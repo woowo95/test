@@ -14,6 +14,7 @@
     return false;
   };
   const tri = (a, b, c) => (x, y) => { const s = (p, q) => (q[0] - p[0]) * (y - p[1]) - (q[1] - p[1]) * (x - p[0]); const d1 = s(a, b), d2 = s(b, c), d3 = s(c, a); return !((d1 < 0 || d2 < 0 || d3 < 0) && (d1 > 0 || d2 > 0 || d3 > 0)); };
+  const poly = pts => (x, y) => { let inne = false; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [xi, yi] = pts[i], [xj, yj] = pts[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inne = !inne; } return inne; };
   const och = (...f) => (x, y) => f.some(g => g(x, y));
   const utan = (f, g) => (x, y) => f(x, y) && !g(x, y);
   const punkt = (px, py) => (x, y) => Math.floor(x) === px && Math.floor(y) === py;
@@ -96,15 +97,21 @@
   const TALG_TEXT = ['En rund klump stelnat fett, ljus på ovansidan och gulvit i skuggan.', 'Ett kantigt block talg med gula stänk, som skurits ur en större bit.', 'Talg som stelnat i en näverskål.'];
 
   // ---------- 6.3.2.3 facklan som sak ----------
-  const FACK_L = { j: 'jord1', J: 'jord2', g: 'senap1', G: 'senap2', y: 'senap3', w: 'ben2', W: 'ben3', r: 'jord3', n: 'ben3', k: 'kol1' };
-  // lång som ett spjut (Björn 2026-11-04: "gör den lång som ett spjut"): skaftet är ett smalt streck från hörn till hörn
-  // i rutan, som flintspjutet, och huvudet sitter i den översta fjärdedelen
+  const FACK_L = { s: 'jord0', j: 'jord1', J: 'jord2', g: 'senap1', G: 'senap2', y: 'senap3', w: 'ben2', W: 'ben3', r: 'jord3', n: 'ben3', k: 'kol1' };
+  // som den uppsatta facklan du valde (Björn 2026-11-04: "kolla på den uppsatta facklan och gör en liknande"): lång som
+  // ett spjut, käppen kluven i toppen och tjärstickor i klykan, snörd under klykan. Som sak är den släckt
   const SKAFT = [(x, y) => Math.floor(x) + Math.floor(y) === 15 && Math.floor(x) <= 10, (x) => Math.floor(x) % 2 ? 'j' : 'J'];
+  const KLYKA = (s, langd) => { // klykans två grenar och stickorna som sprider sig uppåt höger; s: hur mycket de sprider sig
+    const lista = [[och(linje([[10.5, 4.5], [11.2, 2.4]], 0.45), linje([[10.5, 4.5], [12.6, 3.8]], 0.45)), 'J']];
+    for (let i = -1; i <= 1; i++) lista.push([linje([[10.8, 4.2], [10.8 + langd + i * s * 0.6, 4.2 - langd + i * s]], 0.4), i === 0 ? 'k' : 's']);
+    lista.push([punkt(10, 5), 'g']); return lista;
+  };
   const FACKLA = [
-    former(16, 16, [SKAFT, [linje([[10.6, 4.6], [13.8, 1.4]], 1.3, 1.0), (x, y) => (Math.floor(x) + Math.floor(y)) % 2 ? 'g' : 'G'], [linje([[10.5, 4.7], [11.1, 4.1]], 1.4), 'n']]),
-    former(16, 16, [SKAFT, [ell(12.6, 2.9, 1.9, 1.9), (x, y) => x + y < 14.6 ? 'W' : 'w'], [punkt(12, 2), 'y']]),
-    former(16, 16, [SKAFT, [linje([[10.5, 4.7], [13.6, 1.6]], 1.2), (x, y) => (Math.floor(x) + Math.floor(y)) % 3 === 0 ? 'k' : 'n'], [punkt(14, 1), 'G'], [punkt(13, 1), 'G']]),
+    former(16, 16, [SKAFT, ...KLYKA(1.2, 3.6)]),
+    former(16, 16, [SKAFT, ...KLYKA(2.0, 3.2)]),
+    former(16, 16, [SKAFT, ...KLYKA(0.7, 4.2), [och(punkt(11, 3), punkt(12, 3)), 'g']]),
   ];
+  const FACKLA_TEXT = ['Stickorna i en solfjäder, som på den uppsatta facklan.', 'Stickorna mer utspridda och kortare.', 'Stickorna tätt ihop och längre, snörda två gånger.'];
 
   // ---------- 6.3.2.4 uppsatta facklor, tända i mörkret ----------
   // tre nya utseenden på facklan (Björn 2026-11-04: "prova fler utseenden på facklor"), alla långa som ett spjut och
@@ -230,7 +237,8 @@
       [punkt(Math.floor(hx + 0.4), Math.floor(hy - 0.2)), 'k'],
     ];
     if (bock) lista.push([och(linje([[hx - 0.2, hy - 1.4], [hx - 0.6, hy - 4.6]], 0.45), linje([[hx - 0.5, hy - 3.2], [hx + 0.8, hy - 4]], 0.4)), 'h']);
-    return former(W, H, lista).filter(r => /[^.]/.test(r));
+    const Y = 5; // plats ovanför huvudet, så att hornen inte klipps av (Björn 2026-11-04: "är djuret avklippt?")
+    return former(W, H + Y, lista.map(([f, t]) => [(x, y) => f(x, y - Y), typeof t === 'function' ? (x, y) => t(x, y - Y) : t])).filter(r => /[^.]/.test(r));
   }
   function radjurFallt(v) {
     const W = 24, H = 12;
@@ -385,42 +393,48 @@
 
   // ---------- 6.5.3 björnen, idet och fällen ----------
   const BJ_L = { d: 'jord0', m: 'jord1', l: 'jord2', n: 'jord3', k: 'kol0', b: 'ben2' };
-  // tre nya björnar (Björn 2026-11-04: "björnen ser för snällt ut, gör tre nya versioner, inte tre positioner"): alla
-  // går, med huvudet lågt och framskjutet, öronen bakåt, ett snett mörkt ögonbryn över ett litet öga och klorna ute.
-  // 1: brun och morrande med öppen mun och tänder; 2: mörk och tung med hög puckel och stängd mun; 3: grå spetsar i
-  // pälsen över ryggen (silverspetsar), ett ärr över nosen och en hörntand som syns
+  // björnen ritad om helt, utan förlaga (Björn 2026-11-04: "ändra formen på björnen, gör tre nya utan förlaga som inte ser
+  // för snälla ut"): kantiga former i stället för runda. Kroppen är en kil som är högst över den stora puckeln vid axlarna
+  // och sluttar ner mot en låg bak, huvudet hänger lågt framför bröstet med en lång nos, frambenen är tjocka pelare med
+  // långa ljusa klor, och ögat är en liten mörk punkt under ett snett ögonbryn.
+  // 1: brun, med morrande öppen mun och tänder; 2: mörk och lurvig, med tovor längs ryggen och buken; 3: mager och
+  // långbent med lång nos, grå spetsar på puckeln och en hörntand
   const BJ_UT = [
-    { puckel: 2.4, lag: 2.2, mun: true, st: 1.4, L: { ...BJ_L, r: 'rost0' } },
-    { puckel: 3.6, lag: 3, mun: false, st: 1.55, L: { d: 'kol0', m: 'jord0', l: 'jord1', n: 'jord2', k: 'kol0', b: 'ben2', r: 'rost0' } },
-    { puckel: 2.8, lag: 1.6, mun: false, tand: true, gra: true, st: 1.45, L: { ...BJ_L, g: 'ben0', r: 'rost1' } },
+    { ben: 10, kropp: 10, puckel: 5, nos: 2, mun: true, L: { d: 'jord0', m: 'jord1', l: 'jord2', n: 'jord3', k: 'kol0', b: 'ben3', r: 'rost0' } },
+    { ben: 9, kropp: 12, puckel: 6, nos: 1, lurv: true, L: { d: 'kol0', m: 'jord0', l: 'jord1', n: 'jord2', k: 'kol0', b: 'ben3', r: 'rost0' } },
+    { ben: 12, kropp: 8, puckel: 4, nos: 3.5, tand: true, gra: true, L: { d: 'jord0', m: 'jord1', l: 'jord2', n: 'jord3', k: 'kol0', b: 'ben3', g: 'ben1', r: 'rost0' } },
   ];
   function bjorn(v) {
-    const t = BJ_UT[v], W = 38, H = 24, fot = H - 0.5, bot = fot - 6, mitt = bot - 4.4;
-    const kropp = och(ell(13, mitt, 10, 5), ell(20.5, mitt - 1 - t.puckel * 0.4, 5.6, 5 + t.puckel * 0.4), ell(7, mitt + 0.4, 5.6, 5));
-    const hx = 29.2, hy = mitt - 2 + t.lag;
-    const hals = linje([[22, mitt - 1.2], [hx - 1, hy]], 3.6, 2.8);
-    const ben = (x) => linje([[x, bot - 2], [x + 0.2, fot - 1]], 1.7, 1.6);
-    const topp = mitt - 3.4 - t.puckel * 0.6;
-    const lista = [
-      [och(ben(9.6), ben(20.4)), 'd'],
-      [kropp, (x, y) => t.gra && y < topp + 2.4 && (Math.floor(x) + Math.floor(y)) % 2 === 0 ? 'g' : y < mitt - 3.4 ? 'l' : y > bot - 1.4 ? 'd' : 'm'],
-      [hals, (x, y) => t.gra && y < hy - 1.6 && (Math.floor(x) + Math.floor(y)) % 2 === 0 ? 'g' : y < hy - 0.8 ? 'l' : 'm'],
-      [och(ben(5.4), ben(23)), (x, y) => y > fot - 1.4 ? 'd' : 'm'],
-      [ell(hx, hy, 2.9, 2.5), (x, y) => x < hx - 2 ? 'd' : y < hy - 0.8 ? 'l' : 'm'], // huvudet, med en mörk kant mot halsen så att det syns
-      [ell(hx - 1.4, hy - 2.4, 1.2, 1.0), 'd'], // örat, bakåtlagt
-    ];
-    if (t.mun) lista.push( // öppen mun: överkäken, underkäken, gapet och tänderna
-      [ell(hx + 2.4, hy + 2.2, 1.7, 0.8), 'm'], [linje([[hx + 1, hy + 1.3], [hx + 4.6, hy + 1.6]], 0.6), 'r'], [ell(hx + 3.2, hy + 0.2, 2, 1.1), (x) => x > hx + 4.2 ? 'n' : 'm'],
-      [och(punkt(Math.floor(hx + 4), Math.floor(hy + 1.2)), punkt(Math.floor(hx + 2.2), Math.floor(hy + 1.2)), punkt(Math.floor(hx + 3.2), Math.floor(hy + 1.9))), 'b']);
-    else lista.push([ell(hx + 3, hy + 0.8, 1.9, 1.3), (x) => x > hx + 3.6 ? 'n' : 'm'], [linje([[hx + 1.6, hy + 1.8], [hx + 4.4, hy + 1.6]], 0.35), 'd']);
-    if (t.tand) lista.push([punkt(Math.floor(hx + 3.4), Math.floor(hy + 2.2)), 'b']);
-    if (t.gra) lista.push([linje([[hx + 2, hy - 0.4], [hx + 3.4, hy + 0.6]], 0.3), 'r']); // ärret
+    const t = BJ_UT[v], fot = 33, b = fot - t.ben, yr = b - t.kropp, yp = yr - t.puckel, n = t.nos;
+    // kroppen: låg bak, hög puckel över axlarna, bröstet ner mot frambenen
+    const kropp = poly([[3, yr + 2], [6, yr - 1], [20, yp + 1.5], [26, yp], [30, yp + 1], [34, yp + 5], [35.5, b - 5], [34, b + 1], [28, b], [14, b - 1], [6, b - 1], [3, b - 4]]);
+    const rygg = x => { for (let y = 0; y < fot; y++) if (kropp(x + 0.5, y + 0.5)) return y; return fot; };
+    const hy = yp + 3; // huvudets överkant: lågt, framför och under puckeln
+    const huvud = poly([[32, hy], [37, hy - 0.5], [41, hy + 2], [45 + n, hy + 3.5], [47 + n, hy + 5], [46.5 + n, hy + 8], [40, hy + 10], [33, hy + 9.5]]);
+    const ora = tri([34.5, hy + 0.5], [35.5, hy - 2.2], [37.5, hy + 0.5]);
+    // benen i ett kliv: det närmre frambenet framåt, det bortre bakåt, och tvärtom för bakbenen
+    const framN = poly([[28, b - 6], [33.5, b - 6], [35, fot - 2], [38, fot - 1.5], [38, fot], [31, fot], [28, b]]);
+    const framB = poly([[26, b - 6], [31, b - 6], [29, b + 2], [28, fot - 1.5], [28, fot], [22.5, fot], [24, b + 1]]);
+    const bakN = poly([[4, b - 7], [12, b - 5], [11, b + 1], [8, fot], [2.5, fot], [5, b]]);
+    const bakB = poly([[7, b - 7], [14, b - 5], [16, fot], [10.5, fot], [9, b]]);
+    const ton = (x, y) => { const r = rygg(Math.floor(x)); return t.gra && x > 18 && x < 33 && y < r + 1.5 && (Math.floor(x) + Math.floor(y)) % 3 === 0 ? 'g' : y < r + 2 ? 'l' : y > b - 2 ? 'd' : 'm'; };
+    const lista = [[och(framB, bakB), 'd'], [kropp, ton], [och(framN, bakN), (x, y) => y > fot - 2 ? 'd' : 'm']];
+    if (t.lurv) { // tovor längs ryggen och buken
+      const tovor = [];
+      for (let x = 6; x < 32; x += 3) { const y = rygg(x + 1); tovor.push(tri([x, y + 1], [x + 1.2, y - 1.6], [x + 2.6, y + 1])); }
+      for (let x = 13; x < 28; x += 3) tovor.push(tri([x, b - 1], [x + 1.2, b + 1.4], [x + 2.6, b - 1]));
+      lista.push([och(...tovor), (x, y) => y > b - 2 ? 'd' : 'l']);
+    }
+    lista.push([huvud, (x, y) => x > 42 + n * 0.5 ? 'n' : y < hy + 1.5 ? 'l' : 'm'], [ora, 'd']);
+    const my = hy + 7;
+    if (t.mun) lista.push([poly([[39, my - 0.2], [47 + n, my - 0.8], [46 + n, my + 1.4], [40, my + 1.2]]), 'r'], [och(punkt(42, Math.floor(my)), punkt(Math.floor(45 + n), Math.floor(my - 1)), punkt(43, Math.floor(my + 1))), 'b']);
+    else lista.push([linje([[39, my], [46.5 + n, my - 0.5]], 0.4), 'd']);
+    if (t.tand) lista.push([och(punkt(Math.floor(44 + n), Math.floor(my)), punkt(Math.floor(44 + n), Math.floor(my + 1))), 'b']);
     lista.push(
-      [linje([[hx - 0.8, hy - 1.5], [hx + 1.9, hy - 0.5]], 0.55), 'd'], // det sneda ögonbrynet: argt
-      [punkt(Math.floor(hx + 1), Math.floor(hy - 0.1)), 'k'], [punkt(Math.floor(hx + 4.8), Math.floor(hy + (t.mun ? 0 : 0.4))), 'k'],
-      [och(punkt(6, Math.floor(fot - 0.6)), punkt(7, Math.floor(fot - 0.6)), punkt(23, Math.floor(fot - 0.6)), punkt(24, Math.floor(fot - 0.6))), 'b']); // klorna
-    const st = t.st;
-    return former(Math.ceil(W * st), Math.ceil(H * st), lista.map(([f, tn]) => [(x, y) => f(x / st, y / st), typeof tn === 'function' ? (x, y) => tn(x / st, y / st) : tn])).filter(r => /[^.]/.test(r));
+      [linje([[35.5, hy + 1.5], [40, hy + 2.8]], 0.5), 'd'], // det sneda ögonbrynet
+      [punkt(38, Math.floor(hy + 3.5)), 'k'], [och(punkt(Math.floor(46 + n), Math.floor(hy + 4.5)), punkt(Math.floor(45 + n), Math.floor(hy + 4.5))), 'k'], // ögat och nosen
+      [och(punkt(36, fot - 1), punkt(37, fot - 1), punkt(38, fot - 1)), 'b']); // klorna
+    return former(Math.ceil(50 + n), fot + 1, lista).filter(r => /[^.]/.test(r));
   }
   // björnen bredvid en människa och en varg (Björn 2026-11-04: "jag vill se björnen i relation till en människa och en
   // varg"): den vanliga kartfiguren och vargen från djur.js, med fötterna på samma rad
@@ -449,8 +463,7 @@
     KORT('f6_naver', 'Näver', S + '6.3.1.3: en ny sak, som görs av ved och tänds lättare än torrgräs. Vit näver med mörka streck, i sakens storlek (16 punkter per ruta).', [
       PA_MARK('En hoprullad bit näver, med den bruna insidan synlig i änden.', NAVER[0], NAV_L), PA_MARK('En lös remsa som rullar sig i ena änden.', NAVER[1], NAV_L), PA_MARK('Tre remsor i en liten hög.', NAVER[2], NAV_L)]),
     KORT('f6_talg', 'Talg', S + '6.3.2.2: en ny sak från slakten, djurfettet, som blir facklor och ljus.', TALG.map((r, i) => PA_MARK(TALG_TEXT[i], r, TALG_L))),
-    KORT('f6_fackla', 'Facklan', S + '6.3.2.3: facklan som sak, när den ligger i förrådet eller bärs. Lång som ett spjut: ett smalt skaft från hörn till hörn i rutan, som flintspjutet, och huvudet i toppen. Din kommentar förra gången: ”Gör den lång som ett spjut”.', [
-      PA_MARK('En bunt torrgräs som surrats fast med en ljus rand.', FACKLA[0], FACK_L), PA_MARK('Ett runt huvud som doppats i talg.', FACKLA[1], FACK_L), PA_MARK('Huvudet lindat med näver.', FACKLA[2], FACK_L)]),
+    KORT('f6_fackla', 'Facklan', S + '6.3.2.3: facklan som sak, när den ligger i förrådet eller bärs, släckt. Den liknar den uppsatta facklan du valde: lång som ett spjut, käppen kluven i toppen med tjärstickor i klykan och snörd under. Din kommentar förra gången: ”kolla på den uppfatta facklan och gör en liknande”.', FACKLA.map((r, i) => PA_MARK(FACKLA_TEXT[i], r, FACK_L))),
     KORT('f6_uppsatt', 'Uppsatt fackla', S + '6.3.2.4: en tänd fackla, lång som ett spjut, som stuckits ner i marken och lyser upp natten runt sig. Tre nya utseenden på facklan. Din kommentar förra gången: ”Prova fler utseende på facklor”.', [
       UPPSATT('En käpp som kluvits i toppen, med tjärstickor i klykan.', 0), UPPSATT('En strut av näver med elden i, och stenar runt foten.', 1), UPPSATT('En tjock halmbunt, bunden med tre band.', 2)]),
     KORT('f6_ljus', 'Talgljuset', S + '6.3.2.5: ljuset som står på ett bord eller en hylla inne och lyser upp rummet.', [
@@ -461,7 +474,7 @@
       BARSCEN('Stora bär, ett och ett.', 0), BARSCEN('Klasar om tre, som saken bär.', 1), BARSCEN('Många små bär, glest.', 2)]),
     KORT('f6_styckdel', 'Styckdelen', S + '6.5.1.1: en bit av ett styckat djur. En enda bild för alla djur som får djurets färger (du, 2026-11-04): pälsens tre toner byts, köttet och benet är lika. Varje version visas som rådjur, varg och björn.',
       STYCK.map((r, i) => I_FARGER(STYCK_TEXT[i], r, ['radjur', 'varg', 'bjorn'].map(styckL)))),
-    KORT('f6_radjur', 'Rådjuret', S + '6.5.1.2 (ditt beslut väntar, steget är ett förslag): rådjuret på kartan, sett från sidan, med den vita spegeln bak. Tre utseenden av djuret. Din kommentar förra gången: ”Jag vill se olika versioner av djuret inte olika animationsframes”.', RAD_UTSEENDE.map(u => PA_MARK(u.text, u.r, u.L))),
+    KORT('f6_radjur', 'Rådjuret', S + '6.5.1.2 (ditt beslut väntar, steget är ett förslag): rådjuret på kartan, sett från sidan, med den vita spegeln bak. Tre utseenden av djuret. Bockens horn klipptes av upptill i bilden förra gången; nu syns de. Din kommentar förra gången: ”jag kan inte se några horn är djuret avklippt?”', RAD_UTSEENDE.map(u => PA_MARK(u.text, u.r, u.L))),
     KORT('f6_radjur_fallt', 'Fällt rådjur', S + '6.5.1.2: det fällda rådjuret som bärs hem eller styckas.', [
       PA_MARK('På sidan med benen utsträckta.', radjurFallt(0), RAD_L), PA_MARK('På sidan med benen hopvikta.', radjurFallt(1), RAD_L), PA_MARK('Med benen bundna ihop, klart att bäras.', radjurFallt(2), { ...RAD_L, r: 'senap2' })]),
     KORT('f6_radjursskinn', 'Rådjursskinn', S + '6.5.1.2: skinnet från slakten.', [
@@ -476,8 +489,8 @@
       PA_MARK('Två ägg i ett litet bo av gräs.', AGG[0], AGG_L), PA_MARK('Tre prickiga ägg på rad.', AGG[1], AGG_L), PA_MARK('Ett enda ägg.', AGG[2], AGG_L)]),
     KORT('f6_kasttra', 'Kastträet', S + '6.5.2.2: kastvapnet mot fåglar och harar, som ligger kvar på marken efter kastet.', [
       PA_MARK('Ett böjt kastträ.', KASTTRA[0], KAST_L), PA_MARK('En rak käpp med tjock ände.', KASTTRA[1], KAST_L), PA_MARK('En böjd käpp med rep lindat om handtaget.', KASTTRA[2], KAST_L)]),
-    KORT('f6_bjorn', 'Björnen', S + '6.5.3: björnen på kartan, sedd från sidan, bredvid en människa och en varg. Tre björnar som ser farligare ut: huvudet lågt och framskjutet, öronen bakåt, ett snett mörkt ögonbryn över ett litet öga och klorna ute. Din kommentar förra gången: ”Björnen ser för snällt ut. Gör tre nya versioner. Inte tre positioner”.', [
-      BJORNSCEN('Brun och morrande, med öppen mun och tänderna synliga.', 0), BJORNSCEN('Mörk och tung, med hög puckel och stängd mun.', 1), BJORNSCEN('Grå spetsar i pälsen över ryggen, ett ärr över nosen och en hörntand som syns.', 2)]),
+    KORT('f6_bjorn', 'Björnen', S + '6.5.3: björnen på kartan, sedd från sidan, bredvid en människa och en varg. Ritad helt ny utan förlaga, med kantiga former: en kropp som är högst över den stora puckeln och sluttar ner bakåt, huvudet lågt framför bröstet med lång nos, tjocka framben med långa klor och ett litet öga under ett snett ögonbryn. Din kommentar förra gången: ”ändra formen på björnen gör tre nya utan förlaga som inte ser för snälla ut”.', [
+      BJORNSCEN('Brun, morrande med öppen mun och tänderna ute.', 0), BJORNSCEN('Mörk och lurvig, med tovor längs ryggen och buken.', 1), BJORNSCEN('Mager och långbent med lång nos, grå spetsar på puckeln och en hörntand.', 2)]),
     KORT('f6_bjornskinn', 'Björnfällen', S + '6.5.3.3: björnskinnet som slakten ger.', [
       PA_MARK('Utbredd med huvudet och klorna kvar.', FALL[0], BJ_L), PA_MARK('Utbredd utan huvud.', FALL[1], BJ_L), PA_MARK('Hopvikt.', FALL[2], BJ_L)]),
   );
