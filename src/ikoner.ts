@@ -1,6 +1,7 @@
 // ikoner för föremål: små pixelbilder (8×8) som används både på kartan och i listorna
 // varje tecken är en pixel, '.' är genomskinlig
 import { KLADER_AV } from './sim/klader';
+import { KARTBILDER } from './kartbilder';
 
 // slagen av arbete ritas ljust i en färg (vattnet blått)
 const AKT = { w: '#dad0bb', a: '#8a9c9e' };
@@ -3912,6 +3913,12 @@ function lagereldRader(l: LagereldLage, ring: boolean) {
 for (const l of LAGERELD_LAGEN) for (const ring of [true, false]) { PIX[lagereldId(l, ring)] = lagereldRader(l, ring); PAL[lagereldId(l, ring)] = ELD_PAL; }
 // symbolen för en lägereld (stationen som lägger ringen till en lägereld till, steg 4.5.6.8): den nylagda med ring
 PIX.lagereld = lagereldRader('ny', true); PAL.lagereld = ELD_PAL;
+
+// bildstilens godkända bilder (kartbilder.ts, steg 5.2.4) som PIX och PAL med id:t kb_<id>. kartbild(k) ger id:t för sakens
+// kartbild, som ritas i sin naturliga storlek, aldrig förstorad eller förminskad (steg 5.1.2.1)
+for (const [id, b] of Object.entries(KARTBILDER)) { PIX['kb_' + id] = b.rader; PAL['kb_' + id] = b.pal; }
+export const kartbild = (k: string) => KARTBILDER[k] ? 'kb_' + k : undefined;
+export const kartbildEnsam = (k: string) => !!KARTBILDER[k]?.ensam;
 
 const canvases: Record<string, HTMLCanvasElement> = {};
 const urls: Record<string, string> = {};

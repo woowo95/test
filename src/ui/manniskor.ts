@@ -4,7 +4,7 @@ import { PRICKAR, personFarg } from './hjalp';
 import { s, sakVar, ui, uppgiftVid, vidNyBy } from './lage';
 import { Ikoner, TS, bubbleG, labels, markLayer, peopleG } from './scen';
 import { jaktPlats } from './jakt';
-import { hasIcon, iconCanvas, ljusSymbol } from '../ikoner';
+import { hasIcon, iconCanvas, kartbild, ljusSymbol } from '../ikoner';
 
 // människorna på kartan: kroppen, det de bär, pratbubblor, symbolen för vad de gör och namnet
 const bubbles: { id: number; kind: string; good: boolean; until: number; i?: string }[] = [];
@@ -168,6 +168,11 @@ function pratRuta(x: number, top: number, bob: number, kind: string | undefined,
   markIcons.add(k, x - 4, top - 4.5 + bob, 8 / iconCanvas(k).width, ljusSymbol(k) ? PRAT_KANT : 0xffffff);
 }
 const markIcons = new Ikoner(markLayer);
+// en sak med mitten i (cx, cy): kartbilden i sin naturliga storlek, annars den gamla bilden storlek punkter stor
+function bar(k: string, cx: number, cy: number, storlek: number) {
+  const kb = kartbild(k), c = iconCanvas(kb ?? k), sc = kb ? 1 : storlek / (c.width || 8);
+  markIcons.add(kb ?? k, Math.round(cx - c.width * sc / 2), Math.round(cy - c.height * sc / 2), sc);
+}
 // namnet över den valda och den under musen. Två texter som återanvänds: att skapa en text varje bildruta är dyrt
 const nameStyle = new PIXI.TextStyle({ fontFamily: 'Alegreya Sans, system-ui, sans-serif', fontSize: 22, fill: 0xffffff, stroke: 0x111111, strokeThickness: 5, fontWeight: '700' });
 const nameTags = [0, 1].map(() => { const tx = new PIXI.Text('', nameStyle); tx.scale.set(0.5); tx.anchor.set(0.5, 1); tx.visible = false; labels.addChild(tx); return tx; });
@@ -195,12 +200,14 @@ export function drawPeople(t: number) {
     peopleG.lineStyle(0);
     if (PRICKAR.sjuk.har(p)) peopleG.beginFill(PRICKAR.sjuk.farg).drawCircle(x + r * 0.7, y - r * 0.7, 1.8).endFill();
     if (PRICKAR.gravid.har(p)) peopleG.beginFill(PRICKAR.gravid.farg).drawCircle(x - r * 0.7, y - r * 0.7, 1.6).endFill();
-    if (tk && load(tk, s) > 0) markIcons.add(homeKind(tk), x + r - 2.5, y - 1, 4.8 / iconCanvas(homeKind(tk)).width); // det man bär syns på figuren, hur lite det än är (steg 3.6.5)
+    // det man bär syns på figuren, hur lite det än är (steg 3.6.5): framför kroppen, och med en kartbild ur bildstilen i sin
+    // naturliga storlek (steg 5.1.2.1)
+    if (tk && load(tk, s) > 0) bar(homeKind(tk), x + r - 0.1, y + 1.4, 4.8);
     const mal = tk?.act === 'maltid' && tk.phase === 'do' && tk.mal, bord = mal && hasIcon(mal) ? bordVid(s, q) : undefined; // (vid bordet där hen syns sitta)
     if (mal && bord) { // den som äter vid bordet har maten i händerna och framför sig på bordet (steg 3.10.3)
       const { w, h } = storlekAv(bord), dx = (bord.x + w / 2) * TS - x, dy = (bord.y + h / 2) * TS - y, d = Math.hypot(dx, dy) || 1, f = Math.min(1, TS * 0.7 / d);
-      markIcons.add(mal, x + r - 2.5, y - 1, 0.6);
-      markIcons.add(mal, x + dx * f - 2.4, y + dy * f - 2.4, 0.6);
+      bar(mal, x + r - 0.1, y + 1.4, 4.8);
+      bar(mal, x + dx * f, y + dy * f, 4.8);
     }
   }
   // pågående samtal och symboler
