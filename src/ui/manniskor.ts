@@ -3,7 +3,8 @@ import { ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bo
 import { PRICKAR } from './hjalp';
 import { s, sakVar, ui, uppgiftVid, vidNyBy } from './lage';
 import { Ikoner, TS, bubbleG, figurLayer, labels, markLayer, peopleG } from './scen';
-import { type Arm, type Ben, type Rikt, figurTex } from './folkbild';
+import { type Arm, type Ben, type Rikt, figurHand, figurTex } from './folkbild';
+import { ARBETEN, arbetsBild, ritaArbete } from './arbetsbild';
 import { skapad } from './utseende';
 import { fotSkugga, skuggFolk, skuggLangd } from './skugga';
 import { jaktPlats } from './jakt';
@@ -234,15 +235,22 @@ export function drawPeople(t: number) {
     const gor = tk?.phase === 'do' ? tk.act : undefined, sitter = !ligger && !!gor && SITTA.has(gor);
     let rikt = riktning(p.id, q.x, q.y);
     if (sitter && rikt === 'bak') rikt = 'fram';
+    // arbetet i bild (steg 5.1.9.4, ui/arbetsbild.ts): rörelsen från sidan, en bild per slag, förskjutet per person
+    const arb = !ligger && !sitter && gor && !(tk && load(tk, s) > 0) ? ARBETEN[gor] : undefined;
+    const ab = arb ? arbetsBild(arb, slag() + p.id) : undefined;
+    if (ab && rikt !== 'sida' && rikt !== 'vast') rikt = p.id % 2 ? 'vast' : 'sida';
     const steg = !sitter && !ligger && gar(p.id, performance.now()) ? GANG[(slag() + p.id) % 4] : undefined;
-    const ben: Ben = sitter ? 'sitta' : steg ? steg[0] : 'sta';
+    const ben: Ben = sitter ? 'sitta' : ab ? ab.ben : steg ? steg[0] : 'sta';
     let arm: Arm = tk && load(tk, s) > 0 ? 'bara' : gor && SLA.has(gor) ? 'sla' : gor === 'station' ? 'framfor' : 'hanga';
     if (steg && arm === 'hanga') arm = steg[1];
+    if (ab) arm = ab.arm;
     sp.texture = figurTex(skapad(s, p), { rikt, ben, arm, ligga: ligger, tacke: sleeping }, p.id === ui.selected || p.id === harSaken);
     sp.scale.set(k);
     const w = sp.texture.width * k, h = sp.texture.height * k;
     if (ligger) sp.position.set(x - w / 2, y - h / 2);
-    else sp.position.set(x - w / 2, y + r * 0.9 - h + k);
+    else sp.position.set(x - w / 2 + (ab?.b.ut ?? 0) * (rikt === 'vast' ? -k : k), y + r * 0.9 - h + k);
+    const hand = ab && figurHand(sp.texture);
+    if (arb && ab && hand) ritaArbete(peopleG, arb, ab.b, sp.position.x + hand[0] * k, sp.position.y + hand[1] * k, rikt === 'vast' ? -1 : 1, k);
     sp.zIndex = y + r * 0.9; // fötterna (ordningen söderut, steg 5.1.4.5)
     if (!ligger) fotSkugga(skugga, x - 4 * k, Math.round(sp.zIndex) - 1, 4 * k, 2, skuggLangd());
     sp.visible = true; sedd.add(p.id);

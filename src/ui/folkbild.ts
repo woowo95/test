@@ -32,6 +32,9 @@ function ljusKontur(B: Bild) {
 }
 const MAX = 3000; // så många bilder sparas; sedan börjar det om (personerna åldras och byter läge)
 const figurer = new Map<string, PIXI.Texture>(), portratt = new Map<string, string>();
+// handen i figurens bild (punkter från övre vänstra hörnet), till redskapen i arbetena (steg 5.1.9.4, ui/arbetsbild.ts)
+const hander = new WeakMap<PIXI.Texture, [number, number]>();
+export const figurHand = (t: PIXI.Texture) => hander.get(t);
 export function figurTex(q: Skapad, l: Lage, vald: boolean) {
   const k = JSON.stringify(q) + JSON.stringify(l) + vald;
   let t = figurer.get(k);
@@ -40,6 +43,7 @@ export function figurTex(q: Skapad, l: Lage, vald: boolean) {
     const B: Bild = KARNA.kartFigur(q, l.rikt, l.ben, l.arm, { ligga: l.ligga, tacke: l.tacke });
     t = PIXI.Texture.from(canvasAv(vald ? ljusKontur(B) : B), { scaleMode: PIXI.SCALE_MODES.NEAREST });
     figurer.set(k, t);
+    const h = (B as Bild & { hand?: [number, number] | null }).hand; if (h) hander.set(t, h);
   }
   return t;
 }
