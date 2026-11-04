@@ -24,29 +24,5 @@
     "ooo....ooppooo.................."
    ]
   }
- },
- "forra": {
-  "ritad": 2,
-  "bilder": {
-   "standard": {
-    "x": -16,
-    "y": -12,
-    "rader": [
-     "..........................wwwqqp",
-     ".....................wwwqqqqqppp",
-     "................wwwqqqqqppppppoo",
-     "................qqqqppppooo.....",
-     ".........wwwwwwqqppooo..........",
-     ".......wwqqqqqqqp...............",
-     ".......wqqqqqqqpp...............",
-     "qwwwwwwqqqqqqqppp...............",
-     "qqqqqqqqqqqqqpppo...............",
-     "pppppppqqqqqpppoo...............",
-     "ooooopppqqpprsooo...............",
-     "........pppstooo................",
-     ".........oooooo................."
-    ]
-   }
-  }
  }
 }

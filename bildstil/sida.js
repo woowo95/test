@@ -971,6 +971,28 @@ const VAL = [
 // Björns val som är bestämda men inte inbyggda i spelet: de visas under Valt med den valda versionen (0 = förut-versionen
 // behålls) och steget där de byggs in. När saken är inbyggd tas raden bort här och ur VAL, och dess dokument i samlingen 'val'
 const BESLUT = {
+  f6_grans: { val: 1, steg: '6.2.1.3' }, f6_talg: { val: 3, steg: '6.3.2.2' }, f6_agg: { val: 3, steg: '6.5.1.3' },
+  f6_radjursskinn: { val: 1, steg: '6.5.1.2' }, f6_bjornskinn: { val: 1, steg: '6.5.3.3' },
+  f6_barbuske: { val: 1, steg: '6.4.1.4' }, f6_fagel: { val: 2, steg: '6.5.1.3' }, f6_fjadrar: { val: 2, steg: '6.5.1.3' }, f6_uppsatt: { val: 1, steg: '6.3.2.4' },
+  f6_fagel_falld: { val: 1, text: 'Byggs in i steg 6.5.1.3, ritad om i de tre fåglarnas egna former och färger från fåglarna du valde (version 2).' },
+  f6_fackla: { val: 1, steg: '6.3.2.3' },
+  f6_radjur: { val: 1, text: 'Hinden (1) och bocken (2) används båda, i färgerna från version 3 (gråbrun päls). Byggs in i steg 6.5.1.2.' },
+  f6_bjorn: { val: 1, text: 'Björns egen ritning (1) är björnen som den står och går; när den anfaller öppnar den munnen (2). Byggs in i steg 6.5.3.' },
+  f6_radjur_fallt: { val: 2, steg: '6.5.1.2' },
+  f6_naver: { val: 1, text: 'Byggs in i steg 6.3.1.3 efter din ritning: tre remsor utan mörk kontur (den lösa mörka punkten till höger tas bort).' },
+  f6_ljus: { val: 1, text: 'Version 1 och 2 används båda, som variationer (ljuset på stenen och i lerskålen). Byggs in i steg 6.3.2.5.' },
+  f6_buske: { val: 1, text: 'Alla tre används, som variationer (rund, gles och låg). Byggs in i steg 6.4.1.3.' },
+  f6_bjornunge: { val: 1, steg: '6.5.3.2' },
+  f7_stockvag: { val: 2, steg: '7.2.8.1' }, f7_brygga: { val: 2, steg: '7.2.3' },
+  f6_bjorn_hall: { val: 1, text: 'Din ritning: björnen från sidan, framifrån och bakifrån, utan den öppna munnen. Byggs in i steg 6.5.3.' },
+  f6_bjornunge_hall: { val: 1, text: 'Din ritning: björnungen från sidan, framifrån och bakifrån. Byggs in i steg 6.5.3.2.' },
+  f6_bjorn_falld: { val: 2, steg: '6.5.3' },
+  f6_fagel_hall: { val: 1, text: 'Ripan och skogsduvan från tre håll. Orren används bara från ett håll i spelet: den ritas bara från sidan (du sa nej till den omritade orren framifrån och bakifrån). Byggs in i steg 6.5.1.3.' },
+  f6_radjur_hall: { val: 1, text: 'Din ritning: hinden och bocken från sidan, framifrån och bakifrån (version 1 med dina ändringar). Byggs in i steg 6.5.1.2.' },
+  f6_tornado_storlek: { val: 1, steg: '6.3.5.8' },
+  f5_pratbubbla: { val: 1, steg: '5.5.5' }, f5_smabarn: { val: 1, steg: '5.5.5' }, f5_smatecken: { val: 1, steg: '5.5.5' },
+  f6_rovare: { val: 1, text: 'Alla tre används: rövarluvan, rövarens duk, det mörka slitna skinnet och vargskinnet. Delarna är märkta rövare: byborna kan inte tillverka dem, men varje rövare har en chans att bära dem. Byggs in i steg 6.6.12.' },
+  f6_styckdel: { val: 1, text: 'Version 1 och 2 används båda, som variationer (låret och högen), i djurets färger. Byggs in i steg 6.5.1.1.' },
 };
 // räknas när valdelen ritas, så att korten från filerna efter denna (mark.js, djur.js, gui.js) också kommer med
 const VALT = [];
@@ -1018,6 +1040,33 @@ function byggValt(P) {
     lista.append(f);
   }
 }
+// att rita på ett förslag (Björn 2026-11-04): versionen ritas utan bakgrund (bara det som är nytt; scenerna har sin mark
+// kvar) och öppnas i ritaren. Det sparade visas på kortet som Din ritning, och Claude läser det i samlingen ritningar
+function ritaKnapp(s, v, i, P) {
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'rita-pa'; b.textContent = '✏️';
+  const namn = s.namn + (s.versioner.length > 1 ? ', version ' + (i + 1) : '');
+  b.title = 'Rita på ' + namn; b.setAttribute('aria-label', b.title);
+  b.onclick = () => {
+    if (!window.RITA_PA) return;
+    const B = Bild(Math.min(128, v.w), Math.min(128, v.h), P); v.rita(B, P, 0);
+    window.RITA_PA({ w: B.w, h: B.h, px: Array.from(B.px) }, 'val:' + s.id + ':' + (i + 1), namn);
+  };
+  return b;
+}
+let SISTA_RITNINGAR = null;
+window.VAL_RITNINGAR = ritningar => {
+  SISTA_RITNINGAR = ritningar;
+  document.querySelectorAll('#vallista figure.din').forEach(f => f.remove());
+  for (const [id, r] of Object.entries(ritningar)) {
+    const m = /^val:([^:]+):(\d+)$/.exec(r.fran || ''); if (!m || !window.RITA_BILD) continue;
+    const alt = document.querySelector('#val-' + m[1] + ' .alternativ'); if (!alt) continue;
+    const bild = window.RITA_BILD(r), B = Bild(bild.w, bild.h, PAL); bild.px.forEach((v, k) => { B.px[k] = v; });
+    const f = document.createElement('figure'); f.className = 'alt din';
+    f.append(valBild({ w: B.w, h: B.h, rita: (D) => { for (let k = 0; k < B.px.length; k++) if (B.px[k] >= 0) D.px[k] = B.px[k]; } }, PAL));
+    const cap = document.createElement('figcaption'); cap.innerHTML = '<b>Din ritning</b>'; cap.append('Efter version ' + m[2] + (r.kommentar ? ': ' + r.kommentar : '.'));
+    f.append(cap); alt.append(f);
+  }
+};
 const SVAR = {}; // det som finns sparat i databasen, per sak
 let DB = null;
 function byggVal(P) {
@@ -1036,7 +1085,8 @@ function byggVal(P) {
     s.versioner.forEach((v, i) => {
       const f = document.createElement('figure'); f.className = 'alt';
       f.append(valBild(v, P));
-      f.insertAdjacentHTML('beforeend', `<figcaption><b>${s.typ === 'tre' ? 'Version ' + (i + 1) : 'Ny'}</b>${v.text}</figcaption>`); alt.append(f);
+      f.insertAdjacentHTML('beforeend', `<figcaption><b>${s.typ === 'tre' ? 'Version ' + (i + 1) : 'Ny'}</b>${v.text}</figcaption>`);
+      f.append(ritaKnapp(s, v, i, P)); alt.append(f);
     });
     const knappar = s.typ === 'tre' ? s.versioner.map((_, i) => [String(i + 1), 'Version ' + (i + 1)]).concat([['nej', 'Ingen']]) : [['ja', 'Ja'], ['nej', 'Nej']];
     kort.querySelector('.svar').innerHTML = knappar.map(([v, t]) => `<button type="button" data-svar="${v}" data-sak="${s.id}"${v === 'nej' ? ' class="nej"' : ''}>${t}</button>`).join('');
@@ -1045,6 +1095,7 @@ function byggVal(P) {
     lista.append(kort);
   }
   visaSvar();
+  if (SISTA_RITNINGAR) window.VAL_RITNINGAR(SISTA_RITNINGAR);
 }
 function visaSvar() {
   for (const s of VAL) {

@@ -45,7 +45,8 @@
   "material": [
     {"id": "harskinn", "namn": "Harskinn", "toner": ["jord0", "jord1", "jord2", "ben0"]},
     {"id": "vargskinn", "namn": "Vargskinn", "toner": ["kol2", "kol3", "skiffer2", "skiffer3"]},
-    {"id": "rep", "namn": "Rep", "toner": ["jord0", "senap0", "senap1", "senap2"]}
+    {"id": "rep", "namn": "Rep", "toner": ["jord0", "senap0", "senap1", "senap2"]},
+    {"id": "rovarskinn", "namn": "Mörkt, slitet skinn", "toner": ["kol0", "kol1", "jord0", "jord1"], "rovare": true}
   ],
   "mallar": [
     {"id": "kvinna", "namn": "Kvinna", "ritad": 2, "huvud": {"cx": 32, "cy": 30, "rx": 15, "ry": 20, "under": [1, 1]}, "fast": {"oga": [[26, 30], [38, 30]], "ogonbryn": [[26, 25], [38, 25]], "nasa": [32, 31], "mun": [32, 43], "ora": [[16.5, 33], [47.5, 33]], "har": [32, 10], "skagg": [32, 43], "huvudbonad": [32, 10], "halsband": [32, 57], "redskap": [54, 52]}, "munruta": [26, 41, 37, 46], "karta": {"huvud": 1, "bal": [7, 12], "ben": [13, 18], "bredd": [4, 9], "armar": [3, 10]}, "zoner": [["oron", [12, 26, 19, 41], [45, 26, 52, 41]], ["oga-v", [21, 27, 30, 33]], ["oga-h", [33, 27, 42, 33]], ["mun", [26, 41, 37, 46]], ["skalle", [0, 0, 63, 18]], ["lugg", [18, 19, 45, 24]], ["sidor", [0, 19, 17, 52], [46, 19, 63, 52]]], "kropp": {"hals": 5.3, "axel0": 54, "axel1": 61, "bredd": 26.5, "nyckelben": true}, "vad": "Kvinnans mall: samma skalle som de andra, smalare hals och smalare, sluttande axlar. På kartan smalare axlar och bredare höfter."},
@@ -259,6 +260,8 @@
     {"id": "bonad-6", "sort": "huvudbonad", "namn": "Pälsmössa", "karta": "mossa", "maskar": ["skalle", "lugg", "oron"], "ritad": 2, "kon": "bada"},
     {"id": "bonad-7", "sort": "huvudbonad", "namn": "Huvudduk", "karta": "huva", "maskar": ["skalle", "lugg", "sidor"], "ritad": 1, "kon": "kvinna"},
     {"id": "bonad-8", "sort": "huvudbonad", "namn": "Krans", "karta": "band", "maskar": [], "ritad": 1, "kon": "kvinna"},
+    {"id": "bonad-9", "sort": "huvudbonad", "namn": "Rövarluva", "karta": "huva", "maskar": ["skalle", "lugg", "sidor", "oron", "mun"], "ritad": 1, "kon": "bada", "barn": false, "rovare": true, "vad": "rövarens luva: en mörk, sliten luva av kolsvart ylle som täcker hjässan, kinderna och halsen och bara lämnar en smal öppning över ögonen och näsroten. Tyget har revor, lagade hål och en fransig, ojämn kant runt öppningen. Ingen ljus kant: den ska se hotfull och smutsig ut"},
+    {"id": "bonad-10", "sort": "huvudbonad", "namn": "Rövarens duk", "karta": "duk", "maskar": ["skalle", "lugg", "mun"], "ritad": 1, "kon": "bada", "barn": false, "rovare": true, "vad": "rövarens duk: en mörk, smutsig duk knuten tätt över hjässan, och en andra duk knuten över näsan och munnen så att bara ögonen och pannan syns. Tyget är slitet, med en fransig nederkant under hakan och en knut i nacken"},
     {"id": "smycke-2", "sort": "smycke", "namn": "Benhalsband", "plats": "hals", "ritad": 2, "kon": "bada"},
     {"id": "smycke-1", "sort": "smycke", "namn": "Pärlhalsband", "plats": "hals", "ritad": 2, "kon": "kvinna"},
     {"id": "smycke-3", "sort": "smycke", "namn": "Tandhalsband", "plats": "hals", "ritad": 1, "kon": "man"},
@@ -290,7 +293,7 @@
     {"id": "forband-huvud", "sort": "forband", "namn": "Runt huvudet", "karta": "huvud", "ritad": 2},
     {"id": "forband-oga", "sort": "forband", "namn": "Över ögat", "karta": "oga", "maskar": ["oga-v"], "ritad": 3, "forra": "bandaget var bättre på den förra versionen. Det var inte det som var problemet. Problemet är att ögat som INTE är täckt inte ritas på bilden. Ögat som inte är täckt med bandage ska fortfarande synas"},
     {"id": "ogonlapp", "sort": "ogonlapp", "namn": "Ögonlapp", "maskar": ["oga-h"], "ritad": 0},
-    {"id": "plagg-rock", "sort": "klader", "namn": "Rock", "plagg": "rock", "material": ["harskinn", "vargskinn"], "zoner": ["bal", "armar"], "lang": true, "ritad": 3},
+    {"id": "plagg-rock", "sort": "klader", "namn": "Rock", "plagg": "rock", "material": ["harskinn", "vargskinn", "rovarskinn"], "zoner": ["bal", "armar"], "lang": true, "ritad": 3},
     {"id": "plagg-skor", "sort": "klader", "namn": "Skor", "plagg": "skor", "material": ["harskinn"], "zoner": ["fotter"], "ritad": 0},
     {"id": "plagg-balte", "sort": "klader", "namn": "Bälte", "plagg": "balte", "material": ["rep"], "zoner": ["midja"], "portratt": false, "ritad": 0},
     {"id": "redskap-yxa", "sort": "redskap", "namn": "Flintyxa", "sak": "yxa", "form": "yxa", "ritad": 5},

@@ -14,10 +14,13 @@ ${fs.readFileSync(d + '/kropp.html', 'utf8').replace('<section aria-labelledby="
 <script>const GUI = ${fs.readFileSync(d + '/gui.json', 'utf8')};</script>
 <script>${fs.readFileSync(d + '/gui.js', 'utf8')}</script>
 <script>${fs.readFileSync(d + '/anim.js', 'utf8')}</script>
+<script>${fs.readFileSync(d + '/fas6.js', 'utf8')}</script>
+<script>${fs.readFileSync(d + '/fas7.js', 'utf8')}</script>
 <script>const PORTRATT = ${fs.readFileSync(d + '/portratt.json', 'utf8')};</script>
 <script>const DELAR = ${JSON.stringify(Object.fromEntries(fs.readdirSync(d + '/delar').filter(f => f.endsWith('.json')).sort().map(f => { const o = JSON.parse(fs.readFileSync(d + '/delar/' + f, 'utf8')); return [o.id, o]; })))};</script>
 <script>const BILDER = ${fs.readFileSync(d + '/bilder.json', 'utf8')};</script>
 <script>const GAMLA = ${fs.existsSync(d + '/gamla.json') ? fs.readFileSync(d + '/gamla.json', 'utf8') : '{}'};</script>
 <script>const BILDFILER = ${JSON.stringify(Object.fromEntries(fs.readdirSync(d + '/bilder').filter(f => f.endsWith('.json')).sort().map(f => { const o = JSON.parse(fs.readFileSync(d + '/bilder/' + f, 'utf8')); return [o.id, o]; })))};</script>
-<script>${fs.readFileSync(d + '/skapare.js', 'utf8')}</script>`;
+<script>${fs.readFileSync(d + '/skapare.js', 'utf8')}</script>
+<script>${fs.readFileSync(d + '/rita.js', 'utf8')}</script>`;
 fs.writeFileSync(d + '/bildstil.html', html); console.log('ok', html.length);

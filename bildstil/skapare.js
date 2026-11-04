@@ -611,7 +611,7 @@
   // vriden ett kvarts varv. Sju armlägen (beslut, Björn efter 5.2.2.1)
   function kartFigur(p, riktIn, ben, arm, opt = {}) {
     const spegel = riktIn === 'vast', rikt = spegel ? 'sida' : riktIn;
-    const m = MALL[mallAv(p)], K = m.karta, del = effektiva(p), kvinna = m.id === 'kvinna', barn = m.id === 'barn';
+    const m = opt.mall || MALL[mallAv(p)], K = m.karta, del = effektiva(p), kvinna = m.id === 'kvinna', barn = m.id === 'barn';
     const W = 14, H = 20, kt = new Array(W * H).fill(null), zn = new Array(W * H).fill(null);
     const satt = (x, y, v, z = null) => { if (x < 0 || y < 0 || x >= W || y >= H) return; kt[y * W + x] = v; zn[y * W + x] = z; };
     const sitt = ben === 'sitta' ? 2 : 0;
@@ -740,25 +740,33 @@
       }
     }
     if (bonad) {
-      const mat = { 'bonad-1': 'skiffer', 'bonad-2': 'jord', 'bonad-3': 'oliv', 'bonad-4': 'rost', 'bonad-5': 'senap', 'bonad-6': 'ben', 'bonad-7': 'oliv', 'bonad-8': 'oliv' }[del.huvudbonad];
+      const mat = { 'bonad-1': 'skiffer', 'bonad-2': 'jord', 'bonad-3': 'oliv', 'bonad-4': 'rost', 'bonad-5': 'senap', 'bonad-6': 'ben', 'bonad-7': 'oliv', 'bonad-8': 'oliv', 'bonad-9': 'kol', 'bonad-10': 'kol' }[del.huvudbonad];
       const s = rikt === 'sida' ? 1 : 0, xa = 4 + s, xb = 9 + s;
       if (bonad === 'mossa') for (let y = h - 1; y <= h + 1; y++) for (let x = xa - (y === h + 1 ? 1 : 0); x <= xb + (y === h + 1 && !s ? 1 : 0); x++) satt(x, y, mat + (y === h - 1 ? 3 : 2));
       if (bonad === 'hatt') { for (let x = xa - 2; x <= xb + 2; x++) satt(x, h + 1, mat + 1); for (let y = h - 1; y <= h; y++) for (let x = xa; x <= xb; x++) satt(x, y, mat + 2); }
       // huvan: rundad överst, en öppning för ansiktet med en kant (huvan har en senapsgul kant som i porträttet) och tyget ner över axlarna
       if (bonad === 'huva') {
-        const kant = del.huvudbonad === 'bonad-3' ? 'senap2' : mat + 3;
+        // rövarluvan (förslag): ingen ljus kant, och öppningen är bara en smal springa över ögonen
+        const rov = del.huvudbonad === 'bonad-9', kant = del.huvudbonad === 'bonad-3' ? 'senap2' : rov ? mat + 1 : mat + 3, ned = rov ? h + 2 : h + 5;
         const x1 = rikt === 'sida' ? 10 : 10, x0 = rikt === 'sida' ? 4 : 3;
         for (let y = h - 1; y <= h + 7; y++) for (let x = x0; x <= x1; x++) {
           if (y === h - 1 && (x === x0 || x === x1)) continue;
           if (y === h + 7 && rikt === 'sida' && x > 8) continue;
-          const opp = rikt === 'fram' ? x >= 5 && x <= 8 && y >= h + 1 && y <= h + 5 : rikt === 'sida' ? x >= 8 && y >= h + 1 && y <= h + 5 : false;
+          const opp = rikt === 'fram' ? x >= 5 && x <= 8 && y >= h + 1 && y <= ned : rikt === 'sida' ? x >= 8 && y >= h + 1 && y <= ned : false;
           if (opp) continue;
-          const runt = rikt === 'fram' ? ((x === 4 || x === 9) && y >= h + 1 && y <= h + 5) || (y === h && x >= 5 && x <= 8) || (y === h + 6 && x >= 5 && x <= 8)
-            : rikt === 'sida' ? (x === 7 && y >= h + 1 && y <= h + 5) || (y === h && x >= 8) || (y === h + 6 && x >= 8) : false;
-          satt(x, y, runt ? kant : mat + (x === x0 || y === h - 1 ? 3 : x === x1 ? 1 : 2));
+          const runt = rikt === 'fram' ? ((x === 4 || x === 9) && y >= h + 1 && y <= ned) || (y === h && x >= 5 && x <= 8) || (y === ned + 1 && x >= 5 && x <= 8)
+            : rikt === 'sida' ? (x === 7 && y >= h + 1 && y <= ned) || (y === h && x >= 8) || (y === ned + 1 && x >= 8) : false;
+          satt(x, y, runt ? kant : mat + (rov && (x + y * 3) % 7 === 0 ? 1 : x === x0 || y === h - 1 ? (rov ? 2 : 3) : x === x1 ? 1 : 2)); // rövarluvan sliten: mörka fläckar
         }
       }
       if (bonad === 'band') for (let x = xa; x <= xb; x++) satt(x, h + 1, mat + 2);
+      // rövarens duk (förslag): en tät duk över hjässan och en över näsan och munnen, knuten i nacken; bara ögonen syns
+      if (bonad === 'duk') {
+        for (let y = h - 1; y <= h + 1; y++) for (let x = xa; x <= xb; x++) if (!(y === h - 1 && (x === xa || x === xb))) satt(x, y, mat + (y === h - 1 ? 2 : x === xb ? 1 : 2));
+        if (rikt === 'bak') { satt(6, h + 2, mat + 1); satt(7, h + 2, mat + 1); satt(6, h + 3, mat + 2); satt(8, h + 3, mat + 2); }
+        else for (let y = h + 3; y <= h + 5; y++) for (let x = rikt === 'sida' ? 7 : xa; x <= (rikt === 'sida' ? 11 : xb); x++) { if (y === h + 5 && x % 2) continue; satt(x, y, mat + (x === xb || x === 11 ? 1 : y === h + 3 ? 3 : 2)); }
+        if (rikt === 'sida') { satt(5, h + 2, mat + 1); satt(4, h + 3, mat + 2); }
+      }
     }
     for (const id of p.forband) {
       const k = DEL[id]?.karta;
@@ -776,6 +784,7 @@
         if (d.form === 'spade') { satt(hx, hy - 4, 'ben2'); satt(hx + 1, hy - 4, 'ben1'); }
       }
     }
+    // efter: den som ritar något annat än en bybo (rövaren, 6.2.5.x) får ändra figuren sist, med samma satt och måtten
     const ut = kartUt(p, kt, W, H, spegel, opt);
     ut.hand = hand && (spegel ? [W - 1 - hand[0], hand[1]] : hand); // handen, till det som hålls (animationerna i anim.js)
     // kroppsdelen under varje punkt (huvud, bal, armar, hand, ben, fotter, balte; null för hår, ögon och redskap), till
@@ -839,7 +848,7 @@
   const valj = (r, a) => a[Math.floor(r() * a.length)];
   const viktat = (r, par) => { const sum = par.reduce((s, [, v]) => s + v, 0); let x = r() * sum; for (const [k, v] of par) { x -= v; if (x < 0) return k; } return par[par.length - 1][0]; };
   const radAv = (r, sort, mall, kon, skon = null) => {
-    let a = alternativ(sort, mall, kon).filter(Boolean);
+    let a = alternativ(sort, mall, kon).filter(Boolean).filter(id => !DEL[id]?.rovare); // rövarens delar bärs bara av rövarna
     // skönheten styr de fula delarna (ful i registret, Björn efter 5.2.2.3): de vanliga och vackra får aldrig en ful del, de
     // fula får en ibland och de fulaste ofta
     if (skon !== null) { const ful = a.filter(id => DEL[id]?.ful), fin = a.filter(id => !DEL[id]?.ful); a = skon < 0 && ful.length && r() < (skon <= -2 ? 0.6 : 0.3) ? ful : fin.length ? fin : a; }
@@ -1010,16 +1019,16 @@
   // ---------- databasen: Björns svar (samlingen val) och de sparade kombinationerna ----------
   let DBS = null; const SVARDEL = {}; let KOMBOS = [];
   async function anslut() {
-    const st = [$('#gr-status'), $('#sk-sparstatus')];
+    const st = [$('#sk-sparstatus')]; // granskningen är borttagen från sidan (Björn 2026-11-04: alla kort klara)
     st.forEach(e => { e.textContent = 'Ansluter till sidans databas …'; });
     try { DBS = await window.claude?.use?.('db'); } catch (e) { DBS = null; }
     if (!DBS) { st.forEach(e => { e.textContent = 'Svaren och kombinationerna går bara att spara när sidan är öppen i Claude och du är inloggad.'; }); visaGranskning(); visaKombos(); return; }
-    $('#gr-status').textContent = 'Ditt svar sparas direkt.'; $('#sk-sparstatus').textContent = '';
+    $('#sk-sparstatus').textContent = '';
     DBS.collection('val').onSnapshot(snap => {
       for (const k of Object.keys(SVARDEL)) delete SVARDEL[k];
       snap.docs.forEach(d => { if (d.exists && d.id.startsWith('del-')) SVARDEL[d.id.slice(4)] = d.data(); });
       visaGranskning();
-    }, () => { $('#gr-status').textContent = 'Kontakten med databasen bröts. Ladda om sidan.'; });
+    }, () => { $('#sk-sparstatus').textContent = 'Kontakten med databasen bröts. Ladda om sidan.'; });
     DBS.collection('kombinationer').onSnapshot(snap => {
       KOMBOS = snap.docs.filter(d => d.exists).map(d => ({ id: d.id, ...d.data() })).sort((a, b) => String(b.nar).localeCompare(String(a.nar)));
       visaKombos();
@@ -1406,6 +1415,19 @@
     prova(id, data) { BILDFILER[id] = data; },
   };
   // en bybo på kartan till sidans bilder (sporterna och dragkampen i valdelen): samma person för samma frö
+  // rövaren på kartan: en vuxen ur samma frö, med rock (så att bålen och armarna är kläder), utan huvudbonad och redskap;
+  // efter ritar det som gör honom till rövare (fas6.js)
+  // småbarnet i hel skala (förslag, steg 5.5.5): barnets mall med huvudet tre rader lägre och en kortare kropp och kortare ben,
+  // i stället för barnet förminskat till tre fjärdedelar
+  const SMABARN_KARTA = { huvud: 9, bal: [15, 17], ben: [18, 18], bredd: [5, 8], armar: [4, 9] };
+  window.SMABARN = (fro, rikt, ben, arm, liten = true) => { const p = slumpPerson(slumpFran(fro), { alder: 'barn' }); return kartFigur(p, rikt, ben, arm, liten ? { mall: { ...MALL.barn, karta: SMABARN_KARTA } } : {}); };
+  // rövaren (förslag, steg 6.6.12): en bybo med rövarens luva eller duk, ett mörkt slitet skinn och ibland ett ärr,
+  // i porträttet (kvinna och man) och på kartan framifrån, från sidan, bakifrån och i ett gångsteg
+  window.ROVAREN = (bonad, rock, arr) => {
+    const gor = mall => { const p = neutral(mall); p.alder = 'vuxen'; p.humor = 'arg'; p.del.huvudbonad = bonad; p.klader = { rock, skor: true, balte: true }; if (arr && mall === 'man') p.del.arr = PR.delar.find(d => d.sort === 'arr')?.id || null; if (mall === 'man') p.del.skagg = PR.delar.find(d => d.sort === 'skagg' && d.ritad > 0)?.id || null; return p; };
+    const k = gor('kvinna'), m = gor('man');
+    return { portratt: [portratt(k), portratt(m)], karta: [kartFigur(m, 'fram', 'sta', 'hanga'), kartFigur(m, 'sida', 'sta', 'hanga'), kartFigur(m, 'bak', 'sta', 'hanga'), kartFigur(m, 'sida', 'gang1', 'gang1'), kartFigur(k, 'fram', 'sta', 'hanga')] };
+  };
   window.BYBO = (fro, rikt, ben, arm, redskap) => { const p = slumpPerson(slumpFran(fro), { alder: 'vuxen' }); if (redskap !== undefined) p.del.redskap = redskap; return kartFigur(p, rikt, ben, arm); }; // redskap: en del ur portratt.json (null = inget)
   window.PORTRATTEN = { portratt, kartBild, neutral, granskPerson, KORT, medForslag, provaDel(id, data) { DELAR[id] = data; }, png(B, skala = 4) { const c = document.createElement('canvas'); tillCanvas(B, c, 0); const s = document.createElement('canvas'); s.width = B.w * skala; s.height = B.h * skala; const g = s.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(c, 0, 0, s.width, s.height); return s.toDataURL('image/png'); } };
 })();

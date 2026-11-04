@@ -19,23 +19,5 @@
     "..bRRbb.."
    ]
   }
- },
- "forra": {
-  "ritad": 1,
-  "bilder": {
-   "standard": {
-    "x": -12,
-    "y": 3,
-    "rader": [
-     "...bRRb..",
-     ".bRRsRbb.",
-     "bRsrQsRb.",
-     ".RQrrQsRb",
-     "bRsQrQsb.",
-     ".bRsRRb..",
-     "...bRbb.."
-    ]
-   }
-  }
  }
 }
