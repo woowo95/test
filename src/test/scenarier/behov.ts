@@ -605,7 +605,7 @@ SCENARIER.halsoflik = {
     const hel = skadeLista(p, s.now).length === 0 && Object.values(FORMAGOR).every(f => f.delar(p).length === 0) && delSkada(p, 'huvud') === 0;
     skada(s, p, 'handH', 'skarsar', 0.4, 'olycka', ''); skada(s, p, 'benV', 'benbrott', 0.8, 'olycka', '');
     const [sar, brott] = skadeLista(p, s.now);
-    const sarRad = sar.namn === 'Skärsår i högra handen' && sar.bloder && sar.grad === 'svårt' && sar.battre && sar.tecken === '🔪';
+    const sarRad = sar.namn === 'Skärsår i högra handen' && sar.bloder && sar.grad === 'svårt' && sar.battre && sar.tecken === '{sym_skarsar}';
     const brottRad = brott.namn === 'Benbrott i vänstra benet' && !brott.bloder && brott.grad === 'mycket svårt' && brott.tecken === '🦴';
     const farg = delSkada(p, 'benV') > delSkada(p, 'handH') && delSkada(p, 'handH') > 0 && delSkada(p, 'handV') === 0;
     // förmågorna: värdet är det simuleringen räknar med, och delarna visar var det kommer ifrån

@@ -6,6 +6,10 @@ import { FARGER, MORKARE, PALETT, iPaletten, kornPa, rasterSteg } from '../../pa
 import { START, STEG_TIM, korBy } from '../kor';
 import { seedAv } from '../pool';
 import { KARNA } from '../../portrattkarna';
+import { KARTBILDER, SYMNAMN } from '../../kartbilder';
+import { symDelar, symUtan } from '../../ui/symboler';
+import * as fs from 'fs';
+import * as path from 'path';
 import { ANSIKTSORD, drag, glomArv, skapad, skonNiva } from '../../ui/utseende';
 import { Koll, kor, klockan, uiLas, SCENARIER, grenarUte, barGrenar } from './hjalp';
 
@@ -65,6 +69,30 @@ SCENARIER.ikoner = {
     });
     del.push(['handlingar i personens tid', utan]);
     return del.map(([namn, m]) => [m.length ? `${namn} utan symbol: ${m.join(', ')}` : `alla ${namn} har en symbol`, !m.length] as Koll);
+  },
+};
+
+SCENARIER.symboler = {
+  text: 'Emojierna blir pixelsymboler (steg 5.3.2.1): varje emoji i spelets kod har en symbol, och varje {sym_id} i koden finns i bildstilen',
+  kor: () => {
+    const filer = (d: string): string[] => fs.readdirSync(d, { withFileTypes: true }).flatMap(e => e.isDirectory() ? (e.name === 'test' ? [] : filer(path.join(d, e.name))) : e.name.endsWith('.ts') ? [path.join(d, e.name)] : []);
+    const bilder = new Set(['kartbilder.ts', 'portrattkarna.ts', 'guibilder.ts', 'djurbilder.ts']), utan = new Map<string, string>(), okanda = new Set<string>();
+    let antal = 0;
+    for (const f of filer('src')) {
+      if (bilder.has(path.basename(f))) continue;
+      const t = fs.readFileSync(f, 'utf8');
+      for (const m of t.matchAll(/\p{Extended_Pictographic}\uFE0F?(?:\u200D\p{Extended_Pictographic}\uFE0F?)*/gu)) {
+        antal++;
+        if (!symDelar(m[0]).some(x => typeof x !== 'string')) utan.set(m[0], path.relative('src', f));
+      }
+      for (const m of t.matchAll(/\{(sym_[a-z0-9_]+)\}/g)) if (!KARTBILDER[m[1]]) okanda.add(m[1]);
+    }
+    return [
+      [`${antal} emojier i koden, alla med en symbol${utan.size ? `; utan: ${[...utan].map(([e, f]) => `${e} (${f})`).join(', ')}` : ''}`, antal > 100 && utan.size === 0],
+      [`varje {sym_id} finns${okanda.size ? `; saknas: ${[...okanda].join(', ')}` : ''}`, okanda.size === 0],
+      ['emojin i en text blir en symbol, och {sym_toa} är toan', symDelar('a 💧 b').some(x => typeof x !== 'string' && x.id === 'sym_droppe') && symDelar('{sym_toa}').some(x => typeof x !== 'string' && x.id === 'sym_toa')],
+      ['utan bild (tipsrutan) stryks emojin, och ensam blir den namnet', symUtan('💧 Vätska') === 'Vätska' && symUtan('💧') === SYMNAMN.sym_droppe],
+    ];
   },
 };
 

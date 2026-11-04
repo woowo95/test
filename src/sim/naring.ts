@@ -36,9 +36,9 @@ interface NaringDef { namn: string; tecken: string; vikt: number; takt: number; 
 // brist på det heter och gör (symbolen är en platshållare)
 export const NARING = {
   energi: { namn: 'Energi', tecken: '⚡', vikt: 0.4, takt: 1.1, fran: 'stärkelse, sött och fett', langtar: 'rötter', brist: { namn: 'Trötthet', tecken: '😩', gor: 'Vilan sjunker fortare.' } },
-  protein: { namn: 'Protein', tecken: '🍖', vikt: 0.2, takt: 0.9, fran: 'kött, fisk, ärtor och ägg', langtar: 'kött', brist: { namn: 'Svaghet', tecken: '🦴', gor: 'Styrkan sjunker: arbetet går långsammare, och sår läker långsammare.' } },
+  protein: { namn: 'Protein', tecken: '🍖', vikt: 0.2, takt: 0.9, fran: 'kött, fisk, ärtor och ägg', langtar: 'kött', brist: { namn: 'Svaghet', tecken: '{sym_svaghet}', gor: 'Styrkan sjunker: arbetet går långsammare, och sår läker långsammare.' } },
   fett: { namn: 'Fett', tecken: '🧈', vikt: 0.15, takt: 0.8, fran: 'djurfett, fet fisk, nötter och olja', langtar: 'något fett', brist: { namn: 'Fryser lätt', tecken: '🥶', gor: 'Kylan biter mer.' } },
-  vitamin: { namn: 'Vitaminer', tecken: '🍓', vikt: 0.125, takt: 0.8, fran: 'grönt, bär och frukt', langtar: 'bär', brist: { namn: 'Skörbjugg', tecken: '🦷', gor: 'Hälsan sjunker, och sår läker långsammare.' } },
+  vitamin: { namn: 'Vitaminer', tecken: '🍓', vikt: 0.125, takt: 0.8, fran: 'grönt, bär och frukt', langtar: 'bär', brist: { namn: 'Skörbjugg', tecken: '{sym_skorbjugg}', gor: 'Hälsan sjunker, och sår läker långsammare.' } },
   mineral: { namn: 'Mineraler', tecken: '🧂', vikt: 0.125, takt: 0.9, fran: 'salt, grönt, kött och fisk', langtar: 'svamp', brist: { namn: 'Yrsel och kramp', tecken: '😵', gor: 'Gången och arbetet går långsammare. Den som arbetar hårt i värmen tappar salt.' } },
 } satisfies Record<string, NaringDef>;
 export type Naring = keyof typeof NARING;

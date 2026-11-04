@@ -19,6 +19,7 @@ import { renderPorts, stopFollow } from './ui/portratt';
 import { catchUp, loadSaves, nyByVald, saveDb, saveLocal } from './ui/spara';
 import './ui/interaktion';
 import './ui/ram';
+import './ui/symboler'; // emojierna blir pixelsymboler (steg 5.3.2.1)
 import { drawArena, oppnaArena } from './ui/arena';
 import { drawTona } from './ui/tona';
 

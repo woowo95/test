@@ -98,11 +98,11 @@ const ARMAR: Kroppsdel[] = ['armV', 'armH'], HANDER: Kroppsdel[] = ['handV', 'ha
 // för en skada av grad 1 att läka för den som är mätt och otörstig, tecken = symbolen i fliken Hälsa (platshållare)
 interface SkadaDef { namn: string; ett: string; tecken: string; blod: number; smarta: number; fel: number; lakTim: number }
 export const SKADOR = {
-  skarsar: { namn: 'Skärsår', ett: 'ett skärsår', tecken: '🔪', blod: 1, smarta: 0.5, fel: 0.4, lakTim: 24 },
+  skarsar: { namn: 'Skärsår', ett: 'ett skärsår', tecken: '{sym_skarsar}', blod: 1, smarta: 0.5, fel: 0.4, lakTim: 24 },
   bett: { namn: 'Bett', ett: 'ett bett', tecken: '🦷', blod: 0.8, smarta: 0.6, fel: 0.5, lakTim: 36 },
   klos: { namn: 'Klösmärken', ett: 'klösmärken', tecken: '🐾', blod: 0.6, smarta: 0.4, fel: 0.3, lakTim: 24 },
   benbrott: { namn: 'Benbrott', ett: 'ett benbrott', tecken: '🦴', blod: 0, smarta: 1, fel: 1, lakTim: 120 },
-  krossar: { namn: 'Krossår', ett: 'ett krossår', tecken: '🪨', blod: 0.4, smarta: 0.7, fel: 0.7, lakTim: 48 },
+  krossar: { namn: 'Krossår', ett: 'ett krossår', tecken: '{sym_krossar}', blod: 0.4, smarta: 0.7, fel: 0.7, lakTim: 48 },
   blamarke: { namn: 'Blåmärke', ett: 'ett blåmärke', tecken: '🟣', blod: 0, smarta: 0.4, fel: 0.2, lakTim: 24 }, // efter ett slag (steg 3.2.3)
   sticksar: { namn: 'Sticksår', ett: 'ett sticksår', tecken: '🗡️', blod: 1.5, smarta: 0.7, fel: 0.5, lakTim: 48 }, // ett djupt stick (steg 3.7.2, strid.ts)
   hjarnskakning: { namn: 'Hjärnskakning', ett: 'en hjärnskakning', tecken: '💫', blod: 0, smarta: 0.6, fel: 0.3, lakTim: 48 }, // ett hårt slag mot huvudet

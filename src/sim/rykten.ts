@@ -98,7 +98,7 @@ const IDEF = {
   generos: { namn: 'generös', tecken: 1, op: 15, sym: '🎁', betyder: 'Ger bort saker till andra.' },
   hjalpsam: { namn: 'hjälpsam', tecken: 1, op: 25, sym: '🤝', betyder: 'Har gett något till någon som höll på att dö.' },
   skicklig: { namn: 'skicklig', tecken: 1, op: 12, sym: '⭐', betyder: 'Har gjort ett mästerverk.' },
-  flitig: { namn: 'flitig', tecken: 1, op: 8, sym: '💪', betyder: 'Arbetar mycket mer än de andra i byn.' },
+  flitig: { namn: 'flitig', tecken: 1, op: 8, sym: '{sym_flitig}', betyder: 'Arbetar mycket mer än de andra i byn.' },
   valbargad: { namn: 'välbärgad', tecken: 1, op: 0, sym: '👛', betyder: 'Äger mer än de flesta i byn.' }, // steg 4.5.4.7
   rik: { namn: 'rik', tecken: 1, op: 0, sym: '💰', betyder: 'Äger mycket mer än de andra i byn.' },
   rattvis: { namn: 'rättvis', tecken: 1, op: 10, sym: '⚖️', betyder: 'Har dömt rättvist som ledare.' }, // ledarens straff (steg 3.5.3, styre.ts)

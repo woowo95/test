@@ -50,7 +50,7 @@ const DELAR: Del[] = [
   { id: 'pres', tecken: '🪪', namn: 'Presentation', html: presHtml, gast: gastPres },
   { id: 'behov', tecken: '❤️', namn: 'Behov', levande: true, html: behovHtml, gast: gastBehov },
   { id: 'halsa', tecken: '🩺', namn: 'Hälsa', levande: true, html: halsaHtml, gast: gastHalsa },
-  { id: 'egen', tecken: '💪', namn: 'Egenskaper', html: egenHtml, gast: gastEgen },
+  { id: 'egen', tecken: '{sym_egenskaper}', namn: 'Egenskaper', html: egenHtml, gast: gastEgen },
   { id: 'tid', tecken: '🕓', namn: 'Tiden', levande: true, html: tidHtml, gast: gastTid },
   { id: 'utr', tecken: '🎒', namn: 'Utrustning', levande: true, html: p => `<p class="muted">${carryTxt(p)}</p>${gearHtml(p)}`, gast: gastUtr },
   { id: 'kun', tecken: '🧠', namn: 'Kunskap', html: knowledgeHtml, gast: gastKun },
