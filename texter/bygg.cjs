@@ -10,7 +10,7 @@ const d = JSON.parse(fs.readFileSync(path.join(__dirname, 'forslag.json'), 'utf8
 
 const GRUPPNAMN = {
   '1a': 'hen blir han eller hon', '1b': 'Ändelser, genus och tal', '1c': 'Skälet i hedersnamn och öknamn',
-  '1d': 'Artikeln i ryktena', '1e': 'Binamnen', '1f': 'Namnen', 'ord': 'Ord', 'm': 'Mönster ur genomgången',
+  '1d': 'Artikeln i ryktena', '1e': 'Binamnen', '1f': 'Namnen', 'ord': 'Ord', 'm': 'Mönster ur genomgången', 'r': 'Rötterna i textgeneratorn',
 };
 const kort = [];
 for (const r of d.rattelser) {
@@ -30,6 +30,7 @@ for (const p of d.prov) {
     gamla: p.varianter.filter(x => !x.ny).map(x => x.text),
   });
 }
+kort.sort((a, b) => (b.grupp === 'r') - (a.grupp === 'r')); // rötterna först: de rättar flera mönster var
 const hela = JSON.parse(fs.readFileSync(path.join(__dirname, 'hela.json'), 'utf8'));
 // Claudes genomgång av varje hel text (granskning.json): en kommentar och mönstren (förslagen m_…) som felet hör till
 const gr = JSON.parse(fs.readFileSync(path.join(__dirname, 'granskning.json'), 'utf8'));

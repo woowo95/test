@@ -9,7 +9,7 @@
   const q = s => document.querySelector(s);
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const hash = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
-  const GRUPP = { '1a': 'Rättelse · hen blir han eller hon', '1b': 'Rättelse · ändelser, genus och tal', '1c': 'Rättelse · skälet i binamnen', '1d': 'Rättelse · artikeln i ryktena', '1e': 'Rättelse · binamnen', '1f': 'Rättelse · namnen', ord: 'Rättelse · ord', m: 'Mönster ur genomgången (Björn och Claude)' };
+  const GRUPP = { '1a': 'Rättelse · hen blir han eller hon', '1b': 'Rättelse · ändelser, genus och tal', '1c': 'Rättelse · skälet i binamnen', '1d': 'Rättelse · artikeln i ryktena', '1e': 'Rättelse · binamnen', '1f': 'Rättelse · namnen', ord: 'Rättelse · ord', m: 'Mönster ur genomgången (Björn och Claude)', r: 'Roten · ett fel i hur texterna byggs' };
   const VYER = {
     hela: { namn: 'Hela texter', om: 'Texterna som spelet skriver i dag, hela och så som de syns, från varje ställe i spelet. Tre byar i 45 dygn (45 år i spelet, drygt sex veckor i verkligheten). Under varje text står vad Claude tycker, och länkar till mönstret i Förslagen. Skriv vad du själv tycker i rutan; det sparas när du går ur den.' },
     forslag: { namn: 'Förslagen', om: 'Säg ja eller nej till varje förslag.' },
