@@ -1,6 +1,7 @@
 import * as PIXI from 'pixi.js';
 import { ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bordVid, byId, homeKind, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats, Match, Task, dragLag, kastMal, SPORT, bakomFilt } from '../sim';
 import { PRICKAR } from './hjalp';
+import { farg, fargTal } from '../palett';
 import { s, sakVar, ui, uppgiftVid, vidNyBy } from './lage';
 import { Ikoner, TS, bubbleG, figurLayer, labels, markLayer, peopleG } from './scen';
 import { type Arm, type Ben, type Rikt, figurHand, figurTex } from './folkbild';
@@ -50,7 +51,11 @@ function platsAv(p: Person) {
 }
 // dragkampen (steg 4.5.6.10), bara i bilden: lagen står på sina platser (sport.ts), hela raden glider fram och tillbaka med
 // repet och lutar sig bakåt. Repet ligger på marken medan de samlas och spänns mellan lagen när de drar; strecket i mitten
-const DRAG = { glid: 0.3, takt: 0.5, luta: 0.12, rep: 0x9c7a45, tofs: 0xc0432f, streck: 0x3b2f25 };
+const DRAG = { glid: 0.3, takt: 0.5, luta: 0.12 };
+// sportens saker i punkter ur paletten, som Björn valde i bildstilen (steg 5.5.2): strecket, repet och tofsen, snövallarna,
+// stenarna som missat och det som flyger i en båge (en boll med mörk kant)
+const SP = { jord: [0, 1, 2, 3].map(i => fargTal(farg('jord', i as 0))), rost: [0, 1, 2, 3].map(i => fargTal(farg('rost', i as 0))), ben: [0, 1, 2, 3].map(i => fargTal(farg('ben', i as 0))), skiffer: [0, 1, 2, 3].map(i => fargTal(farg('skiffer', i as 0))), kol: fargTal(farg('kol', 0)) };
+const pt = (x: number, y: number, c: number, w = 1, h = 1) => peopleG.beginFill(c).drawRect(Math.round(x), Math.round(y), w, h).endFill();
 const iMatchen = (tk: Task) => { const m = s.sport; return tk.act === 'sport' && tk.phase === 'do' && m && m.start === tk.ref ? m : undefined; };
 const dragGlid = (m: Match, t: number) => m.spelat ? DRAG.glid * Math.sin(t / SEC * DRAG.takt + m.start % 7) * Math.sin(t / SEC * DRAG.takt * 0.31 + 1) : 0;
 // var spelaren syns (steg 4.5.6.11), med de rörelser som redan finns: i dragkampen lutar de och glider med repet, brottarna
@@ -69,11 +74,16 @@ function sportPlats(m: Match, p: Person, x: number, y: number, t: number): { x: 
   }
   return undefined;
 }
-// något som flyger i en båge från a till b, f = 0–1 av vägen: en prick och dess skugga på marken
-function flyg(ax: number, ay: number, bx: number, by: number, f: number, farg: number, h: number) {
-  const x = ax + (bx - ax) * f, y = ay + (by - ay) * f;
-  peopleG.beginFill(0x372f25).drawEllipse(x, y + 2, 1.4, 0.6).endFill();
-  peopleG.lineStyle(0.6, 0x1a1a1a, 0.8).beginFill(farg).drawCircle(x, y - h * 4 * f * (1 - f), 1.3).endFill().lineStyle(0);
+// något som flyger i en båge från a till b, f = 0–1 av vägen: en boll i punkter (kol runt om, rampens ton i mitten) och
+// dess skugga på marken
+function flyg(ax: number, ay: number, bx: number, by: number, f: number, ramp: number[], ton: number, h: number) {
+  const x = Math.round(ax + (bx - ax) * f), y = Math.round(ay + (by - ay) * f - h * 4 * f * (1 - f)), gy = Math.round(ay + (by - ay) * f) + 2;
+  pt(x - 1, gy, 0x372f25, 3, 1);
+  for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+    const r = Math.abs(dx) + Math.abs(dy);
+    if (r > 2 && !(Math.abs(dx) < 2 && Math.abs(dy) < 2)) continue;
+    pt(x + dx, y + dy, r >= 2 && !(Math.abs(dx) === 1 && Math.abs(dy) === 1) ? SP.kol : ramp[dx + dy < 0 ? ton : Math.max(0, ton - 1)]);
+  }
 }
 const hash = (n: number) => { const v = Math.sin(n * 12.9898) * 43758.5453; return v - Math.floor(v); };
 // det som syns runt matchen, bara i bilden: repet och strecket, målet, snövallarna, bollen och det som kastas
@@ -81,7 +91,7 @@ function ritaSport(t: number) {
   const m = s.sport;
   if (!m || s.now >= m.slut) return;
   if (m.k === 'dragkamp') { ritaDragkamp(m, t); return; }
-  const g = peopleG, k = t / SEC, med: { x: number; y: number }[] = [];
+  const k = t / SEC, med: { x: number; y: number }[] = [];
   for (const p of living(s)) { const tk = uppgiftVid(p); if (tk && iMatchen(tk)) { const q = synlig.get(p.id); if (q) med.push({ x: q.x * TS, y: q.y * TS }); } }
   const mx = m.x * TS, my = m.y * TS;
   if (m.k === 'kast') {
@@ -90,35 +100,39 @@ function ritaSport(t: number) {
     if (!m.spelat || !med.length) return;
     med.sort((a, b) => a.y - b.y);
     const P = 2.2, n = Math.floor(k / P), f = k / P - n, v = med[n % med.length], miss = hash(n + m.start % 97) < 0.4;
-    if (f < 0.6) flyg(v.x + 3, v.y - 3, ax + (miss ? (hash(n) - 0.5) * 18 : 0), ay + (miss ? 5 : -2), f / 0.6, 0x8a8178, 10); // i tur och ordning: träff eller miss
+    for (const d of [-12, 8]) pt(ax + d, ay + 5, SP.skiffer[2], 2, 1); // stenar som missat ligger i gräset
+    if (f < 0.6) flyg(v.x + 3, v.y - 3, ax + (miss ? (hash(n) - 0.5) * 18 : 0), ay + (miss ? 5 : -2), f / 0.6, SP.skiffer, 3, 10); // i tur och ordning: träff eller miss
   } else if (m.k === 'snoboll') {
-    for (const sida of [-1, 1]) { const vx = mx + sida * (SPORT.snoAvst - 0.8) * TS; g.lineStyle(0.8, 0x9fb3c2, 0.9).beginFill(0xf2f6f8).drawRoundedRect(vx - 2.5, my - TS * 1.8, 5, TS * 3.6, 2).endFill().lineStyle(0); } // vallarna
+    for (const sida of [-1, 1]) { // vallarna: sju punkter breda, kant i skiffer och snö i ben
+      const vx = Math.round(mx + sida * (SPORT.snoAvst - 0.8) * TS), y0 = Math.round(my - TS * 1.8), y1 = Math.round(my + TS * 1.8);
+      pt(vx - 3, y0, SP.skiffer[1], 7, y1 - y0 + 1); pt(vx - 2, y0 + 1, SP.ben[2], 2, y1 - y0 - 1); pt(vx, y0 + 1, SP.ben[3], 3, y1 - y0 - 1);
+      pt(vx - 3, y1 + 1, 0x372f25, 7, 1);
+    }
     if (!m.spelat) return;
     const v = med.filter(q => q.x < mx), h = med.filter(q => q.x >= mx);
     if (!v.length || !h.length) return;
-    for (let j = 0; j < 2; j++) { const P = 1.6, n = Math.floor(k / P + j * 0.5), f = k / P + j * 0.5 - n, fr = (n % 2 ? v : h), till = (n % 2 ? h : v), a = fr[Math.floor(hash(n) * fr.length)], b = till[Math.floor(hash(n + 7) * till.length)]; flyg(a.x, a.y - 3, b.x, b.y - 3, f, 0xffffff, 6); }
+    for (let j = 0; j < 2; j++) { const P = 1.6, n = Math.floor(k / P + j * 0.5), f = k / P + j * 0.5 - n, fr = (n % 2 ? v : h), till = (n % 2 ? h : v), a = fr[Math.floor(hash(n) * fr.length)], b = till[Math.floor(hash(n + 7) * till.length)]; flyg(a.x, a.y - 3, b.x, b.y - 3, f, SP.ben, 3, 6); }
   } else if (m.k === 'bollspel') {
     const slag = med.length ? med.reduce((a, b) => (a.x < b.x ? a : b)) : { x: mx - SPORT.slagAvst * TS, y: my };
     markIcons.add('slagtra', slag.x + 1, slag.y - 7, 7 / iconCanvas('slagtra').width);
     const P = 4, n = Math.floor(k / P), f = k / P - n, bx = mx + (hash(n) * 3) * TS, by = my + (hash(n + 3) - 0.5) * 4 * TS;
     if (!m.spelat) { markIcons.add('boll', mx - 3, my - 3, 6 / iconCanvas('boll').width); return; }
-    if (f < 0.5) flyg(slag.x + 3, slag.y - 3, bx, by, f / 0.5, 0x7d5b40, 14); // slaget flyger ut på planen ...
+    if (f < 0.5) flyg(slag.x + 3, slag.y - 3, bx, by, f / 0.5, SP.jord, 2, 14); // slaget flyger ut på planen ...
     else markIcons.add('boll', bx - 3, by - 3, 6 / iconCanvas('boll').width); // ... och ligger där tills någon hinner fram
   }
 }
 function ritaDragkamp(m: Match, t: number) {
-  const g = peopleG, mx = m.x * TS, my = m.y * TS;
-  g.lineStyle(1.2, DRAG.streck, 0.7).moveTo(mx, my - TS * 0.6).lineTo(mx, my + TS * 0.6).lineStyle(0); // strecket på marken
+  const mx = Math.round(m.x * TS), my = Math.round(m.y * TS);
+  pt(mx, my - 9, SP.jord[0], 1, 19); pt(mx + 1, my - 9, SP.jord[1], 1, 19); // strecket ristat i marken
   const xs: number[] = [];
   for (const p of living(s)) { const tk = uppgiftVid(p); if (tk && iMatchen(tk)) { const q = synlig.get(p.id); if (q) xs.push(q.x * TS); } }
   if (!m.spelat || xs.length < 2) { // repet ligger hoprullat på marken medan de samlas
-    g.lineStyle(1.2, DRAG.rep, 1).moveTo(mx - TS * 1.4, my + 2);
-    for (let i = 1; i <= 8; i++) g.lineTo(mx - TS * 1.4 + i * TS * 0.35, my + 2 + (i % 2 ? 1.2 : -0.6));
-    g.lineStyle(0); return;
+    for (let i = 0; i < 22; i++) pt(mx - 22 + i, my + 2 + (Math.floor(i / 3) % 2), SP.jord[i % 2 ? 1 : 2]);
+    return;
   }
-  const glid = dragGlid(m, t) * TS, a = Math.min(...xs) - 3, b = Math.max(...xs) + 3, ry = my - 1;
-  g.lineStyle(1.4, DRAG.rep, 1).moveTo(a, ry).lineTo(b, ry).lineStyle(0); // repet spänt mellan lagen
-  g.beginFill(DRAG.tofs).drawRect(mx + glid - 1, ry - 1, 2, 3).endFill(); // tofsen mitt på repet, som ska dras över strecket
+  const glid = Math.round(dragGlid(m, t) * TS), a = Math.round(Math.min(...xs) - 3), b = Math.round(Math.max(...xs) + 3), ry = my - 1;
+  pt(a, ry, SP.jord[2], b - a + 1, 1); pt(a, ry + 1, SP.jord[1], b - a + 1, 1); // repet spänt mellan lagen
+  pt(mx + glid, ry - 1, SP.rost[2], 1, 5); pt(mx + glid + 1, ry - 1, SP.rost[1], 1, 5); // tofsen mitt på repet, som ska dras över strecket
 }
 // de som står still sprider ut sig lite så att de inte står i varandra (Björn efter v89), bara i bilden. Den som går rör
 // sig inte undan och knuffar ingen, så att man kan mötas i en smal gång. SPRID = avståndet de vill ha (rutor), NARMRE = hur
