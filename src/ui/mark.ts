@@ -49,14 +49,14 @@ export interface MarkIn {
 }
 // tid: 0 istid, 1 vår, 2 sommar, 3 höst; is: 0 öppet vatten, 1 tunn is, 2 tjock is
 let IN: MarkIn, W = 0, H = 0, tid = 2, is = 0;
-let SD = new Float32Array(0), NOTT = new Float32Array(0), TRAD = new Uint8Array(0), ASKA = new Float32Array(0);
+let SD = new Float32Array(0), FD = new Float32Array(0), NOTT = new Float32Array(0), TRAD = new Uint8Array(0), ASKA = new Float32Array(0);
 const SDMAX = 3;
-// avståndet till vattnet i rutor, med tecken: över 0 i vattnet, under 0 på land (högst SDMAX)
-function raknaSD() {
+// avståndet i rutor till kanten av det inne() säger, med tecken: över 0 inne, under 0 ute (högst SDMAX)
+function avstand(inne: (i: number) => boolean) {
   const n = W * H, d = new Float32Array(n), inf = 99;
-  for (const vatten of [true, false]) {
+  for (const sida of [true, false]) {
     const a = new Float32Array(n);
-    for (let i = 0; i < n; i++) a[i] = (IN.tiles[i] === IN.vatten) === vatten ? inf : 0;
+    for (let i = 0; i < n; i++) a[i] = inne(i) === sida ? inf : 0;
     const D = 1, D2 = Math.SQRT2;
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const i = y * W + x; let v = a[i]; if (!v) continue;
@@ -70,11 +70,16 @@ function raknaSD() {
       if (y < H - 1) { v = Math.min(v, a[i + W] + D); if (x < W - 1) v = Math.min(v, a[i + W + 1] + D2); if (x > 0) v = Math.min(v, a[i + W - 1] + D2); }
       a[i] = v;
     }
-    // från rutans mitt: kanten ligger mitt emellan en vattenruta (+0,5) och en landruta (-0,5)
-    for (let i = 0; i < n; i++) if (a[i]) d[i] = (vatten ? 1 : -1) * Math.min(SDMAX, a[i] - 0.5);
+    // från rutans mitt: kanten ligger mitt emellan en ruta inne (+0,5) och en ute (-0,5)
+    for (let i = 0; i < n; i++) if (a[i]) d[i] = (sida ? 1 : -1) * Math.min(SDMAX, a[i] - 0.5);
   }
-  SD = d;
+  return d;
 }
+// avståndet till vattnet (över 0 i vattnet) och till skogen (över 0 inne i skogen)
+const raknaSD = () => { SD = avstand(i => IN.tiles[i] === IN.vatten); };
+const raknaFD = () => { FD = avstand(i => TRAD[i] === 1); };
+// skogskanten i punkter: över 0 inne i skogen, lite ojämn
+const kantE = (x: number, y: number) => bil(FD, x, y) * 16 + (vn(x, y, 7, 590) - 0.5) * 8;
 // ett fält mellan rutornas mitt, för punkten x, y i världen
 function bil(F: Float32Array, x: number, y: number) {
   const fx = (x + 0.5) / 16 - 0.5, fy = (y + 0.5) / 16 - 0.5;
@@ -96,7 +101,7 @@ function lera(x: number, y: number, i: number) {
 
 // ---------- en punkt ----------
 // sorten av punkten, så att tuvorna och vassen bara hamnar på gräs och i strandkanten
-const GRAS = 1, VASS = 2, ANNAT = 0;
+const GRAS = 1, VASS = 2, KANT = 3, ANNAT = 0;
 let sort = ANNAT;
 function punkt(x: number, y: number): number {
   sort = ANNAT;
@@ -143,8 +148,12 @@ function punkt(x: number, y: number): number {
       const q = hash(x, y, 562);
       c = q < 0.1 ? JORD + 1 : q > 0.93 ? JORD + 3 : flack(x, y, 9, 562, 0.68) ? JORD + 3 : JORD + 2;
     } else if (p > 0.55) c = JORD + 1; // en mörkare rand av nött gräs längs kanten
-    else if (TRAD[ji]) { // skogsmarken under träden
-      c = vagstreck(x, y, 588, 0.02) ? JORD : strack(x, y, 589, 0.012) === 1 ? OLIV + 1 : flack(x, y, 14, 584, 0.62) ? OLIV : BARR + 1;
+    else if (kantE(x, y) > -28) { // skogskanten i steg (version 1): skogsmark, fläckar av mörkt gräs, mörkt gräs, fläckar i gräset
+      const e = kantE(x, y);
+      const skogsmark = () => vagstreck(x, y, 588, 0.02) ? JORD : strack(x, y, 589, 0.012) === 1 ? OLIV + 1 : flack(x, y, 14, 584, 0.62) ? OLIV : BARR + 1;
+      const mork = () => { const st = strack(x, y, 591, 0.015); return st === 1 ? OLIV + 3 : st === 2 ? OLIV : flack(x, y, 16, 585, 0.66) ? OLIV + 2 : OLIV + 1; };
+      sort = KANT;
+      c = e > 10 ? skogsmark() : e > 0 ? (flack(x, y, 11, 586, 0.5) ? mork() : skogsmark()) : e > -12 || flack(x, y, 11, 587, 0.5) ? mork() : gras(x, y);
     } else {
       c = gras(x, y);
       if (p > 0.3 && bayer(x, y) < (p - 0.3) * 2) c = OLIV + 1; // nött gräs
@@ -201,6 +210,16 @@ export function rakna(x0: number, y0: number, px: Int8Array) {
     else if (r < 0.345) { satt(x, y, OLIV); satt(x, y - 1, BEN + 3); } // en liten blomma
     else if (r > 0.994) { satt(x, y, JORD + 1); satt(x + 1, y, JORD); satt(x, y - 1, JORD + 3); satt(x + 1, y - 1, JORD + 2); morka(x + 1, y + 1); morka(x + 2, y); } // en liten sten
   }
+  // högt mörkt gräs i skogskanten (version 1)
+  for (let cy = Math.floor(y0 / 8) - 1; cy * 8 < y0 + BP + 4; cy++) for (let cx = Math.floor(x0 / 8) - 1; cx * 8 < x0 + BP + 2; cx++) {
+    const x = cx * 8 + Math.floor(hash(cx, cy, 593) * 8), y = cy * 8 + Math.floor(hash(cx, cy, 594) * 8);
+    if (x < x0 - 2 || x > x0 + BP || y < y0 || y > y0 + BP + 3) continue;
+    if (sortAv(x, y) !== KANT || vn(x, y, 12, 595) <= 0.5) continue;
+    const e = kantE(x, y);
+    if (!(e > -26 && e < 1)) continue;
+    const top = hash(cx, cy, 596) < 0.2 ? SENAP : OLIV + 2;
+    satt(x, y, OLIV); satt(x, y - 1, OLIV); satt(x, y - 2, top); satt(x + 1, y, OLIV); satt(x + 1, y - 1, top);
+  }
   // vass i strandkanten (version 1)
   for (let cy = Math.floor(y0 / 3); cy * 3 < y0 + BP + 9; cy++) for (let cx = Math.floor(x0 / 3) - 1; cx * 3 < x0 + BP + 2; cx++) {
     if (hash(cx, cy, 550) > 0.4) continue;
@@ -228,17 +247,26 @@ export function stallMark(inp: MarkIn, nyTid: number, nyIs: number, glob: string
     raknaSD();
     NOTT = new Float32Array(W * H); TRAD = new Uint8Array(W * H); ASKA = new Float32Array(W * H); sig = new Int32Array(W * H);
     for (let i = 0; i < W * H; i++) uppdatera(i, aska?.get(i) ?? 0);
+    raknaFD();
     for (let i = 0; i < bw * bh; i++) smutsiga.add(i);
     return;
   }
+  let skog = false;
   for (let i = 0; i < W * H; i++) {
     const a = aska?.get(i) ?? 0, ns = rutSig(i, a);
     if (ns === sig[i]) continue;
+    const fore = TRAD[i];
     uppdatera(i, a);
+    if (TRAD[i] !== fore) { // skogskanten flyttar sig: avståndet räknas om, och kanten syns upp till tre rutor bort
+      skog = true;
+      const tx = i % W, ty = (i / W) | 0;
+      for (let y = Math.max(0, ty - 3); y <= Math.min(H - 1, ty + 3); y++) for (let x = Math.max(0, tx - 3); x <= Math.min(W - 1, tx + 3); x++) smutsiga.add(((y / BIT) | 0) * bw + ((x / BIT) | 0));
+    }
     // fälten är mjuka över en ruta åt varje håll, och tuvorna och vassen sticker upp några punkter
     const tx = i % W, ty = (i / W) | 0;
     for (let y = Math.max(0, ty - 1); y <= Math.min(H - 1, ty + 2); y++) for (let x = Math.max(0, tx - 1); x <= Math.min(W - 1, tx + 1); x++) smutsiga.add(((y / BIT) | 0) * bw + ((x / BIT) | 0));
   }
+  if (skog) raknaFD();
 }
 function uppdatera(i: number, a: number) {
   sig[i] = rutSig(i, a);
