@@ -946,7 +946,9 @@ SCENARIER.brand = {
       const t0 = by.now;
       let iVagg = 0, iVattnet = 0, sack = 0, hand = 0, risC = 1, tim = 0;
       const sedda = new Set<number>();
-      for (; tim < 12 * 12 && by.brand; tim++) {
+      // elden nära byn är släckt: inget brinner längre inom BRAND.hot rutor från byns eld (den som nått en dunge längre bort får brinna)
+      const naraByn = () => { const e2 = SIM.eldPlats(by); return SIM.brinnande(by).some(q => Math.hypot(q[0] % W - e2.x, Math.floor(q[0] / W) - e2.y) <= SIM.BRAND.hot); };
+      for (; tim < 12 * 12 && by.brand && naraByn(); tim++) {
         kor(by, 1 / 12, torr);
         risC = Math.min(risC, ris.b < 1 ? 0 : ris.c);
         for (const p of living(by)) {
@@ -971,7 +973,7 @@ SCENARIER.brand = {
         [`de vuxna släckte: ${sack} med vattensäcken (${st['brand sack'] ?? 0} säckar), ${hand} med händerna, ${st['brand slackt'] ?? 0} rutor släckta, ${st['brand skadad'] ?? 0} brännskador`, sack >= 1 && hand >= 1 && (st['brand slackt'] ?? 0) >= 1],
         [`risväggen brann (skick ${risC.toFixed(2)}${ris.b < 1 ? ', rasade' : ''})`, risC < 1],
         [`ingen stod i en vägg (${iVagg}) eller i vattnet (${iVattnet})`, iVagg === 0 && iVattnet === 0],
-        [`elden slocknade efter ${(tim / 12).toFixed(1)} timmar`, !by.brand && slocknat],
+        [`elden nära byn slocknade efter ${(tim / 12).toFixed(1)} timmar${by.brand ? ` (${by.brand.r.length} rutor brinner längre bort)` : ''}`, by.brand ? !naraByn() : slocknat],
         [`marken var svart (${svart0} rutor) och det svarta är borta efter ${SIM.BRAND.svart} dygn`, svart0 > 0 && !sv.aska],
       ];
     }

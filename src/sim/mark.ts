@@ -29,10 +29,13 @@ export const MARK = balans('mark', {
   fro: 0.0015, // chans per timme att ett frö gror: per skogsgranne ...
   froLangt: 0.00002, // ... och långt bort från skogen
   nyPlanta: 0.05, // en ny planta är så här stor (0 till 1)
+  dungeAndel: 0.5, // urskogen har träd på ungefär så här stor del av jordrutorna, i dungar med gläntor emellan (steg 5.1.4.1)
+  dungeSkala: 6, // dungarnas storlek i kartans brus (rutor)
+  glantaSpridning: 0.15, // i urskogens gläntor slår frön rot så här många gånger så fort som i dungarna, så att gläntorna står kvar
 });
 
 // ---------- mark: gräs, stigar och skog ----------
-// Förr fanns skog överallt där det är jord. Byn börjar i en liten glänta; resten är skog.
+// Förr fanns skog överallt där det är jord. Sedan steg 5.1.4.1 står urskogen i dungar med gläntor emellan, och byn börjar i en liten glänta.
 const grounds = new WeakMap<State, Ground>();
 // vattnet har ändrats under en torka (steg 3.8.2, torka.ts): marken följer vattnet som det är nu (sjo.ts)
 export function nyttVatten(s: State) { const g = grounds.get(s); if (g) g.tiles = vattenNu(s); }
@@ -59,12 +62,29 @@ export const angOf = perKarta(seed => {
   return a;
 });
 
-// skog på jorden utom på ängarna och i en liten glänta runt byplatsen (lite ojämn kant)
+// urskogens dungar (steg 5.1.4.1): ett långsamt brus över kartan, och dungarna är den del av jordrutorna där bruset är
+// högst (dungeAndel av all jord, ängarna medräknade: där växer inga dungar). Mellan dem är gläntor, där frön slår rot
+// långsammare (glantaSpridning)
+export const dungeOf = perKarta(seed => {
+  const m = getMap(seed), ang = angOf(seed), d = new Uint8Array(W * H), v = new Float32Array(W * H), jord: number[] = [];
+  let alla = 0;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = y * W + x, gx = x - OX, gy = y - OY, k = MARK.dungeSkala;
+    v[i] = vnoise(seed + 51, gx / k, gy / k) * 0.75 + vnoise(seed + 53, gx / (k / 2.5), gy / (k / 2.5)) * 0.25;
+    if (isSoil(m.tiles[i])) { alla++; if (!ang[i]) jord.push(v[i]); }
+  }
+  jord.sort((a, b) => a - b);
+  const k = Math.floor(jord.length - Math.min(jord.length, alla * MARK.dungeAndel));
+  const grans = jord.length ? jord[Math.min(k, jord.length - 1)] : 1;
+  for (let i = 0; i < W * H; i++) d[i] = v[i] >= grans && !ang[i] ? 1 : 0;
+  return d;
+});
+// skog i urskogens dungar utom på ängarna och i en liten glänta runt byplatsen (lite ojämn kant)
 function startForest(seed: number) {
-  const m = getMap(seed), ang = angOf(seed), trees = new Float32Array(W * H);
+  const m = getMap(seed), ang = angOf(seed), dunge = dungeOf(seed), trees = new Float32Array(W * H);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const i = y * W + x;
-    if (!isSoil(m.tiles[i]) || ang[i]) continue;
+    if (!isSoil(m.tiles[i]) || ang[i] || !dunge[i]) continue;
     const d = Math.hypot(x - m.fire.x, (y - m.fire.y) * MARK.gladaHojd);
     const edge = MARK.gladaRadie + hash(seed + 31, x - OX, y - OY) * MARK.gladaOjamn;
     trees[i] = d < edge ? 0 : d < edge + MARK.gladaKant ? MARK.gladaKantTrad : 1;
@@ -104,7 +124,7 @@ function built(s: State) {
 const TREE_GROW = 1 / (MARK.tradDygn * 24); // plantans tillväxt per timme
 // en timme: gräset växer tillbaka från grannrutorna, skogen sprider sig som en våg och plantor växer
 export function growGround(s: State, hours: number, season: number) {
-  const g = groundOf(s), b = built(s), ang = angOf(s.seed), { tiles, cover, trees } = g;
+  const g = groundOf(s), b = built(s), ang = angOf(s.seed), dunge = dungeOf(s.seed), { tiles, cover, trees } = g;
   const old = cover.slice(), hr = Math.floor(s.now / HOUR), ts = MARK.tradVaxt[season];
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const i = y * W + x;
@@ -126,7 +146,7 @@ export function growGround(s: State, hours: number, season: number) {
       const xx = x + dx, yy = y + dy;
       if ((dx || dy) && inMap(xx, yy) && trees[yy * W + xx] >= FOREST) n++;
     }
-    if (hash(s.seed + hr, x, y) < hours * (MARK.fro * n + MARK.froLangt) * ts * (ang[i] ? MARK.angSpridning : 1)) trees[i] = MARK.nyPlanta;
+    if (hash(s.seed + hr, x, y) < hours * (MARK.fro * n + MARK.froLangt) * ts * (ang[i] ? MARK.angSpridning : 1) * (dunge[i] ? 1 : MARK.glantaSpridning)) trees[i] = MARK.nyPlanta;
   }
 }
 

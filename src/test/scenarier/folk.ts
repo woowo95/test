@@ -404,7 +404,9 @@ SCENARIER.utbrott = {
   text: 'Utbrotten (steg 3.2.2): den som mår mycket dåligt brister ut, behoven går före, den som är elak sänker den andras humör, en sak slås sönder och efteråt mår man lite bättre',
   kor: () => {
     // en by där alla mår mycket dåligt i åtta dygn (åtta år i spelet)
+    // (med ved i förrådet: utan den frös två ihjäl första natten i den glesare skogen, steg 5.1.4.1, och då mäts inte utbrotten)
     const s = createState(9, START);
+    SIM.setAmount(s, 'ved', 40);
     for (const p of living(s)) SIM.think(p, 'Sorg', -0.6, s.now, 8 * DAY);
     kor(s, 8 * 24);
     const utb = (s.stat?.utbrott as number) ?? 0, slag = Object.keys(s.stat ?? {}).filter(k => k.startsWith('utb_') && !k.startsWith('utb_sonder')).map(k => k.slice(4));

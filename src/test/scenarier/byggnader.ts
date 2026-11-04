@@ -465,8 +465,9 @@ SCENARIER.lager = {
     const start = zoneOf(s).w * zoneOf(s).h;
     setFood(s, 230); setAmount(s, 'ved', 90); setAmount(s, 'grenar', 70); setAmount(s, 'flinta', 3); // mycket på en gång
     kor(s, 18);
-    // när lagerplatsen krymper hamnar en stack ibland utanför en stund, och bärs in igen inom ett par timmar
-    for (let i = 0; i < 3 && pilesOf(s).some(p => p.out); i++) kor(s, 1);
+    // när lagerplatsen krymper hamnar en stack ibland utanför en stund, och bärs in igen inom några timmar (också veden från
+    // ett träd som fällts en bit bort, som i den glesare skogen sedan steg 5.1.4.1 kan ligga kvar vid stubben en stund)
+    for (let i = 0; i < 10 && pilesOf(s).some(p => p.out); i++) kor(s, 1);
     const z = zoneOf(s), ps = pilesOf(s), stor = z.w * z.h;
     const summaOk = Object.keys(STACK).filter(k => !SIM.isTool(k)).every(k => Math.abs(ps.filter(p => p.k === k).reduce((a, p) => a + p.n, 0) - amountOf(s, k)) < 1e-6); // ett redskap kan vara i bruk
     // bära: kör en stund med gående invånare och se hur mycket de bär hem
@@ -485,9 +486,10 @@ SCENARIER.lager = {
     const v = living(b).find(p => ageOf(p, b.now) >= 18)!;
     const tk0: SIM.Task = v.task = { act: 'samla', phase: 'do', tx: v.x, ty: v.y, until: b.now + 3 * HOUR, carry: capacity(b, v) * STACK.bar, why: 'test', dark: false };
     step(b, 2); step(b, 2);
-    const gickHem = tk0.phase === 'back'; // på väg hem, eller redan framme vid lagret och har lämnat bördan
+    const gickHem = tk0.phase === 'back' || load(tk0, b) === 0; // på väg hem, eller redan framme vid lagret och har lämnat bördan
     const stark = living(b).slice().sort((x, y) => stat(y, 'styrka', b.now) - stat(x, 'styrka', b.now));
-    // tomt lager krymper
+    // tomt lager krymper (lagerplatserna tillsammans: det lilla som är kvar kan bäras till en av dem, som då står kvar)
+    const ytor = () => zonesOf(s).reduce((a, z) => a + z.w * z.h, 0), ytaFore = ytor();
     setFood(s, 5); setAmount(s, 'ved', 0); setItems(s, { flinta: 1 });
     kor(s, 12);
     // en död med en uppgift kvar låser varken en stack som ska bäras in eller elden (bara de levande räknas)
@@ -544,7 +546,7 @@ SCENARIER.lager = {
       [`folk bär hem saker, aldrig mer än de orkar (${hem} steg på väg hem, ${fullt} med full börda, högst ${(maxKvot * 100).toFixed(0)} % av förmågan)`, hem > 50 && maxKvot <= 1.15],
       ['den som bär så mycket hen orkar går hem med bördan', gickHem],
       ['den starke orkar bära mer än den svage', capacity(b, stark[0]) > capacity(b, stark[stark.length - 1])],
-      [`lagerplatsen krymper när den står tom (${zoneOf(s).w * zoneOf(s).h} rutor)`, zoneOf(s).w * zoneOf(s).h < stor],
+      [`lagerplatserna krymper när de står tomma (${ytaFore} → ${ytor()} rutor)`, ytor() < ytaFore],
     ];
   },
 };
