@@ -978,7 +978,6 @@ const VAL = [
 const BESLUT = {
   dragkamp: { val: 1, steg: '5.1.2' },
   sport_brottning: { val: 1, steg: '5.1.2' }, sport_kast: { val: 1, steg: '5.1.2' }, sport_snoboll: { val: 1, steg: '5.1.2' }, sport_bollspel: { val: 1, steg: '5.1.2' },
-  g_vag: { val: 1, steg: '5.3.1.2' },
 };
 // räknas när valdelen ritas, så att korten från filerna efter denna (mark.js, djur.js, gui.js) också kommer med
 const VALT = [];

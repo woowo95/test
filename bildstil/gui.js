@@ -178,8 +178,5 @@
   const T = 'Steg 5.2.4.7: ';
   // runstenarna, banden och Tros, Personens och Grannarnas förslag är inbyggda i spelet (5.3.3.1, v338) och borttagna ur valdelen;
   // scenerna STENAR och BAND och FORSLAG ligger kvar som referens
-  VAL.push(
-    { id: 'g_vag', stor: true, namn: 'Vågbandet', typ: 'janej', vad: T + 'vågbandet längst ner i raden överst (till 5.3.1.2), spiraler i kol på beige med en linje under som ligger mot kartan. En ruta på 8 × 7 punkter som upprepas över hela bredden.',
-      versioner: [{ text: 'Version 1: vågbandet mot kartan.', ...VAG }] },
-  );
+  // vågbandet (g_vag) är inbyggt i spelet (5.3.1.2, v355) och borttaget ur valdelen; scenen VAG ligger kvar som referens
 })();
