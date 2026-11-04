@@ -11,7 +11,7 @@ import { groundOf } from './mark';
 import { motgangNu, motgangTal } from './motgang';
 import { larma, larmNu } from './rykten';
 import { SAKER } from './saker';
-import { SKOG, stocks } from './skog';
+import { stamAv, stocks } from './skog';
 import { forvarAt, stationAt } from './stationer';
 import { isLight } from './tid';
 import { H, HOUR, MIN, Person, State, W, inMap } from './typer';
@@ -108,10 +108,10 @@ function svep(s: State, t: Tornado, a: number, b: number) {
   const g = groundOf(s);
   for (const i of rutor) {
     if (g.trees[i] < FOREST || ur(s, t, i, 3825) >= TORNADO.trad) continue;
-    const size = g.trees[i], x = i % W, y = Math.floor(i / W);
+    const stam = stamAv(g, i), x = i % W, y = Math.floor(i / W);
     g.trees[i] = 0; g.cover[i] = 1;
     if (s.halvfallt) delete s.halvfallt[i];
-    stocks(s).push({ id: (s.nextStock = (s.nextStock ?? 0) + 1), x: x + 0.5, y: y + 0.5, ved: Math.round(SKOG.stamVed * size), grenar: Math.round(SKOG.stamGrenar * size) });
+    stocks(s).push({ id: (s.nextStock = (s.nextStock ?? 0) + 1), x: x + 0.5, y: y + 0.5, ...stam });
     if (!g.built?.[i]) (s.stubbar ??= []).push({ x, y, t: s.now });
     t.trad++; count(s, 'tornado trad');
   }

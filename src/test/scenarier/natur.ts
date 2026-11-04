@@ -2198,7 +2198,7 @@ SCENARIER.virke = {
 };
 
 SCENARIER.trad = {
-  text: 'Träden (steg 5.1.4.1–5.1.4.2): urskogen står i dungar med gläntor på ungefär hälften av jorden, och varje träd har art, ålder och stadium: ett vuxet träd blir gammalt om det står fritt och torkar i en tät dunge, en torraka faller och lämnar en glänta, och åldern följer med i sparfilen',
+  text: 'Träden (steg 5.1.4.1–5.1.4.2 och 5.1.4.4): urskogen står i dungar med gläntor på ungefär hälften av jorden, och varje träd har art, ålder och stadium: ett vuxet träd blir gammalt om det står fritt och torkar i en tät dunge, en torraka faller och lämnar en glänta, och åldern följer med i sparfilen; ett större träd ger mer trä när det fälls',
   kor: () => {
     const s = createState(3, START), g = groundOf(s);
     let jord = 0, skog = 0;
@@ -2229,6 +2229,10 @@ SCENARIER.trad = {
     const c = cloneState(s), gc = groundOf(c);
     let lika = true; for (let i = 0; i < g.trees.length; i++) if (g.trees[i] >= 1 && Math.abs(gc.alder![i] - g.alder![i]) > 0.5) lika = false;
     const arter = new Set([...g.trees.keys()].filter(i => g.trees[i] > 0).map(i => SIM.tradArt(s.seed, i).id));
+    // ett större träd ger mer trä när det fälls (steg 5.1.4.4)
+    const forsta = (k: string) => [...g.trees.keys()].find(i => SIM.stadium(g, i) === k)!;
+    const u = cloneState(s), gu = groundOf(u), ung = forsta('vuxet'); gu.trees[ung] = 0.4;
+    const vedUng = SIM.stamAv(gu, ung).ved, vedVuxet = SIM.stamAv(g, forsta('vuxet')).ved, vedGammalt = SIM.stamAv(g, forsta('gammalt')).ved, torr = SIM.stamAv(g, forsta('torraka'));
     return [
       [`urskogen har träd på ungefär hälften av jorden (${(andel * 100).toFixed(0)} %)`, andel > 0.38 && andel < 0.55],
       [`vuxna, gamla och några torrakor står i urskogen (${Object.entries(st).map(([k, n]) => `${k} ${n}`).join(', ')})`, ['vuxet', 'gammalt', 'torraka'].every(k => (st[k] ?? 0) > 0) && (st.torraka ?? 0) < (st.vuxet ?? 0) / 4],
@@ -2238,6 +2242,7 @@ SCENARIER.trad = {
       [`en planta som växer klart blir ett vuxet träd med åldern noll (${ny}, ${nyAlder})`, ny === 'vuxet' && nyAlder === 0],
       ['trädens åldrar följer med i sparfilen', lika && !!c.tradAlder],
       [`varje träd har en art (${[...arter].join(', ')})`, arter.size >= 1],
+      [`ett större träd ger mer trä: ungträd ${vedUng}, vuxet ${vedVuxet}, gammalt ${vedGammalt}, torraka ${torr.ved} med ${torr.grenar} grenar`, vedUng < vedVuxet && vedVuxet < vedGammalt && torr.ved > vedVuxet && Number.isInteger(vedUng) && torr.grenar < SIM.SKOG.stamGrenar],
     ];
   },
 };

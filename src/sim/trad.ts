@@ -21,12 +21,16 @@ export interface TradArt { id: string; namn: string }
 export const TRADARTER: TradArt[] = [{ id: 'gran', namn: 'Gran' }];
 export const tradArt = (_seed: number, _i: number): TradArt => TRADARTER[0];
 
-// stadierna (register), i den ordning trädet går igenom dem
+// stadierna (register), i den ordning trädet går igenom dem. stam = hur mycket trä och grenar trädet ger när det fälls,
+// gånger ett vuxet träds (SKOG.stamVed och stamGrenar i skog.ts) och gånger trädets storlek (steg 5.1.4.4): ett gammalt
+// träd är grövre, och torrakan har tappat grenarna men stammen står kvar
 export type Stadium = 'planta' | 'ungtrad' | 'vuxet' | 'gammalt' | 'torraka';
-export const STADIER: { id: Stadium; namn: string }[] = [
-  { id: 'planta', namn: 'Planta' }, { id: 'ungtrad', namn: 'Ungträd' }, { id: 'vuxet', namn: 'Vuxet träd' },
-  { id: 'gammalt', namn: 'Gammalt träd' }, { id: 'torraka', namn: 'Torraka' },
+export const STADIER: { id: Stadium; namn: string; stam: number; grenar: number }[] = [
+  { id: 'planta', namn: 'Planta', stam: 1, grenar: 1 }, { id: 'ungtrad', namn: 'Ungträd', stam: 1, grenar: 1 },
+  { id: 'vuxet', namn: 'Vuxet träd', stam: 1, grenar: 1 }, { id: 'gammalt', namn: 'Gammalt träd', stam: 1.5, grenar: 1.4 },
+  { id: 'torraka', namn: 'Torraka', stam: 1.25, grenar: 0.4 },
 ];
+export const stadiumAv = (id: Stadium) => STADIER.find(q => q.id === id)!;
 const GAMMAL = () => TRAD.vuxenDygn, TORR = () => TRAD.vuxenDygn + TRAD.gammalDygn, FALL = () => TRAD.vuxenDygn + TRAD.gammalDygn + TRAD.torrDygn;
 export function stadium(g: Ground, i: number): Stadium | null {
   const v = g.trees[i];

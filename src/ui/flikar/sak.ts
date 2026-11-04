@@ -1,4 +1,4 @@
-import { MARK, STADIER, VAG, groundOf, stadium, tradAlder, tradArt, STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf } from '../../sim';
+import { FOREST, stamAv, MARK, STADIER, VAG, groundOf, stadium, tradAlder, tradArt, STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { condBar, durTxt, esc, kvMark, kvText, pLink } from '../hjalp';
 import { piles, s, ui } from '../lage';
@@ -69,11 +69,12 @@ function trad(i: number) {
   const x = i % W, y = Math.floor(i / W), b = tradBild(st, g.trees[i], x, y, VAG.ungskog);
   const namn = STADIER.find(d => d.id === st)!.namn, art = tradArt(s.seed, i).namn;
   const ar = Math.floor(tradAlder(g, i, MARK.tradDygn));
-  const alder = ar < 1 ? 'Under ett år' : `${ar} år`;
+  const alder = ar < 1 ? 'Under ett år' : `${ar} år`, stam = stamAv(g, i); // trä och grenar när det fälls (steg 5.1.4.4)
   return `
     <div class="phead"><img class="ikon" src="${tradBildUrl(b)}" width="${b.typ === 'torr' ? 32 : 28}" style="height:auto;image-rendering:pixelated" alt=""><div><h2>${esc(art)}</h2><span class="muted">${esc(namn)}</span></div></div>
     <dl class="kv">
       <dt>Ålder</dt><dd>${alder}</dd>
+      ${g.trees[i] >= FOREST ? `<dt>Fälls</dt><dd>${iconImg('ved', 14)} ${stam.ved} ${iconImg('grenar', 14)} ${stam.grenar}</dd>` : ''}
     </dl>`;
 }
 export const sak: Flik = {
