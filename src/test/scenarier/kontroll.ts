@@ -5,6 +5,8 @@ import { hasIcon, PAL } from '../../ikoner';
 import { FARGER, MORKARE, PALETT, iPaletten, kornPa, rasterSteg } from '../../palett';
 import { START, STEG_TIM, korBy } from '../kor';
 import { seedAv } from '../pool';
+import { KARNA } from '../../portrattkarna';
+import { drag, glomArv, skapad } from '../../ui/utseende';
 import { Koll, kor, klockan, uiLas, SCENARIER, grenarUte, barGrenar } from './hjalp';
 
 SCENARIER['ui-ren'] = {
@@ -212,3 +214,31 @@ SCENARIER.aldrig = {
   },
 };
 
+SCENARIER.portratt = {
+  text: 'Porträtten (steg 5.2.3.1): varje person får sina delar ur registret PORTRATT, ett barn ärver dem från mamman och pappan, och samma person blir likadan varje gång, också i en sparad by (allt räknas ur numret och föräldrarna); porträttet och kartfiguren har bara färger ur paletten',
+  kor: () => {
+    const s = createState(3, START), vuxna = living(s).filter(p => ageOf(p, s.now) >= 20);
+    const mor = vuxna.find(p => p.sex === 'k')!, far = vuxna.find(p => p.sex === 'm')!;
+    const barn: Person[] = []; for (let i = 0; i < 30; i++) barn.push(SIM.newPerson(s, i % 2 ? 'm' : 'k', s.now, mor, far));
+    const alla = [...living(s), ...barn], ett = (p: Person) => JSON.stringify(drag(s, p));
+    const forst = alla.map(ett); glomArv(); const igen = alla.map(ett);
+    const ANSIKTE = ['huvudform', 'ora', 'nasa', 'oga', 'ogonbryn', 'mun'] as const;
+    let fran = 0, delar = 0;
+    for (const c of barn) { const d = drag(s, c), m = drag(s, mor), f = drag(s, far); for (const k of ANSIKTE) { delar++; if (d.del[k] === m.del[k] || d.del[k] === f.del[k]) fran++; } }
+    const olika = new Set(living(s).map(p => JSON.stringify(drag(s, p).del))).size;
+    let utanfor = 0, ritade = 0;
+    for (const p of alla) {
+      const q = skapad(s, p), B = KARNA.portratt(q), F = KARNA.kartFigur(q, 'fram', 'sta', 'hanga');
+      if (B.w === 64 && B.h === 64 && F.w === 14 && F.h === 20) ritade++;
+      for (const v of [...B.px, ...F.px]) if (v < -1 || v >= FARGER.length) utanfor++;
+    }
+    const kon = alla.every(p => drag(s, p).kon === (p.sex === 'k' ? 'kvinna' : 'man')) && barn.every(c => skapad(s, c).alder === 'barn');
+    return [
+      ['samma person blir likadan igen, när allt räknas om', forst.every((v, i) => v === igen[i])],
+      [`barnen ärver ansiktet: ${fran} av ${delar} delar från mamman eller pappan (minst 80 %)`, fran >= delar * 0.8],
+      [`de första i byn ser olika ut (${olika} olika av ${living(s).length})`, olika === living(s).length],
+      ['könet följer personen och barnen ritas som barn', kon],
+      [`porträttet (64 × 64) och kartfiguren (14 × 20) ritas för alla ${alla.length} (${ritade}) med bara palettens färger (${utanfor} utanför)`, ritade === alla.length && utanfor === 0],
+    ] as Koll[];
+  },
+};
