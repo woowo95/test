@@ -266,7 +266,7 @@ SCENARIER.samlarrunda = {
     // timmar, med alla nyfikna och modiga och med alla försiktiga: hur långt från lägret varje runda når som längst
     const ut = (pot: number) => {
       const langst: number[] = [];
-      for (const seed of [42, 7]) {
+      for (const seed of [42, 7, 3, 11]) {
         const s = createState(seed, START), tagit = SIM.takenOf(s), nar = new Map<number, number>();
         setMat(s, {}); setAmount(s, 'ved', 300);
         for (const k of SIM.lagren('samla')) { const a = tagit[k as keyof typeof tagit]; if (a) for (let i = 0; i < W * H; i++) if (campDist(s, i % W, Math.floor(i / W)) < 14) a[i] = 1; }

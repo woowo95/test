@@ -18,6 +18,7 @@ import { renderPorts, stopFollow } from './ui/portratt';
 import { catchUp, loadSaves, nyByVald, saveDb, saveLocal } from './ui/spara';
 import './ui/interaktion';
 import { drawArena, oppnaArena } from './ui/arena';
+import { drawTona } from './ui/tona';
 
 // startpunkten: klockan, kontrollerna, huvudloopen och uppstarten. Allt annat i gränssnittet ligger i ui/
 function renderClock() {
@@ -178,7 +179,7 @@ function tick() {
   drawTerrain();
   drawPlants(); drawFlackar(); drawAnimals();
   drawStructures(now);
-  drawPeople(now); drawHandel(); drawArena();
+  drawPeople(now); drawHandel(); drawArena(); drawTona();
   drawNight(ui.nu);
   drawFilter();
   drawVader(now);

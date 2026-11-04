@@ -141,3 +141,26 @@ export function stallTrad(lager: PIXI.Container, W: number, H: number, bild: (i:
     sprites.set(i, { sp, k });
   }
 }
+
+// Träden skymmer inte (steg 5.1.4.6): en krona som står framför (söder om) något man behöver se, folk, djur, saker på
+// marken, byggen eller det man valt, blir halvgenomskinlig. punkter = det som syns, i rutor (mitten av rutan = x + 0.5)
+export const GENOM = 0.45;
+const tonade = new Set<PIXI.Sprite>();
+export function tonaTrad(punkter: { x: number; y: number }[], W: number, H: number) {
+  const nu = new Set<PIXI.Sprite>();
+  for (const p of punkter) {
+    const px = p.x * 16 + 8, fot = p.y * 16 + 14, tx = Math.floor(p.x + 0.5), ty = Math.floor(p.y + 0.5);
+    for (let dy = 0; dy <= 4; dy++) for (let dx = -2; dx <= 2; dx++) {
+      const x = tx + dx, y = ty + dy;
+      if (x < 0 || y < 0 || x >= W || y >= H) continue;
+      const f = sprites.get(y * W + x);
+      if (!f || nu.has(f.sp) || f.sp.zIndex <= fot) continue;
+      const sp = f.sp, l = sp.x + 1, r = sp.x + sp.texture.width - 1, t = sp.y, b = sp.y + sp.texture.height;
+      // själva saken och en bit upp (huvudet på den som står där)
+      if (px >= l && px <= r && ((fot >= t && fot <= b) || (fot - 8 >= t && fot - 8 <= b))) nu.add(sp);
+    }
+  }
+  for (const sp of tonade) if (!nu.has(sp) && !sp.destroyed) sp.alpha = 1;
+  for (const sp of nu) sp.alpha = GENOM;
+  tonade.clear(); for (const sp of nu) tonade.add(sp);
+}
