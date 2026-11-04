@@ -985,7 +985,7 @@ SCENARIER.gastliv = {
   },
 };
 SCENARIER.forhandling = {
-  text: 'Handeln som förhandling (steg 4.5.7.4, handel.ts): handlarens varor ligger i packningen och filten är tom. Kunden frågar vad handlaren har (handlaren svarar med varornas symboler), väljer, och handlaren lägger det på sin filt. Kunden hämtar det hen bjuder från sina egna högar och förhandlar en kort stund; första budet är en bra affär för kunden. Handlaren svarar bara ja eller nej; vid nej bjuder kunden mer, och efter tre nej ger hen upp. Vid ja blir det handslag, var och en plockar upp det den fått och kunden bär hem det köpta. En kund i taget, också medan hen hämtar, och byn handlar genom den som handlar för byn. Buden sparas med bytet, och en affär som inte blev av får en egen rad (redogörelsen, steg 5.4.6.1).',
+  text: 'Handeln som förhandling (steg 4.5.7.4, handel.ts): handlarens varor ligger i packningen och filten är tom. Kunden frågar vad handlaren har (handlaren svarar med varornas symboler), väljer, och handlaren lägger det på sin filt. Kunden hämtar det hen bjuder från sina egna högar och förhandlar en kort stund; första budet är en bra affär för kunden. Handlaren svarar bara ja eller nej; vid nej bjuder kunden mer, och efter tre nej ger hen upp. Vid ja blir det handslag, var och en plockar upp det den fått och kunden bär hem det köpta. En kund i taget, också medan hen hämtar, och byn handlar genom den som handlar för byn. Buden sparas med bytet, och en affär som inte blev av får en egen rad (redogörelsen, steg 5.4.6.1), med en kort berättelse om argumenten och hur det gick (steg 5.4.6.2).',
   kor: () => {
     const s = createState(6, START);
     rikBy(s); s.nastaHandlare = s.now;
@@ -1047,6 +1047,13 @@ SCENARIER.forhandling = {
       && fa[fa.length - 1].bjod >= fa[0].bjod && !!ma?.rel && ma.rel[1] > ma.rel[0];
     const mb = b.byten?.[b.byten.length - 1], rad = s.log.slice().reverse().find(l => l.byte?.avbruten);
     const avbr = !!mb?.avbruten && mb.forsok?.length === SIM.HANDEL.nejMax && mb.forsok.every(f => !f.ja) && rad?.byte === mb && rad.text.includes('blev inte överens') && !!mb.rel;
+    // berättelsen (steg 5.4.6.2): argumenten ur det som fanns i affären, samma text varje gång, och slutet stämmer
+    const berA = ma ? SIM.handelBerattelse(s, ma) : '', berB = mb ? SIM.handelBerattelse(s, mb) : '';
+    const ber = !!ma?.arg?.includes('langt') && berA.includes(a.name) && berA === SIM.handelBerattelse(s, ma!) && !/\{|\}|  /.test(berA + berB)
+      && berB.includes(b.name) && /gav .* upp|aldrig överens|ingen affär|utan något/.test(berB) && !/tog de i hand|var de överens|blev en affär|blev av/.test(berB);
+    // många argument: högst tre i berättelsen, och irritationen kommer alltid med
+    const manga = ma ? SIM.handelBerattelse(s, { ...ma, arg: ['byn', 'kemiGod', 'vanner', 'smicker', 'skicklig', 'irriterad', 'langt'] }) : '';
+    const irr = /irriterad|lura mig|blev sur/.test(manga) && manga.split('. ').length <= 1 + 3 + 3;
     return [
       ['handlarens filt är tom när hen lagt ut den; varorna ligger i packningen', tom],
       ['byn handlar först, genom den som handlar för byn; ingen annan går', byn],
@@ -1061,6 +1068,8 @@ SCENARIER.forhandling = {
       ['efter tre nej ger kunden upp och går tomhänt', gav],
       [`redogörelsen: bytet minns buden (${fa.map(f => `${f.bjod}/${f.krav} ${f.ja ? 'ja' : 'nej'}`).join(', ')}) och relationen före och efter (${ma?.rel?.join(' → ')})`, redogor],
       ['den som gav upp får en rad i loggen och ett minne med alla bud, så att affären kan visas', avbr],
+      [`berättelsen om affären: "${berA}" / "${berB}"`, ber],
+      [`med många argument tar berättelsen högst tre, och irritationen kommer med: "${manga}"`, irr],
     ];
   },
 };

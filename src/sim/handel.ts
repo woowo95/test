@@ -20,7 +20,8 @@ import { ledareOf } from './styre';
 import { kanterna } from './varg';
 import { KLAN, KLAN_HEM, andraInst, handlarKlan, klanById, klanerOf } from './klaner';
 import { foddNar, gastNyckel } from './gastliv';
-import { affarMed, gillar, glomIrritation, kravMax, kravRel, luradMed, nejTill } from './gastrel';
+import { affarMed, gastRel, gillar, glomIrritation, kravMax, kravRel, luradMed, nejTill } from './gastrel';
+import { handelsArg } from './handelsber';
 import { notis } from './notiser';
 
 // ---------- handlarna (steg 4.4.1) ----------
@@ -150,7 +151,7 @@ export interface Affar {
   kop: HVara[]; bud: Vara[]; salj?: true;
   hamta: { x: number; y: number; k: string[] }[]; framme: string[];
   nej: number; f: number; t: number; dur?: number; byt?: number; hem?: { x: number; y: number };
-  forsok?: ByteForsok[]; rel0?: number; // buden och relationen före affären (steg 5.4.6.1), för redogörelsen
+  forsok?: ByteForsok[]; rel0?: number; arg?: string[]; // buden, relationen före affären och argumenten (steg 5.4.6.1–5.4.6.2), för redogörelsen
 }
 // vad handlaren gör just nu (inforutan, steg 4.5.7.4)
 export function handlarFas(h: Handlare) {
@@ -563,6 +564,7 @@ function affarSteg(s: State, h: Handlare, a: Affar) {
 function svar(s: State, h: Handlare, a: Affar, p: Person, M: Part) {
   const H_ = handlarPart(s, h), ger = vardFor(a.kop, H_.varde), krav = ger * Math.max(HANDEL.kravMin, kravAv(h, M) * kravRel(s, h, p)), bud = vardFor(a.bud, H_.varde);
   a.rel0 ??= relTal(s, h, p);
+  a.arg ??= handelsArg({ s, p, byn: !!a.byn, salj: !!a.salj, kop: a.kop, varde: M.varde, handel: M.handel ?? 0, hHandel: h.handel, rel: gastRel(s, h, p), gill: gillar(s, h, p) });
   const hela = (v: Vara[]) => v.map(w => ({ k: w.k, n: Math.max(1, Math.round(w.n)) }));
   const f: ByteForsok = { vill: hela(a.kop), bud: hela(a.bud), krav: Math.max(1, Math.round(krav)), bjod: Math.max(1, Math.round(bud)) };
   (a.forsok ??= []).push(f);
@@ -576,10 +578,12 @@ function svar(s: State, h: Handlare, a: Affar, p: Person, M: Part) {
     genomfor(s, M, H_, fatt, betal, 'handel', false, true, lurare);
     a.bud = betal;
     const m = s.log.slice(-8).reverse().find(l => l.byte?.nr === s.byteNr)?.byte; // minnet byteKlart just skrev
-    if (m) { m.forsok = a.forsok; m.rel = [a.rel0, relTal(s, h, p)]; }
+    if (m) { m.forsok = a.forsok; m.rel = [a.rel0, relTal(s, h, p)]; m.arg = a.arg; }
     return;
   }
+  const irr0 = gastRel(s, h, p)?.irr ?? 0;
   nejTill(s, h, p, krav > 0 ? bud / krav : 1);
+  if ((gastRel(s, h, p)?.irr ?? 0) > irr0 && !a.arg.includes('irriterad')) a.arg.push('irriterad');
   if (++a.nej >= HANDEL.nejMax || (a.f = Math.min(kravMax(), a.f + (kravMax() - HANDEL.forstaBud) / (HANDEL.nejMax - 1)), !budNu(s, h, a, M))) { slut(s, h, a, p); return; }
   nastaBud(s, h, a, p);
 }
@@ -600,7 +604,7 @@ const relTal = (s: State, h: Handlare, p: Person) => Math.round(gillar(s, h, p) 
 // de blev inte överens (steg 5.4.6.1): en rad i loggen och ett minne hos bybon med buden, så att redogörelsen kan visas som
 // ett byte. Bara loggen och minnet; inget i simuleringen läser det
 function avbrutenAffar(s: State, h: Handlare, a: Affar, p: Person) {
-  const minne: ByteMinne = { nr: (s.byteNr = (s.byteNr ?? 0) + 1), t: s.now, a: p.id, an: p.name, b: h.id, bn: h.namn, ag: [], bg: [], forsok: a.forsok, avbruten: true, rel: [a.rel0 ?? relTal(s, h, p), relTal(s, h, p)] };
+  const minne: ByteMinne = { nr: (s.byteNr = (s.byteNr ?? 0) + 1), t: s.now, a: p.id, an: p.name, b: h.id, bn: h.namn, ag: [], bg: [], forsok: a.forsok, arg: a.arg, avbruten: true, rel: [a.rel0 ?? relTal(s, h, p), relTal(s, h, p)] };
   log(s, `${p.name} och ${h.namn} blev inte överens efter ${a.forsok!.length === 1 ? 'ett bud' : `${a.forsok!.length} bud`}.`, 'rel', [p.id]).byte = minne;
   const b = (p.byten ??= []); b.push(minne); if (b.length > BYTE.minnas) b.splice(0, b.length - BYTE.minnas);
 }

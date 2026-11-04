@@ -1,4 +1,4 @@
-import { ByteMinne, ByteVara, Filt, byId, filtMot, grundvarde, handlarVarde, sakNamn } from '../../sim';
+import { ByteMinne, ByteVara, Filt, byId, filtMot, grundvarde, handelBerattelse, handlarVarde, sakNamn } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { clockTxt, esc, pLink } from '../hjalp';
 import { s, ui } from '../lage';
@@ -37,7 +37,8 @@ function minneHtml() {
   const b = byteMinne(ui.byteNr);
   if (!b) return '<p class="muted">Bytet är glömt.</p>';
   const sidor = b.avbruten ? `<p>${vem(b.a)} <span class="muted">och</span> ${esc(b.bn)} <span class="muted">blev inte överens.</span></p>` : `<div class="filtpar">${minneSida(b.a, b.an, b.ag)}${minneSida(b.b, b.bn, b.bg)}</div>`;
-  return `<h2>${b.avbruten ? 'Affären' : 'Bytet'}</h2><p class="muted">${esc(clockTxt(b.t))}</p>${sidor}${forsokHtml(b)}`;
+  const ber = handelBerattelse(s, b);
+  return `<h2>${b.avbruten ? 'Affären' : 'Bytet'}</h2><p class="muted">${esc(clockTxt(b.t))}</p>${ber ? `<p class="ovBer">${esc(ber)}</p>` : ''}${sidor}${forsokHtml(b)}`;
 }
 // förhandlingen med handlaren (steg 5.4.6.1): varje bud som symboler (det kunden ville ha ⇐ det hen bjöd), vad budet var värt
 // och vad handlaren krävde i silver, ja eller nej, och hur relationen ändrades. Texten kommer fram när man håller över raden

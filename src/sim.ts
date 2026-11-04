@@ -36,6 +36,7 @@ export * from './sim/framtradande';
 export * from './sim/pynt';
 export * from './sim/byte';
 export * from './sim/handel';
+export * from './sim/handelsber';
 export * from './sim/klaner';
 export * from './sim/rovare';
 export * from './sim/liv';
