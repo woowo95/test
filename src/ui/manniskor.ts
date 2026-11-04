@@ -7,6 +7,7 @@ import { type Arm, type Ben, type Rikt, figurTex } from './folkbild';
 import { skapad } from './utseende';
 import { fotSkugga, skuggFolk, skuggLangd } from './skugga';
 import { jaktPlats } from './jakt';
+import { slag } from './animation';
 import { hasIcon, iconCanvas, kartbild, ljusSymbol } from '../ikoner';
 
 // människorna på kartan: kroppen, det de bär, pratbubblor, symbolen för vad de gör och namnet
@@ -193,18 +194,23 @@ function figurAv(id: number) {
 }
 // kartfigurens läge (steg 5.2.3.2, Kartfigurens lägen) efter det personen gör: riktningen efter hur hen rört sig sedan förra
 // bildrutan (står kvar när hen står still), sittande vid måltiden, samtalet och vilan, armarna fulla när hen bär något, i
-// slaget vid de tunga arbetena och framför sig vid stationen. Benen står still tills gången får liv (5.1.9)
+// slaget vid de tunga arbetena och framför sig vid stationen. Den som rört sig nyss går (steg 5.1.9.3): gångsteg 1, stå,
+// gångsteg 2, stå, som bildstilens gång, en bild per slag i animationernas klocka (ui/animation.ts) och förskjutet per person
 const SITTA = new Set(['maltid', 'samtal', 'vila', 'lyssna', 'beratta']);
 const SLA = new Set(['falla', 'bygga', 'krossa', 'slakta', 'yxa', 'dorr', 'strid']);
-const forra = new Map<number, { x: number; y: number; rikt: Rikt }>();
+const forra = new Map<number, { x: number; y: number; rikt: Rikt; rord: number }>();
+const GANG: [Ben, Arm][] = [['gang1', 'gang1'], ['sta', 'hanga'], ['gang2', 'gang2'], ['sta', 'hanga']];
+const GAR_MS = 300; // så länge efter senaste rörelsen (datorns tid) går figuren, så att den inte stannar mellan bildrutorna
+const gar = (id: number, nu: number) => nu - (forra.get(id)?.rord ?? -Infinity) < GAR_MS;
 vidNyBy.push(() => forra.clear());
 function riktning(id: number, x: number, y: number): Rikt {
-  const f = forra.get(id); let rikt: Rikt = f?.rikt ?? 'fram';
+  const f = forra.get(id); let rikt: Rikt = f?.rikt ?? 'fram', rord = f?.rord ?? -Infinity;
   if (f) {
     const dx = x - f.x, dy = y - f.y;
     if (Math.abs(dx) + Math.abs(dy) > 0.01) rikt = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'sida' : 'vast') : dy > 0 ? 'fram' : 'bak';
+    if (Math.abs(dx) + Math.abs(dy) > 1e-4) rord = performance.now();
   }
-  forra.set(id, { x, y, rikt });
+  forra.set(id, { x, y, rikt, rord });
   return rikt;
 }
 export function drawPeople(t: number) {
@@ -228,8 +234,10 @@ export function drawPeople(t: number) {
     const gor = tk?.phase === 'do' ? tk.act : undefined, sitter = !ligger && !!gor && SITTA.has(gor);
     let rikt = riktning(p.id, q.x, q.y);
     if (sitter && rikt === 'bak') rikt = 'fram';
-    const ben: Ben = sitter ? 'sitta' : 'sta';
-    const arm: Arm = tk && load(tk, s) > 0 ? 'bara' : gor && SLA.has(gor) ? 'sla' : gor === 'station' ? 'framfor' : 'hanga';
+    const steg = !sitter && !ligger && gar(p.id, performance.now()) ? GANG[(slag() + p.id) % 4] : undefined;
+    const ben: Ben = sitter ? 'sitta' : steg ? steg[0] : 'sta';
+    let arm: Arm = tk && load(tk, s) > 0 ? 'bara' : gor && SLA.has(gor) ? 'sla' : gor === 'station' ? 'framfor' : 'hanga';
+    if (steg && arm === 'hanga') arm = steg[1];
     sp.texture = figurTex(skapad(s, p), { rikt, ben, arm, ligga: ligger, tacke: sleeping }, p.id === ui.selected || p.id === harSaken);
     sp.scale.set(k);
     const w = sp.texture.width * k, h = sp.texture.height * k;
