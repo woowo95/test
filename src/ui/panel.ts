@@ -12,6 +12,7 @@ import { person } from './flikar/person';
 import { teknik } from './flikar/teknik';
 import { sak } from './flikar/sak';
 import { filt } from './flikar/filt';
+import { fram } from './flikar/fram';
 import { djur } from './flikar/djur';
 import { grannar } from './flikar/grannar';
 import { byn } from './flikar/byn';
@@ -30,7 +31,7 @@ export interface Flik {
   syns?(): boolean; // annars är knappen en blek sten som inte går att trycka på (grannarna när byn har grannar)
   band?(): string; // bandet överst är en annan fliks (Byn visar den öppna delens band, steg 5.3.3.2)
 }
-const FLIKAR = { byn, teknik, kronika, folk, grannar, person, eld, lager, hog, hus, station, sjo, falt, sak, djur, filt } satisfies Record<string, Flik>;
+const FLIKAR = { byn, teknik, kronika, folk, grannar, person, eld, lager, hog, hus, station, sjo, falt, sak, djur, filt, fram } satisfies Record<string, Flik>;
 export type FlikId = keyof typeof FLIKAR;
 const ALLA: Record<FlikId, Flik> = FLIKAR;
 const IDS = Object.keys(FLIKAR) as FlikId[];

@@ -241,7 +241,7 @@ export interface Rel { chem: number; op: number; rom: number; talks: number; fla
 // hållen (gav[0] är gåvorna från den med lägst id)
 export interface RelMinne { gral?: number; slag?: number; lek?: number; sida?: number; gav?: [number, number] }
 
-export interface LogEntry { t: number; text: string; kind: 'birth' | 'death' | 'rel' | 'skill' | 'world' | 'move'; ids: number[]; byte?: ByteMinne } // byte = bytet raden handlar om (steg 4.5.4.17)
+export interface LogEntry { t: number; text: string; kind: 'birth' | 'death' | 'rel' | 'skill' | 'world' | 'move'; ids: number[]; byte?: ByteMinne; fram?: number } // byte = bytet raden handlar om (steg 4.5.4.17), fram = framträdandets nummer (steg 5.4.7.1)
 // ett byte som det minns (steg 4.5.4.17): med raden i loggen, hos bybor som var med (p.byten) och hos handlaren. a köpte (m i
 // byteKlart) och gav ag, b gav bg; p = priset i silver styck när bytet gjordes. fa/fb = var a:s och b:s filt låg (där sakerna
 // syns gå från den ena filten till den andra), saknas när bytet gjordes från hand till hand
@@ -321,7 +321,7 @@ export interface State {
   djurFlykt?: { g: number; t: number; dx: number; dy: number }[]; // kaningrupper som flytt från en jägare: från tiden t så här långt (steg 4.5.4.1, djur.ts)
   strider?: import('./strid').StridMinne[]; // de senaste striderna i byn, så att arenan kan visa dem igen (steg 3.7.2, strid.ts)
   sportBast?: Record<string, number>; // den bästa i varje sport (personens id, steg 4.3.1.2)
-  fram?: import('./framtradande').Fram; framKvall?: number; // framträdandet som pågår och kvällen då det senaste hölls (steg 4.3.2.1)
+  fram?: import('./framtradande').Fram; framKvall?: number; framNr?: number; // framträdandet som pågår och kvällen då det senaste hölls (steg 4.3.2.1)
   framtradanden?: import('./framtradande').FramMinne[]; // de senaste framträdandena
   overl?: import('./byte').Overl[]; filtar?: import('./byte').Filt[]; filtNr?: number; byteNr?: number; bytt?: import('./byte').Bytt[];
   rovare?: import('./rovare').Rovarflock; rovarNr?: number; rovarVila?: number; // rövarflocken på kartan, hur många som kommit och när nästa tidigast kommer (steg 4.4.5, rovare.ts)

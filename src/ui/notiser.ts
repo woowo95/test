@@ -29,7 +29,7 @@ export function notisHtml() {
   if (!n) return `<p class="muted">Inga notiser</p><div class="notisknappar"><button type="button" data-notis="stang">Stäng</button></div>`;
   notisVal.nr = n.nr; lasNotis(s, n.nr);
   const typ = NOTISER[n.id], slag = NOTIS_SLAG[typ.slag], k = kalender(s, n.t);
-  const rader = n.rader.map(text => `<li>${linkify({ t: n.t, text, ids: n.ids } as LogEntry)}</li>`).join('');
+  const rader = n.rader.map((text, i) => `<li>${linkify({ t: n.t, text, ids: n.ids, fram: n.fram?.[i] || undefined } as LogEntry)}</li>`).join('');
   const fler = n.n > n.rader.length ? `<p class="muted">och ${n.n - n.rader.length} till samma dygn</p>` : '';
   const plats = n.plats ? `<button type="button" data-notis="plats" title="Visa platsen på kartan" aria-label="Visa platsen på kartan">{sym_oga}</button>` : '';
   return `<div class="notishuvud notis-${typ.slag}" title="${slag.namn}">{${slag.bild}}<b>${esc(typ.rubrik)}</b><span class="muted">År ${k.ar}</span><span class="notisnr">${i + 1} / ${lista.length}</span></div>
