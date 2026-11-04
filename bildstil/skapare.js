@@ -777,7 +777,6 @@
       }
     }
     // efter: den som ritar något annat än en bybo (rövaren, 6.2.5.x) får ändra figuren sist, med samma satt och måtten
-    if (opt.efter) opt.efter({ satt, kt, zn, W, H, rikt, h, b0, b1, l0, l1, x0, x1, kvinna });
     const ut = kartUt(p, kt, W, H, spegel, opt);
     ut.hand = hand && (spegel ? [W - 1 - hand[0], hand[1]] : hand); // handen, till det som hålls (animationerna i anim.js)
     // kroppsdelen under varje punkt (huvud, bal, armar, hand, ben, fotter, balte; null för hår, ögon och redskap), till
@@ -1410,7 +1409,6 @@
   // en bybo på kartan till sidans bilder (sporterna och dragkampen i valdelen): samma person för samma frö
   // rövaren på kartan: en vuxen ur samma frö, med rock (så att bålen och armarna är kläder), utan huvudbonad och redskap;
   // efter ritar det som gör honom till rövare (fas6.js)
-  window.ROVARE = (fro, rikt, ben, arm, efter) => { const p = slumpPerson(slumpFran(fro), { alder: 'vuxen' }); p.klader.rock = 'harskinn'; p.del.huvudbonad = null; p.del.redskap = null; return kartFigur(p, rikt, ben, arm, { efter }); };
   window.BYBO = (fro, rikt, ben, arm, redskap) => { const p = slumpPerson(slumpFran(fro), { alder: 'vuxen' }); if (redskap !== undefined) p.del.redskap = redskap; return kartFigur(p, rikt, ben, arm); }; // redskap: en del ur portratt.json (null = inget)
   window.PORTRATTEN = { portratt, kartBild, neutral, granskPerson, KORT, medForslag, provaDel(id, data) { DELAR[id] = data; }, png(B, skala = 4) { const c = document.createElement('canvas'); tillCanvas(B, c, 0); const s = document.createElement('canvas'); s.width = B.w * skala; s.height = B.h * skala; const g = s.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(c, 0, 0, s.width, s.height); return s.toDataURL('image/png'); } };
 })();

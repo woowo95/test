@@ -181,7 +181,9 @@
   // storlekarna (steg 6.3.5.8, en rad var i spelets register) ritas av samma kod: tratten och molnet så breda som kärnan
   // (liten 1 ruta, medel 3, stor 5) och dammet vid foten ut mot nära-zonen (2, 3 och 5 rutor från mitten), räknat så att
   // medel är som förut. TNMATT ger bildens mått och foten för en storlek.
-  const STORLEKAR = { liten: { S: 0.5, damm: 2.5 }, medel: { S: 1.5, damm: 3.5 }, stor: { S: 2.5, damm: 5.5 } };
+  // Björn 2026-11-04 (efter bildstil v162): "gör så det bara är liten skillnad i storlek. Gör så det är extremt mycket damm och
+  // streck runt den största tornadon": bilden skiljer sig lite (S), medan mer ger den stora ett tjockt dammoln och många streck
+  const STORLEKAR = { liten: { S: 1.25, damm: 3, mer: 0 }, medel: { S: 1.5, damm: 3.5, mer: 0 }, stor: { S: 1.8, damm: 5, mer: 1 } };
   const TNMATT = S => { const w = Math.round(32 * S), h = Math.round(48 * S); return { w, h, cx: w / 2 - 0.5, fot: h - Math.round(7 * S / 1.5) }; };
   const TN = TNMATT(1.5);
   // det som flyger runt (Björn 2026-11-04: "mer kaosartad och mindre clean, mer saker som virvlar runt"): höjd, varv per
@@ -200,7 +202,7 @@
     sten: [[0, 0, 'skiffer', 2], [1, 0, 'skiffer', 0], [0, 1, 'kol', 0]], gras: [[0, 0, 'oliv', 1], [0, -1, 'oliv', 2], [1, -2, 'senap', 1]],
   };
   function tornado(B, x0, y0, f, storlek = 'medel') {
-    const { S, damm } = STORLEKAR[storlek], TN = TNMATT(S), sk = S / 1.5, DR = 23 * damm / 3.5; // sk: skalan mot medel, DR: dammets radie
+    const { S, damm, mer } = STORLEKAR[storlek], TN = TNMATT(S), sk = S / 1.5, DR = 23 * damm / 3.5; // sk: skalan mot medel, DR: dammets radie
     const P = B.P, ett = Array.from({ length: TN.h }, () => Array(TN.w).fill(-1)), v = 2 * Math.PI * f, bnr = Math.round(f * 8) % 8;
     const satt = (g, x, y, c) => { x = Math.round(x); y = Math.round(y); if (x >= 0 && y >= 0 && x < TN.w && y < TN.h) g[y][x] = c; };
     const mitt = y => TN.cx + Math.sin(v + y / (7 * S)) * 1.8 * S * (y / TN.fot) ** 1.3 + Math.sin(v * 2 + y / (3 * S)) * 0.5 * S; // svajet, ryckigt
@@ -262,6 +264,22 @@
         const x = x0 + mitt(yy) + Math.cos(a) * (bredd(yy) + ut), y = y0 + yy + si * 2.5 + Math.sin(v + yy) * 1.2;
         const spegel = Math.cos(a) < 0 ? -1 : 1;
         for (const [dx, dy, ramp, ton] of SKRAPFORM[sort]) prick(B, x + dx * spegel, y + dy, ramp, ton);
+      }
+      if (!mer) return;
+      // den stora: ett tjockt moln av jord som virvlar runt foten högt upp längs tratten, och många vindstreck runt om
+      for (let y = Math.round(-48 * sk); y <= Math.round(6 * sk); y++) for (let x = -Math.round(DR * 1.45); x <= Math.round(DR * 1.45); x++) {
+        const ang = Math.atan2(y, x), e = (x / (DR * 1.45)) ** 2 + (y / (y < 0 ? 44 * sk : 7 * sk)) ** 2 + Math.sin(ang * 5 + v * 1.5) * 0.14 + Math.sin(ang * 3 - v) * 0.1;
+        if (e >= 1 || (y < -4 && Math.abs(x) < bredd(TN.fot + y) - 1)) continue; // tratten syns genom dammet
+        if (!bak && hash(x, y, 975 + bnr) < 0.45) continue; // allt bakom tratten, det mesta också framför
+        if (hash(x + bnr * 5, y, 976) > (1.3 - e) * 1.1) continue;
+        const q = hash(x, y + bnr * 7, 977); prick(B, x0 + TN.cx + x, y0 + TN.fot + y, q < 0.25 ? 'ben' : 'jord', q < 0.25 ? (q < 0.1 ? 3 : 1) : q < 0.6 ? 3 : 2);
+      }
+      for (let k = 0; k < 64; k++) { // vindstreck: bågar runt tratten i alla höjder
+        const yy = TN.fot * (0.15 + 0.85 * ((k * 0.37) % 1)), m = k % 2 ? 1 : -1.5, ut = (3 + (k % 7) * 3) * sk, langd = 8 + (k % 4) * 4, ljus = k % 3 !== 1;
+        for (let i = 0; i < langd; i++) {
+          const R = bredd(yy) + ut, a = v * m + k * 1.3 - i * 0.9 / R * Math.sign(m), si = Math.sin(a); if ((si < 0) !== bak) continue;
+          prick(B, x0 + mitt(yy) + Math.cos(a) * R, y0 + yy + si * 2 - i * 0.12, ljus ? 'ben' : 'skiffer', i < langd / 2 ? 3 : 2);
+        }
       }
     };
     runt(true);
