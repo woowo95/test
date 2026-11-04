@@ -11,6 +11,9 @@
   const SORT = Object.fromEntries(PR.sorter.map(s => [s.id, s]));
   const DEL = Object.fromEntries(PR.delar.map(d => [d.id, d]));
   const MALL = Object.fromEntries(PR.mallar.map(m => [m.id, m]));
+  // småbarnet i hel skala (steg 5.5.5): barnets mall med huvudet tre rader lägre och en kortare kropp och kortare ben,
+  // i stället för barnet förminskat till tre fjärdedelar
+  const SMABARN_KARTA = { huvud: 9, bal: [15, 17], ben: [18, 18], bredd: [5, 8], armar: [4, 9] };
   const HUMOR = Object.fromEntries(PR.humor.map(h => [h.id, h]));
   const ALDER = Object.fromEntries(PR.aldrar.map(a => [a.id, a]));
   const MATERIAL = Object.fromEntries(PR.material.map(m => [m.id, m]));
@@ -611,7 +614,7 @@
   // vriden ett kvarts varv. Sju armlägen (beslut, Björn efter 5.2.2.1)
   function kartFigur(p, riktIn, ben, arm, opt = {}) {
     const spegel = riktIn === 'vast', rikt = spegel ? 'sida' : riktIn;
-    const m = opt.mall || MALL[mallAv(p)], K = m.karta, del = effektiva(p), kvinna = m.id === 'kvinna', barn = m.id === 'barn';
+    const m = opt.mall || (opt.smabarn ? { ...MALL.barn, karta: SMABARN_KARTA } : MALL[mallAv(p)]), K = m.karta, del = effektiva(p), kvinna = m.id === 'kvinna', barn = m.id === 'barn';
     const W = 14, H = 20, kt = new Array(W * H).fill(null), zn = new Array(W * H).fill(null);
     const satt = (x, y, v, z = null) => { if (x < 0 || y < 0 || x >= W || y >= H) return; kt[y * W + x] = v; zn[y * W + x] = z; };
     const sitt = ben === 'sitta' ? 2 : 0;
@@ -1417,10 +1420,8 @@
   // en bybo på kartan till sidans bilder (sporterna och dragkampen i valdelen): samma person för samma frö
   // rövaren på kartan: en vuxen ur samma frö, med rock (så att bålen och armarna är kläder), utan huvudbonad och redskap;
   // efter ritar det som gör honom till rövare (fas6.js)
-  // småbarnet i hel skala (förslag, steg 5.5.5): barnets mall med huvudet tre rader lägre och en kortare kropp och kortare ben,
-  // i stället för barnet förminskat till tre fjärdedelar
-  const SMABARN_KARTA = { huvud: 9, bal: [15, 17], ben: [18, 18], bredd: [5, 8], armar: [4, 9] };
-  window.SMABARN = (fro, rikt, ben, arm, liten = true) => { const p = slumpPerson(slumpFran(fro), { alder: 'barn' }); return kartFigur(p, rikt, ben, arm, liten ? { mall: { ...MALL.barn, karta: SMABARN_KARTA } } : {}); };
+  // småbarnet i hel skala (steg 5.5.5), med SMABARN_KARTA ovan
+  window.SMABARN = (fro, rikt, ben, arm, liten = true) => { const p = slumpPerson(slumpFran(fro), { alder: 'barn' }); return kartFigur(p, rikt, ben, arm, { smabarn: liten }); };
   // rövaren (förslag, steg 6.6.12): en bybo med rövarens luva eller duk, ett mörkt slitet skinn och ibland ett ärr,
   // i porträttet (kvinna och man) och på kartan framifrån, från sidan, bakifrån och i ett gångsteg
   window.ROVAREN = (bonad, rock, arr) => {

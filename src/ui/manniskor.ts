@@ -116,9 +116,9 @@ function ritaSport(t: number) {
     const slag = med.length ? med.reduce((a, b) => (a.x < b.x ? a : b)) : { x: mx - SPORT.slagAvst * TS, y: my };
     markIcons.add('slagtra', slag.x + 1, slag.y - 7, 7 / iconCanvas('slagtra').width);
     const P = 4, n = Math.floor(k / P), f = k / P - n, bx = mx + (hash(n) * 3) * TS, by = my + (hash(n + 3) - 0.5) * 4 * TS;
-    if (!m.spelat) { markIcons.add('boll', mx - 3, my - 3, 6 / iconCanvas('boll').width); return; }
+    if (!m.spelat) { markIcons.add('boll_liten', Math.round(mx - 3), Math.round(my - 3), 1); return; }
     if (f < 0.5) flyg(slag.x + 3, slag.y - 3, bx, by, f / 0.5, SP.jord, 2, 14); // slaget flyger ut på planen ...
-    else markIcons.add('boll', bx - 3, by - 3, 6 / iconCanvas('boll').width); // ... och ligger där tills någon hinner fram
+    else markIcons.add('boll_liten', Math.round(bx - 3), Math.round(by - 3), 1); // ... och ligger där tills någon hinner fram
   }
 }
 function ritaDragkamp(m: Match, t: number) {
@@ -180,11 +180,15 @@ function pratRuta(x: number, top: number, bob: number, kind: string | undefined,
     : rel === 'karlek' ? 0xbd753e : rel === 'ovan' ? 0x742a01 : rel === 'van' ? 0x647025 : undefined;
   // en ljus, rundad pratbubbla med en spets ner mot den som pratar, så att den inte ser ut som arbetets mörka ruta (steg 4.5.6.9)
   const y0 = top + bob, linje = kant ?? PRAT_KANT, b = kant !== undefined ? 1.2 : 0.8;
-  bubbleG.lineStyle(b, linje).beginFill(PRAT_FARG).drawRoundedRect(x - 6, y0 - 6, 12, 11, 4).endFill();
+  // tecknet i sina egna punkter (steg 5.5.5): det vanliga tecknet i 8 punkter i den lilla bubblan, och ett ämne vars bild har
+  // 16 punkter i en större bubbla, så att inget ritas i halv storlek
+  const k = ikon && hasIcon(ikon) ? ikon : 'a_prata', w = iconCanvas(k).width || 8, stor = w > 8;
+  if (stor) bubbleG.lineStyle(b, linje).beginFill(PRAT_FARG).drawRoundedRect(x - 10, y0 - 14, 20, 19, 5).endFill();
+  else bubbleG.lineStyle(b, linje).beginFill(PRAT_FARG).drawRoundedRect(x - 6, y0 - 6, 12, 11, 4).endFill();
   bubbleG.lineStyle(0).beginFill(PRAT_FARG).drawPolygon([x - 2.6, y0 + 4.4, x + 1.4, y0 + 4.4, x - 1.8, y0 + 8.2]).endFill();
   bubbleG.lineStyle(b, linje).moveTo(x - 2.6, y0 + 5).lineTo(x - 1.8, y0 + 8.2).lineTo(x + 1.4, y0 + 5).lineStyle(0);
-  const k = ikon && hasIcon(ikon) ? ikon : 'a_prata';
-  markIcons.add(k, x - 4, top - 4.5 + bob, 8 / iconCanvas(k).width, ljusSymbol(k) ? PRAT_KANT : 0xffffff);
+  if (stor) markIcons.add(k, x - 8, top - 12.5 + bob, 1, ljusSymbol(k) ? PRAT_KANT : 0xffffff);
+  else markIcons.add(k, x - 4, top - 4.5 + bob, 8 / w, ljusSymbol(k) ? PRAT_KANT : 0xffffff);
 }
 const markIcons = new Ikoner(markLayer);
 // en sak med mitten i (cx, cy): kartbilden i sin naturliga storlek, annars den gamla bilden storlek punkter stor
@@ -255,8 +259,8 @@ export function drawPeople(t: number) {
     pos.set(p.id, q);
     const tk = uppgiftVid(p), sleeping = tk?.act === 'sova';
     // figuren ur porträttgeneratorn (steg 5.2.3.2, ui/folkbild.ts) med fötterna under punkten; den som sover eller inte kan
-    // gå ligger ner (steg 3.7.19), under täcket när hen sover, och de minsta barnen är mindre
-    const sp = figurAv(p.id), ligger = sleeping || !kanGa(p), k = a < ALDER.smabarn ? 0.75 : 1;
+    // gå ligger ner (steg 3.7.19), under täcket när hen sover, och de minsta barnen har en egen, lägre mall i hel skala (steg 5.5.5)
+    const sp = figurAv(p.id), ligger = sleeping || !kanGa(p), liten = a < ALDER.smabarn;
     const gor = tk?.phase === 'do' ? tk.act : undefined, sitter = !ligger && !!gor && SITTA.has(gor);
     let rikt = riktning(p.id, q.x, q.y);
     if (sitter && rikt === 'bak') rikt = 'fram';
@@ -271,15 +275,14 @@ export function drawPeople(t: number) {
     let arm: Arm = tk && load(tk, s) > 0 ? 'bara' : gor && SLA.has(gor) ? 'sla' : gor === 'station' ? 'framfor' : 'hanga';
     if (steg && arm === 'hanga') arm = steg[1];
     if (ab) arm = ab.arm;
-    sp.texture = figurTex(skapad(s, p), { rikt, ben, arm, ligga: ligger, tacke: sleeping }, p.id === ui.selected || p.id === harSaken);
-    sp.scale.set(k);
-    const w = sp.texture.width * k, h = sp.texture.height * k;
+    sp.texture = figurTex(skapad(s, p), { rikt, ben, arm, ligga: ligger, tacke: sleeping, smabarn: liten || undefined }, p.id === ui.selected || p.id === harSaken);
+    const w = sp.texture.width, h = sp.texture.height;
     if (ligger) sp.position.set(x - w / 2, y - h / 2);
-    else sp.position.set(x - w / 2 + (ab?.b.ut ?? 0) * (rikt === 'vast' ? -k : k), y + r * 0.9 - h + k);
+    else sp.position.set(x - w / 2 + (ab?.b.ut ?? 0) * (rikt === 'vast' ? -1 : 1), y + r * 0.9 - h + 1);
     const hand = ab && figurHand(sp.texture);
-    if (arb && ab && hand) ritaArbete(peopleG, arb, ab.b, sp.position.x + hand[0] * k, sp.position.y + hand[1] * k, rikt === 'vast' ? -1 : 1, k);
+    if (arb && ab && hand) ritaArbete(peopleG, arb, ab.b, sp.position.x + hand[0], sp.position.y + hand[1], rikt === 'vast' ? -1 : 1, 1);
     sp.zIndex = y + r * 0.9; // fötterna (ordningen söderut, steg 5.1.4.5)
-    if (!ligger) fotSkugga(skugga, x - 4 * k, Math.round(sp.zIndex) - 1, 4 * k, 2, skuggLangd());
+    if (!ligger) fotSkugga(skugga, x - 4, Math.round(sp.zIndex) - 1, 4, 2, skuggLangd());
     sp.visible = true; sedd.add(p.id);
     if (PRICKAR.sjuk.har(p)) peopleG.beginFill(PRICKAR.sjuk.farg).drawCircle(x + r * 0.7, y - r * 0.7, 1.8).endFill();
     if (PRICKAR.gravid.har(p)) peopleG.beginFill(PRICKAR.gravid.farg).drawCircle(x - r * 0.7, y - r * 0.7, 1.6).endFill();
@@ -299,7 +302,7 @@ export function drawPeople(t: number) {
   const flashIkon = new Map<number, string | undefined>();
   for (let i = bubbles.length - 1; i >= 0; i--) { const b = bubbles[i]; if (b.until < t) bubbles.splice(i, 1); else { flash.set(b.id, b.kind); flashIkon.set(b.id, b.i); } }
   for (const p of ppl) {
-    const pp = pos.get(p.id)!, x = pp.x * TS, y = pp.y * TS, a = ageOf(p, s.now), top = y - (a < ALDER.smabarn ? 9 : a < ALDER.vuxen ? 11 : 13);
+    const pp = pos.get(p.id)!, x = pp.x * TS, y = pp.y * TS, a = ageOf(p, s.now), top = y - (a < ALDER.smabarn ? 8 : a < ALDER.vuxen ? 11 : 13);
     const o = talkWith.get(p.id), q = o !== undefined ? byId(s, o) : undefined;
     // bara medan de pratar: en stund efter samtalet (steg 3.10.3), inte så länge de sitter nära varandra
     const talking = !!q && pratarMed(s, p) === q;

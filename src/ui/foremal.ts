@@ -45,16 +45,16 @@ function drawPile(pl: Pile, t: number) {
   // liten stapel för skicket längst ner i rutan
   g.beginFill(0x24201d).drawRect(x0 + 2, y0 + 13.5, 12, 2).endFill().beginFill(condCol(c)).drawRect(x0 + 2, y0 + 13.5, 12 * clamp(c, 0, 1), 2).endFill();
   // ikoner: ju fullare stacken är desto fler, redskap som en större bild
-  // en symbol ritas 12 punkter stor mitt i rutan, hur stor bilden än är (8 eller 16 punkter, steg 3.6.7)
-  const stor = (k: string) => 12 / (iconCanvas(k).width || 8);
-  if (pl.gor) { pileIcons.add(pl.gor, x0 + 2, y0, stor(pl.gor)); framsteg(x0 + 12.5, y0 + 1.5, pl.klar ?? 0); return; } // påbörjat: framstegscirkeln i hörnet
+  // en ensam symbol ritas i sina egna punkter mitt i rutan (steg 5.5.5): 8 punkter mitt över stapeln, 16 punkter över hela rutan
+  const ensam = (k: string) => { const w = iconCanvas(k).width || 8; if (w > 8) pileIcons.add(k, x0, y0 - 3, 1); else pileIcons.add(k, x0 + 4, y0 + 3, 1); };
+  if (pl.gor) { ensam(pl.gor); framsteg(x0 + 12.5, y0 + 1.5, pl.klar ?? 0); return; } // påbörjat: framstegscirkeln i hörnet
   const n = clamp(Math.ceil(f * 4), 1, 4);
   if (kartbild(pl.k)) {
     kartHog(pl.k, x0, y0, pl.max === 1 || kartbildEnsam(pl.k) ? 1 : n);
     if ((pl.q ?? 0) >= MASTERVERK) glans(x0 + 12, y0 + 3, t, pl.id ?? 0, pl.q === PERFEKT);
     return;
   }
-  if (pl.max === 1 || iconCanvas(pl.k).width > 8) { pileIcons.add(pl.k, x0 + 2, y0, stor(pl.k)); if ((pl.q ?? 0) >= MASTERVERK) glans(x0 + 12, y0 + 3, t, pl.id ?? 0, pl.q === PERFEKT); return; }
+  if (pl.max === 1 || iconCanvas(pl.k).width > 8) { ensam(pl.k); if ((pl.q ?? 0) >= MASTERVERK) glans(x0 + 12, y0 + 3, t, pl.id ?? 0, pl.q === PERFEKT); return; }
   for (const [dx, dy] of PILE_LAYOUT[n - 1]) pileIcons.add(pl.k, x0 + dx, y0 + dy, 1);
 }
 // mästerverken glänser (steg 2.2.2, platshållare): en liten ljus gnista som blinkar till ibland, var och en i sin takt.
@@ -79,7 +79,7 @@ function drawFalt() {
       if (!rojd) structG.lineStyle(1, 0x5e3c24).drawRect(X + 0.5, Y + 0.5, TS - 1, TS - 1).lineStyle(0);
       else structG.beginFill(grav ? 0x5e3c24 : 0x7d5b40).drawRect(X, Y, TS, TS).endFill();
       if (grav) for (let r = 0; r < 4; r++) structG.lineStyle(1, 0x3f2415).moveTo(X + 1, Y + 2.5 + r * 4).lineTo(X + TS - 1, Y + 2.5 + r * 4).lineStyle(0);
-      if (bild && grodaPa(f, k)) { const kb = !liten && kartbild(bild), sc = liten ? 0.5 : 1, b = iconCanvas(kb || bild).width * sc, bh = iconCanvas(kb || bild).height * sc; pileIcons.add(kb || bild, Math.round(X + (TS - b) / 2), Math.round(Y + (TS - bh) / 2), sc); }
+      if (bild && grodaPa(f, k)) { const kb = liten ? (bild === 'grodd' ? 'grodd_liten' : bild) : kartbild(bild) || bild, b = iconCanvas(kb).width, bh = iconCanvas(kb).height; pileIcons.add(kb, Math.round(X + (TS - b) / 2), Math.round(Y + (TS - bh) / 2), 1); }
     }
     if (!vaxer && !mogen) { const i = faltRuta(f, Math.min(f.klara, f.n - 1)); framsteg((i % W) * TS + TS / 2, Math.floor(i / W) * TS + 3, faltKlar(f)); }
   }

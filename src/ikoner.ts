@@ -37,6 +37,7 @@ export const PAL: Record<string, Record<string, string>> = {
   // kläderna och bensylen (steg 2.3.2; Björn valde kläderna efter v89, bensylen är en platshållare)
   bensyl: { w: '#dad0bb', W: '#dad0bb', d: '#a0947d' },
   // sportens föremål (steg 4.3.1.2, platshållare)
+  boll_liten: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', e: '#987e62' }, // bollen på kartan i egna 6 punkter (Björn sa ja, bildstil v166, steg 5.5.5)
   boll: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', e: '#987e62', z: 'rgba(36,32,29,.30)' }, // (Björn valde version 1 efter v245, steg 4.5.2)
   slagtra: { o: '#24201d', c: '#7d5b40', e: '#987e62', t: '#a14808', s: '#906f0f', S: '#b2921b', v: '#dad0bb', z: 'rgba(36,32,29,.30)' }, // (Björn valde version 3 efter v245, steg 4.5.2)
   mal: { o: '#24201d', b: '#5e3c24', c: '#7d5b40', e: '#987e62', S: '#b2921b', z: 'rgba(36,32,29,.30)' }, // (Björn valde version 1 efter v245, steg 4.5.2)
@@ -87,6 +88,7 @@ export const PAL: Record<string, Record<string, string>> = {
   // toa-högen (steg 2.10.5, platshållare efter stankslingan på kartan, ui/smuts.ts)
   toa: { C: '#7d5b40', V: '#898b4c', c: '#5e3c24', k: '#3f2415', v: '#d8b25f' },
   grodd: { G: '#647025', L: '#898b4c', g: '#4b4f00' },
+  grodd_liten: { G: '#647025', L: '#898b4c', g: '#4b4f00' },
   ...Object.fromEntries(['klart', 'moln', 'regn', 'sno', 'blast', 'aska', 'dimma'].map(k => ['vader_' + k, VADER_PAL])),
   benspade: { h: '#694902', H: '#7e7362', y: '#a0947d', Y: '#bdb39b', w: '#dad0bb', W: '#dad0bb', d: '#a0947d', R: '#bdb39b' },
   skinnklader: { b: '#7d5b40', B: '#987e62', d: '#5e3c24', w: '#bdb39b' },
@@ -1654,6 +1656,8 @@ export const PIX: Record<string, string[]> = {
     '................',
   ],
   // grodden på fältet (steg 3.6.11, Björn valde version 1: fyra blad mitt på rutan)
+  // den unga grodden under första halvan av växandet (steg 5.5.5): 8 punkter i hel skala i stället för grodden i halv skala
+  grodd_liten: ['........', '........', '...L....', '.L.G.L..', '.GgGgG..', '..gGg...', '...g....', '...g....'],
   grodd: [
     '................',
     '................',
@@ -2061,6 +2065,7 @@ export const PIX: Record<string, string[]> = {
     '.d....d.',
   ],
   // sportens föremål (steg 4.3.1.2): platshållare med 16 punkter per ruta
+  boll_liten: ['..oo..', '.oeao.', 'oeeaco', 'oaaaao', '.ocao.', '..oo..'],
   boll: [ // (Björn valde version 1 efter v245, steg 4.5.2)
     '................',
     '.....oooooo.....',
