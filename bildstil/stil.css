@@ -282,3 +282,33 @@ details.mer p { color: var(--dim); max-width: 62ch; margin: 4px 0 0; }
 .rita-mina { display: flex; flex-wrap: wrap; gap: 12px; }
 .rita-mitt { margin: 0; background: var(--panel2); padding: 10px; display: grid; gap: 6px; max-width: 220px; }
 .rita-mitt canvas { image-rendering: pixelated; }
+
+/* texterna (textchatten): förslagen som valkort och exemplen som rader att trycka på */
+.tx-topp { display: flex; flex-wrap: wrap; gap: 8px 16px; justify-content: space-between; align-items: center; }
+#tx-flikar b { color: var(--mustard); font-weight: 400; }
+#tx-flikar button[aria-pressed="true"] b { color: var(--bg); }
+#texter code { font: 13px/1.4 ui-monospace, monospace; color: var(--dim); overflow-wrap: anywhere; }
+.tx-fil { font: 12px/1.4 ui-monospace, monospace; overflow-wrap: anywhere; }
+.tx-lista { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.tx-lista.ny li::marker { color: var(--gron); }
+.tx-lista li.bort { text-decoration: line-through; color: var(--dim); }
+.tx-villkor { font: 400 8px/1.2 var(--pixel); text-transform: uppercase; color: var(--mustard); border: 1px solid currentColor; padding: 1px 4px; }
+#tx-innehall { display: grid; gap: 10px; }
+.tx-grupp { background: var(--panel); border: 1px solid var(--line); padding: 10px 14px; display: grid; gap: 10px; }
+.tx-grupp > summary { cursor: pointer; }
+.tx-grupp > summary b { font: 400 13px/1.4 var(--pixel); color: var(--mustard); }
+.tx-grupp[open] > summary { margin-bottom: 8px; }
+.tx-rader { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 2px; }
+.tx-rad > button { all: unset; box-sizing: border-box; display: block; width: 100%; padding: 4px 8px 4px 18px; position: relative; cursor: pointer; border-left: 3px solid transparent; }
+.tx-rad > button:hover { background: var(--panel2); }
+.tx-rad > button:focus-visible { outline: 2px solid var(--mustard); }
+.tx-rad > button::before { content: ''; position: absolute; left: 6px; top: 0.75em; width: 5px; height: 5px; background: var(--line); }
+.tx-rad.ny > button::before { background: var(--gron); }
+.tx-rad.fel > button { border-left-color: var(--rost); }
+.tx-rad.kommenterad > button { background: var(--gronbg); }
+.tx-n { color: var(--dim); font-variant-numeric: tabular-nums; margin-right: 8px; }
+.tx-komm { margin: 2px 0 6px 18px; padding: 4px 8px; border-left: 3px solid var(--mustard); color: var(--ink); }
+.tx-komm::before { content: 'Din kommentar: '; color: var(--mustard); }
+.tx-redigera { margin: 4px 0 8px 18px; display: grid; gap: 6px; }
+#texter textarea { background: var(--bg); border: 1px solid var(--line); padding: 8px 10px; resize: vertical; width: 100%; color: var(--ink); font: inherit; }
+.tx-mall { display: grid; gap: 4px; color: var(--dim); }

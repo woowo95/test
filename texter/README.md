@@ -1,6 +1,6 @@
 # Texterna: grammatik och variation (underlag)
 
-Textchatten har gjort grundarbetet här, på samma sätt som bildstilen: inget i `src/` är ändrat. Programmeringschatten bygger in det Björn sagt ja till på sidan **Texterna** (https://claude.ai/artifact/Yc9uPxk4LXcXfwPujoSu73). Björns svar ligger i sidans databas, samlingen `val` (ett dokument per förslag: `svar` = `ja` eller `nej`, och `kommentar`). Läs dem med ArtifactData.
+Textchatten har gjort grundarbetet här, på samma sätt som bildstilen: inget i `src/` är ändrat. Programmeringschatten bygger in det Björn sagt ja till i avsnittet **Texterna** på bildstilens sida (https://claude.ai/artifact/Khx8Ggn4CdRb76UpZLnQww). Björns svar ligger i bildstilens databas, samlingen `texter`: `f-<kort>` är ett förslag (`svar` = `ja` eller `nej`, och `kommentar`; korten heter `r-<rättelse>`, `k-<kontroll>` och `m-<mall>`), `e-<hash>` en kommentar till en mening i exemplen (`text`, `mall`, `vy`, `kommentar`) och `m-<vy>-<mall>` en kommentar till en hel mall. Läs dem med ArtifactData.
 
 Bara texterna ändras, inte hur spelet räknar. Varianterna väljs som i dag med `valjVariant`, alltså med en hash av byns frö, nyckeln och timmen, aldrig med spelets slump. Därför ska `npm run samma` vara exakt lika efteråt, med ett undantag: namnen i punkt 1f.
 
@@ -14,7 +14,8 @@ Bara texterna ändras, inte hur spelet räknar. Varianterna väljs som i dag med
 | `loggrader.ts` | De vanligaste fasta raderna i loggen för en by, med namnen bytta mot X och talen mot N. Kör: `npx tsx texter/loggrader.ts 1 45` |
 | `sallsynt.ts` | Räknar det som de oanvända mallarna kräver (3f). |
 | `matning/` | Mätningen före: `texter-fore.txt` och `.json` från `npm run texter -- 8 45`, och loggraderna i byarna 1, 42, 777 och 5. |
-| `bygg.cjs` | Bygger sidan `texterna.html` av `forslag.json`. |
+| `exempel.ts` | Exemplen att läsa: alla varianter i mallarna som ändras, ifyllda med sex olika personer (man och kvinna, namn som med 1f) och olika saker, det spelet skrev i dag för de andra mallarna och loggens vanligaste fasta rader. Ger `exempel.json`. Kör: `npx tsx texter/exempel.ts` |
+| `bygg.cjs` | Bygger `sida.json` (korten och exemplen) som bildstilens avsnitt Texterna läser. Kör sedan `node bildstil/bygg.cjs` och publicera bildstilen. |
 
 ## Mätningen före
 
