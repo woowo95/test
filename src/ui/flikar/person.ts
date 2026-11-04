@@ -1,7 +1,8 @@
 import { klanById, FORMAGOR, gangDelar, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
 import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, BORDA_KG, UTRUSTNING, bordOf, capacity, kvNamn, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, timeLabel, vidBordet, upplevelseText, uppEffekt, vuxenUpp, Upplevelse, yrkeNamn, andlighet, troOf, tolkning, teckenText, troNamn, pratarMed, gastRelationer, type ByteMinne, type GastRel, type Slakting } from '../../sim';
 import { gorText } from '../jakt';
-import { portrattImg } from '../folkbild';
+import { figurSvg, portrattImg } from '../folkbild';
+import { FARGER, farg } from '../../palett';
 import { skapad } from '../utseende';
 import { hasIcon, iconImg, kvSvg, tecknet } from '../../ikoner';
 import { framstegSvg, ringSvg, tartFarg, tartSvg } from '../framsteg';
@@ -79,7 +80,7 @@ const DELAR: Del[] = [
   { id: 'halsa', tecken: '🩺', namn: 'Hälsa', levande: true, html: halsaHtml, kort: halsaKort, gast: gastHalsa },
   { id: 'egen', tecken: '{sym_egenskaper}', namn: 'Egenskaper', html: egenHtml, kort: egenKort, gast: gastEgen },
   { id: 'tid', tecken: '🕓', namn: 'Tiden', levande: true, html: tidHtml, kort: tidKort, gast: gastTid },
-  { id: 'utr', tecken: '🎒', namn: 'Utrustning', levande: true, html: p => `<p class="muted">${carryTxt(p)}</p>${gearHtml(p)}`, kort: p => `${ownedBy(s, p).length} saker`, gast: gastUtr },
+  { id: 'utr', tecken: '🎒', namn: 'Utrustning', levande: true, html: p => `<p class="muted">${carryTxt(p)}</p>${gearHtml(p)}`, kort: p => { const u = utrustning(s, p, false), n = PLATS_LIST.filter(k => u[k].ting).length; return n ? `${n} på sig` : 'Inget på sig'; }, gast: gastUtr },
   { id: 'form', tecken: '💰', namn: 'Förmögenhet', html: p => `<dl class="kv">${formogenhetRad(p)}</dl>`, kort: p => String(Math.round(formogenhetDelar(s, p.id).sum)) },
   { id: 'kun', tecken: '🧠', namn: 'Kunskap', html: knowledgeHtml, kort: p => { const n = Object.values(p.tek ?? {}).filter(v => v >= 1).length; return n === 1 ? '1 teknik' : `${n} tekniker`; }, gast: gastKun },
   { id: 'rel', tecken: '👥', namn: 'Relationer', html: relHtml, kort: p => { const n = s.people.filter(q => q.id !== p.id && alive(q) && s.rels[relKey(p.id, q.id)]).length; return `känner ${n}`; }, gast: gastRel },
@@ -269,28 +270,27 @@ function behovHtml(p: Person) {
       ${rad(p, 'toa', 'Toa', bar(p.toa, p.toa < KROPP.toaBehov ? 'low' : '', trend(p, 'toa', p.toa)), [{ namn: p.task?.act === 'sova' ? 'Behovet växer, långsammare i sömnen' : 'Behovet växer', v: -1 / KROPP.toaTim * (p.task?.act === 'sova' ? KROPP.toaSomn : 1) }], ' i timmen', 'Ett toabesök fyller den.')}
     </dl>`;
 }
-// fliken Hälsa (steg 2.5.3): kroppen som pixelgubbe nr 3 ("händer och fötter", Björn efter v55), ritad i rutor som
-// människorna på kartan, utan kontur. Bildens vänstra sida är personens högra. Varje del är grön när den är hel och går mot
-// gult och rött ju mer skadad den är (delSkada); ett tryck eller musen visar vad som är fel just där. Under kroppen listan
-// över skadorna (skadeLista) och förmågorna som staplar under rubriken Status (FORMAGOR, och gångfarten ur GANGFART). Saknade delar (grå) och proteser kommer senare
-const GUBBE = ['......hhhh......', ...Array(3).fill('.....hhhhhh.....'), '......hhhh......', '.......hh.......',
-  ...Array(8).fill('..AA.bbbbbb.aa..'), '.DDD.bbbbbb.ddd.', '.DD..bbbbbb..dd.', '................',
-  ...Array(8).fill('.....LL..ll.....'), '...FFFF..ffff...'];
-const GUBBE_DEL: Record<string, Kroppsdel> = { h: 'huvud', b: 'bal', A: 'armH', a: 'armV', D: 'handH', d: 'handV', L: 'benH', l: 'benV', F: 'fotH', f: 'fotV' };
-// rutorna per del, hopslagna till en rektangel per lopp i raden (räknas en gång)
-const GUBBE_RUTOR = (() => {
-  const m = {} as Record<Kroppsdel, string>;
-  GUBBE.forEach((r, y) => { for (let x = 0; x < r.length;) { const c = r[x]; let n = 1; while (r[x + n] === c) n++; if (c !== '.') m[GUBBE_DEL[c]] = (m[GUBBE_DEL[c]] ?? '') + `<rect x="${x}" y="${y}" width="${n}" height="1"/>`; x += n; } });
-  return m;
-})();
-const delFarg = (f: number) => `hsl(${Math.round(110 - 104 * f)} 55% 50%)`;
+// fliken Hälsa (steg 2.5.3, figuren sedan steg 5.3.4.3): kroppen som samma figur som på kartan (folkbild.ts), utan kläder.
+// Bildens vänstra sida är personens högra. En hel del har sin hudfärg; en skadad går mot senap och sedan mörkare rost ju mer
+// skadad den är (delSkada); ett tryck eller musen visar vad som är fel just där. Under kroppen listan över skadorna
+// (skadeLista) och förmågorna som staplar under rubriken Status (FORMAGOR, och gångfarten ur GANGFART)
+const ZONDEL: Record<string, [Kroppsdel, Kroppsdel]> = { huvud: ['huvud', 'huvud'], bal: ['bal', 'bal'], balte: ['bal', 'bal'], armar: ['armH', 'armV'], hand: ['handH', 'handV'], ben: ['benH', 'benV'], fotter: ['fotH', 'fotV'] };
+const FIGMITT = 7; // figurens mitt i punkter (14 breda): till vänster om den är personens högra sida
+const SKADEFARG = { latt: 0.34, svar: 0.67 }; // senap under latt, rost en ton mörkare under svar, och två toner mörkare över
+function skadeFarg(f: number, ton: number) {
+  return f < SKADEFARG.latt ? farg('senap', ton as 0) : farg('rost', Math.max(0, ton - (f < SKADEFARG.svar ? 1 : 2)) as 0);
+}
 function halsaHtml(p: Person) {
   const rader = skadeLista(p, s.now), delar = Object.keys(KROPPSDELAR) as Kroppsdel[];
   const vad = (d: Kroppsdel) => rader.filter(r => r.d === d);
-  const gubbe = delar.map(d => {
-    const r = vad(d), titel = `${KROPPSDELAR[d].namn}: ${r.length ? r.map(x => `${x.namn.split(' i ')[0].toLowerCase()}, ${x.grad}`).join('; ') : 'hel'}`;
-    return `<g class="klick${hjalpOppen(`k-${d}-${p.id}`) ? ' vald' : ''}" data-hjalp="k-${d}-${p.id}" data-hjalp-grupp="k-" fill="${delFarg(delSkada(p, d))}"><title>${esc(titel)}</title>${GUBBE_RUTOR[d]}</g>`;
-  }).join('');
+  const titel = (d: Kroppsdel) => `${KROPPSDELAR[d].namn}: ${vad(d).length ? vad(d).map(x => `${x.namn.split(' i ')[0].toLowerCase()}, ${x.grad}`).join('; ') : 'hel'}`;
+  const q = skapad(s, p), naken = { ...q, klader: { rock: null, skor: false, balte: false }, del: { ...q.del, redskap: null, huvudbonad: null } };
+  const gubbe = figurSvg(naken, 'gubbe', 'Kroppen', {
+    del: (z, x) => ZONDEL[z]?.[x < FIGMITT ? 0 : 1],
+    farg: (d, v) => { const f = delSkada(p, d as Kroppsdel); return f > 0.02 ? skadeFarg(f, v % 4) : FARGER[v]; },
+    attr: d => `class="klick${hjalpOppen(`k-${d}-${p.id}`) ? ' vald' : ''}" data-hjalp="k-${d}-${p.id}" data-hjalp-grupp="k-"`,
+    titel: d => esc(titel(d as Kroppsdel)),
+  });
   const oppen = delar.map(d => hjalpText(`k-${d}-${p.id}`, `<p class="forkl"><b>${esc(KROPPSDELAR[d].namn)}</b>: ${vad(d).length ? vad(d).map(r => esc(`${r.namn.split(' i ')[0]}, ${r.grad}, ${r.gar}`)).join('; ') : 'hel'}</p>`)).join('');
   const blod = p.blod ?? 1, brister = bristerNu(p);
   // bristerna (steg 2.6.2): symbolen, och vad den gör när man håller musen över den
@@ -314,7 +314,7 @@ function halsaHtml(p: Person) {
     `Finns i ${NARING[k].fran}. Under ${Math.round(NARINGBAL.brist * 100)} %: ${NARING[k].brist.namn.toLowerCase()} (${NARING[k].brist.gor.charAt(0).toLowerCase() + NARING[k].brist.gor.slice(1)})`)).join('');
   // vätskan står först under näringen (Björn efter v89): samma värde som törsten i simuleringen, fullt = otörstig
   const vatska = rad(p, 'torst', '💧 Vätska', `${bar(p.torst, p.torst < TORST.torstig ? 'low' : '', trend(p, 'torst', p.torst))}<span>${Math.round(p.torst * 100)} %</span>`, torstRad(p), ' i timmen', 'Att dricka fyller den. Vattnet är olika smutsigt på olika ställen, och i istiden smälter man snö vid elden.');
-  return `<div class="kropp"><svg class="gubbe" viewBox="0 0 16 26" shape-rendering="crispEdges" role="img" aria-label="Kroppen">${gubbe}</svg>${oppen ? `<div class="kroppinfo">${oppen}</div>` : ''}</div>
+  return `<div class="kropp">${gubbe}${oppen ? `<div class="kroppinfo">${oppen}</div>` : ''}</div>
     <h3>Det som är fel</h3>${lista}<h3>Status</h3><dl class="kv">${formagor}${gang}</dl><h3>Näring</h3><dl class="kv">${vatska}${naring}</dl>`;
 }
 // det en egenskap eller färdighet gör: arbetena som går fortare (ACTS) och raderna i STAT_GOR och SKILL_GOR
@@ -495,34 +495,17 @@ function gearHtml(p: Person) {
   };
   const paSig = PLATS_LIST.filter(k => !PLATSER[k].hand).reduce((a, k) => a + (u[k].ting && k !== 'krok' ? viktOf(u[k].ting!.k) : 0), 0);
   const rad = PLATS_LIST.filter(k => !PLATSER[k].hand).map(k => ruta(k)).join('');
-  return `<div class="utrhander"><div class="utrhand">${ruta('hoger', true)}${handKg('hoger')}</div>${utrGubbe(u)}<div class="utrhand">${ruta('vanster', true)}${handKg('vanster')}</div></div>
+  return `<div class="utrhander"><div class="utrhand">${ruta('hoger', true)}${handKg('hoger')}</div>${utrGubbe(p, u)}<div class="utrhand">${ruta('vanster', true)}${handKg('vanster')}</div></div>
     <div class="tekrad utrrad">${rad}</div><p class="small muted utrkg">På sig <b>${kg(paSig)}</b>${bar ? ` · börda <b>${kg(borda * BORDA_KG)}</b>` : ''} · orkar <b>${kg(orkar * BORDA_KG)}</b></p>
     <div class="tekrad">${own.map(t => ting(t, `Äger: ${tingNamn(t).toLowerCase()}, ${Math.round(t.c * 100)} %, väger ${kg(viktOf(t.k))}, ${where(t)}`, 'pa')).join('')}</div>${stockHtml(p)}`;
 }
-// människan i utrustningen: gubben från förslaget (16×26 rutor) med hud och hår, och det hen har på sig ritat på kroppen:
-// yttre lagret som en rock med pälskrage, inre som en tröja, skor, byxor, mössa och bältet. Redskapet i handen syns i handen
-const UGUBBE = [
-  '......kkkk......', '.....kkkkkk.....', '.....kssssk.....', '.....sesses.....', '......SssS......', '.......SS.......',
-  ...Array(8).fill('..sS.ssssSS.sS..'), '.ssS.llllLL.sSs.', '.ss..llllLL..ss.',
-  ...Array(9).fill('.....sS..Ss.....'), '...ssss..ssss...'];
-const UFARG: Record<string, string> = { s: '#d9a878', S: '#b07e56', k: '#4a3018', e: '#2a1c12', l: '#6e5236', L: '#57402a', B: '#b48a5e', b: '#8a6440', d: '#5e4026', w: '#d8c8a8', r: '#c9a86a', R: '#e2c792', q: '#8a6e3e', t: '#5a7a8a', T: '#46626f', m: '#7a5a36' };
-function utrGubbe(u: ReturnType<typeof utrustning>) {
-  const g = UGUBBE.map(r => [...r]), put = (x: number, y: number, k: string) => { if (g[y]?.[x] !== undefined) g[y][x] = k; };
-  if (u.inre.ting) for (let y = 6; y <= 15; y++) for (let x = 5; x <= 10; x++) put(x, y, x >= 9 ? 'T' : 't');
-  if (u.ben.ting) for (let y = 16; y <= 24; y++) for (const x of [5, 6, 9, 10]) put(x, y, x === 6 || x === 9 ? 'L' : 'l');
-  if (u.yttre.ting) {
-    for (let y = 6; y <= 15; y++) { for (let x = 5; x <= 10; x++) put(x, y, x >= 9 ? 'b' : 'B'); put(7, y, y > 7 ? 'd' : 'B'); }
-    for (let y = 6; y <= 13; y++) { put(2, y, 'B'); put(3, y, 'b'); put(12, y, 'B'); put(13, y, 'b'); }
-    for (const x of [2, 3, 12, 13]) put(x, 13, 'w');
-    for (let x = 6; x <= 9; x++) put(x, 6, 'w');
-  }
-  if (u.balte.ting) { for (let x = 5; x <= 10; x++) put(x, 14, x % 2 ? 'r' : 'R'); put(7, 15, 'q'); }
-  if (u.fotter.ting) { for (let x = 3; x <= 6; x++) put(x, 25, x === 6 ? 'b' : 'B'); for (let x = 9; x <= 12; x++) put(x, 25, x === 9 ? 'b' : 'B'); put(5, 24, 'B'); put(10, 24, 'B'); }
-  if (u.huvud.ting) for (let x = 5; x <= 10; x++) { put(x, 0, 'm'); put(x, 1, 'm'); }
-  const rects = g.map((r, y) => r.map((k, x) => k !== '.' ? `<rect x="${x}" y="${y}" width="1" height="1" fill="${UFARG[k]}"/>` : '').join('')).join('');
+// människan i utrustningen (steg 5.3.4.3): samma figur som på kartan (folkbild.ts), med kläderna på, och redskapen i
+// händerna (och i bältet) som små bilder ovanpå, där platserna är
+function utrGubbe(p: Person, u: ReturnType<typeof utrustning>) {
+  const q = skapad(s, p), fig = figurSvg({ ...q, del: { ...q.del, redskap: null } }, '', 'Det hen har på sig');
   // redskapen i händerna (och i bältet) som små bilder ovanpå
   const pa = (k: Plats, x: number, y: number) => u[k].ting && !(k === 'vanster' && u.vanster.ting === u.hoger.ting) ? `<span class="utrpa" style="left:${x}%;top:${y}%">${iconImg(u[k].ting!.halv?.gor ?? u[k].ting!.k, 22)}</span>` : '';
-  return `<div class="utrgubbe"><svg viewBox="0 0 16 26" shape-rendering="crispEdges" role="img" aria-label="Det hen har på sig">${rects}</svg>${pa('hoger', -12, 46)}${pa('vanster', 62, 46)}${pa('krok', 50, 52)}</div>`;
+  return `<div class="utrgubbe">${fig}${pa('hoger', -12, 46)}${pa('vanster', 62, 46)}${pa('krok', 50, 52)}</div>`;
 }
 // det hen äger i byns förråd (egendom.ts): symbolen och hur mycket, namnet när man håller över. Saker utan egen stack
 // (giftig svamp bland den ätliga) syns inte, som i förrådet

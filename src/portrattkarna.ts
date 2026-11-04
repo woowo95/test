@@ -1179,6 +1179,9 @@ export const KARNA: any = (() => {
     }
     const ut = kartUt(p, kt, W, H, spegel, opt);
     ut.hand = hand && (spegel ? [W - 1 - hand[0], hand[1]] : hand); // handen, till det som hålls (animationerna i anim.js)
+    // kroppsdelen under varje punkt (huvud, bal, armar, hand, ben, fotter, balte; null för hår, ögon och redskap), till
+    // spelets panel som färgar de skadade delarna (steg 5.3.4.3). Bara stående och inte liggande
+    if (opt.zoner && !opt.ligga) ut.zon = spegel ? zn.map((_, i) => zn[((i / W) | 0) * W + (W - 1 - (i % W))]) : zn.slice();
     return ut;
   }
   // speglingen, den liggande figuren och täcket, konturen och färgerna
