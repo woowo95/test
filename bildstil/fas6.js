@@ -710,7 +710,6 @@
   return former(W, H, L).filter(r => /[^.]/.test(r));
 }
   const ORRE_L = { k: 'kol0', w: 'ben3', ...ARTER.orre.L, ...(FAGEL_VAR[1].orre.L || {}) };
-  const ORRE_HALL = PA_RAD('Orren från sidan, framifrån och bakifrån.', [[fagelArt('orre', 0, 1), ORRE_L], [orreFram(0), ORRE_L], [orreFram(1), ORRE_L]], 4, 4);
 
   // 6.3.5.8 tornadons tre storlekar, ritade av samma kod (anim.js): tratten så bred som kärnan och dammet ut mot nära-zonen
   const TORNADOSCEN = { text: 'Liten, medel (som förut) och stor, nära varandra i storlek. Runt den stora virvlar damm och många vindstreck som går runt långt ut från tratten. Den rör sig som på kartan.', w: 260, h: 136, stor: true, liten: true, rutor: 96, takt: 230,
@@ -727,7 +726,6 @@
       RADJUR_HALL('B', 'Version 2: ett smalare huvud med stora öron som ett V.'),
       RADJUR_HALL('C', 'Version 3: öronen nästan vågräta, en bredare bringa och den ljusa buken.')]),
     { id: 'f6_fagel_hall', namn: 'Fåglarna från tre håll', typ: 'janej', vad: S + '6.5.1.3: ripan och skogsduvan framifrån och bakifrån, i utseendet du valde (version 2).', versioner: [FAGEL_HALL] },
-    { id: 'f6_orre_hall', namn: 'Orren från tre håll', typ: 'janej', vad: S + '6.5.1.3: orren framifrån och bakifrån, omritad: bredare kropp och större huvud, den stora röda kammen och det vita vingbandet, och lyrans fjädrar som sticker ut på sidorna. Din kommentar förra gången: ”nej till orren ja till de andra två”.', versioner: [ORRE_HALL] },
     { id: 'f6_bjorn_hall', namn: 'Björnen från tre håll', typ: 'janej', vad: S + '6.5.3: din björn framifrån och bakifrån, lika stor som sidobilden och i dina färger, och framifrån med munnen öppen när den anfaller.', versioner: [BJORN_HALL] },
     { id: 'f6_bjornunge_hall', namn: 'Björnungen från tre håll', typ: 'janej', vad: S + '6.5.3.2: björnungen du valde, framifrån och bakifrån.', versioner: [UNGE_HALL] },
     KORT('f6_bjorn_falld', 'Fälld björn', S + '6.5.3: den fällda björnen som ligger på marken innan den styckas, som det fällda rådjuret: på sidan med huvudet på marken och ögat slutet, i din björns färger.', [
