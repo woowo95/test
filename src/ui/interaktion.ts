@@ -100,7 +100,7 @@ export function brandKnapp() { document.querySelector('#testSkicka button[data-b
 function avmarkera() {
   if (ui.selected === undefined && !ärPersonflik(ui.tab)) return;
   ui.selected = undefined; stopFollow();
-  if (ärPersonflik(ui.tab)) ui.tab = 'folk';
+  if (ärPersonflik(ui.tab)) ui.tab = undefined;
   renderPanel(true); renderPorts();
 }
 // lagret (steg 2.10.17): första trycket visar lagerplatsen, och varje nytt tryck på samma ruta visar nästa sak på rutan, en

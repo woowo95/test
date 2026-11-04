@@ -20,7 +20,7 @@ import { $, hjalpKlick } from './hjalp';
 import { piles, s, ui } from './lage';
 import { renderPorts } from './portratt';
 
-// panelen till höger: flikarna och listan över allt byn äger.
+// panelerna: flikarna och listan över allt byn äger.
 // En ny flik: en fil i flikar/ som exporterar en Flik, och en rad i FLIKAR nedan. Knappen skapas av sig själv
 export interface Flik {
   namn: string; // texten på flikknappen
@@ -34,45 +34,65 @@ export type FlikId = keyof typeof FLIKAR;
 const ALLA: Record<FlikId, Flik> = FLIKAR;
 const IDS = Object.keys(FLIKAR) as FlikId[];
 
-// flikknapparna: en för varje flik som inte visas under en annan
+// panelerna ovanpå kartan (steg 5.3.1.1): personens panel till vänster visar personen och det man tryckt på (elden, lagret,
+// högen, huset, stationen, sjön, fältet, saken, djuret, filten), den öppna flikens panel till höger, och flikknapparna står
+// i en kolumn längst till höger. Ett tryck på den öppna flikens knapp stänger den, och krysset stänger en panel
 const nav = document.querySelector<HTMLElement>('.tabs')!;
-nav.innerHTML = IDS.filter(id => !ALLA[id].knapp).map(id => `<button type="button" role="tab" data-tab="${id}" aria-selected="false">${ALLA[id].namn}</button>`).join('');
+nav.innerHTML = IDS.filter(id => !ALLA[id].knapp && id !== 'person').map(id => `<button type="button" role="tab" data-tab="${id}" aria-selected="false">${ALLA[id].namn}</button>`).join('');
 
-export function visa(id: FlikId) { ui.tab = id; renderPanel(true); }
-// flikarna som visas under personknappen (personen, elden, lagret, högen, huset, stationen, sjön, fältet, saken, djuret): ett tryck på tom mark stänger dem
-export const ärPersonflik = (id: FlikId) => (ALLA[id].knapp ?? id) === 'person';
+// flikarna som visas i personens panel (personen, elden, lagret, högen, huset, stationen, sjön, fältet, saken, djuret)
+export const ärPersonflik = (id: FlikId | undefined) => !!id && (ALLA[id].knapp ?? id) === 'person';
+export function visa(id: FlikId) { if (ärPersonflik(id)) ui.tab = id; else ui.hoger = id; renderPanel(true); }
 export function selectPerson(id: number) { ui.selected = id; ui.tab = 'person'; renderPanel(true); renderPorts(); }
+function stang(sida: 'v' | 'h') {
+  if (sida === 'h') ui.hoger = undefined;
+  else { ui.tab = undefined; ui.selected = undefined; }
+  renderPanel(true); renderPorts();
+}
 
-// det som senast skrevs i panelen: är det samma skrivs det inte om (markering, musen över och fokus står kvar)
-let panelHtml = '';
+// en panel och det som senast skrevs i den: är det samma skrivs det inte om (markering, musen över och fokus står kvar)
+interface Sida { el: HTMLElement; body: HTMLElement; html: string; musOver: boolean }
+const SIDOR: Record<'v' | 'h', Sida> = {
+  v: { el: $('vPanel'), body: $('vBody'), html: '', musOver: false },
+  h: { el: $('hPanel'), body: $('panelBody'), html: '', musOver: false },
+};
+function skriv(sd: Sida, id: FlikId | undefined, force: boolean) {
+  sd.el.hidden = !id;
+  if (!id) { sd.html = ''; return; }
+  if (!force && (ui.busy || performance.now() - ui.lastPointer < 800 || sd.musOver)) return;
+  const html = ALLA[id].html();
+  if (!force && html === sd.html) return;
+  sd.html = html; sd.body.innerHTML = html;
+}
 export function renderPanel(force = false) {
-  const cur = ALLA[ui.tab], under = cur.knapp ?? ui.tab;
+  if (ui.hoger && (ALLA[ui.hoger].syns?.() ?? true) === false) ui.hoger = undefined;
   for (const b of nav.querySelectorAll<HTMLButtonElement>('button')) {
     const id = b.dataset.tab as FlikId;
-    b.setAttribute('aria-selected', String(id === under));
-    b.textContent = id === under ? cur.namn : ALLA[id].namn;
+    b.setAttribute('aria-selected', String(id === ui.hoger));
     b.hidden = !(ALLA[id].syns?.() ?? true);
   }
+  document.body.classList.toggle('vOppen', !!ui.tab);
   renderOwned();
-  if (!force && (ui.busy || performance.now() - ui.lastPointer < 800 || musOver)) return;
-  const html = cur.html();
-  if (!force && html === panelHtml) return;
-  panelHtml = html; $('panelBody').innerHTML = html;
+  skriv(SIDOR.v, ui.tab, force);
+  skriv(SIDOR.h, ui.hoger, force);
 }
-// musen står över något i panelen som förklaras när man håller musen över det: då skrivs panelen inte om, så att
+// musen står över något i en panel som förklaras när man håller musen över det: då skrivs panelen inte om, så att
 // förklaringen och markeringen står kvar (steg 2.3.7)
-let musOver = false;
-$('panelBody').addEventListener('pointerover', e => { musOver = !!(e.target as Element).closest('[title], [data-i], title'); });
-$('panelBody').addEventListener('pointerleave', () => { musOver = false; });
+for (const sd of Object.values(SIDOR)) {
+  sd.body.addEventListener('pointerover', e => { sd.musOver = !!(e.target as Element).closest('[title], [data-i], title'); });
+  sd.body.addEventListener('pointerleave', () => { sd.musOver = false; });
+}
 document.addEventListener('pointerdown', () => { ui.lastPointer = performance.now(); }, true);
 document.addEventListener('click', e => {
   const el = e.target as HTMLElement;
+  const x = el.closest<HTMLElement>('[data-stang]');
+  if (x) { stang(x.dataset.stang as 'v' | 'h'); return; }
   const b = el.closest<HTMLElement>('[data-id]');
   if (b) { selectPerson(Number(b.dataset.id)); return; }
   if (hjalpKlick(el)) { renderPanel(true); return; }
   for (const id of IDS) if (ALLA[id].klick?.(el)) { renderPanel(true); return; }
   const tb = el.closest<HTMLElement>('.tabs button');
-  if (tb) visa(tb.dataset.tab as FlikId);
+  if (tb) { const id = tb.dataset.tab as FlikId; if (ui.hoger === id) stang('h'); else visa(id); }
 });
 
 // listan till vänster över allt i förrådet, i mappar som kan fällas ihop: en sak per rad, symbolen och antalet, namnet när musen är över

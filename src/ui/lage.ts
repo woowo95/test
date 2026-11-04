@@ -12,7 +12,8 @@ export function setByn(n: State) {
   for (const f of vidNyBy) f();
 }
 export const ui = {
-  tab: 'folk' as FlikId,
+  tab: undefined as FlikId | undefined, // fliken i personens panel till vänster (personen, elden, saken …), steg 5.3.1.1
+  hoger: 'folk' as FlikId | undefined, // den öppna flikens panel till höger (Folket, Teknik, Seder …)
   selected: undefined as number | undefined, // personen som visas i panelen
   personDel: 'pres', // underfliken i personrutan (DELAR i flikar/person.ts)
   hovered: undefined as number | undefined, // personen under musen

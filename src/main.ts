@@ -83,7 +83,7 @@ async function laddaIn(by: State) {
 // byn i molnet gick att läsa först senare och är nyare än den som spelas: den tar över
 function nyareIMolnet(by: State) {
   dropTest();
-  ui.selected = undefined; ui.tab = 'folk';
+  ui.selected = undefined; ui.tab = undefined;
   laddaIn(by).then(() => { renderClock(); renderPanel(true); });
 }
 // testläget byter till en kopia av byn och tillbaka: det som är valt i panelen är kvar (finns det inte visar fliken det)
@@ -136,12 +136,14 @@ function testKnappar() {
   if (!ui.testMode || !s) return;
   for (const b of document.querySelectorAll<HTMLButtonElement>('#testSkicka button')) b.classList.toggle('ej', !!(b.dataset.flock ? rovarHinder(s) : b.dataset.handlare ? handlarHinder(s) : undefined));
 }
+// inställningarna (testläget och ny by) öppnas med kugghjulet längst ner bland flikknapparna (steg 5.3.1.1)
+$('installKnapp').addEventListener('click', () => { const r = $('installningar'); r.hidden = !r.hidden; $('installKnapp').setAttribute('aria-expanded', String(!r.hidden)); });
 $('newVillage').addEventListener('click', () => { $('confirmNew').hidden = false; });
 $('cancelNew').addEventListener('click', () => { $('confirmNew').hidden = true; });
 $('okNew').addEventListener('click', () => {
   $('confirmNew').hidden = true;
   dropTest(); nyByVald();
-  ui.selected = undefined; ui.tab = 'folk';
+  ui.selected = undefined; ui.tab = undefined;
   nyBy(); renderPanel(true);
 });
 
