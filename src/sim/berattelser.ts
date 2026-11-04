@@ -1477,6 +1477,66 @@ const MDEF = {
     '{Namn} såg sig omkring, men ingen satte sig för att lyssna.',
     'Elden sprakade, men ingen kom för att höra {namn}.',
   ],
+  // Berättelsen om en match (steg 5.4.8.2, matchber.ts): början efter sporten ({sport} = sporten, {spelare} = namnen, {n} = hur många)
+  m_start: [
+    { t: '{Spelare} brottades på lekplatsen.', om: f => f.sport === 'brottning' },
+    { t: 'Det blev brottning på lekplatsen, och {spelare} tog tag i varandra.', om: f => f.sport === 'brottning' },
+    { t: '{Spelare} drog i var sin ände av repet.', om: f => f.sport === 'dragkamp' },
+    { t: 'Det blev dragkamp på lekplatsen: {n} drog i repet.', om: f => f.sport === 'dragkamp' },
+    { t: '{Spelare} kastade mot målet i tur och ordning.', om: f => f.sport === 'kast' },
+    { t: 'Det blev kast mot mål på lekplatsen, och {n} ställde upp.', om: f => f.sport === 'kast' },
+    { t: '{Spelare} byggde vallar av snö och kastade snöbollar på varandra.', om: f => f.sport === 'snoboll' },
+    { t: 'Det blev snöbollskrig på lekplatsen, med {n} som kastade.', om: f => f.sport === 'snoboll' },
+    { t: '{Spelare} spelade boll på lekplatsen.', om: f => f.sport === 'bollspel' },
+    { t: 'Det blev bollspel, och {n} sprang efter bollen.', om: f => f.sport === 'bollspel' },
+  ],
+  // hur matchen gick: jämnt, överlägset eller däremellan, och hur länge den höll på
+  m_lopp: [
+    { t: 'Det var jämnt länge, och ingen kunde säga vem som skulle vinna.', om: f => f.jamnt === true },
+    { t: 'Det böljade fram och tillbaka ända till slutet.', om: f => f.jamnt === true },
+    { t: 'Det var så jämnt att det avgjordes på det allra sista.', om: f => f.jamnt === true },
+    { t: 'Det höll på länge, och alla var trötta efteråt.', om: f => f.jamnt === true && f.lang === true },
+    { t: 'Det var aldrig jämnt.', om: f => f.overlagset === true },
+    { t: 'Det var avgjort långt innan det var slut.', om: f => f.overlagset === true },
+    { t: 'Det gick fort, och de andra hann knappt börja.', om: f => f.overlagset === true && f.kort === true },
+    { t: 'Det var en hård match.', om: f => f.jamnt !== true && f.overlagset !== true },
+    { t: 'Det gick fram och tillbaka en stund.', om: f => f.jamnt !== true && f.overlagset !== true },
+    { t: 'Det höll på en god stund.', om: f => f.jamnt !== true && f.overlagset !== true && f.kort !== true },
+  ],
+  // vem som vann: {vinnare}, och {bast} = den som var skickligast. skrall = den svagare vann
+  m_vinst: [
+    { t: 'Till slut vann {vinnare}, fast {bast} var skickligare.', om: f => f.skrall === true },
+    { t: 'Ingen hade trott det, men {vinnare} vann över {bast}.', om: f => f.skrall === true },
+    { t: '{Vinnare} vann oväntat, och {bast} fick se sig slagen.', om: f => f.skrall === true },
+    { t: 'Det var {vinnare} som vann, som alla hade trott.', om: f => f.skrall !== true && f.favorit === true },
+    { t: '{Vinnare} var bäst på planen och vann.', om: f => f.skrall !== true && f.favorit === true },
+    { t: '{Vinnare} vann, ingen var förvånad.', om: f => f.skrall !== true && f.favorit === true },
+    { t: 'Till slut vann {vinnare}.', om: f => f.skrall !== true },
+    { t: 'Det var {vinnare} som vann.', om: f => f.skrall !== true },
+    { t: '{Vinnare} vann och såg nöjd ut.', om: f => f.skrall !== true },
+  ],
+  // efteråt
+  m_slut: [
+    { t: 'Efteråt var alla på gott humör.', om: f => f.glad === true },
+    { t: 'De som spelat skrattade länge åt det efteråt.', om: f => f.glad === true },
+    { t: 'De gick därifrån glada och svettiga.', om: f => f.glad === true },
+    { t: 'Det pratades om matchen resten av dagen.', om: f => f.glad === true },
+    { t: 'Efteråt satte de sig och vilade.', om: f => f.lang === true },
+    { t: 'Sedan gick var och en tillbaka till sitt.', om: f => f.glad !== true },
+    { t: 'Sedan gick de tillbaka till arbetet.', om: f => f.glad !== true },
+    { t: 'Det var en dag som andra.', om: f => f.glad !== true },
+  ],
+  // matchen som inte blev av: {sport} = sporten, {spelare} = de som kom
+  m_installd: [
+    { t: '{Spelare} väntade på lekplatsen, men det kom för få för {sportnamn}.', om: f => !!f.spelare },
+    { t: '{Spelare} ville ha {sportnamn}, men ingen annan ville vara med.', om: f => !!f.spelare },
+    { t: '{Spelare} stod på lekplatsen en god stund, men det kom inte fler.', om: f => !!f.spelare },
+    { t: '{Spelare} gav upp till slut: det kom för få för {sportnamn}.', om: f => !!f.spelare },
+    'Det blev ingen {sportnamn}: det kom för få.',
+    'Det skulle ha blivit {sportnamn}, men det kom för få.',
+    'Ingen ville vara med, så det blev ingen {sportnamn}.',
+    'Lekplatsen stod tom. Det blev ingen {sportnamn}.',
+  ],
 } satisfies Record<string, Variant[]>;
 export type MallId = keyof typeof MDEF;
 export const BERATTELSER: Record<MallId, Variant[]> = MDEF;
