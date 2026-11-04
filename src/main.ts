@@ -20,6 +20,7 @@ import { catchUp, loadSaves, nyByVald, saveDb, saveLocal } from './ui/spara';
 import './ui/interaktion';
 import './ui/ram';
 import './ui/symboler'; // emojierna blir pixelsymboler (steg 5.3.2.1)
+import './ui/trycktips'; // förklaringarna kommer fram när man trycker (steg 5.3.7)
 import { drawArena, oppnaArena } from './ui/arena';
 import { drawTona } from './ui/tona';
 
