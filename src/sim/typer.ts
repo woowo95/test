@@ -246,7 +246,12 @@ export interface LogEntry { t: number; text: string; kind: 'birth' | 'death' | '
 // byteKlart) och gav ag, b gav bg; p = priset i silver styck när bytet gjordes. fa/fb = var a:s och b:s filt låg (där sakerna
 // syns gå från den ena filten till den andra), saknas när bytet gjordes från hand till hand
 export interface ByteVara { k: string; n: number; p: number }
-export interface ByteMinne { nr: number; t: number; a: number; an: string; b: number; bn: string; ag: ByteVara[]; bg: ByteVara[]; fa?: { x: number; y: number }; fb?: { x: number; y: number } }
+// forsok = buden i en affär med handlaren (steg 5.4.6.1), avbruten = de blev inte överens (ag och bg är då tomma), rel =
+// hur mycket handlaren gillade bybon före och efter affären (−100 till 100)
+export interface ByteMinne { nr: number; t: number; a: number; an: string; b: number; bn: string; ag: ByteVara[]; bg: ByteVara[]; fa?: { x: number; y: number }; fb?: { x: number; y: number }; forsok?: ByteForsok[]; avbruten?: true; rel?: [number, number] }
+// ett bud i förhandlingen (steg 5.4.6.1): det kunden ville ha, det hen bjöd, vad handlaren krävde och vad budet var värt för
+// hen (i silver), och om hen sa ja
+export interface ByteForsok { vill: { k: string; n: number }[]; bud: { k: string; n: number }[]; krav: number; bjod: number; ja?: true }
 
 export interface State {
   v: number; // numret på den senaste uppgraderingen av sparfilen (UPPGRADERINGAR i varld.ts)

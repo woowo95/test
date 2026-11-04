@@ -122,7 +122,7 @@ function gastPres(g: Gast) {
 function bytenHtml(b: ByteMinne[] | undefined) {
   if (!b?.length) return '';
   const sida = (namn: string, v: ByteMinne['ag']) => `${esc(namn)} ${v.map(w => `<span title="${esc(`${w.n} ${sakNamn(w.k).toLowerCase()}`)}">${iconImg(w.k, 12)}${w.n > 1 ? w.n : ''}</span>`).join(' ') || '–'}`;
-  return `<h3>Byten</h3><ul class="fame">${b.slice().reverse().map(m => `<li><span class="muted">${esc(clockTxt(m.t))}</span> ${sida(m.an, m.ag)} ⇄ ${sida(m.bn, m.bg)}${byteKnapp(m.nr)}</li>`).join('')}</ul>`;
+  return `<h3>Byten</h3><ul class="fame">${b.slice().reverse().map(m => `<li><span class="muted">${esc(clockTxt(m.t))}</span> ${m.avbruten ? `${esc(m.an)} {sym_nej} ${esc(m.bn)}` : `${sida(m.an, m.ag)} ⇄ ${sida(m.bn, m.bg)}`}${byteKnapp(m.nr)}</li>`).join('')}</ul>`;
 }
 function gastEgen(g: Gast) {
   const rad = (namn: string, v: number) => `<dt>${namn}</dt><dd>${bar(v / 20)}<span>${visa(v)}</span></dd>`;
