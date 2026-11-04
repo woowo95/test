@@ -195,7 +195,7 @@ Allt i `src/test/` körs med tsx i Node och ingår inte i spelet. Filer som hete
 | `en.ts` | En by med `korBy`: nyckeltal och vakter som JSON (för test, balans, jamfor och snabbkoll) |
 | `test.ts` | `npm test` och `npm run facit`: tre byar i 90 dygn mot `test/facit.json`. Facit sparas inte om vakterna larmar |
 | `samma.ts` | `npm run samma`: hela tillståndet för fem byar som hash mot `test/samma.json` (by 139 och 121 får alla motgångar inom tiden). En krasch sparas inte |
-| `scenario.ts` | Körningen av scenarierna. Utan namn körs alla samtidigt, vart och ett i en egen process. Ett scenario med `env` (kalender och bostad: svensk tid) får den miljön också när det körs ensamt |
+| `scenario.ts` | Körningen av scenarierna. Utan namn körs alla samtidigt: de långa och de med `env` i en egen process var, de korta i grupper om sex per process (`--grupp`), eftersom uppstarten tar mer tid än de flesta scenarier (steg 5.5.3). Ett scenario med `env` (kalender och bostad: svensk tid) får den miljön också när det körs ensamt |
 | `scenarier/hjalp.ts` | Registret `SCENARIER` (ett scenario per system) och hjälparna som flera grupper använder (`kor`, `klockan`, `tandEld`, `tomtForrad`, `treVuxna`, `byggare`, `bastaJaktruta`, `rikBy`, `valjer`, `nyInvanare`). En hjälpare som bara en grupp använder står i gruppens fil |
 | `scenarier/*.ts` | Scenarierna, en fil per grupp: `grund` (gläntan, yxan, vintern, kunskap, kalender), `sparning`, `redskap`, `agande`, `behov`, `natur` (djur, sjön, värmekartor), `byggnader` (och lager), `folk` (befolkning, faror, seder, samtal, liv) och `kontroll` (gränssnittet, ikoner, vakter, det som aldrig händer). En ny grupp blir en ny fil och en rad `import` överst i `scenario.ts` |
 | `koll.ts`, `snabbkoll.ts` | Det stora testet och den snabba kollen: kör de andra skripten samtidigt och skriver bara det som behövs |
@@ -213,7 +213,7 @@ Allt i `src/test/` körs med tsx i Node och ingår inte i spelet. Filer som hete
 
 | Kommando | Tid | När |
 |---|---|---|
-| `npm run snabbkoll -- [scenarier]` | ca 40 s | **Efter varje steg.** Typkontroll, scenarierna utom de långa (`lang`) och de som nämns, vakterna i fyra byar i 12 dygn |
+| `npm run snabbkoll -- [scenarier]` | ca 2,5 min | **Efter varje steg.** Typkontroll, scenarierna utom de långa (`lang`) och de som nämns, vakterna i fyra byar i 12 dygn |
 | `npm run riktad -- [--mot ref]` | några s – 3 min | Efter en liten ändring: typkontroll och bara scenarierna som kör de ändrade funktionerna (och vakterna om simuleringen ändrats). Kartan byggs om med `npm run riktad -- --karta` (ca 12 min datortid) när många funktioner tillkommit |
 | `npm run koll` | ca 3 min | **Det stora testet**, efter sista steget i ett system (se CLAUDE.md). Typkontroll, testbyarna mot facit, alla scenarier och samma-kollen, med kort utskrift |
 | `npm run samma` | ca 20 s | Vid ombyggnad som inte ska ändra något i spelet. Säger om byarna utvecklas exakt som förut |
