@@ -16,6 +16,7 @@ export const ui = {
   hoger: 'folk' as FlikId | undefined, // den öppna flikens panel till höger (Byn, Teknik, Krönika, Folket …)
   selected: undefined as number | undefined, // personen som visas i panelen
   bynDel: 'seder', // delen i fliken Byn (DELAR i flikar/byn.ts)
+  personFall: {} as Record<string, boolean>, // delarna i personens flikar som man fällt ut eller ihop (steg 5.3.4.2)
   personDel: 'om', // fliken i personrutan (FLIKAR i flikar/person.ts), eller en del i den (DELAR)
   hovered: undefined as number | undefined, // personen under musen
   eld: undefined as number | undefined, // lägerelden som eldens flik visar: undefined = den första, annars en till (Fire.id, steg 4.5.6.8)

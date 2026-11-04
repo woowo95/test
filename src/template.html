@@ -317,6 +317,9 @@ button.rw { border: none; background: none; padding: 0; font: inherit; color: in
 .pdelar button { flex: 1; min-width: 0; background: none; border: 0; border-bottom: 2px solid transparent; font-size: 18px; padding: 6px 0 4px; cursor: pointer; opacity: 0.55; }
 .pdelar button[aria-selected="true"] { border-bottom-color: var(--accent); opacity: 1; }
 .pdelar button[aria-pressed="true"] { border-bottom-color: var(--accent); opacity: 1; } .sortrad .pil { font-size: 9px; margin-left: 2px; vertical-align: top; }
+.delrub { display: flex; align-items: center; gap: 6px; cursor: pointer; border-bottom: 1px solid var(--line); padding-bottom: 3px; } /* en del i personens flik (steg 5.3.4.2) */
+.delrub .dtk { font-size: 14px; } .delrub .kort { margin-left: auto; font-weight: normal; text-transform: none; letter-spacing: 0; color: var(--muted); font-size: 11px; } .delrub .pil { font-size: 10px; color: var(--muted); } .delrub:not(:has(.kort)) .pil { margin-left: auto; }
+.delinne { margin-bottom: 6px; } .delinne h3 { font-size: 0.85em; opacity: 0.8; }
 .pdelar button:disabled { opacity: 0.2; cursor: default; } /* en del i Byn som inte finns än (steg 5.3.3.2) */
 .tro { display: inline-block; border: 1px solid var(--line); border-radius: 10px; padding: 0 7px; margin: 0 3px 3px 0; font-size: 13px; cursor: help; }
 .tid { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
