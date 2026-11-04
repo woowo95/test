@@ -1,0 +1,27 @@
+{
+ "id": "sym_lat_resa",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 3. Den har tydligast silhuett i liten storlek: fyra raka fingrar, en tumme och en ärmkant i skiffer. Ärmkanten gör att man genast läser den som en uppsträckt öppen hand (🖐️), och den ljusa bentonen (q/p) syns både på mörk och ljus bakgrund. Konturen i jord0 går runt hela handen och skiffer0 runt ärmen, alltså materialens mörkaste toner som hos svärden i förebilden. Ljuset kommer uppifrån vänster: q och p på vänster sida och jord3 nere till höger. Glansen är en enda w-punkt på långfingrets topp. Ändring: tummen var bara två punkter hög och såg ut som en knöl. Nu börjar den en rad högre, på rad 5 i stället för rad 6, så att den står ut som en egen tumme och handen läses tydligare som öppen. Resten behöll jag eftersom formen redan var ren och fyllde rutan, 16 × 16.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".......EE.......",
+  "....EEEwqEEE....",
+  "...EqpEqpEqpE...",
+  "...EqpEqpEqpEEE.",
+  "...EqpEqpEqpEqpE",
+  ".EEEqpEqpEqpEqHE",
+  "EqpEqpEqpEqpEqHE",
+  "EqpEqpHqpHqpHqHE",
+  "EqpHqqpqpqpppHHE",
+  ".EqpHqpqppppppHE",
+  "..EqpHqpppppHpHE",
+  "...EppqpppppHHHE",
+  "....EppppppHHHE.",
+  ".....EqppppHHE..",
+  "....QSTSTSSRRQ..",
+  "....QQQQQQQQQQ.."
+ ],
+ "pal": {"E":"#3f2415","H":"#987e62","Q":"#233035","R":"#3e5156","S":"#61767a","T":"#8a9c9e","p":"#a0947d","q":"#bdb39b","w":"#dad0bb"}
+}

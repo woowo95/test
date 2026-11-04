@@ -1,0 +1,27 @@
+{
+ "id": "sym_brandslackare",
+ "ritad": 3,
+ "av": "API:t, vald av Claude",
+ "om": "API:t ritade tre versioner efter Björns kommentar; Claude valde version 1 (valet i API:t hann inte köras).",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".......QQ.......",
+  "......QTSQ......",
+  "......QTSQ......",
+  ".....QTSSRQ.....",
+  ".....QTSSRQ.....",
+  "....QTTSSSRQ....",
+  "....QTSSSSRQ....",
+  "...QTTSSSSSRQ...",
+  ".r.QTSSSSSSRQ.r.",
+  "rurQTSSSSSRRQrtr",
+  "rLtrQSSSSRRQrtsr",
+  "rtLKtQSSRRQtKJsr",
+  "rtLKKtQQQQtKKJsr",
+  "rtKLKKKKKKKKJJsr",
+  ".rtKKKJJJJJJtsr.",
+  "..rrrrrrrrrrrr.."
+ ],
+ "pal": {"J":"#906f0f","K":"#b2921b","L":"#d8b25f","Q":"#233035","R":"#3e5156","S":"#61767a","T":"#8a9c9e","r":"#521100","s":"#742a01","t":"#a14808","u":"#bd753e"}
+}

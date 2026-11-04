@@ -1,0 +1,40 @@
+{
+ "id": "sym_baddning",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Det rostfärgade huvudet syns tydligt mot den dova olivgröna filten. Därför läses figuren i sängen på en blick, även i liten storlek, och den mättade tonen hamnar där man ska titta, som i förebilden. I version 2 och 3 är filten i rost nästan lika stark som huvudet, så huvud och filt flyter ihop och sängen läses sämre. Bilden är 16 punkter bred och 15 hög, har en mörk jord0-kontur runt trästommen, oliv0 runt filten och få, stora former, med ljuset uppe till vänster. Jag ändrade inget, eftersom punkterna redan stämmer med reglerna.",
+ "w": 16,
+ "h": 15,
+ "rader": [
+  ".EE.............",
+  "EHGE............",
+  "EHFE.EEEE.......",
+  "EHFEEHHuuE......",
+  "EHFEEGuuuE...EEE",
+  "EHFEqGuusEMMMEGE",
+  "EHFEqpEEEMPPOEGE",
+  "EHFEqppMPPOPOEFE",
+  "EHFEoopMOOPONEFE",
+  "EHFEoooMMMMMMEFE",
+  "EHHGHGGHGGGFGFFE",
+  "EGFFGFFGFFFFFFFE",
+  "EFEEEEEEEEEEEEFE",
+  "EFE..........EFE",
+  "EEE..........EEE"
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "M": "#353204",
+  "N": "#4b4f00",
+  "O": "#647025",
+  "P": "#898b4c",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "s": "#742a01",
+  "u": "#bd753e"
+ }
+}

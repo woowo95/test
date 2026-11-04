@@ -1,0 +1,17 @@
+{
+ "id": "rep",
+ "ritad": 6,
+ "av": "Claude",
+ "om": "samma hoprullade rep, omfärgat från senap till brunt och benvitt bast",
+ "w": 11,
+ "h": 6,
+ "rader": [
+  "..GGGGGGG..",
+  ".GpqpqpqpG.",
+  "GpHGGGGGHpG",
+  "GqHG...GHqG",
+  ".GpqpqpqpGp",
+  "..GGGGGGG.q"
+ ],
+ "pal": {"G":"#7d5b40","p":"#a0947d","q":"#bdb39b","H":"#987e62"}
+}

@@ -1,0 +1,17 @@
+{
+ "id": "arr-5",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 2. Den följer förebilden bäst: en tunn diagonal linje i den ljusaste hudtonen (d) och bara en enstaka mörkare punkt (b) under som skugga. Det stämmer med beskrivningen om en ljus upphöjd linje med en mörk skugga under. Kontrasten blir ändå låg, så ärret syns men tar inte över hakan. Version 1 bygger mest på c och b, vilket ger en tydligare och hårdare linje som blir för stark på barnet. Version 3 saknar helt den mörka skuggan och blir därför bara en ljus fläck. Ändring: jag tog bort sista raden (en ensam c-punkt längst ner till höger). Den förlängde ärret utan att tillföra något och kunde se ut som en ensam prick. Nu är ärret kortare och mer subtilt, vilket följer Björns kommentar om att det ska vara mindre och svagare, särskilt på barnet. Delen ligger inom rutan på hakan under munnen.",
+ "bilder": {
+  "standard": {
+   "x": -2,
+   "y": 14,
+   "rader": [
+    "dd...",
+    "cbdd.",
+    "..ccd"
+   ]
+  }
+ }
+}

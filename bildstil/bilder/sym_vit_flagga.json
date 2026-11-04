@@ -1,0 +1,38 @@
+{
+ "id": "sym_vit_flagga",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2 och ritade om ingenting. Den fyller rutan bäst: 16 punkter hög och 16 bred, med en stor vajande duk som läses som vit flagga redan i liten storlek. Duken har kontur i sitt eget mörkaste ben (ben0), stången har kontur i jord0, och ljuset faller uppifrån vänster: ljusast (w) uppe till vänster och mörkare (p) nere till höger. Knoppen i senap knyter an till de gula fästena på förebildens svärd. Version 1 har kontur i kol3 i stället för ben0, och duken är låg och kantig. Version 3 har konturen i kol0 och en liten, spetsig duk som läses som en vimpel. Inga rättelser behövdes: storlek, palett och konturer stämmer redan.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".II.............",
+  "IKJI............",
+  ".EHEooooo.......",
+  ".EHEwwqwwoo..ooo",
+  ".EHEwqwwqqpoowqo",
+  ".EGEqwqwqppqwqpo",
+  ".EHEwqwqqpqwqqpo",
+  ".EGEqwqqpppqqpqo",
+  ".EHEqqwqqppqqqpo",
+  ".EGEqqqpqpqqpppo",
+  ".EHEqpqppppqpppo",
+  ".EGEooooopqppppo",
+  ".EHE.....ooppooo",
+  ".EGE.......oo...",
+  ".EHE............",
+  ".EEE............"
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

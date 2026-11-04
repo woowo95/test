@@ -1,0 +1,23 @@
+{
+ "kommando": "rita",
+ "args": [
+  "har-25"
+ ],
+ "modell": "claude-opus-5-5",
+ "insats": "high",
+ "versioner": 3,
+ "uppskattat": {
+  "lag": 0.31,
+  "hog": 0.48
+ },
+ "dollar": 0.597,
+ "tokens": {
+  "in": 15093,
+  "ut": 55842,
+  "cacheLas": 3298,
+  "cacheSkriv": 3321
+ },
+ "rapport": [
+  "har-25: ritad, version 2 vald (2 av 3 versioner gick igenom koden): Valde version 2. Där syns flätorna vid tinningarna tydligt som flätade band i ett jämnt fyrradsmönster, och det långa håret faller rakt ner med strån i samma storlek som i förebilden. Ljuset kommer från vänster (h/g till vänster, e/f till höger), som i förebilden. Version 3 ser mer krusig och lockig ut på sidorna än flätad, och dess bakhår är platt med ett kantigt avslut. Delen är symmetrisk kring mittlinjen (x -22 till 21) och håller sig inom rutan. Inga ändringar behövdes: bara tecknen efgh används, och det finns inga glansfläckar."
+ ]
+}

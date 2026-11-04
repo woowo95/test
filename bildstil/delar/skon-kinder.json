@@ -1,0 +1,35 @@
+{
+ "id": "skon-kinder",
+ "ritad": 5,
+ "av": "Claude",
+ "om": "Två enkla, fyllda cirklar i rost3, två punkter närmare näsan än förra gången. Paletten har ingen rosa ton; rost3 är den närmaste och drar mot orange.",
+ "bilder": {
+  "standard": {
+   "x": -12,
+   "y": 1,
+   "rader": [
+    "........................",
+    "...uuu...........uuu....",
+    "..uuuuu.........uuuuu...",
+    "..uuuuu.........uuuuu...",
+    "...uuu...........uuu...."
+   ]
+  }
+ },
+ "forra": {
+  "ritad": 4,
+  "bilder": {
+   "standard": {
+    "x": -12,
+    "y": 1,
+    "rader": [
+     "........................",
+     ".uuu...............uuu..",
+     "uuuuu.............uuuuu.",
+     "uuuuu.............uuuuu.",
+     ".uuu...............uuu.."
+    ]
+   }
+  }
+ }
+}

@@ -1,0 +1,35 @@
+{
+ "id": "sym_gran",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den är 16 punkter bred och symmetrisk kring mitten och stammen ligger mitt under kronan. Version 2 är 15 bred och har stammen förskjuten. Version 1 har en bred stamfot och en plottrigare kontur. Version 3 har tre tydliga våningar med inskärningar i barr0, samma slags kontur som förebildens tydliga silhuett. Ljuset faller rätt: barr3 och barr2 till vänster, barr1 till höger. Stammen i jord är ljusare till vänster och har en kontur i jord0, så granen läses som 🌲 även i liten storlek. Jag ändrade bara rad 6 och 9. Där var högersidan slät barr1, och jag lade in några barr2 som korn så att ytan inte blir platt. Det blev inga mörka fläckar och inga nya toner.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".......UU.......",
+  "......UXWU......",
+  ".....UXWWVU.....",
+  "....UXWWVVVU....",
+  "...UUUXWVVUUU...",
+  "....UXWWVVVU....",
+  "...UXWXWVVWVU...",
+  "..UXWXWWVVVVVU..",
+  ".UUUXWWWVVVVUUU.",
+  "...UXWXWVWVVU...",
+  "..UXWXWWVVVVVU..",
+  ".UXWWXWWVWVVVVU.",
+  "UXWXWWWVVWVVVVVU",
+  ".UUUUUEGFEUUUUU.",
+  "......EGFE......",
+  "......EEEE......"
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "U": "#21290d",
+  "V": "#21310e",
+  "W": "#324726",
+  "X": "#505e3e"
+ }
+}

@@ -1,0 +1,21 @@
+{
+ "id": "sym_handslag",
+ "ritad": 3,
+ "av": "Claude",
+ "om": "Ritad av Claude: två händer i olika hudton som hälsar, med ärmar i olika färg, så att man ser att det är två händer.",
+ "w": 16,
+ "h": 10,
+ "rader": [
+  "................",
+  "..........EEE...",
+  ".....EEEEEHHGE..",
+  "rrrEEqqqqqEHGEQQ",
+  "tusEqwqqqqqEEQRT",
+  "tssEqqqEqEqEHGRS",
+  "tssEqqqEqEqEGGRS",
+  "tssEpqqEqEqEGFRS",
+  "rrrEEpqqpqpEFFQQ",
+  "....EEEEEEEEEEE."
+ ],
+ "pal": {"E":"#3f2415","F":"#5e3c24","G":"#7d5b40","H":"#987e62","Q":"#233035","R":"#3e5156","S":"#61767a","T":"#8a9c9e","p":"#a0947d","q":"#bdb39b","r":"#521100","s":"#742a01","t":"#a14808","u":"#bd753e","w":"#dad0bb"}
+}

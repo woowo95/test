@@ -1,0 +1,22 @@
+{
+ "id": "torrfisk",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den liknar dagens bild mest: den har en ljus glanspunkt (w), som motsvarar #d8c098, och bruna jordtoner (F, G, H) som motsvarar #583820, #7a5030 och #a07048. Inslaget av ben0 (o) ger den gråbruna ton som beskrivningen begär och skiljer torrfisken från det rostigare fiskköttet i förebilden. Formen är en platt fisk med kluven stjärt, och den läses tydligt i 10 × 3 punkter. Ljuset ligger uppe till vänster och kanten nere till höger är jord0. Jag ändrade en punkt: den sista punkten i mittraden är nu E i stället för F, så att stjärtens högra kant får den mörka konturtonen och ljuset faller jämnare från övre vänstra hörnet.",
+ "w": 10,
+ "h": 3,
+ "rader": [
+  ".FHqHoHF.F",
+  "FHwHoGoGFE",
+  ".EFoFGFE.E"
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "o": "#7e7362",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

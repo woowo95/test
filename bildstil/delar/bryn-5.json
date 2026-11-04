@@ -1,0 +1,56 @@
+{
+ "id": "bryn-5",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 1. Den har tätast och buskigast form och skuggas som förebilden: ljust (g, h) uppåt mot ljuset och mörkt (f, e) längs underkanten. Den har inga lösa punkter. Version 2 och 3 har hål och ensamma prickar i översta raden, och det bryter mot regeln om inga ensamma prickar. Lägena stämmer: arga sänker den inre änden mot näsan, ledsna höjer den, och förvånade lyfter brynet till en båge. Björn ville ha bredare bryn. Brynen fyller redan rutans hela bredd på 9 punkter, så jag gjorde dem fylligare i stället: i lugna drog jag ut den översta raden och den ljusa kanten åt vänster, och i förvånade breddade jag den översta raden åt vänster. Det är samma del i alla lägen, och bara vinkeln och höjden ändras med humöret.",
+ "bilder": {
+  "lugna": {
+   "x": -4,
+   "y": -4,
+   "rader": [
+    ".........",
+    ".hggggg..",
+    "hggfgggff",
+    "gggffgffe",
+    "ffffeeeee",
+    ".ee......"
+   ]
+  },
+  "arga": {
+   "x": -4,
+   "y": -4,
+   "rader": [
+    "hgg......",
+    "gggggh...",
+    "fgfggggg.",
+    ".ffffgggg",
+    "...eeffff",
+    ".....eeee"
+   ]
+  },
+  "ledsna": {
+   "x": -4,
+   "y": -4,
+   "rader": [
+    "......hgg",
+    "....hgggg",
+    "..hgggfgf",
+    "hgggfffee",
+    "gffeeee..",
+    "fee......"
+   ]
+  },
+  "forvanade": {
+   "x": -4,
+   "y": -4,
+   "rader": [
+    ".hggggg..",
+    ".hggfgggf",
+    "hgfeeeffe",
+    "gfe....ee",
+    "fe.......",
+    "........."
+   ]
+  }
+ }
+}

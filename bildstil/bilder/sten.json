@@ -1,0 +1,16 @@
+{
+ "id": "sten",
+ "ritad": 4,
+ "av": "Claude",
+ "om": "brun rundad sten i jordfärgerna i stället för kol",
+ "w": 6,
+ "h": 5,
+ "rader": [
+  "..EEE.",
+  ".EGHFE",
+  "EGHGFE",
+  "EFGFFE",
+  ".EEEE."
+ ],
+ "pal": {"E":"#3f2415","G":"#7d5b40","H":"#987e62","F":"#5e3c24"}
+}

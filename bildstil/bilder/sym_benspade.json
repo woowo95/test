@@ -1,0 +1,36 @@
+{
+ "id": "sym_benspade",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "..........oooo..",
+  ".........oqqqqo.",
+  "........oqwqqqpo",
+  ".......oqwqqpqpo",
+  ".......oqqqpqppo",
+  ".......oqqpqpppo",
+  "......oqqpqpppo.",
+  "......oqpqpppo..",
+  ".....EHoppppo...",
+  "....EHFEoooo....",
+  "...EHFE.........",
+  "..EHFE..........",
+  ".EHFE...........",
+  "EHFE............",
+  "EGE.............",
+  ".E.............."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

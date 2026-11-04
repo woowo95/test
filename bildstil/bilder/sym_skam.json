@@ -1,0 +1,33 @@
+{
+ "id": "sym_skam",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den fyller hela rutan på 16 × 16 med en rund och tydlig silhuett och en jord0-kontur runt hela. Ansiktet har jordtoner med ljus uppe till vänster (ben1) och skugga nere till höger (jord2), vilket hör ihop med förebildens dämpade och tydliga stil. Uttrycket läses som 😔: inre ändarna av ögonbrynen är höjda, ögonen är slutna och munnen är nedåtböjd. Rostkinderna är den enda starka färgen. Version 1 är plattare och har svagare ljussättning. Version 3 är blek och syns dåligt mot den ljusa panelen. Ändringar: jag lade till två ljusa ben1-punkter som korn på pannan och kinden (rad 3 och 6), så att den ljusa sidan inte blir slät. Formen och uttrycket är oförändrade.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "....EEEEEEEE....",
+  "..EEpHHHHHHHEE..",
+  ".EppHHHHHHHHGGE.",
+  ".EpHpHHHHHHHHGE.",
+  "EpHHHHEHHEHHHHGE",
+  "EpHHEEHHHHEEHHGE",
+  "EHpHHHHHHHHHHGGE",
+  "EHHHEEEHHEEEHGGE",
+  "EHHHHHHHHHHHGHGE",
+  "EHssHHHHHHHHssGE",
+  "EHHHHHHHHHHGHGGE",
+  "EHHHHHEEEEHHGGGE",
+  ".EHHHEHHHHEGGGE.",
+  ".EGHHHHHHHGHGGE.",
+  "..EEGGGGGGGGEE..",
+  "....EEEEEEEE...."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "p": "#a0947d",
+  "s": "#742a01"
+ }
+}

@@ -1,0 +1,42 @@
+{
+ "id": "redskap-slagtra",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Slagträts tjocka, kolvformade huvud sticker upp tydligt bredvid huvudet ovanför höger axel, men inte för högt. Skaftet går diagonalt bakåt ner mot vänster, som yxskaftet i förebilden. Repet runt greppet i senap ligger vid axeln på samma sätt som yxans surrning. Skuggningen följer ljuset från övre vänster: H och G på vänster sida, F och E åt höger och nedåt. Hela delen ligger inom rutan. Version 1 är för smal i huvudet och syns därför sämre. I version 2 ligger huvudet för långt åt vänster: det hamnar bakom ansiktet och nästan bara repet syns. Jag ändrade inget, eftersom formen, tecknen och placeringen redan stämmer.",
+ "bilder": {
+  "standard": {
+   "x": -13,
+   "y": -16,
+   "rader": [
+    "..............HHGG.",
+    ".............HHGGGF",
+    "...........HHHGGGFE",
+    "..........HHGGGGFFE",
+    ".........HHGGGFFFE.",
+    ".........HGGGFGFEE.",
+    "........HGGGFFFEE..",
+    "........HGGFGFFEE..",
+    ".......HGGGFFEEE...",
+    ".......HGGFFFEEE...",
+    ".......HGGFFEEE....",
+    ".......HGGFFEE.....",
+    ".......HGGFEE......",
+    ".......HGGFE.......",
+    ".......HGGE........",
+    "......HGGE.........",
+    "......HGGE.........",
+    ".....HGGE..........",
+    ".....HGGE..........",
+    "....LLLK...........",
+    "....KKKJ...........",
+    "...LLLK............",
+    "...KKKJ............",
+    "..LLLK.............",
+    "..HGGE.............",
+    ".HGGE..............",
+    "HGGFE..............",
+    "GFFEE.............."
+   ]
+  }
+ }
+}

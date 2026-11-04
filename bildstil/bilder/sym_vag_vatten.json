@@ -1,0 +1,27 @@
+{
+ "id": "sym_vag_vatten",
+ "ritad": 3,
+ "av": "API:t, vald av Claude",
+ "om": "API:t ritade tre versioner efter Björns kommentar; Claude valde version 1 (valet i API:t hann inte köras).",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".....QQQQQ......",
+  "...QQwwqqTQQ....",
+  "..QwqTTSSTTqQ...",
+  ".QwTSSRRSSTTwQ..",
+  ".QqTSRRRRSSTqQ..",
+  "QqTSRRRRSSTqQ...",
+  "QqTSRRRSSTqQ....",
+  "QTSSRRSSTqQ.....",
+  "QTSRRSSTqQ......",
+  "QTSRSRSTQ...QQQ.",
+  "QTSSRSRSQ.QQwqTQ",
+  "QqTSSRRSQQwqTSSQ",
+  "QTTSSRSSTqTSSRRQ",
+  "QTSSSRRSSSRRRSRQ",
+  "QSSSRRRSRRRRRRRQ",
+  ".QQQQQQQQQQQQQQ."
+ ],
+ "pal": {"Q":"#233035","R":"#3e5156","S":"#61767a","T":"#8a9c9e","q":"#bdb39b","w":"#dad0bb"}
+}

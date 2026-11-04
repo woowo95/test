@@ -1,0 +1,37 @@
+{
+ "id": "sym_byta",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Version 2 hör bäst ihop med förebilden. Den har samma två material som de korsade svärden: stålgrå skiffer (övre pilen) och senapsguld (undre pilen). Det gör de två pilarna lätta att skilja åt i liten storlek. Den fyller hela rutan på 16 × 16, har kontur i materialets mörkaste ton (skiffer0 och senap0) och är ljusast uppe till vänster. Den läses som två pilar i cirkel, alltså samma sak som 🔁. Version 1 är helt i stål, så de två pilarna flyter ihop, och den är bara 14 rader hög. Version 3 visar två raka motriktade pilar (⇄) och ingen cirkel, så den stämmer inte med beskrivningen. Jag har inte ändrat något: konturen är sluten runt hela symbolen, glansen är en enda punkt (w) och tonerna skiftar som korn utan ensamma mörka prickar.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".....QQQQQQ.....",
+  "...QQwTTTTSQQ...",
+  "..QTTTSTSSSSSQ..",
+  ".QQQQQQQQQQSSSQ.",
+  "...........QSRQ.",
+  "...I.......QSRQ.",
+  "..ILI....QQQTSQQ",
+  ".ILLKI...QTTSSRQ",
+  "ILLKKKI...QSSRQ.",
+  "IIKJIII....QSQ..",
+  ".IKJI.......Q...",
+  ".IKJI...........",
+  ".IKKJIIIIIIIIII.",
+  "..IKKKJKJJJJJI..",
+  "...IIKJJJJJII...",
+  ".....IIIIII....."
+ ],
+ "pal": {
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "w": "#dad0bb"
+ }
+}

@@ -1,0 +1,27 @@
+{
+ "id": "sym_dricka",
+ "ritad": 3,
+ "av": "API:t, vald av Claude",
+ "om": "API:t ritade tre versioner efter Björns kommentar; Claude valde version 2 (valet i API:t hann inte köras).",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "..QQQQQQQQQQQQ..",
+  "..QwTTTTTTTTSQ..",
+  "..QwTTSTTTTSSQ..",
+  "..QTTTTTSTTTSQ..",
+  "..QTTSTTTTTSSQ..",
+  "..QTTTTTTTTTSQ..",
+  "..QTSSSSSSSSRQ..",
+  "..QTSSSRSSSRRQ..",
+  "...QTSSSSSRRQ...",
+  "...QTSSSSRSRQ...",
+  "...QTSSSSSSRQ...",
+  "...QTSSSSSRRQ...",
+  "....QTSSSRRQ....",
+  "....QSSSSRRQ....",
+  "....QTTSSSRQ....",
+  "....QQQQQQQQ...."
+ ],
+ "pal": {"Q":"#233035","R":"#3e5156","S":"#61767a","T":"#8a9c9e","w":"#dad0bb"}
+}

@@ -1,0 +1,27 @@
+{
+ "id": "sym_plaster",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 2. Den är den enda som är helt beige (ben), vilket Björn bad om. Version 1 har en brun kudde i jordtoner och version 3 är brun rakt igenom. Den har ingen röd prick och samma snedställda, tydliga form med jordkontur som svärden i förebilden. Den läses som ett plåster även i liten storlek. För att göra den enklare tog jag bort det täta rutmönstret av ben0 och ben1 på kudden. Nu är kudden mest ben1, med några få ben0-punkter som antyder hålen. Det mörkaste ligger mot nedre högra kanten så att ljuset kommer uppifrån vänster. Formen, konturen och de ljusa remsorna är oförändrade.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "...........EEE..",
+  "..........EwqqE.",
+  ".........EwqqqpE",
+  "........EwqqqqpE",
+  ".......EwqqqqppE",
+  "......EwqqqqppE.",
+  ".....EqpppppoE..",
+  "....EqpoppooE...",
+  "...EqppppooE....",
+  "..EqppoppoE.....",
+  ".EwqqqqppE......",
+  "EwqqqqqpE.......",
+  "EqqqqppE........",
+  "EqqqqpE.........",
+  ".EqppE..........",
+  "..EEE..........."
+ ],
+ "pal": {"E":"#3f2415","o":"#7e7362","p":"#a0947d","q":"#bdb39b","w":"#dad0bb"}
+}

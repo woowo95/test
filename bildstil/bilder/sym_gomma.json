@@ -1,0 +1,24 @@
+{
+ "id": "sym_gomma",
+ "ritad": 5,
+ "av": "Claude",
+ "om": "Ritad av Claude efter Björns kommentar: gör om hela symbolen utan förlaga. den blir värre och värre",
+ "w": 16,
+ "h": 13,
+ "rader": [
+  "................",
+  ".....EEEE.......",
+  "....EGHHGE......",
+  "...EHGGGHGE.....",
+  "...EqqqqqpE.....",
+  "...EwkqqwkE.....",
+  "..QEqEQQEqEQQ...",
+  ".QTTTSTSSSSSRQ..",
+  "QTTSTSSSSSRSRRQ.",
+  "QTSSSSSSRSRSRRQ.",
+  "QSSSSRSSSRRRRRRQ",
+  "QSSRSSRSRRRRRRRQ",
+  ".QQQQQQQQQQQQQQ."
+ ],
+ "pal": {"E":"#3f2415","G":"#7d5b40","H":"#987e62","Q":"#233035","R":"#3e5156","S":"#61767a","T":"#8a9c9e","k":"#24201d","p":"#a0947d","q":"#bdb39b","w":"#dad0bb"}
+}

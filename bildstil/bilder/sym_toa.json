@@ -1,0 +1,27 @@
+{
+ "id": "sym_toa",
+ "ritad": 2,
+ "av": "API:t, vald av Claude",
+ "om": "API:t ritade tre versioner efter Björns kommentar; Claude valde version 3 (valet i API:t hann inte köras).",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "................",
+  "................",
+  "................",
+  "................",
+  "......EEEE......",
+  ".....EHGGFE.....",
+  "....EHGGFGFE....",
+  "...EEEEEEEEEE...",
+  "..EHGHGGFGFFFE..",
+  ".EHGGGFGFFFFFFE.",
+  ".EGGFGFFFFFFFFE.",
+  "..EEEEEEEEEEEE..",
+  "................",
+  "................",
+  "................",
+  "................"
+ ],
+ "pal": {"E":"#3f2415","F":"#5e3c24","G":"#7d5b40","H":"#987e62"}
+}

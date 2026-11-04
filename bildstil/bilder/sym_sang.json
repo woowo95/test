@@ -1,0 +1,39 @@
+{
+ "id": "sym_sang",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 2",
+ "om": "Jag valde version 1. Den läses tydligast som 🛏️: hög gavel vid huvudet, lägre fotgavel, kudde och täcke, och den har samma enkla, tunga form med mörk kontur som de korsade svärden. Den fyller rutan, 16 punkter bred och 15 hög. Version 3 har stolpar med regelbundet randade H och G, som i liten storlek ser ut som stegar eller mönster i stället för korn. I version 1 rättade jag täcket. Den vikta kanten (rad 9) hade spridda ljusa punkter (ututtsts), som nu är en ljusare band från vänster till mörkare åt höger (uuttttss), så att ljuset kommer uppifrån vänster. Raden under kudden fick också tt i stället för den ensamma s-pricken (oooottss). Resten lämnade jag som det var.",
+ "w": 16,
+ "h": 15,
+ "rader": [
+  ".EE.............",
+  "EHGE............",
+  "EHFE............",
+  "EGFE............",
+  "EGFE.ooo........",
+  "EGFEowqpo....EE.",
+  "EGFEoqqprrrrEHGE",
+  "EGFEoqpputtsEHFE",
+  "EGFEoooottssEGFE",
+  "EGFEuuttttssEGFE",
+  "EGFErrrrrrrrEGFE",
+  "EGFEHHGHGGGFEGFE",
+  "EGFEGFGFFFFEEFFE",
+  "EFFEEEEEEEEEEFFE",
+  ".EE..........EE."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e",
+  "w": "#dad0bb"
+ }
+}

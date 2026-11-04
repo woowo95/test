@@ -1,0 +1,28 @@
+{
+ "id": "vattensack",
+ "ritad": 2,
+ "av": "Claude",
+ "om": "vattensäcken utan mörk kant (5.1.2.5): samma säck med snörd hals, skuggad med skinnets egna toner",
+ "w": 7,
+ "h": 8,
+ "rader": [
+  "..JKJ..",
+  ".J...J.",
+  ".GHHG..",
+  "GHHGGFK",
+  "HHGGFFI",
+  "GGFFFF.",
+  ".FFFF.T",
+  "......S"
+ ],
+ "pal": {
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "F": "#5e3c24",
+  "I": "#694902",
+  "T": "#8a9c9e",
+  "S": "#61767a"
+ }
+}

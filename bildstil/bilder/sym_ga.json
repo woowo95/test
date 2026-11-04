@@ -1,0 +1,27 @@
+{
+ "id": "sym_ga",
+ "ritad": 3,
+ "av": "API:t, vald av Claude",
+ "om": "API:t ritade tre versioner efter Björns kommentar; Claude valde version 3 (valet i API:t hann inte köras).",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".......EEEE.....",
+  "......EGGFFE....",
+  "......EGGqqE....",
+  "......EFqqpqE...",
+  "......EFqppE....",
+  ".......EopE.....",
+  "......ruttsr....",
+  ".....rutttssr...",
+  ".....rtrttsrsr..",
+  "....rtr.rtsr.rsr",
+  "...EpE..rtsr.EpE",
+  "......rtsssr....",
+  "......rrrrrr....",
+  ".....EGFE.EGFE..",
+  "....EGFE...EGFE.",
+  "...lmmml...lmmml"
+ ],
+ "pal": {"E":"#3f2415","F":"#5e3c24","G":"#7d5b40","l":"#2f261d","m":"#372f25","o":"#7e7362","p":"#a0947d","q":"#bdb39b","r":"#521100","s":"#742a01","t":"#a14808","u":"#bd753e"}
+}

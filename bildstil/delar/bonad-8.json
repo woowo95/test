@@ -1,0 +1,21 @@
+{
+ "id": "bonad-8",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 2",
+ "om": "Jag valde version 3. Kransen ligger jämnt och symmetriskt kring mittlinjen (x = -18 till 17) och bildar ett tydligt band runt skallen, ungefär som mössans kant i förebilden. Blommorna är jämnt fördelade: små prästkragar med ljusa ben-kronblad och senapsgul mitt, och en rostblomma mitt fram. Det ser ordnat och hantverksmässigt ut på alla tre ansiktena. Ljuset faller från vänster: barrgrönskan går från ljusare W/X till vänster mot mörkare U/V till höger, och skuggan är mattast i nederkanten med inslag av oliv. Det stämmer med hur förebilden skuggar. Version 1 har mer slumpvis spridda blommor och rostbär som ser rörigare ut och mer som prickar. Jag ändrade ingenting, eftersom formen, storleken, tecknen och rutan redan stämmer.",
+ "bilder": {
+  "standard": {
+   "x": -18,
+   "y": 3,
+   "rader": [
+    "...WX...XW....WX....XW...VW...WV....",
+    ".XWXXWWXXWWXWWXWWVWXWWVWVWVVWVUVVUV.",
+    "XWXWWwXWVWXWwWVWWssVWVWVqVUVWVUqVUVU",
+    "WXWWwJwWWVWwJwWVsttsVWVqIqVUVVqIqVUU",
+    "VWWVWqVWVVWVqVWVVrrVUVVUpUVUVUUpUVUU",
+    "UVNUVVOUVNVUVUNVUUVUNUVUUNUUVUNUUNU.",
+    "..UN....VU.....NU....UN...UU...NU..."
+   ]
+  }
+ }
+}

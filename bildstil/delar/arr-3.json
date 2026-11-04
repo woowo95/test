@@ -1,0 +1,18 @@
+{
+ "id": "arr-3",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 3. Den har lägst kontrast och ligger närmast huden, vilket stämmer med Björns kommentar om att ärren ska vara subtila. Den följer också förebildens byggsätt: en ljus linje (d) en punkt bred med skuggan direkt under. Ärret sitter centrerat över näsan, från x = -3 till x = 2, och lika långt åt båda hållen från mittlinjen. Version 1 och 2 har mörkare b-skugga och därmed hårdare kontrast. Version 2 är dessutom ojämn, med skuggan på fel sida i tredje raden. Det jag ändrade: de ensamma b-punkterna i rad 3 och 4 är nu c, så att skuggan genomgående är en jämn c under den ljusa d-linjen. Det tar bort de mörka prickarna och ger lägre, jämnare kontrast på alla tre ansiktena.",
+ "bilder": {
+  "standard": {
+   "x": -3,
+   "y": 2,
+   "rader": [
+    "dd....",
+    "ccdd..",
+    "..ccdd",
+    "....cc"
+   ]
+  }
+ }
+}

@@ -1,0 +1,28 @@
+{
+ "id": "abborre",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den följer dagens bild närmast: en mörk ryggfena överst, olivgrön kropp med två tydliga mörka ränder (barr0 mot oliv3/oliv2), ett svart öga längst fram, en rödaktig stjärt, ljus buk i ben och två röda bukfenor under. Version 2 har för svaga ränder och en rörig nedersta rad. Version 3 har en röd ryggfena, men i förebilden är den mörk. Ändring: stjärten saknade en punkt på mittraden ('t.'), så den såg trasig ut. Jag fyllde den till 'tt' så att stjärten blir hel, ljusast uppe till vänster (u) och mörkast nere till höger (s), som i dagens bild där stjärten är bredast i mitten. Konturen är oliv0 runt kroppen, och kol0 används bara i ögat.",
+ "w": 10,
+ "h": 5,
+ "rader": [
+  "..MUMUM...",
+  ".MPPUPUMtu",
+  "MkPOUOUMtt",
+  ".MqwqqpMts",
+  "...s.s...."
+ ],
+ "pal": {
+  "M": "#353204",
+  "O": "#647025",
+  "P": "#898b4c",
+  "U": "#21290d",
+  "k": "#24201d",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e",
+  "w": "#dad0bb"
+ }
+}

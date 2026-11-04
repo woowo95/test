@@ -1,0 +1,25 @@
+{
+ "id": "skagg-12",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den är mest lik förebildens helskägg i storlek, kornighet och skuggning: den ljusa sidan (h, g) ligger till vänster mot ljuset och den mörka (f, e) till höger. Formen är också tydligast som hängmustasch. Den bär över överläppen, breder ut sig vid mungiporna och hänger ner i två tjocka spetsar mot hakan. Det ser bra ut på alla tre ansiktena. Version 1 blev för smal och klumpig upptill. Version 2 var för tunn och slutade i ensamma punkter längst ner. Rättelse: rad 2 och 3 stack ut en punkt längre åt höger än åt vänster. Jag har kortat dem så att mustaschen ligger symmetriskt kring mittlinjen mellan x = -1 och 0.",
+ "bilder": {
+  "standard": {
+   "x": -8,
+   "y": -4,
+   "rader": [
+    "...gghhhhggff...",
+    "..ghhhhghgfgfe..",
+    ".ghhhgghgggfffe.",
+    "ghhggg....fgffee",
+    "ghgg........ffee",
+    "ghhg........fffe",
+    ".hgg........ffe.",
+    ".ggg........ffe.",
+    ".gfg........fee.",
+    "..gf........fe..",
+    "..ff........ee.."
+   ]
+  }
+ }
+}

@@ -1,0 +1,28 @@
+{
+ "kommando": "rita",
+ "args": [
+  "redskap"
+ ],
+ "modell": "claude-opus-5-5",
+ "insats": "high",
+ "versioner": 3,
+ "uppskattat": {
+  "lag": 0.64,
+  "hog": 0.97
+ },
+ "dollar": 0.998,
+ "tokens": {
+  "in": 40837,
+  "ut": 90875,
+  "cacheLas": 35213,
+  "cacheSkriv": 1549
+ },
+ "rapport": [
+  "redskap-kniv: ritad, version 2 vald: Jag valde version 2. Flintbladet är brett och sticker upp tydligt bredvid huvudet ovanför höger axel utan att gå för högt. Skaftet går diagonalt från nere till vänster upp mot axeln, som beskrivningen säger. Bladets storlek och tjocklek ligger närmast yxhuvudet i förebilden och läses tydligt på kvinnan, mannen och barnet. Skuggningen följer ljuset uppifrån vänster: ljusare T och S till vänster, mörkare R och Q till höger. Lindningen i senap växlar mellan ljust och mörkt som repet på yxan. Version 1 är för smal och liten, och i version 3 hamnar bladet lågt och flackt och ser ut som en fjäder. Jag ändrade en sak: rad 5 i bladet fick tonföljden TSRRQ i stället för STRRQ, så att den ljusa kanten ligger kvar till vänster och övergången blir jämn. Allt annat behöll jag. Delen håller sig inom rutan och använder bara tillåtna tecken.",
+  "redskap-trasjut: ritad, version 3 vald: Jag valde version 3. Skaftet ligger diagonalt bakom ryggen upp mot höger axel och har samma tjocklek och skuggning som yxans skaft i förebilden. Den eldhärdade, mörka spetsen är lång, tydlig och avsmalnande, och den sticker upp bredvid huvudet utan att gå för högt. Version 1 är för tunn och har en liten spets, så den läses som en pinne. Version 2 har lindningar i rost, men rep ska vara senap, och spetsen har en ojämn kant. Det jag ändrade: den ljusaste tonen H satt på skaftets högra kant i vartannat steg, och den sidan vänder sig bort från ljuset. Jag bytte den mot F, så att skaftet blir ljust till vänster och mörkt till höger, med ett lätt korn i träet.",
+  "redskap-flintspjut: ritad, version 1 vald: Jag valde version 1. Skaftet går tydligt diagonalt bakom ryggen, från nere till vänster upp mot höger axel, i ungefär samma vinkel och med samma smala linjetjocklek som yxskaftet i förebilden. Flintspetsen sticker upp bredvid huvudet utan att gå för högt och syns stor och hel på alla tre mallarna. Spetsen är ljusast på sidan mot ljuset uppe till vänster och mörknar mot höger, i skiffer T–Q. Skaftet är i jord och surrningen i senap, och delen ryms inom rutan. Version 2 är brantare och har ett bredare skaft. I version 3 försvinner spetsen delvis bakom huvudet och kanten. Ändring: på surrningens nedre varv lade jag en mörkare ton (J–I) på högra sidan, så att repet skuggas mot ljuset på samma sätt som spetsen.",
+  "redskap-metspo: ritad, version 3 vald: Jag valde version 3. Spöet går diagonalt från nere till vänster upp mot höger axel. Toppen sticker upp lagom högt bredvid huvudet, inte så högt som i version 2 där spöet nästan når ramens överkant. Lindningen av senapsrep är bred och tydlig, i samma stil och storlek som lindningen på flintyxans skaft. Skaftet är tre punkter tjockt med den ljusa sidan mot vänster, så det följer ljuset uppifrån vänster. Flötet i rost och kroken i ben syns tydligt på alla tre ansiktena, och hela delen håller sig inom rutan. Ändring: i den tunna toppen bytte jag de enstaka ljusa H-punkterna på rad 4 och 6 mot G, så att spötoppen får jämn ton och inga ensamma ljusa prickar.",
+  "redskap-benspade: ritad, version 2 vald: Version 2 valdes. Den har det bredaste och rundaste bladet och läses tydligast som en spade av skulderblad. Version 1 ser mer ut som en fjäder och version 3 som en benklubba. Bladet är stort och sitter bredvid huvudet på ungefär samma höjd som flintyxans huvud, inte för högt. Ljuset kommer uppifrån vänster: kanten till vänster är ljus (w) och den högra sidan mörkare (p/o). Den diagonala åsen i bladet är skulderbladets kam. Repbindningen i senap är randig som på yxan, och skaftet i jord går diagonalt ned åt vänster bakom ryggen. Allt håller sig inom rutan: x från -16 till 9 och y från -16 till 11. Ändring: jag tog bort den ensamma ben-punkten (o) i slutet av den första repraden, eftersom den bröt mot regeln om ensamma prickar.",
+  "redskap-slagtra: ritad, version 3 vald: Jag valde version 3. Slagträts tjocka, kolvformade huvud sticker upp tydligt bredvid huvudet ovanför höger axel, men inte för högt. Skaftet går diagonalt bakåt ner mot vänster, som yxskaftet i förebilden. Repet runt greppet i senap ligger vid axeln på samma sätt som yxans surrning. Skuggningen följer ljuset från övre vänster: H och G på vänster sida, F och E åt höger och nedåt. Hela delen ligger inom rutan. Version 1 är för smal i huvudet och syns därför sämre. I version 2 ligger huvudet för långt åt vänster: det hamnar bakom ansiktet och nästan bara repet syns. Jag ändrade inget, eftersom formen, tecknen och placeringen redan stämmer."
+ ]
+}

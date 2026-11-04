@@ -1,0 +1,15 @@
+{
+ "id": "mossa",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den följer dagens bild bäst: grön tuva med ljusa toppar, ett brunt band tvärs över och en brun rand nedåt i mitten. Konturen är oliv0, mossans mörkaste ton, och jord0 där det bruna bandet möter kanten. Det håller ihop med vedens mörka kontur och syns tydligt mot gräset. Version 1 har en barrkontur och en blandad underkant (barr och jord). Version 3 saknar kontur i bandets kanter och har en ljus jordton längst till höger, vilket bryter mot ljusriktningen. Ändring: bandets näst sista punkt till höger blev jord1 i stället för jord2. Då blir bandet mörkare åt höger, som ljuset från övre vänstra hörnet kräver, och kornet finns kvar utan ensamma prickar.",
+ "w": 7,
+ "h": 4,
+ "rader": [
+  ".MPOPM.",
+  "MPOHONM",
+  "EHHGHFE",
+  ".MNGNM."
+ ],
+ "pal": {"E":"#3f2415","F":"#5e3c24","G":"#7d5b40","H":"#987e62","M":"#353204","N":"#4b4f00","O":"#647025","P":"#898b4c"}
+}

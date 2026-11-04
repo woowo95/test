@@ -1,0 +1,36 @@
+{
+ "id": "sym_halla",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den har samma tydliga silhuett och kontur som de korsade svärden. Det runda lerkärlet med pip tömmer en jämn ljusgrå vattenstråle som slutar i en pöl, så den läses som 🫗 på en blick, både på mörk och ljus bakgrund. Ljuset kommer uppifrån vänster (jord3 till jord1 med jord0 som kontur, skiffer med skiffer0 som kontur) och den fyller rutan, 16 × 16 punkter. Version 2 ser ut som en flaska med stövel. I version 3 blir kärlet en klumpig sten och strålen en krok. Ändring: pölen nederst var en sned klump med en hård kant mot strålen. Jag gjorde den bredare och plattare, gav den en egen kontur ovanpå och en ljus yta mot vänster, så att det läses som vatten som samlas på marken och inte som en böjd krok.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "...EEEEE........",
+  ".EEHHGGFEE......",
+  "EHHGGGGGFFE.....",
+  "EHGGGFGGFFFEEE..",
+  "EHGGFGGFGFFEHFE.",
+  "EGGFGGFGFFFFEQTQ",
+  "EGFGGFGFFFFE.QTQ",
+  ".EGFGFFFFFE..QwQ",
+  "..EFFFFFE....QTQ",
+  "...EEEEE.....QSQ",
+  ".............QTQ",
+  ".............QSQ",
+  "............QTSQ",
+  ".........QQQQTSQ",
+  "........QTSTSSSQ",
+  ".........QQQQQQ."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "Q": "#233035",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "w": "#dad0bb"
+ }
+}

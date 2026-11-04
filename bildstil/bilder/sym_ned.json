@@ -1,0 +1,20 @@
+{
+ "id": "sym_ned",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 3 eftersom den är den enda som följer Björns kommentar. Den visar en person som ligger direkt på gräset. Version 1 och 2 ser ut som någon som sover i en säng på träben, och det läses som vila, inte som att falla omkull i striden. Version 3 har också få och stora former: håret i senap, ansiktet i jord och kroppen i skiffer med kontur. Det stämmer med förebildens dämpade toner och läses tydligt i liten storlek. Den är 16 punkter bred och fyller därmed rutan åt det hållet. Jag ändrade en sak: i rad 7 fyllde jag glappet mellan huvudet och gräset med kontur, så att huvudet vilar på marken i stället för att sväva. Resten lät jag stå oförändrat.",
+ "w": 16,
+ "h": 9,
+ "rader": [
+  ".IIEEE..........",
+  "IKJHHHE.........",
+  "IKJHHGE.QQQQQEE.",
+  "IJHHGGEQTTSSQEHE",
+  "IIEGFEQTSTSSFGFE",
+  ".IEEEQTSSSSRFFFE",
+  "..EEQQQQQQQQEEEE",
+  "OPOPOOPOPOOPOOPN",
+  "MNNMNNMNNMNNMNNM"
+ ],
+ "pal": {"E":"#3f2415","F":"#5e3c24","G":"#7d5b40","H":"#987e62","I":"#694902","J":"#906f0f","K":"#b2921b","M":"#353204","N":"#4b4f00","O":"#647025","P":"#898b4c","Q":"#233035","R":"#3e5156","S":"#61767a","T":"#8a9c9e"}
+}

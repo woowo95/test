@@ -1,0 +1,14 @@
+{
+ "id": "arter",
+ "ritad": 3,
+ "av": "Claude",
+ "om": "Claude: en smal skida som böjer sig uppåt i båda ändar, två punkter tjock i mitten, ljus uppe till vänster.",
+ "w": 6,
+ "h": 3,
+ "rader": [
+  "P....N",
+  "OPPPOM",
+  ".NNNM."
+ ],
+ "pal": {"P":"#898b4c","N":"#4b4f00","O":"#647025","M":"#353204"}
+}

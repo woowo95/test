@@ -1,0 +1,36 @@
+{
+ "id": "sym_krasch",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den har den tydligaste silhuetten av en smäll: en nästan symmetrisk stjärna med åtta spetsar som fyller hela rutan på 16 × 16 punkter. Den ljusa kärnan i senap har en enda glanspunkt i ben3 uppe till vänster, och tonerna går från ljust uppe till vänster mot mörk rost nere till höger, precis som ljuset ska falla. Konturen är rost0 runt hela formen, och den läses direkt som 💥 både på mörk och ljus bakgrund. Den hör också ihop med de korsade svärden i form och färg. Version 2 har kärnan förskjuten och ojämna spetsar. I version 3 drar senap0 ner mitten så att den blir grumlig och svårare att läsa i liten storlek. Jag behövde inte ändra något: alla rader är 16 tecken, konturen är hel, glansen är en enda punkt och det finns inga lösa prickar.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".......r........",
+  ".r....rur....rr.",
+  ".rur..ruur..rtr.",
+  "..ruurrLutrrtsr.",
+  "..ruLuLLLuttsr..",
+  "...ruLwLLKutsr..",
+  "..rruLLLLKKutr..",
+  "rruuLLLKKKKtssrr",
+  ".rrtuLKKKKJtsrr.",
+  "...rtuKKJJtsr...",
+  "..rtutKJJttssr..",
+  "..rtsrtJttrrssr.",
+  ".rtsr.rttsr.rsr.",
+  ".rsr..rtsr...rr.",
+  ".rr....rsr....r.",
+  "........r......."
+ ],
+ "pal": {
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e",
+  "w": "#dad0bb"
+ }
+}

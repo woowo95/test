@@ -1,0 +1,25 @@
+{
+ "id": "grillkott",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Av de tre ligger den närmast dagens bild: en rund köttbit med mörk kontur, mörka streck tvärs över och ett ljust ben som sticker ut nere till höger. Den fyller hela rutan på 8 × 5 bäst, och klumpen är jämnt rundad, så silhuetten läses tydligt i liten storlek. Ljuset stämmer: rost3 sitter som glans uppe till vänster, och köttet blir mörkare ner mot höger. Konturen är rost0, köttets mörkaste ton. Strecken är kol0 eftersom de ska vara svarta, och den mättade rosten passar för mat. Benet går från ben3 till ben0 diagonalt och sitter ihop med köttet. Det hör ihop med fiskköttets form och toner. Version 1 har ett ljust u på högerkanten, alltså på skuggsidan, och är smalare. Version 2 har benets ljusa punkt nere till höger, mot ljuset. Jag behövde inte ändra något i version 3.",
+ "w": 8,
+ "h": 5,
+ "rader": [
+  ".rrrr...",
+  "rutktr..",
+  "rtktksr.",
+  "rskssrwq",
+  ".rrrr.qo"
+ ],
+ "pal": {
+  "k": "#24201d",
+  "o": "#7e7362",
+  "q": "#bdb39b",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e",
+  "w": "#dad0bb"
+ }
+}

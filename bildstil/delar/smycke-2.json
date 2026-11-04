@@ -1,0 +1,24 @@
+{
+ "id": "smycke-2",
+ "ritad": 2,
+ "av": "programmeringschatten, förebild",
+ "om": "Benhalsband: ett mörkt snöre i en båge runt halsen med fem benbitar, ljusa uppåt vänster och med mörk skugga till höger och under så att de syns mot huden, och en lite längre bit i mitten.",
+ "bilder": {
+  "standard": {
+   "x": -12,
+   "y": -4,
+   "rader": [
+    "EE....................kk",
+    "..E..................k..",
+    "..wqE..............kk...",
+    "..qpEEEE........kkk.....",
+    "..ppE.wqEEEEkkkk..wqE...",
+    "..EE..qpE.wqE.wqE.qpE...",
+    "......ppE.qpE.qpE.ppE...",
+    "......EE..qpE.ppE.EE....",
+    "..........ppE.EE........",
+    "..........EE............"
+   ]
+  }
+ }
+}

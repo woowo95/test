@@ -1,0 +1,21 @@
+{
+ "id": "ora-1",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den är fyra punkter bred och sju hög, alltså tydligt mindre än förebilden men lika lång som de andra små versionerna. Därför sticker den ut lagom från kinden på alla tre mallarna. Ljuset stämmer med förebilden: den ljusaste tonen d ligger på kanten uppe till vänster och följs av c nedåt längs ytterkanten. Den mörka tonen a sitter som skugga i örongången, och örsnibben böjer sig in mot kinden (..cb), så att örat ser fäst ut. Version 2 har en rak och smal snibb (.cb. två gånger) som ser stel ut, och toppen saknar ljus. Version 3 sitter en punkt längre in (x -1), så nästan hela örat hamnar bakom ansiktet och det blir för lite kvar att se. Delen håller sig inom rutan (x -2 till 1, y -3 till 3) och använder bara tecknen a, b, c och d. Jag behövde inte ändra något.",
+ "bilder": {
+  "standard": {
+   "x": -2,
+   "y": -3,
+   "rader": [
+    ".dc.",
+    "dcbb",
+    "cbab",
+    "cbab",
+    "cbbb",
+    ".cbb",
+    "..cb"
+   ]
+  }
+ }
+}

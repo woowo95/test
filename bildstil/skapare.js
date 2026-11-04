@@ -59,7 +59,10 @@
 
   // ---------- färgbytet ----------
   // en punkt är en kanal och en ton (hud2, har0, oga1, kind, vit, ett material som harskinn3) eller en fast färg (ben2)
-  const KANALER = new Set(['hud', 'kind', 'har', 'oga', 'vit', ...PR.material.map(m => m.id)]);
+  // Claudes egna ändringar ligger som förslag (Björn efter version 80 av bildstilen: "lägg in alla dina ritade grejer som förslag
+  // inte som godkända"): de syns bara på förslagets kort bredvid hur det ser ut nu, tills Björn sagt ja och Claude byggt in dem
+  const FORSLAG_PA = new Set();
+  const KANALER = new Set(['hud', 'kind', 'har', 'oga', 'vit', 'mat', ...PR.material.map(m => m.id)]);
   const ref = s => P.i(s.slice(0, -1), +s.slice(-1));
   function fargerFor(p, gratt) {
     const hud = PR.farger.hud[p.hud], har = ALDER[p.alder].grattHar && mallAv(p) !== 'barn' ? PR.farger.grattHar : PR.farger.har[p.har], oga = PR.farger.oga[p.ogon];
@@ -73,11 +76,13 @@
       let i;
       if (gratt && KANALER.has(k)) i = ref(PR.farger.gratt[k === 'vit' ? 3 : k === 'oga' ? t + 1 : t]);
       else if (k === 'hud') i = hudF(t);
-      else if (k === 'kind') i = p.kyla && !dod ? ref(t >= 2 ? hud.kyla : hud.kyla.slice(0, -1) + Math.max(0, +hud.kyla.slice(-1) - 1)) : hudF(t);
+      // kinderna är huden: kylan syns inte på kinderna utan i ramen (Björn efter version 85 av bildstilen)
+      else if (k === 'kind') i = hudF(t);
       else if (k === 'har') i = ref(har.toner[t]);
       else if (k === 'oga') i = ref(oga.toner[Math.min(t, 1)]);
       else if (k === 'vit') i = ref('ben2');
       else if (MATERIAL[k]) i = ref(MATERIAL[k].toner[t]);
+      else if (k === 'mat') i = ref((MATERIAL[p.klader.rock] || MATERIAL.harskinn).toner[t]); // plaggets material (5.2.2.7)
       else i = ref(kt);
       cache.set(kt, i); return i;
     };
@@ -130,7 +135,7 @@
   const S = (x, y) => [32 + (x - 32) * 15 / 13, 30 + (y - 30) * 1.25];
 
   // ---------- porträttet: geometrin ur mallen ----------
-  const FORM = { smal: [0.86, 1.05, 1.7], bred: [1.05, 0.95, 3], rund: [1, 0.95, 2.2] };
+  const FORM = { smal: [0.86, 1.05, 1.7], bred: [1.05, 0.95, 3], rund: [1, 0.95, 2.2], kantig: [1.03, 0.95, 3.6], lang: [0.9, 1.05, 2] };
   function geo(m, p) {
     const H = m.huvud, f = m.fast, sned = skonLager(p).includes('skon-sned');
     const flytt = (pt, k) => sned && k === 1 ? [pt[0], pt[1] + 1] : pt;
@@ -193,7 +198,7 @@
       for (const [x, y] of [[22, 37], [23, 37], [22, 38], [23, 38], [40, 37], [41, 37], [40, 38], [41, 38]]) { const v = dk.get(x, y); if (v) dk.satt(x, y, 'kind' + v.slice(-1)); }
     },
     ora(dk, G, d) {
-      const v = nr(d), [rx, ry] = [[2.4, 4.2], [2.9, 5], [3.8, 5.4]][v];
+      const v = nr(d) % 3, [rx, ry] = [[2.4, 4.2], [2.9, 5], [3.8, 5.4]][v];
       G.ora.forEach(([ex, ey], s) => {
         const cx = ex + (v === 2 ? (s ? 1 : -1) : 0), inne = (x, y) => ellips(cx, ey, rx, ry)(x, y) && (s ? x + 0.5 >= 45 : x + 0.5 <= 19);
         fyll(dk, inne, 'hud', [cx - 5, ey - 6, cx + 5, ey + 6], { mitt: [cx, ey - 1, rx, ry], forskj: s ? -1 : 0 });
@@ -201,7 +206,7 @@
       });
     },
     nasa(dk, G, d) {
-      const v = nr(d), barn = G.barn;
+      const v = nr(d) % 10, barn = G.barn;
       const len = [6, 6, 6, 5, 8, 5, 7, 8, 5, 7][v] - (barn ? 2 : 0), b = Math.max(1, [2, 1, 3, 2, 2, 2, 2, 3, 3, 1][v] - (barn ? 1 : 0));
       const top = G.nasa[1], yb = top + len;
       linje(dk, 33, top + 1, 33 + (v === 6 ? 1 : 0), yb - 1, 'hud1');
@@ -213,7 +218,7 @@
       if (v === 7) { dk.satt(30, yb - 1, 'hud3'); dk.satt(34, yb - 1, 'hud1'); }
     },
     oga(dk, G, d, p) {
-      const v = nr(d), lage = lageAv(p, 'oga');
+      const v = nr(d) % 6, lage = lageAv(p, 'oga');
       const w = [6, 6, 5, 7, 6, 6][v], h = [4, 3, 2, 4, 3, 3][v];
       G.oga.forEach(([ex, ey], s) => {
         const x0 = ex - Math.floor(w / 2), x1 = x0 + w - 1, yt = ey - Math.ceil(h / 2), yb = yt + h - 1;
@@ -238,7 +243,7 @@
       });
     },
     ogonbryn(dk, G, d, p) {
-      const v = nr(d), lage = lageAv(p, 'ogonbryn');
+      const v = nr(d) % 5, lage = lageAv(p, 'ogonbryn');
       const len = [7, 7, 8, 6, 8][v], tjock = [1, 1, 2, 1, 2][v], bage = [0, 1, 0, 0, 1][v];
       G.bryn.forEach(([bx, by], s) => {
         const x0 = bx - Math.floor(len / 2);
@@ -253,7 +258,7 @@
       });
     },
     mun(dk, G, d, p) {
-      const v = nr(d), lage = lageAv(p, 'mun'), base = G.mun[1];
+      const v = nr(d) % 6, lage = lageAv(p, 'mun'), base = G.mun[1];
       const w = [8, 10, 8, 8, 6, 8][v] - (G.barn ? 2 : 0), tjock = [1, 1, 2, 0, 1, 1][v];
       const x0 = 32 - w / 2, x1 = 31 + w / 2;
       if (lage === 'oppen') {
@@ -390,7 +395,6 @@
       const hake = G.hake('rund');
       if (d.id === 'forband-huvud') { fyll(dk, (x, y) => y >= 18 && y <= 21 && ellips(32, 30, 16.5, 21.5)(x, y), 'ben', [14, 18, 50, 21]); punkter(dk, [[26, 19], [27, 19]], 'rost1'); }
       if (d.id === 'forband-oga') fyll(dk, (x, y) => { const ax = 33, ay = 18, bx = 46, by = 40, t = Math.max(0, Math.min(1, ((x - ax) * (bx - ax) + (y - ay) * (by - ay)) / ((bx - ax) ** 2 + (by - ay) ** 2))); return Math.hypot(x - (ax + (bx - ax) * t), y - (ay + (by - ay) * t)) <= 2.3 && ellips(32, 31, 16.5, 21)(x, y); }, 'ben', [28, 14, 50, 44]);
-      if (d.id === 'forband-kake') fyll(dk, (x, y) => { const dx = Math.abs(x + 0.5 - 32); return (dx >= 13.5 && dx <= 16.5 && y >= 14 && y <= hake - 2) || (y >= 8 && y <= 10 && dx <= 13) || (y >= hake - 1 && y <= hake + 2 && dx <= 12 - (y - hake + 1)); }, 'ben', [14, 7, 50, hake + 3]);
     },
     ogonlapp(dk) { linje(dk, 34, 28, 18, 21, 'jord0'); linje(dk, 42, 28, 47, 26, 'jord0'); fyll(dk, ellips(38, 30, 4.5, 3.5), 'kol', [33, 26, 44, 34], { forskj: -1 }); },
     klader(dk, G, p) {
@@ -415,7 +419,6 @@
     skonhet(dk, G, d, p) {
       if (d.id === 'skon-fransar') G.oga.forEach(([ex, ey], s) => { const x = s ? ex + 3 : ex - 4; dk.satt(x, ey - 2, 'kol0'); dk.satt(x + (s ? 1 : -1), ey - 3, 'kol0'); });
       if (d.id === 'skon-glans') punkter(dk, [[24, 13], [25, 12], [26, 12]], 'ben3');
-      if (d.id === 'skon-lappar') { const b = G.mun[1]; for (let x = 30; x <= 33; x++) dk.satt(x, b + 2, 'hud1'); dk.satt(31, b + 1, 'rost3'); dk.satt(32, b + 1, 'rost3'); }
       if (d.id === 'skon-tander' && ['glad', 'oppen'].includes(lageAv(p, 'mun'))) { const b = G.mun[1]; dk.satt(31, b, 'kol0'); dk.satt(33, b + (lageAv(p, 'mun') === 'oppen' ? -1 : 0), 'kol0'); }
       if (d.id === 'skon-varta') { const [x, y] = S(39, 38).map(Math.round); dk.satt(x, y, 'jord1'); dk.satt(x + 1, y, 'jord0'); dk.satt(x, y - 1, 'jord2'); }
       if (d.id === 'skon-hud') punkter(dk, [[22, 34], [24, 38], [41, 33], [39, 37], [36, 22], [27, 21], [25, 40]].map(([x, y]) => S(x, y)), 'rost1');
@@ -423,10 +426,11 @@
   };
 
   // ---------- ritade delar (bildstil/delar/<id>.json, steg 5.2.2.3) ----------
-  // en ritad del har en bild per läge (standard när delen bara har ett), och en egen bild för barnmallen när den behövs.
+  // en ritad del har en bild per läge (standard när delen bara har ett), och en egen bild för barnmallen när den behövs
+  // (barn) och för mannen (man: huvudformerna är lite fyrkantigare, Björn efter 5.2.2.3).
   // Bildens x och y räknas från fästpunkten; delar som finns i par (öron, ögon, ögonbryn) ritas för vänster sida på bilden,
   // och den högra är den speglade (kring ansiktets mitt), för öronen en ton mörkare
-  const ritadBild = (id, mall, lage) => { const D = DELAR[id]; if (!D) return null; const b = (mall === 'barn' && D.barn) || D.bilder; return b[lage || 'standard'] || b.standard || Object.values(b)[0]; };
+  const ritadBild = (id, mall, lage) => { const D = DELAR[id]; if (!D) return null; const b = (mall === 'barn' && D.barn) || (mall === 'man' && D.man) || D.bilder; return b[lage || 'standard'] || b.standard || Object.values(b)[0]; };
   const skifta = (v, n) => n ? v.slice(0, -1) + Math.max(0, Math.min(3, +v.slice(-1) + n)) : v;
   function ritaBild(dk, bild, [ax, ay], { spegel = false, forskj = 0, dy = 0 } = {}) {
     bild.rader.forEach((rad, j) => [...rad].forEach((ch, i) => {
@@ -438,8 +442,10 @@
   }
   // en sorts del: den ritade bilden om den finns, annars platshållaren
   function delen(dk, G, d, p, sort) {
-    const R2 = SORT[sort].ritas, f = G.m.fast, mall = G.m.id;
-    if (!DELAR[d.id] || !R2) return RITA[sort](dk, G, d, p);
+    const R0 = SORT[sort].ritas, f = G.m.fast, mall = G.m.id;
+    if (!DELAR[d.id] || !R0) return RITA[sort](dk, G, d, p);
+    // smyckena sitter på olika platser (hals, hår, öra) med egen fästpunkt (5.2.2.4)
+    const R2 = R0.plats?.[d.plats] ? { ...R0, ...R0.plats[d.plats] } : R0;
     const lage = SORT[sort].lagen ? lageAv(p, sort) : null, bild = ritadBild(d.id, mall, lage);
     const fast = R2.fast === 'huvud' ? [G.H.cx, G.H.cy] : f[R2.fast];
     if (!R2.par) return ritaBild(dk, bild, fast);
@@ -457,28 +463,34 @@
     lagg('huvud', dk => RITA.skalle(dk, G));
     lagg('huvud', dk => delen(dk, G, hf, p, 'huvudform'));
     if (opt.bara) return B;
-    lagg('klader', dk => RITA.klader(dk, G, p));
+    lagg('klader', dk => p.klader.rock && DELAR['plagg-rock'] ? delen(dk, G, DEL['plagg-rock'], p, 'klader') : RITA.klader(dk, G, p));
     lagg('oron', dk => delen(dk, G, D('ora'), p, 'ora'), { maskbar: true });
-    const rs = rynkSteg(p); if (rs > 0) lagg('rynkor', dk => RITA.rynkor(dk, G, rs));
-    if (D('arr')) lagg('arr', dk => RITA.arr(dk, G, D('arr')));
-    if (D('blamarke')) lagg('blamarke', dk => RITA.blamarke(dk, G, D('blamarke')));
+    const rs = rynkSteg(p); if (rs > 0) lagg('rynkor', dk => DELAR['rynkor-' + rs] ? delen(dk, G, DEL['rynkor-' + rs], p, 'rynkor') : RITA.rynkor(dk, G, rs));
+    if (D('arr')) lagg('arr', dk => delen(dk, G, D('arr'), p, 'arr'));
+    if (D('blamarke')) lagg('blamarke', dk => delen(dk, G, D('blamarke'), p, 'blamarke'));
     if (p.blod) lagg('blod', dk => RITA.blod(dk, G));
     lagg('ogon', dk => delen(dk, G, D('oga'), p, 'oga'), { maskbar: true });
     lagg('ogonbryn', dk => delen(dk, G, D('ogonbryn'), p, 'ogonbryn'));
     lagg('nasa', dk => delen(dk, G, D('nasa'), p, 'nasa'));
-    if (D('skagg')) lagg('skagg', dk => RITA.skagg(dk, G, D('skagg')), { utom: SORT.skagg.utom });
+    if (D('skagg')) lagg('skagg', dk => delen(dk, G, D('skagg'), p, 'skagg'), { utom: SORT.skagg.utom });
     lagg('mun', dk => delen(dk, G, D('mun'), p, 'mun'));
     const fr = D('frisyr');
-    if (fr) { lagg('bakhar', dk => RITA.bakhar(dk, G, fr), { maskbar: true }); lagg('framhar', dk => RITA.framhar(dk, G, fr), { maskbar: true }); }
+    // en ritad frisyr har två lager (bilder.bakhar och bilder.framhar, steg 5.2.2.4) från fästpunkten har; annars platshållaren
+    const frD = fr && SORT.frisyr.ritas ? DELAR[fr.id] : null;
+    if (frD) { lagg('bakhar', dk => ritaBild(dk, frD.bilder.bakhar, G.m.fast.har), { maskbar: true, har: true }); lagg('framhar', dk => ritaBild(dk, frD.bilder.framhar, G.m.fast.har), { maskbar: true, har: true }); }
+    else if (fr) { lagg('bakhar', dk => RITA.bakhar(dk, G, fr), { maskbar: true, har: true }); lagg('framhar', dk => RITA.framhar(dk, G, fr), { maskbar: true, har: true }); }
     for (const id of skonLager(p)) {
       const d = DEL[id]; if (!d.lager || (id === 'skon-glans' && (!fr || fr.karta === 'flint'))) continue;
+      // ett ritat lager (5.2.2.5) ritas från sin plats; tänderna syns bara när munnen är glad eller öppen
+      if (DELAR[id] && d.plats) { if (id !== 'skon-tander' || ['glad', 'oppen'].includes(lageAv(p, 'mun'))) lagg(d.lager, dk => delen(dk, G, d, p, 'skonhet'), { maskbar: !!d.maskbar }); continue; }
       lagg(d.lager, dk => RITA.skonhet(dk, G, d, p), { maskbar: !!d.maskbar });
     }
-    if (D('smycke')) lagg('smycke', dk => RITA.smycke(dk, G, D('smycke')), { maskbar: !!D('smycke').maskbar });
-    if (D('huvudbonad')) lagg('huvudbonad', dk => RITA.huvudbonad(dk, G, D('huvudbonad')));
-    for (const id of p.forband) if (DEL[id]) lagg('forband', dk => RITA.forband(dk, G, DEL[id]));
+    if (D('smycke')) lagg('smycke', dk => delen(dk, G, D('smycke'), p, 'smycke'), { maskbar: !!D('smycke').maskbar });
+    if (D('huvudbonad')) lagg('huvudbonad', dk => delen(dk, G, D('huvudbonad'), p, 'huvudbonad'));
+    for (const id of p.forband) if (DEL[id]) lagg('forband', dk => delen(dk, G, DEL[id], p, 'forband'));
     if (p.ogonlapp) lagg('ogonlapp', dk => RITA.ogonlapp(dk));
-    if (D('redskap')) { lagg('redskapBak', dk => RITA.redskap(dk, G, D('redskap'), false)); lagg('redskapFram', dk => RITA.redskap(dk, G, D('redskap'), true)); }
+    if (D('redskap') && DELAR[del.redskap]) lagg('redskapBak', dk => delen(dk, G, D('redskap'), p, 'redskap')); // ritat: på ryggen, bakom personen (Björn efter 5.2.2.7)
+    else if (D('redskap')) { lagg('redskapBak', dk => RITA.redskap(dk, G, D('redskap'), false)); lagg('redskapFram', dk => RITA.redskap(dk, G, D('redskap'), true)); }
     return B;
   }
 
@@ -498,7 +510,9 @@
       const dk = Duk(W, W); b.rita(dk);
       for (let i = 0; i < dk.px.length; i++) {
         const v = dk.px[i]; if (!v) continue;
-        const z = (b.maskbar || b.utom) ? G.zon(i % W, (i / W) | 0) : null;
+        let z = (b.maskbar || b.utom) ? G.zon(i % W, (i / W) | 0) : null;
+        // håret över örat hör till sidhåret: det döljs bara när huvudbonaden täcker sidorna, så att inga lösa testar blir kvar (Björn: ja)
+        if (b.har && z === 'oron') z = 'sidor';
         if (z && b.maskbar && masker.has(z)) continue;
         if (z && b.utom && b.utom.includes(z)) continue;
         kt[i] = v; ag[i] = L;
@@ -529,8 +543,65 @@
     // rostig järnram med nitar
     for (let k = 0; k < W; k++) for (const [x, y] of [[k, 0], [k, 1], [k, W - 2], [k, W - 1], [0, k], [1, k], [W - 2, k], [W - 1, k]]) ut.satt(x, y, P.i('jord', 0));
     for (const [a, b] of [[0, 0], [W - 2, 0], [0, W - 2], [W - 2, W - 2]]) for (let k = 0; k < 4; k++) ut.satt(a + (k & 1), b + (k >> 1), P.i('rost', 1));
+    tempRam(ut, temperatur(p), i => !fig(i));
     return ut;
   }
+
+  // temperaturen: -2 fryser mycket, -1 fryser, 0 lagom, 1 varm, 2 för varm (kyla utan tal är -1)
+  const temperatur = p => p.temp ?? (p.kyla ? -1 : 0);
+  // temperaturramen (Björn godkände förslaget efter version 90 av bildstilen; förslaget kom efter version 85: "Jag tycker inte vi visar kyla på kinderna. Vi gör istället
+  // en isig ram runt porträttet. Och gör en varm version också", två steg åt vardera hållet). Kylan: ramen blir is med istappar
+  // från överkanten och frost som kryper in från hörnen (mer och längre i steg två). Värmen: ramen glöder och värmen darrar i
+  // bakgrunden längs kanterna; i steg två slickar små lågor upp från underkanten.
+  function tempRam(ut, t, bak) {
+    if (!t) return;
+    const W = ut.w, n = Math.abs(t), kall = t < 0, rand = (x, y) => kantRam(x, y, W);
+    const horn = (x, y) => Math.min(Math.hypot(x, y), Math.hypot(W - 1 - x, y), Math.hypot(x, W - 1 - y), Math.hypot(W - 1 - x, W - 1 - y));
+    // hela bakgrunden tonas blåare (kyla) eller rödare (värme), mer i steg två (Björn efter version 89 av bildstilen)
+    const ton = kall ? 'skiffer' : 'rost';
+    for (let y = 2; y < W - 2; y++) for (let x = 2; x < W - 2; x++) {
+      const i = y * W + x; if (!bak(i)) continue;
+      const v = ut.px[i];
+      if (v === P.i('kol', 2) && (n === 2 || (x + y) % 2 === 0)) ut.px[i] = P.i(ton, 0);
+      else if (v === P.i('kol', 1) && n === 2 && (x + y) % 2 === 0) ut.px[i] = P.i(ton, 0);
+    }
+    // steg ett: bara hörnen; steg två: hela ramen
+    const iRam = (x, y) => rand(x, y) && (n === 2 || horn(x, y) < 12 + hash(x, y, 7) * 4);
+    if (kall) {
+      for (let y = 0; y < W; y++) for (let x = 0; x < W; x++) if (iRam(x, y)) { const h = hash(x, y, 11); ut.satt(x, y, P.i(h < 0.1 ? 'ben' : 'skiffer', h < 0.1 ? 3 : h < 0.55 ? 2 : 1)); }
+      // frosten kryper in från hörnen (steg ett) eller längs alla kanter (steg två), blå med vita kristaller, glesare inåt
+      const djup = n === 1 ? 8 : 9;
+      for (let y = 2; y < W - 2; y++) for (let x = 2; x < W - 2; x++) {
+        const dk = Math.min(x - 2, y - 2, W - 3 - x, W - 3 - y), d = n === 1 ? horn(x, y) - 2 : Math.min((horn(x, y) - 2) * 0.8, dk * 1.6);
+        if (d > djup) continue;
+        const h = hash(x, y, 31 + n);
+        if (h < (1 - d / djup) * 0.75) ut.satt(x, y, h < 0.06 ? P.i('ben', 3) : P.i('skiffer', h < 0.25 ? 3 : h < 0.55 ? 2 : 1));
+      }
+      // istapparna: i hörnen i steg ett, längs hela överkanten i steg två
+      for (let x = 4; x < W - 4; x += 3) {
+        if (n === 1 && Math.min(x, W - 1 - x) > 9) continue;
+        const l = Math.floor(hash(x, 7, 5) * (n === 1 ? 2 : 6)) + n; if (hash(x, 3, 9) < (n === 1 ? 0.3 : 0.2)) continue;
+        for (let k = 0; k < l; k++) { ut.satt(x, 2 + k, P.i(k === l - 1 ? 'ben' : 'skiffer', k === l - 1 ? 3 : 2)); if (k < l / 2) ut.satt(x + 1, 2 + k, P.i('skiffer', 1)); }
+      }
+    } else {
+      for (let y = 0; y < W; y++) for (let x = 0; x < W; x++) if (iRam(x, y)) ut.satt(x, y, P.i((x * 3 + y) % 4 ? 'rost' : 'senap', (x * 3 + y) % 4 ? 2 : 3));
+      // glöden: bakgrunden närmast hörnen (steg ett) eller kanterna (steg två) lyser
+      const djup = n === 1 ? 6 : 9;
+      for (let y = 2; y < W - 2; y++) for (let x = 2; x < W - 2; x++) {
+        const i = y * W + x; if (!bak(i)) continue;
+        const d = n === 1 ? horn(x, y) - 2 : Math.min(x - 2, y - 2, W - 3 - x, W - 3 - y);
+        if (d > djup) continue;
+        if (hash(x, y, 41) < (1 - d / djup) * 0.8) ut.px[i] = P.i('rost', d < 2 ? 2 : 1);
+      }
+      // lågor: i de nedre hörnen i steg ett, längs hela underkanten i steg två
+      for (let x = 3; x < W - 3; x += 4) {
+        if (n === 1 && Math.min(x, W - 1 - x) > 8) continue;
+        const l = (n === 1 ? 2 : 3) + Math.floor(hash(x, 1, 13) * (n === 1 ? 3 : 5));
+        for (let k = 0; k < l; k++) { const y = W - 3 - k, b = k < l * 0.4 ? 1 : 0; for (let dx = -b; dx <= b; dx++) ut.satt(x + dx + (k > l * 0.6 && hash(x, k, 3) < 0.5 ? 1 : 0), y, P.i(k > l * 0.7 ? 'senap' : 'rost', k > l * 0.7 ? 3 : k > l * 0.4 ? 3 : 2)); }
+      }
+    }
+  }
+  const kantRam = (x, y, W) => x < 2 || y < 2 || x >= W - 2 || y >= W - 2;
 
   // ---------- kartfiguren (14 × 20): mallarna ritade i steg 5.2.2.2 ----------
   // kroppen delas i zoner (huvud, bål, armar, händer, ben, fötter); kläderna målar sina zoner, och bara det som sticker ut
@@ -669,13 +740,23 @@
       }
     }
     if (bonad) {
-      const mat = { 'bonad-1': 'skiffer', 'bonad-2': 'jord', 'bonad-3': 'jord', 'bonad-4': 'rost', 'bonad-5': 'senap', 'bonad-6': 'ben', 'bonad-7': 'oliv', 'bonad-8': 'oliv' }[del.huvudbonad];
+      const mat = { 'bonad-1': 'skiffer', 'bonad-2': 'jord', 'bonad-3': 'oliv', 'bonad-4': 'rost', 'bonad-5': 'senap', 'bonad-6': 'ben', 'bonad-7': 'oliv', 'bonad-8': 'oliv' }[del.huvudbonad];
       const s = rikt === 'sida' ? 1 : 0, xa = 4 + s, xb = 9 + s;
       if (bonad === 'mossa') for (let y = h - 1; y <= h + 1; y++) for (let x = xa - (y === h + 1 ? 1 : 0); x <= xb + (y === h + 1 && !s ? 1 : 0); x++) satt(x, y, mat + (y === h - 1 ? 3 : 2));
       if (bonad === 'hatt') { for (let x = xa - 2; x <= xb + 2; x++) satt(x, h + 1, mat + 1); for (let y = h - 1; y <= h; y++) for (let x = xa; x <= xb; x++) satt(x, y, mat + 2); }
-      if (bonad === 'huva') for (let y = h - 1; y <= h + 6; y++) for (let x = xa - 1; x <= xb + 1; x++) {
-        const ansikte = rikt === 'fram' ? x >= 5 && x <= 8 && y >= h + 2 && y <= h + 5 : rikt === 'sida' ? x >= 8 && y >= h + 2 && y <= h + 5 : false;
-        if (!ansikte && !(rikt === 'sida' && x > 10)) satt(x, y, mat + (x === xa - 1 ? 3 : 2));
+      // huvan: rundad överst, en öppning för ansiktet med en kant (huvan har en senapsgul kant som i porträttet) och tyget ner över axlarna
+      if (bonad === 'huva') {
+        const kant = del.huvudbonad === 'bonad-3' ? 'senap2' : mat + 3;
+        const x1 = rikt === 'sida' ? 10 : 10, x0 = rikt === 'sida' ? 4 : 3;
+        for (let y = h - 1; y <= h + 7; y++) for (let x = x0; x <= x1; x++) {
+          if (y === h - 1 && (x === x0 || x === x1)) continue;
+          if (y === h + 7 && rikt === 'sida' && x > 8) continue;
+          const opp = rikt === 'fram' ? x >= 5 && x <= 8 && y >= h + 1 && y <= h + 5 : rikt === 'sida' ? x >= 8 && y >= h + 1 && y <= h + 5 : false;
+          if (opp) continue;
+          const runt = rikt === 'fram' ? ((x === 4 || x === 9) && y >= h + 1 && y <= h + 5) || (y === h && x >= 5 && x <= 8) || (y === h + 6 && x >= 5 && x <= 8)
+            : rikt === 'sida' ? (x === 7 && y >= h + 1 && y <= h + 5) || (y === h && x >= 8) || (y === h + 6 && x >= 8) : false;
+          satt(x, y, runt ? kant : mat + (x === x0 || y === h - 1 ? 3 : x === x1 ? 1 : 2));
+        }
       }
       if (bonad === 'band') for (let x = xa; x <= xb; x++) satt(x, h + 1, mat + 2);
     }
@@ -683,7 +764,6 @@
       const k = DEL[id]?.karta;
       if (k === 'huvud') for (let x = rikt === 'sida' ? 5 : 4; x <= (rikt === 'sida' ? 10 : 9); x++) satt(x, h + 1, 'ben3');
       if (k === 'oga' && rikt !== 'bak') punkter({ satt }, rikt === 'sida' ? [[9, h + 2], [8, h + 1]] : [[8, h + 2], [7, h + 1], [9, h + 3]], 'ben3');
-      if (k === 'kake') punkter({ satt }, rikt === 'sida' ? [[8, h + 5], [9, h + 5], [10, h + 5]] : [[4, h + 4], [9, h + 4], [5, h + 5], [6, h + 5], [7, h + 5], [8, h + 5]], 'ben3');
     }
     if (p.ogonlapp && rikt !== 'bak') { if (rikt === 'fram') { satt(8, h + 2, 'kol0'); satt(7, h + 1, 'jord0'); } else satt(9, h + 2, 'kol0'); }
     if (arm === 'bara') for (let y = b0 + 1; y <= b0 + 3; y++) for (let x = rikt === 'sida' ? 9 : x0; x <= (rikt === 'sida' ? 12 : x1); x++) satt(x, y, 'jord' + (y === b0 + 1 ? 3 : 2));
@@ -696,7 +776,9 @@
         if (d.form === 'spade') { satt(hx, hy - 4, 'ben2'); satt(hx + 1, hy - 4, 'ben1'); }
       }
     }
-    return kartUt(p, kt, W, H, spegel, opt);
+    const ut = kartUt(p, kt, W, H, spegel, opt);
+    ut.hand = hand && (spegel ? [W - 1 - hand[0], hand[1]] : hand); // handen, till det som hålls (animationerna i anim.js)
+    return ut;
   }
   // speglingen, den liggande figuren och täcket, konturen och färgerna
   function kartUt(p, kt, W, H, spegel, opt) {
@@ -753,13 +835,20 @@
   const slumpFran = s => () => { s = (s + 0x6D2B79F5) | 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
   const valj = (r, a) => a[Math.floor(r() * a.length)];
   const viktat = (r, par) => { const sum = par.reduce((s, [, v]) => s + v, 0); let x = r() * sum; for (const [k, v] of par) { x -= v; if (x < 0) return k; } return par[par.length - 1][0]; };
-  const radAv = (r, sort, mall, kon) => { const a = alternativ(sort, mall, kon).filter(Boolean); return a.length ? valj(r, a) : null; };
+  const radAv = (r, sort, mall, kon, skon = null) => {
+    let a = alternativ(sort, mall, kon).filter(Boolean);
+    // skönheten styr de fula delarna (ful i registret, Björn efter 5.2.2.3): de vanliga och vackra får aldrig en ful del, de
+    // fula får en ibland och de fulaste ofta
+    if (skon !== null) { const ful = a.filter(id => DEL[id]?.ful), fin = a.filter(id => !DEL[id]?.ful); a = skon < 0 && ful.length && r() < (skon <= -2 ? 0.6 : 0.3) ? ful : fin.length ? fin : a; }
+    return a.length ? valj(r, a) : null;
+  };
   function slumpPerson(r, o = {}) {
     const p = neutral('kvinna');
     p.kon = o.kon || (r() < 0.5 ? 'kvinna' : 'man');
     p.alder = o.alder || viktat(r, [['barn', 2], ['ung', 3], ['vuxen', 4], ['gammal', 2]]);
     const m = mallAv(p);
-    for (const s of ['huvudform', 'ora', 'nasa', 'oga', 'ogonbryn', 'mun', 'frisyr']) p.del[s] = radAv(r, s, m, p.kon);
+    p.skonhet = viktat(r, [[-2, 1], [-1, 2], [0, 6], [1, 2], [2, 1]]);
+    for (const s of ['huvudform', 'ora', 'nasa', 'oga', 'ogonbryn', 'mun', 'frisyr']) p.del[s] = radAv(r, s, m, p.kon, p.skonhet);
     p.del.skagg = m === 'man' && r() < 0.65 ? radAv(r, 'skagg', m, p.kon) : null;
     p.del.huvudbonad = r() < 0.2 ? radAv(r, 'huvudbonad', m, p.kon) : null;
     p.del.smycke = r() < 0.25 ? radAv(r, 'smycke', m, p.kon) : null;
@@ -770,7 +859,6 @@
     p.har = viktat(r, PR.farger.har.map((f, i) => [i, f.sallsynt ? 0.6 : 2]));
     p.ogon = Math.floor(r() * PR.farger.oga.length);
     p.humor = viktat(r, [['glad', 2], ['nojd', 3], ['lugn', 4], ['ledsen', 1.5], ['arg', 1], ['radd', 0.5], ['sover', 0.4]]);
-    p.skonhet = viktat(r, [[-2, 1], [-1, 2], [0, 6], [1, 2], [2, 1]]);
     p.forband = r() < 0.06 ? [radAv(r, 'forband', m, p.kon)] : [];
     p.ogonlapp = r() < 0.03; p.sjuk = r() < 0.08; p.kyla = r() < 0.1; p.blod = r() < 0.05;
     p.klader = { rock: r() < 0.55 ? viktat(r, [['harskinn', 3], ['vargskinn', 1]]) : null, skor: r() < 0.5, balte: r() < 0.35 };
@@ -962,20 +1050,33 @@
     else if (s.rader?.startsWith('farger.')) { const k = s.rader.split('.')[1]; PR.farger[k].forEach((f, i) => KORT.push({ id: 'farg-' + k + '-' + f.id, sort: s, rad: f, i, namn: f.namn, ritad: f.ritad || 0 })); }
     else delarAv(s.id).forEach(d => KORT.push({ id: d.id, sort: s, rad: d, namn: d.namn, ritad: d.ritad || 0 }));
   }
+  // fas 5:s bilder i förväg (steg 5.2.4): en sort per slag, ett kort per bild; kortens id är sak-<id>
+  for (const s of BILDER.sorter) { const so = { ...s, bild: true }; BILDER.bilder.filter(b => b.sort === s.id).forEach(b => KORT.push({ id: 'sak-' + b.id, sort: so, rad: b, namn: b.namn, ritad: b.ritad || 0 })); }
+  // Claudes förslag (se FORSLAG_PA): ett kort per förslag med förslaget bredvid hur det ser ut nu. ritad räknas upp när förslaget görs om.
+  const FORSLAG_SORT = { id: 'forslag', namn: 'Claudes förslag', en: 'Förslag', steg: '5.2.2', forslag: true };
+  const medForslag = (id, f) => { FORSLAG_PA.add(id); try { return f(); } finally { FORSLAG_PA.delete(id); } };
+  const FORSLAG = [
+  ];
+  for (const f of FORSLAG) KORT.push({ id: 'forslag-' + f.id, sort: FORSLAG_SORT, rad: f, namn: f.namn, ritad: f.ritad });
   KORT.forEach((k, i) => {
-    k.forebild = i === 0 || KORT[i - 1].sort !== k.sort;
+    k.forebild = !k.sort.forslag && (i === 0 || KORT[i - 1].sort.id !== k.sort.id);
+    if (k.sort.bild || k.sort.forslag) { k.vem = []; return; }
     if (k.mallar) { k.vem = k.mallar.map(m => ({ mall: m, kon: m === 'man' ? 'man' : 'kvinna' })); return; }
     const t = k.rad.sort ? konAv(k.rad) : 'bada', barn = k.rad.sort ? barnOk(k.rad) : true;
     k.kon = k.rad.sort ? t : null; k.barn = barn;
     k.vem = [...(t === 'bada' ? ['kvinna', 'man'] : [t]).map(m => ({ mall: m, kon: m })), ...(barn ? [{ mall: 'barn', kon: t === 'man' ? 'man' : 'kvinna' }] : [])];
   });
-  let grFilter = lagra.las('granskning-filter') || 'obesvarade', grId = lagra.las('granskning-kort') || KORT[0].id, grVantar = null;
+  // granskningen visar bara de ritade delarna (Björn efter 5.2.2.3: sidan var förvirrande); de grå platshållarna kommer dit när de ritas
+  const GKORT = KORT.filter(k => k.ritad > 0);
+  let grFilter = lagra.las('granskning-filter') || 'obesvarade', grId = lagra.las('granskning-kort') || GKORT[0]?.id, grVantar = null;
   const svarFor = k => { const s = SVARDEL[k.id]; return s && (s.ritad ?? 0) === k.ritad ? s : null; };
   const lage = k => { const s = svarFor(k); return !s ? 'obesvarad' : s.svar === 'ja' || s.svar === 'nej' ? s.svar : 'kommentar'; };
   const synlig = k => grFilter === 'alla' || lage(k) === 'obesvarad' || k.id === grId;
   function granskPerson(k, mall, kon = mall === 'man' ? 'man' : 'kvinna') {
     const q = neutral(mall); q.kon = kon;
-    for (const [s, id] of Object.entries(k.sort.granskaMed || {})) if (DEL[id] && passar(DEL[id], mall, kon)) q.del[s] = id;
+    // delarna kortet visas med; ett smycke kan ha egna efter sin plats (örhängen med kort hår så att öronen syns, 5.2.2.4)
+    const med = { ...(k.sort.granskaMed || {}), ...(k.rad.plats && k.sort.granskaMedPlats?.[k.rad.plats] || {}) };
+    for (const [s, id] of Object.entries(med)) if (DEL[id] && passar(DEL[id], mall, kon)) q.del[s] = id;
     switch (k.sort.id) {
       case 'mall': break;
       case 'hudton': q.hud = k.i; break;
@@ -997,7 +1098,135 @@
     for (const [B, skala, text] of bilder) { const f = document.createElement('figure'); f.append(duk(B, skala, text)); f.insertAdjacentHTML('beforeend', `<figcaption>${text}</figcaption>`); r.append(f); }
     g.append(r); return g;
   }
+  // ---------- fas 5:s bilder (steg 5.2.4): sakens kartbild i sitt sammanhang, som den syns i spelet ----------
+  // tecknen är porträttens fasta färger (jord2, kol0 …); kontur och skuggning ritas i bilden, skuggan på marken av programmet
+  const tonAv = ch => { const t = PR.tecken[ch]; return t && /\d$/.test(t) ? P.i(t.slice(0, -1), +t.slice(-1)) : -1; };
+  function sakBild(id, data = BILDFILER[id]) {
+    if (!data?.rader) return null;
+    const w = Math.max(...data.rader.map(r => r.length)), h = data.rader.length, B = Bild(w, h, P);
+    data.rader.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== '.') B.satt(x, y, tonAv(ch)); }));
+    return B;
+  }
+  // spelets bild av saken nu (GAMLA, ur src/ikoner.ts via bildstil/gamla.ts; körs när nya rader läggs till, de godkända tas bort ur gamla.json), med varje färg till närmaste i paletten
+  function gammalBild(id) {
+    const g = GAMLA[id]; if (!g) return null;
+    const w = Math.max(...g.rader.map(r => r.length)), h = g.rader.length, B = Bild(w, h, P), f = {};
+    for (const [k, v] of Object.entries(g.pal)) f[k] = P.av(v);
+    g.rader.forEach((r, y) => [...r].forEach((ch, x) => { if (f[ch] !== undefined) B.satt(x, y, f[ch]); }));
+    return B;
+  }
+  // klistrar in en bild; med skugga faller den snett nedåt till höger på marken (guiden)
+  function klistra(M, S, x0, y0, skugga = true) {
+    if (!S) return;
+    if (skugga) for (let y = 0; y < S.h; y++) for (let x = 0; x < S.w; x++) if (S.px[y * S.w + x] >= 0 && !(S.px[(y + 1) * S.w + x + 1] >= 0 && x + 1 < S.w && y + 1 < S.h)) M.morka(x0 + x + 1, y0 + y + 1);
+    for (let y = 0; y < S.h; y++) for (let x = 0; x < S.w; x++) { const v = S.px[y * S.w + x]; if (v >= 0) M.satt(x0 + x, y0 + y, v); }
+  }
+  // en ruta (16 × 16) markeras med ljusa hörn, så att storleken mot rutan syns
+  function rutHorn(M, x0, y0) { for (const [a, b] of [[0, 0], [15, 0], [0, 15], [15, 15]]) M.satt(x0 + a, y0 + b, P.i('ben', 2)); }
+  // symbolerna (steg 5.2.4.2): panelens och textens symboler, 16 × 16 punkter både i panelen och i textraderna (Björn efter
+  // version 91 av bildstilen). De visas på panelens mörka och ljusa bakgrund och bredvid de symboler Björn redan valt
+  const SYM_REF = ['s_mat', 'a_vatten', 'l_fara', 'handslag', 'silver', 'i_stark', 'm_torka', 'r_fiende'];
+  const arSymbol = id => !!BILDER.sorter.find(s => s.id === BILDER.bilder.find(b => b.id === id)?.sort)?.symbol;
+  const fylld = (w, h, ramp, ton) => { const M = Bild(w, h, P); for (let i = 0; i < M.px.length; i++) M.px[i] = P.i(ramp, ton); return M; };
+  function symbolRad(lista, bg = ['kol', 1]) {
+    const M = fylld(lista.length * 20 + 4, 24, ...bg); lista.forEach((S, i) => klistra(M, S, 4 + i * 20 + ((16 - S.w) >> 1), 4 + ((16 - S.h) >> 1), false)); return M;
+  }
+  const refSymboler = () => SYM_REF.filter(k => IKONER.PIX[k]).map(k => { const r = IKONER.PIX[k], B = Bild(r[0].length, r.length, P); ritaIkon(B, k, 0, 0); return B; });
+  function symbolSammanhang(id, S) {
+    const ut = [];
+    ut.push(['I panelen (mörk bakgrund)', symbolRad([S]), 4]);
+    ut.push(['På ljus bakgrund', symbolRad([S], ['ben', 2]), 4]);
+    ut.push(['Bredvid symbolerna Björn redan valt', symbolRad([...refSymboler().slice(0, 4), S]), 3]);
+    const rad = BILDER.bilder.find(b => b.id === id), andra = BILDER.bilder.filter(b => b.id !== id && arSymbol(b.id) && BILDFILER[b.id]?.rader).slice(0, 6).map(b => sakBild(b.id));
+    if (andra.length) ut.push(['Bredvid de andra nya symbolerna', symbolRad([...andra, S]), 3]);
+    return ut;
+  }
+  // stationerna och lägerelden (steg 5.2.4.3): på marken med rutorna markerade nertill, med stenringen under när raden har
+  // ett lager under (under), och bredvid en stående människa
+  const arStation = id => !!BILDER.sorter.find(s => s.id === BILDER.bilder.find(b => b.id === id)?.sort)?.station;
+  function stationSammanhang(id, S) {
+    const rad = BILDER.bilder.find(b => b.id === id), U = rad?.under && BILDFILER[rad.under] ? sakBild(rad.under) : null, ut = [];
+    // möblerna står på trägolvet (inne), golven läggs bredvid sig själva (monster)
+    const golv = rad?.inne && BILDFILER.golv_tra ? sakBild('golv_tra') : null;
+    if (rad?.monster) { const M = markBild(56, 40, P, 400, 420); for (let x = 4; x < 52; x += 16) for (let y = 4; y < 36; y += 16) klistra(M, S, x, y); ut.push(['Lagt bredvid sig självt, tre × två rutor', M, 4]); return ut; }
+    const pa = (lager, titel) => {
+      const W = Math.max(...lager.map(B => B.w)), H = Math.max(...lager.map(B => B.h)), M = markBild(W + 8, H + 8, P, 400, 420);
+      if (golv) for (let x = 0; x < W + 8; x += 16) for (let y = 0; y < H + 8; y += 16) klistra(M, golv, x, y);
+      for (let tx = 0; tx * 16 < W; tx++) for (let ty = 0; (ty + 1) * 16 <= H; ty++) rutHorn(M, 4 + tx * 16, 4 + H - 16 * (ty + 1));
+      lager.forEach((B, i) => klistra(M, B, 4 + ((W - B.w) >> 1), 4 + H - B.h, i === lager.length - 1));
+      ut.push([titel, M, 4]);
+    };
+    const un = BILDER.bilder.find(b => b.id === rad?.under)?.namn?.toLowerCase();
+    if (U) { pa([U, S], rad.under === 'lagereld_ring' ? 'Med stenring' : 'På ' + un); pa([S], rad.under === 'lagereld_ring' ? 'Utan stenring' : 'Ensam'); } else pa([S], golv ? 'På trägolvet' : 'På marken');
+    if (rad?.medManniska) {
+      const q = neutral('man'), F = kartFigur(q, 'fram', 'sta', 'hanga'), lag = U ? [U, S] : [S], SW = Math.max(...lag.map(B => B.w)), SH = Math.max(...lag.map(B => B.h));
+      const W = F.w + SW + 14, H = Math.max(F.h, SH) + 8, M = markBild(W, H, P, 410, 430);
+      klistra(M, F, 4, H - F.h - 3); lag.forEach(B => klistra(M, B, F.w + 8 + ((SW - B.w) >> 1), H - B.h - 4)); ut.push(['Bredvid en människa', M, 3]);
+    }
+    return ut;
+  }
+  function sakSammanhang(id, data) {
+    const S = sakBild(id, data); if (!S) return [];
+    if (arSymbol(id)) return symbolSammanhang(id, S);
+    if (arStation(id)) return stationSammanhang(id, S);
+    const ut = [];
+    // ensam på marken, mitt i en ruta
+    { const n = Math.max(16, S.w + 4, S.h + 4), M = markBild(n + 8, n + 8, P, 400, 420); rutHorn(M, 4 + ((n - 16) >> 1), 4 + ((n - 16) >> 1)); klistra(M, S, 4 + ((n - S.w) >> 1), 4 + ((n - S.h) >> 1)); ut.push(['Ensam på marken (hörnen visar en ruta)', M, 4]); }
+    // högen: en till fyra, efter hur full den är; det som bara läggs ett och ett på en ruta (redskapen och kläderna, stack 1
+    // i spelet) får ingen hög (Björn: de kan bara stackas en och en)
+    const forsk = [[0, 0], [Math.max(2, S.w >> 1), -1], [-1, Math.max(2, S.h >> 1)], [Math.max(2, S.w >> 1) - 1, Math.max(2, S.h >> 1) + 1]];
+    const rad = BILDER.bilder.find(b => b.id === id), ensam = rad?.ensam || BILDER.sorter.find(s => s.id === rad?.sort)?.ensam;
+    if (!ensam) for (let n = 1; n <= 4; n++) {
+      const W = Math.max(20, S.w + (S.w >> 1) + 8), H = Math.max(20, S.h + (S.h >> 1) + 9), M = markBild(W, H, P, 430, 410);
+      const bx = (W - S.w - (S.w >> 1)) >> 1, by = (H - S.h - (S.h >> 1)) >> 1;
+      forsk.slice(0, n).sort((a, b) => a[1] - b[1]).forEach(([dx, dy]) => klistra(M, S, bx + dx, by + dy + 1));
+      ut.push([`Högen, ${['en', 'två', 'tre', 'fyra'][n - 1]}`, M, 4]);
+    }
+    // i stationen: på slöjdbänken
+    { const M = markBild(40, 38, P, 380, 400); ritaSlojdbank(M, 4, 4, P, true); klistra(M, S, 27 - (S.w >> 1), Math.max(2, 21 - S.h), true); ut.push(['På slöjdbänken', M, 4]); }
+    // när den bärs: framför kroppen, i kartfigurens storlek
+    { const q = neutral('man'), F = kartFigur(q, 'fram', 'sta', 'bara'), W = Math.max(F.w, S.w) + 8, H = F.h + Math.max(0, S.h - 8) + 8, M = markBild(W, H, P, 420, 400);
+      const fx = (W - F.w) >> 1, fy = H - F.h - 3; klistra(M, F, fx, fy, false); klistra(M, S, fx + 7 - (S.w >> 1), fy + 12 - (S.h >> 1), false); ut.push(['Bärs', M, 4]); }
+    // bredvid en stående människa, så att storleken kan jämföras (medManniska på raden; Björn efter version 90 av bildstilen)
+    if (BILDER.bilder.find(b => b.id === id)?.medManniska) {
+      const q = neutral('man'), F = kartFigur(q, 'fram', 'sta', 'hanga'), W = F.w + S.w + 14, H = Math.max(F.h, S.h) + 8, M = markBild(W, H, P, 410, 430);
+      klistra(M, F, 4, H - F.h - 3); klistra(M, S, F.w + 8, H - S.h - 4); ut.push(['Bredvid en människa', M, 4]);
+    }
+    return ut;
+  }
+  function sakBilder(k) {
+    const ut = document.createElement('div'), data = BILDFILER[k.rad.id]; ut.className = 'gr-bilder';
+    ut.append(bildRad('Som i spelet', sakSammanhang(k.rad.id).map(([t, B, s]) => [B, s, t])));
+    const stor = [[sakBild(k.rad.id), 10, 'Nu, tio gånger större']];
+    if (data?.forra) stor.push([sakBild(k.rad.id, data.forra), 10, 'Förra versionen']);
+    const g = gammalBild(k.rad.id);
+    if (g) stor.push([g, 10, `I spelet i dag (${g.w} × ${g.h} punkter), som den nya ritas om efter`]);
+    ut.append(bildRad('Nu bredvid ' + (data?.forra ? 'förra versionen och ' : '') + 'bilden i spelet i dag', stor));
+    if (data?.forra) ut.append(bildRad('Förra versionen som i spelet', sakSammanhang(k.rad.id, data.forra).map(([t, B, s]) => [B, s, t])));
+    // det tillagade bredvid det otillagade, eller en annan referens (bredvid på raden; Björn efter version 90 av bildstilen)
+    const ref = k.rad.bredvid && BILDER.bilder.find(b => b.id === k.rad.bredvid);
+    if (ref && BILDFILER[ref.id]) {
+      const M = markBild(Math.max(ref.w, k.rad.w) * 2 + 16, Math.max(ref.h, k.rad.h) + 10, P, 400, 420);
+      klistra(M, sakBild(ref.id), 4, 5); klistra(M, sakBild(k.rad.id), Math.max(ref.w, k.rad.w) + 10, 5);
+      ut.append(bildRad(`Bredvid ${ref.namn.toLowerCase()} (till vänster) som jämförelse`, [[M, 6, `${ref.namn} och ${k.rad.namn.toLowerCase()}`], [sakBild(ref.id), 10, ref.namn + ', tio gånger större'], [sakBild(k.rad.id), 10, k.rad.namn + ', tio gånger större']]));
+    }
+    // alla varianter av plagget: samma form, en palett per material (variantAv på raden; Björn efter version 92 av bildstilen)
+    const grund = k.rad.variantAv || (BILDER.bilder.some(b => b.variantAv === k.rad.id) ? k.rad.id : null);
+    if (grund) {
+      const alla = BILDER.bilder.filter(b => (b.id === grund || b.variantAv === grund) && BILDFILER[b.id]);
+      ut.append(bildRad('Alla varianter av plagget: samma form, olika material', alla.map(b => [sakBild(b.id), 10, b.namn])));
+    }
+    return ut;
+  }
   function granskBilder(k) {
+    if (k.sort.bild) return sakBilder(k);
+    if (k.sort.forslag) {
+      const ut = document.createElement('div'); ut.className = 'gr-bilder';
+      const forslag = medForslag(k.rad.id, () => k.rad.bilder()), nu = k.rad.bilder();
+      ut.append(bildRad('Förslaget', forslag.flatMap(([t, rad]) => rad.map(([B, sk, tt]) => [B, sk, rad.length > 1 ? t + ', ' + tt.toLowerCase() : t]))));
+      ut.append(bildRad('Som det ser ut nu', nu.flatMap(([t, rad]) => rad.map(([B, sk, tt]) => [B, sk, rad.length > 1 ? t + ', ' + tt.toLowerCase() : t]))));
+      return ut;
+    }
     const ut = document.createElement('div'); ut.className = 'gr-bilder';
     const lagen = k.sort.lagen ? LAGEN[k.sort.lagen] : null;
     if (k.sort.id === 'mall') {
@@ -1012,6 +1241,9 @@
       ut.append(bildRad('Liggande', [[kartBild(q, 'fram', 'sta', 'hanga', { ligga: true, slutna: true, bara: 'mall' }), 3, 'Ligger'], [kartBild(q, 'fram', 'sta', 'hanga', { ligga: true, slutna: true, tacke: true, bara: 'mall' }), 3, 'Ligger under fällen']]));
       return ut;
     }
+    // den förra ritningen (Björn efter 5.2.2.7: den gamla versionen ska alltid stå bredvid, så att det syns vad som ändrats)
+    const forra = DELAR[k.id]?.forra || null;
+    const medForra = f => { const nu = DELAR[k.id]; DELAR[k.id] = { ...nu, ...forra, man: forra.man, barn: forra.barn }; try { return f(); } finally { DELAR[k.id] = nu; } };
     const vemNamn = v => v.mall === 'barn' && k.kon && k.kon !== 'bada' ? (v.kon === 'man' ? 'Barn (pojke)' : 'Barn (flicka)') : MALL[v.mall].namn;
     for (const v of k.vem) {
       const mall = v.mall, bilder = [];
@@ -1021,8 +1253,13 @@
         if (k.sort.id === 'mun') { const h = PR.humor.find(x => x.mun === l.id); if (h) q.humor = h.id; }
         bilder.push([portratt(q), 2, l.namn]);
       }
-      else bilder.push([portratt(granskPerson(k, mall, v.kon)), 2, vemNamn(v)]);
+      else {
+        bilder.push([portratt(granskPerson(k, mall, v.kon)), 2, forra ? 'Nu' : vemNamn(v)]);
+        if (forra) bilder.push([medForra(() => portratt(granskPerson(k, mall, v.kon))), 2, 'Förra versionen']);
+      }
       ut.append(bildRad(lagen ? vemNamn(v) + ': ' + (k.sort.id === 'mun' ? 'munnen i sina sex lägen, med ögonen och ögonbrynen i samma humör' : 'i alla fyra lägen') : vemNamn(v), bilder));
+      // en del i flera lägen: den förra versionen i en rad direkt under, i samma lägen
+      if (lagen && forra) ut.append(bildRad(vemNamn(v) + ': förra versionen', lagen.map(l => { const q = granskPerson(k, mall, v.kon); q.lagen[k.sort.id] = l.id; if (k.sort.id === 'mun') { const h = PR.humor.find(x => x.mun === l.id); if (h) q.humor = h.id; } return [medForra(() => portratt(q)), 2, l.namn]; })));
     }
     if (k.sort.harfarger) {
       const v0 = k.vem[0], bilder = [0, 2, 4, 5].map(i => { const q = granskPerson(k, v0.mall, v0.kon); q.har = i; return [portratt(q), 2, PR.farger.har[i].namn]; });
@@ -1040,45 +1277,53 @@
     } else ut.insertAdjacentHTML('beforeend', '<p class="not">Syns inte på kartan.</p>');
     return ut;
   }
+  // korten man har sett, så att Förra går tillbaka till kortet man nyss var på, också när det är besvarat
+  // (Björn efter 5.2.2.3: förut hoppade Förra över det besvarade kortet till ett helt annat)
+  const grSett = [];
   function flytta(steg, svarat = false) {
-    const i = KORT.findIndex(k => k.id === grId);
-    for (let n = 1; n <= KORT.length; n++) {
-      const k = KORT[(i + steg * n + KORT.length * n) % KORT.length];
+    if (steg < 0 && grSett.length) { grId = grSett.pop(); lagra.skriv('granskning-kort', grId); visaGranskning(true); return; }
+    const fran = grId, i = GKORT.findIndex(k => k.id === grId);
+    for (let n = 1; n <= GKORT.length; n++) {
+      const k = GKORT[(i + steg * n + GKORT.length * n) % GKORT.length];
       if (grFilter === 'alla' || lage(k) === 'obesvarad') { grId = k.id; break; }
-      if (svarat && n === KORT.length) break;
+      if (svarat && n === GKORT.length) break;
     }
+    if (steg > 0 && grId !== fran) grSett.push(fran);
     lagra.skriv('granskning-kort', grId); visaGranskning(true);
   }
   let senastVisad = null;
   function visaGranskning(nyttKort = false) {
     if (!$('#grkort')) return;
-    const alla = KORT.length, obesv = KORT.filter(k => lage(k) === 'obesvarad').length;
+    const alla = GKORT.length, obesv = GKORT.filter(k => lage(k) === 'obesvarad').length;
     document.querySelectorAll('[data-grfilter]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.grfilter === grFilter)));
     $('#gr-antal-obesvarade').textContent = obesv; $('#gr-antal-alla').textContent = alla;
     // sorterna med hur många som är godkända
     const sorter = $('#gr-sorter'); sorter.textContent = '';
-    for (const s of PR.sorter) {
-      const ks = KORT.filter(k => k.sort === s), ja = ks.filter(k => lage(k) === 'ja').length, kom = ks.filter(k => ['kommentar', 'nej'].includes(lage(k))).length;
+    for (const s of [...new Set(GKORT.map(k => k.sort))]) {
+      const ks = GKORT.filter(k => k.sort === s); if (!ks.length) continue;
+      const ja = ks.filter(k => lage(k) === 'ja').length, kom = ks.filter(k => ['kommentar', 'nej'].includes(lage(k))).length;
       const b = document.createElement('button'); b.type = 'button'; b.dataset.grsort = s.id;
       b.className = ja === ks.length ? 'klar' : kom ? 'kommenterad' : '';
       b.innerHTML = `${s.namn} <small>${ja}/${ks.length}</small>`;
-      if (KORT.find(k => k.id === grId)?.sort === s) b.setAttribute('aria-current', 'true');
+      if (GKORT.find(k => k.id === grId)?.sort === s) b.setAttribute('aria-current', 'true');
       sorter.append(b);
     }
-    let k = KORT.find(x => x.id === grId) || KORT[0];
+    let k = GKORT.find(x => x.id === grId) || GKORT[0];
     const kort = $('#grkort');
+    if (!k) { kort.className = 'grkort'; kort.innerHTML = '<p>Inget att granska just nu.</p>'; senastVisad = null; return; }
     if (grFilter === 'obesvarade' && !obesv && lage(k) !== 'obesvarad') {
       kort.className = 'grkort'; kort.innerHTML = '<p>Alla kort är besvarade.</p><p><button type="button" class="gr-knapp" data-grfilter="alla">Visa alla kort</button></p>'; senastVisad = null; return;
     }
     const st = lage(k), s = SVARDEL[k.id], forra = !svarFor(k) && s && s.kommentar ? s.kommentar : k.rad.forra || null;
-    const synliga = KORT.filter(synlig), pos = synliga.indexOf(k) + 1;
+    const synliga = GKORT.filter(synlig), pos = synliga.indexOf(k) + 1;
     const nav = `<nav class="gr-nav" aria-label="Bläddra bland korten"><button type="button" class="gr-knapp" data-grsteg="-1">‹ Förra</button><span>${pos} av ${synliga.length}</span><button type="button" class="gr-knapp" data-grsteg="1">Nästa ›</button></nav>`;
     if (nyttKort || senastVisad !== k.id || !kort.querySelector('.gr-bilder')) {
-      const vad = k.sort.id === 'mall' ? k.rad.vad + ' Mallen är kroppen, halsen, axlarna och skallen, med fästpunkterna där delarna sitter och zonerna som maskerna döljer.'
+      const vad = k.sort.forslag ? k.rad.vad : k.sort.symbol ? `${k.namn} (ersätter ${(k.rad.tecken || []).join(' ')} i spelet): ${k.rad.vad}. Symbolen är 16 × 16 punkter, både i panelen och i textraderna (steg 5.2.4.2).` : k.sort.bild ? `${k.namn}: ${k.rad.vad}. Kartbilden är ${k.rad.w} × ${k.rad.h} punkter i sin naturliga storlek mot rutan (16 punkter), och den ritas alltid i den storleken: på högen, i stationen, på marken och när den bärs (steg 5.1.2.1).`
+        : k.sort.id === 'mall' ? k.rad.vad + ' Mallen är kroppen, halsen, axlarna och skallen, med fästpunkterna där delarna sitter och zonerna som maskerna döljer.'
         : k.rad.toner ? `Färgen ${k.namn.toLowerCase()}: tonerna ${k.rad.toner.join(', ')} ur paletten, på det neutrala ansiktet.`
           : `${k.sort.en} på ett helt ansikte, där resten är detsamma för alla delar av sorten.`;
       kort.innerHTML = `${nav}<header><span class="typ">${k.sort.namn} · steg ${k.sort.steg}${k.kon ? ' · ' + KONTEXT[k.kon] + (k.barn ? '' : ', inte barn') : ''}${k.forebild ? ' · förebild' : ''}${k.ritad ? '' : ' · grå platshållare'}</span>
-        <h3>${k.sort.en}: ${k.namn}</h3><p class="not">${vad}${k.ritad ? (k.sort.id === 'mall' ? ' Mallen är ritad; ansiktets delar och håret på bilderna är ännu grå platshållare.' : '') : ' Delen är inte ritad än: bilden är en platshållare, och ett svar nu gäller bara platshållaren.'}</p>
+        <h3>${k.sort.bild ? k.namn : k.sort.en + ': ' + k.namn}</h3><p class="not">${vad}${k.ritad ? (k.sort.id === 'mall' ? ' Mallen är ritad; ansiktets delar och håret på bilderna är ännu grå platshållare.' : '') : ' Delen är inte ritad än: bilden är en platshållare, och ett svar nu gäller bara platshållaren.'}</p>
         ${forra ? `<p class="forra">Din kommentar förra gången: ${forra.replace(/</g, '&lt;')}</p>` : ''}</header>
         <div class="gr-svar"><div class="gr-svarknappar"><button type="button" class="gr-ja" data-grsvar="ja">Ja</button><button type="button" class="gr-nej" data-grsvar="nej">Nej</button></div>
         <label for="gr-kommentar">Kommentar: vad ska ändras?</label><textarea id="gr-kommentar" rows="3" placeholder="Skriv gärna vad som ska ändras, till exempel: munnen ska vara bredare när hon är glad"></textarea>
@@ -1124,17 +1369,40 @@
       else if (t.id === 'sk-nyabarn') { barnFro++; ritaFamilj(); }
       else if (t.id === 'sk-somunga') { somUnga = !somUnga; ritaFamilj(); }
       else if (t.id === 'sk-nyaby') { byFro++; ritaByn(); }
-      else if (t.dataset.grfilter) { grFilter = t.dataset.grfilter; lagra.skriv('granskning-filter', grFilter); if (grFilter === 'obesvarade' && lage(KORT.find(k => k.id === grId)) !== 'obesvarad') flytta(1, true); else visaGranskning(true); }
-      else if (t.dataset.grsort) { grId = KORT.find(k => k.sort.id === t.dataset.grsort && (grFilter === 'alla' || lage(k) === 'obesvarad'))?.id || KORT.find(k => k.sort.id === t.dataset.grsort).id; lagra.skriv('granskning-kort', grId); visaGranskning(true); $('#grkort').scrollIntoView({ block: 'start' }); }
+      else if (t.dataset.grfilter) { grFilter = t.dataset.grfilter; lagra.skriv('granskning-filter', grFilter); if (grFilter === 'obesvarade' && GKORT.length && lage(GKORT.find(k => k.id === grId) || GKORT[0]) !== 'obesvarad') flytta(1, true); else visaGranskning(true); }
+      else if (t.dataset.grsort) { if (grId) grSett.push(grId); grId = GKORT.find(k => k.sort.id === t.dataset.grsort && (grFilter === 'alla' || lage(k) === 'obesvarad'))?.id || GKORT.find(k => k.sort.id === t.dataset.grsort).id; lagra.skriv('granskning-kort', grId); visaGranskning(true); $('#grkort').scrollIntoView({ block: 'start' }); }
       else if (t.dataset.grsteg) { flytta(+t.dataset.grsteg); if (t.closest('.gr-nav:last-child')) $('#grkort').scrollIntoView({ block: 'start' }); }
       else if (t.dataset.grsvar) svara(t.dataset.grsvar);
     });
     ritaSkaparen(); ritaFamilj(); ritaByn(); spela();
-    if (!KORT.some(k => k.id === grId)) grId = KORT[0].id;
+    if (!GKORT.some(k => k.id === grId)) grId = GKORT[0]?.id;
     visaGranskning(true);
     anslut();
   }
   starta();
   // för skriptet som ritar med API:t (bildstil/api/rita.mjs): det öppnar sidan, lägger in en ny del och tar bilden
-  window.PORTRATTEN = { portratt, kartBild, neutral, granskPerson, KORT, provaDel(id, data) { DELAR[id] = data; }, png(B, skala = 4) { const c = document.createElement('canvas'); tillCanvas(B, c, 0); const s = document.createElement('canvas'); s.width = B.w * skala; s.height = B.h * skala; const g = s.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(c, 0, 0, s.width, s.height); return s.toDataURL('image/png'); } };
+  // för skriptet som ritar fas 5:s bilder (bildstil/api/bilder.mjs)
+  const pngAv = (B, skala) => { const c = document.createElement('canvas'); tillCanvas(B, c, 0); const s = document.createElement('canvas'); s.width = B.w * skala; s.height = B.h * skala; const g = s.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(c, 0, 0, s.width, s.height); return s.toDataURL('image/png').split(',')[1]; };
+  window.BILDERNA = {
+    // sakens bild i sitt sammanhang: alla bilderna på en rad, fyra gånger större
+    sammanhang(id, data) {
+      const l = sakSammanhang(id, data || undefined); if (!l.length) return null;
+      const G = 6, W = l.reduce((s, [, B]) => s + B.w + G, 0), H = Math.max(...l.map(([, B]) => B.h)), A = Bild(W, H, P);
+      for (let i = 0; i < A.px.length; i++) A.px[i] = P.i('kol', 0);
+      let x = 0; for (const [, B] of l) { klistra(A, B, x, 0, false); x += B.w + G; }
+      return pngAv(A, 4);
+    },
+    // scenen i dagsljus: de godkända bilderna (marken, granarna, slöjdbänken, kistan, lägerelden och sakerna i dag)
+    scen() { return pngAv(ritaScen(P, { tid: 'dag' }), 3); },
+    // spelets bild av saken i dag, åtta gånger större (som den nya ritas om efter)
+    gammal(id) { const g = gammalBild(id); return g ? pngAv(g, 8) : null; },
+    // symbolerna Björn redan valt, fyra gånger större (underlag för symbolernas förebild)
+    symboler() { return pngAv(symbolRad(refSymboler()), 4); },
+    // tecknen som färger (för spelets PAL)
+    hex() { return Object.fromEntries([...BILDER.tecken].map(ch => [ch, P.cols[tonAv(ch)].hex])); },
+    prova(id, data) { BILDFILER[id] = data; },
+  };
+  // en bybo på kartan till sidans bilder (sporterna och dragkampen i valdelen): samma person för samma frö
+  window.BYBO = (fro, rikt, ben, arm, redskap) => { const p = slumpPerson(slumpFran(fro), { alder: 'vuxen' }); if (redskap !== undefined) p.del.redskap = redskap; return kartFigur(p, rikt, ben, arm); }; // redskap: en del ur portratt.json (null = inget)
+  window.PORTRATTEN = { portratt, kartBild, neutral, granskPerson, KORT, medForslag, provaDel(id, data) { DELAR[id] = data; }, png(B, skala = 4) { const c = document.createElement('canvas'); tillCanvas(B, c, 0); const s = document.createElement('canvas'); s.width = B.w * skala; s.height = B.h * skala; const g = s.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(c, 0, 0, s.width, s.height); return s.toDataURL('image/png'); } };
 })();

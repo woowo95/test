@@ -1,0 +1,18 @@
+{
+ "id": "skon-varta",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den är en liten, kompakt och rund knopp på 4 × 4 punkter, i samma skala som detaljerna i förebilden. Den ljusa sidan ligger uppe till vänster (c och C) och den mörka nere till höger (a), så skuggan följer formen när ljuset kommer uppifrån vänster. Kindtonerna ger vårtan en lätt rödaktig ton utan glans och utan ensamma prickar. Den sitter på kinden strax intill näsvingen och håller sig väl inom rutan. Version 1 valde jag bort för att det enstaka hårstrået (e) blir en ensam prick och ger delen en spretig kant. Version 2 är något plattare, och dess övre rad med två ljusa punkter gör att knoppen läser sämre som en upphöjning. Jag ändrade ingenting i version 3, eftersom form, toner och placering redan stämmer med reglerna.",
+ "bilder": {
+  "standard": {
+   "x": 4,
+   "y": 2,
+   "rader": [
+    ".cB.",
+    "cCBa",
+    "BBaa",
+    ".aa."
+   ]
+  }
+ }
+}

@@ -1,0 +1,27 @@
+{
+ "id": "sym_knytnav",
+ "ritad": 3,
+ "av": "API:t, vald av Claude",
+ "om": "API:t ritade tre versioner efter Björns kommentar; Claude valde version 2 (valet i API:t hann inte köras).",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".EEE.EEE.EEE....",
+  "EwqqEqqpEqppEEE.",
+  "EqqpEqqpEqppEqpE",
+  "EqqpEqppEqppEqpE",
+  "EqppEqppEpppEppE",
+  "EpppEpppEppoEpoE",
+  "EEEEEEEEEppoEpoE",
+  "EwqqqqqqqEpoEooE",
+  "EqqqqqqppEooEooE",
+  ".EppppppEoooooE.",
+  "..EpEEEEppoooE..",
+  "...EpppppppooE..",
+  "...EqppppppooE..",
+  "...EpppppoooE...",
+  "...EEEEEEEEEE...",
+  "......EE........"
+ ],
+ "pal": {"E":"#3f2415","o":"#7e7362","p":"#a0947d","q":"#bdb39b","w":"#dad0bb"}
+}

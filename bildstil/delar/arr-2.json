@@ -1,0 +1,17 @@
+{
+ "id": "arr-2",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 2 eftersom den bäst följer Björns kommentar. Den är minst av de tre, bara fyra punkter bred och tre rader hög. Den har samma linjetjocklek som förebilden: en punkt tjock ljus linje (hud3) med en mörkare skugga (hud1) direkt under. Båda tonerna ligger bara ett steg från hudens mellanton, så kontrasten blir låg och ärret smälter in i kinden men syns när man tittar. Version 1 är längre och har en extra skuggpunkt, så den blir tydligare. Version 3 är för stor och lång för en liten skada och tar över kinden. Placeringen x -10, y 2 lägger ärret på vänster kind under ögat. Den håller sig inom rutan på kvinna, man och barn och krockar inte med ögat eller näsan. Jag ändrade ingenting: formen är redan kort och diagonal, skuggan följer linjen nedåt mot ljuset uppifrån vänster, och det finns inga ensamma ljusa prickar eller rost, eftersom ärret ska vara läkt och subtilt.",
+ "bilder": {
+  "standard": {
+   "x": -10,
+   "y": 2,
+   "rader": [
+    "..dd",
+    "ddb.",
+    "bb.."
+   ]
+  }
+ }
+}

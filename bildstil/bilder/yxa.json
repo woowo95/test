@@ -1,0 +1,23 @@
+{
+ "id": "yxa",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 2 eftersom den ligger närmast dagens 8 × 8-bild. Den har samma grå, kilformade flinthuvud uppe till höger med den ljusa sidan uppe till vänster. Skaftet är ett jämnt, brant snedställt träskaft som går från nedre vänstra hörnet och slutar precis vid huvudets vänstra sida, två rader per kolumn som i originalet. Version 1 har ett tjockt, nästan lodrätt skaft som inte följer dagens form. Version 3 har en ljus prick i ben3 som inte hör hemma på flinta, och dess skaft går rakt ned på slutet i stället för att fortsätta snett. Version 2 följer stilen: flintan har skifferkontur (Q), träet har jord0-kontur (E), och tonerna växlar punkt för punkt i två till tre toner med ljuset uppe till vänster. Den syns tydligt mot gräset, och mellantonerna passar scenens dämpade palett. Repsurrningen i beskrivningen lade jag inte till, eftersom den inte finns i dagens bild och Björn vill att den befintliga bilden ritas om utan nya detaljer. Jag har inte ändrat något, eftersom bilden redan stämmer med förlagan och stilguiden.",
+ "w": 10,
+ "h": 12,
+ "rader": [
+  ".....QQQ..",
+  "....QTTSQ.",
+  "....QTSSRQ",
+  "...EHQSRRQ",
+  "...EGEQRQ.",
+  "..EHE.QQ..",
+  "..EGE.....",
+  ".EHE......",
+  ".EGE......",
+  "EHE.......",
+  "EFE.......",
+  "EE........"
+ ],
+ "pal": {"E":"#3f2415","F":"#5e3c24","G":"#7d5b40","H":"#987e62","Q":"#233035","R":"#3e5156","S":"#61767a","T":"#8a9c9e"}
+}

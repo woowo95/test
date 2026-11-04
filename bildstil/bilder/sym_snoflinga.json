@@ -1,0 +1,31 @@
+{
+ "id": "sym_snoflinga",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den har sex tydliga armar med små grenar i ändarna och genomskinliga luckor mellan armarna, så den läses direkt som ❄. Version 1 fylls ut till en rund, nästan massiv skiva som liknar en snöboll eller sköld. Version 2 har så många små lösa prickar att den blir spretig och grynig i liten storlek. Version 3 stämmer med förebilden: få, stora former med skiffer0 som kontur runt hela, ljus skiffer3 uppe till vänster och mörkare skiffer2 nere till höger, och en enda glanspunkt (ben3) nära mitten. Den är 15 × 15 punkter och fyller rutan. Jag behövde inte ändra något.",
+ "w": 15,
+ "h": 15,
+ "rader": [
+  ".......Q.......",
+  ".....QQTQQ.....",
+  "....QTQTQTQ....",
+  ".....QTTTQ.....",
+  "..Q..QQTQQ..Q..",
+  ".QTQQTQTQSQQSQ.",
+  ".QQTQQwTSQQSQQ.",
+  "QTTTTTTTSSSSSSQ",
+  ".QQTQQSSSQQSQQ.",
+  ".QTQQSQSQSQQSQ.",
+  "..Q..QQSQQ..Q..",
+  ".....QSSSQ.....",
+  "....QSQSQSQ....",
+  ".....QQSQQ.....",
+  ".......Q......."
+ ],
+ "pal": {
+  "Q": "#233035",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "w": "#dad0bb"
+ }
+}

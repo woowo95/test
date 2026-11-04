@@ -1,0 +1,21 @@
+{
+ "id": "benspade",
+ "ritad": 3,
+ "av": "Claude, omfärgad efter Björns svar",
+ "om": "Surrningen var gul och såg ut som metall; den är nu brun som rep av bast. Inget annat är ändrat.",
+ "w": 10,
+ "h": 10,
+ "rader": [
+  "......ooo.",
+  ".....owwqo",
+  "....owwqpo",
+  "....oqqppo",
+  "...FHqppo.",
+  "..FGFooo..",
+  ".EHE......",
+  "EGE.......",
+  "HE........",
+  "E........."
+ ],
+ "pal": {"o":"#7e7362","w":"#dad0bb","q":"#bdb39b","p":"#a0947d","F":"#5e3c24","H":"#987e62","G":"#7d5b40","E":"#3f2415"}
+}

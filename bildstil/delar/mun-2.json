@@ -1,0 +1,64 @@
+{
+ "id": "mun-2",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 3. Den har samma former som version 1 och 2 (de två är identiska), men den saknar de tomma raderna längst ner, så delen blir kompakt och slutar direkt under underläppens skugga. Linjen är en punkt tjock i r som i förebilden, med en mjuk b-skugga under läppen. Munnen är centrerad över mittlinjen (x -5 till 4 för linjen), och den håller sig inom rutan. Om placeringen: munlinjen ligger redan på y = -1, och glad behöver raden ovanför (y = -2) till de uppåtvända mungiporna. Därför går den inte att flytta högre utan att lägena hoppar i höjd mot varandra. Jag har inte flyttat den, eftersom den ser rimligt placerad ut i bilderna, men det bör kontrolleras mot Björns kommentar om att den sitter för lågt. Ändring: den ledsna var för överdriven, så jag tonade ner de nedåtböjda mungiporna från s till den ljusare t. Böjen blir en svag antydan i stället för en tydlig sur båge. Formen och linjen är oförändrade, så munnen är samma del i alla lägen.",
+ "bilder": {
+  "glad": {
+   "x": -6,
+   "y": -2,
+   "rader": [
+    "r..........r",
+    ".rqqqqqqqqr.",
+    "..rrrrrrrr..",
+    "...bbbbbb..."
+   ]
+  },
+  "nojd": {
+   "x": -6,
+   "y": -2,
+   "rader": [
+    "r..........r",
+    ".rrrrrrrrrr.",
+    "...bbbbbb..."
+   ]
+  },
+  "lugn": {
+   "x": -6,
+   "y": -2,
+   "rader": [
+    "............",
+    ".rrrrrrrrrr.",
+    "...bbbbbb..."
+   ]
+  },
+  "ledsen": {
+   "x": -6,
+   "y": -2,
+   "rader": [
+    "............",
+    "..rrrrrrrr..",
+    ".t.bbbbbb.t."
+   ]
+  },
+  "arg": {
+   "x": -6,
+   "y": -2,
+   "rader": [
+    "............",
+    ".rkkkkkkkkr.",
+    ".r.bbbbbb.r."
+   ]
+  },
+  "oppen": {
+   "x": -6,
+   "y": -2,
+   "rader": [
+    "....rrrr....",
+    "...rkkkkr...",
+    "...rkkkkr...",
+    "....bbbb...."
+   ]
+  }
+ }
+}

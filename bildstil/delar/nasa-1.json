@@ -1,11 +1,11 @@
 {
  "id": "nasa-1",
- "ritad": 1,
+ "ritad": 2,
  "av": "programmeringschatten, förebild",
  "om": "Rak näsa: ljus näsrygg till vänster, skuggad sida till höger, ljus spets och mörka näsborrar med en skugga under.",
  "bilder": {
   "standard": {
-   "x": -3,
+   "x": -4,
    "y": 1,
    "rader": [
     "...db..",
@@ -20,7 +20,7 @@
  },
  "barn": {
   "standard": {
-   "x": -2,
+   "x": -3,
    "y": 1,
    "rader": [
     "..db.",

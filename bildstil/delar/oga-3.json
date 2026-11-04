@@ -1,0 +1,52 @@
+{
+ "id": "oga-3",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 1. Den använder hela rutans bredd på 8 punkter och är därför den enda som faktiskt följer Björns kommentar att göra ögonen lite större. Versionerna 2 och 3 är bara 7 punkter breda. Ögat är ändå smalt på höjden, med två rader iris, som beskrivningen Smala säger. Linjerna och skuggningen stämmer med förebilden: överlocket ligger i hud0, under ögat och på kinden blir det ljusare, och pupillen i k sitter mitt i irisen. Alla lägen har samma form, och bara locken och nedre kanten ändras med humöret. Jag ändrade en sak: i slutna förlängde jag fransraden till aaaaaaaa, så att det slutna ögat blir lika brett som det öppna ögonspringan och inte ser avhugget ut i ena hörnet.",
+ "bilder": {
+  "oppna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "........",
+    ".aaaaaa.",
+    "avvjkiva",
+    ".bvjiib.",
+    "..bccb.."
+   ]
+  },
+  "glada": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "........",
+    ".aaaaaa.",
+    "acvjkica",
+    ".cddddc.",
+    "........"
+   ]
+  },
+  "ledsna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "bbbb....",
+    "aaaaaaa.",
+    "aavjkiva",
+    ".bvjiib.",
+    "..bccb.."
+   ]
+  },
+  "slutna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "........",
+    ".bbbbbb.",
+    ".cccccc.",
+    "aaaaaaaa",
+    "..bccb.."
+   ]
+  }
+ }
+}

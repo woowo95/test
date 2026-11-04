@@ -1,0 +1,56 @@
+{
+ "id": "oga-5",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den ljusa ögonbrynsbågen (c) ovanför en mörk ögonhåla (a) ger det djupt liggande intrycket. Ljuset kommer uppifrån vänster, med mörkare b i högra änden. Ögat har samma storlek och samma iris, pupill och ögonvita som förebilden, och bredden 8 håller sig inom rutan. Version 1 har inte den skuggade håla som beskrivningen kräver, och dess slutna lock ser för ljust och slätt ut. Version 3 är bara 7 punkter bred, så den blir osymmetrisk mot fästpunkten, och dess ledsna läge är rörigt. Det jag ändrade gäller ledsna. Där satt en ensam vit prick (v) ovanför ögat, och den låg på fel sida: den lyfte ögonvrån i stället för att låta locket hänga. Hela ögat låg dessutom en rad lägre än i de andra lägena. Nu ligger ögat kvar på samma rader som i oppna, och bara det tunga ögonlocket sänks över den övre raden. Brynbågen, hålan och kinden under ögat är desamma som i de andra lägena.",
+ "bilder": {
+  "oppna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".cccccb.",
+    "bbaaaaab",
+    "aavjjiva",
+    "bavikkvb",
+    ".baaaab.",
+    "..bccb.."
+   ]
+  },
+  "glada": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".cccccb.",
+    "bbaaaaab",
+    "aavjjiva",
+    "bbcikkcb",
+    ".bcdddc.",
+    "..bccb.."
+   ]
+  },
+  "ledsna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".ccccbb.",
+    "bbaaaaab",
+    "aaaaaaab",
+    "bavikkvb",
+    ".baaaab.",
+    "..bccb.."
+   ]
+  },
+  "slutna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".cccccb.",
+    "bbaaaaab",
+    "abbbbbaa",
+    "aaaaaaab",
+    ".baaaab.",
+    "..bccb.."
+   ]
+  }
+ }
+}

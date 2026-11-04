@@ -1,0 +1,39 @@
+{
+ "id": "sym_termometer",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den bredare kolven och det tjockare röret ger den tydligaste silhuetten i liten storlek, och den fyller hela höjden på 16 punkter. Glaset har tre skiffertoner med ljus från vänster och mörkt till höger, och rostpelaren går från ljust uppe till vänster till mörkt nere till höger, precis som i förebilden. Gradstrecken i ben (q och o) syns både på mörk och ljus bakgrund. I version 1 försvinner strecken i skiffer mot den mörka bakgrunden, och i version 2 är röret tunt och kolven liten. Konturen är skiffer0 runt hela symbolen, och den mättade rosten används bara för vätskan. Ändring: jag satte en enda glanspunkt i ben3 (w) överst till vänster på röret, som svärdens glans i förebilden. I övrigt är bilden oförändrad.",
+ "w": 10,
+ "h": 16,
+ "rader": [
+  "...QQQQ...",
+  "..QwSSRQ..",
+  "..QTSSRQ..",
+  "..QTSSRQqo",
+  "..QTSSRQ..",
+  "..QTutRQqo",
+  "..QTtsRQ..",
+  "..QTtsRQqo",
+  "..QTtsRQ..",
+  "..QTtsRQqo",
+  ".QQTtsRQQ.",
+  "QTuttttsRQ",
+  "QtutttssrQ",
+  "QttttsssrQ",
+  ".QssssrrQ.",
+  "..QQQQQQ.."
+ ],
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "o": "#7e7362",
+  "q": "#bdb39b",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e",
+  "w": "#dad0bb"
+ }
+}

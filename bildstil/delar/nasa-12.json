@@ -1,0 +1,35 @@
+{
+ "id": "nasa-12",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den har samma linjetjocklek och samma db-skuggning som förebilden och samma näsborrar längst ner. Knölen sitter på rad 1–2, där näsryggen breddas till ddb/dcb. Därefter förskjuts ryggen en punkt åt höger, så näsan står lite snett utan att det blir ryckigt. Version 3 hoppar två kolumner i sidled och får en klumpig knöl som är två rader hög. Version 2 är en rad längre än förebilden och börjar redan på y=0. Båda bilderna håller sig inom rutan. Barnbilden är mindre och följer samma förskjutning. Jag behövde inte rätta något.",
+ "bilder": {
+  "standard": {
+   "x": -4,
+   "y": 1,
+   "rader": [
+    "...db...",
+    "...ddb..",
+    "...dcb..",
+    "....db..",
+    "....dcb.",
+    "...bdccb",
+    "..adccba",
+    "...abba."
+   ]
+  }
+ },
+ "barn": {
+  "standard": {
+   "x": -3,
+   "y": 1,
+   "rader": [
+    "..db..",
+    "..ddb.",
+    "...db.",
+    "..dccb",
+    "..abba"
+   ]
+  }
+ }
+}

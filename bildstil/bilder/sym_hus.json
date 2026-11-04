@@ -1,0 +1,38 @@
+{
+ "id": "sym_hus",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den fyller rutan, 16 × 16 punkter, med två stora former: ett halmtak i senap och en trävägg i jord. Det liknar förebildens svärd, som också har kontur i materialets mörkaste ton (senap0 runt taket, jord0 runt väggen). Ljuset faller rätt, med ljus halm och ljust trä till vänster och mörkare till höger. De korsade gavelbräderna överst gör att huset känns igen som 🏠 på en blick. Dörren är bred, fyra punkter, och läses tydligt i liten storlek. Den har en hel kontur, även nedtill. Version 2 har en smal dörr och ett platt band under taket, så den läses sämre. Version 3 har gavelbräder i jord1 i stället för konturtonen, en randig takfot som blir brus och en dörr som bryter den nedre konturen. Jag behövde inte ändra något: alla rader är 16 tecken, bara tecken ur paletten används och ingen kol0 förekommer.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".....E....E.....",
+  "......EIIE......",
+  ".....ILKJJI.....",
+  "....ILKLKJJI....",
+  "...ILKLKJKJJI...",
+  "..ILKLKJKJJJJI..",
+  ".ILKLKJKJKJJJJI.",
+  "ILKLKJKJKJJJJJJI",
+  "IIIIIIIIIIIIIIII",
+  ".EHGHGHGGFGFGFE.",
+  ".EHGHEEEEEEGFFE.",
+  ".EGHGElmmlEFGFE.",
+  ".EHGHElmmlEGFFE.",
+  ".EGHGElmmlEFGFE.",
+  ".EHGFElmmlEGFFE.",
+  ".EEEEEEEEEEEEEE."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "l": "#2f261d",
+  "m": "#372f25"
+ }
+}

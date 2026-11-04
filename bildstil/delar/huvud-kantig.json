@@ -1,0 +1,80 @@
+{
+ "id": "huvud-kantig",
+ "ritad": 3,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Valde version 1. Den följer Björns kommentar bäst: käken har ett tydligt men måttligt hörn (rad 10–12) och hakan är rak och bred i de nedersta raderna, utan att ansiktet blir överdrivet fyrkantigt. Version 2 och 3 smalnar av i en jämn diagonal och ser nästan ut som en spetsig rund form. Skuggningen följer förebilden: ljust c åt vänster mot ljuset, b i mitten och a på den bortvända högra sidan. Kinderna (C och B/A) sitter på samma ställe och i samma storlek som i förebilden. Alla rader är 32 tecken och symmetriska kring mittlinjen mellan x = -1 och 0, och delen håller sig inom rutan. Mannen har rakare sidor ända ner till rad 6, en bredare käke och en plattare haka (18 punkter bred). Barnet har ett kortare och rundare nedre ansikte på 14 rader. Jag behöll versionen utan ändringar, eftersom den redan stämmer med beskrivningen och med kommentaren.",
+ "bilder": {
+  "standard": {
+   "x": -16,
+   "y": 1,
+   "rader": [
+    ".ccddddccccccccccccccbbbbbaaaaa.",
+    ".cccccccccccccccccccbbbbbbaaaaa.",
+    ".ccccccccccccccccccbbbbbbbaaaaa.",
+    ".ccccccccccccccccccbbbbbbbaaaaa.",
+    "..cccccccccccccccccbbbbbbbaaaa..",
+    "..cccccccccccccccccbbbbbbbaaaa..",
+    "..ccccCCccccccccccbbbbbbBAaaaa..",
+    "..ccccCCcccccccbbbbbbbbbAAaaaa..",
+    "..cccccccccccccbbbbbbbbbaaaaaa..",
+    "..ccccccccccccbbbbbbbbbbaaaaaa..",
+    "..bcccccccccccbbbbbbbbbbaaaaaa..",
+    "...bbcccccccbbbbbbbbbbbaaaaaa...",
+    ".....bbbcccccbbbbbbbbaaaaaa.....",
+    "......bbbbcccbbbbbbbaaaaaa......",
+    ".......bbbbbbbbbbbbaaaaaa.......",
+    "........bbbbbbbbbbbaaaaa........",
+    "........bbbbbbbbbbaaaaaa........",
+    ".........bbbbbbbbaaaaaa........."
+   ]
+  }
+ },
+ "man": {
+  "standard": {
+   "x": -16,
+   "y": 1,
+   "rader": [
+    ".ccddddccccccccccccccbbbbbaaaaa.",
+    ".cccccccccccccccccccbbbbbbaaaaa.",
+    ".ccccccccccccccccccbbbbbbbaaaaa.",
+    ".ccccccccccccccccccbbbbbbbaaaaa.",
+    ".ccccccccccccccccccbbbbbbbaaaaa.",
+    ".ccccccccccccccccccbbbbbbbaaaaa.",
+    ".cccccCCccccccccccbbbbbbBAaaaaa.",
+    "..ccccCCcccccccbbbbbbbbbAAaaaa..",
+    "..cccccccccccccbbbbbbbbbaaaaaa..",
+    "..bcccccccccccbbbbbbbbbbaaaaaa..",
+    "..bccccccccccbbbbbbbbbbbaaaaaa..",
+    "..bbcccccccccbbbbbbbbbbbaaaaaa..",
+    "...bbbcccccccbbbbbbbbbbaaaaaa...",
+    "....bbbbcccccbbbbbbbbbaaaaaa....",
+    ".....bbbbbccbbbbbbbbaaaaaaa.....",
+    "......bbbbbbbbbbbbbaaaaaaa......",
+    "......bbbbbbbbbbbbaaaaaaaa......",
+    ".......bbbbbbbbbbbaaaaaaa......."
+   ]
+  }
+ },
+ "barn": {
+  "standard": {
+   "x": -16,
+   "y": 1,
+   "rader": [
+    "cccddddccccccccccccccbbbbbaaaaaa",
+    ".cccccccccccccccccccbbbbbbaaaaa.",
+    ".ccccccccccccccccccbbbbbbbaaaaa.",
+    ".ccccccccccccccccccbbbbbbbaaaaa.",
+    ".ccccccccccccccccccbbbbbbbaaaaa.",
+    "..cccccccccccccccccbbbbbbbaaaa..",
+    "..ccccCCccccccccccbbbbbbBAaaaa..",
+    "..ccccCCcccccccbbbbbbbbbAAaaaa..",
+    "...bccccccccccbbbbbbbbbbaaaaa...",
+    "....bbcccccccbbbbbbbbbaaaaaa....",
+    ".....bbbcccccbbbbbbbbaaaaaa.....",
+    "......bbbbcccbbbbbbbaaaaaa......",
+    ".......bbbbbbbbbbbbaaaaaa.......",
+    "........bbbbbbbbbbbaaaaa........"
+   ]
+  }
+ }
+}

@@ -1,0 +1,36 @@
+{
+ "id": "sym_frysa",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den läses tydligast som 🥶: ett runt, blågrått ansikte med sammanbitna tänder och istappar under hakan. Den har skifferkontur runt hela och ljuset uppe till vänster, precis som de korsade svärden. Version 1 liknar mer en dödskalle, och i version 2 smälter munnen ihop med kinderna. Ändringar: Jag minskade glansen. Pannan har nu en enda w-punkt i stället för tre, och ögonen har q i stället för w. De rutiga tänderna (w/q om vartannat) var plottriga och syns inte i liten storlek, så jag gjorde om dem till tre breda tänder med mörka glipor. Istapparna har skiffer3 i stället för ben3, så att de hör till isen och inte drar till sig blicken.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "....QQQQQQQQ....",
+  "..QQwqqTTTSSQQ..",
+  ".QqqTTTTTSSSSRQ.",
+  ".QTTTTSSSSSSRRQ.",
+  "QTTSQQSSSQQSSRRQ",
+  "QTSqkSSSSSqkSRRQ",
+  "QTSkkSSSSSkkSRRQ",
+  "QTSSSSSSSSSSSRRQ",
+  "QSSSkkkkkkkkSRRQ",
+  "QSSkqqkqqkqpkRRQ",
+  "QSSkpqkpqkppkRRQ",
+  "QRSSkkkkkkkkRRRQ",
+  ".QRRSSSSRRRRRRQ.",
+  "..QQRRRRRRRRQQ..",
+  "...QTQ.QTQ.QTQ..",
+  "....Q...Q...Q..."
+ ],
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "k": "#24201d",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

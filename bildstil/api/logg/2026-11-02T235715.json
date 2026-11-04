@@ -1,0 +1,25 @@
+{
+ "kommando": "rita",
+ "args": [
+  "har-8=Björn sa nej. Programmeringschattens bedömning: lockarna blev ett jämnt rutnät och luggen fick hack som en tandad kant. Allmänt: skugga håret som förebilden (matt, ljus uppifrån vänster), inga regelbundna mönster som rutnät av lockar eller raka ränder, och låt formen följa huvudets rundning.",
+  "har-11=Björn sa nej. Programmeringschattens bedömning: lockarna blev ett jämnt rutnät. Allmänt: skugga håret som förebilden (matt, ljus uppifrån vänster), inga regelbundna mönster som rutnät av lockar eller raka ränder, och låt formen följa huvudets rundning."
+ ],
+ "modell": "claude-opus-5-5",
+ "insats": "high",
+ "versioner": 3,
+ "uppskattat": {
+  "lag": 0.63,
+  "hog": 0.96
+ },
+ "dollar": 1.699,
+ "tokens": {
+  "in": 49339,
+  "ut": 159058,
+  "cacheLas": 10067,
+  "cacheSkriv": 3371
+ },
+ "rapport": [
+  "har-8: ritad, version 1 vald (2 av 3 versioner gick igenom koden): Valde version 1. Version 3 har lockar som ett jämnt sicksack-/fiskbensmönster i diagonala ränder över hela håret, alltså precis det regelbundna rutnät Björn sa nej till. Version 1 har oregelbundna lockklungor av olika storlek, ljusare toner (h/g) uppe till vänster och mörkare (f/e) åt höger och nedåt, så skuggningen följer huvudets rundning som i förebilden, och den har samma halvlånga längd och sidostycken. Ändrat: luggens underkant var tandad med hack (luckor i rad 15 och en ensam klunga mitt i rad 16). Rad 15 är nu helt fylld med mörkare toner (g/f) mot underkanten. Rad 16 har fått en jämn kant som trappar mjukt ut mot sidostyckena, och den lösa mittklungan är borttagen. Bakhåret är oförändrat.",
+  "har-11: ritad, version 3 vald (2 av 3 versioner gick igenom koden): Valde version 3. Version 1 har kvar det som Björn sa nej till: lockarna på högra sidan blir ett jämnt prickrutnät, och framhårets högra sida är ojämnt bred och spretar asymmetriskt. I version 3 följer lockarna huvudets rundning som snedställda, oregelbundna slingor. Skuggningen går som i förebilden från h/g uppe till vänster till f/e nere till höger, matt och utan glans. Luggen bryts upp i slingor ungefär som förebildens lugg, och sidorna smalnar av mot lockspetsar vid axlarna. Det ser bra ut på kvinna, man och barn. Jag kontrollerade radbredder (48), rutan (x -24 till 23, y -3 till 44) och att det inte finns lösa prickar: alla lockspetsar hänger ihop med raden ovanför. Jag har inte ändrat något i punkterna, eftersom jag inte hittade något som behövde rättas."
+ ]
+}

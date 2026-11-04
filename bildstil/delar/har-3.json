@@ -1,0 +1,42 @@
+{
+ "id": "har-3",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den är den enda som verkligen ser snaggad ut: hjässan ligger tätt mot skallen och börjar på y = 0, hårfästet sitter högt (y = 6) och sidorna är tunna. Skuggningen följer förebilden, ljus h/g till vänster och mörk f/e till höger. Version 1 har ett stort bakhår som syns som en klump bredvid käken och halsen, och det passar inte en snaggad frisyr. Version 2 har en lugg ända ned till y = 8 och ger för mycket volym. Det här ändrade jag i version 3: Hjässan var slät och nästan blank, så jag lade in korn i små klungor i raderna 0–5 så att ytan blir matt. Polisongerna var för långa (ned till y = 20) och slutar nu vid y = 15. Bakhårets sidoremsor är kortade till y = 8–13, så att inget hår syns bakom käke och hals.",
+ "bilder": {
+  "bakhar": {
+   "x": -16,
+   "y": 8,
+   "rader": [
+    ".f............................e.",
+    "fe............................ee",
+    "fe............................ee",
+    "ef............................ee",
+    ".e............................e.",
+    ".e............................e."
+   ]
+  },
+  "framhar": {
+   "x": -16,
+   "y": 0,
+   "rader": [
+    "..........hhhhghgggfff..........",
+    ".......hhhghhhgghgggfgfff.......",
+    ".....hhhhghhhggghgggggfgfef.....",
+    "....ghhhghhhhgghggggfgffefee....",
+    "...ghhhhhghhhgggghgggfgfffefe...",
+    "..ghhhghhgghgggggfggggfgffefee..",
+    "..ghhhhggfg..........fgfffefee..",
+    ".ghhgf....................ffeee.",
+    ".ghhg......................feee.",
+    ".hhg........................fee.",
+    ".ghg........................efe.",
+    ".hhg........................fee.",
+    ".hgg........................fee.",
+    ".ggf........................eef.",
+    "..gf........................ee..",
+    "..f..........................e.."
+   ]
+  }
+ }
+}

@@ -1,0 +1,32 @@
+{
+ "id": "sym_lov",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den har den bredaste och rundaste lövformen och fyller rutan bäst (15 × 16 punkter), precis som de korsade svärden fyller sin. Därför läses den tydligast som ett löv i liten storlek, både på mörk och ljus bakgrund. Version 1 och 2 är smalare och blir mer som ett strå eller en fjäder. Ljuset faller rätt: oliv3 ligger uppe till vänster och oliv1 nere till höger. Konturen är oliv0 runt hela formen, och skaftet är tydligt. Materialet har tre toner och kornet byts punkt för punkt utan ensamma mörka fläckar. Bilden behövde inga rättelser; punkterna är oförändrade.",
+ "w": 15,
+ "h": 16,
+ "rader": [
+  "............MMM",
+  "........MMMMPOM",
+  "......MMPPOOOPM",
+  "....MMPPPOOOPNM",
+  "...MPPPOPOOPONM",
+  "..MPPOPOOOPOONM",
+  "..MPOPOOOPONNM.",
+  ".MPPOPOOPOONNM.",
+  ".MPOPOOPOONNM..",
+  ".MPOOOPOONONM..",
+  ".MPOOPONONNM...",
+  "..MOPNONNNM....",
+  "..MOMMMMMM.....",
+  ".MOM...........",
+  "MOM............",
+  "MM............."
+ ],
+ "pal": {
+  "M": "#353204",
+  "N": "#4b4f00",
+  "O": "#647025",
+  "P": "#898b4c"
+ }
+}

@@ -1,0 +1,31 @@
+{
+ "id": "sym_dis",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1 oförändrad. Tre förskjutna dimstrimmor i ben och skiffer läses direkt som dis, både på mörk och ljus bakgrund. Den är 16 punkter bred och 14 hög, med skiffer0 som kontur runt varje strimma. Ljuset stämmer: ljusast uppe till vänster i varje strimma och mörkast nere till höger. Formerna är få och stora, i samma enkla stil som förebilden. Version 2 föll bort eftersom senapssolen ovanpå strimmorna i spelets storlek ser ut som en hög mynt och kan läsas som pengar. Version 3 är nästan likvärdig, men i version 1 ligger strimmorna i en tydligare och lugnare rytm, och den bredare nedersta strimman ger symbolen en stadig bas.",
+ "w": 16,
+ "h": 14,
+ "rader": [
+  ".QQQQQQQQQQQ....",
+  "QwqqqTqqqTTSQ...",
+  "QTqTTSTTSSSSQ...",
+  ".QQQQQQQQQQQ....",
+  "................",
+  "....QQQQQQQQQQQ.",
+  "...QqqqTqqqTqTSQ",
+  "...QTTqTTSTTSSSQ",
+  "....QQQQQQQQQQQ.",
+  "................",
+  "..QQQQQQQQQQQQ..",
+  ".QwqqTqqqTqqTTSQ",
+  ".QTqTTSTTTSSSSSQ",
+  "..QQQQQQQQQQQQ.."
+ ],
+ "pal": {
+  "Q": "#233035",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

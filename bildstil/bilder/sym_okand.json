@@ -1,0 +1,27 @@
+{
+ "id": "sym_okand",
+ "ritad": 3,
+ "av": "Claude",
+ "om": "Ritad av Claude efter Björns kommentar: gör repet brunt istället för gult",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".EEEEEEEEEEEEEE.",
+  "EHHGHGGGFGGFGFFE",
+  ".EEEEEEGFEEEEEE.",
+  "......EGFE......",
+  ".....EEEEEE.....",
+  ".....EHGGFE.....",
+  ".....EGFFFE.....",
+  ".....EHGGFE.....",
+  ".....EFFFFE.....",
+  "....EGFEEGFE....",
+  "...EGFE..EFFE...",
+  "...EGE....EFE...",
+  "...EGE....EFE...",
+  "...EGFE..EFFE...",
+  "....EFFFFFFE....",
+  "....EEEEEEEE...."
+ ],
+ "pal": {"E":"#3f2415","F":"#5e3c24","G":"#7d5b40","H":"#987e62"}
+}

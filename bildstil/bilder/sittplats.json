@@ -1,0 +1,34 @@
+{
+ "id": "sittplats",
+ "ritad": 2,
+ "av": "Claude",
+ "om": "stubben att sitta på: ändytan grå och väderbiten med årsringar uppifrån, barken framtill, utan gult",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "................",
+  "................",
+  "................",
+  "................",
+  "....GGooooGG....",
+  "...noppppppoG...",
+  "...GppooooppG...",
+  "...opoonnoopo...",
+  "..GGppooooppGE..",
+  "...GoppppppoG...",
+  "..GGGGooooGGEE..",
+  "..GGGFEFFFFEEE..",
+  "...GGFEFFFEEE...",
+  "................",
+  "................",
+  "................"
+ ],
+ "pal": {
+  "G": "#7d5b40",
+  "o": "#7e7362",
+  "n": "#474138",
+  "p": "#a0947d",
+  "E": "#3f2415",
+  "F": "#5e3c24"
+ }
+}

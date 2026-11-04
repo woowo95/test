@@ -1,0 +1,28 @@
+{
+ "id": "skagg-2",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Valde version 3: jämnast och mattast skuggning och närmast förebildens stil, utan version 2:s lodräta ränder och version 1:s spräckliga fläckar. Formen var redan spegelsymmetrisk kring mittlinjen, så det sneda intrycket kom från skuggningen: gränsen mellan ljus och skugga gick snett över hakan, så att vänstra halvan blev mycket ljusare. Jag har flyttat gränsen så att den följer formen nära mittlinjen med en mjuk övergång med korn i små klungor, och mildrat kontrasten mellan sidorna (vänster kant h/g, höger f/e). Ljuset kommer fortfarande uppifrån vänster och undersidan mörknar mot e, men skägget läses nu som symmetriskt. Hålen för munnen och konturen är oförändrade.",
+ "bilder": {
+  "standard": {
+   "x": -15,
+   "y": -7,
+   "rader": [
+    ".hgg......................gff.",
+    ".hgg......................gff.",
+    ".hggg....................gfff.",
+    ".hggg...hggggggggfffff...gffe.",
+    ".hgggg.hgggggggggfffffe.gfffe.",
+    "..hhggggggggggggggfgffffffee..",
+    "..hggggggggggggggggfgffffeee..",
+    "...hggggggggggggggfgfffffee...",
+    "...gggggggggggggfgffffffeee...",
+    "....ggggggggggggfgfffffeee....",
+    ".....ggggggggggfgfffffeee.....",
+    "......fggggggggffffffeee......",
+    "........fgggfffffffeee........",
+    "..........effffffeee.........."
+   ]
+  }
+ }
+}

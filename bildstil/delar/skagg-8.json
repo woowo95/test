@@ -1,0 +1,29 @@
+{
+ "id": "skagg-8",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1 eftersom den ligger närmast förebilden. Detaljerna har samma storlek som i helskägget, mustaschen är lagom tjock och hakskägget smalnar av till en spets under hakan. Delen är symmetrisk kring mittlinjen (x = -7 till 6). Raden vid munnen är tom, så munnen syns på alla tre ansiktena. Skuggningen följer ljuset uppifrån vänster: h och g på vänster sida och överst, f och e åt höger och nedåt, med korn i små klungor där tonerna möts. Version 2 blev för tung av h, och version 3 blev för bred och fick ett glapp mitt i mustaschen. Jag ändrade ingenting: delen håller sig inom rutan, använder bara efgh och har inga ensamma prickar.",
+ "bilder": {
+  "standard": {
+   "x": -7,
+   "y": -4,
+   "rader": [
+    "...ghhgggff...",
+    ".gghhhggffffe.",
+    "ggg........ffe",
+    "g............e",
+    "..............",
+    "....ghggff....",
+    "...ghhggfff...",
+    "..gghhgggffe..",
+    "..ghhgggfffe..",
+    "..gghggffffe..",
+    "...ggfgffee...",
+    "...gfffffee...",
+    "....ffefee....",
+    ".....feee.....",
+    "......ee......"
+   ]
+  }
+ }
+}

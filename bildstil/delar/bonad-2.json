@@ -1,0 +1,34 @@
+{
+ "id": "bonad-2",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Valde version 1. Den är den enda som följer Björns kommentar: kullen är hög och hatten sitter nere över huvudet ända till ögonbrynen, med ett band i jord och en tydlig brätte som går ut på båda sidor och böjer sig ner i kanterna. Färgerna i kol och jord är dämpade. Ljuset faller rätt, med ljusare toner till vänster och mörkare till höger, och hatten ligger symmetriskt kring mittlinjen (x -21 till 20). Version 2 är låg och platt och ser fortfarande ut som en skål ovanpå huvudet. Version 3 har en för stark grön färg och en kulle som är rundad som en skål. Ändringar: jag tog bort ensamma prickar på brättets undersida. Två ensamma m i den skuggade nedersta raden blev l, och ett ensamt l i brättets ovansida blev m, så att ytan blir matt utan lösa prickar.",
+ "bilder": {
+  "standard": {
+   "x": -21,
+   "y": -5,
+   "rader": [
+    ".............nnnnmmmmmmmlmlll.............",
+    "..........nnnnnnmnmmmmmmmmlmllll..........",
+    "........mnnnnnnmnnmmmmmmmmmlmmllll........",
+    ".......mnnnnnmnnmmmmmmmmmmmlmlllllk.......",
+    "......mnnnnmnnnmmmmmmmmmmmmlmmllllkk......",
+    ".....mmnnnnmnnmmmmmmmmmmmmmlmlllllkkk.....",
+    "....mmnnnnmnnmmmmmmmmmmmmmmlmmlllllkkk....",
+    "....mmnnnmnnmmmmmmmmmmmmmmmlmllllllkkk....",
+    "...lmmnnnmnmmmmmmmmmmmmmmmlmmlllllllkkk...",
+    "...lmmnnmnmmmmmmmmmmmmmmmmlmllllllllkkk...",
+    "...lmmmnmnmmmmmmmmmmmmmmmlmlmllllllkkkk...",
+    "...llmmmnmmmmmmmmmmmmmmmmmlmlllllllkkkk...",
+    "...FGGHHHGGGGGGGGGGGGGGGGFGFFFFEFFEEEEE...",
+    "...FGHHGHGGGGGGGGGGGGGFGFFFFFFEFEEEEEEE...",
+    "...EFFGFGGGGGGGGGGFFFFFFFFFFEFEEEEEEEEE...",
+    ".mnnnnnnnnmnnmmmmmmmmmmmmmmmmmlmmmlllllll.",
+    "mnnnnnmnnnmmmmmmmmmmmmmmmmmmmmmlmmlllllllk",
+    "lmmmmmmmmmmmmmmmmmmmmmmmmlmmmllllllllllkkk",
+    "lllllllllllllllllllllllllllllllllllkklkkkk",
+    "lll....................................kkk"
+   ]
+  }
+ }
+}

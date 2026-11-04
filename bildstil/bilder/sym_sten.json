@@ -1,0 +1,32 @@
+{
+  "id": "sym_sten",
+  "ritad": 2,
+  "av": "API:t (claude-opus-5-5), bästa av 3",
+  "om": "Den version Björn ville behålla (stenen som vapen och flinta i minnet).",
+  "w": 16,
+  "h": 14,
+  "rader": [
+    "....QQQQQQ......",
+    "...QTTSTSSQQQ...",
+    "..QTwTSTSSRSRQ..",
+    ".QTTSTTSSRSRSRQ.",
+    ".QTSTSSTSSRSRRQ.",
+    "QTTSTSSRQSSRSRRQ",
+    "QTSTSSSSRQSRSRRQ",
+    "QSTSSTSSRSQRSRRQ",
+    "QTSSSSSRSRQRRSRQ",
+    "QSSTSSRSRSRQRRRQ",
+    "QSSSSRSRSRRRRRRQ",
+    "QRSRSRSRRSRRRRRQ",
+    ".QRRSRRRRRRRRRQ.",
+    "..QQRRRRRRRRQQ..",
+    "....QQQQQQQQ...."
+  ],
+  "pal": {
+    "Q": "#233035",
+    "R": "#3e5156",
+    "S": "#61767a",
+    "T": "#8a9c9e",
+    "q": "#bdb39b"
+  }
+}

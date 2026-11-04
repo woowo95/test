@@ -1,0 +1,37 @@
+{
+ "id": "nasa-10",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 1 eftersom den är den enda vars form är symmetrisk kring mittlinjen mellan x = -1 och x = 0. Näsryggen ligger på x = -1 och 0, och varje bredare rad växer lika mycket åt båda hållen. Versionerna 2 och 3 har rader som '..dcb...' och '..dcbb..' som skjuter ut åt vänster. Det gör att näsan lutar, och det var det Björn menade med att förra ritningen såg sne ut. Version 1 följer förebilden: en rygg som är två punkter bred i d/b, ljuset från vänster (ljusare d till vänster, mörkare c/b till höger) och mörkare a under näsborrarna. Den smala spetsen '...ba...' längst ner ger den spetsiga formen. Ingenting behövde ändras i formen: den håller sig inom rutan (x -4..3, y 1..9) och använder bara abcd. Barnbilden är också symmetrisk (x -3..2) och kortare och mindre, med samma skuggning. Den behålls som den är.",
+ "bilder": {
+  "standard": {
+   "x": -4,
+   "y": 1,
+   "rader": [
+    "...db...",
+    "...db...",
+    "...db...",
+    "..bdcb..",
+    "..bdcb..",
+    ".bddccb.",
+    ".adccba.",
+    "..abba..",
+    "...ba..."
+   ]
+  }
+ },
+ "barn": {
+  "standard": {
+   "x": -3,
+   "y": 1,
+   "rader": [
+    "..db..",
+    "..db..",
+    ".bdcb.",
+    "adccba",
+    ".abba.",
+    "..ba.."
+   ]
+  }
+ }
+}

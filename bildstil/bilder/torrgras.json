@@ -1,0 +1,25 @@
+{
+ "id": "torrgras",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den är den enda som behåller dagens form: en upprätt kärve med strån som spretar uppåt och nedåt och ett tvärgående band i mitten, ungefär där bandet sitter i dag. Version 2 och 3 har bandet på längden, så att höet läses som en liggande bunt, och det är en ny bild. Färgerna stämmer med förebilden. Stråna är blekt senapsgula, bandet är i jordtoner nära dagens bruna (#8a6a3a) och konturen är senap0 och jord0, utan svart. Det enda jag ändrade är nedre raden. Där satt den ljusaste tonen (L) längst ner till vänster, vilket bryter mot ljuset från övre vänstra hörnet. Nu börjar raden med J och K, så att stråna mörknar nedåt och toppen förblir ljusast. Varje strå hänger ihop med raden ovanför, så det blir inga ensamma prickar.",
+ "w": 9,
+ "h": 5,
+ "rader": [
+  "LI.LK.KJ.",
+  "ILKLKKJI.",
+  "..EHGFE..",
+  ".ILKLKJI.",
+  "JKI.KJ.JI"
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f"
+ }
+}

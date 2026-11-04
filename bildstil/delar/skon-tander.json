@@ -1,0 +1,16 @@
+{
+ "id": "skon-tander",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den är liten och precis som förebilden: en rad tänder med luckor i kol och en underläpp i rost under. Den sitter mitt i munnen, från x = -3 till 2, och håller sig inom rutan. Version 1 är för stor och lägger en egen överläpp på munnen. Dess tänder i ben3 blir för ljusa och ser blanka ut. Version 2 saknar läpp och blir ett platt block av tänder som inte hör ihop med munnen på mallen. Det enda jag ändrade var tändernas toner, från kpkopk till kpkpok. Nu går de från ljusare till vänster till mörkare till höger, så att de följer ljuset uppifrån vänster i stället för att växla ojämnt.",
+ "bilder": {
+  "standard": {
+   "x": -3,
+   "y": 0,
+   "rader": [
+    "kpkpok",
+    ".tsst."
+   ]
+  }
+ }
+}

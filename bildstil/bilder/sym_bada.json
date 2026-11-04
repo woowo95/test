@@ -1,0 +1,25 @@
+{
+ "id": "sym_bada",
+ "ritad": 4,
+ "av": "Claude",
+ "om": "Ritad av Claude efter Björns kommentar: armen ser fortfarande konstig ut",
+ "w": 16,
+ "h": 14,
+ "rader": [
+  "................",
+  "......EEEE......",
+  ".....EGHHGE.....",
+  "....EHHGGHGE....",
+  "....EqqqqqpE....",
+  "....EqkqqkpE....",
+  ".T..EqqqqppE..T.",
+  "T....EqqppE....T",
+  "...EEEpppoEEE...",
+  "QTTSSTTSSTTTSSRQ",
+  "QSTSSRSSTSRSSRRQ",
+  ".QRRSRRSRRSRRRQ.",
+  "QTTSQQTTSQQTTSRQ",
+  ".QQQQQQQQQQQQQQ."
+ ],
+ "pal": {"E":"#3f2415","G":"#7d5b40","H":"#987e62","Q":"#233035","R":"#3e5156","S":"#61767a","T":"#8a9c9e","k":"#24201d","o":"#7e7362","p":"#a0947d","q":"#bdb39b"}
+}

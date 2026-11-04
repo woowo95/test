@@ -1,0 +1,34 @@
+{
+ "id": "sym_tarning",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 2",
+ "om": "Jag valde version 2. Den mörka kol0-konturen och kanten mellan ovansidan och framsidan delar upp tärningen i tre tydliga ytor: ljus ovansida, ben-framsida och mörkare sida. Det följer ljuset uppifrån till vänster. Femman på framsidan och ettan på ovansidan läses direkt, och tärningen fyller rutan på samma sätt som de korsade svärden. I version 3 smälter ytorna ihop, eftersom konturen är kol1 utan inre kant och prickarna är i kol2. Den blir grumlig och tappar formen i liten storlek, särskilt på mörk bakgrund. Jag gjorde en ändring: sidan var tom, så jag lade till två prickar i jord0 på sidoytan (en tvåa). Nu läses alla tre ytorna som en tärning. Prickarna är få och stora, så tydligheten blir inte sämre.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "....kkkkkkkkkkkk",
+  "...kwwqwwwqwwqkk",
+  "..kqwwqEEwqwqkpk",
+  ".kqwqqwqqwqqkpok",
+  "kkkkkkkkkkkkpook",
+  "kwwqwqqwqqpkopok",
+  "kwEEqqqqEEpkoEok",
+  "kqEEqpqqEEpkopok",
+  "kqqqpqqpqqpkoook",
+  "kqpqqEEqqppkopok",
+  "kqqpqEEqpqpkoEok",
+  "kqqqpqqpqppkopok",
+  "kqEEqqpqEEpkook.",
+  "kpEEqpqpEEpkok..",
+  "kppqppqppppkk...",
+  "kkkkkkkkkkkk...."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "k": "#24201d",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

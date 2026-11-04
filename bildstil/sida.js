@@ -213,7 +213,7 @@ function ritaEld(B, cx, cy, P, opt) {
   }
   for (let i = -4; i <= 4; i++) { B.satt(cx + i, cy + Math.round(i * 0.5) + 1, P.i('jord', 1)); B.satt(cx + i, cy + Math.round(i * 0.5) + 2, P.i('jord', 0)); B.satt(cx + i, cy - Math.round(i * 0.4) + 1, P.i('jord', 2)); }
   // lågorna: höjd per kolumn, glöd längst ner
-  const H = [2, 4, 7, 9, 6, 4, 2];
+  const H = (opt && opt.lagor) || [2, 4, 7, 9, 6, 4, 2]; // lågornas höjd; animationerna (anim.js) ger andra per ruta
   H.forEach((hh, k) => {
     const x = cx - 3 + k;
     for (let j = 0; j < hh; j++) {
@@ -222,7 +222,7 @@ function ritaEld(B, cx, cy, P, opt) {
       B.satt(x, y, v, true);
     }
   });
-  B.satt(cx - 1, cy - 10, P.i('rost', 1), true); B.satt(cx + 2, cy - 8, P.i('rost', 2), true);
+  if (!(opt && opt.lagor)) { B.satt(cx - 1, cy - 10, P.i('rost', 1), true); B.satt(cx + 2, cy - 8, P.i('rost', 2), true); }
 }
 
 // ---------- kistan, 16 × 16 ----------
@@ -401,16 +401,6 @@ function ritaSlojdbank(B, x0, y0, P, spant = false) {
   ritaIkon(B, 'torrgras', x0 + 10, y0 + 11);
   ritaIkon(B, 'bensyl', x0 + 18, y0 + 14);
 }
-// spelets slöjdbänk som den ser ut i dag: 16 × 16 punkter på två rutor (8 per ruta), förstorad två gånger
-function ritaSlojdbankIdag(B, x0, y0, P) {
-  const L = Bild(16, 16, P);
-  ritaIkon(L, 'flatarbank_karta', 0, 0);
-  for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) {
-    const v = L.px[(y >> 1) * 16 + (x >> 1)];
-    if (v >= 0) B.satt(x0 + x, y0 + y, v);
-    else if (IKONER.PIX.flatarbank_karta[y >> 1][x >> 1] === 'x') B.morka(x0 + x, y0 + y);
-  }
-}
 
 // ---------- blod på marken, 16 punkter på rutan ----------
 function ritaBlod(B, cx, cy, P) {
@@ -582,55 +572,9 @@ function tillCanvas(B, c, skala = 1) {
   g.putImageData(im, 0, 0);
   if (skala) c.style.width = B.w * skala + 'px';
 }
-function utsnitt(B, x0, y0, w, h) {
-  const U = Bild(w, h, B.P);
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) U.px[y * w + x] = B.px[(y0 + y) * B.w + x0 + x];
-  return U;
-}
 
 // ---------- i dag mot förslaget ----------
-const Z = 6; // skärmpunkter per spelpunkt i jämförelsen
-function rutnat(g, x0, n, sida) {
-  g.strokeStyle = 'rgba(255,240,210,0.16)'; g.lineWidth = 1;
-  for (let i = 1; i < n; i++) { const p = Math.round(x0 + (i * sida) / n) + 0.5; g.beginPath(); g.moveTo(p, 0); g.lineTo(p, sida); g.stroke(); g.beginPath(); g.moveTo(x0, Math.round((i * sida) / n) + 0.5); g.lineTo(x0 + sida, Math.round((i * sida) / n) + 0.5); g.stroke(); }
-}
-function ikonPa(g, k, x, y, punkt) {
-  const rows = IKONER.PIX[k], pal = IKONER.PAL[k] || {};
-  rows.forEach((row, yy) => [...row].forEach((ch, xx) => { if (ch !== '.' && pal[ch]) { g.fillStyle = pal[ch]; g.fillRect(x + xx * punkt, y + yy * punkt, punkt, punkt); } }));
-}
-function ritaIdag(c) {
-  const T = 16 * Z; c.width = T * 3 + 16; c.height = T;
-  const g = c.getContext('2d'); g.imageSmoothingEnabled = false;
-  [0, 1, 2].forEach(i => { g.fillStyle = '#8daa5f'; g.fillRect(i * (T + 8), 0, T, T); });
-  ikonPa(g, 'kista_karta', 0, 0, T / 8); rutnat(g, 0, 8, T);
-  ['ved', 'flinta', 'svamp', 'fisk'].forEach((k, j) => ikonPa(g, k, T + 8 + (j % 2) * T / 2, Math.floor(j / 2) * T / 2, T / 16));
-  rutnat(g, T + 8, 16, T);
-  const x0 = 2 * (T + 8);
-  g.fillStyle = '#355e33';
-  g.beginPath(); g.moveTo(x0 + T * 0.3, T * 0.12); g.lineTo(x0 + T * 0.08, T * 0.62); g.lineTo(x0 + T * 0.52, T * 0.62); g.fill();
-  g.fillStyle = '#c99a6a'; g.beginPath(); g.arc(x0 + T * 0.68, T * 0.5, T * 0.13, 0, 7); g.fill();
-  g.fillStyle = '#6a8ab0'; g.beginPath(); g.arc(x0 + T * 0.68, T * 0.72, T * 0.17, 0, 7); g.fill();
-}
-function ritaForslag(c, P) {
-  const B = Bild(16 * 3 + 2, 16, P);
-  for (let y = 0; y < 16; y++) for (let x = 0; x < B.w; x++) {
-    if (x === 16 || x === 17 || x === 34 || x === 35) continue;
-    const n = vn(x, y, 3.5, 2) * 0.72 + hash(x, y, 3) * 0.28;
-    B.satt(x, y, n < 0.28 ? P.i('oliv', 1) : n > 0.78 ? P.i('oliv', 3) : P.i('oliv', 2));
-  }
-  ritaKista(B, 0, 0, P);
-  ['ved', 'flinta', 'svamp', 'fisk'].forEach((k, j) => ritaIkon(B, k, 18 + (j % 2) * 8, Math.floor(j / 2) * 8));
-  ritaGran(B, 40, 15, 16, P, { tid: 'dag' });
-  ritaPerson(B, 3, 36, -5);
-  const T = 16 * Z; c.width = T * 3 + 16; c.height = T;
-  const g = c.getContext('2d');
-  for (let y = 0; y < 16; y++) for (let x = 0; x < B.w; x++) {
-    const v = B.px[y * B.w + x]; if (v < 0) continue;
-    const sx = x < 16 ? x * Z : x < 34 ? T + 8 + (x - 18) * Z : 2 * (T + 8) + (x - 36) * Z;
-    g.fillStyle = P.cols[v].hex; g.fillRect(sx, y * Z, Z, Z);
-  }
-  [0, T + 8, 2 * (T + 8)].forEach(x0 => rutnat(g, x0, 16, T));
-}
+const Z = 6;
 
 // ---------- symbolerna i pixlar, 8 × 8 ----------
 const SYMBOLER = [
@@ -777,96 +721,6 @@ function former(P) {
   if (P.tool === 'yxa') { l([[79, 101], [88, 52]], 3, '#7a5a36'); p([[84, 53], [95, 46], [98, 60], [88, 61]], '#8c9093', { sh: 1, cx: 91, cy: 55, rx: 7, ry: 7 }); l([[85, 55], [90, 56]], 1.4, '#c9b07a', { det: 2 }); }
   return S;
 }
-
-const lum = c => { const [r, g, b] = hex(c); return 0.3 * r + 0.59 * g + 0.11 * b; };
-// dov färg: mindre mättad och lite mörkare, dragen mot brungrått
-const dov = (c, t = 0.28) => { const [r, g, b] = hex(c), L = 0.3 * r + 0.59 * g + 0.11 * b; return shade(toHex([r, g, b].map(v => v + (L - v) * t)), 0.9); };
-
-function inside(f, u, v, px) {
-  if (f.t === 'e') { if (!f.rx) return false; const rx = Math.max(f.rx, px * 0.5), ry = Math.max(f.ry, px * 0.5); return ((u - f.cx) / rx) ** 2 + ((v - f.cy) / ry) ** 2 <= 1; }
-  if (f.t === 'p') { let c = false; const P = f.pts; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { if ((P[i][1] > v) !== (P[j][1] > v) && u < (P[j][0] - P[i][0]) * (v - P[i][1]) / (P[j][1] - P[i][1]) + P[i][0]) c = !c; } return c; }
-  const w = Math.max(f.w / 2, px * 0.55);
-  for (let i = 1; i < f.pts.length; i++) {
-    const [ax, ay] = f.pts[i - 1], [bx, by] = f.pts[i], dx = bx - ax, dy = by - ay, L = dx * dx + dy * dy;
-    const t = Math.max(0, Math.min(1, ((u - ax) * dx + (v - ay) * dy) / L));
-    if (Math.hypot(u - ax - t * dx, v - ay - t * dy) <= w) return true;
-  }
-  return false;
-}
-function center(f) {
-  if (f.cx !== undefined && f.rx !== undefined) return f;
-  const xs = f.pts.map(p => p[0]), ys = f.pts.map(p => p[1]);
-  const a = Math.min(...xs), b = Math.max(...xs), c = Math.min(...ys), d = Math.max(...ys);
-  return { cx: (a + b) / 2, cy: (c + d) / 2, rx: (b - a) / 2 || 1, ry: (d - c) / 2 || 1 };
-}
-
-// porträttet, 64 × 64 punkter: formerna ritas i punkter med hårt ljus uppifrån vänster och varmt sken från elden,
-// och varje punkt byts sedan mot närmaste färg i paletten. Konturen är kolets mörkaste ton och bakgrunden kolets ramp.
-// Ljuset ligger i hela band utan rutmönster, och håret och skägget har strån i klungor längs växtriktningen
-// (Björn efter v95: mindre schackrutigt). gammal = true ritar som före v95, för jämförelsen i valdelen
-function ritaPortratt(Pal, P, N = 64, gammal = false) {
-  const VX = 13, VY = 10, VW = 74, px = VW / N, F = former(P).filter(f => (f.det ?? 1) <= 3), g = Array(N * N).fill(null), id = Array(N * N).fill(-1), hud = Array(N * N).fill(0), harm = Array(N * N).fill(0), stra = new Int8Array(N * N);
-  const seed = P.namn.length * 7 + P.age, smuts = 0.012 + (P.beauty < 0 ? 0.05 : 0) + (P.age > 55 ? 0.03 : 0);
-  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
-    const u = VX + (i + 0.5) * px, v = VY + (j + 0.5) * px, k0 = j * N + i;
-    F.forEach((f, n) => {
-      if (!inside(f, u, v, px)) return;
-      let c = dov(f.c, 0.18);
-      const har = [P.hair, '#d8d4cc', '#c2bdb4'].includes(f.c);
-      if (f.sh) {
-        // hårt ljus snett uppifrån vänster: ljus, mellan, rastrerad övergång, skugga
-        const m = center(f), k = (u - m.cx) / m.rx * 0.65 + (v - m.cy) / m.ry * 0.7;
-        const dark = mix(shade(c, 0.64), '#2a2238', 0.15), mid = shade(c, 0.84);
-        if (gammal) c = k > 0.7 ? dark : k > 0.55 ? ((i + j) % 2 ? dark : mid) : k > 0.1 ? mid : k < -0.6 ? mix(c, '#ffe2b0', 0.14) : c;
-        else c = k > 0.62 ? dark : k > 0.1 ? mid : k < -0.6 ? mix(c, '#ffe2b0', 0.14) : c;
-      }
-      if (har && gammal) { const s = (i * 2 + j + Math.floor(hash(i, 0, 1) * 2)) % 6; if (s === 0) c = mix(c, '#fff0d0', 0.16); else if (s === 3) c = shade(c, 0.85); }
-      else if (har) {
-        // strån i klungor: smala och långa nedåt, så att ljuset följer hårets riktning i stället för ett mönster
-        // (ett steg ljusare eller mörkare i samma ramp i paletten, så att färgen inte byter ton)
-        const s = vn(i / 1.7, j / 5, 1, seed + 3 + (f.c === P.hair ? 0 : 9));
-        stra[k0] = s > 0.72 ? 1 : s < 0.22 ? -1 : 0;
-      }
-      if (f.a) { if (g[k0]) g[k0] = mix(g[k0], c, f.a); return; }
-      g[k0] = c; id[k0] = n; hud[k0] = f.skin ? 1 : 0; harm[k0] = har ? 1 : 0; if (!har) stra[k0] = 0;
-    });
-    // smuts och fläckar i huden
-    if (hud[k0]) { const h = hash(i, j, seed); if (h < smuts) g[k0] = shade(g[k0], 0.92); else if (P.blemish && h > 0.993) g[k0] = mix(g[k0], '#9a3a30', 0.3); }
-  }
-  const B = Bild(N, N, Pal), K = t => Pal.i('kol', t);
-  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
-    const k0 = j * N + i; let c = g[k0];
-    const nb = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([a, b]) => (i + a >= 0 && i + a < N && j + b >= 0 && j + b < N) ? k0 + b * N + a : -1);
-    if (!c) {
-      if (nb.some(n => n >= 0 && g[n])) { B.satt(i, j, K(0)); continue; }
-      // bakgrunden ljusnar svagt mot mitten, med rastrering
-      const r = Math.hypot(i - N * 0.3, j - N * 0.45) / N, b = gammal ? (r < 0.35 ? 2 : r < 0.45 ? ((i + j) % 2 ? 2 : 1) : r < 0.62 ? 1 : r < 0.7 ? ((i + j) % 2 ? 1 : 0) : 0) : (r < 0.4 ? 2 : r < 0.66 ? 1 : 0);
-      B.satt(i, j, K(b)); continue;
-    }
-    // inre konturer där två former med olika ljushet möts
-    const r = nb[0], dn = nb[2];
-    if ((r >= 0 && g[r] && id[r] !== id[k0] && Math.abs(lum(g[r]) - lum(c)) > 55) || (dn >= 0 && g[dn] && id[dn] !== id[k0] && Math.abs(lum(g[dn]) - lum(c)) > 55)) c = mix(c, SVART, 0.4);
-    // varmt sken från elden till vänster
-    else if (nb[1] >= 0 && !g[nb[1]]) c = mix(c, '#f0a050', 0.3);
-    let v = Pal.av(c);
-    if (stra[k0] > 0 && v % 4 < 3) v++; else if (stra[k0] < 0 && v % 4 > 0) v--;
-    B.satt(i, j, v);
-  }
-  // ensamma punkter i håret och skägget tar grannarnas färg, så att inget rutmönster blir kvar
-  if (!gammal) for (let j = 1; j < N - 1; j++) for (let i = 1; i < N - 1; i++) {
-    if (!harm[j * N + i]) continue;
-    const v = B.get(i, j), l = B.get(i - 1, j), r = B.get(i + 1, j), u = B.get(i, j - 1), d = B.get(i, j + 1);
-    if (v !== l && l === r && (u === l || d === l)) B.px[j * N + i] = l;
-    else if (v !== u && u === d && (l === u || r === u)) B.px[j * N + i] = u;
-  }
-  // rostig järnram med nitar
-  for (let k = 0; k < N; k++) for (const [x, y] of [[k, 0], [k, 1], [k, N - 2], [k, N - 1], [0, k], [1, k], [N - 2, k], [N - 1, k]]) B.satt(x, y, Pal.i('jord', 0));
-  for (const [a, b] of [[0, 0], [N - 2, 0], [0, N - 2], [N - 2, N - 2]]) for (let k = 0; k < 4; k++) B.satt(a + (k & 1), b + (k >> 1), Pal.i('rost', 1));
-  return B;
-}
-
-// ---------- sidan ----------
-const toHex = tillHex;
 const $ = s => document.querySelector(s);
 const lage = { tid: 'dag' };
 try { const v = JSON.parse(localStorage.getItem('bildstil4') || '{}'); if (['dag', 'natt', 'istid'].includes(v.tid)) lage.tid = v.tid; } catch (e) { /* inget sparat */ }
@@ -890,21 +744,6 @@ function ritaPalett(P) {
   tillCanvas(S, $('#pk'), 0);
   for (const [id, tid] of [['#pd', 'dag'], ['#pn', 'natt'], ['#pi', 'istid']]) tillCanvas(ritaScen(P, { tid }), $(id), 0);
 }
-// slöjdbänken i dag och med 16 punkter per ruta, på samma mark (tre × tre rutor)
-function ritaBankerna(P) {
-  for (const [id, ny] of [['#bankidag', false], ['#bankny', true]]) {
-    const B = markBild(48, 48, P);
-    if (ny) ritaSlojdbank(B, 8, 8, P); else ritaSlojdbankIdag(B, 8, 8, P);
-    tillCanvas(B, $(id), 0);
-  }
-}
-// folket: porträttet och figuren på gräset
-function ritaFolket(P) {
-  PERSONER.forEach((p, i) => {
-    tillCanvas(ritaPortratt(P, p), $('#por' + i), 0);
-    const B = markBild(16, 22, P, 176, 62); ritaPerson(B, i, 1, 0); tillCanvas(B, $('#fig' + i), 0);
-  });
-}
 function heltalsskala(c, w) {
   const bredd = c.parentElement.clientWidth - 20, s = Math.floor(bredd / w);
   c.style.width = (s >= 2 ? w * s : bredd) + 'px';
@@ -927,140 +766,7 @@ function forstorad(B, k, x0, y0) {
     else if (IKONER.PAL[k]?.[rows[y >> 1][x >> 1]]?.startsWith('rgba')) B.morka(x0 + x, y0 + y);
   }
 }
-// registret över det Björn ska välja: typ 'janej' (en ny version mot den i dag) eller 'tre' (tre nya versioner).
-// Varje version är en bild { w, h, rita(B, P) } på marken. När valet är inbyggt i spelet tas raden bort, och dess
-// dokument i databasens samling 'val' tas bort
-const VATTENSACK = { o: 'kol0', j: 'jord1', J: 'jord2', L: 'jord3', k: 'jord0', s: 'senap1', y: 'senap2', w: 'ben2', b: 'skiffer2', B: 'skiffer3' };
-const ODLING = { k: 'jord0', j: 'jord1', J: 'jord2', B: 'jord3', g: 'oliv1', G: 'oliv2', H: 'oliv3', y: 'senap2', Y: 'senap3' };
-const ROVOR = { o: 'oliv0', g: 'oliv1', G: 'oliv2', L: 'oliv3', r: 'rost1', R: 'rost2', b: 'ben1', B: 'ben2', W: 'ben3', k: 'jord0', j: 'jord1', J: 'jord2' };
-const KORN = { s: 'senap0', y: 'senap1', Y: 'senap2', L: 'senap3', k: 'jord0', j: 'jord1', J: 'jord2' };
-const TOA = { v: 'senap3', V: 'oliv3', c: 'jord1', C: 'jord2', k: 'jord0' };
-// vädrets symboler (steg 2.11.4): klart, mulet, regn, snö, blåst och åska, 8 × 8 punkter
-const VS_L = { a: 'senap1', b: 'senap2', c: 'senap3', w: 'ben1', W: 'ben3', d: 'skiffer3', s: 'ben2', S: 'ben3', k: 'skiffer1', K: 'skiffer2', y: 'senap3', v: 'ben2' };
-const VS = [
-  ['...a....', '.a.b.a..', '..bcb...', 'abcccba.', '..bcb...', '.a.b.a..', '...a....', '........'],
-  ['........', '...ww...', '..wWWw..', '.wWWWWw.', 'wWWWWWWw', 'wwwwwwww', '........', '........'],
-  ['..ww....', '.wWWww..', 'wWWWWWw.', 'wwwwwww.', '.d..d...', '..d..d..', '.d..d...', '........'],
-  ['...s....', '.s.s.s..', '..sss...', 'sssSsss.', '..sss...', '.s.s.s..', '...s....', '........'],
-  ['........', 'vvvvv...', '.....v..', 'vvvvvv..', '........', '..vvvvvv', '.v......', '..vv....'],
-  ['..kk....', '.kKKkk..', 'kKKKKKk.', 'kkkykkk.', '...yy...', '..yy....', '...y....', '..y.....'],
-];
-// en mörk kontur runt symbolen (10 × 10)
-const konturera = rader => Array.from({ length: 10 }, (_, y) => Array.from({ length: 10 }, (_, x) => {
-  const c = (rader[y - 1] || '')[x - 1];
-  if (c && c !== '.') return c;
-  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const n = (rader[y - 1 + dy] || '')[x - 1 + dx]; if (n && n !== '.') return 'o'; }
-  return '.';
-}).join(''));
-// symbolen på en liten himmel med marken under (10 × 10): himlens färg efter vädret
-const HIMMEL = ['skiffer3', 'skiffer2', 'skiffer1', 'skiffer2', 'skiffer3', 'kol3'];
-const VS_RAD = (lista, sida) => ({ w: lista.length * (sida + 2) + 2, h: sida + 4, kol: true, rita: (B, P) => lista.forEach((r, i) => r(B, P, 2 + i * (sida + 2), 2)) });
-const regnKarta = (stil) => ({ w: 64, h: 32, rita: (B, P) => {
-  const d = P.i('skiffer', 3), l = P.i('ben', 1), sn = P.i('ben', 3);
-  for (let i = 0; i < 26; i++) {
-    const x = Math.floor(hash(i, 1, 7) * 30), y = Math.floor(hash(i, 2, 7) * 28);
-    if (stil === 1) for (let k = 0; k < 3; k++) B.satt(x, y + k, d);
-    else if (stil === 2) { for (let k = 0; k < 4; k++) B.satt(x + (k >> 1), y + k, d); if (i % 4 === 0) { B.satt(x - 1, 31, l); B.satt(x + 1, 31, l); B.satt(x, 30, l); } }
-    else { B.satt(x, y, l); B.satt(x, y + 1, d); }
-  }
-  for (let i = 0; i < 22; i++) {
-    const x = 34 + Math.floor(hash(i, 3, 7) * 28), y = Math.floor(hash(i, 4, 7) * 30);
-    if (stil === 3) { B.satt(x, y, sn); B.satt(x - 1, y, l); B.satt(x + 1, y, l); B.satt(x, y - 1, l); B.satt(x, y + 1, l); }
-    else if (stil === 2) { B.satt(x, y, sn); B.satt(x + 1, y, sn); B.satt(x, y + 1, sn); B.satt(x + 1, y + 1, l); }
-    else B.satt(x, y, sn);
-  }
-} });
-// utbrottens symboler (steg 3.2.2–3.2.4): motiven ritas bara med fyllning, och kanten (o), skuggan (z) och brickan läggs på i koden
-const UTB_KANT = rader => rader.map((row, y) => [...row].map((ch, x) => ch !== '.' ? ch : [[0, -1], [0, 1], [-1, 0], [1, 0]].some(([dx, dy]) => { const c = rader[y + dy]?.[x + dx]; return c && c !== '.' && c !== 'o'; }) ? 'o' : '.').join(''));
-const UTB_SKUGGA = rader => rader.map((row, y) => [...row].map((ch, x) => ch === '.' && y > 0 && x > 0 && rader[y - 1][x - 1] !== '.' ? 'z' : ch).join(''));
-const UTB_ANSIKTE = ['................', '.....oooooo.....', '...oowwaaaaoo...', '..owaaaaaaaaao..', '.owaaaaaaaaaaao.', '.oaaaaaaaaaaaao.', 'oaaaaaaaaaaaaaao', 'oaaaaaaaaaaaaaao', 'oaaaaaaaaaaaaaao', 'oaaaaaaaaaaaaaao', 'oaaaaaaaaaaaaaao', '.oaaaaaaaaaaaao.', '.obaaaaaaaaaabo.', '..obbaaaaaabbo..', '...oobbbbbboo...', '.....oooooo.....'];
-const UTB_DRAG = drag => UTB_ANSIKTE.map((row, y) => drag[y] ? [...row].map((ch, x) => drag[y][x] && drag[y][x] !== ' ' ? drag[y][x] : ch).join('') : row);
-const UTB_MOTIV = [
-  { namn: 'gråta', grad: 1, l: { a: 'ben2', w: 'ben3', b: 'ben1', t: 'skiffer3' }, p: UTB_DRAG({ 6: '   oo      oo   ', 7: '            t   ', 8: '            t   ', 9: '           tt   ', 11: '      oooo      ', 12: '     o    o     ' }) },
-  { namn: 'tjura', grad: 1, l: { a: 'ben2', w: 'ben3', b: 'ben1' }, p: UTB_DRAG({ 4: '   o        o   ', 5: '    oo    oo    ', 6: '     o    o     ', 11: '     oooooo     ', 12: 'w              w', 13: 'ww            ww', 14: ' w            w ' }) },
-  { namn: 'vara elak', grad: 2, l: { a: 'rost3', w: 'senap3', b: 'rost2' }, p: UTB_DRAG({ 4: '   o        o   ', 5: '    oo    oo    ', 6: '    oo    oo    ', 10: '     oooooo     ', 11: '     owowow     ', 12: '     oooooo     ' }) },
-  { namn: 'slå sönder något', grad: 2, l: { a: 'jord3', b: 'jord2', w: 'senap3' }, p: UTB_KANT(['................', '..a.....b....a..', '...a...b....a...', '.....b.....b....', '................', '................', '.aaaaaa...aaaaa.', '.waaaaa..aaaaaw.', '..aaaaaa.aaaaa..', '..aaaaa.aaaaaa..', '...aaaaa.aaaa...', '...bbbb.bbbbb...', '....bbbb.bbb....', '......bb.bb.....', '................', '................']) },
-  { namn: 'springa iväg', grad: 2, l: { a: 'skiffer2' }, p: UTB_KANT(['..........aa....', '.........aaaa...', '.........aaaa...', '..........aa....', '......aaaaa.....', '.....a..aaa.....', '....a...aaaa....', '........aa..a...', '........aa...a..', '.......aaa......', '......a...a.....', '.....a.....a....', '....a.......aa..', '...a............', '..aa............', '................']) },
-  { namn: 'ligga kvar i bädden', grad: 3, l: { h: 'ben2', w: 'ben3', b: 'oliv2', d: 'jord2' }, p: UTB_KANT(['................', '................', '................', '................', '................', '................', '..hhh...........', '.whhhhbbbbbbbb..', '.wwhhbbbbbbbbbb.', '.wwwbbbbbbbbbbb.', '.dddddddddddddd.', '.d............d.', '.d............d.', '................', '................', '................']) },
-  { namn: 'göra slut', grad: 3, l: { a: 'rost2' }, p: UTB_KANT(['................', '................', '..aaaa....aaaa..', '.aaaaaa..aaaaaa.', '.aaaaaaa.aaaaaa.', '.aaaaaa.aaaaaaa.', '.aaaaaaa.aaaaaa.', '..aaaaa.aaaaaa..', '...aaaaa.aaaa...', '....aaa.aaaa....', '.....aaa.aa.....', '......a.aa......', '.......aa.......', '................', '................', '................']) },
-  { namn: 'slå', grad: 3, l: { a: 'ben2', b: 'ben1' }, p: UTB_KANT(['................', '................', '................', '...aabaabaabaa..', '..aaabaabaabaaa.', '..aaabaabaabaaa.', '..aaaaaaaaaaaaa.', '..abbbbbbaaaaaa.', '..aaaaaaabaaaaa.', '..aaaaaaaaaaaaa.', '...aaaaaaaaaaa..', '....aaaaaaaaa...', '.....aaaaaaa....', '.....aaaaaaa....', '.....aaaaaaa....', '................']) },
-  { namn: 'skrika (barn)', grad: 1, l: { a: 'ben2', w: 'ben3', b: 'ben1', t: 'skiffer3', r: 'rost2' }, p: UTB_DRAG({ 6: '   oo      oo   ', 7: '  t          t  ', 8: '  t          t  ', 9: '  t   oooo   t  ', 10: '  t  obbbbo  t  ', 11: '     obrrbo     ', 12: '      oooo      ' }) },
-  { namn: 'blåmärket', grad: 0, l: { a: 'ben2', r: 'rost1', b: 'skiffer2', c: 'skiffer1' }, p: UTB_KANT(['................', '................', '...aaaaaaaaaa...', '..aaaaaaaaaaaa..', '.aaaaarrraaaaaa.', '.aaaarbbbraaaaa.', '.aaarbbcbbraaaa.', '.aaarbcccbraaaa.', '.aaaarbcbbraaaa.', '.aaaaarbbraaaaa.', '.aaaaaarraaaaaa.', '.aaaaaaaaaaaaaa.', '..aaaaaaaaaaaa..', '...aaaaaaaaaa...', '................', '................']) },
-];
-// intryckens och ryktenas symboler (steg 3.3–3.4): motiven ritas med fyllning, och kanten, skuggan eller brickan läggs på i koden (som utbrotten)
-const IK_MOTIV = [
-  { namn: 'våldsam', t: -1, l: { a: 'ben2', b: 'ben1' }, p: UTB_MOTIV[7].p },
-  { namn: 'tjuv', t: -1, l: { a: 'jord3', b: 'jord2', c: 'kol2' }, p: UTB_KANT(['................', '................', '.......cc.......', '......c..c......', '.......cc.......', '......aaaa......', '.....aaaaaa.....', '....aaaaaaaa....', '...aaaaaaaaaa...', '...aaaabbaaaa...', '..aaaaabbaaaaa..', '..aaaaaaaaaaaa..', '..aaaaaaaaaaaa..', '...bbbbbbbbbb...', '................', '................']) },
-  { namn: 'elak', t: -1, l: { a: 'rost3', w: 'senap3', b: 'rost2' }, p: UTB_MOTIV[2].p },
-  { namn: 'lögnare', t: -1, l: { a: 'ben2', w: 'ben3', b: 'ben1', n: 'rost2' }, p: UTB_DRAG({ 5: '    o     o     ', 7: '        nnnnnnnn', 8: '        nnnnnnnn', 11: '     oooo       ' }) },
-  { namn: 'klåpare', t: -1, l: { a: 'jord3', b: 'jord2', c: 'skiffer2' }, p: UTB_KANT(['................', '................', '..cccc..........', '..ccccc.........', '...ccaa.........', '.....aa.........', '......aa........', '.......aa.......', '................', '.........aa.....', '..........aa....', '...........aa...', '............aa..', '.............b..', '................', '................']) },
-  { namn: 'lat', t: -1, l: { a: 'skiffer3', b: 'ben2', c: 'ben1' }, p: UTB_KANT(['................', '.........aaaa...', '...........a....', '..........a.....', '.........aaaa...', '....aaa.........', '.....a..........', '....aaa.........', '................', '................', '..bbbbbbbbbbbb..', '.bbbbbbbbbbbbbb.', '.bbbbbbbbbbbbbb.', '.cccccccccccccc.', '................', '................']) },
-  { namn: 'fattig', t: -1, l: { a: 'jord2', b: 'jord1', w: 'jord3' }, p: UTB_KANT(['................', '................', '................', '................', '................', '................', '..wwwwwwwwwwww..', '..aaaaaaaaaaaa..', '..aaaaaaaaaaaa..', '...aaaaaaaaaa...', '....aaaaaaaa....', '.....bbbbbb.....', '......bbbb......', '................', '................', '................']) },
-  { namn: 'generös', t: 1, l: { a: 'oliv2', b: 'oliv1', r: 'rost2', w: 'oliv3' }, p: UTB_KANT(['................', '.....rr..rr.....', '....r..rr..r....', '.....rrrrrr.....', '..aaaaarraaaaa..', '..wwwwwrrwwwww..', '..aaaaarraaaaa..', '................', '...aaaarraaaa...', '...aaaarraaaa...', '...aaaarraaaa...', '...aaaarraaaa...', '...bbbbrrbbbb...', '...bbbbrrbbbb...', '................', '................']) },
-  { namn: 'hjälpsam', t: 1, l: { a: 'ben2', b: 'ben1', c: 'senap2' }, p: UTB_KANT(['................', '................', '................', '................', '.cc..........cc.', '.cca........acc.', '.ccaaa....aaacc.', '.ccaaaaaaaaaacc.', '.ccaabaabaabacc.', '.cc.aaaaaaaa.cc.', '.cc..aaaaaa..cc.', '.cc...bbbb...cc.', '................', '................', '................', '................']) },
-  { namn: 'skicklig', t: 1, l: { a: 'senap3', b: 'senap2', w: 'ben3' }, p: UTB_KANT(['................', '.......aa.......', '.......aa.......', '......awaa......', '......aaaa......', '.aaaaaaaaaaaaaa.', '..aaaaawaaaaaa..', '...aaaaaaaaaa...', '....aaaaaaaa....', '....aaaaaaaa....', '...aaaabbaaaa...', '...aaab..baaa...', '..aaab....baaa..', '..abb......bba..', '................', '................']) },
-  { namn: 'flitig', t: 1, l: { a: 'skiffer3', b: 'skiffer2', h: 'jord3', d: 'jord2', t: 'skiffer3' }, p: UTB_KANT(['................', '..aaaaaaa.......', '.aaaaaaaaa...t..', '.abbbbbbba..t...', '.....hh......t..', '.....hh.........', '.....hh.........', '.....hh.........', '.....hh.........', '.....hh.........', '.....dd.........', '.....hh.........', '.....hh.........', '.....dd.........', '................', '................']) },
-  { namn: 'rik', t: 1, l: { a: 'jord3', b: 'jord2', r: 'rost2', R: 'rost3', g: 'oliv2' }, p: UTB_KANT(['................', '................', '.....g..g.......', '....rRrrRrr.....', '...rrrRrrrRrr...', '..RrrrrRrrrrrR..', '..aaaaaaaaaaaa..', '..abababababba..', '..aaaaaaaaaaaa..', '..abababababba..', '...aaaaaaaaaa...', '...abababababa..', '....aaaaaaaa....', '....bbbbbbbb....', '................', '................']) },
-  { namn: 'legend', t: 1, l: { a: 'senap3', b: 'senap2', w: 'ben3', g: 'senap1' }, p: UTB_KANT(['..g....g.....g..', '.......aa.......', '.......aa.......', '......awaa......', '.g....aaaa....g.', '.aaaaaaaaaaaaaa.', '..aaaaawaaaaaa..', '...aaaaaaaaaa...', '....aaaaaaaa....', '....aaaaaaaa....', '...aaaabbaaaa...', '...aaab..baaa...', '..aaab....baaa..', '..abb......bba..', '.g............g.', '................']) },
-  { namn: 'ökänd', t: -1, l: { a: 'ben3', b: 'ben1', k: 'kol1' }, p: UTB_KANT(['................', '....aaaaaaaa....', '...aaaaaaaaaa...', '..aaaaaaaaaaaa..', '..aaaaaaaaaaaa..', '..akkkaaaakkka..', '..akkkaaaakkka..', '..aakaaaaaakaa..', '...aaaakkaaaa...', '....aaaaaaaa....', '.....abababa....', '.....aaaaaaa....', '......bbbbb.....', '................', '................', '................']) },
-  { namn: 'gott anseende', t: 1, l: { a: 'ben2', w: 'ben3', b: 'ben1', g: 'senap3' }, p: UTB_DRAG({ 0: '...gggggggggg...', 6: '    o      o    ', 10: '    o      o    ', 11: '     oooooo     ' }) },
-  { namn: 'blandat anseende', t: 0, l: { a: 'ben2', w: 'ben3', b: 'ben1' }, p: UTB_DRAG({ 6: '    o      o    ', 11: '     oooooo     ' }) },
-  { namn: 'dåligt anseende', t: -1, l: { a: 'rost2', w: 'rost3', b: 'rost1', h: 'kol1' }, p: UTB_DRAG({ 0: '..h..........h..', 1: '..hh........hh..', 5: '    oo    oo    ', 6: '     o    o     ', 10: '     oooooo     ', 11: '    o      o    ' }) },
-  { namn: 'farlig plats', t: -1, l: { a: 'senap2', b: 'senap1', k: 'kol0' }, p: UTB_KANT(['................', '.......aa.......', '.......aa.......', '......aaaa......', '......akka......', '.....aakkaa.....', '.....aakkaa.....', '....aaakkaaa....', '....aaakkaaa....', '...aaaakkaaaa...', '...aaaaaaaaaa...', '..aaaaakkaaaaa..', '..aaaaakkaaaaa..', '.aaaaaaaaaaaaaa.', '.bbbbbbbbbbbbbb.', '................']) },
-];
-// utbrotten förenklade (efter v143): en symbol per allvarsgrad 1–5, ur motiven ovan. 'skugga', 'bricka' (ljust motiv på en
-// bricka i gradens färg) eller 'ansikte' (bara ansiktet, argare och rödare för varje grad)
-const UTB5_FARG = ['oliv2', 'senap2', 'rost3', 'rost1', 'kol2'];
-const UTB5_MOTIV = [UTB_MOTIV[0], UTB_MOTIV[2], UTB_MOTIV[6], UTB_MOTIV[7], IK_MOTIV[13]];
-const UTB5_ANSIKTE = [
-  UTB_MOTIV[0],
-  { l: { a: 'senap3', w: 'ben3', b: 'senap2' }, p: UTB_DRAG({ 4: '   o        o   ', 5: '    oo    oo    ', 6: '     o    o     ', 11: '     oooooo     ' }) },
-  { l: { a: 'rost3', w: 'senap3', b: 'rost2' }, p: UTB_MOTIV[2].p },
-  { l: { a: 'rost2', w: 'ben3', b: 'rost1' }, p: UTB_DRAG({ 4: '   o        o   ', 5: '    oo    oo    ', 6: '    oo    oo    ', 10: '     oooooo     ', 11: '     owowow     ', 12: 'w    oooooo    w', 13: 'ww            ww', 14: ' w            w ' }) },
-  IK_MOTIV[13],
-];
-// Björn valde version 1 efter v193 och ville att grad 1–4 blir ansikten som blir argare och argare: grad 1 och 2 och dödskallen är kvar,
-// grad 3 och 4 är nya ansikten (steg 3.10.13)
-const UTB5_ARG = [
-  UTB5_MOTIV[0], UTB5_MOTIV[1],
-  { l: { a: 'rost2', w: 'senap3', b: 'rost1', r: 'rost0' }, p: UTB_DRAG({ 2: '         r r    ', 3: '          r     ', 4: '   oo    r oo   ', 5: '     oo  oo     ', 6: '    oo    oo    ', 10: '    oooooooo    ', 11: '    owowowow    ', 12: '   oooooooooo   ', 13: '   o        o   ' }) },
-  { l: { a: 'rost1', w: 'ben3', b: 'rost0', m: 'kol1', v: 'ben2' }, p: UTB_DRAG({ 3: '   oo      oo   ', 4: '    ooo  ooo    ', 5: '      o  o      ', 6: '   owo    owo   ', 7: '    o      o    ', 9: '    oooooooo    ', 10: '    owwwwwwo    ', 11: 'v   ommmmmmo   v', 12: 'vv  owwwwwwo  vv', 13: ' v   oooooo   v ' }) },
-  UTB5_MOTIV[4],
-];
-const UTB5_M = satt => ({ w: 5 * 22 + 2, h: 22, kol: true, rita: (B, P) => (satt === 'ansikte' ? UTB5_ANSIKTE : satt === 'arg' ? UTB5_ARG : UTB5_MOTIV).forEach((m, i) => {
-  const x0 = 3 + i * 22, y0 = 3;
-  if (satt === 'bricka') {
-    const tile = Array.from({ length: 20 }, (_, y) => Array.from({ length: 20 }, (_, x) => { const kx = Math.min(x, 19 - x), ky = Math.min(y, 19 - y); return kx + ky < 2 ? '.' : kx === 0 || ky === 0 || kx + ky === 2 ? 'k' : 'g'; }).join(''));
-    ritaSprite(B, tile, { k: 'kol0', g: UTB5_FARG[i] }, x0 - 2, y0 - 2);
-    const ljus = Object.fromEntries(Object.keys(m.l).map(k => [k, ['a', 'h', 'w'].includes(k) ? 'ben3' : 'ben1']));
-    ritaSprite(B, m.p, { o: 'kol0', ...ljus }, x0, y0);
-  } else ritaSprite(B, UTB_SKUGGA(m.p), { o: 'kol0', z: 'skugga', ...m.l }, x0, y0);
-}) });
-const LED_STAV = UTB_KANT(['................', '.......ss.......', '......sSSs......', '..ww..sSSs..ww..', '..wW..jjjj..Ww..', '...wW.rrrr.Ww...', '....wWjJJjWw....', '......jJJj......', '.......Jj.......', '.......Jj.......', '.......Jj.......', '.......Jj.......', '.......Jj.......', '.......Jj.......', '.......jj.......', '................']);
-const LED_KRONA = UTB_KANT(['................', '.......W........', '...W..wWw...W...', '..wWw.wWw..wWw..', '..wWw.wWw..wWw..', '..wWw.wWw..wWw..', '..rWw.wWw..wWr..', '...rr.wrw..rr...', '......rrr.......', '.ssssssssssssss.', '.sSySsSySsSySss.', '.ssssssssssssss.', '................', '................', '................', '................']);
-const LED_FOLK = UTB_KANT(['................', '......aaaa......', '......aaaa......', '......aaaa......', '...a...aa...a...', '....aaaaaaaa....', '......aaaa......', '......aaaa......', '......aaaa......', '..bb..a..a..bb..', '.bbbb.a..a.bbbb.', '..bb..a..a..bb..', '.bbbb.a..a.bbbb.', '.bbbb......bbbb.', '.b..b......b..b.', '................']);
-// en symbol i rätt storlek och tre gånger större bredvid
-// spelets symbol k i rätt storlek och tre gånger större bredvid, som LED_M
-const IKON_M = k => ({ w: 74, h: 52, kol: true, rita: (B, P) => {
-  ritaIkon(B, k, 3, 3);
-  const rows = IKONER.PIX[k]; if (!rows) return;
-  const L = Bild(rows[0].length, rows.length, B.P); ritaIkon(L, k, 0, 0);
-  for (let y = 0; y < L.h * 3; y++) for (let x = 0; x < L.w * 3; x++) {
-    const v = L.px[Math.floor(y / 3) * L.w + Math.floor(x / 3)];
-    if (v >= 0) B.satt(22 + x, 2 + y, v);
-    else if (IKONER.PAL[k]?.[rows[Math.floor(y / 3)][Math.floor(x / 3)]]?.startsWith('rgba')) B.morka(22 + x, 2 + y);
-  }
-} });
 const LED_M = (p, l) => ({ w: 74, h: 52, kol: true, rita: (B, P) => { ritaSprite(B, p, { o: 'kol0', ...l }, 3, 3); ritaSprite(B, p.flatMap(r => { const rr = [...r].map(c => c.repeat(3)).join(''); return [rr, rr, rr]; }), { o: 'kol0', ...l }, 22, 2); } });
-// grillen omritad (steg 3.6.7): kartbilden förstorad till 16 punkter per ruta, med en mörk kant runt klykorna och spettet
-// och en skugga under klykorna, så att den syns mot marken
-function grillNy() {
-  const g = IKONER.PIX.grill_karta.flatMap(r => { const rr = [...r].map(c => c + c).join(''); return [rr, rr]; }).map(r => [...r]);
-  const H = g.length, W = g[0].length, ut = g.map(r => r.map(c => c === 'x' ? '.' : c));
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (ut[y][x] === '.' && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => { const c = g[y + dy]?.[x + dx]; return c && c !== '.' && c !== 'x'; })) ut[y][x] = 'o';
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (g[y][x] === 'x') for (let dx = -2; dx <= 3; dx++) if (ut[y + 1]?.[x + dx] === '.') { ut[y][x + dx] = 'z'; ut[y + 1][x + dx] = 'z'; }
-  return ut.map(r => r.join(''));
-}
 // grillen i fler varianter (Björn efter v193: "Prova fler varianter", steg 3.10.13): 48 × 32 punkter (tre rutor), mörk kant och skugga under fötterna
 function grillStil(stil, kontur = true) {
   const W = 48, H = 32, fot = 27, sy = stil === 'kors' ? 6 : 4, g = Array.from({ length: H }, () => Array(W).fill('.'));
@@ -1086,477 +792,17 @@ function grillStil(stil, kontur = true) {
   for (const fx of fotter) for (let dx = -3; dx <= 4; dx++) for (const y of [fot + 1, fot + 2]) if (ut[y][fx + dx] === '.') ut[y][fx + dx] = 'z';
   return ut.map(r => r.join(''));
 }
-const GRILL_L = { o: 'kol0', w: 'jord1', W: 'jord2', L: 'jord3', O: 'ben3', q: 'jord1', s: 'skiffer1', S: 'skiffer2', r: 'senap2', z: 'skugga' };
-// Björns nya förslag efter v193 (steg 3.10.13), 16 × 16 punkter: samtalen om mat, tröst och barnen, den hårda vintern och vargen
-// (bara från sidan, gärna läskig), och 8 × 8 punkter för att smyga och sikta
-const AM_MAT4 = ['................', '................', '......w..w......', '.....w..w.......', '......w..w......', '................', '..oooooooooooo..', '.okkkkkkkkkkkko.', '.oyykkyykkyykko.', '..obbbbbbbbbbo..', '..oBbbbbbbbbBo..', '...oBbbbbbbBo...', '....oBBBBBBo....', '.....oooooo.....', '................', '................'];
-const AM_TROST4 = ['................', '......o.o.o.....', '.....ohoHoho....', '....ohHhHhHo....', '....ohHhHhHHo...', '...ohhHhHhHHo...', '..ohhhhhHHHHHo..', '.ohhhhhhHHHHHHo.', 'ohhhhhhhHHHHHHHo', 'ohhhhhhooHHHHHHo', '.ohhhho..oHHHHo.', '.obbbbo..owwwwo.', '.obbbbo..owwwwo.', '.obbbbo..owwwwo.', '..oooo....oooo..', '................'];
-const AM_TROST5 = ['...ooo...ooo....', '..ohhho.oHHHo...', '.ohhhhhoHHHHHo..', '.ohhhhhoHHHHHo..', '..ohhho.oHHHo...', '..ooooooooooo...', '.owwwwwbbbbbbo..', 'owwwwhhhhbbbbbo.', 'owwwwwwbHHHbbbo.', 'owwwwwwbbbbbbbo.', 'owwwwwwbbbbbbbo.', '.owwwwwbbbbbbo..', '.owwowwobbobbo..', '.owwowwobbobbo..', '..oo.oo.oo.oo...', '................'];
-const AM_TROST6 = ['................', '..oooo....oooo..', '.okkkko..oWwWko.', 'okkkkkkooWWWkkko', 'okhkkkkkWwWkkkko', 'okhkkkkWWWkkkkko', 'okkkkkWwWkkkkkko', '.okkkWWWkkkkkko.', '..okWwWkkkkkko..', '..oWWWkkkkkko...', '..owWkkkkkko....', '..oWookkkko.....', '...o..okko......', '.......oo.......', '................', '................'];
-const AM_BARN4 = ['................', '................', '......oooo......', '.....ohhhho.....', '....ohhhhhho....', '..ooohhhhhhooo..', '.obwwwhhhhwwwbo.', '.obwwwwwwwwwwbo.', '.obbbbbbbbbbbbo.', '..obbbbbbbbbbo..', '.oBooooooooooBo.', '..oBBBBBBBBBBo..', '...oooooooooo...', '................', '................', '................'];
-const AM_BARN5 = ['...ooo..........', '..ohhho.........', '.ohhhhho........', '.ohhhhho........', '..ohhho.........', '.owwwwwo...ooo..', 'owwwwwwwo.ohhho.', 'owwwwwwwoohhhhho', 'owwwwwwwoohhhhho', 'owwwwwwwhoohhho.', '.owwwwwohhobbbo.', '.owwwwwoohhbbbbo', '.owwowwo.obbbbbo', '.owwowwo.obbobbo', '.owwowwo.obbobbo', '..oo.oo...oo.oo.'];
-const AM_BARN6 = ['................', '................', '................', '........o.o.....', '.......oyoyo....', '......oyyyyyo...', '..ooo.oyyyyyo...', '.ohhhooyyyyoooo.', '.ohhhhhhyyhhhhho', '..ohhhhhhhhhhhhh', '...ohhhhhhhhhhho', '....ohhhhhhhhho.', '.....ooooooooo..', '................', '................', '................'];
-const HV_TRAD = ['.s......S.....s.', '....S.......s...', '..k...k.k..k..S.', 's..k..k.k.k.....', '....k.kkk.k...s.', '..S..kkkkk..S...', '.......kk.......', 's......kk....S..', '...S...kk.......', '.......kk...s...', '..s....kk.......', '.......kk..S....', 'SSSSSSSkkSSSSSSS', 'SSSSSSSSSSSSSSSS', 'ssssssssssssssss', '................'];
-const HV_STUGA = ['..........ss....', '.........ss.....', '......oooosso...', '....ooSSSSkSSo..', '..ooSSSSSSkSSSo.', '.oSSSSSSSSSSSSSo', 'oSSSSSSSSSSSSSSS', '.obbbbbbbbbbbbbo', 'oobbrrbbbbbbbbbo', 'SSSSSSSSSSSSSSSS', 'SSSSSSSSSSSSSSSS', 'SSSSSSSSSSSSSSSS', 'oooooooooooooooo', '................', '................', '................'];
-const VARG_GAP = ['................', '................', '..o........oo...', '.oGo....oooHHoo.', 'oGGGooooHHHHHHHo', 'oGGGGGGHHHHHHHGG', 'GGyGGGGGGGGGGGGG', 'kGGGGGGGGGGGGGgo', 'WrWrGGGGGGGGGggo', 'rrrrGgggggggGgo.', 'WWWGGGoooooGGGo.', 'oooGGo.....oGGo.', '.oGGo.....oGGo..', '.oggo.....oggo..', '..oo.......oo...', '................'];
-const VARG_YL = ['.oko.......oWWo.', '.oddoo.o..oWWWWo', '..odddodo.oWWWWo', '..odydddo..ooWWo', '...oddddo....oo.', '...odddddo......', '...odWddddo.....', '...odWWddddo....', '...odWWdddddo...', '...odWWddddddo..', '...odWWDDDDddo..', '...oddodDDDDddoo', '...oddoodDDDDdod', '..odddoodddddddo', '...ooo..ooooooo.', '................'];
-const VARG_SPRANG = ['................', '.oo.............', 'oGGo...ooooo....', 'GGGGoooHHHHHoo..', 'kGyGGGHHHHHHHHoo', 'WrWGGGGGGGGGGGGG', 'rrGGGGGGGGGGGgoG', 'WWoGGggggggggo.o', 'ooGGooooooogGGo.', 'oGGo.......oGGGo', 'GGo.........oGGo', 'oo...........oo.', '................', '................', '................', '................'];
-const VARG_BORST = ['.........o.o.o..', '..o.....oGoGoGo.', '.oGo..ooGGGGGGGo', 'oGGGooGGHHHHHHGG', 'GGRGGGHHHHHHHHHG', 'kGGGGGGGGGGGGGGG', 'WWrGGGGGGGGGGGGo', 'oGGGGgggggggGGo.', '.oGGoooooooGGo..', '.oGGo.....oGGo..', '.oGGo.....oGGo..', '.oggo.....oggo..', '..oo.......oo...', '................', '................', '................'];
-const SMYG_BUSKE = ['........', '..aaaa..', '.aaaaaa.', 'aawaawaa', 'aaaaaaaa', '.aaaaaa.', '...aa...', '........'];
-const SMYG_GRAS = ['........', '...ww...', '..wwww..', '..wwww..', 'a.a.a.a.', 'aaaaaaaa', 'aaaaaaaa', '........'];
-const SIKTA_BAGE = ['..w.....', '.w.w....', 'w...w...', 'aaaaaaaw', 'w...w...', '.w.w....', '..w.....', '........'];
-const SIKTA_MAL = ['..wwww..', '.w....w.', 'w..aa..w', 'w.aaaa.w', 'w.aaaa.w', 'w..aa..w', '.w....w.', '..wwww..'];
-const SIKTA_KNA = ['........', '.ww.....', '.ww.....', '.wwwaaaw', '.www....', '..w.....', '.w.ww...', '........'];
-// dimman (steg 3.7.11): vädersymbol 10 × 10 punkter, i rätt storlek och tre gånger större
-const DIM_M = (p, l) => ({ w: 48, h: 36, kol: true, rita: (B, P) => { ritaSprite(B, p, { o: 'kol0', ...l }, 2, 2); ritaSprite(B, p.flatMap(r => { const rr = [...r].map(c => c.repeat(3)).join(''); return [rr, rr, rr]; }), { o: 'kol0', ...l }, 15, 3); } });
-const DIM_BAND = ['..........', '.ovvvvvvo.', '..........', 'ovvvvvvvvo', '..........', '.ovvvvvvo.', '..........', 'ovvvvvvvvo', '..........', '..ovvvvo..'];
-const DIM_SOL = ['...oooo...', '..oyyyyo..', '.oyyyyyyo.', 'oWWWWWWWWo', '.oyyyyyyo.', 'oWWWWWWWWo', '..ovvvvo..', '.oWWWWWWo.', '..........', 'ovvvvvvvvo'];
-const DIM_TRAD = ['....dd....', '...dddd...', 'oWWWWWWWWo', '..dddddd..', '.oWWWWWWo.', '.dddddddd.', 'oWWWWWWWWo', '....dd....', 'ovvvvvvvvo', '..........'];
-// vargens bilder (Björns val efter v159) (steg 3.7.1 och 3.7.14), 16 × 16 punkter
-const VARG_STAR = [
-  '................',
-  '.o.o............',
-  'oGoGo...........',
-  'oGGGGo..........',
-  'kkGkGGo.........',
-  'oWWGGGGooooooo..',
-  '.ooWGGGGHHHHGGo.',
-  '...oGGGHHHHHGGGo',
-  '...oGGGGGGGGgoGo',
-  '...oWgGGGGGgo.oo',
-  '....ogWWggggGo..',
-  '....oGo.o..oGo..',
-  '....oGo....oGo..',
-  '....ogo....ogo..',
-  '....oo.....oo...',
-  '................',
-];
-const VARG_FRAM = [
-  '..o..........o..',
-  '.oGo........oGo.',
-  '.oGGo......oGGo.',
-  '.oGdGooooooGdGo.',
-  '.oGGGGHHHHGGGGo.',
-  'oGGGHHHHHHHHGGGo',
-  'oGHHkyHHHHykHHGo',
-  'oGHHHHHHHHHHHHGo',
-  '.oGHHHWWWWHHHGo.',
-  '..oGHWWkkWWHGo..',
-  '..oGGWWWWWWGGo..',
-  '...oGWWrrWWGo...',
-  '...ooGWWWWGoo...',
-  '..oGGoGWWGoGGo..',
-  '.oGGGGoooGGGGGo.',
-  '................',
-];
-const VARG_MORK = [
-  '................',
-  '..o.o...........',
-  '.odod...........',
-  '.odddo..........',
-  'kkdyddo.........',
-  'oWWdddddooooo...',
-  '.oowddddDDDDdoo.',
-  '...oddDDDDDDDddo',
-  '...odddddddddodo',
-  '...oWWddddddo.oo',
-  '....oWWWWWWddo..',
-  '...odo.o..odo...',
-  '..odo.....o.do..',
-  '..oo.......o.do.',
-  '.............oo.',
-  '................',
-];
-const KOTT_BIT = [
-  '................',
-  '................',
-  '....oooooo......',
-  '..ooRRRRrroo....',
-  '.oRRrrrrrrrro...',
-  '.oRrrwwrrrrrroo.',
-  'oRrrrrwwwrrrrro.',
-  'orrrrrrrwwrrrro.',
-  'orrwwrrrrrwrrro.',
-  'orrrwwwrrrrrrro.',
-  '.orrrrwwrrrrro..',
-  '.oqrrrrrrrrrqo..',
-  '..ooqqqqqqqoo...',
-  '....ooooooo.....',
-  '................',
-  '................',
-];
-const KOTT_LAR = [
-  '................',
-  '..........oo....',
-  '.........oWWo.oo',
-  '........oWwwWoWo',
-  '.......oRoWwwWWo',
-  '.....ooRRroWWoo.',
-  '...ooRRRrrro....',
-  '..oRRRrrrrro....',
-  '.oRRrrwwrrro....',
-  'oRRrrrrwrrro....',
-  'oRrrrrrrrrro....',
-  'orrrrrrrrrqo....',
-  'orrrrrrrrqo.....',
-  '.oqrrrrqqo......',
-  '..ooqqqoo.......',
-  '................',
-];
-const KOTT_REMSOR = [
-  '................',
-  'jjjjjjjjjjjjjjjj',
-  '.o.....o.....o..',
-  'oRo...oRo...oRo.',
-  'oro...oro...oro.',
-  'orwo..orro..owro',
-  'orro..owro..orro',
-  'orro..orro..orro',
-  'owro..orwo..orro',
-  'orro..orro..orwo',
-  'orro..orro..orro',
-  'oqro..oqro..oqro',
-  '.oqo..oqo...oqo.',
-  '..o....o.....o..',
-  '................',
-  '................',
-];
-const SKINN_UTBRETT = [
-  '......oooo......',
-  'oo...oGddGo...oo',
-  'oGo..oGGGGo..oGo',
-  '.oGooGGGGGGooGo.',
-  '..oGGGHHHHGGGo..',
-  '...oGHHHHHHGo...',
-  '...oGHHddHHGo...',
-  '...oGHHddHHGo...',
-  '...oGHHHHHHGo...',
-  '...oGHHHHHHGo...',
-  '..oGGGHHHHGGGo..',
-  '.oGooGGGGGGooGo.',
-  'oGo..oGGGGo..oGo',
-  'oo....oGGo....oo',
-  '.......oGo......',
-  '........oo......',
-];
-const SKINN_RULLE = [
-  '................',
-  '................',
-  '................',
-  '...oooooooooo...',
-  '..oGGGGGGGGGGo..',
-  '.oGHHHHHHHHHHGo.',
-  'oGHddoooooodHHGo',
-  'oGHdojjjjjjodHGo',
-  'oGHdojJJJJjodHGo',
-  'oGHddoooooodHHGo',
-  '.oGHHHHHHHHHHGo.',
-  '..oGGGGGGGGGGo..',
-  '...ooooooooooo..',
-  '...oGGo...oGGo..',
-  '....oo.....oo...',
-  '................',
-];
-const SKINN_RAM = [
-  'jj............jj',
-  'jJoooooooooooJJj',
-  'jJ.oGGGGGGGGo.Jj',
-  'jJoGGHHHHHHGGoJj',
-  'jJoGHHHHHHHHGoJj',
-  'jJoGHHHddHHHGoJj',
-  'jJ.oGHHddHHGo.Jj',
-  'jJ.oGHHHHHHGo.Jj',
-  'jJ.oGHHHHHHGo.Jj',
-  'jJoGHHHHHHHHGoJj',
-  'jJoGGHHHHHHGGoJj',
-  'jJ.oGGGGGGGGo.Jj',
-  'jJooo.oGGo.oooJj',
-  'jJ.....oo.....Jj',
-  'jJoooooooooooJJj',
-  'jj............jj',
-];
-const PALS_HUVA = [
-  '...o.o..o.o.....',
-  '..oGoGooGoGo....',
-  '..oGGkGGkGGo....',
-  '..oGHHHHHHGo....',
-  '.oGHWooooWHGo...',
-  '.oGHo....oHGo...',
-  'oGGHo....oHGGo..',
-  'oGHHHooooHHHGo..',
-  'oGHHHHHHHHHHGo..',
-  'oGHHHHHHHHHHHGo.',
-  'oGHHHHHHHHHHHGo.',
-  'oGHHHHHHHHHHHHGo',
-  'oGGHHHHHHHHHHGGo',
-  'oGWGWGWGWGWGWGGo',
-  '.oooooooooooooo.',
-  '................',
-];
-const PALS_ROCK = [
-  '....oooooooo....',
-  '..ooWWWWWWWWoo..',
-  '.oWWWWooooWWWWo.',
-  'oGWWGo....oGWWGo',
-  'oGGGGo....oGGGGo',
-  'oGHGGGoo.oGGGHGo',
-  'oGHGGHGo.oGHGHGo',
-  'oGHGoGGo.oGGoHGo',
-  'oGGGoGHGoGHGoGGo',
-  'oWWoOGHHdHHGoWWo',
-  '.oo.oGHHdHHGo.oo',
-  '....oGHHdHHGo...',
-  '....oGGHdHGGo...',
-  '....oWGWdWGWo...',
-  '....ooooooooo...',
-  '................',
-];
-const PALS_KAPPA = [
-  '................',
-  '....oooooooo....',
-  '..ooGGHHHHGGoo..',
-  '.oGGHHHHHHHHGGo.',
-  'oGHHHHHHHHHHHHGo',
-  'oGHHHHrrrrHHHHGo',
-  'oGHHHHrRRrHHHHGo',
-  'oGHHHHHrrHHHHHGo',
-  'oGGHHHHHHHHHHGGo',
-  '.oGHHHHHHHHHHGo.',
-  '.oGGHHHHHHHHGGo.',
-  '..oGHHHHHHHHGo..',
-  '..oGoGHHHHGoGo..',
-  '.oGo.oGGGGo.oGo.',
-  '.oo...oooo...oo.',
-  '................',
-];
-const FALLD_SIDA = [
-  '................',
-  '................',
-  '................',
-  '................',
-  '................',
-  '.......ooooooo..',
-  '.o.o.ooGGGGGGGoo',
-  'oGoGoGGHHHHHHGGo',
-  'oGxGGGHHHHHHHHGo',
-  'oWWGGGGGGGGGGGGo',
-  '.oWWoWWWWWWGGoGo',
-  '..oo.ooWoWoGo.oo',
-  '...or..oo.oo....',
-  '................',
-  '................',
-  '................',
-];
-const FALLD_STANG = [
-  'jjjjjjjjjjjjjjjj',
-  'JJJJJJJJJJJJJJJJ',
-  '..oGo......oGo..',
-  '..oGo......oGo..',
-  '..oGGoooooooGo..',
-  '..oGGGGHHHHGGo..',
-  '..oGHHHHHHHHGo..',
-  '...oGHHHHHHGo...',
-  '...oGHHHHHHGo...',
-  '...oWGGGGGGGo...',
-  '..oGWWWWWGGGoo..',
-  '..oGWo..oGGo.oo.',
-  '.oGxGo...oGo.oGo',
-  '.oWGGo....oo..oo',
-  '..oro...........',
-  '...o............',
-];
-const FALLD_BLOD = [
-  '................',
-  '................',
-  '................',
-  '................',
-  '.......ooooooo..',
-  '.o.o.ooGGGGGGGoo',
-  'oGoGoGGHHHHHHGGo',
-  'oGxGGGHHHHHHHHGo',
-  'oWWGGGGGGGGGGGGo',
-  '.oWWoWWWWWWGGoGo',
-  '..oo.ooWoWoGo.oo',
-  '..rRRrr..oo.oo..',
-  '.rRRRRrr........',
-  '..rrRrr.........',
-  '................',
-  '................',
-];
-const VARG_L = { G: 'skiffer2', H: 'skiffer3', g: 'skiffer1', d: 'skiffer0', W: 'ben3', w: 'ben3', k: 'kol0', y: 'senap3', r: 'rost1', R: 'rost2', q: 'rost0', j: 'jord1', J: 'jord2', x: 'kol1', O: 'jord2' }, VARG_M = { d: 'kol2', D: 'kol3', W: 'ben2', w: 'ben2', k: 'kol0', y: 'senap3' }, KOTT_L = { R: 'rost2', r: 'rost1', q: 'rost0', w: 'ben3', W: 'ben3', j: 'jord1', J: 'jord2' };
-// kläderna av vargskinn (steg 3.10.12): formen är plagget och färgerna materialet. Varje förslag ritas av kaninskinn och av
-// vargskinn, i rätt storlek till vänster och tre gånger större till höger
-const ROCK16 = [
-  '.....oWWWWo.....',
-  '...ooWWHHWWoo...',
-  '..oWWHo..oHWWo..',
-  '.oGGWo....oWGGo.',
-  '.oGHGGo..oGGHGo.',
-  'oGHHGGGooGGGHHGo',
-  'oGHGGgGGGGgGGHGo',
-  'oGHGoGGgGGGoGHGo',
-  'oGGGoGGgGGGoGGGo',
-  'oWWoGGGgGGGGoWWo',
-  '.oooGHGgGGHGooo.',
-  '...oGHGgGGHGo...',
-  '...oGGGgGGGGo...',
-  '...oGgGgGgGgo...',
-  '...oGoGoGoGoo...',
-  '...o.o.o.o.o....',
-];
-const ROCK_BALTE = [
-  '.....oooooo.....',
-  '....oWWWWWWo....',
-  '...oGWWooWWGo...',
-  '..oGGGo..oGGGo..',
-  '.oGHGGGooGGGHGo.',
-  'oGHHGGGgGGGGHHGo',
-  'oGHGGGGgGGGGGHGo',
-  'oGHGoGGgGGGoGHGo',
-  'oWWoyYyYyYyYoWWo',
-  '.oooGGGgGyGGooo.',
-  '...oGHGgGYGGo...',
-  '...oGHGgGGHGo...',
-  '..oGGHGgGGHGGo..',
-  '..oGGGGgGGGGGo..',
-  '..oWWWWWWWWWWo..',
-  '..oooooooooooo..',
-];
-const SKOR16 = [
-  '................',
-  '................',
-  '........oooo....',
-  '.......oWWWWo...',
-  '.......oGHGGo...',
-  '.......oGHGGGoo.',
-  '.......oGGHGGGHo',
-  '.......odddddddo',
-  '..oooo..ooooooo.',
-  '.oWWWWo.........',
-  '.oGHGGo.........',
-  '.oGHGGGoo.......',
-  '.oGGHGGGHoo.....',
-  '.oGGGHGGGGHo....',
-  '.oddddddddddo...',
-  '..oooooooooo....',
-];
-const STOVEL = [
-  '................',
-  '....oooooo......',
-  '...oWWWWWWo.....',
-  '...oWWWWWWo.....',
-  '...oGyGGHGo.....',
-  '...oGGyGHGo.....',
-  '...oGyGGHGo.....',
-  '...oGGyGHGo.....',
-  '...oGyGGHGo.....',
-  '...oGGGGHGooo...',
-  '...oGGGGGHHGGoo.',
-  '...oGGGGGGGHHGGo',
-  '...oGGGGGGGGGHGo',
-  '...oddddddddddGo',
-  '....ooooooooooo.',
-  '................',
-];
-const MOCKASIN = [
-  '................',
-  '..oooo....oooo..',
-  '.oWWWWo..oWWWWo.',
-  '.oWddWo..oWddWo.',
-  '.oGddGo..oGddGo.',
-  '.oGddGo..oGddGo.',
-  'oGGGGGGooGGGGGGo',
-  'oGHGGHGooGHGGHGo',
-  'oGHGGHGooGHGGHGo',
-  'oGGHHGGooGGHHGGo',
-  'oGgGGgGooGgGGgGo',
-  'oGGgGgGooGgGgGGo',
-  '.oGGgGo..oGgGGo.',
-  '.oGGGGo..oGGGGo.',
-  '..oooo....oooo..',
-  '................',
-];
-const KSKINN_L = { G: 'jord2', H: 'jord3', g: 'jord1', d: 'jord0', W: 'ben3', w: 'ben2', O: 'senap1', y: 'senap3', Y: 'senap2', k: 'kol0' }, VSKINN_L = { ...VARG_L, Y: 'senap2' };
-const PAR_M = p => ({ w: 124, h: 52, kol: true, rita: (B, P) => {
-  const stor = p.flatMap(r => { const rr = [...r].map(c => c.repeat(3)).join(''); return [rr, rr, rr]; });
-  [KSKINN_L, VSKINN_L].forEach((l, i) => { ritaSprite(B, p, { o: 'kol0', ...l }, 2, 8 + i * 20); ritaSprite(B, stor, { o: 'kol0', ...l }, 21 + i * 52, 2); });
-} });
+const GRILL_L = { o: 'kol0', w: 'jord1', W: 'jord2', L: 'jord0', O: 'jord3', q: 'jord1', s: 'skiffer1', S: 'skiffer2', r: 'senap2', z: 'skugga' };
+const SIKTA_BAGE = ['.ww...aa', '..aww.aa', '...a.w..', '....a.w.', '...a.aw.', '..a...aw', 'aa.....w', 'aa......'];
+const SMYG_SPAR = ['....w.w.', '....www.', '....www.', '.....w..', 'w.w.....', 'www.....', 'www.....', '.w......'];
+const SMYG_KRYP = ['........', '........', '......ww', '......ww', '.wwwwww.', 'w.w..w.w', '........', 'aaaaaaaa'];
+const SMYG_TA = ['.....ww.', '.....ww.', '....ww..', '...www.w', '..w.ww..', '...w..w.', '..w....w', '.w......'];
 // jaktens och kaninernas nya symboler (Björn efter v159), 8 × 8 punkter som de andra symbolerna i spelet: till vänster i rätt
 // storlek, till höger fyra gånger större
 const SYM8_M = (p, l) => ({ w: 48, h: 38, kol: true, rita: (B, P) => { ritaSprite(B, p, l, 2, 2); ritaSprite(B, p.flatMap(r => { const rr = [...r].map(c => c.repeat(4)).join(''); return [rr, rr, rr, rr]; }), l, 13, 3); } });
 const AKT_L = { w: 'ben3', a: 'skiffer3' }, KANIN_L = { b: 'jord2', B: 'jord3', w: 'ben3', k: 'kol0', r: 'rost2', y: 'senap3' };
-const PRATA_PRICK = ['.wwwww..', 'wwwwwww.', 'w.w.w.w.', 'wwwwwww.', '.wwwww..', '.ww.....', '.w......', '........'];
-const PRATA_TVA = ['wwww....', 'w..w....', 'wwww....', '.w..aaaa', '....a..a', '....aaaa', '.......a', '........'];
-const PRATA_MUN = ['........', '..www...', '.w...w..', 'w..a..w.', 'w.aaa.w.', '.w...w..', '..www...', '........'];
-const TOA_DROPPE = ['...a....', '...a....', '..aaa...', '..aaa...', '.aaaaa..', '.aaawa..', '..aaa...', '........'];
-const TOA_HUK = ['....ww..', '....ww..', '...www..', '..www...', '.ww.w...', '.w..w...', '.......a', '......aa'];
-const TOA_GROP = ['........', '..ww....', '..ww....', '.wwww...', '..ww....', '.w..w...', 'aaaaaaa.', '.aaaaa..'];
-const SMYG_TA = ['........', '.w...w..', '........', '...ww...', '..wwww..', '..www...', '.ww.....', '........'];
-const SMYG_HUK = ['........', '....ww..', '....ww..', '.wwwww..', 'w.www...', '..w.w...', '.w...w..', '........'];
-const SMYG_SPAR = ['.....ww.', '.....ww.', '......w.', '.ww.....', '.ww.....', '..w.....', '....ww..', '....ww..'];
-const SIKTA_SPJUT = ['......aw', '.....aw.', '....w...', '...w....', '..w.....', '.w......', 'w.......', '........'];
-const SIKTA_KAST = ['.ww.....', '.ww...wa', '..w..w..', '.wwww...', '..w.....', '..w.....', '.w.w....', 'w...w...'];
-const SIKTA_OGA = ['........', '.wwwww..', 'w.waw.w.', '.wwwww..', '........', '...a....', '....a...', '.....aaa'];
-const LARM_GUL = ['..kyyk..', '..kyyk..', '..kyyk..', '..kyyk..', '...kk...', '..kyyk..', '..kyyk..', '...kk...'];
-const LARM_ROD = ['..rrrr..', '.rrwwrr.', 'rrrwwrrr', 'rrrwwrrr', 'rrrwwrrr', 'rrrrrrrr', '.rrwwrr.', '..rrrr..'];
-const LARM_BUBBLA = ['kkkkkkk.', 'kkkwkkk.', 'kkkwkkk.', 'kkkwkkk.', 'kkkkkkk.', 'kkkwkkk.', 'kkkkkkk.', '.kk.....'];
-const DOD_SIDA = ['........', '........', '........', '.bb.....', 'bkBbbbb.', 'bBBBBBBw', '.bBBrBb.', '..bbbb..'];
-const DOD_HANGER = ['..b.b...', '..bbb...', '..bBb...', '.bBBBb..', '.bBBBb..', '.bBBBb..', '..bkb...', '..b.b...'];
-const DOD_BLOD = ['........', '........', '.bb.....', 'bkBbbbb.', 'bBBBBBBw', '.bbbbbb.', '.rrrrr..', 'rrrrrrr.'];
-// trädörren (steg 3.7.21), 16 × 16 punkter som en vägg
-const DORR_REP = [
-  'oooooooooooooooo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'oyyyyyyyyyyyyyyo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo',
-  'oJjoJjoJjoJjkkjo', 'oJjoJjoJjoJjkkjo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'oyyyyyyyyyyyyyyo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'oooooooooooooooo',
-];
-const DORR_Z = [
-  'oooooooooooooooo', 'oJjJjJjJjJjJjJjo', 'oWWWWWWWWWWWWWWo', 'oJjJjJjJjJjJWWjo', 'oJjJjJjJjJjWWJjo', 'oJjJjJjJjJWWjJjo', 'oJjJjJjJjWWJjJjo', 'oJjJjJjJWWjJjJjo',
-  'oJjJjJjWWJjJjkko', 'oJjJjJWWjJjJjkko', 'oJjJjWWJjJjJjJjo', 'oJjJWWjJjJjJjJjo', 'oJjWWJjJjJjJjJjo', 'oWWWWWWWWWWWWWWo', 'oJjJjJjJjJjJjJjo', 'oooooooooooooooo',
-];
-const DORR_BOM = [
-  'oooooooooooooooo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'ssJjoJjoJjoJjoss', 'oSSSSSSSSSSSSSSo',
-  'oSSSSSSSSSSSSSSo', 'ssJjoJjoJjoJjoss', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'oooooooooooooooo',
-];
-const HV_L = { o: 'kol0', s: 'ben2', S: 'ben3', b: 'skiffer2', B: 'skiffer3', k: 'skiffer1', r: 'rost1' };
-const HV_FLINGA = ['.......o........', '....o.oso.o.....', '....osoSoso.....', '.o...osSso...o..', 'oso...oSo...oso.', '.osooooSooooso..', '..oSSSSSSSSSo...', '.osooooSooooso..', 'oso...oSo...ooo.', '.o...osSso..oBo.', '....osoSoso.oBo.', '....o.oso.o.oBo.', '.......o...ooboo', '...........obbbo', '...........obbbo', '............ooo.'];
-const HV_ANSIKTE = ['.....oooooo.....', '...oobbbbbboo...', '..obbBBBBBBbbo..', '.obBBBBBBBBBBbo.', '.obBBoBBBBoBBbo.', 'obBBBBBBBBBBBBbo', 'obBBBBBBBBBBBBbo', 'obBBoSoSoSoBBBbo', 'obBBoooooooBBBbo', '.obBBBBBBBBBBbo.', '.obbBBBBBBBBbbo.', '..oSbbbbbbbbSo..', '..oS.oooooo.So..', '...o........o...', '..oSo..oo..oSo..', '...o...oo...o...'];
-const HV_ISTAPP = ['oooooooooooooooo', 'oSSSSSSSSSSSSSSo', 'oSSSsSSSSSsSSSSo', '.osSSosSSsoSSSo.', '.oSSo.oSSo.oSso.', '.oSso.oSso..oSo.', '..oSo.osSo..oSo.', '..oso..oSo..oo..', '..oSo..oso......', '...o...oSo......', '.......oSo......', '........o.......', '....o.....o.....', '...oso...oso....', '....o.....o.....', '................'];
-const DORR_L = { J: 'jord2', j: 'jord1', W: 'jord3', y: 'senap2', k: 'kol0', S: 'jord3', s: 'skiffer1' };
-const BN_L = { o: 'kol0', g: 'senap2', G: 'senap1', y: 'senap3', r: 'rost2', R: 'rost1', w: 'ben3', W: 'ben2', k: 'kol2', K: 'kol1', b: 'skiffer2', B: 'skiffer1', l: 'oliv2', L: 'oliv1' };
-const BN_2 = p => p.flatMap(r => { const rr = [...r].map(c => c.repeat(2)).join(''); return [rr, rr]; });
-const BN_MEDALJ = ['...oo......oo...', '...orro..oRRo...', '....orRooRro....', '.....orRRro.....', '......oRRo......', '.....oooooo.....', '....oggggggo....', '...ogGggggGgo...', '...oggGggGggo...', '...ogggGGgggo...', '...oggGggGggo...', '...ogGggggGgo...', '....oggggggo....', '.....oooooo.....', '................', '................'];
-const BN_KRANS = ['................', '.....oo..oo.....', '...oolo..oloo...', '..olLo....oLlo..', '.olLo......oLlo.', '.olo........olo.', 'olLo........oLlo', 'olo..........olo', 'olLo........oLlo', '.olo........olo.', '.olLo......oLlo.', '..olLo....oLlo..', '...oolo..oloo...', '.....oRrrRo.....', '....oRo..oRo....', '.....o....o.....'];
-const BN_STJARNA = ['.......oo.......', '.......og.......', '...o..ogyo..o...', '....o.ogyo.o....', '.......gy.......', '..ooooogyooooo..', '.oyyyyyyyyyyyyo.', '..oggyyyyyyggo..', '...ogggyyggggo..', '....ogggggggo...', '....oggoogggo...', '...oggo..oggo...', '...ogo....ogo...', '..ooo......ooo..', '..o..........o..', '................'];
-const BN_BUBBLA = ['................', '..oooooooooooo..', '.owwwwwwwwwwwwo.', '.owwrwwwwwwrwwo.', '.owwwrwwwwrwwwo.', '.owwwwrwwrwwwwo.', '.owwwwwrrwwwwwo.', '.owwwwwrrwwwwwo.', '.owwwwrwwrwwwwo.', '.owwwrwwwwrwwwo.', '.owwrwwwwwwrwwo.', '.owwwwwwwwwwwwo.', '..ooookwoooooo..', '.....okwo.......', '.....oko........', '.....oo.........'];
-const BN_MOLN = ['................', '.....oooo.......', '...ooBBBBoo.....', '..oBBbbbbBBooo..', '.oBbbbbbbbbBBBo.', 'oBbbbbbbbbbbbbBo', 'oBbbbbbbbbbbbbBo', '.oBBBBBBBBBBBBo.', '..oooooyooooo...', '......oyo.......', '.....oyo........', '....oyyyyo......', '......oyo.......', '.....oyo........', '.....oo.........', '................'];
-const BN_SPRUCKEN = ['................', '.....oooooo.....', '....oBBBBBBo....', '...oBbbbobbBo...', '..oBbbbbobbbBo..', '..oBbbbobbbbBo..', '..oBbbboobbbBo..', '..oBbbbbobbbBo..', '..oBbbbobbbbBo..', '..oBbbobbbbbBo..', '...oBbobbbbBo...', '....oBobBBBo....', '.....oooooo.....', '................', '................', '................'];
 // torkan och den torra sjöbottnen (steg 3.8.2)
 const TK_L = { o: 'kol0', y: 'senap2', Y: 'senap3', r: 'rost2', j: 'jord2', J: 'jord3', k: 'jord0', v: 'skiffer2', V: 'skiffer3', g: 'oliv1', G: 'oliv2', b: 'jord1' };
-const TK_SOL = ['.....o..o.......', '..o..oyyo..o....', '...ooyYYyoo.....', '...oyYYYYyo.....', 'ooyYYYYYYYYyoo..', '...oyYYYYyo.....', '...ooyYYyoo.....', '..o..oyyo..o....', '.....o..o.......', '................', 'oooooooooooooooo', 'ojJJjkJJJjJJkJjo', 'ojjkjjkJjjjkjjjo', 'okjjkjjjkjkjjkjo', 'ojkjjjrjjkjjjjko', 'oooooooooooooooo'];
-const TK_SJO = ['................', '...oooooooooo...', '..ojJJjjJJJjjo..', '.ojJkjjJjjkJjjo.', 'ojjkjjoooojjkjjo', 'ojJjjovVVvojjJjo', 'ojjkjovvvvojkjjo', 'ojJjjjoooojjjJjo', '.ojjkjjJjkjjjjo.', '..ojjjkjjjJjjo..', '...oooooooooo...', '................', '..o..........o..', '.oyo........oyo.', '..o..........o..', '................'];
-const TK_VISSEN = ['................', '.......o........', '......oGo.......', '.....oGgo..o....', '....ogo.o.oyo...', '....oo..oyyo....', '........obo.....', '.....oyyob......', '....oyo.ob......', '....oo..ob......', '........ob......', 'oooooooooooooooo', 'ojJjkjjJjkjjJjjo', 'ojkjjJjkjjjkjjko', 'okjjjkjjjJjkjjjo', 'oooooooooooooooo'];
-const LE_L = { o: 'kol0', j: 'jord1', J: 'jord2', k: 'jord0', l: 'jord3', s: 'skiffer1', S: 'skiffer2', v: 'skiffer2', V: 'skiffer3' };
-const LE_SPRICK = ['JJJjJJJJkJJJJjJJ', 'JJjJJJJkJJJjJJJJ', 'kkJJJJkJJJJJJJkk', 'JJkkJkJJJJJJkkJJ', 'JJJJkJJJJJJkJJJJ', 'JJJJkJJJJkkJJJJJ', 'JJJkJkkkkJJJJJJJ', 'JJkJJJJJkJJJJJJJ', 'JkJJJJJJJkJJJJJJ', 'kJJJJJJJJkkJJJkk', 'JJJJJJJJkJJkkkJJ', 'JJJJJJJkJJJJJkJJ', 'JJJJJkkJJJJJJJkJ', 'JJJJkJJJJJJJJJJk', 'JJJkJJJJJJJJJJJJ', 'JJkJJJJJJJJJJJJJ'];
-const LE_STEN = ['JJJJJJJJJJJJJJJJ', 'JJlJJJJJJJJJJJJJ', 'JJJJJJsSJJJJJJJJ', 'JJJJJJssJJJJlJJJ', 'JJJJJJJJJJJJJJJJ', 'JJJjJJJJJJJJJJJJ', 'JJjjjJJJJJJsJJJJ', 'JJJjJJJJJJJJJJJJ', 'JJJJJJJJJlJJJJJJ', 'JJJJJJJJJJJJJjJJ', 'JsSJJJJJJJJJjjjJ', 'JssJJJJJJJJJJjJJ', 'JJJJJJlJJJJJJJJJ', 'JJJJJJJJJJJsSJJJ', 'JJJJJJJJJJJssJJJ', 'JJJJJJJJJJJJJJJJ'];
-const LE_FUKT = ['JJJJJJJJJJJJJJJJ', 'JJJJJJJJJJJjJJJJ', 'JJJjJJJJJJJJJJJJ', 'JJJJJJJJjJJJJJJJ', 'JJJJJJjjjjjJJJJJ', 'JJJJjjjvvvjjjJJJ', 'JJJjjvvVVvvvjJJJ', 'JJJjjvVVVVvjjJJJ', 'JJJJjjvvvvjjJJJJ', 'JJJJJjjjjjjJJJJJ', 'JJJJJJJJJJJJJjJJ', 'JjJJJJJJJJJJJJJJ', 'JJJJJJJJJjJJJJJJ', 'JJJJJJJJJJJJJJJJ', 'JJJJjJJJJJJJJJJJ', 'JJJJJJJJJJJJJJJJ'];
-// Översvämningen (steg 3.8.3)
-const FL_L = { o: 'kol0', b: 'skiffer1', B: 'skiffer2', l: 'skiffer3', g: 'oliv1', G: 'oliv2', k: 'jord0', j: 'jord1', J: 'jord2', Y: 'ben3' };
-const FL_STRAND = ['................', '..........G.....', '.........GgG....', '..........g.....', 'oooooooo..g.....', 'ogGgGgGgo.g.....', 'okkkkkkkko......', '..l..l...l..l...', '.lBl.lBl.lBl.lB.', 'lBbBlBbBlBbBlBbB', 'BbbbBbbbBbgbBbbb', 'bbbbbbbbbbgbbbbb', 'bBbbbbBbbbbbBbbb', 'bbbbBbbbbbBbbbbb', 'bbBbbbbbBbbbbbBb', 'oooooooooooooooo'];
-const FL_HUS = ['................', '.......oo.......', '......ojjo......', '.....ojJJjo.....', '....ojJJJJjo....', '...ojJJJJJJjo...', '..oooooooooooo..', '...okkkkkkkko...', '...okkkoookko...', '...okkkobbokko..', 'l.lokkkobboklo.l', 'BlBlBlBlBlBlBlBl', 'bBbbbbBbbbbbBbbb', 'bbbbBbbbbbBbbbbb', 'bbBbbbbbBbbbbbBb', 'oooooooooooooooo'];
-const FL_STOLPE = ['......oo........', '.....oYYo.......', '....oYYYYo......', '......Yk........', '......kk....o...', '......kk...oYo..', '......Ykl..oYo..', '......kk...oYo..', '......kk...oYo..', 'llllllkklllllll.', 'BlBlBlkkBlBlBlBl', 'bbbbbbkkbbbbbbbb', 'bBbbbbkkbbbbBbbb', 'bbbbBbkkbbBbbbbb', 'bbBbbbkkBbbbbbBb', 'oooooooooooooooo'];
-// Samtalens ämnen (steg 3.9.5)
-const AM_L = { o: 'kol0', b: 'jord2', B: 'jord1', k: 'rost1', w: 'ben2', W: 'ben3', h: 'rost2', H: 'rost1', s: 'skiffer2', S: 'skiffer3', g: 'oliv2', G: 'oliv1', y: 'senap2' };
-const AM_MAT1 = ['................', '................', '......w..w......', '.....w..w.......', '......w..w......', '................', '...oooooooooo...', '..okkkkkkkkkko..', '..obbbbbbbbbbo..', '...obbbbbbbbo...', '...oBbbbbbbBo...', '....oBBBBBBo....', '.....oooooo.....', '................', '................', '................'];
-const AM_MAT2 = ['................', '.........oo.....', '........obbo....', '.......obbo.....', '......obbo......', '.....obbo.......', '..oooobooooooo..', '.okkkkkkkkkkkko.', '.oyykkyykkyykko.', '..obbbbbbbbbbo..', '..oBbbbbbbbbBo..', '...oBbbbbbbBo...', '....oBBBBBBo....', '.....oooooo.....', '................', '................'];
-const AM_MAT3 = ['................', '................', '.....oooooo.....', '...ooyyyyyyoo...', '..oyyyyyyyyyyo..', '..oyyyoyyoyyyo..', '..oyyyyyyyyyyo..', '...oyyyyyyyyo...', '....oooooooo....', '.....okkkko.....', '....okkkkkko....', '....okkkkkko....', '.....okkkko.....', '......oooo......', '................', '................'];
-const AM_TROST1 = ['................', '................', '................', '...ooo....ooo...', '..ohhho..oHHHo..', '..ohhhhooHHHHo..', '..ohhhhhHHHHHo..', '...ohhhhHHHHo...', '....ohhhHHHo....', '.....ohhHHo.....', '......ohHo......', '.......oo.......', '................', '................', '................', '................'];
-const AM_TROST2 = ['................', '.....oooo.......', '....ohhhho......', '....ohhhho......', '.....oooo.oooo..', '..ooohhhooHHHHo.', '.ohhhhhhhoHHHHo.', '.ohhhhhhhhooooo.', '.ohhhhhhhHHHHHo.', '..ohhhhhHHHHHo..', '..ohhhhhHHHHHo..', '..ohhhhoHHHHHo..', '..ohhhho.oHHHo..', '..oooooo.ooooo..', '................', '................'];
-const AM_TROST3 = ['................', '...oo....oo.....', '..okko..okko....', '..okkkookkkko...', '..okkkkkkkkko...', '...okkkkkkkko...', '....okkkkkko....', '.....okkkko.....', '......okko......', '.......oo.......', '..oooooooooooo..', '.ohhhhhhhhhhhho.', '.ohhhhhhhhhhhho.', '..oooooooooooo..', '................', '................'];
-const AM_DOD1 = ['................', '................', '.....oooooo.....', '....oWWWWWWo....', '...oWWWoWWWWo...', '...oWWoooWWWo...', '...oWWWoWWWwo...', '...oWWWoWWWwo...', '...oWWWWWWWwo...', '...oWWWWWWwwo...', '...oWwwwwwwwo...', '..goooooooooog..', '.gggggggggggggg.', '................', '................', '................'];
-const AM_DOD2 = ['................', '.......oo.......', '.......ob.......', '.....oooboo.....', '.....obbbbo.....', '.....oooboo.....', '.......ob.......', '.......ob.......', '.......ob.......', '.......ob.......', '.......ob.......', '....ooooBooo....', '...osssssssso...', '..ossssssssss...', '.gggggggggggggg.', '................'];
-const AM_DOD3 = ['................', '................', '......oooo......', '.....oyyyyo.....', '.....oyyyyo.....', '......oyyo......', '.......oo.......', '.......ob.......', '......oBBo......', '.....oBBBBo.....', '.....oBBBBo.....', '.....oBBBBo.....', '.....oBBBBo.....', '......oooo......', '................', '................'];
-const AM_BARN1 = ['................', '................', '......oooo......', '.....oBBBBo.....', '.....ohhhho.....', '.....ohhhho.....', '......oooo......', '.....owwwwo.....', '....owwwwwwo....', '....owowwowo....', '....oowwwwoo....', '......owwo......', '......o..o......', '......o..o......', '................', '................'];
-const AM_BARN2 = ['................', '....oooo........', '...oBBBBo.......', '...ohhhho.......', '...ohhhho...ooo.', '....oooo...oBBBo', '...owwwwo..ohhho', '..owwwwwwo.ohhho', '..owowwowo..ooo.', '...owwwwo..owwwo', '....owwo..owwwwo', '....o..o..owwwwo', '....o..o...o..o.', '...oo..oo..o..o.', '................', '................'];
-const AM_BARN3 = ['................', '................', '................', '......oooo......', '.....okkkko.....', '....okkkkkko....', '...okkhhhhkko...', '...okhhhhhhko...', '...okhohhohko...', '...okhhhhhhko...', '...okkhhhhkko...', '....okkkkkko....', '.....oooooo.....', '................', '................', '................'];
 // Eldsvådan (steg 3.8.5): lågorna på en ruta som brinner
 const BR_L = { r: 'rost1', R: 'rost2', y: 'senap2', Y: 'senap3', k: 'kol1', s: 'skiffer2', S: 'skiffer1', g: 'oliv1' };
 const BR_TUNGOR = ['.......o........', '......oRo.......', '......oRo...o...', '..o..oRYRo.oRo..', '.oRo.oRYRo.oRo..', '.oRRooRYYRooRRo.', 'oRYRooRYYRooRYRo', 'oRYRRoRYYYRoRYRo', 'oRYYRRYYYYRRYYRo', 'oRYYYRYYYYRYYYRo', '.oRYYYYYYYYYYRo.', '.orRYYYYYYYYRro.', '..orRRYYYYRRro..', '..okrrRRRRrrko..', '.okkkkkkkkkkkko.', '..oooooooooooo..'];
@@ -1564,210 +810,12 @@ const BR_ROK = ['.....sSs........', '....sSSSs..s....', '.....sSs..sSs...', '...
 const BR_GRAS = ['................', '................', '................', '................', '...o.......o....', '..oRo..o..oRo...', '..oRo.oRo.oRo.o.', '.oRYRooRo.oYRoRo', '.oRYRoRYRooYRoRo', 'goRYYRYYRoRYYRRo', 'goRYYYYYYRYYYYRo', 'gorRRYYYRRRYYRro', '.okrrRRRrrrRRrko', 'g.oykoykkoykkyo.', 'gg.oooooooooooo.', '................'];
 // Tornadon (steg 3.8.4): symbolen i kalendern och tornadon på kartan (32 × 48 punkter, 2 × 3 rutor)
 const TN_L = { o: 'kol0', g: 'skiffer2', G: 'ben2', d: 'jord1', D: 'ben3', k: 'kol1', K: 'kol2', l: 'oliv1', j: 'jord2', J: 'jord3' };
-const TN_TRATT = ['................', '.oooooooooooooo.', '.ogGgGgGgGgGgGo.', '..ooGgGgGgGgoo..', '...ogGgGgGgGo...', '....ooGgGgoo....', '.....ogGgGo.....', '......oGgo......', '......ogGo......', '.......oGo......', '.......ogo......', '......oGo.......', '......ogo.......', '....dDdoDd......', '..dDdDdDdDdD....', '................'];
-const TN_MOLN = ['.ooooooooooooo..', 'okKKkKKKkKKKkKo.', 'okkkkkkkkkkkkko.', '.oooogGgGgooooo.', '....ogGgGgo.....', '.....oGgGo..l...', '.....ogGgo.l....', '......oGgo......', '..l...ogGo......', '.......oGo...l..', '.......ogo......', '......oGo.......', '.l....ogo...j...', '....dDdoDd..jj..', '..dDdDdDdDdD....', '................'];
-const TN_SKRAP = ['................', '..oooooooooooo..', '.oGgggggggggGGo.', '..oGGggggggGGo..', '..j.oGGggGGo....', '.jj..oGgggo..JJ.', '.....oGGgo...JJ.', '......oGgo......', '......ogGo..j...', '.JJ....oGo.jj...', '.JJ....ogo......', '......oGo.......', '......ogo.......', '...dDdDoDdD.....', '.dDdDdDdDdDdD...', '................'];
-const TN_KARTA1 = [
-  '..oggggggGGGGGGGGGGGGGGGgggggo..',
-  '..oggggGGGGGGGGGGGGGGGGggggggo..',
-  '...ogGGGGGGGGGGGGGGGGgggggggo...',
-  '...oGGGGGGGGGGGGGGGggggggggGo...',
-  '...oGGGGGGGGGGGGGggggggggGGGo...',
-  '....oGGGGGGGGGGggggggggGGGGGo...',
-  '....oGGGGGGGGggggggggGGGGGGGo...',
-  '....ooGGGGGggggggggGGGGGGGGoo...',
-  '.....oGGGggggggggGGGGGGGGggo....',
-  '.....oGggggggggGGGGGGGGggggo....',
-  '.....ooggggggGGGGGGGGggggggo....',
-  '......oggggGGGGGGGGggggggggo....',
-  '......oggGGGGGGGGggggggggGo.....',
-  '......oGGGGGGGGggggggggGGGo.....',
-  '.......oGGGGGggggggggGGGGGo.....',
-  '.......oGGGggggggggGGGGGGoo.....',
-  '.......oGggggggggGGGGGGGGo......',
-  '.......ogggggggGGGGGGGGggo......',
-  '.......ogggggGGGGGGGGgggo.......',
-  '.......oggGGGGGGGGggggggo.......',
-  '.......oGGGGGGGGgggggggo........',
-  '.......oGGGGGGggggggggGo........',
-  '.......oGGGGggggggggGGo.........',
-  '.......oGggggggggGGGGGo.........',
-  '.......ooggggggGGGGGGo..........',
-  '.......ooggggGGGGGGGGo..........',
-  '.......ooggGGGGGGGGgo...........',
-  '........oGGGGGGGGgggo...........',
-  '........oGGGGGGggggo............',
-  '........oGGGGggggggo............',
-  '........oGGggggggggo............',
-  '.........ogggggggGoo............',
-  '.........ogggggGGGo.............',
-  '.........ooggGGGGGo.............',
-  '..........oGGGGGGGo.............',
-  '...........oGGGGGgo.............',
-  '...........oGGGGggo.............',
-  '............oGggggoo............',
-  '............oogggggo............',
-  '.............ogggggo............',
-  '..............ogggGo............',
-  '...............oGGGo............',
-  '..........ddDddooGGodD..........',
-  '.......dDddDddDdoGGooddDd.......',
-  '......dDddDddDddDddDddDddD......',
-  '......DddDddDddDddDddDddDd......',
-  '.......dDddDddDddDddDddDd.......',
-  '..........DddDddDddDdd..........',
-];
-// tratten på kartan räknad rad för rad: bredden uppe och nere, hur mycket den svajar, banden som snurrar, ett moln
-// överst och saker som flyger runt den
-function tnKarta({ topp, fot, svaj, band, moln = 0, skrap = [] }) {
-  const R = Array.from({ length: 48 }, () => Array(32).fill('.'));
-  for (let y = moln; y < 43; y++) {
-    const u = (y - moln) / (42 - moln), w = fot + (topp - fot) * Math.pow(1 - u, 1.6), cx = 15.5 + Math.sin(u * Math.PI * 1.4) * svaj * u;
-    const a = Math.max(0, Math.round(cx - w / 2)), b = Math.min(31, Math.round(cx + w / 2));
-    for (let x = a; x <= b; x++) R[y][x] = x === a || x === b ? 'o' : (((x - a + Math.round(y * band)) % 6) + 6) % 6 < 3 ? 'g' : 'G';
-  }
-  for (let y = 0; y < moln; y++) for (let x = 0; x < 32; x++) { const k = Math.abs(x - 15.5) / 16 + (moln - y) / (moln * 2.2); if (k < 1) R[y][x] = k > 0.88 ? 'o' : (x + y * 3) % 7 < 2 ? 'K' : 'k'; }
-  for (let y = 42; y < 48; y++) for (let x = 0; x < 32; x++) { const e = ((x - 15.5) / 13) ** 2 + ((y - 45) / 3) ** 2; if (e < 1 && R[y][x] === '.') R[y][x] = (x + y) % 3 ? 'd' : 'D'; }
-  for (const [x, y, c] of skrap) R[y][x] = c;
-  return R.map(r => r.join(''));
-}
-const TN_KARTA2 = tnKarta({ topp: 30, fot: 4, svaj: 2, band: 0.7, moln: 7, skrap: [[3, 14, 'j'], [4, 15, 'j'], [27, 20, 'l'], [26, 26, 'J'], [27, 27, 'J'], [5, 30, 'l'], [24, 34, 'j']] });
-const TN_KARTA3 = tnKarta({ topp: 24, fot: 3, svaj: 6, band: 1.2, skrap: [[2, 8, 'l'], [29, 12, 'l'], [3, 22, 'J'], [4, 22, 'J'], [28, 30, 'j'], [27, 31, 'j'], [6, 38, 'l']] });
 const TN_KART_M = p => ({ w: 104, h: 100, rita: (B, P) => { ritaSprite(B, p, TN_L, 2, 50); ritaSprite(B, p.flatMap(r => { const rr = [...r].map(c => c.repeat(2)).join(''); return [rr, rr]; }), TN_L, 38, 2); } });
-// nya symboler för intrycken klåpare, fattig och rik (steg 3.10.5): bara fyllningen; kanten och skuggan snett nedanför läggs på
-// som för de andra intrycken (UTB_KANT och UTB_SKUGGA)
-const IK_NY = (rader, l) => LED_M(UTB_SKUGGA(UTB_KANT(rader)), { z: 'skugga', ...l });
-const IK_IDAG = namn => { const m = IK_MOTIV.find(x => x.namn === namn); return { ...LED_M(UTB_SKUGGA(m.p), { z: 'skugga', ...m.l }) }; };
-const KLA_KRUKA = ['................', '................', '.....aaaaaa.....', '......aaaa......', '.....aaaaaa.....', '....awaaaaaa....', '...awaaaoaa.....', '...awaaaao...ab.', '...aaaaaoa..abb.', '...aaaaaaoa..b..', '...baaaaoaaa....', '....baaaaaaa....', '.....bbbbbb.....', '................', '................', '................'];
-const KLA_YXA = ['................', '...........ss...', '..........sSss..', '..........sSss..', '...........ss...', '........w.......', '.......w..w.....', '......w..w......', '................', '.....hH.........', '....hH..........', '...hH...........', '..hH............', '.hH.............', '................', '................'];
-const KLA_REP = ['................', '................', '....aaaa........', '...a....a.aaa...', '..a..aa..a...a..', '..a.a..a.a.a.a..', '...a.aa.aa.a.a..', '..aa..aa..aa.a..', '.a..a....a..a...', '.a...aaaa.a.a...', '..a..a.....a....', '...aa.a..aa.....', '......aaa..a....', '...........aaa..', '..............a.', '................'];
-const FAT_PUNG = ['................', '................', '................', '................', '......a..a......', '.......aa.......', '......aaaa......', '.....aaaaaa.....', '....aaaaaaaa....', '...aawaaaaaaa...', '...awaaapppaa...', '...aaaaapppaa...', '...baaaaaaaab...', '....bbbbbbbb....', '................', '................'];
-const FAT_SKJORTA = ['................', '................', '....aaa..aaa....', '..aaaaaaaaaaaa..', '.aaaaaaaaaaaaaa.', '.aaaaaaaaaaaaaa.', '.aa.aaaaaapppaa.', '....aaaaaapppa..', '....aa.aaaaaaa..', '....aaaaaaaaaa..', '....aaaaaaaa.a..', '....aaapppaaaa..', '....aaapppaaaa..', '....a.aa.aa.aa..', '................', '................'];
-const FAT_KNYTE = ['................', '..........aaa...', '.........aaaaa..', '........aakaaaa.', '........aaaaaab.', '.........abbbb..', '........s.......', '.......s........', '......s.........', '.....s..........', '....s...........', '...s............', '..s.............', '................', '................', '................'];
-const RIK_PUNG = ['................', '................', '......c..c......', '.......cc.......', '......aaaa......', '.....aaaaaa.....', '....aaaaaaaa....', '...awaaaaaaaa...', '..awaaaaaaaaaa..', '..aaaaaaaaaaaa..', '..aaaaaaaaaaaa..', '..baaaaaaaaaab..', '...baaaaaaaab.y.', '....bbbbbbbb.yy.', '................', '................'];
-const RIK_SKINN = ['................', '................', '................', '...a........a...', '....aaaaaaaa....', '...aaaaaaaaaa...', '..bbbbbbbbbbbb..', '.b.bbbbbbbbbb.b.', '..cccccccccccc..', '.c.cccccccccc.c.', '..dddddddddddd..', '.dddddddddddddd.', '..eeeeeeeeeeee..', '................', '................', '................'];
-const RIK_HALSBAND = ['................', '..c..........c..', '..c..........c..', '...c........c...', '...y........y...', '...Y........Y...', '....y......y....', '....Y......Y....', '.....y....y.....', '......yYYy......', '.......ww.......', '.......ww.......', '.......w........', '................', '................', '................'];
-// ---------- timmerväggen och det som kan vridas (steg 3.10.7) ----------
-// Väggen som husbild.ts ritar den i spelet, 8 × 8 punkter per ruta och här dubbelt så stor som forstorad. slut = hur väggen
-// slutar mot en öppning (HUS_SLUT): 0 är som i dag, 1–3 är förslagen
-const HUS_FARG = { k: '#5e3e22', b: '#8a5e34', B: '#b8885a', e: '#d8b480', E: '#efd3a0', d: '#4a3018', F: '#a27a4e', f: '#9a7248', D: '#86603c' };
-const HUS_STOCK = ['.', 'k', 'b', 'B', 'B', 'b', 'k', '.'];
-const HUS_GRANNAR = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, -1], [-1, 1], [1, 1]];
-const husAnde = (lx, ly, cx, cy, r) => { const d = Math.hypot(lx - cx, ly - cy); return d < r[0] ? 'E' : d < r[1] ? 'e' : d < r[2] ? 'd' : ''; };
-function husPlanka(gx, gy) { const c = Math.floor(gx / 3), x = gx % 3, sy = (gy + c * 4) % 11; return x === 0 || sy === 0 || (sy === 1 && x === 2) ? 'D' : x === 1 ? 'F' : 'f'; }
-// avslutningen räknad som om öppningen ligger till höger: u = längs väggen mot öppningen, v = tvärs över väggen.
-// '' = stocken som vanligt, '.' = ingenting (marken eller golvet syns)
-const HUS_SLUT = [
-  (u, v) => u >= 5 ? husAnde(u, v, 5.5, 3.5, [1.3, 2.1, 2.6]) : '', // i dag: en halv stockände, avskuren vid rutans kant
-  (u, v) => v < 1 || v > 6 ? '' : u === 7 ? (v === 1 || v === 6 ? 'k' : v === 3 || v === 4 ? 'E' : 'e') : u === 6 ? 'd' : '', // rakt avsågad
-  (u, v) => husAnde(u, v, 4.5, 3.5, [1.2, 2, 2.8]) || (u >= 7 ? '.' : ''), // en hel rund stolpe
-  (u, v) => u < 4 ? '' : u === 4 || u === 7 || v === 0 || v === 7 ? 'd' : v === 3 || v === 4 ? 'b' : 'e', // en fyrkantig huggen stolpe
-];
-function husVagg(n, lx, ly, slut) {
-  const [l, r, up, dn] = [...n].map(c => c === 'W'), o = [...n].map(c => c === 'O' || c === 'P');
-  let h = l || r; const v = up || dn;
-  if (!h && !v) h = o[0] || o[1] || !(o[2] || o[3]);
-  const horn = (h || o[0] || o[1]) && (v || o[2] || o[3]) && (h || v);
-  if (horn) { const a = Math.hypot(lx - 3.5, ly - 3.5); if (a < 2.2) return Math.round(a * 2) % 2 ? 'e' : 'E'; if (a < 3.3) return 'd'; }
-  else {
-    const uv = o[1] ? [lx, ly] : o[0] ? [7 - lx, ly] : o[3] ? [ly, lx] : o[2] ? [7 - ly, lx] : null;
-    const p = uv ? HUS_SLUT[slut](uv[0], uv[1]) : '';
-    if (p) return p === '.' ? '' : p;
-  }
-  const inH = h && ly >= 1 && ly <= 6 && lx >= (l ? 0 : 1) && lx <= (r ? 7 : 6);
-  const inV = v && lx >= 1 && lx <= 6 && ly >= (up ? 0 : 1) && ly <= (dn ? 7 : 6);
-  const k = inV ? HUS_STOCK[lx] : inH ? HUS_STOCK[ly] : '.';
-  return k === '.' ? '' : k;
-}
-// ett hus efter en plan (W = vägg, G = trägolv, O = öppning, . = marken), dubbelt så stort som i spelet
-function ritaHusPlan(B, x0, y0, plan, slut) {
-  const at = (x, y) => plan[y]?.[x] ?? '.';
-  const golvO = (x, y) => at(x, y) === 'O' && HUS_GRANNAR.slice(0, 4).some(([dx, dy]) => at(x + dx, y + dy) === 'G');
-  for (let ty = 0; ty < plan.length; ty++) for (let tx = 0; tx < plan[0].length; tx++) {
-    const c = at(tx, ty), egen = c === 'O' ? (golvO(tx, ty) ? 'G' : '') : c;
-    if (egen !== 'W' && egen !== 'G') continue;
-    const n8 = HUS_GRANNAR.map(([dx, dy]) => golvO(tx + dx, ty + dy) ? 'P' : at(tx + dx, ty + dy)).join('');
-    for (let ly = 0; ly < 8; ly++) for (let lx = 0; lx < 8; lx++) {
-      const gx = tx * 8 + lx, gy = ty * 8 + ly;
-      let k = egen === 'G' ? husPlanka(gx, gy) : husVagg(n8, lx, ly, slut);
-      if (!k) { // golvet syns där stocken inte täcker rutan, om grannen åt det hållet är golv
-        const dx = lx <= 1 ? -1 : lx >= 6 ? 1 : 0, dy = ly <= 1 ? -1 : ly >= 6 ? 1 : 0;
-        for (const [ax, ay] of [[dx, 0], [0, dy], [dx, dy]]) {
-          if (!ax && !ay) continue;
-          const g = n8[HUS_GRANNAR.findIndex(([x, y]) => x === ax && y === ay)];
-          if (g === 'G' || g === 'P') { k = husPlanka(gx, gy); break; }
-        }
-      }
-      if (k) { const f = B.P.fran(HUS_FARG[k]); for (let j = 0; j < 4; j++) B.satt(x0 + gx * 2 + (j & 1), y0 + gy * 2 + (j >> 1), f); }
-    }
-  }
-}
-// huset i förslagen: öppningar i övre och vänstra väggen och en precis vid hörnet nere till höger, så att avslutningen syns
-// åt alla håll
-const HUS_PLAN = ['WWWOWW', 'WGGGGW', 'OGGGGW', 'WGGGGO', 'WWWWWW'];
-const HUS_SLUT_M = slut => ({ w: 100, h: 84, rita: (B, P) => ritaHusPlan(B, 2, 2, HUS_PLAN, slut) });
-// spelets bild vriden ett kvarts varv medsols, som spelet ritade det vridna före steg 3.10.7
-function vridenIkon(k) {
-  const n = k + '_vreds', r = IKONER.PIX[k];
-  IKONER.PIX[n] ??= [...r[0]].map((_, x) => r.map(row => row[x]).reverse().join(''));
-  IKONER.PAL[n] ??= IKONER.PAL[k];
-  return n;
-}
-// det som kan vridas: bilden som den står i registret och vriden, sida vid sida med nederkanterna i linje. lager = bilder som
-// ritas ovanpå varandra (skinnfällen i bädden); vrid ger den vridna bildens namn
-function vridPar(lager, vrid) {
-  const hor = k => IKONER.PIX[k], ver = k => IKONER.PIX[vrid(k)];
-  const W = hor(lager[0])[0].length * 2, H = Math.max(hor(lager[0]).length, ver(lager[0]).length) * 2;
-  return { w: W + ver(lager[0])[0].length * 2 + 10, h: H + 4, rita: (B, P) => { for (const k of lager) { forstorad(B, k, 2, 2 + H - hor(k).length * 2); forstorad(B, vrid(k), W + 8, 2 + H - ver(k).length * 2); } } };
-}
-const VRID_IDAG = 'Som spelet ritade den: samma bild vriden ett kvarts varv, så att benen och skuggan hamnade på sidan.';
-const VRID_VAL = (id, namn, lager, text) => ({ id, namn, vad: `Det som kan vridas (steg 3.10.7): ${namn.toLowerCase()} får en egen bild när den står vriden, i stället för att bilden vrids. Till vänster som den står i registret, till höger vriden.`, typ: 'janej',
-  idag: vridPar(lager, vridenIkon), idagText: VRID_IDAG, versioner: [{ text, ...vridPar(lager, k => k + '_v') }] });
-// dörrarna i en vägg åt båda hållen: en vägg som går åt sidan och en som går uppåt, med dörren i öppningen
-const DORR_PLAN = ['WOW.W', '....O', '....W'];
-const DORR_M = (dorrar, vrid) => ({ w: dorrar.length * 88 + 2, h: 52, rita: (B, P) => dorrar.forEach((k, i) => {
-  const x0 = 2 + i * 88; ritaHusPlan(B, x0, 2, DORR_PLAN, 0);
-  forstorad(B, k, x0 + 16, 2); forstorad(B, vrid(k), x0 + 64, 18);
-}) });
-// trons och gudarnas symboler (steg 4.1.2.3 och 4.1.5): spelets platshållare, 16 × 16 punkter, i en rund bricka. Figurens
-// kant blir 'o', resten av figuren 'f', brickan 'd' och brickans kant 'e'; stilen (legenden) ger färgerna
-function heligRad(k) {
-  return IKONER.PIX[k].map((row, y) => [...row].map((c, x) => {
-    const d = Math.hypot(x - 7.5, y - 7.5);
-    if (c === '.') return d <= 7.6 ? (d > 6.6 ? 'e' : 'd') : '.';
-    return c === 'o' ? 'o' : 'f';
-  }).join(''));
-}
-// alla symbolerna i ett rutnät, fyra i bredd och två skärmpunkter per punkt
-const HELIG_M = (keys, L) => ({ w: 4 * 36 + 4, h: Math.ceil(keys.length / 4) * 36 + 4, kol: true, rita: (B, P) => keys.forEach((k, i) =>
-  ritaSprite(B, heligRad(k).flatMap(r => { const rr = [...r].map(c => c + c).join(''); return [rr, rr]; }), L, 2 + (i % 4) * 36, 2 + Math.floor(i / 4) * 36)) });
-const HELIG_STEN = { d: 'skiffer2', e: 'skiffer1', f: 'kol1', o: 'kol0' };
-const HELIG_OCKRA = { d: 'ben2', e: 'jord2', f: 'rost1', o: 'jord1' };
-const HELIG_GULD = { d: 'jord1', e: 'senap2', f: 'senap3', o: 'kol0' };
-const TRO_SYM = ['tro_blixt', 'tro_brand', 'tro_vinter', 'tro_regn', 'tro_flod', 'tro_hare', 'tro_barn', 'tro_drom'];
-const GUD_SYM = ['gud_aska', 'gud_sjon', 'gud_skord', 'gud_doden', 'gud_jakt', 'gud_elden', 'gud_vintern', 'gud_solen', 'gud_atten', 'gud_kriget', 'gud_hantverk'];
-const HELIG_VAL = (id, namn, vad, keys) => ({ id, namn, vad, typ: 'tre',
-  idag: { w: 4 * 36 + 4, h: Math.ceil(keys.length / 4) * 36 + 4, rita: (B, P) => keys.forEach((k, i) => forstorad(B, k, 2 + (i % 4) * 36, 2 + Math.floor(i / 4) * 36)) },
-  idagText: 'Platshållarna i spelet nu.',
-  versioner: [
-    { text: 'Ristade i en grå sten: figuren mörk i en rund stenbricka.', ...HELIG_M(keys, HELIG_STEN) },
-    { text: 'Målade med rödockra på ett ljust skinn med brun kant.', ...HELIG_M(keys, HELIG_OCKRA) },
-    { text: 'Ett amulett: figuren i guld på en mörk bricka med guldkant.', ...HELIG_M(keys, HELIG_GULD) },
-  ] });
 // kulturen i fas 4 (steg 4.3.1, 4.3.2 och 4.3.4): tre förslag på varje ny sak. Färgerna: trä (a–e), lera och rödockra
 // (r, R, T, t), rep och gräs (s, S, y), ben och skinn (w, W, v), sten (g, G, h), blad (n, L) och skuggan på marken (z)
+const SCEN_HOJD = ["..........................", ".oooooooooooooooooooooooo.", "oeccbeccbeccbeccbeccbeccbo", "oeccbeccbeccbeccbeccbeccbo", "oeccbeccbeccbeccbeccbeccbo", "oeccbeccbaaabeccbeccbeccbo", "oeccbeccbeccbeccbeccbeccbo", "oeccbeccbeccbeccbeccbeccbo", "oeccbeccbeccbeccbaaabeccbo", "oaaabeccbeccbeccbeccbeccbo", "oeccbeccbeccbeccbeccbeccbo", "oeccbeccbeccbeccbeccbeccbo", "oeccbeccbeccbeccbeccbeccbo", "oeccbeccbeccbeccbeccbeccbo", "oeccbeccbeccbaaabeccbeccbo", "oeccbeccbeccbeccbeccbeccbo", "oeccbeccbeccbeccbeccbeccbo", "oeccbeccbeccbeccbeccbaaabo", "oeccbeccbeccbeccbeccbeccbo", "oeccbeccbeccbeccbeccbeccbo", "oeccbaaabeccbeccbeccbeccbo", "oeccbeccbeccbeccbeccbeccbo", "oeccbeccbeccbeccbeccbeccbo", "oeccbeccbeccbeccbeccbeccbo", "oeccbeccbeccbeccbaaabeccbo", "oeccbeccbeccbeccbeccbeccbo", "oeccbeccbeccbeccbeccbeccbo", "oeccbeccbaaabeccbeccbeccbo", "oeccbeccbeccbeccbeccbeccbo", "oeccbeccbeccbeccbeccbeccbo", "oaaabeccbeccbeccbeccbeccbo", "oeccbeccbeccbeccbeccbeccbo", "oeccbeccbeccbeccbeccbeccbo", "oeccbeccbeccbeccbeccbeccbo", "oeccbeccbeccbeccbeccbeccbo", "oeccbeccbeccbaaabeccbeccbo", "oeccbeccbeccbeccbeccbeccbo", "oeccbeccbeccbeccbeccbeccbo", "oeccbaaabeccbeccbeccbeccbo", "oeccbeccbeccbeccbeccbaaabo", "oeccbeccbeccbeccbeccbeccbo", "oeccbeccbeccbeccbeccbeccbo", "oeccbeccbeccbeccbeccbeccbo", "oeccbeccbeccbeccbeccbeccbo", "oaaaaaaaaaaaaaaaaaaaaaaaao", "obbbbbbbbbbbbbbbbbbbbbbbbo", "obbbbbbbbbbbbbbbbbbbbbbbbo", ".ooooeeeeeoooeeeeeooooooo.", "....occccco.occccco.......", ".....ooooo...ooooo........"];
 const KULT_L = { a: 'jord0', b: 'jord1', c: 'jord2', e: 'jord3', r: 'rost0', R: 'rost1', t: 'rost2', T: 'rost3', s: 'senap1', S: 'senap2', y: 'senap3', w: 'ben1', W: 'ben2', v: 'ben3', k: 'kol1', g: 'skiffer1', G: 'skiffer2', h: 'skiffer3', n: 'barr1', L: 'oliv2', z: 'skugga' };
 const KULT = {"boll": [{"text": "En boll av sytt läder, brun med söm i kors.", "rader": ["................", ".....oooooo.....", "....oeeaecco....", "...oeeeecccco...", "..oeeeeaccccco..", "..oeeeccccccco..", ".oeeeccaccccbbo.", ".oeacacacacabao.", ".oeccccaccbbbbo.", "..occccccbbbbo..", "..occccabbbbbo..", "...occcbbbbbo...", "....ocbabbbo....", ".....oooooo.....", "....zzzzzzzzzz..", ".......zzzz....."]}, {"text": "En boll av flätat torrgräs, gul med ett rutigt mönster.", "rader": ["................", ".....oooooo.....", "....oyssySso....", "...oyyssSsSso...", "..oyssySsSSsso..", "..oyssSsSssSSo..", ".ossySsSSssSsso.", ".ossSsSssSSssso.", ".oySsSSssSsssso.", "..osSssSSsssso..", "..oSSssSssssso..", "...osSSssssso...", "....oSssssso....", ".....oooooo.....", "....zzzzzzzzzz..", ".......zzzz....."]}, {"text": "En ljus boll av kaninskinn med en röd rand runt.", "rader": ["................", ".....oooooo.....", "....ovvvvWWo....", "...ovvvvWWWWo...", "..ovvvvWWWWWWo..", "..ovvvWWWWWWWo..", ".ovvvWWWWWWWwwo.", ".oTTTRRRRRRRRRo.", ".oTTTRRRRRRRRRo.", "..oWWWWWWwwwwo..", "..oWWWWWwwwwwo..", "...oWWWwwwwwo...", "....oWwwwwwo....", ".....oooooo.....", "....zzzzzzzzzz..", ".......zzzz....."]}], "slagtra": [{"text": "Ett slätt slagträ av trä som blir tjockare mot änden, med rep lindat kring handtaget.", "rader": ["................", "...........oo...", "..........oeeo..", ".........oeecbo.", ".........oecbbo.", "........oecbbo..", ".......oecboo...", "......oecbo.....", ".....oecbo......", "....oecbo.......", "...oSsbo........", "..osSSo.........", ".oSsso..........", ".osSo...........", "..oo............", ".zzzzzzzzzzzzz.."]}, {"text": "En knotig gren med en tung klubba i änden, som den är från skogen.", "rader": ["................", "...........oo...", "..........ocao..", ".........occbao.", "........oacbbao.", ".......occabao..", ".......ocbbao...", "......ocbbao....", ".....ocbboo.....", "....ocbbo.......", "...ocbbo........", "..ocbbo.........", ".ocbbo..........", ".obbo...........", "..oo............", ".zzzzzzzzzzzzz.."]}, {"text": "Ett platt slagträ som en paddel, ljust trä med en röd ring och rep kring handtaget.", "rader": ["...........o....", "..........ovo...", ".........ovveo..", "........ovveeeo.", ".......ovveeecco", "......ovteeecco.", ".....ovvetecco..", "....ovveeetco...", ".....oeeecco....", "....oeeecco.....", "...oSseoco......", "..osSSo.o.......", ".oSsso..........", ".osSo...........", "..oo............", ".zzzzzzzzzzzzz.."]}], "mal": [{"text": "En ring av böjda grenar, bunden med rep, på en påle.", "rader": ["......oooo......", "....ooeeScoo....", "...oSeeooccSo...", "...oeoo..ooco...", "..oeeo....ocbo..", "..oeo......obo..", "..oSo......oSo..", "..occo....obbo..", "...ocoo..oobo...", "...occcoobbbo...", "....oobbSboo....", "......ocbo......", "......ocbo......", "......ocbo......", "......ocbo......", ".....zocbozz...."]}, {"text": "Två stolpar med en ribba över och ett nät av rep emellan.", "rader": ["................", "..oooooooooooo..", ".oeeeeeeeeeeeeo.", ".occcccccccccco.", ".oSSwwowwowwSSo.", ".ocbww.ww.wwcbo.", ".ocbo.w..w.ocbo.", ".ocbww.ww.wwcbo.", ".ocbww.ww.wwcbo.", ".ocbo.w..w.ocbo.", ".ocbww.ww.wwcbo.", ".ocbww.ww.wwcbo.", ".ocbo.w..w.ocbo.", ".ocbww.ww.wwcbo.", ".ocbo......ocbo.", ".zoozzzzzzzzoozz"]}, {"text": "Ett skinn spänt i en ring av trä, med en röd prick och en röd ring att sikta på, på en påle.", "rader": [".....oooooo.....", "....oeeeecco....", "...oeevvvWcco...", "..oeevttttWcco..", "..oevtvWWWtWco..", ".oeevtWRRWtWbbo.", ".oevvWRRRRWwwbo.", ".oecWtWRRWtwbbo.", "..ocWtWWWwtwbo..", "..occWttttwbbo..", "...occWwwwbbo...", "....ocbbbbbo....", ".....oocboo.....", "......ocbo......", "......ocbo......", ".....zocbozz...."]}], "trumma": [{"text": "En hög trumma av trä med ett ljust skinn över och snören av rep i sicksack runt.", "rader": ["................", "......oooo......", "...ooovWWWooo...", "..ovvvvWWWWWWo..", "..ovvvvWWWWWWo..", "..oSecvWWWcbbo..", "..ocScccScSbbo..", "..oceScScccSbo..", "..ocecSccccbSo..", "..oceScScccSbo..", "..ocScccScSbbo..", "..oSeccccScbbo..", "..ocScccScSbbo..", "..oceScScccSbo..", "..oaaaaaaaaaao..", "...ooooooooooz.."]}, {"text": "En flat trumma som ett skinn i en ram av trä, och en käpp med ett benhuvud att slå med.", "rader": ["................", "....oooooo......", "...occcbbbo.....", "..ocvvvWWWbo....", ".ocvvvWWWWWbo...", ".ocvvWWRWWWbo...", "ocvvWWWWWWWwbo..", "ocvWWWWRWWwwbo..", "ocWWWWWWWwwwbWoo", ".ocWWWWRwwwboWWW", ".ocWWWWwwwwbccWo", "..ocWWwwwwbocoo.", "...occcbbboco...", "....oooooocco...", ".........oco....", "...zzzzzzzozz..."]}, {"text": "En urholkad stock med en spricka på ovansidan, och två pinnar att slå på den med.", "rader": ["......o..o......", ".....ocooco.....", "....occoocco....", "...occo..occo...", "...oco....oco...", "..oco......oco..", ".oooooooooooooo.", "oeeeeeeeeeeeeeeo", "oecckkkkkkkkccco", "oecckkkkkkkkccco", "occcccccccccccco", "ocbbbbbbbbbbbbbo", "ocaaaaaaaaaaaaao", ".oooooooooooooo.", ".zzzzzzzzzzzzzzz", "................"]}], "benflojt": [{"text": "Ett ljust ben på snedden med tre hål och knutiga ändar, som det är.", "rader": ["................", "............oo..", "...........oWWo.", "..........ovwWo.", ".........ovwwo..", "........ovkwo...", ".......ovwwo....", "......ovkwo.....", ".....ovwwo......", "....ovkwo.......", "...ovwwo........", "..ovwwo.........", ".oWwwo..........", ".oWWo...........", "..oo............", "..zzzzzzzzzzzzz."]}, {"text": "En panflöjt: sex rör av ben, kortare och kortare, bundna ihop med rep.", "rader": ["................", "................", "..oooooooooooo..", ".okkkkkkkkkkkko.", ".ovwvwvwvwvwvwo.", ".ovwvwvwvwvwvwo.", ".ovwvwvwvwvwvwo.", ".oSSSSSSSSSSSSo.", ".osssssssssssso.", ".ovwvwvwvwvwvwo.", ".ovwvwvwvwvwoo..", ".ovwvwvwvwoo....", ".ovwvwvwoo......", ".ovwvwoo........", ".ovwoo..........", "..oozzzzzzzzz..."]}, {"text": "En rak flöjt av ben på tvären, med fyra hål och en röd rand vid varje ände.", "rader": ["................", "................", "................", "................", "................", "oo............oo", "WWooooooooooooWW", "WWvRvkvkvkvkRvWW", "WWwRwwwwwwwwRwWW", "WWooooooooooooWW", "oo............oo", ".....zzzzzzz....", ".....zzzzzzz....", "................", "................", "................"]}], "lyra": [{"text": "En fyrkantig ram av trä med en låda nertill och tre strängar av rep.", "rader": ["................", "...oooooooooo...", "..oeeeeeeeeeeo..", "..occcccccccco..", "..ocbyoyoyocbo..", "..ocby.y.yocbo..", "..ocby.y.yocbo..", "..ocby.y.yocbo..", "..ocby.y.yocbo..", "..ocby.y.yocbo..", "..ocby.y.yocbo..", "..ocbyoyoyocbo..", ".occcccccccccco.", ".obbbbbbbbbbbbo.", ".obbbbbbbbbbbbo.", "..oooooooooooo.."]}, {"text": "Två böjda horn som armar, en ribba av trä överst och en låda av skinn nertill.", "rader": ["....oo.....oo...", "...ovwo...ovwo..", "...ovwooooovwo..", "..occccccccccco.", "..ovwoyoyoyovwo.", "..ovwoy.y.yovwo.", ".ovwo.y.y.y.ovwo", ".ovwo.y.y.y.ovwo", "..ovwoy.y.yovwo.", "..ovwoyoyoyovwo.", "..ovwWyWywyovwo.", "..oWWWyWywywwo..", ".oWWWWWWwwwwwwo.", "..oWWWWWwwwwwo..", "...ooWWWwwwoo...", "....zoooooozz..."]}, {"text": "En trekantig ram av trä, som en liten harpa, med strängar som blir kortare och en röd tofs överst.", "rader": ["...oo...........", "..otto..........", "..occo..........", "..occco.........", "..ocbcco........", "..ocboyo........", "..ocboyco.......", "..ocboycyo......", "..ocboyoyco.....", "..ocboy.ycco....", "..ocboy.yoyco...", "..ocboyoyoycco..", "..occcccccccco..", "..obbbbbbbbbbo..", "...oooooooooo...", "..zzzzzzzzzzzzz."]}], "kruka": [{"text": "En rund kruka av rödbränd lera med en mörk rand av prickar runt magen.", "rader": ["................", "................", "................", ".....oooooo.....", "....orrrrrro....", "...oTRRRRRRRo...", "..oTTTTRRRRRRo..", "..oTTTRRRRRRro..", "..oTkRkRkRkrko..", "..okRkRkRkrkro..", "..oRRRRRRrrrro..", "..oRRRRRrrrrro..", "...oRRRrrrrro...", "....oRrrrrro....", ".....oooooo.....", "...zzzzzzzzzzz.."]}, {"text": "En hög kruka med smal hals, två öron och inristade ränder.", "rader": ["................", "......oooo......", ".....orrrro.....", ".....oTRRro.....", "...o.oTRRro.o...", "..oRoTTRRrroRo..", "..oRrrrrrrrrRo..", "..oRTTRRRRrrRo..", "..oTTTRRRRrrro..", "..oTTTRRRRrrro..", "...orrrrrrrro...", "...oTTRRRRrro...", "....oTTRRRro....", ".....oTRRro.....", "......oooo......", "......zzzzz....."]}, {"text": "En låg skål av lera med vita prickar och en kvist med blad och blommor i.", "rader": ["................", ".........o......", "......o.oyo.....", ".....oyo.oL.....", ".....Lo..L.L....", "....L.L.ono.....", ".....onono......", "......ono.......", "..ooooonoooooo..", ".oTTTTRRRRRrrro.", "..oTvTvRvRvrvo..", "...oTTRRRRRro...", "...oTTRRRRRro...", "....oTRRRRRo....", ".....oooooo.....", ".....zzzzzzz...."]}], "bonad": [{"text": "Ett ljust skinn på en käpp, med en röd romb och en mörk mitt, och fransar nertill.", "rader": [".oooooooooooooo.", "ocbbbbbbbbbbbbbo", ".oovWWWWWWWWwoo.", "..ovWWWRRWWWwo..", "..ovWWRWWRWWwo..", "..ovWRWWWWRWwo..", "..ovRWWkkWWRwo..", "..ovRWWkkWWRwo..", "..ovWRWWWWRWwo..", "..ovWWRWWRWWwo..", "..ovWWWRRWWWwo..", "..ovWWWWWWWWwo..", "..ovWWWWWWWWwo..", "..owowowowowo...", "..owowowowowo...", "...o.o.o.o.o...."]}, {"text": "Ett brunt skinn med en hjort målad i rödockra, som en hällristning, och fransar av rep.", "rader": [".oooooooooooooo.", "ocbbbbbbbbbbbbbo", ".oeccccccccccbo.", ".oeccctccctccbo.", ".oecccctctcccbo.", ".oecccccttcccbo.", ".oeccccctttccbo.", ".oecctttttcccbo.", ".oecttttttcccbo.", ".oecctccctcccbo.", ".oecctccctcccbo.", ".oeccccccccccbo.", ".oeccccccccccbo.", ".oSoSoSoSoSoSo..", ".oSoSoSoSoSoSo..", "..o.o.o.o.o.o..."]}, {"text": "En vävd bonad av rep i ränder av gult, rött och ljust, med tofsar nertill.", "rader": [".oooooooooooooo.", "ocbbbbbbbbbbbbbo", ".oosSSsSSsSSsoo.", "..osSSsSSsSSso..", "..orRRrRRrRRro..", "..orRRrRRrRRro..", "..owWWwWWwWWwo..", "..owWWwWWwWWwo..", "..osSSsSSsSSso..", "..osSSsSSsSSso..", "..orRRrRRrRRro..", "..orRRrRRrRRro..", "..owWWwWWwWWwo..", "..oSooSooSooSo..", "..oSooSooSooSo..", "...o..o..o..o..."]}], "vaggbrade": [{"text": "En hylla med en uddig kant och inristade märken, på två konsoler, med en liten kruka på.", "rader": ["................", "................", "......ooo.......", ".....oRRro......", "....oRRRrro.....", ".ooooRRRrrooooo.", "oeeeeeeeeeeeeeeo", "occcaccaccacccco", "obobobobobobobo.", ".obboo.o.o.obbo.", "..obo......obo..", "..obo......obo..", "...o....z...o...", "........z.......", "................", "................"]}, {"text": "Ett stående bräde med en sol inristad i mitten och prickar i ändarna.", "rader": ["....oooooooo....", "...oeccccccbo...", "...oecaccacbo...", "...oeccccccbo...", "...oeccccccbo...", "...oecaccacbo...", "...oeaccccabo...", "...oeacaacabo...", "...oeaccccabo...", "...oecaccacbo...", "...oeccccccbo...", "...oeccccccbo...", "...oeccccccbo...", "...oecaccacbo...", "...oeccccccbo...", "....oooooooo...."]}, {"text": "Ett bräde på tvären med snidade hästhuvuden i båda ändarna.", "rader": ["................", "................", "ooo..........ooo", "ecco........occe", "okco........ocko", "occoooooooooocco", ".obeeeeeeeeeebo.", ".obcacacacaccbo.", ".obbbbbbbbbbbbo.", "..oooboooobooo..", "....obo..obo....", ".....o....o.....", ".....zzzzzzz....", "................", "................", "................"]}], "scen": [{"text": "Golvet av stockar på längden, en kant av hela stockar framtill och två trappsteg ner mot publiken.", "rader": ["................................................", ".oooooooooooooooooooooooooooooooooooooooooooooo.", "oeeeeeeeeeeeeeeeeeeeeeeaeeeeeeeeeeeeeeeeeeeeeeao", "occccccccccccccccccccccaccccccccccccccccccccccao", "occccccccccccccccccccccaccccccccccccccccccccccao", "obbbbbbbbbbbbbbbbbbbbbbabbbbbbbbbbbbbbbbbbbbbbao", "oeeeeeeaeeeeeeeeeeeeeeeeeeeeeeaeeeeeeeeeeeeeeeeo", "occccccaccccccccccccccccccccccacccccccccccccccco", "occccccaccccccccccccccccccccccacccccccccccccccco", "obbbbbbabbbbbbbbbbbbbbbbbbbbbbabbbbbbbbbbbbbbbbo", "oeeeeeeeeeeeeeaeeeeeeeeeeeeeeeeeeeeeeaeeeeeeeeeo", "occcccccccccccaccccccccccccccccccccccaccccccccco", "occcccccccccccaccccccccccccccccccccccaccccccccco", "obbbbbbbbbbbbbabbbbbbbbbbbbbbbbbbbbbbabbbbbbbbbo", "oeeeeeeeeeeeeeeeeeeeeaeeeeeeeeeeeeeeeeeeeeeeaeeo", "occccccccccccccccccccaccccccccccccccccccccccacco", "occccccccccccccccccccaccccccccccccccccccccccacco", "obbbbbbbbbbbbbbbbbbbbabbbbbbbbbbbbbbbbbbbbbbabbo", "oeeeeaeeeeeeeeeeeeeeeeeeeeeeaeeeeeeeeeeeeeeeeeeo", "occccaccccccccccccccccccccccacccccccccccccccccco", "occccaccccccccccccccccccccccacccccccccccccccccco", "obbbbabbbbbbbbbbbbbbbbbbbbbbabbbbbbbbbbbbbbbbbbo", "oeeeeeeeeeeeaeeeeeeeeeeeeeeeeeeeeeeaeeeeeeeeeeeo", "occcccccccccaccccccccccccccccccccccaccccccccccco", "occcccccccccaccccccccccccccccccccccaccccccccccco", "obbbbbbbbbbbabbbbbbbbbbbbbbbbbbbbbbabbbbbbbbbbbo", "oaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaao", "obbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbo", "obbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbo", ".oooooooooooooooooeeeeeoooeeeeeoooooooooooooooo.", ".................occccco.occccco................", "..................ooooo...ooooo................."]}, {"text": "Golvet av kluvna stockar på tvären, och bakom en ribba på två stolpar med skinn som hänger ner som en fond.", "rader": ["..oooooooooooooooooooooooooooooooooooooooooooo..", ".obbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbo.", ".oaaoWrRRRRRwWWWWWrRRRRRwWWWWWrRRRRRwWWWWWroaao.", ".oaaoWrRRRRRwWWWWWrRRRRRwWWWWWrRRRRRwWWWWWroaao.", ".oaaoWrRRRRRwWWWWWrRRRRRwWWWWWrRRRRRwWWWWWroaao.", ".oaaoWoooooowWWWWWoooooowWWWWWoooooowWWWWWooaao.", "oeaaccbeccccbeccccbeccccbeccccbeccccbeccccbeaaco", "oeccccbeccccbeccccbeccccbeccccbeccccbeccccbeccco", "oeccccbeccccbeccccbeccccbeccccbeccccbeccccbeccco", "oeccccbeccccbeccccbeccccbeccccbeccccbeccccbeccco", "oeccccbeccccbeccccbeccccbeccccbeccccbeccccbeccco", "oeccccbeccccbeccccbeccccbeccccbeccccbeccccbeccco", "oeccccbeccccbeccccbeccccbeccccbeccccbeccccbeccco", "oeccccbeccccbeccccbeccccbeccccbeccccbeccccbeccco", "oeccccbeccccbeccccbeccccbeccccbeccccbeccccbeccco", "oeccccbeccccbeccccbeccccbeccccbeccccbeccccbeccco", "oeccccbeccccbeccccbeccccbeccccbeccccbeccccbeccco", "oeccccbeccccbeccccbeccccbeccccbeccccbeccccbeccco", "oeccccbeccccbeccccbeccccbeccccbeccccbeccccbeccco", "oeccccbeccccbeccccbeccccbeccccbeccccbeccccbeccco", "oeccccbeccccbeccccbeccccbeccccbeccccbeccccbeccco", "oeccccbeccccbeccccbeccccbeccccbeccccbeccccbeccco", "oeccccbeccccbeccccbeccccbeccccbeccccbeccccbeccco", "oeccccbeccccbeccccbeccccbeccccbeccccbeccccbeccco", "oeccccbeccccbeccccbeccccbeccccbeccccbeccccbeccco", "oeccccbeccccbeccccbeccccbeccccbeccccbeccccbeccco", "oeccccbeccccbeccccbeccccbeccccbeccccbeccccbeccco", "oaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaao", "obbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbo", "obbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbo", ".oooooooooooooooooooooooooooooooooooooooooooooo.", "................................................"]}, {"text": "Ett runt golv av kluvna stockar med en ring av stenar runt kanten.", "rader": ["................oooooooooooooooo................", "............ooooGgGGhGGgGGhGGgGGoooo............", "..........ooGhGGhGGhecccbecchGGhGGhGoo..........", "........ooGGhGGecccbecccbecccbeccgGGhGoo........", ".......ohGGhccbecccbecccbecccbecccbeGGhGo.......", ".....oogGGecccbecccbecccbecccbecccbeccGGhoo.....", "....oGhGGbecccbecccbecccbecccbecccbeccchGGho....", "...oGgGGcbecccbecccbecccbecccbecccbecccbGgGGo...", "..oGhGcccbecccbecccbecccbecccbecccbecccbecGhGo..", "..ogGGcccbecccbecccbecccbecccbecccbecccbechGGo..", ".ohGGecccbecccbecccbecccbecccbecccbecccbeccGhGo.", ".oGGbecccbecccbecccbecccbecccbecccbecccbecccGGo.", "oGGhbecccbecccbecccbecccbecccbecccbecccbecccGhGo", "oGhGbecccbecccbecccbecccbecccbecccbecccbeccchGGo", "ohGGbecccbecccbecccbecccbecccbecccbecccbecccGGho", "oGGgbecccbecccbecccbecccbecccbecccbecccbecccGgGo", "oGhGbecccbecccbecccbecccbecccbecccbecccbeccchGGo", "ogGGbecccbecccbecccbecccbecccbecccbecccbecccGGho", ".oGhbecccbecccbecccbecccbecccbecccbecccbecccGho.", ".ohGGecccbecccbecccbecccbecccbecccbecccbeccGhGo.", "..oGhGcccbecccbecccbecccbecccbecccbecccbecGhGo..", "..ogGGcccbecccbecccbecccbecccbecccbecccbechGGo..", "...oGhGGcbecccbecccbecccbecccbecccbecccbGhGGo...", "....oGGgGbecccbecccbecccbecccbecccbecccGhGGo....", ".....ooGGhecccbecccbecccbecccbecccbeccGhGoo.....", ".......ohGGgccbecccbecccbecccbecccbeGGhGo.......", "........oohGGhGecccbecccbecccbeccGhGGhoo........", "..........oohGGgGGhGecccbeccGGhGGgGGoo..........", "............ooooGhGGhGGhGGhGGhGGoooo............", "................oooooooooooooooo................", "................................................", "................................................"]}]};
-// den stora scenen: i rätt storlek till vänster och dubbelt så stor till höger
-const KULT_STOR = p => ({ w: 2 + 48 + 6 + 96 + 2, h: 68, kol: true, rita: (B, P) => { ritaSprite(B, p, { o: 'kol0', ...KULT_L }, 2, 2); ritaSprite(B, p.flatMap(r => { const rr = [...r].map(c => c + c).join(''); return [rr, rr]; }), { o: 'kol0', ...KULT_L }, 56, 2); } });
-const KULT_VAL = (id, namn, vad, idag) => ({ id, namn, typ: 'tre', vad: vad + (idag === 'scen_karta' ? ' Till vänster i rätt storlek, till höger dubbelt så stor.' : ' Till vänster i rätt storlek, till höger tre gånger större.') + ' I spelet nu: platshållaren överst.',
-  idag: idag === 'scen_karta' ? { w: 100, h: 68, rita: (B, P) => forstorad(B, idag, 2, 2) } : { w: 36, h: 36, rita: (B, P) => forstorad(B, idag, 2, 2) }, idagText: 'Platshållaren i spelet nu.',
-  versioner: KULT[id].map(v => ({ text: v.text, ...(id === 'scen' ? KULT_STOR(v.rader) : LED_M(v.rader, KULT_L)) })) });
-// världen utanför i fas 4 (steg 4.4.1 och 4.4.5): tre förslag på filten, handlaren, silvret och rövaren, i samma färger som kulturen
-const VARLD = {"filt": [{"text": "En vävd filt i ränder av rött och gult, med fransar i kortändarna (som platshållaren, i paletten).", "rader": ["................", "................", "..y.y.y.y.y.y.y.", ".oooooooooooooo.", ".oRRRRRRRRRRRRo.", ".oSyySyySyySyyo.", ".orrrrrrrrrrrro.", ".oRRRRRRRRRRRRo.", ".orrrrrrrrrrrro.", ".oSyySyySyySyyo.", ".oRRRRRRRRRRRRo.", ".oooooooooooooo.", "..y.y.y.y.y.y.y.", "................", "................", "................"]}, {"text": "Ett utbrett skinn med benen ut åt sidorna, ljust i mitten och mörkare mot kanten.", "rader": ["................", "..oo........oo..", ".ocbo......obco.", "..ocboooooobco..", "...occccccccco..", "..occceeeeecco..", ".occeecccceecco.", ".ocecccacccceco.", ".ocecccccacceco.", ".occeecccceecco.", "..occceeeeecco..", "...occcccccco...", "..ocbooooooobco.", ".ocbo......obco.", "..oo........oo..", "................"]}, {"text": "En flätad matta av torrt gräs i rutor, med en röd kant.", "rader": ["................", "................", ".oooooooooooooo.", ".oRRRRRRRRRRRRo.", ".oRSsSsSsSsSsRo.", ".oRsSsSsSsSsSRo.", ".oRSsSsSsSsSsRo.", ".oRsSsSsSsSsSRo.", ".oRSsSsSsSsSsRo.", ".oRsSsSsSsSsSRo.", ".oRSsSsSsSsSsRo.", ".oRRRRRRRRRRRRo.", ".oooooooooooooo.", "................", "................", "................"]}], "handlare": [{"text": "En vandrare i lång kappa med en stor korg på ryggen och en stav.", "rader": ["......ooo.......", ".....oaaao.oooo.", ".....oWWWoosSSso", ".....oWWWoosSsSo", "......oWo.osSSso", "....ooccco.sSsSo", "...o.occccosSSso", "...o.occccooosoo", "...o.occcco.....", "...o.occcco.....", "...o.occcco.....", "...o..oc.co.....", "...o..oc.co.....", "...o..ob.bo.....", "...o..oo.oo.....", "..zzzzzzzzzzz..."]}, {"text": "En bärare med ett ok över axlarna och en packe i var ände.", "rader": ["................", "......ooo.......", ".....oaaao......", ".....oWWWo......", "oooo..oWo..oooo.", "oeeoooooooooeeo.", "occooRRRRRooeco.", "obbo.oRRRo.obbo.", "oooo.oRRRo.oooo.", ".....oRRRo......", ".....ocooco.....", ".....oc..co.....", ".....oc..co.....", ".....ob..bo.....", ".....oo..oo.....", "...zzzzzzzzz...."]}, {"text": "En handlare med bred hatt, röd mantel och en pung i bältet.", "rader": ["................", ".....oooooo.....", "...oocccccccoo..", "..oaaaaaaaaaaao.", ".....oWWWWo.....", ".....oWWWWo.....", "......oWWo......", "....oRRRRRRo....", "...oRRRRRRRRo...", "...oRRsooRRRo...", "...oRRoyyoRRo...", "...oRRRooRRRo...", "....oRRRRRRo....", ".....oc..co.....", ".....oo..oo.....", "...zzzzzzzzz...."]}], "silver": [{"text": "Tre runda silverbitar i en liten hög (som platshållaren, i paletten).", "rader": ["................", "................", "................", ".....oooo.......", "....ohGGGo......", "....oGGGgo......", ".....oggoooo....", "......oohGGGo...", "..oooo.oGGGgo...", ".ohGGGo.oggo....", ".oGGGgo..oooo...", "..oggo..........", "...oooo.........", "................", "................", "................"]}, {"text": "En armring av silver, böjd och öppen, med en blank kant.", "rader": ["................", "................", "................", ".....oooooo.....", "...oohhGGGgoo...", "..ohGoooooogGo..", ".ohGo......ogGo.", ".oGo........ogo.", ".oGo........ogo.", ".ogGo......oGgo.", "..oggo....oggo..", "...oo......oo...", "................", "................", "................", "................"]}, {"text": "En liten pung av skinn med silverbitar som ramlat ut.", "rader": ["................", "......oo.o......", ".....oSoSo......", "......ooo.......", ".....occco......", "....occeecco....", "...occeeeecco...", "...oceeeeeeco...", "...oceeeeeeco...", "...occeeeecco...", "....occcccco....", ".....oooooooohGo", "......ohGo.ogGGo", "......oGgo..oo..", ".......oo.......", "................"]}], "rovare": [{"text": "En gestalt i mörk huva och slitna skinn, med ett spjut (som platshållaren, i paletten).", "rader": ["...........h....", "......kkk..h....", ".....kkWkk.c....", ".....kWWWk.c....", "......WWW..c....", ".....kaaaakc....", "....kaaaaaak....", "...ka.aaaaack...", ".....aaaaac.....", ".....kaaakc.....", ".....aa.aac.....", ".....aa.aa......", ".....aa.aa......", ".....oo.oo......", "................", "...zzzzzzzz....."]}, {"text": "En rövare med ansiktet målat i svart och rött och en yxa i handen.", "rader": ["................", ".....oooooo.....", "....oaaaaaao....", "....oWkWWkWo....", "....oRWWWWRo....", ".....oWWWWo..oo.", "....oocccooo.ogo", "...occcccccooGgo", "...ocoeeeecoocoo", "...ocoeeeeco.co.", "....oeeeeeeo.co.", ".....oc..co.....", ".....oc..co.....", ".....ob..bo.....", ".....oo..oo.....", "...zzzzzzzzz...."]}, {"text": "En rövare i en kappa av vargskinn med en säck med byte över axeln.", "rader": ["................", ".....oooo..oooo.", "....ohGGho.oSSso", "....oWWWWooSsSso", "....oWkWkWoSSsSo", ".....oWWWoosSSso", "...ohGGGGGhoooo.", "..ohGGGGGGGho...", "..oGoGGGGGoGo...", "..oGoGGGGGoGo...", "...ooGGGGGoo....", "....ohGGGGho....", ".....oc..co.....", ".....ob..bo.....", ".....oo..oo.....", "...zzzzzzzzz...."]}]};
-const VARLD_VAL = (id, namn, vad) => ({ id, namn, typ: 'tre', vad: vad + ' Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: platshållaren överst.',
-  idag: { w: 36, h: 36, rita: (B, P) => forstorad(B, id, 2, 2) }, idagText: 'Platshållaren i spelet nu.',
-  versioner: VARLD[id].map(v => ({ text: v.text, ...LED_M(v.rader, KULT_L) })) });
 // ---------- Björns önskemål efter v245 (steg 4.5.2): nya versioner räknade punkt för punkt ----------
 // figur(f) ger rader W × H: f(satt) fyller, och med kant läggs en mörk kontur ('o') runt det som fyllts; efter(satt) ritas ovanpå
 function punkter(f, { kant = true, W = 16, H = 16, efter } = {}) {
@@ -1786,34 +834,7 @@ function klot(satt, cx, cy, r, [mork, mitt, ljus], ry = r) {
     satt(x, y, u + v < -0.7 ? ljus : u + v > 0.6 ? mork : mitt);
   }
 }
-// ett mynt framifrån: mörk kant, ljus kant uppe till vänster och ett kors präglat i mitten
-function mynt(satt, cx, cy, r, [kant, yta, ljus, marke], ry = r, kors = true) {
-  for (let y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++) for (let x = Math.floor(cx - r); x <= Math.ceil(cx + r); x++) {
-    const u = (x - cx) / r, v = (y - cy) / ry, d = u * u + v * v; if (d > 1.05) continue;
-    satt(x, y, d > 0.55 ? (u + v < -0.4 ? ljus : kant) : yta);
-  }
-  if (kors && ry > 2) for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) satt(cx + dx, cy + dy, marke);
-}
-const skuggaUnder = (satt, a, b, y) => { for (let x = a; x <= b; x++) { satt(x, y, 'z'); if (x > a && x < b) satt(x, y + 1, 'z'); } };
 const linje = (satt, pts, c) => { for (let i = 1; i < pts.length; i++) { const [a, b] = [pts[i - 1], pts[i]], n = Math.max(Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1])); for (let k = 0; k <= n; k++) satt(a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n, c); } };
-const SILVER = ['g', 'h', 'v', 'G'];
-// silvret som mynt (Björn: "Gör mynt")
-const SILV_MYNT = punkter(s => { mynt(s, 8, 7, 5.4, SILVER); skuggaUnder(s, 4, 12, 13); });
-const SILV_STAPEL = punkter(s => { for (let i = 0; i < 5; i++) { const cy = 13 - i * 2; for (let x = 2; x <= 9; x++) s(x, cy + 1, x === 2 ? 'h' : 'g'); mynt(s, 5.5, cy, 3.6, SILVER, 1.2, false); } mynt(s, 12.5, 13, 2.6, SILVER, 1.3, false); skuggaUnder(s, 2, 15, 15); });
-const SILV_TRE = punkter(s => { mynt(s, 5, 6, 3.6, SILVER); mynt(s, 11, 8, 3.6, SILVER); mynt(s, 7, 11.5, 3.4, SILVER, 2.2, false); skuggaUnder(s, 3, 13, 14); });
-// fattig och rik som mynt: bara fyllningen (kanten och skuggan läggs på som för de andra intrycken)
-const MYNT_L = { g: 'skiffer1', h: 'skiffer3', v: 'ben3', G: 'skiffer2', r: 'rost2', R: 'rost3' };
-const FAT_KRYSS = punkter(s => { mynt(s, 7.5, 7.5, 5.6, SILVER); for (let i = 2; i <= 13; i++) { s(i, i, 'r'); s(i + 1, i, 'R'); s(15 - i, i, 'r'); s(16 - i, i, 'R'); } }, { kant: false });
-const FAT_FORBUD = punkter(s => { for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) { const d = Math.hypot(x - 7.5, y - 7.5); if (d > 5.1 && d < 6.9) s(x, y, d < 6 ? 'r' : 'R'); } mynt(s, 7.5, 7.5, 3.9, SILVER); for (let i = 3; i <= 12; i++) { s(i, i, 'r'); s(i + 1, i, 'r'); } }, { kant: false });
-const FAT_KLUVET = punkter(s => mynt(s, 7.5, 8, 5.2, SILVER), { kant: false }).map((rad, y) => { const c = 7 + ((y >> 1) % 2), t = [...rad], R = t.slice(c + 1); return [...t.slice(1, c + 1), '.', '.', ...R.slice(0, R.length - 1)].join(''); });
-const RIK_HOG = punkter(s => { for (const [x, y] of [[3, 12], [7, 12.5], [11, 12], [14, 13], [5, 10], [9, 10], [12, 9.5], [7, 7.5], [10, 7], [8.5, 4.8]]) mynt(s, x, y, 2.6, SILVER, 1.5, false); }, { kant: false });
-const RIK_STAPLAR = punkter(s => { for (const [x0, n] of [[3, 3], [8, 5], [13, 2]]) for (let i = 0; i < n; i++) { const cy = 13 - i * 2; for (let x = x0 - 2; x <= x0 + 2; x++) { s(x, cy + 1, x === x0 - 2 ? 'h' : 'g'); } mynt(s, x0, cy, 2.5, SILVER, 1.2, false); } }, { kant: false });
-const RIK_PUNG_SILVER = punkter(s => { klot(s, 7, 9, 5.2, ['b', 'a', 'w'], 4.6); for (const [x, y] of [[6, 4], [7, 4], [8, 4], [7, 3]]) s(x, y, 'a'); for (let x = 5; x <= 9; x++) s(x, 5, 'c'); s(5, 2, 'c'); s(9, 2, 'c'); mynt(s, 13, 13, 2.4, SILVER, 1.4, false); mynt(s, 10.5, 14.5, 2.2, SILVER, 1.1, false); }, { kant: false });
-// ärterna (Björn: "Prova tre nya symboler")
-const ART_L = { g: 'oliv1', G: 'oliv2', L: 'oliv3', w: 'ben2', b: 'jord1', z: 'skugga' };
-const ART_HOG = punkter(s => { for (const [x, y] of [[3, 12], [6.5, 12.3], [10, 12], [13.2, 12.3], [4.8, 9.2], [8.3, 9], [11.8, 9.3], [6.5, 6.2], [10, 6.2], [8.2, 3.4]]) klot(s, x, y, 1.75, ['g', 'G', 'L']); skuggaUnder(s, 2, 14, 14); });
-const ART_SKIDA = punkter(s => { klot(s, 8, 8.5, 6.6, ['g', 'g', 'G'], 3.3); klot(s, 8.3, 8.2, 5.4, ['w', 'w', 'w'], 2.1); for (const x of [3.8, 6.3, 8.8, 11.3]) klot(s, x, 8.3, 1.25, ['g', 'G', 'L']); s(0, 8, 'b'); s(1, 8, 'b'); s(0, 7, 'b'); skuggaUnder(s, 3, 13, 13); });
-const ART_KVIST = punkter(s => { linje(s, [[2, 15], [5, 10], [8, 6], [11, 2]], 'g'); klot(s, 4, 7, 2.6, ['g', 'G', 'L'], 1.5); klot(s, 11, 7, 2.4, ['g', 'G', 'L'], 1.4); klot(s, 7.5, 12, 1.5, ['g', 'G', 'L'], 3.2); klot(s, 12.3, 11.8, 1.4, ['g', 'G', 'L'], 3); s(7, 8, 'g'); s(12, 8, 'g'); s(11, 1, 'G'); s(12, 1, 'G'); s(13, 2, 'G'); s(13, 3, 'G'); s(12, 3, 'G'); });
 // torkan efter version 1 (Björn: "Gör tre nya versioner baserat på 1"): en het sol över sprucken mark
 function torka({ sol, varme = false, tuva = false, sprickor }) {
   return punkter(s => {
@@ -1865,29 +886,6 @@ function ritaBrandSammanhang(B, P, rader) {
   for (const [tx, ty] of [[16, 32], [32, 16], [32, 32], [48, 32], [64, 16]]) ritaSprite(B, rader, { o: 'kol0', ...BR_L }, tx, ty);
 }
 const BRAND_M = rader => ({ w: 96, h: 48, rita: (B, P) => ritaBrandSammanhang(B, P, rader) });
-const vrid90 = r => [...r[0]].map((_, x) => r.map(rad => rad[x]).reverse().join(''));
-// steg 4.5.4.7 och 4.5.4.17: välbärgad (intryck) och handslaget när ett byte är godkänt, tre versioner var
-const BYTE_L = { o: 'kol0', e: 'jord3', c: 'jord2', b: 'jord1', R: 'rost1', L: 'oliv2', G: 'skiffer2', h: 'skiffer3', v: 'ben3', z: 'skugga' };
-const HS_RAKT = ["................", "................", "................", "................", "......oooo......", "oo...oeeeeo...oo", "RRo.oeececeo.oLL", "RRRoeeeeeceeoLLL", "RRRReeceeeeeLLLL", "RRRoeeeeeeeeoLLL", "RRo.oeeeeeeo.oLL", "oo...oooooo..zoo", "......zzzzzz....", "................", "................", "................"];
-const HS_SNETT = ["................", "................", "................", ".....oooooo.....", "....oeeeeeeo....", "...oeecececeo...", "...oeeeeeeeeo...", "..oReeeeeeeeLo..", ".oRRoeeeeeeoLLo.", ".oRRRooooooLLLo.", "oRRRo.zzzz.oLLLo", "oRRo........oLLo", "oRo..........oLo", ".o............o.", "................", "................"];
-const HS_MYNT = [".......oo.......", "......oGho......", "......ohvo......", ".......oo.......", "................", "oo...oooooo...oo", "RRo.oeeceeeo.oLL", "RRRoeeeeeceeoLLL", "RRRReeceeeeeLLLL", "RRRoeeeeeeeeoLLL", "RRo.oeeeeeeo.oLL", "oo...oooooo..zoo", "......zzzzzz....", "................", "................", "................"];
-const VB_PUNG = ["................", "................", "......oo........", ".....oLLo.......", "....oobboo......", "...occccccoo....", "..occcbcccco....", "..occccccbco....", ".occbccccccco...", ".occccccbccco...", ".occcccccccco.oo", "..occccccccooGho", "...oooooooooGhho", "....zzzzzzz.oooz", "............zzz.", "................"];
-const VB_STAPEL = ["................", "................", "................", "................", ".....oooooo.....", "....oGhhhhGo....", "....oooooooo....", "....oGhhhhGo....", "....oooooooo....", "....oGhhhhGoz...", "....oooooooo....", "....oGhhhhGoz...", ".....oooooooz...", "......zzzzzz....", "................", "................"];
-const VB_MYNT = ["................", "......oooo......", ".....oGhhGo.....", ".....oohhoo.....", ".....oLLLLo.....", "....obbbbbbo....", "...obbcbbbbbo...", "..obbbbbbcbbbo..", "..obcbbbbbbbbo..", "..obbbbbcbbbbo..", "..obbbbbbbbcbo..", "...obbbbbbbbo...", "....oooooooozz..", ".....zzzzzzzz...", "................", "................"];
-// pratbubblan (steg 4.5.6.9): ljus och rundad med en spets ner mot den som pratar, 12 × 15 punkter med symbolen (8 × 8) i
-// mitten. Bredvid för jämförelse arbetets mörka ruta. Varje bild dubbelt så stor
-const PRAT_RAD = ['..oooooooo..', '.owwwwwwwwo.', 'owwwwwwwwwwo', 'owwwwwwwwwwo', 'owwwwwwwwwwo', 'owwwwwwwwwwo', 'owwwwwwwwwwo', 'owwwwwwwwwwo',
-  'owwwwwwwwwwo', 'owwwwwwwwwwo', '.owwwwwwwwo.', '..oowwoooo..', '...owo......', '...oo.......', '...o........'];
-const RUTA_RAD = ['.kkkkkkkkkk.', 'kkkkkkkkkkkk', 'kkkkkkkkkkkk', 'kkkkkkkkkkkk', 'kkkkkkkkkkkk', 'kkkkkkkkkkkk', 'kkkkkkkkkkkk', 'kkkkkkkkkkkk', 'kkkkkkkkkkkk', 'kkkkkkkkkkkk', 'kkkkkkkkkkkk', '.kkkkkkkkkk.'];
-const PRAT_L = { o: 'kol0', w: 'ben3', k: 'kol1' };
-function ritaPrat(B, x0, y0, rader, ikon) {
-  const L = Bild(12, 15, B.P); ritaSprite(L, rader, PRAT_L, 0, 0);
-  if (rader === PRAT_RAD) ritaSprite(L, IKONER.PIX[ikon], { w: 'kol0', a: 'skiffer1' }, 2, 2); else ritaIkon(L, ikon, 2, 2); // i bubblan ritas symbolen mörk
-  for (let y = 0; y < 30; y++) for (let x = 0; x < 24; x++) { const v = L.px[(y >> 1) * 12 + (x >> 1)]; if (v >= 0) B.satt(x0 + x, y0 + y, v); }
-}
-const PRAT_PAR = (bubbla) => ({ w: 3 * 64 + 4, h: 34, rita: (B, P) => ['a_prata', 'a_tra', 'a_fiska'].forEach((k, i) => {
-  ritaPrat(B, 2 + i * 64, 2, bubbla ? PRAT_RAD : RUTA_RAD, k); ritaPrat(B, 30 + i * 64, 2, RUTA_RAD, k);
-}) });
 // dragkampen (steg 4.5.6.10): två lag på en rad på var sin sida om ett streck med repet mellan sig, 16 punkter per ruta,
 // en ruta mellan spelarna. v väljer hur repet, strecket och lagen ser ut
 function ritaDragkamp(B, v) {
@@ -1902,27 +900,21 @@ function ritaDragkamp(B, v) {
   const tx = mx + glid;
   if (v === 2) { B.satt(tx, ry(tx) - 1, P.i('jord', 3)); B.satt(tx - 1, ry(tx), P.i('jord', 3)); B.satt(tx + 1, ry(tx), P.i('jord', 3)); B.satt(tx, ry(tx) + 2, P.i('jord', 1)); } // en knut
   else for (let y = -1; y <= 3; y++) { B.satt(tx, ry(tx) + y, P.i('rost', 2)); B.satt(tx + 1, ry(tx) + y, P.i('rost', 1)); } // tofsen
-  xs.forEach((x, i) => {
-    const vanster = i < 3, luta = vanster ? -2 : 2, lag = v === 1 ? (vanster ? 'rost' : 'skiffer') : 'jord';
-    const hy = my - 16, kx = x + luta; // huvudet lutar bakåt, fötterna framåt
-    for (let y = 0; y < 12; y++) for (let dx = -3; dx <= 3; dx++) { const fx = Math.round(x + luta * (1 - y / 12) + dx); B.satt(fx, hy + 5 + y, y < 12 && (dx === -3 || dx === 3) ? P.i('kol', 0) : P.i(lag, dx < 0 ? 1 : 2)); } // kroppen
-    for (let dy = 0; dy < 5; dy++) for (let dx = -2; dx <= 2; dx++) B.satt(kx + dx, hy + dy, Math.abs(dx) === 2 ? P.i('kol', 0) : P.i('senap', dy === 0 ? 1 : 2)); // huvudet
-    for (let dx = -2; dx <= 2; dx++) B.satt(kx + dx, hy - 1, P.i('kol', 0)); // håret
-    for (let dx = -2; dx <= 2; dx++) if (dx) B.satt(x + dx, my + 1, P.i('kol', 1)); // fötterna
-    for (let dx = -1; dx <= 1; dx++) B.satt(x + luta / 2 + dx + (vanster ? 3 : -3), ry(x), P.i('senap', 1)); // händerna på repet
-    for (let dx = -3; dx <= 3; dx++) B.morka(x + dx, my + 2); // skuggan
-  });
+  SPELARE_N = 0;
+  xs.forEach((x, i) => spelare(B, x, my + 1, i < 3 ? -1 : 1, i < 3 ? 'rost' : 'skiffer', 'framfor')); // båda lagen håller i repet
 }
 const DRAG_BILD = (v) => ({ w: 128, h: 40, rita: (B) => ritaDragkamp(B, v) });
 // de andra sporterna (steg 4.5.6.11), som dragkampen: gräs eller snö, figurer på en rad sedda från sidan, och det som kastas
 // i en båge. k är sporten och v förslaget
-function spelare(B, x, fot, luta, lag) {
-  const P = B.P, hy = fot - 17, kx = x + luta;
-  for (let y = 0; y < 12; y++) for (let dx = -3; dx <= 3; dx++) { const fx = Math.round(x + luta * (1 - y / 12) + dx); B.satt(fx, hy + 5 + y, dx === -3 || dx === 3 ? P.i('kol', 0) : P.i(lag, dx < 0 ? 1 : 2)); }
-  for (let dy = 0; dy < 5; dy++) for (let dx = -2; dx <= 2; dx++) B.satt(kx + dx, hy + dy, Math.abs(dx) === 2 ? P.i('kol', 0) : P.i('senap', dy === 0 ? 1 : 2));
-  for (let dx = -2; dx <= 2; dx++) B.satt(kx + dx, hy - 1, P.i('kol', 0));
-  for (let dx = -2; dx <= 2; dx++) if (dx) B.satt(x + dx, fot, P.i('kol', 1));
-  for (let dx = -3; dx <= 3; dx++) B.morka(x + dx, fot + 1);
+// en spelare: den vanliga kartfiguren (14 × 20 punkter, karaktärsgeneratorn i skapare.js) med fötterna på raden fot, vänd
+// åt höger eller vänster efter hur den lutar eller vilket lag den hör till. Personerna ritas som de brukar, inte på ett nytt
+// sätt för sporten (Björn efter v287); bara sportens saker är nya. Utan skaparen (innan den laddats) ritas inget
+let SPELARE_N = 0;
+function spelare(B, x, fot, luta, lag, arm = 'hanga', ben = 'sta') {
+  if (!window.BYBO) return;
+  const vast = luta > 0 || lag === 'skiffer', F = window.BYBO(1000 + (SPELARE_N++ % 40) * 7919, vast ? 'vast' : 'sida', ben, arm);
+  for (let y = 0; y < F.h; y++) for (let dx = 0; dx < F.w; dx++) { const v = F.px[y * F.w + dx]; if (v >= 0) B.satt(Math.round(x) - (F.w >> 1) + dx, fot - F.h + 1 + y, v); }
+  for (let dx = -3; dx <= 3; dx++) B.morka(Math.round(x) + dx + 1, fot + 1);
 }
 function bage(B, ax, ay, bx, by, h, n, ramp, ton) { // det som flyger, n prickar längs bågen (den sista störst)
   const P = B.P;
@@ -1965,62 +957,21 @@ function ritaSporten(B, k, v) {
     if (v === 1) for (const x of [10, 60, 108]) { B.satt(x, fot + 1, P.i('skiffer', 2)); B.satt(x + 1, fot + 1, P.i('skiffer', 1)); B.satt(x, fot + 2, P.i('skiffer', 1)); } // stenar som mål
     if (v === 2) for (let x = 0; x < W; x += 3) B.satt(x, fot + 4, P.i('jord', 1)); // en linje på planen
     spelare(B, 16, fot, -1, 'rost'); ritaIkon(B, 'slagtra', 18, fot - 20); // den som slår
-    [64, 88, 110].forEach((x, i) => spelare(B, x, fot - (i % 2 ? 3 : 0), i ? -3 : 3, 'skiffer')); // de som springer efter bollen
+    [64, 88, 110].forEach((x, i) => spelare(B, x, fot - (i % 2 ? 3 : 0), i ? -3 : 3, 'skiffer', i % 2 ? 'gang2' : 'gang1', i % 2 ? 'gang2' : 'gang1')); // de som springer efter bollen
     bage(B, 26, fot - 16, 78, fot - 4, 14, 7, 'jord', 2);
   }
 }
 const SPORT_BILD = (k, v) => ({ w: 128, h: 40, rita: (B) => ritaSporten(B, k, v) });
+const SPORT_JA = (k, namn, vad, text, komm) => ({ id: 'sport_' + k, namn, typ: 'janej', vad: 'Steg 4.5.6.11: ' + vad + ' ' + komm, versioner: [{ text: 'Version 1: ' + text, ...SPORT_BILD(k, 0) }] });
 const SPORT_VAL = (k, namn, vad, idag, texter) => ({ id: 'sport_' + k, namn, typ: 'tre', vad: 'Steg 4.5.6.11: ' + vad + ' Sedd från sidan i rätt storlek. I spelet nu: ' + idag,
   idag: SPORT_BILD(k, 0), idagText: 'Platshållaren i spelet är enklare: ' + idag, versioner: texter.map((text, v) => ({ text, ...SPORT_BILD(k, v) })) });
 const VAL = [
-  SPORT_VAL('brottning', 'Brottningen', 'två brottas i mitten och trycker mot varandra, och de andra står i en ring runt om och hejar. Ingen hamnar på marken.', 'två trycker mot varandra i mitten och de andra står runt om.', [
-    'Bara folket: brottarna i mitten och de som hejar med armarna i luften.',
-    'En ring av stenar på marken, och brottarna i var sin färg.',
-    'En trampad plan av jord där de brottas.']),
-  SPORT_VAL('kast', 'Kast mot målet', 'de står på en rad och kastar i tur och ordning mot målet en bit bort; det som kastas flyger i en båge och träffar eller missar.', 'målet (symbolen) och en grå prick som flyger i en båge.', [
-    'En sten flyger mot målet, och några stenar som missat ligger i gräset.',
-    'En pinne flyger, och pinnar som missat ligger runt målet.',
-    'Ett streck i marken som de kastar ifrån.']),
-  SPORT_VAL('snoboll', 'Snöbollskriget', 'två lag bakom var sin snövall kastar snöbollar på varandra.', 'två ljusa vallar och vita snöbollar som flyger mellan lagen.', [
-    'Låga vallar av snö.',
-    'Höga vallar av snöblock.',
-    'Rundade snöhögar.']),
-  SPORT_VAL('bollspel', 'Bollspelet', 'den som slår står i ena änden med slagträet, bollen flyger ut på planen och de andra springer efter den.', 'slagträet vid den som slår, en brun prick som flyger och bollen som ligger kvar där den landat.', [
-    'Bara slagträet, bollen i luften och de som springer.',
-    'Stenar på planen som mål.',
-    'En linje på planen.']),
-  { id: 'dragkamp', namn: 'Dragkampen', typ: 'tre', vad: 'Steg 4.5.6.10: dragkampen syns. Två lag står på en rad på var sin sida om ett streck med repet mellan sig och lutar sig bakåt, och hela raden glider fram och tillbaka med repet tills det ena laget dras över strecket. Sex spelare, en ruta mellan dem, i rätt storlek. I spelet nu: ett brunt rep spänt mellan lagen, ett mörkt streck i mitten och en röd tofs mitt på repet.',
-    idag: DRAG_BILD(0), idagText: 'Platshållaren i spelet nu (repet, strecket och tofsen).',
-    versioner: [
-      { text: 'Ett streck ristat i marken och en röd tofs mitt på repet, som visar vem som vinner.', ...DRAG_BILD(0) },
-      { text: 'Strecket är en rad stenar, och lagen har var sin färg på kläderna, rött och grått.', ...DRAG_BILD(1) },
-      { text: 'En fåra i marken som streck, repet hänger lite i mitten och har en knut i stället för tofsen.', ...DRAG_BILD(2) },
-    ] },
-  { id: 'pratbubbla', namn: 'Pratbubblan', typ: 'janej', vad: 'Steg 4.5.6.9: symbolen för vad man pratar om står i en pratbubbla, så att den inte ser ut som symbolen för vad någon arbetar med. Tre par: att prata, att prata om skogen och att prata om fisket. I varje par till vänster pratet, till höger arbetet. Dubbelt så stort som i spelet. I spelet nu: den nya bubblan.',
-    idag: PRAT_PAR(false), idagText: 'Förut: samma mörka ruta för pratet och arbetet.',
-    versioner: [{ text: 'En ljus, rundad bubbla med mörk kant och en spets ner mot den som pratar, och symbolen mörk i den. Kanten får relationens färg som förut (röd vid gräl, rosa vid kärlek).', ...PRAT_PAR(true) }] },
-
-  { id: 'ved', namn: 'Veden', typ: 'tre', vad: 'Ny symbol (steg 4.5.5.3), 16 × 16 punkter: veden är bränslet, vedträn som elden bränner (20 i en stack, 1 kg styck), i förrådet och lagret. Den ska synas skild från virket. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: platshållaren överst.',
-    idag: { w: 36, h: 36, rita: (B, P) => forstorad(B, 'ved', 2, 2) }, idagText: 'Platshållaren i spelet nu.',
-    versioner: [
-      { text: "En hög kluvna vedträn sedda från änden, tre nederst, två i mitten och ett överst, med ljus ved och mörk bark (som platshållaren).", ...LED_M(["................", "................", "................", "................", "......oooo......", ".....oWWwbo.....", "....oWWWwbao....", "...oooooooooo...", "..oWWwboovWwbo..", ".oWvWwbaoWWWwbo.", "oooooooooooooooo", "oWWwbooWvwbooWwo", "oWWWwboWWWwboWbo", "oooooooooooooooo", ".zzzzzzzzzzzzzz.", "................"], KULT_L) },
-      { text: "Tre kluvna vedträn på längden, staplade i ett travat lager, med ljus änd i ena hörnet.", ...LED_M(["................", "................", "................", "..oooooooooooo..", ".oeeeeeeeeeeewo.", ".obbbcbbbbcbbWo.", ".oooooooooooooo.", "oeeeeeeeeeeeewo.", "obbcbbbbbcbbbWo.", "oooooooooooooo..", ".oeeeeeeeeeeeewo", ".obbbbcbbbbcbbWo", ".oooooooooooooo.", "..zzzzzzzzzzzzz.", "................", "................"], KULT_L) },
-      { text: "En knippe vedträn sedda från änden, bunden med ett rep runt mitten.", ...LED_M(["................", "................", "................", "....oooooooo....", "...oWwboWWwbo...", "..oWvWbooWvWbo..", "..oooooooooooo..", ".oWwboWWwboWwbo.", ".oSSSSSSSSSSSSo.", ".oWvbooWvWboWvo.", ".oooooooooooooo.", "..oWWwbooWWwbo..", "...oooo..oooo...", "..zzzzzzzzzzzz..", "................", "................"], KULT_L) },
-    ] },
-  { id: 'virke', namn: 'Virket', typ: 'tre', vad: 'Ny sak (steg 4.5.5.3), 16 × 16 punkter: virket är kluvna stockar som stationerna och möblerna byggs av (2 i en stack, 10 kg styck), i förrådet och lagret. Det ska synas skilt från veden. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: platshållaren överst.',
-    idag: { w: 36, h: 36, rita: (B, P) => forstorad(B, 'virke', 2, 2) }, idagText: 'Platshållaren i spelet nu.',
-    versioner: [
-      { text: "En kluven stock på längden med en ljus klyvyta överst och mörk bark under (som platshållaren).", ...LED_M(["................", "................", "................", "..oooooooooooo..", ".ovWWWWWWWWWWwo.", "ovWWwWWWWWwWWwbo", "oWWWWWWwWWWWWcbo", "owWWWwWWWWWWWcbo", ".oooooooooooocbo", "..obbcbbbcbbbbbo", ".oabbbbcbbbbbbo.", "oaabbbbbbcbbbo..", "oabbcbbbbbbbbo..", ".oooooooooooo...", "..zzzzzzzzzzzz..", "................"], KULT_L) },
-      { text: "Två kluvna stockhalvor, den ena ovanpå den andra och lite förskjuten.", ...LED_M(["................", "................", ".oooooooooooo...", "ovWWWwWWWWWwbo..", "oWWwWWWWwWWWco..", "oooooooooooooo..", "..oooooooooooooo", "..ovWWWWwWWWWwbo", "..oWWwWWWWWwWWco", "..owWWWWWwWWWWco", "..oooooooooooooo", "..obbcbbbbcbbbbo", "..oabbbbbbbbcbbo", "..oooooooooooooo", "...zzzzzzzzzzzzz", "................"], KULT_L) },
-      { text: "En platt kluven planka med ljus yta och ådring, och en tunn kant av bark under.", ...LED_M(["................", "................", "................", "................", "oooooooooooooooo", "ovWWwwWWWWwwWWWo", "oWwwWWWWwwWWWwwo", "oWWWWwwWWWWWwwWo", "owwWWWWWwwWWWWwo", "oooooooooooooooo", "obbbbbbbbbbbbbbo", "oooooooooooooooo", ".zzzzzzzzzzzzzzz", "................", "................", "................"], KULT_L) },
-    ] },
-  { ...VARLD_VAL('silver', 'Silvret', 'Ny sak (steg 4.4.1.3), 16 × 16 punkter, i förrådet, i handlarens packning och i pratbubblan när handlaren säger sitt pris. Tre nya versioner: mynt. Din kommentar förra gången: ”Gör mynt”.'),
-    versioner: [
-      { text: 'Ett stort silvermynt med ett kors präglat i mitten.', ...LED_M(SILV_MYNT, KULT_L) },
-      { text: 'En stapel med fem mynt och ett mynt bredvid.', ...LED_M(SILV_STAPEL, KULT_L) },
-      { text: 'Tre mynt huller om buller, ett av dem på snedden.', ...LED_M(SILV_TRE, KULT_L) },
-    ] },
-  KULT_VAL('kruka', 'Lerkrukan', 'Ny pyntmöbel (steg 4.3.4), en ruta med 16 punkter, i rummet där ägaren sover. Samma bild blir symbolen för intrycket smakfull.', 'kruka'),
+  SPORT_JA('brottning', 'Brottningen', 'två brottas i mitten och trycker mot varandra, och de andra står i en ring runt om och hejar.', 'Bara folket: brottarna i mitten och de som hejar.', 'Din kommentar förra gången (du valde version 1): ”Personerna ska ritas som dem brukar inte göras om.”. Nu ritas personerna som de brukar på kartan, och bara sportens saker är nya.'),
+  SPORT_JA('kast', 'Kast mot målet', 'de står på en rad och kastar i tur och ordning mot målet en bit bort.', 'En sten flyger mot målet, och några stenar som missat ligger i gräset.', 'Din kommentar förra gången (du valde version 1): ”Personerna ska ritas som dem brukar inte göras om”. Nu ritas personerna som de brukar på kartan, och bara sportens saker är nya.'),
+  SPORT_JA('snoboll', 'Snöbollskriget', 'två lag bakom var sin snövall kastar snöbollar på varandra.', 'Låga vallar av snö.', 'Din kommentar förra gången (du valde version 1): ”Personerna ska ritas som dem brukar inte göras om”. Nu ritas personerna som de brukar på kartan, och bara sportens saker är nya.'),
+  SPORT_JA('bollspel', 'Bollspelet', 'den som slår står i ena änden med slagträet, bollen flyger ut på planen och de andra springer efter den.', 'Slagträet, bollen i luften och de som springer.', 'Din kommentar förra gången (du valde version 1): ”personerna ska ritas som dem brukar inte göras om”. Nu ritas personerna som de brukar på kartan, och bara sportens saker är nya.'),
+  { id: 'dragkamp', namn: 'Dragkampen', typ: 'janej', vad: 'Steg 4.5.6.10: dragkampen syns. Två lag på var sin sida om strecket håller i repet. Din kommentar förra gången (du valde version 1): ”Hur har du tänkt här? karaktärerna kan inte ritas på ett helt nytt sätt bara för att dom gör en sport. bara repet ska ha ett nytt utseende karaktärerna ska ritas på samma sätt som dem alltid gör”. Nu ritas personerna som de brukar på kartan, och bara sportens saker är nya.',
+    versioner: [{ text: 'Version 1: ett streck ristat i marken och en röd tofs mitt på repet. Folket är de vanliga kartfigurerna, med händerna framför sig på repet.', ...DRAG_BILD(0) }] },
   { id: 'brand', namn: 'Elden som brinner', vad: 'Ny bild (steg 3.8.5), 16 × 16 punkter (en ruta), på varje ruta som brinner i en eldsvåda eller skogsbrand. Nu i ett sammanhang: sex × tre rutor med gräs, två granar och en timmervägg nere till vänster. Fem rutor brinner: en av väggens rutor, tre rutor gräs och den nedre delen av den första granen; resten brinner inte. I spelet nu: version 1 (platshållare). Din kommentar förra gången: ”Jag måste se elden i ett sammanhang för att kunna avgöra”.', typ: 'tre',
     versioner: [
       { text: 'Tre lågor med gula kärnor över en svart, förkolnad botten.', ...BRAND_M(BR_TUNGOR) },
@@ -2045,101 +996,83 @@ const VAL = [
       { text: 'En bajshög med stanken som stiger.', ...SYM8_M(TOA_STANK, TOA_L) },
       { text: 'En människa på huk med en liten hög bakom sig.', ...SYM8_M(TOA_HUKHOG, TOA_L) },
     ] },
-  { id: 'i_fattig', namn: 'Fattig (intryck)', vad: 'Ny symbol (steg 3.10.5), 16 × 16 punkter, i personrutans Rykten när byn tycker att någon är fattig (äger mycket mindre än de andra). Tre nya versioner med mynt. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: den tomma skålen (platshållare), längst till vänster. Din kommentar förra gången: ”Gör tre nya versioner. Prova ett överstruket mynt”.', typ: 'tre',
-    idag: IK_IDAG('fattig'),
+  { id: 'a_smyga', namn: 'Att smyga', vad: 'Ny symbol över huvudet (Björn efter v159), 8 × 8 punkter som de andra handlingarna: jägaren smyger fram mot en kanin. Tre helt nya versioner. Din kommentar förra gången: ”Gör tre nya”. I spelet nu: förra version 1 (platshållare).', typ: 'tre',
     versioner: [
-      { text: 'Ett silvermynt med ett rött kryss över.', ...IK_NY(FAT_KRYSS, MYNT_L) },
-      { text: 'Ett silvermynt i en röd ring med ett streck över, som ett förbud.', ...IK_NY(FAT_FORBUD, MYNT_L) },
-      { text: 'Ett mynt som är kluvet i två halvor.', ...IK_NY(FAT_KLUVET, MYNT_L) },
+      { text: 'Två fotspår på tå, ett framför det andra.', ...SYM8_M(SMYG_SPAR, AKT_L) },
+      { text: 'En människa som kryper fram lågt på marken.', ...SYM8_M(SMYG_KRYP, AKT_L) },
+      { text: 'En människa på tå med långa försiktiga steg, lutad framåt.', ...SYM8_M(SMYG_TA, AKT_L) },
     ] },
-  { id: 'i_rik', namn: 'Rik (intryck)', vad: 'Ny symbol (steg 3.10.5), 16 × 16 punkter, i personrutans Rykten när byn tycker att någon är rik (äger mycket mer än de andra), och i invånarlistan bredvid förmögenheten. Dina tre förra versioner är kvar som 1–3, och tre med mynt har kommit till som 4–6. I spelet nu: korgen med varor (platshållare), längst till vänster. Din kommentar förra gången: ”Prova ett mynt. Eller flera mynt. Men behåll dessa tre också”.', typ: 'tre',
-    idag: IK_IDAG('rik'),
-    versioner: [
-      { text: 'En full skinnpung, knuten med ett snöre, och bärnsten som rullar ut.', ...IK_NY(RIK_PUNG, { a: 'jord2', b: 'jord1', w: 'jord3', c: 'senap2', y: 'senap3' }) },
-      { text: 'En hög med skinn i olika färger.', ...IK_NY(RIK_SKINN, { a: 'ben2', b: 'jord3', c: 'rost2', d: 'skiffer2', e: 'jord1' }) },
-      { text: 'Ett halsband av bärnsten med en tand i mitten.', ...IK_NY(RIK_HALSBAND, { c: 'jord1', y: 'senap3', Y: 'senap2', w: 'ben3' }) },
-      { text: 'En hög med silvermynt.', ...IK_NY(RIK_HOG, MYNT_L) },
-      { text: 'Tre staplar med mynt, den mittersta högst.', ...IK_NY(RIK_STAPLAR, MYNT_L) },
-      { text: 'En full skinnpung med två silvermynt som rullat ut.', ...IK_NY(RIK_PUNG_SILVER, { ...MYNT_L, a: 'jord2', b: 'jord1', w: 'jord3', c: 'senap2' }) },
-    ] },
-  { id: 'g_arter', namn: 'Ärter', vad: 'Ny symbol (steg 3.10.23.8), 16 × 16 punkter: ärterna som skördas på fälten och plockas vilda, i förrådet och det man bär. De vilda ärterna på kartan har kvar sin symbol. Tre nya symboler. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: skidorna (platshållare). Din kommentar förra gången: ”Prova tre nya symboler”.', typ: 'tre',
-    versioner: [
-      { text: 'En hög med runda gröna ärtor.', ...LED_M(ART_HOG, ART_L) },
-      { text: 'En öppen skida på tvären med fyra ärtor i.', ...LED_M(ART_SKIDA, ART_L) },
-      { text: 'En kvist med två blad, en klänge och två skidor som hänger.', ...LED_M(ART_KVIST, ART_L) },
-    ] },
-  { id: 'a_smyga', namn: 'Att smyga', vad: 'Ny symbol över huvudet (Björn efter v159), 8 × 8 punkter som de andra handlingarna: jägaren smyger fram mot en kanin. Förra version 2 kvar som version 1, och två nya efter din kommentar. Din kommentar förra gången: ”behåll version 2 och gör två helt nya alternativ”. I spelet nu: förra version 1 (platshållare).', typ: 'tre',
-    versioner: [
-      { text: 'En människa som hukar sig framåt (förra version 2).', ...SYM8_M(SMYG_HUK, AKT_L) },
-      { text: 'Två ögon som tittar fram ur en buske.', ...SYM8_M(SMYG_BUSKE, AKT_L) },
-      { text: 'Ett huvud som sticker upp över gräset.', ...SYM8_M(SMYG_GRAS, AKT_L) },
-    ] },
-  { id: 'a_sikta', namn: 'Att sikta', vad: 'Ny symbol över huvudet (Björn efter v159), 8 × 8 punkter: jägaren har stannat och siktar innan hen kastar. Tre nya versioner efter din kommentar, en av dem med pilbåge. Din kommentar förra gången: ”Gör tre nya versioner. En pilbåge version”. I spelet nu: förra version 1 (platshållare).', typ: 'tre',
-    versioner: [
-      { text: 'En spänd pilbåge med pilen redo.', ...SYM8_M(SIKTA_BAGE, AKT_L) },
-      { text: 'En måltavla: ringar runt en mörk mitt.', ...SYM8_M(SIKTA_MAL, AKT_L) },
-      { text: 'En människa på knä med spjutet framåt.', ...SYM8_M(SIKTA_KNA, AKT_L) },
-    ] },
-  { id: 'grill', namn: 'Grillen', vad: 'Station, tre rutor (steg 3.6.7). Samma tre varianter utan mörk kant, bara med skuggan på marken. I spelet nu: grillen till vänster. Din kommentar förra gången: ”Jag vill inte att den har konturer”.', typ: 'tre',
+  { id: 'a_sikta', namn: 'Att sikta', vad: 'Ny symbol över huvudet (Björn efter v159), 8 × 8 punkter: jägaren har stannat och siktar innan hen kastar. Version 1, pilbågen, ritad om utan att vara spänd. Din kommentar förra gången: ”version 1 fast att den inte är spänd”. I spelet nu: förra version 1 (platshållare).', typ: 'janej',
+    versioner: [{ text: 'Pilbågen snett, med rak sträng och pilen lagd mot den, inte spänd.', ...SYM8_M(SIKTA_BAGE, AKT_L) }] },
+  { id: 'grill', namn: 'Grillen', vad: 'Station, tre rutor (steg 3.6.7), utan mörk kant, bara med skuggan på marken. Förra gångens version 1 och 3, nu med spettet i trä. I spelet nu: grillen till vänster. Din kommentar förra gången: ”ettan och trean är helt okej men gör inte spättet vitt”.', typ: 'tre',
     idag: { w: 52, h: 36, rita: (B, P) => forstorad(B, 'grill_karta', 2, 2) }, idagText: 'Grillen som den ser ut i spelet nu.',
     versioner: [
-      { text: 'Två klykor med spettet i gaffeln och en vev i änden.', w: 52, h: 36, rita: (B, P) => ritaSprite(B, grillStil('klyka', false), GRILL_L, 2, 2) },
-      { text: 'Två kryss av käppar som står i stenar, med spettet i krysset.', w: 52, h: 36, rita: (B, P) => ritaSprite(B, grillStil('kors', false), GRILL_L, 2, 2) },
-      { text: 'Två raka stolpar i stenhögar, med spettet surrat med rep och en krok för grytan.', w: 52, h: 36, rita: (B, P) => ritaSprite(B, grillStil('rep', false), GRILL_L, 2, 2) },
+      { text: 'Två klykor med spettet i gaffeln och en vev i änden (förra version 1).', w: 52, h: 36, rita: (B, P) => ritaSprite(B, grillStil('klyka', false), GRILL_L, 2, 2) },
+      { text: 'Två raka stolpar i stenhögar, med spettet surrat med rep och en krok för grytan (förra version 3).', w: 52, h: 36, rita: (B, P) => ritaSprite(B, grillStil('rep', false), GRILL_L, 2, 2) },
     ] },
-  { id: 'scen_v', namn: 'Scenen vriden', vad: 'Scenen du valde (version 1), vriden ett kvarts varv medurs, för när scenen står på höjden: 48 × 32 punkter blir 32 × 48.', typ: 'janej',
+  { id: 'scen_v', namn: 'Scenen på höjden', vad: 'Scenen du valde (version 1), för när den står på höjden: 26 × 50 punkter. Ritad på nytt i stället för vriden: stockarna går på längden, kanten av hela stockar är fortfarande framtill (nedtill, som allt på kartan) och de två trappstegen sitter nu framtill (nedtill) i mitten, små som på scenen på bredden, i stället för att sticka ut till vänster. Din kommentar förra gången: ”Det är ett konstig utstick på mitten som inte finns på scenen på bredden”.', typ: 'janej',
     idag: { w: 52, h: 36, rita: (B, P) => ritaSprite(B, KULT.scen[0].rader, KULT_L, 2, 2) }, idagText: 'Scenen som du valde, på bredden.',
-    versioner: [{ text: 'Samma scen på höjden: trappstegen till vänster.', w: 36, h: 52, rita: (B, P) => ritaSprite(B, vrid90(KULT.scen[0].rader), KULT_L, 2, 2) }] },
+    versioner: [{ text: 'Scenen på höjden, med kanten och de två trappstegen framtill, som på bredden.', w: 30, h: 54, rita: (B, P) => ritaSprite(B, SCEN_HOJD, KULT_L, 2, 2) }] },
   { id: 'slaktbank', namn: 'Slaktbänken', vad: 'Station, tre rutor. Version 1 som du valde, med benen flyttade efter din kommentar.', typ: 'janej',
     idag: { w: 52, h: 28, rita: (B, P) => ritaSlakt(B, 2, 2, P, 1) }, idagText: 'Version 1 som du valde.',
     versioner: [{ text: 'Benen står i bordets fyra hörn: de främre längst ut i ändarna, de bakre lite innanför och kortare, som om de står längre bort.', w: 52, h: 28, rita: (B, P) => ritaSlakt(B, 2, 2, P, 1, true) }] },
   { id: 'slojdbank', namn: 'Slöjdbänken', vad: 'Station, två rutor. Omritad med 16 punkter per ruta.', typ: 'janej',
     idag: { w: 36, h: 36, rita: (B, P) => ritaSlojdbank(B, 2, 2, P) }, idagText: 'Förra versionen, som du sa nej till.',
     versioner: [{ text: 'Efter din kommentar: repet spänt rakt mellan stolparna, utan trådar som hänger ner.', w: 36, h: 36, rita: (B, P) => ritaSlojdbank(B, 2, 2, P, true) }] },
-  { id: 'portratt', namn: 'Porträtten', vad: 'Personens porträtt i personrutan, 64 × 64 punkter. Mindre schackrutiga efter din kommentar; alla fem syns under Folket ovanför.', typ: 'janej',
-    idag: { w: 64, h: 64, kol: true, rita: (B, P) => { const R = ritaPortratt(P, PERSONER[0], 64, true); B.px.set(R.px); } }, idagText: 'Förra versionen, som du sa nej till.',
-    versioner: [{ text: 'Ljuset i hela band utan rutmönster, och håret och skägget med strån i klungor längs växtriktningen.', w: 64, h: 64, kol: true, rita: (B, P) => { const R = ritaPortratt(P, PERSONER[0]); B.px.set(R.px); } }] },
   { id: 'kista', namn: 'Kistan', vad: 'Station, en ruta. Omritad med 16 punkter per ruta.', typ: 'janej',
     idag: { w: 20, h: 20, rita: (B, P) => forstorad(B, 'kista_karta', 2, 2) },
     versioner: [{ text: 'Lock med ljus kant, järnband och lås i senap.', w: 20, h: 20, rita: (B, P) => ritaKista(B, 2, 2, P) }] },
   { id: 'lagereld', namn: 'Lägerelden', vad: 'Lägerelden i pixlar. I dag ritas den med cirklar.', typ: 'janej',
     versioner: [{ text: 'Stenring i skiffer, ved, aska och lågor med glöd längst ner.', w: 28, h: 26, rita: (B, P) => ritaEld(B, 14, 15, P, { tid: 'dag' }) }] },
-  { id: 'symboler', namn: 'Symbolerna', vad: 'De första åtta pixelsymbolerna, 8 × 8 punkter, i stället för emojier.', typ: 'janej',
-    idag: { text: SYMBOLER.map(s => s.ers).join(' ') },
-    versioner: [{ text: SYMBOLER.map(s => s.namn).join(', ') + '.', w: SYMBOLER.length * 10 + 2, h: 12, kol: true, rita: (B, P) => SYMBOLER.forEach((s, i) => ritaSprite(B, s.p, s.l, 2 + i * 10, 2)) }] },
-
-  { id: 'handslag', namn: 'Handslaget', vad: 'Ny symbol (steg 4.5.4.17), 16 × 16 punkter: syns ett par sekunder över båda när ett byte är godkänt, och är knappen vid raden i loggen och bland en persons byten som visar hela bytet. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: platshållaren överst (två händer som möts).', typ: 'tre',
-    idag: { w: 36, h: 36, rita: (B, P) => forstorad(B, 'handslag', 2, 2) }, idagText: 'Platshållaren i spelet nu.',
-    versioner: [
-      { text: 'Två händer som möts rakt framifrån, med en rostfärgad ärm till vänster och en olivgrön till höger.', ...LED_M(HS_RAKT, BYTE_L) },
-      { text: 'Två armar som kommer snett nedifrån och möts i ett handslag.', ...LED_M(HS_SNETT, BYTE_L) },
-      { text: 'Handslaget med ett silvermynt ovanför: ett byte.', ...LED_M(HS_MYNT, BYTE_L) },
-    ] },
-  { id: 'i_valbargad', namn: 'Välbärgad (intryck)', vad: 'Ny symbol (steg 4.5.4.7), 16 × 16 punkter, i personrutans Rykten när byn tycker att någon har det gott ställt (mellan rik och fattig). Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: platshållaren överst (en pung med lite i).', typ: 'tre',
-    idag: { w: 36, h: 36, rita: (B, P) => forstorad(B, 'i_valbargad', 2, 2) }, idagText: 'Platshållaren i spelet nu.',
-    versioner: [
-      { text: 'En knuten pung med två silvermynt bredvid.', ...LED_M(VB_PUNG, BYTE_L) },
-      { text: 'En liten stapel med fyra silvermynt.', ...LED_M(VB_STAPEL, BYTE_L) },
-      { text: 'En pung med ett silvermynt som sticker upp ur öppningen.', ...LED_M(VB_MYNT, BYTE_L) },
-    ] },
 ];
 // Björns val som är bestämda men inte inbyggda i spelet: de visas under Valt med den valda versionen (0 = förut-versionen
 // behålls) och steget där de byggs in. När saken är inbyggd tas raden bort här och ur VAL, och dess dokument i samlingen 'val'
 const BESLUT = {
-  kista: { val: 1, steg: '5.1.8' }, lagereld: { val: 1, steg: '5.1.8' }, symboler: { val: 1, steg: '5.1.8' }, slojdbank: { val: 1, steg: '5.1.8' },
-  slaktbank: { val: 1, steg: '5.1.8' }, kruka: { val: 1, text: 'Inbyggd i spelet (v249). Alla fyra bilderna sparas till ett annat sammanhang.' }, portratt: { val: 1, steg: '5.2.3', text: 'Sparas som förebild till karaktärsgeneratorn.' },
+  kista: { val: 1, steg: '5.1.2.2' }, lagereld: { val: 1, steg: '5.1.2.2' }, slojdbank: { val: 1, steg: '5.1.2.2' },
+  slaktbank: { val: 1, steg: '5.1.2.2' }, brand: { val: 2, steg: '5.1.2.2' }, tornado: { val: 3, steg: '5.1.2.2' },
+  m_torka: { val: 1, steg: '5.3.2.1' }, a_toa: { val: 2, steg: '5.3.2.1' },
+  grill: { val: 2, steg: '5.1.2.2' }, a_sikta: { val: 1, steg: '5.3.2.1' }, a_smyga: { val: 3, steg: '5.3.2.1' }, dragkamp: { val: 1, steg: '5.1.2' },
+  sport_brottning: { val: 1, steg: '5.1.2' }, sport_kast: { val: 1, steg: '5.1.2' }, sport_snoboll: { val: 1, steg: '5.1.2' }, sport_bollspel: { val: 1, steg: '5.1.2' },
+  scen_v: { val: 1, steg: '5.1.2.2' },
+  q_tro: { val: 1, steg: '5.3.3.1' }, q_person: { val: 1, steg: '5.3.3.1' }, q_grannar: { val: 1, steg: '5.3.3.1' },
+  djur_varg: { val: 1, text: 'Smal och högbent, med den raka yviga svansen och det argare utseendet. Byggs in i steg 5.1.11.' },
+  djur_kanin: { val: 2, text: 'Version 2 och version 3 används båda: varje hare får den ena eller den andra, slumpat ur dess id. Byggs in i steg 5.1.11.' },
+  g_runsten: { val: 1, steg: '5.3.3.1' }, g_band: { val: 1, steg: '5.3.3.1' }, g_vag: { val: 1, steg: '5.3.1.2' },
+  g_horn: { val: 1, text: 'Ormen. Ring med blad och Dubbel ögla sparas (i gui.json) om du ångrar dig. Byggs in i steg 5.3.1.4.' },
+  v_framsteg: { val: 1, steg: '5.3.2.2' }, v_ring: { val: 1, steg: '5.3.2.2' }, v_tart: { val: 1, steg: '5.3.2.2' },
 };
-const VALT = VAL.filter(s => BESLUT[s.id]);
-for (const s of VALT) VAL.splice(VAL.indexOf(s), 1);
+// räknas när valdelen ritas, så att korten från filerna efter denna (mark.js, djur.js, gui.js) också kommer med
+const VALT = [];
+function delaVal() { for (const s of VAL.filter(s => BESLUT[s.id])) { VALT.push(s); VAL.splice(VAL.indexOf(s), 1); } }
 // en version ritas stor och i kartans storlek (två skärmpunkter per punkt, som i spelet)
+// en animation (steg 5.2.4.8): rutor är hur många bilder, takt millisekunder per bild och rita(B, P, ruta) ritar en av dem.
+// En klocka för hela sidan byter bild på alla kort som syns; kort som byggts om (inte längre på sidan) släpps
+const ANIM = [];
+setInterval(() => {
+  const nu = performance.now();
+  for (let i = ANIM.length - 1; i >= 0; i--) {
+    const a = ANIM[i]; if (!a.c[0].isConnected) { if (a.sedd) ANIM.splice(i, 1); continue; }
+    a.sedd = true; if (nu - a.t < (a.v.takt || 250)) continue;
+    a.t = nu; a.ruta = (a.ruta + 1) % a.v.rutor; const B = a.ny(); a.v.rita(B, a.P, a.ruta); a.c.forEach(c => tillCanvas(B, c, 0));
+  }
+}, 40);
 function valBild(v, P) {
-  const B = v.kol ? kolBild(v.w, v.h, P) : markBild(v.w, v.h, P);
-  v.rita(B, P);
+  const ny = () => v.kol ? kolBild(v.w, v.h, P) : markBild(v.w, v.h, P), B = ny();
+  v.rita(B, P, 0);
+  const anim = c => { if (v.rutor > 1) ANIM.push({ v, P, ny, c, ruta: 0, t: performance.now() }); };
+  if (v.stor) { // en stor scen (marken och träden, 5.2.4.5): en bild över hela kortets bredd, i jämna skalor
+    const c = document.createElement('canvas'); tillCanvas(B, c, 0); c.className = 'scen'; c.style.width = v.w * 3 + 'px'; c.setAttribute('aria-label', 'Scenen');
+    const d = document.createElement('div'); d.className = 'bilder'; d.append(c);
+    const ut = [c];
+    if (v.liten) { const l = document.createElement('canvas'); tillCanvas(B, l, 0); l.style.width = v.w + 'px'; l.setAttribute('aria-label', 'I kartans storlek'); d.append(l); ut.push(l); }
+    anim(ut); return d;
+  }
   const stor = document.createElement('canvas'), liten = document.createElement('canvas');
   tillCanvas(B, stor, 0); tillCanvas(B, liten, 0);
   const s = Math.max(2, Math.min(8, Math.floor(260 / v.w)));
   stor.style.width = v.w * s + 'px'; liten.style.width = v.w * 2 + 'px';
   stor.setAttribute('aria-label', 'Stor'); liten.setAttribute('aria-label', 'I kartans storlek');
+  anim([stor, liten]);
   const d = document.createElement('div'); d.className = 'bilder'; d.append(stor, liten); return d;
 }
 // det valda, med versionen Björn valde och steget där det byggs in
@@ -2160,7 +1093,7 @@ function byggVal(P) {
   const lista = $('#vallista'); lista.textContent = '';
   if (!VAL.length) { lista.innerHTML = '<p class="not">Inget att välja just nu.</p>'; return; }
   for (const s of VAL) {
-    const kort = document.createElement('article'); kort.className = 'valkort'; kort.id = 'val-' + s.id;
+    const kort = document.createElement('article'); kort.className = 'valkort' + (s.stor ? ' stor' : ''); kort.id = 'val-' + s.id;
     kort.innerHTML = `<header><span class="typ">${s.typ === 'tre' ? 'Ny sak · välj en av ' + (['', 'en', 'två', 'tre', 'fyra', 'fem', 'sex', 'sju', 'åtta'][s.versioner.length] || s.versioner.length) : 'Görs om · ja eller nej'}</span><h3>${s.namn}</h3><p class="not">${s.vad}</p></header><div class="alternativ"></div><div class="svar" role="group" aria-label="Ditt val för ${s.namn}"></div><label>Kommentar: vad ska ändras?<textarea rows="3" placeholder="Till exempel: nej, gör locket mörkare och låset större"></textarea></label><div class="sparat" aria-live="polite"></div>`;
     const alt = kort.querySelector('.alternativ');
     if (s.idag) {
@@ -2220,27 +1153,16 @@ async function startaVal() {
   visaSvar();
 }
 function bygg() {
-  $('#folk').innerHTML = PERSONER.map((p, i) => `
-    <figure class="person">
-      <canvas id="por${i}" class="portratt" aria-label="Porträtt av ${p.namn}"></canvas>
-      <div class="pfig"><canvas id="fig${i}" aria-label="${p.namn} på kartan"></canvas><figcaption><b>${p.namn}</b>${p.text}</figcaption></div>
-    </figure>`).join('');
-  $('#symboler').innerHTML = SYMBOLER.map((s, i) => `<figure><canvas id="sym${i}" width="8" height="8" aria-label="${s.namn}"></canvas><figcaption><em>${s.ers}</em>${s.namn}</figcaption></figure>`).join('');
   document.addEventListener('click', e => {
     const b = e.target.closest('button[data-tid]'); if (!b) return;
     lage.tid = b.dataset.tid; ritaHuvud();
   });
-  ritaIdag($('#idag'));
-  ritaForslag($('#forslag'), PAL);
   ritaHuvud();
-  ritaFolket(PAL);
-  ritaBankerna(PAL);
   ritaPalett(PAL);
   ritaPanel(PAL);
-  SYMBOLER.forEach((s, i) => ritaSymbol($('#sym' + i), s, PAL));
-  byggValt(PAL);
-  byggVal(PAL);
-  startaVal();
+  // valdelen ritas när skaparen laddats, så att folket på korten är de vanliga kartfigurerna (window.BYBO)
+  const val = () => { delaVal(); byggValt(PAL); byggVal(PAL); startaVal(); };
+  if (document.readyState === 'loading') addEventListener('DOMContentLoaded', val); else val();
   addEventListener('resize', () => heltalsskala($('#huvud'), SC.W));
 }
 bygg();

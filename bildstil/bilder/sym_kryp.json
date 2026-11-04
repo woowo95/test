@@ -1,0 +1,24 @@
+{
+ "id": "sym_kryp",
+ "ritad": 6,
+ "av": "Claude",
+ "om": "Ritad av Claude utan förlaga, bara från texten: en människa på alla fyra från sidan, med båda armarna och benen.",
+ "w": 16,
+ "h": 13,
+ "rader": [
+  "............EEE.",
+  "...........EHHGE",
+  "...........EqqkE",
+  "...EEEEEEEEEqqpE",
+  "..EuuuutttttEEE.",
+  "..EtttttttttsE..",
+  "..EssEEEEEEssE..",
+  "..EGFE....EpEqE.",
+  "..EGFE....EpEqE.",
+  "..EGFE....EpEqE.",
+  "EEEEGE....EpEqE.",
+  "EGGGGE...EppEqqE",
+  "EEEEEE...EEEEEEE"
+ ],
+ "pal": {"E":"#3f2415","F":"#5e3c24","G":"#7d5b40","H":"#987e62","k":"#24201d","p":"#a0947d","q":"#bdb39b","s":"#742a01","t":"#a14808","u":"#bd753e"}
+}

@@ -1,0 +1,72 @@
+{
+ "id": "mun-4",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den är mest en tunn mun: en enda linje i rost och en kort ljus underläpp (bb) på mittlinjen, som i förebilden. Alla lägen är centrerade kring x = -1/0, håller sig inom rutan och har munlinjen på samma höjd (y = 0), så att det är samma mun som bara böjs efter humöret. De mörkare mungiporna (s) ger en mjuk övergång utan blanka fläckar. Version 2 har tänder och hudmörka giphörn, och den öppna munnen är bara en punkt hög, vilket passar sämre för en tunn mun. Version 3 är för bred, har lösa giphörn i glad och en arg mun i kol som bryter mot stilen. Det enda jag ändrade var att ta bort tomma rader längst ner (i glad, nöjd, lugn och ledsen). Punkterna är annars oförändrade.",
+ "bilder": {
+  "glad": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "s........s",
+    ".rr....rr.",
+    "...rrrr...",
+    "....bb...."
+   ]
+  },
+  "nojd": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "..........",
+    "s........s",
+    ".srrrrrrs.",
+    "....bb...."
+   ]
+  },
+  "lugn": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "..........",
+    "..........",
+    "ssrrrrrrss",
+    "....bb...."
+   ]
+  },
+  "ledsen": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "..........",
+    "..........",
+    "..rrrrrr..",
+    ".s......s.",
+    "....bb...."
+   ]
+  },
+  "arg": {
+   "x": -4,
+   "y": -2,
+   "rader": [
+    "........",
+    "........",
+    "srrrrrrs",
+    "r......r",
+    "...bb..."
+   ]
+  },
+  "oppen": {
+   "x": -4,
+   "y": -2,
+   "rader": [
+    "........",
+    "...ss...",
+    "..skks..",
+    "..rkkr..",
+    "...rr...",
+    "...bb..."
+   ]
+  }
+ }
+}

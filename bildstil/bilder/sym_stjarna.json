@@ -1,0 +1,32 @@
+{
+ "id": "sym_stjarna",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den fyller hela rutan, 16 × 16 punkter. Stjärnan har fem tydliga uddar och en sluten kontur i senap0, materialets mörkaste ton. Ljuset följer regeln: senap3 längs de vänstra och övre kanterna och senap1 på höger sida och nertill. Samma mättade guld och samma kraftiga silhuett finns hos förebildens fästen, så den hör ihop med svärden. Version 2 har kortare sidoarmar, vilket gör stjärnan smalare och mindre lätt att känna igen. Dess glanspunkt i ben3 bryter dessutom mot senapsfärgen. Version 1 är nästan likvärdig, men i version 3 löper axlarna mjukare in i armarna. En ändring: på högra benet, rad 14, har jag bytt en ljus senap2-punkt mot senap1. Då förblir skuggsidan nere till höger jämnt mörk utan en ensam ljus prick.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".......II.......",
+  "......ILJI......",
+  "......ILKI......",
+  ".....ILKKJI.....",
+  ".....ILKJJI.....",
+  "IIIIILKKKJJIIIII",
+  "ILLLLKKKKKJJJJJI",
+  ".ILLKKKLKKJKJJI.",
+  "..ILKKKKKKJJJI..",
+  "...IKKKKKJKJI...",
+  "...IKKKJKJJJI...",
+  "..ILKKJIIJKJJI..",
+  "..IKKJI..IJJJI..",
+  ".IKKJI....IJJJI.",
+  ".IKJI......IJJI.",
+  ".III........III."
+ ],
+ "pal": {
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f"
+ }
+}

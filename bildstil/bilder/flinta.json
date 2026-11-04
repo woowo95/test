@@ -1,0 +1,15 @@
+{
+ "id": "flinta",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Dess bottenrad sträcker sig ut till höger, precis som dagens bild, där knölen är bredast och mörkast nere till höger. Version 1 kapar det hörnet, och version 3 har en glans i ben3, som ligger för nära vitt och sticker ut för mycket bredvid förebildens dämpade ved. Färgerna i version 2 motsvarar dagens: mellantonen g blir skiffer3 (T), den mörka d blir skiffer2 och skiffer1 (S, R), och konturen är skiffer0. Den ljusa punkten G blir en enda glanspunkt i ben2 uppe till vänster, som den slagna, ljusare ytan. Ljuset faller från övre vänstra hörnet mot mörkt nere till höger. Inget behövde ändras.",
+ "w": 5,
+ "h": 4,
+ "rader": [
+  "..QQ.",
+  ".QqTQ",
+  "QTSRQ",
+  ".QQQQ"
+ ],
+ "pal": {"Q":"#233035","R":"#3e5156","S":"#61767a","T":"#8a9c9e","q":"#bdb39b"}
+}

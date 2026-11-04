@@ -1,0 +1,16 @@
+{
+ "id": "ved",
+ "ritad": 5,
+ "av": "Claude (förebilden), efter Björns svar",
+ "om": "Samma vedträ, men den kluvna änden är ljust gråbeige trä i stället för gul, med årsringen i jord3.",
+ "w": 10,
+ "h": 5,
+ "rader": [
+  ".EEEEEEEE.",
+  "EqpqHGHGGE",
+  "EpHpGFGFGE",
+  "EqppFFEFFE",
+  ".EEEEEEEE."
+ ],
+ "pal": {"E":"#3f2415","q":"#bdb39b","p":"#a0947d","H":"#987e62","G":"#7d5b40","F":"#5e3c24"}
+}

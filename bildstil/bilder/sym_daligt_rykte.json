@@ -1,0 +1,38 @@
+{
+ "id": "sym_daligt_rykte",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Hornen har en mörk kontur i kol0 och går i ben, ljusa till vänster (w, q) och mörkare till höger (p, o). Därför syns de både på den mörka och den ljusa panelen. I version 1 är hornkonturen ben0, och den försvinner nästan mot den ljusa bakgrunden. Ögonen i version 3 är spegelvända, med den gula glöden L mot mitten och sneda ögonbryn. Det ger det busiga ansiktet, och det läses som 😈 på en blick. I version 2 är ögonen olika, och i version 1 tittar båda åt samma håll. Ljuset faller rätt: rost3 sitter uppe till vänster och rost1 nere till höger, och konturen är rost0 runt hela huvudet. Bredden 16 och höjden 16 fyller rutan på samma sätt som de korsade svärden. Ändring: den ensamma mörka pricken (rost1) mitt i ansiktet på rad 10 blev rost2, så att ytan inte får en fläck. Allt annat är oförändrat.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "k..............k",
+  "kwk..........kok",
+  "kqpk........kpok",
+  ".kqpk.rrrr.kpok.",
+  "..kqpruuttsrpok.",
+  "..ruuuuttttssr..",
+  ".rukkttttttkksr.",
+  ".rutkkttttkktsr.",
+  ".rutLkttttkLtsr.",
+  ".rutttttttttssr.",
+  ".rtkttttttttksr.",
+  ".rstkwqkkqwktsr.",
+  "..rstkkkkkktsr..",
+  "..rssttttttssr..",
+  "...rsssttsssr...",
+  "....rrrrrrrr...."
+ ],
+ "pal": {
+  "L": "#d8b25f",
+  "k": "#24201d",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e",
+  "w": "#dad0bb"
+ }
+}

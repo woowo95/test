@@ -1,0 +1,21 @@
+{
+ "id": "artfron",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den är identisk med version 3, så valet mellan dem spelar ingen roll. Version 1 följer dagens bild: en rund grön ärta med mörk kontur, en ljus senapsglans uppe till vänster och mörkare oliv nere till höger. Ljuset stämmer med guiden. Konturen är oliv0 i stället för den svarta kol0 som dagens bild har, och det är vad guiden kräver. Ärtan har tre gröna toner med korn och en glanspunkt. Silhuetten är tydlig och syns mot gräset, och den passar ihop med vedens enkla, avgränsade form. Version 2 saknar både kontur och silhuett och blir bara ett brus av fläckar, så den kan inte läsas i liten storlek. Dagens bild har fyra utspridda ärtor. Med fem gånger fyra punkter går det bara att läsa en ärta med kontur, så den enskilda ärtan står för hela sorten. Beskrivningens näverstrut finns inte i dagens bild, och därför ritade jag ingen. Jag ändrade ingenting, eftersom bilden redan följer paletten, storleken och stilen.",
+ "w": 5,
+ "h": 4,
+ "rader": [
+  ".MMM.",
+  "MLPOM",
+  "MPONM",
+  ".MMM."
+ ],
+ "pal": {
+  "L": "#d8b25f",
+  "M": "#353204",
+  "N": "#4b4f00",
+  "O": "#647025",
+  "P": "#898b4c"
+ }
+}

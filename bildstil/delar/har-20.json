@@ -1,0 +1,61 @@
+{
+ "id": "har-20",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Valde version 1: knuten sitter som en rund knut på hjässan med ett smalt band (en rad) under, och framhåret ligger slätt bakåt med samma skuggning som förebilden (ljust uppe till vänster, mörkt åt höger, få ljusa slingor). Den ser inte ut som en hatt och har rätt storlek på alla tre mallarna. Version 2 gör knuten hög och smal som en hattpuff, och i version 3 blir knuten klumpig och för mörk. Ändringar: i bakhåret tog jag bort den regelbundna kanten till vänster (.fggg och .ggg som upprepades var tredje rad) och de raka lodräta tonblocken. Nu följer tonerna huvudets rundning, med korn i små klungor vid gränserna och mörkare toner nedåt och åt höger. I framhårets vänstra sida lugnade jag ner det växlande hghg-mönstret till en jämnare övergång från ljust till mörkt. Knuten, bandet och hårfästet är oförändrade.",
+ "bilder": {
+  "bakhar": {
+   "x": -18,
+   "y": -9,
+   "rader": [
+    "..............hhhgggff..............",
+    "............ghhhhgggfffe............",
+    "...........ghhhggfgggffee...........",
+    "...........ghhgffggggfffe...........",
+    "............gggffgggffee............",
+    "............ffffeeeeeeee............",
+    ".............ggggffffee.............",
+    "..........gggggfffffffeeee..........",
+    ".......ggggggfffffffffeeeeeee.......",
+    ".....gggggggggffffffffffeeeeeee.....",
+    "....gggggggggfffffffffffeeeeeeee....",
+    "...gggggggggffffffffffffeeeeeeeee...",
+    "..ggggggggggffffffffffffeeeeeeeeee..",
+    ".ggggggggggfgffffffffffffeeeeeeeeee.",
+    ".gggggggggffffffffffffffeeeefeeeeee.",
+    ".ggggggggggfgfffffffffffeeeeeeeeeee.",
+    ".fggggggggffffffffffffffeeeeeeeeeee.",
+    ".gggggggggfffffffffffffeeeeeeeeeeee.",
+    ".fgggggggfgffffffffffffeeeeeeeeeeee.",
+    ".ffggggggfffffffffffffeeeeeeeeeeeee.",
+    ".fgggggfffffffffffffffeeeeeeeeeeeee.",
+    "..fggggffffffffffffffeeeeeeeeeeeee..",
+    "..ffgggfffffffffffffeeeeeeeeeeeeee..",
+    "...ffgfffffffffffffeeeeeeeeeeeeee...",
+    "....eefffffffffffeeeeeeeeeeeeeee...."
+   ]
+  },
+  "framhar": {
+   "x": -18,
+   "y": -2,
+   "rader": [
+    "..........hhhhhhgggggfffee..........",
+    ".......hhhhhhhghgggggggfffffe.......",
+    ".....ghhhhghhhhhgggggggfgffffee.....",
+    "....ghhhhhghhhhhhggggggggfgfffee....",
+    "...gghhhhhghhhhhhhgggggggggfgffee...",
+    "..gghhhhhghhhhhhhggggggggggffgffee..",
+    ".ghhhhghhhhg............ggggfgfffee.",
+    ".ghhhghhg..................gggfgfee.",
+    ".ghhghg......................ggffee.",
+    ".ghhhg........................gffee.",
+    ".ghhgg........................ffgee.",
+    ".gghgg........................gffee.",
+    ".gghgf........................gfffe.",
+    ".fgggf........................ffgee.",
+    "..fggg........................ffee..",
+    "...fgg........................fee..."
+   ]
+  }
+ }
+}

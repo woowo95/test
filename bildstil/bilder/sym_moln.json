@@ -1,0 +1,29 @@
+{
+ "id": "sym_moln",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den är 16 punkter bred och har en sluten kontur i skiffer0. Ljuset följer stilen bäst: skiffer3 uppe till vänster och skiffer1 nere till höger, så molnet får volym och läses som ett moln på både mörk och ljus bakgrund. Den passar också med de korsade svärden, som är tecknade likadant. Version 1 är för platt och har för många ljusa punkter i ben3, vilket bryter regeln om högst en eller två punkter glans. Version 2 har ett tunnare mörkt parti nertill och skiljer inte lika tydligt på bubblorna. Det jag ändrade: två glanspunkter i ben3 (w), en på toppen av den stora bubblan och en på den vänstra bubblan. Det ger lite ljus uppe till vänster utan att använda ren vit.",
+ "w": 16,
+ "h": 12,
+ "rader": [
+  "......QQQQ......",
+  ".....QwTTSQ.....",
+  "....QTTTTTSQ....",
+  "..QQQTTTTTSQQQ..",
+  ".QwTQTTTTTSQTSQ.",
+  ".QTTTSTTTTTSTSSQ",
+  "QTTTSSTTTTSSSSRQ",
+  "QTTSSTSTTSSSSSRQ",
+  "QSTSSSSSSSSSRSRQ",
+  "QSSSSSSSSRSRSRRQ",
+  ".QSRSRSRRRRRRRQ.",
+  "..QQQQQQQQQQQQ.."
+ ],
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "w": "#dad0bb"
+ }
+}

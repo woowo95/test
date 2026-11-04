@@ -1,0 +1,35 @@
+{
+ "id": "sym_present",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den är 16 punkter bred och fyller rutan, och snöret går i kors både lodrätt och vågrätt under rosetten, så den läses tydligast som 🎁 i liten storlek. Version 1 har bara ett lodrätt snöre och liknar mer en burk, och version 2 är bara 14 punkter bred och har ett trängre och rörigare mönster. Paketet följer förebilden: rost för papperet med rost0 som kontur, senap för snöret och rosetten med senap0 som kontur, ljuset uppe till vänster och få, stora former. De mättade färgerna passar eftersom en gåva är något man kan ta. Jag ändrade bara en sak: locket hade tre ljusa punkter i rad (uuu), och jag bytte den sista mot rost2 så att ytan får korn och inte blir slät.",
+ "w": 16,
+ "h": 15,
+ "rader": [
+  "...III....III...",
+  "..ILKJI..IKJJI..",
+  "..IKIJJIIJJIJI..",
+  "...IJJJLKJJJI...",
+  "rrrrrrrIJrrrrrrr",
+  "ruutuutLKttttstr",
+  "rttttstKJtsstssr",
+  "rrrrrrrJIrrrrrrr",
+  ".rutttsLKtsttsr.",
+  ".ruttstKJttstsr.",
+  ".rLKKKKLKJJJJIr.",
+  ".rJJJJJKJIIIIIr.",
+  ".rttstsKJstsssr.",
+  ".rtstssJIstsssr.",
+  ".rrrrrrIIrrrrrr."
+ ],
+ "pal": {
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e"
+ }
+}

@@ -1,0 +1,34 @@
+{
+ "id": "sym_arg",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Version 2 läses tydligast som 😠: de tjocka, sneda ögonbrynen som möts mot mitten och den öppna, sammanbitna munnen ger ilska på en blick. Version 1 och 3 har en nedåtböjd mun som snarare läses som sur eller ledsen. Ansiktet fyller 16 × 16 med en mörk rostkontur runt hela och få, stora former. Det rostiga ansiktet hör ihop med förebildens dämpade palett och dess mässingsfärgade fästen. Ljuset kommer uppifrån vänster med rost3 i övre vänstra delen och rost1 nere till höger. Ändring: glansen i höger öga låg på ögats högra sida (kq); jag flyttade den till övre vänstra punkten (qk) så att båda ögonen följer ljuset från vänster.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".....rrrrrr.....",
+  "...rruuutttrr...",
+  "..ruuuttttttsr..",
+  ".ruutttttttttsr.",
+  ".rurrttttttrrsr.",
+  "ruttrrttttrrtssr",
+  "rutttrrttrrttssr",
+  "rtttqkttttqktssr",
+  "rtttkkttttkktssr",
+  "rttttttttttssssr",
+  "rtttttrrrrtssssr",
+  ".rtttrkkkkrsssr.",
+  ".rttrssssssrssr.",
+  "..rtsssssssssr..",
+  "...rrssssssrr...",
+  ".....rrrrrr....."
+ ],
+ "pal": {
+  "k": "#24201d",
+  "q": "#bdb39b",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e"
+ }
+}

@@ -1,0 +1,27 @@
+{
+ "id": "flintspjut",
+ "ritad": 4,
+ "av": "API:t, surrningen omfärgad av Claude efter Björns svar",
+ "om": "Längd och form som förra gången; surrningen är nu blekt bast i bentonerna i stället för gul, så att den inte ser ut som metall.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "..............QQ",
+  "............QTSQ",
+  "...........QTSRQ",
+  "..........QTSRQ.",
+  "..........QRQ...",
+  ".........oqo....",
+  "........opo.....",
+  ".......EHE......",
+  "......EGE.......",
+  ".....EHE........",
+  "....EGE.........",
+  "...EHE..........",
+  "..EGE...........",
+  ".EHE............",
+  "EFE.............",
+  "EE.............."
+ ],
+ "pal": {"Q":"#233035","T":"#8a9c9e","S":"#61767a","R":"#3e5156","o":"#7e7362","q":"#bdb39b","p":"#a0947d","E":"#3f2415","H":"#987e62","G":"#7d5b40","F":"#5e3c24"}
+}

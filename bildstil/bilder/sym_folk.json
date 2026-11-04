@@ -1,0 +1,43 @@
+{
+ "id": "sym_folk",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "..........EEEE..",
+  ".........EHGGFE.",
+  ".........EGqpFE.",
+  ".........EqppoE.",
+  "..EEEE...EppooE.",
+  ".EHGGFE...EooE..",
+  ".EGqpFE..MPONNM.",
+  ".EqppoE.MPOONNNM",
+  ".EppooE.MOONONNM",
+  "..EooE..MONONNNM",
+  ".ruttssrMONNONNM",
+  "ruttttssrOONNNNM",
+  "rutttstssrONNNNM",
+  "rtttttstsrNONNMM",
+  "rtttttsssrNNNNMM",
+  "rrrrrrrrrrMMMMMM"
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "M": "#353204",
+  "N": "#4b4f00",
+  "O": "#647025",
+  "P": "#898b4c",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e"
+ }
+}

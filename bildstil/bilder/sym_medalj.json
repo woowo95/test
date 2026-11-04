@@ -1,0 +1,37 @@
+{
+ "id": "sym_medalj",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Version 1 valdes. Den fyller rutan bäst: 16 punkter hög och 14 bred. Den runda guldskivan är stor och tydlig, och bandet i rost bildar ett V, så den läses direkt som 🏅 även i liten storlek. Det passar ihop med förebildens guldfästen och dämpade toner. Ljuset faller rätt: senap3 uppe till vänster och senap1 nere till höger. Glansen är en enda punkt i ben3, och konturen är materialets mörkaste ton (senap0 runt guldet, rost0 runt bandet). Version 2 har en för smal skiva och ett extra spänne som rör till bilden. Version 3 är lägre och har en plattare skiva. Inga ändringar behövdes.",
+ "w": 14,
+ "h": 16,
+ "rader": [
+  "rrrrr....rrrrr",
+  "ruttr....rtssr",
+  ".rutsr..rtssr.",
+  "..rutsrrtssr..",
+  "...rutttssr...",
+  "....IIIIII....",
+  "..IILLLKKKII..",
+  ".ILwKKKKKKKJI.",
+  ".ILKKJJJJKKJI.",
+  ".ILKJKLLKJKJI.",
+  ".IKKJLLLKJKJI.",
+  ".IKKJKLKKJKJI.",
+  ".IKKKJJJJKJJI.",
+  "..IKKKKKJJJI..",
+  "...IJJJJJJI...",
+  "....IIIIII...."
+ ],
+ "pal": {
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e",
+  "w": "#dad0bb"
+ }
+}

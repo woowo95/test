@@ -1,0 +1,40 @@
+{
+ "id": "sym_vag",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den har samma materialblandning som förebilden: en stålgrå balk och stolpe i skiffer och vågskålar i senap, precis som svärdens klingor och guldfästen. Därför hör den bäst ihop med de korsade svärden. Den gråa balken skiljer sig också tydligt från de gula skålarna, så vågen läses lättare i liten storlek än den helt gula version 1. Silhuetten är tydlig: knopp, balk, stolpe, två hängande skålar och en träfot. Den fyller 16 × 16 punkter, och skiffer0 och jord0 ger kontur runt stål och trä. Ändring: i balkens mittrad låg en ensam mörk skiffer1-prick mitt i ljuset. Jag ordnade om tonerna så att balken går från ljust till vänster till mörkt till höger, med de mörkaste punkterna längst ut mot högerkanten, enligt ljusregeln. I övrigt behöll jag allt.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".......QQ.......",
+  "......QTSQ......",
+  ".QQQQQQTSQQQQQQ.",
+  "QTTTSTTTSSSSSRRQ",
+  ".QQQQQQTSQQQQQQ.",
+  "..J...QTSQ...J..",
+  ".J.J..QTSQ..J.J.",
+  ".J.J..QTSQ..J.J.",
+  "J...J.QTSQ.J...J",
+  "IIIII.QTSQ.IIIII",
+  "ILKJI.QTSQ.ILKJI",
+  ".IJI..QTSQ..IJI.",
+  "......QTSQ......",
+  "....EEEEEEEE....",
+  "...EHGHGGFGFE...",
+  "...EEEEEEEEEE..."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e"
+ }
+}

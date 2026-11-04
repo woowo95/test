@@ -1,0 +1,33 @@
+{
+ "kommando": "rita",
+ "args": [
+  "huvud-bred=barnets huvudform ser konstig ut",
+  "huvud-kantig=överdrivet kantigt ansikte",
+  "mun-3=tona ner färgen. (Programmeringschatten: läpparna blev ljust orange av de ljusa rost-tonerna s och t; använd bara r, rost0, för läpplinjen som förebilden, och hudens toner a och b för läpparnas form och skugga.)",
+  "mun-5=den glada versionen ser konstig ut. (Programmeringschatten: i den glada står de mörka mungiporna upp som parenteser runt tänderna; gör den som förebildens glada mun, bara mindre, med mungipor som går mjukt uppåt.)",
+  "mun-7=Björn sa nej igen utan att skriva varför. Programmeringschattens bedömning: munnen har så många mörka punkter runt läpparna att den ser ut som en krabba eller en mustasch. Rita den som förebilden: en mörk läpplinje i r och en ljus skugga under underläppen, och låt hjärtformen bara vara en liten båge mitt på överläppen (en punkt nedåt i mitten och de två bågarna bredvid).",
+  "ora-4=Björn sa nej igen utan att skriva varför. Programmeringschattens bedömning: det stora örat blev en oval med en stor mörk fläck i mitten och ser inte ut som ett öra. Det ska ha förebildens form (rundad ytterkant, liten skål och örsnibb), bara en eller två punkter högre och bredare, som det godkända utåtstående örat ora-3."
+ ],
+ "modell": "claude-opus-5-5",
+ "insats": "high",
+ "versioner": 3,
+ "uppskattat": {
+  "lag": 0.78,
+  "hog": 1.19
+ },
+ "dollar": 0.967,
+ "tokens": {
+  "in": 99841,
+  "ut": 72790,
+  "cacheLas": 30046,
+  "cacheSkriv": 14700
+ },
+ "rapport": [
+  "huvud-bred: ritad, version 2 vald: Jag valde version 2. Den breda formen har en jämn käklinje och en tydlig skillnad mellan kvinnan och mannen: mannens sidor är rakare och käken bredare, med en plattare haka som är 14 punkter bred mot kvinnans 12. Ljus och skugga följer förebilden, ljust till vänster och mörkt till höger, och kinderna är lite fylligare. Kvinnan och mannen har jag inte ändrat. Barnet har jag rättat efter Björns kommentar. Översta raden gick ut över hela bredden utan genomskinliga kanter, så den stack ut som en list under skallen. Den börjar nu med samma indrag som de vuxna (.cc…aaaaa.). Sidorna smalnade tidigare av med ett plötsligt hopp på rad 6. Nu följer de en jämn rund kurva med indragen 1,1,1,1,1,1,1,2,2,3,4,5,7,10, så att det korta nedre ansiktet blir runt och mjukt. Hakan på 12 punkter ligger mitt på mittlinjen. Barnets kindrodnad är mindre (2×2) som tidigare.",
+  "huvud-kantig: ritad, version 1 vald: Valde version 1. Den följer Björns kommentar bäst: käken har ett tydligt men måttligt hörn (rad 10–12) och hakan är rak och bred i de nedersta raderna, utan att ansiktet blir överdrivet fyrkantigt. Version 2 och 3 smalnar av i en jämn diagonal och ser nästan ut som en spetsig rund form. Skuggningen följer förebilden: ljust c åt vänster mot ljuset, b i mitten och a på den bortvända högra sidan. Kinderna (C och B/A) sitter på samma ställe och i samma storlek som i förebilden. Alla rader är 32 tecken och symmetriska kring mittlinjen mellan x = -1 och 0, och delen håller sig inom rutan. Mannen har rakare sidor ända ner till rad 6, en bredare käke och en plattare haka (18 punkter bred). Barnet har ett kortare och rundare nedre ansikte på 14 rader. Jag behöll versionen utan ändringar, eftersom den redan stämmer med beskrivningen och med kommentaren.",
+  "mun-3: ritad, version 3 vald: Jag valde version 3. Den ger tydligast en fyllig mun: en överläpp med båge och mörkare mungipor (a), och en underläpp som fångar ljuset uppifrån vänster (c) och blir mörkare åt höger (b). Under den ligger en skugga (a) på höger sida. Läpplinjen är bara r som i förebilden, och s och t används inte, så färgen är nedtonad som Björn ville. Den öppna munnen och alla delar håller sig inom rutan och ligger mitt på mittlinjen. Version 1 ser mer ut som förebilden med en extra rad och läser inte som fyllig. Version 2 har en ensam ljus c-prick i underläppen, och dess öppna mun skiljer sig mycket från de andra lägena. Ändring: i läget arg saknades överläppens båge. Jag lade tillbaka den (...bb..bb...), så att munnen är samma del i alla lägen och bara läpplinjen ändras av humöret.",
+  "mun-5: ritad, version 1 vald: Jag valde version 1. Version 1 och 2 är likadana. I version 3 sitter den glada munnen en rad högre än de andra lägena, så munnen hoppar uppåt när humöret byts. Version 1 håller alla lägen på samma höjd, mitt kring linjen mellan x = -1 och 0 och inom rutan. Ändring enligt Björns kommentar: i den glada munnen bildade de mörka r-punkterna vid sidan av tänderna och i mungiporna två stående parenteser. Nu är mungiporna och sidorna om tänderna den ljusare rost1 (s). Det mörka ligger bara i underläppens båge (rrrr), och kinden ligger under med b. Då går mungiporna mjukt snett uppåt som i förebildens glada mun, bara mindre. Övriga lägen är oförändrade, så det är samma del i alla lägen.",
+  "mun-7: ritad, version 3 vald: Valde version 3 eftersom den ligger närmast förebilden: en sammanhängande läpplinje i r med två bågar och en punkt nedåt i mitten, och en ljus skugga (bbba, mörkare åt höger bort från ljuset) under underläppen. Ändrat: tog bort raden 'ba..aa' ovanför läpparna, som gav prickar runt munnen och gjorde att den såg ut som en mustasch eller krabba. Hjärtformen är nu bara en liten båge på överläppen: läpplinjen '.rrr..rrr.' med mittpunkterna 'rr' en rad ner. Arg har inte längre några k runt läpparna, utan en bredare, spänd linje med nedåtvända mungipor i s. Ledsen har mjuka mungipor i s. Öppen är en liten rund mun med bågen ovanpå och k bara inuti. Alla lägen är centrerade kring mittlinjen (x -5 till 4) och håller sig inom rutan.",
+  "ora-4: ritad, version 2 vald: Jag valde version 2. Den är den enda som håller sig inom rutan: x -4 och bredden 6 ger -4 till 2. Version 1 och 3 börjar på x -3 och går därför en punkt utanför x1 = 2. Formen följer förebilden och det godkända ora-3. Ytterkanten är rundad och vänd mot ljuset med d och c. Skålen är en smal, kort rand av a i stället för en stor mörk fläck. Mot huvudet ligger en mörkare b-ton. Nederst smalnar örsnibben av. Örat är bara en eller två punkter högre och bredare än det mellanstora. Det ser lika bra ut på kvinnan, mannen och barnet. Inga ändringar behövdes."
+ ]
+}

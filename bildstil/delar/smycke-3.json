@@ -1,0 +1,25 @@
+{
+ "id": "smycke-3",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den har samma kraftiga snodd och samma benfärger som benhalsbandet i förebilden. Tänderna smalnar av nedåt till en spets, med ljus sida åt vänster (w) och mörkare åt höger (q, p), så de läses tydligt som tänder. Den långa mittre huggtanden och de små rostpärlorna (s över r) mellan tänderna gör att delen skiljer sig från förebilden. Snodden är ljusare (F) på vänster sida och skuggad (E) på höger, vilket följer ljuset uppifrån vänster. Delen är symmetrisk kring mittlinjen x = -1/0 och håller sig inom rutan (x -12 till 11, y -4 till 6). Version 1 har spridda ensamma p-prickar och ojämna tänder. Version 3 är för liten och tunn för att läsas som tänder. På kvinnan och barnet syns halsbandet knappt i alla tre versionerna, så den jämförelsen kunde inte skilja dem åt. Jag har inte ändrat något i version 2.",
+ "bilder": {
+  "standard": {
+   "x": -12,
+   "y": -4,
+   "rader": [
+    "FF....................EE",
+    "..F..................E..",
+    "...FF..............EE...",
+    "...wqFFF........EEEwq...",
+    "...wp...FFsFEsEE...wp...",
+    "....q...wqrwqrwq...q....",
+    "........wp.wq.wp........",
+    "........wp.wp.wp........",
+    ".........q.wp.q.........",
+    "...........qp...........",
+    "...........q............"
+   ]
+  }
+ }
+}

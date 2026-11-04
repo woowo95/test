@@ -1,0 +1,16 @@
+{
+ "id": "grenar",
+ "ritad": 3,
+ "av": "Claude",
+ "om": "Claude: en rak smal pinne i jordtoner med ett enda olivgrönt löv på en kort stjälk, enklare än förut (Björn: en rak pinne med ett löv bara).",
+ "w": 10,
+ "h": 5,
+ "rader": [
+  "......MM..",
+  ".....MPOM.",
+  ".EEEEEMEE.",
+  "EHGHGGFGFE",
+  ".EEEEEEEE."
+ ],
+ "pal": {"E":"#3f2415","F":"#5e3c24","G":"#7d5b40","H":"#987e62","M":"#353204","O":"#647025","P":"#898b4c"}
+}

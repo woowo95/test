@@ -1,0 +1,18 @@
+{
+ "id": "arr-4",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 2. Den är kortast och tunnast och ritas helt i hudens egna toner. Den ljusa linjen är c och skuggan b, så kontrasten blir låg, och det följer Björns kommentar om att ärren ska vara mer subtila. Ärret går genom läppen strax vänster om mittlinjen, på x = -2 och -1, och ser lika diskret ut på kvinnan, mannen och barnet. Version 1 är längre och har en rostpunkt mitt i munnen som drar blicken till sig. Version 3 använder den ljusaste tonen d och rost, vilket ger för hög kontrast. Min ändring: i version 2 var två rader likadana, så ärret blev ett rakt lodrätt streck som kunde se ut som en del av munnen. Jag flyttade den nedre halvan en punkt åt höger så att linjen blir lätt snedställd, som ett riktigt ärr över läppen. Ljuset kommer uppifrån vänster, så den ljusa sidan ligger upptill och till vänster och den mörka b-skuggan under och till höger. Storleken och antalet tecken är oförändrade.",
+ "bilder": {
+  "standard": {
+   "x": -2,
+   "y": 10,
+   "rader": [
+    "c.",
+    "cb",
+    ".c",
+    ".b"
+   ]
+  }
+ }
+}

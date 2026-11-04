@@ -1,0 +1,48 @@
+{
+ "id": "redskap-trasjut",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Skaftet ligger diagonalt bakom ryggen upp mot höger axel och har samma tjocklek och skuggning som yxans skaft i förebilden. Den eldhärdade, mörka spetsen är lång, tydlig och avsmalnande, och den sticker upp bredvid huvudet utan att gå för högt. Version 1 är för tunn och har en liten spets, så den läses som en pinne. Version 2 har lindningar i rost, men rep ska vara senap, och spetsen har en ojämn kant. Det jag ändrade: den ljusaste tonen H satt på skaftets högra kant i vartannat steg, och den sidan vänder sig bort från ljuset. Jag bytte den mot F, så att skaftet blir ljust till vänster och mörkt till höger, med ett lätt korn i träet.",
+ "bilder": {
+  "standard": {
+   "x": -15,
+   "y": -22,
+   "rader": [
+    "..................m",
+    ".................ml",
+    "................mll",
+    "...............nmll",
+    "..............nmll.",
+    "..............mmll.",
+    ".............Fmll..",
+    ".............GFml..",
+    "............HGlE...",
+    "............HGFE...",
+    "...........HGFE....",
+    "...........HGGE....",
+    "..........HGGF.....",
+    "..........HGGE.....",
+    ".........HGGF......",
+    ".........HGGE......",
+    "........HGGF.......",
+    "........HGGE.......",
+    ".......HGGF........",
+    ".......HGGE........",
+    "......HGGF.........",
+    "......HGGE.........",
+    ".....HGGF..........",
+    ".....HGGE..........",
+    "....HGGF...........",
+    "....HGGE...........",
+    "...HGGF............",
+    "...HGGE............",
+    "..HGGF.............",
+    "..HGGE.............",
+    ".HGGF..............",
+    ".HGGE..............",
+    "HGGF...............",
+    "HGGE..............."
+   ]
+  }
+ }
+}

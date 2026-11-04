@@ -1,0 +1,38 @@
+{
+ "id": "nasa-13",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 1. Näsryggen är lika smal som förebildens, med d mot ljuset till vänster och b till höger på x = -1 och 0. Den knöliga formen syns tydligast där: en knöl vid rad 4–5, en insnörning vid rad 7 och en bred, rund spets som slutar i mörk underkant. Version 2 och 3 har för mycket c och d i spetsen och blir den ljusa klump som underkändes förra gången. Ändringar: jag minskade de ljusa tonerna i spetsen. d finns nu bara på knölarnas övre vänstra sida, och c och b tar över ner mot höger och undersidan, så att skuggan följer den runda formen som i förebilden och ingen ljus fläck blir kvar. Nedre kanten på rad 8–9 är mörkare (b och a), så att näsborrarna och undersidan känns skuggade. I barnets bild gjorde jag samma sak (rad 3 'bdccbb', rad 4 '.bcbba'). Den är fortfarande mindre och rundare, centrerad kring mittlinjen och inom rutan.",
+ "bilder": {
+  "standard": {
+   "x": -5,
+   "y": 0,
+   "rader": [
+    "....db....",
+    "....db....",
+    "....db....",
+    "...cdb....",
+    "...bdcb...",
+    "..bdccbb..",
+    ".bdccbbba.",
+    "..bccbba..",
+    ".bccbbbaa.",
+    "..aabbaa.."
+   ]
+  }
+ },
+ "barn": {
+  "standard": {
+   "x": -3,
+   "y": 1,
+   "rader": [
+    "..db..",
+    "..db..",
+    ".bdcb.",
+    "bdccbb",
+    ".bcbba",
+    ".abba."
+   ]
+  }
+ }
+}

@@ -1,0 +1,56 @@
+{
+ "id": "bryn-4",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5)",
+ "om": "Godkänd utan ändringar. Delen håller sig inom rutan och använder bara e, f, g och h. Brynet är en punkt tjockt, som det ska vara för Tunna, och har ungefär samma längd som förebildens bryn (sju kolumner) och samma plats ovanför ögat. Skuggningen följer förebilden: g på ovansidan mot ljuset, f och e där linjen vänder ner. Raderna hänger ihop med diagonala steg, utan ensamma prickar och utan glans. Lägena stämmer med beskrivningen. Lugna är rakt med en svag böj ner mot ytterkanten. Arga har den inre änden sänkt mot näsan. Ledsna har den inre änden höjd. Förvånade är en hög båge. Det är samma del med nästan samma antal punkter i alla lägen, och bara lutningen ändras. Brynet ser bra ut på kvinnan, mannen och barnet i alla fyra lägena.",
+ "bilder": {
+  "lugna": {
+   "x": -3,
+   "y": -3,
+   "rader": [
+    ".......",
+    ".......",
+    "..ggggf",
+    "ff.....",
+    ".......",
+    "......."
+   ]
+  },
+  "arga": {
+   "x": -3,
+   "y": -3,
+   "rader": [
+    ".......",
+    "gg.....",
+    "..ggf..",
+    "....ffe",
+    ".......",
+    "......."
+   ]
+  },
+  "ledsna": {
+   "x": -3,
+   "y": -3,
+   "rader": [
+    ".......",
+    ".....gg",
+    "...ggf.",
+    "fff....",
+    ".......",
+    "......."
+   ]
+  },
+  "forvanade": {
+   "x": -3,
+   "y": -3,
+   "rader": [
+    "..gggg.",
+    ".f....f",
+    "f......",
+    ".......",
+    ".......",
+    "......."
+   ]
+  }
+ }
+}

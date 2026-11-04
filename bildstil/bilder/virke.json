@@ -1,0 +1,18 @@
+{
+ "id": "virke",
+ "ritad": 4,
+ "av": "Claude",
+ "om": "helt ny utan förlaga: två tillyxade bräder förskjutna på varandra med ljusa ändar",
+ "w": 12,
+ "h": 7,
+ "rader": [
+  "..EEEEEEEEEE",
+  "..EHGHHGHHqE",
+  "..EGFGGFGGpE",
+  "EEEEEEEEEEEE",
+  "EHGHHGHHqE..",
+  "EGFGGFGGpE..",
+  "EEEEEEEEEE.."
+ ],
+ "pal": {"E":"#3f2415","H":"#987e62","G":"#7d5b40","q":"#bdb39b","F":"#5e3c24","p":"#a0947d"}
+}

@@ -1,0 +1,16 @@
+{
+ "id": "torrkott",
+ "ritad": 3,
+ "av": "Claude",
+ "om": "Claude: exakt harköttets bild med köttets rost bytt mot gråbrunt (rost0→jord0, rost1→jord1, rost2→jord2, rost3→ben0); benet är kvar.",
+ "w": 7,
+ "h": 5,
+ "rader": [
+  ".EEEE..",
+  "EoGGFE.",
+  "EGGFGFE",
+  ".EFFwqo",
+  "..EEqpo"
+ ],
+ "pal": {"E":"#3f2415","o":"#7e7362","G":"#7d5b40","F":"#5e3c24","w":"#dad0bb","q":"#bdb39b","p":"#a0947d"}
+}

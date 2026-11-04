@@ -1,0 +1,18 @@
+{
+ "id": "trumma",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 2. Den är mest lik dagens bild: den har tre rostprickar i rad mitt på skinnet, i rost1, som stämmer med dagens färg. Skinnet är ljust uppe till vänster och mörknar nere till höger, och konturen är jord0 som på flintyxans skaft. Version 1 och 3 har bara två prickar. Jag ändrade två saker. Remmen nere till höger var ritad i ben (q och p), men den är jord i dagens bild, så nu är den jord1 med kontur i jord0. I andra raden är det vänstra w nu jord3, så att kanten ser ut som en ljus trärand och inte som skinn. Glansen är bara ett w på skinnet.",
+ "w": 8,
+ "h": 7,
+ "rader": [
+  "..EEEE..",
+  ".EHwsqE.",
+  "EHwqqqpE",
+  "EGqqspFE",
+  "EGqqppFE",
+  ".EGpsFEF",
+  "..EEEEFE"
+ ],
+ "pal": {"E":"#3f2415","F":"#5e3c24","G":"#7d5b40","H":"#987e62","p":"#a0947d","q":"#bdb39b","s":"#742a01","w":"#dad0bb"}
+}

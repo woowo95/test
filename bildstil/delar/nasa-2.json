@@ -1,0 +1,35 @@
+{
+ "id": "nasa-2",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 2 eftersom den är smalast och stämmer bäst med \"Smal\". Näsryggen är bara två punkter bred på x = -1 och 0 hela vägen ner. Den ljusa sidan ligger till vänster mot ljuset och den mörka till höger. Spetsen blir bredare först längst ner, och näsvingarna (abba) ligger lika långt åt båda hållen från mittlinjen. Version 1 breddas ojämnt redan halvvägs ner. Version 3 har en ljus punkt i mitten av spetsen som kan se blank ut. Ändring: jag lade till en skuggrad (bb) under näsborrarna som i förebilden, så att näsan får samma avslut och sitter fast i ansiktet. Den slutar på y = 9 och håller sig inom rutan. Barnets näsa från version 2 behöll jag som den är: den är kort och smal och har samma skuggning i mindre skala.",
+ "bilder": {
+  "standard": {
+   "x": -3,
+   "y": 1,
+   "rader": [
+    "..db.",
+    "..db.",
+    "..db.",
+    "..db.",
+    "..dcb",
+    "..dcb",
+    ".bdcb",
+    ".abba",
+    "..bb."
+   ]
+  }
+ },
+ "barn": {
+  "standard": {
+   "x": -2,
+   "y": 1,
+   "rader": [
+    ".db.",
+    ".db.",
+    ".dcb",
+    "abba"
+   ]
+  }
+ }
+}

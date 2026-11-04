@@ -1,0 +1,37 @@
+{
+ "id": "sym_tornado",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den fyller hela rutan (16 × 16) och har få, stora former: en tratt med tydliga band som smalnar av nedåt. Dammet som virvlar upp vid foten gör att den läses som en tornado på en blick. Konturen är skiffer0, och ljuset faller från vänster med skiffer3 och en enda glanspunkt av ben3. Det passar ihop med svärdens kontur och dämpade toner. Version 1 är ren men tunnare och tommare nedtill. Version 2 har lösa skräpbitar som ser ut som ensamma prickar i liten storlek. Ändringar: i rad 3 lade jag till skiffer0 längst till höger, eftersom konturen under tunnelns högra kant (rad 2) hade ett hål mot det genomskinliga. Dammolnen gjorde jag symmetriska: jord0 som kontur upptill, och ljuset ligger till vänster i varje moln (jord3 i vänstra molnet, jord2 i det högra), mörkare åt höger.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "..QQQQQQQQQQQQ..",
+  ".QTwTTTSTSSSSRQ.",
+  "QTTSTSSSSSRSRRRQ",
+  ".QQRRSRRRRRRQQQ.",
+  "..QTTTSTTSSSSRQ.",
+  "..QQRSRRRRRRRQQ.",
+  "...QTTSTSSSSRQ..",
+  "...QQRRSRRRRQQ..",
+  "....QTTSTSSRQ...",
+  "....QQRSRRRQQ...",
+  ".....QTSTSRQ....",
+  ".....QQRSRQQ....",
+  "......QTSRQ.....",
+  ".......QTSQ.....",
+  "...EGE.QSRQ.EGE.",
+  "..EHGFEEQQEGFFE."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "w": "#dad0bb"
+ }
+}

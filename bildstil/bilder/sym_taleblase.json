@@ -1,0 +1,27 @@
+{
+ "id": "sym_taleblase",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 3. Dess svordomstecken #! läses på en blick som ett öknamn eller en nedsättande berättelse, och den hör därför tydligast ihop med 🗯️. Version 1 ser ut som ett ansikte eller en katt och känns inte arg. Version 2 har en stark rostkontur, men !! läses som ögon. Version 3 har också samma enkla, kraftiga form, jordkontur och benfärgade ljusning från övre vänstra hörnet som de andra symbolerna, och den mättade rosten sparas till tecknen. Det som inte stämde var att blåsan bara var taggig upptill och nertill och därför såg nästan rund ut. Jag gjorde den mer explosionsartad genom att lägga till en tagg till på vänster sida (rad 8) och tanda högerkanten (rad 5, 7 och 8 dras in en punkt), så att konturen blir sicksackig runt om. Tecknen #!, tonerna och den lilla svansen nere till vänster lät jag vara som de var.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "...E.....E......",
+  "...EE...EqE..E..",
+  "..EwqEEEqwqEEqE.",
+  ".EwwqqqwqqqqqqpE",
+  ".EwqqqqqqqtsqqpE",
+  "EqqqtqtqqqtsqpE.",
+  ".EqtttttqqtsqqpE",
+  ".EqqtqtqqqtsqpE.",
+  "EqqtttttqqqqqpE.",
+  ".EpqtqtqqqtsqpoE",
+  "..EpqqqqqqqqppoE",
+  "..EqpppqqqpppoE.",
+  "..EppEEEppEEoE..",
+  ".EpEE...EE..E...",
+  "EpE.............",
+  "EE.............."
+ ],
+ "pal": {"E":"#3f2415","o":"#7e7362","p":"#a0947d","q":"#bdb39b","s":"#742a01","t":"#a14808","w":"#dad0bb"}
+}

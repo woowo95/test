@@ -1,0 +1,27 @@
+{
+ "id": "sym_oppen_plan",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 2, omritad efter Björns svar",
+ "om": "Jag valde version 1. Den rundade, sluttande konturen och den lugna ytan hör bäst ihop med förebildens få, stora former. Version 2 har så mycket brus att den flimrar i liten storlek. Version 1 var dock mest ben2, så den såg grå ut i stället för vit, och de ensamma ljusa prickarna gav fläckar. Det kan vara därför Björn sa nej. Jag lät ben3 dominera så att rutan läses som vit på en blick, både på mörk och på ljus bakgrund. Tonen går nu mjukt från ljusast uppe till vänster till ben2 nere till höger, i ett korn där tonerna glider in i varandra. Ben1 ligger kvar som kant till höger och nertill, och ben0 som kontur runt hela. Formen och storleken (16×16) är oförändrade.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "..oooooooooooo..",
+  ".owwwwwwwwwwwqo.",
+  "owwwwwwwqwwwwqpo",
+  "owwwwqwwwwwwqqpo",
+  "owwwwwwwwwqwqqpo",
+  "owwwqwwwwwwqqqpo",
+  "owwwwwwwqwwqqqpo",
+  "owwwwwwwwqqwqqpo",
+  "owwqwwwwwwqqqqpo",
+  "owwwwwqwwqqqqqpo",
+  "owwwwwwqqqwqqqpo",
+  "owwwwqwqqqqqqqpo",
+  "owwqwqqqqqqqpqpo",
+  "oqwqqqqqqqqqqppo",
+  ".oppppppppppppo.",
+  "..oooooooooooo.."
+ ],
+ "pal": {"o":"#7e7362","p":"#a0947d","q":"#bdb39b","w":"#dad0bb"}
+}

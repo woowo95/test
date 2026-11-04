@@ -1,0 +1,35 @@
+{
+ "id": "sym_muskel",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den har tydligast silhuett av en spänd arm: en rund biceps till vänster och underarmen med knytnäven rakt upp till höger. Därför känns den igen som 💪 på en blick, både på mörk och ljus bakgrund. Senapsmanschetten knyter an till de gula fästena på förebildens korsade svärd. Den följer också stilen: jordtoner med ljuset uppe till vänster, mörkast nere till höger och jord0 som kontur. Version 1 läses mer som ett ben eller en stövel. Version 3 har en olivgrön fyrkant som inte betyder något och splittrar formen. Det jag ändrade: manschetten längst till vänster saknade kontur, så jag lade till jord0 framför den och fick en sluten kontur runt hela symbolen. Alla rader är nu 16 punkter breda och fyller rutan på bredden. Höjden är 15 punkter.",
+ "w": 16,
+ "h": 15,
+ "rader": [
+  "..........EEEE..",
+  ".........EHHHGE.",
+  ".........EHGGGFE",
+  ".........EGGFGFE",
+  "..........EGFFE.",
+  "..........EHGFE.",
+  "....EEEE..EHGFE.",
+  "...EHHHGE.EHGFE.",
+  "..EHHGGGGEHGGFE.",
+  ".EHHGGGGGFGGGFFE",
+  "ELKHGGGGGGFGGFFE",
+  "EKJGGGGGFFFFGFFE",
+  "EJIGGFFFFFFFFFE.",
+  "EIIFFFFFFFFFFEE.",
+  ".EEEEEEEEEEEE..."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f"
+ }
+}

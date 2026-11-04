@@ -1,0 +1,27 @@
+{
+ "id": "sym_gnistor",
+ "ritad": 4,
+ "av": "Claude",
+ "om": "Ritad av Claude efter Björns kommentar: vi kör på förra versionen med glittret.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "............I...",
+  "...........ILI..",
+  "..........ILKJI.",
+  "......I..ILLKKJI",
+  ".....ILI..IKKJI.",
+  ".....ILI...IJI..",
+  "....ILKJI...I...",
+  "...ILLKKJI......",
+  ".ILLLLKKKJJI....",
+  "ILLLKLwKKJJJI...",
+  ".IKKKKKKJJJI.I..",
+  "...IKKKJJI..ILI.",
+  "....IKJJI..ILKJI",
+  ".....IJI....IJI.",
+  ".....IJI.....I..",
+  "......I........."
+ ],
+ "pal": {"I":"#694902","J":"#906f0f","K":"#b2921b","L":"#d8b25f","w":"#dad0bb"}
+}

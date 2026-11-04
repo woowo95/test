@@ -1,0 +1,40 @@
+{
+ "id": "sym_flitig",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den diagonala hammaren lutar som svärden i förebilden och ser ut som ett verktyg i arbete, vilket passar betydelsen 'flitig' bättre än den stillastående T-hammaren i version 1. I version 1 syns skaftet dessutom rakt igenom stenhuvudet, vilket blir rörigt. Version 2 fyller hela rutan på 16 × 16 punkter. Version 3 är bara 15 rader hög, och dess bindning i bentoner i huvudet blir små prickar i liten storlek. I version 2 står huvudet vinkelrätt mot skaftet och är byggt av få, stora former. Skiffertonerna går från ljust uppe till vänster till mörkt nere till höger, med en enda glanspunkt (w). Skaftet har jord0 som kontur och en ljus vänsterkant, och de två bentonsraderna under huvudet läses som en surrning. Inget behövde ändras: alla rader är 16 tecken och bara palettens tecken används.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "........Q.......",
+  ".......QTQ......",
+  "......QwTTQ.....",
+  ".....QTTTSTQ....",
+  "......QTTSTSQ...",
+  ".......QTSSTSQ..",
+  "........QSSSTSQ.",
+  ".......EHQRSSRSQ",
+  "......EqpEQRSRQ.",
+  ".....EpoE..QRQ..",
+  "....EHGE....Q...",
+  "...EHGE.........",
+  "..EHFE..........",
+  ".EHGE...........",
+  "EHFE............",
+  "EEE............."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

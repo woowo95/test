@@ -1,0 +1,32 @@
+{
+ "id": "blod_pol",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "en färsk blodpöl: mörkröd kant, röd mitt och en glans; pölar nära varandra flyter ihop som i dag",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "................",
+  "................",
+  "................",
+  "...........sss..",
+  ".....rrrr.rsssr.",
+  "....rrsssrssss..",
+  "...rsussssssr...",
+  "..rrssstsssssrr.",
+  "..rrsssssssssr..",
+  "...sssssssssr.r.",
+  "...rsssssssrr...",
+  "...rrrsssssrrr..",
+  "....rrr.rrrr....",
+  "........r.......",
+  "................",
+  "................"
+ ],
+ "pal": {
+  "s": "#742a01",
+  "r": "#521100",
+  "u": "#bd753e",
+  "t": "#a14808"
+ }
+}

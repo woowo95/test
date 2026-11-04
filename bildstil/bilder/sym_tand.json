@@ -1,0 +1,27 @@
+{
+ "id": "sym_tand",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "",
+ "w": 12,
+ "h": 16,
+ "rader": [
+  "..EEEEEEE...",
+  ".EwwqqqqpE..",
+  "EwqqqqqqppE.",
+  "EwqqqqqqpoE.",
+  "EqqqqqqppoE.",
+  "EqqqpqqppoE.",
+  ".EqqqqqppoE.",
+  "..EqqqqppoE.",
+  "...Eqqpttsr.",
+  "...Eqpttssr.",
+  "....Eptssr..",
+  "....rttssr..",
+  ".....rtsr...",
+  ".....rsr..r.",
+  "......r..rtr",
+  ".........rrr"
+ ],
+ "pal": {"E":"#3f2415","o":"#7e7362","p":"#a0947d","q":"#bdb39b","r":"#521100","s":"#742a01","t":"#a14808","w":"#dad0bb"}
+}

@@ -1,0 +1,27 @@
+{
+ "id": "sym_regn",
+ "ritad": 3,
+ "av": "API:t, vald av Claude",
+ "om": "API:t ritade tre versioner efter Björns kommentar; Claude valde version 2 (valet i API:t hann inte köras).",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "....QQQQ........",
+  "...QTwTTQ.QQQ...",
+  "..QTwTTTSQTTSQ..",
+  ".QQTTTTTSSTTTSQ.",
+  "QTTTTTSTSSSTSSSQ",
+  "QTTTSTSSSSSSSRSQ",
+  "QTSTSSSSSRSSRRRQ",
+  ".QSSSRSSRRSRRRQ.",
+  "..QQQQQQQQQQQQ..",
+  "................",
+  "..T....T....T...",
+  "..R....R....R...",
+  "....T....T....T.",
+  "....R....R....R.",
+  ".T....T....T....",
+  ".R....R....R...."
+ ],
+ "pal": {"Q":"#233035","R":"#3e5156","S":"#61767a","T":"#8a9c9e","w":"#dad0bb"}
+}

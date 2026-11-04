@@ -1,0 +1,35 @@
+{
+ "id": "skagg-11",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 1. Den ligger närmast förebildens helskägg i längd och massa. Ljuset faller uppifrån vänster, med h och g till vänster och f och e till höger, och hårstråna är strimmor i samma tjocklek som i förebilden. Klyftan under hakan öppnar sig stegvis till två lika stora lober, vilket svarar på Björns kommentar. Version 2 blev lång och tung. Version 3 blev ännu längre, och dess lober slutar i smala spetsar som återigen liknar pilar. Min ändring: jag lade till en sista rad med två punkter under varje lob (x 8–9 och 20–21 i bilden, spegelvänt kring mittlinjen). Loberna smalnar nu av från 8 till 6, 4 och 2 punkter och får två rundade toppar i stället för trubbiga avslut. Allt håller sig inom rutan (x -15 till 14, y -7 till 13), och raden över munnen lämnas öppen.",
+ "bilder": {
+  "standard": {
+   "x": -15,
+   "y": -7,
+   "rader": [
+    "hhhhgg..................fffeee",
+    "hhhhgg..................ffffee",
+    ".hhhhg..................fffee.",
+    ".hhhhgg.hhhgggggfffeee.ffffee.",
+    ".hhhhgghhhhgggggfffeeeffffffe.",
+    "..hhhghhhgggggggffffeeefffee..",
+    "..hhhhhgghgggggggfffffefffee..",
+    "...hhhhgghgggggggffffgfffee...",
+    "...ghhhggghggggggffffgffeee...",
+    "...gghgggghgggggfffffgfffee...",
+    "....ggggghgggggffffgfffeee....",
+    "....gggggghggggffffgffffee....",
+    ".....ggggghgggffffgfffeee.....",
+    ".....gggghgggfffggfffeeee.....",
+    "......ggghgggf..ffgfeeee......",
+    ".....gghggggff..ffgffeeee.....",
+    ".....ghgggggf....fgffeeee.....",
+    ".....hggggfff....ffgfeeee.....",
+    "......ggffff......fffeee......",
+    ".......gfff........feee.......",
+    "........ff..........ee........"
+   ]
+  }
+ }
+}

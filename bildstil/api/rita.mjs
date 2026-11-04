@@ -3,13 +3,19 @@
 //   node bildstil/api/rita.mjs prov                 kontrollerar att nyckeln finns och att ett litet prov går igenom
 //   node bildstil/api/rita.mjs torrt [sort|id …]    bygger frågorna utan att skicka dem och uppskattar kostnaden
 //   node bildstil/api/rita.mjs kostnad [sort|id …]  räknar frågornas tokens med API:t (gratis) och uppskattar kostnaden
-//   node bildstil/api/rita.mjs rita [sort|id …]     ritar delarna som inte är ritade (ritad 0) i en batch, kontrollerar
-//                                                   dem, låter API:t granska dem mot förebilden och sparar dem
-//   node bildstil/api/rita.mjs omrita <id> "<kommentar>"   ritar om en del efter Björns kommentar
+//   node bildstil/api/rita.mjs rita [sort|id …]     ritar delarna som inte är ritade (ritad 0): tre versioner av varje del
+//                                                   i en batch, koden kontrollerar dem, API:t väljer den bästa mot
+//                                                   förebilden, och den valda sparas
+//   node bildstil/api/rita.mjs omrita <id> "<kommentar>"   ritar om en del efter Björns kommentar, på samma sätt
+//   rita kan blanda: node bildstil/api/rita.mjs rita ora nasa-11 nasa-2="" bryn-3="gör dom bredare"  — en del med = ritas
+//   om med kommentaren (tom: Björn sa nej utan att skriva varför), allt i samma batch
+//
+// Bästa av tre (beslut, Björn efter v283): Björn ser bara den valda versionen. Kostnaden (Björn efter v283): skriptet säger
+// vad en körning ungefär kostar innan den körs och vad den kostade efteråt; ungefär hälften av krediterna sparas till senare.
 //
 // Utan sort ritas ansiktets sorter (5.2.2.3): huvudformer, öron, näsor, ögon, ögonbryn och munnar. Förebilden i varje
 // sort är den första raden i registret och ritas av programmeringschatten (bildstil/api/forebilder.mjs); skriptet ritar
-// resten efter den. Nyckeln läses ur ANTHROPIC_API_KEY och skrivs aldrig ut. Det som ritas sparas i bildstil/delar/<id>.json,
+// resten efter den. Nyckeln läses ur BJORN_API_NYCKEL och skrivs aldrig ut, och frågorna går direkt till https://api.anthropic.com. Det som ritas sparas i bildstil/delar/<id>.json,
 // och radens ritad i bildstil/portratt.json höjs, så att kortet står obesvarat i granskningen. Spelet behöver aldrig API:t.
 import fs from 'fs';
 import path from 'path';
@@ -23,16 +29,23 @@ const MODELL = 'claude-opus-5-5', INSATS = 'high', MAXTOKENS = 32000;
 // pris per miljon tokens med batch (halva standardpriset för Claude Opus 5.5: 4 och 20 dollar)
 const PRIS = { in: 2, ut: 10, cacheLas: 0.1, cacheSkriv: 2.5 };
 const ANSIKTET = ['huvudform', 'ora', 'nasa', 'oga', 'ogonbryn', 'mun'];
+const VERSIONER = 3;
 
 const PR = JSON.parse(fs.readFileSync(REGISTER, 'utf8'));
 const SORT = Object.fromEntries(PR.sorter.map(s => [s.id, s]));
 const delarAv = s => PR.delar.filter(d => d.sort === s);
 const lasDel = id => { const f = path.join(DELAR, id + '.json'); return fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : null; };
 const lagenFor = s => SORT[s].lagen ? PR.lagen[SORT[s].lagen].map(l => l.id) : ['standard'];
+// bilderna en del består av: lägena, eller lagren för en sort som ritas i lager (frisyrerna: bakhar och framhar, 5.2.2.4)
+const nycklarFor = s => SORT[s].ritas?.lager || lagenFor(s);
+// hur en del ritas: sortens ritas, med platsens fästpunkt och ruta för en del som har en plats (smyckena, 5.2.2.4)
+const ritasFor = (sort, d = null) => { const R = SORT[sort].ritas; return d && R.plats?.[d.plats] ? { ...R, ...R.plats[d.plats] } : R; };
 
 // ---------- registret skrivs med en rad per del, som förut ----------
 function skrivRegister() {
-  const rad = o => JSON.stringify(o), L = ['{'], nycklar = Object.keys(PR);
+  // samma format som registret har: ", " och ": " mellan delarna, så att bara det som ändrats syns i git
+  const rad = v => Array.isArray(v) ? '[' + v.map(rad).join(', ') + ']' : v && typeof v === 'object' ? '{' + Object.entries(v).map(([k, x]) => JSON.stringify(k) + ': ' + rad(x)).join(', ') + '}' : JSON.stringify(v);
+  const L = ['{'], nycklar = Object.keys(PR);
   nycklar.forEach((k, i) => {
     const v = PR[k], sep = i < nycklar.length - 1 ? ',' : '';
     const lista = (namn, arr, ind) => { L.push(`${ind}"${namn}": [`); arr.forEach((x, j) => L.push(`${ind}  ${rad(x)}${j < arr.length - 1 ? ',' : ''}`)); };
@@ -100,56 +113,67 @@ Regler för allt som ritas (Porträttens byggsätt och bildstilen):
 
 Svara bara med JSON enligt schemat.`;
 
-function schema(sort, granska) {
+// schemat för svaret: punkterna i alla lägen (och mannens och barnets bilder när sorten har dem); i valet också vilken version
+function schema(sort, valet = false) {
   const bild = { type: 'object', properties: { x: { type: 'integer' }, y: { type: 'integer' }, rader: { type: 'array', items: { type: 'string' } } }, required: ['x', 'y', 'rader'], additionalProperties: false };
-  const lagen = lagenFor(sort), bilder = { type: 'object', properties: Object.fromEntries(lagen.map(l => [l, bild])), required: lagen, additionalProperties: false };
+  const lagen = nycklarFor(sort), bilder = { type: 'object', properties: Object.fromEntries(lagen.map(l => [l, bild])), required: lagen, additionalProperties: false };
   const props = { bilder, anteckning: { type: 'string' } }, req = ['bilder', 'anteckning'];
+  if (SORT[sort].ritas.manbild) { props.man = bilder; req.push('man'); }
   if (SORT[sort].ritas.barnbild) { props.barn = bilder; req.push('barn'); }
-  if (granska) { props.godkand = { type: 'boolean' }; req.push('godkand'); }
+  if (valet) { props.val = { type: 'integer' }; req.unshift('val'); }
   return { type: 'object', properties: props, required: req, additionalProperties: false };
 }
-function sortText(sort) {
-  const S = SORT[sort], R = S.ritas, f = PR.mallar.map(m => `${m.namn}: ${R.fast === 'huvud' ? `huvudets mitt (${m.huvud.cx}, ${m.huvud.cy})` : JSON.stringify(m.fast[R.fast])}`).join('; ');
-  const lagen = S.lagen ? `Lägen: ${PR.lagen[S.lagen].map(l => `${l.id} (${l.namn})`).join(', ')}. Humöret väljer dem: ${PR.humor.map(h => `${h.namn.toLowerCase()} = ${h[sort] || '–'}`).join(', ')}.` : 'Ett läge: standard.';
-  return `Sort: ${S.namn} (${R.om}). Fästpunkten i porträttet: ${f}. Ruta från fästpunkten (x0, y0, x1, y1): ${R.ruta.join(', ')}. Tecken som sorten får använda: ${R.tecken}. ${lagen}${R.barnbild ? ' Rita också en egen bild för barnmallen (barn), som för förebilden: barnet har kortare och rundare nedre ansikte och mindre drag.' : ''}`;
+function sortText(sort, d = null) {
+  const S = SORT[sort], R = ritasFor(sort, d), f = PR.mallar.map(m => `${m.namn}: ${R.fast === 'huvud' ? `huvudets mitt (${m.huvud.cx}, ${m.huvud.cy})` : JSON.stringify(m.fast[R.fast])}`).join('; ');
+  const lagen = S.lagen ? `Lägen: ${PR.lagen[S.lagen].map(l => `${l.id} (${l.namn})`).join(', ')}. Humöret väljer dem: ${PR.humor.map(h => `${h.namn.toLowerCase()} = ${h[sort] || '–'}`).join(', ')}.` : R.lager ? `Bilderna är lagren ${R.lager.join(' och ')}, som ritas i var sitt lager i porträttet (se sortens beskrivning).` : 'Ett läge: standard.';
+  const mitt = R.par ? '' : ' Ansiktets mittlinje går mellan x = -1 och x = 0 räknat från fästpunkten. Det som ska sitta mitt i ansiktet sträcker sig därför lika långt åt vänster som åt höger om den linjen, till exempel från x = -3 till x = 2, och en näsrygg ligger på x = -1 och 0.';
+  return `Sort: ${S.namn} (${R.om}). Fästpunkten i porträttet: ${f}. Ruta från fästpunkten (x0, y0, x1, y1): ${R.ruta.join(', ')}.${mitt} Tecken som sorten får använda: ${R.tecken}. ${lagen}${R.manbild ? ' Rita också en egen bild för mannen (man), som för förebilden: mannens huvudform är lite fyrkantigare, med rakare sidor, bredare käke och plattare haka (Björn efter 5.2.2.3).' : ''}${R.barnbild ? ' Rita också en egen bild för barnmallen (barn), som för förebilden: barnet har kortare och rundare nedre ansikte och mindre drag.' : ''}`;
 }
-async function fraga(d, { kommentar = null, forra = null } = {}) {
+// en version av en del; bästa av tre (beslut, Björn efter v283): varje del ritas i VERSIONER versioner var för sig
+async function fraga(d, { kommentar = null, forra = null, version = null } = {}) {
   const sort = d.sort, forebild = delarAv(sort)[0], fb = lasDel(forebild.id);
   if (!fb) throw new Error(`Förebilden ${forebild.id} är inte ritad än.`);
   const bild = await bildAvDel(forebild.id, sort, null);
   const text = [
-    sortText(sort),
-    `Förebilden (${forebild.id}, ${forebild.namn}), ritad av programmeringschatten: ${JSON.stringify({ bilder: fb.bilder, ...(fb.barn ? { barn: fb.barn } : {}) })}`,
+    sortText(sort, d),
+    `Förebilden (${forebild.id}, ${forebild.namn}), ritad av programmeringschatten: ${JSON.stringify({ bilder: fb.bilder, ...(fb.man ? { man: fb.man } : {}), ...(fb.barn ? { barn: fb.barn } : {}) })}`,
     'Bilden visar förebilden på det neutrala ansiktet: raderna är kvinna, man och barn, och kolumnerna är lägena i ordning.',
-    `Rita delen ${d.id}: ${SORT[sort].en.toLowerCase()} "${d.namn}"${d.vad ? ` (${d.vad})` : ''}${d.ful ? ', en ful variant som får vara lite komisk' : ''}. Den ska skilja sig tydligt från förebilden och de andra i sorten: ${delarAv(sort).filter(x => x.id !== d.id).map(x => x.namn.toLowerCase()).join(', ')}.`,
+    `Rita delen ${d.id}: ${SORT[sort].en.toLowerCase()} "${d.namn}"${d.vad ? ` (${d.vad})` : ''}${d.ful ? ', en ful variant som får vara lite komisk' : ''}.${d.kon && d.kon !== 'bada' ? ` Den finns bara på ${d.kon === 'man' ? 'män' : 'kvinnor'}${d.barn === false ? ' och inte på barn' : ''}.` : ''}${d.plats ? ` Platsen: ${d.plats}.` : ''} Den ska skilja sig tydligt från förebilden och de andra i sorten: ${delarAv(sort).filter(x => x.id !== d.id).map(x => x.namn.toLowerCase()).join(', ')}.`,
     forra ? `Förra ritningen av delen: ${JSON.stringify(forra)}` : '',
     kommentar ? `Björns kommentar om förra ritningen, som ska följas: ${kommentar}` : '',
+    version ? `Det här är version ${version} av ${VERSIONER}, som ritas var för sig; sedan väljs den som passar bäst. Rita den på ditt eget sätt inom reglerna.` : '',
   ].filter(Boolean).join('\n\n');
-  return { custom_id: d.id, params: { model: MODELL, max_tokens: MAXTOKENS, thinking: { type: 'adaptive' }, output_config: { effort: INSATS, format: { type: 'json_schema', schema: schema(sort, false) } },
+  return { custom_id: version ? `${d.id}__v${version}` : d.id, params: { model: MODELL, max_tokens: MAXTOKENS, thinking: { type: 'adaptive' }, output_config: { effort: INSATS, format: { type: 'json_schema', schema: schema(sort, false) } },
     system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
     messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: 'image/png', data: bild } }, { type: 'text', text }] }] } };
 }
-async function granskning(d, ritning) {
+// valet: API:t ser förebilden och versionerna som gick igenom koden på ansiktena och väljer den som passar bäst, rättar
+// det som inte stämmer i den, eller ritar en ny om ingen passar. Bara den valda kommer till Björns granskning.
+async function valet(d, versioner, { kommentar = null } = {}) {
   const sort = d.sort, forebild = delarAv(sort)[0];
-  const fore = await bildAvDel(forebild.id, sort, null), ny = await bildAvDel(d.id, sort, { id: d.id, ...ritning });
+  const bilder = [await bildAvDel(forebild.id, sort, null)];
+  for (const v of versioner) bilder.push(await bildAvDel(d.id, sort, { id: d.id, ...v.svar }));
   const text = [
-    sortText(sort),
-    `Den första bilden är förebilden (${forebild.id}, ${forebild.namn}) och den andra den nya delen ${d.id} ("${d.namn}"), båda på det neutrala ansiktet: raderna är kvinna, man och barn, och kolumnerna är lägena.`,
-    `Den nya delens punkter: ${JSON.stringify(ritning)}`,
-    'Granska den nya delen: hör den ihop med förebilden (stilen, storleken, linjerna, skuggningen), stämmer den med beskrivningen, och ser den bra ut på alla tre ansiktena i alla lägen? Om allt stämmer: svara godkand true och samma punkter. Annars: rita om det som inte stämmer, svara godkand false och skriv i anteckningen vad du ändrade.',
-  ].join('\n\n');
+    sortText(sort, d),
+    `Den första bilden är förebilden (${forebild.id}, ${forebild.namn}). Sedan kommer ${versioner.length === 1 ? 'den enda versionen' : versioner.length + ' versioner'} av den nya delen ${d.id}, ${SORT[sort].en.toLowerCase()} "${d.namn}"${d.vad ? ` (${d.vad})` : ''}${d.ful ? ', en ful variant som får vara lite komisk' : ''}, i den här ordningen: ${versioner.map(v => 'version ' + v.nr).join(', ')}. Alla visas på det neutrala ansiktet: raderna är kvinna, man och barn, och kolumnerna är lägena.`,
+    ...versioner.map(v => `Version ${v.nr}: ${JSON.stringify({ bilder: v.svar.bilder, ...(v.svar.man ? { man: v.svar.man } : {}), ...(v.svar.barn ? { barn: v.svar.barn } : {}) })}`),
+    kommentar ? `Björns kommentar om förra ritningen, som ska följas: ${kommentar}` : '',
+    'Välj den version som hör bäst ihop med förebilden (stilen, storleken, linjerna, skuggningen), stämmer bäst med beskrivningen och ser bäst ut på alla tre ansiktena i alla lägen. Svara med val (versionens nummer) och dess punkter. Rätta det som inte stämmer i den valda, och skriv i anteckningen varför du valde den och vad du ändrade. Passar ingen: svara val 0, rita en ny som passar och förklara i anteckningen.',
+  ].filter(Boolean).join('\n\n');
   return { custom_id: d.id, params: { model: MODELL, max_tokens: MAXTOKENS, thinking: { type: 'adaptive' }, output_config: { effort: INSATS, format: { type: 'json_schema', schema: schema(sort, true) } },
     system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
-    messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: 'image/png', data: fore } }, { type: 'image', source: { type: 'base64', media_type: 'image/png', data: ny } }, { type: 'text', text }] }] } };
+    messages: [{ role: 'user', content: [...bilder.map(b => ({ type: 'image', source: { type: 'base64', media_type: 'image/png', data: b } })), { type: 'text', text }] }] } };
 }
 
 // ---------- koden kontrollerar varje ritning först: lägena, tecknen, raderna och rutan ----------
-function kontrollera(sort, svar) {
-  const fel = [], R = SORT[sort].ritas, tillatna = new Set(['.', ...R.tecken]);
+function kontrollera(sort, d, svar) {
+  const fel = [], R = ritasFor(sort, d), tillatna = new Set(['.', ...R.tecken]);
   const bild = (b, namn) => {
     if (!b || !Array.isArray(b.rader) || !b.rader.length) { fel.push(`${namn}: inga rader`); return; }
-    const w = b.rader[0].length;
-    if (b.rader.some(r => r.length !== w)) fel.push(`${namn}: raderna är olika långa`);
+    // korta rader fylls ut med genomskinligt i slutet (API:t tappar ibland punkter längst ut i stora delar som håret)
+    const w = Math.max(...b.rader.map(r => (typeof r === 'string' ? r.length : 0)));
+    b.rader = b.rader.map(r => typeof r === 'string' ? r.padEnd(w, '.') : r);
+    if (b.rader.some(r => typeof r !== 'string')) fel.push(`${namn}: en rad är inte text`);
     let punkter = 0;
     b.rader.forEach((r, j) => [...r].forEach((ch, i) => {
       if (!tillatna.has(ch)) fel.push(`${namn}: tecknet "${ch}" får inte användas i sorten`);
@@ -160,15 +184,20 @@ function kontrollera(sort, svar) {
     }));
     if (!punkter) fel.push(`${namn}: bilden är tom`);
   };
-  for (const l of lagenFor(sort)) bild(svar.bilder?.[l], l);
-  if (R.barnbild) for (const l of lagenFor(sort)) bild(svar.barn?.[l], 'barn ' + l);
+  for (const l of nycklarFor(sort)) bild(svar.bilder?.[l], l);
+  if (R.manbild) for (const l of nycklarFor(sort)) bild(svar.man?.[l], 'man ' + l);
+  if (R.barnbild) for (const l of nycklarFor(sort)) bild(svar.barn?.[l], 'barn ' + l);
   return [...new Set(fel)].slice(0, 12);
 }
 
 // ---------- API:t ----------
+// Nyckeln är Björns och ligger i miljön som BJORN_API_NYCKEL (miljön släpper inte igenom ANTHROPIC_API_KEY). Adressen anges
+// här, eftersom ANTHROPIC_BASE_URL i miljön pekar någon annanstans (steg 5.2.2).
+const ADRESS = 'https://api.anthropic.com';
 function klient() {
-  if (!process.env.ANTHROPIC_API_KEY) { console.error('ANTHROPIC_API_KEY saknas i miljön. Lägg in den som en hemlighet i miljöns inställningar och starta en ny chatt.'); process.exit(1); }
-  return new Anthropic();
+  const nyckel = process.env.BJORN_API_NYCKEL;
+  if (!nyckel) { console.error('BJORN_API_NYCKEL saknas i miljön. Lägg in den som en hemlighet i miljöns inställningar och starta en ny chatt.'); process.exit(1); }
+  return new Anthropic({ apiKey: nyckel, baseURL: ADRESS });
 }
 const svarText = m => m.content.filter(b => b.type === 'text').map(b => b.text).join('');
 const kostnad = u => ((u.input_tokens || 0) * PRIS.in + (u.output_tokens || 0) * PRIS.ut + (u.cache_read_input_tokens || 0) * PRIS.cacheLas + (u.cache_creation_input_tokens || 0) * PRIS.cacheSkriv) / 1e6;
@@ -182,26 +211,30 @@ async function batch(client, fragor, namn) {
     console.log(`  ${namn}: ${st.request_counts.succeeded} klara, ${st.request_counts.processing} kvar …`);
     await new Promise(r => setTimeout(r, 30_000));
   }
-  const ut = {}; let summa = 0;
+  const ut = {}; let summa = 0; const tokens = { in: 0, ut: 0, cacheLas: 0, cacheSkriv: 0 };
   for await (const r of await client.messages.batches.results(b.id)) {
     if (r.result.type !== 'succeeded') { ut[r.custom_id] = { fel: `${r.result.type}${r.result.type === 'errored' ? ': ' + r.result.error?.type : ''}` }; continue; }
-    const m = r.result.message; summa += kostnad(m.usage);
+    const m = r.result.message, u = m.usage; summa += kostnad(u);
+    tokens.in += u.input_tokens || 0; tokens.ut += u.output_tokens || 0; tokens.cacheLas += u.cache_read_input_tokens || 0; tokens.cacheSkriv += u.cache_creation_input_tokens || 0;
     if (m.stop_reason === 'refusal') { ut[r.custom_id] = { fel: 'avböjd' }; continue; }
     if (m.stop_reason === 'max_tokens') { ut[r.custom_id] = { fel: 'svaret blev för långt' }; continue; }
     try { ut[r.custom_id] = { svar: JSON.parse(svarText(m)), usage: m.usage }; } catch (e) { ut[r.custom_id] = { fel: 'svaret var inte JSON' }; }
   }
   console.log(`  ${namn} klar: ungefär ${summa.toFixed(2)} dollar.`);
-  return { ut, summa };
+  return { ut, summa, tokens };
 }
 function spara(d, ritning, av) {
-  const ritad = (d.ritad || 0) + 1;
-  const o = { id: d.id, ritad, av, om: ritning.anteckning || '', bilder: ritning.bilder, ...(ritning.barn ? { barn: ritning.barn } : {}) };
+  const ritad = (d.ritad || 0) + 1, gammal = lasDel(d.id);
+  // den förra ritningen sparas med, så att kortet visar den bredvid den nya (Björn efter 5.2.2.7)
+  const forra = gammal?.bilder ? { ritad: gammal.ritad, bilder: gammal.bilder, ...(gammal.man ? { man: gammal.man } : {}), ...(gammal.barn ? { barn: gammal.barn } : {}) } : null;
+  const o = { id: d.id, ritad, av, om: ritning.anteckning || '', bilder: ritning.bilder, ...(ritning.man ? { man: ritning.man } : {}), ...(ritning.barn ? { barn: ritning.barn } : {}), ...(forra ? { forra } : {}) };
   fs.writeFileSync(path.join(DELAR, d.id + '.json'), JSON.stringify(o, null, 1) + '\n');
   d.ritad = ritad;
 }
 
 // ---------- val av delar ----------
-function delarSomSkaRitas(args, allaRitade = false) {
+function delarSomSkaRitas(args, allaRitade = false, baraOmritning = false) {
+  if (baraOmritning) return [];
   const val = args.length ? args : ANSIKTET;
   const ut = [];
   for (const a of val) {
@@ -210,15 +243,32 @@ function delarSomSkaRitas(args, allaRitade = false) {
   }
   return ut;
 }
-const uppskatta = (f) => {
-  const tecken = JSON.stringify(f.params.system).length + f.params.messages[0].content.filter(c => c.type === 'text').map(c => c.text).join('').length;
-  const bilder = f.params.messages[0].content.filter(c => c.type === 'image').length;
-  return Math.round(tecken / 3) + bilder * 1600; // ungefär tre tecken per token, och en bild på 1 000–1 600 tokens
-};
-function kostnadsText(intokens, n, granskas = true) {
-  const ut = [3000, 8000], gang = granskas ? 2 : 1; // tänkandet och punkterna, per svar
-  const lag = gang * (intokens * PRIS.in + n * ut[0] * PRIS.ut) / 1e6, hog = gang * (intokens * PRIS.in + n * ut[1] * PRIS.ut) / 1e6;
-  return `${n} delar, ungefär ${Math.round(intokens / 1000)} 000 tokens in per omgång. Ritningen och granskningen: ungefär ${lag.toFixed(2)}–${hog.toFixed(2)} dollar med batch (${PRIS.in} och ${PRIS.ut} dollar per miljon tokens in och ut), beroende på hur mycket modellen tänker.`;
+// ---------- kostnaden ----------
+// Uppskattningen bygger på de tre första körningarna (2026-11-02, 46 delar). Det som styr är hur stor delen är: tecknen i
+// förebildens punkter (bilderna, mannens och barnets) och antalet lägen. En ritning gav ungefär 500 + 2,4 tokens ut per
+// tecken + 150 per läge, och valet 800 + 1,45 per tecken + 150 per läge. Valet läser ritfrågan och dessutom varje version
+// som punkter (ungefär ett token per 2,5 tecken) och som bild. En bild till API:t är ungefär bredd × höjd / 750 tokens,
+// högst 1 600. Lågt och högt är 0,85 och 1,3 gånger det väntade. Prövat mot körningarna: öronen, munnarna, näsorna och
+// ögonbrynen väntat 2,38 (kostade 2,02), huvudformerna och ögonen väntat 1,78 (kostade 1,78).
+const bildTokens = sort => Math.min(1600, Math.round(lagenFor(sort).length * (64 * 4 + 8) * 3 * (64 * 4 + 8) / 750));
+const forebildTecken = sort => { const fb = lasDel(delarAv(sort)[0].id); return fb ? JSON.stringify({ bilder: fb.bilder, man: fb.man, barn: fb.barn }).length : 300; };
+const textTokens = f => Math.round((JSON.stringify(f.params.system).length + f.params.messages[0].content.filter(c => c.type === 'text').map(c => c.text).join('').length) / 3);
+function delKostnad(d, ritIn) { // ritIn: tokens in i en ritfråga, bilden inräknad
+  const T = forebildTecken(d.sort), L = nycklarFor(d.sort).length, B = bildTokens(d.sort);
+  const ritUt = 500 + 2.4 * T + 150 * L, valIn = ritIn + VERSIONER * (T / 2.5 + B), valUt = 800 + 1.45 * T + 150 * L;
+  return (VERSIONER * (ritIn * PRIS.in + ritUt * PRIS.ut) + valIn * PRIS.in + valUt * PRIS.ut) / 1e6;
+}
+async function uppskattning(delar, client = null) {
+  const per = {}; let summa = 0;
+  for (const d of delar) {
+    const f = await fraga(d, { version: 1 });
+    const ritIn = client ? (await client.messages.countTokens({ model: f.params.model, system: f.params.system, messages: f.params.messages })).input_tokens : textTokens(f) + bildTokens(d.sort);
+    const k = delKostnad(d, ritIn); summa += k;
+    per[d.sort] = per[d.sort] || { n: 0, k: 0 }; per[d.sort].n++; per[d.sort].k += k;
+  }
+  const lag = summa * 0.85, hog = summa * 1.3;
+  const rader = Object.entries(per).map(([sort, p]) => `  ${SORT[sort].namn}: ${p.n} delar, ungefär ${p.k.toFixed(2)} dollar`);
+  return { lag, hog, vantat: summa, text: `${delar.length} delar, bästa av ${VERSIONER}: ungefär ${lag.toFixed(2)}–${hog.toFixed(2)} dollar med batch (väntat ${summa.toFixed(2)})\n${rader.join('\n')}` };
 }
 
 // ---------- kommandona ----------
@@ -231,44 +281,73 @@ try {
   } else if (kommando === 'torrt' || kommando === 'kostnad') {
     const delar = delarSomSkaRitas(args);
     fs.mkdirSync(UT, { recursive: true });
-    const fragor = []; for (const d of delar) fragor.push(await fraga(d));
+    const fragor = []; for (const d of delar) fragor.push(await fraga(d, { version: 1 }));
     fs.writeFileSync(path.join(UT, 'fragor.json'), JSON.stringify(fragor.map(f => ({ ...f, params: { ...f.params, messages: f.params.messages.map(m => ({ ...m, content: m.content.map(c => c.type === 'image' ? { type: 'image', bild: `${c.source.data.length} tecken base64` } : c) })) } })), null, 1));
-    let intokens = 0;
-    if (kommando === 'kostnad') { const client = klient(); for (const f of fragor) { const { model, system, messages } = f.params; intokens += (await client.messages.countTokens({ model, system, messages })).input_tokens + 300; } }
-    else intokens = fragor.reduce((s, f) => s + uppskatta(f), 0);
-    console.log(`${kommando === 'kostnad' ? 'Räknat' : 'Uppskattat'}: ${kostnadsText(intokens, fragor.length)}`);
+    // ett exempel på valet, med förebilden som tre låtsade versioner, så att frågan kan läsas utan att något skickas
+    if (delar.length) { const d = delar[0], fb = lasDel(delarAv(d.sort)[0].id); const vf = await valet(d, [1, 2, 3].map(nr => ({ nr, svar: fb }))); fs.writeFileSync(path.join(UT, 'valet.json'), JSON.stringify({ ...vf, params: { ...vf.params, messages: vf.params.messages.map(m => ({ ...m, content: m.content.map(c => c.type === 'image' ? { type: 'image', bild: `${c.source.data.length} tecken base64` } : c) })) } }, null, 1)); }
+    const u = await uppskattning(delar, kommando === 'kostnad' ? klient() : null);
+    console.log(`${kommando === 'kostnad' ? 'Räknat' : 'Uppskattat'}: ${u.text}`);
     console.log(`Frågorna (utan bilderna) står i ${path.relative(process.cwd(), path.join(UT, 'fragor.json'))}.`);
   } else if (kommando === 'rita' || kommando === 'omrita') {
     const client = klient();
-    let delar, kommentar = null;
-    if (kommando === 'omrita') { const d = PR.delar.find(x => x.id === args[0]); if (!d || !args[1]) throw new Error('Skriv: omrita <id> "<kommentar>"'); delar = [d]; kommentar = args[1]; }
-    else delar = delarSomSkaRitas(args);
+    let delar; const kommentarer = {};
+    if (kommando === 'omrita') { const d = PR.delar.find(x => x.id === args[0]); if (!d || !args[1]) throw new Error('Skriv: omrita <id> "<kommentar>"'); delar = [d]; kommentarer[d.id] = args[1]; }
+    else {
+      const om = args.filter(a => a.includes('=')).map(a => [a.slice(0, a.indexOf('=')), a.slice(a.indexOf('=') + 1)]);
+      delar = delarSomSkaRitas(args.filter(a => !a.includes('=')), false, args.length > 0 && om.length === args.length);
+      for (const [id, k] of om) { const d = PR.delar.find(x => x.id === id); if (!d) throw new Error('Okänd del: ' + id); if (!delar.includes(d)) delar.push(d); kommentarer[id] = k.trim() || 'Björn sa nej till förra ritningen utan att skriva varför: rita en bättre.'; }
+    }
     if (!delar.length) { console.log('Inget att rita.'); process.exit(0); }
-    const fragor = []; for (const d of delar) fragor.push(await fraga(d, kommentar ? { kommentar, forra: lasDel(d.id) } : {}));
-    let { ut: ritat, summa } = await batch(client, fragor, 'ritningen');
-    // koden kontrollerar; den som inte går igenom ritas en gång till med felen
+    const fore = await uppskattning(delar);
+    console.log(`Uppskattat före: ${fore.text}`);
+    const opts = d => kommentarer[d.id] ? { kommentar: kommentarer[d.id], forra: lasDel(d.id) } : {};
+    const tokens = { in: 0, ut: 0, cacheLas: 0, cacheSkriv: 0 }, plus = t => { for (const k in tokens) tokens[k] += t[k]; };
+    // 1. tre versioner av varje del, var för sig
+    const fragor = []; for (const d of delar) for (let v = 1; v <= VERSIONER; v++) fragor.push(await fraga(d, { ...opts(d), version: v }));
+    const r1 = await batch(client, fragor, 'ritningen'); let summa = r1.summa; plus(r1.tokens);
+    const versioner = {};
+    for (const d of delar) versioner[d.id] = [...Array(VERSIONER)].map((_, i) => { const r = r1.ut[`${d.id}__v${i + 1}`]; return { nr: i + 1, svar: r?.svar, fel: r?.svar ? kontrollera(d.sort, d, r.svar) : [r?.fel || 'inget svar'] }; });
+    // 2. koden kontrollerar; gick ingen version igenom ritas en till med felen
     const omtag = [];
-    for (const d of delar) { const r = ritat[d.id]; const fel = r.svar ? kontrollera(d.sort, r.svar) : [r.fel]; if (fel.length) { const f = await fraga(d); f.params.messages[0].content.push({ type: 'text', text: 'Förra försöket hade de här felen, som ska rättas: ' + fel.join('; ') }); omtag.push(f); } }
-    if (omtag.length) { const o = await batch(client, omtag, 'omtagen'); summa += o.summa; Object.assign(ritat, o.ut); }
-    // API:t granskar varje ritning på ansiktet mot förebilden och ritar om det som inte passar
-    const godkanda = delar.filter(d => ritat[d.id]?.svar && !kontrollera(d.sort, ritat[d.id].svar).length);
-    const granskningar = []; for (const d of godkanda) granskningar.push(await granskning(d, ritat[d.id].svar));
-    const { ut: granskat, summa: s2 } = granskningar.length ? await batch(client, granskningar, 'granskningen') : { ut: {}, summa: 0 };
-    summa += s2;
+    for (const d of delar) {
+      if (versioner[d.id].some(x => !x.fel.length)) continue;
+      const f = await fraga(d, { ...opts(d), version: VERSIONER + 1 });
+      f.params.messages[0].content.push({ type: 'text', text: 'De förra försöken hade de här felen, som ska rättas: ' + [...new Set(versioner[d.id].flatMap(x => x.fel))].slice(0, 12).join('; ') });
+      omtag.push(f);
+    }
+    if (omtag.length) {
+      const o = await batch(client, omtag, 'omtagen'); summa += o.summa; plus(o.tokens);
+      for (const d of delar) { const r = o.ut[`${d.id}__v${VERSIONER + 1}`]; if (r) versioner[d.id].push({ nr: VERSIONER + 1, svar: r.svar, fel: r.svar ? kontrollera(d.sort, d, r.svar) : [r.fel] }); }
+    }
+    // 3. API:t väljer den bästa av versionerna som gick igenom koden, på ansiktena och mot förebilden
+    const valfragor = [];
+    for (const d of delar) { const ok = versioner[d.id].filter(x => !x.fel.length); if (ok.length) valfragor.push(await valet(d, ok, { kommentar: kommentarer[d.id] || null })); }
+    const r3 = valfragor.length ? await batch(client, valfragor, 'valet') : { ut: {}, summa: 0, tokens: { in: 0, ut: 0, cacheLas: 0, cacheSkriv: 0 } };
+    summa += r3.summa; plus(r3.tokens);
+    // 4. den valda sparas; går valet inte igenom koden sparas versionen det pekade på (eller den första som gick igenom)
     const rapport = [];
     for (const d of delar) {
-      const g = granskat[d.id]?.svar, r = ritat[d.id]?.svar;
-      const slut = g && !kontrollera(d.sort, g).length ? g : r && !kontrollera(d.sort, r).length ? r : null;
-      if (!slut) { rapport.push(`${d.id}: inte ritad (${ritat[d.id]?.fel || kontrollera(d.sort, r || {}).join('; ')})`); continue; }
-      spara(d, slut, kommentar ? `API:t (${MODELL}), omritad efter Björns kommentar` : `API:t (${MODELL})`);
-      rapport.push(`${d.id}: ritad${g ? (g.godkand ? ', godkänd i granskningen' : ', ändrad i granskningen: ' + g.anteckning) : ''}`);
+      const ok = versioner[d.id].filter(x => !x.fel.length), g = r3.ut[d.id]?.svar;
+      let slut = null, hur = '';
+      if (g && !kontrollera(d.sort, d, g).length) { slut = g; hur = (g.val > 0 ? `version ${g.val} vald` : 'ingen passade, en ny ritad i valet') + (ok.length < VERSIONER ? ` (${ok.length} av ${VERSIONER} versioner gick igenom koden)` : ''); }
+      else if (ok.length) { const v = ok.find(x => x.nr === g?.val) || ok[0]; slut = v.svar; hur = `version ${v.nr} av ${ok.length} (valet ${g ? 'gick inte igenom koden' : 'saknas: ' + (r3.ut[d.id]?.fel || '')})`; }
+      if (!slut) { rapport.push(`${d.id}: inte ritad (${[...new Set(versioner[d.id].flatMap(x => x.fel))].slice(0, 3).join('; ')})`); continue; }
+      spara(d, slut, `API:t (${MODELL}), bästa av ${ok.length}${kommentarer[d.id] ? ', omritad efter Björns svar' : ''}`);
+      rapport.push(`${d.id}: ritad, ${hur}${g?.anteckning ? ': ' + g.anteckning : ''}`);
     }
+    // registret läses om från disken, och bara ritad för delarna som ritades ändras, så att en annan körning eller en
+    // ändring under tiden inte skrivs över
+    const ritade = Object.fromEntries(delar.map(d => [d.id, d.ritad]));
+    const nu = JSON.parse(fs.readFileSync(REGISTER, 'utf8'));
+    for (const k of Object.keys(PR)) delete PR[k];
+    Object.assign(PR, nu);
+    for (const d of PR.delar) if (d.id in ritade) d.ritad = ritade[d.id];
     skrivRegister();
     await stangSidan();
     fs.mkdirSync(path.join(HAR, 'logg'), { recursive: true });
-    fs.writeFileSync(path.join(HAR, 'logg', new Date().toISOString().slice(0, 19).replace(/:/g, '') + '.json'), JSON.stringify({ kommando, args, modell: MODELL, insats: INSATS, dollar: +summa.toFixed(3), rapport }, null, 1));
+    fs.writeFileSync(path.join(HAR, 'logg', new Date().toISOString().slice(0, 19).replace(/:/g, '') + '.json'), JSON.stringify({ kommando, args, modell: MODELL, insats: INSATS, versioner: VERSIONER, uppskattat: { lag: +fore.lag.toFixed(2), hog: +fore.hog.toFixed(2) }, dollar: +summa.toFixed(3), tokens, rapport }, null, 1));
     console.log(rapport.join('\n'));
-    console.log(`Klart: ungefär ${summa.toFixed(2)} dollar. Bygg sidan (node bildstil/bygg.cjs) och publicera bildstilen.`);
+    console.log(`Klart: det kostade ungefär ${summa.toFixed(2)} dollar (uppskattat före: ${fore.lag.toFixed(2)}–${fore.hog.toFixed(2)}). Bygg sidan (node bildstil/bygg.cjs) och publicera bildstilen.`);
   } else {
     console.log(fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(0, 12).join('\n'));
   }

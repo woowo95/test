@@ -1,0 +1,34 @@
+{
+ "id": "sym_notis_framsteg",
+ "ritad": 2,
+ "av": "Claude",
+ "om": "Sigillet mindre (6 × 6 punkter) efter Björns kommentar på det tomma brevet.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "................",
+  "................",
+  ".oooooooooooooo.",
+  "opwwwwwwwwwwwwpo",
+  "owpqqqqqqqqpqppo",
+  "owqpqqqqqqqqpqpo",
+  "owqppqqqqqqpqqpo",
+  "owqqqpqqqqpqqqpo",
+  "owqqqqIIIIqqqqpo",
+  "owqqqIJwwJIqqqpo",
+  "owqqpIwwwwIqqqpo",
+  "owqqqIJwwJIqqqpo",
+  "oppppIwJJwIppppo",
+  ".oooooIIIIooooo.",
+  "................",
+  "................"
+ ],
+ "pal": {
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "w": "#dad0bb",
+  "q": "#bdb39b",
+  "I": "#694902",
+  "J": "#906f0f"
+ }
+}

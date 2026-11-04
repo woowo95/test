@@ -1,0 +1,23 @@
+{
+ "id": "sym_fjader",
+ "ritad": 6,
+ "av": "Claude",
+ "om": "Ritad av Claude: spargrisen ritad på nytt, större, med två sammanhängande sprickor.",
+ "w": 16,
+ "h": 12,
+ "rader": [
+  ".........rr.....",
+  "....rrrrrwur....",
+  "...rwwqkkkqqr...",
+  "..rwqqqqkqqqqrr.",
+  "r.rwqqqkkqqkqrur",
+  ".rrqqqqkqqqqqrsr",
+  "..rqqqkkkkqqpqrr",
+  "..rqqqkqqkkpppr.",
+  "...rpqkqqpppppr.",
+  "....rpprrrppr...",
+  "....rpr...rpr...",
+  "....rrr...rrr..."
+ ],
+ "pal": {"k":"#24201d","p":"#a0947d","q":"#bdb39b","r":"#521100","s":"#742a01","u":"#bd753e","w":"#dad0bb"}
+}

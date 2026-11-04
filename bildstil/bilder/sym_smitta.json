@@ -1,0 +1,37 @@
+{
+ "id": "sym_smitta",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den har en tydlig rund kropp med åtta korta utskott och en ljus kärna i senap, så den läses som 🦠 på en blick. Den fyller rutan (16 × 16) och har en sammanhängande kontur i oliv0, som materialets mörkaste ton. Ljuset faller från övre vänster med en enda glanspunkt (ben2), vilket stämmer med förebilden. Version 1 har utskott som lossnar från kroppen och blir små fläckar i liten storlek. Version 2 blir rörig av många gula prickar och tunna utskott. Jag ändrade en sak: en ljus punkt (P) nere till höger i kroppen (rad 10) fick mellantonen O, eftersom den bröt ljusriktningen och såg ut som en ensam prick.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "......MMM.......",
+  "..MM..MPM...MM..",
+  "..MPMMMOMMMMNM..",
+  "...MMPPPOOOMM...",
+  "...MPqPOOOONM...",
+  "..MPPPOOOOOONM..",
+  "MMMPPOOIIOOONMMM",
+  "MPPPOOILKIOONNNM",
+  "MMMPOOIKJIONNMMM",
+  "..MOOOOIIOOONM..",
+  "..MOONONNNONNM..",
+  "...MONONNNNNM...",
+  "...MMONNNNNMM...",
+  "..MNMMMNMMMMNM..",
+  "..MM..MNM...MM..",
+  "......MMM......."
+ ],
+ "pal": {
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "M": "#353204",
+  "N": "#4b4f00",
+  "O": "#647025",
+  "P": "#898b4c",
+  "q": "#bdb39b"
+ }
+}

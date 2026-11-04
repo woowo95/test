@@ -1,0 +1,27 @@
+{
+ "id": "sym_tass",
+ "ritad": 3,
+ "av": "API:t, vald av Claude",
+ "om": "API:t ritade tre versioner efter Björns kommentar; Claude valde version 1 (valet i API:t hann inte köras).",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "..........r.....",
+  "......r..rur..r.",
+  ".....rur.rtr.rur",
+  ".....rtr.rtr.rtr",
+  "....rtr.rtr.rtr.",
+  "....rtr.rtr.rtr.",
+  "....rtr.rtr.rtr.",
+  "...rtr.rtr.rtr..",
+  "...rsr.rtr.rsr..",
+  "..rsr.rtr.rsr...",
+  "..rsr.rsr.rsr...",
+  "..rsr.rsr.rsr...",
+  ".rsr.rsr.rsr....",
+  ".rsr.rsr.rsr....",
+  ".r..rsr..r......",
+  ".....r.........."
+ ],
+ "pal": {"r":"#521100","s":"#742a01","t":"#a14808","u":"#bd753e"}
+}

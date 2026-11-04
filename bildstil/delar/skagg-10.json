@@ -1,0 +1,42 @@
+{
+ "id": "skagg-10",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 2, omritad efter Björns svar",
+ "om": "Valde version 3: den är bredare och yvigare än version 1, sidorna har redan en trasig, tovig kant, och skuggningen följer förebilden (ljusa h-toner till vänster mot ljuset, mörka e-toner till höger och under hakan). Version 1 har dessutom ensamma prickar längst ner. Efter Björns kommentar om för rundad kontur har jag brutit upp den mjuka, jämna rundningen nedtill. Nederkanten slutar nu i flera separata, ojämnt långa testar i stället för en jämn båge, och det sticker ut lösa tovor på sidorna nere vid hakan och på bägge sidor under käken. Testarna hänger ihop lodrätt, så att inga ensamma prickar uppstår. Skägget går till y = 19 och håller sig inom rutan. Bara tonerna e, f, g och h används.",
+ "bilder": {
+  "standard": {
+   "x": -18,
+   "y": -8,
+   "rader": [
+    ".hhghhg.....................gffeff..",
+    "hhhhhggg...................ggffffee.",
+    "ghhhhhgg...................gffffffee",
+    ".hhhhhhgg..................ggffffffe",
+    "hhhhhhhgg.hhhhhggghgfggfff.gffffffee",
+    "ghhhhghhhhhhhgggghgffgggffffgfffffe.",
+    "hhhhhhhghhhhggghhgffgggffffgffffffee",
+    ".hhhhghhhgghggggghgfgggfffgfffffffee",
+    "hhhhghhggghggggghgfggffgffgfffffeffe",
+    "hhhgghgggghgggghggfgfgffffgfffeffee.",
+    ".hhggghggggghggggfgfgfffffgffefffee.",
+    "hhhgggggghggggghgffgffffgfffeffeefee",
+    "..hgggggghgggggggfgfffffgfffefffeee.",
+    ".gggghggghggggggffgfffffgffefffeeeee",
+    "...gggggghgggggfffgffffgfffeffeeee..",
+    "..gggggggggggffffgfffffgffeffeeeeee.",
+    "..fggggggggggffffgffffffgfeefeeeef..",
+    "ffggfgggggfgfffffgffffffffeefeeeeee.",
+    "..ff.fggggffgffffgffffffeeefeeeeee..",
+    "...fffgfgfffffffgfffffeeeefeeeeee...",
+    "..fffffgfffffffgffffeeeeeeeeeeee....",
+    "...fffffffgffffffffeeeeeefeeeeee....",
+    "....ffeffgfffffeeeeeeefeeeeee.ee....",
+    "....ee.efffffeffeeeeeeeeeeeeee.ee...",
+    "......eeeeffeeeeeeeeeeeeeee..ee.....",
+    ".......eee.eeeee.eeeeeee.eeee.......",
+    ".......ee...eeee..eeee...eee........",
+    "........e....ee....ee.....ee........"
+   ]
+  }
+ }
+}

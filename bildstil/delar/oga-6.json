@@ -1,0 +1,52 @@
+{
+ "id": "oga-6",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den har samma ögonstorlek, irisbredd och skuggning som förebilden. Snedheten uppåt syns tydligt: det yttre hörnet sitter högre och vitan vid det inre hörnet ligger lägre. Den nedre skuggkanten (bccccb) når ända fram till det inre hörnet och följer formen bättre än i version 1. Version 2 drar ögat ut till kanten redan på andra raden, och dess slutna läge har en ljus kant längst ner till höger, vilket bryter mot ljuset uppifrån vänster. I version 3 är de fyra lägena samma del: bara ögonlocken och irisens läge ändras. Allt ryms inom rutan och bara tillåtna tecken används. Jag ändrade inget.",
+ "bilder": {
+  "oppna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "aaaa....",
+    "avjjiaa.",
+    "bvikkvva",
+    ".bjiivvb",
+    "..bccccb"
+   ]
+  },
+  "glada": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "aaaa....",
+    "avjjiaa.",
+    "bcikkvca",
+    ".bcdddcb",
+    "........"
+   ]
+  },
+  "ledsna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "bbbb....",
+    "aaaaaaa.",
+    "bvjjivva",
+    ".bikkvvb",
+    "..bccccb"
+   ]
+  },
+  "slutna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "........",
+    "bbbbb...",
+    "aaccccb.",
+    ".baaaaaa",
+    "..bccccb"
+   ]
+  }
+ }
+}

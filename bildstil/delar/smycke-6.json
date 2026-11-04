@@ -1,0 +1,20 @@
+{
+ "id": "smycke-6",
+ "ritad": 3,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 3. Den läses tydligast som ett litet ben: ett ljust skaft i ben-tonerna med knoppar i båda ändarna. Den ligger snett inne i håret på samma ställe på alla tre ansiktena, och dess detaljer är lika stora som pärlorna i benhalsbandet. Version 1 liknar mer en böjd kvist eller tofs. Version 2 ser ut som en rak spänne med band under, och knopparna syns dåligt. Ändringar: jag har tagit bort en punkt i vänster ände (rad 2) och en i höger ände (rad 4). Då får varje ände ett litet hack mellan två knölar, och benformen med knoppiga ändar blir tydligare, som Björn bad om. Ljuset kommer uppifrån vänster, med ljusast w uppe till vänster och mörkare p nere till höger. Den skugga i jord som benet kastar på håret under sig ligger kvar, och ingen kontur är tillagd.",
+ "bilder": {
+  "standard": {
+   "x": -14,
+   "y": 1,
+   "rader": [
+    "ww..........",
+    ".wqwww....wq",
+    "wqpqqpwwwwqp",
+    "qpEEEEqqpqp.",
+    "EE....EEEEpp",
+    "..........EE"
+   ]
+  }
+ }
+}

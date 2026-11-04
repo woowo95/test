@@ -1,0 +1,27 @@
+{
+ "id": "sym_stetoskop",
+ "ritad": 3,
+ "av": "Claude",
+ "om": "Ett rött plustecken för fliken Hälsa, inte ett kristet kors, som Björn bad om. Ritat av Claude.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "................",
+  ".....rrrrrr.....",
+  ".....ruuuur.....",
+  ".....ruttsr.....",
+  ".....ruttsr.....",
+  ".rrrrttttttrrrr.",
+  ".ruuuttttttuuur.",
+  ".ruttttttttttsr.",
+  ".ruttttttttttsr.",
+  ".russttttttsssr.",
+  ".rrrrttttttrrrr.",
+  ".....ruttsr.....",
+  ".....ruttsr.....",
+  ".....russsr.....",
+  ".....rrrrrr.....",
+  "................"
+ ],
+ "pal": {"r":"#521100","s":"#742a01","t":"#a14808","u":"#bd753e"}
+}

@@ -1,0 +1,43 @@
+{
+ "id": "sym_egenskaper",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den hör bäst ihop med förebilden: senapsstrecken har samma guldton som svärdens fästen, och rostkroppen syns tydligt på både mörk och ljus bakgrund. Version 2 har en olivgrön kropp som blir för mörk och flyter ihop. Version 3 har skifferstreck som blir kalla och svåra att se på den mörka panelen. Figuren i version 1 har jord0-kontur runt huvud och ben och rost0 runt kroppen, och ljuset faller uppifrån till vänster. Det jag ändrade: strecken var lika långa och såg mest ut som tre rutor. Nu är de 5, 4 och 3 punkter långa, så att de läses som egenskapsstaplar. Det översta strecket fick en ljusare mitt (senap2 och senap3), och det understa fick bara en senap1-punkt i mitten. Symbolen är 16 punkter hög och 16 bred och fyller rutan.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "...EEEE.........",
+  "..EHGGFE........",
+  "..EGqpFE...IIIII",
+  "..EqppoE...ILKJI",
+  "..EppooE...IIIII",
+  "...EooE.........",
+  ".rrrrrrrr.......",
+  "rutttttssr.IIII.",
+  "rurtttsrsr.ILJI.",
+  "rtrttssrsr.IIII.",
+  "rtrtsssrsr......",
+  "EprssssrpE......",
+  ".ErrrrrrE..III..",
+  ".EGFEEGFE..IJI..",
+  ".EGFEEGFE..III..",
+  "EEEE..EEEE......"
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e"
+ }
+}

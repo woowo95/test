@@ -1,0 +1,38 @@
+{
+ "id": "sym_gott_rykte",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den fyller rutan bäst, 14 × 16 punkter. Glorian sitter tätt ovanpå huvudet, så symbolen hålls ihop som en form. Ansiktet i benljusa toner syns tydligt på både mörk och ljus bakgrund. De glada stängda ögonen, leendet och rostfärgade kinder gör att den känns igen som 😇 på en blick. Senapsglorian med jord0-konturen passar ihop med förebildens guldfästen och mörka kontur. Version 1 har ett brunt ansikte med svag kontrast och en tom rad mellan gloria och huvud. Version 2 är smalare och ser mer neutral ut. Ändringar: ögon och mun är omritade från kol0 till jord0 (E), eftersom kol0 bara ska användas för det som verkligen är svart och dragen ska ha materialets mörkaste ton. Jag tog också bort de två ensamma ljusa w-prickarna mitt i pannan, så att ljuset samlas uppe till vänster och glansen inte blir fläckig.",
+ "w": 14,
+ "h": 16,
+ "rader": [
+  "..IIIIIIIIII..",
+  ".ILLKKKKKKKJI.",
+  "..IIJJJJJJII..",
+  "....EEEEEE....",
+  "..EEwwqqqqEE..",
+  ".EwwwqqqqqqpE.",
+  "EwwqqqqqqqqqpE",
+  "EwqqEqqqqEqqpE",
+  "EqqEqEqqEqEppE",
+  "EquqqqqqqqqupE",
+  "EqqEqqqqqqEppE",
+  "EqqpEEEEEEpppE",
+  "EqqpppppppppoE",
+  ".EppppppppooE.",
+  "..EEppppooEE..",
+  "....EEEEEE...."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "u": "#bd753e",
+  "w": "#dad0bb"
+ }
+}

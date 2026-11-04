@@ -1,0 +1,28 @@
+{
+ "id": "vilt",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den följer dagens bild närmast: örat uppe till vänster, det svarta ögat ytterst till vänster i huvudet, en ljus kropp med ljusare rygg, den vita svansen till höger, benen under och rött blod nere till höger. Den är också den enda versionen med jord0 som kontur, så som guiden kräver för brunt material, och därför syns silhuetten tydligast mot gräset. Ljuset faller rätt, med q och H på ryggen uppe till vänster och mörkare G nedåt. Kroppen i ben och jord passar ihop med förebildens dämpade toner, och bara blodet är mättat. Jag ändrade en sak: undersidan på rad 5 är mörkare (H blev G, och G blev F närmast bakbenen), så att buken mellan benen får en mörkare kant nere till höger och inte slutar i en ljus ton utan kontur.",
+ "w": 12,
+ "h": 6,
+ "rader": [
+  "EE..........",
+  "EqE...EEEE..",
+  ".EqEEEqqqHE.",
+  "EkqHqqHqHHGw",
+  ".EHGHGGGGFEp",
+  "..EGE.EGE.ts"
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "k": "#24201d",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "s": "#742a01",
+  "t": "#a14808",
+  "w": "#dad0bb"
+ }
+}

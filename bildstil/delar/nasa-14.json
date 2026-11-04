@@ -1,0 +1,35 @@
+{
+ "id": "nasa-14",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Näsryggen ligger på x = -1 och 0, som i förebilden. Delen går från x = -4 till 3, alltså lika långt åt båda hållen om mittlinjen, och håller sig inom rutan både i vuxenbilden och i barnbilden. Spetsen växer mjukt i bredd (6, 6, 8, 6 punkter) och blir därför rund och bred, så som beskrivningen säger. Ljuset kommer från vänster med d på den sidan och b på den bortvända. Näsvingarna och undersidan är tonade med a, vilket ger en matt skugga utan glans. Version 1 är sned i spetsen och sträcker sig längre åt höger än åt vänster. Version 2 har en för bred och kantig rad 6, och den har en mörkare b på ljussidan där ljuset borde falla. Barnbilden i version 3 är symmetrisk och kortare, och den följer samma skuggning. Jag har inte ändrat något.",
+ "bilder": {
+  "standard": {
+   "x": -4,
+   "y": 1,
+   "rader": [
+    "...db...",
+    "...db...",
+    "...cb...",
+    "..dcbb..",
+    ".ddccbb.",
+    ".dcccbb.",
+    "adcccbba",
+    ".abbbba."
+   ]
+  }
+ },
+ "barn": {
+  "standard": {
+   "x": -3,
+   "y": 1,
+   "rader": [
+    "..db..",
+    "..cb..",
+    ".dccb.",
+    "adccba",
+    ".abba."
+   ]
+  }
+ }
+}

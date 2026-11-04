@@ -1,0 +1,75 @@
+{
+ "id": "mun-7",
+ "ritad": 3,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Valde version 3 eftersom den ligger närmast förebilden: en sammanhängande läpplinje i r med två bågar och en punkt nedåt i mitten, och en ljus skugga (bbba, mörkare åt höger bort från ljuset) under underläppen. Ändrat: tog bort raden 'ba..aa' ovanför läpparna, som gav prickar runt munnen och gjorde att den såg ut som en mustasch eller krabba. Hjärtformen är nu bara en liten båge på överläppen: läpplinjen '.rrr..rrr.' med mittpunkterna 'rr' en rad ner. Arg har inte längre några k runt läpparna, utan en bredare, spänd linje med nedåtvända mungipor i s. Ledsen har mjuka mungipor i s. Öppen är en liten rund mun med bågen ovanpå och k bara inuti. Alla lägen är centrerade kring mittlinjen (x -5 till 4) och håller sig inom rutan.",
+ "bilder": {
+  "glad": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "r........r",
+    ".rrr..rrr.",
+    ".rqqrrqqr.",
+    "..rrrrrr..",
+    "...bbba..."
+   ]
+  },
+  "nojd": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "r........r",
+    ".rrr..rrr.",
+    "....rr....",
+    "...bbba...",
+    ".........."
+   ]
+  },
+  "lugn": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "..........",
+    ".rrr..rrr.",
+    "....rr....",
+    "...bbba...",
+    ".........."
+   ]
+  },
+  "ledsen": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "..........",
+    ".rrr..rrr.",
+    "s...rr...s",
+    "...bbba...",
+    ".........."
+   ]
+  },
+  "arg": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "..........",
+    "rrrr..rrrr",
+    "s...rr...s",
+    "...bbba...",
+    ".........."
+   ]
+  },
+  "oppen": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "..........",
+    "..rr..rr..",
+    "..rkrrkr..",
+    "..rkkkkr..",
+    "...rrrr...",
+    "...bbba..."
+   ]
+  }
+ }
+}

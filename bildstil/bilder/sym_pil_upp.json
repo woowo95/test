@@ -1,0 +1,20 @@
+{
+ "id": "sym_pil_upp",
+ "ritad": 3,
+ "av": "Claude",
+ "om": "Claude: en enkel pil rakt upp, bara spetsen, utan skaft, samma form som pilen ner.",
+ "w": 15,
+ "h": 9,
+ "rader": [
+  ".......M.......",
+  "......MPM......",
+  ".....MOOPM.....",
+  "....MOOONNM....",
+  "...MOOOONNNM...",
+  "..MOOOOONNNNM..",
+  ".MOOOOOONNNNNM.",
+  "MMMMMMMMMMMMMMM",
+  "..............."
+ ],
+ "pal": {"M":"#353204","P":"#898b4c","O":"#647025","N":"#4b4f00"}
+}

@@ -1,0 +1,27 @@
+{
+ "id": "sym_ben_knota",
+ "ritad": 3,
+ "av": "API:t, vald av Claude",
+ "om": "API:t ritade tre versioner efter Björns kommentar; Claude valde version 1 (valet i API:t hann inte köras).",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".........kk.kk..",
+  "........kwqkqqk.",
+  "........kqqqqpk.",
+  ".........kqqpk..",
+  "........kqqpk...",
+  "....k...kqpok...",
+  "...kqk.kqppk....",
+  "..kpk..kpkok....",
+  "...k....k.k.....",
+  ".....k.k...k....",
+  "....kqkpk.kqk...",
+  ".kk.kqqpk..k....",
+  "kwqkqqpk........",
+  "kqqpqppk........",
+  ".kqpkpok........",
+  "..kk.kk........."
+ ],
+ "pal": {"k":"#24201d","o":"#7e7362","p":"#a0947d","q":"#bdb39b","w":"#dad0bb"}
+}

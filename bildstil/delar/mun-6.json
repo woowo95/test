@@ -1,0 +1,74 @@
+{
+ "id": "mun-6",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Valde version 2. Den är den enda där snedheten finns i alla lägen: höger mungipa ligger högre och vänster lägre, så munnen ser ut som samma sneda mun i varje humör. Linjetjockleken är också densamma som i förebilden (en punkt rost, läppen under i hud1). Version 1 är nästan rak i lugn och ledsen, och i ledsen hänger s-punkten lös under en rak linje. Version 3 har tänder (q) i arg och en lös rost-punkt nere till höger, och i ledsen ligger läppen i samma rad som munlinjen, vilket inte stämmer med förebilden. I version 2 sitter alla lägen på samma ställe, med x från -5 till 4 och y från -2 till 2, inom rutan. Arg och öppen är bara lätt sneda och läses bra på alla tre ansiktena. Jag behövde inte ändra något: alla punkter hänger ihop, inga tecken utanför sortens tillåtna används och inget hamnar utanför rutan.",
+ "bilder": {
+  "glad": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "........r.",
+    "r......r..",
+    ".rqqqqqr..",
+    "..rrrrr...",
+    "...bbb...."
+   ]
+  },
+  "nojd": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "..........",
+    ".........r",
+    "r......rr.",
+    ".rrrrrr...",
+    "..bbbb...."
+   ]
+  },
+  "lugn": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "..........",
+    "..........",
+    "......rrr.",
+    ".rrrrr....",
+    "..bbbb...."
+   ]
+  },
+  "ledsen": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "..........",
+    "..........",
+    "....rrrrr.",
+    "..rr.bbb..",
+    ".s........"
+   ]
+  },
+  "arg": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "..........",
+    "......rrr.",
+    ".rrkkkkkr.",
+    "r.rrrrr...",
+    "..bbbb...."
+   ]
+  },
+  "oppen": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "..........",
+    "....rrr...",
+    "...rkkkr..",
+    "...rkkr...",
+    "....bb...."
+   ]
+  }
+ }
+}

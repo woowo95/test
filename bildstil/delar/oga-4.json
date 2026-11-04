@@ -1,0 +1,56 @@
+{
+ "id": "oga-4",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 2. Den har den tydligaste stora, runda formen och ett jämnt övre ögonlock i hud0, och de slutna och ledsna lägena läser bra på alla tre ansiktena. Den håller sig också inom rutan (-4..3, -3..3).\n\nDet öppna läget såg konstigt ut, som Björn skrev, eftersom iristonerna låg huller om buller: ljus oga1 överst, mörk oga0 nederst och en osymmetrisk rad (vjjji). Jag ritade om iris så att den är rund och symmetrisk och skuggas som förebilden:\n- Den mörka tonen ligger överst under locket (iiii).\n- En pupill på 2×2 i k sitter i mitten.\n- Den ljusare tonen ligger nedtill (jkkj, jj), och den nedersta raden rundar av iris.\n\nDet glada och det ledsna läget fick samma iris och pupill, så att delen är densamma i alla lägen och bara locken och kinden ändras. Det slutna läget är oförändrat.",
+ "bilder": {
+  "oppna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".aaaaaa.",
+    "aviiiiva",
+    "avikkiva",
+    "bvjkkjvb",
+    ".bvjjvb.",
+    "..cccc.."
+   ]
+  },
+  "glada": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".aaaaaa.",
+    "aviiiiva",
+    "avikkiva",
+    "bcjkkjcb",
+    ".cddddc.",
+    "........"
+   ]
+  },
+  "ledsna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "bbbbbaa.",
+    "aaaaaiva",
+    "avikkiva",
+    "bvjkkjvb",
+    ".bvjjvb.",
+    "..cccc.."
+   ]
+  },
+  "slutna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".bbbbbb.",
+    "bccccbbb",
+    "bcccbbba",
+    "aaaaaaaa",
+    ".bccccb.",
+    "..cccc.."
+   ]
+  }
+ }
+}

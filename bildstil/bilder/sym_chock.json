@@ -1,0 +1,27 @@
+{
+ "id": "sym_chock",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 2. Ansiktet har en dämpad hudton (rost3 som blir jord3 och jord2 åt höger), och det följer Björns kommentar. Version 1 har senapsgult hår och ett blekt benvitt ansikte, så den drar åt emojins gula. Version 3 är nästan helt i mättad rost3 och blir för stark för en symbol som inte är eld, blod eller mat. Version 2 har jord0-kontur runt hela, ljuset uppe till vänster och skuggan nere till höger som förebilden. Den har också tydliga former i liten storlek: uppdragna ögonbryn, stora vita uppspärrade ögon med små pupiller och en öppen mun. Den fyller rutan i 16 × 16 punkter. Jag ändrade bara håret: i de två översta hårraderna lade jag ljusare jord3 och jord2 uppe till vänster, så att ljusriktningen syns även i håret och håret inte smälter ihop med konturen på mörk bakgrund.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "....EEEEEEEE....",
+  "..EEHGGFFGFFEE..",
+  ".EGGFGFFFFFFFFE.",
+  "EGFuuuHuHHHHHGFE",
+  "EFuEEEuHuHEEEHFE",
+  "EuuuuHuHHHHHHHGE",
+  "EuuEEEHuHHEEEHGE",
+  "EuEwwqEHHEwwqEGE",
+  "EuEwkqEHGEwkqEGE",
+  "EHEqqpEHGEqqpEGE",
+  "EHHEEEHGHGEEEGGE",
+  "EHHHHGEEEEGHGGFE",
+  "EGHHGEkllkEGGFFE",
+  ".EGHGEklrkEGFFE.",
+  "..EGGFEEEEFFFE..",
+  "....EEEEEEEE...."
+ ],
+ "pal": {"E":"#3f2415","F":"#5e3c24","G":"#7d5b40","H":"#987e62","k":"#24201d","l":"#2f261d","p":"#a0947d","q":"#bdb39b","r":"#521100","u":"#bd753e","w":"#dad0bb"}
+}

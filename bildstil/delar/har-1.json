@@ -1,0 +1,63 @@
+{
+ "id": "har-1",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 1",
+ "om": "Version 3 är den enda och passar bra: kort frisyr med sidbena, ljuset uppifrån vänster (h/g till vänster, f/e till höger), samma tonstegning och detaljstorlek som förebilden, och den ligger rätt på alla tre mallarna utan att täcka ögonbrynen. Ändringar: i bakhar togs det regelbundna mönstret av ensamma prickar (f i g-ytan och e i f-ytan varannan rad) bort, eftersom det såg ut som ränder och bröt mot regeln om ensamma prickar; i stället har gränserna mellan tonerna fått ett ojämnt korn i små klungor. I framhar flyttades en ensam e-punkt i rad 2 ut till kanten så att övergången f→e blir sammanhängande. Formen, storleken och fästet är oförändrade.",
+ "bilder": {
+  "bakhar": {
+   "x": -20,
+   "y": -2,
+   "rader": [
+    "..............ggggfffffeee..............",
+    "...........gggggfffffffffeeee...........",
+    ".........ggggggffffffffffeeeeee.........",
+    ".......gggggggffffffffffffeeeeeee.......",
+    "......gggggggfffffffffffffeeeeeeee......",
+    ".....ggggggggffffffffffffffeeeeeeee.....",
+    "....ggggggggfffffffffffffffeeeeeeeee....",
+    "...gggggggggfffffffffffffffeeeeeeeeee...",
+    "..gggggggggffffffffffffffffeeeeeeeeeee..",
+    "..ggggggggfgffffffffffffffefeeeeeeeeee..",
+    "..ggggggggffffffffffffffffffeeeeeeeeee..",
+    "..gggggggggffffffffffffffffeeeeeeeeeee..",
+    "..ggggggggggffffffffffffffeeeeeeeeeeee..",
+    "..ggggggggggffffffffffffffffeeeeeeeeee..",
+    "...ggggggggffffffffffffffffeeeeeeeeee...",
+    "...gggggggffffffffffffffffeeeeeeeeeee...",
+    "...ggggggggfffffffffffffffffeeeeeeeee...",
+    "...ggggggggffffffffffffffffeeeeeeeeee...",
+    "...gggggggggfffffffffffffffeeeeeeeeee...",
+    "...ggggggggfffffffffffffffeeeeeeeeeee...",
+    "....gggggggfffffffffffffffeeeeeeeeee....",
+    ".....gggfffffffffffffffeeeeeeeeeeee.....",
+    ".......ffffffffffffffeeeeeeeeeeee.......",
+    "..........eeffffffffffeeeeeeee.........."
+   ]
+  },
+  "framhar": {
+   "x": -20,
+   "y": -2,
+   "rader": [
+    "...............hhhhgggff................",
+    "............hhhhhhhgggggffff............",
+    "..........hhhfhhhhhhgggggffffe..........",
+    "........hhhhfhhhhhhhggggggffffee........",
+    ".......ghhhhfhhhhhhhhggggggfffeee.......",
+    "......ghhhhfghhhhhhhhgggggggffffee......",
+    ".....gghhhhfghhhhhhhhgggggggfffffee.....",
+    "....ggghhhhfghhhhhhhhhggggggfffffeee....",
+    "....ggghhhhf......hhhhhggggggfffeeee....",
+    "...ggghhhf............ghhhgggggffeeee...",
+    "...gggghf................ghggggffeeee...",
+    "...ggggf...................gggfffeeee...",
+    "..fggggf.....................ggffeeeee..",
+    "...fgggf.......................ffeeee...",
+    "....fgggf......................ffeee....",
+    "......fgf......................fee......",
+    ".......gf......................fe.......",
+    ".......gf......................ee.......",
+    "........f......................e........"
+   ]
+  }
+ }
+}

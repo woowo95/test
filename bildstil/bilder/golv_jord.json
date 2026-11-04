@@ -1,0 +1,32 @@
+{
+ "id": "golv_jord",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "jordgolvet: hårt trampad jord med små stenar och smulor",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "GGFGFFEFGFGFFEFF",
+  "FEEGFEFFFEGmFGFG",
+  "FFFFFEFEFFFFmGGG",
+  "EFGGFEGGGFFFEFFF",
+  "FFEFFGFmFFFmFFFm",
+  "EFGFFFFFFGEFFFGG",
+  "FEEFGFFGFFEGFFGF",
+  "FEFFFFGGFFFGGFFG",
+  "FFFGFFFGFmGFEFFF",
+  "GGFFGFGFEFFFFFFF",
+  "GFGFFEEGGFFFGFFF",
+  "FEFGFEFFFFEFFFFF",
+  "FFFFFFEGFFFFFFFE",
+  "FFGFFEGGGFFFFFFG",
+  "FFFFEFFFFGFFFFFE",
+  "EGGFEGFFFGGFFFEF"
+ ],
+ "pal": {
+  "G": "#7d5b40",
+  "F": "#5e3c24",
+  "E": "#3f2415",
+  "m": "#372f25"
+ }
+}

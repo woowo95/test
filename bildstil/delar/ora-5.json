@@ -1,0 +1,24 @@
+{
+ "id": "ora-5",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 2. Den är kortast, tio rader från y -5 till 4, och är inte längre någon lång remsa längs huvudets sida. Den sitter ungefär lika högt som förebildens öra och håller sig inom rutan. Spetsen upptill är smal och sitter en kolumn in från ytterkanten, så den läses som en liten spets och inte som en rak kant. Version 1 har en rak d-kolumn ända upp och ser därför ut som en remsa. Version 3 är längre och har en utdragen skål. I version 2 finns förebildens form kvar: en rundad ytterkant med ljus ton d upptill mot ljuset och c längre ner, en skål i a och b med mörkast ton i mitten, och en örsnibb som smalnar av nertill. Inga punkter är ändrade, eftersom formen, tonerna och storleken redan stämmer med förebilden och med reglerna.",
+ "bilder": {
+  "standard": {
+   "x": -2,
+   "y": -5,
+   "rader": [
+    ".d...",
+    ".dc..",
+    "dccb.",
+    "dcbbb",
+    "dbabb",
+    "dbaab",
+    "cbabb",
+    "cbbb.",
+    ".ccb.",
+    "..cb."
+   ]
+  }
+ }
+}

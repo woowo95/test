@@ -1,0 +1,27 @@
+{
+ "id": "sym_oron",
+ "ritad": 3,
+ "av": "API:t, vald av Claude",
+ "om": "API:t ritade tre versioner efter Björns kommentar; Claude valde version 1 (valet i API:t hann inte köras).",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".....EEEEE......",
+  "....EwqqqpE.....",
+  "...EwqqqqqpE....",
+  "...EqqGGGqpoE...",
+  "...EqGFFFGpoE...",
+  "...EqGFqpGpoE...",
+  "...EGFqpFGpoE...",
+  "...EpEEFqGpoE...",
+  "...EqEEFpGpoE...",
+  "...EpqFFpGpoE...",
+  "....EpGGGpoE....",
+  "....EqppppoE....",
+  ".....EqppoE.....",
+  ".....EqppoE.....",
+  "......EpoE......",
+  ".......EE......."
+ ],
+ "pal": {"E":"#3f2415","F":"#5e3c24","G":"#7d5b40","o":"#7e7362","p":"#a0947d","q":"#bdb39b","w":"#dad0bb"}
+}

@@ -1,0 +1,19 @@
+{
+ "id": "rock_vargskinn",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Valde version 1 eftersom den följer dagens bild närmast. Den har samma ljusa pälskrage som en V-formad ring kring halsen. Ärmarna går ut i full bredd över axlarna, och de ljusa muddarna sitter i ärmarnas nedre kant på båda sidor. En mörk linje skiljer ärmarna från kroppen, och kroppen smalnar av nedåt med en mörkare mittsöm och en fransig nederkant. Färgerna motsvarar dagens: grått skinn i skiffer2/skiffer3 med skiffer1 i sömmen, kragen och muddarna i ben3/ben2, och konturen i skiffer0 i stället för svart. Ljuset faller uppifrån vänster: den vänstra ärmen och muddarna är ljusast. Version 2 tappar konturen i muddarna och har en ojämn krage. Version 3 har ringkragens hål men blir för bred och klumpig nedtill och har bara muddar halvvägs ner. Inga ändringar behövdes: storleken 11 × 8 stämmer och alla tecken finns i paletten.",
+ "w": 11,
+ "h": 8,
+ "rader": [
+  "...owwqo...",
+  ".QTwqoqpSQ.",
+  "QTSTqRpSSRQ",
+  "QTSQTRSQSRQ",
+  "QwqQSRSQqoQ",
+  ".QQQTRSQQQ.",
+  "...QSRSQ...",
+  "...Q.Q.Q..."
+ ],
+ "pal": {"Q":"#233035","R":"#3e5156","S":"#61767a","T":"#8a9c9e","o":"#7e7362","p":"#a0947d","q":"#bdb39b","w":"#dad0bb"}
+}

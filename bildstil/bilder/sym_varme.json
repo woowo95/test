@@ -1,0 +1,27 @@
+{
+ "id": "sym_varme",
+ "ritad": 3,
+ "av": "API:t, vald av Claude",
+ "om": "API:t ritade tre versioner efter Björns kommentar; Claude valde version 1 (valet i API:t hann inte köras).",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "......rr........",
+  ".....rtsr.......",
+  ".....rtsr.......",
+  "..rr..rtsr..rr..",
+  ".rtsr.rtsr.rtsr.",
+  ".rutr.rutr.rutr.",
+  "rutr.rutr.rutr..",
+  "rutr.rutr.rutr..",
+  "rutr.rutr.rutr..",
+  ".rutr.rutr.rutr.",
+  ".rLKr.rLKr.rLKr.",
+  ".rLKr.rLKr.rLKr.",
+  "rLKr.rLKr.rLKr..",
+  "rLKr.rLKr.rLKr..",
+  "rKJr.rKJr.rKJr..",
+  ".rr..rr..rr....."
+ ],
+ "pal": {"J":"#906f0f","K":"#b2921b","L":"#d8b25f","r":"#521100","s":"#742a01","t":"#a14808","u":"#bd753e"}
+}

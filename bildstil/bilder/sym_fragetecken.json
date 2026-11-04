@@ -1,0 +1,33 @@
+{
+ "id": "sym_fragetecken",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den ljusa bentonen motsvarar det vita ❔ och känns därför igen direkt. Konturen i kol0 är hel och tydlig på både mörk och ljus bakgrund, och de tjocka, få formerna fyller rutan med 14 × 16 punkter. Ljuset faller uppe till vänster och ben0 ligger nere till höger, som på förebildens svärd. Version 1 har en svagare kontur i kol1 och är smalare. Version 3 är skifferblå, vilket läses mer som en kall sten än som frågetecknet och krockar med svärdens blad. Ändringar: jag tog bort de spridda w-punkterna i översta bågen, eftersom glansen ska vara högst ett par punkter. Jag lät också bågens vänstra kant gå i q i stället för w, så att den ljusaste tonen bara finns uppe till vänster och på punkten.",
+ "w": 14,
+ "h": 16,
+ "rader": [
+  "..kkkkkkkkk...",
+  ".kwqqqqqqqpk..",
+  "kwqqqkkkkqqpk.",
+  "kqqpk...kqqppk",
+  "kkkkk...kqppok",
+  ".......kqppok.",
+  "......kqqpok..",
+  ".....kqppok...",
+  ".....kqpok....",
+  ".....kqpok....",
+  ".....kkkkk....",
+  "..............",
+  ".....kkkkk....",
+  ".....kwqpk....",
+  ".....kqpok....",
+  ".....kkkkk...."
+ ],
+ "pal": {
+  "k": "#24201d",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

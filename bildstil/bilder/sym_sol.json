@@ -1,0 +1,32 @@
+{
+ "id": "sym_sol",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Version 3 är vald. Det är den enda som läses som en sol direkt: en rund skiva med åtta tydliga strålar runt om. Version 1 liknar en skalbagge eller sköldpadda med korta ben, och version 2 ser ut som en fyrkantig låda med lösa prickar. Version 3 hör ihop med förebilden: få stora former, kontur i senap0 (materialets mörkaste ton), ljuset uppe till vänster (senap3 uppe till vänster, senap1 nere till höger), korn i skivan utan fläckar och mättad senap som den enda färgen. Den fyller hela rutan, 16 × 16. Raka och sneda strålar är lika stora och har samma byggnad, med ett glapp mot skivan, så silhuetten blir ren även i liten storlek. Jag har inte ändrat något, eftersom den redan stämmer med reglerna.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".......II.......",
+  ".II...ILKI...II.",
+  ".ILI..IKJI..IKI.",
+  "..IKI......IKI..",
+  "...II.IIII.II...",
+  ".....ILLKKI.....",
+  ".II.ILLKLKJI.II.",
+  "ILK.ILKKKJKI.KJI",
+  "IKJ.IKKJKJJI.JJI",
+  ".II.IKJKJJJI.II.",
+  ".....IKJJJI.....",
+  "...II.IIII.II...",
+  "..IKI......IJI..",
+  ".IJI..IKJI..IJI.",
+  ".II...IJJI...II.",
+  ".......II......."
+ ],
+ "pal": {
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f"
+ }
+}

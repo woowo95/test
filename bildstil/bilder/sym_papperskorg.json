@@ -1,0 +1,33 @@
+{
+ "id": "sym_papperskorg",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den har en tydlig, sluten silhuett med handtag, lock och en kropp som smalnar av nedåt, så att den läses direkt som 🗑️. Den fyller rutan, 16 punkter bred och 16 hög, och har skiffer0 som kontur runt hela. Den mörkare kroppen har jämna räfflor i två till tre skiffertoner, ljusast uppe till vänster och mörkast nere till höger, och stämmer därmed med förebildens grå svärdsblad. Locket har en enda glanspunkt i ben3, som inte är ren vit. Version 2 är nästan lika bra, men locket når kanterna och smälter ihop med kroppens kontur. Det glesa, öppna handtaget blir också otydligt i liten storlek. Version 3 har inre konturlinjer (Q) inne i kroppen, som läses som mörka ränder eller fläckar, och den är smalare. Jag behövde inte rätta något i version 1.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "......QQQQ......",
+  ".....QTSSRQ.....",
+  ".QQQQQQQQQQQQQQ.",
+  "QTwTTSTSSSRSSRRQ",
+  "QSTSSSRSSRSRRRRQ",
+  ".QQQQQQQQQQQQQQ.",
+  ".QTSTRSTRSSRSRQ.",
+  ".QTTSRTSRSRRSRQ.",
+  ".QSTSRSTRSSRRRQ.",
+  ".QTSSRTSRSRRSRQ.",
+  "..QTSRSTRSSRRQ..",
+  "..QSTRTSRSRRRQ..",
+  "..QTSRSTRSSRRQ..",
+  "..QSSRTSRSRRRQ..",
+  "..QRRRRRRRRRRQ..",
+  "...QQQQQQQQQQ..."
+ ],
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "w": "#dad0bb"
+ }
+}

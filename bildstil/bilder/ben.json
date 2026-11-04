@@ -1,0 +1,15 @@
+{
+ "id": "ben",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den liknar förebilden Ved mest: en kort, tydlig sak med mörk kant nedtill till höger och korn i två till tre bentoner (ben0 till ben3). Formen läses tydligast som ett tecknat hundben: ett rakt skaft på två rader och två knölar i varje ände. Ljuset stämmer, med den ljusaste tonen uppe till vänster och ben0 som kontur nere till höger, och glansen är bara två punkter ben3, aldrig ren vit. Den håller sig inom 7 × 4 punkter. Version 1 är ojämnare, med en mörk nederkant över nästan hela skaftet och ljusa knölar bara till vänster. Version 2 blir för klumpig: knölarna är tre punkter breda och skaftet bara en punkt, så den läses mer som ett block än som ett ben. Dagens bild är ett diagonalt ben med små knölar i ändarna, och ingen version är diagonal. Beskrivningen kräver ett rakt skaft, och 7 × 4 ger för lite plats för en läsbar diagonal, så jag behöll den liggande formen men samma idé och färger: skaft och knölar i ljusa bentoner nära dagens #e8e2d0, #fffaf0 och #b8ae98. Jag ändrade inget, eftersom punkterna redan följer stilguiden.",
+ "w": 7,
+ "h": 4,
+ "rader": [
+  "qo...qo",
+  "wqqwqpo",
+  "qpqppoo",
+  "po...oo"
+ ],
+ "pal": {"o":"#7e7362","p":"#a0947d","q":"#bdb39b","w":"#dad0bb"}
+}

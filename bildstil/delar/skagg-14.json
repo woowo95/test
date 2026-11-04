@@ -1,0 +1,41 @@
+{
+ "id": "skagg-14",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Valde version 3: flätorna har ett tydligt band överst och en avslutad spets, och de sitter symmetriskt kring mittlinjen (kolumn 9–12 och 17–20). Enligt Björn var flätorna bra men skägget konstigt. Det berodde på de lodräta h-ränderna mitt i skägget, som såg ut som streck och inte som ett helskägg likt förebilden. Därför ritade jag om skäggets kropp (rad 0–16) och behöll flätorna. Skägget är nu ljust (h/g) uppe till vänster, går över i g och sedan f och blir mörkt (e) mot höger kant och nedåt. Övergångarna har korn i små klungor i stället för ränder. Polisongerna och mustaschpartiet har samma form som förut, och munnens ruta lämnas åt programmet. Skägget smalnar jämnt av ner mot flätornas fästen, där rad 16 har flätornas toner så att de växer ut ur skägget. Delen håller sig inom rutan och använder bara e, f, g och h.",
+ "bilder": {
+  "standard": {
+   "x": -15,
+   "y": -7,
+   "rader": [
+    "hhhhggg................gfffeee",
+    "hhhhhgg................gffffee",
+    ".hhhhgg................gfffee.",
+    ".hhhhgg.hhhhggggggffff.gffffe.",
+    ".hhhhggghhhhggggggfffffgffffe.",
+    "..hhhggghhhggggggggfffffffee..",
+    "..hhhgghhggggggggggffffgffee..",
+    "...hhhggghggggggggfffffffee...",
+    "...hhgggghgggggggffgfffffee...",
+    "...hgggghggggggfffgffffffee...",
+    "...ggghggggggggggfffffffeee...",
+    "....gggggggggggffgfffffeee....",
+    "....gghgggggggffffffffeeee....",
+    ".....gggggggfgffffffffeee.....",
+    ".....gggggfgffffffffffeee.....",
+    "......ggggfffffffffffeee......",
+    "........ghhgfffffggfee........",
+    ".........ffee....feee.........",
+    ".........hhgf....ggfe.........",
+    ".........ghff....gffe.........",
+    ".........fgge....efge.........",
+    ".........hhgf....ggfe.........",
+    ".........ghff....gffe.........",
+    ".........fgge....efge.........",
+    ".........ffee....feee.........",
+    ".........hggf....gffe.........",
+    "..........gf......fe.........."
+   ]
+  }
+ }
+}

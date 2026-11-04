@@ -1,0 +1,32 @@
+{
+ "id": "sym_spela",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den fyller hela rutan, 16 × 16 punkter, och är spegelsymmetrisk kring de två mittraderna, så spetsen pekar rakt åt höger och läses direkt som ▶. Version 1 är bara 15 bred och har enpunktshörn som blir spretiga i liten storlek. Version 2 är bara 14 bred och har en ojämn kant. Senapsguldet hör ihop med det gula i förebildens svärdsfästen. Konturen är materialets mörkaste ton (senap0), den ljusaste tonen (senap3) ligger längs den övre vänstra kanten och den mörkare (senap1) nere till höger mot spetsen. Två eller tre toner och en stor form gör den tydlig på både mörk och ljus bakgrund. Jag behövde inte ändra något: radlängderna stämmer (högst 16), och ytan har korn utan mörka fläckar.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "II..............",
+  "ILII............",
+  "ILLKII..........",
+  "ILLKKKII........",
+  "ILKLKKKKII......",
+  "ILKKKLKKJJII....",
+  "IKLKKKKKKJJJII..",
+  "IKKKKKKKKKJJJJII",
+  "IKKKKKKKKJJJJJII",
+  "IKKKKKKKJJJJII..",
+  "IKKKKKJJJJII....",
+  "IKKKJJJJII......",
+  "IKJJJJII........",
+  "IJJJII..........",
+  "IJII............",
+  "II.............."
+ ],
+ "pal": {
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f"
+ }
+}

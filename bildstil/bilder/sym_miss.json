@@ -1,0 +1,36 @@
+{
+ "id": "sym_miss",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den är den enda som läses som ett slag som går förbi: en lång, böjd fartlinje sveper från övre vänstra hörnet ner till höger och passerar under krysset utan att röra det. Version 1 och 3 ser i liten storlek mest ut som en krok eller en hacka bredvid krysset. Version 2 fyller rutan bra (16 bred, 15 hög) och har skiffer0 som kontur runt linjen och rost0 runt krysset. Ljuset stämmer: de ljusa tonerna ligger på linjens vänstra och övre sida, och glanspunkten i ben3 är bara en punkt. Krysset är i rost, alltså mättat där man ska se det, vilket passar ihop med förebildens enkla och tydliga former. Ändring: i den näst nedersta raden av svansen bytte jag en skiffer2 mot skiffer1 (SSS till SSR), så att linjen mörknar mot nedre högra hörnet som ljusregeln kräver. Resten är oförändrat.",
+ "w": 16,
+ "h": 15,
+ "rader": [
+  ".Q.......rr...rr",
+  "QTQ......rur.rsr",
+  "QTQ.......rtrsr.",
+  "QTSQ.......rtr..",
+  "QTSQ......rtrsr.",
+  ".QTSQ....rtr.rsr",
+  ".QTSQ....rr...rr",
+  "..QTSQ..........",
+  "..QTTSQ.........",
+  "...QwTSQ........",
+  "....QTTSQ.......",
+  ".....QTTTSQQQQQ.",
+  "......QQTTTTSSSQ",
+  "........QQSSRRRQ",
+  "..........QQQQQ."
+ ],
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e",
+  "w": "#dad0bb"
+ }
+}

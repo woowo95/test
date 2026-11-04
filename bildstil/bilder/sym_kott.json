@@ -1,0 +1,36 @@
+{
+ "id": "sym_kott",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Köttbiten har den rundaste och fylligaste formen och fyller hela rutan, 16 × 16 punkter. Den har en sammanhängande kontur i rost0, ljus från övre vänstra hörnet och mörkare rost1 nere till höger. Den enda glanspunkten är ben3, inte ren vit. Benet sticker tydligt fram under köttet och har jord0 som kontur, precis som förebildens svärd har en kontur i materialets mörkaste ton. Silhuetten läses direkt som 🍖 i liten storlek. Version 1 är plattare och har ingen glans. Version 3 har randiga t/s-mönster som blir brusiga i liten storlek. Jag behövde inte ändra något: paletten, måtten och konturen stämmer redan.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "........rrrr....",
+  "......rruuttrr..",
+  ".....ruuttttssr.",
+  "....ruututttstsr",
+  "...ruwuttttttssr",
+  "...rutuuttttsssr",
+  "...rututttttstsr",
+  "...rtttttttsssr.",
+  "...rttttttssssr.",
+  "....rttsssssrr..",
+  "...Ewqrrrrrr....",
+  "..EwqoE.........",
+  ".EwqoE..........",
+  "EwqqoE..........",
+  "EqqooE..........",
+  ".EEEE..........."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "o": "#7e7362",
+  "q": "#bdb39b",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e",
+  "w": "#dad0bb"
+ }
+}

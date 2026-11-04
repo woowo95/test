@@ -1,0 +1,38 @@
+{
+ "id": "sym_klapare",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Det är den enda som läses som 🤡: ett vitt clownansikte med röd näsa, rött leende och röda hårtofsar på sidorna. Version 2 och 3 har narrmössa med bjällror och läses därför som en gycklare eller narr, inte som emojins clown. De har också fler små detaljer, som blir otydliga i liten storlek. Version 1 har få och stora former, och ljuset stämmer: ljust uppe till vänster i ansiktet, mörkare ben0 och ben1 nere till höger, ljus rost3 på vänster tofs och rost1 på höger. Den mättade rosten finns bara på näsan, munnen och håret, alltså det man ska se. Bilden är 16 punkter bred och 15 hög och fyller rutan som förebilden. Det jag ändrade: ansiktets kontur var kol1 (l), och nu är den kol0 (k) enligt regeln om kol0 eller materialets mörkaste ton, så att hela symbolen får en sammanhängande mörk kontur. Hårtofsarna behåller sin kontur i rost0. Allt annat är oförändrat.",
+ "w": 16,
+ "h": 15,
+ "rader": [
+  ".....kkkkkk.....",
+  "...kkwwwwwqqkk..",
+  ".rrkwwwwqwqqkrr.",
+  "rutkwqwwwqqqpksr",
+  "rutkwwqwwqqwqksr",
+  "rutkwQRwqqQRqksr",
+  "rttkqQQqwqQQpksr",
+  "rtskwqrutsrqpksr",
+  "rsskqqrtssrqpksr",
+  ".rrkqpqrrrpppkr.",
+  "...kqsqqpqpsqk..",
+  "...kqpstttsppk..",
+  "....kpprrrppk...",
+  ".....kppoppk....",
+  "......kkkk......"
+ ],
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "k": "#24201d",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e",
+  "w": "#dad0bb"
+ }
+}

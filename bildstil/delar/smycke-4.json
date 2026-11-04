@@ -1,0 +1,29 @@
+{
+ "id": "smycke-4",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den visar tydligast pärlor i håret: två smala, förskjutna pärlsträngar längs hårets vänstra sida, uppträdda på en tunn jordtråd (E). Varje pärla är 2×2 punkter med ljusast ton uppe till vänster och mörkast nere till höger, på samma sätt som benbitarna i förebildens halsband. Storleken och skuggningen stämmer alltså med förebilden. Färgerna är dämpade (rost, senap och skiffer) och följer paletten. På alla tre ansiktena hamnar strängen i håret vid tinningen och går inte in över ögonbryn eller ögon. Version 1 ligger för långt in mot pannan och blir en rörig klunga. Version 3 går ner över ögonbrynet. Version 2 håller sig inom rutan och använder bara tillåtna tecken, så jag behövde inte ändra något.",
+ "bilder": {
+  "standard": {
+   "x": -17,
+   "y": 1,
+   "rader": [
+    ".E..E",
+    "ts..E",
+    "sr.LK",
+    ".E.KJ",
+    "LK..E",
+    "KJ.ts",
+    ".E.sr",
+    "SR..E",
+    "RQ.LK",
+    ".E.KJ",
+    "ts..E",
+    "sr.SR",
+    ".E.RQ",
+    "LK...",
+    "KJ..."
+   ]
+  }
+ }
+}

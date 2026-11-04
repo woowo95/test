@@ -1,0 +1,59 @@
+{
+ "id": "har-23",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Valde version 2: den är den enda som verkligen ger en rundad, upplyft kalufs framtill som följer huvudets rundning, med ljuset uppifrån vänster (h/g på vänster sida av lyftet, f/e mot höger) och matt skuggning som i förebilden. Version 1 blev för låg och tät, version 3 mer en sidbena än en kalufs. Ändringar: bakhåret hade ett regelbundet mönster som upprepades var tredje rad (raka ränder) – jag bröt upp det så att de få ljusa slingorna ligger oregelbundet, och kortade bakhåret samt rundade av nederkanten så att det inte hänger som ett långt block för en kort frisyr. Sidorna framför öronen kortades från y=20 till y=13 och avslutas avsmalnande, eftersom en kalufs är kort på sidorna. Två rader i lyftet (rad 8–9) justerades så att strängarna inte bildar en helt jämn trappstegsdiagonal. Delen är fortfarande symmetrisk kring mittlinjen (x -15 till 14) och använder bara e, f, g och h.",
+ "bilder": {
+  "bakhar": {
+   "x": -15,
+   "y": -2,
+   "rader": [
+    "fgggggffffffffffffffffeeeeeeee",
+    "ffggggffffffffffffffffeeeeefee",
+    "fggggffffffgfffffffffeeeeeeeee",
+    "fgggggffffffffffffffffeeefeeee",
+    "ffgggfffffffffffffffffeeeeeeee",
+    "fggggfffffffffffffffffeeeeefee",
+    "fgggffffffffffffgffffeeeeeeeee",
+    "ffggggffffffffffffffffeeeeeeee",
+    "fgggfffffffffffffffffeeeefeeee",
+    "ffgggfffffffffffffffffeeeeeeee",
+    ".fgggffffffffffffffffeeeeefee.",
+    ".ffggfffffffffffffffeeeeeeeee.",
+    ".fgggffffffffffffffffeeeeeee..",
+    "..fggfffffffffffffffeeeeeeee..",
+    "..effffffffffffffffeeeeeeee...",
+    "....eeffffffffffffeeeeee......"
+   ]
+  },
+  "framhar": {
+   "x": -15,
+   "y": -9,
+   "rader": [
+    ".........hhhhhgggggff.........",
+    "......hhhhhhhgggggggfffe......",
+    "....ghhhhhhhhggggggggffffe....",
+    "...ghhhhhhhhhhgggggggfffffe...",
+    "..gghhhhhhhhhhggggggggffffee..",
+    ".fghhhhhhhhhhhgggggggggffffee.",
+    ".fgghhhhhhhhhggghgggggggfffee.",
+    "ffgghhhhhhhhgghhggggggggffeeee",
+    "fgghhhhhhhhghhhgggggggggfffeee",
+    "fgghhhhhhhgghhgggggggggfffeefe",
+    "ffgghhhhgghhgggggggggffffeeefe",
+    "fgggghhgghhggggggfffffffeeeefe",
+    ".ffgggggggggggfffffffffeeeefe.",
+    ".efggffgggggggfffffffffeeeeee.",
+    ".efgfffgffffffffffffeeeeeeefe.",
+    ".fgff..efffffffffffffee..eefe.",
+    ".fgff.....eeffffeeee.....eefe.",
+    ".fggf........eefe........efee.",
+    ".fgff....................eefe.",
+    ".ffgf....................efee.",
+    "..fgf....................eee..",
+    "..gf......................ee..",
+    "..ff......................e..."
+   ]
+  }
+ }
+}

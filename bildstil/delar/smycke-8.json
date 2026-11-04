@@ -1,0 +1,23 @@
+{
+ "id": "smycke-8",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den har ett litet mörkt fäste av kol (m, l) och två pärlor som hänger på en kort tråd, en senapsgul och en barrgrön. Båda pärlorna är två punkter breda och skuggas från ljust uppe till vänster mot mörkt nere till höger. Det stämmer med ljusriktningen och med det matta, korniga sätt som benbitarna i förebilden är skuggade på. Detaljerna är lika stora som i förebilden, och delen håller sig inom rutan (x -3 till 1, y 0 till 8). Den sitter symmetriskt under örat och läses tydligt som ett pärlörhänge på alla tre ansiktena. Version 1 har en krok av ensamma diagonala senapsprickar och en spretig form. Version 2 har en stor rostfärgad droppe som ser tung ut, mer som en morot än en pärla. Jag behövde inte ändra något i version 3.",
+ "bilder": {
+  "standard": {
+   "x": -3,
+   "y": 0,
+   "rader": [
+    "..m..",
+    "..l..",
+    ".LKJ.",
+    ".KJI.",
+    "..I..",
+    "..l..",
+    ".XWV.",
+    ".WVU.",
+    "..U.."
+   ]
+  }
+ }
+}

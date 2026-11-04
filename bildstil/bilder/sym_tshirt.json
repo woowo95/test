@@ -1,0 +1,26 @@
+{
+ "id": "sym_tshirt",
+ "ritad": 3,
+ "av": "API:t, vald av Claude",
+ "om": "API:t ritade tre versioner efter Björns kommentar; Claude valde version 3 (valet i API:t hann inte köras).",
+ "w": 16,
+ "h": 15,
+ "rader": [
+  "..rrrrr..rrrrr..",
+  ".ruuuuKrrKttttr.",
+  "ruuuutLKKLtttssr",
+  "ruuuttttttttttsr",
+  "ruuttttttttttssr",
+  "ruutttttttttttsr",
+  "rLKrttttttttrJIr",
+  ".rrruttttttsrrr.",
+  "...ruttttttsr...",
+  "...ruttttttsr...",
+  "...rttttsttsr...",
+  "...rttttsttsr...",
+  "...rtttttsssr...",
+  "...rKLKKKJJIr...",
+  "...rrrrrrrrrr..."
+ ],
+ "pal": {"I":"#694902","J":"#906f0f","K":"#b2921b","L":"#d8b25f","r":"#521100","s":"#742a01","t":"#a14808","u":"#bd753e"}
+}

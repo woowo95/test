@@ -1,0 +1,26 @@
+{
+ "id": "sym_svaghet",
+ "ritad": 4,
+ "av": "Claude",
+ "om": "Ritad av Claude efter Björns kommentar: ta bort den blåa punkten. Gör en \"inverterad bicep\" alltså att det hänger ner under armen.",
+ "w": 16,
+ "h": 15,
+ "rader": [
+  ".........EEEE...",
+  "........EqqqqE..",
+  "........EwqqqpE.",
+  "........EEEqqpE.",
+  ".........EqqpoE.",
+  "..........EqpE..",
+  "..........EqpE..",
+  "..........EqpE..",
+  "..........EqpE..",
+  "EEEEEEEEEEEqpoE.",
+  "tusEqqqqqqqqppoE",
+  "tssEpppppppppoE.",
+  "rrrEEppppppEEE..",
+  "....EEoooEE.....",
+  "......EEE......."
+ ],
+ "pal": {"E":"#3f2415","o":"#7e7362","p":"#a0947d","q":"#bdb39b","r":"#521100","s":"#742a01","t":"#a14808","u":"#bd753e","w":"#dad0bb"}
+}

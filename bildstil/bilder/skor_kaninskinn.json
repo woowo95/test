@@ -1,0 +1,16 @@
+{
+ "id": "skor_kaninskinn",
+ "ritad": 3,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 1. Den ligger närmast dagens bild. Den har två skor från sidan med tån åt höger. Den bakre skon sitter högre och till höger, den främre lägre och till vänster, som i originalet och vargskorna. Skaftkanten är ljus i ben3/ben2, kroppen i jord2/jord3 och sulan i jord0. Den ljusa jord3-punkten sitter vid tån, precis som i originalet. Konturen är jord0 i stället för den svarta, som guiden kräver. Version 3 saknar konturen till höger om skaftkanten och har jord1 vid tån, så den läses sämre. Version 2 tappar ljuset vid tån. Jag ändrade en sak: den främre skons sula börjar en punkt in (.EEEE). Då blir hälen rundad på samma sätt som på den bakre skon och som originalets indragna sulrad, så att skorna läses som skor med häl och tå och inte som fyrkanter. Bilden är 10 × 5 punkter.",
+ "w": 10,
+ "h": 5,
+ "rader": [
+  ".....EwqE.",
+  "EwqE.EHGE.",
+  "EHGE.EHGHE",
+  "EHGHE.EEEE",
+  ".EEEE....."
+ ],
+ "pal": {"E":"#3f2415","G":"#7d5b40","H":"#987e62","q":"#bdb39b","w":"#dad0bb"}
+}

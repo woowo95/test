@@ -1,0 +1,65 @@
+{
+ "id": "har-27",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 1, omritad efter Björns svar",
+ "om": "Version 1 blev underkänd av Björn (luggen ett solitt block, och bakhåret räckte för långt ned för en frisyr som ska vara kort i nacken), så jag ritade om den (val 0). Framhåret: rundad hjässa som följer skallen, ljus uppifrån vänster (h och g till vänster, f och e till höger) med få och oregelbundna ljusa slingor. Luggen är lång och delar sig nedåt i fyra slingor med springor av panna emellan. Slingorna slutar i olika längd, ungefär mellan y = 12 och y = 14, alltså strax ovanför ögonbrynen, och har inga raka ränder eller rutmönster. Sidorna framför öronen är korta och slutar vid tinningen (y ≈ 16). Bakhåret är mörkare och ligger bakom skallen. Det är rundat och slutar redan i höjd med öronen (y ≈ 20) och smalnar av mot nacken, så att inget hår hänger ned mot axlarna. Därför passar frisyren både kvinna, man och barn. Jag har bara använt efgh och ritat ingen kontur.",
+ "bilder": {
+  "bakhar": {
+   "x": -16,
+   "y": -3,
+   "rader": [
+    ".........gghgggggfffffe.........",
+    "......ggggggggffffffffffee......",
+    "....gggggggggffffffffffffeee....",
+    "...ggggggggggfffffffffffffeee...",
+    "..gggggggggggffffffffffffffeee..",
+    ".gggggggggggfffffffffffffffeeee.",
+    ".ggggggggggffffffffffffffffeeee.",
+    ".gggggggggfgfffffffffffffffeeee.",
+    "gggggggggggffffffffffffffffeeeee",
+    "ggggggggggfgfffffffffffffffeeeee",
+    "gggggggggggfffffffffffffffeeeeee",
+    "ggggggggggffffffffffffffffeeeeee",
+    "ggggggggggfgffffffffffffffeeeeee",
+    "gggggggggggfffffffffffffffeeeeee",
+    "ggggggggggffffffffffffffffeeeeee",
+    "gggggggggfgffffffffffffffeeeeeee",
+    "gggggggggfffffffffffffffeeeeeeee",
+    "ggggggggffffffffffffffffeeeeeeee",
+    ".gggggggfffffffffffffffeeeeeeee.",
+    ".ggggggfffffffffffffffffeeeeeee.",
+    "..ggggfffffffffffffffffffeeeee..",
+    "...ggffffffffffffffffffffeeee...",
+    ".....fffffffffffffffffffeee.....",
+    "........fffffffffffffffe........"
+   ]
+  },
+  "framhar": {
+   "x": -16,
+   "y": -4,
+   "rader": [
+    "..........gghhhggggfff..........",
+    ".......gghhhhhhgggggffffe.......",
+    ".....ghhhhhhhhggggggfffffee.....",
+    "....ghhhhhhhhhgghggggfffffee....",
+    "...ghhhhhhhgghhhggggfgffffeee...",
+    "..gghhhhhhghhhhggggfggfffffeee..",
+    "..ghhhhhgghhhhgggggfggffffeeee..",
+    ".gghhhhghhhhgghggggfgggfffffeee.",
+    ".ghhhhgghhhgghhgggfgggfffgffeee.",
+    "gghhhghhhgghhgggfgggffgfffeffeee",
+    "ghhhgghhgghhhggfgggfffgfffeffeee",
+    "gghhghhgghhhgghggfggffgffffeffee",
+    "ghhhghhgghh.hggfgg.fgffg.fffefee",
+    "gghhghhghh..hgfgg..fgff..ffeffee",
+    "ghhghhggh...gfgg...gff...ffefeee",
+    "gghgghgg....fgf....ff....fefeeee",
+    "ghggfgg.....gf.....f.....feeeee.",
+    "gggff.g......f............feee..",
+    "ggf..........f.............ee...",
+    "gf..........................ee..",
+    ".f..........................e..."
+   ]
+  }
+ }
+}

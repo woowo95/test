@@ -1,0 +1,52 @@
+{
+ "id": "oga-7",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 3. Läget Öppna, Glada och Ledsna är lika i alla tre versionerna. Där ser ögat snett nedåt ut, med det yttre hörnet (till vänster) lägre, och det stämmer med beskrivningen. Skillnaden finns bara i läget Slutna. I version 3 går ögonlockets mörka linje (a) i en ren och sammanhängande diagonal från det inre hörnet ner mot det yttre. Den följer alltså samma lutning som det öppna ögat. Version 1 har en mer spretig linje och version 2 ritar linjen ljust med c, vilket ser blankt ut. Ändring: enligt Björns kommentar satt delen för högt, så jag flyttade alla lägen en punkt nedåt (y från -2 till -1). Delen håller sig fortfarande inom rutan -4..3, -3..3.",
+ "bilder": {
+  "oppna": {
+   "x": -4,
+   "y": -1,
+   "rader": [
+    "...aaaa.",
+    ".bajjiva",
+    "bavikkvb",
+    "bvvjiib.",
+    ".bcccb.."
+   ]
+  },
+  "glada": {
+   "x": -4,
+   "y": -1,
+   "rader": [
+    "...aaaa.",
+    ".bajjiva",
+    "bacikkcb",
+    "bcdddcb.",
+    "........"
+   ]
+  },
+  "ledsna": {
+   "x": -4,
+   "y": -1,
+   "rader": [
+    "..bbaaa.",
+    ".baaaava",
+    "bavikkvb",
+    "bvvjiib.",
+    ".bcccb.."
+   ]
+  },
+  "slutna": {
+   "x": -4,
+   "y": -1,
+   "rader": [
+    "...aaaa.",
+    ".abbccca",
+    "abbcaaaa",
+    "aaaabcb.",
+    ".bcccb.."
+   ]
+  }
+ }
+}

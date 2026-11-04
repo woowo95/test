@@ -1,0 +1,15 @@
+{
+ "id": "toa",
+ "ritad": 3,
+ "av": "Claude",
+ "om": "Claude: samma hög som Björn sett, utan det gula luktsträcket.",
+ "w": 8,
+ "h": 4,
+ "rader": [
+  "..EGFE..",
+  ".EHGFFE.",
+  "EGFGFFFE",
+  ".EEEEEE."
+ ],
+ "pal": {"E":"#3f2415","F":"#5e3c24","G":"#7d5b40","H":"#987e62"}
+}

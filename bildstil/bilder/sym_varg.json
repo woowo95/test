@@ -1,0 +1,40 @@
+{
+ "id": "sym_varg",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den läses tydligast som en morrande varg: spetsiga öron, gula ögon och en öppen käft med vita huggtänder och mörkröd mun. Det passar betydelsen vargens käftar som vapen och hör ihop med svärdens skifferstål och kontur i förebilden. Version 1 liknar mer en hund med liten mun. I version 2 är käften mindre tydlig och ögonen inramade och plottriga. Ändringar: Sista raden är förlängd så att skiffer0-konturen även täcker hakans högra hörn, där en skiffer1-punkt låg bar mot det genomskinliga. Pannan på rad 4 har fått lite korn (S-punkter bland T) så att ytan inte blir slät.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".Q............Q.",
+  ".QTQ........QSQ.",
+  ".QTSQ......QSRQ.",
+  ".QTGSQQQQQQSGRQ.",
+  "QTTSTTTTSTSSSSRQ",
+  "QTTTTTTSTSSSSSRQ",
+  "QTSLkSTSTSSkLSRQ",
+  "QTSSSqwqqqqSSSRQ",
+  ".QTSSqqqqpqpSRQ.",
+  ".QSSqqkkkkppSRQ.",
+  "..QSqqqkkpppRQ..",
+  "..QSpwkrrkwoRQ..",
+  "...QSpkrrkpoQ...",
+  "....QSpkkpoRQ...",
+  ".....QRpooRQ....",
+  ".....QQQQQQ....."
+ ],
+ "pal": {
+  "G": "#7d5b40",
+  "L": "#d8b25f",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "k": "#24201d",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "r": "#521100",
+  "w": "#dad0bb"
+ }
+}

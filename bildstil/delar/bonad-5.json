@@ -1,0 +1,31 @@
+{
+ "id": "bonad-5",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 2",
+ "om": "Jag valde version 1. Bandet är jämnt två punkter tjockt, som brätten på förebildens mössa, och ligger symmetriskt kring mittlinjen: varje rad sträcker sig lika långt åt båda hållen. Det sitter också snyggt över pannan och tinningarna på alla tre ansiktena. Flätmönstret med ljusa senapsprickar i rosten och de två hängande banden med knut på vänster sida stämmer med beskrivningen av ett hårband. Version 3 har en tunnare och ojämn linje. På höger sida är den bara en punkt bred, och längst ner i banden finns ensamma prickar, vilket går emot stilen. Den blandar dessutom in mer senap utan att det följer ljuset. Det jag ändrade: på höger sida, som vänder sig bort från ljuset uppe till vänster, bytte jag de ljusa K-punkterna i flätan på raderna 2–7 mot den mörkare rost2 (t). Mönstret finns kvar, men skuggningen följer nu formen. Resten lät jag vara som det var.",
+ "bilder": {
+  "standard": {
+   "x": -18,
+   "y": 1,
+   "rader": [
+    "............uttuttsttsss...........",
+    ".........ttKttKttKstKssKsss........",
+    ".......ttKssstsssssssssssrtrr......",
+    ".....utKtsss............ssrstrr....",
+    "....tKtss..................srstr...",
+    "...tKss......................rstr..",
+    "...ts..........................sr..",
+    "..tK............................tr.",
+    "..ts............................sr.",
+    ".tuts...........................sr.",
+    "ttKsr..............................",
+    ".tsr...............................",
+    "ts.sr..............................",
+    "ts.sr..............................",
+    "ts.sr..............................",
+    "ss.sr..............................",
+    "KJ.KJ.............................."
+   ]
+  }
+ }
+}

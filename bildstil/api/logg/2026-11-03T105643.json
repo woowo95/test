@@ -1,0 +1,23 @@
+{
+ "kommando": "rita",
+ "args": [
+  "skon-glans=gör ännu tydligare hårglans. Överdrivet som i en manga: breda, skarpa, ljusa glansband tvärs över håret"
+ ],
+ "modell": "claude-opus-5-5",
+ "insats": "high",
+ "versioner": 3,
+ "uppskattat": {
+  "lag": 0.04,
+  "hog": 0.06
+ },
+ "dollar": 0.099,
+ "tokens": {
+  "in": 7343,
+  "ut": 7604,
+  "cacheLas": 3052,
+  "cacheSkriv": 3075
+ },
+ "rapport": [
+  "skon-glans: ritad, version 3 vald: Jag valde version 3. Den följer Björns önskan bäst: ett brett, skarpt och ljust glansband som en ring tvärs över hjässan, i mangastil. Bandet böjer sig med huvudets form och har en bena i mitten, så det ser ut som glans på håret och inte som en platt fläck. Version 1 är en stor, nästan slät klump av h som också täcker pannan. Version 2 börjar ovanför håret och är mest ett tunt streck. Ändringen: ljuset kommer uppifrån vänster, så jag lät bandets högra, nedre del gå över mer i g (rad 5–7). Då blir höger sida mörkare än vänster och skuggan följer formen. Delen håller sig inom rutan och använder bara de tillåtna hårtonerna g och h."
+ ]
+}

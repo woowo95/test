@@ -1,0 +1,41 @@
+{
+ "id": "sym_mal",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den fyller hela rutan, 16 × 16 punkter. Den raka flaggan har ett tydligt rutmönster med fyra gånger tre rutor om 3 × 3 punkter, och därför läses den lättast som 🏁 i liten storlek. Den har samma uppbyggnad som förebilden: få, stora former, en mörk kontur runt hela och en knopp i senap som motsvarar svärdens gyllene fästen. Version 1 är smalare och har bara tre gånger tre rutor, så den fyller inte rutan lika bra. Den vajande flaggan i version 2 blir rörig i spelets storlek. Ljuset stämmer: ljusrutorna går från ben3 uppe till vänster till ben1 nere till höger. Stången har jord0 som kontur och ett korn av jord2 och jord3. Kol används bara i de svarta rutorna och i konturen, och där betyder svart något. Jag behövde inte ändra något, eftersom versionen redan följer reglerna.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "ILI.............",
+  "IKIkkkkkkkkkkkkk",
+  "EHEwqwmnmwqqnmmk",
+  "EGEqwqnmmqwqmmlk",
+  "EHEwqqmmlqqpmllk",
+  "EGEnmmwqqmnmqqpk",
+  "EHEmmlqwqmmlqpqk",
+  "EGEmllqqpmllqppk",
+  "EHEqwqnmmqqpmmlk",
+  "EGEwqqmmlqpqmllk",
+  "EHEqqpmllqpplllk",
+  "EGEkkkkkkkkkkkkk",
+  "EHE.............",
+  "EGE.............",
+  "EHE.............",
+  "EEE............."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "I": "#694902",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "k": "#24201d",
+  "l": "#2f261d",
+  "m": "#372f25",
+  "n": "#474138",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

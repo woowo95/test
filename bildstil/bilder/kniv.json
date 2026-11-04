@@ -1,0 +1,18 @@
+{
+ "id": "kniv",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 3. Bladet har skiffer3 (T) i två rader på den övre vänstra sidan och skiffer1 och skiffer2 mot nedre högra kanten. Det ligger närmast dagens ljusgrå flintblad (#c9cdd0 och #8f9396), och ljuset faller rätt från övre vänstra hörnet. Kniven ligger snett från nedre vänstra till övre högra hörnet, som Björn ville och som yxan i förebilden. Delarna är desamma som i dagens bild: ett smalt grått blad uppe till höger och ett brunt träskaft (jord med jord0 som kontur) nere till vänster. Repet som beskrivningen kräver är tillagt som en senapsfärgad lindning vid övergången. Den enda ljusa punkten (senap3) på lindningen fungerar som glans och gör att kniven syns tydligt på gräset. Version 1 har ett mörkare och plattare blad. I version 2 är bladet kortare och repet ligger för högt upp på bladet. Jag ändrade ingenting: versionen håller sig inom 7×7, har kontur i varje materials mörkaste ton och använder bara palettens tecken.",
+ "w": 7,
+ "h": 7,
+ "rader": [
+  ".....QQ",
+  "....QTQ",
+  "...QTSQ",
+  "..QTRQ.",
+  ".ILI...",
+  "EHE....",
+  "EE....."
+ ],
+ "pal": {"E":"#3f2415","H":"#987e62","I":"#694902","L":"#d8b25f","Q":"#233035","R":"#3e5156","S":"#61767a","T":"#8a9c9e"}
+}

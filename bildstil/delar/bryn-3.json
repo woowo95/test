@@ -1,0 +1,60 @@
+{
+ "id": "bryn-3",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 3. Den har samma tjocka form som de andra och tonerna går från g överst till e nederst, alltså ljust uppifrån vänster och mörkt nedtill, så som i förebilden. Brynen lutar rätt i alla lägen: inre änden går ner i arga och upp i ledsna, och i förvånade är bågen höjd med korta, nedåtvända ändar. Version 1 har ett glest och hackigt förvånat läge (ffe...ffe). Version 2:s lugna läge är smalare i nederkanten. Ändringar: i lugna läget gick nederkanten ut till hela bredden (ffffeeeee), så att brynet blir lite bredare som Björn bad om. Delen fyller nu nästan hela rutans bredd på 9 punkter, och bredare än så går inte inom rutan. Överkanten lade jag lite mörkare åt höger (f i stället för g längst in) i lugna och arga, så att den ljusa randen inte ser blank ut på det mörka håret. Formen är i övrigt oförändrad mellan lägena.",
+ "bilder": {
+  "lugna": {
+   "x": -4,
+   "y": -4,
+   "rader": [
+    ".........",
+    ".........",
+    ".ggggggf.",
+    "gggggffff",
+    "ffggffeee",
+    "ffffeeeee",
+    "........."
+   ]
+  },
+  "arga": {
+   "x": -4,
+   "y": -4,
+   "rader": [
+    "gg.......",
+    "ggggg....",
+    "fgggggff.",
+    ".ffffgggf",
+    "...fffeee",
+    ".....eeee",
+    "........."
+   ]
+  },
+  "ledsna": {
+   "x": -4,
+   "y": -4,
+   "rader": [
+    "......ggg",
+    "...ggggff",
+    ".gggggfff",
+    "gggffffee",
+    "fffeeee..",
+    "eee......",
+    "........."
+   ]
+  },
+  "forvanade": {
+   "x": -4,
+   "y": -4,
+   "rader": [
+    ".ggggggg.",
+    "gggggggff",
+    "ggfffffee",
+    "ff.....ee",
+    ".........",
+    ".........",
+    "........."
+   ]
+  }
+ }
+}

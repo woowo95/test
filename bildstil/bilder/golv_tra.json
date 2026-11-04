@@ -1,0 +1,31 @@
+{
+ "id": "golv_tra",
+ "ritad": 2,
+ "av": "Claude",
+ "om": "trägolvet, mörkare: plankor uppifrån och ner, fyra punkter breda, med förskjutna skarvar och låg kontrast",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "EEEEEGFFEGGGEGFF",
+  "EGGEEGFFEGGGEEEE",
+  "EGGGEGFFEGGGEGFE",
+  "EGGGEGFFEGGGEGFF",
+  "EGGGEGFFEGGGEGFF",
+  "EGGGEGFFEGGGEGFF",
+  "EGGGEGFFEEEEEGFF",
+  "EGGGEGFFEGGEEGFF",
+  "EGGGEGFFEGGGEGFF",
+  "EGGGEGFFEGGGEGFF",
+  "EGGGEGFFEGGGEGFF",
+  "EGGGEEEEEGGGEGFF",
+  "EGGGEGGEEGGGEGFF",
+  "EGGGEGGGEGGGEGFF",
+  "EGGGEGGGEGGGEGFF",
+  "EGGGEGGGEGGGEGFF"
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "G": "#7d5b40",
+  "F": "#5e3c24"
+ }
+}

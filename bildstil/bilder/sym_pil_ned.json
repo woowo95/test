@@ -1,0 +1,20 @@
+{
+ "id": "sym_pil_ned",
+ "ritad": 3,
+ "av": "Claude",
+ "om": "Claude: en enkel pil rakt ner, bara spetsen, utan skaft (Björn: inte diagonal).",
+ "w": 15,
+ "h": 9,
+ "rader": [
+  "...............",
+  "rrrrrrrrrrrrrrr",
+  ".rttttttuuuuur.",
+  "..rtttttssssr..",
+  "...rttttsssr...",
+  "....rtttssr....",
+  ".....rttsr.....",
+  "......rtr......",
+  ".......r......."
+ ],
+ "pal": {"r":"#521100","t":"#a14808","u":"#bd753e","s":"#742a01"}
+}

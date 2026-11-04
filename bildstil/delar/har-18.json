@@ -1,0 +1,66 @@
+{
+ "id": "har-18",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 2",
+ "om": "Valde version 3: knuten är tydligare formad med två lober och skuggning från vänster (ljus h-sida, mörk e-sida) som i förebilden, håret omsluter hjässan och sidorna ner mot öronen likt halvlånga förebildens tjocklek, och den ser bättre ut på kvinna och barn. Version 1 har en plattare knut och ett mer randigt bakhår. Ändringar: i bakhåret tog jag bort det regelbundna ränd-/prickmönstret (ensamma g i mittfältet och strikt växlande rader på vänster sida) och ersatte det med oregelbundna klungor; i framhåret bytte jag de ljusare f-pixlarna längst ut på mörka högerkanten (rad 17–19) mot e så att skuggsidan inte får ensamma ljusa prickar.",
+ "bilder": {
+  "bakhar": {
+   "x": -17,
+   "y": -2,
+   "rader": [
+    "........ggfgffffffffffeeee........",
+    "......gggfgfffffffffffeeeeee......",
+    ".....ggggffffffffffffffeeeeee.....",
+    "....gggfgfffffffffffffffeeeeee....",
+    "...ggggffgffffffffffffffeeeeeee...",
+    "..gggggfgffffffffffffffffeeeeeee..",
+    ".ggggffgfffffffffffffffffeeeeeeee.",
+    ".gggfgfgfffffffffffffffffeefeeeee.",
+    "fggggfgffffffffffffffffffeeeeeeeee",
+    "ggggggfgfffffffffffffffffeeeeeeeee",
+    "fgggggfffffffffffffffffffeeeeeeeee",
+    "gggggfgffffffffffffffffffeeeeeeeee",
+    "fggggffgfffffffffffffffffeeeeeeeee",
+    "gggggffffffffffffffffffffeeeeeeeee",
+    "fggggfgffffffffffffffffffeeeeeeeee",
+    "ggggggffffffffffffffffffffeeeeeeee",
+    "fggggffffffffffffffffffffeeeeeeeee",
+    ".fgggffffffffffffffffffffeeeeeeee.",
+    "..ffgfffffffffffffffffffeeeeeeee.."
+   ]
+  },
+  "framhar": {
+   "x": -16,
+   "y": -10,
+   "rader": [
+    "............hhggggff............",
+    "..........hhhhggggfffe..........",
+    ".........hhhhggfgggffee.........",
+    "........hhhggfghhgggffee........",
+    "........hhgggfghgggfgfee........",
+    "........ghgggfggggffgfee........",
+    ".........ggggffgggffeee.........",
+    "..........gfffffffeeee..........",
+    "...........fgggfffeee...........",
+    ".......hhhhhggfggfgfffeee.......",
+    ".....hhhhhhgghggfgffgfffeee.....",
+    "....hhhhhhhgghggfgffgffffeee....",
+    "...hhhhhhhhgghggfgfgffgffffee...",
+    "..hhhhhhhhhgghgggfgfgffgfffeee..",
+    ".ghhhhhhhhhghhgggfggfgffgffffee.",
+    ".ghhhhhhhhghhggggfggfgffgfffeee.",
+    "gghhhhhhhghhgggggfgfggffgfffeeee",
+    "ghhhhhhhghhggggggfgfgffgffffeeee",
+    "ghhhhhhghhgggggfgggfgfffgfffeeee",
+    "ghhhhhghhg............gffffeeeee",
+    "ghhhg......................ffeef",
+    "ghhg........................feef",
+    "ghhg........................feef",
+    "gghg........................feee",
+    "ghgg........................ffee",
+    ".ggg........................fee.",
+    ".gf..........................ef."
+   ]
+  }
+ }
+}

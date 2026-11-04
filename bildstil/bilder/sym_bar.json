@@ -1,0 +1,36 @@
+{
+ "id": "sym_bar",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Tre blåbär i en klase med ett litet barrgrönt blad upptill. Bären är i skiffer (skiffer0 som kontur, skiffer1–3 i ytan), med ljuset uppe till vänster och en enda glanspunkt i ben3 på det främre bäret. Det främre bäret har en mörk stjärnformad krona, så att det läses som blåbär och inte som ett vanligt bär. Symbolen fyller 16 × 16 punkter.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "...........UUU..",
+  "..........UXXWU.",
+  ".....QQQQUXWWU..",
+  "....QTTSSQUU....",
+  "...QSTTSSSQ.....",
+  "...QSTSSSRQ.....",
+  "...QSSSSRRQQQQ..",
+  "..QQQQQRRQTTSSQ.",
+  ".QTTTSSQQSTTSSSQ",
+  "QTwTSSSSQTSSSSRQ",
+  "QTTSSSSRQSSSSRRQ",
+  "QTSSQSSRQSSSRRRQ",
+  "QSSQRQSRQQRRRRQ.",
+  "QSSSQSRRQ.QQQQ..",
+  ".QSSRRRQ........",
+  "..QQQQQ........."
+ ],
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "U": "#21290d",
+  "W": "#324726",
+  "X": "#505e3e",
+  "w": "#dad0bb"
+ }
+}

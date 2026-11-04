@@ -1,0 +1,90 @@
+{
+ "id": "huvud-lang",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 2",
+ "om": "Valde version 3: ansiktet håller full bredd längre ner och smalnar sedan av mot en tydligt lång haka, vilket ger den avlånga formen bättre än version 2. Skuggningen följer förebilden med ljus kind till vänster och mörk sida till höger. Mannen har raka sidor och bred käke, och barnet är kortare och rundare. Ändringar: de ljusa c-fläckarna på hakan är borttagna (2x2 hos kvinna och man, en rad hos barn), eftersom de såg ut som glans. Den ensamma a-punkten i hakans nedersta rad är borttagen hos kvinna och man. Barnets nedersta hakrad är centrerad kring mittlinjen.",
+ "bilder": {
+  "standard": {
+   "x": -16,
+   "y": 1,
+   "rader": [
+    ".ccddddccccccccccccccbbbbbaaaaa.",
+    ".cdddcccccccccccccccbbbbbbaaaaa.",
+    ".ccccccccccccccccccbbbbbbbaaaaa.",
+    ".ccccccccccccccccccbbbbbbbaaaaa.",
+    "..cccccccccccccccccbbbbbbbaaaa..",
+    "..ccccCCcccccccccccbbbbbbBAaaa..",
+    "..ccccCCccccccccbbbbbbbbbAAaaa..",
+    "..cccccccccccccbbbbbbbbbbaaaaa..",
+    "...ccccccccccccbbbbbbbbbbaaaa...",
+    "...cccccccccccbbbbbbbbbbbaaaa...",
+    "...bccccccccccbbbbbbbbbbaaaaa...",
+    "...bccccccccbbbbbbbbbbbbaaaaa...",
+    "....bcccccccbbbbbbbbbbbaaaaa....",
+    "....bbccccccbbbbbbbbbbbaaaaa....",
+    "....bbbccccbbbbbbbbbbbaaaaaa....",
+    ".....bbbcccbbbbbbbbbbaaaaaa.....",
+    ".....bbbbccbbbbbbbbbaaaaaaa.....",
+    "......bbbbbbbbbbbbbbaaaaaa......",
+    ".......bbbbbbbbbbbbaaaaaa.......",
+    "........bbbbbbbbbbbaaaaa........",
+    "..........bbbbbbbbaaaa..........",
+    "............bbbbaaaa............"
+   ]
+  }
+ },
+ "man": {
+  "standard": {
+   "x": -16,
+   "y": 1,
+   "rader": [
+    ".ccddddccccccccccccccbbbbbaaaaa.",
+    ".cdddcccccccccccccccbbbbbbaaaaa.",
+    ".ccccccccccccccccccbbbbbbbaaaaa.",
+    ".ccccccccccccccccccbbbbbbbaaaaa.",
+    ".ccccccccccccccccccbbbbbbbaaaaa.",
+    ".cccccCCccccccccccbbbbbbBAaaaaa.",
+    ".cccccCCcccccccbbbbbbbbbAAaaaaa.",
+    "..cccccccccccccbbbbbbbbbbaaaaa..",
+    "..ccccccccccccbbbbbbbbbbbaaaaa..",
+    "..ccccccccccccbbbbbbbbbbbaaaaa..",
+    "..bcccccccccccbbbbbbbbbbaaaaaa..",
+    "..bccccccccccbbbbbbbbbbbaaaaaa..",
+    "..bbcccccccccbbbbbbbbbbbaaaaaa..",
+    "..bbbcccccccbbbbbbbbbbbaaaaaaa..",
+    "...bbbccccccbbbbbbbbbbaaaaaaa...",
+    "...bbbbcccccbbbbbbbbbbaaaaaaa...",
+    "...bbbbbcccbbbbbbbbbbaaaaaaaa...",
+    "....bbbbbbbbbbbbbbbbbaaaaaaa....",
+    ".....bbbbbbbbbbbbbbaaaaaaaa.....",
+    "......bbbbbbbbbbbbbaaaaaaa......",
+    "........bbbbbbbbbbaaaaaa........",
+    "..........bbbbbbaaaaaa.........."
+   ]
+  }
+ },
+ "barn": {
+  "standard": {
+   "x": -16,
+   "y": 1,
+   "rader": [
+    "cccddddccccccccccccccbbbbbaaaaaa",
+    ".cdddcccccccccccccccbbbbbbaaaaa.",
+    ".ccccccccccccccccccbbbbbbbaaaaa.",
+    "..cccccccccccccccccbbbbbbbaaaa..",
+    "..ccccCCcccccccccccbbbbbbBAaaa..",
+    "..ccccCCccccccccbbbbbbbbbAAaaa..",
+    "...ccccccccccccbbbbbbbbbbaaaa...",
+    "...bcccccccccccbbbbbbbbbaaaaa...",
+    "....bcccccccccbbbbbbbbbaaaaa....",
+    "....bbcccccccbbbbbbbbbbaaaaa....",
+    ".....bbbcccccbbbbbbbbbaaaaa.....",
+    "......bbbbcccbbbbbbbbaaaaa......",
+    ".......bbbbbbbbbbbbbaaaaa.......",
+    "........bbbbbbbbbbbaaaaa........",
+    "..........bbbbbbbbaaaa..........",
+    "............bbbbaaaa............"
+   ]
+  }
+ }
+}

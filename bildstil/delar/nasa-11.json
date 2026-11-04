@@ -1,0 +1,37 @@
+{
+ "id": "nasa-11",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 3. Den är den enda där näsryggen följer en jämn båge. Den ljusa sidan mot vänster växer i jämna steg (db, ddcb, dccb) utan sicksack. Spetsen hänger ner under näsvingarna (bccb över abba) och ger den krok nedåt som Björns kommentar och beskrivningen efterfrågar. Version 1 har just den växlande skuggningen (cdcb, cddb) som gav sicksackformen. Version 2 bryter skuggningen i mitten och har ingen krok. Version 3 ligger också på mittlinjen: näsryggen på x = -1 och 0, och vingarna symmetriska från -3 till 2. Den håller sig inom rutan och har samma bredd och skuggning som förebilden. Jag ändrade bara barnbildens nedersta rad från bb till ba, så att kroken får en mörkare undersida på skuggsidan, likt den vuxna näsan.",
+ "bilder": {
+  "standard": {
+   "x": -4,
+   "y": 0,
+   "rader": [
+    "...db..",
+    "...db..",
+    "..ddcb.",
+    "..ddcb.",
+    "..dccb.",
+    "..dccb.",
+    ".bdccbb",
+    ".adccba",
+    "..bccb.",
+    "..abba."
+   ]
+  }
+ },
+ "barn": {
+  "standard": {
+   "x": -3,
+   "y": 1,
+   "rader": [
+    "..db.",
+    ".ddcb",
+    ".dccb",
+    ".abba",
+    "..ba."
+   ]
+  }
+ }
+}

@@ -1,0 +1,38 @@
+{
+ "id": "nasa-8",
+ "ritad": 3,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 3. Den ser mest ut som en näsa, vilket var Björns och chattens krav. Näsryggen cb/db ligger på x = -1 och 0 och fortsätter obruten, precis som i förebilden. Sedan vidgas näsan gradvis till en tung, lite komisk knöl. Den ljusa sidan (d) ligger till vänster mot ljuset och skuggan (b/a) till höger. Näsborrarna i nedersta raden (.aabbbbaa.) är symmetriska kring mittlinjen, och de genomskinliga hörnen ger rundade näsvingar i stället för en rak kloss som i version 1 och 2. Spetsen syns tydligt som knölen ovanför näsborrarna. Barnversionen är samma form i mindre skala, med kortare rygg och smalare näsvingar, och följer barnansiktets rundare drag. Jag ändrade ingenting. Delen håller sig inom rutan och använder bara a–d, och den har inga ensamma ljusa prickar och ingen glans.",
+ "bilder": {
+  "standard": {
+   "x": -5,
+   "y": 0,
+   "rader": [
+    "....cb....",
+    "....db....",
+    "....db....",
+    "...cdbb...",
+    "...cdcb...",
+    "..bcdccb..",
+    "..cddccb..",
+    ".bdddccbb.",
+    "adddcccbba",
+    ".aabbbbaa."
+   ]
+  }
+ },
+ "barn": {
+  "standard": {
+   "x": -4,
+   "y": 0,
+   "rader": [
+    "...cb...",
+    "...db...",
+    "..cdbb..",
+    ".cddcbb.",
+    "addccbba",
+    ".aabbaa."
+   ]
+  }
+ }
+}

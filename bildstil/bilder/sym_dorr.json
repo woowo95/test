@@ -1,0 +1,41 @@
+{
+ "id": "sym_dorr",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Version 2 läses tydligast som en dörr. Den välvda stenomfattningen, trädörren med två järnband och det senapsgula handtaget känns igen på en blick. Den passar förebilden med dämpade toner, ljus från vänster i ramen och en enda stark detalj. Version 1 är rak och kantig och liknar mest en tunna eller kista. Version 3 är smal och mörk och läses som en pelare eller ett fönster. Ändring: den nedersta raden var en ljus tröskel utan kontur. Den är nu skiffer0 hela vägen, så att konturen sluter sig runt hela symbolen.",
+ "w": 14,
+ "h": 16,
+ "rader": [
+  "...QQQQQQQQ...",
+  "..QTTSSSSSRQ..",
+  ".QTSEEEEEESRQ.",
+  "QTSEHGHGGFESRQ",
+  "QTEHGHGGFGFERQ",
+  "QSEHGHHGFGFERQ",
+  "QTEnnnnnmmmESQ",
+  "QTEHGHGGFGFERQ",
+  "QSEHGHGGLKFERQ",
+  "QTEHGHGGKIFERQ",
+  "QTEHGHHGFGFESQ",
+  "QSEHGHGGFGFERQ",
+  "QTEnnnnnmmmERQ",
+  "QTEHGHGGFGFERQ",
+  "QSEEEEEEEEEERQ",
+  "QQQQQQQQQQQQQQ"
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "I": "#694902",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "m": "#372f25",
+  "n": "#474138"
+ }
+}

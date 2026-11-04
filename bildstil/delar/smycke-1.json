@@ -1,0 +1,20 @@
+{
+ "id": "smycke-1",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 1 eftersom den bäst följer Björns kommentar. Pärlorna är små, bara två punkter breda, och färgerna är dämpade: ben (q, w) på ett snöre i jord (E, G, H) och lite rost (t, s) i hänget mitt fram. Storleken och den tunna linjen liknar förebildens benhalsband, och halsbandet följer halslinjen på kvinnan, mannen och barnet. Hänget ligger på x = -1 och 0, alltså på mittlinjen, och hela delen håller sig inom rutan. Ljuset faller från vänster, så varje pärla är ljusare på den vänstra sidan. Version 2 valdes bort för att den är för tung, med fler rader och fler pärlor. Version 3 valdes bort för att rostpärlorna vid sidorna ger för många starka färger. Jag ändrade inget, eftersom version 1 redan stämmer med reglerna och kommentaren.",
+ "bilder": {
+  "standard": {
+   "x": -12,
+   "y": -4,
+   "rader": [
+    "qE....................Eq",
+    "..wqE..............Ewq..",
+    ".....HGE........EHG.....",
+    "........EwqEEwqE........",
+    "...........ts...........",
+    "...........qp..........."
+   ]
+  }
+ }
+}

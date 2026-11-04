@@ -1,0 +1,61 @@
+{
+ "id": "mun-5",
+ "ritad": 3,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 1. Version 1 och 2 är likadana. I version 3 sitter den glada munnen en rad högre än de andra lägena, så munnen hoppar uppåt när humöret byts. Version 1 håller alla lägen på samma höjd, mitt kring linjen mellan x = -1 och 0 och inom rutan. Ändring enligt Björns kommentar: i den glada munnen bildade de mörka r-punkterna vid sidan av tänderna och i mungiporna två stående parenteser. Nu är mungiporna och sidorna om tänderna den ljusare rost1 (s). Det mörka ligger bara i underläppens båge (rrrr), och kinden ligger under med b. Då går mungiporna mjukt snett uppåt som i förebildens glada mun, bara mindre. Övriga lägen är oförändrade, så det är samma del i alla lägen.",
+ "bilder": {
+  "glad": {
+   "x": -4,
+   "y": -1,
+   "rader": [
+    "s......s",
+    ".sqqqqs.",
+    "..rrrr..",
+    "...bb..."
+   ]
+  },
+  "nojd": {
+   "x": -3,
+   "y": -1,
+   "rader": [
+    "r....r",
+    ".rrrr.",
+    "..bb.."
+   ]
+  },
+  "lugn": {
+   "x": -3,
+   "y": 0,
+   "rader": [
+    ".rrrr.",
+    "..bb.."
+   ]
+  },
+  "ledsen": {
+   "x": -3,
+   "y": 0,
+   "rader": [
+    ".rrrr.",
+    "s.bb.s"
+   ]
+  },
+  "arg": {
+   "x": -3,
+   "y": 0,
+   "rader": [
+    "rkkkkr",
+    "r.bb.r"
+   ]
+  },
+  "oppen": {
+   "x": -2,
+   "y": -1,
+   "rader": [
+    ".rr.",
+    "rkkr",
+    "rkkr",
+    ".bb."
+   ]
+  }
+ }
+}

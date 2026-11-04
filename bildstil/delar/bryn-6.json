@@ -1,0 +1,46 @@
+{
+ "id": "bryn-6",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 1. Den är smalast: två punkter tjock i lugnt läge, med samma linjetjocklek som de raka förebildsbrynen. Ljuset uppifrån vänster syns i ljus g överst, f under och e mörkast nertill. Den följer Björns kommentar bäst, eftersom den inre änden når rutans kant (x = 4) i alla lägen. Version 2 och 3 har hängande extra rader (eef och ee…ee) som gör brynen tjockare och klumpigare. Ändringar: i det lugna läget tog jag bort de tomma raderna och flyttade y till -2, så att bilden sitter tätt utan att brynet flyttas. De andra lägena är oförändrade. Den mörkare inre änden (e, ff) i arga och förvånade lägen fick stå kvar som en kort tapp ner mot näsroten. Den ger den komiska, hopvuxna känslan. Brynen kan inte gå helt ihop: rutan slutar vid x = 4, så det blir alltid en glipa på tre punkter (x 31–33) mot det speglade brynet. Ska de mötas helt måste rutan breddas inåt till x = 6, eller så behövs en egen mittdel.",
+ "bilder": {
+  "lugna": {
+   "x": -4,
+   "y": -2,
+   "rader": [
+    "..ggggggg",
+    "fffffeeff"
+   ]
+  },
+  "arga": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "gg.......",
+    "ffgg.....",
+    "..ffgg...",
+    "....ffggg",
+    "......eff"
+   ]
+  },
+  "ledsna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".....gggg",
+    "...ggfffe",
+    ".ggffe...",
+    "ffe......"
+   ]
+  },
+  "forvanade": {
+   "x": -4,
+   "y": -4,
+   "rader": [
+    "..ggggg..",
+    ".gfffffgg",
+    "ff.....ef"
+   ]
+  }
+ }
+}

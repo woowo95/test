@@ -1,0 +1,22 @@
+{
+ "id": "forband-huvud",
+ "ritad": 2,
+ "av": "programmeringschatten, förebild",
+ "om": "Förband runt huvudet: ett linneband över pannan som följer huvudets rundning, ljust upptill och skuggat nedåt, med en stor blodfläck till vänster som sugits upp i linnet och en droppe som runnit ner.",
+ "bilder": {
+  "standard": {
+   "x": -16,
+   "y": -12,
+   "rader": [
+    ".........twwwwwwqqqqqqq.........",
+    "....ssrrrsstqqqqpppppppqqqqq....",
+    "wwwssrrrrrsspqpqppppppppppppqqqq",
+    "qqpqssrrrssppppppppppppppppppppp",
+    "ppqqpptpp..............ppppppppp",
+    "pppp..s.....................pppp",
+    "......r.........................",
+    "......r........................."
+   ]
+  }
+ }
+}

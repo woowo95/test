@@ -1,0 +1,47 @@
+{
+ "id": "redskap-metspo",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Spöet går diagonalt från nere till vänster upp mot höger axel. Toppen sticker upp lagom högt bredvid huvudet, inte så högt som i version 2 där spöet nästan når ramens överkant. Lindningen av senapsrep är bred och tydlig, i samma stil och storlek som lindningen på flintyxans skaft. Skaftet är tre punkter tjockt med den ljusa sidan mot vänster, så det följer ljuset uppifrån vänster. Flötet i rost och kroken i ben syns tydligt på alla tre ansiktena, och hela delen håller sig inom rutan. Ändring: i den tunna toppen bytte jag de enstaka ljusa H-punkterna på rad 4 och 6 mot G, så att spötoppen får jämn ton och inga ensamma ljusa prickar.",
+ "bilder": {
+  "standard": {
+   "x": -20,
+   "y": -22,
+   "rader": [
+    "..........................GK",
+    ".........................G.K",
+    "........................G..K",
+    "........................G..K",
+    ".......................G...K",
+    "......................GF...K",
+    ".....................GF....K",
+    "....................HF....ut",
+    "....................GE....ts",
+    "..................LLKJ....sr",
+    ".................KKJI......K",
+    "................LLKJ.......K",
+    "...............KKJI........K",
+    "...............GF..........K",
+    "...............HF..........q",
+    ".............HGF.........w.q",
+    "............HGE..........qqp",
+    "...........HGF..............",
+    "..........HGE...............",
+    "..........HGF...............",
+    ".........HGE................",
+    "........HGF.................",
+    ".......HGE..................",
+    "......HGF...................",
+    ".....HGE....................",
+    ".....HGF....................",
+    "....HGE.....................",
+    "...HGF......................",
+    "..HGE.......................",
+    ".HGF........................",
+    ".HGE........................",
+    "HGF.........................",
+    "HGE........................."
+   ]
+  }
+ }
+}

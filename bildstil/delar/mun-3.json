@@ -1,0 +1,80 @@
+{
+ "id": "mun-3",
+ "ritad": 3,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 3. Den ger tydligast en fyllig mun: en överläpp med båge och mörkare mungipor (a), och en underläpp som fångar ljuset uppifrån vänster (c) och blir mörkare åt höger (b). Under den ligger en skugga (a) på höger sida. Läpplinjen är bara r som i förebilden, och s och t används inte, så färgen är nedtonad som Björn ville. Den öppna munnen och alla delar håller sig inom rutan och ligger mitt på mittlinjen. Version 1 ser mer ut som förebilden med en extra rad och läser inte som fyllig. Version 2 har en ensam ljus c-prick i underläppen, och dess öppna mun skiljer sig mycket från de andra lägena. Ändring: i läget arg saknades överläppens båge. Jag lade tillbaka den (...bb..bb...), så att munnen är samma del i alla lägen och bara läpplinjen ändras av humöret.",
+ "bilder": {
+  "glad": {
+   "x": -6,
+   "y": -2,
+   "rader": [
+    "..bbbbbbbb..",
+    "r.rrrrrrrr.r",
+    ".rqqqqqqqqr.",
+    "..rrrrrrrr..",
+    "..ccccccbb..",
+    "...bbbbaa..."
+   ]
+  },
+  "nojd": {
+   "x": -6,
+   "y": -2,
+   "rader": [
+    "...bb..bb...",
+    "r.abbbbbba.r",
+    ".rrrrrrrrrr.",
+    "..ccccccbb..",
+    "...bbbbaa...",
+    "............"
+   ]
+  },
+  "lugn": {
+   "x": -6,
+   "y": -2,
+   "rader": [
+    "...bb..bb...",
+    "..abbbbbba..",
+    ".rrrrrrrrrr.",
+    "..ccccccbb..",
+    "...bbbbaa...",
+    "............"
+   ]
+  },
+  "ledsen": {
+   "x": -6,
+   "y": -2,
+   "rader": [
+    "...bb..bb...",
+    "..abbbbbba..",
+    "..rrrrrrrr..",
+    ".rcccccccbr.",
+    "...bbbbaa...",
+    "............"
+   ]
+  },
+  "arg": {
+   "x": -6,
+   "y": -2,
+   "rader": [
+    "...bb..bb...",
+    "..abbbbbba..",
+    "rkkkkkkkkkkr",
+    "r.ccccccbb.r",
+    "...bbbbaa...",
+    "............"
+   ]
+  },
+  "oppen": {
+   "x": -4,
+   "y": -2,
+   "rader": [
+    "..bbbb..",
+    ".brrrrb.",
+    ".rkkkkr.",
+    ".rkkkkr.",
+    "..rrrr..",
+    "..cccb.."
+   ]
+  }
+ }
+}

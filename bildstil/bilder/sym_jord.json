@@ -1,0 +1,32 @@
+{
+ "id": "sym_jord",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den har en sammanhängande, förgrenad spricka, så rutan läses direkt som sprucken torr jord även i liten storlek. I version 2 löper sprickorna snett och parallellt, så den liknar mer ett streck eller en reva och kan förväxlas med svärdssymbolen bredvid. Version 3 har fler små sprickor som flyter ihop i spelets storlek. Version 1 följer också förebildens stil: kontur i jord0, få och stora former och ljus från övre vänstra hörnet (jord3 uppe till vänster, jord1 nere till höger). Jag ändrade bara en sak: rad 14 hade ett helt slätt fält i jord1 nere till höger, så jag lade in två punkter jord2 för att ge ytan korn utan att skapa mörka fläckar.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".EEEEEEEEEEEEEE.",
+  "EHHHGHGGGGEGGFGE",
+  "EHHGHGGGGGEFGGFE",
+  "EHGHGGGGGEGGFGFE",
+  "EGHGGGFGGEGFGFFE",
+  "EHGGGGGGEEGGFFFE",
+  "EGGGEEEEEGFGFFFE",
+  "EGGEGGGGEFGFFFFE",
+  "EGEGGGFGEFFGFFFE",
+  "EEGGFGGFFEFFFFFE",
+  "EGGFGFGFFEEFFFFE",
+  "EGFGFGFFFFFEEFFE",
+  "EGGFGFFFFFFFFEFE",
+  "EFGFFGFFFFGFFFEE",
+  "EGFFFFGFFFFFFFFE",
+  ".EEEEEEEEEEEEEE."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62"
+ }
+}

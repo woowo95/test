@@ -1,0 +1,27 @@
+{
+ "id": "sym_tappa",
+ "ritad": 4,
+ "av": "Claude",
+ "om": "Ritad av Claude efter Björns kommentar: gör samma symbol som att plocka upp fast en röd pil neråt under vapnet istället",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "....IIQQQQQQQQ..",
+  ".IEELKTwTTTTTSQ.",
+  "ILHGKJTSTSTSSRRQ",
+  ".IEEJISSRSRSRRQ.",
+  "....IIQQQQQQQQ..",
+  "................",
+  "......rrrr......",
+  "......rutr......",
+  "......rtsr......",
+  "......rtsr......",
+  "..rrrrrtsrrrrr..",
+  "...rutttttssr...",
+  "....rutttssr....",
+  ".....rttssr.....",
+  "......rtsr......",
+  ".......rr......."
+ ],
+ "pal": {"E":"#3f2415","G":"#7d5b40","H":"#987e62","I":"#694902","J":"#906f0f","K":"#b2921b","L":"#d8b25f","Q":"#233035","R":"#3e5156","S":"#61767a","T":"#8a9c9e","r":"#521100","s":"#742a01","t":"#a14808","u":"#bd753e","w":"#dad0bb"}
+}

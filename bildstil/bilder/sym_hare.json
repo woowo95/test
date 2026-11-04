@@ -1,0 +1,36 @@
+{
+ "id": "sym_hare",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den sittande haren i profil har två höga, raka öron och läses tydligast som 🐇 i 16 punkter. Den fyller rutan på höjden (16) och nästan på bredden. Den har en sluten jord0-kontur och få, stora former med jord i tre toner, ljus uppe till vänster och mörkare nere till höger, precis som de korsade svärden. Ögat i kol0 och den ljusa svansen i ben3 syns på både mörk och ljus bakgrund. Version 1 har snedställda öron som flyter ihop med ryggen. Version 3 blir hopsjunken och svårare att känna igen. Ändringar: jag bröt de raka H/G-ränderna i öronen med en H och en F, och lade in en H i den släta bukytan för att få korn utan fläckar.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "...EE...........",
+  "..EHGE..........",
+  "..EHGEEE........",
+  "..EHGEGFE.......",
+  "..EHHEGFE.......",
+  "..EHGEFFE.......",
+  "..EHGGEFE.......",
+  ".EHHGGGFE.......",
+  "EHHkGGGGFEEEE...",
+  "EqHGGGGFGHHHGEE.",
+  ".EqGGFHGGGGGGwpE",
+  "..EGGFHGHGGGGFE.",
+  "..EqGFGGGGGGFFE.",
+  "..EqEFGGGGGFFFE.",
+  ".EHGEFGGFFFFFE..",
+  "EEEEEEEEEEEEEE.."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "k": "#24201d",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

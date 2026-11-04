@@ -1,0 +1,42 @@
+{
+ "id": "skagg-4",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Version 3 vald. Den hör ihop med helskägget i stilen och skuggar likadant: ljust (h) på vänster sida mot ljuset och mörkt (e) åt höger, med korniga strån i små klungor. Den följer Björns kommentar bäst. Version 1 och 2 smalnar av till en spetsig V-form med glesa, trasiga punkter längst ner. Version 3 smalnar jämnt och slutar i en trubbig, bred botten med 14 punkter, så skägget blir långt utan att bli spetsigt. Jag har kontrollerat måtten: 30 kolumner och 28 rader, från x = -15 till 14 och y = -7 till 20. Delen ligger alltså inom rutan och symmetriskt kring mittlinjen. Munnens ruta lämnas fri av programmet, och kinderna når lite utanför käken. Inga ändringar behövdes.",
+ "bilder": {
+  "standard": {
+   "x": -15,
+   "y": -7,
+   "rader": [
+    "hhhhgg..................ffffee",
+    "hhhhgg..................fffeee",
+    ".hhhgg..................ffffe.",
+    ".hhhhg..hhhhhggggfffff..ffffe.",
+    ".hhhhgghhhhhhggggfffffgfffffe.",
+    "..hhhhghhhhggghgfgggfffffffe..",
+    "..hghhhhhghgggghhfggfffffgfe..",
+    "..ghhhhgghghgghhfgggfffgfffe..",
+    "..gghhgggghghgghhghggfffgffe..",
+    "..gghggggghghgghhggfgfffgffe..",
+    "...hgggggggghgghggffffffgfe...",
+    "...hgggggggghgggggfgffffgfe...",
+    "...hgggggggghggggffgfffefee...",
+    "...ggghggggghgggfffgfffefee...",
+    "...gghgggghgggfgfffgffefeee...",
+    "...ghgggghggghgffgffgfefeee...",
+    "....hggghgggghfgfgffgfeefe....",
+    "....gghgghggghgffgffgfeefe....",
+    "....ghgggghgghffgfgffefeee....",
+    "....gghggghgghgfgffgfeefee....",
+    "....ghgghgghgffgffgffefeee....",
+    "....gghgghgghgfgffgfeefeee....",
+    ".....ghgghggfgffgffefeeee.....",
+    ".....gghgghgffgfgfeefeeee.....",
+    "......ghgghgfgffgfeefeee......",
+    "......gghggffgfgfeefeeee......",
+    ".......gghgfgffgfeefeee.......",
+    "........gfgffgfeefeeee........"
+   ]
+  }
+ }
+}

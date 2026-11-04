@@ -1,0 +1,30 @@
+{
+ "id": "nasa-6",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5)",
+ "om": "Vuxennäsan stämmer med förebilden och beskrivningen. Den håller sig inom rutan, är skuggad med ljus från vänster och har synliga näsborrar på en rund, uppåtvänd spets, så den är oförändrad. I barnets näsa stod det ljusaste tonet d som en ensam punkt mitt bland c (.dccb). Det läste som en liten ljusfläck eller glans. Jag ändrade raden till .ddcb, så att ljuset på spetsens vänstra sida blir en liten klunga som i vuxennäsan. Barnnäsan är fortfarande kortare och mindre, med samma uppåtvända spets och samma näsborrar. Flyttad en punkt åt vänster så att den sitter mitt i ansiktet (Björn efter 5.2.2.3).",
+ "bilder": {
+  "standard": {
+   "x": -4,
+   "y": 2,
+   "rader": [
+    "...cb..",
+    "...db..",
+    "..ddcb.",
+    ".bdccbb",
+    ".aacbaa"
+   ]
+  }
+ },
+ "barn": {
+  "standard": {
+   "x": -3,
+   "y": 2,
+   "rader": [
+    "..cb.",
+    ".ddcb",
+    "aacba"
+   ]
+  }
+ }
+}

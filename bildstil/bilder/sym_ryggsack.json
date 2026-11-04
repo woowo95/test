@@ -1,0 +1,27 @@
+{
+ "id": "sym_ryggsack",
+ "ritad": 3,
+ "av": "API:t, vald av Claude",
+ "om": "API:t ritade tre versioner efter Björns kommentar; Claude valde version 2 (valet i API:t hann inte köras).",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "......EEEE......",
+  ".....EHGGFE.....",
+  "QQQQQEGqpFE..Q..",
+  "QTTSQEqppoE.QTQ.",
+  "QTSRQEppooE.QTQ.",
+  "QQQQQ.EooE..QSQ.",
+  ".EGE.MPOONM.QSQ.",
+  ".EGEMPPOONNMQSQ.",
+  "EqpMPOOOONNNMpoE",
+  "EppMPOONONNNMooE",
+  ".EGEMOONNNNMEGE.",
+  ".EGEMONONNNMEGE.",
+  ".EEEMONNNNNMEEE.",
+  "....MMMMMMMM....",
+  ".....EGE.EGE....",
+  "....EEEE.EEEE..."
+ ],
+ "pal": {"E":"#3f2415","F":"#5e3c24","G":"#7d5b40","H":"#987e62","M":"#353204","N":"#4b4f00","O":"#647025","P":"#898b4c","Q":"#233035","R":"#3e5156","S":"#61767a","T":"#8a9c9e","o":"#7e7362","p":"#a0947d","q":"#bdb39b"}
+}

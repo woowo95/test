@@ -1,0 +1,41 @@
+{
+ "id": "sym_avstand",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den läses tydligast som 🏹: en spänd båge från sidan med en pil på strängen som pekar åt höger, och den har få och stora former. Den fyller rutan (15 × 15) och har en tydlig kontur: jord0 runt träet och skiffer0 runt pilspetsen. Ljuset faller uppifrån vänster: den övre bågarmen och pilskaftets översida är ljusare (jord3/jord2), den undre armen och undersidan mörkare (jord2/jord1). Precis som stålet och mässingen i förebilden har pilspetsen skiffertoner med glansen uppe till vänster, och de rostfärgade fjädrarna är den enda starka färgen. Version 1 hör ihop med förebildens diagonaler men blir rörig i liten storlek, och strängen och bågen flyter ihop. I version 2 är pilen svagare och fjädrarna sitter långt ut till vänster, utanför strängen. Jag ändrade ingenting: punkterna håller paletten och storleken, och silhuetten är redan ren.",
+ "w": 15,
+ "h": 16,
+ "rader": [
+  ".EHE...........",
+  ".pEHGE.........",
+  ".p.EHGE........",
+  ".p..EHGE.......",
+  ".p...EHGE......",
+  ".prrr.EHFE.QQ..",
+  ".putsrEEHFETTQ.",
+  "EHHGHHHGHHHTTTQ",
+  "EFGFFGFFGFFSSRQ",
+  ".pssrrEEGFERRQ.",
+  ".prrr.EGFE.QQ..",
+  ".p...EGFE......",
+  ".p..EGFE.......",
+  ".p.EGFE........",
+  ".pEGFE.........",
+  ".EGE..........."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "p": "#a0947d",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e"
+ }
+}

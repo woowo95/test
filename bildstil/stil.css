@@ -152,6 +152,8 @@ td.tal { white-space: nowrap; }
 .alt.idag { background: transparent; border: 1px dashed var(--line); }
 .alt .bilder { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
 .alt .bilder canvas { background: #24201d; }
+.valkort.stor .alternativ { grid-template-columns: 1fr; }
+.alt .bilder canvas.scen { max-width: 100%; height: auto; }
 .alt figcaption b { color: var(--mustard); }
 .svar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .svar button { background: var(--panel2); border: 1px solid var(--line); padding: 5px 14px; cursor: pointer; }
@@ -253,3 +255,7 @@ td.tal { white-space: nowrap; }
 .grkort button:disabled, .grkort textarea:disabled { opacity: 0.5; cursor: not-allowed; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
 .grkort > *, .gr-bilder > *, .gr-mall > *, .sk-avsnitt > * { min-width: 0; }
+/* överst det Björn ska svara på; under strecket guiden och allt annat */
+.resten { display: grid; gap: 14px; border-top: 6px double var(--line); padding-top: 32px; }
+details.mer summary { cursor: pointer; color: var(--dim); min-height: 40px; display: flex; align-items: center; width: fit-content; }
+details.mer p { color: var(--dim); max-width: 62ch; margin: 4px 0 0; }

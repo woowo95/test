@@ -1,0 +1,18 @@
+{
+ "id": "vargkott",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 1 eftersom den liknar dagens bild mest. Benet med ljus knöl sticker ut uppe till höger, och köttkroppen är en stor, rund klump som sväller nedåt åt vänster. Den fyller hela den tillåtna rutan på 11 × 7 punkter och ligger därmed så nära Björns önskan om en större bit som gränsen tillåter. Den har rost0 som kontur, ljus kant (rost2 och rost3) uppe till vänster och mörkare rost1 nere till höger. Därför läses den tydligt som en mörk köttbit som skiljer sig från fiskköttets ljusa skivor. Version 2 har ett hål mellan kött och ben och en ben-ton mitt i köttet som ser ut som en fläck. Version 3 har en mindre köttkropp som inte fyller rutan. Ändring: jag lade till en enda glanspunkt i ben3 i köttets övre del (rad 4), som motsvarar den ljusa fettstrimman i dagens bild. Allt annat är oförändrat.",
+ "w": 11,
+ "h": 7,
+ "rader": [
+  "........wqo",
+  "....rrrwqpo",
+  "..rrtuusqo.",
+  ".rtuwttssr.",
+  "rtuttsstsr.",
+  "rtsstsssr..",
+  ".rrrrrrr..."
+ ],
+ "pal": {"o":"#7e7362","p":"#a0947d","q":"#bdb39b","r":"#521100","s":"#742a01","t":"#a14808","u":"#bd753e","w":"#dad0bb"}
+}

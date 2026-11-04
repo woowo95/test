@@ -1,0 +1,51 @@
+{
+ "id": "har-21",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den är den enda som faktiskt ser tunn ut: hjässan består av glesa, kammade strån i klungor med huden synlig mellan dem. Ljuset ligger rätt, med ljusa h/g till vänster och mörka f/e till höger, och sidorna sluttar mjukt som hårmassan i förebilden. Den har inga ensamma prickar, och bakhåret är en dämpad, matt massa bakom huvudet som passar alla tre mallarna. Version 2 har många ensamma punkter (till exempel '.f.' och 'e.e'), och trådarna längst ner i bakhåret flimrar. Version 3 är för tät och massiv för att läsas som tunt hår och liknar mer en vanlig frisyr. Jag ändrade ingenting i version 1, eftersom delen håller sig inom rutan, är symmetrisk kring mittlinjen och bara använder tecknen efgh.",
+ "bilder": {
+  "bakhar": {
+   "x": -20,
+   "y": 8,
+   "rader": [
+    "..ffgfgfffffffffffffffffffffffffefeeee..",
+    "..fgfgffffffffffffffffffffffffffeefeee..",
+    "..ffgfgfffffffffffffffffffffffffefeeee..",
+    "..fgfgffffffffffffffffffffffffffeefeee..",
+    "..fgffgfffffffffffffffffffffffffefeeee..",
+    "..fgfgffffffffffffffffffffffffffeefeee..",
+    "..ffgfgfffffffffffffffffffffffffefeeee..",
+    "...fgfffffffffffffffffffffffffffefeee...",
+    "...ffgffffffffffffffffffffffffffeefee...",
+    "....ffffffffffffffffffffffffffffeeee....",
+    ".....efffffffffffffffffffffffffffee.....",
+    ".......eeffffffffffffffffffffffee......."
+   ]
+  },
+  "framhar": {
+   "x": -20,
+   "y": -2,
+   "rader": [
+    ".................gghgff.................",
+    "..............hghhggggffff..............",
+    "............hhgh..hggg..gfef............",
+    "...........hhh..ghh..gg..ffef...........",
+    "..........hhgg..hhg...ggf..fef..........",
+    ".........hhh..hhgg..hgg..gff.ef.........",
+    "........hhg..hhg...hgg..ggf..fee........",
+    ".......hhh...hhg..ghg...gff..ffee.......",
+    "......hhh....hhg..gg....gf...fffee......",
+    ".....hhhh.......hgg..ggf.......feee.....",
+    "....hhhh.........hg..gf.........feee....",
+    "....hhhh........................feee....",
+    "...hhhhh........................ffeee...",
+    "...hhghh........................fefee...",
+    "..ghhhhg........................ffefee..",
+    "..gghhg..........................ffeee..",
+    "..gghg............................feee..",
+    "..ggg..............................eee..",
+    "...gg..............................ee..."
+   ]
+  }
+ }
+}

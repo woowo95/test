@@ -1,0 +1,23 @@
+{
+ "id": "smycke-7",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den böjda tanden av ben hör bäst ihop med tänderna i förebildens benhalsband. Den skuggas också som förebilden: ljus ben w och q på vänster sida mot ljuset, mörkare p och en kant av jord E på höger sida. Kroken i kol (m, l) läser som en metallögla i örat. Version 1 har en ring av lösa F-punkter som blir prickig, och version 3 ser mer ut som pärlor än som ett benhänge. Ändring: på den femte raden saknades E i högerkanten, så skuggkanten blev en ensam prick ovanför och under. Jag fyllde i den (.wqpE) så att skuggan går obruten längs formen. Delen håller sig inom rutan (-3..2, 0..9) och använder bara tillåtna tecken.",
+ "bilder": {
+  "standard": {
+   "x": -3,
+   "y": 0,
+   "rader": [
+    "..m..",
+    "..lm.",
+    ".wqE.",
+    ".wqpE",
+    ".wqpE",
+    ".wqpE",
+    "..wpE",
+    "..qp.",
+    "...p."
+   ]
+  }
+ }
+}

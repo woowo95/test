@@ -1,0 +1,33 @@
+{
+ "id": "golv_lera",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "lera: ett jordgolv som legat under vatten, mörkt och blankt med pölar",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "FEFEEEFFGmEFRRRm",
+  "FGEmFEEEFFFmRRFm",
+  "EmmEFEFFFEFFmRmR",
+  "EFEmmFGFEmFmEFFF",
+  "FFFFFEGmGEGEmFFm",
+  "EEFEFmEGFmmFEFFE",
+  "mmFFFRGGFEEFmmEm",
+  "EFEFGmRRFFmFFEFG",
+  "mGFERmRRmmFFFEFE",
+  "mFFFFFFmRRRRFEmE",
+  "EGEFFFEFRmmRFGFm",
+  "mmFmmFFFFmRRFEEF",
+  "RRGmmEEFFEFFGEFF",
+  "RRGRGFEFEFFEEFFm",
+  "RRRmEmEFFEFGFFEF",
+  "FFEFFFmmRFmREmFF"
+ ],
+ "pal": {
+  "F": "#5e3c24",
+  "E": "#3f2415",
+  "G": "#7d5b40",
+  "m": "#372f25",
+  "R": "#3e5156"
+ }
+}

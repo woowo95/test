@@ -1,0 +1,55 @@
+{
+ "id": "har-16",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 1, omritad efter Björns svar",
+ "om": "Val 0: den enda versionen (3) var underkänd av Björn eftersom flätorna inte syntes och det såg ut som kort lockigt hår, så jag ritade om frisyren. Den nya har en enda tydlig fläta, ungefär fem punkter tjock, som ligger som en båge över hjässan ovanför pannan och fortsätter ner längs båda sidorna framför öronen. Flätan är byggd av snedställda flätleder i fiskbensmönster med mörka skarvar (e). Varje led är ljusast uppe till vänster, och flätan som helhet är ljusare på vänster sida och mörkare på höger, så skuggan följer huvudets rundning. Mellan flätan och hårfästet ligger slätt, bakåtkammat hår med glesa strån som följer formen ut mot flätan. Under bågen finns en mörkare skuggrad. h används bara i två korta slingor, så att håret blir matt som i förebilden. Ansiktsöppningen och ytterformen är desamma som förut, så frisyren passar alla tre mallarna. Bakhåret är en mörk och slät nacke med samma ytterkant upptill, så att det inte sticker ut ovanför flätan. Nertill fortsätter flätan bakom öronen och böjer in mot nacken, så att den hänger ihop runt huvudet.",
+ "bilder": {
+  "bakhar": {
+   "x": -18,
+   "y": -3,
+   "rader": [
+    "...........ffffffffeeeeee...........",
+    "....ffffffffffffffeeeeeeeeeeeeee....",
+    "...fffffffffffffffeeeeeeeeeeeeeee...",
+    ".fffffffffffffffffeeeeeeeeeeeeeeeee.",
+    "fffffffffffffffffefeeeeeeeeeeeeeeeee",
+    "ffffffffffffffffefeeeeeeeeeeeeeeeeee",
+    "fffffffffffffffffefeeeeeeeeeeeeeeeee",
+    "ffffffffffffffffefeeeeeeeeeeeeeeeeee",
+    "fffffffffffffffffefeeeeeeeeeeeeeeeee",
+    "ffffffffffffffffefeeeeeeeeeeeeeeeeee",
+    "fffffffffffffffffefeeeeeeeeeeeeeeeee",
+    "ffffffffffffffffefeeeeeeeeeeeeeeeeee",
+    "fffffffffffffffffefeeeeeeeeeeeeeeeee",
+    "geffeeffffffffffffeeeeeeeeeeeeefffee",
+    "ffeffeffffffffffffeeeeeeeeeeeeeffeff",
+    "fgfeeeffffffffffffeeeeeeeeeeeeeeeffe",
+    ".ffeeeffffffffffffeeeeeeeeeeeeegeff.",
+    "..effeffffffffffffeeeeeeeeeeeeeffe..",
+    "....eeffffffffffffeeeeeeeeeeeeee...."
+   ]
+  },
+  "framhar": {
+   "x": -18,
+   "y": -3,
+   "rader": [
+    "...........ehggffegggffeg...........",
+    "....fegggfffegggffefggffeffffegf....",
+    "...fefegggeffegfeffeffeffegffeeff...",
+    ".ggeeffegfgfffeegfffeegfffffeffefff.",
+    "fgfeffffeefefeeffefeeffeefeefffgefff",
+    "ffegfefeefefgffefffeffefeeeefeegfefe",
+    "efffefgffgffggffgfffefffeffefeeggfee",
+    "gefffgfgffgffhgffgfffefffeffefefgfef",
+    "ggefefgfgffgfggfgffeffeffefefeeffeff",
+    "gggeegfgffgfgf........fefffeefeefffe",
+    "fgfeffggff................ffeefgefff",
+    "ffeffgff....................feeffefe",
+    "efffegf......................fefgfee",
+    "geffff........................efffef",
+    ".fefef........................effef.",
+    "..fee..........................eff.."
+   ]
+  }
+ }
+}
