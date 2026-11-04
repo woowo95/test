@@ -1002,6 +1002,7 @@ const BESLUT = {
   q_tro: { val: 1, steg: '5.3.3.1' }, q_person: { val: 1, steg: '5.3.3.1' }, q_grannar: { val: 1, steg: '5.3.3.1' },
   g_runsten: { val: 1, steg: '5.3.3.1' }, g_band: { val: 1, steg: '5.3.3.1' }, g_vag: { val: 1, steg: '5.3.1.2' },
   g_horn: { val: 1, text: 'Ormen. Ring med blad och Dubbel ögla sparas (i gui.json) om du ångrar dig. Byggs in i steg 5.3.1.4.' },
+  a_tornado: { val: 1, text: 'Byggs in i steg 5.1.9.1 (tornadon på kartan).' }, a_brand: { val: 1, text: 'Byggs in i steg 5.1.9.1 (rutor som brinner på kartan).' },
   a_rorelser: { val: 1, text: 'Byggs in i steg 5.1.9.4 (arbetena) och 5.1.9.5 (striden).' }, a_effekter: { val: 1, text: 'Byggs in i steg 5.1.9.1 (elden och röken) och 5.1.9.2 (vågorna och stranden).' },
   v_framsteg: { val: 1, steg: '5.3.2.2' }, v_ring: { val: 1, steg: '5.3.2.2' }, v_tart: { val: 1, steg: '5.3.2.2' },
 };
