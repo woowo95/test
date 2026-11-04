@@ -85,7 +85,6 @@ export const PAL: Record<string, Record<string, string>> = {
   toa: { C: '#7d5b40', V: '#898b4c', c: '#5e3c24', k: '#3f2415', v: '#d8b25f' },
   grodd: { G: '#647025', L: '#898b4c', g: '#4b4f00' },
   ...Object.fromEntries(['klart', 'moln', 'regn', 'sno', 'blast', 'aska', 'dimma'].map(k => ['vader_' + k, VADER_PAL])),
-  vattensack: { B: '#8a9c9e', J: '#7d5b40', L: '#987e62', b: '#61767a', j: '#5e3c24', o: '#24201d', s: '#906f0f', y: '#b2921b' },
   benspade: { h: '#694902', H: '#7e7362', y: '#a0947d', Y: '#bdb39b', w: '#dad0bb', W: '#dad0bb', d: '#a0947d', R: '#bdb39b' },
   skinnklader: { b: '#7d5b40', B: '#987e62', d: '#5e3c24', w: '#bdb39b' },
   slaktbank: { b: '#694902', B: '#987e62', d: '#372f25', r: '#742a01' },
@@ -2035,24 +2034,6 @@ export const PIX: Record<string, string[]> = {
     '..........',
     '..ovvvvo..',
   ],
-  vattensack: [
-    '................',
-    '...ssssssssss...',
-    '..s..........s..',
-    '..s..........s..',
-    '..s.ooooooo..s..',
-    '..sojJJLLJJoo...',
-    '..ojJJLLJJJJjoyo',
-    '.ojJJJJJJJJJjyyo',
-    '.ojJJJJJJJJjjoyo',
-    '.ojjJJJJJJjjo.o.',
-    '..ojjjjjjjjo....',
-    '...oooooooo...b.',
-    '..............b.',
-    '.............bBb',
-    '.............bbb',
-    '................',
-  ],
   // benspaden (Björn valde S1g efter v85): snett uppåt höger som de andra redskapen, tre ben som ett rakt avskuret blad lika
   // mycket åt båda hållen kring skaftet, bundna med rep
   benspade: [
@@ -3777,6 +3758,11 @@ for (const k of ['brand', 'tornado']) { PIX[k] = KARTBILDER[k].rader; PAL[k] = K
 // (bildstilens tecken har samma färg i alla bilder, så att två bilder kan läggas på varandra tecken för tecken)
 { const ring = KARTBILDER.lagereld_ring, ny = KARTBILDER.lagereld_ny;
   PIX.lagereld = ring.rader.map((r, y) => [...r].map((c, x) => ny.rader[y][x] !== '.' ? ny.rader[y][x] : c).join('')); PAL.lagereld = { ...ring.pal, ...ny.pal }; }
+// vattensäcken utan mörk kant (steg 5.1.2.5): symbolen i listorna är bildstilens godkända bild, förstorad två gånger och mitt i
+// rutan på 16 × 16 punkter som de andra symbolerna (på kartan ritas den i sin naturliga storlek)
+{ const b = KARTBILDER.vattensack!, w = 16, x0 = (w - 2 * b.w) >> 1, y0 = (w - 2 * b.h) >> 1;
+  PIX.vattensack = Array.from({ length: w }, (_, y) => Array.from({ length: w }, (_, x) => b.rader[(y - y0) >> 1]?.[(x - x0) >> 1] ?? '.').join(''));
+  PAL.vattensack = b.pal; }
 export const kartbild = (k: string) => KARTBILDER[k] ? 'kb_' + k : undefined;
 export const kartbildEnsam = (k: string) => !!KARTBILDER[k]?.ensam;
 
