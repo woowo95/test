@@ -11,7 +11,7 @@ import { gaster } from './gaster';
 import { valdFilt } from './flikar/filt';
 import { sakKey } from './flikar/sak';
 import { flyttaHit } from './flikar/station';
-import { renderPanel, selectPerson, visa, ärPersonflik } from './panel';
+import { renderPanel, selectPerson, stangRuta, visa, ärPersonflik, ärRuta } from './panel';
 import { renderPorts, stopFollow } from './portratt';
 import { TS, app, cam, layout, tileAt, toWorld, view, world, zoomAt } from './scen';
 
@@ -98,6 +98,7 @@ export function testSvara(text: string) {
 export function brandKnapp() { document.querySelector('#testSkicka button[data-brand]')?.classList.toggle('aktiv', ui.testMode && ui.brandTest); }
 // ett tryck där inget finns: personen släpps och personrutan stängs
 function avmarkera() {
+  if (ärRuta(ui.tab)) { stangRuta(); renderPanel(true); return; } // först stängs rutan (steg 5.3.5.1)
   if (ui.selected === undefined && !ärPersonflik(ui.tab)) return;
   ui.selected = undefined; stopFollow();
   if (ärPersonflik(ui.tab)) ui.tab = undefined;

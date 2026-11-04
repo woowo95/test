@@ -43,20 +43,43 @@ nav.innerHTML = IDS.filter(id => !ALLA[id].knapp && id !== 'person').map(id => `
 
 // flikarna som visas i personens panel (personen, elden, lagret, högen, huset, stationen, sjön, fältet, saken, djuret)
 export const ärPersonflik = (id: FlikId | undefined) => !!id && (ALLA[id].knapp ?? id) === 'person';
-export function visa(id: FlikId) { if (ärPersonflik(id)) ui.tab = id; else ui.hoger = id; renderPanel(true); }
+// det man trycker på (elden, högen, huset, stationen, sjön, fältet, saken, djuret …) visas i en mindre ruta där man tryckte, och
+// personens panel står kvar (steg 5.3.5.1)
+export const ärRuta = (id: FlikId | undefined) => ärPersonflik(id) && id !== 'person';
+let tryck = { x: 0, y: 0 }, flytta = false;
+export function visa(id: FlikId) {
+  if (ärRuta(id)) flytta = true;
+  if (ärPersonflik(id)) ui.tab = id; else ui.hoger = id;
+  renderPanel(true);
+}
 export function selectPerson(id: number) { ui.selected = id; ui.tab = 'person'; renderPanel(true); renderPorts(); }
-function stang(sida: 'v' | 'h') {
+// rutan stängs: personens panel står kvar om en person är vald
+export function stangRuta() { ui.tab = ui.selected !== undefined ? 'person' : undefined; }
+function stang(sida: 'v' | 'h' | 'r') {
   if (sida === 'h') ui.hoger = undefined;
-  else { ui.tab = undefined; ui.selected = undefined; }
+  else if (sida === 'r') stangRuta();
+  else { ui.selected = undefined; if (!ärRuta(ui.tab)) ui.tab = undefined; }
   renderPanel(true); renderPorts();
 }
 
 // en panel och det som senast skrevs i den: är det samma skrivs det inte om (markering, musen över och fokus står kvar)
 interface Sida { el: HTMLElement; body: HTMLElement; html: string; musOver: boolean }
-const SIDOR: Record<'v' | 'h', Sida> = {
+const SIDOR: Record<'v' | 'h' | 'r', Sida> = {
   v: { el: $('vPanel'), body: $('vBody'), html: '', musOver: false },
   h: { el: $('hPanel'), body: $('panelBody'), html: '', musOver: false },
+  r: { el: $('ruta'), body: $('rutaBody'), html: '', musOver: false },
 };
+// rutan läggs bredvid trycket och hålls inom fönstret, till vänster om runstenarna
+function placeraRuta() {
+  const el = SIDOR.r.el, b = el.offsetWidth, h = el.offsetHeight, m = 8;
+  const hoger = (document.querySelector<HTMLElement>('.tabs')?.offsetWidth ?? 0) + m;
+  const topp = parseFloat(getComputedStyle(document.body).getPropertyValue('--topp')) || 0;
+  let x = tryck.x + 14, y = tryck.y + 14;
+  if (x + b > innerWidth - hoger) x = tryck.x - b - 14;
+  if (y + h > innerHeight - m) y = innerHeight - m - h;
+  el.style.left = `${Math.max(m, Math.min(x, innerWidth - hoger - b))}px`;
+  el.style.top = `${Math.max(topp + m, y)}px`;
+}
 function skriv(sd: Sida, id: FlikId | undefined, force: boolean) {
   sd.el.hidden = !id;
   if (!id) { sd.html = ''; return; }
@@ -74,10 +97,14 @@ export function renderPanel(force = false) {
     const kan = ALLA[id].syns?.() ?? true;
     if (b.disabled === kan) { b.disabled = !kan; b.title = kan ? ALLA[id].namn : `${ALLA[id].namn}: går inte att öppna än`; }
   }
-  document.body.classList.toggle('vOppen', !!ui.tab);
+  const vanster = ui.tab === 'person' || (ärRuta(ui.tab) && ui.selected !== undefined) ? 'person' : undefined;
+  document.body.classList.toggle('vOppen', !!vanster);
   renderOwned();
-  skriv(SIDOR.v, ui.tab, force);
+  skriv(SIDOR.v, vanster, force);
   skriv(SIDOR.h, ui.hoger, force);
+  const dold = SIDOR.r.el.hidden;
+  skriv(SIDOR.r, ärRuta(ui.tab) ? ui.tab : undefined, force);
+  if ((flytta || dold) && !SIDOR.r.el.hidden) { flytta = false; placeraRuta(); }
 }
 // musen står över något i en panel som förklaras när man håller musen över det: då skrivs panelen inte om, så att
 // förklaringen och markeringen står kvar (steg 2.3.7)
@@ -85,11 +112,14 @@ for (const sd of Object.values(SIDOR)) {
   sd.body.addEventListener('pointerover', e => { sd.musOver = !!(e.target as Element).closest('[title], [data-i], title'); });
   sd.body.addEventListener('pointerleave', () => { sd.musOver = false; });
 }
-document.addEventListener('pointerdown', () => { ui.lastPointer = performance.now(); }, true);
+document.addEventListener('pointerdown', e => {
+  ui.lastPointer = performance.now();
+  if (!SIDOR.r.el.contains(e.target as Node)) tryck = { x: e.clientX, y: e.clientY };
+}, true);
 document.addEventListener('click', e => {
   const el = e.target as HTMLElement;
   const x = el.closest<HTMLElement>('[data-stang]');
-  if (x) { stang(x.dataset.stang as 'v' | 'h'); return; }
+  if (x) { stang(x.dataset.stang as 'v' | 'h' | 'r'); return; }
   const b = el.closest<HTMLElement>('[data-id]');
   if (b) { selectPerson(Number(b.dataset.id)); return; }
   if (hjalpKlick(el)) { renderPanel(true); return; }
@@ -103,7 +133,7 @@ document.addEventListener('click', e => {
 $('calRik').addEventListener('click', () => {
   const oppna = !document.body.classList.contains('forradOppen');
   document.body.classList.toggle('forradOppen', oppna); $('calRik').setAttribute('aria-expanded', String(oppna));
-  if (oppna && ui.tab) stang('v'); // listan står där personens panel står
+  if (oppna && (ui.tab === 'person' || ui.selected !== undefined)) stang('v'); // listan står där personens panel står
 });
 const closed = new Set<string>();
 let ownedKey = '';
