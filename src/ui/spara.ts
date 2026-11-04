@@ -1,5 +1,6 @@
-import { BEAT, Borta, DAY, KUNSKAPER, LARDOMAR, LKind, LogEntry, MIN, State, byId, describe, joinParts, living, migrate, serialize, serializeParts, step, timeLabel } from '../sim';
-import { $, durTxt, esc, num } from './hjalp';
+import { BEAT, Borta, MIN, State, joinParts, migrate, serialize, serializeParts, step, timeLabel } from '../sim';
+import { $, esc } from './hjalp';
+import { bortaHtml } from './borta';
 import { s, ui } from './lage';
 import { drawTerrain } from './terrang';
 import { drawPlants } from './vaxter';
@@ -141,7 +142,7 @@ export async function catchUp(target: number) {
   const showOverlay = span > 10 * MIN || !!s.borta; // efter mer än tio minuter visas en sammanställning
   ui.busy = true;
   const from = s.now;
-  if (showOverlay) s.borta ??= { fran: from, fodda: s.stat?.fodda ?? 0, doda: s.stat?.doda ?? 0, kan: knowSnapshot() };
+  if (showOverlay) s.borta ??= { fran: from, fodda: s.stat?.fodda ?? 0, doda: s.stat?.doda ?? 0 };
   const ov = $('overlay');
   if (showOverlay) { ov.hidden = false; $('ovBody').innerHTML = `<p class="ovLead">Byn har levt vidare medan du var borta.</p><div class="prog"><div id="progBar"></div></div><p class="muted" id="progTxt"></p>`; }
   await new Promise<void>((resolve, reject) => {
@@ -166,51 +167,11 @@ export async function catchUp(target: number) {
   saveLocal(); saveDb();
   drawTerrain(true); drawPlants(true);
 }
-// vad var och en kan och tror innan ikappräkningen, för att visa det nya i sammanställningen
-function knowSnapshot(): Borta['kan'] {
-  const m: Borta['kan'] = {};
-  for (const p of living(s)) m[p.id] = { k: Object.fromEntries(Object.entries(p.kunskap ?? {}).map(([k, e]) => [k, e.v])), l: (p.lardomar ?? []).map(l => l.k + ':' + l.a) };
-  return m;
-}
-function knowHtml(before: Borta['kan']) {
-  const nyK: string[] = [], per: Record<string, number> = {}, ex: string[] = [];
-  let nyL = 0;
-  for (const p of living(s)) {
-    const b = before[p.id], fanns = new Set(b?.l);
-    for (const [k, e] of Object.entries(p.kunskap ?? {})) {
-      const v0 = b?.k[k] ?? 0;
-      if (e.v - v0 >= 0.2) nyK.push(`${esc(p.name)} har lärt sig ${esc((KUNSKAPER[k]?.namn ?? k).toLowerCase())} (${Math.round(v0 * 100)} → ${Math.round(e.v * 100)} %)`);
-    }
-    for (const l of p.lardomar ?? []) {
-      if (fanns.has(l.k + ':' + l.a)) continue;
-      nyL++; per[l.k] = (per[l.k] ?? 0) + 1;
-      if (ex.length < 4 && (l.k === 'fara' || l.k === 'flinta' || l.c >= 0.75)) ex.push(`${esc(p.name)}: ${esc(describe(s, l).text)}`);
-    }
-  }
-  if (!nyK.length && !nyL) return '';
-  const delar = Object.entries(per).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${n} om ${LARDOMAR[k as LKind]?.namn ?? k}`).join(', ');
-  return `<h3>Ny kunskap och nya lärdomar</h3><ul class="sumList">${nyK.slice(0, 6).map(x => `<li>${x}</li>`).join('')}${nyK.length > 6 ? `<li class="muted">och ${nyK.length - 6} till</li>` : ''}
-    ${nyL ? `<li>${nyL} nya lärdomar: ${delar}</li>${ex.map(x => `<li class="muted">${x}</li>`).join('')}` : ''}</ul>`;
-}
-// sammanställningen efter ikappräkningen: det viktigaste som hänt
+// sammanställningen efter ikappräkningen (steg 5.4.3.4, ui/borta.ts): tiden, talen och de nya notiserna
 function showSummary(b: Borta) {
-  const from = b.fran, ev = s.log.filter(l => l.t > from);
-  const years = (s.now - from) / DAY;
-  const births = (s.stat?.fodda ?? 0) - b.fodda, deaths = (s.stat?.doda ?? 0) - b.doda;
-  // det viktigaste först, efter slaget (inte texten): döda, födda och flyttar, det man lärt sig och nya par, det som hänt byn, relationer
-  const par = (e: LogEntry) => e.ids.length === 2 && byId(s, e.ids[0])?.partner === e.ids[1];
-  const prio = (e: LogEntry) => e.kind === 'death' ? 5 : e.kind === 'birth' || e.kind === 'move' ? 4 : e.kind === 'skill' || (e.kind === 'rel' && par(e)) ? 3 : e.kind === 'world' ? 2 : e.kind === 'rel' ? 1 : 0;
-  const key = ev.map((e, i) => ({ e, i, p: prio(e) })).filter(x => x.p > 0).sort((a, b) => b.p - a.p || b.i - a.i).slice(0, 10).sort((a, b) => b.i - a.i).map(x => x.e);
-  // den verkliga tiden och tiden i spelet (ett dygn är ett år), minst en månad
-  const man = Math.max(1, Math.round(years * 12));
-  const yrs = years >= 1 ? `${num(years)} år` : `${man} ${man === 1 ? 'månad' : 'månader'}`;
-  // loggen rymmer bara de senaste raderna: har den börjat efter att du gick är det bara de senaste som syns
-  const kort = s.log.length >= 400 && s.log[0].t > from;
-  $('ovBody').innerHTML = `
-    <p class="ovLead">Medan du var borta gick ${durTxt(s.now - from)} (${yrs} i spelet).</p>
-    <p class="muted">${births} födda · ${deaths} döda · ${living(s).length} lever nu i byn</p>
-    ${kort ? '<p class="muted small">Det viktigaste av de senaste händelserna:</p>' : ''}<ol class="sumList">${key.map(e => `<li><span class="when">${timeLabel(s, e.t)}</span>${esc(e.text)}</li>`).join('') || '<li>Inget särskilt hände.</li>'}</ol>
-    ${knowHtml(b.kan)}
-    <button id="ovClose" class="primary" type="button">Till byn</button>`;
-  $('ovClose').onclick = () => { $('overlay').hidden = true; s.borta = undefined; saveLocal(); saveDb(); };
+  $('ovBody').innerHTML = bortaHtml(b);
+  const stang = () => { $('overlay').hidden = true; s.borta = undefined; saveLocal(); saveDb(); };
+  $('ovClose').onclick = stang;
+  // knappen öppnar notiserna (ui/notiser.ts tar hand om data-notis) och stänger sammanfattningen
+  const nb = document.getElementById('ovNotiser'); if (nb) nb.addEventListener('click', stang);
 }

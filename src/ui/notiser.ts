@@ -49,6 +49,7 @@ export function notisKlick(vad: string) {
   if (vad !== 'alla') notisVal.fraga = false;
   if (vad === 'oppna') notisVal.oppen = !notisVal.oppen;
   else if (vad === 'stang') notisVal.oppen = false;
+  else if (vad === 'visa') { notisVal.oppen = true; notisVal.nr = undefined; } // från sammanfattningen (ui/borta.ts): den viktigaste först
   else if (vad === 'nasta' || vad === 'forra') notisVal.nr = lista[Math.max(0, Math.min(lista.length - 1, i + (vad === 'nasta' ? 1 : -1)))]?.nr;
   else if (vad === 'bort' && n) { taBortNotis(s, n.nr); notisVal.nr = (lista[i + 1] ?? lista[i - 1])?.nr; if (!harNotiser()) notisVal.oppen = false; }
   else if (vad === 'alla') notisVal.fraga = true;

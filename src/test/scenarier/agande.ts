@@ -7,6 +7,7 @@ import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import { setItems, setMat, setFood, kor, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank, utanWebblasare } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
 import { notisHtml, notisKlick, notisKnapp, notisVal } from '../../ui/notiser';
+import { bortaHtml } from '../../ui/borta';
 import { person } from '../../ui/flikar/person';
 import { gaster } from '../../ui/gaster';
 import { filt as filtFlik } from '../../ui/flikar/filt';
@@ -1620,7 +1621,7 @@ SCENARIER.notislista = {
     utanWebblasare();
     const s = createState(6, START);
     for (let i = 0; i < STEG_DYGN / 4; i++) step(s, BEAT);
-    setByn(s);
+    setByn(s); s.notiser = undefined; // bara scenariots notiser
     const [a, b] = living(s);
     SIM.notis(s, 'byte', 'Ett byte med handlaren.');
     SIM.notis(s, 'fodd', `${a.name} fick ett barn.`, [a.id]);
@@ -1642,6 +1643,32 @@ SCENARIER.notislista = {
       ['nästa och föregående bläddrar', andra.includes('2 / 3') && andra.includes(a.name) && igen.includes('1 / 3') && sista.includes('3 / 3') && sista.includes('Byte med handlaren')],
       ['ta bort tar bort den som visas och visar en annan', efterBort === 2 && efter.includes('2 / 2')],
       ['ta bort alla frågar först, och sedan är alla borta och rutan stängd', fraga.includes('data-notis="allaJa"') && kvar === 2 && s.notiser!.lista.length === 0 && !notisVal.oppen],
+    ];
+  },
+};
+
+SCENARIER.sammanfattning = {
+  text: 'Sammanfattningen efter ikappräkningen (steg 5.4.3.4, ui/borta.ts): bara tiden, talen och hur många notiser som är nya, med en knapp som öppnar notiserna; ingen lista med händelser. Bara gränssnittet.',
+  kor: () => {
+    utanWebblasare();
+    const s = createState(6, START);
+    for (let i = 0; i < STEG_DYGN / 4; i++) step(s, BEAT);
+    setByn(s); s.notiser = undefined;
+    const b: SIM.Borta = { fran: s.now - 2 * SIM.DAY, fodda: (s.stat?.fodda ?? 0) - 1, doda: s.stat?.doda ?? 0 };
+    const tom = bortaHtml(b);
+    const [p] = living(s);
+    SIM.notis(s, 'fodd', `${p.name} fick ett barn.`, [p.id]); SIM.notis(s, 'dod', `${p.name} dog.`, [p.id]);
+    const html = bortaHtml(b);
+    Object.assign(notisVal, { oppen: false, nr: undefined, fraga: false });
+    notisKlick('visa');
+    const ren = (h: string) => h.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    return [
+      [`tiden i verkligheten och i spelet (${ren(html).slice(0, 60)}…)`, /gick 2(,0)? dygn \(2(,0)? år i spelet\)/.test(html)],
+      ['talen: födda, döda och invånare', /1 födda · 0 döda · \d+ lever nu i byn/.test(html)],
+      [`antalet nya notiser och en knapp till dem (${ren(html).match(/\d+ nya notiser/)?.[0]})`, /2 nya notiser/.test(html) && html.includes('data-notis="visa"')],
+      ['utan nya notiser ingen knapp till dem', /Inga nya notiser/.test(tom) && !tom.includes('data-notis')],
+      ['ingen lista med händelser', !/<ol|<ul|<li/.test(html)],
+      ['knappen öppnar notiserna med den viktigaste först', notisVal.oppen && notisVal.nr === undefined && /Död i byn/.test(notisHtml())],
     ];
   },
 };
