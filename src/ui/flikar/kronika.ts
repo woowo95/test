@@ -6,6 +6,7 @@ import { AGES, type LogEntry, type Person, kalender } from '../../sim';
 import { clockTxt, esc, linkify } from '../hjalp';
 import { ritaOm, s } from '../lage';
 import type { Flik } from '../panel';
+import { kartminneHtml } from '../kartminne';
 
 interface Rad { t: number; text: string; kind?: LogEntry['kind']; ids: number[] }
 // var en person står med i en krönikerad: krönikan sparar bara texten, så personen hittas på namnet
@@ -15,12 +16,15 @@ function iText(text: string, folk: Person[]) {
 const VISNING: Record<string, { namn: string; title: string; rader(): Rad[] }> = {
   stort: { namn: 'Stort', title: 'Krönikan: det viktiga som hänt sedan byns början', rader: () => (s.hist?.kronika ?? []).map(([t, text]) => ({ t, text, ids: iText(text, s.people) })) },
   allt: { namn: 'Allt', title: 'Allt som hänt i byn den senaste tiden (de senaste 400 raderna)', rader: () => s.log.map(l => ({ t: l.t, text: l.text, kind: l.kind, ids: l.ids })) },
+  kartan: { namn: 'Kartan', title: 'Kartan år för år: skogen, stigarna och husen (steg 5.4.5.2)', rader: () => [] },
 };
 export const val: { visning: string; ar?: number; person?: number } = { visning: 'stort' }; // det som visas (exporterat för scenariot kronikalista)
 
+const filterKnappar = () => `<div class="pdelar kfilter" role="toolbar" aria-label="Visa">${Object.entries(VISNING).map(([id, x]) => `<button type="button" data-kvis="${id}" aria-pressed="${id === val.visning}" title="${x.title}">${x.namn}</button>`).join('')}</div>`;
 export const kronika: Flik = {
   namn: 'Krönika',
   html() {
+    if (val.visning === 'kartan') return filterKnappar() + kartminneHtml(); // kartan över tid (ui/kartminne.ts)
     const v = VISNING[val.visning], alla = v.rader(), ar = (t: number) => kalender(s, t).ar;
     if (val.person !== undefined && !alla.some(r => r.ids.includes(val.person!))) val.person = undefined; // inte med här (t.ex. bara i krönikan)
     const folk = [...new Set(alla.flatMap(r => r.ids))].map(id => s.people.find(p => p.id === id)).filter((p): p is Person => !!p).sort((a, b) => a.name.localeCompare(b.name, 'sv') || a.born - b.born);
@@ -31,7 +35,7 @@ export const kronika: Flik = {
     const i = val.ar === undefined ? -1 : aren.indexOf(val.ar);
     const pil = (dit: number | undefined, tecken: string, namn: string) => `<button type="button" data-kar="${dit ?? ''}" ${dit === undefined ? 'disabled' : ''} title="${namn}" aria-label="${namn}">${tecken}</button>`;
     const aldre = i < 0 ? aren.at(-1) : aren[i - 1], nyare = i < 0 ? undefined : aren[i + 1];
-    const knappar = `<div class="pdelar kfilter" role="toolbar" aria-label="Visa">${Object.entries(VISNING).map(([id, x]) => `<button type="button" data-kvis="${id}" aria-pressed="${id === val.visning}" title="${x.title}">${x.namn}</button>`).join('')}</div>
+    const knappar = `${filterKnappar()}
       <div class="kblad">${pil(aldre, '◀', 'Året före')}<button type="button" data-kar="alla" aria-pressed="${val.ar === undefined}" title="${val.ar === undefined ? 'Alla år' : 'Visa alla år'}">${val.ar === undefined ? 'Alla år' : `År ${val.ar}`}</button>${pil(nyare, '▶', 'Året efter')}
       <select data-kperson aria-label="Person" title="Visa bara det en person var med om"><option value="">Alla</option>${folk.map(p => `<option value="${p.id}"${p.id === val.person ? ' selected' : ''}>${esc(p.name)}${p.died !== undefined ? ' †' : ''}</option>`).join('')}</select></div>`;
     let html = '', forra: number | undefined;

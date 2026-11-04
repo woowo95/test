@@ -4,6 +4,7 @@ import { skogAndel } from './mark';
 import { avgMood } from './humor';
 import { DAY, Historik, State, WEEK } from './typer';
 import { TORST } from './torst';
+import { kartminneSteg } from './kartminne';
 
 // ---------- byns historik ----------
 // Några nyckeltal sparas en gång i timmen (en timme är ca 15 dagar i spelet). Efter en vecka (en tidsålder) slås
@@ -48,6 +49,7 @@ export function historikSteg(s: State) {
   const h = histOf(s);
   if (h.tal.join() !== HISTORIK_TAL.map(t => t.id).join()) omordna(h); // registret har ändrats sedan byn sparades
   h.tim.push([s.now, ...HISTORIK_TAL.map(t => Math.round(t.varde(s) * 1000) / 1000)]);
+  kartminneSteg(s); // en bild av kartan per dygn (steg 5.4.5.2)
   const grans = Math.floor((s.now - WEEK) / DAY) * DAY; // hela dygn som är äldre än en vecka
   while (h.tim.length && h.tim[0][0] < grans) {
     const d = Math.floor(h.tim[0][0] / DAY), rader: number[][] = [];
@@ -81,11 +83,13 @@ export function histParts(s: State, h: Historik): Record<string, Historik> {
   for (const r of h.dygn) del(r[0]).dygn.push(r);
   for (const r of h.tim) del(r[0]).tim.push(r);
   for (const k of h.kronika) del(k[0]).kronika.push(k);
+  for (const k of h.kartor ?? []) (del(k[0]).kartor ??= []).push(k);
   return ut;
 }
 export function joinHist(delar: Historik[]): Historik {
   const h: Historik = { tal: delar[0].tal, tim: [], dygn: [], kronika: [] };
-  for (const d of delar) { h.tim.push(...d.tim); h.dygn.push(...d.dygn); h.kronika.push(...d.kronika); }
+  for (const d of delar) { h.tim.push(...d.tim); h.dygn.push(...d.dygn); h.kronika.push(...d.kronika); if (d.kartor) (h.kartor ??= []).push(...d.kartor); }
+  h.kartor?.sort((a, b) => a[0] - b[0]);
   h.tim.sort((a, b) => a[0] - b[0]); h.dygn.sort((a, b) => a[0] - b[0]); h.kronika.sort((a, b) => a[0] - b[0]);
   return h;
 }

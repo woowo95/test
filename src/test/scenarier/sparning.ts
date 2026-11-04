@@ -284,3 +284,36 @@ SCENARIER.karta = {
     ];
   },
 };
+
+SCENARIER.kartminne = {
+  text: 'Kartan över tid (steg 5.4.5.2): en bild av kartan per dygn (ett år i spelet) i historiken, med marken, stigarna, skogen, fälten och det som byggts men utan folk. Bilder äldre än fyra veckor glesas ut till en per vecka. De sparas i veckans del och visas i krönikan under Kartan, där ett reglage går fram och tillbaka genom åren',
+  kor: () => {
+    const s = createState(3, START), e = SIM.eldPlats(s);
+    s.hist ??= { tal: [], tim: [], dygn: [], kronika: [] };
+    const tom = SIM.kartrutor(s), forstGras = tom.findIndex((k, i) => (k === 'h' || k === 'k') && Math.abs(i % SIM.W - e.x) > 3);
+    const wx = forstGras % SIM.W, wy = Math.floor(forstGras / SIM.W);
+    (s.byggen ??= []).push({ id: 9001, x: wx, y: wy, k: 'vagg', m: 'timmer', b: 1, mat: 0, c: 1 } as SIM.Bit, { id: 9002, x: wx + 1, y: wy, k: 'golv', m: 'jord', b: 0, mat: 0, c: 1 } as SIM.Bit);
+    const r = SIM.kartrutor(s), p = SIM.packaKarta(r);
+    const bokstaver = new Set(SIM.KARTRUTA.map(k => k.k));
+    // en bild per dygn: samma dygn ger ingen ny, nästa dygn en till
+    const t0 = s.now;
+    SIM.kartminneSteg(s); SIM.kartminneSteg(s); const n1 = s.hist.kartor!.length;
+    s.now += DAY; SIM.kartminneSteg(s); const n2 = s.hist.kartor!.length;
+    // 40 dygn (40 år i spelet): de som är äldre än fyra veckor blir en per vecka
+    for (let d = 2; d <= 40; d++) { s.now = t0 + d * DAY; SIM.kartminneSteg(s); }
+    const k = s.hist.kartor!, grans = s.now - SIM.GLES;
+    const gamla = k.filter(b => b[0] < grans), veckor = new Set(gamla.map(b => Math.floor((b[0] - s.founded) / SIM.WEEK)));
+    const nya = k.filter(b => b[0] >= grans);
+    const delar = SIM.histParts(s, s.hist), ater = SIM.joinHist(Object.values(delar));
+    return [
+      [`bilden packas och läses tillbaka likadant (${Math.round(p.length / 1024 * 10) / 10} KB för ${SIM.W}×${SIM.H} rutor)`, isDeepStrictEqual(SIM.lasKarta(p), r) && p.length < 20 * 1024],
+      ['bara registrets slag på bilden (inga människor eller djur)', r.every(x => bokstaver.has(x))],
+      ['vatten, gräs och skog finns på bilden', ['v', 's'].every(x => r.includes(x)) && (r.includes('h') || r.includes('k'))],
+      ['en byggd vägg syns, ett golv som inte påbörjats syns inte', r[wy * SIM.W + wx] === 'w' && r[wy * SIM.W + wx + 1] !== 'g'],
+      ['elden syns där den är', r[Math.floor(e.y) * SIM.W + Math.floor(e.x)] === 'e'],
+      [`en bild per dygn (${n1} samma dygn, ${n2} dygnet efter)`, n1 === 1 && n2 === 2],
+      [`äldre än fyra veckor en per vecka (${gamla.length} gamla bilder i ${veckor.size} veckor, ${nya.length} nya)`, gamla.length === veckor.size && nya.length >= 28 && nya.length <= 29],
+      ['bilderna sparas i veckans del och blir samma igen', isDeepStrictEqual(ater.kartor, k)],
+    ];
+  },
+};

@@ -425,6 +425,10 @@ body.testing .mapwrap { box-shadow: inset 0 0 0 3px var(--accent); }
 #arLogg li { padding: 2px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
 #arLogg .arT { color: var(--muted); font-variant-numeric: tabular-nums; display: inline-block; min-width: 3em; }
 #arLogg .arText { display: none; color: var(--muted); } #arLogg li.open .arText { display: block; padding-left: 3em; }
+.kartminne img { width: 100%; height: auto; image-rendering: pixelated; border: 1px solid var(--linje, #0003); display: block; }
+.kartminne input[type=range] { width: 100%; margin: 8px 0 2px; }
+.kmFarger { display: flex; flex-wrap: wrap; gap: 2px 10px; font-size: 0.85em; }
+.kmFarger i { display: inline-block; width: 10px; height: 10px; margin-right: 4px; vertical-align: -1px; }
 #overlay.spolar { background: transparent; align-items: flex-end; pointer-events: none; }
 #overlay.spolar .card { pointer-events: auto; max-width: 420px; opacity: 0.94; }
 #overlay, #loading { position: fixed; inset: 0; background: rgba(10, 14, 12, 0.55); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 20; }
