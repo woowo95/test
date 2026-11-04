@@ -11,8 +11,9 @@ import { tekInfo } from './teknik';
 import { gastById, gastRad, type Gast } from '../gaster';
 import type { Flik } from '../panel';
 
-// allt om den valda personen, i underflikar (DELAR): först en presentation, sedan behov, egenskaper, tiden, utrustning,
-// kunskap och relationer. Namnet och vad hen gör just nu står alltid överst
+// allt om den valda personen i fem flikar (steg 5.3.4.1, registret FLIKAR): Om (presentationen, egenskaperna och tiden),
+// Kropp (behoven och hälsan), Saker (utrustningen och förmögenheten), Människor (relationerna och ryktena) och Kunskap.
+// Varje flik är delar ur registret DELAR med en rubrik var. Namnet och vad hen gör just nu står alltid överst
 export const person: Flik = {
   namn: 'Person',
   html() {
@@ -21,14 +22,14 @@ export const person: Flik = {
     const p = byId(s, ui.selected);
     if (!p && ui.selected !== undefined && ui.selected < 0) return '<p class="muted">Hen har lämnat byn.</p>';
     if (!p) return `<p class="muted">Klicka på en person på kartan eller i listan för att se allt om hen.</p>`;
-    const delar = DELAR.filter(d => alive(p) || !d.levande), del = delar.find(d => d.id === ui.personDel) ?? delar[0];
+    const { flikar, flik, delar } = valda(d => alive(p) || !d.levande);
     const med = alive(p) ? pratarMed(s, p) : undefined;
     const tNu = uppgiftVid(p), status = alive(p) ? (tNu ? gorText(p, tNu) + (med ? ` och pratar med ${pLink(med)}` : '') : '–') : p.died !== undefined ? `Dog ${p.cause} (${timeLabel(s, p.died)})` : `Flyttade från byn (${timeLabel(s, p.left!)})`;
     return `
       <div class="phead">${portrattImg(skapad(s, p), "big")}<div><h2>${esc(p.name)}${binamnHtml(p)}${alive(p) ? prickar(p) : ''}${anseende(p)}</h2>${binamnForkl(p)}
       <p class="status">${status}</p>${alive(p) && p.task?.why ? `<p class="why">Varför: ${esc(p.task.why)}</p>` : ''}${prat(p)}</div></div>
-      ${flikRad(delar, del)}
-      <h3>${del.namn}</h3>${del.html(p)}`;
+      ${flikRad(flikar, flik)}
+      ${delar.map(d => `<h3>${d.namn}</h3>${d.html(p)}`).join('')}`;
   },
   klick(el) {
     const ti = el.closest<HTMLElement>('.tid [data-t]');
@@ -46,7 +47,22 @@ export const person: Flik = {
 // levande = visas bara för den som lever (en död eller utflyttad har inga behov och lägger ingen tid på något).
 // gast = samma flik för en gäst (gaster.ts, steg 4.5.4.12); en flik utan den visas inte för en gäst
 interface Del { id: string; tecken: string; namn: string; levande?: true; html(p: Person): string; gast?(g: Gast): string }
-const flikRad = (delar: Del[], del: Del) => `<div class="pdelar" role="tablist">${delar.map(d => `<button type="button" role="tab" data-pdel="${d.id}" aria-selected="${d === del}" title="${d.namn}" aria-label="${d.namn}">${d.tecken}</button>`).join('')}</div>`;
+interface PFlik { id: string; tecken: string; namn: string; delar: string[] }
+const FLIKAR: PFlik[] = [
+  { id: 'om', tecken: '🪪', namn: 'Om', delar: ['pres', 'egen', 'tid'] },
+  { id: 'kropp', tecken: '❤️', namn: 'Kropp', delar: ['behov', 'halsa'] },
+  { id: 'saker', tecken: '🎒', namn: 'Saker', delar: ['utr', 'form'] },
+  { id: 'folk', tecken: '👥', namn: 'Människor', delar: ['rel', 'ryk'] },
+  { id: 'kun', tecken: '🧠', namn: 'Kunskap', delar: ['kun'] },
+];
+// flikarna som har något att visa, den öppna (ui.personDel är fliken eller en del i den) och dess delar
+function valda(finns: (d: Del) => boolean) {
+  const delarI = (f: PFlik) => f.delar.map(id => DELAR.find(d => d.id === id)!).filter(finns);
+  const flikar = FLIKAR.filter(f => delarI(f).length);
+  const flik = flikar.find(f => f.id === ui.personDel || f.delar.includes(ui.personDel)) ?? flikar[0];
+  return { flikar, flik, delar: delarI(flik) };
+}
+const flikRad = (delar: PFlik[], del: PFlik) => `<div class="pdelar" role="tablist">${delar.map(d => `<button type="button" role="tab" data-pdel="${d.id}" aria-selected="${d === del}" title="${d.namn}" aria-label="${d.namn}">${d.tecken}</button>`).join('')}</div>`;
 const DELAR: Del[] = [
   { id: 'pres', tecken: '🪪', namn: 'Presentation', html: presHtml, gast: gastPres },
   { id: 'behov', tecken: '❤️', namn: 'Behov', levande: true, html: behovHtml, gast: gastBehov },
@@ -54,6 +70,7 @@ const DELAR: Del[] = [
   { id: 'egen', tecken: '{sym_egenskaper}', namn: 'Egenskaper', html: egenHtml, gast: gastEgen },
   { id: 'tid', tecken: '🕓', namn: 'Tiden', levande: true, html: tidHtml, gast: gastTid },
   { id: 'utr', tecken: '🎒', namn: 'Utrustning', levande: true, html: p => `<p class="muted">${carryTxt(p)}</p>${gearHtml(p)}`, gast: gastUtr },
+  { id: 'form', tecken: '💰', namn: 'Förmögenhet', html: p => `<dl class="kv">${formogenhetRad(p)}</dl>` },
   { id: 'kun', tecken: '🧠', namn: 'Kunskap', html: knowledgeHtml, gast: gastKun },
   { id: 'rel', tecken: '👥', namn: 'Relationer', html: relHtml, gast: gastRel },
   { id: 'ryk', tecken: '🗣️', namn: 'Rykten', html: ryktenHtml, gast: gastRyk },
@@ -61,11 +78,11 @@ const DELAR: Del[] = [
 
 // en gäst (steg 4.5.4.12): samma huvud och flikrad som en bybo, och i flikarna det man vet om hen
 function gastHtml(g: Gast) {
-  const delar = DELAR.filter(d => d.gast), del = delar.find(d => d.id === ui.personDel) ?? delar[0];
+  const { flikar, flik, delar } = valda(d => !!d.gast);
   return `
       <div class="phead"><span class="dot big" style="background:${cssFarg(g.farg)}"></span><div><h2>${esc(g.namn)}</h2><p class="status">${esc(g.gor)}</p></div></div>
-      ${flikRad(delar, del)}
-      <h3>${del.namn}</h3>${del.gast!(g)}`;
+      ${flikRad(flikar, flik)}
+      ${delar.map(d => `<h3>${d.namn}</h3>${d.gast!(g)}`).join('')}`;
 }
 // gästens familj i hemklanen (steg 4.5.7.6, 4.5.7.7): namnen, och de som dött märkta
 const slakt = (g: Gast, roll: Slakting['roll'][]) => g.liv.familj.filter(f => roll.includes(f.roll)).map(f => `${esc(f.namn)}${f.dog !== undefined ? ' <span class="muted">(död)</span>' : ''}`).join(', ') || '–';
@@ -137,7 +154,7 @@ function presHtml(p: Person) {
       <dt>Yrke</dt><dd>${esc(yrkeNamn(s, p) ?? '–')}${p.tag && yrkeNamn(s, p) !== p.tag ? ` <span class="muted">(${esc(p.tag.toLowerCase())})</span>` : ''}</dd>
       <dt>Föräldrar</dt><dd>${p.mother || p.father ? [byId(s, p.mother), byId(s, p.father)].filter(Boolean).map(q => pLink(q)).join(' och ') : 'Bland de första i byn'}</dd>
       <dt>Partner</dt><dd>${pLink(byId(s, p.partner))}</dd><dt>Barn</dt><dd>${kids.length ? kids.map(pLink).join(', ') : '–'}</dd>
-      <dt>Övertygelser</dt><dd>${tro.length ? tro.join(' ') : '–'}</dd>${formogenhetRad(p)}</dl>
+      <dt>Övertygelser</dt><dd>${tro.length ? tro.join(' ') : '–'}</dd></dl>
       <h3>Viktiga händelser</h3>${p.fame.length ? `<ul class="fame">${p.fame.map(f => `<li>${esc(f.replace(/^Kom på /, 'Uppfann '))}</li>`).join('')}</ul>` : '<p class="muted">Inget som minns ännu.</p>'}
       ${bytenHtml(p.byten)}${livet(p)}`;
 }

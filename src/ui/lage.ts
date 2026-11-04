@@ -16,7 +16,7 @@ export const ui = {
   hoger: 'folk' as FlikId | undefined, // den öppna flikens panel till höger (Byn, Teknik, Krönika, Folket …)
   selected: undefined as number | undefined, // personen som visas i panelen
   bynDel: 'seder', // delen i fliken Byn (DELAR i flikar/byn.ts)
-  personDel: 'pres', // underfliken i personrutan (DELAR i flikar/person.ts)
+  personDel: 'om', // fliken i personrutan (FLIKAR i flikar/person.ts), eller en del i den (DELAR)
   hovered: undefined as number | undefined, // personen under musen
   eld: undefined as number | undefined, // lägerelden som eldens flik visar: undefined = den första, annars en till (Fire.id, steg 4.5.6.8)
   follow: undefined as number | undefined, // personen kameran följer
