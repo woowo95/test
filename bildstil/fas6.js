@@ -733,5 +733,61 @@
     KORT('f6_bjorn_falld', 'Fälld björn', S + '6.5.3: den fällda björnen som ligger på marken innan den styckas, som det fällda rådjuret: på sidan med huvudet på marken och ögat slutet, i din björns färger.', [
       PA_MARK('Benen utsträckta.', bjornFalld(0), BJ_FALLD_L), PA_MARK('Benen hopvikta under kroppen.', bjornFalld(1), BJ_FALLD_L), PA_MARK('Benen bundna ihop med rep, klar att släpas hem.', bjornFalld(2), BJ_FALLD_L)]),
     { id: 'f6_tornado_storlek', namn: 'Tornadons storlekar', typ: 'janej', stor: true, vad: S + '6.3.5.8: tornadon i tre storlekar, nära varandra i storlek. Den stora har nu mindre damm och fler vindstreck som går runt längre bort från tratten. Medel är exakt som förut. Din kommentar förra gången: ”på den stora tornadon. Ta bort lite dam men lägg till fler sträck som går runt längre bort från tornadon.”', versioner: [TORNADOSCEN] },
+    // ---------- steg 5.5.5: det som ännu ritas i en annan skala än hel ----------
+    ...(() => {
+      const figur = (B, F, x, fot) => { for (let y = 0; y < F.h; y++) for (let dx = 0; dx < F.w; dx++) { const c = F.px[y * F.w + dx]; if (c >= 0) B.satt(x + dx, fot - F.h + 1 + y, c); } for (let dx = 2; dx < F.w - 2; dx++) B.morka(x + dx, fot + 1); };
+      // pratbubblan i punkter: ljus botten, mörk kant, rundade hörn och en spets ner mot den som pratar
+      const bubbla = (B, x0, y0, w, h) => {
+        const P = B.P, lj = P.i('ben', 3), ka = P.i('kol', 2);
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+          const horn = (x === 0 || x === w - 1) && (y === 0 || y === h - 1); if (horn) continue;
+          const kant = x === 0 || y === 0 || x === w - 1 || y === h - 1 || ((x === 1 || x === w - 2) && (y === 1 || y === h - 2));
+          B.satt(x0 + x, y0 + y, kant ? ka : lj);
+        }
+        [[2, 0, 3], [2, 1, 2], [2, 2, 1]].forEach(([dx, dy, n]) => { for (let i = 0; i < n; i++) B.satt(x0 + dx + i + 1, y0 + h - 1 + dy, dy === 0 && i > 0 && i < n - 1 ? lj : ka); B.satt(x0 + dx + 1, y0 + h - 1 + dy, ka); });
+        B.satt(x0 + 4, y0 + h - 1, lj);
+      };
+      const ikon = (B, k, x, y, s = 1) => { const r = IKONER.PIX[k], pal = IKONER.PAL[k] || {}; if (!r) return; const n = Math.round(r[0].length * s);
+        for (let ty = 0; ty < n; ty++) for (let tx = 0; tx < n; tx++) { const ch = r[Math.floor(ty / s)][Math.floor(tx / s)], c = pal[ch]; if (ch === '.' || !c) continue; if (c.startsWith('rgba')) B.morka(x + tx, y + ty); else B.satt(x + tx, y + ty, B.P.fran(c)); } };
+      const PRAT = { text: 'Till vänster det vanliga tecknet, ritat i 8 punkter i den lilla bubblan. Till höger ett ämne (grodden), i sina 16 punkter i en större bubbla.', w: 72, h: 52, rita: B => {
+        const fot = 46; if (!window.BYBO) return;
+        const a = window.BYBO(4242, 'sida', 'sta', 'hanga'), b = window.BYBO(5151, 'vast', 'sta', 'hanga');
+        figur(B, a, 10, fot); figur(B, b, 44, fot);
+        bubbla(B, 12, fot - 20 - 13, 12, 11); ritaSprite(B, IKONER.PIX.a_prata, { w: 'kol2' }, 14, fot - 20 - 11);
+        bubbla(B, 42, fot - 20 - 21, 20, 19); ikon(B, 'grodd', 44, fot - 20 - 20);
+      } };
+      const SMA = { text: 'En vuxen, ett barn och det nya småbarnet framifrån, från sidan och i ett gångsteg. Småbarnet är tre rader lägre än barnet: ett lika stort huvud, en kortare kropp och korta ben.', w: 150, h: 30, rita: B => {
+        if (!window.SMABARN) return; const fot = 25; let x = 4;
+        for (const [r, ben] of [['fram', 'sta'], ['sida', 'sta'], ['sida', 'gang1']]) {
+          figur(B, window.BYBO(4242, r, ben, ben === 'sta' ? 'hanga' : 'gang1'), x, fot); x += 15;
+          figur(B, window.SMABARN(777, r, ben, ben === 'sta' ? 'hanga' : 'gang1', false), x, fot); x += 15;
+          figur(B, window.SMABARN(777, r, ben, ben === 'sta' ? 'hanga' : 'gang1'), x, fot); x += 20;
+        }
+      } };
+      const BOLL6 = ['..oo..', '.oeao.', 'oeeaco', 'oaaaao', '.ocao.', '..oo..'];
+      const SAKER = ['kott', 'fisk', 'ved', 'flinta', 'svamp', 'bar'].filter(k => IKONER.PIX[k] && IKONER.PIX[k][0].length === 8);
+      const SMATECKEN = { text: 'Överst som nu: bollen och varorna i handeln förminskade till 6 punkter och en ensam sak på en hög förstorad till 12. Nedanför i hel skala: bollen ritad i egna 6 punkter, och varorna och saken i sina 8.', w: 30 + SAKER.length * 14, h: 44, rita: B => {
+        ritaSprite(B, BOLL6, { o: 'kol0', e: 'jord3', c: 'jord2', b: 'jord1', a: 'jord0' }, 4, 28);
+        if (IKONER.PIX.boll) ikon(B, 'boll', 4, 6, 6 / IKONER.PIX.boll[0].length);
+        SAKER.forEach((k, i) => { const x = 16 + i * 14; ikon(B, k, x, 4 + (i % 2 ? 0 : 6), i % 2 ? 1.5 : 0.75); ikon(B, k, x, 28, 1); });
+      } };
+      return [
+        { id: 'f5_pratbubbla', namn: 'Pratbubblan i hel skala', typ: 'janej', vad: S + '5.5.5: tecknet i pratbubblan ritas i dag i 16 punkter och visas i 8. Förslag: det vanliga tecknet ritas i 8 punkter, som det är här, och när bubblan visar ett ämne med en bild på 16 punkter blir bubblan större så att bilden syns i sin hela storlek.', versioner: [PRAT] },
+        { id: 'f5_smabarn', namn: 'Småbarnet i hel skala', typ: 'janej', vad: S + '5.5.5: småbarnen visas i dag som barnet förminskat till tre fjärdedelar. Förslag: en egen mall för småbarnet på kartan, i hela punkter, med samma kläder och delar som barnet.', versioner: [SMA] },
+        { id: 'f5_smatecken', namn: 'De små tecknen i hel skala', typ: 'janej', vad: S + '5.5.5: bollen i leken och sakerna i handeln förminskas i dag till 6 punkter, och en ensam sak på en hög förstoras till 12. Förslag: bollen får en egen ritning i 6 punkter, och varorna och sakerna visas i sina egna 8 punkter.', versioner: [SMATECKEN] },
+      ];
+    })(),
+    // ---------- rövaren (Björn 2026-11-04: "Gör rövardelarna"): luvan eller duken och de mörka kläderna ----------
+    ...(() => {
+      const rov = (bonad, rock, arr, text) => ({ text, w: 4 + 64 + 3 + 64 + 6 + 5 * 15 + 2, h: 72, rita: B => {
+        if (!window.ROVAREN) return; const R = window.ROVAREN(bonad, rock, arr);
+        R.portratt.forEach((Q, n) => { for (let y = 0; y < Q.h; y++) for (let x = 0; x < Q.w; x++) { const c = Q.px[y * Q.w + x]; if (c >= 0) B.satt(4 + n * 67 + x, 4 + y, c); } });
+        R.karta.forEach((F, n) => { const x0 = 4 + 2 * 67 + 4 + n * 15, fot = 66; for (let y = 0; y < F.h; y++) for (let dx = 0; dx < F.w; dx++) { const c = F.px[y * F.w + dx]; if (c >= 0) B.satt(x0 + dx, fot - F.h + 1 + y, c); } for (let dx = 2; dx < F.w - 2; dx++) B.morka(x0 + dx, fot + 1); });
+      } });
+      return [KORT('f6_rovare', 'Rövaren', S + '6.6.12: det som skiljer en rövare från en bybo, som nya delar i skaparen som bara rövarna bär: rövarluvan av kolsvart, slitet ylle med en smal springa för ögonen, rövarens duk över hjässan och över näsan och munnen, och ett mörkt, slitet skinn i rocken. Kvinnan och mannen i porträttet, och på kartan mannen framifrån, från sidan, bakifrån och i ett gångsteg, och kvinnan framifrån. Luvan och duken är ritade av API:t (bästa av tre).', [
+        rov('bonad-9', 'rovarskinn', false, 'Version 1: rövarluvan och det mörka, slitna skinnet.'),
+        rov('bonad-10', 'rovarskinn', false, 'Version 2: rövarens duk över hjässan och ansiktet, och det mörka skinnet.'),
+        rov('bonad-9', 'vargskinn', true, 'Version 3: rövarluvan med en rock av vargskinn, och mannen med ett ärr och skägg.')])];
+    })(),
   );
 })();
