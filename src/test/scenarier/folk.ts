@@ -1592,6 +1592,7 @@ SCENARIER.vemibyn = {
 };
 
 SCENARIER.merliv = {
+  lang: true,
   text: 'Steg 3.9.8: mer ur livet i beskrivningen: familjen (många barn, föräldralös, först född i byn, barn till en grundare), bäst i byn på något, bedrifterna i tal (vargar, vårdade, hus) räknade i personens statistik (p.liv), lärare och lärling, rädslan efter ett vargbett (stark men rädd), det hen överlevt, ägodelarna (mästerverk, rik, fattig, eget hus), ledaren, skammen, arvet från föräldrarna och längtan',
   kor: () => {
     const t = createState(13, START);
@@ -1693,6 +1694,7 @@ SCENARIER.gjort = {
 };
 
 SCENARIER.kronika = {
+  lang: true,
   text: 'Steg 3.9.3: händelserna (födslar, dödsfall, första elden, uppfinningar, hus, ledare, strider och vargjakter) skrivs som små berättelser i krönikan ur mallarna k_* i BERATTELSER, med årstiden, vädret och natten; loggen behåller sin korta rad',
   kor: () => {
     const t = createState(3, START);
