@@ -8,7 +8,10 @@ import { s } from './lage';
 
 // kartans scen: lagren som ritas ovanpå varandra och kameran
 export const TS = 16; // pixlar per ruta i världen
-export const app = new PIXI.Application({ background: 0x1d2420, antialias: true, resolution: Math.min(2, window.devicePixelRatio || 1), autoDensity: true });
+// alla bilder skarpa och utan förminskade kopior (mipmap), som annars blandar färgerna när kartan zoomas ut (steg 5.5.1)
+PIXI.BaseTexture.defaultOptions.scaleMode = PIXI.SCALE_MODES.NEAREST;
+PIXI.BaseTexture.defaultOptions.mipmap = PIXI.MIPMAP_MODES.OFF;
+export const app = new PIXI.Application({ background: 0x1d2420, antialias: false, resolution: Math.min(2, window.devicePixelRatio || 1), autoDensity: true });
 export const view = app.view as HTMLCanvasElement;
 export const world = new PIXI.Container();
 export const terrainG = new PIXI.Graphics();
@@ -57,7 +60,7 @@ export class Ikoner {
     textures[k] ??= PIXI.Texture.from(iconCanvas(k), { scaleMode: PIXI.SCALE_MODES.NEAREST });
     let sp = this.bilder[this.n++];
     if (!sp) { sp = new PIXI.Sprite(); this.bilder.push(sp); this.layer.addChild(sp); }
-    sp.texture = this.skugga ? ikonUtanSkugga(k) : textures[k]; sp.scale.set(sc);
+    sp.texture = ikonUtanSkugga(k); sp.scale.set(sc); // den halvgenomskinliga skuggan i bilden ritas aldrig som den är (steg 5.5.1): i ett lager med skugga blir den skuggbild, annars tas den bort
     (sp as PIXI.Sprite & { skuggIkon?: string }).skuggIkon = this.skugga ? k : undefined; sp.tint = tint; sp.visible = true;
     sp.position.set(x, y); sp.zIndex = y + textures[k].height * sc; // bildens nederkant, i ett lager som sorteras
   }

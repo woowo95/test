@@ -6,6 +6,7 @@
 // några unga granar där marken är orörd (skogskanten i steg, bildstilen). På vintern ligger snö på våningarna. Varje bild
 // ritas en gång och sparas. Storleken (steg 5.1.4.5): se HOJD nedan; kronan når in i rutorna norr om stammen, och träden
 // står i samma lager som folket och djuren, i ordning söderut.
+import { rasterPa } from '../palett';
 import * as PIXI from 'pixi.js';
 import { FARGER, kornPa } from '../palett';
 import { fotSkugga, skuggTrad } from './skugga';
@@ -319,6 +320,25 @@ export function tradSkuggor(lang = 1) {
 // marken, byggen eller det man valt, blir halvgenomskinlig. punkter = det som syns, i rutor (mitten av rutan = x + 0.5)
 export const GENOM = 0.45;
 const tonade = new Set<PIXI.Sprite>();
+// den genomsiktliga kronan (steg 5.5.1): samma bild med punkterna borttagna i ett rastermönster (GENOM av dem är kvar), så att
+// det som står bakom syns mellan punkterna utan att några nya färger blandas fram
+const genomAv = new Map<PIXI.Texture, PIXI.Texture>(), helAv = new Map<PIXI.Texture, PIXI.Texture>();
+function genomTex(t: PIXI.Texture) {
+  if (helAv.has(t)) return t;
+  let g = genomAv.get(t);
+  if (!g) {
+    const src = t.baseTexture.resource as unknown as { source?: CanvasImageSource } | undefined, f = t.frame;
+    if (!src?.source) return t;
+    const c = document.createElement('canvas'); c.width = f.width; c.height = f.height;
+    const x = c.getContext('2d')!; x.drawImage(src.source, f.x, f.y, f.width, f.height, 0, 0, f.width, f.height);
+    const d = x.getImageData(0, 0, f.width, f.height);
+    for (let y = 0; y < f.height; y++) for (let i = 0; i < f.width; i++) if (!rasterPa(GENOM, i, y)) d.data[(y * f.width + i) * 4 + 3] = 0;
+    x.putImageData(d, 0, 0);
+    g = PIXI.Texture.from(c, { scaleMode: PIXI.SCALE_MODES.NEAREST });
+    genomAv.set(t, g); helAv.set(g, t);
+  }
+  return g;
+}
 export function tonaTrad(punkter: { x: number; y: number }[], W: number, H: number) {
   const nu = new Set<PIXI.Sprite>();
   for (const p of punkter) {
@@ -333,7 +353,7 @@ export function tonaTrad(punkter: { x: number; y: number }[], W: number, H: numb
       if (px >= l && px <= r && ((fot >= t && fot <= b) || (fot - 8 >= t && fot - 8 <= b))) nu.add(sp);
     }
   }
-  for (const sp of tonade) if (!nu.has(sp) && !sp.destroyed) sp.alpha = 1;
-  for (const sp of nu) sp.alpha = GENOM;
+  for (const sp of tonade) if (!nu.has(sp) && !sp.destroyed) { const hel = helAv.get(sp.texture); if (hel) sp.texture = hel; }
+  for (const sp of nu) sp.texture = genomTex(sp.texture);
   tonade.clear(); for (const sp of nu) tonade.add(sp);
 }

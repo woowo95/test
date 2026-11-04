@@ -72,7 +72,7 @@ function sportPlats(m: Match, p: Person, x: number, y: number, t: number): { x: 
 // något som flyger i en båge från a till b, f = 0–1 av vägen: en prick och dess skugga på marken
 function flyg(ax: number, ay: number, bx: number, by: number, f: number, farg: number, h: number) {
   const x = ax + (bx - ax) * f, y = ay + (by - ay) * f;
-  peopleG.beginFill(0x000000, 0.2).drawEllipse(x, y + 2, 1.4, 0.6).endFill();
+  peopleG.beginFill(0x372f25).drawEllipse(x, y + 2, 1.4, 0.6).endFill();
   peopleG.lineStyle(0.6, 0x1a1a1a, 0.8).beginFill(farg).drawCircle(x, y - h * 4 * f * (1 - f), 1.3).endFill().lineStyle(0);
 }
 const hash = (n: number) => { const v = Math.sin(n * 12.9898) * 43758.5453; return v - Math.floor(v); };
@@ -160,15 +160,15 @@ function markOf(p: Person): string | undefined {
 }
 // pratbubblan (steg 3.10.3): samma ruta som arbetssymbolerna, med pratbubblan i pixlar eller ämnets symbol (ikon, steg 3.9.5).
 // Kanten följer samtalet och relationen: rött gräl, rosa flirt eller kärlek, guld berättelse, grönt vänner, mörkrött ovänner
-const PRAT_FARG = 0xf3ead2, PRAT_KANT = 0x3b2f25; // pratbubblans ljusa botten och mörka kant
+const PRAT_FARG = 0xdad0bb, PRAT_KANT = 0x372f25; // pratbubblans ljusa botten och mörka kant
 function pratRuta(x: number, top: number, bob: number, kind: string | undefined, rel: 'karlek' | 'van' | 'ovan' | 'neutral', ikon?: string) {
-  const kant = kind === 'gräl' ? 0xd9534f : kind === 'flirt' ? 0xf0a3bd : kind === 'berättelse' ? 0xf2d27a
-    : rel === 'karlek' ? 0xf0a3bd : rel === 'ovan' ? 0x8a2a22 : rel === 'van' ? 0x7fbf5a : undefined;
+  const kant = kind === 'gräl' ? 0xa14808 : kind === 'flirt' ? 0xbd753e : kind === 'berättelse' ? 0xd8b25f
+    : rel === 'karlek' ? 0xbd753e : rel === 'ovan' ? 0x742a01 : rel === 'van' ? 0x647025 : undefined;
   // en ljus, rundad pratbubbla med en spets ner mot den som pratar, så att den inte ser ut som arbetets mörka ruta (steg 4.5.6.9)
   const y0 = top + bob, linje = kant ?? PRAT_KANT, b = kant !== undefined ? 1.2 : 0.8;
-  bubbleG.lineStyle(b, linje, 0.95).beginFill(PRAT_FARG, 0.94).drawRoundedRect(x - 6, y0 - 6, 12, 11, 4).endFill();
-  bubbleG.lineStyle(0).beginFill(PRAT_FARG, 0.94).drawPolygon([x - 2.6, y0 + 4.4, x + 1.4, y0 + 4.4, x - 1.8, y0 + 8.2]).endFill();
-  bubbleG.lineStyle(b, linje, 0.95).moveTo(x - 2.6, y0 + 5).lineTo(x - 1.8, y0 + 8.2).lineTo(x + 1.4, y0 + 5).lineStyle(0);
+  bubbleG.lineStyle(b, linje).beginFill(PRAT_FARG).drawRoundedRect(x - 6, y0 - 6, 12, 11, 4).endFill();
+  bubbleG.lineStyle(0).beginFill(PRAT_FARG).drawPolygon([x - 2.6, y0 + 4.4, x + 1.4, y0 + 4.4, x - 1.8, y0 + 8.2]).endFill();
+  bubbleG.lineStyle(b, linje).moveTo(x - 2.6, y0 + 5).lineTo(x - 1.8, y0 + 8.2).lineTo(x + 1.4, y0 + 5).lineStyle(0);
   const k = ikon && hasIcon(ikon) ? ikon : 'a_prata';
   markIcons.add(k, x - 4, top - 4.5 + bob, 8 / iconCanvas(k).width, ljusSymbol(k) ? PRAT_KANT : 0xffffff);
 }
@@ -314,11 +314,11 @@ export function drawPeople(t: number) {
     if (m === 'zzz') { // z som stiger och bleknar
       for (let k = 0; k < 2; k++) {
         const f = ((t / 1800 + p.id * 0.37 + k * 0.5) % 1), w = 2 + f * 2, zx = x + 3 + f * 3, zy = top + 2 - f * 6;
-        bubbleG.lineStyle(1, 0xdfe6ff, 0.9 * (1 - f)).moveTo(zx, zy).lineTo(zx + w, zy).lineTo(zx, zy + w).lineTo(zx + w, zy + w).lineStyle(0);
+        bubbleG.lineStyle(1, 0xdad0bb).moveTo(zx, zy).lineTo(zx + w, zy).lineTo(zx, zy + w).lineTo(zx + w, zy + w).lineStyle(0);
       }
     } else if (m) {
       const bob = Math.sin(t / 500 + p.id) * 0.6;
-      bubbleG.beginFill(0x111111, 0.35).drawRoundedRect(x - 5, top - 5 + bob, 10, 10, 3).endFill();
+      bubbleG.beginFill(0x24201d).drawRoundedRect(x - 5, top - 5 + bob, 10, 10, 3).endFill();
       markIcons.add(m, x - 4, top - 4 + bob, 8 / iconCanvas(m).width);
     }
   }

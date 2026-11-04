@@ -125,7 +125,7 @@ export function drawAnimals() {
   synliga = ut;
 }
 // utropstecknet över kaninen som ser någon och flyr
-const larm = (x: number, y: number) => larmIkoner.add('kanin_larm', x * TS - 2, y * TS - 13, 0.75);
+const larm = (x: number, y: number) => larmIkoner.add('kanin_larm', x * TS - 3, y * TS - 15, 1);
 // dammet efter en kanin som springer
 function damm(x: number, y: number, vx: number, vy: number) {
   for (let k = 1; k <= 3; k++) djurFx.beginFill(0xd8c8a0, 0.5 - k * 0.12).drawCircle((x - vx * k * 0.35) * TS, (y - vy * k * 0.35) * TS + 1, 1.6 - k * 0.3).endFill();

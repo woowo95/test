@@ -10,13 +10,15 @@ import { ANIMTAKT } from '../animbilder';
 import { mix } from './terrang';
 import { iBruk } from './ibruk';
 import { framstegPunkter } from './framsteg';
-import { fargTal } from '../palett';
+import { fargTal, narmast } from '../palett';
 
 // det som står på marken: lagerplatserna och stackarna, stationerna, husen, stubbar, fällda träd och elden
 const pileIcons = new Ikoner(pileLayer, true); // med skuggor på marken (steg 5.1.8)
 const rokIkoner = new Ikoner(rokLayer); // gnistorna och röken över elden (steg 5.1.9.1)
 // skicket som färg: grönt, gult, rött
-const condCol = (c: number) => c >= 0.5 ? 0x6fbf5a : c >= 0.25 ? 0xe0b040 : 0xd2553f;
+// en färg i talform till närmaste färg i paletten
+const palTal = (c: number) => fargTal(narmast('#' + c.toString(16).padStart(6, '0')));
+const condCol = (c: number) => c >= 0.5 ? 0x647025 : c >= 0.25 ? 0xb2921b : 0xa14808; // oliv, senap och rost ur paletten
 // var ikonerna ligger i rutan, bakersta först
 const PILE_LAYOUT = [[[4, 5]], [[1, 5], [7, 5]], [[4, 1], [1, 5], [7, 5]], [[2, 0], [6, 1], [0, 5], [8, 5]]];
 // en stack: ju fullare desto fler saker i högen
@@ -41,7 +43,7 @@ function kartHog(k: string, x0: number, y0: number, n: number) {
 function drawPile(pl: Pile, t: number) {
   const x0 = pl.x * TS, y0 = pl.y * TS, f = Math.min(1, pl.n / pl.max), g = structG, c = condOf(pl);
   // liten stapel för skicket längst ner i rutan
-  g.beginFill(0x161210, 0.7).drawRect(x0 + 2, y0 + 13.5, 12, 2).endFill().beginFill(condCol(c)).drawRect(x0 + 2, y0 + 13.5, 12 * clamp(c, 0, 1), 2).endFill();
+  g.beginFill(0x24201d).drawRect(x0 + 2, y0 + 13.5, 12, 2).endFill().beginFill(condCol(c)).drawRect(x0 + 2, y0 + 13.5, 12 * clamp(c, 0, 1), 2).endFill();
   // ikoner: ju fullare stacken är desto fler, redskap som en större bild
   // en symbol ritas 12 punkter stor mitt i rutan, hur stor bilden än är (8 eller 16 punkter, steg 3.6.7)
   const stor = (k: string) => 12 / (iconCanvas(k).width || 8);
@@ -61,7 +63,8 @@ function glans(x: number, y: number, t: number, id: number, perfekt: boolean) {
   const f = (t / 2600 + id * 0.37) % 1;
   if (f > 0.18) return;
   const a = Math.sin(f / 0.18 * Math.PI), r = (perfekt ? 2.5 : 1.8) * a;
-  overG.beginFill(0xfff3c8, 0.9 * a).drawRect(x - 0.5, y - r, 1, 2 * r).drawRect(x - r, y - 0.5, 2 * r, 1).endFill();
+  if (a < 0.3) return;
+  overG.beginFill(0xdad0bb).drawRect(x - 0.5, y - r, 1, 2 * r).drawRect(x - r, y - 0.5, 2 * r, 1).endFill();
 }
 // fälten (steg 2.10.3, 2.10.13, odling.ts), ruta för ruta: en ram runt rutan som ska röjas, ljus jord när den är röjd och mörk
 // jord med fåror när den är uppgrävd. Grodden mitt på varje sådd ruta medan grödan växer (liten den första halvan) och
@@ -73,9 +76,9 @@ function drawFalt() {
     for (let k = 0; k < f.n; k++) {
       const i = faltRuta(f, k), X = (i % W) * TS, Y = Math.floor(i / W) * TS;
       const klar = k < f.klara, rojd = f.steg !== 'roja' || klar, grav = f.steg === 'bereda' ? klar : f.steg !== 'roja';
-      if (!rojd) structG.lineStyle(1, 0x5e3c24, 0.7).drawRect(X + 0.5, Y + 0.5, TS - 1, TS - 1).lineStyle(0);
-      else structG.beginFill(grav ? 0x5e3c24 : 0x7d5b40, 0.9).drawRect(X, Y, TS, TS).endFill();
-      if (grav) for (let r = 0; r < 4; r++) structG.lineStyle(1, 0x3f2415, 0.8).moveTo(X + 1, Y + 2.5 + r * 4).lineTo(X + TS - 1, Y + 2.5 + r * 4).lineStyle(0);
+      if (!rojd) structG.lineStyle(1, 0x5e3c24).drawRect(X + 0.5, Y + 0.5, TS - 1, TS - 1).lineStyle(0);
+      else structG.beginFill(grav ? 0x5e3c24 : 0x7d5b40).drawRect(X, Y, TS, TS).endFill();
+      if (grav) for (let r = 0; r < 4; r++) structG.lineStyle(1, 0x3f2415).moveTo(X + 1, Y + 2.5 + r * 4).lineTo(X + TS - 1, Y + 2.5 + r * 4).lineStyle(0);
       if (bild && grodaPa(f, k)) { const kb = !liten && kartbild(bild), sc = liten ? 0.5 : 1, b = iconCanvas(kb || bild).width * sc, bh = iconCanvas(kb || bild).height * sc; pileIcons.add(kb || bild, Math.round(X + (TS - b) / 2), Math.round(Y + (TS - bh) / 2), sc); }
     }
     if (!vaxer && !mogen) { const i = faltRuta(f, Math.min(f.klara, f.n - 1)); framsteg((i % W) * TS + TS / 2, Math.floor(i / W) * TS + 3, faltKlar(f)); }
@@ -132,7 +135,7 @@ export function drawStructures(t: number) {
   // lagerplatsen: en ram runt rutorna, och en stack per ruta
   zonesOf(s).forEach((z, i) => {
     const on = tab === 'lager' && ui.lagerNr === i;
-    structG.beginFill(0x5b4a35, 0.22).lineStyle(1, on ? 0xffffff : 0x5b4a35, on ? 0.9 : 0.5).drawRoundedRect(z.x * TS + 0.5, z.y * TS + 0.5, z.w * TS - 1, z.h * TS - 1, 3).endFill().lineStyle(0);
+    structG.lineStyle(1, on ? 0xdad0bb : 0x5e3c24).drawRect(z.x * TS + 0.5, z.y * TS + 0.5, z.w * TS - 1, z.h * TS - 1).lineStyle(0);
   });
   drawBuild();
   pileIcons.start(); rokIkoner.start();
@@ -150,7 +153,7 @@ export function drawStructures(t: number) {
     const x0 = st.x * TS + (kb ? Math.round((w - iconCanvas(ik).width) / 2) : 0), y0 = st.y * TS - upp; // bildens övre vänstra hörn: bildstilens bild mitt över rutorna och med foten på den nedersta
     pileIcons.add(isKlar(st) ? smutsIkon(ik, smutsGrad(s.now, st.klar)) : ik, x0, y0, sk); // en station i bruk blir smutsigare (steg 5.1.7.3)
     if (!isKlar(st)) { framsteg(st.x * TS + w / 2, y0 + 3, stationKlar(st)); continue; }
-    if (st.fyllt) overG.beginFill(0x24160a, 0.75 * clamp(st.fyllt, 0, 1)).drawEllipse(st.x * TS + TS / 2, st.y * TS + TS / 2 + 1, 5, 4).endFill(); // latrinen mörknar när den fylls (smuts.ts)
+    if (st.fyllt && st.fyllt > 0.1) { const f = clamp(st.fyllt, 0, 1); overG.beginFill(0x2f261d).drawEllipse(st.x * TS + TS / 2, st.y * TS + TS / 2 + 1, 5 * f, 4 * f).endFill(); } // latrinen mörknar när den fylls (smuts.ts)
     if ((st.q ?? 0) >= MASTERVERK) glans(st.x * TS + w - 3, st.y * TS + 3, t, st.id, st.q === PERFEKT);
     // stubbarna (Björn valde den korta stocken efter v89) är en ruta stora: framför bänken och runt bordet
     if (d?.sitt) pileIcons.add(SITT, st.x * TS + w / 2 - TS / 2, (st.y + bh) * TS, TS / iconCanvas(SITT).width);
@@ -177,18 +180,19 @@ export function drawStructures(t: number) {
   const fv = tab === 'falt' ? faltById(s, ui.faltId) : undefined; // fältet, eller grödan på en av dess rutor (steg 2.10.14)
   if (fv) kant(ui.faltRuta >= 0 ? [faltRuta(fv, ui.faltRuta)] : faltRutor(fv));
   const vald = tab === 'station' ? stationById(s, ui.stationId) : sst;
-  if (vald) { const { w, h: d } = storlekAv(vald); overG.lineStyle(1, 0xffffff, 0.9).drawRoundedRect(vald.x * TS + 0.5, vald.y * TS + 0.5, w * TS - 1, d * TS - 1, 2).lineStyle(0); }
+  if (vald) { const { w, h: d } = storlekAv(vald); overG.lineStyle(1, 0xdad0bb).drawRoundedRect(vald.x * TS + 0.5, vald.y * TS + 0.5, w * TS - 1, d * TS - 1, 2).lineStyle(0); }
   // stubbar: bleknar medan de ruttnar bort
   for (const k of s.stubbar ?? []) {
     const a = 1 - (s.now - k.t) / STUBBE_LIV, x = k.x * TS + TS * 0.65, y = k.y * TS + TS * 0.6;
-    structG.beginFill(0x4a3420, 0.9 * a).drawCircle(x, y, 3.2).endFill();
-    structG.beginFill(0xb08a58, 0.9 * a).drawCircle(x, y - 0.6, 2.2).endFill();
+    const r = 0.5 + 0.5 * a; // krymper i stället för att blekna
+    structG.beginFill(0x3f2415).drawCircle(x, y, 3.2 * r).endFill();
+    structG.beginFill(0x987e62).drawCircle(x, y - 0.6, 2.2 * r).endFill();
   }
   // fällda träd som ligger och väntar på att huggas till ved
   for (const k of s.stockar ?? []) {
     const x = k.x * TS, y = k.y * TS, len = 6 + Math.min(8, k.ved);
-    structG.lineStyle(4, 0x5a3c22).moveTo(x - len / 2, y + 2).lineTo(x + len / 2, y - 1).lineStyle(0);
-    structG.beginFill(0xc9a46a).drawCircle(x - len / 2, y + 2, 1.8).endFill();
+    structG.lineStyle(4, 0x5e3c24).moveTo(x - len / 2, y + 2).lineTo(x + len / 2, y - 1).lineStyle(0);
+    structG.beginFill(0xd8b25f).drawCircle(x - len / 2, y + 2, 1.8).endFill();
   }
   // eldarna: värmeområdet för varje brinnande lägereld när eldens flik är öppen, och en ring runt den som fliken visar (ui.eld)
   if (tab === 'eld') for (const f of eldarOf(s)) {
@@ -221,19 +225,18 @@ function drawBuild() {
     if (klara.has(b.id)) continue;
     const x = b.x * TS, y = b.y * TS;
     if (b.k === 'golv') {
-      const col = MATERIAL[b.m]?.farg ?? MATERIAL.jord.farg, a = b.b >= 1 ? (b.m === 'jord' ? 0.55 : 0.85) : 0.12 + 0.3 * b.b;
-      structG.beginFill(col, a).drawRect(x, y, TS, TS).endFill();
+      const col = palTal(MATERIAL[b.m]?.farg ?? MATERIAL.jord.farg); // närmaste färg i paletten; ett golv som byggs är bara en ram
+      if (b.b >= 1) structG.beginFill(col).drawRect(x, y, TS, TS).endFill(); else structG.lineStyle(1, col).drawRect(x + 0.5, y + 0.5, TS - 1, TS - 1).lineStyle(0);
     } else if (b.k === 'vagg') {
-      if (b.b <= 0 && b.mat <= 0) { structG.lineStyle(1, 0x5a3c22, 0.45).drawRect(x + 1.5, y + 1.5, TS - 3, TS - 3).lineStyle(0); continue; }
-      const a = b.b >= 1 ? 0.55 + 0.45 * b.c : 0.25 + 0.5 * b.b;
+      if (b.b <= 0 && b.mat <= 0) { structG.lineStyle(1, 0x5e3c24).drawRect(x + 1.5, y + 1.5, TS - 3, TS - 3).lineStyle(0); continue; }
       // timmerväggarna ritar ritaHus; här ritas risväggarna
-      structG.beginFill(MATERIAL.ris.farg, a).drawRect(x + 1, y + 1, TS - 2, TS - 2).endFill();
+      structG.beginFill(palTal(MATERIAL.ris.farg)).drawRect(x + 1, y + 1, TS - 2, TS - 2).endFill();
       // flätningen: vågiga streck, färre ju mer slitet
       const n = b.b >= 1 ? Math.max(1, Math.round(3 * b.c)) : Math.ceil(3 * b.b);
-      for (let k = 0; k < n; k++) { const yy = y + TS * (0.28 + 0.22 * k); structG.lineStyle(1, 0xb08a58, a).moveTo(x + 2, yy).lineTo(x + TS / 2, yy + 1.5).lineTo(x + TS - 2, yy).lineStyle(0); }
-      for (let k = 1; k < 3; k++) structG.lineStyle(1, 0x3a2614, a).moveTo(x + TS * k / 3, y + 1).lineTo(x + TS * k / 3, y + TS - 1).lineStyle(0);
+      for (let k = 0; k < n; k++) { const yy = y + TS * (0.28 + 0.22 * k); structG.lineStyle(1, 0x987e62).moveTo(x + 2, yy).lineTo(x + TS / 2, yy + 1.5).lineTo(x + TS - 2, yy).lineStyle(0); }
+      for (let k = 1; k < 3; k++) structG.lineStyle(1, 0x3f2415).moveTo(x + TS * k / 3, y + 1).lineTo(x + TS * k / 3, y + TS - 1).lineStyle(0);
     } else {
-      structG.beginFill(MATERIAL.oppning.farg, 0.35).drawRect(x + 1, y + 1, TS - 2, TS - 2).endFill(); // öppningen: trampad jord
+      structG.beginFill(0x7d5b40).drawRect(x + 1, y + 1, TS - 2, TS - 2).endFill(); // öppningen: trampad jord
     }
   }
 }
