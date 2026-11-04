@@ -10,7 +10,7 @@ Björn förklarar inte i prompten var fakta finns. Gör därför alltid så här
 
 1. Läs "Läget just nu" i designdokumentet: vad som är byggt, nästa steg och kända brister.
 2. Hitta steget i Färdplanen (sök på numret, t.ex. mönstret `^1\.5\.`). Nämner Björn inget nummer: hitta systemet som berörs och se om det redan finns ett steg.
-3. Läs avsnitten som systemets "Läs:" pekar på, och sök i dokumentet på orden prompten handlar om (saker, handlingar, system). "Beslut" är bestämt; "förslag" är inte bestämt.
+3. Läs avsnitten som systemets "Läs:" pekar på, och sök i dokumentet på orden prompten handlar om (saker, handlingar, system). Det som står gäller; står det "förslag" i äldre text är det inte bestämt.
 4. Fråga först om steget säger "Björn avgör", om dokumentet säger emot sig självt eller prompten, eller om det saknas det som behövs. Säg i så fall vad som saknas.
 5. Läs `ARKITEKTUR.md` och sedan bara de filer som berörs.
 
@@ -25,6 +25,9 @@ Sök i dokumentet i stället för att läsa allt; det är långt.
 ## Färdplanen
 
 - Färdplanen i designdokumentet är numrerad: fas, system, steg. Ett steg med tre siffror (t.ex. 2.5.1) är en prompt.
+- Stegen är korta, som i fas 2 och 3: en rad om vad som byggs. Hur systemet fungerar står i dess avsnitt längre upp i dokumentet, och "Läs:" pekar dit. Ett steg säger bara det som gäller själva bygget: testerna, vad som ritas och vad det väntar på.
+- Inga datum, inget "Björn sa" eller "Björn efter vNNN" och inget "beslut" eller "förslag" i designdokumentet: det som står där gäller. Ändrar Björn något, skrivs texten om där den står, i avsnittet och i steget.
+- Ett obyggt steg som flyttas eller tas bort försvinner helt, utan en rad om att det flyttats eller strukits. Stegen efter numreras om, och hänvisningarna i dokumentet rättas.
 - Björn säger t.ex. "gör 2.5.1", "gör 2.5" eller "gör till och med 2.6.2". Bygg de steg som nämns och stanna efter det sista.
 - Läs avsnitten som systemets "Läs:" pekar på innan du bygger. Står det "Björn avgör" i steget, fråga först.
 - Bocka av ett byggt steg och skriv versionen efter, t.ex. "(v36)". Byggda steg byter aldrig nummer.
