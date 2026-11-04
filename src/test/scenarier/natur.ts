@@ -639,7 +639,7 @@ SCENARIER.flatarbank = {
     };
     const kElden = kniv(false), kBank = kniv(true);
     // en vanlig by tills någon tvinnar rep, högst tio dygn (tio år i spelet): inget handarbete utan sak, och rep tvinnas som en egen handling
-    const v = createState(3, START); // en by som kommer på repet tidigt (by 2 kom inte på det inom tio dygn i v75, by 3 inte i v156, by 5 inte i v159)
+    const v = createState(7, START); // en by som kommer på repet tidigt (by 2 kom inte på det inom tio dygn i v75, by 3 inte i v156 och v324, by 5 inte i v159)
     let dygn = 0;
     for (; dygn < 10 && !tvinnar; dygn++) kor(v, 24, w => { for (const r of living(w)) { if (r.task?.act === 'hantverk') hantverk++; if (r.task?.act === 'tvinna') tvinnar++; } });
     // att tvinna rep är hantverk: den som gör det kommer på det som hör till hantverket (kniven)
@@ -1504,6 +1504,39 @@ SCENARIER.falt = {
       ['ett fält i en sparad by från före steget blir 2 × 2 rutor när byn laddas', gammalt],
       ['i en sparad by från före steg 3.10.23.8 blir kornet ärter, också på fältet, och fröna delas lika på rovfrön och ärtfrön, också det som bärs och vems de är', kornFron],
       [`ett nytt fält ligger utanför byns hus, stationer och lagerplatser med minst ${stig} rutor fritt emellan (${inpa} rutor för nära, ${innanfor} innanför något, ${narmast.toFixed(1)} rutor från byn)`, !!site && inpa === 0 && innanfor === 0 && narmast <= stig + 1 + SIM.ODLING.faltUtom && gr.ut.some(u => u > 0)],
+    ];
+  },
+};
+
+SCENARIER.regntvatt = {
+  text: 'Regnet tvättar bort fläckarna (steg 5.1.12): blod och toa-fläckar som ligger ute bleknar mycket fortare när det regnar, så att några timmars regn tar bort det mesta; i husen påverkar regnet dem inte, och när det inte regnar bleknar de som förut',
+  kor: () => {
+    const { blodOf, blodNu, blodas, flackNu, flackarOf, regnetTvattar, vaderNu, roomAt, SMUTS } = SIM;
+    const s = createState(5, START); klockan(s); medHus(s);
+    let inne = -1;
+    for (let i = 0; i < W * H && inne < 0; i++) if (roomAt(s, (i % W) + 0.5, Math.floor(i / W) + 0.5)) inne = i;
+    const c = campCenter(s), ix = (inne % W) + 0.5, iy = Math.floor(inne / W) + 0.5;
+    // en timme med kraftigt regn (inte snö)
+    let t = Math.ceil(s.now / HOUR) * HOUR;
+    for (let k = 0; k < 24 * 400; k++, t += HOUR) { const v = vaderNu(s, t); if (v.nb > 0.5 && !v.sno && vaderNu(s, t + HOUR).nb > 0.5) break; }
+    s.now = t;
+    const nb = vaderNu(s).nb;
+    blodas(s, c.x + 3.5, c.y + 3.5, 'forblodning', 1); blodas(s, ix, iy, 'forblodning', 1);
+    s.flackar = [{ k: 'toa', i: Math.floor(c.y + 5) * W + Math.floor(c.x + 5), n: 1, t: s.now }, { k: 'toa', i: inne, n: 1, t: s.now }];
+    const ute = () => blodOf(s).find(b => !roomAt(s, b.x, b.y))!, inneB = () => blodOf(s).find(b => roomAt(s, b.x, b.y))!;
+    const fore = [blodNu(ute(), s.now), blodNu(inneB(), s.now)];
+    regnetTvattar(s); s.now += HOUR; regnetTvattar(s);
+    const efter = [blodNu(ute(), s.now), blodNu(inneB(), s.now)], toa = flackarOf(s).map(f => flackNu(f, s.now));
+    // utan regn: inget händer
+    const u = createState(5, START); klockan(u); let tu = Math.ceil(u.now / HOUR) * HOUR;
+    for (let k = 0; k < 24 * 400 && vaderNu(u, tu).nb > 0; k++) tu += HOUR;
+    u.now = tu; blodas(u, c.x + 3.5, c.y + 3.5, 'forblodning', 1); const t0 = blodOf(u)[0]!.t; regnetTvattar(u);
+    return [
+      [`det regnar (${nb.toFixed(2)})`, nb > 0.5],
+      [`blodet ute bleknar mycket fortare i regnet (${fore[0].toFixed(2)} → ${efter[0].toFixed(2)} på en timme)`, efter[0] < fore[0] - 2 * nb * SMUTS.regnTvatt * 0.9 + 1e-9 && efter[0] < 0.75],
+      [`blodet i huset bleknar som förut (${efter[1].toFixed(3)})`, efter[1] > 0.95],
+      [`toa-fläcken ute tvättas bort, den inne inte (${toa.map(v => v.toFixed(2)).join(', ')})`, toa[0]! < 0.75 && toa[1]! > 0.95],
+      ['utan regn händer inget', blodOf(u)[0]!.t === t0],
     ];
   },
 };

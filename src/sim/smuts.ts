@@ -18,7 +18,9 @@ import { count, forstaGang, log, think } from './folk';
 import { groundOf, tileOf } from './mark';
 import { FOREST } from './vag';
 import { smutsOf } from './sjo';
-import { blodNu, blodOf, blodas } from './blod';
+import { BLODFORM, blodNu, blodOf, blodas } from './blod';
+import { roomAt } from './byggnad';
+import { vaderNu } from './vader';
 
 // ---------- balanstal (regel 8) ----------
 export const SMUTS = balans('smuts', {
@@ -34,6 +36,7 @@ export const SMUTS = balans('smuts', {
   blodSyns: 0.2, // ... blodet när det är färskare än så här (blodNu), en toa-hög när den är starkare än akel ...
   synHumor: -0.04, synTim: 3, // ... och sänker humöret så här mycket, i så många timmar
   rutt: 2, // mat som ligger i en blodfläck, eller på eller bredvid en toa-hög, ruttnar så här många gånger fortare
+  regnTvatt: 0.3, // i det kraftigaste regnet bleknar blod och fläckar ute så här mycket av sin fulla styrka mer per timme (steg 5.1.12)
   lardom: 0.25, // byns kunskap om hygien (s.hygien, 0–1) ökar så här mycket när någon får ont i magen av vatten som toaletten smutsat ner
 });
 
@@ -228,4 +231,16 @@ export function magont(s: State, i: number) {
   s.hygien = clamp(forr + SMUTS.lardom, 0, 1);
   count(s, 'magont av toa-smuts');
   if (forr <= 0) log(s, 'Byn förstod att vattnet blir smutsigt nära toaletten. Latrinen läggs hädanefter längre från vattnet.', 'world');
+}
+
+// Regnet tvättar bort fläckarna (steg 5.1.12): varje timme det regnar (inte snöar) blir blodet och fläckarna som ligger ute
+// äldre, så att de bleknar fortare: i det kraftigaste regnet regnTvatt av sin fulla styrka mer per timme, så att några
+// timmars regn tar bort det mesta. Under tak och i husen (roomAt) påverkar regnet dem inte. Vädret räknas ur tiden, så det
+// blir likadant i spelet och i ikappräkningen. Nya listor och nya fläckar, så att det som räknats ur de gamla räknas om
+export function regnetTvattar(s: State) {
+  const v = vaderNu(s);
+  if (v.nb <= 0 || v.sno) return;
+  const del = v.nb * SMUTS.regnTvatt, ute = (x: number, y: number) => !roomAt(s, x, y);
+  if (s.flackar?.length) s.flackar = s.flackar.map(f => ute((f.i % W) + 0.5, Math.floor(f.i / W) + 0.5) ? { ...f, t: f.t - del * (DEF[f.k]?.bleknar ?? 1) * HOUR } : f);
+  if (s.blod?.length) s.blod = s.blod.map(b => ute(b.x, b.y) ? { ...b, t: b.t - del * BLODFORM[b.f]!.bleknar * HOUR } : b);
 }
