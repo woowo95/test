@@ -1,4 +1,4 @@
-import { AGES, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, VADERLAGE, vaderNu, kalender, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, rikedomDelar, spar, step, temperature, visning, yearNo, State, motgangNu, motgangNasta, motgangDef, varslade, ROVARFLOCK, skickaRovare, skickaHandlare, rovarHinder, handlarHinder, lightLevel } from './sim';
+import { BEAT, DAY, HOUR, MIN, SEC, TalkEvent, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, spar, step, visning, yearNo, State, motgangNu, motgangNasta, motgangDef, varslade, ROVARFLOCK, skickaRovare, skickaHandlare, rovarHinder, handlarHinder, lightLevel } from './sim';
 import { brandKnapp, testSvara } from './ui/interaktion';
 import { testBortaIByn } from './ui/testborta';
 import { $ } from './ui/hjalp';
@@ -15,6 +15,7 @@ import { drawFlackar } from './ui/smuts';
 import { addTalks, drawPeople, posOf } from './ui/manniskor';
 import { drawHandel } from './ui/handel';
 import { renderPanel } from './ui/panel';
+import { renderRaden } from './ui/raden';
 import { renderPorts, stopFollow } from './ui/portratt';
 import { catchUp, loadSaves, nyByVald, saveDb, saveLocal } from './ui/spara';
 import './ui/interaktion';
@@ -30,13 +31,7 @@ function renderClock() {
   const d = new Date(t);
   const hh = String(d.getHours()).padStart(2, '0'), mm = String(d.getMinutes()).padStart(2, '0');
   $('calYear').textContent = `År ${yearNo(s, t)}`;
-  { const k = kalender(s, t); $('calAge').textContent = `${AGES[k.ai]}, dag ${k.dag} av ${k.av}`; }
-  { // temperaturen och vädret (steg 2.11.1); vädrets namn och vad det gör visas när man håller musen över det
-    const c = Math.round(temperature(s, t)), v = VADERLAGE[vaderNu(s, t).lage], el = $('calTemp');
-    const html = `${tecknet('vader_' + vaderNu(s, t).lage, v.ikon, 20)} 🌡 ${c > 0 ? '+' : c < 0 ? '−' : ''}${Math.abs(c)} °C`; // symbolen (steg 2.10.10)
-    if (el.dataset.v !== html) { el.innerHTML = html; el.dataset.v = html; }
-    el.title = `${v.namn}. ${v.text}`;
-  }
+  renderRaden(t); // årstiden, tidsstaven och nyckeltalen (ui/raden.ts, steg 5.3.1.2)
   { // motgången som pågår, eller som någon i byn anar (steg 3.8.1, motgang.ts): symbolen, och vad den gör när musen är över den
     const nu = motgangNu(s, t), na = nu ? undefined : motgangNasta(s, t), n = na ? varslade(s, na.start) : 0, el = $('calMotgang');
     const m = nu ?? (n ? na : undefined), d = m && motgangDef(m.id);
@@ -47,11 +42,6 @@ function renderClock() {
       el.style.opacity = nu ? '1' : '0.55';
       el.title = nu ? `${d.namn}. ${d.text}` : `${n === 1 ? 'En' : n} i byn anar att det blir en ${d.namn.toLowerCase()}. ${d.text}`;
     }
-  }
-  { // byns rikedom (varde.ts): talet, och vad den består av när musen är över
-    const r = rikedomDelar(s), sum = r.forrad + r.redskap + r.hus, el = $('calRik'), a = s.delning?.andel ?? 0;
-    el.textContent = `⚖ ${Math.round(sum)}`;
-    el.title = `Byns rikedom: ${Math.round(sum)} (ungefär arbetstimmar). Tryck för att öppna förrådet\nFörrådet ${Math.round(r.forrad)} · redskapen ${Math.round(r.redskap)} · husen ${Math.round(r.hus)}\n${a > 0 ? `${Math.round(a * 100)} % av det folk skaffar går till byn` : 'Byn är så rik att folk behåller det de skaffar'}`;
   }
   $('sparFel').hidden = !ui.sparFel;
   $('molnFel').hidden = !ui.molnFel;
