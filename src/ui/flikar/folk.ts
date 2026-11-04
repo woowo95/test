@@ -1,6 +1,6 @@
 import { type Person, ageOf, anseendeSym, formogenheter, halsa, living, moodOf, taskName, yrkeNamn } from '../../sim';
 import { iconImg } from '../../ikoner';
-import { LAG, ansTecken, bar, clockTxt, esc, linkify, moodWord, num, prickar, trend } from '../hjalp';
+import { LAG, ansTecken, bar, esc, moodWord, num, prickar, trend } from '../hjalp';
 import { s, uppgiftVid } from '../lage';
 import type { Flik } from '../panel';
 import { grafHtml } from '../graf';
@@ -39,10 +39,4 @@ export const folk: Flik = {
     if (sortId === b.dataset.fsort) omvant = !omvant; else { sortId = b.dataset.fsort!; omvant = false; }
     return true;
   },
-};
-
-// det som hänt i byn, senast först
-export const logg: Flik = {
-  namn: 'Händelser',
-  html: () => `<ol class="logg">${s.log.slice().reverse().slice(0, 150).map(l => `<li class="k-${l.kind}"><span class="when">${clockTxt(l.t)}</span>${linkify(l)}</li>`).join('')}</ol>`,
 };

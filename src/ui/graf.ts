@@ -4,7 +4,7 @@
 // En ny graf är en rad i GRAFER och `grafHtml('id')` där den ska stå; ett nytt tal är en rad i HISTORIK_TAL.
 import { AGES, DAY, HISTORIK_TAL, WEEK, historikSerie, kalender } from '../sim';
 import { farg } from '../palett';
-import { s } from './lage';
+import { ritaOm, s } from './lage';
 
 interface Graf { namn: string; serier: { tal: string; farg: string }[]; max?: number; procent?: boolean }
 export const GRAFER: Record<string, Graf> = {
@@ -52,9 +52,6 @@ export function grafHtml(id: string) {
 
 // att dra i grafen flyttar fönstret bakåt eller framåt i tiden; panelen skrivs om medan man drar, så rörelsen följs på
 // fönstret och inte på grafens element (det byts ut)
-// panel.ts sätter omritningen; graf.ts importerar inte panel.ts, så att flikarna går att läsa i scenarierna utan kartan
-let omRita = () => {};
-export const satOmRita = (f: () => void) => { omRita = f; };
 let drag: { id: string; x: number; slut: number; bredd: number } | undefined;
 if (typeof document !== 'undefined') {
 document.addEventListener('pointerdown', e => {
@@ -67,7 +64,7 @@ addEventListener('pointermove', e => {
   if (!drag) return;
   const t = drag.slut - (e.clientX - drag.x) / drag.bredd * WEEK;
   fonster[drag.id].slut = t >= s.now ? undefined : t;
-  omRita();
+  ritaOm();
 });
 const slapp = () => { drag = undefined; };
 addEventListener('pointerup', slapp);
@@ -77,6 +74,6 @@ document.addEventListener('click', e => {
   if (!b) return;
   const f = fonster[b.dataset.grafallt!] ??= {};
   f.allt = !f.allt; f.slut = undefined;
-  omRita();
+  ritaOm();
 });
 }

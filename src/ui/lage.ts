@@ -6,6 +6,9 @@ import type { FlikId } from './panel';
 // (pratbubblor, trender, vem som följs) nollställs, och moduler med eget sådant lägger en rad i vidNyBy
 export let s: State;
 export const vidNyBy: (() => void)[] = [];
+// panelen ritas om (panel.ts sätter den); för det som ändras utan ett tryck, t.ex. ett drag i en graf eller ett val i en lista
+export let ritaOm = () => {};
+export const satRitaOm = (f: () => void) => { ritaOm = f; };
 export function setByn(n: State) {
   s = n; ui.nu = n.now; useMap(n); nyBild();
   ui.hovered = undefined; ui.husId = -1; ui.stationId = -1; ui.flytta = -1; ui.flyttFel = false; ui.hogAt = { x: 0, y: 0 }; ui.filtAt = { x: 0, y: 0 }; ui.byteNr = -1; ui.sak = ''; ui.faltId = -1; ui.faltRuta = -1; ui.djurId = -1;

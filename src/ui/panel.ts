@@ -1,7 +1,8 @@
 import { FOLDERS, amountOf, grundvarde, isTool, kortTal, ownedSum, sakNamn, wornOf } from '../sim';
 import { iconImg } from '../ikoner';
 import { eld } from './flikar/eld';
-import { folk, logg } from './flikar/folk';
+import { folk } from './flikar/folk';
+import { kronika } from './flikar/kronika';
 import { hog, lager } from './flikar/lager';
 import { hus } from './flikar/hus';
 import { sjo } from './flikar/sjo';
@@ -15,8 +16,7 @@ import { djur } from './flikar/djur';
 import { grannar } from './flikar/grannar';
 import { byn } from './flikar/byn';
 import { $, hjalpKlick } from './hjalp';
-import { satOmRita } from './graf';
-import { piles, s, ui } from './lage';
+import { piles, s, satRitaOm, ui } from './lage';
 import { renderPorts } from './portratt';
 import { bandHtml, stenHtml } from './runstenar';
 
@@ -30,7 +30,7 @@ export interface Flik {
   syns?(): boolean; // annars är knappen en blek sten som inte går att trycka på (grannarna när byn har grannar)
   band?(): string; // bandet överst är en annan fliks (Byn visar den öppna delens band, steg 5.3.3.2)
 }
-const FLIKAR = { byn, teknik, logg, folk, grannar, person, eld, lager, hog, hus, station, sjo, falt, sak, djur, filt } satisfies Record<string, Flik>;
+const FLIKAR = { byn, teknik, kronika, folk, grannar, person, eld, lager, hog, hus, station, sjo, falt, sak, djur, filt } satisfies Record<string, Flik>;
 export type FlikId = keyof typeof FLIKAR;
 const ALLA: Record<FlikId, Flik> = FLIKAR;
 const IDS = Object.keys(FLIKAR) as FlikId[];
@@ -91,7 +91,7 @@ function skriv(sd: Sida, id: FlikId | undefined, force: boolean) {
   if (!force && html === sd.html) return;
   sd.html = html; sd.body.innerHTML = html;
 }
-satOmRita(() => renderPanel(true));
+satRitaOm(() => renderPanel(true));
 export function renderPanel(force = false) {
   if (ui.hoger && (ALLA[ui.hoger].syns?.() ?? true) === false) ui.hoger = undefined;
   for (const b of nav.querySelectorAll<HTMLButtonElement>('button')) {

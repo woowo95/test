@@ -297,6 +297,14 @@ button.tnod.liten.ryk { cursor: pointer; width: 36px; height: 36px; }
 .logg .k-death .when { color: var(--muted); }
 .logg .k-world { font-style: italic; }
 .logg .oratt { color: var(--bad); } /* en orättvis dom (steg 3.10.17) */
+/* krönikan (steg 5.4.2): Stort/Allt, bläddra efter år och person, en rubrik per år */
+.kfilter button { font-size: 13px; font-weight: 600; }
+.kblad { display: flex; gap: 4px; align-items: center; margin: 8px 0 4px; }
+.kblad button { background: none; border: 1px solid var(--line); border-radius: 4px; font: inherit; font-size: 12px; padding: 3px 8px; cursor: pointer; color: inherit; }
+.kblad button:disabled { opacity: 0.3; cursor: default; }
+.kblad button[aria-pressed="true"] { border-color: var(--accent); }
+.kblad select { margin-left: auto; min-width: 0; max-width: 45%; font: inherit; font-size: 12px; background: var(--panel); color: inherit; border: 1px solid var(--line); border-radius: 4px; padding: 2px 4px; }
+.kar { margin: 12px 0 2px; font-size: 13px; color: var(--muted); border-bottom: 1px solid var(--line); }
 .plink { background: none; border: 0; padding: 0; font: inherit; font-weight: 700; color: inherit; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent) 60%, transparent); text-underline-offset: 2px; cursor: pointer; }
 .phead { display: flex; gap: 10px; align-items: flex-start; }
 .phead h2 { font-family: var(--display); font-size: 24px; margin: 0; line-height: 1.1; }

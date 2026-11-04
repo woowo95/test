@@ -13,6 +13,7 @@ import { hjalpKlick, linkify } from '../../ui/hjalp';
 import { taBortITest, testBortaIByn } from '../../ui/testborta';
 import { station as stationFlik } from '../../ui/flikar/station';
 import { lager as lagerFlik } from '../../ui/flikar/lager';
+import { kronika as kronikaFlik, val as kronikaVal } from '../../ui/flikar/kronika';
 // handlaren väntar på kvällen innan filten läggs ut (steg 4.5.4.11): testerna som handlar på dagen hoppar över väntan
 const utanVantan = (s: State) => { if (s.handlare?.fas === 'vantar') s.handlare.kvall = s.now; };
 // p gör hela sin affär med handlaren (steg 4.5.7.4): hen får uppgiften handlaVal ger, står på platsen och gör klart den, steg för
@@ -1580,6 +1581,34 @@ SCENARIER.forvarlista = {
       ['kistan visar yxan i lagrets lista med skicket', /<dl class="kv stk">/.test(k) && k.includes(SIM.sakNamn('yxa')) && k.includes(`data-sak="t:${yxa.id}"`) && k.includes('50 %')],
       ['hyllan visar stenarna med antalet, som i lagret', /<dl class="kv stk">/.test(h) && /Sten 3 st/.test(h) && h.includes('100 %')],
       ['en tom kista säger att den är tom', t.includes('tom') && !/<dl class="kv stk">/.test(t)],
+    ];
+  },
+};
+
+SCENARIER.kronikalista = {
+  text: 'Krönikan och händelserna i en lista (steg 5.4.2, ui/flikar/kronika.ts): Stort visar krönikan, Allt händelseloggen, senast först under en rubrik per år. Man bläddrar år för år och kan välja en person: bara raderna där hen står med. Bara panelen.',
+  kor: () => {
+    utanWebblasare();
+    const s = createState(6, START);
+    for (let i = 0; i < 2 * STEG_DYGN; i++) step(s, BEAT);
+    setByn(s);
+    const [a, b] = living(s), K = s.hist!.kronika, D = SIM.DAY;
+    K.push([s.now - D, `${a.name} hittade en sten.`], [s.now, `${b.name} och ${a.name} byggde ett hus.`]);
+    const rader = (h: string) => (h.match(/<li/g) ?? []).length;
+    Object.assign(kronikaVal, { visning: 'stort', ar: undefined, person: undefined });
+    const alla = kronikaFlik.html();
+    kronikaVal.person = a.id; const medA = kronikaFlik.html();
+    kronikaVal.person = b.id; const medB = kronikaFlik.html();
+    kronikaVal.person = undefined; kronikaVal.ar = SIM.kalender(s, s.now).ar; const iAr = kronikaFlik.html();
+    kronikaVal.ar = undefined; kronikaVal.visning = 'allt'; const allt = kronikaFlik.html();
+    Object.assign(kronikaVal, { visning: 'stort', ar: undefined, person: undefined });
+    const forst = alla.indexOf(`${b.name}</button> och`), sen = alla.indexOf(`${a.name}</button> hittade`);
+    return [
+      [`Stort visar hela krönikan (${rader(alla)} rader av ${K.length})`, rader(alla) === K.length],
+      ['senast först, med en rubrik per år', forst >= 0 && sen > forst && /<h4 class="kar">År \d+<\/h4>/.test(alla)],
+      [`personen: bara raderna där hen står med (${a.name} ${rader(medA)}, ${b.name} ${rader(medB)})`, rader(medA) === K.filter(r => r[1].includes(a.name)).length && rader(medB) === K.filter(r => r[1].includes(b.name)).length && medB.includes(`${b.name}</button> och`) && !medB.includes('hittade en sten')],
+      ['ett år visar bara det årets rader', rader(iAr) === K.filter(r => SIM.kalender(s, r[0]).ar === SIM.kalender(s, s.now).ar).length && rader(iAr) < rader(alla)],
+      [`Allt visar händelseloggen (${rader(allt)} rader)`, rader(allt) === s.log.length && s.log.length > K.length],
     ];
   },
 };
