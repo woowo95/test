@@ -987,6 +987,7 @@ const BESLUT = {
   f6_bjorn_hall: { val: 1, text: 'Din ritning: björnen från sidan, framifrån och bakifrån, utan den öppna munnen. Byggs in i steg 6.5.3.' },
   f6_bjornunge_hall: { val: 1, text: 'Din ritning: björnungen från sidan, framifrån och bakifrån. Byggs in i steg 6.5.3.2.' },
   f6_bjorn_falld: { val: 2, steg: '6.5.3' },
+  f6_fagel_hall: { val: 1, text: 'Ripan och skogsduvan från tre håll. Orren ritas om (eget kort). Byggs in i steg 6.5.1.3.' },
   f6_styckdel: { val: 1, text: 'Version 1 och 2 används båda, som variationer (låret och högen), i djurets färger. Byggs in i steg 6.5.1.1.' },
 };
 // räknas när valdelen ritas, så att korten från filerna efter denna (mark.js, djur.js, gui.js) också kommer med

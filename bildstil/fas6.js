@@ -597,26 +597,34 @@
   };
   // 6.5.1.2 rådjuret framifrån och bakifrån: hinden och bocken, i den gråbruna pälsen. Framifrån stora öron med rosa
   // insida, ögonen på sidorna, ljus nos, mörk nostipp och den ljusa strupen; bakifrån örats baksida och den vita spegeln
-  // omritat (Björn 2026-11-04: "det ser konstigt ut framifrån och bakifrån"): öronen snett uppåt och utåt med rosa insida,
-  // ett huvud som smalnar mot den mörka nosen med ögonen på sidorna, halsen med den ljusa strupen, den breda bringan och
-  // fyra smala ben; bakifrån örats baksida, nacken och den vita spegeln. Bocken har hornen över huvudet (T rader högre)
-  function radjurFram(bak, horn) {
-    const c = 7.5, T = horn ? 4 : 0, L = [];
-    L.push([och(linje([[5.8, 6], [2.6, 3.4], [1.8, 2.6]], 1.9, 1.1), linje([[9.2, 6], [12.4, 3.4], [13.2, 2.6]], 1.9, 1.1)), (x) => bak && x > c ? 's' : 'm']); // öronen
-    if (!bak) L.push([och(linje([[4.8, 5.2], [2.6, 3.4]], 0.7), linje([[10.2, 5.2], [12.4, 3.4]], 0.7)), 'p']);
-    L.push([poly([[4.8, 4.4], [10.2, 4.4], [11.2, 6.6], [10, 9.6], [9, 12.2], [6, 12.2], [5, 9.6], [3.8, 6.6]]), (x, y) => bak ? (x > 9 ? 's' : 'm') : y > 10 ? 'c' : x > 9.6 ? 's' : 'm']); // huvudet
-    if (!bak) L.push([och(punkt(4, 7), punkt(10, 7)), 'k'], [rakt(6, 11.2, 9, 12.2), 'k']); // ögonen och nosen
-    L.push([rakt(5.4, 12, 9.6, 15.5), (x) => !bak && x > 6.5 && x < 8.5 ? 'c' : x > 8.5 ? 's' : 'm']); // halsen
-    L.push([ell(c, 17.6, 5.4, 3.5), (x, y) => bak && ell(c, 18.2, 3.2, 2.4)(x, y) ? 'v' : x > 10.4 || y > 20 ? 's' : 'm']); // bringan, bakifrån spegeln
-    L.push([och(rakt(4.6, 19.5, 6.6, 26), rakt(8.4, 19.5, 10.4, 26)), (x) => (x > 5.6 && x < 6.6) || x > 9.4 ? 's' : 'm'], [och(rakt(4.6, 26, 6.6, 27), rakt(8.4, 26, 10.4, 27)), 'k']); // benen och klövarna
-    if (horn) L.push([och(linje([[6, 4.8], [5.4, 1.4], [5.6, -3.4]], 0.5), linje([[9, 4.8], [9.6, 1.4], [9.4, -3.4]], 0.5), linje([[5.4, -0.6], [4.2, -1.8]], 0.5), linje([[9.6, -0.6], [10.8, -1.8]], 0.5)), bak ? 'V' : 'v']);
-    return MED_KONTUR(former(15, 27 + T, L.map(([f, t]) => [(x, y) => f(x, y - T), typeof t === 'function' ? (x, y) => t(x, y - T) : t]), false));
-  }
+  // ritat om från början (Björn 2026-11-04: "rita tre helt nya versioner som bara är baserade på den från sidan"):
+  // A rakt framifrån med öronen snett upp, B ett smalare huvud med stora öron som ett V, C öronen nästan vågräta och en bredare bringa.
+  // Varje version ritades först tre gånger och den bästa valdes. Per version: hinden framifrån, bakifrån, bocken framifrån, bakifrån
+  const RAD_VER = {
+    A: [
+      ["..mm.......mm..", "..mppm...mPPs..", "...mPpmmmPPs...", ".....mmmmms....", ".....mkmks.....", ".....mmmms.....", "......mkk......", "......ccc......", ".....mcms......", "....mmcmms.....", "..mmmmmmmmmss..", "..mmmmmmmmmss..", "..mmmmmmmmmss..", "..mmmmmmmmsss..", "..msmmmmmmsss..", "...ssmmmmsss...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...kkk...kkk..."],
+      ["..mm.......mm..", "..mmsm...mssd..", "...mmsmmmssd...", ".....mmmmms....", ".....mmmmms....", ".....mmmms.....", "......mms......", "......mms......", ".....mmms......", "....mmmmss.....", "..mmmmmmmmmss..", "..mmmvvvvvmss..", "..mmvvvvvvvss..", "..mmvvvvvvvss..", "..msvvvvvvvss..", "...ssvvvvvss...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...kkk...kkk..."],
+      ["....v.....v....", "....vv...vv....", ".....v...v.....", ".....v...v.....", "..mm.......mm..", "..mppm...mPPs..", "...mPpmmmPPs...", ".....mmmmms....", ".....mkmks.....", ".....mmmms.....", "......mkk......", "......ccc......", ".....mcms......", "....mmcmms.....", "..mmmmmmmmmss..", "..mmmmmmmmmss..", "..mmmmmmmmmss..", "..mmmmmmmmsss..", "..msmmmmmmsss..", "...ssmmmmsss...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...kkk...kkk..."],
+      ["....V.....V....", "...VV.....VV...", "....V.....V....", ".....V...V.....", "..mm.......mm..", "..mmsm...mssd..", "...mmsmmmssd...", ".....mmmmms....", ".....mmmmms....", ".....mmmms.....", "......mms......", "......mms......", ".....mmms......", "....mmmmss.....", "..mmmmmmmmmss..", "..mmmvvvvvmss..", "..mmvvvvvvvss..", "..mmvvvvvvvss..", "..msvvvvvvvss..", "...ssvvvvvss...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...kkk...kkk..."],
+    ],
+    B: [
+      [".mm.........mm.", ".mppm.....mPPs.", "..mppm...mPPs..", "...mPmmmmmPs...", ".....mmmmms....", ".....kmmmk.....", "......mmms.....", "......mkk......", ".......c.......", ".....mcms......", "....mmcmms.....", "..mmmmmmmmmss..", "..mmmmmmmmmss..", "..mmmmmmmmmss..", "..mmmmmmmmsss..", "..msmmmmmmsss..", "...ssmmmmsss...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...kkk...kkk..."],
+      [".mm.........mm.", ".mmsm.....mssd.", "..mmsm...mssd..", "...mmmmmmmsd...", ".....mmmmms....", ".....mmmmms....", "......mmms.....", "......mms......", ".......m.......", ".....mmms......", "....mmmmss.....", "..mmmmmmmmmss..", "..mmmvvvvvmss..", "..mmvvvvvvvss..", "..mmvvvvvvvss..", "..msvvvvvvvss..", "...ssvvvvvss...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...kkk...kkk..."],
+      ["...v.......v...", "...vv.....vv...", "....v.....v....", "....v.....v....", ".mm.........mm.", ".mppm.....mPPs.", "..mppm...mPPs..", "...mPmmmmmPs...", ".....mmmmms....", ".....kmmmk.....", "......mmms.....", "......mkk......", ".......c.......", ".....mcms......", "....mmcmms.....", "..mmmmmmmmmss..", "..mmmmmmmmmss..", "..mmmmmmmmmss..", "..mmmmmmmmsss..", "..msmmmmmmsss..", "...ssmmmmsss...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...kkk...kkk..."],
+      ["...V.......V...", "..VV.......VV..", "...V.......V...", "....V.....V....", ".mm.........mm.", ".mmsm.....mssd.", "..mmsm...mssd..", "...mmmmmmmsd...", ".....mmmmms....", ".....mmmmms....", "......mmms.....", "......mms......", ".......m.......", ".....mmms......", "....mmmmss.....", "..mmmmmmmmmss..", "..mmmvvvvvmss..", "..mmvvvvvvvss..", "..mmvvvvvvvss..", "..msvvvvvvvss..", "...ssvvvvvss...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...kkk...kkk..."],
+    ],
+    C: [
+      [".mm.........mm.", ".mpPm.....mPPs.", "..mmmmmmmmmss..", "....mkmmmks....", "....mmmmmms....", ".....mkkks.....", "......ccc......", ".....mcms......", "....mmcmms.....", ".mmmmmmmmmmmss.", ".mmmmmmmmmmmss.", ".mmmmmmmmmmsss.", ".mmmmmmmmmmsss.", ".msmmmmmmmsss..", "..ssmcccmsss...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...kkk...kkk..."],
+      [".mm.........mm.", ".mmsm.....mssd.", "..mmmmmmmmmsd..", "....mmmmmms....", "....mmmmmms....", ".....mmmms.....", "......mms......", ".....mmms......", "....mmmmss.....", ".mmmmmmmmmmmss.", ".mmmmvvvvvmmss.", ".mmmvvvvvvvmss.", ".mmmvvvvvvvsss.", ".msmvvvvvvvss..", "..ssmvvvvvss...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...kkk...kkk..."],
+      ["...v.......v...", "...vv.....vv...", "....v.....v....", "....v.....v....", ".mm.........mm.", ".mpPm.....mPPs.", "..mmmmmmmmmss..", "....mkmmmks....", "....mmmmmms....", ".....mkkks.....", "......ccc......", ".....mcms......", "....mmcmms.....", ".mmmmmmmmmmmss.", ".mmmmmmmmmmmss.", ".mmmmmmmmmmsss.", ".mmmmmmmmmmsss.", ".msmmmmmmmsss..", "..ssmcccmsss...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...kkk...kkk..."],
+      ["...V.......V...", "..VV.......VV..", "...V.......V...", "....V.....V....", ".mm.........mm.", ".mmsm.....mssd.", "..mmmmmmmmmsd..", "....mmmmmms....", "....mmmmmms....", ".....mmmms.....", "......mms......", ".....mmms......", "....mmmmss.....", ".mmmmmmmmmmmss.", ".mmmmvvvvvmmss.", ".mmmvvvvvvvmss.", ".mmmvvvvvvvsss.", ".msmvvvvvvvss..", "..ssmvvvvvss...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...bms...msb...", "...kkk...kkk..."],
+    ],
+  };
   const RAD_BOCK_L = { ...RAD_FARG, v: 'ben1' }, RAD_BAK_L = { ...RAD_FARG }; // bakifrån är v den vita spegeln
   const RAD_BOCK_BAK_L = { ...RAD_FARG, v: 'ben3', V: 'ben1' };
-  const RADJUR_HALL = PA_RAD('Hinden från sidan, framifrån och bakifrån, och bocken likadant. Bakifrån syns den vita spegeln.', [
-    [MED_KONTUR(RAD_KO), RAD_FARG], [radjurFram(0, 0), RAD_FARG], [radjurFram(1, 0), RAD_BAK_L],
-    [MED_KONTUR(RAD_BOCK), RAD_BOCK_L], [radjurFram(0, 1), RAD_BOCK_L], [radjurFram(1, 1), RAD_BOCK_BAK_L]]);
+  const RADJUR_HALL = (v, text) => PA_RAD(text, [
+    [MED_KONTUR(RAD_KO), RAD_FARG], [MED_KONTUR(RAD_VER[v][0]), RAD_FARG], [MED_KONTUR(RAD_VER[v][1]), RAD_BAK_L],
+    [MED_KONTUR(RAD_BOCK), RAD_BOCK_L], [MED_KONTUR(RAD_VER[v][2]), RAD_BOCK_L], [MED_KONTUR(RAD_VER[v][3]), RAD_BOCK_BAK_L]]);
 
   // Björns egen ritning (2026-11-04, ”ta bort den öppna munnen helt. Använd min version”): från sidan, framifrån och bakifrån
   const BJ_RITAD = [".......................k.k.k.k.............................................................................................", "......................ksksksksk............................................................................................", "..........kkkkkkkkkkkkkksssssk.................................k.k.k.k.k.....................kkk.k.k.kkkk..................", "........kksssssssssssssssssssskk...........................kkkkskskskskskkk.................kkkkkskskskkkk.................", "......kksssssssssssssssssssssssskkk.......................kkkrkssssssssmrkkk...............kksssssssssssskk...............k", ".....kssssssssssssssssssssssssssssskk.....................kksrrkssssssmrrrkk...............kksssksssskssskk...............k", "....ksssssssssssssssssssssssssssssssskkk.k...............ksmsrrkmssssmmrrrkrk.............ksskkksssssskkkssk.............ks", "...kssssssssssssssssssssssssssssssssssssksk.............ksssmkksssssssskkksrrk...........kssssssssssssssssssk...........kss", "...ksssssssssssssssssssssssssssssssssllssslk............kssssksssssssssskssrrk..........ksssssssssssssssssssrk.........ksss", "..kssssssssssssssssssssssssssssssssssllsssmk...........kssssmssmmssssmmssmsrrkk........kssssssssssssssssssssrk.........ksss", "..ksssssssssssssssssssssssssssssssssssmssssk...........kssssmsskmmssmmkssmsrrrk........kksssssssssssssssssssrrk.......kssss", ".kssssssssrssssssssssssssssssssssssssssmmmtk...........kssssmssssmssmssrrmsrrrk........kssssssssssssssssssssrrk.......kssss", ".kssssssssmrsssssssssssssssssssssrrssssskkttk..........kssssssssmssssmsrrssrrrk........kssssssssssssssssssssrrk.......kssss", "ksssssssssmrssssssssssmssssssssssrrssssssttttk.........kssssssssmkkkkmsrrssrrrk........kssssssssssssssssssssrrk.......kssss", "ksssssssssrmrssssssssmsssssssssssmrsssssstttllk........ksssssmmrmtkktmsrkssrrrk.......ksssssssssssssssssssssrrrk......kssss", ".kssssssssrmrssssssssmssssssssssmmmssssssstttk.........kssssssmrrttttrrksssrrrk.......ksssssssssssrrssssssssrrrk......kssss", ".kssssssssrmrrrsssssrssssssssssmmmmsssssssssk..........ksssssssmrtmrtrkssssrrrk........ksssssssssssrssssssssrrk.......kssss", ".kssssssssrmrrrrrrrrrssssssssssmmmmmmmssrrrk...........kssssssssmrrrrmsssssrrlk........ksssssssssssssssssssrrrk.......klsss", ".kssssssssrmrrrrrrrrrssssssssrmmllllkkmsssk............kssssssssrssssssssssrrlk........ksssssssrrssssrsssssrrrk.......klsss", ".kssssssssrmmrrrrrrrmssssssssrlllllk..kkkk.............krsssssssrssssssssssrrlk........ksssssssrrrrsrrsssssrrk........kllss", ".kssssssssrmmmmmmmmmmsssssssrllllllk...................klrssssssrssssssssssrrlk.........kssssssrrssssrsssssrrk........kllls", ".kssssssssmmmmmmmmmmmssssssrrllllllk...................klrssssssrssssssssssrrlk.........kssssssrrssssrsssssrrk........kllls", ".ksssssssrmmmmmmmmmkmssssssrlllllllk...................klrssssssrssssssssssrrlk.........kssssssrrssssrsssssrrk........kllls", ".kssssssrrllllllkkk.kssssssrlllllllk...................klrssssssrkkkkssssssrrlk.........kssssssrrssssrsssssrrk........kllls", ".kssssssrlllllllk...kssssssrllllllk....................klrssssssk....krssssrrlk.........kssssssrrssssrsssssrrk........kllls", ".ksssssrrlllllllk...ksssssskllllllk....................klrssssssk....krssssrrlk.........kssssssrsssssssssssrrk........kllls", ".ksssssrrlllllllk...ksssssskllllllk....................klrssssssk....krssssrrlk.........kssssssrkkkkkksssssrrk........kllls", ".ksssssrkllllllk.....kssssskklllllk....................kllrsssssk....krssssrllk.........kssssssrk....ksssssrrk........kllll", "..kssssskklllllk.....kssssskklllllk....................kllrsssssk....krssssklk..........klllllllk....klllllllk........kllll", "..ksssssskllllllkk...ksssssssllllllkkk..................kkssssssk....krsssskk...........klllllllk....klllllllk........klllV", "...ksrrrVrVllllVlVk...ksrtrVrVlllllVlVk...................sVsVskk.....ksVsVl............klllllllk....klllllllk........klllV", "....kkkkkkkkkkkkkk.....kkkkkkkkkkkkkkk...................VsVsVsk......ksVsVkV............klllllk......klllllk..........kllV"];
@@ -675,27 +683,55 @@
   } else if (art === 'orre') L.push([och(punkt(Math.floor(c - A.hr * 0.7) - 1, Math.floor(hy - 0.3)), punkt(Math.floor(c + A.hr * 0.7) + 1, Math.floor(hy - 0.3))), 'a']);
   return former(Math.ceil(W) + 0, H, L).filter(r => /[^.]/.test(r));
 }
-  const FAGEL_HALL = PA_RAD('Från sidan, framifrån och bakifrån: orren, ripan och skogsduvan.', ['orre', 'ripa', 'duva'].flatMap(a => {
+  const FAGEL_HALL = PA_RAD('Från sidan, framifrån och bakifrån: ripan och skogsduvan.', ['ripa', 'duva'].flatMap(a => {
     const L = { k: 'kol0', w: 'ben3', ...ARTER[a].L, ...(FAGEL_VAR[1][a].L || {}) };
     return [[fagelArt(a, 0, 1), L], [fagelFram(a, 0), L], [fagelFram(a, 1), L]];
   }), 4, 3);
+  // orren omritad (Björn efter bildstil v163: "nej till orren, ja till de andra två"): bredare kropp och större huvud, den stora
+  // röda kammen över ögonen och det vita vingbandet på båda sidor. Lyrans böjda fjädrar sticker ut på sidorna framifrån, och
+  // bakifrån breder lyran ut sig över den vita undersidan
+  function orreFram(bak) {
+  const W = 17, H = 14, fot = H - 0.5, c = W / 2, by = 8.6, hy = 3.4, L = [];
+  // lyran: de två böjda stjärtfjädrarna sticker ut på sidorna, bakifrån stora och utbredda
+  const lyra = bak ? 1 : 0.7;
+  L.push([och(linje([[c - 2, by + 1.2], [c - 5.6 * lyra - 1, by + 0.6], [c - 7.4 * lyra - 0.6, by - 1.6], [c - 7.8 * lyra - 0.4, by - 0.2]], 1.0, 0.5), linje([[c + 2, by + 1.2], [c + 5.6 * lyra + 1, by + 0.6], [c + 7.4 * lyra + 0.6, by - 1.6], [c + 7.8 * lyra + 0.4, by - 0.2]], 1.0, 0.5)), 'd']);
+  if (bak) L.push([ell(c, by + 2.6, 2.4, 1.4), 's']); // den vita undersidan mellan lyrans fjädrar
+  L.push([och(linje([[c - 1.2, by + 2.6], [c - 1.4, fot - 0.3]], 0.45), linje([[c + 1.2, by + 2.6], [c + 1.4, fot - 0.3]], 0.45)), 'n']); // benen
+  L.push([ell(c, by, 4.4, 3.3), (x, y) => {
+    const sida = Math.abs(x - c) > 2.6;
+    if (sida && Math.abs(y - (by + 0.4)) < 0.6) return 'l'; // det vita vingbandet
+    if (bak) return sida ? 'm' : y > by + 1.6 ? 'm' : 'd';
+    return y < by - 1.6 && !sida ? 'm' : sida ? 'm' : 'd'; // glansen på bröstet
+  }]);
+  if (bak) L.push([ell(c, by + 2.8, 1.8, 1.0), 's']);
+  L.push([rakt(c - 1.6, hy, c + 1.6, by - 2.4), 'd'], [ell(c, hy, 2.1, 2.0), 'd']); // halsen och huvudet
+  L.push([och(rakt(c - 2.4, hy - 1.4, c - 0.6, hy - 0.2), rakt(c + 0.6, hy - 1.4, c + 2.4, hy - 0.2)), 'a']); // den stora röda kammen över ögonen
+  if (!bak) L.push([rakt(c - 0.5, hy + 0.3, c + 0.5, hy + 1.6), 'n']); // näbben mot oss
+  return former(W, H, L).filter(r => /[^.]/.test(r));
+}
+  const ORRE_L = { k: 'kol0', w: 'ben3', ...ARTER.orre.L, ...(FAGEL_VAR[1].orre.L || {}) };
+  const ORRE_HALL = PA_RAD('Orren från sidan, framifrån och bakifrån.', [[fagelArt('orre', 0, 1), ORRE_L], [orreFram(0), ORRE_L], [orreFram(1), ORRE_L]], 4, 4);
 
   // 6.3.5.8 tornadons tre storlekar, ritade av samma kod (anim.js): tratten så bred som kärnan och dammet ut mot nära-zonen
-  const TORNADOSCEN = { text: 'Liten, medel (som förut) och stor, nära varandra i storlek. Runt den stora virvlar ett tjockt moln av damm högt upp och många vindstreck. Den rör sig som på kartan.', w: 230, h: 136, stor: true, liten: true, rutor: 96, takt: 230,
+  const TORNADOSCEN = { text: 'Liten, medel (som förut) och stor, nära varandra i storlek. Runt den stora virvlar damm och många vindstreck som går runt långt ut från tratten. Den rör sig som på kartan.', w: 260, h: 136, stor: true, liten: true, rutor: 96, takt: 230,
     rita: (B, P, slag) => {
       const T = window.TORNADOBILD; if (!T) return;
       T.gras(B);
       const fot = 128, f = T.bild(slag, 'tornado') / 8;
-      [['liten', 24], ['medel', 84], ['stor', 172]].forEach(([s, cx]) => { const M = T.TNMATT(T.STORLEKAR[s].S); T.tornado(B, Math.round(cx - M.cx), fot - M.fot, f, s); });
+      [['liten', 24], ['medel', 84], ['stor', 188]].forEach(([s, cx]) => { const M = T.TNMATT(T.STORLEKAR[s].S); T.tornado(B, Math.round(cx - M.cx), fot - M.fot, f, s); });
     } };
 
   VAL.push(
-    { id: 'f6_radjur_hall', namn: 'Rådjuret från tre håll', typ: 'janej', vad: S + '6.5.1.2: rådjuret framifrån och bakifrån, omritat: öronen snett uppåt och utåt, ett huvud som smalnar mot den mörka nosen, halsen med den ljusa strupen och den breda bringan. Hinden och bocken i den gråbruna pälsen du valde, lika höga som sidobilden. Din kommentar förra gången: ”det ser konstigt ut framifrån och bakifrån”.', versioner: [RADJUR_HALL] },
-    { id: 'f6_fagel_hall', namn: 'Fåglarna från tre håll', typ: 'janej', vad: S + '6.5.1.3: orren, ripan och skogsduvan framifrån och bakifrån, i utseendet du valde (version 2), lika höga som sidobilden som står först.', versioner: [FAGEL_HALL] },
+    KORT('f6_radjur_hall', 'Rådjuret från tre håll', S + '6.5.1.2: rådjuret framifrån och bakifrån, ritat helt från början och bara utifrån bilden från sidan: samma färger, lika högt, ett huvud på sju rader, en kort hals med den ljusa strupen, fyra smala ben och bakifrån den vita spegeln. Hinden och sedan bocken med hornen. Din kommentar förra gången: ”rita tre helt nya versioner som bara är baserade på den från sidan och inte det du ritade nu”.', [
+      RADJUR_HALL('A', 'Version 1: rakt framifrån, öronen snett uppåt och utåt.'),
+      RADJUR_HALL('B', 'Version 2: ett smalare huvud med stora öron som ett V.'),
+      RADJUR_HALL('C', 'Version 3: öronen nästan vågräta, en bredare bringa och den ljusa buken.')]),
+    { id: 'f6_fagel_hall', namn: 'Fåglarna från tre håll', typ: 'janej', vad: S + '6.5.1.3: ripan och skogsduvan framifrån och bakifrån, i utseendet du valde (version 2).', versioner: [FAGEL_HALL] },
+    { id: 'f6_orre_hall', namn: 'Orren från tre håll', typ: 'janej', vad: S + '6.5.1.3: orren framifrån och bakifrån, omritad: bredare kropp och större huvud, den stora röda kammen och det vita vingbandet, och lyrans fjädrar som sticker ut på sidorna. Din kommentar förra gången: ”nej till orren ja till de andra två”.', versioner: [ORRE_HALL] },
     { id: 'f6_bjorn_hall', namn: 'Björnen från tre håll', typ: 'janej', vad: S + '6.5.3: din björn framifrån och bakifrån, lika stor som sidobilden och i dina färger, och framifrån med munnen öppen när den anfaller.', versioner: [BJORN_HALL] },
     { id: 'f6_bjornunge_hall', namn: 'Björnungen från tre håll', typ: 'janej', vad: S + '6.5.3.2: björnungen du valde, framifrån och bakifrån.', versioner: [UNGE_HALL] },
     KORT('f6_bjorn_falld', 'Fälld björn', S + '6.5.3: den fällda björnen som ligger på marken innan den styckas, som det fällda rådjuret: på sidan med huvudet på marken och ögat slutet, i din björns färger.', [
       PA_MARK('Benen utsträckta.', bjornFalld(0), BJ_FALLD_L), PA_MARK('Benen hopvikta under kroppen.', bjornFalld(1), BJ_FALLD_L), PA_MARK('Benen bundna ihop med rep, klar att släpas hem.', bjornFalld(2), BJ_FALLD_L)]),
-    { id: 'f6_tornado_storlek', namn: 'Tornadons storlekar', typ: 'janej', stor: true, vad: S + '6.3.5.8: tornadon i tre storlekar, ritade av samma kod som den godkända. Nu är skillnaden i storlek liten, och den stora har ett tjockt moln av damm som virvlar högt upp och många vindstreck runt sig. Medel är exakt som förut. Din kommentar förra gången: ”Gör så det bara är liten skillnad i storlek. Gör så det är extremt mycket damm och streck runt den största tornadon”.', versioner: [TORNADOSCEN] },
+    { id: 'f6_tornado_storlek', namn: 'Tornadons storlekar', typ: 'janej', stor: true, vad: S + '6.3.5.8: tornadon i tre storlekar, nära varandra i storlek. Den stora har nu mindre damm och fler vindstreck som går runt längre bort från tratten. Medel är exakt som förut. Din kommentar förra gången: ”på den stora tornadon. Ta bort lite dam men lägg till fler sträck som går runt längre bort från tornadon.”', versioner: [TORNADOSCEN] },
   );
 })();

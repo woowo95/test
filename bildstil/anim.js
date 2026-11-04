@@ -182,7 +182,8 @@
   // (liten 1 ruta, medel 3, stor 5) och dammet vid foten ut mot nära-zonen (2, 3 och 5 rutor från mitten), räknat så att
   // medel är som förut. TNMATT ger bildens mått och foten för en storlek.
   // Björn 2026-11-04 (efter bildstil v162): "gör så det bara är liten skillnad i storlek. Gör så det är extremt mycket damm och
-  // streck runt den största tornadon": bilden skiljer sig lite (S), medan mer ger den stora ett tjockt dammoln och många streck
+  // streck runt den största tornadon": bilden skiljer sig lite (S), medan mer ger den stora ett dammoln och många streck.
+  // Sedan (Björn efter bildstil v163): "ta bort lite damm men lägg till fler streck som går runt längre bort från tornadon"
   const STORLEKAR = { liten: { S: 1.25, damm: 3, mer: 0 }, medel: { S: 1.5, damm: 3.5, mer: 0 }, stor: { S: 1.8, damm: 5, mer: 1 } };
   const TNMATT = S => { const w = Math.round(32 * S), h = Math.round(48 * S); return { w, h, cx: w / 2 - 0.5, fot: h - Math.round(7 * S / 1.5) }; };
   const TN = TNMATT(1.5);
@@ -270,12 +271,12 @@
       for (let y = Math.round(-48 * sk); y <= Math.round(6 * sk); y++) for (let x = -Math.round(DR * 1.45); x <= Math.round(DR * 1.45); x++) {
         const ang = Math.atan2(y, x), e = (x / (DR * 1.45)) ** 2 + (y / (y < 0 ? 44 * sk : 7 * sk)) ** 2 + Math.sin(ang * 5 + v * 1.5) * 0.14 + Math.sin(ang * 3 - v) * 0.1;
         if (e >= 1 || (y < -4 && Math.abs(x) < bredd(TN.fot + y) - 1)) continue; // tratten syns genom dammet
-        if (!bak && hash(x, y, 975 + bnr) < 0.45) continue; // allt bakom tratten, det mesta också framför
-        if (hash(x + bnr * 5, y, 976) > (1.3 - e) * 1.1) continue;
+        if ((hash(x, y, 975 + bnr) < 0.5) !== bak) continue; // hälften bakom tratten, hälften framför
+        if (hash(x + bnr * 5, y, 976) > (1.15 - e) * 0.75) continue;
         const q = hash(x, y + bnr * 7, 977); prick(B, x0 + TN.cx + x, y0 + TN.fot + y, q < 0.25 ? 'ben' : 'jord', q < 0.25 ? (q < 0.1 ? 3 : 1) : q < 0.6 ? 3 : 2);
       }
-      for (let k = 0; k < 64; k++) { // vindstreck: bågar runt tratten i alla höjder
-        const yy = TN.fot * (0.15 + 0.85 * ((k * 0.37) % 1)), m = k % 2 ? 1 : -1.5, ut = (3 + (k % 7) * 3) * sk, langd = 8 + (k % 4) * 4, ljus = k % 3 !== 1;
+      for (let k = 0; k < 96; k++) { // vindstreck: bågar runt tratten i alla höjder
+        const yy = TN.fot * (0.15 + 0.85 * ((k * 0.37) % 1)), m = k % 2 ? 1 : -1.5, ut = (4 + (k % 11) * 4.2) * sk, langd = 8 + (k % 4) * 4, ljus = k % 3 !== 1;
         for (let i = 0; i < langd; i++) {
           const R = bredd(yy) + ut, a = v * m + k * 1.3 - i * 0.9 / R * Math.sign(m), si = Math.sin(a); if ((si < 0) !== bak) continue;
           prick(B, x0 + mitt(yy) + Math.cos(a) * R, y0 + yy + si * 2 - i * 0.12, ljus ? 'ben' : 'skiffer', i < langd / 2 ? 3 : 2);
