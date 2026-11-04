@@ -49,6 +49,11 @@ header::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; h
 .nycklar { display: inline-flex; gap: 6px; align-items: center; }
 .nyckel { display: inline-flex; align-items: center; gap: 3px; padding: 1px 5px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); line-height: 18px; }
 .nyckel img { image-rendering: pixelated; vertical-align: middle; }
+.notisruta { position: fixed; z-index: 4; top: calc(var(--topp) + 8px); left: 50%; transform: translateX(-50%); width: min(380px, calc(100vw - 32px)); box-sizing: border-box; padding: 8px 10px; background: var(--panel); color: var(--fg); border: 2px solid #24201d; box-shadow: 0 3px 0 rgba(36,32,29,.35); }
+.notishuvud { display: flex; align-items: center; gap: 6px; padding-bottom: 4px; border-bottom: 2px solid var(--line); } .notishuvud b { flex: 1; } .notisnr { font-size: 12px; color: var(--muted, inherit); }
+.notis-fara { border-color: #a14808; } .notis-dod { border-color: #24201d; } .notis-folk { border-color: #647025; } .notis-framsteg { border-color: #b2921b; } .notis-handel { border-color: #3e5156; }
+.notisrader { margin: 6px 0; padding-left: 18px; max-height: 40vh; overflow-y: auto; } .notisrader li { margin: 2px 0; }
+.notisknappar { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; } .notisknappar button { display: inline-flex; align-items: center; gap: 3px; min-height: 28px; }
 .calknapp { font: inherit; color: inherit; background: none; border: 0; padding: 0 4px; }
 .nyckel.calknapp { padding: 1px 5px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); } .calknapp { border-radius: 3px; cursor: pointer; } .calknapp:hover, .calknapp[aria-expanded="true"] { color: var(--fg); box-shadow: inset 0 -2px var(--accent); }
 .mapwrap { position: fixed; left: 0; right: 0; top: var(--topp); bottom: 0; overflow: hidden; background: #1d2420; }
@@ -453,7 +458,7 @@ body.testing .mapwrap { box-shadow: inset 0 0 0 3px var(--accent); }
 <div class="app">
   <header>
     <h1>Samhällssimulatorn</h1>
-    <div class="cal" aria-live="polite"><b id="calYear">År 1</b><span id="calAge" class="tidsstav">Vårtid</span><span id="calTime"></span><span id="calMotgang" hidden></span><span class="nycklar"><span id="calTemp" class="nyckel"></span><button type="button" id="calRik" class="nyckel calknapp" aria-expanded="false" aria-controls="owned"></button><button type="button" id="calFolk" class="nyckel calknapp"></button></span><span id="sparFel" title="Byn kunde inte sparas i molnet. Den finns kvar i webbläsaren, och spelet försöker igen om en minut." hidden>☁✗</span><span id="molnFel" title="Byn i molnet gick inte att läsa. Den sparas inte där förrän den har lästs, så att den inte skrivs över. Spelet försöker igen, och är byn i molnet nyare tar den över." hidden>☁?</span><span id="lokalFel" title="Byn kunde inte sparas i webbläsaren (lagringen är kanske full eller avstängd). Den sparas i molnet om det går." hidden>⚠</span></div>
+    <div class="cal" aria-live="polite"><b id="calYear">År 1</b><span id="calAge" class="tidsstav">Vårtid</span><span id="calTime"></span><span id="calMotgang" hidden></span><span class="nycklar"><span id="calTemp" class="nyckel"></span><button type="button" id="calRik" class="nyckel calknapp" aria-expanded="false" aria-controls="owned"></button><button type="button" id="calFolk" class="nyckel calknapp"></button><button type="button" id="calNotis" class="nyckel calknapp" aria-expanded="false" aria-controls="notisRuta" hidden></button></span><span id="sparFel" title="Byn kunde inte sparas i molnet. Den finns kvar i webbläsaren, och spelet försöker igen om en minut." hidden>☁✗</span><span id="molnFel" title="Byn i molnet gick inte att läsa. Den sparas inte där förrän den har lästs, så att den inte skrivs över. Spelet försöker igen, och är byn i molnet nyare tar den över." hidden>☁?</span><span id="lokalFel" title="Byn kunde inte sparas i webbläsaren (lagringen är kanske full eller avstängd). Den sparas i molnet om det går." hidden>⚠</span></div>
   </header>
     <section class="mapwrap" aria-label="Karta över byn">
       <div id="map"></div>
@@ -474,6 +479,7 @@ body.testing .mapwrap { box-shadow: inset 0 0 0 3px var(--accent); }
     </section>
     <aside id="vPanel" class="panel vanster" aria-label="Personen och det valda" hidden><button type="button" class="stang" data-stang="v" aria-label="Stäng">✕</button><div id="vBody" class="panelkropp"></div></aside>
     <aside id="hPanel" class="panel hoger" aria-label="Fliken" hidden><button type="button" class="stang" data-stang="h" aria-label="Stäng">✕</button><div id="panelBody" class="panelkropp"></div></aside>
+    <aside id="notisRuta" class="notisruta" role="dialog" aria-label="Notiserna" hidden></aside>
     <aside id="ruta" class="panel ruta" aria-label="Det man tryckte på" hidden><button type="button" class="stang" data-stang="r" aria-label="Stäng">✕</button><div id="rutaBody" class="panelkropp"></div></aside>
     <nav class="tabs" role="tablist" aria-label="Flikarna"></nav>
     <button type="button" class="stenvert" id="installKnapp" aria-label="Inställningar" title="Testläget och ny by">⚙</button>

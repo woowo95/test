@@ -7,11 +7,13 @@ import { GUI } from '../guibilder';
 import { $ } from './hjalp';
 import { s, ui } from './lage';
 import { renderPanel, visa } from './panel';
+import { harNotiser, notisHtml, notisKlick, notisKnapp, notisTitel, notisVal } from './notiser';
 
 interface Ruta {
   html(t: number): string; // symbolen och talet
   title(t: number): string; // det som syns när musen är över eller när man trycker
   klick?(): void;
+  syns?(): boolean; // annars dold (notiserna innan den första kommit)
 }
 const grader = (c: number) => `${c > 0 ? '+' : c < 0 ? '−' : ''}${Math.abs(c)} °C`;
 export const RUTOR: Record<string, Ruta> = {
@@ -34,6 +36,8 @@ export const RUTOR: Record<string, Ruta> = {
     title: t => { const f = living(s), barn = f.filter(p => ageOf(p, t) < ALDER.vuxen).length; return `${f.length} i byn${barn ? `, varav ${barn} barn` : ''}. Tryck för att se folket`; },
     klick: () => { if (ui.hoger === 'folk') { ui.hoger = undefined; renderPanel(true); } else visa('folk'); },
   },
+  // notiserna (steg 5.4.3.2, ui/notiser.ts): brevet med antalet olästa; ett tryck öppnar genomgången under raden
+  calNotis: { html: notisKnapp, title: notisTitel, syns: harNotiser, klick: () => { notisKlick('oppna'); renderPanel(true); } },
 };
 for (const [id, r] of Object.entries(RUTOR)) if (r.klick) $(id).addEventListener('click', r.klick);
 
@@ -48,7 +52,10 @@ export function renderRaden(t = ui.nu) {
   skriv(age, stav(t));
   age.title = `${AGES[k.ai]}, dag ${k.dag} av ${k.av}`;
   age.setAttribute('aria-label', age.title);
-  for (const [id, r] of Object.entries(RUTOR)) { const el = $(id); skriv(el, r.html(t)); el.title = r.title(t); }
+  for (const [id, r] of Object.entries(RUTOR)) { const el = $(id); el.hidden = r.syns ? !r.syns() : false; skriv(el, r.html(t)); el.title = r.title(t); }
+  const ruta = $('notisRuta'), oppen = notisVal.oppen && harNotiser();
+  ruta.hidden = !oppen; $('calNotis').setAttribute('aria-expanded', String(oppen));
+  if (oppen) skriv(ruta, notisHtml());
 }
 
 // vågbandet (Björns ja till g_vag): rutan på 8 × 7 punkter upprepas över hela bredden, i hel skala, på grundens beige

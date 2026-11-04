@@ -6,6 +6,7 @@ import * as SIM from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import { setItems, setMat, setFood, kor, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank, utanWebblasare } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
+import { notisHtml, notisKlick, notisKnapp, notisVal } from '../../ui/notiser';
 import { person } from '../../ui/flikar/person';
 import { gaster } from '../../ui/gaster';
 import { filt as filtFlik } from '../../ui/flikar/filt';
@@ -1609,6 +1610,38 @@ SCENARIER.kronikalista = {
       [`personen: bara raderna där hen står med (${a.name} ${rader(medA)}, ${b.name} ${rader(medB)})`, rader(medA) === K.filter(r => r[1].includes(a.name)).length && rader(medB) === K.filter(r => r[1].includes(b.name)).length && medB.includes(`${b.name}</button> och`) && !medB.includes('hittade en sten')],
       ['ett år visar bara det årets rader', rader(iAr) === K.filter(r => SIM.kalender(s, r[0]).ar === SIM.kalender(s, s.now).ar).length && rader(iAr) < rader(alla)],
       [`Allt visar händelseloggen (${rader(allt)} rader)`, rader(allt) === s.log.length && s.log.length > K.length],
+    ];
+  },
+};
+
+SCENARIER.notislista = {
+  text: 'Genomgången av notiserna (steg 5.4.3.2, ui/notiser.ts): brevet i raden överst visar antalet olästa, rutan visar en notis i taget (den viktigaste först) med namnen som knappar, nästa och föregående, ta bort och ta bort alla (efter ett ja), och den som visats är läst. Bara gränssnittet.',
+  kor: () => {
+    utanWebblasare();
+    const s = createState(6, START);
+    for (let i = 0; i < STEG_DYGN / 4; i++) step(s, BEAT);
+    setByn(s);
+    const [a, b] = living(s);
+    SIM.notis(s, 'byte', 'Ett byte med handlaren.');
+    SIM.notis(s, 'fodd', `${a.name} fick ett barn.`, [a.id]);
+    SIM.notis(s, 'dod', `${b.name} dog.`, [b.id], { x: 5, y: 5 });
+    const knapp = notisKnapp();
+    Object.assign(notisVal, { oppen: false, nr: undefined, fraga: false });
+    notisKlick('oppna');
+    const forsta = notisHtml(), olastaEfter = SIM.olasta(s);
+    notisKlick('nasta'); const andra = notisHtml();
+    notisKlick('forra'); const igen = notisHtml();
+    notisKlick('nasta'); notisKlick('nasta'); const sista = notisHtml();
+    notisKlick('bort'); const efterBort = s.notiser!.lista.length, efter = notisHtml();
+    notisKlick('alla'); const fraga = notisHtml(), kvar = s.notiser!.lista.length;
+    notisKlick('allaJa');
+    return [
+      [`brevet visar tre olästa (${knapp.replace(/<[^>]*>/g, '').trim()})`, / 3$/.test(knapp)],
+      ['rutan visar den viktigaste först, döden, med namnet som knapp och platsen', forsta.includes('Död i byn') && forsta.includes(`data-id="${b.id}"`) && forsta.includes('data-notis="plats"') && forsta.includes('1 / 3')],
+      [`den som visats är läst (${olastaEfter} olästa kvar)`, olastaEfter === 2],
+      ['nästa och föregående bläddrar', andra.includes('2 / 3') && andra.includes(a.name) && igen.includes('1 / 3') && sista.includes('3 / 3') && sista.includes('Byte med handlaren')],
+      ['ta bort tar bort den som visas och visar en annan', efterBort === 2 && efter.includes('2 / 2')],
+      ['ta bort alla frågar först, och sedan är alla borta och rutan stängd', fraga.includes('data-notis="allaJa"') && kvar === 2 && s.notiser!.lista.length === 0 && !notisVal.oppen],
     ];
   },
 };
