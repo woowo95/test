@@ -15,6 +15,7 @@ import { djur } from './flikar/djur';
 import { grannar } from './flikar/grannar';
 import { byn } from './flikar/byn';
 import { $, hjalpKlick } from './hjalp';
+import { satOmRita } from './graf';
 import { piles, s, ui } from './lage';
 import { renderPorts } from './portratt';
 import { bandHtml, stenHtml } from './runstenar';
@@ -90,6 +91,7 @@ function skriv(sd: Sida, id: FlikId | undefined, force: boolean) {
   if (!force && html === sd.html) return;
   sd.html = html; sd.body.innerHTML = html;
 }
+satOmRita(() => renderPanel(true));
 export function renderPanel(force = false) {
   if (ui.hoger && (ALLA[ui.hoger].syns?.() ?? true) === false) ui.hoger = undefined;
   for (const b of nav.querySelectorAll<HTMLButtonElement>('button')) {

@@ -10,12 +10,13 @@ import { TORST } from './torst';
 // timmarna ihop till ett värde per dygn (ett år i spelet), så att historiken räcker till byns början utan att växa
 // mycket. Viktiga händelser sparas för alltid i krönikan. Historiken sparas i egna delar, en per vecka (serializeParts
 // i steg.ts). Byn beror aldrig på den (scenariot historik): simuleringen läser bara krönikans längd, som väljer textens
-// variant i kronikaBer (berattelser.ts); graferna (steg 5.3.1) läser resten.
+// variant i kronikaBer (berattelser.ts); graferna (steg 5.4.1, ui/graf.ts) läser resten med historikSerie.
 // hur: 'snitt' = medelvärdet över dygnet när timmarna slås ihop, 'sist' = det sista värdet (det som räknas upp)
-const HISTORIK_TAL: { id: string; namn: string; hur: 'snitt' | 'sist'; varde: (s: State) => number }[] = [
+export const HISTORIK_TAL: { id: string; namn: string; hur: 'snitt' | 'sist'; varde: (s: State) => number }[] = [
   { id: 'folk', namn: 'Invånare', hur: 'snitt', varde: s => living(s).length },
   { id: 'mat', namn: 'Mat i förrådet', hur: 'snitt', varde: s => foodOf(s) },
   { id: 'tra', namn: 'Ved i förrådet', hur: 'snitt', varde: s => amountOf(s, 'ved') },
+  { id: 'eld', namn: 'Trä på elden', hur: 'snitt', varde: s => s.fire.fuel }, // steg 5.4.1: den första lägerelden
   { id: 'humor', namn: 'Humör', hur: 'snitt', varde: s => avgMood(s, 0) },
   { id: 'hunger', namn: 'Mycket hungriga', hur: 'snitt', varde: s => living(s).filter(p => p.hunger < 0.15).length },
   { id: 'torst', namn: 'Mycket törstiga', hur: 'snitt', varde: s => living(s).filter(p => p.torst < TORST.farligt).length }, // steg 2.4.1
@@ -59,6 +60,18 @@ export function historikSteg(s: State) {
 function omordna(h: Historik) {
   const ids = HISTORIK_TAL.map(t => t.id), flytta = (r: number[]) => [r[0], ...ids.map(id => { const i = h.tal.indexOf(id); return i < 0 ? NaN : r[i + 1]; })];
   h.tim = h.tim.map(flytta); h.dygn = h.dygn.map(flytta); h.tal = ids;
+}
+
+// en serie för graferna (steg 5.4.1): [tid, värde] från byns början till nu, ett värde per dygn för det som är äldre än en
+// vecka (mitt på dygnet; dygnen slås ihop efter dygnsgränsen i UTC) och sedan ett per timme. Ett tal som inte fanns då hoppas över
+export function historikSerie(s: State, id: string): [number, number][] {
+  const h = s.hist;
+  if (!h) return [];
+  const i = h.tal.indexOf(id) + 1, ut: [number, number][] = [];
+  if (i < 1) return ut;
+  for (const r of h.dygn) if (Number.isFinite(r[i])) ut.push([r[0] + DAY / 2, r[i]]);
+  for (const r of h.tim) if (Number.isFinite(r[i])) ut.push([r[0], r[i]]);
+  return ut;
 }
 
 // sparningen: historiken delas i en del per vecka sedan byns början, så att varje del ryms i ett dokument

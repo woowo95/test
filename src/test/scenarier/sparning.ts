@@ -26,6 +26,7 @@ SCENARIER.historik = {
     const ka = cloneState(s), kb = cloneState(s), p0 = living(s)[0];
     kb.hist!.kronika = kb.hist!.kronika.slice(0, 1);
     for (const k of [ka, kb]) for (let n = 0; n < 8; n++) SIM.kronikaBer(k, 'k_forstaEld', p0.id + n, SIM.personFalt(p0));
+    const eldSerie = SIM.historikSerie(s, 'eld');
     const sammaText = isDeepStrictEqual(ka.hist!.kronika.slice(-8).map(r => r[1]), kb.hist!.kronika.slice(-8).map(r => r[1]));
     return [
       [`en rad i timmen den senaste veckan (${h.tim.length} timmar)`, timOk],
@@ -37,6 +38,8 @@ SCENARIER.historik = {
       ['delarna blir samma historik igen', isDeepStrictEqual(ater, JSON.parse(serialize(s)).hist)],
       ['historiken ändrar inget i byn', JSON.stringify(utan) === serialize(t)],
       ['krönikans text beror inte på hur lång krönikan är', sammaText],
+      // graferna (steg 5.4.1) läser serien: ett värde per dygn och sedan per timme, i tidsordning, från byns början till nu
+      [`grafens serie för veden på elden går från byns början till nu (${eldSerie.length} punkter)`, eldSerie.length === h.dygn.length + h.tim.length && eldSerie.every((p, k) => k === 0 || p[0] > eldSerie[k - 1][0]) && eldSerie[0][0] < s.founded + DAY && eldSerie[eldSerie.length - 1][1] === sist[i('eld')]],
     ];
   },
 };
