@@ -86,7 +86,7 @@ SCENARIER.sportsaker = {
     SIM.newTing(s, 'mal', 1, a.id);
     let matcher = 0;
     for (let i = 0; i < 6; i++) {
-      klockan(s, 10);
+      klockan(s, 10); tandEld(s); // elden brinner, så att ingen går från matchen för att tända den
       match(s, 'kast', [a, b]); kor(s, 2); matcher++;
       if (i < 5) s.now += 20 * SIM.HOUR;
     }

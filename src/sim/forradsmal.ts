@@ -15,7 +15,7 @@ import { Pabud, pabud } from './styre';
 import { ALDER, ageOf, living } from './folk';
 import { clamp } from './slump';
 import { sportFor } from './sport';
-import { STATIONER, StationDef, StationSlag, bordBrist, forvarBrist, harStation, pyntBrist, tommaPlatser } from './stationer';
+import { STATIONER, StationDef, StationSlag, bordBrist, forvarBrist, harStation, isKlar, pyntBrist, stationerOf, tommaPlatser } from './stationer';
 import { brasaBrist } from './brasor';
 import { utanBadd } from './byggnader';
 import { latrinBrist } from './smuts';
@@ -184,8 +184,10 @@ export const villAv = (s: State, g: string) => REDSKAPMAL[g](s);
 // en station av sorten k: bufferten är en färdig. Halmbäddarna (det byn kan ha flera av, steg 2.2.5): en per den som sover
 // under tak; borden (steg 2.2.15) en plats per invånare; förvaringen, pyntet, brasorna, latrinen och torkställningen efter
 // sina egna mått. Bristen är hur stor del av bufferten som saknas (0 till 1), som projektets brist (projekt.ts)
+// En halvbyggd station (en kista, ett pynt) görs klar även när ingen längre vill ha en ny: bristen är då 1
 export function stationBrist(s: State, k: StationSlag) {
   const d: StationDef = STATIONER[k];
+  if (!d.brasa && stationerOf(s).some(t => t.k === k && !isKlar(t))) return 1;
   return d.pynt ? pyntBrist(s, k) : d.brasa ? brasaBrist(s) : d.sover ? (living(s).length ? utanBadd(s) / living(s).length : 0) : d.platser ? bordBrist(s, k)
     : d.forvar ? forvarBrist(s, k) : d.gor.includes('toa') ? latrinBrist(s) : d.gor.includes('torka') ? torkBrist(s) : harStation(s, k) ? 0 : 1;
 }
