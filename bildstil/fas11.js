@@ -1,11 +1,9 @@
-// fas 11: konceptbilder av världskartan (Björn 2026-11-05: "kan vi börja jobba på konceptbilder till världskartan").
-// Idéerna står i designdokumentet under Flera samhällen, tribut och diplomati (Världen och grannbyarna), steg 11.1.9.
-// En liten värld genereras ur ett frö, som i spelet: höjd och fukt ur brus, hav i väster och söder, berg i nordost,
-// floder från bergen till havet, sjöar, skog och myr, och platserna (byarna, läger, rövarläger, ruiner, en helig
-// plats, en gravhög och en runsten). Samma värld ritas i tre stilar. En ruta på världskartan (8 × 8 punkter här) är en
-// bykarta; den egna byn har en ring runt sig.
-// Kortet f11_varldskarta_o (Björn: kartan ska kännas större, med hav runt den stora ön i mitten) ritar en större värld
-// med samma kod: dubbelt så stor åt varje håll, en ö mitt i havet och fler platser. De första kartorna ritas som förut.
+// fas 11: konceptbilden av världskartan, steg 11.1.9 (Världen och grannbyarna i designdokumentet).
+// En liten värld genereras ur ett frö, som i spelet: en stor kontinent i mitten och fyra öar ute vid hörnen, höjd och fukt
+// ur brus, floder från bergen till havet, sjöar, skog och myr, och platserna (byarna, läger, rövarläger, ruiner, en helig
+// plats, en gravhög och en runsten). En ruta på världskartan (8 × 8 punkter här) är en bykarta; den egna byn har en ring.
+// Kartan ritas med bläck på pergament, med ett runt gradnät som samlas i en kompassros, ett runband runt kanten och en
+// stämpel, och papperet är lite böjt i kanterna och hålls av två händer. Det är den karta Björn valde; de andra är borttagna.
 (() => {
   const RUTA = 8, FRO = 11;
   const hash = (a, b, c = 0) => { let n = (a * 374761393 + b * 668265263 + c * 1274126177) | 0; n = Math.imul(n ^ (n >>> 13), 1274126177); return ((n ^ (n >>> 16)) >>> 0) / 4294967296; };
@@ -257,7 +255,6 @@
   }
 
   // ---------- version 1: skinnkartan, med bläck på ett spänt skinn ----------
-  const skinn = B => skinnRitning(B, false);
   function skinnRitning(B, papper, gron = false, ext = {}) {
     const P = B.P, V = varld(), cx = W / 2, cy = H / 2;
     const BLACK = P.i('kol', 1), HAVL = P.i('skiffer', 1), EKO = P.i('skiffer', 2);
@@ -314,7 +311,7 @@
     return ut;
   }
   // runbandet med bläck: en ram av två bläcklinjer med runor emellan, ett streck där varje linje i gradnätet möter bandet och
-  // en knut i varje hörn (som runbandet på träkartan, version 3)
+  // en knut i varje hörn, som på en runsten
   function runband(B, BLACK, streck = true) {
     const P = B.P, R = 10;
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -399,144 +396,17 @@
     }
   }
 
-  // ---------- version 2: färgkartan, i spelets färger med en flätad ram ----------
-  function farg(B, bla = false) {
-    const P = B.P, V = varld();
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-      const i = y * W + x, t = V.typ[i], g = hash(x, y, 5), a = V.avst[i];
-      let c;
-      if (t === HAV && bla) c = a <= 2 ? P.i('skiffer', 3) : a <= 6 ? P.i('skiffer', 2) : a <= 12 ? (bayer(x, y) < (a - 6) / 7 ? P.i('skiffer', 1) : P.i('skiffer', 2)) : a <= 20 ? P.i('skiffer', 1) : bayer(x, y) < 0.5 ? P.i('skiffer', 0) : P.i('skiffer', 1); // blått hav, mörkare ju djupare
-      else if (t === HAV) c = a <= 2 ? P.i('skiffer', 2) : a <= 7 ? P.i('skiffer', 1) : a <= 14 ? P.i('barr', 1) : P.i('barr', 0);
-      else if (t === SJO) c = a <= 1 || bla ? P.i('skiffer', 2) : P.i('skiffer', 1);
-      else if (t === BERG) c = g < 0.2 ? P.i('skiffer', 1) : P.i('skiffer', 2);
-      else if (t === SKOG) c = g < 0.25 ? P.i('barr', 1) : P.i('barr', 2);
-      else if (t === MYR) c = (x + y * 2) % 5 === 0 ? P.i('skiffer', 1) : g < 0.3 ? P.i('oliv', 1) : P.i('oliv', 2);
-      else c = g < 0.15 ? P.i('oliv', 1) : g > 0.9 ? P.i('oliv', 3) : P.i('oliv', 2);
-      if (t !== HAV && t !== SJO && V.typ[i - 1] === HAV || t !== HAV && t !== SJO && [1, -1, W, -W].some(d => V.typ[i + d] === HAV)) c = P.i('senap', 2); // stranden
-      if ((t === HAV) && a > 3 && g < 0.03) c = bla ? P.i('skiffer', 3) : P.i('skiffer', 2); // vågor
-      if (V.elv[i]) c = P.i('skiffer', 3);
-      B.satt(x, y, c);
-    }
-    for (let gy = 3; gy < H - 3; gy += 5) for (let gx = 3; gx < W - 3; gx += 5) {
-      const x = gx + Math.floor(hash(gx, gy, 1) * 3), y = gy + Math.floor(hash(gx, gy, 2) * 3), i = y * W + x;
-      if (V.typ[i] === SKOG && !V.elv[i]) glyf(B, SYM.gran, { a: P.i('barr', 3), c: P.i('jord', 0) }, x, y);
-    }
-    for (let gy = 4; gy < H - 4; gy += 6) for (let gx = 4; gx < W - 4; gx += 7) {
-      const x = gx + Math.floor(hash(gx, gy, 1) * 4), y = gy + Math.floor(hash(gx, gy, 2) * 3), i = y * W + x;
-      if (V.typ[i] === BERG) glyf(B, ['...b...', '..bbo..', '.oaaco.', '.oaacco', 'oaaacco'], { o: P.i('kol', 1), a: P.i('skiffer', 3), b: P.i('ben', 3), c: P.i('skiffer', 0) }, x, y);
-    }
-    // rutnätet där en ruta är en bykarta, prickat på land
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if ((x % RUTA === 0 || y % RUTA === 0) && (x + y) % 2 === 0 && V.typ[y * W + x] !== HAV) B.morka(x, y);
-    const egen = V.platser.find(p => p.sort === 'egen');
-    for (let k = 0; k <= RUTA; k++) for (const [x, y] of [[egen.rx * RUTA + k, egen.ry * RUTA], [egen.rx * RUTA + k, egen.ry * RUTA + RUTA], [egen.rx * RUTA, egen.ry * RUTA + k], [egen.rx * RUTA + RUTA, egen.ry * RUTA + k]]) B.satt(x, y, P.i('senap', 3));
-    for (const [x, y] of V.hav) glyf(B, SYM.skepp, { o: P.i('kol', 0), a: P.i('ben', 2) }, x, y);
-    platserna(B, V, { kontur: P.i('kol', 0), by: P.i('rost', 2), egen: P.i('senap', 3), ljus: P.i('jord', 3), mork: P.i('jord', 0), sten: P.i('ben', 1), helig: P.i('senap', 2), talt: P.i('jord', 3), taltM: P.i('jord', 1), vag: P.i('jord', 1), sjovag: P.i('ben', 2), ring: P.i('senap', 3), djur: P.i('jord', 1), stig: P.i('jord', 0) });
-    // ramen: ett flätat band
-    const R = 6;
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-      const k = Math.min(x, y, W - 1 - x, H - 1 - y); if (k >= R) continue;
-      const u = (x + y) % 8, v = (x - y + 800) % 8, ovan = ((Math.floor((x + y) / 8) + Math.floor((x - y + 800) / 8)) % 2) === 0;
-      let c = P.i('jord', 0);
-      if (k === 0 || k === R - 1) c = P.i('kol', 0);
-      else if (u < 2 && (ovan || v >= 2)) c = u === 0 ? P.i('senap', 3) : P.i('senap', 1);
-      else if (v < 2) c = v === 0 ? P.i('senap', 2) : P.i('senap', 0);
-      B.satt(x, y, c);
-    }
-  }
-
-  // ---------- version 3: ristad i trä, med ett runband som på en runsten ----------
-  function tra(B, ny = false) {
-    const P = B.P, V = varld(), R = 10;
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-      const i = y * W + x, t = V.typ[i], adr = fbm(x / 60, y / 2.5, 41, 3), vat = t === HAV || t === SJO;
-      let c = adr > 0.66 ? P.i('jord', 2) : P.i('jord', 3);
-      if (vat) {
-        c = adr > 0.66 ? P.i('kol', 2) : P.i('jord', 0);
-        if (V.avst[i] > 2 && (y + Math.round(Math.sin(x / 4) * 1.5)) % 6 === 0) c = P.i('jord', 1);
-      } else {
-        const upp = V.vatten(i - W) || V.vatten(i - 1), ner = V.vatten(i + W) || V.vatten(i + 1);
-        if (upp) c = P.i('senap', 3); else if (ner) c = P.i('kol', 1);
-        if (t === MYR && (x * 3 + y) % 7 === 0) c = P.i('kol', 2);
-      }
-      if (V.elv[i]) c = V.elv[i - W] ? P.i('kol', 1) : P.i('kol', 2);
-      B.satt(x, y, c);
-    }
-    for (let gy = 4; gy < H - 4; gy += 6) for (let gx = 4; gx < W - 4; gx += 7) {
-      const x = gx + Math.floor(hash(gx, gy, 1) * 4), y = gy + Math.floor(hash(gx, gy, 2) * 3), i = y * W + x;
-      if (V.typ[i] === BERG) glyf(B, ['...o...', '..obo..', '.ob.co.', 'ob...co'], { o: P.i('kol', 1), b: P.i('senap', 3), c: P.i('jord', 0) }, x, y);
-      else if (V.typ[i] === SKOG && !V.elv[i]) glyf(B, ['.o.', 'o.o', '.o.', '.o.'], { o: P.i('kol', 2) }, x, y);
-    }
-    if (o) for (const [x, y] of V.hav) glyf(B, SYM.skepp, { o: P.i('kol', 1), a: P.i('jord', 2) }, x, y);
-    platserna(B, V, { kontur: P.i('kol', 0), by: P.i('senap', 2), egen: P.i('senap', 3), ljus: P.i('ben', 3), mork: P.i('jord', 0), sten: P.i('ben', 1), helig: P.i('senap', 2), talt: P.i('senap', 1), taltM: P.i('jord', 0), vag: P.i('kol', 2), sjovag: P.i('kol', 2), ring: P.i('senap', 3), namn: ny ? null : P.i('kol', 0), stig: P.i('kol', 1) });
-    // runbandet: en orm runt kanten med runor i, huvudet nere till vänster och svansen nere till höger
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-      const k = Math.min(x, y, W - 1 - x, H - 1 - y); if (k >= R) continue;
-      let c = k === 0 ? P.i('kol', 0) : k === 1 || k === R - 1 ? P.i('kol', 1) : k === 2 || k === R - 2 ? P.i('jord', 3) : P.i('ben', 1);
-      B.satt(x, y, c);
-    }
-    const RUN = P.i('kol', 1);
-    const nv = Math.floor((W - 28) / 4), nl = Math.floor((H - 28) / 4) - 1;
-    runrad(B, 14, 3, nv, 1, RUN); runrad(B, 14, H - 8, nv, 2, RUN);
-    runrad(B, 2, 14, nl, 4, RUN, true); runrad(B, W - 8, 14, nl, 5, RUN, true);
-    // en knut i varje hörn
-    for (const [x, y] of [[5, 5], [W - 5, 5], [5, H - 5], [W - 5, H - 5]]) glyf(B, ['.ooo.', 'oaoao', 'ooboo', 'oaoao', '.ooo.'], { o: P.i('kol', 0), a: P.i('senap', 2), b: P.i('senap', 3) }, x, y);
-  }
-
   // den vänstra handen: o kontur, 0–3 huden från djup skugga till ljus, n och m nageln; kolumn HAND_KANT är papperets kant.
   // Tummen med nageln och leden ligger på framsidan, pek- och långfingret går runt kanten och handleden snett ut ur bilden.
   const HAND = ["...................................................................", "...................................................................", "...................................................................", "...................................................................", "................................................oooo...............", ".............................................ooo333ooo.............", "............................................o333333333o............", "...........................................o33333332332o...........", "..........................................o3333222222222o..........", "..........................................o3332222222222o..........", "....................oooooo...............o333211111122221o.........", ".................ooo333333..............o333311mmmm112211o.........", "..............ooo333333333.............oo3331nmmmmmm12111o.........", "...........ooo333333332222.............o33321nnnmmmm12111o.........", ".........ooo33333332222222............o33321nnnmmmmm11111o.........", "......ooo33333333222222222...........oo33321nnmmmmmm11111o.........", "...ooo33333333222222222222...........o333221nnmmmmmm1111o..........", ".oo33333333222222222222222..........o3332221nmmmmmmm1111o..........", "o3333333222222222222222222.........o33332221nmmmmmm1111o...........", "33333322222222222222222222.........o33322221mmmmmm11111o...........", "33322222222222222222222222........o3332222221mmm111111o............", "32222222222222222222222222.......o33332222222111221111o............", "22222222222222222222222222......oo3332222222222221111o.............", "22222222222222222222222222......o33322222222222221111o.............", "22222222222222222222222221.....o33322222222222221111o..............", "22222222222222222222222111....oo33322222222222221111o..............", "22222222222222222222211111....o33022222222222221111o...............", "22222222222222222211111111...o333000222222222221111o...............", "2222222222222222111111111o..oo33320000222222221111o................", "2222222222222211111111ooo3..o333222200022222221111o................", "22222222222211111111ooo333.o333222222200022221111o.................", "222222222211111111oo333223o3333222222220000221111o.................", "2222222211111111oo33222222o333222222222220001111o..................", "21111111111111oo322222222o3332222222222222200011o..................", "111111111111oo2222222222o3333222222222222221101o...................", "1111111111oo22222222222oo3332222222222222221111o...................", "oo11111ooo2222222222222o3332222222222222221111o....................", "o3ooooo222222222222222o33322222222222222221111o....................", "333322222222222222222oo3332222222222222221111o.....................", "333222222222222222222o33322222222222222221111o.....................", "33222222222222222222o33322222222222222221111o......................", "3322222222222222222o333322222222222222221111o......................", "3322222222222222222o33322222222222222221111o.......................", "322222222222222222o333222222222222222221111o.......................", "322222222222222222o33322222222222222221111o........................", "22222222222222221oo33222222222222222221111o........................", "22222222222222111o33322222222222222221111o.........................", "2222222222221111oo33222222222222222221111o.........................", "o222211221111111oo3322222222222222221111oo.........................", "oo1111111111111o3o3322222222222222221111oo.........................", "2oo11111111111oo33o32222222222222221111o22o........................", "22ooo111111ooo2o33o22222222222222221111o11o........................", "2222oooooooo222o33o2222222222222221111o221o........................", "22222222222222o3332o222222222222211111o221o........................", "22222222222222o3332o22222122222211111o2211o........................", "22222222222222o33222o211211111111111oo2111o........................", "22222222222222o332222oo111111111111oo22111o........................", "22222222222222o3322222oo111111111oo2222111o........................", "22222222222222o332222222oooo11oooo22222111o........................", "222222222222222o322222222222oo222222221111o........................", "222222222222222o22222222222222222222221111o........................", "222222222222222o22222222222222222222221111o........................", "222222222222222o2222222222222222222221111o.........................", "2222222222222222o222222222222222222221111o.........................", "2222222222222222o22222222222222222221111o..........................", "22222222222222222o2222222222222222211111o..........................", "22222222222222222oo22222222222222211111o...........................", "222222222222222222o2112111222221111111oo...........................", "2222222222222222222o11111111111111111oo............................", "22222222222222222222oo11111111111111oo.............................", "222222222222222222222oo111111111111oo..............................", "22222222222222222222222oo1111111ooo................................", "2222222222222222222222211oooooooo..................................", "222222222222222222222221111........................................", "222222222222222222222221111........................................", "22222222222222222222221111o........................................", "22222222222222222222221111o........................................", "22222222222222222222211111o........................................", "2222222222222222222221111o.........................................", "2222222222222222222211111o.........................................", "222222222222222222211111o..........................................", "22222222222222222221111oo..........................................", "22222222222222222211111o...........................................", "2222222222222222211111oo...........................................", "222222222222222111111oo............................................", "222222222222221111111o.............................................", "12222222222211111111o..............................................", "1111222221111111111o...............................................", "111111111111111111o................................................", "1111111111111111oo.................................................", "111111111111111oo..................................................", "1111111111111ooo...................................................", "ooo111111oooooo....................................................", "22ooooooooo11o.....................................................", "2222222221111o.....................................................", "222222221111o......................................................", "222222221111o......................................................", "22222221111o.......................................................", "2222221111oo.......................................................", "2222221111o........................................................", "222221111o.........................................................", "222221111o........................................................."], HAND_KANT = 26;
-  // ---------- kartan på ett riktigt papper som två händer håller ----------
-  // stil 'black': skinnkartans bläck direkt på papperet; 'farg': den målade kartan; 'tryck': träkartan tryckt som ett träsnitt.
-  // s är skalan på händerna och kanterna. Papperet har vikningar, ett hundöra, gulnade kanter och en fläck.
-  function iHander(stil, s) {
-    const pm = Math.round(6 * s), sid = 18, topp = 4, botten = 4;
-    const PW = W + 2 * pm, PH = H + 2 * pm, BW = PW + 2 * sid, BH = PH + topp + botten, x0 = sid, y0 = topp;
-    const rita = B => {
-      const P = B.P, pap = new Uint8Array(BW * BH), hud = [P.i('jord', 1), P.i('jord', 2), P.i('jord', 3), P.i('ben', 1)], KONTUR = P.i('kol', 0);
-      // marken långt nedanför: mörk skogsbotten
-      for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) { const g = hash(x, y, 61); B.satt(x, y, g < 0.05 ? P.i('jord', 0) : g < 0.13 ? P.i('kol', 1) : P.i('kol', 0)); }
-      // papperet: ojämna kanter, ett hundöra uppe till höger
-      const c = Math.round(11 * s), hundora = (x, y) => { const a = x0 + PW - 1 - x, b = y - y0; return a >= 0 && b >= 0 && a + b < c; };
-      const pa = (x, y) => x >= x0 && y >= y0 && x < x0 + PW && y < y0 + PH && !hundora(x, y) && !((x === x0 || y === y0 || x === x0 + PW - 1 || y === y0 + PH - 1) && hash(x, y, 62) < 0.25);
-      for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) if (pa(x, y)) { pap[y * BW + x] = 1; if (!pa(x + 2, y + 3)) B.satt(x + 2, y + 3, P.i('kol', 0)); } // skuggan på marken
-      for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) {
-        if (!pap[y * BW + x]) continue;
-        const g = hash(x, y, 63), k = Math.min(x - x0, y - y0, x0 + PW - 1 - x, y0 + PH - 1 - y);
-        let f = g < 0.05 ? P.i('ben', 3) : g > 0.97 ? P.i('ben', 1) : P.i('ben', 2);
-        if (k < 4 && bayer(x, y) < (4 - k) / 4 * 0.7) f = P.i('senap', 3); // gulnat längs kanten
-        B.satt(x, y, f);
-      }
-      kartanPa(B, stil, x0 + pm, y0 + pm, pap, BW, false);
-      // vikningarna: kartan har legat hopvikt i tre delar på bredden och två på höjden
-      const vx = [x0 + Math.round(PW / 3), x0 + Math.round(PW * 2 / 3)], vy = y0 + Math.round(PH / 2);
-      for (const cx of vx) for (let y = y0; y < y0 + PH; y++) if (pap[y * BW + cx]) { B.morka(cx, y); if (pap[y * BW + cx + 1] && B.get(cx + 1, y) === P.i('ben', 2)) B.satt(cx + 1, y, P.i('ben', 3)); }
-      for (let x = x0; x < x0 + PW; x++) if (pap[vy * BW + x]) { B.morka(x, vy); if (B.get(x, vy + 1) === P.i('ben', 2)) B.satt(x, vy + 1, P.i('ben', 3)); }
-      for (const cx of vx) for (let d = -2; d <= 2; d++) if (hash(cx, d, 65) < 0.6) B.satt(cx + d, vy + (d & 1), P.i('ben', 1)); // slitet där vikningarna korsas
-      // en fläck, en ring som efter en kopp
-      const fx = x0 + Math.round(PW * 0.82), fy = y0 + Math.round(PH * 0.8), fr = 7 * s;
-      for (let y = fy - fr - 2; y <= fy + fr + 2; y++) for (let x = fx - fr - 2; x <= fx + fr + 2; x++) { const d = Math.hypot(x - fx, y - fy); if (Math.abs(d - fr) < 0.8 && pap[y * BW + x] && hash(x, y, 66) < 0.8) B.morka(x, y); }
-      // hundörat: hörnet vikt framåt, papperets baksida syns
-      for (let y = y0; y < y0 + c + 1; y++) for (let x = x0 + PW - c - 1; x < x0 + PW; x++) {
-        const a = x0 + PW - 1 - x, b = y - y0; if (a > c || b > c || a + b < c) continue;
-        B.satt(x, y, a === c || b === c ? P.i('kol', 1) : a + b === c ? P.i('ben', 3) : P.i('ben', 1));
-        if (a + b === c && !pap[(y + 1) * BW + x - 1]) B.satt(x - 1, y + 1, P.i('kol', 0));
-      }
-      handerna(B, pap, BW, x0, x0 + PW - 1, y0 + Math.round(PH / 2) - 40);
-    };
-    return { w: BW, h: BH, rita };
-  }
   // kartan i stilen stil, med övre vänstra hörnet i (X0, Y0), där papperet finns (pap); ny: gröna skogar och blått vatten
   function kartanPa(B, stil, X0, Y0, pap, BW, ny, ext = {}) {
     const P = B.P, M = Bild(W, H, P);
-    if (stil === 'black') skinnRitning(M, true, ny, ext); else if (stil === 'farg') farg(M, ny); else tra(M, ny);
+    skinnRitning(M, true, ny, ext);
     if (ny) namnen(M, stil);
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const v = M.get(x, y), X = X0 + x, Y = Y0 + y; if (v < 0 || !pap[Y * BW + X]) continue;
-      if (stil === 'tryck') { // träsnittet: det som är upphöjt i brädan tar färgen, det urskurna blir papper; trycket är lite ojämnt
-        const r = v >> 2, t = v & 3;
-        if (r === 0 || (r === 1 && t === 0)) { if (hash(X, Y, 64) > 0.06) B.satt(X, Y, P.i('kol', 1)); }
-        else if (r === 1 && t === 1) B.satt(X, Y, P.i('ben', 1));
-      } else B.satt(X, Y, v);
+      B.satt(X, Y, v);
     }
   }
   // händerna, ritade punkt för punkt (HAND): tummen ligger på framsidan, fingrarna går runt kanten bakom och handleden går ut
@@ -622,59 +492,8 @@
     }
   }
 
-  // ---------- kartan på en utrullad pergamentrulle som två händer håller ----------
-  // Papperet är rullat ihop i var ände, utan stav: rullarna är papperet självt, jämnt runda och ljusa från vänster, och i den
-  // övre änden syns varven som en spiral. Händerna håller om rullarna med tummen på framsidan, och papperet mellan rullen och
-  // kartan är så brett att tummen ligger på papperet och inte över kartan. Papperet är lite gulnat i fläckar och längs
-  // kanterna och skuggat där det böjer sig in i rullarna. Skogen är gröna ytor på bläckkartan, vattnet är blått på den
-  // målade kartan, och byarna och landmassorna har namn.
-  const TUMME = Math.max(...HAND.map(rad => rad.replace(/\.+$/, '').length)) - HAND_KANT; // hur långt tummen når innanför kanten
-  // ext.smal: bara ett varv papper kvar i var rulle, så att rullarna blir smala; ext.gradnat och ext.runband: se skinnRitning
-  function iRulle(stil, s, ext = {}) {
-    const pm = Math.round(6 * s), r = ext.smal ? Math.max(3, Math.round(2.5 * s)) : Math.round(6 * s), D = 2 * r + 1, hE = Math.max(2, Math.round(r * 0.45)), sid = 18;
-    const mx = Math.max(pm, TUMME - D + 3 - (ext.runband ? 12 : 0)); // papperet mellan rullen och kartan; med runbandet vilar tummen på bandet
-    const PW = W + 2 * mx + 2 * D, PH = H + 2 * pm, BW = PW + 2 * sid, BH = PH + 2 * hE + 10, x0 = sid, y0 = hE + 5;
-    const cxV = x0 + r, cxH = x0 + PW - 1 - r; // rullarnas mitt
-    const rita = B => {
-      const P = B.P, pap = new Uint8Array(BW * BH), KONTUR = P.i('kol', 0);
-      for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) { const g = hash(x, y, 61); B.satt(x, y, g < 0.05 ? P.i('jord', 0) : g < 0.13 ? P.i('kol', 1) : P.i('kol', 0)); }
-      // papperet mellan rullarna: lite ojämnt i över- och underkanten
-      const pa = (x, y) => x >= cxV && x <= cxH && y >= y0 && y < y0 + PH && !((y === y0 || y === y0 + PH - 1) && hash(x, y, 62) < 0.3);
-      const paRulle = (x, y) => (Math.abs(x - cxV) <= r || Math.abs(x - cxH) <= r) && y >= y0 - hE && y < y0 + PH + hE;
-      for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) if (pa(x, y) || paRulle(x, y)) { if (pa(x, y)) pap[y * BW + x] = 1; if (!pa(x + 2, y + 3) && !paRulle(x + 2, y + 3)) B.satt(x + 2, y + 3, P.i('kol', 0)); } // skuggan på marken
-      for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) {
-        if (!pap[y * BW + x]) continue;
-        const g = hash(x, y, 63), k = Math.min(y - y0, y0 + PH - 1 - y), f = fbm(x / 18, y / 18, 91, 3);
-        let c = g < 0.05 ? P.i('ben', 3) : g > 0.97 ? P.i('ben', 1) : P.i('ben', 2);
-        if (bayer(x, y) < (f - 0.5) * 1.6 || (k < 4 && bayer(x, y) < (4 - k) / 4 * 0.7)) c = P.i('senap', 3); // gulnat i fläckar och längs kanten
-        B.satt(x, y, c);
-      }
-      kartanPa(B, stil, x0 + D + mx, y0 + pm, pap, BW, true, ext);
-      // där papperet böjer sig in i rullarna: skuggat, tätast närmast rullen
-      for (let y = y0; y < y0 + PH; y++) for (let d = 1; d <= 5; d++) for (const x of [cxV + r + d, cxH - r - d]) if (pap[y * BW + x] && bayer(x, y) < (6 - d) / 6 * 0.7) B.morka(x, y);
-      // rullarna: papperet självt, ljust från vänster, rundat i den nedre änden
-      for (const cx of [cxV, cxH]) {
-        for (let y = y0; y < y0 + PH + hE; y++) for (let x = cx - r; x <= cx + r; x++) {
-          const u = (x - cx) / r;
-          if (y >= y0 + PH - 1) { const dy = y - (y0 + PH - 1), h = Math.round(Math.sqrt(Math.max(0, 1 - u * u)) * hE); if (dy > h) continue; if (dy === h) { B.satt(x, y, KONTUR); continue; } }
-          B.satt(x, y, Math.abs(x - cx) === r ? KONTUR : u < -0.6 ? P.i('ben', 2) : u < -0.2 ? P.i('ben', 3) : u < 0.35 ? P.i('ben', 2) : u < 0.7 ? P.i('ben', 1) : P.i('jord', 3));
-        }
-        // den övre änden: varven som en spiral runt ett litet hål
-        for (let x = cx - r; x <= cx + r; x++) {
-          const u = (x - cx) / r, h = Math.round(Math.sqrt(Math.max(0, 1 - u * u)) * hE);
-          for (let d = -h; d <= h; d++) {
-            const y = y0 + d, ux = u * r, uy = d * r / hE, rho = Math.hypot(ux, uy), th = Math.atan2(uy, ux) / (2 * Math.PI), varv = ((rho / (ext.smal ? r * 0.9 : 1.8) + th) % 1 + 1) % 1;
-            B.satt(x, y, Math.abs(d) === h || Math.abs(x - cx) === r ? KONTUR : rho < r * 0.2 ? P.i('jord', 1) : varv < 0.3 ? P.i('jord', 3) : u < 0.3 ? P.i('ben', 2) : P.i('ben', 1));
-          }
-        }
-      }
-      // händerna håller om rullarna: kanten i mallen är rullens yttre kant, så att fingrarna går bakom rullen och tummen ligger på framsidan
-      for (const cx of [cxV, cxH]) for (let y = y0 - hE; y < y0 + PH + hE; y++) for (let x = cx - r; x <= cx + r; x++) pap[y * BW + x] = 1;
-      handerna(B, pap, BW, cxV - r, cxH + r, y0 + Math.round(PH / 2) - 40);
-    };
-    return { w: BW, h: BH, rita };
-  }
-
+  // hur långt tummen når innanför papperets kant
+  const TUMME = Math.max(...HAND.map(rad => rad.replace(/\.+$/, '').length)) - HAND_KANT;
   // ---------- kartan utrullad och lite böjd i kanterna, som två händer håller ----------
   // Kartan ligger nästan plant; bara sidorna böjer sig lite upp mot betraktaren, så att man ser att den brukar vara ihoprullad.
   // Där kanten böjer sig blir papperet lite bredare (närmare ögat), krönet är ljust och baksidan syns som en smal rand.
@@ -714,72 +533,13 @@
     const x0 = Math.max(0, Math.min(W - w, V.karavan.x - (w >> 1))), y0 = Math.max(0, Math.min(H - h, V.karavan.y - (h >> 1)));
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) B.satt(x, y, M.get(x0 + x, y0 + y));
   };
-  return { varld, skinn, farg: B => farg(B), tra: B => tra(B), iHander, iRulle, iBojd, utsnitt };
+  return { varld, iBojd, utsnitt };
   }
 
-  const K1 = karta(240, 160, null);
-  VAL.push({
-    id: 'f11_varldskarta', namn: 'Världskartan', typ: 'tre', stor: true, kol: true,
-    vad: 'Steg 11.1.9 (koncept, långt fram): världskartan i fornnordisk stil, inget jordklot. Världen är genererad ur ett frö, som den blir i spelet: hav i väster och söder, berg i nordost, floder från bergen till havet, sjöar, skog och myr. En ruta på kartan (8 × 8 punkter här) är en bykarta. Den egna byn har en ring runt sig, och en flod rinner genom den. Platserna: grannbyarna (hus), läger (tält), ett rövarläger (mörkt tält), ruiner, en helig plats (stenring), en gravhög och en runsten; de prickade linjerna är vägarna mellan byarna. Runorna är bara prydnad och byarnas namn. Samma värld i tre stilar.',
-    versioner: [
-      { text: 'Version 1: skinnkartan. Ritad med bläck på ett spänt skinn: havet som vågiga streck och en dubbel kustlinje, bergen och granarna som små tecken, en havsorm i havet och byarnas namn i runor.', w: 240, h: 160, kol: true, rita: K1.skinn },
-      { text: 'Version 2: färgkartan. I spelets färger: djupt och grunt hav, stränder, skog, myr och berg med snö, ett skepp i havet och en flätad ram. Rutnätet visar bykartorna, och den egna byns ruta har en gul kant.', w: 240, h: 160, kol: true, rita: K1.farg },
-      { text: 'Version 3: ristad i trä. Landet är upphöjt och havet urskuret i en bräda, byarna är inlagda i mässing och runt kanten går ett runband med knutar i hörnen, som på en runsten.', w: 240, h: 160, kol: true, rita: K1.tra },
-    ],
-  });
-
-  // kartorna på papper i händerna (Björn: "gör så alla kartor är riktiga papper och att man ser att händer håller i kartan")
-  const PAPPER_TEXT = ['Version 1: bläck på papper. Skinnkartans bläckteckning direkt på papperet, med en dubbel bläckram. Havet och sjöarna är målade blå.', 'Version 2: den målade kartan. Färgkartan med sin flätade ram, målad på papperet.', 'Version 3: tryckt som ett träsnitt. Träkartan tryckt på papperet: det som är upphöjt i brädan blir svart, det urskurna blir papper, och trycket är lite ojämnt.'];
-  const PAPPER_VAD = ' Kartan är ett riktigt papper som två stora händer håller mitt på sidorna: tummarna med naglarna ligger på framsidan, fingrarna går runt kanten bakom papperet och handlederna går snett ut ur bilden. Bilden är inzoomad, så att kartan fyller den. Din kommentar förra gången: händerna skulle vara mycket större och hålla mitt på kanterna, inte längst ner. Papperet är vikt i tre delar på bredden och två på höjden, ett hörn har vikts till ett hundöra, kanterna har gulnat och det finns en ring efter en kopp.';
-  const papperKort = (id, namn, K, s, vad) => {
-    const v = ['black', 'farg', 'tryck'].map((st, k) => { const h = K.iHander(st, s); return { text: PAPPER_TEXT[k], w: h.w, h: h.h, kol: true, rita: h.rita }; });
-    VAL.push({ id, namn, typ: 'tre', stor: true, kol: true, vad, karta: K, versioner: v });
-  };
-  // kartorna på utrullade pergamentrullar (Björn: "gör så det ser ut som utrullade pergamentrullar istället för viksträck"), med gröna
-  // skogar på bläckkartan och blått vatten på den målade kartan; korten med papperet står kvar
-  const RULLE_TEXT = ['Version 1: bläck på pergament. Bläckteckningen med havet och sjöarna målade blå, och skogen målad som gröna ytor under granarna.', 'Version 2: den målade kartan med blått vatten: ljust vid stranden och mörkare blått ju djupare havet är.', 'Version 3: tryckt som ett träsnitt på pergamentet.'];
-  const RULLE_VAD = ' Kartan är en utrullad pergamentrulle: papperet är rullat ihop i var ände, utan stav, och rullarna är jämnt runda med varven som en spiral i den övre änden. Två händer håller om rullarna med tummen på framsidan; papperet mellan rullen och kartan är så brett att tummen inte ligger över kartan. Papperet är lite gulnat i fläckar och längs kanterna. Varje by har ett påhittat namn, och öarna och kontinenterna har stora namn (inte på de första kartorna, där landet fortsätter utanför kartan). Din kommentar förra gången: den blev alldeles för sliten; pergamentrullen som gjordes först såg för modern ut, gör den neutral. Handen klipper igenom kartan. Korten med kartorna på papper står kvar.';
-  const rulleKort = (id, namn, K, s, vad) => {
-    const v = ['black', 'farg', 'tryck'].map((st, k) => { const h = K.iRulle(st, s); return { text: RULLE_TEXT[k], w: h.w, h: h.h, kol: true, rita: h.rita }; });
-    VAL.push({ id, namn, typ: 'tre', stor: true, kol: true, vad, karta: K, versioner: v });
-  };
-  papperKort('f11_varldskarta_papper', 'Världskartan på papper', K1, 1, 'Steg 11.1.9 (koncept, långt fram). Din kommentar: alla kartor ska vara riktiga papper, och man ska se att händer håller i kartan. Här är de första kartorna (kortet Världskartan) på papper; de gamla korten står kvar.' + PAPPER_VAD);
-  rulleKort('f11_varldskarta_rulle', 'Världskartan på en pergamentrulle', K1, 1, 'Steg 11.1.9 (koncept, långt fram). De första kartorna (kortet Världskartan) på en utrullad pergamentrulle.' + RULLE_VAD);
-
-  // den större kartan: en stor ö i mitten med hav runt om, fler byar, läger och platser
-  const OW = 384, OH = 256;
-  const O2 = { rx: 0.42, ry: 0.4, lyft: 0.27, fall: 0.58, berg: 0.72, floder: 8, antal: { by: 12, lager: 7, rovare: 3, ruin: 5, helig: 2, hog: 3, runsten: 3 } };
-  const K2 = karta(OW, OH, O2), K2z = karta(OW, OH, { ...O2, zoom: 1.2, stigar: true }); // K2z: samma ö, inzoomad, med vägar längs marken
-  VAL.push({
-    id: 'f11_varldskarta_o', namn: 'Världskartan, en stor ö', typ: 'tre', stor: true, kol: true, karta: K2,
-    vad: 'Steg 11.1.9 (koncept, långt fram). Din kommentar: kartan ska kännas större, med hav runt den stora ön i mitten; de första kartorna står kvar i kortet ovanför. Här är världen dubbelt så stor åt varje håll som på de första kartorna (en ruta, 8 × 8 punkter, är fortfarande en bykarta): en stor ö med hav runt om och några små öar utanför kusten. Floderna rinner från bergen inne på ön ut i havet. Den egna byn ligger inne på ön med en flod genom byn, och runt den finns tolv grannbyar, sju läger, tre rövarläger, fem ruiner, två heliga platser, tre gravhögar och tre runstenar. Samma tre stilar som förut.',
-    versioner: [
-      { text: 'Version 1: skinnkartan. Ön ritad med bläck på ett spänt skinn, med en havsorm och skepp ute i havet.', w: OW, h: OH, kol: true, rita: K2.skinn },
-      { text: 'Version 2: färgkartan. Ön i spelets färger, med djupt hav runt om, skepp, rutnätet över bykartorna och den flätade ramen.', w: OW, h: OH, kol: true, rita: K2.farg },
-      { text: 'Version 3: ristad i trä. Ön upphöjd och havet urskuret i brädan, med inristade skepp och runbandet runt kanten.', w: OW, h: OH, kol: true, rita: K2.tra },
-    ],
-  });
-  papperKort('f11_varldskarta_o_papper', 'Världskartan, en stor ö, på papper', K2z, 1.4, 'Steg 11.1.9 (koncept, långt fram). Din kommentar: alla kartor ska vara riktiga papper, och man ska se att händer håller i kartan. Här är den stora ön (kortet Världskartan, en stor ö) på papper, lite inzoomad så att ön fyller mer av kartan; de gamla korten står kvar. Din kommentar förra gången: gå tillbaka till småbergen och gör vägarna tydligare med ritade sträck, inte prickade. Bergen är åter de små bergen. Vägarna är hela ritade sträck som går längs marken mellan grannbyarna, runt bergen och sjöarna, och över floderna på broar. På den längsta vägen går en karavan mot byn i andra änden (kortet Karavanen på världskartan har tre förslag på karavanen).' + PAPPER_VAD);
-  rulleKort('f11_varldskarta_o_rulle', 'Världskartan, en stor ö, på en pergamentrulle', K2z, 1.4, 'Steg 11.1.9 (koncept, långt fram). Den stora ön med vägarna och karavanen på en utrullad pergamentrulle.' + RULLE_VAD);
-
-  // världen med kontinenter: fyra landmassor med hav emellan, så att det kan finnas båtar; sjövägar mellan kontinenterna
+  // världskartan som den ska se ut: bläck på pergament, en stor kontinent i mitten med fyra öar ute vid hörnen, ett runt gradnät
+  // som samlas i en kompassros, ett runband runt kanten och en gammaldags stämpel; papperet är lite böjt i kanterna
   const KW = 448, KH = 288;
-  const K3 = karta(KW, KH, { kontinenter: [[0.24, 0.33, 0.23, 0.28], [0.71, 0.28, 0.24, 0.24], [0.36, 0.77, 0.21, 0.21], [0.82, 0.74, 0.16, 0.21]], lyft: 0.27, fall: 0.58, berg: 0.72, floder: 10, stigar: true, antal: { by: 16, lager: 8, rovare: 3, ruin: 6, helig: 3, hog: 3, runsten: 4 } });
-  papperKort('f11_varldskarta_k_papper', 'Världskartan med kontinenter, på papper', K3, 1.4, 'Steg 11.1.9 (koncept, långt fram). Din kommentar: det hade varit kul med kontinenter, så att det kan finnas båtar i spelet. Här är en värld med fyra kontinenter och hav emellan. Varje kontinent har byar och vägar; mellan kontinenterna går sjövägar (de streckade linjerna över havet) från de byar som ligger närmast varandra, och på varje sjöväg seglar ett skepp. Den egna byn ligger på en av kontinenterna med en flod genom byn. Din kommentar förra gången: gå tillbaka till småbergen och gör vägarna tydligare med ritade sträck, inte prickade. Bergen är åter de små bergen. Vägarna är hela ritade sträck som går längs marken mellan grannbyarna, runt bergen och sjöarna, och över floderna på broar. På den längsta vägen går en karavan mot byn i andra änden (kortet Karavanen på världskartan har tre förslag på karavanen).' + PAPPER_VAD);
-  rulleKort('f11_varldskarta_k_rulle', 'Världskartan med kontinenter, på en pergamentrulle', K3, 1.4, 'Steg 11.1.9 (koncept, långt fram). Världen med fyra kontinenter, vägarna, sjövägarna och karavanen på en utrullad pergamentrulle.' + RULLE_VAD);
-  // en stor kontinent i mitten med små öar runt om (Björn: "gör en stor kontinent i mitten med små öar runt omkring")
-  const K4 = karta(KW, KH, { kontinenter: [[0.5, 0.5, 0.33, 0.35], [0.1, 0.2, 0.035, 0.05], [0.13, 0.78, 0.04, 0.06], [0.27, 0.12, 0.03, 0.045], [0.3, 0.9, 0.035, 0.05], [0.58, 0.09, 0.04, 0.05], [0.72, 0.91, 0.03, 0.05], [0.9, 0.22, 0.04, 0.06], [0.91, 0.58, 0.03, 0.05], [0.86, 0.86, 0.035, 0.05], [0.09, 0.5, 0.025, 0.04], [0.44, 0.92, 0.02, 0.035]], fin: 0.4, lyft: 0.27, fall: 0.58, berg: 0.72, floder: 9, stigar: true, antal: { by: 14, lager: 7, rovare: 3, ruin: 5, helig: 2, hog: 3, runsten: 3 } });
-  rulleKort('f11_varldskarta_s_rulle', 'Världskartan, en stor kontinent med öar, på en pergamentrulle', K4, 1.4, 'Steg 11.1.9 (koncept, långt fram). Din kommentar: gör en stor kontinent i mitten med små öar runt omkring. Här är en stor kontinent mitt i havet med elva små öar runt om, en del med en by eller ett läger. Vägarna går mellan byarna på kontinenten, och skepp seglar ute på havet.' + RULLE_VAD);
-  // version 1 med gradnät, runband och smala rullar, en större kontinent och bara några öar ute vid kanterna (Björn: "gör
-  // kordinatstreck på kartan", "runskrift runt hela kartans kant som det är på version 3", "gör kontinenten i mitten större och
-  // gör öarna färre och bara några i kanterna", "ett eller ett halvt varv kvar på pappret i kanterna")
   const K5 = karta(KW, KH, { kontinenter: [[0.5, 0.5, 0.4, 0.42], [0.09, 0.14, 0.035, 0.05], [0.92, 0.85, 0.04, 0.06], [0.08, 0.84, 0.03, 0.05], [0.91, 0.17, 0.03, 0.045]], fin: 0.15, lyft: 0.27, fall: 0.58, berg: 0.72, floder: 10, stigar: true, antal: { by: 16, lager: 7, rovare: 3, ruin: 5, helig: 2, hog: 3, runsten: 3 } });
-  const R5 = K5.iRulle('black', 1.4, { smal: true, gradnat: true, runband: true });
-  VAL.push({
-    id: 'f11_varldskarta_v1_rulle', namn: 'Världskartan med gradnät och runband', typ: 'janej', stor: true, kol: true, karta: K5,
-    vad: 'Steg 11.1.9 (koncept, långt fram). Din kommentar: gör koordinatstreck på kartan, som på gamla kartor; fortsätt bara med version 1; runskrift runt hela kartans kant, ungefär som på version 3; gör kontinenten i mitten större och öarna färre och bara några i kanterna; låt pergamentrullen ha bara ett eller ett halvt varv kvar i kanterna. Här är bläckkartan (version 1) med ett gradnät: prickade linjer på lika avstånd över hela kartan, och ett streck där varje linje möter runbandet. Runt hela kanten går ett band med runor mellan två bläcklinjer och en knut i varje hörn. Kontinenten är större, fyra öar ligger ute vid hörnen och bara några få skär nära kusten. Rullarna har bara ett varv papper kvar och är smala. De gamla korten står kvar.',
-    versioner: [{ text: 'Bläck på pergament med gradnät och runband, smala rullar.', w: R5.w, h: R5.h, kol: true, rita: R5.rita }],
-  });
   // version 1 som ligger nästan plant och bara är böjd i kanterna, med ett runt gradnät som samlas i en kompassros och en
   // gammaldags stämpel (Björn: "kartan bara är lite böjd i kanterna", "kordinatsträcken är kurvade och samlas i en cirkel",
   // "gör en gammaldags stämpel någon stans på kartan")
@@ -792,11 +552,11 @@
   // karavanen på väg längs en väg (Björn: "gör en ikon för en karavan som är påväg någonstans"): tre förslag, i ett utsnitt av bläckkartan
   VAL.push({
     id: 'f11_karavan', namn: 'Karavanen på världskartan', typ: 'tre', kol: true,
-    vad: 'Steg 11.1.9 (koncept, långt fram). Din kommentar: gör en ikon för en karavan som är på väg någonstans. Karavanen står på den längsta vägen på kartan med kontinenterna, vänd mot byn den är på väg till; i spelet flyttar den sig längs vägen mellan byarna. Här är ett utsnitt av bläckkartan runt karavanen, i kartans egen skala och förstorat; karavanen på de stora kartorna är version 1.',
+    vad: 'Steg 11.1.9 (koncept, långt fram). Din kommentar: gör en ikon för en karavan som är på väg någonstans. Karavanen står på den längsta vägen på världskartan, vänd mot byn den är på väg till; i spelet flyttar den sig längs vägen mellan byarna. Här är ett utsnitt av bläckkartan runt karavanen, i kartans egen skala och förstorat; karavanen på de stora kartorna är version 1.',
     versioner: [
       'Version 1: en oxkärra med kapell, dragen av en oxe.',
       'Version 2: två packhästar i rad, med packningen på ryggen.',
       'Version 3: en vandrare med en packe på ryggen som leder en packhäst.',
-    ].map((text, k) => ({ text, w: 120, h: 72, kol: true, stor: true, liten: true, rita: K3.utsnitt(k, 120, 72) })),
+    ].map((text, k) => ({ text, w: 120, h: 72, kol: true, stor: true, liten: true, rita: K5.utsnitt(k, 120, 72) })),
   });
 })();
