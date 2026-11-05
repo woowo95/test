@@ -25,7 +25,7 @@ import { balans } from './balans';
 import { ELDFLYTT, nyEldplats, vidElden } from './eldflytt';
 import { canLight } from './eld';
 import { notis } from './notiser';
-import { strakHindrar } from './strak';
+import { strakHindrar, strakI } from './strak';
 
 // ---------- balanstal (regel 8) ----------
 // Planeringen (var ett nytt hus står) och arbetet (i vilken ordning och hur fort det byggs och lagas). Husens storlek och
@@ -98,8 +98,19 @@ function siteFor(s: State, w: number, h: number, okAt: Uint8Array) {
     platser.push({ x, y, sc });
   }
   // den bästa platsen som inte stänger in någon mark (stationer.ts); lika bra platser i samma ordning som de söktes
-  const at = platser.sort((a, b) => a.sc - b.sc).find(q => !stangerIn(s, q.x, q.y, w, h) && !strakHindrar(s, q.x, q.y, w, h)); // gångstråken viker bara om de kan dras om (steg 6.2.5)
-  return at && { x: at.x, y: at.y };
+  // gångstråken viker bara om de kan dras om (steg 6.2.5). Byns statistik räknar när den bästa platsen inte fick användas för
+  // ett stråk (strakSamre) och när ett stråk drogs om runt platsen (strakOm), för provet i steg 6.2.6
+  platser.sort((a, b) => a.sc - b.sc);
+  let samre = false;
+  for (const q of platser) {
+    if (stangerIn(s, q.x, q.y, w, h)) continue;
+    if (strakHindrar(s, q.x, q.y, w, h)) { samre = true; continue; }
+    if (samre) count(s, 'strakSamre');
+    if (strakI(s, q.x, q.y, w, h)) count(s, 'strakOm');
+    return { x: q.x, y: q.y };
+  }
+  if (platser.length) count(s, 'strakIngen');
+  return undefined;
 }
 // kan man gå från rutan (ux, uy) utanför dörren till elden f, med huset på platsen at (yttermåtten w×h) i vägen?
 function kanGaUt(s: State, at: { x: number; y: number }, w: number, h: number, ux: number, uy: number, f: { x: number; y: number }) {

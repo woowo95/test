@@ -1,5 +1,7 @@
 // Scenarier. Byggnader och lager: byggnader, förrådshus, familjehus, funktion, påbörjat, bostad, bygg, lager och lagerplatser.
 import { isDeepStrictEqual } from 'node:util';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { MIN, Person, Act, createState, addTool, FOREST, HOUR_S, toolsOf, BYN, step, living, sees, ageIndex, cloneState, ageStart, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, dropLoad, T, isStored, zonesOf, allows, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, rektAvstand, stat, bynsMitt, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, isWall, Bit, wearBuild, treeOn, ownsAmount, addTo, setAmount, isFood, grundvarde, tingOf, komOf, BYGGNADER, FN, mostUrgent, fnId, fnOf, planBuild, workOn, wearMult, LAGER, homeless, sovplatser, inZone, startWork, workHalf, finishHalf, stepPaborjat, halvOf, tingVarde, HALV_TID, fallTid, treeSpot, SEC, Task, familjOf, bedTile, takeForHouse, put, stepByggnader, husNamn, spotFor, roofed, MATERIAL, usable, dropSpot, ALDER, KROPP, samlingRum, varmareInne, haulJob, fetchFuel, chooseTask, minOf } from '../../sim';
 import * as SIM from '../../sim';
 import { findPath } from '../../sim/vag';
@@ -966,6 +968,28 @@ SCENARIER.strak = {
       [`inget nytt hus står på rutan framför en dörr (${husPa})`, husPa === 0],
       [`rutan framför en dörr står fast`, framfor === true],
       [`ett hus som stänger stråket till elden hindras (${hindrar ? 'ja' : 'nej'}), men inte ett hus långt från stråken`, hindrar !== undefined && !SIM.strakHindrar(s, 2, 2, 3, 3)],
+    ];
+  },
+};
+
+SCENARIER.strakprov = {
+  text: 'Provet med gångstråken (steg 6.2.6): samma by i 8 dygn med och utan stråken. Med stråken står husen inte mer än lite längre från byns mitt, och utan stråken räknas inga hus som fick sämre plats för ett stråk',
+  lang: true,
+  kor: () => {
+    // samma körning som npm run prov, för en by: utan stråken med BALANS="strak.pa=0" (balanstalen går inte att ändra i en körning)
+    const fil = fileURLToPath(new URL('../prov-en.ts', import.meta.url));
+    const by = (env: Record<string, string>) => {
+      const u = spawnSync(process.execPath, ['--import', 'tsx', fil, '1001', '8'], { env: { ...process.env, ...env }, encoding: 'utf8' });
+      if (u.status) throw new Error(`prov-en.ts kraschade:\n${(u.stderr ?? '').slice(-1500)}`);
+      return JSON.parse(u.stdout.trim().split('\n').pop()!) as { hus: number; fran: number; samre: number; ingen: number; om: number; utan: boolean; vakter: string[] };
+    };
+    const med = by({}), utan = by({ BALANS: 'strak.pa=0' });
+    return [
+      [`båda byarna har hus efter 8 dygn (8 år i spelet): med ${med.hus}, utan ${utan.hus}`, med.hus > 0 && utan.hus > 0 && !med.utan && utan.utan],
+      [`med stråken står inget hus mer än 4 rutor längre från byns mitt än utan (längst bort ${med.fran.toFixed(1)} mot ${utan.fran.toFixed(1)})`, med.fran <= utan.fran + 4],
+      [`utan stråken räknas inga hus som fick sämre plats eller stråk som drogs om (${utan.samre}, ${utan.om})`, utan.samre === 0 && utan.om === 0 && utan.ingen === 0],
+      [`med stråken räknas det (sämre plats ${med.samre}, ingen plats ${med.ingen}, stråk som drogs om ${med.om})`, true],
+      [`vakterna larmar inte (${[...med.vakter, ...utan.vakter].join('; ')})`, !med.vakter.length && !utan.vakter.length],
     ];
   },
 };

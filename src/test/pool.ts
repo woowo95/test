@@ -39,8 +39,8 @@ export async function pool<T>(jobb: (() => Promise<T>)[], n = cpus().length): Pr
 // sista raden i utskriften tolkad som JSON
 export const sistaJson = <T>(u: Utfall): T => JSON.parse(u.out.trim().split('\n').pop()!);
 // ett skript som skriver sitt svar som JSON på sista raden. Kraschar det kastas ett fel med slutet av felutskriften
-export async function korJson<T>(fil: string, args: string[], namn: string): Promise<T> {
-  const u = await korSkript(fil, args);
+export async function korJson<T>(fil: string, args: string[], namn: string, env: Record<string, string> = {}): Promise<T> {
+  const u = await korSkript(fil, args, env);
   if (u.code) throw new Error(`${namn} kraschade:\n${u.err.slice(-1500)}`);
   return sistaJson<T>(u);
 }

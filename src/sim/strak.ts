@@ -15,6 +15,7 @@ import { stationAt, stationerOf, storlekAv } from './stationer';
 import { H, State, T, W, inMap } from './typer';
 
 export const STRAK = balans('strak', {
+  pa: 1, // 1 = stråken hålls fria; 0 = de räknas och ritas men hindrar inget (provet i steg 6.2.6: byarna med och utan)
   omvag: 3, // ett stråk dras om runt ett nytt hus om omvägen blir högst så här många rutor; annars får huset inte stå där
   sok: 30, // så många rutor runt byns område som vägarna söks i (vattnet längre bort får inget stråk)
 });
@@ -108,9 +109,10 @@ export function straken(s: State): Straken {
 }
 
 // ligger rutan på ett stråk? Då ställs inget där
-export const paStrak = (s: State, x: number, y: number) => inMap(x, y) && straken(s).ruta[y * W + x] > 0;
+export const paStrak = (s: State, x: number, y: number) => STRAK.pa > 0 && inMap(x, y) && straken(s).ruta[y * W + x] > 0;
 // ligger någon ruta i rektangeln på ett stråk?
 export function strakI(s: State, x: number, y: number, w: number, h: number) {
+  if (!STRAK.pa) return false;
   const r = straken(s).ruta;
   for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) if (inMap(i, j) && r[j * W + i]) return true;
   return false;
@@ -118,16 +120,20 @@ export function strakI(s: State, x: number, y: number, w: number, h: number) {
 // hindrar ett nytt hus på rektangeln (väggarna med) ett stråk? Inte om varje väg det står på kan dras om runt det med högst
 // STRAK.omvag rutors omväg till samma slags mål; aldrig på rutan framför en dörr
 export function strakHindrar(s: State, x: number, y: number, w: number, h: number) {
-  const st = straken(s), inne = (i: number) => { const ix = i % W, iy = (i / W) | 0; return ix >= x && ix < x + w && iy >= y && iy < y + h; };
   if (!strakI(s, x, y, w, h)) return false;
+  return !omvag(s, x, y, w, h);
+}
+// kan stråken som rektangeln står på dras om runt den (med högst STRAK.omvag rutors omväg, aldrig rutan framför en dörr)?
+export function omvag(s: State, x: number, y: number, w: number, h: number) {
+  const st = straken(s), inne = (i: number) => { const ix = i % W, iy = (i / W) | 0; return ix >= x && ix < x + w && iy >= y && iy < y + h; };
   const traffade = st.vagar.filter(v => v.rutor.some(inne));
-  if (traffade.some(v => inne(v.dorr))) return true;
+  if (traffade.some(v => inne(v.dorr))) return false;
   const d = sokData(s), nya = new Map<number, Map<Mal, number[]>>();
   for (const v of traffade) {
     let n = nya.get(v.dorr);
     if (!n) nya.set(v.dorr, n = vagarFran(d, v.dorr, { x, y, w, h }));
     const ny = n.get(v.mal);
-    if (!ny || ny.length > v.len + STRAK.omvag) return true;
+    if (!ny || ny.length > v.len + STRAK.omvag) return false;
   }
-  return false;
+  return true;
 }
