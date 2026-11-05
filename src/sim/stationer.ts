@@ -7,7 +7,7 @@ import { getable, saknatAv, takeMaterial } from './behov';
 import { sparas } from './ekonomi';
 import { Ting, freeTools, tingOf, wearTool } from './agande';
 import { BYN } from './egendom';
-import { Zone, inZone, pilesOf, stallBorta, usable, zoneAt, zonesOf } from './lager';
+import { Zone, inZone, pilesInne, stallBorta, usable, zoneAt, zonesOf } from './lager';
 import { PLATS, campDist, campKey, rektAvstand } from './plats';
 import { balans } from './balans';
 import { Hus, Rum, bitAt, bitsOf, blocked, gridOf, housesOf, husById, roomAt, touch } from './byggnad';
@@ -565,7 +565,7 @@ export const forvarAt = (s: State, x: number, y: number) => { const t = stationA
 function golvet(s: State, k: string, alla = false) {
   const f = stationDef(k)?.forvar, ut: { x: number; y: number; z: Zone; full: boolean }[] = [];
   if (!f || f.privat) return ut;
-  for (const a of pilesOf(s)) {
+  for (const a of pilesInne(s)) {
     const z = zonesOf(s)[a.zone];
     if (!z || z.hus === undefined || stationAt(s, a.x, a.y)) continue; // bara inomhus (steg 2.10.18)
     const full = a.n >= a.max - 1e-9;
@@ -577,7 +577,7 @@ function golvet(s: State, k: string, alla = false) {
 // hur stor del av golvet i lagren inomhus som har högar eller möbler på sig (0 till 1, steg 4.5.4.6)
 export function golvAndel(s: State) {
   const g = groundOf(s), upptagen = new Set<number>();
-  for (const a of pilesOf(s)) upptagen.add(a.y * W + a.x);
+  for (const a of pilesInne(s)) upptagen.add(a.y * W + a.x);
   let n = 0, u = 0;
   for (const z of zonesOf(s)) {
     if (z.hus === undefined) continue;

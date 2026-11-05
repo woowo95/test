@@ -56,6 +56,7 @@ export const LAGER = balans('lager', {
   barGammal: 0.75, barSjuk: 0.6, // ... en gammal (över ALDER.gammal) och en sjuk så här stor del
   // vad som bärs in först (haulJob): poängen är avståndet från lägret, plus detta för det som inte ligger på marken; lägst poäng först
   barBredvid: 50, // saker bredvid lagret när det nu finns plats i det
+  barFullt: 8, // när förrådet är fullt bärs bara det som ligger längre bort från lägret än så här många rutor (det man bär in hamnar ändå utanför)
   barSortera: 100, // saker i fel lagerplats (maten bland materialet)
   barNarmare: 150, // saker som kan flyttas till en lagerplats närmare elden
 });
@@ -440,12 +441,19 @@ export function dropSpot(s: State, k: string) {
   const sp = besideSpot(s, k, occ);
   return { x: sp.x + 0.5, y: sp.y + 0.5 };
 }
-function besideSpot(s: State, k: string, occ: Occ) {
-  const zs = zonesOf(s).filter(z => z.hus === undefined), base = zs.filter(z => allows(z, k)); // inte bredvid förrådshuset: där står väggarna
+// en ruta i ringen runt lagerplatserna där slaget k får plats (inte bredvid förrådshuset: där står väggarna)
+function ringSpot(s: State, k: string, occ: Occ) {
+  const zs = zonesOf(s).filter(z => z.hus === undefined), base = zs.filter(z => allows(z, k));
   for (const z of base.length ? base : zs) for (const r of ringTiles(s, z)) {
     if (zoneAt(s, r.x, r.y) >= 0) continue;
     if (roomIn(s, occ, r.x, r.y, k)) return r;
   }
+  return undefined;
+}
+function besideSpot(s: State, k: string, occ: Occ) {
+  const r = ringSpot(s, k, occ);
+  if (r) return r;
+  const zs = zonesOf(s).filter(z => z.hus === undefined), base = zs.filter(z => allows(z, k));
   // nödlösning när också ringen är full: längre ut, på en ruta där inget annat ligger (aldrig ovanpå en annan sak)
   const upptagen = new Set<number>();
   for (const a of things(s)) if (!(a.k === k && !isTool(k) && a.n < rymd(s, a.x, a.y, k) - 1e-9)) upptagen.add(key(a.x, a.y));
@@ -481,7 +489,11 @@ function place(s: State, k: string, n: number, c: number, ag?: Del, at?: { x: nu
   for (let g = 0; n > 1e-9 && g < 60; g++) {
     const sp = at && isStored(s, at.x, at.y) && usable(s, at.x, at.y) && roomIn(s, occ, at.x, at.y, k) ? at : zoneSpot(s, k, -Infinity, occ) ?? besideSpot(s, k, occ);
     at = undefined;
-    const a = occ.get(key(sp.x, sp.y)), max = helt(rymd(s, sp.x, sp.y, k));
+    // utanför förrådet (när det är fullt) räknas inte rutan i occ: det som redan ligger där av samma slag fylls på, så att
+    // det inte blir en ny stack på samma ruta varje gång
+    let a = occ.get(key(sp.x, sp.y));
+    if (!a && !isStored(s, sp.x, sp.y)) { a = st.find(q => q.x === sp.x && q.y === sp.y && q.k === k); if (a) occ.set(key(sp.x, sp.y), a); }
+    const max = helt(rymd(s, sp.x, sp.y, k));
     const v = !a ? Math.min(n, max) : roomIn(s, occ, sp.x, sp.y, k) ? Math.max(0, Math.min(n, max - a.n)) : 0;
     if (!v) break;
     const del = delAv(ag, v, tot); ag = minus(ag, del); tot -= v;
@@ -625,11 +637,14 @@ export function storeFromSums(s: State) {
 
 // alla stackar med plats och skick. Gränssnittet frågar, så byn ändras inte. Redskapen har alltid en ruta efter ett steg
 // (placeTools); bara en äldre sparfil som just lästs in kan ha ett redskap utan ruta, och det visas efter första steget
-export function pilesOf(s: State): Pile[] {
+export function pilesOf(s: State, bara?: (x: number, y: number) => boolean): Pile[] {
   const ts = tingOf(s);
   // en stack där bara det gömda (giftsvampen) finns kvar visas inte: den skulle avslöja det gömda som "0 st"
-  return [...stacksOf(s).filter(a => a.n > 1e-6 || a.gor), ...ts.filter(ligger).map(asStack)].map(a => { const zone = zoneAt(s, a.x, a.y); return { ...a, max: rymd(s, a.x, a.y, a.k), zone, out: zone < 0, stored: isStored(s, a.x, a.y) }; });
+  // (bara = bara högarna på de rutorna: förrådshusens golv, stationer.ts, utan att räkna fram resten)
+  return [...stacksOf(s).filter(a => (a.n > 1e-6 || a.gor) && (!bara || bara(a.x, a.y))), ...ts.filter(t => ligger(t) && (!bara || bara(t.x!, t.y!))).map(asStack)].map(a => { const zone = zoneAt(s, a.x, a.y); return { ...a, max: rymd(s, a.x, a.y, a.k), zone, out: zone < 0, stored: isStored(s, a.x, a.y) }; });
 }
+// högarna i förrådshusen (i en lagerplats under tak)
+export const pilesInne = (s: State) => { const hus = zonesOf(s).filter(z => z.hus !== undefined); return hus.length ? pilesOf(s, (x, y) => hus.some(z => inZone(z, x, y))) : []; };
 
 // ---------- slitage ----------
 // Skicket sjunker varje timme. Mat ruttnar (fisk fortast) efter temperaturen: fortare när det är varmt, nästan inte i frost.
@@ -943,6 +958,12 @@ export function haulJob(s: State, near?: number, baraMat = false) {
     if (!plats.has(q)) plats.set(q, zoneSpot(s, k, prio, occ));
     return plats.get(q);
   };
+  // finns det plats för slaget i förrådet (i en lagerplats eller ringen runt)? Annars hamnar det man bär in ändå på marken
+  // utanför, och då bärs bara det som ligger långt bort (LAGER.barFullt). Annars bärs samma saker fram och tillbaka
+  const ryms = new Map<string, boolean>(), rymsIn = (k: string) => {
+    if (!ryms.has(k)) ryms.set(k, !!(spot(k, -Infinity) ?? ringSpot(s, k, occ)));
+    return ryms.get(k)!;
+  };
   let best: { x: number; y: number; why: string } | undefined, bs = Infinity;
   for (const a of things(s)) {
     if (taken.has(key(a.x, a.y)) || baraMat && !isFood(a.k)) continue;
@@ -951,7 +972,7 @@ export function haulJob(s: State, near?: number, baraMat = false) {
     if (near !== undefined && d > near) continue;
     const zi = zoneAt(s, a.x, a.y);
     let why: string | undefined, sc = d;
-    if (!isStored(s, a.x, a.y)) why = 'Det ligger saker på marken som ska in i lagret';
+    if (!isStored(s, a.x, a.y)) { if (d > LAGER.barFullt || rymsIn(a.k)) why = 'Det ligger saker på marken som ska in i lagret'; }
     else if (zi < 0) { if (spot(a.k, -Infinity)) { why = 'Det ligger saker bredvid lagret och nu finns det plats'; sc += LAGER.barBredvid; } }
     else if (!allows(zs[zi], a.k)) { if (spot(a.k, -Infinity)) { why = `Sorterar: flyttar ${sakNamn(a.k).toLowerCase()} till ${zs.find(z => allows(z, a.k))?.namn?.toLowerCase() ?? 'rätt lager'}`; sc += LAGER.barSortera; } }
     else if (spot(a.k, zs[zi].prio ?? 0)) { why = 'Flyttar saker till ett lager närmare elden'; sc += LAGER.barNarmare; }
