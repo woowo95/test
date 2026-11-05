@@ -21,6 +21,7 @@ import { FOREST } from './vag';
 import { brasaMal, nyEld } from './brasor';
 import { underMinnet } from './sjo';
 import { ODLING } from './odling';
+import { paStrak } from './strak';
 
 // ---------- arbetsstationer och möbler (steg 2.2.3, 2.2.5) ----------
 // En station är en plats i byn där ett visst arbete görs: vid slaktbänken slaktas viltet och fisken rensas, vid slöjdbänken
@@ -327,7 +328,7 @@ export const fartVid = (s: State, p: { x: number; y: number }, act: Act) => {
 // en ruta där inget annat ligger eller står: inte på en lagerplats, ett hus, en stack, ett redskap, en stock eller en stubbe,
 // och inte där byn minns att vattnet nådde (steg 3.8.7, flod.ts)
 export function ledig(s: State, x: number, y: number) {
-  if (!usable(s, x, y) || underMinnet(s, y * W + x) || stationAt(s, x, y) || sittAt(s, x, y) || zonesOf(s).some(z => x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h)) return false;
+  if (!usable(s, x, y) || underMinnet(s, y * W + x) || paStrak(s, x, y) || stationAt(s, x, y) || sittAt(s, x, y) || zonesOf(s).some(z => x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h)) return false;
   return !((s.stackar ?? []).some(a => a.x === x && a.y === y) || tingOf(s).some(k => k.x === x && k.y === y) || (s.stockar ?? []).some(k => Math.floor(k.x) === x && Math.floor(k.y) === y) || (s.stubbar ?? []).some(k => k.x === x && k.y === y));
 }
 // ---------- avståndet ute (steg 2.10.8) ----------

@@ -18,6 +18,7 @@ import { FOOD, SAKER, SAK_LIST, STACK_ORDER, isFood, isTool, rutaOf, sakNamn, vi
 import { balans } from './balans';
 import { flodHotad, iVattnetNu, underMinnet } from './sjo';
 import { FLOD } from './flod';
+import { strakI } from './strak';
 
 // ---------- balanstal (regel 8) ----------
 // Förrådet: hur lagerplatserna växer, hur fort saker slits och ruttnar, hur mycket en person bär och vad som bärs in först.
@@ -816,7 +817,7 @@ export function tidyStore(s: State) {
 function growOf(s: State, i: number): Zone | undefined {
   const zs = zonesOf(s), z = zs[i];
   const n = [{ ...z, w: z.w + 1 }, { ...z, h: z.h + 1 }, { ...z, x: z.x - 1, w: z.w + 1 }, { ...z, y: z.y - 1, h: z.h + 1 }]
-    .filter(n => n.w <= LAGER.zonBredd && n.h <= LAGER.zonHojd && allUsable(s, n) && skogI(s, n) < Infinity && !zs.some((o, j) => j !== i && overlaps(n, o, LAGER.mellan)))
+    .filter(n => n.w <= LAGER.zonBredd && n.h <= LAGER.zonHojd && allUsable(s, n) && !strakI(s, n.x, n.y, n.w, n.h) && skogI(s, n) < Infinity && !zs.some((o, j) => j !== i && overlaps(n, o, LAGER.mellan)))
     .sort((a, b) => Math.abs(a.w - a.h) - Math.abs(b.w - b.h))[0];
   return n && !n.rojs && skogI(s, n) > 0 ? { ...n, rojs: true } : n;
 }
@@ -826,7 +827,7 @@ function newZone(s: State) {
   const zs = zonesOf(s), f = eldPlats(s), z0 = zs[0], g = groundOf(s), kand: { c: Zone; d: number }[] = [];
   for (let y = 0; y < H - 2; y++) for (let x = 0; x < W - 2; x++) {
     const c: Zone = { x, y, w: LAGER.nyBredd, h: LAGER.nyHojd }, df = Math.hypot(x + c.w / 2 - f.x, y + c.h / 2 - f.y);
-    if (df < LAGER.nyEldMin || utanforByn(s, x + (c.w - 1) / 2, y + (c.h - 1) / 2) > LAGER.nyLagerMax || !allUsable(s, c) || zs.some(o => overlaps(c, o, LAGER.mellan))) continue;
+    if (df < LAGER.nyEldMin || utanforByn(s, x + (c.w - 1) / 2, y + (c.h - 1) / 2) > LAGER.nyLagerMax || !allUsable(s, c) || strakI(s, c.x, c.y, c.w, c.h) || zs.some(o => overlaps(c, o, LAGER.mellan))) continue; // inte på ett gångstråk (steg 6.2.5)
     const skog = skogI(s, c); // i skogen fälls träden först (steg 3.6.9)
     if (skog < Infinity) kand.push({ c, d: Math.hypot(x - z0.x, y - z0.y) + skog * LAGER.skogKost });
   }

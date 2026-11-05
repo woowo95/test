@@ -25,6 +25,7 @@ import { balans } from './balans';
 import { ELDFLYTT, nyEldplats, vidElden } from './eldflytt';
 import { canLight } from './eld';
 import { notis } from './notiser';
+import { strakHindrar } from './strak';
 
 // ---------- balanstal (regel 8) ----------
 // Planeringen (var ett nytt hus står) och arbetet (i vilken ordning och hur fort det byggs och lagas). Husens storlek och
@@ -97,7 +98,7 @@ function siteFor(s: State, w: number, h: number, okAt: Uint8Array) {
     platser.push({ x, y, sc });
   }
   // den bästa platsen som inte stänger in någon mark (stationer.ts); lika bra platser i samma ordning som de söktes
-  const at = platser.sort((a, b) => a.sc - b.sc).find(q => !stangerIn(s, q.x, q.y, w, h));
+  const at = platser.sort((a, b) => a.sc - b.sc).find(q => !stangerIn(s, q.x, q.y, w, h) && !strakHindrar(s, q.x, q.y, w, h)); // gångstråken viker bara om de kan dras om (steg 6.2.5)
   return at && { x: at.x, y: at.y };
 }
 // kan man gå från rutan (ux, uy) utanför dörren till elden f, med huset på platsen at (yttermåtten w×h) i vägen?

@@ -74,6 +74,7 @@ export * from './sim/egendom';
 export * from './sim/behov';
 export * from './sim/lager';
 export * from './sim/omrade';
+export * from './sim/strak';
 export * from './sim/plats';
 export * from './sim/byggnad';
 export * from './sim/bygg';

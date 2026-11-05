@@ -65,6 +65,34 @@
     }
   }
 
+  // ---------- 6.2.5 gångstråken i testläget ----------
+  // en stuga uppe till vänster och elden nere till höger; stråket går från dörren ner och bort till elden (16 punkter per ruta)
+  const STRAK_RUTOR = (() => { const r = []; for (let y = 1; y <= 5; y++) r.push([1, y]); for (let x = 2; x <= 5; x++) r.push([x, 5]); return r; })();
+  function strak(B, v) {
+    const P = B.P, T = 16, m = (i) => i * T + 8;
+    ritaSprite(B, ['..oooo..', '.oSSSSo.', 'oSSSSSSo', 'oJjjjjJo', 'oJjkkjJo', 'oJjkkjJo', 'oooooooo'], { o: 'kol0', S: 'senap1', J: 'jord1', j: 'jord2', k: 'kol0' }, m(1) - 4, m(1) - 15);
+    laga(B, m(6), m(5) + 3, 5);
+    STRAK_RUTOR.forEach(([x, y], i) => {
+      const nasta = STRAK_RUTOR[i + 1];
+      if (!nasta) return;
+      const [nx, ny] = nasta, x0 = m(x), y0 = m(y), dx = Math.sign(nx - x), dy = Math.sign(ny - y);
+      for (let k = 0; k <= T; k++) {
+        const px = x0 + dx * k, py = y0 + dy * k;
+        if (v === 0) B.satt(px, py, P.i('senap', 2)); // tunn gul linje
+        if (v === 1 && k % 3 < 2) B.satt(px, py, P.i('rost', 3)); // röda streck
+        if (v === 2) { B.satt(px + dy, py + dx, P.i('ben', 2)); B.satt(px - dy, py - dx, P.i('ben', 2)); } // två ljusa kanter, som en väg
+      }
+    });
+    // rutan framför dörren
+    const [dx0, dy0] = STRAK_RUTOR[0];
+    for (let y = -2; y <= 2; y++) for (let x = -2; x <= 2; x++) {
+      const kant = Math.abs(x) === 2 || Math.abs(y) === 2;
+      if (v === 0 || v === 2 && kant) B.satt(m(dx0) + x, m(dy0) + y, P.i(v === 0 ? 'senap' : 'ben', v === 0 ? 2 : 3));
+      if (v === 1 && kant && (x + y) % 2 === 0) B.satt(m(dx0) + x, m(dy0) + y, P.i('rost', 3));
+    }
+  }
+  const STRAK = (text, v) => ({ text, w: 7 * 16, h: 7 * 16, rita: (B) => strak(B, v) });
+
   // ---------- 6.3.1.3 näver ----------
   const NAV_L = { W: 'ben3', w: 'ben2', k: 'kol1', s: 'senap2', S: 'senap1', r: 'rost2' };
   const NAVER = [
@@ -534,6 +562,8 @@
   // ---------- korten ----------
   const S = 'Steg ';
   VAL.push(
+    KORT('f6_strak', 'Gångstråken i testläget', S + '6.2.5: i testläget syns gångstråken, vägarna från dörrarna till elden, lagren, latrinen och vattnet där inget får byggas, som en tunn linje genom rutornas mitt, och rutan framför dörren som en liten ruta. Stugan och elden är bara för att visa platsen.', [
+      STRAK('En tunn gul linje och en fylld gul ruta framför dörren.', 0), STRAK('Korta röda streck och en prickig ruta framför dörren.', 1), STRAK('Två ljusa kanter, som en väg, och en ljus ram framför dörren.', 2)]),
     KORT('f6_naver', 'Näver', S + '6.3.1.3: en ny sak, som görs av ved och tänds lättare än torrgräs. Vit näver med mörka streck, i sakens storlek (16 punkter per ruta).', [
       PA_MARK('En hoprullad bit näver, med den bruna insidan synlig i änden.', NAVER[0], NAV_L), PA_MARK('En lös remsa som rullar sig i ena änden.', NAVER[1], NAV_L), PA_MARK('Tre remsor i en liten hög.', NAVER[2], NAV_L)]),
     KORT('f6_talg', 'Talg', S + '6.3.2.2: en ny sak från slakten, djurfettet, som blir facklor och ljus.', TALG.map((r, i) => PA_MARK(TALG_TEXT[i], r, TALG_L))),
