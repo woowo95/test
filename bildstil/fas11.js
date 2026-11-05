@@ -285,7 +285,8 @@
       if (V.elv[i]) c = HAVL;
       B.satt(x, y, c);
     }
-    if (ext.gradnat) for (const [x, y] of gradnat()) B.satt(x, y, P.i('jord', 1)); // gradnätet: prickade linjer i brunt bläck över hela kartan
+    const NAT = ext.gradnat === 'rund' ? rundNat(V) : ext.gradnat ? gradnat() : null;
+    if (NAT) for (const [x, y] of NAT) B.satt(x, y, P.i('jord', 1)); // gradnätet: prickade linjer i brunt bläck över hela kartan
     // bergen och granarna som små tecken, i ett glest mönster
     for (let gy = 4; gy < H - 4; gy += 6) for (let gx = 4; gx < W - 4; gx += 7) {
       const x = gx + Math.floor(hash(gx, gy, 1) * 4), y = gy + Math.floor(hash(gx, gy, 2) * 3), i = y * W + x;
@@ -299,7 +300,9 @@
     glyf(B, ['.oo.', 'oaao', '.oao', '..o.'], { o: BLACK, a: P.i('barr', 2) }, sx + 23, sy - 3);
     for (const [x, y] of V.hav.slice(1)) glyf(B, SYM.skepp, { o: BLACK, a: P.i('ben', 3) }, x, y);
     platserna(B, V, { kontur: BLACK, by: P.i('rost', 1), egen: P.i('rost', 2), ljus: P.i('ben', 3), mork: P.i('jord', 1), sten: P.i('skiffer', 2), helig: P.i('senap', 1), talt: P.i('jord', 2), taltM: P.i('jord', 1), vag: P.i('jord', 1), sjovag: P.i('jord', 1), ring: P.i('rost', 1), namn: gron ? null : BLACK, djur: P.i('jord', 1), stig: P.i('jord', 0), packe: P.i('senap', 2) });
-    if (ext.runband) runband(B, BLACK);
+    if (ext.gradnat === 'rund') kompassros(B, V, BLACK);
+    if (ext.stampel) stampel(B, V);
+    if (ext.runband) runband(B, BLACK, ext.gradnat !== 'rund');
     else if (papper) for (const k of [0, 2]) for (let x = k; x < W - k; x++) for (let y = k; y < H - k; y++) if (x === k || y === k || x === W - 1 - k || y === H - 1 - k) B.satt(x, y, BLACK); // en dubbel bläckram
   }
   // gradnätet som på gamla kartor: lodräta och vågräta linjer på lika avstånd, prickade, som går genom hela kartan innanför runbandet
@@ -312,7 +315,7 @@
   }
   // runbandet med bläck: en ram av två bläcklinjer med runor emellan, ett streck där varje linje i gradnätet möter bandet och
   // en knut i varje hörn (som runbandet på träkartan, version 3)
-  function runband(B, BLACK) {
+  function runband(B, BLACK, streck = true) {
     const P = B.P, R = 10;
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const k = Math.min(x, y, W - 1 - x, H - 1 - y); if (k >= R) continue;
@@ -322,9 +325,78 @@
     const nv = Math.floor((W - 28) / 4), nl = Math.floor((H - 28) / 4) - 1;
     runrad(B, 14, 3, nv, 11, BLACK); runrad(B, 14, H - 8, nv, 12, BLACK);
     runrad(B, 3, 14, nl, 14, BLACK, true); runrad(B, W - 8, 14, nl, 15, BLACK, true);
-    for (let k = 1; k <= GX; k++) for (const y of [R - 2, H - R + 1]) B.satt(gradX(k), y, BLACK);
-    for (let k = 1; k <= GY; k++) for (const x of [R - 2, W - R + 1]) B.satt(x, gradY(k), BLACK);
+    if (streck) for (let k = 1; k <= GX; k++) for (const y of [R - 2, H - R + 1]) B.satt(gradX(k), y, BLACK);
+    if (streck) for (let k = 1; k <= GY; k++) for (const x of [R - 2, W - R + 1]) B.satt(x, gradY(k), BLACK);
     for (const [x, y] of [[5, 5], [W - 5, 5], [5, H - 5], [W - 5, H - 5]]) glyf(B, ['.ooo.', 'oaoao', 'ooboo', 'oaoao', '.ooo.'], { o: BLACK, a: P.i('rost', 1), b: P.i('ben', 3) }, x, y);
+  }
+
+  // en fri plats ute i havet för kompassrosen och stämpeln: minst avstånd d till land, inte nära kanten, skeppen, havsormen
+  // eller den andra platsen, och så nära önskade punkten (px, py) som möjligt
+  function friHavsplats(V, d, px, py, undan = []) {
+    let bast = null;
+    for (let y = d + 12; y < H - d - 12; y++) for (let x = d + 12; x < W - d - 12; x++) {
+      if (V.typ[y * W + x] !== HAV || V.avst[y * W + x] < d) continue;
+      if (V.hav.some(([a, b]) => Math.hypot(a - x, b - y) < d + 8) || (x > V.djupX - 18 - d && x < V.djupX + 20 + d && Math.abs(y - V.djupY) < d + 6)) continue;
+      if (undan.some(([a, b, r]) => Math.hypot(a - x, b - y) < r + d + 6)) continue;
+      const e = Math.hypot(x - px, y - py); if (!bast || e < bast[2]) bast = [x, y, e];
+    }
+    return bast || [px, py, 0];
+  }
+  const ROS = 15;
+  const rosPlats = V => V.ros || (V.ros = friHavsplats(V, ROS + 4, W * 0.2, H * 0.22));
+  // det runda gradnätet: linjerna böjer sig och samlas i en cirkel runt kompassrosen; runt rosen går cirklar på lika avstånd,
+  // och sexton linjer går ut från rosen i en svag båge mot kanten. Prickat, som det raka gradnätet.
+  function rundNat(V) {
+    const [cx, cy] = rosPlats(V), ut = [], inne = (x, y) => x >= 10 && y >= 10 && x < W - 10 && y < H - 10;
+    const maxR = Math.hypot(Math.max(cx, W - cx), Math.max(cy, H - cy));
+    for (let r = ROS + 30; r < maxR; r += 42) { const n = Math.ceil(2 * Math.PI * r * 2); for (let k = 0; k < n; k++) if (Math.floor(k / 2) % 2 === 0) { const a = k / n * 2 * Math.PI, x = Math.round(cx + Math.cos(a) * r), y = Math.round(cy + Math.sin(a) * r); if (inne(x, y)) ut.push([x, y]); } }
+    for (let j = 0; j < 16; j++) for (let t = (ROS + 3) * 2; t < maxR * 2; t++) {
+      if (Math.floor(t / 2) % 2) continue;
+      const r = t / 2, a = j / 16 * 2 * Math.PI + r / maxR * 0.45, x = Math.round(cx + Math.cos(a) * r), y = Math.round(cy + Math.sin(a) * r); // bågen: vinkeln växer lite med avståndet
+      if (inne(x, y)) ut.push([x, y]);
+    }
+    return ut;
+  }
+  // kompassrosen där linjerna samlas: en dubbel ring och en stjärna med åtta uddar, de långa åt väderstrecken, norr i rött
+  function kompassros(B, V, BLACK) {
+    const P = B.P, [cx, cy] = rosPlats(V), R = ROS, L = R - 2;
+    const udd = (x, y) => { // stjärnans uddar: smala trekanter ut från mitten, de långa åt väderstrecken
+      const prov = (k, Ls, Wm) => {
+        const f = k * Math.PI / 4, fram = x * Math.cos(f) + y * Math.sin(f), tvar = -x * Math.sin(f) + y * Math.cos(f);
+        return fram >= -0.5 && fram <= Ls && Math.abs(tvar) <= Wm * (1 - Math.max(0, fram) / Ls) + 0.35 ? { inne: true, ljus: tvar > 0, norr: k === 6, lang: k % 2 === 0 } : null;
+      };
+      const a = Math.atan2(y, x), lang = ((Math.round(a / (Math.PI / 2)) % 4) + 4) % 4 * 2, kort = ((Math.round((a - Math.PI / 4) / (Math.PI / 2)) % 4) + 4) % 4 * 2 + 1;
+      return prov(lang, L, 3) || prov(kort, L * 0.6, 2) || { inne: false }; // de långa uddarna först, de korta emellan
+    };
+    for (let y = -R - 1; y <= R + 1; y++) for (let x = -R - 1; x <= R + 1; x++) {
+      const d = Math.hypot(x, y); if (d > R + 0.5) continue;
+      let c = Math.abs(d - R) < 0.5 || Math.abs(d - (R - 3)) < 0.5 ? BLACK : P.i('ben', 2);
+      const u = udd(x, y);
+      if (u.inne) {
+        const kant = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => !udd(x + a, y + b).inne);
+        c = kant ? BLACK : u.norr ? (u.ljus ? P.i('rost', 2) : P.i('rost', 1)) : u.ljus ? P.i('ben', 3) : u.lang ? P.i('jord', 1) : P.i('jord', 2);
+      }
+      B.satt(cx + x, cy + y, c);
+    }
+    glyf(B, ['#.#', '##.', '#.#', '#..', '#..'].map(r => r.replace(/#/g, 'o')), { o: BLACK }, cx, cy - R - 5); // en runa ovanför norr
+  }
+  // en gammaldags stämpel i rött bläck: två ringar, prickar runt om och en runa i mitten, lite sned och nött där bläcket inte tog
+  function stampel(B, V) {
+    const P = B.P, R = 15, [cx, cy] = friHavsplats(V, R + 2, W * 0.8, H * 0.82, [[...rosPlats(V).slice(0, 2), ROS]]), BL = P.i('rost', 1);
+    const not = (x, y) => hash(x, y, 91) < 0.1 || fbm(x / 4, y / 4, 93, 2) < 0.22; // där bläcket inte tog
+    const RUNA = ['##.', '#.#', '##.', '#.#', '#.#'];
+    const bit = (x, y) => { // stämpelns mönster, mätt från mitten: två ringar, prickarna mellan dem och runan R dubbelt så stor
+      const d = Math.hypot(x, y), a = Math.atan2(y, x);
+      if ((d > R - 1.6 && d <= R + 0.4) || Math.abs(d - (R - 5)) < 0.6) return true;
+      if (Math.abs(d - (R - 3)) < 0.8 && Math.abs(((a / (Math.PI / 6)) % 1 + 1) % 1 - 0.5) < 0.12) return true;
+      const rx = Math.floor((x + 3) / 2), ry = Math.floor((y + 5) / 2);
+      return ry >= 0 && ry < 5 && rx >= 0 && rx < 3 && RUNA[ry][rx] === '#';
+    };
+    const v = -0.25; // stämpeln sitter lite snett
+    for (let Y = cy - R - 2; Y <= cy + R + 2; Y++) for (let X = cx - R - 2; X <= cx + R + 2; X++) {
+      const dx = X - cx, dy = Y - cy, x = dx * Math.cos(v) + dy * Math.sin(v), y = -dx * Math.sin(v) + dy * Math.cos(v);
+      if (bit(x, y) && !not(X, Y)) B.satt(X, Y, BL);
+    }
   }
 
   // ---------- version 2: färgkartan, i spelets färger med en flätad ram ----------
@@ -603,13 +675,46 @@
     return { w: BW, h: BH, rita };
   }
 
+  // ---------- kartan utrullad och lite böjd i kanterna, som två händer håller ----------
+  // Kartan ligger nästan plant; bara sidorna böjer sig lite upp mot betraktaren, så att man ser att den brukar vara ihoprullad.
+  // Där kanten böjer sig blir papperet lite bredare (närmare ögat), krönet är ljust och baksidan syns som en smal rand.
+  // Händerna håller i sidorna med tummen på runbandet.
+  function iBojd(stil, s, ext = {}) {
+    const pm = Math.round(6 * s), c = Math.round(7 * s), lyft = 4, sid = 18;
+    const mx = Math.max(pm, TUMME - 10);
+    const PW = W + 2 * mx, PH = H + 2 * pm, BW = PW + 2 * sid, BH = PH + 2 * lyft + 10, x0 = sid, y0 = lyft + 5;
+    const kantAv = x => Math.min(x - x0, x0 + PW - 1 - x), hojning = x => { const d = kantAv(x); return d < c ? Math.round(((c - d) / c) ** 2 * lyft) : 0; };
+    const rita = B => {
+      const P = B.P, pap = new Uint8Array(BW * BH);
+      for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) { const g = hash(x, y, 61); B.satt(x, y, g < 0.05 ? P.i('jord', 0) : g < 0.13 ? P.i('kol', 1) : P.i('kol', 0)); }
+      const pa = (x, y) => { if (x < x0 || x >= x0 + PW) return false; const h = hojning(x); return y >= y0 - h && y <= y0 + PH - 1 + h && !((y === y0 - h || y === y0 + PH - 1 + h) && kantAv(x) >= c && hash(x, y, 62) < 0.3); };
+      for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) if (pa(x, y)) { pap[y * BW + x] = 1; const k = kantAv(x) < c ? 4 : 3; if (!pa(x + 2, y + k)) B.satt(x + 2, y + k, P.i('kol', 0)); } // skuggan på marken, längre där kanten lyfter
+      for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) {
+        if (!pap[y * BW + x]) continue;
+        const g = hash(x, y, 63), h = hojning(x), k = Math.min(y - (y0 - h), y0 + PH - 1 + h - y), f = fbm(x / 18, y / 18, 91, 3), d = kantAv(x), hoger = x > x0 + PW / 2;
+        let col = g < 0.05 ? P.i('ben', 3) : g > 0.97 ? P.i('ben', 1) : P.i('ben', 2);
+        if (bayer(x, y) < (f - 0.5) * 1.6 || (k < 4 && bayer(x, y) < (4 - k) / 4 * 0.7)) col = P.i('senap', 3);
+        if (d < c) { // den böjda kanten: baksidan som en smal rand, ett ljust krön och skugga in mot det plana
+          const t = d / c; // 0 vid kanten, 1 där böjen börjar
+          col = d === 0 ? P.i('jord', 1) : d === 1 ? P.i('ben', 1) : t < 0.4 ? (hoger ? P.i('ben', 2) : P.i('ben', 3)) : t < 0.65 ? (hoger && bayer(x, y) < 0.5 ? P.i('ben', 1) : P.i('ben', 2)) : bayer(x, y) < (hoger ? 0.75 : 0.45) ? P.i('ben', 1) : P.i('ben', 2);
+          if (k === 0) col = P.i('jord', 1);
+        }
+        B.satt(x, y, col);
+      }
+      for (let y = y0; y < y0 + PH; y++) for (const x of [x0 + c, x0 + PW - 1 - c]) if (bayer(x, y) < 0.5) B.morka(x, y); // där böjen börjar
+      kartanPa(B, stil, x0 + mx, y0 + pm, pap, BW, true, ext);
+      handerna(B, pap, BW, x0, x0 + PW - 1, y0 + Math.round(PH / 2) - 40);
+    };
+    return { w: BW, h: BH, rita };
+  }
+
   // ett utsnitt av bläckkartan på papper runt karavanen, med karavan nummer nr
   const utsnitt = (nr, w, h) => B => {
     const V = varld(), M = Bild(W, H, B.P); KNR = nr; skinnRitning(M, true); KNR = 0;
     const x0 = Math.max(0, Math.min(W - w, V.karavan.x - (w >> 1))), y0 = Math.max(0, Math.min(H - h, V.karavan.y - (h >> 1)));
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) B.satt(x, y, M.get(x0 + x, y0 + y));
   };
-  return { varld, skinn, farg: B => farg(B), tra: B => tra(B), iHander, iRulle, utsnitt };
+  return { varld, skinn, farg: B => farg(B), tra: B => tra(B), iHander, iRulle, iBojd, utsnitt };
   }
 
   const K1 = karta(240, 160, null);
@@ -674,6 +779,15 @@
     id: 'f11_varldskarta_v1_rulle', namn: 'Världskartan med gradnät och runband', typ: 'janej', stor: true, kol: true, karta: K5,
     vad: 'Steg 11.1.9 (koncept, långt fram). Din kommentar: gör koordinatstreck på kartan, som på gamla kartor; fortsätt bara med version 1; runskrift runt hela kartans kant, ungefär som på version 3; gör kontinenten i mitten större och öarna färre och bara några i kanterna; låt pergamentrullen ha bara ett eller ett halvt varv kvar i kanterna. Här är bläckkartan (version 1) med ett gradnät: prickade linjer på lika avstånd över hela kartan, och ett streck där varje linje möter runbandet. Runt hela kanten går ett band med runor mellan två bläcklinjer och en knut i varje hörn. Kontinenten är större, fyra öar ligger ute vid hörnen och bara några få skär nära kusten. Rullarna har bara ett varv papper kvar och är smala. De gamla korten står kvar.',
     versioner: [{ text: 'Bläck på pergament med gradnät och runband, smala rullar.', w: R5.w, h: R5.h, kol: true, rita: R5.rita }],
+  });
+  // version 1 som ligger nästan plant och bara är böjd i kanterna, med ett runt gradnät som samlas i en kompassros och en
+  // gammaldags stämpel (Björn: "kartan bara är lite böjd i kanterna", "kordinatsträcken är kurvade och samlas i en cirkel",
+  // "gör en gammaldags stämpel någon stans på kartan")
+  const R6 = K5.iBojd('black', 1.4, { gradnat: 'rund', runband: true, stampel: true });
+  VAL.push({
+    id: 'f11_varldskarta_v1_bojd', namn: 'Världskartan böjd i kanterna, med kompassros och stämpel', typ: 'janej', stor: true, kol: true, karta: K5,
+    vad: 'Steg 11.1.9 (koncept, långt fram). Din kommentar: pröva att kartan bara är lite böjd i kanterna, för att visa att den brukar vara ihoprullad; gör koordinatstrecken kurvade så att de samlas i en cirkel någonstans på kartan; gör en gammaldags stämpel någonstans på kartan. Här ligger kartan nästan plant, och bara sidorna böjer sig lite upp: papperet blir lite bredare där, krönet är ljust och baksidan syns som en smal rand. Strecken är cirklar runt en kompassros ute i havet, och sexton linjer går ut från rosen i en svag båge mot kanten. Rosen har åtta uddar, norr i rött. Stämpeln är röd, lite sned och nött, med två ringar, prickar och runan R i mitten. Samma karta som i kortet ovanför; det kortet står kvar.',
+    versioner: [{ text: 'Bläck på pergament, böjd i kanterna, med kompassros, runt gradnät och stämpel.', w: R6.w, h: R6.h, kol: true, rita: R6.rita }],
   });
   // karavanen på väg längs en väg (Björn: "gör en ikon för en karavan som är påväg någonstans"): tre förslag, i ett utsnitt av bläckkartan
   VAL.push({
