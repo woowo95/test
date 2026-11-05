@@ -96,7 +96,8 @@ SCENARIER.material = {
     const med = bastaProjekt(s, p, f);
     setItems(s, { flinta: 0, torrgras: 0, grenar: 0 }); setAmount(s, 'ved', 0);
     const utan = bastaProjekt(s, p, f), yxa = PROJEKT.yxa?.saknar?.(s, p, f);
-    const ho = (hamtar?: string) => { const t = by(4), q = vuxna(t)[0]; setItems(t, { torrgras: 50, grenar: 50 }); q.task = { act: 'samla', phase: 'do', tx: q.x, ty: q.y, until: t.now + SIM.HOUR, carry: 0, why: "test", dark: false, hamtar }; return SIM.forageItems(t, q, 3600)?.torrgras ?? 0; };
+    const ho = (hamtar?: string) => { const t = by(4), q = vuxna(t)[0]; setItems(t, { torrgras: Math.ceil(SIM.materialBuffert(t, 'torrgras')) + 1, grenar: 50 }); q.task = { act: 'samla', phase: 'do', tx: q.x, ty: q.y, until: t.now + SIM.HOUR, carry: 0, why: "test", dark: false, hamtar }; return SIM.forageItems(t, q, 3600)?.torrgras ?? 0; };
+    // höet ligger över bufferten men under taket (steg 6.2.14): över taket plockar ingen
     const hoFatt = ho('torrgras'), hoUtan = ho();
     return [
       [`med material finns ett projekt att göra (${med?.k}, uppgift ${med?.u?.act})`, !!med?.u],
