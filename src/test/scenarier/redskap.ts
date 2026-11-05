@@ -429,7 +429,7 @@ SCENARIER.forvaring = {
     const hyllan = () => stationerOf(s).find(t => t.k === 'hylla' && isKlar(t));
     // kistan fyller samma behov och är billigare, så under tiden byggs ingen kista (den prövas nedan)
     const kistTek = SIM.STATIONER.kista.tek; (SIM.STATIONER.kista as SIM.StationDef).tek = [];
-    try { while (!hyllan() && h < 200) /* ca 130 timmar sedan steg 4.5.6.7 */ { kor(s, 1); h++; } } finally { (SIM.STATIONER.kista as SIM.StationDef).tek = kistTek; }
+    try { while (!hyllan() && h < 300) /* ca 230 timmar sedan steg 6.1.8 (130 sedan 4.5.6.7) */ { kor(s, 1); h++; } } finally { (SIM.STATIONER.kista as SIM.StationDef).tek = kistTek; }
     const hy = hyllan(), z = hy && zonesOf(s).find(q => inZone(q, hy.x, hy.y) && q.hus !== undefined);
     const ryms = hy ? rymd(s, hy.x, hy.y, 'grenar') : 0;
     // mer grenar: hyllans ruta fylls mer än en vanlig ruta

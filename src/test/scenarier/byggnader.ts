@@ -1,6 +1,6 @@
 // Scenarier. Byggnader och lager: byggnader, förrådshus, familjehus, funktion, påbörjat, bostad, bygg, lager och lagerplatser.
 import { isDeepStrictEqual } from 'node:util';
-import { MIN, Person, Act, createState, addTool, FOREST, HOUR_S, toolsOf, BYN, step, living, sees, ageIndex, cloneState, ageStart, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, dropLoad, T, isStored, zonesOf, allows, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, rektAvstand, stat, campCenter, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, isWall, Bit, wearBuild, treeOn, KANIN, ownsAmount, addTo, setAmount, isFood, grundvarde, tingOf, komOf, BYGGNADER, FN, mostUrgent, fnId, fnOf, planBuild, workOn, wearMult, LAGER, homeless, sovplatser, inZone, startWork, workHalf, finishHalf, stepPaborjat, halvOf, tingVarde, HALV_TID, fallTid, treeSpot, SEC, Task, familjOf, bedTile, takeForHouse, put, stepByggnader, husNamn, spotFor, roofed, MATERIAL, usable, dropSpot, ALDER, KROPP, samlingRum, varmareInne, haulJob, fetchFuel, chooseTask, minOf } from '../../sim';
+import { MIN, Person, Act, createState, addTool, FOREST, HOUR_S, toolsOf, BYN, step, living, sees, ageIndex, cloneState, ageStart, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, dropLoad, T, isStored, zonesOf, allows, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, rektAvstand, stat, campCenter, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, isWall, Bit, wearBuild, treeOn, ownsAmount, addTo, setAmount, isFood, grundvarde, tingOf, komOf, BYGGNADER, FN, mostUrgent, fnId, fnOf, planBuild, workOn, wearMult, LAGER, homeless, sovplatser, inZone, startWork, workHalf, finishHalf, stepPaborjat, halvOf, tingVarde, HALV_TID, fallTid, treeSpot, SEC, Task, familjOf, bedTile, takeForHouse, put, stepByggnader, husNamn, spotFor, roofed, MATERIAL, usable, dropSpot, ALDER, KROPP, samlingRum, varmareInne, haulJob, fetchFuel, chooseTask, minOf } from '../../sim';
 import * as SIM from '../../sim';
 import { findPath } from '../../sim/vag';
 import { START } from '../kor';
@@ -477,14 +477,15 @@ SCENARIER.lager = {
     let hem = 0, maxKvot = 0, fullt = 0;
     for (let i = 0; i < 8 * 3600 / 2; i++) {
       step(b, 2);
-      // en kanin bärs hem hel, en i taget, hur stark man än är
+      // aldrig mer än händerna orkar, utom en enda sak (steg 6.1.8)
       for (const p of living(b)) if (p.task?.phase === 'back' && p.task.act !== 'elda') {
-        const kv = p.task.act === 'jakt' ? load(p.task, b) / KANIN : load(p.task, b) / capacity(b, p); hem++; maxKvot = Math.max(maxKvot, kv); if (kv >= 0.95) fullt++;
+        const bs = SIM.bordSlag(p.task), kv = Object.values(bs).reduce((a, x) => a + x, 0) / Math.max(SIM.bordPlats(b, p), ...Object.keys(bs).map(k => SIM.viktOf(k))); // korgen rymmer mer än händerna
+        hem++; maxKvot = Math.max(maxKvot, kv); if (kv >= 0.95) fullt++;
       }
     }
     // den som har fullt går hem med en gång, även om uppgiften inte är klar
     const v = living(b).find(p => ageOf(p, b.now) >= 18)!;
-    const tk0: SIM.Task = v.task = { act: 'samla', phase: 'do', tx: v.x, ty: v.y, until: b.now + 3 * HOUR, carry: capacity(b, v) * STACK.bar, why: 'test', dark: false };
+    const tk0: SIM.Task = v.task = { act: 'samla', phase: 'do', tx: v.x, ty: v.y, until: b.now + 3 * HOUR, carry: Math.floor(capacity(b, v) / SIM.viktOf('bar')), why: 'test', dark: false };
     step(b, 2); step(b, 2);
     const gickHem = tk0.phase === 'back' || load(tk0, b) === 0; // på väg hem, eller redan framme vid lagret och har lämnat bördan
     const stark = living(b).slice().sort((x, y) => stat(y, 'styrka', b.now) - stat(x, 'styrka', b.now));
@@ -558,7 +559,7 @@ SCENARIER.lagerplatser = {
     const startFel = [54, 990, 2612].filter(seed => { const k = createState(seed, START), z = zonesOf(k)[0]; for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (!usable(k, x, y)) return true; return false; });
     const s = createState(9, START);
     setFood(s, 600); setAmount(s, 'ved', 200); setAmount(s, 'grenar', 400); setAmount(s, 'flinta', 1); s.fire.ring = true; // byn kan tända sin eld och har tid att sortera
-    kor(s, 30); // sorteringen tar ungefär ett dygn, ibland några timmar till
+    kor(s, 72); // sorteringen tar två till tre dygn: en tur bär det som ryms i händerna (steg 6.1.8)
     const zs = zonesOf(s), ps = pilesOf(s);
     const fel = ps.filter(p => p.zone >= 0 && !allows(zs[p.zone], p.k)).length;
     const summaOk = Object.keys(STACK).filter(k => !SIM.isTool(k)).every(k => Math.abs(ps.filter(p => p.k === k && p.stored).reduce((a, p) => a + p.n, 0) - amountOf(s, k)) < 1e-3); // ett redskap kan vara i bruk eller hänga vid en station
@@ -573,7 +574,7 @@ SCENARIER.lagerplatser = {
       [`den första lagerplatsen går att använda (${startFel.length ? 'inte i by ' + startFel.join(', ') : 'i alla tre byarna'})`, startFel.length === 0],
       [`en ny lagerplats görs när den första inte kan växa mer (${zs.length} lagerplatser)`, zs.length >= 2],
       [`maten får den första och material den nya (${zs.map(z => z.namn).join(', ')})`, zs[0].slag === 'mat' && zs[1]?.slag === 'material'],
-      [`sakerna sorteras till rätt lagerplats (${fel} stackar ligger fel efter 30 timmar)`, fel <= 2],
+      [`sakerna sorteras till rätt lagerplats (${fel} stackar ligger fel efter 72 timmar)`, fel <= 2],
       ['stackarna innehåller allt i förrådet', summaOk && ps.every(p => p.n <= p.max + 1e-9)],
     ];
   },
@@ -858,29 +859,27 @@ SCENARIER.skogsrojning = {
 };
 
 SCENARIER.stackar = {
-  text: 'Stacken efter vikt eller volym (steg 4.5.5.1): en stack är det som ryms i en börda, efter vikten eller volymen, det som tar slut först. Harskinnen är lätta men skrymmande, och en full famn harskinn väger mindre än en full famn sten',
+  text: 'Stacken och vikten (steg 4.5.5.1, 6.1.8): en sak väger VIKT_STACK delat med stacken, om inte vikten står i registret, så en full stack av vad som helst väger lika mycket. Den som plockar upp tar så många hela saker som händerna orkar',
   kor: () => {
-    const ny: Record<string, [number, number]> = { skinn: [30, 0.3], vilt: [5, 4], flinta: [20, 1], rep: [40, 0.5], ben: [40, 0.5] };
-    const fel = Object.entries(ny).filter(([k, [n, kg]]) => STACK[k] !== n || SIM.viktOf(k) !== kg).map(([k]) => k);
+    const ny: Record<string, [number, number]> = { skinn: [30, 100 / 30], vilt: [5, 8], flinta: [20, 5], rep: [40, 2.5], ben: [40, 2.5] };
+    const fel = Object.entries(ny).filter(([k, [n, v]]) => STACK[k] !== n || Math.abs(SIM.viktOf(k) - v) > 1e-9).map(([k]) => k);
     const lika = ['vargskinn', 'sten', 'grenar', 'torrgras', 'mossa', 'kol', 'silver', 'bar'].filter(k => STACK[k] !== { vargskinn: 5, sten: 10, grenar: 50, torrgras: 50, mossa: 50, kol: 25, silver: 200, bar: 25 }[k]);
-    // en full stack av vad som helst är en full famn; harskinnen fyller famnen av sin volym, inte sin vikt
+    // en full stack av vad som helst väger lika mycket (det som inte har en egen vikt)
     const s = createState(1, START);
     const famn = (k: string) => load({ act: 'bara', phase: 'back', tx: 0, ty: 0, until: s.now, carry: 0, items: { [k]: STACK[k] } } as Task, s);
-    const fulla = [...Object.keys(ny), 'sten', 'grenar'].filter(k => Math.abs(famn(k) - 1) > 1e-9);
-    const skinnKg = STACK.skinn * SIM.viktOf('skinn'), stenKg = STACK.sten * SIM.viktOf('sten');
-    // den som plockar upp harskinn tar inte fler än en stack i en full famn
+    const fulla = ['skinn', 'flinta', 'rep', 'ben', 'sten', 'grenar'].filter(k => Math.abs(famn(k) - SIM.VIKT_STACK) > 1e-9);
+    // den som plockar upp harskinn tar så många som båda händerna orkar
     const p = living(s).find(q => ageOf(q, s.now) >= 18)!;
     put(s, 'skinn', 60);
     const g = (s.stackar ?? []).find(x => x.k === 'skinn')!;
     const t: Task = { act: 'bara', phase: 'go', tx: g.x + 0.5, ty: g.y + 0.5, until: s.now + HOUR, carry: 0, why: 'test', dark: false };
-    SIM.pickUp(s, p, t, 1);
-    const tog = t.items?.skinn ?? 0;
+    SIM.pickUp(s, p, t, SIM.ryms(s, p));
+    const tog = t.items?.skinn ?? 0, orkar = Math.floor(SIM.capacity(s, p) / SIM.viktOf('skinn') + 1e-9);
     return [
-      [`de nya stackarna och vikterna: harskinn 30 à 0,3 kg, fällt vilt 5 à 4 kg, flinta 20 à 1 kg, rep och ben 40 à 0,5 kg${fel.length ? ` (fel: ${fel.join(', ')})` : ''}`, fel.length === 0],
+      [`de nya stackarna och vikterna: harskinn 30 à 3,3, fällt vilt 5 à 8, flinta 20 à 5, rep och ben 40 à 2,5${fel.length ? ` (fel: ${fel.join(', ')})` : ''}`, fel.length === 0],
       [`vargskinn, sten, grenar, hö, mossa, kol, silver och mat är som förut${lika.length ? ` (fel: ${lika.join(', ')})` : ''}`, lika.length === 0],
-      [`en full stack är en full famn${fulla.length ? ` (fel: ${fulla.join(', ')})` : ''}`, fulla.length === 0],
-      [`en famn harskinn väger mindre än en famn sten (${skinnKg} kg mot ${stenKg} kg)`, skinnKg < stenKg],
-      [`en full famn ur en hög med 60 harskinn är en stack (${tog})`, tog === 30],
+      [`en full stack väger ${SIM.VIKT_STACK}${fulla.length ? ` (fel: ${fulla.join(', ')})` : ''}`, fulla.length === 0],
+      [`ur en hög med 60 harskinn tar man så många som båda händerna orkar (${tog} av ${orkar})`, tog === orkar],
     ];
   },
 };

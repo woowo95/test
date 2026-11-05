@@ -1,6 +1,6 @@
 import { iconImg, kvSvg, tecknet } from '../ikoner';
 import { framstegSvg } from './framsteg';
-import { NORMAL, kvEffekt, kvHaller, kvNamn, kvOf, kvVarde, BORDA_KG, bordOf, UTRUSTNING, HOUR, KROPP, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, ledareOf, load, num, ryktbarhet, sak, sakNamn, skadeLista, timeLabel } from '../sim';
+import { NORMAL, kvEffekt, kvHaller, kvNamn, kvOf, kvVarde, viktOf, HOUR, KROPP, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, ledareOf, load, num, ryktbarhet, sak, sakNamn, skadeLista, timeLabel } from '../sim';
 import { s, uppgiftVid, vidNyBy } from './lage';
 
 // små hjälpare för text, tal, färger och staplar som alla delar av gränssnittet använder
@@ -129,10 +129,10 @@ export const pileTxt = (p: { k: string; n: number; max: number; gor?: string; kl
 // det p bär vid tiden som visas (uppgiftVid, steg 6.1.1), som kartan
 export function carryTxt(p: Person) {
   const t = uppgiftVid(p), orkar = capacity(s, p), parts: string[] = [];
-  const kg = (n: number) => `${num(n * BORDA_KG).replace(',0', '')} kg`, styck = (k: string, n: number) => `${fmtN(n)} ${sakNamn(k).toLowerCase()} (${kg(n * bordOf(k))})`;
+  const kg = (n: number) => `${num(n).replace(',0', '')} vikt`, styck = (k: string, n: number) => `${fmtN(n)} ${sakNamn(k).toLowerCase()} (${kg(n * viktOf(k))})`;
   if (t && t.carry > 0) parts.push(styck(carryKind(t.act), t.carry));
   for (const k in t?.items ?? {}) if (t!.items![k] > 0 && !sak(k)?.dold) parts.push(styck(k, t!.items![k]));
-  return parts.length ? `Bär ${parts.join(' och ')}, ${kg(load(t!, s))} (${Math.round(load(t!, s) / orkar * 100)} % av vad hen orkar)` : `Bär inget just nu, orkar bära ${kg(orkar)} med båda händerna och ${kg(orkar * UTRUSTNING.en)} i en`;
+  return parts.length ? `Bär ${parts.join(' och ')}, ${kg(load(t!, s))} (${Math.round(load(t!, s) / orkar * 100)} % av vad hen orkar)` : `Bär inget just nu, orkar bära ${kg(orkar)} med båda händerna och ${kg(orkar / 2)} i en`;
 }
 // en rad i loggen där namnen går att trycka på
 // Namnen letas upp i den ursprungliga texten och byts i ett svep, så att samma namn två gånger, eller ett namn som är

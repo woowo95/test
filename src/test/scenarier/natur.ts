@@ -1,5 +1,5 @@
 // Scenarier. Djur och natur: djur, abborre, sjön, kaniner, rötter, värmekartor och naturen.
-import { FANGST, createState, bearbeta, canProcess, makeTool, step, living, cloneState, ageStart, nyKalender, pilesOf, amountOf, STACK, isLight, T, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, findL, areaOf, describe, campDist, campCenter, FYND, FYND_IDS, GRUPPER, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, observe, hoped, Lager, skyggOf, grupperOf, KANINER, share, djurOf, KANIN, SLAKT, DJUR, DJURARTER, gain, ownsAmount, setAmount, BEAT, matGott, barnMat, hungerFlytt, regulate, EKONOMI, kroppensMat, foodDays, SAMTALSSLAG, SAKER, materialOf, balansTal, load, capacity, bordPlats, PLATS, tinderShort } from '../../sim';
+import { FANGST, createState, bearbeta, canProcess, makeTool, step, living, cloneState, ageStart, nyKalender, pilesOf, amountOf, STACK, isLight, T, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, findL, areaOf, describe, campDist, campCenter, FYND, FYND_IDS, GRUPPER, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, observe, hoped, Lager, skyggOf, grupperOf, KANINER, share, djurOf, KANIN, SLAKT, DJUR, DJURARTER, gain, ownsAmount, setAmount, BEAT, matGott, barnMat, hungerFlytt, regulate, EKONOMI, kroppensMat, foodDays, SAMTALSSLAG, SAKER, materialOf, balansTal, load, bordPlats, PLATS, tinderShort } from '../../sim';
 import * as SIM from '../../sim';
 import { FOREST, isSoil } from '../../sim/vag';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
@@ -346,7 +346,7 @@ SCENARIER.samlartur = {
     // turerna följs i steg om 10 sekunder (ett slag är fem minuter, kortare än en tur), i tre byar under två dygn (två år i spelet).
     // Byarna har ingen mat men gott om trä, så att de samlar mat: sedan det vilda blev sällsyntare (steg 3.10.23.7) samlade de annars
     // nästan bara tändmaterial de första dygnen
-    const borda = balansTal().steg.borda as number, turer: { min: number; lass: number; flytt: number }[] = [];
+    const turer: { min: number; lass: number; flytt: number }[] = [];
     let tomt = 0, arbete = 0;
     for (const seed of [42, 7, 3]) {
       const s = createState(seed, START), pagar = new Map<number, { t0: number; last: string; lass: number; flytt: number; tom?: string; tx?: string }>();
@@ -366,7 +366,7 @@ SCENARIER.samlartur = {
           // den som redan bestämt sig för att gå (until nu) står kvar till nästa steg; det räknas inte som att stanna
           if (t.phase === 'do') { arbete++; if (tomNu && v.tom === plats && t.until > s.now) tomt++; }
           v.tom = tomNu ? plats : undefined;
-          if (t.phase === 'back') v.lass = load(t, s) / Math.min(capacity(s, p) * borda, bordPlats(s, p));
+          if (t.phase === 'back') v.lass = load(t, s) / bordPlats(s, p);
           v.last = t.phase;
         }
       }
@@ -647,7 +647,7 @@ SCENARIER.flatarbank = {
     };
     const kElden = kniv(false), kBank = kniv(true);
     // en vanlig by tills någon tvinnar rep, högst tio dygn (tio år i spelet): inget handarbete utan sak, och rep tvinnas som en egen handling
-    const v = createState(6, START); // en by som kommer på repet tidigt (by 7 inte i v381, by 2 kom inte på det inom tio dygn i v75, by 3 inte i v156 och v324, by 5 inte i v159)
+    const v = createState(3, START); // en by som kommer på repet tidigt (by 6 inte i v384, by 7 inte i v381, by 2 kom inte på det inom tio dygn i v75, by 3 inte i v156 och v324, by 5 inte i v159)
     let dygn = 0;
     for (; dygn < 10 && !tvinnar; dygn++) kor(v, 24, w => { for (const r of living(w)) { if (r.task?.act === 'hantverk') hantverk++; if (r.task?.act === 'tvinna') tvinnar++; } });
     // att tvinna rep är hantverk: den som gör det kommer på det som hör till hantverket (kniven)
@@ -2210,7 +2210,7 @@ SCENARIER.virke = {
   text: 'Ved och virke (steg 4.5.5.2): träet är ved (bränsle, 20 i en stack, 1 kg styck) och virke (kluvna stockar, 2 i en stack, 10 kg styck). Virket klyvs ur de fällda stammarna med yxa när byn vill bygga en station av virke, och stationerna och möblerna byggs av virke; små saker görs av ved',
   kor: () => {
     const { STATIONER, stationerOf, isKlar, addTool, fellTree, stocks, PROJEKT } = SIM;
-    const vikt = STACK.ved === 20 && SIM.viktOf('ved') === 1 && STACK.virke === 2 && SIM.viktOf('virke') === 10;
+    const vikt = STACK.ved === 20 && SIM.viktOf('ved') === 5 && STACK.virke === 2 && SIM.viktOf('virke') === 15;
     const av = (k: string) => (STATIONER as Record<string, { av: Partial<Record<string, number>> }>)[k]!.av;
     const alla = SIM.STATION_LIST.filter(k => (av(k).virke ?? 0) > 0).length, avVed = SIM.STATION_LIST.filter(k => (av(k).ved ?? 0) > 0).length;
     const scen = av('scen').virke === 6, hylla = (av('hylla').virke ?? 0) >= 1 && (av('hylla').virke ?? 0) <= 2;
@@ -2229,7 +2229,7 @@ SCENARIER.virke = {
     while (!stationerOf(s).some(isKlar) && h < 48) { kor(s, 1, v => { for (const r of living(v)) if (r.task?.act === 'klyva') klov++; }); h++; }
     const st = stationerOf(s).find(t => t.k === 'slaktbank'), klar = !!st && isKlar(st);
     return [
-      [`ved: 20 i en stack à 1 kg; virke: 2 i en stack à 10 kg`, vikt],
+      [`ved: 20 i en stack à 5 vikt; virke: 2 i en stack à 15 vikt`, vikt],
       [`stationerna och möblerna kostar virke (${alla} slag av virke, ${avVed} av ved), scenen 6 och en hylla 1–2`, alla >= 10 && avVed === 0 && scen && hylla],
       ['slagträet, trumman och lyran görs av ved', sma],
       [`byn saknar virke när den vill bygga en slaktbänk (${brist0.toFixed(2)}) och har ${stocks(s).length} fällda stammar kvar`, brist0 > 0 && fallda > 0],

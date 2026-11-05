@@ -626,7 +626,7 @@ export function betalVaror(M: Part, G: Part, utom: readonly string[]) {
 // det M betalar för att G ska få mal (för G), i hela saker: man betalar hellre lite för mycket (steg 2.10.7). fick = värt för G, kost = värt för M
 export function betalaAv(varor: ReturnType<typeof betalVaror>, G: Part, mal: number) {
   const ut: Vara[] = [];
-  let f = 0, k = 0, rum = G.rymmer?.() ?? Infinity; // det G får, för G, och det M ger, för M, och hur mycket mer G kan bära (kg)
+  let f = 0, k = 0, rum = G.rymmer?.() ?? Infinity; // det G får, för G, och det M ger, för M, och hur mycket mer G kan bära (vikt)
   for (const w of varor) {
     if (f >= mal - 1e-9) break;
     let n = w.t ? 1 : Math.min(w.n, Math.ceil((mal - f) / w.ut - 1e-6));

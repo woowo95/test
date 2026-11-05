@@ -16,7 +16,8 @@ import { redskapIHanden, tidyTools } from './agande';
 import { kvEffekt } from './kvalitet';
 import { SKOG, chopStock, fellTree, rotStumps, stocks } from './skog';
 import { needLadder, noticeTheft, stole } from './behov';
-import { avbryt, capacity, carryKind, dropSpot, fetchSpot, helaIBordan, helt, homeKind, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore } from './lager';
+import { avbryt, bordSlag, carryKind, dropSpot, fetchSpot, helaIBordan, helt, homeKind, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore } from './lager';
+import { SAKER, viktOf } from './saker';
 import { DJURARTER, REDSKAP, bearbeta, djurKvar, twineRope, wearUsed } from './redskap';
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
 import { arbetaBredvid, forsokKlar, forsokSteg, stepLarlingar, thinkWhileWorking } from './teknik';
@@ -65,7 +66,7 @@ import { sjoRakna } from './sjo';
 import { akel, regnetTvattar, toaBesok } from './smuts';
 import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from './torst';
 import { barMed, burenSteg, halsa, halsaSteg, lakerFullt, lamnaAv, mossaFynd, mossaPaStam, vardKlar, vardMal } from './halsa';
-import { bordPlats, kladVarme, stepKlader } from './utrustning';
+import { bordPlats, fullBorda, kladVarme, ryms, stepKlader } from './utrustning';
 import { stepPynt } from './pynt';
 import { stadaByten } from './byte';
 import { finishStation, finishTillbehor, stationRutor, stepStationer, tillbehorVarme, workStation } from './stationer';
@@ -73,7 +74,7 @@ import { notis } from './notiser';
 
 // Simuleringen går i slag om fem minuter (BEAT), i spelet och vid ikappräkning likadant. Inom ett slag går tiden åt
 // till det som händer i tur och ordning (taskStep). Arbetet görs i bitar om högst BIT sekunder, och man bär aldrig mer
-// än en tredjedel av vad man orkar från arbetet (STEG.borda), och aldrig mer än som ryms i de fria händerna (bordPlats i utrustning.ts). STEG.markNot = hur mycket ett steg nöter marken (MARK.nott per ruta)
+// än som ryms i de fria händerna (fullBorda i utrustning.ts, steg 6.1.8). STEG.markNot = hur mycket ett steg nöter marken (MARK.nott per ruta)
 export const BEAT = 300;
 const BIT = 60;
 // Balanstalen (regel 8). Kroppens gränser och takter (KROPP) och åldrarna (ALDER) står i folk.ts, eftersom val.ts och behov.ts läser dem
@@ -81,7 +82,6 @@ const STEG = balans('steg', {
   // att nöta marken (hur fort man går står i GANG, gang.ts)
   markNot: 0.03, // hur mycket ett steg nöter marken (MARK.nott per ruta)
   vandraNot: 0.08, // ... och när man rör sig på platsen (gånger vandra.v i handlingens rad och tiden)
-  borda: 1 / 3, // man bär aldrig mer än så stor del av vad man orkar från arbetet
   rundaRutor: 40, // så många rutor högst i en bit av rundan där man går förbi rutorna där inget är klart (rundaSteg, steg 6.1.3)
   // graviditet
   dragtid: 0.75, // dygn som en graviditet varar
@@ -543,7 +543,7 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
     if (r && r.until > now + 2 * MIN && tk.dark === !light) { tk.phase = 'go'; tk.tx = r.x; tk.ty = r.y; tk.until = r.until; tk.res = undefined; }
     else p.task = undefined;
   } else {
-    tk.phase = 'do'; tk.hopp = undefined; tk.plock = undefined; if (tk.act === 'bara') { pickUp(s, p, tk, bordPlats(s, p)); tk.until = now; }
+    tk.phase = 'do'; tk.hopp = undefined; tk.plock = undefined; if (tk.act === 'bara') { pickUp(s, p, tk, ryms(s, p)); tk.until = now; }
     if (tk.act === 'flyttaeld') tk.until = now + ELDFLYTT.tim * HOUR; // vid elden: släcka den och bära stenarna (eldflytt.ts)
     startWork(s, p, tk); // ett redskap eller ett träd: arbetet räknas härifrån, och det påbörjade fortsätter
     tk.tur = 0; tk.lim = ACTS[tk.act].tur ?? (tk.sok ? ELD.sokTur : undefined);
@@ -679,7 +679,7 @@ function drag(s: State, p: Person, tk: Task, varde: (x: number, y: number) => nu
   let ut = RUNDA.ut + RUNDA.nyfiken * stat(p, 'nyfikenhet', now) / 20 + RUNDA.mod * stat(p, 'mod', now) / 20;
   if (a < ALDER.vuxen || a >= ALDER.gammal || halsa(p) < RUNDA.svagHalsa) ut *= RUNDA.svag;
   const under = (v: number) => Math.max(0, 0.5 - v) * 2;
-  ut -= RUNDA.borda * load(tk, s) / Math.max(1, capacity(s, p)) + RUNDA.behov * (under(p.hunger) + under(p.torst) + under(p.rest));
+  ut -= RUNDA.borda * Math.min(1, load(tk, s) / Math.max(1, bordPlats(s, p))) + RUNDA.behov * (under(p.hunger) + under(p.torst) + under(p.rest));
   ut -= RUNDA.mork * (isLight(now) ? clamp(1 - (19 - h) / RUNDA.morkTim, 0, 1) : 1);
   ut -= RUNDA.kyla * (Math.min(1, coldOf(temperature(s))) + (p.warm < KROPP.kallt ? 1 : 0));
   const mod = clamp(MINNE.radslaMax - stat(p, 'mod', now) / 20, MINNE.radslaMin, MINNE.radslaMax);
@@ -766,7 +766,7 @@ function rundaRuta(s: State, p: Person, tk: Task, left: number, a: number, learn
   // nästa ruta i närheten som man inte nyss plockat på; finns ingen går man längre bort, sedan till en man plockat på förut
   // (men aldrig samma igen: då står man still). Står man vid den enda busken går man ett steg åt sidan och tillbaka. Den som
   // samlar tändmaterial och inte har nog går runt på marken omkring, där det ligger överallt
-  const full = load(tk, s) >= Math.min(capacity(s, p) * STEG.borda, bordPlats(s, p)), sett = tk.sett;
+  const full = fullBorda(s, p, tk), sett = tk.sett;
   const dr = drag(s, p, tk, varde);
   const ner = (rr: number, g: Parameters<typeof nastaRuta>[7], ...krav: { sett: readonly number[]; minst: number }[]) => nastaRuta(s, varde, tk.tx, tk.ty, rr, p.id, krav, g);
   let n = ner(r.r, dr.nara, { sett, minst: PLATS.vidare });
@@ -793,7 +793,13 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   if (res && del) takeFrom(s, res, tk.tx, tk.ty, y, del.r);
   // den som arbetar ser hur mycket som finns i området och minns det
   if (res && (rich < PLATS.tomtGrans || chance(s, 1 / STEG.minneSek, dtSec, 'minne', p))) lookAround(s, p, tk.tx, tk.ty);
-  const bar = (k: string, n: number) => { if (n > 0) { tk.items ??= {}; tk.items[k] = (tk.items[k] ?? 0) + n; } };
+  // det arbetet ger läggs i bördan; något annat än det arbetet ger tas bara med om det ryms i händerna (steg 6.1.8),
+  // utom ett sällsynt fynd (flintan), som man inte lämnar
+  const bar = (k: string, n: number) => {
+    if (!(n > 0)) return;
+    if (k !== carryKind(tk.act) && !SAKER[k]?.skaffa?.sallsynt) { const b = bordSlag(tk), w = viktOf(k); if (!ryms(s, p)({ ...b, [k]: Math.ceil((b[k] ?? 0) / w + n - 1e-9) * w })) return; } // bördan blir hela saker (helaIBordan)
+    tk.items ??= {}; tk.items[k] = (tk.items[k] ?? 0) + n;
+  };
   // det arbetet ger (UTFALL ovan); utan egen rad, eller om raden inte tagit hand om det, läggs det platsen gav i bördan
   const u = UTFALL[tk.act];
   if (!(u && u(s, p, tk, { y, rich, delar: del?.r, rd, dtSec, a, bar })) && y > 0) {
@@ -814,7 +820,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   }
   // arbetet sker i turer: efter en stunds arbete (tur), en fångst eller när bördan är full bärs det hem, sedan fortsätter man
   tk.tur = (tk.tur ?? 0) + dtSec;
-  const full = load(tk, s) >= Math.min(capacity(s, p) * STEG.borda, bordPlats(s, p)), has = isCarrying(tk);
+  const full = fullBorda(s, p, tk), has = isCarrying(tk);
   // busken är tom: den som samlar går vidare till nästa i närheten tills famnen är full (steg 2.12.4), annars hem.
   // Den som samlar tändmaterial stannar tills det räcker. Jägaren som redan gått vidare för att leta (jakt.ts) fortsätter
   if (tomt && tk.phase === 'do' && !runda) {

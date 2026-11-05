@@ -78,8 +78,8 @@ export const HANDEL = balans('handel', {
 });
 
 // handlarens utrustning: det hen bär varorna i. Bara ryggsäcken nu; kärran (vägar, fas 7) och packdjuret (11.4.1.2) läggs till här
-export const HANDLAR_UTR: Record<string, { namn: string; kg: number }> = {
-  ryggsack: { namn: 'Ryggsäck', kg: 25 },
+export const HANDLAR_UTR: Record<string, { namn: string; vikt: number }> = {
+  ryggsack: { namn: 'Ryggsäck', vikt: 125 }, // i vikt (saker.ts, steg 6.1.8)
 };
 
 // sorterna av handlare (steg 4.5.4.16): vilken som kommer styrs av hur rik byn är (rik = gånger HANDEL.rik), inte av byns
@@ -162,7 +162,7 @@ export function handlarFas(h: Handlare) {
 const mellan = (s: State, [a, b]: readonly [number, number] | number[]) => a + rnd(s, 'handel') * (b - a);
 const heltMellan = (s: State, [a, b]: readonly [number, number] | number[]) => a + Math.floor(rnd(s, 'handel') * (b - a + 1));
 export const kgOf = (v: HVara[]) => v.reduce((a, w) => a + w.n * viktOf(w.k), 0);
-export const rymmer = (h: Handlare) => HANDLAR_UTR[h.utr]?.kg ?? 0;
+export const rymmer = (h: Handlare) => HANDLAR_UTR[h.utr]?.vikt ?? 0;
 
 // hur många dygn till nästa handlare, efter hur rik byn är nu
 function intervall(s: State) {

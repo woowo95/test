@@ -6,7 +6,7 @@ import { kvHaller } from './kvalitet';
 import { forvarAt, sittAt, stationAt, stationDef, stationRutor, tillbakaVid } from './stationer';
 import { faltAt } from './odling';
 import { ruttSmuts } from './smuts';
-import { alive, byId, count, living, stat, ageOf, log } from './folk';
+import { ALDER, alive, byId, count, isSick, living, stat, ageOf, log } from './folk';
 import { matOrdning } from './naring';
 import { eldPlats, getMap } from './karta';
 import { Act, H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
@@ -14,7 +14,7 @@ import { bitAt, roofed } from './byggnad';
 import { ACTS, toolRow, usesTool } from './handlingar';
 import { temperature, vaderSlit } from './vader';
 import { BYN, Del, addDel, sumOf, takeOrder } from './egendom';
-import { FOOD, SAKER, SAK_LIST, STACK_ORDER, bordOf, famnOf, isFood, isTool, rutaOf, sakNamn } from './saker';
+import { FOOD, SAKER, SAK_LIST, STACK_ORDER, isFood, isTool, rutaOf, sakNamn, viktOf } from './saker';
 import { balans } from './balans';
 import { flodHotad, iVattnetNu, underMinnet } from './sjo';
 import { FLOD } from './flod';
@@ -50,9 +50,10 @@ export const LAGER = balans('lager', {
   // utan tak håller det så mycket kortare som ute och inne säger
   blirSkick: 0.5, // skicket på grenarna som veden faller sönder till
   // bära
-  barBas: 0.5, barStyrka: 20, // en person bär (Bas + styrkan / Styrka) stackar
-  barBarn: 10, barBarnDel: 0.35, // ... en under Barn år bär så här stor del av det ...
-  barUng: 15, barUngDel: 0.65, // ... en under Ung år så här stor del
+  handBas: 5, handStyrka: 2, // en hand orkar Bas + styrkan / Styrka vikt (steg 6.1.8; vikten står i saker.ts)
+  barBarn: 10, barBarnDel: 0.5, // ... en under Barn år orkar så här stor del av det ...
+  barUng: 15, barUngDel: 0.75, // ... en under Ung år så här stor del ...
+  barGammal: 0.75, barSjuk: 0.6, // ... en gammal (över ALDER.gammal) och en sjuk så här stor del
   // vad som bärs in först (haulJob): poängen är avståndet från lägret, plus detta för det som inte ligger på marken; lägst poäng först
   barBredvid: 50, // saker bredvid lagret när det nu finns plats i det
   barSortera: 100, // saker i fel lagerplats (maten bland materialet)
@@ -826,18 +827,28 @@ export function homeKind(t: Task) {
   if (t.carry > 0 || !t.items) return carryKind(t.act);
   return Object.keys(t.items).sort((a, b) => t.items![b] - t.items![a])[0] ?? carryKind(t.act);
 }
-// hur mycket en person orkar bära med båda händerna, i fulla famnar (stackar): en normalstark vuxen bär en famn, starka mer,
-// barn och gamla mindre. Hur det delas på händerna står i utrustning.ts
-export function capacity(s: State, p: Person) {
+// hur mycket en hand orkar, i vikt (steg 6.1.8): en normalstark vuxen 10, barn, gamla och sjuka mindre. Hur bördan delas
+// på händerna står i utrustning.ts
+export function handOrkar(s: State, p: Person) {
   const a = ageOf(p, s.now);
-  return (LAGER.barBas + stat(p, 'styrka', s.now) / LAGER.barStyrka) * (a < LAGER.barBarn ? LAGER.barBarnDel : a < LAGER.barUng ? LAGER.barUngDel : 1);
+  return (LAGER.handBas + stat(p, 'styrka', s.now) / LAGER.handStyrka) * (a < LAGER.barBarn ? LAGER.barBarnDel : a < LAGER.barUng ? LAGER.barUngDel : a > ALDER.gammal ? LAGER.barGammal : 1)
+    * (isSick(p, s.now) ? LAGER.barSjuk : 1);
 }
-// hur full bördan är, i fulla famnar (en stack av vad som helst är en famn). Redskapen i bördan väger det de väger
-// (bordOf, steg 2.3.1); förut var ett redskap en full börda
+// hur mycket en person orkar med båda händerna, i vikt
+export const capacity = (s: State, p: Person) => 2 * handOrkar(s, p);
+// bördans slag och vikt (redskapen i bördan räknas för sig, se load)
+export function bordSlag(t: Task): Record<string, number> {
+  const r: Record<string, number> = {};
+  if (t.carry > 0) r[carryKind(t.act)] = t.carry * viktOf(carryKind(t.act));
+  for (const k in t.items ?? {}) if (t.items![k] > 0) r[k] = (r[k] ?? 0) + t.items![k] * viktOf(k);
+  return r;
+}
+// hur tung bördan är, i vikt (steg 6.1.8). Redskapen i bördan väger det de väger
 export function load(t: Task, s: State) {
-  let l = t.carry * famnOf(carryKind(t.act));
-  for (const k in t.items ?? {}) l += t.items![k] * famnOf(k);
-  for (const id of t.ting ?? []) l += bordOf(tingOf(s).find(g => g.id === id)?.k ?? '');
+  let l = 0;
+  const b = bordSlag(t);
+  for (const k in b) l += b[k];
+  for (const id of t.ting ?? []) l += viktOf(tingOf(s).find(g => g.id === id)?.k ?? '');
   return l;
 }
 // redskapen i bördan: de läggs på rutan at om den är ledig i förrådet, annars på bästa lediga plats
@@ -944,14 +955,16 @@ export function flodUndan(s: State) {
   }
   return best;
 }
-// plocka upp så mycket som ryms i händerna (plats, i famnar: bordPlats i utrustning.ts) av stackarna på rutan.
+// plocka upp så mycket som ryms i händerna (ryms, i utrustning.ts: varje hand ett slag) av stackarna på rutan.
 // Ägarna följer med i bördan, lika mycket av varjes del
-export function pickUp(s: State, p: Person, t: Task, plats = capacity(s, p)) {
+export function pickUp(s: State, p: Person, t: Task, ryms: (b: Record<string, number>) => boolean) {
   const x = Math.floor(t.tx), y = Math.floor(t.ty);
-  let room = plats - load(t, s);
   for (const g of stacksOf(s)) {
-    if (g.x !== x || g.y !== y || room <= 1e-9) continue;
-    const v = Math.min(g.n, helt(room / famnOf(g.k))), f = g.n > 0 ? v / g.n : 1; // hela saker (steg 2.10.7)
+    if (g.x !== x || g.y !== y) continue;
+    const b = bordSlag(t), had0 = b[g.k] ?? 0, w = viktOf(g.k);
+    let v = 0; // hela saker (steg 2.10.7), så många som ryms
+    while (v < helt(g.n) && ryms({ ...b, [g.k]: had0 + (v + 1) * w })) v++;
+    const f = g.n > 0 ? v / g.n : 1;
     const had = t.items?.[g.k] ?? 0;
     if (g.dold) { const d = DOLD_I[g.k], m = f >= 1 ? g.dold : helt(g.dold * f); if (m > 0) { (t.items ??= {})[d] = (t.items[d] ?? 0) + m; g.dold -= m; } }
     if (v > 0) {
@@ -960,7 +973,6 @@ export function pickUp(s: State, p: Person, t: Task, plats = capacity(s, p)) {
       const m = minska(s, g, v);
       if (Object.keys(m).length) { const ag = (t.ag ??= {})[g.k] ??= {}; for (const o in m) if (m[o] > 0) ag[+o] = (ag[+o] ?? 0) + m[o]; }
     }
-    room -= v * famnOf(g.k);
   }
   // redskapen på rutan tas med, hur full bördan än är
   for (const g of lying(s)) if (g.x === x && g.y === y) { g.x = g.y = undefined; g.lass = p.id; (t.ting ??= []).push(g.id); }

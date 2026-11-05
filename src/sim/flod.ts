@@ -36,7 +36,7 @@ export const FLOD = balans('flod', {
   sjunkTim: 12, // ... och sjunker en ruta var så här många timmar
   regn: 0.25, // från ett halvt dygn innan vattnet stiger tills det står som högst är gränsen för regn (regnFran i vader.ts) så här mycket lägre
   regnFore: 12, // ... (timmar innan)
-  latt: 0.5, // saker som väger högst så här mycket (kg per styck: grenar, hö, mossa, frön) flyter bort ute
+  latt: 3.4, // saker som väger högst så här mycket (vikt per styck, saker.ts: grenar, hö, mossa, frön, skinn) flyter bort ute
   slit: 3, // tunga saker under vatten slits så här många gånger fortare
   hotPlus: 1, // medan vattnet stiger bärs maten undan från så här många rutor ovanför vattnet (och upp till det byn minns)
   blotTim: 12, // en ruta är blöt (ingen sover där) så här många timmar efter att vattnet gått undan

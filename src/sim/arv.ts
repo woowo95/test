@@ -13,7 +13,7 @@ import { tingOf } from './agande';
 import { count, isKin, isParent, living, log } from './folk';
 import { kronika } from './historik';
 import { capacity, carryOff, helt, ownedAll, passOn } from './lager';
-import { bordOf, famnOf, sakNamn, tingNamn } from './saker';
+import { sakNamn, tingNamn, viktOf } from './saker';
 import { grundvarde, husVarde, tingVarde, varuVarde } from './varde';
 import { housesOf } from './byggnad';
 import { husNamn } from './byggnader';
@@ -68,13 +68,13 @@ export function inherit(s: State, p: Person) {
 }
 
 // p flyttar: hen tar med sig det mest värda för vikten av sitt eget, så mycket hen orkar bära (redskapen efter vad de
-// väger, bordOf i saker.ts, sedan steg 2.3.1). Anropas innan resten blir byns (releaseOwner)
+// väger, viktOf i saker.ts, sedan steg 2.3.1). Anropas innan resten blir byns (releaseOwner)
 export function packUp(s: State, p: Person) {
   let kvar = capacity(s, p);
   const eget = ownedAll(s, p.id);
   const saker = [
-    ...tingOf(s).filter(t => t.agare === p.id).map(t => ({ k: t.k, ting: t.id, n: 1, per: tingVarde(t) / bordOf(t.k), bord: bordOf(t.k) })),
-    ...Object.keys(eget).map(k => ({ k, ting: undefined, n: eget[k], per: grundvarde(k) / famnOf(k), bord: famnOf(k) })),
+    ...tingOf(s).filter(t => t.agare === p.id).map(t => ({ k: t.k, ting: t.id, n: 1, per: tingVarde(t) / viktOf(t.k), bord: viktOf(t.k) })),
+    ...Object.keys(eget).map(k => ({ k, ting: undefined, n: eget[k], per: grundvarde(k) / viktOf(k), bord: viktOf(k) })),
   ].sort((a, b) => b.per - a.per || (a.k < b.k ? -1 : a.k > b.k ? 1 : 0)); // inte localeCompare: ordningen får inte bero på språket
   for (const x of saker) {
     if (kvar <= 1e-9) break;

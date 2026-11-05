@@ -1,5 +1,5 @@
 // Scenarier. Behov och val: behov, ved, aktivitet och fritid.
-import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, DELA, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, varmeRaknas, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, GANG, HALSA, kanGa, kroppFaktor, hemma, mossaFynd, chopStock, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker, bristGrad, bristSteg, berattaBrist, onskan, matOrdning, takeFood, vilaTim, skorbjugg, NARINGBAL, DODSORSAKER, converse, Naring, STATIONER, TEKNIK, tingOf, vaderNu, type Task } from '../../sim';
+import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, bordPlats, bordSlag, ryms, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, gain, takeFuel, ownsAmount, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, DELA, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, varmeRaknas, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, GANG, HALSA, kanGa, kroppFaktor, hemma, mossaFynd, chopStock, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker, bristGrad, bristSteg, berattaBrist, onskan, matOrdning, takeFood, vilaTim, skorbjugg, NARINGBAL, DODSORSAKER, converse, Naring, STATIONER, TEKNIK, tingOf, vaderNu, type Task } from '../../sim';
 import { cloneState, stepIs, stepVader, isCm, vattenGrader, halVal, halMin, drickVal, iIstiden, ageIndex, tidyTools } from '../../sim';
 import * as SIM from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
@@ -152,7 +152,7 @@ SCENARIER.aktivitet = {
       for (const p of living(s)) {
         const t = p.task, v = spar.v.get(p) ?? [];
         for (let k = 0; k < v.length; k += 3) if (vatt(v[k + 1], v[k + 2])) vatten++;
-        if (t?.phase === 'back' && t.act !== 'bara' && !(t.act === 'jakt' && load(t, s) <= KANIN + 0.01) && load(t, s) > capacity(s, p) / 3 + 0.05) tungt++; // bärandet av högar och en hel kanin får ta en full famn
+        if (t?.phase === 'back' && t.act !== 'bara' && !ryms(s, p)(bordSlag(t)) && Object.values(bordSlag(t)).reduce((a, b) => a + b, 0) > bordPlats(s, p) + 1e-6) tungt++; // aldrig mer än som ryms i de fria händerna (steg 6.1.8)
         const r = t?.phase === 'do' && !ACTS[t.act].runda ? ACTS[t.act].vandra?.r : undefined; // hur långt från platsen man rör sig (handlingar.ts); rundan (steg 4.5.6.1) går från ruta till ruta
         if (t && r && Math.hypot(p.x - t.tx, p.y - t.ty) > r + 0.6) utanfor++;
         if (t?.phase === 'do' && isWork(t.act)) arbete += BEAT / 3600;
@@ -170,7 +170,7 @@ SCENARIER.aktivitet = {
     }
     return [
       [`man bär hem efter en stunds arbete och går tillbaka (${turer} turer på ${Math.round(arbete)} arbetstimmar)`, turer > 20],
-      [`ingen bär mer än en tredjedel av vad hen orkar från arbetet (${tungt} för tunga)`, tungt === 0],
+      [`ingen bär mer från arbetet än som ryms i de fria händerna (${tungt} för tunga)`, tungt === 0],
       [`man håller sig nära platsen (${utanfor} gånger utanför)`, utanfor === 0],
       [`ingen går ut i vattnet, längs hela vägen (${vatten} punkter i vattnet)`, vatten === 0],
       [`elden matas med en famn i taget (högst ${eldMax.toFixed(1)})`, eldMax > 0 && eldMax <= 1 + 1e-9],
