@@ -2233,7 +2233,7 @@ SCENARIER.gangar = {
 SCENARIER.virke = {
   text: 'Ved och virke (steg 4.5.5.2): träet är ved (bränsle, 20 i en stack, 1 kg styck) och virke (kluvna stockar, 2 i en stack, 10 kg styck). Virket klyvs ur de fällda stammarna med yxa när byn vill bygga en station av virke, och stationerna och möblerna byggs av virke; små saker görs av ved',
   kor: () => {
-    const { STATIONER, stationerOf, isKlar, addTool, fellTree, stocks, PROJEKT } = SIM;
+    const { STATIONER, stationerOf, isKlar, addTool, fellTree, stocks } = SIM;
     const vikt = STACK.ved === 20 && SIM.viktOf('ved') === 5 && STACK.virke === 2 && SIM.viktOf('virke') === 15;
     const av = (k: string) => (STATIONER as Record<string, { av: Partial<Record<string, number>> }>)[k]!.av;
     const alla = SIM.STATION_LIST.filter(k => (av(k).virke ?? 0) > 0).length, avVed = SIM.STATION_LIST.filter(k => (av(k).ved ?? 0) > 0).length;
@@ -2248,7 +2248,8 @@ SCENARIER.virke = {
     const g = groundOf(s), c = bynsMitt(s);
     let fallda = 0;
     for (let i = 0; i < W * SIM.H && fallda < 2; i++) { const x = i % W, y = (i - x) / W; if (g.trees[i] >= FOREST && Math.hypot(x - c.x, y - c.y) < 14) { fellTree(s, vuxna[0], x + 0.5, y + 0.5); fallda++; } }
-    const brist0 = PROJEKT.virke.brist(s);
+    // virket ärver slaktbänkens nivå (steg 6.2.19): det är det som fattas till bänken, inte en buffert för sig
+    const brist0 = SIM.fattas(s, vuxna[0], 'slaktbank', SIM.dangers(s)) === 'virke' ? 1 : 0;
     let klov = 0, h = 0;
     while (!stationerOf(s).some(isKlar) && h < 48) { kor(s, 1, v => { for (const r of living(v)) if (r.task?.act === 'klyva') klov++; }); h++; }
     const st = stationerOf(s).find(t => t.k === 'slaktbank'), klar = !!st && isKlar(st);
@@ -2256,7 +2257,7 @@ SCENARIER.virke = {
       [`ved: 20 i en stack à 5 vikt; virke: 2 i en stack à 15 vikt`, vikt],
       [`stationerna och möblerna kostar virke (${alla} slag av virke, ${avVed} av ved), scenen 6 och en hylla 1–2`, alla >= 10 && avVed === 0 && scen && hylla],
       ['slagträet, trumman och lyran görs av ved', sma],
-      [`byn saknar virke när den vill bygga en slaktbänk (${brist0.toFixed(2)}) och har ${stocks(s).length} fällda stammar kvar`, brist0 > 0 && fallda > 0],
+      [`slaktbänken saknar virke (${brist0 ? 'ja' : 'nej'}) och har ${stocks(s).length} fällda stammar kvar`, brist0 > 0 && fallda > 0],
       [`någon klyver virke med yxan (${klov} gånger sett) och slaktbänken byggs av virket på ${h} timmar`, klov > 0 && klar],
     ];
   },

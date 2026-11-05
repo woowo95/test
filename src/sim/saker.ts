@@ -55,9 +55,9 @@ const DEF = {
   svamp: { namn: 'Svamp', skaffa: { act: 'samla' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 3, naring: { protein: 0.6, mineral: 0.8, vitamin: 1, energi: 0.5, fett: 0.1 }, haller: 2 },
   ved: { namn: 'Ved', skaffa: { act: 'hugga', tek: 'yxa' }, stack: 20, mapp: 'Bränsle', slits: 0.0004, blir: { k: 'grenar', per: 2 } },
   grenar: { namn: 'Grenar', skaffa: { act: 'ved' }, stack: 50, mapp: 'Bränsle', slits: 0.0006 },
-  torrgras: { namn: 'Hö', ett: true, skaffa: { tid: 0.4 }, stack: 50, mapp: 'Bränsle', slits: 0.006 }, // hö ruttnar på ett par dygn när det ligger utanför lagret (steg 2.2.9)
+  torrgras: { namn: 'Hö', ett: true, skaffa: { tid: 0.4, act: 'samla' }, stack: 50, mapp: 'Bränsle', slits: 0.006 }, // hö ruttnar på ett par dygn när det ligger utanför lagret (steg 2.2.9)
   kol: { namn: 'Kol', ett: true, skaffa: { tid: 0.3 }, stack: 25, mapp: 'Bränsle' },
-  flinta: { namn: 'Flinta', skaffa: { tid: 8, sallsynt: true }, stack: 20, mapp: 'Sten', brinnerInte: true },
+  flinta: { namn: 'Flinta', skaffa: { tid: 8, sallsynt: true, act: 'samla' }, stack: 20, mapp: 'Sten', brinnerInte: true },
   yxa: { namn: 'Flintyxa', skaffa: { av: { flinta: 1, grenar: 1 }, min: 5, slag: 'stor', tek: 'yxa' }, vikt: 6, stack: 1, mapp: 'Redskap', slits: 0.0004, redskap: true, trasig: { stat: 'yxorTrasiga', text: '{namn}s yxa gick sönder.' },
     gors: { text: 'Gör en flintyxa.', stat: 'yxa1', forsta: '{namn} gjorde byns första yxa av en pinne och en flintsten. Nu kan byn fälla träd.', fame: 'Gjorde byns första yxa', igen: '{namn} gjorde en flintyxa.' } },
   fiskespjut: { namn: 'Träspjut', ett: true, skaffa: { av: { grenar: 1 }, min: 4, slag: 'liten', tek: 'fiskespjut', verktyg: { yxa: 'yxan', flinta: 'en flintsten' } }, vikt: 5, stack: 1, mapp: 'Redskap', slits: 0.001, redskap: true, grupp: 'spjut', trasig: { stat: 'spjutTrasiga', text: '{namn}s träspjut gick sönder. Träspjuten håller inte länge.' },

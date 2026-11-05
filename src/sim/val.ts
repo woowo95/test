@@ -21,7 +21,7 @@ const lekText = (s: State) => snoPaMarken(s) > 0 ? 'Är barn och leker i snön' 
 import { varselSamla } from './motgang';
 import { FORRAD, FORRADSMAL, TROSKEL, villAv, buffert, lyxtak, materialTimme, onskatDygn, overTak, underBuffert } from './forradsmal';
 import { DJUR, DJURARTER, Djurart, GORS, canProcess, djurKvar, freeOfKinds, handelTask, harAv, toolGroups, underhallGrupp, wantsTool } from './redskap';
-import { HAMTA, PROJEKT, Uppgift, bastaProjekt, projektNu } from './projekt';
+import { PROJEKT, Uppgift, bastaProjekt, hamtas, projektNu } from './projekt';
 import { faltNu, vildFronPlats } from './odling';
 import { MINNE, areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { eldPlats, getMap } from './karta';
@@ -784,11 +784,11 @@ function bygg(c: Ctx) {
   return true;
 }
 // projektet (Förbättra, steg 6.1.17): det mest värda projekt byn eller p saknar (projekt.ts). Fattas ett material som går att
-// hämta (HAMTA) hämtar man det; flintan letas bara av dem som raden leta ger plats åt, de andra går vidare på nivån
+// hämta (hamtas i projekt.ts) hämtar man det; flintan letas bara av dem som raden leta ger plats åt, de andra går vidare på nivån
 function projektArbete(c: Ctx) {
   const { s, p, v } = c, pr = bastaProjekt(s, p, faror(c));
   if (pr?.u) { projektVal(v, pr.u, `Byn saknar ${PROJEKT[pr.k].namn.toLowerCase()}`); return true; }
-  const hamta = pr?.sak ? HAMTA[pr.sak] : undefined;
+  const hamta = pr?.sak ? hamtas(pr.sak) : undefined;
   if (!hamta) return false;
   if (hamta.leta) {
     if (!(rnd(s, 'val', p) < VAL.letaChans * fullVikt(s, p, 'leta'))) return false;

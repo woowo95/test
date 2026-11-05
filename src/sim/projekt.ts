@@ -1,21 +1,23 @@
 import { Act, Person, State } from './typer';
-import { familjOf, living, stat } from './folk';
+import { familjOf, stat } from './folk';
 import { clamp } from './slump';
 import { amountOf } from './lager';
-import { TROSKEL, materialBuffert, stationBrist, vantarPa, villAv } from './forradsmal';
+import { TROSKEL, materialBuffert, stationBrist, villAv } from './forradsmal';
 import { SAKER } from './saker';
 import { PLAGG, PLAGG_LIST } from './klader';
 import { ARBETE, grundvarde, varuVarde } from './varde';
 import { balans } from './balans';
-import { GORS, harAv, makeTask, saknatTill, wantsRope, wantsTool } from './redskap';
-import { STATIONER, STATION_LIST, StationDef, StationSlag, TILLBEHOR, TILLBEHOR_LIST, TillbehorDef, TillbehorSlag, kanBygga, kanGoraTillbehor, saknatStation, saknatTillbehor, stationSpot, tillbehorSpot, tillbehorStationer, utanTillbehor } from './stationer';
+import { GORS, harAv, makeTask, receptTill, wantsRope, wantsTool } from './redskap';
+import { STATIONER, STATION_LIST, StationDef, StationSlag, TILLBEHOR, TILLBEHOR_LIST, TillbehorDef, TillbehorSlag, kanBygga, kanGoraTillbehor, receptStation, receptTillbehor, stationSpot, tillbehorSpot, tillbehorStationer, utanTillbehor } from './stationer';
 import { brasaLeta, kanLetaBrasaSten } from './brasor';
 import { DORRAR, DORR_LIST, DorrDef, DorrSlag } from './byggnad';
-import { dorrOppningar, dorrSpot, kanHangaDorr, saknatDorr, utanDorr } from './bygg';
+import { dorrOppningar, dorrSpot, kanHangaDorr, receptDorr, utanDorr } from './bygg';
 import { GRODOR, ODLING, faltBrist, faltUppgift } from './odling';
-import { SKOG, fallTid, klyvStam, rojSpot, skaRojas } from './skog';
-import { knows } from './teknik';
+import { SKOG, fallTid, fellingTiles, klyvStam, rojSpot, skaRojas, treeSpot } from './skog';
 import { freeTools, tingOf } from './agande';
+import { ACTS } from './handlingar';
+import { tileOf } from './mark';
+import { Recept, saknatAv } from './behov';
 import { SED } from './seder';
 import { bedTile } from './byggnader';
 import { stationRutor } from './stationer';
@@ -71,7 +73,7 @@ export interface ProjektDef {
   brist(s: State): number; kostnad(): number;
   egen?(s: State, fam: readonly Person[]): number; // hur mycket p och familjen saknar det (0 till 1, steg 6.1.16)
   kan(s: State, p: Person, f: ProjektFara): boolean;
-  saknar?(s: State, p: Person, f: ProjektFara): string | undefined; // materialet som fattas när p annars kunde göra det (steg 6.1.17)
+  recept?(s: State, p: Person, f: ProjektFara): Recept | undefined; // receptet när bara materialet eller redskapet fattas (steg 6.2.19)
   uppgift(s: State, p: Person): Uppgift | undefined;
 }
 
@@ -85,7 +87,7 @@ const redskap = (g: string): ProjektDef => {
     egen: (s, fam) => villAv(s, g) > 0 && !tingOf(s).some(t => t.agare !== undefined && GORS[g].includes(t.k) && fam.some(q => q.id === t.agare)) ? 1 : 0, // ingen i familjen äger ett
     kostnad: () => grundvarde(k),
     kan: (s, p, f) => !f.kyla && wantsTool(s, p, g, f.gras),
-    saknar: (s, p, f) => f.kyla ? undefined : saknatTill(s, p, g),
+    recept: (s, p, f) => f.kyla ? undefined : receptTill(s, p, g),
     uppgift: (s, p) => { const m = makeTask(s, p, g); return { act: m.act, text: m.text, min: m.min, tool: m.tool }; },
   };
 };
@@ -100,7 +102,7 @@ const station = (k: StationSlag): ProjektDef => {
     brist: s => stationBrist(s, k), // bufferten står i forradsmal.ts (steg 6.2.17)
     kostnad: () => varuVarde(d.av, d.min / 60 * ARBETE),
     kan: (s, p, f) => !f.kyla && (kanBygga(s, p, k) || !!d.brasa && kanLetaBrasaSten(s, p)), // brasans stenar letas först (brasor.ts)
-    saknar: (s, p, f) => f.kyla ? undefined : saknatStation(s, p, k),
+    recept: (s, p, f) => f.kyla ? undefined : receptStation(s, p, k),
     uppgift: (s, p) => { if (d.brasa && !kanBygga(s, p, k)) return brasaLeta(s, p); const sp = stationSpot(s, k, p); return sp ? { act: 'station', text: d.bygger, min: d.min, tool: k, spot: sp } : undefined; },
   };
 };
@@ -112,7 +114,7 @@ const tillbehor = (k: TillbehorSlag): ProjektDef => {
     brist: s => { const n = tillbehorStationer(s, k).length; return n ? utanTillbehor(s, k).length / n : 0; },
     kostnad: () => varuVarde(d.av, d.min / 60 * ARBETE),
     kan: (s, p, f) => !f.kyla && kanGoraTillbehor(s, p, k),
-    saknar: (s, p, f) => f.kyla ? undefined : saknatTillbehor(s, p, k),
+    recept: (s, p, f) => f.kyla ? undefined : receptTillbehor(s, p, k),
     uppgift: s => { const sp = tillbehorSpot(s, k); return sp ? { act: 'tillbehor', text: d.gor, min: d.min, tool: k, spot: sp } : undefined; },
   };
 };
@@ -124,7 +126,7 @@ const dorr = (k: DorrSlag): ProjektDef => {
     brist: s => { const n = dorrOppningar(s).length; return n ? utanDorr(s, k).length / n : 0; },
     kostnad: () => varuVarde(d.av, d.min / 60 * ARBETE),
     kan: (s, p, f) => !f.kyla && kanHangaDorr(s, p, k),
-    saknar: (s, p, f) => f.kyla ? undefined : saknatDorr(s, p, k),
+    recept: (s, p, f) => f.kyla ? undefined : receptDorr(s, p, k),
     uppgift: s => { const sp = dorrSpot(s, k); return sp ? { act: 'dorr', text: d.gor, min: d.min, tool: k, spot: sp } : undefined; },
   };
 };
@@ -145,8 +147,14 @@ export const PROJEKT: Record<string, ProjektDef> = {
     namn: SAKER.virke!.namn, vikt: PROJEKT_TAL.virke,
     brist: s => { const n = materialBuffert(s, 'virke'); return n > 0 ? clamp(1 - amountOf(s, 'virke') / n, 0, 1) : 0; }, // bufferten i FORRADSMAL (steg 6.2.14)
     kostnad: () => grundvarde('virke'),
-    kan: (s, p, f) => !f.kyla && freeTools(s, p, 'yxa') > 0 && !!klyvStam(s),
-    uppgift: s => { const k = klyvStam(s); return k && { act: 'klyva', text: 'Klyver virke ur en fälld stam.', tool: 'yxa', spot: { x: k.x + 0.3, y: k.y + 0.2 }, ref: k.id }; },
+    kan: (s, p, f) => !f.kyla && freeTools(s, p, 'yxa') > 0 && (!!klyvStam(s) || !!treeSpot(s, fellingTiles(s, p), p)),
+    // finns ingen fälld stam fälls ett träd först (steg 6.2.19)
+    uppgift: (s, p) => {
+      const k = klyvStam(s);
+      if (k) return { act: 'klyva', text: 'Klyver virke ur en fälld stam.', tool: 'yxa', spot: { x: k.x + 0.3, y: k.y + 0.2 }, ref: k.id };
+      const t = treeSpot(s, fellingTiles(s, p), p);
+      return t && { act: 'falla', text: 'Fäller ett träd till virke.', min: fallTid(s, tileOf(t.x, t.y)) / 60000, tool: 'yxa', spot: t };
+    },
   },
   // träden på en lagerplats eller ett fält i skogen fälls först (steg 3.6.9, skog.ts), med en yxa; de blir trä
   rojning: {
@@ -166,17 +174,6 @@ export const PROJEKT: Record<string, ProjektDef> = {
   },
 };
 export const PROJEKT_LIST = Object.keys(PROJEKT);
-// hur mycket virke byn vill ha: så mycket som den dyraste station, möbel eller dörr av virke som byn saknar och någon kan
-// bygga, och minst TROSKEL.virkeVill när det finns något sådant (steg 4.5.5.2)
-vantarPa('virke', virkeBehov); // bufferten för virke räknar in det projekten väntar på (forradsmal.ts, steg 6.2.14)
-export function virkeBehov(s: State) {
-  let n = 0;
-  const pr = (k: string, av: Record<string, number>, tek: string[]) => { const v = av.virke ?? 0; if (v > n && living(s).some(p => tek.some(t => knows(p, t))) && PROJEKT[k].brist(s) > 0) n = v; };
-  for (const k of STATION_LIST) pr(k, STATIONER[k].av, STATIONER[k].tek);
-  for (const k of DORR_LIST) pr(k, DORRAR[k].av ?? {}, DORRAR[k].tek);
-  return n > 0 ? Math.max(n, TROSKEL.virkeVill) : 0;
-}
-
 // värdet av projektet just nu: vikten gånger bristen, delat med kostnaden
 export const projektVarde = (s: State, k: string) => { const d = PROJEKT[k]; return d.vikt * d.brist(s) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad()); };
 // hur mycket p bryr sig om det hen och familjen saknar, jämfört med byn (steg 6.1.16): mindre med empati och seden Sammanhållning
@@ -194,15 +191,31 @@ function utanEgenBadd(s: State, fam: readonly Person[]) {
 // allt byn saknar något av, det mest värda först (scenariot projekt)
 export const projekt = (s: State) => PROJEKT_LIST.map(k => ({ k, d: PROJEKT[k], varde: projektVarde(s, k), brist: PROJEKT[k].brist(s) }))
   .filter(r => r.brist > 0).sort((a, b) => b.varde - a.varde);
-// det mest värda projekt p kan göra nu, med uppgiften och värdet (lika värde: registrets ordning)
-// material som fattas till ett projekt och som hämtas i ett arbete under Försörjning (steg 6.1.17, val.ts): handlingen, och om
-// det letas vid stenarna. Annat material (skinn, ben, rep, virke) kommer av andra arbeten och projekt, och då väntar projektet
-export const HAMTA: Record<string, { act: Act; leta?: true }> = {
-  flinta: { act: 'samla', leta: true },
-  grenar: { act: 'ved' },
-  ved: { act: 'ved' },
-  torrgras: { act: 'samla' },
-};
+// det som fattas till projektet k (steg 6.2.19): redskapet som behövs och inte finns ledigt, annars det första materialet
+// som p inte kan få tag på
+export function fattas(s: State, p: Person, k: string, f: ProjektFara) {
+  const r = PROJEKT[k]?.recept?.(s, p, f);
+  if (!r) return undefined;
+  if (r.verktyg && !freeTools(s, p, r.verktyg)) return r.verktyg;
+  return saknatAv(s, p, r.av, r.spar);
+}
+// arbetet som hämtar materialet m (skaffa.act i SAKER: hö och flinta samlas, grenar och ved med arbetet ved) och om det letas
+// vid stenarna (det sällsynta, flintan). Annat material (skinn, ben) kommer av andra arbeten, och då väntar projektet
+export function hamtas(m: string): { act: Act; leta?: true } | undefined {
+  const sk = SAKER[m]?.skaffa, a = sk?.act ? ACTS[sk.act as Act]?.arbete : undefined;
+  return a ? { act: a as Act, leta: sk!.sallsynt ? true : undefined } : undefined;
+}
+// det som saknas ärver nivån och värdet (steg 6.2.19): ett redskap eller material som självt är ett projekt (yxan, kniven,
+// virket, repet) görs, och saknas något till det i sin tur går man ett steg till; ett material som hämtas blir sak
+function arv(s: State, p: Person, m: string, f: ProjektFara, djup = 0): { u?: Uppgift; sak?: string } | undefined {
+  if (PROJEKT[m]) {
+    const u = projektNu(s, p, m, f);
+    if (u) return { u };
+    const n = djup < 2 ? fattas(s, p, m, f) : undefined;
+    return n ? arv(s, p, n, f, djup + 1) : undefined;
+  }
+  return hamtas(m) ? { sak: m } : undefined;
+}
 // det mest värda projekt p kan göra nu, med uppgiften och värdet (lika värde: registrets ordning). Är det mest värda ett som p
 // kunde göra om ett material som går att hämta inte fattades, kommer det i stället med materialet (sak) och utan uppgift
 // (steg 6.1.17). egen: bara det p och familjen saknar räknas, pyssel för ens egen skull på fritiden (craft i val.ts)
@@ -213,8 +226,8 @@ export function bastaProjekt(s: State, p: Person, f: ProjektFara, egen = false) 
     const d = PROJEKT[k], v = egen ? (d.egen && ei > 0 ? d.vikt * d.egen(s, fam) * ei / Math.max(PROJEKT_TAL.minKostnad, d.kostnad()) : 0) : personVarde(s, k, fam, ei);
     if (v <= 0 || best && v <= best.varde) continue;
     if (d.kan(s, p, f)) { const u = d.uppgift(s, p); if (u) best = { k, varde: v, u }; continue; }
-    const m = egen ? undefined : d.saknar?.(s, p, f);
-    if (m && HAMTA[m]) best = { k, varde: v, sak: m };
+    const m = egen ? undefined : fattas(s, p, k, f), a = m ? arv(s, p, m, f) : undefined;
+    if (a) best = { k, varde: v, ...a };
   }
   return best;
 }

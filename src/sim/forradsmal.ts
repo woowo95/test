@@ -10,8 +10,6 @@
 // bufferten är materialet ett behov under Försörjning, och över taket plockar ingen av det (eld.ts, val.ts, projekt.ts).
 // Målen räknas en gång i timmen med arbetarna (arbetsTimme i val.ts) och sparas i s.arbBehov, så att alla lägen räknar likadant.
 import { balans } from './balans';
-import { bitsOf, MATERIAL } from './byggnad';
-import { needOf } from './bygg';
 import { allows, amountOf, rymd, zonesOf } from './lager';
 import { Pabud, pabud } from './styre';
 import { ALDER, ageOf, living } from './folk';
@@ -53,7 +51,6 @@ export const TROSKEL = balans('troskel', {
   flintaMinsta: 1, flintaBehov: 2, // byn vill ha minst en flinta, och så här många flintor och yxor tillsammans
   flintaSparas: 1, // flintor som sparas att tända eld med: ett redskap av flinta görs bara av det som är över (receptet plus detta)
   repVill: 4, // så många rep byn vill ha (tvinnat eller från senor, redskap.ts)
-  virkeVill: 4, // byn klyver virke tills förrådet har så här många, eller så många som det dyraste den vill bygga (projekt.ts)
   kolEld: 0.6, // kol hämtas ur den släckta elden när elden vill ha mindre än så här (val.ts)
   // gränserna för försök och bygge
   forsokMat: 1.1, // byn prövar sig fram bara när maten räcker minst så här många dygn ...
@@ -105,20 +102,14 @@ export const lyxtak = (s: State, k: Resurs, extra = 0) => extra ? FORRADSMAL[k].
 // ---------- materialen (steg 6.2.14) ----------
 interface Materialmal {
   min: (s: State) => number; // byn vill alltid ha minst så här mycket (tändmaterialet till elden, flintan)
-  vantar?: (s: State) => number; // det som projekten och bygget väntar på
 }
-// det projekten väntar på, per material: projekt.ts lägger in sin funktion när den laddas (så att filerna inte laddar varandra)
-const projektVantar: Record<string, (s: State) => number> = {};
-export const vantarPa = (k: Materialslag, f: (s: State) => number) => { projektVantar[k] = f; };
-// det bygget saknar av slaget k: väggar och golv som inte är klara eller ska lagas
-const byggVantar = (k: string) => (s: State) => { let n = 0; for (const b of bitsOf(s)) if (MATERIAL[b.m].item === k) n += needOf(b); return n; };
 const tand = (s: State) => s.fire.lit ? TROSKEL.tandVill : TROSKEL.tandVillSlocknad; // tändmaterialet invånarna vill ha
 export const MATERIALMAL = {
-  grenar: { min: tand, vantar: byggVantar('grenar') },
-  torrgras: { min: tand, vantar: byggVantar('torrgras') },
+  grenar: { min: tand },
+  torrgras: { min: tand },
   sten: { min: () => 0 },
   flinta: { min: () => TROSKEL.flintaMinsta },
-  virke: { min: () => 0, vantar: s => projektVantar.virke?.(s) ?? 0 }, // projekt.ts säger vad projekten väntar på (virkeBehov)
+  virke: { min: () => 0 },
 } as const satisfies Record<string, Materialmal>;
 export type Materialslag = keyof typeof MATERIALMAL;
 export const MATERIAL_LIST = Object.keys(MATERIALMAL) as Materialslag[];
@@ -147,8 +138,7 @@ function rymmer(s: State, k: string) {
 export function materialTimme(s: State): Record<string, { b: number; t: number }> {
   const ut: Record<string, { b: number; t: number }> = {};
   for (const k of MATERIAL_LIST) {
-    const r: Materialmal = MATERIALMAL[k];
-    const b = r3((s.forbruk?.[k] ?? 0) / FORRAD.forbrukDygn * FORRAD.materialDygn + (r.vantar?.(s) ?? 0));
+    const b = r3((s.forbruk?.[k] ?? 0) / FORRAD.forbrukDygn * FORRAD.materialDygn);
     ut[k] = { b, t: r3(rymmer(s, k)) };
   }
   return ut;

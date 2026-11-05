@@ -298,6 +298,9 @@ const aldrigStjal = (s: State, p: Person) => stat(p, 'empati', s.now) >= DELA.st
 // så mycket av slaget k som p kan få till ett arbete
 export const getable = (s: State, p: Person, k: string) => aldrigStjal(s, p) ? mayTake(s, p, k) : amountOf(s, k);
 // det första material i receptet av som p inte kan få tag i (med det som sparas till elden, sparas i ekonomi.ts), annars undefined (steg 6.1.17)
+// receptet till ett projekt när p kunde göra det om materialet eller redskapet fanns (steg 6.2.19): materialet, redskapet
+// som behövs och hur mycket av varje som sparas (annars sparas() i forradsmal.ts)
+export interface Recept { av: Record<string, number>; verktyg?: string; spar?: (m: string) => number }
 export const saknatAv = (s: State, p: Person, av: Record<string, number>, extra = (_m: string) => sparas(_m)) => Object.entries(av).find(([m, n]) => getable(s, p, m) < n + extra(m) - 1e-9)?.[0];
 // materialet till ett redskap efter receptet (saker.ts: skaffa.av), till ens eget arbete: hur mycket av varje som togs
 export function takeRecipe(s: State, p: Person, k: string) {

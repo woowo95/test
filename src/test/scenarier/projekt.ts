@@ -53,7 +53,8 @@ SCENARIER.projekt = {
     return [
       ['varje redskap, varje station och repet är ett projekt', allt],
       [`listan har det mest värda först (${lista.map(r => r.d.namn).join(', ')})`, lista.length >= 3 && sorterad],
-      [`den som har tid gör det mest värda hen kan (${b?.k ?? 'inget'})`, !!b && b.k === forsta?.k],
+      // eller ett mer värt projekt hen inte kan göra än, genom det som fattas till det (steg 6.2.19)
+      [`den som har tid gör det mest värda hen kan (${b?.k ?? 'inget'}${b && b.k !== forsta?.k ? `, genom ${b.u?.act ?? b.sak}` : ''})`, !!b && (b.k === forsta?.k || !PROJEKT[b.k].kan(s, p, dangers(s)) && (!!b.u || !!b.sak))],
       [`när byn har knivar nog saknar den ingen (${knivFore.toFixed(2)} → ${knivEfter.toFixed(2)})`, knivFore > 0 && knivEfter === 0 && ejListad],
       ['när byn har en slaktbänk står den inte längre bland projekten', bank],
       [`på dagen görs projekt när maten räcker (${mett} av 200), inte när byn svälter (${svalt})`, mett > 0 && svalt === 0],
@@ -90,18 +91,18 @@ SCENARIER.jaget = {
   },
 };
 SCENARIER.material = {
-  text: 'Material som saknas (steg 6.1.17, "Arbetsordningen" i designdokumentet): projekten ligger på nivån Förbättra, och fattas ett material som går att hämta (registret HAMTA) blir hämtningen arbetet i stället för att projektet hoppas över',
+  text: 'Material som saknas (steg 6.1.17, "Arbetsordningen" i designdokumentet): projekten ligger på nivån Förbättra, och fattas ett material som går att hämta (skaffa.act i SAKER, hamtas i projekt.ts) blir hämtningen arbetet i stället för att projektet hoppas över, och det som saknas ärver nivån (steg 6.2.19)',
   kor: () => {
     const s = by(4), p = vuxna(s)[0], f = dangers(s);
     const med = bastaProjekt(s, p, f);
     setItems(s, { flinta: 0, torrgras: 0, grenar: 0 }); setAmount(s, 'ved', 0);
-    const utan = bastaProjekt(s, p, f), yxa = PROJEKT.yxa?.saknar?.(s, p, f);
+    const utan = bastaProjekt(s, p, f), yxa = SIM.fattas(s, p, 'yxa', f);
     const ho = (hamtar?: string) => { const t = by(4), q = vuxna(t)[0]; setItems(t, { torrgras: Math.ceil(SIM.materialBuffert(t, 'torrgras')) + 1, grenar: 50 }); q.task = { act: 'samla', phase: 'do', tx: q.x, ty: q.y, until: t.now + SIM.HOUR, carry: 0, why: "test", dark: false, hamtar }; return SIM.forageItems(t, q, 3600)?.torrgras ?? 0; };
     // höet ligger över bufferten men under taket (steg 6.2.14): över taket plockar ingen
     const hoFatt = ho('torrgras'), hoUtan = ho();
     return [
       [`med material finns ett projekt att göra (${med?.k}, uppgift ${med?.u?.act})`, !!med?.u],
-      [`utan material blir det mest värda projektet en hämtning (${utan?.k} saknar ${utan?.sak}, arbetet ${utan?.sak ? SIM.HAMTA[utan.sak]?.act : '-'})`, !!utan?.sak && !!SIM.HAMTA[utan.sak] && !utan.u],
+      [`utan material blir det mest värda projektet en hämtning (${utan?.k} saknar ${utan?.sak}, arbetet ${utan?.sak ? SIM.hamtas(utan.sak)?.act : '-'})`, !!utan?.sak && !!SIM.hamtas(utan.sak) && !utan.u],
       [`yxan saknar flinta (${yxa})`, yxa === 'flinta'],
       // den som hämtar hö får hö också när förrådet har tändmaterial nog (annars plockade hen bär utan slut, knapphet efter 6.1.17)
       [`den som hämtar hö får hö fast förrådet har tändmaterial (${hoFatt.toFixed(2)} hö, ${hoUtan.toFixed(2)} för den som samlar mat)`, hoFatt > 0 && hoUtan === 0],
