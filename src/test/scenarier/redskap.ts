@@ -19,10 +19,13 @@ SCENARIER.stenring = {
     delete (g.fire as { ring?: boolean }).ring;
     g.v = 1; migrate(g); // som en sparfil från före v40
     // flinta till en yxa är en förbättring: när maten inte räcker letar ingen efter den. Flinta till elden letas när byn inte svälter (steg 2.12.3)
+    // Sedan steg 6.1.17 letas flinta till en yxa när yxan är ett projekt som saknar flinta: de vuxna kan göra en yxa, och veden
+    // räcker, så att Försörjningen inte går före
     const f = createState(4, START);
     f.now = new Date(f.now).setHours(10, 0, 0, 0); Object.assign(f.fire, { lit: true, fuel: 3, ring: true });
+    for (const q of f.people) q.tek = { ...q.tek, yxa: 1 };
     const letar = (flinta: number, mat: number) => {
-      setItems(f, { flinta, torrgras: 20, grenar: 20 }); setFood(f, mat); let n = 0, samla = 0;
+      setItems(f, { flinta, torrgras: 20, grenar: 20 }); setAmount(f, 'ved', 300); setFood(f, mat); let n = 0, samla = 0;
       for (let i = 0; i < 300; i++) {
         const p = living(f).filter(q => ageOf(q, f.now) >= ALDER.vuxen)[i % 4];
         Object.assign(p, { toa: 1, torst: 1, warm: 1, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
@@ -44,7 +47,7 @@ SCENARIER.stenring = {
       p.task = undefined;
     }
     for (const q of f.people) if (q.tek) delete q.tek.korg;
-    setItems(f, { flinta: 1, torrgras: 20, grenar: 20 }); setFood(f, 200); // som efter letar(1, 200)
+    setItems(f, { flinta: 1, torrgras: 20, grenar: 20 }); setAmount(f, 'ved', 300); setFood(f, 200); // som efter letar(1, 200)
     // arbetarna (steg 6.1.13): letar redan så många som raden leta har (flaggan sok, vad skälet än säger), letar de andra
     // flinta till en yxa med en tredjedel av chansen
     const [l0, ...andra] = living(f).filter(q => ageOf(q, f.now) >= ALDER.vuxen);

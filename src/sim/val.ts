@@ -661,13 +661,17 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number, fara: Faror) 
   // Fattas ett material som går att hämta (HAMTA) blir det i stället ett behov under Försörjning: man hämtar det
   const forsorj = fd < matOnskat(s, p) || egen !== undefined || wd < onskatLager(true, pabud(s, 'vedlager')) || needTinder(s);
   const pr = a >= ALDER.vuxen && !fara.kyla && !fara.svalt && !build && !forsorj ? bastaProjekt(s, p, fara) : undefined;
-  const proj = !!pr?.u, hamta = pr?.sak ? HAMTA[pr.sak] : undefined;
+  const proj = !!pr?.u, best0 = best;
+  let hamta = pr?.sak ? HAMTA[pr.sak] : undefined;
   if (hamta) best = hamta.act;
   // saknar byn flinta eller stenar till elden när maten räcker, eller fattas flinta till ett projekt, går någon och letar vid
   // stenarna, också när plockning inte är det mest behövda. Raden leta har sina arbetare (steg 6.1.13)
   const eldFlinta = flintaTillElden(s, fara), matLeta = !!hamta?.leta;
   const leta = !build && !proj && a >= ALDER.vuxen && (eldFlinta || matLeta) && rnd(s, 'val', p) < VAL.letaChans * fullVikt(s, p, 'leta');
   if (leta) best = 'samla';
+  // ett material som letas (flintan) hämtas bara av dem som raden leta ger plats åt; de andra gör det de annars skulle,
+  // så att ingen samlar frön med skälet att yxan behöver flinta
+  else if (matLeta) { hamta = undefined; best = best0; }
   const u = clamp(burg / VAL.akut, 0, 1); // hur akut byn behöver arbete
   const sat = Math.min(p.hunger, p.rest, p.social); // hur väl de egna behoven är fyllda
   const tandmat = !leta && !(build && job!.missing) && best === 'samla' && needTinder(s); // samlar tändmaterial åt en släckt eld
@@ -695,7 +699,7 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number, fara: Faror) 
     set(v, best, what + (lazy < 0.2 ? '. Plikttrogen.' : habitShare(p, [best], tot) > 0.25 ? '. Brukar göra det.' : p.skill[best as Skill] > 10 ? '. Skicklig på det.' : '.'));
     v.dur = (VAL.arbeteMin + rnd(s, 'val', p) * VAL.arbeteSpann) * MIN * VAL.pass;
     if (tandmat) v.tandmat = true;
-    withTools(s, p, v, best, what, fara, leta, matLeta);
+    withTools(s, p, v, best, what, fara, leta, !!hamta?.leta);
     if (v.act === 'fiske' && islagt(s)) v.why = `${v.why} Hugger upp ett hål i isen och pimplar.`;
     if (build && job!.missing && job!.item === 'ved' && v.act === 'falla') { v.ref = job!.bit.hus; v.why = `${v.why} Stocken ska bli en vägg.`; } // trädet fälls för bygget
   } else leisure(s, p, v, u, lazy);

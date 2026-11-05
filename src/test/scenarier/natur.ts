@@ -1909,7 +1909,7 @@ SCENARIER.tradorr = {
     const prov = (dorr: string, mod: number, ensam = false) => {
       const q = cloneState(s);
       for (const b of bitsOf(q)) if (b.hus === hus.id && b.k === 'oppning') b.dorr = dorr;
-      SIM.touch(q); q.fire.lit = false; q.fire.fuel = 0;
+      SIM.touch(q); q.fire.lit = false; q.fire.fuel = 0; SIM.setAmount(q, 'flinta', 0); // (ingen kan tända elden igen och gå ut ensam dit)
       const folk = living(q).filter(x => ageOf(x, q.now) >= SIM.ALDER.vuxen), p = folk[0], ute = folk[1];
       // (de andra är borta, utom en som är långt bort och kan komma ut ensam)
       for (const x of living(q)) if (x !== p && x !== ute) { x.left = q.now; x.task = undefined; }

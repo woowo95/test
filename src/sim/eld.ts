@@ -231,7 +231,7 @@ export function fetchFuel(s: State, p: Person, why: string, fran?: Person) {
 const awake = (s: State, p: Person, minAge: number) => {
   const t = p.task;
   return ageOf(p, s.now) >= minAge && !isSick(p, s.now) && halsa(p) >= KROPP.svag &&
-    (!t || (t.act !== 'sova' && !(t.phase === 'back' && t.carry > 0) && !t.items));
+    (!t || (t.act !== 'sova' && t.act !== 'gomma' && !(t.phase === 'back' && t.carry > 0) && !t.items)); // den som gömmer sig för vargarna går inte ut till elden
 };
 // så mycket fortare än vanligt elden brinner nu, två faktorer: i regnet brinner en eld ute fortare (steg 2.11.1; en eld under
 // tak gör det inte), och i en hård vinter äter elden mer (steg 3.8.1). Fliken Elden visar samma
