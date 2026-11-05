@@ -477,13 +477,14 @@ SCENARIER.lager = {
     klockan(b, 7); setFood(b, 2); // morgon, och byn behöver mat
     tandEld(b, 4, false); // elden brinner, annars avbryts allt för att tända den
     let hem = 0, maxKvot = 0, fullt = 0;
+    const forut = new WeakMap<SIM.Task, number>(); // den största förmågan under turen: blir man trött med bördan i händerna går man hem med den
     for (let i = 0; i < 8 * 3600 / 2; i++) {
       step(b, 2);
       // aldrig mer än händerna orkar, utom en enda sak (steg 6.1.8)
-      for (const p of living(b)) if (p.task?.phase === 'back' && p.task.act !== 'elda') {
-        const bs = SIM.bordSlag(p.task), kv = Object.values(bs).reduce((a, x) => a + x, 0) / Math.max(SIM.bordPlats(b, p), ...Object.keys(bs).map(k => SIM.viktOf(k) * (k === 'vilt' ? KANIN : 1))); // korgen rymmer mer än händerna; en hare (2 fällt vilt) bärs hel som en sak
+      for (const p of living(b)) { const nu = SIM.bordPlats(b, p), fore = p.task ? Math.max(nu, forut.get(p.task) ?? 0) : nu; if (p.task) forut.set(p.task, fore); if (p.task?.phase === 'back' && p.task.act !== 'elda') {
+        const bs = SIM.bordSlag(p.task), kv = Object.values(bs).reduce((a, x) => a + x, 0) / Math.max(nu, fore, ...Object.keys(bs).map(k => SIM.viktOf(k) * (k === 'vilt' ? KANIN : 1))); // korgen rymmer mer än händerna; en hare (2 fällt vilt) bärs hel som en sak
         hem++; maxKvot = Math.max(maxKvot, kv); if (kv >= 0.95) fullt++;
-      }
+      } }
     }
     // den som har fullt går hem med en gång, även om uppgiften inte är klar
     const v = living(b).find(p => ageOf(p, b.now) >= 18)!;
