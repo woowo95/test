@@ -19,7 +19,7 @@ import { coldOf, nederbord, snoPaMarken, temperature, vaderNu } from './vader';
 // barnen leker i snön när den ligger, som de vuxna har snöbollskrig (steg 4.3.1.3, sport.ts)
 const lekText = (s: State) => snoPaMarken(s) > 0 ? 'Är barn och leker i snön' : 'Är barn och leker';
 import { varselSamla } from './motgang';
-import { DJUR, DJURARTER, Djurart, GORS, REDSKAP, canProcess, djurKvar, freeOfKinds, handelTask, harAv, makeTask, toolGroups, villAv, wantsTool } from './redskap';
+import { DJUR, DJURARTER, Djurart, GORS, REDSKAP, canProcess, djurKvar, freeOfKinds, handelTask, harAv, makeTask, toolGroups, underhallGrupp, villAv, wantsTool } from './redskap';
 import { HAMTA, PROJEKT, Uppgift, bastaProjekt } from './projekt';
 import { faltNu, vildFronPlats } from './odling';
 import { MINNE, areaOf, flintArea, pickSpot, prospectFor } from './minne';
@@ -716,7 +716,7 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number, fara: Faror) 
 
 // 8 Förbättra är aldrig tom (steg 6.1.18): när inget går före och inget projekt finns att göra väljer man i den här ordningen
 // att pröva sig fram mot en teknik (teknik.ts), arbeta där en öppen teknik kan komma, göra varor till handlaren (steg 6.2.11)
-// eller gå i lära. Att bygga om och underhåll väntar på sina system (Färdplanen). true = valet är gjort; ett arbete görs som det vanliga arbetet
+// göra ett nytt redskap eller plagg i stället för ett slitet (underhållet, steg 6.2.12) eller gå i lära. Att bygga om väntar på sitt system (Färdplanen). true = valet är gjort; ett arbete görs som det vanliga arbetet
 function forbattra(s: State, p: Person, v: Val, fd: number, wd: number): true | { act: Act; why: string } | undefined {
   const fv = forsokChans(s, p, fd, wd) > 0 ? forsokVal(s, p) : undefined;
   if (fv) {
@@ -730,6 +730,8 @@ function forbattra(s: State, p: Person, v: Val, fd: number, wd: number): true | 
   const ta = tekArbete(s, p, a => WORK.includes(a) && !nog(a) && (ACTS[a].vid !== 'vatten' || vaderTillater(s, 'lugnt')));
   if (ta) return { act: ta.act, why: `Kanske kommer hen på ${ta.t.namn.toLowerCase()}` };
   if (handlarVara(s, p, v)) return true;
+  const ug = underhallGrupp(s, p); // underhållet (steg 6.2.12): ett nytt i stället för ett slitet
+  if (ug) { const m = makeTask(s, p, ug); projektVal(v, { act: m.act, text: m.text, min: m.min, tool: m.tool }, 'Byn har det den behöver. Ett av byns är slitet och ett nytt görs i tid'); return true; }
   return gaILara(s, p, v, 'Byn har det den behöver') || undefined;
 }
 // varor till handlaren (steg 6.2.11): det handlarna brukar köpa (handlarMal i handel.ts), så många byn har över det den själv

@@ -38,6 +38,7 @@ export const REDSKAP = balans('redskap', {
   kottMin: 0.8, kottMax: 1.2, kottFull: 20, // slakten ger så stor del av köttet (slakt.kott i DJUR) utan jaktfärdighet, och så stor del med färdigheten Full eller mer
   spadar: 1, // så många benspadar byn vill ha (steg 2.7.2)
   vattensackar: 1, // så många vattensäckar byn vill ha (steg 2.10.1)
+  slitet: 0.25, // ett redskap eller plagg som har så här lite kvar (t.c) är slitet: ett nytt görs medan det håller (underhållet, steg 6.2.12)
   bensylSlits: 0.1, // ett plagg som sys slits bensylen vid slöjdbänken så här mycket (tio plagg per bensyl, steg 2.3.2)
 });
 // vad ett slag kräver, ur receptet (skaffa.av i saker.ts)
@@ -255,6 +256,19 @@ export const wantsTool = (s: State, p: Person, g: string, spar = 0) => {
   return kanGoras(s, g as Act, p) && (!!halvOf(s, p, ks) || ks.some(k => canMake(s, p, k) && (!av(k).torrgras || amountOf(s, 'torrgras') >= spar)))
     && harAv(s, g) < VILL[g](s) && !doingAct(s, g as Act, p);
 };
+// underhållet (steg 6.2.12, nivån Förbättra i val.ts): en grupp där byn har så många den vill, men några av dem är slitna
+// (REDSKAP.slitet) så att de hela är färre än byn vill ha. Inget lagas: ett nytt görs medan det gamla håller, och det gamla
+// används tills det går sönder. p kan göra ett (eller har påbörjat ett) och ingen annan gör ett i gruppen. undefined annars
+export function underhallGrupp(s: State, p: Person) {
+  for (const g in GORS) {
+    const ks = GORS[g], vill = VILL[g](s);
+    if (!vill || harAv(s, g) < vill) continue; // färre än byn vill: det vanliga arbetet gör dem
+    const hela = tingOf(s).reduce((n, t) => n + (ks.includes(t.k) && t.c >= REDSKAP.slitet ? 1 : 0), 0);
+    if (hela >= vill || !kanGoras(s, g as Act, p) || doingAct(s, g as Act, p)) continue;
+    if (halvOf(s, p, ks) || ks.some(k => canMake(s, p, k))) return g;
+  }
+  return undefined;
+}
 // materialet p saknar till ett redskap i gruppen g som byn vill ha fler av: p kan tekniken och har verktyget till det första
 // slaget hen kan göra, men inte materialet (projekt.ts, steg 6.1.17). undefined när p kan göra det, eller inte kan alls
 export function saknatTill(s: State, p: Person, g: string) {

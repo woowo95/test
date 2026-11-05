@@ -602,3 +602,31 @@ SCENARIER.kvalitet = {
     ];
   },
 };
+
+SCENARIER.underhall = {
+  text: 'Underhållet på nivån Förbättra (steg 6.2.12): när byn har så många yxor den vill men en av dem är sliten, gör den som kan ett nytt medan det gamla håller. Inget lagas; när de hela räcker, eller någon annan redan gör ett, görs inget',
+  kor: () => {
+    const s = createState(4, START), q = living(s).find(x => ageOf(x, s.now) >= ALDER.vuxen)!;
+    q.tek = { ...q.tek, yxa: 1 }; setItems(s, { flinta: 6, grenar: 30, rep: 4, torrgras: 30 });
+    const vill = SIM.villAv(s, 'yxa');
+    const yxor = Array.from({ length: vill }, () => addTool(s, 'yxa', q));
+    const hela = SIM.underhallGrupp(s, q);
+    yxor[0].c = SIM.REDSKAP.slitet / 2;
+    const slitet = SIM.underhallGrupp(s, q);
+    const m = makeTask(s, q, 'yxa');
+    // ett nytt är gjort: de hela räcker igen, och det slitna finns kvar tills det går sönder
+    addTool(s, 'yxa', q);
+    const efter = SIM.underhallGrupp(s, q), kvar = tingOf(s).filter(t => t.k === 'yxa').length;
+    // någon annan gör redan en yxa
+    s.ting = tingOf(s).filter(t => t !== tingOf(s).filter(x => x.k === 'yxa' && x.c >= SIM.REDSKAP.slitet).pop());
+    const r = living(s).find(x => x !== q && ageOf(x, s.now) >= ALDER.vuxen)!;
+    r.task = { act: 'yxa', phase: 'do', tx: 0, ty: 0, until: s.now + HOUR, carry: 0, why: '' };
+    const annan = SIM.underhallGrupp(s, q);
+    return [
+      [`när alla ${vill} yxor är hela görs ingen ny (${hela ?? 'inget'})`, hela === undefined],
+      [`när en yxa är sliten görs en ny i tid (${slitet}, ${m.text})`, slitet === 'yxa'],
+      [`när en ny är gjord görs ingen till, och den slitna används tills den går sönder (${efter ?? 'inget'}, ${kvar} yxor)`, efter === undefined && kvar === vill + 1],
+      [`när någon annan redan gör en yxa görs ingen till (${annan ?? 'inget'})`, annan === undefined],
+    ];
+  },
+};
