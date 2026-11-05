@@ -13,7 +13,7 @@ import { onskan } from './naring';
 import { halsa, hemma, kanGa, vardVal, vilaHellre } from './halsa';
 import { egnaMatDygn, harMat } from './behov';
 import { FANGST, Kind, Lager, flintSpot, richness, wantsFlint } from './fynd';
-import { coldOf, nederbord, snoPaMarken, temperature } from './vader';
+import { coldOf, nederbord, snoPaMarken, temperature, vaderNu } from './vader';
 // barnen leker i snön när den ligger, som de vuxna har snöbollskrig (steg 4.3.1.3, sport.ts)
 const lekText = (s: State) => snoPaMarken(s) > 0 ? 'Är barn och leker i snön' : 'Är barn och leker';
 import { varselSamla } from './motgang';
@@ -397,6 +397,18 @@ const set = (v: Val, act: Act, why: string) => { v.act = act; v.why = why; retur
 // Nivåerna (ARBETSNIVAER) säger vad raden är; raderna står ännu i dagens ordning, och de sista raderna på dagen och natten
 // (arbete och kväll) väger fortfarande arbete, bygge, projekt och fritid mot varandra (steg 6.1.12–6.1.18 delar dem).
 // Man går sedan dit (steg.ts)
+// villkoren för vädret (steg 6.1.12): ingen torkning eller bad i regn, inget fiske i storm
+export type Vaderkrav = 'torrt' | 'lugnt';
+export function vaderTillater(s: State, krav?: Vaderkrav) {
+  if (!krav) return true;
+  const v = vaderNu(s);
+  return krav === 'torrt' ? v.nb <= 0 : v.lage !== 'blast' && v.lage !== 'aska';
+}
+// byns behov räknas en gång i timmen, på jämna klockslag i spelet (timblocket i steg.ts), så att alla lägen väljer likadant
+// (steg 6.1.12): hur många dygn maten och veden räcker, med tre decimaler som i sparfilen
+const r3 = (x: number) => Math.round(x * 1000) / 1000;
+export function arbetsTimme(s: State) { s.arbBehov = { mat: r3(foodDays(s)), ved: r3(woodDays(s)) }; }
+const arbBehov = (s: State) => s.arbBehov ?? (arbetsTimme(s), s.arbBehov!);
 export const ARBETSNIVAER = ['', 'Fara', 'Nöd och vård', 'Tillfälle', 'Grundbehov', 'Rädda', 'Försörjning', 'Tak', 'Förbättra', 'Fritid'] as const;
 type Niva = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 // det valet vet om personen; farorna räknas första gången en rad frågar och gäller hela valet
@@ -408,6 +420,8 @@ export interface Arbete {
   id: string; niva: Niva;
   nar?: 'dag' | 'natt'; // utan nar: både dag och natt
   kort?: true; // dagens pass (VAL.pass): på dagen kortas valets tid innan raden prövas
+  arstid?: readonly number[]; // en vikt per tidsålder (som sasong i ACTS); 0 = görs inte då
+  vader?: Vaderkrav; // torrt: inte i regn eller snöfall; lugnt: inte i blåst eller åska
   prova: (c: Ctx) => boolean | undefined; // true = raden valde något (v är ifyllt)
 }
 export const ARBETEN: readonly Arbete[] = [
@@ -494,7 +508,7 @@ export const ARBETEN: readonly Arbete[] = [
     processTask(s, v, vilt, 'Det finns vilt att slakta innan det blir dåligt'); return true;
   } },
   { id: 'rensa', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => a >= ALDER.rensar && canProcess(s, p, DJUR.abborre) && rnd(s, 'val', p) < VAL.rensaChans && (processTask(s, v, DJUR.abborre, 'Det finns fisk att rensa innan den blir dålig'), true) },
-  { id: 'torka', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => a >= ALDER.grillar && kanTorka(s, p) && rnd(s, 'val', p) < torkAndel(pabud(s, 'torkat')) && (torkVal(s, v, 'Det finns kött och fisk att torka'), true) },
+  { id: 'torka', niva: 5, nar: 'dag', kort: true, vader: 'torrt', prova: ({ s, p, v, a }) => a >= ALDER.grillar && kanTorka(s, p) && rnd(s, 'val', p) < torkAndel(pabud(s, 'torkat')) && (torkVal(s, v, 'Det finns kött och fisk att torka'), true) },
   { id: 'grilla', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => a >= ALDER.grillar && kanGrilla(s, p) && rnd(s, 'val', p) < VAL.grillaChans && (grillVal(s, v, 'Det finns rått kött och rå fisk att grilla'), true) },
   // 6–9 på dagen: byns behov (mat, ved, tändmaterial, bygget, projekten, flinta) mot egen lust, vägda med pliktkänslan, annars fritid
   { id: 'arbete', niva: 6, nar: 'dag', kort: true, prova: c => { day(c.s, c.p, c.v, c.a, c.lazy, faror(c)); return true; } },
@@ -508,7 +522,7 @@ export function chooseTask(s: State, p: Person) {
   const c: Ctx = { s, p, v, a, lazy, light }, nar = light ? 'dag' : 'natt';
   let rad: Arbete | undefined, kortat = false;
   for (const r of ARBETEN) {
-    if (r.nar && r.nar !== nar) continue;
+    if (r.nar && r.nar !== nar || r.arstid && !r.arstid[ageIndex(s)] || !vaderTillater(s, r.vader)) continue; // villkoren på raden (steg 6.1.12)
     if (r.kort && light && !kortat) { v.dur *= VAL.pass; kortat = true; }
     if (r.prova(c)) { rad = r; break; }
   }
@@ -570,7 +584,7 @@ function dricka(s: State, p: Person, v: Val) {
 // 6–9 på dagen (raden arbete i ARBETEN): byns behov mot egen lust, vägda med pliktkänslan, annars fritid
 function day(s: State, p: Person, v: Val, a: number, lazy: number, fara: Faror) {
   const sd = s.seder.v;
-  const fd = foodDays(s), wd = woodDays(s), ai = ageIndex(s), tot = habitTotal(p);
+  const { mat: fd, ved: wd } = arbBehov(s), ai = ageIndex(s), tot = habitTotal(p); // byns behov från timmens början (steg 6.1.12)
   let { best, bs, burg, egen } = bestWork(s, p, fd, wd, ai, tot, fara);
   // bygget: väger mer ju fler som saknar sovplats under tak, inför och under istiden, när en vägg behöver lagas och när huset inte är klart.
   // När kylan är en fara byggs inget: tiden går till värmen (steg 2.12.3)
@@ -655,6 +669,7 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
   for (const w of WORK) {
     // behovet, tändmaterialet och vattnet står i handlingens rad (ACTS i handlingar.ts, steg 2.12.3)
     const d = ACTS[w], need = vikt[d.behov!];
+    if (d.vid === 'vatten' && !vaderTillater(s, 'lugnt')) continue; // inget fiske i storm (steg 6.1.12)
     const tinder = !!d.tand && needTinder(s);
     // nytta för byn; det platserna har kvar väger också in hur mycket de ger just nu, och att fiske med händerna ger lite
     const yieldF = !d.resurs || tinder ? 1 : clamp(prospectFor(s, p, w as Kind), VAL.prospektMin, VAL.prospektMax) * (d.vid === 'vatten' ? FANGST.handFiske * (naVattnet(s, p) ? 1 : 0) : 1) * toolGain(s, p, w, fara); // genom isen bara med ett hål (is.ts)
@@ -800,7 +815,7 @@ function leisure(s: State, p: Person, v: Val, u: number, lazy: number) {
   const calm = u < VAL.lugn ? 1 : VAL.lugnAkut, temp = temperature(s), shore = bathSpot(s);
   const wp = (VAL.promBas + stat(p, 'nyfikenhet', now) / VAL.promNyfiken) * calm;
   const varm = p.warm > KROPP.forVarm ? VAL.badVarm * (p.warm - 1) : 0;
-  const wb = temp >= VAL.badTemp && shore ? (clamp((temp - VAL.badNoll) / VAL.badSpann, 0, VAL.badMax) + varm) * calm : 0;
+  const wb = temp >= VAL.badTemp && shore && vaderTillater(s, 'torrt') ? (clamp((temp - VAL.badNoll) / VAL.badSpann, 0, VAL.badMax) + varm) * calm : 0;
   // sitta vid stranden och se ut över vattnet: lugnt, året om, mest för den som inte är så sällskaplig
   const ws = shore ? (VAL.strandBas + (20 - stat(p, 'empati', now)) / VAL.strandDiv) * calm : 0;
   if (gaILara(s, p, v, 'Har tid över')) return; // lärlingen går hellre till mästaren än vilar eller umgås

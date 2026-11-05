@@ -42,7 +42,7 @@ import { ACTS, toolRow } from './handlingar';
 import { AGES_BORJAR, Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, Historik, simulera } from './typer';
 import { FOREST, findPath, speedAt, wear } from './vag';
 import { kroppFart, markFaktor, smidig } from './gang';
-import { chooseTask, dangers, nastaBuske, nastaRedskap, nastaRuta, spotFor } from './val';
+import { arbetsTimme, chooseTask, dangers, nastaBuske, nastaRedskap, nastaRuta, spotFor } from './val';
 import { djurSteg } from './djur';
 import { vargSteg, vargjaktSteg } from './varg';
 import { rovarSteg } from './rovare';
@@ -236,6 +236,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
     stepVader(s); regnetTvattar(s); stepMotgang(s); stepTorka(s); stepFlod(s); stepIs(s); growGround(s, 1, ai); growFynd(s, 1, ai, vaxtFaktor(s)); forget(s, 1); stepRykten(s, moodOf); glomRykten(s, 1); stepBerattelser(s); stepStyre(s); rotStumps(s); tidyStore(s);
     wearBuild(s, 1, ai); stepByggnader(s); planBuild(s); stepEldFlytt(s); stepPaborjat(s); stepStationer(s); stepPynt(s); stadaByten(s); stepBrasor(s); stepKlader(s); stepOdling(s);
     askaSteg(s); // det svarta efter en eldsvåda försvinner (brand.ts)
+    arbetsTimme(s); // byns behov för arbetsordningen (val.ts, steg 6.1.12)
     historikSteg(s); // nyckeltalen till byns historik (läses inte av simuleringen)
     compact(s); // här och inte i sparningen, så att alla lägen städar vid samma tid
   }

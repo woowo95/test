@@ -3,6 +3,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { MIN, Person, Act, createState, addTool, FOREST, HOUR_S, toolsOf, BYN, step, living, sees, ageIndex, cloneState, ageStart, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, dropLoad, T, isStored, zonesOf, allows, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, rektAvstand, stat, campCenter, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, isWall, Bit, wearBuild, treeOn, ownsAmount, addTo, setAmount, isFood, grundvarde, tingOf, komOf, BYGGNADER, FN, mostUrgent, fnId, fnOf, planBuild, workOn, wearMult, LAGER, homeless, sovplatser, inZone, startWork, workHalf, finishHalf, stepPaborjat, halvOf, tingVarde, HALV_TID, fallTid, treeSpot, SEC, Task, familjOf, bedTile, takeForHouse, put, stepByggnader, husNamn, spotFor, roofed, MATERIAL, usable, dropSpot, ALDER, KROPP, samlingRum, varmareInne, haulJob, fetchFuel, chooseTask, minOf } from '../../sim';
 import * as SIM from '../../sim';
 import { findPath } from '../../sim/vag';
+import { KANIN } from '../../sim/redskap';
 import { START } from '../kor';
 import { setItems, setFood, kor, klockan, tandEld, byggare, byggKlart, nyInvanare, medBank, STOCKHOLM, SCENARIER } from './hjalp';
 
@@ -84,6 +85,7 @@ SCENARIER.forradshus = {
 };
 
 SCENARIER.familjehus = {
+  lang: true,
   text: 'Ett par med barn som inte har något eget hus och äger nog för att betala det bygger ett familjehus. Familjens material tas först, familjen sover där, huset går i arv och blir byns när ingen äger det',
   kor: () => {
     const s = createState(6, START);
@@ -479,7 +481,7 @@ SCENARIER.lager = {
       step(b, 2);
       // aldrig mer än händerna orkar, utom en enda sak (steg 6.1.8)
       for (const p of living(b)) if (p.task?.phase === 'back' && p.task.act !== 'elda') {
-        const bs = SIM.bordSlag(p.task), kv = Object.values(bs).reduce((a, x) => a + x, 0) / Math.max(SIM.bordPlats(b, p), ...Object.keys(bs).map(k => SIM.viktOf(k))); // korgen rymmer mer än händerna
+        const bs = SIM.bordSlag(p.task), kv = Object.values(bs).reduce((a, x) => a + x, 0) / Math.max(SIM.bordPlats(b, p), ...Object.keys(bs).map(k => SIM.viktOf(k) * (k === 'vilt' ? KANIN : 1))); // korgen rymmer mer än händerna; en hare (2 fällt vilt) bärs hel som en sak
         hem++; maxKvot = Math.max(maxKvot, kv); if (kv >= 0.95) fullt++;
       }
     }

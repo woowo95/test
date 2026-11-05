@@ -573,6 +573,7 @@ export function use(s: State, p: Person | undefined, k: string, n: number, commo
 // för nya byar och tester: förrådet av slaget k blir n, och det som läggs till är byns
 // (i hela saker, steg 2.10.7)
 export function setAmount(s: State, k: string, n: number) {
+  s.arbBehov = undefined; // byns behov för arbetsordningen räknas om vid nästa val (val.ts, steg 6.1.12)
   if (isTool(k)) { setTools(s, k, n); return; }
   const d = Math.round(n) - amountOf(s, k);
   if (d > 0) place(s, k, d, 1); else if (d < 0) taBort(s, k, -d);
