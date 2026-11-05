@@ -46,7 +46,7 @@ import { arbetsTimme, chooseTask, dangers, nastaBuske, nastaRedskap, nastaRuta, 
 import { djurSteg } from './djur';
 import { vargSteg, vargjaktSteg } from './varg';
 import { rovarSteg } from './rovare';
-import { handelSteg, handlaKlar, pratMedHandlare } from './handel';
+import { handelSteg, handlaKlar, handlarMal, pratMedHandlare } from './handel';
 import { klanSteg } from './klaner';
 import { vaktSteg } from './vakt';
 import { JAKT, jaktForsok, jaktKlar } from './jakt';
@@ -144,7 +144,7 @@ const MEDAN: Partial<Record<Act, Krok>> = {
   toa: (s, p, t) => { p.toa = 1; if (t.prog === undefined) { t.prog = 0; toaBesok(s, p, t.ref); } }, // i latrinen, annars blir det en fläck (smuts.ts)
   kol: (s, p, t) => { const e = eldById(s, t.ref); if (e) takeCoal(s, p, 'hämtade', e); },
   bygga: (s, p, t, dtSec) => buildStep(s, p, t, dtSec),
-  tvinna: (s, p, _t, dtSec) => twineRope(s, p, dtSec / HOUR_S),
+  tvinna: (s, p, t, dtSec) => twineRope(s, p, dtSec / HOUR_S, t.handel ? REDSKAP.repVill + handlarMal(s, 'rep') : undefined), // rep till handlaren (steg 6.2.11)
   hantverk: (s, p, t, dtSec) => { if (t.tool === 'rep') twineRope(s, p, dtSec / HOUR_S); }, // äldre sparfiler: rep tvinnades i handarbetet
   tanda: (s, p, t, dtSec) => {
     const f = eldById(s, t.ref); // lägerelden eller en lägereld till (task.ref, brasor.ts)

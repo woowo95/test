@@ -9,17 +9,17 @@ import { brandVal } from './brand';
 import { RESERV, foodDays } from './ekonomi';
 import { ACTS, WORK, usesTool } from './handlingar';
 import { canLight, eldarOf, emberOn, fuelStock, vidEld, needStones, needTinder, woodDays } from './eld';
-import { ALDER, KROPP, REL, ageOf, count, isSick, living, relKey, stat } from './folk';
+import { ALDER, KROPP, REL, ageOf, count, doingAct, isSick, living, relKey, stat } from './folk';
 import { RELT, bredvidVikt } from './relationer';
 import { onskan } from './naring';
 import { halsa, hemma, kanGa, vardVal, vilaHellre } from './halsa';
-import { egnaMatDygn, harMat } from './behov';
+import { egnaMatDygn, getable, harMat } from './behov';
 import { FANGST, Kind, Lager, flintSpot, richness } from './fynd';
 import { coldOf, nederbord, snoPaMarken, temperature, vaderNu } from './vader';
 // barnen leker i snön när den ligger, som de vuxna har snöbollskrig (steg 4.3.1.3, sport.ts)
 const lekText = (s: State) => snoPaMarken(s) > 0 ? 'Är barn och leker i snön' : 'Är barn och leker';
 import { varselSamla } from './motgang';
-import { DJUR, DJURARTER, Djurart, GORS, canProcess, djurKvar, freeOfKinds, makeTask, toolGroups, wantsTool } from './redskap';
+import { DJUR, DJURARTER, Djurart, GORS, REDSKAP, canProcess, djurKvar, freeOfKinds, handelTask, harAv, makeTask, toolGroups, villAv, wantsTool } from './redskap';
 import { HAMTA, PROJEKT, Uppgift, bastaProjekt } from './projekt';
 import { faltNu, vildFronPlats } from './odling';
 import { MINNE, areaOf, flintArea, pickSpot, prospectFor } from './minne';
@@ -36,7 +36,7 @@ import { clamp, hash3, pick, pickNarmaste, rnd } from './slump';
 import { samtalMed } from './samtal';
 import { ARSTID, ageIndex, isLight, kallTid, yearNo } from './tid';
 import { Act, GREN, H, HOUR, MIN, Person, Skill, Stat, State, T, Task, W, inMap } from './typer';
-import { sakNamn } from './saker';
+import { SAKER, gruppOf, sakNamn } from './saker';
 import { balans } from './balans';
 import { islagt, naVattnet } from './is';
 import { drickVal, torstig, tortarFarligt, vattenVal } from './torst';
@@ -44,9 +44,9 @@ import { forSmutsigt, latrinFor } from './smuts';
 import { bordenOf, ledigPlats, lekplats, sittAt, stationAt, stationFor, storlekAv, vidStation } from './stationer';
 import { RATTER, TORKAS, grillTid, kanGrilla, kanTorka, torkTid } from './matlagning';
 import { egenBrasa } from './brasor';
-import { TEK, forsokChans, forsokVal, laraVal, tekArbete } from './teknik';
+import { TEK, forsokChans, forsokVal, knows, laraVal, tekArbete } from './teknik';
 import { sportVal, sportVikt } from './sport';
-import { handlaVal } from './handel';
+import { handlaVal, handlarMal } from './handel';
 import { framVal } from './framtradande';
 import { utbrottBorjar, utbrottNu } from './humor';
 import { smakDrag } from './rykten';
@@ -399,7 +399,7 @@ type Faror = ReturnType<typeof dangers>;
 // elden är släckt och kan inte tändas för att det saknas tändmaterial, och för få hämtar det
 const tinderNeeded = (s: State) => !s.fire.lit && !emberOn(s) && !canLight(s) && needTinder(s);
 // det som väljs: handlingen, varför, hur länge, och var om det inte följer av handlingen
-interface Val { act: Act; why: string; dur: number; pass?: number; spot?: { x: number; y: number }; ref?: number; tool?: string; site?: { x: number; y: number }; sok?: true; tandmat?: true; falt?: true; hamtar?: string }
+export interface Val { act: Act; why: string; dur: number; pass?: number; spot?: { x: number; y: number }; ref?: number; tool?: string; site?: { x: number; y: number }; sok?: true; tandmat?: true; falt?: true; hamtar?: string; handel?: true }
 const set = (v: Val, act: Act, why: string) => { v.act = act; v.why = why; return true; };
 
 // Registret ARBETEN (steg 6.1.11, "Arbetsordningen" i designdokumentet): en rad per uppgift, i den ordning valet prövar dem.
@@ -594,7 +594,7 @@ export function chooseTask(s: State, p: Person) {
     if (l) { v.spot = { x: l.x + 0.5, y: l.y + 0.5 }; v.ref = l.id; v.why += '. Går till latrinen'; }
   }
   const sp0 = v.spot ?? spotFor(s, v.act, p), sp = freeNear(s, sp0.x, sp0.y); // aldrig i en husvägg
-  p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur + (startsOnArrival(v.act) ? GA_TID : 0), carry: 0, why: v.why, dark: !light, ref: v.ref, tool: v.tool, site: v.site, sok: v.sok, tandmat: v.tandmat, falt: v.falt, hamtar: v.hamtar, pass: v.pass !== undefined ? s.now + v.pass : undefined };
+  p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur + (startsOnArrival(v.act) ? GA_TID : 0), carry: 0, why: v.why, dark: !light, ref: v.ref, tool: v.tool, site: v.site, sok: v.sok, tandmat: v.tandmat, falt: v.falt, hamtar: v.hamtar, handel: v.handel, pass: v.pass !== undefined ? s.now + v.pass : undefined };
   if (v.act === 'samtal' && !v.spot) samtalMed(s, p); // fram till den man vill prata med (steg 4.5.6.7)
   const k = usesTool(p.task);
   if (k && !take(s, p, k)) p.task.tool = undefined; // redskapet tas i handen: det egna först (agande.ts)
@@ -715,8 +715,8 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number, fara: Faror) 
 }
 
 // 8 Förbättra är aldrig tom (steg 6.1.18): när inget går före och inget projekt finns att göra väljer man i den här ordningen
-// att pröva sig fram mot en teknik (teknik.ts), arbeta där en öppen teknik kan komma, eller gå i lära. Varor till handlaren,
-// att bygga om och underhåll väntar på sina system (Färdplanen). true = valet är gjort; ett arbete görs som det vanliga arbetet
+// att pröva sig fram mot en teknik (teknik.ts), arbeta där en öppen teknik kan komma, göra varor till handlaren (steg 6.2.11)
+// eller gå i lära. Att bygga om och underhåll väntar på sina system (Färdplanen). true = valet är gjort; ett arbete görs som det vanliga arbetet
 function forbattra(s: State, p: Person, v: Val, fd: number, wd: number): true | { act: Act; why: string } | undefined {
   const fv = forsokChans(s, p, fd, wd) > 0 ? forsokVal(s, p) : undefined;
   if (fv) {
@@ -729,7 +729,30 @@ function forbattra(s: State, p: Person, v: Val, fd: number, wd: number): true | 
   const nog = (a: Act) => ACTS[a].behov === 'ved' ? wd > VAL.vedMatt * onskatLager(true, pabud(s, 'vedlager')) : ACTS[a].behov === 'mat' && fd > VAL.matMatt * matOnskat(s, p);
   const ta = tekArbete(s, p, a => WORK.includes(a) && !nog(a) && (ACTS[a].vid !== 'vatten' || vaderTillater(s, 'lugnt')));
   if (ta) return { act: ta.act, why: `Kanske kommer hen på ${ta.t.namn.toLowerCase()}` };
+  if (handlarVara(s, p, v)) return true;
   return gaILara(s, p, v, 'Byn har det den behöver') || undefined;
+}
+// varor till handlaren (steg 6.2.11): det handlarna brukar köpa (handlarMal i handel.ts), så många byn har över det den själv
+// vill ha. Redskapen görs som andra redskap (handelTask i redskap.ts), repet tvinnas av hö
+export function handlarVara(s: State, p: Person, v: Val) {
+  for (const k in s.handlarKopt ?? {}) {
+    const mal = handlarMal(s, k);
+    if (!mal) continue;
+    if (k === 'rep') {
+      if (!knows(p, 'rep') || amountOf(s, 'rep') >= REDSKAP.repVill + mal || getable(s, p, 'torrgras') < SAKER.rep!.skaffa!.av!.torrgras! + RESERV.torrgras || doingAct(s, 'tvinna', p)) continue;
+      set(v, 'tvinna', 'Byn har det den behöver. Tvinnar rep att byta med handlaren.');
+      v.handel = true;
+      return true;
+    }
+    const g = gruppOf(k);
+    if (!GORS[g]?.includes(k) || harAv(s, g) - villAv(s, g) >= mal) continue;
+    const u = handelTask(s, p, k);
+    if (!u) continue;
+    projektVal(v, u, `Byn har det den behöver. Gör ${sakNamn(k).toLowerCase()} att byta med handlaren`);
+    v.handel = true;
+    return true;
+  }
+  return false;
 }
 // egen lust att arbeta med färdigheten skill: färdigheten och egenskapen som hjälper, gånger vanan (acts: handlingarna som räknas)
 const lust = (s: State, p: Person, skill: Skill, egenskap: Stat, acts: Act[], tot: number) => (VAL.lustBas + p.skill[skill] + stat(p, egenskap, s.now) / VAL.lustEgenskap) * (1 + VAL.lustVana * habitShare(p, acts, tot)) * smakDrag(p, acts); // och smaken (steg 3.3.5)

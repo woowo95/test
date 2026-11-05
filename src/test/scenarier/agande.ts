@@ -735,6 +735,37 @@ SCENARIER.bytessystem = {
   },
 };
 
+SCENARIER.handelsvaror = {
+  text: 'Varor till handlaren (steg 6.2.11): byn minns vad handlarna köpt av den, och på nivån Förbättra gör man det när inget annat finns att göra, högst så många som handlaren köpte och orkar bära',
+  kor: () => {
+    // handlaren köper två rep av en bybo; när hen gått hem minns byn det
+    const s = createState(6, START); rikBy(s); s.nastaHandlare = s.now;
+    for (let i = 0; i < 60 && !s.handlare; i++) step(s, BEAT);
+    const h = s.handlare, p = living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    if (h) { SIM.put(s, 'rep', 2, { [p.id]: 2 }); SIM.byteKlart(s, SIM.handlarPart(s, h), SIM.personPart(s, p, true), [{ k: 'rep', n: 2 }], [{ k: 'silver', n: 4 }]); }
+    const kopt = h?.kopt?.rep ?? 0;
+    for (let i = 0; i < 48 * 3600 / BEAT && s.handlare; i++) step(s, BEAT);
+    const minns = s.handlarKopt?.rep ?? 0;
+    // en by som vet att handlarna brukar köpa rep och yxor
+    const t = createState(4, START), q = living(t).find(x => SIM.ageOf(x, t.now) >= SIM.ALDER.vuxen)!;
+    q.tek = { ...q.tek, rep: 1, yxa: 1 }; setItems(t, { flinta: 6, torrgras: 30, grenar: 30, rep: 0 });
+    const val = () => { const v: SIM.Val = { act: 'vila', why: '', dur: 0 }; return SIM.handlarVara(t, q, v) ? v : undefined; };
+    const utan = val();
+    t.handlarKopt = { rep: 3, yxa: 9 };
+    const yxMal = SIM.handlarMal(t, 'yxa'), yxBar = Math.floor(SIM.HANDLAR_UTR.ryggsack.vikt * (1 - SIM.HANDEL.fylla) / viktOf('yxa'));
+    const rep = val();
+    SIM.twineRope(t, q, 20, SIM.REDSKAP.repVill + SIM.handlarMal(t, 'rep'));
+    const repN = amountOf(t, 'rep'), yxa = val();
+    return [
+      [`handlaren minns vad hen köpt på besöket (${kopt} rep), och byn minns det när hen gått hem (${minns} rep)`, kopt === 2 && minns >= 2],
+      [`utan något handlarna köpt görs inga varor till dem (${utan?.act ?? 'inget'})`, !utan],
+      [`yxorna görs högst så många som ryggsäcken rymmer (${yxMal} av 9, plats för ${yxBar})`, yxMal === Math.min(9, yxBar) && yxMal < 9],
+      [`den som kan tvinna rep gör det åt handlaren (${rep?.act}, ${rep?.why})`, rep?.act === 'tvinna' && !!rep.handel],
+      [`repet tvinnas inte över det byn vill ha plus det handlaren köper (${repN.toFixed(0)} av ${SIM.REDSKAP.repVill} + 3)`, Math.round(repN) === SIM.REDSKAP.repVill + 3],
+      [`när repen räcker gör man en yxa att byta med (${yxa?.act}, ${yxa?.tool})`, yxa?.act === 'yxa' && yxa.tool === 'yxa' && !!yxa.handel],
+    ];
+  },
+};
 SCENARIER.handlare = {
   text: 'Handlare som kommer när byns rikedom passerat en gräns (steg 4.4.1.2, handel.ts): en fattig by får ingen handlare; när rikedomen passerat HANDEL.rik bestäms när den första kommer. Handlaren kommer gående från kartans kant, väntar på kvällen (steg 4.5.4.11), breder ut en filt med sina varor nära elden på kvällen och går hem på morgonen, och nästa besök bestäms. Byborna handlar på kvällen. Varorna ryms i ryggsäcken, den första handlaren står i krönikan, och under istiden kommer ingen.',
   kor: () => {

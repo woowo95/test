@@ -83,6 +83,15 @@ export const HANDLAR_UTR: Record<string, { namn: string; vikt: number }> = {
   ryggsack: { namn: 'Ryggsäck', vikt: 125 }, // i vikt (saker.ts, steg 6.1.8)
 };
 
+// varorna till handlaren (steg 6.2.11, "Arbetsordningen (Förbättra är aldrig tom)" i designdokumentet): det handlarna brukar
+// köpa är det de köpte av byn och byborna på det senaste besök då slaget köptes (s.handlarKopt). Byn gör lika många, men
+// aldrig fler än en ryggsäck har plats för när handlaren kommer (det som är kvar när packningen fyllts till HANDEL.fylla).
+// 0 = handlarna brukar inte köpa det
+export function handlarMal(s: State, k: string) {
+  const n = s.handlarKopt?.[k] ?? 0;
+  return n < 1 ? 0 : Math.min(n, Math.floor(HANDLAR_UTR.ryggsack.vikt * (1 - HANDEL.fylla) / viktOf(k) + 1e-9));
+}
+
 // sorterna av handlare (steg 4.5.4.16): vilken som kommer styrs av hur rik byn är (rik = gånger HANDEL.rik), inte av byns
 // tekniker; finns flera som byn är rik nog för väljs en på måfå. Sorten bestämmer utrustningen (HANDLAR_UTR) och varorna
 // (kolumnen sort i HANDLARVAROR). I dag finns bara den vandrande med ryggsäck; den med bärdjur (steg 11.4.1.2) och med kärra
@@ -139,6 +148,7 @@ export interface Handlare {
   affar?: Affar; // affären som pågår (steg 4.5.7.4): en kund i taget
   ko?: number[]; // byborna som står i kö vid filten, först till kvarn (steg 4.4.1.5), utan den som handlar nu
   handlat?: number[]; // de som handlat med hen på det här besöket
+  kopt?: Record<string, number>; // det hen köpt av byn och byborna på det här besöket, per slag (steg 6.2.11)
   bytt?: { vem: string; fick: string; gav: string; m?: ByteMinne }[]; // bytena under besöket, för inforutan (m = hela bytet, steg 4.5.4.17)
 }
 // en affär med handlaren (steg 4.5.7.4): vem som handlar (en bybo, eller den som handlar för byn), hur långt den kommit,
@@ -279,6 +289,7 @@ function lagUt(s: State, h: Handlare) {
 function gar(s: State, h: Handlare) {
   glomIrritation(s, h);
   if (h.affar) { const p = byId(s, h.affar.vem); slut(s, h, h.affar, p && alive(p) ? p : undefined); } // en affär som pågår slutar
+  if (h.kopt) s.handlarKopt = { ...s.handlarKopt, ...h.kopt }; // byn minns vad handlarna brukar köpa (steg 6.2.11)
   h.fas = 'gar'; h.affar = undefined; h.mx = h.ut.x; h.my = h.ut.y; h.fran = { x: h.x, y: h.y, t: s.now }; h.framme = s.now + Math.hypot(h.mx - h.x, h.my - h.y) / HANDEL.fart * SEC;
   const par = s.filtar?.find(f => f.handlare === h.id)?.par;
   if (s.filtar) { s.filtar = s.filtar.filter(f => f.handlare !== h.id && (par === undefined || f.par !== par)); if (!s.filtar.length) delete s.filtar; }
@@ -421,6 +432,7 @@ vidByte.push((s, m, g, fatt, betal, minne) => {
   const b = (h.bytt ??= []), kop = m.id === h.id; // kop = handlaren köpte
   b.push({ vem: kop ? g.namn : m.namn, fick: varorText(kop ? fatt : betal), gav: varorText(kop ? betal : fatt), m: minne });
   if (b.length > HANDEL.minnas) b.splice(0, b.length - HANDEL.minnas);
+  for (const w of kop ? fatt : betal) if (w.k !== 'silver') (h.kopt ??= {})[w.k] = (h.kopt[w.k] ?? 0) + (w.t ? 1 : w.n); // det handlaren köpte (steg 6.2.11)
   const k = klanById(s, h.klan); // ett byte gör klanen lite vänligare (steg 4.4.3)
   if (k) andraInst(k, KLAN.handel);
 });

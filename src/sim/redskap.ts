@@ -82,9 +82,9 @@ const spearsWanted = (s: State) => (s.stat?.fiskeForsok ?? 0) > 0 || (s.stat?.pr
 // oavsett material. Rep behövs till flintspjut och metspö.
 const REP_TIMME = 60 / SAKER.rep!.skaffa!.min!; // rep per timme
 export const wantsRope = (s: State, p: Person) => knows(p, 'rep') && amountOf(s, 'rep') < REDSKAP.repVill && getable(s, p, 'torrgras') >= REP.torrgras + RESERV.torrgras; // lite hö sparas till elden
-export function twineRope(s: State, p: Person, hours: number) {
+export function twineRope(s: State, p: Person, hours: number, vill: number = REDSKAP.repVill) { // vill: så många rep byn vill ha (fler att byta med handlaren, steg 6.2.11)
   const f = fartVid(s, p, 'tvinna'), bank = f > 1; // vid slöjdbänken
-  const n = Math.min(hours * REP_TIMME * f, (getable(s, p, 'torrgras') - RESERV.torrgras) / REP.torrgras, REDSKAP.repVill - amountOf(s, 'rep'));
+  const n = Math.min(hours * REP_TIMME * f, (getable(s, p, 'torrgras') - RESERV.torrgras) / REP.torrgras, vill - amountOf(s, 'rep'));
   if (n <= 0) return;
   takeMaterial(s, p, 'torrgras', n * REP.torrgras);
   gain(s, p, 'rep', n);
@@ -237,7 +237,16 @@ function materialVal(s: State, p: Person, g: string, ks: string[]) {
   return valMaterial(lage, { kyla, hot, fin: egen && anseendeSym(s, p.id) === '😇' });
 }
 // det slag p börjar göra när hen kommer fram, om hen kan (paborjat.ts)
-export const borjaTool = (s: State, p: Person, g: string) => { const k = kindFor(s, p, g); return canMake(s, p, k) ? k : undefined; };
+export const borjaTool = (s: State, p: Person, g: string, handel?: string) => { const k = handel && GORS[g].includes(handel) ? handel : kindFor(s, p, g); return canMake(s, p, k) ? k : undefined; };
+// arbetet att göra ett redskap av slaget k att byta med handlaren (steg 6.2.11, varorna i val.ts): p kan göra det (eller har
+// påbörjat ett av slaget), där det görs, och ingen annan gör ett i gruppen. undefined annars
+export function handelTask(s: State, p: Person, k: string) {
+  const g = gruppOf(k), ks = GORS[g];
+  if (!ks?.includes(k) || !kanGoras(s, g as Act, p) || doingAct(s, g as Act, p)) return undefined;
+  const halv = halvOf(s, p, ks)?.halv!.gor;
+  if (halv ? halv !== k : !canMake(s, p, k)) return undefined;
+  return { act: g as Act, text: SAKER[k]!.gors!.text.replace('{verktyg}', ordFor(s, k)), min: minOf(k), tool: k };
+}
 // p vill göra ett redskap i gruppen g: hen har påbörjat ett eller kan göra ett, byn har färre än den vill, och ingen
 // annan gör ett. spar = hö som ska sparas till värmen (ett recept med hö görs bara när byn har så mycket). Det som bara
 // görs vid en station (korgen vid slöjdbänken, stationer.ts) görs inte förrän byn har den
