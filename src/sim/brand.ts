@@ -1,9 +1,10 @@
-import { freeTools } from './agande';
+import { freeTools, tingOf } from './agande';
 import { balans } from './balans';
 import { brasorOf } from './brasor';
 import { hearthOf } from './eld';
 import { rasar } from './bygg';
-import { MATERIAL, bitAt, touch } from './byggnad';
+import { Bit, MATERIAL, bitAt, dorrDef, touch } from './byggnad';
+import { Station, stationAt, stationDef, taBort } from './stationer';
 import { ALDER, ageOf, alive, count, livet, living, log } from './folk';
 import { Kroppsdel, kanGa, skada } from './halsa';
 import { kronika } from './historik';
@@ -94,7 +95,8 @@ export const BRAND = balans('brand', {
 export type BrandRuta = [number, number, number, number];
 // branden som pågår: när och var den började (kalla = gnistor eller blixten), rutorna som brinner och de som brunnit klart,
 // hur många rutor som tagit eld, och vad den gjort
-export interface Brand { t: number; x: number; y: number; kalla: 'gnista' | 'blixt'; r: BrandRuta[]; ut: number[]; n: number; trad: number; vagg: number; saker: number; skadade: number; slackt: number; hot?: 1; sagd?: 1; kallor?: number[] }
+// brann = det av trä som brunnit upp (golv, dörrar, stationer, möbler och redskap), namnet och hur många (steg 6.4.3)
+export interface Brand { t: number; x: number; y: number; kalla: 'gnista' | 'blixt'; r: BrandRuta[]; ut: number[]; n: number; trad: number; vagg: number; saker: number; skadade: number; slackt: number; hot?: 1; sagd?: 1; kallor?: number[]; brann?: Record<string, number> }
 
 // ett tal mellan 0 och 1 ur byns frö, tiden (i steg), en ruta eller person och ett salt (hash3 i slump.ts, drar inget ur
 // slumpföljderna)
@@ -109,6 +111,12 @@ export function torrhet(s: State) {
   if (snoPaMarken(s) > BRAND.sno) return 0;
   return Math.min(1, torrTim(s) / BRAND.torrTim) * BRAND.arstid[kalender(s).ai];
 }
+// hur lätt biten v tar eld: en vägg eller ett golv efter materialet, en öppning med en dörr som en vägg (steg 6.4.3)
+const bitBrinner = (v: Bit | undefined) => !v ? undefined : v.k === 'oppning' ? (v.dorr ? 1 : undefined) : v.b >= 1 ? MATERIAL[v.m]?.brinner : undefined;
+// en station eller möbel brinner om något den är gjord av brinner (inte stenringen)
+const stationBrinner = (t: Station | undefined) => !!t && Object.keys(stationDef(t.k)?.av ?? {}).some(k => !SAKER[k]?.brinnerInte);
+// ett redskap som ligger på marken eller i en möbel (ingen bär det)
+const tingPaMarken = (s: State) => tingOf(s).filter(t => t.hos === undefined && t.lass === undefined && t.x !== undefined && t.y !== undefined && !SAKER[t.k]?.brinnerInte);
 // det som kan brinna på en ruta: [antändning, timmar, hur lätt det släcks (det svåraste)], eller undefined. Sakerna slås upp en gång per steg
 function bransleAv(s: State) {
   let saker: Set<number> | undefined;
@@ -120,9 +128,10 @@ function bransleAv(s: State) {
     const fa = faltAt(s, x, y), v = bitAt(s, x, y);
     if (fa) { if (grodaPa(fa, faltIndex(fa, x, y))) lagg(BRAND.groda); }
     else if (!v && isSoil(g.tiles[i]) && !g.built?.[i]) { const m = markslag(g, i); if (m !== 'bar') lagg(BRAND[m]); } // inte under ett golv eller en vägg
-    const b = v && v.b >= 1 ? MATERIAL[v.m]?.brinner : undefined;
+    const b = bitBrinner(v);
     if (b) lagg(BRAND.vagg, b);
-    saker ??= new Set(stacksOf(s).filter(st => st.n >= 1 && !SAKER[st.k]?.brinnerInte).map(st => st.y * W + st.x));
+    if (s.stationer?.length && stationBrinner(stationAt(s, x, y))) lagg(BRAND.sak);
+    saker ??= new Set([...stacksOf(s).filter(st => st.n >= 1 && !SAKER[st.k]?.brinnerInte).map(st => st.y * W + st.x), ...tingPaMarken(s).map(t => Math.floor(t.y!) * W + Math.floor(t.x!))]);
     if (saker.has(i)) lagg(BRAND.sak);
     return f > 0 ? [f, tim, sl] : undefined;
   };
@@ -216,7 +225,7 @@ export function brandSteg(s: State, dtSec: number) {
   iElden(s, b, dtSec);
   if (b.r.length) return;
   // branden är slut
-  const delar = [`brände ${b.ut.length} ${b.ut.length === 1 ? 'ruta' : 'rutor'}`, b.trad && `${b.trad} träd`, b.vagg && `rev ${b.vagg} ${b.vagg === 1 ? 'vägg' : 'väggar'}`, b.saker && `${b.saker} saker`].filter(Boolean);
+  const delar = [`brände ${b.ut.length} ${b.ut.length === 1 ? 'ruta' : 'rutor'}`, b.trad && `${b.trad} träd`, b.vagg && `rev ${b.vagg} ${b.vagg === 1 ? 'vägg' : 'väggar'}`, b.saker && `${b.saker} saker`, b.brann && `och det här brann upp: ${brannText(b)}`].filter(Boolean);
   log(s, `Elden har slocknat. Den ${delar.join(', ')}${b.skadade ? `, och ${b.skadade} brändes` : ''}.`, 'world');
   if (b.hot || b.ut.length >= BRAND.stor) {
     notis(s, 'motgang', `Elden har slocknat. Den ${delar.join(', ')}${b.skadade ? `, och ${b.skadade} brändes` : ''}.`);
@@ -264,12 +273,23 @@ function slocknar(s: State, b: Brand) {
       }
       (s.aska ??= []).push([i, Math.round(s.now)]);
     }
-    // väggen tappar skick och rasar
-    const v = bitAt(s, x, y), br = v && v.b >= 1 ? MATERIAL[v.m]?.brinner : undefined;
-    if (v && br) {
+    // väggen tappar skick och rasar; ett golv av trä eller hö blir jordgolv, och dörren brinner upp (steg 6.4.3)
+    const v = bitAt(s, x, y), br = bitBrinner(v), upp = a >= BRAND.trad;
+    if (v && br && v.k === 'vagg') {
       v.c -= a * BRAND.vaggSkick; rev = true;
       if (v.c <= 0) { const h = rasar(s, v); b.vagg++; count(s, 'brand vagg'); drabbadHus(s, h, 'eldsvådan som förstörde huset'); }
+    } else if (v && br && upp) {
+      if (v.k === 'golv') { brann(b, MATERIAL[v.m].namn); v.m = 'jord'; }
+      else { brann(b, dorrDef(v.dorr)?.namn ?? 'Dörr'); delete v.dorr; }
+      count(s, 'brand ' + v.k); rev = true;
     }
+    // stationen eller möbeln brinner upp, med redskapen i den, och redskapen som ligger på marken
+    const st = s.stationer?.length ? stationAt(s, x, y) : undefined;
+    if (upp && st && stationBrinner(st)) {
+      for (const k of tingOf(s).filter(q => q.vid === st.id && q.hos === undefined && q.lass === undefined && !SAKER[q.k]?.brinnerInte)) { brann(b, SAKER[k.k]?.namn ?? k.k); s.ting = tingOf(s).filter(q => q !== k); }
+      brann(b, stationDef(st.k)?.namn ?? st.k); count(s, 'brand station'); taBort(s, st); flytt = true;
+    }
+    if (upp) for (const k of tingPaMarken(s)) if (Math.floor(k.x!) === x && Math.floor(k.y!) === y) { brann(b, SAKER[k.k]?.namn ?? k.k); s.ting = tingOf(s).filter(q => q !== k); count(s, 'brand redskap'); }
     // sakerna brinner upp, och grödan
     for (const st of stacksOf(s)) {
       if (st.x !== x || st.y !== y || st.n < 1 || SAKER[st.k]?.brinnerInte) continue;
@@ -283,6 +303,11 @@ function slocknar(s: State, b: Brand) {
   if (rev) touch(s);
   if (flytt) tidy(s);
 }
+
+// det som brann upp skrivs i branden (namnet och hur många)
+function brann(b: Brand, namn: string) { (b.brann ??= {})[namn] = (b.brann[namn] ?? 0) + 1; }
+// det som brann upp, i ord: "Kista, Trägolv ×3"
+const brannText = (b: Brand) => Object.entries(b.brann ?? {}).map(([k, n]) => n > 1 ? `${k.toLowerCase()} ×${n}` : k.toLowerCase()).join(', ');
 
 // brinner det nära byn (dess område, steg 6.2.4)? Då släcker de vuxna
 function hotar(s: State, b: Brand) {

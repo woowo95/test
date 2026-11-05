@@ -1253,6 +1253,40 @@ SCENARIER.slackning = {
   },
 };
 
+SCENARIER.brinnerupp = {
+  text: 'Steg 6.4.3: allt av trä och allt i lagren kan brinna: golv, dörrar, stationer och möbler med det som ligger i dem, och sakerna i högarna och på marken. Sten och flinta blir kvar, ett trägolv blir jordgolv, och det som brunnit skrivs i branden',
+  kor: () => {
+    const a = torrAng();
+    if (typeof a === 'string') return [[a, false]];
+    const x = cloneState(a.s), mitt = a.mitt, cx = mitt % W, cy = Math.floor(mitt / W);
+    angSlag(x, mitt, 'hog');
+    // ett trägolv och en öppning med en skinndörr, en hylla med en kniv i, en yxa på marken och högar med skinn och flinta
+    const golv = { id: 9101, x: cx + 3, y: cy, k: 'golv', m: 'tra', b: 1, mat: 0, c: 1 } as SIM.Bit, dorr = { id: 9102, x: cx - 3, y: cy, k: 'oppning', m: 'oppning', b: 1, mat: 0, c: 1, dorr: 'skinndorr' } as SIM.Bit;
+    (x.byggen ??= []).push(golv, dorr);
+    const hylla: SIM.Station = { id: x.nextStation = (x.nextStation ?? 0) + 1, k: 'hylla', x: cx, y: cy + 3, kvar: 0 };
+    (x.stationer ??= []).push(hylla);
+    const kniv = SIM.newTing(x, 'kniv', 1, 0); kniv.vid = hylla.id; kniv.x = hylla.x; kniv.y = hylla.y;
+    const yxa = SIM.newTing(x, 'yxa', 1, 0); yxa.x = cx; yxa.y = cy - 3;
+    (x.stackar ??= []).push({ k: 'skinn', n: 5, c: 1, x: cx + 2, y: cy + 2 }, { k: 'flinta', n: 4, c: 1, x: cx - 2, y: cy + 2 });
+    SIM.touch(x);
+    if (x.vader) { x.vader.torr = 240; x.vader.fukt = 0; }
+    SIM.tand(x, mitt, 'blixt', 0);
+    const flintor = () => (x.stackar ?? []).filter(q => q.k === 'flinta').reduce((n, q) => n + q.n, 0) + (living(x).reduce((n, p) => n + (p.task?.items?.flinta ?? 0), 0));
+    const b = x.brand!, flinta0 = flintor();
+    step(x, 4 * 3600);
+    const har = (k: string, xx: number, yy: number) => (x.stackar ?? []).some(q => q.k === k && q.x === xx && q.y === yy && q.n >= 1);
+    const brann = b.brann ?? {};
+    return [
+      [`trägolvet blev jordgolv (${golv.m})`, golv.m === 'jord'],
+      [`skinndörren brann upp (${dorr.dorr ?? 'borta'})`, !dorr.dorr],
+      [`hyllan och kniven i den brann upp`, !SIM.stationerOf(x).includes(hylla) && !SIM.tingOf(x).includes(kniv)],
+      [`yxan på marken brann upp`, !SIM.tingOf(x).includes(yxa)],
+      [`de fem skinnen brann upp (${b.saker} saker brann), men flintan blev kvar (${flintor()} av ${flinta0})`, b.saker >= 5 && !har('skinn', cx + 2, cy + 2) && flintor() >= flinta0],
+      [`det som brunnit står i branden (${Object.entries(brann).map(([k, n]) => `${k} ${n}`).join(', ')})`, ['Trägolv', 'Skinndörr', 'Hylla', 'Flintkniv', 'Flintyxa'].every(k => brann[k] >= 1)],
+    ];
+  },
+};
+
 SCENARIER.brand = {
   text: 'Steg 3.8.5: eldsvådor och skogsbrand. När marken är torr på sommaren tar elden sig från ruta till ruta i skogen och träden dör; när marken är blöt tar den sig inte vidare. Gnistor från lägerelden tänder ibland marken. Elden nära byn: folk ser den och ropar, de vuxna släcker med vattensäcken och med händerna, en risvägg brinner, ingen står i en vägg eller i vattnet, och elden slocknar. Där skogen brann kommer plantor, som växer upp när gräset kommit tillbaka, och det svarta försvinner efter några dygn',
   kor: () => {

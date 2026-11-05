@@ -1014,8 +1014,8 @@ function tomt(s: State, borta: Station[]) {
   for (const k of tingOf(s)) if (borta.some(t => t.id === k.vid)) { k.vid = undefined; if (k.hos === undefined && k.lass === undefined) k.x = k.y = undefined; }
   for (const t of borta) if (stationDef(t.k)?.forvar?.redskap) stallBorta(s, t.x, t.y);
 }
-// stationen t tas bort
-function taBort(s: State, t: Station) {
+// stationen t tas bort (också när den brunnit upp, brand.ts)
+export function taBort(s: State, t: Station) {
   s.stationer = stationerOf(s).filter(q => q !== t);
   tomt(s, [t]);
   touch(s);
