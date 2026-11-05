@@ -1,7 +1,7 @@
 # Fas 7: samtalet med Björn, att fortsätta
 
-Inget av detta är inskrivet i designdokumentet än. Björn har sagt: skriv inte in något förrän han säger till.
-När han gör det skrivs det bestämda in där det står (avsnitt och steg), stegen numreras om och hänvisningarna rättas.
+Allt här utom världskartan är nu inskrivet i designdokumentet, i avsnitten och i stegen 7.1, 7.4–7.7 och de nya stegen i fas 8–14.
+Världskartan skrivs inte in förrän den är färdigtänkt.
 
 ## Bestämt
 
@@ -110,3 +110,9 @@ När han gör det skrivs det bestämda in där det står (avsnitt och steg), ste
 - Fångstbänken: namnet, och att den flyttas före mjärden.
 - Härdens form (steget säger "Björn avgör").
 - När får det skrivas in i designdokumentet?
+
+## Sist bestämt (inskrivet)
+- Örter odlas inte på fält utan i krukor och blomlådor, som också är pynt; blommor senare på samma sätt (8.3.21–8.3.22, inte i fas 7).
+- Den första örten är rölleka, som stämmer blod.
+- Skinn byter inte namn: skinn är huden med pälsen, läder huden utan päls, garvad med talg.
+- Allt kött och all fisk hålls isär per art, också grillat och torkat; raderna görs ur djurregistret.
