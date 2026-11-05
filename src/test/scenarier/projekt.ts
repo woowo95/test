@@ -1,5 +1,5 @@
 // Scenarier. Byns projekt (steg 2.2.7): byn väljer vad den bygger och gör efter vad den saknar.
-import { createState, living, ageOf, ALDER, chooseTask, dangers, GORS, STATION_LIST, PROJEKT, projekt, bastaProjekt, projektVarde, addTool, setAmount, State } from '../../sim';
+import { createState, living, ageOf, ALDER, chooseTask, dangers, GORS, STATION_LIST, PROJEKT, PROJEKT_LIST, projekt, bastaProjekt, projektVarde, addTool, setAmount, State } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
 import { setItems, setFood, SCENARIER, medBank, kor } from './hjalp';
@@ -132,5 +132,43 @@ SCENARIER.arbetspabud = {
       [`Bygg före allt gäller bara när ledaren vill (${byggUtan.toFixed(2)} → ${byggMed.toFixed(2)})`, byggUtan <= 0 && byggMed > 0],
       [`påbuden finns i registret och visas i Byn (${SIM.PABUD.bygg.namn}, ${SIM.PABUD.vinter.namn})`, SIM.PABUD_LIST.includes('bygg') && SIM.PABUD_LIST.includes('vinter')],
     ];
+  },
+};
+SCENARIER.fullaforrad = {
+  text: 'Förråden till taket (steg 6.2.15): sist på Förbättra fylls förråden mellan bufferten och taket i FORRADSMAL. I en by som kan alla tekniker och inte saknar något projekt (projektens brist sätts till noll under provet, och vedens buffert halveras och taket sänks till bufferten, så att det ryms i lagret) samlar ingen mer under en arbetsdag (8 timmar) när förråden nått taken: lagret växer inte över taken, och de vuxna får fritid. I samma by vars förråd bara når bufferten fylls de',
+  lang: true,
+  kor: () => {
+    const brist = PROJEKT_LIST.map(k => PROJEKT[k].brist), ved = SIM.FORRADSMAL.ved as { matt: number; dygn: number }, vedMatt = ved.matt, vedDygn = ved.dygn;
+    for (const k of PROJEKT_LIST) PROJEKT[k].brist = () => 0;
+    ved.matt = 1; ved.dygn = vedDygn / 2;
+    try {
+      const fyll = (full: boolean) => {
+        const s = by(4);
+        for (const q of s.people) for (const t of SIM.TEKNIK) q.tek = { ...q.tek, [t.id]: 1 };
+        SIM.arbetsTimme(s);
+        const mat = full ? 1.5 * SIM.lyxtak(s, 'mat') : 1.1 * SIM.buffert(s, 'mat'), vd = full ? 1.3 * SIM.lyxtak(s, 'ved') : 0.8 * SIM.buffert(s, 'ved');
+        setFood(s, 100); for (let i = 0; i < 40 && SIM.foodDaysAll(s) < mat; i++) setFood(s, SIM.foodOf(s) * 1.1);
+        if (!full) for (let i = 0; i < 40 && SIM.foodDays(s) > mat; i++) setFood(s, SIM.foodOf(s) * 0.9);
+        SIM.setAmount(s, 'ved', Math.ceil(vd * SIM.hearthOf(s.fire).burn * 24));
+        SIM.arbetsTimme(s);
+        if (full) setItems(s, { flinta: 6, torrgras: Math.ceil(SIM.materialTak(s, 'torrgras')) + 5, grenar: Math.ceil(SIM.materialTak(s, 'grenar')) + 5 });
+        return s;
+      };
+      const full = fyll(true), halv = fyll(false);
+      const fore = { mat: SIM.foodOf(full), grenar: SIM.amountOf(full, 'grenar'), torrgras: SIM.amountOf(full, 'torrgras'), ved: SIM.amountOf(full, 'ved') };
+      const vuxen = (q: SIM.Person, v: State) => ageOf(q, v.now) >= ALDER.vuxen;
+      const samlar = (s: State) => { let n = 0; const sett = new WeakSet<object>(); kor(s, 8, v => { for (const q of living(v)) if (vuxen(q, v) && q.task && !sett.has(q.task)) { sett.add(q.task); if (q.task.why?.startsWith('Mer ')) n++; } }); return n; };
+      const samlarFull = samlar(full), samlarHalv = samlar(halv);
+      const fri = (v: State) => v.stat?.fullaForrad ?? 0;
+      return [
+        [`i den fulla byn samlar ingen för att fylla förråden (${samlarFull} uppgifter), i byn vid bufferten gör de det (${samlarHalv})`, samlarFull === 0 && samlarHalv > 0],
+        [`maten växer inte (${fore.mat.toFixed(0)} → ${SIM.foodOf(full).toFixed(0)}), inte heller veden (${fore.ved} → ${SIM.amountOf(full, 'ved')})`, SIM.foodOf(full) <= fore.mat + 1 && SIM.amountOf(full, 'ved') <= fore.ved + 1],
+        [`grenarna och höet växer inte över taken (grenar ${fore.grenar} → ${SIM.amountOf(full, 'grenar')}, hö ${fore.torrgras} → ${SIM.amountOf(full, 'torrgras')})`, SIM.amountOf(full, 'grenar') <= fore.grenar + 1 && SIM.amountOf(full, 'torrgras') <= fore.torrgras + 1],
+        [`de vuxna i den fulla byn får fritid när inget finns kvar att göra (${fri(full)} gånger, mot ${fri(halv)} i byn vid bufferten)`, fri(full) > fri(halv)],
+      ];
+    } finally {
+      PROJEKT_LIST.forEach((k, i) => { PROJEKT[k].brist = brist[i]; });
+      ved.matt = vedMatt; ved.dygn = vedDygn;
+    }
   },
 };

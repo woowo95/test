@@ -3,7 +3,7 @@ import { handighet } from './halsa';
 import { ageIndex } from './tid';
 import { ACTS, SNABBARE } from './handlingar';
 import { Act, HOUR_S, Person, State } from './typer';
-import { matSomHaller } from './lager';
+import { foodOf, matSomHaller } from './lager';
 import { balans } from './balans';
 import { RELT } from './relationer';
 
@@ -71,8 +71,10 @@ export function atSteg(s: State) {
 // hur många dygn maten i förrådet räcker (steg 2.12.4): räknat av det byn faktiskt äter per person (atSteg), och aldrig av mindre
 // än kroppen behöver, så att en by som inte har något att äta inte tror att maten räcker längre. Bara den mat räknas som hinner
 // ätas innan den ruttnar (steg 3.10.9, matSomHaller i lager.ts): ett fullt förråd av fisk som ruttnar i morgon räcker inte länge
-export function foodDays(s: State) {
+function matPerDygn(s: State) {
   const ppl = living(s), kropp = ppl.length ? ppl.reduce((t, p) => t + kroppensMat(p, s.now), 0) : 24 / KROPP.hungerTim / KROPP.mattar; // en tom by räknas som en vuxen
-  const perDygn = Math.max(kropp, ppl.length * (s.atTakt ?? 0));
-  return matSomHaller(s, perDygn / 24) / perDygn;
+  return Math.max(kropp, ppl.length * (s.atTakt ?? 0));
 }
+export function foodDays(s: State) { const d = matPerDygn(s); return matSomHaller(s, d / 24) / d; }
+// hur många dygn all mat i förrådet skulle räcka om ingen ruttnade: över lyxtaket ger mer mat bara mer som ruttnar (steg 6.2.15)
+export function foodDaysAll(s: State) { return foodOf(s) / matPerDygn(s); }

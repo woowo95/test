@@ -6,7 +6,7 @@ import { PLATS } from './plats';
 import { vargSkydd, vargjaktVal } from './varg';
 import { tornadoSkydd } from './tornado';
 import { brandVal } from './brand';
-import { RESERV, foodDays } from './ekonomi';
+import { RESERV, foodDays, foodDaysAll } from './ekonomi';
 import { ACTS, WORK, usesTool } from './handlingar';
 import { canLight, eldarOf, emberOn, fuelStock, vidEld, needStones, needTinder, woodDays } from './eld';
 import { ALDER, KROPP, REL, ageOf, count, doingAct, isSick, living, relKey, stat } from './folk';
@@ -682,7 +682,8 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number, fara: Faror) 
   // skälet "behöver mat" bara när förrådet räcker kortare än byn vill (steg 3.10.9)
   let what = leta ? `Byn behöver ${needStones(s) ? 'stenar' : eldFlinta ? 'flinta' : `flinta till ${PROJEKT[pr!.k].namn.toLowerCase()}`}` : hamta ? `${PROJEKT[pr!.k].namn} behöver ${sakNamn(pr!.sak!).toLowerCase()}` : build && job!.missing ? `Bygget behöver ${job!.item === 'torrgras' ? 'hö' : job!.item === 'ved' ? 'ved' : job!.item === 'virke' ? 'virke' : 'grenar'}` : best === 'ved' ? `Byn behöver ved, förrådet räcker ${dygn(wd)}` : tandmat ? 'Byn behöver tändmaterial till elden'
     : egen !== undefined && ACTS[best].behov === 'mat' ? `Behöver egen mat, har för ${dygn(egen)}` : fd < matBuf ? `Byn behöver mat, förrådet räcker ${dygn(fd)}` : `Mer mat till förrådet, som räcker ${dygn(fd)}`;
-  let works = false, fb: ReturnType<typeof forbattra>;
+  let works = false, fb: ReturnType<typeof forbattra>, fy: ReturnType<typeof fylla>;
+  const utanBehov = !build && !forsorj && !hamta && !leta && !fara.kyla && !fara.svalt; // inget under Försörjning, Tak eller projekten
   // kolet i en utbrunnen lägereld (den första först, steg 4.5.6.8)
   const kolEld = a >= ALDER.ansvar ? eldarOf(s).find(e => (e.ash ?? 0) >= 1 && !e.lit && !emberOn(s, e) && (e.want ?? 0) < VAL.kolEld) : undefined;
   if (kolEld && rnd(s, 'val', p) < VAL.kolChans * fullVikt(s, p, 'kol')) {
@@ -696,14 +697,19 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number, fara: Faror) 
     building(s, p, v, job!);
   } else if (works && proj) {
     projektVal(v, pr!.u!, `Byn saknar ${PROJEKT[pr!.k].namn.toLowerCase()}`);
-  } else if (works && !build && !forsorj && !hamta && !leta && !fara.kyla && !fara.svalt && (fb = forbattra(s, p, v, fd, wd)) === true) {
+  } else if (works && utanBehov && (fb = forbattra(s, p, v, fd, wd)) === true) {
     count(s, 'forbattra');
+  } else if (works && utanBehov && !fb && !(fy = fylla(s, p, best, fd, wd))) {
+    // allt på Förbättra är gjort och förråden har nått sina tak: tiden blir fritid (steg 6.2.15)
+    count(s, 'fullaForrad');
+    leisure(s, p, v, u, lazy);
   } else if (works) {
     if (fb && fb !== true) { best = fb.act; what = `Byn har det den behöver. ${fb.why}`; count(s, 'forbattra'); }
+    else if (fy) { best = fy.act; what = fy.why; count(s, 'fylla'); }
     set(v, best, what + (lazy < 0.2 ? '. Plikttrogen.' : habitShare(p, [best], tot) > 0.25 ? '. Brukar göra det.' : p.skill[best as Skill] > 10 ? '. Skicklig på det.' : '.'));
     v.dur = (VAL.arbeteMin + rnd(s, 'val', p) * VAL.arbeteSpann) * MIN * VAL.pass;
     if (tandmat) v.tandmat = true;
-    if (v.act === 'samla' && !leta) v.hamtar = hamta ? pr!.sak : build && job!.missing ? job!.item : undefined;
+    if (v.act === 'samla' && !leta) v.hamtar = hamta ? pr!.sak : build && job!.missing ? job!.item : fy?.hamtar;
     withTools(s, p, v, best, what, fara, leta, !!hamta?.leta);
     if (v.act === 'fiske' && islagt(s)) v.why = `${v.why} Hugger upp ett hål i isen och pimplar.`;
     if (build && job!.missing && job!.item === 'ved' && v.act === 'falla') { v.ref = job!.bit.hus; v.why = `${v.why} Stocken ska bli en vägg.`; } // trädet fälls för bygget
@@ -722,13 +728,30 @@ function forbattra(s: State, p: Person, v: Val, fd: number, wd: number): true | 
   }
   // arbetet där en teknik kan komma, bara så länge det byn får av det inte redan räcker så länge att byn annars slutat samla
   // (lyxtaket i FORRADSMAL, forradsmal.ts): annars växer högarna i lagret utan slut
-  const nog = (a: Act) => ACTS[a].behov === 'ved' ? wd > lyxtak(s, 'ved') : ACTS[a].behov === 'mat' && fd > lyxtak(s, 'mat', p.varsel ? varselSamla(s, p) : 0);
+  const nog = (a: Act) => ACTS[a].behov === 'ved' ? wd > lyxtak(s, 'ved') : ACTS[a].behov === 'mat' && matFullt(s, p, fd);
   const ta = tekArbete(s, p, a => WORK.includes(a) && !nog(a) && (ACTS[a].vid !== 'vatten' || vaderTillater(s, 'lugnt')));
   if (ta) return { act: ta.act, why: `Kanske kommer hen på ${ta.t.namn.toLowerCase()}` };
   if (handlarVara(s, p, v)) return true;
   const ug = underhallGrupp(s, p); // underhållet (steg 6.2.12): ett nytt i stället för ett slitet
   if (ug) { const m = makeTask(s, p, ug); projektVal(v, { act: m.act, text: m.text, min: m.min, tool: m.tool }, 'Byn har det den behöver. Ett av byns är slitet och ett nytt görs i tid'); return true; }
   return gaILara(s, p, v, 'Byn har det den behöver') || undefined;
+}
+// Sist på Förbättra (steg 6.2.15): förråden fylls mellan bufferten och taket i FORRADSMAL. Först det arbete p helst gör om dess
+// förråd är under taket, sedan maten, veden och materialen som plockas (grenar och hö). Är alla vid taket finns inget kvar
+// att göra, och tiden blir fritid (undefined)
+// maten har nått taket när den räcker så länge, eller när all mat, också den som ruttnar först, skulle räcka så länge: då ger
+// mer mat bara mer som ruttnar
+const matFullt = (s: State, p: Person, fd: number) => { const t = lyxtak(s, 'mat', p.varsel ? varselSamla(s, p) : 0); return fd >= t || foodDaysAll(s) >= t; };
+function fylla(s: State, p: Person, best: Act, fd: number, wd: number): { act: Act; why: string; hamtar?: string } | undefined {
+  const matFull = matFullt(s, p, fd), vedTak = lyxtak(s, 'ved');
+  const mat = { act: 'samla' as Act, why: `Mer mat till förrådet, som räcker ${dygn(fd)}` }, ved = { act: 'ved' as Act, why: `Mer ved till förrådet, som räcker ${dygn(wd)}` };
+  const b = ACTS[best].behov;
+  if (b === 'mat' && !matFull) return { ...mat, act: best };
+  if (b === 'ved' && wd < vedTak) return { ...ved, act: best };
+  if (!matFull) return mat;
+  if (wd < vedTak) return ved;
+  for (const k of ['grenar', 'torrgras'] as const) if (!overTak(s, k)) return { act: 'samla', why: `Mer ${k === 'grenar' ? 'grenar' : 'hö'} till förrådet`, hamtar: k };
+  return undefined;
 }
 // varor till handlaren (steg 6.2.11): det handlarna brukar köpa (handlarMal i handel.ts), så många byn har över det den själv
 // vill ha. Redskapen görs som andra redskap (handelTask i redskap.ts), repet tvinnas av hö
