@@ -434,7 +434,7 @@ export function arbetsTimme(s: State) {
   // byn saknar av varje projekt, frågat en gång i timmen i stället för av varje person i varje val)
   const brist: Record<string, number> = {};
   for (const k of PROJEKT_LIST) { const b = r3(PROJEKT[k].brist(s)); if (b > 0) brist[k] = b; }
-  s.arbBehov = { mat, ved, arb, mal: materialTimme(s), brist };
+  s.arbBehov = { mat, ved, arb, mal: materialTimme(s), brist, bv: s.byggV ?? 0 };
 }
 // raderna som har arbetare (steg 6.1.13). Maten är flera arbeten (samla, jaga, fiska, fältet) som delar på samma arbetare
 export type ArbRad = 'mat' | 'ved' | 'bygga' | 'tand' | 'leta' | 'kol';

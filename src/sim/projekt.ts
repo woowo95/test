@@ -180,7 +180,8 @@ export const projektVarde = (s: State, k: string) => { const d = PROJEKT[k]; ret
 export const egenintresse = (s: State, p: Person) => clamp(PROJEKT_TAL.egen - PROJEKT_TAL.egenEmpati * (stat(p, 'empati', s.now) - SED.mitt) / SED.spann - PROJEKT_TAL.egenSed * (s.seder?.v.gemenskap ?? 0), 0, PROJEKT_TAL.egenMax);
 // det projektet är värt för den som har familjen fam och egenintresset ei: byns värde och det egna (vad p och familjen saknar) gånger egenintresset
 // Byns brist kommer från timräkningen (arbetsTimme i val.ts, steg 6.2.21), så länge den finns
-export const bristNu = (s: State, k: string) => s.arbBehov?.brist ? s.arbBehov.brist[k] ?? 0 : PROJEKT[k].brist(s);
+// byns brist ur timmens räkning (val.ts), men räknas fram igen när något byggts eller satts upp sedan dess (s.byggV), så att ingen börjar ett andra bord samma timme
+export const bristNu = (s: State, k: string) => s.arbBehov?.brist && s.arbBehov.bv === (s.byggV ?? 0) ? s.arbBehov.brist[k] ?? 0 : PROJEKT[k].brist(s);
 export function personVarde(s: State, k: string, fam: readonly Person[], ei: number) {
   const d = PROJEKT[k], e = d.egen && ei > 0 ? d.egen(s, fam) : 0;
   return d.vikt * (bristNu(s, k) + e * ei) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad());

@@ -78,6 +78,7 @@ SCENARIER.agande = {
     const v = createState(5, START);
     for (const q of v.people) q.tek = { fiskespjut: 1, korg: 1 };
     setItems(v, { grenar: 20, flinta: 2, torrgras: 30 }); v.stat = { ...(v.stat ?? {}), fiskeForsok: 1 };
+    makeTool(v, living(v)[1], 'spjut'); // ett eget spjut från början, så att provet inte hänger på vem som gör det (den som blir nattvakt lägger ner det hen bär)
     let ihand = 0;
     kor(v, 3 * 24, q => { if (living(q).some(p => heldBy(q, p) && !usesTool(p.task))) ihand++; });
     const ts = v.ting ?? [], egna = ts.filter(t => t.agare !== BYN).length;
