@@ -392,20 +392,128 @@ const tinderNeeded = (s: State) => !s.fire.lit && !emberOn(s) && !canLight(s) &&
 interface Val { act: Act; why: string; dur: number; pass?: number; spot?: { x: number; y: number }; ref?: number; tool?: string; site?: { x: number; y: number }; sok?: true; tandmat?: true; falt?: true }
 const set = (v: Val, act: Act, why: string) => { v.act = act; v.why = why; return true; };
 
-// Viljan i tre steg: 1. nöd, 2. grundbehov, 3. byns behov mot egen lust (på dagen) eller kvällen vid elden (på natten).
+// Registret ARBETEN (steg 6.1.11, "Arbetsordningen" i designdokumentet): en rad per uppgift, i den ordning valet prövar dem.
+// Valet går igenom registret uppifrån och tar den första rad som gäller nu (nar: dag, natt eller båda) och väljer något.
+// Nivåerna (ARBETSNIVAER) säger vad raden är; raderna står ännu i dagens ordning, och de sista raderna på dagen och natten
+// (arbete och kväll) väger fortfarande arbete, bygge, projekt och fritid mot varandra (steg 6.1.12–6.1.18 delar dem).
 // Man går sedan dit (steg.ts)
+export const ARBETSNIVAER = ['', 'Fara', 'Nöd och vård', 'Tillfälle', 'Grundbehov', 'Rädda', 'Försörjning', 'Tak', 'Förbättra', 'Fritid'] as const;
+type Niva = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+// det valet vet om personen; farorna räknas första gången en rad frågar och gäller hela valet
+interface Ctx { s: State; p: Person; v: Val; a: number; lazy: number; light: boolean; f?: Faror }
+const faror = (c: Ctx) => c.f ??= dangers(c.s);
+// lat: hur mycket tidigare den lata tar grundbehoven
+const fryser = (c: Ctx) => c.p.warm < KROPP.kallt + KROPP.latVarme * c.lazy;
+export interface Arbete {
+  id: string; niva: Niva;
+  nar?: 'dag' | 'natt'; // utan nar: både dag och natt
+  kort?: true; // dagens pass (VAL.pass): på dagen kortas valets tid innan raden prövas
+  prova: (c: Ctx) => boolean | undefined; // true = raden valde något (v är ifyllt)
+}
+export const ARBETEN: readonly Arbete[] = [
+  // 1 Fara: vargar är nära (steg 3.7.15), en tornado kommer (steg 3.8.4), det brinner (steg 3.8.5) eller vattnet stiger (steg 3.8.7)
+  { id: 'skydd', niva: 1, prova: ({ s, p, v }) => { const sk = vargSkydd(s, p) ?? tornadoSkydd(s, p); if (!sk) return false; set(v, sk.act, sk.why); v.spot = sk.spot; v.dur = sk.dur; return true; } },
+  { id: 'brand', niva: 1, prova: ({ s, p, v }) => { const br = brandVal(s, p); if (!br) return false; set(v, br.act, br.why); v.spot = br.spot; v.dur = br.dur; v.tool = br.tool; v.ref = br.ref; return true; } },
+  // de vuxna som orkar bär undan maten från lagerplatserna vattnet kan nå, också på natten (flod.ts)
+  { id: 'flod', niva: 1, prova: ({ s, p, v, a }) => {
+    const fl = !s.flodHot || a < ALDER.vuxen || isSick(p, s.now) || !kanGa(p) ? undefined : flodUndan(s);
+    if (!fl) return false;
+    set(v, 'bara', fl.why); v.spot = fl; v.dur = VAL.baraTim * HOUR; count(s, 'flod undan'); return true;
+  } },
+  // 2 Nöd och vård (sjuk, svag, fryser farligt, måste på toa genast)
+  { id: 'smabarn', niva: 2, prova: ({ v, a }) => a < ALDER.smabarn && set(v, 'sova', 'Är ett litet barn') },
+  { id: 'toaGenast', niva: 2, prova: ({ p, v }) => p.toa < KROPP.toaGenast && set(v, 'toa', 'Måste gå på toa genast') },
+  { id: 'torstFarligt', niva: 2, prova: ({ s, p, v }) => tortarFarligt(p) && dricka(s, p, v) }, // också den som är sjuk eller svag dricker
+  { id: 'vardaSig', niva: 2, prova: ({ s, p, v }) => varda(s, p, v, true) }, // sina egna sår: trycka på, lägga förband och rengöra (steg 2.5.2)
+  { id: 'sjuk', niva: 2, prova: ({ s, p, v }) => isSick(p, s.now) && set(v, 'sova', 'Är sjuk') },
+  { id: 'svag', niva: 2, prova: ({ p, v }) => halsa(p) < KROPP.svag && set(v, 'sova', 'Är för svag för att orka något') }, // också av blodförlust och smärta (halsa.ts)
+  { id: 'fryserFarligt', niva: 2, prova: ({ s, p, v }) => p.warm < KROPP.farligt && s.fire.lit && set(v, 'varma', 'Fryser farligt') },
+  // elden går inte att tända för att tändmaterial saknas: den som fryser men orkar hämtar det i stället för att gå in.
+  // Kylan är faran och elden det enda som hjälper mot den (några räcker; de andra går in och väntar)
+  { id: 'tandFryser', niva: 2, prova: c => fryser(c) && c.a >= ALDER.vuxen && tinderNeeded(c.s) && (c.v.tandmat = true) && set(c.v, 'samla', 'Fryser, men utan tändmaterial blir det ingen eld') },
+  { id: 'fryserFarligtInne', niva: 2, prova: ({ s, p, v }) => p.warm < KROPP.farligt && bedTile(s, p) !== undefined && set(v, 'vila', 'Fryser farligt och går in i huset') },
+  { id: 'varda', niva: 2, prova: ({ s, p, v }) => varda(s, p, v, false) }, // en skadad är en fara: vården går före förbättringarna (steg 2.5.2)
+  { id: 'vatten', niva: 2, prova: ({ s, p, v }) => hamtaVatten(s, p, v) }, // vatten i säcken åt den som inte kan gå (steg 2.10.1)
+  // 4 Grundbehov (toa, värme, vatten, vila, mat). En lat person tillgodoser dem tidigare än en flitig
+  { id: 'gammalSover', niva: 4, nar: 'natt', prova: ({ s, p, v, a }) => a > ALDER.sovGammal && rnd(s, 'val', p) < VAL.gammalSover && set(v, 'sova', 'Är gammal och sover på natten') },
+  { id: 'toa', niva: 4, prova: ({ p, v, lazy }) => p.toa < KROPP.toaBehov + KROPP.latToa * lazy && set(v, 'toa', 'Behöver gå på toa') },
+  { id: 'fryser', niva: 4, prova: c => fryser(c) && c.s.fire.lit && set(c.v, 'varma', 'Fryser') },
+  { id: 'fryserInne', niva: 4, prova: c => fryser(c) && bedTile(c.s, c.p) !== undefined && set(c.v, 'vila', 'Fryser och går in i huset') },
+  { id: 'torstig', niva: 4, prova: ({ s, p, v, lazy }) => torstig(p, lazy) && dricka(s, p, v) },
+  // den som inte kan gå kravlar hem, och den som har mycket ont eller ett infekterat sår vilar (steg 2.5.2)
+  { id: 'kravla', niva: 4, prova: ({ s, p, v }) => !kanGa(p) && !hemma(s, p) && set(v, 'vila', 'Är skadad och kravlar hem') },
+  { id: 'vilaSkadad', niva: 4, prova: ({ p, v }) => vilaHellre(p) && set(v, 'vila', 'Är skadad och vilar') },
+  // extremt varm i solen: man söker skugga under ett träd eller i ett hus, så som den som fryser söker sig till elden (steg 2.3.13).
+  // Den som bara är för varm arbetar som vanligt (steg 2.10.20)
+  { id: 'svalka', niva: 4, prova: ({ s, p, v }) => {
+    if (!forVarmISol(s, p, KROPP.extremVarm)) return false;
+    const sk = skuggaHar(s, p);
+    if (!sk) return false;
+    v.spot = sk; v.dur = (VAL.svalkaMin + rnd(s, 'val', p) * VAL.svalkaSpann) * MIN; return set(v, 'svalka', 'Är för varm och söker skugga');
+  } },
+  { id: 'trott', niva: 4, prova: ({ p, v, lazy, light }) => p.rest < (light ? KROPP.trottDag : KROPP.trottNatt) + KROPP.latVila * lazy && set(v, 'vila', 'Är trött') },
+  // snart hungrig och det finns en ledig plats vid ett bord: man går dit och äter tillsammans med de andra (steg 2.2.15)
+  { id: 'maltid', niva: 4, prova: ({ s, p, v }) => {
+    const bord = p.hunger < KROPP.hungrig + KROPP.bordHunger && harMat(s, p) ? ledigPlats(s, p) : undefined;
+    if (!bord) return false;
+    v.spot = bord; v.dur = (VAL.maltidMin + rnd(s, 'val', p) * VAL.maltidSpann) * MIN; return set(v, 'maltid', 'Är hungrig och äter vid bordet');
+  } },
+  { id: 'utbrott', niva: 4, nar: 'dag', prova: ({ s, p, v }) => utbrottVal(s, p, v) },
+  // nattens vakt (byts varje natt kl. 7)
+  { id: 'vakt', niva: 6, nar: 'natt', prova: ({ s, p, v, a }) => vaktVal(s, p, v, a) },
+  // barnen leker; de lite större hjälper till (raden arbete)
+  { id: 'leka', niva: 9, nar: 'dag', kort: true, prova: ({ s, v, a }) => a < ALDER.hjalper && set(v, 'leka', lekText(s)) },
+  // 3 Tillfälle: handlaren är här och byn har inte handlat (steg 4.4.1.3, handel.ts); på kvällen ligger filten ute (steg 4.5.4.11)
+  { id: 'handla', niva: 3, kort: true, prova: ({ s, p, v, light }) => {
+    const hv = !light && skams(p, s.now) ? undefined : handlaVal(s, p);
+    if (!hv) return false;
+    set(v, hv.act, hv.why); v.spot = hv.spot; v.dur = hv.dur; v.ref = hv.ref; return true;
+  } },
+  // ett framträdande vid elden (steg 4.3.2, framtradande.ts): uppträda eller lyssna
+  { id: 'framtradande', niva: 9, nar: 'natt', prova: ({ s, p, v }) => {
+    const fr = skams(p, s.now) ? undefined : framVal(s, p, q => spotFor(s, 'beratta', q));
+    if (!fr) return false;
+    set(v, fr.act, fr.why); v.spot = fr.spot ?? spotFor(s, 'beratta', p); v.dur = fr.dur; v.ref = fr.ref; v.tool = fr.tool; return true;
+  } },
+  // 5 Rädda. Att bära in är en förbättring: inte när byn fryser (talet dras ändå, så att personens följd är som förut). När byn
+  // svälter bärs bara maten in, så att den inte blir liggande ute (steg 2.12.3)
+  { id: 'bara', niva: 5, nar: 'dag', kort: true, prova: c => {
+    const { s, p, v } = c; let gt: ReturnType<typeof haulJob>;
+    if (!(s.stackar?.length && rnd(s, 'val', p) < VAL.baraChans && !faror(c).kyla && (gt = haulJob(s, undefined, faror(c).svalt)))) return false;
+    set(v, 'bara', gt.why); v.spot = gt; v.dur = VAL.baraTim * HOUR; return true;
+  } },
+  // fältet (steg 2.10.3): den mogna grödan skördas innan den blir övermogen eller fryser, och den som börjat på sitt fält arbetar vidare
+  { id: 'falt', niva: 5, nar: 'dag', kort: true, prova: c => {
+    const sk = c.a >= ALDER.vuxen ? faltNu(c.s, c.p, faror(c).svalt || faror(c).kyla) : undefined;
+    if (!sk) return false;
+    projektVal(c.v, { act: 'odla', text: sk.text, min: sk.min, tool: sk.tool, spot: sk.spot, ref: sk.ref }, sk.tool === 'mogen' ? 'Grödan på fältet är mogen' : 'Arbetar vidare på sitt fält'); return true;
+  } },
+  { id: 'slakta', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => {
+    const vilt = slaktbart(s, p);
+    if (!(a >= ALDER.vuxen && vilt && rnd(s, 'val', p) < VAL.slaktChans)) return false;
+    processTask(s, v, vilt, 'Det finns vilt att slakta innan det blir dåligt'); return true;
+  } },
+  { id: 'rensa', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => a >= ALDER.rensar && canProcess(s, p, DJUR.abborre) && rnd(s, 'val', p) < VAL.rensaChans && (processTask(s, v, DJUR.abborre, 'Det finns fisk att rensa innan den blir dålig'), true) },
+  { id: 'torka', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => a >= ALDER.grillar && kanTorka(s, p) && rnd(s, 'val', p) < torkAndel(pabud(s, 'torkat')) && (torkVal(s, v, 'Det finns kött och fisk att torka'), true) },
+  { id: 'grilla', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => a >= ALDER.grillar && kanGrilla(s, p) && rnd(s, 'val', p) < VAL.grillaChans && (grillVal(s, v, 'Det finns rått kött och rå fisk att grilla'), true) },
+  // 6–9 på dagen: byns behov (mat, ved, tändmaterial, bygget, projekten, flinta) mot egen lust, vägda med pliktkänslan, annars fritid
+  { id: 'arbete', niva: 6, nar: 'dag', kort: true, prova: c => { day(c.s, c.p, c.v, c.a, c.lazy, faror(c)); return true; } },
+  // på natten håller man sig vid elden och berättar, gör handarbete, umgås eller sover
+  { id: 'kvall', niva: 9, nar: 'natt', prova: ({ s, p, v, a }) => { night(s, p, v, a); return true; } },
+];
+
 export function chooseTask(s: State, p: Person) {
   const a = ageOf(p, s.now), light = isLight(s.now), lazy = 1 - duty(s, p);
   const v: Val = { act: 'vila', why: '', dur: (VAL.vilaMin + rnd(s, 'val', p) * VAL.vilaSpann) * MIN }; // 20–60 min
-  const sk = vargSkydd(s, p) ?? tornadoSkydd(s, p), br = sk ? undefined : brandVal(s, p); // vargar är nära (steg 3.7.15), en tornado kommer (steg 3.8.4) eller det brinner (steg 3.8.5)
-  // vattnet stiger (steg 3.8.7, flod.ts): de vuxna som orkar bär undan maten från lagerplatserna vattnet kan nå, också på natten
-  const fl = sk || br || !s.flodHot || a < ALDER.vuxen || isSick(p, s.now) || !kanGa(p) ? undefined : flodUndan(s);
-  if (sk) { set(v, sk.act, sk.why); v.spot = sk.spot; v.dur = sk.dur; }
-  else if (br) { set(v, br.act, br.why); v.spot = br.spot; v.dur = br.dur; v.tool = br.tool; v.ref = br.ref; }
-  else if (fl) { set(v, 'bara', fl.why); v.spot = fl; v.dur = VAL.baraTim * HOUR; count(s, 'flod undan'); }
-  else if (!needs(s, p, v, a, lazy, light) && !(light && utbrottVal(s, p, v))) { if (light) day(s, p, v, a, lazy); else night(s, p, v, a); }
+  const c: Ctx = { s, p, v, a, lazy, light }, nar = light ? 'dag' : 'natt';
+  let rad: Arbete | undefined, kortat = false;
+  for (const r of ARBETEN) {
+    if (r.nar && r.nar !== nar) continue;
+    if (r.kort && light && !kortat) { v.dur *= VAL.pass; kortat = true; }
+    if (r.prova(c)) { rad = r; break; }
+  }
   // straffet skam (steg 3.5.3, styre.ts): inte det faran väljer (vargarna, tornadon, branden, vattnet) och inte det som skyddar (skamfri i ACTS)
-  if (!sk && !br && !fl && ACTS[v.act].social && !ACTS[v.act].skamfri && skams(p, s.now)) { v.act = 'skams'; v.why = 'Skäms och håller sig undan de andra'; v.spot = undefined; }
+  if (rad?.niva !== 1 && ACTS[v.act].social && !ACTS[v.act].skamfri && skams(p, s.now)) { v.act = 'skams'; v.why = 'Skäms och håller sig undan de andra'; v.spot = undefined; }
   if (v.act === 'toa') {
     v.dur = (VAL.toaMin + rnd(s, 'val', p) * VAL.toaSpann) * MIN;
     const l = latrinFor(s, p); // till latrinen om byn har en (steg 2.7.2, smuts.ts)
@@ -416,44 +524,6 @@ export function chooseTask(s: State, p: Person) {
   if (v.act === 'samtal' && !v.spot) samtalMed(s, p); // fram till den man vill prata med (steg 4.5.6.7)
   const k = usesTool(p.task);
   if (k && !take(s, p, k)) p.task.tool = undefined; // redskapet tas i handen: det egna först (agande.ts)
-}
-
-// 1–2. nöd (sjuk, svag, fryser farligt, måste på toa genast) och grundbehov (toa, värme, vila).
-// En lat person tillgodoser grundbehoven tidigare än en flitig. true = något valdes
-function needs(s: State, p: Person, v: Val, a: number, lazy: number, light: boolean) {
-  const lit = s.fire.lit, sick = isSick(p, s.now);
-  if (a < ALDER.smabarn) return set(v, 'sova', 'Är ett litet barn');
-  if (p.toa < KROPP.toaGenast) return set(v, 'toa', 'Måste gå på toa genast');
-  if (tortarFarligt(p) && dricka(s, p, v)) return true; // också den som är sjuk eller svag dricker
-  if (varda(s, p, v, true)) return true; // sina egna sår: trycka på, lägga förband och rengöra (steg 2.5.2)
-  if (sick) return set(v, 'sova', 'Är sjuk');
-  if (halsa(p) < KROPP.svag) return set(v, 'sova', 'Är för svag för att orka något'); // också av blodförlust och smärta (halsa.ts)
-  if (p.warm < KROPP.farligt && lit) return set(v, 'varma', 'Fryser farligt');
-  // elden går inte att tända för att tändmaterial saknas: den som fryser men orkar hämtar det i stället för att gå in.
-  // Kylan är faran och elden det enda som hjälper mot den (några räcker; de andra går in och väntar)
-  if (p.warm < KROPP.kallt + KROPP.latVarme * lazy && a >= ALDER.vuxen && tinderNeeded(s)) { v.tandmat = true; return set(v, 'samla', 'Fryser, men utan tändmaterial blir det ingen eld'); }
-  if (p.warm < KROPP.farligt && bedTile(s, p) !== undefined) return set(v, 'vila', 'Fryser farligt och går in i huset');
-  if (varda(s, p, v, false)) return true; // en skadad är en fara: vården går före förbättringarna (steg 2.5.2)
-  if (hamtaVatten(s, p, v)) return true; // vatten i säcken åt den som inte kan gå (steg 2.10.1)
-  if (!light && a > ALDER.sovGammal && rnd(s, 'val', p) < VAL.gammalSover) return set(v, 'sova', 'Är gammal och sover på natten');
-  if (p.toa < KROPP.toaBehov + KROPP.latToa * lazy) return set(v, 'toa', 'Behöver gå på toa');
-  if (p.warm < KROPP.kallt + KROPP.latVarme * lazy && lit) return set(v, 'varma', 'Fryser');
-  if (p.warm < KROPP.kallt + KROPP.latVarme * lazy && bedTile(s, p) !== undefined) return set(v, 'vila', 'Fryser och går in i huset');
-  if (torstig(p, lazy) && dricka(s, p, v)) return true;
-  // den som inte kan gå kravlar hem, och den som har mycket ont eller ett infekterat sår vilar (steg 2.5.2)
-  if (!kanGa(p) && !hemma(s, p)) return set(v, 'vila', 'Är skadad och kravlar hem');
-  if (vilaHellre(p)) return set(v, 'vila', 'Är skadad och vilar');
-  // extremt varm i solen: man söker skugga under ett träd eller i ett hus, så som den som fryser söker sig till elden (steg 2.3.13).
-  // Den som bara är för varm arbetar som vanligt (steg 2.10.20)
-  if (forVarmISol(s, p, KROPP.extremVarm)) {
-    const sk = skuggaHar(s, p);
-    if (sk) { v.spot = sk; v.dur = (VAL.svalkaMin + rnd(s, 'val', p) * VAL.svalkaSpann) * MIN; return set(v, 'svalka', 'Är för varm och söker skugga'); }
-  }
-  if (p.rest < (light ? KROPP.trottDag : KROPP.trottNatt) + KROPP.latVila * lazy) return set(v, 'vila', 'Är trött');
-  // snart hungrig och det finns en ledig plats vid ett bord: man går dit och äter tillsammans med de andra (steg 2.2.15)
-  const bord = p.hunger < KROPP.hungrig + KROPP.bordHunger && harMat(s, p) ? ledigPlats(s, p) : undefined;
-  if (bord) { v.spot = bord; v.dur = (VAL.maltidMin + rnd(s, 'val', p) * VAL.maltidSpann) * MIN; return set(v, 'maltid', 'Är hungrig och äter vid bordet'); }
-  return false;
 }
 
 // ett utbrott som väntar (steg 3.2.2, humor.ts), när grundbehoven är klara: den som är hungrig, törstig, fryser eller är
@@ -497,26 +567,10 @@ function dricka(s: State, p: Person, v: Val) {
   return set(v, d.act, d.why);
 }
 
-// 3. på dagen: byns behov mot egen lust, vägda med pliktkänslan
-function day(s: State, p: Person, v: Val, a: number, lazy: number) {
+// 6–9 på dagen (raden arbete i ARBETEN): byns behov mot egen lust, vägda med pliktkänslan, annars fritid
+function day(s: State, p: Person, v: Val, a: number, lazy: number, fara: Faror) {
   const sd = s.seder.v;
-  let gt: ReturnType<typeof haulJob>;
-  v.dur *= VAL.pass;
-  if (a < ALDER.hjalper) { set(v, 'leka', lekText(s)); return; }
-  const fd = foodDays(s), wd = woodDays(s), ai = ageIndex(s), tot = habitTotal(p), fara = dangers(s); // farorna räknas en gång och gäller hela valet
-  const hv = handlaVal(s, p); // handlaren är här och byn har inte handlat (steg 4.4.1.3, handel.ts)
-  if (hv) { set(v, hv.act, hv.why); v.spot = hv.spot; v.dur = hv.dur; v.ref = hv.ref; return; }
-  // att bära in är en förbättring: inte när byn fryser (talet dras ändå, så att personens följd är som förut). När byn svälter
-  // bärs bara maten in, så att den inte blir liggande ute (steg 2.12.3)
-  if (s.stackar?.length && rnd(s, 'val', p) < VAL.baraChans && !fara.kyla && (gt = haulJob(s, undefined, fara.svalt))) { set(v, 'bara', gt.why); v.spot = gt; v.dur = VAL.baraTim * HOUR; return; }
-  // fältet (steg 2.10.3): den mogna grödan skördas innan den blir övermogen eller fryser, och den som börjat på sitt fält arbetar vidare
-  const sk = a >= ALDER.vuxen ? faltNu(s, p, fara.svalt || fara.kyla) : undefined;
-  if (sk) { projektVal(v, { act: 'odla', text: sk.text, min: sk.min, tool: sk.tool, spot: sk.spot, ref: sk.ref }, sk.tool === 'mogen' ? 'Grödan på fältet är mogen' : 'Arbetar vidare på sitt fält'); return; }
-  const vilt = slaktbart(s, p);
-  if (a >= ALDER.vuxen && vilt && rnd(s, 'val', p) < VAL.slaktChans) { processTask(s, v, vilt, 'Det finns vilt att slakta innan det blir dåligt'); return; }
-  if (a >= ALDER.rensar && canProcess(s, p, DJUR.abborre) && rnd(s, 'val', p) < VAL.rensaChans) { processTask(s, v, DJUR.abborre, 'Det finns fisk att rensa innan den blir dålig'); return; }
-  if (a >= ALDER.grillar && kanTorka(s, p) && rnd(s, 'val', p) < torkAndel(pabud(s, 'torkat'))) { torkVal(s, v, 'Det finns kött och fisk att torka'); return; }
-  if (a >= ALDER.grillar && kanGrilla(s, p) && rnd(s, 'val', p) < VAL.grillaChans) { grillVal(s, v, 'Det finns rått kött och rå fisk att grilla'); return; }
+  const fd = foodDays(s), wd = woodDays(s), ai = ageIndex(s), tot = habitTotal(p);
   let { best, bs, burg, egen } = bestWork(s, p, fd, wd, ai, tot, fara);
   // bygget: väger mer ju fler som saknar sovplats under tak, inför och under istiden, när en vägg behöver lagas och när huset inte är klart.
   // När kylan är en fara byggs inget: tiden går till värmen (steg 2.12.3)
@@ -769,12 +823,12 @@ function leisure(s: State, p: Person, v: Val, u: number, lazy: number) {
   else { set(v, 'strand', islagt(s) ? 'Vill se ut över isen en stund' : 'Vill sitta vid vattnet och se ut över sjön'); v.spot = strandSpot(s, p); v.dur = (VAL.strandMin + rnd(s, 'val', p) * VAL.strandSpann) * MIN * VAL.pass; }
 }
 
-// på natten: en vakt, och de andra håller sig vid elden och berättar, gör handarbete, umgås eller sover
-function night(s: State, p: Person, v: Val, a: number) {
+// nattens vakt: den modigaste av de vuxna som orkar, med lite slump, byts varje natt
+function vaktVal(s: State, p: Person, v: Val, a: number) {
   const now = s.now;
   const guardDay = yearNo(s, now - VAL.vaktByte * HOUR); // vaktdygnet är kalenderns dygn, förskjutet så att det byts kl. 7
   if (guardDay !== s.lastGuardDay) {
-    // välj nattens vakt (modigast med lite slump) bland de vuxna som orkar (den sjuka, svaga eller skadade sover, needs), byts varje natt
+    // välj nattens vakt (modigast med lite slump) bland de vuxna som orkar (den sjuka, svaga eller skadade sover), byts varje natt
     const adults = living(s).filter(q => ageOf(q, now) >= ALDER.vaktFran && ageOf(q, now) < ALDER.vaktTill && !isSick(q, now) && halsa(q) >= KROPP.svag && kanGa(q) && !vilaHellre(q) && q.task?.act !== 'strid' && !skams(q, now)); // inte den som slåss (strid.ts) eller skäms
     if (adults.length) {
       s.lastGuardDay = guardDay;
@@ -784,13 +838,11 @@ function night(s: State, p: Person, v: Val, a: number) {
       avbryt(s, g); g.guardDay = guardDay; // det vakten bar läggs ner där hen står
     }
   }
-  if (p.guardDay === guardDay && a >= ALDER.vaktFran) { set(v, 'vakt', 'Håller vakt i natt'); return; }
-  // kvällsmarknaden (steg 4.5.4.11, handel.ts): handlarens filt ligger ute på kvällen
-  const hv = skams(p, now) ? undefined : handlaVal(s, p);
-  if (hv) { set(v, hv.act, hv.why); v.spot = hv.spot; v.dur = hv.dur; v.ref = hv.ref; return; }
-  // ett framträdande vid elden (steg 4.3.2, framtradande.ts): uppträda eller lyssna
-  const fr = skams(p, now) ? undefined : framVal(s, p, q => spotFor(s, 'beratta', q));
-  if (fr) { set(v, fr.act, fr.why); v.spot = fr.spot ?? spotFor(s, 'beratta', p); v.dur = fr.dur; v.ref = fr.ref; v.tool = fr.tool; return; }
+  return p.guardDay === guardDay && a >= ALDER.vaktFran && set(v, 'vakt', 'Håller vakt i natt');
+}
+// på natten (raden kväll i ARBETEN): man håller sig vid elden och berättar, gör handarbete, umgås eller sover
+function night(s: State, p: Person, v: Val, a: number) {
+  const now = s.now;
   const r = rnd(s, 'val', p);
   const story = (p.skill.berattande + (a > VAL.berattaAlder ? VAL.berattaBonus : 0)) / VAL.berattaDiv;
   const craftW = (p.skill.hantverk + stat(p, 'flit', now)) / VAL.nattHantDiv;
