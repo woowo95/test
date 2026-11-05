@@ -188,7 +188,13 @@
       const d = inne(x, y); if (d > 1) continue;
       const i = y * W + x, t = V.typ[i], g = hash(x, y, 3);
       let c = d > 0.95 ? P.i('jord', 1) : d > 0.88 ? P.i('jord', 3) : g < 0.12 ? P.i('ben', 1) : g > 0.94 ? P.i('ben', 3) : P.i('ben', 2);
-      if (t === HAV || t === SJO) {
+      if ((t === HAV || t === SJO) && papper) { // på papperet är vattnet målat blått
+        const a = V.avst[i];
+        c = a > 14 && bayer(x, y) < 0.3 ? P.i('skiffer', 2) : g > 0.985 ? P.i('ben', 3) : P.i('skiffer', 3);
+        if (a === 1) c = BLACK;
+        else if (a === 3 && t === HAV) c = P.i('skiffer', 2);
+        else if (a > 4 && (y + Math.round(Math.sin(x / 3 + y * 0.7) * 1.2)) % 4 === 0 && hash(Math.floor(x / 7), y, 4) > 0.15) c = HAVL;
+      } else if (t === HAV || t === SJO) {
         const a = V.avst[i];
         if (a === 1) c = BLACK;
         else if (a === 3 && t === HAV) c = EKO;
@@ -295,11 +301,13 @@
     for (const [x, y] of [[5, 5], [W - 5, 5], [5, H - 5], [W - 5, H - 5]]) glyf(B, ['.ooo.', 'oaoao', 'ooboo', 'oaoao', '.ooo.'], { o: P.i('kol', 0), a: P.i('senap', 2), b: P.i('senap', 3) }, x, y);
   }
 
+  // den vänstra handen: o kontur, 1–3 huden från skugga till ljus, n och m nageln; kolumn HAND_KANT är papperets kant
+  const HAND = ["....................", ".............ooo....", "............o3nmo...", "...........o3nnm1o..", "...........o3mm11o..", "..........o32211o...", "...ooo....o32211o...", "..o333oo.o32211o....", ".o33322o.o32211o....", "o3322221oo3221o.....", "o3222211o32221o.....", "o2221111o322211o....", "o2211oooo322211o....", "o221o33332222111o...", "o221o32222222111o...", "o221o32222221111o...", "o222o3222221111o....", "o222oo32222111o.....", "o2222oo32211oo......", "o22222oooooo1o......", "o22222222111o.......", "o2222222111o........", "o22222221oo.........", "o222222o............"], HAND_KANT = 8;
   // ---------- kartan på ett riktigt papper som två händer håller ----------
   // stil 'black': skinnkartans bläck direkt på papperet; 'farg': den målade kartan; 'tryck': träkartan tryckt som ett träsnitt.
   // s är skalan på händerna och kanterna. Papperet har vikningar, ett hundöra, gulnade kanter och en fläck.
   function iHander(stil, s) {
-    const pm = Math.round(6 * s), sid = Math.round(30 * s), topp = Math.round(8 * s), botten = Math.round(40 * s);
+    const pm = Math.round(6 * s), sid = HAND_KANT, topp = 4, botten = 4;
     const PW = W + 2 * pm, PH = H + 2 * pm, BW = PW + 2 * sid, BH = PH + topp + botten, x0 = sid, y0 = topp;
     const rita = B => {
       const P = B.P, pap = new Uint8Array(BW * BH), hud = [P.i('jord', 1), P.i('jord', 2), P.i('jord', 3), P.i('ben', 1)], KONTUR = P.i('kol', 0);
@@ -341,31 +349,16 @@
         B.satt(x, y, a === c || b === c ? P.i('kol', 1) : a + b === c ? P.i('ben', 3) : P.i('ben', 1));
         if (a + b === c && !pap[(y + 1) * BW + x - 1]) B.satt(x - 1, y + 1, P.i('kol', 0));
       }
-      // händerna: tummen ligger på framsidan, handflatan och fingrarna bakom papperet, armarna går ner ur bilden
-      const gy = y0 + Math.round(PH * 0.56);
-      const kapsel = (ax, ay, bx, by, r) => (x, y) => { const dx = bx - ax, dy = by - ay, t = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy || 1))), qx = ax + dx * t, qy = ay + dy * t, l = Math.hypot(x - qx, y - qy); return [l - r, (x - qx) / (l || 1), (y - qy) / (l || 1)]; };
-      const del = (form, farger, bakom) => {
-        for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) {
-          const [d, nx, ny] = form(x + 0.5, y + 0.5); if (d >= 1) continue;
-          if (bakom && pap[y * BW + x]) continue;
-          if (d >= 0) { B.satt(x, y, KONTUR); continue; }
-          const ljus = -(nx * 0.6 + ny * 0.8);
-          B.satt(x, y, farger[d > -1.6 ? (ljus > 0.35 ? 3 : ljus < -0.35 ? 1 : 2) : d > -3 && ljus < -0.5 ? 1 : 2]);
-        }
-      };
-      const arm = [P.i('skiffer', 0), P.i('skiffer', 1), P.i('skiffer', 2), P.i('skiffer', 3)];
+      // händerna, ritade punkt för punkt (HAND): tummen ligger på framsidan nere vid hörnen, fingrarna går runt kanten bakom papperet
+      // och handleden går ut ur bilden; den högra handen är den vänstra spegelvänd. Tummen kastar en skugga på papperet.
+      const HL = { o: KONTUR, 1: hud[1], 2: hud[2], 3: hud[3], n: P.i('ben', 3), m: P.i('ben', 2) };
+      const hy = BH - HAND.length;
       for (const dir of [-1, 1]) {
-        const ex = dir < 0 ? x0 : x0 + PW - 1, X = u => ex + dir * u * s, Y = v => gy + v * s;
-        del(kapsel(X(12), Y(14), X(26), Y(70), 7.5 * s), hud, true); // underarmen
-        del(kapsel(X(7), Y(-3), X(10), Y(10), 8 * s), hud, true); // handen bakom kanten
-        del(kapsel(X(10), Y(-5), X(3), Y(-15), 3.6 * s), hud, true); // pekfingret som går runt kanten
-        del(kapsel(X(12), Y(1), X(4), Y(-7), 3.4 * s), hud, true); // långfingret
-        del(kapsel(X(23), Y(34), X(36), Y(80), 10.5 * s), arm, true); // ärmen
-        const tumme = [kapsel(X(5), Y(4), X(-1), Y(1), 5.5 * s), kapsel(X(1), Y(0), X(-10), Y(-9), 4 * s)];
-        for (const f of tumme) for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) if (pap[y * BW + x] && f(x + 0.5, y + 0.5)[0] < 1 && tumme.every(g => g(x - 0.5, y - 1.5)[0] >= 1)) B.morka(x + 1, y + 2); // tummens skugga på papperet
-        for (const f of tumme) del(f, hud, false);
-        const nx = X(-10) - dir * 0.8 * s, ny = Y(-9) + 0.2 * s; // nageln
-        for (let y = Math.floor(ny - 2 * s); y <= ny + 2 * s; y++) for (let x = Math.floor(nx - 2 * s); x <= nx + 2 * s; x++) { const d = Math.hypot(x + 0.5 - nx, y + 0.5 - ny); if (d < 1.9 * s) B.satt(x, y, d < 0.8 * s ? P.i('ben', 3) : P.i('ben', 2)); }
+        const ex = dir < 0 ? x0 : x0 + PW - 1, X = k => ex + (k - HAND_KANT) * -dir;
+        const pkt = []; HAND.forEach((rad, y) => [...rad].forEach((ch, k) => { if (HL[ch] !== undefined) pkt.push([X(k), hy + y, HL[ch]]); }));
+        const har = new Set(pkt.map(([x, y]) => x + ',' + y));
+        for (const [x, y] of pkt) if (pap[(y + 2) * BW + x + 1] && !har.has((x + 1) + ',' + (y + 2)) && pap[y * BW + x]) B.morka(x + 1, y + 2);
+        for (const [x, y, f] of pkt) B.satt(x, y, f);
       }
     };
     return { w: BW, h: BH, rita };
@@ -386,8 +379,8 @@
   });
 
   // kartorna på papper i händerna (Björn: "gör så alla kartor är riktiga papper och att man ser att händer håller i kartan")
-  const PAPPER_TEXT = ['Version 1: bläck på papper. Skinnkartans bläckteckning direkt på papperet, med en dubbel bläckram.', 'Version 2: den målade kartan. Färgkartan med sin flätade ram, målad på papperet.', 'Version 3: tryckt som ett träsnitt. Träkartan tryckt på papperet: det som är upphöjt i brädan blir svart, det urskurna blir papper, och trycket är lite ojämnt.'];
-  const PAPPER_VAD = ' Kartan är ett riktigt papper som två händer håller: tummarna ligger på framsidan och ärmarna går ner ur bilden. Papperet är vikt i tre delar på bredden och två på höjden, ett hörn har vikts till ett hundöra, kanterna har gulnat och det finns en ring efter en kopp.';
+  const PAPPER_TEXT = ['Version 1: bläck på papper. Skinnkartans bläckteckning direkt på papperet, med en dubbel bläckram. Havet och sjöarna är målade blå.', 'Version 2: den målade kartan. Färgkartan med sin flätade ram, målad på papperet.', 'Version 3: tryckt som ett träsnitt. Träkartan tryckt på papperet: det som är upphöjt i brädan blir svart, det urskurna blir papper, och trycket är lite ojämnt.'];
+  const PAPPER_VAD = ' Kartan är ett riktigt papper som två händer håller nere vid hörnen: tummarna ligger på framsidan, fingrarna går runt kanten bakom papperet och bara handlederna syns nedanför. Bilden är inzoomad, så att kartan fyller den. Din kommentar förra gången: händerna såg tokiga ut, kartan skulle vara mer inzoomad med nästan inget av armarna, och vattnet på den beiga kartan skulle vara blåare. Papperet är vikt i tre delar på bredden och två på höjden, ett hörn har vikts till ett hundöra, kanterna har gulnat och det finns en ring efter en kopp.';
   const papperKort = (id, namn, K, s, vad) => {
     const v = ['black', 'farg', 'tryck'].map((st, k) => { const h = K.iHander(st, s); return { text: PAPPER_TEXT[k], w: h.w, h: h.h, kol: true, rita: h.rita }; });
     VAL.push({ id, namn, typ: 'tre', stor: true, kol: true, vad, versioner: v });
