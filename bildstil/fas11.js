@@ -256,7 +256,7 @@
 
   // ---------- version 1: skinnkartan, med bläck på ett spänt skinn ----------
   const skinn = B => skinnRitning(B, false);
-  function skinnRitning(B, papper) {
+  function skinnRitning(B, papper, gron = false) {
     const P = B.P, V = varld(), cx = W / 2, cy = H / 2;
     const BLACK = P.i('kol', 1), HAVL = P.i('skiffer', 1), EKO = P.i('skiffer', 2);
     const inne = papper ? () => 0 : (x, y) => { const d = (Math.abs(x - cx) / (W / 2 - 3)) ** 3 + (Math.abs(y - cy) / (H / 2 - 3)) ** 3; return Math.cbrt(d) + (fbm(x / 9, y / 9, 77, 2) - 0.5) * 0.14; };
@@ -276,6 +276,10 @@
         else if (a === 3 && t === HAV) c = EKO;
         else if (a > 4 && (y + Math.round(Math.sin(x / 3 + y * 0.7) * 1.2)) % (o ? 4 : 5) === 0 && hash(Math.floor(x / 7), y, 4) > (o ? 0.15 : 0.35)) c = HAVL;
       } else if (t === MYR && y % 3 === 0 && (x + y) % 6 < 2) c = P.i('oliv', 1);
+      else if (gron && t === SKOG) { // skogen som en grön yta, tätare inne i skogen och glesare i kanten
+        const kant = [1, -1, W, -W, 2, -2, 2 * W, -2 * W].some(d => V.typ[i + d] !== SKOG);
+        if (bayer(x, y) < (kant ? 0.35 : 0.8)) c = g < 0.1 ? P.i('oliv', 2) : P.i('oliv', 3);
+      }
       if (V.elv[i]) c = HAVL;
       B.satt(x, y, c);
     }
@@ -296,19 +300,20 @@
   }
 
   // ---------- version 2: färgkartan, i spelets färger med en flätad ram ----------
-  function farg(B) {
+  function farg(B, bla = false) {
     const P = B.P, V = varld();
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const i = y * W + x, t = V.typ[i], g = hash(x, y, 5), a = V.avst[i];
       let c;
-      if (t === HAV) c = a <= 2 ? P.i('skiffer', 2) : a <= 7 ? P.i('skiffer', 1) : a <= 14 ? P.i('barr', 1) : P.i('barr', 0);
-      else if (t === SJO) c = a <= 1 ? P.i('skiffer', 2) : P.i('skiffer', 1);
+      if (t === HAV && bla) c = a <= 2 ? P.i('skiffer', 3) : a <= 6 ? P.i('skiffer', 2) : a <= 12 ? (bayer(x, y) < (a - 6) / 7 ? P.i('skiffer', 1) : P.i('skiffer', 2)) : a <= 20 ? P.i('skiffer', 1) : bayer(x, y) < 0.5 ? P.i('skiffer', 0) : P.i('skiffer', 1); // blått hav, mörkare ju djupare
+      else if (t === HAV) c = a <= 2 ? P.i('skiffer', 2) : a <= 7 ? P.i('skiffer', 1) : a <= 14 ? P.i('barr', 1) : P.i('barr', 0);
+      else if (t === SJO) c = a <= 1 || bla ? P.i('skiffer', 2) : P.i('skiffer', 1);
       else if (t === BERG) c = g < 0.2 ? P.i('skiffer', 1) : P.i('skiffer', 2);
       else if (t === SKOG) c = g < 0.25 ? P.i('barr', 1) : P.i('barr', 2);
       else if (t === MYR) c = (x + y * 2) % 5 === 0 ? P.i('skiffer', 1) : g < 0.3 ? P.i('oliv', 1) : P.i('oliv', 2);
       else c = g < 0.15 ? P.i('oliv', 1) : g > 0.9 ? P.i('oliv', 3) : P.i('oliv', 2);
       if (t !== HAV && t !== SJO && V.typ[i - 1] === HAV || t !== HAV && t !== SJO && [1, -1, W, -W].some(d => V.typ[i + d] === HAV)) c = P.i('senap', 2); // stranden
-      if ((t === HAV) && a > 3 && g < 0.03) c = P.i('skiffer', 2); // vågor
+      if ((t === HAV) && a > 3 && g < 0.03) c = bla ? P.i('skiffer', 3) : P.i('skiffer', 2); // vågor
       if (V.elv[i]) c = P.i('skiffer', 3);
       B.satt(x, y, c);
     }
@@ -401,17 +406,7 @@
         if (k < 4 && bayer(x, y) < (4 - k) / 4 * 0.7) f = P.i('senap', 3); // gulnat längs kanten
         B.satt(x, y, f);
       }
-      // kartan
-      const M = Bild(W, H, P);
-      if (stil === 'black') skinnRitning(M, true); else if (stil === 'farg') farg(M); else tra(M);
-      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-        const v = M.get(x, y), X = x0 + pm + x, Y = y0 + pm + y; if (v < 0 || !pap[Y * BW + X]) continue;
-        if (stil === 'tryck') { // träsnittet: det som är upphöjt i brädan tar färgen, det urskurna blir papper; trycket är lite ojämnt
-          const r = v >> 2, t = v & 3;
-          if (r === 0 || (r === 1 && t === 0)) { if (hash(X, Y, 64) > 0.06) B.satt(X, Y, P.i('kol', 1)); }
-          else if (r === 1 && t === 1) B.satt(X, Y, P.i('ben', 1));
-        } else B.satt(X, Y, v);
-      }
+      kartanPa(B, stil, x0 + pm, y0 + pm, pap, BW, false);
       // vikningarna: kartan har legat hopvikt i tre delar på bredden och två på höjden
       const vx = [x0 + Math.round(PW / 3), x0 + Math.round(PW * 2 / 3)], vy = y0 + Math.round(PH / 2);
       for (const cx of vx) for (let y = y0; y < y0 + PH; y++) if (pap[y * BW + cx]) { B.morka(cx, y); if (pap[y * BW + cx + 1] && B.get(cx + 1, y) === P.i('ben', 2)) B.satt(cx + 1, y, P.i('ben', 3)); }
@@ -426,17 +421,96 @@
         B.satt(x, y, a === c || b === c ? P.i('kol', 1) : a + b === c ? P.i('ben', 3) : P.i('ben', 1));
         if (a + b === c && !pap[(y + 1) * BW + x - 1]) B.satt(x - 1, y + 1, P.i('kol', 0));
       }
-      // händerna, ritade punkt för punkt (HAND): tummen ligger på framsidan mitt på sidan, fingrarna går runt kanten bakom papperet
-      // och handleden går ut ur bilden; den högra handen är den vänstra spegelvänd. Tummen kastar en skugga på papperet.
-      const HL = { o: KONTUR, 0: hud[0], 1: hud[1], 2: hud[2], 3: hud[3], n: P.i('ben', 3), m: P.i('ben', 2) };
-      const hy = y0 + Math.round(PH / 2) - 40; // tummen mitt på kanten
-      for (const dir of [-1, 1]) {
-        const ex = dir < 0 ? x0 : x0 + PW - 1, X = k => ex + (k - HAND_KANT) * -dir;
-        const pkt = []; HAND.forEach((rad, y) => [...rad].forEach((ch, k) => { if (HL[ch] !== undefined) pkt.push([X(k), hy + y, HL[ch]]); }));
-        const har = new Set(pkt.map(([x, y]) => x + ',' + y));
-        for (const [x, y] of pkt) if (pap[(y + 2) * BW + x + 1] && !har.has((x + 1) + ',' + (y + 2)) && pap[y * BW + x]) B.morka(x + 1, y + 2);
-        for (const [x, y, f] of pkt) B.satt(x, y, f);
+      handerna(B, pap, BW, x0, x0 + PW - 1, y0 + Math.round(PH / 2) - 40);
+    };
+    return { w: BW, h: BH, rita };
+  }
+  // kartan i stilen stil, med övre vänstra hörnet i (X0, Y0), där papperet finns (pap); ny: gröna skogar och blått vatten
+  function kartanPa(B, stil, X0, Y0, pap, BW, ny) {
+    const P = B.P, M = Bild(W, H, P);
+    if (stil === 'black') skinnRitning(M, true, ny); else if (stil === 'farg') farg(M, ny); else tra(M);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const v = M.get(x, y), X = X0 + x, Y = Y0 + y; if (v < 0 || !pap[Y * BW + X]) continue;
+      if (stil === 'tryck') { // träsnittet: det som är upphöjt i brädan tar färgen, det urskurna blir papper; trycket är lite ojämnt
+        const r = v >> 2, t = v & 3;
+        if (r === 0 || (r === 1 && t === 0)) { if (hash(X, Y, 64) > 0.06) B.satt(X, Y, P.i('kol', 1)); }
+        else if (r === 1 && t === 1) B.satt(X, Y, P.i('ben', 1));
+      } else B.satt(X, Y, v);
+    }
+  }
+  // händerna, ritade punkt för punkt (HAND): tummen ligger på framsidan, fingrarna går runt kanten bakom och handleden går ut
+  // ur bilden; den högra handen är den vänstra spegelvänd. exV och exH är kanterna händerna håller i, hy handens översta rad.
+  // Tummen kastar en skugga på papperet.
+  function handerna(B, pap, BW, exV, exH, hy) {
+    const P = B.P, hud = [P.i('jord', 1), P.i('jord', 2), P.i('jord', 3), P.i('ben', 1)];
+    const HL = { o: P.i('kol', 0), 0: hud[0], 1: hud[1], 2: hud[2], 3: hud[3], n: P.i('ben', 3), m: P.i('ben', 2) };
+    for (const dir of [-1, 1]) {
+      const ex = dir < 0 ? exV : exH, X = k => ex + (k - HAND_KANT) * -dir;
+      const pkt = []; HAND.forEach((rad, y) => [...rad].forEach((ch, k) => { if (HL[ch] !== undefined) pkt.push([X(k), hy + y, HL[ch]]); }));
+      const har = new Set(pkt.map(([x, y]) => x + ',' + y));
+      for (const [x, y] of pkt) if (pap[(y + 2) * BW + x + 1] && !har.has((x + 1) + ',' + (y + 2)) && pap[y * BW + x]) B.morka(x + 1, y + 2);
+      for (const [x, y, f] of pkt) B.satt(x, y, f);
+    }
+  }
+
+  // ---------- kartan på en utrullad pergamentrulle som två händer håller ----------
+  // Pergamentet är rullat runt en stav i var ände; rullarna står lodrätt till vänster och höger, med stavens knoppar utanför,
+  // och händerna håller rullarna mitt på. Pergamentet har inga vikningar: det är gulnat i fläckar och skuggat där det böjer sig
+  // in i rullarna. Skogen är gröna ytor på bläckkartan, och vattnet är blått på den målade kartan.
+  function iRulle(stil, s) {
+    const pm = Math.round(6 * s), D = 2 * Math.round(8 * s) + 1, r = (D - 1) / 2, ov = Math.round(4 * s), hE = Math.max(2, Math.round(r * 0.3)), knopp = Math.round(5 * s), sid = 18;
+    const PW = W + 2 * pm + 2 * D, PH = H + 2 * pm, BW = PW + 2 * sid, BH = PH + 2 * (ov + hE + knopp) + 6, x0 = sid, y0 = ov + hE + knopp + 3;
+    const cxV = x0 + r, cxH = x0 + PW - 1 - r; // rullarnas mitt
+    const rita = B => {
+      const P = B.P, pap = new Uint8Array(BW * BH), KONTUR = P.i('kol', 0);
+      for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) { const g = hash(x, y, 61); B.satt(x, y, g < 0.05 ? P.i('jord', 0) : g < 0.13 ? P.i('kol', 1) : P.i('kol', 0)); }
+      // pergamentet mellan rullarna: ojämnt i över- och underkanten
+      const pa = (x, y) => x >= cxV && x <= cxH && y >= y0 && y < y0 + PH && !((y === y0 || y === y0 + PH - 1) && hash(x, y, 62) < 0.3);
+      const rulle = (x, y) => (Math.abs(x - cxV) <= r || Math.abs(x - cxH) <= r) && y >= y0 - ov && y < y0 + PH + ov;
+      for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) if (pa(x, y) || rulle(x, y)) { if (pa(x, y)) pap[y * BW + x] = 1; if (!pa(x + 2, y + 3) && !rulle(x + 2, y + 3)) B.satt(x + 2, y + 3, P.i('kol', 0)); } // skuggan på marken
+      for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) {
+        if (!pap[y * BW + x]) continue;
+        const g = hash(x, y, 63), k = Math.min(y - y0, y0 + PH - 1 - y), f = fbm(x / 18, y / 18, 91, 3);
+        let c = g < 0.05 ? P.i('ben', 3) : g > 0.97 ? P.i('ben', 1) : P.i('ben', 2);
+        if (bayer(x, y) < (f - 0.5) * 1.6 || (k < 4 && bayer(x, y) < (4 - k) / 4 * 0.7)) c = P.i('senap', 3); // gulnat i fläckar och längs kanten
+        B.satt(x, y, c);
       }
+      kartanPa(B, stil, x0 + D + pm, y0 + pm, pap, BW, true);
+      // där pergamentet böjer sig in i rullarna: skuggat, tätast närmast rullen
+      for (let y = y0; y < y0 + PH; y++) for (let d = 1; d <= 6; d++) for (const x of [cxV + r + d, cxH - r - d]) if (pap[y * BW + x] && bayer(x, y) < (7 - d) / 7 * 0.8) B.morka(x, y);
+      // en fläck, en ring som efter en kopp
+      const fx = x0 + Math.round(PW * 0.8), fy = y0 + Math.round(PH * 0.8), fr = 7 * s;
+      for (let y = fy - fr - 2; y <= fy + fr + 2; y++) for (let x = fx - fr - 2; x <= fx + fr + 2; x++) { const d = Math.hypot(x - fx, y - fy); if (Math.abs(d - fr) < 0.8 && pap[y * BW + x] && hash(x, y, 66) < 0.8) B.morka(x, y); }
+      // rullarna: en cylinder av pergament, ljus från vänster, med det rullade pergamentets varv i ändarna och stavens svarvade knoppar utanför
+      for (const cx of [cxV, cxH]) {
+        for (let y = y0 - ov; y < y0 + PH + ov; y++) for (let x = cx - r; x <= cx + r; x++) {
+          const u = (x - cx) / r;
+          B.satt(x, y, Math.abs(x - cx) === r ? KONTUR : u < -0.7 ? P.i('ben', 2) : u < -0.25 ? P.i('ben', 3) : u < 0.25 ? P.i('ben', 2) : u < 0.6 ? P.i('ben', 1) : P.i('jord', 3));
+        }
+        for (const [yk, upp] of [[y0 - ov, true], [y0 + PH + ov - 1, false]]) {
+          for (let x = cx - r; x <= cx + r; x++) { // änden: en ellips där pergamentets varv syns som ringar runt staven
+            const u = (x - cx) / r, h = Math.round(Math.sqrt(Math.max(0, 1 - u * u)) * hE);
+            for (let d = -h; d <= h; d++) {
+              const y = yk + d, ring = Math.hypot(u * r, d * r / hE);
+              B.satt(x, y, Math.abs(d) === h || Math.abs(x - cx) === r ? KONTUR : Math.round(ring) % 3 === 0 ? P.i('jord', 2) : u < 0.3 ? P.i('ben', 2) : P.i('ben', 1));
+            }
+          }
+          // staven: en smal hals och sedan en rund knopp av trä, ljus från vänster
+          const kb = Math.max(2, Math.round(r * 0.45)), y1 = upp ? yk - hE : yk + hE;
+          for (let k = 1; k <= knopp; k++) {
+            const y = upp ? y1 - k : y1 + k, t = k / knopp, b = k <= 1 ? 1 : Math.max(1, Math.round(Math.sin(Math.PI * Math.min(1, (k - 1) / (knopp - 1))) * kb));
+            for (let x = cx - b - 1; x <= cx + b + 1; x++) {
+              const kant = Math.abs(x - cx) === b + 1 || k === knopp;
+              B.satt(x, y, kant ? KONTUR : x < cx - b / 2 ? P.i('jord', 2) : x < cx + b / 2 ? P.i('jord', 1) : P.i('jord', 0));
+            }
+            if (t > 0 && k === knopp - 1 && b >= 2) B.satt(cx - b + 1, y, P.i('jord', 3)); // en glans på knoppen
+          }
+          B.satt(cx, yk, P.i('jord', 0)); B.satt(cx, yk + (upp ? -1 : 1), P.i('jord', 0));
+        }
+      }
+      // händerna håller rullarna mitt på
+      for (let y = 0; y < BH; y++) for (const cx of [cxV, cxH]) for (let x = cx - r; x <= cx + r; x++) if (y >= y0 - ov && y < y0 + PH + ov) pap[y * BW + x] = 1;
+      handerna(B, pap, BW, cxV + 2, cxH - 2, y0 + Math.round(PH / 2) - 40);
     };
     return { w: BW, h: BH, rita };
   }
@@ -447,7 +521,7 @@
     const x0 = Math.max(0, Math.min(W - w, V.karavan.x - (w >> 1))), y0 = Math.max(0, Math.min(H - h, V.karavan.y - (h >> 1)));
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) B.satt(x, y, M.get(x0 + x, y0 + y));
   };
-  return { varld, skinn, farg, tra, iHander, utsnitt };
+  return { varld, skinn, farg: B => farg(B), tra, iHander, iRulle, utsnitt };
   }
 
   const K1 = karta(240, 160, null);
@@ -468,7 +542,16 @@
     const v = ['black', 'farg', 'tryck'].map((st, k) => { const h = K.iHander(st, s); return { text: PAPPER_TEXT[k], w: h.w, h: h.h, kol: true, rita: h.rita }; });
     VAL.push({ id, namn, typ: 'tre', stor: true, kol: true, vad, karta: K, versioner: v });
   };
+  // kartorna på utrullade pergamentrullar (Björn: "gör så det ser ut som utrullade pergamentrullar istället för viksträck"), med gröna
+  // skogar på bläckkartan och blått vatten på den målade kartan; korten med papperet står kvar
+  const RULLE_TEXT = ['Version 1: bläck på pergament. Bläckteckningen med havet och sjöarna målade blå, och skogen målad som gröna ytor under granarna.', 'Version 2: den målade kartan med blått vatten: ljust vid stranden och mörkare blått ju djupare havet är.', 'Version 3: tryckt som ett träsnitt på pergamentet.'];
+  const RULLE_VAD = ' Kartan är en utrullad pergamentrulle: pergamentet är rullat runt en stav i var ände, och rullarna står till vänster och höger med stavens knoppar utanför. Två händer håller rullarna mitt på. Pergamentet har inga vikningar; det är gulnat i fläckar och skuggat där det böjer sig in i rullarna. Din kommentar: på kartversion 1 lite gröna ytor som markerar skog, blått vatten på karta 2, och utrullade pergamentrullar i stället för viksträck. Korten med kartorna på papper står kvar.';
+  const rulleKort = (id, namn, K, s, vad) => {
+    const v = ['black', 'farg', 'tryck'].map((st, k) => { const h = K.iRulle(st, s); return { text: RULLE_TEXT[k], w: h.w, h: h.h, kol: true, rita: h.rita }; });
+    VAL.push({ id, namn, typ: 'tre', stor: true, kol: true, vad, karta: K, versioner: v });
+  };
   papperKort('f11_varldskarta_papper', 'Världskartan på papper', K1, 1, 'Steg 11.1.9 (koncept, långt fram). Din kommentar: alla kartor ska vara riktiga papper, och man ska se att händer håller i kartan. Här är de första kartorna (kortet Världskartan) på papper; de gamla korten står kvar.' + PAPPER_VAD);
+  rulleKort('f11_varldskarta_rulle', 'Världskartan på en pergamentrulle', K1, 1, 'Steg 11.1.9 (koncept, långt fram). De första kartorna (kortet Världskartan) på en utrullad pergamentrulle.' + RULLE_VAD);
 
   // den större kartan: en stor ö i mitten med hav runt om, fler byar, läger och platser
   const OW = 384, OH = 256;
@@ -484,11 +567,13 @@
     ],
   });
   papperKort('f11_varldskarta_o_papper', 'Världskartan, en stor ö, på papper', K2z, 1.4, 'Steg 11.1.9 (koncept, långt fram). Din kommentar: alla kartor ska vara riktiga papper, och man ska se att händer håller i kartan. Här är den stora ön (kortet Världskartan, en stor ö) på papper, lite inzoomad så att ön fyller mer av kartan; de gamla korten står kvar. Din kommentar förra gången: gå tillbaka till småbergen och gör vägarna tydligare med ritade sträck, inte prickade. Bergen är åter de små bergen. Vägarna är hela ritade sträck som går längs marken mellan grannbyarna, runt bergen och sjöarna, och över floderna på broar. På den längsta vägen går en karavan mot byn i andra änden (kortet Karavanen på världskartan har tre förslag på karavanen).' + PAPPER_VAD);
+  rulleKort('f11_varldskarta_o_rulle', 'Världskartan, en stor ö, på en pergamentrulle', K2z, 1.4, 'Steg 11.1.9 (koncept, långt fram). Den stora ön med vägarna och karavanen på en utrullad pergamentrulle.' + RULLE_VAD);
 
   // världen med kontinenter: fyra landmassor med hav emellan, så att det kan finnas båtar; sjövägar mellan kontinenterna
   const KW = 448, KH = 288;
   const K3 = karta(KW, KH, { kontinenter: [[0.24, 0.33, 0.23, 0.28], [0.71, 0.28, 0.24, 0.24], [0.36, 0.77, 0.21, 0.21], [0.82, 0.74, 0.16, 0.21]], lyft: 0.27, fall: 0.58, berg: 0.72, floder: 10, stigar: true, antal: { by: 16, lager: 8, rovare: 3, ruin: 6, helig: 3, hog: 3, runsten: 4 } });
   papperKort('f11_varldskarta_k_papper', 'Världskartan med kontinenter, på papper', K3, 1.4, 'Steg 11.1.9 (koncept, långt fram). Din kommentar: det hade varit kul med kontinenter, så att det kan finnas båtar i spelet. Här är en värld med fyra kontinenter och hav emellan. Varje kontinent har byar och vägar; mellan kontinenterna går sjövägar (de streckade linjerna över havet) från de byar som ligger närmast varandra, och på varje sjöväg seglar ett skepp. Den egna byn ligger på en av kontinenterna med en flod genom byn. Din kommentar förra gången: gå tillbaka till småbergen och gör vägarna tydligare med ritade sträck, inte prickade. Bergen är åter de små bergen. Vägarna är hela ritade sträck som går längs marken mellan grannbyarna, runt bergen och sjöarna, och över floderna på broar. På den längsta vägen går en karavan mot byn i andra änden (kortet Karavanen på världskartan har tre förslag på karavanen).' + PAPPER_VAD);
+  rulleKort('f11_varldskarta_k_rulle', 'Världskartan med kontinenter, på en pergamentrulle', K3, 1.4, 'Steg 11.1.9 (koncept, långt fram). Världen med fyra kontinenter, vägarna, sjövägarna och karavanen på en utrullad pergamentrulle.' + RULLE_VAD);
   // karavanen på väg längs en väg (Björn: "gör en ikon för en karavan som är påväg någonstans"): tre förslag, i ett utsnitt av bläckkartan
   VAL.push({
     id: 'f11_karavan', namn: 'Karavanen på världskartan', typ: 'tre', kol: true,
