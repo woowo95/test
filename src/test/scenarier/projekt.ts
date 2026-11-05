@@ -114,3 +114,19 @@ SCENARIER.forbattra = {
     return [[`på 12 dygn (12 år i spelet) valdes Förbättra ${n} gånger (${sett} steg med skälet "Byn har det den behöver")`, n > 0 && sett > 0]];
   },
 };
+SCENARIER.arbetspabud = {
+  text: 'Påbuden i arbetsordningen (steg 6.1.19): Bygg före allt låter bygget gå före Försörjningen med chansen påbudet, och Samla för vintern ger maten och veden fler arbetare',
+  kor: () => {
+    const s = by(4), l = vuxna(s)[0];
+    setFood(s, 1); setAmount(s, 'ved', 1);
+    s.styre = { historia: [], oppna: [], ledare: l.id, sedan: s.now, pabud: { bygg: -1, vinter: -1 } };
+    SIM.arbetsTimme(s); const utan = { ...s.arbBehov!.arb }, byggUtan = SIM.pabud(s, 'bygg');
+    s.styre.pabud = { bygg: 1, vinter: 1 };
+    SIM.arbetsTimme(s); const med = { ...s.arbBehov!.arb }, byggMed = SIM.pabud(s, 'bygg');
+    return [
+      [`Samla för vintern ger fler händer (mat ${utan.mat} → ${med.mat}, ved ${utan.ved} → ${med.ved})`, med.mat > utan.mat && med.ved >= utan.ved],
+      [`Bygg före allt gäller bara när ledaren vill (${byggUtan.toFixed(2)} → ${byggMed.toFixed(2)})`, byggUtan <= 0 && byggMed > 0],
+      [`påbuden finns i registret och visas i Byn (${SIM.PABUD.bygg.namn}, ${SIM.PABUD.vinter.namn})`, SIM.PABUD_LIST.includes('bygg') && SIM.PABUD_LIST.includes('vinter')],
+    ];
+  },
+};

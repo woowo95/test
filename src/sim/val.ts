@@ -48,7 +48,7 @@ import { handlaVal } from './handel';
 import { framVal } from './framtradande';
 import { utbrottBorjar, utbrottNu } from './humor';
 import { smakDrag } from './rykten';
-import { pabud, skams } from './styre';
+import { PAB, pabud, skams } from './styre';
 
 // ---------- val av aktivitet ----------
 // Balanstalen (regel 8): vikter, chanser, avstånd och hur länge ett pass varar. Kroppens gränser (KROPP) och åldrarna (ALDER)
@@ -422,8 +422,9 @@ export function arbetsTimme(s: State) {
   const hus = new Set<number>();
   for (const b of bitsOf(s)) if (b.hus !== undefined && (b.b < 1 || b.c < BYGG.laga)) hus.add(b.hus);
   const kol = eldarOf(s).filter(e => (e.ash ?? 0) >= 1 && !e.lit && !emberOn(s, e)).length;
+  const fler = 1 + PAB.hander * Math.max(0, pabud(s, 'vinter')); // påbudet Samla för vintern ger fler händer (steg 6.1.19)
   const arb: Record<ArbRad, number> = {
-    mat: Math.max(1, Math.ceil(matFattas / VAL.matPass)), ved: Math.max(1, Math.ceil(vedFattas / VAL.vedPass)),
+    mat: Math.max(1, Math.ceil(matFattas / VAL.matPass * fler)), ved: Math.max(1, Math.ceil(vedFattas / VAL.vedPass * fler)),
     bygga: Math.max(1, hus.size * BYGG.perHus), tand: Math.max(1, Math.ceil(n / VAL.tandPer)), leta: Math.max(1, Math.ceil(n / VAL.letaPer)), kol: Math.max(1, kol),
   };
   s.arbBehov = { mat, ved, arb };
@@ -651,7 +652,9 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number, fara: Faror) 
     const col = ((job.repair ? VAL.byggLaga : halvt ? VAL.byggHalvt : VAL.byggNytt) + VAL.byggUtan * utan) * (kallTid(ai) ? ARSTID.byggKall : 1) * clamp((fd - VAL.byggMatFran) / VAL.byggMatSpann, VAL.byggMatMin, 1);
     const sc = poang(s, p, col * fullVikt(s, p, 'bygga'), lust(s, p, 'hantverk', 'flit', ['bygga'], tot)); // bygget som har sina arbetare väger en tredjedel (steg 6.1.13)
     burg = Math.max(burg, col);
-    if (sc > bs) { build = true; if (job.missing) best = job.item === 'torrgras' ? 'samla' : 'ved'; }
+    // påbudet Bygg före allt flyttar bygget en nivå upp, före Försörjningen: med chansen påbudet (steg 6.1.19). Hungern går ändå före
+    const pb = pabud(s, 'bygg'), fore = pb > 0 && !fara.svalt && rnd(s, 'val', p) < pb;
+    if (fore || sc > bs) { build = true; if (job.missing) best = job.item === 'torrgras' ? 'samla' : 'ved'; }
   }
   // 6 Försörjning är med när förrådet av mat eller ved räcker kortare tid än byn (eller p själv) vill, eller elden saknar
   // tändmaterial; annars 8 Förbättra efter 7 Tak (bygget): det mest värda projekt byn eller p saknar (projekt.ts, steg 6.1.17).
