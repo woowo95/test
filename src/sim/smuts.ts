@@ -1,4 +1,5 @@
 // Smuts (steg 2.7.1–2.7.2, beslut): fläckar på marken som bleknar bort. Registret FLACKAR säger hur varje slag ser ut och hur
+import { utanforByn } from './omrade';
 // fort det bleknar. Stationsregistret säger vilka handlingar som smutsar ner en station och med vad (`smutsar` i STATIONER,
 // stationer.ts): slaktbänken blir blodig när det slaktas där. Blodet har ett eget system sedan v94 (blod.ts), som smutsa
 // skickar det till.
@@ -11,7 +12,7 @@
 // därifrån (s.hygien), och lägger sedan latrinen längre från vattnet (siteUtkant i stationer.ts)
 import { Act, H, HOUR, Person, State, T, W } from './typer';
 import { getMap } from './karta';
-import { STATION, Station, byAvstand, isKlar, stationById, stationDef, stationFor, stationerOf, storlekAv } from './stationer';
+import { STATION, Station, isKlar, stationById, stationDef, stationFor, stationerOf, storlekAv } from './stationer';
 import { clamp } from './slump';
 import { balans } from './balans';
 import { count, forstaGang, log, think } from './folk';
@@ -31,7 +32,7 @@ export const SMUTS = balans('smuts', {
   akelHumor: -0.05, akelTim: 2, // ... så här mycket (humör), i så många timmar
   plock: 0.15, // man plockar inte på eller bredvid en toa-fläck som är starkare än så här
   ifred: 0.04, ifredTim: 2, // den som går på toa i latrinen får vara ifred: så här mycket bättre humör, i så många timmar
-  byn: 1, // blod och toa-högar så här nära byn (byAvstand: lägret och husen) ligger inne i byn (steg 3.6.10) ...
+  byn: 0, // blod och toa-högar så här nära byns område (utanforByn, 0 innanför) ligger inne i byn (steg 3.6.10) ...
   ser: 4, // ... och syns för den som är vaken inom så här många rutor ...
   blodSyns: 0.2, // ... blodet när det är färskare än så här (blodNu), en toa-hög när den är starkare än akel ...
   synHumor: -0.04, synTim: 3, // ... och sänker humöret så här mycket, i så många timmar
@@ -151,10 +152,10 @@ export function toaInfo(s: State, f: Flack) {
 // varje steg för den som är vaken: står hen på eller bredvid en toa-fläck blir hen äcklad. Inte den som själv är på toa.
 // Ser hen blod eller en toa-hög inne i byn (steg 3.6.10) blir humöret sämre
 export function akel(s: State, p: Person) {
-  if (p.task?.act === 'sova') return;
+  if (p.task?.act === 'sova' || p.task?.act === 'toa') return; // den som själv är på toa störs inte av smutsen
   const syns = smutsIByn(s).punkter, R = SMUTS.ser;
   if (syns.length && syns.some(q => Math.abs(q.x - p.x) <= R && Math.abs(q.y - p.y) <= R && Math.hypot(q.x - p.x, q.y - p.y) <= R)) think(p, 'Blod och smuts i byn', SMUTS.synHumor, s.now, SMUTS.synTim * HOUR);
-  if (!s.flackar?.length || p.task?.act === 'toa') return;
+  if (!s.flackar?.length) return;
   if (toaNara(s, tileOf(p.x, p.y)) > SMUTS.akel) think(p, 'Äcklad av smuts', SMUTS.akelHumor, s.now, SMUTS.akelTim * HOUR);
 }
 // blodet och toa-högarna inne i byn som syns (punkter), och rutorna där det ligger blod (blod). Räknas om varje timme i spelet
@@ -170,11 +171,11 @@ export function smutsIByn(s: State) {
     const n = blodNu(g, Math.max(h0, g.t));
     if (n <= 0) continue;
     blod.add(tileOf(g.x, g.y));
-    if (n > SMUTS.blodSyns && byAvstand(s, Math.floor(g.x), Math.floor(g.y)) <= SMUTS.byn) punkter.push({ x: g.x, y: g.y });
+    if (n > SMUTS.blodSyns && utanforByn(s, Math.floor(g.x), Math.floor(g.y)) <= SMUTS.byn) punkter.push({ x: g.x, y: g.y });
   }
   for (const f of fl) {
     const x = f.i % W, y = Math.floor(f.i / W);
-    if (f.k === 'toa' && flackNu(f, Math.max(h0, f.t)) > SMUTS.akel && byAvstand(s, x, y) <= SMUTS.byn) punkter.push({ x: x + 0.5, y: y + 0.5 });
+    if (f.k === 'toa' && flackNu(f, Math.max(h0, f.t)) > SMUTS.akel && utanforByn(s, x, y) <= SMUTS.byn) punkter.push({ x: x + 0.5, y: y + 0.5 });
   }
   synCache.set(s, c = { hr, b: s.blod, fl: s.flackar, punkter, blod });
   return c;

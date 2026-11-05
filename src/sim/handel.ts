@@ -1,3 +1,4 @@
+import { bynsMitt, utanforByn } from './omrade';
 import { ByteForsok, ByteMinne, DAY, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
 import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, stat, think } from './folk';
@@ -11,7 +12,7 @@ import { iIstiden, ageIndex, hourOf } from './tid';
 import { grundvarde, rikedom } from './varde';
 import { SAKER, isTool, viktOf } from './saker';
 import { DELA, behovAv, betalVaror, betalaAv, bynPart, genomfor, luraI, personPart } from './behov';
-import { BYTE, BYTESPRIS, FILT_MOT, Part, Vara, filtMot, nyttPar, satPersonFlytt, vardeOf, vidByte, vidLura, varorText } from './byte';
+import { BYTE, BYTESPRIS, FILT_MOT, Part, Vara, filtMot, loggaByte, nyttPar, satPersonFlytt, vardeOf, vidByte, vidLura, varorText } from './byte';
 import { newTing, tingOf } from './agande';
 import { knows } from './teknik';
 import { dropSpot, put, stacksOf, use } from './lager';
@@ -42,7 +43,7 @@ export const HANDEL = balans('handel', {
   // som kommer fram efter sentKvall, på natten eller på dagen väntar vid filtens plats till nästa kväll
   kvall: 19, sentKvall: 23, morgon: 7,
   fart: 1.2, // rutor i sekunden när handlaren går (en bybo går 1,6 utan börda)
-  avstand: 4, // filten ligger så här många rutor från elden ...
+  avstand: 1, // filten ligger så här många rutor utanför byns område (utanforByn) ...
   letaLangre: 8, // ... eller upp till så många rutor längre bort, om det inte finns fri mark där (steg 4.5.7.3)
   vardeVaror: [25, 45], // grundvärdet av varorna hen har med sig (ungefär arbetstimmar)
   silver: [10, 30], // silvret hen har med sig (används i handeln, steg 4.4.1.3)
@@ -78,9 +79,18 @@ export const HANDEL = balans('handel', {
 });
 
 // handlarens utrustning: det hen bär varorna i. Bara ryggsäcken nu; kärran (vägar, fas 7) och packdjuret (11.4.1.2) läggs till här
-export const HANDLAR_UTR: Record<string, { namn: string; kg: number }> = {
-  ryggsack: { namn: 'Ryggsäck', kg: 25 },
+export const HANDLAR_UTR: Record<string, { namn: string; vikt: number }> = {
+  ryggsack: { namn: 'Ryggsäck', vikt: 125 }, // i vikt (saker.ts, steg 6.1.8)
 };
+
+// varorna till handlaren (steg 6.2.11, "Arbetsordningen (Förbättra är aldrig tom)" i designdokumentet): det handlarna brukar
+// köpa är det de köpte av byn och byborna på det senaste besök då slaget köptes (s.handlarKopt). Byn gör lika många, men
+// aldrig fler än en ryggsäck har plats för när handlaren kommer (det som är kvar när packningen fyllts till HANDEL.fylla).
+// 0 = handlarna brukar inte köpa det
+export function handlarMal(s: State, k: string) {
+  const n = s.handlarKopt?.[k] ?? 0;
+  return n < 1 ? 0 : Math.min(n, Math.floor(HANDLAR_UTR.ryggsack.vikt * (1 - HANDEL.fylla) / viktOf(k) + 1e-9));
+}
 
 // sorterna av handlare (steg 4.5.4.16): vilken som kommer styrs av hur rik byn är (rik = gånger HANDEL.rik), inte av byns
 // tekniker; finns flera som byn är rik nog för väljs en på måfå. Sorten bestämmer utrustningen (HANDLAR_UTR) och varorna
@@ -138,6 +148,7 @@ export interface Handlare {
   affar?: Affar; // affären som pågår (steg 4.5.7.4): en kund i taget
   ko?: number[]; // byborna som står i kö vid filten, först till kvarn (steg 4.4.1.5), utan den som handlar nu
   handlat?: number[]; // de som handlat med hen på det här besöket
+  kopt?: Record<string, number>; // det hen köpt av byn och byborna på det här besöket, per slag (steg 6.2.11)
   bytt?: { vem: string; fick: string; gav: string; m?: ByteMinne }[]; // bytena under besöket, för inforutan (m = hela bytet, steg 4.5.4.17)
 }
 // en affär med handlaren (steg 4.5.7.4): vem som handlar (en bybo, eller den som handlar för byn), hur långt den kommit,
@@ -162,7 +173,7 @@ export function handlarFas(h: Handlare) {
 const mellan = (s: State, [a, b]: readonly [number, number] | number[]) => a + rnd(s, 'handel') * (b - a);
 const heltMellan = (s: State, [a, b]: readonly [number, number] | number[]) => a + Math.floor(rnd(s, 'handel') * (b - a + 1));
 export const kgOf = (v: HVara[]) => v.reduce((a, w) => a + w.n * viktOf(w.k), 0);
-export const rymmer = (h: Handlare) => HANDLAR_UTR[h.utr]?.kg ?? 0;
+export const rymmer = (h: Handlare) => HANDLAR_UTR[h.utr]?.vikt ?? 0;
 
 // hur många dygn till nästa handlare, efter hur rik byn är nu
 function intervall(s: State) {
@@ -208,10 +219,12 @@ export function handelFri(s: State, x: number, y: number) {
   return !(s.filtar ?? []).some(f => f.x > X - FILT_BRED - 2 && f.x < X + FILT_BRED + 3 && f.y > Y - 2 && f.y < Y + djup + 3);
 }
 function filtPlats(s: State) {
-  const e = eldPlats(s);
-  for (let r = HANDEL.avstand; r <= HANDEL.avstand + HANDEL.letaLangre; r++) for (let i = 0; i < 24; i++) {
-    const v = rnd(s, 'handel') * Math.PI * 2, x = Math.round(e.x + Math.cos(v) * r), y = Math.round(e.y + Math.sin(v) * r);
-    if (x < 2 || y < 2 || x >= W - 2 || y >= H - 6 || !handelFri(s, x, y)) continue;
+  const e = eldPlats(s), m = bynsMitt(s);
+  for (let r = 1; r <= W / 2; r++) for (let i = 0; i < 24; i++) {
+    const v = rnd(s, 'handel') * Math.PI * 2, x = Math.round(m.x + Math.cos(v) * r), y = Math.round(m.y + Math.sin(v) * r);
+    if (x < 2 || y < 2 || x >= W - 2 || y >= H - 6) continue;
+    const ut = utanforByn(s, x, y);
+    if (ut < HANDEL.avstand || ut > HANDEL.avstand + HANDEL.letaLangre || !handelFri(s, x, y)) continue;
     return { x: x + 0.5, y: y + 0.5 };
   }
   return freeNear(s, e.x + 0.5, e.y + 2.5);
@@ -276,6 +289,7 @@ function lagUt(s: State, h: Handlare) {
 function gar(s: State, h: Handlare) {
   glomIrritation(s, h);
   if (h.affar) { const p = byId(s, h.affar.vem); slut(s, h, h.affar, p && alive(p) ? p : undefined); } // en affär som pågår slutar
+  if (h.kopt) s.handlarKopt = { ...s.handlarKopt, ...h.kopt }; // byn minns vad handlarna brukar köpa (steg 6.2.11)
   h.fas = 'gar'; h.affar = undefined; h.mx = h.ut.x; h.my = h.ut.y; h.fran = { x: h.x, y: h.y, t: s.now }; h.framme = s.now + Math.hypot(h.mx - h.x, h.my - h.y) / HANDEL.fart * SEC;
   const par = s.filtar?.find(f => f.handlare === h.id)?.par;
   if (s.filtar) { s.filtar = s.filtar.filter(f => f.handlare !== h.id && (par === undefined || f.par !== par)); if (!s.filtar.length) delete s.filtar; }
@@ -418,6 +432,7 @@ vidByte.push((s, m, g, fatt, betal, minne) => {
   const b = (h.bytt ??= []), kop = m.id === h.id; // kop = handlaren köpte
   b.push({ vem: kop ? g.namn : m.namn, fick: varorText(kop ? fatt : betal), gav: varorText(kop ? betal : fatt), m: minne });
   if (b.length > HANDEL.minnas) b.splice(0, b.length - HANDEL.minnas);
+  for (const w of kop ? fatt : betal) if (w.k !== 'silver') (h.kopt ??= {})[w.k] = (h.kopt[w.k] ?? 0) + (w.t ? 1 : w.n); // det handlaren köpte (steg 6.2.11)
   const k = klanById(s, h.klan); // ett byte gör klanen lite vänligare (steg 4.4.3)
   if (k) andraInst(k, KLAN.handel);
 });
@@ -605,8 +620,7 @@ const relTal = (s: State, h: Handlare, p: Person) => Math.round(gillar(s, h, p) 
 // ett byte. Bara loggen och minnet; inget i simuleringen läser det
 function avbrutenAffar(s: State, h: Handlare, a: Affar, p: Person) {
   const minne: ByteMinne = { nr: (s.byteNr = (s.byteNr ?? 0) + 1), t: s.now, a: p.id, an: p.name, b: h.id, bn: h.namn, ag: [], bg: [], forsok: a.forsok, arg: a.arg, avbruten: true, rel: [a.rel0 ?? relTal(s, h, p), relTal(s, h, p)] };
-  log(s, `${p.name} och ${h.namn} blev inte överens efter ${a.forsok!.length === 1 ? 'ett bud' : `${a.forsok!.length} bud`}.`, 'rel', [p.id]).byte = minne;
-  const b = (p.byten ??= []); b.push(minne); if (b.length > BYTE.minnas) b.splice(0, b.length - BYTE.minnas);
+  loggaByte(log(s, `${p.name} och ${h.namn} blev inte överens efter ${a.forsok!.length === 1 ? 'ett bud' : `${a.forsok!.length} bud`}.`, 'rel', [p.id]), minne, [p]);
 }
 // den som inte kommit tillbaka till affären på länge (somnat, blivit sjuk) har gett upp den, och den som dött är borta
 function glomAffar(s: State, h: Handlare) {

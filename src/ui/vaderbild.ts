@@ -1,5 +1,6 @@
 import * as PIXI from 'pixi.js';
 import { vaderNu } from '../sim';
+import { BAYER } from '../palett';
 import { s, ui } from './lage';
 import { app } from './scen';
 
@@ -28,7 +29,6 @@ const BILD = {
 };
 export const vaderG = new PIXI.Graphics();
 // dimman och blixten: ett rutmönster av punkter (BILD.punkt skärmpunkter stora) i ett Bayer-raster, 17 tätheter
-const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 const raster: PIXI.Texture[] = [];
 function rasterTex(del: number) {
   const n = Math.max(0, Math.min(16, Math.round(del * 16)));

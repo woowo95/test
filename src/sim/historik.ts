@@ -54,9 +54,21 @@ export function historikSteg(s: State) {
   while (h.tim.length && h.tim[0][0] < grans) {
     const d = Math.floor(h.tim[0][0] / DAY), rader: number[][] = [];
     while (h.tim.length && Math.floor(h.tim[0][0] / DAY) === d) rader.push(h.tim.shift()!);
-    h.dygn.push([d * DAY, ...HISTORIK_TAL.map((t, i) => t.hur === 'sist' ? rader[rader.length - 1][i + 1]
-      : Math.round(rader.reduce((a, r) => a + r[i + 1], 0) / rader.length * 1000) / 1000)]);
+    h.dygn.push([d * DAY, ...HISTORIK_TAL.map((t, i) => slaIhop(t.hur, rader.map(r => r[i + 1])))]);
   }
+}
+// ett dygns timmar till ett värde: bara de timmar som har ett värde räknas (steg 5.5.7). Ett tal som inte fanns då är NaN i
+// minnet och null i en inläst sparfil; utan värde någon timme blir dygnet också utan värde
+function slaIhop(hur: 'snitt' | 'sist', v: (number | null)[]) {
+  const med = v.filter((x): x is number => Number.isFinite(x));
+  if (!med.length) return NaN;
+  return hur === 'sist' ? med[med.length - 1] : Math.round(med.reduce((a, x) => a + x, 0) / med.length * 1000) / 1000;
+}
+// när byn läses in (uppgradering 24 i varld.ts): kolumnerna i registrets ordning direkt, så att graferna har ett nytt tal
+// redan före nästa timme
+export function historikKolumner(s: State) {
+  const h = s.hist;
+  if (h && h.tal.join() !== HISTORIK_TAL.map(t => t.id).join()) omordna(h);
 }
 // ett nytt nyckeltal får inget värde bakåt (NaN sparas som null), ett borttaget försvinner
 function omordna(h: Historik) {

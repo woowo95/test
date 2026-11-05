@@ -1,3 +1,4 @@
+import { omrade, tillHoljet } from './omrade';
 import { upplev } from './uppvaxt';
 import { ALDER, ageOf, count, doingAct, forstaGang, livet, living, log, stat } from './folk';
 import { kronikaBer, personFalt } from './berattelser';
@@ -5,14 +6,15 @@ import { Bit, DORRAR, DorrDef, DorrSlag, Hus, MATERIAL, bitById, dorrDef, dorrRa
 import { eldPlats, getMap } from './karta';
 import { vaderSlit } from './vader';
 import { groundOf, punktIRuta } from './mark';
-import { PLATS, campCenter, rektAvstand } from './plats';
+import { PLATS, rektAvstand } from './plats';
 import { lekplats, paLek, stangerIn, uteStation } from './stationer';
-import { kunnighet, sparas } from './ekonomi';
+import { kunnighet } from './ekonomi';
+import { sparas } from './forradsmal';
 import { ARSTID, iIstiden } from './tid';
 import { knows } from './teknik';
 import { amountOf, changed, nearZone, ownMove, ownsAmount, use, usable, zonesOf } from './lager';
 import { freeTools, tingOf } from './agande';
-import { getable, takeMaterial } from './behov';
+import { getable, Recept, takeMaterial } from './behov';
 import { Del } from './egendom';
 import { fellingTiles } from './skog';
 import { FOREST, findPath } from './vag';
@@ -24,22 +26,24 @@ import { balans } from './balans';
 import { ELDFLYTT, nyEldplats, vidElden } from './eldflytt';
 import { canLight } from './eld';
 import { notis } from './notiser';
+import { strakHindrar, strakI } from './strak';
 
 // ---------- balanstal (regel 8) ----------
 // Planeringen (var ett nytt hus står) och arbetet (i vilken ordning och hur fort det byggs och lagas). Husens storlek och
 // funktion står i HUS (byggnader.ts), lekplatsens läge i PLATS (plats.ts)
-const BYGG = balans('bygg', {
+export const BYGG = balans('bygg', {
   maxInne: 24, // största hus: så många sovplatser
-  husAvst: 5.5, // så långt från elden man helst bygger (rutor till husets närmaste vägg)
-  radieBas: 9, // ett hus planeras inom så här många rutor från byns mitt ...
+  husAvst: 5.5, // ett hus står helst minst så här långt från elden (rutor till husets närmaste vägg), för röken och gnistorna
+  radieBas: 9, // ett hus planeras högst så här många rutor utanför det byn omsluter (tillHoljet i omrade.ts) ...
   radiePerPerson: 0.25, // ... plus så många per invånare
+  utomVikt: 1, // en plats får så många poäng (färre är bättre) för varje ruta utanför det byn omsluter, så att byn håller ihop ...
+  mittVikt: 0.2, // ... och så många för varje ruta från områdets mitt (bynsMitt), bland platserna innanför ...
   lagerMarg: 1, // ett hus står minst så här många rutor från en lagerplats
-  mittVikt: 0.2, // en plats får så många poäng (färre är bättre) för varje ruta från byns mitt ...
   lekStraff: 3, // ... så många om huset står på lekplatsen ...
   tradVikt: 0.15, // ... och så många för varje träd som måste fällas först
   byggareInt: 4, // när byn väljer byggare väger intelligensen så här många gånger mindre än hantverket
   omforsok: 12, // timmar innan byn försöker planera ett hus igen när det inte fanns någon plats
-  samtidiga: 4, // högst så här många rutor byggs på samtidigt
+  perHus: 4, // så många får bygga på varje hus (platserna på bygget); fler väger en tredjedel (arbetarna, steg 6.1.13 i val.ts)
   laga: 0.5, // väggar under det skicket lagas
   prioJord: 100, // i vilken ordning man bygger: lagning först, sedan jordgolv, väggar och sist trägolv (plus rutor till platsen)
   prioVagg: 200,
@@ -70,32 +74,44 @@ const tileOk = (s: State, x: number, y: number, utomElden: boolean) => {
 // en plats för ett hus med yttermåtten w×h inom byområdet, PLATS.husMellan rutor från andra hus och PLATS.uteFri från stationer
 // som står ute, helst en bit från elden och inte på lekplatsen, och inte så att väggarna stänger in mark. Träden där
 // huset ska stå fälls först, men en plats med färre träd går fortare
-function siteFor(s: State, w: number, h: number, okAt: Uint8Array) {
-  const f = eldPlats(s), mid = campCenter(s), R = BYGG.radieBas + living(s).length * BYGG.radiePerPerson, g = groundOf(s), lekR = lekplats(s), M = Math.max(PLATS.husMellan, PLATS.uteFri);
-  const platser: { x: number; y: number; sc: number }[] = [];
-  for (let y = 1; y + h < H; y++) for (let x = 1; x + w < W; x++) {
+function siteFor(s: State, w: number, h: number, okAt: (i: number) => boolean) {
+  const f = eldPlats(s), R = BYGG.radieBas + living(s).length * BYGG.radiePerPerson, g = groundOf(s), lekR = lekplats(s), M = Math.max(PLATS.husMellan, PLATS.uteFri);
+  const platser: { x: number; y: number; sc: number }[] = [], o = omrade(s), r = Math.ceil(R) + w + h;
+  for (let y = Math.max(1, o.y0 - r); y + h < H && y <= o.y1 + r; y++) for (let x = Math.max(1, o.x0 - r); x + w < W && x <= o.x1 + r; x++) {
     const cx = x + w / 2, cy = y + h / 2;
-    if (Math.hypot(cx - mid.x, cy - mid.y) > R) continue;
+    const ut = tillHoljet(s, cx, cy); // byns område (steg 6.2.4): inget räknas från elden eller byns mitt
+    if (ut > R) continue;
     let ok = true;
     for (let yy = y - M; yy < y + h + M && ok; yy++) for (let xx = x - M; xx < x + w + M && ok; xx++) {
       const inside = xx >= x && xx < x + w && yy >= y && yy < y + h;
-      if (inside) { ok = !!okAt[yy * W + xx]; continue; }
+      if (inside) { ok = okAt(yy * W + xx); continue; }
       if (!inMap(xx, yy)) continue;
       const d = Math.max(x - xx, xx - (x + w - 1), y - yy, yy - (y + h - 1)); // så många rutor från huset
       if (gridOf(s).at.has(yy * W + xx) || d <= PLATS.uteFri && uteStation(s, xx, yy)) ok = false; // plats för en stig mellan husen och runt stationerna ute (steg 2.10.8)
     }
     if (!ok) continue;
-    const near = rektAvstand(f.x, f.y, x, y, w, h);
+    const near = rektAvstand(f.x, f.y, x, y, w, h), m = o.mitt;
     const lek = paLek(lekR, x, y, w, h) ? BYGG.lekStraff : 0; // lekplatsen räknas från byns inre (plats.ts, steg 2.10.4)
     let trad = 0; // helst en plats med få träd: varje träd ska fällas först
     for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) if (g.trees[yy * W + xx] >= FOREST) trad++;
     const eld = rektAvstand(f.x, f.y, x - 1, y - 1, w + 2, h + 2) === 0 ? ELDFLYTT.husStraff : 0; // där elden står bara om ingen annan plats finns: elden flyttas först
-    const sc = Math.abs(near - BYGG.husAvst) + BYGG.mittVikt * Math.hypot(cx - mid.x, cy - mid.y) + lek + BYGG.tradVikt * trad + eld;
+    const sc = Math.max(0, BYGG.husAvst - near) + BYGG.utomVikt * Math.max(0, ut - Math.min(w, h) / 2) + BYGG.mittVikt * Math.hypot(cx - m.x - 0.5, cy - m.y - 0.5) + lek + BYGG.tradVikt * trad + eld;
     platser.push({ x, y, sc });
   }
   // den bästa platsen som inte stänger in någon mark (stationer.ts); lika bra platser i samma ordning som de söktes
-  const at = platser.sort((a, b) => a.sc - b.sc).find(q => !stangerIn(s, q.x, q.y, w, h));
-  return at && { x: at.x, y: at.y };
+  // gångstråken viker bara om de kan dras om (steg 6.2.5). Byns statistik räknar när den bästa platsen inte fick användas för
+  // ett stråk (strakSamre) och när ett stråk drogs om runt platsen (strakOm), för provet i steg 6.2.6
+  platser.sort((a, b) => a.sc - b.sc);
+  let samre = false;
+  for (const q of platser) {
+    if (stangerIn(s, q.x, q.y, w, h)) continue;
+    if (strakHindrar(s, q.x, q.y, w, h)) { samre = true; continue; }
+    if (samre) count(s, 'strakSamre');
+    if (strakI(s, q.x, q.y, w, h)) count(s, 'strakOm');
+    return { x: q.x, y: q.y };
+  }
+  if (platser.length) count(s, 'strakIngen');
+  return undefined;
 }
 // kan man gå från rutan (ux, uy) utanför dörren till elden f, med huset på platsen at (yttermåtten w×h) i vägen?
 function kanGaUt(s: State, at: { x: number; y: number }, w: number, h: number, ux: number, uy: number, f: { x: number; y: number }) {
@@ -123,8 +139,10 @@ export function planBuild(s: State) {
   for (let h = HUS.minSida; h <= HUS.maxSida; h++) for (let w = h; w <= HUS.langSida * h; w++) sizes.push({ w, h });
   const want = Math.min(BYGG.maxInne, u.a.plats);
   sizes.sort((a, b) => (a.w * a.h < want ? 1000 - a.w * a.h : 0) - (b.w * b.h < want ? 1000 - b.w * b.h : 0) || a.w * a.h - b.w * b.h || (a.w - a.h) - (b.w - b.h));
-  const okAt = new Uint8Array(W * H), utomElden = canLight(s); // elden flyttas bara om den kan tändas igen
-  for (let i = 0; i < W * H; i++) okAt[i] = tileOk(s, i % W, Math.floor(i / W), utomElden) ? 1 : 0;
+  // går det att bygga på rutan? Räknas först när sökningen runt byns område (siteFor) frågar, och sparas under planeringen
+  // (steg 6.2.21: bara rutorna nära området, inte hela kartan). Elden flyttas bara om den kan tändas igen
+  const utomElden = canLight(s), okMinne = new Int8Array(W * H).fill(-1);
+  const okAt = (i: number) => (okMinne[i] < 0 ? okMinne[i] = tileOk(s, i % W, Math.floor(i / W), utomElden) ? 1 : 0 : okMinne[i]) === 1;
   for (const { w, h } of sizes) {
     const at = siteFor(s, w + 2, h + 2, okAt);
     if (!at) continue;
@@ -212,7 +230,6 @@ export function buildJob(s: State, p: Person): Job | undefined {
     }
     if (fb) return { bit: fb, repair: false, need: 0, missing: false, fell: true };
   }
-  if (taken.size >= BYGG.samtidiga) return;
   let best: Job | undefined, bs = Infinity;
   for (const b of bitsOf(s)) {
     if (taken.has(b.id) || b.k === 'oppning' || (b.b < 1 && (treeOn(s, b) || vidElden(s, b.x, b.y)))) continue; // där elden står byggs inget förrän den flyttats (eldflytt.ts)
@@ -360,6 +377,12 @@ export const dorrOppningar = (s: State) => bitsOf(s).filter(b => {
 // öppningarna som saknar dörren k eller en bättre (en skinndörr ersätter aldrig en trädörr)
 export const utanDorr = (s: State, k: DorrSlag) => dorrOppningar(s).filter(b => dorrRang(b.dorr) < dorrRang(k));
 // p kan hänga dörren: p kan tekniken, det finns fler öppningar utan den än de som redan hänger en, och p kan få tag i materialet
+// receptet till en dörr av sorten k som någon öppning saknar, när p kunde hänga den om materialet fanns (steg 6.2.19)
+export function receptDorr(s: State, p: Person, k: DorrSlag): Recept | undefined {
+  const d: DorrDef = DORRAR[k];
+  if (!d.tek.some(t => knows(p, t)) || utanDorr(s, k).length <= (doingAct(s, 'dorr', p) ? 1 : 0)) return undefined;
+  return { av: d.av };
+}
 export function kanHangaDorr(s: State, p: Person, k: DorrSlag) {
   const d: DorrDef = DORRAR[k];
   if (!d.tek.some(t => knows(p, t))) return false;

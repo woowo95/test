@@ -1,5 +1,5 @@
 // Scenarier. Grunden: gläntan, yxan, vintern, knapphet, svamp och flinta, kunskap, temperatur och kalender.
-import { createState, growGround, step, living, temperature, coldOf, ageIndex, ageStart, kalender, yearNo, AGES, amountOf, groundOf, getMap, DAY, HOUR, W, tileOf, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, angOf, setAmount, BEAT, tingOf, eatPoison, HOST, vaderNu, VADER, VADERLAGE, VaderId, blotSteg, varmeDelar, stepVader, vaxtFaktor, stepFire, hearthOf, cloneState, wearMult, vaderSlit, NEW_W, NEW_H, allaTider, tiderUtanfor, skaRojas } from '../../sim';
+import { createState, growGround, step, living, temperature, coldOf, ageIndex, ageStart, kalender, yearNo, AGES, amountOf, groundOf, getMap, DAY, HOUR, W, tileOf, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, angOf, setAmount, BEAT, tingOf, eatPoison, HOST, vaderNu, VADER, VADERLAGE, VaderId, blotSteg, varmeDelar, stepVader, vaxtFaktor, stepFire, hearthOf, cloneState, wearMult, vaderSlit, NEW_W, NEW_H, allaTider, tiderUtanfor, skaRojas, straken } from '../../sim';
 import { BAR, FOREST, HIGH, isSoil } from '../../sim/vag';
 import { T } from '../../sim/typer';
 import * as SIM from '../../sim';
@@ -70,6 +70,7 @@ SCENARIER['ingen-yxa'] = {
 };
 
 SCENARIER.yxa = {
+  lang: true,
   text: 'Byn har en yxa: träd fälls, stammarna huggs till ved och det växer gräs där träden stod',
   kor: () => {
     const s = createState(14, START); // by 14 sedan v146: i by 13 gick stigarna rakt över fällplatserna, så mest bar jord
@@ -82,14 +83,15 @@ SCENARIER.yxa = {
     kor(s, 10 * 24, s => { ved = Math.max(ved, amountOf(s, 'ved')); for (const i of skaRojas(s)) rojs.add(i); for (const k of s.stockar ?? []) fallda.add(tileOf(k.x, k.y)); });
     const liggande = (s.stockar ?? []).filter(k => !rojs.has(tileOf(k.x, k.y))).length;
     const g = groundOf(s);
-    // inne i lägret trampas marken där träden stod till jord, så räkna bara utanför
-    const ute = [...fallda].filter(i => campDist(s, i % W, Math.floor(i / W)) >= 1);
+    // på gångstråken trampas marken där träden stod till jord, så räkna bara utanför dem (byns område täcker sedan steg 6.2.1
+    // också skogen där byn fäller, så området går inte att räkna bort)
+    const sk = straken(s).ruta, ute = [...fallda].filter(i => !sk[i]);
     // gräs, inte bar jord: de som går förbi med trä trampar ner det högsta gräset (stigar, vag.ts)
     let gras = 0; for (const i of ute) if (g.trees[i] < FOREST && g.cover[i] >= BAR) gras++;
     return [
       ['träd har fällts', (s.fallda ?? 0) >= 3],
       ['ved har huggits', ved > 0],
-      [`gräs där träden stod utanför lägret, minst hälften (${gras} av ${ute.length})`, ute.length >= 3 && gras >= ute.length / 2],
+      [`gräs där träden stod utanför stråken, minst hälften (${gras} av ${ute.length})`, ute.length >= 3 && gras >= ute.length / 2],
       [`stammarna huggs upp (högst 2 liggande utanför lagret i skogen: ${liggande})`, liggande <= 2]];
   },
 };
@@ -125,7 +127,7 @@ SCENARIER.knapphet = {
   lang: true,
   text: 'Bär, rötter och vilt tar slut nära byn för en tid, så invånarna går längre bort; fiske med händerna ger få fiskar per försök',
   kor: () => {
-    const s = createState(23, START); // by 15 svälter ut sedan toa-smutsen kom (steg 2.7.2), by 16 och 17 sedan kartan blev 120 × 120 (2.10.9), by 18 sedan stigarna ligger kvar längre (2.10.15) och by 22 och 26 sedan tiderna följer riktlinjen (2.12.8); det balanseras i 2.12
+    const s = createState(25, START); // by 23 plockar mer långt bort sedan projekten på nivån Förbättra (steg 6.1.17), i kor men inte med minutsteg: brus i en enda by. By 15 svälter ut sedan toa-smutsen kom (steg 2.7.2), by 16 och 17 sedan kartan blev 120 × 120 (2.10.9), by 18 sedan stigarna ligger kvar längre (2.10.15) och by 22 och 26 sedan tiderna följer riktlinjen (2.12.8); det balanseras i 2.12
     // mät varje dygn: buskarna växer tillbaka, så ett enda mått i slutet beror på slumpen
     let nara = 0, langt = 0;
     for (let d = 0; d < 12; d++) { kor(s, 24); const n = uttag(s, 'samla', 0, 8); if (n > nara) { nara = n; langt = uttag(s, 'samla', 16, 30); } }
@@ -139,6 +141,8 @@ SCENARIER.knapphet = {
       [`vilt jagat inom 30 rutor från byn (${uttag(s, 'jakt', 0, 30).toFixed(3)}, ${st.kaniner ?? 0} kaniner)`, uttag(s, 'jakt', 0, 30) > 0.002],
       // fiske väljs inte i alla byar; fisket testas utförligt i fiskespjut-scenariot
       [`fiske: ${st.fiskeForsok ?? 0} försök, ${st.fiskeNapp ?? 0} napp, ${st.fisk ?? 0} fiskar`, !st.fiskeForsok || ((st.fiskeForsok ?? 0) > (st.fiskeNapp ?? 0) && (st.fiskeNapp ?? 0) >= (st.fisk ?? 0))],
+      // det fisket gett räknas som de andra arbetena (prod_fiske), så att npm run takt visar fisket (steg 6.1.4)
+      [`fångsten räknas som fiskets arbete (${st.prod_fiske ?? 0} av ${st.fisk ?? 0} fiskar)`, (st.prod_fiske ?? 0) === (st.fisk ?? 0)],
       ['ingen svalt ihjäl', !s.people.some(p => p.cause === 'av svält')]];
   },
 };
@@ -310,6 +314,7 @@ SCENARIER.vader = {
 };
 
 SCENARIER.kalender = {
+  lang: true,
   env: STOCKHOLM, // sommartiden finns bara i en tidszon som har den
   text: 'Tidsåldrarna följer kalendern: de börjar en måndag kl. 00, en ny by får en längre första vårtid och en gammal by kommer i fas',
   kor: () => {
@@ -491,7 +496,7 @@ SCENARIER.torka = {
     tandEld(s); setMat(s, { bar: 40, torkat: 40 });
     const vatten0 = SIM.vattenNu(s).filter(t => t === T.Vatten).length;
     // två fält med växande ärter: det ena hos en med vattensäck, det andra utan ägare som vattnar
-    const vuxna = living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen), c = SIM.campCenter(s), g = getMap(s.seed).tiles;
+    const vuxna = living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen), c = SIM.bynsMitt(s), g = getMap(s.seed).tiles;
     const ledigt = (x0: number, y0: number) => { for (let k = 0; k < 6; k++) { const x = x0 + k % 3, y = y0 + Math.floor(k / 3); if (g[y * W + x] !== T.Gras) return false; } return true; };
     const platser: { x: number; y: number }[] = [];
     for (let r = 4; r < 20 && platser.length < 2; r++) for (const [dx, dy] of [[r, 0], [-r, 0], [0, r], [0, -r]]) { const x = Math.floor(c.x) + dx, y = Math.floor(c.y) + dy; if (platser.length < 2 && ledigt(x, y) && !platser.some(q => Math.abs(q.x - x) < 5 && Math.abs(q.y - y) < 5)) platser.push({ x, y }); }
@@ -511,7 +516,7 @@ SCENARIER.torka = {
     // den som fiskar från stranden tar fisken ur vattnet som finns kvar, inte ur den torra sjöbotten (takeFrom i fynd.ts, kodgenomgången 3.10.25)
     let iTorr = 0, iVatten = 0;
     {
-      const q = cloneState(s), vn = SIM.vattenNu(q), cq = SIM.campCenter(q);
+      const q = cloneState(s), vn = SIM.vattenNu(q), cq = SIM.bynsMitt(q);
       let ruta: { x: number; y: number } | undefined, bd = Infinity;
       for (let y = 3; y < SIM.H - 3; y++) for (let x = 3; x < W - 3; x++) {
         if (vn[y * W + x] === T.Vatten || vn[y * W + x] === T.Lera) continue;
@@ -601,7 +606,7 @@ SCENARIER.oversvamning = {
     let b0 = m.start; while (!SIM.flodNiva(s, b0 + HOUR)) b0 += HOUR;
     kor(s, (b0 - s.now) / HOUR);
     // på stranden närmast byn (en ruta från vattnet): en hög bär, en hög grenar och en hög sten, och ett fält med ärter
-    const { land } = SIM.djupOf(s.seed), g = getMap(s.seed).tiles, c = SIM.campCenter(s);
+    const { land } = SIM.djupOf(s.seed), g = getMap(s.seed).tiles, c = SIM.bynsMitt(s);
     const strand: { x: number; y: number }[] = [];
     for (let i = 0; i < W * W; i++) if (land[i] === 1 && g[i] !== T.Sten) strand.push({ x: i % W, y: Math.floor(i / W) });
     strand.sort((a, b) => Math.hypot(a.x - c.x, a.y - c.y) - Math.hypot(b.x - c.x, b.y - c.y));
@@ -647,7 +652,7 @@ SCENARIER.oversvamning = {
     // det som ligger i vattnet hämtar ingen medan vattnet står där (haulJob i lager.ts, kodgenomgången 3.10.25)
     let hjVatten = false;
     if (q2) {
-      const q = cloneState(q2), cq = SIM.campCenter(q);
+      const q = cloneState(q2), cq = SIM.bynsMitt(q);
       let ruta: { x: number; y: number } | undefined, bd = Infinity;
       for (let i = 0; i < W * SIM.H; i++) {
         const x = i % W, y = Math.floor(i / W), d = Math.hypot(x - cq.x, y - cq.y);
@@ -661,7 +666,7 @@ SCENARIER.oversvamning = {
     }
     let utan = 0, steg = 0, dodaQ = 0, inmurad = false;
     if (q2) {
-      const q = q2, cq = SIM.campCenter(q), gq = getMap(q.seed).tiles;
+      const q = q2, cq = SIM.bynsMitt(q), gq = getMap(q.seed).tiles;
       let ruta: { x: number; y: number } | undefined, bd = Infinity;
       for (let y = 2; y < SIM.H - 2; y++) for (let x = 2; x < W - 2; x++) {
         const i = y * W + x, d = Math.hypot(x - cq.x, y - cq.y);
@@ -720,7 +725,7 @@ SCENARIER.flodrest = {
     tandEld(s); setMat(s, { bar: 40, torkat: 40 });
     let b0 = m.start; while (!SIM.flodNiva(s, b0 + HOUR)) b0 += HOUR;
     kor(s, (b0 - s.now) / HOUR);
-    const { land } = SIM.djupOf(s.seed), g = getMap(s.seed).tiles, c = SIM.campCenter(s);
+    const { land } = SIM.djupOf(s.seed), g = getMap(s.seed).tiles, c = SIM.bynsMitt(s);
     const fritt = (x: number, y: number) => x > 0 && y > 0 && x < W - 1 && y < W - 1 && g[y * W + x] !== T.Sten && g[y * W + x] !== T.Vatten && SIM.ledig(s, x, y) && !SIM.bitAt(s, x, y);
     const nara = (f: (i: number) => boolean, ej: { x: number; y: number }[] = []) => {
       let b: { x: number; y: number } | undefined, bd = Infinity;
@@ -922,7 +927,7 @@ SCENARIER.brand = {
       kor(s, 18, torr);
       const rutor = s.stat?.['brand ruta'] ?? 0, trad = s.stat?.['brand trad'] ?? 0;
       const brunnen = [...new Set((s.aska ?? []).map(a => a[0]))].filter(i => skog0.has(i));
-      const planta = (t: number) => Math.abs(t - SIM.MARK.nyPlanta) < 1e-6, plantor = brunnen.filter(i => planta(groundOf(s).trees[i])).length;
+      const planta = (t: number) => t > 0 && t <= SIM.MARK.nyPlanta + 1e-6, plantor = brunnen.filter(i => planta(groundOf(s).trees[i])).length;
       const askan = brunnen.length ? Math.max(...brunnen.map(i => groundOf(s).cover[i])) : 1;
       // samma ruta när marken är blöt: elden tar sig inte vidare
       SIM.tand(vat, mitt, 'blixt', 0);
@@ -968,7 +973,7 @@ SCENARIER.brand = {
         [`gnistor från lägerelden tände marken efter ${gnistTim} timmar med torr mark`, (gn.stat?.['brand gnista'] ?? 0) >= 1],
         [`skogsbranden spred sig i torr skog (${rutor} rutor på 18 timmar, ${trad} träd dog)`, rutor >= 8 && trad >= 5],
         [`när marken är blöt tar den sig inte vidare (${vatRutor} ruta)`, vatRutor <= 2],
-        [`där skogen brann står plantor (${plantor} av ${brunnen.length}; en torraka kan ha fallit av ålder) i aska (gräset högst ${askan.toFixed(2)})`, brunnen.length > 0 && plantor >= brunnen.length * 0.95 && askan < HIGH],
+        [`där skogen brann står plantor (${plantor} av ${brunnen.length}; en torraka kan ha fallit av ålder, och en planta kan vara nedtrampad) i aska (gräset högst ${askan.toFixed(2)})`, brunnen.length > 0 && plantor >= brunnen.length * 0.95 && askan < HIGH],
         [`plantorna växer när gräset kommit tillbaka (${vuxna} av ${brunnen.length} efter ${vaxtTim} timmar sommar)`, vuxna >= brunnen.length / 2],
         [`elden nära byn sågs (${st['brand sedd'] ?? 0}) och hotade byn (${st['brand hot'] ?? 0})`, (st['brand sedd'] ?? 0) >= 1 && (st['brand hot'] ?? 0) >= 1],
         [`de vuxna släckte: ${sack} med vattensäcken (${st['brand sack'] ?? 0} säckar), ${hand} med händerna, ${st['brand slackt'] ?? 0} rutor släckta, ${st['brand skadad'] ?? 0} brännskador`, sack >= 1 && hand >= 1 && (st['brand slackt'] ?? 0) >= 1],

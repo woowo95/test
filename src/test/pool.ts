@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 export interface Utfall { code: number; out: string; err: string }
 // en process som inte är klar efter så här lång tid (datorns tid) stoppas och räknas som kraschad
-const TIDSGRANS_MIN = 20;
+const TIDSGRANS_MIN = 35; // sedan Förbättra aldrig är tom (steg 6.1.18) arbetar byarna mer, och testerna tar längre tid
 
 // ett skript i src/test, kört med tsx i en egen process (env läggs till datorns miljö, t.ex. { TZ: 'Europe/Stockholm' })
 export function korSkript(fil: string, args: string[] = [], env: Record<string, string> = {}): Promise<Utfall> {
@@ -39,8 +39,8 @@ export async function pool<T>(jobb: (() => Promise<T>)[], n = cpus().length): Pr
 // sista raden i utskriften tolkad som JSON
 export const sistaJson = <T>(u: Utfall): T => JSON.parse(u.out.trim().split('\n').pop()!);
 // ett skript som skriver sitt svar som JSON på sista raden. Kraschar det kastas ett fel med slutet av felutskriften
-export async function korJson<T>(fil: string, args: string[], namn: string): Promise<T> {
-  const u = await korSkript(fil, args);
+export async function korJson<T>(fil: string, args: string[], namn: string, env: Record<string, string> = {}): Promise<T> {
+  const u = await korSkript(fil, args, env);
   if (u.code) throw new Error(`${namn} kraschade:\n${u.err.slice(-1500)}`);
   return sistaJson<T>(u);
 }

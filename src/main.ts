@@ -25,6 +25,7 @@ import './ui/trycktips'; // förklaringarna kommer fram när man trycker (steg 5
 import './ui/ark'; // panelerna som ark nerifrån på en liten skärm (steg 5.3.7)
 import { drawArena, oppnaArena } from './ui/arena';
 import { drawTona } from './ui/tona';
+import { drawOmrade } from './ui/omradebild';
 
 // startpunkten: klockan, kontrollerna, huvudloopen och uppstarten. Allt annat i gränssnittet ligger i ui/
 function renderClock() {
@@ -174,6 +175,7 @@ function ritaKartan(now: number) {
   drawSkuggor();
   drawNight(ui.nu);
   drawFilter();
+  drawOmrade();
   drawVader(now);
 }
 ikapp.rita = () => { ui.nu = s.now; nyBild(); ritaKartan(performance.now()); renderClock(); };

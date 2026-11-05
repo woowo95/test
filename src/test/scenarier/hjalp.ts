@@ -1,6 +1,6 @@
 // Scenariernas register (SCENARIER) och det som flera grupper av scenarier använder. Varje grupp har en egen fil här,
 // och ../scenario.ts kör dem.
-import { Person, Act, ownedBy, tidyTools, heldBy, isTool, step, living, temperature, ageIndex, kalender, yearNo, pilesOf, amountOf, capacity, load, isLight, T, condOf, FOOD, zonesOf, ageOf, groundOf, getMap, DAY, HOUR, W, State, skogAndel, takenOf, Kind, describe, stat, campDist, campCenter, TEKNIK, knows, bitsOf, housesOf, gridOf, roomAt, insulation, FYND_IDS, angOf, fyndAt, H, vaxerAt, richness, djurOf, ownedStock, ownedSum, setAmount, setStock, foodOf, isFood, STACK_ORDER, BEAT, rikedomDelar, grundvarde, tingOf, komOf, fnOf, Task, barnMat, hungerFlytt, FOLDERS, STATS, ACTS, coverOf, lightLevel, timeLabel, hearthOf, igniterOf, fireWant, fireHeat, heatRadius, emberOn, zoneAt, bitAt, husById, isSick, isSocial, moodOf, duty, habitTotal, habitShare, childrenOf, homeKind, taskName, carryKind, influence, hasMaterial, wornOf, relKey, sakNamn, tingNamn, visning } from '../../sim';
+import { Person, Act, ownedBy, tidyTools, heldBy, isTool, step, living, temperature, ageIndex, kalender, yearNo, pilesOf, amountOf, capacity, load, isLight, T, condOf, FOOD, zonesOf, ageOf, groundOf, getMap, DAY, HOUR, W, State, skogAndel, takenOf, Kind, describe, stat, utanforByn, bynsMitt, TEKNIK, knows, bitsOf, housesOf, gridOf, roomAt, insulation, FYND_IDS, angOf, fyndAt, H, vaxerAt, richness, djurOf, ownedStock, ownedSum, setAmount, setStock, foodOf, isFood, STACK_ORDER, BEAT, rikedomDelar, grundvarde, tingOf, komOf, fnOf, Task, barnMat, hungerFlytt, FOLDERS, STATS, ACTS, coverOf, lightLevel, timeLabel, hearthOf, igniterOf, fireWant, fireHeat, heatRadius, emberOn, zoneAt, bitAt, husById, isSick, isSocial, moodOf, duty, habitTotal, habitShare, childrenOf, homeKind, taskName, carryKind, influence, hasMaterial, wornOf, relKey, sakNamn, tingNamn, visning } from '../../sim';
 import * as SIM from '../../sim';
 import { STEG_TIM } from '../kor';
 
@@ -59,7 +59,7 @@ export const treVuxna = (s: State, hunger: number, mer?: (q: Person) => void) =>
 // alla vuxna (från ålder år) kan göra timmerväggar och yxor
 export const byggare = (s: State, alder = 14) => { for (const p of living(s)) if (ageOf(p, s.now) >= alder) Object.assign((p.tek ??= {}), { yxa: 1, timmervagg: 1 }); };
 // mitten av rutan med mest vilt inom radie rutor från lägret, utom vatten (undefined om det inte finns vilt där)
-export function bastaJaktruta(s: State, radie: number, c = campCenter(s)) {
+export function bastaJaktruta(s: State, radie: number, c = bynsMitt(s)) {
   const m = getMap(s.seed);
   let bast = 0, b: { x: number; y: number } | undefined;
   for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) { const v = richness(s, 'jakt', x + 0.5, y + 0.5); if (v > bast && m.tiles[y * W + x] !== T.Vatten && Math.hypot(x - c.x, y - c.y) < radie) { bast = v; b = { x: x + 0.5, y: y + 0.5 }; } }
@@ -83,7 +83,7 @@ export function skogsandel(s: State, min: number, max: number, ang = 0) {
 export function uttag(s: State, k: Kind, min: number, max: number) {
   const t = takenOf(s)[k === 'samla' ? 'bar' : k]!;
   let n = 0, v = 0;
-  for (let i = 0; i < t.length; i++) { const d = campDist(s, i % W, Math.floor(i / W)); if (d >= min && d < max) { n++; v += t[i]; } }
+  for (let i = 0; i < t.length; i++) { const d = utanforByn(s, i % W, Math.floor(i / W)); if (d >= min && d < max) { n++; v += t[i]; } }
   return n ? v / n : 0;
 }
 
@@ -100,7 +100,7 @@ function uiLasNu(s: State, t: number) {
   for (const k of FYND_IDS) for (let i = 0; i < W * H; i++) { vaxerAt(s, k, i); fyndAt(s, k, i); }
   for (const f of SIM.flackarOf(s)) SIM.flackNu(f, t); for (const st of SIM.stationerOf(s)) SIM.smutsVid(s, st); // fläckarna (smuts.ts)
   djurOf(s, t);
-  groundOf(s); coverOf(s); campCenter(s); getMap(s.seed);
+  groundOf(s); coverOf(s); bynsMitt(s); getMap(s.seed);
   { const sj = SIM.sjoarna(s.seed); sj.rutor.forEach((_, n) => { SIM.sjoNamn(s, n); void s.sjoar?.[n]; }); }
   hearthOf(s.fire); igniterOf(s); fireWant(s); fireHeat(s); heatRadius(s); emberOn(s);
   // förrådet, lagerplatserna och högarna

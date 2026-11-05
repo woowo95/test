@@ -1,9 +1,10 @@
+import { bynsMitt } from './omrade';
 import { ALDER, KROPP, ageOf, count, isSick, living, log, think } from './folk';
 import { halsa } from './halsa';
 import { eldPlats } from './karta';
 import { avbryt } from './lager';
 import { canLight } from './eld';
-import { byInne, ledig, lekplats, paLek, stationDef, stationerOf } from './stationer';
+import { ledig, lekplats, paLek, stationDef, stationerOf } from './stationer';
 import { bitsOf, gridOf, housesOf, roomAt } from './byggnad';
 import { isLight } from './tid';
 import { kronika } from './historik';
@@ -13,7 +14,7 @@ import { balans } from './balans';
 // ---------- elden flyttas (steg 2.10.4) ----------
 // Elden står där byn grundades. Den flyttas i två fall (Björn efter v115): när ett hus behöver platsen där elden står
 // (planBuild i bygg.ts väljer den bara när ingen annan plats finns, ELDFLYTT.husStraff), och när byn vuxit ifrån den: husens
-// och lagrets mitt (byInne) ligger mer än ELDFLYTT.vuxit rutor från elden. Då släcks elden, stenarna i ringen bärs till den nya
+// och lagrets mitt (bynsMitt) ligger mer än ELDFLYTT.vuxit rutor från elden. Då släcks elden, stenarna i ringen bärs till den nya
 // platsen och elden tänds där igen med flinta som vanligt (eld.ts). Grillställningen följer med elden.
 export const ELDFLYTT = balans('eldflytt', {
   husMin: 3, // byn flyttar elden till sin mitt först när den har så här många färdiga hus ...
@@ -68,7 +69,7 @@ export function stepEldFlytt(s: State) {
     if (ny) f.flytt = { ...ny, varfor: 'plats' };
   }
   if (!f.flytt) {
-    const klara = housesOf(s).filter(h => h.klar).length, mid = byInne(s), e = eldPlats(s);
+    const klara = housesOf(s).filter(h => h.klar).length, mid = bynsMitt(s), e = eldPlats(s);
     if (klara >= ELDFLYTT.husMin && Math.hypot(mid.x - e.x, mid.y - e.y) > ELDFLYTT.vuxit) {
       const ny = nyEldplats(s, mid.x, mid.y);
       if (ny) f.flytt = { ...ny, varfor: 'vuxit' };

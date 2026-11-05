@@ -1,5 +1,3 @@
-import { eldPlats } from './karta';
-import { H, State, W, inMap } from './typer';
 import { balans } from './balans';
 
 // Balanstalen (regel 8): hur långt folk går från lägret, vad avståndet kostar och när en plats är tömd
@@ -12,69 +10,15 @@ export const PLATS = balans('plats', {
   tomtGrans: 0.08, // en plats som ger mindre än så (rikedom, richness) är tömd: man går därifrån (steg.ts)
   vidare: 0.2, // samlandet (steg 2.12.4): när busken är tom går man vidare till en ruta i närheten som ger minst så mycket (nastaBuske i val.ts), annars hem
   lekBredd: 8, // lekplatsen (steg 2.10.4, lekplats i stationer.ts) är så många rutor bred ...
-  lekFran: 3, // ... ligger helst så här många rutor från byns inre mitt (byInne) till sin närmaste kant, helst söderut ...
+  lekFran: 1, // ... ligger helst så här många rutor utanför byns område (omrade.ts) med sin närmaste ruta, helst söderut ...
   lekDjup: 3, // ... och är så här många rutor djup (barnen leker där i val.ts, och byn bygger helst inte där, bygg.ts)
-  lekSok: 14, // så långt från byns inre mitt som lekplatsen kan ligga
+  lekSok: 6, // så långt utanför byns område som lekplatsen kan ligga
   lekHinder: 4, // en ruta på lekplatsen där något står (ett hus, ett lager, en station, ett träd) kostar så här mycket ...
   lekNorr: 1, // ... och en lekplats norr om byns inre mitt så här mycket (förr låg den alltid söder om elden)
-  husMellan: 2, // byn sprids ut (steg 2.10.8): så många rutor fritt mellan två hus, plats för en stig (bygg.ts) ...
+  husMellan: 3, // byn sprids ut (steg 2.10.8): så många rutor fritt mellan två hus, så att en väg (2–3 rutor bred) får plats (bygg.ts; 2 före steg 6.2.10). Hus som redan står flyttas inte ...
   uteFri: 1, // ... och så många fria rutor runt en station eller möbel som står ute, mot lagerplatser och andra stationer (stationer.ts; mot en husvägg får den stå)
 });
 
-// Byns läger är inte bara elden: det är elden och lagerplatserna, och senare fler eldar och byggnader.
-// "Nära byn" mäts till den närmaste av dem, och byns mitt är medelpunkten av dem.
-// Koordinater i rutor, som kartans eld (rutans hörn).
-const NONE: NonNullable<State['lagren']> = [];
-const zonesIn = (s: State) => s.lagren ?? NONE;
-
-// avståndet från en ruta till närmaste del av lägret (0 inne i en lagerplats)
-export function campDist(s: State, x: number, y: number) {
-  if (Number.isInteger(x) && Number.isInteger(y) && inMap(x, y)) return campGrid(s)[y * W + x];
-  return distTo(s, x, y);
-}
-// Avståndet frågas efter tusentals gånger i varje steg, så det räknas för alla rutor på en gång och sparas
-// tills lägret ändras (en lagerplats blir större, mindre eller ny). En kartslinga kan läsa rutnätet direkt
-// (campGrid(s)[i] för rutan med index i).
-type Grid = { seed: number; geo: number[]; d: Float64Array };
-const grids = new WeakMap<State, Grid>();
-export function campGrid(s: State) {
-  const zs = zonesIn(s);
-  let c = grids.get(s);
-  if (!c || !sammaForm(c, s, zs)) {
-    const d = new Float64Array(W * H), f = eldPlats(s);
-    for (let i = 0; i < W * H; i++) d[i] = distTo(s, i % W, Math.floor(i / W));
-    c = { seed: s.seed, geo: [f.x, f.y, ...zs.flatMap(z => [z.x, z.y, z.w, z.h])], d };
-    grids.set(s, c);
-  }
-  return c.d;
-}
-// har lägret samma form som när rutnätet räknades (elden på samma plats och samma lagerplatser)?
-function sammaForm(c: Grid, s: State, zs: NonNullable<State['lagren']>) {
-  const f = eldPlats(s), g = c.geo;
-  if (c.seed !== s.seed || g.length !== zs.length * 4 + 2 || g[0] !== f.x || g[1] !== f.y) return false;
-  for (let i = 0; i < zs.length; i++) {
-    const z = zs[i], j = i * 4 + 2;
-    if (g[j] !== z.x || g[j + 1] !== z.y || g[j + 2] !== z.w || g[j + 3] !== z.h) return false;
-  }
-  return true;
-}
-function distTo(s: State, x: number, y: number) {
-  const f = eldPlats(s);
-  let d = Math.hypot(x - f.x, y - f.y);
-  for (const z of zonesIn(s)) d = Math.min(d, rektAvstand(x, y, z.x, z.y, z.w, z.h));
-  return d;
-}
 // avståndet från en ruta (px, py) till närmaste ruta i rektangeln med hörnet (rx, ry) och måtten rw×rh (0 inne i den)
 export const rektAvstand = (px: number, py: number, rx: number, ry: number, rw: number, rh: number) =>
   Math.hypot(Math.max(rx - px, 0, px - (rx + rw - 1)), Math.max(ry - py, 0, py - (ry + rh - 1)));
-// lägrets form som text (en flyttad eld och lagerplatserna): för det som räknas en gång och sparas tills lägret ändras
-export const campKey = (s: State) => `${s.seed}:${s.fire.at ? `${s.fire.at.x},${s.fire.at.y}:` : ''}${zonesIn(s).map(z => `${z.x},${z.y},${z.w},${z.h}`).join(';')}`;
-// byns mitt: elden väger lika mycket som alla lagerplatser tillsammans
-export function campCenter(s: State) {
-  const f = eldPlats(s), zs = zonesIn(s);
-  if (!zs.length) return { x: f.x, y: f.y };
-  let x = 0, y = 0;
-  for (const z of zs) { x += z.x + (z.w - 1) / 2; y += z.y + (z.h - 1) / 2; }
-  return { x: Math.round((f.x + x / zs.length) / 2), y: Math.round((f.y + y / zs.length) / 2) };
-}
-

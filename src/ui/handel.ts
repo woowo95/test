@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { BYTE, SEC, byId, clamp, filtMot } from '../sim';
+import { BYTE, SEC, byId, clamp, filtMot, radByte } from '../sim';
 import { gaster } from './gaster';
 import { iconCanvas } from '../ikoner';
 import { s, ui } from './lage';
@@ -37,7 +37,7 @@ function drawGodkant() {
   for (let i = s.log.length - 1; i >= 0; i--) {
     const e = s.log[i], d = ui.nu - e.t;
     if (d > H + F) break;
-    const b = e.byte;
+    const b = radByte(s, e);
     if (!b || d < 0) continue;
     if (d < H) {
       for (const id of [b.a, b.b]) { const q = platsAvPart(id); if (q) handIkoner.add('handslag', q.x * TS - 5, q.y * TS - 18, hs); }
@@ -46,11 +46,13 @@ function drawGodkant() {
     if (!b.fa || !b.fb) continue;
     const k = clamp((d - H) / F, 0, 1);
     for (const [varor, a, c] of [[b.ag, b.fa, b.fb], [b.bg, b.fb, b.fa]] as const) varor.forEach((v, j) => {
-      const x = (a.x + (c.x - a.x) * k) * TS + (j % 4) * 5 - 8, y = (a.y + (c.y - a.y) * k) * TS - TS / 2 - Math.sin(k * Math.PI) * 6 + Math.floor(j / 4) * 5;
-      handIkoner.add(v.k, x, y, 6 / (iconCanvas(v.k).width || 8));
+      const x = (a.x + (c.x - a.x) * k) * TS + (j % 4) * 7 - 12, y = (a.y + (c.y - a.y) * k) * TS - TS / 2 - Math.sin(k * Math.PI) * 6 + Math.floor(j / 4) * 7;
+      handIkoner.add(v.k, Math.round(x), Math.round(y), hel(v.k)); // varorna i sina egna punkter (steg 5.5.5)
     });
   }
 }
+// en vara i sina egna punkter (steg 5.5.5): en bild på 8 punkter som den är; en på 16 punkter i halv storlek, som förut
+const hel = (k: string) => { const w = iconCanvas(k).width || 8; return w > 8 ? 8 / w : 1; };
 export function drawHandel() {
   filtIkoner.start(); handIkoner.start(); framlingG.clear(); kantG.clear();
   const vf = ui.tab === 'filt' ? valdFilt() : undefined, markerad = vf ? [vf, filtMot(s, vf)] : [];
@@ -73,7 +75,7 @@ export function drawHandel() {
     const vems = [...new Set(varor.map(v => v.fran))], kol = vems.length > 1 ? 2 : 4;
     varor.forEach((v, i) => {
       const sida = vems.indexOf(v.fran), n = varor.filter((w, j) => j < i && w.fran === v.fran).length;
-      filtIkoner.add(v.k, x0 + 2 + sida * TS + (n % kol) * 6, y0 - 4 + Math.floor(n / kol) * 5, 6 / (iconCanvas(v.k).width || 8));
+      filtIkoner.add(v.k, x0 + 1 + sida * TS + (n % kol) * 7, y0 - 5 + Math.floor(n / kol) * 6, hel(v.k));
     });
   }
   for (const o of s.overl ?? []) {
@@ -82,7 +84,7 @@ export function drawHandel() {
     const a = platsAvPart(o.a), b = platsAvPart(o.b);
     if (!a || !b) continue;
     const k = clamp(f, 0, 1), x = (a.x + (b.x - a.x) * k) * TS, y = (a.y + (b.y - a.y) * k) * TS - 6 - Math.sin(k * Math.PI) * 4;
-    handIkoner.add(o.k, x - 3, y - 3, 6 / (iconCanvas(o.k).width || 8));
+    handIkoner.add(o.k, Math.round(x - 4), Math.round(y - 4), hel(o.k));
   }
   filtIkoner.end(); handIkoner.end();
 }

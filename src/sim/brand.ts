@@ -9,6 +9,7 @@ import { Kroppsdel, kanGa, skada } from './halsa';
 import { kronika } from './historik';
 import { naVattnet } from './is';
 import { eldPlats, vaderstreck } from './karta';
+import { bynsAvstand, bynsMitt } from './omrade';
 import { avbryt, minska, stacksOf, tidy } from './lager';
 import { die } from './liv';
 import { MARK, groundOf, markslag } from './mark';
@@ -50,7 +51,7 @@ export const BRAND = balans('brand', {
   gnista: 0.004, // chansen per steg (5 minuter) att en gnista från en brinnande eld når marken, gånger eldstadens spread ...
   gnistaR: 2, // ... så här många rutor bort (slumpas)
   blixt: 0.5, // chansen att blixten slår ner nära byn när den slår ner (blixtNu i vader.ts) ...
-  blixtR: 30, // ... så här många rutor från elden (slumpas)
+  blixtR: 30, // ... så här många rutor från byns mitt (bynsMitt i omrade.ts, slumpas)
   sprid: 0.06, // chansen per steg att elden tar sig från en ruta till en grannruta, gånger det som kan brinna där (antändning)
   hornet: 0.7, // ... gånger det här till en ruta snett bredvid
   torrTim: 120, // marken är helt torr efter så här många torra timmar (torrTim i vader.ts) ...
@@ -69,7 +70,7 @@ export const BRAND = balans('brand', {
   stor: 20, // ... och i krönikan när den bränt så här många, eller när den kommit nära byn
   sikt: 20, // man ser elden så här många rutor bort på dagen ...
   siktNatt: 0.5, // ... och så här stor del av det på natten (men glöden syns)
-  hot: 15, // elden hotar byn när en ruta brinner så här nära byns eld: då släcker de vuxna
+  hot: 10, // elden hotar byn när en ruta brinner så här nära byns område (utanforByn): då släcker de vuxna
   fara: 2, // den som är så här nära en brinnande ruta och inte släcker går undan ...
   undan: 6, // ... så här många rutor bort ...
   undanMin: 30, // ... i så här många minuter
@@ -225,7 +226,7 @@ function gnistor(s: State, dtSec: number, dry: number) {
   if (s.fire.lit) { const e = eldPlats(s); fran(e.x, e.y, (HEARTHS.find(h => h.id === s.fire.hearth) ?? HEARTHS[0]).spread, 0); }
   for (const f of brasorOf(s)) if (f.lit) fran(f.at!.x, f.at!.y, hearthOf(f).spread, f.id! + 1); // de andra lägereldarna gnistrar som den första (steg 4.5.6.8)
   if (Math.floor(s.now / HOUR) !== Math.floor((s.now - dtSec * SEC) / HOUR) && blixtNu(s) && ur(s, 0, 3856) < BRAND.blixt) {
-    const e = eldPlats(s), R = BRAND.blixtR, nx = e.x + Math.round((ur(s, 0, 3857) * 2 - 1) * R), ny = e.y + Math.round((ur(s, 0, 3858) * 2 - 1) * R);
+    const e = bynsMitt(s), R = BRAND.blixtR, nx = e.x + Math.round((ur(s, 0, 3857) * 2 - 1) * R), ny = e.y + Math.round((ur(s, 0, 3858) * 2 - 1) * R);
     if (inMap(nx, ny)) { count(s, 'blixt nara'); tand(s, ny * W + nx, 'blixt', ur(s, 0, 3859) / dry); }
   }
 }
@@ -271,10 +272,17 @@ function slocknar(s: State, b: Brand) {
   if (flytt) tidy(s);
 }
 
-// brinner det nära byns eld? Då släcker de vuxna
+// brinner det nära byn (dess område, steg 6.2.4)? Då släcker de vuxna
 function hotar(s: State, b: Brand) {
-  const e = eldPlats(s);
-  return b.r.some(r => Math.hypot(r[0] % W - e.x, Math.floor(r[0] / W) - e.y) <= BRAND.hot);
+  const ut = bynsAvstand(s);
+  return b.r.some(r => ut[r[0]] <= BRAND.hot);
+}
+// den brinnande rutan närmast byns område
+function narmastByn(s: State, b: Brand) {
+  const ut = bynsAvstand(s);
+  let best = -1, bd = Infinity;
+  for (const r of b.r) if (ut[r[0]] < bd) { bd = ut[r[0]]; best = r[0]; }
+  return best;
 }
 // den närmaste brinnande rutan till (x, y) och avståndet dit
 function narmast(b: Brand, x: number, y: number, utom?: (i: number) => boolean) {
@@ -324,12 +332,12 @@ function brandMal(s: State, b: Brand, p: Person, hot: boolean): BrandMal | undef
   if (!kanGa(p) || !b.r.length) return;
   const n = narmast(b, p.x, p.y);
   if (hot && ageOf(p, s.now) >= ALDER.vuxen) {
-    const e = eldPlats(s), mal = narmast(b, e.x + 0.5, e.y + 0.5).i; // det som brinner närmast byn först
+    const mal = narmastByn(s, b); // det som brinner närmast byn först
     if (freeTools(s, p, 'vattensack') >= 1 && naVattnet(s, p)) {
       const spot = drickPlats(s, p);
       if (spot) return { act: 'slacka', why: 'Hämtar vatten i säcken till elden', spot, dur: BRAND.fyllMin * MIN, tool: 'vattensack', ref: mal };
     }
-    const m = narmast(b, p.x, p.y, i => slacks(s, i, p) || Math.hypot(i % W - e.x, Math.floor(i / W) - e.y) > BRAND.hot); // bara det som brinner nära byn
+    const ut = bynsAvstand(s), m = narmast(b, p.x, p.y, i => slacks(s, i, p) || ut[i] > BRAND.hot); // bara det som brinner nära byn
     if (m.i >= 0) return { act: 'slacka', why: 'Släcker elden med händerna', spot: bredvid(b, m.i, p), dur: BRAND.handMin * MIN, ref: m.i };
   }
   if (n.d > BRAND.fara) return;

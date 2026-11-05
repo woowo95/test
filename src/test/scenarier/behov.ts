@@ -1,5 +1,5 @@
 // Scenarier. Behov och val: behov, ved, aktivitet och fritid.
-import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, DELA, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, varmeRaknas, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, GANG, HALSA, kanGa, kroppFaktor, hemma, mossaFynd, chopStock, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker, bristGrad, bristSteg, berattaBrist, onskan, matOrdning, takeFood, vilaTim, skorbjugg, NARINGBAL, DODSORSAKER, converse, Naring, STATIONER, TEKNIK, tingOf, vaderNu } from '../../sim';
+import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, bordPlats, bordSlag, ryms, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, bynsMitt, gain, takeFuel, ownsAmount, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, DELA, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, varmeRaknas, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, GANG, HALSA, kanGa, kroppFaktor, hemma, mossaFynd, chopStock, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker, bristGrad, bristSteg, berattaBrist, onskan, matOrdning, takeFood, vilaTim, skorbjugg, NARINGBAL, DODSORSAKER, converse, Naring, STATIONER, TEKNIK, tingOf, vaderNu, type Task } from '../../sim';
 import { cloneState, stepIs, stepVader, isCm, vattenGrader, halVal, halMin, drickVal, iIstiden, ageIndex, tidyTools } from '../../sim';
 import * as SIM from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
@@ -139,7 +139,7 @@ SCENARIER.aktivitet = {
       // en jägare, en som promenerar och en bärplockare, så att alla syns i provet. Den som avbryts (t.ex. för ett samtal) får uppgiften igen
       if (i === 12) prov = living(s).filter(p => ageOf(p, s.now) >= 16).slice(0, 3);
       if (i >= 12 && i < 12 * 7) {
-        const c = campCenter(s), akt = ['jakt', 'promenad', 'samla'] as const;
+        const c = bynsMitt(s), akt = ['jakt', 'promenad', 'samla'] as const;
         prov.forEach((p, j) => {
           if (p.task?.act === akt[j] || p.died !== undefined) return;
           let x = 0, y = 0;
@@ -152,7 +152,7 @@ SCENARIER.aktivitet = {
       for (const p of living(s)) {
         const t = p.task, v = spar.v.get(p) ?? [];
         for (let k = 0; k < v.length; k += 3) if (vatt(v[k + 1], v[k + 2])) vatten++;
-        if (t?.phase === 'back' && t.act !== 'bara' && !(t.act === 'jakt' && load(t, s) <= KANIN + 0.01) && load(t, s) > capacity(s, p) / 3 + 0.05) tungt++; // bärandet av högar och en hel kanin får ta en full famn
+        if (t?.phase === 'back' && t.act !== 'bara' && !ryms(s, p)(bordSlag(t)) && Object.values(bordSlag(t)).reduce((a, b) => a + b, 0) > bordPlats(s, p) + 1e-6) tungt++; // aldrig mer än som ryms i de fria händerna (steg 6.1.8)
         const r = t?.phase === 'do' && !ACTS[t.act].runda ? ACTS[t.act].vandra?.r : undefined; // hur långt från platsen man rör sig (handlingar.ts); rundan (steg 4.5.6.1) går från ruta till ruta
         if (t && r && Math.hypot(p.x - t.tx, p.y - t.ty) > r + 0.6) utanfor++;
         if (t?.phase === 'do' && isWork(t.act)) arbete += BEAT / 3600;
@@ -170,7 +170,7 @@ SCENARIER.aktivitet = {
     }
     return [
       [`man bär hem efter en stunds arbete och går tillbaka (${turer} turer på ${Math.round(arbete)} arbetstimmar)`, turer > 20],
-      [`ingen bär mer än en tredjedel av vad hen orkar från arbetet (${tungt} för tunga)`, tungt === 0],
+      [`ingen bär mer från arbetet än som ryms i de fria händerna (${tungt} för tunga)`, tungt === 0],
       [`man håller sig nära platsen (${utanfor} gånger utanför)`, utanfor === 0],
       [`ingen går ut i vattnet, längs hela vägen (${vatten} punkter i vattnet)`, vatten === 0],
       [`elden matas med en famn i taget (högst ${eldMax.toFixed(1)})`, eldMax > 0 && eldMax <= 1 + 1e-9],
@@ -200,7 +200,7 @@ SCENARIER.fritid = {
         const t = p.task;
         if (ageOf(p, s.now) >= 16) { const l = isLight(s.now), v = t?.act === 'vila' ? 1 : 0; if (l) { vila.dag += v; vila.dagN++; } else { vila.natt += v; vila.nattN++; } }
         if (t?.phase !== 'do') continue;
-        const c = campCenter(s), ny = !sett.has(t); sett.add(t); // varje promenad, bad och stund vid stranden räknas en gång
+        const c = bynsMitt(s), ny = !sett.has(t); sett.add(t); // varje promenad, bad och stund vid stranden räknas en gång
         if (t.act === 'promenad') { if (ny) prom++; gang.set(p.id, Math.max(gang.get(p.id) ?? 0, Math.hypot(t.tx - c.x - 0.5, t.ty - c.y - 0.5))); }
         if (t.act === 'bada') { if (ny) bad++; if (temperature(s) < 14) badVarmt = false; }
         if (t.act === 'strand') { if (ny) strand++; if (getMap(s.seed).tiles[tileOf(p.x, p.y)] === T.Vatten) strandLand = false; }
@@ -221,6 +221,41 @@ SCENARIER.fritid = {
       [`folk sitter vid stranden (${strand} gånger)`, strand >= 2],
       ['den som sitter vid stranden sitter på land', strandLand],
       [`man vilar ut när det är mörkt (${(100 * vila.natt / vila.nattN).toFixed(0)} % av natten) och lite på dagen (${(100 * vila.dag / vila.dagN).toFixed(0)} %)`, vila.natt / vila.nattN > 2 * vila.dag / vila.dagN],
+    ];
+  },
+};
+
+SCENARIER.promenad = {
+  lang: true,
+  text: 'Promenaden är en riktig runda (steg 6.2.8): man går i vanlig fart mellan några punkter på land runt platsen man valt, stannar ibland och ser sig omkring, och går aldrig i vattnet, en vägg eller en station. Ingen svängning i bilden',
+  kor: () => {
+    let prom = 0, punkter = 0, stopp = 0, land = true, langtFran = 0, maxR = 0;
+    for (const seed of [5, 6]) {
+      const s = createState(seed, START), sett = new Map<object, Set<string>>();
+      s.kal = nyKalender(s.now, 2); setFood(s, 40); setAmount(s, 'ved', 40);
+      kor(s, 2 * 24, s => {
+        for (const p of living(s)) {
+          const t = p.task;
+          if (t?.act !== 'promenad' || t.phase !== 'do') continue;
+          let m = sett.get(t);
+          if (!m) { sett.set(t, m = new Set()); prom++; }
+          m.add(`${Math.floor(t.tx)},${Math.floor(t.ty)}`); // punkten man går till eller står vid (ett steg är fem minuter, så alla punkter syns inte)
+          if ((t.plock ?? 0) > 0) stopp++;
+          if (t.kring) maxR = Math.max(maxR, Math.hypot(Math.floor(t.tx) - t.kring.x, Math.floor(t.ty) - t.kring.y));
+          if (getMap(s.seed).tiles[tileOf(p.x, p.y)] === T.Vatten || SIM.isWall(s, p.x, p.y)) land = false;
+          if (t.kring) langtFran = Math.max(langtFran, Math.hypot(p.x - t.kring.x, p.y - t.kring.y));
+        }
+      });
+      for (const m of sett.values()) punkter += m.size;
+    }
+    const r = ACTS.promenad.tur!.r;
+    return [
+      [`folk tar promenader (${prom})`, prom >= 3],
+      [`varje promenad går mellan flera punkter (${(punkter / Math.max(1, prom)).toFixed(1)} i snitt)`, punkter >= 2 * prom],
+      [`man stannar ibland och ser sig omkring (${stopp} steg i ett stopp)`, stopp > 0],
+      [`punkterna ligger inom ${r} rutor från platsen man valde (längst ${maxR.toFixed(1)})`, maxR <= r + 1],
+      ['den som promenerar går aldrig i vattnet eller i en vägg', land],
+      ['promenaden svänger inte i bilden (ingen vandra i handlingens rad)', !ACTS.promenad.vandra],
     ];
   },
 };
@@ -503,7 +538,7 @@ SCENARIER.vattensack = {
     const s = createState(5, START);
     klockan(s, 10); rikBy(s);
     const [p, q, r] = treVuxna(s, 1);
-    const c = campCenter(s);
+    const c = bynsMitt(s);
     const fyll = (x: Person, dx: number) => Object.assign(x, { rest: 1, toa: 1, hunger: 1, social: 1, warm: 1, health: 1, torst: 1, blod: 1, skador: undefined, sickUntil: undefined, task: undefined, x: c.x + 0.5 + dx, y: c.y + 2.5 });
     fyll(p, 0); fyll(q, 1); fyll(r, 2); r.x = c.x + 40;
     skada(s, p, 'benH', 'benbrott', 0.9, 'olycka', ''); p.skador![0].b = 0;
@@ -540,7 +575,7 @@ SCENARIER.vard = {
     const s = createState(5, START);
     klockan(s, 10); rikBy(s);
     const [p, q] = treVuxna(s, 1, x => Object.assign(x, { rest: 1, toa: 1, social: 1, warm: 1, torst: 1, blod: 1, skador: undefined, sickUntil: undefined }));
-    const c = campCenter(s);
+    const c = bynsMitt(s);
     const fyll = (x: Person) => Object.assign(x, { rest: 1, toa: 1, hunger: 1, social: 1, warm: 1, health: 1, torst: 1, blod: 1, skador: undefined, sickUntil: undefined, task: undefined, x: c.x + 0.5, y: c.y + 2.5 });
     const timmar = (x: Person, h: number) => { for (let i = 0; i < h * 60; i++) { const d = halsaSteg(s, x, 60); if (d) return d; } return undefined; };
     // en infektion som inte rengörs blir kallbrand och dödar
@@ -754,7 +789,7 @@ SCENARIER.matdygn = {
   kor: () => {
     const { foodDays, foodOf, chooseTask, ALDER, SAKER, ruttTemp } = SIM;
     // gott om trä, så att det bara är maten som fattas (sedan steg 3.10.23.7 väljer de annars trä när förrådet räcker 0,7 dygn)
-    const by = () => { const s = createState(6, START); klockan(s, 11); tandEld(s); setAmount(s, 'ved', 300); return s; };
+    const by = () => { const s = createState(6, START); klockan(s, 11); tandEld(s); setAmount(s, 'ved', 100); return s; }; // ved för ungefär nio dygn: under FORRAD.vedMatt (forradsmal.ts), så att vedarbetet finns kvar att välja (steg 6.1.5)
     // lika mycket fisk (håller ett dygn) och torkat kött (håller länge): fisken räcker kortare, eftersom det mesta hinner ruttna
     const f = by(); setMat(f, { fisk: 120 });
     const t = by(); setMat(t, { torrkott: 120 });
@@ -790,17 +825,25 @@ SCENARIER.matdygn = {
 
 SCENARIER.gorjustnu = {
   lang: true,
-  text: 'Gör just nu stämmer med bilden (steg 4.5.6.5): byn räknas ett slag före klockan som visas, och det som visar vad någon gör frågar vad hen gör vid tiden som visas (sparUppgift i steg.ts). Den som visas dricka, äta vid bordet, fiska, samla eller bygga står vid platsen i bilden, den som äter vid bordet sitter vid ett bord, och den som står still visas inte som på väg.',
+  text: 'Gör just nu stämmer med bilden (steg 4.5.6.5): byn räknas ett slag före klockan som visas, och det som visar vad någon gör frågar vad hen gör vid tiden som visas (sparUppgift i steg.ts). Det man bär syns som det är vid samma tid (steg 6.1.1): bördan i bilden, texten och Utrustning växer med varje hel sak som plockas. Den som visas dricka, äta vid bordet, fiska, samla eller bygga står vid platsen i bilden, den som äter vid bordet sitter vid ett bord, och den som står still visas inte som på väg.',
   kor: () => {
     const AKT = new Set<Act>(['dricka', 'maltid', 'fiske', 'samla', 'ved', 'bygga']);
-    let prov = 0, langtBort = 0, stillaGar = 0, utanBord = 0, maltider = 0, vidPlats = 0;
+    let prov = 0, langtBort = 0, stillaGar = 0, utanBord = 0, maltider = 0, vidPlats = 0, barProv = 0, barFel = 0, barVaxer = 0;
     const ex: string[] = [];
+    const hela = (tk?: Task) => tk ? Math.floor(tk.carry + 1e-9) + Object.values(tk.items ?? {}).reduce((a, n) => a + Math.floor(n + 1e-9), 0) : 0;
     spar.pa = true;
     for (const seed of [3, 11, 42]) {
       const s = createState(seed, START);
       for (let i = 0; i < 6 * 24 * 3600 / BEAT; i++) {
         const t0 = s.now;
         step(s, BEAT);
+        for (const p of living(s)) { // bördan i slutet av slaget är den som visas just då (steg 6.1.1)
+          const nu = hela(p.task);
+          if (!nu) continue;
+          barProv++;
+          if (Math.abs(hela(SIM.sparUppgift(p, s.now - 1e-3, s.now)) - nu) > 1) barFel++; // den sista biten slutar med slaget (ett fångat djur, en klyvd ved kan ge två på en gång)
+          if (hela(SIM.sparUppgift(p, t0 + 1e-3, s.now)) < nu) barVaxer++;
+        }
         for (const p of living(s)) for (let k = 0; k < 10; k++) {
           const t = t0 + (s.now - t0) * (k + 0.5) / 10, tk = SIM.sparUppgift(p, t, s.now), sp = SIM.sparPlats(p, t);
           const x = sp?.x ?? p.x, y = sp?.y ?? p.y;
@@ -819,6 +862,38 @@ SCENARIER.gorjustnu = {
       [`den som visas göra något på en plats står vid platsen (${langtBort} av ${vidPlats} prov långt bort${ex.length ? ': ' + ex.join('; ') : ''})`, vidPlats > 1000 && langtBort <= vidPlats * 0.005],
       [`den som äter vid bordet sitter vid ett bord (${utanBord} av ${maltider})`, maltider > 50 && utanBord === 0],
       [`den som står still visas inte som på väg (${stillaGar} av ${prov} prov)`, stillaGar <= prov * 0.002],
+      [`det man bär visas vid tiden som visas och växer under turen (steg 6.1.1): ${barFel} av ${barProv} slag visar en annan börda i slutet, ${barVaxer} slag där bördan växte`, barProv > 500 && barFel <= barProv * 0.02 && barVaxer > 100],
+    ];
+  },
+};
+
+SCENARIER.arbetare = {
+  text: 'Arbetarna (steg 6.1.13, "Arbetsordningen" i designdokumentet): varje rad har ett antal arbetare, minst en, räknat en gång i timmen: maten efter det som fattas, tändmaterialet och letandet per invånare, bygget och kolet efter platserna. Taket är mjukt: när raden har sina arbetare väger den en tredjedel, och färre väljer den',
+  kor: () => {
+    const { arbetsTimme, chooseTask, ALDER } = SIM;
+    const by = (mat: number) => { const s = createState(6, START); klockan(s, 11); tandEld(s); setAmount(s, 'ved', 100); setMat(s, { torrkott: mat }); arbetsTimme(s); return s; };
+    const tom = by(3), rik = by(600);
+    const arbTom = tom.arbBehov!.arb, arbRik = rik.arbBehov!.arb;
+    const minstEn = Object.values(arbTom).every(n => n >= 1) && Object.values(arbRik).every(n => n >= 1);
+    // hur många av de vuxna som väljer mat, när så många som maten har redan samlar och när ingen gör det
+    const valjerMat = (s: SIM.State, fullt: boolean) => {
+      const vuxna = living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen), [p0, ...andra] = vuxna;
+      const upptagna = fullt ? Array.from({ length: s.arbBehov!.arb.mat }, (_, i) => andra[i % andra.length]) : [];
+      let n = 0, alla = 0;
+      for (let i = 0; i < 60; i++) {
+        for (const q of andra) q.task = upptagna.includes(q) ? { act: 'samla', phase: 'do', tx: q.x, ty: q.y, until: s.now + HOUR, carry: 0, why: 'Samlar.', dark: false } : { act: 'vila', phase: 'do', tx: q.x, ty: q.y, until: s.now + HOUR, carry: 0, why: 'Vilar.', dark: false };
+        Object.assign(p0, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, warm: 0.9, health: 1, sickUntil: undefined, task: undefined });
+        chooseTask(s, p0); alla++; if (['samla', 'jakt', 'fiske'].includes(p0.task!.act) && !p0.task!.sok && !p0.task!.tandmat) n++;
+        p0.task = undefined;
+      }
+      return n / (alla || 1);
+    };
+    const t = by(20); t.arbBehov!.arb.mat = 1; // en arbetare för maten, så att den andra som samlar fyller raden
+    const ledig = valjerMat(t, false), full = valjerMat(t, true);
+    return [
+      [`varje rad har minst en arbetare (${JSON.stringify(arbRik)})`, minstEn],
+      [`maten får fler arbetare när förrådet är tomt (${arbTom.mat}) än när det räcker länge (${arbRik.mat})`, arbTom.mat > arbRik.mat && arbRik.mat === 1],
+      [`när maten har sina arbetare väljer färre den (${Math.round(full * 100)} % mot ${Math.round(ledig * 100)} %), men inte ingen (taket är mjukt)`, ledig > 0 && full < ledig],
     ];
   },
 };

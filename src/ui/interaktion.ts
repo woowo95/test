@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { BAR, FALT_STEG, FOREST, GRODOR, isSoil, stadium, Falt, byId, faltAt, faltIndex, faltKlar, HIGH, MATERIAL, Person, T, W, bitAt, campCenter, condOf, dorrDef, emberOn, eldXY, eldarOf, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, tingOf, toaAt, tandTest, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, verbOf, zoneAt, zonesOf, Pile } from '../sim';
+import { BAR, FALT_STEG, FOREST, GRODOR, isSoil, stadium, Falt, byId, faltAt, faltIndex, faltKlar, HIGH, MATERIAL, Person, T, W, bitAt, bynsMitt, condOf, dorrDef, emberOn, eldXY, eldarOf, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, tingOf, toaAt, tandTest, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, verbOf, zoneAt, zonesOf, Pile } from '../sim';
 import { gorText } from './jakt';
 import { iconImg, tecknet } from '../ikoner';
 import { $, esc, fmtN, prickar } from './hjalp';
@@ -169,7 +169,7 @@ $('zIn').addEventListener('click', () => zoomAt(1.4));
 $('zOut').addEventListener('click', () => zoomAt(1 / 1.4));
 // en notis visar sin plats på kartan (steg 5.4.3.2)
 satVisaPlats((x, y) => { stopFollow(); cam.zoom = Math.max(cam.zoom, 2.4); cam.x = (x + 0.5) * TS; cam.y = (y + 0.5) * TS; layout(); });
-$('zHome').addEventListener('click', () => { stopFollow(); cam.zoom = 2.4; const f = campCenter(s); cam.x = f.x * TS; cam.y = f.y * TS; layout(); });
+$('zHome').addEventListener('click', () => { stopFollow(); cam.zoom = 2.4; const f = bynsMitt(s); cam.x = f.x * TS; cam.y = f.y * TS; layout(); });
 
 // ---------- rutan i hörnet: vad som finns under musen ----------
 // bara underlaget och det som står där; vad som växer och lever på platsen finns i värmekartorna
@@ -227,3 +227,13 @@ function showHover(gx: number, gy: number) {
   box.innerHTML = rows.map(r => `<p>${r}</p>`).join('');
   box.hidden = false;
 }
+
+// tangentbordet (steg 5.5.7): det man trycker på som inte är en knapp eller länk (rubrikerna som fälls ut, raderna med
+// data-hjalp, symbolerna med tabindex) nås med Tab, och Enter eller mellanslag gör samma sak som ett tryck
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const el = e.target as HTMLElement | null;
+  if (!el || el.matches('button, a, input, select, textarea, summary') || !(el.matches('[role="button"], .klick') || el.tabIndex >= 0 && el.hasAttribute('tabindex'))) return;
+  e.preventDefault();
+  el.click();
+});

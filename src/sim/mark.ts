@@ -1,5 +1,5 @@
+import { omrade } from './omrade';
 import { eldPlats, getMap, hash, perKarta, vnoise } from './karta';
-import { campKey } from './plats';
 import { clampI, rnd } from './slump';
 import { H, HOUR, OX, OY, Person, State, W, inMap } from './typer';
 import { BAR, FOREST, Ground, HIGH, VAG, decodeCover, encodeCover, isSoil } from './vag';
@@ -112,9 +112,9 @@ export function skogAndel(s: State, villkor?: (i: number) => boolean) {
 }
 
 // rutor där inget får växa: runt elden och på lagerplatserna (husen står i g.built). Räknas om när lägret ändras
-const builtCache = new WeakMap<State, { key: string; b: Uint8Array }>();
+const builtCache = new WeakMap<State, { key: number; b: Uint8Array }>();
 function built(s: State) {
-  const key = campKey(s);
+  const key = omrade(s).key;
   let c = builtCache.get(s);
   if (c?.key === key) return c.b;
   const f = eldPlats(s), b = new Uint8Array(W * H); // 1 = vid elden och i lagret, 2 = på en lagerplats i skogen (steg 3.6.9)

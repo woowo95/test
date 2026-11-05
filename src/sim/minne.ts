@@ -1,5 +1,6 @@
+import { bynsMitt, omrade, utanforByn } from './omrade';
 import { strandNu, vattenNu } from './sjo';
-import { PLATS, campCenter, campDist, campKey } from './plats';
+import { PLATS } from './plats';
 import { byId, count, forstaGang, gjort, isParent, living, log, stat } from './folk';
 import { delade } from './berattelser';
 import { teach } from './teknik';
@@ -44,7 +45,7 @@ export const MINNE = balans('minne', {
   sokR: 5, // väl framme letar man efter den bästa rutan inom så här många rutor ...
   sokPris: 0.01, // ... och varje ruta bort från den valda platsen kostar så här mycket
   flintaSaker: 0.25, // man går till ett område efter flinta när lärdomen är säkrare än så här
-  olyckaBy: 6, // en olycka närmare byn än så här många rutor gör ingen rädd
+  olyckaBy: 3, // en olycka närmare byns område än så här många rutor (eller innanför) gör ingen rädd
   olyckaSyn: 10, // de som var närmare än så här många rutor såg olyckan
   radslaSett: 0.8, // de som såg den blir så här rädda för platsen (värde i lärdomen), och säkra på det med radslaSettSaker ...
   radslaSettSaker: 1,
@@ -245,14 +246,14 @@ function bestKnown(s: State, p: Person, k: Kind) {
 }
 // områdena bestKnown går igenom och deras avstånd till lägret. Det som syns från lägret räknas redan i prospect; här
 // bara platser längre bort, oavsett var personen står just nu. Beror bara på lägret, och räknas om när det ändras
-const fjarr = new WeakMap<State, { key: string; a: number[]; d: number[] }>();
+const fjarr = new WeakMap<State, { key: number; a: number[]; d: number[] }>();
 function fjarran(s: State) {
-  const key = campKey(s);
+  const key = omrade(s).key;
   let c = fjarr.get(s);
   if (!c || c.key !== key) {
-    const f = campCenter(s), a: number[] = [], d: number[] = [];
+    const f = bynsMitt(s), a: number[] = [], d: number[] = [];
     for (let i = 0; i < aw() * ah(); i++) {
-      const m = areaCenter(i), di = campDist(s, m.x, m.y);
+      const m = areaCenter(i), di = utanforByn(s, m.x, m.y);
       if (di <= FANGST.syn || Math.abs(m.x - f.x) > PLATS.dagX || Math.abs(m.y - f.y) > PLATS.dagY) continue;
       a.push(i); d.push(di);
     }
@@ -282,7 +283,7 @@ export function pickSpot(s: State, p: Person, k: Kind, cands: { x: number; y: nu
     const i = y * W + x; // bara land, och för fiske bara stranden
     if (tiles[i] === T.Vatten || (k === 'fiske' && !shore[i]) || bitAt(s, x, y) || (ren && forSmutsigt(s, x, y))) continue;
     const v = richness(s, k, x + 0.5, y + 0.5) - Math.hypot(x - best.x, y - best.y) * MINNE.sokPris;
-    if (v > rs) { rs = v; r = { x, y, d: campDist(s, x, y) }; }
+    if (v > rs) { rs = v; r = { x, y, d: utanforByn(s, x, y) }; }
   }
   return r;
 }
@@ -297,7 +298,7 @@ export function flintArea(p: Person) {
 
 // en olycka (en död eller en svår skada, om = det man minns): de som såg den, och de närmaste, blir rädda för platsen
 export function fearPlace(s: State, victim: Person, cause: string, om = `${victim.name} dog ${cause} där`) {
-  if (campDist(s, victim.x, victim.y) < MINNE.olyckaBy) return; // inte mitt i byn
+  if (utanforByn(s, victim.x, victim.y) < MINNE.olyckaBy) return; // inte mitt i byn
   const a = areaOf(victim.x, victim.y);
   for (const q of living(s)) {
     const saw = Math.hypot(q.x - victim.x, q.y - victim.y) < MINNE.olyckaSyn;
@@ -393,7 +394,7 @@ export function forget(s: State, hours: number) {
 // ---------- att visa ----------
 const DIRS = ['öster', 'sydost', 'söder', 'sydväst', 'väster', 'nordväst', 'norr', 'nordost'];
 function placeName(s: State, a: number) {
-  const m = getMap(s.seed), g = groundOf(s), f = campCenter(s);
+  const m = getMap(s.seed), g = groundOf(s), f = bynsMitt(s);
   const x0 = (a % aw()) * AREA, y0 = Math.floor(a / aw()) * AREA;
   let n = 0, wat = 0, sten = 0, skog = 0, sand = 0;
   for (let y = y0; y < Math.min(H, y0 + AREA); y++) for (let x = x0; x < Math.min(W, x0 + AREA); x++) {
@@ -402,7 +403,7 @@ function placeName(s: State, a: number) {
   }
   const terr = sten > 6 ? 'vid stenarna' : wat > n * 0.25 ? 'vid vattnet' : skog > n * 0.5 ? 'i skogen' : sand > n * 0.3 ? 'på stranden' : 'på ängen';
   const c = areaCenter(a), dx = c.x - f.x, dy = c.y - f.y;
-  if (campDist(s, c.x, c.y) < 5) return `${terr} nära byn`;
+  if (utanforByn(s, c.x, c.y) < 3) return `${terr} nära byn`;
   const dir = DIRS[(Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) + 8) % 8];
   return `${terr} ${dir} om byn`;
 }

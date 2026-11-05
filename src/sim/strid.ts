@@ -48,10 +48,10 @@ import { setRanStrid } from './behov';
 import { handelse, larma, smaka, smakAv } from './rykten';
 import { avbryt } from './lager';
 import { GRANNAR4, HOUR, SEC, T } from './typer';
-import { harBalte, paSig, paSigVikt } from './utrustning';
+import { UTRUSTNING, harBalte, paSig, paSigVikt } from './utrustning';
 import { capacity } from './lager';
 import { snoPaMarken, vaderNu } from './vader';
-import { bordOf } from './saker';
+import { viktOf } from './saker';
 import { ownedBy, tingOf, toolsOf, wearTool } from './agande';
 import { getMap } from './karta';
 import { groundOf, markslag, tileOf } from './mark';
@@ -776,9 +776,9 @@ export function personKampe(s: State, p: Person, id: number, sida: 0 | 1, x: num
   const val = (v: Vapen) => VAP[v].skada * (1 + STRID.tyckeVal * smakAv(p, 'v:' + v)); // tycket drar i valet (steg 3.7.10)
   const vapen = MANNISKOVAPEN.filter(v => bar.includes(v)).sort((a, b) => val(b) - val(a))[0] ?? 'hand';
   const res = (MANNISKOVAPEN.filter(v => v !== vapen && VAP[v].liten && bar.includes(v)) as Vapen[]).sort((a, b) => VAP[a].takt - VAP[b].takt)[0]; // den snabbaste (kniven)
-  const reserv = res && (p.reservAlltid || (harBalte(s, p) && paSigVikt(s, p) + bordOf(res) <= capacity(s, p))) ? res : undefined;
+  const reserv = res && (p.reservAlltid || (harBalte(s, p) && paSigVikt(s, p) + viktOf(res) <= capacity(s, p) * UTRUSTNING.kropp)) ? res : undefined;
   return {
-    id, namn: p.name, sida, pid: p.id, vapen, reserv, ledare: ledareOf(s) === p ? ledarPlats(s, p) : undefined, klader: bar.filter(k => SKYDD[k]), fart: 1, x, y, tung: clamp(paSigVikt(s, p) / Math.max(1, capacity(s, p)), 0, 1),
+    id, namn: p.name, sida, pid: p.id, vapen, reserv, ledare: ledareOf(s) === p ? ledarPlats(s, p) : undefined, klader: bar.filter(k => SKYDD[k]), fart: 1, x, y, tung: clamp(paSigVikt(s, p) / UTRUSTNING.kropp / Math.max(1, capacity(s, p)), 0, 1),
     st: { styrka: stat(p, 'styrka', s.now), uthallighet: stat(p, 'uthallighet', s.now), mod: stat(p, 'mod', s.now), smidighet: stat(p, 'smidighet', s.now), skicklighet: 5 + (p.skill.narstrid ?? 0) / 2 + STRID.tyckeSkick * smakAv(p, 'v:' + vapen), sikte: 5 + (p.skill.traff ?? 0) / 2, torst: blodtorst(s, p) },
   };
 }

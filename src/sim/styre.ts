@@ -14,6 +14,7 @@ import { Bevis, HANDELSER, HandelseTyp, allmant, handelse, ryktbarhet, vittnen }
 import { ISTID, ageIndex, hourOf, isLight, kallTid } from './tid';
 import { temperature, vaderNu } from './vader';
 import { notis } from './notiser';
+import { homeless } from './byggnader';
 
 // Styret (steg 3.5, "Ledarskap och makt" i designdokumentet).
 // Ledarskap är en teknik som man kommer på och lär ut i samtal (teknik.ts). Bara den som kan den kan bli ledare: när byn har
@@ -49,6 +50,11 @@ export const PAB = balans('pabud', {
   legBas: 0.5, rang: 1, max: 0.8,
   hanEmp: 10, hanDiv: 4, // hånet: ledarens åsikt är (empatin - hanEmp) / hanDiv, från -1 (förbjudet) till 1 (fritt)
   plan: 0.4, // inför och under istiden lägger en intelligent ledare (intelligens över 10) till så här mycket per steg (6) på lagren
+  // arbetsordningen (steg 6.1.19): Bygg före allt. Ledarens åsikt = byggUtan × andelen utan sovplats under tak − 1 (från -1 till 1);
+  // påbudet över 0 är chansen att bygget (raden Tak) går före Försörjningen
+  byggUtan: 2,
+  // Samla för vintern: påbudet över 0 ger maten och veden så här många fler arbetare per steg (påbudet 1 = ×(1 + hander))
+  hander: 1,
 });
 export const STR = balans('straff', {
   dygn: 2, // ledaren dömer för det som hänt de senaste så här många dygnen
@@ -108,6 +114,9 @@ const PDEF = {
   matlager: { ruta: 'Lagret', namn: 'Matlager', text: 'Hur många dygn mat byn ska ha i förrådet innan den slappnar av', sed: 'forsiktighet', asikt: (s, l) => lagerAsikt(s, l) },
   vedlager: { ruta: 'Lagret', namn: 'Vedlager', text: 'Hur många dygn ved byn ska ha i förrådet', sed: 'forsiktighet', asikt: (s, l) => lagerAsikt(s, l) },
   torkat: { ruta: 'Lagret', namn: 'Torkat', text: 'Hur mycket av köttet och fisken som torkas på torkställningen', asikt: (s, l) => lagerAsikt(s, l) },
+  // arbetsordningen (steg 6.1.19, val.ts): ett påbud kan flytta en rad en nivå upp eller ge den fler händer
+  bygg: { ruta: 'Arbetet', namn: 'Bygg före allt', text: 'Hur ofta bygget går före försörjningen med mat och ved', asikt: s => clamp(PAB.byggUtan * homeless(s) / Math.max(1, living(s).length) - 1, -1, 1) },
+  vinter: { ruta: 'Arbetet', namn: 'Samla för vintern', text: 'Hur många fler som arbetar med maten och veden', asikt: (s, l) => lagerAsikt(s, l) },
   // hånet (steg 4.3.2.3, framtradande.ts): en ledare med låg empati förbjuder att man hånar hen när man uppträder
   han: { namn: 'Hån', text: 'Om den som uppträder får håna ledaren', asikt: (s, l) => clamp((stat(l, 'empati', s.now) - PAB.hanEmp) / PAB.hanDiv, -1, 1) },
 } satisfies Record<string, PabudDef>;

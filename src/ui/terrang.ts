@@ -6,14 +6,14 @@ import { ritaSkuggor, sattMoln, skuggLangd } from './skugga';
 import { stallNatt } from './natt';
 import { vaderMork } from './vaderbild';
 import { DJUPNATT } from '../palett';
-import { animMark, markLayer, ritaMark, stallMark } from './mark';
+import { animMark, markytaLayer, ritaMark, stallMark } from './mark';
 import { animBild } from './animation';
 import { type Lov, stallTrad, tradBild, tradSkuggor } from './trad';
 
 // marken (steg 5.1.3.1): gräs, vatten, strand, stigar, sten, lera, aska och snö ritas i pixlar i ui/mark.ts. Här bestäms
 // när: hela marken när tidsåldern, isen, vattnet eller byn byts, annars bara de rutor som ändrats (stigarna, skogen, askan).
 // Träden är granar i pixlar efter sitt stadium (steg 5.1.3.2 och 5.1.4.3, ui/trad.ts), ovanpå marken och sorterade söderut.
-mork.addChildAt(markLayer, mork.getChildIndex(terrainG));
+mork.addChildAt(markytaLayer, mork.getChildIndex(terrainG));
 // isen på sjön (steg 2.11.3, sim/is.ts): 0 = öppet vatten, 1 = tunn is (under 5 cm), 2 = tjock is
 const isNiva = () => { const cm = isCm(s); return cm <= 0 ? 0 : cm < 5 ? 1 : 2; };
 let drawnSig = -1, lastSigCheck = 0, lastDraw = -Infinity, drawnNyckel = '', tradNyckel = '';
@@ -45,11 +45,6 @@ function coverSig() {
   const g = groundOf(s); let h = 0;
   for (let i = 0; i < g.cover.length; i++) h = (Math.imul(h, 31) + Math.floor((1 - g.cover[i]) * 16) * 16 + treeLevel(g, i)) | 0;
   return h;
-}
-// färgen mellan a (f = 0) och b (f = 1)
-export function mix(a: number, b: number, f: number) {
-  const ch = (sh: number) => Math.round(((a >> sh) & 255) * (1 - f) + ((b >> sh) & 255) * f);
-  return (ch(16) << 16) | (ch(8) << 8) | ch(0);
 }
 const jord = (t: number) => t === T.Gras || t === T.Skog;
 export function drawTerrain(force = false) {
@@ -120,5 +115,5 @@ export function drawSkuggor() {
   tradSkuggor(skuggLangd());
   const v = vaderNu(s, ui.nu);
   sattMoln(v.moln, v.vind, lightLevel(ui.nu), performance.now()); // molnskuggorna (steg 5.1.10)
-  ritaSkuggor(app.renderer as PIXI.Renderer, world, [pileLayer, figurLayer], [markLayer, husLayer], W * TS, H * TS);
+  ritaSkuggor(app.renderer as PIXI.Renderer, world, [pileLayer, figurLayer], [markytaLayer, husLayer], W * TS, H * TS);
 }

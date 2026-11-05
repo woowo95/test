@@ -56,12 +56,23 @@ export function startArt(seed: number, trees: Float32Array, tiles: Uint8Array) {
   for (let i = 0; i < a.length; i++) if (trees[i] > 0) a[i] = valjArt(seed, { trees, tiles }, i, false);
   return a;
 }
-export const packaArt = (a: Uint8Array) => btoa(Array.from(a, v => String.fromCharCode(v)).join(''));
-export function lasArt(txt: string) {
-  const a = new Uint8Array(W * H);
-  try { const bin = atob(txt); for (let i = 0; i < Math.min(bin.length, a.length); i++) a[i] = bin.charCodeAt(i); } catch { /* nya sorter */ }
+// sorten och åldern packas som upprepningar (steg 5.5.6): '~' och sedan par av tecken (värdet, hur många rutor i rad,
+// högst 255), base64. Utan '~' är det det äldre formatet med ett tecken per ruta, som lasPackat också läser
+export const UPPREPAT = '~';
+export function packaUpprepat(a: ArrayLike<number>) {
+  let bin = '';
+  for (let i = 0; i < a.length;) { const v = a[i]; let n = 1; while (n < 255 && i + n < a.length && a[i + n] === v) n++; bin += String.fromCharCode(v, n); i += n; }
+  return UPPREPAT + btoa(bin);
+}
+function lasPackat<T extends Uint8Array | Float32Array>(txt: string, a: T) {
+  try {
+    if (txt.startsWith(UPPREPAT)) { const bin = atob(txt.slice(1)); for (let j = 0, i = 0; j + 1 < bin.length && i < a.length; j += 2) for (let n = bin.charCodeAt(j + 1); n > 0 && i < a.length; n--) a[i++] = bin.charCodeAt(j); }
+    else { const bin = atob(txt); for (let i = 0; i < Math.min(bin.length, a.length); i++) a[i] = bin.charCodeAt(i); }
+  } catch { /* ny karta */ }
   return a;
 }
+export const packaArt = (a: Uint8Array) => packaUpprepat(a);
+export const lasArt = (txt: string) => lasPackat(txt, new Uint8Array(W * H));
 
 // stadierna (register), i den ordning trädet går igenom dem. stam = hur mycket trä och grenar trädet ger när det fälls,
 // gånger ett vuxet träds (SKOG.stamVed och stamGrenar i skog.ts) och gånger trädets storlek (steg 5.1.4.4): ett gammalt
@@ -114,12 +125,8 @@ export function aldras(g: Ground, i: number, hours: number) {
   if (efter >= FALL()) { g.trees[i] = 0; a[i] = 0; return; }
   a[i] = efter;
 }
-// åldern packad i sparfilen: ett tecken per ruta, hela dygn
+// åldern packad i sparfilen: hela dygn per ruta, som upprepningar (packaUpprepat ovan)
 export const ALDER_MAX = 255;
-export const packaAlder = (a: Float32Array) => btoa(Array.from(a, v => String.fromCharCode(Math.min(ALDER_MAX, Math.round(v)))).join(''));
-export function lasAlder(txt: string) {
-  const a = new Float32Array(W * H);
-  try { const bin = atob(txt); for (let i = 0; i < Math.min(bin.length, a.length); i++) a[i] = bin.charCodeAt(i); } catch { /* ny ålder */ }
-  return a;
-}
+export const packaAlder = (a: Float32Array) => packaUpprepat(Array.from(a, v => Math.min(ALDER_MAX, Math.round(v))));
+export const lasAlder = (txt: string) => lasPackat(txt, new Float32Array(W * H));
 

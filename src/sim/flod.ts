@@ -1,3 +1,4 @@
+import { bynsMitt } from './omrade';
 import { balans } from './balans';
 import { count, living, log } from './folk';
 import { motgangNu, motgangTal } from './motgang';
@@ -8,7 +9,6 @@ import { isFood, viktOf } from './saker';
 import { iVattnetNu, vattenNu } from './sjo';
 import { vattnetAndrat } from './torka';
 import { areaOf, bynsMinne } from './minne';
-import { campCenter } from './plats';
 import { eldPlats } from './karta';
 import { DAY, HOUR, State, T, W } from './typer';
 
@@ -36,7 +36,7 @@ export const FLOD = balans('flod', {
   sjunkTim: 12, // ... och sjunker en ruta var så här många timmar
   regn: 0.25, // från ett halvt dygn innan vattnet stiger tills det står som högst är gränsen för regn (regnFran i vader.ts) så här mycket lägre
   regnFore: 12, // ... (timmar innan)
-  latt: 0.5, // saker som väger högst så här mycket (kg per styck: grenar, hö, mossa, frön) flyter bort ute
+  latt: 3.4, // saker som väger högst så här mycket (vikt per styck, saker.ts: grenar, hö, mossa, frön, skinn) flyter bort ute
   slit: 3, // tunga saker under vatten slits så här många gånger fortare
   hotPlus: 1, // medan vattnet stiger bärs maten undan från så här många rutor ovanför vattnet (och upp till det byn minns)
   blotTim: 12, // en ruta är blöt (ingen sover där) så här många timmar efter att vattnet gått undan
@@ -107,7 +107,7 @@ function minnet(s: State) {
 }
 // när vattnet börjar sjunka minns alla i byn hur högt det nådde, som en egen upplevelse
 function minns(s: State, n: number) {
-  const f = campCenter(s), a = areaOf(f.x, f.y);
+  const f = bynsMitt(s), a = areaOf(f.x, f.y);
   for (const p of living(s)) bynsMinne(s, p, 'flod', a, n);
   count(s, 'flod minns');
   log(s, `Byn minns att vattnet nådde ${n === 1 ? 'en ruta' : `${n} rutor`} upp på land. Där bygger man inte igen.`, 'world');

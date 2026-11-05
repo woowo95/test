@@ -9,21 +9,11 @@
 import { rasterPa } from '../palett';
 import * as PIXI from 'pixi.js';
 import { FARGER, kornPa } from '../palett';
+import { brus as vn, platsHash as hash } from './pixel';
 import { fotSkugga, skuggTrad } from './skugga';
 
 const KOL = 0, JORD = 4, BARR = 20, BEN = 28;
 const RGBA = FARGER.map(h => parseInt(h.slice(1), 16));
-function hash(x: number, y: number, s: number) {
-  let h = Math.imul(x | 0, 0x27d4eb2d) ^ Math.imul(y | 0, 0x165667b1) ^ Math.imul(s | 0, 0x2c1b3c6d);
-  h = Math.imul(h ^ (h >>> 15), 0x85ebca6b); h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35); h ^= h >>> 16;
-  return (h >>> 0) / 4294967296;
-}
-function vn(x: number, y: number, sk: number, s: number) {
-  const fx = x / sk, fy = y / sk, x0 = Math.floor(fx), y0 = Math.floor(fy), tx = fx - x0, ty = fy - y0;
-  const u = tx * tx * (3 - 2 * tx), v = ty * ty * (3 - 2 * ty);
-  const a = hash(x0, y0, s), b = hash(x0 + 1, y0, s), c = hash(x0, y0 + 1, s), d = hash(x0 + 1, y0 + 1, s);
-  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
-}
 
 // granen h punkter hög med foten mitt i bildens nedre kant; sno = hur mycket snö på grenarna (0–1), s = vilken gran
 function granPx(h: number, sno: number, s: number) {

@@ -50,7 +50,7 @@ export function startWork(s: State, p: Person, tk: Task) {
   if (!ger) return;
   let t = halvOf(s, p, ger);
   if (!t) {
-    const k = borjaTool(s, p, tk.act);
+    const k = borjaTool(s, p, tk.act, tk.handel ? tk.tool : undefined); // till handlaren: slaget hen ska ha (steg 6.2.11)
     if (!k) { tk.ref = undefined; tk.until = s.now; return; }
     t = newTing(s, 'paborjat', 1, p.id);
     t.halv = { gor: k, av: takeRecipe(s, p, k), kvar: minOf(k) * MIN, ag: p.id };

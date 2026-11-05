@@ -1,10 +1,10 @@
 import { existsSync } from 'node:fs';
 // Scenarier. Ägande och ekonomi: ägande, gåvor, byte, egendom, delning, arv och värde.
 import { isDeepStrictEqual } from 'node:util';
-import { Person, Act, Task, createState, bearbeta, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, makeTool, step, living, pilesOf, amountOf, capacity, isLight, isStored, spears, HOUR, State, migrate, die, bitsOf, KANIN, DJUR, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, foodOf, STACK_ORDER, needLadder, takeMaterial, BEAT, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELNING, packUp, releaseOwner, willing, tingOf, EKONOMI, SAK_LIST, ownedAll, leave, chooseTask, stackOf, birth, SAKER, viktOf, bordOf, BORDA_KG, handerFor, bordPlats, utrustning, PLATS_LIST, cloneState, pickUp, load, byId } from '../../sim';
+import { Person, Act, Task, createState, bearbeta, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, makeTool, step, living, pilesOf, amountOf, capacity, handOrkar, ryms, VIKT_STACK, isLight, isStored, spears, HOUR, State, migrate, die, bitsOf, KANIN, DJUR, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, foodOf, STACK_ORDER, needLadder, takeMaterial, BEAT, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELNING, packUp, releaseOwner, willing, tingOf, EKONOMI, SAK_LIST, ownedAll, leave, chooseTask, stackOf, birth, SAKER, viktOf, handerFor, bordPlats, utrustning, bordaIHander, PLATS_LIST, cloneState, pickUp, load, byId } from '../../sim';
 import * as SIM from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
-import { setItems, setMat, setFood, kor, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank, utanWebblasare } from './hjalp';
+import { setItems, setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank, utanWebblasare, nyInvanare } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
 import { notisHtml, notisKlick, notisKnapp, notisVal } from '../../ui/notiser';
 import { bortaBerattelse, bortaHtml, ikappHtml } from '../../ui/borta';
@@ -192,10 +192,11 @@ SCENARIER.byte = {
     addTo(s, 'flinta', 3); gain(s, b, 'flinta', 2); gain(s, a, 'bar', 20);
     takeMaterial(s, a, 'flinta', 1);
     const material = nara(byns(s, 'flinta'), 3) && nara(ownsAmount(s, b, 'flinta'), 1) && ownsAmount(s, b, 'bar') > 1;
-    // grenar räknas i styck, inte i vedens behovsenheter: a köper tre grenar av b och inga fler av c (motor-4)
+    // grenar räknas i styck, inte i vedens behovsenheter: a köper 60 grenar av b och inga fler av c (motor-4). Sedan steg 6.1.5
+    // är grenar så billiga att tre grenar är värda mindre än den minsta hela sak man kan betala med, så a köper 60
     let c: Person; ({ s, a, b, c } = ny()); c.x = a.x; c.y = a.y;
-    gain(s, b, 'grenar', 3); gain(s, c, 'grenar', 3); gain(s, a, 'bar', 20);
-    takeMaterial(s, a, 'grenar', 3);
+    gain(s, b, 'grenar', 60); gain(s, c, 'grenar', 60); gain(s, a, 'bar', 20);
+    takeMaterial(s, a, 'grenar', 60);
     const grenar = ownsAmount(s, b, 'grenar') + ownsAmount(s, c, 'grenar'), grenOver = ownsAmount(s, a, 'grenar'), grenByten = s.stat?.byten;
     // ett redskap mot mat: a samlar och saknar korg, b har två
     ({ s, a, b } = ny());
@@ -233,7 +234,7 @@ SCENARIER.byte = {
       ['den som håller på att dö får ett ojämnt byte', dor],
       ['en ovän byter inte', ovan],
       ['material till ett eget arbete byts till sig före byns', material],
-      [`den som saknar tre grenar köper tre i ett byte (grannarna har ${grenar.toFixed(2)} av 6 kvar, ${grenOver.toFixed(2)} över, ${grenByten} byten)`, nara(grenar, 3) && nara(grenOver, 0) && grenByten === 1],
+      [`den som saknar 60 grenar köper 60 i ett byte (grannarna har ${grenar.toFixed(2)} av 120 kvar, ${grenOver.toFixed(2)} över, ${grenByten} byten)`, nara(grenar, 60) && nara(grenOver, 0) && grenByten === 1],
       ['ett redskap byts mot mat', korg],
       ['i samtal byter den som har mindre mat än hen vill ha kvar till sig mat mot trä, och båda tjänar på det', kvall],
       ['har båda det de vill ha kvar blir det inget byte', nog],
@@ -303,19 +304,29 @@ SCENARIER.delning = {
     const egetAv = (n: number) => { const f = ownsAmount(s, p, 'bar'); gain(s, p, 'bar', n); return ownsAmount(s, p, 'bar') - f; };
     const ny = s.delning!, nyRik = rikedom(s), nyEgen = egetAv(10);
     // halvrik: hälften av gränsen
-    setAmount(s, 'ved', 0); setAmount(s, 'ved', (DELNING.rik / 2 - rikedom(s)) / grundvarde('ved')); stepDelning(s);
+    setAmount(s, 'flinta', 0); setAmount(s, 'flinta', (DELNING.rik / 2 - rikedom(s)) / grundvarde('flinta')); stepDelning(s); // flinta: ved är för lite värd sedan steg 6.1.6 och ryms inte i förrådet
     const halv = s.delning!, halvEgen = egetAv(10);
     // rik
-    setAmount(s, 'ved', amountOf(s, 'ved') + DELNING.rik / grundvarde('ved')); stepDelning(s);
+    setAmount(s, 'flinta', amountOf(s, 'flinta') + DELNING.rik / grundvarde('flinta')); stepDelning(s);
     const rik = s.delning!, rikRik = rikedom(s), rikEgen = egetAv(10);
     // fattig igen
-    setAmount(s, 'ved', 0); setFood(s, 0); stepDelning(s);
+    setAmount(s, 'flinta', 0); setFood(s, 0); stepDelning(s);
     const igen = s.delning!;
+    // bufferten per jag (steg 6.2.20): i en rik by har byn ingen buffert för maten, utan familjen sin för det den äger. Den
+    // fattiga familjen (äger ingen mat) samlar åt sig, den rika (äger mat för många dygn) gör det inte, fast byns förråd är fullt
+    const j = createState(5, START); klockan(j); tandEld(j); setFood(j, 300); setItems(j, { flinta: 10, grenar: 30, torrgras: 10 }); setAmount(j, 'ved', 80); rikBy(j);
+    // den fattiga är den som bryr sig mest om sig själv och familjen (egenintresset, projekt.ts)
+    const vx = living(j).filter(q => SIM.ageOf(q, j.now) >= 18).sort((a, b) => SIM.egenintresse(j, b) - SIM.egenintresse(j, a)), fattig = vx[0], rikP = vx.find(q => !SIM.familjOf(j, fattig.id).includes(q))!;
+    for (const q of SIM.familjOf(j, rikP.id)) gain(j, q, 'bar', 120);
+    const egenMat = (q: Person) => { let n = 0; for (let i = 0; i < 40; i++) { q.task = undefined; chooseTask(j, q); if ((q.task as Task | undefined)?.why?.startsWith('Behöver egen mat')) n++; } return n; };
+    const fDygn = SIM.familjMatDygn(j, SIM.familjOf(j, fattig.id)), rDygn = SIM.familjMatDygn(j, SIM.familjOf(j, rikP.id));
+    const fattigSamlar = egenMat(fattig), rikSamlar = rikP ? egenMat(rikP) : -1;
     return [
       [`en ny by är fattig (rikedom ${nyRik.toFixed(0)}) och ger det mesta till byn (${nyEgen.toFixed(1)} av 10 eget)`, ny.andel > 0.75 && Math.abs(nyEgen - 10 * (1 - ny.andel)) < 1], // i hela saker (steg 2.10.7)
       [`halvvägs till gränsen ${DELNING.rik} ges hälften (andel ${halv.andel.toFixed(2)}, ${halvEgen.toFixed(1)} av 10 eget)`, Math.abs(halv.andel - 0.5) < 0.02 && Math.abs(halvEgen - 5) < 0.3],
       [`en rik by (rikedom ${rikRik.toFixed(0)}) ger inget (${rikEgen.toFixed(1)} av 10 eget)`, rik.andel === 0 && Math.abs(rikEgen - 10) < 0.01],
       [`blir byn fattig igen ger folk igen (andel ${igen.andel.toFixed(2)})`, igen.andel > 0.8],
+      [`i en rik by samlar den fattiga familjen mat åt sig (${fattigSamlar} av 40, äger för ${fDygn.toFixed(1)} dygn) men inte den rika (${rikSamlar} av 40, äger för ${rDygn.toFixed(1)} dygn)`, fattigSamlar >= 5 && rikSamlar === 0],
     ];
   },
 };
@@ -467,15 +478,15 @@ SCENARIER.varde = {
 };
 
 SCENARIER.utrustning = {
-  text: 'Steg 2.3.1: var och en har platser för utrustning (två händer, kroppen i två lager, huvud, ben och fötter). Varje sak väger något, och hur många händer den tar räknas fram ur vikten och styrkan. Bördan bärs i de fria händerna: den som håller yxan bär mindre, och korgen tar en hand men rymmer så mycket att en vuxen med korg bär lika mycket som utan redskap',
+  text: 'Steg 2.3.1: var och en har platser för utrustning (två händer, kroppen i två lager, huvud, ben och fötter). Varje sak väger något, och hur många händer den tar räknas fram ur vikten och styrkan. Bördan bärs i de fria händerna: den som håller yxan bär mindre, och korgen tar en hand men rymmer så mycket att en vuxen med korg bär minst lika mycket som utan redskap',
   kor: () => {
     const s = createState(4, START);
     setItems(s, { grenar: 20, flinta: 2, sten: 30 });
     const p = living(s).sort((a, b) => capacity(s, b) - capacity(s, a))[0]!; // den starkaste
     // vikten: varje redskap har en egen, och en stack av vad som helst är en full famn
     const redskap = SAK_LIST.filter(k => SAKER[k]?.redskap);
-    const vikt = redskap.every(k => SAKER[k]!.vikt! > 0) && STACK_ORDER.every(k => SAKER[k]?.redskap || stackOf(k) * viktOf(k) <= BORDA_KG + 1e-9); // en stack är en full famn av vikten eller volymen (steg 4.5.5.1)
-    const kniv1 = handerFor(s, p, 'kniv') === 1, vilt2 = handerFor(s, p, 'varg') !== 1;
+    const vikt = redskap.every(k => SAKER[k]!.vikt! > 0) && STACK_ORDER.every(k => SAKER[k]?.redskap || SAKER[k]?.vikt !== undefined || Math.abs(stackOf(k) * viktOf(k) - VIKT_STACK) < 1e-9); // en stack väger VIKT_STACK, om inte vikten står i registret (steg 6.1.8)
+    const kniv1 = handerFor(s, p, 'kniv') === 1, vilt2 = handerFor(s, p, 'varg') === (viktOf('varg') <= handOrkar(s, p) ? 1 : 2);
     // händerna och bördan
     const fri = bordPlats(s, p);
     const yxa = addTool(s, 'yxa', p); take(s, p, 'yxa');
@@ -484,28 +495,38 @@ SCENARIER.utrustning = {
     const platser = u.hoger.ting === yxa && u.vanster.borda === true && !u.inre.ting && (['hoger', 'vanster', 'inre', 'yttre', 'huvud', 'ben', 'fotter'] as const).every(k => PLATS_LIST.includes(k));
     const korg = addTool(s, 'korg', p); take(s, p, 'korg');
     const medKorg = bordPlats(s, p);
-    // att plocka upp stenar med och utan yxan i handen
-    const g = (s.stackar ?? []).find(x => x.k === 'sten')!;
+    // att plocka upp grenar med och utan yxan i handen (stenarna i stacken ryms i en hand sedan steg 6.1.8)
+    const g = (s.stackar ?? []).find(x => x.k === 'grenar')!;
     const plocka = (hall?: string) => {
       const c = cloneState(s), q = c.people.find(x => x.id === p.id)!;
       for (const t of tingOf(c)) if (t.hos === q.id) t.hos = undefined;
       if (hall) take(c, q, hall);
       const t: Task = { act: 'bara', phase: 'go', tx: g.x + 0.5, ty: g.y + 0.5, until: c.now + HOUR, carry: 0, why: 'test', dark: false };
-      pickUp(c, q, t, bordPlats(c, q));
-      return t.items?.sten ?? 0;
+      pickUp(c, q, t, ryms(c, q));
+      return t.items?.grenar ?? 0;
     };
     const utan = plocka(), med = plocka('yxa');
     // ett redskap i en börda väger det det väger, inte en hel famn som förut
     const lass: Task = { act: 'bara', phase: 'back', tx: 0, ty: 0, until: s.now, carry: 0, ting: [korg.id] };
-    const korgVikt = Math.abs(load(lass, s) - bordOf('korg')) < 1e-9;
+    const korgVikt = Math.abs(load(lass, s) - viktOf('korg')) < 1e-9;
+    // varje hand visar sitt eget (steg 6.1.2): två slag i var sin hand, lite av ett slag i en hand, mycket i båda, och med
+    // yxan i en hand allt i den andra
+    const tom = cloneState(s), q = tom.people.find(x => x.id === p.id)!;
+    for (const t of tingOf(tom)) if (t.hos === q.id) t.hos = undefined;
+    const ut = utrustning(tom, q, true), ih = (items: Record<string, number>) => bordaIHander(tom, q, { act: 'bara', phase: 'back', tx: 0, ty: 0, until: tom.now, carry: 0, items }, ut);
+    const tva = ih({ sten: 2, flinta: 1 }), lite = ih({ flinta: 1 }), mycket = ih({ grenar: Math.floor(capacity(tom, q) / viktOf('grenar')) });
+    const iYxa = (() => { take(tom, q, 'yxa'); return bordaIHander(tom, q, { act: 'bara', phase: 'back', tx: 0, ty: 0, until: tom.now, carry: 0, items: { sten: 2, flinta: 1 } }, utrustning(tom, q, true)); })();
+    const hander = tva.hoger?.k === 'sten' && tva.vanster?.k === 'flinta' && lite.hoger?.k === 'flinta' && !lite.vanster
+      && mycket.hoger?.k === 'grenar' && mycket.vanster?.k === 'grenar' && !iYxa.hoger && iYxa.vanster?.k === 'sten';
     return [
-      ['varje redskap har en vikt, och en stack av något annat är en full famn (av vikten eller volymen)', vikt],
-      ['kniven tar en hand, och en fälld varg tar båda händerna eller är för tung', kniv1 && vilt2],
-      [`med yxan i handen ryms mindre i händerna (${(medYxa * BORDA_KG).toFixed(1)} kg mot ${(fri * BORDA_KG).toFixed(1)} kg)`, medYxa < fri - 1e-6],
-      [`med korgen bär man lika mycket som med fria händer (${(medKorg * BORDA_KG).toFixed(1)} kg)`, Math.abs(medKorg - fri) < 1e-6],
+      ['varje redskap har en vikt, och en stack av något annat väger lika mycket (steg 6.1.8)', vikt],
+      ['kniven tar en hand, och en fälld varg tar båda händerna om den väger mer än en hand orkar', kniv1 && vilt2],
+      [`med yxan i handen ryms mindre i händerna (${medYxa.toFixed(1)} mot ${fri.toFixed(1)} vikt)`, medYxa < fri - 1e-6],
+      [`med korgen bär man minst lika mycket som med fria händer (${medKorg.toFixed(1)} vikt)`, medKorg >= fri - 1e-6],
       ['yxan sitter i höger hand och bördan i den vänstra; kroppens platser är tomma', platser],
-      [`den som håller yxan plockar upp färre stenar (${med.toFixed(1)} mot ${utan.toFixed(1)})`, med > 0 && med < utan - 1e-6],
+      [`den som håller yxan plockar upp färre grenar (${med.toFixed(1)} mot ${utan.toFixed(1)})`, med > 0 && med < utan - 1e-6],
       ['en korg i bördan väger som en korg', korgVikt],
+      ['varje hand visar sitt eget: två slag i var sin hand, lite i en hand, mycket i båda, och bredvid yxan i den andra (steg 6.1.2)', hander],
     ];
   },
 };
@@ -531,13 +552,13 @@ SCENARIER.klader = {
     const slits = (bensyl()?.c ?? 1) < 1 - 1e-9 || (s.stat?.bensylTrasiga ?? 0) > 0;
     const p = buren && byId(s, buren.bar!);
     const ejLiggande = !!buren && buren.x === undefined && buren.hos === undefined;
-    // värmen: kylan tar mindre av den som har kläder på sig, och kläderna väger
+    // värmen: kylan tar mindre av den som har kläder på sig, och kläderna väger (på kroppen, inte i händerna, steg 6.1.8)
     const kyla = (q: Person) => SIM.varmeDelar(s, q, 1, new Map()).kyla;
     let varmare = false, tyngre = false;
     if (p) {
-      const med = kyla(p), plats = bordPlats(s, p), mina = SIM.paSig(s, p);
+      const med = kyla(p), vikt0 = SIM.paSigVikt(s, p), mina = SIM.paSig(s, p);
       for (const t of mina) t.bar = undefined;
-      varmare = kyla(p) > med + 1e-9; tyngre = bordPlats(s, p) > plats + 1e-9;
+      varmare = kyla(p) > med + 1e-9; tyngre = vikt0 > SIM.paSigVikt(s, p) + 1e-9;
       for (const t of mina) t.bar = p.id;
     }
     // ett utslitet plagg försvinner och räknas
@@ -567,7 +588,7 @@ SCENARIER.klader = {
       [`bensylen slits av en sydd rock och en vattensäck (${syrSlits})`, syrOk],
       ['ett plagg som någon har på sig ligger inte i förrådet', ejLiggande],
       ['den som har kläder på sig fryser mindre', varmare],
-      ['kläderna väger: den som har dem på sig bär mindre', tyngre],
+      ['kläderna väger: den som har dem på sig bär mer på kroppen', tyngre],
       ['ett utslitet plagg försvinner och räknas', slitet],
       ['den dödes plagg tar någon annan på sig', arv],
     ];
@@ -724,6 +745,37 @@ SCENARIER.bytessystem = {
   },
 };
 
+SCENARIER.handelsvaror = {
+  text: 'Varor till handlaren (steg 6.2.11): byn minns vad handlarna köpt av den, och på nivån Förbättra gör man det när inget annat finns att göra, högst så många som handlaren köpte och orkar bära',
+  kor: () => {
+    // handlaren köper två rep av en bybo; när hen gått hem minns byn det
+    const s = createState(6, START); rikBy(s); s.nastaHandlare = s.now;
+    for (let i = 0; i < 60 && !s.handlare; i++) step(s, BEAT);
+    const h = s.handlare, p = living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    if (h) { SIM.put(s, 'rep', 2, { [p.id]: 2 }); SIM.byteKlart(s, SIM.handlarPart(s, h), SIM.personPart(s, p, true), [{ k: 'rep', n: 2 }], [{ k: 'silver', n: 4 }]); }
+    const kopt = h?.kopt?.rep ?? 0;
+    for (let i = 0; i < 48 * 3600 / BEAT && s.handlare; i++) step(s, BEAT);
+    const minns = s.handlarKopt?.rep ?? 0;
+    // en by som vet att handlarna brukar köpa rep och yxor
+    const t = createState(4, START), q = living(t).find(x => SIM.ageOf(x, t.now) >= SIM.ALDER.vuxen)!;
+    q.tek = { ...q.tek, rep: 1, yxa: 1 }; setItems(t, { flinta: 6, torrgras: 30, grenar: 30, rep: 0 });
+    const val = () => { const v: SIM.Val = { act: 'vila', why: '', dur: 0 }; return SIM.handlarVara(t, q, v) ? v : undefined; };
+    const utan = val();
+    t.handlarKopt = { rep: 3, yxa: 9 };
+    const yxMal = SIM.handlarMal(t, 'yxa'), yxBar = Math.floor(SIM.HANDLAR_UTR.ryggsack.vikt * (1 - SIM.HANDEL.fylla) / viktOf('yxa'));
+    const rep = val();
+    SIM.twineRope(t, q, 20, SIM.TROSKEL.repVill + SIM.handlarMal(t, 'rep'));
+    const repN = amountOf(t, 'rep'), yxa = val();
+    return [
+      [`handlaren minns vad hen köpt på besöket (${kopt} rep), och byn minns det när hen gått hem (${minns} rep)`, kopt === 2 && minns >= 2],
+      [`utan något handlarna köpt görs inga varor till dem (${utan?.act ?? 'inget'})`, !utan],
+      [`yxorna görs högst så många som ryggsäcken rymmer (${yxMal} av 9, plats för ${yxBar})`, yxMal === Math.min(9, yxBar) && yxMal < 9],
+      [`den som kan tvinna rep gör det åt handlaren (${rep?.act}, ${rep?.why})`, rep?.act === 'tvinna' && !!rep.handel],
+      [`repet tvinnas inte över det byn vill ha plus det handlaren köper (${repN.toFixed(0)} av ${SIM.TROSKEL.repVill} + 3)`, Math.round(repN) === SIM.TROSKEL.repVill + 3],
+      [`när repen räcker gör man en yxa att byta med (${yxa?.act}, ${yxa?.tool})`, yxa?.act === 'yxa' && yxa.tool === 'yxa' && !!yxa.handel],
+    ];
+  },
+};
 SCENARIER.handlare = {
   text: 'Handlare som kommer när byns rikedom passerat en gräns (steg 4.4.1.2, handel.ts): en fattig by får ingen handlare; när rikedomen passerat HANDEL.rik bestäms när den första kommer. Handlaren kommer gående från kartans kant, väntar på kvällen (steg 4.5.4.11), breder ut en filt med sina varor nära elden på kvällen och går hem på morgonen, och nästa besök bestäms. Byborna handlar på kvällen. Varorna ryms i ryggsäcken, den första handlaren står i krönikan, och under istiden kommer ingen.',
   kor: () => {
@@ -740,16 +792,17 @@ SCENARIER.handlare = {
     s.nastaHandlare = s.now;
     for (let i = 0; i < 30 && s.handlare?.fas !== 'handlar' && s.handlare?.fas !== 'vantar'; i++) step(s, BEAT);
     // kvällsmarknaden (steg 4.5.4.11): på dagen väntar hen vid filtens plats till kvällen och går på morgonen
-    const v0 = s.handlare, dagNu = SIM.hourOf(s.now), vantar = !!v0 && v0.fas === 'vantar' && !(s.filtar ?? []).some(f => f.handlare === v0.id) && SIM.hourOf(v0.kvall!) === SIM.HANDEL.kvall && SIM.handlarFas(v0) === 'Väntar på kvällen';
+    const v0 = s.handlare, med = v0 && { varor: structuredClone(v0.varor), silver: v0.silver }, dagNu = SIM.hourOf(s.now), vantar = !!v0 && v0.fas === 'vantar' && !(s.filtar ?? []).some(f => f.handlare === v0.id) && SIM.hourOf(v0.kvall!) === SIM.HANDEL.kvall && SIM.handlarFas(v0) === 'Väntar på kvällen';
     for (let i = 0; i < 30 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); }
-    const h = s.handlare, e = SIM.eldPlats(s), morgon = !!h && Math.abs(SIM.hourOf(h.gar) - SIM.HANDEL.morgon) < 0.05;
-    const kom = !!h && h.id < 0 && h.varor.length > 0 && SIM.kgOf(h.varor) <= SIM.rymmer(h) && h.silver >= SIM.HANDEL.silver[0]
+    const h = s.handlare, morgon = !!h && Math.abs(SIM.hourOf(h.gar) - SIM.HANDEL.morgon) < 0.05;
+    const kom = !!h && !!med && h.id < 0 && med.varor.length > 0 && SIM.kgOf(med.varor) <= SIM.rymmer(h) && med.silver >= SIM.HANDEL.silver[0] // det hen kom med (byn kan redan ha handlat)
       && (h.ut.x < 1 || h.ut.y < 1 || h.ut.x > SIM.W - 1 || h.ut.y > SIM.H - 1);
-    const filt = !!h && h.fas === 'handlar' && Math.hypot(h.x - e.x - 0.5, h.y - e.y - 0.5) <= SIM.HANDEL.avstand + 1
+    const filt = !!h && h.fas === 'handlar' && SIM.utanforByn(s, h.x, h.y) <= SIM.HANDEL.avstand + SIM.HANDEL.letaLangre + 1
       && (s.filtar ?? []).some(f => f.handlare === h.id && f.varor.length === 0); // varorna ligger i packningen (steg 4.5.7.4)
     const kron = (s.hist?.kronika ?? []).filter(k => k[1].includes('första handlaren')).length === 1;
     // på kvällen väljer den som handlar för byn att gå till filten (night i val.ts)
-    const kv = SIM.cloneState(s); kv.now = new Date(kv.now).setHours(20, 0, 0, 0); kv.lastGuardDay = SIM.yearNo(kv, kv.now - 7 * HOUR);
+    const kv = SIM.cloneState(s); if (kv.handlare && med) Object.assign(kv.handlare, structuredClone(med), { handlat: [] }); // med det hen kom med
+    kv.now = new Date(kv.now).setHours(20, 0, 0, 0); kv.lastGuardDay = SIM.yearNo(kv, kv.now - 7 * HOUR);
     for (const q of living(kv)) Object.assign(q, { hunger: 1, rest: 1, warm: 1, toa: 1, torst: 1, health: 1, sickUntil: undefined, guardDay: undefined, task: undefined });
     const kvVal = living(kv).filter(q => SIM.ageOf(q, kv.now) >= SIM.ALDER.vuxen).map(q => { SIM.chooseTask(kv, q); return q.task?.act; });
     // hen går hem efter några timmar, filten plockas ihop och nästa besök bestäms
@@ -764,9 +817,9 @@ SCENARIER.handlare = {
     return [
       [`en fattig by får ingen handlare (rikedom ${Math.round(rikedom(createState(6, START)))})`, fattig],
       [`när byn är rik nog bestäms den första handlaren (rikedom ${Math.round(rikedom(s))})`, bestamd],
-      [`handlaren kommer från kanten med varor som ryms i ryggsäcken (${h ? `${h.namn}, ${SIM.kgOf(h.varor).toFixed(1)} kg av ${SIM.rymmer(h)}` : 'ingen'})`, kom],
+      [`handlaren kommer från kanten med varor som ryms i ryggsäcken (${h && med ? `${h.namn}, ${SIM.kgOf(med.varor).toFixed(1)} kg av ${SIM.rymmer(h)}` : 'ingen'})`, kom],
       [`handlaren som kommer klockan ${dagNu.toFixed(1)} väntar vid filtens plats till kvällen (${v0?.kvall ? SIM.hourOf(v0.kvall).toFixed(1) : '–'})`, vantar],
-      ['handlaren breder ut en filt nära elden, med varorna kvar i packningen, och går på morgonen', filt && morgon],
+      ['handlaren breder ut en filt strax utanför byns område, med varorna kvar i packningen, och går på morgonen', filt && morgon],
       ['den första handlaren står i krönikan', kron],
       [`på kvällen går en vuxen till filten för att handla för byn (${kvVal.join(', ')})`, kvVal.includes('handla')],
       ['handlaren går hem efter några timmar och nästa besök bestäms', gick],
@@ -809,8 +862,9 @@ SCENARIER.silver = {
     const full = SIM.kgOf(g.varor) <= Math.max(kg0, SIM.rymmer(g)) + 1e-9 && !g.varor.some(w => w.k === 'torrfisk');
     // ledaren (eller den äldsta vuxna) går till filten på dagen och handlar
     const u = createState(6, START), k = fram(u);
+    setAmount(u, 'torrfisk', 120); // något att betala med, som ovan (byns egna förråd när handlaren kommer beror på vad den hunnit samla)
     let gick = false;
-    for (let i = 0; i < 12 * 3600 / BEAT && !k.bynKlar && u.handlare; i++) { step(u, BEAT); if (u.log.some(l => l.byte?.an.endsWith('för byn'))) gick = true; } // affären tar bara någon minut (steg 4.5.7.4)
+    for (let i = 0; i < 12 * 3600 / BEAT && !k.bynKlar && u.handlare; i++) { step(u, BEAT); if (u.log.some(l => SIM.radByte(u, l)?.an.endsWith('för byn'))) gick = true; } // affären tar bara någon minut (steg 4.5.7.4)
     return [
       [`byn säljer det den har gott om (handlaren har nu ${h.varor.map(w => `${w.n} ${SIM.sakNamn(w.k).toLowerCase()}`).join(', ')})`, salde],
       [`byn köper det den saknar (rep ${Math.round(amountOf(s, 'rep'))})`, kopte],
@@ -901,6 +955,92 @@ SCENARIER.handelsko = {
       ['den andra flyttar fram i kön', fram],
       ['det den första köpte är borta: den andra går tomhänt och blir lite sämre till mods', tom],
       ['den som handlat ställer sig inte i kö igen', !SIM.handlaVal(s, a)],
+    ];
+  },
+};
+
+SCENARIER.tillfalle = {
+  text: 'Nivån Tillfälle (steg 6.1.14, "Arbetsordningen" i designdokumentet): det som går förlorat om ingen tar det nu. Den som ska följa med på vargjakten går före vanlig trötthet men efter nöden (måste på toa genast). Handeln brådskar mer ju närmare handlaren är att gå: när besöket börjar går ungefär hälften av de trötta och handlar först, när det slutar alla; den som inte är trött handlar ändå',
+  kor: () => {
+    // vargjakten: en by i istiden med en flock som någon just sett och modiga vuxna med spjut
+    const s = createState(1, START); s.kal = SIM.nyKalender(s.now, 0); tandEld(s);
+    while (!isLight(s.now)) s.now += HOUR;
+    for (const [x, a] of [['m', 30], ['k', 28], ['m', 35], ['k', 24], ['m', 40]] as const) nyInvanare(s, x, a);
+    setMat(s, { vilt: 60, bar: 60 });
+    const vuxna = living(s).filter(q => SIM.ageOf(q, s.now) >= 18 && SIM.ageOf(q, s.now) < 55);
+    for (const q of vuxna) { const t = addTool(s, 'flintspjut', q); t.hos = q.id; q.pot.mod = 18; q.pot.karisma = 14; }
+    const c = SIM.bynsMitt(s);
+    const f: SIM.Vargflock = { id: s.vargNr = 1, vargar: [10_000_008], x: c.x + 14, y: c.y, mx: c.x + 14, my: c.y, gar: s.now + 48 * HOUR, hunger: 0.5, gor: 'stryker', sedd: s.now, sag: vuxna[0].id };
+    (s.vargar ??= []).push(f);
+    for (let i = 0; i < 60 && !f.jagare; i++) SIM.jaktBeslut(s, f, living(s));
+    const foljer = (f.jagare ?? []).map(id => byId(s, id)!).filter(q => q.id !== f.kallare);
+    const kallarGar = byId(s, f.kallare ?? -1)?.task?.act === 'vargjakt', vantar = foljer.length >= 2 && foljer.every(q => !q.task);
+    const [n, tr] = foljer;
+    if (n) n.toa = 0; // måste på toa genast (Nöd)
+    if (tr) tr.rest = 0.05; // trött (Grundbehov)
+    if (n) chooseTask(s, n);
+    if (tr) chooseTask(s, tr);
+    const nod = n?.task?.act === 'toa', fore = tr?.task?.act === 'vargjakt';
+    // när tiden att komma iväg är ute är tillfället borta
+    const sen = foljer[2] ?? n;
+    s.now += (SIM.VARG.kallMin + 1) * SIM.MIN;
+    const borta = !!sen && !SIM.vargjaktVal(s, sen);
+    // handeln: en rik by där handlaren just kommit (eller snart går) och byn redan handlat; a är trött
+    const hs = createState(6, START);
+    rikBy(hs); hs.nastaHandlare = hs.now;
+    for (let i = 0; i < 40 && hs.handlare?.fas !== 'handlar'; i++) { step(hs, BEAT); utanVantan(hs); }
+    const h = hs.handlare!, a = living(hs).filter(p => SIM.ageOf(p, hs.now) >= SIM.ALDER.vuxen)[0];
+    h.bynKlar = true; h.varor = [{ k: 'torrkott', n: 4 }];
+    SIM.put(hs, 'silver', 40, { [a.id]: 40 });
+    const prova = (fran: number, trott: boolean) => {
+      let ja = 0;
+      for (let i = 0; i < 200; i++) {
+        h.kom = hs.now - fran * HOUR; h.gar = h.kom + 10 * HOUR; h.ko = []; delete h.affar; h.handlat = [];
+        a.task = undefined; a.rest = trott ? 0.05 : 1; a.toa = 1; a.hunger = 1; a.torst = 1;
+        chooseTask(hs, a);
+        const act: string | undefined = (a.task as Task | undefined)?.act; if (act === 'handla' || act === 'koa') ja++;
+      }
+      return ja / 200;
+    };
+    const borjan = prova(0, true), slut = prova(9.99, true), pigg = prova(0, false);
+    return [
+      [`den som kallar går genast, de ${foljer.length} som följer med väljer igen (${kallarGar ? 'går' : 'går inte'}, ${vantar ? 'väljer' : 'väljer inte'})`, kallarGar && vantar],
+      [`den som måste på toa genast går dit först (${n?.task?.act})`, nod],
+      [`den trötta följer med på vargjakten före vilan (${tr?.task?.act})`, fore],
+      ['när tiden att komma iväg är ute är tillfället borta', borta],
+      [`när handlaren just kommit handlar ${Math.round(borjan * 100)} % av de trötta först (ungefär hälften)`, borjan > 0.35 && borjan < 0.65],
+      [`när handlaren snart går handlar ${Math.round(slut * 100)} % av de trötta först`, slut > 0.95],
+      [`den som inte är trött handlar (${Math.round(pigg * 100)} %)`, pigg > 0.95],
+    ];
+  },
+};
+
+SCENARIER.radda = {
+  text: 'Nivån Rädda (steg 6.1.15, "Arbetsordningen" i designdokumentet): det som ska räddas väljs efter hur snart det blir dåligt i stället för med fasta chanser. Fisk som ruttnar inom ett dygn rensas varje gång den som kan väljer, färsk fisk som håller längre mer sällan, men aldrig mer sällan än golvet (VAL.raddaMin), så att det som inte ruttnar ändå tas om hand',
+  kor: () => {
+    // en by med slaktbänk och abborrar i förrådet; a är en vuxen utan behov
+    const s = createState(1, START); s.kal = SIM.nyKalender(s.now, 1); tandEld(s);
+    while (!isLight(s.now)) s.now += HOUR;
+    medBank(s); setMat(s, { bar: 200 }); setAmount(s, 'abborre', 10);
+    const a = living(s).find(p => SIM.ageOf(p, s.now) >= 18)!;
+    const fisk = () => SIM.stacksOf(s).filter(x => x.k === 'abborre');
+    const prova = (c: number) => {
+      for (const x of fisk()) x.c = c;
+      let ja = 0;
+      for (let i = 0; i < 200; i++) {
+        a.task = undefined; a.rest = 1; a.toa = 1; a.hunger = 1; a.torst = 1;
+        chooseTask(s, a);
+        if ((a.task as Task | undefined)?.act === 'rensa') ja++;
+      }
+      return { tim: SIM.timKvar(s, x => x.k === 'abborre'), andel: ja / 200 };
+    };
+    const farsk = prova(1), snart = prova(0.03);
+    // det som inte slits alls (stenen) har ingen tid kvar att räkna: Infinity, och raden faller till golvet
+    const sten = SIM.timKvar(s, x => x.k === 'sten');
+    return [
+      [`fisk som ruttnar om ${Math.round(snart.tim)} timmar rensas ${Math.round(snart.andel * 100)} % av gångerna`, snart.tim < SIM.VAL.raddaTim && snart.andel > 0.9],
+      [`färsk fisk (${Math.round(farsk.tim)} timmar kvar) rensas mer sällan (${Math.round(farsk.andel * 100)} %), men minst vid golvet`, farsk.tim > SIM.VAL.raddaTim && farsk.andel < snart.andel - 0.1 && farsk.andel >= SIM.VAL.raddaMin * 0.7],
+      ['det som inte slits har ingen tid att räkna (Infinity)', sten === Infinity],
     ];
   },
 };
@@ -1030,7 +1170,7 @@ SCENARIER.forhandling = {
     }
     a.task = undefined;
     const kopte = ownsAmount(s, a, k) >= 1 && steg.includes('Hämtar det köpta') && steg.includes('Bär hem det köpta');
-    const handslag = (s.log.slice().reverse().find(l => l.byte)?.byte?.a) === a.id;
+    const handslag = (SIM.radByte(s, s.log.slice().reverse().find(l => SIM.radByte(s, l))!)?.a) === a.id;
     // b ger upp efter tre nej (vi håller budet nere)
     const v4 = uppgift(b, SIM.handlaVal(s, b)!);
     let gav = !!v4 && v4.why.startsWith('Frågar vad'), antal = 0;
@@ -1045,8 +1185,8 @@ SCENARIER.forhandling = {
     const ma = a.byten?.[a.byten.length - 1], fa = ma?.forsok ?? [];
     const redogor = fa.length >= 2 && !!fa[fa.length - 1].ja && fa.slice(0, -1).every(f => !f.ja) && fa.every(f => f.vill.length > 0 && f.bud.length > 0 && f.krav >= 1 && f.bjod >= 1 && Number.isInteger(f.krav) && Number.isInteger(f.bjod))
       && fa[fa.length - 1].bjod >= fa[0].bjod && !!ma?.rel && ma.rel[1] > ma.rel[0];
-    const mb = b.byten?.[b.byten.length - 1], rad = s.log.slice().reverse().find(l => l.byte?.avbruten);
-    const avbr = !!mb?.avbruten && mb.forsok?.length === SIM.HANDEL.nejMax && mb.forsok.every(f => !f.ja) && rad?.byte === mb && rad.text.includes('blev inte överens') && !!mb.rel;
+    const mb = b.byten?.[b.byten.length - 1], rad = s.log.slice().reverse().find(l => SIM.radByte(s, l)?.avbruten);
+    const avbr = !!mb?.avbruten && mb.forsok?.length === SIM.HANDEL.nejMax && mb.forsok.every(f => !f.ja) && !!rad && SIM.radByte(s, rad) === mb && rad.byte === undefined && rad.text.includes('blev inte överens') && !!mb.rel;
     // berättelsen (steg 5.4.6.2): argumenten ur det som fanns i affären, samma text varje gång, och slutet stämmer
     const berA = ma ? SIM.handelBerattelse(s, ma) : '', berB = mb ? SIM.handelBerattelse(s, mb) : '';
     const ber = !!ma?.arg?.includes('langt') && berA.includes(a.name) && berA === SIM.handelBerattelse(s, ma!) && !/\{|\}|  /.test(berA + berB)
@@ -1335,7 +1475,7 @@ SCENARIER.handslag = {
     const [a, b] = treVuxna(t, 1, q => { q.warm = 1; q.pot.empati = 10; q.habit = {}; });
     a.habit = { samla: 10 }; addTool(t, 'korg', b); addTool(t, 'korg', b); gain(t, a, 'bar', 20);
     const bytte = askForTool(t, a, b) === 'byte';
-    const e = t.log.slice().reverse().find(l => l.byte), m = e?.byte;
+    const e = t.log.slice().reverse().find(l => SIM.radByte(t, l)), m = e && SIM.radByte(t, e);
     const hel = (v: SIM.ByteVara[]) => v.length > 0 && v.every(w => Number.isInteger(w.n) && w.n >= 1 && Number.isInteger(w.p) && w.p >= 1);
     const minns = !!m && [m.a, m.b].sort().join() === [a.id, b.id].sort().join() && hel(m.ag) && hel(m.bg) && !!m.fa && !!m.fb
       && !!a.byten?.some(x => x.nr === m.nr) && !!b.byten?.some(x => x.nr === m.nr);
@@ -1359,7 +1499,7 @@ SCENARIER.handslag = {
     for (const p of living(s)) if (p.task?.act === 'handla') p.task = undefined;
     SIM.put(s, 'skinn', 12, { [c.id]: 12 });
     helAffar(s, c);
-    const hm = s.log.slice().reverse().find(l => l.byte)?.byte, hf = s.filtar?.find(f => f.handlare === h.id);
+    const hm = s.log.slice().reverse().map(l => SIM.radByte(s, l)).find(Boolean), hf = s.filtar?.find(f => f.handlare === h.id);
     const hand = !!hm && hm.a === c.id && hm.b === h.id && !!hf && hm.fb?.x === hf.x && hm.fb?.y === hf.y && h.bytt?.at(-1)?.m?.nr === hm.nr
       && hm.bg.every(w => w.k === 'silver' && w.p === 1) && hel(hm.ag) && !!c.byten?.some(x => x.nr === hm.nr);
     return [

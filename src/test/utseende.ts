@@ -38,12 +38,7 @@ function tills(s: State, ai: number, h: number) {
 }
 
 // bilder som ännu ritas i en annan skala än hel och väntar på egna ritningar (steg 5.5.5): de visas men larmar inte
-const KANDA: Record<string, string> = {
-  '0.50×0.50 (16×16)': 'symbolen i pratbubblan, halv storlek',
-  '0.75×0.75 (20×14)': 'småbarnen, tre fjärdedels storlek',
-  '0.75×0.75 (8×8)': 'en liten symbol i 6 punkter (lek, handel, vakt)',
-  '1.50×1.50 (8×8)': 'en liten symbol i 12 punkter (lek, handel, vakt)',
-};
+const KANDA: Record<string, string> = {}; // det som väntade på ritningar i steg 5.5.5 är byggt (v376)
 const req = createRequire(import.meta.url);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { chromium } = req('playwright') as any;

@@ -32,7 +32,7 @@ export const rokBakLayer = new PIXI.Container(), rokLayer = new PIXI.Container()
 export const figurLayer = new PIXI.Container();
 figurLayer.sortableChildren = true;
 export const bubbleG = new PIXI.Graphics();
-export const markLayer = new PIXI.Container(); // symboler över huvudet: vad var och en håller på med
+export const symbolLayer = new PIXI.Container(); // symboler över huvudet: vad var och en håller på med
 export const filterG = new PIXI.Graphics(); // värmekartan när ett filter är på
 export const labels = new PIXI.Container();
 // det som blir mörkt på natten (steg 5.1.1.4, ui/natt.ts): marken, naturen, husen, sakerna och folket; symbolerna, namnen
@@ -40,7 +40,7 @@ export const labels = new PIXI.Container();
 // (lagerEfter)
 export const mork = new PIXI.Container();
 mork.addChild(terrainG, plantG, flackG, husLayer, structG, pileLayer, overG, djurFx, rokBakLayer, figurLayer, peopleG, rokLayer);
-world.addChild(mork, filterG, bubbleG, markLayer, djurMarkLayer, labels);
+world.addChild(mork, filterG, bubbleG, symbolLayer, djurMarkLayer, labels);
 // lägg ett lager direkt ovanför ett annat, i samma behållare
 export const lagerEfter = (nytt: PIXI.DisplayObject, fore: PIXI.DisplayObject) => fore.parent!.addChildAt(nytt, fore.parent!.getChildIndex(fore) + 1);
 app.stage.addChild(world);

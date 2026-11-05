@@ -1,4 +1,4 @@
-import { ByteMinne, ByteVara, HOUR, MIN, SEC, Person, State } from './typer';
+import { ByteMinne, ByteVara, HOUR, LogEntry, MIN, SEC, Person, State } from './typer';
 import { SAKER, isTool } from './saker';
 import { Ting } from './agande';
 import { ALDER, ageOf, log } from './folk';
@@ -121,6 +121,24 @@ function prisAv(s: State, fran: Part, till: Part, k: string) {
   return Math.max(1, Math.round(grundvarde(k)));
 }
 const byteVaror = (s: State, varor: Vara[], fran: Part, till: Part): ByteVara[] => varor.map(w => ({ k: w.k, n: w.t ? 1 : Math.round(w.n), p: prisAv(s, fran, till, w.k) }));
+// bytet i loggen och i bybornas minne (steg 5.5.6): minns en bybo det (p.byten) har raden bara numret (bnr), annars hela
+// bytet. Minnet rymmer BYTE.minnas byten; en affär som inte blev av tar bort den äldsta som inte heller blev av, aldrig ett
+// riktigt byte
+export function loggaByte(rad: LogEntry, minne: ByteMinne, folk: (Person | undefined)[]) {
+  const vem = folk.filter((p): p is Person => !!p);
+  for (const p of vem) {
+    const b = (p.byten ??= []); b.push(minne);
+    if (b.length > BYTE.minnas) b.splice(minne.avbruten ? b.findIndex(x => x.avbruten) : 0, 1);
+  }
+  if (vem.some(p => p.byten!.includes(minne))) rad.bnr = minne.nr; else rad.byte = minne;
+}
+// bytet en rad i loggen handlar om: hela bytet på raden eller det någon minns med numret (filt.ts, gränssnittet)
+export function radByte(s: State, l: LogEntry): ByteMinne | undefined {
+  if (l.byte) return l.byte;
+  if (l.bnr === undefined) return undefined;
+  for (const p of s.people) { const b = p.byten?.find(x => x.nr === l.bnr); if (b) return b; }
+  return undefined;
+}
 // bytet är klart: m fick fatt av g och gav betal. Samma för alla byten. desperat = m höll på att dö av bristen
 export function byteKlart(s: State, m: Part, g: Part, fatt: Vara[], betal: Vara[], desperat = false) {
   const alla = [...fatt, ...betal], stort = stortByte(alla), bytt = (s.bytt ??= []);
@@ -141,8 +159,7 @@ export function byteKlart(s: State, m: Part, g: Part, fatt: Vara[], betal: Vara[
     minne.fa = { x, y: y + FILT_MOT / 2 }; minne.fb = { x, y: y - FILT_MOT / 2 };
   } else { overlamna(s, fatt, g, m); overlamna(s, betal, m, g); }
   const text = `${m.namn} och ${g.namn} bytte: ${varorText(fatt)} mot ${varorText(betal)}${desperat ? `. ${m.namn} höll på att dö` : ''}.`;
-  log(s, text, 'rel', [m.id, g.id].filter(i => i > 0)).byte = minne;
-  for (const P of [m, g]) if (P.p) { const b = (P.p.byten ??= []); b.push(minne); if (b.length > BYTE.minnas) b.splice(0, b.length - BYTE.minnas); }
+  loggaByte(log(s, text, 'rel', [m.id, g.id].filter(i => i > 0)), minne, [m.p, g.p]);
   if (hf) notis(s, 'byte', text, [m.id, g.id].filter(i => i > 0));
   if (stort) kronika(s, text, 'byte');
   for (const f of vidByte) f(s, m, g, fatt, betal, minne);
