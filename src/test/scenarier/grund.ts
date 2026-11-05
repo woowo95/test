@@ -1199,6 +1199,21 @@ function angSlag(x: State, mitt: number, slag: 'hog' | 'kort' | 'skog') {
   }
 }
 
+SCENARIER.brandkant = {
+  text: 'Steg 6.4.5: bara brandens kant räknas. När en stor brand brinner på en torr äng hoppas rutorna mitt i branden över, och bara kanten prövar grannrutorna',
+  kor: () => {
+    const a = torrAng();
+    if (typeof a === 'string') return [[a, false]];
+    const { s, mitt } = a, x = cloneState(s);
+    angSlag(x, mitt, 'hog');
+    if (x.vader) { x.vader.torr = 240; x.vader.fukt = 0; }
+    SIM.tand(x, mitt, 'blixt', 0);
+    for (let k = 0; k < 6; k++) step(x, 10);
+    const alla = SIM.brinnande(x).length, kant = SIM.brandKant(x);
+    return [[`en stor brand på ängen efter en minut (${alla} rutor brinner)`, alla >= 100], [`bara kanten räknas (${kant} av ${alla} rutor)`, kant > 0 && kant < alla * 0.7]];
+  },
+};
+
 SCENARIER.brandfart = {
   text: 'Steg 6.4.1: branden räknas i steg om 5 sekunder och sprids efter markslaget. I torrt högt gräs tar sig elden till en grannruta ungefär var femte sekund, så att en brand på en äng är stor efter en minut; i skog går det långsammare, och i blöt mark tar den sig inte vidare',
   kor: () => {

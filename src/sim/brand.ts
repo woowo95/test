@@ -146,6 +146,16 @@ function kartaOf(b: Brand) {
   if (!k) { k = new Uint8Array(W * H); for (const i of b.ut) k[i] = 2; for (const r of b.r) k[r[0]] = 1; karta.set(b, k); }
   return k;
 }
+// bara brandens kant räknas (steg 6.4.5): en ruta vars grannar alla brinner eller har brunnit kan inte sprida elden mer,
+// och den hoppas över tills den slocknar. Grannarna börjar aldrig om, så det ändrar ingenting i hur branden går
+const inreKarta = new WeakMap<Brand, Uint8Array>();
+function inreOf(b: Brand) {
+  let k = inreKarta.get(b);
+  if (!k) { k = new Uint8Array(W * H); inreKarta.set(b, k); }
+  return k;
+}
+// hur många av de brinnande rutorna som räknas, alltså brandens kant (scenariot brandkant)
+export const brandKant = (s: State) => s.brand ? s.brand.r.filter(r => !inreOf(s.brand!)[r[0]]).length : 0;
 // brinner ruta i?
 export const brinner = (s: State, i: number) => !!s.brand && kartaOf(s.brand)[i] === 1;
 // rutorna som brinner just nu (gränssnittet ritar lågorna)
@@ -191,7 +201,7 @@ export function brandSteg(s: State, dtSec: number) {
   if (dry > 0) gnistor(s, dtSec, dry);
   const b = s.brand;
   if (!b) return;
-  const v = vaderNu(s), k = kartaOf(b), bransle = bransleAv(s);
+  const v = vaderNu(s), k = kartaOf(b), inre = inreOf(b), bransle = bransleAv(s);
   // elden tar sig till grannrutorna, i delsteg om fem sekunder (steg 6.4.1): det som tänds i ett delsteg sprider sig i nästa
   const n = Math.max(1, Math.round(dtSec / DELSTEG)), dt = dtSec / n;
   const sprid = BRAND.sprid * dry * (1 - v.nb) * dt / DELSTEG;
@@ -203,15 +213,20 @@ export function brandSteg(s: State, dtSec: number) {
     const slag = Math.round(s.now / SEC) - Math.round((n - 1 - d) * dt), kvar = (n - 1 - d) * dt; // delstegets tid, och tiden kvar av slaget
     const nya: number[] = [];
     for (const [i] of b.r) {
+      if (inre[i]) continue;
       const x = i % W, y = Math.floor(i / W);
+      let kant = false;
       for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
         const nx = x + dx, ny = y + dy, j = ny * W + nx, c = sprid * fv[(dy + 1) * 3 + dx + 1];
-        if ((!dx && !dy) || !inMap(nx, ny) || k[j] || !nara(b, nx, ny)) continue;
+        if ((!dx && !dy) || !inMap(nx, ny) || k[j]) continue;
+        kant = true;
+        if (!nara(b, nx, ny)) continue;
         const u = hash(s.seed + 3851, slag, i * 9 + (dy + 1) * 3 + dx + 1);
         if (u >= c) continue; // antändningen är högst 1: slå bara upp det som brinner när det kan behövas
         const fu = bransle(j);
         if (fu && u < c * fu[0]) nya.push(j);
       }
+      if (!kant) inre[i] = 1; // grannarna brinner eller har brunnit: rutan sprider aldrig mer
     }
     for (const j of nya) {
       const fore = b.r.length;
