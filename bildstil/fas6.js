@@ -564,14 +564,6 @@
   VAL.push(
     KORT('f6_strak', 'Gångstråken i testläget', S + '6.2.5: i testläget syns gångstråken, vägarna från dörrarna till elden, lagren, latrinen och vattnet där inget får byggas, som en tunn linje genom rutornas mitt, och rutan framför dörren som en liten ruta. Stugan och elden är bara för att visa platsen.', [
       STRAK('En tunn gul linje och en fylld gul ruta framför dörren.', 0), STRAK('Korta röda streck och en prickig ruta framför dörren.', 1), STRAK('Två ljusa kanter, som en väg, och en ljus ram framför dörren.', 2)]),
-    KORT('f6_naver', 'Näver', S + '6.3.1.3: en ny sak, som görs av ved och tänds lättare än torrgräs. Vit näver med mörka streck, i sakens storlek (16 punkter per ruta).', [
-      PA_MARK('En hoprullad bit näver, med den bruna insidan synlig i änden.', NAVER[0], NAV_L), PA_MARK('En lös remsa som rullar sig i ena änden.', NAVER[1], NAV_L), PA_MARK('Tre remsor i en liten hög.', NAVER[2], NAV_L)]),
-    KORT('f6_talg', 'Talg', S + '6.3.2.2: en ny sak från slakten, djurfettet, som blir facklor och ljus.', TALG.map((r, i) => PA_MARK(TALG_TEXT[i], r, TALG_L))),
-    KORT('f6_fackla', 'Facklan', S + '6.3.2.3: facklan som sak, när den ligger i förrådet eller bärs, släckt. Den liknar den uppsatta facklan du valde: lång som ett spjut, käppen kluven i toppen med tjärstickor i klykan och snörd under. Din kommentar förra gången: ”kolla på den uppfatta facklan och gör en liknande”.', FACKLA.map((r, i) => PA_MARK(FACKLA_TEXT[i], r, FACK_L))),
-    KORT('f6_uppsatt', 'Uppsatt fackla', S + '6.3.2.4: en tänd fackla, lång som ett spjut, som stuckits ner i marken och lyser upp natten runt sig. Tre nya utseenden på facklan. Din kommentar förra gången: ”Prova fler utseende på facklor”.', [
-      UPPSATT('En käpp som kluvits i toppen, med tjärstickor i klykan.', 0), UPPSATT('En strut av näver med elden i, och stenar runt foten.', 1), UPPSATT('En tjock halmbunt, bunden med tre band.', 2)]),
-    KORT('f6_ljus', 'Talgljuset', S + '6.3.2.5: ljuset som står på ett bord eller en hylla inne och lyser upp rummet.', [
-      LJUS('Ett kort, tjockt ljus på en flat sten, med talg som runnit.', 0), LJUS('Ett smalt ljus i en lerskål.', 1), LJUS('En talglampa: en stenskål med smält talg och en veke på kanten.', 2)]),
     KORT('f6_buske', 'Busken', S + '6.4.1.3: den nya sortens mark mellan högt gräs och ungskog. Tre buskar i olika storlek.', [
       BUSKSCEN('Rund och tät.', 0, null), BUSKSCEN('Gles, med grenarna synliga mellan bladen.', 1, null), BUSKSCEN('Låg och bred.', 2, null)]),
     KORT('f6_barbuske', 'Bärbusken', S + '6.4.1.4: samma slags buske som ger bär, på alla tre buskarna. Bären har samma färger som saken bär: blåbär i skiffertoner, ljusa uppe till vänster och mörka nere till höger. Versionerna är hur bären sitter. Din kommentar förra gången: ”Gör dem samma färg som bären är som item just nu”.', [
