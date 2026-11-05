@@ -61,9 +61,10 @@ export const BRAND = balans('brand', {
   sno: 0.2, // inget brinner när det ligger mer snö än så här (snoPaMarken i vader.ts)
   vind: 1.5, // blåsten (0 till 1) sprider elden så här mycket mer
   regn: 2, // regnet släcker en ruta så här fort (rutor per timme i det kraftigaste regnet), och sprider den mindre
-  // det som kan brinna: [antändning 0 till 1, timmar det brinner]. Högt gräs brinner snabbast, kort gräs medel, skogen och det
-  // som är av trä lite långsammare (steg 6.4.1)
-  skog: [0.2, 3], ung: [0.3, 1], hog: [1, 0.5], kort: [0.4, 0.3], groda: [0.5, 0.5], vagg: [0.25, 2], sak: [0.35, 1],
+  // det som kan brinna: [antändning 0 till 1, timmar det brinner, hur lätt det släcks]. Högt gräs brinner snabbast, kort gräs
+  // medel, skogen och det som är av trä lite långsammare (steg 6.4.1). Det sista talet gångrar händerna och vattensäcken: kort
+  // gräs väldigt lätt, högt gräs lätt, skog och trä väldigt svårt, så en brand som vuxit in i skogen är svår att släcka (steg 6.4.2)
+  skog: [0.2, 3, 0.3], ung: [0.3, 1, 0.6], hog: [1, 0.5, 2], kort: [0.4, 0.3, 4], groda: [0.5, 0.5, 2], vagg: [0.25, 2, 0.3], sak: [0.35, 1, 1],
   aska: 0.32, // gräset på en ruta som brunnit (0 till 1; just över bar jord, så att det inte blir en stig)
   trad: 0.5, // träden dör när så här stor del av rutan har brunnit
   vaggSkick: 1.2, // en vägg tappar så här mycket av sitt skick gånger andelen som brunnit
@@ -81,7 +82,7 @@ export const BRAND = balans('brand', {
   hand: 1.5, // ... släcker så här många rutor i timmen ...
   handR: 1.6, // ... inom så här många rutor från den som släcker
   fyllMin: 2, // minuter att fylla vattensäcken
-  sackRutor: 4, // en säck vatten släcker så här många rutor ...
+  sackRutor: 4, // en säck vatten släcker så här många rutor (gånger hur lätt rutan släcks, högst helt) ...
   sackR: 2.5, // ... inom så här många rutor från där den hälls
   brannHand: 0.15, // chansen i timmen att få en brännskada när man släcker med händerna ...
   brannHandGrad: [0.1, 0.4], // ... så här svår (slumpas mellan)
@@ -108,14 +109,14 @@ export function torrhet(s: State) {
   if (snoPaMarken(s) > BRAND.sno) return 0;
   return Math.min(1, torrTim(s) / BRAND.torrTim) * BRAND.arstid[kalender(s).ai];
 }
-// det som kan brinna på en ruta: [antändning, timmar], eller undefined. Sakerna slås upp en gång per steg
+// det som kan brinna på en ruta: [antändning, timmar, hur lätt det släcks (det svåraste)], eller undefined. Sakerna slås upp en gång per steg
 function bransleAv(s: State) {
   let saker: Set<number> | undefined;
   const g = groundOf(s);
-  return (i: number): [number, number] | undefined => {
+  return (i: number): [number, number, number] | undefined => {
     const x = i % W, y = Math.floor(i / W);
-    let f = 0, tim = 0;
-    const lagg = (r: readonly number[], k = 1) => { if (r[0] * k > f) f = r[0] * k; if (r[1] > tim) tim = r[1]; };
+    let f = 0, tim = 0, sl = Infinity;
+    const lagg = (r: readonly number[], k = 1) => { if (r[0] * k > f) f = r[0] * k; if (r[1] > tim) tim = r[1]; if (r[2] < sl) sl = r[2]; };
     const fa = faltAt(s, x, y), v = bitAt(s, x, y);
     if (fa) { if (grodaPa(fa, faltIndex(fa, x, y))) lagg(BRAND.groda); }
     else if (!v && isSoil(g.tiles[i]) && !g.built?.[i]) { const m = markslag(g, i); if (m !== 'bar') lagg(BRAND[m]); } // inte under ett golv eller en vägg
@@ -123,7 +124,7 @@ function bransleAv(s: State) {
     if (b) lagg(BRAND.vagg, b);
     saker ??= new Set(stacksOf(s).filter(st => st.n >= 1 && !SAKER[st.k]?.brinnerInte).map(st => st.y * W + st.x));
     if (saker.has(i)) lagg(BRAND.sak);
-    return f > 0 ? [f, tim] : undefined;
+    return f > 0 ? [f, tim, sl] : undefined;
   };
 }
 
@@ -375,6 +376,8 @@ export function brandVal(s: State, p: Person): BrandMal | undefined {
 }
 
 // ---------- att släcka (steg.ts) ----------
+// hur lätt den brinnande rutan i släcks (det svåraste som brinner där; 1 om inget finns kvar)
+const latt = (s: State, i: number) => bransleAv(s)(i)?.[2] ?? 1;
 // medan man släcker med händerna: den närmaste brinnande rutan inom räckhåll släcks lite i taget, och man kan bränna sig
 export function slackaSteg(s: State, p: Person, t: Task, dtSec: number) {
   const b = s.brand;
@@ -388,7 +391,7 @@ export function slackaSteg(s: State, p: Person, t: Task, dtSec: number) {
   }
   if (!r) { t.until = s.now; return; }
   t.ref = r[0];
-  r[3] += BRAND.hand * dtSec / HOUR_S;
+  r[3] += BRAND.hand * latt(s, r[0]) * dtSec / HOUR_S;
   if (k[r[0]] === 1 && ur(s, p.id, 3864) < chans(BRAND.brannHand, dtSec)) {
     const DELAR: Kroppsdel[] = ['handV', 'handH', 'armV', 'armH'];
     const d = DELAR[Math.floor(ur(s, p.id, 3865) * DELAR.length)], g = BRAND.brannHandGrad[0] + ur(s, p.id, 3866) * (BRAND.brannHandGrad[1] - BRAND.brannHandGrad[0]);
@@ -410,7 +413,8 @@ export function slackaFram(s: State, p: Person, _t: Task) {
   const b = s.brand;
   if (b) {
     const nara = b.r.map(r => ({ r, d: Math.hypot(r[0] % W + 0.5 - p.x, Math.floor(r[0] / W) + 0.5 - p.y) })).filter(q => q.d <= BRAND.sackR).sort((a, c) => a.d - c.d || a.r[0] - c.r[0]);
-    for (const q of nara.slice(0, BRAND.sackRutor)) q.r[3] = 1;
+    const sl = bransleAv(s);
+    for (const q of nara.slice(0, BRAND.sackRutor)) q.r[3] = Math.min(1, q.r[3] + (sl(q.r[0])?.[2] ?? 1));
     if (nara.length) { count(s, 'brand sack'); wearUsed(s, p, 1); }
     slocknar(s, b);
   }

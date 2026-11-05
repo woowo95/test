@@ -1164,9 +1164,9 @@ SCENARIER.tornado = {
   },
 };
 
-SCENARIER.brandfart = {
-  text: 'Steg 6.4.1: branden räknas i steg om 5 sekunder och sprids efter markslaget. I torrt högt gräs tar sig elden till en grannruta ungefär var femte sekund, så att en brand på en äng är stor efter en minut; i skog går det långsammare, och i blöt mark tar den sig inte vidare',
-  kor: () => {
+// en by på sommaren med en torr dag framför sig, och en plats 30 till 50 rutor från elden där en cirkel med radien 12 är jord
+// utan byggen och fält (scenarierna brandfart och slackning)
+function torrAng(): { s: State; mitt: number } | string {
     const torrDag = (x: State) => { for (let h = 0; h < 2; h++) if (vaderNu(x, x.now + h * HOUR).nb > 0) return false; return true; };
     let s: State | undefined;
     for (let seed = 1; seed < 200 && !s; seed++) {
@@ -1174,7 +1174,7 @@ SCENARIER.brandfart = {
       for (let h = 0; h < 48 && !torrDag(b); h++) step(b, 3600);
       if (torrDag(b) && SIM.isLight(b.now)) s = b;
     }
-    if (!s) return [['en by på sommaren med torrt väder', false]];
+    if (!s) return 'en by på sommaren med torrt väder';
     const e = SIM.eldPlats(s);
     // en plats 30 till 50 rutor från elden där en cirkel med radien 12 är jord utan byggen och fält
     const fri = (x: State, i: number) => { const g = groundOf(x); return isSoil(g.tiles[i]) && !g.built?.[i] && !SIM.bitAt(x, i % W, Math.floor(i / W)) && !SIM.faltAt(x, i % W, Math.floor(i / W)); };
@@ -1186,14 +1186,28 @@ SCENARIER.brandfart = {
       for (let dy = -12; dy <= 12 && ok; dy++) for (let dx = -12; dx <= 12 && ok; dx++) if (Math.hypot(dx, dy) <= 12 && (!SIM.inMap(cx + dx, cy + dy) || !fri(s, (cy + dy) * W + cx + dx))) ok = false;
       if (ok) mitt = i;
     }
-    if (mitt < 0) return [['en plats för ängen', false]];
+    if (mitt < 0) return 'en plats för ängen';
+    return { s, mitt };
+}
+// sätter markslaget i cirkeln kring mitt (radien 12) i byn x
+function angSlag(x: State, mitt: number, slag: 'hog' | 'kort' | 'skog') {
+  const g = groundOf(x), cx = mitt % W, cy = Math.floor(mitt / W);
+  for (let dy = -12; dy <= 12; dy++) for (let dx = -12; dx <= 12; dx++) {
+    if (Math.hypot(dx, dy) > 12) continue;
+    const i = (cy + dy) * W + cx + dx;
+    if (slag === 'skog') { g.trees[i] = FOREST + 0.5; g.cover[i] = 0.6; } else { g.trees[i] = 0; g.cover[i] = slag === 'hog' ? 1 : (SIM.HIGH + SIM.BAR) / 2; }
+  }
+}
+
+SCENARIER.brandfart = {
+  text: 'Steg 6.4.1: branden räknas i steg om 5 sekunder och sprids efter markslaget. I torrt högt gräs tar sig elden till en grannruta ungefär var femte sekund, så att en brand på en äng är stor efter en minut; i skog går det långsammare, och i blöt mark tar den sig inte vidare',
+  kor: () => {
+    const a = torrAng();
+    if (typeof a === 'string') return [[a, false]];
+    const { s, mitt } = a;
     const prov = (slag: 'hog' | 'skog', torr: number) => {
-      const x = cloneState(s!), g = groundOf(x), cx = mitt % W, cy = Math.floor(mitt / W);
-      for (let dy = -12; dy <= 12; dy++) for (let dx = -12; dx <= 12; dx++) {
-        if (Math.hypot(dx, dy) > 12) continue;
-        const i = (cy + dy) * W + cx + dx;
-        if (slag === 'hog') { g.trees[i] = 0; g.cover[i] = 1; } else { g.trees[i] = FOREST + 0.5; g.cover[i] = 0.6; }
-      }
+      const x = cloneState(s), cx = mitt % W, cy = Math.floor(mitt / W);
+      angSlag(x, mitt, slag);
       if (x.vader) { x.vader.torr = torr; x.vader.fukt = 0; }
       SIM.tand(x, mitt, 'blixt', 0);
       const fore = SIM.brinnande(x).length;
@@ -1206,6 +1220,35 @@ SCENARIER.brandfart = {
       [`i torrt högt gräs brinner ${hog.n} rutor efter en minut (en ruta tändes)`, hog.fore === 1 && hog.n >= 100],
       [`i torr skog går det långsammare: ${skog.n} rutor`, skog.n >= 2 && skog.n < hog.n / 2],
       [`i blött högt gräs tar den sig inte vidare: ${blot.n} ruta`, blot.n <= 1],
+    ];
+  },
+};
+
+SCENARIER.slackning = {
+  text: 'Steg 6.4.2: en brand som vuxit blir svårare att släcka. Varje markslag har ett tal för hur lätt det släcks, som händerna och vattensäcken använder: kort gräs väldigt lätt, högt gräs lätt, skog väldigt svårt',
+  kor: () => {
+    const a = torrAng();
+    if (typeof a === 'string') return [[a, false]];
+    const { s, mitt } = a;
+    // en ruta tänds; en vuxen står bredvid och häller en säck vatten, eller släcker tio minuter med händerna
+    const prov = (slag: 'hog' | 'kort' | 'skog') => {
+      const ut = (sack: boolean) => {
+        const x = cloneState(s); angSlag(x, mitt, slag);
+        SIM.tand(x, mitt, 'blixt', 0);
+        const p = living(x).find(q => SIM.ageOf(q, x.now) >= 18)!;
+        p.x = mitt % W + 1.5; p.y = Math.floor(mitt / W) + 0.5;
+        const t = { act: 'slacka', ref: mitt, until: x.now + HOUR } as unknown as SIM.Task;
+        if (sack) SIM.slackaFram(x, p, t); else SIM.slackaSteg(x, p, t, 600);
+        const r = SIM.brinnande(x).find(q => q[0] === mitt);
+        return r ? r[3] : 1;
+      };
+      return { sack: ut(true), hand: ut(false) };
+    };
+    const kort = prov('kort'), hog = prov('hog'), skog = prov('skog');
+    const f = (n: number) => n.toFixed(2).replace('.', ',');
+    return [
+      [`en säck vatten släcker kort gräs (${f(kort.sack)}) och högt gräs (${f(hog.sack)}) helt, men bara en del av en ruta skog (${f(skog.sack)})`, kort.sack >= 1 && hog.sack >= 1 && skog.sack < 0.5],
+      [`med händerna i tio minuter: kort gräs ${f(kort.hand)}, högt gräs ${f(hog.hand)}, skog ${f(skog.hand)} (1 = släckt)`, kort.hand > hog.hand && hog.hand > skog.hand * 4],
     ];
   },
 };
