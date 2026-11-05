@@ -239,7 +239,7 @@ SCENARIER.promenad = {
           if (t?.act !== 'promenad' || t.phase !== 'do') continue;
           let m = sett.get(t);
           if (!m) { sett.set(t, m = new Set()); prom++; }
-          if (t.hopp) m.add(`${Math.floor(t.tx)},${Math.floor(t.ty)}`);
+          m.add(`${Math.floor(t.tx)},${Math.floor(t.ty)}`); // punkten man går till eller står vid (ett steg är fem minuter, så alla punkter syns inte)
           if ((t.plock ?? 0) > 0) stopp++;
           if (t.kring) maxR = Math.max(maxR, Math.hypot(Math.floor(t.tx) - t.kring.x, Math.floor(t.ty) - t.kring.y));
           if (getMap(s.seed).tiles[tileOf(p.x, p.y)] === T.Vatten || SIM.isWall(s, p.x, p.y)) land = false;

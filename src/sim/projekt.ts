@@ -179,9 +179,11 @@ export const projektVarde = (s: State, k: string) => { const d = PROJEKT[k]; ret
 // hur mycket p bryr sig om det hen och familjen saknar, jämfört med byn (steg 6.1.16): mindre med empati och seden Sammanhållning
 export const egenintresse = (s: State, p: Person) => clamp(PROJEKT_TAL.egen - PROJEKT_TAL.egenEmpati * (stat(p, 'empati', s.now) - SED.mitt) / SED.spann - PROJEKT_TAL.egenSed * (s.seder?.v.gemenskap ?? 0), 0, PROJEKT_TAL.egenMax);
 // det projektet är värt för den som har familjen fam och egenintresset ei: byns värde och det egna (vad p och familjen saknar) gånger egenintresset
+// Byns brist kommer från timräkningen (arbetsTimme i val.ts, steg 6.2.21), så länge den finns
+export const bristNu = (s: State, k: string) => s.arbBehov?.brist ? s.arbBehov.brist[k] ?? 0 : PROJEKT[k].brist(s);
 export function personVarde(s: State, k: string, fam: readonly Person[], ei: number) {
   const d = PROJEKT[k], e = d.egen && ei > 0 ? d.egen(s, fam) : 0;
-  return d.vikt * (d.brist(s) + e * ei) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad());
+  return d.vikt * (bristNu(s, k) + e * ei) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad());
 }
 // den i familjen som sover under tak utan en bädd
 function utanEgenBadd(s: State, fam: readonly Person[]) {

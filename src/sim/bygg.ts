@@ -74,7 +74,7 @@ const tileOk = (s: State, x: number, y: number, utomElden: boolean) => {
 // en plats för ett hus med yttermåtten w×h inom byområdet, PLATS.husMellan rutor från andra hus och PLATS.uteFri från stationer
 // som står ute, helst en bit från elden och inte på lekplatsen, och inte så att väggarna stänger in mark. Träden där
 // huset ska stå fälls först, men en plats med färre träd går fortare
-function siteFor(s: State, w: number, h: number, okAt: Uint8Array) {
+function siteFor(s: State, w: number, h: number, okAt: (i: number) => boolean) {
   const f = eldPlats(s), R = BYGG.radieBas + living(s).length * BYGG.radiePerPerson, g = groundOf(s), lekR = lekplats(s), M = Math.max(PLATS.husMellan, PLATS.uteFri);
   const platser: { x: number; y: number; sc: number }[] = [], o = omrade(s), r = Math.ceil(R) + w + h;
   for (let y = Math.max(1, o.y0 - r); y + h < H && y <= o.y1 + r; y++) for (let x = Math.max(1, o.x0 - r); x + w < W && x <= o.x1 + r; x++) {
@@ -84,7 +84,7 @@ function siteFor(s: State, w: number, h: number, okAt: Uint8Array) {
     let ok = true;
     for (let yy = y - M; yy < y + h + M && ok; yy++) for (let xx = x - M; xx < x + w + M && ok; xx++) {
       const inside = xx >= x && xx < x + w && yy >= y && yy < y + h;
-      if (inside) { ok = !!okAt[yy * W + xx]; continue; }
+      if (inside) { ok = okAt(yy * W + xx); continue; }
       if (!inMap(xx, yy)) continue;
       const d = Math.max(x - xx, xx - (x + w - 1), y - yy, yy - (y + h - 1)); // så många rutor från huset
       if (gridOf(s).at.has(yy * W + xx) || d <= PLATS.uteFri && uteStation(s, xx, yy)) ok = false; // plats för en stig mellan husen och runt stationerna ute (steg 2.10.8)
@@ -139,8 +139,10 @@ export function planBuild(s: State) {
   for (let h = HUS.minSida; h <= HUS.maxSida; h++) for (let w = h; w <= HUS.langSida * h; w++) sizes.push({ w, h });
   const want = Math.min(BYGG.maxInne, u.a.plats);
   sizes.sort((a, b) => (a.w * a.h < want ? 1000 - a.w * a.h : 0) - (b.w * b.h < want ? 1000 - b.w * b.h : 0) || a.w * a.h - b.w * b.h || (a.w - a.h) - (b.w - b.h));
-  const okAt = new Uint8Array(W * H), utomElden = canLight(s); // elden flyttas bara om den kan tändas igen
-  for (let i = 0; i < W * H; i++) okAt[i] = tileOk(s, i % W, Math.floor(i / W), utomElden) ? 1 : 0;
+  // går det att bygga på rutan? Räknas först när sökningen runt byns område (siteFor) frågar, och sparas under planeringen
+  // (steg 6.2.21: bara rutorna nära området, inte hela kartan). Elden flyttas bara om den kan tändas igen
+  const utomElden = canLight(s), okMinne = new Int8Array(W * H).fill(-1);
+  const okAt = (i: number) => (okMinne[i] < 0 ? okMinne[i] = tileOk(s, i % W, Math.floor(i / W), utomElden) ? 1 : 0 : okMinne[i]) === 1;
   for (const { w, h } of sizes) {
     const at = siteFor(s, w + 2, h + 2, okAt);
     if (!at) continue;

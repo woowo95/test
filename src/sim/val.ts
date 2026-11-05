@@ -1,4 +1,4 @@
-import { bynsAvstand, bynsMitt, iByn, omrade, utanforByn } from './omrade';
+import { OMRADE, bynsAvstand, bynsMitt, iByn, omrade, utanforByn } from './omrade';
 import { GANG } from './gang';
 import { iVattnetNu, strandNu, vattenNu } from './sjo';
 import { freeTools, take } from './agande';
@@ -21,7 +21,7 @@ const lekText = (s: State) => snoPaMarken(s) > 0 ? 'Är barn och leker i snön' 
 import { varselSamla } from './motgang';
 import { FORRAD, FORRADSMAL, TROSKEL, villAv, buffert, lyxtak, materialTimme, onskatDygn, overTak, underBuffert } from './forradsmal';
 import { DJUR, DJURARTER, Djurart, GORS, canProcess, djurKvar, freeOfKinds, handelTask, harAv, toolGroups, underhallGrupp, wantsTool } from './redskap';
-import { PROJEKT, Uppgift, bastaProjekt, egenintresse, hamtas, projektNu } from './projekt';
+import { PROJEKT, PROJEKT_LIST, Uppgift, bastaProjekt, egenintresse, hamtas, projektNu } from './projekt';
 import { faltNu, vildFronPlats } from './odling';
 import { MINNE, areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { eldPlats, getMap } from './karta';
@@ -64,6 +64,7 @@ export const VAL = balans('val', {
   toaMin: 4, toaSpann: 4, // ett toabesök
   // var man arbetar (spotFor)
   provar: 260, // så många slumpade rutor prövas runt lägret
+  sokForst: 8, // nearestWanted söker först så många rutor runt byns område, sedan dubbelt så många (steg 6.2.21)
   narAvst: 4, // arbetsplatser ligger minst så många rutor från lägret ...
   narAvstAng: 5, // ... på ängen och avsides minst så många
   langtAvsides: 9, // ... och avsides högst så långt
@@ -332,16 +333,21 @@ export function nastaRuta(s: State, varde: (x: number, y: number) => number, x0:
   return best.find(b => b);
 }
 // ingen plats hittades i närheten: den närmaste rutan som passar, var den än ligger
+// Sökningen börjar runt byns område och växer tills det bästa svaret ligger närmare än allt utanför rutan (steg 6.2.21):
+// en ruta r rutor utanför områdets rektangel ligger minst r − kant från byn. Samma svar som en sökning över hela kartan
 function nearestWanted(s: State, want: (t: number, x: number, y: number) => boolean, min = 0) {
-  const m = getMap(s.seed), lager = bynsAvstand(s);
-  let best: { x: number; y: number } | undefined, bd = Infinity;
-  for (let i = 0; i < W * H; i++) {
-    const x = i % W, y = Math.floor(i / W);
-    if (!want(m.tiles[i], x, y)) continue;
-    const d = lager[i];
-    if (d >= min && d < bd) { bd = d; best = { x, y }; } // inte närmare lägret än min (toa: inte mitt i byn, steg 3.10.3)
+  const m = getMap(s.seed), lager = bynsAvstand(s), o = omrade(s);
+  for (let r = VAL.sokForst; ; r *= 2) {
+    const x0 = Math.max(0, o.x0 - r), y0 = Math.max(0, o.y0 - r), x1 = Math.min(W - 1, o.x1 + r), y1 = Math.min(H - 1, o.y1 + r);
+    let best: { x: number; y: number } | undefined, bd = Infinity;
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+      const i = y * W + x, d = lager[i];
+      if (d < min || d >= bd || !want(m.tiles[i], x, y)) continue; // inte närmare lägret än min (toa: inte mitt i byn, steg 3.10.3)
+      bd = d; best = { x, y };
+    }
+    const hela = x0 === 0 && y0 === 0 && x1 === W - 1 && y1 === H - 1;
+    if (hela || best && bd < r - OMRADE.kant) return best;
   }
-  return best;
 }
 // en plats på land en bit bort åt ett slumpat håll (p:s egen slumpföljd)
 function walkSpot(s: State, p: Person, far: number) {
@@ -424,7 +430,11 @@ export function arbetsTimme(s: State) {
     mat: Math.max(1, Math.ceil(matFattas / VAL.matPass * fler)), ved: Math.max(1, Math.ceil(vedFattas / VAL.vedPass * fler)),
     bygga: Math.max(1, hus.size * BYGG.perHus), tand: Math.max(1, Math.ceil(n / VAL.tandPer)), leta: Math.max(1, Math.ceil(n / VAL.letaPer)), kol: Math.max(1, kol),
   };
-  s.arbBehov = { mat, ved, arb, mal: materialTimme(s) }; // och materialens buffert och tak (forradsmal.ts, steg 6.2.14)
+  // och materialens buffert och tak (forradsmal.ts, steg 6.2.14) och byns del av projektens värde (steg 6.2.21: hur mycket
+  // byn saknar av varje projekt, frågat en gång i timmen i stället för av varje person i varje val)
+  const brist: Record<string, number> = {};
+  for (const k of PROJEKT_LIST) { const b = r3(PROJEKT[k].brist(s)); if (b > 0) brist[k] = b; }
+  s.arbBehov = { mat, ved, arb, mal: materialTimme(s), brist };
 }
 // raderna som har arbetare (steg 6.1.13). Maten är flera arbeten (samla, jaga, fiska, fältet) som delar på samma arbetare
 export type ArbRad = 'mat' | 'ved' | 'bygga' | 'tand' | 'leta' | 'kol';

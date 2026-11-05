@@ -42,7 +42,7 @@ SCENARIER.projekt = {
     medBank(s, 'slaktbank');
     const bank = projektVarde(s, 'slaktbank') === 0;
     // på dagen tävlar projekten med arbetet när maten räcker, men inte när byn svälter eller fryser
-    const m = by(5); setFood(m, 200);
+    const m = by(5); setFood(m, 200); for (const q of living(m)) SIM.gain(m, q, 'bar', 120); // byn och familjerna har mat (steg 6.2.20: var och en har sin buffert)
     const mett = valjer(m, 200);
     const h = by(5); setFood(h, 0.1);
     const svalt = valjer(h, 200);

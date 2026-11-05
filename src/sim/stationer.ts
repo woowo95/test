@@ -470,7 +470,25 @@ export function gangFri(s: State, rutor: { x: number; y: number }[]) {
   return true;
 }
 // ute: alla rutorna den tar är lediga, ingenting utom ett hus står inpå (friRunt), helst mot en vägg och inte där barnen leker. Avståndet räknas från stationens mitt
+// Platsen räknas en gång i timmen per slag (steg 6.2.21) och när något byggs eller området ändras; ligger något på den
+// sedan dess (en stack, ett redskap), söks den om. Alla som undrar om stationen går att bygga (kanBygga, för varje person
+// i valet) får samma svar utan att söka
+const uteCache = new WeakMap<State, { key: string; m: Map<string, { x: number; y: number; rot?: 1 } | undefined> }>();
 function siteUte(s: State, k: string) {
+  const key = `${Math.floor(s.now / HOUR)}:${s.byggV ?? 0}:${omrade(s).key}`;
+  let c = uteCache.get(s);
+  if (c?.key !== key) uteCache.set(s, c = { key, m: new Map() });
+  if (c.m.has(k)) {
+    const at = c.m.get(k);
+    if (!at) return at;
+    const { w, h } = storlek(k, at.rot ?? 0);
+    if (rutorAv(at.x, at.y, w, h).every(q => ledig(s, q.x, q.y))) return at;
+  }
+  const at = sokUte(s, k);
+  c.m.set(k, at);
+  return at;
+}
+function sokUte(s: State, k: string) {
   const lekR = lekplats(s), o = omrade(s);
   let best: { x: number; y: number; rot?: 1 } | undefined, bs = Infinity;
   for (const rot of [0, 1] as const) {

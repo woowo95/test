@@ -1,4 +1,4 @@
-import { utanforByn } from './omrade';
+import { OMRADE, omrade, utanforByn } from './omrade';
 import { groundOf } from './mark';
 import { FOREST, findPath, nasbara } from './vag';
 import { Ting, halvKlar, nTools, newTing, tingOf } from './agande';
@@ -827,7 +827,9 @@ function growOf(s: State, i: number): Zone | undefined {
 // Platsen ska gå att gå till från elden: en ö i sjön nära lägret blir ingen lagerplats (då gick bärarna genom vattnet)
 function newZone(s: State) {
   const zs = zonesOf(s), f = eldPlats(s), z0 = zs[0], g = groundOf(s), kand: { c: Zone; d: number }[] = [];
-  for (let y = 0; y < H - 2; y++) for (let x = 0; x < W - 2; x++) {
+  // bara runt byns område (steg 6.2.21): en plats längre ut än nyLagerMax från området blir ändå ingen lagerplats
+  const o = omrade(s), r = Math.ceil(LAGER.nyLagerMax + OMRADE.kant) + Math.max(LAGER.nyBredd, LAGER.nyHojd) + 1;
+  for (let y = Math.max(0, o.y0 - r); y < Math.min(H - 2, o.y1 + r + 1); y++) for (let x = Math.max(0, o.x0 - r); x < Math.min(W - 2, o.x1 + r + 1); x++) {
     const c: Zone = { x, y, w: LAGER.nyBredd, h: LAGER.nyHojd }, df = Math.hypot(x + c.w / 2 - f.x, y + c.h / 2 - f.y);
     if (df < LAGER.nyEldMin || utanforByn(s, x + (c.w - 1) / 2, y + (c.h - 1) / 2) > LAGER.nyLagerMax || !allUsable(s, c) || strakI(s, c.x, c.y, c.w, c.h) || zs.some(o => overlaps(c, o, LAGER.mellan))) continue; // inte på ett gångstråk (steg 6.2.5)
     const skog = skogI(s, c); // i skogen fälls träden först (steg 3.6.9)
@@ -953,8 +955,25 @@ export function avbryt(s: State, p: Person) {
 // baraMat = bara maten (när byn svälter, steg 2.12.3)
 export function haulJob(s: State, near?: number, baraMat = false) {
   placeTools(s);
-  const zs = zonesOf(s), occ = occupancy(s);
-  const taken = paVagAttBara(s);
+  const taken = paVagAttBara(s), finns = new Set(things(s).map(q => `${q.x},${q.y},${q.k}`));
+  let best: { x: number; y: number; why: string } | undefined, bs = Infinity;
+  for (const a of barLista(s)) {
+    if (a.sc >= bs || taken.has(key(a.x, a.y)) || baraMat && !isFood(a.k) || near !== undefined && a.d > near) continue;
+    if (s.flod && (iVattnetNu(s, key(a.x, a.y)) || !nasIFloden(s, key(a.x, a.y)))) continue; // inte det som ligger i översvämningen eller bakom den (flod.ts)
+    if (!finns.has(`${a.x},${a.y},${a.k}`)) continue; // det har burits sedan listan räknades
+    bs = a.sc; best = { x: a.x + 0.5, y: a.y + 0.5, why: a.why };
+  }
+  return best;
+}
+// bärlistan (steg 6.2.21): det som borde bäras och varför, med poängen (avståndet från byn och tillägget för slaget av
+// bärande). Den räknas en gång i timmen och när något byggs, så att alla som väljer att bära (och alla lägen) frågar samma
+// lista; haulJob tar bort det som någon redan är på väg till och det som burits sedan dess
+interface Bara { x: number; y: number; k: string; d: number; sc: number; why: string }
+const barCache = new WeakMap<State, { key: string; l: Bara[] }>();
+function barLista(s: State) {
+  const key = `${Math.floor(s.now / HOUR)}:${s.byggV ?? 0}:${zonesOf(s).length}`, c = barCache.get(s);
+  if (c && c.key === key) return c.l;
+  const zs = zonesOf(s), occ = occupancy(s), l: Bara[] = [];
   // zoneSpot frågas för varje stack, men svaret beror bara på slaget och prioriteten: en gång per par räcker
   const plats = new Map<string, ReturnType<typeof zoneSpot>>(), spot = (k: string, prio: number) => {
     const q = `${k}|${prio}`;
@@ -967,21 +986,18 @@ export function haulJob(s: State, near?: number, baraMat = false) {
     if (!ryms.has(k)) ryms.set(k, !!(spot(k, -Infinity) ?? ringSpot(s, k, occ)));
     return ryms.get(k)!;
   };
-  let best: { x: number; y: number; why: string } | undefined, bs = Infinity;
   for (const a of things(s)) {
-    if (taken.has(key(a.x, a.y)) || baraMat && !isFood(a.k)) continue;
-    if (s.flod && (iVattnetNu(s, key(a.x, a.y)) || !nasIFloden(s, key(a.x, a.y)))) continue; // inte det som ligger i översvämningen eller bakom den (flod.ts)
     const d = utanforByn(s, a.x, a.y); // nära lägret: elden eller någon lagerplats
-    if (near !== undefined && d > near) continue;
     const zi = zoneAt(s, a.x, a.y);
     let why: string | undefined, sc = d;
     if (!isStored(s, a.x, a.y)) { if (d > LAGER.barFullt || rymsIn(a.k)) why = 'Det ligger saker på marken som ska in i lagret'; }
     else if (zi < 0) { if (spot(a.k, -Infinity)) { why = 'Det ligger saker bredvid lagret och nu finns det plats'; sc += LAGER.barBredvid; } }
     else if (!allows(zs[zi], a.k)) { if (spot(a.k, -Infinity)) { why = `Sorterar: flyttar ${sakNamn(a.k).toLowerCase()} till ${zs.find(z => allows(z, a.k))?.namn?.toLowerCase() ?? 'rätt lager'}`; sc += LAGER.barSortera; } }
     else if (spot(a.k, zs[zi].prio ?? 0)) { why = 'Flyttar saker till ett lager närmare elden'; sc += LAGER.barNarmare; }
-    if (why && sc < bs) { bs = sc; best = { x: a.x + 0.5, y: a.y + 0.5, why }; }
+    if (why) l.push({ x: a.x, y: a.y, k: a.k, d, sc, why });
   }
-  return best;
+  barCache.set(s, { key, l });
+  return l;
 }
 // medan vattnet stiger (steg 3.8.7, flod.ts): maten på en lagerplats som vattnet kan nå (flodHotad i sjo.ts), närmast lägret
 // först. Den bärs till en plats som vattnet inte når (roomIn). Det som ligger i en kista eller på en hylla klarar sig
