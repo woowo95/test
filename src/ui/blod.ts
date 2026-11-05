@@ -1,4 +1,5 @@
 import { rasterPa } from '../palett';
+import { sinHash as hash } from './pixel';
 import * as PIXI from 'pixi.js';
 import { Blodflack, blodNu, blodOf, snoPaMarken } from '../sim';
 import { s, ui } from './lage';
@@ -16,7 +17,6 @@ const FARG: Record<string, [number, number]> = {
   5: [0x5e3c24, 1], 6: [0x3f2415, 1], 7: [0x3f2415, 0.45], 0: [0x3f2415, 0.3],
   p: [0xa14808, 0.45], q: [0xbd753e, 0.22], // svaga: ritas glesare i ett rastermönster (rasterPa)
 };
-const hash = (a: number, b: number) => { const h = Math.sin(a * 12.9898 + b * 78.233) * 43758.5453; return h - Math.floor(h); };
 const krymp = (v: number) => v > 0.7 ? 1 : v > 0.3 ? 0.82 : 0.6;
 const droppFarg = (v: number) => v > 0.7 ? '1' : v > 0.3 ? '5' : '7';
 const key = (x: number, y: number) => x * 4096 + y; // punkterna utanför kartan (x eller y under 0) ritas inte

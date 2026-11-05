@@ -142,7 +142,8 @@ function delar() {
   l.takScen.addChild(l.tak, l.takHal);
   return l;
 }
-export const skuggTrad = () => delar().fasta; // träden
+let tradVer = 0;
+export const skuggTrad = () => { tradVer++; return delar().fasta; }; // träden (anropas bara när deras skuggor ritas om)
 export const skuggFolk = () => delar().folk; // folket
 // väggarnas form flyttad snett åt höger (VAGG_D punkter); där väggen själv står blir det ingen skugga
 export const VAGG_D = 2;
@@ -183,6 +184,26 @@ export function takYtor(lista: { x: number; y: number; t: PIXI.Texture; form?: P
   for (let i = h; i < takHalSp.length; i++) takHalSp[i]!.visible = false;
 }
 
+// en signatur för allt som ritas i skuggbilderna: n = antalet bilder med egen skugga som används nu
+let ritadSig = '';
+const blanda = (h: number, v: number) => (Math.imul(h, 31) + (v | 0)) | 0;
+function spriteSig(h: number, c: PIXI.Container) {
+  for (const x of c.children) {
+    const sp = x as PIXI.Sprite;
+    if (!sp.visible) continue;
+    h = blanda(blanda(blanda(blanda(h, sp.texture?.baseTexture?.uid ?? 0), (sp.texture?.frame.x ?? 0) * 7919 + (sp.texture?.frame.y ?? 0)), sp.position.x * 64), sp.position.y * 64);
+    h = blanda(h, sp.scale.x * 1024);
+  }
+  return h;
+}
+function skuggSig(n: number, bredd: number, hojd: number) {
+  const l = delar();
+  let h = 17;
+  for (const d of l.folk.geometry.graphicsData) { const r = d.shape as PIXI.Rectangle; h = blanda(blanda(blanda(blanda(h, r.x * 8), r.y * 8), r.width * 8), r.height * 8); }
+  for (const c of [l.vaggar, l.vaggHal, l.ikoner, l.tak, l.takHal]) h = spriteSig(h, c);
+  return `${tradVer}|${l.folk.geometry.graphicsData.length}|${n}|${bredd}|${hojd}|${h}`;
+}
+
 // skuggorna nu: kastare = lagren med det som står (bilderna i dem som ritats med Ikoner och skugga, ikonSkugga i sp.skuggIkon),
 // mottagare = marken och golven, som får filtret. Bredd och höjd = kartan i världens pixlar
 export function ritaSkuggor(renderer: PIXI.Renderer, varld: PIXI.Container, kastare: PIXI.Container[], mottagare: PIXI.Container[], bredd: number, hojd: number) {
@@ -190,6 +211,7 @@ export function ritaSkuggor(renderer: PIXI.Renderer, varld: PIXI.Container, kast
     rt?.destroy(true); rtTak?.destroy(true);
     rt = PIXI.RenderTexture.create({ width: bredd, height: hojd, scaleMode: PIXI.SCALE_MODES.NEAREST, resolution: 1 });
     rtTak = PIXI.RenderTexture.create({ width: bredd, height: hojd, scaleMode: PIXI.SCALE_MODES.NEAREST, resolution: 1 });
+    ritadSig = '';
   }
   const { ikoner, scen, takScen } = delar(), e = extra();
   let n = 0;
@@ -203,8 +225,14 @@ export function ritaSkuggor(renderer: PIXI.Renderer, varld: PIXI.Container, kast
     }
   }
   for (let i = n; i < ikoner.children.length; i++) ikoner.children[i]!.visible = false;
-  renderer.render(scen, { renderTexture: rt, clear: true });
-  renderer.render(takScen, { renderTexture: rtTak, clear: true });
+  // skuggbilderna ritas om bara när något i dem ändrats (steg 5.5.7): träden när deras skuggor ritats om, och folket,
+  // väggarna, taken och bilderna efter var de står
+  const sig = skuggSig(n, bredd, hojd);
+  if (sig !== ritadSig) {
+    ritadSig = sig;
+    renderer.render(scen, { renderTexture: rt, clear: true });
+    renderer.render(takScen, { renderTexture: rtTak, clear: true });
+  }
   const f = skuggFilter(), u = f.uniforms;
   u.uSkugga = rt; u.uTak = rtTak; u.uPos[0] = varld.position.x; u.uPos[1] = varld.position.y; u.uSkala = varld.scale.x;
   u.uStorlek[0] = bredd; u.uStorlek[1] = hojd;

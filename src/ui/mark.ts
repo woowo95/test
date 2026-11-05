@@ -7,6 +7,7 @@
 // Kartan delas i bitar om 8 × 8 rutor, var och en en egen bild, och bara de bitar där något ändrats ritas om.
 import * as PIXI from 'pixi.js';
 import { FARGER, kornPa } from '../palett';
+import { bayer, brus as vn, platsHash as hash } from './pixel';
 import { PAL as IKON_PAL, PIX } from '../ikoner';
 
 // palettens ramper: index = ramp * 4 + ton (mörk till ljus)
@@ -16,19 +17,6 @@ const IDX = new Map(FARGER.map((h, i) => [h.toLowerCase(), i]));
 const morkare = (c: number) => c - (c & 3) + Math.max(0, (c & 3) - 1);
 
 // ---------- slump som bara beror på platsen ----------
-function hash(x: number, y: number, s: number) {
-  let h = Math.imul(x | 0, 0x27d4eb2d) ^ Math.imul(y | 0, 0x165667b1) ^ Math.imul(s | 0, 0x2c1b3c6d);
-  h = Math.imul(h ^ (h >>> 15), 0x85ebca6b); h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35); h ^= h >>> 16;
-  return (h >>> 0) / 4294967296;
-}
-function vn(x: number, y: number, sk: number, s: number) {
-  const fx = x / sk, fy = y / sk, x0 = Math.floor(fx), y0 = Math.floor(fy), tx = fx - x0, ty = fy - y0;
-  const u = tx * tx * (3 - 2 * tx), v = ty * ty * (3 - 2 * ty);
-  const a = hash(x0, y0, s), b = hash(x0 + 1, y0, s), c = hash(x0, y0 + 1, s), d = hash(x0 + 1, y0 + 1, s);
-  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
-}
-const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(v => (v + 0.5) / 16);
-const bayer = (x: number, y: number) => BAYER[(y & 3) * 4 + (x & 3)];
 // en fläck med ren kant (en långsam våg som skärs av), ett kort streck i stället för en lös punkt
 const flack = (x: number, y: number, sk: number, s: number, grans: number) => vn(x, y, sk, s) * 0.75 + vn(x, y, sk / 3, s + 1) * 0.25 > grans;
 const strack = (x: number, y: number, s: number, p: number) => hash(x, y, s) < p ? 1 : hash(x, y - 1, s) < p ? 2 : 0;
@@ -188,9 +176,9 @@ const BP = BIT * 16;
 interface Bit { sp: PIXI.Sprite; c: HTMLCanvasElement; g: CanvasRenderingContext2D; img: ImageData; u: Uint32Array; px: Int8Array }
 const bitar: Bit[] = [];
 let bw = 0, bh = 0;
-export const markLayer = new PIXI.Container();
+export const markytaLayer = new PIXI.Container();
 const bitLayer = new PIXI.Container(), animLayer = new PIXI.Container();
-markLayer.addChild(bitLayer, animLayer);
+markytaLayer.addChild(bitLayer, animLayer);
 function ritaBit(bx: number, by: number) {
   let b = bitar[by * bw + bx];
   if (!b) {

@@ -4,6 +4,7 @@
 // Stigarnas smuts räknas i mark.ts (mitten av stigen, där man går mest). Bara utseende: simuleringen läser inget härifrån.
 import { DAY } from '../sim';
 import { FARGER, tonSteg } from '../palett';
+import { platsHash as hash } from './pixel';
 import { PAL, PIX, hasIcon } from '../ikoner';
 
 export const SLIT = {
@@ -14,11 +15,6 @@ export const SLIT = {
 // hur smutsigt (0 till SLIT.steg) det som blev färdigt vid klar är nu; utan tid (en äldre sparfil) ett steg
 export const smutsGrad = (now: number, klar: number | undefined) => klar === undefined ? 1 : Math.max(0, Math.min(SLIT.steg, Math.floor((now - klar) / DAY / SLIT.dygn)));
 
-function hash(x: number, y: number, s: number) {
-  let h = Math.imul(x | 0, 0x27d4eb2d) ^ Math.imul(y | 0, 0x165667b1) ^ Math.imul(s | 0, 0x2c1b3c6d);
-  h = Math.imul(h ^ (h >>> 15), 0x85ebca6b); h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35); h ^= h >>> 16;
-  return (h >>> 0) / 4294967296;
-}
 const INDEX = new Map(FARGER.map((h, i) => [h, i]));
 // färgen i punkten (x, y) med smuts av graden g (och lite mer med extra, 0–1): ett korn är två punkter i rad, ett steg mörkare
 export function smutsigFarg(hex: string, x: number, y: number, g: number, s = 0, extra = 0) {

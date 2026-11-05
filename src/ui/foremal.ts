@@ -7,7 +7,7 @@ import { outPilesAt, piles, s, sakVar, ui } from './lage';
 import { Ikoner, TS, overG, pileLayer, rokLayer, structG } from './scen';
 import { eldBild, gnistBild, rokBild } from './animation';
 import { ANIMTAKT } from '../animbilder';
-import { mix } from './terrang';
+import { mix } from './pixel';
 import { iBruk } from './ibruk';
 import { framstegPunkter } from './framsteg';
 import { fargTal, narmast } from '../palett';

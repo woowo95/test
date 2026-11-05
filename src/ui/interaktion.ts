@@ -227,3 +227,13 @@ function showHover(gx: number, gy: number) {
   box.innerHTML = rows.map(r => `<p>${r}</p>`).join('');
   box.hidden = false;
 }
+
+// tangentbordet (steg 5.5.7): det man trycker på som inte är en knapp eller länk (rubrikerna som fälls ut, raderna med
+// data-hjalp, symbolerna med tabindex) nås med Tab, och Enter eller mellanslag gör samma sak som ett tryck
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const el = e.target as HTMLElement | null;
+  if (!el || el.matches('button, a, input, select, textarea, summary') || !(el.matches('[role="button"], .klick') || el.tabIndex >= 0 && el.hasAttribute('tabindex'))) return;
+  e.preventDefault();
+  el.click();
+});

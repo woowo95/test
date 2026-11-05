@@ -15,6 +15,7 @@ import { startSmak } from './rykten';
 import { nyAndlighet } from './religion';
 import { newFire } from './eld';
 import { UPPREPAT, lasAlder, lasArt, packaAlder, packaArt } from './trad';
+import { historikKolumner } from './historik';
 
 // ---------- skapa värld ----------
 // storlek: kartans storlek, för testerna av äldre byar (en ny by får alltid NEW_W × NEW_H)
@@ -230,6 +231,7 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
       if (b && p) { l.bnr = b.nr; delete l.byte; }
     }
   }],
+  [24, 'v378: historikens kolumner (eld sedan v357) i registrets ordning redan när byn läses in (steg 5.5.7)', s => historikKolumner(s)],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

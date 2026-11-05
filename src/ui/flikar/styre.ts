@@ -66,7 +66,7 @@ function rattegangar() {
   if (!lista?.length) return '';
   return `<h3>Rättegångar</h3><ol class="logg">${lista.slice().reverse().map(r => {
     const id = `ratt-${r.t}-${r.om}`, x = rattegang(s, r);
-    return `<li class="klick" data-hjalp="${id}" data-hjalp-grupp="ratt-" title="Tryck för hela rättegången"><span class="when">${timeLabel(s, r.t)}</span>${esc(r.namn)} ${esc(x.brott)}: ${esc(STRAFF_NAMN[r.steg].toLowerCase())}${r.oratt ? ' <span class="oratt">orättvis</span>' : ''}</li>${hjalpText(id, rattMer(r, x))}`;
+    return `<li class="klick" data-hjalp="${id}" data-hjalp-grupp="ratt-" title="Tryck för hela rättegången" tabindex="0" role="button"><span class="when">${timeLabel(s, r.t)}</span>${esc(r.namn)} ${esc(x.brott)}: ${esc(STRAFF_NAMN[r.steg].toLowerCase())}${r.oratt ? ' <span class="oratt">orättvis</span>' : ''}</li>${hjalpText(id, rattMer(r, x))}`;
   }).join('')}</ol>`;
 }
 function rattMer(r: Rattegang, x: ReturnType<typeof rattegang>) {

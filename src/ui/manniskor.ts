@@ -2,8 +2,9 @@ import * as PIXI from 'pixi.js';
 import { ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bordVid, byId, homeKind, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats, Match, Task, dragLag, kastMal, SPORT, bakomFilt } from '../sim';
 import { PRICKAR } from './hjalp';
 import { farg, fargTal } from '../palett';
+import { sinHash as hash } from './pixel';
 import { s, sakVar, ui, uppgiftVid, vidNyBy } from './lage';
-import { Ikoner, TS, bubbleG, figurLayer, labels, markLayer, peopleG } from './scen';
+import { Ikoner, TS, bubbleG, figurLayer, labels, symbolLayer, peopleG } from './scen';
 import { type Arm, type Ben, type Rikt, figurHand, figurTex } from './folkbild';
 import { ARBETEN, STRIDBILD, arbetsBild, ritaArbete } from './arbetsbild';
 import { skapad } from './utseende';
@@ -85,7 +86,6 @@ function flyg(ax: number, ay: number, bx: number, by: number, f: number, ramp: n
     pt(x + dx, y + dy, r >= 2 && !(Math.abs(dx) === 1 && Math.abs(dy) === 1) ? SP.kol : ramp[dx + dy < 0 ? ton : Math.max(0, ton - 1)]);
   }
 }
-const hash = (n: number) => { const v = Math.sin(n * 12.9898) * 43758.5453; return v - Math.floor(v); };
 // det som syns runt matchen, bara i bilden: repet och strecket, målet, snövallarna, bollen och det som kastas
 function ritaSport(t: number) {
   const m = s.sport;
@@ -190,7 +190,7 @@ function pratRuta(x: number, top: number, bob: number, kind: string | undefined,
   if (stor) markIcons.add(k, x - 8, top - 12.5 + bob, 1, ljusSymbol(k) ? PRAT_KANT : 0xffffff);
   else markIcons.add(k, x - 4, top - 4.5 + bob, 8 / w, ljusSymbol(k) ? PRAT_KANT : 0xffffff);
 }
-const markIcons = new Ikoner(markLayer);
+const markIcons = new Ikoner(symbolLayer);
 // en sak med mitten i (cx, cy): kartbilden i sin naturliga storlek, annars den gamla bilden storlek punkter stor
 function bar(k: string, cx: number, cy: number, storlek: number) {
   const kb = kartbild(k), c = iconCanvas(kb ?? k), sc = kb ? 1 : storlek / (c.width || 8);
