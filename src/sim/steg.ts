@@ -27,7 +27,7 @@ import { halMin, halVal, islagt, stepIs } from './is';
 import { blotSteg, coldOf, stepVader, temperature, VADER, vaderGrader, vaderNu, vaxtFaktor } from './vader';
 import { ELD, VED, addFuel, canLight, eldById, eldXY, giveBack, needStones, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight } from './eld';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, gjort, isSick, living, log, ovning, stat, think } from './folk';
-import { eldPlats } from './karta';
+import { eldPlats, getMap } from './karta';
 import { ELDFLYTT, flyttaElden, stepEldFlytt } from './eldflytt';
 import { DODSORSAKER, barnMat, birth, birthWish, die, regulate } from './liv';
 import { MARK, groundOf, growGround, packGround, tileOf } from './mark';
@@ -39,7 +39,7 @@ import { PLATS } from './plats';
 import { chance, clamp, hash3, rnd } from './slump';
 import { ARSTID, ageIndex, hourOf, iIstiden, isLight } from './tid';
 import { ACTS, toolRow } from './handlingar';
-import { AGES_BORJAR, Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, Historik, simulera } from './typer';
+import { AGES_BORJAR, Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, Historik, simulera, T, inMap } from './typer';
 import { FOREST, findPath, wear } from './vag';
 import { kroppFart, rutFart, smidig } from './gang';
 import { arbetsTimme, chooseTask, dangers, nastaBuske, nastaRedskap, nastaRuta, spotFor } from './val';
@@ -69,7 +69,7 @@ import { barMed, burenSteg, halsa, halsaSteg, lakerFullt, lamnaAv, mossaFynd, mo
 import { bordPlats, fullBorda, kladVarme, ryms, stepKlader } from './utrustning';
 import { stepPynt } from './pynt';
 import { stadaByten } from './byte';
-import { finishStation, finishTillbehor, stationRutor, stepStationer, tillbehorVarme, workStation } from './stationer';
+import { finishStation, finishTillbehor, stationAt, stationRutor, stepStationer, tillbehorVarme, workStation } from './stationer';
 import { notis } from './notiser';
 
 // Simuleringen går i slag om fem minuter (BEAT), i spelet och vid ikappräkning likadant. Inom ett slag går tiden åt
@@ -432,7 +432,8 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
       used = w.used;
       if (tk.bar !== undefined && !barMed(s, p, tk)) { left -= used; continue; } // den som bärs följer med
       if (w.framme) { s.now = t1 - (left - used) * SEC; arrive(s, p, tk, isLight(s.now)); }
-    } else if (d.runda && tk.phase === 'do') used = rundaSteg(s, p, tk, left, a, learn); // också den som letar flinta eller stenar, bland stenarna (steg 4.5.6.3)
+    } else if (d.tur && tk.phase === 'do') used = turSteg(s, p, tk, left); // promenaden (steg 6.2.8)
+    else if (d.runda && tk.phase === 'do') used = rundaSteg(s, p, tk, left, a, learn); // också den som letar flinta eller stenar, bland stenarna (steg 4.5.6.3)
     else {
       // arbetet i bitar: till uppgiftens slut, till dess bördan bärs hem, men aldrig längre än BIT sekunder åt gången
       used = Math.min(left, Math.max(0, (tk.until - now) / SEC), BIT);
@@ -503,6 +504,39 @@ function walk(s: State, p: Person, tk: Task, left: number) {
     tk.path!.shift(); spara(s, p, klocka());
     if (budget <= 0) return { used: left, framme: false };
   }
+}
+// promenaden (steg 6.2.8): en runda i vanlig gångfart mellan punkter på land inom tur.r rutor från platsen man valde (kring),
+// och vid en del av punkterna ett stopp där man ser sig omkring (lookAround). När tiden är slut väljer man något annat
+// (oftast hem). Punkterna väljs med hash3, så att spelet och ikappräkningen går samma väg
+function turSteg(s: State, p: Person, tk: Task, left: number, n = 0): number {
+  const r = ACTS[tk.act].tur!, now = s.now, slut = Math.max(0, (tk.until - now) / SEC);
+  tk.kring ??= { x: Math.floor(tk.tx), y: Math.floor(tk.ty) };
+  if (tk.hopp) {
+    const w = walk(s, p, tk, Math.min(left, Math.max(slut, 1e-3))), used = Math.max(w.used, 1e-3);
+    if (p.task !== tk || !w.framme) return used;
+    tk.hopp = undefined;
+    const h = hash3(p.id, tileOf(tk.tx, tk.ty), Math.floor(now / SEC));
+    if (h < r.se) { tk.plock = r.stopp[0] + h / r.se * (r.stopp[1] - r.stopp[0]); lookAround(s, p, tk.tx, tk.ty); }
+    return used;
+  }
+  if ((tk.plock ?? 0) > 1e-6) { const used = Math.max(1e-3, Math.min(left, tk.plock!, slut, BIT)); tk.plock! -= used; return used; }
+  tk.plock = undefined;
+  const q = n < 2 ? turPunkt(s, p, tk, r.r) : undefined;
+  if (!q) return Math.max(1e-3, Math.min(left, slut, BIT)); // ingen punkt att gå till: hen står kvar en stund
+  tk.tx = q.x + 0.5; tk.ty = q.y + 0.5; tk.hopp = true; tk.pk = undefined;
+  return turSteg(s, p, tk, left, n + 1);
+}
+// nästa punkt på promenaden: en ruta på land inom r rutor från kring, inte den man står på, inte i en vägg, ett hus, vattnet
+// eller en station, och dit det finns en väg
+function turPunkt(s: State, p: Person, tk: Task, r: number) {
+  const m = getMap(s.seed), g = groundOf(s), c = tk.kring!, hit = tileOf(p.x, p.y);
+  for (let k = 0; k < 8; k++) {
+    const h1 = hash3(p.id, k, Math.floor(s.now / SEC)), h2 = hash3(p.id + 7919, k, Math.floor(s.now / SEC));
+    const v = h1 * Math.PI * 2, d = 2 + h2 * (r - 2), x = Math.floor(c.x + Math.cos(v) * d), y = Math.floor(c.y + Math.sin(v) * d);
+    if (!inMap(x, y) || y * W + x === hit || m.tiles[y * W + x] === T.Vatten || m.tiles[y * W + x] === T.Sten || blocked(s, x + 0.5, y + 0.5) || stationAt(s, x, y)) continue;
+    if (pathFor(s, g, p.x, p.y, x + 0.5, y + 0.5)) return { x, y };
+  }
+  return undefined;
 }
 // där man ställer sig för att lägga på ved: nedanför elden, eller vid en annan sida om rutan nedanför är vatten eller en
 // vägg (en brasa vid stranden, steg 2.12.6: den som bar ved dit gick ut i vattnet)

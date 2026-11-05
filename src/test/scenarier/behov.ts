@@ -225,6 +225,41 @@ SCENARIER.fritid = {
   },
 };
 
+SCENARIER.promenad = {
+  lang: true,
+  text: 'Promenaden är en riktig runda (steg 6.2.8): man går i vanlig fart mellan några punkter på land runt platsen man valt, stannar ibland och ser sig omkring, och går aldrig i vattnet, en vägg eller en station. Ingen svängning i bilden',
+  kor: () => {
+    let prom = 0, punkter = 0, stopp = 0, land = true, langtFran = 0, maxR = 0;
+    for (const seed of [5, 6]) {
+      const s = createState(seed, START), sett = new Map<object, Set<string>>();
+      s.kal = nyKalender(s.now, 2); setFood(s, 40); setAmount(s, 'ved', 40);
+      kor(s, 2 * 24, s => {
+        for (const p of living(s)) {
+          const t = p.task;
+          if (t?.act !== 'promenad' || t.phase !== 'do') continue;
+          let m = sett.get(t);
+          if (!m) { sett.set(t, m = new Set()); prom++; }
+          if (t.hopp) m.add(`${Math.floor(t.tx)},${Math.floor(t.ty)}`);
+          if ((t.plock ?? 0) > 0) stopp++;
+          if (t.kring) maxR = Math.max(maxR, Math.hypot(Math.floor(t.tx) - t.kring.x, Math.floor(t.ty) - t.kring.y));
+          if (getMap(s.seed).tiles[tileOf(p.x, p.y)] === T.Vatten || SIM.isWall(s, p.x, p.y)) land = false;
+          if (t.kring) langtFran = Math.max(langtFran, Math.hypot(p.x - t.kring.x, p.y - t.kring.y));
+        }
+      });
+      for (const m of sett.values()) punkter += m.size;
+    }
+    const r = ACTS.promenad.tur!.r;
+    return [
+      [`folk tar promenader (${prom})`, prom >= 3],
+      [`varje promenad går mellan flera punkter (${(punkter / Math.max(1, prom)).toFixed(1)} i snitt)`, punkter >= 2 * prom],
+      [`man stannar ibland och ser sig omkring (${stopp} steg i ett stopp)`, stopp > 0],
+      [`punkterna ligger inom ${r} rutor från platsen man valde (längst ${maxR.toFixed(1)})`, maxR <= r + 1],
+      ['den som promenerar går aldrig i vattnet eller i en vägg', land],
+      ['promenaden svänger inte i bilden (ingen vandra i handlingens rad)', !ACTS.promenad.vandra],
+    ];
+  },
+};
+
 SCENARIER.varm = {
   text: 'Steg 2.3.4: kroppen kan bli varmare än idealet: av solen på sommaren (inte i skugga under ett träd eller i ett hus), av kläderna när det är milt och av att sitta tätt vid elden. Under idealet är det som förut. Den som är för varm svalnar, tar av sig de varma kläderna (bältet sitter kvar), tar inte på sig nya, lockas till bad, och badet kyler. Tröttare blir hen först när hen är extremt varm (steg 2.10.20)',
   lang: true,

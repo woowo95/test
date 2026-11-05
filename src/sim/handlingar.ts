@@ -60,7 +60,8 @@ interface ActDef {
   resurs?: 'samla' | 'jakt' | 'fiske'; // platsen har ett förråd som tar slut och som man minns (fynd.ts, minne.ts)
   hand?: { napp: number; hall: number }; // fiske utan redskap: samma tal som napp och hall i redskapets rad
   hemVarje?: true; // varje fångst bärs hem på en gång (fisket)
-  runda?: { stopp: [number, number]; r: number; leta: string; plock: string; hel?: true }; // rundan (steg 4.5.6.1): man går i full fart från ruta till ruta inom r rutor och stannar stopp[0]–stopp[1] sekunder där det finns något att plocka; gången räknas som arbete. leta och plock är undertexterna (underText). hel: varje stopp ger en hel sak i handen (steg 6.1.3): arbetet mot nästa sak räknas medan man letar, och man stannar först där den är klar
+  runda?: { stopp: [number, number]; r: number; leta: string; plock: string; hel?: true };
+  tur?: { r: number; stopp: [number, number]; se: number }; // promenaden (steg 6.2.8, turSteg i steg.ts): man går i vanlig fart mellan punkter på land inom r rutor från platsen man valt, och vid en del av dem (se, 0–1) stannar man stopp[0]–stopp[1] sekunder och ser sig omkring // rundan (steg 4.5.6.1): man går i full fart från ruta till ruta inom r rutor och stannar stopp[0]–stopp[1] sekunder där det finns något att plocka; gången räknas som arbete. leta och plock är undertexterna (underText). hel: varje stopp ger en hel sak i handen (steg 6.1.3): arbetet mot nästa sak räknas medan man letar, och man stannar först där den är klar
   vandra?: { r: number; h0: number; h1: number; v: number }; // rörelse på platsen (bara det som visas, och lite slitage): radie, stilla h0–h1 sekunder, fart
   tungt?: true; // tröttar mer än att bara vara vaken
   vila?: true; // man återhämtar sig
@@ -132,7 +133,7 @@ const DEF = {
   metspo: { namn: 'Gör ett metspö', slag: 'hantverk', hantverk: true, plats: 'station' },
   kniv: { namn: 'Gör en flintkniv', slag: 'hantverk', hantverk: true, plats: 'station' },
   slakta: { namn: 'Slaktar vilt med kniven', slag: 'hantverk', redskap: { kniv: { haller: 250, kravs: true } }, slits: { enhet: 'djur', per: 'gang' }, hantverk: true, social: true, stilla: true, verb: 'slaktar', plats: 'station' },
-  promenad: { namn: 'Tar en promenad', tecken: '🚶', vandra: { r: 4, h0: 1, h1: 4, v: 0.8 }, dygn: true },
+  promenad: { namn: 'Tar en promenad', tecken: '🚶', tur: { r: 6, stopp: [20, 90], se: 0.35 }, dygn: true },
   bada: { namn: 'Badar i sjön', tecken: '🏊', dygn: true },
   bara: { namn: 'Bär in saker till lagret', slag: 'bara' },
   strand: { namn: 'Sitter vid stranden och ser ut över vattnet', tecken: '🌊', dygn: true },

@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bordVid, byId, homeKind, bordaIHander, utrustning, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats, Match, Task, dragLag, kastMal, SPORT, bakomFilt } from '../sim';
+import { ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bordVid, byId, homeKind, bordaIHander, utrustning, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats, Match, Task, dragLag, kastMal, SPORT, bakomFilt, blocked, stationAt } from '../sim';
 import { PRICKAR } from './hjalp';
 import { farg, fargTal } from '../palett';
 import { sinHash as hash } from './pixel';
@@ -43,10 +43,14 @@ function platsAv(p: Person) {
   if (sp2) return { ...sp2, still }; // sporten (steg 4.5.6.10–11)
   const f = still ? s.filtar?.find(g => g.vem === p.id && !g.handlare && g.slut > t) : undefined;
   if (f) return { ...bakomFilt(s, f), still }; // bakom sin egen filt i ett byte (steg 4.5.7.1)
-  if (still && tk?.phase === 'do' && d && !d.stilla) {
+  // promenaden går på riktigt mellan punkter (steg 6.2.8) och svänger inte. Svängningen går aldrig in i en vägg, ett hus,
+  // vattnet eller en station: då blir den kortare, eller ingen alls
+  if (still && tk?.phase === 'do' && d && !d.stilla && !d.tur) {
     const w = d.vandra, k = t / SEC, r = w ? w.r * 0.6 : 0.12, f = w ? w.v / (w.r * 6) : 0.05;
-    x += Math.sin(k * f + p.id * 1.7) * r * Math.sin(k * f * 0.37 + p.id);
-    y += Math.cos(k * f * 0.83 + p.id * 2.3) * r * Math.sin(k * f * 0.29 + p.id * 0.5);
+    const dx = Math.sin(k * f + p.id * 1.7) * r * Math.sin(k * f * 0.37 + p.id), dy = Math.cos(k * f * 0.83 + p.id * 2.3) * r * Math.sin(k * f * 0.29 + p.id * 0.5);
+    const hem = Math.floor(y) * 10000 + Math.floor(x);
+    const fri = (nx: number, ny: number) => Math.floor(ny) * 10000 + Math.floor(nx) === hem || !blocked(s, nx, ny) && !stationAt(s, Math.floor(nx), Math.floor(ny));
+    for (const del of [1, 0.5, 0.25]) if (fri(x + dx * del, y + dy * del)) { x += dx * del; y += dy * del; break; }
   }
   return { x, y, still };
 }
