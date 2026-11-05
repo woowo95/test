@@ -324,8 +324,10 @@ export function nastaRuta(s: State, varde: (x: number, y: number) => number, x0:
   // långt bort (bortom MINNE.sokR) prövas varannan ruta: det är bara riktningen som behövs, väl framme letar man nära
   const st = r > MINNE.sokR ? 2 : 1;
   for (let dy = -r; dy <= r; dy += st) for (let dx = -r; dx <= r; dx += st) {
-    const x = cx + dx, y = cy + dy, d = Math.hypot(dx, dy), i = y * W + x;
-    if (d < 0.5 || d > r + 0.01 || x < 0 || y < 0 || x >= W || y >= H) continue;
+    const x = cx + dx, y = cy + dy;
+    if (x < 0 || y < 0 || x >= W || y >= H) continue;
+    const d = Math.hypot(dx, dy), i = y * W + x;
+    if (d < 0.5 || d > r + 0.01) continue;
     if (tiles[i] === T.Vatten || bitAt(s, x, y) || forSmutsigt(s, x, y)) continue;
     const v0 = utan ? 0 : drag?.tror ? drag.tror(x, y) : varde(x, y);
     if (v0 < minst) continue; // rutan ger för lite för alla kraven

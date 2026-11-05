@@ -937,6 +937,12 @@ export function haulJob(s: State, near?: number, baraMat = false) {
   placeTools(s);
   const zs = zonesOf(s), occ = occupancy(s);
   const taken = paVagAttBara(s);
+  // zoneSpot frågas för varje stack, men svaret beror bara på slaget och prioriteten: en gång per par räcker
+  const plats = new Map<string, ReturnType<typeof zoneSpot>>(), spot = (k: string, prio: number) => {
+    const q = `${k}|${prio}`;
+    if (!plats.has(q)) plats.set(q, zoneSpot(s, k, prio, occ));
+    return plats.get(q);
+  };
   let best: { x: number; y: number; why: string } | undefined, bs = Infinity;
   for (const a of things(s)) {
     if (taken.has(key(a.x, a.y)) || baraMat && !isFood(a.k)) continue;
@@ -946,9 +952,9 @@ export function haulJob(s: State, near?: number, baraMat = false) {
     const zi = zoneAt(s, a.x, a.y);
     let why: string | undefined, sc = d;
     if (!isStored(s, a.x, a.y)) why = 'Det ligger saker på marken som ska in i lagret';
-    else if (zi < 0) { if (zoneSpot(s, a.k, -Infinity, occ)) { why = 'Det ligger saker bredvid lagret och nu finns det plats'; sc += LAGER.barBredvid; } }
-    else if (!allows(zs[zi], a.k)) { if (zoneSpot(s, a.k, -Infinity, occ)) { why = `Sorterar: flyttar ${sakNamn(a.k).toLowerCase()} till ${zs.find(z => allows(z, a.k))?.namn?.toLowerCase() ?? 'rätt lager'}`; sc += LAGER.barSortera; } }
-    else if (zoneSpot(s, a.k, zs[zi].prio ?? 0, occ)) { why = 'Flyttar saker till ett lager närmare elden'; sc += LAGER.barNarmare; }
+    else if (zi < 0) { if (spot(a.k, -Infinity)) { why = 'Det ligger saker bredvid lagret och nu finns det plats'; sc += LAGER.barBredvid; } }
+    else if (!allows(zs[zi], a.k)) { if (spot(a.k, -Infinity)) { why = `Sorterar: flyttar ${sakNamn(a.k).toLowerCase()} till ${zs.find(z => allows(z, a.k))?.namn?.toLowerCase() ?? 'rätt lager'}`; sc += LAGER.barSortera; } }
+    else if (spot(a.k, zs[zi].prio ?? 0)) { why = 'Flyttar saker till ett lager närmare elden'; sc += LAGER.barNarmare; }
     if (why && sc < bs) { bs = sc; best = { x: a.x + 0.5, y: a.y + 0.5, why }; }
   }
   return best;

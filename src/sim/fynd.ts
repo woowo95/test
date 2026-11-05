@@ -262,8 +262,8 @@ function bortaOf(s: State, c2: typeof skygghet, inne: number, r: number) {
   return v;
 }
 // vad en orörd ruta ger nu (utan årstid och uttag)
-function capOf(s: State, k: FyndId, i: number) {
-  if (iLagret(s, i)) return 0;
+// (i lägret 0: det frågar vaxerAt först, en gång för alla lagren)
+function capUte(s: State, k: FyndId, i: number) {
   const f = FYND[k];
   return f.bas(s, i, f.monster ? monsterOf(s, k).m[i] : 1);
 }
@@ -276,9 +276,10 @@ export function synsOf(s: State, k: Lager, i: number): number {
 }
 const sasong = (s: State, k: FyndId) => (FYND[k].arstid?.[ageIndex(s)] ?? 1) * (s.sjoTorr?.pa ? FYND[k].torka ?? 1 : 1);
 // var det växer just nu, med årstiden men utan uttaget: det man ser av buskar och spår även när det är plockat
-export function vaxerAt(s: State, k: Lager, i: number) {
+export const vaxerAt = (s: State, k: Lager, i: number) => iLagret(s, i) ? 0 : vaxerUte(s, k, i);
+function vaxerUte(s: State, k: Lager, i: number) {
   let v = 0;
-  for (const j of lagren(k)) v += capOf(s, j, i) * sasong(s, j);
+  for (const j of lagren(k)) v += capUte(s, j, i) * sasong(s, j);
   return v;
 }
 // Viltkartan som kaningrupperna väljer plats efter (djur.ts): bara ur kartan och tiden t, så att den är densamma efter
@@ -378,9 +379,10 @@ export const stoneDist = perKarta(seed => {
 
 // vad lagret har på rutan just nu: det filtret visar
 export function fyndAt(s: State, k: Lager, i: number) {
+  if (iLagret(s, i)) return 0; // i lägret växer inget (vaxerAt)
   const d = takenOf(s);
   let v = 0;
-  for (const j of lagren(k)) { const t = d[j]; v += vaxerAt(s, j, i) * (t ? 1 - t[i] : 1); }
+  for (const j of lagren(k)) { const t = d[j]; v += vaxerUte(s, j, i) * (t ? 1 - t[i] : 1); }
   return v;
 }
 // rutorna runt en ruta ut till r rutor och deras vikt efter avståndet (0 längst ut), i ordningen dy yttre, dx inre,
