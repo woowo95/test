@@ -12,7 +12,7 @@
 import { tingOf } from './agande';
 import { count, isKin, isParent, living, log } from './folk';
 import { kronika } from './historik';
-import { capacity, carryOff, helt, ownedAll, passOn } from './lager';
+import { capacity, carryOff, helt, ownedAll, ownMove, passOn } from './lager';
 import { sakNamn, tingNamn, viktOf } from './saker';
 import { grundvarde, husVarde, tingVarde, varuVarde } from './varde';
 import { housesOf } from './byggnad';
@@ -57,6 +57,15 @@ export function inherit(s: State, p: Person) {
     heirs.forEach((h, i) => { f[h.id] = sd > 1e-9 ? d[i] / sd : 1 / heirs.length; });
     const fore = heirs.map(h => ownedAll(s, h.id));
     passOn(s, p.id, f);
+    // varje stack delas i hela saker för sig, och avrundningen kan lägga sig åt samma håll: jämna ut efteråt, en sak i taget
+    // från den som fick mest till den som fick minst, så länge skillnaden blir mindre
+    const fatt = (i: number) => { const nu = ownedAll(s, heirs[i].id); let v = val[i]; for (const k in eget) v += ((nu[k] ?? 0) - (fore[i][k] ?? 0)) * grundvarde(k); return v; };
+    for (let varv = 0; varv < 100 && heirs.length > 1; varv++) {
+      const v = heirs.map((_, i) => fatt(i)), hi = v.indexOf(Math.max(...v)), lo = v.indexOf(Math.min(...v)), gap = v[hi] - v[lo];
+      const nu = ownedAll(s, heirs[hi].id);
+      const k = Object.keys(eget).filter(k => (nu[k] ?? 0) - (fore[hi][k] ?? 0) >= 1 && grundvarde(k) < gap - 1e-9).sort((a, b) => grundvarde(b) - grundvarde(a) || (a < b ? -1 : 1))[0];
+      if (!k || !ownMove(s, k, 1, heirs[hi].id, heirs[lo].id)) break;
+    }
     heirs.forEach((h, i) => { const nu = ownedAll(s, h.id); for (const k in eget) { const n = Math.round((nu[k] ?? 0) - (fore[i][k] ?? 0)); if (n >= 1) fick[i].push(`${n} ${sakNamn(k).toLowerCase()}`); } }); // det som delades ut (hela saker)
   }
   heirs.forEach((h, i) => {

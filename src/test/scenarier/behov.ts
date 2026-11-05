@@ -789,7 +789,8 @@ SCENARIER.matdygn = {
   kor: () => {
     const { foodDays, foodOf, chooseTask, ALDER, SAKER, ruttTemp } = SIM;
     // gott om trä, så att det bara är maten som fattas (sedan steg 3.10.23.7 väljer de annars trä när förrådet räcker 0,7 dygn)
-    const by = () => { const s = createState(6, START); klockan(s, 11); tandEld(s); setAmount(s, 'ved', 100); return s; }; // ved för ungefär nio dygn: under FORRAD.vedMatt (forradsmal.ts), så att vedarbetet finns kvar att välja (steg 6.1.5)
+    // byn delar all mat, så att ingen familj fyller sin egen del av bufferten (bufferten per jag, steg 6.2.20)
+    const by = () => { const s = createState(6, START); klockan(s, 11); tandEld(s); setAmount(s, 'ved', 100); s.delning = { andel: 1 }; return s; }; // ved för ungefär nio dygn: under FORRAD.vedMatt (forradsmal.ts), så att vedarbetet finns kvar att välja (steg 6.1.5)
     // lika mycket fisk (håller ett dygn) och torkat kött (håller länge): fisken räcker kortare, eftersom det mesta hinner ruttna
     const f = by(); setMat(f, { fisk: 120 });
     const t = by(); setMat(t, { torrkott: 120 });
@@ -805,8 +806,9 @@ SCENARIER.matdygn = {
         tidyTools(s);
         for (const p of vuxna) { chooseTask(s, p); alla++; if (['samla', 'jakt', 'fiske'].includes(p.task!.act)) skal.push(p.task!.why ?? ''); }
       }
-      const behover = skal.filter(w => w.includes('Byn behöver mat')).length, mer = skal.filter(w => w.includes('Mer mat till förrådet')).length;
-      return { andel: (behover + mer) / (alla || 1), behover, mer };
+      // den egna maten räknas också (bufferten per jag, steg 6.2.20: familjen fyller sin del av bufferten)
+      const behover = skal.filter(w => w.includes('Byn behöver mat')).length, mer = skal.filter(w => w.includes('Mer mat till förrådet')).length, egen = skal.filter(w => w.includes('egen mat')).length;
+      return { andel: (behover + mer + egen) / (alla || 1), behover, mer };
     };
     const rik = by(); setMat(rik, { torrkott: 600 });
     const tom = by(); setMat(tom, { bar: 3 });
@@ -871,7 +873,8 @@ SCENARIER.arbetare = {
   text: 'Arbetarna (steg 6.1.13, "Arbetsordningen" i designdokumentet): varje rad har ett antal arbetare, minst en, räknat en gång i timmen: maten efter det som fattas, tändmaterialet och letandet per invånare, bygget och kolet efter platserna. Taket är mjukt: när raden har sina arbetare väger den en tredjedel, och färre väljer den',
   kor: () => {
     const { arbetsTimme, chooseTask, ALDER } = SIM;
-    const by = (mat: number) => { const s = createState(6, START); klockan(s, 11); tandEld(s); setAmount(s, 'ved', 100); setMat(s, { torrkott: mat }); arbetsTimme(s); return s; };
+    // byn delar all mat, så att familjernas egen mat (en egen rad, bufferten per jag, steg 6.2.20) inte blandas in
+    const by = (mat: number) => { const s = createState(6, START); klockan(s, 11); tandEld(s); setAmount(s, 'ved', 100); setMat(s, { torrkott: mat }); s.delning = { andel: 1 }; arbetsTimme(s); return s; };
     const tom = by(3), rik = by(600);
     const arbTom = tom.arbBehov!.arb, arbRik = rik.arbBehov!.arb;
     const minstEn = Object.values(arbTom).every(n => n >= 1) && Object.values(arbRik).every(n => n >= 1);

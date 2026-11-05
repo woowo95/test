@@ -39,6 +39,7 @@ SCENARIER.faror = {
       klockan(s, 11); byggare(s); tandEld(s);
       for (const p of living(s)) Object.assign((p.tek ??= {}), { korg: 1, fiskespjut: 1, metspo: 1, kniv: 1 });
       setStock(s, { ved: 200, grenar: 20, torrgras: 40, flinta: 3, ben: 2, rep: 2 }); setAmount(s, 'yxa', 1); setFood(s, 200);
+      s.delning = { andel: 1 }; // byn delar all mat, så att familjerna inte fyller sin egen del av bufferten (steg 6.2.20)
       planBuild(s);
       return s;
     };
@@ -65,7 +66,7 @@ SCENARIER.faror = {
     const ute = by(); setFood(ute, 0.3); const c = SIM.bynsMitt(ute);
     (ute.stackar ??= []).push({ k: 'grenar', n: 5, c: 1, x: Math.floor(c.x) + 9, y: Math.floor(c.y) });
     const barGren = SIM.haulJob(ute, undefined, true), barGrenRik = SIM.haulJob(ute);
-    ute.stackar.push({ k: 'bar', n: 3, c: 1, x: Math.floor(c.x) - 9, y: Math.floor(c.y) });
+    ute.stackar.push({ k: 'bar', n: 3, c: 1, x: Math.floor(c.x) - 9, y: Math.floor(c.y) }); SIM.touch(ute); // bärlistan räknas en gång i timmen (steg 6.2.21): räkna om den nu
     const barBar = SIM.haulJob(ute, undefined, true);
     return [
       [`rik by: bygge, hantverk och fritid ${pct(rik.andel(FORBATTRING))} av valen (${rik.topp})`, rik.andel(FORBATTRING) > 0.3],

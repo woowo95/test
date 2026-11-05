@@ -525,7 +525,7 @@ SCENARIER.slaktbank = {
     // en by där alla kan göra en kniv och slaktbänken, med gott om mat och trä: bänken byggs
     const s = createState(1, START); klockan(s); tandEld(s);
     for (const r of s.people) r.tek = { ...r.tek, kniv: 1, slaktbank: 1 };
-    setMat(s, { bar: 200 }); setAmount(s, 'ved', 60); setAmount(s, 'virke', 6); setAmount(s, 'flinta', 3); setAmount(s, 'grenar', 10);
+    setMat(s, { bar: 200 }); s.delning = { andel: 1 }; setAmount(s, 'ved', 60); setAmount(s, 'virke', 6); setAmount(s, 'flinta', 3); setAmount(s, 'grenar', 10);
     const ved0 = amountOf(s, 'virke');
     let h = 0, byggare = '';
     while (!stationerOf(s).some(isKlar) && h < 48) { kor(s, 1, v => { for (const r of living(v)) if (r.task?.act === 'station') byggare = r.task.why ?? ''; }); h++; }
@@ -1858,15 +1858,15 @@ SCENARIER.patrull = {
     kor(s, 4, s => {
       const v = living(s).find(q => q.task?.act === 'vakt'); if (!v) return;
       vaktId ??= v.id; if (v.id !== vaktId) return;
-      const r = Math.hypot(v.x - e.x - 0.5, v.y - e.y - 0.5); maxR = Math.max(maxR, r);
-      if (r > 6) { langt++; stopp.add(`${v.task!.runda}`); } else if (r < 4 && v.task!.phase === 'do') vidEld++;
+      const r = Math.hypot(v.x - e.x - 0.5, v.y - e.y - 0.5), ut = utanforByn(s, Math.floor(v.x), Math.floor(v.y)); maxR = Math.max(maxR, ut);
+      if (ut >= 0.5 && v.task!.phase === 'do') { langt++; stopp.add(`${v.task!.runda}`); } else if (r < 4 && v.task!.phase === 'do') vidEld++;
       const h = SIM.tingOf(s).find(t => t.hos === v.id); if (h) { haller++; slag = h.k; }
       if (annans.hos === v.id) tog++;
       if (h) kv = SIM.personKampe(s, v, 1, 0, v.x, v.y).vapen;
     });
     return [
       [`någon håller vakt på natten`, vaktId !== undefined],
-      [`vakten går runt byn: ${stopp.size} olika stopp långt från elden (${langt} stunder), som längst ${maxR.toFixed(1)} rutor bort`, stopp.size >= 4 && maxR > 8],
+      [`vakten går runt byn (steg 6.2.4: runt byns område): ${stopp.size} olika stopp utanför området (${langt} stunder), som längst ${maxR.toFixed(1)} rutor utanför`, stopp.size >= 4 && maxR >= 0.5],
       [`vakten stannar vid elden ibland (${vidEld} stunder)`, vidEld > 0],
       [`vakten har byns spjut i handen (${haller} stunder, ${slag}) och striden räknar med det (${kv})`, haller > 0 && slag === 'fiskespjut' && kv === 'fiskespjut'],
       [`vakten tar aldrig någon annans vapen (${tog} gånger)`, tog === 0],
@@ -2201,7 +2201,7 @@ SCENARIER.gangar = {
     const lp = stationSite(s, 'latrin');
     const latrin = lp ? utanforByn(s, lp.x, lp.y) : -1;
     // husen: minst husMellan fritt emellan i en by som byggt flera hus
-    const b = createState(5, START);
+    const b = createState(3, START); // by 3 bygger hus tidigt (by 5 kommer på yxan sent sedan steg 6.2)
     let minst = Infinity;
     for (let d = 0; d < 12; d++) {
       kor(b, 24);

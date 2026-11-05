@@ -169,14 +169,16 @@ SCENARIER.fullaforrad = {
         if (/^Mer (mat|ved) /.test(why)) r.matVed++;
         if (why.startsWith('Mer ')) r.mer++;
         const k = /^Mer (grenar|hö) /.exec(why)?.[1];
-        if (k && SIM.overTak(v, k === 'hö' ? 'torrgras' : 'grenar')) r.overTak++;
+        const m = k === 'hö' ? 'torrgras' : 'grenar';
+        if (k && SIM.amountOf(v, m) > SIM.materialTak(v, m) + 1e-9) r.overTak++; // över taket (vid taket kan valet ha gjorts innan den sista bördan lades in)
       } }); return r; };
       const pf = prov(full), ph = prov(halv);
       const fri = (v: State) => v.stat?.fullaForrad ?? 0;
       return [
         [`i den fulla byn fyller ingen på maten eller veden (${pf.matVed} uppgifter), i byn vid bufferten fylls förråden (${ph.mer})`, pf.matVed === 0 && ph.mer > 0],
         [`ingen samlar grenar eller hö till förrådet när det är över taket (${pf.overTak + ph.overTak} gånger; en kan ses efter att någon annan lagt in en börda i samma steg)`, pf.overTak + ph.overTak <= 1],
-        [`de vuxna i den fulla byn får fritid när inget finns kvar att göra (${fri(full)} gånger, mot ${fri(halv)} i byn vid bufferten)`, fri(full) > fri(halv)],
+        // också byn vid bufferten når taken under dagen när den fyllt på, så antalen jämförs inte (steg 6.2.21)
+        [`de vuxna i den fulla byn får fritid när inget finns kvar att göra (${fri(full)} gånger; ${fri(halv)} i byn vid bufferten när den fyllt på)`, fri(full) > 0],
       ];
     } finally {
       PROJEKT_LIST.forEach((k, i) => { PROJEKT[k].brist = brist[i]; });

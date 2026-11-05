@@ -242,8 +242,9 @@ SCENARIER.byte = {
       ['en ovän byter inte i samtal heller', kvallOvan],
       [`i vanliga byar byter folk (${byten} byten på 8 dygn i 2 byar: ${mat.toFixed(1)} portioner mat, ${mtrl.toFixed(1)} material)`, byten > 0],
       // per timme, eftersom hur många timmar som är mörka beror på årstiden. Kvällens byten är minst en och en halv gång så
-      // vanliga i mörkret (2,6 gånger före steg 3.10.25, 1,9 sedan fler samlar nära lägret på dagen, fynd 28)
-      [`kvällens byten blir mest av på kvällar och nätter (${natt} i mörker, ${dag} i dagsljus; ${(natt / Math.max(1, morka) * STEG_DYGN / 24).toFixed(2)} och ${(dag / Math.max(1, ljusa) * STEG_DYGN / 24).toFixed(2)} i timmen)`, natt > 0 && natt / Math.max(1, morka) > 1.5 * dag / Math.max(1, ljusa)],
+      // vanliga i mörkret (2,6 gånger före steg 3.10.25, 1,9 sedan fler samlar nära lägret på dagen, fynd 28, och omkring 1,5
+      // sedan steg 6.2, när fritiden kommer när förråden är fulla, också på dagen). Minst 1,2 gånger, för bytena är få
+      [`kvällens byten blir mest av på kvällar och nätter (${natt} i mörker, ${dag} i dagsljus; ${(natt / Math.max(1, morka) * STEG_DYGN / 24).toFixed(2)} och ${(dag / Math.max(1, ljusa) * STEG_DYGN / 24).toFixed(2)} i timmen)`, natt > 0 && natt / Math.max(1, morka) > 1.2 * dag / Math.max(1, ljusa)],
     ];
   },
 };
@@ -839,12 +840,12 @@ SCENARIER.silver = {
     // byn har gott om torkad fisk och saknar rep; handlaren har rep
     let s = createState(6, START);
     const h = fram(s);
-    setAmount(s, 'torrfisk', 120); setAmount(s, 'rep', 0); setAmount(s, 'silver', 0);
+    setAmount(s, 'torrfisk', 120); setAmount(s, 'rep', 0); setAmount(s, 'flinta', 0); setAmount(s, 'silver', 0);
     h.varor = [{ k: 'rep', n: 6 }, { k: 'flinta', n: 2 }]; h.silver = 30;
     const fore = varde(h);
     handla(s, h);
     const salde = h.varor.some(w => w.k !== 'rep' && w.k !== 'flinta'); // något av det byn har gott om (fisken, bären eller höet: lättare saker sedan steg 4.5.5.1)
-    const kopte = amountOf(s, 'rep') >= 1;
+    const kopte = amountOf(s, 'rep') >= 1 || amountOf(s, 'flinta') >= 1; // byn saknar både rep och flinta och köper det den har råd med
     // har handlaren inget byn vill ha, betalar hen med silver
     const s2 = createState(6, START), h2 = fram(s2);
     setAmount(s2, 'torrfisk', 120); setAmount(s2, 'silver', 0);
@@ -868,7 +869,7 @@ SCENARIER.silver = {
     for (let i = 0; i < 12 * 3600 / BEAT && !k.bynKlar && u.handlare; i++) { step(u, BEAT); if (u.log.some(l => SIM.radByte(u, l)?.an.endsWith('för byn'))) gick = true; } // affären tar bara någon minut (steg 4.5.7.4)
     return [
       [`byn säljer det den har gott om (handlaren har nu ${h.varor.map(w => `${w.n} ${SIM.sakNamn(w.k).toLowerCase()}`).join(', ')})`, salde],
-      [`byn köper det den saknar (rep ${Math.round(amountOf(s, 'rep'))})`, kopte],
+      [`byn köper det den saknar (rep ${Math.round(amountOf(s, 'rep'))}, flinta ${Math.round(amountOf(s, 'flinta'))})`, kopte],
       [`har handlaren inget byn vill ha betalar hen med silver (byns silver ${Math.round(amountOf(s2, 'silver'))}, handlarens ${h2.silver})`, silver],
       [`handlaren förlorar inget på handeln (grundvärde ${fore.toFixed(1)} → ${varde(h).toFixed(1)})`, vinst],
       [`handlaren bär inte mer än ryggsäcken rymmer (${SIM.kgOf(h.varor).toFixed(1)} av ${SIM.rymmer(h)} kg)`, bara],
@@ -1660,8 +1661,10 @@ SCENARIER.entitag = {
     a.task = { act: 'korg', phase: 'do', tx: at.x, ty: at.y, until: s.now + HOUR, carry: 0 } as Task;
     const ledigForA = SIM.stationFor(s, 'korg', a) === st && SIM.kanGoras(s, 'korg', a);
     const fullForB = SIM.upptagen(s, st, b) && !SIM.stationFor(s, 'korg', b) && !SIM.kanGoras(s, 'korg', b) && SIM.kanGoras(s, 'korg');
-    const st2: SIM.Station = { ...st, id: s.nextStation = (s.nextStation ?? 0) + 1, x: st.x + 3 }; // en bänk till bredvid
-    s.stationer!.push(st2); SIM.touch(s);
+    // en bänk till bredvid, där det är fritt framför den
+    const st2: SIM.Station = { ...st, id: s.nextStation = (s.nextStation ?? 0) + 1, x: st.x + 3 };
+    s.stationer!.push(st2);
+    for (const [dx, dy] of [[3, 0], [-3, 0], [0, 3], [0, -3], [4, 2], [-4, 2]]) { Object.assign(st2, { x: st.x + dx, y: st.y + dy }); SIM.touch(s); if (SIM.framFri(s, st2)) break; }
     const andra = SIM.stationFor(s, 'korg', b) === st2;
     a.task = undefined;
     // i en by med två vuxna som arbetar: aldrig två vid samma bänk
