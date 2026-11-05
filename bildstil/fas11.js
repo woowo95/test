@@ -30,7 +30,8 @@
       let h = fbm(ux / 46, uy / 46, FRO) * 0.62 + fbm(ux / 13, uy / 13, FRO + 50, 3) * 0.38;
       if (o) { // ön (eller kontinenterna): landet stiger mot mitten och sjunker under havet långt innan kanten
         const vx = (fbm(ux / 40, uy / 40, FRO + 120, 2) - 0.5) * 0.35, vy = (fbm(ux / 40, uy / 40, FRO + 140, 2) - 0.5) * 0.35;
-        const lyft = (cx, cy, rx, ry) => { const d = Math.hypot((ux - W * cx) / (W * rx) + vx, (uy - H * cy) / (H * ry) + vy); return o.lyft - d * d * o.fall; };
+        const fin = o.fin ? (fbm(ux / 10, uy / 10, FRO + 160, 2) - 0.5) * o.fin : 0; // o.fin: en ojämnare kust, så att småöarna inte blir runda
+        const lyft = (cx, cy, rx, ry) => { const d = Math.hypot((ux - W * cx) / (W * rx) + vx, (uy - H * cy) / (H * ry) + vy) + fin; return o.lyft - d * d * o.fall; };
         h += o.kontinenter ? Math.max(...o.kontinenter.map(k => lyft(...k))) : lyft(0.5, 0.5, o.rx, o.ry);
         const kant = Math.min(x, y, W - 1 - x, H - 1 - y); if (kant < 24) h -= (24 - kant) / 24 * 0.25; // havet längs hela kanten
       } else {
@@ -523,90 +524,54 @@
     }
   }
 
-  // ---------- kartan på en utrullad, sliten pergamentrulle som två händer håller ----------
-  // Pergamentet är rullat ihop i var ände, utan stav: rullarna är papperet självt, lite ojämna och skrynkliga, och i den
-  // övre änden syns varven som en spiral med ett hål i mitten. Händerna håller rullarna mitt på. Papperet är slitet:
-  // hack och revor i över- och underkanten, brunt längs kanterna, fläckar och en stor vattenfläck, och skuggat där det böjer
-  // sig in i rullarna. Skogen är gröna ytor på bläckkartan, vattnet är blått på den målade kartan, och byarna och
-  // landmassorna har namn.
+  // ---------- kartan på en utrullad pergamentrulle som två händer håller ----------
+  // Papperet är rullat ihop i var ände, utan stav: rullarna är papperet självt, jämnt runda och ljusa från vänster, och i den
+  // övre änden syns varven som en spiral. Händerna håller om rullarna med tummen på framsidan, och papperet mellan rullen och
+  // kartan är så brett att tummen ligger på papperet och inte över kartan. Papperet är lite gulnat i fläckar och längs
+  // kanterna och skuggat där det böjer sig in i rullarna. Skogen är gröna ytor på bläckkartan, vattnet är blått på den
+  // målade kartan, och byarna och landmassorna har namn.
+  const TUMME = Math.max(...HAND.map(rad => rad.replace(/\.+$/, '').length)) - HAND_KANT; // hur långt tummen når innanför kanten
   function iRulle(stil, s) {
     const pm = Math.round(6 * s), r = Math.round(6 * s), D = 2 * r + 1, hE = Math.max(2, Math.round(r * 0.45)), sid = 18;
-    const PW = W + 2 * pm + 2 * D, PH = H + 2 * pm, BW = PW + 2 * sid, BH = PH + 2 * hE + 14, x0 = sid, y0 = hE + 7;
+    const mx = Math.max(pm, TUMME - D + 3); // papperet mellan rullen och kartan
+    const PW = W + 2 * mx + 2 * D, PH = H + 2 * pm, BW = PW + 2 * sid, BH = PH + 2 * hE + 10, x0 = sid, y0 = hE + 5;
     const cxV = x0 + r, cxH = x0 + PW - 1 - r; // rullarnas mitt
-    // hack i kanten: oftast en punkt eller ingen, ibland ett djupare hack
-    const hack = (x, fro) => {
-      const k = Math.floor(x / 17); let d = hash(x, fro, 62) < 0.3 ? 1 : 0;
-      if (hash(k, fro, 64) < 0.4) { const c = k * 17 + Math.floor(hash(k, fro + 1, 64) * 17), djup = 2 + Math.floor(hash(k, fro + 2, 64) * Math.round(3 * s)); d = Math.max(d, djup - Math.abs(x - c)); }
-      return d;
-    };
-    // rullarnas ände och bredd: lite ojämnt, som om papperet rullats snett
-    const rullar = [cxV, cxH].map((cx, n) => ({ cx, topp: y0 - Math.floor(hash(n, 1, 65) * 3), botten: y0 + PH - 1 + Math.floor(hash(n, 2, 65) * 3), n }));
-    const halv = (R, y) => r + Math.round((fbm(y / 14, R.n * 7, 95, 2) - 0.5) * 5) - (hash(y, R.n, 96) < 0.12 ? 1 : 0); // ojämn bredd och en trasig kant
     const rita = B => {
       const P = B.P, pap = new Uint8Array(BW * BH), KONTUR = P.i('kol', 0);
       for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) { const g = hash(x, y, 61); B.satt(x, y, g < 0.05 ? P.i('jord', 0) : g < 0.13 ? P.i('kol', 1) : P.i('kol', 0)); }
-      const pa = (x, y) => x >= cxV && x <= cxH && y >= y0 + hack(x, 10) && y <= y0 + PH - 1 - hack(x, 20);
-      const paRulle = (x, y) => rullar.some(R => y >= R.topp - hE && y <= R.botten + hE && Math.abs(x - R.cx) <= halv(R, y));
+      // papperet mellan rullarna: lite ojämnt i över- och underkanten
+      const pa = (x, y) => x >= cxV && x <= cxH && y >= y0 && y < y0 + PH && !((y === y0 || y === y0 + PH - 1) && hash(x, y, 62) < 0.3);
+      const paRulle = (x, y) => (Math.abs(x - cxV) <= r || Math.abs(x - cxH) <= r) && y >= y0 - hE && y < y0 + PH + hE;
       for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) if (pa(x, y) || paRulle(x, y)) { if (pa(x, y)) pap[y * BW + x] = 1; if (!pa(x + 2, y + 3) && !paRulle(x + 2, y + 3)) B.satt(x + 2, y + 3, P.i('kol', 0)); } // skuggan på marken
       for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) {
         if (!pap[y * BW + x]) continue;
-        const g = hash(x, y, 63), k = Math.min(y - y0 - hack(x, 10), y0 + PH - 1 - hack(x, 20) - y), f = fbm(x / 18, y / 18, 91, 3);
+        const g = hash(x, y, 63), k = Math.min(y - y0, y0 + PH - 1 - y), f = fbm(x / 18, y / 18, 91, 3);
         let c = g < 0.05 ? P.i('ben', 3) : g > 0.97 ? P.i('ben', 1) : P.i('ben', 2);
-        if (bayer(x, y) < (f - 0.45) * 1.8 || (k < 6 && bayer(x, y) < (6 - k) / 6 * 0.8)) c = P.i('senap', 3); // gulnat i fläckar och längs kanten
-        if (k < 2 && bayer(x, y) < 0.6) c = P.i('jord', 3); // brunt i själva kanten
-        if (fbm(x / 3, y / 3, 93, 2) > 0.8) c = P.i('jord', 3); // små bruna prickar
+        if (bayer(x, y) < (f - 0.5) * 1.6 || (k < 4 && bayer(x, y) < (4 - k) / 4 * 0.7)) c = P.i('senap', 3); // gulnat i fläckar och längs kanten
         B.satt(x, y, c);
       }
-      kartanPa(B, stil, x0 + D + pm, y0 + pm, pap, BW, true);
-      // slitet: en stor vattenfläck, ytor där bläcket nötts bort, och en ring som efter en kopp
-      for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) {
-        if (!pap[y * BW + x]) continue;
-        const v = fbm(x / 26, y / 26, 94, 3);
-        if (v > 0.64 && v < 0.67 && hash(x, y, 67) < 0.7) B.morka(x, y); // fläckens kant
-        else if (v > 0.67 && bayer(x, y) < 0.2) B.morka(x, y);
-        if (hash(x, y, 68) < 0.004) B.satt(x, y, P.i('ben', 2));
-      }
-      const fx = x0 + Math.round(PW * 0.78), fy = y0 + Math.round(PH * 0.76), fr = 7 * s;
-      for (let y = fy - fr - 2; y <= fy + fr + 2; y++) for (let x = fx - fr - 2; x <= fx + fr + 2; x++) { const d = Math.hypot(x - fx, y - fy); if (Math.abs(d - fr) < 0.8 && pap[y * BW + x] && hash(x, y, 66) < 0.8) B.morka(x, y); }
+      kartanPa(B, stil, x0 + D + mx, y0 + pm, pap, BW, true);
       // där papperet böjer sig in i rullarna: skuggat, tätast närmast rullen
-      for (let y = y0; y < y0 + PH; y++) for (let d = 1; d <= 6; d++) for (const x of [cxV + r + d, cxH - r - d]) if (pap[y * BW + x] && bayer(x, y) < (7 - d) / 7 * 0.8) B.morka(x, y);
-      // rullarna: papperet självt, ljust från vänster, med fläckar och skrynklor
-      for (const R of rullar) {
-        const { cx } = R;
-        for (let y = R.topp; y <= R.botten + hE; y++) {
-          const hv = halv(R, y);
-          for (let x = cx - hv; x <= cx + hv; x++) {
-            const u = (x - cx) / hv, under = y > R.botten;
-            if (under) { const dy = y - R.botten, h = Math.round(Math.sqrt(Math.max(0, 1 - u * u)) * hE); if (dy > h) continue; if (dy === h) { B.satt(x, y, KONTUR); continue; } }
-            const ljus = -0.55 + (fbm(y / 6, R.n, 90, 2) - 0.5) * 0.6; // det ljusa bandet slingrar sig där papperet är skrynkligt
-            let c = Math.abs(x - cx) === hv ? KONTUR : u < ljus - 0.25 ? P.i('ben', 2) : u < ljus + 0.3 ? P.i('ben', 3) : u < 0.35 ? P.i('ben', 2) : u < 0.7 ? P.i('senap', 3) : P.i('jord', 3);
-            if (c !== KONTUR && fbm(x / 6, y / 9, 97 + R.n, 2) > 0.6) c = fbm(x / 6, y / 9, 97 + R.n, 2) > 0.68 ? P.i('jord', 2) : P.i('jord', 3); // fläckar
-            B.satt(x, y, c);
-          }
+      for (let y = y0; y < y0 + PH; y++) for (let d = 1; d <= 5; d++) for (const x of [cxV + r + d, cxH - r - d]) if (pap[y * BW + x] && bayer(x, y) < (6 - d) / 6 * 0.7) B.morka(x, y);
+      // rullarna: papperet självt, ljust från vänster, rundat i den nedre änden
+      for (const cx of [cxV, cxH]) {
+        for (let y = y0; y < y0 + PH + hE; y++) for (let x = cx - r; x <= cx + r; x++) {
+          const u = (x - cx) / r;
+          if (y >= y0 + PH - 1) { const dy = y - (y0 + PH - 1), h = Math.round(Math.sqrt(Math.max(0, 1 - u * u)) * hE); if (dy > h) continue; if (dy === h) { B.satt(x, y, KONTUR); continue; } }
+          B.satt(x, y, Math.abs(x - cx) === r ? KONTUR : u < -0.6 ? P.i('ben', 2) : u < -0.2 ? P.i('ben', 3) : u < 0.35 ? P.i('ben', 2) : u < 0.7 ? P.i('ben', 1) : P.i('jord', 3));
         }
-        // skrynklor: korta mörka bågar tvärs över rullen, på ojämna avstånd
-        for (let y = R.topp + hE + 4; y < R.botten - 2; y += 6 + Math.floor(hash(y, R.n, 98) * 14)) {
-          const bred = 0.3 + hash(y, R.n, 99) * 0.5, start = -0.5 + hash(y, R.n, 100) * 0.3;
-          for (let x = cx - r + 1; x < cx + r; x++) { const u = (x - cx) / r; if (u < start || u > start + bred || Math.abs(x - cx) >= halv(R, y) - 1) continue; B.satt(x, y + Math.round(u * u * 2), P.i('jord', 3)); if (hash(x, y, 101) < 0.5) B.satt(x, y + 1 + Math.round(u * u * 2), P.i('ben', 3)); }
-        }
-        // den övre änden: varven som en spiral, med ett hål i mitten och en ojämn kant
-        const yk = R.topp;
+        // den övre änden: varven som en spiral runt ett litet hål
         for (let x = cx - r; x <= cx + r; x++) {
           const u = (x - cx) / r, h = Math.round(Math.sqrt(Math.max(0, 1 - u * u)) * hE);
           for (let d = -h; d <= h; d++) {
-            const y = yk + d, ux = u * r, uy = d * r / hE, rho = Math.hypot(ux, uy), th = Math.atan2(uy, ux) / (2 * Math.PI), varv = ((rho / 1.8 + th) % 1 + 1) % 1;
-            let c = rho < r * 0.3 ? P.i('kol', 0) : varv < 0.35 ? P.i('jord', 2) : u < 0.2 ? P.i('ben', 2) : P.i('senap', 3);
-            if (Math.abs(d) === h || Math.abs(x - cx) === r) c = hash(x, y, 69) < 0.15 ? P.i('jord', 3) : KONTUR;
-            B.satt(x, y, c);
+            const y = y0 + d, ux = u * r, uy = d * r / hE, rho = Math.hypot(ux, uy), th = Math.atan2(uy, ux) / (2 * Math.PI), varv = ((rho / 1.8 + th) % 1 + 1) % 1;
+            B.satt(x, y, Math.abs(d) === h || Math.abs(x - cx) === r ? KONTUR : rho < r * 0.2 ? P.i('jord', 1) : varv < 0.3 ? P.i('jord', 3) : u < 0.3 ? P.i('ben', 2) : P.i('ben', 1));
           }
         }
-        // papperets yttersta varv som en flik, där papperet går ut från rullen mot kartan
-        const inat = cx === cxV ? 1 : -1;
-        for (let y = R.topp + hE; y <= R.botten; y++) B.satt(cx + inat * (r - 1), y, hash(0, y, 70) < 0.5 ? P.i('jord', 3) : P.i('senap', 3));
       }
-      // händerna håller rullarna mitt på
-      for (const R of rullar) for (let y = R.topp; y <= R.botten; y++) for (let x = R.cx - r; x <= R.cx + r; x++) pap[y * BW + x] = 1;
-      handerna(B, pap, BW, cxV + 2, cxH - 2, y0 + Math.round(PH / 2) - 40);
+      // händerna håller om rullarna: kanten i mallen är rullens yttre kant, så att fingrarna går bakom rullen och tummen ligger på framsidan
+      for (const cx of [cxV, cxH]) for (let y = y0 - hE; y < y0 + PH + hE; y++) for (let x = cx - r; x <= cx + r; x++) pap[y * BW + x] = 1;
+      handerna(B, pap, BW, cxV - r, cxH + r, y0 + Math.round(PH / 2) - 40);
     };
     return { w: BW, h: BH, rita };
   }
@@ -641,7 +606,7 @@
   // kartorna på utrullade pergamentrullar (Björn: "gör så det ser ut som utrullade pergamentrullar istället för viksträck"), med gröna
   // skogar på bläckkartan och blått vatten på den målade kartan; korten med papperet står kvar
   const RULLE_TEXT = ['Version 1: bläck på pergament. Bläckteckningen med havet och sjöarna målade blå, och skogen målad som gröna ytor under granarna.', 'Version 2: den målade kartan med blått vatten: ljust vid stranden och mörkare blått ju djupare havet är.', 'Version 3: tryckt som ett träsnitt på pergamentet.'];
-  const RULLE_VAD = ' Kartan är en utrullad pergamentrulle som är sliten: papperet är rullat ihop i var ände utan stav, och rullarna är papperet självt, ojämna, skrynkliga och fläckiga, med varven som en spiral och ett hål i den övre änden. Två händer håller rullarna mitt på. Papperet har hack och revor i kanterna, är brunt längs kanterna och har fläckar, en stor vattenfläck och en ring efter en kopp. Varje by har ett påhittat namn, och öarna och kontinenterna har stora namn (inte på de första kartorna, där landet fortsätter utanför kartan). Din kommentar förra gången: gör pergamentrullen mindre snygg, mer som ett ihoprullat papper som är slitet, utan en stav att rulla den runt; skriv påhittade namn vid varje by, och kanske namnet på kontinenterna. Din kommentar innan dess: på kartversion 1 lite gröna ytor som markerar skog, blått vatten på karta 2, och utrullade pergamentrullar i stället för viksträck. Korten med kartorna på papper står kvar.';
+  const RULLE_VAD = ' Kartan är en utrullad pergamentrulle: papperet är rullat ihop i var ände, utan stav, och rullarna är jämnt runda med varven som en spiral i den övre änden. Två händer håller om rullarna med tummen på framsidan; papperet mellan rullen och kartan är så brett att tummen inte ligger över kartan. Papperet är lite gulnat i fläckar och längs kanterna. Varje by har ett påhittat namn, och öarna och kontinenterna har stora namn (inte på de första kartorna, där landet fortsätter utanför kartan). Din kommentar förra gången: den blev alldeles för sliten; pergamentrullen som gjordes först såg för modern ut, gör den neutral. Handen klipper igenom kartan. Korten med kartorna på papper står kvar.';
   const rulleKort = (id, namn, K, s, vad) => {
     const v = ['black', 'farg', 'tryck'].map((st, k) => { const h = K.iRulle(st, s); return { text: RULLE_TEXT[k], w: h.w, h: h.h, kol: true, rita: h.rita }; });
     VAL.push({ id, namn, typ: 'tre', stor: true, kol: true, vad, karta: K, versioner: v });
@@ -670,6 +635,9 @@
   const K3 = karta(KW, KH, { kontinenter: [[0.24, 0.33, 0.23, 0.28], [0.71, 0.28, 0.24, 0.24], [0.36, 0.77, 0.21, 0.21], [0.82, 0.74, 0.16, 0.21]], lyft: 0.27, fall: 0.58, berg: 0.72, floder: 10, stigar: true, antal: { by: 16, lager: 8, rovare: 3, ruin: 6, helig: 3, hog: 3, runsten: 4 } });
   papperKort('f11_varldskarta_k_papper', 'Världskartan med kontinenter, på papper', K3, 1.4, 'Steg 11.1.9 (koncept, långt fram). Din kommentar: det hade varit kul med kontinenter, så att det kan finnas båtar i spelet. Här är en värld med fyra kontinenter och hav emellan. Varje kontinent har byar och vägar; mellan kontinenterna går sjövägar (de streckade linjerna över havet) från de byar som ligger närmast varandra, och på varje sjöväg seglar ett skepp. Den egna byn ligger på en av kontinenterna med en flod genom byn. Din kommentar förra gången: gå tillbaka till småbergen och gör vägarna tydligare med ritade sträck, inte prickade. Bergen är åter de små bergen. Vägarna är hela ritade sträck som går längs marken mellan grannbyarna, runt bergen och sjöarna, och över floderna på broar. På den längsta vägen går en karavan mot byn i andra änden (kortet Karavanen på världskartan har tre förslag på karavanen).' + PAPPER_VAD);
   rulleKort('f11_varldskarta_k_rulle', 'Världskartan med kontinenter, på en pergamentrulle', K3, 1.4, 'Steg 11.1.9 (koncept, långt fram). Världen med fyra kontinenter, vägarna, sjövägarna och karavanen på en utrullad pergamentrulle.' + RULLE_VAD);
+  // en stor kontinent i mitten med små öar runt om (Björn: "gör en stor kontinent i mitten med små öar runt omkring")
+  const K4 = karta(KW, KH, { kontinenter: [[0.5, 0.5, 0.33, 0.35], [0.1, 0.2, 0.035, 0.05], [0.13, 0.78, 0.04, 0.06], [0.27, 0.12, 0.03, 0.045], [0.3, 0.9, 0.035, 0.05], [0.58, 0.09, 0.04, 0.05], [0.72, 0.91, 0.03, 0.05], [0.9, 0.22, 0.04, 0.06], [0.91, 0.58, 0.03, 0.05], [0.86, 0.86, 0.035, 0.05], [0.09, 0.5, 0.025, 0.04], [0.44, 0.92, 0.02, 0.035]], fin: 0.4, lyft: 0.27, fall: 0.58, berg: 0.72, floder: 9, stigar: true, antal: { by: 14, lager: 7, rovare: 3, ruin: 5, helig: 2, hog: 3, runsten: 3 } });
+  rulleKort('f11_varldskarta_s_rulle', 'Världskartan, en stor kontinent med öar, på en pergamentrulle', K4, 1.4, 'Steg 11.1.9 (koncept, långt fram). Din kommentar: gör en stor kontinent i mitten med små öar runt omkring. Här är en stor kontinent mitt i havet med elva små öar runt om, en del med en by eller ett läger. Vägarna går mellan byarna på kontinenten, och skepp seglar ute på havet.' + RULLE_VAD);
   // karavanen på väg längs en väg (Björn: "gör en ikon för en karavan som är påväg någonstans"): tre förslag, i ett utsnitt av bläckkartan
   VAL.push({
     id: 'f11_karavan', namn: 'Karavanen på världskartan', typ: 'tre', kol: true,
