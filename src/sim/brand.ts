@@ -43,8 +43,10 @@ import { notis } from './notiser';
 // brännskador); de andra går undan. Den som står i elden bränns. Allt räknas med hashade tal ur tiden och rutan, så att
 // det levande läget och ikappräkningen blir lika. Branden sparas i s.brand och det som brunnit nyss i s.aska (det svarta).
 
-// gnista och sprid är chanser per fem minuter speltid, oavsett hur långt steget är (en tidsenhet, inget balanstal)
+// gnista är en chans per fem minuter speltid, oavsett hur långt steget är (en tidsenhet, inget balanstal)
 const FEM_MIN = 5 * MIN / SEC;
+// spridningen räknas i delsteg om fem sekunder inne i varje slag (steg 6.4.1), likadant i levande läget och snabbläget
+const DELSTEG = 5;
 
 // Balanstal (regel 8)
 export const BRAND = balans('brand', {
@@ -52,15 +54,16 @@ export const BRAND = balans('brand', {
   gnistaR: 2, // ... så här många rutor bort (slumpas)
   blixt: 0.5, // chansen att blixten slår ner nära byn när den slår ner (blixtNu i vader.ts) ...
   blixtR: 30, // ... så här många rutor från byns mitt (bynsMitt i omrade.ts, slumpas)
-  sprid: 0.06, // chansen per steg att elden tar sig från en ruta till en grannruta, gånger det som kan brinna där (antändning)
+  sprid: 0.7, // chansen per delsteg (5 sekunder) att elden tar sig från en ruta till en grannruta när marken är helt torr, gånger det som kan brinna där (antändning): i torrt högt gräs ungefär var femte sekund
   hornet: 0.7, // ... gånger det här till en ruta snett bredvid
   torrTim: 120, // marken är helt torr efter så här många torra timmar (torrTim i vader.ts) ...
   arstid: [0, 0.6, 1, 0.8], // ... och så här torr i tidsåldern (istid, vår, sommar, höst)
   sno: 0.2, // inget brinner när det ligger mer snö än så här (snoPaMarken i vader.ts)
   vind: 1.5, // blåsten (0 till 1) sprider elden så här mycket mer
   regn: 2, // regnet släcker en ruta så här fort (rutor per timme i det kraftigaste regnet), och sprider den mindre
-  // det som kan brinna: [antändning 0 till 1, timmar det brinner]
-  skog: [0.3, 3], ung: [0.6, 1], hog: [1, 0.5], kort: [0.35, 0.3], groda: [0.5, 0.5], vagg: [0.4, 2], sak: [0.5, 1],
+  // det som kan brinna: [antändning 0 till 1, timmar det brinner]. Högt gräs brinner snabbast, kort gräs medel, skogen och det
+  // som är av trä lite långsammare (steg 6.4.1)
+  skog: [0.2, 3], ung: [0.3, 1], hog: [1, 0.5], kort: [0.4, 0.3], groda: [0.5, 0.5], vagg: [0.25, 2], sak: [0.35, 1],
   aska: 0.32, // gräset på en ruta som brunnit (0 till 1; just över bar jord, så att det inte blir en stig)
   trad: 0.5, // träden dör när så här stor del av rutan har brunnit
   vaggSkick: 1.2, // en vägg tappar så här mycket av sitt skick gånger andelen som brunnit
@@ -176,22 +179,30 @@ export function brandSteg(s: State, dtSec: number) {
   if (dry > 0) gnistor(s, dtSec, dry);
   const b = s.brand;
   if (!b) return;
-  const v = vaderNu(s), k = kartaOf(b), slag = Math.round(s.now / SEC);
-  // elden tar sig till grannrutorna
-  const sprid = BRAND.sprid * dry * (1 + BRAND.vind * v.vind) * (1 - v.nb) * dtSec / FEM_MIN, bransle = bransleAv(s);
-  const nya: number[] = [];
-  if (sprid > 0) for (const [i] of b.r) {
-    const x = i % W, y = Math.floor(i / W);
-    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-      const nx = x + dx, ny = y + dy, j = ny * W + nx, c = sprid * (dx && dy ? BRAND.hornet : 1);
-      if ((!dx && !dy) || !inMap(nx, ny) || k[j] || !nara(b, nx, ny)) continue;
-      const u = hash(s.seed + 3851, slag, i * 9 + (dy + 1) * 3 + dx + 1);
-      if (u >= c) continue; // antändningen är högst 1: slå bara upp det som brinner när det kan behövas
-      const fu = bransle(j);
-      if (fu && u < c * fu[0]) nya.push(j);
+  const v = vaderNu(s), k = kartaOf(b), bransle = bransleAv(s);
+  // elden tar sig till grannrutorna, i delsteg om fem sekunder (steg 6.4.1): det som tänds i ett delsteg sprider sig i nästa
+  const n = Math.max(1, Math.round(dtSec / DELSTEG)), dt = dtSec / n;
+  const sprid = BRAND.sprid * dry * (1 + BRAND.vind * v.vind) * (1 - v.nb) * dt / DELSTEG;
+  if (sprid > 0) for (let d = 0; d < n; d++) {
+    const slag = Math.round(s.now / SEC) - Math.round((n - 1 - d) * dt), kvar = (n - 1 - d) * dt; // delstegets tid, och tiden kvar av slaget
+    const nya: number[] = [];
+    for (const [i] of b.r) {
+      const x = i % W, y = Math.floor(i / W);
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const nx = x + dx, ny = y + dy, j = ny * W + nx, c = sprid * (dx && dy ? BRAND.hornet : 1);
+        if ((!dx && !dy) || !inMap(nx, ny) || k[j] || !nara(b, nx, ny)) continue;
+        const u = hash(s.seed + 3851, slag, i * 9 + (dy + 1) * 3 + dx + 1);
+        if (u >= c) continue; // antändningen är högst 1: slå bara upp det som brinner när det kan behövas
+        const fu = bransle(j);
+        if (fu && u < c * fu[0]) nya.push(j);
+      }
+    }
+    for (const j of nya) {
+      const fore = b.r.length;
+      tand(s, j, b.kalla, 0, bransle);
+      if (b.r.length > fore) b.r[fore][1] = (kvar - dtSec) / HOUR_S; // har brunnit bara resten av slaget när slaget räknas nedan
     }
   }
-  for (const j of nya) tand(s, j, b.kalla, 0, bransle);
   // rutorna brinner, regnet släcker, och det som brunnit klart blir aska
   const regn = v.nb * BRAND.regn * dtSec / HOUR_S;
   for (const r of b.r) { r[1] += dtSec / HOUR_S; r[3] += regn; }

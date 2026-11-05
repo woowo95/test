@@ -1164,6 +1164,52 @@ SCENARIER.tornado = {
   },
 };
 
+SCENARIER.brandfart = {
+  text: 'Steg 6.4.1: branden räknas i steg om 5 sekunder och sprids efter markslaget. I torrt högt gräs tar sig elden till en grannruta ungefär var femte sekund, så att en brand på en äng är stor efter en minut; i skog går det långsammare, och i blöt mark tar den sig inte vidare',
+  kor: () => {
+    const torrDag = (x: State) => { for (let h = 0; h < 2; h++) if (vaderNu(x, x.now + h * HOUR).nb > 0) return false; return true; };
+    let s: State | undefined;
+    for (let seed = 1; seed < 200 && !s; seed++) {
+      const b = createState(seed, START); b.founded -= 20 * DAY; b.kal = nyKalender(b.now - HOUR, 2);
+      for (let h = 0; h < 48 && !torrDag(b); h++) step(b, 3600);
+      if (torrDag(b) && SIM.isLight(b.now)) s = b;
+    }
+    if (!s) return [['en by på sommaren med torrt väder', false]];
+    const e = SIM.eldPlats(s);
+    // en plats 30 till 50 rutor från elden där en cirkel med radien 12 är jord utan byggen och fält
+    const fri = (x: State, i: number) => { const g = groundOf(x); return isSoil(g.tiles[i]) && !g.built?.[i] && !SIM.bitAt(x, i % W, Math.floor(i / W)) && !SIM.faltAt(x, i % W, Math.floor(i / W)); };
+    let mitt = -1;
+    for (let i = 0; i < W * W && mitt < 0; i++) {
+      const cx = i % W, cy = Math.floor(i / W), d = Math.hypot(cx - e.x, cy - e.y);
+      if (d < 30 || d > 50) continue;
+      let ok = true;
+      for (let dy = -12; dy <= 12 && ok; dy++) for (let dx = -12; dx <= 12 && ok; dx++) if (Math.hypot(dx, dy) <= 12 && (!SIM.inMap(cx + dx, cy + dy) || !fri(s, (cy + dy) * W + cx + dx))) ok = false;
+      if (ok) mitt = i;
+    }
+    if (mitt < 0) return [['en plats för ängen', false]];
+    const prov = (slag: 'hog' | 'skog', torr: number) => {
+      const x = cloneState(s!), g = groundOf(x), cx = mitt % W, cy = Math.floor(mitt / W);
+      for (let dy = -12; dy <= 12; dy++) for (let dx = -12; dx <= 12; dx++) {
+        if (Math.hypot(dx, dy) > 12) continue;
+        const i = (cy + dy) * W + cx + dx;
+        if (slag === 'hog') { g.trees[i] = 0; g.cover[i] = 1; } else { g.trees[i] = FOREST + 0.5; g.cover[i] = 0.6; }
+      }
+      if (x.vader) { x.vader.torr = torr; x.vader.fukt = 0; }
+      SIM.tand(x, mitt, 'blixt', 0);
+      const fore = SIM.brinnande(x).length;
+      step(x, 60); // en minut: tolv delsteg
+      const inne = (i: number) => Math.hypot(i % W - cx, Math.floor(i / W) - cy) <= 12;
+      return { fore, n: SIM.brinnande(x).filter(r => inne(r[0])).length + (x.brand?.ut ?? []).filter(inne).length };
+    };
+    const hog = prov('hog', 240), skog = prov('skog', 240), blot = prov('hog', 0);
+    return [
+      [`i torrt högt gräs brinner ${hog.n} rutor efter en minut (en ruta tändes)`, hog.fore === 1 && hog.n >= 100],
+      [`i torr skog går det långsammare: ${skog.n} rutor`, skog.n >= 2 && skog.n < hog.n / 2],
+      [`i blött högt gräs tar den sig inte vidare: ${blot.n} ruta`, blot.n <= 1],
+    ];
+  },
+};
+
 SCENARIER.brand = {
   text: 'Steg 3.8.5: eldsvådor och skogsbrand. När marken är torr på sommaren tar elden sig från ruta till ruta i skogen och träden dör; när marken är blöt tar den sig inte vidare. Gnistor från lägerelden tänder ibland marken. Elden nära byn: folk ser den och ropar, de vuxna släcker med vattensäcken och med händerna, en risvägg brinner, ingen står i en vägg eller i vattnet, och elden slocknar. Där skogen brann kommer plantor, som växer upp när gräset kommit tillbaka, och det svarta försvinner efter några dygn',
   kor: () => {
@@ -1212,6 +1258,7 @@ SCENARIER.brand = {
       const planta = (t: number) => t > 0 && t <= SIM.MARK.nyPlanta + 1e-6, plantor = brunnen.filter(i => planta(groundOf(s).trees[i])).length;
       const askan = brunnen.length ? Math.max(...brunnen.map(i => groundOf(s).cover[i])) : 1;
       // samma ruta när marken är blöt: elden tar sig inte vidare
+      if (vat.vader) { vat.vader.torr = 0; vat.vader.fukt = 1; } // blött redan när den tänds: elden sprids fort (steg 6.4.1)
       SIM.tand(vat, mitt, 'blixt', 0);
       kor(vat, 18, x => { if (x.vader) x.vader.torr = 0; });
       const vatRutor = vat.stat?.['brand ruta'] ?? 0;
