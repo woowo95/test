@@ -971,7 +971,7 @@ const VAL = [
 // Björns val som är bestämda men inte inbyggda i spelet: de visas under Valt med den valda versionen (0 = förut-versionen
 // behålls) och steget där de byggs in. När saken är inbyggd tas raden bort här och ur VAL, och dess dokument i samlingen 'val'
 const BESLUT = {
-  f6_grans: { val: 1, steg: '6.2.1.3' }, f6_talg: { val: 3, steg: '6.3.2.2' }, f6_agg: { val: 3, steg: '6.5.1.3' },
+  f6_talg: { val: 3, steg: '6.3.2.2' }, f6_agg: { val: 3, steg: '6.5.1.3' },
   f6_radjursskinn: { val: 1, steg: '6.5.1.2' }, f6_bjornskinn: { val: 1, steg: '6.5.3.3' },
   f6_barbuske: { val: 1, steg: '6.4.1.4' }, f6_fagel: { val: 2, steg: '6.5.1.3' }, f6_fjadrar: { val: 2, steg: '6.5.1.3' }, f6_uppsatt: { val: 1, steg: '6.3.2.4' },
   f6_fagel_falld: { val: 1, text: 'Byggs in i steg 6.5.1.3, ritad om i de tre fåglarnas egna former och färger från fåglarna du valde (version 2).' },

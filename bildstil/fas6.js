@@ -64,22 +64,6 @@
       if (i > 0 && i < hojd - 2) B.satt(x + (i % 2 ? -1 : 1), y - i, B.P.i('senap', 2), true);
     }
   }
-  // ---------- 6.2.1.3 byns gräns i testläget ----------
-  const GRANS_PUNKTER = (() => { const p = []; for (let a = 0; a < 360; a += 3) { const r = a * Math.PI / 180, k = 1 + 0.08 * Math.sin(r * 3) + 0.05 * Math.cos(r * 5); p.push([48 + Math.cos(r) * 36 * k, 28 + Math.sin(r) * 18 * k]); } return p; })();
-  function grans(B, v) {
-    const P = B.P, sedda = new Set();
-    GRANS_PUNKTER.forEach(([x, y], i) => {
-      const k = Math.round(x) + ',' + Math.round(y); if (sedda.has(k)) return; sedda.add(k);
-      const n = sedda.size;
-      if (v === 0 && n % 2) B.satt(x, y, P.i('ben', 3)); // prickar
-      if (v === 1) { B.satt(x, y, P.i('ben', 3)); B.morka(x, y + 1); } // tunn hel linje med skugga
-      if (v === 2 && n % 5 < 3) B.satt(x, y, P.i('rost', 3)); // streck
-    });
-    // stugan och elden i mitten, så att man ser vad som är byn
-    ritaSprite(B, ['..oooo..', '.oSSSSo.', 'oSSSSSSo', 'oJjjjjJo', 'oJjkkjJo', 'oJjkkjJo', 'oooooooo'], { o: 'kol0', S: 'senap1', J: 'jord1', j: 'jord2', k: 'kol0' }, 36, 20);
-    laga(B, 58, 31, 4);
-  }
-  const GRANS = (text, v) => ({ text, w: 96, h: 56, rita: (B) => grans(B, v) });
 
   // ---------- 6.3.1.3 näver ----------
   const NAV_L = { W: 'ben3', w: 'ben2', k: 'kol1', s: 'senap2', S: 'senap1', r: 'rost2' };
@@ -550,8 +534,6 @@
   // ---------- korten ----------
   const S = 'Steg ';
   VAL.push(
-    KORT('f6_grans', 'Byns gräns i testläget', S + '6.2.1.3: i testläget syns byns gräns som en tunn linje på kartan, så att du ser vad som räknas som byn. Stugan och elden i mitten är bara för att visa platsen.', [
-      GRANS('Vita prickar, så att marken syns mellan dem.', 0), GRANS('En tunn vit linje med en mörk skugga under.', 1), GRANS('Korta röda streck.', 2)]),
     KORT('f6_naver', 'Näver', S + '6.3.1.3: en ny sak, som görs av ved och tänds lättare än torrgräs. Vit näver med mörka streck, i sakens storlek (16 punkter per ruta).', [
       PA_MARK('En hoprullad bit näver, med den bruna insidan synlig i änden.', NAVER[0], NAV_L), PA_MARK('En lös remsa som rullar sig i ena änden.', NAVER[1], NAV_L), PA_MARK('Tre remsor i en liten hög.', NAVER[2], NAV_L)]),
     KORT('f6_talg', 'Talg', S + '6.3.2.2: en ny sak från slakten, djurfettet, som blir facklor och ljus.', TALG.map((r, i) => PA_MARK(TALG_TEXT[i], r, TALG_L))),
