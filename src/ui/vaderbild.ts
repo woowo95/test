@@ -21,7 +21,8 @@ const BILD = {
   punkt: 3, // en punkt i regnet och snön är så här många skärmpunkter, som bildstilens pixlar
   regnTopp: 0xbdb39b, regnKropp: 0x8a9c9e, // dropparnas ljusa topp (ben 2) och kropp (skiffer 3)
   snoMitt: 0xdad0bb, snoArm: 0xbdb39b, // snöflingornas mitt (ben 3) och armar (ben 2)
-  vindSnett: 0.6, // så snett faller regnet i den hårdaste blåsten (sidled per fall)
+  vindSnett: 0.6, // så snett faller regnet i den hårdaste blåsten (sidled per fall), åt det håll vinden blåser (steg 6.4.6) ...
+  vindNer: 0.4, // ... och så mycket fortare (eller långsammare) det faller nedåt på skärmen när vinden blåser mot söder (eller norr)
   blixtVar: 9000, // i åskan blixtrar det ungefär så här ofta (millisekunder, datorns tid) ...
   blixtMs: 180, // ... och blixten lyser så här länge
   dimma: 0.4, dimmaFarg: '#dad0bb', // dimman (steg 3.7.11): så här tät (andel av punkterna) i den tätaste dimman, i ben 3
@@ -59,12 +60,13 @@ export function drawVader(ms: number) {
   const v = vaderNu(s, ui.nu), w = app.screen.width, h = app.screen.height;
   tackRaster(dimmaSp, v.dimma > 0.01 ? v.dimma * BILD.dimma : 0, w, h);
   if (v.nb > 0.01) {
-    const yta = w * h / (1280 * 800), snett = v.vind * BILD.vindSnett;
+    // regnet och snön faller med vinden (steg 6.4.6): sidled efter vindens riktning, och fortare när den blåser nedåt på skärmen
+    const yta = w * h / (1280 * 800), snett = Math.cos(v.rikt) * v.vind * BILD.vindSnett, ner = Math.max(0.5, 1 + Math.sin(v.rikt) * v.vind * BILD.vindNer);
     if (v.sno) {
       const n = Math.round((BILD.minst + (1 - BILD.minst) * v.nb) * BILD.flingor * yta);
       const px = BILD.punkt, flingor: number[] = [];
       for (let i = 0; i < n; i++) {
-        const y = (fast(i, 1) * h + ms * BILD.snoFart * (0.6 + fast(i, 2) * 0.8)) % h;
+        const y = (fast(i, 1) * h + ms * BILD.snoFart * ner * (0.6 + fast(i, 2) * 0.8)) % h;
         const x = ((fast(i, 3) * w + Math.sin(ms / 900 + i) * 6 + y * snett) % w + w) % w;
         flingor.push(Math.round(x / px) * px, Math.round(y / px) * px);
       }
@@ -78,11 +80,11 @@ export function drawVader(ms: number) {
       const n = Math.round((BILD.minst + (1 - BILD.minst) * v.nb) * BILD.droppar * yta), dx = BILD.regnLang * snett;
       const px = BILD.punkt, droppar: number[] = [];
       for (let i = 0; i < n; i++) {
-        const y = (fast(i, 1) * h + ms * BILD.regnFart * (0.8 + fast(i, 2) * 0.4)) % h;
+        const y = (fast(i, 1) * h + ms * BILD.regnFart * ner * (0.8 + fast(i, 2) * 0.4)) % h;
         const x = ((fast(i, 3) * w + y * snett) % w + w) % w;
         droppar.push(Math.round(x / px) * px, Math.round(y / px) * px);
       }
-      // droppen: en mörkare kropp som lutar med vinden och en ljus topp
+      // droppen: en ljus topp och en mörkare kropp som pekar dit den faller, med vinden
       vaderG.beginFill(BILD.regnKropp);
       for (let i = 0; i < droppar.length; i += 2) { const x = droppar[i], y = droppar[i + 1]; vaderG.drawRect(x, y + px, px, px).drawRect(x + Math.round(dx / 2 / px) * px, y + 2 * px, px, px); }
       vaderG.endFill().beginFill(BILD.regnTopp);
