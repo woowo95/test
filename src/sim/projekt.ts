@@ -2,17 +2,14 @@ import { Act, Person, State } from './typer';
 import { familjOf, living, stat } from './folk';
 import { clamp } from './slump';
 import { amountOf } from './lager';
-import { TROSKEL, materialBuffert, vantarPa } from './forradsmal';
+import { TROSKEL, materialBuffert, stationBrist, vantarPa, villAv } from './forradsmal';
 import { SAKER } from './saker';
 import { PLAGG, PLAGG_LIST } from './klader';
 import { ARBETE, grundvarde, varuVarde } from './varde';
 import { balans } from './balans';
-import { GORS, harAv, makeTask, saknatTill, villAv, wantsRope, wantsTool } from './redskap';
-import { STATIONER, STATION_LIST, StationDef, StationSlag, TILLBEHOR, TILLBEHOR_LIST, TillbehorDef, TillbehorSlag, bordBrist, forvarBrist, pyntBrist, harStation, kanBygga, kanGoraTillbehor, saknatStation, saknatTillbehor, stationSpot, tillbehorSpot, tillbehorStationer, utanTillbehor } from './stationer';
-import { utanBadd } from './byggnader';
-import { latrinBrist } from './smuts';
-import { torkBrist } from './matlagning';
-import { brasaBrist, brasaLeta, kanLetaBrasaSten } from './brasor';
+import { GORS, harAv, makeTask, saknatTill, wantsRope, wantsTool } from './redskap';
+import { STATIONER, STATION_LIST, StationDef, StationSlag, TILLBEHOR, TILLBEHOR_LIST, TillbehorDef, TillbehorSlag, kanBygga, kanGoraTillbehor, saknatStation, saknatTillbehor, stationSpot, tillbehorSpot, tillbehorStationer, utanTillbehor } from './stationer';
+import { brasaLeta, kanLetaBrasaSten } from './brasor';
 import { DORRAR, DORR_LIST, DorrDef, DorrSlag } from './byggnad';
 import { dorrOppningar, dorrSpot, kanHangaDorr, saknatDorr, utanDorr } from './bygg';
 import { GRODOR, ODLING, faltBrist, faltUppgift } from './odling';
@@ -59,6 +56,12 @@ export const PROJEKT_TAL = balans('projekt', {
   egen: 1, egenEmpati: 0.3, egenSed: 0.5, egenMax: 2,
 });
 
+// projektet k som uppgift, om p kan göra det nu (steg 6.2.17): ett redskap görs bara så, i arbetet som behöver det
+// (withTools i val.ts), på Förbättra eller som pyssel på fritiden. undefined annars
+export function projektNu(s: State, p: Person, k: string, f: ProjektFara): Uppgift | undefined {
+  const d = PROJEKT[k];
+  return d?.kan(s, p, f) ? d.uppgift(s, p) : undefined;
+}
 // det p gör: handlingen, texten, hur många minuter (annars valets vanliga), slaget (task.tool) och platsen
 export interface Uppgift { act: Act; text: string; min?: number; tool?: string; spot?: { x: number; y: number }; sok?: true; ref?: number } // sok: letar vid stenarna, ref: fältet (odling.ts)
 // det som gör att något inte görs just nu: kyla = kylan är en fara, gras = hö som sparas till värmen (dangers i val.ts)
@@ -94,7 +97,7 @@ const station = (k: StationSlag): ProjektDef => {
   return {
     namn: d.namn, vikt: (PROJEKT_TAL as Record<string, number>)[k] ?? 1,
     egen: d.sover ? (s, fam) => utanEgenBadd(s, fam) : undefined, // någon i familjen sover under tak utan en bädd
-    brist: s => d.pynt ? pyntBrist(s, k) : d.brasa ? brasaBrist(s) : d.sover ? (living(s).length ? utanBadd(s) / living(s).length : 0) : d.platser ? bordBrist(s, k) : d.forvar ? forvarBrist(s, k) : d.gor.includes('toa') ? latrinBrist(s) : d.gor.includes('torka') ? torkBrist(s) : harStation(s, k) ? 0 : 1,
+    brist: s => stationBrist(s, k), // bufferten står i forradsmal.ts (steg 6.2.17)
     kostnad: () => varuVarde(d.av, d.min / 60 * ARBETE),
     kan: (s, p, f) => !f.kyla && (kanBygga(s, p, k) || !!d.brasa && kanLetaBrasaSten(s, p)), // brasans stenar letas först (brasor.ts)
     saknar: (s, p, f) => f.kyla ? undefined : saknatStation(s, p, k),

@@ -19,9 +19,9 @@ import { coldOf, nederbord, snoPaMarken, temperature, vaderNu } from './vader';
 // barnen leker i snön när den ligger, som de vuxna har snöbollskrig (steg 4.3.1.3, sport.ts)
 const lekText = (s: State) => snoPaMarken(s) > 0 ? 'Är barn och leker i snön' : 'Är barn och leker';
 import { varselSamla } from './motgang';
-import { FORRAD, FORRADSMAL, TROSKEL, buffert, lyxtak, materialTimme, onskatDygn, overTak, underBuffert } from './forradsmal';
-import { DJUR, DJURARTER, Djurart, GORS, canProcess, djurKvar, freeOfKinds, handelTask, harAv, makeTask, toolGroups, underhallGrupp, villAv, wantsTool } from './redskap';
-import { HAMTA, PROJEKT, Uppgift, bastaProjekt } from './projekt';
+import { FORRAD, FORRADSMAL, TROSKEL, villAv, buffert, lyxtak, materialTimme, onskatDygn, overTak, underBuffert } from './forradsmal';
+import { DJUR, DJURARTER, Djurart, GORS, canProcess, djurKvar, freeOfKinds, handelTask, harAv, toolGroups, underhallGrupp, wantsTool } from './redskap';
+import { HAMTA, PROJEKT, Uppgift, bastaProjekt, projektNu } from './projekt';
 import { faltNu, vildFronPlats } from './odling';
 import { MINNE, areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { eldPlats, getMap } from './karta';
@@ -732,7 +732,8 @@ function forbattra(s: State, p: Person, v: Val, fd: number, wd: number): true | 
   if (ta) return { act: ta.act, why: `Kanske kommer hen på ${ta.t.namn.toLowerCase()}` };
   if (handlarVara(s, p, v)) return true;
   const ug = underhallGrupp(s, p); // underhållet (steg 6.2.12): ett nytt i stället för ett slitet
-  if (ug) { const m = makeTask(s, p, ug); projektVal(v, { act: m.act, text: m.text, min: m.min, tool: m.tool }, 'Byn har det den behöver. Ett av byns är slitet och ett nytt görs i tid'); return true; }
+  const uu = ug && PROJEKT[ug].uppgift(s, p); // samma projekt som när byn saknar redskapet (steg 6.2.17)
+  if (uu) { projektVal(v, uu, 'Byn har det den behöver. Ett av byns är slitet och ett nytt görs i tid'); return true; }
   return gaILara(s, p, v, 'Byn har det den behöver') || undefined;
 }
 // Sist på Förbättra (steg 6.2.15): förråden fylls mellan bufferten och taket i FORRADSMAL. Först det arbete p helst gör om dess
@@ -860,30 +861,30 @@ function withTools(s: State, p: Person, v: Val, best: Act, what: string, fara: F
     const vf = vildFronPlats(s);
     if (vf && rnd(s, 'val', p) < VAL.fronChans) { v.spot = vf; v.why = `${v.why} Plockar vilda frön.`; }
   }
-  const ax = best === 'ved' ? axeTask(s, p, fara.kyla) : undefined; // med yxa fälls träd och huggs ved
+  const ax = best === 'ved' ? axeTask(s, p) : undefined; // med yxa fälls träd och huggs ved
   if (ax) {
     set(v, ax.act, `${what}. ${ax.why}.`);
-    if (ax.act === 'yxa') v.pass = v.dur; // yxan görs i ett helt pass (steg 2.3.8)
     if (ax.dur) v.dur = ax.dur;
-    if (ax.act !== 'yxa') { v.spot = { x: ax.x, y: ax.y }; v.tool = 'yxa'; }
-    v.ref = ax.ref;
+    v.spot = { x: ax.x, y: ax.y }; v.tool = 'yxa'; v.ref = ax.ref;
+  } else if (best === 'ved') { // utan yxa görs en, som projekt (steg 6.2.17)
+    const u = projektNu(s, p, 'yxa', fara);
+    if (u) projektVal(v, u, what);
   }
   // med det bästa redskapet som är ledigt; finns inget gör den som kan ett först (inte när kylan är en fara)
-  const { kyla, gras } = fara, rader = ACTS[v.act].redskap;
+  const rader = ACTS[v.act].redskap;
   if (rader) for (const [g, ks] of Object.entries(toolGroups(v.act))) {
     if (!rader[ks[0]].tar) continue; // yxan väljs med arbetet (axeTask)
     const k = freeOfKinds(s, p, ks);
     if (k) { v.tool = k; v.why = v.why.replace(/\.$/, '') + '. ' + rader[k].tar; return; }
-    if (GORS[g] && !kyla && wantsTool(s, p, g, gras)) { // redskapet görs vid sin egen plats: inget ärvs från flintletandet eller tändmaterialet
-      const m = makeTask(s, p, g); v.spot = undefined; v.sok = undefined; v.tandmat = undefined; set(v, m.act, `${what}. ${m.text}`); v.pass = v.dur; v.dur = m.min * MIN; if (m.tool) v.tool = m.tool; return;
-    }
+    const u = GORS[g] ? projektNu(s, p, g, fara) : undefined; // redskapet görs som projekt (steg 6.2.17), vid sin egen plats: inget ärvs från flintletandet eller tändmaterialet
+    if (u) { v.spot = undefined; v.sok = undefined; v.tandmat = undefined; projektVal(v, u, what); return; }
   }
 }
 // hur mycket mer arbetet ger med det redskap som finns ledigt eller kan göras (det bästa först). Ett redskap räknas som
 // möjligt att göra bara när withTools skulle göra det: inte när kylan är en fara, och med höet som sparas till värmen
 export function toolGain(s: State, p: Person, act: Act, fara: Faror) {
   for (const [g, ks] of Object.entries(toolGroups(act))) {
-    if (freeOfKinds(s, p, ks) || GORS[g] && !fara.kyla && wantsTool(s, p, g, fara.gras)) return ACTS[act].redskap![ks[0]].ger ?? 1;
+    if (freeOfKinds(s, p, ks) || GORS[g] && PROJEKT[g].kan(s, p, fara)) return ACTS[act].redskap![ks[0]].ger ?? 1;
   }
   return 1;
 }
@@ -930,8 +931,8 @@ function gaILara(s: State, p: Person, v: Val, why: string) {
 export function nastaRedskap(s: State, p: Person, tk: Task) {
   if (tk.pass === undefined || s.now >= tk.pass) return;
   const f = dangers(s);
-  if (f.kyla || !wantsTool(s, p, tk.act, f.gras)) return;
-  const m = makeTask(s, p, tk.act);
+  const m = projektNu(s, p, tk.act, f); // samma projekt (steg 6.2.17)
+  if (!m) return;
   tk.tool = m.tool; tk.ref = undefined;
   startWork(s, p, tk);
   if (tk.until > s.now) count(s, 'iSammaPass'); // byns statistik: redskap som gjordes efter ett annat i samma pass

@@ -135,6 +135,7 @@ SCENARIER.fiskespjut = {
 };
 
 SCENARIER.redskap = {
+  lang: true,
   text: 'Rep tvinnas av hö vid elden. Flintspjut (gren, flinta, rep) håller längre än träspjut och används till fiske och jakt. Metspö (gren, rep, ben) med mask ger mest fisk',
   kor: () => {
     const s = createState(4, START);

@@ -5,9 +5,8 @@ import { groundOf, isForest, tileOf } from './mark';
 import { FOREST, Ground } from './vag';
 import { stadium, stadiumAv } from './trad';
 import { pickNarmaste } from './slump';
-import { Act, DAY, H, HOUR, MIN, Person, State, Stock, W } from './typer';
+import { Act, DAY, H, HOUR, Person, State, Stock, W } from './typer';
 import { SNABBARE } from './handlingar';
-import { minOf, wantsTool } from './redskap';
 import { balans } from './balans';
 import { faltOf, faltRuta } from './odling';
 
@@ -123,17 +122,14 @@ export function chopStock(s: State, ref: number | undefined, amount: number) {
 // finns det en stam att klyva (utan att leta upp den närmaste)
 export const finnsKlyvStam = (s: State) => (s.stockar ?? []).some(k => k.ved >= SKOG.virkeVed);
 export const klyvStam = (s: State) => (s.stockar ?? []).filter(k => k.ved >= SKOG.virkeVed).sort((a, c) => utanforByn(s, a.x, a.y) - utanforByn(s, c.x, c.y))[0];
-// en vuxen som ska skaffa ved: hugga en fälld stam, fälla ett träd, göra en yxa eller (annars) samla grenar
-// kyla: kylan är en fara (dangers i val.ts). Då görs ingen ny yxa, för ett nytt redskap är en förbättring
-export function axeTask(s: State, p: Person, kyla = false): { act: Act; x: number; y: number; ref?: number; dur?: number; why: string } | undefined {
+// en vuxen med en ledig yxa som ska skaffa ved: hugga en fälld stam eller fälla ett träd. Utan yxa görs en som projekt
+// (withTools i val.ts, steg 6.2.17), eller samlas grenar
+export function axeTask(s: State, p: Person): { act: Act; x: number; y: number; ref?: number; dur?: number; why: string } | undefined {
   if (freeTools(s, p, 'yxa') > 0) { // en yxa som ingen annan fäller eller hugger med
     const k = nearestStock(s);
     if (k) return { act: 'hugga', x: k.x + 0.3, y: k.y + 0.2, ref: k.id, why: 'Hugger ved av en fälld stam' };
     const t = treeSpot(s, fellingTiles(s, p), p);
     if (t) return { act: 'falla', x: t.x, y: t.y, dur: fallTid(s, tileOf(t.x, t.y)), why: 'Har en yxa och fäller ett träd' };
-  }
-  if (!kyla && wantsTool(s, p, 'yxa')) { // receptet och hur många byn vill ha: saker.ts och redskap.ts
-    return { act: 'yxa', x: 0, y: 0, dur: minOf('yxa') * MIN, why: 'Har flinta och vill göra en yxa för att kunna fälla träd' };
   }
   return undefined;
 }

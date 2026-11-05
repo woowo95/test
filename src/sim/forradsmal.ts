@@ -14,6 +14,14 @@ import { bitsOf, MATERIAL } from './byggnad';
 import { needOf } from './bygg';
 import { allows, amountOf, rymd, zonesOf } from './lager';
 import { Pabud, pabud } from './styre';
+import { ALDER, ageOf, living } from './folk';
+import { clamp } from './slump';
+import { sportFor } from './sport';
+import { STATIONER, StationDef, StationSlag, bordBrist, forvarBrist, harStation, pyntBrist, tommaPlatser } from './stationer';
+import { brasaBrist } from './brasor';
+import { utanBadd } from './byggnader';
+import { latrinBrist } from './smuts';
+import { torkBrist } from './matlagning';
 import { HOUR, State } from './typer';
 
 export const FORRAD = balans('forrad', {
@@ -51,6 +59,16 @@ export const TROSKEL = balans('troskel', {
   forsokMat: 1.1, // byn prövar sig fram bara när maten räcker minst så här många dygn ...
   forsokVed: 2, // ... och veden så här många (byn har ett överskott, teknik.ts)
   byggMatFran: 0.25, byggMatSpann: 0.9, byggMatMin: 0.1, // maten dämpar bygget: (matdygn - Fran) / Spann, aldrig under Min (val.ts)
+});
+// Redskapen och stationerna (steg 6.2.17): hur många byn vill ha är bufferten. Ett redskap räknas per vuxen från ALDER.vuxen
+// (yxan från yxaFran)
+export const VILLTAL = balans('vill', {
+  spjutPerVuxna: 3, spjutMin: 1, spjutMax: 4, // byn vill ha ett spjut (och ett metspö) per så här många vuxna, minst Min och högst Max
+  korgPerVuxna: 3, korgMin: 1, korgMax: 5, // ... en korg
+  yxaPerVuxna: 4, yxaMin: 1, yxaMax: 3, yxaFran: 16, yxaBygge: 1, // ... en yxa, räknat på dem som är över Fran år, och Bygge till medan ett hus byggs (träden där det ska stå)
+  knivar: 1, // ... så många knivar, och en till för varje tom knivplats vid en station (stationer.ts)
+  spadar: 1, // så många benspadar byn vill ha (steg 2.7.2)
+  vattensackar: 1, // så många vattensäckar byn vill ha (steg 2.10.1)
 });
 // det som lämnas kvar i förrådet till elden av slaget k när något byggs (bygg.ts, stationer.ts)
 export const sparas = (k: string) => k === 'ved' ? TROSKEL.ved : k === 'grenar' ? TROSKEL.grenar : k === 'torrgras' ? TROSKEL.torrgras : 0;
@@ -146,3 +164,38 @@ export function materialTak(s: State, k: Materialslag) {
 // är materialet under bufferten (ett behov), eller vid eller över taket (ingen plockar det)? Det man bär räknas med
 export const underBuffert = (s: State, k: Materialslag, extra = 0) => amountOf(s, k) + extra < materialBuffert(s, k);
 export const overTak = (s: State, k: Materialslag, extra = 0) => amountOf(s, k) + extra >= materialTak(s, k);
+
+// ---------- redskapen och stationerna (steg 6.2.17) ----------
+// Bufferten för ett redskap är hur många byn vill ha av gruppen (GORS i redskap.ts). Under den är redskapet ett projekt
+// (projekt.ts), och det görs bara som projekt: i arbetet som behöver det (withTools i val.ts, yxan till veden), på Förbättra
+// eller som pyssel på fritiden. En ny grupp är en ny rad här.
+const vuxna = (s: State, fran: number) => living(s).filter(p => ageOf(p, s.now) >= fran).length;
+const perVuxna = (s: State, per: number, min: number, max: number, fran: number = ALDER.vuxen) => clamp(Math.floor(vuxna(s, fran) / per), min, max);
+// ett spjut per tre vuxna, när någon väl har börjat fiska eller jaga
+const spjutVill = (s: State) => (s.stat?.fiskeForsok ?? 0) > 0 || (s.stat?.prod_jakt ?? 0) > 0 ? perVuxna(s, VILLTAL.spjutPerVuxna, VILLTAL.spjutMin, VILLTAL.spjutMax) : 0;
+export const REDSKAPMAL: Record<string, (s: State) => number> = {
+  spjut: spjutVill,
+  metspo: spjutVill, // ett metspö per spjut
+  korg: s => perVuxna(s, VILLTAL.korgPerVuxna, VILLTAL.korgMin, VILLTAL.korgMax),
+  kniv: s => VILLTAL.knivar + tommaPlatser(s, 'kniv'), // och en till för en tom knivplats vid slaktbänken
+  bensyl: s => tommaPlatser(s, 'bensyl'), // en till slöjdbänken (steg 2.3.2)
+  rock: s => living(s).length, // en per person (steg 2.3.2), av vilket material som helst (klader.ts)
+  skor: s => living(s).length,
+  balte: s => living(s).length, // ett per person (steg 2.3.3)
+  benspade: () => VILLTAL.spadar, // till latrinen och rötterna (steg 2.7.2)
+  vattensack: () => VILLTAL.vattensackar, // till den som inte kan gå (steg 2.10.1)
+  boll: s => sportFor(s, 'boll'), slagtra: s => sportFor(s, 'slagtra'), mal: s => sportFor(s, 'mal'), // en av varje när byn har vuxna nog till sporten (sport.ts, steg 4.3.1.2)
+  trumma: s => tommaPlatser(s, 'trumma'), benflojt: s => tommaPlatser(s, 'benflojt'), lyra: s => tommaPlatser(s, 'lyra'), // ett av varje till scenen (steg 4.3.2.2)
+  // en yxa per fyra över yxaFran år, och en till medan ett hus byggs (för träden där det ska stå)
+  yxa: s => perVuxna(s, VILLTAL.yxaPerVuxna, VILLTAL.yxaMin, VILLTAL.yxaMax, VILLTAL.yxaFran) + (s.hus?.some(h => !h.klar) ? VILLTAL.yxaBygge : 0),
+};
+// hur många byn vill ha av gruppen g
+export const villAv = (s: State, g: string) => REDSKAPMAL[g](s);
+// en station av sorten k: bufferten är en färdig. Halmbäddarna (det byn kan ha flera av, steg 2.2.5): en per den som sover
+// under tak; borden (steg 2.2.15) en plats per invånare; förvaringen, pyntet, brasorna, latrinen och torkställningen efter
+// sina egna mått. Bristen är hur stor del av bufferten som saknas (0 till 1), som projektets brist (projekt.ts)
+export function stationBrist(s: State, k: StationSlag) {
+  const d: StationDef = STATIONER[k];
+  return d.pynt ? pyntBrist(s, k) : d.brasa ? brasaBrist(s) : d.sover ? (living(s).length ? utanBadd(s) / living(s).length : 0) : d.platser ? bordBrist(s, k)
+    : d.forvar ? forvarBrist(s, k) : d.gor.includes('toa') ? latrinBrist(s) : d.gor.includes('torka') ? torkBrist(s) : harStation(s, k) ? 0 : 1;
+}
