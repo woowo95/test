@@ -4,7 +4,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { Person, Act, Task, createState, bearbeta, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, makeTool, step, living, pilesOf, amountOf, capacity, handOrkar, ryms, VIKT_STACK, isLight, isStored, spears, HOUR, State, migrate, die, bitsOf, KANIN, DJUR, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, foodOf, STACK_ORDER, needLadder, takeMaterial, BEAT, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELNING, packUp, releaseOwner, willing, tingOf, EKONOMI, SAK_LIST, ownedAll, leave, chooseTask, stackOf, birth, SAKER, viktOf, handerFor, bordPlats, utrustning, bordaIHander, PLATS_LIST, cloneState, pickUp, load, byId } from '../../sim';
 import * as SIM from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
-import { setItems, setMat, setFood, kor, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank, utanWebblasare, nyInvanare } from './hjalp';
+import { setItems, setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank, utanWebblasare, nyInvanare } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
 import { notisHtml, notisKlick, notisKnapp, notisVal } from '../../ui/notiser';
 import { bortaBerattelse, bortaHtml, ikappHtml } from '../../ui/borta';
@@ -312,11 +312,21 @@ SCENARIER.delning = {
     // fattig igen
     setAmount(s, 'flinta', 0); setFood(s, 0); stepDelning(s);
     const igen = s.delning!;
+    // bufferten per jag (steg 6.2.20): i en rik by har byn ingen buffert för maten, utan familjen sin för det den äger. Den
+    // fattiga familjen (äger ingen mat) samlar åt sig, den rika (äger mat för många dygn) gör det inte, fast byns förråd är fullt
+    const j = createState(5, START); klockan(j); tandEld(j); setFood(j, 300); setItems(j, { flinta: 10, grenar: 30, torrgras: 10 }); setAmount(j, 'ved', 80); rikBy(j);
+    // den fattiga är den som bryr sig mest om sig själv och familjen (egenintresset, projekt.ts)
+    const vx = living(j).filter(q => SIM.ageOf(q, j.now) >= 18).sort((a, b) => SIM.egenintresse(j, b) - SIM.egenintresse(j, a)), fattig = vx[0], rikP = vx.find(q => !SIM.familjOf(j, fattig.id).includes(q))!;
+    for (const q of SIM.familjOf(j, rikP.id)) gain(j, q, 'bar', 120);
+    const egenMat = (q: Person) => { let n = 0; for (let i = 0; i < 40; i++) { q.task = undefined; chooseTask(j, q); if ((q.task as Task | undefined)?.why?.startsWith('Behöver egen mat')) n++; } return n; };
+    const fDygn = SIM.familjMatDygn(j, SIM.familjOf(j, fattig.id)), rDygn = SIM.familjMatDygn(j, SIM.familjOf(j, rikP.id));
+    const fattigSamlar = egenMat(fattig), rikSamlar = rikP ? egenMat(rikP) : -1;
     return [
       [`en ny by är fattig (rikedom ${nyRik.toFixed(0)}) och ger det mesta till byn (${nyEgen.toFixed(1)} av 10 eget)`, ny.andel > 0.75 && Math.abs(nyEgen - 10 * (1 - ny.andel)) < 1], // i hela saker (steg 2.10.7)
       [`halvvägs till gränsen ${DELNING.rik} ges hälften (andel ${halv.andel.toFixed(2)}, ${halvEgen.toFixed(1)} av 10 eget)`, Math.abs(halv.andel - 0.5) < 0.02 && Math.abs(halvEgen - 5) < 0.3],
       [`en rik by (rikedom ${rikRik.toFixed(0)}) ger inget (${rikEgen.toFixed(1)} av 10 eget)`, rik.andel === 0 && Math.abs(rikEgen - 10) < 0.01],
       [`blir byn fattig igen ger folk igen (andel ${igen.andel.toFixed(2)})`, igen.andel > 0.8],
+      [`i en rik by samlar den fattiga familjen mat åt sig (${fattigSamlar} av 40, äger för ${fDygn.toFixed(1)} dygn) men inte den rika (${rikSamlar} av 40, äger för ${rDygn.toFixed(1)} dygn)`, fattigSamlar >= 5 && rikSamlar === 0],
     ];
   },
 };

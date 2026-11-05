@@ -9,7 +9,7 @@ import { Ting, newTing, tingOf } from './agande';
 import { kvEffekt } from './kvalitet';
 import { bordVid } from './stationer';
 import { BYN, Del, addDel, sumOf } from './egendom';
-import { amountOf, helt, mayTake, ownMove, ownsAmount, put, takeFood, use } from './lager';
+import { amountOf, helt, mayTake, ownMove, ownedSum, ownsAmount, put, takeFood, use } from './lager';
 import { eatPoison } from './fynd';
 import { ata } from './naring';
 import { ratt } from './matlagning';
@@ -129,6 +129,18 @@ const lacksFor = (s: State, p: Person, b: Behov) => b.behover(s, p) && hasFor(s,
 export const harMat = (s: State, p: Person) => hasFor(s, p, MAT) >= MAT.minst;
 // hur många dygn p har mat (steg 3.10.26): sin egen, byns och det familjen äger (familjen ger, isFamily). I en rik by delas
 // inget (delning.ts) och den som inte äger något arbetar då för sin egen mat, också när byns förråd ser fullt ut (val.ts)
+// bufferten per jag (steg 6.2.20): hur stor del av maten i förrådet som är byns (resten äger invånarna; en tom by räknas som byns)
+export function bynsMatAndel(s: State) {
+  let all = 0, by = 0;
+  for (const k of MAT.slag) { const a = amountOf(s, k), per = perOf(MAT, k); all += a * per; by += Math.max(0, a - ownedSum(s, k)) * per; }
+  return all > 0 ? by / all : 1;
+}
+// ... hur många dygn maten som familjen fam äger räcker för den (den som saknar familj är sin egen familj)
+export function familjMatDygn(s: State, fam: readonly Person[]) {
+  let n = 0;
+  for (const q of fam) n += ownFor(s, q, MAT);
+  return n / (MAT.kvar * Math.max(1, fam.length));
+}
 export function egnaMatDygn(s: State, p: Person) {
   let n = hasFor(s, p, MAT);
   for (const q of living(s)) if (q !== p && isFamily(q, p)) n += ownFor(s, q, MAT);
