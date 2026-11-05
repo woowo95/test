@@ -21,6 +21,8 @@ import { Recept, saknatAv } from './behov';
 import { SED } from './seder';
 import { bedTile } from './byggnader';
 import { stationRutor } from './stationer';
+import { LJUS, UPPSATT, friFackla, friLjus, ljusPlatser, morkStalle } from './ljus';
+import { doingAct } from './folk';
 
 // ---------- byns projekt: vad den bygger och gör (steg 2.2.7) ----------
 // Allt byn kan bygga eller göra av handarbete är en rad i registret PROJEKT: redskapen (en rad per grupp i GORS,
@@ -34,7 +36,7 @@ import { stationRutor } from './stationer';
 
 // ---------- balanstal (regel 8) ----------
 export const PROJEKT_TAL = balans('projekt', {
-  kniv: 1.2, yxa: 1.2, spjut: 1, metspo: 0.8, korg: 0.8, bensyl: 1, rock: 0.8, skor: 0.5, balte: 0.6, benspade: 0.6, vattensack: 0.5, boll: 0.3, slagtra: 0.3, mal: 0.3, trumma: 0.3, benflojt: 0.3, lyra: 0.3, // hur mycket varje redskap väger när byn saknar alla den vill ha
+  kniv: 1.2, yxa: 1.2, spjut: 1, metspo: 0.8, korg: 0.8, bensyl: 1, rock: 0.8, skor: 0.5, balte: 0.6, benspade: 0.6, vattensack: 0.5, fackla: 0.4, talgljus: 0.3, boll: 0.3, slagtra: 0.3, mal: 0.3, trumma: 0.3, benflojt: 0.3, lyra: 0.3, // hur mycket varje redskap väger när byn saknar alla den vill ha
   slaktbank: 1, flatarbank: 0.6, scen: 0.3, // ... varje station när byn saknar den
   grill: 0.8, // ... grillställningen (steg 2.8.1)
   tork: 0.6, // ... torkställningen (steg 2.8.2)
@@ -50,6 +52,8 @@ export const PROJEKT_TAL = balans('projekt', {
   rep: 0.5, // ... repet när förrådet är tomt
   virke: 0.8, // ... virket när förrådet saknar det byn vill bygga av (steg 4.5.5.2)
   rojning: 1, // ... att fälla träden på en lagerplats eller ett fält i skogen (steg 3.6.9)
+  ljus: 0.4, // ... att ställa fram ett talgljus på ett bord eller en hylla inne (steg 6.3.8, ljus.ts)
+  uppsatt: 0.4, // ... att sätta upp en fackla där folk ofta är vakna i mörker (steg 6.3.7, ljus.ts)
   falt: 1, // ... arbetet på fälten när ett fält har arbete att göra, eller någon som kan odla har frön men inget fält (steg 2.10.3)
   minKostnad: 0.25, // kostnaden räknas aldrig under så här många arbetstimmar
   // jaget och familjen (steg 6.1.16): det egna värdet räknas med egenintresset, som är egen för en vanlig människa i en by
@@ -163,6 +167,22 @@ export const PROJEKT: Record<string, ProjektDef> = {
     kostnad: () => SKOG.fallTim * ARBETE,
     kan: (s, p, f) => !f.kyla && freeTools(s, p, 'yxa') > 0 && !!rojSpot(s, p),
     uppgift: (s, p) => { const t = rojSpot(s, p); return t && { act: 'falla', text: 'Fäller ett träd där byn ska ha lager eller fält.', min: fallTid(s, t.i) / 60000, tool: 'yxa', spot: { x: t.x, y: t.y } }; },
+  },
+  // en uppsatt fackla (steg 6.3.7, ljus.ts): där folk ofta är vakna i mörker, med en av byns facklor
+  uppsatt: {
+    namn: 'Uppsatt fackla', vikt: PROJEKT_TAL.uppsatt,
+    brist: s => morkStalle(s) ? 1 : 0,
+    kostnad: () => grundvarde('fackla') + UPPSATT.min / 60 * ARBETE,
+    kan: (s, p, f) => !f.kyla && !!friFackla(s) && !!morkStalle(s) && !doingAct(s, 'uppsatt', p),
+    uppgift: s => { const m = morkStalle(s); return m && { act: 'uppsatt', text: 'Sätter upp en fackla där byn ofta går i mörkret.', min: UPPSATT.min, spot: { x: m.x + 0.5, y: m.y + 0.5 } }; },
+  },
+  // ett talgljus på ett bord eller en hylla inne (steg 6.3.8, ljus.ts)
+  ljus: {
+    namn: 'Talgljus på bordet', vikt: PROJEKT_TAL.ljus,
+    brist: s => ljusPlatser(s).length ? 1 : 0,
+    kostnad: () => grundvarde('talgljus') + LJUS.min / 60 * ARBETE,
+    kan: (s, p, f) => !f.kyla && !!friLjus(s) && ljusPlatser(s).length > 0 && !doingAct(s, 'ljus', p),
+    uppgift: s => { const st = ljusPlatser(s)[0]; return st && { act: 'ljus', text: 'Ställer fram ett talgljus inne.', min: LJUS.min, spot: { x: st.x + 0.5, y: st.y + 0.5 }, ref: st.id }; },
   },
   // fälten (steg 2.10.3, odling.ts): nästa steg på det egna fältet, eller att röja ett nytt
   falt: {

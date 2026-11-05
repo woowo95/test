@@ -146,6 +146,7 @@ const DEF = {
   handla: { namn: 'Handlar med handlaren', slag: 'prata', stilla: true }, // byns handel vid handlarens filt (steg 4.4.1.3, handel.ts): task.ref är handlarens id. Inte social: den som handlar pratar bara med handlaren (steg 4.5.7.5)
   koa: { namn: 'Står i kö till handlaren', slag: 'prata', social: true, stilla: true }, // kön till handlaren (steg 4.5.7.5, handel.ts): de som väntar får prata med varandra
   slagtra: { namn: 'Täljer ett slagträ', slag: 'hantverk', hantverk: true, verb: 'täljer', plats: 'station' },
+  fackla: { namn: 'Gör en fackla', slag: 'hantverk', hantverk: true, verb: 'binder', plats: 'station' }, // steg 6.3.6 (ljus.ts)
   trumma: { namn: 'Gör en trumma', slag: 'hantverk', hantverk: true, verb: 'spänner', plats: 'station' },
   benflojt: { namn: 'Skär en benflöjt', slag: 'hantverk', hantverk: true, verb: 'skär', plats: 'station' },
   lyra: { namn: 'Gör en lyra', slag: 'hantverk', hantverk: true, verb: 'täljer', plats: 'station' },
@@ -163,6 +164,9 @@ const DEF = {
   // fälten (steg 2.10.3, odling.ts): steget på fältet är task.tool, och arbetet sparas i fältet om det avbryts
   odla: { namn: 'Odlar', slag: 'odla', verktyg: { roja: 'Röjer ett fält', bereda: 'Gräver upp jorden på fältet', sa: 'Sår', mogen: 'Skördar' }, tungt: true, stilla: true, framme: true },
   dorr: { namn: 'Hänger en dörr', slag: 'bygga', verktyg: { skinndorr: 'Hänger en hud i dörröppningen', tradorr: 'Hänger en dörr av trä i dörröppningen' }, hantverk: true, stilla: true, framme: true }, // i en öppning (DORRAR i byggnad.ts, steg 2.2.16); task.tool = sorten
+  talgljus: { namn: 'Gör ett talgljus', slag: 'hantverk', hantverk: true, verb: 'doppar', plats: 'station' },
+  ljus: { namn: 'Ställer fram ett ljus', slag: 'bygga', hantverk: true, stilla: true, framme: true }, // på ett bord eller en hylla inne (ljus.ts, steg 6.3.8)
+  uppsatt: { namn: 'Sätter upp en fackla', slag: 'bygga', hantverk: true, stilla: true, framme: true }, // där folk ofta är vakna i mörker (ljus.ts, steg 6.3.7)
   tillbehor: { namn: 'Gör ett tillbehör', slag: 'hantverk', verktyg: { skinnfall: 'Lägger en skinnfäll i halmbädden' }, hantverk: true, stilla: true, framme: true }, // till en station eller möbel (TILLBEHOR i stationer.ts); task.tool = sorten
   // utbrotten (steg 3.2.2, humor.ts): den som mår mycket dåligt brister ut. Platsen väljs i val.ts (utbrottVal). Symbolen är gradens
   // (steg 3.10.13), och över huvudet utbrottets egen (task.tool, utbIkon i humor.ts)

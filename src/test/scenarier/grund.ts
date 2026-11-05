@@ -6,7 +6,7 @@ import * as SIM from '../../sim';
 import type { Person, State } from '../../sim';
 import { nyKalender } from '../../sim';
 import { START, STEG_TIM } from '../kor';
-import { setMat, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER, nyInvanare, klockan, medHus } from './hjalp';
+import { setMat, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER, nyInvanare, klockan, medHus, medBank } from './hjalp';
 
 SCENARIER.glanta = {
   lang: true,
@@ -93,6 +93,288 @@ SCENARIER.yxa = {
       ['ved har huggits', ved > 0],
       [`gräs där träden stod utanför stråken, minst hälften (${gras} av ${ute.length})`, ute.length >= 3 && gras >= ute.length / 2],
       [`stammarna huggs upp (högst 2 liggande utanför lagret i skogen: ${liggande})`, liggande <= 2]];
+  },
+};
+
+SCENARIER.egnaeldar = {
+  text: 'Steg 6.3.1: varje eld får ved efter vad de som använder just den vill ha. Den trivsamma elden räknas bara från den som sitter vid elden eller är på väg dit, så en varm natt då ingen är vid elden vill ingen ha mer ved; alla eldar fylls på lika, den första är inte särskild',
+  kor: () => {
+    const s = createState(3, START);
+    // en varm natt: timme för timme framåt tills det är mörkt och inte kallt
+    for (let i = 0; i < 24 * 30 && (SIM.isLight(s.now) || coldOf(temperature(s)) > 0); i++) s.now += HOUR;
+    const varmNatt = !SIM.isLight(s.now) && coldOf(temperature(s)) === 0;
+    const ppl = living(s), e = SIM.eldPlats(s);
+    const vuxna = ppl.filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.ansvar);
+    for (const p of ppl) { p.warm = 1; p.task = undefined; p.x = e.x + 0.5 + 30; p.y = e.y + 0.5; }
+    setAmount(s, 'ved', 40);
+    Object.assign(s.fire, { lit: true, fuel: 0.2, lightings: 1 });
+    stepFire(s, 1, ppl);
+    const langtBort = s.fire.want ?? 0, ingenHamtar = !ppl.some(p => p.task?.act === 'elda');
+    // en sätter sig vid elden: den trivsamma elden räknas från henom
+    const a = vuxna[0];
+    a.x = e.x + 0.5; a.y = e.y + 2;
+    stepFire(s, 1, ppl);
+    const vid = s.fire.want ?? 0, why = s.fire.wantWhy ?? '';
+    // en lägereld till, långt bort, där en annan sitter: båda eldarna fylls på samtidigt
+    const b = vuxna[1], at = { x: e.x + 30, y: e.y };
+    const br = Object.assign(SIM.newFire(), { id: (s.nextStation ??= 1), at, ring: true, lit: true, fuel: 0.2, lightings: 1, folk: [b.id] });
+    s.nextStation = (s.nextStation ?? 1) + 1; (s.eldar ??= []).push(br);
+    for (const p of ppl) p.task = undefined;
+    b.x = at.x + 0.5; b.y = at.y + 2;
+    stepFire(s, 1, ppl);
+    const eldare = ppl.filter(p => p.task?.act === 'elda'), tillForsta = eldare.filter(p => p.task!.ref === undefined).length, tillBrasan = eldare.filter(p => p.task!.ref === br.id).length;
+    return [
+      ['en varm natt hittades', varmNatt],
+      [`ingen vid elden: ingen trivsam önskan (${langtBort.toFixed(2)} ved) och ingen hämtar ved`, langtBort < 1 && ingenHamtar],
+      [`${a.name} vid elden vill ha en trivsam eld (${vid.toFixed(2)} ved: ${why.toLowerCase()})`, vid > langtBort && /trivsam/.test(why)],
+      [`brasan får sin önskan från ${b.name} som sitter där (${(br.want ?? 0).toFixed(2)} ved)`, (br.want ?? 0) > 1],
+      [`båda eldarna fylls på samtidigt (till den första ${tillForsta}, till brasan ${tillBrasan})`, tillForsta === 1 && tillBrasan === 1],
+    ];
+  },
+};
+
+SCENARIER.glod = {
+  text: 'Steg 6.3.2: när elden slocknar ligger glöden kvar i tolv timmar. Den som lägger på ved under tiden blåser liv i elden utan flinta och fnöske, och kylan räknas inte som en fara så länge någon eld eller glöd finns. Elden slocknar bara när veden tar slut, inte av slumpen',
+  kor: () => {
+    const s = createState(3, START);
+    const p = living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.ansvar)!;
+    Object.assign(s.fire, { lit: true, fuel: 0.001, lightings: 1 });
+    stepFire(s, 60, []);
+    const slocknade = !s.fire.lit, glod = SIM.emberOn(s, s.fire), kvar = ((s.fire.emberUntil ?? 0) - s.now) / HOUR;
+    const glodFinns = SIM.nagonGlod(s);
+    s.now += 11 * HOUR; // nästan tolv timmar senare: glöden lever än
+    const levande = SIM.emberOn(s, s.fire);
+    SIM.addFuel(s, p, 3);
+    const tandes = s.fire.lit;
+    // samma sak efter mer än tolv timmar: glöden är borta och veden går tillbaka
+    const t = createState(3, START), q = living(t).find(x => SIM.ageOf(x, t.now) >= SIM.ALDER.ansvar)!;
+    Object.assign(t.fire, { lit: true, fuel: 0.001, lightings: 1 });
+    stepFire(t, 60, []);
+    t.now += 13 * HOUR; stepFire(t, 60, []);
+    const borta = !SIM.emberOn(t, t.fire) && !SIM.nagonGlod(t);
+    SIM.addFuel(t, q, 3);
+    // en eld med gott om ved brinner ett dygn utan att slockna av sig själv
+    const u = createState(3, START);
+    Object.assign(u.fire, { lit: true, fuel: 1e6, lightings: 1 });
+    let slocknadeAvSlump = false;
+    for (let i = 0; i < 24 * 60; i++) { stepFire(u, 60, []); if (!u.fire.lit) slocknadeAvSlump = true; }
+    return [
+      [`elden slocknade när veden tog slut och glöden ligger kvar (${kvar.toFixed(1)} h)`, slocknade && glod && Math.abs(kvar - SIM.ELD.glodTim) < 0.1],
+      ['glöden räknas som en eld (ingen fara av kylan, inget fnöske behövs)', glodFinns],
+      [`elva timmar senare lever glöden och ${p.name} blåser liv i den med ved`, levande && tandes],
+      ['efter tretton timmar är glöden borta och veden tänder inget', borta && !t.fire.lit],
+      ['en eld med ved slocknar inte av sig själv på ett dygn', !slocknadeAvSlump],
+    ];
+  },
+};
+
+SCENARIER.naver = {
+  text: 'Steg 6.3.3: näver täljs ur en ved med kniv eller yxa när elden ska tändas, fyra av en ved. En näver ersätter höet vid tändningen och gör chansen större, och med ett blad och ved behöver byn inte samla hö för att kunna tända',
+  kor: () => {
+    const s = createState(3, START);
+    const p = living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.ansvar)!;
+    const utanBlad = !SIM.kanTalja(s);
+    s.ting = (s.ting ?? []).filter(t => t.k !== 'kniv' && t.k !== 'yxa');
+    SIM.newTing(s, 'kniv', 1, p.id);
+    setAmount(s, 'torrgras', 0); setAmount(s, 'naver', 0); setAmount(s, 'ved', 10); setAmount(s, 'grenar', 20); setAmount(s, 'flinta', 2); setAmount(s, 'sten', 10);
+    Object.assign(s.fire, { lit: false, emberUntil: undefined, fuel: 0 });
+    const kan = SIM.canLight(s), behoverInte = !SIM.needTinder(s);
+    const ved0 = amountOf(s, 'ved');
+    SIM.tryLight(s, p);
+    const naverKvar = amountOf(s, 'naver'), vedKvar = amountOf(s, 'ved'), hoKvar = amountOf(s, 'torrgras');
+    const v = SIM.grundvarde('naver'), vv = SIM.grundvarde('ved');
+    return [
+      ['i början finns inget blad att tälja med', utanBlad],
+      [`med en kniv och ved kan elden tändas utan hö (${kan ? 'ja' : 'nej'}), och inget hö behöver samlas`, kan && behoverInte],
+      [`en ved blev fyra näver och en gick åt: ${ved0 - vedKvar} ved, ${naverKvar} näver kvar`, ved0 - vedKvar === 1 && naverKvar === 3 && hoKvar === 0],
+      [`nävern är inte värd mer än veden (${v.toFixed(2)} mot ${vv.toFixed(2)})`, v <= vv && v > 0],
+      ['chansen är större med näver', SIM.ELD.naverChans > 1],
+    ];
+  },
+};
+
+SCENARIER.morker = {
+  text: 'Steg 6.3.4: den som är vaken i totalmörker (natt och inget ljus från en eld) går och arbetar långsammare och får lite sämre humör. Nära en brinnande eld och på dagen märks inget, och den som sover bryr sig inte',
+  kor: () => {
+    const s = createState(3, START);
+    const p = living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.ansvar)!;
+    const e = SIM.eldXY(s, s.fire);
+    tandEld(s, 4);
+    klockan(s, 23);
+    p.x = e.x + 0.5; p.y = e.y + 1.5;
+    const vidElden = SIM.morkFart(s, p), ljus = SIM.ljusAt(s, p.x, p.y);
+    p.x = e.x + 0.5 + 20;
+    const langtBort = SIM.morkFart(s, p);
+    SIM.morkHumor(s, p);
+    const delar: { namn: string; v: number }[] = []; SIM.moodOf(p, s.now, delar);
+    const mork = delar.some(d => d.namn === 'Mörkt');
+    klockan(s, 12);
+    const dag = SIM.morkFart(s, p);
+    klockan(s, 23);
+    const q = living(s).find(x => x !== p)!;
+    q.x = p.x; q.y = p.y; q.morkT = undefined; q.task = { act: 'sova' } as SIM.Task;
+    SIM.morkHumor(s, q);
+    Object.assign(s.fire, { lit: false, fuel: 0 });
+    p.x = e.x + 0.5; p.y = e.y + 1.5;
+    const slocknad = SIM.morkFart(s, p);
+    return [
+      [`nära den brinnande elden på natten är det ljust (${ljus.toFixed(2)}) och farten som vanligt`, ljus > 0 && vidElden === 1],
+      [`tjugo rutor bort i mörkret går man ${langtBort} gånger så fort`, langtBort === SIM.MORKER.fart],
+      ['den som är vaken i mörkret får lite sämre humör (Mörkt)', mork],
+      ['på dagen märks inget', dag === 1],
+      ['den som sover bryr sig inte', q.morkT === undefined],
+      ['vid en slocknad eld är det mörkt', slocknad === SIM.MORKER.fart],
+    ];
+  },
+};
+
+SCENARIER.talg = {
+  text: 'Steg 6.3.5: slakten ger talg, djurfett i hela stycken: en kanin 1 och en varg 3',
+  kor: () => {
+    const s = createState(3, START);
+    const p = living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.ansvar)!;
+    medBank(s);
+    for (const r of s.people) r.tek = { ...r.tek, kniv: 1 };
+    s.ting = (s.ting ?? []).filter(t => t.k !== 'kniv'); SIM.newTing(s, 'kniv', 1, p.id);
+    setMat(s, {}); setMat(s, { vilt: 3 * SIM.KANIN }); setAmount(s, 'talg', 0);
+    SIM.bearbeta(s, p, SIM.DJUR.kanin, 1);
+    const kanin = amountOf(s, 'talg');
+    setAmount(s, 'talg', 0); setAmount(s, 'varg', 1);
+    SIM.bearbeta(s, p, SIM.DJUR.varg, 1);
+    const varg = amountOf(s, 'talg');
+    return [
+      [`tre kaniner gav ${kanin} talg`, kanin === 3],
+      [`en varg gav ${varg} talg`, varg === 3],
+      ['talgen är en sak med namn och bild', !!SIM.SAKER.talg && SIM.SAKER.talg.namn === 'Talg'],
+    ];
+  },
+};
+
+SCENARIER.fackla = {
+  text: 'Steg 6.3.6: den som går ut i mörkret tänder en fackla vid elden. Den lyser där hen går, brinner ner, släcks när ljuset inte behövs och är borta när den brunnit ut',
+  kor: () => {
+    const s = createState(3, START);
+    const p = living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.ansvar)!;
+    const e = SIM.eldXY(s, s.fire);
+    tandEld(s, 4);
+    klockan(s, 23);
+    s.ting = (s.ting ?? []).filter(t => t.k !== 'fackla');
+    const f = SIM.newTing(s, 'fackla', 1, SIM.BYN);
+    p.x = e.x + 0.5; p.y = e.y + 1.5;
+    p.task = { act: 'samla', tx: e.x + 25.5, ty: e.y + 0.5 } as SIM.Task;
+    SIM.facklaVal(s, p);
+    const tand = f.tand === p.id;
+    p.x = e.x + 15.5;
+    const ljus = SIM.ljusAt(s, p.x, p.y), fart = SIM.morkFart(s, p);
+    s.now += SIM.HOUR; SIM.facklorTimme(s);
+    const brann = f.c < 1 && f.c > 0;
+    klockan(s, 12); f.tandT = s.now; // natten har gått timme för timme; här räknas bara gryningen
+    SIM.facklorTimme(s);
+    const slackt = f.tand === undefined && SIM.tingOf(s).includes(f);
+    klockan(s, 23);
+    SIM.facklaVal(s, p);
+    const igen = f.tand === p.id;
+    s.now += Math.ceil(SIM.FACKLA.brinnTim) * SIM.HOUR; SIM.facklorTimme(s);
+    const borta = !SIM.tingOf(s).includes(f);
+    return [
+      ['den som går ut i mörkret tänder facklan vid elden', tand],
+      [`facklan lyser där hen går (${ljus.toFixed(2)}) och farten är som vanligt`, ljus > 0 && fart === 1],
+      [`facklan brinner ner (${f.c.toFixed(2)} kvar efter en timme)`, brann],
+      ['på dagen släcks den och finns kvar', slackt],
+      ['nästa natt tänds den igen', igen],
+      [`efter ${SIM.FACKLA.brinnTim} timmar har den brunnit ut`, borta],
+      ['facklan kräver slaktbänken (talgen)', SIM.TEK.fackla.krav.includes('slaktbank')],
+    ];
+  },
+};
+
+SCENARIER.uppsatt = {
+  text: 'Steg 6.3.7: där folk ofta är vakna i mörker blir det ett projekt att sätta upp en fackla. Den tänds när någon vaken är nära och släcks när ingen är kvar eller dagen kommer',
+  kor: () => {
+    const s = createState(3, START);
+    const [p, q] = living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.ansvar);
+    const e = SIM.eldXY(s, s.fire);
+    Object.assign(s.fire, { lit: false, fuel: 0 });
+    klockan(s, 23);
+    const x = e.x + 12, y = e.y + 3;
+    p.x = x + 0.5; p.y = y + 0.5; p.task = { act: 'samla', tx: x + 0.5, ty: y + 0.5 } as SIM.Task;
+    for (let h = 0; h < 4; h++) SIM.morkHumor(s, p);
+    const stalle = SIM.morkStalle(s);
+    s.ting = (s.ting ?? []).filter(t => t.k !== 'fackla');
+    const utan = SIM.PROJEKT.uppsatt.kan(s, p, { kyla: false, gras: 0 });
+    SIM.newTing(s, 'fackla', 1, SIM.BYN);
+    const med = SIM.PROJEKT.uppsatt.kan(s, p, { kyla: false, gras: 0 });
+    const u = SIM.PROJEKT.uppsatt.uppgift(s, p)!;
+    SIM.finishUppsatt(s, p, { tx: u.spot!.x, ty: u.spot!.y });
+    const upp = s.uppsatta?.[0], tingBorta = !SIM.tingOf(s).some(t => t.k === 'fackla');
+    const igen = !!SIM.morkStalle(s);
+    SIM.facklorTimme(s);
+    const tand = !!upp?.tand, ljus = SIM.ljusAt(s, p.x, p.y);
+    p.x = x + 30; p.task = { act: 'sova', tx: x + 30, ty: y } as SIM.Task; q.x = x + 30; q.task = { act: 'sova', tx: x + 30, ty: y } as SIM.Task;
+    for (const r of living(s)) if (r !== p && r !== q) { r.x = x + 30; r.task = { act: 'sova', tx: x + 30, ty: y } as SIM.Task; }
+    s.now += SIM.HOUR; SIM.facklorTimme(s);
+    const slackt = !!upp && !upp.tand && upp.c < 1;
+    q.x = x - 0.5; q.task = { act: 'samla', tx: x + 0.5, ty: y + 0.5 } as SIM.Task;
+    SIM.facklaVal(s, q);
+    const vidVal = !!upp?.tand;
+    klockan(s, 12); if (upp) upp.tandT = s.now; SIM.facklorTimme(s);
+    const dag = !!upp && !upp.tand;
+    return [
+      [`där någon varit vaken i mörker fyra timmar behövs en fackla (${stalle ? `${stalle.x - e.x}, ${stalle.y - e.y} från elden` : 'ingen'})`, !!stalle && stalle.x === x && stalle.y === y],
+      ['utan en fackla i byn kan ingen sätta upp en', !utan && med],
+      ['facklan sätts upp på platsen och tas ur byns saker', !!upp && upp.x === x && upp.y === y && tingBorta],
+      ['där den står behövs ingen till', !igen],
+      [`den tänds när någon vaken är nära och lyser (${ljus.toFixed(2)})`, tand && ljus > 0],
+      ['den släcks när alla sover långt bort, och har brunnit lite', slackt],
+      ['den tänds när någon väljer att gå dit', vidVal],
+      ['på dagen släcks den', dag],
+    ];
+  },
+};
+
+SCENARIER.talgljus = {
+  text: 'Steg 6.3.8: talgljuset görs av två talg och ett torrgräs. Det ställs på ett bord inne där folk är vakna i mörker, lyser upp rummet när någon vaken är där och släcks när ingen är kvar eller dagen kommer',
+  kor: () => {
+    const s = createState(1, START);
+    const hus = medHus(s)!;
+    const [p, q] = living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.ansvar);
+    const bitar = SIM.bitsOf(s).filter(b => b.hus === hus.id);
+    let inne: { x: number; y: number } | undefined;
+    for (const b of bitar) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const x = b.x + dx, y = b.y + dy; if (!inne && SIM.roomAt(s, x, y)?.hus === hus.id && !SIM.stationAt(s, x, y) && SIM.roomAt(s, x + 1, y)?.hus === hus.id && !SIM.stationAt(s, x + 1, y)) inne = { x, y }; }
+    const bord = { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'bord', x: inne!.x, y: inne!.y, kvar: 0 } as SIM.Station;
+    (s.stationer ??= []).push(bord); SIM.touch(s);
+    Object.assign(s.fire, { lit: false, fuel: 0 });
+    klockan(s, 23);
+    const sover = (r: SIM.Person) => { r.x = inne!.x + 40; r.task = { act: 'sova', tx: r.x, ty: inne!.y } as SIM.Task; };
+    for (const r of living(s)) if (r !== p) sover(r);
+    p.x = inne!.x + 0.5; p.y = inne!.y + 0.5; p.task = { act: 'samla', tx: p.x, ty: p.y } as SIM.Task;
+    for (let h = 0; h < 4; h++) SIM.morkHumor(s, p);
+    const plats = SIM.ljusPlatser(s).some(st => st.id === bord.id);
+    s.ting = (s.ting ?? []).filter(t => t.k !== 'talgljus');
+    const utan = SIM.PROJEKT.ljus.kan(s, p, { kyla: false, gras: 0 });
+    SIM.newTing(s, 'talgljus', 1, SIM.BYN);
+    const med = SIM.PROJEKT.ljus.kan(s, p, { kyla: false, gras: 0 }), u = SIM.PROJEKT.ljus.uppgift(s, p)!;
+    SIM.finishLjus(s, p, { tx: u.spot!.x, ty: u.spot!.y, ref: u.ref } as SIM.Task);
+    const l = s.ljus?.[0], fram = !!l && l.st === bord.id && !SIM.tingOf(s).some(t => t.k === 'talgljus') && !SIM.ljusPlatser(s).length;
+    SIM.facklorTimme(s);
+    const tand = !!l?.tand, ljus = SIM.ljusAt(s, inne!.x + 0.5, inne!.y + 0.5), fart = SIM.morkFart(s, p);
+    sover(p); s.now += SIM.HOUR; SIM.facklorTimme(s);
+    const slackt = !!l && !l.tand && l.c < 1 && l.c > 1 - 2 / SIM.LJUS.brinnTim;
+    q.x = inne!.x + 10; q.task = { act: 'samla', tx: inne!.x + 0.5, ty: inne!.y + 0.5 } as SIM.Task; SIM.facklaVal(s, q);
+    const vidVal = !!l?.tand;
+    klockan(s, 12); if (l) l.tandT = s.now; SIM.facklorTimme(s);
+    const dag = !!l && !l.tand;
+    const r = SIM.SAKER.talgljus?.skaffa?.av;
+    return [
+      ['talgljuset görs av två talg och ett torrgräs', r?.talg === 2 && r?.torrgras === 1],
+      ['där någon varit vaken i mörker vid bordet inne vill byn ha ett ljus på det', plats],
+      ['utan ett talgljus kan ingen ställa fram ett', !utan && med],
+      ['ljuset ställs på bordet och tas ur byns saker', fram],
+      [`det tänds när någon vaken är i rummet och lyser upp det (${ljus.toFixed(2)}), och där går arbetet som vanligt`, tand && ljus === 1 && fart === 1],
+      ['det släcks när alla sover, och har brunnit en timme', slackt],
+      ['det tänds när någon går dit', vidVal],
+      ['på dagen släcks det', dag],
+    ];
   },
 };
 

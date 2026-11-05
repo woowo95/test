@@ -1,3 +1,4 @@
+import { facklaVal } from './ljus';
 import { OMRADE, bynsAvstand, bynsMitt, iByn, omrade, utanforByn } from './omrade';
 import { GANG } from './gang';
 import { iVattnetNu, strandNu, vattenNu } from './sjo';
@@ -8,7 +9,7 @@ import { tornadoSkydd } from './tornado';
 import { brandVal } from './brand';
 import { foodDays, foodDaysAll } from './ekonomi';
 import { ACTS, WORK, usesTool } from './handlingar';
-import { canLight, eldarOf, emberOn, fuelStock, vidEld, needStones, needTinder, woodDays } from './eld';
+import { canLight, eldFor, eldXY, nagonEld, nagonGlod, eldarOf, emberOn, fuelStock, vidEld, needStones, needTinder, woodDays } from './eld';
 import { ALDER, KROPP, REL, ageOf, count, doingAct, familjOf, isSick, living, relKey, stat } from './folk';
 import { RELT, bredvidVikt } from './relationer';
 import { onskan } from './naring';
@@ -44,7 +45,6 @@ import { drickVal, torstig, tortarFarligt, vattenVal } from './torst';
 import { forSmutsigt, latrinFor } from './smuts';
 import { bordenOf, ledigPlats, lekplats, sittAt, stationAt, stationFor, storlekAv, vidStation } from './stationer';
 import { RATTER, TORKAS, grillTid, kanGrilla, kanTorka, torkTid } from './matlagning';
-import { egenBrasa } from './brasor';
 import { TEK, forsokChans, forsokVal, knows, laraVal, tekArbete } from './teknik';
 import { sportVal, sportVikt } from './sport';
 import { handlaVal, handlarMal } from './handel';
@@ -212,7 +212,7 @@ export function spotFor(s: State, act: Act, p: Person): { x: number; y: number }
 }
 function platsFor(s: State, act: Act, p: Person): { x: number; y: number } {
   const m = getMap(s.seed), d = ACTS[act], plats = d.plats ?? 'skog';
-  const eb = plats === 'elden' ? egenBrasa(s, p) : undefined, f = eb ? eb.at! : eldPlats(s); // vid elden: vid den brinnande lägereld man hör till (steg 2.9.1), annars den första
+  const eb = plats === 'elden' ? eldFor(s, p) : undefined, f = eb ? eldXY(s, eb) : eldPlats(s); // vid elden: vid den brinnande lägereld man hör till, annars den närmaste som brinner (steg 6.3.1)
   // det som görs utan bänk görs inne i byn och inte vid elden (steg 2.10.6); när det är kallt sätter man sig vid elden som förut, för värmens skull
   const iByn = d.slag === 'hantverk' && (plats === 'elden' || plats === 'station' && !stationFor(s, act, p)) && coldOf(temperature(s)) === 0;
   if (iByn && nederbord(s)) { const sal = samlingRum(s); if (sal) return punktIRuta(s, pick(s, sal.tiles, 'val', p), p); } // i regnet under tak (steg 2.11.1)
@@ -393,11 +393,11 @@ function strandSpot(s: State, p: Person) {
 export function dangers(s: State) {
   const ppl = living(s), freezing = ppl.filter(q => q.warm < KROPP.kallt).length / (ppl.length || 1), ai = ageIndex(s);
   const cold = coldOf(temperature(s)) > 0 || freezing > VAL.fryserAndel;
-  return { kyla: cold && !s.fire.lit && !emberOn(s), svalt: foodDays(s) < VAL.svaltDygn, gras: kallTid(ai) || cold ? TROSKEL.torrgrasKyla : 0 };
+  return { kyla: cold && !nagonGlod(s), svalt: foodDays(s) < VAL.svaltDygn, gras: kallTid(ai) || cold ? TROSKEL.torrgrasKyla : 0 };
 }
 type Faror = ReturnType<typeof dangers>;
 // elden är släckt och kan inte tändas för att det saknas tändmaterial, och för få hämtar det
-const tinderNeeded = (s: State) => !s.fire.lit && !emberOn(s) && !canLight(s) && needTinder(s);
+const tinderNeeded = (s: State) => !nagonGlod(s) && !canLight(s) && needTinder(s);
 // det som väljs: handlingen, varför, hur länge, och var om det inte följer av handlingen
 export interface Val { act: Act; why: string; dur: number; pass?: number; spot?: { x: number; y: number }; ref?: number; tool?: string; site?: { x: number; y: number }; sok?: true; tandmat?: true; falt?: true; hamtar?: string; handel?: true }
 const set = (v: Val, act: Act, why: string) => { v.act = act; v.why = why; return true; };
@@ -490,7 +490,7 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'vardaSig', niva: 2, prova: ({ s, p, v }) => varda(s, p, v, true) }, // sina egna sår: trycka på, lägga förband och rengöra (steg 2.5.2)
   { id: 'sjuk', niva: 2, prova: ({ s, p, v }) => isSick(p, s.now) && set(v, 'sova', 'Är sjuk') },
   { id: 'svag', niva: 2, prova: ({ p, v }) => halsa(p) < KROPP.svag && set(v, 'sova', 'Är för svag för att orka något') }, // också av blodförlust och smärta (halsa.ts)
-  { id: 'fryserFarligt', niva: 2, prova: ({ s, p, v }) => p.warm < KROPP.farligt && s.fire.lit && set(v, 'varma', 'Fryser farligt') },
+  { id: 'fryserFarligt', niva: 2, prova: ({ s, p, v }) => p.warm < KROPP.farligt && nagonEld(s) && set(v, 'varma', 'Fryser farligt') },
   // elden går inte att tända för att tändmaterial saknas: den som fryser men orkar hämtar det i stället för att gå in.
   // Kylan är faran och elden det enda som hjälper mot den (några räcker; de andra går in och väntar)
   { id: 'tandFryser', niva: 2, prova: c => fryser(c) && c.a >= ALDER.vuxen && tinderNeeded(c.s) && mjuk(c.s, c.p, 'tand') && (c.v.tandmat = true) && set(c.v, 'samla', 'Fryser, men utan tändmaterial blir det ingen eld') },
@@ -516,7 +516,7 @@ export const ARBETEN: readonly Arbete[] = [
   // 4 Grundbehov (toa, värme, vatten, vila, mat). En lat person tillgodoser dem tidigare än en flitig
   { id: 'gammalSover', niva: 4, nar: 'natt', prova: ({ s, p, v, a }) => a > ALDER.sovGammal && rnd(s, 'val', p) < VAL.gammalSover && set(v, 'sova', 'Är gammal och sover på natten') },
   { id: 'toa', niva: 4, prova: ({ p, v, lazy }) => p.toa < KROPP.toaBehov + KROPP.latToa * lazy && set(v, 'toa', 'Behöver gå på toa') },
-  { id: 'fryser', niva: 4, prova: c => fryser(c) && c.s.fire.lit && set(c.v, 'varma', 'Fryser') },
+  { id: 'fryser', niva: 4, prova: c => fryser(c) && nagonEld(c.s) && set(c.v, 'varma', 'Fryser') },
   { id: 'fryserInne', niva: 4, prova: c => fryser(c) && bedTile(c.s, c.p) !== undefined && set(c.v, 'vila', 'Fryser och går in i huset') },
   { id: 'torstig', niva: 4, prova: ({ s, p, v, lazy }) => torstig(p, lazy) && dricka(s, p, v) },
   // den som inte kan gå kravlar hem, och den som har mycket ont eller ett infekterat sår vilar (steg 2.5.2)
@@ -703,6 +703,7 @@ export function chooseTask(s: State, p: Person) {
   if (v.act === 'samtal' && !v.spot) samtalMed(s, p); // fram till den man vill prata med (steg 4.5.6.7)
   const k = usesTool(p.task);
   if (k && !take(s, p, k)) p.task.tool = undefined; // redskapet tas i handen: det egna först (agande.ts)
+  facklaVal(s, p); // facklan tänds för den som går ut i mörkret, och släcks när den inte behövs (ljus.ts)
 }
 
 // ett utbrott som väntar (steg 3.2.2, humor.ts), när grundbehoven är klara: den som är hungrig, törstig, fryser eller är

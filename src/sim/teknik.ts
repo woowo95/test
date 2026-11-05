@@ -91,6 +91,8 @@ export const TEKNIK: Tek[] = [
   { id: 'skinnklader', namn: 'Skinnkläder', text: 'Skinn som sys ihop med rep av senor till en rock och ett par skor.', effekt: 'Den som har kläderna på sig fryser mindre.',
     omr: ['hantverk', 'jakt'], krav: ['bensyl'], niva: 4, tid: 14, forsok: { vid: ['flatarbank'], skill: 'hantverk' }, episk: 'Efter många förstörda skinn vid slöjdbänken drog {namn} på sig den första rock som byn hade sett.' },
   // vattensäcken (steg 2.10.1): sys av skinn som kläderna. Man kommer på den när man ger vatten åt den som inte kan gå
+  { id: 'fackla', namn: 'Fackla', text: 'En käpp som klyvs i toppen, med torrt gräs och talg i klykan.', effekt: 'Den som går ut i mörkret tänder en fackla vid elden och ser vart hen går.',
+    omr: ['jakt', 'hantverk'], krav: ['slaktbank'], niva: 3, tid: 4 },
   { id: 'vattensack', namn: 'Vattensäck', text: 'Ett skinn som sys ihop till en säck och knyts med rep.', effekt: 'Man kan bära vatten till den som inte kan gå till vattnet.',
     omr: ['hantverk', 'dricka', 'varda'], krav: ['skinnklader'], niva: 5, tid: 5.4, forsok: { vid: ['flatarbank'], skill: 'hantverk' }, episk: 'Vattnet rann ut genom varje söm {namn} sydde. Men till sist höll säcken tätt, och {hen} bar vatten utan att spilla en droppe.' },
   // bältet (steg 2.3.3): kommer man på när man bär hem både redskap och börda, ganska tidigt

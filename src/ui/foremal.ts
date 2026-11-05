@@ -167,6 +167,18 @@ export function drawStructures(t: number) {
   }
   // dörrarna i öppningarna (DORRAR i byggnad.ts): den stående bilden (_v) när väggen går uppåt (en vägg ovanför öppningen)
   for (const b of bitsOf(s)) if (b.dorr) { const ik = dorrDef(b.dorr)?.ikon, v = bitAt(s, b.x, b.y - 1)?.k === 'vagg' ? '_v' : '', k = hasIcon('kb_' + ik + v) ? 'kb_' + ik + v : ik + '_karta' + v; pileIcons.add(k, b.x * TS, b.y * TS, TS / iconCanvas(k).width); } // bildstilens dörr (skinndörren, steg 5.1.2.3) eller den som redan hade 16 punkter
+  // de uppsatta facklorna (steg 6.3.7, ljus.ts): med foten i rutan, mot väggen när de sitter på en, den tända med lågan
+  for (const u of s.uppsatta ?? []) {
+    const k = 'kb_uppsatt' + (u.tand ? '_tand' : ''), c = iconCanvas(k);
+    pileIcons.add(k, u.x * TS + ((TS - c.width) >> 1) + (u.vx ?? 0) * 5, u.y * TS + TS - 2 - c.height + (u.vy ?? 0) * 5, 1);
+  }
+  // talgljusen på borden och hyllorna (steg 6.3.8, ljus.ts): mitt på möbeln, två utseenden efter möbeln, det tända med lågan
+  for (const l of s.ljus ?? []) {
+    const st = stationById(s, l.st);
+    if (!st) continue;
+    const k = 'kb_talgljus' + (1 + st.id % 2) + (l.tand ? '_tand' : ''), c = iconCanvas(k), w = storlekAv(st).w * TS;
+    pileIcons.add(k, st.x * TS + ((w - c.width) >> 1), st.y * TS + 6 - c.height, 1);
+  }
   pileIcons.end(); rokIkoner.end();
   // markerad hög utanför lagret: vit kant runt rutan, som lagerplatsen får
   const h = ui.hogAt;

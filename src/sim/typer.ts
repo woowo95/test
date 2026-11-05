@@ -216,6 +216,7 @@ export interface Person {
   // utbrotten (steg 3.2.2, humor.ts): hur många nyss (klingar av), och det som väntar på att brista ut (slaget och när)
   utb?: number; ubr?: { k: string; t: number };
   lekt?: number; // när ett barn senast lekte (färre utbrott efteråt, steg 3.2.4)
+  morkT?: number; // när hen senast var vaken i mörkret (lite sämre humör en stund, steg 6.3.4, ljus.ts)
   larm?: import('./rykten').Larm; // det senaste larmet man hört (steg 3.7.11, rykten.ts)
   intryck?: import('./rykten').Intryck[]; // det personen tycker att andra är, och varför (steg 3.3, rykten.ts)
   smak?: Record<string, number>; // tycke och smak: 'a:' + arbete, 'm:' + mat eller 'v:' + vapen (steg 3.7.10), -1 till 1 (steg 3.3.5, rykten.ts)
@@ -289,6 +290,9 @@ export interface State {
   stackar?: { k: string; n: number; c: number; x: number; y: number; ag?: Record<string, number>; dold?: number }[]; // alla stackar med plats och skick (c: 1 = nytt), det enda som sparas om förrådet. ag = vems stacken är (lager.ts)
   delar?: Record<string, Record<string, number>>; forlust?: Record<string, number>; andelRest?: Record<string, number>; // det påbörjade per ägare och slag (under 1), det som försvunnit i delar, tills det blir hela saker, och det som blivit över av var och ens del när byn får en andel (steg 2.10.7, lager.ts)
   egna?: Record<string, Record<string, number>>; egnaT?: Record<string, number>; // äldre sparfiler (före v40): vems sakerna i förrådet var
+  uppsatta?: Uppsatt[]; // de uppsatta facklorna (ljus.ts, steg 6.3.7)
+  ljus?: TalgLjus[]; // talgljusen på borden och hyllorna inne (ljus.ts, steg 6.3.8)
+  morkPlats?: Record<number, number>; // ruta -> hur många timmar någon varit vaken i mörker där, som avtar (ljus.ts)
   stubbar?: { x: number; y: number; t: number }[]; // stubbar efter fällda träd, t = när trädet fälldes
   nextStock?: number; fallda?: number;
   matSnitt?: number; // maten i förrådet i dygn för alla, glidande snitt över ungefär ett år (liv.ts)
@@ -387,3 +391,9 @@ export interface Fire {
   // sin sovplats närmast den (räknas varje timme i brasor.ts), när den slocknade och när ringen lades
   id?: number; folk?: number[]; ut?: number; klar?: number;
 }
+
+// en fackla som satts upp i marken eller på en vägg (ljus.ts, steg 6.3.7): rutan, hur mycket som är kvar av den (c, 0–1),
+// om den brinner och sedan när (tandT), och åt vilket håll väggen den sitter på står (vx, vy; ingen = i marken)
+export interface Uppsatt { x: number; y: number; c: number; tand?: true; tandT?: number; vx?: number; vy?: number }
+// ett talgljus som står på ett bord eller en hylla inne (ljus.ts, steg 6.3.8): stationen, hur mycket som är kvar (c, 0–1), om det brinner
+export interface TalgLjus { st: number; c: number; tand?: true; tandT?: number }

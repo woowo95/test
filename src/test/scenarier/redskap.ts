@@ -334,7 +334,7 @@ SCENARIER.teknik = {
     const kanFran = TEKNIK.every(t => !s.people.some(p => knows(p, t.id)));
     kor(s, 20 * 24, s => {
       for (const t of TEKNIK) if (forst[t.id] === undefined && living(s).some(p => knows(p, t.id))) forst[t.id] = (s.now - s.founded) / DAY;
-      if ((amountOf(s, 'yxa')) > 0 && forst.yxa === undefined) yxaInnan = true;
+      if ((s.stat?.yxa1 ?? 0) > 0 && forst.yxa === undefined) yxaInnan = true; // gjord i byn: en handlare kan sälja en yxa förut
       if ((amountOf(s, 'rep')) > 0 && forst.rep === undefined) repInnan = true;
     });
     const kan = (id: string) => living(s).filter(p => knows(p, id)).length;

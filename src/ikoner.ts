@@ -3773,6 +3773,13 @@ for (const k of ['brand', 'tornado']) { PIX[k] = KARTBILDER[k].rader; PAL[k] = K
 { const b = KARTBILDER.vattensack!, w = 16, x0 = (w - 2 * b.w) >> 1, y0 = (w - 2 * b.h) >> 1;
   PIX.vattensack = Array.from({ length: w }, (_, y) => Array.from({ length: w }, (_, x) => b.rader[(y - y0) >> 1]?.[(x - x0) >> 1] ?? '.').join(''));
   PAL.vattensack = b.pal; }
+// fas 6:s nya saker som bara har bildstilens bild (nävern, steg 6.3.3): symbolen i listorna är bilden mitt i rutan på
+// 16 × 16 punkter, förstorad två gånger om den ryms
+for (const k of ['naver', 'talg', 'fackla', 'talgljus']) {
+  const b = KARTBILDER[k]!, w = 16, f = 2 * b.w <= w && 2 * b.h <= w ? 2 : 1, x0 = (w - f * b.w) >> 1, y0 = (w - f * b.h) >> 1;
+  PIX[k] = Array.from({ length: w }, (_, y) => Array.from({ length: w }, (_, x) => { const yy = Math.floor((y - y0) / f), xx = Math.floor((x - x0) / f); return yy >= 0 && xx >= 0 ? b.rader[yy]?.[xx] ?? '.' : '.'; }).join(''));
+  PAL[k] = b.pal;
+}
 // djuren på kartan (steg 5.1.11, ritade i bildstilen i 5.2.4.6): varje art har en eller flera ritningar (vargen en, haren två)
 // och fyra pälsar, och varje ritning tre håll; västerut är sidan speglad. Bilden heter djur_<art>_<ritning>_<päls>_<håll>,
 // där hållet är sida, vast, fram eller bak. Vilken ritning och päls ett djur har räknas ur dess id (djurBild)

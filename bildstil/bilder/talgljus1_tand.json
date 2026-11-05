@@ -1,0 +1,37 @@
+{
+ "id": "talgljus1_tand",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "version 1 i valet f6_ljus",
+ "w": 11,
+ "h": 15,
+ "rader": [
+  ".....o.....",
+  "....oao....",
+  "....oao....",
+  "...obco....",
+  "....odo....",
+  "...ooeoo...",
+  "..oddffgo..",
+  "..oddffgo..",
+  "..oddffgo..",
+  "..oddfdgo..",
+  "..oddffgo..",
+  "..oddffgo..",
+  ".ohhhhhhho.",
+  "oiiiiiiiiio",
+  ".ooooooooo."
+ ],
+ "pal": {
+  "o": "#24201d",
+  "a": "#a14808",
+  "b": "#b2921b",
+  "c": "#d8b25f",
+  "d": "#dad0bb",
+  "e": "#24201d",
+  "f": "#bdb39b",
+  "g": "#a0947d",
+  "h": "#61767a",
+  "i": "#3e5156"
+ }
+}

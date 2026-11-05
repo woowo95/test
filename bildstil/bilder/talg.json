@@ -1,0 +1,23 @@
+{
+ "id": "talg",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "version 3 i valet f6_talg",
+ "w": 9,
+ "h": 6,
+ "rader": [
+  "...ooo...",
+  ".ooWwwoo.",
+  "oWWWwwwwo",
+  "jWWWwwywj",
+  "ojjWwwjjo",
+  ".ojjjjjo."
+ ],
+ "pal": {
+  "o": "#24201d",
+  "W": "#dad0bb",
+  "w": "#bdb39b",
+  "j": "#5e3c24",
+  "y": "#d8b25f"
+ }
+}

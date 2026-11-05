@@ -95,7 +95,8 @@ export function twineRope(s: State, p: Person, hours: number, vill: number = TRO
 // En flintkniv är en vass flintskärva med ett skaft. Utan kniv och slaktbänk äter byn direkt av det fällda djuret. Med kniv
 // slaktas det vid slaktbänken till mer kött, ett ben och ett skinn. Ett djur med senor ger dessutom ibland ett rep, men bara om den som
 // slaktar kan tekniken Rep (fisk har inga senor). Köttet och skinnet är eget för varje art (kaninkött, vargkött, kaninskinn,
-// vargskinn; steg 3.7.14), men benen är samma sak.
+// vargskinn; steg 3.7.14), men benen är samma sak. Talgen, djurfettet, är också samma sak för alla arter: kaninen ger 1, vargen 3
+// (rådjuret 2 och björnen 6 när de kommer; steg 6.3.5).
 // Jaktfärdigheten avgör hur mycket kött man får ut av djuret (kottFaktor, steg 2.2.3).
 // Kniven kräver en flinta utöver den som sparas att tända eld med. Fisken rensas med händerna till fiskkött.
 // Viltet slaktas och fisken rensas bara vid slaktbänken (bara i STATIONER, stationer.ts; Björn, steg 2.2.6 och 2.2.8); innan
@@ -111,9 +112,9 @@ export function twineRope(s: State, p: Person, hours: number, vill: number = TRO
 export interface Djurart { sak: string; kott?: string; mat: number; slakt: Record<string, number>; rep: number; timme: number; maxTim: number; act: Act; kniv?: true; minDel: number; stat: string; forsta: string; strid?: DjurStrid } // strid = hur djuret slåss (strid.ts, steg 3.7.5)
 export const DJUR = {
   kanin: { sak: 'vilt', kott: 'kott', mat: 2, // en kanin är två fällt vilt (4 kg styck sedan steg 4.5.5.1)
-    slakt: { kott: 3, ben: 1, skinn: 1 }, rep: 0.15, timme: 15, maxTim: 2, act: 'slakta', kniv: true, minDel: REDSKAP.slaktMinDel, stat: 'slaktat', forsta: '{namn} slaktade byns första vilt med en flintkniv. Det gav mer kött, ett ben och ett skinn.', strid: { namn: 'Haren', art: 'Hare', alder: 6, styrka: 2, uthallighet: 6, mod: 2, smidighet: 16, skicklighet: 4, fart: 1.4, vapen: 'bett' } },
+    slakt: { kott: 3, ben: 1, skinn: 1, talg: 1 }, rep: 0.15, timme: 15, maxTim: 2, act: 'slakta', kniv: true, minDel: REDSKAP.slaktMinDel, stat: 'slaktat', forsta: '{namn} slaktade byns första vilt med en flintkniv. Det gav mer kött, ett ben och ett skinn.', strid: { namn: 'Haren', art: 'Hare', alder: 6, styrka: 2, uthallighet: 6, mod: 2, smidighet: 16, skicklighet: 4, fart: 1.4, vapen: 'bett' } },
   abborre: { sak: 'abborre', mat: 1, slakt: { fisk: 1 }, rep: 0, timme: 30, maxTim: 1, act: 'rensa', minDel: 1, stat: 'rensat', forsta: '{namn} rensade byns första abborre. Den blev fiskkött.' },
-  varg: { sak: 'varg', kott: 'vargkott', mat: 1, slakt: { vargkott: 12, ben: 3, vargskinn: 1 }, rep: 0.6, timme: 2, maxTim: 2, act: 'slakta', kniv: true, minDel: 1, stat: 'slaktatVarg', forsta: '{namn} slaktade byns första varg. Den gav mycket kött, ben och ett tjockt vargskinn.', strid: { namn: 'Vargen', art: 'Varg', alder: 12, styrka: 10, uthallighet: 14, mod: 10, smidighet: 16, skicklighet: 9, fart: 1.5, vapen: 'vargbett' } }, // snabb och svår att träffa, duckar men parerar inte och biter hårt (steg 3.7.1)
+  varg: { sak: 'varg', kott: 'vargkott', mat: 1, slakt: { vargkott: 12, ben: 3, vargskinn: 1, talg: 3 }, rep: 0.6, timme: 2, maxTim: 2, act: 'slakta', kniv: true, minDel: 1, stat: 'slaktatVarg', forsta: '{namn} slaktade byns första varg. Den gav mycket kött, ben och ett tjockt vargskinn.', strid: { namn: 'Vargen', art: 'Varg', alder: 12, styrka: 10, uthallighet: 14, mod: 10, smidighet: 16, skicklighet: 9, fart: 1.5, vapen: 'vargbett' } }, // snabb och svår att träffa, duckar men parerar inte och biter hårt (steg 3.7.1)
 } satisfies Record<string, Djurart>;
 export const DJURARTER: readonly Djurart[] = Object.values(DJUR);
 export const KANIN = DJUR.kanin.mat; // så mycket mat en kanin är, uppäten som den är: två fällt vilt (saker.ts)
