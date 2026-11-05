@@ -33,7 +33,7 @@ import { duty, dygn, habitShare, habitTotal } from './seder';
 import { clamp, hash3, pick, pickNarmaste, rnd } from './slump';
 import { samtalMed } from './samtal';
 import { ARSTID, ageIndex, isLight, kallTid, yearNo } from './tid';
-import { Act, H, HOUR, MIN, Person, Skill, Stat, State, T, Task, W, inMap } from './typer';
+import { Act, GREN, H, HOUR, MIN, Person, Skill, Stat, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
 import { islagt, naVattnet } from './is';
 import { drickVal, torstig, tortarFarligt, vattenVal } from './torst';
@@ -722,7 +722,9 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
   const egen = egnaMatDygn(s, p), wEgen = egen < VAL.egenDygn ? VAL.behovTomt - egen / VAL.egenDygn * (VAL.behovTomt - VAL.matMin) : 0; // steg 3.10.26
   const wFood = Math.max(wBy, wEgen);
   // grenarna mättas: räcker veden länge och kan p inte hugga trä som byn saknar, sjunker golvet (steg 6.1.5)
-  const mattad = wd > VAL.vedMatt * vs && (freeTools(s, p, 'yxa') === 0 && (fara.kyla || !wantsTool(s, p, 'yxa')) || wd * amountOf(s, 'ved') / Math.max(1e-9, fuelStock(s)) > VAL.vedMatt * vs);
+  // (grenarna ensamma räcker också: den som har yxa men inget träd att fälla samlar annars grenar utan slut, by 7 i likhet efter v390)
+  const andel = (k: string) => wd * amountOf(s, k) * (k === 'grenar' ? GREN : 1) / Math.max(1e-9, fuelStock(s));
+  const mattad = wd > VAL.vedMatt * vs && (freeTools(s, p, 'yxa') === 0 && (fara.kyla || !wantsTool(s, p, 'yxa')) || andel('ved') > VAL.vedMatt * vs || andel('grenar') > VAL.vedMatt * vs);
   const vedGolv = !mattad ? VAL.vedMin : Math.max(VAL.vedMinMatt, VAL.vedMin - (VAL.vedMin - VAL.vedMinMatt) * (wd - VAL.vedMatt * vs) / (VAL.vedMatt * vs));
   const wWood = clamp(VAL.behovTomt - wd / (VAL.vedDygn * vs), vedGolv, VAL.behovMax) * (kallTid(ai) ? ARSTID.vedKall : 1); // inför och under istiden väger veden tyngre
   const vikt = { mat: wFood, ved: wWood };
