@@ -137,8 +137,6 @@ export interface Task {
   mal?: string; // måltiden vid bordet: det som åts, som syns på bordet och i händerna (behov.ts, steg 3.10.3)
   leta?: 'grupp' | 'karta'; // jakten: hen går mot en grupp kaniner hen ser, eller letar dit kaninerna brukar vara (jakt.ts, steg 3.10.3)
   tool?: string; // redskapet som används, t.ex. fiskespjut, eller slaget av bygge eller hantverk (vagg, golv, laga, rep)
-  tur?: number; // sekunder arbete sedan bördan bars hem sist
-  lim?: number; // hur länge en tur varar (sekunder), innan bördan bärs hem
   res?: { x: number; y: number; until: number }; // var och till när arbetet fortsätter efter att bördan bärts hem
   site?: { x: number; y: number }; // bygget man går till efter att ha hämtat material
   mask?: number; // fiske: maskar på kroken till metspöet

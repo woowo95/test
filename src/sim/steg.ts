@@ -435,7 +435,6 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
     else {
       // arbetet i bitar: till uppgiftens slut, till dess bördan bärs hem, men aldrig längre än BIT sekunder åt gången
       used = Math.min(left, Math.max(0, (tk.until - now) / SEC), BIT);
-      if (tk.lim !== undefined) used = Math.min(used, Math.max(1, tk.lim - (tk.tur ?? 0)));
       // samlandet går så fort att busken töms mitt i en bit (steg 2.12.4): biten slutar då, och sedan går man vidare
       const kvar = d.fart && d.arbete && tk.phase === 'do' ? tidTillTom(s, p, tk) : Infinity, tom = kvar > 0 && kvar <= used;
       if (tom) used = Math.max(1, kvar);
@@ -546,7 +545,6 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
     tk.phase = 'do'; tk.hopp = undefined; tk.plock = undefined; if (tk.act === 'bara') { pickUp(s, p, tk, ryms(s, p)); tk.until = now; }
     if (tk.act === 'flyttaeld') tk.until = now + ELDFLYTT.tim * HOUR; // vid elden: släcka den och bära stenarna (eldflytt.ts)
     startWork(s, p, tk); // ett redskap eller ett träd: arbetet räknas härifrån, och det påbörjade fortsätter
-    tk.tur = 0; tk.lim = ACTS[tk.act].tur ?? (tk.sok ? ELD.sokTur : undefined);
   }
 }
 
@@ -818,8 +816,8 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
     if (first) notis(s, 'mastare', `${p.name} är byns första mästare i ${SKILL_NAMES[sk].toLowerCase()}.`, [p.id]);
     if (first) for (const q of living(s)) if (q !== p) upplev(s, q, 'forstaMastare', p.name); // de andra såg det (steg 4.5.4.9)
   }
-  // arbetet sker i turer: efter en stunds arbete (tur), en fångst eller när bördan är full bärs det hem, sedan fortsätter man
-  tk.tur = (tk.tur ?? 0) + dtSec;
+  // arbetet sker i turer: när de fria händerna är fulla eller efter en fångst bärs det hem, sedan fortsätter man. Någon fast
+  // tid för en tur finns inte (steg 6.1.10): arbetet slutar annars när det är slut (tk.until) eller när något går före (val.ts)
   const full = fullBorda(s, p, tk), has = isCarrying(tk);
   // busken är tom: den som samlar går vidare till nästa i närheten tills famnen är full (steg 2.12.4), annars hem.
   // Den som samlar tändmaterial stannar tills det räcker. Jägaren som redan gått vidare för att leta (jakt.ts) fortsätter
@@ -827,10 +825,9 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
     const n = d.fart && !full && tk.until > now + 2 * MIN ? nastaBuske(s, res!, tk.tx, tk.ty) : undefined;
     if (n) { tk.phase = 'go'; tk.tx = n.x; tk.ty = n.y; } else if (!(tk.tandmat && tinderShort(s, tk))) tk.until = now;
   }
-  if (full || (tk.lim !== undefined && tk.tur >= tk.lim) || (d.hemVarje && tk.carry > 0)) {
-    if (has && tk.until > now + 2 * MIN) { tk.res = { x: tk.tx, y: tk.ty, until: tk.until }; tk.until = now; count(s, 'turer'); }
-    else if (has && full) { tk.until = now; count(s, 'turer'); }
-    else tk.tur = 0;
+  if ((full || (d.hemVarje && tk.carry > 0)) && has) {
+    if (tk.until > now + 2 * MIN) tk.res = { x: tk.tx, y: tk.ty, until: tk.until };
+    tk.until = now; count(s, 'turer');
   }
 }
 
