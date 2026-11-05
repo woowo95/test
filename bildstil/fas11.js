@@ -97,6 +97,7 @@
       storlek.push(q.length);
     }
     const kont = storlek.map((n, id) => n >= 1500 ? id : -1).filter(id => id >= 0);
+    const landmassor = kont.map(c => { let sx = 0, sy = 0, n = 0; for (let i = 0; i < N; i++) if (del[i] === c) { sx += i % W; sy += (i / W) | 0; n++; } return { id: c, x: Math.round(sx / n), y: Math.round(sy / n), n }; });
     // platserna, på rutnätet där en ruta är en bykarta
     const RW = W / RUTA, RH = H / RUTA, ruttyp = (rx, ry) => typ[(ry * RUTA + 4) * W + rx * RUTA + 4];
     const narVatten = (rx, ry) => { for (let y = ry * RUTA - 4; y < ry * RUTA + 12; y++) for (let x = rx * RUTA - 4; x < rx * RUTA + 12; x++) { if (x < 0 || y < 0 || x >= W || y >= H) continue; const i = y * W + x; if (vatten(i) || elv[i]) return true; } return false; };
@@ -182,7 +183,7 @@
       for (const [, x, y] of kand) { if (hav.length >= 3) break; if (hav.every(([ax, ay]) => Math.hypot(ax - x, ay - y) > W / 4)) hav.push([x, y]); }
     }
     hav.push(...skepp);
-    VARLD = { hojd, typ, elv, avst, stigar, karavan, floder, platser, vagar, sjovagar, djupX: hav[0][0], djupY: hav[0][1], hav, vatten };
+    VARLD = { landmassor, del, hojd, typ, elv, avst, stigar, karavan, floder, platser, vagar, sjovagar, djupX: hav[0][0], djupY: hav[0][1], hav, vatten };
     return VARLD;
   }
 
@@ -295,7 +296,7 @@
     for (let k = 0; k < 3; k++) for (let a = 0; a <= 8; a++) { const x = sx + k * 7 + a * 0.6, y = sy - Math.round(Math.sin(a / 8 * Math.PI) * 3); B.satt(Math.round(x), y, BLACK); B.satt(Math.round(x), y + 1, P.i('barr', 2)); }
     glyf(B, ['.oo.', 'oaao', '.oao', '..o.'], { o: BLACK, a: P.i('barr', 2) }, sx + 23, sy - 3);
     for (const [x, y] of V.hav.slice(1)) glyf(B, SYM.skepp, { o: BLACK, a: P.i('ben', 3) }, x, y);
-    platserna(B, V, { kontur: BLACK, by: P.i('rost', 1), egen: P.i('rost', 2), ljus: P.i('ben', 3), mork: P.i('jord', 1), sten: P.i('skiffer', 2), helig: P.i('senap', 1), talt: P.i('jord', 2), taltM: P.i('jord', 1), vag: P.i('jord', 1), sjovag: P.i('jord', 1), ring: P.i('rost', 1), namn: BLACK, djur: P.i('jord', 1), stig: P.i('jord', 0), packe: P.i('senap', 2) });
+    platserna(B, V, { kontur: BLACK, by: P.i('rost', 1), egen: P.i('rost', 2), ljus: P.i('ben', 3), mork: P.i('jord', 1), sten: P.i('skiffer', 2), helig: P.i('senap', 1), talt: P.i('jord', 2), taltM: P.i('jord', 1), vag: P.i('jord', 1), sjovag: P.i('jord', 1), ring: P.i('rost', 1), namn: gron ? null : BLACK, djur: P.i('jord', 1), stig: P.i('jord', 0), packe: P.i('senap', 2) });
     if (papper) for (const k of [0, 2]) for (let x = k; x < W - k; x++) for (let y = k; y < H - k; y++) if (x === k || y === k || x === W - 1 - k || y === H - 1 - k) B.satt(x, y, BLACK); // en dubbel bläckram
   }
 
@@ -345,7 +346,7 @@
   }
 
   // ---------- version 3: ristad i trä, med ett runband som på en runsten ----------
-  function tra(B) {
+  function tra(B, ny = false) {
     const P = B.P, V = varld(), R = 10;
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const i = y * W + x, t = V.typ[i], adr = fbm(x / 60, y / 2.5, 41, 3), vat = t === HAV || t === SJO;
@@ -367,7 +368,7 @@
       else if (V.typ[i] === SKOG && !V.elv[i]) glyf(B, ['.o.', 'o.o', '.o.', '.o.'], { o: P.i('kol', 2) }, x, y);
     }
     if (o) for (const [x, y] of V.hav) glyf(B, SYM.skepp, { o: P.i('kol', 1), a: P.i('jord', 2) }, x, y);
-    platserna(B, V, { kontur: P.i('kol', 0), by: P.i('senap', 2), egen: P.i('senap', 3), ljus: P.i('ben', 3), mork: P.i('jord', 0), sten: P.i('ben', 1), helig: P.i('senap', 2), talt: P.i('senap', 1), taltM: P.i('jord', 0), vag: P.i('kol', 2), sjovag: P.i('kol', 2), ring: P.i('senap', 3), namn: P.i('kol', 0), stig: P.i('kol', 1) });
+    platserna(B, V, { kontur: P.i('kol', 0), by: P.i('senap', 2), egen: P.i('senap', 3), ljus: P.i('ben', 3), mork: P.i('jord', 0), sten: P.i('ben', 1), helig: P.i('senap', 2), talt: P.i('senap', 1), taltM: P.i('jord', 0), vag: P.i('kol', 2), sjovag: P.i('kol', 2), ring: P.i('senap', 3), namn: ny ? null : P.i('kol', 0), stig: P.i('kol', 1) });
     // runbandet: en orm runt kanten med runor i, huvudet nere till vänster och svansen nere till höger
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const k = Math.min(x, y, W - 1 - x, H - 1 - y); if (k >= R) continue;
@@ -428,7 +429,8 @@
   // kartan i stilen stil, med övre vänstra hörnet i (X0, Y0), där papperet finns (pap); ny: gröna skogar och blått vatten
   function kartanPa(B, stil, X0, Y0, pap, BW, ny) {
     const P = B.P, M = Bild(W, H, P);
-    if (stil === 'black') skinnRitning(M, true, ny); else if (stil === 'farg') farg(M, ny); else tra(M);
+    if (stil === 'black') skinnRitning(M, true, ny); else if (stil === 'farg') farg(M, ny); else tra(M, ny);
+    if (ny) namnen(M, stil);
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const v = M.get(x, y), X = X0 + x, Y = Y0 + y; if (v < 0 || !pap[Y * BW + X]) continue;
       if (stil === 'tryck') { // träsnittet: det som är upphöjt i brädan tar färgen, det urskurna blir papper; trycket är lite ojämnt
@@ -453,63 +455,157 @@
     }
   }
 
-  // ---------- kartan på en utrullad pergamentrulle som två händer håller ----------
-  // Pergamentet är rullat runt en stav i var ände; rullarna står lodrätt till vänster och höger, med stavens knoppar utanför,
-  // och händerna håller rullarna mitt på. Pergamentet har inga vikningar: det är gulnat i fläckar och skuggat där det böjer sig
-  // in i rullarna. Skogen är gröna ytor på bläckkartan, och vattnet är blått på den målade kartan.
+  // ---------- namnen på kartan: påhittade namn vid byarna och på de stora landmassorna ----------
+  // en liten bokstavsstil, 3 × 5 punkter (M och N är bredare); prickarna och ringen över Å, Ä och Ö står två rader ovanför
+  const BOKST = {
+    A: ['.#.', '#.#', '###', '#.#', '#.#'], B: ['##.', '#.#', '##.', '#.#', '##.'], C: ['.##', '#..', '#..', '#..', '.##'], D: ['##.', '#.#', '#.#', '#.#', '##.'],
+    E: ['###', '#..', '##.', '#..', '###'], F: ['###', '#..', '##.', '#..', '#..'], G: ['.##', '#..', '#.#', '#.#', '.##'], H: ['#.#', '#.#', '###', '#.#', '#.#'],
+    I: ['###', '.#.', '.#.', '.#.', '###'], J: ['..#', '..#', '..#', '#.#', '.#.'], K: ['#.#', '##.', '#..', '##.', '#.#'], L: ['#..', '#..', '#..', '#..', '###'],
+    M: ['#...#', '##.##', '#.#.#', '#...#', '#...#'], N: ['#..#', '##.#', '#.##', '#..#', '#..#'], O: ['.#.', '#.#', '#.#', '#.#', '.#.'], P: ['##.', '#.#', '##.', '#..', '#..'],
+    R: ['##.', '#.#', '##.', '#.#', '#.#'], S: ['.##', '#..', '.#.', '..#', '##.'], T: ['###', '.#.', '.#.', '.#.', '.#.'], U: ['#.#', '#.#', '#.#', '#.#', '###'],
+    V: ['#.#', '#.#', '#.#', '.#.', '.#.'], Y: ['#.#', '#.#', '.#.', '.#.', '.#.'],
+  };
+  const OVER = { Å: ['A', '.#.'], Ä: ['A', '#.#'], Ö: ['O', '#.#'] };
+  // punkterna i ett namn med övre vänstra hörnet i (x, y), i skalan k
+  const namnPunkter = (namn, x, y, k = 1) => {
+    const ut = []; let px = x;
+    for (const ch of namn) {
+      const [bas, over] = OVER[ch] || [ch, null], g = BOKST[bas]; if (!g) continue;
+      const rader = over ? [over, '...', ...g] : ['...', '...', ...g];
+      rader.forEach((rad, dy) => [...rad].forEach((c, dx) => { if (c === '#') for (let a = 0; a < k; a++) for (let b = 0; b < k; b++) ut.push([px + dx * k + a, y + (dy - 2) * k + b]); }));
+      px += (g[0].length + 1) * k;
+    }
+    return ut;
+  };
+  const namnBredd = (namn, k = 1) => [...namn].reduce((s, ch) => s + ((BOKST[(OVER[ch] || [ch])[0]] || ['...'])[0].length + 1) * k, 0) - k;
+  const NAMN_FORE = ['ULV', 'BJÖRK', 'HJORT', 'ASK', 'STEN', 'KRÅK', 'ÖRN', 'EK', 'LIND', 'RAVN', 'TOR', 'HAM', 'GRIM', 'ODD', 'HAG', 'SVAL', 'TING', 'BRO', 'GRAN', 'HÄLL', 'MYR', 'SAND', 'VARG', 'FALK', 'LÖV', 'HED', 'FRÖ', 'ALV', 'SKOG', 'BÄCK'];
+  const NAMN_EFTER = ['BY', 'VIK', 'STA', 'HEM', 'HOLM', 'NÄS', 'TORP', 'DAL', 'RUM', 'INGE', 'MARK', 'ÅS', 'BODA', 'LÖSA'];
+  const LANDNAMN = ['ULVALAND', 'SOLMARK', 'GRANRIKE', 'ISHEIM', 'RAVNMARK', 'ASKLAND'];
+  // färgerna per stil: namnen vid byarna (text, kant) och landets namn (stor, storKant)
+  function namnen(M, stil) {
+    const P = M.P, V = varld(), m = 12;
+    const F = stil === 'black' ? { text: P.i('kol', 1), kant: P.i('ben', 3), stor: P.i('rost', 1), storKant: P.i('ben', 3) }
+      : stil === 'farg' ? { text: P.i('ben', 3), kant: P.i('kol', 0), stor: P.i('senap', 3), storKant: P.i('kol', 0) }
+      : { text: P.i('kol', 0), kant: P.i('ben', 2), stor: P.i('kol', 0), storKant: P.i('ben', 2) };
+    const upptagen = V.platser.map(p => [p.x - 6, p.y - 5, p.x + 6, p.y + 5]);
+    const ledig = ([a, b, c, d]) => a >= m && b >= m - 2 && c < W - m && d < H - m + 2 && upptagen.every(([e, f, g, h]) => c < e - 1 || a > g + 1 || d < f - 1 || b > h + 1);
+    const skriv = (namn, x, y, k, text, kant) => {
+      const pk = namnPunkter(namn, x, y, k), har = new Set(pk.map(([a, b]) => a + ',' + b));
+      for (const [a, b] of pk) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]) if (!har.has((a + dx) + ',' + (b + dy))) M.satt(a + dx, b + dy, kant);
+      for (const [a, b] of pk) M.satt(a, b, text);
+    };
+    // landets namn, stort, nära mitten av landet där det är land under och inga platser i vägen; bara på land som är
+    // en ö eller en kontinent, inte på land som fortsätter utanför kartan
+    const kanten = new Set(); for (let x = 0; x < W; x++) kanten.add(V.del[x]).add(V.del[(H - 1) * W + x]); for (let y = 0; y < H; y++) kanten.add(V.del[y * W]).add(V.del[y * W + W - 1]);
+    V.landmassor.filter(l => !kanten.has(l.id)).forEach((l, n) => {
+      const namn = LANDNAMN[(n + Math.floor(hash(W, H, 72) * LANDNAMN.length)) % LANDNAMN.length], bw = namnBredd(namn, 2);
+      let bast = null;
+      for (let dy = -40; dy <= 40; dy += 3) for (let dx = -50; dx <= 50; dx += 4) {
+        const x = l.x + dx - (bw >> 1), y = l.y + dy, rekt = [x - 4, y - 6, x + bw + 3, y + 12];
+        if (!ledig(rekt)) continue;
+        let land = 0; for (let k = 0; k < 9; k++) { const px = x + Math.round(bw * k / 8), py = y + 4; if (V.del[py * W + px] === l.id) land++; }
+        if (land < 9) continue;
+        const d = Math.hypot(dx, dy * 1.5); if (!bast || d < bast[0]) bast = [d, x, y, rekt];
+      }
+      if (!bast) return;
+      skriv(namn, bast[1], bast[2], 2, F.stor, F.storKant); upptagen.push(bast[3]);
+    });
+    // byarnas namn: under byn, annars ovanför, till höger eller till vänster
+    const tagna = new Set();
+    for (const p of V.platser.filter(p => p.sort === 'egen' || p.sort === 'by')) {
+      let namn, f = 0;
+      do { const h = hash(p.rx + f, p.ry, 71), g = hash(p.rx, p.ry + f, 73); namn = NAMN_FORE[Math.floor(h * NAMN_FORE.length)] + NAMN_EFTER[Math.floor(g * NAMN_EFTER.length)]; f++; } while ((tagna.has(namn) || namn.length > 8) && f < 50);
+      tagna.add(namn);
+      const bw = namnBredd(namn);
+      const forslag = [[p.x - (bw >> 1), p.y + 7], [p.x - (bw >> 1), p.y - 11], [p.x + 7, p.y - 2], [p.x - 7 - bw, p.y - 2]].map(([x, y]) => [x, y, [x - 2, y - 4, x + bw + 1, y + 6]]);
+      const [x, y, rekt] = forslag.find(([, , rk]) => ledig(rk)) || forslag[0];
+      skriv(namn, x, y, 1, F.text, F.kant); upptagen.push(rekt);
+    }
+  }
+
+  // ---------- kartan på en utrullad, sliten pergamentrulle som två händer håller ----------
+  // Pergamentet är rullat ihop i var ände, utan stav: rullarna är papperet självt, lite ojämna och skrynkliga, och i den
+  // övre änden syns varven som en spiral med ett hål i mitten. Händerna håller rullarna mitt på. Papperet är slitet:
+  // hack och revor i över- och underkanten, brunt längs kanterna, fläckar och en stor vattenfläck, och skuggat där det böjer
+  // sig in i rullarna. Skogen är gröna ytor på bläckkartan, vattnet är blått på den målade kartan, och byarna och
+  // landmassorna har namn.
   function iRulle(stil, s) {
-    const pm = Math.round(6 * s), D = 2 * Math.round(8 * s) + 1, r = (D - 1) / 2, ov = Math.round(4 * s), hE = Math.max(2, Math.round(r * 0.3)), knopp = Math.round(5 * s), sid = 18;
-    const PW = W + 2 * pm + 2 * D, PH = H + 2 * pm, BW = PW + 2 * sid, BH = PH + 2 * (ov + hE + knopp) + 6, x0 = sid, y0 = ov + hE + knopp + 3;
+    const pm = Math.round(6 * s), r = Math.round(6 * s), D = 2 * r + 1, hE = Math.max(2, Math.round(r * 0.45)), sid = 18;
+    const PW = W + 2 * pm + 2 * D, PH = H + 2 * pm, BW = PW + 2 * sid, BH = PH + 2 * hE + 14, x0 = sid, y0 = hE + 7;
     const cxV = x0 + r, cxH = x0 + PW - 1 - r; // rullarnas mitt
+    // hack i kanten: oftast en punkt eller ingen, ibland ett djupare hack
+    const hack = (x, fro) => {
+      const k = Math.floor(x / 17); let d = hash(x, fro, 62) < 0.3 ? 1 : 0;
+      if (hash(k, fro, 64) < 0.4) { const c = k * 17 + Math.floor(hash(k, fro + 1, 64) * 17), djup = 2 + Math.floor(hash(k, fro + 2, 64) * Math.round(3 * s)); d = Math.max(d, djup - Math.abs(x - c)); }
+      return d;
+    };
+    // rullarnas ände och bredd: lite ojämnt, som om papperet rullats snett
+    const rullar = [cxV, cxH].map((cx, n) => ({ cx, topp: y0 - Math.floor(hash(n, 1, 65) * 3), botten: y0 + PH - 1 + Math.floor(hash(n, 2, 65) * 3), n }));
+    const halv = (R, y) => r + Math.round((fbm(y / 14, R.n * 7, 95, 2) - 0.5) * 5) - (hash(y, R.n, 96) < 0.12 ? 1 : 0); // ojämn bredd och en trasig kant
     const rita = B => {
       const P = B.P, pap = new Uint8Array(BW * BH), KONTUR = P.i('kol', 0);
       for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) { const g = hash(x, y, 61); B.satt(x, y, g < 0.05 ? P.i('jord', 0) : g < 0.13 ? P.i('kol', 1) : P.i('kol', 0)); }
-      // pergamentet mellan rullarna: ojämnt i över- och underkanten
-      const pa = (x, y) => x >= cxV && x <= cxH && y >= y0 && y < y0 + PH && !((y === y0 || y === y0 + PH - 1) && hash(x, y, 62) < 0.3);
-      const rulle = (x, y) => (Math.abs(x - cxV) <= r || Math.abs(x - cxH) <= r) && y >= y0 - ov && y < y0 + PH + ov;
-      for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) if (pa(x, y) || rulle(x, y)) { if (pa(x, y)) pap[y * BW + x] = 1; if (!pa(x + 2, y + 3) && !rulle(x + 2, y + 3)) B.satt(x + 2, y + 3, P.i('kol', 0)); } // skuggan på marken
+      const pa = (x, y) => x >= cxV && x <= cxH && y >= y0 + hack(x, 10) && y <= y0 + PH - 1 - hack(x, 20);
+      const paRulle = (x, y) => rullar.some(R => y >= R.topp - hE && y <= R.botten + hE && Math.abs(x - R.cx) <= halv(R, y));
+      for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) if (pa(x, y) || paRulle(x, y)) { if (pa(x, y)) pap[y * BW + x] = 1; if (!pa(x + 2, y + 3) && !paRulle(x + 2, y + 3)) B.satt(x + 2, y + 3, P.i('kol', 0)); } // skuggan på marken
       for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) {
         if (!pap[y * BW + x]) continue;
-        const g = hash(x, y, 63), k = Math.min(y - y0, y0 + PH - 1 - y), f = fbm(x / 18, y / 18, 91, 3);
+        const g = hash(x, y, 63), k = Math.min(y - y0 - hack(x, 10), y0 + PH - 1 - hack(x, 20) - y), f = fbm(x / 18, y / 18, 91, 3);
         let c = g < 0.05 ? P.i('ben', 3) : g > 0.97 ? P.i('ben', 1) : P.i('ben', 2);
-        if (bayer(x, y) < (f - 0.5) * 1.6 || (k < 4 && bayer(x, y) < (4 - k) / 4 * 0.7)) c = P.i('senap', 3); // gulnat i fläckar och längs kanten
+        if (bayer(x, y) < (f - 0.45) * 1.8 || (k < 6 && bayer(x, y) < (6 - k) / 6 * 0.8)) c = P.i('senap', 3); // gulnat i fläckar och längs kanten
+        if (k < 2 && bayer(x, y) < 0.6) c = P.i('jord', 3); // brunt i själva kanten
+        if (fbm(x / 3, y / 3, 93, 2) > 0.8) c = P.i('jord', 3); // små bruna prickar
         B.satt(x, y, c);
       }
       kartanPa(B, stil, x0 + D + pm, y0 + pm, pap, BW, true);
-      // där pergamentet böjer sig in i rullarna: skuggat, tätast närmast rullen
-      for (let y = y0; y < y0 + PH; y++) for (let d = 1; d <= 6; d++) for (const x of [cxV + r + d, cxH - r - d]) if (pap[y * BW + x] && bayer(x, y) < (7 - d) / 7 * 0.8) B.morka(x, y);
-      // en fläck, en ring som efter en kopp
-      const fx = x0 + Math.round(PW * 0.8), fy = y0 + Math.round(PH * 0.8), fr = 7 * s;
+      // slitet: en stor vattenfläck, ytor där bläcket nötts bort, och en ring som efter en kopp
+      for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) {
+        if (!pap[y * BW + x]) continue;
+        const v = fbm(x / 26, y / 26, 94, 3);
+        if (v > 0.64 && v < 0.67 && hash(x, y, 67) < 0.7) B.morka(x, y); // fläckens kant
+        else if (v > 0.67 && bayer(x, y) < 0.2) B.morka(x, y);
+        if (hash(x, y, 68) < 0.004) B.satt(x, y, P.i('ben', 2));
+      }
+      const fx = x0 + Math.round(PW * 0.78), fy = y0 + Math.round(PH * 0.76), fr = 7 * s;
       for (let y = fy - fr - 2; y <= fy + fr + 2; y++) for (let x = fx - fr - 2; x <= fx + fr + 2; x++) { const d = Math.hypot(x - fx, y - fy); if (Math.abs(d - fr) < 0.8 && pap[y * BW + x] && hash(x, y, 66) < 0.8) B.morka(x, y); }
-      // rullarna: en cylinder av pergament, ljus från vänster, med det rullade pergamentets varv i ändarna och stavens svarvade knoppar utanför
-      for (const cx of [cxV, cxH]) {
-        for (let y = y0 - ov; y < y0 + PH + ov; y++) for (let x = cx - r; x <= cx + r; x++) {
-          const u = (x - cx) / r;
-          B.satt(x, y, Math.abs(x - cx) === r ? KONTUR : u < -0.7 ? P.i('ben', 2) : u < -0.25 ? P.i('ben', 3) : u < 0.25 ? P.i('ben', 2) : u < 0.6 ? P.i('ben', 1) : P.i('jord', 3));
-        }
-        for (const [yk, upp] of [[y0 - ov, true], [y0 + PH + ov - 1, false]]) {
-          for (let x = cx - r; x <= cx + r; x++) { // änden: en ellips där pergamentets varv syns som ringar runt staven
-            const u = (x - cx) / r, h = Math.round(Math.sqrt(Math.max(0, 1 - u * u)) * hE);
-            for (let d = -h; d <= h; d++) {
-              const y = yk + d, ring = Math.hypot(u * r, d * r / hE);
-              B.satt(x, y, Math.abs(d) === h || Math.abs(x - cx) === r ? KONTUR : Math.round(ring) % 3 === 0 ? P.i('jord', 2) : u < 0.3 ? P.i('ben', 2) : P.i('ben', 1));
-            }
+      // där papperet böjer sig in i rullarna: skuggat, tätast närmast rullen
+      for (let y = y0; y < y0 + PH; y++) for (let d = 1; d <= 6; d++) for (const x of [cxV + r + d, cxH - r - d]) if (pap[y * BW + x] && bayer(x, y) < (7 - d) / 7 * 0.8) B.morka(x, y);
+      // rullarna: papperet självt, ljust från vänster, med fläckar och skrynklor
+      for (const R of rullar) {
+        const { cx } = R;
+        for (let y = R.topp; y <= R.botten + hE; y++) {
+          const hv = halv(R, y);
+          for (let x = cx - hv; x <= cx + hv; x++) {
+            const u = (x - cx) / hv, under = y > R.botten;
+            if (under) { const dy = y - R.botten, h = Math.round(Math.sqrt(Math.max(0, 1 - u * u)) * hE); if (dy > h) continue; if (dy === h) { B.satt(x, y, KONTUR); continue; } }
+            const ljus = -0.55 + (fbm(y / 6, R.n, 90, 2) - 0.5) * 0.6; // det ljusa bandet slingrar sig där papperet är skrynkligt
+            let c = Math.abs(x - cx) === hv ? KONTUR : u < ljus - 0.25 ? P.i('ben', 2) : u < ljus + 0.3 ? P.i('ben', 3) : u < 0.35 ? P.i('ben', 2) : u < 0.7 ? P.i('senap', 3) : P.i('jord', 3);
+            if (c !== KONTUR && fbm(x / 6, y / 9, 97 + R.n, 2) > 0.6) c = fbm(x / 6, y / 9, 97 + R.n, 2) > 0.68 ? P.i('jord', 2) : P.i('jord', 3); // fläckar
+            B.satt(x, y, c);
           }
-          // staven: en smal hals och sedan en rund knopp av trä, ljus från vänster
-          const kb = Math.max(2, Math.round(r * 0.45)), y1 = upp ? yk - hE : yk + hE;
-          for (let k = 1; k <= knopp; k++) {
-            const y = upp ? y1 - k : y1 + k, t = k / knopp, b = k <= 1 ? 1 : Math.max(1, Math.round(Math.sin(Math.PI * Math.min(1, (k - 1) / (knopp - 1))) * kb));
-            for (let x = cx - b - 1; x <= cx + b + 1; x++) {
-              const kant = Math.abs(x - cx) === b + 1 || k === knopp;
-              B.satt(x, y, kant ? KONTUR : x < cx - b / 2 ? P.i('jord', 2) : x < cx + b / 2 ? P.i('jord', 1) : P.i('jord', 0));
-            }
-            if (t > 0 && k === knopp - 1 && b >= 2) B.satt(cx - b + 1, y, P.i('jord', 3)); // en glans på knoppen
-          }
-          B.satt(cx, yk, P.i('jord', 0)); B.satt(cx, yk + (upp ? -1 : 1), P.i('jord', 0));
         }
+        // skrynklor: korta mörka bågar tvärs över rullen, på ojämna avstånd
+        for (let y = R.topp + hE + 4; y < R.botten - 2; y += 6 + Math.floor(hash(y, R.n, 98) * 14)) {
+          const bred = 0.3 + hash(y, R.n, 99) * 0.5, start = -0.5 + hash(y, R.n, 100) * 0.3;
+          for (let x = cx - r + 1; x < cx + r; x++) { const u = (x - cx) / r; if (u < start || u > start + bred || Math.abs(x - cx) >= halv(R, y) - 1) continue; B.satt(x, y + Math.round(u * u * 2), P.i('jord', 3)); if (hash(x, y, 101) < 0.5) B.satt(x, y + 1 + Math.round(u * u * 2), P.i('ben', 3)); }
+        }
+        // den övre änden: varven som en spiral, med ett hål i mitten och en ojämn kant
+        const yk = R.topp;
+        for (let x = cx - r; x <= cx + r; x++) {
+          const u = (x - cx) / r, h = Math.round(Math.sqrt(Math.max(0, 1 - u * u)) * hE);
+          for (let d = -h; d <= h; d++) {
+            const y = yk + d, ux = u * r, uy = d * r / hE, rho = Math.hypot(ux, uy), th = Math.atan2(uy, ux) / (2 * Math.PI), varv = ((rho / 1.8 + th) % 1 + 1) % 1;
+            let c = rho < r * 0.3 ? P.i('kol', 0) : varv < 0.35 ? P.i('jord', 2) : u < 0.2 ? P.i('ben', 2) : P.i('senap', 3);
+            if (Math.abs(d) === h || Math.abs(x - cx) === r) c = hash(x, y, 69) < 0.15 ? P.i('jord', 3) : KONTUR;
+            B.satt(x, y, c);
+          }
+        }
+        // papperets yttersta varv som en flik, där papperet går ut från rullen mot kartan
+        const inat = cx === cxV ? 1 : -1;
+        for (let y = R.topp + hE; y <= R.botten; y++) B.satt(cx + inat * (r - 1), y, hash(0, y, 70) < 0.5 ? P.i('jord', 3) : P.i('senap', 3));
       }
       // händerna håller rullarna mitt på
-      for (let y = 0; y < BH; y++) for (const cx of [cxV, cxH]) for (let x = cx - r; x <= cx + r; x++) if (y >= y0 - ov && y < y0 + PH + ov) pap[y * BW + x] = 1;
+      for (const R of rullar) for (let y = R.topp; y <= R.botten; y++) for (let x = R.cx - r; x <= R.cx + r; x++) pap[y * BW + x] = 1;
       handerna(B, pap, BW, cxV + 2, cxH - 2, y0 + Math.round(PH / 2) - 40);
     };
     return { w: BW, h: BH, rita };
@@ -521,7 +617,7 @@
     const x0 = Math.max(0, Math.min(W - w, V.karavan.x - (w >> 1))), y0 = Math.max(0, Math.min(H - h, V.karavan.y - (h >> 1)));
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) B.satt(x, y, M.get(x0 + x, y0 + y));
   };
-  return { varld, skinn, farg: B => farg(B), tra, iHander, iRulle, utsnitt };
+  return { varld, skinn, farg: B => farg(B), tra: B => tra(B), iHander, iRulle, utsnitt };
   }
 
   const K1 = karta(240, 160, null);
@@ -545,7 +641,7 @@
   // kartorna på utrullade pergamentrullar (Björn: "gör så det ser ut som utrullade pergamentrullar istället för viksträck"), med gröna
   // skogar på bläckkartan och blått vatten på den målade kartan; korten med papperet står kvar
   const RULLE_TEXT = ['Version 1: bläck på pergament. Bläckteckningen med havet och sjöarna målade blå, och skogen målad som gröna ytor under granarna.', 'Version 2: den målade kartan med blått vatten: ljust vid stranden och mörkare blått ju djupare havet är.', 'Version 3: tryckt som ett träsnitt på pergamentet.'];
-  const RULLE_VAD = ' Kartan är en utrullad pergamentrulle: pergamentet är rullat runt en stav i var ände, och rullarna står till vänster och höger med stavens knoppar utanför. Två händer håller rullarna mitt på. Pergamentet har inga vikningar; det är gulnat i fläckar och skuggat där det böjer sig in i rullarna. Din kommentar: på kartversion 1 lite gröna ytor som markerar skog, blått vatten på karta 2, och utrullade pergamentrullar i stället för viksträck. Korten med kartorna på papper står kvar.';
+  const RULLE_VAD = ' Kartan är en utrullad pergamentrulle som är sliten: papperet är rullat ihop i var ände utan stav, och rullarna är papperet självt, ojämna, skrynkliga och fläckiga, med varven som en spiral och ett hål i den övre änden. Två händer håller rullarna mitt på. Papperet har hack och revor i kanterna, är brunt längs kanterna och har fläckar, en stor vattenfläck och en ring efter en kopp. Varje by har ett påhittat namn, och öarna och kontinenterna har stora namn (inte på de första kartorna, där landet fortsätter utanför kartan). Din kommentar förra gången: gör pergamentrullen mindre snygg, mer som ett ihoprullat papper som är slitet, utan en stav att rulla den runt; skriv påhittade namn vid varje by, och kanske namnet på kontinenterna. Din kommentar innan dess: på kartversion 1 lite gröna ytor som markerar skog, blått vatten på karta 2, och utrullade pergamentrullar i stället för viksträck. Korten med kartorna på papper står kvar.';
   const rulleKort = (id, namn, K, s, vad) => {
     const v = ['black', 'farg', 'tryck'].map((st, k) => { const h = K.iRulle(st, s); return { text: RULLE_TEXT[k], w: h.w, h: h.h, kol: true, rita: h.rita }; });
     VAL.push({ id, namn, typ: 'tre', stor: true, kol: true, vad, karta: K, versioner: v });
