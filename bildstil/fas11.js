@@ -258,7 +258,7 @@
 
   // ---------- version 1: skinnkartan, med bläck på ett spänt skinn ----------
   const skinn = B => skinnRitning(B, false);
-  function skinnRitning(B, papper, gron = false) {
+  function skinnRitning(B, papper, gron = false, ext = {}) {
     const P = B.P, V = varld(), cx = W / 2, cy = H / 2;
     const BLACK = P.i('kol', 1), HAVL = P.i('skiffer', 1), EKO = P.i('skiffer', 2);
     const inne = papper ? () => 0 : (x, y) => { const d = (Math.abs(x - cx) / (W / 2 - 3)) ** 3 + (Math.abs(y - cy) / (H / 2 - 3)) ** 3; return Math.cbrt(d) + (fbm(x / 9, y / 9, 77, 2) - 0.5) * 0.14; };
@@ -285,6 +285,7 @@
       if (V.elv[i]) c = HAVL;
       B.satt(x, y, c);
     }
+    if (ext.gradnat) for (const [x, y] of gradnat()) B.satt(x, y, P.i('jord', 1)); // gradnätet: prickade linjer i brunt bläck över hela kartan
     // bergen och granarna som små tecken, i ett glest mönster
     for (let gy = 4; gy < H - 4; gy += 6) for (let gx = 4; gx < W - 4; gx += 7) {
       const x = gx + Math.floor(hash(gx, gy, 1) * 4), y = gy + Math.floor(hash(gx, gy, 2) * 3), i = y * W + x;
@@ -298,7 +299,32 @@
     glyf(B, ['.oo.', 'oaao', '.oao', '..o.'], { o: BLACK, a: P.i('barr', 2) }, sx + 23, sy - 3);
     for (const [x, y] of V.hav.slice(1)) glyf(B, SYM.skepp, { o: BLACK, a: P.i('ben', 3) }, x, y);
     platserna(B, V, { kontur: BLACK, by: P.i('rost', 1), egen: P.i('rost', 2), ljus: P.i('ben', 3), mork: P.i('jord', 1), sten: P.i('skiffer', 2), helig: P.i('senap', 1), talt: P.i('jord', 2), taltM: P.i('jord', 1), vag: P.i('jord', 1), sjovag: P.i('jord', 1), ring: P.i('rost', 1), namn: gron ? null : BLACK, djur: P.i('jord', 1), stig: P.i('jord', 0), packe: P.i('senap', 2) });
-    if (papper) for (const k of [0, 2]) for (let x = k; x < W - k; x++) for (let y = k; y < H - k; y++) if (x === k || y === k || x === W - 1 - k || y === H - 1 - k) B.satt(x, y, BLACK); // en dubbel bläckram
+    if (ext.runband) runband(B, BLACK);
+    else if (papper) for (const k of [0, 2]) for (let x = k; x < W - k; x++) for (let y = k; y < H - k; y++) if (x === k || y === k || x === W - 1 - k || y === H - 1 - k) B.satt(x, y, BLACK); // en dubbel bläckram
+  }
+  // gradnätet som på gamla kartor: lodräta och vågräta linjer på lika avstånd, prickade, som går genom hela kartan innanför runbandet
+  const GX = 7, GY = 5, gradX = k => Math.round(W * k / (GX + 1)), gradY = k => Math.round(H * k / (GY + 1));
+  function gradnat() {
+    const ut = [];
+    for (let k = 1; k <= GX; k++) for (let y = 10; y < H - 10; y++) if (y % 2 === 0) ut.push([gradX(k), y]);
+    for (let k = 1; k <= GY; k++) for (let x = 10; x < W - 10; x++) if (x % 2 === 0) ut.push([x, gradY(k)]);
+    return ut;
+  }
+  // runbandet med bläck: en ram av två bläcklinjer med runor emellan, ett streck där varje linje i gradnätet möter bandet och
+  // en knut i varje hörn (som runbandet på träkartan, version 3)
+  function runband(B, BLACK) {
+    const P = B.P, R = 10;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const k = Math.min(x, y, W - 1 - x, H - 1 - y); if (k >= R) continue;
+      const g = hash(x, y, 81);
+      B.satt(x, y, k === 0 || k === R - 1 ? BLACK : k === 1 ? P.i('senap', 3) : g < 0.06 ? P.i('ben', 3) : g > 0.97 ? P.i('ben', 1) : P.i('ben', 2));
+    }
+    const nv = Math.floor((W - 28) / 4), nl = Math.floor((H - 28) / 4) - 1;
+    runrad(B, 14, 3, nv, 11, BLACK); runrad(B, 14, H - 8, nv, 12, BLACK);
+    runrad(B, 3, 14, nl, 14, BLACK, true); runrad(B, W - 8, 14, nl, 15, BLACK, true);
+    for (let k = 1; k <= GX; k++) for (const y of [R - 2, H - R + 1]) B.satt(gradX(k), y, BLACK);
+    for (let k = 1; k <= GY; k++) for (const x of [R - 2, W - R + 1]) B.satt(x, gradY(k), BLACK);
+    for (const [x, y] of [[5, 5], [W - 5, 5], [5, H - 5], [W - 5, H - 5]]) glyf(B, ['.ooo.', 'oaoao', 'ooboo', 'oaoao', '.ooo.'], { o: BLACK, a: P.i('rost', 1), b: P.i('ben', 3) }, x, y);
   }
 
   // ---------- version 2: färgkartan, i spelets färger med en flätad ram ----------
@@ -428,9 +454,9 @@
     return { w: BW, h: BH, rita };
   }
   // kartan i stilen stil, med övre vänstra hörnet i (X0, Y0), där papperet finns (pap); ny: gröna skogar och blått vatten
-  function kartanPa(B, stil, X0, Y0, pap, BW, ny) {
+  function kartanPa(B, stil, X0, Y0, pap, BW, ny, ext = {}) {
     const P = B.P, M = Bild(W, H, P);
-    if (stil === 'black') skinnRitning(M, true, ny); else if (stil === 'farg') farg(M, ny); else tra(M, ny);
+    if (stil === 'black') skinnRitning(M, true, ny, ext); else if (stil === 'farg') farg(M, ny); else tra(M, ny);
     if (ny) namnen(M, stil);
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const v = M.get(x, y), X = X0 + x, Y = Y0 + y; if (v < 0 || !pap[Y * BW + X]) continue;
@@ -531,9 +557,10 @@
   // kanterna och skuggat där det böjer sig in i rullarna. Skogen är gröna ytor på bläckkartan, vattnet är blått på den
   // målade kartan, och byarna och landmassorna har namn.
   const TUMME = Math.max(...HAND.map(rad => rad.replace(/\.+$/, '').length)) - HAND_KANT; // hur långt tummen når innanför kanten
-  function iRulle(stil, s) {
-    const pm = Math.round(6 * s), r = Math.round(6 * s), D = 2 * r + 1, hE = Math.max(2, Math.round(r * 0.45)), sid = 18;
-    const mx = Math.max(pm, TUMME - D + 3); // papperet mellan rullen och kartan
+  // ext.smal: bara ett varv papper kvar i var rulle, så att rullarna blir smala; ext.gradnat och ext.runband: se skinnRitning
+  function iRulle(stil, s, ext = {}) {
+    const pm = Math.round(6 * s), r = ext.smal ? Math.max(3, Math.round(2.5 * s)) : Math.round(6 * s), D = 2 * r + 1, hE = Math.max(2, Math.round(r * 0.45)), sid = 18;
+    const mx = Math.max(pm, TUMME - D + 3 - (ext.runband ? 12 : 0)); // papperet mellan rullen och kartan; med runbandet vilar tummen på bandet
     const PW = W + 2 * mx + 2 * D, PH = H + 2 * pm, BW = PW + 2 * sid, BH = PH + 2 * hE + 10, x0 = sid, y0 = hE + 5;
     const cxV = x0 + r, cxH = x0 + PW - 1 - r; // rullarnas mitt
     const rita = B => {
@@ -550,7 +577,7 @@
         if (bayer(x, y) < (f - 0.5) * 1.6 || (k < 4 && bayer(x, y) < (4 - k) / 4 * 0.7)) c = P.i('senap', 3); // gulnat i fläckar och längs kanten
         B.satt(x, y, c);
       }
-      kartanPa(B, stil, x0 + D + mx, y0 + pm, pap, BW, true);
+      kartanPa(B, stil, x0 + D + mx, y0 + pm, pap, BW, true, ext);
       // där papperet böjer sig in i rullarna: skuggat, tätast närmast rullen
       for (let y = y0; y < y0 + PH; y++) for (let d = 1; d <= 5; d++) for (const x of [cxV + r + d, cxH - r - d]) if (pap[y * BW + x] && bayer(x, y) < (6 - d) / 6 * 0.7) B.morka(x, y);
       // rullarna: papperet självt, ljust från vänster, rundat i den nedre änden
@@ -564,7 +591,7 @@
         for (let x = cx - r; x <= cx + r; x++) {
           const u = (x - cx) / r, h = Math.round(Math.sqrt(Math.max(0, 1 - u * u)) * hE);
           for (let d = -h; d <= h; d++) {
-            const y = y0 + d, ux = u * r, uy = d * r / hE, rho = Math.hypot(ux, uy), th = Math.atan2(uy, ux) / (2 * Math.PI), varv = ((rho / 1.8 + th) % 1 + 1) % 1;
+            const y = y0 + d, ux = u * r, uy = d * r / hE, rho = Math.hypot(ux, uy), th = Math.atan2(uy, ux) / (2 * Math.PI), varv = ((rho / (ext.smal ? r * 0.9 : 1.8) + th) % 1 + 1) % 1;
             B.satt(x, y, Math.abs(d) === h || Math.abs(x - cx) === r ? KONTUR : rho < r * 0.2 ? P.i('jord', 1) : varv < 0.3 ? P.i('jord', 3) : u < 0.3 ? P.i('ben', 2) : P.i('ben', 1));
           }
         }
@@ -638,6 +665,16 @@
   // en stor kontinent i mitten med små öar runt om (Björn: "gör en stor kontinent i mitten med små öar runt omkring")
   const K4 = karta(KW, KH, { kontinenter: [[0.5, 0.5, 0.33, 0.35], [0.1, 0.2, 0.035, 0.05], [0.13, 0.78, 0.04, 0.06], [0.27, 0.12, 0.03, 0.045], [0.3, 0.9, 0.035, 0.05], [0.58, 0.09, 0.04, 0.05], [0.72, 0.91, 0.03, 0.05], [0.9, 0.22, 0.04, 0.06], [0.91, 0.58, 0.03, 0.05], [0.86, 0.86, 0.035, 0.05], [0.09, 0.5, 0.025, 0.04], [0.44, 0.92, 0.02, 0.035]], fin: 0.4, lyft: 0.27, fall: 0.58, berg: 0.72, floder: 9, stigar: true, antal: { by: 14, lager: 7, rovare: 3, ruin: 5, helig: 2, hog: 3, runsten: 3 } });
   rulleKort('f11_varldskarta_s_rulle', 'Världskartan, en stor kontinent med öar, på en pergamentrulle', K4, 1.4, 'Steg 11.1.9 (koncept, långt fram). Din kommentar: gör en stor kontinent i mitten med små öar runt omkring. Här är en stor kontinent mitt i havet med elva små öar runt om, en del med en by eller ett läger. Vägarna går mellan byarna på kontinenten, och skepp seglar ute på havet.' + RULLE_VAD);
+  // version 1 med gradnät, runband och smala rullar, en större kontinent och bara några öar ute vid kanterna (Björn: "gör
+  // kordinatstreck på kartan", "runskrift runt hela kartans kant som det är på version 3", "gör kontinenten i mitten större och
+  // gör öarna färre och bara några i kanterna", "ett eller ett halvt varv kvar på pappret i kanterna")
+  const K5 = karta(KW, KH, { kontinenter: [[0.5, 0.5, 0.4, 0.42], [0.09, 0.14, 0.035, 0.05], [0.92, 0.85, 0.04, 0.06], [0.08, 0.84, 0.03, 0.05], [0.91, 0.17, 0.03, 0.045]], fin: 0.15, lyft: 0.27, fall: 0.58, berg: 0.72, floder: 10, stigar: true, antal: { by: 16, lager: 7, rovare: 3, ruin: 5, helig: 2, hog: 3, runsten: 3 } });
+  const R5 = K5.iRulle('black', 1.4, { smal: true, gradnat: true, runband: true });
+  VAL.push({
+    id: 'f11_varldskarta_v1_rulle', namn: 'Världskartan med gradnät och runband', typ: 'janej', stor: true, kol: true, karta: K5,
+    vad: 'Steg 11.1.9 (koncept, långt fram). Din kommentar: gör koordinatstreck på kartan, som på gamla kartor; fortsätt bara med version 1; runskrift runt hela kartans kant, ungefär som på version 3; gör kontinenten i mitten större och öarna färre och bara några i kanterna; låt pergamentrullen ha bara ett eller ett halvt varv kvar i kanterna. Här är bläckkartan (version 1) med ett gradnät: prickade linjer på lika avstånd över hela kartan, och ett streck där varje linje möter runbandet. Runt hela kanten går ett band med runor mellan två bläcklinjer och en knut i varje hörn. Kontinenten är större, fyra öar ligger ute vid hörnen och bara några få skär nära kusten. Rullarna har bara ett varv papper kvar och är smala. De gamla korten står kvar.',
+    versioner: [{ text: 'Bläck på pergament med gradnät och runband, smala rullar.', w: R5.w, h: R5.h, kol: true, rita: R5.rita }],
+  });
   // karavanen på väg längs en väg (Björn: "gör en ikon för en karavan som är påväg någonstans"): tre förslag, i ett utsnitt av bläckkartan
   VAL.push({
     id: 'f11_karavan', namn: 'Karavanen på världskartan', typ: 'tre', kol: true,
