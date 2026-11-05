@@ -23,8 +23,8 @@ import { faltNu, vildFronPlats } from './odling';
 import { MINNE, areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { eldPlats, getMap } from './karta';
 import { amountOf, avbryt, fetchSpot, flodUndan, haulJob } from './lager';
-import { bedFor, buildJob, siteOf } from './bygg';
-import { bitAt, blocked, freeNear, roomAt } from './byggnad';
+import { BYGG, bedFor, buildJob, siteOf } from './bygg';
+import { bitAt, bitsOf, blocked, freeNear, roomAt } from './byggnad';
 import { bedTile, homeless, samlingRum, varmareInne } from './byggnader';
 import { groundOf, isForest, punktIRuta, tileOf } from './mark';
 import { axeTask, fallTid } from './skog';
@@ -86,7 +86,13 @@ const VAL = balans('val', {
   letaChans: 0.3, // ... och med denna chans
   fronChans: 0.4, // (0,2 före steg 2.12.2) chansen att den som samlar går till de vilda grödorna och plockar frön, när byn vill ha fler (steg 2.10.11)
   stenarChans: 0.5, // chansen att den som samlar letar flinta eller stenar vid stenarna när byn saknar det (och ett helt pass)
-  tandHamtare: 3, // så många hämtar tändmaterial åt en släckt eld som mest
+  // arbetarna (steg 6.1.13): hur många som får göra en rad, räknat en gång i timmen. Taket är mjukt: när raden har sina
+  // arbetare väger den fullRad gånger så mycket (en chans blir så mycket mindre) i stället för att spärras
+  fullRad: 1 / 3,
+  matPass: 2, // maten: det som fattas (dygn × invånare) delat med så här många person-dygn mat, vad en person hinner på ett pass
+  vedPass: 1, // veden: det som fattas (dygn) delat med så här många dygns ved, vad en person hinner på ett pass
+  tandPer: 4, // tändmaterial åt en släckt eld: en per så här många invånare
+  letaPer: 10, // att leta flinta och stenar: en per så här många invånare
   projektVikt: 1.5, // det mest värda projektet (projekt.ts) väger som arbete så här mycket gånger sitt värde
   akut: 3, // arbetet är helt akut när det mest behövda väger så här mycket
   kolEld: 0.6, kolChans: 0.2, kolMin: 10, // kol hämtas ur den släckta elden när elden vill ha mindre än så här, med denna chans, i så många minuter
@@ -387,7 +393,7 @@ export function dangers(s: State) {
 }
 type Faror = ReturnType<typeof dangers>;
 // elden är släckt och kan inte tändas för att det saknas tändmaterial, och för få hämtar det
-const tinderNeeded = (s: State) => !s.fire.lit && !emberOn(s) && !canLight(s) && needTinder(s) && living(s).filter(q => q.task?.act === 'samla').length < VAL.tandHamtare;
+const tinderNeeded = (s: State) => !s.fire.lit && !emberOn(s) && !canLight(s) && needTinder(s);
 // det som väljs: handlingen, varför, hur länge, och var om det inte följer av handlingen
 interface Val { act: Act; why: string; dur: number; pass?: number; spot?: { x: number; y: number }; ref?: number; tool?: string; site?: { x: number; y: number }; sok?: true; tandmat?: true; falt?: true }
 const set = (v: Val, act: Act, why: string) => { v.act = act; v.why = why; return true; };
@@ -407,7 +413,34 @@ export function vaderTillater(s: State, krav?: Vaderkrav) {
 // byns behov räknas en gång i timmen, på jämna klockslag i spelet (timblocket i steg.ts), så att alla lägen väljer likadant
 // (steg 6.1.12): hur många dygn maten och veden räcker, med tre decimaler som i sparfilen
 const r3 = (x: number) => Math.round(x * 1000) / 1000;
-export function arbetsTimme(s: State) { s.arbBehov = { mat: r3(foodDays(s)), ved: r3(woodDays(s)) }; }
+export function arbetsTimme(s: State) {
+  const mat = r3(foodDays(s)), ved = r3(woodDays(s)), n = living(s).length || 1;
+  // arbetarna för varje rad (steg 6.1.13), minst en: efter arbetet (det som fattas ÷ vad en person hinner på ett pass), per
+  // invånare eller efter platserna (bygget: BYGG.perHus för varje hus det finns något att göra på; kolet: varje utbrunnen eld)
+  const matFattas = Math.max(0, VAL.matDygn * (VAL.behovTomt - VAL.matMin) - mat) * n, vedFattas = Math.max(0, VAL.vedDygn * (VAL.behovTomt - VAL.vedMin) - ved);
+  const hus = new Set<number>();
+  for (const b of bitsOf(s)) if (b.hus !== undefined && (b.b < 1 || b.c < BYGG.laga)) hus.add(b.hus);
+  const kol = eldarOf(s).filter(e => (e.ash ?? 0) >= 1 && !e.lit && !emberOn(s, e)).length;
+  const arb: Record<ArbRad, number> = {
+    mat: Math.max(1, Math.ceil(matFattas / VAL.matPass)), ved: Math.max(1, Math.ceil(vedFattas / VAL.vedPass)),
+    bygga: Math.max(1, hus.size * BYGG.perHus), tand: Math.max(1, Math.ceil(n / VAL.tandPer)), leta: Math.max(1, Math.ceil(n / VAL.letaPer)), kol: Math.max(1, kol),
+  };
+  s.arbBehov = { mat, ved, arb };
+}
+// raderna som har arbetare (steg 6.1.13). Maten är flera arbeten (samla, jaga, fiska, fältet) som delar på samma arbetare
+export type ArbRad = 'mat' | 'ved' | 'bygga' | 'tand' | 'leta' | 'kol';
+const radOf = (t: Task): ArbRad | undefined => t.tandmat ? 'tand' : t.sok ? 'leta' : t.act === 'bygga' ? 'bygga' : t.act === 'kol' ? 'kol' : ACTS[t.act]?.behov;
+// räkneverket: hur många andra som gör raden just nu
+export function arbetarNu(s: State, p: Person, rad: ArbRad) {
+  let n = 0;
+  for (const q of living(s)) if (q !== p && q.task && radOf(q.task) === rad) n++;
+  return n;
+}
+// har raden sina arbetare? Då väger den VAL.fullRad
+export const radFull = (s: State, p: Person, rad: ArbRad) => arbetarNu(s, p, rad) >= arbBehov(s).arb[rad];
+const fullVikt = (s: State, p: Person, rad: ArbRad) => radFull(s, p, rad) ? VAL.fullRad : 1;
+// en rad som väljs utan poäng (en chans eller en nödsak) tas med chansen fullRad när den har sina arbetare
+const mjuk = (s: State, p: Person, rad: ArbRad) => !radFull(s, p, rad) || rnd(s, 'val', p) < VAL.fullRad;
 const arbBehov = (s: State) => s.arbBehov ?? (arbetsTimme(s), s.arbBehov!);
 export const ARBETSNIVAER = ['', 'Fara', 'Nöd och vård', 'Tillfälle', 'Grundbehov', 'Rädda', 'Försörjning', 'Tak', 'Förbättra', 'Fritid'] as const;
 type Niva = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
@@ -444,7 +477,7 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'fryserFarligt', niva: 2, prova: ({ s, p, v }) => p.warm < KROPP.farligt && s.fire.lit && set(v, 'varma', 'Fryser farligt') },
   // elden går inte att tända för att tändmaterial saknas: den som fryser men orkar hämtar det i stället för att gå in.
   // Kylan är faran och elden det enda som hjälper mot den (några räcker; de andra går in och väntar)
-  { id: 'tandFryser', niva: 2, prova: c => fryser(c) && c.a >= ALDER.vuxen && tinderNeeded(c.s) && (c.v.tandmat = true) && set(c.v, 'samla', 'Fryser, men utan tändmaterial blir det ingen eld') },
+  { id: 'tandFryser', niva: 2, prova: c => fryser(c) && c.a >= ALDER.vuxen && tinderNeeded(c.s) && mjuk(c.s, c.p, 'tand') && (c.v.tandmat = true) && set(c.v, 'samla', 'Fryser, men utan tändmaterial blir det ingen eld') },
   { id: 'fryserFarligtInne', niva: 2, prova: ({ s, p, v }) => p.warm < KROPP.farligt && bedTile(s, p) !== undefined && set(v, 'vila', 'Fryser farligt och går in i huset') },
   { id: 'varda', niva: 2, prova: ({ s, p, v }) => varda(s, p, v, false) }, // en skadad är en fara: vården går före förbättringarna (steg 2.5.2)
   { id: 'vatten', niva: 2, prova: ({ s, p, v }) => hamtaVatten(s, p, v) }, // vatten i säcken åt den som inte kan gå (steg 2.10.1)
@@ -595,7 +628,7 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number, fara: Faror) 
     const halvt = !job.repair && !s.hus?.find(h => h.id === job.bit.hus)?.klar; // ett påbörjat hus vill man göra klart, även när det sista är ett hörn
     // hungern är en fara och går före: räcker maten mindre än byggMatFran + byggMatSpann dygn (1,15) väger bygget mindre
     const col = ((job.repair ? VAL.byggLaga : halvt ? VAL.byggHalvt : VAL.byggNytt) + VAL.byggUtan * utan) * (kallTid(ai) ? ARSTID.byggKall : 1) * clamp((fd - VAL.byggMatFran) / VAL.byggMatSpann, VAL.byggMatMin, 1);
-    const sc = poang(s, p, col, lust(s, p, 'hantverk', 'flit', ['bygga'], tot));
+    const sc = poang(s, p, col * fullVikt(s, p, 'bygga'), lust(s, p, 'hantverk', 'flit', ['bygga'], tot)); // bygget som har sina arbetare väger en tredjedel (steg 6.1.13)
     burg = Math.max(burg, col);
     if (sc > bs) { build = true; bsBygg = sc; if (job.missing) best = job.item === 'torrgras' ? 'samla' : 'ved'; }
   }
@@ -604,9 +637,9 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number, fara: Faror) 
   let proj = false;
   if (pr && poang(s, p, pr.varde * VAL.projektVikt, lust(s, p, 'hantverk', 'flit', [pr.u.act], tot)) > Math.max(bs, bsBygg)) { proj = true; build = false; }
   // saknar byn flinta eller stenar till elden när maten räcker, eller har den flinta till elden (en sprucken räknas) men inte till
-  // en yxa, går någon och letar vid stenarna, också när plockning inte är det mest behövda. En i taget (steg 2.12.3)
-  const eldFlinta = flintaTillElden(s, p, fara);
-  const leta = !build && !proj && a >= ALDER.vuxen && (eldFlinta || flintaTillYxa(s, p, fd, ai)) && rnd(s, 'val', p) < VAL.letaChans;
+  // en yxa, går någon och letar vid stenarna, också när plockning inte är det mest behövda. Raden leta har sina arbetare (steg 6.1.13)
+  const eldFlinta = flintaTillElden(s, fara);
+  const leta = !build && !proj && a >= ALDER.vuxen && (eldFlinta || flintaTillYxa(s, fd, ai)) && rnd(s, 'val', p) < VAL.letaChans * fullVikt(s, p, 'leta');
   if (leta) best = 'samla';
   const u = clamp(burg / VAL.akut, 0, 1); // hur akut byn behöver arbete
   const sat = Math.min(p.hunger, p.rest, p.social); // hur väl de egna behoven är fyllda
@@ -617,7 +650,7 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number, fara: Faror) 
   let works = false;
   // kolet i en utbrunnen lägereld (den första först, steg 4.5.6.8)
   const kolEld = a >= ALDER.ansvar ? eldarOf(s).find(e => (e.ash ?? 0) >= 1 && !e.lit && !emberOn(s, e) && (e.want ?? 0) < VAL.kolEld) : undefined;
-  if (kolEld && rnd(s, 'val', p) < VAL.kolChans && !ppl.some(q => q.task?.act === 'kol')) {
+  if (kolEld && rnd(s, 'val', p) < VAL.kolChans * fullVikt(s, p, 'kol')) {
     set(v, 'kol', 'Det ligger kol kvar i den slocknade elden');
     v.dur = VAL.kolMin * MIN;
     if (kolEld !== s.fire) { v.ref = kolEld.id; v.spot = vidEld(s, kolEld, 0, 1.1); }
@@ -675,7 +708,8 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
     const yieldF = !d.resurs || tinder ? 1 : clamp(prospectFor(s, p, w as Kind), VAL.prospektMin, VAL.prospektMax) * (d.vid === 'vatten' ? FANGST.handFiske * (naVattnet(s, p) ? 1 : 0) : 1) * toolGain(s, p, w, fara); // genom isen bara med ett hål (is.ts)
     const season = d.sasong![ai];
     // maten som någon längtar efter är mer värd att hämta (steg 2.6.2)
-    const col = need * (!d.resurs ? 1 : tinder ? Math.max(VAL.tandMin, season) * VAL.tandVikt : season * yieldF * onskan(p, w, s.now));
+    const col = need * (!d.resurs ? 1 : tinder ? Math.max(VAL.tandMin, season) * VAL.tandVikt : season * yieldF * onskan(p, w, s.now))
+      * fullVikt(s, p, tinder ? 'tand' : d.behov!); // raden som har sina arbetare väger en tredjedel (steg 6.1.13)
     const sc = poang(s, p, col, lust(s, p, w as Skill, ACTS[w].egenskap!, [w], tot)) * bredvidVikt(s, p, w, ppl); // egen lust och vana, och vad vänner och ovänner gör (steg 3.1.1)
     burg = Math.max(burg, col);
     if (sc > bs) { bs = sc; best = w; }
@@ -698,18 +732,16 @@ function building(s: State, p: Person, v: Val, job: NonNullable<ReturnType<typeo
   const site = siteOf(s, b); v.spot = job.need > 0 ? fetchSpot(s, job.item!) : site; if (job.need > 0) v.site = site;
 }
 
-// en i taget letar vid stenarna (steg 2.12.3)
-const andraLetar = (s: State, p: Person) => living(s).some(q => q !== p && q.task?.sok);
 // Flinta till en yxa är en förbättring: bara när maten räcker och inte inför eller under istiden
 // (byn har flinta till elden, en sprucken räknas, och stenar till eldringen)
-const flintaTillYxa = (s: State, p: Person, fd: number, ai: number) => amountOf(s, 'flinta') > VAL.letaFlinta && !needStones(s) && wantsFlint(s) && fd >= VAL.letaMat && !kallTid(ai) && !andraLetar(s, p);
+const flintaTillYxa = (s: State, fd: number, ai: number) => amountOf(s, 'flinta') > VAL.letaFlinta && !needStones(s) && wantsFlint(s) && fd >= VAL.letaMat && !kallTid(ai);
 // Flinta och stenar till elden letas när byn saknar dem och maten räcker: hungern är en fara och elden ett verktyg (steg 2.12.3)
-const flintaTillElden = (s: State, p: Person, fara: Faror) => !fara.svalt && (amountOf(s, 'flinta') < FANGST.flintaMinsta || needStones(s)) && !andraLetar(s, p);
+const flintaTillElden = (s: State, fara: Faror) => !fara.svalt && (amountOf(s, 'flinta') < FANGST.flintaMinsta || needStones(s));
 // arbetet med redskap: flinta letas vid stenarna, yxan fäller träd, korgen och spjutet görs först om de saknas.
 // fd: hur många dygn maten räcker, ai: tidsåldern, fara: farorna från day()
 function withTools(s: State, p: Person, v: Val, best: Act, what: string, fd: number, ai: number, fara: Faror, leta = false) {
   const stones = needStones(s);
-  if (best === 'samla' && (leta || (flintaTillElden(s, p, fara) || flintaTillYxa(s, p, fd, ai)) && rnd(s, 'val', p) < VAL.stenarChans)) { // byn saknar flinta eller stenar till eldringen. Stenarna ligger långt bort, så där letar man ett helt pass
+  if (best === 'samla' && (leta || (flintaTillElden(s, fara) || flintaTillYxa(s, fd, ai)) && rnd(s, 'val', p) < VAL.stenarChans * fullVikt(s, p, 'leta'))) { // byn saknar flinta eller stenar till eldringen. Stenarna ligger långt bort, så där letar man ett helt pass
     const fa = flintArea(p), fl = (fa !== undefined && flintSpot(s, p, (x, y) => areaOf(x, y) === fa)) || flintSpot(s, p);
     if (fl) { v.spot = fl; v.dur /= VAL.pass; v.sok = true; v.why = `${v.why} Letar efter ${stones ? 'stenar till en eldring' : 'flinta'} vid stenarna${fa !== undefined ? ' där hen vet att det finns flinta' : ''}.`; }
   }

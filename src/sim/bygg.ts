@@ -28,7 +28,7 @@ import { notis } from './notiser';
 // ---------- balanstal (regel 8) ----------
 // Planeringen (var ett nytt hus står) och arbetet (i vilken ordning och hur fort det byggs och lagas). Husens storlek och
 // funktion står i HUS (byggnader.ts), lekplatsens läge i PLATS (plats.ts)
-const BYGG = balans('bygg', {
+export const BYGG = balans('bygg', {
   maxInne: 24, // största hus: så många sovplatser
   husAvst: 5.5, // så långt från elden man helst bygger (rutor till husets närmaste vägg)
   radieBas: 9, // ett hus planeras inom så här många rutor från byns mitt ...
@@ -39,7 +39,7 @@ const BYGG = balans('bygg', {
   tradVikt: 0.15, // ... och så många för varje träd som måste fällas först
   byggareInt: 4, // när byn väljer byggare väger intelligensen så här många gånger mindre än hantverket
   omforsok: 12, // timmar innan byn försöker planera ett hus igen när det inte fanns någon plats
-  samtidiga: 4, // högst så här många rutor byggs på samtidigt
+  perHus: 4, // så många får bygga på varje hus (platserna på bygget); fler väger en tredjedel (arbetarna, steg 6.1.13 i val.ts)
   laga: 0.5, // väggar under det skicket lagas
   prioJord: 100, // i vilken ordning man bygger: lagning först, sedan jordgolv, väggar och sist trägolv (plus rutor till platsen)
   prioVagg: 200,
@@ -212,7 +212,6 @@ export function buildJob(s: State, p: Person): Job | undefined {
     }
     if (fb) return { bit: fb, repair: false, need: 0, missing: false, fell: true };
   }
-  if (taken.size >= BYGG.samtidiga) return;
   let best: Job | undefined, bs = Infinity;
   for (const b of bitsOf(s)) {
     if (taken.has(b.id) || b.k === 'oppning' || (b.b < 1 && (treeOn(s, b) || vidElden(s, b.x, b.y)))) continue; // där elden står byggs inget förrän den flyttats (eldflytt.ts)

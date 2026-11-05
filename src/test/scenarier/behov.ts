@@ -831,3 +831,34 @@ SCENARIER.gorjustnu = {
     ];
   },
 };
+
+SCENARIER.arbetare = {
+  text: 'Arbetarna (steg 6.1.13, "Arbetsordningen" i designdokumentet): varje rad har ett antal arbetare, minst en, räknat en gång i timmen: maten efter det som fattas, tändmaterialet och letandet per invånare, bygget och kolet efter platserna. Taket är mjukt: när raden har sina arbetare väger den en tredjedel, och färre väljer den',
+  kor: () => {
+    const { arbetsTimme, chooseTask, ALDER } = SIM;
+    const by = (mat: number) => { const s = createState(6, START); klockan(s, 11); tandEld(s); setAmount(s, 'ved', 100); setMat(s, { torrkott: mat }); arbetsTimme(s); return s; };
+    const tom = by(3), rik = by(600);
+    const arbTom = tom.arbBehov!.arb, arbRik = rik.arbBehov!.arb;
+    const minstEn = Object.values(arbTom).every(n => n >= 1) && Object.values(arbRik).every(n => n >= 1);
+    // hur många av de vuxna som väljer mat, när så många som maten har redan samlar och när ingen gör det
+    const valjerMat = (s: SIM.State, fullt: boolean) => {
+      const vuxna = living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen), [p0, ...andra] = vuxna;
+      const upptagna = fullt ? Array.from({ length: s.arbBehov!.arb.mat }, (_, i) => andra[i % andra.length]) : [];
+      let n = 0, alla = 0;
+      for (let i = 0; i < 60; i++) {
+        for (const q of andra) q.task = upptagna.includes(q) ? { act: 'samla', phase: 'do', tx: q.x, ty: q.y, until: s.now + HOUR, carry: 0, why: 'Samlar.', dark: false } : { act: 'vila', phase: 'do', tx: q.x, ty: q.y, until: s.now + HOUR, carry: 0, why: 'Vilar.', dark: false };
+        Object.assign(p0, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, warm: 0.9, health: 1, sickUntil: undefined, task: undefined });
+        chooseTask(s, p0); alla++; if (['samla', 'jakt', 'fiske'].includes(p0.task!.act) && !p0.task!.sok && !p0.task!.tandmat) n++;
+        p0.task = undefined;
+      }
+      return n / (alla || 1);
+    };
+    const t = by(20); t.arbBehov!.arb.mat = 1; // en arbetare för maten, så att den andra som samlar fyller raden
+    const ledig = valjerMat(t, false), full = valjerMat(t, true);
+    return [
+      [`varje rad har minst en arbetare (${JSON.stringify(arbRik)})`, minstEn],
+      [`maten får fler arbetare när förrådet är tomt (${arbTom.mat}) än när det räcker länge (${arbRik.mat})`, arbTom.mat > arbRik.mat && arbRik.mat === 1],
+      [`när maten har sina arbetare väljer färre den (${Math.round(full * 100)} % mot ${Math.round(ledig * 100)} %), men inte ingen (taket är mjukt)`, ledig > 0 && full < ledig],
+    ];
+  },
+};

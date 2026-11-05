@@ -45,15 +45,20 @@ SCENARIER.stenring = {
     }
     for (const q of f.people) if (q.tek) delete q.tek.korg;
     setItems(f, { flinta: 1, torrgras: 20, grenar: 20 }); setFood(f, 200); // som efter letar(1, 200)
-    // en i taget: letar någon redan (flaggan sok, vad skälet än säger) letar ingen annan flinta till en yxa
+    // arbetarna (steg 6.1.13): letar redan så många som raden leta har (flaggan sok, vad skälet än säger), letar de andra
+    // flinta till en yxa med en tredjedel av chansen
     const [l0, ...andra] = living(f).filter(q => ageOf(q, f.now) >= ALDER.vuxen);
-    let fler = 0;
-    for (let i = 0; i < 100; i++) {
-      const p = andra[i % andra.length];
-      l0.task = { act: 'samla', phase: 'do', tx: l0.x, ty: l0.y, until: f.now + HOUR, carry: 0, why: 'Samlar.', dark: false, sok: true };
-      Object.assign(p, { toa: 1, torst: 1, warm: 1, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
-      chooseTask(f, p); if (p.task?.sok) fler++; p.task = undefined;
-    }
+    const letare = (redan: boolean) => {
+      let n = 0;
+      for (let i = 0; i < 300; i++) {
+        const p = andra[i % andra.length];
+        l0.task = redan ? { act: 'samla', phase: 'do', tx: l0.x, ty: l0.y, until: f.now + HOUR, carry: 0, why: 'Samlar.', dark: false, sok: true } : undefined;
+        Object.assign(p, { toa: 1, torst: 1, warm: 1, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
+        chooseTask(f, p); if (p.task?.sok) n++; p.task = undefined;
+      }
+      return n;
+    };
+    const ensam = letare(false), fler = letare(true);
     // den som hämtar tändmaterial åt en släckt eld fortsätter på en plats utan bär, och slutar när tändmaterialet räcker.
     // Buskarna runt platsen töms, för annars går man vidare till nästa (nastaBuske, steg 2.12.4)
     const r = createState(4, START), rm = getMap(r.seed);
@@ -81,7 +86,7 @@ SCENARIER.stenring = {
       [`en sliten yxa räknas som en yxa när byn vill ha flinta (${slitenYxa ? 'vill ha mer' : 'räcker'})`, !slitenYxa],
       [`elden tänds bara med bränsle kvar efter tändgrenarna (5 grenar: ${tand5 ? 'ja' : 'nej'}, 6 grenar: ${tand6 ? 'ja' : 'nej'})`, !tand5 && tand6],
       [`en korg flätas vid slöjdbänken, inte där flintan skulle letas (${korgFel} av ${korgar} korgar fel)`, korgar > 0 && korgFel === 0],
-      [`en i taget letar flinta till en yxa (${fler} till av 100 när någon redan letar)`, fler === 0],
+      [`när raden leta har sina arbetare letar färre flinta till en yxa (${fler} av 300 när någon redan letar, ${ensam} annars)`, ensam > 0 && fler < ensam * 0.6],
       [`den som hämtar tändmaterial (${valt ? 'vald' : 'inte vald'}) fortsätter på en plats utan bär (${fortsatt ? 'ja' : 'nej'}) och slutar när det räcker (${slutat ? 'ja' : 'nej'})`, valt && fortsatt && slutat],
       [`flinta till en yxa letas inte när maten är knapp (${yxaSvalt} som samlar letar), men när den räcker (${yxaMat}); flinta till elden inte heller när byn svälter (${eldSvalt}), men när maten räcker (${eldMat}) (steg 2.12.3)`, yxaSvalt.startsWith('0 ') && !yxaMat.startsWith('0 ') && eldSvalt.startsWith('0 ') && !eldMat.startsWith('0 ')],
       [`stenar samlas och elden tänds (efter ${h} timmar)`, tand],
