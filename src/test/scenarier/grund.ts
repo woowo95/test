@@ -125,7 +125,7 @@ SCENARIER.knapphet = {
   lang: true,
   text: 'Bär, rötter och vilt tar slut nära byn för en tid, så invånarna går längre bort; fiske med händerna ger få fiskar per försök',
   kor: () => {
-    const s = createState(23, START); // by 15 svälter ut sedan toa-smutsen kom (steg 2.7.2), by 16 och 17 sedan kartan blev 120 × 120 (2.10.9), by 18 sedan stigarna ligger kvar längre (2.10.15) och by 22 och 26 sedan tiderna följer riktlinjen (2.12.8); det balanseras i 2.12
+    const s = createState(25, START); // by 23 plockar mer långt bort sedan projekten på nivån Förbättra (steg 6.1.17), i kor men inte med minutsteg: brus i en enda by. By 15 svälter ut sedan toa-smutsen kom (steg 2.7.2), by 16 och 17 sedan kartan blev 120 × 120 (2.10.9), by 18 sedan stigarna ligger kvar längre (2.10.15) och by 22 och 26 sedan tiderna följer riktlinjen (2.12.8); det balanseras i 2.12
     // mät varje dygn: buskarna växer tillbaka, så ett enda mått i slutet beror på slumpen
     let nara = 0, langt = 0;
     for (let d = 0; d < 12; d++) { kor(s, 24); const n = uttag(s, 'samla', 0, 8); if (n > nara) { nara = n; langt = uttag(s, 'samla', 16, 30); } }

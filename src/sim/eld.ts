@@ -347,8 +347,8 @@ export function forageItems(s: State, p: Person, dtSec: number, fart = 1): Recor
   const sk = kunnighet(p.skill.samla);
   const got: Record<string, number> = {};
   const bar = (k: string) => amountOf(s, k) + (p.task?.items?.[k] ?? 0); // det man redan bär räknas, så att ingen bär hem mer än byn vill ha
-  if (bar('torrgras') < want) got.torrgras = ELD.hoTakt * ARSTID.hoPerTid[ai] * sk * vaxer;
-  if (bar('grenar') < want) got.grenar = ELD.grenarTakt * (iIstiden(ai) ? ARSTID.grenarIstid : 1) * sk * vaxer;
+  if (bar('torrgras') < want || p.task?.hamtar === 'torrgras') got.torrgras = ELD.hoTakt * ARSTID.hoPerTid[ai] * sk * vaxer;
+  if (bar('grenar') < want || p.task?.hamtar === 'grenar') got.grenar = ELD.grenarTakt * (iIstiden(ai) ? ARSTID.grenarIstid : 1) * sk * vaxer;
   // stenar till eldringen: många vid stenarna, några i sanden, få annars
   if (needStones(s)) {
     const d = p.task ? stoneDist(s.seed)[tileOf(p.task.tx, p.task.ty)] : 9;

@@ -145,6 +145,7 @@ export interface Task {
   kom?: Record<string, number>; // var materialet till bygget kom ifrån (bygg.ts)
   sok?: true; // letar flinta eller stenar vid stenarna: blir platsen tom fortsätter man ändå i stället för att gå hem (steg.ts, workStep)
   pass?: number; // när ett pass med redskap som görs är slut (ms): blir ett klart före det görs ett till om byn vill ha fler (steg 2.3.8)
+  hamtar?: string; // materialet uppgiften hämtar till ett projekt eller bygge (steg 6.1.17): samlandet ger det, också när förrådet har tändmaterial nog
   tandmat?: true; // samlar tändmaterial åt en släckt eld: blir platsen tom på bär fortsätter man tills tändmaterialet räcker (steg.ts, workStep)
   bar?: number; // vården: den skadade som bärs hem (halsa.ts, steg 2.5.2)
   falt?: true; // vattensäcken bärs till fältet ref i stället för till en människa (torka.ts, steg 3.8.2)

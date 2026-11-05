@@ -96,10 +96,14 @@ SCENARIER.material = {
     const med = bastaProjekt(s, p, f);
     setItems(s, { flinta: 0, torrgras: 0, grenar: 0 }); setAmount(s, 'ved', 0);
     const utan = bastaProjekt(s, p, f), yxa = PROJEKT.yxa?.saknar?.(s, p, f);
+    const ho = (hamtar?: string) => { const t = by(4), q = vuxna(t)[0]; setItems(t, { torrgras: 50, grenar: 50 }); q.task = { act: 'samla', phase: 'do', tx: q.x, ty: q.y, until: t.now + SIM.HOUR, carry: 0, why: "test", dark: false, hamtar }; return SIM.forageItems(t, q, 3600)?.torrgras ?? 0; };
+    const hoFatt = ho('torrgras'), hoUtan = ho();
     return [
       [`med material finns ett projekt att göra (${med?.k}, uppgift ${med?.u?.act})`, !!med?.u],
       [`utan material blir det mest värda projektet en hämtning (${utan?.k} saknar ${utan?.sak}, arbetet ${utan?.sak ? SIM.HAMTA[utan.sak]?.act : '-'})`, !!utan?.sak && !!SIM.HAMTA[utan.sak] && !utan.u],
       [`yxan saknar flinta (${yxa})`, yxa === 'flinta'],
+      // den som hämtar hö får hö också när förrådet har tändmaterial nog (annars plockade hen bär utan slut, knapphet efter 6.1.17)
+      [`den som hämtar hö får hö fast förrådet har tändmaterial (${hoFatt.toFixed(2)} hö, ${hoUtan.toFixed(2)} för den som samlar mat)`, hoFatt > 0 && hoUtan === 0],
     ];
   },
 };
