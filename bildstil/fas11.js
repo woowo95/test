@@ -18,12 +18,31 @@
 
   const HAV = 0, SLATT = 1, SKOG = 2, BERG = 3, MYR = 4, SJO = 5;
   // en karta: W × H punkter; o = en stor ö mitt i havet (antalet floder och platser står i o), annars den första kartan
+  let KNR = 0;
   function karta(W, H, o) {
   // ---------- världen ----------
   let VARLD = null;
   function varld() {
     if (VARLD) return VARLD;
-    const N = W * H, hojd = new Float32Array(N), typ = new Uint8Array(N), elv = new Uint8Array(N);
+    const N = W * H, hojd = new Float32Array(N), typ = new Uint8Array(N), elv = new Uint8Array(N), rygg = new Float32Array(N);
+    // bergskedjorna (o.kedjor = antal per landmassa): en slingrande ås genom varje landmassa, i världens koordinater
+    const kedjor = [];
+    if (o && o.kedjor) (o.kontinenter || [[0.5, 0.5, o.rx, o.ry]]).forEach(([cx, cy, rx, ry], m) => {
+      for (let j = 0; j < o.kedjor; j++) {
+        const a = (hash(m, j, 81) + j * 0.5) * Math.PI, dx = Math.cos(a), dy = Math.sin(a);
+        const L = 0.7 * Math.hypot(rx * W * dx, ry * H * dy), mx = W * (cx + (hash(m, j, 82) - 0.5) * rx * 0.6), my = H * (cy + (hash(m, j, 83) - 0.5) * ry * 0.6), fas = hash(m, j, 84) * 6;
+        const pts = []; for (let k = 0; k <= 8; k++) { const t = k / 4 - 1, v = Math.sin(t * 2.4 + fas) * L * 0.16; pts.push([mx + dx * t * L - dy * v, my + dy * t * L + dx * v]); }
+        kedjor.push(pts);
+      }
+    });
+    const tillKedja = (ux, uy) => { // avståndet till närmaste ås och hur långt från änden (0 i änden, 1 i mitten)
+      let bd = 1e9, bt = 0;
+      for (const pts of kedjor) for (let k = 0; k < pts.length - 1; k++) {
+        const [ax, ay] = pts[k], [bx, by] = pts[k + 1], ex = bx - ax, ey = by - ay, t = Math.max(0, Math.min(1, ((ux - ax) * ex + (uy - ay) * ey) / (ex * ex + ey * ey)));
+        const d = Math.hypot(ux - ax - ex * t, uy - ay - ey * t); if (d < bd) { bd = d; bt = 1 - Math.abs((k + t) / (pts.length - 1) * 2 - 1); }
+      }
+      return [bd, bt];
+    };
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const z = o && o.zoom || 1, ux = W / 2 + (x - W / 2) / z, uy = H / 2 + (y - H / 2) / z; // inzoomat: samma värld, större
       let h = fbm(ux / 46, uy / 46, FRO) * 0.62 + fbm(ux / 13, uy / 13, FRO + 50, 3) * 0.38;
@@ -31,6 +50,11 @@
         const vx = (fbm(ux / 40, uy / 40, FRO + 120, 2) - 0.5) * 0.35, vy = (fbm(ux / 40, uy / 40, FRO + 140, 2) - 0.5) * 0.35;
         const lyft = (cx, cy, rx, ry) => { const d = Math.hypot((ux - W * cx) / (W * rx) + vx, (uy - H * cy) / (H * ry) + vy); return o.lyft - d * d * o.fall; };
         h += o.kontinenter ? Math.max(...o.kontinenter.map(k => lyft(...k))) : lyft(0.5, 0.5, o.rx, o.ry);
+        if (kedjor.length) { // åsen: högst längs mitten, smalnar av mot ändarna och har pass där bruset är lågt
+          const [d, t] = tillKedja(ux, uy), bred = 9 + fbm(ux / 30, uy / 30, FRO + 160, 2) * 7, r = Math.max(0, 1 - d / bred);
+          const v = r * r * Math.min(1, t * 3) * (0.26 + fbm(ux / 11, uy / 11, FRO + 170, 2) * 0.22);
+          rygg[y * W + x] = v; h += v;
+        }
         const kant = Math.min(x, y, W - 1 - x, H - 1 - y); if (kant < 24) h -= (24 - kant) / 24 * 0.25; // havet längs hela kanten
       } else {
         h += (x / W - 0.45) * 0.5 - (y / H - 0.4) * 0.22;
@@ -43,7 +67,7 @@
       const z = o && o.zoom || 1, ux = W / 2 + (x - W / 2) / z, uy = H / 2 + (y - H / 2) / z;
       const i = y * W + x, h = hojd[i], f = fbm(ux / 20, uy / 20, FRO + 30, 3);
       if (h < HAVNIVA) typ[i] = HAV;
-      else if (h > BERGNIVA) typ[i] = BERG;
+      else if (h > BERGNIVA && (!kedjor.length || rygg[i] > 0.1)) typ[i] = BERG; // med kedjor blir bara åsarna berg, inte varje höjd
       else if (fbm(ux / 9, uy / 9, FRO + 90, 2) > 0.74 && h > HAVNIVA + 0.06 && h < BERGNIVA - 0.04) typ[i] = SJO;
       else if (f > 0.56 && h < HAVNIVA + 0.09) typ[i] = MYR;
       else if (f > 0.47 || h > BERGNIVA - 0.07) typ[i] = SKOG;
@@ -126,6 +150,35 @@
       if (!b) continue;
       const k = [a, b].map(p => p.rx + ',' + p.ry).sort().join('|'); if (!par.has(k)) { par.add(k); vagar.push([a, b]); }
     }
+    // vägarna längs marken (o.stigar): den billigaste vägen över land, runt bergen och sjöarna, över floderna på broar
+    const stigar = [];
+    if (o && o.stigar) {
+      const kost = i => { const t = typ[i]; return t === HAV || t === SJO ? 0 : t === BERG ? 14 : elv[i] ? 7 : t === MYR ? 4 : t === SKOG ? 1.8 : 1; };
+      const dist = new Float32Array(N), fran = new Int32Array(N);
+      for (const [a, b] of vagar) {
+        dist.fill(Infinity); const s0 = a.y * W + a.x, mal = b.y * W + b.x; dist[s0] = 0; fran[s0] = -1;
+        const hog = [[0, s0]], upp = (k) => { while (k > 0) { const f = (k - 1) >> 1; if (hog[f][0] <= hog[k][0]) break; [hog[f], hog[k]] = [hog[k], hog[f]]; k = f; } };
+        const ner = () => { const top = hog[0], sist = hog.pop(); if (hog.length) { hog[0] = sist; let k = 0; for (;;) { const l = 2 * k + 1, rr = l + 1; let m = k; if (l < hog.length && hog[l][0] < hog[m][0]) m = l; if (rr < hog.length && hog[rr][0] < hog[m][0]) m = rr; if (m === k) break; [hog[m], hog[k]] = [hog[k], hog[m]]; k = m; } } return top; };
+        while (hog.length) {
+          const [d, i] = ner(); if (d > dist[i]) continue; if (i === mal) break;
+          const x = i % W, y = (i / W) | 0;
+          for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]]) {
+            const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+            const j = ny * W + nx, k = kost(j); if (!k) continue;
+            const nd = d + k * (dx && dy ? 1.41 : 1) + hash(nx, ny, 85) * 0.3; if (nd < dist[j]) { dist[j] = nd; fran[j] = i; hog.push([nd, j]); upp(hog.length - 1); }
+          }
+        }
+        if (dist[mal] === Infinity || dist[mal] > 3.2 * Math.hypot(b.x - a.x, b.y - a.y) + 20) continue; // för långt runt: ingen väg
+        const vag = []; for (let i = mal; i >= 0; i = fran[i]) vag.push([i % W, (i / W) | 0]);
+        stigar.push(vag.reverse());
+      }
+    }
+    // karavanen: mitt på den längsta vägen, på väg mot byn i andra änden
+    let karavan = null;
+    if (stigar.length) {
+      const v = stigar.reduce((a, b) => (b.length > a.length ? b : a)), k = Math.round(v.length * 0.45), f = v[Math.min(v.length - 1, k + 4)], e = v[Math.max(0, k - 4)];
+      karavan = { x: v[k][0], y: v[k][1], hoger: f[0] >= e[0], spar: v.slice(Math.max(0, k - 16), Math.max(0, k - 6)) };
+    }
     // sjövägarna: från varje kontinent till den närmaste andra, mellan de två byar som ligger närmast varandra; ett skepp på varje
     const sjovagar = [], skepp = [];
     if (o && o.kontinenter) {
@@ -152,7 +205,8 @@
       for (const [, x, y] of kand) { if (hav.length >= 3) break; if (hav.every(([ax, ay]) => Math.hypot(ax - x, ay - y) > W / 4)) hav.push([x, y]); }
     }
     hav.push(...skepp);
-    VARLD = { hojd, typ, elv, avst, floder, platser, vagar, sjovagar, djupX: hav[0][0], djupY: hav[0][1], hav, vatten };
+    const zz = o && o.zoom || 1, tillBild = ([ux, uy]) => [W / 2 + (ux - W / 2) * zz, H / 2 + (uy - H / 2) * zz];
+    VARLD = { hojd, typ, elv, avst, rygg, kedjor: kedjor.map(p => p.map(tillBild)), stigar, karavan, floder, platser, vagar, sjovagar, djupX: hav[0][0], djupY: hav[0][1], hav, vatten };
     return VARLD;
   }
 
@@ -170,10 +224,31 @@
     gran: ['.a.', 'aaa', 'aaa', '.c.'],
     skepp: ['....o....', '...oao...', '..oaaao..', '....o....', 'oo..o..oo', '.oooooo..'],
   };
-  const glyf = (B, rader, leg, cx, cy) => {
+  const glyf = (B, rader, leg, cx, cy, spegel = false) => {
     const h = rader.length, w = rader[0].length, x0 = Math.round(cx - w / 2), y0 = Math.round(cy - h / 2);
-    rader.forEach((r, y) => [...r].forEach((ch, x) => { if (leg[ch] !== undefined) B.satt(x0 + x, y0 + y, leg[ch]); }));
+    rader.forEach((r, y) => [...r].forEach((ch, x) => { if (leg[ch] !== undefined) B.satt(x0 + (spegel ? w - 1 - x : x), y0 + y, leg[ch]); }));
   };
+  // karavanen på väg (o kontur, b kapellet, p packningen, a vagnen och kläderna, c djuren, d hjulnavet, k ansiktet), vänd åt höger
+  const KARAVANER = [
+    ['..ooooo.........', '.obbbbbo........', 'obbbbbbbo...o.o.', 'obbbbbbbo.oooooo', 'oaaaaaaaooccccco', 'oaaaaaaao.cccccc', 'ooooooooo.occcoo', '.odo.odo..o.o.o.', '.ooo.ooo..o.o.o.'], // en oxkärra med kapell
+    ['..........o.......o', '..ooo....oco.ooo.oc', '.opppo...occopppooc', '.opppocccccoopppoco', '..occcccccco.occcco', '..oo.oo..oo..oo.oo.', '..o..o...o...o..o..'], // två packhästar i rad
+    ['...o..........oo', '..oko.......oocco', '..opo.ooo..ooccc.', '.opppoopppooooo..', '..oao.occcccco...', '..oao..oo..oo....', '..o.o..o...o.....'], // en vandrare som leder en packhäst
+  ];
+  // bergskedjornas stora toppar: längs varje ås, var femte punkt, växelvis lite åt sidorna; de närmast betraktaren ritas sist
+  const STOR = ['......o......', '.....obo.....', '....obbbo....', '...obbbcco...', '..obbbbccco..', '.obbbbbcccco.', 'obbbbbbccccco'];
+  const MELLAN = ['....o....', '...obo...', '..obbco..', '.obbbcco.', 'obbbbccco'];
+  const storaBerg = (B, V, rader, leg) => {
+    const toppar = [];
+    for (const pts of V.kedjor) for (let k = 0; k < pts.length - 1; k++) {
+      const [ax, ay] = pts[k], [bx, by] = pts[k + 1], n = Math.max(1, Math.round(Math.hypot(bx - ax, by - ay) / 4)), l = Math.hypot(bx - ax, by - ay) || 1;
+      for (let t = 0; t < n; t++) {
+        const s = (toppar.length % 2 ? 3 : -3) * (hash(k, t, 86) + 0.4), x = Math.round(ax + (bx - ax) * t / n - (by - ay) / l * s), y = Math.round(ay + (by - ay) * t / n + (bx - ax) / l * s);
+        if (x > 6 && y > 6 && x < W - 6 && y < H - 6 && V.typ[y * W + x] === BERG) toppar.push([x, y]);
+      }
+    }
+    toppar.sort((a, b) => a[1] - b[1]).forEach(([x, y]) => { const hog = V.rygg[y * W + x] > 0.2 && hash(x, y, 87) > 0.25; glyf(B, rader ? (hog ? rader : MELLAN) : hog ? STOR : MELLAN, leg, x, y - (hog ? 3 : 2)); });
+  };
+  const foten = (V, i) => !V.kedjor.length || V.rygg[i] < 0.12; // med kedjor: de små bergen bara vid foten av åsarna
   // runorna (yngre futharken, 3 × 5), bara som prydnad och namn
   const RUNOR = [
     ['#.#', '##.', '#.#', '#..', '#..'], ['##.', '#.#', '#.#', '#.#', '#.#'], ['#..', '##.', '#.#', '##.', '#..'],
@@ -202,12 +277,20 @@
   function platserna(B, V, stil) {
     const P = B.P;
     for (const [a, b] of V.sjovagar) linje(B, a, b, (x, y) => { const t = V.typ[y * W + x]; if (t === HAV) B.satt(x, y, stil.sjovag); }, 5, 3); // sjövägarna, streckade över havet
-    for (const [a, b] of V.vagar) linje(B, a, b, (x, y) => { const i = y * W + x; if (V.typ[i] === HAV || V.typ[i] === SJO) { if ((x + y) % 4 === 0) B.satt(x, y, stil.sjovag); } else B.satt(x, y, stil.vag); }, 3, 1);
+    if (V.stigar.length) for (const v of V.stigar) v.forEach(([x, y], k) => { // vägarna längs marken, två punkter breda och streckade, med broar över floderna
+      const f = v[Math.min(v.length - 1, k + 1)], e = v[Math.max(0, k - 1)], ligg = Math.abs(f[0] - e[0]) >= Math.abs(f[1] - e[1]);
+      const bredvid = ligg ? [x, y + 1] : [x + 1, y], vat = (x, y) => V.typ[y * W + x] === HAV || V.typ[y * W + x] === SJO;
+      if (V.elv[y * W + x]) { B.satt(x, y, stil.kontur); if (!vat(...bredvid)) B.satt(...bredvid, stil.kontur); }
+      else if (k % 6 < 4) { B.satt(x, y, stil.stig || stil.vag); if (!vat(...bredvid) && !V.elv[bredvid[1] * W + bredvid[0]]) B.satt(...bredvid, stil.stig || stil.vag); }
+    });
+    else for (const [a, b] of V.vagar) linje(B, a, b, (x, y) => { const i = y * W + x; if (V.typ[i] === HAV || V.typ[i] === SJO) { if ((x + y) % 4 === 0) B.satt(x, y, stil.sjovag); } else B.satt(x, y, stil.vag); }, 3, 1);
     for (const p of V.platser) {
       if (p.sort === 'egen') ring(B, p.x, p.y, 8, stil.ring, true);
       glyf(B, SYM[p.sort], platsLegend(P, p.sort, stil), p.x, p.y);
       if (stil.namn && (p.sort === 'egen' || p.sort === 'by')) runrad(B, p.x - 6, p.y + 6, 3, p.rx * 31 + p.ry, stil.namn);
     }
+    const kv = V.karavan;
+    if (kv) { const g = KARAVANER[KNR]; glyf(B, g, { o: stil.kontur, b: stil.ljus, p: stil.packe || stil.helig, a: stil.by, c: stil.djur || stil.mork, d: stil.sten, k: stil.ljus }, kv.x, kv.y - Math.floor(g.length / 2) + 1, !kv.hoger); }
   }
 
   // ---------- version 1: skinnkartan, med bläck på ett spänt skinn ----------
@@ -239,15 +322,16 @@
     for (let gy = 4; gy < H - 4; gy += 6) for (let gx = 4; gx < W - 4; gx += 7) {
       const x = gx + Math.floor(hash(gx, gy, 1) * 4), y = gy + Math.floor(hash(gx, gy, 2) * 3), i = y * W + x;
       if (inne(x, y) > 0.86) continue;
-      if (V.typ[i] === BERG) glyf(B, SYM.berg, { o: BLACK, b: P.i('ben', 2), c: P.i('jord', 2) }, x, y);
-      else if (V.typ[i] === SKOG && !V.elv[i]) glyf(B, ['..o..', '.o.o.', 'o...o', '..o..'], { o: P.i('barr', 1) }, x, y);
+      if (V.typ[i] === BERG) { if (foten(V, i)) glyf(B, SYM.berg, { o: BLACK, b: P.i('ben', 2), c: P.i('jord', 2) }, x, y); }
+      else if (V.typ[i] === SKOG && !V.elv[i] && !(V.rygg[i] > 0.02)) glyf(B, ['..o..', '.o.o.', 'o...o', '..o..'], { o: P.i('barr', 1) }, x, y);
     }
+    storaBerg(B, V, null, { o: BLACK, b: P.i('ben', 3), c: P.i('jord', 2) });
     // havsormen
     const sx = V.djupX - 10, sy = V.djupY;
     for (let k = 0; k < 3; k++) for (let a = 0; a <= 8; a++) { const x = sx + k * 7 + a * 0.6, y = sy - Math.round(Math.sin(a / 8 * Math.PI) * 3); B.satt(Math.round(x), y, BLACK); B.satt(Math.round(x), y + 1, P.i('barr', 2)); }
     glyf(B, ['.oo.', 'oaao', '.oao', '..o.'], { o: BLACK, a: P.i('barr', 2) }, sx + 23, sy - 3);
     for (const [x, y] of V.hav.slice(1)) glyf(B, SYM.skepp, { o: BLACK, a: P.i('ben', 3) }, x, y);
-    platserna(B, V, { kontur: BLACK, by: P.i('rost', 1), egen: P.i('rost', 2), ljus: P.i('ben', 3), mork: P.i('jord', 1), sten: P.i('skiffer', 2), helig: P.i('senap', 1), talt: P.i('jord', 2), taltM: P.i('jord', 1), vag: P.i('jord', 1), sjovag: P.i('jord', 1), ring: P.i('rost', 1), namn: BLACK });
+    platserna(B, V, { kontur: BLACK, by: P.i('rost', 1), egen: P.i('rost', 2), ljus: P.i('ben', 3), mork: P.i('jord', 1), sten: P.i('skiffer', 2), helig: P.i('senap', 1), talt: P.i('jord', 2), taltM: P.i('jord', 1), vag: P.i('jord', 1), sjovag: P.i('jord', 1), ring: P.i('rost', 1), namn: BLACK, djur: P.i('jord', 1), stig: P.i('jord', 0), packe: P.i('senap', 2) });
     if (papper) for (const k of [0, 2]) for (let x = k; x < W - k; x++) for (let y = k; y < H - k; y++) if (x === k || y === k || x === W - 1 - k || y === H - 1 - k) B.satt(x, y, BLACK); // en dubbel bläckram
   }
 
@@ -270,18 +354,19 @@
     }
     for (let gy = 3; gy < H - 3; gy += 5) for (let gx = 3; gx < W - 3; gx += 5) {
       const x = gx + Math.floor(hash(gx, gy, 1) * 3), y = gy + Math.floor(hash(gx, gy, 2) * 3), i = y * W + x;
-      if (V.typ[i] === SKOG && !V.elv[i]) glyf(B, SYM.gran, { a: P.i('barr', 3), c: P.i('jord', 0) }, x, y);
+      if (V.typ[i] === SKOG && !V.elv[i] && !(V.rygg[i] > 0.02)) glyf(B, SYM.gran, { a: P.i('barr', 3), c: P.i('jord', 0) }, x, y);
     }
     for (let gy = 4; gy < H - 4; gy += 6) for (let gx = 4; gx < W - 4; gx += 7) {
       const x = gx + Math.floor(hash(gx, gy, 1) * 4), y = gy + Math.floor(hash(gx, gy, 2) * 3), i = y * W + x;
-      if (V.typ[i] === BERG) glyf(B, ['...b...', '..bbo..', '.oaaco.', '.oaacco', 'oaaacco'], { o: P.i('kol', 1), a: P.i('skiffer', 3), b: P.i('ben', 3), c: P.i('skiffer', 0) }, x, y);
+      if (V.typ[i] === BERG && foten(V, i)) glyf(B, ['...b...', '..bbo..', '.oaaco.', '.oaacco', 'oaaacco'], { o: P.i('kol', 1), a: P.i('skiffer', 3), b: P.i('ben', 3), c: P.i('skiffer', 0) }, x, y);
     }
+    storaBerg(B, V, ['......o......', '.....obo.....', '....obbbo....', '...oabbcco...', '..oaaabccco..', '.oaaaaacccco.', 'oaaaaaaccccco'], { o: P.i('kol', 1), a: P.i('skiffer', 3), b: P.i('ben', 3), c: P.i('skiffer', 0) });
     // rutnätet där en ruta är en bykarta, prickat på land
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if ((x % RUTA === 0 || y % RUTA === 0) && (x + y) % 2 === 0 && V.typ[y * W + x] !== HAV) B.morka(x, y);
     const egen = V.platser.find(p => p.sort === 'egen');
     for (let k = 0; k <= RUTA; k++) for (const [x, y] of [[egen.rx * RUTA + k, egen.ry * RUTA], [egen.rx * RUTA + k, egen.ry * RUTA + RUTA], [egen.rx * RUTA, egen.ry * RUTA + k], [egen.rx * RUTA + RUTA, egen.ry * RUTA + k]]) B.satt(x, y, P.i('senap', 3));
     for (const [x, y] of V.hav) glyf(B, SYM.skepp, { o: P.i('kol', 0), a: P.i('ben', 2) }, x, y);
-    platserna(B, V, { kontur: P.i('kol', 0), by: P.i('rost', 2), egen: P.i('senap', 3), ljus: P.i('jord', 3), mork: P.i('jord', 0), sten: P.i('ben', 1), helig: P.i('senap', 2), talt: P.i('jord', 3), taltM: P.i('jord', 1), vag: P.i('jord', 1), sjovag: P.i('ben', 2), ring: P.i('senap', 3) });
+    platserna(B, V, { kontur: P.i('kol', 0), by: P.i('rost', 2), egen: P.i('senap', 3), ljus: P.i('jord', 3), mork: P.i('jord', 0), sten: P.i('ben', 1), helig: P.i('senap', 2), talt: P.i('jord', 3), taltM: P.i('jord', 1), vag: P.i('jord', 1), sjovag: P.i('ben', 2), ring: P.i('senap', 3), djur: P.i('jord', 1), stig: P.i('jord', 0) });
     // ramen: ett flätat band
     const R = 6;
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -314,11 +399,12 @@
     }
     for (let gy = 4; gy < H - 4; gy += 6) for (let gx = 4; gx < W - 4; gx += 7) {
       const x = gx + Math.floor(hash(gx, gy, 1) * 4), y = gy + Math.floor(hash(gx, gy, 2) * 3), i = y * W + x;
-      if (V.typ[i] === BERG) glyf(B, ['...o...', '..obo..', '.ob.co.', 'ob...co'], { o: P.i('kol', 1), b: P.i('senap', 3), c: P.i('jord', 0) }, x, y);
-      else if (V.typ[i] === SKOG && !V.elv[i]) glyf(B, ['.o.', 'o.o', '.o.', '.o.'], { o: P.i('kol', 2) }, x, y);
+      if (V.typ[i] === BERG) { if (foten(V, i)) glyf(B, ['...o...', '..obo..', '.ob.co.', 'ob...co'], { o: P.i('kol', 1), b: P.i('senap', 3), c: P.i('jord', 0) }, x, y); }
+      else if (V.typ[i] === SKOG && !V.elv[i] && !(V.rygg[i] > 0.02)) glyf(B, ['.o.', 'o.o', '.o.', '.o.'], { o: P.i('kol', 2) }, x, y);
     }
+    storaBerg(B, V, null, { o: P.i('kol', 1), b: P.i('senap', 3), c: P.i('jord', 0) });
     if (o) for (const [x, y] of V.hav) glyf(B, SYM.skepp, { o: P.i('kol', 1), a: P.i('jord', 2) }, x, y);
-    platserna(B, V, { kontur: P.i('kol', 0), by: P.i('senap', 2), egen: P.i('senap', 3), ljus: P.i('ben', 3), mork: P.i('jord', 0), sten: P.i('ben', 1), helig: P.i('senap', 2), talt: P.i('senap', 1), taltM: P.i('jord', 0), vag: P.i('kol', 2), sjovag: P.i('kol', 2), ring: P.i('senap', 3), namn: P.i('kol', 0) });
+    platserna(B, V, { kontur: P.i('kol', 0), by: P.i('senap', 2), egen: P.i('senap', 3), ljus: P.i('ben', 3), mork: P.i('jord', 0), sten: P.i('ben', 1), helig: P.i('senap', 2), talt: P.i('senap', 1), taltM: P.i('jord', 0), vag: P.i('kol', 2), sjovag: P.i('kol', 2), ring: P.i('senap', 3), namn: P.i('kol', 0), stig: P.i('kol', 1) });
     // runbandet: en orm runt kanten med runor i, huvudet nere till vänster och svansen nere till höger
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const k = Math.min(x, y, W - 1 - x, H - 1 - y); if (k >= R) continue;
@@ -397,7 +483,13 @@
     return { w: BW, h: BH, rita };
   }
 
-  return { varld, skinn, farg, tra, iHander };
+  // ett utsnitt av bläckkartan på papper runt karavanen, med karavan nummer nr
+  const utsnitt = (nr, w, h) => B => {
+    const V = varld(), M = Bild(W, H, B.P); KNR = nr; skinnRitning(M, true); KNR = 0;
+    const x0 = Math.max(0, Math.min(W - w, V.karavan.x - (w >> 1))), y0 = Math.max(0, Math.min(H - h, V.karavan.y - (h >> 1)));
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) B.satt(x, y, M.get(x0 + x, y0 + y));
+  };
+  return { varld, skinn, farg, tra, iHander, utsnitt };
   }
 
   const K1 = karta(240, 160, null);
@@ -423,7 +515,7 @@
   // den större kartan: en stor ö i mitten med hav runt om, fler byar, läger och platser
   const OW = 384, OH = 256;
   const O2 = { rx: 0.42, ry: 0.4, lyft: 0.27, fall: 0.58, berg: 0.72, floder: 8, antal: { by: 12, lager: 7, rovare: 3, ruin: 5, helig: 2, hog: 3, runsten: 3 } };
-  const K2 = karta(OW, OH, O2), K2z = karta(OW, OH, { ...O2, zoom: 1.2 }); // K2z: samma ö, inzoomad
+  const K2 = karta(OW, OH, O2), K2z = karta(OW, OH, { ...O2, zoom: 1.2, kedjor: 2, stigar: true }); // K2z: samma ö, inzoomad, med bergskedjor och vägar längs marken
   VAL.push({
     id: 'f11_varldskarta_o', namn: 'Världskartan, en stor ö', typ: 'tre', stor: true, kol: true, karta: K2,
     vad: 'Steg 11.1.9 (koncept, långt fram). Din kommentar: kartan ska kännas större, med hav runt den stora ön i mitten; de första kartorna står kvar i kortet ovanför. Här är världen dubbelt så stor åt varje håll som på de första kartorna (en ruta, 8 × 8 punkter, är fortfarande en bykarta): en stor ö med hav runt om och några små öar utanför kusten. Floderna rinner från bergen inne på ön ut i havet. Den egna byn ligger inne på ön med en flod genom byn, och runt den finns tolv grannbyar, sju läger, tre rövarläger, fem ruiner, två heliga platser, tre gravhögar och tre runstenar. Samma tre stilar som förut.',
@@ -433,10 +525,20 @@
       { text: 'Version 3: ristad i trä. Ön upphöjd och havet urskuret i brädan, med inristade skepp och runbandet runt kanten.', w: OW, h: OH, kol: true, rita: K2.tra },
     ],
   });
-  papperKort('f11_varldskarta_o_papper', 'Världskartan, en stor ö, på papper', K2z, 1.4, 'Steg 11.1.9 (koncept, långt fram). Din kommentar: alla kartor ska vara riktiga papper, och man ska se att händer håller i kartan. Här är den stora ön (kortet Världskartan, en stor ö) på papper, lite inzoomad så att ön fyller mer av kartan; de gamla korten står kvar.' + PAPPER_VAD);
+  papperKort('f11_varldskarta_o_papper', 'Världskartan, en stor ö, på papper', K2z, 1.4, 'Steg 11.1.9 (koncept, långt fram). Din kommentar: alla kartor ska vara riktiga papper, och man ska se att händer håller i kartan. Här är den stora ön (kortet Världskartan, en stor ö) på papper, lite inzoomad så att ön fyller mer av kartan; de gamla korten står kvar. Din senaste kommentar: tydligare bergkedjor och inte bara många småberg, vägar mellan några byar och en karavan som är på väg någonstans. Bergen ligger nu i långa åsar som slingrar sig genom landet, med stora toppar i mitten och mindre mot ändarna; floderna börjar i åsarna. Vägarna går längs marken mellan grannbyarna, runt bergen och sjöarna, och över floderna på broar. Ön har två åsar. På den längsta vägen går en karavan mot byn i andra änden (kortet Karavanen på världskartan har tre förslag på karavanen).' + PAPPER_VAD);
 
   // världen med kontinenter: fyra landmassor med hav emellan, så att det kan finnas båtar; sjövägar mellan kontinenterna
   const KW = 448, KH = 288;
-  const K3 = karta(KW, KH, { kontinenter: [[0.24, 0.33, 0.23, 0.28], [0.71, 0.28, 0.24, 0.24], [0.36, 0.77, 0.21, 0.21], [0.82, 0.74, 0.16, 0.21]], lyft: 0.27, fall: 0.58, berg: 0.72, floder: 10, antal: { by: 16, lager: 8, rovare: 3, ruin: 6, helig: 3, hog: 3, runsten: 4 } });
-  papperKort('f11_varldskarta_k_papper', 'Världskartan med kontinenter, på papper', K3, 1.4, 'Steg 11.1.9 (koncept, långt fram). Din kommentar: det hade varit kul med kontinenter, så att det kan finnas båtar i spelet. Här är en värld med fyra kontinenter och hav emellan. Varje kontinent har byar och vägar; mellan kontinenterna går sjövägar (de streckade linjerna över havet) från de byar som ligger närmast varandra, och på varje sjöväg seglar ett skepp. Den egna byn ligger på en av kontinenterna med en flod genom byn.' + PAPPER_VAD);
+  const K3 = karta(KW, KH, { kontinenter: [[0.24, 0.33, 0.23, 0.28], [0.71, 0.28, 0.24, 0.24], [0.36, 0.77, 0.21, 0.21], [0.82, 0.74, 0.16, 0.21]], lyft: 0.27, fall: 0.58, berg: 0.72, floder: 10, kedjor: 1, stigar: true, antal: { by: 16, lager: 8, rovare: 3, ruin: 6, helig: 3, hog: 3, runsten: 4 } });
+  papperKort('f11_varldskarta_k_papper', 'Världskartan med kontinenter, på papper', K3, 1.4, 'Steg 11.1.9 (koncept, långt fram). Din kommentar: det hade varit kul med kontinenter, så att det kan finnas båtar i spelet. Här är en värld med fyra kontinenter och hav emellan. Varje kontinent har byar och vägar; mellan kontinenterna går sjövägar (de streckade linjerna över havet) från de byar som ligger närmast varandra, och på varje sjöväg seglar ett skepp. Den egna byn ligger på en av kontinenterna med en flod genom byn. Din senaste kommentar: tydligare bergkedjor och inte bara många småberg, vägar mellan några byar och en karavan som är på väg någonstans. Bergen ligger nu i långa åsar som slingrar sig genom landet, med stora toppar i mitten och mindre mot ändarna; floderna börjar i åsarna. Vägarna går längs marken mellan grannbyarna, runt bergen och sjöarna, och över floderna på broar. På den längsta vägen går en karavan mot byn i andra änden (kortet Karavanen på världskartan har tre förslag på karavanen).' + PAPPER_VAD);
+  // karavanen på väg längs en väg (Björn: "gör en ikon för en karavan som är påväg någonstans"): tre förslag, i ett utsnitt av bläckkartan
+  VAL.push({
+    id: 'f11_karavan', namn: 'Karavanen på världskartan', typ: 'tre', kol: true,
+    vad: 'Steg 11.1.9 (koncept, långt fram). Din kommentar: gör en ikon för en karavan som är på väg någonstans. Karavanen står på den längsta vägen på kartan med kontinenterna, vänd mot byn den är på väg till; i spelet flyttar den sig längs vägen mellan byarna. Här är ett utsnitt av bläckkartan runt karavanen, i kartans egen skala och förstorat; karavanen på de stora kartorna är version 1.',
+    versioner: [
+      'Version 1: en oxkärra med kapell, dragen av en oxe.',
+      'Version 2: två packhästar i rad, med packningen på ryggen.',
+      'Version 3: en vandrare med en packe på ryggen som leder en packhäst.',
+    ].map((text, k) => ({ text, w: 120, h: 72, kol: true, stor: true, liten: true, rita: K3.utsnitt(k, 120, 72) })),
+  });
 })();
