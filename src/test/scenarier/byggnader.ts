@@ -888,7 +888,7 @@ SCENARIER.stackar = {
 };
 
 SCENARIER.omrade = {
-  text: 'Byns område (steg 6.2.1): det husen, stationerna, lagren och eldarna omsluter, plus 2 rutor runt om; latrinen och slaktbänken räknas inte',
+  text: 'Byns område (steg 6.2.1–6.2.2): det husen, stationerna, lagren och eldarna omsluter, plus 2 rutor runt om; latrinen och slaktbänken räknas inte',
   kor: () => {
     const s = createState(9, START), f = SIM.eldPlats(s), o0 = SIM.omrade(s), k = SIM.OMRADE.kant;
     const inne = (o: SIM.Omrade, x: number, y: number) => o.inne[y * W + x] === 1;
@@ -904,7 +904,17 @@ SCENARIER.omrade = {
     let langtUte = 0;
     for (let y = 0; y < SIM.H; y += 3) for (let x = 0; x < W; x += 3) if (inne(o, x, y) && SIM.tillHolje(x, y, o.holje) > k + 0.5) langtUte++;
     const samma = SIM.omrade(s) === o;
+    // frågorna (steg 6.2.2)
+    let fel = 0, utFel = 0;
+    for (let y = 0; y < SIM.H; y += 2) for (let x = 0; x < W; x += 2) {
+      if (SIM.iByn(s, x, y) !== (SIM.utanforByn(s, x, y) === 0)) fel++;
+      const d = SIM.utanforByn(s, x, y), d2 = SIM.utanforByn(s, x + 1e-9, y);
+      if (Math.abs(d - d2) > 1e-3 && !SIM.iByn(s, x, y)) utFel++;
+    }
+    const fri = SIM.friRuta(s), fri3 = SIM.friRuta(s, 3, (x, y) => !SIM.iByn(s, x, y));
     return [
+      [`en ruta är innanför byn precis när den ligger 0 rutor utanför (${fel} fel), och en punkt mitt emellan räknas som rutan (${utFel} fel)`, fel === 0 && utFel === 0],
+      [`en fri ruta innanför byn finns (${fri ? `${fri.x},${fri.y}` : 'ingen'}), och en utanför ligger högst 3 rutor ut (${fri3 ? SIM.utanforByn(s, fri3.x, fri3.y).toFixed(1) : 'ingen'})`, !!fri && SIM.iByn(s, fri.x, fri.y) && SIM.ledig(s, fri.x, fri.y) && !!fri3 && SIM.utanforByn(s, fri3.x, fri3.y) > 0 && SIM.utanforByn(s, fri3.x, fri3.y) <= 3],
       [`elden och rutorna ${k} steg från den hör till byn från början (${o0.n} rutor)`, inne(o0, f.x, f.y) && inne(o0, f.x + k, f.y) && inne(o0, f.x, f.y - k)],
       [`lagerplatserna ligger innanför byn från början`, lagerInne],
       [`efter 4 dygn (4 år i spelet) ligger alla hus och stationer innanför (${hus.length} hus, ${husUte} utanför; ${st.length} stationer, ${stUte} utanför; ${o.n} rutor)`, husUte === 0 && stUte === 0],
