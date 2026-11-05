@@ -179,10 +179,11 @@
   }
 
   // ---------- version 1: skinnkartan, med bläck på ett spänt skinn ----------
-  function skinn(B) {
+  const skinn = B => skinnRitning(B, false);
+  function skinnRitning(B, papper) {
     const P = B.P, V = varld(), cx = W / 2, cy = H / 2;
     const BLACK = P.i('kol', 1), HAVL = P.i('skiffer', 1), EKO = P.i('skiffer', 2);
-    const inne = (x, y) => { const d = (Math.abs(x - cx) / (W / 2 - 3)) ** 3 + (Math.abs(y - cy) / (H / 2 - 3)) ** 3; return Math.cbrt(d) + (fbm(x / 9, y / 9, 77, 2) - 0.5) * 0.14; };
+    const inne = papper ? () => 0 : (x, y) => { const d = (Math.abs(x - cx) / (W / 2 - 3)) ** 3 + (Math.abs(y - cy) / (H / 2 - 3)) ** 3; return Math.cbrt(d) + (fbm(x / 9, y / 9, 77, 2) - 0.5) * 0.14; };
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const d = inne(x, y); if (d > 1) continue;
       const i = y * W + x, t = V.typ[i], g = hash(x, y, 3);
@@ -209,6 +210,7 @@
     glyf(B, ['.oo.', 'oaao', '.oao', '..o.'], { o: BLACK, a: P.i('barr', 2) }, sx + 23, sy - 3);
     for (const [x, y] of V.hav.slice(1)) glyf(B, SYM.skepp, { o: BLACK, a: P.i('ben', 3) }, x, y);
     platserna(B, V, { kontur: BLACK, by: P.i('rost', 1), egen: P.i('rost', 2), ljus: P.i('ben', 3), mork: P.i('jord', 1), sten: P.i('skiffer', 2), helig: P.i('senap', 1), talt: P.i('jord', 2), taltM: P.i('jord', 1), vag: P.i('jord', 1), sjovag: P.i('jord', 1), ring: P.i('rost', 1), namn: BLACK });
+    if (papper) for (const k of [0, 2]) for (let x = k; x < W - k; x++) for (let y = k; y < H - k; y++) if (x === k || y === k || x === W - 1 - k || y === H - 1 - k) B.satt(x, y, BLACK); // en dubbel bläckram
   }
 
   // ---------- version 2: färgkartan, i spelets färger med en flätad ram ----------
@@ -293,7 +295,83 @@
     for (const [x, y] of [[5, 5], [W - 5, 5], [5, H - 5], [W - 5, H - 5]]) glyf(B, ['.ooo.', 'oaoao', 'ooboo', 'oaoao', '.ooo.'], { o: P.i('kol', 0), a: P.i('senap', 2), b: P.i('senap', 3) }, x, y);
   }
 
-  return { varld, skinn, farg, tra };
+  // ---------- kartan på ett riktigt papper som två händer håller ----------
+  // stil 'black': skinnkartans bläck direkt på papperet; 'farg': den målade kartan; 'tryck': träkartan tryckt som ett träsnitt.
+  // s är skalan på händerna och kanterna. Papperet har vikningar, ett hundöra, gulnade kanter och en fläck.
+  function iHander(stil, s) {
+    const pm = Math.round(6 * s), sid = Math.round(30 * s), topp = Math.round(8 * s), botten = Math.round(40 * s);
+    const PW = W + 2 * pm, PH = H + 2 * pm, BW = PW + 2 * sid, BH = PH + topp + botten, x0 = sid, y0 = topp;
+    const rita = B => {
+      const P = B.P, pap = new Uint8Array(BW * BH), hud = [P.i('jord', 1), P.i('jord', 2), P.i('jord', 3), P.i('ben', 1)], KONTUR = P.i('kol', 0);
+      // marken långt nedanför: mörk skogsbotten
+      for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) { const g = hash(x, y, 61); B.satt(x, y, g < 0.05 ? P.i('jord', 0) : g < 0.13 ? P.i('kol', 1) : P.i('kol', 0)); }
+      // papperet: ojämna kanter, ett hundöra uppe till höger
+      const c = Math.round(11 * s), hundora = (x, y) => { const a = x0 + PW - 1 - x, b = y - y0; return a >= 0 && b >= 0 && a + b < c; };
+      const pa = (x, y) => x >= x0 && y >= y0 && x < x0 + PW && y < y0 + PH && !hundora(x, y) && !((x === x0 || y === y0 || x === x0 + PW - 1 || y === y0 + PH - 1) && hash(x, y, 62) < 0.25);
+      for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) if (pa(x, y)) { pap[y * BW + x] = 1; if (!pa(x + 2, y + 3)) B.satt(x + 2, y + 3, P.i('kol', 0)); } // skuggan på marken
+      for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) {
+        if (!pap[y * BW + x]) continue;
+        const g = hash(x, y, 63), k = Math.min(x - x0, y - y0, x0 + PW - 1 - x, y0 + PH - 1 - y);
+        let f = g < 0.05 ? P.i('ben', 3) : g > 0.97 ? P.i('ben', 1) : P.i('ben', 2);
+        if (k < 4 && bayer(x, y) < (4 - k) / 4 * 0.7) f = P.i('senap', 3); // gulnat längs kanten
+        B.satt(x, y, f);
+      }
+      // kartan
+      const M = Bild(W, H, P);
+      if (stil === 'black') skinnRitning(M, true); else if (stil === 'farg') farg(M); else tra(M);
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const v = M.get(x, y), X = x0 + pm + x, Y = y0 + pm + y; if (v < 0 || !pap[Y * BW + X]) continue;
+        if (stil === 'tryck') { // träsnittet: det som är upphöjt i brädan tar färgen, det urskurna blir papper; trycket är lite ojämnt
+          const r = v >> 2, t = v & 3;
+          if (r === 0 || (r === 1 && t === 0)) { if (hash(X, Y, 64) > 0.06) B.satt(X, Y, P.i('kol', 1)); }
+          else if (r === 1 && t === 1) B.satt(X, Y, P.i('ben', 1));
+        } else B.satt(X, Y, v);
+      }
+      // vikningarna: kartan har legat hopvikt i tre delar på bredden och två på höjden
+      const vx = [x0 + Math.round(PW / 3), x0 + Math.round(PW * 2 / 3)], vy = y0 + Math.round(PH / 2);
+      for (const cx of vx) for (let y = y0; y < y0 + PH; y++) if (pap[y * BW + cx]) { B.morka(cx, y); if (pap[y * BW + cx + 1] && B.get(cx + 1, y) === P.i('ben', 2)) B.satt(cx + 1, y, P.i('ben', 3)); }
+      for (let x = x0; x < x0 + PW; x++) if (pap[vy * BW + x]) { B.morka(x, vy); if (B.get(x, vy + 1) === P.i('ben', 2)) B.satt(x, vy + 1, P.i('ben', 3)); }
+      for (const cx of vx) for (let d = -2; d <= 2; d++) if (hash(cx, d, 65) < 0.6) B.satt(cx + d, vy + (d & 1), P.i('ben', 1)); // slitet där vikningarna korsas
+      // en fläck, en ring som efter en kopp
+      const fx = x0 + Math.round(PW * 0.82), fy = y0 + Math.round(PH * 0.8), fr = 7 * s;
+      for (let y = fy - fr - 2; y <= fy + fr + 2; y++) for (let x = fx - fr - 2; x <= fx + fr + 2; x++) { const d = Math.hypot(x - fx, y - fy); if (Math.abs(d - fr) < 0.8 && pap[y * BW + x] && hash(x, y, 66) < 0.8) B.morka(x, y); }
+      // hundörat: hörnet vikt framåt, papperets baksida syns
+      for (let y = y0; y < y0 + c + 1; y++) for (let x = x0 + PW - c - 1; x < x0 + PW; x++) {
+        const a = x0 + PW - 1 - x, b = y - y0; if (a > c || b > c || a + b < c) continue;
+        B.satt(x, y, a === c || b === c ? P.i('kol', 1) : a + b === c ? P.i('ben', 3) : P.i('ben', 1));
+        if (a + b === c && !pap[(y + 1) * BW + x - 1]) B.satt(x - 1, y + 1, P.i('kol', 0));
+      }
+      // händerna: tummen ligger på framsidan, handflatan och fingrarna bakom papperet, armarna går ner ur bilden
+      const gy = y0 + Math.round(PH * 0.56);
+      const kapsel = (ax, ay, bx, by, r) => (x, y) => { const dx = bx - ax, dy = by - ay, t = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy || 1))), qx = ax + dx * t, qy = ay + dy * t, l = Math.hypot(x - qx, y - qy); return [l - r, (x - qx) / (l || 1), (y - qy) / (l || 1)]; };
+      const del = (form, farger, bakom) => {
+        for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) {
+          const [d, nx, ny] = form(x + 0.5, y + 0.5); if (d >= 1) continue;
+          if (bakom && pap[y * BW + x]) continue;
+          if (d >= 0) { B.satt(x, y, KONTUR); continue; }
+          const ljus = -(nx * 0.6 + ny * 0.8);
+          B.satt(x, y, farger[d > -1.6 ? (ljus > 0.35 ? 3 : ljus < -0.35 ? 1 : 2) : d > -3 && ljus < -0.5 ? 1 : 2]);
+        }
+      };
+      const arm = [P.i('skiffer', 0), P.i('skiffer', 1), P.i('skiffer', 2), P.i('skiffer', 3)];
+      for (const dir of [-1, 1]) {
+        const ex = dir < 0 ? x0 : x0 + PW - 1, X = u => ex + dir * u * s, Y = v => gy + v * s;
+        del(kapsel(X(12), Y(14), X(26), Y(70), 7.5 * s), hud, true); // underarmen
+        del(kapsel(X(7), Y(-3), X(10), Y(10), 8 * s), hud, true); // handen bakom kanten
+        del(kapsel(X(10), Y(-5), X(3), Y(-15), 3.6 * s), hud, true); // pekfingret som går runt kanten
+        del(kapsel(X(12), Y(1), X(4), Y(-7), 3.4 * s), hud, true); // långfingret
+        del(kapsel(X(23), Y(34), X(36), Y(80), 10.5 * s), arm, true); // ärmen
+        const tumme = [kapsel(X(5), Y(4), X(-1), Y(1), 5.5 * s), kapsel(X(1), Y(0), X(-10), Y(-9), 4 * s)];
+        for (const f of tumme) for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) if (pap[y * BW + x] && f(x + 0.5, y + 0.5)[0] < 1 && tumme.every(g => g(x - 0.5, y - 1.5)[0] >= 1)) B.morka(x + 1, y + 2); // tummens skugga på papperet
+        for (const f of tumme) del(f, hud, false);
+        const nx = X(-10) - dir * 0.8 * s, ny = Y(-9) + 0.2 * s; // nageln
+        for (let y = Math.floor(ny - 2 * s); y <= ny + 2 * s; y++) for (let x = Math.floor(nx - 2 * s); x <= nx + 2 * s; x++) { const d = Math.hypot(x + 0.5 - nx, y + 0.5 - ny); if (d < 1.9 * s) B.satt(x, y, d < 0.8 * s ? P.i('ben', 3) : P.i('ben', 2)); }
+      }
+    };
+    return { w: BW, h: BH, rita };
+  }
+
+  return { varld, skinn, farg, tra, iHander };
   }
 
   const K1 = karta(240, 160, null);
@@ -307,6 +385,15 @@
     ],
   });
 
+  // kartorna på papper i händerna (Björn: "gör så alla kartor är riktiga papper och att man ser att händer håller i kartan")
+  const PAPPER_TEXT = ['Version 1: bläck på papper. Skinnkartans bläckteckning direkt på papperet, med en dubbel bläckram.', 'Version 2: den målade kartan. Färgkartan med sin flätade ram, målad på papperet.', 'Version 3: tryckt som ett träsnitt. Träkartan tryckt på papperet: det som är upphöjt i brädan blir svart, det urskurna blir papper, och trycket är lite ojämnt.'];
+  const PAPPER_VAD = ' Kartan är ett riktigt papper som två händer håller: tummarna ligger på framsidan och ärmarna går ner ur bilden. Papperet är vikt i tre delar på bredden och två på höjden, ett hörn har vikts till ett hundöra, kanterna har gulnat och det finns en ring efter en kopp.';
+  const papperKort = (id, namn, K, s, vad) => {
+    const v = ['black', 'farg', 'tryck'].map((st, k) => { const h = K.iHander(st, s); return { text: PAPPER_TEXT[k], w: h.w, h: h.h, kol: true, rita: h.rita }; });
+    VAL.push({ id, namn, typ: 'tre', stor: true, kol: true, vad, versioner: v });
+  };
+  papperKort('f11_varldskarta_papper', 'Världskartan på papper', K1, 1, 'Steg 11.1.9 (koncept, långt fram). Din kommentar: alla kartor ska vara riktiga papper, och man ska se att händer håller i kartan. Här är de första kartorna (kortet Världskartan) på papper; de gamla korten står kvar.' + PAPPER_VAD);
+
   // den större kartan: en stor ö i mitten med hav runt om, fler byar, läger och platser
   const OW = 384, OH = 256;
   const K2 = karta(OW, OH, { rx: 0.42, ry: 0.4, lyft: 0.27, fall: 0.58, berg: 0.72, floder: 8, antal: { by: 12, lager: 7, rovare: 3, ruin: 5, helig: 2, hog: 3, runsten: 3 } });
@@ -319,4 +406,5 @@
       { text: 'Version 3: ristad i trä. Ön upphöjd och havet urskuret i brädan, med inristade skepp och runbandet runt kanten.', w: OW, h: OH, kol: true, rita: K2.tra },
     ],
   });
+  papperKort('f11_varldskarta_o_papper', 'Världskartan, en stor ö, på papper', K2, 1.4, 'Steg 11.1.9 (koncept, långt fram). Din kommentar: alla kartor ska vara riktiga papper, och man ska se att händer håller i kartan. Här är den stora ön (kortet Världskartan, en stor ö) på papper; de gamla korten står kvar.' + PAPPER_VAD);
 })();
