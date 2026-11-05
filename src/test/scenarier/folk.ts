@@ -920,7 +920,7 @@ SCENARIER.blockera = {
 };
 
 SCENARIER.kryper = {
-  text: 'Den svårt skadade kryper (steg 3.7.19): den som inte kan gå (ett ben eller en fot skadad till HALSA.krypFel) reser sig inte i striden utan kryper mot vännerna eller bort mot sin sida, lika långsamt som i byn (ungefär en ruta på fem sekunder), och den som kravlar i byn med ett blödande sår lämnar ett släpspår',
+  text: 'Den svårt skadade kryper (steg 3.7.19): den som inte kan gå (ett ben eller en fot skadad till HALSA.krypFel) reser sig inte i striden utan kryper mot vännerna eller bort mot sin sida, lika långsamt som i byn (steg 6.2.7: 0,3 av gångfarten, ungefär en ruta på två sekunder), och den som kravlar i byn med ett blödande sår lämnar ett släpspår',
   kor: () => {
     const m = (id: number, sida: 0 | 1, vapen: SIM.Vapen, x: number, y: number) => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 10, smidighet: 10, skicklighet: 10 }, vapen, klader: [] as string[], fart: 1, x, y });
     let kropp = 0, flyttade = 0, reste = 0, slog = 0, forFort = 0, nara = 0;
@@ -953,7 +953,7 @@ SCENARIER.kryper = {
     s.blod = []; for (let i = 0; i < 20; i++) SIM.halsaSteg(s, p, 60);
     const spar = SIM.blodOf(s).filter(b => b.f === 'spar').length, droppar = SIM.blodOf(s).filter(b => b.f === 'droppar').length;
     return [
-      [`krypfarten är ${SIM.GANG.krypFart} av gångfarten (en ruta på ${(1 / (SIM.STRID.fart * SIM.GANG.krypFart)).toFixed(0)} s för en frisk vuxen i striden)`, SIM.GANG.krypFart >= 0.1 && SIM.GANG.krypFart <= 0.15],
+      [`krypfarten är ${SIM.GANG.krypFart} av gångfarten (en ruta på ${(1 / (SIM.STRID.fart * SIM.GANG.krypFart)).toFixed(0)} s för en frisk vuxen i striden)`, SIM.GANG.krypFart >= 0.25 && SIM.GANG.krypFart <= 0.35],
       [`den som har ett brutet ben och fälls kryper i ${kropp} av 100 strider, och ${flyttade} av dem kom någonstans (av sig själv med yxor: ${sjalv} gånger i 200 strider till döden)`, kropp >= 90 && flyttade >= kropp * 0.5],
       [`den som kryper reser sig aldrig (${reste}) och slår aldrig mer (${slog})`, reste === 0 && slog === 0],
       [`hen kryper aldrig fortare än krypfarten (${forFort} för fort) och stannar en bit från vännen (${nara} för nära)`, forFort === 0 && nara === 0],
@@ -963,7 +963,7 @@ SCENARIER.kryper = {
 };
 
 SCENARIER.gangfart = {
-  text: 'Gångfarten i ett register (steg 3.10.10): åldern, skadade ben och fötter, yrseln, att kravla, att bära någon, marken, saker på golvet och smidigheten är rader i GANGFART som multipliceras. Ingen rad ger ensam en mycket låg fart (krypandet ungefär 0,12, skadade ben aldrig under GANG.rorGolv), och personrutan visar det som drar ner farten just nu',
+  text: 'Gångfarten i ett register (steg 3.10.10): åldern, skadade ben och fötter, yrseln, att kravla, att bära någon, marken, saker på golvet och smidigheten är rader i GANGFART som multipliceras. Ingen går väldigt långsamt (steg 6.2.7): marken bromsar som mest till 0,75, barn och gamla går 0,75 av en vuxens fart, krypandet 0,3 och marken drar inte ner det, skadade ben aldrig under GANG.rorGolv, och personrutan visar det som drar ner farten just nu',
   kor: () => {
     const { GANG, GANGFART, kroppFart, kroppFaktor, gangDelar, markFaktor, smidig, speedAt, rorlighetSkador, kanGa, groundOf, tileOf, FOREST, isSoil, skada, SKADOR, ALDER } = SIM;
     const s = createState(3, START), vuxna = living(s).filter(q => ageOf(q, s.now) >= 18 && ageOf(q, s.now) <= ALDER.gangGammal);
@@ -978,6 +978,13 @@ SCENARIER.gangfart = {
     // den som kravlar: ett brutet ben
     const k = vuxna[3] ?? q; skada(s, k, 'benH', 'benbrott', 0.9, 'olycka', '');
     const kryper = !kanGa(k) && nara(kroppFaktor(k, s.now), GANG.krypFart);
+    // marken drar inte ner den som kravlar
+    const kg = groundOf(s);
+    let ks = -1;
+    for (let i = 0; i < kg.tiles.length && ks < 0; i++) if (isSoil(kg.tiles[i]) && kg.trees[i] >= FOREST) ks = i;
+    const kx = k.x, ky = k.y; k.x = (ks % SIM.W) + 0.5; k.y = Math.floor(ks / SIM.W) + 0.5;
+    const kSkog = gangDelar(s, k).fart; k.x = kx; k.y = ky;
+    const markLagst = Math.min(...GANG.fartMark.filter(v => v > 0), GANG.fartSkog, GANG.fartUng, GANG.fartHog);
     // ingen enskild rad är långsammare än att kravla
     const enskilda = [GANG.fartBarn / GANG.fart, GANG.fartGammal / GANG.fart, GANG.rorGolv, GANG.baraFart, ...GANG.fartMark.filter(v => v > 0), GANG.fartSkog, GANG.fartUng, GANG.fartHog, GANG.fartSaker];
     const lagst = Math.min(...enskilda);
@@ -997,6 +1004,8 @@ SCENARIER.gangfart = {
       [`svåra skador på båda benen och fötterna ger aldrig mindre än ${GANG.rorGolv} av farten (${kroppFaktor(r, s.now).toFixed(2)})`, skadad],
       [`den som inte kan gå kravlar med ${GANG.krypFart} av farten (${kroppFaktor(k, s.now).toFixed(3)})`, kryper && GANG.krypFart >= 0.1],
       [`ingen enskild rad går under krypandet (lägst ${lagst.toFixed(2)})`, lagst >= GANG.krypFart],
+      [`marken bromsar som mest till 0,75 (${markLagst}), barn och gamla går 0,75 av en vuxens fart (${(barn / frisk).toFixed(2)}, ${(gammal / frisk).toFixed(2)})`, markLagst >= 0.75 - 1e-9 && nara(barn / frisk, 0.75) && nara(gammal / frisk, 0.75)],
+      [`den som kravlar i skogen kravlar lika fort som på en stig (${kSkog.toFixed(2)} av farten)`, ks >= 0 && nara(kSkog, GANG.krypFart)],
       [`personrutan visar barnet i skogen: ${gd.delar.map(d => `${d.namn} ${Math.round(d.v * 100)} %`).join(', ')}, ${Math.round(gd.fart * 100)} % av farten`, skog >= 0 && visar && forklarar],
     ];
   },

@@ -1,4 +1,5 @@
 import { bynsAvstand, bynsMitt, iByn, omrade, utanforByn } from './omrade';
+import { GANG } from './gang';
 import { iVattnetNu, strandNu, vattenNu } from './sjo';
 import { freeTools, take } from './agande';
 import { PLATS } from './plats';
@@ -511,7 +512,12 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'fryserInne', niva: 4, prova: c => fryser(c) && bedTile(c.s, c.p) !== undefined && set(c.v, 'vila', 'Fryser och går in i huset') },
   { id: 'torstig', niva: 4, prova: ({ s, p, v, lazy }) => torstig(p, lazy) && dricka(s, p, v) },
   // den som inte kan gå kravlar hem, och den som har mycket ont eller ett infekterat sår vilar (steg 2.5.2)
-  { id: 'kravla', niva: 4, prova: ({ s, p, v }) => !kanGa(p) && !hemma(s, p) && set(v, 'vila', 'Är skadad och kravlar hem') },
+  // ... men bara korta sträckor: längre bort än GANG.kravlaMax rutor väntar hen där hen är på att bäras (steg 6.2.7)
+  { id: 'kravla', niva: 4, prova: ({ s, p, v }) => {
+    if (kanGa(p) || hemma(s, p)) return false;
+    if (utanforByn(s, Math.floor(p.x), Math.floor(p.y)) <= GANG.kravlaMax) return set(v, 'vila', 'Är skadad och kravlar hem');
+    set(v, 'vila', 'Kan inte gå och väntar på att bäras hem'); v.spot = { x: p.x, y: p.y }; return true;
+  } },
   { id: 'vilaSkadad', niva: 4, prova: ({ p, v }) => vilaHellre(p) && set(v, 'vila', 'Är skadad och vilar') },
   // extremt varm i solen: man söker skugga under ett träd eller i ett hus, så som den som fryser söker sig till elden (steg 2.3.13).
   // Den som bara är för varm arbetar som vanligt (steg 2.10.20)

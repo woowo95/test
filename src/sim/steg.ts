@@ -40,8 +40,8 @@ import { chance, clamp, hash3, rnd } from './slump';
 import { ARSTID, ageIndex, hourOf, iIstiden, isLight } from './tid';
 import { ACTS, toolRow } from './handlingar';
 import { AGES_BORJAR, Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, Historik, simulera } from './typer';
-import { FOREST, findPath, speedAt, wear } from './vag';
-import { kroppFart, markFaktor, smidig } from './gang';
+import { FOREST, findPath, wear } from './vag';
+import { kroppFart, rutFart, smidig } from './gang';
 import { arbetsTimme, chooseTask, dangers, nastaBuske, nastaRedskap, nastaRuta, spotFor } from './val';
 import { djurSteg } from './djur';
 import { vargSteg, vargjaktSteg } from './varg';
@@ -494,7 +494,7 @@ function walk(s: State, p: Person, tk: Task, left: number) {
   for (;;) {
     const sist = !tk.path?.length, i = sist ? 0 : tk.path![0];
     const wx = sist ? tk.tx : (i % W) + 0.5 + off, wy = sist ? tk.ty : Math.floor(i / W) + 0.5 - off;
-    const ci = tileOf(p.x, p.y), sp = markFaktor(speedAt(g, ci) || 1, sm);
+    const ci = tileOf(p.x, p.y), sp = rutFart(p, g, ci, sm);
     const dx = wx - p.x, dy = wy - p.y, d = Math.hypot(dx, dy), can = budget * sp;
     wear(g, ci, MARK.nott * STEG.markNot * Math.min(d, can));
     if (d > can) { p.x += dx / d * can; p.y += dy / d * can; return { used: left, framme: false }; } // tiden räckte inte hela vägen
