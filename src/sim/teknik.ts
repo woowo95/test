@@ -1,4 +1,5 @@
 import { allaBarn, upplev } from './uppvaxt';
+import { TROSKEL } from './forradsmal';
 import { delade, fyll, kronikaBer, personFalt } from './berattelser';
 import { kronika } from './historik';
 import { ALDER, ageOf, alive, byId, count, living, log, stat, think } from './folk';
@@ -160,8 +161,6 @@ export const TEKTAL = balans('teknik', {
   forsokMin: 90, // ... ett försök tar så här många minuter och tar en hel sak av materialet
   forsokChans: 0.3, // chansen att den skicklige prövar sig fram i stället för annat handarbete, för en medelmåttigt nyfiken i en by utan sed åt något håll ...
   forsokSed: 0.5, // ... gånger 1 + seden Förnyelse – Tradition (-1 till 1) gånger så här mycket, och gånger nyfikenheten / 10 (steg 4.2.1.2)
-  forsokMat: 1.1, // bara när maten räcker minst så här många dygn ...
-  forsokVed: 2, // ... och veden så här många (byn har ett överskott)
   // spridningen efter nivå (steg 4.2.3): i samtal lärs bara det upp till den här nivån ...
   larNiva: 2,
   bredvidAvst: 3, // ... nivå 3 lär man sig av den som arbetar med samma sak inom så här många rutor ...
@@ -248,7 +247,7 @@ const kanForsoka = (s: State, p: Person, t: Tek) => !!t.forsok && ageOf(p, s.now
   && p.skill[t.forsok.skill] >= TEKTAL.forsokSkill && (r => !r.length || r.some(k => amountOf(s, k) >= 1))(forbrukas(t)) && (!t.forsok.vid.length || !!stationForsok(s, t));
 // hur ofta (steg 4.2.1.2): sedvanan mot nya sätt (seden nyfikenhet, Förnyelse – Tradition) och personens nyfikenhet. Bara när
 // byn har ett överskott av mat och ved (matDygn, vedDygn); farorna avgörs i valet (val.ts), där de går före
-export const forsokChans = (s: State, p: Person, matDygn: number, vedDygn: number) => matDygn < TEKTAL.forsokMat || vedDygn < TEKTAL.forsokVed ? 0
+export const forsokChans = (s: State, p: Person, matDygn: number, vedDygn: number) => matDygn < TROSKEL.forsokMat || vedDygn < TROSKEL.forsokVed ? 0
   : TEKTAL.forsokChans * Math.max(0, 1 + (s.seder?.v.nyfikenhet ?? 0) * TEKTAL.forsokSed) * stat(p, 'nyfikenhet', s.now) / 10;
 // vad p kan pröva sig fram till nu, och var: den teknik hen kommit längst mot (så att försöken samlas på en sak)
 export function forsokVal(s: State, p: Person): { id: string; spot?: { x: number; y: number }; min: number } | undefined {

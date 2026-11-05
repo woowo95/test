@@ -22,20 +22,6 @@ export const EKONOMI = balans('ekonomi', {
   taktFardighet: 20,
   taktEgenskap: 40,
 });
-// Reserver: det som lämnas kvar i förrådet till elden, och tändmaterialet byn vill ha. Mängder i förrådets enheter
-export const RESERV = balans('reserv', {
-  // sparas till elden när något byggs eller tvinnas (bygg.ts, redskap.ts)
-  ved: 6, // trä
-  grenar: 15, // grenar
-  torrgras: 6, // hö
-  torrgrasKyla: 12, // hö som sparas till elden inför och under istiden och när det är kallt: en korg flätas först av det som är över (val.ts, redskap.ts)
-  // tändmaterial (eld.ts)
-  tandBrist: 12, // byn behöver samla tändmaterial när hö eller grenar är färre än så och elden är släckt
-  tandVill: 12, // så mycket hö och grenar samlas det till när elden brinner
-  tandVillSlocknad: 36, // ... och när elden är släckt
-});
-// det som lämnas kvar i förrådet till elden av slaget k när något byggs (bygg.ts, stationer.ts)
-export const sparas = (k: string) => k === 'ved' ? RESERV.ved : k === 'grenar' ? RESERV.grenar : k === 'torrgras' ? RESERV.torrgras : 0;
 // enheter per arbetstimme. Grundtakten, årstiden och egenskapen som hjälper står i handlingar.ts; att fälla och hugga
 // är vedarbete och räknas som ved
 // arbetsförmågan: ålder (barn och gamla orkar mindre) gånger sjukdom. workRate multiplicerar de två delarna var för sig

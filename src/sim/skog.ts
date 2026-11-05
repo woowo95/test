@@ -20,7 +20,6 @@ export const SKOG = balans('skog', {
   stamVed: 8, // ett vuxet träd ger så här mycket trä ...
   stamGrenar: 5, // ... och så här många grenar
   virkeVed: 2, // ett virke (steg 4.5.5.2) tar så här mycket av stammens trä
-  virkeVill: 4, // byn klyver virke tills förrådet har så här många, eller så många som det dyraste den vill bygga
   fallTim: 0.1, // så många timmar tar det att fälla ett träd, delat med SNABBARE: fyra minuter (steg 2.3.8; 48 minuter förut)
   fallMin: 0.5, // ett litet träd fälls fortare, men aldrig på mindre än så här stor del av tiden
   stubbeDygn: 8, // en stubbe ruttnar bort efter så här många dygn (år i spelet)

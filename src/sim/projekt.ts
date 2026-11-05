@@ -2,12 +2,12 @@ import { Act, Person, State } from './typer';
 import { familjOf, living, stat } from './folk';
 import { clamp } from './slump';
 import { amountOf } from './lager';
-import { materialBuffert, vantarPa } from './forradsmal';
+import { TROSKEL, materialBuffert, vantarPa } from './forradsmal';
 import { SAKER } from './saker';
 import { PLAGG, PLAGG_LIST } from './klader';
 import { ARBETE, grundvarde, varuVarde } from './varde';
 import { balans } from './balans';
-import { GORS, REDSKAP, harAv, makeTask, saknatTill, villAv, wantsRope, wantsTool } from './redskap';
+import { GORS, harAv, makeTask, saknatTill, villAv, wantsRope, wantsTool } from './redskap';
 import { STATIONER, STATION_LIST, StationDef, StationSlag, TILLBEHOR, TILLBEHOR_LIST, TillbehorDef, TillbehorSlag, bordBrist, forvarBrist, pyntBrist, harStation, kanBygga, kanGoraTillbehor, saknatStation, saknatTillbehor, stationSpot, tillbehorSpot, tillbehorStationer, utanTillbehor } from './stationer';
 import { utanBadd } from './byggnader';
 import { latrinBrist } from './smuts';
@@ -132,7 +132,7 @@ export const PROJEKT: Record<string, ProjektDef> = {
   ...Object.fromEntries(DORR_LIST.map(k => [k, dorr(k)])),
   rep: {
     namn: SAKER.rep!.namn, vikt: PROJEKT_TAL.rep,
-    brist: s => clamp(1 - amountOf(s, 'rep') / REDSKAP.repVill, 0, 1),
+    brist: s => clamp(1 - amountOf(s, 'rep') / TROSKEL.repVill, 0, 1),
     kostnad: () => grundvarde('rep'),
     kan: (s, p) => wantsRope(s, p),
     uppgift: () => ({ act: 'tvinna', text: 'Tvinnar rep av hö.' }),
@@ -164,14 +164,14 @@ export const PROJEKT: Record<string, ProjektDef> = {
 };
 export const PROJEKT_LIST = Object.keys(PROJEKT);
 // hur mycket virke byn vill ha: så mycket som den dyraste station, möbel eller dörr av virke som byn saknar och någon kan
-// bygga, och minst SKOG.virkeVill när det finns något sådant (steg 4.5.5.2)
+// bygga, och minst TROSKEL.virkeVill när det finns något sådant (steg 4.5.5.2)
 vantarPa('virke', virkeBehov); // bufferten för virke räknar in det projekten väntar på (forradsmal.ts, steg 6.2.14)
 export function virkeBehov(s: State) {
   let n = 0;
   const pr = (k: string, av: Record<string, number>, tek: string[]) => { const v = av.virke ?? 0; if (v > n && living(s).some(p => tek.some(t => knows(p, t))) && PROJEKT[k].brist(s) > 0) n = v; };
   for (const k of STATION_LIST) pr(k, STATIONER[k].av, STATIONER[k].tek);
   for (const k of DORR_LIST) pr(k, DORRAR[k].av ?? {}, DORRAR[k].tek);
-  return n > 0 ? Math.max(n, SKOG.virkeVill) : 0;
+  return n > 0 ? Math.max(n, TROSKEL.virkeVill) : 0;
 }
 
 // värdet av projektet just nu: vikten gånger bristen, delat med kostnaden

@@ -1,7 +1,7 @@
 import { allaBarn } from './uppvaxt';
 import { kronikaBer, personFalt } from './berattelser';
 import { addTo, amountOf, avbryt, fetchSpot, takeLimit, use } from './lager';
-import { Materialslag, forbrukat, overTak, underBuffert } from './forradsmal';
+import { Materialslag, TROSKEL, forbrukat, overTak, underBuffert } from './forradsmal';
 import { Behov, getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
 import { coldOf, hardVinter, temperature, vaderNu, VADER } from './vader';
@@ -15,7 +15,7 @@ import { eldPlats } from './karta';
 import { tileOf } from './mark';
 import { moodOf } from './humor';
 import { duty } from './seder';
-import { RESERV, kunnighet } from './ekonomi';
+import { kunnighet } from './ekonomi';
 import { chance, clamp, rnd } from './slump';
 import { ARSTID, ageIndex, iIstiden, isLight } from './tid';
 import { SNABBARE } from './handlingar';
@@ -28,7 +28,7 @@ import { iVattnetNu } from './sjo';
 // ---------- balanstal (regel 8) ----------
 // Elden: hur stark den är, vad var och en vill ha på den, hur den tänds och fylls på, och hur tändmaterial, stenar och flinta
 // samlas. Mängder är i förrådets enheter (ved), tider i timmar och dygn (år i spelet). Hur mycket hö och grenar byn vill ha
-// i förrådet står i RESERV (ekonomi.ts), eldstädernas bränsle och tänddonens chans i HEARTHS och IGNITERS (typer.ts)
+// i förrådet står i TROSKEL (forradsmal.ts), eldstädernas bränsle och tänddonens chans i HEARTHS och IGNITERS (typer.ts)
 export const ELD = balans('eld', {
   // styrkan och värmen
   styrkaFaktor: 1.4, styrkaMin: 0.15, // styrkan är bränslet delat med eldstadens max gånger Faktor, minst Min (1 = full eld)
@@ -161,7 +161,7 @@ export function canLight(s: State, p?: Person, f = s.fire) {
   return (!!f.ring || has('sten') >= ELD.ring) && has('torrgras') >= ig.grass && (pinnar || has('kol') >= 1) && (p ? fuelFor(s, p) : fuelStock(s)) - (pinnar ? ig.sticks * GREN : 0) >= ELD.tandVedMin;
 }
 export function needTinder(s: State) {
-  return !s.fire.lit && !emberOn(s) && (amountOf(s, 'flinta') < 1 || needStones(s) || amountOf(s, 'torrgras') < RESERV.tandBrist || amountOf(s, 'grenar') < RESERV.tandBrist);
+  return !s.fire.lit && !emberOn(s) && (amountOf(s, 'flinta') < 1 || needStones(s) || amountOf(s, 'torrgras') < TROSKEL.tandBrist || amountOf(s, 'grenar') < TROSKEL.tandBrist);
 }
 function durText(sec: number) { const h = sec / HOUR_S; return h >= 24 ? `${num(h / 24)} dygn` : h >= 1 ? `${Math.round(h)} timmar` : `${Math.round(sec / 60)} minuter`; }
 function lightFire(s: State, p: Person, f: Fire) {

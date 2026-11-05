@@ -12,8 +12,6 @@
 import { balans } from './balans';
 import { bitsOf, MATERIAL } from './byggnad';
 import { needOf } from './bygg';
-import { RESERV } from './ekonomi';
-import { FANGST } from './fynd';
 import { allows, amountOf, rymd, zonesOf } from './lager';
 import { Pabud, pabud } from './styre';
 import { HOUR, State } from './typer';
@@ -30,6 +28,32 @@ export const FORRAD = balans('forrad', {
   materialDygn: 2, // bufferten av ett material räcker så här många dygn med den förbrukningen ...
   materialMatt: 3, // ... och taket är så här många gånger bufferten
 });
+
+// Trösklarna (steg 6.2.16): alla minsta tal för vad byn sparar eller vill ha, och gränserna för när byn prövar sig fram och
+// bygger. Mängder i förrådets enheter
+export const TROSKEL = balans('troskel', {
+  // sparas till elden när något byggs eller tvinnas (bygg.ts, redskap.ts, sparas)
+  ved: 6, // trä
+  grenar: 15, // grenar
+  torrgras: 6, // hö
+  torrgrasKyla: 12, // hö som sparas till elden inför och under istiden och när det är kallt: en korg flätas först av det som är över (val.ts, redskap.ts)
+  // tändmaterial (eld.ts)
+  tandBrist: 12, // byn behöver samla tändmaterial när hö eller grenar är färre än så och elden är släckt
+  tandVill: 12, // så mycket hö och grenar samlas det till när elden brinner
+  tandVillSlocknad: 36, // ... och när elden är släckt
+  // flintan (fynd.ts, redskap.ts)
+  flintaMinsta: 1, flintaBehov: 2, // byn vill ha minst en flinta, och så här många flintor och yxor tillsammans
+  flintaSparas: 1, // flintor som sparas att tända eld med: ett redskap av flinta görs bara av det som är över (receptet plus detta)
+  repVill: 4, // så många rep byn vill ha (tvinnat eller från senor, redskap.ts)
+  virkeVill: 4, // byn klyver virke tills förrådet har så här många, eller så många som det dyraste den vill bygga (projekt.ts)
+  kolEld: 0.6, // kol hämtas ur den släckta elden när elden vill ha mindre än så här (val.ts)
+  // gränserna för försök och bygge
+  forsokMat: 1.1, // byn prövar sig fram bara när maten räcker minst så här många dygn ...
+  forsokVed: 2, // ... och veden så här många (byn har ett överskott, teknik.ts)
+  byggMatFran: 0.25, byggMatSpann: 0.9, byggMatMin: 0.1, // maten dämpar bygget: (matdygn - Fran) / Spann, aldrig under Min (val.ts)
+});
+// det som lämnas kvar i förrådet till elden av slaget k när något byggs (bygg.ts, stationer.ts)
+export const sparas = (k: string) => k === 'ved' ? TROSKEL.ved : k === 'grenar' ? TROSKEL.grenar : k === 'torrgras' ? TROSKEL.torrgras : 0;
 
 export interface Forradsmal {
   dygn: number; // förrådets dygn räknas mot så här många (gånger försiktigheten) ...
@@ -70,12 +94,12 @@ const projektVantar: Record<string, (s: State) => number> = {};
 export const vantarPa = (k: Materialslag, f: (s: State) => number) => { projektVantar[k] = f; };
 // det bygget saknar av slaget k: väggar och golv som inte är klara eller ska lagas
 const byggVantar = (k: string) => (s: State) => { let n = 0; for (const b of bitsOf(s)) if (MATERIAL[b.m].item === k) n += needOf(b); return n; };
-const tand = (s: State) => s.fire.lit ? RESERV.tandVill : RESERV.tandVillSlocknad; // tändmaterialet invånarna vill ha
+const tand = (s: State) => s.fire.lit ? TROSKEL.tandVill : TROSKEL.tandVillSlocknad; // tändmaterialet invånarna vill ha
 export const MATERIALMAL = {
   grenar: { min: tand, vantar: byggVantar('grenar') },
   torrgras: { min: tand, vantar: byggVantar('torrgras') },
   sten: { min: () => 0 },
-  flinta: { min: () => FANGST.flintaMinsta },
+  flinta: { min: () => TROSKEL.flintaMinsta },
   virke: { min: () => 0, vantar: s => projektVantar.virke?.(s) ?? 0 }, // projekt.ts säger vad projekten väntar på (virkeBehov)
 } as const satisfies Record<string, Materialmal>;
 export type Materialslag = keyof typeof MATERIALMAL;

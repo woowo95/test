@@ -754,14 +754,14 @@ SCENARIER.handelsvaror = {
     t.handlarKopt = { rep: 3, yxa: 9 };
     const yxMal = SIM.handlarMal(t, 'yxa'), yxBar = Math.floor(SIM.HANDLAR_UTR.ryggsack.vikt * (1 - SIM.HANDEL.fylla) / viktOf('yxa'));
     const rep = val();
-    SIM.twineRope(t, q, 20, SIM.REDSKAP.repVill + SIM.handlarMal(t, 'rep'));
+    SIM.twineRope(t, q, 20, SIM.TROSKEL.repVill + SIM.handlarMal(t, 'rep'));
     const repN = amountOf(t, 'rep'), yxa = val();
     return [
       [`handlaren minns vad hen köpt på besöket (${kopt} rep), och byn minns det när hen gått hem (${minns} rep)`, kopt === 2 && minns >= 2],
       [`utan något handlarna köpt görs inga varor till dem (${utan?.act ?? 'inget'})`, !utan],
       [`yxorna görs högst så många som ryggsäcken rymmer (${yxMal} av 9, plats för ${yxBar})`, yxMal === Math.min(9, yxBar) && yxMal < 9],
       [`den som kan tvinna rep gör det åt handlaren (${rep?.act}, ${rep?.why})`, rep?.act === 'tvinna' && !!rep.handel],
-      [`repet tvinnas inte över det byn vill ha plus det handlaren köper (${repN.toFixed(0)} av ${SIM.REDSKAP.repVill} + 3)`, Math.round(repN) === SIM.REDSKAP.repVill + 3],
+      [`repet tvinnas inte över det byn vill ha plus det handlaren köper (${repN.toFixed(0)} av ${SIM.TROSKEL.repVill} + 3)`, Math.round(repN) === SIM.TROSKEL.repVill + 3],
       [`när repen räcker gör man en yxa att byta med (${yxa?.act}, ${yxa?.tool})`, yxa?.act === 'yxa' && yxa.tool === 'yxa' && !!yxa.handel],
     ];
   },

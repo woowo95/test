@@ -6,7 +6,7 @@ import { PLATS } from './plats';
 import { vargSkydd, vargjaktVal } from './varg';
 import { tornadoSkydd } from './tornado';
 import { brandVal } from './brand';
-import { RESERV, foodDays, foodDaysAll } from './ekonomi';
+import { foodDays, foodDaysAll } from './ekonomi';
 import { ACTS, WORK, usesTool } from './handlingar';
 import { canLight, eldarOf, emberOn, fuelStock, vidEld, needStones, needTinder, woodDays } from './eld';
 import { ALDER, KROPP, REL, ageOf, count, doingAct, isSick, living, relKey, stat } from './folk';
@@ -19,8 +19,8 @@ import { coldOf, nederbord, snoPaMarken, temperature, vaderNu } from './vader';
 // barnen leker i snön när den ligger, som de vuxna har snöbollskrig (steg 4.3.1.3, sport.ts)
 const lekText = (s: State) => snoPaMarken(s) > 0 ? 'Är barn och leker i snön' : 'Är barn och leker';
 import { varselSamla } from './motgang';
-import { FORRAD, FORRADSMAL, buffert, lyxtak, materialTimme, onskatDygn, overTak, underBuffert } from './forradsmal';
-import { DJUR, DJURARTER, Djurart, GORS, REDSKAP, canProcess, djurKvar, freeOfKinds, handelTask, harAv, makeTask, toolGroups, underhallGrupp, villAv, wantsTool } from './redskap';
+import { FORRAD, FORRADSMAL, TROSKEL, buffert, lyxtak, materialTimme, onskatDygn, overTak, underBuffert } from './forradsmal';
+import { DJUR, DJURARTER, Djurart, GORS, canProcess, djurKvar, freeOfKinds, handelTask, harAv, makeTask, toolGroups, underhallGrupp, villAv, wantsTool } from './redskap';
 import { HAMTA, PROJEKT, Uppgift, bastaProjekt } from './projekt';
 import { faltNu, vildFronPlats } from './odling';
 import { MINNE, areaOf, flintArea, pickSpot, prospectFor } from './minne';
@@ -55,7 +55,7 @@ import { PAB, pabud, skams } from './styre';
 
 // ---------- val av aktivitet ----------
 // Balanstalen (regel 8): vikter, chanser, avstånd och hur länge ett pass varar. Kroppens gränser (KROPP) och åldrarna (ALDER)
-// står i folk.ts, halv dags gång (PLATS) i plats.ts, reserverna (RESERV) i ekonomi.ts och tidsålderns faktorer (ARSTID) i tid.ts.
+// står i folk.ts, halv dags gång (PLATS) i plats.ts, reserverna och trösklarna (TROSKEL) i forradsmal.ts och tidsålderns faktorer (ARSTID) i tid.ts.
 // Längder är i minuter om inget annat sägs; ett val varar minst X och upp till X + Spann
 export const VAL = balans('val', {
   // alla pass
@@ -84,7 +84,6 @@ export const VAL = balans('val', {
   extraMin: 5, // slakt och rensning varar 5 minuter över vad det tar (och högst maxTim i DJUR, redskap.ts)
   byggLaga: 1.2, byggHalvt: 3, byggNytt: 0.8, // hur mycket bygget väger: en vägg som lagas, ett hus som är påbörjat, ett nytt
   byggUtan: 3, // ... plus så mycket gånger andelen som saknar sovplats under tak
-  byggMatFran: 0.25, byggMatSpann: 0.9, byggMatMin: 0.1, // maten dämpar bygget: (matdygn - Fran) / Spann, aldrig under Min
   letaChans: 0.3, // chansen att någon letar flinta när byn eller ett projekt saknar den (steg 6.1.17)
   fronChans: 0.4, // (0,2 före steg 2.12.2) chansen att den som samlar går till de vilda grödorna och plockar frön, när byn vill ha fler (steg 2.10.11)
   stenarChans: 0.5, // chansen att den som samlar letar flinta eller stenar vid stenarna när byn saknar det (och ett helt pass)
@@ -99,7 +98,7 @@ export const VAL = balans('val', {
   // stänger. Med den chansen går tillfället före grundbehoven; annars tas det efter dem
   tillfalleMin: 0.5,
   akut: 3, // arbetet är helt akut när det mest behövda väger så här mycket
-  kolEld: 0.6, kolChans: 0.2, kolMin: 10, // kol hämtas ur den släckta elden när elden vill ha mindre än så här, med denna chans, i så många minuter
+  kolChans: 0.2, kolMin: 10, // kol hämtas ur den släckta elden när elden vill ha mindre än så här, med denna chans, i så många minuter
   lekBas: 0.45, lekSed: 0.2, // en yngre än vuxen leker med denna chans (plus seden Barn gånger Sed)
   flitigBas: 0.88, flitigAkut: 0.12, // chansen att arbeta för den flitige: Bas + Akut gånger hur akut arbetet är
   latBas: 0.6, latAkut: 0.4, // ... och för den lata (gånger hur väl de egna behoven är fyllda)
@@ -388,7 +387,7 @@ function strandSpot(s: State, p: Person) {
 export function dangers(s: State) {
   const ppl = living(s), freezing = ppl.filter(q => q.warm < KROPP.kallt).length / (ppl.length || 1), ai = ageIndex(s);
   const cold = coldOf(temperature(s)) > 0 || freezing > VAL.fryserAndel;
-  return { kyla: cold && !s.fire.lit && !emberOn(s), svalt: foodDays(s) < VAL.svaltDygn, gras: kallTid(ai) || cold ? RESERV.torrgrasKyla : 0 };
+  return { kyla: cold && !s.fire.lit && !emberOn(s), svalt: foodDays(s) < VAL.svaltDygn, gras: kallTid(ai) || cold ? TROSKEL.torrgrasKyla : 0 };
 }
 type Faror = ReturnType<typeof dangers>;
 // elden är släckt och kan inte tändas för att det saknas tändmaterial, och för få hämtar det
@@ -652,7 +651,7 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number, fara: Faror) 
     const utan = homeless(s) / (ppl.length || 1);
     const halvt = !job.repair && !s.hus?.find(h => h.id === job.bit.hus)?.klar; // ett påbörjat hus vill man göra klart, även när det sista är ett hörn
     // hungern är en fara och går före: räcker maten mindre än byggMatFran + byggMatSpann dygn (1,15) väger bygget mindre
-    const col = ((job.repair ? VAL.byggLaga : halvt ? VAL.byggHalvt : VAL.byggNytt) + VAL.byggUtan * utan) * (kallTid(ai) ? ARSTID.byggKall : 1) * clamp((fd - VAL.byggMatFran) / VAL.byggMatSpann, VAL.byggMatMin, 1);
+    const col = ((job.repair ? VAL.byggLaga : halvt ? VAL.byggHalvt : VAL.byggNytt) + VAL.byggUtan * utan) * (kallTid(ai) ? ARSTID.byggKall : 1) * clamp((fd - TROSKEL.byggMatFran) / TROSKEL.byggMatSpann, TROSKEL.byggMatMin, 1);
     const sc = poang(s, p, col * fullVikt(s, p, 'bygga'), lust(s, p, 'hantverk', 'flit', ['bygga'], tot)); // bygget som har sina arbetare väger en tredjedel (steg 6.1.13)
     burg = Math.max(burg, col);
     // påbudet Bygg före allt flyttar bygget en nivå upp, före Försörjningen: med chansen påbudet (steg 6.1.19). Hungern går ändå före
@@ -685,7 +684,7 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number, fara: Faror) 
   let works = false, fb: ReturnType<typeof forbattra>, fy: ReturnType<typeof fylla>;
   const utanBehov = !build && !forsorj && !hamta && !leta && !fara.kyla && !fara.svalt; // inget under Försörjning, Tak eller projekten
   // kolet i en utbrunnen lägereld (den första först, steg 4.5.6.8)
-  const kolEld = a >= ALDER.ansvar ? eldarOf(s).find(e => (e.ash ?? 0) >= 1 && !e.lit && !emberOn(s, e) && (e.want ?? 0) < VAL.kolEld) : undefined;
+  const kolEld = a >= ALDER.ansvar ? eldarOf(s).find(e => (e.ash ?? 0) >= 1 && !e.lit && !emberOn(s, e) && (e.want ?? 0) < TROSKEL.kolEld) : undefined;
   if (kolEld && rnd(s, 'val', p) < VAL.kolChans * fullVikt(s, p, 'kol')) {
     set(v, 'kol', 'Det ligger kol kvar i den slocknade elden');
     v.dur = VAL.kolMin * MIN;
@@ -760,7 +759,7 @@ export function handlarVara(s: State, p: Person, v: Val) {
     const mal = handlarMal(s, k);
     if (!mal) continue;
     if (k === 'rep') {
-      if (!knows(p, 'rep') || amountOf(s, 'rep') >= REDSKAP.repVill + mal || getable(s, p, 'torrgras') < SAKER.rep!.skaffa!.av!.torrgras! + RESERV.torrgras || doingAct(s, 'tvinna', p)) continue;
+      if (!knows(p, 'rep') || amountOf(s, 'rep') >= TROSKEL.repVill + mal || getable(s, p, 'torrgras') < SAKER.rep!.skaffa!.av!.torrgras! + TROSKEL.torrgras || doingAct(s, 'tvinna', p)) continue;
       set(v, 'tvinna', 'Byn har det den behöver. Tvinnar rep att byta med handlaren.');
       v.handel = true;
       return true;
@@ -846,7 +845,7 @@ function building(s: State, p: Person, v: Val, job: NonNullable<ReturnType<typeo
 }
 
 // Flinta och stenar till elden letas när byn saknar dem och maten räcker: hungern är en fara och elden ett verktyg (steg 2.12.3)
-// flintan under sin buffert i FORRADSMAL (minst FANGST.flintaMinsta), stenarna under sin eller till eldringen (steg 6.2.14)
+// flintan under sin buffert i FORRADSMAL (minst TROSKEL.flintaMinsta), stenarna under sin eller till eldringen (steg 6.2.14)
 const flintaTillElden = (s: State, fara: Faror) => !fara.svalt && (underBuffert(s, 'flinta') || needStones(s) || underBuffert(s, 'sten'));
 // arbetet med redskap: flinta letas vid stenarna, yxan fäller träd, korgen och spjutet görs först om de saknas.
 // fara: farorna från day(), leta: letar vid stenarna hela passet, matLeta: ett projekt saknar flinta (steg 6.1.17)

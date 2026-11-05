@@ -8,6 +8,7 @@ import { chance, clamp, clampI, pickNarmaste, rnd } from './slump';
 import { kn, learnK, useK } from './kunskap';
 import { ageIndex } from './tid';
 import { kunnighet } from './ekonomi';
+import { TROSKEL } from './forradsmal';
 import { LAGER, addTo, amountOf, foodOf } from './lager';
 import { nTools } from './agande';
 import { DAY, H, HOUR, HOUR_S, OX, OY, Person, State, T, W, egen, inMap, mapKey, tvaDelar, visning } from './typer';
@@ -44,7 +45,6 @@ export const FANGST = balans('fangst', {
   hallSkill: 40, hallUthall: 100, // fisken sitter kvar: redskapets hall plus färdigheten delad med Skill plus uthålligheten delad med Uthall ...
   hallSmid: 0.05, // ... plus så här mycket gånger (smidigheten − 10) / 10 (steg 3.7.6)
   // flinta
-  flintaMinsta: 1, flintaBehov: 2, // byn vill ha minst en flinta, och så här många flintor och yxor tillsammans
   flintaAvstand: 30, // en flintplats ligger närmare lägret än så här ...
   flintaRik: 1, // ... och har mer än så här stor chans att hitta flinta (flintFactor)
   flintaUrval: 8, // den väljs bland så här många av de närmaste
@@ -526,7 +526,7 @@ export const flintFactor = (s: State, x: number, y: number) => richness(s, 'flin
 // flintorna och yxorna i byn. Yxorna räknas i styck, som i skog.ts (axes): en sliten yxa är fortfarande en yxa
 export const flintorOchYxor = (s: State) => amountOf(s, 'flinta') + nTools(s, 'yxa');
 // byn behöver flinta att tända eld med och till en yxa
-export const wantsFlint = (s: State) => amountOf(s, 'flinta') < FANGST.flintaMinsta || flintorOchYxor(s) < FANGST.flintaBehov;
+export const wantsFlint = (s: State) => amountOf(s, 'flinta') < TROSKEL.flintaMinsta || flintorOchYxor(s) < TROSKEL.flintaBehov;
 // en plats att samla på nära stenarna, där flinta är vanlig. I lägret och där flintan redan plockats finns ingen.
 // q väljer med sin egen slumpföljd
 export function flintSpot(s: State, q: Person, area?: (x: number, y: number) => boolean): { x: number; y: number } | undefined {

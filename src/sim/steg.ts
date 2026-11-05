@@ -70,7 +70,7 @@ import { bordPlats, fullBorda, kladVarme, ryms, stepKlader } from './utrustning'
 import { stepPynt } from './pynt';
 import { stadaByten } from './byte';
 import { finishStation, finishTillbehor, stationAt, stationRutor, stepStationer, tillbehorVarme, workStation } from './stationer';
-import { forbrukTimme } from './forradsmal';
+import { TROSKEL, forbrukTimme } from './forradsmal';
 import { notis } from './notiser';
 
 // Simuleringen går i slag om fem minuter (BEAT), i spelet och vid ikappräkning likadant. Inom ett slag går tiden åt
@@ -145,7 +145,7 @@ const MEDAN: Partial<Record<Act, Krok>> = {
   toa: (s, p, t) => { p.toa = 1; if (t.prog === undefined) { t.prog = 0; toaBesok(s, p, t.ref); } }, // i latrinen, annars blir det en fläck (smuts.ts)
   kol: (s, p, t) => { const e = eldById(s, t.ref); if (e) takeCoal(s, p, 'hämtade', e); },
   bygga: (s, p, t, dtSec) => buildStep(s, p, t, dtSec),
-  tvinna: (s, p, t, dtSec) => twineRope(s, p, dtSec / HOUR_S, t.handel ? REDSKAP.repVill + handlarMal(s, 'rep') : undefined), // rep till handlaren (steg 6.2.11)
+  tvinna: (s, p, t, dtSec) => twineRope(s, p, dtSec / HOUR_S, t.handel ? TROSKEL.repVill + handlarMal(s, 'rep') : undefined), // rep till handlaren (steg 6.2.11)
   hantverk: (s, p, t, dtSec) => { if (t.tool === 'rep') twineRope(s, p, dtSec / HOUR_S); }, // äldre sparfiler: rep tvinnades i handarbetet
   tanda: (s, p, t, dtSec) => {
     const f = eldById(s, t.ref); // lägerelden eller en lägereld till (task.ref, brasor.ts)

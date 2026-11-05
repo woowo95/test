@@ -5,7 +5,7 @@ import { eldPlats, getMap } from './karta';
 import { knows } from './teknik';
 import { ALDER, ageOf, alive, byId, count, doingAct, familjOf, forstaGang, gjort, living, log } from './folk';
 import { getable, saknatAv, takeMaterial } from './behov';
-import { sparas } from './ekonomi';
+import { sparas } from './forradsmal';
 import { Ting, freeTools, tingOf, wearTool } from './agande';
 import { BYN } from './egendom';
 import { Zone, inZone, pilesInne, stallBorta, usable, zoneAt, zonesOf } from './lager';
