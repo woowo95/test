@@ -16,7 +16,7 @@ import { redskapIHanden, tidyTools } from './agande';
 import { kvEffekt } from './kvalitet';
 import { SKOG, chopStock, fellTree, rotStumps, stocks } from './skog';
 import { needLadder, noticeTheft, stole } from './behov';
-import { avbryt, capacity, dropSpot, fetchSpot, helaIBordan, homeKind, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore } from './lager';
+import { avbryt, capacity, carryKind, dropSpot, fetchSpot, helaIBordan, helt, homeKind, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore } from './lager';
 import { DJURARTER, REDSKAP, bearbeta, djurKvar, twineRope, wearUsed } from './redskap';
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
 import { arbetaBredvid, forsokKlar, forsokSteg, stepLarlingar, thinkWhileWorking } from './teknik';
@@ -82,6 +82,7 @@ const STEG = balans('steg', {
   markNot: 0.03, // hur mycket ett steg nöter marken (MARK.nott per ruta)
   vandraNot: 0.08, // ... och när man rör sig på platsen (gånger vandra.v i handlingens rad och tiden)
   borda: 1 / 3, // man bär aldrig mer än så stor del av vad man orkar från arbetet
+  rundaRutor: 40, // så många rutor högst i en bit av rundan där man går förbi rutorna där inget är klart (rundaSteg, steg 6.1.3)
   // graviditet
   dragtid: 0.75, // dygn som en graviditet varar
   mellanFodslar: 1.6, // dygn som en kvinna väntar efter en födsel innan hon kan bli gravid igen
@@ -712,7 +713,22 @@ function rutVarde(s: State, tk: Task): (x: number, y: number) => number {
   const tr = groundOf(s).trees;
   return (x, y) => tr[y * W + x] >= FOREST ? Math.min(1, tr[y * W + x]) : 0;
 }
+// rundan i en bit av steget. Där varje stopp ger en hel sak (r.hel, steg 6.1.3) går man förbi rutorna där inget är klart,
+// och då går flera rutor i samma bit, så att tiden i steget räcker (taskStep räknar bitarna)
 function rundaSteg(s: State, p: Person, tk: Task, left: number, a: number, learn: number) {
+  if (!ACTS[tk.act].runda!.hel) return rundaRuta(s, p, tk, left, a, learn);
+  const t0 = s.now;
+  let used = 0;
+  for (let k = 0; k < STEG.rundaRutor && left - used > 1e-6; k++) {
+    s.now = t0 + used * SEC;
+    used += rundaRuta(s, p, tk, left - used, a, learn);
+    spara(s, p, t0 + used * SEC); // platsen och uppgiften vid varje ruta, så att bilden går rutan till rutan (bara för att visa)
+    if (p.task !== tk || tk.phase !== 'do' || (tk.plock ?? 0) > 1e-6) break; // ett stopp som inte är slut: nästa bit
+  }
+  s.now = t0 + used * SEC;
+  return used;
+}
+function rundaRuta(s: State, p: Person, tk: Task, left: number, a: number, learn: number) {
   const d = ACTS[tk.act], r = d.runda!, now = s.now, slut = Math.max(0, (tk.until - now) / SEC);
   if (tk.hopp) {
     const w = walk(s, p, tk, Math.min(left, Math.max(slut, 1e-3))), used = Math.max(w.used, 1e-3);
@@ -729,6 +745,12 @@ function rundaSteg(s: State, p: Person, tk: Task, left: number, a: number, learn
   }
   const i = tileOf(tk.tx, tk.ty), varde = rutVarde(s, tk), har = varde(i % W, Math.floor(i / W));
   // där det inte finns något att plocka (steget åt sidan från den enda busken) stannar man inte
+  // varje stopp ger en hel sak (steg 6.1.3, r.hel): man stannar bara där arbetet mot nästa sak är klart, och saken läggs
+  // direkt i handen när stoppet börjar; annars letar man vidare
+  if (tk.plock === undefined && r.hel && har >= PLATS.tomtGrans) {
+    const k = carryKind(tk.act), fram = p.delar?.[k] ?? 0;
+    if (helt(fram) >= 1) { tk.carry += 1; framsteg(p, k, -1); if (spar.pa) sparaUppgift(p, now); } else tk.plock = 0;
+  }
   tk.plock ??= har < PLATS.tomtGrans ? 0 : r.stopp[0] + hash3(p.id, i, Math.floor(now / SEC)) * (r.stopp[1] - r.stopp[0]);
   let used = Math.min(left, tk.plock, slut, BIT);
   const kvar = tidTillTom(s, p, tk), tom = kvar > 0 && kvar <= used;
@@ -755,6 +777,12 @@ function rundaSteg(s: State, p: Person, tk: Task, left: number, a: number, learn
   if (n) { tk.tx = n.x; tk.ty = n.y; tk.hopp = true; } else tk.until = s.now;
   return used;
 }
+// p:s arbete mot nästa hela sak av slaget k (p.delar): det som inte syns i bördan (steg 2.10.7, 6.1.3)
+function framsteg(p: Person, k: string, v: number) {
+  const d = (p.delar ??= {}), t = (d[k] ?? 0) + v;
+  if (t > 1e-6) d[k] = t; else delete d[k];
+  if (!Object.keys(d).length) delete p.delar;
+}
 function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn: number, tom = false, runda = false) {
   const now = s.now, d = ACTS[tk.act], res = d.resurs;
   const { takt, del, rich, rd } = arbetsTakt(s, p, tk), y = takt * dtSec;
@@ -768,7 +796,10 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   const bar = (k: string, n: number) => { if (n > 0) { tk.items ??= {}; tk.items[k] = (tk.items[k] ?? 0) + n; } };
   // det arbetet ger (UTFALL ovan); utan egen rad, eller om raden inte tagit hand om det, läggs det platsen gav i bördan
   const u = UTFALL[tk.act];
-  if (!(u && u(s, p, tk, { y, rich, delar: del?.r, rd, dtSec, a, bar })) && y > 0) tk.carry += y;
+  if (!(u && u(s, p, tk, { y, rich, delar: del?.r, rd, dtSec, a, bar })) && y > 0) {
+    if (runda && d.runda?.hel) framsteg(p, carryKind(tk.act), y); // arbetet mot nästa hela sak, som ges vid nästa stopp (rundaSteg)
+    else tk.carry += y;
+  }
   helaIBordan(p, tk); // bara hela saker i bördan (steg 2.10.7)
   const sk = d.arbete!;
   const before = p.skill[sk];

@@ -296,20 +296,27 @@ SCENARIER.samlarrunda = {
   },
 };
 SCENARIER.grenrunda = {
-  text: 'Steg 4.5.6.3: den som samlar grenar går samma runda i skogen, från ruta till ruta med korta stopp, och den som letar stenar eller flinta går runt bland stenarna och finner dem. Gör just nu säger vad hen letar efter',
+  text: 'Steg 4.5.6.3: den som samlar grenar går samma runda i skogen, från ruta till ruta med korta stopp (sedan steg 6.1.3 stannar hen där nästa gren är klar, och stoppet ger en hel gren i handen), och den som letar stenar eller flinta går runt bland stenarna och finner dem. Gör just nu säger vad hen letar efter',
   kor: () => {
     // två byar med ont om ved följs i steg om två sekunder i åtta timmar: var grenplockarna och de som letar stannar
     let vedStopp = 0, vedSkog = 0, vedFlytt = 0, sokStopp = 0, sokNara = 0, stenar = 0;
+    let vaxer = 0, vidStopp = 0, enGren = 0, hela = 0, prov = 0; // varje stopp ger en hel gren (steg 6.1.3)
     const texter = new Set<string>();
     for (const seed of [1, 42]) {
-      const s = createState(seed, START), forra = new Map<number, string>(), sd = SIM.stoneDist(s.seed), tr = groundOf(s).trees;
+      const s = createState(seed, START), forra = new Map<number, string>(), bar = new Map<number, number>(), sd = SIM.stoneDist(s.seed), tr = groundOf(s).trees;
       setAmount(s, 'ved', 0); setAmount(s, 'grenar', 0);
       const sten0 = amountOf(s, 'sten');
       for (let i = 0; i < 8 * 1800; i++) {
         step(s, 2);
         for (const p of living(s)) {
           const t = p.task;
-          if (!t || t.phase !== 'do' || !(t.act === 'ved' || t.sok)) { forra.delete(p.id); continue; }
+          if (!t || t.phase !== 'do' || !(t.act === 'ved' || t.sok)) { forra.delete(p.id); bar.delete(p.id); continue; }
+          if (t.act === 'ved') {
+            const g = t.carry, f = bar.get(p.id);
+            prov++; if (Math.abs(g - Math.round(g)) < 1e-9) hela++;
+            if (f !== undefined && g > f + 1e-9) { vaxer++; if (!t.hopp) vidStopp++; if (Math.abs(g - f - 1) < 1e-9) enGren++; }
+            bar.set(p.id, g);
+          }
           texter.add(SIM.taskText(t));
           const plats = `${t.tx},${t.ty}`, j = tileOf(t.tx, t.ty);
           if (t.hopp || forra.get(p.id) === plats) { forra.set(p.id, plats); continue; }
@@ -323,10 +330,11 @@ SCENARIER.grenrunda = {
     }
     const tx = [...texter];
     return [
-      [`grenplockarna går från ruta till ruta (${vedStopp} stopp, ${vedFlytt} gånger vidare)`, vedStopp > 50 && vedFlytt > 40],
+      [`grenplockarna går från ruta till ruta (${vidStopp} stopp med en gren, ${vedFlytt} gånger vidare)`, vidStopp > 50 && vedFlytt > 10],
       [`grenplockarna stannar i skogen (${(vedSkog / Math.max(1, vedStopp) * 100).toFixed(0)} % av stoppen)`, vedSkog > 0.8 * vedStopp],
       [`den som letar stenar eller flinta stannar vid stenarna eller i sanden (${sokNara} av ${sokStopp} stopp)`, sokStopp === 0 || sokNara > 0.8 * sokStopp],
       [`stenarna hittades (${stenar} stenar, eller ringen)`, stenar > 0],
+      [`varje stopp ger en hel gren direkt i handen och bördan har inga bråkdelar (${vaxer} gånger växte bördan, ${vidStopp} vid ett stopp, ${enGren} med en gren; ${hela} av ${prov} hela; steg 6.1.3)`, vaxer > 20 && vidStopp >= vaxer * 0.95 && enGren === vaxer && hela === prov],
       [`Gör just nu säger letar efter grenar och plockar grenar (${tx.filter(x => x.includes('gren') || x.includes('sten')).join(', ')})`, tx.some(x => x.endsWith('letar efter grenar')) && tx.some(x => x.endsWith('plockar grenar'))],
     ];
   },
