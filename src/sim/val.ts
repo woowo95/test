@@ -711,7 +711,10 @@ function forbattra(s: State, p: Person, v: Val, fd: number, wd: number): true | 
     v.tool = fv.id; v.dur = fv.min * MIN; if (fv.spot) v.spot = fv.spot;
     return true;
   }
-  const ta = tekArbete(s, p, a => WORK.includes(a) && (ACTS[a].vid !== 'vatten' || vaderTillater(s, 'lugnt')));
+  // arbetet där en teknik kan komma, bara så länge det byn får av det inte redan räcker så länge att byn annars slutat samla
+  // (matMatt och vedMatt): annars växer högarna i lagret utan slut
+  const nog = (a: Act) => ACTS[a].behov === 'ved' ? wd > VAL.vedMatt * onskatLager(true, pabud(s, 'vedlager')) : ACTS[a].behov === 'mat' && fd > VAL.matMatt * matOnskat(s, p);
+  const ta = tekArbete(s, p, a => WORK.includes(a) && !nog(a) && (ACTS[a].vid !== 'vatten' || vaderTillater(s, 'lugnt')));
   if (ta) return { act: ta.act, why: `Kanske kommer hen på ${ta.t.namn.toLowerCase()}` };
   return gaILara(s, p, v, 'Byn har det den behöver') || undefined;
 }
