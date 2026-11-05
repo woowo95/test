@@ -1386,6 +1386,31 @@ SCENARIER.odling = {
   },
 };
 
+SCENARIER.faltglanta = {
+  text: 'Fälten i gläntor (steg 6.2.9): ett fält får ligga upp till ODLING.faltTill rutor från byns område, och varje vuxet träd på platsen räknas som ODLING.skogKost rutor längre bort. Byn väljer då en glänta eller äng en bit bort före skog nära byn, men fäller hellre några få träd nära än går långt',
+  kor: () => {
+    const { ODLING, faltSite } = SIM, gr = groundOf, F = FOREST;
+    const rader: { seed: number; d: number; trad: number; skogNara: number }[] = [];
+    for (const seed of [1, 2, 3, 4, 5, 6]) {
+      const s = createState(seed, START);
+      SIM.addTool(s, 'yxa', living(s)[0]); // med en yxa får skogen fällas, så att både skog nära och gläntor längre bort finns att välja på
+      const w = 5, n = 25, at = faltSite(s, w, n);
+      if (!at) { rader.push({ seed, d: -1, trad: -1, skogNara: 0 }); continue; }
+      const g = gr(s), f = { x: at.x, y: at.y, w, dir: SIM.faltRiktning(s, at.y), n } as SIM.Falt;
+      const trad = SIM.faltRutor(f).filter(i => g.trees[i] >= F).length;
+      rader.push({ seed, d: utanforByn(s, at.x + w / 2, at.y + 0.5), trad, skogNara: 0 });
+    }
+    const hittade = rader.filter(r => r.d >= 0), utanTrad = hittade.filter(r => r.trad === 0).length;
+    const lista = hittade.map(r => `by ${r.seed}: ${r.d.toFixed(0)} rutor, ${r.trad} träd`).join('; ');
+    return [
+      [`varje by hittar en plats för ett fält (${hittade.length} av ${rader.length})`, hittade.length === rader.length],
+      [`fälten ligger högst ${ODLING.faltTill} rutor från byns område (${lista})`, hittade.every(r => r.d <= ODLING.faltTill + 1)],
+      [`de flesta fälten läggs där inga vuxna träd står (${utanTrad} av ${hittade.length})`, utanTrad >= Math.ceil(hittade.length * 2 / 3)],
+      [`ett vuxet träd kostar som ${ODLING.skogKost} rutors avstånd`, ODLING.skogKost === 8 && ODLING.faltTill === 25],
+    ];
+  },
+};
+
 SCENARIER.falt = {
   text: 'Steg 2.10.3, 2.10.13 och 3.10.14: den som kan odla och har frön röjer ett fält på jorden utanför byn, så stort som familjen behöver och fröna räcker till, och gräver upp det och sår ruta för ruta. Grödan växer när det är varmt, skördas när den är mogen och ger mat och nya frön. Frosten dödar den, den mogna ruttnar om ingen skördar, och ett fält som ingen sköter blir gräs igen',
   kor: () => {
@@ -2168,13 +2193,13 @@ SCENARIER.harflykt = {
 
 SCENARIER.gangar = {
   lang: true,
-  text: 'Avstånd i byn (steg 4.5.4.5): minst 2 rutor mellan två hus, latrinen lika långt från elden som fälten (15 rutor), och en station ute (bord, torkställning) står i en gång mellan husen bara om gången är minst 3 rutor bred, och då mot husväggen så att gången är fri',
+  text: 'Avstånd i byn (steg 4.5.4.5): minst 2 rutor mellan två hus, latrinen STATION.latrinMal rutor från byns område (där de närmaste fälten ligger), och en station ute (bord, torkställning) står i en gång mellan husen bara om gången är minst 3 rutor bred, och då mot husväggen så att gången är fri',
   kor: () => {
-    const { gangFri, stationSite, eldPlats, housesOf, bitsOf, touch, PLATS, ODLING } = SIM;
-    // latrinen: 15 rutor från elden (som fältens första rad), inte närmare byn än utkantMin
+    const { gangFri, stationSite, housesOf, bitsOf, touch, PLATS } = SIM;
+    // latrinen: latrinMal rutor från byns område (steg 6.2.4), inte närmare byn än utkantMin
     const s = createState(3, START); klockan(s); tandEld(s);
-    const f = eldPlats(s), lp = stationSite(s, 'latrin');
-    const latrin = lp ? Math.hypot(lp.x - f.x, lp.y - f.y) : -1;
+    const lp = stationSite(s, 'latrin');
+    const latrin = lp ? utanforByn(s, lp.x, lp.y) : -1;
     // husen: minst husMellan fritt emellan i en by som byggt flera hus
     const b = createState(5, START);
     let minst = Infinity;
@@ -2196,7 +2221,7 @@ SCENARIER.gangar = {
     };
     const smal = gang(2, hx => hx - 1), mot = gang(3, hx => hx - 1), mitt = gang(3, hx => hx - 2), bred = gang(4, hx => hx - 1), annan = gang(3, hx => hx - 3);
     return [
-      [`latrinen ligger ${latrin.toFixed(1)} rutor från elden (fälten högst ${ODLING.faltTill})`, Math.abs(latrin - ODLING.faltTill) <= 1.5],
+      [`latrinen ligger ${latrin.toFixed(1)} rutor från byns område (helst ${SIM.STATION.latrinMal})`, Math.abs(latrin - SIM.STATION.latrinMal) <= 1.5],
       [`minst ${PLATS.husMellan} rutor mellan två hus (minst ${minst} bland ${antalHus} hus på 12 dygn)`, antalHus >= 2 && minst >= PLATS.husMellan],
       ['ingen station i en gång som är 2 rutor bred', smal === false],
       ['i en gång som är 3 rutor bred står den mot husväggen (vilken som helst av dem), inte mitt i', mot === true && annan === true && mitt === false],

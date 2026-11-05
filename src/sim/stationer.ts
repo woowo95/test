@@ -20,7 +20,6 @@ import { groundOf, tileOf } from './mark';
 import { FOREST } from './vag';
 import { brasaMal, nyEld } from './brasor';
 import { underMinnet } from './sjo';
-import { ODLING } from './odling';
 import { paStrak } from './strak';
 
 // ---------- arbetsstationer och möbler (steg 2.2.3, 2.2.5) ----------
@@ -92,7 +91,8 @@ export const STATION = balans('station', {
   latrinRymmer: 150, // så många toabesök ryms i gropen innan den är full och fylls igen
   latrinNy: 0.85, // byn gräver en ny när den den har är så här full
   latrinTill: 10, // gropen ligger högst så här många rutor från byn (lägret och husen) ... (Björn efter v107: alltid ganska långt bort, steg 2.10.21)
-  latrinAvst: 5, // ... och minst så här långt; helst ligger den lika långt från byns område som fälten (ODLING.faltTill, steg 4.5.4.5) ...
+  latrinAvst: 5, // ... och minst så här långt; helst ligger den latrinMal rutor från byns område (steg 4.5.4.5: lika långt som de närmaste fälten; fälten får ligga längre bort sedan steg 6.2.9) ...
+  latrinMal: 8,
   latrinVatten: 8, // ... och, när byn lärt sig att smutsen når vattnet (s.hygien), helst så här många rutor från vattnet ...
   latrinVattenPoang: 1, // ... med så här många poäng (färre är bättre) för varje ruta för nära, gånger s.hygien
   // grillställningen (steg 2.8.1, matlagning.ts): grenar och rep över elden
@@ -414,7 +414,7 @@ function siteUtkant(s: State, k: string) {
       const vatten = u.vatten && s.hygien ? s.hygien * STATION.latrinVattenPoang * Math.max(0, STATION.latrinVatten - tillVatten(s, x, y, STATION.latrinVatten)) : 0;
       if (u.falt && d < u.avst) continue;
       // latrinen: lika långt från byn som fälten (steg 4.5.4.5), räknat från byns område (steg 6.2.4)
-      const sc = Math.abs(d - (u.falt ? Math.min(u.till, ODLING.faltTill) : u.avst)) + lek + vatten + rot * STATION.vriden;
+      const sc = Math.abs(d - (u.falt ? Math.min(u.till, STATION.latrinMal) : u.avst)) + lek + vatten + rot * STATION.vriden;
       if (sc < bs) { bs = sc; best = rot ? { x, y, rot } : { x, y }; }
     }
   }

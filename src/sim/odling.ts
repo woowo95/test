@@ -51,8 +51,8 @@ export const ODLING = balans('odling', {
   faltMin: 16, faltMax: 64, // ... men minst och högst så här många (2 och 200 före steg 3.10.23); ett nytt fält läggs först när ägaren har frön till faltMin rutor
   sidaMin: 3, sidaMax: 12, // fältets bredd och antalet rader när det har alla rutor det ska ha (steg 3.10.23.2; högst 10 brett före)
   faltStig: 3, // fältet ligger utanför byns område och så många rutor från allt som står, med plats för en stig (steg 3.10.14) ...
-  faltTill: 8, // ... och dess första rad högst så här många rutor utanför byns område (omrade.ts, steg 6.2.4)
-  skogKost: 2, // ett vuxet träd på platsen räknas som så många rutor längre bort: det fälls först (steg 3.6.9)
+  faltTill: 25, // ... och dess första rad högst så här många rutor utanför byns område (omrade.ts, steg 6.2.4; 8 före steg 6.2.9)
+  skogKost: 8, // ett vuxet träd på platsen räknas som så många rutor längre bort: det fälls först (steg 3.6.9). Så väljer byn en glänta eller äng en bit bort före skog nära byn (steg 6.2.9; 2 före)
   // arbetet per ruta är kort, så att fälten kan bli stora (Björn efter v107, steg 2.10.13; kortare i steg 3.10.23.4)
   rojaMin: 3, // minuters arbete per ruta att röja gräs, buskar och ungskog (5 före steg 3.10.23)
   beredaMin: 4, // minuters arbete per ruta att gräva upp jorden för hand (8 före steg 3.10.23) ...
@@ -256,14 +256,14 @@ function hittaSite(s: State, w: number, n: number) {
   const R = ODLING.faltTill + w + rader + 1;
   let best: { x: number; y: number } | undefined, bs = Infinity;
   for (let y = Math.max(0, o.y0 - R); y <= Math.min(H - 1, o.y1 + R); y++) for (let x = Math.max(0, o.x0 - R); x <= Math.min(W - 1, o.x1 + R); x++) {
-    const mx = x + b / 2, my = y + 0.5;
-    if (utanforByn(s, mx, my) > ODLING.faltTill) continue;
+    const mx = x + b / 2, my = y + 0.5, u = utanforByn(s, mx, my);
+    if (u > ODLING.faltTill || u >= bs) continue; // längre bort än den bästa hittills: blir aldrig bättre
     const ny = { x, y, w, dir: faltRiktning(s, y), n } as Falt;
     let ok = true, unga = 0;
-    for (let k = 0; k < n && ok; k++) { const r = rutaXY(ny, k); if (!rutaFri(s, gr, r.x, r.y)) ok = false; else { const tr = g.trees[r.y * W + r.x]; unga += tr >= FOREST ? ODLING.skogKost : tr; } }
+    for (let k = 0; k < n && ok; k++) { const r = rutaXY(ny, k); if (!rutaFri(s, gr, r.x, r.y)) ok = false; else { const tr = g.trees[r.y * W + r.x]; unga += tr >= FOREST ? ODLING.skogKost : tr; if (u + unga >= bs) ok = false; } }
     if (!ok) continue;
     const lek = paLek(lekR, x, ny.dir > 0 ? y : y - rader + 1, b, rader) ? ODLING.lekStraff : 0;
-    const sc = utanforByn(s, mx, my) + lek + unga;
+    const sc = u + lek + unga;
     if (sc < bs) { bs = sc; best = { x, y }; }
   }
   return best;
