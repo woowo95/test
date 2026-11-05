@@ -1,6 +1,6 @@
 // Scenarier. Byggnader och lager: byggnader, förrådshus, familjehus, funktion, påbörjat, bostad, bygg, lager och lagerplatser.
 import { isDeepStrictEqual } from 'node:util';
-import { MIN, Person, Act, createState, addTool, FOREST, HOUR_S, toolsOf, BYN, step, living, sees, ageIndex, cloneState, ageStart, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, dropLoad, T, isStored, zonesOf, allows, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, rektAvstand, stat, campCenter, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, isWall, Bit, wearBuild, treeOn, ownsAmount, addTo, setAmount, isFood, grundvarde, tingOf, komOf, BYGGNADER, FN, mostUrgent, fnId, fnOf, planBuild, workOn, wearMult, LAGER, homeless, sovplatser, inZone, startWork, workHalf, finishHalf, stepPaborjat, halvOf, tingVarde, HALV_TID, fallTid, treeSpot, SEC, Task, familjOf, bedTile, takeForHouse, put, stepByggnader, husNamn, spotFor, roofed, MATERIAL, usable, dropSpot, ALDER, KROPP, samlingRum, varmareInne, haulJob, fetchFuel, chooseTask, minOf } from '../../sim';
+import { MIN, Person, Act, createState, addTool, FOREST, HOUR_S, toolsOf, BYN, step, living, sees, ageIndex, cloneState, ageStart, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, dropLoad, T, isStored, zonesOf, allows, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, rektAvstand, stat, bynsMitt, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, isWall, Bit, wearBuild, treeOn, ownsAmount, addTo, setAmount, isFood, grundvarde, tingOf, komOf, BYGGNADER, FN, mostUrgent, fnId, fnOf, planBuild, workOn, wearMult, LAGER, homeless, sovplatser, inZone, startWork, workHalf, finishHalf, stepPaborjat, halvOf, tingVarde, HALV_TID, fallTid, treeSpot, SEC, Task, familjOf, bedTile, takeForHouse, put, stepByggnader, husNamn, spotFor, roofed, MATERIAL, usable, dropSpot, ALDER, KROPP, samlingRum, varmareInne, haulJob, fetchFuel, chooseTask, minOf } from '../../sim';
 import * as SIM from '../../sim';
 import { findPath } from '../../sim/vag';
 import { KANIN } from '../../sim/redskap';
@@ -286,7 +286,7 @@ SCENARIER.paborjat = {
     const arv = tingOf(s).find(t => t.id === t4.ref)?.agare === arving.id;
     // ett träd: den som börjar fälla det lämnar det halvfällt, och nästa fäller det färdigt
     addTool(s, 'yxa', p);
-    const g = groundOf(s), c = campCenter(s);
+    const g = groundOf(s), c = bynsMitt(s);
     let ti = -1;
     for (let d = 1; d < 30 && ti < 0; d++) for (let y = c.y - d; y <= c.y + d && ti < 0; y++) for (let x = c.x - d; x <= c.x + d; x++) if (g.trees[y * W + x] >= 0.95) { ti = y * W + x; break; }
     const ft = uppgift(p, 'falla'); ft.tx = (ti % W) + 0.5; ft.ty = Math.floor(ti / W) + 0.5; startWork(s, p, ft);
@@ -646,23 +646,24 @@ SCENARIER.lekplats = {
         if (t === T.Vatten || t === T.Sten || roomAt(s, x, y) || zonesOf(s).some(z => inZone(z, x, y))) fel++;
       }
     }
-    const l = SIM.lekplats(s), mid = SIM.byInne(s), f = getMap(s.seed).fire;
+    const l = SIM.lekplats(s), mid = SIM.bynsMitt(s), f = getMap(s.seed).fire;
     const storlek = l.w === SIM.PLATS.lekBredd && l.h === SIM.PLATS.lekDjup;
     // när byns inre flyttar (en ny lagerplats långt bort) följer lekplatsen med, men elden står kvar
-    const z = zonesOf(s)[0], fore = rektAvstand(mid.x, mid.y, l.x, l.y, l.w, l.h);
+    const utom = (r: { x: number; y: number; w: number; h: number }) => { let d = Infinity; for (let j = 0; j < r.h; j++) for (let i = 0; i < r.w; i++) d = Math.min(d, SIM.utanforByn(s, r.x + i, r.y + j)); return d; }; // rutor utanför byns område (steg 6.2.4)
+    const z = zonesOf(s)[0], fore = utom(l);
     const dir = l.x + l.w / 2 > mid.x ? -1 : 1; // åt andra hållet från lekplatsen, så att den måste flytta
-    s.lagren!.push({ x: z.x + dir * 36, y: z.y, w: 2, h: 2, namn: 'Prov', prio: 0 }); // lagren krymper först efter sex timmar (steg 2.12.4) och är större, så den nya ligger längre bort (36 rutor sedan steg 3.10.9: med 24 flyttade mitten för lite för att lekplatsen skulle behöva flytta, när rutorna närmare var upptagna)
-    const mid2 = SIM.byInne(s), l2 = SIM.lekplats(s);
+    const o = SIM.omrade(s); s.lagren!.push({ x: dir > 0 ? o.x1 + 12 : o.x0 - 14, y: z.y, w: 2, h: 2, namn: 'Prov', prio: 0 }); // utanför byns område (steg 6.2.4), så att dess mitt flyttar; // lagren krymper först efter sex timmar (steg 2.12.4) och är större, så den nya ligger längre bort (36 rutor sedan steg 3.10.9: med 24 flyttade mitten för lite för att lekplatsen skulle behöva flytta, när rutorna närmare var upptagna)
+    const mid2 = SIM.bynsMitt(s), l2 = SIM.lekplats(s);
     // hur långt den flyttar beror på husen, lagren och skogen i vägen; den ska flytta åt rätt håll och komma närmare den nya mitten
-    const nu = rektAvstand(mid2.x, mid2.y, l2.x, l2.y, l2.w, l2.h), kvar = rektAvstand(mid2.x, mid2.y, l.x, l.y, l.w, l.h);
-    const foljer = (mid2.x - mid.x) * dir > 3 && (l2.x - l.x) * dir > 0 && nu <= kvar + SIM.PLATS.lekNorr && nu <= SIM.PLATS.lekSok; // (söder om mitten får den ligga lite längre bort, lekNorr)
+    const nu = utom(l2), kvar = rektAvstand(mid2.x, mid2.y, l.x, l.y, l.w, l.h);
+    const foljer = (mid2.x - mid.x) * dir > 3 && nu <= SIM.PLATS.lekSok; // den ligger fortfarande strax utanför det nya området
     s.lagren!.pop();
     return [
       [`lekplatsen är ${SIM.PLATS.lekBredd} × ${SIM.PLATS.lekDjup} rutor`, storlek],
-      [`den ligger nära byns inre (${fore.toFixed(1)} rutor från dess mitt, elden ${Math.hypot(f.x - mid.x, f.y - mid.y).toFixed(1)} rutor därifrån)`, fore <= SIM.PLATS.lekSok],
+      [`den ligger strax utanför byns område (${fore.toFixed(1)} rutor därifrån, elden ${Math.hypot(f.x - mid.x, f.y - mid.y).toFixed(1)} rutor från byns mitt)`, fore <= SIM.PLATS.lekSok],
       [`den ligger aldrig i vattnet, på sten, i ett hus eller på en lagerplats (${fel} rutor fel på 72 timmar)`, fel === 0],
       [`barnen leker på lekplatsen (${paPlats} av ${leker} timmar)`, leker > 0 && paPlats >= leker * 0.85], // lekplatsen flyttar med byn, och ett barn som redan leker gör klart på den gamla platsen
-      [`när byns inre flyttar följer lekplatsen med (mitten ${mid.x.toFixed(1)} → ${mid2.x.toFixed(1)}, lekplatsen x ${l.x} → ${l2.x}, ${kvar.toFixed(1)} → ${nu.toFixed(1)} rutor från den nya mitten)`, foljer],
+      [`när byns inre flyttar följer lekplatsen med (mitten ${mid.x.toFixed(1)} → ${mid2.x.toFixed(1)}, lekplatsen x ${l.x} → ${l2.x}, ${kvar.toFixed(1)} rutor från den nya mitten, ${nu.toFixed(1)} rutor utanför det nya området)`, foljer],
     ];
   },
 };
@@ -675,18 +676,18 @@ SCENARIER.ibyn = {
       s.kal = SIM.nyKalender(s.now, tidsalder); klockan(s, 10); tandEld(s);
       const z = zonesOf(s)[0], f = getMap(s.seed).fire;
       s.lagren = [{ x: z.x + 14, y: z.y, w: 2, h: 2, namn: 'Prov', prio: 0 }]; // byns inre långt från elden
-      const mid = SIM.byInne(s), p = living(s)[0];
+      const mid = SIM.bynsMitt(s), p = living(s)[0];
       p.warm = 1; let iByn = 0, vidElden = 0, n = 0;
       for (const act of ['kniv', 'hantverk', 'tvinna', 'balte'] as Act[]) for (let k = 0; k < 15; k++) {
         const at = spotFor(s, act, p); n++;
-        if (Math.hypot(at.x - mid.x - 0.5, at.y - mid.y - 0.5) <= 5) iByn++;
+        if (SIM.iByn(s, at.x, at.y)) iByn++; // inne i byns område (steg 6.2.4)
         if (Math.hypot(at.x - f.x - 0.5, at.y - f.y - 0.5) <= 3) vidElden++;
       }
       return { iByn, vidElden, n, kallt: SIM.coldOf(SIM.temperature(s)) > 0, avst: Math.hypot(mid.x - f.x, mid.y - f.y) };
     };
     const varmt = plats(SIM.SOMMAR), kallt = plats(SIM.ISTID);
     return [
-      [`på sommaren görs handarbetet utan bänk inne i byn, ${varmt.avst.toFixed(0)} rutor från elden (${varmt.iByn} av ${varmt.n} gånger)`, !varmt.kallt && varmt.avst > 8 && varmt.iByn === varmt.n],
+      [`på sommaren görs handarbetet utan bänk inne i byns område, sällan vid elden (${varmt.iByn} av ${varmt.n} gånger i byn, ${varmt.vidElden} vid elden)`, !varmt.kallt && varmt.iByn === varmt.n && varmt.vidElden <= varmt.n * 0.3],
       [`när det är kallt sitter man vid elden som förut (${kallt.vidElden} av ${kallt.n} gånger)`, kallt.kallt && kallt.vidElden === kallt.n],
     ];
   },
@@ -777,7 +778,7 @@ SCENARIER.eldflytt = {
       for (const h of hus) { s.hus = SIM.housesOf(s).filter(q => q !== h); s.byggen = SIM.bitsOf(s).filter(b => b.hus !== h.id); }
       SIM.touch(s);
     }
-    const mid = SIM.byInne(s), langt = Math.hypot(mid.x - e0.x, mid.y - e0.y);
+    const mid = SIM.bynsMitt(s), langt = Math.hypot(mid.x - e0.x, mid.y - e0.y);
     let vald: SIM.Person | undefined, flytt = s.fire.flytt;
     SIM.stepEldFlytt(s);
     flytt = s.fire.flytt; vald = living(s).find(p => p.task?.act === 'flyttaeld');
@@ -827,7 +828,7 @@ SCENARIER.skogsrojning = {
   kor: () => {
     const s = createState(9, START);
     tandEld(s); klockan(s, 9);
-    const g = groundOf(s), c = campCenter(s), m = getMap(s.seed);
+    const g = groundOf(s), c = bynsMitt(s), m = getMap(s.seed);
     // ett skogsparti nära lägret, två gånger två rutor, och ett fält i skogen bredvid
     const skog = (x: number, y: number, w: number, h: number) => { for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) if (m.tiles[yy * W + xx] !== T.Skog && m.tiles[yy * W + xx] !== T.Gras || bitAt(xx, yy)) return false; return true; };
     const bitAt = (x: number, y: number) => usable(s, x, y) === false;

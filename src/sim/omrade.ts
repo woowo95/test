@@ -25,19 +25,25 @@ export const OMRADE_DELAR: Record<string, { namn: string; rutor: (s: State) => R
 };
 
 export interface Omrade {
-  key: string;
+  key: number;
   inne: Uint8Array; // 1 för varje ruta innanför byn (index y * W + x)
   x0: number; y0: number; x1: number; y1: number; // den minsta rektangeln runt området (rutorna, båda kanterna med)
   holje: { x: number; y: number }[]; // hörnen i det konvexa höljet (rutornas mitt), moturs
   n: number; // antalet rutor innanför
   ut?: Float32Array; // hur många rutor utanför varje ruta ligger (0 innanför), räknas första gången någon frågar
+  mitt: { x: number; y: number }; // områdets mitt: medelpunkten av rutorna innanför, avrundad till en ruta
 }
 
 const cache = new WeakMap<State, Omrade>();
-// nyckeln: det som ändrar området. byggV ändras när något byggs, flyttas eller rivs; lagerplatserna växer utan det
+// nyckeln: det som ändrar området. byggV ändras när något byggs, flyttas eller rivs; lagerplatserna växer utan det.
+// Ett tal och ingen text, för frågorna ställs tusentals gånger i varje steg (avstånden till byn)
+const blanda = (h: number, v: number) => Math.imul(h ^ v, 0x9e3779b1) + 0x7f4a7c15 | 0;
 const nyckelAv = (s: State) => {
   const f = eldPlats(s);
-  return `${s.seed}:${s.byggV ?? 0}:${f.x},${f.y}:${stationerOf(s).length}:${housesOf(s).length}:${bitsOf(s).length}:${zonesOf(s).map(z => `${z.x},${z.y},${z.w},${z.h}`).join(';')}`;
+  let h = blanda(blanda(blanda(s.seed, s.byggV ?? 0), f.x), f.y);
+  h = blanda(blanda(blanda(h, stationerOf(s).length), housesOf(s).length), bitsOf(s).length);
+  for (const z of zonesOf(s)) h = blanda(blanda(blanda(blanda(h, z.x), z.y), z.w), z.h);
+  return h;
 };
 export function omrade(s: State): Omrade {
   const key = nyckelAv(s), c = cache.get(s);
@@ -77,7 +83,7 @@ export function tillHolje(x: number, y: number, h: P[]) {
   for (let i = 0; i < h.length; i++) d = Math.min(d, tillStracka(x, y, h[i], h[(i + 1) % h.length]));
   return d;
 }
-function rakna(key: string, r: Rekt[]): Omrade {
+function rakna(key: number, r: Rekt[]): Omrade {
   const holje = holjeAv(r), k = OMRADE.kant, inne = new Uint8Array(W * H);
   let x0 = W, y0 = H, x1 = -1, y1 = -1, n = 0;
   const bx0 = Math.max(0, Math.min(...holje.map(p => p.x)) - k), bx1 = Math.min(W - 1, Math.max(...holje.map(p => p.x)) + k);
@@ -87,7 +93,10 @@ function rakna(key: string, r: Rekt[]): Omrade {
     inne[y * W + x] = 1; n++;
     if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
   }
-  return { key, inne, x0, y0, x1, y1, holje, n };
+  let mx = 0, my = 0;
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (inne[y * W + x]) { mx += x; my += y; }
+  const mitt = n ? { x: Math.round(mx / n), y: Math.round(my / n) } : { x: holje[0]?.x ?? 0, y: holje[0]?.y ?? 0 };
+  return { key, inne, x0, y0, x1, y1, holje, n, mitt };
 }
 
 // ---------- frågorna (steg 6.2.2, "Byns område (Frågorna)") ----------
@@ -103,6 +112,12 @@ export function utanforByn(s: State, x: number, y: number) {
   if (inMap(Math.floor(x), Math.floor(y)) && o.inne[Math.floor(y) * W + Math.floor(x)]) return 0;
   return Math.max(0, tillHolje(x, y, o.holje) - OMRADE.kant);
 }
+// avståndet från punkten till det byn omsluter, utan kanten runt (0 innanför höljet): för det som ska stå en bit från
+// det som redan står (ett nytt hus, en station ute), så att byn växer utåt i en ring
+export const tillHoljet = (s: State, x: number, y: number) => tillHolje(x, y, omrade(s).holje);
+// områdets mitt (en ruta): det som behöver en punkt att utgå från (kamerans hemknapp, lekplatsen, åt vilket håll fältet
+// växer, var byn minns översvämningen). Den följer området, inte elden
+export const bynsMitt = (s: State) => omrade(s).mitt;
 // rutnätet till utanforByn, sparat med området; en kartslinga kan läsa det direkt (bynsAvstand(s)[i])
 export const bynsAvstand = (s: State) => utGrid(omrade(s));
 function utGrid(o: Omrade) {

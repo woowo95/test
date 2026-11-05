@@ -1,5 +1,5 @@
 // Scenarier. Redskap: stenring, spjut, redskap, slitage och teknik.
-import { createState, addTool, twineRope, makeTool, wearUsed, isSpear, step, living, cloneState, pilesOf, zoneOf, amountOf, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, ageOf, spears, SPJUT_FORSOK, getMap, DAY, HOUR, W, State, takenOf, migrate, campCenter, TEKNIK, knows, thinkWhileWorking, die, isWall, H, richness, setAmount, BEAT, tingOf, wantsTool, makeTask, wantsFlint, ALDER, KROPP, inMap, canLight, dangers, toolGain, chooseTask } from '../../sim';
+import { createState, addTool, twineRope, makeTool, wearUsed, isSpear, step, living, cloneState, pilesOf, zoneOf, amountOf, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, ageOf, spears, SPJUT_FORSOK, getMap, DAY, HOUR, W, State, takenOf, migrate, bynsMitt, TEKNIK, knows, thinkWhileWorking, die, isWall, H, richness, setAmount, BEAT, tingOf, wantsTool, makeTask, wantsFlint, ALDER, KROPP, inMap, canLight, dangers, toolGain, chooseTask } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
 import { setItems, setMat, setFood, kor, klockan, tandEld, bastaJaktruta, SCENARIER, medBank, medHus } from './hjalp';
@@ -70,7 +70,7 @@ SCENARIER.stenring = {
     const th = living(r).find(q => ageOf(q, r.now) >= ALDER.vuxen)!;
     Object.assign(th, { toa: 1, torst: 1, warm: KROPP.kallt - 0.05, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
     chooseTask(r, th);
-    const tom = (() => { const c = campCenter(r); for (let d = 4; d < 30; d++) for (let k = 0; k < 16; k++) { const x = Math.floor(c.x + Math.cos(k / 16 * 6.283) * d), y = Math.floor(c.y + Math.sin(k / 16 * 6.283) * d); if (inMap(x, y) && rm.tiles[y * W + x] !== T.Vatten && !isWall(r, x + 0.5, y + 0.5) && richness(r, 'samla', x + 0.5, y + 0.5) < 0.01) return { x: x + 0.5, y: y + 0.5 }; } })()!;
+    const tom = (() => { const c = bynsMitt(r); for (let d = 4; d < 30; d++) for (let k = 0; k < 16; k++) { const x = Math.floor(c.x + Math.cos(k / 16 * 6.283) * d), y = Math.floor(c.y + Math.sin(k / 16 * 6.283) * d); if (inMap(x, y) && rm.tiles[y * W + x] !== T.Vatten && !isWall(r, x + 0.5, y + 0.5) && richness(r, 'samla', x + 0.5, y + 0.5) < 0.01) return { x: x + 0.5, y: y + 0.5 }; } })()!;
     for (const k of SIM.lagren('samla')) for (let dy = -8; dy <= 8; dy++) for (let dx = -8; dx <= 8; dx++) if (inMap(tom.x + dx, tom.y + dy)) takenOf(r)[k]![SIM.tileOf(tom.x + dx, tom.y + dy)] = 1;
     const valt = th.task?.act === 'samla' && !!th.task.tandmat;
     Object.assign(th.task!, { tx: tom.x, ty: tom.y, phase: 'do', until: r.now + 3 * HOUR }); th.x = tom.x; th.y = tom.y;
@@ -153,7 +153,7 @@ SCENARIER.redskap = {
     makeTool(s, p, 'metspo');
     const spo = amountOf(s, 'metspo') === 1 && amountOf(s, 'ben') === 1 && amountOf(s, 'rep') === 0;
     // jakt med flintspjutet: fångar kaniner, och spjutet slits
-    const { x: bx, y: by } = bastaJaktruta(s, 30) ?? campCenter(s);
+    const { x: bx, y: by } = bastaJaktruta(s, 30) ?? bynsMitt(s);
     const vilt0 = amountOf(s, 'vilt'), sp0 = amountOf(s, 'flintspjut');
     let medSpjut = 0;
     // samma uppgift tills en kanin är hemma (jakten är försök som tar en stund, steg 3.7.3), högst sex timmar
@@ -245,7 +245,7 @@ SCENARIER.slitage = {
     // yxan slits för varje träd som faller (steg 2.3.12), inte per timme: att hugga trä ur stammen sliter den inte mer
     const y = createState(4, START), yp = living(y).find(q => ageOf(q, y.now) >= 18)!;
     const yx = addTool(y, 'yxa', yp), PER = 1 / SIM.ACTS.falla.redskap!.yxa.haller!;
-    const g = SIM.groundOf(y), c = campCenter(y);
+    const g = SIM.groundOf(y), c = bynsMitt(y);
     const trad = () => { for (let d = 1; d < 30; d++) for (let yy = c.y - d; yy <= c.y + d; yy++) for (let x = c.x - d; x <= c.x + d; x++) if (g.trees[yy * W + x] >= 0.95) return yy * W + x; return -1; };
     const falla = (ti: number) => {
       const ft: SIM.Task = { act: 'falla', phase: 'do', tx: (ti % W) + 0.5, ty: Math.floor(ti / W) + 0.5, until: 0, carry: 0, tool: 'yxa' };

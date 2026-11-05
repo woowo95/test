@@ -1,3 +1,4 @@
+import { utanforByn } from './omrade';
 import { balans } from './balans';
 import { kronikaBer, och, personFalt, sakVarg, talOrd } from './berattelser';
 import { redskapIHanden } from './agande';
@@ -68,7 +69,7 @@ export const VARG = balans('varg', {
   // att se vargar och väcka byn
   vaktSer: 24, folkSer: 10, nattSer: 0.6, // vakten ser vargar inom så här många rutor, andra inom folkSer, gånger nattSer i mörkret
   larmTim: 2, // samma flock larmas om högst så här ofta
-  vack: 30, // vakten väcker byn när flocken är så här nära elden
+  vack: 25, // vakten väcker byn när flocken är så här nära byns område (utanforByn)
   vakenTim: 1, // den som väckts håller sig vaken vid elden så här många timmar
   // vargjakten
   jaktTim: 3, // jägarna letar efter flocken högst så här många timmar
@@ -209,8 +210,7 @@ function ses(s: State, f: Vargflock, folk: Person[]) {
   notis(s, 'anfall', `${p.name} såg ${f.vargar.length > 1 ? `en flock vargar (${f.vargar.length})` : 'en ensam varg'} nära byn.`, [p.id], { x: Math.floor(f.x), y: Math.floor(f.y) });
   const hort = larma(s, 'varg', f.vargar.length, [p]);
   // vakten väcker de vuxna som sover när flocken är nära byn
-  const e = eldPlats(s);
-  if (vakt && Math.hypot(f.x - e.x - 0.5, f.y - e.y - 0.5) < VARG.vack) {
+  if (vakt && utanforByn(s, f.x, f.y) < VARG.vack) {
     let n = 0;
     for (const q of folk) if (q.task?.act === 'sova' && ageOf(q, s.now) >= ALDER.vaktFran && !(skyddas(s, q) && iHus(s, q))) { avbryt(s, q); q.task = undefined; q.larm = { t: s.now, vad: 'varg', storlek: f.vargar.length, led: 0 }; n++; }
     if (n) { count(s, 'vargVackt', n); log(s, `${vakt.name} höll vakt och väckte byn: vargar nära.`, 'world', [vakt.id]); }

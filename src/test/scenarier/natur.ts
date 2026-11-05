@@ -1,5 +1,5 @@
 // Scenarier. Djur och natur: djur, abborre, sjön, kaniner, rötter, värmekartor och naturen.
-import { FANGST, createState, bearbeta, canProcess, makeTool, step, living, cloneState, ageStart, nyKalender, pilesOf, amountOf, STACK, isLight, T, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, findL, areaOf, describe, campDist, campCenter, FYND, FYND_IDS, GRUPPER, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, observe, hoped, Lager, skyggOf, grupperOf, KANINER, share, djurOf, KANIN, SLAKT, DJUR, DJURARTER, gain, ownsAmount, setAmount, BEAT, matGott, barnMat, hungerFlytt, regulate, EKONOMI, kroppensMat, foodDays, SAMTALSSLAG, SAKER, materialOf, balansTal, load, bordPlats, PLATS, tinderShort } from '../../sim';
+import { FANGST, createState, bearbeta, canProcess, makeTool, step, living, cloneState, ageStart, nyKalender, pilesOf, amountOf, STACK, isLight, T, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, findL, areaOf, describe, utanforByn, bynsMitt, FYND, FYND_IDS, GRUPPER, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, observe, hoped, Lager, skyggOf, grupperOf, KANINER, share, djurOf, KANIN, SLAKT, DJUR, DJURARTER, gain, ownsAmount, setAmount, BEAT, matGott, barnMat, hungerFlytt, regulate, EKONOMI, kroppensMat, foodDays, SAMTALSSLAG, SAKER, materialOf, balansTal, load, bordPlats, PLATS, tinderShort } from '../../sim';
 import * as SIM from '../../sim';
 import { FOREST, isSoil } from '../../sim/vag';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
@@ -10,8 +10,8 @@ SCENARIER.djur = {
   kor: () => {
     const s = createState(6, START);
     klockan(s);
-    const dj = djurOf(s), c = campCenter(s);
-    const iLagret = dj.filter(d => campDist(s, Math.floor(d.x), Math.floor(d.y)) < FANGST.lagerR).length;
+    const dj = djurOf(s), c = bynsMitt(s);
+    const iLagret = dj.filter(d => utanforByn(s, Math.floor(d.x), Math.floor(d.y)) < FANGST.lagerR).length;
     // fler kaniner där det finns mycket vilt
     let rik = 0, fattig = 0, nr = 0, nf = 0;
     for (let i = 0; i < W * H; i++) { const v = fyndAt(s, 'jakt', i) / FYND.jakt.topp; if (v > 0.6) nr++; else if (v > 0.05 && v < 0.25) nf++; }
@@ -177,7 +177,7 @@ SCENARIER.kaniner = {
       }
       for (const d of dj) {
         kaniner++;
-        if (campDist(s, Math.floor(d.x), Math.floor(d.y)) < FANGST.skyggIn) naraByn++;
+        if (utanforByn(s, Math.floor(d.x), Math.floor(d.y)) < FANGST.skyggIn) naraByn++;
         if (Math.min(...gs.map(g => Math.hypot(g.x - d.x, g.y - d.y))) > 3) spridda++;
       }
       s.now += HOUR;
@@ -269,13 +269,13 @@ SCENARIER.samlarrunda = {
       for (const seed of [42, 7, 3, 11]) {
         const s = createState(seed, START), tagit = SIM.takenOf(s), nar = new Map<number, number>();
         setMat(s, {}); setAmount(s, 'ved', 300);
-        for (const k of SIM.lagren('samla')) { const a = tagit[k as keyof typeof tagit]; if (a) for (let i = 0; i < W * H; i++) if (campDist(s, i % W, Math.floor(i / W)) < 14) a[i] = 1; }
+        for (const k of SIM.lagren('samla')) { const a = tagit[k as keyof typeof tagit]; if (a) for (let i = 0; i < W * H; i++) if (utanforByn(s, i % W, Math.floor(i / W)) < 14) a[i] = 1; }
         for (const p of living(s)) { p.pot.nyfikenhet = pot; p.pot.mod = pot; }
         for (let i = 0; i < 6 * 360; i++) {
           step(s, 10);
           for (const p of living(s)) {
             const t = p.task, runda = t?.act === 'samla' && t.phase === 'do' && !t.sok;
-            if (runda) nar.set(p.id, Math.max(nar.get(p.id) ?? 0, campDist(s, p.x, p.y)));
+            if (runda) nar.set(p.id, Math.max(nar.get(p.id) ?? 0, utanforByn(s, p.x, p.y)));
             else if (nar.has(p.id)) { langst.push(nar.get(p.id)!); nar.delete(p.id); }
           }
         }
@@ -403,12 +403,12 @@ SCENARIER.varmekarta = {
     for (let i = 0; i < W * H; i++) if (land(i)) { jord++; if (vaxerAt(s, 'bar', i) > 1) buskar++; }
     // rötter: glest men nästan överallt på land, och de finns kvar på vintern när bär och svamp är borta
     let rotLand = 0, rotRik = 0; const rotTopp = FYND.rotter.topp;
-    for (let i = 0; i < W * H; i++) if (land(i) && campDist(s, i % W, Math.floor(i / W)) >= FANGST.lagerR) { if (vaxerAt(s, 'rotter', i) > 0) rotLand++; if (vaxerAt(s, 'rotter', i) > rotTopp * 0.5) rotRik++; }
+    for (let i = 0; i < W * H; i++) if (land(i) && utanforByn(s, i % W, Math.floor(i / W)) >= FANGST.lagerR) { if (vaxerAt(s, 'rotter', i) > 0) rotLand++; if (vaxerAt(s, 'rotter', i) > rotTopp * 0.5) rotRik++; }
     vid(0); const rotVinter = summa('rotter'), barVinter = summa('bar'); vid(3);
     // kaninerna håller sig borta från lägret och från platser där folk trampat
     const sk0 = skyggOf(s);
     let nara = 0, naraN = 0, langt = 0, langtN = 0;
-    for (let i = 0; i < W * H; i++) if (land(i)) { const d = campDist(s, i % W, Math.floor(i / W)); if (d >= FANGST.lagerR && d < FANGST.skyggIn) { nara += sk0[i]; naraN++; } else if (d > FANGST.skyggIn + FANGST.skyggR) { langt += sk0[i]; langtN++; } }
+    for (let i = 0; i < W * H; i++) if (land(i)) { const d = utanforByn(s, i % W, Math.floor(i / W)); if (d >= FANGST.lagerR && d < FANGST.skyggIn) { nara += sk0[i]; naraN++; } else if (d > FANGST.skyggIn + FANGST.skyggR) { langt += sk0[i]; langtN++; } }
     // kaniner trivs bäst i gräs (räknat utan skyggheten)
     let gr = 0, grN = 0, sk = 0, skN = 0;
     for (let i = 0; i < W * H; i++) if (land(i) && sk0[i] > 0.02) { const v = vaxerAt(s, 'jakt', i) / sk0[i]; if (g.trees[i] >= FOREST) { sk += v; skN++; } else { gr += v; grN++; } }
@@ -420,7 +420,7 @@ SCENARIER.varmekarta = {
     const fiskEfter = richness(s, 'fiske', sx, sy);
     // inget växer i lägret
     let iLagret = 0;
-    for (let i = 0; i < W * H; i++) if (campDist(s, i % W, Math.floor(i / W)) < FANGST.lagerR) for (const k of FYND_IDS) if (k !== 'fiske' && fyndAt(s, k, i) > 0) iLagret++;
+    for (let i = 0; i < W * H; i++) if (utanforByn(s, i % W, Math.floor(i / W)) < FANGST.lagerR) for (const k of FYND_IDS) if (k !== 'fiske' && fyndAt(s, k, i) > 0) iLagret++;
     // mönstren kryper: bärsnåren står nästan kvar ett speldygnsvarv (4 veckor = samma årstid igen), kaninerna har flyttat mer
     const kvar = (k: Lager, dygn: number, grans: number) => {
       const nu = s.now, t0 = ageStart(s, 2) + 3 * DAY, fore: boolean[] = []; // mitt i sommaren, så att 28 dygn senare är sommar igen
@@ -442,7 +442,7 @@ SCENARIER.varmekarta = {
     const kopia = JSON.parse(JSON.stringify(s)) as State;
     const sparad = Math.abs(fyndAt(kopia, 'kantarell', bast) - efter) < 0.01;
     // den som ser en plockad plats minns att det växer där och tror att det växt tillbaka om ett tag
-    let snar = 0; for (let i = 0; i < W * H; i++) if (vaxerAt(s, 'bar', i) > vaxerAt(s, 'bar', snar) && campDist(s, i % W, Math.floor(i / W)) > 6) snar = i;
+    let snar = 0; for (let i = 0; i < W * H; i++) if (vaxerAt(s, 'bar', i) > vaxerAt(s, 'bar', snar) && utanforByn(s, i % W, Math.floor(i / W)) > 6) snar = i;
     const bx = snar % W, by = Math.floor(snar / W), p = living(s)[0];
     for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) for (let n = 0; n < 6; n++) takeFrom(s, 'samla', bx + dx + 0.5, by + dy + 0.5, 1);
     // en annan har hört att platsen är rik; när hen kommer dit och ser att den är tömd rättas lärdomen och sprids
@@ -532,7 +532,7 @@ SCENARIER.slaktbank = {
     const st = stationerOf(s)[0], klar = !!st && isKlar(st);
     const logg = s.log.some(l => l.text.includes('första slaktbänk'));
     const sz = st ? SIM.storlekAv(st) : { w: 0, h: 0 }, rutor = Array.from({ length: sz.w * sz.h }, (_, i) => ({ x: st!.x + i % sz.w, y: st!.y + Math.floor(i / sz.w) }));
-    const avElden = st ? Math.min(...rutor.map(r => SIM.byAvstand(s, r.x, r.y))) : 0; // till lägret och husen (steg 2.10.16)
+    const avElden = st ? Math.min(...rutor.map(r => SIM.utanforByn(s, r.x, r.y))) : 0; // till lägret och husen (steg 2.10.16)
     const bredd = STATIONER.slaktbank.w, ingenAnnan = !!st && rutor.every(r => !usable(s, r.x, r.y) && SIM.stationAt(s, r.x, r.y) === st) && !SIM.stationAt(s, st.x + sz.w, st.y);
     const enda = stationerOf(s).length === 1;
     // en kniv blir bänkens: den är byns och ligger vid bänken
@@ -554,7 +554,7 @@ SCENARIER.slaktbank = {
     // en bänk med rutan framför i vattnet används inte (man skulle stå bredvid den) och flyttas till en plats där man står på land (steg 4.5.4.3)
     let iVattnet = false, flyttad = false, vattenPlats = '';
     if (st) {
-      const q = cloneState(s), qb = stationerOf(q).find(t => t.id === st.id)!, tl = getMap(q.seed).tiles, c = campCenter(q);
+      const q = cloneState(s), qb = stationerOf(q).find(t => t.id === st.id)!, tl = getMap(q.seed).tiles, c = bynsMitt(q);
       let bd = Infinity, plats: { x: number; y: number } | undefined;
       for (let y = 2; y < SIM.H - 3; y++) for (let x = 2; x < W - 2 - sz.w; x++) {
         const d = Math.hypot(x - c.x, y - c.y);
@@ -1014,13 +1014,13 @@ SCENARIER.blod = {
 SCENARIER.utkant = {
   text: 'Byns utkant (steg 2.10.16 och 2.10.21): slaktbänken står en bit från byn eftersom den är smutsig, och latringropen alltid ganska långt bort. Avståndet räknas till lägret (elden och lagerplatserna) och till husen, så att det som står i utkanten flyttar ut när byn växer',
   kor: () => {
-    const { stationSite, byAvstand, STATION } = SIM;
+    const { stationSite, utanforByn, STATION } = SIM;
     const rader: [string, boolean][] = [];
     let slakt = true, latrin = true, langre = true, hus = true;
     for (const seed of [1, 3, 42]) {
       const s = createState(seed, START);
       const b = stationSite(s, 'slaktbank'), l = stationSite(s, 'latrin');
-      const db = b ? byAvstand(s, b.x, b.y) : -1, dl = l ? byAvstand(s, l.x, l.y) : -1;
+      const db = b ? utanforByn(s, b.x, b.y) : -1, dl = l ? utanforByn(s, l.x, l.y) : -1;
       slakt &&= db >= STATION.slaktAvst - 1 && db <= STATION.slaktTill;
       latrin &&= dl >= STATION.latrinAvst && dl <= STATION.latrinTill;
       langre &&= dl > 5; // förr låg gropen 3–5 rutor från lägret
@@ -1028,7 +1028,7 @@ SCENARIER.utkant = {
       if (l) {
         (s.hus ??= []).push({ id: 99, namn: 'Hus', x: l.x - 1, y: l.y - 1, w: 3, h: 3 });
         const l2 = stationSite(s, 'latrin');
-        hus &&= !!l2 && byAvstand(s, l2.x, l2.y) >= STATION.latrinAvst && Math.max(Math.abs(l2.x - l.x), Math.abs(l2.y - l.y)) > 2;
+        hus &&= !!l2 && utanforByn(s, l2.x, l2.y) >= STATION.latrinAvst && Math.max(Math.abs(l2.x - l.x), Math.abs(l2.y - l.y)) > 2;
       }
     }
     rader.push([`slaktbänken står ${STATION.slaktAvst - 1}–${STATION.slaktTill} rutor från byn`, slakt]);
@@ -1041,7 +1041,7 @@ SCENARIER.utkant = {
 SCENARIER.latrin = {
   text: 'Toa-smuts och latriner (steg 2.7.2): den som går på toa utanför en latrin lämnar en fläck som bleknar på två dygn. Den äcklar den som går förbi, man plockar inte där, och nära vattnet smutsar den vattnet. Latrinen är en grop i byns utkant som grävs med benspaden: man går dit, får vara ifred och lämnar ingen fläck, gropen fylls och fylls igen, och byn gräver en ny. Får någon ont i magen av toa-smutsat vatten lär sig byn att lägga latrinen långt från vattnet. Benspaden görs av tre ben, ett rep och en gren och gräver fram rötter fortare',
   kor: () => {
-    const { flackarOf, toaBesok, akel, toaNara, toaVatten, vattenSmuts, smutsOf, forSmutsigt, magont, latrinFor, latrinBrist, stationSite, byAvstand, STATION, shoreOf, tidyTools, stationerOf, isKlar } = SIM;
+    const { flackarOf, toaBesok, akel, toaNara, toaVatten, vattenSmuts, smutsOf, forSmutsigt, magont, latrinFor, latrinBrist, stationSite, utanforByn, STATION, shoreOf, tidyTools, stationerOf, isKlar } = SIM;
     const s = createState(1, START); klockan(s); tandEld(s);
     const [p, q] = living(s).filter(r => ageOf(r, s.now) >= 18) as [SIM.Person, SIM.Person];
     // utan latrin: en fläck där p står, som äcklar den som går förbi
@@ -1073,7 +1073,7 @@ SCENARIER.latrin = {
     for (let seed = 1; seed < 40; seed++) { const q = createState(seed, START), at = stationSite(q, 'latrin'); if (at && tillVatten(q, at) < STATION.latrinVatten) { u0 = q; break; } }
     const u1 = cloneState(u0); u1.hygien = 1;
     const d0 = tillVatten(u0, stationSite(u0, 'latrin')), d1 = tillVatten(u1, stationSite(u1, 'latrin'));
-    const at = stationSite(u0, 'latrin'), utkant = !!at && byAvstand(u0, at.x, at.y) >= STATION.utkantMin && byAvstand(u0, at.x, at.y) <= STATION.latrinTill;
+    const at = stationSite(u0, 'latrin'), utkant = !!at && utanforByn(u0, at.x, at.y) >= STATION.utkantMin && utanforByn(u0, at.x, at.y) <= STATION.latrinTill;
     // latrinen: man går dit, lämnar ingen fläck, gropen fylls och fylls igen
     const l = createState(1, START); klockan(l); tandEld(l);
     const lat = medBank(l, 'latrin'), lp = living(l).find(r => ageOf(r, l.now) >= 18)!;
@@ -1104,7 +1104,7 @@ SCENARIER.latrin = {
     {
       const v = createState(2, START); klockan(v); tandEld(v);
       const [a, b] = living(v).filter(r => ageOf(r, v.now) >= 18) as [SIM.Person, SIM.Person];
-      const mid = SIM.campCenter(v), ax = a.x, ay = a.y, vat = SIM.vattenNu(v);
+      const mid = SIM.bynsMitt(v), ax = a.x, ay = a.y, vat = SIM.vattenNu(v);
       let n = 0;
       for (let dy = -14; dy <= 14; dy += 2) for (let dx = -14; dx <= 14; dx += 2) {
         const x = Math.floor(mid.x + dx), y = Math.floor(mid.y + dy);
@@ -1114,7 +1114,7 @@ SCENARIER.latrin = {
       a.x = ax; a.y = ay; b.x = mid.x + 60; b.y = mid.y + 60;
       const min = 5;
       for (let dy = -12; dy <= 12; dy++) for (let dx = -12; dx <= 12; dx++) {
-        const x = Math.floor(mid.x + dx), y = Math.floor(mid.y + dy), d = SIM.campDist(v, x, y);
+        const x = Math.floor(mid.x + dx), y = Math.floor(mid.y + dy), d = SIM.utanforByn(v, x, y);
         if (d < min || vat[y * SIM.W + x] === SIM.T.Vatten || forSmutsigt(v, x, y) || SIM.bitAt(v, x, y)) continue;
         const r = SIM.pickSpot(v, b, 'samla', [{ x, y, d }]);
         if (!r) continue;
@@ -1334,7 +1334,7 @@ SCENARIER.odling = {
     }
     // inte nära byn (steg 2.10.12): inget närmare lägret än FANGST.vildIn, och nött mark runt omkring tar bort det mesta
     let naraByn = 0;
-    for (let i = 0; i < W * H; i++) if (campDist(s, i % W, Math.floor(i / W)) < FANGST.vildIn) naraByn += vaxerAt(s, 'vildrova', i) + vaxerAt(s, 'arter', i);
+    for (let i = 0; i < W * H; i++) if (utanforByn(s, i % W, Math.floor(i / W)) < FANGST.vildIn) naraByn += vaxerAt(s, 'vildrova', i) + vaxerAt(s, 'arter', i);
     const trampad = createState(7, START); trampad.kal = nyKalender(trampad.now, 3); klockan(trampad);
     const tg = groundOf(trampad), kx = rovI % W, ky = Math.floor(rovI / W);
     for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if ((dx || dy) && SIM.inMap(kx + dx, ky + dy)) { const j = (ky + dy) * W + kx + dx; tg.cover[j] = 0; tg.trees[j] = 0; }
@@ -1467,16 +1467,15 @@ SCENARIER.falt = {
     // faltStig rutor fritt emellan, och så nära byn som det går. Byn har ett hus så att gränsen ligger en bit ut
     const gs = createState(6, START); gs.kal = nyKalender(gs.now, 1); klockan(gs, 7); tandEld(gs);
     medHus(gs);
-    const site = SIM.faltSite(gs, 3, 9), gr = SIM.byGrans(gs), stig = SIM.ODLING.faltStig;
+    const site = SIM.faltSite(gs, 3, 9), stig = SIM.ODLING.faltStig;
     const delar = [...SIM.housesOf(gs), ...SIM.zonesOf(gs), ...SIM.stationerOf(gs).filter(t => !SIM.stationDef(t.k)?.utkant).map(t => ({ x: t.x, y: t.y, ...SIM.storlekAv(t) }))];
     let inpa = 0, innanfor = 0;
     if (site) for (const i of SIM.faltRutor({ x: site.x, y: site.y, w: 3, n: 9, dir: SIM.faltRiktning(gs, site.y) } as SIM.Falt)) {
       const x = i % W, y = Math.floor(i / W);
       if (delar.some(d => x >= d.x - stig && x < d.x + d.w + stig && y >= d.y - stig && y < d.y + d.h + stig)) inpa++;
-      const e = SIM.eldPlats(gs);
-      if (delar.some(d => Math.hypot(d.x - e.x, d.y - e.y) > Math.hypot(x - e.x, y - e.y) + 1.5 && Math.abs(Math.atan2(d.y - e.y, d.x - e.x) - Math.atan2(y - e.y, x - e.x)) < 0.2)) innanfor++;
+      if (SIM.iByn(gs, x, y)) innanfor++; // innanför byns område (steg 6.2.4)
     }
-    const narmast = site ? SIM.byAvstand(gs, site.x + 1.5, site.y + 0.5) : Infinity;
+    const narmast = site ? SIM.utanforByn(gs, site.x + 1.5, site.y + 0.5) : Infinity;
     // en sparad by från före steg 2.10.13: fältet blir 2 × 2 rutor när byn laddas
     const gm = cloneState(s);
     gm.falt = [{ id: 1, x: 10, y: 10, agare: 0, steg: 'vaxer', groda: 'rovor', vuxit: 0.5, rord: gm.now } as unknown as SIM.Falt];
@@ -1484,7 +1483,7 @@ SCENARIER.falt = {
     const gf = gm.falt[0], gammalt = gf.w === 2 && gf.n === 4 && gf.sadda === 4 && SIM.faltRutor(gf).length === 4;
     // en sparad by från före steg 3.10.23.8: kornet blir ärter, också på fältet, och fröna delas lika på rovfrön och ärtfrön
     // (det udda till rovfröna), också vems de är och det som bärs
-    const gk = cloneState(s), gp = living(gk)[0], gc = campCenter(gk);
+    const gk = cloneState(s), gp = living(gk)[0], gc = bynsMitt(gk);
     gk.stackar = (gk.stackar ?? []).filter(a => !['rovfron', 'artfron', 'arter'].includes(a.k));
     gk.stackar.push({ k: 'fron', n: 9, c: 0.8, x: Math.floor(gc.x) + 1, y: Math.floor(gc.y), ag: { [gp.id]: 5 } }, { k: 'korn', n: 4, c: 1, x: Math.floor(gc.x) + 1, y: Math.floor(gc.y) + 1 });
     gp.task = { act: 'samla', items: { fron: 7, korn: 2 }, ag: { fron: { [gp.id]: 3 } } } as unknown as SIM.Task;
@@ -1511,7 +1510,7 @@ SCENARIER.falt = {
       ['ett fält som ingen skött på länge blir gräs igen', gras],
       ['ett fält i en sparad by från före steget blir 2 × 2 rutor när byn laddas', gammalt],
       ['i en sparad by från före steg 3.10.23.8 blir kornet ärter, också på fältet, och fröna delas lika på rovfrön och ärtfrön, också det som bärs och vems de är', kornFron],
-      [`ett nytt fält ligger utanför byns hus, stationer och lagerplatser med minst ${stig} rutor fritt emellan (${inpa} rutor för nära, ${innanfor} innanför något, ${narmast.toFixed(1)} rutor från byn)`, !!site && inpa === 0 && innanfor === 0 && narmast <= stig + 1 + SIM.ODLING.faltUtom && gr.ut.some(u => u > 0)],
+      [`ett nytt fält ligger utanför byns hus, stationer och lagerplatser med minst ${stig} rutor fritt emellan och utanför byns område (${inpa} rutor för nära, ${innanfor} innanför området, ${narmast.toFixed(1)} rutor från byn)`, !!site && inpa === 0 && innanfor === 0 && narmast <= SIM.ODLING.faltTill],
     ];
   },
 };
@@ -1523,7 +1522,7 @@ SCENARIER.regntvatt = {
     const s = createState(5, START); klockan(s); medHus(s);
     let inne = -1;
     for (let i = 0; i < W * H && inne < 0; i++) if (roomAt(s, (i % W) + 0.5, Math.floor(i / W) + 0.5)) inne = i;
-    const c = campCenter(s), ix = (inne % W) + 0.5, iy = Math.floor(inne / W) + 0.5;
+    const c = bynsMitt(s), ix = (inne % W) + 0.5, iy = Math.floor(inne / W) + 0.5;
     // en timme med kraftigt regn (inte snö)
     let t = Math.ceil(s.now / HOUR) * HOUR;
     for (let k = 0; k < 24 * 400; k++, t += HOUR) { const v = vaderNu(s, t); if (v.nb > 0.5 && !v.sno && vaderNu(s, t + HOUR).nb > 0.5) break; }
@@ -1552,7 +1551,7 @@ SCENARIER.regntvatt = {
 SCENARIER.smutsibyn = {
   text: 'Steg 3.6.10: blod och toa-högar inne i byn ger en tanke som sänker humöret hos dem som ser dem, och mat som ligger i en blodfläck eller på eller bredvid en toa-hög ruttnar fortare',
   kor: () => {
-    const { blodas, akel, toaBesok, slitageNu, smutsIByn, SMUTS, zoneOf, byAvstand } = SIM;
+    const { blodas, akel, toaBesok, slitageNu, smutsIByn, SMUTS, zoneOf, utanforByn } = SIM;
     const s = createState(1, START); klockan(s); tandEld(s);
     const [p, q] = living(s).filter(r => ageOf(r, s.now) >= 18) as [SIM.Person, SIM.Person];
     const z = zoneOf(s), bx = z.x + 0.5, by = z.y + 0.5;
@@ -1566,7 +1565,7 @@ SCENARIER.smutsibyn = {
     const pa = slitageNu(s, { k: 'bar', x: z.x, y: z.y }).per, rent = slitageNu(s, ren).per;
     Object.assign(q, { x: z.x + 0.5, y: z.y + z.h - 1 + 0.5, task: undefined }); toaBesok(s, q); // i lagrets andra hörn
     const toa = slitageNu(s, { k: 'bar', x: z.x + 1, y: z.y + z.h - 1 }).per;
-    const ibyn = smutsIByn(s).punkter.length, inne = byAvstand(s, z.x, z.y) <= SMUTS.byn;
+    const ibyn = smutsIByn(s).punkter.length, inne = utanforByn(s, z.x, z.y) <= SMUTS.byn;
     // nytt blod i en bleknad fläck (samma antal fläckar) syns genast, inte först nästa timme (smutsIByn, kodgenomgången 3.10.25)
     const u = createState(1, START); klockan(u); tandEld(u);
     const uz = zoneOf(u);
@@ -1691,7 +1690,7 @@ SCENARIER.varg = {
     // en by i istiden med en flock nära
     const by = (h: number, seed = 1) => { const s = createState(seed, START); s.kal = nyKalender(s.now, 0); klockan(s, h); tandEld(s); return s; };
     const flock = (s: State, n: number, dx: number, hunger: number) => {
-      const c = campCenter(s), id = s.vargNr = (s.vargNr ?? 0) + 1;
+      const c = bynsMitt(s), id = s.vargNr = (s.vargNr ?? 0) + 1;
       const f: SIM.Vargflock = { id, vargar: Array.from({ length: n }, (_, j) => 10_000_000 + id * 8 + j), x: c.x + dx, y: c.y, mx: c.x + dx, my: c.y, gar: s.now + 48 * HOUR, hunger, gor: 'stryker' };
       (s.vargar ??= []).push(f); return f;
     };
@@ -1756,7 +1755,7 @@ SCENARIER.kallar = {
       setMat(s, { vilt: 60, bar: 60 });
       const vuxna = living(s).filter(q => ageOf(q, s.now) >= 18 && ageOf(q, s.now) < 55);
       for (const q of vuxna) { const t = SIM.addTool(s, 'flintspjut', q); t.hos = q.id; q.pot.mod = 10; q.pot.karisma = 10; }
-      const c = campCenter(s), id = s.vargNr = 1;
+      const c = bynsMitt(s), id = s.vargNr = 1;
       const f: SIM.Vargflock = { id, vargar: [10_000_008, 10_000_009], x: c.x + 14, y: c.y, mx: c.x + 14, my: c.y, gar: s.now + 48 * HOUR, hunger: 0.5, gor: 'stryker', sedd: s.now };
       (s.vargar ??= []).push(f);
       return { s, f, vuxna };
@@ -1785,7 +1784,7 @@ SCENARIER.kallar = {
     step(av.s, SIM.BEAT);
     // flocken står på isen längre från land än VARG.na: jägarna kommer inte längre än stranden och anfaller därifrån (kodgenomgången 3.10.25)
     const is = by(); is.vuxna[3].pot.mod = 16; is.f.sag = is.vuxna[3].id; is.s.is = { vatten: -5, cm: 30 };
-    const ic = campCenter(is.s), m = getMap(is.s.seed), landNara = (x: number, y: number) => { let d = Infinity; for (let dy = -6; dy <= 6; dy++) for (let dx = -6; dx <= 6; dx++) { const i = (y + dy) * W + x + dx; if (i >= 0 && i < W * H && m.tiles[i] !== T.Vatten) d = Math.min(d, Math.hypot(dx, dy)); } return d; };
+    const ic = bynsMitt(is.s), m = getMap(is.s.seed), landNara = (x: number, y: number) => { let d = Infinity; for (let dy = -6; dy <= 6; dy++) for (let dx = -6; dx <= 6; dx++) { const i = (y + dy) * W + x + dx; if (i >= 0 && i < W * H && m.tiles[i] !== T.Vatten) d = Math.min(d, Math.hypot(dx, dy)); } return d; };
     let isR = { x: -1, y: -1, d: Infinity };
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const d = Math.hypot(x - ic.x, y - ic.y), l = m.tiles[y * W + x] === T.Vatten ? landNara(x, y) : 0; if (l > SIM.VARG.na + 0.5 && l < 5.5 && d < isR.d) isR = { x, y, d }; }
     const pa = () => { is.f.x = is.f.mx = isR.x + 0.5; is.f.y = is.f.my = isR.y + 0.5; is.f.gor = 'vantar'; };
@@ -1858,7 +1857,7 @@ SCENARIER.vargskydd = {
       if (hus) medHus(s);
       for (let i = 0; i < 4; i++) SIM.newTing(s, 'fiskespjut', 1, SIM.BYN);
       kor(s, 0.2);
-      const c = campCenter(s), id = s.vargNr = (s.vargNr ?? 0) + 1;
+      const c = bynsMitt(s), id = s.vargNr = (s.vargNr ?? 0) + 1;
       (s.vargar ??= []).push({ id, vargar: [10_000_000 + id * 8, 10_000_001 + id * 8], x: c.x + 9, y: c.y, mx: c.x + 9, my: c.y, gar: s.now + 48 * HOUR, hunger: 0.1, gor: 'stryker' });
       let gom = 0, svaga = 0, iHus = 0, vidEld = 0, forsvar = 0, medVapen = 0, foralder = 0;
       kor(s, 0.4);
@@ -1978,7 +1977,7 @@ SCENARIER.stridkronika = {
     for (const x of jag) SIM.addTool(v, 'flintspjut', x);
     let jakter = 0, forsta = 0;
     for (let i = 0; i < 6; i++) {
-      const id = v.vargNr = (v.vargNr ?? 0) + 1, c = campCenter(v);
+      const id = v.vargNr = (v.vargNr ?? 0) + 1, c = bynsMitt(v);
       const f: SIM.Vargflock = { id, vargar: [10_000_000 + id * 8], x: c.x + 5, y: c.y, mx: c.x + 5, my: c.y, gar: v.now + 48 * HOUR, hunger: 0.5, gor: 'stryker' };
       (v.vargar ??= []).push(f);
       const n0 = krn(v).length;
@@ -2075,7 +2074,7 @@ SCENARIER.arbete = {
     // inga kaniner alls: hen letar dit viltkartan är hög, i vanlig fart, tills en grupp syns eller jakten är slut
     const s = cloneState(s0), p = SIM.byId(s, p0.id)!;
     for (let i = 0; i < 9 && djurOf(s).length; i++) s.djurDoda = [...(s.djurDoda ?? []), ...djurOf(s).map(d => ({ id: d.id, t: s.now }))];
-    const c = campCenter(s), tk = jakt(s, c.x + 0.5, c.y + 0.5); Object.assign(p, { x: tk.tx, y: tk.ty });
+    const c = bynsMitt(s), tk = jakt(s, c.x + 0.5, c.y + 0.5); Object.assign(p, { x: tk.tx, y: tk.ty });
     const r3 = jaktForsok(s, p, tk), d3 = Math.hypot(tk.tx - p.x, tk.ty - p.y);
     const v = viltStart(s, s.now), vi = Math.floor(tk.ty) * W + Math.floor(tk.tx);
     let hogre = 0, alla = 0;
@@ -2221,7 +2220,7 @@ SCENARIER.virke = {
     setMat(s, { bar: 200 }); SIM.setAmount(s, 'ved', 60); SIM.setAmount(s, 'virke', 0); SIM.setAmount(s, 'grenar', 20);
     const vuxna = living(s).filter(r => ageOf(r, s.now) >= 18);
     for (const r of vuxna.slice(0, 2)) addTool(s, 'yxa', r);
-    const g = groundOf(s), c = campCenter(s);
+    const g = groundOf(s), c = bynsMitt(s);
     let fallda = 0;
     for (let i = 0; i < W * SIM.H && fallda < 2; i++) { const x = i % W, y = (i - x) / W; if (g.trees[i] >= FOREST && Math.hypot(x - c.x, y - c.y) < 14) { fellTree(s, vuxna[0], x + 0.5, y + 0.5); fallda++; } }
     const brist0 = PROJEKT.virke.brist(s);
@@ -2263,7 +2262,7 @@ SCENARIER.trad = {
     ga.alder![tat] = SIM.TRAD.vuxenDygn + SIM.TRAD.gammalDygn + SIM.TRAD.torrDygn - 0.01; SIM.aldras(ga, tat, 1);
     const fallen = ga.trees[tat] === 0 && !SIM.stadium(ga, tat);
     // en planta som växer klart börjar sitt vuxna liv
-    const b = cloneState(s), gb = groundOf(b), pl = [...gb.trees.keys()].find(i => isSoil(gb.tiles[i]) && gb.trees[i] === 0 && gb.cover[i] >= SIM.HIGH && SIM.campDist(b, i % W, Math.floor(i / W)) > 8)!;
+    const b = cloneState(s), gb = groundOf(b), pl = [...gb.trees.keys()].find(i => isSoil(gb.tiles[i]) && gb.trees[i] === 0 && gb.cover[i] >= SIM.HIGH && SIM.utanforByn(b, i % W, Math.floor(i / W)) > 8)!;
     gb.trees[pl] = 0.9999; gb.alder![pl] = 77; SIM.growGround(b, 1, 1);
     const ny = SIM.stadium(gb, pl), nyAlder = gb.alder![pl];
     // åldern följer med i sparfilen (hela dygn)

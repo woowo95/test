@@ -1,4 +1,4 @@
-import { campDist } from './plats';
+import { utanforByn } from './omrade';
 import { groundOf } from './mark';
 import { FOREST, findPath, nasbara } from './vag';
 import { Ting, halvKlar, nTools, newTing, tingOf } from './agande';
@@ -34,7 +34,7 @@ export const LAGER = balans('lager', {
   skogKost: 2, // en ny lagerplats i skogen räknas så här många rutor längre bort per vuxet träd som ska fällas (steg 3.6.9)
   bredvid: 2, // det som ligger så här nära en lagerplats räknas till förrådet, och läggs ut i ringen runt den
   nyBredd: 3, nyHojd: 2, // en ny lagerplats
-  nyEldMin: 3, nyLagerMax: 8, // ... ligger minst så här långt från elden och högst så här långt från lägret
+  nyEldMin: 3, nyLagerMax: 6, // ... ligger minst så här långt från elden och högst så här långt utanför byns område
   krympMin: 4, // en lagerplats på så här många rutor eller färre krymper inte ...
   krympDel: 2, // ... annars när mer än 1 / Del av rutorna står tomma (2 = hälften) ...
   krympTim: 6, // ... och har stått så i så här många timmar (en kvarts år i spelet, steg 2.12.4) ...
@@ -826,7 +826,7 @@ function newZone(s: State) {
   const zs = zonesOf(s), f = eldPlats(s), z0 = zs[0], g = groundOf(s), kand: { c: Zone; d: number }[] = [];
   for (let y = 0; y < H - 2; y++) for (let x = 0; x < W - 2; x++) {
     const c: Zone = { x, y, w: LAGER.nyBredd, h: LAGER.nyHojd }, df = Math.hypot(x + c.w / 2 - f.x, y + c.h / 2 - f.y);
-    if (df < LAGER.nyEldMin || campDist(s, x + (c.w - 1) / 2, y + (c.h - 1) / 2) > LAGER.nyLagerMax || !allUsable(s, c) || zs.some(o => overlaps(c, o, LAGER.mellan))) continue;
+    if (df < LAGER.nyEldMin || utanforByn(s, x + (c.w - 1) / 2, y + (c.h - 1) / 2) > LAGER.nyLagerMax || !allUsable(s, c) || zs.some(o => overlaps(c, o, LAGER.mellan))) continue;
     const skog = skogI(s, c); // i skogen fälls träden först (steg 3.6.9)
     if (skog < Infinity) kand.push({ c, d: Math.hypot(x - z0.x, y - z0.y) + skog * LAGER.skogKost });
   }
@@ -968,7 +968,7 @@ export function haulJob(s: State, near?: number, baraMat = false) {
   for (const a of things(s)) {
     if (taken.has(key(a.x, a.y)) || baraMat && !isFood(a.k)) continue;
     if (s.flod && (iVattnetNu(s, key(a.x, a.y)) || !nasIFloden(s, key(a.x, a.y)))) continue; // inte det som ligger i översvämningen eller bakom den (flod.ts)
-    const d = campDist(s, a.x, a.y); // nära lägret: elden eller någon lagerplats
+    const d = utanforByn(s, a.x, a.y); // nära lägret: elden eller någon lagerplats
     if (near !== undefined && d > near) continue;
     const zi = zoneAt(s, a.x, a.y);
     let why: string | undefined, sc = d;
@@ -989,7 +989,7 @@ export function flodUndan(s: State) {
   for (const a of things(s)) {
     const i = key(a.x, a.y);
     if (!isFood(a.k) || !flodHotad(s, i) || iVattnetNu(s, i) || taken.has(i) || forvarAt(s, a.x, a.y) || !nasIFloden(s, i)) continue; // bara det man når
-    const d = campDist(s, a.x, a.y);
+    const d = utanforByn(s, a.x, a.y);
     if (d < bs) { bs = d; best = { x: a.x + 0.5, y: a.y + 0.5, why: 'Vattnet stiger: bär undan maten' }; }
   }
   return best;

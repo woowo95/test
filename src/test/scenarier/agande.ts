@@ -753,10 +753,10 @@ SCENARIER.handlare = {
     // kvällsmarknaden (steg 4.5.4.11): på dagen väntar hen vid filtens plats till kvällen och går på morgonen
     const v0 = s.handlare, med = v0 && { varor: structuredClone(v0.varor), silver: v0.silver }, dagNu = SIM.hourOf(s.now), vantar = !!v0 && v0.fas === 'vantar' && !(s.filtar ?? []).some(f => f.handlare === v0.id) && SIM.hourOf(v0.kvall!) === SIM.HANDEL.kvall && SIM.handlarFas(v0) === 'Väntar på kvällen';
     for (let i = 0; i < 30 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); }
-    const h = s.handlare, e = SIM.eldPlats(s), morgon = !!h && Math.abs(SIM.hourOf(h.gar) - SIM.HANDEL.morgon) < 0.05;
+    const h = s.handlare, morgon = !!h && Math.abs(SIM.hourOf(h.gar) - SIM.HANDEL.morgon) < 0.05;
     const kom = !!h && !!med && h.id < 0 && med.varor.length > 0 && SIM.kgOf(med.varor) <= SIM.rymmer(h) && med.silver >= SIM.HANDEL.silver[0] // det hen kom med (byn kan redan ha handlat)
       && (h.ut.x < 1 || h.ut.y < 1 || h.ut.x > SIM.W - 1 || h.ut.y > SIM.H - 1);
-    const filt = !!h && h.fas === 'handlar' && Math.hypot(h.x - e.x - 0.5, h.y - e.y - 0.5) <= SIM.HANDEL.avstand + 1
+    const filt = !!h && h.fas === 'handlar' && SIM.utanforByn(s, h.x, h.y) <= SIM.HANDEL.avstand + SIM.HANDEL.letaLangre + 1
       && (s.filtar ?? []).some(f => f.handlare === h.id && f.varor.length === 0); // varorna ligger i packningen (steg 4.5.7.4)
     const kron = (s.hist?.kronika ?? []).filter(k => k[1].includes('första handlaren')).length === 1;
     // på kvällen väljer den som handlar för byn att gå till filten (night i val.ts)
@@ -778,7 +778,7 @@ SCENARIER.handlare = {
       [`när byn är rik nog bestäms den första handlaren (rikedom ${Math.round(rikedom(s))})`, bestamd],
       [`handlaren kommer från kanten med varor som ryms i ryggsäcken (${h && med ? `${h.namn}, ${SIM.kgOf(med.varor).toFixed(1)} kg av ${SIM.rymmer(h)}` : 'ingen'})`, kom],
       [`handlaren som kommer klockan ${dagNu.toFixed(1)} väntar vid filtens plats till kvällen (${v0?.kvall ? SIM.hourOf(v0.kvall).toFixed(1) : '–'})`, vantar],
-      ['handlaren breder ut en filt nära elden, med varorna kvar i packningen, och går på morgonen', filt && morgon],
+      ['handlaren breder ut en filt strax utanför byns område, med varorna kvar i packningen, och går på morgonen', filt && morgon],
       ['den första handlaren står i krönikan', kron],
       [`på kvällen går en vuxen till filten för att handla för byn (${kvVal.join(', ')})`, kvVal.includes('handla')],
       ['handlaren går hem efter några timmar och nästa besök bestäms', gick],
@@ -928,7 +928,7 @@ SCENARIER.tillfalle = {
     setMat(s, { vilt: 60, bar: 60 });
     const vuxna = living(s).filter(q => SIM.ageOf(q, s.now) >= 18 && SIM.ageOf(q, s.now) < 55);
     for (const q of vuxna) { const t = addTool(s, 'flintspjut', q); t.hos = q.id; q.pot.mod = 18; q.pot.karisma = 14; }
-    const c = SIM.campCenter(s);
+    const c = SIM.bynsMitt(s);
     const f: SIM.Vargflock = { id: s.vargNr = 1, vargar: [10_000_008], x: c.x + 14, y: c.y, mx: c.x + 14, my: c.y, gar: s.now + 48 * HOUR, hunger: 0.5, gor: 'stryker', sedd: s.now, sag: vuxna[0].id };
     (s.vargar ??= []).push(f);
     for (let i = 0; i < 60 && !f.jagare; i++) SIM.jaktBeslut(s, f, living(s));

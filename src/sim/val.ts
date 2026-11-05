@@ -1,6 +1,7 @@
+import { bynsAvstand, bynsMitt, iByn, omrade, utanforByn } from './omrade';
 import { iVattnetNu, strandNu, vattenNu } from './sjo';
 import { freeTools, take } from './agande';
-import { PLATS, campCenter, campDist, campGrid, campKey } from './plats';
+import { PLATS } from './plats';
 import { vargSkydd, vargjaktVal } from './varg';
 import { tornadoSkydd } from './tornado';
 import { brandVal } from './brand';
@@ -39,7 +40,7 @@ import { balans } from './balans';
 import { islagt, naVattnet } from './is';
 import { drickVal, torstig, tortarFarligt, vattenVal } from './torst';
 import { forSmutsigt, latrinFor } from './smuts';
-import { bordenOf, byInne, ledigPlats, lekplats, sittAt, stationAt, stationFor, storlekAv, vidStation } from './stationer';
+import { bordenOf, ledigPlats, lekplats, sittAt, stationAt, stationFor, storlekAv, vidStation } from './stationer';
 import { RATTER, TORKAS, grillTid, kanGrilla, kanTorka, torkTid } from './matlagning';
 import { egenBrasa } from './brasor';
 import { TEK, forsokChans, forsokVal, laraVal, tekArbete } from './teknik';
@@ -152,7 +153,6 @@ export const VAL = balans('val', {
   skuggaBland: 3, // en av så många av de närmaste skuggrutorna
   svalkaMin: 30, svalkaSpann: 30, // så länge man svalkar sig i skuggan innan man väljer igen
   // handarbete utan bänk (steg 2.10.6)
-  bynRadie: 1, bynSpann: 2.5, // så här många rutor från byns inre (plus upp till Spann) sitter den som gör handarbete utan bänk
   bynTak: 0.5, // med denna chans under tak i samlingshuset, när det finns
 });
 // skugga (steg 2.3.13): i ett hus eller under ett träd, där solen inte värmer (varmeDelar i steg.ts)
@@ -174,17 +174,17 @@ export function skuggaNara(s: State, p: Person, x0: number, y0: number): { x: nu
 }
 // där p står om det är skugga, annars en skuggig plats nära
 const skuggaHar = (s: State, p: Person) => iSkugga(s, p.x, p.y) ? { x: p.x, y: p.y } : skuggaNara(s, p, p.x, p.y);
-// handarbete utan bänk (steg 2.10.6): inne i byn, där lagret och husen är (byInne i stationer.ts), eller under tak i samlingshuset,
+// handarbete utan bänk (steg 2.10.6): någonstans inne i byns område (omrade.ts, steg 6.2.4), eller under tak i samlingshuset,
 // så att arbetet inte hänger på var elden ligger. Inte i en vägg, i vattnet, i en station eller på en stubbe vid bordet.
 // Den som är för varm i solen söker skugga nära platsen (steg 2.3.13).
 function hantverkIByn(s: State, p: Person): { x: number; y: number } {
   const sal = samlingRum(s);
   if (sal && rnd(s, 'val', p) < VAL.bynTak) return punktIRuta(s, pick(s, sal.tiles, 'val', p), p);
-  const mid = byInne(s), cx = mid.x + 0.5, cy = mid.y + 0.5;
+  const o = omrade(s), cx = o.mitt.x + 0.5, cy = o.mitt.y + 0.5;
   if (forVarmISol(s, p)) { const sk = skuggaNara(s, p, cx, cy); if (sk) return sk; }
-  for (let k = 0; k < 12; k++) {
-    const ang = rnd(s, 'val', p) * Math.PI * 2, r = VAL.bynRadie + rnd(s, 'val', p) * VAL.bynSpann, x = cx + Math.cos(ang) * r, y = cy + Math.sin(ang) * r;
-    if (inMap(x, y) && !blocked(s, x, y) && !sittAt(s, x, y) && !stationAt(s, x, y)) return { x, y };
+  for (let k = 0; k < 24; k++) {
+    const x = o.x0 + rnd(s, 'val', p) * (o.x1 - o.x0 + 1), y = o.y0 + rnd(s, 'val', p) * (o.y1 - o.y0 + 1);
+    if (iByn(s, x, y) && !blocked(s, x, y) && !sittAt(s, x, y) && !stationAt(s, x, y)) return { x, y };
   }
   return freeNear(s, cx, cy);
 }
@@ -275,12 +275,12 @@ function platsFor(s: State, act: Act, p: Person): { x: number; y: number } {
     return isForest(s, y * W + x); // grenar och vilt finns i skogen
   };
   // arbetsplatser räknas från byns läger (eld och lagerplatser), inte bara från elden
-  const cands: { x: number; y: number; d: number }[] = [], mid = campCenter(s);
+  const cands: { x: number; y: number; d: number }[] = [], mid = bynsMitt(s);
   const min = plats === 'ang' || plats === 'avsides' ? VAL.narAvstAng : VAL.narAvst, max = plats === 'avsides' ? VAL.langtAvsides : Infinity;
   for (let i = 0; i < VAL.provar; i++) {
     const x = Math.floor(mid.x + (rnd(s, 'val', p) - 0.5) * (2 * PLATS.dagX)), y = Math.floor(mid.y + (rnd(s, 'val', p) - 0.5) * (2 * PLATS.dagY));
     if (!inMap(x, y)) continue;
-    const d = campDist(s, x, y);
+    const d = utanforByn(s, x, y);
     if (d < min || d > max) continue;
     if (want(m.tiles[y * W + x], x, y)) cands.push({ x, y, d });
   }
@@ -320,7 +320,7 @@ export function nastaBuske(s: State, k: Lager, x0: number, y0: number) {
 // (med rädslan avdragen; utan tror gäller det rutan ger) och rädslan ensam
 export function nastaRuta(s: State, varde: (x: number, y: number) => number, x0: number, y0: number, r: number, id: number, krav: readonly { sett: readonly number[]; minst: number }[], drag?: { ut: number; tror?: (x: number, y: number) => number; radsla: (x: number, y: number) => number }) {
   const cx = Math.floor(x0), cy = Math.floor(y0), tiles = vattenNu(s), best: ({ x: number; y: number } | undefined)[] = [], bv = krav.map(() => -Infinity);
-  const n = krav[0]?.sett.length ?? 0, utan = krav.every(q => q.minst <= 0), minst = utan ? -Infinity : Math.min(...krav.map(q => q.minst)), lager = campGrid(s), d0 = campDist(s, x0, y0);
+  const n = krav[0]?.sett.length ?? 0, utan = krav.every(q => q.minst <= 0), minst = utan ? -Infinity : Math.min(...krav.map(q => q.minst)), lager = bynsAvstand(s), d0 = utanforByn(s, x0, y0);
   // långt bort (bortom MINNE.sokR) prövas varannan ruta: det är bara riktningen som behövs, väl framme letar man nära
   const st = r > MINNE.sokR ? 2 : 1;
   for (let dy = -r; dy <= r; dy += st) for (let dx = -r; dx <= r; dx += st) {
@@ -338,7 +338,7 @@ export function nastaRuta(s: State, varde: (x: number, y: number) => number, x0:
 }
 // ingen plats hittades i närheten: den närmaste rutan som passar, var den än ligger
 function nearestWanted(s: State, want: (t: number, x: number, y: number) => boolean, min = 0) {
-  const m = getMap(s.seed), lager = campGrid(s);
+  const m = getMap(s.seed), lager = bynsAvstand(s);
   let best: { x: number; y: number } | undefined, bd = Infinity;
   for (let i = 0; i < W * H; i++) {
     const x = i % W, y = Math.floor(i / W);
@@ -350,7 +350,7 @@ function nearestWanted(s: State, want: (t: number, x: number, y: number) => bool
 }
 // en plats på land en bit bort åt ett slumpat håll (p:s egen slumpföljd)
 function walkSpot(s: State, p: Person, far: number) {
-  const f = campCenter(s);
+  const f = bynsMitt(s);
   for (let k = 0; k < 20; k++) {
     const ang = rnd(s, 'val', p) * Math.PI * 2, r = far * (VAL.gangMin + rnd(s, 'val', p) * VAL.gangSpann);
     const x = clamp(f.x + 0.5 + Math.cos(ang) * r, 0.5, W - 0.5), y = clamp(f.y + 0.5 + Math.sin(ang) * r, 0.5, H - 0.5);
@@ -362,10 +362,10 @@ function walkSpot(s: State, p: Person, far: number) {
 // närmaste av dem. Sparas tills lägret ändras eller något byggs (ett nytt hus kan stå på stranden)
 const strandCache = new WeakMap<State, { key: string; ok: number[]; bad?: { x: number; y: number } }>();
 function strandOf(s: State) {
-  const key = `${campKey(s)},${s.byggV ?? 0}`;
+  const key = `${omrade(s).key},${s.byggV ?? 0}`;
   let c = strandCache.get(s);
   if (c?.key !== key) {
-    const sh = strandNu(s), ok: number[] = [], lager = campGrid(s);
+    const sh = strandNu(s), ok: number[] = [], lager = bynsAvstand(s);
     let bad: { x: number; y: number } | undefined, bd = VAL.strandNara;
     for (let i = 0; i < W * H; i++) {
       if (!sh[i]) continue;

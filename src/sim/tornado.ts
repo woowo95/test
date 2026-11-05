@@ -4,7 +4,7 @@ import { MATERIAL, bitAt, blocked, roofed, touch } from './byggnad';
 import { alive, count, living, log } from './folk';
 import { drabbadHus, upplev } from './uppvaxt';
 import { kanGa, skada, Kroppsdel } from './halsa';
-import { eldPlats } from './karta';
+import { bynsMitt } from './omrade';
 import { avbryt, minska, nagotPa, stacksOf, tidy } from './lager';
 import { die } from './liv';
 import { groundOf } from './mark';
@@ -32,7 +32,7 @@ import { larmAvbryter } from './handlingar';
 export const TORNADO = balans('tornado', {
   borjar: [0.5, 5.5], // tornadon kommer så här många dygn (år i spelet) in i tidsåldern (slumpas mellan, hela timmar) ...
   tim: [3, 5], // ... och går över kartan på så här många timmar (slumpas mellan, hela timmar)
-  nara: 10, // banan går högst så här många rutor från elden (slumpas)
+  nara: 10, // banan går högst så här många rutor från byns mitt (bynsMitt i omrade.ts, slumpas)
   radie: 2, // den tar allt inom så här många rutor från mitten
   trad: 0.6, // chansen att ett vuxet träd i vägen fälls
   storm: [0.5, 1.5], // en vägg i vägen förlorar så här mycket av sitt skick gånger materialets storm (slumpas mellan)
@@ -57,9 +57,9 @@ export function tornadoTid(s: State, start: number) {
 // drar en tornado fram vid tiden t? (vädret, vader.ts)
 export const tornadoNu = (s: State, t = s.now) => motgangNu(s, t)?.id === 'tornado';
 
-// banan: en rak linje genom en punkt nära elden, i en riktning ur tiden, från kartans kant till kartans kant
+// banan: en rak linje genom en punkt nära byn, i en riktning ur tiden, från kartans kant till kartans kant
 function nyBana(s: State, start: number): Tornado {
-  const e = eldPlats(s), v = tal(s, start, 3823) * 2 * Math.PI, dx = Math.cos(v), dy = Math.sin(v);
+  const e = bynsMitt(s), v = tal(s, start, 3823) * 2 * Math.PI, dx = Math.cos(v), dy = Math.sin(v);
   const sida = (2 * tal(s, start, 3824) - 1) * TORNADO.nara, cx = e.x + 0.5 - dy * sida, cy = e.y + 0.5 + dx * sida;
   // var linjen går in och ut ur kartan (Liang–Barsky)
   let u0 = -Infinity, u1 = Infinity;

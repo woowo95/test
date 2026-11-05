@@ -62,7 +62,7 @@ SCENARIER.faror = {
     const tillvAndel = (v: typeof rik) => v.andel(SKYDDADE);
     // den svältande byn utan flinta letar ändå inte vid stenarna, och när den svälter bärs bara maten in (steg 2.12.3)
     const utanFlinta = by(); setFood(utanFlinta, 0.3); setAmount(utanFlinta, 'flinta', 0); const svaltFlinta = valjer(utanFlinta);
-    const ute = by(); setFood(ute, 0.3); const c = SIM.campCenter(ute);
+    const ute = by(); setFood(ute, 0.3); const c = SIM.bynsMitt(ute);
     (ute.stackar ??= []).push({ k: 'grenar', n: 5, c: 1, x: Math.floor(c.x) + 9, y: Math.floor(c.y) });
     const barGren = SIM.haulJob(ute, undefined, true), barGrenRik = SIM.haulJob(ute);
     ute.stackar.push({ k: 'bar', n: 3, c: 1, x: Math.floor(c.x) - 9, y: Math.floor(c.y) });

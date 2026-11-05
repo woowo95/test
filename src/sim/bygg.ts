@@ -1,3 +1,4 @@
+import { omrade, tillHoljet } from './omrade';
 import { upplev } from './uppvaxt';
 import { ALDER, ageOf, count, doingAct, forstaGang, livet, living, log, stat } from './folk';
 import { kronikaBer, personFalt } from './berattelser';
@@ -5,7 +6,7 @@ import { Bit, DORRAR, DorrDef, DorrSlag, Hus, MATERIAL, bitById, dorrDef, dorrRa
 import { eldPlats, getMap } from './karta';
 import { vaderSlit } from './vader';
 import { groundOf, punktIRuta } from './mark';
-import { PLATS, campCenter, rektAvstand } from './plats';
+import { PLATS, rektAvstand } from './plats';
 import { lekplats, paLek, stangerIn, uteStation } from './stationer';
 import { kunnighet, sparas } from './ekonomi';
 import { ARSTID, iIstiden } from './tid';
@@ -30,11 +31,12 @@ import { notis } from './notiser';
 // funktion står i HUS (byggnader.ts), lekplatsens läge i PLATS (plats.ts)
 export const BYGG = balans('bygg', {
   maxInne: 24, // största hus: så många sovplatser
-  husAvst: 5.5, // så långt från elden man helst bygger (rutor till husets närmaste vägg)
-  radieBas: 9, // ett hus planeras inom så här många rutor från byns mitt ...
+  husAvst: 5.5, // ett hus står helst minst så här långt från elden (rutor till husets närmaste vägg), för röken och gnistorna
+  radieBas: 9, // ett hus planeras högst så här många rutor utanför det byn omsluter (tillHoljet i omrade.ts) ...
   radiePerPerson: 0.25, // ... plus så många per invånare
+  utomVikt: 1, // en plats får så många poäng (färre är bättre) för varje ruta utanför det byn omsluter, så att byn håller ihop ...
+  mittVikt: 0.2, // ... och så många för varje ruta från områdets mitt (bynsMitt), bland platserna innanför ...
   lagerMarg: 1, // ett hus står minst så här många rutor från en lagerplats
-  mittVikt: 0.2, // en plats får så många poäng (färre är bättre) för varje ruta från byns mitt ...
   lekStraff: 3, // ... så många om huset står på lekplatsen ...
   tradVikt: 0.15, // ... och så många för varje träd som måste fällas först
   byggareInt: 4, // när byn väljer byggare väger intelligensen så här många gånger mindre än hantverket
@@ -71,11 +73,12 @@ const tileOk = (s: State, x: number, y: number, utomElden: boolean) => {
 // som står ute, helst en bit från elden och inte på lekplatsen, och inte så att väggarna stänger in mark. Träden där
 // huset ska stå fälls först, men en plats med färre träd går fortare
 function siteFor(s: State, w: number, h: number, okAt: Uint8Array) {
-  const f = eldPlats(s), mid = campCenter(s), R = BYGG.radieBas + living(s).length * BYGG.radiePerPerson, g = groundOf(s), lekR = lekplats(s), M = Math.max(PLATS.husMellan, PLATS.uteFri);
-  const platser: { x: number; y: number; sc: number }[] = [];
-  for (let y = 1; y + h < H; y++) for (let x = 1; x + w < W; x++) {
+  const f = eldPlats(s), R = BYGG.radieBas + living(s).length * BYGG.radiePerPerson, g = groundOf(s), lekR = lekplats(s), M = Math.max(PLATS.husMellan, PLATS.uteFri);
+  const platser: { x: number; y: number; sc: number }[] = [], o = omrade(s), r = Math.ceil(R) + w + h;
+  for (let y = Math.max(1, o.y0 - r); y + h < H && y <= o.y1 + r; y++) for (let x = Math.max(1, o.x0 - r); x + w < W && x <= o.x1 + r; x++) {
     const cx = x + w / 2, cy = y + h / 2;
-    if (Math.hypot(cx - mid.x, cy - mid.y) > R) continue;
+    const ut = tillHoljet(s, cx, cy); // byns område (steg 6.2.4): inget räknas från elden eller byns mitt
+    if (ut > R) continue;
     let ok = true;
     for (let yy = y - M; yy < y + h + M && ok; yy++) for (let xx = x - M; xx < x + w + M && ok; xx++) {
       const inside = xx >= x && xx < x + w && yy >= y && yy < y + h;
@@ -85,12 +88,12 @@ function siteFor(s: State, w: number, h: number, okAt: Uint8Array) {
       if (gridOf(s).at.has(yy * W + xx) || d <= PLATS.uteFri && uteStation(s, xx, yy)) ok = false; // plats för en stig mellan husen och runt stationerna ute (steg 2.10.8)
     }
     if (!ok) continue;
-    const near = rektAvstand(f.x, f.y, x, y, w, h);
+    const near = rektAvstand(f.x, f.y, x, y, w, h), m = o.mitt;
     const lek = paLek(lekR, x, y, w, h) ? BYGG.lekStraff : 0; // lekplatsen räknas från byns inre (plats.ts, steg 2.10.4)
     let trad = 0; // helst en plats med få träd: varje träd ska fällas först
     for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) if (g.trees[yy * W + xx] >= FOREST) trad++;
     const eld = rektAvstand(f.x, f.y, x - 1, y - 1, w + 2, h + 2) === 0 ? ELDFLYTT.husStraff : 0; // där elden står bara om ingen annan plats finns: elden flyttas först
-    const sc = Math.abs(near - BYGG.husAvst) + BYGG.mittVikt * Math.hypot(cx - mid.x, cy - mid.y) + lek + BYGG.tradVikt * trad + eld;
+    const sc = Math.max(0, BYGG.husAvst - near) + BYGG.utomVikt * Math.max(0, ut - Math.min(w, h) / 2) + BYGG.mittVikt * Math.hypot(cx - m.x - 0.5, cy - m.y - 0.5) + lek + BYGG.tradVikt * trad + eld;
     platser.push({ x, y, sc });
   }
   // den bästa platsen som inte stänger in någon mark (stationer.ts); lika bra platser i samma ordning som de söktes

@@ -1,5 +1,5 @@
 // Scenarier. Behov och val: behov, ved, aktivitet och fritid.
-import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, bordPlats, bordSlag, ryms, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, gain, takeFuel, ownsAmount, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, DELA, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, varmeRaknas, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, GANG, HALSA, kanGa, kroppFaktor, hemma, mossaFynd, chopStock, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker, bristGrad, bristSteg, berattaBrist, onskan, matOrdning, takeFood, vilaTim, skorbjugg, NARINGBAL, DODSORSAKER, converse, Naring, STATIONER, TEKNIK, tingOf, vaderNu, type Task } from '../../sim';
+import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, bordPlats, bordSlag, ryms, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, bynsMitt, gain, takeFuel, ownsAmount, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, DELA, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, varmeRaknas, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, GANG, HALSA, kanGa, kroppFaktor, hemma, mossaFynd, chopStock, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker, bristGrad, bristSteg, berattaBrist, onskan, matOrdning, takeFood, vilaTim, skorbjugg, NARINGBAL, DODSORSAKER, converse, Naring, STATIONER, TEKNIK, tingOf, vaderNu, type Task } from '../../sim';
 import { cloneState, stepIs, stepVader, isCm, vattenGrader, halVal, halMin, drickVal, iIstiden, ageIndex, tidyTools } from '../../sim';
 import * as SIM from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
@@ -139,7 +139,7 @@ SCENARIER.aktivitet = {
       // en jägare, en som promenerar och en bärplockare, så att alla syns i provet. Den som avbryts (t.ex. för ett samtal) får uppgiften igen
       if (i === 12) prov = living(s).filter(p => ageOf(p, s.now) >= 16).slice(0, 3);
       if (i >= 12 && i < 12 * 7) {
-        const c = campCenter(s), akt = ['jakt', 'promenad', 'samla'] as const;
+        const c = bynsMitt(s), akt = ['jakt', 'promenad', 'samla'] as const;
         prov.forEach((p, j) => {
           if (p.task?.act === akt[j] || p.died !== undefined) return;
           let x = 0, y = 0;
@@ -200,7 +200,7 @@ SCENARIER.fritid = {
         const t = p.task;
         if (ageOf(p, s.now) >= 16) { const l = isLight(s.now), v = t?.act === 'vila' ? 1 : 0; if (l) { vila.dag += v; vila.dagN++; } else { vila.natt += v; vila.nattN++; } }
         if (t?.phase !== 'do') continue;
-        const c = campCenter(s), ny = !sett.has(t); sett.add(t); // varje promenad, bad och stund vid stranden räknas en gång
+        const c = bynsMitt(s), ny = !sett.has(t); sett.add(t); // varje promenad, bad och stund vid stranden räknas en gång
         if (t.act === 'promenad') { if (ny) prom++; gang.set(p.id, Math.max(gang.get(p.id) ?? 0, Math.hypot(t.tx - c.x - 0.5, t.ty - c.y - 0.5))); }
         if (t.act === 'bada') { if (ny) bad++; if (temperature(s) < 14) badVarmt = false; }
         if (t.act === 'strand') { if (ny) strand++; if (getMap(s.seed).tiles[tileOf(p.x, p.y)] === T.Vatten) strandLand = false; }
@@ -503,7 +503,7 @@ SCENARIER.vattensack = {
     const s = createState(5, START);
     klockan(s, 10); rikBy(s);
     const [p, q, r] = treVuxna(s, 1);
-    const c = campCenter(s);
+    const c = bynsMitt(s);
     const fyll = (x: Person, dx: number) => Object.assign(x, { rest: 1, toa: 1, hunger: 1, social: 1, warm: 1, health: 1, torst: 1, blod: 1, skador: undefined, sickUntil: undefined, task: undefined, x: c.x + 0.5 + dx, y: c.y + 2.5 });
     fyll(p, 0); fyll(q, 1); fyll(r, 2); r.x = c.x + 40;
     skada(s, p, 'benH', 'benbrott', 0.9, 'olycka', ''); p.skador![0].b = 0;
@@ -540,7 +540,7 @@ SCENARIER.vard = {
     const s = createState(5, START);
     klockan(s, 10); rikBy(s);
     const [p, q] = treVuxna(s, 1, x => Object.assign(x, { rest: 1, toa: 1, social: 1, warm: 1, torst: 1, blod: 1, skador: undefined, sickUntil: undefined }));
-    const c = campCenter(s);
+    const c = bynsMitt(s);
     const fyll = (x: Person) => Object.assign(x, { rest: 1, toa: 1, hunger: 1, social: 1, warm: 1, health: 1, torst: 1, blod: 1, skador: undefined, sickUntil: undefined, task: undefined, x: c.x + 0.5, y: c.y + 2.5 });
     const timmar = (x: Person, h: number) => { for (let i = 0; i < h * 60; i++) { const d = halsaSteg(s, x, 60); if (d) return d; } return undefined; };
     // en infektion som inte rengörs blir kallbrand och dödar

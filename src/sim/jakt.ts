@@ -1,3 +1,4 @@
+import { utanforByn } from './omrade';
 import { balans } from './balans';
 import { blodas } from './blod';
 import { blocked, freeNear } from './byggnad';
@@ -13,7 +14,6 @@ import { HOUR, Jaktforsok, Person, SEC, State, T, Task, W, inMap } from './typer
 import { viltStart } from './fynd';
 import { getMap, hash } from './karta';
 import { motgangNu } from './motgang';
-import { campDist } from './plats';
 import { snoPaMarken, vaderNu } from './vader';
 import { wearTool } from './agande';
 import { tecken } from './religion';
@@ -109,7 +109,7 @@ function letaPlats(s: State, p: Person) {
     if (!(v[i] > bv)) continue;
     // poängen först (den är billig och avgör de flesta rutor), sedan de dyra villkoren; alla är rena, så valet blir detsamma
     const sc = v[i] * (1 - JAKT.letaSlump * hash(salt, x, y));
-    if (sc > bv && tiles[i] !== T.Vatten && !(campDist(s, x, y) > JAKT.letaHem) && !blocked(s, x + 0.5, y + 0.5)) { bv = sc; b = { x: x + 0.5, y: y + 0.5 }; }
+    if (sc > bv && tiles[i] !== T.Vatten && !(utanforByn(s, x, y) > JAKT.letaHem) && !blocked(s, x + 0.5, y + 0.5)) { bv = sc; b = { x: x + 0.5, y: y + 0.5 }; }
   }
   return b;
 }

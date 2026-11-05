@@ -1,3 +1,4 @@
+import { utanforByn } from './omrade';
 import { balans } from './balans';
 import { blodas } from './blod';
 import { ALDER, KROPP, ageOf, count, isSick, living, log, makeName, ovning, stat, think } from './folk';
@@ -47,7 +48,7 @@ export const ROVARE = balans('rovare', {
   flyFart: 0.06, // ... och när den flyr
   vaktSer: 26, folkSer: 12, nattSer: 0.5, dimmaSer: 0.5, // vakten ser rövare inom så här många rutor, andra inom folkSer, gånger nattSer i mörkret
   gissFel: 0.5, // vaktens gissning av antalet: fel med upp till så här stor del, gånger avståndet / vaktSer (andra gissar som på längsta avståndet)
-  vack: 40, // vakten väcker byn när flocken är så här nära elden
+  vack: 35, // vakten väcker byn när flocken är så här nära byns område (utanforByn)
   ser: 14, // rövarna ser byns försvar så här långt bort ...
   overmakt: 1.5, // ... och vänder om när fler än så här många gånger rövarna väntar med vapen
   nara: 1.5, // rövarna är framme vid förrådet så här nära
@@ -163,8 +164,8 @@ function ses(s: State, f: Rovarflock, folk: Person[]) {
   const natt = isLight(s.now) ? 1 : ROVARE.nattSer, dimma = 1 - ROVARE.dimmaSer * vaderNu(s).dimma;
   const rad = (q: Person) => (q.task?.act === 'vakt' ? ROVARE.vaktSer : ROVARE.folkSer) * natt * dimma;
   const ser = (q: Person) => vaken(q) && avst(q, f) < rad(q);
-  const vakt = folk.find(q => q.task?.act === 'vakt' && ser(q)), e = eldPlats(s);
-  const vack = () => { if (vakt && !f.vackt && Math.hypot(f.x - e.x - 0.5, f.y - e.y - 0.5) < ROVARE.vack) { f.vackt = true; vacka(s, f, vakt, folk); } };
+  const vakt = folk.find(q => q.task?.act === 'vakt' && ser(q));
+  const vack = () => { if (vakt && !f.vackt && utanforByn(s, f.x, f.y) < ROVARE.vack) { f.vackt = true; vacka(s, f, vakt, folk); } };
   if (f.sedd !== undefined) { vack(); return; }
   const p = vakt ?? folk.find(ser);
   if (!p) return;

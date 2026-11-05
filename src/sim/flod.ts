@@ -1,3 +1,4 @@
+import { bynsMitt } from './omrade';
 import { balans } from './balans';
 import { count, living, log } from './folk';
 import { motgangNu, motgangTal } from './motgang';
@@ -8,7 +9,6 @@ import { isFood, viktOf } from './saker';
 import { iVattnetNu, vattenNu } from './sjo';
 import { vattnetAndrat } from './torka';
 import { areaOf, bynsMinne } from './minne';
-import { campCenter } from './plats';
 import { eldPlats } from './karta';
 import { DAY, HOUR, State, T, W } from './typer';
 
@@ -107,7 +107,7 @@ function minnet(s: State) {
 }
 // när vattnet börjar sjunka minns alla i byn hur högt det nådde, som en egen upplevelse
 function minns(s: State, n: number) {
-  const f = campCenter(s), a = areaOf(f.x, f.y);
+  const f = bynsMitt(s), a = areaOf(f.x, f.y);
   for (const p of living(s)) bynsMinne(s, p, 'flod', a, n);
   count(s, 'flod minns');
   log(s, `Byn minns att vattnet nådde ${n === 1 ? 'en ruta' : `${n} rutor`} upp på land. Där bygger man inte igen.`, 'world');

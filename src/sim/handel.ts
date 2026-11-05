@@ -1,3 +1,4 @@
+import { bynsMitt, utanforByn } from './omrade';
 import { ByteForsok, ByteMinne, DAY, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
 import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, stat, think } from './folk';
@@ -42,7 +43,7 @@ export const HANDEL = balans('handel', {
   // som kommer fram efter sentKvall, på natten eller på dagen väntar vid filtens plats till nästa kväll
   kvall: 19, sentKvall: 23, morgon: 7,
   fart: 1.2, // rutor i sekunden när handlaren går (en bybo går 1,6 utan börda)
-  avstand: 4, // filten ligger så här många rutor från elden ...
+  avstand: 1, // filten ligger så här många rutor utanför byns område (utanforByn) ...
   letaLangre: 8, // ... eller upp till så många rutor längre bort, om det inte finns fri mark där (steg 4.5.7.3)
   vardeVaror: [25, 45], // grundvärdet av varorna hen har med sig (ungefär arbetstimmar)
   silver: [10, 30], // silvret hen har med sig (används i handeln, steg 4.4.1.3)
@@ -208,10 +209,12 @@ export function handelFri(s: State, x: number, y: number) {
   return !(s.filtar ?? []).some(f => f.x > X - FILT_BRED - 2 && f.x < X + FILT_BRED + 3 && f.y > Y - 2 && f.y < Y + djup + 3);
 }
 function filtPlats(s: State) {
-  const e = eldPlats(s);
-  for (let r = HANDEL.avstand; r <= HANDEL.avstand + HANDEL.letaLangre; r++) for (let i = 0; i < 24; i++) {
-    const v = rnd(s, 'handel') * Math.PI * 2, x = Math.round(e.x + Math.cos(v) * r), y = Math.round(e.y + Math.sin(v) * r);
-    if (x < 2 || y < 2 || x >= W - 2 || y >= H - 6 || !handelFri(s, x, y)) continue;
+  const e = eldPlats(s), m = bynsMitt(s);
+  for (let r = 1; r <= W / 2; r++) for (let i = 0; i < 24; i++) {
+    const v = rnd(s, 'handel') * Math.PI * 2, x = Math.round(m.x + Math.cos(v) * r), y = Math.round(m.y + Math.sin(v) * r);
+    if (x < 2 || y < 2 || x >= W - 2 || y >= H - 6) continue;
+    const ut = utanforByn(s, x, y);
+    if (ut < HANDEL.avstand || ut > HANDEL.avstand + HANDEL.letaLangre || !handelFri(s, x, y)) continue;
     return { x: x + 0.5, y: y + 0.5 };
   }
   return freeNear(s, e.x + 0.5, e.y + 2.5);

@@ -11,7 +11,7 @@ export const omradeG = new PIXI.Graphics();
 lagerEfter(omradeG, filterG);
 const FARG = fargTal(farg('ben', 3)), STRECK = 1, MELLAN = 1;
 
-let ritad = '';
+let ritad: number | '' = '';
 export function drawOmrade() {
   const o = ui.testMode && s ? omrade(s) : undefined, key = o ? o.key : '';
   if (key === ritad) return;

@@ -1,5 +1,5 @@
+import { bynsMitt, utanforByn } from './omrade';
 import { freeTools } from './agande';
-import { campCenter, campDist } from './plats';
 import { gjort, living, log, think } from './folk';
 import { groundOf, isForest, tileOf } from './mark';
 import { FOREST, Ground } from './vag';
@@ -47,30 +47,30 @@ export function skaRojas(s: State) {
 // det närmaste trädet att fälla i ett lager eller på ett fält i skogen, som ingen annan fäller (projektet rojning i projekt.ts)
 export function rojSpot(s: State, p: Person) {
   const taken = fellingTiles(s, p); let best = -1, bd = Infinity;
-  for (const i of skaRojas(s)) { const d = campDist(s, i % W, Math.floor(i / W)); if (!taken.has(i) && d < bd) { bd = d; best = i; } }
+  for (const i of skaRojas(s)) { const d = utanforByn(s, i % W, Math.floor(i / W)); if (!taken.has(i) && d < bd) { bd = d; best = i; } }
   return best < 0 ? undefined : { x: (best % W) + 0.5, y: Math.floor(best / W) + 0.5, i: best };
 }
 // rutorna där någon annan än utom håller på att fälla ett träd
 export const fellingTiles = (s: State, utom: Person) => new Set(living(s).filter(q => q !== utom && q.task?.act === 'falla').map(q => tileOf(q.task!.tx, q.task!.ty)));
 // närmaste vuxna träd att fälla, helst i skogskanten nära byn (p väljer med sin egen slumpföljd)
 export function treeSpot(s: State, taken: Set<number>, p: Person): { x: number; y: number } | undefined {
-  const g = groundOf(s), f = campCenter(s);
+  const g = groundOf(s), f = bynsMitt(s);
   // först träden där ett hus ska stå: de måste bort ändå, och stockarna blir husets väggar. Sedan träden på en lagerplats
   // och ett fält som röjs (steg 3.6.9): där fälls de först, och de blir trä
   let site = -1, sd = Infinity;
-  const prova = (i: number) => { if (g.trees[i] >= FOREST && !taken.has(i)) { const d = campDist(s, i % W, Math.floor(i / W)); if (d < sd) { sd = d; site = i; } } };
+  const prova = (i: number) => { if (g.trees[i] >= FOREST && !taken.has(i)) { const d = utanforByn(s, i % W, Math.floor(i / W)); if (d < sd) { sd = d; site = i; } } };
   if (g.built) for (let i = 0; i < W * H; i++) if (g.built[i]) prova(i);
   if (site < 0) for (const i of skaRojas(s)) prova(i);
   if (site >= 0) return { x: (site % W) + 0.5, y: Math.floor(site / W) + 0.5 };
   // sedan ett träd som någon har börjat fälla (paborjat.ts): det närmaste
   let half = -1, hd = Infinity;
-  for (const k in s.halvfallt ?? {}) { const i = +k, d = campDist(s, i % W, Math.floor(i / W)); if (isForest(s, i) && !taken.has(i) && d < hd) { hd = d; half = i; } }
+  for (const k in s.halvfallt ?? {}) { const i = +k, d = utanforByn(s, i % W, Math.floor(i / W)); if (isForest(s, i) && !taken.has(i) && d < hd) { hd = d; half = i; } }
   if (half >= 0) return { x: (half % W) + 0.5, y: Math.floor(half / W) + 0.5 };
   const c: { i: number; d: number }[] = [];
   for (let y = Math.max(0, f.y - SKOG.sokY); y < Math.min(H, f.y + SKOG.sokY + 1); y++) for (let x = Math.max(0, f.x - SKOG.sokX); x < Math.min(W, f.x + SKOG.sokX + 1); x++) {
     const i = y * W + x;
     if (g.trees[i] < SKOG.tradMin || taken.has(i)) continue;
-    c.push({ i, d: campDist(s, x, y) });
+    c.push({ i, d: utanforByn(s, x, y) });
   }
   if (!c.length) return undefined;
   c.sort((a, b) => a.d - b.d);
@@ -84,7 +84,7 @@ export function stamAv(g: Ground, i: number) {
 }
 const nearestStock = (s: State) => {
   const b = groundOf(s).built, onSite = (k: Stock) => b?.[tileOf(k.x, k.y)] ? 0 : 1; // stammarna där huset ska stå först
-  return stocks(s).filter(k => k.ved > 0).sort((a, c) => onSite(a) - onSite(c) || campDist(s, a.x, a.y) - campDist(s, c.x, c.y))[0];
+  return stocks(s).filter(k => k.ved > 0).sort((a, c) => onSite(a) - onSite(c) || utanforByn(s, a.x, a.y) - utanforByn(s, c.x, c.y))[0];
 };
 
 // trädet faller: det blir en liggande stam, och där det stod växer högt gräs
@@ -123,7 +123,7 @@ export function chopStock(s: State, ref: number | undefined, amount: number) {
 // den fällda stam närmast byn som räcker till ett virke (steg 4.5.5.2)
 // finns det en stam att klyva (utan att leta upp den närmaste)
 export const finnsKlyvStam = (s: State) => (s.stockar ?? []).some(k => k.ved >= SKOG.virkeVed);
-export const klyvStam = (s: State) => (s.stockar ?? []).filter(k => k.ved >= SKOG.virkeVed).sort((a, c) => campDist(s, a.x, a.y) - campDist(s, c.x, c.y))[0];
+export const klyvStam = (s: State) => (s.stockar ?? []).filter(k => k.ved >= SKOG.virkeVed).sort((a, c) => utanforByn(s, a.x, a.y) - utanforByn(s, c.x, c.y))[0];
 // en vuxen som ska skaffa ved: hugga en fälld stam, fälla ett träd, göra en yxa eller (annars) samla grenar
 // kyla: kylan är en fara (dangers i val.ts). Då görs ingen ny yxa, för ett nytt redskap är en förbättring
 export function axeTask(s: State, p: Person, kyla = false): { act: Act; x: number; y: number; ref?: number; dur?: number; why: string } | undefined {

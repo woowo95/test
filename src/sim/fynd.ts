@@ -1,5 +1,6 @@
+import { bynsAvstand, bynsMitt } from './omrade';
 import { upplev } from './uppvaxt';
-import { PLATS, campCenter, campGrid, rektAvstand } from './plats';
+import { PLATS, rektAvstand } from './plats';
 import { count, forstaGang, franMitt, gjort, stat, log, think } from './folk';
 import { getMap, hash, perKarta, vnoise } from './karta';
 import { Markslag, groundOf, markslag, startGround, tileOf } from './mark';
@@ -28,10 +29,10 @@ export const FANGST = balans('fangst', {
   // var det finns
   stenNara: 2, // så nära en sten finns flintan oftast
   jaktFaktor: 2.1, // kaninerna håller sig långt från byn (skyggIn), så en jakttur är lång; i gengäld ger platserna så mycket mer än förr
-  lagerR: 3, // i byns läger växer inget: allt är redan hämtat och marken nött. Lägret växer när byn får fler lagerplatser
-  skyggIn: 8, // vilt skyr människor: inget vilt närmare lägret än så här ...
+  lagerR: 1, // i byn växer inget: allt är redan hämtat och marken nött. Räknas från byns område (omrade.ts, steg 6.2.4), som växer med byn
+  skyggIn: 6, // vilt skyr människor: inget vilt närmare byns område än så här ...
   skyggR: 8, // ... och helt fram först så här mycket längre bort
-  vildIn: 4, vildR: 5, // de vilda grödorna växer inte närmare lägret än vildIn, och helt först vildR längre bort (steg 2.10.12)
+  vildIn: 2, vildR: 5, // de vilda grödorna växer inte närmare byns område än vildIn, och helt först vildR längre bort (steg 2.10.12)
   nottR: 2, nottMax: 0.8, nottDiv: 10, // nött mark skrämmer också: rutorna inom NottR runt en ruta räknas, och viltet minskar med antalet delat med Div, högst Max
   syn: 8, // byns närområde, som man i stort sett känner till från elden
   aterTom: 0.004, // ett uttag under detta räknas som orört när platsen växer tillbaka
@@ -234,8 +235,8 @@ function monsterDag(fro: number, k: FyndId, dag: number) {
   return { m, snitt: sum / (W * H) };
 }
 // i byns läger växer inget (FANGST.lagerR)
-const iLagret = (s: State, i: number) => iLagretI(campGrid(s), getMap(s.seed).tiles, i);
-const iLagretI = (lager: Float64Array, tiles: Uint8Array, i: number) => lager[i] < FANGST.lagerR && tiles[i] !== T.Vatten;
+const iLagret = (s: State, i: number) => iLagretI(bynsAvstand(s), getMap(s.seed).tiles, i);
+const iLagretI = (lager: Float32Array, tiles: Uint8Array, i: number) => lager[i] < FANGST.lagerR && tiles[i] !== T.Vatten;
 // vilt skyr människor: ett stort område runt lägret, och marken där många går (stigar och nött mark).
 // Räknas om en gång per dygn (av gränssnittet i en egen del, typer.ts).
 const skygghet = tvaDelar<{ dag: number; v: Float32Array }>();
@@ -251,7 +252,7 @@ function bortaOf(s: State, c2: typeof skygghet, inne: number, r: number) {
   if (visning.pa) { c = c2.bild.get(s); if (c?.dag === dag) return c.v; }
   const g = groundOf(s), v = new Float32Array(W * H), nott = new Uint8Array(W * H);
   for (let i = 0; i < W * H; i++) nott[i] = isSoil(g.tiles[i]) && markslag(g, i) === 'bar' ? 1 : 0;
-  const lager = campGrid(s); // lägret ändras inte under slingan
+  const lager = bynsAvstand(s); // lägret ändras inte under slingan
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const d = clamp((lager[y * W + x] - inne) / r, 0, 1);
     let n = 0;
@@ -504,7 +505,7 @@ export function prospect(s: State, k: Kind) {
   let c = prospects.get(s);
   if (!c || c.hr !== hr) { c = { hr, v: {} }; prospects.set(s, c); }
   if (c.v[k] === undefined) {
-    const f = campCenter(s), top: number[] = [], lager = campGrid(s);
+    const f = bynsMitt(s), top: number[] = [], lager = bynsAvstand(s);
     for (let y = Math.max(0, f.y - PLATS.dagY); y < Math.min(H, f.y + PLATS.dagY + 1); y++) for (let x = Math.max(0, f.x - PLATS.dagX); x < Math.min(W, f.x + PLATS.dagX + 1); x++) {
       const d = lager[y * W + x];
       if (d > FANGST.syn) continue;
@@ -529,7 +530,7 @@ export const wantsFlint = (s: State) => amountOf(s, 'flinta') < FANGST.flintaMin
 // en plats att samla på nära stenarna, där flinta är vanlig. I lägret och där flintan redan plockats finns ingen.
 // q väljer med sin egen slumpföljd
 export function flintSpot(s: State, q: Person, area?: (x: number, y: number) => boolean): { x: number; y: number } | undefined {
-  const m = getMap(s.seed), sd = stoneDist(s.seed), c: { x: number; y: number; d: number }[] = [], lager = campGrid(s);
+  const m = getMap(s.seed), sd = stoneDist(s.seed), c: { x: number; y: number; d: number }[] = [], lager = bynsAvstand(s);
   for (let i = 0; i < W * H; i++) {
     if (sd[i] < 1 || sd[i] > FANGST.stenNara || m.tiles[i] === T.Vatten || m.tiles[i] === T.Sten) continue;
     const x = i % W, y = Math.floor(i / W), d = lager[i];

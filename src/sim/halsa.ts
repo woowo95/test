@@ -1,3 +1,4 @@
+import { utanforByn } from './omrade';
 import { UPPV, upplev } from './uppvaxt';
 // Kroppen (steg 2.5.1). Kroppen har tio delar (KROPPSDELAR): huvud, bål, två armar, två händer, två ben och två fötter (Björn, efter
 // v55). Olyckor i farliga arbeten (OLYCKOR) ger skador (SKADOR) i en del: ett sår blöder tills det levrat sig, gör ont och
@@ -19,7 +20,6 @@ import { TORST } from './torst';
 import { getable, takeMaterial } from './behov';
 import { bedFor } from './bygg';
 import { freeNear, roomAt } from './byggnad';
-import { campDist } from './plats';
 import { isForest, tileOf } from './mark';
 import { eldPlats } from './karta';
 import { chance, clamp, pick, rnd } from './slump';
@@ -60,7 +60,7 @@ export const HALSA = balans('halsa', {
   vardMin: 5, // minuter att trycka på såren, lägga förband och rengöra
   vardR: 30, // man går för att vårda den som är högst så här många rutor bort
   vardHand: 0.5, // den som vårdar någon annan har minst så här bra händer
-  hemma: 6, // så nära lägret är man hemma (rutor): längre bort kravlar den som inte kan gå, eller bärs
+  hemma: 3, // så nära byns område är man hemma (rutor, 0 innanför): längre bort kravlar den som inte kan gå, eller bärs
   krypFel: 0.6, // den som har ett ben eller en fot som är så här skadad kan inte gå, utan kravlar (med GANG.krypFart, gang.ts)
   buren: 6, // timmar som den skadade som mest väntar på att bäras hem
   vila: 1.5, // man läker så här mycket fortare när man sover eller vilar ...
@@ -148,7 +148,7 @@ export const rorlighet = (p: Person) => forlust(p, 'rorlighet') * yrselFaktor(p)
 // den som har ett ben eller en fot som är för skadad kan inte gå, utan kravlar (steg 2.5.2)
 export const GADELAR: readonly Kroppsdel[] = [...BEN, ...FOTTER]; // delarna man går med
 export const kanGa = (p: Person) => !p.skador?.length || !GADELAR.some(d => delFel(p, d) >= HALSA.krypFel);
-export const hemma = (s: State, p: Person) => campDist(s, Math.floor(p.x), Math.floor(p.y)) <= HALSA.hemma;
+export const hemma = (s: State, p: Person) => utanforByn(s, Math.floor(p.x), Math.floor(p.y)) <= HALSA.hemma;
 const infektion = (p: Person) => { let v = 0; for (const w of p.skador ?? []) v = Math.max(v, w.inf ?? 0); return v; };
 // arbetet gånger detta (workRate i ekonomi.ts): skadorna och styrkan, som sjunker av brist på protein och mineraler (steg 2.6.2)
 export const handighet = (p: Person) => forlust(p, 'handighet') * styrkaFaktor(p);
