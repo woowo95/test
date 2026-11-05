@@ -31,6 +31,7 @@ export const VADER = balans('vader', {
   regnTak: 0.99, // regngränsen når aldrig 1 (torkan och sommaren tillsammans), då delar nederbörden med noll eller blir ständigt regn
   molnSpann: 0.15, // ... och så här långt under det är det mulet
   snoGrad: 1, // under så här många grader faller det snö i stället för regn
+  riktTim: 12, // vindens riktning ändras långsamt: vågens längd (timmar) för de två vågor som ger riktningen (steg 6.4.4)
   vindTim: 9, // blåsten: vågens längd (timmar) ...
   blastFran: [0.62, 0.68, 0.75, 0.6], // ... och över så här mycket blåser det, per tidsålder
   askaTim: 1.5, askaFran: 0.8, askaGrad: 12, // åskan: en kort våg, över så här mycket i ett regn när det är varmare än askaGrad
@@ -118,7 +119,8 @@ export const VADERLAGE: Record<VaderId, { namn: string; ikon: string; text: stri
   aska: { namn: 'Åska', ikon: '⛈', text: 'Ett kort oväder med regn. Ibland slår blixten ner.' },
   dimma: { namn: 'Dimma', ikon: '🌫', text: 'Man ser inte långt, och det är svårt att träffa på avstånd.' },
 };
-export interface Vader { lage: VaderId; moln: number; nb: number; sno: boolean; vind: number; aska: boolean; dimma: number }
+// rikt = åt vilket håll vinden blåser (radianer; 0 = österut, π/2 = söderut), också när det inte blåser hårt (steg 6.4.4)
+export interface Vader { lage: VaderId; moln: number; nb: number; sno: boolean; vind: number; rikt: number; aska: boolean; dimma: number }
 export interface VaderMinne { fukt: number; sno: number; torr?: number } // torr = hur torr marken är, i timmar (torrTim, steg 3.8.5)
 
 // en jämn slumpvåg ur byns frö: 0 till 1, som ändrar sig under ungefär `tim` timmar (hash3 i slump.ts: att byta den
@@ -149,10 +151,14 @@ export function vaderNu(s: State, t = s.now): Vader {
   const h = hourOf(t), [m0, m1] = VADER.dimmaMorgon, df = VADER.dimmaFran[ai];
   const dimma = nb > 0 || vind > 0 ? 0 : clamp((vag(s, t, VADER.dimmaTim, 5) * (h >= m0 && h < m1 ? 1 : VADER.dimmaDag) - df) / (1 - df), 0, 1);
   const lage: VaderId = aska ? 'aska' : nb > 0 ? (sno ? 'sno' : 'regn') : vind > 0 ? 'blast' : dimma > VADER.dimmaLage ? 'dimma' : moln > 0.5 ? 'moln' : 'klart';
-  const v = { lage, moln, nb, sno, vind, aska, dimma };
+  const rikt = Math.atan2(vag(s, t, VADER.riktTim, 7) - 0.5, vag(s, t, VADER.riktTim, 8) - 0.5); // två vågor, så att riktningen vrider sig jämnt
+  const v = { lage, moln, nb, sno, vind, rikt, aska, dimma };
   vaderCache.set(s, { t, v });
   return v;
 }
+// varifrån vinden kommer, i ord ("väster")
+const STRECK = ['öster', 'sydost', 'söder', 'sydväst', 'väster', 'nordväst', 'norr', 'nordost'];
+export const vindFran = (rikt: number) => STRECK[(Math.round((rikt + Math.PI) / (Math.PI / 4)) % 8 + 8) % 8];
 // regnar eller snöar det nu?
 export const nederbord = (s: State) => vaderNu(s).nb > 0;
 const minneOf = (s: State) => (s.vader ??= { fukt: 0.5, sno: 0 });

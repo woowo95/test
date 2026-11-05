@@ -1287,6 +1287,34 @@ SCENARIER.brinnerupp = {
   },
 };
 
+SCENARIER.vind = {
+  text: 'Steg 6.4.4: vinden har en riktning som ändras långsamt. Hård vind sprider elden mycket fortare med vinden och långsammare mot den, och pilen vid vädret pekar åt det håll vinden blåser',
+  kor: () => {
+    const a = torrAng();
+    if (typeof a === 'string') return [[a, false]];
+    const { s, mitt } = a;
+    // en timme med hård vind utan regn, i samma tidsålder
+    let t = -1;
+    for (let h = 0; h < 24 * 6 && t < 0; h++) { const v = vaderNu(s, s.now + h * HOUR); if (v.vind >= 0.6 && v.nb === 0 && kalender(s, s.now + h * HOUR).ai === kalender(s).ai) t = s.now + h * HOUR; }
+    if (t < 0) return [['en timme med hård vind', false]];
+    // riktningen ändras långsamt: högst en åttondel av ett varv på en timme
+    let vrid = 0;
+    for (let h = 0; h < 48; h++) { const d = Math.abs(vaderNu(s, s.now + (h + 1) * HOUR).rikt - vaderNu(s, s.now + h * HOUR).rikt); vrid = Math.max(vrid, Math.min(d, 2 * Math.PI - d)); }
+    const x = cloneState(s); x.now = t; angSlag(x, mitt, 'hog');
+    if (x.vader) { x.vader.torr = 240; x.vader.fukt = 0; }
+    const v = vaderNu(x), vx = Math.cos(v.rikt), vy = Math.sin(v.rikt), cx = mitt % W, cy = Math.floor(mitt / W);
+    SIM.tand(x, mitt, 'blixt', 0);
+    step(x, 30);
+    let med = 0, mot = 0;
+    for (const i of [...SIM.brinnande(x).map(r => r[0]), ...(x.brand?.ut ?? [])]) { const d = (i % W - cx) * vx + (Math.floor(i / W) - cy) * vy; if (d >= 2) med++; else if (d <= -2) mot++; }
+    const f = (n: number) => n.toFixed(2).replace('.', ',');
+    return [
+      [`vinden vrider sig långsamt (högst ${f(vrid)} radianer på en timme)`, vrid < Math.PI / 4],
+      [`i hård vind (${f(v.vind)}, från ${SIM.vindFran(v.rikt)}) tar sig elden fler rutor med vinden (${med}) än mot den (${mot}) på en halv minut`, med > 3 * Math.max(1, mot)],
+    ];
+  },
+};
+
 SCENARIER.brand = {
   text: 'Steg 3.8.5: eldsvådor och skogsbrand. När marken är torr på sommaren tar elden sig från ruta till ruta i skogen och träden dör; när marken är blöt tar den sig inte vidare. Gnistor från lägerelden tänder ibland marken. Elden nära byn: folk ser den och ropar, de vuxna släcker med vattensäcken och med händerna, en risvägg brinner, ingen står i en vägg eller i vattnet, och elden slocknar. Där skogen brann kommer plantor, som växer upp när gräset kommit tillbaka, och det svarta försvinner efter några dygn',
   kor: () => {

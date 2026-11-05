@@ -60,7 +60,9 @@ export const BRAND = balans('brand', {
   torrTim: 120, // marken är helt torr efter så här många torra timmar (torrTim i vader.ts) ...
   arstid: [0, 0.6, 1, 0.8], // ... och så här torr i tidsåldern (istid, vår, sommar, höst)
   sno: 0.2, // inget brinner när det ligger mer snö än så här (snoPaMarken i vader.ts)
-  vind: 1.5, // blåsten (0 till 1) sprider elden så här mycket mer
+  vind: 1.5, // blåsten (0 till 1) sprider elden så här mycket mer med vinden, och mindre mot den (steg 6.4.4) ...
+  motvind: 0.15, // ... men aldrig mindre än så här mycket (gånger) rakt mot vinden
+  gnistVind: 3, // gnistorna flyger så här många rutor till med vinden i full blåst
   regn: 2, // regnet släcker en ruta så här fort (rutor per timme i det kraftigaste regnet), och sprider den mindre
   // det som kan brinna: [antändning 0 till 1, timmar det brinner, hur lätt det släcks]. Högt gräs brinner snabbast, kort gräs
   // medel, skogen och det som är av trä lite långsammare (steg 6.4.1). Det sista talet gångrar händerna och vattensäcken: kort
@@ -192,14 +194,18 @@ export function brandSteg(s: State, dtSec: number) {
   const v = vaderNu(s), k = kartaOf(b), bransle = bransleAv(s);
   // elden tar sig till grannrutorna, i delsteg om fem sekunder (steg 6.4.1): det som tänds i ett delsteg sprider sig i nästa
   const n = Math.max(1, Math.round(dtSec / DELSTEG)), dt = dtSec / n;
-  const sprid = BRAND.sprid * dry * (1 + BRAND.vind * v.vind) * (1 - v.nb) * dt / DELSTEG;
+  const sprid = BRAND.sprid * dry * (1 - v.nb) * dt / DELSTEG;
+  // med vinden fortare, mot den långsammare (steg 6.4.4): en faktor per grannruta, efter hur väl hållet stämmer med vinden
+  const vx = Math.cos(v.rikt), vy = Math.sin(v.rikt), medVind = (dx: number, dy: number) => Math.max(BRAND.motvind, 1 + BRAND.vind * v.vind * (dx * vx + dy * vy) / Math.hypot(dx, dy));
+  const fv: number[] = [];
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) fv.push(dx || dy ? medVind(dx, dy) * (dx && dy ? BRAND.hornet : 1) : 0);
   if (sprid > 0) for (let d = 0; d < n; d++) {
     const slag = Math.round(s.now / SEC) - Math.round((n - 1 - d) * dt), kvar = (n - 1 - d) * dt; // delstegets tid, och tiden kvar av slaget
     const nya: number[] = [];
     for (const [i] of b.r) {
       const x = i % W, y = Math.floor(i / W);
       for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-        const nx = x + dx, ny = y + dy, j = ny * W + nx, c = sprid * (dx && dy ? BRAND.hornet : 1);
+        const nx = x + dx, ny = y + dy, j = ny * W + nx, c = sprid * fv[(dy + 1) * 3 + dx + 1];
         if ((!dx && !dy) || !inMap(nx, ny) || k[j] || !nara(b, nx, ny)) continue;
         const u = hash(s.seed + 3851, slag, i * 9 + (dy + 1) * 3 + dx + 1);
         if (u >= c) continue; // antändningen är högst 1: slå bara upp det som brinner när det kan behövas
@@ -239,9 +245,10 @@ export function brandSteg(s: State, dtSec: number) {
 // gnistor från elden och brasorna, och blixten när den slår ner (en gång i timmen)
 function gnistor(s: State, dtSec: number, dry: number) {
   const v = vaderNu(s), takt = BRAND.gnista * dry * (1 + BRAND.vind * v.vind) * (1 - v.nb) * dtSec / FEM_MIN;
+  const fx = Math.cos(v.rikt) * v.vind * BRAND.gnistVind, fy = Math.sin(v.rikt) * v.vind * BRAND.gnistVind; // gnistorna flyger med vinden (steg 6.4.4)
   const fran = (x: number, y: number, spread: number, salt: number) => {
     if (ur(s, salt, 3852) >= takt * spread) return;
-    const R = BRAND.gnistaR, nx = x + Math.round((ur(s, salt, 3853) * 2 - 1) * R), ny = y + Math.round((ur(s, salt, 3854) * 2 - 1) * R);
+    const R = BRAND.gnistaR, nx = x + Math.round((ur(s, salt, 3853) * 2 - 1) * R + fx), ny = y + Math.round((ur(s, salt, 3854) * 2 - 1) * R + fy);
     if (inMap(nx, ny) && (nx !== x || ny !== y)) tand(s, ny * W + nx, 'gnista', ur(s, salt, 3855));
   };
   if (s.fire.lit) { const e = eldPlats(s); fran(e.x, e.y, (HEARTHS.find(h => h.id === s.fire.hearth) ?? HEARTHS[0]).spread, 0); }
