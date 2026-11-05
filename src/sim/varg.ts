@@ -72,6 +72,7 @@ export const VARG = balans('varg', {
   vakenTim: 1, // den som väckts håller sig vaken vid elden så här många timmar
   // vargjakten
   jaktTim: 3, // jägarna letar efter flocken högst så här många timmar
+  kallMin: 30, // den som ska följa med på vargjakten har så här många minuter på sig att komma iväg (nivån Tillfälle i val.ts, steg 6.1.14)
   jaktMax: 6, // högst så många följer med
   jaktVet: 6, // byn vet om flocken i så här många timmar efter ett larm
   kraftVarg: 1.1, // en vargs styrka mot jägarnas: kraftBas + kraftSkada × vapnets skada (händerna 0,78, flintspjutet 1,4)
@@ -283,11 +284,11 @@ function flockSteg(s: State, f: Vargflock, folk: Person[], dtSec: number) {
   // jägarna går mot flocken (som inte märker dem förrän de är nära). Den som inte längre jagar (avbruten, larm, skadad) är inte
   // med, och när ingen jagar är jakten slut: då kan byn kalla till en ny och flocken undviker grupper igen
   if (f.jagare) {
-    f.jagare = f.jagare.filter(id => byId(s, id)?.task?.act === 'vargjakt');
+    f.jagare = f.jagare.filter(id => { const q = byId(s, id); return !!q && q.health > 0 && (q.task?.act === 'vargjakt' || s.now < (f.kallTill ?? 0)); });
     if (!f.jagare.length) { f.jagare = undefined; f.samlas = undefined; }
     for (const id of f.jagare ?? []) {
-      const tk = byId(s, id)!.task!;
-      if (tk.phase === 'go' && Math.hypot(tk.tx - f.x, tk.ty - f.y) > 3) { const sp = jaktPlats(s, f); if (sp) { tk.tx = sp.x; tk.ty = sp.y; } }
+      const tk = byId(s, id)!.task;
+      if (tk?.act === 'vargjakt' && tk.phase === 'go' && Math.hypot(tk.tx - f.x, tk.ty - f.y) > 3) { const sp = jaktPlats(s, f); if (sp) { tk.tx = sp.x; tk.ty = sp.y; } }
     }
   }
   if (f.gor === 'anfaller') {
@@ -456,10 +457,22 @@ export function jaktBeslut(s: State, f: Vargflock, folk: Person[]) {
   if (kvot < VARG.jaktKvot || rnd(s, 'varg') >= VARG.jaktChans) return;
   const sp = jaktPlats(s, f);
   if (!sp) return; // flocken står för långt ut på isen
-  f.jagare = vill.map(q => q.id);
-  for (const q of vill) { avbryt(s, q); q.task = { act: 'vargjakt', phase: 'go', tx: sp.x, ty: sp.y, until: s.now + VARG.jaktTim * HOUR, carry: 0, why: q === kallar ? 'Kallar till vargjakt' : `Följer ${kallar.name} på vargjakt` }; }
+  // den som kallar går genast; de som följer med avbryter det de gör och väljer igen, där vargjakten är ett Tillfälle i
+  // arbetsordningen (vargjaktVal, steg 6.1.14): den som är i nöd tar hand om det först
+  f.jagare = vill.map(q => q.id); f.kallare = kallar.id; f.kallTill = s.now + VARG.kallMin * MIN; f.jaktTill = s.now + VARG.jaktTim * HOUR;
+  for (const q of vill) avbryt(s, q);
+  kallar.task = { act: 'vargjakt', phase: 'go', tx: sp.x, ty: sp.y, until: f.jaktTill, carry: 0, why: 'Kallar till vargjakt' };
   count(s, 'vargjakt');
   log(s, `${kallar.name} kallade till vargjakt${vill.length > 1 ? `, och ${vill.length - 1} följde med` : ''} (${f.vargar.length > 1 ? `en flock på ${f.vargar.length}` : 'en ensam varg'}).`, 'world', vill.map(q => q.id));
+}
+
+// nivån Tillfälle (val.ts, steg 6.1.14): den som ska följa med på vargjakten och ännu inte gått
+export function vargjaktVal(s: State, p: Person) {
+  const f = flockarna(s).find(x => x.jagare?.includes(p.id));
+  if (!f || f.gor === 'flyr' || p.task?.act === 'vargjakt' || s.now >= (f.kallTill ?? 0) || s.now >= (f.jaktTill ?? 0)) return undefined;
+  const sp = jaktPlats(s, f), k = f.kallare === undefined ? undefined : byId(s, f.kallare);
+  if (!sp) return undefined;
+  return { spot: sp, dur: f.jaktTill! - s.now, why: k ? `Följer ${k.name} på vargjakt` : 'Följer med på vargjakt' };
 }
 
 // jägaren som kommit fram (MEDAN i steg.ts): anfaller flocken med de jägare som är nära

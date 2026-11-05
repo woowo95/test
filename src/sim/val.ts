@@ -1,7 +1,7 @@
 import { iVattnetNu, strandNu, vattenNu } from './sjo';
 import { freeTools, take } from './agande';
 import { PLATS, campCenter, campDist, campGrid, campKey } from './plats';
-import { vargSkydd } from './varg';
+import { vargSkydd, vargjaktVal } from './varg';
 import { tornadoSkydd } from './tornado';
 import { brandVal } from './brand';
 import { RESERV, foodDays } from './ekonomi';
@@ -93,6 +93,9 @@ const VAL = balans('val', {
   vedPass: 1, // veden: det som fattas (dygn) delat med så här många dygns ved, vad en person hinner på ett pass
   tandPer: 4, // tändmaterial åt en släckt eld: en per så här många invånare
   letaPer: 10, // att leta flinta och stenar: en per så här många invånare
+  // nivån Tillfälle (steg 6.1.14): behovet stiger när tiden rinner ut, från tillfalleMin när fönstret öppnar till 1 när det
+  // stänger. Med den chansen går tillfället före grundbehoven; annars tas det efter dem
+  tillfalleMin: 0.5,
   projektVikt: 1.5, // det mest värda projektet (projekt.ts) väger som arbete så här mycket gånger sitt värde
   akut: 3, // arbetet är helt akut när det mest behövda väger så här mycket
   kolEld: 0.6, kolChans: 0.2, kolMin: 10, // kol hämtas ur den släckta elden när elden vill ha mindre än så här, med denna chans, i så många minuter
@@ -442,6 +445,8 @@ const fullVikt = (s: State, p: Person, rad: ArbRad) => radFull(s, p, rad) ? VAL.
 // en rad som väljs utan poäng (en chans eller en nödsak) tas med chansen fullRad när den har sina arbetare
 const mjuk = (s: State, p: Person, rad: ArbRad) => !radFull(s, p, rad) || rnd(s, 'val', p) < VAL.fullRad;
 const arbBehov = (s: State) => s.arbBehov ?? (arbetsTimme(s), s.arbBehov!);
+// hur bråttom ett tillfälle är (steg 6.1.14): från tillfalleMin när fönstret öppnar till 1 när det stänger
+const tillfalle = (fran: number, till: number, nu: number) => VAL.tillfalleMin + (1 - VAL.tillfalleMin) * clamp((nu - fran) / Math.max(1, till - fran), 0, 1);
 export const ARBETSNIVAER = ['', 'Fara', 'Nöd och vård', 'Tillfälle', 'Grundbehov', 'Rädda', 'Försörjning', 'Tak', 'Förbättra', 'Fritid'] as const;
 type Niva = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 // det valet vet om personen; farorna räknas första gången en rad frågar och gäller hela valet
@@ -455,6 +460,7 @@ export interface Arbete {
   kort?: true; // dagens pass (VAL.pass): på dagen kortas valets tid innan raden prövas
   arstid?: readonly number[]; // en vikt per tidsålder (som sasong i ACTS); 0 = görs inte då
   vader?: Vaderkrav; // torrt: inte i regn eller snöfall; lugnt: inte i blåst eller åska
+  bradska?: (c: Ctx) => number; // ett Tillfälle (steg 6.1.14): chansen att raden prövas före grundbehoven; annars prövas den efter dem
   prova: (c: Ctx) => boolean | undefined; // true = raden valde något (v är ifyllt)
 }
 export const ARBETEN: readonly Arbete[] = [
@@ -481,6 +487,22 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'fryserFarligtInne', niva: 2, prova: ({ s, p, v }) => p.warm < KROPP.farligt && bedTile(s, p) !== undefined && set(v, 'vila', 'Fryser farligt och går in i huset') },
   { id: 'varda', niva: 2, prova: ({ s, p, v }) => varda(s, p, v, false) }, // en skadad är en fara: vården går före förbättringarna (steg 2.5.2)
   { id: 'vatten', niva: 2, prova: ({ s, p, v }) => hamtaVatten(s, p, v) }, // vatten i säcken åt den som inte kan gå (steg 2.10.1)
+  // 3 Tillfälle (steg 6.1.14): det som går förlorat om ingen tar det nu. Den som ska följa med på vargjakten (varg.ts) går
+  { id: 'vargjakt', niva: 3, prova: ({ s, p, v }) => {
+    const j = vargjaktVal(s, p);
+    if (!j) return false;
+    set(v, 'vargjakt', j.why); v.spot = j.spot; v.dur = j.dur; return true;
+  } },
+  // handlaren är här och byn har inte handlat (steg 4.4.1.3, handel.ts); på kvällen ligger filten ute (steg 4.5.4.11). Behovet
+  // stiger under handlarens besök; den som står i kön eller handlar fortsätter
+  { id: 'handla', niva: 3, bradska: ({ s, p }) => {
+    const h = s.handlare;
+    return !h || h.fas !== 'handlar' || h.affar?.vem === p.id || h.ko?.includes(p.id) ? 1 : tillfalle(h.kom, h.gar, s.now);
+  }, prova: ({ s, p, v, light }) => {
+    const hv = !light && skams(p, s.now) ? undefined : handlaVal(s, p);
+    if (!hv) return false;
+    set(v, hv.act, hv.why); v.spot = hv.spot; v.dur = hv.dur; v.ref = hv.ref; return true;
+  } },
   // 4 Grundbehov (toa, värme, vatten, vila, mat). En lat person tillgodoser dem tidigare än en flitig
   { id: 'gammalSover', niva: 4, nar: 'natt', prova: ({ s, p, v, a }) => a > ALDER.sovGammal && rnd(s, 'val', p) < VAL.gammalSover && set(v, 'sova', 'Är gammal och sover på natten') },
   { id: 'toa', niva: 4, prova: ({ p, v, lazy }) => p.toa < KROPP.toaBehov + KROPP.latToa * lazy && set(v, 'toa', 'Behöver gå på toa') },
@@ -510,12 +532,6 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'vakt', niva: 6, nar: 'natt', prova: ({ s, p, v, a }) => vaktVal(s, p, v, a) },
   // barnen leker; de lite större hjälper till (raden arbete)
   { id: 'leka', niva: 9, nar: 'dag', kort: true, prova: ({ s, v, a }) => a < ALDER.hjalper && set(v, 'leka', lekText(s)) },
-  // 3 Tillfälle: handlaren är här och byn har inte handlat (steg 4.4.1.3, handel.ts); på kvällen ligger filten ute (steg 4.5.4.11)
-  { id: 'handla', niva: 3, kort: true, prova: ({ s, p, v, light }) => {
-    const hv = !light && skams(p, s.now) ? undefined : handlaVal(s, p);
-    if (!hv) return false;
-    set(v, hv.act, hv.why); v.spot = hv.spot; v.dur = hv.dur; v.ref = hv.ref; return true;
-  } },
   // ett framträdande vid elden (steg 4.3.2, framtradande.ts): uppträda eller lyssna
   { id: 'framtradande', niva: 9, nar: 'natt', prova: ({ s, p, v }) => {
     const fr = skams(p, s.now) ? undefined : framVal(s, p, q => spotFor(s, 'beratta', q));
@@ -553,10 +569,14 @@ export function chooseTask(s: State, p: Person) {
   const a = ageOf(p, s.now), light = isLight(s.now), lazy = 1 - duty(s, p);
   const v: Val = { act: 'vila', why: '', dur: (VAL.vilaMin + rnd(s, 'val', p) * VAL.vilaSpann) * MIN }; // 20–60 min
   const c: Ctx = { s, p, v, a, lazy, light }, nar = light ? 'dag' : 'natt';
-  let rad: Arbete | undefined, kortat = false;
+  let rad: Arbete | undefined, kortat = false, senare: Arbete[] = [];
   for (const r of ARBETEN) {
+    // de tillfällen som inte brådskade prövas när grundbehoven är förbi (steg 6.1.14)
+    if (senare.length && r.niva > 4) { rad = senare.find(w => w.prova(c)); senare = []; if (rad) break; }
     if (r.nar && r.nar !== nar || r.arstid && !r.arstid[ageIndex(s)] || !vaderTillater(s, r.vader)) continue; // villkoren på raden (steg 6.1.12)
     if (r.kort && light && !kortat) { v.dur *= VAL.pass; kortat = true; }
+    const b = r.bradska?.(c) ?? 1;
+    if (b < 1 && rnd(s, 'val', p) >= b) { senare.push(r); continue; }
     if (r.prova(c)) { rad = r; break; }
   }
   // straffet skam (steg 3.5.3, styre.ts): inte det faran väljer (vargarna, tornadon, branden, vattnet) och inte det som skyddar (skamfri i ACTS)

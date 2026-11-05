@@ -4,7 +4,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { Person, Act, Task, createState, bearbeta, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, makeTool, step, living, pilesOf, amountOf, capacity, handOrkar, ryms, VIKT_STACK, isLight, isStored, spears, HOUR, State, migrate, die, bitsOf, KANIN, DJUR, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, foodOf, STACK_ORDER, needLadder, takeMaterial, BEAT, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELNING, packUp, releaseOwner, willing, tingOf, EKONOMI, SAK_LIST, ownedAll, leave, chooseTask, stackOf, birth, SAKER, viktOf, handerFor, bordPlats, utrustning, bordaIHander, PLATS_LIST, cloneState, pickUp, load, byId } from '../../sim';
 import * as SIM from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
-import { setItems, setMat, setFood, kor, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank, utanWebblasare } from './hjalp';
+import { setItems, setMat, setFood, kor, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank, utanWebblasare, nyInvanare } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
 import { notisHtml, notisKlick, notisKnapp, notisVal } from '../../ui/notiser';
 import { bortaBerattelse, bortaHtml, ikappHtml } from '../../ui/borta';
@@ -914,6 +914,62 @@ SCENARIER.handelsko = {
       ['den andra flyttar fram i kön', fram],
       ['det den första köpte är borta: den andra går tomhänt och blir lite sämre till mods', tom],
       ['den som handlat ställer sig inte i kö igen', !SIM.handlaVal(s, a)],
+    ];
+  },
+};
+
+SCENARIER.tillfalle = {
+  text: 'Nivån Tillfälle (steg 6.1.14, "Arbetsordningen" i designdokumentet): det som går förlorat om ingen tar det nu. Den som ska följa med på vargjakten går före vanlig trötthet men efter nöden (måste på toa genast). Handeln brådskar mer ju närmare handlaren är att gå: när besöket börjar går ungefär hälften av de trötta och handlar först, när det slutar alla; den som inte är trött handlar ändå',
+  kor: () => {
+    // vargjakten: en by i istiden med en flock som någon just sett och modiga vuxna med spjut
+    const s = createState(1, START); s.kal = SIM.nyKalender(s.now, 0); tandEld(s);
+    while (!isLight(s.now)) s.now += HOUR;
+    for (const [x, a] of [['m', 30], ['k', 28], ['m', 35], ['k', 24], ['m', 40]] as const) nyInvanare(s, x, a);
+    setMat(s, { vilt: 60, bar: 60 });
+    const vuxna = living(s).filter(q => SIM.ageOf(q, s.now) >= 18 && SIM.ageOf(q, s.now) < 55);
+    for (const q of vuxna) { const t = addTool(s, 'flintspjut', q); t.hos = q.id; q.pot.mod = 18; q.pot.karisma = 14; }
+    const c = SIM.campCenter(s);
+    const f: SIM.Vargflock = { id: s.vargNr = 1, vargar: [10_000_008], x: c.x + 14, y: c.y, mx: c.x + 14, my: c.y, gar: s.now + 48 * HOUR, hunger: 0.5, gor: 'stryker', sedd: s.now, sag: vuxna[0].id };
+    (s.vargar ??= []).push(f);
+    for (let i = 0; i < 60 && !f.jagare; i++) SIM.jaktBeslut(s, f, living(s));
+    const foljer = (f.jagare ?? []).map(id => byId(s, id)!).filter(q => q.id !== f.kallare);
+    const kallarGar = byId(s, f.kallare ?? -1)?.task?.act === 'vargjakt', vantar = foljer.length >= 2 && foljer.every(q => !q.task);
+    const [n, tr] = foljer;
+    if (n) n.toa = 0; // måste på toa genast (Nöd)
+    if (tr) tr.rest = 0.05; // trött (Grundbehov)
+    if (n) chooseTask(s, n);
+    if (tr) chooseTask(s, tr);
+    const nod = n?.task?.act === 'toa', fore = tr?.task?.act === 'vargjakt';
+    // när tiden att komma iväg är ute är tillfället borta
+    const sen = foljer[2] ?? n;
+    s.now += (SIM.VARG.kallMin + 1) * SIM.MIN;
+    const borta = !!sen && !SIM.vargjaktVal(s, sen);
+    // handeln: en rik by där handlaren just kommit (eller snart går) och byn redan handlat; a är trött
+    const hs = createState(6, START);
+    rikBy(hs); hs.nastaHandlare = hs.now;
+    for (let i = 0; i < 40 && hs.handlare?.fas !== 'handlar'; i++) { step(hs, BEAT); utanVantan(hs); }
+    const h = hs.handlare!, a = living(hs).filter(p => SIM.ageOf(p, hs.now) >= SIM.ALDER.vuxen)[0];
+    h.bynKlar = true; h.varor = [{ k: 'torrkott', n: 4 }];
+    SIM.put(hs, 'silver', 40, { [a.id]: 40 });
+    const prova = (fran: number, trott: boolean) => {
+      let ja = 0;
+      for (let i = 0; i < 200; i++) {
+        h.kom = hs.now - fran * HOUR; h.gar = h.kom + 10 * HOUR; h.ko = []; delete h.affar; h.handlat = [];
+        a.task = undefined; a.rest = trott ? 0.05 : 1; a.toa = 1; a.hunger = 1; a.torst = 1;
+        chooseTask(hs, a);
+        const act: string | undefined = (a.task as Task | undefined)?.act; if (act === 'handla' || act === 'koa') ja++;
+      }
+      return ja / 200;
+    };
+    const borjan = prova(0, true), slut = prova(9.99, true), pigg = prova(0, false);
+    return [
+      [`den som kallar går genast, de ${foljer.length} som följer med väljer igen (${kallarGar ? 'går' : 'går inte'}, ${vantar ? 'väljer' : 'väljer inte'})`, kallarGar && vantar],
+      [`den som måste på toa genast går dit först (${n?.task?.act})`, nod],
+      [`den trötta följer med på vargjakten före vilan (${tr?.task?.act})`, fore],
+      ['när tiden att komma iväg är ute är tillfället borta', borta],
+      [`när handlaren just kommit handlar ${Math.round(borjan * 100)} % av de trötta först (ungefär hälften)`, borjan > 0.35 && borjan < 0.65],
+      [`när handlaren snart går handlar ${Math.round(slut * 100)} % av de trötta först`, slut > 0.95],
+      [`den som inte är trött handlar (${Math.round(pigg * 100)} %)`, pigg > 0.95],
     ];
   },
 };
