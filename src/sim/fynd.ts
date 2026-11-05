@@ -38,7 +38,7 @@ export const FANGST = balans('fangst', {
   barFull: 1.35, // så mycket bär en buske ger innan den är tom (full i bärens rad i FYND); den växer tillbaka på lika lång tid. Tre gånger mer än förut (0,45) sedan v135 (Björn efter v134)
   // fiske
   handFiske: 0.55, // fiske med händerna ger ungefär så mycket som samling på en lagom rik plats gånger detta
-  forsokSek: 300, // ett fiskeförsök tar så här många sekunder (delat med SNABBARE)
+  forsokSek: 80, // ett fiskeförsök tar så här många sekunder (delat med SNABBARE)
   fiskRikMax: 1.3, // en plats räknas inte som rikare än så här vid napp
   hallSkill: 40, hallUthall: 100, // fisken sitter kvar: redskapets hall plus färdigheten delad med Skill plus uthålligheten delad med Uthall ...
   hallSmid: 0.05, // ... plus så här mycket gånger (smidigheten − 10) / 10 (steg 3.7.6)

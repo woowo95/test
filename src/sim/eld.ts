@@ -66,6 +66,7 @@ export const ELD = balans('eld', {
   stenNara: 1, stenNaraDel: 3, // ... gånger Nara dit stenarna ligger inom så många rutor ...
   stenMedel: 3, stenMedelDel: 1.5, // ... Del inom så många ...
   stenAnnars: 0.4, // ... och annars
+  sokTur: 1200, // den som letar stenar eller flinta går hem efter så här många sekunders letande, med det hen hittat (målet för en tur, steg 6.1.7)
   flintaMax: 4, // byn letar inte flinta när den har så här många flintor och yxor
   flintaTakt: 0.04, // flinta: chans per arbetstimme gånger hur lätt den är att hitta på platsen (flintFactor)
   flintaOkand: 0.4, // hur lätt den är att hitta när platsen inte är känd

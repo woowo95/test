@@ -546,7 +546,7 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
     tk.phase = 'do'; tk.hopp = undefined; tk.plock = undefined; if (tk.act === 'bara') { pickUp(s, p, tk, bordPlats(s, p)); tk.until = now; }
     if (tk.act === 'flyttaeld') tk.until = now + ELDFLYTT.tim * HOUR; // vid elden: släcka den och bära stenarna (eldflytt.ts)
     startWork(s, p, tk); // ett redskap eller ett träd: arbetet räknas härifrån, och det påbörjade fortsätter
-    tk.tur = 0; tk.lim = ACTS[tk.act].tur;
+    tk.tur = 0; tk.lim = ACTS[tk.act].tur ?? (tk.sok ? ELD.sokTur : undefined);
   }
 }
 
