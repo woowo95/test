@@ -42,7 +42,7 @@ import { forSmutsigt, latrinFor } from './smuts';
 import { bordenOf, byInne, ledigPlats, lekplats, sittAt, stationAt, stationFor, storlekAv, vidStation } from './stationer';
 import { RATTER, TORKAS, grillTid, kanGrilla, kanTorka, torkTid } from './matlagning';
 import { egenBrasa } from './brasor';
-import { TEK, forsokChans, forsokVal, laraVal } from './teknik';
+import { TEK, forsokChans, forsokVal, laraVal, tekArbete } from './teknik';
 import { sportVal, sportVikt } from './sport';
 import { handlaVal } from './handel';
 import { framVal } from './framtradande';
@@ -669,9 +669,9 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number, fara: Faror) 
   const sat = Math.min(p.hunger, p.rest, p.social); // hur väl de egna behoven är fyllda
   const tandmat = !leta && !(build && job!.missing) && best === 'samla' && needTinder(s); // samlar tändmaterial åt en släckt eld
   // skälet "behöver mat" bara när förrådet räcker kortare än byn vill (steg 3.10.9)
-  const what = leta ? `Byn behöver ${needStones(s) ? 'stenar' : eldFlinta ? 'flinta' : `flinta till ${PROJEKT[pr!.k].namn.toLowerCase()}`}` : hamta ? `${PROJEKT[pr!.k].namn} behöver ${sakNamn(pr!.sak!).toLowerCase()}` : build && job!.missing ? `Bygget behöver ${job!.item === 'torrgras' ? 'hö' : job!.item === 'ved' ? 'ved' : job!.item === 'virke' ? 'virke' : 'grenar'}` : best === 'ved' ? `Byn behöver ved, förrådet räcker ${dygn(wd)}` : tandmat ? 'Byn behöver tändmaterial till elden'
+  let what = leta ? `Byn behöver ${needStones(s) ? 'stenar' : eldFlinta ? 'flinta' : `flinta till ${PROJEKT[pr!.k].namn.toLowerCase()}`}` : hamta ? `${PROJEKT[pr!.k].namn} behöver ${sakNamn(pr!.sak!).toLowerCase()}` : build && job!.missing ? `Bygget behöver ${job!.item === 'torrgras' ? 'hö' : job!.item === 'ved' ? 'ved' : job!.item === 'virke' ? 'virke' : 'grenar'}` : best === 'ved' ? `Byn behöver ved, förrådet räcker ${dygn(wd)}` : tandmat ? 'Byn behöver tändmaterial till elden'
     : egen !== undefined && ACTS[best].behov === 'mat' ? `Behöver egen mat, har för ${dygn(egen)}` : fd < matOnskat(s, p) ? `Byn behöver mat, förrådet räcker ${dygn(fd)}` : `Mer mat till förrådet, som räcker ${dygn(fd)}`;
-  let works = false;
+  let works = false, fb: ReturnType<typeof forbattra>;
   // kolet i en utbrunnen lägereld (den första först, steg 4.5.6.8)
   const kolEld = a >= ALDER.ansvar ? eldarOf(s).find(e => (e.ash ?? 0) >= 1 && !e.lit && !emberOn(s, e) && (e.want ?? 0) < VAL.kolEld) : undefined;
   if (kolEld && rnd(s, 'val', p) < VAL.kolChans * fullVikt(s, p, 'kol')) {
@@ -685,7 +685,10 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number, fara: Faror) 
     building(s, p, v, job!);
   } else if (works && proj) {
     projektVal(v, pr!.u!, `Byn saknar ${PROJEKT[pr!.k].namn.toLowerCase()}`);
+  } else if (works && !build && !forsorj && !hamta && !leta && !fara.kyla && !fara.svalt && (fb = forbattra(s, p, v, fd, wd)) === true) {
+    count(s, 'forbattra');
   } else if (works) {
+    if (fb && fb !== true) { best = fb.act; what = `Byn har det den behöver. ${fb.why}`; count(s, 'forbattra'); }
     set(v, best, what + (lazy < 0.2 ? '. Plikttrogen.' : habitShare(p, [best], tot) > 0.25 ? '. Brukar göra det.' : p.skill[best as Skill] > 10 ? '. Skicklig på det.' : '.'));
     v.dur = (VAL.arbeteMin + rnd(s, 'val', p) * VAL.arbeteSpann) * MIN * VAL.pass;
     if (tandmat) v.tandmat = true;
@@ -695,6 +698,20 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number, fara: Faror) 
   } else leisure(s, p, v, u, lazy);
 }
 
+// 8 Förbättra är aldrig tom (steg 6.1.18): när inget går före och inget projekt finns att göra väljer man i den här ordningen
+// att pröva sig fram mot en teknik (teknik.ts), arbeta där en öppen teknik kan komma, eller gå i lära. Varor till handlaren,
+// att bygga om och underhåll väntar på sina system (Färdplanen). true = valet är gjort; ett arbete görs som det vanliga arbetet
+function forbattra(s: State, p: Person, v: Val, fd: number, wd: number): true | { act: Act; why: string } | undefined {
+  const fv = forsokChans(s, p, fd, wd) > 0 ? forsokVal(s, p) : undefined;
+  if (fv) {
+    set(v, 'forsok', `Byn har det den behöver. Prövar sig fram till ${TEK[fv.id].namn.toLowerCase()}.`);
+    v.tool = fv.id; v.dur = fv.min * MIN; if (fv.spot) v.spot = fv.spot;
+    return true;
+  }
+  const ta = tekArbete(s, p, a => WORK.includes(a) && (ACTS[a].vid !== 'vatten' || vaderTillater(s, 'lugnt')));
+  if (ta) return { act: ta.act, why: `Kanske kommer hen på ${ta.t.namn.toLowerCase()}` };
+  return gaILara(s, p, v, 'Byn har det den behöver') || undefined;
+}
 // egen lust att arbeta med färdigheten skill: färdigheten och egenskapen som hjälper, gånger vanan (acts: handlingarna som räknas)
 const lust = (s: State, p: Person, skill: Skill, egenskap: Stat, acts: Act[], tot: number) => (VAL.lustBas + p.skill[skill] + stat(p, egenskap, s.now) / VAL.lustEgenskap) * (1 + VAL.lustVana * habitShare(p, acts, tot)) * smakDrag(p, acts); // och smaken (steg 3.3.5)
 // byns behov (col) gånger lusten, med ett slumpbrus mellan brusMin och brusMin + brusSpann (drar ett tal ur 'val')

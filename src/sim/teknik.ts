@@ -273,6 +273,19 @@ export function forsokKlar(s: State, p: Person, tk: Task) {
   count(s, 'forsok'); count(s, 'forsok_' + t.id);
 }
 
+// Förbättra är aldrig tom (steg 6.1.18): det arbete där p kan komma på en öppen teknik (kraven kan hen, materialet finns), den
+// hen kommit längst mot. Bara arbete som ok godtar (det vanliga arbetet i val.ts); inte tekniker med ett eget tillfälle (nar)
+// eller som bara kommer av försök
+export function tekArbete(s: State, p: Person, ok: (a: Act) => boolean): { act: Act; t: Tek } | undefined {
+  let bast: { act: Act; t: Tek } | undefined;
+  for (const t of TEKNIK) {
+    if (t.nar || t.forsok || !canThink(p, t) || !hasMaterial(s, t)) continue;
+    const act = t.omr.find(ok);
+    if (act && (!bast || (p.tek?.[t.id] ?? 0) > (p.tek?.[bast.t.id] ?? 0))) bast = { act, t };
+  }
+  return bast;
+}
+
 // i samtal lär den som kan något ut det, och den som lyssnar lär sig fortare ju intelligentare hen är
 export function teach(s: State, a: Person, b: Person, slag: SamtalDef, mer = 1) { // mer: mentorn lär ut mer (relationer.ts)
   if (!a.tek || ageOf(b, s.now) < ALDER.lar) return;

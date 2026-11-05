@@ -2,7 +2,7 @@
 import { createState, living, ageOf, ALDER, chooseTask, dangers, GORS, STATION_LIST, PROJEKT, projekt, bastaProjekt, projektVarde, addTool, setAmount, State } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { setItems, setFood, SCENARIER, medBank } from './hjalp';
+import { setItems, setFood, SCENARIER, medBank, kor } from './hjalp';
 
 // en by där alla vuxna kan allt, med material till allt och elden tänd mitt på dagen
 function by(seed: number) {
@@ -87,5 +87,30 @@ SCENARIER.jaget = {
       [`när p äger en kniv saknar familjen ingen (${harEgen.toFixed(2)})`, harEgen === 0],
       [`egenintresset är lågt med hög empati i en sammanhållen by (${sam.toFixed(2)}) och högt med låg empati och självförsörjning (${sjalv.toFixed(2)}, högst ${PROJEKT_TAL.egenMax})`, sam < 0.6 && sjalv > 1.4 && sjalv <= PROJEKT_TAL.egenMax],
     ];
+  },
+};
+SCENARIER.material = {
+  text: 'Material som saknas (steg 6.1.17, "Arbetsordningen" i designdokumentet): projekten ligger på nivån Förbättra, och fattas ett material som går att hämta (registret HAMTA) blir hämtningen arbetet i stället för att projektet hoppas över',
+  kor: () => {
+    const s = by(4), p = vuxna(s)[0], f = dangers(s);
+    const med = bastaProjekt(s, p, f);
+    setItems(s, { flinta: 0, torrgras: 0, grenar: 0 }); setAmount(s, 'ved', 0);
+    const utan = bastaProjekt(s, p, f), yxa = PROJEKT.yxa?.saknar?.(s, p, f);
+    return [
+      [`med material finns ett projekt att göra (${med?.k}, uppgift ${med?.u?.act})`, !!med?.u],
+      [`utan material blir det mest värda projektet en hämtning (${utan?.k} saknar ${utan?.sak}, arbetet ${utan?.sak ? SIM.HAMTA[utan.sak]?.act : '-'})`, !!utan?.sak && !!SIM.HAMTA[utan.sak] && !utan.u],
+      [`yxan saknar flinta (${yxa})`, yxa === 'flinta'],
+    ];
+  },
+};
+SCENARIER.forbattra = {
+  text: 'Förbättra är aldrig tom (steg 6.1.18): när maten och veden räcker och inget projekt finns prövar man sig fram mot en teknik, arbetar där en öppen teknik kan komma eller går i lära',
+  lang: true,
+  kor: () => {
+    const s = createState(4, START);
+    let sett = 0;
+    kor(s, 12 * 24, v => { for (const p of living(v)) if (p.task?.why?.startsWith('Byn har det den behöver')) sett++; });
+    const n = s.stat?.forbattra ?? 0;
+    return [[`på 12 dygn (12 år i spelet) valdes Förbättra ${n} gånger (${sett} steg med skälet "Byn har det den behöver")`, n > 0 && sett > 0]];
   },
 };
