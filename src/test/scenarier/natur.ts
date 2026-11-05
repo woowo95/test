@@ -647,7 +647,7 @@ SCENARIER.flatarbank = {
     };
     const kElden = kniv(false), kBank = kniv(true);
     // en vanlig by tills någon tvinnar rep, högst tio dygn (tio år i spelet): inget handarbete utan sak, och rep tvinnas som en egen handling
-    const v = createState(7, START); // en by som kommer på repet tidigt (by 2 kom inte på det inom tio dygn i v75, by 3 inte i v156 och v324, by 5 inte i v159)
+    const v = createState(6, START); // en by som kommer på repet tidigt (by 7 inte i v381, by 2 kom inte på det inom tio dygn i v75, by 3 inte i v156 och v324, by 5 inte i v159)
     let dygn = 0;
     for (; dygn < 10 && !tvinnar; dygn++) kor(v, 24, w => { for (const r of living(w)) { if (r.task?.act === 'hantverk') hantverk++; if (r.task?.act === 'tvinna') tvinnar++; } });
     // att tvinna rep är hantverk: den som gör det kommer på det som hör till hantverket (kniven)

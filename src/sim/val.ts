@@ -1,12 +1,12 @@
 import { iVattnetNu, strandNu, vattenNu } from './sjo';
-import { take } from './agande';
+import { freeTools, take } from './agande';
 import { PLATS, campCenter, campDist, campGrid, campKey } from './plats';
 import { vargSkydd } from './varg';
 import { tornadoSkydd } from './tornado';
 import { brandVal } from './brand';
 import { RESERV, foodDays } from './ekonomi';
 import { ACTS, WORK, usesTool } from './handlingar';
-import { canLight, eldarOf, emberOn, vidEld, needStones, needTinder, woodDays } from './eld';
+import { canLight, eldarOf, emberOn, fuelStock, vidEld, needStones, needTinder, woodDays } from './eld';
 import { ALDER, KROPP, REL, ageOf, count, isSick, living, relKey, stat } from './folk';
 import { RELT, bredvidVikt } from './relationer';
 import { onskan } from './naring';
@@ -105,6 +105,7 @@ const VAL = balans('val', {
   matMatt: 2, matMinMatt: 0.04, // ... och sedan vidare ner till MinMatt när det räcker Matt gånger så länge: då upphör matarbetet nästan (steg 3.10.9)
   egenDygn: 1.5, // den som har mat för kortare tid än så själv (sin egen, byns och familjens) arbetar för maten, hur fullt byns förråd än är (steg 3.10.26)
   vedDygn: 2, vedMin: 0.15, // ... och för ved
+  vedMatt: 12, vedMinMatt: 0.01, // räcker veden mer än Matt dygn sjunker golvet mot MinMatt, som ligger där vid dubbla tiden: en full börda grenar tar några minuter (steg 6.1.5), och byn samlar inte i det oändliga. Med en ledig yxa, eller en yxa att göra, gäller det först när också trät räcker så länge
   tandMin: 0.8, tandVikt: 3, // tändmaterial: årstiden räknas minst Min, gånger Vikt
   prospektMin: 0.05, prospektMax: 1.3, // hur mycket platserna ger just nu räknas mellan dessa
   // fritid (leisure): vikter (ju större desto oftare), u = hur akut byn behöver arbete
@@ -590,7 +591,10 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
     : Math.max(VAL.matMinMatt, VAL.matMin - (VAL.matMin - VAL.matMinMatt) * (fd - onskat) / (onskat * (VAL.matMatt - 1)));
   const egen = egnaMatDygn(s, p), wEgen = egen < VAL.egenDygn ? VAL.behovTomt - egen / VAL.egenDygn * (VAL.behovTomt - VAL.matMin) : 0; // steg 3.10.26
   const wFood = Math.max(wBy, wEgen);
-  const wWood = clamp(VAL.behovTomt - wd / (VAL.vedDygn * vs), VAL.vedMin, VAL.behovMax) * (kallTid(ai) ? ARSTID.vedKall : 1); // inför och under istiden väger veden tyngre
+  // grenarna mättas: räcker veden länge och kan p inte hugga trä som byn saknar, sjunker golvet (steg 6.1.5)
+  const mattad = wd > VAL.vedMatt * vs && (freeTools(s, p, 'yxa') === 0 && (fara.kyla || !wantsTool(s, p, 'yxa')) || wd * amountOf(s, 'ved') / Math.max(1e-9, fuelStock(s)) > VAL.vedMatt * vs);
+  const vedGolv = !mattad ? VAL.vedMin : Math.max(VAL.vedMinMatt, VAL.vedMin - (VAL.vedMin - VAL.vedMinMatt) * (wd - VAL.vedMatt * vs) / (VAL.vedMatt * vs));
+  const wWood = clamp(VAL.behovTomt - wd / (VAL.vedDygn * vs), vedGolv, VAL.behovMax) * (kallTid(ai) ? ARSTID.vedKall : 1); // inför och under istiden väger veden tyngre
   const vikt = { mat: wFood, ved: wWood };
   let best: Act = 'samla', bs = -1, burg = 0;
   const ppl = living(s);

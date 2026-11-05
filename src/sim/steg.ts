@@ -723,7 +723,7 @@ function rundaSteg(s: State, p: Person, tk: Task, left: number, a: number, learn
     s.now = t0 + used * SEC;
     used += rundaRuta(s, p, tk, left - used, a, learn);
     spara(s, p, t0 + used * SEC); // platsen och uppgiften vid varje ruta, så att bilden går rutan till rutan (bara för att visa)
-    if (p.task !== tk || tk.phase !== 'do' || (tk.plock ?? 0) > 1e-6) break; // ett stopp som inte är slut: nästa bit
+    if (p.task !== tk || tk.phase !== 'do' || tk.until <= s.now || (tk.plock ?? 0) > 1e-6) break; // full börda (hem), eller ett stopp som inte är slut: nästa bit
   }
   s.now = t0 + used * SEC;
   return used;
@@ -800,7 +800,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
     if (runda && d.runda?.hel) framsteg(p, carryKind(tk.act), y); // arbetet mot nästa hela sak, som ges vid nästa stopp (rundaSteg)
     else tk.carry += y;
   }
-  helaIBordan(p, tk); // bara hela saker i bördan (steg 2.10.7)
+  if (!(runda && d.runda?.hel)) helaIBordan(p, tk); // bara hela saker i bördan (steg 2.10.7); på en runda med hela saker ges saken bara vid stoppet (rundaRuta, steg 6.1.3)
   const sk = d.arbete!;
   const before = p.skill[sk];
   const m = p.mentor !== undefined ? byId(s, p.mentor) : undefined; // bredvid sin mentor lär man sig fortare (steg 3.1.1)
