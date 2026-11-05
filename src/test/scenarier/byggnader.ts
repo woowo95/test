@@ -886,3 +886,31 @@ SCENARIER.stackar = {
     ];
   },
 };
+
+SCENARIER.omrade = {
+  text: 'Byns område (steg 6.2.1): det husen, stationerna, lagren och eldarna omsluter, plus 2 rutor runt om; latrinen och slaktbänken räknas inte',
+  kor: () => {
+    const s = createState(9, START), f = SIM.eldPlats(s), o0 = SIM.omrade(s), k = SIM.OMRADE.kant;
+    const inne = (o: SIM.Omrade, x: number, y: number) => o.inne[y * W + x] === 1;
+    const zs0 = zonesOf(s);
+    const lagerInne = zs0.every(z => { for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (!inne(o0, x, y)) return false; return true; });
+    setFood(s, 600); setAmount(s, 'ved', 200); setAmount(s, 'grenar', 200); setAmount(s, 'flinta', 2); s.fire.ring = true;
+    kor(s, 96);
+    const o = SIM.omrade(s), hus = housesOf(s), st = SIM.stationerOf(s);
+    const rutorIn = (x0: number, y0: number, w: number, h: number) => { for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) if (!inne(o, x, y)) return false; return true; };
+    const husUte = hus.filter(h => !rutorIn(h.x, h.y, h.w, h.h)).length;
+    const stUte = st.filter(t => !SIM.stationDef(t.k)?.utkant).filter(t => { const m = SIM.storlekAv(t); return !rutorIn(t.x, t.y, m.w, m.h); }).length;
+    // en ruta långt utanför allt räknas inte
+    let langtUte = 0;
+    for (let y = 0; y < SIM.H; y += 3) for (let x = 0; x < W; x += 3) if (inne(o, x, y) && SIM.tillHolje(x, y, o.holje) > k + 0.5) langtUte++;
+    const samma = SIM.omrade(s) === o;
+    return [
+      [`elden och rutorna ${k} steg från den hör till byn från början (${o0.n} rutor)`, inne(o0, f.x, f.y) && inne(o0, f.x + k, f.y) && inne(o0, f.x, f.y - k)],
+      [`lagerplatserna ligger innanför byn från början`, lagerInne],
+      [`efter 4 dygn (4 år i spelet) ligger alla hus och stationer innanför (${hus.length} hus, ${husUte} utanför; ${st.length} stationer, ${stUte} utanför; ${o.n} rutor)`, husUte === 0 && stUte === 0],
+      [`ingen ruta långt från det byn omsluter räknas in (${langtUte})`, langtUte === 0],
+      [`området sparas tills något ändras`, samma],
+      [`byn växer: området är större efter 4 dygn (${o0.n} → ${o.n} rutor)`, o.n >= o0.n],
+    ];
+  },
+};
