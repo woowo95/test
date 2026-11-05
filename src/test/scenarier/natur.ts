@@ -2193,7 +2193,7 @@ SCENARIER.harflykt = {
 
 SCENARIER.gangar = {
   lang: true,
-  text: 'Avstånd i byn (steg 4.5.4.5): minst 2 rutor mellan två hus, latrinen STATION.latrinMal rutor från byns område (där de närmaste fälten ligger), och en station ute (bord, torkställning) står i en gång mellan husen bara om gången är minst 3 rutor bred, och då mot husväggen så att gången är fri',
+  text: 'Avstånd i byn (steg 4.5.4.5): minst PLATS.husMellan (3) rutor mellan två hus (steg 6.2.10), latrinen STATION.latrinMal rutor från byns område (där de närmaste fälten ligger), och en station ute (bord, torkställning) står i en gång mellan husen bara om gången är minst 3 rutor bred, och då mot husväggen så att gången är fri',
   kor: () => {
     const { gangFri, stationSite, housesOf, bitsOf, touch, PLATS } = SIM;
     // latrinen: latrinMal rutor från byns område (steg 6.2.4), inte närmare byn än utkantMin

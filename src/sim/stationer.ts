@@ -458,13 +458,13 @@ function runtOm(s: State, x: number, y: number, w: number, h: number, f: (k: str
 }
 
 // står rutorna i en gång mellan husen (en vägg på båda sidor, högst gangSok rutor bort), så är gången minst gangMin bred,
-// och de står mot den ena väggen med minst husMellan fritt mot den andra, så att gången är fri (steg 4.5.4.5)
+// och de står mot den ena väggen med minst gangMin - 1 rutor fritt mot den andra, så att gången är fri (steg 4.5.4.5)
 export function gangFri(s: State, rutor: { x: number; y: number }[]) {
   const g = gridOf(s), x0 = Math.min(...rutor.map(q => q.x)), x1 = Math.max(...rutor.map(q => q.x)), y0 = Math.min(...rutor.map(q => q.y)), y1 = Math.max(...rutor.map(q => q.y));
   const vagg = (x: number, y: number) => inMap(x, y) && g.at.has(y * W + x);
   // fritt från kanten (a) i riktningen d tills en vägg, eller undefined om ingen vägg finns inom gangSok
   const fritt = (ax: number, ay: number, dx: number, dy: number) => { for (let k = 0; k < STATION.gangSok; k++) if (vagg(ax + dx * (k + 1), ay + dy * (k + 1))) return k; return undefined; };
-  const ok = (a?: number, b?: number) => a === undefined || b === undefined || a + b + 1 >= STATION.gangMin && Math.min(a, b) === 0 && Math.max(a, b) >= PLATS.husMellan;
+  const ok = (a?: number, b?: number) => a === undefined || b === undefined || a + b + 1 >= STATION.gangMin && Math.min(a, b) === 0 && Math.max(a, b) >= STATION.gangMin - 1;
   for (let y = y0; y <= y1; y++) if (!ok(fritt(x0, y, -1, 0), fritt(x1, y, 1, 0))) return false;
   for (let x = x0; x <= x1; x++) if (!ok(fritt(x, y0, 0, -1), fritt(x, y1, 0, 1))) return false;
   return true;
