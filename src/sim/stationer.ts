@@ -3,7 +3,7 @@ import { Act, GRANNAR4, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } fr
 import { eldPlats, getMap } from './karta';
 import { knows } from './teknik';
 import { ALDER, ageOf, alive, byId, count, doingAct, familjOf, forstaGang, gjort, living, log } from './folk';
-import { getable, takeMaterial } from './behov';
+import { getable, saknatAv, takeMaterial } from './behov';
 import { sparas } from './ekonomi';
 import { Ting, freeTools, tingOf, wearTool } from './agande';
 import { BYN } from './egendom';
@@ -752,6 +752,14 @@ export function kanBygga(s: State, p: Person, k: StationSlag) {
   if (halvbyggd(s, k, p)) return true;
   return (!d.forvar?.privat || villKista(s, p)) && (!d.pynt || villPynt(s, p, k)) && Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n + sparas(m)) && !!stationSite(s, k, p);
 }
+// materialet p saknar till en station av sorten k som byn saknar och p kan bygga, annars undefined (projekt.ts, steg 6.1.17).
+// Brasans stenar letas för sig (brasor.ts)
+export function saknatStation(s: State, p: Person, k: StationSlag) {
+  const d: StationDef = STATIONER[k];
+  if (d.brasa || doingAct(s, 'station', p) || !d.tek.some(k => knows(p, k)) || !d.flera && harStation(s, k) || d.verktyg && !freeTools(s, p, d.verktyg) || halvbyggd(s, k, p)) return undefined;
+  if (d.forvar?.privat && !villKista(s, p) || d.pynt && !villPynt(s, p, k)) return undefined;
+  return saknatAv(s, p, d.av);
+}
 // byn har en färdig station av sorten k
 export const harStation = (s: State, k: string) => stationerOf(s).some(t => t.k === k && isKlar(t));
 // platsen dit den som ska bygga går: den halvbyggda stationen, annars rutan där den ska stå
@@ -880,6 +888,12 @@ export const tillbehorStationer = (s: State, k: TillbehorSlag) => stationerOf(s)
 export const utanTillbehor = (s: State, k: TillbehorSlag) => tillbehorStationer(s, k).filter(t => !t.med?.includes(k));
 // p kan göra tillbehöret: p kan tekniken, det finns fler stationer som saknar det än de som redan gör det, och p kan få tag i
 // materialet
+// materialet p saknar till ett tillbehör av sorten k som någon station saknar (steg 6.1.17)
+export function saknatTillbehor(s: State, p: Person, k: TillbehorSlag) {
+  const d: TillbehorDef = TILLBEHOR[k];
+  if (!d.tek.some(t => knows(p, t)) || utanTillbehor(s, k).length <= (doingAct(s, 'tillbehor', p) ? 1 : 0)) return undefined;
+  return saknatAv(s, p, d.av);
+}
 export function kanGoraTillbehor(s: State, p: Person, k: TillbehorSlag) {
   const d: TillbehorDef = TILLBEHOR[k];
   if (!d.tek.some(t => knows(p, t))) return false;

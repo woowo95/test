@@ -12,7 +12,7 @@ import { ARSTID, iIstiden } from './tid';
 import { knows } from './teknik';
 import { amountOf, changed, nearZone, ownMove, ownsAmount, use, usable, zonesOf } from './lager';
 import { freeTools, tingOf } from './agande';
-import { getable, takeMaterial } from './behov';
+import { getable, saknatAv, takeMaterial } from './behov';
 import { Del } from './egendom';
 import { fellingTiles } from './skog';
 import { FOREST, findPath } from './vag';
@@ -359,6 +359,12 @@ export const dorrOppningar = (s: State) => bitsOf(s).filter(b => {
 // öppningarna som saknar dörren k eller en bättre (en skinndörr ersätter aldrig en trädörr)
 export const utanDorr = (s: State, k: DorrSlag) => dorrOppningar(s).filter(b => dorrRang(b.dorr) < dorrRang(k));
 // p kan hänga dörren: p kan tekniken, det finns fler öppningar utan den än de som redan hänger en, och p kan få tag i materialet
+// materialet p saknar till en dörr av sorten k som någon öppning saknar (steg 6.1.17)
+export function saknatDorr(s: State, p: Person, k: DorrSlag) {
+  const d: DorrDef = DORRAR[k];
+  if (!d.tek.some(t => knows(p, t)) || utanDorr(s, k).length <= (doingAct(s, 'dorr', p) ? 1 : 0)) return undefined;
+  return saknatAv(s, p, d.av);
+}
 export function kanHangaDorr(s: State, p: Person, k: DorrSlag) {
   const d: DorrDef = DORRAR[k];
   if (!d.tek.some(t => knows(p, t))) return false;

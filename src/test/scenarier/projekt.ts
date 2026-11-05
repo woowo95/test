@@ -49,7 +49,7 @@ SCENARIER.projekt = {
     const k = by(5); setFood(k, 200); Object.assign(k.fire, { lit: false, fuel: 0, emberUntil: undefined });
     for (const q of k.people) q.warm = 0.1; // alla fryser och elden är släckt: kylan är en fara
     const kyla = dangers(k).kyla, iKyla = bastaProjekt(k, vuxna(k)[0], dangers(k));
-    const bara = !iKyla || iKyla.u.act === 'tvinna';
+    const bara = !iKyla || iKyla.u?.act === 'tvinna';
     return [
       ['varje redskap, varje station och repet är ett projekt', allt],
       [`listan har det mest värda först (${lista.map(r => r.d.namn).join(', ')})`, lista.length >= 3 && sorterad],

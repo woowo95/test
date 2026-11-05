@@ -8,7 +8,7 @@ import { ACTS, ACT_LIST, toolRow } from './handlingar';
 import { SAKER, SAK_LIST, gruppOf, isTool, sakNamn } from './saker';
 import { nyKvalitet } from './kvalitet';
 import { amountOf, gain, put, use } from './lager';
-import { getable, takeMaterial, takeRecipe } from './behov';
+import { getable, saknatAv, takeMaterial, takeRecipe } from './behov';
 import { addDel } from './egendom';
 import { RESERV } from './ekonomi';
 import { addTool, freeTools, halvOf, nTools, ownsFree, tingOf, wearTool } from './agande';
@@ -246,6 +246,14 @@ export const wantsTool = (s: State, p: Person, g: string, spar = 0) => {
   return kanGoras(s, g as Act, p) && (!!halvOf(s, p, ks) || ks.some(k => canMake(s, p, k) && (!av(k).torrgras || amountOf(s, 'torrgras') >= spar)))
     && harAv(s, g) < VILL[g](s) && !doingAct(s, g as Act, p);
 };
+// materialet p saknar till ett redskap i gruppen g som byn vill ha fler av: p kan tekniken och har verktyget till det första
+// slaget hen kan göra, men inte materialet (projekt.ts, steg 6.1.17). undefined när p kan göra det, eller inte kan alls
+export function saknatTill(s: State, p: Person, g: string) {
+  const ks = GORS[g];
+  if (!kanGoras(s, g as Act, p) || harAv(s, g) >= VILL[g](s) || doingAct(s, g as Act, p) || halvOf(s, p, ks)) return undefined;
+  const k = ks.find(k => { const tek = SAKER[k]!.skaffa!.tek; return (!tek || knows(p, tek)) && (!SAKER[k]!.skaffa!.verktyg || !!verktygFor(s, k)); });
+  return k && saknatAv(s, p, av(k), m => m === 'flinta' ? REDSKAP.flintaSparas : 0);
+}
 // arbetet att göra ett redskap i gruppen g. tool = slaget som görs när gruppen har flera (namnet på arbetet, handlingar.ts)
 export function makeTask(s: State, p: Person, g: string) {
   const k = kindFor(s, p, g);

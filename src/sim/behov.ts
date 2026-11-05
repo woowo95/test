@@ -15,7 +15,7 @@ import { ata } from './naring';
 import { ratt } from './matlagning';
 import { habitShare, habitTotal } from './seder';
 import { grundvarde } from './varde';
-import { EKONOMI } from './ekonomi';
+import { EKONOMI, sparas } from './ekonomi';
 import { balans } from './balans';
 import { RELT, arBast, arRivaler, minnsGava } from './relationer';
 import { handelse, smakMat } from './rykten';
@@ -296,6 +296,8 @@ export function noticeTheft(s: State, p: Person, key: string) {
 const aldrigStjal = (s: State, p: Person) => stat(p, 'empati', s.now) >= DELA.stjalAldrig;
 // så mycket av slaget k som p kan få till ett arbete
 export const getable = (s: State, p: Person, k: string) => aldrigStjal(s, p) ? mayTake(s, p, k) : amountOf(s, k);
+// det första material i receptet av som p inte kan få tag i (med det som sparas till elden, sparas i ekonomi.ts), annars undefined (steg 6.1.17)
+export const saknatAv = (s: State, p: Person, av: Record<string, number>, extra = (_m: string) => sparas(_m)) => Object.entries(av).find(([m, n]) => getable(s, p, m) < n + extra(m) - 1e-9)?.[0];
 // materialet till ett redskap efter receptet (saker.ts: skaffa.av), till ens eget arbete: hur mycket av varje som togs
 export function takeRecipe(s: State, p: Person, k: string) {
   const av: Record<string, number> = {};
