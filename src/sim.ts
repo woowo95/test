@@ -30,6 +30,7 @@ export * from './sim/samtal';
 export * from './sim/humor';
 export * from './sim/rykten';
 export * from './sim/styre';
+export * from './sim/forradsmal';
 export * from './sim/teknik';
 export * from './sim/sport';
 export * from './sim/framtradande';

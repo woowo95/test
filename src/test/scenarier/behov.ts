@@ -789,7 +789,7 @@ SCENARIER.matdygn = {
   kor: () => {
     const { foodDays, foodOf, chooseTask, ALDER, SAKER, ruttTemp } = SIM;
     // gott om trä, så att det bara är maten som fattas (sedan steg 3.10.23.7 väljer de annars trä när förrådet räcker 0,7 dygn)
-    const by = () => { const s = createState(6, START); klockan(s, 11); tandEld(s); setAmount(s, 'ved', 100); return s; }; // ved för ungefär nio dygn: under VAL.vedMatt, så att vedarbetet finns kvar att välja (steg 6.1.5)
+    const by = () => { const s = createState(6, START); klockan(s, 11); tandEld(s); setAmount(s, 'ved', 100); return s; }; // ved för ungefär nio dygn: under FORRAD.vedMatt (forradsmal.ts), så att vedarbetet finns kvar att välja (steg 6.1.5)
     // lika mycket fisk (håller ett dygn) och torkat kött (håller länge): fisken räcker kortare, eftersom det mesta hinner ruttna
     const f = by(); setMat(f, { fisk: 120 });
     const t = by(); setMat(t, { torrkott: 120 });
