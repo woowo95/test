@@ -1,5 +1,5 @@
 import { Act, Person, State } from './typer';
-import { living } from './folk';
+import { familjOf, living, stat } from './folk';
 import { clamp } from './slump';
 import { amountOf } from './lager';
 import { SAKER } from './saker';
@@ -17,7 +17,10 @@ import { dorrOppningar, dorrSpot, kanHangaDorr, utanDorr } from './bygg';
 import { GRODOR, ODLING, faltBrist, faltUppgift } from './odling';
 import { SKOG, fallTid, klyvStam, rojSpot, skaRojas } from './skog';
 import { knows } from './teknik';
-import { freeTools } from './agande';
+import { freeTools, tingOf } from './agande';
+import { SED } from './seder';
+import { bedTile } from './byggnader';
+import { stationRutor } from './stationer';
 
 // ---------- byns projekt: vad den bygger och gör (steg 2.2.7) ----------
 // Allt byn kan bygga eller göra av handarbete är en rad i registret PROJEKT: redskapen (en rad per grupp i GORS,
@@ -49,6 +52,10 @@ export const PROJEKT_TAL = balans('projekt', {
   rojning: 1, // ... att fälla träden på en lagerplats eller ett fält i skogen (steg 3.6.9)
   falt: 1, // ... arbetet på fälten när ett fält har arbete att göra, eller någon som kan odla har frön men inget fält (steg 2.10.3)
   minKostnad: 0.25, // kostnaden räknas aldrig under så här många arbetstimmar
+  // jaget och familjen (steg 6.1.16): det egna värdet räknas med egenintresset, som är egen för en vanlig människa i en by
+  // utan sed, sjunker med egenEmpati per steg empati över det vanliga och med egenSed när seden är Sammanhållning (stiger när
+  // den är Självförsörjning), och ligger mellan 0 och egenMax
+  egen: 1, egenEmpati: 0.3, egenSed: 0.5, egenMax: 2,
 });
 
 // det p gör: handlingen, texten, hur många minuter (annars valets vanliga), slaget (task.tool) och platsen
@@ -58,6 +65,7 @@ export interface ProjektFara { kyla: boolean; gras: number }
 export interface ProjektDef {
   namn: string; vikt: number;
   brist(s: State): number; kostnad(): number;
+  egen?(s: State, fam: readonly Person[]): number; // hur mycket p och familjen saknar det (0 till 1, steg 6.1.16)
   kan(s: State, p: Person, f: ProjektFara): boolean;
   uppgift(s: State, p: Person): Uppgift | undefined;
 }
@@ -69,6 +77,7 @@ const redskap = (g: string): ProjektDef => {
   return {
     namn: NAMN[g] ?? SAKER[GORS[g][0]]!.namn, vikt: (PROJEKT_TAL as Record<string, number>)[g] ?? 1,
     brist: s => { const v = villAv(s, g); return v > 0 ? clamp((v - harAv(s, g)) / v, 0, 1) : 0; },
+    egen: (s, fam) => villAv(s, g) > 0 && !tingOf(s).some(t => t.agare !== undefined && GORS[g].includes(t.k) && fam.some(q => q.id === t.agare)) ? 1 : 0, // ingen i familjen äger ett
     kostnad: () => grundvarde(k),
     kan: (s, p, f) => !f.kyla && wantsTool(s, p, g, f.gras),
     uppgift: (s, p) => { const m = makeTask(s, p, g); return { act: m.act, text: m.text, min: m.min, tool: m.tool }; },
@@ -81,6 +90,7 @@ const station = (k: StationSlag): ProjektDef => {
   const d: StationDef = STATIONER[k];
   return {
     namn: d.namn, vikt: (PROJEKT_TAL as Record<string, number>)[k] ?? 1,
+    egen: d.sover ? (s, fam) => utanEgenBadd(s, fam) : undefined, // någon i familjen sover under tak utan en bädd
     brist: s => d.pynt ? pyntBrist(s, k) : d.brasa ? brasaBrist(s) : d.sover ? (living(s).length ? utanBadd(s) / living(s).length : 0) : d.platser ? bordBrist(s, k) : d.forvar ? forvarBrist(s, k) : d.gor.includes('toa') ? latrinBrist(s) : d.gor.includes('torka') ? torkBrist(s) : harStation(s, k) ? 0 : 1,
     kostnad: () => varuVarde(d.av, d.min / 60 * ARBETE),
     kan: (s, p, f) => !f.kyla && (kanBygga(s, p, k) || !!d.brasa && kanLetaBrasaSten(s, p)), // brasans stenar letas först (brasor.ts)
@@ -159,14 +169,27 @@ function virkeBehov(s: State) {
 
 // värdet av projektet just nu: vikten gånger bristen, delat med kostnaden
 export const projektVarde = (s: State, k: string) => { const d = PROJEKT[k]; return d.vikt * d.brist(s) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad()); };
+// hur mycket p bryr sig om det hen och familjen saknar, jämfört med byn (steg 6.1.16): mindre med empati och seden Sammanhållning
+export const egenintresse = (s: State, p: Person) => clamp(PROJEKT_TAL.egen - PROJEKT_TAL.egenEmpati * (stat(p, 'empati', s.now) - SED.mitt) / SED.spann - PROJEKT_TAL.egenSed * (s.seder?.v.gemenskap ?? 0), 0, PROJEKT_TAL.egenMax);
+// det projektet är värt för den som har familjen fam och egenintresset ei: byns värde och det egna (vad p och familjen saknar) gånger egenintresset
+export function personVarde(s: State, k: string, fam: readonly Person[], ei: number) {
+  const d = PROJEKT[k], e = d.egen && ei > 0 ? d.egen(s, fam) : 0;
+  return d.vikt * (d.brist(s) + e * ei) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad());
+}
+// den i familjen som sover under tak utan en bädd
+function utanEgenBadd(s: State, fam: readonly Person[]) {
+  const sov = stationRutor(s).sov;
+  return fam.some(q => { const b = bedTile(s, q); return b !== undefined && !sov.has(b); }) ? 1 : 0;
+}
 // allt byn saknar något av, det mest värda först (scenariot projekt)
 export const projekt = (s: State) => PROJEKT_LIST.map(k => ({ k, d: PROJEKT[k], varde: projektVarde(s, k), brist: PROJEKT[k].brist(s) }))
   .filter(r => r.brist > 0).sort((a, b) => b.varde - a.varde);
 // det mest värda projekt p kan göra nu, med uppgiften och värdet (lika värde: registrets ordning)
 export function bastaProjekt(s: State, p: Person, f: ProjektFara) {
   let best: { k: string; varde: number; u: Uppgift } | undefined;
+  const fam = familjOf(s, p.id), ei = egenintresse(s, p); // p, partnern och de ogifta barnen
   for (const k of PROJEKT_LIST) {
-    const v = projektVarde(s, k);
+    const v = personVarde(s, k, fam, ei);
     if (v <= 0 || best && v <= best.varde || !PROJEKT[k].kan(s, p, f)) continue;
     const u = PROJEKT[k].uppgift(s, p);
     if (u) best = { k, varde: v, u };
