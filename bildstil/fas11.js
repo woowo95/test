@@ -1,0 +1,281 @@
+// fas 11: konceptbilder av världskartan (Björn 2026-11-05: "kan vi börja jobba på konceptbilder till världskartan").
+// Idéerna står i designdokumentet under Flera samhällen, tribut och diplomati (Världen och grannbyarna), steg 11.1.9.
+// En liten värld genereras ur ett frö, som i spelet: höjd och fukt ur brus, hav i väster och söder, berg i nordost,
+// floder från bergen till havet, sjöar, skog och myr, och platserna (byarna, läger, rövarläger, ruiner, en helig
+// plats, en gravhög och en runsten). Samma värld ritas i tre stilar. En ruta på världskartan (8 × 8 punkter här) är en
+// bykarta; den egna byn har en ring runt sig.
+(() => {
+  const W = 240, H = 160, RUTA = 8, FRO = 11;
+  const hash = (a, b, c = 0) => { let n = (a * 374761393 + b * 668265263 + c * 1274126177) | 0; n = Math.imul(n ^ (n >>> 13), 1274126177); return ((n ^ (n >>> 16)) >>> 0) / 4294967296; };
+  const brus = (x, y, s) => {
+    const xi = Math.floor(x), yi = Math.floor(y), fx = x - xi, fy = y - yi, u = fx * fx * (3 - 2 * fx), v = fy * fy * (3 - 2 * fy);
+    const a = hash(xi, yi, s), b = hash(xi + 1, yi, s), c = hash(xi, yi + 1, s), d = hash(xi + 1, yi + 1, s);
+    return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+  };
+  const fbm = (x, y, s, okt = 4) => { let v = 0, a = 0.5, f = 1, sum = 0; for (let i = 0; i < okt; i++) { v += a * brus(x * f, y * f, s + i * 17); sum += a; a *= 0.5; f *= 2; } return v / sum; };
+
+  // ---------- världen ----------
+  const HAV = 0, SLATT = 1, SKOG = 2, BERG = 3, MYR = 4, SJO = 5;
+  let VARLD = null;
+  function varld() {
+    if (VARLD) return VARLD;
+    const N = W * H, hojd = new Float32Array(N), typ = new Uint8Array(N), elv = new Uint8Array(N);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      let h = fbm(x / 46, y / 46, FRO) * 0.62 + fbm(x / 13, y / 13, FRO + 50, 3) * 0.38;
+      h += (x / W - 0.45) * 0.5 - (y / H - 0.4) * 0.22;
+      const kant = Math.min(x, H - 1 - y); if (kant < 14) h -= (14 - kant) / 14 * 0.2;
+      hojd[y * W + x] = h;
+    }
+    const HAVNIVA = 0.4, BERGNIVA = 0.69;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const i = y * W + x, h = hojd[i], f = fbm(x / 20, y / 20, FRO + 30, 3);
+      if (h < HAVNIVA) typ[i] = HAV;
+      else if (h > BERGNIVA) typ[i] = BERG;
+      else if (fbm(x / 9, y / 9, FRO + 90, 2) > 0.74 && h > HAVNIVA + 0.06 && h < BERGNIVA - 0.04) typ[i] = SJO;
+      else if (f > 0.56 && h < HAVNIVA + 0.09) typ[i] = MYR;
+      else if (f > 0.47 || h > BERGNIVA - 0.07) typ[i] = SKOG;
+      else typ[i] = SLATT;
+    }
+    // floderna: på ett grövre rutnät från de högsta punkterna i bergen, alltid till den lägsta grannen som inte besökts
+    const G = 4, GW = W / G, GH = H / G, gh = (gx, gy) => hojd[(gy * G + 2) * W + gx * G + 2];
+    const kallor = [];
+    for (let gy = 1; gy < GH - 1; gy++) for (let gx = 1; gx < GW - 1; gx++) if (typ[(gy * G + 2) * W + gx * G + 2] === BERG) kallor.push([gh(gx, gy) + hash(gx, gy, 5) * 0.05, gx, gy]);
+    kallor.sort((a, b) => b[0] - a[0]);
+    const valda = [];
+    for (const [, gx, gy] of kallor) { if (valda.length >= 4) break; if (valda.every(([ax, ay]) => Math.abs(ax - gx) + Math.abs(ay - gy) > 12)) valda.push([gx, gy]); }
+    const floder = [];
+    for (const [sx, sy] of valda) {
+      let gx = sx, gy = sy; const sedd = new Set([gx + ',' + gy]), vag = [[gx, gy]];
+      for (let s = 0; s < 120; s++) {
+        let bast = null;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]]) {
+          const nx = gx + dx, ny = gy + dy; if (nx < 0 || ny < 0 || nx >= GW || ny >= GH || sedd.has(nx + ',' + ny)) continue;
+          const v = gh(nx, ny) + hash(nx, ny, 7) * 0.02 + (dx && dy ? 0.004 : 0);
+          if (!bast || v < bast[0]) bast = [v, nx, ny];
+        }
+        if (!bast) break;
+        [, gx, gy] = bast; sedd.add(gx + ',' + gy); vag.push([gx, gy]);
+        if (typ[(gy * G + 2) * W + gx * G + 2] === HAV) break;
+      }
+      // punkterna mellan rutornas mitt, med en liten slingring
+      const pts = vag.map(([gx, gy], k) => [gx * G + 2 + (k && k < vag.length - 1 ? Math.round((hash(gx, gy, 9) - 0.5) * 3) : 0), gy * G + 2 + (k && k < vag.length - 1 ? Math.round((hash(gx, gy, 10) - 0.5) * 3) : 0)]);
+      floder.push(pts);
+      for (let k = 0; k < pts.length - 1; k++) {
+        const [ax, ay] = pts[k], [bx, by] = pts[k + 1], n = Math.max(Math.abs(bx - ax), Math.abs(by - ay)) || 1;
+        for (let t = 0; t <= n; t++) {
+          const x = Math.round(ax + (bx - ax) * t / n), y = Math.round(ay + (by - ay) * t / n);
+          const bred = k > pts.length * 0.6 ? 2 : 1;
+          for (let dy = 0; dy < bred; dy++) for (let dx = 0; dx < bred; dx++) { const i = (y + dy) * W + x + dx; if (x + dx < W && y + dy < H && typ[i] !== HAV) elv[i] = 1; }
+        }
+      }
+    }
+    // avståndet till kusten (i havet och sjöarna) och till vattnet (på land)
+    const avst = new Int16Array(N).fill(999), ko = [];
+    const vatten = i => typ[i] === HAV || typ[i] === SJO;
+    for (let i = 0; i < N; i++) if (!vatten(i)) { avst[i] = 0; ko.push(i); }
+    for (let k = 0; k < ko.length; k++) { const i = ko[k], x = i % W, y = (i / W) | 0; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue; const j = ny * W + nx; if (avst[j] > avst[i] + 1) { avst[j] = avst[i] + 1; ko.push(j); } } }
+    // platserna, på rutnätet där en ruta är en bykarta
+    const RW = W / RUTA, RH = H / RUTA, ruttyp = (rx, ry) => typ[(ry * RUTA + 4) * W + rx * RUTA + 4];
+    const narVatten = (rx, ry) => { for (let y = ry * RUTA - 4; y < ry * RUTA + 12; y++) for (let x = rx * RUTA - 4; x < rx * RUTA + 12; x++) { if (x < 0 || y < 0 || x >= W || y >= H) continue; const i = y * W + x; if (vatten(i) || elv[i]) return true; } return false; };
+    const flodI = (rx, ry) => { for (let y = ry * RUTA; y < ry * RUTA + RUTA; y++) for (let x = rx * RUTA; x < rx * RUTA + RUTA; x++) if (elv[y * W + x]) return true; return false; };
+    const platser = [], fri = (rx, ry, d) => platser.every(p => Math.abs(p.rx - rx) + Math.abs(p.ry - ry) >= d);
+    const rutor = []; for (let ry = 1; ry < RH - 1; ry++) for (let rx = 1; rx < RW - 1; rx++) rutor.push([hash(rx, ry, 21), rx, ry]);
+    rutor.sort((a, b) => a[0] - b[0]);
+    const valj = (sort, antal, ok, d) => { let n = 0; for (const [, rx, ry] of rutor) { if (n >= antal) break; if (ok(rx, ry) && fri(rx, ry, d)) { platser.push({ sort, rx, ry, x: rx * RUTA + 4, y: ry * RUTA + 4 }); n++; } } };
+    const land = (rx, ry) => { const t = ruttyp(rx, ry); return t === SLATT || t === SKOG; };
+    valj('egen', 1, (rx, ry) => land(rx, ry) && flodI(rx, ry) && rx > 8 && rx < 22 && ry > 5 && ry < 15, 0); // den egna byn: en flod rinner genom byn
+    if (!platser.length) valj('egen', 1, (rx, ry) => land(rx, ry) && narVatten(rx, ry), 0);
+    valj('by', 5, (rx, ry) => land(rx, ry) && narVatten(rx, ry), 5);
+    valj('lager', 3, land, 3);
+    valj('rovare', 1, (rx, ry) => ruttyp(rx, ry) === SKOG && platser.every(p => p.sort !== 'egen' || Math.abs(p.rx - rx) + Math.abs(p.ry - ry) > 8), 3);
+    valj('ruin', 2, (rx, ry) => ruttyp(rx, ry) !== HAV && ruttyp(rx, ry) !== SJO, 3);
+    valj('helig', 1, (rx, ry) => land(rx, ry) && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => ruttyp(rx + dx, ry + dy) === BERG), 3);
+    valj('hog', 1, land, 3);
+    valj('runsten', 1, land, 3);
+    // vägarna: varje by till sin närmaste granne, en gång per par
+    const byar = platser.filter(p => p.sort === 'egen' || p.sort === 'by'), vagar = [], par = new Set();
+    for (const a of byar) {
+      const b = byar.filter(o => o !== a).sort((p, q) => Math.hypot(p.x - a.x, p.y - a.y) - Math.hypot(q.x - a.x, q.y - a.y))[0];
+      const k = [a, b].map(p => p.rx + ',' + p.ry).sort().join('|'); if (b && !par.has(k)) { par.add(k); vagar.push([a, b]); }
+    }
+    // havsormen och skeppet: i det djupaste havet
+    let djup = 0, djupI = 0; for (let i = 0; i < N; i++) if (typ[i] === HAV && avst[i] > djup && i % W > 40 && i % W < W - 50 && ((i / W) | 0) > 30 && ((i / W) | 0) < H - 35) { djup = avst[i]; djupI = i; }
+    VARLD = { hojd, typ, elv, avst, floder, platser, vagar, djupX: djupI % W, djupY: (djupI / W) | 0, vatten };
+    return VARLD;
+  }
+
+  // ---------- symbolerna (o = kontur, a = fyllning, b = ljust, c = mörkt) ----------
+  const SYM = {
+    by: ['...o...', '..oao..', '.oaaao.', 'oaaaaao', '.obcbo.', '.obcbo.', '.ooooo.'],
+    egen: ['....o....', '...oao...', '..oaaao..', '.oaaaaao.', 'oaaaaaaao', '.obbcbbo.', '.obbcbbo.', '.ooooooo.'],
+    lager: ['...o...', '..oao..', '.oaaco.', 'oaaacco', 'ooooooo'],
+    rovare: ['...o...', '..oco..', '.occco.', 'occccco', 'ooooooo'],
+    ruin: ['.o...o.', 'oa..oa.', 'oa..oao', 'oaooaao', 'ooooooo'],
+    helig: ['..b.b..', '.b...b.', 'b..a..b', '.b...b.', '..b.b..'],
+    hog: ['..ooo..', '.oaaao.', 'oaabaao', 'ooooooo'],
+    runsten: ['.oo.', 'obao', 'oaao', 'obao', 'oaao', 'oooo'],
+    berg: ['...o...', '..obo..', '.obbco.', '.obbcco', 'obbbcco'],
+    gran: ['.a.', 'aaa', 'aaa', '.c.'],
+    skepp: ['....o....', '...oao...', '..oaaao..', '....o....', 'oo..o..oo', '.oooooo..'],
+  };
+  const glyf = (B, rader, leg, cx, cy) => {
+    const h = rader.length, w = rader[0].length, x0 = Math.round(cx - w / 2), y0 = Math.round(cy - h / 2);
+    rader.forEach((r, y) => [...r].forEach((ch, x) => { if (leg[ch] !== undefined) B.satt(x0 + x, y0 + y, leg[ch]); }));
+  };
+  // runorna (yngre futharken, 3 × 5), bara som prydnad och namn
+  const RUNOR = [
+    ['#.#', '##.', '#.#', '#..', '#..'], ['##.', '#.#', '#.#', '#.#', '#.#'], ['#..', '##.', '#.#', '##.', '#..'],
+    ['##.', '#.#', '##.', '#.#', '#.#'], ['#.#', '##.', '#..', '#..', '#..'], ['#.#', '.#.', '###', '.#.', '#.#'],
+    ['.#.', '.##', '##.', '.#.', '.#.'], ['.#.', '.#.', '.#.', '.#.', '.#.'], ['..#', '.#.', '#..', '.#.', '..#'],
+    ['.#.', '#.#', '.#.', '.#.', '.#.'], ['##.', '#.#', '##.', '#.#', '##.'], ['##.', '#.#', '#..', '#..', '#..'],
+  ];
+  const runrad = (B, x, y, n, frö, farg, lodratt = false) => {
+    for (let k = 0; k < n; k++) {
+      const r = RUNOR[Math.floor(hash(k, frö, 33) * RUNOR.length)];
+      r.forEach((rad, dy) => [...rad].forEach((ch, dx) => { if (ch === '#') lodratt ? B.satt(x + 4 - dy, y + k * 4 + dx, farg) : B.satt(x + k * 4 + dx, y + dy, farg); }));
+    }
+  };
+  const linje = (B, a, b, f, steg = 1, av = 1) => { const n = Math.max(Math.abs(b.x - a.x), Math.abs(b.y - a.y)) || 1; for (let t = 0; t <= n; t++) if (t % steg < av) f(Math.round(a.x + (b.x - a.x) * t / n), Math.round(a.y + (b.y - a.y) * t / n)); };
+  const ring = (B, cx, cy, r, farg, prickar = false) => { for (let a = 0; a < 64; a++) { if (prickar && a % 4 > 1) continue; B.satt(Math.round(cx + Math.cos(a / 64 * 2 * Math.PI) * r), Math.round(cy + Math.sin(a / 64 * 2 * Math.PI) * r), farg); } };
+  const platsLegend = (P, sort, stil) => {
+    const ut = { o: stil.kontur, a: stil.by, b: stil.ljus, c: stil.mork };
+    if (sort === 'rovare') ut.c = P.i('rost', 0);
+    if (sort === 'helig') { ut.b = stil.sten; ut.a = stil.helig; }
+    if (sort === 'egen') { ut.a = stil.egen; }
+    if (sort === 'ruin' || sort === 'runsten' || sort === 'hog') { ut.a = stil.sten; ut.b = stil.ljus; }
+    if (sort === 'lager') { ut.a = stil.talt; ut.c = stil.taltM; }
+    return ut;
+  };
+  // gemensamt för alla stilar: floderna, vägarna, platserna, den egna byns ring och namnen
+  function platserna(B, V, stil) {
+    const P = B.P;
+    for (const [a, b] of V.vagar) linje(B, a, b, (x, y) => { const i = y * W + x; if (V.typ[i] === HAV || V.typ[i] === SJO) { if ((x + y) % 4 === 0) B.satt(x, y, stil.sjovag); } else B.satt(x, y, stil.vag); }, 3, 1);
+    for (const p of V.platser) {
+      if (p.sort === 'egen') ring(B, p.x, p.y, 8, stil.ring, true);
+      glyf(B, SYM[p.sort], platsLegend(P, p.sort, stil), p.x, p.y);
+      if (stil.namn && (p.sort === 'egen' || p.sort === 'by')) runrad(B, p.x - 6, p.y + 6, 3, p.rx * 31 + p.ry, stil.namn);
+    }
+  }
+
+  // ---------- version 1: skinnkartan, med bläck på ett spänt skinn ----------
+  function skinn(B) {
+    const P = B.P, V = varld(), cx = W / 2, cy = H / 2;
+    const BLACK = P.i('kol', 1), HAVL = P.i('skiffer', 1), EKO = P.i('skiffer', 2);
+    const inne = (x, y) => { const d = (Math.abs(x - cx) / (W / 2 - 3)) ** 3 + (Math.abs(y - cy) / (H / 2 - 3)) ** 3; return Math.cbrt(d) + (fbm(x / 9, y / 9, 77, 2) - 0.5) * 0.14; };
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const d = inne(x, y); if (d > 1) continue;
+      const i = y * W + x, t = V.typ[i], g = hash(x, y, 3);
+      let c = d > 0.95 ? P.i('jord', 1) : d > 0.88 ? P.i('jord', 3) : g < 0.12 ? P.i('ben', 1) : g > 0.94 ? P.i('ben', 3) : P.i('ben', 2);
+      if (t === HAV || t === SJO) {
+        const a = V.avst[i];
+        if (a === 1) c = BLACK;
+        else if (a === 3 && t === HAV) c = EKO;
+        else if (a > 4 && (y + Math.round(Math.sin(x / 3 + y * 0.7) * 1.2)) % 5 === 0 && hash(Math.floor(x / 7), y, 4) > 0.35) c = HAVL;
+      } else if (t === MYR && y % 3 === 0 && (x + y) % 6 < 2) c = P.i('oliv', 1);
+      if (V.elv[i]) c = HAVL;
+      B.satt(x, y, c);
+    }
+    // bergen och granarna som små tecken, i ett glest mönster
+    for (let gy = 4; gy < H - 4; gy += 6) for (let gx = 4; gx < W - 4; gx += 7) {
+      const x = gx + Math.floor(hash(gx, gy, 1) * 4), y = gy + Math.floor(hash(gx, gy, 2) * 3), i = y * W + x;
+      if (inne(x, y) > 0.86) continue;
+      if (V.typ[i] === BERG) glyf(B, SYM.berg, { o: BLACK, b: P.i('ben', 2), c: P.i('jord', 2) }, x, y);
+      else if (V.typ[i] === SKOG && !V.elv[i]) glyf(B, ['..o..', '.o.o.', 'o...o', '..o..'], { o: P.i('barr', 1) }, x, y);
+    }
+    // havsormen
+    const sx = V.djupX - 10, sy = V.djupY;
+    for (let k = 0; k < 3; k++) for (let a = 0; a <= 8; a++) { const x = sx + k * 7 + a * 0.6, y = sy - Math.round(Math.sin(a / 8 * Math.PI) * 3); B.satt(Math.round(x), y, BLACK); B.satt(Math.round(x), y + 1, P.i('barr', 2)); }
+    glyf(B, ['.oo.', 'oaao', '.oao', '..o.'], { o: BLACK, a: P.i('barr', 2) }, sx + 23, sy - 3);
+    platserna(B, V, { kontur: BLACK, by: P.i('rost', 1), egen: P.i('rost', 2), ljus: P.i('ben', 3), mork: P.i('jord', 1), sten: P.i('skiffer', 2), helig: P.i('senap', 1), talt: P.i('jord', 2), taltM: P.i('jord', 1), vag: P.i('jord', 1), sjovag: P.i('jord', 1), ring: P.i('rost', 1), namn: BLACK });
+  }
+
+  // ---------- version 2: färgkartan, i spelets färger med en flätad ram ----------
+  function farg(B) {
+    const P = B.P, V = varld();
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const i = y * W + x, t = V.typ[i], g = hash(x, y, 5), a = V.avst[i];
+      let c;
+      if (t === HAV) c = a <= 2 ? P.i('skiffer', 2) : a <= 7 ? P.i('skiffer', 1) : a <= 14 ? P.i('barr', 1) : P.i('barr', 0);
+      else if (t === SJO) c = a <= 1 ? P.i('skiffer', 2) : P.i('skiffer', 1);
+      else if (t === BERG) c = g < 0.2 ? P.i('skiffer', 1) : P.i('skiffer', 2);
+      else if (t === SKOG) c = g < 0.25 ? P.i('barr', 1) : P.i('barr', 2);
+      else if (t === MYR) c = (x + y * 2) % 5 === 0 ? P.i('skiffer', 1) : g < 0.3 ? P.i('oliv', 1) : P.i('oliv', 2);
+      else c = g < 0.15 ? P.i('oliv', 1) : g > 0.9 ? P.i('oliv', 3) : P.i('oliv', 2);
+      if (t !== HAV && t !== SJO && V.typ[i - 1] === HAV || t !== HAV && t !== SJO && [1, -1, W, -W].some(d => V.typ[i + d] === HAV)) c = P.i('senap', 2); // stranden
+      if ((t === HAV) && a > 3 && g < 0.03) c = P.i('skiffer', 2); // vågor
+      if (V.elv[i]) c = P.i('skiffer', 3);
+      B.satt(x, y, c);
+    }
+    for (let gy = 3; gy < H - 3; gy += 5) for (let gx = 3; gx < W - 3; gx += 5) {
+      const x = gx + Math.floor(hash(gx, gy, 1) * 3), y = gy + Math.floor(hash(gx, gy, 2) * 3), i = y * W + x;
+      if (V.typ[i] === SKOG && !V.elv[i]) glyf(B, SYM.gran, { a: P.i('barr', 3), c: P.i('jord', 0) }, x, y);
+    }
+    for (let gy = 4; gy < H - 4; gy += 6) for (let gx = 4; gx < W - 4; gx += 7) {
+      const x = gx + Math.floor(hash(gx, gy, 1) * 4), y = gy + Math.floor(hash(gx, gy, 2) * 3), i = y * W + x;
+      if (V.typ[i] === BERG) glyf(B, ['...b...', '..bbo..', '.oaaco.', '.oaacco', 'oaaacco'], { o: P.i('kol', 1), a: P.i('skiffer', 3), b: P.i('ben', 3), c: P.i('skiffer', 0) }, x, y);
+    }
+    // rutnätet där en ruta är en bykarta, prickat på land
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if ((x % RUTA === 0 || y % RUTA === 0) && (x + y) % 2 === 0 && V.typ[y * W + x] !== HAV) B.morka(x, y);
+    const egen = V.platser.find(p => p.sort === 'egen');
+    for (let k = 0; k <= RUTA; k++) for (const [x, y] of [[egen.rx * RUTA + k, egen.ry * RUTA], [egen.rx * RUTA + k, egen.ry * RUTA + RUTA], [egen.rx * RUTA, egen.ry * RUTA + k], [egen.rx * RUTA + RUTA, egen.ry * RUTA + k]]) B.satt(x, y, P.i('senap', 3));
+    glyf(B, SYM.skepp, { o: P.i('kol', 0), a: P.i('ben', 2) }, V.djupX, V.djupY);
+    platserna(B, V, { kontur: P.i('kol', 0), by: P.i('rost', 2), egen: P.i('senap', 3), ljus: P.i('jord', 3), mork: P.i('jord', 0), sten: P.i('ben', 1), helig: P.i('senap', 2), talt: P.i('jord', 3), taltM: P.i('jord', 1), vag: P.i('jord', 1), sjovag: P.i('ben', 2), ring: P.i('senap', 3) });
+    // ramen: ett flätat band
+    const R = 6;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const k = Math.min(x, y, W - 1 - x, H - 1 - y); if (k >= R) continue;
+      const u = (x + y) % 8, v = (x - y + 800) % 8, ovan = ((Math.floor((x + y) / 8) + Math.floor((x - y + 800) / 8)) % 2) === 0;
+      let c = P.i('jord', 0);
+      if (k === 0 || k === R - 1) c = P.i('kol', 0);
+      else if (u < 2 && (ovan || v >= 2)) c = u === 0 ? P.i('senap', 3) : P.i('senap', 1);
+      else if (v < 2) c = v === 0 ? P.i('senap', 2) : P.i('senap', 0);
+      B.satt(x, y, c);
+    }
+  }
+
+  // ---------- version 3: ristad i trä, med ett runband som på en runsten ----------
+  function tra(B) {
+    const P = B.P, V = varld(), R = 10;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const i = y * W + x, t = V.typ[i], adr = fbm(x / 60, y / 2.5, 41, 3), vat = t === HAV || t === SJO;
+      let c = adr > 0.66 ? P.i('jord', 2) : P.i('jord', 3);
+      if (vat) {
+        c = adr > 0.66 ? P.i('kol', 2) : P.i('jord', 0);
+        if (V.avst[i] > 2 && (y + Math.round(Math.sin(x / 4) * 1.5)) % 6 === 0) c = P.i('jord', 1);
+      } else {
+        const upp = V.vatten(i - W) || V.vatten(i - 1), ner = V.vatten(i + W) || V.vatten(i + 1);
+        if (upp) c = P.i('senap', 3); else if (ner) c = P.i('kol', 1);
+        if (t === MYR && (x * 3 + y) % 7 === 0) c = P.i('kol', 2);
+      }
+      if (V.elv[i]) c = V.elv[i - W] ? P.i('kol', 1) : P.i('kol', 2);
+      B.satt(x, y, c);
+    }
+    for (let gy = 4; gy < H - 4; gy += 6) for (let gx = 4; gx < W - 4; gx += 7) {
+      const x = gx + Math.floor(hash(gx, gy, 1) * 4), y = gy + Math.floor(hash(gx, gy, 2) * 3), i = y * W + x;
+      if (V.typ[i] === BERG) glyf(B, ['...o...', '..obo..', '.ob.co.', 'ob...co'], { o: P.i('kol', 1), b: P.i('senap', 3), c: P.i('jord', 0) }, x, y);
+      else if (V.typ[i] === SKOG && !V.elv[i]) glyf(B, ['.o.', 'o.o', '.o.', '.o.'], { o: P.i('kol', 2) }, x, y);
+    }
+    platserna(B, V, { kontur: P.i('kol', 0), by: P.i('senap', 2), egen: P.i('senap', 3), ljus: P.i('ben', 3), mork: P.i('jord', 0), sten: P.i('ben', 1), helig: P.i('senap', 2), talt: P.i('senap', 1), taltM: P.i('jord', 0), vag: P.i('kol', 2), sjovag: P.i('kol', 2), ring: P.i('senap', 3), namn: P.i('kol', 0) });
+    // runbandet: en orm runt kanten med runor i, huvudet nere till vänster och svansen nere till höger
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const k = Math.min(x, y, W - 1 - x, H - 1 - y); if (k >= R) continue;
+      let c = k === 0 ? P.i('kol', 0) : k === 1 || k === R - 1 ? P.i('kol', 1) : k === 2 || k === R - 2 ? P.i('jord', 3) : P.i('ben', 1);
+      B.satt(x, y, c);
+    }
+    const RUN = P.i('kol', 1);
+    runrad(B, 14, 3, 53, 1, RUN); runrad(B, 14, H - 8, 53, 2, RUN);
+    runrad(B, 2, 14, 32, 4, RUN, true); runrad(B, W - 8, 14, 32, 5, RUN, true);
+    // en knut i varje hörn
+    for (const [x, y] of [[5, 5], [W - 5, 5], [5, H - 5], [W - 5, H - 5]]) glyf(B, ['.ooo.', 'oaoao', 'ooboo', 'oaoao', '.ooo.'], { o: P.i('kol', 0), a: P.i('senap', 2), b: P.i('senap', 3) }, x, y);
+  }
+
+  VAL.push({
+    id: 'f11_varldskarta', namn: 'Världskartan', typ: 'tre', stor: true, kol: true,
+    vad: 'Steg 11.1.9 (koncept, långt fram): världskartan i fornnordisk stil, inget jordklot. Världen är genererad ur ett frö, som den blir i spelet: hav i väster och söder, berg i nordost, floder från bergen till havet, sjöar, skog och myr. En ruta på kartan (8 × 8 punkter här) är en bykarta. Den egna byn har en ring runt sig, och en flod rinner genom den. Platserna: grannbyarna (hus), läger (tält), ett rövarläger (mörkt tält), ruiner, en helig plats (stenring), en gravhög och en runsten; de prickade linjerna är vägarna mellan byarna. Runorna är bara prydnad och byarnas namn. Samma värld i tre stilar.',
+    versioner: [
+      { text: 'Version 1: skinnkartan. Ritad med bläck på ett spänt skinn: havet som vågiga streck och en dubbel kustlinje, bergen och granarna som små tecken, en havsorm i havet och byarnas namn i runor.', w: W, h: H, kol: true, rita: skinn },
+      { text: 'Version 2: färgkartan. I spelets färger: djupt och grunt hav, stränder, skog, myr och berg med snö, ett skepp i havet och en flätad ram. Rutnätet visar bykartorna, och den egna byns ruta har en gul kant.', w: W, h: H, kol: true, rita: farg },
+      { text: 'Version 3: ristad i trä. Landet är upphöjt och havet urskuret i en bräda, byarna är inlagda i mässing och runt kanten går ett runband med knutar i hörnen, som på en runsten.', w: W, h: H, kol: true, rita: tra },
+    ],
+  });
+})();
