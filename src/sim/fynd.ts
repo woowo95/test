@@ -603,8 +603,8 @@ export function handFish(s: State, p: Person, x: number, y: number, ageF: number
   st.n++; count(s, 'fiskeNapp'); sjoRakna(s, x, y, 'napp', p);
   const hold = hall + p.skill.fiske / FANGST.hallSkill + stat(p, 'uthallighet', s.now) / FANGST.hallUthall + FANGST.hallSmid * franMitt(p, 'smidighet', s.now);
   if (rnd(s, 'arbete', p) >= hold) return 0;
-  st.k++; gjort(s, p, 'fisk'); sjoRakna(s, x, y, 'fisk', p); const forsta = forstaGang(s, 'fisk'); if (spear) count(s, 'spjutFisk'); if (gear === 'metspo') count(s, 'metFisk');
-  takeFrom(s, 'fiske', x, y, 1);
+  st.k++; count(s, 'prod_fiske'); gjort(s, p, 'fisk'); sjoRakna(s, x, y, 'fisk', p); const forsta = forstaGang(s, 'fisk'); if (spear) count(s, 'spjutFisk'); if (gear === 'metspo') count(s, 'metFisk');
+  takeFrom(s, 'fiske', x, y, 1); // prod_fiske: fångsten som det arbetet gett, som de andra arbetena räknar i workStep (takt.ts, steg 6.1.4)
   if (forsta) log(s, `${p.name} fångade byns första abborre ${spear ? 'med spjut' : gear === 'metspo' ? 'med metspö' : 'med händerna'}, efter ${s.stat!.fiskeForsok} försök.`, 'world', [p.id]);
   return 1;
 }

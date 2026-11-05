@@ -139,6 +139,8 @@ SCENARIER.knapphet = {
       [`vilt jagat inom 30 rutor från byn (${uttag(s, 'jakt', 0, 30).toFixed(3)}, ${st.kaniner ?? 0} kaniner)`, uttag(s, 'jakt', 0, 30) > 0.002],
       // fiske väljs inte i alla byar; fisket testas utförligt i fiskespjut-scenariot
       [`fiske: ${st.fiskeForsok ?? 0} försök, ${st.fiskeNapp ?? 0} napp, ${st.fisk ?? 0} fiskar`, !st.fiskeForsok || ((st.fiskeForsok ?? 0) > (st.fiskeNapp ?? 0) && (st.fiskeNapp ?? 0) >= (st.fisk ?? 0))],
+      // det fisket gett räknas som de andra arbetena (prod_fiske), så att npm run takt visar fisket (steg 6.1.4)
+      [`fångsten räknas som fiskets arbete (${st.prod_fiske ?? 0} av ${st.fisk ?? 0} fiskar)`, (st.prod_fiske ?? 0) === (st.fisk ?? 0)],
       ['ingen svalt ihjäl', !s.people.some(p => p.cause === 'av svält')]];
   },
 };
