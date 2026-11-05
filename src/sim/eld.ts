@@ -1,6 +1,7 @@
 import { allaBarn } from './uppvaxt';
 import { kronikaBer, personFalt } from './berattelser';
 import { addTo, amountOf, avbryt, fetchSpot, takeLimit, use } from './lager';
+import { Materialslag, forbrukat, overTak, underBuffert } from './forradsmal';
 import { Behov, getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
 import { coldOf, hardVinter, temperature, vaderNu, VADER } from './vader';
@@ -107,7 +108,7 @@ export function takeFuel(s: State, n: number, p?: Person, ag?: Del, fran?: Perso
   const v = Math.min(n, takeLimit(s, 'ved', p, fran));
   const w = use(s, p, 'ved', v, true, fran?.id);
   const g = Math.min(Math.floor(takeLimit(s, 'grenar', p, fran) + 1e-9), Math.ceil((n - v) / GREN - 1e-9)); // hela grenar (steg 3.6.13)
-  if (g > 0) { const d = use(s, p, 'grenar', g, true, fran?.id); if (ag) addDel(ag, d, GREN); }
+  if (g > 0) { const d = use(s, p, 'grenar', g, true, fran?.id); forbrukat(s, 'grenar', -g); if (ag) addDel(ag, d, GREN); } // grenarna som bränsle räknas i veden, inte som förbrukat material (steg 6.2.14)
   if (ag) addDel(ag, w);
   return v + g * GREN;
 }
@@ -145,10 +146,9 @@ function fireWish(s: State, p: Person, vc: number): Wish {
   const b = opts.reduce((a, o) => (o.v > a.v ? o : a));
   return { v: b.v * hearthOf(s.fire).maxFuel, why: b.why };
 }
-// tändmaterial som invånarna vill ha i förrådet
-const tinderWant = (s: State) => (s.fire.lit ? RESERV.tandVill : RESERV.tandVillSlocknad);
 // hö eller grenar räcker inte till det byn vill ha, med det den som samlar redan bär (tk)
-export const tinderShort = (s: State, tk?: Task) => amountOf(s, 'torrgras') + (tk?.items?.torrgras ?? 0) < tinderWant(s) || amountOf(s, 'grenar') + (tk?.items?.grenar ?? 0) < tinderWant(s);
+// (bufferten i FORRADSMAL är minst det tändmaterial byn vill ha, och mer när byn förbrukar mycket, steg 6.2.14)
+export const tinderShort = (s: State, tk?: Task) => underBuffert(s, 'torrgras', tk?.items?.torrgras ?? 0) || underBuffert(s, 'grenar', tk?.items?.grenar ?? 0);
 // den första elden läggs i en ring av stenar; ringen ligger kvar när elden slocknat. Stenar behövs också till en lägereld till (brasor.ts).
 // Stenarna som någon bär hem räknas, så att ingen samlar fler än ringen behöver
 const stenarHem = (s: State) => living(s).reduce((n, q) => n + (q.task?.items?.sten ?? 0), 0);
@@ -343,20 +343,21 @@ export function stepFire(s: State, dtSec: number, ppl: Person[]) {
 // samling hittar tändmaterial, sten och flinta när förrådet behöver det
 // fart: hö och grenar växer på platsen och hittas lika mycket fortare som det man samlar (steg 2.12.4); stenar och flinta letar man efter
 export function forageItems(s: State, p: Person, dtSec: number, fart = 1): Record<string, number> | undefined {
-  const ai = ageIndex(s), want = tinderWant(s), hrs = dtSec / HOUR_S * SNABBARE, vaxer = hrs * fart; // allt man skaffar går fortare sedan steg 1.5.13
+  const ai = ageIndex(s), hrs = dtSec / HOUR_S * SNABBARE, vaxer = hrs * fart; // allt man skaffar går fortare sedan steg 1.5.13
   const sk = kunnighet(p.skill.samla);
   const got: Record<string, number> = {};
-  const bar = (k: string) => amountOf(s, k) + (p.task?.items?.[k] ?? 0); // det man redan bär räknas, så att ingen bär hem mer än byn vill ha
-  if (bar('torrgras') < want || p.task?.hamtar === 'torrgras') got.torrgras = ELD.hoTakt * ARSTID.hoPerTid[ai] * sk * vaxer;
-  if (bar('grenar') < want || p.task?.hamtar === 'grenar') got.grenar = ELD.grenarTakt * (iIstiden(ai) ? ARSTID.grenarIstid : 1) * sk * vaxer;
+  // under bufferten plockas materialet, och den som hämtar det plockar till taket men aldrig över (FORRADSMAL, steg 6.2.14)
+  const plocka = (k: Materialslag) => !overTak(s, k, p.task?.items?.[k] ?? 0) && (underBuffert(s, k, p.task?.items?.[k] ?? 0) || p.task?.hamtar === k);
+  if (plocka('torrgras')) got.torrgras = ELD.hoTakt * ARSTID.hoPerTid[ai] * sk * vaxer;
+  if (plocka('grenar')) got.grenar = ELD.grenarTakt * (iIstiden(ai) ? ARSTID.grenarIstid : 1) * sk * vaxer;
   // stenar till eldringen: många vid stenarna, några i sanden, få annars
-  if (needStones(s)) {
+  if (needStones(s) || plocka('sten')) {
     const d = p.task ? stoneDist(s.seed)[tileOf(p.task.tx, p.task.ty)] : 9;
     got.sten = ELD.stenTakt * (d <= ELD.stenNara ? ELD.stenNaraDel : d <= ELD.stenMedel ? ELD.stenMedelDel : ELD.stenAnnars) * sk * hrs;
   }
   // flinta är ovanlig och hittas oftast vid stenarna. Den slås mot en sten för att tända eld, och med en pinne blir den en yxa
   const ff = p.task ? flintFactor(s, p.task.tx, p.task.ty) : ELD.flintaOkand;
-  if (flintorOchYxor(s) < ELD.flintaMax && chance(s, ELD.flintaTakt * ff * sk * SNABBARE / HOUR_S, dtSec, 'arbete', p)) {
+  if (flintorOchYxor(s) < ELD.flintaMax && !overTak(s, 'flinta', p.task?.items?.flinta ?? 0) && chance(s, ELD.flintaTakt * ff * sk * SNABBARE / HOUR_S, dtSec, 'arbete', p)) {
     got.flinta = 1; count(s, ff > ELD.flintaStenar ? 'flintaSten' : 'flintaAnnan');
     if (p.task) takeFrom(s, 'flinta', p.task.tx, p.task.ty, 1);
     if (ff > ELD.flintaStenar && p.task) observe(s, p, 'flinta', p.task.tx, p.task.ty);

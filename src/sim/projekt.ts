@@ -2,6 +2,7 @@ import { Act, Person, State } from './typer';
 import { familjOf, living, stat } from './folk';
 import { clamp } from './slump';
 import { amountOf } from './lager';
+import { materialBuffert, vantarPa } from './forradsmal';
 import { SAKER } from './saker';
 import { PLAGG, PLAGG_LIST } from './klader';
 import { ARBETE, grundvarde, varuVarde } from './varde';
@@ -139,7 +140,7 @@ export const PROJEKT: Record<string, ProjektDef> = {
   // virket (steg 4.5.5.2): kluvet ur en fälld stam med yxa, när byn vill bygga en station, möbel eller dörr av virke
   virke: {
     namn: SAKER.virke!.namn, vikt: PROJEKT_TAL.virke,
-    brist: s => { const n = virkeBehov(s); return n > 0 ? clamp(1 - amountOf(s, 'virke') / n, 0, 1) : 0; },
+    brist: s => { const n = materialBuffert(s, 'virke'); return n > 0 ? clamp(1 - amountOf(s, 'virke') / n, 0, 1) : 0; }, // bufferten i FORRADSMAL (steg 6.2.14)
     kostnad: () => grundvarde('virke'),
     kan: (s, p, f) => !f.kyla && freeTools(s, p, 'yxa') > 0 && !!klyvStam(s),
     uppgift: s => { const k = klyvStam(s); return k && { act: 'klyva', text: 'Klyver virke ur en fälld stam.', tool: 'yxa', spot: { x: k.x + 0.3, y: k.y + 0.2 }, ref: k.id }; },
@@ -164,7 +165,8 @@ export const PROJEKT: Record<string, ProjektDef> = {
 export const PROJEKT_LIST = Object.keys(PROJEKT);
 // hur mycket virke byn vill ha: så mycket som den dyraste station, möbel eller dörr av virke som byn saknar och någon kan
 // bygga, och minst SKOG.virkeVill när det finns något sådant (steg 4.5.5.2)
-function virkeBehov(s: State) {
+vantarPa('virke', virkeBehov); // bufferten för virke räknar in det projekten väntar på (forradsmal.ts, steg 6.2.14)
+export function virkeBehov(s: State) {
   let n = 0;
   const pr = (k: string, av: Record<string, number>, tek: string[]) => { const v = av.virke ?? 0; if (v > n && living(s).some(p => tek.some(t => knows(p, t))) && PROJEKT[k].brist(s) > 0) n = v; };
   for (const k of STATION_LIST) pr(k, STATIONER[k].av, STATIONER[k].tek);

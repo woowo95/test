@@ -630,3 +630,46 @@ SCENARIER.underhall = {
     ];
   },
 };
+
+SCENARIER.forradsmal = {
+  text: 'Materialen i FORRADSMAL (steg 6.2.14): det som tas ur förrådet räknas som förbrukat (inte grenarna som bränsle), förbrukningen glöms långsamt, bufferten följer förbrukningen och det bygget och projekten väntar på, och under bufferten plockas materialet men aldrig över taket',
+  kor: () => {
+    const s = createState(4, START), q = living(s).find(x => ageOf(x, s.now) >= ALDER.vuxen)!;
+    setItems(s, { grenar: 200, torrgras: 5, sten: 0, flinta: 0, virke: 0 });
+    s.forbruk = {};
+    SIM.use(s, q, 'grenar', 20);
+    const tagna = s.forbruk.grenar ?? 0;
+    SIM.takeFuel(s, 10 * SIM.GREN, q);
+    const brand = s.forbruk.grenar ?? 0;
+    SIM.forbrukTimme(s);
+    const glomt = s.forbruk.grenar ?? 0;
+    // mycket förbrukning: bufferten blir större än tändmaterialet byn alltid vill ha
+    s.forbruk = { grenar: 60, torrgras: 0 };
+    SIM.arbetsTimme(s);
+    const bGren = SIM.materialBuffert(s, 'grenar'), bHo = SIM.materialBuffert(s, 'torrgras'), tak = SIM.materialTak(s, 'grenar');
+    // den som samlar: höet och grenarna är under bufferten och plockas
+    setItems(s, { grenar: 10 }); s.forbruk = { grenar: 60 }; SIM.arbetsTimme(s);
+    q.task = { act: 'samla', phase: 'do', tx: 0, ty: 0, until: s.now + HOUR, carry: 0, why: '' };
+    const g1 = SIM.forageItems(s, q, 3600) ?? {};
+    // över taket plockar ingen, inte heller den som hämtar grenar
+    setItems(s, { grenar: Math.ceil(tak) + 1 }); s.forbruk = { grenar: 60 }; SIM.arbetsTimme(s);
+    q.task.hamtar = 'grenar';
+    const g2 = SIM.forageItems(s, q, 3600) ?? {};
+    // sten: ingen ring behövs och ingen förbrukning, så ingen sten plockas
+    const sten = !SIM.needStones(s) ? (g2.sten ?? 0) : 0;
+    // virket: bufferten är förbrukningen och det projekten väntar på
+    s.forbruk = { virke: 6 }; SIM.arbetsTimme(s);
+    const bVirke = SIM.materialBuffert(s, 'virke'), brist = SIM.PROJEKT.virke.brist(s);
+    return [
+      [`20 grenar ur förrådet räknas som förbrukade (${tagna})`, tagna === 20],
+      [`grenarna som bränsle räknas inte (${brand})`, brand === 20],
+      [`förbrukningen glöms långsamt (${glomt})`, glomt < 20 && glomt > 19],
+      [`bufferten för grenar följer förbrukningen (${bGren}), för hö är den det tändmaterial byn vill ha (${bHo})`, bGren === 40 && bHo === (s.fire.lit ? SIM.RESERV.tandVill : SIM.RESERV.tandVillSlocknad)],
+      [`taket är högre än bufferten, högst så mycket lagret rymmer (${tak.toFixed(1)})`, tak > bGren && tak <= SIM.FORRAD.materialMatt * bGren],
+      [`under bufferten plockas hö och grenar (${Object.keys(g1).join(', ')})`, (g1.torrgras ?? 0) > 0 && (g1.grenar ?? 0) > 0],
+      [`över taket plockas inga grenar, inte heller av den som hämtar dem (${g2.grenar ?? 0})`, !g2.grenar],
+      [`ingen sten plockas när ingen behövs (${sten})`, sten === 0],
+      [`bufferten för virke följer förbrukningen och det som väntar (${bVirke}), och virket fattas (${brist.toFixed(2)})`, bVirke >= 6 / SIM.FORRAD.forbrukDygn * SIM.FORRAD.materialDygn && brist === 1],
+    ];
+  },
+};

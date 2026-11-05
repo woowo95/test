@@ -19,7 +19,7 @@ import { coldOf, nederbord, snoPaMarken, temperature, vaderNu } from './vader';
 // barnen leker i snön när den ligger, som de vuxna har snöbollskrig (steg 4.3.1.3, sport.ts)
 const lekText = (s: State) => snoPaMarken(s) > 0 ? 'Är barn och leker i snön' : 'Är barn och leker';
 import { varselSamla } from './motgang';
-import { FORRAD, FORRADSMAL, buffert, lyxtak, onskatDygn } from './forradsmal';
+import { FORRAD, FORRADSMAL, buffert, lyxtak, materialTimme, onskatDygn, overTak, underBuffert } from './forradsmal';
 import { DJUR, DJURARTER, Djurart, GORS, REDSKAP, canProcess, djurKvar, freeOfKinds, handelTask, harAv, makeTask, toolGroups, underhallGrupp, villAv, wantsTool } from './redskap';
 import { HAMTA, PROJEKT, Uppgift, bastaProjekt } from './projekt';
 import { faltNu, vildFronPlats } from './odling';
@@ -425,7 +425,7 @@ export function arbetsTimme(s: State) {
     mat: Math.max(1, Math.ceil(matFattas / VAL.matPass * fler)), ved: Math.max(1, Math.ceil(vedFattas / VAL.vedPass * fler)),
     bygga: Math.max(1, hus.size * BYGG.perHus), tand: Math.max(1, Math.ceil(n / VAL.tandPer)), leta: Math.max(1, Math.ceil(n / VAL.letaPer)), kol: Math.max(1, kol),
   };
-  s.arbBehov = { mat, ved, arb };
+  s.arbBehov = { mat, ved, arb, mal: materialTimme(s) }; // och materialens buffert och tak (forradsmal.ts, steg 6.2.14)
 }
 // raderna som har arbetare (steg 6.1.13). Maten är flera arbeten (samla, jaga, fiska, fältet) som delar på samma arbetare
 export type ArbRad = 'mat' | 'ved' | 'bygga' | 'tand' | 'leta' | 'kol';
@@ -781,9 +781,9 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
   const egen = egnaMatDygn(s, p), wEgen = egen < VAL.egenDygn ? FORRAD.behovTomt - egen / VAL.egenDygn * (FORRAD.behovTomt - M.min) : 0; // steg 3.10.26
   const wFood = Math.max(wBy, wEgen);
   // grenarna mättas: räcker veden länge och kan p inte hugga trä som byn saknar, sjunker golvet (steg 6.1.5)
-  // (grenarna ensamma räcker också: den som har yxa men inget träd att fälla samlar annars grenar utan slut, by 7 i likhet efter v390)
+  // (grenarna vid sitt tak räcker också: den som har yxa men inget träd att fälla samlar annars grenar utan slut; taket i FORRADSMAL, steg 6.2.14)
   const andel = (k: string) => wd * amountOf(s, k) * (k === 'grenar' ? GREN : 1) / Math.max(1e-9, fuelStock(s));
-  const mattad = wd > V.matt * vs && (freeTools(s, p, 'yxa') === 0 && (fara.kyla || !wantsTool(s, p, 'yxa')) || andel('ved') > V.matt * vs || andel('grenar') > V.matt * vs);
+  const mattad = wd > V.matt * vs && (freeTools(s, p, 'yxa') === 0 && (fara.kyla || !wantsTool(s, p, 'yxa')) || andel('ved') > V.matt * vs || overTak(s, 'grenar'));
   const vedGolv = !mattad ? V.min : Math.max(V.minMatt, V.min - (V.min - V.minMatt) * (wd - V.matt * vs) / (V.matt * vs));
   const wWood = clamp(FORRAD.behovTomt - wd / (V.dygn * vs), vedGolv, FORRAD.behovMax) * (kallTid(ai) ? ARSTID.vedKall : 1); // inför och under istiden väger veden tyngre
   const vikt = { mat: wFood, ved: wWood };
@@ -823,7 +823,8 @@ function building(s: State, p: Person, v: Val, job: NonNullable<ReturnType<typeo
 }
 
 // Flinta och stenar till elden letas när byn saknar dem och maten räcker: hungern är en fara och elden ett verktyg (steg 2.12.3)
-const flintaTillElden = (s: State, fara: Faror) => !fara.svalt && (amountOf(s, 'flinta') < FANGST.flintaMinsta || needStones(s));
+// flintan under sin buffert i FORRADSMAL (minst FANGST.flintaMinsta), stenarna under sin eller till eldringen (steg 6.2.14)
+const flintaTillElden = (s: State, fara: Faror) => !fara.svalt && (underBuffert(s, 'flinta') || needStones(s) || underBuffert(s, 'sten'));
 // arbetet med redskap: flinta letas vid stenarna, yxan fäller träd, korgen och spjutet görs först om de saknas.
 // fara: farorna från day(), leta: letar vid stenarna hela passet, matLeta: ett projekt saknar flinta (steg 6.1.17)
 function withTools(s: State, p: Person, v: Val, best: Act, what: string, fara: Faror, leta = false, matLeta = false) {

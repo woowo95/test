@@ -70,6 +70,7 @@ import { bordPlats, fullBorda, kladVarme, ryms, stepKlader } from './utrustning'
 import { stepPynt } from './pynt';
 import { stadaByten } from './byte';
 import { finishStation, finishTillbehor, stationAt, stationRutor, stepStationer, tillbehorVarme, workStation } from './stationer';
+import { forbrukTimme } from './forradsmal';
 import { notis } from './notiser';
 
 // Simuleringen går i slag om fem minuter (BEAT), i spelet och vid ikappräkning likadant. Inom ett slag går tiden åt
@@ -236,6 +237,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
     stepVader(s); regnetTvattar(s); stepMotgang(s); stepTorka(s); stepFlod(s); stepIs(s); growGround(s, 1, ai); growFynd(s, 1, ai, vaxtFaktor(s)); forget(s, 1); stepRykten(s, moodOf); glomRykten(s, 1); stepBerattelser(s); stepStyre(s); rotStumps(s); tidyStore(s);
     wearBuild(s, 1, ai); stepByggnader(s); planBuild(s); stepEldFlytt(s); stepPaborjat(s); stepStationer(s); stepPynt(s); stadaByten(s); stepBrasor(s); stepKlader(s); stepOdling(s);
     askaSteg(s); // det svarta efter en eldsvåda försvinner (brand.ts)
+    forbrukTimme(s); // materialens förbrukning glöms långsamt (forradsmal.ts, steg 6.2.14)
     arbetsTimme(s); // byns behov för arbetsordningen (val.ts, steg 6.1.12)
     historikSteg(s); // nyckeltalen till byns historik (läses inte av simuleringen)
     compact(s); // här och inte i sparningen, så att alla lägen städar vid samma tid

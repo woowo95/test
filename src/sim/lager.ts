@@ -18,6 +18,7 @@ import { FOOD, SAKER, SAK_LIST, STACK_ORDER, isFood, isTool, rutaOf, sakNamn, vi
 import { balans } from './balans';
 import { flodHotad, iVattnetNu, underMinnet } from './sjo';
 import { FLOD } from './flod';
+import { forbrukat } from './forradsmal';
 import { strakI } from './strak';
 
 // ---------- balanstal (regel 8) ----------
@@ -558,6 +559,7 @@ function takeOwn(s: State, k: string, n: number, p?: Person, common = false, fra
       got += fick; if (fick > 0) ag[o] = (ag[o] ?? 0) + fick;
     }
     tidy(s);
+    forbrukat(s, k, got); // materialens förbrukning (forradsmal.ts, steg 6.2.14)
   }
   return { ag, n: got, c: tagna > 0 && !SAKER[k]?.i ? cw / tagna : 1 };
 }
