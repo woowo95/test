@@ -852,6 +852,8 @@ SCENARIER.skogsrojning = {
     const p = living(s).find(q => q !== agare && ageOf(q, s.now) >= 18)!;
     addTool(s, 'yxa', p);
     const forst = treeSpot(s, new Set(), p), forstOk = !!forst && SIM.skaRojas(s).includes(tileOf(forst.x, forst.y));
+    // byn har mat, så att den med yxa inte måste jaga för egen räkning (det prövas inte här)
+    put(s, 'bar', 150);
     kor(s, 48);
     const kvar = [...lagerRutor, ...faltRutor].filter(i => g.trees[i] >= FOREST).length;
     const tra = SIM.stocks(s).length + amountOf(s, 'ved');
@@ -938,7 +940,9 @@ SCENARIER.strak = {
     let paStrak = 0, husPa = 0, timmar = 0, maxRutor = 0;
     const nyttPa: string[] = [];
     for (let t = 0; t < 120; t++) {
-      const fore = SIM.straken(s).ruta.slice();
+      const fore = SIM.straken(s).ruta.slice(), vagar0 = SIM.straken(s).vagar.map(v => ({ mal: v.mal, rutor: v.rutor.slice() }));
+      // den sista rutan på ett stråk till ett lager: växer lagret över den blir stråket bara kortare
+      const sistaTillLager = (r: number) => vagar0.every(v => !v.rutor.includes(r) || v.mal === 'lager' && v.rutor.indexOf(r) === v.rutor.length - 1);
       const st0 = new Set(SIM.stationerOf(s)), z0 = zonesOf(s).map(z => `${z.x},${z.y},${z.w},${z.h}`), f0 = new Set(s.falt ?? []), h0 = new Set(housesOf(s));
       kor(s, 1); timmar++;
       const pa = (x: number, y: number, w: number, h: number) => { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) if (fore[j * W + i]) return true; return false; };
@@ -947,7 +951,7 @@ SCENARIER.strak = {
         const gammal = zonesOf(s).length && z0.map(k => k.split(',').map(Number)).find(([x, y]) => Math.abs(x - z.x) <= 1 && Math.abs(y - z.y) <= 1);
         for (let j = z.y; j < z.y + z.h; j++) for (let i = z.x; i < z.x + z.w; i++) {
           const forut = gammal && i >= gammal[0] && i < gammal[0] + gammal[2] && j >= gammal[1] && j < gammal[1] + gammal[3];
-          if (!forut && fore[j * W + i]) { paStrak++; nyttPa.push('lager'); }
+          if (!forut && fore[j * W + i] && !sistaTillLager(j * W + i)) { paStrak++; nyttPa.push('lager'); }
         }
       }
       for (const f of s.falt ?? []) if (!f0.has(f) && SIM.faltRutor(f).some(i => fore[i])) { paStrak++; nyttPa.push('fält'); }
