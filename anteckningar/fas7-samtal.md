@@ -28,6 +28,7 @@ När han gör det skrivs det bestämda in där det står (avsnitt och steg), ste
 - Gäddan är större och sliter mer på redskapet. I övrigt lika, och det är okej.
 - Inget lekfiske med spjut på våren. Metspöet är alltid bättre än spjutet (så är det redan i koden). Inget särskilt bete för gäddan.
 - Mört kan användas som bete och ökar fiskelyckan generellt.
+- Fiskarna har olika näringsinnehåll: gäddan mager (mycket protein, lite fett), abborren som nu, mörten lite fetare. Då blir köttet eget för varje art, som harköttet och vargköttet.
 
 ### Garvningen
 - Skinnkläderna finns redan; garvningsställningen låser bara upp läder.
@@ -56,7 +57,12 @@ När han gör det skrivs det bestämda in där det står (avsnitt och steg), ste
 ### Fiskarna, tal
 - Abborre: 1 fiskkött. Nappar bäst på sommaren och genom isen på vintern.
 - Gädda: 2 fiskkött. Nappar bäst på våren och hösten. Sliter dubbelt så mycket på redskapet per fisk.
-- Näringen är densamma per fiskkött, eftersom båda blir fiskkött. Gäddan ger mer av det, men är inte vanligare.
+- Eget kött per art (som harkött och vargkött): fiskkött är abborrens (nyckeln fisk behålls, så att sparade byar fungerar), plus gäddkött och mörtkött.
+- Näring per kött, förslag (abborrens är dagens fiskkött):
+  - Abborre: protein 2, fett 0,8, mineral 0,7, energi 0,6, vitamin 0,3 (som nu).
+  - Gädda: protein 2,2, fett 0,3, mineral 0,7, energi 0,5, vitamin 0,3 (mager).
+  - Mört: protein 1,8, fett 1,2, mineral 0,9, energi 0,7, vitamin 0,4 (fetare, de små benen äts).
+- Grillat och torkat: förslaget är att den grillade och torkade fisken behåller artens näring, alltså en rad per art och tillagning, som köttet.
 - Mört: fångas i mjärden. Mask finns redan som bete på metspöet; en mört är ett bättre bete. Förslag: 1 mört per fisketur ger t.ex. en tredjedel fler napp. Mört kan också rensas: 2 mörtar ger 1 fiskkött.
 
 ### Garvningen, tal
