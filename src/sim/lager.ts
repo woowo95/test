@@ -692,6 +692,17 @@ export function matSomHaller(s: State, perTim: number) {
   for (const a of st) atit += Math.max(0, Math.min(a.n, perTim * a.tim - atit));
   return atit;
 }
+// hur många timmar det dröjer innan den första stacken som pass godtar är förstörd, med det som sliter på den just nu
+// (temperaturen, taket, vädret och smutsen, som i wearStore); Infinity om ingen slits (steg 6.1.15, Rädda i val.ts)
+export function timKvar(s: State, pass: (a: Stack) => boolean) {
+  const temp = temperature(s); let min = Infinity;
+  for (const a of stacksOf(s)) {
+    if (a.n <= 0 || !pass(a)) continue;
+    const r = wearAt(a.k, wearMult(s, a.x, a.y), true, temp) * (SAKER[a.k]?.haller !== undefined ? ruttSmuts(s, a.x, a.y) : 1);
+    if (r > 0) min = Math.min(min, a.c / r);
+  }
+  return min;
+}
 export function wearStore(s: State, dtSec: number) {
   const h = dtSec / HOUR_S, temp = temperature(s), bort: Record<string, number> = {};
   for (const a of stacksOf(s)) {

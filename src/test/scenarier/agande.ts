@@ -974,6 +974,36 @@ SCENARIER.tillfalle = {
   },
 };
 
+SCENARIER.radda = {
+  text: 'Nivån Rädda (steg 6.1.15, "Arbetsordningen" i designdokumentet): det som ska räddas väljs efter hur snart det blir dåligt i stället för med fasta chanser. Fisk som ruttnar inom ett dygn rensas varje gång den som kan väljer, färsk fisk som håller längre mer sällan, men aldrig mer sällan än golvet (VAL.raddaMin), så att det som inte ruttnar ändå tas om hand',
+  kor: () => {
+    // en by med slaktbänk och abborrar i förrådet; a är en vuxen utan behov
+    const s = createState(1, START); s.kal = SIM.nyKalender(s.now, 1); tandEld(s);
+    while (!isLight(s.now)) s.now += HOUR;
+    medBank(s); setMat(s, { bar: 200 }); setAmount(s, 'abborre', 10);
+    const a = living(s).find(p => SIM.ageOf(p, s.now) >= 18)!;
+    const fisk = () => SIM.stacksOf(s).filter(x => x.k === 'abborre');
+    const prova = (c: number) => {
+      for (const x of fisk()) x.c = c;
+      let ja = 0;
+      for (let i = 0; i < 200; i++) {
+        a.task = undefined; a.rest = 1; a.toa = 1; a.hunger = 1; a.torst = 1;
+        chooseTask(s, a);
+        if ((a.task as Task | undefined)?.act === 'rensa') ja++;
+      }
+      return { tim: SIM.timKvar(s, x => x.k === 'abborre'), andel: ja / 200 };
+    };
+    const farsk = prova(1), snart = prova(0.03);
+    // det som inte slits alls (stenen) har ingen tid kvar att räkna: Infinity, och raden faller till golvet
+    const sten = SIM.timKvar(s, x => x.k === 'sten');
+    return [
+      [`fisk som ruttnar om ${Math.round(snart.tim)} timmar rensas ${Math.round(snart.andel * 100)} % av gångerna`, snart.tim < SIM.VAL.raddaTim && snart.andel > 0.9],
+      [`färsk fisk (${Math.round(farsk.tim)} timmar kvar) rensas mer sällan (${Math.round(farsk.andel * 100)} %), men minst vid golvet`, farsk.tim > SIM.VAL.raddaTim && farsk.andel < snart.andel - 0.1 && farsk.andel >= SIM.VAL.raddaMin * 0.7],
+      ['det som inte slits har ingen tid att räkna (Infinity)', sten === Infinity],
+    ];
+  },
+};
+
 SCENARIER.gastsida = {
   text: 'Alla personer har samma sida (steg 4.5.4.12, ui/gaster.ts): handlaren och rövarna är gäster i registret GASTER. De ritas som byborna och väljs som en bybo, och personsidan visar dem med samma flikrad: presentationen med det som är särskilt för sorten (handlarens klan, silver och packning, rövarens flock), egenskaperna och färdigheterna man vet och det hen bär. Fliken Handlaren finns inte längre.',
   kor: () => {

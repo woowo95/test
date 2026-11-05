@@ -22,7 +22,7 @@ import { PROJEKT, Uppgift, bastaProjekt } from './projekt';
 import { faltNu, vildFronPlats } from './odling';
 import { MINNE, areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { eldPlats, getMap } from './karta';
-import { amountOf, avbryt, fetchSpot, flodUndan, haulJob } from './lager';
+import { amountOf, avbryt, fetchSpot, flodUndan, haulJob, isStored, timKvar } from './lager';
 import { BYGG, bedFor, buildJob, siteOf } from './bygg';
 import { bitAt, bitsOf, blocked, freeNear, roomAt } from './byggnad';
 import { bedTile, homeless, samlingRum, varmareInne } from './byggnader';
@@ -39,7 +39,7 @@ import { islagt, naVattnet } from './is';
 import { drickVal, torstig, tortarFarligt, vattenVal } from './torst';
 import { forSmutsigt, latrinFor } from './smuts';
 import { bordenOf, byInne, ledigPlats, lekplats, sittAt, stationAt, stationFor, storlekAv, vidStation } from './stationer';
-import { grillTid, kanGrilla, kanTorka, torkTid } from './matlagning';
+import { RATTER, TORKAS, grillTid, kanGrilla, kanTorka, torkTid } from './matlagning';
 import { egenBrasa } from './brasor';
 import { TEK, forsokChans, forsokVal, laraVal } from './teknik';
 import { sportVal, sportVikt } from './sport';
@@ -53,7 +53,7 @@ import { pabud, skams } from './styre';
 // Balanstalen (regel 8): vikter, chanser, avstånd och hur länge ett pass varar. Kroppens gränser (KROPP) och åldrarna (ALDER)
 // står i folk.ts, halv dags gång (PLATS) i plats.ts, reserverna (RESERV) i ekonomi.ts och tidsålderns faktorer (ARSTID) i tid.ts.
 // Längder är i minuter om inget annat sägs; ett val varar minst X och upp till X + Spann
-const VAL = balans('val', {
+export const VAL = balans('val', {
   // alla pass
   pass: 0.5, // dagens pass är så stor del av vad de var före steg 1.5.11 (arbete, bygge och fritid kortas lika mycket)
   vilaMin: 20, vilaSpann: 40, // ett val som inte säger annat (nöd och grundbehov)
@@ -72,11 +72,11 @@ const VAL = balans('val', {
   svaltDygn: 0.25, // hungern är en fara när maten räcker mindre än så här många dygn
   gammalSover: 0.6, // chansen att den som är över sovGammal sover på natten
   // dagen: byns behov mot egen lust
-  baraChans: 0.25, baraTim: 3, // chansen att bära in det som ligger ute, och hur länge (timmar)
-  slaktChans: 0.5, // chansen att slakta vilt som finns
-  rensaChans: 0.5, // ... och att rensa fisk som finns
-  grillaChans: 0.5, // ... och att grilla rått kött och rå fisk (steg 2.8.1)
-  torkaChans: 0.5, // ... och att hänga upp det byn inte hinner äta på torkställningen och ta ner det torkade (steg 2.8.2)
+  baraTim: 3, // hur länge man bär in det som ligger ute (timmar)
+  // Rädda (steg 6.1.15): chansen att bära in, slakta, rensa, torka och grilla är raddaTim delat med timmarna tills det första
+  // blir dåligt (alltid när det är dåligt inom raddaTim), men aldrig under raddaMin, så att det som inte ruttnar (i frosten,
+  // stenen ute) ändå tas om hand
+  raddaTim: 24, raddaMin: 0.25,
   extraMin: 5, // slakt och rensning varar 5 minuter över vad det tar (och högst maxTim i DJUR, redskap.ts)
   byggLaga: 1.2, byggHalvt: 3, byggNytt: 0.8, // hur mycket bygget väger: en vägg som lagas, ett hus som är påbörjat, ett nytt
   byggUtan: 3, // ... plus så mycket gånger andelen som saknar sovplats under tak
@@ -538,11 +538,11 @@ export const ARBETEN: readonly Arbete[] = [
     if (!fr) return false;
     set(v, fr.act, fr.why); v.spot = fr.spot ?? spotFor(s, 'beratta', p); v.dur = fr.dur; v.ref = fr.ref; v.tool = fr.tool; return true;
   } },
-  // 5 Rädda. Att bära in är en förbättring: inte när byn fryser (talet dras ändå, så att personens följd är som förut). När byn
+  // 5 Rädda: det som blir dåligt först räddas först (radda nedan, steg 6.1.15). Att bära in är en förbättring: inte när byn fryser (talet dras ändå, så att personens följd är som förut). När byn
   // svälter bärs bara maten in, så att den inte blir liggande ute (steg 2.12.3)
   { id: 'bara', niva: 5, nar: 'dag', kort: true, prova: c => {
     const { s, p, v } = c; let gt: ReturnType<typeof haulJob>;
-    if (!(s.stackar?.length && rnd(s, 'val', p) < VAL.baraChans && !faror(c).kyla && (gt = haulJob(s, undefined, faror(c).svalt)))) return false;
+    if (!(s.stackar?.length && radda(s, p, a => !isStored(s, a.x, a.y)) && !faror(c).kyla && (gt = haulJob(s, undefined, faror(c).svalt)))) return false;
     set(v, 'bara', gt.why); v.spot = gt; v.dur = VAL.baraTim * HOUR; return true;
   } },
   // fältet (steg 2.10.3): den mogna grödan skördas innan den blir övermogen eller fryser, och den som börjat på sitt fält arbetar vidare
@@ -553,12 +553,12 @@ export const ARBETEN: readonly Arbete[] = [
   } },
   { id: 'slakta', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => {
     const vilt = slaktbart(s, p);
-    if (!(a >= ALDER.vuxen && vilt && rnd(s, 'val', p) < VAL.slaktChans)) return false;
+    if (!(a >= ALDER.vuxen && vilt && radda(s, p, lagrat(s, k => k === vilt.sak)))) return false;
     processTask(s, v, vilt, 'Det finns vilt att slakta innan det blir dåligt'); return true;
   } },
-  { id: 'rensa', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => a >= ALDER.rensar && canProcess(s, p, DJUR.abborre) && rnd(s, 'val', p) < VAL.rensaChans && (processTask(s, v, DJUR.abborre, 'Det finns fisk att rensa innan den blir dålig'), true) },
-  { id: 'torka', niva: 5, nar: 'dag', kort: true, vader: 'torrt', prova: ({ s, p, v, a }) => a >= ALDER.grillar && kanTorka(s, p) && rnd(s, 'val', p) < torkAndel(pabud(s, 'torkat')) && (torkVal(s, v, 'Det finns kött och fisk att torka'), true) },
-  { id: 'grilla', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => a >= ALDER.grillar && kanGrilla(s, p) && rnd(s, 'val', p) < VAL.grillaChans && (grillVal(s, v, 'Det finns rått kött och rå fisk att grilla'), true) },
+  { id: 'rensa', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => a >= ALDER.rensar && canProcess(s, p, DJUR.abborre) && radda(s, p, lagrat(s, k => k === DJUR.abborre.sak)) && (processTask(s, v, DJUR.abborre, 'Det finns fisk att rensa innan den blir dålig'), true) },
+  { id: 'torka', niva: 5, nar: 'dag', kort: true, vader: 'torrt', prova: ({ s, p, v, a }) => a >= ALDER.grillar && kanTorka(s, p) && radda(s, p, lagrat(s, k => TORKAS.some(r => r.ra === k)), torkAndel(pabud(s, 'torkat'))) && (torkVal(s, v, 'Det finns kött och fisk att torka'), true) },
+  { id: 'grilla', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => a >= ALDER.grillar && kanGrilla(s, p) && radda(s, p, lagrat(s, k => RATTER.some(r => r.ra === k))) && (grillVal(s, v, 'Det finns rått kött och rå fisk att grilla'), true) },
   // 6–9 på dagen: byns behov (mat, ved, tändmaterial, bygget, projekten, flinta) mot egen lust, vägda med pliktkänslan, annars fritid
   { id: 'arbete', niva: 6, nar: 'dag', kort: true, prova: c => { day(c.s, c.p, c.v, c.a, c.lazy, faror(c)); return true; } },
   // på natten håller man sig vid elden och berättar, gör handarbete, umgås eller sover
@@ -700,7 +700,16 @@ export const onskatLager = (ved: boolean, v: number) => (ved ? VAL.vedDygn : VAL
 // hur många dygn mat p tycker att byn ska ha (som onskatLager, med p:s aning om en hård vinter, steg 3.8.1): kortare tid är matarbetet
 // ett behov, längre bara ett tillskott (steg 3.10.9)
 const matOnskat = (s: State, p: Person) => VAL.matDygn * (1 + VAL.forsiktig * pabud(s, 'matlager') + (p.varsel ? varselSamla(s, p) : 0)) * (VAL.behovTomt - VAL.matMin);
-export const torkAndel = (v: number) => VAL.torkaChans * (1 + VAL.torkPabud * v);
+// så mycket ledarens påbud om torkat ändrar chansen att torka (1 = som utan påbud; styre.ts visar det i procent)
+export const torkAndel = (v: number) => 1 + VAL.torkPabud * v;
+// Rädda (steg 6.1.15): p tar det som blir dåligt inom VAL.raddaTim, och det som håller längre mer sällan, aldrig under
+// VAL.raddaMin. Talet dras alltid, och timmarna räknas bara när talet inte redan räcker under golvet
+function radda(s: State, p: Person, pass: (a: { k: string; x: number; y: number }) => boolean, gang = 1) {
+  const r = rnd(s, 'val', p);
+  return r < VAL.raddaMin * gang || r < Math.min(1, gang * Math.max(VAL.raddaMin, Math.min(1, VAL.raddaTim / timKvar(s, pass))));
+}
+// det som ligger i lagret och är av en sort som k godtar
+const lagrat = (s: State, k: (k: string) => boolean) => (a: { k: string; x: number; y: number }) => k(a.k) && isStored(s, a.x, a.y);
 // det arbete byn behöver mest just nu, vägt mot egen lust och vana. burg = hur mycket det mest behövda behövs
 function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: number, fara: Faror) {
   // en försiktig by vill ha större förråd, och ledarens påbud drar åt sitt håll (steg 3.5.2, styre.ts)
