@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bordVid, byId, homeKind, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats, Match, Task, dragLag, kastMal, SPORT, bakomFilt } from '../sim';
+import { ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bordVid, byId, homeKind, bordaIHander, utrustning, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats, Match, Task, dragLag, kastMal, SPORT, bakomFilt } from '../sim';
 import { PRICKAR } from './hjalp';
 import { farg, fargTal } from '../palett';
 import { sinHash as hash } from './pixel';
@@ -288,7 +288,12 @@ export function drawPeople(t: number) {
     if (PRICKAR.gravid.har(p)) peopleG.beginFill(PRICKAR.gravid.farg).drawCircle(x - r * 0.7, y - r * 0.7, 1.6).endFill();
     // det man bär syns på figuren, hur lite det än är (steg 3.6.5): framför kroppen, och med en kartbild ur bildstilen i sin
     // naturliga storlek (steg 5.1.2.1)
-    if (tk && load(tk, s) > 0) bar(homeKind(tk), x + r - 0.1, y + 1.4, 4.8);
+    // varje hand sitt eget (steg 6.1.2): två slag syns i var sin hand, ett slag framför kroppen som förut
+    if (tk && load(tk, s) > 0) {
+      const ih = bordaIHander(s, p, tk, utrustning(s, p, true)), sv = rikt === 'vast' ? -1 : 1;
+      if (ih.hoger && ih.vanster && ih.hoger.k !== ih.vanster.k) { bar(ih.hoger.k, x + (r - 0.1) * sv, y + 1.4, 4.8); bar(ih.vanster.k, x - (r - 0.1) * sv, y + 1.4, 4.8); }
+      else bar(ih.hoger?.k ?? ih.vanster?.k ?? homeKind(tk), x + r - 0.1, y + 1.4, 4.8);
+    }
     const mal = tk?.act === 'maltid' && tk.phase === 'do' && tk.mal, bord = mal && hasIcon(mal) ? bordVid(s, q) : undefined; // (vid bordet där hen syns sitta)
     if (mal && bord) { // den som äter vid bordet har maten i händerna och framför sig på bordet (steg 3.10.3)
       const { w, h } = storlekAv(bord), dx = (bord.x + w / 2) * TS - x, dy = (bord.y + h / 2) * TS - y, d = Math.hypot(dx, dy) || 1, f = Math.min(1, TS * 0.7 / d);

@@ -177,6 +177,7 @@ function drag(s: State, k: Strom, f: () => void) {
   return n;
 }
 SCENARIER.slump = {
+  lang: true,
   text: 'Varje system och varje person har en egen slumpföljd, och det som bara syns i spelet rör aldrig byns följder',
   kor: () => {
     const serie = (s: State, k: Strom, p?: Person) => Array.from({ length: 5 }, () => rnd(s, k, p));

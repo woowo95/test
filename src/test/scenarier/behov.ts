@@ -1,5 +1,5 @@
 // Scenarier. Behov och val: behov, ved, aktivitet och fritid.
-import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, DELA, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, varmeRaknas, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, GANG, HALSA, kanGa, kroppFaktor, hemma, mossaFynd, chopStock, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker, bristGrad, bristSteg, berattaBrist, onskan, matOrdning, takeFood, vilaTim, skorbjugg, NARINGBAL, DODSORSAKER, converse, Naring, STATIONER, TEKNIK, tingOf, vaderNu } from '../../sim';
+import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, DELA, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, varmeRaknas, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, GANG, HALSA, kanGa, kroppFaktor, hemma, mossaFynd, chopStock, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker, bristGrad, bristSteg, berattaBrist, onskan, matOrdning, takeFood, vilaTim, skorbjugg, NARINGBAL, DODSORSAKER, converse, Naring, STATIONER, TEKNIK, tingOf, vaderNu, type Task } from '../../sim';
 import { cloneState, stepIs, stepVader, isCm, vattenGrader, halVal, halMin, drickVal, iIstiden, ageIndex, tidyTools } from '../../sim';
 import * as SIM from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
@@ -790,17 +790,25 @@ SCENARIER.matdygn = {
 
 SCENARIER.gorjustnu = {
   lang: true,
-  text: 'Gör just nu stämmer med bilden (steg 4.5.6.5): byn räknas ett slag före klockan som visas, och det som visar vad någon gör frågar vad hen gör vid tiden som visas (sparUppgift i steg.ts). Den som visas dricka, äta vid bordet, fiska, samla eller bygga står vid platsen i bilden, den som äter vid bordet sitter vid ett bord, och den som står still visas inte som på väg.',
+  text: 'Gör just nu stämmer med bilden (steg 4.5.6.5): byn räknas ett slag före klockan som visas, och det som visar vad någon gör frågar vad hen gör vid tiden som visas (sparUppgift i steg.ts). Det man bär syns som det är vid samma tid (steg 6.1.1): bördan i bilden, texten och Utrustning växer med varje hel sak som plockas. Den som visas dricka, äta vid bordet, fiska, samla eller bygga står vid platsen i bilden, den som äter vid bordet sitter vid ett bord, och den som står still visas inte som på väg.',
   kor: () => {
     const AKT = new Set<Act>(['dricka', 'maltid', 'fiske', 'samla', 'ved', 'bygga']);
-    let prov = 0, langtBort = 0, stillaGar = 0, utanBord = 0, maltider = 0, vidPlats = 0;
+    let prov = 0, langtBort = 0, stillaGar = 0, utanBord = 0, maltider = 0, vidPlats = 0, barProv = 0, barFel = 0, barVaxer = 0;
     const ex: string[] = [];
+    const hela = (tk?: Task) => tk ? Math.floor(tk.carry + 1e-9) + Object.values(tk.items ?? {}).reduce((a, n) => a + Math.floor(n + 1e-9), 0) : 0;
     spar.pa = true;
     for (const seed of [3, 11, 42]) {
       const s = createState(seed, START);
       for (let i = 0; i < 6 * 24 * 3600 / BEAT; i++) {
         const t0 = s.now;
         step(s, BEAT);
+        for (const p of living(s)) { // bördan i slutet av slaget är den som visas just då (steg 6.1.1)
+          const nu = hela(p.task);
+          if (!nu) continue;
+          barProv++;
+          if (Math.abs(hela(SIM.sparUppgift(p, s.now - 1e-3, s.now)) - nu) > 1) barFel++; // den sista biten slutar med slaget (ett fångat djur, en klyvd ved kan ge två på en gång)
+          if (hela(SIM.sparUppgift(p, t0 + 1e-3, s.now)) < nu) barVaxer++;
+        }
         for (const p of living(s)) for (let k = 0; k < 10; k++) {
           const t = t0 + (s.now - t0) * (k + 0.5) / 10, tk = SIM.sparUppgift(p, t, s.now), sp = SIM.sparPlats(p, t);
           const x = sp?.x ?? p.x, y = sp?.y ?? p.y;
@@ -819,6 +827,7 @@ SCENARIER.gorjustnu = {
       [`den som visas göra något på en plats står vid platsen (${langtBort} av ${vidPlats} prov långt bort${ex.length ? ': ' + ex.join('; ') : ''})`, vidPlats > 1000 && langtBort <= vidPlats * 0.005],
       [`den som äter vid bordet sitter vid ett bord (${utanBord} av ${maltider})`, maltider > 50 && utanBord === 0],
       [`den som står still visas inte som på väg (${stillaGar} av ${prov} prov)`, stillaGar <= prov * 0.002],
+      [`det man bär visas vid tiden som visas och växer under turen (steg 6.1.1): ${barFel} av ${barProv} slag visar en annan börda i slutet, ${barVaxer} slag där bördan växte`, barProv > 500 && barFel <= barProv * 0.02 && barVaxer > 100],
     ];
   },
 };

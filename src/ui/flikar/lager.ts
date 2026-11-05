@@ -1,6 +1,6 @@
 import { LAGER, condOf, lagerHinder, living, sakNamn, zonesOf } from '../../sim';
 import { carryTxt, condBar, esc, hjalpKnapp, hjalpText, pLink, pileTxt } from '../hjalp';
-import { outPilesAt, piles, s, ui } from '../lage';
+import { outPilesAt, piles, s, ui, uppgiftVid } from '../lage';
 import type { Flik } from '../panel';
 import { grafHtml } from '../graf';
 import { frystAttr, sakAttr } from './sak';
@@ -20,7 +20,7 @@ export const lager: Flik = {
   html() {
     const zs = zonesOf(s), z = zs[Math.min(ui.lagerNr, zs.length - 1)], zi = zs.indexOf(z);
     const ps = piles().filter(p => p.zone === zi).sort((a, b) => sakNamn(a.k).localeCompare(sakNamn(b.k), 'sv') || b.n - a.n || condOf(b) - condOf(a));
-    const barare = living(s).filter(p => p.task && (p.task.carry > 0 || p.task.items));
+    const barare = living(s).filter(p => (t => t && (t.carry > 0 || t.items))(uppgiftVid(p)));
     // turordningen: byn lägger saker i lagerplatsen med högst prio först (lager.ts)
     const nr = zs.map((q, i) => ({ q, i })).sort((a, b) => (b.q.prio ?? 0) - (a.q.prio ?? 0)).findIndex(x => x.i === zi) + 1;
     const what = !z.slag ? '' : z.slag === 'mat' ? 'Här läggs maten. ' : 'Här läggs material och redskap. ';

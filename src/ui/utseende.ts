@@ -6,6 +6,7 @@
 import { ALDER, BERATT, BESK_ANSIKTE, KLADMATERIAL, KROPP, ageOf, blodning, byId, hash, isSick, kladAv, load, moodOf, utbrottNu, utrustning } from '../sim';
 import type { Person, State } from '../sim';
 import { KARNA } from '../portrattkarna';
+import { s as visad, uppgiftVid } from './lage';
 
 // en person i karaktärsskaparens form (skapare.js): kön, ålder, en del per sort, färgerna, humöret och det man bär
 export interface Skapad {
@@ -91,7 +92,7 @@ export function skapad(s: State, p: Person): Skapad {
 // spelet (Kläder)
 const REDSKAP = new Map<string, string>(KARNA.PR.delar.filter((d: { sort: string; sak?: string }) => d.sort === 'redskap' && d.sak).map((d: { id: string; sak: string }) => [d.sak, d.id]));
 function utrustad(s: State, p: Person, u: Skapad) {
-  const r = utrustning(s, p, !!p.task && load(p.task, s) > 0);
+  const t = s === visad ? uppgiftVid(p) : p.task, r = utrustning(s, p, !!t && load(t, s) > 0); // vid tiden som visas, som kartan (steg 6.1.1); en by som inte visas (texterna i testerna): nu
   u.klader = { rock: null, skor: false, balte: false };
   for (const pl of Object.values(r)) {
     const a = pl.ting && kladAv(pl.ting.k);

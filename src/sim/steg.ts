@@ -102,9 +102,11 @@ const STEG = balans('steg', {
 // spelet ritar folk där de är medan slaget visas: var och ens väg under det senaste slaget, som
 // [tid, x, y, tid, x, y, ...]. Bara för att visa; simuleringen läser det aldrig. Uppgiften sparas också med tiden varje
 // gång den eller dess fas byts (u, steg 4.5.6.5), så att det som visar vad någon gör (Gör just nu, raden överst på kartan,
-// symbolen över huvudet, listan över invånare) frågar vad hen gör vid tiden som visas (uppgiftVid i ui/lage.ts)
+// symbolen över huvudet, listan över invånare) frågar vad hen gör vid tiden som visas (uppgiftVid i ui/lage.ts).
+// Också när bördan växer med en hel sak (steg 6.1.1), så att fliken Utrustning, texten och porträttet visar det man bär
+// vid tiden som visas, som kartan
 export const spar = { pa: false, v: new WeakMap<Person, number[]>(), u: new WeakMap<Person, [number, Task | undefined][]>() };
-const uppgiftNyckel = (t?: Task) => t ? `${t.act}|${t.phase}|${t.tool ?? ''}|${t.hopp ? 1 : 0}|${t.carry > 0 ? 1 : 0}|${t.jf ? 1 : 0}|${t.leta ?? ''}|${t.sok ? 1 : 0}` : '';
+const uppgiftNyckel = (t?: Task) => t ? `${t.act}|${t.phase}|${t.tool ?? ''}|${t.hopp ? 1 : 0}|${Math.floor(t.carry + 1e-9)}|${Object.values(t.items ?? {}).reduce((a, n) => a + Math.floor(n + 1e-9), 0)}|${t.jf ? 1 : 0}|${t.leta ?? ''}|${t.sok ? 1 : 0}` : '';
 const kopia = (t?: Task): Task | undefined => t && { ...t, path: undefined, items: t.items && { ...t.items } };
 function sparaUppgift(p: Person, t: number) {
   const u = spar.u.get(p);
@@ -443,6 +445,7 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
       if (tk.phase === 'do' && d.hantverk) ovning(p, 'hantverk', used / HOUR_S * STEG.ovningHant * learn);
       if (d.vandra) wear(groundOf(s), tileOf(tk.tx, tk.ty), MARK.nott * STEG.markNot * STEG.vandraNot * d.vandra.v * used); // man rör sig på platsen
     }
+    if (spar.pa && tk.phase !== 'go') sparaUppgift(p, t1 - (left - used) * SEC); // det som plockats syns när biten är klar (steg 6.1.1)
     // vana: tiden räknas mot yrkestaggar
     addHabit(p, tk.act, Math.exp(-used * SEC / HABIT_FADE), used / HOUR_S);
     // den som arbetar kommer så småningom på hur det kan göras bättre; man funderar också på vägen dit och hem

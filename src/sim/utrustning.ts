@@ -11,14 +11,14 @@
 // Bältet (steg 2.3.3) är ett plagg med en krok: när man bär hem hänger redskapet i det (iBaltet), så det tar inga händer
 // och bördan får hela famnen. En korg hänger inte där; den rymmer bördan.
 // En ny plats blir en rad i PLATSER.
-import { Person, State } from './typer';
-import { KLAD_SLAG, SAKER, bordOf } from './saker';
+import { Person, State, Task } from './typer';
+import { KLAD_SLAG, SAKER, bordOf, famnOf } from './saker';
 import { heldBy, Ting, tingOf } from './agande';
 import { kvEffekt } from './kvalitet';
 import { BYN, lends } from './egendom';
 import { KROPP, living } from './folk';
 import { temperature } from './vader';
-import { capacity } from './lager';
+import { capacity, carryKind } from './lager';
 import { balans } from './balans';
 
 export const UTRUSTNING = balans('utrustning', {
@@ -81,6 +81,27 @@ export function utrustning(s: State, p: Person, bar: boolean): Record<Plats, { t
     else if (h.hander === 1) r.vanster.borda = true;
   }
   for (const t of paSig(s, p)) r[SAKER[t.k]!.klad!.plats as Plats].ting = t;
+  return r;
+}
+
+// vad av bördan som ligger i varje hand, och hur mycket (i fulla famnar), som fliken, figuren i Utrustning och kartan visar
+// (steg 6.1.2, bara bilden: bördan räknas som förut). En hand rymmer ett slag: med båda händerna fria ligger det mesta
+// slaget i höger hand och det näst mesta i vänster, och ett enda slag ligger i en hand så länge en hand orkar det, annars i
+// båda. Med en fri hand (eller korgen) ligger allt där. Fler än två slag: resten räknas till höger hand
+export type IHanden = Partial<Record<'hoger' | 'vanster', { k: string; v: number }>>;
+export function bordaIHander(s: State, p: Person, t: Task | undefined, u: ReturnType<typeof utrustning>): IHanden {
+  const r: IHanden = {};
+  if (!t || (!u.hoger.borda && !u.vanster.borda)) return r;
+  const slag: [string, number][] = [];
+  if (t.carry > 0) slag.push([carryKind(t.act), t.carry * famnOf(carryKind(t.act))]);
+  for (const k in t.items ?? {}) if (t.items![k] > 0) slag.push([k, t.items![k] * famnOf(k)]);
+  slag.sort((a, b) => b[1] - a[1]);
+  if (!slag.length) return r;
+  const alla = slag.reduce((a, x) => a + x[1], 0);
+  if (!(u.hoger.borda && u.vanster.borda)) { r[u.hoger.borda ? 'hoger' : 'vanster'] = { k: slag[0][0], v: alla }; return r; }
+  if (slag.length > 1) { r.hoger = { k: slag[0][0], v: alla - slag[1][1] }; r.vanster = { k: slag[1][0], v: slag[1][1] }; }
+  else if (alla <= capacity(s, p) * UTRUSTNING.en) r.hoger = { k: slag[0][0], v: alla };
+  else { r.hoger = { k: slag[0][0], v: alla / 2 }; r.vanster = { k: slag[0][0], v: alla / 2 }; }
   return r;
 }
 

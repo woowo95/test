@@ -1,5 +1,5 @@
 import { klanById, FORMAGOR, gangDelar, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
-import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, BORDA_KG, UTRUSTNING, bordOf, capacity, kvNamn, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, timeLabel, vidBordet, upplevelseText, uppEffekt, vuxenUpp, Upplevelse, yrkeNamn, andlighet, troOf, tolkning, teckenText, troNamn, pratarMed, gastRelationer, type ByteMinne, type GastRel, type Slakting } from '../../sim';
+import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, BORDA_KG, UTRUSTNING, bordOf, capacity, kvNamn, handerFor, load, utrustning, bordaIHander, type IHanden, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, timeLabel, vidBordet, upplevelseText, uppEffekt, vuxenUpp, Upplevelse, yrkeNamn, andlighet, troOf, tolkning, teckenText, troNamn, pratarMed, gastRelationer, type ByteMinne, type GastRel, type Slakting } from '../../sim';
 import { gorText } from '../jakt';
 import { figurSvg, portrattImg } from '../folkbild';
 import { FARGER, farg } from '../../palett';
@@ -468,7 +468,7 @@ function gearHtml(p: Person) {
   const whose = (t: Ting) => t.agare === p.id ? 'eget' : t.agare === BYN ? 'byns' : `lånat av ${byId(s, t.agare)?.name ?? 'någon'}`;
   const where = (t: Ting) => t.bar !== undefined ? `${byId(s, t.bar)?.name ?? 'någon'} har det på sig` : t.hos === undefined ? 'i förrådet' : `${byId(s, t.hos)?.name ?? 'någon'} har det i handen`;
   const ting = (t: Ting, title: string, cls = 'kan', px = 16) => `<span class="tnod liten ${cls}" tabindex="0" data-sak="t:${t.id}" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(t.halv?.gor ?? t.k, px)}${kvSvg(t.q, px > 20 ? 14 : 9) && `<span class="kvhorn">${kvSvg(t.q, px > 20 ? 14 : 9)}</span>`}${t.halv ? `<span class="halvmark">${framstegSvg(halvKlar(t.halv), 4)}</span>` : ''}${skickRing(t.c, cls.includes('hand'), px > 20)}</span>`;
-  const t = p.task, borda = t ? load(t, s) : 0, bar = !!t && borda > 0, u = utrustning(s, p, bar), kg = (n: number) => `${kortTal(n)} kg`;
+  const t = uppgiftVid(p), borda = t ? load(t, s) : 0, bar = !!t && borda > 0, u = utrustning(s, p, bar), ih = bordaIHander(s, p, t, u), kg = (n: number) => `${kortTal(n)} kg`;
   const bordaTxt = bar ? `bär ${carryTxt(p).replace(/^Bär /, '')}` : '';
   // den som äter vid bordet har maten i den första fria handen (steg 3.10.3)
   const mal = vidBordet(p) ? t?.mal : undefined, malHand = mal ? (['hoger', 'vanster'] as const).find(k => !u[k].ting && !u[k].borda) : undefined;
@@ -478,9 +478,11 @@ function gearHtml(p: Person) {
       const h = handerFor(s, p, x.ting.k);
       const title = `${pl.namn}: ${sakNamn(x.ting.k).toLowerCase()}${x.ting.q !== undefined ? `, ${kvNamn(x.ting).toLowerCase()}` : ''}, ${whose(x.ting)}, ${Math.round(x.ting.c * 100)} %, väger ${kg(viktOf(x.ting.k))}${SAKER[x.ting.k]?.klad?.varme ? `, skyddar ${Math.round(SAKER[x.ting.k]!.klad!.varme * 100)} % mot kylan` : ''}${pl.hand && h === 2 ? ', tar båda händerna' : ''}${k === 'krok' ? ', hänger i bältet medan hen bär' : ''}${x.borda ? `; ${bordaTxt}` : ''}`;
       const i = ting(x.ting, title, (k === 'vanster' && x.ting === u.hoger.ting ? 'kan hand pa' : 'kan hand') + cls, stor ? 36 : 16);
-      return x.borda ? i.replace(/<\/span>$/, `<span class="antal">${iconImg(homeKind(t!), 10)}</span></span>`) : i;
+      const ik = (k === 'hoger' || k === 'vanster') && ih[k]?.k; // det som ligger i just den handen (steg 6.1.2)
+      return x.borda && ik ? i.replace(/<\/span>$/, `<span class="antal">${iconImg(ik, 10)}</span></span>`) : i;
     }
-    if (x.borda) { const title = `${pl.namn}: ${bordaTxt}`; return `<span class="tnod liten hand${cls}" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(homeKind(t!), stor ? 36 : 16)}</span>`; }
+    const ik = (k === 'hoger' || k === 'vanster') ? ih[k]?.k : undefined;
+    if (x.borda && ik) { const title = `${pl.namn}: ${sakNamn(ik).toLowerCase()}; ${bordaTxt}`; return `<span class="tnod liten hand${cls}" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(ik, stor ? 36 : 16)}</span>`; }
     if (k === malHand) { const title = `${pl.namn}: äter ${sakNamn(mal!).toLowerCase()}`; return `<span class="tnod liten hand${cls}" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(mal!, stor ? 36 : 16)}</span>`; }
     const title = `${pl.namn}: ${pl.hand ? 'tom' : 'inget'}`;
     return `<span class="tnod liten hand tom${cls}" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}">${pl.ikon}</span>`;
@@ -488,23 +490,25 @@ function gearHtml(p: Person) {
   // vad varje hand bär och orkar, i kg: ett redskap som tar båda händerna och en börda i båda delas lika
   const orkar = capacity(s, p), en = orkar * UTRUSTNING.en;
   const handKg = (k: 'hoger' | 'vanster') => {
-    const x = u[k], tva = !!x.ting && u.hoger.ting === u.vanster.ting, bada = !x.ting && !!u.hoger.borda && !!u.vanster.borda;
+    const x = u[k], tva = !!x.ting && u.hoger.ting === u.vanster.ting, bada = !x.ting && !!u.hoger.borda && !!u.vanster.borda, i = ih[k];
     const tak = tva || bada ? orkar / 2 : Math.min(orkar, en + (x.ting ? SAKER[x.ting.k]?.rymmer ?? 0 : 0));
-    const v = (x.ting ? bordOf(x.ting.k) / (tva ? 2 : 1) : 0) + (x.borda ? borda / (bada ? 2 : 1) : 0);
-    return `<div class="hbar"><i class="${x.borda ? 'borda' : ''}" style="width:${Math.min(100, Math.round(v / Math.max(0.01, tak) * 100))}%"></i></div><div class="small"><b>${kg(v * BORDA_KG)}</b> / ${kg(tak * BORDA_KG)}</div>`;
+    const v = (x.ting ? bordOf(x.ting.k) / (tva ? 2 : 1) : 0) + (i?.v ?? 0);
+    return `<div class="hbar"><i class="${i ? 'borda' : ''}" style="width:${Math.min(100, Math.round(v / Math.max(0.01, tak) * 100))}%"></i></div><div class="small"><b>${kg(v * BORDA_KG)}</b> / ${kg(tak * BORDA_KG)}</div>`;
   };
   const paSig = PLATS_LIST.filter(k => !PLATSER[k].hand).reduce((a, k) => a + (u[k].ting && k !== 'krok' ? viktOf(u[k].ting!.k) : 0), 0);
   const rad = PLATS_LIST.filter(k => !PLATSER[k].hand).map(k => ruta(k)).join('');
-  return `<div class="utrhander"><div class="utrhand">${ruta('hoger', true)}${handKg('hoger')}</div>${utrGubbe(p, u)}<div class="utrhand">${ruta('vanster', true)}${handKg('vanster')}</div></div>
+  return `<div class="utrhander"><div class="utrhand">${ruta('hoger', true)}${handKg('hoger')}</div>${utrGubbe(p, u, ih)}<div class="utrhand">${ruta('vanster', true)}${handKg('vanster')}</div></div>
     <div class="tekrad utrrad">${rad}</div><p class="small muted utrkg">På sig <b>${kg(paSig)}</b>${bar ? ` · börda <b>${kg(borda * BORDA_KG)}</b>` : ''} · orkar <b>${kg(orkar * BORDA_KG)}</b></p>
     <div class="tekrad">${own.map(t => ting(t, `Äger: ${tingNamn(t).toLowerCase()}, ${Math.round(t.c * 100)} %, väger ${kg(viktOf(t.k))}, ${where(t)}`, 'pa')).join('')}</div>${stockHtml(p)}`;
 }
 // människan i utrustningen (steg 5.3.4.3): samma figur som på kartan (folkbild.ts), med kläderna på, och redskapen i
 // händerna (och i bältet) som små bilder ovanpå, där platserna är
-function utrGubbe(p: Person, u: ReturnType<typeof utrustning>) {
+function utrGubbe(p: Person, u: ReturnType<typeof utrustning>, ih: IHanden) {
   const q = skapad(s, p), fig = figurSvg({ ...q, del: { ...q.del, redskap: null } }, '', 'Det hen har på sig');
   // redskapen i händerna (och i bältet) som små bilder ovanpå
-  const pa = (k: Plats, x: number, y: number) => u[k].ting && !(k === 'vanster' && u.vanster.ting === u.hoger.ting) ? `<span class="utrpa" style="left:${x}%;top:${y}%">${iconImg(u[k].ting!.halv?.gor ?? u[k].ting!.k, 22)}</span>` : '';
+  // och det av bördan som ligger i varje hand (steg 6.1.2), i den hand där det ligger
+  const bild = (k: Plats) => u[k].ting && !(k === 'vanster' && u.vanster.ting === u.hoger.ting) ? u[k].ting!.halv?.gor ?? u[k].ting!.k : (k === 'hoger' || k === 'vanster') && !u[k].ting ? ih[k]?.k : undefined;
+  const pa = (k: Plats, x: number, y: number) => (b => b ? `<span class="utrpa" style="left:${x}%;top:${y}%">${iconImg(b, 22)}</span>` : '')(bild(k));
   return `<div class="utrgubbe">${fig}${pa('hoger', -12, 46)}${pa('vanster', 62, 46)}${pa('krok', 50, 52)}</div>`;
 }
 // det hen äger i byns förråd (egendom.ts): symbolen och hur mycket, namnet när man håller över. Saker utan egen stack

@@ -310,6 +310,7 @@ SCENARIER.vader = {
 };
 
 SCENARIER.kalender = {
+  lang: true,
   env: STOCKHOLM, // sommartiden finns bara i en tidszon som har den
   text: 'Tidsåldrarna följer kalendern: de börjar en måndag kl. 00, en ny by får en längre första vårtid och en gammal by kommer i fas',
   kor: () => {
