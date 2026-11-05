@@ -614,8 +614,14 @@ SCENARIER.vard = {
     const k = { id: 999, x: 1, y: 1, ved: 5, grenar: 2, mossa: 2 }; (s.stockar ??= []).push(k); const hugg = chopStock(s, 999, 1)?.mossa ?? 0;
     // en by i tolv dygn (tolv år i spelet, knappt två veckor i verkligheten): mossa hittas och såren vårdas
     // skadorna är få och slumpen avgör vilka sår som behöver vård (ett benbrott behöver inget förband), så byarna prövas tills en har vårdat
-    let b = createState(4, START); kor(b, 288);
-    for (let n = 1; n <= 12 && !((b.stat?.vard ?? 0) > 0); n++) if (n !== 4) { b = createState(n, START); kor(b, 288); }
+    // olyckorna är sällsynta (några på tolv dygn i en by, ofta ingen), så här är de tio gånger vanligare
+    const risk = Object.values(SIM.OLYCKOR).map(o => o!.risk);
+    let b = createState(4, START);
+    try {
+      for (const o of Object.values(SIM.OLYCKOR)) o!.risk *= 10;
+      kor(b, 288);
+      for (let n = 1; n <= 6 && !((b.stat?.vard ?? 0) > 0); n++) if (n !== 4) { b = createState(n, START); kor(b, 288); }
+    } finally { Object.values(SIM.OLYCKOR).forEach((o, i) => { o!.risk = risk[i]; }); }
     const st = (n: string) => b.stat?.[n] as number ?? 0;
     return [
       [`ett infekterat sår som inte rengörs blir kallbrand och dödar (${dog ?? 'överlevde'})`, dog === 'kallbrand' && kall],
