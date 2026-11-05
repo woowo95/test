@@ -192,10 +192,11 @@ SCENARIER.byte = {
     addTo(s, 'flinta', 3); gain(s, b, 'flinta', 2); gain(s, a, 'bar', 20);
     takeMaterial(s, a, 'flinta', 1);
     const material = nara(byns(s, 'flinta'), 3) && nara(ownsAmount(s, b, 'flinta'), 1) && ownsAmount(s, b, 'bar') > 1;
-    // grenar räknas i styck, inte i vedens behovsenheter: a köper tre grenar av b och inga fler av c (motor-4)
+    // grenar räknas i styck, inte i vedens behovsenheter: a köper 60 grenar av b och inga fler av c (motor-4). Sedan steg 6.1.5
+    // är grenar så billiga att tre grenar är värda mindre än den minsta hela sak man kan betala med, så a köper 60
     let c: Person; ({ s, a, b, c } = ny()); c.x = a.x; c.y = a.y;
-    gain(s, b, 'grenar', 3); gain(s, c, 'grenar', 3); gain(s, a, 'bar', 20);
-    takeMaterial(s, a, 'grenar', 3);
+    gain(s, b, 'grenar', 60); gain(s, c, 'grenar', 60); gain(s, a, 'bar', 20);
+    takeMaterial(s, a, 'grenar', 60);
     const grenar = ownsAmount(s, b, 'grenar') + ownsAmount(s, c, 'grenar'), grenOver = ownsAmount(s, a, 'grenar'), grenByten = s.stat?.byten;
     // ett redskap mot mat: a samlar och saknar korg, b har två
     ({ s, a, b } = ny());
@@ -233,7 +234,7 @@ SCENARIER.byte = {
       ['den som håller på att dö får ett ojämnt byte', dor],
       ['en ovän byter inte', ovan],
       ['material till ett eget arbete byts till sig före byns', material],
-      [`den som saknar tre grenar köper tre i ett byte (grannarna har ${grenar.toFixed(2)} av 6 kvar, ${grenOver.toFixed(2)} över, ${grenByten} byten)`, nara(grenar, 3) && nara(grenOver, 0) && grenByten === 1],
+      [`den som saknar 60 grenar köper 60 i ett byte (grannarna har ${grenar.toFixed(2)} av 120 kvar, ${grenOver.toFixed(2)} över, ${grenByten} byten)`, nara(grenar, 60) && nara(grenOver, 0) && grenByten === 1],
       ['ett redskap byts mot mat', korg],
       ['i samtal byter den som har mindre mat än hen vill ha kvar till sig mat mot trä, och båda tjänar på det', kvall],
       ['har båda det de vill ha kvar blir det inget byte', nog],
@@ -303,13 +304,13 @@ SCENARIER.delning = {
     const egetAv = (n: number) => { const f = ownsAmount(s, p, 'bar'); gain(s, p, 'bar', n); return ownsAmount(s, p, 'bar') - f; };
     const ny = s.delning!, nyRik = rikedom(s), nyEgen = egetAv(10);
     // halvrik: hälften av gränsen
-    setAmount(s, 'ved', 0); setAmount(s, 'ved', (DELNING.rik / 2 - rikedom(s)) / grundvarde('ved')); stepDelning(s);
+    setAmount(s, 'flinta', 0); setAmount(s, 'flinta', (DELNING.rik / 2 - rikedom(s)) / grundvarde('flinta')); stepDelning(s); // flinta: ved är för lite värd sedan steg 6.1.6 och ryms inte i förrådet
     const halv = s.delning!, halvEgen = egetAv(10);
     // rik
-    setAmount(s, 'ved', amountOf(s, 'ved') + DELNING.rik / grundvarde('ved')); stepDelning(s);
+    setAmount(s, 'flinta', amountOf(s, 'flinta') + DELNING.rik / grundvarde('flinta')); stepDelning(s);
     const rik = s.delning!, rikRik = rikedom(s), rikEgen = egetAv(10);
     // fattig igen
-    setAmount(s, 'ved', 0); setFood(s, 0); stepDelning(s);
+    setAmount(s, 'flinta', 0); setFood(s, 0); stepDelning(s);
     const igen = s.delning!;
     return [
       [`en ny by är fattig (rikedom ${nyRik.toFixed(0)}) och ger det mesta till byn (${nyEgen.toFixed(1)} av 10 eget)`, ny.andel > 0.75 && Math.abs(nyEgen - 10 * (1 - ny.andel)) < 1], // i hela saker (steg 2.10.7)
