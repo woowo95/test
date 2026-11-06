@@ -1746,6 +1746,46 @@ SCENARIER.motvind = {
   },
 };
 
+SCENARIER.kaninbyn = {
+  text: 'Kaninerna undviker byn (steg 6.6.8): en kaningrupp börjar inte och glider inte dit där husen, stigarna och den nötta marken är, och hela gruppen flyttar bort när någon kommer nära, inte bara när en jägare gör det. Platsen sparas i byn och är densamma efter inläsning',
+  kor: () => {
+    const s = createState(1, START);
+    let starter = 0, nara = 0, minF = 1;
+    kor(s, 72, q => { // tre dygn (tre år i spelet): varje ny plats prövas mot var folk rör sig just då
+      const f = SIM.skyggOf(q);
+      for (const [k, st] of Object.entries(q.kaninStart ?? {})) {
+        if (!st || (q as State & { _sedda?: Set<string> })._sedda?.has(k)) continue;
+        ((q as State & { _sedda?: Set<string> })._sedda ??= new Set()).add(k);
+        starter++;
+        const v0 = f[Math.floor(st.y0) * W + Math.floor(st.x0)], v1 = f[Math.floor(st.y1) * W + Math.floor(st.x1)];
+        minF = Math.min(minF, v0, v1);
+        if (SIM.bynsAvstand(q)[Math.floor(st.y0) * W + Math.floor(st.x0)] < FANGST.skyggIn) nara++;
+      }
+    });
+    delete (s as State & { _sedda?: Set<string> })._sedda;
+    // en som går förbi en grupp får den att flytta; en jägare som smyger gör det inte
+    const prov = (jagare: boolean) => {
+      const t = cloneState(s), g = SIM.grupperOf(t).find(q => q.n > 0)!, p = living(t)[0];
+      p.x = g.x + 1.5; p.y = g.y; if (jagare) p.task = { act: 'jakt', phase: 'do', tx: g.x, ty: g.y, until: t.now + HOUR, carry: 0 } as SIM.Task; else p.task = undefined;
+      SIM.djurSteg(t);
+      t.now += 3 * SIM.SEC;
+      const h = SIM.grupperOf(t).find(q => q.id === g.id)!;
+      return Math.hypot(h.x - g.x, h.y - g.y);
+    };
+    const gick = prov(false), smog = prov(true);
+    // sparat och inläst: grupperna står på samma plats
+    const fore = JSON.stringify(SIM.grupperOf(s)), ater = SIM.migrate(JSON.parse(SIM.serialize(s)));
+    const efter = JSON.stringify(SIM.grupperOf(ater));
+    const st = s.stat ?? {};
+    return [
+      [`${starter} nya platser på tre dygn, ingen där folk rör sig (lägsta skygghet på platsen ${minF.toFixed(2)}, ${nara} närmare byn än ${FANGST.skyggIn} rutor)`, starter >= 4 && minF > 0 && nara === 0],
+      [`den som går förbi får gruppen att flytta ${gick.toFixed(1)} rutor; en jägare som smyger ${smog.toFixed(1)} rutor`, gick >= SIM.KANINER.folkFly * 0.7 && smog < 0.5],
+      [`i byn flyttade grupperna undan för folk ${st.kaninerUndan ?? 0} gånger`, (st.kaninerUndan ?? 0) >= 0],
+      ['grupperna står på samma plats efter inläsning', fore === efter],
+    ];
+  },
+};
+
 SCENARIER.varg = {
   lang: true,
   text: 'Vargen och vakten (steg 3.7.1): vargar kommer under istiden, oftast i flock och ibland ensamma, och drar vidare efter en tid. Vakten ser dem och väcker byn, en flock anfaller den som är ensam, på natten stjäl de mat ur förrådet när ingen är vaken nära, och byn kan jaga dem i grupp. Svårigheten: en varg slår oftast en obeväpnad, med spjut klarar man sig oftast, och tre med spjut slår oftast fyra vargar men någon skadas',

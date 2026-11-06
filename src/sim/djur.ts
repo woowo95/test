@@ -1,9 +1,9 @@
-import { FYND, setNarvaro, takenOf, vaxerAt, viltStart } from './fynd';
+import { FYND, setNarvaro, skyggOf, takenOf, vaxerAt, viltStart } from './fynd';
 import { getMap, hash, perKarta } from './karta';
 import { groundOf, startGround } from './mark';
 import { FOREST, isSoil } from './vag';
 import { clamp } from './slump';
-import { living } from './folk';
+import { count, living } from './folk';
 import { motgangNu } from './motgang';
 import { H, HOUR, SEC, State, T, W, egen, inMap, mapKey, tvaDelar, visning } from './typer';
 import { vattenNu } from './sjo';
@@ -47,6 +47,9 @@ export const KANINER = balans('djur', {
   narvR: 5, // så långt (rutor) från gruppen jakten ger något
   narvBas: 0.4, // fångsten långt från grupperna (en och annan kanin för sig själv), mot kartan ensam
   narvK: 1.6, // så mycket mer det ger mitt i en full grupp
+  folkR: 4, // en grupp flyttar bort när någon kommer så här nära gruppens mitt (steg 6.6.8) ...
+  folkFly: 5, // ... så här långt (rutor) ...
+  folkSek: 2, // ... på så här många sekunder
 });
 const LIVSTID = KANINER.livTim * HOUR; // så länge en grupp håller till i samma trakt
 const SKUTT = KANINER.skuttSek * SEC; // så ofta en kanin skuttar, ungefär
@@ -58,18 +61,23 @@ const epokOf = (k: number, t: number) => Math.floor((t - tidAv(k)) / LIVSTID);
 // var grupp k dyker upp under sin tid e: en ruta där kartan är hög (slumpad med vikt efter kartan), en bit från de andra
 // grupperna (där de är när tiden börjar), och den bästa platsen i närheten som den rör sig mot. Bara ur kartan och tiden
 // (viltStart i fynd.ts), så att platsen blir densamma när cachen töms och efter inläsning
+// Kaninerna undviker byn (steg 6.6.8): husen, stigarna och den nötta marken just när gruppens tid börjar (skyggOf), så
+// som simuleringen ser dem; platsen sparas i byn (s.kaninStart), så att den är densamma efter inläsning
 function start(s: State, k: number, e: number): Start | null {
-  const key = `${mapKey(s.seed)},${k},${e}`, f = starter.sim.get(s);
-  if (f?.has(key)) return f.get(key)!;
+  const key = `${mapKey(s.seed)},${k},${e}`, f = starter.sim.get(s), sparad = s.kaninStart?.[`${k},${e}`], t0 = tidAv(k) + e * LIVSTID;
+  if (sparad !== undefined) return sparad;
+  // simuleringen räknar en tid som börjat en gång och sparar den; en tid som inte börjat än räknas utan att minnas
+  const spara = !visning.pa && t0 <= s.now;
+  if (visning.pa && f?.has(key)) return f.get(key)!;
   const d = egen(starter);
   let m = d.get(s);
   if (!m) d.set(s, m = new Map());
-  if (m.has(key)) return m.get(key)!;
-  const topp = FYND.jakt.topp, salt = s.seed * 31 + k * 977 + e * 7919, t0 = tidAv(k) + e * LIVSTID;
+  if (visning.pa && m.has(key)) return m.get(key)!;
+  const topp = FYND.jakt.topp, salt = s.seed * 31 + k * 977 + e * 7919;
   const andra: { x: number; y: number }[] = [];
   for (let j = 0; j < k; j++) { const g = mitt(s, j, t0); if (g) andra.push(g); }
   let bi = -1, bs = -Infinity;
-  const vax = viltStart(s, t0, motgangNu(s, t0)?.id === 'torka');
+  const vax0 = viltStart(s, t0, motgangNu(s, t0)?.id === 'torka'), folk = skyggOf(s), vax = vax0.map((v, i) => v * folk[i]);
   for (let i = 0; i < W * H; i++) {
     const v = vax[i] / topp;
     if (v < KANINER.startMin) continue;
@@ -90,8 +98,13 @@ function start(s: State, k: number, e: number): Start | null {
     }
     st = { x0: x0 + 0.5, y0: y0 + 0.5, x1: (gi % W) + 0.5, y1: Math.floor(gi / W) + 0.5, n0: KANINER.storlek[0] + Math.floor(hash(salt, 1, 3) * (KANINER.storlek[1] - KANINER.storlek[0] + 1)) };
   }
-  if (m.size > 64) m.clear();
-  m.set(key, st);
+  if (visning.pa) { if (m.size > 64) m.clear(); m.set(key, st); }
+  // simuleringen sparar platsen när gruppens tid har börjat; det som ligger två tider bak glöms
+  if (spara) {
+    const ks = (s.kaninStart ??= {});
+    ks[`${k},${e}`] = st;
+    for (const q in ks) { const [qk, qe] = q.split(',').map(Number); if (qk === k && qe < e - 1) delete ks[q]; }
+  }
   return st;
 }
 // gruppens mitt vid tiden t: den glider mot den bättre platsen under första delen av sin tid
@@ -102,23 +115,36 @@ function mitt(s: State, k: number, t = s.now) {
   return { x: st.x0 + (st.x1 - st.x0) * g, y: st.y0 + (st.y1 - st.y0) * g, e, st };
 }
 // varje steg: en grupp som får en ny tid väljer sin plats direkt, så att platsen blir densamma i båda lägena
-export function djurSteg(s: State) { for (let k = 0; k < KANINER.grupper; k++) mitt(s, k); }
+// Den som kommer nära en grupp får hela gruppen att flytta bort en bit, inte bara en jägare (steg 6.6.8)
+export function djurSteg(s: State) {
+  for (let k = 0; k < KANINER.grupper; k++) mitt(s, k);
+  const ppl = living(s);
+  for (const g of grupperOf(s)) {
+    if (g.n <= 0 || (s.djurFlykt ?? []).some(f => f.g === g.id && s.now - f.t < KANINER.folkSek * SEC)) continue;
+    let near: { x: number; y: number } | undefined, nd: number = KANINER.folkR;
+    for (const p of ppl) { if (p.task?.act === 'jakt' && !p.task.carry) continue; const d = Math.hypot(g.x - p.x, g.y - p.y); if (d < nd) { nd = d; near = p; } } // jägaren smyger (jakt.ts)
+    if (!near) continue;
+    const ux = nd > 1e-6 ? (g.x - near.x) / nd : 1, uy = nd > 1e-6 ? (g.y - near.y) / nd : 0;
+    gruppFlyr(s, g.id, s.now, ux * KANINER.folkFly, uy * KANINER.folkFly, KANINER.folkSek);
+    count(s, 'kaninerUndan');
+  }
+}
 // grupperna vid tiden t (just nu om inget annat sägs). En grupp krymper där lagret är tömt (där man jagat), och är tom
 // när det jagats slut. Med bara (en fråga om gruppens mitt) räknas bara de grupper som den godtar
 // så långt gruppen flytt från jägare fram till tiden t (steg 4.5.4.1): hela gruppen följer med den som flyr
 function flyttAv(s: State, g: number, t: number) {
   let dx = 0, dy = 0, har = false;
-  for (const f of s.djurFlykt ?? []) if (f.g === g && f.t <= t) { dx += f.dx; dy += f.dy; har = true; }
+  for (const f of s.djurFlykt ?? []) if (f.g === g && f.t <= t) { const a = f.sek ? Math.min(1, (t - f.t) / (f.sek * SEC)) : 1; dx += f.dx * a; dy += f.dy * a; har = true; }
   return har ? { dx, dy } : undefined;
 }
 // gruppen g flyr från tiden t så här långt; det som är äldre än en grupps tid i trakten glöms
 // Gruppen flyr aldrig ut i vattnet: vägen kortas tills den slutar på land med land omkring, annars flyr den inte
-export function gruppFlyr(s: State, g: number, t: number, dx: number, dy: number) {
+export function gruppFlyr(s: State, g: number, t: number, dx: number, dy: number, sek?: number) {
   const c = (arRadjurGrupp(g) ? radjurGrupper(s, t) : grupperOf(s, t)).find(q => q.id === g), vt = vattenNu(s);
   const land = (x: number, y: number) => { for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) { const a = Math.floor(x) + i, b = Math.floor(y) + j; if (!inMap(a, b) || vt[b * W + a] === T.Vatten) return false; } return true; };
   const f = c ? [1, 0.75, 0.5, 0.25].find(k => land(clamp(c.x + dx * k, 1, W - 1), clamp(c.y + dy * k, 1, H - 1))) : undefined;
   if (f === undefined) return;
-  s.djurFlykt = [...(s.djurFlykt ?? []).filter(q => s.now - q.t < LIVSTID), { g, t, dx: dx * f, dy: dy * f }];
+  s.djurFlykt = [...(s.djurFlykt ?? []).filter(q => s.now - q.t < LIVSTID), { g, t, dx: dx * f, dy: dy * f, ...(sek ? { sek } : {}) }];
 }
 export function grupperOf(s: State, t = s.now, bara?: (x: number, y: number) => boolean): Kaningrupp[] {
   const ut: Kaningrupp[] = [], tj = takenOf(s).jakt;
