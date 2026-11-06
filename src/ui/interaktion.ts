@@ -108,6 +108,8 @@ app.stage.on('pointertap', e => {
   else if (outPilesAt(c.x, c.y).length) { ui.hogAt = c; visa('hog'); }
   else if (toaAt(s, c.x, c.y)) { ui.sak = `f:${c.y * W + c.x}`; visa('sak'); }
   else if (faltAt(s, c.x, c.y)) valjFalt(faltAt(s, c.x, c.y)!, c.x, c.y);
+  else if (s.uppsatta?.some(q => q.x === c.x && q.y === c.y)) { ui.sak = `a:${c.y * W + c.x}`; visa('sak'); } // den uppsatta facklan (steg 6.3.7)
+  else if (s.stockar?.some(q => Math.floor(q.x) === c.x && Math.floor(q.y) === c.y)) { ui.sak = `v:${s.stockar.find(q => Math.floor(q.x) === c.x && Math.floor(q.y) === c.y)!.id}`; visa('sak'); } // stocken
   else if (stubbeAt(c.x, c.y)) { ui.sak = `u:${c.y * W + c.x}`; visa('sak'); } // stubben (steg 3.10.6)
   else if (husAt(c.x, c.y) !== undefined) { ui.husId = husAt(c.x, c.y)!; visa('hus'); }
   else if (tradAt(c.x, c.y)) { ui.sak = `r:${c.y * W + c.x}`; visa('sak'); } // trädet (steg 5.1.4.3)
@@ -173,7 +175,7 @@ app.stage.on('pointermove', e => {
   showHover(gx, gy);
   ui.hovered = personAt(gx, gy)?.id;
   const c = tileAt(gx, gy);
-  view.style.cursor = ui.hovered || djurAt(gx, gy) !== undefined || gastAt(gx, gy) !== undefined || !!filtAt(gx, gy) || inMap(c.x, c.y) && (fireAt(gx, gy) !== undefined || storeAt(gx, gy) || outPilesAt(c.x, c.y).length || toaAt(s, c.x, c.y) || faltAt(s, c.x, c.y) || stubbeAt(c.x, c.y) || husAt(c.x, c.y) !== undefined || stationAt(s, c.x, c.y) || stolAt(c.x, c.y) || tradAt(c.x, c.y) || buskeAt(c.x, c.y)) ? 'pointer' : 'grab';
+  view.style.cursor = ui.hovered || djurAt(gx, gy) !== undefined || gastAt(gx, gy) !== undefined || !!filtAt(gx, gy) || inMap(c.x, c.y) && (fireAt(gx, gy) !== undefined || storeAt(gx, gy) || outPilesAt(c.x, c.y).length || toaAt(s, c.x, c.y) || faltAt(s, c.x, c.y) || stubbeAt(c.x, c.y) || husAt(c.x, c.y) !== undefined || stationAt(s, c.x, c.y) || stolAt(c.x, c.y) || tradAt(c.x, c.y) || buskeAt(c.x, c.y) || !!s.uppsatta?.some(q => q.x === c.x && q.y === c.y) || !!s.stockar?.some(q => Math.floor(q.x) === c.x && Math.floor(q.y) === c.y)) ? 'pointer' : 'grab';
 });
 view.addEventListener('wheel', e => { e.preventDefault(); const r = view.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.06 : 1 / 1.06, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
 view.addEventListener('pointerleave', () => { $('hoverBox').hidden = true; ui.hovered = undefined; });
@@ -208,6 +210,8 @@ function showHover(gx: number, gy: number) {
   const log = (s.stockar ?? []).find(k => Math.floor(k.x) === x && Math.floor(k.y) === y);
   if (log) rows.push(`Fällt träd, ca ${Math.ceil(log.ved)} ved kvar`);
   if ((s.stubbar ?? []).some(k => k.x === x && k.y === y)) rows.push('Stubbe efter ett fällt träd');
+  const fa = s.uppsatta?.find(q => q.x === x && q.y === y); // den uppsatta facklan (steg 6.3.7)
+  if (fa) rows.push(`Uppsatt fackla, ${fa.tand ? 'brinner' : 'släckt'}, ${Math.round(fa.c * 100)} % kvar`);
   const falt = faltAt(s, x, y); // fältet (steg 2.10.3): ägaren, grödan och hur långt det kommit
   if (falt) {
     const ag = byId(s, falt.agare), groda = falt.groda && (falt.steg === 'vaxer' || falt.steg === 'mogen') ? GRODOR[falt.groda] : undefined;

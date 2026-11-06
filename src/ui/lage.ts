@@ -68,6 +68,8 @@ export function sakVar(): { x: number; y: number } | { station: number } | { per
   const [slag, rest = ''] = ui.sak.split(':');
   if (slag === 'f' || slag === 'u' || slag === 'r' || slag === 'b') { const i = Number(rest); return { x: i % W, y: Math.floor(i / W) }; } // toa-högen, stubben (steg 3.10.6), trädet (steg 5.1.4.3) och busken (steg 6.5.3)
   if (slag === 's') { const [x, y] = rest.split(',').map(Number); return { x, y }; }
+  if (slag === 'a') { const i = Number(rest); return { x: i % W, y: Math.floor(i / W) }; } // den uppsatta facklan (steg 6.3.7)
+  if (slag === 'v') { const k = s.stockar?.find(q => q.id === Number(rest)); return k && { x: Math.floor(k.x), y: Math.floor(k.y) }; } // stocken
   const t = slag === 't' ? tingOf(s).find(k => k.id === Number(rest)) : undefined;
   if (!t) return undefined;
   const person = t.bar ?? t.hos ?? t.lass;

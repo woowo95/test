@@ -80,7 +80,10 @@ export const station: Flik = {
     // latrinen (steg 2.7.2): hur full den är. När den är full fylls den igen och byn gräver en ny
     // det som hänger på torkställningen (steg 2.8.2): råvaran, hur många bitar (steg 4.5.3.1) och hur långt torkningen kommit
     const hanger = (st.tork ?? []).map(q => `<span ${tip(`${fmtN(q.n)} ${sakNamn(q.k).toLowerCase()}, torkat till ${Math.round(torrDel(s, q) * 100)} % av ${TORK.dygn} dygn`)}>${iconImg(q.k)} ×${fmtN(q.n)} · ${Math.round(torrDel(s, q) * 100)} %</span>`).join(' ');
-    const fyllt = (hanger ? `<p>${hanger}</p>` : '') + (d.gor.includes('toa') && klar ? `<p ${tip(`Fylld till ${Math.round((st.fyllt ?? 0) * 100)} %. När den är full fylls den igen med jord, och byn gräver en ny`)}>${iconImg('latrin')} ${Math.round((st.fyllt ?? 0) * 100)} %</p>` : '');
+    // talgljuset på bordet eller hyllan (ljus.ts, steg 6.3.8): om det brinner och hur mycket som är kvar
+    const tl = s.ljus?.find(q => q.st === st.id);
+    const ljuset = tl ? `<p ${tip(`Ett talgljus, ${tl.tand ? 'tänt' : 'släckt'}, ${Math.round(tl.c * 100)} % kvar`)}>${iconImg('talgljus')} ${tl.tand ? 'Tänt' : 'Släckt'} ${condBar(tl.c)}<span>${Math.round(tl.c * 100)} %</span></p>` : '';
+    const fyllt = ljuset + (hanger ? `<p>${hanger}</p>` : '') + (d.gor.includes('toa') && klar ? `<p ${tip(`Fylld till ${Math.round((st.fyllt ?? 0) * 100)} %. När den är full fylls den igen med jord, och byn gräver en ny`)}>${iconImg('latrin')} ${Math.round((st.fyllt ?? 0) * 100)} %</p>` : '');
     // det som används just nu (steg 3.6.6): den som arbetar, sakerna på bänken och hur långt arbetet kommit
     const ib = klar ? iBruk(st) : undefined;
     const bruk = ib ? `<h3>Används nu</h3><p>${pLink(ib.p)} ${esc(verbOf(ib.p.task!.act))} ${ib.saker.map(k => `<span ${tip(sakNamn(k))}>${iconImg(k)}</span>`).join('')}${ib.gor ? ` → <span ${tip(sakNamn(ib.gor))}>${iconImg(ib.gor)}</span>` : ''}</p>`

@@ -96,6 +96,23 @@ function buske(i: number) {
     <div class="phead"><img class="ikon" src="${tradBildUrl(buskBild(i % W, Math.floor(i / W)))}" width="32" style="height:auto;image-rendering:pixelated" alt=""><div><h2>${esc(bu.namn)}</h2></div></div>
     <p>${esc(bu.text)}</p>`;
 }
+// den uppsatta facklan (ljus.ts, steg 6.3.7): om den brinner och hur mycket som är kvar
+function fackla(i: number) {
+  const f = s.uppsatta?.find(q => q.x === i % W && q.y === Math.floor(i / W));
+  if (!f) return '<p class="muted">Facklan är borta.</p>';
+  return `
+    <div class="phead">${iconImg('fackla', 32)}<div><h2>Uppsatt fackla</h2></div></div>
+    <dl class="kv"><dt>${f.tand ? 'Brinner' : 'Släckt'}</dt><dd>${condBar(f.c)}<span>${Math.round(f.c * 100)} % kvar</span></dd></dl>`;
+}
+// stocken (skog.ts, skogsvard.ts): ett fällt träd eller ett vindfall som väntar på att huggas, och vad det ger
+function stock(id: number) {
+  const k = s.stockar?.find(q => q.id === id);
+  if (!k) return '<p class="muted">Stocken är huggen.</p>';
+  return `
+    <div class="phead">${iconImg('ved', 32)}<div><h2>Stock</h2></div></div>
+    <p>Ett fällt träd som väntar på att huggas.</p>
+    <dl class="kv"><dt>${iconImg('ved')}</dt><dd>${Math.floor(k.ved)} ved</dd><dt>${iconImg('grenar')}</dt><dd>${Math.floor(k.grenar)} grenar</dd></dl>`;
+}
 // vem som äger en stack eller ett slag i förrådet (steg 5.3.5.3): byns del och varje ägares, flest först
 function agarRader(ag: Record<string, number> | undefined, n: number) {
   const eg = Object.entries(ag ?? {}).map(([id, m]) => ({ q: byId(s, Number(id)), m: Math.round(m) })).filter(r => r.m >= 1).sort((a, b) => b.m - a.m);
@@ -147,6 +164,8 @@ export const sak: Flik = {
     if (ui.sak.startsWith('u:')) return stubbe(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('r:')) return trad(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('b:')) return buske(Number(ui.sak.slice(2)));
+    if (ui.sak.startsWith('a:')) return fackla(Number(ui.sak.slice(2)));
+    if (ui.sak.startsWith('v:')) return stock(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('k:')) return slagIForradet(ui.sak.slice(2));
     const { t, p } = hitta(), a = t ?? p;
     if (!a) return '<p class="muted">Den finns inte längre.</p>';
