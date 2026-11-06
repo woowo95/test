@@ -689,7 +689,7 @@ SCENARIER.ryggsack = {
       // samlandet: det finns korgar i förrådet, men den med ryggsäcken tar ingen
       SIM.newTing(s, 'korg', 1, BYN); SIM.newTing(s, 'korg', 1, BYN);
       const c0 = r.c; let korg = false;
-      setMat(s, { bar: 10 }); // maten tar slut, så byn samlar
+      setMat(s, { bar: 0 }); // maten är slut, så byn samlar
       for (let i = 0; i < 480 && samlade < 3; i++) {
         kor(s, 1);
         for (const q of living(s)) {
@@ -1579,7 +1579,7 @@ SCENARIER.handlarprat = {
     // i spelet: medan handlaren är kvar pratar någon med hen
     const t = createState(6, START);
     rikBy(t); t.nastaHandlare = t.now;
-    for (let i = 0; i < 24 * 12 && !(t.stat?.handlarPrat); i++) { step(t, BEAT); utanVantan(t); }
+    for (let i = 0; i < 24 * 48 && !(t.stat?.handlarPrat); i++) { step(t, BEAT); utanVantan(t); }
     return [
       ['den som sitter vid elden nära handlaren småpratar med hen och får en tanke om det', tanke],
       ['samtalet blir ett småprat med handlaren (bubblan), den som är långt borta pratar inte', handelse && ingenB],
