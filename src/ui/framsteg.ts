@@ -80,3 +80,49 @@ export function tartSvg(delar: { v: number; attr: string; titel: string }[]) {
   const grupper = delar.map((dl, j) => `<g ${dl.attr}><title>${dl.titel}</title>${rutor(n, n, (x, y) => del[y * n + x] === j ? '#' : '').replace(/ fill="#"/g, '')}</g>`).join('');
   return svg(n, n, grupper + linjer, 'tart', TART_SKALA, ' role="img" aria-label="Vad hen ägnat sin vakna tid åt"');
 }
+
+// ---------- köpmansvågen (steg 6.9.9, skissen bildstil/granssnitt/seder.png): en ring överst, en gaffel med visare, balken och
+// runda skålar på tre trådar, i brons. n vikter (högst 5, staplade tre, två och en) i skålen på sidan sida; balken tippar mer
+// ju fler de är. Vikterna är gråblå (skiffer). Vågen är låg: 64 × 30 punkter
+const VAG_W = 64, VAG_H = 30, VAG_L = 24, VAG_TIPP = 1.6, VAG_RADER = [3, 2, 1];
+const VAGAR = new Map<string, string>();
+export function vagSvg(n: number, sida: -1 | 1, skala = 2) {
+  const k = `${n}:${sida}:${skala}`, hit = VAGAR.get(k);
+  if (hit) return hit;
+  const g: string[] = Array(VAG_W * VAG_H).fill('');
+  const satt = (x: number, y: number, c: string) => { x = Math.round(x); y = Math.round(y); if (x >= 0 && y >= 0 && x < VAG_W && y < VAG_H) g[y * VAG_W + x] = c; };
+  const linje = (x0: number, y0: number, x1: number, y1: number, c: string) => {
+    const st = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1);
+    for (let i = 0; i <= st; i++) satt(x0 + (x1 - x0) * i / st, y0 + (y1 - y0) * i / st, c);
+  };
+  const cx = VAG_W / 2, py = 9, lut = sida * Math.min(5, n) * VAG_TIPP / VAG_L; // lutningen: positiv när höger sida sjunker
+  const morkt = farg('senap', 0), brons = farg('senap', 2), ljust = farg('senap', 3);
+  // ringen och gaffeln, som hänger stilla
+  for (const [x, y] of [[-1, 0], [0, 0], [1, 0], [-2, 1], [2, 1], [-1, 2], [1, 2]]) satt(cx + x, y, morkt);
+  linje(cx - 3, 3, cx + 3, 3, brons); linje(cx - 3, 4, cx - 3, 8, brons); linje(cx + 3, 4, cx + 3, 8, brons);
+  // visaren, vinkelrätt mot balken
+  for (let t = 1; t <= 5; t++) satt(cx + lut * t, py - t, morkt);
+  // balken, två punkter tjock
+  for (let x = -VAG_L; x <= VAG_L; x++) { satt(cx + x, py + lut * x, ljust); satt(cx + x, py + lut * x + 1, brons); }
+  satt(cx, py, morkt);
+  // skålarna på tre trådar, och vikterna i den tunga
+  for (const s of [-1, 1] as const) {
+    const ex = cx + s * VAG_L, ey = py + lut * s * VAG_L, ry = ey + 10;
+    linje(ex, ey + 1, ex - 7, ry, morkt); linje(ex, ey + 1, ex, ry, morkt); linje(ex, ey + 1, ex + 7, ry, morkt);
+    for (let x = -8; x <= 8; x++) satt(ex + x, ry, ljust);
+    for (let x = -7; x <= 7; x++) satt(ex + x, ry + 1, brons);
+    for (let x = -5; x <= 5; x++) satt(ex + x, ry + 2, morkt);
+    if (s !== sida || n <= 0) continue;
+    let kvar = Math.min(5, n);
+    VAG_RADER.forEach((r, i) => {
+      const m = Math.min(r, kvar); kvar -= m;
+      for (let j = 0; j < m; j++) {
+        const x0 = ex - (m * 5 - 1) / 2 + j * 5, y0 = ry - 3 - i * 3;
+        for (let dx = 0; dx < 4; dx++) { satt(x0 + dx, y0, farg('skiffer', 3)); satt(x0 + dx, y0 + 1, farg('skiffer', 2)); satt(x0 + dx, y0 + 2, farg('skiffer', 1)); }
+      }
+    });
+  }
+  const u = svg(VAG_W, VAG_H, rutor(VAG_W, VAG_H, (x, y) => g[y * VAG_W + x]), 'vagbild', skala, ' aria-hidden="true"');
+  VAGAR.set(k, u);
+  return u;
+}
