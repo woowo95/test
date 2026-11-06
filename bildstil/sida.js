@@ -972,19 +972,16 @@ const VAL = [
 // behålls) och steget där de byggs in. När saken är inbyggd tas raden bort här och ur VAL, och dess dokument i samlingen 'val'
 const BESLUT = {
   f6_agg: { val: 3, steg: '6.5.1.3' },
-  f6_radjursskinn: { val: 1, steg: '6.5.1.2' }, f6_bjornskinn: { val: 1, steg: '6.5.3.3' },
+  f6_bjornskinn: { val: 1, steg: '6.5.3.3' },
   f6_fagel: { val: 2, steg: '6.5.1.3' }, f6_fjadrar: { val: 2, steg: '6.5.1.3' },
   f6_fagel_falld: { val: 1, text: 'Byggs in i steg 6.5.1.3, ritad om i de tre fåglarnas egna former och färger från fåglarna du valde (version 2).' },
-  f6_radjur: { val: 1, text: 'Hinden (1) och bocken (2) används båda, i färgerna från version 3 (gråbrun päls). Byggs in i steg 6.5.1.2.' },
   f6_bjorn: { val: 1, text: 'Björns egen ritning (1) är björnen som den står och går; när den anfaller öppnar den munnen (2). Byggs in i steg 6.5.3.' },
-  f6_radjur_fallt: { val: 2, steg: '6.5.1.2' },
   f6_bjornunge: { val: 1, steg: '6.5.3.2' },
   f7_stockvag: { val: 2, steg: '7.2.8.1' }, f7_brygga: { val: 2, steg: '7.2.3' },
   f6_bjorn_hall: { val: 1, text: 'Din ritning: björnen från sidan, framifrån och bakifrån, utan den öppna munnen. Byggs in i steg 6.5.3.' },
   f6_bjornunge_hall: { val: 1, text: 'Din ritning: björnungen från sidan, framifrån och bakifrån. Byggs in i steg 6.5.3.2.' },
   f6_bjorn_falld: { val: 2, steg: '6.5.3' },
   f6_fagel_hall: { val: 1, text: 'Ripan och skogsduvan från tre håll. Orren används bara från ett håll i spelet: den ritas bara från sidan (du sa nej till den omritade orren framifrån och bakifrån). Byggs in i steg 6.5.1.3.' },
-  f6_radjur_hall: { val: 1, text: 'Din ritning: hinden och bocken från sidan, framifrån och bakifrån (version 1 med dina ändringar). Byggs in i steg 6.5.1.2.' },
   f6_tornado_storlek: { val: 1, steg: '6.3.5.8' },
   f6_rovare: { val: 1, text: 'Alla tre används: rövarluvan, rövarens duk, det mörka slitna skinnet och vargskinnet. Delarna är märkta rövare: byborna kan inte tillverka dem, men varje rövare har en chans att bära dem. Byggs in i steg 6.6.12.' },
 };

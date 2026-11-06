@@ -564,11 +564,6 @@
   VAL.push(
     KORT('f6_strak', 'Gångstråken i testläget', S + '6.2.5: i testläget syns gångstråken, vägarna från dörrarna till elden, lagren, latrinen och vattnet där inget får byggas, som en tunn linje genom rutornas mitt, och rutan framför dörren som en liten ruta. Stugan och elden är bara för att visa platsen.', [
       STRAK('En tunn gul linje och en fylld gul ruta framför dörren.', 0), STRAK('Korta röda streck och en prickig ruta framför dörren.', 1), STRAK('Två ljusa kanter, som en väg, och en ljus ram framför dörren.', 2)]),
-    KORT('f6_radjur', 'Rådjuret', S + '6.5.1.2 (ditt beslut väntar, steget är ett förslag): rådjuret på kartan, sett från sidan, med den vita spegeln bak. Ritat efter din förebild: formen ur din bild, nerskalad till vår täthet (16 punkter per ruta) och i vår palett, med den mörka konturen. Din kommentar förra gången: ”jag kan inte se några horn är djuret avklippt?”, och sedan din förebild.', RAD_UTSEENDE.map(u => PA_MARK(u.text, u.r, u.L))),
-    KORT('f6_radjur_fallt', 'Fällt rådjur', S + '6.5.1.2: det fällda rådjuret som bärs hem eller styckas. Omritat helt ur den levande hinden: samma kropp och samma huvud, oförändrade, men djuret ligger ner med huvudet på marken, en kort hals, öronen bakåt och ögat slutet. Din kommentar förra gången: ”halsen sen väldigt konstig ut gör om hela med det levande djuret som förlaga”.', [
-      PA_MARK('På sidan med benen utsträckta.', MED_KONTUR(RAD_FALLT[0]), RAD_FARG), PA_MARK('På sidan med benen hopvikta.', MED_KONTUR(RAD_FALLT[1]), RAD_FARG), PA_MARK('Med benen bundna ihop med rep, klart att bäras.', MED_KONTUR(RAD_FALLT[2]), RAD_FARG)]),
-    KORT('f6_radjursskinn', 'Rådjursskinn', S + '6.5.1.2: skinnet från slakten.', [
-      PA_MARK('Utbrett, med en ljus fläck där spegeln satt.', RADSKINN[0], RADSKINN_L), PA_MARK('Hoprullat och knutet.', RADSKINN[1], RADSKINN_L), PA_MARK('Hopvikt.', RADSKINN[2], RADSKINN_L)]),
     KORT('f6_fagel', 'Fåglarna', S + '6.5.1.3: tre fåglar som skiljer sig i storlek och form: orren stor och svart med lyrformad stjärt, ripan rund och vit med fjäderklädda fötter, skogsduvan liten och smal. Version 1 är den du ville behålla; 2 och 3 är andra utseenden av samma tre. Din kommentar förra gången: ”Jag vill se olika versioner av djuren inte olika positioner. Behåll version 1 och gör två nya”.', [
       FAGEL_UT(0), FAGEL_UT(1), FAGEL_UT(2)]),
     KORT('f6_fagel_falld', 'Fälld fågel', S + '6.5.1.3: den fällda fågeln, i samma tre färger.', [
@@ -719,10 +714,6 @@
     } };
 
   VAL.push(
-    KORT('f6_radjur_hall', 'Rådjuret från tre håll', S + '6.5.1.2: rådjuret framifrån och bakifrån, ritat helt från början och bara utifrån bilden från sidan: samma färger, lika högt, ett huvud på sju rader, en kort hals med den ljusa strupen, fyra smala ben och bakifrån den vita spegeln. Hinden och sedan bocken med hornen. Din kommentar förra gången: ”rita tre helt nya versioner som bara är baserade på den från sidan och inte det du ritade nu”.', [
-      RADJUR_HALL('A', 'Version 1: rakt framifrån, öronen snett uppåt och utåt.'),
-      RADJUR_HALL('B', 'Version 2: ett smalare huvud med stora öron som ett V.'),
-      RADJUR_HALL('C', 'Version 3: öronen nästan vågräta, en bredare bringa och den ljusa buken.')]),
     { id: 'f6_fagel_hall', namn: 'Fåglarna från tre håll', typ: 'janej', vad: S + '6.5.1.3: ripan och skogsduvan framifrån och bakifrån, i utseendet du valde (version 2).', versioner: [FAGEL_HALL] },
     { id: 'f6_bjorn_hall', namn: 'Björnen från tre håll', typ: 'janej', vad: S + '6.5.3: din björn framifrån och bakifrån, lika stor som sidobilden och i dina färger, och framifrån med munnen öppen när den anfaller.', versioner: [BJORN_HALL] },
     { id: 'f6_bjornunge_hall', namn: 'Björnungen från tre håll', typ: 'janej', vad: S + '6.5.3.2: björnungen du valde, framifrån och bakifrån.', versioner: [UNGE_HALL] },
