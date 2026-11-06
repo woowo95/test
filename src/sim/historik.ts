@@ -37,12 +37,6 @@ const histOf = (s: State) => (s.hist ??= ny());
 // slag: vad raden handlar om (mallens id i BERATTELSER, steg 3.9.3), så att den kan hittas utan att läsa texten
 // Raden läggs i tidsordning: i ett steg räknar var och en sin egen tid (taskStep i steg.ts), så den som skrivs sist kan ha
 // hänt lite tidigare. Då blir krönikan likadan när delarna läses in igen (joinHist sorterar på tiden)
-// de senaste raderna i krönikan med slaget (mallen), nyast sist (textminnet, steg 6.7.3)
-export function senasteKronika(s: State, slag: string, n: number) {
-  const k = s.hist?.kronika ?? [], ut: string[] = [];
-  for (let i = k.length - 1; i >= 0 && ut.length < n; i--) if (k[i][2] === slag) ut.unshift(k[i][1]);
-  return ut;
-}
 export function kronika(s: State, text: string, slag?: string) {
   const k = histOf(s).kronika, t = Math.round(s.now);
   let i = k.length;

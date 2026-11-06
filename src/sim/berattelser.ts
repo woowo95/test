@@ -2,7 +2,7 @@ import { balans } from './balans';
 import { ALDER, KROPP, REL, ageOf, alive, byId, count, isKin, isParent, living, log, namnSlut, relKey } from './folk';
 import { ACTS, Act, slagIkon } from './handlingar';
 import { TAGS } from './seder';
-import { kronika, senasteKronika } from './historik';
+import { kronika } from './historik';
 import { Bevis, HANDELSER, INTRYCK, IntryckTyp, bevisText, intryckOm, intryckText, samlatIntryck } from './rykten';
 import { SAKER, sakNamn } from './saker';
 import { moodOf } from './humor';
@@ -2378,9 +2378,10 @@ export function kronikaBer(s: State, mall: MallId, nyckel: number, f: Fyllning) 
   const v = vaderNu(s);
   const g: Fyllning = { arstid: ARSTIDER[kalender(s).ai], kallt: temperature(s) < 0, sno: v.sno, regn: v.lage === 'regn', blast: v.lage === 'blast', natt: !isLight(s.now), ...f };
   // varianten väljs ur nyckeln och timmen; en som börjar som någon av de tre senaste raderna med samma mall hoppas över
-  // (textminnet, steg 6.7.3, m_upprepning). Krönikan läses bara här, för texten; simuleringen läser den inte
-  const forra = senasteKronika(s, mall, 3).map(x => tre(x));
+  // (textminnet, steg 6.7.3, m_upprepning). Minnet ligger utanför historiken, så att byn blir likadan utan den
+  const tm = (s.textminne ??= {}), forra = (tm[mall] ??= []);
   const text = fyll(valjVariant(s, mall, nyckel, g, undefined, x => forra.includes(tre(x))), g);
+  forra.push(tre(text)); if (forra.length > 3) forra.shift();
   kronika(s, text, mall);
   return text;
 }

@@ -207,7 +207,7 @@ SCENARIER.forlust = {
     return [
       ['teknikträdet varnar när bara mästaren kan det', varning],
       [`lärlingen ${l.name} har det hen lärt sig kvar som ett halvminne`, !!halv && info.includes('halvminne')],
-      [`krönikan: "${rad}"`, rad.startsWith(`Med ${m.name} dog konsten att göra skinnkläder`) && rad.includes(l.name)],
+      [`krönikan: "${rad}"`, rad.includes(m.name) && /dog konsten/.test(rad) && rad.includes(l.name)],
     ];
   },
 };

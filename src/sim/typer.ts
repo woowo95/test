@@ -262,6 +262,7 @@ export interface State {
   seed: number; founded: number; now: number;
   rngs?: Record<string, number>; // var i sin slumpföljd varje system är (slump.ts)
   hist?: Historik; // byns historik: nyckeltal och krönika (historik.ts)
+  textminne?: Record<string, string[]>; // textminnet (steg 6.7.3): början på de tre senaste krönikaraderna per mall, utan historiken
   notiser?: import('./notiser').Notiser; // notiserna som spelaren inte tagit bort (notiser.ts, steg 5.4.3)
   W?: number; H?: number; // kartans storlek (saknas i de äldsta byarna: 64×40)
   kart?: Kart; // var den gamla kartan ligger i en äldre by som fått den stora kartan (steg 2.10.9, kartflytt.ts)

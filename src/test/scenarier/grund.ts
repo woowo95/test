@@ -2267,12 +2267,12 @@ SCENARIER.bjornjakt = {
       return { s, jagare, b };
     };
     const fa = by(3, 0);
-    let jakter = 0, strider = 0, falld = 0, borta = 0, dodare = 0, delar = 0, skinn = 0, gick = 0, maxJ = 0;
+    let jakter = 0, strider = 0, falld = 0, borta = 0, dodare = 0, delar = 0, skinn = 0, gick = 0, nadd = 0, maxJ = 0;
     for (let f = 0; f < 10; f++) {
       const { s, jagare } = by(6, f);
       if (!jagare) continue;
       jakter++; maxJ = Math.max(maxJ, jagare);
-      strider += s.stat?.bjornstrid ? 1 : 0; gick += s.stat?.bjornjaktGick ? 1 : 0;
+      strider += s.stat?.bjornstrid ? 1 : 0; gick += s.stat?.bjornjaktGick ? 1 : 0; nadd += s.stat?.bjornstrid || s.stat?.bjornjaktGick ? 1 : 0;
       if (s.bjornFalld !== undefined) {
         falld++;
         if (!SIM.bjornarOf(s).length && !SIM.bjornarOf(s, s.now + 30 * HOUR * 0 + 2 * HOUR).length) borta++;
@@ -2286,7 +2286,7 @@ SCENARIER.bjornjakt = {
       [`med för få spjut går ingen på björnjakt (${fa.jagare} jägare)`, fa.jagare === 0],
       [`med sex spjut kallar byn till björnjakt (${jakter} av 10)`, jakter >= 8],
       [`en stor grupp följer med (högst ${maxJ})`, maxJ >= SIM.BJORNJAKT.spjut],
-      [`jägarna når björnen och slåss, eller den går undan (${strider} strider, ${gick} gick undan)`, strider + gick === jakter && strider > 0],
+      [`jägarna når björnen och slåss, eller den går undan (${strider} strider, ${gick} gick undan, en björn kan först slåss och sedan gå undan)`, nadd === jakter && strider > 0],
       [`björnen fälls ibland (${falld} av ${strider})`, falld > 0],
       [`en fälld björn är borta resten av året (${borta} av ${falld})`, borta === falld],
       [`den som fällde den är björndödare (${dodare} av ${falld})`, dodare === falld],
