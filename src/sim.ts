@@ -22,6 +22,7 @@ export * from './sim/ekonomi';
 export * from './sim/eld';
 export * from './sim/ljus';
 export * from './sim/skogsvard';
+export * from './sim/buskar';
 export * from './sim/eldflytt';
 export * from './sim/seder';
 export * from './sim/relationer';

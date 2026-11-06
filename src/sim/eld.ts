@@ -14,7 +14,8 @@ import { halsa } from './halsa';
 import { flintFactor, flintorOchYxor, stoneDist, takeFrom } from './fynd';
 import { observe } from './minne';
 import { eldPlats } from './karta';
-import { tileOf } from './mark';
+import { groundOf, tileOf } from './mark';
+import { grenFaktor } from './buskar';
 import { moodOf } from './humor';
 import { duty } from './seder';
 import { kunnighet } from './ekonomi';
@@ -385,7 +386,7 @@ export function forageItems(s: State, p: Person, dtSec: number, fart = 1): Recor
   // under bufferten plockas materialet, och den som hämtar det plockar till taket men aldrig över (FORRADSMAL, steg 6.2.14)
   const plocka = (k: Materialslag) => !overTak(s, k, p.task?.items?.[k] ?? 0) && (underBuffert(s, k, p.task?.items?.[k] ?? 0) || p.task?.hamtar === k);
   if (plocka('torrgras')) got.torrgras = ELD.hoTakt * ARSTID.hoPerTid[ai] * sk * vaxer;
-  if (plocka('grenar')) got.grenar = ELD.grenarTakt * (iIstiden(ai) ? ARSTID.grenarIstid : 1) * sk * vaxer;
+  if (plocka('grenar')) got.grenar = ELD.grenarTakt * (iIstiden(ai) ? ARSTID.grenarIstid : 1) * sk * vaxer * (p.task ? grenFaktor(groundOf(s), tileOf(p.task.tx, p.task.ty)) : 1); // fler vid buskarna (steg 6.5.3)
   // stenar till eldringen: många vid stenarna, några i sanden, få annars
   if (needStones(s) || plocka('sten')) {
     const d = p.task ? stoneDist(s.seed)[tileOf(p.task.tx, p.task.ty)] : 9;

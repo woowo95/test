@@ -1,3 +1,4 @@
+import { tabortBuske } from './buskar';
 import { OMRADE_DELAR, bynsMitt, iByn, omrade, utanforByn } from './omrade';
 import { ALDER, ageOf, alive, count, familjOf, forstaGang, living, log } from './folk';
 import { FYND, richness, takeFrom } from './fynd';
@@ -358,7 +359,7 @@ export function workOdla(s: State, p: Person, tk: Task, dtSec: number) {
 // en ruta är klar i steget
 function rutaKlar(s: State, p: Person, f: Falt) {
   const nu = Math.round(s.now); (f.skott ??= [])[f.klara] = nu; if (f.steg === 'bereda') (f.bered ??= [])[f.klara] = nu;
-  if (f.steg === 'roja') { const i = faltRuta(f, f.klara), g = groundOf(s); g.trees[i] = 0; g.cover[i] = 0; } // gräs, buskar och ungskog är borta
+  if (f.steg === 'roja') { const i = faltRuta(f, f.klara), g = groundOf(s); g.trees[i] = 0; g.cover[i] = 0; tabortBuske(g, i); } // gräs, buskar och ungskog är borta
   else if (f.steg === 'bereda') { if (freeTools(s, p, 'benspade') && wearTool(s, p, 'benspade', ODLING.spadeSlit)) { const tr = SAKER.benspade?.trasig; if (tr) count(s, tr.stat); } }
   else if (f.steg === 'sa') { takeMaterial(s, p, GRODOR[f.groda!].fro, ODLING.froPerRuta); count(s, 'fronSadda', ODLING.froPerRuta); } // fröna som såtts (scenariot falt)
   else if (f.steg === 'mogen') {

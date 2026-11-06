@@ -823,7 +823,7 @@ export function kastat(s: State, p: Person, v: string, d: number, x: number, y: 
   const kv = VAP[v]?.kast;
   if (!kv || !toolsOf(s, v).length) return undefined; // stenarna är inga ting
   const i = tileOf(x, y), ms = markslag(groundOf(s), i);
-  const f = (ms === 'hog' ? KAST.hog : ms === 'skog' || ms === 'ung' ? KAST.skog : 1) * (1 + KAST.sno * snoPaMarken(s))
+  const f = (ms === 'hog' ? KAST.hog : ms === 'skog' || ms === 'ung' || ms === 'buske' ? KAST.skog : 1) * (1 + KAST.sno * snoPaMarken(s))
     * (getMap(s.seed).tiles[i] === T.Vatten ? KAST.vatten : 1) * (1 + KAST.langt * d / kv.rack);
   if (r() < KAST.borta * f) { wearTool(s, p, v, Infinity); count(s, 'kastBorta'); return 'borta'; }
   return wearTool(s, p, v, r() * KAST.slit) ? 'trasig' : undefined;

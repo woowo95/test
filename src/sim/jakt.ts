@@ -88,7 +88,7 @@ const skramd = (s: State, g: number) => !!s.djurSkramd?.some(x => x.g === g && s
 function skram(s: State, g: number) {
   s.djurSkramd = [...(s.djurSkramd ?? []).filter(x => x.g !== g && s.now - x.t < JAKT.skramdTim * HOUR), { g, t: s.now }];
 }
-const TERR = { hog: JAKT.hog, ung: JAKT.ung, skog: JAKT.skog, kort: 1, bar: JAKT.bar };
+const TERR = { hog: JAKT.hog, ung: JAKT.ung, buske: JAKT.ung, skog: JAKT.skog, kort: 1, bar: JAKT.bar };
 
 // var jägaren letar när hen inte ser några kaniner (steg 3.10.3): den ruta letaMin–letaMax rutor bort där viltkartan (som
 // kaningrupperna väljer plats efter, fynd.ts) är högst, med lite slump, inte i vattnet, i husen eller för långt från byn.

@@ -1,3 +1,4 @@
+import { tabortBuske } from './buskar';
 import { freeTools, tingOf } from './agande';
 import { balans } from './balans';
 import { brasorOf } from './brasor';
@@ -68,7 +69,7 @@ export const BRAND = balans('brand', {
   // det som kan brinna: [antändning 0 till 1, timmar det brinner, hur lätt det släcks]. Högt gräs brinner snabbast, kort gräs
   // medel, skogen och det som är av trä lite långsammare (steg 6.4.1). Det sista talet gångrar händerna och vattensäcken: kort
   // gräs väldigt lätt, högt gräs lätt, skog och trä väldigt svårt, så en brand som vuxit in i skogen är svår att släcka (steg 6.4.2)
-  skog: [0.2, 3, 0.3], ung: [0.3, 1, 0.6], hog: [1, 0.5, 2], kort: [0.4, 0.3, 4], groda: [0.5, 0.5, 2], vagg: [0.25, 2, 0.3], sak: [0.35, 1, 1],
+  skog: [0.2, 3, 0.3], ung: [0.3, 1, 0.6], buske: [1, 1, 1.2], hog: [1, 0.5, 2], kort: [0.4, 0.3, 4], groda: [0.5, 0.5, 2], vagg: [0.25, 2, 0.3], sak: [0.35, 1, 1],
   aska: 0.32, // gräset på en ruta som brunnit (0 till 1; just över bar jord, så att det inte blir en stig)
   trad: 0.5, // träden dör när så här stor del av rutan har brunnit
   vaggSkick: 1.2, // en vägg tappar så här mycket av sitt skick gånger andelen som brunnit
@@ -325,6 +326,7 @@ function slocknar(s: State, b: Brand) {
     // marken: gräset blir aska, och träden dör (där det var skog kommer en planta, som växer upp när gräset är tillbaka)
     if (isSoil(g.tiles[i]) && !g.built?.[i]) {
       if (g.cover[i] > BRAND.aska) g.cover[i] -= a * (g.cover[i] - BRAND.aska);
+      if (a >= BRAND.trad) tabortBuske(g, i); // busken brinner upp (steg 6.5.3)
       if (g.trees[i] > 0 && a >= BRAND.trad) {
         if (g.trees[i] >= VAG.ungskog) { b.trad++; count(s, 'brand trad'); }
         g.trees[i] = g.trees[i] >= FOREST ? MARK.nyPlanta : 0;

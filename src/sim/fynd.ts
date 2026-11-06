@@ -108,17 +108,18 @@ const SVAMP_SEASON = [0, 0.15, 0.8, 1.5];
 const SVAMP_UTTAG: Uttag = { full: 2.5, reach: 1, regrow: [1 / 1200, 1 / 450, 1 / 120, 1 / 120] };
 const land = (s: State, i: number) => isSoil(groundOf(s).tiles[i]);
 // hur väl varje slags mark passar lagret (gånger resten av värdet)
-const BAR_PASSAR: Record<Markslag, number> = { skog: 0.8, ung: 1, hog: 1, kort: 0, bar: 0 };
-const JAKT_PASSAR: Record<Markslag, number> = { skog: 0.85, ung: 0.9, hog: 1, kort: 1, bar: 0.3 };
+const BAR_PASSAR: Record<Markslag, number> = { skog: 0.8, ung: 1, buske: 1, hog: 1, kort: 0, bar: 0 };
+const JAKT_PASSAR: Record<Markslag, number> = { skog: 0.85, ung: 0.9, buske: 1.25, hog: 1, // kaninerna trivs bäst i buskarna (steg 6.5.3)
+  kort: 1, bar: 0.3 };
 // kaninernas värde på rutan i: marken g, skygghet sky (0 nära folk, 1 långt bort) och mönstret m
 const jaktBas = (g: Ground, sky: ArrayLike<number>, i: number, m: number) => isSoil(g.tiles[i]) ? JAKT_PASSAR[markslag(g, i)] * (0.15 + 1.3 * m) * FANGST.jaktFaktor * sky[i] : 0;
 // skogsbrynet: en ruta med gräs eller ungskog intill skogen (de fyra grannarna)
-const BRYN = new Set<Markslag>(['ung', 'hog', 'kort']);
+const BRYN = new Set<Markslag>(['ung', 'buske', 'hog', 'kort']);
 const intillSkog = (g: Ground, i: number) => {
   const x = i % W;
   return (x > 0 && g.trees[i - 1] >= FOREST) || (x < W - 1 && g.trees[i + 1] >= FOREST) || (i >= W && g.trees[i - W] >= FOREST) || (i + W < W * H && g.trees[i + W] >= FOREST);
 };
-const ROTTER_PASSAR: Record<Markslag, number> = { skog: 0.5, ung: 0.5, hog: 0.5, kort: 0.4, bar: 0.1 };
+const ROTTER_PASSAR: Record<Markslag, number> = { skog: 0.5, ung: 0.5, buske: 0.5, hog: 0.5, kort: 0.4, bar: 0.1 };
 // Ordningen bland lagren med uttag är ordningen i sparfilen: nya lager med uttag läggs sist.
 const DEF = {
   // bärbuskar i små täta snår i skog och högt gräs; de flyttar sig mycket långsamt. Inga bär i istiden.

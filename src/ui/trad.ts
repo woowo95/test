@@ -11,6 +11,7 @@ import * as PIXI from 'pixi.js';
 import { FARGER, kornPa } from '../palett';
 import { brus as vn, platsHash as hash } from './pixel';
 import { fotSkugga, skuggTrad } from './skugga';
+import { buskPx } from './buske';
 
 const KOL = 0, JORD = 4, BARR = 20, BEN = 28;
 const RGBA = FARGER.map(h => parseInt(h.slice(1), 16));
@@ -180,8 +181,10 @@ const bjorkPx = (h: number, lov: Lov, sno: number, s: number) => {
 const torrBjorkPx = (h: number, sno: number) => { const M = torrBjorkM(h); return iBild(sno > 0 ? snoPa(M, sno) : M); };
 
 // bjork: björken i stället för granen (steg 5.1.6); lov: björkens löv nu (steg 5.1.13, sommar om inget anges)
-export type TradBild = { typ: 'gran' | 'torr'; h: number; s: number; mork?: boolean; bjork?: boolean; lov?: Lov };
+// typ 'buske': en buske (steg 6.5.3, ui/buske.ts), s = vilken av de tre formerna
+export type TradBild = { typ: 'gran' | 'torr' | 'buske'; h: number; s: number; mork?: boolean; bjork?: boolean; lov?: Lov };
 function tradPx(b: TradBild, sno: number): { w: number; h: number; px: Int8Array; fot?: number } {
+  if (b.typ === 'buske') return buskPx(b.s);
   if (b.bjork) {
     const p = b.typ === 'torr' ? torrBjorkPx(b.h, sno) : bjorkPx(b.h, b.lov ?? 'sommar', sno, b.s);
     if (b.mork) for (let i = 0; i < p.px.length; i++) if (p.px[i] > 16 && p.px[i] < 20) p.px[i]--; // den gamla björken är mörkare
@@ -205,7 +208,7 @@ const bilder = new Map<string, { t: PIXI.Texture; fot: number }>();
 // snön syns på granen, på den torra björken och på den kala björken; löven bara på den levande björken
 function nyckel(b: TradBild, sno: number) {
   const lov = b.bjork && b.typ !== 'torr' ? b.lov ?? 'sommar' : '';
-  const sn = (b.typ === 'torr' && !b.bjork) || (lov && lov !== 'kal') ? 0 : sno;
+  const sn = (b.typ === 'torr' && !b.bjork) || b.typ === 'buske' || (lov && lov !== 'kal') ? 0 : sno;
   return `${b.bjork ? 'b' : ''}${b.typ}|${b.h}|${b.s}|${b.mork ? 1 : 0}|${sn}|${lov}`;
 }
 function tradTex(b: TradBild, sno: number) {
@@ -300,7 +303,7 @@ export function tradSkuggor(lang = 1) {
   const fasta = skuggTrad();
   fasta.clear().beginFill(0xffffff);
   for (const { b, x, y } of sprites.values()) {
-    const w = Math.max(1, Math.round(b.h * (b.typ === 'torr' && !b.bjork ? 0.2 : b.bjork ? 0.3 : 0.28)));
+    const w = b.typ === 'buske' ? 6 : Math.max(1, Math.round(b.h * (b.typ === 'torr' && !b.bjork ? 0.2 : b.bjork ? 0.3 : 0.28)));
     fotSkugga(fasta, x, y, w, b.h < 8 ? 2 : 5, lang);
   }
   fasta.endFill();

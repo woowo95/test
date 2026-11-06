@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { BJORK, BRAND, DAY, H, HOUR, STADIER, T, VAG, W, tradArt, valjArt, ageIndex, stadium, emberOn, fireHeat, eldXY, eldarOf, groundOf, isCm, kalender, lightLevel, snoPaMarken, vaderNu, LJUSKALLOR } from '../sim';
+import { BJORK, BRAND, busksort, DAY, H, HOUR, STADIER, T, VAG, W, tradArt, valjArt, ageIndex, stadium, emberOn, fireHeat, eldXY, eldarOf, groundOf, isCm, kalender, lightLevel, snoPaMarken, vaderNu, LJUSKALLOR } from '../sim';
 import { s, ui } from './lage';
 import { TS, app, figurLayer, husLayer, mork, pileLayer, terrainG, world } from './scen';
 import { ritaSkuggor, sattMoln, skuggLangd } from './skugga';
@@ -9,6 +9,7 @@ import { DJUPNATT } from '../palett';
 import { animMark, markytaLayer, ritaMark, stallMark } from './mark';
 import { animBild } from './animation';
 import { type Lov, stallTrad, tradBild, tradSkuggor } from './trad';
+import { buskBild } from './buske';
 
 // marken (steg 5.1.3.1): gräs, vatten, strand, stigar, sten, lera, aska och snö ritas i pixlar i ui/mark.ts. Här bestäms
 // när: hela marken när tidsåldern, isen, vattnet eller byn byts, annars bara de rutor som ändrats (stigarna, skogen, askan).
@@ -39,7 +40,7 @@ export const OMRITA_MS = 1000;
 const STAD = Object.fromEntries(STADIER.map((d, k) => [d.id, k]));
 function treeLevel(g: ReturnType<typeof groundOf>, i: number) {
   const st = stadium(g, i);
-  return st === null ? 0 : st === 'planta' || st === 'ungtrad' ? 1 + STAD[st] * 4 + Math.floor(g.trees[i] * 4) : 9 + STAD[st];
+  return st === null ? (busksort(g, i) ? 20 : 0) : st === 'planta' || st === 'ungtrad' ? 1 + STAD[st] * 4 + Math.floor(g.trees[i] * 4) : 9 + STAD[st];
 }
 function coverSig() {
   const g = groundOf(s); let h = 0;
@@ -85,6 +86,7 @@ function ritaTrad(g: ReturnType<typeof groundOf>, sno: number) {
   stallTrad(figurLayer, W, H, i => {
     const x = i % W, y = (i / W) | 0, st = jord(g.tiles[i]) ? stadium(g, i) : null;
     const b = st ? tradBild(st, g.trees[i], x, y, VAG.ungskog, tradArt(g, i).id === 'bjork')
+      : jord(g.tiles[i]) && busksort(g, i) ? buskBild(x, y) // busken (steg 6.5.3), en av tre former efter rutan
       // ett ungt träd i skogskanten, med den sort som skulle slå rot där (steg 5.1.6)
       : kant(i) && kantHash(x, y) < 0.3 ? tradBild('ungtrad', VAG.ungskog + (1 - VAG.ungskog) * kantHash(y, x) * 0.7, x, y, VAG.ungskog, valjArt(s.seed, g, i, true) === BJORK) : null;
     if (b?.bjork) b.lov = lovAt(x, y);

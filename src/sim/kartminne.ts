@@ -25,7 +25,7 @@ export const KARTRUTA: { k: string; id: string; namn: string }[] = [
   { k: 't', id: 'station', namn: 'Bänkar och ställningar' },
   { k: 'e', id: 'eld', namn: 'Elden' },
 ];
-const MARK_K: Record<string, string> = { skog: 's', ung: 'u', hog: 'h', kort: 'k', bar: 'b' };
+const MARK_K: Record<string, string> = { skog: 's', ung: 'u', buske: 'u', hog: 'h', kort: 'k', bar: 'b' };
 const TILE_K: Partial<Record<T, string>> = { [T.Vatten]: 'v', [T.Sand]: 'a', [T.Sten]: 'n', [T.Lera]: 'l' };
 
 // kartan just nu, en bokstav per ruta (rad för rad)

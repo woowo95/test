@@ -1836,3 +1836,47 @@ SCENARIER.skogsvard = {
     ];
   },
 };
+
+SCENARIER.buskar = {
+  text: 'Steg 6.5.3: buskarna. Högt gräs som ingen gått på på tio dygn kan bli en buske, oftast där få stora träd står runt. En buske är tung att gå igenom, ger grenar, brinner lätt, försvinner där något byggs och sparas med byn',
+  kor: () => {
+    const s = createState(3, START), g = groundOf(s);
+    // den öppna marken utanför byn: helt uppvuxet gräs, och ingen går där (bara marken växer, ingen tar steg)
+    const oppen: number[] = [];
+    for (let i = 0; i < W * W; i++) if (isSoil(g.tiles[i]) && g.trees[i] === 0 && SIM.utanforByn(s, i % W, Math.floor(i / W)) >= 6) { g.cover[i] = 1; oppen.push(i); }
+    const trampad = oppen.filter((_, k) => k % 7 === 0), tramp = new Set(trampad);
+    const fore = SIM.antalBuskar(g);
+    let forsta = Infinity;
+    for (let h = 0; h < 40 * 24; h++) {
+      s.now += HOUR;
+      for (const i of trampad) g.cover[i] = 0.97; // någon går här varje timme
+      growGround(s, 1, 2);
+      if (forsta === Infinity && SIM.antalBuskar(g) > 0) forsta = h;
+    }
+    const buskar = oppen.filter(i => SIM.arBuske(g, i)), iTramp = buskar.filter(i => tramp.has(i)).length;
+    const glest = oppen.filter(i => !tramp.has(i) && SIM.trangsel(g, i) === 0), trangt = oppen.filter(i => !tramp.has(i) && SIM.trangsel(g, i) >= 3);
+    const andel = (l: number[]) => l.length ? l.filter(i => SIM.arBuske(g, i)).length / l.length : 0;
+    const b = buskar[0] ?? -1;
+    const slag = b >= 0 ? SIM.markslag(g, b) : '', fart = b >= 0 ? SIM.markFart(g, b) : 0;
+    const gren = b >= 0 ? SIM.grenFaktor(g, b) : 0, grenUtan = SIM.grenFaktor(g, glest.find(i => !SIM.arBuske(g, i) && SIM.grenFaktor(g, i) === 1) ?? 0);
+    // sparas med byn
+    const c = cloneState(s), lika = SIM.antalBuskar(groundOf(c)) === SIM.antalBuskar(g) && SIM.arBuske(groundOf(c), b);
+    // där något byggs försvinner busken
+    const fore2 = g.built; g.built = new Uint8Array(W * W); if (b >= 0) g.built[b] = 1;
+    growGround(s, 1, 2);
+    const bort = b >= 0 && !SIM.arBuske(g, b); g.built = fore2;
+    const pc = (v: number) => `${Math.round(v * 100)} %`;
+    return [
+      [`inga buskar när byn grundas (${fore})`, fore === 0],
+      [`den första busken kommer efter tio dygn utan steg (efter ${Math.floor(forsta / 24)} dygn)`, forsta >= SIM.ORORD && forsta < 40 * 24],
+      [`buskar på den öppna marken (${buskar.length} av ${oppen.length})`, buskar.length > oppen.length * 0.05],
+      [`ingen buske där någon går (${iTramp})`, iTramp === 0],
+      [`fler buskar där få stora träd står runt (${pc(andel(glest))} mot ${pc(andel(trangt))} bland ${trangt.length} trånga rutor)`, trangt.length < 10 || andel(glest) > andel(trangt)],
+      [`en buske är ett eget slags mark (${slag}) och lika tung att gå igenom som ungskog`, slag === 'buske' && Math.abs(fart - SIM.GANG.fartUng) < 1e-9],
+      [`den som samlar vid en buske hittar fler grenar (${gren} mot ${grenUtan})`, gren > 1 && grenUtan === 1],
+      ['en buske brinner lätt', SIM.BRAND.buske[0] >= SIM.BRAND.hog[0]],
+      ['buskarna sparas med byn', lika],
+      ['där något byggs försvinner busken', bort],
+    ];
+  },
+};

@@ -177,7 +177,7 @@ export function rad(r: Pick<Resultat, 'seed' | 'n'>) {
 // jordrutorna per markslag, delade som simuleringen delar dem (markslag i mark.ts): skog, ungskog, högt gräs, kort gräs och
 // bar jord. Bar jord är nött marktäcke utan ungskog, alltså stigarna
 export function markStat(s: State): Record<Markslag, number> {
-  const g = groundOf(s), n: Record<Markslag, number> = { skog: 0, ung: 0, hog: 0, kort: 0, bar: 0 };
+  const g = groundOf(s), n: Record<Markslag, number> = { skog: 0, ung: 0, buske: 0, hog: 0, kort: 0, bar: 0 };
   for (let i = 0; i < g.tiles.length; i++) if (isSoil(g.tiles[i])) n[markslag(g, i)]++;
   return n;
 }

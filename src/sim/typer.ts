@@ -279,6 +279,7 @@ export interface State {
   mark?: string; // markens grästäcke per ruta (stigar), packat
   skog?: string; // trädens tillväxt per ruta, packat
   tradSort?: string; // trädens sort per ruta (gran eller björk), packat (trad.ts, steg 5.1.6)
+  buskar?: string; // buskarna och hur länge gräset stått orört per ruta, packat (buskar.ts, steg 6.5.3)
   tradAlder?: string; // trädens ålder efter att de vuxit klart, dygn per ruta, packat (trad.ts, steg 5.1.4.2)
   stockar?: Stock[]; // fällda träd som ligger och väntar på att huggas
   lager?: { x: number; y: number; w: number; h: number }; // lagerplatsen, rutor

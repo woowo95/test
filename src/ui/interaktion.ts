@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { BAR, FALT_STEG, FOREST, GRODOR, isSoil, stadium, Falt, byId, faltAt, faltIndex, faltKlar, HIGH, MATERIAL, Person, T, W, bitAt, bynsMitt, condOf, dorrDef, emberOn, eldXY, eldarOf, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, tingOf, toaAt, tandTest, blixtTest, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, verbOf, zoneAt, zonesOf, Pile } from '../sim';
+import { BAR, busksort, FALT_STEG, FOREST, GRODOR, isSoil, stadium, Falt, byId, faltAt, faltIndex, faltKlar, HIGH, MATERIAL, Person, T, W, bitAt, bynsMitt, condOf, dorrDef, emberOn, eldXY, eldarOf, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, tingOf, toaAt, tandTest, blixtTest, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, verbOf, zoneAt, zonesOf, Pile } from '../sim';
 import { gorText } from './jakt';
 import { iconImg, tecknet } from '../ikoner';
 import { $, esc, fmtN, prickar } from './hjalp';
@@ -59,6 +59,7 @@ app.stage.on('pointerupoutside', () => { drag = null; });
 // ett tryck väljer det som ligger överst: en person, ett djur, elden, en lagerplats, en station, en hög på marken, en toa-hög, ett fält, en stubbe, ett hus eller en sjö. Tom mark avmarkerar
 const stubbeAt = (x: number, y: number) => (s.stubbar ?? []).some(k => k.x === x && k.y === y);
 // ett träd på rutan (steg 5.1.4.3): en planta, ett ungträd, ett vuxet eller gammalt träd eller en torraka (sim/trad.ts)
+const buskeAt = (x: number, y: number) => { const g = groundOf(s), i = y * W + x; return isSoil(g.tiles[i]) && !!busksort(g, i); };
 const tradAt = (x: number, y: number) => { const g = groundOf(s), i = y * W + x; return isSoil(g.tiles[i]) && stadium(g, i) !== null; };
 // mobil och surfplatta (steg 5.3.7): två fingrar zoomar (nyper) runt punkten mellan dem, och ett tryck visar rutan i hörnet
 // som musen annars visar. Medan två fingrar ligger på kartan flyttas den inte, och när de lyfts väljer trycket inget
@@ -109,6 +110,7 @@ app.stage.on('pointertap', e => {
   else if (stubbeAt(c.x, c.y)) { ui.sak = `u:${c.y * W + c.x}`; visa('sak'); } // stubben (steg 3.10.6)
   else if (husAt(c.x, c.y) !== undefined) { ui.husId = husAt(c.x, c.y)!; visa('hus'); }
   else if (tradAt(c.x, c.y)) { ui.sak = `r:${c.y * W + c.x}`; visa('sak'); } // trädet (steg 5.1.4.3)
+  else if (buskeAt(c.x, c.y)) { ui.sak = `b:${c.y * W + c.x}`; visa('sak'); } // busken (steg 6.5.3)
   else if (sjoAt(c.x, c.y) >= 0) { ui.sjoNr = sjoAt(c.x, c.y); visa('sjo'); }
   else avmarkera();
 });
@@ -165,7 +167,7 @@ app.stage.on('pointermove', e => {
   showHover(gx, gy);
   ui.hovered = personAt(gx, gy)?.id;
   const c = tileAt(gx, gy);
-  view.style.cursor = ui.hovered || djurAt(gx, gy) !== undefined || gastAt(gx, gy) !== undefined || !!filtAt(gx, gy) || inMap(c.x, c.y) && (fireAt(gx, gy) !== undefined || storeAt(gx, gy) || outPilesAt(c.x, c.y).length || toaAt(s, c.x, c.y) || faltAt(s, c.x, c.y) || stubbeAt(c.x, c.y) || husAt(c.x, c.y) !== undefined || stationAt(s, c.x, c.y) || tradAt(c.x, c.y)) ? 'pointer' : 'grab';
+  view.style.cursor = ui.hovered || djurAt(gx, gy) !== undefined || gastAt(gx, gy) !== undefined || !!filtAt(gx, gy) || inMap(c.x, c.y) && (fireAt(gx, gy) !== undefined || storeAt(gx, gy) || outPilesAt(c.x, c.y).length || toaAt(s, c.x, c.y) || faltAt(s, c.x, c.y) || stubbeAt(c.x, c.y) || husAt(c.x, c.y) !== undefined || stationAt(s, c.x, c.y) || tradAt(c.x, c.y) || buskeAt(c.x, c.y)) ? 'pointer' : 'grab';
 });
 view.addEventListener('wheel', e => { e.preventDefault(); const r = view.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.06 : 1 / 1.06, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
 view.addEventListener('pointerleave', () => { $('hoverBox').hidden = true; ui.hovered = undefined; });
@@ -186,8 +188,9 @@ function showHover(gx: number, gy: number) {
   if (!inMap(x, y)) { box.hidden = true; return; }
   const m = getMap(s.seed), g = groundOf(s), i = y * W + x, t = m.tiles[i], tr = g.trees[i], c = g.cover[i];
   const soil = t === T.Gras || t === T.Skog;
-  const ground = g.tiles[i] === T.Lera ? 'Torr sjöbotten' : t === T.Vatten ? 'Vatten' : t === T.Sand ? 'Sand' : t === T.Sten ? 'Sten' : tr >= FOREST ? 'Skogsmark' : c >= HIGH ? 'Högt gräs' : c >= BAR ? 'Kort gräs' : 'Bar jord, stig';
+  const ground = g.tiles[i] === T.Lera ? 'Torr sjöbotten' : t === T.Vatten ? 'Vatten' : t === T.Sand ? 'Sand' : t === T.Sten ? 'Sten' : tr >= FOREST ? 'Skogsmark' : busksort(g, i) ? busksort(g, i)!.namn : c >= HIGH ? 'Högt gräs' : c >= BAR ? 'Kort gräs' : 'Bar jord, stig';
   const rows: string[] = [`<b>${ground}</b>${soil && tr > 0 ? ` · ${tr >= FOREST ? 'skog' : tr >= 0.25 ? 'ungskog' : 'plantor'}` : ''}`];
+  const bu = soil ? busksort(g, i) : undefined; if (bu) rows.push(bu.text); // busken (steg 6.5.3)
   for (const f of eldarOf(s)) { const e = eldXY(s, f); if (x === e.x && y === e.y) rows.push(`${f === s.fire ? 'Elden' : 'En lägereld'} (${f.lit ? 'brinner' : emberOn(s, f) ? 'glöder' : 'släckt'})`); }
   const zi = zoneAt(s, x, y);
   if (zi >= 0) {
