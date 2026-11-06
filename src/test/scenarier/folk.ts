@@ -1724,6 +1724,7 @@ SCENARIER.kronika = {
 };
 
 SCENARIER.masterverk = {
+  lang: true,
   text: 'Steg 3.9.4: när ett mästerverk eller en usel sak görs sparas görarens humör, årstiden, vädret, vem som var nära, vem det gjordes åt och något om görarens liv. Inforutan berättar om saken (mallarna m_* och u_* i BERATTELSER), ett perfekt mästerverk (★) får ett eget namn, och ett perfekt vapen som fäller en varg heter sedan Vargdräparen',
   kor: () => {
     const t = createState(11, START);
@@ -1797,6 +1798,7 @@ SCENARIER.amnen = {
 };
 
 SCENARIER.relationstext = {
+  lang: true,
   text: 'Steg 3.9.6: ett tryck på en relation i personrutan berättar utförligt vad hen tycker om den andra och varför: hur nära de är, personkemin, vad de varit med om tillsammans (samtal, barn, gräl, slagsmål, lek, strider sida vid sida, gåvor åt båda hållen; Rel.minns) och vad hen tror om den andra (intrycken och ryktena)',
   kor: () => {
     const hel = (x: string) => !/[{}]|undefined|NaN|  | \.|^\s*$/.test(x) && /[.!"]$/.test(x);

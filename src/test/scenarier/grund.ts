@@ -476,6 +476,7 @@ SCENARIER.flinta = {
 };
 
 SCENARIER.kunskap = {
+  lang: true,
   text: 'Var och en minns var det finns mat och flinta, berättar det för andra (ibland överdrivet), glömmer med tiden och blir rädd för platser där någon dött',
   kor: () => {
     const s = createState(32, START); // by 31 svälter ihjäl under den långa första vårtiden sedan kalendern kom (1.5.2)

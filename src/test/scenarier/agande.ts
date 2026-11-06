@@ -886,7 +886,7 @@ SCENARIER.handelsfardighet = {
     const fram = (s: State) => { rikBy(s); s.nastaHandlare = s.now; for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); } return s.handlare!; };
     const vuxna = (s: State) => living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
     const bas = createState(6, START), h0 = fram(bas);
-    setAmount(bas, 'torrfisk', 120); setAmount(bas, 'silver', 0); h0.varor = []; h0.silver = 60; h0.handel = 10;
+    setAmount(bas, 'torrfisk', 120); setAmount(bas, 'silver', 0); h0.varor = []; h0.silver = 400; h0.handel = 10;
     if (bas.styre) bas.styre.ledare = undefined;
     // byn säljer fisk för silver med en ovan och en skicklig i Handel
     const salj = (skill: number, i = 0) => {
@@ -898,9 +898,13 @@ SCENARIER.handelsfardighet = {
       helAffar(s, p, true);
       return { silver: amountOf(s, 'silver'), ovat: p.skill.handel > fore, lurad: p.thoughts?.some(t => t.text.startsWith('Blev lurad')) ?? false, lurat: (s.stat?.lurat ?? 0) > l0 };
     };
-    const ovan = salj(0), skicklig = salj(20);
-    let lurat = 0, markt = 0;
-    for (let i = 0; i < 60; i++) { const r = salj(0, i); if (r.lurat) lurat++; if (r.lurad) markt++; }
+    // packningen rymmer mycket här, så att det är silvret som tar slut i bytet och den som lurar har plats för det hen tar extra
+    const utr = SIM.HANDLAR_UTR[h0.utr], vikt0 = utr.vikt; utr.vikt = vikt0 * 10;
+    let ovan, skicklig, lurat = 0, markt = 0;
+    try {
+      ovan = salj(0); skicklig = salj(20);
+      for (let i = 0; i < 60; i++) { const r = salj(0, i); if (r.lurat) lurat++; if (r.lurad) markt++; }
+    } finally { utr.vikt = vikt0; }
     // utan ledare handlar den skickligaste
     const t = cloneState(bas), v = vuxna(t);
     for (const p of t.people) if (p.task?.act === 'handla') p.task = undefined;

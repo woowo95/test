@@ -84,6 +84,7 @@ SCENARIER.djur = {
 };
 
 SCENARIER.abborre = {
+  lang: true,
   text: 'Det som fångas är en hel abborre. Den rensas med händerna vid slaktbänken till fiskkött, som är det man äter; köttet är dens som ägde fisken. Innan byn har en bänk äts abborren som den är',
   kor: () => {
     const s = createState(1, START);

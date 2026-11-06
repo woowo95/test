@@ -8,7 +8,7 @@ import { PLAGG, PLAGG_LIST } from './klader';
 import { ARBETE, grundvarde, varuVarde } from './varde';
 import { balans } from './balans';
 import { GORS, harAv, makeTask, receptTill, wantsRope, wantsTool } from './redskap';
-import { STATIONER, STATION_LIST, StationDef, StationSlag, TILLBEHOR, TILLBEHOR_LIST, TillbehorDef, TillbehorSlag, kanBygga, kanGoraTillbehor, receptStation, receptTillbehor, stationSpot, tillbehorSpot, tillbehorStationer, utanTillbehor } from './stationer';
+import { STATIONER, STATION_LIST, StationDef, StationSlag, TILLBEHOR, TILLBEHOR_LIST, TillbehorDef, TillbehorSlag, kanBygga, kanGoraTillbehor, receptStation, receptTillbehor, stationSpot, villKista, tillbehorSpot, tillbehorStationer, utanTillbehor } from './stationer';
 import { brasaLeta, kanLetaBrasaSten } from './brasor';
 import { DORRAR, DORR_LIST, DorrDef, DorrSlag } from './byggnad';
 import { dorrOppningar, dorrSpot, kanHangaDorr, receptDorr, utanDorr } from './bygg';
@@ -78,7 +78,7 @@ export interface ProjektFara { kyla: boolean; gras: number }
 export interface ProjektDef {
   namn: string; vikt: number;
   brist(s: State): number; kostnad(): number;
-  egen?(s: State, fam: readonly Person[]): number; // hur mycket p och familjen saknar det (0 till 1, steg 6.1.16)
+  egen?(s: State, fam: readonly Person[], p?: Person): number; // hur mycket p och familjen saknar det (0 till 1, steg 6.1.16)
   kan(s: State, p: Person, f: ProjektFara): boolean;
   recept?(s: State, p: Person, f: ProjektFara): Recept | undefined; // receptet när bara materialet eller redskapet fattas (steg 6.2.19)
   uppgift(s: State, p: Person): Uppgift | undefined;
@@ -105,7 +105,8 @@ const station = (k: StationSlag): ProjektDef => {
   const d: StationDef = STATIONER[k];
   return {
     namn: d.namn, vikt: (PROJEKT_TAL as Record<string, number>)[k] ?? 1,
-    egen: d.sover ? (s, fam) => utanEgenBadd(s, fam) : undefined, // någon i familjen sover under tak utan en bädd
+    // någon i familjen sover under tak utan en bädd, eller p vill ha en egen kista (steg 2.10.18): den byggs också som pyssel på fritiden
+    egen: d.sover ? (s, fam) => utanEgenBadd(s, fam) : d.forvar?.privat ? (s, _fam, p) => p && villKista(s, p) ? 1 : 0 : undefined,
     brist: s => stationBrist(s, k), // bufferten står i forradsmal.ts (steg 6.2.17)
     kostnad: () => varuVarde(d.av, d.min / 60 * ARBETE),
     kan: (s, p, f) => !f.kyla && (kanBygga(s, p, k) || !!d.brasa && kanLetaBrasaSten(s, p)), // brasans stenar letas först (brasor.ts)
@@ -221,8 +222,8 @@ export const egenintresse = (s: State, p: Person) => clamp(PROJEKT_TAL.egen - PR
 // Byns brist kommer från timräkningen (arbetsTimme i val.ts, steg 6.2.21), så länge den finns
 // byns brist ur timmens räkning (val.ts), men räknas fram igen när något byggts eller satts upp sedan dess (s.byggV), så att ingen börjar ett andra bord samma timme
 export const bristNu = (s: State, k: string) => s.arbBehov?.brist && s.arbBehov.bv === (s.byggV ?? 0) ? s.arbBehov.brist[k] ?? 0 : PROJEKT[k].brist(s);
-export function personVarde(s: State, k: string, fam: readonly Person[], ei: number) {
-  const d = PROJEKT[k], e = d.egen && ei > 0 ? d.egen(s, fam) : 0;
+export function personVarde(s: State, k: string, fam: readonly Person[], ei: number, p?: Person) {
+  const d = PROJEKT[k], e = d.egen && ei > 0 ? d.egen(s, fam, p) : 0;
   return d.vikt * (bristNu(s, k) + e * ei) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad());
 }
 // den i familjen som sover under tak utan en bädd
@@ -265,7 +266,7 @@ export function bastaProjekt(s: State, p: Person, f: ProjektFara, egen = false) 
   let best: { k: string; varde: number; u?: Uppgift; sak?: string } | undefined;
   const fam = familjOf(s, p.id), ei = egenintresse(s, p); // p, partnern och de ogifta barnen
   for (const k of PROJEKT_LIST) {
-    const d = PROJEKT[k], v = egen ? (d.egen && ei > 0 ? d.vikt * d.egen(s, fam) * ei / Math.max(PROJEKT_TAL.minKostnad, d.kostnad()) : 0) : personVarde(s, k, fam, ei);
+    const d = PROJEKT[k], v = egen ? (d.egen && ei > 0 ? d.vikt * d.egen(s, fam, p) * ei / Math.max(PROJEKT_TAL.minKostnad, d.kostnad()) : 0) : personVarde(s, k, fam, ei, p);
     if (v <= 0 || best && v <= best.varde) continue;
     if (d.kan(s, p, f)) { const u = d.uppgift(s, p); if (u) best = { k, varde: v, u }; continue; }
     const m = egen ? undefined : fattas(s, p, k, f), a = m ? arv(s, p, m, f) : undefined;
