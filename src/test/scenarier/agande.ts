@@ -1754,6 +1754,41 @@ SCENARIER.rovarstrid = {
   },
 };
 
+SCENARIER.rovarbyte = {
+  text: 'Plundringen och flykten på kartan (steg 6.6.11, rovare.ts): när ingen står emot tar varje rövare som når förrådet sina saker (ROVARE.tar), det mest värda först, och bär dem. Sedan springer de var för sig mot kanten. Den som faller (här i en tornado) tappar det hen bär där hen ligger, och det är byns igen.',
+  kor: () => {
+    const s = createState(6, START);
+    const z = SIM.zoneOf(s)!, m = { x: z.x + z.w / 2, y: z.y + z.h / 2 };
+    for (const p of living(s)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 20 * HOUR, carry: 0 };
+    addTo(s, 'skinn', 30); addTo(s, 'rep', 30);
+    const fore = SAK_LIST.reduce((n, k) => n + (SAKER[k]!.redskap ? 0 : amountOf(s, k)), 0);
+    SIM.rovarnaKommer(s, 3); const f = s.rovare!; f.gor = 'kommer'; f.sedd = s.now; SIM.stallUpp(s, f, m.x + 3, m.y);
+    const steg = (x: State, sek: number) => { x.now += sek * SIM.SEC; SIM.rovarSteg(x, sek); };
+    for (let i = 0; i < 40 && s.rovare?.gor !== 'flyr'; i++) steg(s, 5);
+    const efter = SAK_LIST.reduce((n, k) => n + (SAKER[k]!.redskap ? 0 : amountOf(s, k)), 0);
+    const folk = s.rovare?.folk ?? [], bars = folk.map(r => Object.values(r.bar ?? {}).reduce((a, b) => a + b, 0));
+    const tog = s.rovare?.gor === 'flyr' && folk.length === 3 && bars.every(n => n === SIM.ROVARE.tar) && Math.round(fore - efter) === 3 * SIM.ROVARE.tar;
+    const vardast = folk.every(r => Object.keys(r.bar ?? {}).every(k => SIM.grundvarde(k) >= Math.min(SIM.grundvarde('skinn'), SIM.grundvarde('rep'))));
+    // de flyr var för sig: avståndet mellan dem växer, och alla kommer längre från förrådet
+    const fran0 = folk.map(r => Math.hypot(r.x! - m.x, r.y! - m.y));
+    for (let i = 0; i < 2; i++) steg(s, 5);
+    const folk2 = s.rovare?.folk ?? []; if (!s.rovare) return [[`rövarna finns kvar efter flykten (${bars.join(",")}, ${fore - efter}, ${s.stat?.rovarBorta})`, false]];
+    const bort = folk2.length === 3 && folk2.every((r, j) => Math.hypot(r.x! - m.x, r.y! - m.y) > fran0[j] + 1);
+    // tornadon dödar dem: bytet ligger där de föll
+    const platser = folk2.map(r => ({ x: Math.floor(r.x!), y: Math.floor(r.y!) }));
+    const hogar = () => SIM.pilesOf(s).filter(a => platser.some(q => q.x === a.x && q.y === a.y) && !SAKER[a.k]!.redskap).reduce((n, a) => n + a.n, 0);
+    const h0 = hogar();
+    SIM.rovarTornado(s, s.rovare!, 0, 1, 0, [0, 0], () => 0);
+    const tappat = !s.rovare && Math.round(hogar() - h0) === 3 * SIM.ROVARE.tar && (s.stat?.rovarTappat ?? 0) === 3 * SIM.ROVARE.tar;
+    return [
+      [`varje rövare tar ${SIM.ROVARE.tar} saker ur förrådet och bär dem (${bars.join(', ')})`, tog],
+      ['de tar det mest värda först', vardast],
+      ['de flyr var för sig bort från förrådet', bort],
+      ['den som faller tappar det hen bär där hen ligger', tappat],
+    ];
+  },
+};
+
 SCENARIER.entitag = {
   text: 'Steg 4.5.3.6: vid en arbetsbänk arbetar en i taget (STATIONER `samtidigt`, annars 1). Står någon redan vid bänken väljer en annan en annan bänk av samma sort eller ett annat arbete, och i en by som arbetar står aldrig två vid samma bänk',
   kor: () => {

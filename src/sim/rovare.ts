@@ -6,7 +6,7 @@ import { halsa, kanGa, skada } from './halsa';
 import { kronika } from './historik';
 import { eldPlats, getMap, vaderstreck } from './karta';
 import { Klan, andraInst, klanById, klanerOf } from './klaner';
-import { addTo, amountOf, avbryt, zoneOf } from './lager';
+import { addTo, amountOf, avbryt, dropLoad, zoneOf } from './lager';
 import { die } from './liv';
 import { bitAt } from './byggnad';
 import { larma } from './rykten';
@@ -15,7 +15,7 @@ import { vattenNu } from './sjo';
 import { clamp, rnd } from './slump';
 import { SLAGSMAL, STRID, VAPEN, Strid, StridGang, Uppstallning, Vapen, foljet, personKampe, slitKastat, sparaStrid, spelaUpp, svartSkadad, vadretIStriden } from './strid';
 import { isLight } from './tid';
-import { DAY, HOUR, MIN, Person, SEC, State, T, W, H } from './typer';
+import { DAY, HOUR, MIN, Person, SEC, State, T, Task, W, H } from './typer';
 import { vaderNu } from './vader';
 import { grundvarde, rikedom } from './varde';
 import { kanterna, soker } from './varg';
@@ -67,7 +67,7 @@ export const ROVARE = balans('rovare', {
 const ROVARVAPEN: Vapen[] = ['kniv', 'yxa', 'fiskespjut', 'flintspjut', 'sten'];
 // fodd: gästens liv (steg 4.5.7.7, gastliv.ts). x, y: var rövaren står (steg 6.6.9; saknas i sparade byar från före v450 och
 // sätts då vid flocken), path och pk: vägen och målrutan den gäller, spar: vägen för bilden, tid och plats efter varandra
-export interface Rovare { namn: string; sex: 'm' | 'k'; st: { styrka: number; uthallighet: number; mod: number; smidighet: number; skicklighet: number }; vapen: Vapen; blod: number; fodd?: number; x?: number; y?: number; path?: number[]; pk?: number; spar?: number[] }
+export interface Rovare { namn: string; sex: 'm' | 'k'; st: { styrka: number; uthallighet: number; mod: number; smidighet: number; skicklighet: number }; vapen: Vapen; blod: number; fodd?: number; x?: number; y?: number; path?: number[]; pk?: number; spar?: number[]; bar?: Record<string, number> }
 // x, y: ledaren (den första rövaren), mx, my: ledarens mål. lurat: flocken har väntat utanför byn
 // striden vid förrådet som pågår (steg 6.6.10): striden (strid.ts) och när den började (t0), och arenans hörn på kartan (ox, oy)
 export interface RovarStrid extends StridGang { t0: number; ox: number; oy: number }
@@ -348,17 +348,32 @@ export function rovarStrid(s: State, f: Rovarflock, folk: Person[]) {
   return stridSlut(s, f, st);
 }
 
-// rövarna tar det mest värda ur förrådet (inte redskapen), hela saker
+// rövarna tar det mest värda ur förrådet (inte redskapen), hela saker: var och en tar sina (ROVARE.tar) och bär dem (steg 6.6.11)
 export function plundra(s: State, f: Rovarflock, tyst: boolean) {
-  let n = f.folk.length * ROVARE.tar, tog = 0;
+  let tog = 0;
   const varor = SAK_LIST.filter(k => !SAKER[k]!.redskap && amountOf(s, k) >= 1).sort((a, b) => grundvarde(b) - grundvarde(a));
-  const tagna: string[] = [];
-  for (const k of varor) { let m = 0; while (n > 0 && amountOf(s, k) >= 1) { addTo(s, k, -1); n--; tog++; m++; } if (m) tagna.push(`${m} ${(SAKER[k]?.namn ?? k).toLowerCase()}`); if (n <= 0) break; }
+  const tagna: Record<string, number> = {};
+  for (const r of f.folk) {
+    let n = ROVARE.tar;
+    for (const k of varor) {
+      while (n > 0 && amountOf(s, k) >= 1) { addTo(s, k, -1); n--; tog++; tagna[k] = (tagna[k] ?? 0) + 1; (r.bar ??= {})[k] = (r.bar[k] ?? 0) + 1; }
+      if (n <= 0) break;
+    }
+  }
+  const lista = varor.filter(k => tagna[k]).map(k => `${tagna[k]} ${(SAKER[k]?.namn ?? k).toLowerCase()}`);
   count(s, 'rovarPlundring'); if (tog) count(s, 'rovat', tog);
   if (tyst) count(s, 'rovarTyst');
-  const text = tog ? `Rövare ${fran(s, f)} ${tyst ? 'smög in i byn osedda och ' : ''}tog ${tagna.join(', ')} ur förrådet.` : `Rövare ${fran(s, f)} kom till förrådet men hittade inget att ta.`;
+  const text = tog ? `Rövare ${fran(s, f)} ${tyst ? 'smög in i byn osedda och ' : ''}tog ${lista.join(', ')} ur förrådet.` : `Rövare ${fran(s, f)} kom till förrådet men hittade inget att ta.`;
   log(s, text, 'world'); if (tog) notis(s, 'motgang', text);
   if (tog) kronika(s, text, 'rovare');
+}
+// rövaren som faller tappar det hen bär där hen ligger; det är byns igen
+export function tappar(s: State, r: Rovare) {
+  if (!r.bar || r.x === undefined || r.y === undefined) return;
+  const n = Object.values(r.bar).reduce((a, b) => a + b, 0);
+  dropLoad(s, { act: 'bara', carry: 0, items: { ...r.bar } } as unknown as Task, r.x, r.y);
+  r.bar = undefined;
+  if (n) count(s, 'rovarTappat', n);
 }
 
 // vad flocken gör i det här slaget
@@ -420,7 +435,7 @@ function flockSteg(s: State, f: Rovarflock, folk: Person[], dtSec: number) {
 export function rovarTornado(s: State, f: Rovarflock, zon: number, dod: number, skadas: number, grad: readonly number[], r: (j: number, salt: number) => number, till?: { x: number; y: number }) {
   const fore = f.folk.length;
   f.folk = f.folk.filter((q, j) => {
-    if (zon === 0 || r(j, 1) < dod) { count(s, 'rovarDoda'); count(s, 'tornado dod'); return false; }
+    if (zon === 0 || r(j, 1) < dod) { tappar(s, q); count(s, 'rovarDoda'); count(s, 'tornado dod'); return false; }
     if (r(j, 2) < skadas) q.blod = Math.max(0.05, q.blod - (grad[0] + r(j, 3) * (grad[1] - grad[0])));
     return true;
   });

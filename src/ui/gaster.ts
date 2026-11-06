@@ -72,7 +72,8 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
       fran: klanById(s, r.klan)?.namn,
       rader: [{ namn: 'Flocken', varde: `${n} rövare`, title: `En av ${n} i flocken` }],
       stats: { styrka: q.st.styrka, uthallighet: q.st.uthallighet, mod: q.st.mod, smidighet: q.st.smidighet }, skills: { narstrid: q.st.skicklighet },
-      bar: [{ ikon: q.vapen, text: VAPEN[q.vapen].namn, title: `Vapnet: ${VAPEN[q.vapen].namn.toLowerCase()}` }],
+      bar: [{ ikon: q.vapen, text: VAPEN[q.vapen].namn, title: `Vapnet: ${VAPEN[q.vapen].namn.toLowerCase()}` },
+        ...Object.entries(q.bar ?? {}).map(([k, m]) => ({ ikon: k, text: m > 1 ? String(m) : '', title: `${sakNamn(k)}: taget ur byns förråd` }))], // bytet (steg 6.6.11)
       handelser: [], liv: livFor(s, r.klan, q.namn, q.sex, 'rovare', q.fodd), blod: q.blod,
       };
     });
