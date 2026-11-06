@@ -80,7 +80,7 @@ export const PAL: Record<string, Record<string, string>> = {
   artfron: { o: '#24201d', L: '#d8b25f', Y: '#898b4c', y: '#647025' },
   odling: { k: '#3f2415', j: '#5e3c24', J: '#7d5b40', g: '#4b4f00', G: '#647025', L: '#898b4c' },
   // skogsvården (steg 6.5.2, platshållare): en planta med rotklump bredvid en spade
-  skogsvard: { k: '#3f2415', j: '#5e3c24', g: '#4b4f00', G: '#647025', L: '#898b4c', b: '#d8c8a8', o: '#24201d' },
+  skogsvard: { k: '#3f2415', j: '#5e3c24', g: '#4b4f00', G: '#647025', L: '#898b4c', b: '#dad0bb', o: '#24201d' },
   // ledarskapet: ledaren och folket (Björn valde version 3 efter v193, steg 3.10.13)
   ledarskap: { o: '#24201d', a: '#d8b25f', b: '#61767a' },
   // grödorna från fälten och grodden på fältet (steg 2.10.3, platshållare i bildstilens palett)
