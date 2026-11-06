@@ -11,7 +11,7 @@ export type Rikt = 'fram' | 'bak' | 'sida' | 'vast';
 export type Ben = 'sta' | 'gang1' | 'gang2' | 'sitta';
 export type Arm = 'hanga' | 'gang1' | 'gang2' | 'bara' | 'lyfta' | 'sla' | 'framfor';
 // kartfigurens läge (Kartfigurens lägen): riktningen, benen och armarna, och om hen ligger (med täcke när hen sover i en bädd)
-export interface Lage { rikt: Rikt; ben: Ben; arm: Arm; ligga?: boolean; tacke?: boolean }
+export interface Lage { rikt: Rikt; ben: Ben; arm: Arm; ligga?: boolean; tacke?: boolean; smabarn?: boolean } // smabarn: småbarnets egen mall i hel skala (steg 5.5.5)
 interface Bild { w: number; h: number; px: Int16Array }
 const RGBA = FARGER.map(h => parseInt(h.slice(1), 16));
 function canvasAv(B: Bild) {
@@ -40,7 +40,7 @@ export function figurTex(q: Skapad, l: Lage, vald: boolean) {
   let t = figurer.get(k);
   if (!t) {
     if (figurer.size > MAX) figurer.clear();
-    const B: Bild = KARNA.kartFigur(q, l.rikt, l.ben, l.arm, { ligga: l.ligga, tacke: l.tacke });
+    const B: Bild = KARNA.kartFigur(q, l.rikt, l.ben, l.arm, { ligga: l.ligga, tacke: l.tacke, smabarn: l.smabarn });
     t = PIXI.Texture.from(canvasAv(vald ? ljusKontur(B) : B), { scaleMode: PIXI.SCALE_MODES.NEAREST });
     figurer.set(k, t);
     const h = (B as Bild & { hand?: [number, number] | null }).hand; if (h) hander.set(t, h);

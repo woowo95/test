@@ -1,0 +1,722 @@
+[
+ {
+  "id": "besk",
+  "rubrik": "Beskrivningen av en person",
+  "var": "Överst i personrutan, när man trycker på någon.",
+  "max": 10,
+  "texter": [
+   {
+    "id": "besk-1",
+    "by": 1,
+    "nar": "År 9, vårtid",
+    "vem": "Tustig, man, 38 år",
+    "text": "De som känner Tustig säger att han är vig men glömsk. Byn finns för att Tustig och de andra slog sig ner vid sjön. Han har ett leende som får folk att stanna upp, och den som får det blir glad en lång stund. Den som frågar i byn får höra att han är välbärgad. En dag kom Tustig på hur man kan odla. Ingen hade tänkt på det förut."
+   },
+   {
+    "id": "besk-2",
+    "by": 1,
+    "nar": "År 21, hösttid",
+    "vem": "Gunulf, man, 6 år",
+    "text": "Gunulf är vig, mer än något annat. Redan som barn är han modig. Han litar mest av alla på Ragveig. Tuveig är den han helst går en omväg kring. Man känner igen hans mors smidighet i honom."
+   },
+   {
+    "id": "besk-3",
+    "by": 1,
+    "nar": "År 34, istid",
+    "vem": "Lonsger, man, 28 år",
+    "text": "Man vet var man har Lonsger: varmhjärtad men hetlevrad. Många säger att Lonsger är den vackraste i byn, med ett ansikte som folk vänder sig om efter. Det var Lonsger som kom på hur man kan göra metspön. Med Aulf delar han sina hemligheter. Det är kallt mellan honom och Frönvi."
+   },
+   {
+    "id": "besk-4",
+    "by": 1,
+    "nar": "År 46, sommartid",
+    "vem": "Gurngaut, man, 7 år",
+    "text": "Fridsam och tystlåten: så beskriver byn Gurngaut. Frönvi är den han helst går en omväg kring. Det är tomt för honom sedan Ragveig gick bort. Han vet hur det är att nästan dö: han har överlevt svält och en eldsvåda."
+   },
+   {
+    "id": "besk-5",
+    "by": 42,
+    "nar": "År 21, hösttid",
+    "vem": "Olgaut, man, 50 år",
+    "text": "Olgaut är arbetsam och tystlåten. Det var Olgaut och de andra första som grundade byn. Han har blankt, tjockt hår, som barnen gärna vill fläta. Byn kallar honom den outtröttlige. Han var den första som kunde odla, och byn har haft nytta av det sedan dess."
+   },
+   {
+    "id": "besk-6",
+    "by": 42,
+    "nar": "År 34, istid",
+    "vem": "Olgaut, man, 63 år",
+    "text": "Olgaut har alltid varit arbetsam. Trots sin ålder är han lika vig som förr. Det var Olgaut och de andra första som grundade byn. Han har blankt, tjockt hår, som barnen gärna vill fläta. Med sina 63 år är Olgaut byns äldsta. Byn kallar honom den outtröttlige."
+   },
+   {
+    "id": "besk-7",
+    "by": 42,
+    "nar": "År 46, sommartid",
+    "vem": "Olgaut, man, 75 år",
+    "text": "Om Olgaut säger man två saker: han är tystlåten, och han är arbetsam. Det var Olgaut och de andra första som grundade byn. Han har blankt, tjockt hår, som barnen gärna vill fläta. Med sina 75 år är Olgaut byns äldsta. Byn kallar honom den outtröttlige."
+   },
+   {
+    "id": "besk-8",
+    "by": 777,
+    "nar": "År 9, vårtid",
+    "vem": "Vistgaut, man, 38 år",
+    "text": "Nyfiken på allt och klok: så beskriver byn Vistgaut. Han var en av dem som slog sig ner här först. Det första man ser hos honom är ett ansikte som folk vänder sig om efter, och främlingar stannar upp när de ser det. Han är väktare till sin syssla, och välbärgad i byns ögon. En dag kom Vistgaut på hur man kan göra lyror, tälja slagträn och snida väggbräden. Ingen hade tänkt på det förut."
+   },
+   {
+    "id": "besk-9",
+    "by": 777,
+    "nar": "År 21, hösttid",
+    "vem": "Vekja, kvinna, 6 år",
+    "text": "Man vet var man har Vekja: nyfiken på allt men klumpig. En av byns grundare, Asunn, är hennes mor. Folk säger att hon är lika nyfiken på allt som sin far."
+   },
+   {
+    "id": "besk-10",
+    "by": 777,
+    "nar": "År 34, istid",
+    "vem": "Vimlaug, kvinna, 37 år",
+    "text": "Vimlaug är klok och talför. Hon har mörka, djupa ögon, och det vet hon om. Boik är hennes partner. Vekja är den hon går till när något tynger. Byn har sett henne klara en svår skada och en eldsvåda."
+   }
+  ]
+ },
+ {
+  "id": "dod",
+  "rubrik": "Eftermälet",
+  "var": "Överst i personrutan för någon som är död.",
+  "max": 6,
+  "texter": [
+   {
+    "id": "dod-1",
+    "by": 1,
+    "nar": "År 9, vårtid",
+    "vem": "Frörhild (död)",
+    "text": "Frörhild dog i barnsäng våren år 6, 32 år gammal. De som kände Frörhild minns att hon var nyfiken på allt men trög i tanken. Byn finns för att Frörhild och de andra slog sig ner vid sjön. Om dagarna var hon eldvaktare. Byn minns att hon tände byns första eld och blev en legend i byn. Vid elden berättar man fortfarande om henne."
+   },
+   {
+    "id": "dod-2",
+    "by": 1,
+    "nar": "År 21, hösttid",
+    "vem": "Lostig (död)",
+    "text": "Sommaren år 17 tog döden Lostig: han dog av en barnsjukdom, två år gammal. Han var en pojke, varmhjärtad men rädd av sig. Ännu talar man om honom vid elden."
+   },
+   {
+    "id": "dod-3",
+    "by": 1,
+    "nar": "År 46, sommartid",
+    "vem": "Osdis (död)",
+    "text": "Osdis lever inte längre. Hon dog av svält sommaren år 45, 32 år gammal. Hon var mer nyfiken på allt än de flesta och lika varmhjärtad. Om dagarna var hon mästare. En dag kom Osdis på hur man kan göra lyror. Ingen hade tänkt på det förut. De som var med minns hur det var när hon levde."
+   },
+   {
+    "id": "dod-4",
+    "by": 42,
+    "nar": "År 34, istid",
+    "vem": "Gunve (död)",
+    "text": "Istiden år 30 dog Gunve i en olycka. Hon blev 50 år. Hon var en klen kvinna, trög i tanken som få. Det var Gunve och de andra första som grundade byn. Namnet den välbärgade följde henne livet ut. Byn minns att hon fällde byns första träd och blev en legend i byn. Hennes namn lever kvar i byn."
+   },
+   {
+    "id": "dod-5",
+    "by": 42,
+    "nar": "År 46, sommartid",
+    "vem": "Gunste (död)",
+    "text": "Gunste lever inte längre. Hon dog i barnsäng sommaren år 45, 19 år gammal. Alla som kände Gunste visste att hon var uthållig men rädd av sig. Ännu talar man om henne vid elden."
+   },
+   {
+    "id": "dod-6",
+    "by": 777,
+    "nar": "År 34, istid",
+    "vem": "Kae (död)",
+    "text": "Kae dog av ålderdom istiden år 33, 58 år gammal. De som kände Kae minns att hon var klok men bekväm av sig. Byn kallade henne Järnarmen. Hon blev ökänd, och ingen har glömt det. Ännu talar man om henne vid elden."
+   }
+  ]
+ },
+ {
+  "id": "binamn",
+  "rubrik": "Öknamnet eller hedersnamnet",
+  "var": "Personrutan, när man trycker på öknamnet eller hedersnamnet bakom namnet.",
+  "max": 6,
+  "texter": [
+   {
+    "id": "binamn-1",
+    "by": 1,
+    "nar": "År 9, vårtid",
+    "vem": "Igik den rike",
+    "text": "Hedersnamn: byn ser Igik som rik."
+   },
+   {
+    "id": "binamn-2",
+    "by": 1,
+    "nar": "År 21, hösttid",
+    "vem": "Igik den outtröttlige",
+    "text": "Hedersnamn: byn ser Igik som flitig."
+   },
+   {
+    "id": "binamn-3",
+    "by": 1,
+    "nar": "År 46, sommartid",
+    "vem": "Tugerd den lata",
+    "text": "Öknamn: byn ser Tugerd som lat."
+   },
+   {
+    "id": "binamn-4",
+    "by": 42,
+    "nar": "År 9, vårtid",
+    "vem": "Ylvunn den fattiga",
+    "text": "Öknamn: byn ser Ylvunn som fattig."
+   },
+   {
+    "id": "binamn-5",
+    "by": 42,
+    "nar": "År 34, istid",
+    "vem": "Sige den givmilde",
+    "text": "Hedersnamn: byn ser Sige som generös. Sige gav mat till Osdis."
+   },
+   {
+    "id": "binamn-6",
+    "by": 777,
+    "nar": "År 21, hösttid",
+    "vem": "Vistgaut Smörbyttan",
+    "text": "Hedersnamn: byn ser Vistgaut som välbärgad."
+   }
+  ]
+ },
+ {
+  "id": "rel",
+  "rubrik": "Vad hen tycker om någon",
+  "var": "Personrutan, Relationer: när man trycker på ordet för relationen (vän, ovän …).",
+  "max": 10,
+  "texter": [
+   {
+    "id": "rel-1",
+    "by": 1,
+    "nar": "År 9, vårtid",
+    "vem": "Vad Tustig tycker om Igik",
+    "text": "Tustig litar på Igik. De har pratat otaliga gånger. Han tycker att Igik är rik. Han har själv sett att Igik dömde Adar rättvist och tycker att han är rättvis."
+   },
+   {
+    "id": "rel-2",
+    "by": 1,
+    "nar": "År 21, hösttid",
+    "vem": "Vad Tustig tycker om Sifast",
+    "text": "Tustig blir trött på Sifast fort. De har pratat otaliga gånger och grälat fem gånger. Tustig har lärt Sifast något sju gånger. Från Steja har han hört att Sifast är lat."
+   },
+   {
+    "id": "rel-3",
+    "by": 1,
+    "nar": "År 34, istid",
+    "vem": "Vad Ara tycker om Frönvi",
+    "text": "Ara vill inte ha med Frönvi att göra. De har pratat många gånger, grälat många gånger och slagits mot varandra en gång. Frönvi har lärt Ara något tre gånger. Hon har själv sett att Frönvi vann ett slagsmål mot Ragveig och tycker att hon är stark. Hon har själv sett att Frönvi slog Ragveig och tycker att hon är våldsam."
+   },
+   {
+    "id": "rel-4",
+    "by": 42,
+    "nar": "År 9, vårtid",
+    "vem": "Vad Olgaut tycker om Sige",
+    "text": "Olgaut tycker mycket om Sige. De har pratat otaliga gånger. Olgaut har lärt Sige något tre gånger."
+   },
+   {
+    "id": "rel-5",
+    "by": 42,
+    "nar": "År 21, hösttid",
+    "vem": "Vad Vekel tycker om Oka",
+    "text": "Oka är Vekels mor. Vekel och Oka står varandra nära. De har pratat många gånger. Oka har lärt Vekel något fyra gånger. Oka har gett Vekel nio gåvor, men Vekel har aldrig gett något tillbaka. Från Torkel har han hört att Oka är rik. Från Yrun har han hört att Oka är välbärgad."
+   },
+   {
+    "id": "rel-6",
+    "by": 42,
+    "nar": "År 34, istid",
+    "vem": "Vad Sigger tycker om Gunste",
+    "text": "Gunste är Siggers syster. Sigger skulle göra vad som helst för Gunste. De har pratat många gånger och brottats på lek en gång. Sigger har gett Gunste en gåva men aldrig fått något tillbaka. Han har själv sett att Gunste överdrev om Sige och tycker att hon är en lögnare."
+   },
+   {
+    "id": "rel-7",
+    "by": 42,
+    "nar": "År 46, sommartid",
+    "vem": "Vad Frömvid tycker om Lostig",
+    "text": "Lostig är Frömvids bror. Frömvid och Lostig sitter ofta bredvid varandra vid elden. De har pratat många gånger. Lostig har lärt Frömvid något nio gånger."
+   },
+   {
+    "id": "rel-8",
+    "by": 777,
+    "nar": "År 9, vårtid",
+    "vem": "Vad Gerstig tycker om Dafast",
+    "text": "Dafast är Gerstigs bror. Gerstig kan prata med Dafast om allt. De har pratat många gånger."
+   },
+   {
+    "id": "rel-9",
+    "by": 777,
+    "nar": "År 21, hösttid",
+    "vem": "Vad Ikunn tycker om Vekja",
+    "text": "Ikunn saknar Vekja när de inte ses. De har pratat många gånger."
+   },
+   {
+    "id": "rel-10",
+    "by": 777,
+    "nar": "År 34, istid",
+    "vem": "Vad Tormund tycker om Vistgaut",
+    "text": "Blir det bråk ställer sig Tormund alltid på samma sida som Vistgaut. De har pratat otaliga gånger. Vistgaut har lärt Tormund något sju gånger. Han har själv sett att Vistgaut överdrev om Boik två gånger och tycker att han är en lögnare."
+   }
+  ]
+ },
+ {
+  "id": "reltyp",
+  "rubrik": "En symbol i relationen",
+  "var": "Personrutan, Relationer: när man trycker på en symbol (partner, bästa vän, rival …).",
+  "max": 8,
+  "texter": [
+   {
+    "id": "reltyp-1",
+    "by": 1,
+    "nar": "År 9, vårtid",
+    "vem": "Tustig och Igik",
+    "text": "Bästa vän: Igik är den Tustig står närmast, och tvärtom. De arbetar och sitter gärna bredvid varandra, delar med sig som till släkt och berättar mer för varandra."
+   },
+   {
+    "id": "reltyp-2",
+    "by": 1,
+    "nar": "År 9, vårtid",
+    "vem": "Steja och Yhild",
+    "text": "Ärkefiende: Den Steja hatar mest. De grälar nästan varje gång de möts, Steja ger Yhild aldrig något och tar hellre av henne."
+   },
+   {
+    "id": "reltyp-3",
+    "by": 1,
+    "nar": "År 21, hösttid",
+    "vem": "Ragveig och Adar",
+    "text": "Lärling: Adar är mentor för Ragveig i berättande, tills Ragveig har kommit ikapp."
+   },
+   {
+    "id": "reltyp-4",
+    "by": 1,
+    "nar": "År 34, istid",
+    "vem": "Igik och Frönvi",
+    "text": "Ärkefiende: Den Igik hatar mest. De grälar nästan varje gång de möts, Igik ger Frönvi aldrig något och tar hellre av henne."
+   },
+   {
+    "id": "reltyp-5",
+    "by": 1,
+    "nar": "År 46, sommartid",
+    "vem": "Gurngaut och Frönvi",
+    "text": "Ärkefiende: Den Gurngaut hatar mest. De grälar nästan varje gång de möts, Gurngaut ger Frönvi aldrig något och tar hellre av henne."
+   },
+   {
+    "id": "reltyp-6",
+    "by": 42,
+    "nar": "År 21, hösttid",
+    "vem": "Torkel och Alger",
+    "text": "Ärkefiende: Den Torkel hatar mest. De grälar nästan varje gång de möts, Torkel ger Alger aldrig något och tar hellre av honom."
+   },
+   {
+    "id": "reltyp-7",
+    "by": 777,
+    "nar": "År 9, vårtid",
+    "vem": "Vistgaut och Asunn",
+    "text": "Gifta: Gifta sedan 8 år. Ett äktenskap håller mer än ett par och sörjs mer."
+   },
+   {
+    "id": "reltyp-8",
+    "by": 777,
+    "nar": "År 21, hösttid",
+    "vem": "Vimlaug och Dafast",
+    "text": "Bästa vän: Dafast är den Vimlaug står närmast, och tvärtom. De arbetar och sitter gärna bredvid varandra, delar med sig som till släkt och berättar mer för varandra."
+   }
+  ]
+ },
+ {
+  "id": "ans",
+  "rubrik": "Vad byn tycker om hen",
+  "var": "Personrutan, Rykten: när man trycker på stapeln för anseendet.",
+  "max": 6,
+  "texter": [
+   {
+    "id": "ans-1",
+    "by": 1,
+    "nar": "År 9, vårtid",
+    "vem": "Tustig",
+    "text": "Gott anseende: byn tycker att han är flitig."
+   },
+   {
+    "id": "ans-2",
+    "by": 1,
+    "nar": "År 21, hösttid",
+    "vem": "Igik",
+    "text": "Gott anseende: byn tycker att han är rik, flitig och rättvis."
+   },
+   {
+    "id": "ans-3",
+    "by": 1,
+    "nar": "År 46, sommartid",
+    "vem": "Asve",
+    "text": "Gott anseende: byn tycker att hon är rik och stark."
+   },
+   {
+    "id": "ans-4",
+    "by": 42,
+    "nar": "År 21, hösttid",
+    "vem": "Sige",
+    "text": "Gott anseende: byn tycker att han är rättvis."
+   },
+   {
+    "id": "ans-5",
+    "by": 42,
+    "nar": "År 46, sommartid",
+    "vem": "Yrun",
+    "text": "Dåligt anseende: byn tycker att hon är en klåpare och en lögnare."
+   },
+   {
+    "id": "ans-6",
+    "by": 777,
+    "nar": "År 21, hösttid",
+    "vem": "Vistgaut",
+    "text": "Gott anseende: byn tycker att han är rik och flitig."
+   }
+  ]
+ },
+ {
+  "id": "intryck",
+  "rubrik": "Vad hen tror om någon",
+  "var": "Personrutan, Rykten: när man trycker på en symbol under \"Vad hen tror om andra\".",
+  "max": 8,
+  "texter": [
+   {
+    "id": "intryck-1",
+    "by": 1,
+    "nar": "År 9, vårtid",
+    "vem": "Vad Tustig tror om Eborg",
+    "text": "Välbärgad: säker, såg det själv"
+   },
+   {
+    "id": "intryck-2",
+    "by": 1,
+    "nar": "År 21, hösttid",
+    "vem": "Vad Tustig tror om Eborg",
+    "text": "Rik: säker, såg det själv"
+   },
+   {
+    "id": "intryck-3",
+    "by": 1,
+    "nar": "År 34, istid",
+    "vem": "Vad Lonsger tror om Frönvi",
+    "text": "Stark: säker, såg det själv\nFrönvi vann ett slagsmål mot Ingrulf (tre gånger)"
+   },
+   {
+    "id": "intryck-4",
+    "by": 42,
+    "nar": "År 9, vårtid",
+    "vem": "Vad Magaut tror om Oka",
+    "text": "Välbärgad: ganska säker, hörde det av Sige"
+   },
+   {
+    "id": "intryck-5",
+    "by": 42,
+    "nar": "År 21, hösttid",
+    "vem": "Vad Sige tror om Yrun",
+    "text": "Lögnare: säker, såg det själv\nYrun överdrev om Alger (två gånger)\nYrun överdrev om Oka"
+   },
+   {
+    "id": "intryck-6",
+    "by": 42,
+    "nar": "År 34, istid",
+    "vem": "Vad Alger tror om Sige",
+    "text": "Generös: säker, såg det själv\nSige gav mat till Gunhild\nSige gav mat till Ylvra\nSige gav mat till Osdar"
+   },
+   {
+    "id": "intryck-7",
+    "by": 777,
+    "nar": "År 9, vårtid",
+    "vem": "Vad Vistgaut tror om Dafast",
+    "text": "Lögnare: ganska säker, hörde det av Ikunn, överdrivet\nDafast överdrev om Vistgaut (tre gånger)"
+   },
+   {
+    "id": "intryck-8",
+    "by": 777,
+    "nar": "År 21, hösttid",
+    "vem": "Vad Vekja tror om Kae",
+    "text": "Tjuv: säker, hörde det av någon, överdrivet\nKae tog hö av Vistgaut (två gånger)\nKae tog hö av Asunn"
+   }
+  ]
+ },
+ {
+  "id": "prat",
+  "rubrik": "Pratbubblan",
+  "var": "Personrutan, medan hen pratar med någon.",
+  "max": 10,
+  "texter": [
+   {
+    "id": "prat-1",
+    "by": 1,
+    "nar": "År 1, vårtid",
+    "vem": "Tustig, man, 30 år",
+    "text": "Yhild berättade en lustig historia för Tustig."
+   },
+   {
+    "id": "prat-2",
+    "by": 1,
+    "nar": "År 13, vårtid",
+    "vem": "Igik, man, 35 år",
+    "text": "Tugerd klagade för Igik på hur slitsamt det är att vara väktare."
+   },
+   {
+    "id": "prat-3",
+    "by": 1,
+    "nar": "År 24, hösttid",
+    "vem": "Gunulf, man, 10 år",
+    "text": "Ingrulf och Gunulf undrade var de kan få tag på kött."
+   },
+   {
+    "id": "prat-4",
+    "by": 1,
+    "nar": "År 35, vårtid",
+    "vem": "Igik, man, 57 år",
+    "text": "Bora frågade Igik hur det gått, och Igik berättade."
+   },
+   {
+    "id": "prat-5",
+    "by": 42,
+    "nar": "År 3, vårtid",
+    "vem": "Olgaut, man, 32 år",
+    "text": "Torkel och Olgaut pratade om våren och vad den för med sig."
+   },
+   {
+    "id": "prat-6",
+    "by": 42,
+    "nar": "År 16, sommartid",
+    "vem": "Ylvunn, kvinna, 42 år",
+    "text": "Ylvunn och Yrun pratade om ingenting särskilt."
+   },
+   {
+    "id": "prat-7",
+    "by": 42,
+    "nar": "År 27, hösttid",
+    "vem": "Yrun, kvinna, 30 år",
+    "text": "Bjegrun och Yrun drömde om något fett."
+   },
+   {
+    "id": "prat-8",
+    "by": 42,
+    "nar": "År 39, vårtid",
+    "vem": "Sige, man, 61 år",
+    "text": "Gungerd och Sige pratade om hur gott det vore med svamp."
+   },
+   {
+    "id": "prat-9",
+    "by": 777,
+    "nar": "År 8, vårtid",
+    "vem": "Vistgaut, man, 38 år",
+    "text": "Gerstig sa att kött var det han längtade mest efter."
+   },
+   {
+    "id": "prat-10",
+    "by": 777,
+    "nar": "År 27, hösttid",
+    "vem": "Vistgaut, man, 56 år",
+    "text": "Ikunn berättade för Vistgaut var det finns bär och rötter."
+   }
+  ]
+ },
+ {
+  "id": "sak",
+  "rubrik": "Sakens berättelse",
+  "var": "Rutan för en sak eller station som har en historia (★ före namnet).",
+  "max": 6,
+  "texter": [
+   {
+    "id": "sak-1",
+    "by": 42,
+    "nar": "År 9, vårtid",
+    "vem": "Träspjut",
+    "text": "Ylvunn gjorde träspjutet en vår. Det borde hon kanske inte ha gjort. Tormvid satt bredvid och bet sig i läppen för att inte skratta."
+   },
+   {
+    "id": "sak-2",
+    "by": 42,
+    "nar": "År 21, hösttid",
+    "vem": "Bälte av rep",
+    "text": "Alger gjorde bältet av rep en sommar i blåsten. Det borde han kanske inte ha gjort. Ylvra frågade vad det skulle bli. Det undrar byn fortfarande."
+   },
+   {
+    "id": "sak-3",
+    "by": 42,
+    "nar": "År 34, istid",
+    "vem": "Bälte av rep",
+    "text": "Asfast gjorde bältet av rep under istiden i snön. Det borde han kanske inte ha gjort. Bjegrun satt bredvid och bet sig i läppen för att inte skratta."
+   },
+   {
+    "id": "sak-4",
+    "by": 42,
+    "nar": "År 46, sommartid",
+    "vem": "Bälte av rep",
+    "text": "Det går att använda bältet av rep, om man inte är noga. Sigfast gjorde det en sommar."
+   },
+   {
+    "id": "sak-5",
+    "by": 42,
+    "nar": "År 46, sommartid",
+    "vem": "Halmbädd",
+    "text": "Halmbädden är Ylvras verk, och det syns, tyvärr."
+   },
+   {
+    "id": "sak-6",
+    "by": 777,
+    "nar": "År 46, sommartid",
+    "vem": "Träspjut",
+    "text": "Vimlaug gjorde träspjutet en sommar. Det borde hon kanske inte ha gjort. Gerrun skrattade så att Vimlaug blev röd i ansiktet."
+   }
+  ]
+ },
+ {
+  "id": "ratt",
+  "rubrik": "Rättegången",
+  "var": "Fliken Styre, Rättegångar: när man trycker på en dom.",
+  "max": 5,
+  "texter": [
+   {
+    "id": "ratt-1",
+    "by": 1,
+    "nar": "År 9, vårtid",
+    "vem": "Adar",
+    "text": "År 5, vårtid: Adar överdrev om Eborg: tillrättavisning\n\nElden sprakade i mörkret när Igik tillrättavisade Adar. Adar överdrev om Eborg. Många hade kommit för att se, och de gick därifrån nöjda med domen.\n\nSåg det: ingen annan\nHörde det: ingen annan"
+   },
+   {
+    "id": "ratt-2",
+    "by": 1,
+    "nar": "År 34, istid",
+    "vem": "Frönvi",
+    "text": "År 29, istid: Frönvi slog Gunulf: tillrättavisning\n\nPå kvällen samlades byn vid elden. Igik tillrättavisade Frönvi för att hon slog Gunulf. De flesta tyckte att Frönvi fick vad hon förtjänade.\n\nSåg det: Adar, Tugerd, Erigve, Tuveig och Gunulf\nHörde det: ingen annan"
+   },
+   {
+    "id": "ratt-3",
+    "by": 42,
+    "nar": "År 9, vårtid",
+    "vem": "Gunve",
+    "text": "År 8, vårtid: Gunve överdrev om Oka: tillrättavisning\n\nDet var vår när Gunve fick svara för att hon överdrev om Oka. Sige tillrättavisade henne. Ingen sa emot. Byn tyckte att domen var rättvis.\n\nSåg det: ingen annan\nHörde det: ingen annan"
+   },
+   {
+    "id": "ratt-4",
+    "by": 42,
+    "nar": "År 34, istid",
+    "vem": "Sigfast",
+    "text": "År 28, istid: Sigfast överdrev om Oka: tillrättavisning\n\nElden sprakade i mörkret när Sige tillrättavisade Sigfast. Sigfast överdrev om Oka. Många hade kommit för att se, och de gick därifrån nöjda med domen. Sige dömde sin egen son.\n\nSåg det: ingen annan\nHörde det: ingen annan"
+   },
+   {
+    "id": "ratt-5",
+    "by": 777,
+    "nar": "År 21, hösttid",
+    "vem": "Kae",
+    "text": "År 20, sommartid: Kae tog hö av Vistgaut: tillrättavisning\n\nRyktet hade gått att Kae tog hö av Vistgaut. På kvällen tog Ikunn upp saken, och domen blev att Kae skulle få höra hur fel det var. Efteråt talade man om domen vid elden, och de flesta höll med Ikunn.\n\nSåg det: Vistgaut\nHörde det: Vimlaug, Dafast, Gerstig, Raglaug och Vekja"
+   }
+  ]
+ },
+ {
+  "id": "logg",
+  "rubrik": "Loggen",
+  "var": "Fliken Folk, Händelser: de senaste raderna, nyast överst. Här 30 rader åt gången.",
+  "max": 6,
+  "texter": [
+   {
+    "id": "logg-1",
+    "by": 1,
+    "nar": "År 9, vårtid",
+    "vem": "Händelser",
+    "text": "År 9, vårtid, kl. 06:00  Yhild såg på när Asve arbetade, och nu kan hon själv göra flintyxor.\nÅr 9, vårtid, kl. 04:50  Adar visade Asve hur man kan göra flintyxor, och nu kan hon det.\nÅr 9, vårtid, kl. 04:50  Eborg kan nu tvinna rep. Igik lärde henne.\nÅr 9, vårtid, kl. 04:30  Adar har lärt Tustig att göra flintyxor.\nÅr 9, vårtid, kl. 02:30  Igik kan nu tvinna rep. Adar lärde honom.\nÅr 9, vårtid, kl. 02:00  Lagerplats 4 blev för liten, så byn gjorde den större.\nÅr 9, vårtid, kl. 01:55  Igik har lärt Eborg att göra flintyxor.\nÅr 9, vårtid, kl. 01:10  Tugerd och Tustig söker sig till varandra nu. De är nära vänner.\nÅr 9, vårtid, kl. 01:00  Lagerplats 3 blev för liten, så byn gjorde den större.\nÅr 9, vårtid, kl. 00:46  Igik gjorde byns första yxa av en pinne och en flintsten. Nu kan byn fälla träd.\nÅr 8, vårtid, kl. 23:55  Lonsger, tre år, fick ett småsyskon, Halik.\nÅr 8, vårtid, kl. 23:55  Ett skrik hördes i byn: Halik hade fötts, son till Eborg och Igik.\nÅr 8, vårtid, kl. 23:05  Det tog sin tid, men nu kan Igik göra flintyxor. Det var Adar som lärde honom.\nÅr 8, vårtid, kl. 23:00  Steja har bestämt sig: Yhild är hennes ärkefiende.\nÅr 8, vårtid, kl. 23:00  Yhild ser nu Steja som sin ärkefiende.\nÅr 8, vårtid, kl. 20:00  Eborg kvad vid elden om Igik, som leder byn väl, och de andra lyssnade.\nÅr 8, vårtid, kl. 18:48  Igik vann brottningen.\nÅr 8, vårtid, kl. 17:51  Adar började tvinna rep av hö i byn.\nÅr 8, vårtid, kl. 16:35  Yhild vågade inte slåss med Steja och drog sig undan (efter ett gräl).\nÅr 8, vårtid, kl. 16:35  Yhild och Steja ropade att det slåss i byn, och elva hörde ropet.\nÅr 8, vårtid, kl. 15:23  Eborg vann brottningen.\nÅr 8, vårtid, kl. 14:05  Sifast vann brottningen.\nÅr 8, vårtid, kl. 13:00  Yhild och Steja har blivit ovänner.\nÅr 8, vårtid, kl. 12:43  Igik vann brottningen.\nÅr 8, vårtid, kl. 11:16  Eborg vann brottningen.\nÅr 8, vårtid, kl. 11:05  Tustig blåste liv i glöden och elden brinner igen.\nÅr 8, vårtid, kl. 10:50  Elden slocknade efter att ha brunnit i 6,8 dygn. Glöden lever en stund till.\nÅr 8, vårtid, kl. 09:08  Igik vann brottningen.\nÅr 8, vårtid, kl. 08:45  Tugerd och Steja är inte vänner längre. De är ovänner.\nÅr 8, vårtid, kl. 07:25  Adar kom på hur man kan tvinna rep. Rep behövs till flintspjut och metspö."
+   },
+   {
+    "id": "logg-2",
+    "by": 1,
+    "nar": "År 34, istid",
+    "vem": "Händelser",
+    "text": "År 34, istid, kl. 04:40  Frönvi och Ragveig slogs (efter ett gräl). Ragveig gav upp.\nÅr 34, istid, kl. 04:40  Frönvi och Ragveig ropade att det slåss i byn, och många hörde ropet.\nÅr 34, istid, kl. 04:25  Frönvi och Adar slogs (efter ett gräl). Adar gav upp.\nÅr 34, istid, kl. 04:25  Frönvi och Adar ropade larm: det slåss i byn. Många hörde det.\nÅr 34, istid, kl. 01:45  Gunulf och Frönvi slogs (efter ett gräl). Gunulf gav upp.\nÅr 34, istid, kl. 01:45  Gunulf och Frönvi ropade larm. Många hörde det: det slåss i byn.\nÅr 34, istid, kl. 00:30  Under natten gjorde byn fyra byten, mest ärter mot ben.\nÅr 34, istid, kl. 00:00  Frönvi och Adar slogs (efter ett gräl). Adar gav upp.\nÅr 34, istid, kl. 00:00  Frönvi och Adar ropade larm. Många hörde det: det slåss i byn.\nÅr 33, istid, kl. 22:18  Ingrulf, 16 år, var med när byn lärde sig att sy vattensäckar.\nÅr 33, istid, kl. 22:18  Adar kom på hur man kan sy vattensäckar. Man kan bära vatten till den som inte kan gå till vattnet.\nÅr 33, istid, kl. 20:25  Under kvällen gjorde byn sju byten, mest rötter mot talg.\nÅr 33, istid, kl. 20:20  Gunulf fick ett träspjut av Adar.\nÅr 33, istid, kl. 20:02  Erigve kvad vid elden om Silvunn, som var stark, och de andra lyssnade.\nÅr 33, istid, kl. 19:39  Tugerd kom på hur man kan sy skinnfällar. Den som sover under en skinnfäll fryser mindre.\nÅr 33, istid, kl. 19:15  Igik räckte Halik en korg.\nÅr 33, istid, kl. 19:05  Asve gav Erigve ett träspjut och bad inte om något tillbaka.\nÅr 33, istid, kl. 17:22  Gunulf har lärt sig att smyga på djuren i motvind.\nÅr 33, istid, kl. 16:52  Gunulf vann snöbollskriget.\nÅr 33, istid, kl. 15:45  Under dagen gjorde byn åtta byten, mest ärter mot talg.\nÅr 33, istid, kl. 15:15  Ara och Sindulf har hittat varandra. De är nära vänner nu.\nÅr 33, istid, kl. 13:10  Ingrulf ligger med feber och orkar inte resa sig.\nÅr 33, istid, kl. 12:59  Ett byte mellan Asve och Adar: ett rep mot en korg och en rot.\nÅr 33, istid, kl. 11:44  Erigve kom på hur man kan bygga en grillställning. Kött och fisk grillas över elden. Den grillade maten håller längre, och den som äter den blir inte sjuk av rått kött.\nÅr 33, istid, kl. 10:00  Ragveig ser nu Frönvi som sin ärkefiende.\nÅr 33, istid, kl. 10:00  Det finns ingen Frönvi hatar som Adar. Adar är hennes ärkefiende.\nÅr 33, istid, kl. 10:00  Lonsger hatar Frönvi mer än någon annan i byn.\nÅr 33, istid, kl. 09:51  Under morgonen gjorde byn fem byten.\nÅr 33, istid, kl. 09:55  Igik, 55 år, var med när byn lärde sig att hänga dörrar av skinn.\nÅr 33, istid, kl. 09:55  Adar kom på hur man kan hänga dörrar av skinn. Huset släpper ut mindre värme genom dörren."
+   },
+   {
+    "id": "logg-3",
+    "by": 42,
+    "nar": "År 9, vårtid",
+    "vem": "Händelser",
+    "text": "År 9, vårtid, kl. 05:00  Sige har lärt Ylvunn att tvinna rep.\nÅr 9, vårtid, kl. 04:45  Oka har lärt sig av Sige att tvinna rep.\nÅr 9, vårtid, kl. 04:00  Tordis, tre år, levde i överflöd.\nÅr 9, vårtid, kl. 03:10  Olgaut har lärt sig av Sige att tvinna rep.\nÅr 9, vårtid, kl. 03:05  Torkel såg på när Sige arbetade, och nu kan han själv tvinna rep.\nÅr 9, vårtid, kl. 01:45  Nu kan Yrun också tvinna rep. Sige visade henne hur.\nÅr 9, vårtid, kl. 00:00  Gunve vill inte vara sämre än Alger. De har blivit rivaler.\nÅr 9, vårtid, kl. 00:00  Det är en tävlan mellan Ylvunn och Alger. De har blivit rivaler.\nÅr 9, vårtid, kl. 00:00  Alger kallas nu för väktare.\nÅr 8, vårtid, kl. 23:45  Gunve har lärt sig av Sige att tvinna rep.\nÅr 8, vårtid, kl. 23:30  I byn har man börjat säga att Sige är en lögnare.\nÅr 8, vårtid, kl. 23:00  Magaut, tre år, levde i överflöd.\nÅr 8, vårtid, kl. 22:25  Alger har lärt sig av Ylvunn att göra flintyxor.\nÅr 8, vårtid, kl. 22:20  Det har börjat sägas att Sige är rättvis, och det sägs med respekt.\nÅr 8, vårtid, kl. 21:45  Alger lärde sig av Sige: att tälja träspjut och att välja en ledare.\nÅr 8, vårtid, kl. 21:30  Magaut blev magsjuk av skämd mat.\nÅr 8, vårtid, kl. 21:05  Eridis och Unborg vill inte längre se varandra. De är ovänner.\nÅr 8, vårtid, kl. 20:55  Sige kvad vid elden om Yrun, som är en lögnare, och de andra lyssnade.\nÅr 8, vårtid, kl. 20:00  Sige tillrättavisar Gunve för att hon överdrev om Oka.\nÅr 8, vårtid, kl. 19:30  Folk viskar om att Ylvunn är flitig.\nÅr 8, vårtid, kl. 18:22  Sige sådde ärter på fältet.\nÅr 8, vårtid, kl. 18:21  Under kvällen gjorde byn fem byten, mest ärtfrön mot bär.\nÅr 8, vårtid, kl. 17:00  Gunve blåste liv i glöden och elden brinner igen.\nÅr 8, vårtid, kl. 16:52  Sige röjde byns första fält. Där ska frön sås.\nÅr 8, vårtid, kl. 16:30  Elden slocknade efter att ha brunnit i 7,0 dygn. Glöden lever en stund till.\nÅr 8, vårtid, kl. 16:16  Ylvunn vann brottningen.\nÅr 8, vårtid, kl. 15:42  Sige började tvinna rep av hö i byn.\nÅr 8, vårtid, kl. 15:40  Utan att fråga om något gav Oka ett träspjut till Yrun.\nÅr 8, vårtid, kl. 15:30  Det går rykten om att Ylvunn är en klåpare.\nÅr 8, vårtid, kl. 14:57  Sige kom på hur man kan tvinna rep. Rep behövs till flintspjut och metspö."
+   },
+   {
+    "id": "logg-4",
+    "by": 42,
+    "nar": "År 34, istid",
+    "vem": "Händelser",
+    "text": "År 34, istid, kl. 05:55  Olgaut såg på när Ylvra arbetade, och nu kan han själv flytta plantor dit skogen behövs.\nÅr 34, istid, kl. 05:50  Torkel såg på när Vekel arbetade, och nu kan han själv flytta plantor dit skogen behövs.\nÅr 34, istid, kl. 05:50  Sige visade Yve hur man kan flytta plantor dit skogen behövs, och nu kan hon det.\nÅr 34, istid, kl. 05:25  Under natten gjorde byn tolv byten, mest bär mot ved och grenar.\nÅr 34, istid, kl. 05:25  Onsvi och Torkel bytte: ett bär mot ett bälte av rep.\nÅr 34, istid, kl. 05:15  Byn minns Oka som rik.\nÅr 34, istid, kl. 05:15  Sigger, sex år, såg Oka dö.\nÅr 34, istid, kl. 05:15  Unborg, 31 år, miste sin mor Oka.\nÅr 34, istid, kl. 05:15  Torkel ärvde Okas hus och bälte av rep efter Oka.\nÅr 34, istid, kl. 05:15  Oka dog av ålderdom, 60 år gammal.\nÅr 34, istid, kl. 05:00  Oka vill vara bättre än Onsvi, och Onsvi vill vara bättre än Oka. De är rivaler.\nÅr 34, istid, kl. 05:00  Onsvi kallas nu för berättare.\nÅr 34, istid, kl. 04:55  Gunste såg på när Sige arbetade, och nu kan hon själv flytta plantor dit skogen behövs.\nÅr 34, istid, kl. 04:25  Torkel och Yve har blivit nära vänner.\nÅr 34, istid, kl. 04:10  Nu kan Sigfast också flytta plantor dit skogen behövs. Ylvra visade honom hur.\nÅr 34, istid, kl. 04:10  Ylvunn och Alger har blivit nära vänner.\nÅr 34, istid, kl. 03:50  Sige lät Sigfast få två bär mot sju vedträn, två grenar och ett bälte av rep.\nÅr 34, istid, kl. 03:40  Vekel såg på när Sige arbetade, och nu kan han själv flytta plantor dit skogen behövs.\nÅr 34, istid, kl. 03:25  Ylvra kan nu flytta plantor dit skogen behövs. Sige lärde henne.\nÅr 34, istid, kl. 03:00  Oka kallas nu för berättare.\nÅr 34, istid, kl. 02:00  Det har vuxit fram en vänskap mellan Ylvra och Yve.\nÅr 34, istid, kl. 02:00  Det är Oka som Yrun går till först. De är bästa vänner.\nÅr 34, istid, kl. 01:40  Ett byte mellan Torkel och Sigfast: ett bär mot ett bälte av rep.\nÅr 34, istid, kl. 01:10  Unborg visade Gunste hur man kan göra flintspjut, och nu kan hon det.\nÅr 34, istid, kl. 01:00  Bjegrun, elva år, växte upp tryggt i ett varmt hus.\nÅr 34, istid, kl. 00:35  Gunste lärde sig mycket av Bjegrun, Halvi och Yrun: att göra trummor, att bygga en slaktbänk och två saker till.\nÅr 33, istid, kl. 23:55  Gunste lärde sig mycket av Halvi, Torkel, Osdar och Bjegrun: att bygga en scen, att binda mål och fem saker till.\nÅr 33, istid, kl. 23:30  Nu är Torkel och Asfast vänner, och det syns.\nÅr 33, istid, kl. 23:25  Nu kan Sige också flytta plantor dit skogen behövs. Onsvi visade honom hur.\nÅr 33, istid, kl. 23:10  Torkel och Osdar söker sig till varandra nu. De är nära vänner."
+   },
+   {
+    "id": "logg-5",
+    "by": 777,
+    "nar": "År 9, vårtid",
+    "vem": "Händelser",
+    "text": "År 9, vårtid, kl. 03:45  Vimlaug såg på när Vistgaut arbetade, och nu kan hon själv göra trummor.\nÅr 9, vårtid, kl. 03:00  Raglaug, 22 år, levde i överflöd.\nÅr 9, vårtid, kl. 02:55  Där Raglaug är, där är ofta Torvdis. De har blivit nära vänner.\nÅr 9, vårtid, kl. 01:05  Det går rykten om att Kae är lat.\nÅr 9, vårtid, kl. 00:50  Bakom ryggen på Kae säger man att hon är en tjuv.\nÅr 8, vårtid, kl. 23:40  Vistgaut har lärt Asunn att göra trummor.\nÅr 8, vårtid, kl. 23:10  Vistgaut har lärt sig av Torvdis att göra trummor.\nÅr 8, vårtid, kl. 22:10  Där Ikunn är, där är ofta Raglaug. De har blivit nära vänner.\nÅr 8, vårtid, kl. 21:40  Nu kan Torvdis också sy bollar. Ikunn visade henne hur.\nÅr 8, vårtid, kl. 21:05  Det tog sin tid, men nu kan Asunn sy bollar. Det var Vistgaut som lärde henne.\nÅr 8, vårtid, kl. 20:45  Nu kan Vimlaug också sy bollar. Vistgaut visade henne hur.\nÅr 8, vårtid, kl. 20:35  Torvdis kan nu göra trummor. Ikunn lärde henne.\nÅr 8, vårtid, kl. 20:25  Vimlaug och Asunn bytte: tre vedträn mot ett bär.\nÅr 8, vårtid, kl. 20:15  Ikunn spelade upp en berättelse för de andra om Dafast, som är en lögnare, med röster och rörelser.\nÅr 8, vårtid, kl. 20:00  Ikunn tillrättavisar Torvdis för att hon tog rep av Asunn.\nÅr 8, vårtid, kl. 19:25  Kae blåste liv i glöden och elden brinner igen.\nÅr 8, vårtid, kl. 19:30  Elden slocknade efter att ha brunnit i 7,3 dygn. Glöden lever en stund till.\nÅr 8, vårtid, kl. 18:40  Torvdis har lärt sig av Ikunn att tälja slagträn.\nÅr 8, vårtid, kl. 18:30  I byn har man börjat säga att Vistgaut är flitig.\nÅr 8, vårtid, kl. 18:10  Raglaug kom på hur man kan välja en ledare. Bara den som kan ledarskap kan bli byns ledare.\nÅr 8, vårtid, kl. 18:10  Det tog sin tid, men nu kan Raglaug bygga en scen. Det var Torvdis som lärde henne.\nÅr 8, vårtid, kl. 17:00  Raglaug kallas nu för mästare.\nÅr 8, vårtid, kl. 16:00  Under dagen gjorde byn sex byten, mest ärtfrön mot bär.\nÅr 8, vårtid, kl. 15:41  Raglaug kom på hur man kan odla. Man kan så frön på ett fält och skörda grödorna.\nÅr 8, vårtid, kl. 15:40  Raglaug lärde sig av Vistgaut: att bygga timmerhus och att tälja träspjut.\nÅr 8, vårtid, kl. 15:25  Ryktet går: Ylvvald är en tjuv.\nÅr 8, vårtid, kl. 14:11  Raglaug kom på hur man kan göra flintyxor. Med yxa kan man fälla träd och hugga trä.\nÅr 8, vårtid, kl. 14:00  Dafast, sex år, levde i överflöd.\nÅr 8, vårtid, kl. 13:42  Raglaug kom på hur man kan fläta korgar. Man bär hem mer från varje tur och spiller mindre bär.\nÅr 8, vårtid, kl. 13:36  Raglaug kom på hur man kan fläta bälten. Redskapet hänger i bältet när man bär hem, så båda händerna är fria och man bär mer."
+   },
+   {
+    "id": "logg-6",
+    "by": 777,
+    "nar": "År 34, istid",
+    "vem": "Händelser",
+    "text": "År 34, istid, kl. 05:50  Under natten gjorde byn två byten, mest bär mot rovfrön.\nÅr 34, istid, kl. 05:00  Man säger i byn att Bjeja är stark.\nÅr 34, istid, kl. 01:20  Boik lät Gerstig få ett bär mot ett träspjut.\nÅr 34, istid, kl. 01:00  Lagerplats 3 blev för liten, så byn gjorde den större.\nÅr 34, istid, kl. 00:55  Boik lät Ikunn få ett bär mot en gren, ett rovfrö och ett träspjut.\nÅr 34, istid, kl. 00:00  Lagerplats 3 blev för liten, så byn gjorde den större.\nÅr 33, istid, kl. 23:00  Lagerplats 3 blev för liten, så byn gjorde den större.\nÅr 33, istid, kl. 22:10  I byn har man börjat säga att Asunn är feg.\nÅr 33, istid, kl. 22:00  Lagerplats 3 blev för liten, så byn gjorde den större.\nÅr 33, istid, kl. 21:35  Boik, 28 år, fick ett barn, Vivulf.\nÅr 33, istid, kl. 21:35  Byn fick en ny invånare, Vivulf, son till Vimlaug och Boik.\nÅr 33, istid, kl. 21:00  Lagerplats 3 blev för liten, så byn gjorde den större.\nÅr 33, istid, kl. 20:50  Tormund och Boja har blivit goda vänner.\nÅr 33, istid, kl. 20:00  Lagerplats 3 blev för liten, så byn gjorde den större.\nÅr 33, istid, kl. 19:49  Vekja kvad vid elden om Kae, som var våldsam, och de andra lyssnade.\nÅr 33, istid, kl. 19:00  Lagerplats 3 blev för liten, så byn gjorde den större.\nÅr 33, istid, kl. 18:00  Lagerplats 3 blev för liten, så byn gjorde den större.\nÅr 33, istid, kl. 17:00  Lagerplats 3 blev för liten, så byn gjorde den större.\nÅr 33, istid, kl. 16:00  Lagerplats 3 blev för liten, så byn gjorde den större.\nÅr 33, istid, kl. 15:00  Lagerplats 3 blev för liten, så byn gjorde den större.\nÅr 33, istid, kl. 14:00  Lagerplats 3 blev för liten, så byn gjorde den större.\nÅr 33, istid, kl. 13:00  Lagerplats 3 blev för liten, så byn gjorde den större.\nÅr 33, istid, kl. 12:00  Lagerplats 3 blev för liten, så byn gjorde den större.\nÅr 33, istid, kl. 11:00  Lagerplats 3 blev för liten, så byn gjorde den större.\nÅr 33, istid, kl. 10:00  Lagerplats 3 blev för liten, så byn gjorde den större.\nÅr 33, istid, kl. 09:00  Lagerplats 3 blev för liten, så byn gjorde den större.\nÅr 33, istid, kl. 08:00  Lagerplats 3 blev för liten, så byn gjorde den större.\nÅr 33, istid, kl. 07:00  Lagerplats 3 blev för liten, så byn gjorde den större.\nÅr 33, istid, kl. 06:00  Lagerplats 3 blev för liten, så byn gjorde den större.\nÅr 33, istid, kl. 05:00  Lagerplats 3 blev för liten, så byn gjorde den större."
+   }
+  ]
+ },
+ {
+  "id": "strid",
+  "rubrik": "Striden",
+  "var": "Arenan, när man väljer en strid i byn: loggen rad för rad. Här de första 30 raderna.",
+  "max": 4,
+  "texter": [
+   {
+    "id": "strid-1",
+    "by": 1,
+    "nar": "År 9, vårtid",
+    "vem": "Steja mot Yhild (på lek)",
+    "text": "0.0 ⚔️ Striden börjar: man brottas på lek. Man brottas och slår på skoj och slutar vid första riktiga smärta.\n0.8 🤚 Yhild knuffar Steja, men Steja står kvar.\n1.0 ⬇️ Steja knuffar omkull Yhild.\n1.2 🖐️ Steja låter Yhild resa sig.\n4.0 ⬆️ Yhild reser sig.\n4.2 💥 Steja slår Yhild i bålen: ett lätt blåmärke.\n4.2 💥 Yhild slår Steja i vänstra handen: ett lätt blåmärke.\n6.2 🌀 Yhild duckar undan slaget från Steja.\n6.2 💥 Yhild slår Steja i högra benet: ett lätt blåmärke.\n8.2 {sym_miss} Yhild slår efter Steja men missar.\n8.4 🌀 Yhild duckar undan slaget från Steja.\n10.6 🌀 Yhild duckar undan slaget från Steja.\n10.6 {sym_miss} Yhild slår efter Steja men missar.\n12.4 ⚔️ Steja parerar slaget från Yhild.\n12.8 🤚 Steja knuffar Yhild, men Yhild står kvar.\n14.2 🤚 Yhild knuffar Steja, men Steja står kvar.\n14.8 {sym_miss} Steja slår efter Yhild men missar.\n16.6 🤚 Yhild knuffar Steja, men Steja står kvar.\n16.8 🤚 Steja knuffar Yhild, men Yhild står kvar.\n18.6 🤚 Steja knuffar Yhild, men Yhild står kvar.\n18.8 🤚 Yhild knuffar Steja, men Steja står kvar.\n20.6 {sym_miss} Steja slår efter Yhild men missar.\n20.6 ⚔️ Steja parerar slaget från Yhild.\n22.6 🤚 Yhild knuffar Steja, men Steja står kvar.\n22.8 💥 Steja slår Yhild i huvudet: ett lätt blåmärke.\n24.6 {sym_miss} Yhild slår efter Steja men missar.\n24.8 💥 Steja slår Yhild i huvudet: ett lätt blåmärke.\n27.0 {sym_miss} Steja slår efter Yhild men missar.\n27.0 ⚔️ Steja parerar slaget från Yhild.\n29.0 {sym_miss} Steja slår efter Yhild men missar.\n… och 4 rader till"
+   },
+   {
+    "id": "strid-2",
+    "by": 1,
+    "nar": "År 46, sommartid",
+    "vem": "Frönvi mot Algaut (efter ett gräl)",
+    "text": "0.0 ⚔️ Striden börjar: man slåss med händerna. Med händerna tills den ena ger upp eller ligger.\n0.8 {sym_miss} Algaut slår efter Frönvi men missar.\n1.4 🌀 Algaut duckar undan slaget från Frönvi.\n2.2 {sym_miss} Algaut slår efter Frönvi men missar.\n3.6 {sym_miss} Frönvi slår efter Algaut men missar.\n3.8 💥 Algaut slår Frönvi i vänstra benet: ett lätt blåmärke.\n5.4 {sym_miss} Algaut slår efter Frönvi men missar.\n5.6 🤚 Frönvi knuffar Algaut, men Algaut står kvar.\n7.0 💥 Algaut slår Frönvi i bålen: ett lätt blåmärke.\n7.6 {sym_miss} Frönvi slår efter Algaut men missar.\n8.8 {sym_miss} Algaut slår efter Frönvi men missar.\n9.8 💥 Frönvi slår Algaut i högra benet: ett lätt blåmärke.\n10.2 {sym_miss} Algaut slår efter Frönvi men missar.\n11.6 💥 Frönvi slår Algaut i vänstra armen: ett lätt blåmärke.\n11.8 ⬇️ Algaut knuffar omkull Frönvi.\n13.6 {sym_miss} Algaut slår efter Frönvi men missar.\n15.0 {sym_miss} Algaut slår efter Frönvi men missar.\n15.2 ⬆️ Frönvi reser sig.\n15.4 💥 Frönvi slår Algaut i högra handen: ett lätt blåmärke.\n17.0 🌀 Frönvi duckar undan slaget från Algaut.\n17.6 🤚 Frönvi knuffar Algaut, men Algaut står kvar.\n18.6 {sym_miss} Algaut slår efter Frönvi men missar.\n19.4 🌀 Algaut duckar undan slaget från Frönvi.\n20.4 {sym_miss} Algaut slår efter Frönvi men missar.\n21.4 {sym_miss} Frönvi slår efter Algaut men missar.\n22.0 ⬇️ Algaut knuffar omkull Frönvi.\n23.6 💥 Algaut slår Frönvi i bålen: ett lätt blåmärke.\n25.2 {sym_miss} Algaut slår efter Frönvi men missar.\n25.6 ⬆️ Frönvi reser sig.\n25.8 {sym_miss} Frönvi slår efter Algaut men missar.\n… och 13 rader till"
+   },
+   {
+    "id": "strid-3",
+    "by": 42,
+    "nar": "År 34, istid",
+    "vem": "Osdis mot Gunste (på lek)",
+    "text": "0.0 ⚔️ Striden börjar: man brottas på lek. Man brottas och slår på skoj och slutar vid första riktiga smärta.\n1.2 🌀 Gunste duckar undan slaget från Osdis.\n1.2 🤚 Gunste knuffar Osdis, men Osdis står kvar.\n3.2 {sym_miss} Osdis slår efter Gunste men missar.\n3.2 🤚 Gunste knuffar Osdis, men Osdis står kvar.\n5.0 {sym_miss} Gunste slår efter Osdis men missar.\n5.4 ⬇️ Osdis knuffar omkull Gunste.\n5.6 🖐️ Osdis låter Gunste resa sig.\n8.6 ⬆️ Gunste reser sig.\n8.8 {sym_miss} Osdis slår efter Gunste men missar.\n8.8 {sym_miss} Gunste slår efter Osdis men missar.\n10.8 {sym_miss} Osdis slår efter Gunste men missar.\n10.8 💥 Gunste slår Osdis i vänstra armen: ett lätt blåmärke.\n12.8 {sym_miss} Gunste slår efter Osdis men missar.\n13.0 ⬇️ Osdis knuffar omkull Gunste.\n16.2 ⬆️ Gunste reser sig.\n16.4 🌀 Gunste duckar undan slaget från Osdis.\n16.4 🤚 Gunste knuffar Osdis, men Osdis står kvar.\n18.4 💥 Gunste slår Osdis i bålen: ett lätt blåmärke.\n18.8 {sym_miss} Osdis slår efter Gunste men missar.\n20.2 💥 Gunste slår Osdis i högra armen: ett lätt blåmärke.\n21.0 💥 Osdis slår Gunste i vänstra armen: ett lätt blåmärke.\n22.2 💥 Gunste slår Osdis i bålen: ett lätt blåmärke.\n22.8 💥 Osdis slår Gunste i vänstra armen: ett lätt blåmärke.\n24.2 {sym_miss} Gunste slår efter Osdis men missar.\n25.2 💥 Osdis slår Gunste i bålen: ett lätt blåmärke.\n26.0 🌀 Osdis duckar undan slaget från Gunste.\n27.2 💥 Osdis slår Gunste i bålen: ett lätt blåmärke.\n28.2 💥 Gunste slår Osdis i vänstra armen: ett lätt blåmärke.\n29.2 💥 Osdis slår Gunste i högra foten: ett lätt blåmärke.\n… och 4 rader till"
+   },
+   {
+    "id": "strid-4",
+    "by": 777,
+    "nar": "År 21, hösttid",
+    "vem": "Kae mot Ikunn (efter ett gräl)",
+    "text": "0.0 ⚔️ Striden börjar: man slåss med händerna. Med händerna tills den ena ger upp eller ligger.\n1.6 💥 Ikunn slår Kae i bålen: ett lätt blåmärke.\n1.8 💥 Kae slår Ikunn i vänstra handen: ett lätt blåmärke.\n2.0 🏳️ Ikunn ger upp.\n2.0 🏁 Striden är slut. Kae vann."
+   }
+  ]
+ },
+ {
+  "id": "kronika",
+  "rubrik": "Krönikan",
+  "var": "Byns krönika: sparas för alltid men visas inte i spelet än. Här de första 30 raderna.",
+  "max": 3,
+  "texter": [
+   {
+    "id": "kronika-1",
+    "by": 1,
+    "nar": "År 46, sommartid",
+    "vem": "Krönikan",
+    "text": "År 1, vårtid  Nu kan byn odla, och det var Tustig som kom på hur.\nÅr 1, vårtid  Frörhild slog sten mot sten tills det tog eld. Det var byns första eld.\nÅr 2, vårtid  Så kom Steja till världen, dotter till Eborg och Igik.\nÅr 2, vårtid  Aulf föddes. Frörhild höll sitt barn i famnen hela natten.\nÅr 2, vårtid  Nu kan byn välja en ledare, och det var Igik som kom på hur.\nÅr 2, vårtid  Vid elden bestämdes det: Igik skulle bli byns första ledare och kallas den vise.\nÅr 3, vårtid  Tustig har vunnit fem matcher i brottning och är den bästa i byn.\nÅr 5, vårtid  Så fick Asve sitt namn: hon är lat, och nu är hon Asve den lata.\nÅr 5, vårtid  Mitt i natten föddes Tuslaug, dotter till Tugerd och Adar.\nÅr 5, vårtid  Eborg och Igik fick ett barn till, Lonsger.\nÅr 5, vårtid  Silvunn föddes, dotter till Asve och Sifast.\nÅr 6, vårtid  Ett nytt barn kom till byn: Frönvi, dotter till Frörhild och Tustig.\nÅr 6, vårtid  Elden brann lågt den kvällen. Frörhild hade dött i barnsäng, 32 år gammal.\nÅr 6, vårtid  Tustig ärvde 2 bär och 8 grenar efter Frörhild.\nÅr 6, vårtid  Alla kom för att se när Adar för första gången visade hur man kan slå flintknivar.\nÅr 6, vårtid  Barnen ropar den rike efter Igik. Han är rik, det vet alla.\nÅr 7, vårtid  Barnen ropar den rika efter Eborg. Hon är rik, det vet alla.\nÅr 7, vårtid  Vid elden viskar man om Tugerd den lata. Alla vet att hon är lat.\nÅr 8, vårtid  Adar var den första i byn som kunde göra flintyxor.\nÅr 8, vårtid  Ingen hade gjort det förut: Adar kom på hur man kan tvinna rep.\nÅr 8, vårtid  Ett skrik hördes i byn: Halik hade fötts, son till Eborg och Igik.\nÅr 9, vårtid  Erigve föddes. Asve höll sitt barn i famnen hela natten.\nÅr 9, vårtid  Det var Adar som först förstod hur man kan bygga timmerhus.\nÅr 9, vårtid  Ragveig föddes, dotter till Tugerd och Adar.\nÅr 10, vårtid  Adar prövade och misslyckades, prövade igen, och till sist kunde han göra halmbäddar.\nÅr 10, vårtid  Alla kom för att se när Adar för första gången visade hur man kan bygga bord.\nÅr 10, vårtid  Medan regnet föll kom Adar på hur man kan göra trädörrar.\nÅr 10, vårtid  Adar var den första i byn som kunde forma lerkrukor.\nÅr 10, vårtid  Adar prövade och misslyckades, prövade igen, och till sist kunde han snida väggbräden.\nÅr 10, vårtid  Efter mycket arbete stod långhuset färdigt."
+   },
+   {
+    "id": "kronika-2",
+    "by": 42,
+    "nar": "År 46, sommartid",
+    "vem": "Krönikan",
+    "text": "År 1, vårtid  Nu kan byn odla, och det var Olgaut som kom på hur.\nÅr 1, vårtid  Sige prövade och misslyckades, prövade igen, och till sist kunde han tälja träspjut.\nÅr 1, vårtid  Sige satt länge och funderade. Sedan kom han på hur man kan göra flintyxor.\nÅr 1, vårtid  Ingen glömmer när Torkel tände byns första eld.\nÅr 1, vårtid  Det var Sige som först förstod hur man kan välja en ledare.\nÅr 2, vårtid  Den första som ledde byn var Sige, den vise.\nÅr 2, vårtid  Byn fick en ny invånare, Ivgerd, dotter till Gunve och Sige.\nÅr 2, vårtid  Den första handlaren kom till byn: Ylvda från kusten i söder, med ryggsäcken full av varor.\nÅr 2, vårtid  Ett byte mellan Gunve för byn och Ylvda: en flintkniv mot tolv bär.\nÅr 2, vårtid  Gunve och Ylvda bytte: tolv bitar silver mot nio bär.\nÅr 3, vårtid  Det var vår när Unborg föddes, dotter till Oka och Torkel.\nÅr 4, vårtid  Ylvunn födde Eridis, och byn samlades för att se barnet.\nÅr 4, vårtid  Gunve den välbärgade, säger de nu. Gunve är välbärgad, och det ser alla.\nÅr 4, vårtid  Olgaut har vunnit fem matcher i brottning och är den bästa i byn.\nÅr 5, vårtid  Vid elden viskar man om Ylvunn den fattiga. Alla vet att hon är fattig.\nÅr 5, vårtid  Så kom Magaut till världen, son till Gunve och Sige.\nÅr 5, vårtid  Mitt i natten föddes Tordis, dotter till Oka och Torkel.\nÅr 6, vårtid  Alla vet att Oka är rik, och nu säger de Oka den förmögna.\nÅr 6, vårtid  Ylvunn och Olgaut fick ett barn till, Tormvid.\nÅr 7, vårtid  Sige gav ett träspjut till Yrun.\nÅr 7, vårtid  Randik föddes, son till Gunve och Sige.\nÅr 8, vårtid  Nu kan byn tvinna rep, och det var Sige som kom på hur.\nÅr 8, vårtid  Utan att fråga om något gav Oka ett träspjut till Yrun.\nÅr 9, vårtid  Ingen hade gjort det förut: Sige kom på hur man kan bygga timmerhus.\nÅr 9, vårtid  Nu kan byn göra halmbäddar, och det var Sige som kom på hur.\nÅr 9, vårtid  Nu kan byn bygga bord, och det var Sige som kom på hur.\nÅr 9, vårtid  Det var vår när Sige kom på hur man kan göra trädörrar.\nÅr 9, vårtid  Nu kan byn forma lerkrukor, och det var Sige som kom på hur.\nÅr 10, vårtid  Nu stod långhuset färdigt, och byn var lite större.\nÅr 10, vårtid  Ett skrik hördes i byn: Steleif hade fötts, son till Oka och Torkel."
+   },
+   {
+    "id": "kronika-3",
+    "by": 777,
+    "nar": "År 46, sommartid",
+    "vem": "Krönikan",
+    "text": "År 1, vårtid  Vistgaut prövade och misslyckades, prövade igen, och till sist kunde han odla.\nÅr 1, vårtid  Vistgaut blåste liv i den första glöden, och byn fick sin första eld.\nÅr 1, vårtid  Nu kan byn göra flintyxor, och det var Vistgaut som kom på hur.\nÅr 1, vårtid  Vistgaut satt länge och funderade. Sedan kom han på hur man kan tvinna rep.\nÅr 1, vårtid  Ingen hade gjort det förut: Ikunn kom på hur man kan tälja träspjut.\nÅr 1, vårtid  Ikunn och Vistgaut kom överens: ett ägg och en svamp mot otaliga grenar, sex famnar hö och ett träspjut.\nÅr 1, vårtid  Det var vår när Ikunn kom på hur man kan välja en ledare.\nÅr 2, vårtid  Ett skrik hördes i byn: Dafast hade fötts, son till Asunn och Vistgaut.\nÅr 2, vårtid  Ikunn gav Asunn ett träspjut för två bär.\nÅr 2, vårtid  Alla kom för att se när Vistgaut för första gången visade hur man kan bygga timmerhus.\nÅr 2, vårtid  Nu kan byn göra halmbäddar, och det var Ikunn som kom på hur.\nÅr 2, vårtid  Nu kan byn bygga bord, och det var Ikunn som kom på hur.\nÅr 2, vårtid  Det var vår när Ikunn kom på hur man kan göra trädörrar.\nÅr 2, vårtid  Nu kan byn forma lerkrukor, och det var Ikunn som kom på hur.\nÅr 2, vårtid  Det var vår när långhuset blev färdigt.\nÅr 2, vårtid  Alla kom för att se när Vistgaut för första gången visade hur man kan bygga en scen.\nÅr 3, vårtid  Ylvvald kom aldrig tillbaka. Han dog i en olycka när han höll vakt, 25 år gammal.\nÅr 3, vårtid  Ikunn ärvde flintyxa, 3 rötter, 2 hö, 581 grenar, 14 ved, 1 mossa och 10 bär efter Ylvvald.\nÅr 3, vårtid  Vistgaut prövade och misslyckades, prövade igen, och till sist kunde han fläta bälten.\nÅr 3, vårtid  Efter mycket arbete stod Vistgauts hus färdigt.\nÅr 4, vårtid  Vistgaut satt länge och funderade. Sedan kom han på hur man kan bygga en slöjdbänk.\nÅr 4, vårtid  Vistgaut lät Asunn få två rep mot ett bälte av rep.\nÅr 4, vårtid  Byn samlades och såg på när Ikunn gjorde klart verkstaden.\nÅr 5, vårtid  Ikunn hade byggt och rivit om och om igen vid bordet. Till sist stod den första hyllan, och den höll.\nÅr 5, vårtid  Asunn och Vistgaut fick ett barn till, Gerstig.\nÅr 5, vårtid  Ikunn lade den sista biten, och förrådshuset stod färdigt.\nÅr 5, vårtid  Det var Vistgaut som först förstod hur man kan binda mål.\nÅr 5, vårtid  Nu kan byn slå flintknivar, och det var Vistgaut som kom på hur.\nÅr 6, vårtid  Det var vår när Vistgaut kom på hur man kan fläta korgar.\nÅr 6, vårtid  Vistgaut prövade och misslyckades, prövade igen, och till sist kunde han göra lyror."
+   }
+  ]
+ }
+]

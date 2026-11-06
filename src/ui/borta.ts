@@ -17,7 +17,7 @@ export const BORTA_VIKT: Record<string, number> = {
   k_gift: 8,
   k_forstaLedare: 7, k_ledare: 7, ledare: 7,
   motgang: 6,
-  rovare: 5, k_vargAnfall: 5, k_vargjakt: 5, k_vargSprang: 5, k_forstaVarg: 5,
+  rovare: 5, k_vargAnfall: 5, k_bjornAnfall: 5, k_bjornjakt: 5, k_bjornjaktMiss: 5, k_bjornSprang: 5, k_forstaBjorn: 5, k_vargjakt: 5, k_vargSprang: 5, k_forstaVarg: 5,
   k_utvisad: 4,
   flytt: 3,
   k_uppfann: 2, episk: 2, k_husKlar: 2, forlust: 2, k_forstaEld: 2, handel: 2,

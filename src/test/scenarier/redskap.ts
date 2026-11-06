@@ -1,5 +1,5 @@
 // Scenarier. Redskap: stenring, spjut, redskap, slitage och teknik.
-import { createState, addTool, twineRope, makeTool, wearUsed, isSpear, step, living, cloneState, pilesOf, zoneOf, amountOf, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, ageOf, spears, SPJUT_FORSOK, getMap, DAY, HOUR, W, State, takenOf, migrate, campCenter, TEKNIK, knows, thinkWhileWorking, die, isWall, H, richness, setAmount, BEAT, tingOf, wantsTool, makeTask, wantsFlint, ALDER, KROPP, inMap, canLight, dangers, toolGain, chooseTask } from '../../sim';
+import { createState, addTool, twineRope, makeTool, wearUsed, isSpear, step, living, cloneState, pilesOf, zoneOf, amountOf, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, ageOf, spears, SPJUT_FORSOK, getMap, DAY, HOUR, W, State, takenOf, migrate, bynsMitt, TEKNIK, knows, thinkWhileWorking, die, isWall, H, richness, setAmount, BEAT, tingOf, wantsTool, makeTask, wantsFlint, ALDER, KROPP, inMap, canLight, dangers, toolGain, chooseTask } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
 import { setItems, setMat, setFood, kor, klockan, tandEld, bastaJaktruta, SCENARIER, medBank, medHus } from './hjalp';
@@ -19,10 +19,14 @@ SCENARIER.stenring = {
     delete (g.fire as { ring?: boolean }).ring;
     g.v = 1; migrate(g); // som en sparfil från före v40
     // flinta till en yxa är en förbättring: när maten inte räcker letar ingen efter den. Flinta till elden letas när byn inte svälter (steg 2.12.3)
+    // Sedan steg 6.1.17 letas flinta till en yxa när yxan är ett projekt som saknar flinta: de vuxna kan göra en yxa, och veden
+    // räcker, så att Försörjningen inte går före
     const f = createState(4, START);
     f.now = new Date(f.now).setHours(10, 0, 0, 0); Object.assign(f.fire, { lit: true, fuel: 3, ring: true });
+    for (const q of f.people) q.tek = { ...q.tek, yxa: 1 };
+    f.delning = { andel: 1 }; // byn delar all mat, så att den egna maten (bufferten per jag, steg 6.2.20) inte blandas in
     const letar = (flinta: number, mat: number) => {
-      setItems(f, { flinta, torrgras: 20, grenar: 20 }); setFood(f, mat); let n = 0, samla = 0;
+      setItems(f, { flinta, torrgras: 20, grenar: 20 }); setAmount(f, 'ved', 300); setFood(f, mat); f.arbBehov = undefined; let n = 0, samla = 0; // behoven räknas om (en gång i timmen i spelet, steg 6.2.21)
       for (let i = 0; i < 300; i++) {
         const p = living(f).filter(q => ageOf(q, f.now) >= ALDER.vuxen)[i % 4];
         Object.assign(p, { toa: 1, torst: 1, warm: 1, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
@@ -44,16 +48,21 @@ SCENARIER.stenring = {
       p.task = undefined;
     }
     for (const q of f.people) if (q.tek) delete q.tek.korg;
-    setItems(f, { flinta: 1, torrgras: 20, grenar: 20 }); setFood(f, 200); // som efter letar(1, 200)
-    // en i taget: letar någon redan (flaggan sok, vad skälet än säger) letar ingen annan flinta till en yxa
+    setItems(f, { flinta: 1, torrgras: 20, grenar: 20 }); setAmount(f, 'ved', 300); setFood(f, 200); f.arbBehov = undefined; // som efter letar(1, 200)
+    // arbetarna (steg 6.1.13): letar redan så många som raden leta har (flaggan sok, vad skälet än säger), letar de andra
+    // flinta till en yxa med en tredjedel av chansen
     const [l0, ...andra] = living(f).filter(q => ageOf(q, f.now) >= ALDER.vuxen);
-    let fler = 0;
-    for (let i = 0; i < 100; i++) {
-      const p = andra[i % andra.length];
-      l0.task = { act: 'samla', phase: 'do', tx: l0.x, ty: l0.y, until: f.now + HOUR, carry: 0, why: 'Samlar.', dark: false, sok: true };
-      Object.assign(p, { toa: 1, torst: 1, warm: 1, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
-      chooseTask(f, p); if (p.task?.sok) fler++; p.task = undefined;
-    }
+    const letare = (redan: boolean) => {
+      let n = 0;
+      for (let i = 0; i < 300; i++) {
+        const p = andra[i % andra.length];
+        l0.task = redan ? { act: 'samla', phase: 'do', tx: l0.x, ty: l0.y, until: f.now + HOUR, carry: 0, why: 'Samlar.', dark: false, sok: true } : undefined;
+        Object.assign(p, { toa: 1, torst: 1, warm: 1, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
+        chooseTask(f, p); if (p.task?.sok) n++; p.task = undefined;
+      }
+      return n;
+    };
+    const ensam = letare(false), fler = letare(true);
     // den som hämtar tändmaterial åt en släckt eld fortsätter på en plats utan bär, och slutar när tändmaterialet räcker.
     // Buskarna runt platsen töms, för annars går man vidare till nästa (nastaBuske, steg 2.12.4)
     const r = createState(4, START), rm = getMap(r.seed);
@@ -62,7 +71,7 @@ SCENARIER.stenring = {
     const th = living(r).find(q => ageOf(q, r.now) >= ALDER.vuxen)!;
     Object.assign(th, { toa: 1, torst: 1, warm: KROPP.kallt - 0.05, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
     chooseTask(r, th);
-    const tom = (() => { const c = campCenter(r); for (let d = 4; d < 30; d++) for (let k = 0; k < 16; k++) { const x = Math.floor(c.x + Math.cos(k / 16 * 6.283) * d), y = Math.floor(c.y + Math.sin(k / 16 * 6.283) * d); if (inMap(x, y) && rm.tiles[y * W + x] !== T.Vatten && !isWall(r, x + 0.5, y + 0.5) && richness(r, 'samla', x + 0.5, y + 0.5) < 0.01) return { x: x + 0.5, y: y + 0.5 }; } })()!;
+    const tom = (() => { const c = bynsMitt(r); for (let d = 4; d < 30; d++) for (let k = 0; k < 16; k++) { const x = Math.floor(c.x + Math.cos(k / 16 * 6.283) * d), y = Math.floor(c.y + Math.sin(k / 16 * 6.283) * d); if (inMap(x, y) && rm.tiles[y * W + x] !== T.Vatten && !isWall(r, x + 0.5, y + 0.5) && richness(r, 'samla', x + 0.5, y + 0.5) < 0.01) return { x: x + 0.5, y: y + 0.5 }; } })()!;
     for (const k of SIM.lagren('samla')) for (let dy = -8; dy <= 8; dy++) for (let dx = -8; dx <= 8; dx++) if (inMap(tom.x + dx, tom.y + dy)) takenOf(r)[k]![SIM.tileOf(tom.x + dx, tom.y + dy)] = 1;
     const valt = th.task?.act === 'samla' && !!th.task.tandmat;
     Object.assign(th.task!, { tx: tom.x, ty: tom.y, phase: 'do', until: r.now + 3 * HOUR }); th.x = tom.x; th.y = tom.y;
@@ -81,7 +90,7 @@ SCENARIER.stenring = {
       [`en sliten yxa räknas som en yxa när byn vill ha flinta (${slitenYxa ? 'vill ha mer' : 'räcker'})`, !slitenYxa],
       [`elden tänds bara med bränsle kvar efter tändgrenarna (5 grenar: ${tand5 ? 'ja' : 'nej'}, 6 grenar: ${tand6 ? 'ja' : 'nej'})`, !tand5 && tand6],
       [`en korg flätas vid slöjdbänken, inte där flintan skulle letas (${korgFel} av ${korgar} korgar fel)`, korgar > 0 && korgFel === 0],
-      [`en i taget letar flinta till en yxa (${fler} till av 100 när någon redan letar)`, fler === 0],
+      [`när raden leta har sina arbetare letar färre flinta till en yxa (${fler} av 300 när någon redan letar, ${ensam} annars)`, ensam > 0 && fler < ensam * 0.6],
       [`den som hämtar tändmaterial (${valt ? 'vald' : 'inte vald'}) fortsätter på en plats utan bär (${fortsatt ? 'ja' : 'nej'}) och slutar när det räcker (${slutat ? 'ja' : 'nej'})`, valt && fortsatt && slutat],
       [`flinta till en yxa letas inte när maten är knapp (${yxaSvalt} som samlar letar), men när den räcker (${yxaMat}); flinta till elden inte heller när byn svälter (${eldSvalt}), men när maten räcker (${eldMat}) (steg 2.12.3)`, yxaSvalt.startsWith('0 ') && !yxaMat.startsWith('0 ') && eldSvalt.startsWith('0 ') && !eldMat.startsWith('0 ')],
       [`stenar samlas och elden tänds (efter ${h} timmar)`, tand],
@@ -127,6 +136,7 @@ SCENARIER.fiskespjut = {
 };
 
 SCENARIER.redskap = {
+  lang: true,
   text: 'Rep tvinnas av hö vid elden. Flintspjut (gren, flinta, rep) håller längre än träspjut och används till fiske och jakt. Metspö (gren, rep, ben) med mask ger mest fisk',
   kor: () => {
     const s = createState(4, START);
@@ -145,7 +155,7 @@ SCENARIER.redskap = {
     makeTool(s, p, 'metspo');
     const spo = amountOf(s, 'metspo') === 1 && amountOf(s, 'ben') === 1 && amountOf(s, 'rep') === 0;
     // jakt med flintspjutet: fångar kaniner, och spjutet slits
-    const { x: bx, y: by } = bastaJaktruta(s, 30) ?? campCenter(s);
+    const { x: bx, y: by } = bastaJaktruta(s, 30) ?? bynsMitt(s);
     const vilt0 = amountOf(s, 'vilt'), sp0 = amountOf(s, 'flintspjut');
     let medSpjut = 0;
     // samma uppgift tills en kanin är hemma (jakten är försök som tar en stund, steg 3.7.3), högst sex timmar
@@ -237,7 +247,7 @@ SCENARIER.slitage = {
     // yxan slits för varje träd som faller (steg 2.3.12), inte per timme: att hugga trä ur stammen sliter den inte mer
     const y = createState(4, START), yp = living(y).find(q => ageOf(q, y.now) >= 18)!;
     const yx = addTool(y, 'yxa', yp), PER = 1 / SIM.ACTS.falla.redskap!.yxa.haller!;
-    const g = SIM.groundOf(y), c = campCenter(y);
+    const g = SIM.groundOf(y), c = bynsMitt(y);
     const trad = () => { for (let d = 1; d < 30; d++) for (let yy = c.y - d; yy <= c.y + d; yy++) for (let x = c.x - d; x <= c.x + d; x++) if (g.trees[yy * W + x] >= 0.95) return yy * W + x; return -1; };
     const falla = (ti: number) => {
       const ft: SIM.Task = { act: 'falla', phase: 'do', tx: (ti % W) + 0.5, ty: Math.floor(ti / W) + 0.5, until: 0, carry: 0, tool: 'yxa' };
@@ -325,7 +335,7 @@ SCENARIER.teknik = {
     const kanFran = TEKNIK.every(t => !s.people.some(p => knows(p, t.id)));
     kor(s, 20 * 24, s => {
       for (const t of TEKNIK) if (forst[t.id] === undefined && living(s).some(p => knows(p, t.id))) forst[t.id] = (s.now - s.founded) / DAY;
-      if ((amountOf(s, 'yxa')) > 0 && forst.yxa === undefined) yxaInnan = true;
+      if ((s.stat?.yxa1 ?? 0) > 0 && forst.yxa === undefined) yxaInnan = true; // gjord i byn: en handlare kan sälja en yxa förut
       if ((amountOf(s, 'rep')) > 0 && forst.rep === undefined) repInnan = true;
     });
     const kan = (id: string) => living(s).filter(p => knows(p, id)).length;
@@ -429,7 +439,7 @@ SCENARIER.forvaring = {
     const hyllan = () => stationerOf(s).find(t => t.k === 'hylla' && isKlar(t));
     // kistan fyller samma behov och är billigare, så under tiden byggs ingen kista (den prövas nedan)
     const kistTek = SIM.STATIONER.kista.tek; (SIM.STATIONER.kista as SIM.StationDef).tek = [];
-    try { while (!hyllan() && h < 200) /* ca 130 timmar sedan steg 4.5.6.7 */ { kor(s, 1); h++; } } finally { (SIM.STATIONER.kista as SIM.StationDef).tek = kistTek; }
+    try { while (!hyllan() && h < 300) /* ca 230 timmar sedan steg 6.1.8 (130 sedan 4.5.6.7) */ { kor(s, 1); h++; } } finally { (SIM.STATIONER.kista as SIM.StationDef).tek = kistTek; }
     const hy = hyllan(), z = hy && zonesOf(s).find(q => inZone(q, hy.x, hy.y) && q.hus !== undefined);
     const ryms = hy ? rymd(s, hy.x, hy.y, 'grenar') : 0;
     // mer grenar: hyllans ruta fylls mer än en vanlig ruta
@@ -591,6 +601,77 @@ SCENARIER.kvalitet = {
       [`ett perfekt plagg värmer mer än ett uselt (skyddar ${(kallPerfekt * 100).toFixed(0)} % mot ${(kallUsel * 100).toFixed(0)} %)`, kallPerfekt > kallUsel],
       ['bordet har kvalitet, slaktbänken inte', bord.q !== undefined && bank.q === undefined],
       ['ett ting från en äldre sparfil är normalt', SIM.kvOf(gammal) === SIM.NORMAL && SIM.kvHaller(gammal) === 1 && SIM.kvVarde(gammal) === 1],
+    ];
+  },
+};
+
+SCENARIER.underhall = {
+  text: 'Underhållet på nivån Förbättra (steg 6.2.12): när byn har så många yxor den vill men en av dem är sliten, gör den som kan ett nytt medan det gamla håller. Inget lagas; när de hela räcker, eller någon annan redan gör ett, görs inget',
+  kor: () => {
+    const s = createState(4, START), q = living(s).find(x => ageOf(x, s.now) >= ALDER.vuxen)!;
+    q.tek = { ...q.tek, yxa: 1 }; setItems(s, { flinta: 6, grenar: 30, rep: 4, torrgras: 30 });
+    const vill = SIM.villAv(s, 'yxa');
+    const yxor = Array.from({ length: vill }, () => addTool(s, 'yxa', q));
+    const hela = SIM.underhallGrupp(s, q);
+    yxor[0].c = SIM.REDSKAP.slitet / 2;
+    const slitet = SIM.underhallGrupp(s, q);
+    const m = makeTask(s, q, 'yxa');
+    // ett nytt är gjort: de hela räcker igen, och det slitna finns kvar tills det går sönder
+    addTool(s, 'yxa', q);
+    const efter = SIM.underhallGrupp(s, q), kvar = tingOf(s).filter(t => t.k === 'yxa').length;
+    // någon annan gör redan en yxa
+    s.ting = tingOf(s).filter(t => t !== tingOf(s).filter(x => x.k === 'yxa' && x.c >= SIM.REDSKAP.slitet).pop());
+    const r = living(s).find(x => x !== q && ageOf(x, s.now) >= ALDER.vuxen)!;
+    r.task = { act: 'yxa', phase: 'do', tx: 0, ty: 0, until: s.now + HOUR, carry: 0, why: '' };
+    const annan = SIM.underhallGrupp(s, q);
+    return [
+      [`när alla ${vill} yxor är hela görs ingen ny (${hela ?? 'inget'})`, hela === undefined],
+      [`när en yxa är sliten görs en ny i tid (${slitet}, ${m.text})`, slitet === 'yxa'],
+      [`när en ny är gjord görs ingen till, och den slitna används tills den går sönder (${efter ?? 'inget'}, ${kvar} yxor)`, efter === undefined && kvar === vill + 1],
+      [`när någon annan redan gör en yxa görs ingen till (${annan ?? 'inget'})`, annan === undefined],
+    ];
+  },
+};
+
+SCENARIER.forradsmal = {
+  text: 'Materialen i FORRADSMAL (steg 6.2.14): det som tas ur förrådet räknas som förbrukat (inte grenarna som bränsle), förbrukningen glöms långsamt, bufferten följer förbrukningen och det bygget och projekten väntar på, och under bufferten plockas materialet men aldrig över taket',
+  kor: () => {
+    const s = createState(4, START), q = living(s).find(x => ageOf(x, s.now) >= ALDER.vuxen)!;
+    setItems(s, { grenar: 200, torrgras: 5, sten: 0, flinta: 0, virke: 0 });
+    s.forbruk = {};
+    SIM.use(s, q, 'grenar', 20);
+    const tagna = s.forbruk.grenar ?? 0;
+    SIM.takeFuel(s, 10 * SIM.GREN, q);
+    const brand = s.forbruk.grenar ?? 0;
+    SIM.forbrukTimme(s);
+    const glomt = s.forbruk.grenar ?? 0;
+    // mycket förbrukning: bufferten blir större än tändmaterialet byn alltid vill ha
+    s.forbruk = { grenar: 60, torrgras: 0 };
+    SIM.arbetsTimme(s);
+    const bGren = SIM.materialBuffert(s, 'grenar'), bHo = SIM.materialBuffert(s, 'torrgras'), tak = SIM.materialTak(s, 'grenar');
+    // den som samlar: höet och grenarna är under bufferten och plockas
+    setItems(s, { grenar: 10 }); s.forbruk = { grenar: 60 }; SIM.arbetsTimme(s);
+    q.task = { act: 'samla', phase: 'do', tx: 0, ty: 0, until: s.now + HOUR, carry: 0, why: '' };
+    const g1 = SIM.forageItems(s, q, 3600) ?? {};
+    // över taket plockar ingen, inte heller den som hämtar grenar
+    setItems(s, { grenar: Math.ceil(tak) + 1 }); s.forbruk = { grenar: 60 }; SIM.arbetsTimme(s);
+    q.task.hamtar = 'grenar';
+    const g2 = SIM.forageItems(s, q, 3600) ?? {};
+    // sten: ingen ring behövs och ingen förbrukning, så ingen sten plockas
+    const sten = !SIM.needStones(s) ? (g2.sten ?? 0) : 0;
+    // virket: bufferten är förbrukningen och det projekten väntar på
+    s.forbruk = { virke: 6 }; SIM.arbetsTimme(s);
+    const bVirke = SIM.materialBuffert(s, 'virke'), brist = SIM.PROJEKT.virke.brist(s);
+    return [
+      [`20 grenar ur förrådet räknas som förbrukade (${tagna})`, tagna === 20],
+      [`grenarna som bränsle räknas inte (${brand})`, brand === 20],
+      [`förbrukningen glöms långsamt (${glomt})`, glomt < 20 && glomt > 19],
+      [`bufferten för grenar följer förbrukningen (${bGren}), för hö är den det tändmaterial byn vill ha (${bHo})`, bGren === 40 && bHo === (s.fire.lit ? SIM.TROSKEL.tandVill : SIM.TROSKEL.tandVillSlocknad)],
+      [`taket är högre än bufferten, högst så mycket lagret rymmer (${tak.toFixed(1)})`, tak > bGren && tak <= SIM.FORRAD.materialMatt * bGren],
+      [`under bufferten plockas hö och grenar (${Object.keys(g1).join(', ')})`, (g1.torrgras ?? 0) > 0 && (g1.grenar ?? 0) > 0],
+      [`över taket plockas inga grenar, inte heller av den som hämtar dem (${g2.grenar ?? 0})`, !g2.grenar],
+      [`ingen sten plockas när ingen behövs (${sten})`, sten === 0],
+      [`bufferten för virke följer förbrukningen och det som väntar (${bVirke}), och virket fattas (${brist.toFixed(2)})`, bVirke >= 6 / SIM.FORRAD.forbrukDygn * SIM.FORRAD.materialDygn && brist === 1],
     ];
   },
 };

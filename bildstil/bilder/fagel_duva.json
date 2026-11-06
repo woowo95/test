@@ -1,0 +1,25 @@
+{
+ "id": "fagel_duva",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "f6_fagel_falld: den fällda skogsduvan på rygg, i duvans form och färger",
+ "w": 14,
+ "h": 8,
+ "rader": [
+  "........o.....",
+  ".......olo....",
+  ".....oolo.....",
+  "...oommlo.....",
+  "ooodmmmdoo....",
+  "ddmmmmmllmo...",
+  "ooollllllmno..",
+  "...ononoooo..."
+ ],
+ "pal": {
+  "o": "#24201d",
+  "l": "#bd753e",
+  "m": "#61767a",
+  "d": "#3e5156",
+  "n": "#bd753e"
+ }
+}

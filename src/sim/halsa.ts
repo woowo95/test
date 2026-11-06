@@ -1,3 +1,5 @@
+import { han, honom } from './ord';
+import { utanforByn } from './omrade';
 import { UPPV, upplev } from './uppvaxt';
 // Kroppen (steg 2.5.1). Kroppen har tio delar (KROPPSDELAR): huvud, bål, två armar, två händer, två ben och två fötter (Björn, efter
 // v55). Olyckor i farliga arbeten (OLYCKOR) ger skador (SKADOR) i en del: ett sår blöder tills det levrat sig, gör ont och
@@ -19,7 +21,6 @@ import { TORST } from './torst';
 import { getable, takeMaterial } from './behov';
 import { bedFor } from './bygg';
 import { freeNear, roomAt } from './byggnad';
-import { campDist } from './plats';
 import { isForest, tileOf } from './mark';
 import { eldPlats } from './karta';
 import { chance, clamp, pick, rnd } from './slump';
@@ -60,7 +61,7 @@ export const HALSA = balans('halsa', {
   vardMin: 5, // minuter att trycka på såren, lägga förband och rengöra
   vardR: 30, // man går för att vårda den som är högst så här många rutor bort
   vardHand: 0.5, // den som vårdar någon annan har minst så här bra händer
-  hemma: 6, // så nära lägret är man hemma (rutor): längre bort kravlar den som inte kan gå, eller bärs
+  hemma: 3, // så nära byns område är man hemma (rutor, 0 innanför): längre bort kravlar den som inte kan gå, eller bärs
   krypFel: 0.6, // den som har ett ben eller en fot som är så här skadad kan inte gå, utan kravlar (med GANG.krypFart, gang.ts)
   buren: 6, // timmar som den skadade som mest väntar på att bäras hem
   vila: 1.5, // man läker så här mycket fortare när man sover eller vilar ...
@@ -148,7 +149,7 @@ export const rorlighet = (p: Person) => forlust(p, 'rorlighet') * yrselFaktor(p)
 // den som har ett ben eller en fot som är för skadad kan inte gå, utan kravlar (steg 2.5.2)
 export const GADELAR: readonly Kroppsdel[] = [...BEN, ...FOTTER]; // delarna man går med
 export const kanGa = (p: Person) => !p.skador?.length || !GADELAR.some(d => delFel(p, d) >= HALSA.krypFel);
-export const hemma = (s: State, p: Person) => campDist(s, Math.floor(p.x), Math.floor(p.y)) <= HALSA.hemma;
+export const hemma = (s: State, p: Person) => utanforByn(s, Math.floor(p.x), Math.floor(p.y)) <= HALSA.hemma;
 const infektion = (p: Person) => { let v = 0; for (const w of p.skador ?? []) v = Math.max(v, w.inf ?? 0); return v; };
 // arbetet gånger detta (workRate i ekonomi.ts): skadorna och styrkan, som sjunker av brist på protein och mineraler (steg 2.6.2)
 export const handighet = (p: Person) => forlust(p, 'handighet') * styrkaFaktor(p);
@@ -215,11 +216,15 @@ export const FORMAGOR = {
 
 // ---------- varje steg ----------
 // en ny skada: loggen, byns räknare, rädsla för platsen och att arbetet avbryts. Returnerar dödsorsaken om den dödar direkt
+// hen i texten om när det hände: efter ett verb som slog eller straffade är den skadade föremålet (honom), annars subjektet (han)
+const narOm = (nar: string, p: Person) => nar.replace(/(slog|straffade) hen\b/, (_m, v: string) => `${v} ${honom(p)}`).replace(/\bhen\b/g, han(p));
 export function skada(s: State, p: Person, d: Kroppsdel, k: SkadaTyp, g: number, dod: Dodsorsak, nar: string): Dodsorsak | undefined {
   (p.skador ??= []).push({ d, k, g, b: SKADA[k].blod > 0 ? 1 : 0 });
   if (SKADA[k].blod > 0) blodas(s, p.x, p.y, 'skada', g * SKADA[k].blod);
   count(s, 'skador'); count(s, 'skada ' + SKADA[k].namn.toLowerCase());
   if (g >= UPPV.skadaGrad) livet(s, p, 'skadad', true); // det hen överlevt (steg 3.9.8)
+  if (g >= UPPV.skadaGrad) nar = narOm(nar, p);
+  nar = narOm(nar, p); // "när hen slaktade" blir "när han slaktade", "när Ask slog hen" "när Ask slog henne" (ordlagret, steg 6.7.2)
   if (g >= UPPV.skadaGrad) upplev(s, p, 'skadad', `${SKADA[k].ett} ${nar}`); // ett barn minns det (steg 3.1.2)
   if (DEL[d].livsviktig && g >= HALSA.dodGrad) return dod;
   if (g >= HALSA.logg) log(s, `${p.name} fick ${SKADA[k].ett} i ${DEL[d].i} ${nar}.`, 'world', [p.id]);

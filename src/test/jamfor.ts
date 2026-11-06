@@ -22,6 +22,7 @@
 // tsconfig.json och node-versionen). En ändring i scenarierna eller gränssnittet kör alltså inte om något. Balanstalen
 // står i filnamnet, så körningen utan dem är densamma för jamfor, --satt och --svep.
 // 35 dygn räcker för grundandet och den första vintern (istiden tar slut efter 34 dygn).
+import './utc';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, statSync, symlinkSync, writeFileSync } from 'node:fs';

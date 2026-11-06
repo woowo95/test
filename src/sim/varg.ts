@@ -1,3 +1,5 @@
+import { lista, stor, tal } from './ord';
+import { utanforByn } from './omrade';
 import { balans } from './balans';
 import { kronikaBer, och, personFalt, sakVarg, talOrd } from './berattelser';
 import { redskapIHanden } from './agande';
@@ -27,6 +29,7 @@ import { GRANNAR4, H, HOUR, MIN, Person, SEC, State, T, Task, Vargflock, W } fro
 import { taVapen } from './vakt';
 import { vaderNu } from './vader';
 import { notis } from './notiser';
+import { lamnaFallt, styckaFallt } from './styckning';
 
 // ---------- vargen och vakten (steg 3.7.1) ----------
 // Under istiden kommer vargar in på kartan från kanten, oftast i flock och ibland en ensam. En flock stryker omkring en tid
@@ -68,10 +71,11 @@ export const VARG = balans('varg', {
   // att se vargar och väcka byn
   vaktSer: 24, folkSer: 10, nattSer: 0.6, // vakten ser vargar inom så här många rutor, andra inom folkSer, gånger nattSer i mörkret
   larmTim: 2, // samma flock larmas om högst så här ofta
-  vack: 30, // vakten väcker byn när flocken är så här nära elden
+  vack: 25, // vakten väcker byn när flocken är så här nära byns område (utanforByn)
   vakenTim: 1, // den som väckts håller sig vaken vid elden så här många timmar
   // vargjakten
   jaktTim: 3, // jägarna letar efter flocken högst så här många timmar
+  kallMin: 30, // den som ska följa med på vargjakten har så här många minuter på sig att komma iväg (nivån Tillfälle i val.ts, steg 6.1.14)
   jaktMax: 6, // högst så många följer med
   jaktVet: 6, // byn vet om flocken i så här många timmar efter ett larm
   kraftVarg: 1.1, // en vargs styrka mot jägarnas: kraftBas + kraftSkada × vapnets skada (händerna 0,78, flintspjutet 1,4)
@@ -208,8 +212,7 @@ function ses(s: State, f: Vargflock, folk: Person[]) {
   notis(s, 'anfall', `${p.name} såg ${f.vargar.length > 1 ? `en flock vargar (${f.vargar.length})` : 'en ensam varg'} nära byn.`, [p.id], { x: Math.floor(f.x), y: Math.floor(f.y) });
   const hort = larma(s, 'varg', f.vargar.length, [p]);
   // vakten väcker de vuxna som sover när flocken är nära byn
-  const e = eldPlats(s);
-  if (vakt && Math.hypot(f.x - e.x - 0.5, f.y - e.y - 0.5) < VARG.vack) {
+  if (vakt && utanforByn(s, f.x, f.y) < VARG.vack) {
     let n = 0;
     for (const q of folk) if (q.task?.act === 'sova' && ageOf(q, s.now) >= ALDER.vaktFran && !(skyddas(s, q) && iHus(s, q))) { avbryt(s, q); q.task = undefined; q.larm = { t: s.now, vad: 'varg', storlek: f.vargar.length, led: 0 }; n++; }
     if (n) { count(s, 'vargVackt', n); log(s, `${vakt.name} höll vakt och väckte byn: vargar nära.`, 'world', [vakt.id]); }
@@ -283,11 +286,11 @@ function flockSteg(s: State, f: Vargflock, folk: Person[], dtSec: number) {
   // jägarna går mot flocken (som inte märker dem förrän de är nära). Den som inte längre jagar (avbruten, larm, skadad) är inte
   // med, och när ingen jagar är jakten slut: då kan byn kalla till en ny och flocken undviker grupper igen
   if (f.jagare) {
-    f.jagare = f.jagare.filter(id => byId(s, id)?.task?.act === 'vargjakt');
+    f.jagare = f.jagare.filter(id => { const q = byId(s, id); return !!q && q.health > 0 && (q.task?.act === 'vargjakt' || s.now < (f.kallTill ?? 0)); });
     if (!f.jagare.length) { f.jagare = undefined; f.samlas = undefined; }
     for (const id of f.jagare ?? []) {
-      const tk = byId(s, id)!.task!;
-      if (tk.phase === 'go' && Math.hypot(tk.tx - f.x, tk.ty - f.y) > 3) { const sp = jaktPlats(s, f); if (sp) { tk.tx = sp.x; tk.ty = sp.y; } }
+      const tk = byId(s, id)!.task;
+      if (tk?.act === 'vargjakt' && tk.phase === 'go' && Math.hypot(tk.tx - f.x, tk.ty - f.y) > 3) { const sp = jaktPlats(s, f); if (sp) { tk.tx = sp.x; tk.ty = sp.y; } }
     }
   }
   if (f.gor === 'anfaller') {
@@ -392,7 +395,7 @@ function borjaVanta(s: State, f: Vargflock, o: Bit, folk: Person[]) {
   const r = vantarVid(s, f), inne = folk.filter(q => r && roomAt(s, q.x, q.y) === r);
   // de som är vakna i huset slutar med det de gör och håller sig gömda
   for (const q of inne) if (q.task && larmAvbryter(q.task.act, 'varg') && q.task.act !== 'sova') { avbryt(s, q); q.task = undefined; }
-  log(s, `${f.vargar.length > 1 ? 'Vargarna' : 'Vargen'} väntar utanför dörren${inne.length ? `, och ${inne.map(q => q.name).join(', ')} är instängda` : ''}.`, 'world', inne.map(q => q.id));
+  log(s, `${f.vargar.length > 1 ? 'Vargarna' : 'Vargen'} väntar utanför dörren${inne.length ? `, och ${och(inne.map(q => q.name))} är instängda` : ''}.`, 'world', inne.map(q => q.id));
 }
 // de vuxna i huset som vågar gå ut och möta flocken: modet och hur många de är mot vargarna (som vargSkydd)
 function modiga(s: State, inne: Person[], f: Vargflock) {
@@ -423,7 +426,7 @@ function vanta(s: State, f: Vargflock, folk: Person[], dtSec: number) {
 
 // flocken tar mat ur förrådet: köttet först, hela saker. Listan går art för art (hela kroppar, kött, fisk, det lagade);
 // en fälld varg i förrådet kan också tas (det är avsiktligt, kodgenomgången 3.10.25)
-const STJALS = ['vilt', 'varg', 'kott', 'vargkott', 'fisk', 'abborre', 'grillkott', 'torrkott'];
+const STJALS = ['vilt', 'fagel', 'varg', 'vargdel', 'radjur', 'radjurdel', 'bjorn', 'bjorndel', 'kott', 'vargkott', 'fisk', 'abborre', 'grillkott', 'torrkott'];
 function stjal(s: State, f: Vargflock) {
   let n = Math.max(1, Math.round(f.vargar.length * VARG.stjalPer)), tog = 0;
   for (const k of STJALS) while (n > 0 && SAKER[k] && amountOf(s, k) >= 1) { addTo(s, k, -1); n--; tog++; }
@@ -456,10 +459,22 @@ export function jaktBeslut(s: State, f: Vargflock, folk: Person[]) {
   if (kvot < VARG.jaktKvot || rnd(s, 'varg') >= VARG.jaktChans) return;
   const sp = jaktPlats(s, f);
   if (!sp) return; // flocken står för långt ut på isen
-  f.jagare = vill.map(q => q.id);
-  for (const q of vill) { avbryt(s, q); q.task = { act: 'vargjakt', phase: 'go', tx: sp.x, ty: sp.y, until: s.now + VARG.jaktTim * HOUR, carry: 0, why: q === kallar ? 'Kallar till vargjakt' : `Följer ${kallar.name} på vargjakt` }; }
+  // den som kallar går genast; de som följer med avbryter det de gör och väljer igen, där vargjakten är ett Tillfälle i
+  // arbetsordningen (vargjaktVal, steg 6.1.14): den som är i nöd tar hand om det först
+  f.jagare = vill.map(q => q.id); f.kallare = kallar.id; f.kallTill = s.now + VARG.kallMin * MIN; f.jaktTill = s.now + VARG.jaktTim * HOUR;
+  for (const q of vill) avbryt(s, q);
+  kallar.task = { act: 'vargjakt', phase: 'go', tx: sp.x, ty: sp.y, until: f.jaktTill, carry: 0, why: 'Kallar till vargjakt' };
   count(s, 'vargjakt');
   log(s, `${kallar.name} kallade till vargjakt${vill.length > 1 ? `, och ${vill.length - 1} följde med` : ''} (${f.vargar.length > 1 ? `en flock på ${f.vargar.length}` : 'en ensam varg'}).`, 'world', vill.map(q => q.id));
+}
+
+// nivån Tillfälle (val.ts, steg 6.1.14): den som ska följa med på vargjakten och ännu inte gått
+export function vargjaktVal(s: State, p: Person) {
+  const f = flockarna(s).find(x => x.jagare?.includes(p.id));
+  if (!f || f.gor === 'flyr' || p.task?.act === 'vargjakt' || s.now >= (f.kallTill ?? 0) || s.now >= (f.jaktTill ?? 0)) return undefined;
+  const sp = jaktPlats(s, f), k = f.kallare === undefined ? undefined : byId(s, f.kallare);
+  if (!sp) return undefined;
+  return { spot: sp, dur: f.jaktTill! - s.now, why: k ? `Följer ${k.name} på vargjakt` : 'Följer med på vargjakt' };
 }
 
 // jägaren som kommit fram (MEDAN i steg.ts): anfaller flocken med de jägare som är nära
@@ -549,12 +564,13 @@ export function vargStrid(s: State, f: Vargflock, folk: Person[], avsikt: Avsikt
     if (avsikt === 'doda' && k.lage === 'strid' && doda.length > bar.size) {
       bar.add(p);
       p.task = { act: 'vargjakt', phase: 'do', tx: p.x, ty: p.y, until: s.now + tid, carry: 1, prog: 1, why: 'Bär hem en fälld varg' };
+      styckaFallt(s, p, p.task, 'varg'); // för tung att bära: styckas där den föll (steg 6.6.1)
     } else p.task = { act: 'strid', phase: 'do', tx: p.x, ty: p.y, until: s.now + tid, carry: 0, why: orsak };
   });
-  if (doda.length > bar.size) count(s, 'vargKvar', doda.length - bar.size); // fler fällda än det fanns bärare
+  if (doda.length > bar.size) { count(s, 'vargKvar', doda.length - bar.size); lamnaFallt(s, 'varg', doda.length - bar.size, folk[0].x, folk[0].y); } // fler fällda än det fanns bärare: de ligger kvar (steg 6.6.1)
   blodas(s, folk[0].x, folk[0].y, 'jakt', 1);
-  const namn = folk.map(p => p.name).join(' och ');
-  const stText = `${namn} slogs med ${n > 1 ? `${n} vargar` : 'en varg'} ${orsak}. ${doda.length ? `${doda.length} ${doda.length === 1 ? 'varg dog' : 'vargar dog'}. ` : ''}${vinnare === 0 ? 'Vargarna förlorade.' : vinnare === 1 ? 'Vargarna vann.' : 'Ingen vann.'}`;
+  const namn = lista(folk.map(p => p.name));
+  const stText = `${namn} slogs med ${n > 1 ? `${tal(n)} vargar` : 'en varg'} ${orsak}. ${doda.length ? `${stor(tal(doda.length))} ${doda.length === 1 ? 'varg dog' : 'vargar dog'}. ` : ''}${vinnare === 0 ? 'Vargarna förlorade.' : vinnare === 1 ? 'Vargarna vann.' : 'Ingen vann.'}`;
   log(s, stText, 'world', folk.map(p => p.id)); notis(s, 'strid', stText, folk.map(p => p.id), { x: Math.floor(folk[0].x), y: Math.floor(folk[0].y) });
   // krönikan (steg 3.7.16): varje vargjakt, och den som skadades svårt när vargarna anföll (döden skriver die)
   if (avsikt === 'doda') kronikaBer(s, 'k_vargjakt', folk[0].id, { folk: och(folk.map(p => p.name)), vargar: n > 1 ? `${talOrd(n)} vargar` : 'en varg', fallde: talOrd(doda.length), svara: svara.length ? ` ${och(svara)} skadades svårt.` : '' });

@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { BAR, FALT_STEG, FOREST, GRODOR, isSoil, stadium, Falt, byId, faltAt, faltIndex, faltKlar, HIGH, MATERIAL, Person, T, W, bitAt, campCenter, condOf, dorrDef, emberOn, eldXY, eldarOf, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, tingOf, toaAt, tandTest, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, verbOf, zoneAt, zonesOf, Pile } from '../sim';
+import { BAR, busksort, FALT_STEG, FOREST, GRODOR, isSoil, stadium, Falt, byId, faltAt, faltIndex, faltKlar, HIGH, MATERIAL, Person, T, W, bitAt, bynsMitt, condOf, dorrDef, emberOn, eldXY, eldarOf, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, stationerOf, framfor, bordPlatser, tingOf, toaAt, tandTest, blixtTest, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, verbOf, zoneAt, zonesOf, Pile } from '../sim';
 import { gorText } from './jakt';
 import { iconImg, tecknet } from '../ikoner';
 import { $, esc, fmtN, prickar } from './hjalp';
@@ -59,6 +59,7 @@ app.stage.on('pointerupoutside', () => { drag = null; });
 // ett tryck väljer det som ligger överst: en person, ett djur, elden, en lagerplats, en station, en hög på marken, en toa-hög, ett fält, en stubbe, ett hus eller en sjö. Tom mark avmarkerar
 const stubbeAt = (x: number, y: number) => (s.stubbar ?? []).some(k => k.x === x && k.y === y);
 // ett träd på rutan (steg 5.1.4.3): en planta, ett ungträd, ett vuxet eller gammalt träd eller en torraka (sim/trad.ts)
+const buskeAt = (x: number, y: number) => { const g = groundOf(s), i = y * W + x; return isSoil(g.tiles[i]) && !!busksort(g, i); };
 const tradAt = (x: number, y: number) => { const g = groundOf(s), i = y * W + x; return isSoil(g.tiles[i]) && stadium(g, i) !== null; };
 // mobil och surfplatta (steg 5.3.7): två fingrar zoomar (nyper) runt punkten mellan dem, och ett tryck visar rutan i hörnet
 // som musen annars visar. Medan två fingrar ligger på kartan flyttas den inte, och när de lyfts väljer trycket inget
@@ -93,6 +94,7 @@ app.stage.on('pointertap', e => {
     if (r.ok) { ui.brandTest = false; brandKnapp(); renderPanel(true); } // brinner inget där är knappen kvar aktiv
     return;
   }
+  if (ui.testMode && ui.blixtTest) { testSvara(blixtTest(s, c.x, c.y).text); renderPanel(true); return; } // blixten slår ner där (steg 6.4.7), flera i rad
   const g = p ? undefined : gastAt(gx, gy), dj = p || g !== undefined ? undefined : djurAt(gx, gy);
   if (p) selectPerson(p.id);
   else if (g !== undefined) selectPerson(g); // handlaren och rövarna får samma sida som en bybo (steg 4.5.4.12)
@@ -102,12 +104,16 @@ app.stage.on('pointertap', e => {
   else if (fireAt(gx, gy) !== undefined) { const id = fireAt(gx, gy)!; ui.eld = id ? id - 1 : undefined; visa('eld'); }
   else if (zi) valjLager(zi - 1, c);
   else if (stationAt(s, c.x, c.y)) { ui.stationId = stationAt(s, c.x, c.y)!.id; visa('station'); }
+  else if (stolAt(c.x, c.y)) { ui.stationId = stolAt(c.x, c.y)!.id; visa('station'); } // stolen vid bänken eller bordet (steg 6.8.10)
   else if (outPilesAt(c.x, c.y).length) { ui.hogAt = c; visa('hog'); }
   else if (toaAt(s, c.x, c.y)) { ui.sak = `f:${c.y * W + c.x}`; visa('sak'); }
   else if (faltAt(s, c.x, c.y)) valjFalt(faltAt(s, c.x, c.y)!, c.x, c.y);
+  else if (s.uppsatta?.some(q => q.x === c.x && q.y === c.y)) { ui.sak = `a:${c.y * W + c.x}`; visa('sak'); } // den uppsatta facklan (steg 6.3.7)
+  else if (s.stockar?.some(q => Math.floor(q.x) === c.x && Math.floor(q.y) === c.y)) { ui.sak = `v:${s.stockar.find(q => Math.floor(q.x) === c.x && Math.floor(q.y) === c.y)!.id}`; visa('sak'); } // stocken
   else if (stubbeAt(c.x, c.y)) { ui.sak = `u:${c.y * W + c.x}`; visa('sak'); } // stubben (steg 3.10.6)
   else if (husAt(c.x, c.y) !== undefined) { ui.husId = husAt(c.x, c.y)!; visa('hus'); }
   else if (tradAt(c.x, c.y)) { ui.sak = `r:${c.y * W + c.x}`; visa('sak'); } // trädet (steg 5.1.4.3)
+  else if (buskeAt(c.x, c.y)) { ui.sak = `b:${c.y * W + c.x}`; visa('sak'); } // busken (steg 6.5.3)
   else if (sjoAt(c.x, c.y) >= 0) { ui.sjoNr = sjoAt(c.x, c.y); visa('sjo'); }
   else avmarkera();
 });
@@ -119,7 +125,10 @@ export function testSvara(text: string) {
   el.textContent = t.charAt(0).toUpperCase() + t.slice(1);
 }
 // brandknappen lyser medan den är aktiv
-export function brandKnapp() { document.querySelector('#testSkicka button[data-brand]')?.classList.toggle('aktiv', ui.testMode && ui.brandTest); }
+export function brandKnapp() {
+  document.querySelector('#testSkicka button[data-brand]')?.classList.toggle('aktiv', ui.testMode && ui.brandTest);
+  document.querySelector('#testSkicka button[data-blixt]')?.classList.toggle('aktiv', ui.testMode && ui.blixtTest);
+}
 // ett tryck där inget finns: personen släpps och personrutan stängs
 function avmarkera() {
   if (ärRuta(ui.tab)) { stangRuta(); renderPanel(true); return; } // först stängs rutan (steg 5.3.5.1)
@@ -127,6 +136,11 @@ function avmarkera() {
   ui.selected = undefined; stopFollow();
   if (ärPersonflik(ui.tab)) ui.tab = undefined;
   renderPanel(true); renderPorts();
+}
+// stolen på rutan (steg 6.8.10): sittplatsen framför en bänk med stol eller en plats vid ett bord; den markeras som sin möbel
+function stolAt(x: number, y: number) {
+  if (!s.stationer?.length || !inMap(x, y)) return undefined;
+  return stationerOf(s).find(t => (stationDef(t.k)?.sitt && framfor(t).some(q => q.x === x && q.y === y)) || bordPlatser(t).some(q => q.x === x && q.y === y));
 }
 // lagret (steg 2.10.17): första trycket visar lagerplatsen, och varje nytt tryck på samma ruta visar nästa sak på rutan, en
 // i taget (stackarna och redskapen, sedan förvaringen som står där), och efter den sista lagerplatsen igen
@@ -161,7 +175,7 @@ app.stage.on('pointermove', e => {
   showHover(gx, gy);
   ui.hovered = personAt(gx, gy)?.id;
   const c = tileAt(gx, gy);
-  view.style.cursor = ui.hovered || djurAt(gx, gy) !== undefined || gastAt(gx, gy) !== undefined || !!filtAt(gx, gy) || inMap(c.x, c.y) && (fireAt(gx, gy) !== undefined || storeAt(gx, gy) || outPilesAt(c.x, c.y).length || toaAt(s, c.x, c.y) || faltAt(s, c.x, c.y) || stubbeAt(c.x, c.y) || husAt(c.x, c.y) !== undefined || stationAt(s, c.x, c.y) || tradAt(c.x, c.y)) ? 'pointer' : 'grab';
+  view.style.cursor = ui.hovered || djurAt(gx, gy) !== undefined || gastAt(gx, gy) !== undefined || !!filtAt(gx, gy) || inMap(c.x, c.y) && (fireAt(gx, gy) !== undefined || storeAt(gx, gy) || outPilesAt(c.x, c.y).length || toaAt(s, c.x, c.y) || faltAt(s, c.x, c.y) || stubbeAt(c.x, c.y) || husAt(c.x, c.y) !== undefined || stationAt(s, c.x, c.y) || stolAt(c.x, c.y) || tradAt(c.x, c.y) || buskeAt(c.x, c.y) || !!s.uppsatta?.some(q => q.x === c.x && q.y === c.y) || !!s.stockar?.some(q => Math.floor(q.x) === c.x && Math.floor(q.y) === c.y)) ? 'pointer' : 'grab';
 });
 view.addEventListener('wheel', e => { e.preventDefault(); const r = view.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.06 : 1 / 1.06, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
 view.addEventListener('pointerleave', () => { $('hoverBox').hidden = true; ui.hovered = undefined; });
@@ -169,7 +183,7 @@ $('zIn').addEventListener('click', () => zoomAt(1.4));
 $('zOut').addEventListener('click', () => zoomAt(1 / 1.4));
 // en notis visar sin plats på kartan (steg 5.4.3.2)
 satVisaPlats((x, y) => { stopFollow(); cam.zoom = Math.max(cam.zoom, 2.4); cam.x = (x + 0.5) * TS; cam.y = (y + 0.5) * TS; layout(); });
-$('zHome').addEventListener('click', () => { stopFollow(); cam.zoom = 2.4; const f = campCenter(s); cam.x = f.x * TS; cam.y = f.y * TS; layout(); });
+$('zHome').addEventListener('click', () => { stopFollow(); cam.zoom = 2.4; const f = bynsMitt(s); cam.x = f.x * TS; cam.y = f.y * TS; layout(); });
 
 // ---------- rutan i hörnet: vad som finns under musen ----------
 // bara underlaget och det som står där; vad som växer och lever på platsen finns i värmekartorna
@@ -182,8 +196,9 @@ function showHover(gx: number, gy: number) {
   if (!inMap(x, y)) { box.hidden = true; return; }
   const m = getMap(s.seed), g = groundOf(s), i = y * W + x, t = m.tiles[i], tr = g.trees[i], c = g.cover[i];
   const soil = t === T.Gras || t === T.Skog;
-  const ground = g.tiles[i] === T.Lera ? 'Torr sjöbotten' : t === T.Vatten ? 'Vatten' : t === T.Sand ? 'Sand' : t === T.Sten ? 'Sten' : tr >= FOREST ? 'Skogsmark' : c >= HIGH ? 'Högt gräs' : c >= BAR ? 'Kort gräs' : 'Bar jord, stig';
+  const ground = g.tiles[i] === T.Lera ? 'Torr sjöbotten' : t === T.Vatten ? 'Vatten' : t === T.Sand ? 'Sand' : t === T.Sten ? 'Sten' : tr >= FOREST ? 'Skogsmark' : busksort(g, i) ? busksort(g, i)!.namn : c >= HIGH ? 'Högt gräs' : c >= BAR ? 'Kort gräs' : 'Bar jord, stig';
   const rows: string[] = [`<b>${ground}</b>${soil && tr > 0 ? ` · ${tr >= FOREST ? 'skog' : tr >= 0.25 ? 'ungskog' : 'plantor'}` : ''}`];
+  const bu = soil ? busksort(g, i) : undefined; if (bu) rows.push(bu.text); // busken (steg 6.5.3)
   for (const f of eldarOf(s)) { const e = eldXY(s, f); if (x === e.x && y === e.y) rows.push(`${f === s.fire ? 'Elden' : 'En lägereld'} (${f.lit ? 'brinner' : emberOn(s, f) ? 'glöder' : 'släckt'})`); }
   const zi = zoneAt(s, x, y);
   if (zi >= 0) {
@@ -195,6 +210,8 @@ function showHover(gx: number, gy: number) {
   const log = (s.stockar ?? []).find(k => Math.floor(k.x) === x && Math.floor(k.y) === y);
   if (log) rows.push(`Fällt träd, ca ${Math.ceil(log.ved)} ved kvar`);
   if ((s.stubbar ?? []).some(k => k.x === x && k.y === y)) rows.push('Stubbe efter ett fällt träd');
+  const fa = s.uppsatta?.find(q => q.x === x && q.y === y); // den uppsatta facklan (steg 6.3.7)
+  if (fa) rows.push(`Uppsatt fackla, ${fa.tand ? 'brinner' : 'släckt'}, ${Math.round(fa.c * 100)} % kvar`);
   const falt = faltAt(s, x, y); // fältet (steg 2.10.3): ägaren, grödan och hur långt det kommit
   if (falt) {
     const ag = byId(s, falt.agare), groda = falt.groda && (falt.steg === 'vaxer' || falt.steg === 'mogen') ? GRODOR[falt.groda] : undefined;
@@ -227,3 +244,13 @@ function showHover(gx: number, gy: number) {
   box.innerHTML = rows.map(r => `<p>${r}</p>`).join('');
   box.hidden = false;
 }
+
+// tangentbordet (steg 5.5.7): det man trycker på som inte är en knapp eller länk (rubrikerna som fälls ut, raderna med
+// data-hjalp, symbolerna med tabindex) nås med Tab, och Enter eller mellanslag gör samma sak som ett tryck
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const el = e.target as HTMLElement | null;
+  if (!el || el.matches('button, a, input, select, textarea, summary') || !(el.matches('[role="button"], .klick') || el.tabIndex >= 0 && el.hasAttribute('tabindex'))) return;
+  e.preventDefault();
+  el.click();
+});

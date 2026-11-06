@@ -4,6 +4,8 @@ import { Strom, clamp, gauss, pick, rnd } from './slump';
 import { Act, DAY, HOUR, LogEntry, Person, Rel, SKILLS, STATS, Skill, Stat, State } from './typer';
 import { balans } from './balans';
 import { nyAndlighet } from './religion';
+import { hourOf } from './tid';
+import { lista, och, tal } from './ord';
 
 // ---------- balanstal (regel 8) ----------
 // Kroppen: mätarna hunger, rest, warm, social, toa och health går från 0 (slut) till 1 (full). Här står gränserna där folk
@@ -153,17 +155,30 @@ const langst = (del: string[], n: string, slut: boolean) => del.filter(d => slut
 export const namnSlut = (n: string) => langst([...NM, ...NK], n.toLowerCase(), true);
 // ett nytt namn, med följden strom (handlaren tar sitt ur handel, så att följden folk inte ändras). Ett barn får ibland
 // början eller slutet av en förälders namn (slutet bara av föräldern med samma kön, steg 4.5.4.8)
+// början + mitten + slutet, men mitten tas bort när namnet blir svårt att uttala med den och lättare utan den (steg 6.7.6):
+// Osllo blir Oso, Kolrkfast Kolfast. Tre konsonanter i rad går bara som slut + början av en stavelse (Askborg, Verkmund)
+const CODA = ['rk', 'rn', 'nd', 'st', 'sk', 'lv', 'rd', 'ns', 'ld', 'lf', 'rg', 'ng', 'lm', 'rm', 'lg', 'nk', 'rv'];
+const ONSET = ['tr', 'kr', 'gr', 'br', 'dr', 'fr', 'bj', 'sk', 'st', 'sv', 'kv', 'sm', 'sn'];
+const garUttala = (k: string) => k.length <= 2 || (
+  k.length === 3 && k[0] !== k[1] && k[1] !== k[2] && ((CODA.includes(k.slice(0, 2)) && 'bdfgmv'.includes(k[2])) || ('rlns'.includes(k[0]) && ONSET.includes(k.slice(1)))));
+const klungor = (n: string) => (n.toLowerCase().slice(1).match(/[bcdfghjklmnpqrstvwxz]+/g) ?? []).filter(k => !n.toLowerCase().endsWith(k));
+const uttalbart = (n: string) => klungor(n).every(garUttala);
+const langstKlunga = (n: string) => Math.max(0, ...klungor(n).map(k => k.length));
+export function foga(borjan: string, mitt: string, slut: string) {
+  const med = borjan + mitt + slut, utan = borjan + slut;
+  return mitt && !uttalbart(med) && (uttalbart(utan) || langstKlunga(utan) < langstKlunga(med)) ? utan : med;
+}
 export function makeName(s: State, sex: 'm' | 'k', strom: Strom = 'folk', foraldrar: (Person | undefined)[] = []) {
   const f = foraldrar.filter((q): q is Person => !!q);
   if (f.length && rnd(s, strom) < NAMN.arv) {
     const q = pick(s, f, strom), slut = q.sex === sex ? namnSlut(q.name) : undefined, borjan = langst(N1, q.name, false);
     const n = slut && (!borjan || rnd(s, strom) < 0.5)
-      ? stor(pick(s, N1, strom) + (rnd(s, strom) < 0.7 ? pick(s, N2, strom) : '') + slut)
-      : borjan ? stor(borjan + (rnd(s, strom) < 0.7 ? pick(s, N2, strom) : '') + pick(s, sex === 'k' ? NK : NM, strom)) : '';
+      ? stor(foga(pick(s, N1, strom), rnd(s, strom) < 0.7 ? pick(s, N2, strom) : '', slut))
+      : borjan ? stor(foga(borjan, rnd(s, strom) < 0.7 ? pick(s, N2, strom) : '', pick(s, sex === 'k' ? NK : NM, strom))) : '';
     if (n && n !== q.name && ledigt(s, n)) return n;
   }
   for (let i = 0; i < 20; i++) {
-    const nn = stor(pick(s, N1, strom) + (rnd(s, strom) < 0.7 ? pick(s, N2, strom) : '') + pick(s, sex === 'k' ? NK : NM, strom));
+    const nn = stor(foga(pick(s, N1, strom), rnd(s, strom) < 0.7 ? pick(s, N2, strom) : '', pick(s, sex === 'k' ? NK : NM, strom)));
     if (ledigt(s, nn)) return nn;
   }
   return pick(s, N1, strom) + pick(s, sex === 'k' ? NK : NM, strom);
@@ -311,12 +326,55 @@ export function similarity(a: Person, b: Person) {
   return 1 - d / 40; // -0,9 (helt olika) till 1 (lika)
 }
 
-export function log(s: State, text: string, kind: LogEntry['kind'], ids: number[] = []) {
+// En rad i loggen. sam (steg 6.7.5): raden kan samlas med andra av samma slag. Står en rad med samma slag och samma nyckel
+// redan bland de senaste i loggen, inom slagets fönster (SAMLA), byggs den på med den nya delen och flyttas överst, i stället
+// för att en ny rad läggs till. Bara texten: statistiken räknar varje händelse som förut
+export function log(s: State, text: string, kind: LogEntry['kind'], ids: number[] = [], sam?: { slag: SamSlag; k: number; n: string; d: string }) {
+  if (sam) {
+    const def = SAMLA[sam.slag], f = def.fonster(s.now);
+    for (let i = s.log.length - 1; i >= Math.max(0, s.log.length - SAMLA_BAKAT); i--) {
+      const e = s.log[i];
+      if (def.fonster(e.t) !== f) break;
+      if (e.sam?.slag !== sam.slag || e.sam.k !== sam.k) continue;
+      e.sam.d.push(sam.d); e.t = s.now; e.text = def.text(e.sam.n, e.sam.d, s.now);
+      for (const id of ids) if (!e.ids.includes(id) && e.ids.length < 8) e.ids.push(id);
+      delete e.byte; delete e.bnr;
+      s.log.splice(i, 1); s.log.push(e);
+      return e;
+    }
+  }
   const e: LogEntry = { t: s.now, text, kind, ids };
+  if (sam) e.sam = { slag: sam.slag, k: sam.k, n: sam.n, d: [sam.d] };
   s.log.push(e);
   if (s.log.length > 400) s.log.splice(0, s.log.length - 400);
   return e;
 }
+// slagen av rader som samlas (steg 6.7.5): fonster = det tidsfönster raderna måste dela (samma timme, samma del av dygnet),
+// text = raden när den samlat fler än en del (n = personens namn, d = delarna)
+const SAMLA_BAKAT = 30; // så här många rader bakåt söks en rad att bygga på
+const DYGNSDEL = (t: number) => { const h = hourOf(t); return h < 6 || h >= 22 ? 'natten' : h < 10 ? 'morgonen' : h < 18 ? 'dagen' : 'kvällen'; };
+export const SAMLA = {
+  // "Ragde har lärt sig av Asunn att odla." d = "lärare|att …"
+  lar: {
+    fonster: (t: number) => Math.floor(t / HOUR),
+    text: (n: string, d: string[]) => {
+      const av = [...new Set(d.map(x => x.split('|')[0]))], vad = [...new Set(d.map(x => x.split('|')[1]))];
+      const sak = vad.length > 3 ? `${vad[0]}, ${vad[1]} och ${tal(vad.length - 2)} saker till` : och(vad);
+      return `${n} lärde sig ${vad.length > 3 ? 'mycket ' : ''}av ${lista(av)}: ${sak}.`;
+    },
+  },
+  // vardagens byten i byn (byteKlart i byte.ts), d = "det som köptes mot det som betalades", utan antal
+  byte: {
+    fonster: (t: number) => `${Math.floor((t - 6 * HOUR) / DAY)}${DYGNSDEL(t)}`,
+    text: (_n: string, d: string[], t: number) => {
+      const r: Record<string, number> = {};
+      for (const x of d) r[x] = (r[x] ?? 0) + 1;
+      const mest = Object.keys(r).sort((a, b) => r[b] - r[a])[0];
+      return `Under ${DYGNSDEL(t)} gjorde byn ${tal(d.length)} byten${r[mest] > 1 ? `, mest ${mest}` : ''}.`;
+    },
+  },
+} satisfies Record<string, { fonster: (t: number) => number | string; text: (n: string, d: string[], t: number) => string }>;
+export type SamSlag = keyof typeof SAMLA;
 // räknar det som händer i byn (statistiken i s.stat)
 export const count = (s: State, k: string, n = 1) => { (s.stat ??= {})[k] = (s.stat[k] ?? 0) + n; };
 // det en person gjort (steg 3.10.6), för färdigheterna i personrutan (SKILL_STAT i typer.ts): totalt (n) och timme för timme

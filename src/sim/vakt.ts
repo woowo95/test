@@ -7,12 +7,13 @@ import { freeNear } from './byggnad';
 import { BYN } from './egendom';
 import { ACTS } from './handlingar';
 import { getMap, eldPlats } from './karta';
+import { bynsMitt, utanforByn } from './omrade';
 import { rnd } from './slump';
 import { MANNISKOVAPEN, VAPEN } from './strid';
 import { MIN, Person, State, T, Task, W, inMap } from './typer';
 
 export const VAKT = balans('vakt', {
-  runda: 11, // rutor från elden som vakten går runt byn
+  utom: 1, // vakten går runt byn så här många rutor utanför dess område (omrade.ts, steg 6.2.4)
   punkter: 10, // stopp längs rundan
   stoppMin: [0.3, 1.5], // minuter vakten stannar och ser sig om vid varje stopp
   eldVar: 5, // efter så här många stopp går vakten till elden ...
@@ -21,13 +22,21 @@ export const VAKT = balans('vakt', {
 });
 
 const mellan = (s: State, p: Person, [a, b]: readonly number[]) => (a + rnd(s, 'vakt', p) * (b - a)) * MIN;
-// stoppet nummer i längs rundan: en punkt på land runt elden (närmare om det är vatten där)
+// stoppet nummer i längs rundan: en punkt på land strax utanför byns område, i riktningen från områdets mitt (närmare
+// om det är vatten där)
 function punkt(s: State, i: number) {
-  const e = eldPlats(s), tl = getMap(s.seed).tiles, v = i / VAKT.punkter * Math.PI * 2;
-  for (let r = VAKT.runda; r > 2; r--) {
-    const x = Math.floor(e.x + 0.5 + Math.cos(v) * r), y = Math.floor(e.y + 0.5 + Math.sin(v) * r);
-    if (inMap(x, y) && tl[y * W + x] !== T.Vatten) return freeNear(s, x + 0.5, y + 0.5);
+  const m = bynsMitt(s), tl = getMap(s.seed).tiles, v = i / VAKT.punkter * Math.PI * 2;
+  let land: { x: number; y: number } | undefined;
+  for (let r = 1; r < W; r++) {
+    const x = Math.floor(m.x + 0.5 + Math.cos(v) * r), y = Math.floor(m.y + 0.5 + Math.sin(v) * r);
+    if (!inMap(x, y)) break;
+    const ute = utanforByn(s, x, y) >= VAKT.utom;
+    if (tl[y * W + x] === T.Vatten) { if (ute) break; continue; }
+    land = { x, y };
+    if (ute) break;
   }
+  if (land) return freeNear(s, land.x + 0.5, land.y + 0.5);
+  const e = eldPlats(s);
   return { x: e.x + 0.5, y: e.y + 1.5 };
 }
 // vakten (och den som försvarar byn mot vargarna, varg.ts) tar sitt eget bästa vapen eller byns, som ingen annan har i handen eller bär

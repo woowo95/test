@@ -1,7 +1,6 @@
 import { FOLDERS, amountOf, grundvarde, isTool, kortTal, ownedSum, sakNamn, wornOf } from '../sim';
 import { iconImg } from '../ikoner';
 import { eld } from './flikar/eld';
-import { folk } from './flikar/folk';
 import { kronika } from './flikar/kronika';
 import { hog, lager } from './flikar/lager';
 import { hus } from './flikar/hus';
@@ -18,7 +17,7 @@ import { djur } from './flikar/djur';
 import { grannar } from './flikar/grannar';
 import { byn } from './flikar/byn';
 import { $, hjalpKlick } from './hjalp';
-import { piles, s, satRitaOm, ui } from './lage';
+import { piles, s, satRitaOm, ui, vidNyBy } from './lage';
 import { renderPorts } from './portratt';
 import { bandHtml, stenHtml } from './runstenar';
 
@@ -32,7 +31,7 @@ export interface Flik {
   syns?(): boolean; // annars är knappen en blek sten som inte går att trycka på (grannarna när byn har grannar)
   band?(): string; // bandet överst är en annan fliks (Byn visar den öppna delens band, steg 5.3.3.2)
 }
-const FLIKAR = { byn, teknik, kronika, folk, grannar, person, eld, lager, hog, hus, station, sjo, falt, sak, djur, filt, fram, match } satisfies Record<string, Flik>;
+const FLIKAR = { byn, teknik, kronika, grannar, person, eld, lager, hog, hus, station, sjo, falt, sak, djur, filt, fram, match } satisfies Record<string, Flik>;
 export type FlikId = keyof typeof FLIKAR;
 const ALLA: Record<FlikId, Flik> = FLIKAR;
 const IDS = Object.keys(FLIKAR) as FlikId[];
@@ -94,8 +93,32 @@ function skriv(sd: Sida, id: FlikId | undefined, force: boolean) {
   sd.html = html; sd.body.innerHTML = html;
 }
 satRitaOm(() => renderPanel(true));
+// bakåtknappen (steg 6.9.5): panelerna minns vad man tittat på. Det som bestämmer vad panelerna visar sparas när det ändras,
+// och ← (bredvid krysset) går tillbaka ett steg, så att man kommer tillbaka till personen, fliken eller saken man såg
+const VY = ['tab', 'hoger', 'selected', 'bynDel', 'personDel', 'eld', 'husId', 'stationId', 'sjoNr', 'faltId', 'faltRuta', 'hogAt', 'filtAt', 'framNr', 'matchNr', 'byteNr', 'djurId', 'sak', 'lagerNr'] as const;
+const BAKAT_MAX = 30;
+const bakat: string[] = [];
+let vyNu = '';
+vidNyBy.push(() => { bakat.length = 0; vyNu = ''; }); // en ny by har inget att gå tillbaka till
+const vyAv = () => JSON.stringify(VY.map(k => ui[k]));
+function minnsVy() {
+  const v = vyAv();
+  if (v === vyNu) return;
+  if (vyNu) { bakat.push(vyNu); if (bakat.length > BAKAT_MAX) bakat.shift(); }
+  vyNu = v;
+}
+export function tillbaka() {
+  const v = bakat.pop();
+  if (!v) return;
+  const x = JSON.parse(v) as unknown[];
+  VY.forEach((k, i) => { (ui as Record<string, unknown>)[k] = x[i] ?? undefined; });
+  vyNu = v; flytta = ärRuta(ui.tab);
+  renderPanel(true); renderPorts();
+}
 export function renderPanel(force = false) {
   if (ui.hoger && (ALLA[ui.hoger].syns?.() ?? true) === false) ui.hoger = undefined;
+  minnsVy();
+  for (const b of document.querySelectorAll<HTMLButtonElement>('.panel > .bakat')) b.hidden = !bakat.length;
   for (const b of nav.querySelectorAll<HTMLButtonElement>('button')) {
     const id = b.dataset.tab as FlikId;
     b.setAttribute('aria-selected', String(id === ui.hoger));
@@ -125,6 +148,7 @@ document.addEventListener('pointerdown', e => {
 }, true);
 document.addEventListener('click', e => {
   const el = e.target as HTMLElement;
+  if (el.closest('.panel > .bakat')) { tillbaka(); return; }
   const x = el.closest<HTMLElement>('[data-stang]');
   if (x) { stang(x.dataset.stang as 'v' | 'h' | 'r'); return; }
   const b = el.closest<HTMLElement>('[data-id]');
@@ -155,7 +179,7 @@ function renderOwned() {
   const ute = piles().filter(p => !p.stored);
   const html = `<h4>Förrådet</h4>${rows.map(({ f, ks }) => {
     const sum = f.summa ? ` <span class="n">${Math.round(ks.reduce((a, r) => a + r.n, 0))}</span>` : '';
-    return `<button type="button" class="fold" data-f="${f.namn}" aria-expanded="${!closed.has(f.namn)}">${closed.has(f.namn) ? '▸' : '▾'} ${f.namn}${sum}</button>${closed.has(f.namn) ? '' : `<ul>${ks.map(r => `<li class="klick" data-sak="k:${r.k}" title="${tipOf(r.k, r.n)}">${iconImg(r.k)}<span class="n">${isTool(r.k) ? Math.ceil(r.n - 1e-9) : Math.max(1, Math.round(r.n))}</span></li>`).join('')}</ul>`}`;
+    return `<button type="button" class="fold" data-f="${f.namn}" aria-expanded="${!closed.has(f.namn)}">${closed.has(f.namn) ? '▸' : '▾'} ${f.namn}${sum}</button>${closed.has(f.namn) ? '' : `<ul>${ks.map(r => `<li class="klick" data-sak="k:${r.k}" title="${tipOf(r.k, r.n)}" tabindex="0" role="button">${iconImg(r.k)}<span class="n">${isTool(r.k) ? Math.ceil(r.n - 1e-9) : Math.max(1, Math.round(r.n))}</span></li>`).join('')}</ul>`}`;
   }).join('') || '<p>Inget ännu</p>'}${ute.length ? `<p class="ute">${ute.length} ${ute.length === 1 ? 'hög' : 'högar'} på marken</p>` : ''}`;
   if (html === ownedKey) return;
   ownedKey = html; $('owned').innerHTML = html;

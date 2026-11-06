@@ -1,3 +1,4 @@
+import { RECEPT } from './recept';
 // Kläderna (steg 3.10.12, "Plagg och material" i designdokumentet): ett klädesplagg är ett plagg av ett material. Plaggen
 // står i PLAGG: platsen på kroppen (PLATSER i utrustning.ts), hur mycket material det tar (mangd, i bitar: ett kaninskinn är
 // en bit, ett vargskinn två), vad mer det sys med (med), hur varmt och slitstarkt det är i sig, vad det väger, tekniken och
@@ -37,13 +38,13 @@ interface PlaggDef {
   forsta: string; fame?: string; // loggen första gången ({namn} = den som gjorde det, {plagg} = plaggets namn i en mening) och det hen minns för
 }
 const PLAGG_DEF = {
-  rock: { namn: 'Rock', ord: 'en rock', verb: 'Syr', plats: 'yttre', mangd: 3, med: { rep: 1 }, varme: 0.25, dygn: 4, vikt: 2, tek: 'skinnklader', min: 5, slag: ['skinn'], tung: true,
+  rock: { namn: 'Rock', ord: 'en rock', verb: 'Syr', plats: 'yttre', mangd: RECEPT.rock.mangd, med: RECEPT.rock.av, varme: 0.25, dygn: 4, vikt: 10, tek: 'skinnklader', min: RECEPT.rock.min, slag: ['skinn'], tung: true,
     skydd: { delar: ['bal', 'armV', 'armH'], tar: { hugg: 0.25, stick: 0.15, slag: 0.2, bett: 0.3 } },
     forsta: '{namn} sydde byns första {plagg}. Den som har den på sig fryser mindre.', fame: 'Sydde byns första {plagg}' },
-  skor: { namn: 'Skor', ord: 'ett par skor', verb: 'Syr', plats: 'fotter', mangd: 1, med: { rep: 1 }, varme: 0.1, dygn: 3, vikt: 0.6, tek: 'skinnklader', min: 5, slag: ['skinn'],
+  skor: { namn: 'Skor', ord: 'ett par skor', verb: 'Syr', plats: 'fotter', mangd: RECEPT.skor.mangd, med: RECEPT.skor.av, varme: 0.1, dygn: 3, vikt: 3, tek: 'skinnklader', min: RECEPT.skor.min, slag: ['skinn'],
     skydd: { delar: ['fotV', 'fotH'], tar: { hugg: 0.2, stick: 0.2, slag: 0.1, bett: 0.3 } },
     forsta: '{namn} sydde byns första par {plagg}.' },
-  balte: { namn: 'Bälte', ord: 'ett bälte', verb: 'Flätar', plats: 'balte', mangd: 2, varme: 0, dygn: 10, vikt: 0.2, tek: 'balte', min: 5, slag: ['flatat'], krok: true,
+  balte: { namn: 'Bälte', ord: 'ett bälte', verb: 'Flätar', plats: 'balte', mangd: RECEPT.balte.mangd, varme: 0, dygn: 10, vikt: 1, tek: 'balte', min: RECEPT.balte.min, slag: ['flatat'], krok: true,
     forsta: '{namn} flätade byns första {plagg}. Redskapet hänger i det, och båda händerna är fria att bära med.' },
 } satisfies Record<string, PlaggDef>;
 export type Plagg = keyof typeof PLAGG_DEF;
@@ -57,6 +58,7 @@ interface MaterialDef { sak: string; namn: string; slag: MaterialSlag; bit: numb
 const KLADMATERIAL_DEF = {
   kaninskinn: { sak: 'skinn', namn: 'harskinn', slag: 'skinn', bit: 1, varme: 1, hallbar: 1, vikt: 1, skydd: 1, finhet: 0 },
   vargskinn: { sak: 'vargskinn', namn: 'vargskinn', slag: 'skinn', bit: 2, varme: 1.8, hallbar: 1, vikt: 1.5, skydd: 1.2, finhet: 1 }, // tjockare än kaninens (steg 3.7.14): varmare, tyngre och skyddar mer
+  bjornskinn: { sak: 'bjornskinn', namn: 'björnskinn', slag: 'skinn', bit: 2, varme: 2.6, hallbar: 1.3, vikt: 2, skydd: 1.5, finhet: 2 }, // steg 6.6.6: det tjockaste skinnet, den varmaste klädern och skyddar mer än vargskinnet
   rep: { sak: 'rep', namn: 'rep', slag: 'flatat', bit: 1, varme: 1, hallbar: 1, vikt: 1, skydd: 1, finhet: 0 },
 } satisfies Record<string, MaterialDef>;
 export type KladMaterial = keyof typeof KLADMATERIAL_DEF;
@@ -95,7 +97,7 @@ export function kladSaker() {
   for (const { k, plagg: pl, mat: m } of KLADER_AV) {
     const P: PlaggDef = PLAGG[pl], M = KLADMATERIAL[m], namn = kladNamn(pl, m), iMening = `${P.namn.toLowerCase()} av ${M.namn}`;
     r[k] = {
-      namn, skaffa: { av: receptAv(pl, m), min: P.min, slag: 'stor', tek: P.tek }, vikt: +(P.vikt * M.vikt).toFixed(3), stack: 1, mapp: 'Kläder', slits: 0.0003, redskap: true, grupp: pl,
+      namn, skaffa: { av: receptAv(pl, m), min: P.min, slag: 'stor', tek: P.tek }, vikt: +(P.vikt * M.vikt).toFixed(3), stack: 1, mapp: 'Kläder', slits: 0.0003, redskap: true, grupp: pl, ...(P.ord === `ett ${P.namn.toLowerCase()}` ? { ett: true as const } : {}),
       klad: { plats: P.plats, varme: +(P.varme * M.varme).toFixed(4), dygn: P.dygn * M.hallbar, ...(P.krok ? { krok: true } : {}) },
       gors: { text: `${P.verb} ${P.ord} av ${M.namn}.`, stat: k, forsta: P.forsta.replace('{plagg}', iMening), ...(P.fame ? { fame: P.fame.replace('{plagg}', iMening) } : {}) },
     };

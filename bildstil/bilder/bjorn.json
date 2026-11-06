@@ -1,0 +1,42 @@
+{
+ "id": "bjorn",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "val 2 i f6_bjorn_falld: den fällda björnen med benen hopvikta",
+ "w": 48,
+ "h": 23,
+ "rader": [
+  "................o.o.o.o.o.......................",
+  "...............osososososo......................",
+  ".............ooooosrssoooo......................",
+  "........ooooorssrssrssrssroo....................",
+  ".....ooossrssrssrssrssrssrssooo.................",
+  "...oossssssssssssssssssssssssssoo...............",
+  "..osssssssssssssssssssssssssssssso..............",
+  ".ossssssssssssssssssssssssssssssssoooo..........",
+  "osssssssssssssssssssssssssssssssssskkko.........",
+  "ossssssssssssssssssssssssssssssssskssskoo.......",
+  "osssssssssssssssssssssssssssssssssksskkkkoo.....",
+  "osssssssssssssssssssssssssssssssssskssssssko....",
+  ".osssssssssssssssssssssssssssssssskssssssssko...",
+  "..ossssssssssssssssssssssssssssssksssssrrsssko..",
+  "...oorrssssssrrrrrrrrrrrrssssssooksssssssstttto.",
+  ".....oosssssrrrrrrrrrrrrrrsssssookssssssstttttko",
+  ".....oossssslrrrrrrrrrrlllsssssookrrrrrrrrtttto.",
+  "...oossssssslllooooooollllsssssssokkrrrrrrkrro..",
+  "..osVssssssslllo.....ollllssssssVssokkkkkkooo...",
+  ".orrVrrrrrrllllo.....olllllrrrrrVrVroooooo......",
+  ".orrVrrrrrllllo.......olllllrrrrVrVro...........",
+  "..orVrrolllooo.........ooollloorVrro............",
+  "...oooo.ooo...............ooo..oooo............."
+ ],
+ "pal": {
+  "o": "#24201d",
+  "s": "#5e3c24",
+  "r": "#3f2415",
+  "k": "#24201d",
+  "t": "#7d5b40",
+  "l": "#2f261d",
+  "V": "#a0947d"
+ }
+}

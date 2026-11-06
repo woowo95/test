@@ -1,3 +1,4 @@
+import { liten, talOrd } from './ord';
 import { KROPP, ageOf, alive, count, isParent, isSick, livet, living, log } from './folk';
 import { pick, rnd } from './slump';
 import { DAY, Person, STATS, Stat, State, Upplevelse } from './typer';
@@ -57,7 +58,7 @@ export const UPPLEVELSER = {
   frys: { text: 'Var nära att frysa ihjäl', chans: 0.3, e: [{ flit: 1, mod: -1 }, { uthallighet: 2 }], vem: 'bada', sed: { forsiktighet: 2 }, ande: true },
   svamp: { text: 'Blev förgiftad av svamp', chans: 0.6, e: [{ nyfikenhet: -2 }, { nyfikenhet: -1, minne: 1 }], vem: 'bada', sed: { nyfikenhet: -2, forsiktighet: 1 } },
   sjuk: { text: 'Var svårt sjuk', chans: 0.05, e: [{ styrka: -1, empati: 2 }, { styrka: -2 }], vem: 'bada', sed: { gemenskap: 1 }, ande: true },
-  foralder: { text: 'Miste sin förälder {om}', chans: 0.9, e: [{ empati: 2 }, { empati: -2 }, { flit: 2 }], vem: 'bada', sed: { gemenskap: 1 }, ande: true },
+  foralder: { text: 'Miste sin {om}', kort: 'Miste en förälder', chans: 0.9, e: [{ empati: 2 }, { empati: -2 }, { flit: 2 }], vem: 'bada', sed: { gemenskap: 1 }, ande: true },
   syskon: { text: 'Miste {om}', chans: 0.7, e: [{ empati: 2 }, { karisma: -2 }], vem: 'bada', sed: { gemenskap: 1 }, kort: 'Miste någon nära', ande: true },
   sagDod: { text: 'Såg {om} dö', chans: 0.4, e: [{ mod: -2 }, { mod: -1, empati: 1 }], vem: 'bada', sed: { forsiktighet: 1 }, kort: 'Såg någon dö' },
   foraldralos: { text: 'Blev föräldralös och växte upp hos andra', chans: 0.9, e: [{ flit: 2, karisma: -1 }, { mod: 2, empati: -1 }], tidig: true, vem: 'barn', sed: { gemenskap: 2 } },
@@ -80,7 +81,7 @@ export const UPPLEVELSER = {
   slagen: { text: 'Blev slagen av {om}', chans: 1, e: [{ mod: -3, empati: -2 }, { karisma: -3, mod: -2 }, { empati: -3, flit: -2 }, { aggression: 3, empati: -2 }], vem: 'barn' },
   slagenIgen: { text: 'Blev slagen igen av {om}', chans: 1, e: [{ mod: -2, karisma: -2 }, { empati: -2, nyfikenhet: -2 }, { flit: -2, karisma: -2 }, { aggression: 3, mod: -1 }], vem: 'barn' },
   // vuxenlivet och fler upplevelser (steg 4.1.1.2, "Fler upplevelser" i designdokumentet): talen gäller en vuxen
-  barnDod: { text: 'Miste sitt barn {om}', chans: 0.9, e: [{ empati: 1 }, { empati: -1 }, { flit: -1 }, { mod: -1 }], vem: 'vuxen', sed: { barn: 2 }, vuxenTal: true, ande: true, tung: true },
+  barnDod: { text: 'Miste {om}', kort: 'Miste ett barn', chans: 0.9, e: [{ empati: 1 }, { empati: -1 }, { flit: -1 }, { mod: -1 }], vem: 'vuxen', sed: { barn: 2 }, vuxenTal: true, ande: true, tung: true },
   ledFramgang: { text: 'Ledde byn till framgång', chans: 0.7, e: [{ karisma: 1 }, { mod: 1 }, { empati: -1 }], vem: 'vuxen', sed: { rang: 2 }, vuxenTal: true },
   ledFordarv: { text: 'Ledde byn i fördärvet', chans: 0.7, e: [{ mod: -1 }, { empati: 1 }, { karisma: -1 }], vem: 'vuxen', sed: { rang: -2 }, vuxenTal: true, ande: true },
   drabbad: { text: 'Drabbades själv av {om}', chans: 0.5, e: [{ uthallighet: 1 }, { mod: -1 }], vem: 'bada', sed: { forsiktighet: 1 }, vuxenTal: true, ande: true },
@@ -116,7 +117,9 @@ export const upplevelseKort = (k: UpplevelseTyp) => DEF[k].kort ?? DEF[k].text.r
 
 // hur mycket en upplevelse formade (den svagaste trängs undan när listan är full)
 const styrka = (u: Upplevelse) => Object.values(u.e).reduce((a, v) => a + Math.abs(v ?? 0), 0);
-export const upplevelseText = (u: Upplevelse) => DEF[u.k].text.replace('{om}', u.om ?? '');
+// en sparad by från före steg 6.7.2 har bara namnet: då står det förälder och barn som förut
+const omText = (u: Upplevelse) => !u.om || u.om.includes(' ') ? u.om ?? '' : u.k === 'foralder' ? `förälder ${u.om}` : u.k === 'barnDod' ? `sitt barn ${u.om}` : u.om;
+export const upplevelseText = (u: Upplevelse) => DEF[u.k].text.replace('{om}', omText(u));
 export const formas = (s: State, p: Person) => alive(p) && ageOf(p, s.now) < UPPV.alder;
 // u är från vuxenlivet (steg 4.1.1.2); de andra är från barndomen
 export const vuxenUpp = (u: Upplevelse) => u.v === 1;
@@ -165,7 +168,7 @@ export function upplev(s: State, p: Person, k: UpplevelseTyp, om?: string) {
   p.upp = lista;
   raknaPot(p);
   count(s, 'upp_' + k); if (vuxen) count(s, 'upp_vuxen');
-  log(s, `${p.name} (${u.a} år): ${upplevelseText(u)}.`, 'rel', [p.id]);
+  log(s, `${p.name}, ${talOrd(u.a)} år, ${liten(upplevelseText(u))}.`, 'rel', [p.id]);
 }
 // alla i byn var med om k (barnen och, sedan steg 4.1.1.2, de vuxna)
 export function allaBarn(s: State, k: UpplevelseTyp, om?: string) { for (const q of living(s)) upplev(s, q, k, om); }
@@ -179,11 +182,11 @@ export function barnTill(s: State, a: Person, b: Person | undefined, k: Upplevel
 export function uppvaxtDod(s: State, p: Person) {
   for (const q of living(s)) {
     if (isParent(p, q)) {
-      upplev(s, q, 'foralder', p.name);
+      upplev(s, q, 'foralder', `${p.sex === 'k' ? 'mor' : 'far'} ${p.name}`); // släktordet (steg 6.7.2)
       const annan = s.people.find(o => o !== p && isParent(o, q));
       if (!annan || !alive(annan)) upplev(s, q, 'foraldralos');
-    } else if (isParent(q, p)) upplev(s, q, 'barnDod', p.name);
-    else if ((q.mother !== undefined && q.mother === p.mother) || (q.father !== undefined && q.father === p.father)) upplev(s, q, 'syskon', `sitt syskon ${p.name}`);
+    } else if (isParent(q, p)) upplev(s, q, 'barnDod', `sin ${p.sex === 'k' ? 'dotter' : 'son'} ${p.name}`);
+    else if ((q.mother !== undefined && q.mother === p.mother) || (q.father !== undefined && q.father === p.father)) upplev(s, q, 'syskon', `sin ${p.sex === 'k' ? 'syster' : 'bror'} ${p.name}`);
     else if (q.partner === p.id) upplev(s, q, 'syskon', `sin partner ${p.name}`);
     else if (q.bast === p.id) upplev(s, q, 'syskon', `sin bästa vän ${p.name}`);
     else if (Math.hypot(q.x - p.x, q.y - p.y) <= UPPV.sagDod) upplev(s, q, 'sagDod', p.name);

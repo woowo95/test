@@ -17,6 +17,7 @@ import { hourOf } from './tid';
 import { snoPaMarken } from './vader';
 import { balans } from './balans';
 import { notis } from './notiser';
+import { tal } from './ord';
 import { HOUR, HOUR_S, MIN, Person, Skill, State, Task } from './typer';
 
 export interface SportDef {
@@ -129,7 +130,7 @@ export function sportVal(s: State, p: Person): { why: string; spot: { x: number;
     }
   }
   const d = SPORT_AV[m.k];
-  return { why: ny ? `Vill ha ${d.namn.toLowerCase()} och samlar folk` : `Går med i ${d.namn.toLowerCase()}en`, spot: plats(s, p, m), dur: m.slut - s.now, ref: m.start, tool: d.id };
+  return { why: ny ? `Vill ha ${d.namn.toLowerCase()} och samlar folk` : `Är med i ${d.best}`, spot: plats(s, p, m), dur: m.slut - s.now, ref: m.start, tool: d.id };
 }
 // var den som går med ställer sig, aldrig i en vägg. I dragkampen (steg 4.5.6.10) två lag på en rad på var sin sida om
 // strecket i mitten: varannan till vänster och varannan till höger, de senare längre ut. De andra sporterna (steg 4.5.6.11)
@@ -203,6 +204,6 @@ function vinnare(s: State, d: SportDef, m: Match, har: Person[]) {
   s.sportBast[d.id] = bast.id;
   const titel = `Den bästa i ${d.namn.toLowerCase()}${d.id === 'kast' ? '' : 'en'}`;
   if (!bast.fame.includes(titel)) bast.fame.push(titel);
-  const text = fore && alive(fore) ? `${bast.name} har vunnit fler matcher i ${d.namn.toLowerCase()} än ${fore.name} och är nu den bästa i byn.` : `${bast.name} har vunnit ${n} matcher i ${d.namn.toLowerCase()} och är den bästa i byn.`;
+  const text = fore && alive(fore) ? `${bast.name} har vunnit fler matcher i ${d.namn.toLowerCase()} än ${fore.name} och är nu den bästa i byn.` : `${bast.name} har vunnit ${tal(n)} matcher i ${d.namn.toLowerCase()} och är den bästa i byn.`;
   log(s, text, 'world', [bast.id]); kronika(s, text);
 }

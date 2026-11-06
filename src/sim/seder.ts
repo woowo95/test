@@ -57,7 +57,7 @@ const DEF = {
   nyfikenhet: { pos: 'Förnyelse', neg: 'Tradition', effect: 'Hur snabbt invånarna lär sig nya färdigheter.', dra: q => dev((q.nyfikenhet + q.intelligens) / 2) },
   forsiktighet: { pos: 'Förutseende', neg: 'Dagens behov', effect: 'Hur stora förråd byn vill ha innan man slappnar av, och om elden hålls vid liv.', dra: q => -dev(q.mod) * SED.forsMod + dev(q.intelligens) * SED.forsInt },
   // den första vågskålen (steg 3.5.1): låst (står på 0) tills byn fått sin första ledare (sedOppen i styre.ts)
-  rang: { pos: 'Envälde', neg: 'Allmogen', effect: 'Hur mycket ledaren bestämmer: ledarens vikt i sederna och påbuden, och hur hårt hen straffar.', dra: q => (dev(q.mod) - dev(q.empati)) * SED.rangDra },
+  rang: { pos: 'Envälde', neg: 'Allmogen', effect: 'Hur mycket ledaren bestämmer: ledarens vikt i sederna och påbuden, och hur hårt ledaren straffar.', dra: q => (dev(q.mod) - dev(q.empati)) * SED.rangDra },
 } satisfies Record<string, SedDef>;
 export type Sed = keyof typeof DEF;
 export const SEDER: Record<Sed, SedDef> = DEF;

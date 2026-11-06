@@ -1,0 +1,36 @@
+{
+ "id": "radjur",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "val 2 i f6_radjur_fallt: det fällda rådjuret med benen hopvikta",
+ "w": 31,
+ "h": 15,
+ "rader": [
+  "....oooooooooooooooo...........",
+  "..oommmmmmmmmmmmmssso..........",
+  ".ommmmmmmmmmmmmmmmpsooo........",
+  "omsmmmmmmmmmmmmmmmspmmmooooo...",
+  "oscmmmmmssmmmmmmmmssssmssmmmoo.",
+  "oscsmmmmsssmmmsmmmssssmssdssmko",
+  "osvssmmmsdssssmmmsssssmssssssso",
+  "osvosmmssddssdmssssdccmsssdddo.",
+  ".oommmmsbcccddmmbsdoooooooooo..",
+  "...oomsbboooooombboo...........",
+  "....omobbboo.omsobbboo.........",
+  "...ommmbbbbkoommmbbbbko........",
+  "...osssmmkbboosssmmkbbo........",
+  "....ooosssoo..ooosssoo.........",
+  ".......ooo.......ooo..........."
+ ],
+ "pal": {
+  "o": "#24201d",
+  "m": "#7d5b40",
+  "s": "#5e3c24",
+  "p": "#bd753e",
+  "c": "#a0947d",
+  "d": "#3f2415",
+  "k": "#24201d",
+  "v": "#dad0bb",
+  "b": "#2f261d"
+ }
+}

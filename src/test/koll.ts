@@ -1,6 +1,7 @@
 // npm run koll: allt som ska kontrolleras efter en ändring, på en gång och med kort utskrift.
 // Typkontroll, de tre testbyarna mot facit, alla scenarier och samma-kollen körs samtidigt. Scenarier som går igenom visas bara
 // som en siffra. "Annan utveckling" är väntat när spelet ändrats med avsikt (spara då med npm run facit), annars ett fel.
+import './utc';
 import { korSkript, scenarioSammanfattning, sek, typkontroll, typRad } from './pool';
 
 const t0 = Date.now();

@@ -1,7 +1,7 @@
 import { iconImg, kvSvg, tecknet } from '../ikoner';
 import { framstegSvg } from './framsteg';
-import { NORMAL, kvEffekt, kvHaller, kvNamn, kvOf, kvVarde, BORDA_KG, bordOf, UTRUSTNING, HOUR, KROPP, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, ledareOf, load, num, ryktbarhet, sak, sakNamn, skadeLista, timeLabel } from '../sim';
-import { s, vidNyBy } from './lage';
+import { NORMAL, kvEffekt, kvHaller, kvNamn, kvOf, kvVarde, viktOf, HOUR, KROPP, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, ledareOf, load, num, ryktbarhet, sak, sakNamn, skadeLista, timeLabel } from '../sim';
+import { s, uppgiftVid, vidNyBy } from './lage';
 
 // små hjälpare för text, tal, färger och staplar som alla delar av gränssnittet använder
 export const $ = (id: string) => document.getElementById(id)!;
@@ -123,15 +123,18 @@ export function ansStapel(om: number) {
 // kvaliteten (steg 2.2.2): nivån och vad den gör jämfört med en normal sak, för texten när musen är över märket (kvSvg)
 const procent = (x: number) => `${x >= 1 ? '+' : '−'}${Math.round(Math.abs(x - 1) * 100)} %`;
 export const kvText = (t: { q?: number }) => kvOf(t) === NORMAL ? kvNamn(t) : `${kvNamn(t)}: håller ${procent(kvHaller(t))}, värde ${procent(kvVarde(t))}, fungerar ${procent(kvEffekt(t))}`;
+// hållbarheten som en liten cirkel (steg 6.9.6): fylld efter hur hel saken är, med procenten när man håller över den
+export const hallCirkel = (c: number) => `<span class="hall${c < LAG.skick ? ' low' : ''}" title="Hållbarhet ${Math.round(c * 100)} %" aria-label="Hållbarhet ${Math.round(c * 100)} %">${framstegSvg(c, 5)}</span>`;
 export const kvMark = (t: { q?: number }, size = 10) => { const m = kvSvg(t.q, size); return m && `<span class="kvm" title="${esc(kvText(t))}">${m}</span>`; };
 export const pileTxt = (p: { k: string; n: number; max: number; gor?: string; klar?: number; q?: number }) => p.gor ? `${iconImg(p.gor)}${framstegSvg(p.klar ?? 0)}${sakNamn(p.gor)} (inte klar, ${Math.round((p.klar ?? 0) * 100)} %)` : `${iconImg(p.k)}${kvMark(p)}${sakNamn(p.k)}${p.max === 1 ? '' : ` ${fmtN(p.n)} st`}`;
 // vad en person bär, vad det väger och hur mycket hen orkar (steg 2.3.1)
+// det p bär vid tiden som visas (uppgiftVid, steg 6.1.1), som kartan
 export function carryTxt(p: Person) {
-  const t = p.task, orkar = capacity(s, p), parts: string[] = [];
-  const kg = (n: number) => `${num(n * BORDA_KG).replace(',0', '')} kg`, styck = (k: string, n: number) => `${fmtN(n)} ${sakNamn(k).toLowerCase()} (${kg(n * bordOf(k))})`;
+  const t = uppgiftVid(p), orkar = capacity(s, p), parts: string[] = [];
+  const kg = (n: number) => `${num(n).replace(',0', '')} vikt`, styck = (k: string, n: number) => `${fmtN(n)} ${sakNamn(k).toLowerCase()} (${kg(n * viktOf(k))})`;
   if (t && t.carry > 0) parts.push(styck(carryKind(t.act), t.carry));
   for (const k in t?.items ?? {}) if (t!.items![k] > 0 && !sak(k)?.dold) parts.push(styck(k, t!.items![k]));
-  return parts.length ? `Bär ${parts.join(' och ')}, ${kg(load(t!, s))} (${Math.round(load(t!, s) / orkar * 100)} % av vad hen orkar)` : `Bär inget just nu, orkar bära ${kg(orkar)} med båda händerna och ${kg(orkar * UTRUSTNING.en)} i en`;
+  return parts.length ? `Bär ${parts.join(' och ')}, ${kg(load(t!, s))} (${Math.round(load(t!, s) / orkar * 100)} % av vad hen orkar)` : `Bär inget just nu, orkar bära ${kg(orkar)} med båda händerna och ${kg(orkar / 2)} i en`;
 }
 // en rad i loggen där namnen går att trycka på
 // Namnen letas upp i den ursprungliga texten och byts i ett svep, så att samma namn två gånger, eller ett namn som är
@@ -155,7 +158,7 @@ export function linkify(l: LogEntry) {
   }
   let ut = '', fran = 0;
   for (const b of bitar.sort((a, b) => a.i - b.i)) { ut += esc(txt.slice(fran, b.i)) + pLink(b.p); fran = b.i + b.n; }
-  return ut + esc(txt.slice(fran)) + (l.byte ? byteKnapp(l.byte.nr) : '') + (l.fram ? framKnapp(l.fram) : '') + (l.match ? matchKnapp(l.match) : '');
+  return ut + esc(txt.slice(fran)) + (l.byte ? byteKnapp(l.byte.nr) : l.bnr !== undefined ? byteKnapp(l.bnr) : '') + (l.fram ? framKnapp(l.fram) : '') + (l.match ? matchKnapp(l.match) : '');
 }
 // knappen som visar hela bytet (steg 4.5.4.17): i loggen och bland en persons byten. Trycket tas om hand i flikar/filt.ts
 // knappen som visar hela framträdandet (steg 5.4.7.1): i loggen och i notisen. Trycket tas om hand i flikar/fram.ts

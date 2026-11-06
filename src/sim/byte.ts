@@ -1,7 +1,9 @@
-import { ByteMinne, ByteVara, HOUR, MIN, SEC, Person, State } from './typer';
+import { ByteMinne, ByteVara, HOUR, LogEntry, MIN, SEC, Person, State } from './typer';
 import { SAKER, isTool } from './saker';
+import { antal, och } from './ord';
 import { Ting } from './agande';
-import { ALDER, ageOf, log } from './folk';
+import { ALDER, ageOf } from './folk';
+import { loggBer } from './berattelser';
 import { ownMove } from './lager';
 import { grundvarde } from './varde';
 import { kvVarde } from './kvalitet';
@@ -48,8 +50,8 @@ export interface Part {
   rymmer?(): number; // så många kg till kan parten ta emot (handlarens packning); saknas = hur mycket som helst
 }
 export const vardeOf = (v: Vara) => grundvarde(v.k) * (v.t ? v.t.c * kvVarde(v.t) : 1);
-const tal = (n: number) => n >= 0.5 ? String(Math.round(n)) : 'lite'; // saker i hela tal (Björn efter v89)
-export const varorText = (v: Vara[]) => v.map(x => `${x.t ? 'en' : tal(x.n)} ${(SAKER[x.k]?.namn ?? x.k).toLowerCase()}`).join(' och ');
+// varorna i en mening (ordlagret, steg 6.7.1): "ett träspjut", "tre rötter och en flintkniv"
+export const varorText = (v: Vara[]) => och(v.map(x => antal(x.t ? 1 : x.n, x.k)));
 
 // w går från fran till till. Mellan två bybor byter bara ägaren i förrådet (ownMove) eller redskapet (tinget); handlaren
 // och byn har egna sätt att lämna och ta emot (lamna, ta)
@@ -121,6 +123,25 @@ function prisAv(s: State, fran: Part, till: Part, k: string) {
   return Math.max(1, Math.round(grundvarde(k)));
 }
 const byteVaror = (s: State, varor: Vara[], fran: Part, till: Part): ByteVara[] => varor.map(w => ({ k: w.k, n: w.t ? 1 : Math.round(w.n), p: prisAv(s, fran, till, w.k) }));
+// bytet i loggen och i bybornas minne (steg 5.5.6): minns en bybo det (p.byten) har raden bara numret (bnr), annars hela
+// bytet. Minnet rymmer BYTE.minnas byten; en affär som inte blev av tar bort den äldsta som inte heller blev av, aldrig ett
+// riktigt byte
+export function loggaByte(rad: LogEntry, minne: ByteMinne, folk: (Person | undefined)[]) {
+  const vem = folk.filter((p): p is Person => !!p);
+  for (const p of vem) {
+    const b = (p.byten ??= []); b.push(minne);
+    if (b.length > BYTE.minnas) b.splice(minne.avbruten ? b.findIndex(x => x.avbruten) : 0, 1);
+  }
+  if ((rad.sam?.d.length ?? 1) > 1) return; // raden samlar flera byten (steg 6.7.5) och pekar inte på något av dem
+  if (vem.some(p => p.byten!.includes(minne))) rad.bnr = minne.nr; else rad.byte = minne;
+}
+// bytet en rad i loggen handlar om: hela bytet på raden eller det någon minns med numret (filt.ts, gränssnittet)
+export function radByte(s: State, l: LogEntry): ByteMinne | undefined {
+  if (l.byte) return l.byte;
+  if (l.bnr === undefined) return undefined;
+  for (const p of s.people) { const b = p.byten?.find(x => x.nr === l.bnr); if (b) return b; }
+  return undefined;
+}
 // bytet är klart: m fick fatt av g och gav betal. Samma för alla byten. desperat = m höll på att dö av bristen
 export function byteKlart(s: State, m: Part, g: Part, fatt: Vara[], betal: Vara[], desperat = false) {
   const alla = [...fatt, ...betal], stort = stortByte(alla), bytt = (s.bytt ??= []);
@@ -140,9 +161,11 @@ export function byteKlart(s: State, m: Part, g: Part, fatt: Vara[], betal: Vara[
       { x, y: y + FILT_MOT / 2, slut, varor: betal.map(w => ({ k: w.k, n: w.t ? 1 : w.n, fran: m.id })), vem: m.id, par, byt: s.now });
     minne.fa = { x, y: y + FILT_MOT / 2 }; minne.fb = { x, y: y - FILT_MOT / 2 };
   } else { overlamna(s, fatt, g, m); overlamna(s, betal, m, g); }
-  const text = `${m.namn} och ${g.namn} bytte: ${varorText(fatt)} mot ${varorText(betal)}${desperat ? `. ${m.namn} höll på att dö` : ''}.`;
-  log(s, text, 'rel', [m.id, g.id].filter(i => i > 0)).byte = minne;
-  for (const P of [m, g]) if (P.p) { const b = (P.p.byten ??= []); b.push(minne); if (b.length > BYTE.minnas) b.splice(0, b.length - BYTE.minnas); }
+  // raden ur mallen l_byte (steg 6.7.7); vardagens byten samlas (steg 6.7.5)
+  const vardag = !hf && !stort && !desperat, slag = (v: Vara[]) => och([...new Set(v.map(w => SAKER[w.k]?.namn.toLowerCase() ?? w.k))]);
+  const rad = loggBer(s, 'l_byte', Math.abs(m.id) * 997 + Math.abs(g.id), { namn: m.namn, med: g.namn, fatt: varorText(fatt), betal: varorText(betal), desperat }, 'rel', [m.id, g.id].filter(i => i > 0), vardag ? { slag: 'byte', k: 0, n: '', d: `${slag(fatt)} mot ${slag(betal)}` } : undefined);
+  const text = rad.text;
+  loggaByte(rad, minne, [m.p, g.p]);
   if (hf) notis(s, 'byte', text, [m.id, g.id].filter(i => i > 0));
   if (stort) kronika(s, text, 'byte');
   for (const f of vidByte) f(s, m, g, fatt, betal, minne);
@@ -153,7 +176,7 @@ export function byteKlart(s: State, m: Part, g: Part, fatt: Vara[], betal: Vara[
 export function gavaKlar(s: State, g: Part, m: Part, varor: Vara[], fara: boolean) {
   overlamna(s, varor, g, m);
   const barn = !!m.p && ageOf(m.p, s.now) < ALDER.vuxen && varor.some(w => w.t || isTool(w.k));
-  const text = `${g.namn} gav ${varorText(varor)} till ${m.namn}${fara ? `, som höll på att dö` : ''}.`;
-  if (fara || varor.some(w => w.t || isTool(w.k))) log(s, text, 'rel', [g.id, m.id].filter(i => i > 0)); // vardagens gåvor fyller inte loggen
-  if (fara || barn) kronika(s, text, 'gava');
+  // raden ur mallen l_gava (steg 6.7.7); vardagens gåvor fyller inte loggen
+  const f = { namn: g.namn, om: m.namn, varor: varorText(varor), fara, barn: !!m.p && ageOf(m.p, s.now) < ALDER.vuxen, honom2: m.p?.sex === 'k' ? 'henne' : 'honom' };
+  if (fara || varor.some(w => w.t || isTool(w.k))) { const rad = loggBer(s, 'l_gava', Math.abs(g.id) * 997 + Math.abs(m.id), f, 'rel', [g.id, m.id].filter(i => i > 0)); if (fara || barn) kronika(s, rad.text, 'gava'); }
 }

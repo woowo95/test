@@ -1,10 +1,11 @@
+import { honom } from './ord';
 import { upplev } from './uppvaxt';
 import { ALDER, REL, ageOf, count, getRel, isParent, living, log, relKey, think } from './folk';
 import { DAY, Person, Rel, SKILLS, Skill, State } from './typer';
 import { balans } from './balans';
 import { ACTS } from './handlingar';
 import { notis } from './notiser';
-import { kronikaBer } from './berattelser';
+import { kronikaBer, loggBer } from './berattelser';
 
 // ---------- balanstal (regel 8) ----------
 // Relationstyperna (steg 3.1.1, "Relationstyper" i designdokumentet). Relationen (op) går från -100 till 100; vän, nära vän,
@@ -51,14 +52,14 @@ const dygnSedan = (s: State, t: number) => Math.max(0, Math.floor((s.now - t) / 
 export const RELATIONER: Record<string, RelTyp> = {
   gift: { namn: 'Gifta', ikon: 'r_gift', har: (_s, p, q, r) => p.partner === q.id && r.gift !== undefined, varfor: (s, _p, _q, r) => `Gifta sedan ${dygnSedan(s, r.gift!)} år. Ett äktenskap håller mer än ett par och sörjs mer.` },
   par: { namn: 'Par', ikon: 'r_par', har: (_s, p, q, r) => p.partner === q.id && r.gift === undefined, varfor: (s, _p, _q, r) => `Tillsammans${r.par !== undefined ? ` i ${dygnSedan(s, r.par)} år` : ''}. Efter ${RELT.giftDygn} år gifter de sig om de fortfarande är goda vänner.` },
-  bastaVan: { namn: 'Bästa vän', ikon: 'r_bast', har: (_s, p, q) => p.bast === q.id, varfor: (_s, p, q) => `${q.name} är den ${p.name} står närmast, och tvärtom. De arbetar och sitter gärna bredvid varandra, delar som med släkt och berättar mer för varandra.` },
-  naraVan: { namn: 'Nära vän', ikon: 'r_naravan', har: (_s, p, q, r) => r.op > REL.naraVan && p.bast !== q.id && p.partner !== q.id, varfor: () => 'Mycket goda vänner: djupa samtal, gåvor och lån.' },
+  bastaVan: { namn: 'Bästa vän', ikon: 'r_bast', har: (_s, p, q) => p.bast === q.id, varfor: (_s, p, q) => `${q.name} är den ${p.name} står närmast, och tvärtom. De arbetar och sitter gärna bredvid varandra, delar med sig som till släkt och berättar mer för varandra.` },
+  naraVan: { namn: 'Nära vän', ikon: 'r_naravan', har: (_s, p, q, r) => r.op > REL.naraVan && p.bast !== q.id && p.partner !== q.id, varfor: () => 'mycket goda vänner, med djupa samtal, gåvor och lån.' },
   van: { namn: 'Vän', ikon: 'r_van', har: (_s, p, q, r) => r.op > REL.vanOrd && r.op <= REL.naraVan && p.partner !== q.id, varfor: () => 'Vänner: de pratar gärna och hjälper varandra.' },
   mentor: { namn: 'Mentor', ikon: 'r_mentor', har: (_s, p, q) => q.mentor === p.id, varfor: (_s, p, q) => `${p.name} är mentor för ${q.name} i ${skillNamn(q.mentorSk)}: lär ut mer, och ${q.name} arbetar gärna bredvid och lär sig fortare där.` },
   larling: { namn: 'Lärling', ikon: 'r_larling', har: (_s, p, q) => p.mentor === q.id, varfor: (_s, p, q) => `${q.name} är mentor för ${p.name} i ${skillNamn(p.mentorSk)}, tills ${p.name} har kommit ikapp.` },
   rival: { namn: 'Rival', ikon: 'r_rival', har: (_s, p, q) => !!p.rivaler?.includes(q.id), varfor: (_s, p, q) => `${p.tag && p.tag === q.tag ? `Båda är ${p.tag.toLowerCase()} och tävlar i det` : 'De vill ha samma person'}. De arbetar lite hårdare, grälar oftare och ger varandra mindre.` },
   fiende: { namn: 'Ovän', ikon: 'r_fiende', har: (_s, p, q, r) => r.op < REL.ovan && p.arke !== q.id, varfor: () => 'Ovänner: de undviker att arbeta och sitta nära varandra och grälar när de möts.' },
-  arke: { namn: 'Ärkefiende', ikon: 'r_arke', har: (_s, p, q) => p.arke === q.id, varfor: (_s, p, q) => `Den ${p.name} hatar mest. De grälar nästan varje gång de möts, ${p.name} ger ${q.name} aldrig något och tar hellre av hen.` },
+  arke: { namn: 'Ärkefiende', ikon: 'r_arke', har: (_s, p, q) => p.arke === q.id, varfor: (_s, p, q) => `Den ${p.name} hatar mest. De grälar nästan varje gång de möts, ${p.name} ger ${q.name} aldrig något och tar hellre av ${honom(q)}.` },
 };
 export const SKILL_ORD: Record<Skill, string> = { samla: 'samlande', jakt: 'jakt', fiske: 'fiske', ved: 'vedhuggning', hantverk: 'hantverk', berattande: 'berättande', matlagning: 'matlagning', narstrid: 'närstrid', traff: 'träffsäkerhet', skaldskap: 'skaldskap', handel: 'handel' };
 const skillNamn = (k?: Skill) => k ? SKILL_ORD[k] : 'något';
@@ -112,7 +113,7 @@ export function stepRelationer(s: State) {
     const q = topp.get(p), ny = q && topp.get(q) === p ? q.id : undefined;
     if (ny !== undefined && p.bast !== ny && p.id < ny) {
       const r = rel(p, q!)!; count(s, 'bastaVan');
-      if (!(r.flags & 8)) { r.flags |= 8; log(s, `${p.name} och ${q!.name} har blivit bästa vänner.`, 'rel', [p.id, ny]); }
+      if (!(r.flags & 8)) { r.flags |= 8; loggBer(s, 'l_bastaVanner', p.id * 997 + ny, { namn: p.name, med: q!.name }, 'rel', [p.id, ny]); }
       upplev(s, p, 'bastaVan', q!.name); upplev(s, q!, 'bastaVan', p.name); // barn minns sin bästa vän (steg 3.1.2)
     }
     p.bast = ny;
@@ -126,7 +127,7 @@ export function stepRelationer(s: State) {
       const v = r.op - (p.arke === q.id ? RELT.arkeSlut - RELT.arke : 0);
       if (v < RELT.arke && v < wv) { wv = v; worst = q; }
     }
-    if (worst && p.arke !== worst.id) { count(s, 'arkefiende'); log(s, `${p.name} ser nu ${worst.name} som sin ärkefiende.`, 'rel', [p.id, worst.id]); }
+    if (worst && p.arke !== worst.id) { count(s, 'arkefiende'); loggBer(s, 'l_arke', p.id * 997 + worst.id, { namn: p.name, om: worst.name, hans: p.sex === 'm' ? 'hans' : 'hennes' }, 'rel', [p.id, worst.id]); }
     p.arke = worst?.id;
   }
   // äktenskap: ett par som varit tillsammans giftDygn dygn och fortfarande är goda vänner
@@ -155,7 +156,7 @@ export function stepRelationer(s: State) {
     }
     for (const id of nu) if (!fore.includes(id) && p.id < id) {
       const q = byId.get(id)!, r = getRel(s, p, q); count(s, 'rival');
-      if (!(r.flags & 4)) { r.flags |= 4; log(s, `${p.name} och ${q.name} har blivit rivaler.`, 'rel', [p.id, id]); }
+      if (!(r.flags & 4)) { r.flags |= 4; loggBer(s, 'l_rivaler', p.id * 997 + id, { namn: p.name, med: q.name }, 'rel', [p.id, id]); }
     }
     p.rivaler = nu.length ? nu : undefined; p.rivalom = om;
   }

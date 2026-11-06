@@ -7,9 +7,10 @@ import { skapad } from './utseende';
 // porträttraden överst på kartan: en knapp per invånare, med mer om personen när musen är över den.
 // Ett tryck väljer personen (data-id, fångas i panel.ts), ett dubbeltryck följer hen med kameran
 export function stopFollow() { if (ui.follow === undefined) return; ui.follow = undefined; $('followChip').hidden = true; }
-function startFollow(id: number) {
-  ui.follow = id; const chip = $('followChip'), p = byId(s, id);
-  chip.hidden = false; chip.textContent = `Följer ${p?.name ?? ''} ✕`;
+// en bybo, eller en gäst med sitt namn (rövaren i testläget, steg 6.6.12: id under noll, ui/gaster.ts)
+export function startFollow(id: number, namn?: string) {
+  ui.follow = id; const chip = $('followChip'), p = id > 0 ? byId(s, id) : undefined;
+  chip.hidden = false; chip.textContent = `Följer ${namn ?? p?.name ?? ''} ✕`;
 }
 $('followChip').addEventListener('click', stopFollow);
 vidNyBy.push(stopFollow);
@@ -58,4 +59,6 @@ function hideTip() { tipId = undefined; $('portTip').hidden = true; }
 const portOf = (e: Event) => (e.target as HTMLElement).closest<HTMLElement>('.port');
 $('ports').addEventListener('pointerover', e => { const b = portOf(e); if (b) showTip(Number(b.dataset.id)); });
 $('ports').addEventListener('pointerleave', hideTip);
+// porträttraden går att scrolla (steg 6.8.13): hjulet uppåt och nedåt flyttar raden i sidled när den inte får plats
+$('ports').addEventListener('wheel', e => { const el = $('ports'); if (el.scrollWidth <= el.clientWidth || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return; e.preventDefault(); el.scrollLeft += e.deltaY; hideTip(); }, { passive: false });
 $('ports').addEventListener('dblclick', e => { const b = portOf(e); if (b) startFollow(Number(b.dataset.id)); });

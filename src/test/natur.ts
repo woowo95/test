@@ -2,6 +2,7 @@
 // Människornas avtryck på naturen (steg 1.7.2): hur mycket bär, svamp och rötter som finns kvar nära byn (inom 12 rutor,
 // snitt över dygnen utom istiden), hur långt från lägret man samlar, jagar och fiskar, andelen skog inom 15 rutor
 // före och efter, hur många rutor som är stigar och bar jord, och hur stor byn blir med och utan redskap för maten.
+import './utc';
 import { korJson, pool, seedAv, sek } from './pool';
 import { matt, median, Nyckel, vardeAv } from './nyckeltal';
 

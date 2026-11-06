@@ -34,7 +34,7 @@ function sjoHtml() {
   const har = (act: string) => living(s).filter(p => p.task?.act === act && sjoVid(s, p.task.tx, p.task.ty) === n);
   const fiskar = har('fiske'), badar = har('bada');
   return `
-    <div class="phead"><span class="dot big" style="background:#2f7fd0"></span><div><h2>${esc(sjoNamn(s, n))}</h2>
+    <div class="phead"><span class="dot big" style="background:#61767a"></span><div><h2>${esc(sjoNamn(s, n))}</h2>
     <p class="muted">${rutor.length} rutor vatten. Man fiskar och badar från stranden.</p></div></div>
     <h3>Just nu</h3><dl class="kv">
       <dt>${iconImg('abborre', 14)} Fisk</dt><dd>${bar(kvar)}<span>${Math.round(kvar * 100)} %</span></dd>

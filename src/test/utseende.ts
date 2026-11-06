@@ -1,9 +1,10 @@
 // Slutgenomgången av utseendet (steg 5.5.1): samma by på dagen, i skymningen, på natten och i istiden, på datorn och i
-// mobilen. Byn räknas fram här utan grafik, läggs i webbläsarens sparfil och visas i det byggda spelet
+// mobilen, i ljust och mörkt läge (steg 6.9.17: datorns inställning, som spelet följer). Byn räknas fram här utan grafik, läggs i webbläsarens sparfil och visas i det byggda spelet
 // (samhallssimulatorn.html, kör npm run build först) med klockan ställd på byns tid i svensk tid. Varje bild sparas, och
 // kartan kontrolleras: varje punkt som ritas ska ha en färg ur paletten (palett.ts; namnskyltarna är text och räknas inte), och
 // varje bild i världen ska ritas i hel skala med skarpa punkter. Felkoden är 1 om något larmar.
-//   npm run utseende -- [mapp] [by]   (mappen utseende/ och by 3 om inget anges; ca 2 min datortid)
+//   npm run utseende -- [mapp] [by]   (mappen utseende/ och by 3 om inget anges; ca 16 min datortid). LAGE=ljust eller
+//   LAGE=morkt tar bara det ena läget, FALL=dag,natt bara de fallen
 import { createRequire } from 'node:module';
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -27,6 +28,8 @@ const SKARMAR = [
   { namn: 'dator', opt: { viewport: { width: 1300, height: 850 } } },
   { namn: 'mobil', opt: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true } },
 ];
+// ljust och mörkt läge (steg 6.9.17); bilderna i mörkt läge får -morkt sist i namnet
+const LAGEN = [{ namn: 'ljust', schema: 'light', fil: '' }, { namn: 'morkt', schema: 'dark', fil: '-morkt' }] as const;
 
 // kör byn tills tidsåldern ai och klockslaget h (räknat från förra fallet, så att alla bilder är samma by)
 function tills(s: State, ai: number, h: number) {
@@ -38,12 +41,7 @@ function tills(s: State, ai: number, h: number) {
 }
 
 // bilder som ännu ritas i en annan skala än hel och väntar på egna ritningar (steg 5.5.5): de visas men larmar inte
-const KANDA: Record<string, string> = {
-  '0.50×0.50 (16×16)': 'symbolen i pratbubblan, halv storlek',
-  '0.75×0.75 (20×14)': 'småbarnen, tre fjärdedels storlek',
-  '0.75×0.75 (8×8)': 'en liten symbol i 6 punkter (lek, handel, vakt)',
-  '1.50×1.50 (8×8)': 'en liten symbol i 12 punkter (lek, handel, vakt)',
-};
+const KANDA: Record<string, string> = {}; // det som väntade på ritningar i steg 5.5.5 är byggt (v376)
 const req = createRequire(import.meta.url);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { chromium } = req('playwright') as any;
@@ -97,8 +95,8 @@ async function main() {
   for (const f of FALL.filter(f => !process.env.FALL || process.env.FALL.split(',').includes(f.namn))) {
     if (!tills(s, f.ai, f.h)) { larm.push(`${f.namn}: byn kom aldrig dit`); continue; }
     const fil = serialize(s), t = s.now;
-    for (const sk of SKARMAR) {
-      const ctx = await b.newContext({ ...sk.opt, timezoneId: 'Europe/Stockholm' });
+    for (const sk of SKARMAR) for (const lg of LAGEN.filter(l => !process.env.LAGE || process.env.LAGE === l.namn)) {
+      const ctx = await b.newContext({ ...sk.opt, timezoneId: 'Europe/Stockholm', colorScheme: lg.schema });
       await ctx.addInitScript(`try { if (!sessionStorage.getItem('klar')) { localStorage.setItem('samhalle-save-v1', ${JSON.stringify(fil)}); sessionStorage.setItem('klar', '1'); } } catch (e) {}`);
       const pg = await ctx.newPage();
       await pg.clock.install({ time: t });
@@ -108,20 +106,20 @@ async function main() {
       await pg.goto(SIDA);
       await pg.clock.runFor(8000);
       await pg.waitForTimeout(1500);
-      await pg.screenshot({ path: `${MAPP}/${f.namn}-${sk.namn}.png`, timeout: 120000 }); // mobilens bild är stor
+      await pg.screenshot({ path: `${MAPP}/${f.namn}-${sk.namn}${lg.fil}.png`, timeout: 120000 }); // mobilens bild är stor
       const r = await pg.evaluate(`(${MATA})(${JSON.stringify(palett)})`) as { skalor: Record<string, number>; utanfor: number; ritade: number; topp: string[]; var: string[]; lager: string[]; klocka: string; nu: string; by: string };
       if (process.env.DEBUG) console.log(new Date(t).toString(), '|', r.nu, '|', r.by, '|', r.klocka, '\n   var (x,y i skärmpunkter):', r.var.join('; '));
       const andel = r.ritade ? r.utanfor / r.ritade : 1;
-      const rad = `${f.namn.padEnd(14)} ${sk.namn.padEnd(6)} ${(andel * 100).toFixed(2).padStart(6)} % utanför paletten (${r.utanfor} av ${r.ritade} punkter)${r.topp.length ? ': ' + r.topp.join(', ') : ''}`;
+      const rad = `${f.namn.padEnd(14)} ${sk.namn.padEnd(6)} ${lg.namn.padEnd(5)} ${(andel * 100).toFixed(2).padStart(6)} % utanför paletten (${r.utanfor} av ${r.ritade} punkter)${r.topp.length ? ': ' + r.topp.join(', ') : ''}`;
       console.log(rad);
       const nya = Object.keys(r.skalor).filter(k => !KANDA[k]), kanda = Object.keys(r.skalor).filter(k => KANDA[k]);
       if (nya.length) console.log('   skala som inte är hel:', nya.map(k => `${k} ×${r.skalor[k]}`).join(', '));
       if (kanda.length) console.log('   väntar på ritningar (steg 5.5.5):', kanda.map(k => `${KANDA[k]} ×${r.skalor[k]}`).join(', '));
       if (r.lager.length) console.log('   lagren:', r.lager.join('; '));
       if (fel.length) console.log('   FEL på sidan:', fel.slice(0, 3).join(' | '));
-      if (r.utanfor) larm.push(`${f.namn} ${sk.namn}: ${r.utanfor} punkter utanför paletten`);
-      if (nya.length) larm.push(`${f.namn} ${sk.namn}: bilder i en skala som inte är hel`);
-      if (fel.length) larm.push(`${f.namn} ${sk.namn}: fel på sidan`);
+      if (r.utanfor) larm.push(`${f.namn} ${sk.namn} ${lg.namn}: ${r.utanfor} punkter utanför paletten`);
+      if (nya.length) larm.push(`${f.namn} ${sk.namn} ${lg.namn}: bilder i en skala som inte är hel`);
+      if (fel.length) larm.push(`${f.namn} ${sk.namn} ${lg.namn}: fel på sidan`);
       await ctx.close();
     }
   }

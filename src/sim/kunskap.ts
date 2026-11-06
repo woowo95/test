@@ -7,6 +7,7 @@ import { Person } from './typer';
 // ("X har lärt sig av Y att …"; minne.ts). Att lära sig själv står i systemet som ger kunskapen (svampen i fynd.ts)
 export const KUNSKAPER: Record<string, { namn: string; larAv?: string } | undefined> = {
   svamp: { namn: 'Skilja kantarellen från den giftiga orangea spindlingen', larAv: 'skilja kantarellen från den giftiga spindlingen' },
+  motvind: { namn: 'Smyga på djuren i motvind', larAv: 'smyga på djuren i motvind' },
 };
 export const kn = (p: Person, k: string) => p.kunskap?.[k]?.v ?? 0;
 export function learnK(p: Person, k: string, dv: number, now: number) {

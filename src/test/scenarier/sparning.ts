@@ -28,6 +28,10 @@ SCENARIER.historik = {
     for (const k of [ka, kb]) for (let n = 0; n < 8; n++) SIM.kronikaBer(k, 'k_forstaEld', p0.id + n, SIM.personFalt(p0));
     const eldSerie = SIM.historikSerie(s, 'eld');
     const sammaText = isDeepStrictEqual(ka.hist!.kronika.slice(-8).map(r => r[1]), kb.hist!.kronika.slice(-8).map(r => r[1]));
+    // byns rikedom per dygn (steg 6.9.13): en rad per dygn sedan byns början, med delarna, var och ens förmögenhet och sakerna
+    const rik = h.rik ?? [], rdagar = rik.map(r => Math.floor(r[0] / DAY)), nuRad = SIM.rikRad(s), nuDel = SIM.rikedomDelar(s);
+    const rikOk = rik.length >= 10 && rdagar.every((d, k) => k === 0 || d === rdagar[k - 1] + 1) && rik.every(r => r[1] >= 0 && r[2] >= 0 && r[3] >= 0 && Object.values(r[4]).every(Number.isInteger) && Object.values(r[5]).every(v => Number.isInteger(v) && v > 0));
+    const rikSerie = SIM.rikSerie(s, r => r[1] + r[2] + r[3]);
     return [
       [`en rad i timmen den senaste veckan (${h.tim.length} timmar)`, timOk],
       [`äldre timmar är ett värde per dygn, utan luckor och fram till timmarna (${h.dygn.length} dygn)`, h.dygn.length >= 2 && ettPerDygn && fortsatt],
@@ -39,6 +43,9 @@ SCENARIER.historik = {
       ['historiken ändrar inget i byn', JSON.stringify(utan) === serialize(t)],
       ['krönikans text beror inte på hur lång krönikan är', sammaText],
       // graferna (steg 5.4.1) läser serien: ett värde per dygn och sedan per timme, i tidsordning, från byns början till nu
+      [`byns rikedom sparas en gång per dygn med delarna, förmögenheterna och sakerna (${rik.length} dygn, ${Object.keys(rik.at(-1)?.[5] ?? {}).length} slags saker)`, rikOk],
+      [`raden just nu stämmer med sidhuvudet och folket (${nuRad[1] + nuRad[2] + nuRad[3]} ≈ ${Math.round(nuDel.forrad + nuDel.redskap + nuDel.hus)})`, nuRad[1] === Math.round(nuDel.forrad) && nuRad[2] === Math.round(nuDel.redskap) && nuRad[3] === Math.round(nuDel.hus) && Object.keys(nuRad[4]).length === living(s).length && (nuRad[5].ved ?? 0) === Math.round(amountOf(s, 'ved'))],
+      [`rikedomens serie går från byns början till nu (${rikSerie.length} punkter)`, rikSerie.length === rik.length + 1 && rikSerie[0][0] < s.founded + DAY && rikSerie.at(-1)![0] === s.now],
       [`grafens serie för veden på elden går från byns början till nu (${eldSerie.length} punkter)`, eldSerie.length === h.dygn.length + h.tim.length && eldSerie.every((p, k) => k === 0 || p[0] > eldSerie[k - 1][0]) && eldSerie[0][0] < s.founded + DAY && eldSerie[eldSerie.length - 1][1] === sist[i('eld')]],
     ];
   },
@@ -46,6 +53,7 @@ SCENARIER.historik = {
 
 SCENARIER.notisispelet = {
   text: 'Notiserna i spelet (steg 5.4.3.3): det som händer i byn (födslar, död, ny kunskap, nya hus, flyttar, ledare, faror) blir notiser, och de ligger kvar när byn laddas igen',
+  lang: true,
   kor: () => {
     const s = createState(3, START);
     for (let i = 0; i < 8 * STEG_DYGN; i++) step(s, BEAT);
@@ -177,6 +185,7 @@ function drag(s: State, k: Strom, f: () => void) {
   return n;
 }
 SCENARIER.slump = {
+  lang: true,
   text: 'Varje system och varje person har en egen slumpföljd, och det som bara syns i spelet rör aldrig byns följder',
   kor: () => {
     const serie = (s: State, k: Strom, p?: Person) => Array.from({ length: 5 }, () => rnd(s, k, p));
@@ -208,6 +217,7 @@ SCENARIER.slump = {
     // var en person går (promenad, strand, flinta, trädet som fälls) väljs med personens egen följd, inte byns
     const h = createState(6, START), hv = () => living(h).filter(q => ageOf(q, h.now) >= ALDER.vuxen);
     h.now = new Date(h.now).setHours(10, 0, 0, 0); Object.assign(h.fire, { lit: true, fuel: 4, ring: true });
+    h.delning = { andel: 1 }; // byn delar all mat, så att ingen familj behöver samla egen mat (maten läggs hos byn här)
     for (const q of h.people) q.tek = { ...q.tek, yxa: 1 };
     const sett = new Set<string>();
     const hd = drag(h, 'val', () => {

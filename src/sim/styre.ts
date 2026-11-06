@@ -1,3 +1,4 @@
+import { honom, slaktOrd } from './ord';
 import { ALDER, REL, ageOf, alive, byId, count, franMitt, isKin, living, log, relKey, stat, think } from './folk';
 import { ARSTIDER, Fyllning, fyll, kronikaBer, och, personFalt, valjVariant } from './berattelser';
 import { skada } from './halsa';
@@ -14,6 +15,7 @@ import { Bevis, HANDELSER, HandelseTyp, allmant, handelse, ryktbarhet, vittnen }
 import { ISTID, ageIndex, hourOf, isLight, kallTid } from './tid';
 import { temperature, vaderNu } from './vader';
 import { notis } from './notiser';
+import { homeless } from './byggnader';
 
 // Styret (steg 3.5, "Ledarskap och makt" i designdokumentet).
 // Ledarskap är en teknik som man kommer på och lär ut i samtal (teknik.ts). Bara den som kan den kan bli ledare: när byn har
@@ -49,6 +51,11 @@ export const PAB = balans('pabud', {
   legBas: 0.5, rang: 1, max: 0.8,
   hanEmp: 10, hanDiv: 4, // hånet: ledarens åsikt är (empatin - hanEmp) / hanDiv, från -1 (förbjudet) till 1 (fritt)
   plan: 0.4, // inför och under istiden lägger en intelligent ledare (intelligens över 10) till så här mycket per steg (6) på lagren
+  // arbetsordningen (steg 6.1.19): Bygg före allt. Ledarens åsikt = byggUtan × andelen utan sovplats under tak − 1 (från -1 till 1);
+  // påbudet över 0 är chansen att bygget (raden Tak) går före Försörjningen
+  byggUtan: 2,
+  // Samla för vintern: påbudet över 0 ger maten och veden så här många fler arbetare per steg (påbudet 1 = ×(1 + hander))
+  hander: 1,
 });
 export const STR = balans('straff', {
   dygn: 2, // ledaren dömer för det som hänt de senaste så här många dygnen
@@ -108,6 +115,9 @@ const PDEF = {
   matlager: { ruta: 'Lagret', namn: 'Matlager', text: 'Hur många dygn mat byn ska ha i förrådet innan den slappnar av', sed: 'forsiktighet', asikt: (s, l) => lagerAsikt(s, l) },
   vedlager: { ruta: 'Lagret', namn: 'Vedlager', text: 'Hur många dygn ved byn ska ha i förrådet', sed: 'forsiktighet', asikt: (s, l) => lagerAsikt(s, l) },
   torkat: { ruta: 'Lagret', namn: 'Torkat', text: 'Hur mycket av köttet och fisken som torkas på torkställningen', asikt: (s, l) => lagerAsikt(s, l) },
+  // arbetsordningen (steg 6.1.19, val.ts): ett påbud kan flytta en rad en nivå upp eller ge den fler händer
+  bygg: { ruta: 'Arbetet', namn: 'Bygg före allt', text: 'Hur ofta bygget går före försörjningen med mat och ved', asikt: s => clamp(PAB.byggUtan * homeless(s) / Math.max(1, living(s).length) - 1, -1, 1) },
+  vinter: { ruta: 'Arbetet', namn: 'Samla för vintern', text: 'Hur många fler som arbetar med maten och veden', asikt: (s, l) => lagerAsikt(s, l) },
   // hånet (steg 4.3.2.3, framtradande.ts): en ledare med låg empati förbjuder att man hånar hen när man uppträder
   han: { namn: 'Hån', text: 'Om den som uppträder får håna ledaren', asikt: (s, l) => clamp((stat(l, 'empati', s.now) - PAB.hanEmp) / PAB.hanDiv, -1, 1) },
 } satisfies Record<string, PabudDef>;
@@ -258,7 +268,8 @@ function stegOf(v: number, h: HandelseTyp, rang: number) {
   if (rang >= STR.slagRang && v >= STR.slag) return 2;
   return v >= STR.skam ? 1 : 0;
 }
-const brottText = (b: Bevis) => HANDELSER[b.h].text.replace('{om}', b.motNamn ?? 'någon').replace('{sak}', b.sak ?? 'något');
+// led: den som dömer; var hen själv den drabbade står det "av henne själv" (steg 6.7.3)
+const brottText = (b: Bevis, led?: string, l?: Person) => HANDELSER[b.h].text.replace('{om}', b.motNamn !== undefined && b.motNamn === led ? `${l ? honom(l) : 'ledaren'} själv` : b.motNamn ?? 'någon').replace('{sak}', b.sak ?? 'något');
 // hårdhetens delar (1 + delarna, mellan STR.min och STR.max): sederna och ledarens empati, humör och aggression
 function hardDelar(s: State, l: Person) {
   return { rang: STR.rang * (s.seder.v.rang ?? 0), emp: STR.empati * (10 - stat(l, 'empati', s.now)) / 10, hum: STR.humor * (0.5 - moodOf(l, s.now)), agg: STR.agg * franMitt(l, 'aggression', s.now) };
@@ -333,13 +344,21 @@ export const STRAFF_NAMN = ['Tillrättavisning', 'Skam', 'Slag', 'Utvisning'];
 // texten om en rättegång: berättelsen ur mallarna r_ratt och r_folk (berattelser.ts), brottet och namnen på dem som visste
 export function rattegang(s: State, r: Rattegang) {
   const q = byId(s, r.om), l = byId(s, r.led), namn = (ids: number[]) => och(ids.map(id => byId(s, id)?.name ?? 'någon som glömts'));
-  const f: Fyllning = { ...(q ? personFalt(q) : { namn: r.namn, hen: 'hen', honom: 'hen' }), ledare: r.ledNamn, lhen: l ? hon(l) : 'hen',
-    brott: brottText(r.b), straff: STRAFF_DA[r.steg], straffInf: STRAFF_INF[r.steg], arstid: ARSTIDER[ageIndex(s, r.t)],
+  const f: Fyllning = { ...(q ? personFalt(q) : { namn: r.namn, hen: 'den dömde', honom: 'den dömde' }), ledare: r.ledNamn, lhen: l ? hon(l) : 'ledaren',
+    brott: brottText(r.b, r.ledNamn, l), straff: STRAFF_DA[r.steg], straffInf: STRAFF_INF[r.steg], arstid: ARSTIDER[ageIndex(s, r.t)],
     regn: !!r.regn, sno: !!r.sno, kallt: !!r.kallt, eld: !!r.eld, natt: !!r.natt, sjalv: !!r.b.sett, falsk: !!r.b.falsk,
     oratt: !!r.oratt, hard: r.steg > r.lagom, utvisad: r.steg === 3, dog: !!r.dog, manga: r.publik >= 5 };
+  // två av samma kön: namnen i stället för hon och han, så att det inte blir oklart vem som menas (textminnet, steg 6.7.3)
+  if (q && l && q.sex === l.sex) { f.hen = f.honom = q.name; f.lhen = l.name; }
+  // samma namn två gånger i en mening utan den andra emellan: den andra gången hon eller han ("Signsfast fick svara för att han …")
+  const enGang = (x: string) => !q || !l || q.sex !== l.sex ? x : x.split(/(?<=[.!?])\s+/).map(m => {
+    const i = m.indexOf(q.name), j = i < 0 ? -1 : m.indexOf(q.name, i + q.name.length);
+    return j > 0 && !m.slice(i, j).includes(l.name) ? m.slice(0, j) + hon(q) + m.slice(j + q.name.length) : m;
+  }).join(' ');
   const t = Math.round(r.t / HOUR), nyckel = r.om * 7919 + r.led;
+  const egen = q && l ? slaktOrd(l, q) : undefined; // "Igik dömde sin egen dotter." (steg 6.7.2)
   return {
-    berattelse: `${fyll(valjVariant(s, 'r_ratt', nyckel, f, t), f)} ${fyll(valjVariant(s, 'r_folk', nyckel, f, t), f)}`,
+    berattelse: `${enGang(fyll(valjVariant(s, 'r_ratt', nyckel, f, t), f))} ${fyll(valjVariant(s, 'r_folk', nyckel, f, t), f)}${egen ? ` ${r.ledNamn} dömde sin egen ${egen}.` : ''}`,
     brott: brottText(r.b), sett: r.sett.length ? namn(r.sett) : '', hort: r.hort.length ? namn(r.hort) : '',
   };
 }

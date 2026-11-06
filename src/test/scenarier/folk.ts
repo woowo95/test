@@ -39,6 +39,7 @@ SCENARIER.faror = {
       klockan(s, 11); byggare(s); tandEld(s);
       for (const p of living(s)) Object.assign((p.tek ??= {}), { korg: 1, fiskespjut: 1, metspo: 1, kniv: 1 });
       setStock(s, { ved: 200, grenar: 20, torrgras: 40, flinta: 3, ben: 2, rep: 2 }); setAmount(s, 'yxa', 1); setFood(s, 200);
+      s.delning = { andel: 1 }; // byn delar all mat, så att familjerna inte fyller sin egen del av bufferten (steg 6.2.20)
       planBuild(s);
       return s;
     };
@@ -62,10 +63,10 @@ SCENARIER.faror = {
     const tillvAndel = (v: typeof rik) => v.andel(SKYDDADE);
     // den svältande byn utan flinta letar ändå inte vid stenarna, och när den svälter bärs bara maten in (steg 2.12.3)
     const utanFlinta = by(); setFood(utanFlinta, 0.3); setAmount(utanFlinta, 'flinta', 0); const svaltFlinta = valjer(utanFlinta);
-    const ute = by(); setFood(ute, 0.3); const c = SIM.campCenter(ute);
+    const ute = by(); setFood(ute, 0.3); const c = SIM.bynsMitt(ute);
     (ute.stackar ??= []).push({ k: 'grenar', n: 5, c: 1, x: Math.floor(c.x) + 9, y: Math.floor(c.y) });
     const barGren = SIM.haulJob(ute, undefined, true), barGrenRik = SIM.haulJob(ute);
-    ute.stackar.push({ k: 'bar', n: 3, c: 1, x: Math.floor(c.x) - 9, y: Math.floor(c.y) });
+    ute.stackar.push({ k: 'bar', n: 3, c: 1, x: Math.floor(c.x) - 9, y: Math.floor(c.y) }); SIM.touch(ute); // bärlistan räknas en gång i timmen (steg 6.2.21): räkna om den nu
     const barBar = SIM.haulJob(ute, undefined, true);
     return [
       [`rik by: bygge, hantverk och fritid ${pct(rik.andel(FORBATTRING))} av valen (${rik.topp})`, rik.andel(FORBATTRING) > 0.3],
@@ -294,7 +295,7 @@ SCENARIER.relationer = {
     const fore = { ...s.stat };
     const rateFore = SIM.workRate(s, j1, 'jakt');
     SIM.stepRelationer(s);
-    const st = (n: string) => (s.stat?.[n] ?? 0) - (fore[n] ?? 0), loggat = (t: string) => s.log.some(l => l.text.includes(t));
+    const st = (n: string) => (s.stat?.[n] ?? 0) - (fore[n] ?? 0), loggat = (t: string) => s.log.some(l => l.text.includes(t) || l.m === t);
     const typ = (p: Person, q: Person) => SIM.relTyper(s, p, q).map(t => t.namn);
     // ett gift par skiljer sig först under RELT.skiljGift, ett ogift redan under REL.gral
     const haller = SIM.skiljGrans(r) < SIM.skiljGrans(r2);
@@ -307,11 +308,11 @@ SCENARIER.relationer = {
       [`paret som varit tillsammans i 15 dygn och är goda vänner gifter sig (${typ(m, k).join(', ')})`, r.gift !== undefined && st('gift') === 1 && loggat(`${m.name} och ${k.name} har gift sig`)],
       ['paret som inte längre är goda vänner gifter sig inte', r2.gift === undefined],
       ['ett gift par håller mer än ett ogift', haller],
-      [`två som tycker mycket om varandra blir bästa vänner (${typ(a, b).join(', ')})`, a.bast === b.id && b.bast === a.id && st('bastaVan') === 1 && loggat('bästa vänner')],
+      [`två som tycker mycket om varandra blir bästa vänner (${typ(a, b).join(', ')})`, a.bast === b.id && b.bast === a.id && st('bastaVan') === 1 && loggat('l_bastaVanner')],
       ['den bästa vännen delar som släkt', somFamilj],
       [`att den bästa vännen arbetar med trä lockar till vedarbetet, också när hen fäller eller hugger (${vedVan.map(x => x.toFixed(2)).join(', ')})`, vedVan.every(x => x === SIM.RELT.bastArbete)],
       [`den man hatar mest blir ärkefiende, och man ger hen aldrig något (${typ(c, d).join(', ')})`, c.arke === d.id && d.arke === c.id && st('arkefiende') === 2 && SIM.willing(s, c, d) === 0],
-      [`två jägare som inte är vänner blir rivaler och jagar lite hårdare (${typ(j1, j2).join(', ')})`, !!j1.rivaler?.includes(j2.id) && j1.rivalom === 'Jägare' && SIM.workRate(s, j1, 'jakt') > rateFore && loggat('rivaler')],
+      [`två jägare som inte är vänner blir rivaler och jagar lite hårdare (${typ(j1, j2).join(', ')})`, !!j1.rivaler?.includes(j2.id) && j1.rivalom === 'Jägare' && SIM.workRate(s, j1, 'jakt') > rateFore && loggat('l_rivaler')],
       [`den vuxna som lärt den unga mycket blir mentor (${typ(lar, ung).join(', ')} / ${typ(ung, lar).join(', ')})`, ung.mentor === lar.id && ung.mentorSk === 'hantverk' && st('mentor') === 1],
     ];
   },
@@ -355,7 +356,7 @@ SCENARIER.uppvaxt = {
       for (let i = 0; i < 20; i++) { const c = SIM.newPerson(s, 'k', s.now, mo, fa); for (const k of SIM.STATS) { summa += c.pot[k]; n++; } }
       const medel = summa / n;
       return [
-        [`barnet (8 år) som miste sina föräldrar minns det och blev föräldralöst (${(barn.upp ?? []).map(SIM.upplevelseText).join('; ')})`, har(barn, 'foralder') && har(barn, 'foraldralos') && s.log.some(l => l.text.includes('Blev föräldralös'))],
+        [`barnet (8 år) som miste sina föräldrar minns det och blev föräldralöst (${(barn.upp ?? []).map(SIM.upplevelseText).join('; ')})`, har(barn, 'foralder') && har(barn, 'foraldralos') && s.log.some(l => /blev föräldralös/i.test(l.text))],
         [`egenskaperna är anlagen plus upplevelserna, och anlagen sparas (${!!barn.anlag})`, flyttad && !!barn.anlag],
         [`den vuxna (20 år) minns föräldrarnas död men blev inte föräldralös (${(vuxen.upp ?? []).map(SIM.upplevelseText).join('; ')})`, har(vuxen, 'foralder') && !har(vuxen, 'foraldralos') && !!vuxen.upp?.every(u => u.v === 1)],
         [`två svåra skador ger ett minne (${skador}): ${SIM.upplevelseText(barn.upp!.find(u => u.k === 'skadad')!)}`, skador === 1],
@@ -402,11 +403,12 @@ SCENARIER.humor = {
 
 SCENARIER.utbrott = {
   text: 'Utbrotten (steg 3.2.2): den som mår mycket dåligt brister ut, behoven går före, den som är elak sänker den andras humör, en sak slås sönder och efteråt mår man lite bättre',
+  lang: true,
   kor: () => {
     // en by där alla mår mycket dåligt i åtta dygn (åtta år i spelet)
-    // (med ved i förrådet: utan den frös två ihjäl första natten i den glesare skogen, steg 5.1.4.1, och då mäts inte utbrotten)
+    // (med ved och en flinta i förrådet: utan dem frös flera ihjäl första natten, steg 5.1.4.1 och 6.1.8, och då mäts inte utbrotten)
     const s = createState(9, START);
-    SIM.setAmount(s, 'ved', 40);
+    SIM.setAmount(s, 'ved', 40); SIM.setAmount(s, 'flinta', 1);
     for (const p of living(s)) SIM.think(p, 'Sorg', -0.6, s.now, 8 * DAY);
     kor(s, 8 * 24);
     const utb = (s.stat?.utbrott as number) ?? 0, slag = Object.keys(s.stat ?? {}).filter(k => k.startsWith('utb_') && !k.startsWith('utb_sonder')).map(k => k.slice(4));
@@ -920,7 +922,7 @@ SCENARIER.blockera = {
 };
 
 SCENARIER.kryper = {
-  text: 'Den svårt skadade kryper (steg 3.7.19): den som inte kan gå (ett ben eller en fot skadad till HALSA.krypFel) reser sig inte i striden utan kryper mot vännerna eller bort mot sin sida, lika långsamt som i byn (ungefär en ruta på fem sekunder), och den som kravlar i byn med ett blödande sår lämnar ett släpspår',
+  text: 'Den svårt skadade kryper (steg 3.7.19): den som inte kan gå (ett ben eller en fot skadad till HALSA.krypFel) reser sig inte i striden utan kryper mot vännerna eller bort mot sin sida, lika långsamt som i byn (steg 6.2.7: 0,3 av gångfarten, ungefär en ruta på två sekunder), och den som kravlar i byn med ett blödande sår lämnar ett släpspår',
   kor: () => {
     const m = (id: number, sida: 0 | 1, vapen: SIM.Vapen, x: number, y: number) => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 10, smidighet: 10, skicklighet: 10 }, vapen, klader: [] as string[], fart: 1, x, y });
     let kropp = 0, flyttade = 0, reste = 0, slog = 0, forFort = 0, nara = 0;
@@ -953,7 +955,7 @@ SCENARIER.kryper = {
     s.blod = []; for (let i = 0; i < 20; i++) SIM.halsaSteg(s, p, 60);
     const spar = SIM.blodOf(s).filter(b => b.f === 'spar').length, droppar = SIM.blodOf(s).filter(b => b.f === 'droppar').length;
     return [
-      [`krypfarten är ${SIM.GANG.krypFart} av gångfarten (en ruta på ${(1 / (SIM.STRID.fart * SIM.GANG.krypFart)).toFixed(0)} s för en frisk vuxen i striden)`, SIM.GANG.krypFart >= 0.1 && SIM.GANG.krypFart <= 0.15],
+      [`krypfarten är ${SIM.GANG.krypFart} av gångfarten (en ruta på ${(1 / (SIM.STRID.fart * SIM.GANG.krypFart)).toFixed(0)} s för en frisk vuxen i striden)`, SIM.GANG.krypFart >= 0.25 && SIM.GANG.krypFart <= 0.35],
       [`den som har ett brutet ben och fälls kryper i ${kropp} av 100 strider, och ${flyttade} av dem kom någonstans (av sig själv med yxor: ${sjalv} gånger i 200 strider till döden)`, kropp >= 90 && flyttade >= kropp * 0.5],
       [`den som kryper reser sig aldrig (${reste}) och slår aldrig mer (${slog})`, reste === 0 && slog === 0],
       [`hen kryper aldrig fortare än krypfarten (${forFort} för fort) och stannar en bit från vännen (${nara} för nära)`, forFort === 0 && nara === 0],
@@ -963,7 +965,7 @@ SCENARIER.kryper = {
 };
 
 SCENARIER.gangfart = {
-  text: 'Gångfarten i ett register (steg 3.10.10): åldern, skadade ben och fötter, yrseln, att kravla, att bära någon, marken, saker på golvet och smidigheten är rader i GANGFART som multipliceras. Ingen rad ger ensam en mycket låg fart (krypandet ungefär 0,12, skadade ben aldrig under GANG.rorGolv), och personrutan visar det som drar ner farten just nu',
+  text: 'Gångfarten i ett register (steg 3.10.10): åldern, skadade ben och fötter, yrseln, att kravla, att bära någon, marken, saker på golvet och smidigheten är rader i GANGFART som multipliceras. Ingen går väldigt långsamt (steg 6.2.7): marken bromsar som mest till 0,75, barn och gamla går 0,75 av en vuxens fart, krypandet 0,3 och marken drar inte ner det, skadade ben aldrig under GANG.rorGolv, och personrutan visar det som drar ner farten just nu',
   kor: () => {
     const { GANG, GANGFART, kroppFart, kroppFaktor, gangDelar, markFaktor, smidig, speedAt, rorlighetSkador, kanGa, groundOf, tileOf, FOREST, isSoil, skada, SKADOR, ALDER } = SIM;
     const s = createState(3, START), vuxna = living(s).filter(q => ageOf(q, s.now) >= 18 && ageOf(q, s.now) <= ALDER.gangGammal);
@@ -978,6 +980,13 @@ SCENARIER.gangfart = {
     // den som kravlar: ett brutet ben
     const k = vuxna[3] ?? q; skada(s, k, 'benH', 'benbrott', 0.9, 'olycka', '');
     const kryper = !kanGa(k) && nara(kroppFaktor(k, s.now), GANG.krypFart);
+    // marken drar inte ner den som kravlar
+    const kg = groundOf(s);
+    let ks = -1;
+    for (let i = 0; i < kg.tiles.length && ks < 0; i++) if (isSoil(kg.tiles[i]) && kg.trees[i] >= FOREST) ks = i;
+    const kx = k.x, ky = k.y; k.x = (ks % SIM.W) + 0.5; k.y = Math.floor(ks / SIM.W) + 0.5;
+    const kSkog = gangDelar(s, k).fart; k.x = kx; k.y = ky;
+    const markLagst = Math.min(...GANG.fartMark.filter(v => v > 0), GANG.fartSkog, GANG.fartUng, GANG.fartHog);
     // ingen enskild rad är långsammare än att kravla
     const enskilda = [GANG.fartBarn / GANG.fart, GANG.fartGammal / GANG.fart, GANG.rorGolv, GANG.baraFart, ...GANG.fartMark.filter(v => v > 0), GANG.fartSkog, GANG.fartUng, GANG.fartHog, GANG.fartSaker];
     const lagst = Math.min(...enskilda);
@@ -997,6 +1006,8 @@ SCENARIER.gangfart = {
       [`svåra skador på båda benen och fötterna ger aldrig mindre än ${GANG.rorGolv} av farten (${kroppFaktor(r, s.now).toFixed(2)})`, skadad],
       [`den som inte kan gå kravlar med ${GANG.krypFart} av farten (${kroppFaktor(k, s.now).toFixed(3)})`, kryper && GANG.krypFart >= 0.1],
       [`ingen enskild rad går under krypandet (lägst ${lagst.toFixed(2)})`, lagst >= GANG.krypFart],
+      [`marken bromsar som mest till 0,75 (${markLagst}), barn och gamla går 0,75 av en vuxens fart (${(barn / frisk).toFixed(2)}, ${(gammal / frisk).toFixed(2)})`, markLagst >= 0.75 - 1e-9 && nara(barn / frisk, 0.75) && nara(gammal / frisk, 0.75)],
+      [`den som kravlar i skogen kravlar lika fort som på en stig (${kSkog.toFixed(2)} av farten)`, ks >= 0 && nara(kSkog, GANG.krypFart)],
       [`personrutan visar barnet i skogen: ${gd.delar.map(d => `${d.namn} ${Math.round(d.v * 100)} %`).join(', ')}, ${Math.round(gd.fart * 100)} % av farten`, skog >= 0 && visar && forklarar],
     ];
   },
@@ -1544,12 +1555,105 @@ SCENARIER.beskrivning = {
     // alla i en by: ingen tom plats, ingen mall kvar, 2–4 meningar
     const alla = living(t).map(x => SIM.beskrivning(t, x));
     const hela = alla.every(x => !/[{}]|undefined|  | \.|^\s*$/.test(x) && meningar(x) >= 2 && meningar(x) <= 5);
+    // eftermälet (steg 6.7.4): den döda beskrivs i dåtid, med döden först och utan det som bara passar en levande
+    SIM.die(t, p, 'sjukdom'); t.now += 2 * HOUR;
+    const dod = SIM.beskrivning(t, p);
     return [
       [`de egenskaper som sticker ut står med (${b1})`, /stark/.test(b1) && /kall/.test(b1)],
       ['partnern, vännen och ovännen nämns', b1.includes(q.name) && b1.includes(v.name) && b1.includes(o.name)],
       ['texten står kvar när tiden går', b1 === b2],
       [`namnet byn gav står med (${b3})`, b3.includes('Björnen')],
       [`alla i byn får en hel text (${alla[0]})`, hela],
+      [`den döda beskrivs i dåtid, döden först (${dod})`, /^[^.]*dog\b[^.]*av sjukdom/.test(dod) && /\bvar\b/.test(dod) && !/\b(är|möter|gillar|tycker om)\b/.test(dod) && !/[{}]|undefined/.test(dod) && meningar(dod) >= 3],
+    ];
+  },
+};
+
+SCENARIER.loggen = {
+  text: 'Steg 6.7.5: loggen är en helhet. Det någon lär sig av andra samma timme blir en rad, vardagens byten under samma del av dygnet blir en rad, döden står före arvet och statistiken räknar som förut',
+  kor: () => {
+    const t = createState(12, START);
+    klockan(t, 12);
+    const [p, q, r] = living(t);
+    const n0 = t.log.length;
+    SIM.log(t, `${p.name} har lärt sig av ${q.name} att odla.`, 'skill', [p.id, q.id], { slag: 'lar', k: p.id, n: p.name, d: `${q.name}|att odla` });
+    SIM.log(t, 'Något annat hände.', 'world', []);
+    for (const [vem, vad] of [[q, 'att bygga timmerhus'], [r, 'att fiska'], [r, 'att göra rep'], [q, 'att elda']] as const) SIM.log(t, 'x', 'skill', [p.id, vem.id], { slag: 'lar', k: p.id, n: p.name, d: `${vem.name}|${vad}` });
+    const lar = t.log[t.log.length - 1];
+    const larRader = t.log.slice(n0).filter(e => e.sam?.slag === 'lar').length;
+    t.now += 2 * HOUR; // en ny timme: en ny rad
+    SIM.log(t, 'ny', 'skill', [p.id, q.id], { slag: 'lar', k: p.id, n: p.name, d: `${q.name}|att jaga` });
+    const ny = t.log[t.log.length - 1].text === 'ny';
+    for (let i = 0; i < 5; i++) SIM.log(t, 'ett byte', 'rel', [p.id], { slag: 'byte', k: 0, n: '', d: i < 3 ? 'harkött mot grenar' : 'rötter mot ved' });
+    const byte = t.log[t.log.length - 1];
+    // döden före arvet
+    SIM.addTool(t, 'kniv', q);
+    SIM.die(t, q, 'sjukdom');
+    const dog = t.log.findIndex(e => e.text.startsWith(`${q.name} dog`)), arv = t.log.findIndex(e => e.text.includes(`efter ${q.name}`));
+    return [
+      [`det hen lärt sig samma timme blir en rad (${lar.text})`, larRader === 1 && /lärde sig mycket av/.test(lar.text) && lar.text.includes('och tre saker till') && lar.text.includes(q.name) && lar.text.includes(r.name)],
+      ['raden som byggs på flyttas överst', t.log.indexOf(lar) > t.log.findIndex(e => e.text === 'Något annat hände.')],
+      ['en ny timme ger en ny rad', ny],
+      [`vardagens byten blir en rad (${byte.text})`, byte.sam?.d.length === 5 && /gjorde byn fem byten, mest harkött mot grenar\.$/.test(byte.text)],
+      [`döden står före arvet (${dog}, ${arv})`, dog >= 0 && arv > dog],
+    ];
+  },
+};
+
+SCENARIER.smatext = {
+  text: 'Steg 6.7.6: hedersnamnet utan bevis säger vad byn tycker att hen är, de förmögna och Pärlan, namn som går att uttala, "Det var sommar när" och de små rättningarna i texterna',
+  kor: () => {
+    const t = createState(14, START);
+    klockan(t, 12);
+    const [p] = living(t);
+    const f = { namn: p.name, binamn: 'Smörbyttan', helt: `${p.name} Smörbyttan`, hen: 'hen', honom: 'hen', skal: '', tillst: true, tillstand: 'välbärgad' };
+    const heder = Array.from({ length: 12 }, (_, i) => SIM.berattelse(t, 'hedersnamn', p.id + i * 7, f));
+    p.binamn = { k: 'valbargad', namn: 'Smörbyttan', v: 1, t: t.now, tillst: true };
+    const info = SIM.binamnInfo(p)!;
+    const namn = Array.from({ length: 40 }, (_, i) => SIM.makeName(t, i % 2 ? 'k' : 'm'));
+    const tre = namn.filter(n => /[bcdfghjklmnpqrstvwxz]{4}/i.test(n.slice(1, -1)));
+    const sommar = SIM.fyll('Det var {arstid} när {namn} föddes. Under {arstid} var det varmt.', { arstid: 'sommaren', namn: 'Ask' });
+    return [
+      [`utan bevis: det byn tycker att hen är (${heder[0]})`, heder.every(h => h.includes('är välbärgad') && !/[{}]|var så/.test(h))],
+      [`personrutan säger "är" (${info.varfor})`, info.varfor === `${p.name} är välbärgad`],
+      ['den rike heter inte Förrådet och den smakfulla inte Blomkrukan', !JSON.stringify(SIM.BINAMN.rik).includes('Förrådet') && JSON.stringify(SIM.BINAMN.smakfull).includes('Pärlan')],
+      [`namnen går att uttala (${namn.slice(0, 6).join(', ')}; fyra konsonanter i rad: ${tre.join(', ') || 'inga'})`, tre.length <= 2 && SIM.foga('Os', 'll', 'o') === 'Oso' && SIM.foga('Kol', 'rk', 'fast') === 'Kolfast' && SIM.foga('Ask', 'b', 'org') === 'Askborg'],
+      [`"Det var sommar när" (${sommar})`, sommar === 'Det var sommar när Ask föddes. Under sommaren var det varmt.'],
+    ];
+  },
+};
+
+SCENARIER.loggmallar = {
+  text: 'Steg 6.7.7: de vanligaste raderna i loggen skrivs ur mallar (l_byte, l_vanner, l_lart …) med minst åtta varianter, och raden minns mallen. Relationerna, samtalen, beskrivningen och döden har fått fler varianter med nya fält: vad de varit med om, årstiden och vädret, vad den döda gjorde vid olyckan och vem som sörjer mest',
+  kor: () => {
+    const t = createState(15, START);
+    klockan(t, 12);
+    const [p, q] = living(t);
+    // varje loggmall har minst åtta varianter, och alla blir hela meningar med fälten ifyllda
+    const mallar = Object.keys(SIM.BERATTELSER).filter(m => m.startsWith('l_')) as SIM.MallId[];
+    const f = { namn: 'Ask', med: 'Ylva', om: 'Ylva', mot: 'Ylva', vinnare: 'Ylva', orsak: 'efter ett gräl', hen: 'han', honom: 'honom', hans: 'hans', honom2: 'honom', fatt: 'tre harkött', betal: 'sex grenar', varor: 'ett träspjut', vad: 'rå fisk', vadtext: 'vargarna kommer', n: 'fem', lara: 'odla', av: 'Ylva', rykte: 'en lögnare', plats: 'vid stenarna' };
+    const texter = mallar.flatMap(m => (SIM.BERATTELSER[m] as SIM.Variant[]).map(v => SIM.fyll(typeof v === 'string' ? v : v.t, f)));
+    const hela = texter.filter(x => /[{}]|undefined|  /.test(x) || !/[.!]$/.test(x));
+    // raderna i spelet minns mallen: två blir vänner, någon lär sig, en flinta hittas
+    SIM.loggBer(t, 'l_vanner', p.id * 997 + q.id, { namn: p.name, med: q.name }, 'rel', [p.id, q.id]);
+    const vanner = t.log[t.log.length - 1];
+    // döden i en olycka: vad hen gjorde och vem som sörjer
+    const falt: SIM.Fyllning[] = [];
+    SIM.lyssnaPaTexter((m, _i, _t, fl) => { if (m === 'k_dog') falt.push(fl); });
+    q.partner = p.id; p.partner = q.id;
+    q.task = { act: 'falla', tx: Math.floor(q.x), ty: Math.floor(q.y), t0: t.now } as unknown as typeof q.task;
+    SIM.die(t, q, 'olycka');
+    SIM.lyssnaPaTexter(undefined);
+    const dod = falt[0] ?? {};
+    // relationen och samtalet får de nya fälten
+    const r = getRel(t, p, q); r.talks = 25; r.minns = { ...r.minns, sida: 2 };
+    const rel = SIM.relationText(t, p, q, r);
+    return [
+      [`${mallar.length} loggmallar med minst åtta varianter var`, mallar.length >= 14 && mallar.every(m => SIM.BERATTELSER[m].length >= 8)],
+      [`alla varianter blir hela meningar (${hela.slice(0, 2).join(' | ') || 'inga fel'})`, !hela.length],
+      [`raden minns sin mall (${vanner.text})`, vanner.m === 'l_vanner' && vanner.text.includes(p.name) && vanner.text.includes(q.name)],
+      [`den som dog i en olycka: ${dod.nar}, och ${dod.sorjer} sörjer`, /när (han|hon) fällde ett träd/.test(String(dod.nar)) && dod.sorjer === p.name],
+      [`relationen läses (${rel[0]})`, rel.length > 0 && !/[{}]|undefined/.test(rel.join(' '))],
     ];
   },
 };
@@ -1703,17 +1807,18 @@ SCENARIER.kronika = {
     const hela = ber.every(([, x]) => !/[{}]|undefined|  | \.|^\s*$/.test(x) && /[.!]$/.test(x));
     const slag = new Set(ber.map(k => k[2]));
     const fodda = ber.filter(k => k[2] === 'k_fodd').map(k => k[1]);
-    const logFodd = t.log.find(l => / föddes, (son|dotter) till /.test(l.text))?.text ?? '';
+    const logFodd = t.log.find(l => l.kind === 'birth' && l.m === 'k_fodd')?.text ?? '';
     return [
       [`krönikan har berättelser (${ber.length} av ${rader.length} rader, ${slag.size} slag)`, ber.length >= 5 && slag.size >= 3],
       [`varje berättelse är hel (t.ex. ${ber.slice(0, 3).map(k => k[1]).join(' | ')})`, hela],
       [`födslarna berättas olika (${new Set(fodda).size} texter av ${fodda.length})`, fodda.length < 3 || new Set(fodda).size >= 2],
-      [`loggen behåller den korta raden (${logFodd})`, !fodda.length || !!logFodd],
+      [`loggen får samma rad ur mallen (${logFodd})`, !fodda.length || !!logFodd],
     ];
   },
 };
 
 SCENARIER.masterverk = {
+  lang: true,
   text: 'Steg 3.9.4: när ett mästerverk eller en usel sak görs sparas görarens humör, årstiden, vädret, vem som var nära, vem det gjordes åt och något om görarens liv. Inforutan berättar om saken (mallarna m_* och u_* i BERATTELSER), ett perfekt mästerverk (★) får ett eget namn, och ett perfekt vapen som fäller en varg heter sedan Vargdräparen',
   kor: () => {
     const t = createState(11, START);
@@ -1787,6 +1892,7 @@ SCENARIER.amnen = {
 };
 
 SCENARIER.relationstext = {
+  lang: true,
   text: 'Steg 3.9.6: ett tryck på en relation i personrutan berättar utförligt vad hen tycker om den andra och varför: hur nära de är, personkemin, vad de varit med om tillsammans (samtal, barn, gräl, slagsmål, lek, strider sida vid sida, gåvor åt båda hållen; Rel.minns) och vad hen tror om den andra (intrycken och ryktena)',
   kor: () => {
     const hel = (x: string) => !/[{}]|undefined|NaN|  | \.|^\s*$/.test(x) && /[.!"]$/.test(x);

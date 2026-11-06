@@ -1,6 +1,7 @@
 // npm run balans -- [antal byar = 20] [dygn = 90]
 // Kör många slumpade byar parallellt och visar median, sämsta och bästa värde för varje nyckeltal. Vad som är bättre
 // står i registret NYCKELTAL (nyckeltal.ts); tal som bara är information visas med lägsta och högsta värde.
+import './utc';
 import { korJson, pool, seedAv, sek } from './pool';
 import { NYCKELTAL, Matt, Nyckeltal, median, snittTal, vardeAv } from './nyckeltal';
 

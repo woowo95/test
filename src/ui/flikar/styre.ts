@@ -1,4 +1,4 @@
-import { DAY, LED, PABUD, PABUD_LIST, Pabud, Rattegang, SEDER, STR, STRAFF_NAMN, VAGSKALAR, byId, legitimitet, ledareOf, onskatLager, pabud, pabudAndel, rattegang, styrelseform, timeLabel, torkAndel } from '../../sim';
+import { DAY, LED, PABUD, PABUD_LIST, Pabud, Rattegang, SEDER, STR, STRAFF_NAMN, VAGSKALAR, byId, legitimitet, ledareOf, onskatDygn, pabud, pabudAndel, rattegang, styrelseform, timeLabel, torkAndel } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { bar, esc, hjalpKnapp, hjalpText, num, pLink } from '../hjalp';
 import { s } from '../lage';
@@ -31,7 +31,7 @@ export const styre: Flik = {
       const oppen = v.sed ? st.oppna.includes(v.id) : false;
       if (!oppen) return `<li class="muted" title="${esc(v.steg ? `Kommer senare (steg ${v.steg})` : 'Inte upplåst än')}">❔ ${esc(v.namn)}</li>`;
       const d = SEDER[v.sed!], x = s.seder.v[v.sed!] ?? 0;
-      return `<li title="${esc(d.effect)}"><div class="sedtop"><span>${esc(d.neg)}</span><span>${esc(d.pos)}</span></div>${sedVag(x)}</li>`;
+      return `<li title="${esc(d.effect)}">${sedVag(x, esc(d.neg), esc(d.pos))}</li>`;
     }).join('');
     const hist = st.historia.slice().reverse().map(h => `<li><span class="when">${timeLabel(s, h.fran)}</span>${pLink(byId(s, h.id)) === '–' ? esc(h.namn) : pLink(byId(s, h.id))}, ${esc([...(h.forr ?? []), h.titel].map(x => x.toLowerCase()).join(', sedan '))}${h.till !== undefined ? ` – ${dygnTxt(h.till - h.fran)}, ${esc(h.slut ?? '')}` : ''}</li>`).join('');
     return `${ledare}<h3>Vågskålar</h3><ul class="seder">${skalar}</ul>${rattegangar()}<h3>Byns ledare</h3><ol class="logg">${hist}</ol>`;
@@ -40,7 +40,7 @@ export const styre: Flik = {
 
 // påbuden (steg 3.5.2): vad ledaren bestämt mot vad byn själv tycker, och hur mycket byn lyssnar. En egen del i fliken Byn
 // (steg 5.3.3.2; förr i Styre efter ledaren, och före 3.10.16 en egen flik). När lagarna kommer (9.2.6) blir delen Lagar
-const varde = (k: Pabud, v: number) => k === 'han' ? (v < -0.33 ? 'förbjudet' : v > 0.33 ? 'tillåtet' : 'ogillas') : k === 'torkat' ? `${Math.round(torkAndel(v) * 100)} %` : `${num(onskatLager(k === 'vedlager', v))} dygn`;
+const varde = (k: Pabud, v: number) => k === 'han' ? (v < -0.33 ? 'förbjudet' : v > 0.33 ? 'tillåtet' : 'ogillas') : k === 'torkat' ? `${Math.round(torkAndel(v) * 100)} %` : k === 'bygg' || k === 'vinter' ? `${Math.round(Math.max(0, v) * 100)} %` : `${num(onskatDygn(k === 'vedlager' ? 'ved' : 'mat', v))} dygn`;
 export function pabudDel() {
   const st = s.styre, l = ledareOf(s);
   if (!l || !st?.pabud) return '<p class="muted">Inga påbud gäller. Utan ledare gör byn som den själv tycker.</p>';
@@ -66,7 +66,7 @@ function rattegangar() {
   if (!lista?.length) return '';
   return `<h3>Rättegångar</h3><ol class="logg">${lista.slice().reverse().map(r => {
     const id = `ratt-${r.t}-${r.om}`, x = rattegang(s, r);
-    return `<li class="klick" data-hjalp="${id}" data-hjalp-grupp="ratt-" title="Tryck för hela rättegången"><span class="when">${timeLabel(s, r.t)}</span>${esc(r.namn)} ${esc(x.brott)}: ${esc(STRAFF_NAMN[r.steg].toLowerCase())}${r.oratt ? ' <span class="oratt">orättvis</span>' : ''}</li>${hjalpText(id, rattMer(r, x))}`;
+    return `<li class="klick" data-hjalp="${id}" data-hjalp-grupp="ratt-" title="Tryck för hela rättegången" tabindex="0" role="button"><span class="when">${timeLabel(s, r.t)}</span>${esc(r.namn)} ${esc(x.brott)}: ${esc(STRAFF_NAMN[r.steg].toLowerCase())}${r.oratt ? ' <span class="oratt">orättvis</span>' : ''}</li>${hjalpText(id, rattMer(r, x))}`;
   }).join('')}</ol>`;
 }
 function rattMer(r: Rattegang, x: ReturnType<typeof rattegang>) {

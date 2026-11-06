@@ -1,4 +1,6 @@
-import { delade } from './berattelser';
+import { han, honom } from './ord';
+import { lista, tal } from './ord';
+import { delade, loggBer } from './berattelser';
 import { ALDER, REL, ageOf, alive, byId, count, forstaGang, getRel, isKin, isParent, living, log, relKey, stat, think } from './folk';
 import { clamp, pickViktat, rnd } from './slump';
 import { HOUR, Person, Rel, State } from './typer';
@@ -91,7 +93,7 @@ const IDEF = {
   valdsam: { namn: 'våldsam', tecken: -1, op: -40, sym: '👊', betyder: 'Har slagit, misshandlat eller dödat någon, eller gått på någon för att ta något.' },
   tjuv: { namn: 'tjuv', tecken: -1, op: -30, sym: '🦝', som: 'en tjuv', betyder: 'Har tagit saker som var någon annans, i smyg eller med våld.' },
   elak: { namn: 'elak', tecken: -1, op: -20, sym: '😠', betyder: 'Har varit elak mot någon.' },
-  logn: { namn: 'lögnare', tecken: -1, op: -20, sym: '🤥', som: 'en lögnare', betyder: 'Har ljugit eller överdrivit om någon. Man tror mindre på det hen berättar.' },
+  logn: { namn: 'lögnare', tecken: -1, op: -20, sym: '🤥', som: 'en lögnare', betyder: 'Har ljugit eller överdrivit om någon. Man tror mindre på det lögnaren berättar.' },
   klapare: { namn: 'klåpare', tecken: -1, op: -6, sym: '🤡', som: 'en klåpare', betyder: 'Har gjort en usel sak, eller träffat någon av misstag i en strid.' },
   lat: { namn: 'lat', tecken: -1, op: -8, sym: '💤', betyder: 'Arbetar mycket mindre än de andra i byn.' },
   fattig: { namn: 'fattig', tecken: -1, op: 0, vikt: RYKTE.fattigVikt, sym: '🪶', betyder: 'Äger mycket mindre än de andra i byn.' },
@@ -105,8 +107,9 @@ const IDEF = {
   orattvis: { namn: 'orättvis', tecken: -1, op: -15, sym: '🙅', betyder: 'Har dömt orättvist som ledare.' },
   stark: { namn: 'stark', tecken: 1, op: 4, sym: '🥊', betyder: 'Har vunnit ett slagsmål.' }, // vann ett slagsmål (steg 3.7.2, strid.ts)
   feg: { namn: 'feg', tecken: -1, op: -5, sym: '🐔', betyder: 'Har backat från en strid.' }, // backade från en strid (steg 3.7.9, strid.ts)
-  smakfull: { namn: 'smakfull', tecken: 1, op: 5, sym: '🏺', betyder: 'Har ett vackert pynt där hen sover.' }, // pyntet (steg 4.3.4, pynt.ts)
+  smakfull: { namn: 'smakfull', tecken: 1, op: 5, sym: '🏺', betyder: 'Har ett vackert pynt där den sover.' }, // pyntet (steg 4.3.4, pynt.ts)
   vargdodare: { namn: 'vargdödare', tecken: 1, op: 5, sym: '🐺', som: 'en vargdödare', betyder: 'Har dödat en varg.' }, // dödade en varg (steg 3.7.1, varg.ts)
+  bjorndodare: { namn: 'björndödare', tecken: 1, op: 10, sym: '🐾', som: 'en björndödare', betyder: 'Har dödat en björn.' }, // dödade en björn (steg 6.6.6, bjorn.ts)
 } satisfies Record<string, IntryckDef>;
 export type IntryckTyp = keyof typeof IDEF;
 export const INTRYCK: Record<IntryckTyp, IntryckDef> = IDEF;
@@ -139,7 +142,8 @@ const HDEF = {
   vannSlagsmal: { i: 'stark', vikt: 0.3, text: 'vann ett slagsmål mot {om}', prestation: true },
   backade: { i: 'feg', vikt: 0.2, text: 'backade från en strid med {om}' }, // steg 3.7.9
   vargdodare: { i: 'vargdodare', vikt: 0.5, text: 'dödade en varg', prestation: true }, // steg 3.7.1
-  pynt: { i: 'smakfull', vikt: 1, text: 'har pyntat där hen sover med {sak}' }, // steg 4.3.4: vikten gånger pyntets (PYNT.syn i pynt.ts)
+  bjorndodare: { i: 'bjorndodare', vikt: 1, text: 'dödade en björn', prestation: true }, // steg 6.6.6
+  pynt: { i: 'smakfull', vikt: 1, text: 'har pyntat sin sovplats med {sak}' }, // steg 4.3.4: vikten gånger pyntets (PYNT.syn i pynt.ts)
 } satisfies Record<string, HandelseDef>;
 export type HandelseTyp = keyof typeof HDEF;
 export const HANDELSER: Record<HandelseTyp, HandelseDef> = HDEF;
@@ -277,7 +281,7 @@ export function beratta(s: State, a: Person, b: Person, e: Intryck, r: Rel) {
   intryck(s, b, om, e.k, v * (q && alive(q) ? 1 : RYKTE.dodBer), c, ex ? { ...ex, sett: undefined } as Bevis : undefined, a.id, led);
   const ny = intryckOm(b, e.om, e.k);
   if (ny && ex) for (const x of e.bev!.slice(1)) addBevis(ny, { ...x, sett: undefined } as Bevis);
-  if (forstaGang(s, 'rykte:' + e.om + ':' + e.k) && q) log(s, `Det går rykten om att ${e.namn} är ${d.namn}.`, 'rel', [e.om]);
+  if (forstaGang(s, 'rykte:' + e.om + ':' + e.k) && q) loggBer(s, 'l_rykte', e.om * 31 + e.k.length, { namn: e.namn, hen: q.sex === 'm' ? 'han' : 'hon', rykte: d.som ?? d.namn, heder: d.tecken > 0 }, 'rel', [e.om]);
 }
 // b märker att a ljög eller överdrev om personen i e
 function ertappad(s: State, b: Person, a: Person, e: Intryck, h: 'logn' | 'overdrev') {
@@ -453,6 +457,12 @@ export function smakDrag(p: Person, acts: readonly string[]) {
 export function bevisText(b: Bevis, om: string) {
   return HANDELSER[b.h].text.replace('{om}', b.motNamn ?? 'någon').replace('{sak}', b.sak ?? 'något').replace(/^/, om + ' ');
 }
+// samma bevis flera gånger står en gång med antalet i ord: "Frönvi vann ett slagsmål mot Ingrulf (tre gånger)" (steg 6.7.8)
+function sammaGanger(L: string[]) {
+  const n = new Map<string, number>();
+  for (const t of L) n.set(t, (n.get(t) ?? 0) + 1);
+  return [...n].map(([t, k]) => k > 1 ? `${t} (${tal(k)} gånger)` : t);
+}
 export function intryckText(s: State, e: Intryck) {
   const sure = e.c >= 0.75 ? 'säker' : e.c >= 0.4 ? 'ganska säker' : 'osäker';
   const q = byId(s, e.om), dod = !q || !alive(q);
@@ -460,7 +470,7 @@ export function intryckText(s: State, e: Intryck) {
   const slag = dod && (e.led ?? 0) >= RYKTE.legendLed ? 'en legend' : dod && (e.led ?? 0) >= RYKTE.berattelseLed ? 'en berättelse' : '';
   const falsk = e.bev?.some(b => b.falsk) ? 'påhittat' : '';
   const sant = falsk || (e.led && e.bev?.length && e.v > HANDELSER[e.bev[0].h].vikt * 1.4 ? 'överdrivet' : '');
-  return { namn: INTRYCK[e.k].namn, sym: INTRYCK[e.k].sym, sure, varifran, slag, sant, bevis: (e.bev ?? []).map(b => bevisText(b, e.namn)), dod };
+  return { namn: INTRYCK[e.k].namn, som: INTRYCK[e.k].som ?? INTRYCK[e.k].namn, sym: INTRYCK[e.k].sym, sure, varifran, slag, sant, bevis: sammaGanger((e.bev ?? []).map(b => bevisText(b, e.namn))), dod };
 }
 // symbolen för en död som minns: en stjärna för en legend, en dödskalle för den ökända
 export function dodSymbol(s: State, om: number) {
@@ -475,11 +485,11 @@ export function anseendeSym(s: State, om: number) {
 // anseendet i ord och vad byn tycker (steg 3.10.5), till exempel "Dåligt anseende: byn tycker att hen är våldsam och en
 // lögnare". De intryck som är minst en fjärdedel så starka som det starkaste kommer med, högst tre
 export function anseendeText(s: State, om: number) {
-  const a = anseendeSym(s, om), top = samlatIntryck(s, om);
-  if (!a || !top.length) return 'Byn har ingen särskild bild av hen.';
-  const ord = top.filter(([, v]) => v >= top[0][1] / 4).slice(0, 3).map(([k]) => INTRYCK[k].som ?? INTRYCK[k].namn);
+  const a = anseendeSym(s, om), top = samlatIntryck(s, om), q = byId(s, om);
+  if (!a || !top.length) return `Byn har ingen särskild bild av ${q ? honom(q) : 'den'}.`;
+  const ord = top.filter(([, v]) => v >= top[0][1] / 4).filter(([k]) => k !== 'valbargad' || !top.some(([j]) => j === 'rik')).slice(0, 3).map(([k]) => INTRYCK[k].som ?? INTRYCK[k].namn);
   const lista = ord.length > 1 ? `${ord.slice(0, -1).join(', ')} och ${ord[ord.length - 1]}` : ord[0];
-  return `${a === '😇' ? 'Gott' : a === '😈' ? 'Dåligt' : 'Blandat'} anseende: byn tycker att hen är ${lista}.`;
+  return `${a === '😇' ? 'Gott' : a === '😈' ? 'Dåligt' : 'Blandat'} anseende: byn tycker att ${q ? han(q) : 'den'} är ${lista}.`;
 }
 
 // ---------- varningar och larm (steg 3.7.11) ----------
@@ -503,6 +513,8 @@ export interface Larm { t: number; vad: string; storlek: number; led: number; fa
 
 // ett larm om vad (storleken: hur många eller hur farligt). ropare ropar först (de vet redan). Returnerar de
 // som hörde det
+// vad ett larm gällde, med ord (l_larm, steg 6.7.7); nycklarna är vad i larma()
+export const LARM_VAD: Record<string, string> = { 'slagsmål': 'det slåss i byn', fara: 'det är fara på väg', varg: 'vargarna kommer', rovare: 'rövare är på väg', brand: 'det brinner', tornado: 'en storm är på väg' };
 export function larma(s: State, vad: string, storlek: number, ropare: Person[], falskt = false): Person[] {
   const hor = LARM.hor * (isLight(s.now) ? 1 : LARM.natt);
   const vet = new Set<Person>(ropare), hort: Person[] = [];
@@ -524,7 +536,8 @@ export function larma(s: State, vad: string, storlek: number, ropare: Person[], 
     ropar = nya;
   }
   count(s, falskt ? 'larm_falskt' : 'larm');
-  if (hort.length) log(s, `${ropare.map(p => p.name).join(' och ')} ropade ${falskt ? 'falskt larm' : 'larm'} (${vad}). ${hort.length} hörde det.`, 'rel', ropare.map(p => p.id));
+  // raden ur mallen l_larm (steg 6.7.7): vad ropet gällde med ord ur LARM_VAD
+  if (hort.length) loggBer(s, 'l_larm', ropare[0].id, { namn: lista(ropare.map(p => p.name)), vad, vadtext: LARM_VAD[vad] ?? vad, n: tal(hort.length), ensam: hort.length === 1, falskt }, 'rel', ropare.map(p => p.id));
   return hort;
 }
 // minns p ett larm nu?

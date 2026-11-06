@@ -1,4 +1,6 @@
+import { hans, honom } from './ord';
 import { upplev } from './uppvaxt';
+import { loggBer } from './berattelser';
 import { State, Person, HOUR, DAY } from './typer';
 import { FOOD, REDSKAP_SLAG, SAKER, SAK_LIST, isTool, viktOf } from './saker';
 import { ACTS, actsOf, usesTool } from './handlingar';
@@ -9,13 +11,14 @@ import { Ting, newTing, tingOf } from './agande';
 import { kvEffekt } from './kvalitet';
 import { bordVid } from './stationer';
 import { BYN, Del, addDel, sumOf } from './egendom';
-import { amountOf, helt, mayTake, ownMove, ownsAmount, put, takeFood, use } from './lager';
+import { amountOf, helt, mayTake, ownMove, ownedSum, ownsAmount, put, takeFood, use } from './lager';
 import { eatPoison } from './fynd';
 import { ata } from './naring';
 import { ratt } from './matlagning';
 import { habitShare, habitTotal } from './seder';
 import { grundvarde } from './varde';
 import { EKONOMI } from './ekonomi';
+import { sparas } from './forradsmal';
 import { balans } from './balans';
 import { RELT, arBast, arRivaler, minnsGava } from './relationer';
 import { handelse, smakMat } from './rykten';
@@ -96,7 +99,7 @@ function eat(s: State, p: Person, fran?: Person) {
   if (q < 0.25 && rnd(s, 'halsa', p) < (0.25 - q) / 0.25 * 0.35) {
     p.sickUntil = Math.max(p.sickUntil ?? 0, now + (4 + rnd(s, 'halsa', p) * 8) * HOUR); p.sickWhy = 'Magsjuk av skämd mat';
     think(p, 'Åt skämd mat och blev magsjuk', -0.2, now, DAY / 2); count(s, 'skamdMat');
-    log(s, `${p.name} blev magsjuk av skämd mat.`, 'world', [p.id]);
+    loggBer(s, 'l_magsjuk', p.id, { namn: p.name, hen: p.sex === 'm' ? 'han' : 'hon' }, 'world', [p.id]);
   }
   return portion;
 }
@@ -128,6 +131,18 @@ const lacksFor = (s: State, p: Person, b: Behov) => b.behover(s, p) && hasFor(s,
 export const harMat = (s: State, p: Person) => hasFor(s, p, MAT) >= MAT.minst;
 // hur många dygn p har mat (steg 3.10.26): sin egen, byns och det familjen äger (familjen ger, isFamily). I en rik by delas
 // inget (delning.ts) och den som inte äger något arbetar då för sin egen mat, också när byns förråd ser fullt ut (val.ts)
+// bufferten per jag (steg 6.2.20): hur stor del av maten i förrådet som är byns (resten äger invånarna; en tom by räknas som byns)
+export function bynsMatAndel(s: State) {
+  let all = 0, by = 0;
+  for (const k of MAT.slag) { const a = amountOf(s, k), per = perOf(MAT, k); all += a * per; by += Math.max(0, a - ownedSum(s, k)) * per; }
+  return all > 0 ? by / all : 1;
+}
+// ... hur många dygn maten som familjen fam äger räcker för den (den som saknar familj är sin egen familj)
+export function familjMatDygn(s: State, fam: readonly Person[]) {
+  let n = 0;
+  for (const q of fam) n += ownFor(s, q, MAT);
+  return n / (MAT.kvar * Math.max(1, fam.length));
+}
 export function egnaMatDygn(s: State, p: Person) {
   let n = hasFor(s, p, MAT);
   for (const q of living(s)) if (q !== p && isFamily(q, p)) n += ownFor(s, q, MAT);
@@ -282,7 +297,7 @@ export function noticeTheft(s: State, p: Person, key: string) {
     think(p, `${t.name} tog av min ${namnOf(key)}`, l ? -0.04 : -0.1, s.now, 12 * HOUR);
     if (alive(t)) think(t, `${p.name} vet att jag tog`, -0.05, s.now, 6 * HOUR);
     handelse(s, t, l ? 'stoldLindrig' : 'stold', p, namnOf(key), p); // bara den bestulne vet, och kan berätta det (steg 3.3.1)
-    if (!l) { livet(s, t, 'stal'); log(s, `${p.name} märkte att ${t.name} hade stulit hens ${namnOf(key)}.`, 'rel', [p.id, t.id]); upplev(s, p, 'bestulen', t.name); upplev(s, t, 'tjuv', p.name); }
+    if (!l) { livet(s, t, 'stal'); log(s, `${p.name} märkte att ${t.name} hade stulit ${hans(p)} ${namnOf(key)}.`, 'rel', [p.id, t.id]); upplev(s, p, 'bestulen', t.name); upplev(s, t, 'tjuv', p.name); }
   }
   p.stulet = p.stulet.filter(x => x.k !== key);
   if (!p.stulet.length) delete p.stulet;
@@ -296,6 +311,11 @@ export function noticeTheft(s: State, p: Person, key: string) {
 const aldrigStjal = (s: State, p: Person) => stat(p, 'empati', s.now) >= DELA.stjalAldrig;
 // så mycket av slaget k som p kan få till ett arbete
 export const getable = (s: State, p: Person, k: string) => aldrigStjal(s, p) ? mayTake(s, p, k) : amountOf(s, k);
+// det första material i receptet av som p inte kan få tag i (med det som sparas till elden, sparas i ekonomi.ts), annars undefined (steg 6.1.17)
+// receptet till ett projekt när p kunde göra det om materialet eller redskapet fanns (steg 6.2.19): materialet, redskapet
+// som behövs och hur mycket av varje som sparas (annars sparas() i forradsmal.ts)
+export interface Recept { av: Record<string, number>; verktyg?: string; spar?: (m: string) => number }
+export const saknatAv = (s: State, p: Person, av: Record<string, number>, extra = (_m: string) => sparas(_m)) => Object.entries(av).find(([m, n]) => getable(s, p, m) < n + extra(m) - 1e-9)?.[0];
 // materialet till ett redskap efter receptet (saker.ts: skaffa.av), till ens eget arbete: hur mycket av varje som togs
 export function takeRecipe(s: State, p: Person, k: string) {
   const av: Record<string, number> = {};
@@ -567,7 +587,7 @@ function lurad(s: State, X: Part, L: Part) {
   gjort(s, p, 'lurad');
   think(p, `Blev lurad av ${L.namn}`, HANDLA.surTanke, s.now, HANDLA.surTim * HOUR);
   if (L.p) { const r = getRel(s, p, L.p); r.op = clamp(r.op - HANDLA.surRel, -100, 100); }
-  log(s, `${p.name} märkte att ${L.namn} hade lurat hen i ett byte.`, 'rel', [p.id, ...(L.p ? [L.p.id] : [])]);
+  log(s, `${p.name} märkte att ${L.namn} hade lurat ${honom(p)} i ett byte.`, 'rel', [p.id, ...(L.p ? [L.p.id] : [])]);
   return true;
 }
 // växeln: G ger tillbaka så mycket silver som M betalat för mycket (for, för G), i hela silver. Betalar M med silver blir det
@@ -626,7 +646,7 @@ export function betalVaror(M: Part, G: Part, utom: readonly string[]) {
 // det M betalar för att G ska få mal (för G), i hela saker: man betalar hellre lite för mycket (steg 2.10.7). fick = värt för G, kost = värt för M
 export function betalaAv(varor: ReturnType<typeof betalVaror>, G: Part, mal: number) {
   const ut: Vara[] = [];
-  let f = 0, k = 0, rum = G.rymmer?.() ?? Infinity; // det G får, för G, och det M ger, för M, och hur mycket mer G kan bära (kg)
+  let f = 0, k = 0, rum = G.rymmer?.() ?? Infinity; // det G får, för G, och det M ger, för M, och hur mycket mer G kan bära (vikt)
   for (const w of varor) {
     if (f >= mal - 1e-9) break;
     let n = w.t ? 1 : Math.min(w.n, Math.ceil((mal - f) / w.ut - 1e-6));

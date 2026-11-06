@@ -1,0 +1,27 @@
+{
+ "id": "vargdel2",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "version 2 i valet f6_styckdel, i vargens färger",
+ "w": 15,
+ "h": 9,
+ "rader": [
+  "..ooooo........",
+  ".odddddo.......",
+  "orddddddo......",
+  "rrmmmmmmmooooo.",
+  "rbmmmmmmmdddddo",
+  "rrmmmmmmmmmmmmm",
+  "ormmmmmmmmmmmmm",
+  ".olllllmmmmmmmo",
+  "..ooooooommmoo."
+ ],
+ "pal": {
+  "o": "#24201d",
+  "d": "#3e5156",
+  "r": "#742a01",
+  "m": "#61767a",
+  "b": "#dad0bb",
+  "l": "#8a9c9e"
+ }
+}

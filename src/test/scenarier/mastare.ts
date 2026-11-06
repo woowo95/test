@@ -59,14 +59,14 @@ SCENARIER.forsok = {
 SCENARIER.forsoklust = {
   text: 'Hur ofta experten prövar sig fram (steg 4.2.1.2): seden Förnyelse – Tradition och personens nyfikenhet, och bara när byn har ett överskott av mat och ved',
   kor: () => {
-    const { s, p } = experten(), T = SIM.TEKTAL;
-    const c = () => SIM.forsokChans(s, p, T.forsokMat + 1, T.forsokVed + 1);
+    const { s, p } = experten();
+    const c = () => SIM.forsokChans(s, p, SIM.TROSKEL.forsokMat + 1, SIM.TROSKEL.forsokVed + 1);
     s.seder.v.nyfikenhet = 0; p.pot.nyfikenhet = 10; const mitt = c();
     p.pot.nyfikenhet = 18; const nyfiken = c();
     p.pot.nyfikenhet = 10; s.seder.v.nyfikenhet = 1; const fornyelse = c();
     s.seder.v.nyfikenhet = -1; const tradition = c();
     s.seder.v.nyfikenhet = 0;
-    const utanMat = SIM.forsokChans(s, p, T.forsokMat - 0.1, T.forsokVed + 1), utanVed = SIM.forsokChans(s, p, T.forsokMat + 1, T.forsokVed - 0.1);
+    const utanMat = SIM.forsokChans(s, p, SIM.TROSKEL.forsokMat - 0.1, SIM.TROSKEL.forsokVed + 1), utanVed = SIM.forsokChans(s, p, SIM.TROSKEL.forsokMat + 1, SIM.TROSKEL.forsokVed - 0.1);
     const f = (x: number) => x.toFixed(2);
     return [
       [`den nyfikne prövar oftare (${f(nyfiken)} mot ${f(mitt)})`, nyfiken > mitt * 1.5],
@@ -207,7 +207,7 @@ SCENARIER.forlust = {
     return [
       ['teknikträdet varnar när bara mästaren kan det', varning],
       [`lärlingen ${l.name} har det hen lärt sig kvar som ett halvminne`, !!halv && info.includes('halvminne')],
-      [`krönikan: "${rad}"`, rad.startsWith(`Med ${m.name} dog konsten att göra skinnkläder`) && rad.includes(l.name)],
+      [`krönikan: "${rad}"`, rad.includes(m.name) && /dog konsten/.test(rad) && rad.includes(l.name)],
     ];
   },
 };

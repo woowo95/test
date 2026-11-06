@@ -53,12 +53,16 @@ export const MORKARE: readonly (readonly string[])[] = [
 ];
 // djup natt (steg 5.1.7.2): tre steg mörkare, skymningens steg och sedan nattens, så att nästan allt blir kolsvart och bara
 // elden lyser (det ljusaste, snön och halmen, syns svagt)
+// molnskuggan (steg 6.8.19, Vädret under Tidsmodell): svagare än ett helt steg, varje färg den närmaste lite mörkare färgen i
+// paletten; en färg utan någon närmare mörkare granne blir som ett helt steg
+export const LITE_MORKARE: readonly string[] = mork(([L, a, b]) => [L * 0.84, a * 0.9, b * 0.9 - 0.006])
+  .map((h, i) => h === FARGER[i] ? MORKARE[1][i] : h);
 (MORKARE as string[][]).push(FARGER.map((_, i) => MORKARE[2][FARGER.indexOf(MORKARE[1][i])]));
 export const DJUPNATT = 3;
 const INDEX = new Map(FARGER.map((h, i) => [h, i]));
 // färgen i mörkret m (0 = dag, 1 = skymning, 2 = natt, 3 = djup natt, och tal emellan) i punkten (x, y): mellan två steg väljer ett
 // rastermönster (Bayer 4 × 4) vilken av dem punkten får, så att övergången blir jämn utan nya färger
-const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+export const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 // rastret i stället för genomskinlighet (steg 5.5.1): punkten (x, y) ritas helt när styrkan a (0–1) når mönstrets tröskel, annars
 // inte alls, så att något svagt syns glesare men bara i palettens färger
 export const rasterPa = (a: number, x: number, y: number) => a * 16 > BAYER[(y & 3) * 4 + (x & 3)] + 0.5;

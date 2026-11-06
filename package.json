@@ -19,7 +19,9 @@
     "samma": "tsx src/test/samma.ts",
     "jamfor": "tsx src/test/jamfor.ts",
     "natur": "tsx src/test/natur.ts",
+    "prov": "tsx src/test/prov.ts",
     "talen": "tsx src/test/talen.ts",
+    "recept": "tsx src/test/recept.ts",
     "texter": "tsx src/test/texter.ts",
     "utseende": "tsx src/test/utseende.ts"
   },
@@ -41,6 +43,7 @@
   "type": "module",
   "devDependencies": {
     "@types/node": "^22.20.5",
+    "playwright": "^1.65.0",
     "typescript": "^5.9.3"
   }
 }

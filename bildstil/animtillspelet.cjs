@@ -7,7 +7,7 @@ const BS = __dirname;
 const sida = fs.readFileSync(path.join(BS, 'sida.js'), 'utf8').split('\n');
 const slut = sida.findIndex(r => r.startsWith('// ---------- kistan'));
 if (slut < 0) throw new Error('hittar inte slutet på lägerelden i sida.js');
-const UT = '\nwindow.ANIM = { TAKT, HASTIGHET, EGNA, LAGOR, rok, gnistor, brandBild, BRANDBAS, tornado, TN, bild };\n})();';
+const UT = '\nwindow.ANIM = { TAKT, HASTIGHET, EGNA, LAGOR, rok, gnistor, brandBild, BRANDBAS, tornado, TN, TNMATT, STORLEKAR, bild };\n})();';
 let anim = fs.readFileSync(path.join(BS, 'anim.js'), 'utf8').trimEnd();
 if (!anim.endsWith('})();')) throw new Error('anim.js slutar inte med })();');
 anim = anim.slice(0, -5) + UT;
@@ -60,6 +60,12 @@ for (let k = 0; k < 4; k++) { const r = Bild(17, 28, P); A.rok(r, 8, 26, k, 22);
 
 // tornadon (5.1.9.1): åtta bilder, 48 × 72 punkter, foten i (TN.cx, TN.fot)
 for (let k = 0; k < 8; k++) { const B = Bild(A.TN.w, A.TN.h, P); A.tornado(B, 0, 0, k / 8); bilder['tornado_' + k] = utAv(B); }
+// de andra storlekarna (steg 6.4.15, Björns val 6.3.5.8): samma kod, egna mått och fot (TORNADOFOT)
+const TORNADOFOT = { medel: { cx: A.TN.cx, fot: A.TN.fot } };
+for (const st of ['liten', 'stor']) {
+  const M = A.TNMATT(A.STORLEKAR[st].S); TORNADOFOT[st] = { cx: M.cx, fot: M.fot };
+  for (let k = 0; k < 8; k++) { const B = Bild(M.w, M.h, P); A.tornado(B, 0, 0, k / 8, st); bilder[`tornado_${st}_${k}`] = utAv(B); }
+}
 
 // branden (5.1.9.1): sex bilder i åtta varianter (rutans plats väljer varianten). Varianten börjar på sitt eget ställe i
 // rörelsen, som i bildstilen; röken ritas för sig (bakom alla lågorna), 16 × 28 punkter med rutans övre kant 26 punkter ned
@@ -74,7 +80,7 @@ const text = `// GENERERAD av bildstil/animtillspelet.cjs ur bildstilens anim.js
 // ändra i bildstilen och kör node bildstil/animtillspelet.cjs. Varje bild i förväg, i samma form som KARTBILDER (rader och
 // pal). ANIMTAKT är bildstilens klocka: ett slag var TAKT ms, och varje effekt byter bild var HASTIGHET:e slag.
 export interface Animbild { w: number; h: number; rader: string[]; pal: Record<string, string> }
-export const ANIMTAKT = ${JSON.stringify({ takt: A.TAKT, hastighet: A.HASTIGHET, eld: ELD, gnista: GNISTA, rok: ROK, tornado: { cx: A.TN.cx, fot: A.TN.fot }, brandVarianter: VARIANTER })};
+export const ANIMTAKT = ${JSON.stringify({ takt: A.TAKT, hastighet: A.HASTIGHET, eld: ELD, gnista: GNISTA, rok: ROK, tornado: { cx: A.TN.cx, fot: A.TN.fot }, tornadoStorlek: TORNADOFOT, brandVarianter: VARIANTER })};
 export const ANIMBILDER: Record<string, Animbild> = ${JSON.stringify(bilder)};
 `;
 fs.writeFileSync(path.join(BS, '..', 'src', 'animbilder.ts'), text);

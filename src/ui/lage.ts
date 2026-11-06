@@ -16,8 +16,8 @@ export function setByn(n: State) {
 }
 export const ui = {
   tab: undefined as FlikId | undefined, // fliken i personens panel till vänster (personen, elden, saken …), steg 5.3.1.1
-  hoger: (typeof matchMedia === 'function' && matchMedia('(max-width: 820px)').matches ? undefined : 'folk') as FlikId | undefined, // på en liten skärm börjar kartan fri (steg 5.3.7)
-  // ↑ den öppna flikens panel till höger (Byn, Teknik, Krönika, Folket …)
+  hoger: undefined as FlikId | undefined, // kartan börjar fri (steg 5.3.7); Folket har ingen egen flik (steg 6.9.15)
+  // ↑ den öppna flikens panel till höger (Byn, Teknik, Krönika …)
   selected: undefined as number | undefined, // personen som visas i panelen
   bynDel: 'seder', // delen i fliken Byn (DELAR i flikar/byn.ts)
   personFall: {} as Record<string, boolean>, // delarna i personens flikar som man fällt ut eller ihop (steg 5.3.4.2)
@@ -38,6 +38,7 @@ export const ui = {
   flytta: -1, // testläget (steg 3.10.1): stationen som flyttas till rutan man trycker på härnäst ...
   flyttFel: false, // ... och om den inte fick plats där
   brandTest: false, // testläget (steg 4.5.6.6): nästa tryck på kartan tänder en brand där
+  blixtTest: false, // testläget (steg 6.4.7): varje tryck på kartan låter en blixt slå ner där, tills knappen trycks igen
   testBorta: { st: [] as number[], lager: [] as { x: number; y: number; w: number; h: number }[] }, // testläget (steg 4.5.7.8): det som tagits bort, och tas bort ur den riktiga byn när testläget slutar
   sjoNr: 0, // sjön som visas i panelen
   faltId: -1, // fältet som visas i panelen (flikar/falt.ts) ...
@@ -65,8 +66,10 @@ export const outPilesAt = (x: number, y: number) => piles().filter(q => q.out &&
 // den står vid eller den som har den på sig, i handen eller bär den
 export function sakVar(): { x: number; y: number } | { station: number } | { person: number } | undefined {
   const [slag, rest = ''] = ui.sak.split(':');
-  if (slag === 'f' || slag === 'u' || slag === 'r') { const i = Number(rest); return { x: i % W, y: Math.floor(i / W) }; } // toa-högen, stubben (steg 3.10.6) och trädet (steg 5.1.4.3)
+  if (slag === 'f' || slag === 'u' || slag === 'r' || slag === 'b') { const i = Number(rest); return { x: i % W, y: Math.floor(i / W) }; } // toa-högen, stubben (steg 3.10.6), trädet (steg 5.1.4.3) och busken (steg 6.5.3)
   if (slag === 's') { const [x, y] = rest.split(',').map(Number); return { x, y }; }
+  if (slag === 'a') { const i = Number(rest); return { x: i % W, y: Math.floor(i / W) }; } // den uppsatta facklan (steg 6.3.7)
+  if (slag === 'v') { const k = s.stockar?.find(q => q.id === Number(rest)); return k && { x: Math.floor(k.x), y: Math.floor(k.y) }; } // stocken
   const t = slag === 't' ? tingOf(s).find(k => k.id === Number(rest)) : undefined;
   if (!t) return undefined;
   const person = t.bar ?? t.hos ?? t.lass;

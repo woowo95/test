@@ -2,7 +2,6 @@ import { BRASA, ELD, FireLog, HOUR, amountOf, byId, eldById, eldFaktor, emberOn,
 import { bar, clockTxt, durTxt, esc, fmtN, num, pLink, times } from '../hjalp';
 import { s, ui } from '../lage';
 import type { Flik } from '../panel';
-import { grafHtml } from '../graf';
 
 // elden: öppnas genom att trycka på en lägereld på kartan (den första eller en till, ui.eld, steg 4.5.6.8)
 export const eld: Flik = { namn: 'Elden', knapp: 'person', html: fireHtml };
@@ -26,7 +25,7 @@ function fireHtml() {
   const fills = Object.entries(f.fills).map(([id, n]) => ({ p: byId(s, Number(id)), n })).filter(x => x.p).sort((a, b) => b.n - a.n).slice(0, 6);
   const tgt = forsta ? fireWant(s) : f.want ?? 0;
   return `
-    <div class="phead"><span class="dot big" style="background:${f.lit ? '#e2702e' : glod ? '#b3361e' : '#4b4640'}"></span><div><h2>${esc(h.name)}</h2>
+    <div class="phead"><span class="dot big" style="background:${f.lit ? '#d8b25f' : glod ? '#a14808' : '#474138'}"></span><div><h2>${esc(h.name)}</h2>
     <p class="muted">${esc(h.desc)}${forsta ? '' : ' En lägereld till, nära sovplatserna.'}</p><p class="status">${status}</p></div></div>
     <h3>Just nu</h3><dl class="kv">
       <dt>Trä på elden</dt><dd>${bar(f.fuel / h.maxFuel)}<span>${fmtN(f.fuel)} av ${h.maxFuel}</span></dd>
@@ -37,7 +36,6 @@ function fireHtml() {
       ${f.wantWhy && byId(s, f.wantBy) ? `<dt>Önskas av</dt><dd>${pLink(byId(s, f.wantBy))}: ${esc(f.wantWhy).toLowerCase()}</dd>` : ''}
       ${tender ? `<dt>Hämtar trä</dt><dd>${pLink(tender)}</dd>` : ''}
     </dl>
-    ${forsta ? grafHtml('eld') : ''}
     ${f.lit ? `<h3>Denna eld</h3><dl class="kv fam">
       <dt>Brunnit i</dt><dd>${durTxt(now - (f.litAt ?? now))}</dd>
       <dt>Tändes</dt><dd>${f.litAt !== undefined ? clockTxt(f.litAt) : '–'}</dd>

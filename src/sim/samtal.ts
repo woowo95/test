@@ -13,7 +13,7 @@ import { ACTS } from './handlingar';
 import { balans } from './balans';
 import { RELT, arArke, arBast, arMentor, arRivaler, minnsRel, skiljGrans } from './relationer';
 import { tankePa } from './teknik';
-import { samtalAmne, samtalBorjar } from './berattelser';
+import { loggBer, samtalAmne, samtalBorjar } from './berattelser';
 import { predika } from './religion';
 
 // ---------- balanstal (regel 8) ----------
@@ -113,7 +113,7 @@ const valVikt = (s: State, a: Person, b: Person) => { const r = getRel(s, a, b);
 // Finns ingen, eller ingen plats bredvid, går man till platsen vid elden som förut
 export function samtalMed(s: State, p: Person) {
   const t = p.task!, now = s.now;
-  const kand = living(s).filter(q => q !== p && q.task?.phase === 'do' && isSocial(q) && q.task.med === undefined && !ACTS[q.task.act].vandra && !ACTS[q.task.act].radie && ageOf(q, now) >= ALDER.smabarn
+  const kand = living(s).filter(q => q !== p && q.task?.phase === 'do' && isSocial(q) && q.task.med === undefined && !ACTS[q.task.act].vandra && !ACTS[q.task.act].tur && !ACTS[q.task.act].radie && ageOf(q, now) >= ALDER.smabarn
     && Math.hypot(q.x - t.tx, q.y - t.ty) < SAMTAL.sokR);
   if (!kand.length) return;
   const q = pickViktat(s, kand, kand.map(b => valVikt(s, p, b)), 'samtal', p);
@@ -214,8 +214,8 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
   a.social = clamp(a.social + SAMTAL.umgange, 0, 1); b.social = clamp(b.social + SAMTAL.umgange, 0, 1);
   events?.push({ a: a.id, b: b.id, kind, good: kind !== 'gräl' && out > 0, t: now, i: a.prat?.i });
 
-  if (r.op > REL.naraVan && !(r.flags & 1) && !isKin(a, b) && a.partner !== b.id) { r.flags |= 1; log(s, `${a.name} och ${b.name} har blivit nära vänner.`, 'rel', [a.id, b.id]); }
-  if (r.op < REL.ovan && !(r.flags & 2)) { r.flags |= 2; log(s, `${a.name} och ${b.name} har blivit ovänner.`, 'rel', [a.id, b.id]); }
+  if (r.op > REL.naraVan && !(r.flags & 1) && !isKin(a, b) && a.partner !== b.id) { r.flags |= 1; loggBer(s, 'l_vanner', a.id * 997 + b.id, { namn: a.name, med: b.name }, 'rel', [a.id, b.id]); }
+  if (r.op < REL.ovan && !(r.flags & 2)) { r.flags |= 2; loggBer(s, 'l_ovanner', a.id * 997 + b.id, { namn: a.name, med: b.name }, 'rel', [a.id, b.id]); }
   if (r.rom > REL.parRom && r.op > REL.van && a.partner === undefined && b.partner === undefined && canFlirt) pair(s, a, b);
   if (a.partner === b.id && r.op < skiljGrans(r)) skiljas(s, a, b, r); // ett gift par håller mer (steg 3.1.1)
   return kind === 'gräl' ? b : undefined;

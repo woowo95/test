@@ -1,4 +1,4 @@
-import { BEAT, DAY, HOUR, MIN, SEC, TalkEvent, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, spar, step, visning, yearNo, State, motgangNu, motgangNasta, motgangDef, varslade, ROVARFLOCK, skickaRovare, skickaHandlare, rovarHinder, handlarHinder, lightLevel } from './sim';
+import { BEAT, DAY, HOUR, MIN, SEC, TalkEvent, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, spar, step, visning, yearNo, State, motgangNu, motgangNasta, motgangDef, varslade, ROVARFLOCK, skickaRovare, skickaHandlare, rovarHinder, handlarHinder, skickaTornado, tornadoHinder, lightLevel } from './sim';
 import { brandKnapp, testSvara } from './ui/interaktion';
 import { testBortaIByn } from './ui/testborta';
 import { $ } from './ui/hjalp';
@@ -16,7 +16,8 @@ import { addTalks, drawPeople, posOf } from './ui/manniskor';
 import { drawHandel } from './ui/handel';
 import { renderPanel } from './ui/panel';
 import { renderRaden } from './ui/raden';
-import { renderPorts, stopFollow } from './ui/portratt';
+import { renderPorts, startFollow, stopFollow } from './ui/portratt';
+import { gaster, rovarGastId } from './ui/gaster';
 import { catchUp, ikapp, loadSaves, nyByVald, saveDb, saveLocal } from './ui/spara';
 import './ui/interaktion';
 import './ui/ram';
@@ -25,6 +26,7 @@ import './ui/trycktips'; // förklaringarna kommer fram när man trycker (steg 5
 import './ui/ark'; // panelerna som ark nerifrån på en liten skärm (steg 5.3.7)
 import { drawArena, oppnaArena } from './ui/arena';
 import { drawTona } from './ui/tona';
+import { drawOmrade } from './ui/omradebild';
 
 // startpunkten: klockan, kontrollerna, huvudloopen och uppstarten. Allt annat i gränssnittet ligger i ui/
 function renderClock() {
@@ -57,7 +59,7 @@ function setSpeed(v: number) {
   speed = v;
   for (const b of document.querySelectorAll<HTMLButtonElement>('#speeds button')) b.setAttribute('aria-pressed', String(Number(b.dataset.v) === v));
 }
-function leaveTest() { testSvara(''); ui.brandTest = false; brandKnapp(); ui.testMode = false; $('arena').hidden = true; $('speeds').hidden = true; $('testSkicka').hidden = true; document.body.classList.remove('testing'); setSpeed(1); }
+function leaveTest() { testSvara(''); ui.brandTest = false; ui.blixtTest = false; brandKnapp(); ui.testMode = false; $('arena').hidden = true; $('speeds').hidden = true; $('testSkicka').hidden = true; document.body.classList.remove('testing'); setSpeed(1); }
 // testläget stängs utan att den verkliga byn kommer tillbaka (en annan by tar dess plats)
 function dropTest() { if (ui.testMode) { ($('testToggle') as HTMLInputElement).checked = false; realState = null; ui.testBorta = { st: [], lager: [] }; leaveTest(); } }
 // en ny by med slumpat frö, sparad direkt
@@ -109,18 +111,22 @@ $('arenaKnapp').addEventListener('click', oppnaArena);
   const flock: [keyof typeof ROVARFLOCK, string][] = [['liten', 'En liten rövarflock'], ['mellan', 'En mellanstor rövarflock'], ['stor', 'En stor rövarflock']];
   $('testSkicka').innerHTML = flock.map(([k, t]) => `<button type="button" data-flock="${k}" title="${t} (${ROVARFLOCK[k]} rövare) kommer nu">${iconImg('rovare', 14)}${ROVARFLOCK[k]}</button>`).join('')
     + `<button type="button" data-handlare="1" title="En handlare kommer nu">${iconImg('handlare', 14)}</button>`
-    + `<button type="button" data-brand="1" title="Tänd en brand: tryck sedan på kartan där den ska börja">${iconImg('brand', 14)}</button><span id="testSvar"></span>`;
+    + `<button type="button" data-brand="1" title="Tänd en brand: tryck sedan på kartan där den ska börja">${iconImg('brand', 14)}</button>`
+    + `<button type="button" data-blixt="1" title="Blixten: tryck sedan på kartan där den ska slå ner, flera gånger; tryck här igen för att sluta">${iconImg('n_energi', 14)}</button>`
+    + `<button type="button" data-tornado="1" title="En tornado kommer nu från kartans kant">${iconImg('tornado', 14)}</button><span id="testSvar"></span>`;
   // knappen svarar direkt (steg 4.5.6.4): den lyser upp, och raden under knapparna säger vad som skickats och varifrån, eller
   // varför det inte går just nu. En knapp som inte kan användas är grå (testKnappar)
   $('testSkicka').addEventListener('click', e => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
     if (!b || !ui.testMode || !s) return;
     // brandknappen (steg 4.5.6.6): ett tryck gör den aktiv, och nästa tryck på kartan tänder rutan där (interaktion.ts); ett nytt tryck avbryter
-    if (b.dataset.brand) { ui.brandTest = !ui.brandTest; brandKnapp(); testSvara(ui.brandTest ? 'Tryck på kartan där branden ska börja' : ''); return; }
-    const r = b.dataset.flock ? skickaRovare(s, ROVARFLOCK[b.dataset.flock as keyof typeof ROVARFLOCK]) : skickaHandlare(s);
+    if (b.dataset.brand) { ui.brandTest = !ui.brandTest; ui.blixtTest = false; brandKnapp(); testSvara(ui.brandTest ? 'Tryck på kartan där branden ska börja' : ''); return; }
+    // blixtknappen (steg 6.4.7): som brandknappen, men den är kvar aktiv så att flera blixtar kan slå ner i rad
+    if (b.dataset.blixt) { ui.blixtTest = !ui.blixtTest; ui.brandTest = false; brandKnapp(); testSvara(ui.blixtTest ? 'Tryck på kartan där blixten ska slå ner' : ''); return; }
+    const r = b.dataset.flock ? skickaRovare(s, ROVARFLOCK[b.dataset.flock as keyof typeof ROVARFLOCK]) : b.dataset.tornado ? skickaTornado(s) : skickaHandlare(s);
     testSvara(r.text);
-    // kameran visar var flocken dök upp (steg 4.5.7.10)
-    if (r.ok && b.dataset.flock && s.rovare) { stopFollow(); cam.x = s.rovare.x * TS; cam.y = s.rovare.y * TS; layout(); }
+    // kameran visar var flocken dök upp (steg 4.5.7.10) och följer den första rövaren in (steg 6.6.12)
+    if (r.ok && b.dataset.flock && s.rovare) { stopFollow(); cam.x = s.rovare.x * TS; cam.y = s.rovare.y * TS; layout(); startFollow(rovarGastId(s.rovare.id, 0), s.rovare.folk[0]?.namn); }
     b.classList.remove('tryckt'); void b.offsetWidth; b.classList.add('tryckt');
     testKnappar(); renderPanel(true);
   });
@@ -128,20 +134,30 @@ $('arenaKnapp').addEventListener('click', oppnaArena);
 // knapparna som inte kan användas just nu är grå
 function testKnappar() {
   if (!ui.testMode || !s) return;
-  for (const b of document.querySelectorAll<HTMLButtonElement>('#testSkicka button')) b.classList.toggle('ej', !!(b.dataset.flock ? rovarHinder(s) : b.dataset.handlare ? handlarHinder(s) : undefined));
+  for (const b of document.querySelectorAll<HTMLButtonElement>('#testSkicka button')) b.classList.toggle('ej', !!(b.dataset.flock ? rovarHinder(s) : b.dataset.handlare ? handlarHinder(s) : b.dataset.tornado ? tornadoHinder(s) : undefined));
 }
 // inställningarna (testläget och ny by) öppnas med kugghjulet längst ner bland flikknapparna (steg 5.3.1.1)
 $('installKnapp').addEventListener('click', () => { const r = $('installningar'); r.hidden = !r.hidden; $('installKnapp').setAttribute('aria-expanded', String(!r.hidden)); });
-// ljust eller mörkt läge (steg 5.3.1.3): data-tema på html byter grundens färger i template.html; valet sparas i webbläsaren
+// ljust eller mörkt läge (steg 5.3.1.3): data-tema på html byter grundens färger i template.html. Läget följer datorns
+// inställning och byter direkt när datorn byter (steg 6.9.16); knappen ◐ växlar mellan Datorn, Ljust och Mörkt, och valet
+// sparas i webbläsaren. Står det på Ljust eller Mörkt följer spelet inte datorn förrän man väljer Datorn igen
 const TEMA_KEY = 'samhallssim-tema';
-function sattTema(morkt: boolean) {
+const TEMAN = { datorn: 'Datorn', ljust: 'Ljust', morkt: 'Mörkt' } as const;
+type Tema = keyof typeof TEMAN;
+const datornMork = typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: dark)') : undefined;
+let tema: Tema = 'datorn';
+function sattTema() {
+  const morkt = tema === 'morkt' || (tema === 'datorn' && !!datornMork?.matches);
   document.documentElement.dataset.tema = morkt ? 'morkt' : 'ljust';
-  const b = $('temaKnapp'); b.setAttribute('aria-pressed', String(morkt)); b.textContent = morkt ? '◐ Ljust' : '◐ Mörkt';
+  const b = $('temaKnapp'); b.textContent = `◐ ${TEMAN[tema]}`;
+  b.title = `Ljust eller mörkt läge: ${tema === 'datorn' ? `som datorn (nu ${morkt ? 'mörkt' : 'ljust'})` : TEMAN[tema].toLowerCase()}. Tryck för att byta`;
 }
-try { sattTema(localStorage.getItem(TEMA_KEY) === 'morkt'); } catch { sattTema(false); }
+try { const v = localStorage.getItem(TEMA_KEY); if (v && v in TEMAN) tema = v as Tema; } catch { /* ignoreras */ }
+sattTema();
+datornMork?.addEventListener('change', sattTema);
 $('temaKnapp').addEventListener('click', () => {
-  const morkt = document.documentElement.dataset.tema !== 'morkt'; sattTema(morkt);
-  try { localStorage.setItem(TEMA_KEY, morkt ? 'morkt' : 'ljust'); } catch { /* ignoreras */ }
+  const ids = Object.keys(TEMAN) as Tema[]; tema = ids[(ids.indexOf(tema) + 1) % ids.length]; sattTema();
+  try { localStorage.setItem(TEMA_KEY, tema); } catch { /* ignoreras */ }
 });
 $('newVillage').addEventListener('click', () => { $('confirmNew').hidden = false; });
 $('cancelNew').addEventListener('click', () => { $('confirmNew').hidden = true; });
@@ -174,6 +190,7 @@ function ritaKartan(now: number) {
   drawSkuggor();
   drawNight(ui.nu);
   drawFilter();
+  drawOmrade();
   drawVader(now);
 }
 ikapp.rita = () => { ui.nu = s.now; nyBild(); ritaKartan(performance.now()); renderClock(); };
@@ -194,8 +211,9 @@ function tick() {
   const now = performance.now();
   addTalks(events, now, ui.nu);
   if (ui.follow !== undefined) {
-    const p = byId(s, ui.follow);
-    if (p && alive(p)) { const q = posOf(p); cam.x = q.x * TS + TS / 2; cam.y = q.y * TS + TS / 2; layout(); } else stopFollow();
+    const p = ui.follow > 0 ? byId(s, ui.follow) : undefined, g = ui.follow < 0 ? gaster().find(x => x.id === ui.follow) : undefined;
+    const q = p && alive(p) ? posOf(p) : g;
+    if (q) { cam.x = q.x * TS + TS / 2; cam.y = q.y * TS + TS / 2; layout(); } else stopFollow();
   }
   ritaKartan(now);
   if (now - lastUi > PANEL_MS) { lastUi = now; renderClock(); renderPanel(); renderPorts(); testKnappar(); }

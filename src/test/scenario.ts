@@ -1,6 +1,7 @@
 // Scenariotester: ställ en by i ett visst läge, kör den en stund och kontrollera att det som ska hända händer.
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett (flera namn: de körs samtidigt, de korta i grupper)
+import './utc';
 import './scenarier/grund';
 import './scenarier/sparning';
 import './scenarier/redskap';
@@ -61,9 +62,11 @@ else {
     if (g.length === 1) { svar[g[0]] = await korSkript('scenario.ts', g, SCENARIER[g[0]]!.env); return; }
     const u = await korSkript('scenario.ts', ['--grupp', ...g]), bitar = u.out.split(MARK).slice(1);
     for (const b of bitar) { const i = b.indexOf('\n'), n = b.slice(0, i); svar[n] = { code: /^FEL/m.test(b) ? 1 : 0, out: b.slice(i + 1), err: '' }; }
-    // kraschade gruppen räknas den som kraschade med felet, och de som inte hann köras körs var för sig
+    // kraschade gruppen räknas den som kraschade med felet, och de som inte hann köras körs var för sig. Felkoden ensam är
+    // ingen krasch när ett scenario i gruppen skrev FEL (då sätts den av körningen) och inget fel skrevs ut
     const sist = bitar.length ? b2n(bitar[bitar.length - 1]) : undefined;
-    if (u.code && sist && !svar[sist]!.code) svar[sist] = { code: u.code, out: svar[sist]!.out, err: u.err };
+    const forklarad = !u.err.trim() && bitar.some(b => /^FEL/m.test(b));
+    if (u.code && sist && !svar[sist]!.code && !forklarad) svar[sist] = { code: u.code, out: svar[sist]!.out, err: u.err };
     for (const n of g) if (!svar[n]) svar[n] = await korSkript('scenario.ts', [n]);
   }));
   let fel = 0;

@@ -17,6 +17,8 @@ const reg = [...Object.values(SAKER).filter(d => d !== undefined), ...Object.val
 const ETT = ord(reg, true), EN = ord(reg, false);
 const efter = (artikel: string, l: string[]) => new RegExp(`(^|[^\\p{L}])${artikel} (\\p{L}+ )?(${l.join('|')})(?=[^\\p{L}]|$)`, 'iu');
 const FEL_ETT = efter('ett', EN), FEL_EN = efter('en', ETT);
+// måttord mellan artikeln och saken: "en bit harkött", "ett par skor" (artikeln hör till måttet, ordlagret ord.ts)
+const MATT = new Set(['bit', 'famn', 'klump', 'tuva', 'näve', 'par', 'stycke', 'knippe', 'liten', 'stort', 'mycket']);
 // adjektiv som slutar på t också i en-form (en trött, en vit)
 const T_ADJ = new Set(['trött', 'vit', 'söt', 'våt', 'het', 'fet', 'lätt', 'rätt', 'tätt', 'flat', 'stolt', 'kort', 'hårt', 'svart', 'tyst', 'snabbt', 'mätt', 'sist', 'först', 'bäst', 'störst', 'minst', 'mest', 'lägst', 'högst', 'yngst', 'äldst', 'fast', 'kvickt', 'lat', 'blöt', 'glatt', 'brant', 'tjockt', 'grått', 'rått', 'gott', 'ett']);
 
@@ -35,13 +37,24 @@ export const KONTROLLER: Kontroll[] = [
     return undefined;
   } },
   { id: 'genus', namn: 'En eller ett, eller adjektivets form, efter ordets genus', hitta: t => {
-    const a = FEL_ETT.exec(t) ?? FEL_EN.exec(t);
-    if (a) return a[0].trim();
+    for (const re of [FEL_ETT, FEL_EN]) { const a = re.exec(t); if (a && !MATT.has((a[2] ?? '').trim().toLowerCase())) return a[0].trim(); }
     const m = new RegExp(`(^|[^\\p{L}])en (\\p{L}+t) (${EN.join('|')})(?=[^\\p{L}]|$)`, 'iu').exec(t);
     return m && !T_ADJ.has(m[2].toLowerCase()) ? m[0].trim() : undefined;
   } },
   { id: 'nyttOrd', namn: 'Ett ord som inte fanns på järnåldern', hitta: t => NYA.exec(t)?.[2] },
+  // ordlagret (steg 6.7.1, src/sim/ord.ts): det simuleringen vet ska inte stå som rådata i texten
+  { id: 'hen', namn: 'hen, hens eller henom om en viss person', hitta: t => /(^|[^\p{L}])(hen|hens|henom)(?=[^\p{L}]|$)/iu.exec(t)?.[2] },
+  { id: 'artikel', namn: 'Ett rykte utan en framför (som lögnare, är tjuv)', hitta: t => ARTIKEL.exec(t)?.[0].trim() },
+  { id: 'andelse', namn: 'En ändelse hängd på ett namn (Lerkrukaen, väggbrädeen)', hitta: (t, f) => {
+    for (const n of Object.values(f).filter((v): v is string => typeof v === 'string' && /^\p{Lu}/u.test(v))) if (/[ae]$/.test(n) && [...t.matchAll(new RegExp(`${n}(en|n|na|et)(?=[^\\p{L}]|$)`, 'gu'))].some(m => !VANLIGA.has(m[0].toLowerCase()))) return n;
+    return /\p{Ll}(aen|een|aet|eet)(?=[^\p{L}]|$)/u.exec(t)?.[0];
+  } },
+  { id: 'siffra', namn: 'En siffra före ett ord (1 rutor, efter 3 försök); utom ålder, år och årtal', hitta: t => { const m = /(^|[^\p{L}\d.,])(\d+) (\p{L}+)/u.exec(t); return m && !/^(år|års|dygn|timmar|timme|kg)$/u.test(m[3]) && !/(^|[^\p{L}])år $/u.test(t.slice(0, m.index + m[1].length)) ? `${m[2]} ${m[3]}` : undefined; } }, // "år 17 dog" är ett årtal
+  { id: 'ochoch', namn: 'Namn fogade med och … och (A och B och C)', hitta: t => /(\p{Lu}\p{Ll}+) och (\p{Lu}\p{Ll}+) och (\p{Lu}\p{Ll}+)/u.exec(t)?.[0] },
 ];
+// vanliga ord som råkar vara ett namn med en ändelse (Inge + n = Ingen)
+const VANLIGA = new Set(['ingen', 'inget', 'inga']);
+const ARTIKEL = new RegExp(`(^|[^\\p{L}])(som|är|var) (lögnare|tjuv|klåpare|vargdödare)(?=[^\\p{L}]|$)`, 'iu');
 // fel som bara gäller en hel beskrivning eller en lång text: upprepningar och för långa meningar. De skrivs i texter.txt
 export const STIL: Kontroll[] = [
   { id: 'sammaMening', namn: 'Samma mening två gånger', hitta: t => { const m = meningar(t); return m.find((x, i) => m.indexOf(x) !== i); } },

@@ -2,6 +2,7 @@
 // Texterna som simuleringen skriver (loggen, krönikan, namnen) räknas varje gång de skrivs. Texterna som bara visas när man
 // trycker på något skrivs här som om någon tittade (titta i textkoll.ts): för alla i byn var TITTA_TIM timme.
 // Varje text går också genom kontrollerna (steg 4.5.1.2), också stilen (upprepningar och långa meningar)
+import './utc';
 import { step, BEAT, createState } from '../sim';
 import { lyssnaPaTexter } from '../sim/berattelser';
 import { START, STEG_DYGN, STEG_TIM } from './kor';
@@ -9,16 +10,19 @@ import { kollaText, konI, titta } from './textkoll';
 
 export const TITTA_TIM = 24;
 export const EXEMPEL = 4; // så många olika ifyllda texter sparas per variant
-export type Samlat = Record<string, Record<number, { n: number; ex: string[] }>>;
+// u = hur många olika ifyllda texter (steg 6.7.8): en beskrivning som skrivs varje dygn för samma person räknas en gång
+export type Samlat = Record<string, Record<number, { n: number; u?: number; ex: string[] }>>;
 // felen per kontroll: hur många och några exempel (mallen, det som hittades och texten)
 export type Fel = Record<string, { n: number; ex: { mall: string; vad: string; text: string }[] }>;
 
 const [seed, dagar] = process.argv.slice(2).map(Number);
-const ut: Samlat = {}, fel: Fel = {};
+const ut: Samlat = {}, fel: Fel = {}, olika = new Map<string, Set<string>>();
 const s = createState(seed, START), kon = konI(s);
 lyssnaPaTexter((mall, i, text, f) => {
   const v = ((ut[mall] ??= {})[i] ??= { n: 0, ex: [] });
   v.n++;
+  const k = `${mall}#${i}`, o = olika.get(k) ?? new Set<string>();
+  olika.set(k, o); o.add(text); v.u = o.size;
   if (v.ex.length < EXEMPEL && !v.ex.includes(text)) v.ex.push(text);
   for (const k of kollaText(text, f, kon, mall === 'beskrivning', mall === 'beskrivning')) {
     const x = (fel[k.id] ??= { n: 0, ex: [] });

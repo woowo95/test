@@ -6,6 +6,7 @@ import { amountOf, put, use } from './lager';
 import { Station, isKlar, kanGoras, stationerOf } from './stationer';
 import { EKONOMI } from './ekonomi';
 import { SAKER } from './saker';
+import { loggBer } from './berattelser';
 import { balans } from './balans';
 
 // ---------- matlagning (steg 2.8.1) ----------
@@ -65,16 +66,17 @@ export function grilla(s: State, p: Person, hours: number) {
 // p har ätit per (av varje slag, behov.ts) av en portion full: det råa köttet och den råa fisken (ra i saker.ts) gör en lite
 // sur och kan ge matförgiftning, oftare ju mer av portionen som var rå. En dragning bara när något rått ätits
 export function ratt(s: State, p: Person, per: Record<string, number>, full: number) {
-  let ra = 0;
-  for (const k in per) if (SAKER[k]?.ra) ra += per[k];
+  let ra = 0, mest = '';
+  for (const k in per) if (SAKER[k]?.ra) { ra += per[k]; if (!mest || per[k] > per[mest]) mest = k; }
   if (ra <= 1e-9) return;
   count(s, 'rattAtit', ra);
   think(p, 'Åt rått', MATLAG.surt, s.now, MATLAG.surtTim * HOUR);
   if (rnd(s, 'halsa', p) >= ra / full * MATLAG.sjuk) return;
-  p.sickUntil = Math.max(p.sickUntil ?? 0, s.now + (MATLAG.sjukMin + rnd(s, 'halsa', p) * MATLAG.sjukSpann) * HOUR); p.sickWhy = 'Matförgiftad av rått kött eller rå fisk';
+  p.sickUntil = Math.max(p.sickUntil ?? 0, s.now + (MATLAG.sjukMin + rnd(s, 'halsa', p) * MATLAG.sjukSpann) * HOUR); const sak = SAKER[mest]!, vad = `rå${sak.ett ? 'tt' : ''} ${sak.namn.toLowerCase()}`; p.sickWhy = `Matförgiftad av ${vad}`;
   think(p, 'Blev matförgiftad av rått kött eller rå fisk', MATLAG.forgiftad, s.now, 12 * HOUR);
   count(s, 'matforgiftad');
-  log(s, `${p.name} blev matförgiftad av rått kött eller rå fisk.`, 'world', [p.id]);
+  // det som åts står i raden, och ingen rad om hen redan blivit förgiftad samma timme (svampen, steg 6.7.5)
+  if (!s.log.some(e => e.t > s.now - HOUR && e.ids.length === 1 && e.ids[0] === p.id && (e.m === 'l_raMat' || e.text.includes('förgiftad')))) loggBer(s, 'l_raMat', p.id, { namn: p.name, hen: p.sex === 'm' ? 'han' : 'hon', vad }, 'world', [p.id]);
 }
 
 // ---------- torkning (steg 2.8.2) ----------

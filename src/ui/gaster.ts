@@ -1,8 +1,9 @@
-import { HANDEL, HANDLAR_UTR, VAPEN, byId, gillar, handlarPerson, foddNar, gastLiv, gastNyckel, handlarFas, handlarPlats, klanById, grundvarde, handlarVarde, kgOf, kortTal, rymmer, sakNamn } from '../sim';
-import type { ByteMinne, GastLiv, GastRel, Person, Roll, Skill, Stat, State } from '../sim';
+import { HANDEL, HANDLAR_UTR, VAPEN, byId, gillar, handlarPerson, foddNar, gastLiv, gastNyckel, handlarFas, handlarPlats, rovarPlats, klanById, grundvarde, handlarVarde, kgOf, kortTal, rymmer, sakNamn } from '../sim';
+import type { ByteMinne, GastLiv, GastRel, Person, Roll, Rovare, Skill, Stat, State } from '../sim';
 import { iconImg } from '../ikoner';
 import { esc } from './hjalp';
 import { s, ui } from './lage';
+import { rovarenNu } from './stridkarta';
 
 // gästerna (steg 4.5.4.12): de som syns på kartan utan att bo i byn, i dag handlaren och rövarna. De väljs som en bybo och
 // får samma sida (personfliken) med de flikar som finns för dem. Det som är särskilt för en sort står som rader i
@@ -22,6 +23,8 @@ export interface Gast {
   byten?: ByteMinne[]; // bytena hen gjort med byn (steg 4.5.4.17)
   liv: GastLiv; // livet i hemklanen (steg 4.5.7.7, gastliv.ts): familjen, händelserna, humöret och det hen kan
   blod?: number; // blodet kvar (rövarna, 0–1)
+  ligger?: boolean; // har fallit i striden (rövarna, steg 6.6.10)
+  rovare?: Rovare; // rövaren själv: ritas som en figur ur skaparen (steg 6.6.12, ui/manniskor.ts), de andra gästerna som en cirkel
   rel?: { p: Person; r: GastRel; g: number }[]; // relationerna till byborna (handlaren, steg 4.5.7.11): g = hur mycket hen gillar bybon, −1 till 1
 }
 // gästens liv, räknat ur byns frö och hens namn och klan (drar ingen slump)
@@ -33,6 +36,7 @@ const livFor = (s: State, klan: number | undefined, namn: string, sex: 'm' | 'k'
 export const handlarPris = (k: string, q?: number) => Math.max(1, Math.round(grundvarde(k) * handlarVarde(s, s.handlare!, k) * (q === undefined ? 1 : 0.6 + 0.2 * q)));
 // rövarnas id: under handlarnas (-1, -2 …), en plats per rövare i flocken
 const ROVAR_ID = -1e6;
+export const rovarGastId = (flock: number, i: number) => ROVAR_ID - flock * 100 - i;
 export const GASTER: ((s: State, t: number) => Gast[])[] = [
   // handlaren (steg 4.4.1.2)
   (s, t) => {
@@ -57,18 +61,24 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
     }];
   },
   // rövarflocken (steg 4.4.5): rövarna i en klunga där flocken står
-  s => {
+  (s, t) => {
     const r = s.rovare;
     if (!r) return [];
-    const gor = r.gor === 'samlas' ? 'Samlas i skogen' : r.gor === 'kommer' ? 'På väg mot byn' : 'Flyr', n = r.folk.length;
-    return r.folk.map((q, i) => ({
-      id: ROVAR_ID - r.id * 100 - i, namn: q.namn, sex: q.sex, sort: 'Rövare', farg: 0x5a5040,
-      x: r.x + (i % 3) * 0.7 - 0.7, y: r.y + Math.floor(i / 3) * 0.7, gor, fran: klanById(s, r.klan)?.namn,
+    const gor = r.gor === 'samlas' ? 'Samlas i skogen' : r.gor === 'kommer' ? 'På väg mot byn' : r.gor === 'vantar' ? 'Väntar utanför byn' : r.gor === 'slass' ? 'Slåss vid förrådet' : 'Flyr', n = r.folk.length;
+    return r.folk.map((q, i) => {
+      const sk = rovarenNu(q.namn, t); // i striden (steg 6.6.10): där striden har hen, och liggande när hen fallit
+      return {
+      id: rovarGastId(r.id, i), namn: q.namn, sex: q.sex, sort: 'Rövare', farg: 0x5a5040,
+      ...(sk ? { x: sk.x, y: sk.y } : rovarPlats(q, t)), // var och en går för sig (steg 6.6.9)
+      rovare: q, gor: sk ? (sk.k.lage === 'dod' ? 'Död' : sk.ligger ? 'Ligger nere' : sk.k.lage === 'flykt' ? 'Flyr' : 'Slåss vid förrådet') : gor, ligger: sk?.ligger,
+      fran: klanById(s, r.klan)?.namn,
       rader: [{ namn: 'Flocken', varde: `${n} rövare`, title: `En av ${n} i flocken` }],
       stats: { styrka: q.st.styrka, uthallighet: q.st.uthallighet, mod: q.st.mod, smidighet: q.st.smidighet }, skills: { narstrid: q.st.skicklighet },
-      bar: [{ ikon: q.vapen, text: VAPEN[q.vapen].namn, title: `Vapnet: ${VAPEN[q.vapen].namn.toLowerCase()}` }],
+      bar: [{ ikon: q.vapen, text: VAPEN[q.vapen].namn, title: `Vapnet: ${VAPEN[q.vapen].namn.toLowerCase()}` },
+        ...Object.entries(q.bar ?? {}).map(([k, m]) => ({ ikon: k, text: m > 1 ? String(m) : '', title: `${sakNamn(k)}: taget ur byns förråd` }))], // bytet (steg 6.6.11)
       handelser: [], liv: livFor(s, r.klan, q.namn, q.sex, 'rovare', q.fodd), blod: q.blod,
-    }));
+      };
+    });
   },
 ];
 export const gaster = (t = ui.nu) => GASTER.flatMap(f => f(s, t));

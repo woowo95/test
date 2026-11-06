@@ -2,6 +2,7 @@
 // varje tecken är en pixel, '.' är genomskinlig
 import { KLADER_AV } from './sim/klader';
 import { KARTBILDER } from './kartbilder';
+import { STUBBILDER } from './stubbilder';
 import { ANIMBILDER } from './animbilder';
 import { DJURBILDER, type Hall } from './djurbilder';
 import { farg } from './palett';
@@ -37,6 +38,7 @@ export const PAL: Record<string, Record<string, string>> = {
   // kläderna och bensylen (steg 2.3.2; Björn valde kläderna efter v89, bensylen är en platshållare)
   bensyl: { w: '#dad0bb', W: '#dad0bb', d: '#a0947d' },
   // sportens föremål (steg 4.3.1.2, platshållare)
+  boll_liten: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', e: '#987e62' }, // bollen på kartan i egna 6 punkter (Björn sa ja, bildstil v166, steg 5.5.5)
   boll: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', e: '#987e62', z: 'rgba(36,32,29,.30)' }, // (Björn valde version 1 efter v245, steg 4.5.2)
   slagtra: { o: '#24201d', c: '#7d5b40', e: '#987e62', t: '#a14808', s: '#906f0f', S: '#b2921b', v: '#dad0bb', z: 'rgba(36,32,29,.30)' }, // (Björn valde version 3 efter v245, steg 4.5.2)
   mal: { o: '#24201d', b: '#5e3c24', c: '#7d5b40', e: '#987e62', S: '#b2921b', z: 'rgba(36,32,29,.30)' }, // (Björn valde version 1 efter v245, steg 4.5.2)
@@ -78,6 +80,8 @@ export const PAL: Record<string, Record<string, string>> = {
   rovfron: { o: '#24201d', R: '#a14808', r: '#742a01', j: '#3f2415' },
   artfron: { o: '#24201d', L: '#d8b25f', Y: '#898b4c', y: '#647025' },
   odling: { k: '#3f2415', j: '#5e3c24', J: '#7d5b40', g: '#4b4f00', G: '#647025', L: '#898b4c' },
+  // skogsvården (steg 6.5.2, platshållare): en planta med rotklump bredvid en spade
+  skogsvard: { k: '#3f2415', j: '#5e3c24', g: '#4b4f00', G: '#647025', L: '#898b4c', b: '#dad0bb', o: '#24201d' },
   // ledarskapet: ledaren och folket (Björn valde version 3 efter v193, steg 3.10.13)
   ledarskap: { o: '#24201d', a: '#d8b25f', b: '#61767a' },
   // grödorna från fälten och grodden på fältet (steg 2.10.3, platshållare i bildstilens palett)
@@ -87,6 +91,7 @@ export const PAL: Record<string, Record<string, string>> = {
   // toa-högen (steg 2.10.5, platshållare efter stankslingan på kartan, ui/smuts.ts)
   toa: { C: '#7d5b40', V: '#898b4c', c: '#5e3c24', k: '#3f2415', v: '#d8b25f' },
   grodd: { G: '#647025', L: '#898b4c', g: '#4b4f00' },
+  grodd_liten: { G: '#647025', L: '#898b4c', g: '#4b4f00' },
   ...Object.fromEntries(['klart', 'moln', 'regn', 'sno', 'blast', 'aska', 'dimma'].map(k => ['vader_' + k, VADER_PAL])),
   benspade: { h: '#694902', H: '#7e7362', y: '#a0947d', Y: '#bdb39b', w: '#dad0bb', W: '#dad0bb', d: '#a0947d', R: '#bdb39b' },
   skinnklader: { b: '#7d5b40', B: '#987e62', d: '#5e3c24', w: '#bdb39b' },
@@ -203,6 +208,7 @@ export const PAL: Record<string, Record<string, string>> = {
   i_orattvis: { a: '#bd753e', b: '#a14808', c: '#7d5b40', o: '#24201d', z: 'rgba(36,32,29,.30)' },
   i_stark: { a: '#bd753e', b: '#a14808', o: '#24201d', w: '#d8b25f', z: 'rgba(36,32,29,.30)' },
   i_feg: { c: '#7d5b40', o: '#24201d', v: '#bdb39b', w: '#dad0bb', z: 'rgba(36,32,29,.30)' },
+  i_bjorndodare: { a: '#7d5b40', b: '#5e3c24', k: '#24201d', o: '#24201d', w: '#a0947d', z: 'rgba(36,32,29,.30)' }, // steg 6.6.6: platshållare, björnens huvud
   i_vargdodare: { a: '#8a9c9e', b: '#61767a', k: '#24201d', o: '#24201d', w: '#dad0bb', z: 'rgba(36,32,29,.30)' },
   l_fara: { a: '#b2921b', b: '#906f0f', k: '#24201d', o: '#24201d', z: 'rgba(36,32,29,.30)' },
   a_varda: { w: '#dad0bb', a: '#8a9c9e', y: '#d8b25f', r: '#bd753e' },
@@ -1557,6 +1563,25 @@ export const PIX: Record<string, string[]> = {
     'oboobo....oboobo',
     '.o..o......o..o.',
   ],
+  // skogsvården (steg 6.5.2, platshållare): en planta med rotklump som lyfts, och benspaden bredvid
+  skogsvard: [
+    '.....L.......b..',
+    '....LGL......b..',
+    '...LGGGL.....b..',
+    '..GLGGGLG....b..',
+    '...GGGGG.....b..',
+    '..GGgGgGG....b..',
+    '....g.g......b..',
+    '.....g......bbb.',
+    '.....g......bbb.',
+    '....jjj.....bbb.',
+    '...jjkjj.....b..',
+    '...jkjkj........',
+    '....jjj.........',
+    '................',
+    'jjjjjjjjjjjjjjjj',
+    'kkkkkkkkkkkkkkkk',
+  ],
   // odlingen (steg 2.10.2, platshållare): en grodd i en fåra i jorden
   odling: [
     '................',
@@ -1654,6 +1679,8 @@ export const PIX: Record<string, string[]> = {
     '................',
   ],
   // grodden på fältet (steg 3.6.11, Björn valde version 1: fyra blad mitt på rutan)
+  // den unga grodden under första halvan av växandet (steg 5.5.5): 8 punkter i hel skala i stället för grodden i halv skala
+  grodd_liten: ['........', '........', '...L....', '.L.G.L..', '.GgGgG..', '..gGg...', '...g....', '...g....'],
   grodd: [
     '................',
     '................',
@@ -2061,6 +2088,7 @@ export const PIX: Record<string, string[]> = {
     '.d....d.',
   ],
   // sportens föremål (steg 4.3.1.2): platshållare med 16 punkter per ruta
+  boll_liten: ['..oo..', '.oeao.', 'oeeaco', 'oaaaao', '.ocao.', '..oo..'],
   boll: [ // (Björn valde version 1 efter v245, steg 4.5.2)
     '................',
     '.....oooooo.....',
@@ -3321,6 +3349,24 @@ export const PIX: Record<string, string[]> = {
     '..ooozz.........',
   ],
   // vargdödare (steg 3.10.8: intrycket hade bara en emoji; platshållare i paletten, Björn väljer i bildstilen)
+  i_bjorndodare: [ // steg 6.6.6: platshållare
+    '..ooo......ooo..',
+    '.obbbo....obbbo.',
+    '.obwbooooooobwbo',
+    '.obboaaaaaaaobbo',
+    '..ooaaaaaaaaaoo.',
+    '..oaaaaaaaaaaao.',
+    '.oaaakaaaaakaaao',
+    '.oaaaaaaaaaaaabo',
+    '.oaaaawwwwaaaabo',
+    '.oaaawwwwwwaaboz',
+    '..oaawwkkwwaaboz',
+    '..oaaawwwwaaboz.',
+    '...oaaawwaabozz.',
+    '....oobbbbbozz..',
+    '......oooooz....',
+    '................',
+  ],
   i_vargdodare: [
     '.o............o.',
     '.oo..........oo.',
@@ -3691,6 +3737,8 @@ PIX.rock_kaninskinn = ROCK16; PAL.rock_kaninskinn = { o: '#24201d', G: '#7d5b40'
 PIX.rock_vargskinn = ROCK16; PAL.rock_vargskinn = { o: '#24201d', G: '#61767a', H: '#8a9c9e', g: '#3e5156', W: '#dad0bb' };
 PIX.skor_kaninskinn = SKOR16; PAL.skor_kaninskinn = { o: '#24201d', G: '#7d5b40', H: '#987e62', d: '#3f2415', W: '#dad0bb' };
 PIX.skor_vargskinn = SKOR16; PAL.skor_vargskinn = { o: '#24201d', G: '#61767a', H: '#8a9c9e', d: '#233035', W: '#dad0bb' };
+PIX.rock_bjornskinn = ROCK16; PAL.rock_bjornskinn = { o: '#24201d', G: '#5e3c24', H: '#7d5b40', g: '#3f2415', W: '#dad0bb' }; // steg 6.6.6: i björnens färger
+PIX.skor_bjornskinn = SKOR16; PAL.skor_bjornskinn = { o: '#24201d', G: '#5e3c24', H: '#7d5b40', d: '#3f2415', W: '#dad0bb' };
 PIX.filt_by = [
   '................',
   '................',
@@ -3758,6 +3806,8 @@ for (const [id, b] of Object.entries(KARTBILDER)) { PIX['kb_' + id] = b.rader; P
 // lågorna där det brinner och tornadon (Björns val i bildstilen, steg 5.1.2.2) heter som förut, så att knappen i testläget hittar dem
 // animationernas bilder (steg 5.1.9, animbilder.ts) med id:t an_<id>; ui/animation.ts väljer bild efter klockan
 for (const [id, b] of Object.entries(ANIMBILDER)) { PIX['an_' + id] = b.rader; PAL['an_' + id] = b.pal; }
+// stubbarna och de fällda träden (steg 6.8.16, stubbilder.ts) med id:t sb_<id>; ui/foremal.ts väljer bild efter trädet och tiden
+for (const [id, b] of Object.entries(STUBBILDER)) { PIX['sb_' + id] = b.rader; PAL['sb_' + id] = b.pal; }
 for (const k of ['brand', 'tornado']) { PIX[k] = KARTBILDER[k].rader; PAL[k] = KARTBILDER[k].pal; }
 // symbolen för en lägereld (stationen som lägger ringen till en lägereld till, steg 4.5.6.8): den nylagda med stenringen under
 // (bildstilens tecken har samma färg i alla bilder, så att två bilder kan läggas på varandra tecken för tecken)
@@ -3768,12 +3818,20 @@ for (const k of ['brand', 'tornado']) { PIX[k] = KARTBILDER[k].rader; PAL[k] = K
 { const b = KARTBILDER.vattensack!, w = 16, x0 = (w - 2 * b.w) >> 1, y0 = (w - 2 * b.h) >> 1;
   PIX.vattensack = Array.from({ length: w }, (_, y) => Array.from({ length: w }, (_, x) => b.rader[(y - y0) >> 1]?.[(x - x0) >> 1] ?? '.').join(''));
   PAL.vattensack = b.pal; }
+// fas 6:s nya saker som bara har bildstilens bild (nävern, steg 6.3.3): symbolen i listorna är bilden mitt i rutan på
+// 16 × 16 punkter, förstorad två gånger om den ryms
+for (const k of ['naver', 'talg', 'fackla', 'talgljus', 'vargdel', 'radjurdel', 'radjursskinn', 'radjur', 'fagel', 'fjadrar', 'agg', 'bjorn', 'bjorndel', 'bjornskinn']) {
+  const b = KARTBILDER[k]!, w = 16, f = 2 * b.w <= w && 2 * b.h <= w ? 2 : 1, x0 = (w - f * b.w) >> 1, y0 = (w - f * b.h) >> 1;
+  PIX[k] = Array.from({ length: w }, (_, y) => Array.from({ length: w }, (_, x) => { const yy = Math.floor((y - y0) / f), xx = Math.floor((x - x0) / f); return yy >= 0 && xx >= 0 ? b.rader[yy]?.[xx] ?? '.' : '.'; }).join(''));
+  PAL[k] = b.pal;
+}
 // djuren på kartan (steg 5.1.11, ritade i bildstilen i 5.2.4.6): varje art har en eller flera ritningar (vargen en, haren två)
 // och fyra pälsar, och varje ritning tre håll; västerut är sidan speglad. Bilden heter djur_<art>_<ritning>_<päls>_<håll>,
 // där hållet är sida, vast, fram eller bak. Vilken ritning och päls ett djur har räknas ur dess id (djurBild)
 export const DJUR_HALL = ['sida', 'vast', 'fram', 'bak'] as const;
 export type DjurHall = typeof DJUR_HALL[number];
-for (const art of ['varg', 'kanin'] as const) DJURBILDER.ritningar[art].forEach((r, v) => DJURBILDER.pals[art].forEach((pals, p) => {
+for (const art of ['varg', 'kanin', 'radjur', 'fagel', 'bjorn', 'bjornunge'] as const) DJURBILDER.ritningar[art].forEach((r, v) => DJURBILDER.pals[art].forEach((pals, p) => {
+  if (art === 'fagel' && v !== p) return; // varje fågel har sin egen palett (steg 6.6.3)
   const pal: Record<string, string> = {};
   for (const [ch, [ramp, ton]] of Object.entries({ ...DJURBILDER.fast, ...pals })) pal[ch] = farg(ramp, ton);
   for (const h of DJUR_HALL) {
@@ -3783,7 +3841,9 @@ for (const art of ['varg', 'kanin'] as const) DJURBILDER.ritningar[art].forEach(
 }));
 // djurets bild: ritningen och pälsen ur id:t (som djurets andra egenskaper, steg 3.7.13) och hållet det rör sig åt
 const idTal = (id: number, salt: number) => { let h = Math.imul(id ^ salt, 2654435761) >>> 0; h ^= h >>> 15; h = Math.imul(h, 2246822519) >>> 0; return (h ^ (h >>> 13)) >>> 0; };
-export function djurBild(art: 'varg' | 'kanin', id: number, hall: DjurHall) {
+// fågeln (steg 6.6.3): utseendet (orre, ripa, skogsduva) kommer från platsen, inte från id:t
+export const fagelBild = (u: number, hall: DjurHall) => `djur_fagel_${u}_${u}_${hall}`;
+export function djurBild(art: 'varg' | 'kanin' | 'radjur' | 'bjorn' | 'bjornunge', id: number, hall: DjurHall) {
   const v = idTal(id, 0x51a7) % DJURBILDER.ritningar[art].length, p = idTal(id, 0x9e37) % DJURBILDER.pals[art].length;
   return `djur_${art}_${v}_${p}_${hall}`;
 }

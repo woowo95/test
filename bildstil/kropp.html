@@ -4,30 +4,66 @@
     <h1>Samhällssimulatorns <span>bildstil</span></h1>
   </header>
 
-  <section id="granskning" aria-labelledby="h-granskning">
-    <div class="rubrik">
-      <span class="ogon">Att svara på · porträttens delar</span>
-      <h2 id="h-granskning">Granskningen</h2>
-      <p>Ja om delen är bra, Nej om den ska ritas om. Skriv gärna vad som ska ändras.</p>
-      <details class="mer"><summary>Mer om korten</summary><p>Här visas bara de delar som är ritade; de grå platshållarna kommer hit först när de ritas. Varje kort visar delen på ett helt ansikte för varje mall den passar, i alla sina lägen, och på kartan. En kommentar går också att skicka för sig. Svaret sparas direkt och nästa kort visas. En del som ritas om står obesvarad igen, med din förra kommentar överst.</p></details>
-    </div>
-    <div class="gr-topp">
-      <div class="gr-filter" role="group" aria-label="Vilka kort"><button type="button" class="gr-knapp" data-grfilter="obesvarade">Obesvarade <b id="gr-antal-obesvarade">0</b></button><button type="button" class="gr-knapp" data-grfilter="alla">Alla <b id="gr-antal-alla">0</b></button></div>
-      <div class="gr-sorter" id="gr-sorter" aria-label="Sorterna, med hur många som är godkända"></div>
-      <p class="not" id="gr-status" aria-live="polite"></p>
-    </div>
-    <article class="grkort" id="grkort" aria-live="polite"></article>
-  </section>
-
   <section id="val" aria-labelledby="h-val">
     <div class="rubrik">
       <span class="ogon">Att svara på · nya bilder</span>
       <h2 id="h-val">Björn väljer</h2>
       <p>Tryck på den version du vill ha, eller Ja eller Nej, och skriv gärna varför.</p>
-      <details class="mer"><summary>Mer om valen</summary><p>Varje sak visas i dag eller förut (om den finns) och som den nya versionen, stor och i kartans storlek. Valet sparas direkt. När det valda är inbyggt i spelet tas saken bort härifrån.</p></details>
+      <details class="mer"><summary>Mer om valen</summary><p>Varje sak visas i dag eller förut (om den finns) och som den nya versionen, stor och i kartans storlek. Valet sparas direkt. Med pennan ✏️ under en version öppnas den i ritaren längre ner, där du kan rita på den och spara; din ritning visas sedan på kortet bredvid versionerna, och Claude ritar om efter den. När det valda är inbyggt i spelet tas saken bort härifrån.</p></details>
     </div>
     <p class="not" id="valstatus"></p>
     <div class="vallista" id="vallista"></div>
+  </section>
+
+  <section id="rita" aria-labelledby="h-rita">
+    <div class="rubrik">
+      <span class="ogon">Rita själv · bara palettens färger</span>
+      <h2 id="h-rita">Ritaren</h2>
+      <p>Rita en egen bild eller ändra en färdig, och spara den med ett namn.</p>
+      <details class="mer"><summary>Mer om ritaren</summary><p>Välj en tom ruta eller en färdig bild och tryck Öppna. Det går bara att rita med palettens 32 färger, så bilden följer alltid bildstilen; färger i en äldre bild som inte finns i paletten blir den närmaste. De ljusa strecken i rutnätet visar var sextonde punkt, alltså en ruta på kartan. Det du sparar läser Claude och bygger in i bildstilen och spelet. Människorna på kartan, djuren, träden och animationerna räknas fram av koden och finns inte här; rita dem som en förlaga på en tom ruta.</p></details>
+    </div>
+    <div class="rita-bord">
+      <div class="rita-vanster">
+        <div class="knappar rita-rad">
+          <select id="rita-fran" aria-label="Börja från"></select>
+          <button type="button" id="rita-oppna">Öppna</button>
+          <span class="not" id="rita-storlek"></span>
+        </div>
+        <div class="rita-dukram"><canvas id="rita-duk" aria-label="Rutnätet att rita i"></canvas></div>
+        <div class="knappar rita-rad">
+          <button type="button" data-verktyg="penna" title="Penna">✏️</button>
+          <button type="button" data-verktyg="sudd" title="Sudd (genomskinligt)">⌫</button>
+          <button type="button" data-verktyg="fyll" title="Fyll en yta">🪣</button>
+          <button type="button" data-verktyg="pipett" title="Pipett: ta färgen ur bilden">💧</button>
+          <button type="button" id="rita-angra" title="Ångra">↶</button>
+          <button type="button" id="rita-spegla" title="Spegla">⇋</button>
+          <button type="button" id="rita-rensa" title="Töm bilden">🗑</button>
+        </div>
+        <div class="knappar rita-rad">
+          <span class="not">Flytta</span>
+          <button type="button" data-flytta="-1,0" title="Flytta åt vänster">←</button>
+          <button type="button" data-flytta="1,0" title="Flytta åt höger">→</button>
+          <button type="button" data-flytta="0,-1" title="Flytta upp">↑</button>
+          <button type="button" data-flytta="0,1" title="Flytta ner">↓</button>
+          <span class="not">Storlek</span>
+          <button type="button" data-storre="1,0" title="En punkt bredare">+ ↔</button>
+          <button type="button" data-storre="-1,0" title="En punkt smalare">− ↔</button>
+          <button type="button" data-storre="0,1" title="En punkt högre">+ ↕</button>
+          <button type="button" data-storre="0,-1" title="En punkt lägre">− ↕</button>
+        </div>
+      </div>
+      <div class="rita-hoger">
+        <div class="rita-valdrad"><span class="rita-vald" id="rita-vald"></span><span class="ogon">Färgen</span></div>
+        <div id="rita-palett" class="rita-palett"></div>
+        <div class="rita-forhand"><canvas id="rita-gras1" aria-label="I kartans storlek"></canvas><canvas id="rita-gras2" aria-label="Dubbel storlek på gräs"></canvas><canvas id="rita-mork" aria-label="Dubbel storlek på mörkt"></canvas></div>
+        <input id="rita-namn" type="text" placeholder="Bildens namn" aria-label="Bildens namn">
+        <textarea id="rita-kommentar" placeholder="Kommentar till Claude (valfritt)" aria-label="Kommentar"></textarea>
+        <div class="knappar"><button type="button" id="rita-spara">Spara</button></div>
+        <p class="not" id="rita-status"></p>
+      </div>
+    </div>
+    <h3>Sparade bilder</h3>
+    <div class="rita-mina" id="rita-mina"></div>
   </section>
 
   <div class="resten">

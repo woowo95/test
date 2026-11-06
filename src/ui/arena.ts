@@ -4,12 +4,13 @@
 // uppställningen och loggen ligger vid sidan av kartan. Loggen visar symbolerna först med hela meningen när man trycker på raden eller håller musen över den.
 import {
   AVSIKTER, Avsikt, KLADER_STRID, MANNISKOVAPEN, STRID, STRIDHANDELSER, STRIDSDJUR, LAGE_ORD, VAPEN, Vapen, DJUR,
-  Strid, Uppstallning, Hinder, korManga, djurKampe, foljet, personKampe, nyStrid, stridRapport, stridSteg, stridText, sakNamn, living, byId, timeLabel,
+  Strid, Uppstallning, Hinder, korManga, djurKampe, foljet, personKampe, stridRapport, spelaUpp, stegIGang, type StridGang, stridText, sakNamn, living, byId, timeLabel,
   getMap, eldPlats, T, W as MW, H as MH, ageOf, ALDER,
 } from '../sim';
 import * as PIXI from 'pixi.js';
 import { $, esc, personFarg } from './hjalp';
 import { s } from './lage';
+import { lista } from '../sim/ord';
 import { TS, cam, lagerEfter, layout, peopleG } from './scen';
 import { dolda } from './manniskor';
 import { stopFollow } from './portratt';
@@ -45,12 +46,13 @@ function uppstallning(): Uppstallning {
   const hinder = PLATSER[lag.plats].hinder;
   return { avsikt: lag.avsikt, w: AW, h: AH, vind: lag.vind, dimma: lag.dimma, halt: lag.halt, ...(hinder.length ? { hinder } : {}), kampar };
 }
-let senast: { u: Uppstallning; fro: number } | undefined; // striden som visas (↺ visar den igen)
-function starta(u = uppstallning(), fro = lag.fro) { senast = { u, fro }; st = nyStrid(u, fro); sedd = 0; kvar = 0; blink.clear(); filter = -1; manga = ''; byFolk(); visaLogg(); }
+let senast: StridGang | undefined; // striden som visas (↺ visar den igen)
+function starta(u = uppstallning(), fro = lag.fro, g?: StridGang) { senast = g ?? { u, fro }; st = spelaUpp(senast, 0); // med blodet och de som kom till (steg 6.6.10)
+  sedd = 0; kvar = 0; blink.clear(); filter = -1; manga = ''; byFolk(); visaLogg(); }
 // striderna som hänt i byn (steg 3.7.2, s.strider): samma uppställning och frö ger samma strid igen
 function visaByStrider() {
   const m = s.strider ?? [];
-  $('arByn').innerHTML = `<option value="-1">🏘️ ${m.length ? 'Striderna i byn' : 'Inga strider i byn än'}</option>` + m.map((x, i) => ({ x, i })).reverse().map(({ x, i }) => `<option value="${i}">${esc(timeLabel(s, x.t))}: ${esc(x.u.kampar.map(k => k.namn).join(' mot '))} (${esc(x.orsak)})</option>`).join('');
+  $('arByn').innerHTML = `<option value="-1">🏘️ ${m.length ? 'Striderna i byn' : 'Inga strider i byn än'}</option>` + m.map((x, i) => ({ x, i })).reverse().map(({ x, i }) => `<option value="${i}">${esc(timeLabel(s, x.t))}: ${esc(([0, 1] as const).map(sd => lista(x.u.kampar.filter(k => k.sida === sd).map(k => k.namn))).join(' mot '))} (${esc(x.orsak)})</option>`).join('');
 }
 
 // ---------- uppställningen ----------
@@ -191,7 +193,7 @@ function korHundra() {
 // ---------- tiden ----------
 function steg() {
   if (!st || st.slut) return;
-  stridSteg(st);
+  stegIGang(st, senast!);
   for (; sedd < st.logg.length; sedd++) { const r = st.logg[sedd]; if ((r.h === 'traff' || r.h === 'miss' || r.h === 'tog') && r.a !== undefined) blink.set(r.a, { t: r.t, h: r.h, mot: r.b, kast: r.kast }); }
 }
 function ram(nu: number) {
@@ -242,10 +244,10 @@ $('arStang').addEventListener('click', () => { spelar = false; $('arena').hidden
 $('arVisa').addEventListener('click', visaPlats);
 $('arSpela').addEventListener('click', () => { if (st?.slut) starta(); spela(!spelar); });
 $('arSteg').addEventListener('click', () => { spela(false); steg(); visaLogg(); });
-$('arOm').addEventListener('click', () => { starta(senast?.u, senast?.fro); spela(true); });
+$('arOm').addEventListener('click', () => { starta(senast?.u, senast?.fro, senast); spela(true); });
 $('arFro').addEventListener('click', () => { lag.fro = (lag.fro * 1103515245 + 12345) | 0; starta(); spela(true); });
 $('arHundra').addEventListener('click', korHundra);
-$('arByn').addEventListener('change', e => { const m = s.strider?.[Number((e.target as HTMLSelectElement).value)]; if (m) { starta(m.u, m.fro); spela(true); } });
+$('arByn').addEventListener('change', e => { const m = s.strider?.[Number((e.target as HTMLSelectElement).value)]; if (m) { starta(m.u, m.fro, m); spela(true); } });
 $('arHalt').addEventListener('change', e => { lag.halt = Number((e.target as HTMLSelectElement).value); starta(); });
 $('arDimma').addEventListener('change', e => { lag.dimma = Number((e.target as HTMLSelectElement).value); starta(); });
 $('arVind').addEventListener('change', e => { lag.vind = Number((e.target as HTMLSelectElement).value); starta(); });

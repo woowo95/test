@@ -1,7 +1,7 @@
 // Kartan över tid (steg 5.4.5.2): bilderna av kartan som sparas en gång per dygn (ett år i spelet, sim/kartminne.ts) visas
 // i krönikan under filtret Kartan. Man drar i reglaget fram och tillbaka genom åren och ser skogen, stigarna, fälten och
 // husen växa fram, utan folk. Bara utseende: spelet läser det aldrig. En ny sorts ruta är en rad i KARTRUTA och en färg här.
-import { AGES, H, KARTRUTA, W, kalender, kartrutor, lasKarta, packaKarta } from '../sim';
+import { AGES, H, HOUR, KARTRUTA, W, kalender, kartrutor, lasKarta, packaKarta } from '../sim';
 import { farg } from '../palett';
 import { s } from './lage';
 
@@ -13,26 +13,33 @@ export const KARTFARG: Record<string, string> = {
 };
 const FARG_K: Record<string, string> = Object.fromEntries(KARTRUTA.map(r => [r.k, KARTFARG[r.id]]));
 
-// bilderna: de sparade och sist kartan som den är nu
+// bilderna: de sparade och sist kartan som den är nu (packas om högst en gång per timme i spelet)
+let nuKarta: { by: number; tim: number; p: string } | undefined;
 export function kartbilder(): { t: number; p: string }[] {
-  const b = (s.hist?.kartor ?? []).map(([t, p]) => ({ t, p }));
-  b.push({ t: s.now, p: packaKarta(kartrutor(s)) });
+  const b = (s.hist?.kartor ?? []).map(([t, p]) => ({ t, p })), tim = Math.floor(s.now / HOUR);
+  if (!nuKarta || nuKarta.by !== s.seed || nuKarta.tim !== tim) nuKarta = { by: s.seed, tim, p: packaKarta(kartrutor(s)) };
+  b.push({ t: s.now, p: nuKarta.p });
   return b;
 }
 export const kartNamn = (t: number, nu = false) => { const k = kalender(s, t); return `År ${k.ar}, ${AGES[k.ai].toLowerCase()}${nu ? ' (nu)' : ''}`; };
-// en bild som en data-URL (en punkt per ruta, skalad i CSS utan utjämning); utan webbläsare (scenarierna) en tom sträng
+// en bild som en data-URL (en punkt per ruta, skalad i CSS utan utjämning); utan webbläsare (scenarierna) en tom sträng.
+// Varje bild görs en gång (steg 5.5.7): de sparade ändras aldrig, så alla behålls tills en annan by laddas, och bilden av
+// kartan nu byts när den packas om
 const cache = new Map<string, string>();
+let cacheBy = NaN, nuUrl: { p: string; u: string } | undefined;
+function rita(p: string) {
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d')!, r = lasKarta(p), im = g.createImageData(W, H);
+  for (let i = 0; i < W * H; i++) { const f = parseInt((FARG_K[r[i]] ?? '#000000').slice(1), 16); im.data.set([f >> 16, (f >> 8) & 255, f & 255, 255], i * 4); }
+  g.putImageData(im, 0, 0);
+  return c.toDataURL();
+}
 export function kartUrl(p: string) {
   if (typeof document === 'undefined') return '';
+  if (cacheBy !== s.seed) { cache.clear(); cacheBy = s.seed; }
+  if (p === nuKarta?.p) return nuUrl?.p === p ? nuUrl.u : (nuUrl = { p, u: rita(p) }).u;
   let u = cache.get(p);
-  if (!u) {
-    const c = document.createElement('canvas'); c.width = W; c.height = H;
-    const g = c.getContext('2d')!, r = lasKarta(p), im = g.createImageData(W, H);
-    for (let i = 0; i < W * H; i++) { const f = parseInt((FARG_K[r[i]] ?? '#000000').slice(1), 16); im.data.set([f >> 16, (f >> 8) & 255, f & 255, 255], i * 4); }
-    g.putImageData(im, 0, 0); u = c.toDataURL();
-    if (cache.size > 60) cache.clear();
-    cache.set(p, u);
-  }
+  if (!u) cache.set(p, u = rita(p));
   return u;
 }
 let valt: number | undefined; // vilken bild som visas (undefined = nu)

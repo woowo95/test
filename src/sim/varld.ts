@@ -14,6 +14,8 @@ import { Act, DAY, NEW_H, NEW_W, Person, SEC, State, simulera, useMap } from './
 import { startSmak } from './rykten';
 import { nyAndlighet } from './religion';
 import { newFire } from './eld';
+import { UPPREPAT, lasAlder, lasArt, packaAlder, packaArt } from './trad';
+import { historikKolumner } from './historik';
 
 // ---------- skapa värld ----------
 // storlek: kartans storlek, för testerna av äldre byar (en ny by får alltid NEW_W × NEW_H)
@@ -221,6 +223,15 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     }
     s.byggV = (s.byggV ?? 0) + 1;
   }],
+  [23, 'v377: mindre sparfil (steg 5.5.6): trädens ålder och sort som upprepningar, och ett byte som en bybo minns står bara med numret i loggen', s => {
+    if (s.tradAlder && !s.tradAlder.startsWith(UPPREPAT)) s.tradAlder = packaAlder(lasAlder(s.tradAlder));
+    if (s.tradSort && !s.tradSort.startsWith(UPPREPAT)) s.tradSort = packaArt(lasArt(s.tradSort));
+    for (const l of s.log) {
+      const b = l.byte, p = b && [b.a, b.b].map(id => byId(s, id)).find(q => q?.byten?.some(x => x.nr === b.nr));
+      if (b && p) { l.bnr = b.nr; delete l.byte; }
+    }
+  }],
+  [24, 'v378: historikens kolumner (eld sedan v357) i registrets ordning redan när byn läses in (steg 5.5.7)', s => historikKolumner(s)],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

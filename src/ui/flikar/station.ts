@@ -69,10 +69,10 @@ export const station: Flik = {
     // redskap och kläder som ingen använder
     const har = d.forvar && st.ag === undefined ? pilesOf(s).filter(a => a.x === st.x && a.y === st.y) : [], agare = byId(s, st.ag);
     const forvar = !d.forvar ? '' : st.ag !== undefined ? `Rymmer ${STATION.kistaTing} redskap och kläder som ägaren inte använder, och de slits som under tak.` : d.forvar.redskap ? `Rymmer ${d.forvar.rymmer} redskap eller vapen.` : `Rymmer ${d.forvar.rymmer} högar av ett slag${d.forvar.tak ? ', och det som ligger i den slits som under tak' : ''}.`;
-    // innehållet visas som i ett lager (steg 4.5.7.9): samma lista med symbol, antal, kvalitet och skick
+    // innehållet visas som i ett lager (steg 4.5.7.9); det som någon tagit ur kistan står inte där förrän det läggs tillbaka (steg 6.8.11): samma lista med symbol, antal, kvalitet och skick
     const rad = (attr: string, txt: string, c: number, k: string) => `<dt class="tryck${frystAttr(k)}" ${attr}>${txt}</dt><dd>${condBar(c)}<span>${Math.round(c * 100)} %</span></dd>`;
     const inne = (st.ag !== undefined
-      ? tingOf(s).filter(k => k.vid === st.id).map(k => rad(`data-sak="t:${k.id}"`, pileTxt({ k: k.k, n: 1, max: 1, q: k.q }), k.c, k.k))
+      ? tingOf(s).filter(k => k.vid === st.id && k.hos === undefined && k.lass === undefined && k.bar === undefined).map(k => rad(`data-sak="t:${k.id}"`, pileTxt({ k: k.k, n: 1, max: 1, q: k.q }), k.c, k.k))
       : [...har].sort((a, b) => sakNamn(a.k).localeCompare(sakNamn(b.k), 'sv') || b.n - a.n || condOf(b) - condOf(a)).map(a => rad(sakAttr(a), pileTxt(a), condOf(a), a.k))).join('');
     // smutsen (steg 2.7.1): blodet vid slaktbänken, som bleknar på ett par dygn. Bara utseende
     const { w: bw, h: bh } = storlekAv(st), bv = blodVid(s, st, bw, bh);
@@ -80,7 +80,10 @@ export const station: Flik = {
     // latrinen (steg 2.7.2): hur full den är. När den är full fylls den igen och byn gräver en ny
     // det som hänger på torkställningen (steg 2.8.2): råvaran, hur många bitar (steg 4.5.3.1) och hur långt torkningen kommit
     const hanger = (st.tork ?? []).map(q => `<span ${tip(`${fmtN(q.n)} ${sakNamn(q.k).toLowerCase()}, torkat till ${Math.round(torrDel(s, q) * 100)} % av ${TORK.dygn} dygn`)}>${iconImg(q.k)} ×${fmtN(q.n)} · ${Math.round(torrDel(s, q) * 100)} %</span>`).join(' ');
-    const fyllt = (hanger ? `<p>${hanger}</p>` : '') + (d.gor.includes('toa') && klar ? `<p ${tip(`Fylld till ${Math.round((st.fyllt ?? 0) * 100)} %. När den är full fylls den igen med jord, och byn gräver en ny`)}>${iconImg('latrin')} ${Math.round((st.fyllt ?? 0) * 100)} %</p>` : '');
+    // talgljuset på bordet eller hyllan (ljus.ts, steg 6.3.8): om det brinner och hur mycket som är kvar
+    const tl = s.ljus?.find(q => q.st === st.id);
+    const ljuset = tl ? `<p ${tip(`Ett talgljus, ${tl.tand ? 'tänt' : 'släckt'}, ${Math.round(tl.c * 100)} % kvar`)}>${iconImg('talgljus')} ${tl.tand ? 'Tänt' : 'Släckt'} ${condBar(tl.c)}<span>${Math.round(tl.c * 100)} %</span></p>` : '';
+    const fyllt = ljuset + (hanger ? `<p>${hanger}</p>` : '') + (d.gor.includes('toa') && klar ? `<p ${tip(`Fylld till ${Math.round((st.fyllt ?? 0) * 100)} %. När den är full fylls den igen med jord, och byn gräver en ny`)}>${iconImg('latrin')} ${Math.round((st.fyllt ?? 0) * 100)} %</p>` : '');
     // det som används just nu (steg 3.6.6): den som arbetar, sakerna på bänken och hur långt arbetet kommit
     const ib = klar ? iBruk(st) : undefined;
     const bruk = ib ? `<h3>Används nu</h3><p>${pLink(ib.p)} ${esc(verbOf(ib.p.task!.act))} ${ib.saker.map(k => `<span ${tip(sakNamn(k))}>${iconImg(k)}</span>`).join('')}${ib.gor ? ` → <span ${tip(sakNamn(ib.gor))}>${iconImg(ib.gor)}</span>` : ''}</p>`

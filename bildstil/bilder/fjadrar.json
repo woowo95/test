@@ -1,0 +1,35 @@
+{
+ "id": "fjadrar",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "val 2 i f6_fjadrar: ripans vita fjäder med svart spets",
+ "w": 9,
+ "h": 17,
+ "rader": [
+  ".....oo..",
+  "....oddo.",
+  "....opdo.",
+  "...odpddo",
+  "...ompmwo",
+  "..owmpmo.",
+  "..owmpmwo",
+  "..ommpmwo",
+  "...ompmwo",
+  "..ommpmo.",
+  "...opmmo.",
+  "...opmo..",
+  "...oso...",
+  "...oso...",
+  "...oso...",
+  "...oso...",
+  "....o...."
+ ],
+ "pal": {
+  "o": "#24201d",
+  "d": "#24201d",
+  "p": "#a0947d",
+  "m": "#dad0bb",
+  "w": "#bdb39b",
+  "s": "#a0947d"
+ }
+}

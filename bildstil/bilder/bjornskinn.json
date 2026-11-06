@@ -1,0 +1,33 @@
+{
+ "id": "bjornskinn",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "val 1 i f6_bjornskinn: utbredd med huvudet och klorna kvar",
+ "w": 18,
+ "h": 14,
+ "rader": [
+  ".o...oddllddo...o.",
+  "oboo..ollllo..oobo",
+  "obmmoollklkloommbo",
+  ".ommmomnnnnmommmo.",
+  "..ommmmmnnmmmmmo..",
+  "...ommmmddmmmmo...",
+  "...ommmmddmmmmo...",
+  "..ommmmmddmmmmmo..",
+  "...ommmmddmmmmo...",
+  "...ommmmddmmmmo...",
+  "..ommmmmddmmmmmo..",
+  ".ommmmmmddmmmmmmo.",
+  "obmmoooooooooommbo",
+  "oboo..........oobo"
+ ],
+ "pal": {
+  "o": "#24201d",
+  "d": "#3f2415",
+  "l": "#7d5b40",
+  "b": "#bdb39b",
+  "m": "#5e3c24",
+  "k": "#24201d",
+  "n": "#987e62"
+ }
+}

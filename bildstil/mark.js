@@ -289,6 +289,21 @@
   const STADIER = [['planta', 6], ['ungträd', 15], ['vuxet', 31], ['gammalt', 46], ['jätteträd', 62]];
   // ---------- vattnet och stranden ----------
   function sjoAvst(x, y) { return ((x - 236) / 118) ** 2 + ((y - 128) / 78) ** 2 + (vn(x, y, 22, 541) - 0.5) * 0.3 + (vn(x, y, 7, 542) - 0.5) * 0.08; }
+  // vattnet och stranden som i spelet (src/ui/mark.ts, version 1, sommar): sd är avståndet till stranden i rutor,
+  // positivt i vattnet. Ger null där det är gräs. Animationernas kort (anim.js) ritar sjön med den här.
+  // spelSd: kanten slingrar sig som i spelet; spelVatten tar det slingrade avståndet
+  const spelSd = (x, y, sd) => (sd > -1.8 && sd < 2.6 ? sd + (vn(x, y, 22, 541) - 0.5) * 0.9 + (vn(x, y, 7, 542) - 0.5) * 0.25 : sd);
+  function spelVatten(x, y, sd, P) {
+    const r = hash(x, y, 543);
+    if (sd > 0) {
+      if (sd < 0.28 && vn(x, y, 3, 544) > 0.66) return sd < 0.12 ? I(P, 'skiffer', 3) : I(P, 'skiffer', 2);
+      const dj = sd > 1.3 ? 0 : sd > 0.42 ? 1 : 2, gl = vn(x, y, 5, 545) > 0.7 && (y + Math.floor(x / 6)) % 4 === 0;
+      return gl ? I(P, 'skiffer', Math.min(3, dj + 1)) : dj === 0 ? (r < 0.3 ? I(P, 'barr', 0) : I(P, 'skiffer', 0)) : I(P, 'skiffer', dj);
+    }
+    if (sd > -0.6) { const sten = vn(x, y, 3, 548); return sten > 0.62 ? (sten > 0.72 ? I(P, 'skiffer', 3) : I(P, 'skiffer', 2)) : r < 0.3 ? I(P, 'jord', 2) : r < 0.85 ? I(P, 'senap', 0) : I(P, 'jord', 3); }
+    if (sd > -0.75 && hash(x, y, 549) < 0.5) return I(P, 'senap', 0);
+    return null;
+  }
   function vatten(B, v) {
     const P = B.P;
     const kant = v === 0 ? 1.14 : v === 1 ? 1.2 : 1.08;
@@ -770,5 +785,5 @@
     ting.sort((a, b) => a[0] - b[0]).forEach(t => t[1]());
   }
 
-  window.MARK = { grasPunkt, tuvor, tidMark, fram, granVariant, stubbe }; // marken och kartfiguren till djurens kort (djur.js)
+  window.MARK = { grasPunkt, tuvor, tidMark, fram, granVariant, stubbe, fallet, snoMossa, spelSd, spelVatten }; // marken och kartfiguren till djurens kort (djur.js)
 })();

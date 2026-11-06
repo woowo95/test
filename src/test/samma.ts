@@ -4,6 +4,7 @@
 // npm run samma -- --spara sparar dagens utfall när en ändring i spelet är avsiktlig (görs också av npm run facit), men inte en krasch.
 // Hashen gäller sparfilens innehåll med nycklarna sorterade, så den beror inte på i vilken ordning fälten lades till i byn
 // (serialize får alltså anropas mitt i en körning som hashas).
+import './utc';
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
