@@ -138,7 +138,7 @@ const DEF = {
   torrfisk: { namn: 'Torkad fisk', skaffa: RECEPT.torrfisk, stack: 25, ruta: 75, mapp: 'Mat', mat: 7, naring: { protein: 2, fett: 0.8, mineral: 0.7, energi: 0.6, vitamin: 0.2 }, haller: 20 },
   // vattensäcken (steg 2.10.1): ett skinn som sys ihop till en säck vid slöjdbänken med bensylen. Med den hämtar man vatten
   // åt den som inte kan gå (torst.ts), och senare till fälten. Den tar en hand
-  talgljus: { namn: 'Talgljus', skaffa: RECEPT.talgljus, vikt: 0.3, stack: 10, mapp: 'Redskap', slits: 0.0003, redskap: true,
+  talgljus: { namn: 'Talgljus', ett: true, skaffa: RECEPT.talgljus, vikt: 0.3, stack: 10, mapp: 'Redskap', slits: 0.0003, redskap: true,
     gors: { text: 'Doppar en veke av torrt gräs i smält talg tills den blivit ett ljus.', stat: 'ljusGjorda', forsta: '{namn} gjorde byns första talgljus. Det står på bordet inne och lyser upp rummet på kvällen.' } },
   fackla: { namn: 'Fackla', skaffa: RECEPT.fackla, vikt: 1, hander: 1, stack: 5, mapp: 'Redskap', slits: 0.0003, redskap: true,
     gors: { text: 'Klyver en käpp i toppen och binder torrt gräs och talg i klykan till en fackla.', stat: 'facklorGjorda', forsta: '{namn} gjorde byns första fackla. Med den kan man gå ut i mörkret och se vart man går.' } }, // brinner FACKLA.brinnTim timmar och bärs tänd i en hand (ljus.ts, steg 6.3.6)
