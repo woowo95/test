@@ -3857,6 +3857,8 @@ for (const [id, b] of Object.entries(ANIMBILDER)) { PIX['an_' + id] = b.rader; P
 // stubbarna och de fällda träden (steg 6.8.16, stubbilder.ts) med id:t sb_<id>; ui/foremal.ts väljer bild efter trädet och tiden
 for (const [id, b] of Object.entries(STUBBILDER)) { PIX['sb_' + id] = b.rader; PAL['sb_' + id] = b.pal; }
 for (const k of ['brand', 'tornado']) { PIX[k] = KARTBILDER[k].rader; PAL[k] = KARTBILDER[k].pal; }
+// platshållare tills bilderna byggs in (steg 7.8.1)
+for (const k of ['stockvag', 'brygga']) { PIX[k] = KARTBILDER.golv_tra.rader; PAL[k] = KARTBILDER.golv_tra.pal; }
 // symbolen för en lägereld (stationen som lägger ringen till en lägereld till, steg 4.5.6.8): den nylagda med stenringen under
 // (bildstilens tecken har samma färg i alla bilder, så att två bilder kan läggas på varandra tecken för tecken)
 { const ring = KARTBILDER.lagereld_ring, ny = KARTBILDER.lagereld_ny;

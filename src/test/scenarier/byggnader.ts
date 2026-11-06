@@ -1124,7 +1124,7 @@ SCENARIER.byggplan2 = {
     klockan(s); byggare(s);
     SIM.planBuild(s); byggKlart(s);
     const h = housesOf(s)[0];
-    put(s, 'ved', 200);
+    put(s, 'ved', 32); // över gränsen för förbättringar, under den för en vedbod
     // ett bättre golv
     const j = bitsOf(s).find(b => b.hus === h.id && b.k === 'golv')!;
     j.m = 'jord'; SIM.touch(s);
@@ -1195,6 +1195,42 @@ SCENARIER.skjul = {
       [`torr ved räknas för sig (${torrFore} → ${torrEfter})`, torrEfter >= torrFore],
       ['när det slutat regna torkar den', torr],
       ['ett hus med zon utanför påverkas inte', !!z],
+    ];
+  },
+};
+
+SCENARIER.brygga = {
+  text: 'Steg 7.3.7, 7.3.9 och 7.3.10: stockvägen läggs på gångstråken på nivån Förbättra och försvinner när den brinner. Bryggan byggs rakt ut i vattnet, man kan stå på den, den räknas som strand och vattnet där är rent',
+  kor: () => {
+    const s = createState(6, START);
+    klockan(s); byggare(s);
+    for (const p of living(s)) Object.assign((p.tek ??= {}), { stockvag: 1, brygga: 1 });
+    SIM.planBuild(s); byggKlart(s);
+    put(s, 'virke', 30);
+    s.byggBehov = undefined; SIM.planBuild(s);
+    const vag = bitsOf(s).filter(b => b.m === 'stockvag'), bryggaBit = bitsOf(s).filter(b => b.m === 'brygga');
+    const valdes = vag.length + bryggaBit.length > 0;
+    const forb = [...vag, ...bryggaBit].every(b => b.forb === 1 && b.hus === undefined);
+    // en brygga direkt: båda rutorna klara
+    const m = SIM.getMap(s.seed).tiles;
+    let x = -1, y = -1;
+    for (let i = 0; i < SIM.W * SIM.H && x < 0; i++) if (m[i] === SIM.T.Vatten && m[i + 1] !== SIM.T.Vatten && m[i - 1] === SIM.T.Vatten) { x = i % SIM.W; y = Math.floor(i / SIM.W); }
+    const iVatten = SIM.blocked(s, x, y), vattenFore = SIM.vattenNu(s)[y * SIM.W + x] === SIM.T.Vatten;
+    const b: SIM.Bit = { id: s.nextBit!++, x, y, k: 'golv', m: 'brygga', b: 0, mat: 1, c: 1 };
+    bitsOf(s).push(b); SIM.touch(s);
+    const site = SIM.siteOf(s, b), inteIVatten = !SIM.blocked(s, Math.floor(site.x), Math.floor(site.y));
+    SIM.workOn(s, living(s)[0], b, 36000);
+    const gar = !SIM.blocked(s, x, y), tile = SIM.vattenNu(s)[y * SIM.W + x] !== SIM.T.Vatten, strand = SIM.strandNu(s)[y * SIM.W + x] === 1, rent = SIM.vattenSmuts(s, y * SIM.W + x) === 0;
+    SIM.vagBort(s, b);
+    const borta = SIM.blocked(s, x, y) && SIM.vattenNu(s)[y * SIM.W + x] === SIM.T.Vatten;
+    return [
+      ['Byggplanen föreslår en väg eller brygga när byn kan det och har virke', valdes],
+      ['de byggs på nivån Förbättra och hör inte till något hus', forb],
+      ['vattnet går inte att stå i före bryggan', iVatten && vattenFore],
+      ['den som bygger står inte i vattnet', inteIVatten],
+      ['på en klar brygga kan man gå och stå', gar && tile],
+      ['bryggan räknas som strand, och vattnet där är rent', strand && rent],
+      ['när den förstörs är rutan vatten igen', borta],
     ];
   },
 };

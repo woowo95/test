@@ -5,7 +5,7 @@ import { balans } from './balans';
 import { brasorOf } from './brasor';
 import { hearthOf } from './eld';
 import { rasar } from './bygg';
-import { Bit, MATERIAL, bitAt, dorrDef, touch } from './byggnad';
+import { Bit, MATERIAL, bitAt, dorrDef, touch, vagBort } from './byggnad';
 import { Station, stationAt, stationDef, taBort } from './stationer';
 import { ALDER, ageOf, alive, count, livet, living, log } from './folk';
 import { Kroppsdel, kanGa, skada } from './halsa';
@@ -342,7 +342,7 @@ function slocknar(s: State, b: Brand) {
       v.c -= a * BRAND.vaggSkick; rev = true;
       if (v.c <= 0) { const h = rasar(s, v); b.vagg++; count(s, 'brand vagg'); drabbadHus(s, h, 'eldsvådan som förstörde huset'); }
     } else if (v && br && upp) {
-      if (v.k === 'golv') { brann(b, MATERIAL[v.m].namn); v.m = 'jord'; }
+      if (v.k === 'golv') { brann(b, MATERIAL[v.m].namn); if (MATERIAL[v.m].vag) vagBort(s, v); else v.m = 'jord'; }
       else { brann(b, dorrDef(v.dorr)?.namn ?? 'Dörr'); delete v.dorr; }
       count(s, 'brand ' + v.k); rev = true;
     }

@@ -1,6 +1,6 @@
 import { balans } from './balans';
 import { rasar } from './bygg';
-import { MATERIAL, bitAt, blocked, roofed, touch } from './byggnad';
+import { MATERIAL, bitAt, blocked, roofed, touch, vagBort } from './byggnad';
 import { alive, count, living, log } from './folk';
 import { drabbadHus, upplev } from './uppvaxt';
 import { kanGa, skada, Kroppsdel } from './halsa';
@@ -429,7 +429,7 @@ function karnan(s: State, t: Tornado, rutor: number[]) {
     if (s.halvfallt) delete s.halvfallt[i];
     const v = bitAt(s, x, y);
     if (v?.k === 'vagg' && v.b >= 1) { const h = rasar(s, v); t.vagg++; count(s, 'tornado vagg'); drabbadHus(s, h, 'tornadon som förstörde huset'); rev = true; }
-    else if (v?.k === 'golv' && v.m !== 'jord') { v.m = 'jord'; borta(); rev = true; }
+    else if (v?.k === 'golv' && v.m !== 'jord') { if (MATERIAL[v.m].vag) vagBort(s, v); else v.m = 'jord'; borta(); rev = true; }
     else if (v?.k === 'oppning' && v.dorr) { delete v.dorr; borta(); rev = true; }
     const st = s.stationer?.length ? stationAt(s, x, y) : undefined;
     if (st) { s.ting = tingOf(s).filter(q => !(q.vid === st.id && q.hos === undefined && q.lass === undefined)); taBort(s, st); borta(); flytt = true; }

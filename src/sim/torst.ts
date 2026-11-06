@@ -127,7 +127,7 @@ export function drickPlats(s: State, p: Person) {
   let best: { x: number; y: number } | undefined, bs = Infinity;
   const prova = (x: number, y: number, nara: boolean) => {
     const i = y * W + x;
-    if (!inMap(x, y) || !sh[i] || !nb[i] && m[i] !== T.Vatten || bitAt(s, x, y) || (mitt.size && !mitt.has(id[i]))) return;
+    if (!inMap(x, y) || !sh[i] || !nb[i] && m[i] !== T.Vatten && bitAt(s, x, y)?.m !== 'brygga' || bitAt(s, x, y) && bitAt(s, x, y)!.m !== 'brygga' || (mitt.size && !mitt.has(id[i]))) return;
     const a = areaOf(x, y);
     let t = tro.get(a);
     if (t === undefined) tro.set(a, t = tror(p, a));

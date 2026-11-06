@@ -6,7 +6,7 @@
 // STRAK.omvag rutors omväg (strakHindrar). Rutan framför en dörr står fast, liksom ett stråk som inte går att dra om.
 // Stråken räknas om när något byggs, flyttas eller rivs (samma nyckel som området, och fälten), och sparas per by.
 import { balans } from './balans';
-import { bitsOf, gridOf } from './byggnad';
+import { MATERIAL, bitsOf, gridOf } from './byggnad';
 import { eldPlats, getMap } from './karta';
 import { zonesOf } from './lager';
 import { faltAt } from './odling';
@@ -57,7 +57,7 @@ function sokData(s: State): Sok {
   const zs = zonesOf(s), latriner = stationerOf(s).filter(t => t.k === 'latrin');
   for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
     const i = y * W + x, t = m.tiles[i];
-    if (t === T.Vatten || t === T.Sten || g.at.has(i)) continue;
+    if (t === T.Vatten || t === T.Sten || g.at.has(i) && !MATERIAL[g.at.get(i)!.m].vag) continue; // på en väg går stråket som förut
     if (zs.some(z => x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h)) { mal[i] = MAL.indexOf('lager'); continue; }
     if (stationAt(s, x, y) || faltAt(s, x, y) || x === f.x && y === f.y) continue;
     gang[i] = 1;

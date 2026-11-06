@@ -2,9 +2,9 @@ import { gen, hans } from './ord';
 import { upplev } from './uppvaxt';
 import { ALDER, ageOf, count, doingAct, forstaGang, livet, living, log } from './folk';
 import { kronikaBer, personFalt } from './berattelser';
-import { Bit, DORRAR, DorrDef, DorrSlag, Hus, MATERIAL, bitById, dorrDef, dorrRang, bitsOf, blocked, freeNear, gridOf, housesOf, husById, touch } from './byggnad';
+import { vagBort, Bit, DORRAR, DorrDef, DorrSlag, Hus, MATERIAL, bitById, dorrDef, dorrRang, bitsOf, blocked, freeNear, gridOf, housesOf, husById, touch } from './byggnad';
 import { vaderSlit } from './vader';
-import { groundOf, punktIRuta } from './mark';
+import { groundOf, nyttVatten, punktIRuta } from './mark';
 import { kunnighet } from './ekonomi';
 import { sparas } from './forradsmal';
 import { ARSTID, iIstiden } from './tid';
@@ -126,7 +126,7 @@ export function needOf(b: Bit) {
 export const lacks = (b: Bit) => needOf(b) > 1e-9;
 // var man står när man bygger: på golvet, eller bredvid väggen (helst inne i huset)
 export function siteOf(s: State, b: Bit) {
-  if (b.k !== 'vagg') return { x: b.x + 0.5, y: b.y + 0.5 };
+  if (b.k !== 'vagg' && !(MATERIAL[b.m].brygga && b.b < 1)) return { x: b.x + 0.5, y: b.y + 0.5 };
   const hus = husById(s, b.hus);
   const opts = GRANNAR4.map(([dx, dy]) => ({ x: b.x + dx, y: b.y + dy })).filter(o => inMap(o.x, o.y) && !blocked(s, o.x, o.y))
     .sort((a, c) => inHus(hus, c) - inHus(hus, a));
@@ -181,6 +181,7 @@ export function workOn(s: State, p: Person, b: Bit, dtSec: number, har = 0) {
   if (b.b < 1) return false;
   deliver(b, har, false);
   b.c = 1; b.forb = undefined; count(s, 'byggt_' + b.m); touch(s);
+  if (M.brygga) { s.bryggV = (s.bryggV ?? 0) + 1; nyttVatten(s); }
   if (b.m === 'jord') stigAv(s, b.x, b.y); // jordgolvet är en stig inne (steg 7.3.2): gräset är borta och marken är bar
   if (b.k === 'vagg') clearTile(s, b);
   const h = husById(s, b.hus);
@@ -270,7 +271,8 @@ export function wearBuild(s: State, hours: number, ai: number) {
     if (b.k === 'vagg') {
       const h = rasar(s, b);
       log(s, `En vägg i ${h ? husFalt(h.namn).hus : 'ett hus'} var så sliten att den rasade.`, 'world');
-    } else { b.m = 'jord'; b.c = 1; }
+    } else if (M.vag) vagBort(s, b);
+    else { b.m = 'jord'; b.c = 1; }
     touch(s);
   }
 }
