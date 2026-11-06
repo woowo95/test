@@ -1,5 +1,5 @@
 import { klanById, FORMAGOR, gangDelar, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
-import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, handOrkar, handPlatser, capacity, kvNamn, handerFor, load, utrustning, bordaIHander, type IHanden, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, timeLabel, vidBordet, upplevelseText, uppEffekt, vuxenUpp, Upplevelse, yrkeNamn, andlighet, troOf, tolkning, teckenText, troNamn, pratarMed, gastRelationer, type ByteMinne, type GastRel, type Slakting } from '../../sim';
+import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, handOrkar, handPlatser, capacity, kvNamn, handerFor, load, utrustning, bordaIHander, type IHanden, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, timeLabel, vidBordet, upplevelseText, uppEffekt, vuxenUpp, Upplevelse, yrkeNamn, andlighet, troOf, tolkning, teckenText, troNamn, pratarMed, gastRelationer, actIkon, utbIkon, AMNEN, type ByteMinne, type GastRel, type Slakting } from '../../sim';
 import { gorText } from '../jakt';
 import { figurSvg, portrattImg } from '../folkbild';
 import { FARGER, farg } from '../../palett';
@@ -25,10 +25,10 @@ export const person: Flik = {
     if (!p) return `<p class="muted">Klicka på en person på kartan eller i listan för att se allt om hen.</p>`;
     const { flikar, flik, delar } = valda(d => alive(p) || !d.levande);
     const med = alive(p) ? pratarMed(s, p) : undefined;
-    const tNu = uppgiftVid(p), status = alive(p) ? (tNu ? gorText(p, tNu) + (med ? ` och pratar med ${pLink(med)}` : '') : '–') : p.died !== undefined ? `Dog ${p.cause} (${timeLabel(s, p.died)})` : `Flyttade från byn (${timeLabel(s, p.left!)})`;
+    const status = alive(p) ? statusRad(p, med) : p.died !== undefined ? `Dog ${p.cause} (${timeLabel(s, p.died)})` : `Flyttade från byn (${timeLabel(s, p.left!)})`;
     return `
       <div class="phead">${portrattImg(skapad(s, p), "big")}<div><h2>${esc(p.name)}${binamnHtml(p)}${alive(p) ? prickar(p) : ''}${anseende(p)}</h2>${binamnForkl(p)}
-      <p class="status">${status}</p>${alive(p) && p.task?.why ? `<p class="why">Varför: ${esc(p.task.why)}</p>` : ''}${prat(p)}</div></div>
+      <p class="status">${status}</p></div></div>
       ${flikRad(flikar, flik)}
       ${delar.map((d, i) => delHtml(d, i, d.kort?.(p), () => d.html(p))).join('')}`;
   },
@@ -583,8 +583,16 @@ function tidHtml(p: Person) {
     <p class="muted small">Den vakna tiden de senaste dygnen. Tryck på en del eller en rad, eller håll musen över den, så lyser båda.</p>`;
 }
 
-// samtalet, med ämnets symbol först (steg 3.9.5), bara medan hen pratar (steg 4.5.3.3); efteråt finns det i loggen och relationerna
-function prat(p: Person) {
-  const t = alive(p) && pratarMed(s, p) ? pratText(s, p) : '', i = p.prat?.i;
-  return t ? `<p class="why">${i && hasIcon(i) ? iconImg(i, 14) : '💬'} ${esc(t)}</p>` : '';
+// överst i personrutan (steg 6.9.1, Sammanfattningen överst i personrutan): aktivitetens symbol och handlingen, och medan hen
+// pratar samtalets symbol och vem hen pratar med, på en rad. Skälet (task.why) kommer fram när man trycker på aktiviteten eller
+// håller musen över den; ämnet (symbolen och "Pratar om …") likaså på samtalet, med hela samtalets text
+function statusRad(p: Person, med: Person | undefined) {
+  const t = uppgiftVid(p);
+  if (!t) return '–';
+  const ik = utbIkon(t) ?? actIkon(t.act), why = t.why;
+  const akt = `<span class="akt"${why ? ` title="${esc(why)}" tabindex="0"` : ''}>${ik && hasIcon(ik) ? iconImg(ik, 14) + ' ' : ''}${esc(gorText(p, t))}</span>`;
+  if (!med) return akt;
+  const x = p.prat, om = x ? (x.k === 'vader' && x.o ? x.o : AMNEN[x.k].namn.toLowerCase()) : '', hel = pratText(s, p);
+  const tips = [om && `Pratar om ${om}`, hel].filter(Boolean).join('. ');
+  return `${akt} · <span class="akt"${tips ? ` title="${esc(tips)}" tabindex="0"` : ''}>${x?.i && hasIcon(x.i) ? iconImg(x.i, 14) : '💬'} med ${pLink(med)}</span>`;
 }
