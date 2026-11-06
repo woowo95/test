@@ -1,6 +1,6 @@
 // Arbetena i bild (steg 5.1.9.4): bildstilens rörelser, redskap och effekter (anim.js, steg 5.2.4.8), så att den som
 // hugger, gräver eller slår flinta syns göra det. Få och generella delar (Björn 2026-11-04: inte en animation per sak):
-//   RORELSER: kroppens rörelse i fyra bilder, som kartfigurens armlägen (slå, stöta, plocka, pyssla och kasta)
+//   RORELSER: kroppens rörelse i fyra bilder, som kartfigurens armlägen (slå, stöta, pyssla och kasta)
 //   REDSKAP:  redskapet i handen som skaft och huvud, ritat ur handen i armens riktning (ett nytt redskap är en rad)
 //   MATERIAL: färgerna på splittret (trä, sten, jord, blod, vatten, snö)
 //   ARBETEN:  en rad per handling i spelet: rörelsen, redskapet, effekten och materialet
@@ -13,12 +13,11 @@ import type { Arm, Ben } from './folkbild';
 type Ramp = 'kol' | 'jord' | 'senap' | 'rost' | 'oliv' | 'barr' | 'skiffer' | 'ben';
 type Ton = [Ramp, number];
 // en bild: ben och arm i kartfiguren, riktningen redskapet pekar (r: framåt, nedåt), steg (1 träffen, 2 efteråt), ut
-// (kroppen en punkt fram eller bak) och för plocka och kasta om saken är i handen (hand)
+// (kroppen en punkt fram eller bak) och för kasta om saken är i handen (hand)
 export interface RorelseBild { arm: Arm; ben?: Ben; r?: [number, number]; steg?: 1 | 2; ut?: number; hand?: boolean }
 export const RORELSER: Record<string, { namn: string; sitta?: boolean; bilder: RorelseBild[] }> = {
   sla: { namn: 'Slå', bilder: [{ arm: 'lyfta', r: [0, -1] }, { arm: 'lyfta', r: [-1, -1] }, { arm: 'sla', r: [1, 1], steg: 1 }, { arm: 'sla', r: [1, 1], steg: 2 }] },
   stota: { namn: 'Stöta', bilder: [{ arm: 'framfor', r: [1, 0] }, { arm: 'framfor', r: [1, 0], ut: -1 }, { arm: 'sla', r: [1, 0], ut: 1, steg: 1 }, { arm: 'sla', r: [1, 0], steg: 2 }] },
-  plocka: { namn: 'Plocka', bilder: [{ arm: 'hanga' }, { ben: 'sitta', arm: 'hanga' }, { ben: 'sitta', arm: 'framfor', hand: true }, { arm: 'framfor', hand: true }] },
   pyssla: { namn: 'Pyssla', sitta: true, bilder: [{ arm: 'framfor', r: [1, 1] }, { arm: 'gang1', r: [1, 1], steg: 1 }, { arm: 'framfor', r: [1, 1] }, { arm: 'gang1', r: [1, 1], steg: 1 }] },
   kasta: { namn: 'Kasta', bilder: [{ arm: 'framfor', r: [1, -1], hand: true }, { arm: 'lyfta', r: [-1, -1], hand: true }, { arm: 'sla', r: [1, 0] }, { arm: 'hanga' }] },
 };
@@ -32,13 +31,8 @@ export const MATERIAL: Record<string, [Ton, Ton]> = {
   tra: [['senap', 3], ['jord', 3]], sten: [['skiffer', 3], ['ben', 2]], jord: [['jord', 1], ['jord', 2]],
   blod: [['rost', 1], ['rost', 2]], vatten: [['ben', 3], ['skiffer', 3]], sno: [['ben', 3], ['ben', 2]],
 };
-// det som plockas och syns i handen
-const SAKER: Record<string, (p: (dx: number, dy: number, t: Ton) => void) => void> = {
-  bar: p => p(0, 0, ['rost', 2]),
-  pinne: p => { for (let i = -1; i <= 2; i++) p(i, 0, ['jord', 2]); },
-};
-// en handling i spelet: rörelsen, redskapet, effekten (splitter), materialet, saken i handen och riktningen vid slaget
-export interface Arbete { rorelse: keyof typeof RORELSER; redskap?: string; effekt?: 'splitter' | 'traff'; material?: string; sak?: string; rSla?: [number, number] }
+// en handling i spelet: rörelsen, redskapet, effekten (splitter), materialet och riktningen vid slaget
+export interface Arbete { rorelse: keyof typeof RORELSER; redskap?: string; effekt?: 'splitter' | 'traff'; material?: string; rSla?: [number, number] }
 const HUGGA: Arbete = { rorelse: 'sla', redskap: 'yxa', effekt: 'splitter', material: 'tra' };
 const FLINTA: Arbete = { rorelse: 'sla', redskap: 'sten', effekt: 'splitter', material: 'sten' };
 export const ARBETEN: Record<string, Arbete> = {
@@ -48,8 +42,8 @@ export const ARBETEN: Record<string, Arbete> = {
   bygga: { rorelse: 'sla', redskap: 'klubba', effekt: 'splitter', material: 'tra' },
   dorr: { rorelse: 'sla', redskap: 'klubba', effekt: 'splitter', material: 'tra' },
   slakta: { rorelse: 'stota', redskap: 'kniv', effekt: 'splitter', material: 'blod', rSla: [1, 1] },
-  samla: { rorelse: 'plocka', sak: 'bar' },
-  ved: { rorelse: 'plocka', sak: 'pinne' },
+  samla: { rorelse: 'stota' }, // den som plockar från marken stöter med handen, utan redskap (steg 6.8.7)
+  ved: { rorelse: 'stota' },
 };
 // striden (steg 5.1.9.5): rörelsen och redskapet efter vapnet i striden (VAPEN i sim/strid.ts), och träffen i stället för splitter
 const SLASS = (redskap?: string): Arbete => ({ rorelse: 'sla', redskap, effekt: 'traff', rSla: [1, 0] });
@@ -85,7 +79,6 @@ export function ritaArbete(g: PIXI.Graphics, a: Arbete, b: RorelseBild, hx: numb
       case 'sten': case 'snoboll': { const [rp, a1, b1]: [Ramp, number, number] = R.huvud === 'sten' ? ['jord', 2, 0] : ['ben', 3, 2]; at(0, 0, [rp, a1]); at(1, 0, [rp, b1]); at(0, 1, [rp, b1]); at(1, 1, [rp, b1]); break; }
     }
   }
-  if (b.hand && a.sak && !a.redskap) SAKER[a.sak]?.((dx, dy, tn) => p(dx, dy + 1, tn));
   // splittret: steg 1 nära träffen, steg 2 längre bort och högre; när man pysslar bara ett korn
   if (b.steg && a.effekt === 'splitter') {
     const M = MATERIAL[a.material ?? 'tra'] ?? MATERIAL.tra, liten = RORELSER[a.rorelse].sitta;
