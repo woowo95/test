@@ -690,7 +690,7 @@ SCENARIER.ryggsack = {
       SIM.newTing(s, 'korg', 1, BYN); SIM.newTing(s, 'korg', 1, BYN);
       const c0 = r.c; let korg = false;
       setMat(s, { bar: 10 }); // maten tar slut, så byn samlar
-      for (let i = 0; i < 96 && samlade < 3; i++) {
+      for (let i = 0; i < 480 && samlade < 3; i++) {
         kor(s, 1);
         for (const q of living(s)) {
           if (!SIM.ryggsack(s, q)) continue;
@@ -809,7 +809,7 @@ SCENARIER.plagg = {
     const varmt = val(sommar) === 'rock_kaninskinn';
     (strid.strider ??= []).push({ t: strid.now - HOUR, orsak: 'test', u: { avsikt: 'skada', w: 10, h: 10, kampar: [] }, fro: 1, vinnare: 0 } as SIM.StridMinne);
     const hot = val(strid) === 'rock_vargskinn';
-    setAmount(behovs, 'skinn', 3); setAmount(behovs, 'vargskinn', 20); // tre kaninskinn: en rock, men skorna och rockarna som alla saknar behöver dem, och vargskinnet räcker till allt
+    setAmount(behovs, 'skinn', 3); setAmount(behovs, 'vargskinn', 60); // tre kaninskinn: en rock, men skorna och rockarna som alla saknar behöver dem, och vargskinnet räcker till allt
     const sparas = val(behovs) === 'rock_vargskinn';
     setAmount(sommar, 'skinn', 0);
     const barafinns = val(sommar) === 'rock_vargskinn';

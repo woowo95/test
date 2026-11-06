@@ -226,7 +226,7 @@ export function tryLight(s: State, p: Person, f = s.fire) {
 
   f.tries++; f.tryTotal++; gjort(s, p, 'tandForsok');
   // eldandet är ingen egen färdighet (steg 3.10.8): chansen räknas ur hantverket, och ingen övar av att tända eller fylla på
-  const c = ig.chance * (ELD.tandBas + p.skill.hantverk / ELD.tandSkill + stat(p, 'intelligens', s.now) / ELD.tandInt) * (iIstiden(ageIndex(s)) ? ARSTID.tandIstid : 1) * ((f.ash ?? 0) >= 1 ? ELD.tandKol : 1) * (torrVed(s) > 0 ? 1 : BLOTVED.tand) // en gammal kolhög tar lättare fyr
+  const c = ig.chance * (ELD.tandBas + p.skill.hantverk / ELD.tandSkill + stat(p, 'intelligens', s.now) / ELD.tandInt) * (iIstiden(ageIndex(s)) ? ARSTID.tandIstid : 1) * ((f.ash ?? 0) >= 1 ? ELD.tandKol : 1) * (amountOf(s, 'ved') > 0 && torrVed(s) <= 0 ? BLOTVED.tand : 1) // en gammal kolhög tar lättare fyr
     * (1 + (f.tries - 1) / ELD.forsokLara) // varje misslyckat försök sedan elden brann gör nästa lättare
     * (naver ? ELD.naverChans : 1); // nävern tar lättare eld än höet
   if (rnd(s, 'eld', p) < c) { gjort(s, p, 'tande'); lightFire(s, p, f); return true; }

@@ -115,11 +115,11 @@ const DEF = {
   tval: { namn: 'Tvål', skaffa: RECEPT.tval, stack: 10, vikt: 0.2, mapp: 'Material' },
   lader: { namn: 'Läder', skaffa: RECEPT.lader, stack: 10, vikt: 1, mapp: 'Material' }, // steg 7.7.6
   ratlin: { namn: 'Rått lin', skaffa: { tid: 0.25, tek: 'lin' }, stack: 25, vikt: 0.3, mapp: 'Material' }, // rötas på torkställningen innan det kan spinnas
-  lin: { namn: 'Lin', skaffa: { act: 'torka' }, stack: 25, vikt: 0.3, mapp: 'Material' }, // steg 7.7.7
+  lin: { namn: 'Lin', skaffa: RECEPT.lin, stack: 25, vikt: 0.3, mapp: 'Material' }, // steg 7.7.7
   linfron: { namn: 'Linfrön', skaffa: { tid: 0.25, tek: 'odling' }, stack: 25, vikt: 0.05, mapp: 'Material' },
   trad: { namn: 'Lintråd', skaffa: RECEPT.trad, stack: 25, vikt: 0.1, mapp: 'Material' }, // steg 7.7.8
   lintyg: { namn: 'Lintyg', skaffa: RECEPT.lintyg, stack: 10, vikt: 0.5, mapp: 'Material' }, // steg 7.7.9
-  vargtand: { namn: 'Vargtand', skaffa: { act: 'slakta' }, stack: 25, vikt: 0.05, mapp: 'Material' }, // steg 7.7.5
+  vargtand: { namn: 'Vargtand', skaffa: { tid: 0.1 }, stack: 25, vikt: 0.05, mapp: 'Material' }, // steg 7.7.5
   leksak: { namn: 'Leksak', skaffa: RECEPT.leksak, stack: 10, vikt: 0.2, mapp: 'Redskap' }, // steg 7.5.4
   snara: { namn: 'Snara', skaffa: RECEPT.snara, stack: 5, vikt: 0.2, mapp: 'Redskap' }, // steg 7.5.10
   grop: { namn: 'Fångstgrop', skaffa: RECEPT.grop, stack: 1, vikt: 1, mapp: 'Redskap' }, // steg 7.5.11

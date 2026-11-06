@@ -63,6 +63,7 @@ const DEF = {
   benlim: { var: 'sak', av: { ben: 2, ved: 1 }, min: 5, slag: 'stor', tek: 'ortkok' },
   tval: { var: 'sak', av: { kol: 1, talg: 1, ved: 1 }, min: 5, slag: 'stor', tek: 'ortkok' },
   lader: { var: 'sak', av: { skinn: 1, talg: 1 }, min: 5, slag: 'stor', tek: 'garvning' },
+  lin: { var: 'sak', av: { ratlin: 1 }, min: 5, slag: 'bearbeta', tek: 'tork' },
   trad: { var: 'sak', av: { lin: 2 }, min: 3, slag: 'liten', tek: 'slanda' },
   lintyg: { var: 'sak', av: { trad: 3 }, min: 5, slag: 'stor', tek: 'vavstol' },
   leksak: { var: 'sak', av: { grenar: 1 }, min: 3, slag: 'liten', tek: 'leksak' },
@@ -70,9 +71,9 @@ const DEF = {
   grop: { var: 'sak', av: { grenar: 6 }, min: 5, slag: 'stor', tek: 'grop' },
   byxor: { var: 'plagg', mangd: 2, av: { rep: 1 }, min: 5 },
   mossa: { var: 'plagg', mangd: 1, av: {}, min: 4 },
-  snoskor: { var: 'plagg', mangd: 1, av: { grenar: 2, rep: 1 }, min: 6 },
+  snoskor: { var: 'plagg', mangd: 1, av: { grenar: 2, rep: 1 }, min: 5 },
   halsband: { var: 'plagg', mangd: 3, av: { rep: 1 }, min: 5 },
-  tunika: { var: 'plagg', mangd: 3, av: {}, min: 6 },
+  tunika: { var: 'plagg', mangd: 3, av: {}, min: 5 },
   skjorta: { var: 'plagg', mangd: 2, av: {}, min: 5 },
   gaddkott: { var: 'sak', av: { gadda: 1 }, min: 3, slag: 'bearbeta' }, // gäddan ger 2 kött (steg 7.4.3)
   mortkott: { var: 'sak', av: { mort: 2 }, min: 2, slag: 'bearbeta' }, // 2 mörtar rensas till 1 kött

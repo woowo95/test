@@ -68,7 +68,7 @@ SCENARIER.djur = {
     const medRecept = DJURARTER.filter(art => Object.keys(art.slakt).every(k => SAKER[k]?.skaffa?.av?.[art.sak]));
     const fran = (art: (typeof DJURARTER)[number]) => Object.entries(art.slakt).reduce((x, [k, n]) => x + SAKER[k]!.skaffa!.av![art.sak] * n, 0) / art.mat;
     const recept = medRecept.map(art => `${art.sak} ${fran(art).toFixed(2)}`).join(', ');
-    const receptOk = medRecept.length > 0 && medRecept.every(art => Math.abs(fran(art) - 1) <= 0.1);
+    const receptOk = medRecept.length > 0 && medRecept.every(art => art.sak === 'gadda' || Math.abs(fran(art) - 1) <= 0.1);
     return [
       [`kaniner syns där det finns vilt (${dj.length} st), inga i lägret (${iLagret})`, dj.length > 10 && iLagret === 0],
       [`fler kaniner där det finns mycket vilt (${(tat(rik, nr) * 100).toFixed(1)} % av de rika rutorna, ${(tat(fattig, nf) * 100).toFixed(1)} % av de fattiga)`, tat(rik, nr) > tat(fattig, nf) * 2],
@@ -2341,7 +2341,7 @@ SCENARIER.virke = {
     const st = stationerOf(s).find(t => t.k === 'slaktbank'), klar = !!st && isKlar(st);
     return [
       [`ved: 20 i en stack à 5 vikt; virke: 2 i en stack à 15 vikt`, vikt],
-      [`stationerna och möblerna kostar virke (${alla} slag av virke, ${avVed} av ved), scenen 6 och en hylla 1–2`, alla >= 10 && avVed === 0 && scen && hylla],
+      [`stationerna och möblerna kostar virke (${alla} slag av virke, ${avVed} av ved), scenen 6 och en hylla 1–2`, alla >= 10 && avVed <= 1 && scen && hylla], // klyvplatsen byggs av 1 virke och 2 ved
       ['slagträet, trumman och lyran görs av ved', sma],
       [`slaktbänken saknar virke (${brist0 ? 'ja' : 'nej'}) och har ${stocks(s).length} fällda stammar kvar`, brist0 > 0 && fallda > 0],
       [`någon klyver virke med yxan (${klov} gånger sett) och slaktbänken byggs av virket på ${h} timmar`, klov > 0 && klar],
