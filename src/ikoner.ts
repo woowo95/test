@@ -2,6 +2,7 @@
 // varje tecken är en pixel, '.' är genomskinlig
 import { KLADER_AV } from './sim/klader';
 import { KARTBILDER } from './kartbilder';
+import { STUBBILDER } from './stubbilder';
 import { ANIMBILDER } from './animbilder';
 import { DJURBILDER, type Hall } from './djurbilder';
 import { farg } from './palett';
@@ -3805,6 +3806,8 @@ for (const [id, b] of Object.entries(KARTBILDER)) { PIX['kb_' + id] = b.rader; P
 // lågorna där det brinner och tornadon (Björns val i bildstilen, steg 5.1.2.2) heter som förut, så att knappen i testläget hittar dem
 // animationernas bilder (steg 5.1.9, animbilder.ts) med id:t an_<id>; ui/animation.ts väljer bild efter klockan
 for (const [id, b] of Object.entries(ANIMBILDER)) { PIX['an_' + id] = b.rader; PAL['an_' + id] = b.pal; }
+// stubbarna och de fällda träden (steg 6.8.16, stubbilder.ts) med id:t sb_<id>; ui/foremal.ts väljer bild efter trädet och tiden
+for (const [id, b] of Object.entries(STUBBILDER)) { PIX['sb_' + id] = b.rader; PAL['sb_' + id] = b.pal; }
 for (const k of ['brand', 'tornado']) { PIX[k] = KARTBILDER[k].rader; PAL[k] = KARTBILDER[k].pal; }
 // symbolen för en lägereld (stationen som lägger ringen till en lägereld till, steg 4.5.6.8): den nylagda med stenringen under
 // (bildstilens tecken har samma färg i alla bilder, så att två bilder kan läggas på varandra tecken för tecken)

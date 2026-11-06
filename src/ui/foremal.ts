@@ -1,6 +1,7 @@
-import { clamp, MASTERVERK, PERFEKT, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, W, bordPlatser, sjoarna, stationById, MATERIAL, Pile, STUBBE_LIV, Station, bitAt, bitsOf, dorrDef, condOf, emberOn, eldById, eldXY, eldarOf, fireHeat, forvarAt, Fire, heatRadius, TORK, torrDel, isKlar, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, zonesOf } from '../sim';
+import { clamp, MASTERVERK, PERFEKT, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, W, bordPlatser, sjoarna, stationById, MATERIAL, Pile, STUBBE_LIV, Station, bitAt, bitsOf, dorrDef, condOf, emberOn, eldById, eldXY, eldarOf, fireHeat, forvarAt, Fire, heatRadius, TORK, torrDel, isKlar, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, zonesOf, groundOf, snoPaMarken, ageIndex, tradArt } from '../sim';
 import { hasIcon, iconCanvas, kartbild, kartbildEnsam } from '../ikoner';
 import { KARTBILDER } from '../kartbilder';
+import { STUBBILDER } from '../stubbilder';
 import { ritaHus } from './husbild';
 import { smutsGrad, smutsIkon } from './slitbild';
 import { outPilesAt, piles, s, sakVar, ui } from './lage';
@@ -194,7 +195,7 @@ export function drawStructures(t: number) {
     const k = 'kb_talgljus' + (1 + st.id % 2) + (l.tand ? '_tand' : ''), c = iconCanvas(k), w = storlekAv(st).w * TS;
     pileIcons.add(k, st.x * TS + ((w - c.width) >> 1), st.y * TS + 6 - c.height, 1);
   }
-  pileIcons.end(); rokIkoner.end();
+  rokIkoner.end();
   // markerad hög utanför lagret: vit kant runt rutan, som lagerplatsen får
   const h = ui.hogAt;
   if (tab === 'hog' && outPilesAt(h.x, h.y).length) structG.lineStyle(1, 0xffffff, 0.9).drawRoundedRect(h.x * TS + 0.5, h.y * TS + 0.5, TS - 1, TS - 1, 3).lineStyle(0);
@@ -208,19 +209,20 @@ export function drawStructures(t: number) {
   if (fv) kant(ui.faltRuta >= 0 ? [faltRuta(fv, ui.faltRuta)] : faltRutor(fv));
   const vald = tab === 'station' ? stationById(s, ui.stationId) : sst;
   if (vald) { const { w, h: d } = storlekAv(vald); overG.lineStyle(1, 0xdad0bb).drawRoundedRect(vald.x * TS + 0.5, vald.y * TS + 0.5, w * TS - 1, d * TS - 1, 2).lineStyle(0); }
-  // stubbar: bleknar medan de ruttnar bort
+  // stubbarna och de fällda träden (steg 6.8.16): bildstilens bilder (stubbilder.ts) i trädets storlek och sort, med hösten
+  // och vintern. Stubben bleknar i fyra steg medan den ruttnar; det fällda trädet ligger med roten på sin ruta
+  const g = groundOf(s), sno = snoPaMarken(s) >= 0.25, tid = sno ? 'vinter' : ageIndex(s) === 3 ? 'host' : 'sommar';
+  const sortAt = (x: number, y: number) => tradArt(g, Math.floor(y) * W + Math.floor(x)).id === 'bjork' ? 'bjork' : 'gran';
   for (const k of s.stubbar ?? []) {
-    const a = 1 - (s.now - k.t) / STUBBE_LIV, x = k.x * TS + TS * 0.65, y = k.y * TS + TS * 0.6;
-    const r = 0.5 + 0.5 * a; // krymper i stället för att blekna
-    structG.beginFill(0x3f2415).drawCircle(x, y, 3.2 * r).endFill();
-    structG.beginFill(0x987e62).drawCircle(x, y - 0.6, 2.2 * r).endFill();
+    const r = Math.min(3, Math.max(0, Math.floor((s.now - k.t) / STUBBE_LIV * 4)));
+    const id = `st_${sortAt(k.x, k.y)}_${k.v === 2 ? 2 : 1}_${r}${sno ? '_v' : ''}`, b = STUBBILDER[id];
+    pileIcons.add('sb_' + id, k.x * TS + 10 - b.fx, k.y * TS + 11 - b.fy, 1);
   }
-  // fällda träd som ligger och väntar på att huggas till ved
   for (const k of s.stockar ?? []) {
-    const x = k.x * TS, y = k.y * TS, len = 6 + Math.min(8, k.ved);
-    structG.lineStyle(4, 0x5e3c24).moveTo(x - len / 2, y + 2).lineTo(x + len / 2, y - 1).lineStyle(0);
-    structG.beginFill(0xd8b25f).drawCircle(x - len / 2, y + 2, 1.8).endFill();
+    const id = `fa_${sortAt(k.x, k.y)}_${k.ved <= 3 ? 0 : k.ved <= 7 ? 1 : 2}_${tid}`, b = STUBBILDER[id];
+    pileIcons.add('sb_' + id, Math.round(k.x * TS) - 4 - b.fx, Math.round(k.y * TS) + 4 - b.fy, 1);
   }
+  pileIcons.end();
   // eldarna: värmeområdet för varje brinnande lägereld när eldens flik är öppen, och en ring runt den som fliken visar (ui.eld)
   if (tab === 'eld') for (const f of eldarOf(s)) {
     const e = eldXY(s, f), cx = e.x * TS + TS / 2, cy = e.y * TS + TS / 2;
