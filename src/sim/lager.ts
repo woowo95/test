@@ -356,10 +356,16 @@ const allUsable = (s: State, z: Zone) => { for (let y = z.y; y < z.y + z.h; y++)
 const overlaps = (a: Zone, b: Zone, gap: number) => a.x < b.x + b.w + gap && b.x < a.x + a.w + gap && a.y < b.y + b.h + gap && b.y < a.y + a.h + gap;
 // rutorna runt en lagerplats, närmast först (från fran till och med till rutor ut). En i taget, så att den som letar efter
 // den första lediga inte går igenom hela kartan
-function* ringTiles(s: State, z: Zone, fran = 1, till = LAGER.bredvid) {
-  for (let d = fran; d <= till; d++) for (let y = z.y - d; y < z.y + z.h + d; y++) for (let x = z.x - d; x < z.x + z.w + d; x++) {
-    const e = Math.max(z.x - x, x - (z.x + z.w - 1), z.y - y, y - (z.y + z.h - 1));
-    if (e === d && usable(s, x, y)) yield { x, y };
+// Bara kanten av varje ring gås igenom, rad för rad som förut (övre raden, sidorna, nedre raden). fore = en snabb kontroll
+// som görs före usable (samma rutor och samma ordning, bara färre dyra kontroller). Ringarna slutar vid kartans kant
+function* ringTiles(s: State, z: Zone, fran = 1, till = LAGER.bredvid, fore?: (x: number, y: number) => boolean) {
+  const ok = (x: number, y: number) => (!fore || fore(x, y)) && usable(s, x, y);
+  for (let d = fran; d <= till; d++) {
+    const x0 = z.x - d, x1 = z.x + z.w - 1 + d, y0 = z.y - d, y1 = z.y + z.h - 1 + d;
+    if (x0 < 0 && y0 < 0 && x1 >= W && y1 >= H) return; // ringen ligger helt utanför kartan, och alla efter den också
+    for (let x = x0; x <= x1; x++) if (ok(x, y0)) yield { x, y: y0 };
+    for (let y = y0 + 1; y < y1; y++) { if (ok(x0, y)) yield { x: x0, y }; if (ok(x1, y)) yield { x: x1, y }; }
+    for (let x = x0; x <= x1; x++) if (ok(x, y1)) yield { x, y: y1 };
   }
 }
 const key = (x: number, y: number) => y * W + x;
@@ -462,7 +468,7 @@ function besideSpot(s: State, k: string, occ: Occ) {
   const upptagen = new Set<number>();
   for (const a of things(s)) if (!(a.k === k && !isTool(k) && a.n < rymd(s, a.x, a.y, k) - 1e-9)) upptagen.add(key(a.x, a.y));
   const z0 = (base.length ? base : zs)[0];
-  for (const r of ringTiles(s, z0, LAGER.bredvid + 1, Math.max(W, H))) if (zoneAt(s, r.x, r.y) < 0 && !upptagen.has(key(r.x, r.y)) && nasIFloden(s, key(r.x, r.y)) && !(s.flodHot && isFood(k) && flodHotad(s, key(r.x, r.y)))) return r; // inte dit vattnet stiger (steg 3.8.7)
+  for (const r of ringTiles(s, z0, LAGER.bredvid + 1, Math.max(W, H), (x, y) => inMap(x, y) && !upptagen.has(key(x, y)))) if (zoneAt(s, r.x, r.y) < 0 && nasIFloden(s, key(r.x, r.y)) && !(s.flodHot && isFood(k) && flodHotad(s, key(r.x, r.y)))) return r; // inte dit vattnet stiger (steg 3.8.7)
   return { x: zs[0].x, y: zs[0].y }; // hela kartan är full
 }
 export const fetchSpot = (s: State, k: string) => {
