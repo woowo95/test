@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { BJORK, BRAND, DAY, H, HOUR, STADIER, T, VAG, W, tradArt, valjArt, ageIndex, stadium, emberOn, fireHeat, eldXY, eldarOf, groundOf, isCm, kalender, lightLevel, snoPaMarken, vaderNu } from '../sim';
+import { BJORK, BRAND, busksort, FYND, fyndAt, DAY, H, HOUR, STADIER, T, VAG, W, tradArt, valjArt, ageIndex, stadium, emberOn, fireHeat, eldXY, eldarOf, groundOf, isCm, kalender, lightLevel, snoPaMarken, vaderNu, LJUSKALLOR } from '../sim';
 import { s, ui } from './lage';
 import { TS, app, figurLayer, husLayer, mork, pileLayer, terrainG, world } from './scen';
 import { ritaSkuggor, sattMoln, skuggLangd } from './skugga';
@@ -9,6 +9,7 @@ import { DJUPNATT } from '../palett';
 import { animMark, markytaLayer, ritaMark, stallMark } from './mark';
 import { animBild } from './animation';
 import { type Lov, stallTrad, tradBild, tradSkuggor } from './trad';
+import { buskBild } from './buske';
 
 // marken (steg 5.1.3.1): gräs, vatten, strand, stigar, sten, lera, aska och snö ritas i pixlar i ui/mark.ts. Här bestäms
 // när: hela marken när tidsåldern, isen, vattnet eller byn byts, annars bara de rutor som ändrats (stigarna, skogen, askan).
@@ -37,9 +38,11 @@ function lovAt(x: number, y: number): Lov {
 export const OMRITA_MS = 1000;
 // trädets stadium och storlek i steg: 0 = inget träd, plantan och ungträdet i fyra steg var, sedan vuxet, gammalt och torraka
 const STAD = Object.fromEntries(STADIER.map((d, k) => [d.id, k]));
+// bärbusken har mogna bär att plocka just nu (steg 6.5.4): då ritas bären på busken
+const mognaBar = (i: number) => fyndAt(s, 'bar', i) >= FYND.bar.topp * 0.15;
 function treeLevel(g: ReturnType<typeof groundOf>, i: number) {
   const st = stadium(g, i);
-  return st === null ? 0 : st === 'planta' || st === 'ungtrad' ? 1 + STAD[st] * 4 + Math.floor(g.trees[i] * 4) : 9 + STAD[st];
+  return st === null ? (busksort(g, i) ? 20 + (mognaBar(i) ? 1 : 0) : 0) : st === 'planta' || st === 'ungtrad' ? 1 + STAD[st] * 4 + Math.floor(g.trees[i] * 4) : 9 + STAD[st];
 }
 function coverSig() {
   const g = groundOf(s); let h = 0;
@@ -85,6 +88,7 @@ function ritaTrad(g: ReturnType<typeof groundOf>, sno: number) {
   stallTrad(figurLayer, W, H, i => {
     const x = i % W, y = (i / W) | 0, st = jord(g.tiles[i]) ? stadium(g, i) : null;
     const b = st ? tradBild(st, g.trees[i], x, y, VAG.ungskog, tradArt(g, i).id === 'bjork')
+      : jord(g.tiles[i]) && busksort(g, i) ? buskBild(x, y, mognaBar(i)) // busken (steg 6.5.3), en av tre former efter rutan, med bären på när de är mogna (steg 6.5.4)
       // ett ungt träd i skogskanten, med den sort som skulle slå rot där (steg 5.1.6)
       : kant(i) && kantHash(x, y) < 0.3 ? tradBild('ungtrad', VAG.ungskog + (1 - VAG.ungskog) * kantHash(y, x) * 0.7, x, y, VAG.ungskog, valjArt(s.seed, g, i, true) === BJORK) : null;
     if (b?.bjork) b.lov = lovAt(x, y);
@@ -107,6 +111,8 @@ export function drawNight(t: number) {
     const f = eldXY(s, e), k = I > 0 ? 0.45 + 0.55 * I : 0.12;
     eldar.push({ x: f.x * TS + TS / 2, y: f.y * TS + TS / 2, r: TS * 6 * k, k: I > 0 ? 1 : 0.5 });
   }
+  // facklorna och de andra ljuskällorna (steg 6.3.6–6.3.8, LJUSKALLOR i sim/ljus.ts); elden har sitt sken ovan
+  if (m > 0) for (const [n, k] of Object.entries(LJUSKALLOR)) if (n !== 'eld') for (const l of k.kallor(s)) eldar.push({ x: l.x * TS, y: l.y * TS, r: TS * l.r, k: 0.8 });
   stallNatt(mork, world, Math.min(DJUPNATT, m), eldar);
 }
 // skuggorna på marken och golven (steg 5.1.8, ui/skugga.ts): träden, folket, djuren, stationerna, sakerna och väggarna.

@@ -348,6 +348,8 @@ SCENARIER.bostad = {
 
 SCENARIER.bygg = {
   text: 'Byn bygger själv ett timmerhus en bit från elden när någon kan det och sovplatser saknas: träden där huset ska stå fälls först och blir väggar, väggar stänger vägen, golvet under tak blir sovplatser, rummet håller värmen, och slitna väggar lagas eller rasar',
+  lang: true,
+  env: { BALANS: 'brand.gnista=0' }, // ingen gnista från elden: en brand kan bränna byn (steg 6.4.1), och här prövas bygget
   kor: () => {
     // handbyggt rum: 4×4 väggar med en öppning, 2×2 golv inuti
     const s = createState(5, START), f = getMap(s.seed).fire;
@@ -852,6 +854,8 @@ SCENARIER.skogsrojning = {
     const p = living(s).find(q => q !== agare && ageOf(q, s.now) >= 18)!;
     addTool(s, 'yxa', p);
     const forst = treeSpot(s, new Set(), p), forstOk = !!forst && SIM.skaRojas(s).includes(tileOf(forst.x, forst.y));
+    // byn har mat, så att den med yxa inte måste jaga för egen räkning (det prövas inte här)
+    put(s, 'bar', 150);
     kor(s, 48);
     const kvar = [...lagerRutor, ...faltRutor].filter(i => g.trees[i] >= FOREST).length;
     const tra = SIM.stocks(s).length + amountOf(s, 'ved');
@@ -938,7 +942,9 @@ SCENARIER.strak = {
     let paStrak = 0, husPa = 0, timmar = 0, maxRutor = 0;
     const nyttPa: string[] = [];
     for (let t = 0; t < 120; t++) {
-      const fore = SIM.straken(s).ruta.slice();
+      const fore = SIM.straken(s).ruta.slice(), vagar0 = SIM.straken(s).vagar.map(v => ({ mal: v.mal, rutor: v.rutor.slice() }));
+      // den sista rutan på ett stråk till ett lager: växer lagret över den blir stråket bara kortare
+      const sistaTillLager = (r: number) => vagar0.every(v => !v.rutor.includes(r) || v.mal === 'lager' && v.rutor.indexOf(r) === v.rutor.length - 1);
       const st0 = new Set(SIM.stationerOf(s)), z0 = zonesOf(s).map(z => `${z.x},${z.y},${z.w},${z.h}`), f0 = new Set(s.falt ?? []), h0 = new Set(housesOf(s));
       kor(s, 1); timmar++;
       const pa = (x: number, y: number, w: number, h: number) => { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) if (fore[j * W + i]) return true; return false; };
@@ -947,7 +953,7 @@ SCENARIER.strak = {
         const gammal = zonesOf(s).length && z0.map(k => k.split(',').map(Number)).find(([x, y]) => Math.abs(x - z.x) <= 1 && Math.abs(y - z.y) <= 1);
         for (let j = z.y; j < z.y + z.h; j++) for (let i = z.x; i < z.x + z.w; i++) {
           const forut = gammal && i >= gammal[0] && i < gammal[0] + gammal[2] && j >= gammal[1] && j < gammal[1] + gammal[3];
-          if (!forut && fore[j * W + i]) { paStrak++; nyttPa.push('lager'); }
+          if (!forut && fore[j * W + i] && !sistaTillLager(j * W + i)) { paStrak++; nyttPa.push('lager'); }
         }
       }
       for (const f of s.falt ?? []) if (!f0.has(f) && SIM.faltRutor(f).some(i => fore[i])) { paStrak++; nyttPa.push('fält'); }
@@ -979,10 +985,12 @@ SCENARIER.strakprov = {
     // samma körning som npm run prov, för en by: utan stråken med BALANS="strak.pa=0" (balanstalen går inte att ändra i en körning)
     const fil = fileURLToPath(new URL('../prov-en.ts', import.meta.url));
     const by = (env: Record<string, string>) => {
-      const u = spawnSync(process.execPath, ['--import', 'tsx', fil, '1001', '8'], { env: { ...process.env, ...env }, encoding: 'utf8' });
+      const u = spawnSync(process.execPath, ['--import', 'tsx', fil, '1002', '8'], { env: { ...process.env, ...env }, encoding: 'utf8' });
       if (u.status) throw new Error(`prov-en.ts kraschade:\n${(u.stderr ?? '').slice(-1500)}`);
       return JSON.parse(u.stdout.trim().split('\n').pop()!) as { hus: number; fran: number; samre: number; ingen: number; om: number; utan: boolean; vakter: string[] };
     };
+    // by 1002: by 1001 har sedan bärbuskarna (6.5.4) så mycket mat och fritid att ingen kommit på timmerväggen efter 8 dygn,
+    // och då byggs inget hus att pröva stråken på (balansen hör till 6.10)
     const med = by({}), utan = by({ BALANS: 'strak.pa=0' });
     return [
       [`båda byarna har hus efter 8 dygn (8 år i spelet): med ${med.hus}, utan ${utan.hus}`, med.hus > 0 && utan.hus > 0 && !med.utan && utan.utan],

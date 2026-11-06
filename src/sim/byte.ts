@@ -1,5 +1,6 @@
 import { ByteMinne, ByteVara, HOUR, LogEntry, MIN, SEC, Person, State } from './typer';
-import { SAKER, isTool } from './saker';
+import { isTool } from './saker';
+import { antal, och } from './ord';
 import { Ting } from './agande';
 import { ALDER, ageOf, log } from './folk';
 import { ownMove } from './lager';
@@ -48,8 +49,8 @@ export interface Part {
   rymmer?(): number; // så många kg till kan parten ta emot (handlarens packning); saknas = hur mycket som helst
 }
 export const vardeOf = (v: Vara) => grundvarde(v.k) * (v.t ? v.t.c * kvVarde(v.t) : 1);
-const tal = (n: number) => n >= 0.5 ? String(Math.round(n)) : 'lite'; // saker i hela tal (Björn efter v89)
-export const varorText = (v: Vara[]) => v.map(x => `${x.t ? 'en' : tal(x.n)} ${(SAKER[x.k]?.namn ?? x.k).toLowerCase()}`).join(' och ');
+// varorna i en mening (ordlagret, steg 6.7.1): "ett träspjut", "tre rötter och en flintkniv"
+export const varorText = (v: Vara[]) => och(v.map(x => antal(x.t ? 1 : x.n, x.k)));
 
 // w går från fran till till. Mellan två bybor byter bara ägaren i förrådet (ownMove) eller redskapet (tinget); handlaren
 // och byn har egna sätt att lämna och ta emot (lamna, ta)

@@ -10,12 +10,13 @@
 // bufferten är materialet ett behov under Försörjning, och över taket plockar ingen av det (eld.ts, val.ts, projekt.ts).
 // Målen räknas en gång i timmen med arbetarna (arbetsTimme i val.ts) och sparas i s.arbBehov, så att alla lägen räknar likadant.
 import { balans } from './balans';
+import { ljusPlatser } from './ljus';
 import { allows, amountOf, rymd, zonesOf } from './lager';
 import { Pabud, pabud } from './styre';
 import { ALDER, ageOf, living } from './folk';
 import { clamp } from './slump';
 import { sportFor } from './sport';
-import { STATIONER, StationDef, StationSlag, bordBrist, forvarBrist, harStation, pyntBrist, tommaPlatser } from './stationer';
+import { STATIONER, StationDef, StationSlag, bordBrist, forvarBrist, harStation, isKlar, pyntBrist, stationerOf, tommaPlatser } from './stationer';
 import { brasaBrist } from './brasor';
 import { utanBadd } from './byggnader';
 import { latrinBrist } from './smuts';
@@ -66,6 +67,7 @@ export const VILLTAL = balans('vill', {
   knivar: 1, // ... så många knivar, och en till för varje tom knivplats vid en station (stationer.ts)
   spadar: 1, // så många benspadar byn vill ha (steg 2.7.2)
   vattensackar: 1, // så många vattensäckar byn vill ha (steg 2.10.1)
+  facklor: 3, // så många facklor byn vill ha när den kan göra dem (steg 6.3.6)
 });
 // det som lämnas kvar i förrådet till elden av slaget k när något byggs (bygg.ts, stationer.ts)
 export const sparas = (k: string) => k === 'ved' ? TROSKEL.ved : k === 'grenar' ? TROSKEL.grenar : k === 'torrgras' ? TROSKEL.torrgras : 0;
@@ -173,6 +175,8 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   skor: s => living(s).length,
   balte: s => living(s).length, // ett per person (steg 2.3.3)
   benspade: () => VILLTAL.spadar, // till latrinen och rötterna (steg 2.7.2)
+  fackla: () => VILLTAL.facklor, // till den som går ut i mörkret (steg 6.3.6, ljus.ts)
+  talgljus: s => ljusPlatser(s).length, // ett till varje bord och hylla inne där folk är vakna i mörker (steg 6.3.8, ljus.ts)
   vattensack: () => VILLTAL.vattensackar, // till den som inte kan gå (steg 2.10.1)
   boll: s => sportFor(s, 'boll'), slagtra: s => sportFor(s, 'slagtra'), mal: s => sportFor(s, 'mal'), // en av varje när byn har vuxna nog till sporten (sport.ts, steg 4.3.1.2)
   trumma: s => tommaPlatser(s, 'trumma'), benflojt: s => tommaPlatser(s, 'benflojt'), lyra: s => tommaPlatser(s, 'lyra'), // ett av varje till scenen (steg 4.3.2.2)
@@ -184,8 +188,10 @@ export const villAv = (s: State, g: string) => REDSKAPMAL[g](s);
 // en station av sorten k: bufferten är en färdig. Halmbäddarna (det byn kan ha flera av, steg 2.2.5): en per den som sover
 // under tak; borden (steg 2.2.15) en plats per invånare; förvaringen, pyntet, brasorna, latrinen och torkställningen efter
 // sina egna mått. Bristen är hur stor del av bufferten som saknas (0 till 1), som projektets brist (projekt.ts)
+// En halvbyggd station (en kista, ett pynt) görs klar även när ingen längre vill ha en ny: bristen är då 1
 export function stationBrist(s: State, k: StationSlag) {
   const d: StationDef = STATIONER[k];
+  if (!d.brasa && stationerOf(s).some(t => t.k === k && !isKlar(t))) return 1;
   return d.pynt ? pyntBrist(s, k) : d.brasa ? brasaBrist(s) : d.sover ? (living(s).length ? utanBadd(s) / living(s).length : 0) : d.platser ? bordBrist(s, k)
     : d.forvar ? forvarBrist(s, k) : d.gor.includes('toa') ? latrinBrist(s) : d.gor.includes('torka') ? torkBrist(s) : harStation(s, k) ? 0 : 1;
 }

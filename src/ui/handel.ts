@@ -1,5 +1,6 @@
 import * as PIXI from 'pixi.js';
 import { BYTE, SEC, byId, clamp, filtMot, radByte } from '../sim';
+import { ritaSlagen } from './stridkarta';
 import { gaster } from './gaster';
 import { iconCanvas } from '../ikoner';
 import { s, ui } from './lage';
@@ -20,8 +21,12 @@ lagerEfter(kantG, filtLayer);
 // 4.5.2 och 4.5.4.12), i sin egen färg. Den valda får en vit ring som en vald bybo
 const framlingG = new PIXI.Graphics();
 handLayer.addChild(framlingG);
-function cirkel(x: number, y: number, col: number, vald: boolean) {
+function cirkel(x: number, y: number, col: number, vald: boolean, ligger?: boolean) {
   const r = 5;
+  if (ligger) { // har fallit i striden (steg 6.6.10): liggande på marken
+    framlingG.lineStyle(vald ? 2.5 : 1.2, vald ? 0xffffff : 0x1a1a1a, vald ? 1 : 0.8).beginFill(col).drawEllipse(x, y + r * 0.5, r * 1.3, r * 0.55).endFill().lineStyle(0);
+    return;
+  }
   framlingG.beginFill(0x372f25).drawEllipse(x, y + r * 0.9, r * 0.9, r * 0.35).endFill();
   framlingG.lineStyle(vald ? 2.5 : 1.2, vald ? 0xffffff : 0x1a1a1a, vald ? 1 : 0.8).beginFill(col).drawCircle(x, y, r).endFill().lineStyle(0);
 }
@@ -57,7 +62,8 @@ export function drawHandel() {
   filtIkoner.start(); handIkoner.start(); framlingG.clear(); kantG.clear();
   const vf = ui.tab === 'filt' ? valdFilt() : undefined, markerad = vf ? [vf, filtMot(s, vf)] : [];
   drawGodkant();
-  for (const g of gaster()) cirkel(g.x * TS, g.y * TS, g.farg, g.id === ui.selected);
+  for (const g of gaster()) if (!g.rovare) cirkel(g.x * TS, g.y * TS, g.farg, g.id === ui.selected, g.ligger);
+  ritaSlagen(framlingG, ui.nu, TS); // striden med rövarna: vem som slår vem (steg 6.6.10)
   for (const f of s.filtar ?? []) {
     if (!f.handlare && f.slut <= ui.nu) continue;
     // handlarens filt och bybornas (Björn valde efter v245: den förra för handlaren och version 1 för byborna, steg 4.5.2)

@@ -1,3 +1,4 @@
+import { gen, hans } from './ord';
 import { omrade, tillHoljet } from './omrade';
 import { upplev } from './uppvaxt';
 import { ALDER, ageOf, count, doingAct, forstaGang, livet, living, log, stat } from './folk';
@@ -17,6 +18,7 @@ import { freeTools, tingOf } from './agande';
 import { getable, Recept, takeMaterial } from './behov';
 import { Del } from './egendom';
 import { fellingTiles } from './skog';
+import { stubbeOn } from './stubbar';
 import { FOREST, findPath } from './vag';
 import { BYGGNADER, Byggnad, Fn, HUS, antalLika, bedTile, familjOf, fnOf, husKlar, mostUrgent } from './byggnader';
 import { GRANNAR4, H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
@@ -232,7 +234,7 @@ export function buildJob(s: State, p: Person): Job | undefined {
   }
   let best: Job | undefined, bs = Infinity;
   for (const b of bitsOf(s)) {
-    if (taken.has(b.id) || b.k === 'oppning' || (b.b < 1 && (treeOn(s, b) || vidElden(s, b.x, b.y)))) continue; // där elden står byggs inget förrän den flyttats (eldflytt.ts)
+    if (taken.has(b.id) || b.k === 'oppning' || (b.b < 1 && (treeOn(s, b) || stubbeOn(s, b.x, b.y) || vidElden(s, b.x, b.y)))) continue; // där elden står byggs inget förrän den flyttats (eldflytt.ts)
     const M = MATERIAL[b.m], repair = b.b >= 1;
     if (repair && b.c >= BYGG.laga) continue;
     if (M.tek && !knows(p, M.tek)) continue;
@@ -281,6 +283,7 @@ export function komOf(h: Hus) {
 // för bygget (hus = husets id). Ger hur mycket som gick åt
 export function toWalls(s: State, x: number, y: number, n: number, hus?: number, by?: Person) {
   const h = housesOf(s).find(q => !q.klar && (hus ? q.id === hus : x >= q.x && y >= q.y && x < q.x + q.w && y < q.y + q.h));
+  n = Math.floor(n + 1e-9); // bara hela stockar går till väggarna; resten ligger kvar på stammen
   if (!h || n <= 0) return 0;
   let used = 0;
   const walls = bitsOf(s).filter(b => b.hus === h.id && b.k === 'vagg' && b.b < 1 && MATERIAL[b.m].item === 'ved' && lacks(b)).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y));
@@ -319,7 +322,7 @@ export function workOn(s: State, p: Person, b: Bit, dtSec: number, har = 0) {
     const n = gridOf(s).rooms.filter(r => r.hus === h.id).reduce((a, r) => a + r.tiles.length, 0);
     if (fnOf(h).sover) log(s, `${h.namn} är färdigt. Nu kan ${n} sova under tak.`, 'world', [p.id]);
     notis(s, 'hus', `${p.name} satte sista biten: ${h.namn} är färdigt.`, [p.id], { x: Math.floor(p.x), y: Math.floor(p.y) });
-    kronikaBer(s, 'k_husKlar', h.id, { ...personFalt(p), ...husFalt(h.namn) }); husKlar(s, h);
+    { const hf = husFalt(h.namn); kronikaBer(s, 'k_husKlar', h.id, { ...personFalt(p), ...hf, hus2: hf.hus.replace(new RegExp(`^${gen(p.name)} `), `${hans(p)} `) }); } husKlar(s, h);
     if ((h.byggare?.length ?? 0) > 1) for (const q of living(s)) if (h.byggare!.includes(q.id)) upplev(s, q, 'byggdeHus', h.namn.toLowerCase()); // de byggde tillsammans (steg 4.5.4.9)
     h.byggare = undefined;
   }
@@ -406,4 +409,13 @@ export function finishDorr(s: State, p: Person, tk: Task) {
   if (forstaGang(s, 'dorr_' + k)) { log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]); p.fame.push(`Hängde byns första ${d.namn.toLowerCase()}`); }
 }
 // husets namn mitt i en mening ('långhuset', 'Stevids hus') och färdig eller färdigt efter genus (steg 4.5.1.4)
-const husFalt = (namn: string) => ({ hus: / hus$/.test(namn) ? namn : namn.charAt(0).toLowerCase() + namn.slice(1), klart: /(et|hus)$/.test(namn) ? 'färdigt' : 'färdig' });
+// huset i krönikan: "Förrådshus 2" blir "det andra förrådshuset" (inga siffror i texten, steg 6.7.4), "Hydda 3" "den tredje hyddan"
+const NUMMER = ['', 'första', 'andra', 'tredje', 'fjärde', 'femte', 'sjätte', 'sjunde', 'åttonde', 'nionde', 'tionde', 'elfte', 'tolfte'];
+function husFalt(namn: string) {
+  const m = namn.match(/^(\S+) (\d+)$/);
+  if (m) {
+    const bas = m[1].toLowerCase(), ett = /hus$/.test(bas), best = ett ? `${bas}et` : bas.replace(/a$/, 'an'), n = +m[2];
+    return { hus: n < NUMMER.length ? `${ett ? 'det' : 'den'} ${NUMMER[n]} ${best}` : `ännu ${ett ? 'ett' : 'en'} ${bas}`, klart: ett ? 'färdigt' : 'färdig' };
+  }
+  return { hus: / hus$/.test(namn) ? namn : namn.charAt(0).toLowerCase() + namn.slice(1), klart: /(et|hus)$/.test(namn) ? 'färdigt' : 'färdig' };
+}

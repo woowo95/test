@@ -1,3 +1,4 @@
+import { honom } from './ord';
 import { upplev } from './uppvaxt';
 import { ALDER, REL, ageOf, count, getRel, isParent, living, log, relKey, think } from './folk';
 import { DAY, Person, Rel, SKILLS, Skill, State } from './typer';
@@ -58,7 +59,7 @@ export const RELATIONER: Record<string, RelTyp> = {
   larling: { namn: 'Lärling', ikon: 'r_larling', har: (_s, p, q) => p.mentor === q.id, varfor: (_s, p, q) => `${q.name} är mentor för ${p.name} i ${skillNamn(p.mentorSk)}, tills ${p.name} har kommit ikapp.` },
   rival: { namn: 'Rival', ikon: 'r_rival', har: (_s, p, q) => !!p.rivaler?.includes(q.id), varfor: (_s, p, q) => `${p.tag && p.tag === q.tag ? `Båda är ${p.tag.toLowerCase()} och tävlar i det` : 'De vill ha samma person'}. De arbetar lite hårdare, grälar oftare och ger varandra mindre.` },
   fiende: { namn: 'Ovän', ikon: 'r_fiende', har: (_s, p, q, r) => r.op < REL.ovan && p.arke !== q.id, varfor: () => 'Ovänner: de undviker att arbeta och sitta nära varandra och grälar när de möts.' },
-  arke: { namn: 'Ärkefiende', ikon: 'r_arke', har: (_s, p, q) => p.arke === q.id, varfor: (_s, p, q) => `Den ${p.name} hatar mest. De grälar nästan varje gång de möts, ${p.name} ger ${q.name} aldrig något och tar hellre av hen.` },
+  arke: { namn: 'Ärkefiende', ikon: 'r_arke', har: (_s, p, q) => p.arke === q.id, varfor: (_s, p, q) => `Den ${p.name} hatar mest. De grälar nästan varje gång de möts, ${p.name} ger ${q.name} aldrig något och tar hellre av ${honom(q)}.` },
 };
 export const SKILL_ORD: Record<Skill, string> = { samla: 'samlande', jakt: 'jakt', fiske: 'fiske', ved: 'vedhuggning', hantverk: 'hantverk', berattande: 'berättande', matlagning: 'matlagning', narstrid: 'närstrid', traff: 'träffsäkerhet', skaldskap: 'skaldskap', handel: 'handel' };
 const skillNamn = (k?: Skill) => k ? SKILL_ORD[k] : 'något';

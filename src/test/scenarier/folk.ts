@@ -39,6 +39,7 @@ SCENARIER.faror = {
       klockan(s, 11); byggare(s); tandEld(s);
       for (const p of living(s)) Object.assign((p.tek ??= {}), { korg: 1, fiskespjut: 1, metspo: 1, kniv: 1 });
       setStock(s, { ved: 200, grenar: 20, torrgras: 40, flinta: 3, ben: 2, rep: 2 }); setAmount(s, 'yxa', 1); setFood(s, 200);
+      s.delning = { andel: 1 }; // byn delar all mat, så att familjerna inte fyller sin egen del av bufferten (steg 6.2.20)
       planBuild(s);
       return s;
     };
@@ -65,7 +66,7 @@ SCENARIER.faror = {
     const ute = by(); setFood(ute, 0.3); const c = SIM.bynsMitt(ute);
     (ute.stackar ??= []).push({ k: 'grenar', n: 5, c: 1, x: Math.floor(c.x) + 9, y: Math.floor(c.y) });
     const barGren = SIM.haulJob(ute, undefined, true), barGrenRik = SIM.haulJob(ute);
-    ute.stackar.push({ k: 'bar', n: 3, c: 1, x: Math.floor(c.x) - 9, y: Math.floor(c.y) });
+    ute.stackar.push({ k: 'bar', n: 3, c: 1, x: Math.floor(c.x) - 9, y: Math.floor(c.y) }); SIM.touch(ute); // bärlistan räknas en gång i timmen (steg 6.2.21): räkna om den nu
     const barBar = SIM.haulJob(ute, undefined, true);
     return [
       [`rik by: bygge, hantverk och fritid ${pct(rik.andel(FORBATTRING))} av valen (${rik.topp})`, rik.andel(FORBATTRING) > 0.3],
@@ -355,7 +356,7 @@ SCENARIER.uppvaxt = {
       for (let i = 0; i < 20; i++) { const c = SIM.newPerson(s, 'k', s.now, mo, fa); for (const k of SIM.STATS) { summa += c.pot[k]; n++; } }
       const medel = summa / n;
       return [
-        [`barnet (8 år) som miste sina föräldrar minns det och blev föräldralöst (${(barn.upp ?? []).map(SIM.upplevelseText).join('; ')})`, har(barn, 'foralder') && har(barn, 'foraldralos') && s.log.some(l => l.text.includes('Blev föräldralös'))],
+        [`barnet (8 år) som miste sina föräldrar minns det och blev föräldralöst (${(barn.upp ?? []).map(SIM.upplevelseText).join('; ')})`, har(barn, 'foralder') && har(barn, 'foraldralos') && s.log.some(l => /blev föräldralös/i.test(l.text))],
         [`egenskaperna är anlagen plus upplevelserna, och anlagen sparas (${!!barn.anlag})`, flyttad && !!barn.anlag],
         [`den vuxna (20 år) minns föräldrarnas död men blev inte föräldralös (${(vuxen.upp ?? []).map(SIM.upplevelseText).join('; ')})`, har(vuxen, 'foralder') && !har(vuxen, 'foraldralos') && !!vuxen.upp?.every(u => u.v === 1)],
         [`två svåra skador ger ett minne (${skador}): ${SIM.upplevelseText(barn.upp!.find(u => u.k === 'skadad')!)}`, skador === 1],
@@ -402,6 +403,7 @@ SCENARIER.humor = {
 
 SCENARIER.utbrott = {
   text: 'Utbrotten (steg 3.2.2): den som mår mycket dåligt brister ut, behoven går före, den som är elak sänker den andras humör, en sak slås sönder och efteråt mår man lite bättre',
+  lang: true,
   kor: () => {
     // en by där alla mår mycket dåligt i åtta dygn (åtta år i spelet)
     // (med ved och en flinta i förrådet: utan dem frös flera ihjäl första natten, steg 5.1.4.1 och 6.1.8, och då mäts inte utbrotten)
@@ -1553,12 +1555,16 @@ SCENARIER.beskrivning = {
     // alla i en by: ingen tom plats, ingen mall kvar, 2–4 meningar
     const alla = living(t).map(x => SIM.beskrivning(t, x));
     const hela = alla.every(x => !/[{}]|undefined|  | \.|^\s*$/.test(x) && meningar(x) >= 2 && meningar(x) <= 5);
+    // eftermälet (steg 6.7.4): den döda beskrivs i dåtid, med döden först och utan det som bara passar en levande
+    SIM.die(t, p, 'sjukdom'); t.now += 2 * HOUR;
+    const dod = SIM.beskrivning(t, p);
     return [
       [`de egenskaper som sticker ut står med (${b1})`, /stark/.test(b1) && /kall/.test(b1)],
       ['partnern, vännen och ovännen nämns', b1.includes(q.name) && b1.includes(v.name) && b1.includes(o.name)],
       ['texten står kvar när tiden går', b1 === b2],
       [`namnet byn gav står med (${b3})`, b3.includes('Björnen')],
       [`alla i byn får en hel text (${alla[0]})`, hela],
+      [`den döda beskrivs i dåtid, döden först (${dod})`, /^[^.]*dog\b[^.]*av sjukdom/.test(dod) && /\bvar\b/.test(dod) && !/\b(är|möter|gillar|tycker om)\b/.test(dod) && !/[{}]|undefined/.test(dod) && meningar(dod) >= 3],
     ];
   },
 };
@@ -1723,6 +1729,7 @@ SCENARIER.kronika = {
 };
 
 SCENARIER.masterverk = {
+  lang: true,
   text: 'Steg 3.9.4: när ett mästerverk eller en usel sak görs sparas görarens humör, årstiden, vädret, vem som var nära, vem det gjordes åt och något om görarens liv. Inforutan berättar om saken (mallarna m_* och u_* i BERATTELSER), ett perfekt mästerverk (★) får ett eget namn, och ett perfekt vapen som fäller en varg heter sedan Vargdräparen',
   kor: () => {
     const t = createState(11, START);
@@ -1796,6 +1803,7 @@ SCENARIER.amnen = {
 };
 
 SCENARIER.relationstext = {
+  lang: true,
   text: 'Steg 3.9.6: ett tryck på en relation i personrutan berättar utförligt vad hen tycker om den andra och varför: hur nära de är, personkemin, vad de varit med om tillsammans (samtal, barn, gräl, slagsmål, lek, strider sida vid sida, gåvor åt båda hållen; Rel.minns) och vad hen tror om den andra (intrycken och ryktena)',
   kor: () => {
     const hel = (x: string) => !/[{}]|undefined|NaN|  | \.|^\s*$/.test(x) && /[.!"]$/.test(x);

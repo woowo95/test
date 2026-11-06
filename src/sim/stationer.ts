@@ -4,6 +4,7 @@ import { Act, GRANNAR4, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } fr
 import { eldPlats, getMap } from './karta';
 import { knows } from './teknik';
 import { ALDER, ageOf, alive, byId, count, doingAct, familjOf, forstaGang, gjort, living, log } from './folk';
+import { enOrd, han, hans, sinOrd, stor } from './ord';
 import { getable, Recept, takeMaterial } from './behov';
 import { sparas } from './forradsmal';
 import { Ting, freeTools, tingOf, wearTool } from './agande';
@@ -127,7 +128,7 @@ export interface Utkant { till: number; avst: number; vatten?: true; falt?: true
 export interface Forvar { rymmer: number; redskap?: true; tak?: true; stangd?: true; privat?: true }
 export interface StationDef { namn: string; ett?: true; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: Utkant; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar; pynt?: true; samtidigt?: number }
 // de enkla redskapen: görs vid slöjdbänken om byn har en, lite fortare där (fart), annars vid elden som förut (Björn, efter v90)
-const ENKLA: Act[] = ['yxa', 'spjut', 'metspo', 'kniv', 'bensyl', 'balte', 'boll', 'slagtra', 'mal', 'trumma', 'benflojt', 'lyra'];
+const ENKLA: Act[] = ['yxa', 'spjut', 'metspo', 'kniv', 'bensyl', 'balte', 'boll', 'slagtra', 'mal', 'trumma', 'benflojt', 'lyra', 'fackla', 'talgljus'];
 export const STATIONER = {
   slaktbank: {
     namn: 'Slaktbänk', ikon: 'slaktbank', w: 3, h: 1, tek: ['slaktbank'], av: { virke: STATION.slaktbankVirke }, min: STATION.slaktbankMin, gor: ['slakta', 'rensa'], bara: ['slakta', 'rensa'], vid: { kniv: STATION.knivplatser }, smutsar: { slakta: 'blod' }, utkant: { till: STATION.slaktTill, avst: STATION.slaktAvst }, // står en bit från byn (steg 2.10.16) // blir blodig när det slaktas (blod.ts)
@@ -168,8 +169,8 @@ export const STATIONER = {
   },
   kista: {
     namn: 'Kista', ikon: 'kista', w: 1, h: 1, tek: ['hylla'], av: { virke: STATION.kistaVirke }, min: STATION.kistaMin, gor: [], mobel: true, flera: true, forvar: { rymmer: STATION.kistaRymmer, tak: true, stangd: true, privat: true },
-    bygger: 'Bygger en kista åt sig själv, i rummet där hen sover.',
-    forsta: '{namn} byggde byns första kista, i rummet där hen sover. Där ligger hens redskap och kläder när hen inte använder dem, och de slits som under tak.',
+    bygger: 'Bygger en kista åt sig själv, i rummet där man sover.',
+    forsta: '{namn} byggde byns första kista, i rummet där {han} sover. Där ligger {hans} redskap och kläder när {han} inte använder dem, och de slits som under tak.',
   },
   stall: {
     namn: 'Redskapsställ', ett: true, ikon: 'stall', w: 1, h: 1, tek: ['hylla'], av: { virke: STATION.stallVirke, rep: STATION.stallRep }, min: STATION.stallMin, gor: [], mobel: true, flera: true, forvar: { rymmer: STATION.stallRymmer, redskap: true },
@@ -213,17 +214,17 @@ export const STATIONER = {
   kruka: {
     namn: 'Lerkruka', ikon: 'kruka', w: 1, h: 1, tek: ['kruka'], av: {}, min: STATION.krukaMin, gor: [], inne: true, mobel: true, flera: true, pynt: true,
     bygger: 'Formar en lerkruka av lera från stranden och bränner den i elden.',
-    forsta: '{namn} formade byns första lerkruka och ställde den där hen sover. Den är bara till för att vara vacker.',
+    forsta: '{namn} formade byns första lerkruka och ställde den där {han} sover. Den är bara till för att vara vacker.',
   },
   bonad: {
     namn: 'Bonad', ikon: 'bonad', w: 1, h: 1, tek: ['bonad'], av: { skinn: STATION.bonadSkinn, rep: STATION.bonadRep }, min: STATION.bonadMin, gor: [], inne: true, mobel: true, flera: true, pynt: true,
     bygger: 'Ritar ett mönster på ett skinn och hänger upp det som en bonad.',
-    forsta: '{namn} hängde upp byns första bonad där hen sover, ett skinn med ett mönster på. Den är bara till för att vara vacker.',
+    forsta: '{namn} hängde upp byns första bonad där {han} sover, ett skinn med ett mönster på. Den är bara till för att vara vacker.',
   },
   vaggbrade: {
     namn: 'Snidat väggbräde', ett: true, ikon: 'vaggbrade', w: 1, h: 1, tek: ['vaggbrade'], av: { virke: STATION.bradeVirke }, min: STATION.bradeMin, gor: [], inne: true, mobel: true, flera: true, pynt: true,
     bygger: 'Snidar mönster i ett bräde och sätter upp det på väggen.',
-    forsta: '{namn} snidade byns första väggbräde och satte upp det där hen sover. Det är bara till för att vara vackert.',
+    forsta: '{namn} snidade byns första väggbräde och satte upp det där {han} sover. Det är bara till för att vara vackert.',
   },
 } satisfies Record<string, StationDef>;
 export type StationSlag = keyof typeof STATIONER;
@@ -797,13 +798,13 @@ export function finishStation(s: State, p: Person, tk: Task) {
   const d = stationDef(t.k)!;
   if (d.brasa) { // ringen till en lägereld till är lagd: den blir en lägereld (brasor.ts)
     nyEld(s, t);
-    if (forstaGang(s, 'station_' + t.k)) { log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]); p.fame.push('Lade byns andra lägereld'); }
+    if (forstaGang(s, 'station_' + t.k)) { log(s, forstaText(d.forsta, p), 'world', [p.id]); p.fame.push('Lade byns andra lägereld'); }
     return;
   }
   if (d.sover) { touch(s); agaBadd(s, t); } // en ny sovplats: var man sover räknas om, och den som sover där äger bädden
   if (d.mobel) nyKvalitet(s, p, t, false, d.namn.toLowerCase()); // möblerna har kvalitet, stationerna inte (kvalitet.ts)
   if (d.verktyg && wearTool(s, p, d.verktyg, STATION.latrinSpade)) { const tr = SAKER[d.verktyg]?.trasig; if (tr) count(s, tr.stat); } // benspaden slits för varje grop
-  if (forstaGang(s, 'station_' + t.k)) { log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]); p.fame.push(`Byggde byns första ${forstaForm(d.namn)}`); }
+  if (forstaGang(s, 'station_' + t.k)) { log(s, forstaText(d.forsta, p), 'world', [p.id]); p.fame.push(`Byggde byns första ${forstaForm(d.namn)}`); }
   fyllPlatser(s);
 }
 
@@ -868,6 +869,8 @@ export function bordBrist(s: State, k: string) {
 // vad den gör (varme: så mycket mindre kyla för den som sover i möbeln). Den görs i handlingen tillbehor (task.tool = sorten)
 // av den som har tid för handarbete, när projektet säger att byn har möbler som saknar den (projekt.ts). Materialet tas
 // när arbetet är klart, så att inget går förlorat om det avbryts. Rivs huset försvinner tillbehöret med möbeln.
+// texten om byns första: namnet och pronomenen efter den som gjorde det (ordlagret, steg 6.7.2)
+const forstaText = (t: string, p: Person) => t.replace('{namn}', p.name).replace(/{hans}/g, hans(p)).replace(/{han}/g, han(p));
 export interface TillbehorDef { namn: string; ikon: string; till: string; tek: string[]; av: Record<string, number>; min: number; varme?: number; gor: string; forsta: string }
 export const TILLBEHOR = {
   skinnfall: {
@@ -1014,8 +1017,8 @@ function tomt(s: State, borta: Station[]) {
   for (const k of tingOf(s)) if (borta.some(t => t.id === k.vid)) { k.vid = undefined; if (k.hos === undefined && k.lass === undefined) k.x = k.y = undefined; }
   for (const t of borta) if (stationDef(t.k)?.forvar?.redskap) stallBorta(s, t.x, t.y);
 }
-// stationen t tas bort
-function taBort(s: State, t: Station) {
+// stationen t tas bort (också när den brunnit upp, brand.ts)
+export function taBort(s: State, t: Station) {
   s.stationer = stationerOf(s).filter(q => q !== t);
   tomt(s, [t]);
   touch(s);
@@ -1103,9 +1106,9 @@ function inredningen(s: State) {
     const egen = sovHus(s, o), namn = d.namn.toLowerCase();
     const at = utan(s, t, () => d.sover ? siteInne(s, t.k, undefined, q => egen !== undefined ? q.id === egen : q.ag === undefined) : siteKista(s, t.k, o));
     count(s, 'möbel utflyttad');
-    if (at) { flytta(s, t, at); log(s, `${o.name} bar sin ${namn} till ${husAv(s, t)?.namn.toLowerCase() ?? 'huset där hen sover'}.`, 'world', [o.id]); continue; }
-    if (!annans) { t.ag = undefined; touch(s); log(s, `${o.name} lämnade sin ${namn} i ${h?.namn.toLowerCase() ?? 'huset'} åt den som sover där.`, 'world', [o.id]); continue; }
-    taBort(s, t); log(s, `${o.name}s ${namn} i ${h.namn.toLowerCase()} togs isär, eftersom den inte fick plats där hen sover.`, 'world', [o.id]);
+    if (at) { flytta(s, t, at); log(s, `${o.name} bar ${sinOrd(d)} ${namn} till ${husAv(s, t)?.namn.toLowerCase() ?? `huset där ${han(o)} sover`}.`, 'world', [o.id]); continue; }
+    if (!annans) { t.ag = undefined; touch(s); log(s, `${o.name} lämnade ${sinOrd(d)} ${namn} i ${h?.namn.toLowerCase() ?? 'huset'} åt den som sover där.`, 'world', [o.id]); continue; }
+    taBort(s, t); log(s, `${o.name}s ${namn} i ${h.namn.toLowerCase()} togs isär, eftersom ${d.ett ? 'det' : 'den'} inte fick plats där ${han(o)} sover.`, 'world', [o.id]);
   }
   for (const t of stationerOf(s)) if (stationDef(t.k)?.sover && isKlar(t)) agaBadd(s, t);
 }
@@ -1116,7 +1119,7 @@ function barIn(s: State) {
     const at = siteInne(s, t.k);
     if (!at) continue;
     flytta(s, t, { ...at, inne: 1 });
-    log(s, `${d.namn}en bars in i ${husById(s, stationRum(s, t)?.hus ?? -1)?.namn ?? 'ett hus'}.`, 'world');
+    log(s, `${stor(enOrd(d))} ${d.namn.toLowerCase()} bars in i ${husById(s, stationRum(s, t)?.hus ?? -1)?.namn ?? 'ett hus'}.`, 'world');
   }
 }
 // stationen stod inne i ett hus som rivits: rutan har inget golv i ett hus längre. Efter en rasad vägg är rummet borta

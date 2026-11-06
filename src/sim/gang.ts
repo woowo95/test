@@ -7,6 +7,7 @@
 // skadade ben ger aldrig mindre än rorGolv. Den som inte kan gå kravlar i fast fart (krypFart, ungefär en ruta på två
 // sekunder) som marken inte drar ner, och bara korta sträckor (kravlaMax; längre bort väntar hen på att bäras, val.ts).
 // Personrutan visar raderna som drar ner farten just nu (gangDelar)
+import { busksort } from './buskar';
 import { balans } from './balans';
 import { ALDER, ageOf, franMitt } from './folk';
 import { kanGa, rorlighetSkador } from './halsa';
@@ -49,7 +50,7 @@ export const GANGFART = {
   mark: { namn: 'Marken', tecken: '🌲', varde: utanSaker, text: l => {
     const t = l.g.tiles[l.i];
     if (!isSoil(t)) return MARKNAMN[t] ?? 'Marken';
-    return l.g.trees[l.i] >= FOREST ? 'Skog' : l.g.trees[l.i] >= VAG.ungskog ? 'Ungskog' : l.g.cover[l.i] >= HIGH ? 'Högt gräs' : 'Marken';
+    return l.g.trees[l.i] >= FOREST ? 'Skog' : l.g.trees[l.i] >= VAG.ungskog ? 'Ungskog' : busksort(l.g, l.i)?.namn ?? (l.g.cover[l.i] >= HIGH ? 'Högt gräs' : 'Marken');
   } },
   saker: { namn: 'Saker på golvet', tecken: '📦', varde: l => kanGa(l.p) && l.g.lost?.[l.i] ? GANG.fartSaker : 1 },
   smidig: { namn: 'Smidigheten i skog och snår', tecken: '🤸', varde: l => { const sp0 = medSaker(l); return markFaktor(sp0, l.sm) / sp0; },

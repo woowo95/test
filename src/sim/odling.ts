@@ -1,3 +1,5 @@
+import { stubbeOn } from './stubbar';
+import { tabortBuske } from './buskar';
 import { OMRADE_DELAR, bynsMitt, iByn, omrade, utanforByn } from './omrade';
 import { ALDER, ageOf, alive, count, familjOf, forstaGang, living, log } from './folk';
 import { FYND, richness, takeFrom } from './fynd';
@@ -271,13 +273,15 @@ function hittaSite(s: State, w: number, n: number) {
 
 // uppgiften på fältet för p (projektet falt i projekt.ts, och skörden i val.ts): nästa steg på hens fält, där arbetet
 // fortsätter, eller att röja ett nytt om hen inte har något och har frön. Inget i mörkret
+// ett träd fälls och en stubbe grävs bort innan rutan röjs (skog.ts, steg 3.6.9 och 6.5.7)
+const iVagen = (s: State, i: number) => groundOf(s).trees[i] >= FOREST || stubbeOn(s, i % W, Math.floor(i / W));
 export interface FaltUppgift { tool: FaltSteg; text: string; min: number; spot: { x: number; y: number }; ref?: number }
 export function faltUppgift(s: State, p: Person): FaltUppgift | undefined {
   if (!isLight(s.now) || !kanOdla(s, p)) return undefined;
   const f = egetFalt(s, p);
   if (f) {
     if (f.steg === 'vaxer') return undefined;
-    if (f.steg === 'roja' && f.klara < f.n && groundOf(s).trees[faltRuta(f, f.klara)] >= FOREST) return undefined; // trädet fälls först (skog.ts, steg 3.6.9)
+    if (f.steg === 'roja' && f.klara < f.n && iVagen(s, faltRuta(f, f.klara))) return undefined; // trädet fälls först (skog.ts, steg 3.6.9)
     // sådden: frön till en ruta till, eller att sådden avslutas när fröna tagit slut
     if (f.steg === 'sa' && f.klara === 0 && !grodaFor(s, p, f.n)) return undefined;
     return { tool: f.steg, text: `${FALT_STEG[f.steg].gor}.`, min: ODLING.pass, spot: nastaRuta(f), ref: f.id };
@@ -346,7 +350,7 @@ export function workOdla(s: State, p: Person, tk: Task, dtSec: number) {
   if (!f || f.steg === 'vaxer' || f.steg !== tk.tool) { tk.until = s.now; return; } // steget ändrades (grödan frös, eller en annan blev klar)
   let t = dtSec * SEC * fart(s, p, f);
   while (t > 0 && f.klara < antal(f) && !froSlut(s, p, f)) {
-    if (f.steg === 'roja' && groundOf(s).trees[faltRuta(f, f.klara)] >= FOREST) { tk.until = s.now; break; } // ett träd fälls först (steg 3.6.9)
+    if (f.steg === 'roja' && iVagen(s, faltRuta(f, f.klara))) { tk.until = s.now; break; } // ett träd fälls först (steg 3.6.9)
     if (t < f.kvar - 1) { f.kvar -= t; break; } // en millisekund kvar räknas som klar (avrundningen)
     t -= f.kvar;
     rutaKlar(s, p, f);
@@ -358,7 +362,7 @@ export function workOdla(s: State, p: Person, tk: Task, dtSec: number) {
 // en ruta är klar i steget
 function rutaKlar(s: State, p: Person, f: Falt) {
   const nu = Math.round(s.now); (f.skott ??= [])[f.klara] = nu; if (f.steg === 'bereda') (f.bered ??= [])[f.klara] = nu;
-  if (f.steg === 'roja') { const i = faltRuta(f, f.klara), g = groundOf(s); g.trees[i] = 0; g.cover[i] = 0; } // gräs, buskar och ungskog är borta
+  if (f.steg === 'roja') { const i = faltRuta(f, f.klara), g = groundOf(s); g.trees[i] = 0; g.cover[i] = 0; tabortBuske(g, i); } // gräs, buskar och ungskog är borta
   else if (f.steg === 'bereda') { if (freeTools(s, p, 'benspade') && wearTool(s, p, 'benspade', ODLING.spadeSlit)) { const tr = SAKER.benspade?.trasig; if (tr) count(s, tr.stat); } }
   else if (f.steg === 'sa') { takeMaterial(s, p, GRODOR[f.groda!].fro, ODLING.froPerRuta); count(s, 'fronSadda', ODLING.froPerRuta); } // fröna som såtts (scenariot falt)
   else if (f.steg === 'mogen') {
@@ -408,13 +412,17 @@ function storre(s: State, p: Person, f: Falt) {
 function forlorad(s: State, f: Falt, varfor: string) {
   const d = GRODOR[f.groda!], agare = s.people.find(q => q.id === f.agare);
   log(s, `${varfor} tog ${d.namn.toLowerCase()}na på ${agare ? agare.name + 's' : 'ett'} fält.`, 'world', agare ? [agare.id] : undefined);
-  count(s, varfor === 'Frosten' ? 'frostdod' : varfor === 'Torkan' ? 'vissnat' : varfor === 'Översvämningen' ? 'drankt falt' : varfor === 'Elden' ? 'brant falt' : 'ruttnat');
+  count(s, varfor === 'Frosten' ? 'frostdod' : varfor === 'Torkan' ? 'vissnat' : varfor === 'Översvämningen' ? 'drankt falt' : varfor === 'Elden' ? 'brant falt' : varfor === 'Tornadon' ? 'tornado falt' : 'ruttnat');
   nasta(f, 'sa'); f.vatten = undefined; f.groda = undefined; f.vuxit = undefined; f.mogen = undefined; f.sadda = undefined;
   f.rord = s.now; // gräset börjar ta fältet först nu, när det står utan gröda (inte från sådden)
 }
 
 // grödan på fältet brann i en eldsvåda (brand.ts, steg 3.8.5)
 export function faltBrann(s: State, f: Falt) { if (f.groda) forlorad(s, f, 'Elden'); }
+// tornadon (steg 6.4.11) förstör grödan på varje fält med en ruta bland rutorna
+export function faltTornado(s: State, rutor: Set<number>) {
+  for (const f of faltOf(s)) if (f.groda) for (let k = 0; k < f.n; k++) if (rutor.has(faltRuta(f, k))) { forlorad(s, f, 'Tornadon'); break; }
+}
 
 // varje timme (steg.ts): grödorna växer när det är varmt nog och dör i frost eller ruttnar, och ett fält som ingen sköter
 // blir gräs igen. Inget träd växer på rutorna som röjts

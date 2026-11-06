@@ -1,0 +1,23 @@
+{
+ "id": "naver",
+ "ritad": 1,
+ "av": "Björn",
+ "om": "Björns ritning av version 1: tre remsor utan mörk kontur, den lösa mörka punkten borttagen",
+ "w": 9,
+ "h": 8,
+ "rader": [
+  ".XXllXXX.",
+  ".WWWWWWWW",
+  ".........",
+  "lXXXXXXW.",
+  "XXlXXlXX.",
+  ".........",
+  "WXXXXXXXW",
+  ".WWWlWlWl"
+ ],
+ "pal": {
+  "W": "#bdb39b",
+  "X": "#dad0bb",
+  "l": "#2f261d"
+ }
+}

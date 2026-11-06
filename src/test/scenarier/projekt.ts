@@ -2,7 +2,7 @@
 import { createState, living, ageOf, ALDER, chooseTask, dangers, GORS, STATION_LIST, PROJEKT, PROJEKT_LIST, projekt, bastaProjekt, projektVarde, addTool, setAmount, State } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { setItems, setFood, SCENARIER, medBank, kor } from './hjalp';
+import { setItems, setFood, SCENARIER, medBank, kor, byggKlart } from './hjalp';
 
 // en by där alla vuxna kan allt, med material till allt och elden tänd mitt på dagen
 function by(seed: number) {
@@ -137,7 +137,7 @@ SCENARIER.arbetspabud = {
   },
 };
 SCENARIER.fullaforrad = {
-  text: 'Förråden till taket (steg 6.2.15): sist på Förbättra fylls förråden mellan bufferten och taket i FORRADSMAL. I en by som kan alla tekniker och inte saknar något projekt (projektens brist sätts till noll under provet, och vedens buffert halveras och taket sänks till bufferten, så att det ryms i lagret) samlar ingen mer under en arbetsdag (8 timmar) när förråden nått taken: lagret växer inte över taken, och de vuxna får fritid. I samma by vars förråd bara når bufferten fylls de',
+  text: 'Förråden till taket (steg 6.2.15): sist på Förbättra fylls förråden mellan bufferten och taket i FORRADSMAL. I en by som kan alla tekniker och inte saknar något projekt (projektens brist sätts till noll under provet, och vedens buffert halveras och taket sänks till bufferten, så att det ryms i lagret, alla har en sovplats under tak och byn delar all mat) fyller ingen på maten eller veden under en arbetsdag (8 timmar) när förråden nått taken, ingen samlar grenar eller hö över taket, och de vuxna får fritid. I samma by vars förråd bara når bufferten fylls de',
   lang: true,
   kor: () => {
     const brist = PROJEKT_LIST.map(k => PROJEKT[k].brist), ved = SIM.FORRADSMAL.ved as { matt: number; dygn: number }, vedMatt = ved.matt, vedDygn = ved.dygn;
@@ -147,6 +147,10 @@ SCENARIER.fullaforrad = {
       const fyll = (full: boolean) => {
         const s = by(4);
         for (const q of s.people) for (const t of SIM.TEKNIK) q.tek = { ...q.tek, [t.id]: 1 };
+        s.delning = { andel: 1 }; // byn delar all mat, så att ingen familj fyller sin egen buffert (bufferten per jag, steg 6.2.20)
+        // alla har en sovplats under tak från början och inget nytt hus planeras, så att bygget (nivå 7) inte tar tiden som provet gäller
+        for (let i = 0; i < 6; i++) { s.byggSok = undefined; SIM.planBuild(s); if (!byggKlart(s)) break; }
+        s.byggSok = Number.MAX_SAFE_INTEGER;
         SIM.arbetsTimme(s);
         const mat = full ? 1.5 * SIM.lyxtak(s, 'mat') : 1.1 * SIM.buffert(s, 'mat'), vd = full ? 1.3 * SIM.lyxtak(s, 'ved') : 0.8 * SIM.buffert(s, 'ved');
         setFood(s, 100); for (let i = 0; i < 40 && SIM.foodDaysAll(s) < mat; i++) setFood(s, SIM.foodOf(s) * 1.1);
@@ -157,16 +161,24 @@ SCENARIER.fullaforrad = {
         return s;
       };
       const full = fyll(true), halv = fyll(false);
-      const fore = { mat: SIM.foodOf(full), grenar: SIM.amountOf(full, 'grenar'), torrgras: SIM.amountOf(full, 'torrgras'), ved: SIM.amountOf(full, 'ved') };
       const vuxen = (q: SIM.Person, v: State) => ageOf(q, v.now) >= ALDER.vuxen;
-      const samlar = (s: State) => { let n = 0; const sett = new WeakSet<object>(); kor(s, 8, v => { for (const q of living(v)) if (vuxen(q, v) && q.task && !sett.has(q.task)) { sett.add(q.task); if (q.task.why?.startsWith('Mer ')) n++; } }); return n; };
-      const samlarFull = samlar(full), samlarHalv = samlar(halv);
+      // det som fyller förråden mellan bufferten och taket (raden fylla). Den egna maten (bufferten per jag, steg 6.2.20), redskapen och
+      // sängarna är andra rader; sängarna och repet drar hö och grenar, och taket för dem följer förbrukningen (steg 6.2.14)
+      const prov = (s: State) => { const r = { matVed: 0, mer: 0, overTak: 0 }; const sett = new WeakSet<object>(); kor(s, 8, v => { for (const q of living(v)) if (vuxen(q, v) && q.task && !sett.has(q.task)) {
+        sett.add(q.task); const why = q.task.why ?? '';
+        if (/^Mer (mat|ved) /.test(why)) r.matVed++;
+        if (why.startsWith('Mer ')) r.mer++;
+        const k = /^Mer (grenar|hö) /.exec(why)?.[1];
+        const m = k === 'hö' ? 'torrgras' : 'grenar';
+        if (k && SIM.amountOf(v, m) > SIM.materialTak(v, m) + 1e-9) r.overTak++; // över taket (vid taket kan valet ha gjorts innan den sista bördan lades in)
+      } }); return r; };
+      const pf = prov(full), ph = prov(halv);
       const fri = (v: State) => v.stat?.fullaForrad ?? 0;
       return [
-        [`i den fulla byn samlar ingen för att fylla förråden (${samlarFull} uppgifter), i byn vid bufferten gör de det (${samlarHalv})`, samlarFull === 0 && samlarHalv > 0],
-        [`maten växer inte (${fore.mat.toFixed(0)} → ${SIM.foodOf(full).toFixed(0)}), inte heller veden (${fore.ved} → ${SIM.amountOf(full, 'ved')})`, SIM.foodOf(full) <= fore.mat + 1 && SIM.amountOf(full, 'ved') <= fore.ved + 1],
-        [`grenarna och höet växer inte över taken (grenar ${fore.grenar} → ${SIM.amountOf(full, 'grenar')}, hö ${fore.torrgras} → ${SIM.amountOf(full, 'torrgras')})`, SIM.amountOf(full, 'grenar') <= fore.grenar + 1 && SIM.amountOf(full, 'torrgras') <= fore.torrgras + 1],
-        [`de vuxna i den fulla byn får fritid när inget finns kvar att göra (${fri(full)} gånger, mot ${fri(halv)} i byn vid bufferten)`, fri(full) > fri(halv)],
+        [`i den fulla byn fyller ingen på maten eller veden (${pf.matVed} uppgifter), i byn vid bufferten fylls förråden (${ph.mer})`, pf.matVed === 0 && ph.mer > 0],
+        [`ingen samlar grenar eller hö till förrådet när det är över taket (${pf.overTak + ph.overTak} gånger; en kan ses efter att någon annan lagt in en börda i samma steg)`, pf.overTak + ph.overTak <= 1],
+        // också byn vid bufferten når taken under dagen när den fyllt på, så antalen jämförs inte (steg 6.2.21)
+        [`de vuxna i den fulla byn får fritid när inget finns kvar att göra (${fri(full)} gånger; ${fri(halv)} i byn vid bufferten när den fyllt på)`, fri(full) > 0],
       ];
     } finally {
       PROJEKT_LIST.forEach((k, i) => { PROJEKT[k].brist = brist[i]; });

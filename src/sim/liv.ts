@@ -1,3 +1,4 @@
+import { honom } from './ord';
 import { upplev, uppvaxtDod, uppvaxtFodd } from './uppvaxt';
 import { kronikaBer, personFalt } from './berattelser';
 import { kronika } from './historik';
@@ -83,6 +84,7 @@ const DOD = {
   olycka: { text: 'i en olycka' },
   barnsang: { text: 'i barnsäng', gud: 'atten' },
   varg: { text: 'av vargar', gud: 'jakt', sorg: true }, // steg 3.7.1 (varg.ts)
+  bjorn: { text: 'av en björn', gud: 'jakt', sorg: true }, // steg 6.6.5 (bjorn.ts)
   tornado: { text: 'i en tornado', gud: 'aska' }, // steg 3.8.4 (tornado.ts)
   brand: { text: 'i en eldsvåda', gud: 'elden' }, // steg 3.8.5 (brand.ts)
   rovare: { text: 'av rövare', gud: 'kriget', sorg: true }, // steg 4.4.5 (rovare.ts)
@@ -184,7 +186,7 @@ export function framling(s: State, tvinga?: { tek?: string; ja?: boolean }) {
   const sex = rnd(s, 'klan') < 0.5 ? 'm' : 'k', tekNamn = tek ? TEK[tek]?.namn.toLowerCase() : '';
   if (!ja) {
     andraInst(k, -KLAN.nejInst); count(s, 'framlingNej');
-    log(s, `En främling från ${k.namn} kom till byn${tek ? ` och kunde ${tekNamn}` : ''}. ${vem} ville inte att hen skulle stanna, och hen gick vidare.`, 'move');
+    log(s, `En främling från ${k.namn} kom till byn${tek ? ` och kunde ${tekNamn}` : ''}. ${vem} ville inte att ${sex === 'k' ? 'hon' : 'han'} skulle stanna, och ${sex === 'k' ? 'hon' : 'han'} gick vidare.`, 'move');
     return undefined;
   }
   const age = LIV.nybyggareAlder + rnd(s, 'folk') * LIV.nybyggareAlderSpann, p = newPerson(s, sex, s.now - age * DAY);
@@ -195,7 +197,7 @@ export function framling(s: State, tvinga?: { tek?: string; ja?: boolean }) {
   upplev(s, p, 'flyttade');
   for (const m in MEDHAVT) put(s, m, MEDHAVT[m], { [p.id]: MEDHAVT[m] });
   andraInst(k, KLAN.stannarInst); count(s, 'framling'); if (tek) count(s, 'framlingTek');
-  const text = `${p.name} från ${k.namn} kom till byn${tek ? ` och kunde ${tekNamn}, som ingen i byn kunde` : ''}. ${vem} lät hen stanna.`;
+  const text = `${p.name} från ${k.namn} kom till byn${tek ? ` och kunde ${tekNamn}, som ingen i byn kunde` : ''}. ${vem} lät ${honom(p)} stanna.`;
   log(s, text, 'move', [p.id]); notis(s, 'inflytt', text, [p.id]);
   if (tek) kronika(s, text, 'flytt');
   return p;

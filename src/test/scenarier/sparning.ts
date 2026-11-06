@@ -46,6 +46,7 @@ SCENARIER.historik = {
 
 SCENARIER.notisispelet = {
   text: 'Notiserna i spelet (steg 5.4.3.3): det som händer i byn (födslar, död, ny kunskap, nya hus, flyttar, ledare, faror) blir notiser, och de ligger kvar när byn laddas igen',
+  lang: true,
   kor: () => {
     const s = createState(3, START);
     for (let i = 0; i < 8 * STEG_DYGN; i++) step(s, BEAT);
@@ -209,6 +210,7 @@ SCENARIER.slump = {
     // var en person går (promenad, strand, flinta, trädet som fälls) väljs med personens egen följd, inte byns
     const h = createState(6, START), hv = () => living(h).filter(q => ageOf(q, h.now) >= ALDER.vuxen);
     h.now = new Date(h.now).setHours(10, 0, 0, 0); Object.assign(h.fire, { lit: true, fuel: 4, ring: true });
+    h.delning = { andel: 1 }; // byn delar all mat, så att ingen familj behöver samla egen mat (maten läggs hos byn här)
     for (const q of h.people) q.tek = { ...q.tek, yxa: 1 };
     const sett = new Set<string>();
     const hd = drag(h, 'val', () => {

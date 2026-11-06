@@ -2,10 +2,11 @@ import { omrade } from './omrade';
 import { eldPlats, getMap, hash, perKarta, vnoise } from './karta';
 import { clampI, rnd } from './slump';
 import { H, HOUR, OX, OY, Person, State, W, inMap } from './typer';
-import { BAR, FOREST, Ground, HIGH, VAG, decodeCover, encodeCover, isSoil } from './vag';
+import { BAR, BUSKE, FOREST, Ground, HIGH, VAG, decodeCover, encodeCover, isSoil } from './vag';
 import { balans } from './balans';
 import { vattenNu } from './sjo';
-import { aldras, lasAlder, lasArt, packaAlder, packaArt, startAlder, startArt, valjArt } from './trad';
+import { barKrok, nyaBuskar, tabortBuske, vaxBuske } from './buskar';
+import { aldras, gammaltTrad, lasAlder, lasArt, packaAlder, packaArt, startAlder, startArt, valjArt } from './trad';
 
 // Balanstal (regel 8): ängarna, gläntan byn börjar i, hur gräset och skogen växer tillbaka och hur mycket stegen nöter. Hur
 // fort man går på marken och hur marken trampas ner står i VAG (vag.ts)
@@ -30,6 +31,10 @@ export const MARK = balans('mark', {
   fro: 0.0015, // chans per timme att ett frö gror: per skogsgranne ...
   froLangt: 0.00002, // ... och långt bort från skogen
   nyPlanta: 0.05, // en ny planta är så här stor (0 till 1)
+  // trängseln (steg 6.5.1): träden i de åtta rutorna runt, ett vuxet träd 1 och ett gammalt träd eller jätteträd så här mycket
+  // (plantor och ungträd 0). Ett frö gror bara där trängseln är högst trangsel, och en planta eller ett ungträd där det är
+  // trängre växer inte utan står skuggad, så att det blir gläntor och plats mellan de stora träden
+  trangsel: 3, trangGammal: 2,
   dungeAndel: 0.5, // urskogen har träd på ungefär så här stor del av jordrutorna, i dungar med gläntor emellan (steg 5.1.4.1)
   dungeSkala: 6, // dungarnas storlek i kartans brus (rutor)
   glantaSpridning: 0.15, // i urskogens gläntor slår frön rot så här många gånger så fort som i dungarna, så att gläntorna står kvar
@@ -47,12 +52,14 @@ export function groundOf(s: State): Ground {
     if (!s.skog) for (let i = 0; i < g.trees.length; i++) if (g.cover[i] < HIGH) g.trees[i] = 0; // äldre sparfil: inga träd på stigarna
     g.alder = s.tradAlder ? lasAlder(s.tradAlder) : startAlder(s.seed, g.trees); // en äldre sparfil får trädens åldrar som urskogen
     g.art = s.tradSort ? lasArt(s.tradSort) : startArt(s.seed, g.trees, g.tiles); // och sorterna (steg 5.1.6)
+    g.buske = s.buskar ? lasArt(s.buskar) : nyaBuskar(); // buskarna (steg 6.5.3), inga i en äldre sparfil
     grounds.set(s, g);
+    if (!s.barbuskar) { barKrok.saUt(s, g); s.barbuskar = 1; } // bärbuskarna där bären växer (steg 6.5.4)
   }
   return g;
 }
 export const coverOf = (s: State) => groundOf(s).cover;
-export function packGround(s: State) { const g = groundOf(s); s.mark = encodeCover(g.cover); s.skog = encodeCover(g.trees); s.tradAlder = packaAlder(g.alder!); s.tradSort = packaArt(g.art!); }
+export function packGround(s: State) { const g = groundOf(s); s.mark = encodeCover(g.cover); s.skog = encodeCover(g.trees); s.tradAlder = packaAlder(g.alder!); s.tradSort = packaArt(g.art!); s.buskar = packaArt(g.buske!); }
 
 // ängar: fläckar av fuktig mark där det växer högt gräs och träd har svårt att få fäste
 export const angOf = perKarta(seed => {
@@ -95,13 +102,13 @@ function startForest(seed: number) {
   return trees;
 }
 // marken som den var när byn grundades (bara ur kartan): för det som ska vara detsamma efter inläsning (djur.ts)
-export const startGround = perKarta((seed): Ground => { const trees = startForest(seed), tiles = getMap(seed).tiles; return { tiles, cover: new Float32Array(W * H).fill(1), trees, alder: startAlder(seed, trees), art: startArt(seed, trees, tiles) }; });
+export const startGround = perKarta((seed): Ground => { const trees = startForest(seed), tiles = getMap(seed).tiles; return { tiles, cover: new Float32Array(W * H).fill(1), trees, alder: startAlder(seed, trees), art: startArt(seed, trees, tiles), buske: nyaBuskar() }; });
 export const isForest = (s: State, i: number) => groundOf(s).trees[i] >= FOREST;
-// vad jordrutan i är: skog, ungskog, högt gräs, kort gräs eller bar jord (en stig)
-export type Markslag = 'skog' | 'ung' | 'hog' | 'kort' | 'bar';
+// vad jordrutan i är: skog, ungskog, en buske (steg 6.5.3), högt gräs, kort gräs eller bar jord (en stig)
+export type Markslag = 'skog' | 'ung' | 'buske' | 'hog' | 'kort' | 'bar';
 export function markslag(g: Ground, i: number): Markslag {
   const tr = g.trees[i], c = g.cover[i];
-  return tr >= FOREST ? 'skog' : tr >= VAG.ungskog ? 'ung' : c >= HIGH ? 'hog' : c >= BAR ? 'kort' : 'bar';
+  return tr >= FOREST ? 'skog' : tr >= VAG.ungskog ? 'ung' : (g.buske?.[i] ?? 0) >= BUSKE ? 'buske' : c >= HIGH ? 'hog' : c >= BAR ? 'kort' : 'bar';
 }
 // andelen av jordrutorna som är skog (0 om det inte finns någon jord); villkor = räkna bara de rutor (index) där den är sann
 export function skogAndel(s: State, villkor?: (i: number) => boolean) {
@@ -132,7 +139,7 @@ export function growGround(s: State, hours: number, season: number) {
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const i = y * W + x;
     if (!isSoil(tiles[i])) continue;
-    if (b[i] || g.built?.[i]) { cover[i] = Math.min(cover[i], MARK.lagerTak); if (b[i] === 1 || trees[i] < FOREST) trees[i] = 0; continue; } // inget växer vid elden, i lagret eller i husen: gräset kapas och plantor och ungskog tas bort. Ett vuxet träd står kvar på en husplats och en lagerplats i skogen tills det fälls (steg 3.6.9), men vid elden och i det första lagret tas det bort
+    if (b[i] || g.built?.[i]) { cover[i] = Math.min(cover[i], MARK.lagerTak); if (b[i] === 1 || trees[i] < FOREST) trees[i] = 0; tabortBuske(g, i); continue; } // inget växer vid elden, i lagret eller i husen: gräset kapas och plantor och ungskog tas bort. Ett vuxet träd står kvar på en husplats och en lagerplats i skogen tills det fälls (steg 3.6.9), men vid elden och i det första lagret tas det bort
     if (old[i] < 1) {
       let n = 0, c = 0;
       if (x > 0 && isSoil(tiles[i - 1])) { n += old[i - 1]; c++; }
@@ -142,17 +149,32 @@ export function growGround(s: State, hours: number, season: number) {
       const nb = c ? n / c : MARK.grasIngen;
       cover[i] = Math.min(1, old[i] + hours * MARK.grasAter * MARK.grasVaxt[season] * (MARK.grasBas + MARK.grasGrann * nb) * (old[i] < BAR ? MARK.stigAter : 1));
     }
+    vaxBuske(s, g, i, hours, ts, trangsel); // buskarna (steg 6.5.3, buskar.ts)
     if (trees[i] >= 1) aldras(g, i, hours); // ett vuxet träd åldras året runt, och torrakan faller till sist (trad.ts)
     if (!ts || old[i] < HIGH) continue; // stigar och kort gräs stoppar ny skog
-    if (trees[i] > 0) { if (trees[i] < 1) { trees[i] = Math.min(1, trees[i] + hours * TREE_GROW * ts); if (trees[i] >= 1) g.alder![i] = 0; } continue; }
+    if (trees[i] >= 1) continue;
+    if (skuggad(g, i)) continue; // för trångt: plantan står skuggad, och inget frö gror (steg 6.5.1)
+    if (trees[i] > 0) { trees[i] = Math.min(1, trees[i] + hours * TREE_GROW * ts); if (trees[i] >= 1) g.alder![i] = 0; continue; }
     let n = 0;
-    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-      const xx = x + dx, yy = y + dy;
-      if ((dx || dy) && inMap(xx, yy) && trees[yy * W + xx] >= FOREST) n++;
-    }
+    // utanför kartkanten står skog (steg 6.5.8): därifrån sprids frön in, också om all skog på kartan huggits ner
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && (!inMap(x + dx, y + dy) || trees[(y + dy) * W + x + dx] >= FOREST)) n++;
     if (hash(s.seed + hr, x, y) < hours * (MARK.fro * n + MARK.froLangt) * ts * (ang[i] ? MARK.angSpridning : 1) * (dunge[i] ? 1 : MARK.glantaSpridning)) { trees[i] = MARK.nyPlanta; g.art![i] = valjArt(s.seed, g, i, false); } // sorten (steg 5.1.6)
   }
 }
+
+// trängseln på ruta i (steg 6.5.1): träden i de åtta rutorna runt den, ett vuxet träd 1 och ett gammalt 2, plantor och ungträd 0
+export function trangsel(g: Ground, i: number) {
+  const x = i % W, y = (i - x) / W; let tr = 0;
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+    const xx = x + dx, yy = y + dy;
+    if ((!dx && !dy) || !inMap(xx, yy)) continue;
+    const j = yy * W + xx;
+    if (g.trees[j] >= 1) tr += gammaltTrad(g, j) ? MARK.trangGammal : 1;
+  }
+  return tr;
+}
+// för trångt på ruta i: ett frö gror inte, och en planta står skuggad och växer inte
+export const skuggad = (g: Ground, i: number) => trangsel(g, i) > MARK.trangsel;
 
 export const tileOf = (x: number, y: number) => clampI(y, H) * W + clampI(x, W); // rutans index, närmaste ruta på kartan om punkten ligger utanför
 // en slumpad punkt nära mitten av rutan med index i (p:s följd 'val')

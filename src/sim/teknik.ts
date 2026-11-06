@@ -17,6 +17,7 @@ import type { SamtalDef } from './samtal';
 import { lartUt } from './relationer';
 import { gudHandelse } from './religion';
 import { notis } from './notiser';
+import { TEKNAMN, gora, goraUtan, lista, och } from './ord';
 
 // ---------- teknik ----------
 // Ingen föds med kunskapen om hur man gör en yxa. Den som arbetar med något kommer så småningom på hur det kan göras
@@ -91,6 +92,8 @@ export const TEKNIK: Tek[] = [
   { id: 'skinnklader', namn: 'Skinnkläder', text: 'Skinn som sys ihop med rep av senor till en rock och ett par skor.', effekt: 'Den som har kläderna på sig fryser mindre.',
     omr: ['hantverk', 'jakt'], krav: ['bensyl'], niva: 4, tid: 14, forsok: { vid: ['flatarbank'], skill: 'hantverk' }, episk: 'Efter många förstörda skinn vid slöjdbänken drog {namn} på sig den första rock som byn hade sett.' },
   // vattensäcken (steg 2.10.1): sys av skinn som kläderna. Man kommer på den när man ger vatten åt den som inte kan gå
+  { id: 'fackla', namn: 'Fackla', text: 'En käpp som klyvs i toppen, med torrt gräs och talg i klykan.', effekt: 'Den som går ut i mörkret tänder en fackla vid elden och ser vart den går.',
+    omr: ['jakt', 'hantverk'], krav: ['slaktbank'], niva: 3, tid: 4 },
   { id: 'vattensack', namn: 'Vattensäck', text: 'Ett skinn som sys ihop till en säck och knyts med rep.', effekt: 'Man kan bära vatten till den som inte kan gå till vattnet.',
     omr: ['hantverk', 'dricka', 'varda'], krav: ['skinnklader'], niva: 5, tid: 5.4, forsok: { vid: ['flatarbank'], skill: 'hantverk' }, episk: 'Vattnet rann ut genom varje söm {namn} sydde. Men till sist höll säcken tätt, och {hen} bar vatten utan att spilla en droppe.' },
   // bältet (steg 2.3.3): kommer man på när man bär hem både redskap och börda, ganska tidigt
@@ -113,11 +116,11 @@ export const TEKNIK: Tek[] = [
   { id: 'lyra', namn: 'Lyra', text: 'En ram av trä med strängar av rep som man knäpper på.', effekt: 'Sången och musiken till lyran gör publiken gladare än med andra instrument.',
     omr: ['upptrada', 'hantverk'], krav: ['scen', 'rep'], niva: 3, tid: 6 },
   // pyntet (steg 4.3.4, pynt.ts): lerkrukan, bonaden och det snidade väggbrädet i rummet där man sover; varje möbel är sin egen teknik
-  { id: 'kruka', namn: 'Lerkruka', text: 'En kruka av lera från stranden, formad för hand och bränd i elden, bara för att vara vacker.', effekt: 'Den som tycker om krukor ställer en där hen sover: hen trivs där, och de som ser den tycker bättre om hen.',
+  { id: 'kruka', namn: 'Lerkruka', text: 'En kruka av lera från stranden, formad för hand och bränd i elden, bara för att vara vacker.', effekt: 'Den som tycker om krukor ställer en där den sover, trivs där, och de som ser den tycker bättre om ägaren.',
     omr: ['hantverk', 'bygga'], krav: ['timmervagg'], niva: 3, tid: 4 },
-  { id: 'bonad', namn: 'Bonad', text: 'Ett skinn som hängs på väggen, med mönster och fransar av rep.', effekt: 'Den som tycker om bonader hänger en där hen sover: hen trivs där, och de som ser den tycker bättre om hen.',
+  { id: 'bonad', namn: 'Bonad', text: 'Ett skinn som hängs på väggen, med mönster och fransar av rep.', effekt: 'Den som tycker om bonader hänger en där den sover, trivs där, och de som ser den tycker bättre om ägaren.',
     omr: ['hantverk', 'bygga'], krav: ['timmervagg', 'rep'], niva: 3, tid: 4 },
-  { id: 'vaggbrade', namn: 'Snidat väggbräde', text: 'Ett bräde med snidade mönster som sätts upp på väggen.', effekt: 'Den som tycker om väggbräden sätter upp ett där hen sover: hen trivs där, och de som ser det tycker bättre om hen.',
+  { id: 'vaggbrade', namn: 'Snidat väggbräde', text: 'Ett bräde med snidade mönster som sätts upp på väggen.', effekt: 'Den som tycker om väggbräden sätter upp ett där den sover, trivs där, och de som ser det tycker bättre om ägaren.',
     omr: ['hantverk', 'bygga'], krav: ['timmervagg', 'kniv'], niva: 3, tid: 4 },
   // latrinen och benspaden (steg 2.7.2): spaden görs av ben, rep och en gren vid slöjdbänken, och med den grävs latrinen
   // (LATRIN i STATIONER, samma id) och rötterna fortare
@@ -135,10 +138,14 @@ export const TEKNIK: Tek[] = [
   // byn plockat; det krävs inte så många (Björn efter v107, steg 2.10.11)
   { id: 'odling', namn: 'Odling', text: 'Frön som sätts i jorden blir nya grödor.', effekt: 'Man kan så frön på ett fält och skörda grödorna.',
     omr: ['samla'], krav: [], niva: 1, tid: 0.15, okar: { stat: 'vildgrodor', per: 5 }, nar: 'plockar vilda frön' },
+  // skogsvården (steg 6.5.2, skogsvard.ts): kommer man på när man fäller träd långt från byn
+  { id: 'skogsvard', namn: 'Skogsvård', text: 'Att gräva upp en planta som står i skuggan och sätta den där skogen behövs.', effekt: 'Man kan flytta plantor närmare byn, så att skogen växer tillbaka där den fällts.',
+    omr: [], krav: ['yxa'], niva: 2, tid: 0.5, nar: 'fäller träd långt från byn' },
   // ledarskapet kommer man på i samtal (steg 3.5.1, styre.ts): bara den som kan det kan bli byns ledare
   { id: 'ledarskap', namn: 'Ledarskap', text: 'Att förstå vad som krävs för att byn ska lyssna på en: att höra alla, döma rättvist och tänka på hela byn.', effekt: 'Bara den som kan ledarskap kan bli byns ledare.',
     omr: [], krav: [], niva: 1, tid: 12, nar: 'i samtal' },
 ];
+for (const t of TEKNIK) TEKNAMN[t.namn.toLowerCase()] = t.id; // ordlagret hittar verbet efter namnet (ord.ts)
 export const TEK = Object.fromEntries(TEKNIK.map(t => [t.id, t])) as Record<string, Tek>;
 
 // Balanstal (regel 8): hur fort man kommer på något står i raden för tekniken (`tid`, arbetstimmar), och här vad det ger och hur man lär ut
@@ -198,16 +205,16 @@ function learn(s: State, p: Person, t: Tek, from?: Person) {
   p.tek![t.id] = 1;
   if (p.lar?.tek === t.id) p.lar = undefined; // lärlingen har lärt sig klart och kan själv bli mästare
   if (p.halvminne) { p.halvminne = p.halvminne.filter(k => k !== t.id); if (!p.halvminne.length) p.halvminne = undefined; }
-  if (from) { log(s, `${p.name} har lärt sig av ${from.name} att göra ${t.namn.toLowerCase()}.`, 'skill', [p.id, from.id]); return; }
+  if (from) { log(s, `${p.name} har lärt sig av ${from.name} ${gora(t)}.`, 'skill', [p.id, from.id]); return; }
   const first = !s.people.some(q => q !== p && knows(q, t.id)) && !(s.stat?.['tek_' + t.id]);
   count(s, 'tek_' + t.id);
   // nivå 4–5: det episka ögonblicket, en egen rad per teknik (steg 4.2.1.3); annars en berättelse ur mallen
   if (first && t.episk) kronika(s, fyll(t.episk, personFalt(p)), 'episk');
-  else if (first) kronikaBer(s, 'k_uppfann', p.id, { ...personFalt(p), teknik: t.namn.toLowerCase() });
-  log(s, `${p.name} kom på hur man gör ${t.namn.toLowerCase()}. ${t.effekt}`, 'skill', [p.id]);
-  if (first) notis(s, 'teknik', `${p.name} kom på hur man gör ${t.namn.toLowerCase()}. ${t.effekt}`, [p.id]);
-  think(p, `Kom på hur man gör ${t.namn.toLowerCase()}`, TEKTAL.kommaPa, s.now, TEKTAL.kommaPaTim * HOUR);
-  if (first) { p.fame.push(`Uppfann ${t.namn.toLowerCase()}`); allaBarn(s, 'uppfinning', `uppfann ${t.namn.toLowerCase()}`); upplev(s, p, 'egenTeknik', t.namn.toLowerCase()); gudHandelse(s, 'hantverk', `${t.namn.toLowerCase()} som ${p.name} kom på`); }
+  else if (first) kronikaBer(s, 'k_uppfann', p.id, { ...personFalt(p), teknik: t.namn.toLowerCase(), lara: goraUtan(t) });
+  log(s, `${p.name} kom på hur man kan ${goraUtan(t)}. ${t.effekt}`, 'skill', [p.id]);
+  if (first) notis(s, 'teknik', `${p.name} kom på hur man kan ${goraUtan(t)}. ${t.effekt}`, [p.id]);
+  think(p, `Kom på hur man kan ${goraUtan(t)}`, TEKTAL.kommaPa, s.now, TEKTAL.kommaPaTim * HOUR);
+  if (first) { p.fame.push(`Uppfann ${t.namn.toLowerCase()}`); allaBarn(s, 'uppfinning', `lärde sig ${gora(t)}`); upplev(s, p, 'egenTeknik', `hur man kan ${goraUtan(t)}`); gudHandelse(s, 'hantverk', `konsten ${gora(t)}, som ${p.name} kom på`); }
 }
 
 // arbete för tankarna framåt mot det som hör till arbetet (omr). Hantverk (slag hantverk i handlingar.ts: att tvinna rep,
@@ -347,7 +354,7 @@ export function stepLarlingar(s: State) {
       const c = ppl.filter(q => q !== m && !q.lar && ageOf(q, s.now) >= ALDER.uppfinner && canThink(q, t)).sort((a, b) => poang(b) - poang(a) || a.id - b.id)[0];
       if (!c) continue;
       c.lar = { av: m.id, tek: t.id }; count(s, 'larling');
-      log(s, `${c.name} blev lärling hos ${m.name} för att lära sig göra ${t.namn.toLowerCase()}.`, 'skill', [c.id, m.id]);
+      log(s, `${c.name} blev lärling hos ${m.name} för att lära sig ${goraUtan(t)}.`, 'skill', [c.id, m.id]);
       break;
     }
   }
@@ -366,8 +373,8 @@ export function kunskapDod(s: State, p: Person) {
   for (const q of larling) halvminne(s, q);
   if (!ppl.length || !borta.length) return; // byn dör ut, eller någon annan kan det
   count(s, 'tekForlorad', borta.length);
-  const namn = borta.map(t => t.namn.toLowerCase()), lista = namn.length > 1 ? namn.slice(0, -1).join(', ') + ' och ' + namn[namn.length - 1] : namn[0];
-  kronika(s, `Med ${p.name} dog konsten att göra ${lista}.${halv.length ? ` ${halv.map(q => q.name).join(' och ')} hade inte lärt sig klart och minns det bara till hälften.` : ''}`, 'forlust');
+  const konst = och(borta.map(t => gora(t))); // "att odla och att leda byn"
+  kronika(s, `Med ${p.name} dog konsten ${konst}.${halv.length ? ` ${lista(halv.map(q => q.name))} hade inte lärt sig klart och minns det bara till hälften.` : ''}`, 'forlust');
 }
 
 // äldre sparfiler: den som redan gjort yxor eller spjut kan det

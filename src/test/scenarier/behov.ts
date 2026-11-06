@@ -512,6 +512,8 @@ SCENARIER.kropp = {
     // olyckorna är sällsynta (ett par på tio dygn), så kontrollen gäller att byn gör farligt arbete där risken räknas, och att
     // skadorna inte blir många fler än risken säger
     // två byar (steg 4.5.6.1): en enda by gör ibland för lite farligt arbete för att risken ska märkas
+    // sedan förråden fylls till taket och det blir fritid när allt är fullt (steg 6.2.15) är det farliga arbetet så litet att
+    // risken för två byar är under en olycka (ca 0,3); det som prövas är att risken räknas och att skadorna inte blir för många
     let vantat = 0, skador = 0, blod = 0;
     for (const seed of [1, 2]) {
       const b = createState(seed, START);
@@ -527,7 +529,7 @@ SCENARIER.kropp = {
       [`ett brutet ben går långsammare (${fart0.toFixed(2)} → ${fart1.toFixed(2)}), och ett skärsår i handen arbetar långsammare (${(arb1 / arb0).toFixed(2)} av farten)`, fart1 < fart0 && arb1 < arb0],
       [`en svår skada avbryter arbetet, och hälsan blir ${halsa1.toFixed(2)}`, avbrot && halsa1 < KROPP.svag + 0.2],
       [`olyckorna i ${Object.keys(OLYCKOR).join(', ')} ger sina skador i sina delar${fel.length ? ` (fel: ${fel.join(', ')})` : ''}`, !fel.length],
-      [`på tio dygn i två byar: ${skador} olyckor (risken säger ${vantat.toFixed(1)}), ${blod} förblödde`, vantat > 1 && skador <= 3 * vantat + 3],
+      [`på tio dygn i två byar: ${skador} olyckor (risken säger ${vantat.toFixed(1)}), ${blod} förblödde`, vantat > 0 && skador <= 3 * vantat + 3],
     ];
   },
 };
@@ -614,8 +616,14 @@ SCENARIER.vard = {
     const k = { id: 999, x: 1, y: 1, ved: 5, grenar: 2, mossa: 2 }; (s.stockar ??= []).push(k); const hugg = chopStock(s, 999, 1)?.mossa ?? 0;
     // en by i tolv dygn (tolv år i spelet, knappt två veckor i verkligheten): mossa hittas och såren vårdas
     // skadorna är få och slumpen avgör vilka sår som behöver vård (ett benbrott behöver inget förband), så byarna prövas tills en har vårdat
-    let b = createState(4, START); kor(b, 288);
-    for (let n = 1; n <= 12 && !((b.stat?.vard ?? 0) > 0); n++) if (n !== 4) { b = createState(n, START); kor(b, 288); }
+    // olyckorna är sällsynta (några på tolv dygn i en by, ofta ingen), så här är de tio gånger vanligare
+    const risk = Object.values(SIM.OLYCKOR).map(o => o!.risk);
+    let b = createState(4, START);
+    try {
+      for (const o of Object.values(SIM.OLYCKOR)) o!.risk *= 10;
+      kor(b, 288);
+      for (let n = 1; n <= 6 && !((b.stat?.vard ?? 0) > 0); n++) if (n !== 4) { b = createState(n, START); kor(b, 288); }
+    } finally { Object.values(SIM.OLYCKOR).forEach((o, i) => { o!.risk = risk[i]; }); }
     const st = (n: string) => b.stat?.[n] as number ?? 0;
     return [
       [`ett infekterat sår som inte rengörs blir kallbrand och dödar (${dog ?? 'överlevde'})`, dog === 'kallbrand' && kall],
@@ -789,7 +797,8 @@ SCENARIER.matdygn = {
   kor: () => {
     const { foodDays, foodOf, chooseTask, ALDER, SAKER, ruttTemp } = SIM;
     // gott om trä, så att det bara är maten som fattas (sedan steg 3.10.23.7 väljer de annars trä när förrådet räcker 0,7 dygn)
-    const by = () => { const s = createState(6, START); klockan(s, 11); tandEld(s); setAmount(s, 'ved', 100); return s; }; // ved för ungefär nio dygn: under FORRAD.vedMatt (forradsmal.ts), så att vedarbetet finns kvar att välja (steg 6.1.5)
+    // byn delar all mat, så att ingen familj fyller sin egen del av bufferten (bufferten per jag, steg 6.2.20)
+    const by = () => { const s = createState(6, START); klockan(s, 11); tandEld(s); setAmount(s, 'ved', 100); s.delning = { andel: 1 }; return s; }; // ved för ungefär nio dygn: under FORRAD.vedMatt (forradsmal.ts), så att vedarbetet finns kvar att välja (steg 6.1.5)
     // lika mycket fisk (håller ett dygn) och torkat kött (håller länge): fisken räcker kortare, eftersom det mesta hinner ruttna
     const f = by(); setMat(f, { fisk: 120 });
     const t = by(); setMat(t, { torrkott: 120 });
@@ -805,8 +814,9 @@ SCENARIER.matdygn = {
         tidyTools(s);
         for (const p of vuxna) { chooseTask(s, p); alla++; if (['samla', 'jakt', 'fiske'].includes(p.task!.act)) skal.push(p.task!.why ?? ''); }
       }
-      const behover = skal.filter(w => w.includes('Byn behöver mat')).length, mer = skal.filter(w => w.includes('Mer mat till förrådet')).length;
-      return { andel: (behover + mer) / (alla || 1), behover, mer };
+      // den egna maten räknas också (bufferten per jag, steg 6.2.20: familjen fyller sin del av bufferten)
+      const behover = skal.filter(w => w.includes('Byn behöver mat')).length, mer = skal.filter(w => w.includes('Mer mat till förrådet')).length, egen = skal.filter(w => w.includes('egen mat')).length;
+      return { andel: (behover + mer + egen) / (alla || 1), behover, mer };
     };
     const rik = by(); setMat(rik, { torrkott: 600 });
     const tom = by(); setMat(tom, { bar: 3 });
@@ -871,7 +881,8 @@ SCENARIER.arbetare = {
   text: 'Arbetarna (steg 6.1.13, "Arbetsordningen" i designdokumentet): varje rad har ett antal arbetare, minst en, räknat en gång i timmen: maten efter det som fattas, tändmaterialet och letandet per invånare, bygget och kolet efter platserna. Taket är mjukt: när raden har sina arbetare väger den en tredjedel, och färre väljer den',
   kor: () => {
     const { arbetsTimme, chooseTask, ALDER } = SIM;
-    const by = (mat: number) => { const s = createState(6, START); klockan(s, 11); tandEld(s); setAmount(s, 'ved', 100); setMat(s, { torrkott: mat }); arbetsTimme(s); return s; };
+    // byn delar all mat, så att familjernas egen mat (en egen rad, bufferten per jag, steg 6.2.20) inte blandas in
+    const by = (mat: number) => { const s = createState(6, START); klockan(s, 11); tandEld(s); setAmount(s, 'ved', 100); setMat(s, { torrkott: mat }); s.delning = { andel: 1 }; arbetsTimme(s); return s; };
     const tom = by(3), rik = by(600);
     const arbTom = tom.arbBehov!.arb, arbRik = rik.arbBehov!.arb;
     const minstEn = Object.values(arbTom).every(n => n >= 1) && Object.values(arbRik).every(n => n >= 1);

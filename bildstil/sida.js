@@ -971,27 +971,9 @@ const VAL = [
 // Björns val som är bestämda men inte inbyggda i spelet: de visas under Valt med den valda versionen (0 = förut-versionen
 // behålls) och steget där de byggs in. När saken är inbyggd tas raden bort här och ur VAL, och dess dokument i samlingen 'val'
 const BESLUT = {
-  f6_talg: { val: 3, steg: '6.3.2.2' }, f6_agg: { val: 3, steg: '6.5.1.3' },
-  f6_radjursskinn: { val: 1, steg: '6.5.1.2' }, f6_bjornskinn: { val: 1, steg: '6.5.3.3' },
-  f6_barbuske: { val: 1, steg: '6.4.1.4' }, f6_fagel: { val: 2, steg: '6.5.1.3' }, f6_fjadrar: { val: 2, steg: '6.5.1.3' }, f6_uppsatt: { val: 1, steg: '6.3.2.4' },
-  f6_fagel_falld: { val: 1, text: 'Byggs in i steg 6.5.1.3, ritad om i de tre fåglarnas egna former och färger från fåglarna du valde (version 2).' },
-  f6_fackla: { val: 1, steg: '6.3.2.3' },
-  f6_radjur: { val: 1, text: 'Hinden (1) och bocken (2) används båda, i färgerna från version 3 (gråbrun päls). Byggs in i steg 6.5.1.2.' },
-  f6_bjorn: { val: 1, text: 'Björns egen ritning (1) är björnen som den står och går; när den anfaller öppnar den munnen (2). Byggs in i steg 6.5.3.' },
-  f6_radjur_fallt: { val: 2, steg: '6.5.1.2' },
-  f6_naver: { val: 1, text: 'Byggs in i steg 6.3.1.3 efter din ritning: tre remsor utan mörk kontur (den lösa mörka punkten till höger tas bort).' },
-  f6_ljus: { val: 1, text: 'Version 1 och 2 används båda, som variationer (ljuset på stenen och i lerskålen). Byggs in i steg 6.3.2.5.' },
-  f6_buske: { val: 1, text: 'Alla tre används, som variationer (rund, gles och låg). Byggs in i steg 6.4.1.3.' },
-  f6_bjornunge: { val: 1, steg: '6.5.3.2' },
   f7_stockvag: { val: 2, steg: '7.3.7' }, f7_brygga: { val: 2, steg: '7.3.9' },
-  f6_bjorn_hall: { val: 1, text: 'Din ritning: björnen från sidan, framifrån och bakifrån, utan den öppna munnen. Byggs in i steg 6.5.3.' },
-  f6_bjornunge_hall: { val: 1, text: 'Din ritning: björnungen från sidan, framifrån och bakifrån. Byggs in i steg 6.5.3.2.' },
-  f6_bjorn_falld: { val: 2, steg: '6.5.3' },
-  f6_fagel_hall: { val: 1, text: 'Ripan och skogsduvan från tre håll. Orren används bara från ett håll i spelet: den ritas bara från sidan (du sa nej till den omritade orren framifrån och bakifrån). Byggs in i steg 6.5.1.3.' },
-  f6_radjur_hall: { val: 1, text: 'Din ritning: hinden och bocken från sidan, framifrån och bakifrån (version 1 med dina ändringar). Byggs in i steg 6.5.1.2.' },
   f6_tornado_storlek: { val: 1, steg: '6.3.5.8' },
   f6_rovare: { val: 1, text: 'Alla tre används: rövarluvan, rövarens duk, det mörka slitna skinnet och vargskinnet. Delarna är märkta rövare: byborna kan inte tillverka dem, men varje rövare har en chans att bära dem. Byggs in i steg 6.6.12.' },
-  f6_styckdel: { val: 1, text: 'Version 1 och 2 används båda, som variationer (låret och högen), i djurets färger. Byggs in i steg 6.5.1.1.' },
 };
 // räknas när valdelen ritas, så att korten från filerna efter denna (mark.js, djur.js, gui.js) också kommer med
 const VALT = [];

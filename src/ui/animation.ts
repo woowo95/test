@@ -20,7 +20,9 @@ export const eldBild = (lage: 'stort' | 'lite', ms?: number) => `an_eld_${lage}_
 export const gnistBild = (ms?: number) => `an_gnistor_${animBild('gnistor', ms)}`;
 export const rokBild = (ms?: number, forskjut = 0) => `an_rok_${animBild('rok', ms, forskjut)}`;
 // tornadon: åtta bilder, foten i ANIMTAKT.tornado
-export const tornadoBild = (ms?: number) => `an_tornado_${animBild('tornado', ms)}`;
+export const tornadoBild = (ms?: number, storlek: 'liten' | 'medel' | 'stor' = 'medel') => `an_tornado_${storlek === 'medel' ? '' : storlek + '_'}${animBild('tornado', ms)}`;
+// var foten är i bilden för storleken (steg 6.4.15)
+export const tornadoFot = (storlek: 'liten' | 'medel' | 'stor' = 'medel') => ANIMTAKT.tornadoStorlek[storlek];
 // branden på en ruta: varianten och var i rörelsen den börjar räknas ur rutan (i, som i bildstilen ur rutans plats)
 const brandVariant = (i: number) => (((i % W) * 31 + Math.floor(i / W) * 17) % 101) % ANIMTAKT.brandVarianter;
 export const brandBild = (i: number, ms?: number) => `an_brand_${brandVariant(i)}_${animBild('brand', ms)}`;

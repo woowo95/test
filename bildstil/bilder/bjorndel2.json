@@ -1,0 +1,27 @@
+{
+ "id": "bjorndel2",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "version 2 i valet f6_styckdel, i björnens färger",
+ "w": 15,
+ "h": 9,
+ "rader": [
+  "..ooooo........",
+  ".odddddo.......",
+  "orddddddo......",
+  "rrmmmmmmmooooo.",
+  "rbmmmmmmmdddddo",
+  "rrmmmmmmmmmmmmm",
+  "ormmmmmmmmmmmmm",
+  ".olllllmmmmmmmo",
+  "..ooooooommmoo."
+ ],
+ "pal": {
+  "o": "#24201d",
+  "d": "#3f2415",
+  "r": "#742a01",
+  "m": "#5e3c24",
+  "b": "#dad0bb",
+  "l": "#7d5b40"
+ }
+}

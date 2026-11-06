@@ -1,9 +1,10 @@
-import { amountOf, isTool, FOREST, stamAv, MARK, STADIER, VAG, groundOf, stadium, tradAlder, tradArt, STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf } from '../../sim';
+import { amountOf, busksort, fallTid, living, tileOf, isTool, FOREST, stamAv, MARK, STADIER, VAG, groundOf, stadium, tradAlder, tradArt, STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { condBar, durTxt, esc, kvMark, kvText, pLink } from '../hjalp';
 import { piles, s, ui } from '../lage';
 import type { Flik } from '../panel';
 import { tradBild, tradBildUrl } from '../trad';
+import { buskBild } from '../buske';
 import { skaffasRader } from '../skaffas';
 
 // en sak eller en hög (steg 2.3.5): öppnas genom att trycka på den i lagret, en hög, personens utrustning eller en
@@ -12,7 +13,7 @@ import { skaffasRader } from '../skaffas';
 // Det som går att trycka på har data-sak: "t:<tingets id>" för ett redskap eller plagg, "s:<x>,<y>,<slag>" för en stack.
 // En toa-hög på kartan (steg 2.10.5) öppnas som "f:<rutan>" och har en egen inforuta (toaHog)
 // Ett slag i förrådet (listan till vänster, steg 5.3.5.2) öppnas som "k:<slaget>" (slagIForradet)
-// En stubbe (steg 3.10.6) öppnas som "u:<rutan>" (stubbe) och ett träd (steg 5.1.4.3) som "r:<rutan>" (trad)
+// En stubbe (steg 3.10.6) öppnas som "u:<rutan>" (stubbe), ett träd (steg 5.1.4.3) som "r:<rutan>" (trad) och en buske (steg 6.5.3) som "b:<rutan>"
 export const sakKey = (a: { id?: number; x?: number; y?: number; k: string }) => a.id !== undefined ? `t:${a.id}` : `s:${a.x},${a.y},${a.k}`;
 export const sakAttr = (a: { id?: number; x?: number; y?: number; k: string }) => `data-sak="${sakKey(a)}"`;
 // maten fryser i frost och ruttnar då nästan inte (LAGER.frost, steg 2.8.2): i lagret får symbolen en vit kant av rimfrost
@@ -77,7 +78,23 @@ function trad(i: number) {
     <dl class="kv">
       <dt>Ålder</dt><dd>${alder}</dd>
       ${g.trees[i] >= FOREST ? `<dt>Fälls</dt><dd>${iconImg('ved', 14)} ${stam.ved} ${iconImg('grenar', 14)} ${stam.grenar}</dd>` : ''}
+      ${fallning(i)}
     </dl>`;
+}
+// om någon börjat fälla trädet (steg 6.5.6): vem som fäller det nu och hur mycket arbete som är kvar
+function fallning(i: number) {
+  const gjort = s.halvfallt?.[i] ?? 0, vem = living(s).find(p => p.task?.act === 'falla' && p.task.phase === 'do' && tileOf(p.task.tx, p.task.ty) === i);
+  if (!gjort && !vem) return '';
+  const tid = fallTid(s, i), kvar = Math.max(0, tid - gjort), del = Math.min(1, gjort / tid);
+  return `<dt>${iconImg('yxa', 14)}</dt><dd>${vem ? `${pLink(vem)} fäller det` : 'Påbörjat'} · ${Math.round(del * 100)} % · ${durTxt(kvar)} kvar</dd>`;
+}
+// en buske (steg 6.5.3): bilden, namnet och vad den gör
+function buske(i: number) {
+  const g = groundOf(s), bu = busksort(g, i);
+  if (!bu) return '<p class="muted">Busken finns inte kvar.</p>';
+  return `
+    <div class="phead"><img class="ikon" src="${tradBildUrl(buskBild(i % W, Math.floor(i / W)))}" width="32" style="height:auto;image-rendering:pixelated" alt=""><div><h2>${esc(bu.namn)}</h2></div></div>
+    <p>${esc(bu.text)}</p>`;
 }
 // vem som äger en stack eller ett slag i förrådet (steg 5.3.5.3): byns del och varje ägares, flest först
 function agarRader(ag: Record<string, number> | undefined, n: number) {
@@ -129,6 +146,7 @@ export const sak: Flik = {
     if (ui.sak.startsWith('f:')) return toaHog(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('u:')) return stubbe(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('r:')) return trad(Number(ui.sak.slice(2)));
+    if (ui.sak.startsWith('b:')) return buske(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('k:')) return slagIForradet(ui.sak.slice(2));
     const { t, p } = hitta(), a = t ?? p;
     if (!a) return '<p class="muted">Den finns inte längre.</p>';

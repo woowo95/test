@@ -31,6 +31,8 @@ export const ARSTID = balans('arstid', {
 interface Kal { ai: number; dag: number; av: number; ar: number; start: number; slut: number } // dag av av i tidsåldern
 const dagNr = (t: number) => { const d = new Date(t); return Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / DAY); };
 const midnatt = (n: number) => { const d = new Date(n * DAY); return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()).getTime(); };
+// när dygnet (året i spelet) som tiden t ligger i började: midnatt, lokal tid (björnen, steg 6.6.4)
+export const dygnStart = (t: number) => midnatt(dagNr(t));
 const mandag = (n: number) => n + (7 - (n + 3) % 7) % 7; // första måndagen från dag n (dag 0, 1 januari 1970, var en torsdag)
 // en ny koloni: tidsåldern a0 från t0 till måndagen minst en vecka bort
 export function nyKalender(t0: number, a0 = VAR) {

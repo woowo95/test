@@ -1,15 +1,18 @@
 import * as PIXI from 'pixi.js';
 import { ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bordVid, byId, homeKind, bordaIHander, utrustning, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats, Match, Task, dragLag, kastMal, SPORT, bakomFilt, blocked, stationAt } from '../sim';
 import { PRICKAR } from './hjalp';
+const LAGA = [fargTal(farg('rost', 3)), fargTal(farg('senap', 3))]; // lågorna på den som brinner
 import { farg, fargTal } from '../palett';
 import { sinHash as hash } from './pixel';
 import { s, sakVar, ui, uppgiftVid, vidNyBy } from './lage';
 import { Ikoner, TS, bubbleG, figurLayer, labels, symbolLayer, peopleG } from './scen';
 import { type Arm, type Ben, type Rikt, figurHand, figurTex } from './folkbild';
 import { ARBETEN, STRIDBILD, arbetsBild, ritaArbete } from './arbetsbild';
-import { skapad } from './utseende';
+import { rovarSkapad, skapad } from './utseende';
+import { gaster } from './gaster';
 import { fotSkugga, skuggFolk, skuggLangd } from './skugga';
 import { jaktPlats } from './jakt';
+import { iStridenNu, rovarenNu } from './stridkarta';
 import { slag } from './animation';
 import { hasIcon, iconCanvas, kartbild, ljusSymbol } from '../ikoner';
 
@@ -35,6 +38,8 @@ export function addTalks(events: TalkEvent[], now: number, nu: number) {
 function platsAv(p: Person) {
   const j = jaktPlats(p); // jägaren som smyger, siktar och hämtar (jakt.ts)
   if (j) return { x: j.x, y: j.y, still: false };
+  const sk = iStridenNu(p.id, ui.nu); // i striden med rövarna (steg 6.6.10): där striden har hen
+  if (sk) return { x: sk.x, y: sk.y, still: false };
   const t = ui.nu, sp = sparPlats(p, t);
   let x = sp?.x ?? p.x, y = sp?.y ?? p.y;
   const still = sp?.still ?? true;
@@ -222,6 +227,8 @@ function figurAv(id: number) {
 const SITTA = new Set(['maltid', 'samtal', 'vila', 'lyssna', 'beratta']);
 // striden hen är med i just nu (steg 5.1.9.5): vapnet och var den närmaste motståndaren står, ur byns senaste strider
 function stridNu(p: Person) {
+  const sk = iStridenNu(p.id, ui.nu); // striden med rövarna som pågår (steg 6.6.10): målet hen går mot och slår
+  if (sk) return { vapen: sk.k.vapen as string, mot: sk.mot };
   for (let i = (s.strider?.length ?? 0) - 1; i >= 0; i--) {
     const m = s.strider![i], k = m.u.kampar.find(x => x.pid === p.id);
     if (!k) continue;
@@ -247,6 +254,31 @@ function riktning(id: number, x: number, y: number): Rikt {
   forra.set(id, { x, y, rikt, rord });
   return rikt;
 }
+// rövarna (steg 6.6.12): figurer ur skaparen som byborna (rovarSkapad i ui/utseende.ts), som går, slåss med sitt vapen mot
+// den de slår och ligger när de fallit. Arga i striden och rädda på flykten
+function ritaRovarna(skugga: PIXI.Graphics) {
+  for (const g of gaster()) {
+    const r = g.rovare;
+    if (!r) continue;
+    const sk = rovarenNu(r.namn, ui.nu), ligger = !!g.ligger, x = g.x * TS, y = g.y * TS;
+    let rikt = riktning(g.id, g.x, g.y);
+    const strid = sk && !ligger ? STRIDBILD[sk.k.vapen as string] ?? STRIDBILD.hand : undefined, ab = strid ? arbetsBild(strid, slag() - g.id) : undefined;
+    if (sk?.mot) rikt = sk.mot.x < g.x ? 'vast' : 'sida';
+    const steg = !ligger && !ab && gar(g.id, performance.now()) ? GANG[(slag() - g.id) % 4] : undefined;
+    const ben: Ben = ab ? ab.ben : steg ? steg[0] : 'sta', arm: Arm = ab ? ab.arm : steg ? steg[1] : 'hanga';
+    const humor = sk ? 'arg' : s.rovare?.gor === 'flyr' ? 'radd' : 'lugn';
+    const sp = figurAv(g.id);
+    sp.texture = figurTex(rovarSkapad(s, r, humor), { rikt, ben, arm, ligga: ligger }, g.id === ui.selected);
+    const w = sp.texture.width, h = sp.texture.height;
+    if (ligger) sp.position.set(x - w / 2, y - h / 2);
+    else sp.position.set(x - w / 2 + (ab?.b.ut ?? 0) * (rikt === 'vast' ? -1 : 1), y + 5 * 0.9 - h + 1);
+    const hand = ab && figurHand(sp.texture);
+    if (strid && ab && hand) ritaArbete(peopleG, strid, ab.b, sp.position.x + hand[0], sp.position.y + hand[1], rikt === 'vast' ? -1 : 1, 1);
+    sp.zIndex = y + 5 * 0.9;
+    if (!ligger) fotSkugga(skugga, x - 4, Math.round(sp.zIndex) - 1, 4, 2, skuggLangd());
+    sp.visible = true; sedd.add(g.id);
+  }
+}
 export function drawPeople(t: number) {
   peopleG.clear(); bubbleG.clear();
   sedd.clear();
@@ -264,7 +296,7 @@ export function drawPeople(t: number) {
     const tk = uppgiftVid(p), sleeping = tk?.act === 'sova';
     // figuren ur porträttgeneratorn (steg 5.2.3.2, ui/folkbild.ts) med fötterna under punkten; den som sover eller inte kan
     // gå ligger ner (steg 3.7.19), under täcket när hen sover, och de minsta barnen har en egen, lägre mall i hel skala (steg 5.5.5)
-    const sp = figurAv(p.id), ligger = sleeping || !kanGa(p), liten = a < ALDER.smabarn;
+    const sp = figurAv(p.id), ligger = sleeping || !kanGa(p) || !!iStridenNu(p.id, ui.nu)?.ligger, liten = a < ALDER.smabarn;
     const gor = tk?.phase === 'do' ? tk.act : undefined, sitter = !ligger && !!gor && SITTA.has(gor);
     let rikt = riktning(p.id, q.x, q.y);
     if (sitter && rikt === 'bak') rikt = 'fram';
@@ -290,6 +322,15 @@ export function drawPeople(t: number) {
     sp.visible = true; sedd.add(p.id);
     if (PRICKAR.sjuk.har(p)) peopleG.beginFill(PRICKAR.sjuk.farg).drawCircle(x + r * 0.7, y - r * 0.7, 1.8).endFill();
     if (PRICKAR.gravid.har(p)) peopleG.beginFill(PRICKAR.gravid.farg).drawCircle(x - r * 0.7, y - r * 0.7, 1.6).endFill();
+    // den som brinner (steg 6.4.16): fladdrande lågor över figuren (platshållare tills Björn valt i bildstilen)
+    if (p.brinner !== undefined) {
+      const f = (slag() + p.id) % 3, topp = sp.position.y + 2;
+      for (let i = 0; i < 4; i++) {
+        const lx = Math.round(sp.position.x + 2 + i * (w - 4) / 3), hoj = 3 + ((i + f) % 3);
+        peopleG.beginFill(LAGA[0]).drawRect(lx - 1, topp + 6 - hoj, 2, hoj).endFill();
+        peopleG.beginFill(LAGA[1]).drawRect(lx - 1, topp + 7 - Math.ceil(hoj / 2), 2, Math.ceil(hoj / 2)).endFill();
+      }
+    }
     // det man bär syns på figuren, hur lite det än är (steg 3.6.5): framför kroppen, och med en kartbild ur bildstilen i sin
     // naturliga storlek (steg 5.1.2.1)
     // varje hand sitt eget (steg 6.1.2): två slag syns i var sin hand, ett slag framför kroppen som förut
@@ -305,6 +346,7 @@ export function drawPeople(t: number) {
       bar(mal, x + dx * f, y + dy * f, 4.8);
     }
   }
+  ritaRovarna(skugga);
   for (const [id, sp] of figurer) if (!sedd.has(id)) { sp.destroy(); figurer.delete(id); }
   // pågående samtal och symboler
   const flash = new Map<number, string>();

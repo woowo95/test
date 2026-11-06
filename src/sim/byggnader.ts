@@ -291,7 +291,7 @@ function bytFn(s: State, h: Hus, fn: Fn, slag?: 'mat' | 'material') {
   h.fn = fn; h.slag = slag; h.tom = undefined;
   h.namn = nyttNamn(s, h, fn, { v: 0, plats: 0, slag, ag: h.ag });
   touch(s); count(s, 'bytt_' + fn);
-  log(s, `${fore} blir ${h.namn.toLowerCase()}.`, 'world'); kronika(s, `${fore} blev ${h.namn.toLowerCase()}.`);
+  log(s, `${fore} blev ${h.namn.toLowerCase()}.`, 'world'); kronika(s, `${fore} blev ${h.namn.toLowerCase()}.`);
   husKlar(s, h);
 }
 function riv(s: State, h: Hus) {

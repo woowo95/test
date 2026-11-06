@@ -1,0 +1,30 @@
+{
+ "id": "fagel_orre",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "f6_fagel_falld: den fällda orren på rygg, i orrens form och färger",
+ "w": 23,
+ "h": 11,
+ "rader": [
+  "..............o........",
+  ".............oso.......",
+  "...........ooslo.......",
+  "..........omsmo........",
+  "oo.....ooomssmo........",
+  "ddooooodmmmsmdo........",
+  "oddddddddmmmmddooo.....",
+  "dodddmmmmmmmmmdddao....",
+  "odddddlllllllldddddo...",
+  ".oooooolllllloooddno...",
+  ".......oonono...ooo...."
+ ],
+ "pal": {
+  "o": "#24201d",
+  "s": "#dad0bb",
+  "l": "#dad0bb",
+  "m": "#2f261d",
+  "d": "#24201d",
+  "a": "#a14808",
+  "n": "#2f261d"
+ }
+}

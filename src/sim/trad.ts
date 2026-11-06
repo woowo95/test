@@ -96,6 +96,8 @@ export function stadium(g: Ground, i: number): Stadium | null {
   const a = g.alder?.[i] ?? 0;
   return a < GAMMAL() ? 'vuxet' : a < TORR() ? (arJatte(i) ? 'jatte' : 'gammalt') : 'torraka';
 }
+// är det vuxna trädet på ruta i gammalt eller ett jätteträd (inte torrakan): det tränger mer (steg 6.5.1, mark.ts)
+export const gammaltTrad = (g: Ground, i: number) => { const a = g.alder?.[i] ?? 0; return g.trees[i] >= 1 && a >= GAMMAL() && a < TORR(); };
 // trädets ålder i dygn (år i spelet): tiden det tog att växa (tradDygn i mark.ts, efter hur stort det är) och åldern som vuxet
 export const tradAlder = (g: Ground, i: number, tradDygn: number) => g.trees[i] < 1 ? g.trees[i] * tradDygn : tradDygn + (g.alder?.[i] ?? 0);
 

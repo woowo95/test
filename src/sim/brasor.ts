@@ -18,10 +18,10 @@ import type { Uppgift } from './projekt';
 // station (STATIONER.brasa i stationer.ts), och när den är klar blir den en lägereld (nyEld) och stationen finns inte längre.
 // Det byn vill ha (s.brasa) räknas varje timme: de som har sin sovplats långt från alla lägereldar, och nära varandra. I en by
 // där var och en håller sig för sig själv (seden gemenskap) räcker ett kortare avstånd för att vilja ha en egen eld.
-// Varje lägereld efter den första är till för dem som har sin sovplats närmast den (Fire.folk): önskan om ved på den är det
-// högsta någon av dem vill ha, och de tänder den och fyller på den (stepFire i eld.ts), en i taget i byn och den första
-// först. När bränslet tryter (slackDygn) fylls bara den första på, så att de andra slocknar först. Dess folk värmer sig,
-// arbetar och samtalar vid den när den brinner (spotFor i val.ts).
+// Varje lägereld efter den första hör till dem som har sin sovplats närmast den (Fire.folk). Önskan om ved på en eld räknas
+// från dem som hör till den och dem som sitter vid den (stepFire i eld.ts, steg 6.3.1); alla eldar är lika. När bränslet
+// tryter (slackDygn) sköts bara den eld som flest använder. Dess folk värmer sig, arbetar och samtalar vid den när den brinner
+// (spotFor i val.ts).
 // En släckt lägereld som ingen längre sover nära tas isär: genast när byn vill ha en någon annanstans, annars efter
 // tomDygn, och de sex stenarna läggs i en hög där den stod. Högen bärs in i lagret och stenarna används igen.
 
@@ -43,8 +43,6 @@ export const BRASA = balans('brasa', {
 // lägereldarna efter den första (eld.ts)
 export const brasorOf = (s: State) => s.eldar ?? NONE;
 const NONE: Fire[] = [];
-// den brinnande lägereld efter den första som p hör till (p har sin sovplats närmast den)
-export const egenBrasa = (s: State, p: Person) => s.eldar?.length ? s.eldar.find(f => f.lit && f.folk?.includes(p.id)) : undefined;
 // platsen byn vill ha en lägereld till på (mitten av sovplatserna, siteBrasa i stationer.ts), om den vill ha en
 export const brasaMal = (s: State) => s.brasa && s.brasa.vill > 0 ? s.brasa : undefined;
 // hur mycket byn vill ha en lägereld till (0 till 1), för projektet

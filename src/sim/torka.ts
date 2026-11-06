@@ -1,9 +1,8 @@
 import { balans } from './balans';
 import { count, living, log } from './folk';
 import { motgangNu } from './motgang';
-import { freeNear, touch } from './byggnad';
+import { freeNear, lagretsMitt, touch } from './byggnad';
 import { groundOf, nyttVatten, tileOf } from './mark';
-import { eldPlats } from './karta';
 import { nasbara } from './vag';
 import { takenOf } from './fynd';
 import { avbryt } from './lager';
@@ -94,7 +93,7 @@ export function vattnetAndrat(s: State, fore: Uint8Array, flytta = true) {
 // där ett barn som föddes på den torra sjöbotten låg kvar på en ö, v206). Ligger lägret själv på den mindre biten land
 // flyttas ingen
 function iLand(s: State) {
-  const g = groundOf(s), f = eldPlats(s), lagret = nasbara(g, f.x + 0.5, f.y + 0.5);
+  const g = groundOf(s), f = lagretsMitt(s), lagret = nasbara(g, f.x + 0.5, f.y + 0.5);
   let stor = -1;
   for (const p of living(s)) {
     if (lagret[tileOf(p.x, p.y)]) continue;

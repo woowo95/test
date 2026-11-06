@@ -1,4 +1,5 @@
 import { Act, DAY, HOUR, MIN, Person, SEC, State, Task } from './typer';
+import { LJUS, UPPSATT } from './ljus';
 import { halvOf, newTing, tingOf } from './agande';
 import { takeRecipe } from './behov';
 import { BYN } from './egendom';
@@ -40,6 +41,8 @@ const halvById = (s: State, id?: number) => id === undefined ? undefined : tingO
 export function startWork(s: State, p: Person, tk: Task) {
   if (tk.act === 'station') { startStation(s, p, tk); return; } // en station byggs vidare där den står (stationer.ts)
   if (tk.act === 'odla') { startOdla(s, p, tk); return; } // på fältet (odling.ts)
+  if (tk.act === 'ljus') { tk.until = s.now + LJUS.min * MIN; return; } // ett talgljus på bordet (ljus.ts)
+  if (tk.act === 'uppsatt') { tk.until = s.now + UPPSATT.min * MIN; return; } // en uppsatt fackla (ljus.ts)
   if (tk.act === 'dorr') { tk.until = s.now + (dorrDef(tk.tool)?.min ?? 0) * MIN; return; } // en dörr i en öppning (bygg.ts)
   if (DRICKA_ACTS.has(tk.act)) { tk.until = s.now + drickMin(s, p, tk.act) * MIN; return; } // att dricka (torst.ts)
   if (tk.act === 'varda') { tk.until = s.now + HALSA.vardMin * MIN; return; } // vården (halsa.ts)

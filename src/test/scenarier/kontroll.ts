@@ -11,7 +11,7 @@ import { symDelar, symUtan } from '../../ui/symboler';
 import { anvandsKant, skaffasKant } from '../../ui/skaffas';
 import * as fs from 'fs';
 import * as path from 'path';
-import { ANSIKTSORD, drag, glomArv, skapad, skonNiva } from '../../ui/utseende';
+import { ANSIKTSORD, ROVARDRAKT, drag, glomArv, rovarSkapad, skapad, skonNiva } from '../../ui/utseende';
 import { Koll, kor, klockan, uiLas, SCENARIER, grenarUte, barGrenar } from './hjalp';
 
 SCENARIER['ui-ren'] = {
@@ -172,6 +172,18 @@ SCENARIER.vakt = {
 
 // Det i registren som bara händer i vissa byar: namnet och varför. Allt annat ska hända i minst en av byarna
 const SALLSYNT: Record<string, string> = {
+  bjorn: 'björnen finns i få byar och fälls sällan (steg 6.6.4–6.6.6); scenarierna bjorn och bjornjakt prövar den',
+  bjornjakt: 'björnen jagas bara när den finns nära och jägarna är många nog (steg 6.6.6); scenariot bjornjakt prövar det',
+  bjornskinn: 'björnskinn blir det bara av en fälld björn (se bjorn); scenariot bjornjakt prövar slakten',
+  bjorndel: 'ett björnstycke blir det bara av en fälld björn (se bjorn); scenariot bjornjakt prövar det',
+  rock_bjornskinn: 'en rock av björnskinn behöver ett björnskinn (se bjorn); scenariot plagg prövar plaggen',
+  skor_bjornskinn: 'skor av björnskinn behöver ett björnskinn (se bjorn); scenariot plagg prövar plaggen',
+  rock: 'plaggen sys vid slöjdbänken med bensylen, som de hungrigare byarna efter 6.6 kommer på sent eller inte alls på 35 dygn; scenariot plagg prövar det, och det ses över i fasens Balans (6.10)',
+  skor: 'som rock; scenariot plagg prövar det, och det ses över i fasens Balans (6.10)',
+  rock_kaninskinn: 'som rock; scenariot plagg prövar det, och det ses över i fasens Balans (6.10)',
+  skor_kaninskinn: 'som rock; scenariot plagg prövar det, och det ses över i fasens Balans (6.10)',
+  koa: 'handlaren kommer först när byn är rik nog (HANDEL.rik), och de hungrigare byarna efter 6.6 hinner sällan dit på 35 dygn; scenariot handelsko prövar kön, och det ses över i fasens Balans (6.10)',
+  fjadrar: 'fjädrar blir det bara när en fälld fågel slaktas och inte äts hel; fåglarna jagas bara när ingen kanin eller inget rådjur finns nära (steg 6.6.3), och i de hungriga byarna äts de; scenariot faglar prövar slakten, och hur ofta det blir fjädrar ses över i fasens Balans (6.10)',
   kol: 'kol blir det bara när elden brunnit ut helt',
   flyttaeld: 'elden flyttas bara när ett hus behöver platsen eller byn har minst tre hus och vuxit ifrån elden (steg 2.10.4); scenariot eldflytt prövar det',
   tillbehor: 'skinnfällen i bädden görs bara när byn har skinn över och kommit på skinnfällen, i 1 av 4 byar på 35 dygn sedan v324; scenariot skinnfall prövar det',
@@ -212,6 +224,14 @@ const SALLSYNT: Record<string, string> = {
   flyEld: 'bara den som står nära en brinnande ruta och inte släcker går undan (steg 3.8.5); scenariot brand prövar branden',
   rock_vargskinn: 'en rock av vargskinn behöver två vargskinn, alltså två fällda vargar (steg 3.7.14), sällan på 35 dygn; scenariot plagg prövar den',
   skor_vargskinn: 'skor av vargskinn behöver ett vargskinn, alltså en fälld varg (steg 3.7.14), sällan på 35 dygn; scenariot plagg prövar dem',
+  vargdel: 'en styckdel av varg blir det bara när en fälld varg är för tung att bära hem (steg 6.6.1); scenariot styckning prövar det',
+  talgljus: 'talgljuset görs av två talg (steg 6.3.8), och talg blir det bara av slaktade rådjur och vargar, i 1 av 4 byar på 35 dygn; scenariot talgljus prövar det, och hur ofta det används ses över i fasens Balans (6.10)',
+  ljus: 'ett talgljus ställs bara fram när byn har ett (se talgljus); scenariot talgljus prövar det',
+  uppsatt: 'en fackla sätts bara upp när byn har en över (steg 6.3.7), och facklan görs i 1 av 4 byar på 35 dygn; scenariot uppsatt prövar det, och hur ofta det används ses över i fasens Balans (6.10)',
+  skinnfall: 'skinnfällen kommer man bara på när byn har skinn över och halmbäddar (steg 2.2.15), sällan på 35 dygn sedan skinnen blev kvar där djuret styckades (steg 6.6.1); scenariot skinnfall prövar det, och det ses över i fasens Balans (6.10)',
+  skinndorr: 'skinndörren kommer man bara på när byn har skinn över och ett hus med en öppen dörröppning (steg 2.2.16), sällan på 35 dygn; scenariot dorr prövar den, och det ses över i fasens Balans (6.10)',
+  skogsvard: 'skogsvården kommer man bara på när de närmaste träden att fälla står långt bort (steg 6.5.2), sällan på 35 dygn; scenariot skogsvard prövar den, och det ses över i fasens Balans (6.10)',
+  plantera: 'plantor flyttas bara av den som kan skogsvården (se skogsvard); scenariot skogsvard prövar det',
 };
 SCENARIER.aldrig = {
   text: 'Allt i registren används: varje handling, sak, husfunktion, djurart och teknik förekommer i minst en av fyra byar under 35 dygn (35 år i spelet, fem veckor i verkligheten)',
@@ -252,6 +272,27 @@ SCENARIER.aldrig = {
       ...ut,
       [`listan över det sällsynta har bara sådant som finns i registren${okanda.length ? ` (inte: ${okanda.join(', ')})` : ''}`, !okanda.length],
       [`inga vaktlarm i byarna${vakter.length ? `: ${vakter.slice(0, 3).join('; ')}` : ''}`, !vakter.length],
+    ];
+  },
+};
+
+SCENARIER.rovardrakt = {
+  text: 'Rövarnas utseende (steg 6.6.12, ui/utseende.ts): rövarna är figurer ur skaparen som byborna, och samma rövare ser alltid likadan ut. De bär rövarens delar (luvan, duken och rocken av mörkt, slitet skinn) och vargskinnsrocken, var och en med sin chans, och vapnet i handen; byborna får aldrig rövarens delar.',
+  kor: () => {
+    const s = createState(4, START), RS = new Set(['bonad-9', 'bonad-10']);
+    const rov = Array.from({ length: 60 }, (_, i) => ({ namn: 'Rövare' + i, sex: i % 2 ? 'm' : 'k', st: { styrka: 10, uthallighet: 10, mod: 10, smidighet: 10, skicklighet: 10 }, vapen: i % 3 ? 'yxa' : 'flintspjut', blod: 1 }) as SIM.Rovare);
+    const a = rov.map(r => rovarSkapad(s, r, 'arg')), b = rov.map(r => rovarSkapad(s, r, 'arg'));
+    const lika = JSON.stringify(a) === JSON.stringify(b);
+    const luva = a.filter(q => q.del.huvudbonad === 'bonad-9').length, duk = a.filter(q => q.del.huvudbonad === 'bonad-10').length;
+    const skinn = a.filter(q => q.klader.rock === 'rovarskinn').length, varg = a.filter(q => q.klader.rock === 'vargskinn').length;
+    const vapen = a.every((q, i) => q.del.redskap === (rov[i].vapen === 'yxa' ? 'redskap-yxa' : q.del.redskap) && !!q.del.redskap);
+    const by = living(s).map(p => skapad(s, p)), bybor = by.every(q => !RS.has(q.del.huvudbonad ?? '') && q.klader.rock !== 'rovarskinn');
+    const kring = (n: number, p: number) => n > 60 * p * 0.4 && n < 60 * p * 1.8;
+    return [
+      ['samma rövare ser likadan ut varje gång', lika],
+      [`luvan ${luva}, duken ${duk}, rocken av slitet skinn ${skinn}, vargskinnet ${varg} av 60 (ROVARDRAKT)`, kring(luva, ROVARDRAKT.luva) && kring(duk, ROVARDRAKT.duk) && kring(skinn, ROVARDRAKT.rovarskinn) && kring(varg, ROVARDRAKT.vargskinn)],
+      ['rövaren har vapnet i handen', vapen],
+      ['byborna bär aldrig rövarens delar', bybor],
     ];
   },
 };

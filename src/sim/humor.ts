@@ -35,6 +35,7 @@ export const HUMOR = balans('humor', {
   socialLag: 0.2, socialMinus: 0.1,
   socialHog: 0.7, socialPlus: 0.05,
   halsaLag: 0.6, halsaMinus: 0.12,
+  morkMinus: 0.04, morkTim: 1, // vaken i mörkret (steg 6.3.4, ljus.ts): humöret så här mycket lägre så många timmar efteråt
   // förväntningarna (steg 3.2.1)
   forvDygn: 5, // förväntningen glider mot rikedomen; efter så här många dygn har en ändring nästan två tredjedelar slagit igenom
   forvC: 30, // läggs till både rikedom och förväntan, så att den som äger nästan inget inte svänger av småsaker
@@ -284,6 +285,7 @@ export function moodOf(p: Person, now: number, ut?: { namn: string; v: number }[
   if (p.rest < HUMOR.viloLag) del('Trött', -HUMOR.viloMinus);
   if (p.social < HUMOR.socialLag) del('Ensam', -HUMOR.socialMinus); else if (p.social > HUMOR.socialHog) del('Umgåtts mycket', HUMOR.socialPlus);
   if (halsa(p) < HUMOR.halsaLag) del('Mår dåligt', -HUMOR.halsaMinus);
+  if (p.morkT !== undefined && now - p.morkT <= HUMOR.morkTim * HOUR) del('Mörkt', -HUMOR.morkMinus);
   if (p.forv) {
     const r = forvRikare(p.forv), v = forvVan(p.forv.f);
     if (Math.abs(r) >= HUMOR.visa) del(r > 0 ? 'Rikare än förut' : 'Fattigare än förut', r);

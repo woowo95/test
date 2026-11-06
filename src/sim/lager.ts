@@ -1,3 +1,4 @@
+import { stubbeOn } from './stubbar';
 import { OMRADE, omrade, utanforByn } from './omrade';
 import { groundOf } from './mark';
 import { FOREST, findPath, nasbara } from './vag';
@@ -10,7 +11,7 @@ import { ALDER, alive, byId, count, isSick, living, stat, ageOf, log } from './f
 import { matOrdning } from './naring';
 import { eldPlats, getMap } from './karta';
 import { Act, H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
-import { bitAt, roofed } from './byggnad';
+import { bitAt, lagretsMitt, roofed } from './byggnad';
 import { ACTS, toolRow, usesTool } from './handlingar';
 import { temperature, vaderSlit } from './vader';
 import { BYN, Del, addDel, sumOf, takeOrder } from './egendom';
@@ -355,10 +356,16 @@ const allUsable = (s: State, z: Zone) => { for (let y = z.y; y < z.y + z.h; y++)
 const overlaps = (a: Zone, b: Zone, gap: number) => a.x < b.x + b.w + gap && b.x < a.x + a.w + gap && a.y < b.y + b.h + gap && b.y < a.y + a.h + gap;
 // rutorna runt en lagerplats, närmast först (från fran till och med till rutor ut). En i taget, så att den som letar efter
 // den första lediga inte går igenom hela kartan
-function* ringTiles(s: State, z: Zone, fran = 1, till = LAGER.bredvid) {
-  for (let d = fran; d <= till; d++) for (let y = z.y - d; y < z.y + z.h + d; y++) for (let x = z.x - d; x < z.x + z.w + d; x++) {
-    const e = Math.max(z.x - x, x - (z.x + z.w - 1), z.y - y, y - (z.y + z.h - 1));
-    if (e === d && usable(s, x, y)) yield { x, y };
+// Bara kanten av varje ring gås igenom, rad för rad som förut (övre raden, sidorna, nedre raden). fore = en snabb kontroll
+// som görs före usable (samma rutor och samma ordning, bara färre dyra kontroller). Ringarna slutar vid kartans kant
+function* ringTiles(s: State, z: Zone, fran = 1, till = LAGER.bredvid, fore?: (x: number, y: number) => boolean) {
+  const ok = (x: number, y: number) => (!fore || fore(x, y)) && usable(s, x, y);
+  for (let d = fran; d <= till; d++) {
+    const x0 = z.x - d, x1 = z.x + z.w - 1 + d, y0 = z.y - d, y1 = z.y + z.h - 1 + d;
+    if (x0 < 0 && y0 < 0 && x1 >= W && y1 >= H) return; // ringen ligger helt utanför kartan, och alla efter den också
+    for (let x = x0; x <= x1; x++) if (ok(x, y0)) yield { x, y: y0 };
+    for (let y = y0 + 1; y < y1; y++) { if (ok(x0, y)) yield { x: x0, y }; if (ok(x1, y)) yield { x: x1, y }; }
+    for (let x = x0; x <= x1; x++) if (ok(x, y1)) yield { x, y: y1 };
   }
 }
 const key = (x: number, y: number) => y * W + x;
@@ -406,7 +413,7 @@ export const rymd = (s: State, x: number, y: number, k: string) => { const f = f
 const narFlod = new WeakMap<State, { k: string; v: Uint8Array }>();
 function nasIFloden(s: State, i: number) {
   if (!s.flod) return true;
-  const f = eldPlats(s), r = stationRutor(s), k = `${s.byggV ?? 0},${r.n},${f.x},${f.y}`;
+  const f = lagretsMitt(s), r = stationRutor(s), k = `${s.byggV ?? 0},${r.n},${f.x},${f.y}`;
   let c = narFlod.get(s);
   if (c?.k !== k) narFlod.set(s, c = { k, v: nasbara(groundOf(s), f.x + 0.5, f.y + 0.5) });
   return c.v[i] > 0;
@@ -416,11 +423,15 @@ function roomIn(s: State, occ: Occ, x: number, y: number, k: string) {
   if (!nasIFloden(s, key(x, y))) return false;
   if (s.flodHot && isFood(k) && flodHotad(s, key(x, y)) && !forvarAt(s, x, y)) return false; // vattnet stiger hit: maten bärs undan (steg 3.8.7)
   if (groundOf(s).trees[key(x, y)] >= FOREST && zonesOf(s).some(z => z.rojs && inZone(z, x, y))) return false; // ett träd i lagret i skogen fälls först (steg 3.6.9)
+  if (stubbeOn(s, x, y)) return false; // på en stubbe läggs inget: den grävs bort först (skog.ts, steg 6.5.7)
   const a = occ.get(key(x, y)), f = forvarAt(s, x, y), st = stationAt(s, x, y);
   if (f?.redskap) return isTool(k) && (!a || isTool(a.k)) && (occ.redskap.get(key(x, y)) ?? 0) < f.rymmer;
   if (st && stationDef(st.k)?.forvar?.redskap) return isTool(k) && !a; // ett ställ som byggs: ett redskap, som på marken
   return !a || (a.k === k && !isTool(k) && a.n < rymd(s, x, y, k) - 1e-9);
 }
+// en snabb kontroll före roomIn: stacken a på rutan gör att inget mer av slaget k ryms där (roomIn hade sagt nej). Ett annat
+// slag (utom redskap bredvid redskap i ett ställ) eller en full stack av samma slag. Bara för fart: samma svar som förut
+const stangd = (s: State, a: Stack | undefined, x: number, y: number, k: string) => !!a && (a.k !== k ? !(isTool(k) && isTool(a.k)) : !isTool(k) && a.n >= rymd(s, x, y, k) - 1e-9);
 // bästa plats i en lagerplats för ett slag: lagerplatserna i prioritetsordning, först en stack av samma slag som inte
 // är full, sedan en tom ruta. minPrio: bara lagerplatser med högre prioritet än så
 function zoneSpot(s: State, k: string, minPrio = -Infinity, occ = occupancy(s)) {
@@ -428,7 +439,9 @@ function zoneSpot(s: State, k: string, minPrio = -Infinity, occ = occupancy(s)) 
   for (const z of zs) {
     let empty: { x: number; y: number } | undefined;
     for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) {
-      const a = occ.get(key(x, y)), rum = roomIn(s, occ, x, y, k);
+      const a = occ.get(key(x, y));
+      if (a ? stangd(s, a, x, y, k) : empty) continue; // roomIn behöver inte frågas
+      const rum = roomIn(s, occ, x, y, k);
       if (a && rum) return { x, y };
       if (!a && rum && !empty) empty = { x, y };
     }
@@ -446,7 +459,7 @@ export function dropSpot(s: State, k: string) {
 // en ruta i ringen runt lagerplatserna där slaget k får plats (inte bredvid förrådshuset: där står väggarna)
 function ringSpot(s: State, k: string, occ: Occ) {
   const zs = zonesOf(s).filter(z => z.hus === undefined), base = zs.filter(z => allows(z, k));
-  for (const z of base.length ? base : zs) for (const r of ringTiles(s, z)) {
+  for (const z of base.length ? base : zs) for (const r of ringTiles(s, z, 1, LAGER.bredvid, (x, y) => !stangd(s, occ.get(key(x, y)), x, y, k))) {
     if (zoneAt(s, r.x, r.y) >= 0) continue;
     if (roomIn(s, occ, r.x, r.y, k)) return r;
   }
@@ -460,7 +473,7 @@ function besideSpot(s: State, k: string, occ: Occ) {
   const upptagen = new Set<number>();
   for (const a of things(s)) if (!(a.k === k && !isTool(k) && a.n < rymd(s, a.x, a.y, k) - 1e-9)) upptagen.add(key(a.x, a.y));
   const z0 = (base.length ? base : zs)[0];
-  for (const r of ringTiles(s, z0, LAGER.bredvid + 1, Math.max(W, H))) if (zoneAt(s, r.x, r.y) < 0 && !upptagen.has(key(r.x, r.y)) && nasIFloden(s, key(r.x, r.y)) && !(s.flodHot && isFood(k) && flodHotad(s, key(r.x, r.y)))) return r; // inte dit vattnet stiger (steg 3.8.7)
+  for (const r of ringTiles(s, z0, LAGER.bredvid + 1, Math.max(W, H), (x, y) => inMap(x, y) && !upptagen.has(key(x, y)))) if (zoneAt(s, r.x, r.y) < 0 && nasIFloden(s, key(r.x, r.y)) && !(s.flodHot && isFood(k) && flodHotad(s, key(r.x, r.y)))) return r; // inte dit vattnet stiger (steg 3.8.7)
   return { x: zs[0].x, y: zs[0].y }; // hela kartan är full
 }
 export const fetchSpot = (s: State, k: string) => {
@@ -799,7 +812,7 @@ export function tidyStore(s: State) {
     if (i < 0) break;
     zs[i] = growOf(s, i)!; grew = i;
   }
-  if (grew >= 0) log(s, `${zs[grew].namn ?? 'Lagret'} blev för litet, så byn gjorde det större.`, 'world');
+  if (grew >= 0) log(s, zs[grew].namn ? `${zs[grew].namn} blev för liten, så byn gjorde den större.` : 'Lagret blev för litet, så byn gjorde det större.', 'world');
   else if (over().length && vanliga(s) < LAGER.zoner) newZone(s);
   if (grew >= 0 || zs.length !== zonesOf(s).length) enPerRuta(s);
   // mindre: ta bort en kant när mer än hälften har stått tom i sex timmar (krympTim) och det som ligger där får plats i resten
@@ -955,12 +968,14 @@ export function avbryt(s: State, p: Person) {
 // baraMat = bara maten (när byn svälter, steg 2.12.3)
 export function haulJob(s: State, near?: number, baraMat = false) {
   placeTools(s);
-  const taken = paVagAttBara(s), finns = new Set(things(s).map(q => `${q.x},${q.y},${q.k}`));
+  const taken = paVagAttBara(s);
+  // finns det slaget på rutan ännu? Frågas bara för de rader som klarat de andra villkoren (stackarna, sedan redskapen)
+  const finns = (x: number, y: number, k: string) => stacksOf(s).some(q => q.x === x && q.y === y && q.k === k) || tingOf(s).some(t => ligger(t) && t.x === x && t.y === y && t.k === k);
   let best: { x: number; y: number; why: string } | undefined, bs = Infinity;
   for (const a of barLista(s)) {
     if (a.sc >= bs || taken.has(key(a.x, a.y)) || baraMat && !isFood(a.k) || near !== undefined && a.d > near) continue;
     if (s.flod && (iVattnetNu(s, key(a.x, a.y)) || !nasIFloden(s, key(a.x, a.y)))) continue; // inte det som ligger i översvämningen eller bakom den (flod.ts)
-    if (!finns.has(`${a.x},${a.y},${a.k}`)) continue; // det har burits sedan listan räknades
+    if (!finns(a.x, a.y, a.k)) continue; // det har burits sedan listan räknades
     bs = a.sc; best = { x: a.x + 0.5, y: a.y + 0.5, why: a.why };
   }
   return best;

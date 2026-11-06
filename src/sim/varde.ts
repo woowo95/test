@@ -62,8 +62,10 @@ function rakna(k: string): number {
   if (SAKER[k]?.varde !== undefined) v = SAKER[k]!.varde!; // silvret
   else if (!f) v = 0;
   else {
-    let x = (f.tid ?? 0) / SNABBARE + (f.act ? actTid(f.act) : 0) + (f.min ?? 0) / 60 * ARBETE;
+    // en sak med egen tid (hö, flinta) räknas på den; arbetet (act) säger då bara vem som skaffar den (steg 6.2.19)
+    let x = (f.tid ?? 0) / SNABBARE + (f.act && f.tid === undefined ? actTid(f.act) : 0) + (f.min ?? 0) / 60 * ARBETE;
     for (const j in f.av ?? {}) x += f.av![j] * grundvarde(j);
+    x /= f.ger ?? 1; // ett recept som ger flera (en ved blir fyra näver)
     v = x * (1 + VARDE.nivaPaslag * nivaOf(k)) * (f.sallsynt ? VARDE.sallsynt : 1);
   }
   raVarde.set(k, v);

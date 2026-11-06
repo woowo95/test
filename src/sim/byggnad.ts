@@ -1,4 +1,4 @@
-import { getMap } from './karta';
+import { eldPlats, getMap } from './karta';
 import { groundOf, tileOf } from './mark';
 import { H, State, T, W, inMap } from './typer';
 import { balans } from './balans';
@@ -33,13 +33,13 @@ export interface Hus { id: number; namn: string; x: number; y: number; w: number
 // jordgolv och 10 trägolv; slaget är k, se TIDSLAG i tider.ts), slitage per timme, hur bra väggen håller värmen.
 // storm = hur illa tornadon river väggen (tornado.ts; 1 om inget sägs).
 // farg och ikon är bara bilden: färgen på kartan och symbolen i rutan under musen (simuleringen läser dem aldrig)
-export interface Material { namn: string; k: BitK; item?: string; n: number; tim: number; slit: number; isol?: number; storm?: number; brinner?: number; tek?: string; farg: number; ikon?: string } // brinner = hur lätt väggen tar eld (eldsvådorna, brand.ts)
+export interface Material { namn: string; k: BitK; item?: string; n: number; tim: number; slit: number; isol?: number; storm?: number; brinner?: number; tek?: string; farg: number; ikon?: string } // brinner = hur lätt väggen eller golvet tar eld (eldsvådorna, brand.ts); ett golv som brunnit blir jordgolv
 export const MATERIAL: Record<string, Material> = {
   timmer: { namn: 'Timmervägg', k: 'vagg', item: 'ved', n: 5, tim: 20 / 60, slit: 0.0005, isol: 0.7, storm: 0.6, brinner: 1, tek: 'timmervagg', farg: 0x8a5e34, ikon: 'timmervagg' },
   ris: { namn: 'Risvägg', k: 'vagg', item: 'grenar', n: 5, tim: 20 / 60, slit: 0.002, isol: 0.55, storm: 1.5, brinner: 1.5, farg: 0x6b4a2a, ikon: 'risvagg' }, // äldre sparfiler: risväggar byggs inte längre men kan lagas
   jord: { namn: 'Jordgolv', k: 'golv', n: 0, tim: 5 / 60, slit: 0, farg: 0x7a5a3a },
-  tra: { namn: 'Trägolv', k: 'golv', item: 'ved', n: 1, tim: 10 / 60, slit: 0.0002, tek: 'timmervagg', farg: 0xa07446, ikon: 'tragolv' },
-  ho: { namn: 'Golv av hö', k: 'golv', item: 'torrgras', n: 1, tim: 5 / 60, slit: 0.002, farg: 0xd2b866, ikon: 'hogolv' }, // äldre sparfiler: hö-golv läggs inte längre, slits till jordgolv
+  tra: { namn: 'Trägolv', k: 'golv', item: 'ved', n: 1, tim: 10 / 60, slit: 0.0002, brinner: 1, tek: 'timmervagg', farg: 0xa07446, ikon: 'tragolv' },
+  ho: { namn: 'Golv av hö', k: 'golv', item: 'torrgras', n: 1, tim: 5 / 60, slit: 0.002, brinner: 2, farg: 0xd2b866, ikon: 'hogolv' }, // äldre sparfiler: hö-golv läggs inte längre, slits till jordgolv
   lera: { namn: 'Lera', k: 'golv', n: 0, tim: 5 / 60, slit: 0, farg: 0x5c4630 }, // ett jordgolv som legat under vatten (steg 3.8.7, flod.ts): ingen sover där, och det blir jordgolv igen när det torkat
   oppning: { namn: 'Öppning', k: 'oppning', n: 0, tim: 0, slit: 0, farg: 0x7a5a3a },
 };
@@ -130,6 +130,9 @@ export const bitAt = (s: State, x: number, y: number) => gridOf(s).at.get(Math.f
 export const isWall = (s: State, x: number, y: number) => inMap(x, y) && gridOf(s).solid[tileOf(x, y)] === 1;
 // man kan inte stå här: vatten eller en vägg
 export const blocked = (s: State, x: number, y: number) => { const i = Math.floor(y) * W + Math.floor(x); return getMap(s.seed).tiles[i] === T.Vatten || !!s.flod && iVattnetNu(s, i) || isWall(s, x, y); }; // och översvämningens vatten (flod.ts)
+// lägrets mitt under en översvämning (steg 3.8.7): elden, eller närmaste torra ruta när vattnet står över elden. Därifrån räknas
+// vad man kan gå till; från en ruta under vattnet nås nästan ingenting, och då hamnade allt i lagret på samma ruta (by 42)
+export function lagretsMitt(s: State) { const f = eldPlats(s); return s.flod ? freeNear(s, f.x, f.y) : f; }
 // närmaste plats som inte är vatten eller vägg
 // inte = rutan själv räknas inte (där en vägg ska byggas)
 export function freeNear(s: State, x: number, y: number, inte = false) {
