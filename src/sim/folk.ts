@@ -155,17 +155,30 @@ const langst = (del: string[], n: string, slut: boolean) => del.filter(d => slut
 export const namnSlut = (n: string) => langst([...NM, ...NK], n.toLowerCase(), true);
 // ett nytt namn, med följden strom (handlaren tar sitt ur handel, så att följden folk inte ändras). Ett barn får ibland
 // början eller slutet av en förälders namn (slutet bara av föräldern med samma kön, steg 4.5.4.8)
+// början + mitten + slutet, men mitten tas bort när namnet blir svårt att uttala med den och lättare utan den (steg 6.7.6):
+// Osllo blir Oso, Kolrkfast Kolfast. Tre konsonanter i rad går bara som slut + början av en stavelse (Askborg, Verkmund)
+const CODA = ['rk', 'rn', 'nd', 'st', 'sk', 'lv', 'rd', 'ns', 'ld', 'lf', 'rg', 'ng', 'lm', 'rm', 'lg', 'nk', 'rv'];
+const ONSET = ['tr', 'kr', 'gr', 'br', 'dr', 'fr', 'bj', 'sk', 'st', 'sv', 'kv', 'sm', 'sn'];
+const garUttala = (k: string) => k.length <= 2 || (
+  k.length === 3 && k[0] !== k[1] && k[1] !== k[2] && ((CODA.includes(k.slice(0, 2)) && 'bdfgmv'.includes(k[2])) || ('rlns'.includes(k[0]) && ONSET.includes(k.slice(1)))));
+const klungor = (n: string) => (n.toLowerCase().slice(1).match(/[bcdfghjklmnpqrstvwxz]+/g) ?? []).filter(k => !n.toLowerCase().endsWith(k));
+const uttalbart = (n: string) => klungor(n).every(garUttala);
+const langstKlunga = (n: string) => Math.max(0, ...klungor(n).map(k => k.length));
+export function foga(borjan: string, mitt: string, slut: string) {
+  const med = borjan + mitt + slut, utan = borjan + slut;
+  return mitt && !uttalbart(med) && (uttalbart(utan) || langstKlunga(utan) < langstKlunga(med)) ? utan : med;
+}
 export function makeName(s: State, sex: 'm' | 'k', strom: Strom = 'folk', foraldrar: (Person | undefined)[] = []) {
   const f = foraldrar.filter((q): q is Person => !!q);
   if (f.length && rnd(s, strom) < NAMN.arv) {
     const q = pick(s, f, strom), slut = q.sex === sex ? namnSlut(q.name) : undefined, borjan = langst(N1, q.name, false);
     const n = slut && (!borjan || rnd(s, strom) < 0.5)
-      ? stor(pick(s, N1, strom) + (rnd(s, strom) < 0.7 ? pick(s, N2, strom) : '') + slut)
-      : borjan ? stor(borjan + (rnd(s, strom) < 0.7 ? pick(s, N2, strom) : '') + pick(s, sex === 'k' ? NK : NM, strom)) : '';
+      ? stor(foga(pick(s, N1, strom), rnd(s, strom) < 0.7 ? pick(s, N2, strom) : '', slut))
+      : borjan ? stor(foga(borjan, rnd(s, strom) < 0.7 ? pick(s, N2, strom) : '', pick(s, sex === 'k' ? NK : NM, strom))) : '';
     if (n && n !== q.name && ledigt(s, n)) return n;
   }
   for (let i = 0; i < 20; i++) {
-    const nn = stor(pick(s, N1, strom) + (rnd(s, strom) < 0.7 ? pick(s, N2, strom) : '') + pick(s, sex === 'k' ? NK : NM, strom));
+    const nn = stor(foga(pick(s, N1, strom), rnd(s, strom) < 0.7 ? pick(s, N2, strom) : '', pick(s, sex === 'k' ? NK : NM, strom)));
     if (ledigt(s, nn)) return nn;
   }
   return pick(s, N1, strom) + pick(s, sex === 'k' ? NK : NM, strom);

@@ -200,7 +200,7 @@ export const STATIONER = {
   brasa: {
     namn: 'Lägereld', ikon: 'lagereld', w: 1, h: 1, tek: [], av: { sten: STATION.brasaSten }, min: STATION.brasaMin, gor: [], flera: true, brasa: true,
     bygger: 'Lägger en ring av stenar till en lägereld nära sovplatserna.',
-    forsta: '{namn} lade en ring av stenar till en lägereld till, långt från den första och nära sovplatserna.',
+    forsta: '{namn} lade en ring av stenar till ännu en lägereld, långt från den första och nära sovplatserna.',
   },
   // scenen (steg 4.3.2.2, framtradande.ts): ett golv av kluvna stockar ute i byn. Där uppträder man på kvällen när det
   // inte är kallt eller regnar, och där ligger byns instrument (vid), en plats för varje sort

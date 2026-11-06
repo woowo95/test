@@ -1600,6 +1600,29 @@ SCENARIER.loggen = {
   },
 };
 
+SCENARIER.smatext = {
+  text: 'Steg 6.7.6: hedersnamnet utan bevis säger vad byn tycker att hen är, de förmögna och Pärlan, namn som går att uttala, "Det var sommar när" och de små rättningarna i texterna',
+  kor: () => {
+    const t = createState(14, START);
+    klockan(t, 12);
+    const [p] = living(t);
+    const f = { namn: p.name, binamn: 'Smörbyttan', helt: `${p.name} Smörbyttan`, hen: 'hen', honom: 'hen', skal: '', tillst: true, tillstand: 'välbärgad' };
+    const heder = Array.from({ length: 12 }, (_, i) => SIM.berattelse(t, 'hedersnamn', p.id + i * 7, f));
+    p.binamn = { k: 'valbargad', namn: 'Smörbyttan', v: 1, t: t.now, tillst: true };
+    const info = SIM.binamnInfo(p)!;
+    const namn = Array.from({ length: 40 }, (_, i) => SIM.makeName(t, i % 2 ? 'k' : 'm'));
+    const tre = namn.filter(n => /[bcdfghjklmnpqrstvwxz]{4}/i.test(n.slice(1, -1)));
+    const sommar = SIM.fyll('Det var {arstid} när {namn} föddes. Under {arstid} var det varmt.', { arstid: 'sommaren', namn: 'Ask' });
+    return [
+      [`utan bevis: det byn tycker att hen är (${heder[0]})`, heder.every(h => h.includes('är välbärgad') && !/[{}]|var så/.test(h))],
+      [`personrutan säger "är" (${info.varfor})`, info.varfor === `${p.name} är välbärgad`],
+      ['den rike heter inte Förrådet och den smakfulla inte Blomkrukan', !JSON.stringify(SIM.BINAMN.rik).includes('Förrådet') && JSON.stringify(SIM.BINAMN.smakfull).includes('Pärlan')],
+      [`namnen går att uttala (${namn.slice(0, 6).join(', ')}; fyra konsonanter i rad: ${tre.join(', ') || 'inga'})`, tre.length <= 2 && SIM.foga('Os', 'll', 'o') === 'Oso' && SIM.foga('Kol', 'rk', 'fast') === 'Kolfast' && SIM.foga('Ask', 'b', 'org') === 'Askborg'],
+      [`"Det var sommar när" (${sommar})`, sommar === 'Det var sommar när Ask föddes. Under sommaren var det varmt.'],
+    ];
+  },
+};
+
 SCENARIER.vemibyn = {
   text: 'Steg 3.9.7: beskrivningen byggs av delar ur registret BESK_DELAR, med ett villkor och hur mycket delen sticker ut: grundare av byn, skönheten och äldst i byn står alltid med när de gäller; sedan namnet byn gav, yrket och ryktet, det hen är känd som, uppfinningarna, bedrifterna, relationerna, den döda hen saknar, smaken (också vapnet) och minnet. 2–4 meningar, 5 när det finns mycket att säga',
   kor: () => {

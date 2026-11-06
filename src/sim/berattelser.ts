@@ -90,42 +90,59 @@ const BDEF: Record<IntryckTyp, BinamnDef> = {
   skicklig: { namn: [['Mästaren', 'Mästarinnan'], ['den skicklige', 'den skickliga'], ['Guldhand', 'Guldhand'], ['den kloke', 'den kloka']] },
   flitig: { namn: [['den flitige', 'den flitiga'], ['Myran', 'Myran'], ['den outtröttlige', 'den outtröttliga'], ['Morgonstjärnan', 'Morgonstjärnan']] },
   valbargad: { namn: [['den välbärgade', 'den välbärgade'], ['Smörbyttan', 'Smörbyttan'], ['den välförsedde', 'den välförsedda'], ['Mjölsäcken', 'Mjölsäcken']] }, // steg 4.5.4.7
-  rik: { namn: [['den rike', 'den rika'], ['Förrådet', 'Förrådet'], ['Guldpungen', 'Guldpungen'], ['Fullkistan', 'Fullkistan']] },
+  rik: { namn: [['den rike', 'den rika'], ['den förmögne', 'den förmögna'], ['Guldpungen', 'Guldpungen'], ['Fullkistan', 'Fullkistan']] },
   rattvis: { namn: [['den rättvise', 'den rättvisa'], ['Vågen', 'Vågen'], ['den vise', 'den visa'], ['Domaren', 'Domarinnan']] },
   orattvis: { namn: [['den orättvise', 'den orättvisa'], ['den hårde', 'den hårda'], ['Snedvågen', 'Snedvågen'], ['den stränge', 'den stränga']] },
   stark: { namn: [['den starke', 'den starka'], ['Björnen', 'Björnen'], ['Järnarmen', 'Järnarmen'], ['Eken', 'Eken']] },
   feg: { namn: [['Haren', 'Haren'], ['den rädde', 'den rädda'], ['Darraren', 'Darrerskan'], ['Hönan', 'Hönan']] },
-  smakfull: { namn: [['den smakfulle', 'den smakfulla'], ['Prydnaden', 'Prydnaden'], ['den fine', 'den fina'], ['Blomkrukan', 'Blomkrukan']] }, // pyntet (steg 4.3.4)
+  smakfull: { namn: [['den smakfulle', 'den smakfulla'], ['Prydnaden', 'Prydnaden'], ['den fine', 'den fina'], ['Pärlan', 'Pärlan']] }, // pyntet (steg 4.3.4)
   vargdodare: { namn: [['Vargdödaren', 'Vargdödaren'], ['Vargbane', 'Vargbane'], ['den modige', 'den modiga'], ['Ulvspjutet', 'Ulvspjutet']] },
   bjorndodare: { namn: [['Björndödaren', 'Björndödaren'], ['Björnbane', 'Björnbane'], ['den orädde', 'den orädda'], ['Björnfällen', 'Björnfällen']] }, // steg 6.6.6
 };
 export const BINAMN: Record<IntryckTyp, BinamnDef> = BDEF;
 
 // mallarna: id → varianterna (minst åtta). {namn} = förnamnet, {binamn} = namnet byn gav, {helt} = båda, {skal} = varför
+// (det som hänt), {tillstand} = det byn tycker att hen är när ingen har ett bevis (tillst, steg 6.7.6)
 const MDEF = {
   hedersnamn: [
-    'Byn har börjat kalla {namn} för {binamn}, för {hen} {skal}.',
-    'Sedan {hen} {skal} säger alla {helt}.',
-    '{namn} {skal}. Från den dagen hette {hen} {helt}.',
-    'Ingen minns vem som sa det först, men nu är {namn} {binamn} för hela byn. {Hen} {skal}.',
-    'Vid elden talar man om {namn} som {binamn}. Det var när {hen} {skal}.',
-    '{helt}, säger de nu, och {namn} låtsas inte höra det men ler. {Hen} {skal}.',
-    'Barnen ropar {binamn} efter {namn}. {Hen} {skal}, och det har de inte glömt.',
-    'Så fick {namn} sitt namn: {hen} {skal}, och byn kallar {honom} {helt}.',
-    { t: 'Det var en kall tid när {namn} {skal}. Sedan dess heter {hen} {helt}.', om: f => f.kallt === true },
-    { t: 'De gamla nickar när de säger {helt}. {Hen} {skal}, och sådant minns man.', om: f => (f.gamla as number) > 0 },
+    { t: 'Byn har börjat kalla {namn} för {binamn}, för {hen} {skal}.', om: f => !f.tillst },
+    { t: 'Sedan {hen} {skal} säger alla {helt}.', om: f => !f.tillst },
+    { t: '{namn} {skal}. Från den dagen hette {hen} {helt}.', om: f => !f.tillst },
+    { t: 'Ingen minns vem som sa det först, men nu är {namn} {binamn} för hela byn. {Hen} {skal}.', om: f => !f.tillst },
+    { t: 'Vid elden talar man om {namn} som {binamn}. Det var när {hen} {skal}.', om: f => !f.tillst },
+    { t: '{helt}, säger de nu, och {namn} låtsas inte höra det men ler. {Hen} {skal}.', om: f => !f.tillst },
+    { t: 'Barnen ropar {binamn} efter {namn}. {Hen} {skal}, och det har de inte glömt.', om: f => !f.tillst },
+    { t: 'Så fick {namn} sitt namn: {hen} {skal}, och byn kallar {honom} {helt}.', om: f => !f.tillst },
+    { t: 'Det var en kall tid när {namn} {skal}. Sedan dess heter {hen} {helt}.', om: f => !f.tillst && f.kallt === true },
+    { t: 'De gamla nickar när de säger {helt}. {Hen} {skal}, och sådant minns man.', om: f => !f.tillst && (f.gamla as number) > 0 },
+    { t: 'Alla vet att {namn} är {tillstand}, och nu säger de {helt}.', om: f => !!f.tillst }, // inget bevis: det byn tycker att hen är (steg 6.7.6)
+    { t: 'Byn har börjat kalla {namn} för {binamn}. {Hen} är {tillstand}, och det har alla sett.', om: f => !!f.tillst }, // inget bevis: det byn tycker att hen är (steg 6.7.6)
+    { t: '{namn} är {tillstand}, och därför heter {hen} nu {helt}.', om: f => !!f.tillst }, // inget bevis: det byn tycker att hen är (steg 6.7.6)
+    { t: 'Vid elden talar man om {namn} som {binamn}, för {hen} är {tillstand}.', om: f => !!f.tillst }, // inget bevis: det byn tycker att hen är (steg 6.7.6)
+    { t: 'Barnen ropar {binamn} efter {namn}. {Hen} är {tillstand}, det vet alla.', om: f => !!f.tillst }, // inget bevis: det byn tycker att hen är (steg 6.7.6)
+    { t: 'Ingen minns vem som sa det först, men {namn} är {tillstand}, och nu heter {hen} {helt}.', om: f => !!f.tillst }, // inget bevis: det byn tycker att hen är (steg 6.7.6)
+    { t: '{helt}, säger de nu. {namn} är {tillstand}, och det ser alla.', om: f => !!f.tillst }, // inget bevis: det byn tycker att hen är (steg 6.7.6)
+    { t: 'Så fick {namn} sitt namn: {hen} är {tillstand}, och byn kallar {honom} {helt}.', om: f => !!f.tillst }, // inget bevis: det byn tycker att hen är (steg 6.7.6)
   ],
   oknamn: [
-    'Bakom ryggen kallar byn {namn} för {binamn}. {Hen} {skal}.',
-    '{namn} {skal}, och nu heter {hen} {helt} i allas mun.',
-    'Ingen säger det högt när {namn} hör, men alla vet vem {binamn} är. {Hen} {skal}.',
-    'Sedan {hen} {skal} säger man {helt}, och man fnissar när man säger det.',
-    'Det är inget fint namn, {binamn}. Men {namn} {skal}.',
-    'Vid elden viskar man om {helt}. Det var när {hen} {skal}.',
-    'Barnen härmar {namn} och ropar {binamn}. {Hen} {skal}, och det sitter i.',
-    'Så fick {namn} sitt namn: {hen} {skal}, och nu är {hen} {helt}.',
-    { t: '{namn} blev arg när {hen} hörde att {hen} heter {binamn}. Men {hen} {skal}.', om: f => f.arg === true },
-    { t: 'Det var i kylan som {namn} {skal}. Ingen har glömt det: {hen} heter {helt}.', om: f => f.kallt === true },
+    { t: 'Bakom ryggen kallar byn {namn} för {binamn}. {Hen} {skal}.', om: f => !f.tillst },
+    { t: '{namn} {skal}, och nu heter {hen} {helt} i allas mun.', om: f => !f.tillst },
+    { t: 'Ingen säger det högt när {namn} hör, men alla vet vem {binamn} är. {Hen} {skal}.', om: f => !f.tillst },
+    { t: 'Sedan {hen} {skal} säger man {helt}, och man fnissar när man säger det.', om: f => !f.tillst },
+    { t: 'Det är inget fint namn, {binamn}. Men {namn} {skal}.', om: f => !f.tillst },
+    { t: 'Vid elden viskar man om {helt}. Det var när {hen} {skal}.', om: f => !f.tillst },
+    { t: 'Barnen härmar {namn} och ropar {binamn}. {Hen} {skal}, och det sitter i.', om: f => !f.tillst },
+    { t: 'Så fick {namn} sitt namn: {hen} {skal}, och nu är {hen} {helt}.', om: f => !f.tillst },
+    { t: '{namn} blev arg när {hen} hörde att {hen} heter {binamn}. Men {hen} {skal}.', om: f => !f.tillst && f.arg === true },
+    { t: 'Det var i kylan som {namn} {skal}. Ingen har glömt det: {hen} heter {helt}.', om: f => !f.tillst && f.kallt === true },
+    { t: 'Bakom ryggen kallar byn {namn} för {binamn}, för alla vet att {hen} är {tillstand}.', om: f => !!f.tillst }, // inget bevis: det byn tycker att hen är (steg 6.7.6)
+    { t: '{namn} är {tillstand}, och nu heter {hen} {helt} i allas mun.', om: f => !!f.tillst }, // inget bevis: det byn tycker att hen är (steg 6.7.6)
+    { t: 'Ingen säger det högt när {namn} hör, men alla vet vem {binamn} är: {hen} är {tillstand}.', om: f => !!f.tillst }, // inget bevis: det byn tycker att hen är (steg 6.7.6)
+    { t: 'Det är inget fint namn, {binamn}. Men {namn} är {tillstand}.', om: f => !!f.tillst }, // inget bevis: det byn tycker att hen är (steg 6.7.6)
+    { t: 'Barnen härmar {namn} och ropar {binamn}, för {hen} är {tillstand}.', om: f => !!f.tillst }, // inget bevis: det byn tycker att hen är (steg 6.7.6)
+    { t: 'Vid elden viskar man om {helt}. Alla vet att {hen} är {tillstand}.', om: f => !!f.tillst }, // inget bevis: det byn tycker att hen är (steg 6.7.6)
+    { t: 'Så fick {namn} sitt namn: {hen} är {tillstand}, och nu är {hen} {helt}.', om: f => !!f.tillst }, // inget bevis: det byn tycker att hen är (steg 6.7.6)
+    { t: 'Man fnissar när man säger {helt}, för {namn} är {tillstand}.', om: f => !!f.tillst }, // inget bevis: det byn tycker att hen är (steg 6.7.6)
   ],
   // personen (steg 3.9.2). {alder} = 'ung kvinna', 'gammal man' osv., {drag1} och {drag2} = de egenskaper som sticker ut
   besk_drag2: [
@@ -517,7 +534,7 @@ const MDEF = {
     'Folk sover under tak som {namn} har byggt.',
     '{Hen} har varit med och byggt {vad}.',
     'Byn har {namn} att tacka för {vad}.',
-    '{Hen} kan peka på {vad} och säga: det byggde jag.',
+    'Ett av husen i byn har {hen} byggt med egna händer.',
     'Med sina händer har {hen} rest {vad}.',
   ],
   // {vem} = lärlingen eller läraren (mentorn, steg 3.1.1)
@@ -862,7 +879,7 @@ const MDEF = {
   // varje rättegång är rättvis eller orättvis (falsk, för hård eller för mild mot ledarens nära), eller slutade med döden
   r_folk: [
     { t: 'De flesta tyckte att {namn} fick vad {hen} förtjänade.', om: f => !f.oratt && !f.dog },
-    { t: 'Ingen sade emot. Byn tyckte att domen var rättvis.', om: f => !f.oratt && !f.dog },
+    { t: 'Ingen sa emot. Byn tyckte att domen var rättvis.', om: f => !f.oratt && !f.dog },
     { t: 'Folket nickade. Så skulle det vara.', om: f => !f.oratt && !f.dog },
     { t: 'Det blev tyst runt elden, men ingen tyckte att {ledare} hade gjort fel.', om: f => !f.oratt && !f.dog },
     { t: 'Efteråt talade man om domen vid elden, och de flesta höll med {ledare}.', om: f => !f.oratt && !f.dog },
@@ -1008,7 +1025,7 @@ const MDEF = {
     '{namn} fann en övergiven boplats och gjorde den till sin. Byn grundades på nytt.',
     { t: 'I kylan hittade {namn} den övergivna boplatsen och grundade byn på nytt.', om: f => f.kallt === true },
   ],
-  // mästerverken och de usla sakerna (steg 3.9.4). {saken} = sakens namn i bestämd form, {den} = den/det/de, {pa} = "på våren" osv.
+  // mästerverken och de usla sakerna (steg 3.9.4). {saken} = sakens namn i bestämd form, {den} = den/det/de, {pa} = "en vår" osv.
   m_gjord: [
     '{namn} gjorde {saken} {pa}{vader}, och det blev ett mästerverk.',
     'Det var {arstid} när {namn} gjorde {saken}{vader}. {Den} blev bättre än något {hen} gjort förut.',
@@ -1180,13 +1197,13 @@ const MDEF = {
   ],
   p_langtan: [
     '{namn} sa till {med} att {hen} längtar efter {om}.',
-    '{namn} och {med} pratade om hur gott {om} vore.',
+    '{namn} och {med} pratade om hur gott det vore med {om}.',
     '{namn} klagade för {med} att {hen} inte fått {om} på länge.',
     '{namn} och {med} drömde om {om}.',
     '{med} fick höra att {namn} saknar {om}.',
     '{namn} pratade om {om} så att {med} också blev sugen.',
     '{namn} och {med} undrade var de kan få tag på {om}.',
-    '{namn} sa att {om} är det {hen} längtar mest efter.',
+    '{namn} sa att {om} var det {hen} längtade mest efter.',
   ],
   p_karlek: [
     '{namn} och {med} flirtade.',
@@ -1327,7 +1344,7 @@ const MDEF = {
     '{namn} blir på dåligt humör av {om}.',
     '{namn} litar inte på {om}.',
     '{namn} himlar med ögonen åt {om}.',
-    '{namn} tycker att {om} är jobbig.',
+    '{namn} tycker att {om} är besvärlig.',
     '{namn} och {om} kommer inte överens.',
     '{namn} säger helst inget alls till {om}.',
     '{namn} vänder sig bort när {om} börjar prata.',
@@ -1486,7 +1503,7 @@ const MDEF = {
     { t: '"Vintern är nära", påminde {handlare}. "Då vill du inte vara utan."', om: f => f.arg === 'vinter' },
     { t: '{Handlare} talade om hösten och om att kölden snart kommer.', om: f => f.arg === 'vinter' },
     { t: 'Löven föll, och {handlare} menade att det inte var läge att pruta inför vintern.', om: f => f.arg === 'vinter' },
-    { t: '{Kund} sa att ingen har något över under istiden.', om: f => f.arg === 'istid' },
+    { t: '{Kund} sa att ingen hade något över under istiden.', om: f => f.arg === 'istid' },
     { t: '"Det är istid, vi har knappt nog åt oss själva", sa {kund}.', om: f => f.arg === 'istid' },
     { t: '{Kund} pekade på snön och sa att byn inte hade mycket att ge.', om: f => f.arg === 'istid' },
     { t: '{Handlare} visste att byn saknade {vara}, och sa det rakt ut.', om: f => f.arg === 'behov' },
@@ -1707,22 +1724,25 @@ export function valjVariant(s: State, mall: MallId, nyckel: number, f: Fyllning 
 let textLyssnare: ((mall: string, i: number, text: string, f: Fyllning) => void) | undefined;
 export function lyssnaPaTexter(f: typeof textLyssnare) { textLyssnare = f; }
 export function fyll(text: string, f: Fyllning) {
-  return text.replace(/\{(\w+)\}/g, (_, k: string) => {
+  return text.replace(/\{(\w+)\}/g, (_, k: string, i: number) => {
     const v = f[k] ?? f[k.toLowerCase()];
-    const t = v === undefined ? '' : String(v);
+    let t = v === undefined ? '' : String(v);
+    if (k === 'arstid' && text.slice(Math.max(0, i - 8), i) === 'Det var ') t = OBEST[t] ?? t; // "Det var sommar när" (steg 6.7.6)
     return k[0] === k[0].toUpperCase() && k[0] !== k[0].toLowerCase() ? t.charAt(0).toUpperCase() + t.slice(1) : t;
   });
 }
 export const berattelse = (s: State, mall: MallId, nyckel: number, f: Fyllning = {}) => fyll(valjVariant(s, mall, nyckel, f), f);
 
 // ---------- öknamnen och hedersnamnen (steg 3.9.1) ----------
-export interface Binamn { k: IntryckTyp; namn: string; v: number; t: number; skal?: string }
+export interface Binamn { k: IntryckTyp; namn: string; v: number; t: number; skal?: string; tillst?: true } // tillst = inget bevis, bara det byn tycker (steg 6.7.6)
 const hen = (p: Person) => p.sex === 'm' ? 'han' : 'hon';
 // namnet efter förnamnet: "Ask Lögnaren", "Brand den flitige"
 export const heltNamn = (p: Person) => p.binamn ? `${p.name} ${p.binamn.namn}` : p.name;
 export const arHeder = (b: Binamn) => INTRYCK[b.k].tecken > 0;
-// varför: det starkaste beviset någon i byn har (utan namnet först), annars intryckets ord
-function skalTill(s: State, p: Person, k: IntryckTyp) {
+// varför: det starkaste beviset någon i byn har (utan namnet först), annars intryckets ord som ett tillstånd (tillst, steg
+// 6.7.6): "är välbärgad", "är en lögnare"
+const tillstand = (k: IntryckTyp) => INTRYCK[k].som ?? INTRYCK[k].namn;
+function skalTill(s: State, p: Person, k: IntryckTyp): { skal: string; tillst: boolean } {
   let bast: { t: string; v: number } | undefined;
   for (const q of living(s)) {
     const e = intryckOm(q, p.id, k);
@@ -1731,7 +1751,7 @@ function skalTill(s: State, p: Person, k: IntryckTyp) {
       if (!bast || v > bast.v) bast = { t: HANDELSER[b.h].text.replace('{om}', b.motNamn ?? 'någon').replace('{sak}', b.sak ?? 'något'), v };
     }
   }
-  return bast?.t ?? `var så ${INTRYCK[k].namn}`;
+  return bast ? { skal: bast.t, tillst: false } : { skal: '', tillst: true };
 }
 // var BERATT.timmar timme: hur många av de andra vuxna som har samma starka intryck av var och en
 export function stepBerattelser(s: State) {
@@ -1763,11 +1783,11 @@ export function lekNamn(s: State, p: Person) {
 function gebinamn(s: State, p: Person, k: IntryckTyp, v: number) {
   const val = BINAMN[k].namn, i = Math.floor(hash(s.seed, p.id, val.length + k.length) * val.length);
   const namnet = lekNamn(s, p) ?? val[i][p.sex === 'm' ? 0 : 1];
-  const skal = skalTill(s, p, k), fore = p.binamn;
-  p.binamn = { k, namn: namnet, v, t: s.now, skal };
+  const { skal, tillst } = skalTill(s, p, k), fore = p.binamn;
+  p.binamn = { k, namn: namnet, v, t: s.now, ...(tillst ? { tillst: true as const } : { skal }) };
   const heder = INTRYCK[k].tecken > 0;
   upplev(s, p, heder ? 'hedersnamn' : 'oknamn', namnet); // steg 4.1.1.2
-  const f: Fyllning = { namn: p.name, binamn: namnet, helt: heltNamn(p), hen: hen(p), honom: p.sex === 'm' ? 'honom' : 'henne', skal, kallt: temperature(s) < 0, gamla: living(s).filter(q => ageOf(q, s.now) >= ALDER.gammal).length, arg: !heder && hash(s.seed, p.id, 3) < 0.5 };
+  const f: Fyllning = { namn: p.name, binamn: namnet, helt: heltNamn(p), hen: hen(p), honom: p.sex === 'm' ? 'honom' : 'henne', skal, tillst, tillstand: tillstand(k), kallt: temperature(s) < 0, gamla: living(s).filter(q => ageOf(q, s.now) >= ALDER.gammal).length, arg: !heder && hash(s.seed, p.id, 3) < 0.5 };
   const text = berattelse(s, heder ? 'hedersnamn' : 'oknamn', p.id, f);
   log(s, `${heder ? '🏅' : '🗯️'} ${text}`, 'rel', [p.id]);
   kronika(s, text, heder ? 'hedersnamn' : 'oknamn');
@@ -1778,7 +1798,7 @@ function gebinamn(s: State, p: Person, k: IntryckTyp, v: number) {
 export function binamnInfo(p: Person) {
   const b = p.binamn;
   if (!b) return undefined;
-  return { namn: b.namn, sym: arHeder(b) ? '🏅' : '🗯️', heder: arHeder(b), varfor: `${p.name} ${b.skal ?? `var så ${INTRYCK[b.k].namn}`}`, intryck: INTRYCK[b.k].namn, alive: alive(p) };
+  return { namn: b.namn, sym: arHeder(b) ? '🏅' : '🗯️', heder: arHeder(b), varfor: `${p.name} ${b.skal ?? `är ${tillstand(b.k)}`}`, intryck: INTRYCK[b.k].namn, alive: alive(p) };
 }
 
 // ---------- personen (steg 3.9.2) ----------
@@ -2107,6 +2127,7 @@ export function beskrivning(s: State, p: Person) {
 
 // ---------- krönikan (steg 3.9.3) ----------
 export const ARSTIDER = ['istiden', 'våren', 'sommaren', 'hösten'];
+const OBEST: Record<string, string> = { istiden: 'istid', våren: 'vår', sommaren: 'sommar', hösten: 'höst' };
 export { talOrd, och }; // talen och listorna bor i ordlagret (steg 6.7.1)
 // en händelse som en liten berättelse i krönikan, med årstiden, vädret och natten (loggen behåller sin korta rad).
 // Raden får mallens id som slag, så att den kan hittas utan att läsa texten
@@ -2133,7 +2154,7 @@ export interface SakMinne { g: number; h: number; ai: number; v?: string; natt?:
 // motivet på ett mästerverk (steg 4.3.3): personen (om, namnet, intrycket) och händelsen (b), om det fanns en; mal = målat
 export interface Motiv { om: number; namn: string; k: IntryckTyp; b?: Bevis; mal?: 1 }
 type SakGrupp = 'egg' | 'vapen' | 'klad' | 'mobel' | 'redskap';
-const PA = ['under istiden', 'på våren', 'på sommaren', 'på hösten'];
+const PA = ['under istiden', 'en vår', 'en sommar', 'en höst']; // en sommar, inte på sommaren som om varje år (steg 6.7.6)
 const VADER_ORD: Record<string, string> = { regn: ' i regnet', sno: ' i snön', blast: ' i blåsten', dimma: ' i dimman' };
 // det egna namnet: en förled efter det som hände när saken gjordes och en efterled efter vad saken är
 const FORLED = { sorg: 'Sorg', barn: 'Glädje', sno: 'Snö', regn: 'Regn', blast: 'Storm', dimma: 'Dim', natt: 'Natt', glad: 'Sol', ledsen: 'Tår', ai: ['Vinter', 'Vår', 'Sommar', 'Höst'] };

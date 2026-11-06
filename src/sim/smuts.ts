@@ -231,7 +231,7 @@ export function magont(s: State, i: number) {
   const forr = s.hygien ?? 0;
   s.hygien = clamp(forr + SMUTS.lardom, 0, 1);
   count(s, 'magont av toa-smuts');
-  if (forr <= 0) log(s, 'Byn förstod att vattnet blir smutsigt nära toaletten. Latrinen läggs hädanefter längre från vattnet.', 'world');
+  if (forr <= 0) log(s, 'Byn förstod att vattnet blir smutsigt nära latrinen. Latrinen läggs hädanefter längre från vattnet.', 'world');
 }
 
 // Regnet tvättar bort fläckarna (steg 5.1.12): varje timme det regnar (inte snöar) blir blodet och fläckarna som ligger ute
