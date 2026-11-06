@@ -18,6 +18,7 @@ import { motgangNu } from './motgang';
 import { snoPaMarken, vaderNu } from './vader';
 import { wearTool } from './agande';
 import { tecken } from './religion';
+import { kn, learnK, useK } from './kunskap';
 
 // ---------- jakten som strid (steg 3.7.3) ----------
 // Jägaren letar upp en kanin nära jaktplatsen och smyger sig fram. Kaninen ser hen på ett avstånd som beror på kaninens
@@ -52,6 +53,22 @@ export const JAKT = balans('jakt', {
   bett: 0.15, bettGrad: 0.06, // den som griper en kanin med händerna blir biten med den här chansen och graden
   fly: 6, // så långt (rutor) flyr gruppen bort från jägaren när den skräms (steg 4.5.4.1), och då får jägaren smyga sig nära igen
 });
+// motvinden (steg 6.6.7): djuren känner lukten av jägaren när vinden blåser från hen mot dem och ser hen då på längre håll,
+// i motvind på kortare; ju hårdare det blåser, desto större skillnad. Den som kan det (kunskapen motvind) går runt och
+// närmar sig i motvind, och det tar lite längre tid; den som inte kan det går rakt fram. Kunskapen lärs efter många jakter
+// där djuret känt lukten och flytt, och av en annan jägare (minne.ts)
+export const MOTVIND = balans('motvind', {
+  lukt: 0.4, // med vinden rakt från jägaren mot djuret ser djuret hen så här mycket längre bort (gånger blåsten), i motvind kortare
+  bas: 0.25, // ... och blåsten räknas som minst så här mycket (en svag bris bär också lukten)
+  runtSek: 40, // att gå runt till motvindssidan tar så här många sekunder extra (när vinden kommer rakt bakifrån)
+  lar: 0.03, // så mycket lär sig jägaren varje gång ett djur kände lukten och flydde
+  kand: 0.6, // en kunskap över detta räknas som lärd (loggas)
+});
+// hur vinden står: 1 när den blåser rakt från jägaren mot djuret, −1 i motvind
+export function vindMot(rikt: number, fx: number, fy: number, tx: number, ty: number) {
+  const d = Math.hypot(tx - fx, ty - fy);
+  return d < 1e-6 ? 0 : (Math.cos(rikt) * (tx - fx) + Math.sin(rikt) * (ty - fy)) / d;
+}
 // ---------- försöket som det syns (steg 4.5.4.1) ----------
 // Försöket är lika långt som förut (smygSek och det kastade som hämtas), men det mesta av tiden letar jägaren efter
 // hararna. Sedan smyger hen jämnt fram i JAKTSYN.smyg sekunder, siktar 3–5 sekunder (kort efter en hare som redan flyr),
@@ -159,11 +176,16 @@ export function jaktForsok(s: State, p: Person, tk: Task, t = s.now): number {
   const st = nyStrid(u, Math.floor(rnd(s, 'arbete', p) * 2147483647)), r = () => slump(st);
   const a = st.kampar[0], b = st.kampar[1];
   b.blod = h.blod;
+  // vinden (steg 6.6.7): den som kan smyga i motvind går runt till motvindssidan
+  const mv = kn(p, 'motvind') >= MOTVIND.kand ? 1 : 0, rak = vindMot(vader.rikt, p.x, p.y, m.x, m.y), vm = mv ? -1 : rak;
+  if (mv) useK(p, 'motvind', now);
+  const blast = Math.min(1, MOTVIND.bas + vader.vind);
   // var kaninen ser jägaren, och var jägaren tror att det blir
-  const sedd = JAKT.upptack * (1 - JAKT.skygg / 2 + JAKT.skygg * (drag.skygghet ?? 0.5)) * (isLight(now) ? 1 : JAKT.natt)
+  const sedd = (1 + MOTVIND.lukt * blast * vm) * JAKT.upptack * (1 - JAKT.skygg / 2 + JAKT.skygg * (drag.skygghet ?? 0.5)) * (isLight(now) ? 1 : JAKT.natt)
     * (rad ? RADJUR.upptack : fag ? FAGEL.upptack : 1) * TERR[markslag(groundOf(s), tileOf(m.x, m.y))] * (1 + JAKT.sno * snoPaMarken(s)) * (skramd(s, m.grupp) ? JAKT.skramd : 1)
     / Math.max(0.3, 1 + JAKT.smid * (a.st.smidighet - 10) + JAKT.vana * jakt);
-  const tror = sedd * (1 + (r() * 2 - 1) * JAKT.gissa * (1 - clamp(jakt / 20, 0, 1))) * JAKT.marg;
+  // den som inte vet om vinden tror att den inte spelar någon roll (steg 6.6.7)
+  const tror = sedd * (1 - MOTVIND.lukt * blast * mv) / (1 + MOTVIND.lukt * blast * vm) * (1 + (r() * 2 - 1) * JAKT.gissa * (1 - clamp(jakt / 20, 0, 1))) * JAKT.marg;
   const kv = (VAPEN[v] as { kast?: { rack: number; skada: number } }).kast!, nar = v === 'sten' ? VAPEN.hand : VAPEN[v]; // med stenar i handen griper man kaninen
   let traff = false, kastD = -1, hand = false, sett: boolean, stopp: number;
   skram(s, m.grupp);
@@ -192,7 +214,12 @@ export function jaktForsok(s: State, p: Person, tk: Task, t = s.now): number {
   const g = b.skador.reduce((x, w) => x + w.g, 0);
   const dog = traff && (hand || b.lage === 'dod' || g + h.sar >= (rad ? RADJUR.dod : fag ? FAGEL.dod : JAKT.dod));
   // det kastade: stenen tappas oftast bort och då letar hen upp en ny, annars hämtas det som kastades
-  const extra = kastD > 0 ? (v === 'sten' && r() < JAKT.stenBorta ? JAKT.stenSek : JAKT.hamtaSek) : 0;
+  const extra = (kastD > 0 ? (v === 'sten' && r() < JAKT.stenBorta ? JAKT.stenSek : JAKT.hamtaSek) : 0) + Math.round(MOTVIND.runtSek * mv * (1 + rak) / 2);
+  // djuret kände lukten och flydde: jägaren lär sig lite om vinden (steg 6.6.7)
+  if (sett && vm > 0) {
+    const fore = kn(p, 'motvind'), efter = learnK(p, 'motvind', MOTVIND.lar * blast * vm, now);
+    if (fore < MOTVIND.kand && efter >= MOTVIND.kand) { log(s, `${p.name} har lärt sig att smyga på djuren i motvind.`, 'skill', [p.id]); count(s, 'motvindLard'); }
+  }
   tk.jf = { t, id: m.id, x: m.x, y: m.y, sx: p.x, sy: p.y, v, stopp, kast: kastD, sett, ut: dog ? 'fangad' : traff && g > 0 ? 'skadad' : kastD > 0 || !sett ? 'miss' : 'flydde', ...(hand ? { hand: true as const } : {}), extra, g, blod: b.blod };
   // flocken flyr bort från jägaren när haren flyr (eller fångas), och då får jägaren smyga sig nära igen (steg 4.5.4.1)
   const o = jaktForlopp(tk.jf);

@@ -1706,6 +1706,46 @@ SCENARIER.kaninjakt = {
   },
 };
 
+SCENARIER.motvind = {
+  text: 'Motvinden (steg 6.6.7): djuren ser jägaren på längre håll när vinden blåser från hen mot dem och på kortare i motvind. Den som inte kan det går rakt fram och lär sig efter många jakter där djuret känt lukten och flytt; den som kan det går runt till motvindssidan, vilket tar lite längre tid',
+  kor: () => {
+    const s0 = createState(6, START);
+    klockan(s0);
+    const p0 = living(s0).find(q => ageOf(q, s0.now) >= 16)!;
+    const alla = djurOf(s0).map(d => d.id);
+    const prova = (vind: 'med' | 'mot', kan: number, n: number) => {
+      const ut = { sett: 0, extra: 0, lard: 0 };
+      const s = cloneState(s0), p = SIM.byId(s, p0.id)!;
+      p.kunskap = kan ? { motvind: { v: kan, t: s.now } } : undefined;
+      for (let i = 0; i < n; i++) {
+        Object.assign(s, { djurDoda: undefined, djurHalsa: undefined, djurSkramd: undefined, djurFlykt: undefined }); s.ting = (s.ting ?? []).filter(t => t.k !== 'flintspjut');
+        const t = SIM.addTool(s, 'flintspjut', p); t.hos = p.id;
+        const k = djurOf(s).find(d => d.id === alla[i % alla.length]) ?? djurOf(s)[0]; // kaninerna i tur och ordning, i olika terräng
+        // vinden blåser rakt från jägaren mot kaninen (medvind) eller tvärtom (motvind)
+        const v = SIM.vaderNu(s), r = Math.atan2(k.y - p.y, k.x - p.x);
+        v.vind = 1; v.rikt = vind === 'med' ? r : r + Math.PI;
+        const tk = { act: 'jakt', phase: 'do', tx: k.x, ty: k.y, until: s.now + HOUR, carry: 0, tool: 'flintspjut' } as SIM.Task;
+        SIM.jaktForsok(s, p, tk);
+        const f = tk.jf!;
+        if (f.sett) ut.sett++;
+        ut.extra += f.extra;
+        SIM.jaktKlar(s, p, tk);
+        p.skador?.splice(0); p.health = 1;
+      }
+      ut.lard = SIM.kn(p, 'motvind');
+      return { ...ut, log: s.log.some(l => l.text.includes('har lärt sig att smyga på djuren i motvind')) };
+    };
+    const N = 600, med = prova('med', 0, N), mot = prova('mot', 0, N), kan = prova('med', 1, N), kanMot = prova('mot', 1, N);
+    return [
+      [`utan kunskapen ser kaninen jägaren oftare i medvind (${med.sett} av ${N}) än i motvind (${mot.sett})`, med.sett > mot.sett * 1.3],
+      [`den som kan smyga i motvind går runt: i medvind sedd ${kan.sett} gånger, nära motvinden (${mot.sett})`, kan.sett < med.sett && Math.abs(kan.sett - mot.sett) <= N * 0.08],
+      [`att gå runt tar längre tid (${Math.round(kan.extra / N)} s extra i snitt mot ${Math.round(kanMot.extra / N)} s när vinden redan står rätt)`, kan.extra > kanMot.extra],
+      [`jägaren lär sig efter många jakter där kaninen känt lukten (kunskap ${med.lard.toFixed(2)} efter ${N} försök i medvind, ${mot.lard.toFixed(2)} i motvind), och det står i loggen`, med.lard >= SIM.MOTVIND.kand && mot.lard === 0 && med.log],
+      [`kunskapen heter "${SIM.KUNSKAPER.motvind?.namn}" i personens lista`, !!SIM.KUNSKAPER.motvind],
+    ];
+  },
+};
+
 SCENARIER.varg = {
   lang: true,
   text: 'Vargen och vakten (steg 3.7.1): vargar kommer under istiden, oftast i flock och ibland ensamma, och drar vidare efter en tid. Vakten ser dem och väcker byn, en flock anfaller den som är ensam, på natten stjäl de mat ur förrådet när ingen är vaken nära, och byn kan jaga dem i grupp. Svårigheten: en varg slår oftast en obeväpnad, med spjut klarar man sig oftast, och tre med spjut slår oftast fyra vargar men någon skadas',
