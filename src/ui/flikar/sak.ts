@@ -1,4 +1,4 @@
-import { amountOf, busksort, isTool, FOREST, stamAv, MARK, STADIER, VAG, groundOf, stadium, tradAlder, tradArt, STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf } from '../../sim';
+import { amountOf, busksort, fallTid, living, tileOf, isTool, FOREST, stamAv, MARK, STADIER, VAG, groundOf, stadium, tradAlder, tradArt, STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { condBar, durTxt, esc, kvMark, kvText, pLink } from '../hjalp';
 import { piles, s, ui } from '../lage';
@@ -78,7 +78,15 @@ function trad(i: number) {
     <dl class="kv">
       <dt>Ålder</dt><dd>${alder}</dd>
       ${g.trees[i] >= FOREST ? `<dt>Fälls</dt><dd>${iconImg('ved', 14)} ${stam.ved} ${iconImg('grenar', 14)} ${stam.grenar}</dd>` : ''}
+      ${fallning(i)}
     </dl>`;
+}
+// om någon börjat fälla trädet (steg 6.5.6): vem som fäller det nu och hur mycket arbete som är kvar
+function fallning(i: number) {
+  const gjort = s.halvfallt?.[i] ?? 0, vem = living(s).find(p => p.task?.act === 'falla' && p.task.phase === 'do' && tileOf(p.task.tx, p.task.ty) === i);
+  if (!gjort && !vem) return '';
+  const tid = fallTid(s, i), kvar = Math.max(0, tid - gjort), del = Math.min(1, gjort / tid);
+  return `<dt>${iconImg('yxa', 14)}</dt><dd>${vem ? `${pLink(vem)} fäller det` : 'Påbörjat'} · ${Math.round(del * 100)} % · ${durTxt(kvar)} kvar</dd>`;
 }
 // en buske (steg 6.5.3): bilden, namnet och vad den gör
 function buske(i: number) {
