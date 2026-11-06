@@ -282,6 +282,7 @@ export function komOf(h: Hus) {
 // för bygget (hus = husets id). Ger hur mycket som gick åt
 export function toWalls(s: State, x: number, y: number, n: number, hus?: number, by?: Person) {
   const h = housesOf(s).find(q => !q.klar && (hus ? q.id === hus : x >= q.x && y >= q.y && x < q.x + q.w && y < q.y + q.h));
+  n = Math.floor(n + 1e-9); // bara hela stockar går till väggarna; resten ligger kvar på stammen
   if (!h || n <= 0) return 0;
   let used = 0;
   const walls = bitsOf(s).filter(b => b.hus === h.id && b.k === 'vagg' && b.b < 1 && MATERIAL[b.m].item === 'ved' && lacks(b)).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y));
