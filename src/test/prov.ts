@@ -1,6 +1,7 @@
 // npm run prov -- [antal byar = 6] [dygn = 35]
 // Provet med gångstråken (steg 6.2.6): samma byar med och utan stråken, bredvid varandra. Skriver siffrorna per by och sidan
 // prov.html med en bild per by och läge: husen, stråken (gula), rutan framför en dörr (orange) och byns gräns.
+import './utc';
 import { writeFileSync } from 'node:fs';
 import { korJson, pool, seedAv, sek } from './pool';
 

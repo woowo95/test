@@ -1,5 +1,6 @@
 // npm test: tre byar i 90 dygn, en rad per by. Jämför med facit och skriver bara ut det som ändrats.
 // npm run facit sparar dagens resultat som nytt facit. Byarna körs samtidigt i egna processer.
+import './utc';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { DOK_KB, rad, Resultat } from './kor';
 import { NYCKELTAL, Nyckeltal } from './nyckeltal';

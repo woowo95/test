@@ -1,6 +1,7 @@
 // Scenariotester: ställ en by i ett visst läge, kör den en stund och kontrollera att det som ska hända händer.
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett (flera namn: de körs samtidigt, de korta i grupper)
+import './utc';
 import './scenarier/grund';
 import './scenarier/sparning';
 import './scenarier/redskap';

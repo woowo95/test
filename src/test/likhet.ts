@@ -4,6 +4,7 @@
 // npm run likhet -- [timmar = 720] [byar = 4]: byarna 3, 5, 7, … körs samtidigt i egna processer (ca 1 min datortid).
 // Standardlängden 720 timmar (30 dygn, 30 år i spelet) räcker för första huset (efter 2–6 dygn) och första istiden
 // (från dygn 21–27). Felkod 1 om någon by är olik eller kraschar.
+import './utc';
 import { createHash } from 'node:crypto';
 import { createState, step, living, serialize, spar, BEAT, State, foodOf, fuelStock, TalkEvent } from '../sim';
 import { START, STEG_TIM } from './kor';

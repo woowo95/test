@@ -4,6 +4,7 @@
 // (systemet val) eller `npm run talen -- fryser eld.slockna` (alla tal om att frysa och när elden slocknar).
 // Ett annat värde prövas med miljövariabeln BALANS före ett testkommando, t.ex. BALANS="kropp.fryser=0.3" npm run balans,
 // och jämförs by för by med npm run jamfor -- --satt kropp.fryser=0.3 (flera värden: --svep kropp.fryser=0.25/0.3/0.4).
+import './utc';
 import { balansTal, okandaBalans } from '../sim';
 
 const filter = process.argv.slice(2).map(f => f.toLowerCase());

@@ -2,6 +2,7 @@
 // Texterna som simuleringen skriver (loggen, krönikan, namnen) räknas varje gång de skrivs. Texterna som bara visas när man
 // trycker på något skrivs här som om någon tittade (titta i textkoll.ts): för alla i byn var TITTA_TIM timme.
 // Varje text går också genom kontrollerna (steg 4.5.1.2), också stilen (upprepningar och långa meningar)
+import './utc';
 import { step, BEAT, createState } from '../sim';
 import { lyssnaPaTexter } from '../sim/berattelser';
 import { START, STEG_DYGN, STEG_TIM } from './kor';

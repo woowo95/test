@@ -2,6 +2,7 @@
 // Typkontroll, alla scenarier utom de långa (och de långa som nämns, t.ex. npm run snabbkoll -- gava ved) och vakterna i
 // fyra byar under de första 12 dygnen (12 år i spelet, knappt två veckor i verkligheten). Den hittar fel medan de är färska.
 // Den mäter inte balansen och jämför inget med facit: det gör det stora testet efter en grupp steg (npm run koll, jamfor, likhet).
+import './utc';
 import { korJson, korSkript, pool, scenarioSammanfattning, seedAv, sek, typkontroll, typRad } from './pool';
 
 const BYAR = [0, 1, 2, 3].map(seedAv), DAGAR = 12;

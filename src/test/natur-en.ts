@@ -1,5 +1,6 @@
 // Kör en by och mäter människornas avtryck på naturen (steg 1.7.2). Skriver måtten som JSON (används av natur.ts).
 // utan = inga korgar, spjut, metspön eller knivar (de tas bort så fort de görs)
+import './utc';
 import { STEG_DYGN, STEG_TIM, korBy, markStat } from './kor';
 import { ACTS, Act, utanforByn, fyndAt, skogAndel, vaxerAt, living, tingOf, ageIndex, housesOf, DAY, H, W, State } from '../sim';
 import { foodDays } from '../sim/ekonomi';
