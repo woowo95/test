@@ -31,6 +31,7 @@ export const BERATT = balans('beratt', {
   drag: 4, // beskrivningen (steg 3.9.2) nämner en egenskap som ligger så här långt från mitten (10) eller mer
   smak: 0.4, // ... och en smak (tycke, -1 till 1) som är så här stark eller starkare
   rykte: 1.5, // ... och vad byn tycker om hen, när intrycken tillsammans är så här starka
+  glomtDygn: 6, // eftermälet (steg 6.7.4): så här många dygn efter döden säger texten att det är länge sedan
   skon: 5, // skönheten står alltid med (steg 3.9.7) när den ligger så här långt från mitten (10) eller mer
   aldstBy: 4, // den äldsta i byn nämns när byn har minst så här många invånare
   mycket: 0.6, // beskrivningen får en mening till när minst fem delar (de fasta med) sticker ut så här mycket (vikt 0–1)
@@ -318,9 +319,9 @@ const MDEF = {
     'Det var {namn} och de andra första som grundade byn.',
     '{Hen} var en av dem som slog sig ner här först.',
     'När byn grundades var {namn} med.',
-    '{Hen} hör till grundarna: {hen} var här när här inte fanns något.',
+    { t: '{Hen} hör till grundarna: {hen} var här när här inte fanns något.', om: f => f.kvar !== false },
     'Byn finns för att {namn} och de andra slog sig ner vid sjön.',
-    '{namn} minns hur det var innan byn fanns, för {hen} var med och grundade den.',
+    { t: '{namn} minns hur det var innan byn fanns, för {hen} var med och grundade den.', om: f => f.kvar !== false },
     'De första stigarna här trampade {namn}.',
     '{Hen} var här från början och såg byn växa fram.',
     { t: '{namn} hittade den tomma boplatsen och grundade byn på nytt.', om: f => f.ny === true },
@@ -658,6 +659,76 @@ const MDEF = {
     'Ännu har inget hänt som byn berättar om.',
     'Det mesta i {hans} liv har inte hänt än.',
     'Ingen har ännu något att berätta om {honom}.',
+  ],
+  // eftermälet (steg 6.7.4, m_eftermale): en död beskrivs i dåtid. {orsak} = 'av svält', {arstid}, {ar} = året, {aldern} = åldern
+  // med ord; spad = dog innan ett år, ung = under 25, gammal
+  e_dog: [
+    { t: '{namn} dog {orsak} {arstid} år {ar}, {aldern} år gammal.', om: f => !f.spad },
+    { t: '{namn} dog {orsak} {arstid} år {ar}, bara {aldern} år gammal.', om: f => f.ung === true && !f.spad },
+    { t: '{namn} hann bli {aldern} år innan {hen} dog {orsak}, {arstid} år {ar}.', om: f => f.gammal === true },
+    { t: '{arstid} år {ar} dog {namn} {orsak}. {Hen} blev {aldern} år.', om: f => !f.spad },
+    { t: '{namn} dog {orsak} när {hen} var {aldern} år, {arstid} år {ar}.', om: f => !f.spad },
+    { t: '{namn} lever inte längre. {Hen} dog {orsak} {arstid} år {ar}, {aldern} år gammal.', om: f => !f.spad },
+    { t: '{namn} levde ett långt liv och dog {orsak} {arstid} år {ar}, {aldern} år gammal.', om: f => f.gammal === true },
+    { t: '{arstid} år {ar} tog döden {namn}: {hen} dog {orsak}, {aldern} år gammal.', om: f => !f.spad },
+    { t: '{namn} dog {orsak} {arstid} år {ar}, innan {hen} hunnit fylla ett år.', om: f => f.spad === true },
+    { t: '{namn} blev inte ens ett år. {Hen} dog {orsak} {arstid} år {ar}.', om: f => f.spad === true },
+  ],
+  // vem hen var: {alder} = 'ung kvinna', 'gammal man' (med det som syns framför), {drag1}, {drag2}, {bind} som i besk_drag2
+  e_drag2: [
+    { t: '{namn} var en {alder}, {drag1} {bind} {drag2}.', om: f => !!f.alder },
+    { t: 'En {alder}, {drag1} {bind} {drag2}: så var {namn}.', om: f => !!f.alder },
+    { t: 'De som kände {namn} minns att {hen} var {drag1} {bind} {drag2}.', om: f => !f.syns },
+    { t: 'I livet var {namn} {drag1} {bind} {drag2}.', om: f => !f.syns },
+    { t: 'Man minns {namn} som {drag1} {bind} {drag2}.', om: f => !f.syns },
+    { t: '{namn} var {drag1}, men {drag2} var {hen} också.', om: f => !f.syns && f.bind === 'men' },
+    { t: '{namn} var mer {drag1} än de flesta och lika {drag2}.', om: f => !f.syns && f.bind === 'och' },
+    { t: 'Alla som kände {namn} visste att {hen} var {drag1} {bind} {drag2}.', om: f => !f.syns },
+    { t: '{namn} var {drag1} {bind} {drag2} så länge {hen} levde.', om: f => !f.syns },
+  ],
+  e_drag1: [
+    { t: '{namn} var en {alder}, {drag1} som få.', om: f => !!f.alder },
+    { t: 'En {alder} som var {drag1}: sådan var {namn}.', om: f => !!f.alder },
+    { t: '{namn} var {drag1}, mer än något annat.', om: f => !f.syns },
+    { t: 'Det man minns om {namn} är att {hen} var {drag1}.', om: f => !f.syns },
+    { t: '{namn} var {drag1} i hela sitt liv.', om: f => !f.syns },
+    { t: 'Alla visste att {namn} var {drag1}.', om: f => !f.syns },
+    { t: 'Om {namn} sa man mest att {hen} var {drag1}.', om: f => !f.syns },
+    { t: '{namn} var {drag1} ut i fingerspetsarna.', om: f => !f.syns },
+  ],
+  e_drag0: [
+    { t: '{namn} var en {alder} som inte stack ut.', om: f => !!f.alder },
+    { t: '{namn} var en {alder} som de flesta andra.', om: f => !!f.alder },
+    { t: '{namn} var en {alder} utan stora gåvor och utan stora fel.', om: f => !!f.alder },
+    { t: 'En {alder} som gick sin egen stilla väg: det var {namn}.', om: f => !!f.alder },
+    { t: '{namn} stack inte ut.', om: f => !f.alder },
+    { t: '{namn} var som de flesta andra i byn.', om: f => !f.alder },
+    { t: '{namn} gick sin egen stilla väg.', om: f => !f.alder },
+    { t: '{namn} hade varken stora gåvor eller stora fel.', om: f => !f.alder },
+  ],
+  // namnet byn gav, yrket och ryktet: {binamn}, {yrke}, {rykte}
+  e_rykte: [
+    { t: 'Byn kallade {honom} {binamn}.', om: f => !!f.binamn },
+    { t: 'I byn hette {hen} {binamn}, och det minns man än.', om: f => !!f.binamn },
+    { t: 'Namnet {binamn} följde {honom} livet ut.', om: f => !!f.binamn },
+    { t: '{Hen} arbetade mest som {yrke}, och byn såg {honom} som {rykte}.', om: f => !f.binamn && !!f.yrke && !!f.rykte },
+    { t: 'Som {yrke} gjorde {hen} sitt för byn.', om: f => !f.binamn && !!f.yrke && !f.rykte },
+    { t: 'Om dagarna var {hen} {yrke}.', om: f => !f.binamn && !!f.yrke && !f.rykte },
+    { t: 'Byn såg {honom} som {rykte}.', om: f => !f.binamn && !!f.rykte },
+    { t: 'Man minns {honom} som {rykte}.', om: f => !f.binamn && !!f.rykte },
+    { t: 'I byns ögon var {hen} {rykte}.', om: f => !f.binamn && !!f.rykte },
+  ],
+  // sist: att byn minns. lange = mer än BERATT.glomtDygn dygn sedan, barn = hen har levande barn
+  e_minns: [
+    'Vid elden berättar man fortfarande om {honom}.',
+    'Byn har inte glömt {honom}.',
+    '{hans} namn lever kvar i byn.',
+    'De som var med minns hur det var när {hen} levde.',
+    { t: 'Det är länge sedan nu, men några minns {honom} än.', om: f => f.lange === true },
+    { t: 'Barnen som föddes efteråt har bara hört talas om {honom}.', om: f => f.lange === true },
+    { t: 'Ännu talar man om {honom} vid elden.', om: f => !f.lange },
+    { t: 'Saknaden efter {honom} har inte gått över.', om: f => !f.lange },
+    { t: '{hans} barn bär minnet av {honom} vidare.', om: f => f.barn === true },
   ],
   // krönikan (steg 3.9.3). Alla har {arstid} ('istiden', 'våren' …), och villkoren kallt, sno, regn, natt och blast
   k_dog: [
@@ -1977,7 +2048,33 @@ const uppfann = (p: Person) => p.fame.filter(x => x.startsWith('Uppfann ')).map(
 const bedrifter = (p: Person) => p.fame.filter(x => !FAME_EGEN.test(x) && !TITEL.test(x));
 // två bedrifter med samma verb säger verbet en gång: 'byggde byns första bord och byns första slaktbänk'
 const ihop = (l: string[]) => l.length === 2 && l[0].split(' ')[0] === l[1].split(' ')[0] ? `${l[0]} och ${l[1].split(' ').slice(1).join(' ')}` : och(l);
+// eftermälet (steg 6.7.4, m_eftermale): en död beskrivs i dåtid, först döden (e_dog), sedan vem hen var, grundandet, namnet
+// byn gav, det hen kom på eller gjorde och sist att byn minns hen. Det som bara passar en levande (smaken, vem hen litar
+// på, utseendet när man möter hen) står inte med
+function eftermale(s: State, p: Person) {
+  const a = Math.floor(ageOf(p, s.now)), k = kalender(s, p.died!);
+  let drag = personDrag(s, p), alder = alderOrd(a, p.sex);
+  const syns = drag.length === 2 ? drag.find(d => SYNS.has(d)) : undefined;
+  if (syns) { alder = `${syns} ${alder || (p.sex === 'm' ? 'man' : 'kvinna')}`; drag = drag.filter(d => d !== syns); }
+  if (drag.length === 2 && (TECKEN[drag[0]] ?? 1) < (TECKEN[drag[1]] ?? 1)) drag = [drag[1], drag[0]];
+  const bind = drag.length === 2 && (TECKEN[drag[0]] ?? 1) !== (TECKEN[drag[1]] ?? 1) ? 'men' : 'och';
+  const by = samlatIntryck(s, p.id)[0];
+  const f: Fyllning = { namn: p.name, hen: hen(p), honom: p.sex === 'm' ? 'honom' : 'henne', hans: p.sex === 'm' ? 'hans' : 'hennes', alder, drag1: drag[0], drag2: drag[1], bind, syns: !!syns,
+    orsak: p.cause ?? 'av okänd orsak', arstid: ARSTIDER[k.ai], ar: k.ar, aldern: talOrd(a, true), spad: a < 1, ung: a >= 1 && a < 25, gammal: a >= ALDER.gammal, kvar: false,
+    binamn: p.binamn?.namn, yrke: p.tag && p.tag !== 'Dagdrivare' ? liten(p.tag) : undefined, rykte: by && by[1] >= BERATT.rykte ? INTRYCK[by[0]].som ?? INTRYCK[by[0]].namn : undefined,
+    lange: s.now - p.died! > BERATT.glomtDygn * 24 * HOUR, barn: s.people.some(c => (c.mother === p.id || c.father === p.id) && alive(c)), ny: p.grundare === 'ny' };
+  const b: Besk = { s, p, f, nyck: i => p.id * 8 + i, borjan: new Set() };
+  const ut = [mening(b, 'e_dog', 40), mening(b, drag.length >= 2 ? 'e_drag2' : drag.length ? 'e_drag1' : 'e_drag0', 41)];
+  if (p.grundare) ut.push(mening(b, 'besk_grundare', 10));
+  if (f.binamn || f.yrke || f.rykte) ut.push(mening(b, 'e_rykte', 42));
+  if (uppfann(p).length) { f.vad = och(uppfann(p).slice(-3)); ut.push(mening(b, 'besk_uppfann', 14)); }
+  else if (bedrifter(p).length) { f.vad = ihop(bedrifter(p).slice(-2).map(liten)); ut.push(mening(b, 'besk_bedrift', 15)); }
+  ut.push(mening(b, 'e_minns', 43));
+  textLyssnare?.('beskrivning', -1, ut.join(' '), f);
+  return ut.join(' ');
+}
 export function beskrivning(s: State, p: Person) {
+  if (p.died !== undefined) return eftermale(s, p);
   const a = ageOf(p, s.now), Hen = hen(p), ung = a < ALDER.vuxen, gammal = a >= ALDER.gammal;
   let drag = personDrag(s, p), alder = alderOrd(a, p.sex), trots: string | undefined;
   if (drag.length === 2) { // ett drag som går emot åldern får en egen mening (besk_trots)

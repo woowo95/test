@@ -1555,12 +1555,16 @@ SCENARIER.beskrivning = {
     // alla i en by: ingen tom plats, ingen mall kvar, 2–4 meningar
     const alla = living(t).map(x => SIM.beskrivning(t, x));
     const hela = alla.every(x => !/[{}]|undefined|  | \.|^\s*$/.test(x) && meningar(x) >= 2 && meningar(x) <= 5);
+    // eftermälet (steg 6.7.4): den döda beskrivs i dåtid, med döden först och utan det som bara passar en levande
+    SIM.die(t, p, 'sjukdom'); t.now += 2 * HOUR;
+    const dod = SIM.beskrivning(t, p);
     return [
       [`de egenskaper som sticker ut står med (${b1})`, /stark/.test(b1) && /kall/.test(b1)],
       ['partnern, vännen och ovännen nämns', b1.includes(q.name) && b1.includes(v.name) && b1.includes(o.name)],
       ['texten står kvar när tiden går', b1 === b2],
       [`namnet byn gav står med (${b3})`, b3.includes('Björnen')],
       [`alla i byn får en hel text (${alla[0]})`, hela],
+      [`den döda beskrivs i dåtid, döden först (${dod})`, /^[^.]*dog\b[^.]*av sjukdom/.test(dod) && /\bvar\b/.test(dod) && !/\b(är|möter|gillar|tycker om)\b/.test(dod) && !/[{}]|undefined/.test(dod) && meningar(dod) >= 3],
     ];
   },
 };
