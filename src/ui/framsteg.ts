@@ -72,9 +72,8 @@ export function tartSvg(delar: { v: number; attr: string; titel: string }[]) {
   for (let y = -r; y <= r; y++) for (let x = -r; x <= r; x++) {
     const d = Math.hypot(x, y); if (d > r + 0.3) continue;
     const a = vinkel(x, y), i = grans.findIndex(v => a < v), j = i < 0 ? delar.length - 1 : i, k = (y + r) * n + x + r;
-    const nara = delar.length > 1 && grans.some(v => { const dv = Math.abs(a - v); return Math.min(dv, 1 - dv) * 2 * Math.PI * d < 0.7; }) && d > 1;
+    // utan ljusa linjer mellan delarna (steg 6.9.8): delarna möts direkt, bara ramen runt om är kol
     if (d > r - 0.7) g[k] = farg('kol', 0);
-    else if (nara) g[k] = 'tl';
     else del[k] = j;
   }
   const linjer = rutor(n, n, (x, y) => g[y * n + x]);

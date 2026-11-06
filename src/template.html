@@ -384,7 +384,7 @@ button.rw { border: none; background: none; padding: 0; font: inherit; color: in
 .pdelar button:disabled { opacity: 0.2; cursor: default; } /* en del i Byn som inte finns än (steg 5.3.3.2) */
 .tro { display: inline-block; border: 1px solid var(--line); border-radius: 10px; padding: 0 7px; margin: 0 3px 3px 0; font-size: 13px; cursor: help; }
 .tid { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
-.tart { flex: none; } .tart g { fill: var(--f); } .tart .tl { fill: var(--panel); } /* tårtan i pixlar (steg 5.3.2.2) */
+.tart { flex: none; } .tart g { fill: var(--f); } /* tårtan i pixlar (steg 5.3.2.2) */
 .tidlista { display: grid; grid-template-columns: max-content; gap: 3px; font-variant-numeric: tabular-nums; }
 .tidlista li { display: flex; align-items: center; gap: 5px; cursor: help; }
 .tidlista .fg { width: 10px; height: 10px; border-radius: 2px; flex: none; }
@@ -392,7 +392,7 @@ button.rw { border: none; background: none; padding: 0; font: inherit; color: in
 .tidlista li { border-radius: 3px; padding: 0 3px; }
 .tart g { cursor: help; }
 .tid:has([data-i]:hover) .tart [data-i] { fill: var(--tartblek); }
-.tid:has([data-i="0"]:hover) [data-i="0"], .tid:has([data-i="1"]:hover) [data-i="1"], .tid:has([data-i="2"]:hover) [data-i="2"], .tid:has([data-i="3"]:hover) [data-i="3"], .tid:has([data-i="4"]:hover) [data-i="4"], .tid:has([data-i="5"]:hover) [data-i="5"], .tid:has([data-i="6"]:hover) [data-i="6"], .tid:has([data-i="7"]:hover) [data-i="7"], .tid:has([data-i="8"]:hover) [data-i="8"], .tid:has([data-i="9"]:hover) [data-i="9"], .tid:has([data-i="10"]:hover) [data-i="10"], .tid:has([data-i="11"]:hover) [data-i="11"] { fill: var(--f); }
+.tid:has([data-i="0"]:hover) .tart [data-i="0"], .tid:has([data-i="1"]:hover) .tart [data-i="1"], .tid:has([data-i="2"]:hover) .tart [data-i="2"], .tid:has([data-i="3"]:hover) .tart [data-i="3"], .tid:has([data-i="4"]:hover) .tart [data-i="4"], .tid:has([data-i="5"]:hover) .tart [data-i="5"], .tid:has([data-i="6"]:hover) .tart [data-i="6"], .tid:has([data-i="7"]:hover) .tart [data-i="7"], .tid:has([data-i="8"]:hover) .tart [data-i="8"], .tid:has([data-i="9"]:hover) .tart [data-i="9"], .tid:has([data-i="10"]:hover) .tart [data-i="10"], .tid:has([data-i="11"]:hover) .tart [data-i="11"] { fill: var(--f); } /* delen under musen behåller sin färg, resten blir grå (steg 6.9.8) */
 .tid:has([data-i="0"]:hover) li[data-i="0"], .tid:has([data-i="1"]:hover) li[data-i="1"], .tid:has([data-i="2"]:hover) li[data-i="2"], .tid:has([data-i="3"]:hover) li[data-i="3"], .tid:has([data-i="4"]:hover) li[data-i="4"], .tid:has([data-i="5"]:hover) li[data-i="5"], .tid:has([data-i="6"]:hover) li[data-i="6"], .tid:has([data-i="7"]:hover) li[data-i="7"], .tid:has([data-i="8"]:hover) li[data-i="8"], .tid:has([data-i="9"]:hover) li[data-i="9"], .tid:has([data-i="10"]:hover) li[data-i="10"], .tid:has([data-i="11"]:hover) li[data-i="11"] { background: color-mix(in srgb, var(--accent) 18%, transparent); }
 .tid.har-vald .tart [data-i] { fill: var(--tartblek); } .tid .tart .vald { fill: var(--f); }
 .tidlista li.vald { background: color-mix(in srgb, var(--accent) 28%, transparent); }
