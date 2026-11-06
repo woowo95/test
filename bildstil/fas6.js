@@ -582,11 +582,13 @@
 
   // ---------- korten ----------
   const S = 'Steg ';
-  const IK_BJ = { o: 'kol0', a: 'jord1', b: 'jord0', w: 'jord3', k: 'kol0' };
+  const IK_BJ = { o: 'kol0', a: 'jord1', b: 'jord0', w: 'jord3', k: 'kol0' }, IK_BJF = { ...IK_BJ, t: 'ben3', r: 'rost2' };
   VAL.push(
     // steg 6.6.6: symbolen för ryktet björndödare (i personens intryck); i spelet står en platshållare (björnens huvud)
-    KORT('f6_i_bjorndodare', 'Björndödaren', S + '6.6.6: symbolen för ryktet björndödare, som den får som fällt en björn. Den står bland personens intryck, bredvid vargdödarens vargansikte.', [
-      PA_MARK('Björnens huvud framifrån med runda öron och ljus nos.', ['..ooo......ooo..', '.obbbo....obbbo.', '.obwbooooooobwbo', '.obboaaaaaaaobbo', '..ooaaaaaaaaaoo.', '..oaaaaaaaaaaao.', '.oaaakaaaaakaaao', '.oaaaaaaaaaaaabo', '.oaaaawwwwaaaabo', '.oaaawwwwwwaabo.', '..oaawwkkwwaabo.', '..oaaawwwwaabo..', '...oaaawwaabo...', '....oobbbbbo....', '......ooooo.....'], IK_BJ), PA_MARK('En björntass med fem ljusa trampdynor.', ['................', '..oo..oo..oo....', '.owwoowwoowwo...', '.owwoowwoowwo.oo', '..oo..oo..oo.oww', '..ooooooooooooww', '.oaaaaaaaaaaaoo.', 'oaaaaaaaaaaaaao.', 'oaaaaawwwaaaaao.', 'oaaaawwwwwaaaao.', 'oaaaawwwwwaaaao.', '.oaaaawwwaaaao..', '.oaaaaaaaaaaao..', '..oaaaaaaaaao...', '...ooooooooo....', '................'], IK_BJ), PA_MARK('Tre björnklor på ett band, som ett halsband.', ['......oo........', '.....owwo.......', '.oo..owwo..oo...', 'owwo.owwo.owwo..', 'owwo.owwo.owwo..', 'owwo.owwo.owwo..', '.owo..owo.owo...', '.ooooooooooo....', '.obbbbbbbbbbo...', '..obbbbbbbbo....', '..oo......oo....', '.o..........o...', '.o....oo....o...', '..o..owwo..o....', '...oo.oo.oo.....', '................'], IK_BJ)]),
+    KORT('f6_i_bjorndodare', 'Björndödaren', S + '6.6.6: symbolen för ryktet björndödare, som den får som fällt en björn. Den står bland personens intryck, bredvid vargdödarens vargansikte. Nu en farlig björn i stället för ett snällt huvud. Din kommentar förra gången: "Gör en farlig björn istället".', [
+      PA_MARK('En björn som ryter framifrån: arga ögonbryn, röda ögon och ett gapande gap med huggtänder.', ['.oo..........oo.', 'obbo........obbo', 'obaooooooooooabo', '.oaaaaaaaaaaaao.', 'oakkaaaaaaaakkao', 'oaaakkaaaakkaaao', 'oaaaaraaaaraaaao', 'oaaawwwwwwwwaaao', 'oaawwwkkkkwwwaao', 'oaawoooooooowaao', 'oaawtrrrrrrtwaao', 'oaawrrrrrrrrwaao', '.oawtrrrrrrtwao.', '.oawttttttttwao.', '..oaooooooooao..', '...oooooooooo...'], IK_BJF),
+      PA_MARK('Björnens huvud från sidan som morrar, med nosen rynkad och tänderna blottade.', ['........oo......', '.......obbo.....', '.....oooaaoooo..', '....oaaaaaaaaao.', '...oakkaaaaaaaao', '..oaaarkaaaaaaao', '.oaaaaaaaaaaaaao', 'okwwwwaaaaaaaaao', 'oowwwwwaaaaaaaao', 'otototwaaaaaaao.', '.rrrrrwaaaaaaao.', 'otototwaaaaaaao.', '.owwwwaaaaaaao..', '..ooooaaaaaaao..', '.....oaaaaaao...', '......ooooooo...'], IK_BJF),
+      PA_MARK('En björntass med långa ljusa klor och tre blodiga klösmärken.', ['..t...t...t.....', '..tt..tt..tt....', '..ot..ot..ot.r..', '.oao.oao.oao.r..', '.oaaoaaaoaaao.r.', 'oaaaaaaaaaaaao.r', 'oaawwaawwaawwao.', 'oaawwaawwaawwao.', 'oaaaaaaaaaaaao..', 'oaaaawwwwwaaao..', 'oaaawwwwwwwaao..', 'oaaawwwwwwwaao..', '.oaaawwwwwaao...', '.oaaaaaaaaaao...', '..oaaaaaaaao....', '...ooooooooo....'], IK_BJF)]),
     // steg 6.8.9: en svag färgton i raster under lagerplatserna; i spelet står den här tonen (senap 3, 3 av 16 punkter)
     { id: 'f6_lagerton', namn: 'Tonen under lagerplatserna', typ: 'janej', vad: S + '6.8.9: en lagerplats syns nu som en svag färgton i raster på marken under stackarna, inte bara som en ram. Till vänster utan tonen, till höger med den. Ja eller nej?', versioner: [{ text: 'Samma lagerplats med tre vedstackar, till vänster utan ton och till höger med en gles ljusgul raster (3 av 16 punkter) på marken.', w: 104, h: 40, rita: B => {
       const P = B.P, BY = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
@@ -632,8 +634,6 @@
       SIFFROR('Som Silkscreen, som står i spelet nu: fem punkter höga och fyrkantiga; ettan är smalare än de andra.', SIFF_SILK),
       SIFFROR('Egenritade i samma storlek som Pixelify Sans: sju punkter höga och alla lika breda, så att talen står i raka kolumner.', SIFF_EGEN),
       SIFFROR('Smala som Tiny5: fem punkter höga och tre breda, alla lika breda; får plats där det är trångt.', SIFF_SMAL)]),
-    KORT('f6_strak', 'Gångstråken i testläget', S + '6.2.5: i testläget syns gångstråken, vägarna från dörrarna till elden, lagren, latrinen och vattnet där inget får byggas, som en tunn linje genom rutornas mitt, och rutan framför dörren som en liten ruta. Stugan och elden är bara för att visa platsen.', [
-      STRAK('En tunn gul linje och en fylld gul ruta framför dörren.', 0), STRAK('Korta röda streck och en prickig ruta framför dörren.', 1), STRAK('Två ljusa kanter, som en väg, och en ljus ram framför dörren.', 2)]),
   );
 
   // ---------- Björns lista efter bildstil v161: djuren från tre håll, den fällda björnen, rövaren och tornadons storlekar ----------
@@ -788,91 +788,50 @@
     } };
 
   VAL.push(
-    { id: 'f6_fagel_ligger', namn: 'Den fällda fågeln', typ: 'janej', vad: S + '6.6.3: du valde den fällda fågeln på sidan med vingen ute. Den är omritad i de tre fåglarnas egna former och färger (orren, ripan och skogsduvan), och så ligger den nu i spelet. Ja eller nej?', versioner: [PA_RAD('Orren, ripan och skogsduvan på sidan med vingen ute.', ['orre', 'ripa', 'duva'].map(a => [fagelLigger(a), { k: 'kol0', w: 'ben3', ...ARTER[a].L, ...(FAGEL_VAR[1][a].L || {}) }]), 4, 3)] },
     // ---------- steg 5.5.5: den unga grodden i hel skala ----------
     ...(() => {
       const ikon = (B, k, x, y, s = 1) => { const r = IKONER.PIX[k], pal = IKONER.PAL[k] || {}; if (!r) return; const n = Math.round(r[0].length * s);
         for (let ty = 0; ty < n; ty++) for (let tx = 0; tx < n; tx++) { const ch = r[Math.floor(ty / s)][Math.floor(tx / s)], c = pal[ch]; if (ch === '.' || !c) continue; if (c.startsWith('rgba')) B.morka(x + tx, y + ty); else B.satt(x + tx, y + ty, B.P.fran(c)); } };
       return [
-      { id: 'f5_grodd', namn: 'Den unga grodden i hel skala', typ: 'janej', vad: S + '5.5.5: grodden på fälten ritades den första halvan av växandet i halv skala (16 punkter i 8). Nu har den en egen bild på 8 punkter. Till vänster som förut, till höger den nya.', versioner: [{ text: 'Till vänster grodden i halv skala, till höger den nya bilden på 8 punkter, båda på en sådd jordruta.', w: 44, h: 22, rita: B => {
+      { id: 'f5_grodd', namn: 'Den unga grodden i hel skala', typ: 'janej', vad: S + '5.5.5: grodden på fälten ritades den första halvan av växandet i halv skala (16 punkter i 8). Nu har den en egen bild på 8 punkter. Till vänster som förut, till höger den nya: en ny ritning med två hjärtblad i ett V på en kort stjälk och en liten jordhög. Du sa nej till förra versionen, utan kommentar.', versioner: [{ text: 'Till vänster grodden i halv skala, till höger den nya bilden på 8 punkter, båda på en sådd jordruta.', w: 44, h: 22, rita: B => {
         const P = B.P, jord = P.i('jord', 1), fara = P.i('jord', 0);
         for (const x0 of [3, 25]) for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) B.satt(x0 + x, 3 + y, (y + 1) % 4 === 0 && x > 0 && x < 15 ? fara : jord);
         if (IKONER.PIX.grodd) ikon(B, 'grodd', 7, 7, 0.5);
-        if (IKONER.PIX.grodd_liten) ikon(B, 'grodd_liten', 29, 7, 1);
+        const NY = ['........', '.LL..LL.', 'LGGL.GGL', '.GGggGG.', '...gg...', '...gg...', '..jjjj..', '.jjjjjj.'], L = { L: P.i('oliv', 3), G: P.i('oliv', 2), g: P.i('oliv', 1), j: P.i('jord', 2) };
+        NY.forEach((r, y) => [...r].forEach((ch, x) => { if (L[ch] !== undefined) B.satt(29 + x, 7 + y, L[ch]); }));
       } }] },
       ];
-    })(),
-    // ---------- 6.4.13: det som tornadon kastar flyger i en båge, och jordstigen den lämnar ----------
-    ...(() => {
-      const W = 96, H = 64;
-      const mark = (B) => { const P = B.P; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) B.satt(x, y, P.i('oliv', ((x * 7 + y * 3) % 11 === 0) ? 1 : 2)); };
-      const stig = (B, v) => { const P = B.P; // jordstigen snett över kortet nedtill
-        for (let x = 0; x < W; x++) { const yc = 50 - Math.round(x / 12), b = v === 2 ? 5 : 3;
-          for (let dy = -b; dy <= b; dy++) { const y = yc + dy; if (y < 0 || y >= H) continue;
-            if (v === 0) B.satt(x, y, P.i('jord', (dy + x) % 3 === 0 ? 0 : 1));
-            else if (v === 1) { if ((x * 5 + dy * 3) % 7 < 5) B.satt(x, y, P.i('jord', Math.abs(dy) === b ? 2 : 1)); else if (dy === -b) B.satt(x, y - 1, P.i('oliv', 3)); }
-            else B.satt(x, y, P.i('jord', Math.abs(dy) >= b - 1 ? 2 : (dy % 2 ? 0 : 1))); } } };
-      const sak = (B, k, x, y) => { const P = B.P, o = P.i('kol', 0);
-        if (k === 'folk') { for (let dy = 0; dy < 7; dy++) for (let dx = 0; dx < 4; dx++) B.satt(x + dx, y + dy, dx === 0 || dx === 3 || dy === 0 || dy === 6 ? o : P.i('rost', 3)); B.satt(x + 1, y + 1, P.i('ben', 2)); B.satt(x + 2, y + 1, P.i('ben', 2)); }
-        else if (k === 'glod') { for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) B.satt(x + dx, y + dy, P.i('senap', 3), true); }
-        else for (let dy = 0; dy < 4; dy++) for (let dx = 0; dx < 4; dx++) B.satt(x + dx, y + dy, dx === 0 || dx === 3 || dy === 0 || dy === 3 ? o : P.i('jord', 2)); };
-      const bage = (v) => (B) => { mark(B); stig(B, v);
-        const P = B.P, banor = [['folk', 10, 40, 60, 34, 18], ['sak', 20, 46, 84, 40, 14], ['glod', 34, 30, 70, 22, 22]];
-        for (const [k, fx, fy, tx, ty, hojd] of banor) {
-          const pos = (f) => [Math.round(fx + (tx - fx) * f), Math.round(fy + (ty - fy) * f - Math.sin(f * Math.PI) * hojd)];
-          if (v === 0) for (let f = 0; f < 0.6; f += 0.06) { const [x, y] = pos(f); B.satt(x, y, P.i('kol', 1)); }
-          if (v === 2) for (let f = 0.42; f < 0.6; f += 0.03) { const [x, y] = pos(f); B.satt(x + 1, y + 2, P.i('ben', 3)); }
-          const [x, y] = pos(0.6); if (v === 1) { const [gx] = pos(0.6); const gy = Math.round(fy + (ty - fy) * 0.6) + 4; for (let dx = 0; dx < 4; dx++) B.morka(gx + dx, gy); }
-          sak(B, k, x, y);
-        } };
-      return [KORT('f6_tornado_flyger', 'Det tornadon kastar, och jordstigen', S + '6.4.13: det som tornadon lyfter flyger i en båge till där det landar (en människa, en sak och en glöd), och efter tornadon syns en stig av uppriven jord där den gått fram, tills gräset vuxit igen. Platshållaren i spelet är den första versionen.', [
-        { text: 'Version 1: en prickad bana bakom det som flyger, och jordstigen i fåror.', w: W, h: H, rita: bage(0) },
-        { text: 'Version 2: ingen bana men en skugga på marken under, och jordstigen i lösa torvor med uppslitet gräs i kanten.', w: W, h: H, rita: bage(1) },
-        { text: 'Version 3: ljusa fartstreck bakom, och en bredare jordstig med ljusa kanter.', w: W, h: H, rita: bage(2) }])];
     })(),
     // ---------- 6.4.16: den som brinner ----------
     ...(() => {
       const W = 96, H = 48;
       const mark = (B) => { const P = B.P; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) B.satt(x, y, P.i('oliv', ((x * 5 + y * 3) % 13 === 0) ? 1 : 2)); };
-      // en enkel människa i 16 punkter per ruta: stående (fötterna i x, y) eller liggande (rullar)
-      const folk = (B, x, y, ligger) => { const P = B.P, o = P.i('kol', 0), hud = P.i('ben', 2), rock = P.i('jord', 2), ben = P.i('jord', 0);
-        const rita = (dx, dy, c) => ligger ? B.satt(x - 7 + dy, y - 4 + dx, c) : B.satt(x - 4 + dx, y - 14 + dy, c);
-        for (let dy = 0; dy < 15; dy++) for (let dx = 0; dx < 8; dx++) {
-          const huvud = dy < 5 && dx >= 2 && dx <= 5, kropp = dy >= 5 && dy < 11, benen = dy >= 11 && (dx === 2 || dx === 3 || dx === 5 || dx === 6);
-          if (!huvud && !kropp && !benen) continue;
-          const kant = (huvud && (dy === 0 || dx === 2 || dx === 5)) || (kropp && (dx === 0 || dx === 7)) || dy === 14;
-          rita(dx, dy, kant ? o : huvud ? hud : kropp ? rock : ben);
-        } };
-      const rok = (B, x, y) => { for (let i = 0; i < 6; i++) B.morka(x + (i % 2), y - i * 2); };
+      // bybornas riktiga figurer (window.BYBO, samma som i spelet): stående med fötterna i (x, fot), eller liggande på sidan
+      const folk = (B, x, fot, ligger, fro, arm = 'hanga') => { if (!window.BYBO) return { w: 8, h: 24 };
+        const F = window.BYBO(fro, ligger ? 'sida' : 'fram', 'sta', arm);
+        for (let y = 0; y < F.h; y++) for (let dx = 0; dx < F.w; dx++) { const c = F.px[y * F.w + dx]; if (c < 0) continue;
+          if (ligger) B.satt(x - (F.h >> 1) + (F.h - 1 - y), fot - F.w + 1 + dx, c); else B.satt(x - (F.w >> 1) + dx, fot - F.h + 1 + y, c); }
+        for (let dx = -(F.w >> 1); dx < (ligger ? F.h : F.w) - (F.w >> 1); dx++) B.morka(x + dx - (ligger ? (F.h >> 1) - (F.w >> 1) : 0), fot + 1);
+        return F; };
+      const rok = (B, x, y) => { for (let i = 0; i < 8; i++) B.morka(x + (i % 2), y - i * 2); };
       const scen = (v) => (B) => { mark(B);
-        const fot = 40;
-        if (v === 0) { // små lågor på axlarna, armarna och håret
-          folk(B, 24, fot, false); for (const [dx, dy, h] of [[-4, -8, 4], [3, -8, 4], [-2, -14, 3], [1, -14, 4], [-4, -4, 3], [3, -4, 3]]) laga(B, 24 + dx, fot + dy, h);
-          folk(B, 70, fot, false); for (const [dx, dy, h] of [[-4, -9, 5], [3, -6, 3]]) laga(B, 70 + dx, fot + dy, h);
-        } else if (v === 1) { // en stor låga över hela ryggen, och marken lyser
-          folk(B, 24, fot, false); for (let dx = -4; dx <= 3; dx += 1) laga(B, 24 + dx, fot - 4 - (dx % 2 ? 0 : 2), 7 + (dx + 4) % 3);
-          for (let dx = -6; dx <= 6; dx++) B.satt(24 + dx, fot + 1, B.P.i('senap', 2), true);
-          folk(B, 70, fot, false); for (let dx = -3; dx <= 2; dx += 2) laga(B, 70 + dx, fot - 6, 6);
-        } else { // rullar på marken med lågor och rök, och en som står och slår med ett skinn
-          folk(B, 30, fot, true); for (const dx of [-6, -2, 3]) laga(B, 30 + dx, fot - 4, 3 + (dx & 1)); rok(B, 28, fot - 9); rok(B, 33, fot - 11);
-          folk(B, 62, fot, false); const P = B.P; for (let dy = 0; dy < 4; dy++) for (let dx = 0; dx < 6; dx++) B.satt(52 + dx, fot - 14 + dy, P.i('jord', dy === 0 ? 3 : 1));
+        const fot = 44;
+        if (v === 0) { // små lågor på axlarna, armarna och i håret
+          const F = folk(B, 24, fot, false, 4242), h = F.h, w = F.w >> 1;
+          for (const [dx, dy, l] of [[-w + 1, 0.62, 4], [w - 2, 0.62, 4], [-1, 0.95, 3], [1, 0.97, 4], [-w, 0.42, 3], [w - 1, 0.42, 3]]) laga(B, 24 + dx, fot - Math.round(h * dy), l);
+          const G = folk(B, 70, fot, false, 777); for (const [dx, dy, l] of [[-(G.w >> 1) + 1, 0.65, 5], [(G.w >> 1) - 2, 0.5, 3]]) laga(B, 70 + dx, fot - Math.round(G.h * dy), l);
+        } else if (v === 1) { // en stor låga över hela ryggen, och marken lyser under
+          const F = folk(B, 24, fot, false, 4242); for (let dx = -(F.w >> 1) + 1; dx < (F.w >> 1) - 1; dx++) laga(B, 24 + dx, fot - Math.round(F.h * 0.3) - (dx % 2 ? 0 : 2), 9 + (dx + 8) % 3);
+          for (let dx = -8; dx <= 8; dx++) B.satt(24 + dx, fot + 2, B.P.i('senap', 2), true);
+          const G = folk(B, 70, fot, false, 777); for (let dx = -3; dx <= 2; dx += 2) laga(B, 70 + dx, fot - Math.round(G.h * 0.55), 6);
+        } else { // rullar på marken med lågor och rök, och en som springer dit med ett skinn
+          const F = folk(B, 30, fot, true, 4242); for (const dx of [-8, -3, 3, 8]) laga(B, 30 + dx, fot - F.w + 2, 3 + (dx & 1)); rok(B, 27, fot - F.w - 3); rok(B, 34, fot - F.w - 5);
+          const G = folk(B, 72, fot, false, 777, 'lyfta'); const P = B.P; for (let dy = 0; dy < 5; dy++) for (let dx = 0; dx < 8; dx++) B.satt(60 + dx, fot - G.h - 2 + dy, P.i('jord', dy === 0 ? 3 : 1));
         } };
-      return [KORT('f6_brinner', 'Den som brinner', S + '6.4.16: en människa som börjar brinna i en eldsvåda: lågor på kläderna tills elden är släckt. Hen rullar på marken, går i vattnet eller sliter av sig plagget, och de som står nära hjälper till. Platshållaren i spelet är fyra fladdrande lågor över figuren.', [
+      return [KORT('f6_brinner', 'Den som brinner', S + '6.4.16: en människa som börjar brinna i en eldsvåda: lågor på kläderna tills elden är släckt. Hen rullar på marken, går i vattnet eller sliter av sig plagget, och de som står nära hjälper till. Platshållaren i spelet är fyra fladdrande lågor över figuren. Nu med bybornas riktiga figurer. Din kommentar förra gången: "Använd dem riktiga människorna som du ritar elden på".', [
         { text: 'Version 1: små lågor på axlarna, armarna och i håret.', w: W, h: H, rita: scen(0) },
         { text: 'Version 2: en stor låga över hela ryggen, och marken lyser under.', w: W, h: H, rita: scen(1) },
         { text: 'Version 3: den som rullar på marken, med lågor och rök, och en som springer dit med ett skinn.', w: W, h: H, rita: scen(2) }])];
-    })(),
-    // ---------- rövaren (Björn 2026-11-04: "Gör rövardelarna"): luvan eller duken och de mörka kläderna ----------
-    ...(() => {
-      const rov = (bonad, rock, arr, text) => ({ text, w: 4 + 64 + 3 + 64 + 6 + 5 * 15 + 2, h: 72, rita: B => {
-        if (!window.ROVAREN) return; const R = window.ROVAREN(bonad, rock, arr);
-        R.portratt.forEach((Q, n) => { for (let y = 0; y < Q.h; y++) for (let x = 0; x < Q.w; x++) { const c = Q.px[y * Q.w + x]; if (c >= 0) B.satt(4 + n * 67 + x, 4 + y, c); } });
-        R.karta.forEach((F, n) => { const x0 = 4 + 2 * 67 + 4 + n * 15, fot = 66; for (let y = 0; y < F.h; y++) for (let dx = 0; dx < F.w; dx++) { const c = F.px[y * F.w + dx]; if (c >= 0) B.satt(x0 + dx, fot - F.h + 1 + y, c); } for (let dx = 2; dx < F.w - 2; dx++) B.morka(x0 + dx, fot + 1); });
-      } });
-      return [KORT('f6_rovare', 'Rövaren', S + '6.6.12: det som skiljer en rövare från en bybo, som nya delar i skaparen som bara rövarna bär: rövarluvan av kolsvart, slitet ylle med en smal springa för ögonen, rövarens duk över hjässan och över näsan och munnen, och ett mörkt, slitet skinn i rocken. Kvinnan och mannen i porträttet, och på kartan mannen framifrån, från sidan, bakifrån och i ett gångsteg, och kvinnan framifrån. Luvan och duken är ritade av API:t (bästa av tre).', [
-        rov('bonad-9', 'rovarskinn', false, 'Version 1: rövarluvan och det mörka, slitna skinnet.'),
-        rov('bonad-10', 'rovarskinn', false, 'Version 2: rövarens duk över hjässan och ansiktet, och det mörka skinnet.'),
-        rov('bonad-9', 'vargskinn', true, 'Version 3: rövarluvan med en rock av vargskinn, och mannen med ett ärr och skägg.')])];
     })(),
   );
 })();

@@ -130,10 +130,10 @@ export function drawAnimals() {
   djurIkoner.end(); larmIkoner.end(); brandRokIkoner.end();
   synliga = ut;
 }
-// tornadons spår (steg 6.4.13), platshållare i paletten: jordstigen där gräset slets upp (mörka fåror i jordens ton, tills
-// gräset vuxit tillbaka) och det som flyger iväg, i en båge från där det låg till där det landar: saker som en liten
-// klump, människor som en liten figur och glöden som en gnista
-const FARA = fargTal(farg('jord', 0)), SAK = fargTal(farg('jord', 2)), FOLK = fargTal(farg('rost', 3)), FOLKK = fargTal(farg('kol', 0)), GLOD = fargTal(farg('senap', 3));
+// tornadons spår (steg 6.4.13): jordstigen där gräset slets upp (mörka fåror i jordens ton, tills gräset vuxit tillbaka)
+// och det som flyger iväg, i en båge från där det låg till där det landar: saker som en liten klump, människor som en
+// liten figur och glöden som en gnista, med ljusa fartstreck bakom (bildstilens val f6_tornado_flyger, version 3)
+const FART = fargTal(farg('ben', 3)), FARA = fargTal(farg('jord', 0)), SAK = fargTal(farg('jord', 2)), FOLK = fargTal(farg('rost', 3)), FOLKK = fargTal(farg('kol', 0)), GLOD = fargTal(farg('senap', 3));
 function ritaTornadoSpar() {
   const g = groundOf(s);
   for (const i of s.tornadoStig ?? []) {
@@ -144,7 +144,8 @@ function ritaTornadoSpar() {
   for (const f of s.tornado?.flyg ?? []) {
     const k = (ui.nu - f.t) / FLYGTID;
     if (k < 0 || k > 1) continue;
-    const d = Math.hypot(f.tx - f.fx, f.ty - f.fy), x = Math.round((f.fx + (f.tx - f.fx) * k) * TS), y = Math.round((f.fy + (f.ty - f.fy) * k) * TS - Math.sin(k * Math.PI) * d * 4);
+    const d = Math.hypot(f.tx - f.fx, f.ty - f.fy), pos = (q: number) => [Math.round((f.fx + (f.tx - f.fx) * q) * TS), Math.round((f.fy + (f.ty - f.fy) * q) * TS - Math.sin(q * Math.PI) * d * 4)], [x, y] = pos(k);
+    djurFx.beginFill(FART); for (let q = Math.max(0, k - 0.18); q < k - 0.01; q += 0.03) { const [sx, sy] = pos(q); djurFx.drawRect(sx + 1, sy + 2, 1, 1); } djurFx.endFill(); // fartstrecken bakom
     if (f.k === 'folk') djurFx.beginFill(FOLKK).drawRect(x - 2, y - 5, 4, 7).endFill().beginFill(FOLK).drawRect(x - 1, y - 4, 2, 5).endFill();
     else if (f.k === 'glod') djurFx.beginFill(GLOD).drawRect(x - 1, y - 1, 2, 2).endFill();
     else djurFx.beginFill(FOLKK).drawRect(x - 2, y - 2, 4, 4).endFill().beginFill(SAK).drawRect(x - 1, y - 1, 2, 2).endFill();

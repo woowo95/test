@@ -972,8 +972,6 @@ const VAL = [
 // behålls) och steget där de byggs in. När saken är inbyggd tas raden bort här och ur VAL, och dess dokument i samlingen 'val'
 const BESLUT = {
   f7_stockvag: { val: 2, steg: '7.3.7' }, f7_brygga: { val: 2, steg: '7.3.9' },
-  f6_tornado_storlek: { val: 1, steg: '6.3.5.8' },
-  f6_rovare: { val: 1, text: 'Alla tre används: rövarluvan, rövarens duk, det mörka slitna skinnet och vargskinnet. Delarna är märkta rövare: byborna kan inte tillverka dem, men varje rövare har en chans att bära dem. Byggs in i steg 6.6.12.' },
 };
 // räknas när valdelen ritas, så att korten från filerna efter denna (mark.js, djur.js, gui.js) också kommer med
 const VALT = [];
