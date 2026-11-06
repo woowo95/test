@@ -1,3 +1,4 @@
+import { rumVila } from './rum';
 import { stepUppvaxt, upplev } from './uppvaxt';
 import { stepReligion } from './religion';
 import { stepMotgang } from './motgang';
@@ -319,7 +320,8 @@ export function viloTak(s: State, p: Person, rum: unknown): 'restBadd' | 'restGo
   return m0 === 'ho' || m0 === 'tra' ? 'restGolv' : 'restTak';
 }
 // man sover bättre i en finare bädd (kvalitet.ts): vilan och tanken gånger detta. Personrutan visar samma tal
-export const takEffekt = (s: State, p: Person, tak: ReturnType<typeof viloTak>) => tak === 'restBadd' ? kvEffekt(stationRutor(s).at.get(tileOf(p.x, p.y))) : 1;
+// och sämre i ett rum där något passar dåligt ihop med att sova (RUM_MINUS i rum.ts, steg 7.2.1)
+export const takEffekt = (s: State, p: Person, tak: ReturnType<typeof viloTak>) => (tak === 'restBadd' ? kvEffekt(stationRutor(s).at.get(tileOf(p.x, p.y))) : 1) * (tak ? rumVila(s, roomAt(s, p.x, p.y)) : 1);
 // värmen per timme: elden, kylan (det huset, skinnfällen och kläderna skyddar är borta) och milt väder. inRum = hur många som är i varje rum.
 // Över idealet (steg 2.3.4): solen (inte i skugga: i ett hus eller under ett träd), kläderna när det är milt och elden tätt intill
 export function varmeDelar(s: State, p: Person, coldRate: number, inRum: Map<number, number>, temp = temperature(s)) {

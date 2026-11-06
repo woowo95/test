@@ -1001,3 +1001,34 @@ SCENARIER.strakprov = {
     ];
   },
 };
+
+SCENARIER.rumstyper = {
+  text: 'Steg 7.2.1: rummen räknas fram och funktionen sitter på rummet, inte på hela huset. Registret RUMSTYPER ger rummet en tagg för varje krav det uppfyller, och taggar som passar dåligt ihop ger ett minus',
+  kor: () => {
+    const s = createState(6, START);
+    klockan(s); byggare(s);
+    SIM.planBuild(s); byggKlart(s);
+    const h = housesOf(s)[0], r = () => gridOf(s).rooms.find(q => q.hus === h.id && q.tiles.length)!, rum = r();
+    const gammal = SIM.rumFnId(s, rum) === SIM.fnId(h) && h.rumFn === undefined;
+    const sov = SIM.rumTaggar(s, rum).has('sovsal') && SIM.sovplatser(s, rum) === rum.tiles.length;
+    const vilaFore = SIM.rumVila(s, rum);
+    const stall = (k: string, i: number) => { (s.stationer ??= []).push({ id: (s.nextBit ??= 1), k, x: i % SIM.W, y: Math.floor(i / SIM.W), kvar: 0, inne: 1 } as SIM.Station); s.nextBit++; SIM.touch(s); };
+    stall('bord', rum.tiles[0]);
+    const matsal = SIM.rumTaggar(s, r()).has('matsal');
+    stall('flatarbank', rum.tiles[rum.tiles.length - 1]);
+    const verkstad = SIM.rumTaggar(s, r()).has('verkstad'), minus = SIM.rumMinus(s, r()).length > 0, vilaEfter = SIM.rumVila(s, r());
+    const fore = SIM.sovplatser(s, r());
+    SIM.setRumFn(s, r(), 'samling');
+    const fnRum = SIM.rumFnId(s, r()) === 'samling' && SIM.fnId(h) === 'sovsal' && SIM.sovplatser(s, r()) === 0 && SIM.samlingRum(s)?.id === r().id;
+    const namn = SIM.rumNamn(s, r());
+    return [
+      ['ett hus från en gammal sparfil är ett rum med husets funktion', gammal],
+      [`rummet är en sovsal med en sovplats per ruta (${SIM.sovplatser(s, rum)})`, sov],
+      ['ett bord inne gör rummet till en matsal', matsal],
+      ['en arbetsbänk gör det till en verkstad', verkstad],
+      [`verkstad och sovplatser passar dåligt ihop: man vilar sämre (${vilaFore} → ${vilaEfter.toFixed(2)})`, minus && vilaEfter < vilaFore],
+      [`funktionen sitter på rummet: med samling som funktion försvinner sovplatserna (${fore} → 0), och huset är fortfarande en sovsal`, fnRum],
+      [`rummets namn efter taggarna: ${namn}`, !!namn],
+    ];
+  },
+};

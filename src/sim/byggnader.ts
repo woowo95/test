@@ -104,6 +104,18 @@ export type Fn = keyof typeof BYGGNADER;
 export const FN = Object.keys(BYGGNADER) as Fn[];
 export const fnId = (h: Hus): Fn => (h.fn ?? 'sovsal') as Fn; // husets funktion; hus från äldre sparfiler är sovsalar
 export const fnOf = (h: Hus): Byggnad => BYGGNADER[fnId(h)] ?? BYGGNADER.sovsal;
+// funktionen sitter på rummet (steg 7.2.1): rummets egen om den har någon, annars husets, så att ett hus från en gammal sparfil
+// blir ett rum med husets funktion. Ett rum utanför något hus räknas som en sovsal
+export const rumNyckel = (r: Rum) => String(r.tiles.length ? Math.min(...r.tiles) : -1);
+export function rumFnId(s: State, r: Rum): Fn {
+  const h = husById(s, r.hus);
+  return (h?.rumFn?.[rumNyckel(r)] ?? (h ? fnId(h) : 'sovsal')) as Fn;
+}
+export const rumFnOf = (s: State, r: Rum): Byggnad => BYGGNADER[rumFnId(s, r)] ?? BYGGNADER.sovsal;
+export function setRumFn(s: State, r: Rum, fn: Fn) {
+  const h = husById(s, r.hus);
+  if (h) { (h.rumFn ??= {})[rumNyckel(r)] = fn; touch(s); }
+}
 // så många andra hus (utom `utom`) har samma sorts namn som ett nytt hus för funktionen fn med yta w×h inuti väggarna
 export function antalLika(s: State, fn: Fn, w: number, h: number, utom?: Hus) {
   const big = w * h >= HUS.langhus, hs = housesOf(s).filter(q => q !== utom);
@@ -188,7 +200,7 @@ function boende(s: State): Boende {
   const baddar: number[] = [];
   for (const r of [...gridOf(s).rooms].sort((a, c) => ordning(a) - ordning(c))) {
     const h = husById(s, r.hus);
-    if (h && !fnOf(h).sover) continue;
+    if (h && !rumFnOf(s, r).sover) continue;
     const t = sovRutor(s, r);
     if (h?.ag !== undefined) egnaTiles.set(h.id, [...(egnaTiles.get(h.id) ?? []), ...t]);
     else { const st = stationRutor(s).sov; baddar.push(...t.filter(i => st.has(i))); gemensamt.push(...t.filter(i => !st.has(i))); }
@@ -231,12 +243,12 @@ function sovRutor(s: State, r: Rum) {
 }
 // sovplatserna i ett rum: en per golvruta under tak där ingen station står eller en per halmbädd, och inga i ett hus där man
 // inte sover (som i boende)
-export const sovplatser = (s: State, r: Rum) => { const h = husById(s, r.hus); return h && !fnOf(h).sover ? 0 : sovRutor(s, r).length; };
+export const sovplatser = (s: State, r: Rum) => husById(s, r.hus) && !rumFnOf(s, r).sover ? 0 : sovRutor(s, r).length;
 // så många sovplatser i rummet som ingen behöver: i ett familjehus de som familjen inte behöver, i byns hus de som ingen
 // behöver i något av dem, och alla i ett hus där man inte sover (steg 2.2.5: där får en möbel stå)
 export function sovKvar(s: State, r: Rum) {
   const h = husById(s, r.hus);
-  if (h && !fnOf(h).sover) return Infinity;
+  if (h && !rumFnOf(s, r).sover) return Infinity;
   const b = boende(s);
   if (h?.ag !== undefined) {
     const tiles = gridOf(s).rooms.filter(q => q.hus === h.id).reduce((n, q) => n + sovRutor(s, q).length, 0);
@@ -288,7 +300,7 @@ function nyttNamn(s: State, h: Hus, fn: Fn, a: Akut) {
 // ett förrådshus byter aldrig funktion, så lagerplatsen behöver inte tas bort här
 function bytFn(s: State, h: Hus, fn: Fn, slag?: 'mat' | 'material') {
   const fore = h.namn;
-  h.fn = fn; h.slag = slag; h.tom = undefined;
+  h.fn = fn; h.slag = slag; h.tom = undefined; h.rumFn = undefined;
   h.namn = nyttNamn(s, h, fn, { v: 0, plats: 0, slag, ag: h.ag });
   touch(s); count(s, 'bytt_' + fn);
   log(s, `${fore} blev ${h.namn.toLowerCase()}.`, 'world'); kronika(s, `${fore} blev ${h.namn.toLowerCase()}.`);
@@ -330,8 +342,8 @@ export function varmareInne(s: State, rum: Rum, c: number, varmer = false) {
 }
 // samlingshusets rum, där man umgås när det är kallt (val.ts)
 export const samlingRum = (s: State): Rum | undefined => {
-  const ids = new Set(housesOf(s).filter(h => h.fn === 'samling' && h.klar).map(h => h.id));
-  return ids.size ? gridOf(s).rooms.find(r => r.hus !== undefined && ids.has(r.hus) && r.tiles.length) : undefined;
+  const ids = new Set(housesOf(s).filter(h => h.klar).map(h => h.id));
+  return ids.size ? gridOf(s).rooms.find(r => r.hus !== undefined && ids.has(r.hus) && r.tiles.length && rumFnId(s, r) === 'samling') : undefined;
 };
 
 // ---------- rummets funktion av det som står i det (steg 2.2.17) ----------

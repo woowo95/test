@@ -14,7 +14,7 @@ import { Zone, inZone, pilesInne, stallBorta, usable, zoneAt, zonesOf } from './
 import { PLATS } from './plats';
 import { balans } from './balans';
 import { Hus, Rum, bitAt, blocked, gridOf, husById, roomAt, touch } from './byggnad';
-import { bedTile, fnOf, sovHus, sovKvar, sovPlats } from './byggnader';
+import { bedTile, fnOf, rumFnOf, sovHus, sovKvar, sovPlats } from './byggnader';
 import { ACTS } from './handlingar';
 import { SAKER, isTool } from './saker';
 import { kvHaller, nyKvalitet } from './kvalitet';
@@ -510,7 +510,7 @@ function siteInne(s: State, k: string, bara?: Rum, far?: (h: Hus) => boolean) {
   for (const r of g.rooms) {
     const hus = husById(s, r.hus);
     if (!hus?.klar || !r.tiles.length || bara && r !== bara || far && !far(hus)) continue;
-    const fn = fnOf(hus);
+    const fn = rumFnOf(s, r);
     if (d.sover ? !fn.sover : fn.lager) continue;
     const rum = new Set(r.tiles), kvar = sovKvar(s, r), bonus = !d.sover && !fn.sover ? -STATION.samling : 0;
     for (const rot of [0, 1] as const) {
