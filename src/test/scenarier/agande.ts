@@ -1073,7 +1073,7 @@ SCENARIER.gastsida = {
     return [
       [`handlaren och ${r.length} rövare är gäster med var sitt negativa id`, !!h && r.length === 2 && g.every(x => x.id < 0) && new Set(g.map(x => x.id)).size === g.length],
       [`handlarens sida har namnet, vad hen gör och flikarna ${knappar(pres)}`, !!h && pres.includes(h.namn) && pres.includes(h.gor)],
-      ['samma flikknappar som för en bybo, alla fem flikar (steg 4.5.7.6, 5.3.4.1)', knappar(pres) === knappar(bybo) && knappar(pres).split(',').length === 5],
+      ['samma flikknappar som för en bybo, alla sex flikar (steg 4.5.7.6, 5.3.4.1, 6.9.10)', knappar(pres) === knappar(bybo) && knappar(pres).split(',').length === 6],
       ['presentationen har handlarens klan, silver och packning som rader', /från .+ vid /.test(pres) && pres.includes('Silver') && pres.includes('Packning') && pres.includes('Handlare')],
       ['egenskaperna visar färdigheten Handel', egen.includes('Handel') && egen.includes('Byn vet inget')],
       ['utrustningen visar ryggsäcken och varorna med priset i silver', utr.includes('Ryggsäck') && /silver styck/.test(utr)],
