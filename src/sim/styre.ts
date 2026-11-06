@@ -241,7 +241,15 @@ function titelFor(s: State, l: Person, vuxna: Person[]) {
 export const ledarTitel = (s: State, l: Person) => titelFor(s, l, vuxnaOf(s));
 // yrket som visas (steg 3.10.19): ledarens titel så länge hen leder, annars yrket. p.tag räknas som förut under tiden och syns igen
 // när hen slutar leda
-export const yrkeNamn = (s: State, p: Person) => s.styre?.ledare === p.id && alive(p) && s.styre.titel ? s.styre.titel : p.tag;
+// den skickligaste av alla med samma yrke är mästare i det (steg 7.5.9), den som går i lära är lärling
+export const yrkeNamn = (s: State, p: Person) => s.styre?.ledare === p.id && alive(p) && s.styre.titel ? s.styre.titel : mastarNamn(s, p);
+function mastarNamn(s: State, p: Person) {
+  if (!p.tag || p.tag === 'Dagdrivare' || p.tag === 'Mästare') return p.tag;
+  const lika = living(s).filter(q => q.tag === p.tag);
+  if (lika.length < 2) return p.tag;
+  const sum = (q: Person) => Object.values(q.skill).reduce((a, b) => a + b, 0);
+  return lika.every(q => q === p || sum(q) < sum(p)) ? `Mäster${p.tag.toLowerCase()}` : p.tag;
+}
 // titeln ses över varje årstid, och genast om den inte finns i TITLAR (en sparad by från före steg 3.10.18)
 function seOverTitel(s: State, l: Person) {
   const st = s.styre!, ny = titelFor(s, l, vuxnaOf(s)), forr = st.titel;

@@ -105,6 +105,7 @@ export const TORKAS: readonly Ratt[] = [
   { ra: 'fisk', blir: 'torrfisk', per: 1 },
   { ra: 'abborre', blir: 'torrfisk', per: 1 }, // den hela abborren hängs i stjärten
   { ra: 'gaddkott', blir: 'torrgadda', per: 1 }, { ra: 'mortkott', blir: 'torrmort', per: 1 },
+  { ra: 'ratlin', blir: 'lin', per: 1 }, // linet rötas som köttet på torkställningen (steg 7.7.7)
   { ra: 'kott', blir: 'torrkott', per: 1 },
   { ra: 'vargkott', blir: 'torrkott', per: 1 },
 ];

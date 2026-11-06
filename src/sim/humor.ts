@@ -1,3 +1,4 @@
+import { amountOf } from './lager';
 import { ALDER, ageOf, count, franMitt, getRel, isParent, livet, living, log, relKey, stat, think } from './folk';
 import { Kroppsdel, SkadaTyp, halsa, skada } from './halsa';
 import { die, leave } from './liv';
@@ -28,6 +29,7 @@ import { LARM, handelse, larma, skitsnack, skitsnackOm } from './rykten';
 
 // ---------- balanstal (regel 8) ----------
 export const HUMOR = balans('humor', {
+  leksakRisk: 0.7, // så stor del av risken för utbrott har ett barn när byn har en leksak (steg 7.5.4)
   bas: 0.55, // grundhumöret
   hungerLag: 0.2, hungerMinus: 0.2, // hungern under 0,2 drar ner humöret med 0,2 ...
   hungerHog: 0.6, hungerPlus: 0.05, // ... och över 0,6 upp 0,05
@@ -243,6 +245,7 @@ export function utbrottChans(s: State, p: Person) {
   if (m >= HUMOR.grans) return 0;
   let risk = HUMOR.risk * (HUMOR.grans - m) / HUMOR.grans * (1 + HUMOR.eskal * (p.utb ?? 0));
   if (ageOf(p, s.now) < ALDER.vuxen) {
+    if (amountOf(s, 'leksak') > 0) risk *= HUMOR.leksakRisk; // ett barn med en leksak får färre utbrott (steg 7.5.4)
     if (living(s).some(q => isParent(q, p) && Math.hypot(q.x - p.x, q.y - p.y) < HUMOR.foraldNara)) risk *= HUMOR.foraldRisk;
     if (p.lekt !== undefined && s.now - p.lekt < HUMOR.lekTim * HOUR) risk *= HUMOR.lekRisk;
   }

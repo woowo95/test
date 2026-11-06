@@ -107,7 +107,7 @@ export const STATION = balans('station', {
 // brasa = ringen till en lägereld till medan den läggs (steg 2.9.1, 4.5.6.8, brasor.ts): står nära sovplatserna den är till för (siteBrasa), och alla vuxna kan bygga den (tek är tom: den som är gammal nog att ta ansvar, ALDER.ansvar). När den är klar blir den en lägereld (nyEld) och ingen station
 export interface Utkant { till: number; avst: number; vatten?: true; falt?: true }
 export interface Forvar { rymmer: number; redskap?: true; tak?: true; stangd?: true; privat?: true }
-export interface StationDef { namn: string; ett?: true; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: Utkant; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar; pynt?: true; samtidigt?: number }
+export interface StationDef { hard?: true; namn: string; ett?: true; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: Utkant; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar; pynt?: true; samtidigt?: number }
 // de enkla redskapen: görs vid slöjdbänken om byn har en, lite fortare där (fart), annars vid elden som förut (Björn, efter v90)
 const ENKLA: Act[] = ['yxa', 'spjut', 'metspo', 'kniv', 'bensyl', 'balte', 'boll', 'slagtra', 'mal', 'trumma', 'benflojt', 'lyra', 'fackla', 'talgljus'];
 export const STATIONER = {
@@ -117,15 +117,42 @@ export const STATIONER = {
     forsta: '{namn} byggde byns första slaktbänk av virke. Där slaktas viltet och rensas fisken, och en kniv ligger kvar vid bänken.',
   },
   flatarbank: { // slöjdbänken: id:t är kvar från när den hette flätarbänken, så att sparade byar fungerar
-    namn: 'Slöjdbänk', ikon: 'flatarbank', w: 2, h: 1, tek: ['flatarbank'], av: RECEPT.flatarbank.av, min: RECEPT.flatarbank.min, gor: ['tvinna', 'korg', 'rock', 'skor', 'axelrem', 'ryggsack', 'benspade', 'vattensack', ...ENKLA], fart: { tvinna: STATION.repFart, ...Object.fromEntries(ENKLA.map(a => [a, STATION.redskapFart])) }, bara: ['korg', 'rock', 'skor', 'axelrem', 'ryggsack', 'benspade', 'vattensack'], vid: { bensyl: 1 }, kraver: { rock: 'bensyl', skor: 'bensyl', ryggsack: 'bensyl', vattensack: 'bensyl' }, inne: true, sitt: true,
+    namn: 'Slöjdbänk', ikon: 'flatarbank', w: 2, h: 1, tek: ['flatarbank'], av: RECEPT.flatarbank.av, min: RECEPT.flatarbank.min, gor: ['tvinna', 'korg', 'rock', 'skor', 'byxor', 'mossa', 'snoskor', 'halsband', 'tunika', 'skjorta', 'axelrem', 'ryggsack', 'benspade', 'vattensack', ...ENKLA], fart: { tvinna: STATION.repFart, ...Object.fromEntries(ENKLA.map(a => [a, STATION.redskapFart])) }, bara: ['korg', 'rock', 'skor', 'byxor', 'mossa', 'snoskor', 'halsband', 'tunika', 'skjorta', 'axelrem', 'ryggsack', 'benspade', 'vattensack'], vid: { bensyl: 1 }, kraver: { rock: 'bensyl', skor: 'bensyl', ryggsack: 'bensyl', vattensack: 'bensyl' }, inne: true, sitt: true,
     bygger: 'Bygger en slöjdbänk av virke och grenar.',
     forsta: '{namn} byggde byns första slöjdbänk. Där tvinnas rep fortare än för hand och flätas korgar.', // och sys kläder med bensylen (steg 2.3.2)
   },
   // fångstbänken (steg 7.4.1): 3×2 rutor. Mjärdar, snaror och andra fällor görs bara här
   fangstbank: {
-    namn: 'Fångstbänk', ikon: 'fangstbank', w: 3, h: 2, tek: ['fangstbank'], av: RECEPT.fangstbank.av, min: RECEPT.fangstbank.min, gor: ['mjarde'], bara: ['mjarde'],
+    namn: 'Fångstbänk', ikon: 'fangstbank', w: 3, h: 2, tek: ['fangstbank'], av: RECEPT.fangstbank.av, min: RECEPT.fangstbank.min, gor: ['mjarde', 'snara', 'grop'], bara: ['mjarde', 'snara', 'grop'],
     bygger: 'Bygger en fångstbänk av virke och grenar.',
     forsta: '{namn} byggde byns första fångstbänk. Där görs mjärdar och andra fällor.',
+  },
+  // stationerna i nivå 2 (steg 7.5.1)
+  stenhuggarplats: {
+    namn: 'Stenhuggarplats', ikon: 'stenhuggarplats', w: 3, h: 2, tek: ['stenhuggarplats'], av: RECEPT.stenhuggarplats.av, min: RECEPT.stenhuggarplats.min, gor: ['hugga_sten'], bara: ['hugga_sten'],
+    bygger: 'Bygger en stenhuggarplats.', forsta: '{namn} byggde byns första stenhuggarplats.',
+  },
+  klyvplats: {
+    namn: 'Klyvplats', ikon: 'klyvplats', w: 3, h: 1, tek: ['klyvplats'], av: RECEPT.klyvplats.av, min: RECEPT.klyvplats.min, gor: ['klyva_plank'], bara: ['klyva_plank'],
+    bygger: 'Bygger en klyvplats.', forsta: '{namn} byggde byns första klyvplats. Där klyvs virket till plankor.',
+  },
+  // örtköket (steg 7.6.1): en egen liten eld, och varje recept tar 1 ved som bränsle (i receptet)
+  ortkok: {
+    namn: 'Örtkök', ikon: 'ortkok', w: 3, h: 2, tek: ['ortkok'], av: RECEPT.ortkok.av, min: RECEPT.ortkok.min, gor: ['koka_salva', 'koka_tjara', 'koka_lim', 'koka_tval'], bara: ['koka_salva', 'koka_tjara', 'koka_lim', 'koka_tval'],
+    bygger: 'Bygger ett örtkök.', forsta: '{namn} byggde byns första örtkök. Där kokas och blandas örter, talg och annat.',
+  },
+  garvning: {
+    namn: 'Garvningsställning', ikon: 'garvning', w: 2, h: 2, tek: ['garvning'], av: RECEPT.garvning.av, min: RECEPT.garvning.min, gor: ['garva'], bara: ['garva'],
+    bygger: 'Sätter upp en garvningsställning.', forsta: '{namn} satte upp byns första garvningsställning. Där blir skinn till läder.',
+  },
+  vavstol: {
+    namn: 'Vävstol', ikon: 'vavstol', w: 2, h: 1, tek: ['vavstol'], av: RECEPT.vavstol.av, min: RECEPT.vavstol.min, gor: ['vava'], bara: ['vava'],
+    bygger: 'Bygger en vävstol.', forsta: '{namn} byggde byns första vävstol.',
+  },
+  // härden (steg 7.5.3): en eldstad inne i ett hus; när den är byggd blir den en eld som värmer huset (nyHard i brasor.ts)
+  harden: {
+    namn: 'Härd', ikon: 'harden', w: 2, h: 2, tek: ['harden'], av: RECEPT.harden.av, min: RECEPT.harden.min, gor: [], inne: true, hard: true,
+    bygger: 'Lägger en härd av huggna stenar på golvet.', forsta: '{namn} lade byns första härd. Den värmer hela huset.',
   },
   halmbadd: {
     namn: 'Halmbädd', ikon: 'halmbadd', w: 2, h: 1, tek: ['halmbadd'], av: RECEPT.halmbadd.av, min: RECEPT.halmbadd.min, gor: [], inne: true, mobel: true, flera: true, sover: true,
@@ -785,6 +812,13 @@ export function finishStation(s: State, p: Person, tk: Task) {
   if (!t || t.kvar > MIN) return;
   t.kvar = 0; t.klar = s.now; gjort(s, p, 'mobel');
   const d = stationDef(t.k)!;
+  if (d.hard) { // härden är lagd: den blir en eld inne i huset (steg 7.5.3)
+    nyEld(s, t);
+    const f = (s.eldar ?? []).find(q => q.id === t.id);
+    if (f) { f.hearth = 'hard'; f.ring = undefined; }
+    if (forstaGang(s, 'station_' + t.k)) { log(s, forstaText(d.forsta, p), 'world', [p.id]); p.fame.push('Lade byns första härd'); }
+    return;
+  }
   if (d.brasa) { // ringen till en lägereld till är lagd: den blir en lägereld (brasor.ts)
     nyEld(s, t);
     if (forstaGang(s, 'station_' + t.k)) { log(s, forstaText(d.forsta, p), 'world', [p.id]); p.fame.push('Lade byns andra lägereld'); }

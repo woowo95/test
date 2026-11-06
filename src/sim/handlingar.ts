@@ -137,6 +137,25 @@ const DEF = {
   bada: { namn: 'Badar i sjön', tecken: '🏊', dygn: true },
   bara: { namn: 'Bär in saker till lagret', slag: 'bara' },
   strand: { namn: 'Sitter vid stranden och ser ut över vattnet', tecken: '🌊', dygn: true },
+  hugga_sten: { namn: 'Hugger sten', slag: 'hantverk', hantverk: true, verb: 'hugger', plats: 'station' }, // vid stenhuggarplatsen (steg 7.5.1)
+  klyva_plank: { namn: 'Klyver plankor', slag: 'hantverk', hantverk: true, verb: 'klyver', plats: 'station' }, // vid klyvplatsen
+  koka_salva: { namn: 'Kokar salva', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' }, // vid örtköket (steg 7.6)
+  koka_tjara: { namn: 'Kokar tjära', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' },
+  koka_lim: { namn: 'Kokar benlim', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' },
+  koka_tval: { namn: 'Kokar tvål', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' },
+  garva: { namn: 'Garvar ett skinn', slag: 'hantverk', hantverk: true, verb: 'garvar', plats: 'station' }, // vid garvningsställningen (steg 7.7.6)
+  spinna: { namn: 'Spinner lintråd', slag: 'hantverk', hantverk: true, verb: 'spinner', plats: 'elden' }, // med sländan, var som helst (steg 7.7.8)
+  vava: { namn: 'Väver lintyg', slag: 'hantverk', hantverk: true, verb: 'väver', plats: 'station' }, // vid vävstolen (steg 7.7.9)
+  gor_leksak: { namn: 'Täljer en leksak', slag: 'hantverk', hantverk: true, verb: 'täljer', plats: 'elden' }, // steg 7.5.4
+  snara: { namn: 'Gör en snara', slag: 'hantverk', hantverk: true, verb: 'gör', plats: 'station' }, // vid fångstbänken (steg 7.5.10)
+  grop: { namn: 'Gräver en fångstgrop', slag: 'hantverk', hantverk: true, verb: 'gräver', plats: 'station' }, // steg 7.5.11
+  byxor: { namn: 'Syr byxor', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, // steg 7.7
+  mossa: { namn: 'Syr en mössa', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' },
+  snoskor: { namn: 'Gör snöskor', slag: 'hantverk', hantverk: true, stilla: true, verb: 'gör', plats: 'station' },
+  barnklader: { namn: 'Syr barnkläder', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' },
+  halsband: { namn: 'Trär ett halsband', slag: 'hantverk', hantverk: true, stilla: true, verb: 'trär', plats: 'station' },
+  tunika: { namn: 'Syr en tunika', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' },
+  skjorta: { namn: 'Syr en skjorta', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' },
   mjarde: { namn: 'Flätar en mjärde', slag: 'hantverk', hantverk: true, verb: 'flätar', plats: 'station' }, // bara vid fångstbänken (stationer.ts, steg 7.4.2)
   vittja: { namn: 'Vittjar mjärden', slag: 'fiska', verb: 'vittjar', plats: 'skog' },
   korg: { namn: 'Flätar en korg av hö', slag: 'hantverk', hantverk: true, verb: 'flätar', plats: 'station' }, // bara vid slöjdbänken (stationer.ts)

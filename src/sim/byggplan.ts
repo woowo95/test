@@ -481,7 +481,7 @@ const skjulA: AtgardDef = {
     stolpe(x, y); stolpe(x + w - 1, y); stolpe(x, y + h - 1); stolpe(x + w - 1, y + h - 1);
     if (w - 2 > PLAN.skjulSida) { stolpe(x + (w >> 1), y); stolpe(x + (w >> 1), y + h - 1); }
     if (h - 2 > PLAN.skjulSida) { stolpe(x, y + (h >> 1)); stolpe(x + w - 1, y + (h >> 1)); }
-    if (ritning.some(a => !inMap(a.x, a.y) || gridOf(s).at.has(a.y * W + a.x) || stationRutor(s).at.has(a.y * W + a.x) || !okAt(a.y * W + a.x) && !zonesOf(s).some(z => a.x >= z.x - 1 && a.x <= z.x + z.w && a.y >= z.y - 1 && a.y <= z.y + z.h))) return [];
+    if (ritning.some(a => !inMap(a.x, a.y) || gridOf(s).at.has(a.y * W + a.x) || stationRutor(s).at.has(a.y * W + a.x) || zonesOf(s).some(z => a.x >= z.x && a.x < z.x + z.w && a.y >= z.y && a.y < z.y + z.h) || (s.stackar ?? []).some(q => q.x === a.x && q.y === a.y) || !okAt(a.y * W + a.x) && !zonesOf(s).some(z => a.x >= z.x - 1 && a.x <= z.x + z.w && a.y >= z.y - 1 && a.y <= z.y + z.h))) return [];
     return [{ at: 'skjulA', x, y, w, h, ritning, oppnas: [], kostnad: ritningKostnad(ritning), varde: Math.min(1, med.length / Math.max(1, under.length)), plats: 0 }];
   },
 };

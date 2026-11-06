@@ -111,6 +111,7 @@ export const HANDLARVAROR: { k: string; n: [number, number]; vikt: number; sort:
   { k: 'torrfisk', n: [2, 5], vikt: 2, sort: V },
   { k: 'ben', n: [2, 4], vikt: 1, sort: V },
   { k: 'rovfron', n: [2, 5], vikt: 1, sort: V },
+  { k: 'linfron', n: [2, 4], vikt: 1, sort: V }, // steg 7.7.7
   { k: 'artfron', n: [2, 5], vikt: 1, sort: V },
   { k: 'kniv', n: [1, 1], vikt: 2, sort: V },
   { k: 'yxa', n: [1, 1], vikt: 1, sort: V },

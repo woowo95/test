@@ -62,6 +62,7 @@ export const TROSKEL = balans('troskel', {
 // (yxan från yxaFran)
 export const VILLTAL = balans('vill', {
   spjutPerVuxna: 3, spjutMin: 1, spjutMax: 4, // byn vill ha ett spjut (och ett metspö) per så här många vuxna, minst Min och högst Max
+  snoskorPer: 4, halsbandPer: 3,
   korgPerVuxna: 3, korgMin: 1, korgMax: 5, // ... en korg
   yxaPerVuxna: 4, yxaMin: 1, yxaMax: 3, yxaFran: 16, yxaBygge: 1, // ... en yxa, räknat på dem som är över Fran år, och Bygge till medan ett hus byggs (träden där det ska stå)
   knivar: 1, // ... så många knivar, och en till för varje tom knivplats vid en station (stationer.ts)
@@ -173,6 +174,11 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   bensyl: s => tommaPlatser(s, 'bensyl'), // en till slöjdbänken (steg 2.3.2)
   rock: s => living(s).length, // en per person (steg 2.3.2), av vilket material som helst (klader.ts)
   skor: s => living(s).length,
+  // steg 7.7: det som gör livet bättre, när någon kan göra det och materialet finns
+  byxor: s => living(s).length, mossa: s => living(s).length,
+  snoskor: s => Math.ceil(living(s).length / VILLTAL.snoskorPer), // några par till dem som går ut i snön
+  halsband: s => Math.ceil(living(s).length / VILLTAL.halsbandPer), // det är få som bär smycken
+  tunika: s => amountOf(s, 'lintyg') > 0 ? living(s).length : 0, skjorta: s => amountOf(s, 'lintyg') > 0 ? living(s).length : 0,
   balte: s => living(s).length, // ett per person (steg 2.3.3)
   axelrem: spjutVill, // en per spjut (steg 7.1.2)
   ryggsack: s => perVuxna(s, VILLTAL.korgPerVuxna, VILLTAL.korgMin, VILLTAL.korgMax), // lika många som korgarna, till dem som samlar (steg 7.1.3)
@@ -191,9 +197,11 @@ export const villAv = (s: State, g: string) => REDSKAPMAL[g](s);
 // under tak; borden (steg 2.2.15) en plats per invånare; förvaringen, pyntet, brasorna, latrinen och torkställningen efter
 // sina egna mått. Bristen är hur stor del av bufferten som saknas (0 till 1), som projektets brist (projekt.ts)
 // En halvbyggd station (en kista, ett pynt) görs klar även när ingen längre vill ha en ny: bristen är då 1
+const harBrist = (s: State) => { const n = (s.eldar ?? []).filter(f => f.hearth === 'hard').length, hus = (s.hus ?? []).filter(h => h.klar && !h.skjul).length; return n < hus ? 0.5 : 0; };
 export function stationBrist(s: State, k: StationSlag) {
   const d: StationDef = STATIONER[k];
   if (!d.brasa && stationerOf(s).some(t => t.k === k && !isKlar(t))) return 1;
+  if (d.hard) return harBrist(s); // härden: ett hus där folk sover utan en härd (steg 7.5.3)
   return d.pynt ? pyntBrist(s, k) : d.brasa ? brasaBrist(s) : d.sover ? (living(s).length ? utanBadd(s) / living(s).length : 0) : d.platser ? bordBrist(s, k)
     : d.forvar ? forvarBrist(s, k) : d.gor.includes('toa') ? latrinBrist(s) : d.gor.includes('torka') ? torkBrist(s) : harStation(s, k) ? 0 : 1;
 }

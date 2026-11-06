@@ -46,6 +46,7 @@ const DEF = {
   krok2: { namn: 'Andra kroken i bältet', ikon: '🪝' }, // steg 7.1.1: ett eget redskap som hänger där medan man arbetar med ett annat
   axelrem: { namn: 'Axelrem', ikon: '➰' }, // steg 7.1.2: plagget
   axel: { namn: 'Axeln', ikon: '🔱' }, // och redskapet som hänger i det medan man bär
+  smycke: { namn: 'Smycke', ikon: '➰' }, // steg 7.7.5
   rygg: { namn: 'Ryggen', ikon: '🎒' }, // steg 7.1.3: ryggsäcken, och bördan i den
 } satisfies Record<string, PlatsDef>;
 export type Plats = keyof typeof DEF;

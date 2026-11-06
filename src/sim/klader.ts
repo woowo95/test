@@ -24,7 +24,7 @@ export const KLADER = balans('klader', {
   skyddTak: 0.9, // ett plagg tar som mest så här stor del av en skada (kodgenomgången 3.10.25: talet stod löst)
 });
 
-export type MaterialSlag = 'skinn' | 'lader' | 'tyg' | 'flatat';
+export type MaterialSlag = 'skinn' | 'lader' | 'tyg' | 'flatat' | 'smycke';
 type Skadeslag = 'hugg' | 'stick' | 'slag' | 'bett';
 // ett plagg. namn = hur plagget börjar ("Rock" i "Rock av vargskinn"), ord = i en mening ("en rock", "ett par skor"),
 // verb = vad den som gör det gör, plats = platsen på kroppen, mangd = bitar material, med = det mer plagget görs med (hela
@@ -50,6 +50,18 @@ const PLAGG_DEF = {
     forsta: '{namn} flätade byns första {plagg}. Redskapen hänger i det, och båda händerna är fria att bära med.' },
   axelrem: { namn: 'Axelrem', ord: 'en axelrem', verb: 'Syr', plats: 'axelrem', mangd: RECEPT.axelrem.mangd, med: RECEPT.axelrem.av, varme: 0, dygn: 10, vikt: 1, tek: 'axelrem', min: RECEPT.axelrem.min, slag: ['skinn'], axel: 1,
     forsta: '{namn} sydde byns första {plagg}. Spjutet hänger på axeln, och båda händerna är fria att bära med.' }, // steg 7.1.2
+  byxor: { namn: 'Byxor', ord: 'ett par byxor', verb: 'Syr', plats: 'ben', mangd: RECEPT.byxor.mangd, med: RECEPT.byxor.av, varme: 0.15, dygn: 4, vikt: 5, tek: 'skinnklader', min: RECEPT.byxor.min, slag: ['skinn', 'lader'],
+    skydd: { delar: ['benV', 'benH'], tar: { hugg: 0.2, stick: 0.15, slag: 0.15, bett: 0.25 } }, forsta: '{namn} sydde byns första par {plagg}.' }, // steg 7.7.1
+  mossa: { namn: 'Mössa', ord: 'en mössa', verb: 'Syr', plats: 'huvud', mangd: RECEPT.mossa.mangd, varme: 0.1, dygn: 4, vikt: 1, tek: 'skinnklader', min: RECEPT.mossa.min, slag: ['skinn', 'lader'],
+    skydd: { delar: ['huvud'], tar: { hugg: 0.15, stick: 0.1, slag: 0.15, bett: 0.2 } }, forsta: '{namn} sydde byns första {plagg}.' }, // steg 7.7.2
+  snoskor: { namn: 'Snöskor', ord: 'ett par snöskor', verb: 'Syr', plats: 'fotter', mangd: RECEPT.snoskor.mangd, med: RECEPT.snoskor.av, varme: 0.1, dygn: 3, vikt: 3, tek: 'skinnklader', min: RECEPT.snoskor.min, slag: ['skinn'],
+    skydd: { delar: ['fotV', 'fotH'], tar: { hugg: 0.2, stick: 0.2, slag: 0.1, bett: 0.3 } }, forsta: '{namn} gjorde byns första par {plagg}. Snön saktar dem nästan inte.' }, // steg 7.7.3
+  halsband: { namn: 'Halsband', ord: 'ett halsband', verb: 'Syr', plats: 'smycke', mangd: RECEPT.halsband.mangd, med: RECEPT.halsband.av, varme: 0, dygn: 20, vikt: 0.2, tek: 'skinnklader', min: RECEPT.halsband.min, slag: ['smycke'],
+    forsta: '{namn} trädde byns första {plagg}. Den som bär det får anseende.' }, // steg 7.7.5
+  tunika: { namn: 'Tunika', ord: 'en tunika', verb: 'Syr', plats: 'yttre', mangd: RECEPT.tunika.mangd, varme: 0.1, dygn: 5, vikt: 2, tek: 'vavstol', min: RECEPT.tunika.min, slag: ['tyg'],
+    skydd: { delar: ['bal'], tar: { hugg: 0.05, stick: 0.05, slag: 0.05, bett: 0.05 } }, forsta: '{namn} sydde byns första {plagg}.' }, // steg 7.7.10
+  skjorta: { namn: 'Skjorta', ord: 'en skjorta', verb: 'Syr', plats: 'inre', mangd: RECEPT.skjorta.mangd, varme: 0.05, dygn: 5, vikt: 1, tek: 'vavstol', min: RECEPT.skjorta.min, slag: ['tyg'],
+    skydd: { delar: ['bal'], tar: { hugg: 0.03, stick: 0.03, slag: 0.03, bett: 0.03 } }, forsta: '{namn} sydde byns första {plagg}.' },
   ryggsack: { namn: 'Ryggsäck', ord: 'en ryggsäck', verb: 'Syr', plats: 'rygg', mangd: RECEPT.ryggsack.mangd, med: RECEPT.ryggsack.av, varme: 0, dygn: 10, vikt: 2, tek: 'ryggsack', min: RECEPT.ryggsack.min, slag: ['skinn'], rygg: 20,
     forsta: '{namn} sydde byns första {plagg}. Den som samlar plockar rakt ner i den och bär dubbelt så mycket.' }, // steg 7.1.3
 } satisfies Record<string, PlaggDef>;
@@ -65,6 +77,10 @@ const KLADMATERIAL_DEF = {
   kaninskinn: { sak: 'skinn', namn: 'harskinn', slag: 'skinn', bit: 1, varme: 1, hallbar: 1, vikt: 1, skydd: 1, finhet: 0 },
   vargskinn: { sak: 'vargskinn', namn: 'vargskinn', slag: 'skinn', bit: 2, varme: 1.8, hallbar: 1, vikt: 1.5, skydd: 1.2, finhet: 1 }, // tjockare än kaninens (steg 3.7.14): varmare, tyngre och skyddar mer
   bjornskinn: { sak: 'bjornskinn', namn: 'björnskinn', slag: 'skinn', bit: 2, varme: 2.6, hallbar: 1.3, vikt: 2, skydd: 1.5, finhet: 2 }, // steg 6.6.6: det tjockaste skinnet, den varmaste klädern och skyddar mer än vargskinnet
+  lader: { sak: 'lader', namn: 'läder', slag: 'lader', bit: 1, varme: 1.3, hallbar: 1.5, vikt: 1.2, skydd: 1.4, finhet: 1 }, // steg 7.7.6
+  lintyg: { sak: 'lintyg', namn: 'lin', slag: 'tyg', bit: 1, varme: 1, hallbar: 1, vikt: 1, skydd: 1, finhet: 2 }, // steg 7.7.9
+  benband: { sak: 'ben', namn: 'ben', slag: 'smycke', bit: 1, varme: 0, hallbar: 1, vikt: 1, skydd: 0, finhet: 0 }, // halsbandet (steg 7.7.5)
+  tandband: { sak: 'vargtand', namn: 'vargtänder', slag: 'smycke', bit: 1, varme: 0, hallbar: 1, vikt: 1, skydd: 0, finhet: 2 },
   rep: { sak: 'rep', namn: 'rep', slag: 'flatat', bit: 1, varme: 1, hallbar: 1, vikt: 1, skydd: 1, finhet: 0 },
 } satisfies Record<string, MaterialDef>;
 export type KladMaterial = keyof typeof KLADMATERIAL_DEF;

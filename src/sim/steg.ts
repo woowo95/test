@@ -1,6 +1,7 @@
 import { rumVila } from './rum';
 import { stepByggplan } from './byggplan';
-import { FISKAR, MJARDE, mjardarOf, sattUtMjarde, stepMjardar, valjFisk, vittja } from './fisk';
+import { FALLOR, FISKAR, MJARDE, mjardarOf, sattUt, stepMjardar, valjFisk, vittja } from './fisk';
+import { TILLVERKA, TILLVERKA_LIST } from './tillverka';
 import { RECEPT } from './recept';
 import { stepBlotVed } from './blotved';
 import { stepUppvaxt, upplev } from './uppvaxt';
@@ -21,8 +22,8 @@ import { lyssnaSteg, upptradaKlar, upptradaSteg } from './framtradande';
 import { redskapIHanden, tidyTools } from './agande';
 import { kvEffekt } from './kvalitet';
 import { SKOG, chopStock, fellTree, rotStumps, stocks, stubbeGravd } from './skog';
-import { needLadder, noticeTheft, stole, takeMaterial } from './behov';
-import { avbryt, bordSlag, carryKind, dropSpot, fetchSpot, helaIBordan, helt, homeKind, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore, ownsAmount, use } from './lager';
+import { needLadder, noticeTheft, stole, takeMaterial, getable } from './behov';
+import { avbryt, bordSlag, carryKind, dropSpot, fetchSpot, helaIBordan, helt, homeKind, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore, ownsAmount, use, put } from './lager';
 import { SAKER, viktOf } from './saker';
 import { DJURARTER, REDSKAP, bearbeta, djurKvar, twineRope, wearUsed } from './redskap';
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
@@ -189,7 +190,14 @@ MEDAN.buren = burenSteg; // den som bärs hem väntar så länge någon bär hen
 for (const act of DRICKA_ACTS) MEDAN[act] = (s, p, t) => { if (t.prog === undefined) { t.prog = 0; drick(s, p, t); } else p.torst = 1; };
 // slakt och rensning: den första arten med arbetet som finns i förrådet (kaninen före vargen, steg 3.7.14)
 // mjärden är klar: materialet tas, och den sätts ut på närmaste strand (steg 7.4.2)
-KLAR.mjarde = (s, p) => { for (const [k, n] of Object.entries(RECEPT.mjarde.av!)) takeMaterial(s, p, k, n); sattUtMjarde(s, p); };
+for (const k of Object.keys(FALLOR)) KLAR[k as Act] = (s, p) => { for (const [q, n] of Object.entries((RECEPT as Record<string, { av?: Record<string, number> }>)[k].av!)) takeMaterial(s, p, q, n); sattUt(s, p, k); };
+// det som görs vid en station är klart: materialet tas och saken läggs i förrådet, och är hens som gjorde den (tillverka.ts)
+for (const k of TILLVERKA_LIST) { const d = TILLVERKA[k]; KLAR[d.act] = (s, p) => {
+  for (const [q, n] of Object.entries(d.av)) { if (getable(s, p, q) < n) return; }
+  for (const [q, n] of Object.entries(d.av)) takeMaterial(s, p, q, n);
+  put(s, d.ger, d.n, { [p.id]: d.n }); count(s, 'gjort_' + d.ger);
+  if (forstaGang(s, 'gjort_' + d.ger)) log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]);
+}; }
 MEDAN.vittja = (s, p, t) => { const m = mjardarOf(s).find(q => q.id === t.ref); if (m) vittja(s, p, m); t.until = s.now; };
 for (const art of DJURARTER) MEDAN[art.act] ??= (s, p, _t, dtSec) => bearbeta(s, p, DJURARTER.find(a => a.act === art.act && djurKvar(s, a) > 0) ?? art, dtSec / HOUR_S);
 MEDAN.grilla = (s, p, _t, dtSec) => grilla(s, p, dtSec / HOUR_S); // grillen över elden (matlagning.ts)
@@ -257,7 +265,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
     atSteg(s); stepSeder(s); updateTags(s); stepRelationer(s); stepUppvaxt(s); stepReligion(s); for (const p of living(s)) morkHumor(s, p); facklorTimme(s); stepHumor(s); stepDelning(s); stepLarlingar(s);
     stepVader(s); vindfallen(s); regnetTvattar(s); stepMotgang(s); stepTorka(s); stepFlod(s); stepIs(s); growGround(s, 1, ai); growFynd(s, 1, ai, vaxtFaktor(s)); forget(s, 1); stepRykten(s, moodOf); glomRykten(s, 1); stepBerattelser(s); stepStyre(s); rotStumps(s); tidyStore(s);
-    wearBuild(s, 1, ai); stepByggnader(s); stepMjardar(s); stepByggplan(s); stepEldFlytt(s); stepPaborjat(s); stepStationer(s); stepPynt(s); stadaByten(s); stepBrasor(s); stepKlader(s); stepOdling(s);
+    wearBuild(s, 1, ai); stepByggnader(s); stepMjardar(s); stepNaken(s); stepByggplan(s); stepEldFlytt(s); stepPaborjat(s); stepStationer(s); stepPynt(s); stadaByten(s); stepBrasor(s); stepKlader(s); stepOdling(s);
     askaSteg(s); // det svarta efter en eldsvåda försvinner (brand.ts)
     forbrukTimme(s); // materialens förbrukning glöms långsamt (forradsmal.ts, steg 6.2.14)
     arbetsTimme(s); // byns behov för arbetsordningen (val.ts, steg 6.1.12)
@@ -678,6 +686,7 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
     const fart = ACTS[tk.act].fart ?? 1, got = forageItems(s, p, dtSec, fart) ?? {}, dt = dtSec * fart; // det som växer på platsen hittar man lika mycket fortare (steg 2.12.4)
     bar('svamp', pickMushrooms(s, p, tk.tx, tk.ty, dt, got));
     bar('mossa', mossaFynd(s, tk, dt)); // mossa till förband (steg 2.5.2)
+    if (ageIndex(s) === 1 || ageIndex(s) === 2) if (rnd(s, 'arbete', p) < dt / HOUR_S * ROLLEKA) bar('rolleka', 1); // den första örten, under sommarhalvåret (steg 7.6.3)
     const vild = froFynd(s, p, tk, dt); // frön och lite mat från de vilda grödorna (steg 2.10.2, 3.10.23.8)
     for (const k in vild) bar(k, vild[k]);
     for (const k in got) bar(k, got[k]);
@@ -724,6 +733,14 @@ function tidTillTom(s: State, p: Person, tk: Task) {
 // Rundan söker sig utåt (steg 4.5.6.2): varje ruta längre från lägret är värd drag() mer. Nyfikenheten och modet drar ut;
 // bördan, hungern, törsten, tröttheten, mörkret som kommer, kylan och rädslan drar hem. Det finns inget tak: den som dras
 // utåt kan gå ända till kartans kant. Barn, gamla och skadade dras mindre ut
+// den som är naken blir missnöjd, mer ju fler andra i byn som bär kläder (steg 7.7.11)
+function stepNaken(s: State) {
+  const folk = living(s), kladda = folk.filter(p => kladVarme(s, p) > 0).length;
+  if (!kladda || !folk.length) return;
+  for (const p of folk) if (kladVarme(s, p) === 0 && ageOf(p, s.now) >= ALDER.bygger) think(p, 'Är naken när andra har kläder', NAKEN * kladda / folk.length, s.now, 2 * HOUR);
+}
+const NAKEN = -0.06;
+const ROLLEKA = 0.05; // chansen per timmes samlande att hitta rölleka
 export const RUNDA = balans('runda', {
   sett: 12, // så många rutor minns man att man nyss plockat på ...
   settSok: 3, // ... och bland stenarna, där det är få rutor och flintan och stenarna inte tar slut på en gång

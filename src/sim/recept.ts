@@ -49,6 +49,32 @@ const DEF = {
   // sakerna (saker.ts): redskapen, maten som lagas och det som slaktas
   kott: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' },
   fisk: { var: 'sak', av: { abborre: 1 }, min: 2, slag: 'bearbeta' },
+  // steg 7.5: stationerna och det som görs där
+  stenhuggarplats: { var: 'station', av: { sten: 4, virke: 1 }, min: 20, slag: 'stor', tek: 'stenhuggarplats' },
+  klyvplats: { var: 'station', av: { virke: 1, ved: 2 }, min: 15, slag: 'stor', tek: 'klyvplats' },
+  ortkok: { var: 'station', av: { virke: 2, sten: 4 }, min: 20, slag: 'stor', tek: 'ortkok' },
+  garvning: { var: 'station', av: { grenar: 4, rep: 2 }, min: 15, slag: 'stor', tek: 'garvning' },
+  vavstol: { var: 'station', av: { virke: 2, sten: 4, rep: 1 }, min: 25, slag: 'stor', tek: 'vavstol' },
+  harden: { var: 'station', av: { huggen_sten: 6 }, min: 30, slag: 'stor', tek: 'harden' },
+  huggen_sten: { var: 'sak', av: { sten: 2 }, min: 15, slag: 'stor', tek: 'stenhuggarplats' },
+  plankor: { var: 'sak', av: { virke: 1 }, min: 8, slag: 'bearbeta', tek: 'klyvplats' },
+  salva: { var: 'sak', av: { rolleka: 2, talg: 1, ved: 1 }, min: 15, slag: 'stor', tek: 'ortkok' },
+  tjara: { var: 'sak', av: { ved: 4 }, min: 20, slag: 'stor', tek: 'ortkok' },
+  benlim: { var: 'sak', av: { ben: 2, ved: 1 }, min: 15, slag: 'stor', tek: 'ortkok' },
+  tval: { var: 'sak', av: { kol: 1, talg: 1, ved: 1 }, min: 15, slag: 'stor', tek: 'ortkok' },
+  lader: { var: 'sak', av: { skinn: 1, talg: 1 }, min: 20, slag: 'stor', tek: 'garvning' },
+  trad: { var: 'sak', av: { lin: 2 }, min: 10, slag: 'liten', tek: 'slanda' },
+  lintyg: { var: 'sak', av: { trad: 3 }, min: 20, slag: 'stor', tek: 'vavstol' },
+  leksak: { var: 'sak', av: { grenar: 1 }, min: 10, slag: 'liten', tek: 'leksak' },
+  snara: { var: 'sak', av: { rep: 1, grenar: 2, ben: 1 }, min: 10, slag: 'liten', tek: 'snara' },
+  grop: { var: 'sak', av: { grenar: 6 }, min: 40, slag: 'stor', tek: 'grop' },
+  byxor: { var: 'plagg', mangd: 2, av: { rep: 1 }, min: 5 },
+  mossa: { var: 'plagg', mangd: 1, av: {}, min: 4 },
+  snoskor: { var: 'plagg', mangd: 1, av: { grenar: 2, rep: 1 }, min: 6 },
+  barnklader: { var: 'plagg', mangd: 2, av: { rep: 1 }, min: 5 },
+  halsband: { var: 'plagg', mangd: 3, av: { rep: 1 }, min: 5 },
+  tunika: { var: 'plagg', mangd: 3, av: {}, min: 6 },
+  skjorta: { var: 'plagg', mangd: 2, av: {}, min: 5 },
   gaddkott: { var: 'sak', av: { gadda: 1 }, min: 3, slag: 'bearbeta' }, // gäddan ger 2 kött (steg 7.4.3)
   mortkott: { var: 'sak', av: { mort: 2 }, min: 2, slag: 'bearbeta' }, // 2 mörtar rensas till 1 kött
   fangstbank: { var: 'station', av: { virke: 2, grenar: 2 }, min: 20, slag: 'stor', tek: 'fangstbank' }, // steg 7.4.1

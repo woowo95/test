@@ -2449,3 +2449,30 @@ SCENARIER.mjarde = {
     ];
   },
 };
+
+SCENARIER.hantverk7 = {
+  text: 'Steg 7.5–7.7: stationerna på nivå 2 och örtköket gör saker ur registret TILLVERKA, snaran och gropen fångar, härden blir en eld inne, de nya plaggen finns, linet rötas på torkställningen, och yrkena har fått sina titlar',
+  kor: () => {
+    const s = SIM.createState(6, START), p = SIM.living(s)[0];
+    const rader = SIM.TILLVERKA_LIST.every(k => { const d = SIM.TILLVERKA[k]; return !!SIM.SAKER[d.ger] && !!SIM.ACTS[d.act] && d.n >= 1; });
+    const ortkok = SIM.STATIONER.ortkok.gor.length === 4 && SIM.RECEPT.salva.av!.rolleka === 2 && SIM.RECEPT.lader.av!.talg === 1;
+    const sn = SIM.sattUt(s, p, 'snara')!, ute = !!sn && !SIM.iByn(s, sn.x, sn.y);
+    sn.fisk = { vilt: 1 }; sn.n = 1; SIM.vittja(s, p, sn);
+    const fick = SIM.amountOf(s, 'vilt') >= 1;
+    const plagg = ['byxor', 'mossa', 'snoskor', 'halsband', 'tunika', 'skjorta'].every(k => !!(SIM.PLAGG as Record<string, unknown>)[k]);
+    const byxor = SIM.PLAGG.byxor.plats === 'ben' && SIM.PLAGG.byxor.varme === 0.15, sko = SIM.PLAGG.snoskor.plats === 'fotter';
+    const lin = SIM.GRODOR.lin.sak === 'ratlin' && SIM.TORKAS.some(r => r.ra === 'ratlin' && r.blir === 'lin');
+    const titlar = ['Slaktare', 'Kock', 'Odlare', 'Stenhuggare'].every(k => SIM.TAGS.some(t => t.tag === k && t.acts.length > 0));
+    const q = SIM.living(s)[1]; p.tag = q.tag = 'Slaktare'; p.skill.jakt = 90;
+    const mast = SIM.yrkeNamn(s, p) === 'Mästerslaktare' && SIM.yrkeNamn(s, q) === 'Slaktare';
+    return [
+      ['varje rad i TILLVERKA har en sak och en handling', rader],
+      ['örtköket gör fyra saker, och recepten stämmer', ortkok],
+      ['snaran sätts utanför byn och vittjas', ute && fick],
+      ['de nya plaggen finns, på rätt plats', plagg && byxor && sko],
+      ['linet rötas på torkställningen', lin],
+      ['yrkestitlarna har sina handlingar', titlar],
+      ['den skickligaste i ett yrke är mästare', mast],
+    ];
+  },
+};

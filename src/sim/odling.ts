@@ -83,6 +83,7 @@ export interface GrodaDef { namn: string; sak: string; fro: string; dygn: number
 export const GRODOR = {
   rovor: { namn: 'Rovor', sak: 'rovor', fro: 'rovfron', dygn: 3, perRuta: 3, fron: 1.5, frost: -6 }, // snabba och härdiga; 1 eller 2 frön per ruta (steg 3.10.23.3); dygn 2 och perRuta 5 före steg 3.10.23.5; frost -3 före steg 2.12.2
   // ärterna har kornets tal och plats (steg 3.10.23.8; korn kommer tillbaka som säd från handlarna i steg 11.4.2)
+  lin: { namn: 'Lin', sak: 'ratlin', fro: 'linfron', dygn: 3, perRuta: 2, fron: 1.5, frost: -3 }, // steg 7.7.7: linfrön köps av handlaren
   arter: { namn: 'Ärter', sak: 'arter', fro: 'artfron', dygn: 4, perRuta: 3, fron: 2, frost: -4 }, // håller länge; dygn 3, perRuta 4 och fron 6 före steg 3.10.23; frost -1 före steg 2.12.2
 } satisfies Record<string, GrodaDef>;
 export type GrodaSlag = keyof typeof GRODOR;

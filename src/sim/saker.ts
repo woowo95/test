@@ -106,6 +106,23 @@ const DEF = {
   torrgadda: { namn: 'Torkad gädda', skaffa: { act: 'torka' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 7, naring: { protein: 2.2, fett: 0.3, mineral: 0.7, energi: 0.5, vitamin: 0.2 }, haller: 20 },
   torrmort: { namn: 'Torkad mört', skaffa: { act: 'torka' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 7, naring: { protein: 1.8, fett: 1.2, mineral: 0.9, energi: 0.7, vitamin: 0.3 }, haller: 20 },
   mjarde: { namn: 'Mjärde', skaffa: RECEPT.mjarde, stack: 1, ruta: 1, mapp: 'Redskap' }, // en flätad korg som sätts ut i vattnet (steg 7.4.2)
+  huggen_sten: { namn: 'Huggen sten', skaffa: RECEPT.huggen_sten, stack: 20, vikt: 4, mapp: 'Material' }, // steg 7.5.1
+  plankor: { namn: 'Plankor', skaffa: RECEPT.plankor, stack: 20, vikt: 2, mapp: 'Material' },
+  rolleka: { namn: 'Rölleka', skaffa: { act: 'samla' }, stack: 25, vikt: 0.1, mapp: 'Material' }, // den första örten (steg 7.6.3): går inte att äta och håller länge
+  salva: { namn: 'Salva', skaffa: RECEPT.salva, stack: 10, vikt: 0.2, mapp: 'Material' }, // steg 7.6.4–7.6.6: ingen funktion än
+  tjara: { namn: 'Tjära', skaffa: RECEPT.tjara, stack: 10, vikt: 0.5, mapp: 'Material' },
+  benlim: { namn: 'Benlim', skaffa: RECEPT.benlim, stack: 10, vikt: 0.3, mapp: 'Material' },
+  tval: { namn: 'Tvål', skaffa: RECEPT.tval, stack: 10, vikt: 0.2, mapp: 'Material' },
+  lader: { namn: 'Läder', skaffa: RECEPT.lader, stack: 10, vikt: 1, mapp: 'Material' }, // steg 7.7.6
+  ratlin: { namn: 'Rått lin', skaffa: { tid: 0.25, tek: 'lin' }, stack: 25, vikt: 0.3, mapp: 'Material' }, // rötas på torkställningen innan det kan spinnas
+  lin: { namn: 'Lin', skaffa: { act: 'torka' }, stack: 25, vikt: 0.3, mapp: 'Material' }, // steg 7.7.7
+  linfron: { namn: 'Linfrön', skaffa: { tid: 0.25, tek: 'odling' }, stack: 25, vikt: 0.05, mapp: 'Material' },
+  trad: { namn: 'Lintråd', skaffa: RECEPT.trad, stack: 25, vikt: 0.1, mapp: 'Material' }, // steg 7.7.8
+  lintyg: { namn: 'Lintyg', skaffa: RECEPT.lintyg, stack: 10, vikt: 0.5, mapp: 'Material' }, // steg 7.7.9
+  vargtand: { namn: 'Vargtand', skaffa: { act: 'slakta' }, stack: 25, vikt: 0.05, mapp: 'Material' }, // steg 7.7.5
+  leksak: { namn: 'Leksak', skaffa: RECEPT.leksak, stack: 10, vikt: 0.2, mapp: 'Redskap' }, // steg 7.5.4
+  snara: { namn: 'Snara', skaffa: RECEPT.snara, stack: 5, vikt: 0.2, mapp: 'Redskap' }, // steg 7.5.10
+  grop: { namn: 'Fångstgrop', skaffa: RECEPT.grop, stack: 1, vikt: 1, mapp: 'Redskap' }, // steg 7.5.11
   abborre: { namn: 'Abborre', skaffa: { act: 'fiske' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 1.2, naring: { protein: 2, fett: 0.8, mineral: 0.7, energi: 0.6, vitamin: 0.3 }, ra: true, haller: 1 }, // den hela fisken äts strax efter fiskköttet: innan byn har en slaktbänk rensas den inte (steg 2.2.8)
   // ett redskap som någon har börjat göra men inte gjort klart (paborjat.ts). Det slits och värderas där, inte här
   paborjat: { namn: 'Påbörjat', ett: true, vikt: 2, stack: 1, mapp: 'Redskap', redskap: true },
