@@ -283,6 +283,8 @@ function riktning(id: number, x: number, y: number): Rikt {
 }
 // rövarna (steg 6.6.12): figurer ur skaparen som byborna (rovarSkapad i ui/utseende.ts), som går, slåss med sitt vapen mot
 // den de slår och ligger när de fallit. Arga i striden och rädda på flykten
+// markeringen runt den valda försvinner när man markerar något annat (steg 6.8.12): då är en ruta för det andra öppen
+const markeradNu = () => ui.tab === undefined || ui.tab === 'person' ? ui.selected : undefined;
 function ritaRovarna(skugga: PIXI.Graphics) {
   for (const g of gaster()) {
     const r = g.rovare;
@@ -295,7 +297,7 @@ function ritaRovarna(skugga: PIXI.Graphics) {
     const ben: Ben = ab ? ab.ben : steg ? steg[0] : 'sta', arm: Arm = ab ? ab.arm : steg ? steg[1] : 'hanga';
     const humor = sk ? 'arg' : s.rovare?.gor === 'flyr' ? 'radd' : 'lugn';
     const sp = figurAv(g.id);
-    sp.texture = figurTex(rovarSkapad(s, r, humor), { rikt, ben, arm, ligga: ligger }, g.id === ui.selected);
+    sp.texture = figurTex(rovarSkapad(s, r, humor), { rikt, ben, arm, ligga: ligger }, g.id === markeradNu());
     const w = sp.texture.width, h = sp.texture.height;
     if (ligger) sp.position.set(x - w / 2, y - h / 2);
     else sp.position.set(x - w / 2 + (ab?.b.ut ?? 0) * (rikt === 'vast' ? -1 : 1), y + 5 * 0.9 - h + 1);
@@ -315,6 +317,7 @@ export function drawPeople(t: number) {
   { const nu = performance.now(); for (const [id, q] of synlig) synlig.set(id, glid(id, q, nu)); }
   markIcons.start();
   ritaSport(t);
+  const markerad = markeradNu();
   const sv = ui.tab === 'sak' ? sakVar() : undefined, harSaken = sv && 'person' in sv ? sv.person : undefined; // den som har den markerade saken (steg 3.10.4)
   for (const p of ppl) {
     const a = ageOf(p, s.now);
@@ -349,7 +352,7 @@ export function drawPeople(t: number) {
     // sängen (steg 6.8.5): den som sover i en färdig säng ligger mitt i den med huvudet i bäddens huvudände (vänster i den
     // liggande bädden, uppåt i den stående), och bara under ett byggt täcke (ett tillbehör i bädden, skinnfällen) har hen täcke
     const badd = sleeping ? stationAt(s, q.x, q.y) : undefined, sang = badd && isKlar(badd) && stationDef(badd.k)?.sover ? badd : undefined;
-    sp.texture = figurTex(skapad(s, p), { rikt, ben, arm, ligga: ligger, tacke: !!sang?.med?.length, smabarn: liten || undefined }, p.id === ui.selected || p.id === harSaken);
+    sp.texture = figurTex(skapad(s, p), { rikt, ben, arm, ligga: ligger, tacke: !!sang?.med?.length, smabarn: liten || undefined }, p.id === markerad || p.id === harSaken);
     const w = sp.texture.width, h = sp.texture.height;
     sp.anchor.set(0); sp.rotation = 0; sp.scale.x = 1;
     if (sang) {
