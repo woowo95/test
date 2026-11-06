@@ -28,6 +28,7 @@ import { blixtNu, snoPaMarken, torrTim, vaderNu } from './vader';
 import { hash3 } from './slump';
 import { larmAvbryter } from './handlingar';
 import { tecken } from './religion';
+import { paSig } from './utrustning';
 import { notis } from './notiser';
 
 // Eldsvådor och skogsbrand (steg 3.8.5, "Motgångarna i spelet" och "Elden" i designdokumentet). Inte en rad i MOTGANGAR:
@@ -91,6 +92,18 @@ export const BRAND = balans('brand', {
   brannHandGrad: [0.1, 0.4], // ... så här svår (slumpas mellan)
   iElden: 3, // den som står i en brinnande ruta bränns med den här takten (i timmen) ...
   iEldenGrad: [0.2, 0.7], // ... så här svårt (slumpas mellan)
+  // den som brinner (steg 6.4.16): kläderna eller håret tar eld, och hen bränns tills elden är släckt
+  tarEld: 0.5, // chansen att man börjar brinna när man bränns i en brinnande ruta ...
+  tarEldHand: 0.2, // ... när man bränns medan man släcker med händerna ...
+  vaggEld: 0.3, // ... och i timmen när man står bredvid en brinnande vägg (elden hoppar över)
+  brinnSkada: 6, // den som brinner får brännskador med den här takten (i timmen) ...
+  brinnGrad: [0.1, 0.4], // ... så här svåra (slumpas mellan)
+  plaggBrinner: 1.5, // chansen i timmen att ett plagg man har på sig brinner upp
+  regnSlacker: 6, // regnet släcker den som brinner med den här takten (i timmen, i det kraftigaste regnet)
+  vattenR: 4, // den som brinner går i vattnet om det är så här nära (rutor) ...
+  rullMin: 1, // ... annars kastar hen plagget som brinner, eller rullar på marken så här många minuter
+  hjalpR: 8, // de som står så här nära (rutor) springer dit och släcker med vattensäcken, ett skinn, en filt eller händerna ...
+  hjalpMin: 0.5, // ... och det tar så här många minuter när de är framme
 });
 
 // en brinnande ruta: rutan, timmar den brunnit, timmar den kan brinna, hur långt den släckts (1 = släckt)
@@ -404,8 +417,92 @@ function iElden(s: State, b: Brand, dtSec: number) {
     const d = DELAR[Math.floor(ur(s, p.id, 3861) * DELAR.length)], g = BRAND.iEldenGrad[0] + ur(s, p.id, 3862) * (BRAND.iEldenGrad[1] - BRAND.iEldenGrad[0]);
     b.skadade++; count(s, 'brand skadad');
     const dod = skada(s, p, d, 'brannskada', g, 'brand', 'i elden');
-    if (dod) die(s, p, dod); else upplev(s, p, 'drabbad', 'eldsvådan'); // steg 4.1.1.2
+    if (dod) { die(s, p, dod); continue; }
+    upplev(s, p, 'drabbad', 'eldsvådan'); // steg 4.1.1.2
+    if (ur(s, p.id, 3867) < BRAND.tarEld) antand(s, p, 'i elden');
   }
+  // elden hoppar över från en brinnande vägg till den som står bredvid
+  for (const p of living(s)) {
+    if (p.brinner !== undefined || !alive(p)) continue;
+    const x = Math.floor(p.x), y = Math.floor(p.y);
+    let vid = false;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (inMap(x + dx, y + dy) && k[(y + dy) * W + x + dx] === 1 && bitAt(s, x + dx, y + dy)?.k === 'vagg') vid = true;
+    if (vid && ur(s, p.id, 3868) < chans(BRAND.vaggEld, dtSec)) antand(s, p, 'från väggen');
+  }
+}
+
+// ---------- den som brinner (steg 6.4.16) ----------
+// p börjar brinna: hen och de vuxna nära slutar med det de gör och väljer på nytt (Fara i val.ts)
+export function antand(s: State, p: Person, var_: string) {
+  if (p.brinner !== undefined || !alive(p)) return;
+  p.brinner = s.now;
+  count(s, 'brinner');
+  log(s, `${p.name} brinner (${var_})!`, 'world', [p.id]);
+  avbryt(s, p);
+  for (const q of living(s)) if (q !== p && hjalpare(s, q, p)) avbryt(s, q);
+}
+// q kan hjälpa den som brinner: en vuxen som kan gå, inte brinner själv och står nära
+const hjalpare = (s: State, q: Person, p: Person) => q.brinner === undefined && kanGa(q) && ageOf(q, s.now) >= ALDER.vuxen && Math.hypot(q.x - p.x, q.y - p.y) <= BRAND.hjalpR;
+export const slacktP = (s: State, p: Person, hur: string) => {
+  if (p.brinner === undefined) return;
+  delete p.brinner;
+  count(s, 'brinner slackt'); count(s, `brinner slackt ${hur}`);
+}
+// varje slag (steg.ts, efter brandSteg): den som brinner bränns, plaggen kan brinna upp, och regnet släcker
+export function brinnerSteg(s: State, dtSec: number) {
+  const v = vaderNu(s), DELAR: Kroppsdel[] = ['armV', 'armH', 'benV', 'benH', 'bal', 'handV', 'handH', 'huvud'];
+  for (const p of living(s)) {
+    if (p.brinner === undefined) continue;
+    if (!alive(p)) { delete p.brinner; continue; }
+    if (v.nb > 0 && ur(s, p.id, 3869) < chans(BRAND.regnSlacker * v.nb, dtSec)) { slacktP(s, p, 'regnet'); continue; }
+    if (ur(s, p.id, 3871) < chans(BRAND.brinnSkada, dtSec)) {
+      const d = DELAR[Math.floor(ur(s, p.id, 3872) * DELAR.length)], g = BRAND.brinnGrad[0] + ur(s, p.id, 3873) * (BRAND.brinnGrad[1] - BRAND.brinnGrad[0]);
+      count(s, 'brinner skadad');
+      const dod = skada(s, p, d, 'brannskada', g, 'brand', 'när hen brann');
+      if (dod) { die(s, p, dod); delete p.brinner; continue; }
+    }
+    const pl = paSig(s, p).filter(t => !SAKER[t.k]?.brinnerInte);
+    if (pl.length && ur(s, p.id, 3874) < chans(BRAND.plaggBrinner, dtSec)) {
+      const t = pl[Math.floor(ur(s, p.id, 3875) * pl.length)];
+      s.ting = tingOf(s).filter(q => q !== t);
+      count(s, 'brinner plagg');
+      log(s, `${p.name}s ${SAKER[t.k]?.namn ?? t.k} brann upp.`, 'world', [p.id]);
+    }
+  }
+}
+// den som brinner släcker sig själv (Fara i val.ts, först): i vattnet om det är nära, annars kastar hen plagget eller rullar på marken
+export function slackaSigVal(s: State, p: Person) {
+  if (p.brinner === undefined) return;
+  const vatten = naVattnet(s, p) ? drickPlats(s, p) : undefined;
+  if (vatten && Math.hypot(vatten.x - p.x, vatten.y - p.y) <= BRAND.vattenR) return { act: 'slackaSig' as const, why: 'Brinner och springer i vattnet', spot: vatten, dur: 0.2 * MIN };
+  const spot = { x: p.x, y: p.y };
+  const pl = paSig(s, p).find(t => !SAKER[t.k]?.brinnerInte);
+  if (pl) return { act: 'slackaSig' as const, why: `Brinner och sliter av sig ${SAKER[pl.k]?.namn ?? pl.k}`, spot, dur: 0.3 * MIN, ref: pl.id };
+  return { act: 'slackaSig' as const, why: 'Brinner och rullar på marken', spot, dur: BRAND.rullMin * MIN };
+}
+// de som står nära den som brinner springer dit och släcker (Fara i val.ts, före att släcka branden i byn)
+export function hjalpaVal(s: State, p: Person) {
+  if (p.brinner !== undefined) return;
+  let m: Person | undefined, md = Infinity;
+  for (const q of living(s)) {
+    if (q.brinner === undefined || q === p || !hjalpare(s, p, q)) continue;
+    if (living(s).some(o => o !== p && o.task?.act === 'hjalpaBrinnande' && o.task.ref === q.id)) continue; // någon annan hjälper redan
+    const d = Math.hypot(q.x - p.x, q.y - p.y);
+    if (d < md) { md = d; m = q; }
+  }
+  if (!m) return;
+  const med = freeTools(s, p, 'vattensack') >= 1 ? 'vattensäcken' : 'det hen har';
+  return { act: 'hjalpaBrinnande' as const, why: `Släcker elden på ${m.name} med ${med}`, spot: { x: m.x, y: m.y }, dur: BRAND.hjalpMin * MIN, ref: m.id };
+}
+// klart (KLAR i steg.ts): den som brann är släckt; ett plagg som slets av ligger på marken
+export function slackaSigKlar(s: State, p: Person, t: Task) {
+  const pl = t.ref !== undefined ? tingOf(s).find(q => q.id === t.ref && q.bar === p.id) : undefined;
+  if (pl) { delete pl.bar; pl.x = Math.floor(p.x); pl.y = Math.floor(p.y); }
+  slacktP(s, p, pl ? 'plagget' : t.why?.includes('vattnet') ? 'vattnet' : 'rullade');
+}
+export function hjalpaKlar(s: State, p: Person, t: Task) {
+  const q = living(s).find(o => o.id === t.ref);
+  if (q && q.brinner !== undefined && Math.hypot(q.x - p.x, q.y - p.y) <= 1.5) slacktP(s, q, 'hjälp');
 }
 
 // vad p gör åt branden: släcker (de vuxna när elden är nära byn), eller går undan (den som är nära elden)
@@ -470,6 +567,7 @@ export function slackaSteg(s: State, p: Person, t: Task, dtSec: number) {
     b.skadade++; count(s, 'brand skadad');
     const dod = skada(s, p, d, 'brannskada', g, 'brand', 'när hen släckte elden');
     if (dod) die(s, p, dod);
+    else if (ur(s, p.id, 3876) < BRAND.tarEldHand) antand(s, p, 'när hen släckte');
   }
 }
 // säcken är fylld (KLAR i steg.ts): bär den till det som brinner. Utan säck i handen blir det inget

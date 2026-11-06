@@ -1,6 +1,7 @@
 import * as PIXI from 'pixi.js';
 import { ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bordVid, byId, homeKind, bordaIHander, utrustning, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats, Match, Task, dragLag, kastMal, SPORT, bakomFilt, blocked, stationAt } from '../sim';
 import { PRICKAR } from './hjalp';
+const LAGA = [fargTal(farg('rost', 3)), fargTal(farg('senap', 3))]; // lågorna på den som brinner
 import { farg, fargTal } from '../palett';
 import { sinHash as hash } from './pixel';
 import { s, sakVar, ui, uppgiftVid, vidNyBy } from './lage';
@@ -290,6 +291,15 @@ export function drawPeople(t: number) {
     sp.visible = true; sedd.add(p.id);
     if (PRICKAR.sjuk.har(p)) peopleG.beginFill(PRICKAR.sjuk.farg).drawCircle(x + r * 0.7, y - r * 0.7, 1.8).endFill();
     if (PRICKAR.gravid.har(p)) peopleG.beginFill(PRICKAR.gravid.farg).drawCircle(x - r * 0.7, y - r * 0.7, 1.6).endFill();
+    // den som brinner (steg 6.4.16): fladdrande lågor över figuren (platshållare tills Björn valt i bildstilen)
+    if (p.brinner !== undefined) {
+      const f = (slag() + p.id) % 3, topp = sp.position.y + 2;
+      for (let i = 0; i < 4; i++) {
+        const lx = Math.round(sp.position.x + 2 + i * (w - 4) / 3), hoj = 3 + ((i + f) % 3);
+        peopleG.beginFill(LAGA[0]).drawRect(lx - 1, topp + 6 - hoj, 2, hoj).endFill();
+        peopleG.beginFill(LAGA[1]).drawRect(lx - 1, topp + 7 - Math.ceil(hoj / 2), 2, Math.ceil(hoj / 2)).endFill();
+      }
+    }
     // det man bär syns på figuren, hur lite det än är (steg 3.6.5): framför kroppen, och med en kartbild ur bildstilen i sin
     // naturliga storlek (steg 5.1.2.1)
     // varje hand sitt eget (steg 6.1.2): två slag syns i var sin hand, ett slag framför kroppen som förut

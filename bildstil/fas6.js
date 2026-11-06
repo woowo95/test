@@ -775,6 +775,38 @@
         { text: 'Version 2: ingen bana men en skugga på marken under, och jordstigen i lösa torvor med uppslitet gräs i kanten.', w: W, h: H, rita: bage(1) },
         { text: 'Version 3: ljusa fartstreck bakom, och en bredare jordstig med ljusa kanter.', w: W, h: H, rita: bage(2) }])];
     })(),
+    // ---------- 6.4.16: den som brinner ----------
+    ...(() => {
+      const W = 96, H = 48;
+      const mark = (B) => { const P = B.P; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) B.satt(x, y, P.i('oliv', ((x * 5 + y * 3) % 13 === 0) ? 1 : 2)); };
+      // en enkel människa i 16 punkter per ruta: stående (fötterna i x, y) eller liggande (rullar)
+      const folk = (B, x, y, ligger) => { const P = B.P, o = P.i('kol', 0), hud = P.i('ben', 2), rock = P.i('jord', 2), ben = P.i('jord', 0);
+        const rita = (dx, dy, c) => ligger ? B.satt(x - 7 + dy, y - 4 + dx, c) : B.satt(x - 4 + dx, y - 14 + dy, c);
+        for (let dy = 0; dy < 15; dy++) for (let dx = 0; dx < 8; dx++) {
+          const huvud = dy < 5 && dx >= 2 && dx <= 5, kropp = dy >= 5 && dy < 11, benen = dy >= 11 && (dx === 2 || dx === 3 || dx === 5 || dx === 6);
+          if (!huvud && !kropp && !benen) continue;
+          const kant = (huvud && (dy === 0 || dx === 2 || dx === 5)) || (kropp && (dx === 0 || dx === 7)) || dy === 14;
+          rita(dx, dy, kant ? o : huvud ? hud : kropp ? rock : ben);
+        } };
+      const rok = (B, x, y) => { for (let i = 0; i < 6; i++) B.morka(x + (i % 2), y - i * 2); };
+      const scen = (v) => (B) => { mark(B);
+        const fot = 40;
+        if (v === 0) { // små lågor på axlarna, armarna och håret
+          folk(B, 24, fot, false); for (const [dx, dy, h] of [[-4, -8, 4], [3, -8, 4], [-2, -14, 3], [1, -14, 4], [-4, -4, 3], [3, -4, 3]]) laga(B, 24 + dx, fot + dy, h);
+          folk(B, 70, fot, false); for (const [dx, dy, h] of [[-4, -9, 5], [3, -6, 3]]) laga(B, 70 + dx, fot + dy, h);
+        } else if (v === 1) { // en stor låga över hela ryggen, och marken lyser
+          folk(B, 24, fot, false); for (let dx = -4; dx <= 3; dx += 1) laga(B, 24 + dx, fot - 4 - (dx % 2 ? 0 : 2), 7 + (dx + 4) % 3);
+          for (let dx = -6; dx <= 6; dx++) B.satt(24 + dx, fot + 1, B.P.i('senap', 2), true);
+          folk(B, 70, fot, false); for (let dx = -3; dx <= 2; dx += 2) laga(B, 70 + dx, fot - 6, 6);
+        } else { // rullar på marken med lågor och rök, och en som står och slår med ett skinn
+          folk(B, 30, fot, true); for (const dx of [-6, -2, 3]) laga(B, 30 + dx, fot - 4, 3 + (dx & 1)); rok(B, 28, fot - 9); rok(B, 33, fot - 11);
+          folk(B, 62, fot, false); const P = B.P; for (let dy = 0; dy < 4; dy++) for (let dx = 0; dx < 6; dx++) B.satt(52 + dx, fot - 14 + dy, P.i('jord', dy === 0 ? 3 : 1));
+        } };
+      return [KORT('f6_brinner', 'Den som brinner', S + '6.4.16: en människa som börjar brinna i en eldsvåda: lågor på kläderna tills elden är släckt. Hen rullar på marken, går i vattnet eller sliter av sig plagget, och de som står nära hjälper till. Platshållaren i spelet är fyra fladdrande lågor över figuren.', [
+        { text: 'Version 1: små lågor på axlarna, armarna och i håret.', w: W, h: H, rita: scen(0) },
+        { text: 'Version 2: en stor låga över hela ryggen, och marken lyser under.', w: W, h: H, rita: scen(1) },
+        { text: 'Version 3: den som rullar på marken, med lågor och rök, och en som springer dit med ett skinn.', w: W, h: H, rita: scen(2) }])];
+    })(),
     // ---------- rövaren (Björn 2026-11-04: "Gör rövardelarna"): luvan eller duken och de mörka kläderna ----------
     ...(() => {
       const rov = (bonad, rock, arr, text) => ({ text, w: 4 + 64 + 3 + 64 + 6 + 5 * 15 + 2, h: 72, rita: B => {

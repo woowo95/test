@@ -1711,3 +1711,39 @@ SCENARIER.brand = {
     }
   },
 };
+
+SCENARIER.brinner = {
+  text: 'Steg 6.4.16: en människa kan börja brinna och får brännskador tills elden är släckt. Hen släcker sig själv först (rullar, går i vattnet eller sliter av sig plagget), och de som står nära springer dit och hjälper till; båda går före allt annat',
+  kor: () => {
+    const a = torrAng();
+    if (typeof a === 'string') return [[a, false]];
+    const { s } = a;
+    const vuxna = (x: State) => living(x).filter(q => SIM.ageOf(q, x.now) >= 18 && SIM.kanGa(q));
+    // 1: en vuxen börjar brinna och släcker sig själv
+    const x = cloneState(s), p = vuxna(x)[0];
+    SIM.antand(x, p, 'i testet');
+    const brann = p.brinner !== undefined;
+    let valde = '', sek = 0;
+    for (; sek < 15 * 60 && p.brinner !== undefined; sek += 5) { step(x, 5); if (p.task && !valde) valde = p.task.act; }
+    const slackt = p.brinner === undefined && SIM.alive(p);
+    // 2: en vuxen står bredvid den som brinner och springer dit
+    const y = cloneState(s), [b, q] = vuxna(y);
+    q.x = b.x + 2; q.y = b.y; q.task = undefined;
+    SIM.antand(y, b, 'i testet');
+    step(y, 5);
+    const qt = uppg(q), hjalper = qt?.act === 'hjalpaBrinnande' && qt.ref === b.id;
+    // 3: den som brinner utan att släckas får brännskador, och plaggen kan brinna upp
+    const z = cloneState(s), r = vuxna(z)[0];
+    r.brinner = z.now;
+    for (let i = 0; i < 12; i++) { z.now += 60 * SIM.SEC; SIM.brinnerSteg(z, 60); }
+    const st = z.stat ?? {}, sx = x.stat ?? {};
+    return [
+      [`${p.name} börjar brinna (${brann ? 'ja' : 'nej'}) och väljer först att släcka sig själv (${ACTS_NAMN(valde)})`, brann && valde === 'slackaSig'],
+      [`elden på ${p.name} är släckt efter ${(sek / 60).toFixed(1)} minuter (${Object.keys(sx).filter(k => k.startsWith('brinner slackt ')).join(', ')})`, slackt && sek <= 10 * 60],
+      [`den som står bredvid springer dit och släcker (${ACTS_NAMN(qt?.act ?? '')})`, hjalper],
+      [`den som brinner i tolv minuter får brännskador (${st['brinner skadad'] ?? 0})`, (st['brinner skadad'] ?? 0) > 0],
+    ];
+  },
+};
+const uppg = (o: Person) => o.task;
+const ACTS_NAMN = (a: string) => (SIM.ACTS as Record<string, { namn: string }>)[a]?.namn ?? (a || 'inget');
