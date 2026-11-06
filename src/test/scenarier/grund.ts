@@ -1614,6 +1614,7 @@ SCENARIER.vind = {
 
 SCENARIER.brand = {
   lang: true,
+  env: { BALANS: 'brand.gnista=0.005' }, // gnistorna är sällsynta efter fas 6:s balans: här prövas att de kan tända, inte hur ofta
   text: 'Steg 3.8.5: eldsvådor och skogsbrand. När marken är torr på sommaren tar elden sig från ruta till ruta i skogen och träden dör; när marken är blöt tar den sig inte vidare. Gnistor från lägerelden tänder ibland marken. Elden nära byn: folk ser den och ropar, de vuxna släcker med vattensäcken och med händerna, en risvägg brinner, ingen står i en vägg eller i vattnet, och elden slocknar. Där skogen brann kommer plantor, som växer upp när gräset kommit tillbaka, och det svarta försvinner efter några dygn',
   kor: () => {
     // en by på sommaren, vid en sjö, med en torr dag utan regn framför sig
@@ -1635,9 +1636,7 @@ SCENARIER.brand = {
       // gnistorna: i en by med torr mark tänder lägerelden förr eller senare marken (en gnista i timmen är ovanlig: vänta upp till 720 timmar, 30 dygn)
       const gn = cloneState(s);
       let gnistTim = 0;
-      const gnista0 = SIM.BRAND.gnista; (SIM.BRAND as { gnista: number }).gnista = gnista0 * 5; // gnistorna är sällsynta efter fas 6:s balans: här prövas att de kan tända, inte hur ofta
       while (!(gn.stat?.['brand gnista']) && gnistTim < 720) { kor(gn, 1, torr); gnistTim++; }
-      (SIM.BRAND as { gnista: number }).gnista = gnista0;
       // skogsbranden: en ruta mitt i tät skog 25 till 35 rutor från elden (gnistor från lägerelden blir en del av samma brand)
       const e = SIM.eldPlats(s), g = groundOf(s);
       const tat = (i: number) => { let n = 0; const x = i % W, y = Math.floor(i / W); for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (SIM.inMap(x + dx, y + dy) && g.trees[(y + dy) * W + x + dx] >= FOREST) n++; return n; };
