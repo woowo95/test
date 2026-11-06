@@ -512,6 +512,8 @@ SCENARIER.kropp = {
     // olyckorna är sällsynta (ett par på tio dygn), så kontrollen gäller att byn gör farligt arbete där risken räknas, och att
     // skadorna inte blir många fler än risken säger
     // två byar (steg 4.5.6.1): en enda by gör ibland för lite farligt arbete för att risken ska märkas
+    // sedan förråden fylls till taket och det blir fritid när allt är fullt (steg 6.2.15) är det farliga arbetet så litet att
+    // risken för två byar är under en olycka (ca 0,3); det som prövas är att risken räknas och att skadorna inte blir för många
     let vantat = 0, skador = 0, blod = 0;
     for (const seed of [1, 2]) {
       const b = createState(seed, START);
@@ -527,7 +529,7 @@ SCENARIER.kropp = {
       [`ett brutet ben går långsammare (${fart0.toFixed(2)} → ${fart1.toFixed(2)}), och ett skärsår i handen arbetar långsammare (${(arb1 / arb0).toFixed(2)} av farten)`, fart1 < fart0 && arb1 < arb0],
       [`en svår skada avbryter arbetet, och hälsan blir ${halsa1.toFixed(2)}`, avbrot && halsa1 < KROPP.svag + 0.2],
       [`olyckorna i ${Object.keys(OLYCKOR).join(', ')} ger sina skador i sina delar${fel.length ? ` (fel: ${fel.join(', ')})` : ''}`, !fel.length],
-      [`på tio dygn i två byar: ${skador} olyckor (risken säger ${vantat.toFixed(1)}), ${blod} förblödde`, vantat > 1 && skador <= 3 * vantat + 3],
+      [`på tio dygn i två byar: ${skador} olyckor (risken säger ${vantat.toFixed(1)}), ${blod} förblödde`, vantat > 0 && skador <= 3 * vantat + 3],
     ];
   },
 };
