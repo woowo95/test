@@ -1,13 +1,72 @@
 // fas 7:s nya bilder i valdelen, tre versioner av varje (som fas6.js), i paletten och 16 punkter per ruta.
+// Den här filen har det gemensamma: formerna (som fas6.js), att lägga en bild på marken och korten, och stockvägen och
+// bryggan. Varje system i fas 7 har sin egen fil i fas7/ (7.1-bara.js, 7.3-skjul.js …), som bygg.cjs läser i nummerordning
+// efter den här, och som hämtar det gemensamma ur window.F7.
 (() => {
   const hash = (a, b, c = 0) => { let n = (a * 374761393 + b * 668265263 + c * 1274126177) | 0; n = Math.imul(n ^ (n >>> 13), 1274126177); return ((n ^ (n >>> 16)) >>> 0) / 4294967296; };
   const KORT = (id, namn, vad, versioner, extra = {}) => ({ id, namn, typ: 'tre', vad, versioner, ...extra });
 
-  // ---------- 7.2.8.1 stockvägen ----------
+  // ---------- formerna (som fas6.js och vargen i djur.js) ----------
+  // varje form är en funktion (x, y) => sant inne i formen; former() fyller dem i ordning (de senare ovanpå) med en
+  // bokstav eller en funktion som ger bokstaven, och lägger konturen 'o' runt allt
+  const ell = (cx, cy, rx, ry) => (x, y) => ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1;
+  const linje = (pts, r0, r1 = r0) => (x, y) => {
+    for (let i = 0; i < pts.length - 1; i++) {
+      const [ax, ay] = pts[i], [bx, by] = pts[i + 1], dx = bx - ax, dy = by - ay, L = dx * dx + dy * dy || 1;
+      const t = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / L)), r = r0 + (r1 - r0) * (i + t) / (pts.length - 1);
+      if ((x - ax - t * dx) ** 2 + (y - ay - t * dy) ** 2 <= r * r) return true;
+    }
+    return false;
+  };
+  const tri = (a, b, c) => (x, y) => { const s = (p, q) => (q[0] - p[0]) * (y - p[1]) - (q[1] - p[1]) * (x - p[0]); const d1 = s(a, b), d2 = s(b, c), d3 = s(c, a); return !((d1 < 0 || d2 < 0 || d3 < 0) && (d1 > 0 || d2 > 0 || d3 > 0)); };
+  const poly = pts => (x, y) => { let inne = false; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [xi, yi] = pts[i], [xj, yj] = pts[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inne = !inne; } return inne; };
+  const och = (...f) => (x, y) => f.some(g => g(x, y));
+  const utan = (f, g) => (x, y) => f(x, y) && !g(x, y);
+  const punkt = (px, py) => (x, y) => Math.floor(x) === px && Math.floor(y) === py;
+  const rakt = (x0, y0, x1, y1) => (x, y) => x >= x0 && x < x1 && y >= y0 && y < y1;
+  function former(w, h, lista, kontur = true) {
+    const g = Array.from({ length: h }, () => Array(w).fill('.'));
+    for (const [inne, ton] of lista) for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      if (!inne(x + 0.5, y + 0.5)) continue;
+      const c = typeof ton === 'function' ? ton(x + 0.5, y + 0.5) : ton; if (c) g[y][x] = c;
+    }
+    if (!kontur) return g.map(r => r.join(''));
+    const ut = g.map(r => r.slice());
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (g[y][x] === '.' && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => g[y + dy] && g[y + dy][x + dx] && g[y + dy][x + dx] !== '.')) ut[y][x] = 'o';
+    return ut.map(r => r.join(''));
+  }
+  const bredd = r => r.reduce((m, s) => Math.max(m, s.length), 0);
+  // en färdig rad-bild får samma mörka kontur som allt som ritas med former
+  const MED_KONTUR = rader => former(rader[0].length + 2, rader.length + 2, [[(x, y) => (rader[Math.floor(y) - 1] || '')[Math.floor(x) - 1] > '.', (x, y) => rader[Math.floor(y) - 1][Math.floor(x) - 1]]]).filter(r => /[^.]/.test(r));
+
+  // ---------- att rita på kortet ----------
+  // legenden: bokstav till 'ramp' + ton (0 mörkast, 3 ljusast), t.ex. { w: 'ben3', j: 'jord1' }; 'o' är konturen (kol0)
+  function lagg(B, rader, legend, x0, y0, skugga = true) {
+    ritaSprite(B, rader, { o: 'kol0', ...legend }, x0, y0);
+    if (!skugga) return;
+    const sista = rader.length - 1;
+    [...rader[sista]].forEach((c, x) => { if (c !== '.') { B.morka(x0 + x, y0 + sista + 1); } });
+  }
+  // en sak på marken, i ett kort som är bilden plus marginal
+  const PA_MARK = (text, rader, legend, m = 4) => {
+    const w = bredd(rader) + m * 2, h = rader.length + m * 2;
+    return { text, w, h, rita: (B) => lagg(B, rader, legend, m, m) };
+  };
+  // en rad bilder bredvid varandra, fötterna på samma rad: [rader, legend] per bild
+  const PA_RAD = (text, bilder, m = 4, mellan = 4) => {
+    const w = bilder.reduce((s, [r]) => s + bredd(r), 0) + mellan * (bilder.length - 1) + m * 2, h = Math.max(...bilder.map(([r]) => r.length)) + m * 2;
+    return { text, w, h, rita: (B) => { let x = m; for (const [r, L] of bilder) { lagg(B, r, L, x, h - m - r.length); x += bredd(r) + mellan; } } };
+  };
+  // en godkänd bild ur bildstil/bilder (BILDFILER, t.ex. 'ved', 'tork', 'timmervagg') ritad i (x0, y0)
+  const bildfil = (B, id, x0, y0) => { const o = BILDFILER[id]; if (!o) return; o.rader.forEach((r, y) => [...r].forEach((ch, x) => { const c = o.pal[ch]; if (ch === '.' || !c) return; if (c.startsWith('rgba')) B.morka(x0 + x, y0 + y); else B.satt(x0 + x, y0 + y, B.P.fran(c)); })); };
+  // marken: gräs (och strand och vatten) som i spelet, ur mark.js
+  const gras = (B, x0 = 0, y0 = 0, w = B.w, h = B.h) => { for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) B.satt(x, y, window.MARK.grasPunkt(x, y, B.P, 0)); };
+
+  // ---------- 7.3.7 stockvägen ----------
   // Björn 2026-11-04: "en stockväg … ska kunna vara olika bred och även läggas som en hel plattform till ett torg. Det ska
   // vara distinkt från trägolv inomhus". Trägolvet är platta, mörka plankor i rutans mönster; vägen är stockar som ligger
   // tvärs över färdriktningen, med rundning (ljus överkant, mörk underkant), bark och ändar som syns i kanten.
-  // Scenen i rutor (efter 7.2.8: en byggd väg är alltid 2–3 rutor bred; 7.2.12: torget börjar på 10 × 10 rutor): ett hörn
+  // Scenen i rutor (en byggd väg är alltid 2–3 rutor bred, 7.3.7; torget börjar på 10 × 10 rutor, 7.3.13): ett hörn
   // av torget, en väg tre rutor bred från vänster och en två rutor bred uppifrån.
   // 'h' = man färdas i sidled (stockarna står lodrätt i bilden), 'v' = man färdas uppåt och nedåt (stockarna ligger vågrätt)
   const R = 16, VW = 12, VH = 10;
@@ -77,7 +136,7 @@
     const P = B.P, o = OJAMNA[v], ritad = new Set();
     const satt = (x, y, c) => { B.satt(x, y, c); ritad.add(x + ',' + y); };
     // stockarna tvärs över vägen: var och en med egen tjocklek och glipa, samma för hela kartan i varje riktning
-    const stockar = h => { const L = []; let p = 0, n = 0; while (p < 220) { const t = o.tjock[0] + Math.floor(hash(n, 1, v + (h ? 0 : 50)) * o.tjock[1]), g = o.glipa[0] + Math.floor(hash(n, 2, v + (h ? 0 : 50)) * o.glipa[1]); for (let k = 0; k < t + g; k++) L[p + k] = [n, k, t]; p += t + g; n++; } return L; };
+    const stockar = h => { const L = []; let p = 0, n = 0; while (p < 1000) { const t = o.tjock[0] + Math.floor(hash(n, 1, v + (h ? 0 : 50)) * o.tjock[1]), g = o.glipa[0] + Math.floor(hash(n, 2, v + (h ? 0 : 50)) * o.glipa[1]); for (let k = 0; k < t + g; k++) L[p + k] = [n, k, t]; p += t + g; n++; } return L; };
     const SH = stockar(true), SV = stockar(false);
     const gras = (x, y, h) => hash(h ? x : y, Math.floor((h ? y : x) / 3), 31) < 0.4 ? P.i('oliv', 2) : P.i('oliv', 1); // strån på längden i glipan
     const stock = (u, t, log, x, y, slut) => {
@@ -87,7 +146,7 @@
       const ton = u === 0 ? 3 : u === t - 1 ? 0 : hash(x, y, 9) < 0.08 ? 0 : u === 1 ? 2 : 1;
       return P.i('jord', Math.max(0, ton - (sj ? 1 : 0)));
     };
-    for (let y = 0; y < VH * R; y++) for (let x = 0; x < VW * R; x++) {
+    for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) {
       const del = delOf(x, y, D); if (!del) continue;
       const h = del[4] === 'h', tvars = h ? x : y;
       const [log0, u, t] = (h ? SH : SV)[tvars], log = log0 + (h ? 0 : 500);
@@ -111,9 +170,9 @@
   }
   const OJAMN = (text, v) => ({ text, w: VW * R, h: VH * R, rita: (B) => ojamn(B, v) });
 
-  // ---------- 7.2.3 bryggan ----------
+  // ---------- 7.3.9 bryggan ----------
   // Björn 2026-11-04: "bygg en brygga. Den ska vara ganska lik trävägen. Den ska funka att sätta ihop med trävägen utan
-  // mellanrum". Steg 7.2.3: en brygga är 1 ruta bred, börjar på en strandruta och går 2–4 rutor rakt ut i vattnet.
+  // mellanrum". Steg 7.3.9: en brygga är 1 ruta bred, börjar på en strandruta och går 2–4 rutor rakt ut i vattnet.
   // Scenen: gräs, en stockväg två rutor bred längs stranden (den valda stockvägen, version 2) och bryggan fyra rutor ut från
   // den. Bryggans stockar ligger tvärs över färdriktningen som vägens, i samma bruna toner, så att de hör ihop; det som skiljer
   // är vattnet under (i gliporna och skuggan) och pålarna den står på.
@@ -180,14 +239,19 @@
   const BRYGGA = (text, v) => ({ text, w: VW * R, h: VH * R, rita: (B) => brygga(B, v) });
 
   VAL.push(
-    KORT('f7_stockvag', 'Stockvägen', 'Steg 7.2.8.1: en väg av stockar som byn lägger på gångstråken, med stockarna tvärs över färdriktningen så att den inte liknar trägolvet inne. Bilden visar vägen tre och två rutor bred och ett hörn av torget. Du valde version 3; den står kvar som den var, och de tre nya utgår från den. Din kommentar förra gången: ”gör tre versioner till utgå från version 3 ha kvar originalet men lägg till mer ojämnheter och gräs som växer upp emellan”.', [
+    KORT('f7_stockvag', 'Stockvägen', 'Steg 7.3.7: en väg av stockar som byn lägger på gångstråken, med stockarna tvärs över färdriktningen så att den inte liknar trägolvet inne. Bilden visar vägen tre och två rutor bred och ett hörn av torget. Du valde version 3; den står kvar som den var, och de tre nya utgår från den. Din kommentar förra gången: ”gör tre versioner till utgå från version 3 ha kvar originalet men lägg till mer ojämnheter och gräs som växer upp emellan”.', [
       STOCKVAG('Version 3 som förut: bruna runda stockar med glipor där jorden syns, mossa på några och ojämna ändar.', 2),
       OJAMN('Stockar som är olika tjocka, gräs i de flesta gliporna och ändar som slutar olika långt.', 0),
       OJAMN('Bredare glipor fulla av gräs, fler tuvor över kanterna och några stockar som sjunkit ner och är mörkare.', 1),
       OJAMN('Den äldsta: gräset växer in över stockarna, mycket mossa, många sjunkna stockar och ändar som slutar långt innanför kanten.', 2)]),
-    KORT('f7_brygga', 'Bryggan', 'Steg 7.2.3: en brygga en ruta bred som byn bygger av virke från stranden rakt ut i vattnet, två till fyra rutor. Den är byggd som stockvägen du valde (version 2), med stockarna tvärs över, och sitter ihop med vägen utan mellanrum. Bilden visar vägen längs stranden och bryggan fyra rutor ut.', [
+    KORT('f7_brygga', 'Bryggan', 'Steg 7.3.9: en brygga en ruta bred som byn bygger av virke från stranden rakt ut i vattnet, två till fyra rutor. Den är byggd som stockvägen du valde (version 2), med stockarna tvärs över, och sitter ihop med vägen utan mellanrum. Bilden visar vägen längs stranden och bryggan fyra rutor ut.', [
       BRYGGA('Täta stockar som vägens, ändar som sticker ut lite olika och en påle vid varje ruta.', 0),
       BRYGGA('Smala glipor där vattnet syns, bjälkarna under som bär stockarna och en påle vid varje ruta.', 1),
       BRYGGA('Den äldsta: olika tjocka stockar, bredare glipor, mossa och pålar bara längst ut.', 2)]),
   );
+
+  // det gemensamma till filerna i fas7/. Stockvägen du valde är version 2 på kortet, ojamn(B, 0, delar): delar är
+  // [rutaX, rutaY, bredd, höjd, 'h' | 'v'] i rutor ('h' = man färdas i sidled), och fast(x, y) säger vilka punkter utanför
+  // delarna som ändå räknas som väg (så att stockarna går ända fram)
+  window.F7 = { hash, KORT, ell, linje, tri, poly, och, utan, punkt, rakt, former, bredd, MED_KONTUR, lagg, PA_MARK, PA_RAD, bildfil, gras, R, ojamn, brygga };
 })();
