@@ -372,7 +372,7 @@ function* ringTiles(s: State, z: Zone, fran = 1, till = LAGER.bredvid, fore?: (x
 const key = (x: number, y: number) => y * W + x;
 // redskapen som ligger på en ruta (inte i någons hand eller börda). En kniv vid slaktbänken (vid, stationer.ts) ligger kvar
 // där och räknas inte till det som ligger i förrådet eller på marken
-const ligger = (t: Ting) => t.x !== undefined && t.hos === undefined && t.lass === undefined && t.vid === undefined && t.bar === undefined;
+const ligger = (t: Ting) => t.x !== undefined && t.hos === undefined && t.lass === undefined && t.vid === undefined && t.bar === undefined && t.krok === undefined;
 const lying = (s: State) => tingOf(s).filter(ligger);
 // det som ligger i förrådet, per ruta: stackarna och sedan redskapen ts (det sista på en ruta gäller, som i things), och hur
 // många redskap som ligger på varje ruta (i ett ställ står flera, steg 2.3.6)
@@ -390,7 +390,7 @@ const things = (s: State): Stack[] => [...stacksOf(s), ...lying(s).map(asStack)]
 // ligger något på rutan (x, y), en stack eller ett redskap? (tornadon sprider saker bara till tomma rutor)
 export const nagotPa = (s: State, x: number, y: number) => things(s).some(a => a.x === x && a.y === y);
 // redskap som ingen har och som inte har någon ruta (nygjorda, tillbakalagda) läggs i förrådet, ett på varje ruta
-const utanRuta = (t: Ting) => t.hos === undefined && t.lass === undefined && t.x === undefined && t.bar === undefined;
+const utanRuta = (t: Ting) => t.hos === undefined && t.lass === undefined && t.x === undefined && t.bar === undefined && t.krok === undefined;
 function placeOn(s: State, ts: Ting[]) {
   for (const t of ts) {
     if (!utanRuta(t) || tillbakaVid(s, t)) continue; // stationens kniv läggs tillbaka vid stationen
@@ -697,7 +697,7 @@ export function slitageNu(s: State, a: { k: string; x?: number; y?: number }, t?
   const temp = temperature(s), kl = t?.bar !== undefined ? SAKER[a.k]?.klad : undefined;
   const hq = kvHaller(t); // ett bättre ting håller längre (kvalitet.ts); en stack har ingen kvalitet
   if (kl) return { orsak: 'pasig', per: 1 / (kl.dygn * 24) / hq };
-  const bars = t && (t.hos !== undefined || t.lass !== undefined);
+  const bars = t && (t.hos !== undefined || t.lass !== undefined || t.krok !== undefined);
   if (bars) {
     const q = t.hos !== undefined ? byId(s, t.hos) : undefined, tk = q?.task, r = tk && usesTool(tk) === a.k ? toolRow(tk) : undefined;
     const slits = tk ? ACTS[tk.act]?.slits : undefined, bas = wearAt(a.k, 1, false, temp) / hq;
@@ -760,7 +760,7 @@ export function wearStore(s: State, dtSec: number) {
   for (const t of tingOf(s)) {
     const kl = t.bar !== undefined ? SAKER[t.k]?.klad : undefined;
     if (kl) { t.c -= Math.min(t.c, h / (kl.dygn * 24) / kvHaller(t)); if (t.c <= 1e-6) count(s, 'kladerSlitna'); continue; }
-    const nere = t.hos === undefined && t.lass === undefined; // på marken, vid en station eller i förrådet (utan plats än)
+    const nere = t.hos === undefined && t.lass === undefined && t.krok === undefined; // på marken, vid en station eller i förrådet (utan plats än)
     t.c -= Math.min(t.c, wearAt(t.k, nere && t.x !== undefined ? wearMult(s, t.x, t.y!) : 1, nere, temp) * h / kvHaller(t));
   }
   s.ting = tingOf(s).filter(t => t.c > 1e-6);

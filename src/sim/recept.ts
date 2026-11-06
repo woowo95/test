@@ -106,6 +106,8 @@ const DEF = {
   rock: { var: 'plagg', mangd: 3, av: { rep: 1 }, min: 5 },
   skor: { var: 'plagg', mangd: 1, av: { rep: 1 }, min: 5 },
   balte: { var: 'plagg', mangd: 2, av: {}, min: 5 },
+  axelrem: { var: 'plagg', mangd: 1, av: { rep: 1 }, min: 5 }, // steg 7.1.2
+  ryggsack: { var: 'plagg', mangd: 3, av: { rep: 1 }, min: 5 }, // steg 7.1.3: tre skinn och remmar av rep, lika länge som de andra plaggen
 } satisfies Record<string, ReceptRad>;
 export const RECEPT: { [K in keyof typeof DEF]: typeof DEF[K] & ReceptRad } = DEF;
 export type ReceptId = keyof typeof DEF;

@@ -416,6 +416,7 @@ function spare(s: State, p: Person, k: string, tot = habitTotal(p)) {
 function give(t: Ting, g: Person, m: Person) {
   t.agare = m.id;
   if (t.hos === g.id) t.hos = undefined;
+  t.krok = undefined; // ett redskap som hängde i bältet (steg 7.1.1) läggs i förrådet
 }
 // a talar med b. Saknar någon av dem ett redskap som den andra har över? Returnerar vad som hände
 export function askForTool(s: State, a: Person, b: Person): 'gåva' | 'byte' | undefined {

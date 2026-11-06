@@ -28,6 +28,7 @@ import { PROJEKT, PROJEKT_LIST, Uppgift, bastaProjekt, egenintresse, hamtas, pro
 import { faltNu, vildFronPlats } from './odling';
 import { MINNE, areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { eldPlats, getMap } from './karta';
+import { ryggsack } from './utrustning';
 import { amountOf, avbryt, fetchSpot, flodUndan, haulJob, isStored, timKvar } from './lager';
 import { BYGG, bedFor, buildJob, siteOf } from './bygg';
 import { bitAt, bitsOf, blocked, freeNear, roomAt } from './byggnad';
@@ -991,6 +992,7 @@ function withTools(s: State, p: Person, v: Val, best: Act, what: string, fara: F
   const rader = ACTS[v.act].redskap;
   if (rader) for (const [g, ks] of Object.entries(toolGroups(v.act))) {
     if (!rader[ks[0]].tar) continue; // yxan väljs med arbetet (axeTask)
+    if (g === 'korg' && ryggsack(s, p)) continue; // den som har en ryggsäck på sig tar ingen korg (steg 7.1.3)
     const k = freeOfKinds(s, p, ks);
     if (k) { v.tool = k; v.why = v.why.replace(/\.$/, '') + '. ' + rader[k].tar; return; }
     const u = GORS[g] ? projektNu(s, p, g, fara) : undefined; // redskapet görs som projekt (steg 6.2.17), vid sin egen plats: inget ärvs från flintletandet eller tändmaterialet
@@ -1001,6 +1003,7 @@ function withTools(s: State, p: Person, v: Val, best: Act, what: string, fara: F
 // möjligt att göra bara när withTools skulle göra det: inte när kylan är en fara, och med höet som sparas till värmen
 export function toolGain(s: State, p: Person, act: Act, fara: Faror) {
   for (const [g, ks] of Object.entries(toolGroups(act))) {
+    if (g === 'korg' && ryggsack(s, p)) return ACTS[act].redskap![ks[0]].ger ?? 1; // ryggsäcken ger det korgen ger (steg 7.1.3)
     if (freeOfKinds(s, p, ks) || GORS[g] && PROJEKT[g].kan(s, p, fara)) return ACTS[act].redskap![ks[0]].ger ?? 1;
   }
   return 1;

@@ -301,6 +301,8 @@ const PORTRATT = {
     {"id": "plagg-rock", "sort": "klader", "namn": "Rock", "plagg": "rock", "material": ["harskinn", "vargskinn", "rovarskinn", "bjornskinn"], "zoner": ["bal", "armar"], "lang": true, "ritad": 3},
     {"id": "plagg-skor", "sort": "klader", "namn": "Skor", "plagg": "skor", "material": ["harskinn"], "zoner": ["fotter"], "ritad": 0},
     {"id": "plagg-balte", "sort": "klader", "namn": "Bälte", "plagg": "balte", "material": ["rep"], "zoner": ["midja"], "portratt": false, "ritad": 0},
+    {"id": "plagg-axelrem", "sort": "klader", "namn": "Axelrem", "plagg": "axelrem", "material": ["harskinn"], "zoner": ["bal"], "ritad": 0},
+    {"id": "plagg-ryggsack", "sort": "klader", "namn": "Ryggsäck", "plagg": "ryggsack", "material": ["harskinn"], "zoner": ["bal"], "ritad": 0},
     {"id": "redskap-yxa", "sort": "redskap", "namn": "Flintyxa", "sak": "yxa", "form": "yxa", "ritad": 5},
     {"id": "redskap-trasjut", "sort": "redskap", "namn": "Träspjut", "sak": "fiskespjut", "form": "spjut", "lang": true, "ritad": 1},
     {"id": "redskap-flintspjut", "sort": "redskap", "namn": "Flintspjut", "sak": "flintspjut", "form": "spjut", "lang": true, "ritad": 1},
@@ -445,7 +447,7 @@ export const KARNA: any = (() => {
       kon: mall === 'man' ? 'man' : 'kvinna', alder: mall === 'barn' ? 'barn' : 'ung',
       del: { huvudform: n.huvudform, ora: n.ora, nasa: n.nasa, oga: n.oga, ogonbryn: n.ogonbryn, mun: n.mun, frisyr: n.frisyr, skagg: null, huvudbonad: null, smycke: null, arr: null, blamarke: null, redskap: null },
       hud: n.hud, har: n.har, ogon: n.ogon, humor: n.humor, skonhet: 0, forband: [], ogonlapp: false, sjuk: false, kyla: false, blod: false,
-      klader: { rock: null, skor: false, balte: false }, lagen: {}, lager: null, rynkor: null,
+      klader: { rock: null, skor: false, balte: false, axelrem: false, ryggsack: false, krokar: 0 }, lagen: {}, lager: null, rynkor: null,
     };
   }
   // delarna som syns: en del som inte passar mallen byts mot den med samma nummer bland mallens, den gamla får sin äldre frisyr
@@ -810,6 +812,13 @@ export const KARNA: any = (() => {
       const k = kroppInne(G), s0 = G.K.axel0;
       fyll(dk, (x, y) => y >= s0 - 1 && k(x, y) && !(y < s0 + 8 && Math.abs(x + 0.5 - 32) < 2 + (y - s0 + 1) * 0.6), p.klader.rock, [0, s0 - 1, 63, 63], { mitt: [32, s0 + 8, G.K.bredd, 9] });
     },
+    // axelremmen och ryggsäckens remmar i porträttet (steg 7.1.4, platshållare): remmen från höger axel ner mot bröstets
+    // mitt, och ryggsäckens två remmar rakt ner över axlarna
+    remmar(dk, G, p) {
+      const k = kroppInne(G), s0 = G.K.axel0, B = G.K.bredd;
+      if (p.klader.ryggsack) for (const sx of [-1, 1]) fyll(dk, (x, y) => y >= s0 && k(x, y) && Math.abs((x + 0.5 - 32) * sx - B * 0.6) <= 1.6, 'jord', [0, s0, 63, 63], { forskj: -1 });
+      if (p.klader.axelrem) fyll(dk, (x, y) => y >= s0 && k(x, y) && Math.abs(x + 0.5 - (32 + B * 0.6 - (y - s0) * 0.7)) <= 1.8, 'jord', [0, s0, 63, 63]);
+    },
     redskap(dk, G, d, fram) {
       const lang = !!d.lang;
       if (lang !== !fram) return;
@@ -872,6 +881,7 @@ export const KARNA: any = (() => {
     lagg('huvud', dk => delen(dk, G, hf, p, 'huvudform'));
     if (opt.bara) return B;
     lagg('klader', dk => p.klader.rock && DELAR['plagg-rock'] ? delen(dk, G, DEL['plagg-rock'], p, 'klader') : RITA.klader(dk, G, p));
+    if (p.klader.axelrem || p.klader.ryggsack) lagg('klader', dk => RITA.remmar(dk, G, p));
     lagg('oron', dk => delen(dk, G, D('ora'), p, 'ora'), { maskbar: true });
     const rs = rynkSteg(p); if (rs > 0) lagg('rynkor', dk => DELAR['rynkor-' + rs] ? delen(dk, G, DEL['rynkor-' + rs], p, 'rynkor') : RITA.rynkor(dk, G, rs));
     if (D('arr')) lagg('arr', dk => delen(dk, G, D('arr'), p, 'arr'));
@@ -1094,6 +1104,23 @@ export const KARNA: any = (() => {
       const R = armLista(aR, 1); zon(R, 'armar'); hand = R[R.length - 1];
     }
     if (p.klader.balte) (rikt === 'sida' ? [5, 6, 7, 8] : [...Array(x1 - x0 + 1)].map((_, i) => x0 + i)).forEach(x => { if (zn[(b1 - 1) * W + x] === 'bal') satt(x, b1 - 1, 'rep', 'balte'); });
+    // det man bär (steg 7.1.4, platshållare tills Björn valt i bildstilens valdel): axelremmen snett över bålen, ryggsäcken
+    // (bakifrån säcken, från sidan säcken bakom ryggen, framifrån remmarna över axlarna) och två redskap i bältets krokar
+    const paBal = (x, y, v, z) => { const q = zn[y * W + x]; if (q === 'bal' || q === 'balte') satt(x, y, v, z); };
+    if (p.klader.axelrem) for (let y = b0; y <= b1 - 1; y++) {
+      const t = (y - b0) / Math.max(1, b1 - 1 - b0);
+      if (rikt === 'sida') paBal(6 + Math.round(t), y, 'jord', 'axelrem');
+      else { const xr = Math.round(x1 - 1 - t * 2); paBal(rikt === 'bak' ? x0 + x1 - xr : xr, y, 'jord', 'axelrem'); }
+    }
+    if (p.klader.ryggsack) {
+      if (rikt === 'bak') for (let y = b0; y <= b1; y++) for (let x = x0; x <= x1; x++) satt(x, y, y === b0 + 1 ? 'jord1' : 'ben', 'ryggsack');
+      else if (rikt === 'sida') { const xs = barn ? [4, 5] : [3, 4]; for (let y = b0; y <= b1; y++) xs.forEach(x => { if (!zn[y * W + x] || zn[y * W + x] === 'armar') satt(x, y, y === b0 + 1 ? 'jord1' : 'ben', 'ryggsack'); }); paBal(barn ? 6 : 5, b0, 'jord0', null); paBal(barn ? 6 : 5, b0 + 1, 'jord0', null); }
+      else for (let y = b0; y <= b0 + 2; y++) for (const x of [x0 + 1, x1 - 1]) paBal(x, y, 'jord0', null);
+    }
+    if (p.klader.balte && p.klader.krokar) {
+      const xs = (rikt === 'sida' ? [8, 5] : rikt === 'bak' ? [x1 - 1, x0 + 1] : [x0 + 1, x1 - 1]).slice(0, p.klader.krokar);
+      xs.forEach((x, n) => { satt(x, b1, 'jord0'); satt(x, b1 + 1, 'jord1'); satt(x, b1 + 2, n ? 'skiffer2' : 'skiffer3'); if (n) satt(x + (x < 7 ? -1 : 1), b1 + 2, 'skiffer1'); });
+    }
     // huvudet: skallen ur mallen, käken efter huvudformen, ögonen som en punkt var
     const kak = (DEL[del.huvudform] || DEL['huvud-rund']).kartbild[rikt === 'sida' ? 'sida' : 'fram'];
     for (let y = h; y <= h + 5; y++) for (let x = 4; x <= 9; x++) {
@@ -1258,7 +1285,7 @@ export const KARNA: any = (() => {
     p.humor = viktat(r, [['glad', 2], ['nojd', 3], ['lugn', 4], ['ledsen', 1.5], ['arg', 1], ['radd', 0.5], ['sover', 0.4]]);
     p.forband = r() < 0.06 ? [radAv(r, 'forband', m, p.kon)] : [];
     p.ogonlapp = r() < 0.03; p.sjuk = r() < 0.08; p.kyla = r() < 0.1; p.blod = r() < 0.05;
-    p.klader = { rock: r() < 0.55 ? viktat(r, [['harskinn', 3], ['vargskinn', 1]]) : null, skor: r() < 0.5, balte: r() < 0.35 };
+    p.klader = { rock: r() < 0.55 ? viktat(r, [['harskinn', 3], ['vargskinn', 1]]) : null, skor: r() < 0.5, balte: r() < 0.35, axelrem: false, ryggsack: false, krokar: 0 };
     return p;
   }
   // arvet (Porträttens byggsätt): varje del och färg från mamman eller pappan med lika stor chans, en gång på tio en

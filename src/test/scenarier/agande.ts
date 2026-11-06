@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 // Scenarier. Ägande och ekonomi: ägande, gåvor, byte, egendom, delning, arv och värde.
 import { isDeepStrictEqual } from 'node:util';
-import { Person, Act, Task, createState, bearbeta, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, makeTool, step, living, pilesOf, amountOf, capacity, handOrkar, ryms, VIKT_STACK, isLight, isStored, spears, HOUR, State, migrate, die, bitsOf, KANIN, DJUR, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, foodOf, STACK_ORDER, needLadder, takeMaterial, BEAT, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELNING, packUp, releaseOwner, willing, tingOf, EKONOMI, SAK_LIST, ownedAll, leave, chooseTask, stackOf, birth, SAKER, viktOf, handerFor, bordPlats, utrustning, bordaIHander, PLATS_LIST, cloneState, pickUp, load, byId } from '../../sim';
+import { Person, Act, Task, createState, bearbeta, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, makeTool, step, living, pilesOf, amountOf, capacity, handOrkar, ryms, VIKT_STACK, isLight, isStored, spears, HOUR, State, migrate, die, bitsOf, KANIN, DJUR, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, foodOf, STACK_ORDER, needLadder, takeMaterial, BEAT, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELNING, packUp, releaseOwner, willing, tingOf, placeTools, EKONOMI, SAK_LIST, ownedAll, leave, chooseTask, stackOf, birth, SAKER, viktOf, handerFor, bordPlats, utrustning, bordaIHander, PLATS_LIST, cloneState, pickUp, load, byId } from '../../sim';
 import * as SIM from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import { setItems, setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank, utanWebblasare, nyInvanare } from './hjalp';
@@ -598,8 +598,126 @@ SCENARIER.klader = {
   },
 };
 
+SCENARIER.axelrem = {
+  text: 'Steg 7.1.2: axelremmen sys av ett skinn och ett rep vid slöjdbänken av den som kan tekniken, och den som saknar en tar på sig en. När man bär hem hänger spjutet, metspöt eller vattensäcken på axeln och tar inga händer, så den som kommer hem med spjutet bär lika mycket som med tomma händer. Yxan och kniven hänger inte på axeln utan i bältet, och den som har både bälte och axelrem bär spjutet på axeln, yxan i bältet och bördan i båda händerna',
+  kor: () => {
+    const s = createState(2, START); tandEld(s);
+    medBank(s, 'flatarbank');
+    for (const r of s.people) r.tek = { ...r.tek, kniv: 1, flatarbank: 1, rep: 1, bensyl: 1, skinnklader: 1, axelrem: 1 };
+    setMat(s, { bar: 300 }); setAmount(s, 'ved', 60); setAmount(s, 'skinn', 30); setAmount(s, 'rep', 12);
+    (s.stat ??= {}).fiskeForsok = 1; // byn fiskar, så den vill ha spjut och axelremmar
+    const tek = SIM.TEKNIK.find(t => t.id === 'axelrem');
+    const regTek = !!tek && tek.krav.includes('skinnklader') && tek.krav.includes('balte') && !!tek.forsok;
+    const rem = () => tingOf(s).find(t => t.k.startsWith('axelrem_') && t.bar !== undefined);
+    let h = 0;
+    while (!rem() && h < 120) { kor(s, 1); h++; }
+    const r = rem(), p = r && byId(s, r.bar!);
+    const sytt = Object.keys(s.stat ?? {}).some(k => k.startsWith('axelrem_') && (s.stat![k] ?? 0) > 0);
+    const recept = !!SAKER.axelrem_kaninskinn && SAKER.axelrem_kaninskinn.skaffa?.av?.skinn === 1 && SAKER.axelrem_kaninskinn.skaffa?.av?.rep === 1;
+    let lika = false, paAxeln = false, mindreUtan = false, metspo = false, vattensack = false, yxaEj = false, bada = false;
+    if (p) {
+      for (const t of tingOf(s)) { if (t.hos === p.id) t.hos = undefined; if (t.bar === p.id && SAKER[t.k]?.klad?.krok) t.bar = undefined; }
+      const fri = bordPlats(s, p);
+      const spjut = addTool(s, 'flintspjut', p); take(s, p, 'flintspjut');
+      lika = Math.abs(bordPlats(s, p) - fri) < 1e-9;
+      const u = utrustning(s, p, true);
+      paAxeln = u.axel.ting === spjut && u.axelrem.ting === r && u.hoger.borda === true && u.vanster.borda === true && !u.hoger.ting;
+      r.bar = undefined; mindreUtan = bordPlats(s, p) < fri - 1e-6; r.bar = p.id;
+      const ms = addTool(s, 'metspo', p); take(s, p, 'metspo');
+      metspo = utrustning(s, p, true).axel.ting === ms && Math.abs(bordPlats(s, p) - fri) < 1e-9;
+      const vs = addTool(s, 'vattensack', p); take(s, p, 'vattensack');
+      vattensack = utrustning(s, p, true).axel.ting === vs;
+      // yxan hänger inte på axeln: utan bälte bär man mindre med den
+      const yxa = addTool(s, 'yxa', p); take(s, p, 'yxa');
+      yxaEj = !utrustning(s, p, true).axel.ting && bordPlats(s, p) < fri - 1e-6;
+      // med både bälte och axelrem: spjutet på axeln och yxan i bältet
+      const b = addTool(s, 'balte_rep', p); b.bar = p.id;
+      take(s, p, 'flintspjut');
+      const ub = utrustning(s, p, true);
+      bada = ub.axel.ting === spjut && ub.krok.ting === yxa && ub.hoger.borda === true && ub.vanster.borda === true && Math.abs(bordPlats(s, p) - fri) < 1e-9;
+    }
+    return [
+      ['tekniken kräver skinnkläderna och bältet och prövas vid slöjdbänken', regTek],
+      ['axelremmen görs av ett skinn och ett rep', recept],
+      [`en axelrem sys och tas på (efter ${h} timmar)`, !!r && sytt],
+      ['med spjutet på axeln bär man lika mycket som med tomma händer', lika],
+      ['spjutet hänger på axeln och bördan är i båda händerna', paAxeln],
+      ['utan axelremmen bär man mindre med spjutet i handen', mindreUtan],
+      ['metspöt hänger också på axeln', metspo],
+      ['vattensäcken hänger också på axeln', vattensack],
+      ['yxan hänger inte på axeln', yxaEj],
+      ['med bälte och axelrem: spjutet på axeln, yxan i bältet och bördan i båda händerna', bada],
+    ];
+  },
+};
+
+SCENARIER.ryggsack = {
+  text: 'Steg 7.1.3: ryggsäcken sys av tre skinn och ett rep vid slöjdbänken med bensylen av den som kan tekniken, och den som saknar en tar på sig en. Den sitter på ryggen, lämnar båda händerna fria och rymmer 20 i vikt, lika för alla, så en vuxen bär ungefär dubbelt så mycket. Den som samlar med ryggsäcken tar ingen korg utan plockar rakt ner i den, och säcken slits av det som samlas. Den går att ha på sig tillsammans med axelremmen',
+  kor: () => {
+    const s = createState(2, START); tandEld(s);
+    const st = medBank(s, 'flatarbank');
+    SIM.newTing(s, 'bensyl', 1, BYN).vid = st.id; // bensylen ligger vid bänken
+    for (const r of s.people) r.tek = { ...r.tek, kniv: 1, flatarbank: 1, rep: 1, bensyl: 1, korg: 1, skinnklader: 1, ryggsack: 1 };
+    for (const r of s.people) for (const k of ['rock_kaninskinn', 'skor_kaninskinn']) addTool(s, k, r).bar = r.id; // de andra plaggen har alla redan
+    setMat(s, { bar: 300 }); setAmount(s, 'ved', 60); setAmount(s, 'skinn', 30); setAmount(s, 'rep', 12); setAmount(s, 'ben', 3); setAmount(s, 'sten', 6);
+    const tek = SIM.TEKNIK.find(t => t.id === 'ryggsack');
+    const regTek = !!tek && tek.krav.includes('korg') && tek.krav.includes('skinnklader') && !!tek.forsok;
+    const sack = () => tingOf(s).find(t => t.k.startsWith('ryggsack_') && t.bar !== undefined);
+    let h = 0;
+    while (!sack() && h < 120) { kor(s, 1); h++; }
+    const r = sack(), p = r && byId(s, r.bar!);
+    const sytt = Object.keys(s.stat ?? {}).some(k => k.startsWith('ryggsack_') && (s.stat![k] ?? 0) > 0);
+    const recept = !!SAKER.ryggsack_kaninskinn && SAKER.ryggsack_kaninskinn.skaffa?.av?.skinn === 3 && SAKER.ryggsack_kaninskinn.skaffa?.av?.rep === 1 && SIM.STATIONER.flatarbank.kraver?.ryggsack === 'bensyl';
+    let dubbelt = false, lika = false, ryms20 = false, paRyggen = false, medRem = false, ingenKorg = false, slits = false, samlade = 0;
+    if (p) {
+      for (const t of tingOf(s)) { if (t.hos === p.id) t.hos = undefined; if (t.bar === p.id && t !== r) t.bar = undefined; }
+      const med = bordPlats(s, p); r.bar = undefined; const utan = bordPlats(s, p); r.bar = p.id;
+      dubbelt = Math.abs(med - utan - 20) < 1e-9 && med / utan > 1.7 && med / utan < 2.6;
+      // lika för alla: säcken på någon annan rymmer också 20
+      const q = living(s).find(x => x !== p);
+      if (q) { for (const t of tingOf(s)) if (t.bar === q.id || t.hos === q.id) { t.bar = undefined; t.hos = undefined; } const u0 = bordPlats(s, q); r.bar = q.id; lika = Math.abs(bordPlats(s, q) - u0 - 20) < 1e-9; r.bar = p.id; }
+      // bördan: en full säck och fulla händer ryms, mer gör det inte; bär ligger i säcken först
+      const ok = ryms(s, p), H = handOrkar(s, p);
+      ryms20 = ok({ bar: 20 + 2 * H - 0.5 }) && !ok({ bar: 20 + 2 * H + 3 }) && ok({ bar: 20, ved: H });
+      const u = utrustning(s, p, true);
+      paRyggen = u.rygg.ting === r && u.rygg.borda === true && u.hoger.borda === true && u.vanster.borda === true;
+      // med axelremmen och spjutet på axeln
+      const rem = addTool(s, 'axelrem_kaninskinn', p); rem.bar = p.id;
+      addTool(s, 'flintspjut', p); take(s, p, 'flintspjut');
+      medRem = Math.abs(bordPlats(s, p) - med) < 1e-9 && utrustning(s, p, true).rygg.ting === r && !!utrustning(s, p, true).axel.ting;
+      for (const t of tingOf(s)) if (t.hos === p.id) t.hos = undefined;
+      // samlandet: det finns korgar i förrådet, men den med ryggsäcken tar ingen
+      SIM.newTing(s, 'korg', 1, BYN); SIM.newTing(s, 'korg', 1, BYN);
+      const c0 = r.c; let korg = false;
+      setMat(s, { bar: 10 }); // maten tar slut, så byn samlar
+      for (let i = 0; i < 96 && samlade < 3; i++) {
+        kor(s, 1);
+        for (const q of living(s)) {
+          if (!SIM.ryggsack(s, q)) continue;
+          if (q.task?.act === 'samla') samlade++;
+          if (q.task?.tool === 'korg') korg = true;
+        }
+      }
+      ingenKorg = samlade > 0 && !korg;
+      slits = r.c < c0 - 1e-9 || !tingOf(s).includes(r);
+    }
+    return [
+      ['tekniken kräver korgen och skinnkläderna och prövas vid slöjdbänken', regTek],
+      ['ryggsäcken görs av tre skinn och ett rep, med bensylen', recept],
+      [`en ryggsäck sys och tas på (efter ${h} timmar)`, !!r && sytt],
+      ['med ryggsäcken bär en vuxen 20 mer, ungefär dubbelt så mycket', dubbelt],
+      ['säcken rymmer 20 för alla', lika],
+      ['en full säck och fulla händer ryms, mer gör det inte', ryms20],
+      ['säcken sitter på ryggen och bördan är i säcken och båda händerna', paRyggen],
+      ['ryggsäcken och axelremmen går att ha samtidigt', medRem],
+      [`den som samlar med ryggsäcken tar ingen korg (samlade ${samlade} timmar)`, ingenKorg],
+      ['ryggsäcken slits av det som samlas', slits],
+    ];
+  },
+};
+
 SCENARIER.balte = {
-  text: 'Steg 2.3.3: bältet flätas av rep vid elden av den som kan tekniken, och den som saknar ett tar på sig ett. När man bär hem hänger redskapet i bältet: det tar inga händer, så den som har yxan i bältet bär lika mycket som med tomma händer. En korg hänger inte i bältet',
+  text: 'Steg 2.3.3: bältet flätas av rep vid elden av den som kan tekniken, och den som saknar ett tar på sig ett. När man bär hem hänger redskapet i bältet: det tar inga händer, så den som har yxan i bältet bär lika mycket som med tomma händer. En korg hänger inte i bältet. Steg 7.1.1: bältet har två krokar, så ett eget redskap (kniven, yxan, spaden) hänger där medan man arbetar med ett annat och tas fram när det behövs. Spjutet hänger på axeln, inte i bältet',
   kor: () => {
     const s = createState(2, START); tandEld(s);
     for (const r of s.people) r.tek = { ...r.tek, rep: 1, balte: 1 };
@@ -609,7 +727,7 @@ SCENARIER.balte = {
     while (!balte() && h < 120) { kor(s, 1); h++; }
     const b = balte(), p = b && byId(s, b.bar!);
     const flatat = (s.stat?.balte_rep ?? 0) > 0;
-    let lika = false, mindreUtan = false, iKroken = false, korgEj = false;
+    let lika = false, mindreUtan = false, iKroken = false, korgEj = false, knivYxa = false, tillbaka = false, baraBada = false, kvar = false, spjutEj = false, spjutHangerEj = false, byns = false, utan = false, hela = true;
     if (p) {
       for (const t of tingOf(s)) if (t.hos === p.id) t.hos = undefined;
       const fri = bordPlats(s, p);
@@ -620,6 +738,33 @@ SCENARIER.balte = {
       b.bar = undefined; mindreUtan = bordPlats(s, p) < fri - 1e-6; b.bar = p.id;
       const korg = addTool(s, 'korg', p); yxa.hos = undefined; take(s, p, 'korg');
       korgEj = utrustning(s, p, true).hoger.ting === korg && !utrustning(s, p, true).krok.ting;
+      // två krokar (steg 7.1.1): den som tar kniven hänger sin yxa i bältet, och tar fram den igen när hen behöver den
+      korg.hos = undefined; take(s, p, 'yxa');
+      const kniv = addTool(s, 'kniv', p); take(s, p, 'kniv');
+      knivYxa = kniv.hos === p.id && yxa.krok === p.id && yxa.hos === undefined && utrustning(s, p, false).krok.ting === yxa;
+      take(s, p, 'yxa');
+      tillbaka = yxa.hos === p.id && yxa.krok === undefined && kniv.krok === p.id;
+      const ub = utrustning(s, p, true);
+      baraBada = ub.krok.ting === yxa && ub.krok2.ting === kniv && ub.hoger.borda === true && ub.vanster.borda === true;
+      tidyTools(s); placeTools(s);
+      kvar = kniv.krok === p.id && kniv.x === undefined;
+      // spjutet hänger på axeln, inte i bältet: med spjutet i handen bär man mindre
+      const spjut = addTool(s, 'flintspjut', p); take(s, p, 'flintspjut');
+      spjutEj = SAKER.flintspjut?.hanger === 'axel' && !utrustning(s, p, true).krok.ting?.k.includes('spjut') && bordPlats(s, p) < fri - 1e-6;
+      // spjutet hänger inte heller på kroken; yxan tar den lediga kroken och kniven (som redan hängde där) får stanna
+      take(s, p, 'yxa');
+      spjutHangerEj = spjut.krok === undefined && spjut.hos === undefined;
+      // byns kniv hänger inte i bältet: den läggs tillbaka när man tar ett annat redskap
+      kniv.agare = BYN; tidyTools(s);
+      byns = kniv.krok === undefined;
+      // utan bälte: ingen krok
+      take(s, p, 'kniv'); b.bar = undefined; kniv.agare = p.id; take(s, p, 'yxa');
+      utan = kniv.krok === undefined; b.bar = p.id;
+      // några timmar i byn: det som hänger i ett bälte ligger aldrig samtidigt i förrådet, hänger hos sin ägare och är ett bältesredskap
+      for (let i = 0; i < 48 && hela; i++) {
+        kor(s, 1);
+        for (const x of tingOf(s)) if (x.krok !== undefined && (x.x !== undefined || x.hos !== undefined || x.agare !== x.krok || SAKER[x.k]?.hanger !== 'balte')) hela = false;
+      }
     }
     return [
       [`ett bälte flätas och tas på (efter ${h} timmar)`, !!b && flatat],
@@ -627,6 +772,15 @@ SCENARIER.balte = {
       ['utan bältet bär man mindre med yxan i handen', mindreUtan],
       ['yxan hänger i bältet och bördan är i båda händerna', iKroken],
       ['korgen hänger inte i bältet', korgEj],
+      ['steg 7.1.1: den som tar kniven hänger sin yxa på den andra kroken', knivYxa],
+      ['... och tar fram yxan igen, och kniven hängs i bältet', tillbaka],
+      ['... och bär med båda i bältet och bördan i båda händerna', baraBada],
+      ['... och kniven läggs inte i förrådet medan den hänger i bältet', kvar],
+      ['spjutet hänger på axeln, inte i bältet: med spjutet i handen bär man mindre', spjutEj],
+      ['... och hängs inte på kroken när man tar yxan', spjutHangerEj],
+      ['byns kniv hänger inte i bältet', byns],
+      ['utan bälte hänger inget på kroken', utan],
+      ['i två dygn hänger det i bältena bara egna bältesredskap, som inte ligger i förrådet', hela],
     ];
   },
 };

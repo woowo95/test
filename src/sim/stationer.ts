@@ -115,7 +115,7 @@ export const STATIONER = {
     forsta: '{namn} byggde byns första slaktbänk av virke. Där slaktas viltet och rensas fisken, och en kniv ligger kvar vid bänken.',
   },
   flatarbank: { // slöjdbänken: id:t är kvar från när den hette flätarbänken, så att sparade byar fungerar
-    namn: 'Slöjdbänk', ikon: 'flatarbank', w: 2, h: 1, tek: ['flatarbank'], av: RECEPT.flatarbank.av, min: RECEPT.flatarbank.min, gor: ['tvinna', 'korg', 'rock', 'skor', 'benspade', 'vattensack', ...ENKLA], fart: { tvinna: STATION.repFart, ...Object.fromEntries(ENKLA.map(a => [a, STATION.redskapFart])) }, bara: ['korg', 'rock', 'skor', 'benspade', 'vattensack'], vid: { bensyl: 1 }, kraver: { rock: 'bensyl', skor: 'bensyl', vattensack: 'bensyl' }, inne: true, sitt: true,
+    namn: 'Slöjdbänk', ikon: 'flatarbank', w: 2, h: 1, tek: ['flatarbank'], av: RECEPT.flatarbank.av, min: RECEPT.flatarbank.min, gor: ['tvinna', 'korg', 'rock', 'skor', 'axelrem', 'ryggsack', 'benspade', 'vattensack', ...ENKLA], fart: { tvinna: STATION.repFart, ...Object.fromEntries(ENKLA.map(a => [a, STATION.redskapFart])) }, bara: ['korg', 'rock', 'skor', 'axelrem', 'ryggsack', 'benspade', 'vattensack'], vid: { bensyl: 1 }, kraver: { rock: 'bensyl', skor: 'bensyl', ryggsack: 'bensyl', vattensack: 'bensyl' }, inne: true, sitt: true,
     bygger: 'Bygger en slöjdbänk av virke och grenar.',
     forsta: '{namn} byggde byns första slöjdbänk. Där tvinnas rep fortare än för hand och flätas korgar.', // och sys kläder med bensylen (steg 2.3.2)
   },
@@ -583,7 +583,7 @@ export const forvarBrist = (s: State, k: string) => {
 // p:s kista, färdig eller halvbyggd
 export const kistaOf = (s: State, p: Person) => stationerOf(s).find(t => t.ag === p.id && !!stationDef(t.k)?.forvar?.privat);
 // p:s egna redskap och kläder som ingen använder: de ligger i lagret, på marken eller i kistan
-const egnaLediga = (s: State, p: Person) => tingOf(s).filter(t => t.agare === p.id && isTool(t.k) && !t.halv && t.hos === undefined && t.lass === undefined && t.bar === undefined);
+const egnaLediga = (s: State, p: Person) => tingOf(s).filter(t => t.agare === p.id && isTool(t.k) && !t.halv && t.hos === undefined && t.krok === undefined && t.lass === undefined && t.bar === undefined);
 // p vill ha en kista: hen sover inne, har ingen och har minst kistaVill egna saker som ingen använder
 export const villKista = (s: State, p: Person) => !kistaOf(s, p) && bedTile(s, p) !== undefined && egnaLediga(s, p).length >= STATION.kistaVill;
 // ---------- pyntet (steg 4.3.4, pynt.ts) ----------

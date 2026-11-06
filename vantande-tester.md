@@ -14,3 +14,14 @@ d4a78e7 6.10.4 Stort test och balans: balans, jamfor, natur, build, utseende, ri
 - Gräns 4 är inte bedömd. Rådjur 16 av 24, fåglar 19, björnmöten 18, stubbar 24 och vindfälle 23 ser bra ut. Facklans teknik finns i bara 9 av 24 och skogsvården har arbetstimmar i bara 9 av 24; de måste granskas, liksom talgljusen och stråken.
 - Sedan: jamfor -- 35 64 --mot e571d1a en gång som information (tar mer än en timme datortid). Npm run natur, build, utseende och riktad -- --karta. Nytt facit. Bocka av 6.10.4 med versionen och publicera spelet. Då är fas 6 klar utom 6.8.1 och 6.9.19, som väntar på Björn.
 - I sandlådan på MacBooken kan kommandot tsx stoppas: kör då node --import tsx src/test/fil.ts.
+
+fdfed3a 7.1 Bära mer (7.1.1–7.1.4, v502–v505): snabbkoll, koll, likhet, riktad --karta, facit. Sedan publiceras spelet. riktad gick inte att köra klart i molnet (tidsgränsen).
+
+Koll är redan körd i molnet på 44da0dc (7.1.3, alltså före 7.1.4), som ett tidsprov: 1 704 s datortid, 28 min, på 4 kärnor. Den gick inte igenom, så inget facit sparades. Felen ska rättas innan testerna körs igen på MacBooken:
+
+- Vaktlarm i by 1: text andelse, 12 gånger. Den första är dag 56.7, l_lart: "Asa har lärt sig av Asan att bygga en slöjdbänk." Namnet får en ändelse.
+- Scenariot symboler: emojin 🎗️ i sim/utrustning.ts har ingen pixelsymbol.
+- Scenariot aldrig: handlingarna axelrem, ryggsack, trumma och benflojt, sakerna axelrem_*, ryggsack_* och trumma, och teknikerna axelrem och ryggsack används aldrig och står inte i listan över det sällsynta. De får antingen en förklaring där eller rättas, om de borde användas.
+- Scenariot episk: en teknik på nivå 4–5 saknar en egen rad i krönikan med uppfinnarens namn. Troligen axelrem eller ryggsack.
+- Scenariot yxa: 3 stammar ligger kvar i skogen utanför lagret, och gränsen är 2.
+- 288 av 292 scenarier gick igenom, och typkontrollen var utan fel. Npm test visar annan utveckling i alla tre byar, by 42 återgrundad 1 gång. Samma-kollen visar annan utveckling, vilket är väntat.

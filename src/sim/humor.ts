@@ -126,7 +126,7 @@ export function utbMal(s: State, p: Person, arg = false) {
   return a ?? b;
 }
 export function utbTing(s: State, p: Person): Ting | undefined {
-  const fria = tingOf(s).filter(t => t.hos === undefined && t.bar === undefined && t.lass === undefined && !t.halv);
+  const fria = tingOf(s).filter(t => t.hos === undefined && t.bar === undefined && t.lass === undefined && t.krok === undefined && !t.halv);
   const egna = fria.filter(t => t.agare === p.id);
   const av = egna.length ? egna : fria.filter(t => t.agare === 0);
   return av.length ? av[Math.floor(rnd(s, 'humor', p) * av.length)] : undefined;
