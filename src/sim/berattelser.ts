@@ -11,7 +11,7 @@ import { upplev, upplevelseText } from './uppvaxt';
 import { isLight, kalender } from './tid';
 import { temperature, vaderNu } from './vader';
 import { hash3 } from './slump';
-import { ganger, goraNamn, och, talOrd } from './ord';
+import { ganger, gen, goraNamn, och, slaktOrd, talOrd } from './ord';
 
 // Berättelserna (steg 3.9, "Berättelser" i designdokumentet): texterna om människorna, händelserna och sakerna. Varje
 // text är en mall i registret BERATTELSER med många varianter; varianten väljs ur byns frö, personen och tiden (hash),
@@ -128,38 +128,56 @@ const MDEF = {
   ],
   // personen (steg 3.9.2). {alder} = 'ung kvinna', 'gammal man' osv., {drag1} och {drag2} = de egenskaper som sticker ut
   besk_drag2: [
-    '{namn} är en {alder}, {drag1} och {drag2}.',
-    '{namn} är {drag1} och {drag2}, säger de som känner {honom}.',
-    'En {alder}, {drag1} men också {drag2}: så är {namn}.',
-    'Den som möter {namn} ser en {alder} som är {drag1} och {drag2}.',
-    '{namn} föddes {drag1}, och {drag2} har {hen} alltid varit.',
-    'Man vet var man har {namn}: {drag1} och {drag2}.',
-    '{namn}, en {alder}, är mer {drag1} än de flesta och lika {drag2}.',
-    'Om {namn} säger man två saker: {hen} är {drag1}, och {hen} är {drag2}.',
-    { t: '{namn} är bara ett barn men redan {drag1} och {drag2}.', om: f => f.ung === true },
-    { t: 'Åren har gjort {namn} till en {alder}, {drag1} och {drag2}.', om: f => f.gammal === true },
+    { t: '{namn} är en {alder}, {drag1} {bind} {drag2}.', om: f => !!f.alder },
+    { t: '{namn} är {drag1} {bind} {drag2}, säger de som känner {honom}.', om: f => !f.syns },
+    { t: 'En {alder}, {drag1} men också {drag2}: så är {namn}.', om: f => !!f.alder && f.bind === 'men' },
+    { t: 'Den som möter {namn} ser en {alder} som är {drag1} {bind} {drag2}.', om: f => !!f.alder },
+    { t: '{namn} föddes {drag1}, och {drag2} har {hen} alltid varit.', om: f => !f.syns && f.bind === 'och' },
+    { t: 'Man vet var man har {namn}: {drag1} {bind} {drag2}.', om: f => !f.syns },
+    { t: '{namn}, en {alder}, är mer {drag1} än de flesta och lika {drag2}.', om: f => !!f.alder && f.bind === 'och' },
+    { t: 'Om {namn} säger man två saker: {hen} är {drag1}, och {hen} är {drag2}.', om: f => !f.syns },
+    { t: '{namn} är {drag1} {bind} {drag2}.', om: f => !f.syns },
+    { t: '{namn} är {drag1}, men {drag2} är {hen} också.', om: f => !f.syns && f.bind === 'men' },
+    { t: '{namn} är bara ett barn men redan {drag1} {bind} {drag2}.', om: f => !f.syns && f.ung === true && !f.liten },
+    { t: 'Åren har gjort {namn} till en {alder}, {drag1} {bind} {drag2}.', om: f => f.gammal === true },
   ],
   besk_drag1: [
-    '{namn} är en {alder}, {drag1} som få.',
-    '{namn} är {drag1}, mer än något annat.',
-    'Det första man märker hos {namn} är att {hen} är {drag1}.',
-    'En {alder} som är {drag1}: det är {namn}.',
-    '{namn} har alltid varit {drag1}.',
-    'Alla vet att {namn} är {drag1}.',
-    'Om {namn} säger man mest att {hen} är {drag1}.',
-    '{namn}, en {alder}, är {drag1} ut i fingerspetsarna.',
-    { t: '{namn} är bara ett barn, men redan {drag1}.', om: f => f.ung === true },
+    { t: '{namn} är en {alder}, {drag1} som få.', om: f => !!f.alder },
+    { t: '{namn} är {drag1}, mer än något annat.', om: f => !f.syns },
+    { t: 'Det första man märker hos {namn} är att {hen} är {drag1}.', om: f => !f.syns },
+    { t: 'En {alder} som är {drag1}: det är {namn}.', om: f => !!f.alder },
+    { t: '{namn} har alltid varit {drag1}.', om: f => !f.syns },
+    { t: 'Alla vet att {namn} är {drag1}.', om: f => !f.syns },
+    { t: 'Om {namn} säger man mest att {hen} är {drag1}.', om: f => !f.syns },
+    { t: '{namn}, en {alder}, är {drag1} ut i fingerspetsarna.', om: f => !!f.alder },
+    { t: '{namn} är {drag1} ut i fingerspetsarna.', om: f => !f.syns },
+    { t: '{namn} är bara ett barn, men redan {drag1}.', om: f => !f.syns && f.ung === true && !f.liten },
     { t: '{namn} är en {alder} och har varit {drag1} i alla sina år.', om: f => f.gammal === true },
   ],
   besk_drag0: [
-    '{namn} är en {alder} som inte sticker ut.',
-    '{namn} är en {alder} som de flesta andra.',
-    'Det finns inte mycket att säga om {namn}: en {alder} bland andra.',
-    '{namn} är en {alder}, varken det ena eller det andra.',
-    'En {alder} som går sin egen stilla väg: det är {namn}.',
-    '{namn} är en vanlig {alder}, och kanske trivs {hen} med det.',
-    'Man lägger inte alltid märke till {namn}, en {alder} som andra.',
-    '{namn} är en {alder} utan stora gåvor och utan stora fel.',
+    { t: '{namn} är en {alder} som inte sticker ut.', om: f => !!f.alder },
+    { t: '{namn} är en {alder} som de flesta andra.', om: f => !!f.alder },
+    { t: 'Det finns inte mycket att säga om {namn}: en {alder} bland andra.', om: f => !!f.alder },
+    { t: '{namn} är en {alder}, varken det ena eller det andra.', om: f => !!f.alder },
+    { t: 'En {alder} som går sin egen stilla väg: det är {namn}.', om: f => !!f.alder },
+    { t: '{namn} är en vanlig {alder}, och kanske trivs {hen} med det.', om: f => !!f.alder },
+    { t: 'Man lägger inte alltid märke till {namn}, en {alder} som andra.', om: f => !!f.alder },
+    { t: '{namn} är en {alder} utan stora gåvor och utan stora fel.', om: f => !!f.alder },
+    { t: '{namn} sticker inte ut.', om: f => !f.alder },
+    { t: '{namn} är som de flesta andra i byn.', om: f => !f.alder },
+    { t: '{namn} går sin egen stilla väg.', om: f => !f.alder },
+    { t: '{namn} har varken stora gåvor eller stora fel.', om: f => !f.alder },
+  ],
+  // ett drag som går emot åldern (steg 6.7.2): {trots} = draget, en gammal som är vig eller ett barn som är klokt
+  besk_trots: [
+    { t: 'Men trots åren är {hen} {trots}.', om: f => f.gammal === true },
+    { t: 'Åren har inte tagit det ifrån {honom}: {hen} är fortfarande {trots}.', om: f => f.gammal === true },
+    { t: 'Fast {hen} är gammal är {hen} {trots} som en ung.', om: f => f.gammal === true },
+    { t: 'Trots sin ålder är {hen} lika {trots} som förr.', om: f => f.gammal === true },
+    { t: '{Hen} är ung, men {trots} som en gammal.', om: f => f.ung === true },
+    { t: 'Trots att {hen} är så ung är {hen} {trots}.', om: f => f.ung === true },
+    { t: 'Redan som barn är {hen} {trots}.', om: f => f.ung === true },
+    { t: '{Hen} är bara ett barn, men {trots} som en vuxen.', om: f => f.ung === true },
   ],
   // {binamn} = öknamnet eller hedersnamnet, {yrke} = yrket, {rykte} = det byn mest ser hen som
   besk_binamn: [
@@ -1697,7 +1715,14 @@ const DRAG: Record<Stat, [string, string]> = {
   flit: ['arbetsam', 'bekväm av sig'], empati: ['varmhjärtad', 'kall'], mod: ['modig', 'rädd av sig'],
   minne: ['minnesgod', 'glömsk'], smidighet: ['vig', 'klumpig'], aggression: ['hetlevrad', 'fridsam'],
 };
-const alderOrd = (a: number, sex: 'm' | 'k') => a < ALDER.vuxen ? (sex === 'm' ? 'pojke' : 'flicka') : a < 25 ? (sex === 'm' ? 'ung man' : 'ung kvinna') : a < ALDER.gammal ? (sex === 'm' ? 'man' : 'kvinna') : (sex === 'm' ? 'gammal man' : 'gammal kvinna');
+// tomt för de medelålders: att någon är en man eller en kvinna säger inget (steg 6.7.2); ung, gammal, pojke och flicka gör det
+const alderOrd = (a: number, sex: 'm' | 'k') => a < ALDER.vuxen ? (sex === 'm' ? 'pojke' : 'flicka') : a < 25 ? (sex === 'm' ? 'ung man' : 'ung kvinna') : a < ALDER.gammal ? '' : (sex === 'm' ? 'gammal man' : 'gammal kvinna');
+// dragens tecken (steg 6.7.2): + bra, − dåligt; tystlåten och fridsam räknas som bra. Två drag med samma tecken binds med och, annars med men
+const TECKEN: Record<string, number> = {};
+for (const [k, [hog, lag]] of Object.entries(DRAG)) { TECKEN[hog] = k === 'aggression' ? -1 : 1; TECKEN[lag] = k === 'aggression' || k === 'karisma' ? 1 : -1; }
+// det som syns står framför åldern ("en vacker kvinna"), och det som går emot åldern får en egen mening
+const SYNS = new Set(['vacker', 'ful', 'stark', 'klen']);
+const MOT_GAMMAL = new Set(['vig', 'stark', 'uthållig', 'nyfiken på allt']), MOT_UNG = new Set(['klok', 'minnesgod', 'modig']);
 const liten = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
 // de egenskaper som skiljer sig mest från det vanliga (10), högst två, och bara de som sticker ut (minst BERATT.drag)
 // skönheten hos en vuxen som sticker ut mycket har en egen del i beskrivningen (steg 3.9.7)
@@ -1775,11 +1800,11 @@ export const BESK_DELAR: BeskDel[] = [
     text: b => mening(b, b.f.binamn ? 'besk_binamn' : b.f.yrke && b.f.rykte ? 'besk_yrkeRykte' : b.f.yrke ? 'besk_yrke' : 'besk_rykte', 1) },
   { id: 'titel', vikt: b => titlar(b.p).length ? 0.8 : 0, text: b => { b.f.vad = liten(titlar(b.p)[0]); return mening(b, 'besk_titel', 13); } },
   { id: 'familj', vikt: b => familj(b.s, b.p)?.[1] ?? 0, text: b => { const [m, , f] = familj(b.s, b.p)!; Object.assign(b.f, f); return mening(b, m, 21); } },
-  { id: 'bast', vikt: b => bastPa(b.s, b.p) ? 0.7 : 0, text: b => { b.f.vad = SKILL_NAMES[bastPa(b.s, b.p)!].toLowerCase(); return mening(b, 'besk_bast', 22); } },
+  { id: 'bast', vikt: b => !b.f.liten && bastPa(b.s, b.p) ? 0.7 : 0, text: b => { b.f.vad = SKILL_NAMES[bastPa(b.s, b.p)!].toLowerCase(); return mening(b, 'besk_bast', 22); } },
   { id: 'uppfann', vikt: b => uppfann(b.p).length ? 0.75 : 0, text: b => { b.f.vad = och(uppfann(b.p).slice(-3)); return mening(b, 'besk_uppfann', 14); } },
   { id: 'bedrift', vikt: b => bedrifter(b.p).length ? 0.7 : 0, text: b => { b.f.vad = ihop(bedrifter(b.p).slice(-2).map(liten)); return mening(b, 'besk_bedrift', 15); } },
   { id: 'tal', vikt: b => talDel(b.p)?.[1] ?? 0, text: b => { const [m, , vad] = talDel(b.p)!; b.f.vad = vad; return mening(b, m, 23); } },
-  { id: 'larare', vikt: b => alive(b.p) && laraVem(b.s, b.p) ? 0.5 : 0, text: b => { const [m, q] = laraVem(b.s, b.p)!; b.f.vem = q.name; return mening(b, m, 24); } },
+  { id: 'larare', vikt: b => !b.f.liten && alive(b.p) && laraVem(b.s, b.p) ? 0.5 : 0, text: b => { const [m, q] = laraVem(b.s, b.p)!; b.f.vem = q.name; return mening(b, m, 24); } },
   { id: 'rel', vikt: b => b.f.partner || b.f.van ? 0.6 : 0, text: b => mening(b, b.f.partner && b.f.van ? 'besk_partnerVan' : b.f.partner ? 'besk_partner' : 'besk_van', 2) },
   { id: 'langtan', vikt: b => langtar(b.s, b.p) ? 0.55 : 0, text: b => { b.f.vem = langtar(b.s, b.p)!.name; return mening(b, 'besk_langtan', 25); } },
   { id: 'fiende', vikt: b => b.f.fiende ? 0.65 : 0, text: b => mening(b, 'besk_fiende', 3) },
@@ -1797,7 +1822,7 @@ export const BESK_DELAR: BeskDel[] = [
   } },
   { id: 'ago', vikt: b => agodel(b.s, b.p)?.[1] ?? 0, text: b => { const [m, , vad] = agodel(b.s, b.p)!; b.f.vad = vad; return mening(b, m, 29); } },
   { id: 'skam', vikt: b => skammen(b.p).length ? 0.6 : 0, text: b => { b.f.vad = ihop(skammen(b.p)); return mening(b, 'besk_skam', 30); } },
-  { id: 'smak', vikt: b => { const m = smakText(b.p); return m ? 0.3 + 0.3 * Math.abs(m.v) : 0; }, text: b => {
+  { id: 'smak', vikt: b => { if (b.f.liten) return 0; const m = smakText(b.p); return m ? 0.3 + 0.3 * Math.abs(m.v) : 0; }, text: b => {
     const m = smakText(b.p)!;
     b.f.vad = m.vad;
     return mening(b, `besk_${m.slag}${m.v > 0 ? 'Gilla' : 'Ogilla'}` as MallId, 4);
@@ -1900,13 +1925,22 @@ const bedrifter = (p: Person) => p.fame.filter(x => !FAME_EGEN.test(x) && !TITEL
 // två bedrifter med samma verb säger verbet en gång: 'byggde byns första bord och byns första slaktbänk'
 const ihop = (l: string[]) => l.length === 2 && l[0].split(' ')[0] === l[1].split(' ')[0] ? `${l[0]} och ${l[1].split(' ').slice(1).join(' ')}` : och(l);
 export function beskrivning(s: State, p: Person) {
-  const a = ageOf(p, s.now), drag = personDrag(s, p), Hen = hen(p);
-  const f: Fyllning = { namn: p.name, hen: Hen, honom: p.sex === 'm' ? 'honom' : 'henne', hans: p.sex === 'm' ? 'hans' : 'hennes', alder: alderOrd(a, p.sex), drag1: drag[0], drag2: drag[1], ung: a < ALDER.vuxen, gammal: a >= ALDER.gammal, kvar: alive(p), ny: p.grundare === 'ny' };
+  const a = ageOf(p, s.now), Hen = hen(p), ung = a < ALDER.vuxen, gammal = a >= ALDER.gammal;
+  let drag = personDrag(s, p), alder = alderOrd(a, p.sex), trots: string | undefined;
+  if (drag.length === 2) { // ett drag som går emot åldern får en egen mening (besk_trots)
+    trots = drag.find(d => (gammal && MOT_GAMMAL.has(d)) || (ung && MOT_UNG.has(d)));
+    if (trots) drag = drag.filter(d => d !== trots);
+  }
+  const syns = drag.length === 2 ? drag.find(d => SYNS.has(d)) : undefined;
+  if (syns) { alder = `${syns} ${alder || (p.sex === 'm' ? 'man' : 'kvinna')}`; drag = drag.filter(d => d !== syns); }
+  if (drag.length === 2 && (TECKEN[drag[0]] ?? 1) < (TECKEN[drag[1]] ?? 1)) drag = [drag[1], drag[0]]; // det bra först: "modig men glömsk"
+  const bind = drag.length === 2 && (TECKEN[drag[0]] ?? 1) !== (TECKEN[drag[1]] ?? 1) ? 'men' : 'och';
+  const f: Fyllning = { namn: p.name, hen: Hen, honom: p.sex === 'm' ? 'honom' : 'henne', hans: p.sex === 'm' ? 'hans' : 'hennes', alder, drag1: drag[0], drag2: drag[1], bind, trots, syns: !!syns, ung, liten: a < ALDER.vuxen / 2, gammal, kvar: alive(p), ny: p.grundare === 'ny' };
   const b: Besk = { s, p, f, nyck: i => p.id * 8 + i, borjan: new Set() };
   // yrket och vad byn tycker, och relationerna
   const by = samlatIntryck(s, p.id)[0];
   f.yrke = p.tag && p.tag !== 'Dagdrivare' ? liten(p.tag) : undefined;
-  f.rykte = by && by[1] >= BERATT.rykte ? INTRYCK[by[0]].namn : undefined;
+  f.rykte = by && by[1] >= BERATT.rykte ? INTRYCK[by[0]].som ?? INTRYCK[by[0]].namn : undefined;
   f.gott = by ? INTRYCK[by[0]].tecken > 0 : undefined;
   f.binamn = p.binamn?.namn;
   const namnPa = (id?: number) => { const q = id !== undefined ? byId(s, id) : undefined; return q ? q.name : undefined; };
@@ -1915,7 +1949,7 @@ export function beskrivning(s: State, p: Person) {
   const fasta = delar.filter(x => x.d.fast), andra = delar.filter(x => !x.d.fast).sort((x, y) => y.v - x.v || x.i - y.i);
   const max = Math.max(fasta.length, delar.filter(x => x.v >= BERATT.mycket).length >= 5 ? 4 : 3);
   const valda = [...fasta, ...andra].slice(0, max).sort((x, y) => x.i - y.i);
-  const ut = [mening(b, drag.length >= 2 ? 'besk_drag2' : drag.length ? 'besk_drag1' : 'besk_drag0', 0), ...valda.map(x => { const t = x.d.text(b); textLyssnare?.('del:' + x.d.id, -1, t, b.f); return t; })];
+  const ut = [mening(b, drag.length >= 2 ? 'besk_drag2' : drag.length ? 'besk_drag1' : 'besk_drag0', 0), ...trots ? [mening(b, 'besk_trots', 31)] : [], ...valda.map(x => { const t = x.d.text(b); textLyssnare?.('del:' + x.d.id, -1, t, b.f); return t; })];
   if (ut.length < 2) ut.push(mening(b, 'besk_inget', 6));
   textLyssnare?.('beskrivning', -1, ut.join(' '), f);
   return ut.join(' ');
@@ -2118,6 +2152,8 @@ export function relationText(s: State, p: Person, q: Person, r: Rel): string[] {
   const f = { namn: p.name, om: q.name };
   const mall: MallId = p.partner === q.id ? 'r_partner' : r.op > REL.naraVan ? 'r_nara' : r.op > REL.vanOrd ? 'r_van' : r.op > REL.osams ? 'r_bekant' : r.op > REL.ovan ? 'r_ogillar' : 'r_ovan';
   const nyckel = p.id * 7919 + q.id, ut: string[] = [fyll(valjVariant(s, mall, nyckel, f, 0), f)];
+  const sl = slaktOrd(p, q); // släkten först: "Igik är Ylvars far." (steg 6.7.2)
+  if (sl) ut.unshift(`${q.name} är ${gen(p.name)} ${sl}.`);
   if (Math.abs(r.chem) >= BERATT.kemi) ut.push(valjVariant(s, r.chem > 0 ? 'r_kemiBra' : 'r_kemiDalig', nyckel, f, 0));
   const ggr = ganger;
   const m = r.minns ?? {}, gjort: string[] = [];
@@ -2136,7 +2172,7 @@ export function relationText(s: State, p: Person, q: Person, r: Rel): string[] {
   else if (fick) ut.push(`${q.name} har gett ${p.name} ${gavor(fick)}, men ${p.name} har aldrig gett något tillbaka.`);
   for (const e of (p.intryck ?? []).filter(x => x.om === q.id).sort((x, y) => y.v * y.c - x.v * x.c).slice(0, BERATT.relIntryck)) {
     const t = intryckText(s, e);
-    ut.push(`${cap(hen(p))} ser ${q.name} som ${t.namn}: ${t.sure}, ${t.varifran}.${t.bevis.length ? ` ${cap(t.bevis[0])}.` : ''}`);
+    ut.push(`${cap(hen(p))} ser ${q.name} som ${t.som}: ${t.sure}, ${t.varifran}.${t.bevis.length ? ` ${cap(t.bevis[0])}.` : ''}`);
   }
   return ut;
 }

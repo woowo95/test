@@ -1,3 +1,4 @@
+import { honom } from './ord';
 import { bynsMitt, utanforByn } from './omrade';
 import { ByteForsok, ByteMinne, DAY, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
@@ -481,7 +482,7 @@ vidLura.push((s, L, X, markt) => {
   if (L.p) luradMed(s, h, L.p, true); // och handlaren att bybon lurade hen
   andraInst(k, -KLAN.lurad);
   count(s, 'klanLurad');
-  log(s, `${h.namn} märkte att ${L.namn} hade lurat hen. ${k.namn} kommer att höra om det.`, 'world');
+  log(s, `${h.namn} märkte att ${L.namn} hade lurat ${honom(h)}. ${k.namn} kommer att höra om det.`, 'world');
 });
 // bybon som part med handlaren: hen betalar också med sitt silver, och silvret är värt sitt grundvärde
 const bybonPart = (s: State, p: Person): Part => ({ ...personPart(s, p, true), varde: k => k === 'silver' ? 1 : behovAv(s, p, k) });

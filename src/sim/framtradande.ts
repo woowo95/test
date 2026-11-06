@@ -3,6 +3,7 @@
 // finns från början, så att även en liten by har framträdanden. Formerna är rader i registret FRAMTRADANDEN. Framträdandet
 // ger publiken glädje (mer ju skickligare och mer karismatisk den som uppträder är) och får en kort text som beskriver det.
 // Ett framträdande i taget, i s.fram; de senaste står i s.framtradanden.
+import { honom } from './ord';
 import { ALDER, ageOf, alive, byId, count, getRel, gjort, isSick, living, log, ovning, stat, think } from './folk';
 import { avbryt } from './lager';
 import { eldPlats } from './karta';
@@ -180,7 +181,7 @@ function bestall(s: State, p: Person, d: FramDef) {
   t.agare = p.id;
   const namn = (SAKER[t.k]?.namn ?? t.k).toLowerCase(), r = getRel(s, p, l);
   r.op = clamp(r.op + FRAM.bestallTack, -100, 100);
-  think(p, `Fick en ${namn} av ${l.name} för att hylla hen`, 0.05, s.now, 6 * HOUR);
+  think(p, `Fick en ${namn} av ${l.name} för att hylla ${honom(l)}`, 0.05, s.now, 6 * HOUR);
   count(s, 'framBestalld');
   log(s, `${l.name} gav ${p.name} en ${namn} för ett framträdande som hyllar ${l.name}.`, 'rel', [l.id, p.id]);
   const x: BudLage = { ev: 0, l, op: r.op };

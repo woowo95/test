@@ -427,9 +427,9 @@ export function describe(s: State, l: Lardom) {
   else {
     const real = areaValue(s, l.k, l.a);
     if (l.k === 'flinta') { if (real < 0.5) wrong = 'fel, där finns ingen flinta'; }
-    else if (l.k === 'vatten') { if (Math.abs(l.v - real) > 0.3) wrong = l.v > real ? 'vattnet är renare än hen tror' : 'vattnet är smutsigare än hen tror'; }
+    else if (l.k === 'vatten') { if (Math.abs(l.v - real) > 0.3) wrong = l.v > real ? 'vattnet är renare än så' : 'vattnet är smutsigare än så'; }
     else if (rel(l.v) > rel(real) + 0.25) wrong = l.src === undefined && !l.led ? 'stämmer inte längre' : 'överdrivet eller inaktuellt';
-    else if (rel(real) > rel(l.v) + 0.35) wrong = 'det finns mer än hen tror';
+    else if (rel(real) > rel(l.v) + 0.35) wrong = 'det finns mer än så';
   }
   return { text, what, place, src, sure, wrong };
 }

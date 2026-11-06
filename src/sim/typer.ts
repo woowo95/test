@@ -56,18 +56,18 @@ export const STAT_NAMES: Record<Stat, string> = {
 // vad varje egenskap påverkar utöver arbetena som har den som egenskap (ACTS), med orden personrutan visar.
 // Skriv till en rad när simuleringen börjar fråga efter egenskapen på ett nytt ställe
 export const STAT_GOR: Record<Stat, string[]> = {
-  styrka: ['Hur mycket hen orkar bära'],
+  styrka: ['Hur mycket man orkar bära'],
   uthallighet: ['Att fisken sitter kvar när den nappat'],
-  intelligens: ['Hur fort hen lär sig färdigheter, lärdomar och tekniker', 'Att tända elden', 'Att känna igen svamp', 'Att väljas till byggare'],
-  nyfikenhet: ['Att komma på nya tekniker', 'Hur långt bort hen går på promenad', 'Att lita på platser hen inte känner', 'Att tända byns allra första eld'],
-  karisma: ['Att dela med sig av lärdomar i samtal', 'Hur charmig hen är i samtal', 'Hur mycket hens röst väger när byns seder ändras'],
-  skonhet: ['Hur charmig och attraktiv hen är i samtal'],
+  intelligens: ['Hur fort man lär sig färdigheter, lärdomar och tekniker', 'Att tända elden', 'Att känna igen svamp', 'Att väljas till byggare'],
+  nyfikenhet: ['Att komma på nya tekniker', 'Hur långt bort man går på promenad', 'Att lita på platser man inte känner', 'Att tända byns allra första eld'],
+  karisma: ['Att dela med sig av lärdomar i samtal', 'Hur charmig man är i samtal', 'Hur mycket rösten väger när byns seder ändras'],
+  skonhet: ['Hur charmig och attraktiv man är i samtal'],
   flit: ['Pliktkänslan', 'Lusten att göra hantverk, också på kvällen', 'Att fylla på elden i rätt tid'],
-  empati: ['Att trösta och ge gåvor', 'Att aldrig ta något utan lov, när den är hög', 'Att vilja ha eld när andra fryser', 'Hur ofta hen pratar med andra', 'Pliktkänslan'],
-  mod: ['Att väljas till nattvakt', 'Hur långt bort hen vågar gå', 'Att inte låta rädslor styra'],
-  minne: ['Hur länge hen minns platser och lärdomar'],
-  smidighet: ['Att inte råka ut för olyckor i arbetet', 'Att fånga harar', 'Att fisken sitter kvar när den nappat', 'Hur fort hen tar sig fram i skog och snår', 'Hur fint det blir som hen tillverkar', 'Hur snabb hen är och hur bra hen duckar i en strid'],
-  aggression: ['Att slå i stället för att gråta när hen mår dåligt', 'Att gräla', 'Hur hårt hen straffar som ledare', 'Blodtörsten: att vilja döda, med låg empati och dåligt humör', 'Att inte ge sig i en strid'],
+  empati: ['Att trösta och ge gåvor', 'Att aldrig ta något utan lov, när den är hög', 'Att vilja ha eld när andra fryser', 'Hur ofta man pratar med andra', 'Pliktkänslan'],
+  mod: ['Att väljas till nattvakt', 'Hur långt bort man vågar gå', 'Att inte låta rädslor styra'],
+  minne: ['Hur länge man minns platser och lärdomar'],
+  smidighet: ['Att inte råka ut för olyckor i arbetet', 'Att fånga harar', 'Att fisken sitter kvar när den nappat', 'Hur fort man tar sig fram i skog och snår', 'Hur fint det blir som man tillverkar', 'Hur snabb man är och hur bra man duckar i en strid'],
+  aggression: ['Att slå i stället för att gråta när man mår dåligt', 'Att gräla', 'Hur hårt man straffar som ledare', 'Blodtörsten: att vilja döda, med låg empati och dåligt humör', 'Att inte ge sig i en strid'],
 };
 export const SKILLS = ['samla', 'jakt', 'fiske', 'ved', 'hantverk', 'berattande', 'matlagning', 'narstrid', 'traff', 'skaldskap', 'handel'] as const; // handel: steg 4.4.1.4 (byten, behov.ts); skaldskap: steg 4.3.2.5 (framtradande.ts); matlagning: steg 2.8.1 (matlagning.ts); narstrid, traff: steg 3.7.2 (strid.ts). Eldkonsten togs bort i steg 3.10.8
 export type Skill = typeof SKILLS[number];
@@ -80,13 +80,13 @@ export const SKILL_GOR: Record<Skill, string[]> = {
   jakt: [],
   fiske: ['Att fisken sitter kvar när den nappat'],
   ved: [],
-  hantverk: ['Hur fort hen tillverkar och bygger', 'Att väljas till byggare', 'Lusten att göra hantverk', 'Att tända elden', 'Att väljas till att tända och flytta elden'],
+  hantverk: ['Hur fort man tillverkar och bygger', 'Att väljas till byggare', 'Lusten att göra hantverk', 'Att tända elden', 'Att väljas till att tända och flytta elden'],
   berattande: ['Lusten att berätta på kvällen'],
   matlagning: ['Att inte bränna maten vid grillen'],
   narstrid: ['Att träffa, parera och slå hårt i en strid', 'Växer av slagsmål och brottning på lek'],
   traff: ['Att träffa med ett kast eller skott', 'Växer av kastlek och jakt'],
-  skaldskap: ['Hur bra framträdandena blir och vilka former hen kan', 'Att vilja uppträda på kvällen', 'Växer när hen berättar, sjunger, spelar eller talar'],
-  handel: ['Hur stor del av vinsten i ett byte hen får', 'Att lura en ovan, och att märka när hen själv blir lurad', 'Att väljas att handla för byn', 'Växer av varje byte'],
+  skaldskap: ['Hur bra framträdandena blir och vilka former man kan', 'Att vilja uppträda på kvällen', 'Växer när man berättar, sjunger, spelar eller talar'],
+  handel: ['Hur stor del av vinsten i ett byte man får', 'Att lura en ovan, och att märka när man själv blir lurad', 'Att väljas att handla för byn', 'Växer av varje byte'],
 };
 
 // det personrutan visar när man trycker på en färdighet (steg 3.10.6): nycklarna i p.gjort (gjort i folk.ts), det senaste
@@ -102,7 +102,7 @@ export const SKILL_STAT: Record<Skill, { k: string; namn: string; av?: string }[
   narstrid: [{ k: 'slagsmal', namn: 'Slagsmål' }, { k: 'vann', namn: 'Vann', av: 'slagsmal' }],
   traff: [{ k: 'kast', namn: 'Kast' }, { k: 'kastTraff', namn: 'Träffade', av: 'kast' }],
   skaldskap: [{ k: 'upptradt', namn: 'Framträdanden' }],
-  handel: [{ k: 'bytt', namn: 'Byten' }, { k: 'lurade', namn: 'Lurade någon', av: 'bytt' }, { k: 'lurad', namn: 'Märkte att hen blev lurad', av: 'bytt' }],
+  handel: [{ k: 'bytt', namn: 'Byten' }, { k: 'lurade', namn: 'Lurade någon', av: 'bytt' }, { k: 'lurad', namn: 'Märkte att någon lurade', av: 'bytt' }],
 };
 
 export const AGES = ['Istid', 'Vårtid', 'Sommartid', 'Hösttid'];

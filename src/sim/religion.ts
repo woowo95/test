@@ -230,7 +230,7 @@ export function tecken(s: State, p: Person, k: TeckenTyp, om?: string) {
   if (formas(s, p) || andlighet(s, p) < TRO.grunda || rnd(s, 'tro', p) >= TRO.grundaChans) return;
   // var någon annan med om samma sak och tolkade den nyss, delar hen den tron i stället för att grunda en egen
   const samma = s.tron?.find(t => t.k === k && t.om === om && t.slut === undefined && s.now - t.t <= TRO.samma * HOUR);
-  if (samma) { p.tro = samma.id; p.troStyrka = TRO.styrka; count(s, 'tro_samma'); log(s, `${p.name} såg samma tecken som ${samma.gnamn} och tror som hen.`, 'rel', [p.id, samma.grundare]); return; }
+  if (samma) { p.tro = samma.id; p.troStyrka = TRO.styrka; count(s, 'tro_samma'); log(s, `${p.name} såg samma tecken som ${samma.gnamn} och tror nu likadant.`, 'rel', [p.id, samma.grundare]); return; }
   grunda(s, p, k, om);
 }
 function grunda(s: State, p: Person, k: TeckenTyp, om?: string) {

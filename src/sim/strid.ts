@@ -245,7 +245,7 @@ export const STRIDHANDELSER = {
   omkull: { tecken: '⬇️', namn: 'Faller omkull' },
   halkar: { tecken: '💫', namn: 'Halkar' },
   upp: { tecken: '⬆️', namn: 'Reser sig' },
-  later: { tecken: '🖐️', namn: 'Låter hen resa sig' },
+  later: { tecken: '🖐️', namn: 'Låter den andra resa sig' },
   tappar: { tecken: '👐', namn: 'Tappar vapnet' },
   plockar: { tecken: '🤲', namn: 'Tar upp' },
   nere: { tecken: '⤵️', namn: 'Faller' },

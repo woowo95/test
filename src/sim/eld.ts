@@ -1,3 +1,4 @@
+import { han } from './ord';
 import { tal } from './ord';
 import { allaBarn } from './uppvaxt';
 import { kronikaBer, personFalt } from './berattelser';
@@ -165,7 +166,7 @@ export const nagonGlod = (s: State) => eldarOf(s).some(f => f.lit || emberOn(s, 
 function fireWish(s: State, p: Person, vc: number, f: Fire, vid: boolean): Wish {
   const light = isLight(s.now), cold = coldOf(temperature(s)), sd = s.seder.v;
   const opts: Wish[] = [
-    { v: clamp((1 - p.warm) * ELD.onskaFryser + cold * ELD.onskaKyla, 0, 1), why: p.warm < 0.5 ? 'Fryser och vill ha mer värme' : 'Det är kallt och hen vill hålla värmen' },
+    { v: clamp((1 - p.warm) * ELD.onskaFryser + cold * ELD.onskaKyla, 0, 1), why: p.warm < 0.5 ? 'Fryser och vill ha mer värme' : `Det är kallt och ${han(p)} vill hålla värmen` },
     { v: clamp(vc * (p.pot.empati / ELD.onskaEmpati) * (ELD.onskaGemBas + ELD.onskaGem * sd.gemenskap), 0, 1), why: 'Andra i byn fryser' },
   ];
   if (vid) opts.push({ v: (light ? ELD.trivsDag : ELD.trivsNatt) * clamp(ELD.trivsMood - moodOf(p, s.now), ELD.trivsMin, 1), why: light ? 'Vill ha en trivsam eld' : 'Vill ha en trivsam eld att samlas kring i mörkret' });

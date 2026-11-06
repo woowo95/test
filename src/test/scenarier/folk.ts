@@ -356,7 +356,7 @@ SCENARIER.uppvaxt = {
       for (let i = 0; i < 20; i++) { const c = SIM.newPerson(s, 'k', s.now, mo, fa); for (const k of SIM.STATS) { summa += c.pot[k]; n++; } }
       const medel = summa / n;
       return [
-        [`barnet (8 år) som miste sina föräldrar minns det och blev föräldralöst (${(barn.upp ?? []).map(SIM.upplevelseText).join('; ')})`, har(barn, 'foralder') && har(barn, 'foraldralos') && s.log.some(l => l.text.includes('Blev föräldralös'))],
+        [`barnet (8 år) som miste sina föräldrar minns det och blev föräldralöst (${(barn.upp ?? []).map(SIM.upplevelseText).join('; ')})`, har(barn, 'foralder') && har(barn, 'foraldralos') && s.log.some(l => /blev föräldralös/i.test(l.text))],
         [`egenskaperna är anlagen plus upplevelserna, och anlagen sparas (${!!barn.anlag})`, flyttad && !!barn.anlag],
         [`den vuxna (20 år) minns föräldrarnas död men blev inte föräldralös (${(vuxen.upp ?? []).map(SIM.upplevelseText).join('; ')})`, har(vuxen, 'foralder') && !har(vuxen, 'foraldralos') && !!vuxen.upp?.every(u => u.v === 1)],
         [`två svåra skador ger ett minne (${skador}): ${SIM.upplevelseText(barn.upp!.find(u => u.k === 'skadad')!)}`, skador === 1],

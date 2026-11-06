@@ -1,3 +1,4 @@
+import { slaktOrd } from './ord';
 import { ALDER, REL, ageOf, alive, byId, count, franMitt, isKin, living, log, relKey, stat, think } from './folk';
 import { ARSTIDER, Fyllning, fyll, kronikaBer, och, personFalt, valjVariant } from './berattelser';
 import { skada } from './halsa';
@@ -342,13 +343,14 @@ export const STRAFF_NAMN = ['Tillrättavisning', 'Skam', 'Slag', 'Utvisning'];
 // texten om en rättegång: berättelsen ur mallarna r_ratt och r_folk (berattelser.ts), brottet och namnen på dem som visste
 export function rattegang(s: State, r: Rattegang) {
   const q = byId(s, r.om), l = byId(s, r.led), namn = (ids: number[]) => och(ids.map(id => byId(s, id)?.name ?? 'någon som glömts'));
-  const f: Fyllning = { ...(q ? personFalt(q) : { namn: r.namn, hen: 'hen', honom: 'hen' }), ledare: r.ledNamn, lhen: l ? hon(l) : 'hen',
+  const f: Fyllning = { ...(q ? personFalt(q) : { namn: r.namn, hen: 'den dömde', honom: 'den dömde' }), ledare: r.ledNamn, lhen: l ? hon(l) : 'ledaren',
     brott: brottText(r.b), straff: STRAFF_DA[r.steg], straffInf: STRAFF_INF[r.steg], arstid: ARSTIDER[ageIndex(s, r.t)],
     regn: !!r.regn, sno: !!r.sno, kallt: !!r.kallt, eld: !!r.eld, natt: !!r.natt, sjalv: !!r.b.sett, falsk: !!r.b.falsk,
     oratt: !!r.oratt, hard: r.steg > r.lagom, utvisad: r.steg === 3, dog: !!r.dog, manga: r.publik >= 5 };
   const t = Math.round(r.t / HOUR), nyckel = r.om * 7919 + r.led;
+  const egen = q && l ? slaktOrd(l, q) : undefined; // "Igik dömde sin egen dotter." (steg 6.7.2)
   return {
-    berattelse: `${fyll(valjVariant(s, 'r_ratt', nyckel, f, t), f)} ${fyll(valjVariant(s, 'r_folk', nyckel, f, t), f)}`,
+    berattelse: `${fyll(valjVariant(s, 'r_ratt', nyckel, f, t), f)} ${fyll(valjVariant(s, 'r_folk', nyckel, f, t), f)}${egen ? ` ${r.ledNamn} dömde sin egen ${egen}.` : ''}`,
     brott: brottText(r.b), sett: r.sett.length ? namn(r.sett) : '', hort: r.hort.length ? namn(r.hort) : '',
   };
 }

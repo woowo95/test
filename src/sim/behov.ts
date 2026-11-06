@@ -1,3 +1,4 @@
+import { hans, honom } from './ord';
 import { upplev } from './uppvaxt';
 import { State, Person, HOUR, DAY } from './typer';
 import { FOOD, REDSKAP_SLAG, SAKER, SAK_LIST, isTool, viktOf } from './saker';
@@ -295,7 +296,7 @@ export function noticeTheft(s: State, p: Person, key: string) {
     think(p, `${t.name} tog av min ${namnOf(key)}`, l ? -0.04 : -0.1, s.now, 12 * HOUR);
     if (alive(t)) think(t, `${p.name} vet att jag tog`, -0.05, s.now, 6 * HOUR);
     handelse(s, t, l ? 'stoldLindrig' : 'stold', p, namnOf(key), p); // bara den bestulne vet, och kan berätta det (steg 3.3.1)
-    if (!l) { livet(s, t, 'stal'); log(s, `${p.name} märkte att ${t.name} hade stulit hens ${namnOf(key)}.`, 'rel', [p.id, t.id]); upplev(s, p, 'bestulen', t.name); upplev(s, t, 'tjuv', p.name); }
+    if (!l) { livet(s, t, 'stal'); log(s, `${p.name} märkte att ${t.name} hade stulit ${hans(p)} ${namnOf(key)}.`, 'rel', [p.id, t.id]); upplev(s, p, 'bestulen', t.name); upplev(s, t, 'tjuv', p.name); }
   }
   p.stulet = p.stulet.filter(x => x.k !== key);
   if (!p.stulet.length) delete p.stulet;
@@ -585,7 +586,7 @@ function lurad(s: State, X: Part, L: Part) {
   gjort(s, p, 'lurad');
   think(p, `Blev lurad av ${L.namn}`, HANDLA.surTanke, s.now, HANDLA.surTim * HOUR);
   if (L.p) { const r = getRel(s, p, L.p); r.op = clamp(r.op - HANDLA.surRel, -100, 100); }
-  log(s, `${p.name} märkte att ${L.namn} hade lurat hen i ett byte.`, 'rel', [p.id, ...(L.p ? [L.p.id] : [])]);
+  log(s, `${p.name} märkte att ${L.namn} hade lurat ${honom(p)} i ett byte.`, 'rel', [p.id, ...(L.p ? [L.p.id] : [])]);
   return true;
 }
 // växeln: G ger tillbaka så mycket silver som M betalat för mycket (for, för G), i hela silver. Betalar M med silver blir det

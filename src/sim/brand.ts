@@ -1,4 +1,4 @@
-import { mark, tal } from './ord';
+import { han, mark, tal } from './ord';
 import { tabortBuske } from './buskar';
 import { freeTools, tingOf } from './agande';
 import { balans } from './balans';
@@ -440,7 +440,7 @@ export function antand(s: State, p: Person, var_: string) {
   if (p.brinner !== undefined || !alive(p)) return;
   p.brinner = s.now;
   count(s, 'brinner');
-  log(s, `${p.name} brinner (${var_})!`, 'world', [p.id]);
+  log(s, `${p.name} brinner (${var_.replace(/\bhen\b/, han(p))})!`, 'world', [p.id]);
   avbryt(s, p);
   for (const q of living(s)) if (q !== p && hjalpare(s, q, p)) avbryt(s, q);
 }
@@ -494,7 +494,7 @@ export function hjalpaVal(s: State, p: Person) {
     if (d < md) { md = d; m = q; }
   }
   if (!m) return;
-  const med = freeTools(s, p, 'vattensack') >= 1 ? 'vattensäcken' : 'det hen har';
+  const med = freeTools(s, p, 'vattensack') >= 1 ? 'vattensäcken' : `det ${han(p)} har`;
   return { act: 'hjalpaBrinnande' as const, why: `Släcker elden på ${m.name} med ${med}`, spot: { x: m.x, y: m.y }, dur: BRAND.hjalpMin * MIN, ref: m.id };
 }
 // klart (KLAR i steg.ts): den som brann är släckt; ett plagg som slets av ligger på marken

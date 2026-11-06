@@ -92,7 +92,7 @@ export const TEKNIK: Tek[] = [
   { id: 'skinnklader', namn: 'Skinnkläder', text: 'Skinn som sys ihop med rep av senor till en rock och ett par skor.', effekt: 'Den som har kläderna på sig fryser mindre.',
     omr: ['hantverk', 'jakt'], krav: ['bensyl'], niva: 4, tid: 14, forsok: { vid: ['flatarbank'], skill: 'hantverk' }, episk: 'Efter många förstörda skinn vid slöjdbänken drog {namn} på sig den första rock som byn hade sett.' },
   // vattensäcken (steg 2.10.1): sys av skinn som kläderna. Man kommer på den när man ger vatten åt den som inte kan gå
-  { id: 'fackla', namn: 'Fackla', text: 'En käpp som klyvs i toppen, med torrt gräs och talg i klykan.', effekt: 'Den som går ut i mörkret tänder en fackla vid elden och ser vart hen går.',
+  { id: 'fackla', namn: 'Fackla', text: 'En käpp som klyvs i toppen, med torrt gräs och talg i klykan.', effekt: 'Den som går ut i mörkret tänder en fackla vid elden och ser vart den går.',
     omr: ['jakt', 'hantverk'], krav: ['slaktbank'], niva: 3, tid: 4 },
   { id: 'vattensack', namn: 'Vattensäck', text: 'Ett skinn som sys ihop till en säck och knyts med rep.', effekt: 'Man kan bära vatten till den som inte kan gå till vattnet.',
     omr: ['hantverk', 'dricka', 'varda'], krav: ['skinnklader'], niva: 5, tid: 5.4, forsok: { vid: ['flatarbank'], skill: 'hantverk' }, episk: 'Vattnet rann ut genom varje söm {namn} sydde. Men till sist höll säcken tätt, och {hen} bar vatten utan att spilla en droppe.' },
@@ -116,11 +116,11 @@ export const TEKNIK: Tek[] = [
   { id: 'lyra', namn: 'Lyra', text: 'En ram av trä med strängar av rep som man knäpper på.', effekt: 'Sången och musiken till lyran gör publiken gladare än med andra instrument.',
     omr: ['upptrada', 'hantverk'], krav: ['scen', 'rep'], niva: 3, tid: 6 },
   // pyntet (steg 4.3.4, pynt.ts): lerkrukan, bonaden och det snidade väggbrädet i rummet där man sover; varje möbel är sin egen teknik
-  { id: 'kruka', namn: 'Lerkruka', text: 'En kruka av lera från stranden, formad för hand och bränd i elden, bara för att vara vacker.', effekt: 'Den som tycker om krukor ställer en där hen sover: hen trivs där, och de som ser den tycker bättre om hen.',
+  { id: 'kruka', namn: 'Lerkruka', text: 'En kruka av lera från stranden, formad för hand och bränd i elden, bara för att vara vacker.', effekt: 'Den som tycker om krukor ställer en där den sover, trivs där, och de som ser den tycker bättre om ägaren.',
     omr: ['hantverk', 'bygga'], krav: ['timmervagg'], niva: 3, tid: 4 },
-  { id: 'bonad', namn: 'Bonad', text: 'Ett skinn som hängs på väggen, med mönster och fransar av rep.', effekt: 'Den som tycker om bonader hänger en där hen sover: hen trivs där, och de som ser den tycker bättre om hen.',
+  { id: 'bonad', namn: 'Bonad', text: 'Ett skinn som hängs på väggen, med mönster och fransar av rep.', effekt: 'Den som tycker om bonader hänger en där den sover, trivs där, och de som ser den tycker bättre om ägaren.',
     omr: ['hantverk', 'bygga'], krav: ['timmervagg', 'rep'], niva: 3, tid: 4 },
-  { id: 'vaggbrade', namn: 'Snidat väggbräde', text: 'Ett bräde med snidade mönster som sätts upp på väggen.', effekt: 'Den som tycker om väggbräden sätter upp ett där hen sover: hen trivs där, och de som ser det tycker bättre om hen.',
+  { id: 'vaggbrade', namn: 'Snidat väggbräde', text: 'Ett bräde med snidade mönster som sätts upp på väggen.', effekt: 'Den som tycker om väggbräden sätter upp ett där den sover, trivs där, och de som ser det tycker bättre om ägaren.',
     omr: ['hantverk', 'bygga'], krav: ['timmervagg', 'kniv'], niva: 3, tid: 4 },
   // latrinen och benspaden (steg 2.7.2): spaden görs av ben, rep och en gren vid slöjdbänken, och med den grävs latrinen
   // (LATRIN i STATIONER, samma id) och rötterna fortare

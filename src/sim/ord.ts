@@ -108,3 +108,15 @@ export const liten = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
 // ---------- marken ----------
 // hur mycket mark (rutor) som brann eller översvämmades: "en liten bit mark", "ett stort stycke mark"
 export const mark = (n: number) => n <= 3 ? 'en liten bit mark' : n <= 15 ? 'en bit mark' : n <= 60 ? 'ett stort stycke mark' : 'ett mycket stort stycke mark';
+
+// ---------- släkten (steg 6.7.2) ----------
+// genitiv av ett namn: "Ylvars", men "Ask" blir "Asks" och "Ines" "Ines"
+export const gen = (namn: string) => /[sxz]$/i.test(namn) ? namn : `${namn}s`;
+// vad q är för p: mor, far, son, dotter, bror eller syster (undefined om de inte är så nära släkt)
+type Slakt = { id: number; sex: 'm' | 'k' | string; mother?: number; father?: number };
+export function slaktOrd(p: Slakt, q: Slakt): string | undefined {
+  if (p.mother === q.id || p.father === q.id) return q.sex === 'k' ? 'mor' : 'far';
+  if (q.mother === p.id || q.father === p.id) return q.sex === 'k' ? 'dotter' : 'son';
+  if ((p.mother !== undefined && p.mother === q.mother) || (p.father !== undefined && p.father === q.father)) return q.sex === 'k' ? 'syster' : 'bror';
+  return undefined;
+}
