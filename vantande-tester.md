@@ -14,3 +14,5 @@ d4a78e7 6.10.4 Stort test och balans: balans, jamfor, natur, build, utseende, ri
 - Gräns 4 är inte bedömd. Rådjur 16 av 24, fåglar 19, björnmöten 18, stubbar 24 och vindfälle 23 ser bra ut. Facklans teknik finns i bara 9 av 24 och skogsvården har arbetstimmar i bara 9 av 24; de måste granskas, liksom talgljusen och stråken.
 - Sedan: jamfor -- 35 64 --mot e571d1a en gång som information (tar mer än en timme datortid). Npm run natur, build, utseende och riktad -- --karta. Nytt facit. Bocka av 6.10.4 med versionen och publicera spelet. Då är fas 6 klar utom 6.8.1 och 6.9.19, som väntar på Björn.
 - I sandlådan på MacBooken kan kommandot tsx stoppas: kör då node --import tsx src/test/fil.ts.
+
+fdfed3a 7.1 Bära mer (7.1.1–7.1.4, v502–v505): snabbkoll, koll, likhet, riktad --karta, facit. Sedan publiceras spelet. riktad gick inte att köra klart i molnet (tidsgränsen).
