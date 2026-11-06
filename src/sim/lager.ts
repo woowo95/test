@@ -29,9 +29,9 @@ import { slappPlanta } from './skogsvard';
 // temperaturen som maten ruttnar efter i vader.ts
 export const LAGER = balans('lager', {
   // lagerplatserna (zoner)
+  forradFran: 4, // med så här många vanliga lagerplatser är ett förrådshus värt mer än en lagerplats till (inget tak på lagerplatserna, steg 7.2.18)
   startBredd: 2, startHojd: 2, // byns första lagerplats, vid kartans lagerplats
   zonBredd: 6, zonHojd: 5, // en lagerplats växer till högst så här många rutor på bredden och på höjden
-  zoner: 4, // högst så här många vanliga lagerplatser (förrådshusets golv räknas inte)
   fullt: 3, // förrådet är fullt när lagerplatserna inte kan bli fler och så här många saker ligger bredvid dem
   vaxSteg: 4, // högst så här många förstoringar av lagerplatserna per timme
   mellan: 1, // lagerplatser ligger minst så här långt ifrån varandra
@@ -784,11 +784,11 @@ export function sakerPaGolvet(s: State) {
 
 // ---------- lagerplatserna ----------
 // en gång i timmen: större när något inte får plats, en ny lagerplats när de inte kan växa mer, mindre när de står tomma
+const vanliga = (s: State) => zonesOf(s).filter(z => z.hus === undefined).length;
 // det i förrådet som inte fått plats i en lagerplats utan ligger bredvid
 export const overflow = (s: State) => things(s).filter(a => zoneAt(s, a.x, a.y) < 0 && isStored(s, a.x, a.y));
-const vanliga = (s: State) => zonesOf(s).filter(z => z.hus === undefined).length;
-// förrådet är fullt: lagerplatserna kan inte bli fler och det ligger saker bredvid dem (förrådshuset, byggnader.ts)
-export const storeFull = (s: State) => vanliga(s) >= LAGER.zoner && overflow(s).length >= LAGER.fullt;
+// förrådet är fullt: det finns många lagerplatser och det ligger saker bredvid dem (förrådshuset, byggnader.ts)
+export const storeFull = (s: State) => vanliga(s) >= LAGER.forradFran && overflow(s).length >= LAGER.fullt;
 // när förrådet växer över marken (eller ett förrådshus blir klart) kan det ligga flera saker på en ruta som nu hör till
 // förrådet (den som högg lade grenar och ved på samma ruta). Det första ligger kvar, resten läggs på andra platser i
 // förrådet och redskapen får en plats av placeTools i slutet av steget
@@ -807,16 +807,7 @@ export function enPerRuta(s: State) {
 }
 export function tidyStore(s: State) {
   const zs = zonesOf(s);
-  const over = () => overflow(s);
-  let grew = -1;
-  for (let rep = 0; rep < LAGER.vaxSteg && over().length; rep++) {
-    const o = over(), i = zs.findIndex((z, j) => z.hus === undefined && o.some(a => allows(z, a.k)) && growOf(s, j));
-    if (i < 0) break;
-    zs[i] = growOf(s, i)!; grew = i;
-  }
-  if (grew >= 0) log(s, zs[grew].namn ? `${zs[grew].namn} blev för liten, så byn gjorde den större.` : 'Lagret blev för litet, så byn gjorde det större.', 'world');
-  else if (over().length && vanliga(s) < LAGER.zoner) newZone(s);
-  if (grew >= 0 || zs.length !== zonesOf(s).length) enPerRuta(s);
+  // större och nya lagerplatser föreslås av Byggplanen (steg 7.2.18, lagerStorre och lagerNy nedan)
   // mindre: ta bort en kant när mer än hälften har stått tom i sex timmar (krympTim) och det som ligger där får plats i resten
   for (let i = 0; i < zs.length; i++) {
     const z = zs[i], all = things(s), have = z.w * z.h, n = all.filter(a => inZone(z, a.x, a.y)).length;
@@ -830,6 +821,29 @@ export function tidyStore(s: State) {
     if (best && n + 1 <= best.w * best.h) zs[i] = best; // det som hamnar utanför bärs in igen
   }
   changed(s);
+}
+// Lagret är ett byggbehov (steg 7.2.18): det som inte fått plats ligger bredvid, och Byggplanen väljer mellan att göra en
+// lagerplats större, en ny lagerplats och ett förrådshus. Antalet lagerplatser har inget tak, utom marken själv
+export const lagerOver = (s: State) => overflow(s).length;
+export function lagerStorre(s: State) {
+  const zs = zonesOf(s);
+  let grew = -1;
+  for (let rep = 0; rep < LAGER.vaxSteg && overflow(s).length; rep++) {
+    const o = overflow(s), i = zs.findIndex((z, j) => z.hus === undefined && o.some(a => allows(z, a.k)) && growOf(s, j));
+    if (i < 0) break;
+    zs[i] = growOf(s, i)!; grew = i;
+  }
+  if (grew < 0) return false;
+  log(s, zs[grew].namn ? `${zs[grew].namn} blev för liten, så byn gjorde den större.` : 'Lagret blev för litet, så byn gjorde det större.', 'world');
+  enPerRuta(s); changed(s);
+  return true;
+}
+export function lagerNy(s: State) {
+  const n = zonesOf(s).length;
+  newZone(s);
+  if (zonesOf(s).length === n) return false;
+  enPerRuta(s); changed(s);
+  return true;
 }
 function growOf(s: State, i: number): Zone | undefined {
   const zs = zonesOf(s), z = zs[i];

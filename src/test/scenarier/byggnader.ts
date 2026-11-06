@@ -534,7 +534,7 @@ SCENARIER.lager = {
     vx.ting = []; vx.stackar = [{ k: 'sten', n: 1, c: 1, x: vz.x - 1, y: vz.y }]; // bredvid lagerplatsen: lagret är fullt och växer
     for (let y = vz.y - ut; y < vz.y + vz.h + ut; y++) for (let x = vz.x - ut; x < vz.x + vz.w + ut; x++) if (!isStored(vx, x, y) && usable(vx, x, y)) vx.stackar.push({ k: 'grenar', n: 1, c: 1, x, y }, { k: 'ved', n: 1, c: 1, x, y });
     const vxFore = tot(), vxYta = vz.w * vz.h;
-    SIM.tidyStore(vx);
+    (SIM.planLager(vx), SIM.tidyStore(vx));
     const vxRutor = new Map<number, number>();
     for (const q of vx.stackar) if (isStored(vx, q.x, q.y)) vxRutor.set(q.y * SIM.W + q.x, (vxRutor.get(q.y * SIM.W + q.x) ?? 0) + 1);
     const vxTva = [...vxRutor.values()].filter(n => n > 1).length, vxStor = zoneOf(vx).w * zoneOf(vx).h;
@@ -575,7 +575,7 @@ SCENARIER.lagerplatser = {
     for (const z of zonesOf(tom)) z.tom = undefined; // klockan börjar när lagret töms, inte när det blev halvtomt tidigare
     const zi = zonesOf(tom).findIndex(z => z.hus === undefined && z.w * z.h > SIM.LAGER.krympMin), yta = () => { const z = zonesOf(tom)[zi]; return z.w * z.h; };
     const yta0 = zi >= 0 ? yta() : 0, ytor: number[] = [];
-    for (let h = 0; h < 8 && zi >= 0; h++) { SIM.tidyStore(tom); ytor.push(yta()); tom.now += HOUR; }
+    for (let h = 0; h < 8 && zi >= 0; h++) { (SIM.planLager(tom), SIM.tidyStore(tom)); ytor.push(yta()); tom.now += HOUR; }
     return [
       [`ett tomt lager krymper inte de första sex timmarna, sedan krymper det (${yta0} rutor, sedan ${ytor.join(', ')} timme för timme)`, zi >= 0 && ytor.slice(0, SIM.LAGER.krympTim).every(n => n === yta0) && ytor[ytor.length - 1] < yta0],
       [`den första lagerplatsen går att använda (${startFel.length ? 'inte i by ' + startFel.join(', ') : 'i alla tre byarna'})`, startFel.length === 0],
@@ -1113,6 +1113,49 @@ SCENARIER.samlingssal = {
       ['man sätter sig vid bordet inne', !!plats && !!SIM.roomAt(s, plats.x, plats.y)],
       ['en scen inne går att använda', scenInne],
       [`verkstaden får en lagerplats för material (${hylla})`, hylla === 1],
+    ];
+  },
+};
+
+SCENARIER.byggplan2 = {
+  text: 'Steg 7.2.10–7.2.18: när inget är akut föreslår Byggplanen ett bättre golv och ett eget rum på nivån Förbättra. Planens tal följer seden, byn och varje familj har var sin ändring, silver går att betala med i byn, ett hus kan köpas och rivas, och lagret är ett byggbehov utan tak på lagerplatserna',
+  kor: () => {
+    const s = createState(6, START);
+    klockan(s); byggare(s);
+    SIM.planBuild(s); byggKlart(s);
+    const h = housesOf(s)[0];
+    put(s, 'ved', 200);
+    // ett bättre golv
+    const j = bitsOf(s).find(b => b.hus === h.id && b.k === 'golv')!;
+    j.m = 'jord'; SIM.touch(s);
+    SIM.planBuild(s);
+    const golvForb = j.m === 'tra' && j.forb === 1 && !SIM.buildJob(s, living(s)[0])?.bit.forb && SIM.buildJob(s, living(s)[0], true)?.bit === j;
+    j.b = 1; j.forb = undefined; j.mat = 1; SIM.touch(s);
+    // byns planering
+    s.seder.v.gemenskap = 1; s.seder.v.nyfikenhet = 1;
+    const plan = SIM.byplanNu(s);
+    const planOk = plan.tat > 0 && plan.form === 'rader';
+    s.seder.v.forsiktighet = -1;
+    const jord = SIM.byplanNu(s).golv === 'jord';
+    s.seder.v.forsiktighet = 0; s.seder.v.nyfikenhet = 0; SIM.byplanNu(s);
+    // silver inom byn
+    const [a, b] = living(s);
+    const silverMed = SIM.personPart(s, a).over === undefined ? false : true;
+    // köpa ett tomt hus av byn: en familj med råd
+    h.tom = s.now; h.fn = 'sovsal';
+    const ag = a.id;
+    put(s, 'silver', 500, { [ag]: 500 });
+    const fore = amountOf(s, 'silver');
+    const saljs = SIM.saljPris(s, h) > 0, kop = SIM.kopPris(s, ag, 1000);
+    // lagret
+    const zonFore = SIM.zonesOf(s).length;
+    return [
+      ['ett jordgolv föreslås bli trägolv, på nivån Förbättra och inte Tak', golvForb],
+      [`planens tal följer seden: tätt och i rader (${plan.tat.toFixed(1)}, ${plan.form})`, planOk],
+      ['seden Dagens behov lägger jordgolv', jord],
+      ['silver räknas i bytet inom byn', silverMed],
+      [`ett hus har ett pris, och köparens högsta (${Math.round(kop)}) räcker när hen har råd`, saljs && kop > 0 && fore >= 500 && b !== undefined],
+      [`lagerplatserna har inget tak (${zonFore})`, zonFore >= 1 && (SIM.LAGER as Record<string, number>).zoner === undefined],
     ];
   },
 };

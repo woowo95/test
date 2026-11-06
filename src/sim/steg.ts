@@ -908,7 +908,7 @@ function buildStep(s: State, p: Person, tk: Task, dtSec: number) {
     }
     if (tk.kom) { noteKom(s, b.hus, tk.kom); tk.kom = undefined; } // varifrån materialet kom räknas när det används
   }
-  const j = buildJob(s, p);
+  const j = buildJob(s, p, !!b.forb);
   if (!j || j.missing || j.fell || dangers(s).kyla) { tk.until = s.now; return; } // ett träd i vägen, eller kylan är en fara (steg 2.12.3): välj på nytt
   // nästa bit av bygget: man går först till lagret om det behövs material
   const site = siteOf(s, j.bit);

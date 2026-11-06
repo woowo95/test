@@ -87,7 +87,7 @@ export function takeForHouse(s: State, p: Person, hus: number | undefined, k: st
 }
 export const treeOn = (s: State, b: Bit) => groundOf(s).trees[b.y * W + b.x] >= FOREST;
 // det p kan bygga härnäst: lagning av slitna väggar först, sedan jordgolv, väggar och sist trägolv. Det andra redan bygger tas inte
-export function buildJob(s: State, p: Person): Job | undefined {
+export function buildJob(s: State, p: Person, forb = false): Job | undefined {
   if (ageOf(p, s.now) < ALDER.bygger) return;
   const others = living(s).filter(q => q !== p);
   const taken = new Set(others.filter(q => q.task?.act === 'bygga').map(q => q.task!.ref));
@@ -104,6 +104,7 @@ export function buildJob(s: State, p: Person): Job | undefined {
   }
   let best: Job | undefined, bs = Infinity;
   for (const b of bitsOf(s)) {
+    if (b.forb && !forb) continue; // en förbättring väntar till nivån Förbättra (steg 7.2.10)
     if (taken.has(b.id) || b.k === 'oppning' || (b.b < 1 && (treeOn(s, b) || stubbeOn(s, b.x, b.y) || vidElden(s, b.x, b.y)))) continue; // där elden står byggs inget förrän den flyttats (eldflytt.ts)
     const M = MATERIAL[b.m], repair = b.b >= 1;
     if (repair && b.c >= BYGG.laga) continue;
@@ -179,7 +180,7 @@ export function workOn(s: State, p: Person, b: Bit, dtSec: number, har = 0) {
   b.b = Math.min(1, b.b + rate);
   if (b.b < 1) return false;
   deliver(b, har, false);
-  b.c = 1; count(s, 'byggt_' + b.m); touch(s);
+  b.c = 1; b.forb = undefined; count(s, 'byggt_' + b.m); touch(s);
   if (b.k === 'vagg') clearTile(s, b);
   const h = husById(s, b.hus);
   if (h && !h.klar && h.varKlar === undefined && !h.byggare?.includes(p.id)) (h.byggare ??= []).push(p.id); // de som byggde (steg 4.5.4.9)
