@@ -1,3 +1,4 @@
+import { RECEPT } from './recept';
 // Kläderna (steg 3.10.12, "Plagg och material" i designdokumentet): ett klädesplagg är ett plagg av ett material. Plaggen
 // står i PLAGG: platsen på kroppen (PLATSER i utrustning.ts), hur mycket material det tar (mangd, i bitar: ett kaninskinn är
 // en bit, ett vargskinn två), vad mer det sys med (med), hur varmt och slitstarkt det är i sig, vad det väger, tekniken och
@@ -37,13 +38,13 @@ interface PlaggDef {
   forsta: string; fame?: string; // loggen första gången ({namn} = den som gjorde det, {plagg} = plaggets namn i en mening) och det hen minns för
 }
 const PLAGG_DEF = {
-  rock: { namn: 'Rock', ord: 'en rock', verb: 'Syr', plats: 'yttre', mangd: 3, med: { rep: 1 }, varme: 0.25, dygn: 4, vikt: 10, tek: 'skinnklader', min: 5, slag: ['skinn'], tung: true,
+  rock: { namn: 'Rock', ord: 'en rock', verb: 'Syr', plats: 'yttre', mangd: RECEPT.rock.mangd, med: RECEPT.rock.av, varme: 0.25, dygn: 4, vikt: 10, tek: 'skinnklader', min: RECEPT.rock.min, slag: ['skinn'], tung: true,
     skydd: { delar: ['bal', 'armV', 'armH'], tar: { hugg: 0.25, stick: 0.15, slag: 0.2, bett: 0.3 } },
     forsta: '{namn} sydde byns första {plagg}. Den som har den på sig fryser mindre.', fame: 'Sydde byns första {plagg}' },
-  skor: { namn: 'Skor', ord: 'ett par skor', verb: 'Syr', plats: 'fotter', mangd: 1, med: { rep: 1 }, varme: 0.1, dygn: 3, vikt: 3, tek: 'skinnklader', min: 5, slag: ['skinn'],
+  skor: { namn: 'Skor', ord: 'ett par skor', verb: 'Syr', plats: 'fotter', mangd: RECEPT.skor.mangd, med: RECEPT.skor.av, varme: 0.1, dygn: 3, vikt: 3, tek: 'skinnklader', min: RECEPT.skor.min, slag: ['skinn'],
     skydd: { delar: ['fotV', 'fotH'], tar: { hugg: 0.2, stick: 0.2, slag: 0.1, bett: 0.3 } },
     forsta: '{namn} sydde byns första par {plagg}.' },
-  balte: { namn: 'Bälte', ord: 'ett bälte', verb: 'Flätar', plats: 'balte', mangd: 2, varme: 0, dygn: 10, vikt: 1, tek: 'balte', min: 5, slag: ['flatat'], krok: true,
+  balte: { namn: 'Bälte', ord: 'ett bälte', verb: 'Flätar', plats: 'balte', mangd: RECEPT.balte.mangd, varme: 0, dygn: 10, vikt: 1, tek: 'balte', min: RECEPT.balte.min, slag: ['flatat'], krok: true,
     forsta: '{namn} flätade byns första {plagg}. Redskapet hänger i det, och båda händerna är fria att bära med.' },
 } satisfies Record<string, PlaggDef>;
 export type Plagg = keyof typeof PLAGG_DEF;

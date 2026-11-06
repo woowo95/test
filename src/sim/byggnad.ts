@@ -1,4 +1,5 @@
 import { eldPlats, getMap } from './karta';
+import { RECEPT } from './recept';
 import { groundOf, tileOf } from './mark';
 import { H, State, T, W, inMap } from './typer';
 import { balans } from './balans';
@@ -10,11 +11,7 @@ export const BYGGNAD = balans('byggnad', {
   kroppsvarme: 0.04, // varje människa i rummet värmer så här mycket (hur många som är där räknas, shelterOf)
   skyddMax: 0.9, // mer än så här skyddar inget rum mot kylan
   skinndorrTat: 0.6, // en skinndörr släpper ut så här mycket mindre värme än en öppen dörröppning (steg 2.2.16) ...
-  skinndorrSkinn: 2, // ... görs av så många skinn ...
-  skinndorrMin: 20, // ... och så många minuters arbete
   tradorrTat: 0.85, // en trädörr släpper ut så här mycket mindre värme än en öppen dörröppning (steg 3.7.21) ...
-  tradorrVirke: 2, tradorrRep: 1, // ... görs av så mycket virke (steg 4.5.5.2) och rep ...
-  tradorrMin: 20, // ... och så många minuters arbete
 });
 
 // ---------- byggen ----------
@@ -55,12 +52,12 @@ export const MATERIAL: Record<string, Material> = {
 export interface DorrDef { namn: string; ikon: string; tek: string[]; av: Record<string, number>; min: number; tat: number; gor: string; forsta: string; stanger?: true }
 export const DORRAR = {
   skinndorr: {
-    namn: 'Skinndörr', ikon: 'skinndorr', tek: ['skinndorr'], av: { skinn: BYGGNAD.skinndorrSkinn }, min: BYGGNAD.skinndorrMin, tat: BYGGNAD.skinndorrTat,
+    namn: 'Skinndörr', ikon: 'skinndorr', tek: ['skinndorr'], av: RECEPT.skinndorr.av, min: RECEPT.skinndorr.min, tat: BYGGNAD.skinndorrTat,
     gor: 'Hänger en hud i dörröppningen.',
     forsta: '{namn} hängde byns första skinndörr i en dörröppning. Huset håller värmen bättre.',
   },
   tradorr: {
-    namn: 'Trädörr', ikon: 'tradorr', tek: ['tradorr'], av: { virke: BYGGNAD.tradorrVirke, rep: BYGGNAD.tradorrRep }, min: BYGGNAD.tradorrMin, tat: BYGGNAD.tradorrTat, stanger: true,
+    namn: 'Trädörr', ikon: 'tradorr', tek: ['tradorr'], av: RECEPT.tradorr.av, min: RECEPT.tradorr.min, tat: BYGGNAD.tradorrTat, stanger: true,
     gor: 'Hänger en dörr av trä i dörröppningen.',
     forsta: '{namn} hängde byns första trädörr. Den håller värmen inne och kan stängas mot vargarna.',
   },

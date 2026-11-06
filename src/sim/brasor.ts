@@ -6,7 +6,8 @@ import { coldOf, temperature } from './vader';
 import { amountOf, changed, isStored } from './lager';
 import { bedFor } from './bygg';
 import { newFire, woodDays } from './eld';
-import { STATION, Station } from './stationer';
+import { Station } from './stationer';
+import { RT } from './recept';
 import { flintSpot } from './fynd';
 import type { Uppgift } from './projekt';
 
@@ -54,7 +55,7 @@ export const vedPerEld = (s: State, extra: number) => woodDays(s) / (brasorOf(s)
 // stenar som ligger i högar på marken (de från en lägereld som tagits isär), på väg in i lagret
 const stenPaMarken = (s: State) => (s.stackar ?? []).reduce((n, a) => a.k === 'sten' && !isStored(s, a.x, a.y) ? n + a.n : n, 0); // utanför lagret: amountOf räknar lagret
 // byn behöver stenar till en lägereld till (eld.ts, needStones): den vill ha en, ingen är påbörjad och stenarna räcker inte
-export const brasaSten = (s: State) => brasaBrist(s) > 0 && !(s.stationer ?? []).some(t => t.k === 'brasa' && t.kvar > 0) && amountOf(s, 'sten') + stenPaMarken(s) < STATION.brasaSten;
+export const brasaSten = (s: State) => brasaBrist(s) > 0 && !(s.stationer ?? []).some(t => t.k === 'brasa' && t.kvar > 0) && amountOf(s, 'sten') + stenPaMarken(s) < RT.brasaSten;
 // stenarna letas som en del av projektet (projekt.ts): byn samlar sällan, så annars kommer lägerelden aldrig. En i taget, och
 // bara den som får bygga en. Stenarna hittas vid stenarna när byn behöver dem (forageItems i eld.ts)
 export const kanLetaBrasaSten = (s: State, p: Person) => brasaSten(s) && ageOf(p, s.now) >= ALDER.ansvar && !living(s).some(q => q !== p && q.task?.sok);
@@ -109,7 +110,7 @@ function taIsar(s: State, f: Fire) {
   const st = (s.stackar ??= []), { x, y } = f.at!;
   let g = st.find(q => q.x === x && q.y === y && q.k === 'sten');
   if (!g) st.push(g = { x, y, k: 'sten', n: 0, c: 1 });
-  g.n += STATION.brasaSten; changed(s);
+  g.n += RT.brasaSten; changed(s);
   count(s, 'brasaIsar');
   log(s, 'En lägereld som ingen längre sov nära togs isär. Stenarna ligger kvar och används till nästa.', 'world');
 }

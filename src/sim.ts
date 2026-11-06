@@ -69,6 +69,7 @@ export * from './sim/is';
 export * from './sim/redskap';
 export * from './sim/paborjat';
 export * from './sim/stationer';
+export * from './sim/recept';
 export * from './sim/smuts';
 export * from './sim/blod';
 export * from './sim/projekt';
