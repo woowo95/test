@@ -1,15 +1,20 @@
 import { LAGER, condOf, lagerHinder, living, sakNamn, zonesOf } from '../../sim';
-import { carryTxt, condBar, esc, hjalpKnapp, hjalpText, pLink, pileTxt } from '../hjalp';
+import { carryTxt, esc, hjalpKnapp, hjalpText, pLink, pileTxt } from '../hjalp';
 import { outPilesAt, piles, s, ui, uppgiftVid } from '../lage';
 import type { Flik } from '../panel';
 import { grafHtml } from '../graf';
 import { frystAttr, sakAttr } from './sak';
 import { taBortLagerITest } from '../testborta';
+import { framstegSvg } from '../framsteg';
+
+// hållbarheten som en liten cirkel (steg 6.9.6): fylld efter hur hel saken är, med procenten när man håller över den
+const hallCirkel = (c: number) => `<span class="hall${c < 0.5 ? ' low' : ''}" title="Hållbarhet ${Math.round(c * 100)} %" aria-label="Hållbarhet ${Math.round(c * 100)} %">${framstegSvg(c, 5)}</span>`;
 
 // en lagerplats: öppnas genom att trycka på den på kartan. Varje stack för sig, med sitt skick
 export const lager: Flik = {
   namn: 'Lagret',
   knapp: 'person',
+  band: () => 'forrad', // Förrådets band (steg 6.9.6)
   // testläget (steg 4.5.7.8): Ta bort, som för en station; minns för den riktiga byn (ui/testborta.ts)
   klick(el) {
     const b = el.closest<HTMLElement>('[data-test="lagerbort"]'), zs = zonesOf(s), z = zs[Math.min(ui.lagerNr, zs.length - 1)];
@@ -29,7 +34,7 @@ export const lager: Flik = {
     <div class="phead"><div><h2>${esc(z.namn ?? 'Lagret')}</h2></div>${hjalpKnapp('lager', 'Hur fungerar lagret?')}</div>
     ${hjalpText('lager', `<p class="muted small">${what}${vaxer}${zs.length > 1 ? ` Byn lägger saker här som nummer ${nr} av ${zs.length} lagerplatser.` : ''}</p>`)}
     ${grafHtml('forrad')}
-    <h3>Stackar</h3>${ps.length ? `<dl class="kv stk">${ps.map(p => `<dt class="tryck${frystAttr(p.k)}" ${sakAttr(p)}>${pileTxt(p)}</dt><dd>${condBar(condOf(p))}<span>${Math.round(condOf(p) * 100)} %</span></dd>`).join('')}</dl>` : '<p class="muted">Lagret är tomt.</p>'}
+    <h3>Stackar</h3>${ps.length ? `<dl class="kv stk">${ps.map(p => `<dt class="tryck${frystAttr(p.k)}" ${sakAttr(p)}>${pileTxt(p)}</dt><dd>${hallCirkel(condOf(p))}</dd>`).join('')}</dl>` : '<p class="muted">Lagret är tomt.</p>'}
     <h3>På väg med saker</h3>${barare.length ? `<ul class="rels">${barare.map(p => `<li>${pLink(p)}<span></span><span></span><span class="muted">${esc(carryTxt(p))}</span></li>`).join('')}</ul>` : '<p class="muted">Ingen bär något just nu.</p>'}
     ${ui.testMode ? `<h3>Testläget</h3><p><button type="button" class="ghost" data-test="lagerbort" title="Ta bort" aria-label="Ta bort"${lagerHinder(s) ? ' disabled' : ''}>🗑️</button>${lagerHinder(s) ? ` <span class="muted">${esc(lagerHinder(s)!)}.</span>` : ' <span class="muted">Det som ligger här blir kvar på marken.</span>'}</p>` : ''}`;
   },
@@ -46,7 +51,7 @@ export const hog: Flik = {
     return `
     <div class="phead"><div><h2>${mark ? 'På marken' : 'Bredvid lagret'}</h2></div>${hjalpKnapp('hog', 'Varför ligger det här?')}</div>
     ${hjalpText('hog', `<p class="muted small">${mark ? 'Lades ner av någon som kallades bort till något annat.' : 'Fick inte plats i lagret.'} Slits ${LAGER.ute} gånger fortare än i lagret.</p>`)}
-    <dl class="kv">${ps.map(p => `<dt class="tryck${frystAttr(p.k)}" ${sakAttr(p)}>${pileTxt(p)}</dt><dd>${condBar(condOf(p))}<span>${Math.round(condOf(p) * 100)} %</span></dd>`).join('')}</dl>
+    <dl class="kv">${ps.map(p => `<dt class="tryck${frystAttr(p.k)}" ${sakAttr(p)}>${pileTxt(p)}</dt><dd>${hallCirkel(condOf(p))}</dd>`).join('')}</dl>
     ${who.length ? `<p class="muted">${who.map(p => pLink(p)).join(', ')} är på väg för att bära in det.</p>` : ''}`;
   },
 };
