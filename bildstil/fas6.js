@@ -576,6 +576,22 @@
           const yy = x0 + sx + x, zz = sy + k * 3 + y + (k === 0 ? 0 : 0); B.satt(yy, zz, P.i('jord', x === 0 || x === 13 ? 3 : y === 0 ? 2 : 1)); }
       }
     } }] },
+    // 6.8.18 nattens färger mot de kalla tonerna: samma utsnitt av scenen i skymningen, på natten och mitt i natten, överst med
+    // spelets nuvarande steg (MORKARE i palett.ts, som P.skymn och P.natt här) och nederst med stegen som drar mot skifferns blågrå
+    // ton. Mitt i natten är skymningens steg och sedan nattens, som i spelet. Förslaget (NATT_KALL) flyttas till palett.ts vid ja
+    { id: 'f6_nattfarg', namn: 'Nattens färger', typ: 'janej', vad: S + '6.8.18: mörkret drar mot de kalla tonerna (skiffer, blågrått) i stället för bara mot svart. Överst som i spelet nu, nederst förslaget; från vänster skymningen, natten och mitt i natten. Ja eller nej?', versioner: [{ text: 'Överst nuvarande skymning, natt och mitt i natten; nederst samma tre steg med färgerna dragna mot skiffer.', w: 304, h: 156, rita: B => {
+      const P = B.P, S0 = ritaScen(P, { tid: 'dag' }), sk = [0, 1, 2, 3].map(t => P.cols[P.i('skiffer', t)].lab), sa = sk.reduce((s, l) => s + l[1], 0) / 4, sb = sk.reduce((s, l) => s + l[2], 0) / 4;
+      const omr = f => P.cols.map(c => P.near(f(c.lab)));
+      const NATT_KALL = [omr(([L, a, b]) => [L * 0.67, a * 0.55 + sa * 0.5, b * 0.55 + sb * 0.5]), omr(([L, a, b]) => [L * 0.54, sa * 1.3, sb * 1.3])];
+      const nu = [P.skymn, P.natt], rader = [nu, NATT_KALL];
+      rader.forEach((T, r) => [0, 1, 2].forEach(k => {
+        const x0 = 4 + k * 100, y0 = 4 + r * 76;
+        for (let y = 0; y < 72; y++) for (let x = 0; x < 96; x++) {
+          const v = S0.get(56 + x, 30 + y); if (v < 0) continue;
+          B.satt(x0 + x, y0 + y, k === 0 ? T[0][v] : k === 1 ? T[1][v] : T[1][T[0][v]]);
+        }
+      }));
+    } }] },
     KORT('f6_strak', 'Gångstråken i testläget', S + '6.2.5: i testläget syns gångstråken, vägarna från dörrarna till elden, lagren, latrinen och vattnet där inget får byggas, som en tunn linje genom rutornas mitt, och rutan framför dörren som en liten ruta. Stugan och elden är bara för att visa platsen.', [
       STRAK('En tunn gul linje och en fylld gul ruta framför dörren.', 0), STRAK('Korta röda streck och en prickig ruta framför dörren.', 1), STRAK('Två ljusa kanter, som en väg, och en ljus ram framför dörren.', 2)]),
   );
