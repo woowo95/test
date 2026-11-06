@@ -4,19 +4,19 @@
 // En ny graf är en rad i GRAFER och `grafHtml('id')` där den ska stå; ett nytt tal är en rad i HISTORIK_TAL.
 import { AGES, DAY, HISTORIK_TAL, WEEK, historikSerie, kalender, living, rikSerie, sakNamn, type RikRad } from '../sim';
 import { esc } from './hjalp';
-import { farg } from '../palett';
 import { ritaOm, s } from './lage';
 
 // en serie är ett tal i historiken (tal) eller punkter som räknas fram (punkter, t.ex. byns rikedom per dygn, steg 6.9.13)
-interface Serie { tal?: string; namn?: string; farg: string; punkter?: () => [number, number][] }
+// farg är en färg i paletten; linjen ritas i ton 2 i ljust läge och ton 3 i mörkt (--g-färg i template.html, steg 6.9.17)
+interface Serie { tal?: string; namn?: string; farg: 'skiffer' | 'senap' | 'rost' | 'oliv' | 'jord'; punkter?: () => [number, number][] }
 interface Graf { namn: string; serier: Serie[] | (() => Serie[]); max?: number; procent?: boolean; topp?: () => string } // topp: val överst i grafen
 // byns rikedom (steg 6.9.13): summan och delarna som i sidhuvudet, en punkt per dygn ur historikens rader
-const rik = (namn: string, ton: string, v: (r: RikRad) => number): Serie => ({ namn, farg: farg(ton, 2), punkter: () => rikSerie(s, v) });
+const rik = (namn: string, ton: Serie['farg'], v: (r: RikRad) => number): Serie => ({ namn, farg: ton, punkter: () => rikSerie(s, v) });
 export const GRAFER: Record<string, Graf> = { // i den ordning de står i Krönikan
-  folk: { namn: 'Invånare', serier: [{ tal: 'folk', farg: farg('skiffer', 2) }] },
-  humor: { namn: 'Humör', serier: [{ tal: 'humor', farg: farg('senap', 2) }], max: 1, procent: true },
-  eld: { namn: 'Trä på elden', serier: [{ tal: 'eld', farg: farg('rost', 2) }] },
-  forrad: { namn: 'Förrådet', serier: [{ tal: 'mat', farg: farg('oliv', 2) }, { tal: 'tra', farg: farg('jord', 2) }] },
+  folk: { namn: 'Invånare', serier: [{ tal: 'folk', farg: 'skiffer' }] },
+  humor: { namn: 'Humör', serier: [{ tal: 'humor', farg: 'senap' }], max: 1, procent: true },
+  eld: { namn: 'Trä på elden', serier: [{ tal: 'eld', farg: 'rost' }] },
+  forrad: { namn: 'Förrådet', serier: [{ tal: 'mat', farg: 'oliv' }, { tal: 'tra', farg: 'jord' }] },
   rik: { namn: 'Byns rikedom', serier: () => rikSerier(), topp: () => rikTopp() },
 };
 
@@ -71,12 +71,12 @@ export function grafHtml(id: string) {
   });
   const max = g.max ?? 1.1 * Math.max(1, ...serier.flatMap(se => se.p.filter(p => p[0] >= fran && p[0] <= till).map(p => p[1])));
   const x = (t: number) => ((t - fran) / (till - fran) * B).toFixed(1), y = (v: number) => (H - Math.min(v, max) / max * (H - 2) - 1).toFixed(1);
-  const linjer = serier.map(se => se.p.length ? `<polyline fill="none" stroke="${se.farg}" stroke-width="1.5" vector-effect="non-scaling-stroke" points="${se.p.map(p => `${x(p[0])},${y(p[1])}`).join(' ')}"/>` : '').join('');
+  const linjer = serier.map(se => se.p.length ? `<polyline fill="none" style="stroke:var(--g-${se.farg})" stroke-width="1.5" vector-effect="non-scaling-stroke" points="${se.p.map(p => `${x(p[0])},${y(p[1])}`).join(' ')}"/>` : '').join('');
   const sist = (se: typeof serier[0]) => { const i = se.p.findIndex(p => p[0] > till); const p = se.p[(i < 0 ? se.p.length : i) - 1]; return p ? talTxt(g, p[1]) : '–'; };
   const nu = !f.allt && (f.slut === undefined || f.slut >= s.now);
   const kanDra = !f.allt && s.now - s.founded > WEEK;
   return `<div class="graf" data-graf="${id}"${id === 'rik' ? ` data-rikvy="${rikVal.vy}"` : ''}>
-    <div class="grafhuvud"><span class="grafnamn">${g.namn}</span>${serier.map(se => `<span class="grafserie" title="${se.namn}"><i style="background:${se.farg}"></i>${sist(se)}</span>`).join('')}
+    <div class="grafhuvud"><span class="grafnamn">${g.namn}</span>${serier.map(se => `<span class="grafserie" title="${se.namn}"><i style="background:var(--g-${se.farg})"></i>${sist(se)}</span>`).join('')}
     <button type="button" class="grafallt" data-grafallt="${id}" aria-pressed="${!!f.allt}" title="${f.allt ? 'Visa en vecka (sju år i spelet)' : 'Visa hela tiden sedan byns början'}">${f.allt ? '7 år' : 'Allt'}</button></div>${g.topp?.() ?? ''}
     <div class="grafram"><span class="grafmax">${talTxt(g, max)}</span><svg class="grafyta${kanDra ? ' dra' : ''}" viewBox="0 0 ${B} ${H}" preserveAspectRatio="none" role="img" aria-label="${g.namn} från ${tidNamn(fran)} till ${nu ? 'nu' : tidNamn(till)}">
       <line x1="0" y1="${H - 0.5}" x2="${B}" y2="${H - 0.5}" class="grafaxel" vector-effect="non-scaling-stroke"/>${linjer}</svg></div>

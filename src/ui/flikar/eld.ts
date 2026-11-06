@@ -25,7 +25,7 @@ function fireHtml() {
   const fills = Object.entries(f.fills).map(([id, n]) => ({ p: byId(s, Number(id)), n })).filter(x => x.p).sort((a, b) => b.n - a.n).slice(0, 6);
   const tgt = forsta ? fireWant(s) : f.want ?? 0;
   return `
-    <div class="phead"><span class="dot big" style="background:${f.lit ? '#e2702e' : glod ? '#b3361e' : '#4b4640'}"></span><div><h2>${esc(h.name)}</h2>
+    <div class="phead"><span class="dot big" style="background:${f.lit ? '#d8b25f' : glod ? '#a14808' : '#474138'}"></span><div><h2>${esc(h.name)}</h2>
     <p class="muted">${esc(h.desc)}${forsta ? '' : ' En lägereld till, nära sovplatserna.'}</p><p class="status">${status}</p></div></div>
     <h3>Just nu</h3><dl class="kv">
       <dt>Trä på elden</dt><dd>${bar(f.fuel / h.maxFuel)}<span>${fmtN(f.fuel)} av ${h.maxFuel}</span></dd>

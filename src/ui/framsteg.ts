@@ -96,7 +96,7 @@ export function vagSvg(n: number, sida: -1 | 1, skala = 2) {
     for (let i = 0; i <= st; i++) satt(x0 + (x1 - x0) * i / st, y0 + (y1 - y0) * i / st, c);
   };
   const cx = VAG_W / 2, py = 9, lut = sida * Math.min(5, n) * VAG_TIPP / VAG_L; // lutningen: positiv när höger sida sjunker
-  const morkt = farg('senap', 0), brons = farg('senap', 2), ljust = farg('senap', 3);
+  const morkt = 'vagm', brons = farg('senap', 2), ljust = farg('senap', 3);
   // ringen och gaffeln, som hänger stilla
   for (const [x, y] of [[-1, 0], [0, 0], [1, 0], [-2, 1], [2, 1], [-1, 2], [1, 2]]) satt(cx + x, y, morkt);
   linje(cx - 3, 3, cx + 3, 3, brons); linje(cx - 3, 4, cx - 3, 8, brons); linje(cx + 3, 4, cx + 3, 8, brons);
