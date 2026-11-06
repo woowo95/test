@@ -409,4 +409,13 @@ export function finishDorr(s: State, p: Person, tk: Task) {
   if (forstaGang(s, 'dorr_' + k)) { log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]); p.fame.push(`Hängde byns första ${d.namn.toLowerCase()}`); }
 }
 // husets namn mitt i en mening ('långhuset', 'Stevids hus') och färdig eller färdigt efter genus (steg 4.5.1.4)
-const husFalt = (namn: string) => ({ hus: / hus$/.test(namn) ? namn : namn.charAt(0).toLowerCase() + namn.slice(1), klart: /(et|hus)$/.test(namn) ? 'färdigt' : 'färdig' });
+// huset i krönikan: "Förrådshus 2" blir "det andra förrådshuset" (inga siffror i texten, steg 6.7.4), "Hydda 3" "den tredje hyddan"
+const NUMMER = ['', 'första', 'andra', 'tredje', 'fjärde', 'femte', 'sjätte', 'sjunde', 'åttonde', 'nionde', 'tionde', 'elfte', 'tolfte'];
+function husFalt(namn: string) {
+  const m = namn.match(/^(\S+) (\d+)$/);
+  if (m) {
+    const bas = m[1].toLowerCase(), ett = /hus$/.test(bas), best = ett ? `${bas}et` : bas.replace(/a$/, 'an'), n = +m[2];
+    return { hus: n < NUMMER.length ? `${ett ? 'det' : 'den'} ${NUMMER[n]} ${best}` : `ännu ${ett ? 'ett' : 'en'} ${bas}`, klart: ett ? 'färdigt' : 'färdig' };
+  }
+  return { hus: / hus$/.test(namn) ? namn : namn.charAt(0).toLowerCase() + namn.slice(1), klart: /(et|hus)$/.test(namn) ? 'färdigt' : 'färdig' };
+}
