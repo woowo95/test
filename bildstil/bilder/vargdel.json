@@ -1,0 +1,29 @@
+{
+ "id": "vargdel",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "version 1 i valet f6_styckdel, i vargens färger",
+ "w": 14,
+ "h": 9,
+ "rader": [
+  ".oooddoo......",
+  "oRddddddo.....",
+  "oRRmmmmmmo....",
+  "rrrmmmmmmmo...",
+  "rbrmmmmmmmo...",
+  "rrrmmmmmmoo...",
+  "orrllllllmmoo.",
+  ".oollllmmmmmko",
+  "...oooooooooo."
+ ],
+ "pal": {
+  "o": "#24201d",
+  "d": "#3e5156",
+  "R": "#a14808",
+  "m": "#61767a",
+  "r": "#742a01",
+  "b": "#dad0bb",
+  "l": "#8a9c9e",
+  "k": "#24201d"
+ }
+}

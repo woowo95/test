@@ -17,12 +17,12 @@ const HITTAS: Record<string, string> = {
   flinta: 'Hittas ibland när man samlar, mest vid stenarna', kol: 'Blir kvar när en eld brunnit ut',
   rovor: 'Odlas på fältet', arter: 'Odlas på fältet', silver: 'Fås av handlaren',
   kott: 'Slaktas ur fällt vilt', ben: 'Slaktas ur fällt vilt', skinn: 'Slaktas ur fällt vilt', talg: 'Slaktas ur fällt vilt och vargar',
-  vargkott: 'Slaktas ur en fälld varg', vargskinn: 'Slaktas ur en fälld varg',
+  vargkott: 'Slaktas ur en fälld varg', vargskinn: 'Slaktas ur en fälld varg', vargdel: 'Styckas där en varg föll, när den är för tung att bära hel',
 };
 // det den används till som inte är ett recept
 const ANVANDS: Record<string, string[]> = {
   torrgras: ['Tänder elden'], naver: ['Tänder elden'], flinta: ['Tänder elden'], sten: ['Eldringen'], mossa: ['Förband'], silver: ['Handel'],
-  vilt: ['Slaktas'], varg: ['Slaktas'], abborre: ['Rensas'],
+  vilt: ['Slaktas'], varg: ['Slaktas'], vargdel: ['Slaktas'], abborre: ['Rensas'],
   bensyl: ['Syr kläder vid slöjdbänken'], boll: ['Sport'], slagtra: ['Sport'], mal: ['Sport'],
   fackla: ['Lyser i mörkret, i handen eller uppsatt'], talgljus: ['Lyser inomhus'],
   trumma: ['Spelas på scenen'], benflojt: ['Spelas på scenen'], lyra: ['Spelas på scenen'], rovfron: ['Sås på fältet'], artfron: ['Sås på fältet'],

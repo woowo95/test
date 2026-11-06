@@ -34,6 +34,9 @@ export function sakVid(ik: Ikoner, k: string, x: number, y: number) {
   ik.add(kb, Math.round(x + 4 - b.w / 2), Math.round(y + 4 - b.h / 2), 1);
 }
 // högen med kartbilder: en till fyra efter hur full den är, lite förskjutna, den bakersta först (som korten i bildstilen)
+// saker med flera bilder som variationer (steg 6.6.1: styckdelen som lår och som hög): högen tar en efter rutan
+const VARIANTER: Record<string, string[]> = { vargdel: ['vargdel', 'vargdel2'] };
+const variant = (k: string, x: number, y: number) => { const v = VARIANTER[k]; return v ? v[(x * 31 + y * 17) % v.length] : k; };
 function kartHog(k: string, x0: number, y0: number, n: number) {
   const b = KARTBILDER[k]!, kb = kartbild(k)!, hw = b.w >> 1, hh = b.h >> 1;
   const forsk = [[0, 0], [Math.max(2, hw), -1], [-1, Math.max(2, hh)], [Math.max(2, hw) - 1, Math.max(2, hh) + 1]];
@@ -50,7 +53,7 @@ function drawPile(pl: Pile, t: number) {
   if (pl.gor) { ensam(pl.gor); framsteg(x0 + 12.5, y0 + 1.5, pl.klar ?? 0); return; } // påbörjat: framstegscirkeln i hörnet
   const n = clamp(Math.ceil(f * 4), 1, 4);
   if (kartbild(pl.k)) {
-    kartHog(pl.k, x0, y0, pl.max === 1 || kartbildEnsam(pl.k) ? 1 : n);
+    kartHog(variant(pl.k, pl.x, pl.y), x0, y0, pl.max === 1 || kartbildEnsam(pl.k) ? 1 : n);
     if ((pl.q ?? 0) >= MASTERVERK) glans(x0 + 12, y0 + 3, t, pl.id ?? 0, pl.q === PERFEKT);
     return;
   }

@@ -28,6 +28,7 @@ import { GRANNAR4, H, HOUR, MIN, Person, SEC, State, T, Task, Vargflock, W } fro
 import { taVapen } from './vakt';
 import { vaderNu } from './vader';
 import { notis } from './notiser';
+import { lamnaFallt, styckaFallt } from './styckning';
 
 // ---------- vargen och vakten (steg 3.7.1) ----------
 // Under istiden kommer vargar in på kartan från kanten, oftast i flock och ibland en ensam. En flock stryker omkring en tid
@@ -424,7 +425,7 @@ function vanta(s: State, f: Vargflock, folk: Person[], dtSec: number) {
 
 // flocken tar mat ur förrådet: köttet först, hela saker. Listan går art för art (hela kroppar, kött, fisk, det lagade);
 // en fälld varg i förrådet kan också tas (det är avsiktligt, kodgenomgången 3.10.25)
-const STJALS = ['vilt', 'varg', 'kott', 'vargkott', 'fisk', 'abborre', 'grillkott', 'torrkott'];
+const STJALS = ['vilt', 'varg', 'vargdel', 'kott', 'vargkott', 'fisk', 'abborre', 'grillkott', 'torrkott'];
 function stjal(s: State, f: Vargflock) {
   let n = Math.max(1, Math.round(f.vargar.length * VARG.stjalPer)), tog = 0;
   for (const k of STJALS) while (n > 0 && SAKER[k] && amountOf(s, k) >= 1) { addTo(s, k, -1); n--; tog++; }
@@ -562,9 +563,10 @@ export function vargStrid(s: State, f: Vargflock, folk: Person[], avsikt: Avsikt
     if (avsikt === 'doda' && k.lage === 'strid' && doda.length > bar.size) {
       bar.add(p);
       p.task = { act: 'vargjakt', phase: 'do', tx: p.x, ty: p.y, until: s.now + tid, carry: 1, prog: 1, why: 'Bär hem en fälld varg' };
+      styckaFallt(s, p, p.task, 'varg'); // för tung att bära: styckas där den föll (steg 6.6.1)
     } else p.task = { act: 'strid', phase: 'do', tx: p.x, ty: p.y, until: s.now + tid, carry: 0, why: orsak };
   });
-  if (doda.length > bar.size) count(s, 'vargKvar', doda.length - bar.size); // fler fällda än det fanns bärare
+  if (doda.length > bar.size) { count(s, 'vargKvar', doda.length - bar.size); lamnaFallt(s, 'varg', doda.length - bar.size, folk[0].x, folk[0].y); } // fler fällda än det fanns bärare: de ligger kvar (steg 6.6.1)
   blodas(s, folk[0].x, folk[0].y, 'jakt', 1);
   const namn = folk.map(p => p.name).join(' och ');
   const stText = `${namn} slogs med ${n > 1 ? `${n} vargar` : 'en varg'} ${orsak}. ${doda.length ? `${doda.length} ${doda.length === 1 ? 'varg dog' : 'vargar dog'}. ` : ''}${vinnare === 0 ? 'Vargarna förlorade.' : vinnare === 1 ? 'Vargarna vann.' : 'Ingen vann.'}`;

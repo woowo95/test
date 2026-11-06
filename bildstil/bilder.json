@@ -27,6 +27,8 @@
     {"id": "uppsatt", "sort": "kar-station", "namn": "Uppsatt fackla", "w": 10, "h": 31, "vad": "en fackla stucken i marken, släckt: käppen kluven i toppen med en solfjäder av tjärstickor", "ritad": 1, "godkand": true},
     {"id": "uppsatt_tand", "sort": "kar-station", "namn": "Uppsatt fackla, tänd", "w": 10, "h": 38, "vad": "den uppsatta facklan med lågan i stickorna", "ritad": 1, "godkand": true},
     {"id": "fackla", "sort": "sak-redskap", "namn": "Fackla", "w": 16, "h": 16, "vad": "en släckt fackla, lång som ett spjut, käppen kluven i toppen med stickor i klykan", "ritad": 1, "godkand": true},
+    {"id": "vargdel", "sort": "sak-material", "namn": "Vargstycke", "w": 14, "h": 9, "vad": "ett lår av en styckad varg, i vargens färger", "ritad": 1, "godkand": true},
+    {"id": "vargdel2", "sort": "sak-material", "namn": "Vargstycke, högen", "w": 15, "h": 9, "vad": "en hög styckat kött av en varg, i vargens färger", "ritad": 1, "godkand": true},
     {"id": "talg", "sort": "sak-material", "namn": "Talg", "w": 9, "h": 6, "vad": "talg som stelnat i en näverskål", "ritad": 1, "godkand": true},
     {"id": "flinta", "sort": "sak-material", "namn": "Flinta", "w": 5, "h": 4, "vad": "en knöl flinta med en slagen skarp yta", "ritad": 2, "godkand": true},
     {"id": "sten", "sort": "sak-material", "namn": "Sten", "w": 6, "h": 5, "vad": "en rundad gråsten", "ritad": 4, "forra": "nu blev den för svart som kål. gör den brun", "godkand": true},

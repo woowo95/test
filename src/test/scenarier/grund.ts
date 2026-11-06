@@ -1996,3 +1996,34 @@ SCENARIER.kartkant = {
     ];
   },
 };
+
+SCENARIER.styckning = {
+  text: 'Steg 6.6.1: ett fällt djur som väger mer än bäraren orkar styckas där det ligger. Bäraren tar så många delar som ryms, resten och skinnet ligger kvar som en hög, och delarna slaktas vid slaktbänken',
+  kor: () => {
+    const s = createState(3, START);
+    const vuxna = living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.ansvar);
+    medBank(s);
+    for (const r of s.people) r.tek = { ...r.tek, kniv: 1 };
+    s.ting = (s.ting ?? []).filter(t => t.k !== 'kniv'); SIM.newTing(s, 'kniv', 1, vuxna[0].id);
+    const svag = vuxna[0], stark = vuxna[1];
+    svag.pot = { ...svag.pot, styrka: 1 }; stark.pot = { ...stark.pot, styrka: 20 };
+    const x = 5, y = 5;
+    const bar = (p: Person) => { p.x = x + 0.5; p.y = y + 0.5; p.task = { act: 'vargjakt', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 1, prog: 1, why: 'Bär hem en fälld varg' }; return p.task; };
+    const hogar = () => SIM.stacksOf(s).filter(g => g.x === x && g.y === y && g.n > 0).map(g => `${g.k} ${g.n}`).sort().join(', ');
+    const tStark = bar(stark), kvarStark = SIM.styckaFallt(s, stark, tStark, 'varg');
+    const tSvag = bar(svag), kvarSvag = SIM.styckaFallt(s, svag, tSvag, 'varg');
+    const hog = hogar();
+    // delarna slaktas vid bänken
+    setMat(s, {}); setAmount(s, 'vargkott', 0); setAmount(s, 'vargdel', 2);
+    SIM.bearbeta(s, svag, SIM.DJUR.vargdel, 2);
+    const kott = amountOf(s, 'vargkott');
+    return [
+      [`den starka (orkar ${SIM.bordPlats(s, stark).toFixed(0)}) bär vargen hel`, kvarStark === 0 && tStark.carry === 1 && !tStark.items],
+      [`den svaga (orkar ${SIM.bordPlats(s, svag).toFixed(0)}) styckar den i två delar och bär ${tSvag.items?.vargdel ?? 0}`, tSvag.carry === 0 && (tSvag.items?.vargdel ?? 0) >= 1 && (tSvag.items?.vargdel ?? 0) + kvarSvag === 2],
+      [`styckningen tar tid (${((tSvag.until - s.now) / SIM.MIN).toFixed(0)} min)`, tSvag.until > s.now],
+      [`högen på platsen: ${hog}`, hog.includes('vargskinn 1') && (kvarSvag === 0 || hog.includes(`vargdel ${kvarSvag}`))],
+      [`två delar slaktade gav ${kott} vargkött`, kott >= 10],
+      ['styckdelen är en sak med namn och bild', SIM.SAKER.vargdel?.namn === 'Vargstycke'],
+    ];
+  },
+};

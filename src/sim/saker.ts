@@ -152,6 +152,9 @@ const DEF = {
   virke: { namn: 'Virke', ett: true, skaffa: { act: 'klyva', tek: 'yxa' }, stack: 2, vikt: 15, mapp: 'Material', slits: 0.0002, blir: { k: 'ved', per: 5 } },
   // nävern (steg 6.3.3, eld.ts): täljs ur en ved med kniv eller yxa när elden ska tändas, fyra av en ved; en näver ersätter höet och tar lättare eld
   naver: { namn: 'Näver', skaffa: { av: { ved: 1 }, ger: 4, min: 2, slag: 'liten', verktyg: { kniv: 'kniven', yxa: 'yxan' } }, stack: 50, mapp: 'Bränsle', slits: 0.0006 },
+  // styckdelen (steg 6.6.1, styckning.ts): en bit av ett stort djur som var för tungt att bära helt och styckades där det
+  // föll. Delarna är fortfarande vilt och slaktas vid slaktbänken (raden vargdel i DJUR, redskap.ts)
+  vargdel: { namn: 'Vargstycke', ett: true, skaffa: { act: 'jakt' }, vikt: 10, stack: 1, mapp: 'Material', haller: 3 },
 } satisfies Record<string, SakDef>;
 
 type Sak = keyof typeof DEF;
