@@ -2148,3 +2148,39 @@ SCENARIER.faglar = {
     ];
   },
 };
+
+SCENARIER.bjorn = {
+  text: 'Steg 6.6.4: björnen är sällsynt, högst en på kartan och inte varje år. Den vandrar från våren till hösten och är borta under istiden, går långsamt mellan bärbuskarna när bären är mogna och stranden där den fiskar, och håller sig en bit från byplatsen',
+  kor: () => {
+    const s = createState(6, START), m = getMap(s.seed), h = m.fire, vt = SIM.vattenNu(s), STEG = 10 * 60_000;
+    const ar = new Map<number, { istid: boolean; bjorn: boolean }>();
+    let flest = 0, iIstid = 0, nara = Infinity, iVatten = 0, hopp = 0, barOmogna = 0, barN = 0, fiskN = 0, fore: { id: number; x: number; y: number } | undefined;
+    for (let t = s.now; t < s.now + 35 * DAY; t += STEG) {
+      const b = SIM.bjornarOf(s, t), ai = ageIndex(s, t), y = yearNo(s, t);
+      const e = ar.get(y) ?? { istid: ai === SIM.ISTID, bjorn: false };
+      e.bjorn ||= b.length > 0; ar.set(y, e);
+      flest = Math.max(flest, b.length);
+      if (ai === SIM.ISTID && b.length) iIstid++;
+      for (const d of b) {
+        if (d.ater) nara = Math.min(nara, Math.hypot(d.x - h.x, d.y - h.y));
+        if (vt[tileOf(d.x, d.y)] === T.Vatten) iVatten++;
+        if (d.ater === 'bar') { barN++; if ((SIM.FYND.bar.arstid?.[ai] ?? 0) < 1) barOmogna++; }
+        if (d.ater === 'fisk') fiskN++;
+        if (fore?.id === d.id && Math.hypot(d.x - fore.x, d.y - fore.y) > SIM.BJORN.fart * STEG / HOUR + 1.5) hopp++;
+        fore = { id: d.id, x: d.x, y: d.y };
+      }
+      if (!b.length) fore = undefined;
+    }
+    const utanfor = [...ar.values()].filter(e => !e.istid), med = utanfor.filter(e => e.bjorn).length;
+    return [
+      [`högst en björn på kartan (${flest})`, flest === 1],
+      [`björnen kommer vissa år men inte alla (${med} av ${utanfor.length} år utanför istiden)`, med > 0 && med < utanfor.length],
+      [`ingen björn under istiden (${iIstid} gånger)`, iIstid === 0],
+      [`den äter en bit från byplatsen (närmast ${nara.toFixed(1)} rutor, gränsen ${SIM.BJORN.hemAvst})`, nara >= SIM.BJORN.hemAvst - 1],
+      [`den äter bär (${barN}) och fiskar (${fiskN})`, barN > 0 && fiskN > 0],
+      [`bär bara när de är mogna (${barOmogna} gånger utan)`, barOmogna === 0],
+      [`den går, den hoppar inte (${hopp} hopp)`, hopp === 0],
+      [`den står aldrig i vattnet (${iVatten} gånger)`, iVatten === 0],
+    ];
+  },
+};

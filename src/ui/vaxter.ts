@@ -1,4 +1,4 @@
-import { Djur, FLYGTID, FYND, H, HOUR, SEC, W, ageIndex, brinnande, djurOf, faglarOf, radjurOf, fyndAt, getMap, groundOf, living, plockOf, tornadoAndel, tornadoPos, vargarOf } from '../sim';
+import { Djur, FLYGTID, FYND, H, HOUR, SEC, W, ageIndex, bjornarOf, brinnande, djurOf, faglarOf, radjurOf, fyndAt, getMap, groundOf, living, plockOf, tornadoAndel, tornadoPos, vargarOf } from '../sim';
 import { farg, fargTal } from '../palett';
 import { s, ui, vidNyBy } from './lage';
 import { Ikoner, TS, djurFx, djurMarkLayer, figurLayer, plantG, rokBakLayer } from './scen';
@@ -67,7 +67,7 @@ function ritaDjur(art: Djur['art'], id: number, x: number, y: number, sedd: Set<
   if (Math.hypot(dx, dy) > 0.01) h = Math.abs(dx) >= Math.abs(dy) * 0.8 ? (dx > 0 ? 'sida' : 'vast') : dy > 0 ? 'fram' : 'bak';
   hallar.set(id, { x, y, h }); sedd.add(id);
   const k = art === 'fagel' ? fagelBild(u, h) : djurBild(art, id, h), c = iconCanvas(k); // fågeln i platsens utseende (steg 6.6.3) // foten nära rutans punkt, mitt under djuret
-  djurIkoner.add(k, Math.round(x * TS - c.width / 2), Math.round(y * TS + (art === 'kanin' ? 2 : art === 'varg' ? 4 : 3) - c.height), 1);
+  djurIkoner.add(k, Math.round(x * TS - c.width / 2), Math.round(y * TS + (art === 'kanin' ? 2 : art === 'varg' || art === 'bjorn' ? 4 : 3) - c.height), 1);
 }
 // djuren där de syns just nu (det man trycker på, interaktion.ts, och djurfliken)
 export const djurSynliga = () => synliga;
@@ -104,7 +104,8 @@ export function drawAnimals() {
     ut.push({ ...d, x, y });
   }
   for (const id of visad.keys()) if (!sedda.has(id)) visad.delete(id);
-  for (const d of vargarOf(s)) { ritaDjur('varg', d.id, d.x, d.y, riktade); ut.push(d); } // vargarna i verklig storlek (Björns val i bildstilen, steg 5.2.4.6)
+  for (const d of vargarOf(s)) { ritaDjur('varg', d.id, d.x, d.y, riktade); ut.push(d); }
+  for (const d of bjornarOf(s, ui.nu)) { ritaDjur('bjorn', d.id, d.x, d.y, riktade); ut.push(d); } // björnen (steg 6.6.4), i Björns ritning // vargarna i verklig storlek (Björns val i bildstilen, steg 5.2.4.6)
   for (const id of hallar.keys()) if (!riktade.has(id)) hallar.delete(id);
   // tornadon där den är (steg 3.8.4), foten mitt på banan, och lågorna där det brinner (steg 3.8.5): bildstilens animationer
   // (steg 5.1.9.1), tornadon som virvlar i åtta bilder och branden som slår ut i sex, med röken bakom alla lågorna
@@ -124,7 +125,7 @@ export function drawAnimals() {
   }
   // det markerade djuret (steg 3.10.4): en vit kant runt symbolen, som allt annat som är markerat
   const vald = ui.tab === 'djur' ? ut.find(d => d.id === ui.djurId) : undefined;
-  if (vald) { const b = vald.art === 'varg' ? { w: 28, h: 19, fot: 5 } : vald.art === 'radjur' ? { w: 28, h: 31, fot: 4 } : vald.art === 'fagel' ? { w: 24, h: 17, fot: 4 } : { w: 14, h: 13, fot: 3 }; // runt djurets bild
+  if (vald) { const b = vald.art === 'varg' ? { w: 28, h: 19, fot: 5 } : vald.art === 'bjorn' ? { w: 50, h: 35, fot: 4 } : vald.art === 'radjur' ? { w: 28, h: 31, fot: 4 } : vald.art === 'fagel' ? { w: 24, h: 17, fot: 4 } : { w: 14, h: 13, fot: 3 }; // runt djurets bild
     djurFx.lineStyle(1, 0xffffff, 0.9).drawRoundedRect(vald.x * TS - b.w / 2, vald.y * TS + b.fot - b.h, b.w, b.h, 3).lineStyle(0); }
   djurIkoner.end(); larmIkoner.end(); brandRokIkoner.end();
   synliga = ut;

@@ -1,4 +1,4 @@
-import { DJUR, INDIVID, djurOf, dragOf, fagelFlockar, faglarOf, grupperOf, halsaOf, kortTal, radjurGrupper, radjurOf, vargarOf } from '../../sim';
+import { INDIVID, bjornarOf, stridOf, djurOf, dragOf, fagelFlockar, faglarOf, grupperOf, halsaOf, kortTal, radjurGrupper, radjurOf, vargarOf } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { bar, condBar, esc } from '../hjalp';
 import { djurSynliga } from '../vaxter';
@@ -11,9 +11,9 @@ import type { Flik } from '../panel';
 const rad = (namn: string, andel: number, varde: string, text: string, cls = '') =>
   `<dt title="${esc(text)}">${esc(namn)}</dt><dd title="${esc(text)}">${cls === 'cond' ? condBar(andel) : bar(andel, cls)}<span>${varde}</span></dd>`;
 function djurHtml() {
-  const d = djurSynliga().find(x => x.id === ui.djurId) ?? [...djurOf(s, ui.nu), ...radjurOf(s, ui.nu), ...faglarOf(s, ui.nu), ...vargarOf(s)].find(x => x.id === ui.djurId);
+  const d = djurSynliga().find(x => x.id === ui.djurId) ?? [...djurOf(s, ui.nu), ...radjurOf(s, ui.nu), ...faglarOf(s, ui.nu), ...bjornarOf(s, ui.nu), ...vargarOf(s)].find(x => x.id === ui.djurId);
   if (!d) return '<p class="muted">Djuret syns inte längre här.</p>';
-  const art = DJUR[d.art].strid, drag = dragOf(d.art, d.id), h = halsaOf(s, d.id), g = d.art === 'kanin' ? grupperOf(s, ui.nu).find(x => x.id === d.grupp) : d.art === 'radjur' ? radjurGrupper(s, ui.nu).find(x => x.id === d.grupp) : d.art === 'fagel' ? fagelFlockar(s, ui.nu).find(x => x.id === d.grupp) : undefined;
+  const art = stridOf(d.art), drag = dragOf(d.art, d.id), h = halsaOf(s, d.id), g = d.art === 'kanin' ? grupperOf(s, ui.nu).find(x => x.id === d.grupp) : d.art === 'radjur' ? radjurGrupper(s, ui.nu).find(x => x.id === d.grupp) : d.art === 'fagel' ? fagelFlockar(s, ui.nu).find(x => x.id === d.grupp) : undefined;
   const f = d.art === 'varg' ? s.vargar?.find(x => x.id === d.grupp) : undefined, topp = 1 + INDIVID.spann;
   const jfr = (v: number, bas: number) => v > bas * 1.08 ? 'mer än de flesta' : v < bas * 0.92 ? 'mindre än de flesta' : 'som de flesta';
   const pr = (v: number) => `${Math.round(v * 100)} %`;
