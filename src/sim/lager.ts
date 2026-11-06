@@ -11,7 +11,7 @@ import { ALDER, alive, byId, count, isSick, living, stat, ageOf, log } from './f
 import { matOrdning } from './naring';
 import { eldPlats, getMap } from './karta';
 import { Act, H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
-import { bitAt, roofed } from './byggnad';
+import { bitAt, lagretsMitt, roofed } from './byggnad';
 import { ACTS, toolRow, usesTool } from './handlingar';
 import { temperature, vaderSlit } from './vader';
 import { BYN, Del, addDel, sumOf, takeOrder } from './egendom';
@@ -413,7 +413,7 @@ export const rymd = (s: State, x: number, y: number, k: string) => { const f = f
 const narFlod = new WeakMap<State, { k: string; v: Uint8Array }>();
 function nasIFloden(s: State, i: number) {
   if (!s.flod) return true;
-  const f = eldPlats(s), r = stationRutor(s), k = `${s.byggV ?? 0},${r.n},${f.x},${f.y}`;
+  const f = lagretsMitt(s), r = stationRutor(s), k = `${s.byggV ?? 0},${r.n},${f.x},${f.y}`;
   let c = narFlod.get(s);
   if (c?.k !== k) narFlod.set(s, c = { k, v: nasbara(groundOf(s), f.x + 0.5, f.y + 0.5) });
   return c.v[i] > 0;

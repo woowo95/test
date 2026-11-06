@@ -248,7 +248,7 @@ export function takeCoal(s: State, p: Person, verb: string, f = s.fire) {
 }
 export function addFuel(s: State, p: Person, n: number, f = s.fire) {
   const h = hearthOf(f);
-  if (!f.lit && !emberOn(s, f)) { giveBack(s, n); return; } // elden hann slockna: bränslet går tillbaka
+  if (!f.lit && !emberOn(s, f) || eldIVatten(s, f)) { giveBack(s, n); return; } // elden hann slockna eller står under vattnet: bränslet går tillbaka
   if (!f.lit) {
     f.lit = true; f.emberUntil = undefined;
     fireLog(s, { k: 'glöd', id: p.id }, f);
@@ -284,10 +284,13 @@ export function eldFaktor(s: State, f = s.fire) {
   const regn = vaderNu(s).sno || roomAt(s, e.x + 0.5, e.y + 0.5) ? 0 : vaderNu(s).nb;
   return [1 + regn * VADER.regnEld, 1 + MOTGANG.hardVed * hardVinter(s)] as const;
 }
+// står elden under flodens vatten (steg 3.8.7)? Där brinner den inte, glöden dör och ingen fyller på den
+export function eldIVatten(s: State, f: Fire) { if (!s.flod) return false; const e = eldXY(s, f); return iVattnetNu(s, tileOf(e.x, e.y)); }
 // en eld brinner, slocknar, glöder och lämnar en kolhög
 function brinner(s: State, f: Fire, dtSec: number) {
   const h = hearthOf(f), now = s.now;
-  if (f !== s.fire && f.lit && s.flod) { const e = f.at!; if (iVattnetNu(s, e.y * W + e.x)) { f.fuel = 0; count(s, 'flod brasa'); } } // vattnet släcker den (steg 3.8.7, flod.ts gör det för den första)
+  const iVatten = eldIVatten(s, f);
+  if (f !== s.fire && f.lit && iVatten) { f.fuel = 0; count(s, 'flod brasa'); } // vattnet släcker den (steg 3.8.7, flod.ts gör det för den första)
   if (f.lit) {
     const [fr, fv] = eldFaktor(s, f);
     const b = Math.min(f.fuel, h.burn / HOUR_S * dtSec * fr * fv);
@@ -298,6 +301,7 @@ function brinner(s: State, f: Fire, dtSec: number) {
       log(s, `${f === s.fire ? 'Elden' : 'En lägereld'} slocknade efter att ha brunnit i ${durText((now - (f.litAt ?? now)) / SEC)}. Glöden lever en stund till.`, 'world');
     }
   }
+  if (iVatten && !f.lit) f.emberUntil = undefined; // under vattnet dör glöden också, så att ingen blåser liv i den där
   if (f.emberUntil !== undefined && !f.lit && f.emberUntil <= now) {
     // glöden dog: kvar blir en svart hög med lite kol, som ligger några dygn
     f.emberUntil = undefined;
@@ -366,13 +370,13 @@ export function stepFire(s: State, dtSec: number, ppl: Person[]) {
   const skots = alla.length > 1 && vedPerEld(s, 0) < BRASA.slackDygn ? ordning.slice(0, 1) : ordning;
   // påfyllning: en i taget vid varje eld
   if (fuelStock(s) >= ELD.hamtaMin) for (const f of skots) {
-    if (!(f.lit || emberOn(s, f)) || ppl.some(p => p.task?.act === 'elda' && p.task.ref === f.id)) continue;
+    if (!(f.lit || emberOn(s, f)) || eldIVatten(s, f) || ppl.some(p => p.task?.act === 'elda' && p.task.ref === f.id)) continue;
     const b = fyllare(s, f, per.get(f)!);
     if (b) fetchFuel(s, b.p, b.w.why, undefined, f);
   }
   // tändning: när en eld är släckt och någon som använder den vill ha eld försöker en person i taget i byn
   if (!ppl.some(p => p.task?.act === 'tanda')) for (const f of skots) {
-    if (f.lit || emberOn(s, f) || !canLight(s, undefined, f) || (f.want ?? 0) < hearthOf(f).maxFuel * ELD.tandVill || s.flod && iVattnetNu(s, tileOf(eldXY(s, f).x, eldXY(s, f).y))) continue;
+    if (f.lit || emberOn(s, f) || !canLight(s, undefined, f) || (f.want ?? 0) < hearthOf(f).maxFuel * ELD.tandVill || eldIVatten(s, f)) continue;
     const c = tandare(s, f, per.get(f)!);
     if (c) { const at = tandPlats(s, f); assign(s, c.p, 'tanda', at.x, at.y, ELD.tandTim * HOUR, `Vill ha eld. ${c.w.why}`); if (f.id !== undefined) c.p.task!.ref = f.id; break; }
   }

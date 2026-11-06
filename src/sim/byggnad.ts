@@ -1,4 +1,4 @@
-import { getMap } from './karta';
+import { eldPlats, getMap } from './karta';
 import { groundOf, tileOf } from './mark';
 import { H, State, T, W, inMap } from './typer';
 import { balans } from './balans';
@@ -130,6 +130,9 @@ export const bitAt = (s: State, x: number, y: number) => gridOf(s).at.get(Math.f
 export const isWall = (s: State, x: number, y: number) => inMap(x, y) && gridOf(s).solid[tileOf(x, y)] === 1;
 // man kan inte stå här: vatten eller en vägg
 export const blocked = (s: State, x: number, y: number) => { const i = Math.floor(y) * W + Math.floor(x); return getMap(s.seed).tiles[i] === T.Vatten || !!s.flod && iVattnetNu(s, i) || isWall(s, x, y); }; // och översvämningens vatten (flod.ts)
+// lägrets mitt under en översvämning (steg 3.8.7): elden, eller närmaste torra ruta när vattnet står över elden. Därifrån räknas
+// vad man kan gå till; från en ruta under vattnet nås nästan ingenting, och då hamnade allt i lagret på samma ruta (by 42)
+export function lagretsMitt(s: State) { const f = eldPlats(s); return s.flod ? freeNear(s, f.x, f.y) : f; }
 // närmaste plats som inte är vatten eller vägg
 // inte = rutan själv räknas inte (där en vägg ska byggas)
 export function freeNear(s: State, x: number, y: number, inte = false) {
