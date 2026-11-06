@@ -335,8 +335,8 @@ export interface State {
   motgang?: { varslad?: number; klok?: number; pagar?: { k: import('./motgang').MotgangId; t: number; dog: number } }; // motgången som byn varslats om (när den börjar), den som den klokaste anat (steg 3.8.6) och den som pågår (steg 3.8.1, motgang.ts)
   vargar?: Vargflock[]; vargNr?: number; // vargflockarna på kartan och hur många som kommit (steg 3.7.1, varg.ts)
   djurSkramd?: { g: number; t: number }[]; // kaningrupper som skrämts av en jägare, och när (steg 3.7.3, jakt.ts)
-  djurFlykt?: { g: number; t: number; dx: number; dy: number; sek?: number }[];
-  kaninStart?: Record<string, { x0: number; y0: number; x1: number; y1: number; n0: number } | null>; // där kaningrupperna dök upp och vart de glider, per grupp och tid (steg 6.6.8, djur.ts) // kaningrupper som flytt från en jägare: från tiden t så här långt (steg 4.5.4.1, djur.ts)
+  djurFlykt?: { g: number; t: number; dx: number; dy: number; sek?: number }[]; // kaningrupper som flytt från en jägare: från tiden t så här långt (steg 4.5.4.1, djur.ts)
+  kaninStart?: Record<string, { x0: number; y0: number; x1: number; y1: number; n0: number } | null>; // där kaningrupperna dök upp och vart de glider, per grupp och tid (steg 6.6.8, djur.ts)
   faglarBorta?: { x: number; y: number; t: number }[]; // platser där fåglarna flugit bort från kartan, och när (steg 6.6.3, djur.ts)
   strider?: import('./strid').StridMinne[]; // de senaste striderna i byn, så att arenan kan visa dem igen (steg 3.7.2, strid.ts)
   sportBast?: Record<string, number>; // den bästa i varje sport (personens id, steg 4.3.1.2)
