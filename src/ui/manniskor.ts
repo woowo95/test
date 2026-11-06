@@ -194,6 +194,15 @@ export function posOf(p: Person) {
   return { x, y };
 }
 // symbolen över huvudet: slaget av arbete man gör på platsen (SLAG i handlingar.ts), eller handlingens egen (toa, steg 3.10.3)
+// prickarna vid figuren (sjuk, väntar barn) i pixlar: 4 × 4 punkter med mörk kant och en ljusare punkt uppe till vänster,
+// på hela punkter bredvid huvudet, så att de följer bildstilen (ingen mjuk cirkel)
+const PRICK = ['.oo.', 'oljo', 'ojjo', '.oo.'];
+function prick(x: number, y: number, f: { ljus: number; mork: number }) {
+  const x0 = Math.round(x), y0 = Math.round(y);
+  PRICK.forEach((rad, dy) => [...rad].forEach((ch, dx) => {
+    if (ch !== '.') peopleG.beginFill(ch === 'o' ? 0x24201d : ch === 'l' ? f.ljus : f.mork).drawRect(x0 + dx, y0 + dy, 1, 1).endFill();
+  }));
+}
 function markOf(p: Person): string | undefined {
   const j = jaktPlats(p);
   if (j) return j.mark ?? 'a_jaga'; // smyger, siktar eller jagar (jakt.ts)
@@ -366,8 +375,8 @@ export function drawPeople(t: number) {
     sp.zIndex = y + r * 0.9; // fötterna (ordningen söderut, steg 5.1.4.5)
     if (!ligger) fotSkugga(skugga, x - 4, Math.round(sp.zIndex) - 1, 4, 2, skuggLangd());
     sp.visible = true; sedd.add(p.id);
-    if (PRICKAR.sjuk.har(p)) peopleG.beginFill(PRICKAR.sjuk.farg).drawCircle(x + r * 0.7, y - r * 0.7, 1.8).endFill();
-    if (PRICKAR.gravid.har(p)) peopleG.beginFill(PRICKAR.gravid.farg).drawCircle(x - r * 0.7, y - r * 0.7, 1.6).endFill();
+    if (PRICKAR.sjuk.har(p)) prick(sp.position.x + w - 1, sp.position.y + 4, PRICKAR.sjuk.farg);
+    if (PRICKAR.gravid.har(p)) prick(sp.position.x - 3, sp.position.y + 4, PRICKAR.gravid.farg);
     // den som brinner (steg 6.4.16): fladdrande lågor över figuren (platshållare tills Björn valt i bildstilen)
     if (p.brinner !== undefined) {
       const f = (slag() + p.id) % 3, topp = sp.position.y + 2;

@@ -95,8 +95,8 @@ export function relWord(p: Person, q: Person, op: number) {
 export const sickNow = (p: Person) => isSick(p, s.now);
 // prickarna på figuren på kartan (manniskor.ts ritar dem): färgen och vad de betyder
 export const PRICKAR = {
-  sjuk: { farg: 0x8fc46a, namn: 'Sjuk', har: sickNow },
-  gravid: { farg: 0xf2c4d0, namn: 'Väntar barn', har: (p: Person) => p.pregnantSince !== undefined },
+  sjuk: { farg: { ljus: 0x898b4c, mork: 0x647025 }, namn: 'Sjuk', har: sickNow }, // oliv
+  gravid: { farg: { ljus: 0xdad0bb, mork: 0xbd753e }, namn: 'Väntar barn', har: (p: Person) => p.pregnantSince !== undefined }, // ljus hud
 };
 // de små symbolerna vid namnet utöver prickarna (steg 3.10.5): ledaren och den som är skadad, med symbolen för den
 // svåraste skadan. namn = det som står vid musen, ikon = bildens nyckel i ikoner.ts
@@ -108,7 +108,7 @@ const MARKEN: { har: (p: Person) => boolean; namn: (p: Person) => string; ikon: 
 // att hålla musen över)
 export const prickar = (p: Person, ord = false) => MARKEN.filter(m => m.har(p)).map(m => { const n = m.namn(p); return ` <span class="mark" title="${esc(n)}" aria-label="${esc(n)}">${iconImg(m.ikon(p), 12)}</span>${ord ? ' ' + esc(n.toLowerCase()) : ''}`; }).join('')
   + Object.values(PRICKAR).filter(q => q.har(p))
-    .map(q => ` <span class="prick" style="background:${cssFarg(q.farg)}" title="${q.namn}" aria-label="${q.namn}"></span>${ord ? ' ' + q.namn.toLowerCase() : ''}`).join('');
+    .map(q => ` <span class="prick" style="background:${cssFarg(q.farg.mork)}" title="${q.namn}" aria-label="${q.namn}"></span>${ord ? ' ' + q.namn.toLowerCase() : ''}`).join('');
 // anseendet och minnet efter döden som pixelsymboler (steg 3.6.11, anseendeSym och dodSymbol i rykten.ts), med tecknet om bilden saknas
 const ANS_IKON: Record<string, string> = { '★': 'i_legend', '☠': 'i_okand', '😇': 'a_gott', '😐': 'a_blandat', '😈': 'a_daligt' };
 export const ansTecken = (a: string, px = 16) => tecknet(ANS_IKON[a] ?? '', a, px);
