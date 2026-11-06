@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { BAR, busksort, FALT_STEG, FOREST, GRODOR, isSoil, stadium, Falt, byId, faltAt, faltIndex, faltKlar, HIGH, MATERIAL, Person, T, W, bitAt, bynsMitt, condOf, dorrDef, emberOn, eldXY, eldarOf, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, tingOf, toaAt, tandTest, blixtTest, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, verbOf, zoneAt, zonesOf, Pile } from '../sim';
+import { BAR, busksort, FALT_STEG, FOREST, GRODOR, isSoil, stadium, Falt, byId, faltAt, faltIndex, faltKlar, HIGH, MATERIAL, Person, T, W, bitAt, bynsMitt, condOf, dorrDef, emberOn, eldXY, eldarOf, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, stationerOf, framfor, bordPlatser, tingOf, toaAt, tandTest, blixtTest, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, verbOf, zoneAt, zonesOf, Pile } from '../sim';
 import { gorText } from './jakt';
 import { iconImg, tecknet } from '../ikoner';
 import { $, esc, fmtN, prickar } from './hjalp';
@@ -104,6 +104,7 @@ app.stage.on('pointertap', e => {
   else if (fireAt(gx, gy) !== undefined) { const id = fireAt(gx, gy)!; ui.eld = id ? id - 1 : undefined; visa('eld'); }
   else if (zi) valjLager(zi - 1, c);
   else if (stationAt(s, c.x, c.y)) { ui.stationId = stationAt(s, c.x, c.y)!.id; visa('station'); }
+  else if (stolAt(c.x, c.y)) { ui.stationId = stolAt(c.x, c.y)!.id; visa('station'); } // stolen vid bänken eller bordet (steg 6.8.10)
   else if (outPilesAt(c.x, c.y).length) { ui.hogAt = c; visa('hog'); }
   else if (toaAt(s, c.x, c.y)) { ui.sak = `f:${c.y * W + c.x}`; visa('sak'); }
   else if (faltAt(s, c.x, c.y)) valjFalt(faltAt(s, c.x, c.y)!, c.x, c.y);
@@ -133,6 +134,11 @@ function avmarkera() {
   ui.selected = undefined; stopFollow();
   if (ärPersonflik(ui.tab)) ui.tab = undefined;
   renderPanel(true); renderPorts();
+}
+// stolen på rutan (steg 6.8.10): sittplatsen framför en bänk med stol eller en plats vid ett bord; den markeras som sin möbel
+function stolAt(x: number, y: number) {
+  if (!s.stationer?.length || !inMap(x, y)) return undefined;
+  return stationerOf(s).find(t => (stationDef(t.k)?.sitt && framfor(t).some(q => q.x === x && q.y === y)) || bordPlatser(t).some(q => q.x === x && q.y === y));
 }
 // lagret (steg 2.10.17): första trycket visar lagerplatsen, och varje nytt tryck på samma ruta visar nästa sak på rutan, en
 // i taget (stackarna och redskapen, sedan förvaringen som står där), och efter den sista lagerplatsen igen
@@ -167,7 +173,7 @@ app.stage.on('pointermove', e => {
   showHover(gx, gy);
   ui.hovered = personAt(gx, gy)?.id;
   const c = tileAt(gx, gy);
-  view.style.cursor = ui.hovered || djurAt(gx, gy) !== undefined || gastAt(gx, gy) !== undefined || !!filtAt(gx, gy) || inMap(c.x, c.y) && (fireAt(gx, gy) !== undefined || storeAt(gx, gy) || outPilesAt(c.x, c.y).length || toaAt(s, c.x, c.y) || faltAt(s, c.x, c.y) || stubbeAt(c.x, c.y) || husAt(c.x, c.y) !== undefined || stationAt(s, c.x, c.y) || tradAt(c.x, c.y) || buskeAt(c.x, c.y)) ? 'pointer' : 'grab';
+  view.style.cursor = ui.hovered || djurAt(gx, gy) !== undefined || gastAt(gx, gy) !== undefined || !!filtAt(gx, gy) || inMap(c.x, c.y) && (fireAt(gx, gy) !== undefined || storeAt(gx, gy) || outPilesAt(c.x, c.y).length || toaAt(s, c.x, c.y) || faltAt(s, c.x, c.y) || stubbeAt(c.x, c.y) || husAt(c.x, c.y) !== undefined || stationAt(s, c.x, c.y) || stolAt(c.x, c.y) || tradAt(c.x, c.y) || buskeAt(c.x, c.y)) ? 'pointer' : 'grab';
 });
 view.addEventListener('wheel', e => { e.preventDefault(); const r = view.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.06 : 1 / 1.06, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
 view.addEventListener('pointerleave', () => { $('hoverBox').hidden = true; ui.hovered = undefined; });
