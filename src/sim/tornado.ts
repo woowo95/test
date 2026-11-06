@@ -19,6 +19,8 @@ import { brinner, tand } from './brand';
 import { vattenNu } from './sjo';
 import { FOREST, isSoil } from './vag';
 import { tingOf } from './agande';
+import { FYND, UTTAG_IDS, takenOf } from './fynd';
+import { faltTornado } from './odling';
 import { djurOf, dodaDjur } from './djur';
 import { isLight } from './tid';
 import { H, HOUR, MIN, SEC, Person, State, T, W, inMap } from './typer';
@@ -43,7 +45,8 @@ export const TORNADO = balans('tornado', {
   ben: [8, 30], // den går rakt så här många rutor (slumpas mellan) ...
   svang: [0.15, 0.7], // ... och svänger sedan så här mycket (radianer, slumpas mellan, åt vänster eller höger)
   in: 1, // den börjar vid kartans kant och går in mot kartan, högst så här många radianer från rakt in
-  trad: 0.6, // nära (steg 6.4.10): chansen att ett vuxet träd fälls
+  trad: 0.6, // nära (steg 6.4.10): chansen att ett vuxet träd fälls ...
+  tradUtkant: 0.1, // ... och i utkanten (steg 6.4.11)
   storm: [0.5, 1.5], // nära: en vägg förlorar så här mycket av sitt skick gånger materialets storm (slumpas mellan)
   trasig: 0.5, // nära: chansen att en dörr slits loss och att en station eller möbel går sönder
   djurNara: 0.5, // nära: chansen att ett djur dör
@@ -201,6 +204,8 @@ function svep(s: State, t: Tornado, a: number, b: number) {
   if (nara.length) naraZon(s, t, nara);
   if (karna.length || nara.length) eldarna(s, t, new Set([...karna, ...nara]));
   if (nara.length || utkant.length) lyft(s, t, new Set(nara), new Set(utkant));
+  if (utkant.length) utkanten(s, t, utkant);
+  if (alla.length) vaxterna(s, alla);
   // människorna och djuren: i kärnan dör de; nära och i utkanten flyger människorna och skadas (en gång per tornado)
   // (som rutorna: efter avståndet till banan, när tornadon passerar den punkt på banan som ligger närmast)
   const zonVid = (x: number, y: number) => {
@@ -229,14 +234,8 @@ function naraZon(s: State, t: Tornado, rutor: number[]) {
   let rev = false, flytt = false;
   for (const i of rutor) {
     const x = i % W, y = Math.floor(i / W);
-    if (g.trees[i] >= FOREST && ur(s, t, i, 3825) < TORNADO.trad) {
-      const stam = stamAv(g, i);
-      g.trees[i] = 0;
-      if (s.halvfallt) delete s.halvfallt[i];
-      stocks(s).push({ id: (s.nextStock = (s.nextStock ?? 0) + 1), x: x + 0.5, y: y + 0.5, ...stam });
-      if (!g.built?.[i]) (s.stubbar ??= []).push({ x, y, t: s.now });
-      t.trad++; count(s, 'tornado trad');
-    } else if (g.trees[i] > 0 && g.trees[i] < FOREST) g.trees[i] = 0;
+    if (g.trees[i] >= FOREST && ur(s, t, i, 3825) < TORNADO.trad) fall(s, t, i);
+    else if (g.trees[i] > 0 && g.trees[i] < FOREST) g.trees[i] = 0;
     if (isSoil(g.tiles[i]) && !g.built?.[i] && g.trees[i] < FOREST) { if (g.cover[i] > 0) count(s, 'tornado stig'); g.cover[i] = 0; } // en jordstig
     const v = bitAt(s, x, y);
     if (v?.k === 'vagg' && v.b >= 1) {
@@ -253,6 +252,28 @@ function naraZon(s: State, t: Tornado, rutor: number[]) {
   }
   if (rev) touch(s);
   if (flytt) tidy(s);
+}
+// ett vuxet träd på rutan i faller och blir en liggande stam
+function fall(s: State, t: Tornado, i: number) {
+  const g = groundOf(s), x = i % W, y = Math.floor(i / W), stam = stamAv(g, i);
+  g.trees[i] = 0;
+  if (s.halvfallt) delete s.halvfallt[i];
+  stocks(s).push({ id: (s.nextStock = (s.nextStock ?? 0) + 1), x: x + 0.5, y: y + 0.5, ...stam });
+  if (!g.built?.[i]) (s.stubbar ??= []).push({ x, y, t: s.now });
+  t.trad++; count(s, 'tornado trad');
+}
+// utkanten (steg 6.4.11): några vuxna träd faller (det som flyger far kortare, i lyft och flyger)
+function utkanten(s: State, t: Tornado, rutor: number[]) {
+  const g = groundOf(s);
+  for (const i of rutor) if (g.trees[i] >= FOREST && ur(s, t, i, 3854) < TORNADO.tradUtkant) fall(s, t, i);
+}
+// i alla zonerna (steg 6.4.11): de vilda växterna försvinner (bär, svamp, rötter, rovor, ärter: allt i gruppen växter som
+// kan plockas slut) och fälten med grödor förstörs. Växterna kommer tillbaka som när någon plockat dem
+const VAXTER = UTTAG_IDS.filter(k => FYND[k].grupp === 'vaxter');
+function vaxterna(s: State, rutor: number[]) {
+  const d = takenOf(s);
+  for (const k of VAXTER) { const a = d[k]; if (a) for (const i of rutor) a[i] = 1; }
+  faltTornado(s, new Set(rutor));
 }
 // eldarna i kärnan och nära släcks, och glöden kan slängas iväg och tända en brand där den landar (steg 6.4.10)
 function eldarna(s: State, t: Tornado, rutor: Set<number>) {

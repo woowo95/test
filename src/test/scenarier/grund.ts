@@ -1300,6 +1300,51 @@ SCENARIER.tornadonara = {
   },
 };
 
+SCENARIER.tornadoutkant = {
+  text: 'Steg 6.4.11: i tornadons utkant (fyra till sex hela rutor från mitten för en medelstor) faller några vuxna träd, lösa saker flyger kortare än nära, och de vilda växterna och grödan på ett fält försvinner',
+  kor: () => {
+    const s = createState(5, START);
+    tandEld(s);
+    SIM.skickaTornado(s);
+    const t = s.tornado!, L = t.L, e = SIM.eldPlats(s), g = groundOf(s), pos = (u: number) => SIM.tornadoPos(t, u);
+    const fran = (x: number, y: number) => { let m = Infinity; for (let u = 0; u <= 1; u += 0.1 / L) m = Math.min(m, Math.hypot(pos(u).x - x - 0.5, pos(u).y - y - 0.5)); return m; };
+    const anv: { x: number; y: number }[] = [];
+    const ledig = (x: number, y: number) => SIM.vattenNu(s)[y * W + x] !== T.Vatten && isSoil(g.tiles[y * W + x]) && !g.built?.[y * W + x] && !SIM.blocked(s, x, y) && !SIM.stationAt(s, x, y) && !SIM.bitAt(s, x, y) && Math.hypot(x - e.x, y - e.y) > 8 && !anv.some(r => Math.abs(r.x - x) + Math.abs(r.y - y) < 2);
+    // en ruta fem rutor vid sidan om banan, från andelen u0 och framåt
+    const pa = (u0: number) => {
+      for (let d = 0; d < 80; d++) {
+        const u = u0 + d / L, p = pos(u), q = pos(u + 1 / L), l = Math.hypot(q.x - p.x, q.y - p.y) || 1;
+        for (const sd of [5, -5]) {
+          const x = Math.floor(p.x - (q.y - p.y) / l * sd), y = Math.floor(p.y + (q.x - p.x) / l * sd), m = fran(x, y);
+          if (SIM.inMap(x, y) && m >= 4.2 && m < 6.3 && ledig(x, y)) { anv.push({ x, y }); return { x, y }; }
+        }
+      }
+      return undefined;
+    };
+    const pb = pa(0.3), pf = pb && pa(0.4), pk = pf && pa(0.5);
+    if (!pb || !pf || !pk) return [['tre lediga rutor i utkanten', false]];
+    // skog på 40 rutor i utkanten
+    const skog: number[] = [];
+    for (let u = 0.2; u < 0.95 && skog.length < 40; u += 1 / L) { const r = pa(u); if (r) { skog.push(r.y * W + r.x); g.trees[r.y * W + r.x] = FOREST + 0.5; } }
+    for (const r of [pb, pf, pk]) g.trees[r.y * W + r.x] = 0;
+    const bar = SIM.takenOf(s).bar!, ib = pb.y * W + pb.x;
+    bar[ib] = 0;
+    s.falt = [{ id: 1, x: pf.x, y: pf.y, w: 1, dir: 1, n: 1, agare: -1, steg: 'vaxer', klara: 0, kvar: 0, sadda: 1, groda: 'arter', vuxit: 0, rord: s.now } as SIM.Falt];
+    s.nextFalt = 1; s.byggV = (s.byggV ?? 0) + 1;
+    s.stackar!.push({ k: 'sten', n: 20, c: 1, x: pk.x, y: pk.y }); SIM.tidy(s);
+    for (let k = 0; k < 900 && s.tornado; k++) step(s, 5);
+    const st = s.stat ?? {}, fallna = skog.filter(i => g.trees[i] < FOREST).length;
+    const sten = (s.stackar ?? []).filter(a => a.k === 'sten' && a.n >= 1 && (a.x !== pk.x || a.y !== pk.y)).map(a => Math.hypot(a.x - pk.x, a.y - pk.y));
+    const langst = Math.max(0, ...sten);
+    return [
+      [`några av träden i utkanten föll (${fallna} av ${skog.length})`, skog.length >= 30 && fallna >= 1 && fallna <= skog.length / 3],
+      [`bären på rutan försvann (uttaget ${bar[ib].toFixed(2)})`, bar[ib] === 1],
+      [`grödan på fältet förstördes (${s.falt?.[0]?.groda ?? 'ingen gröda'}; ${st['tornado falt'] ?? 0})`, !s.falt?.[0]?.groda && (st['tornado falt'] ?? 0) >= 1],
+      [`stenarna flög kort (${sten.length ? langst.toFixed(1) : 'inga'} rutor som längst)`, sten.length >= 1 && langst <= 7],
+    ];
+  },
+};
+
 // en by på sommaren med en torr dag framför sig, och en plats 30 till 50 rutor från elden där en cirkel med radien 12 är jord
 // utan byggen och fält (scenarierna brandfart och slackning)
 function torrAng(): { s: State; mitt: number } | string {
