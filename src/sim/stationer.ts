@@ -13,8 +13,9 @@ import { BYN } from './egendom';
 import { Zone, inZone, pilesInne, stallBorta, usable, zoneAt, zonesOf } from './lager';
 import { PLATS } from './plats';
 import { balans } from './balans';
-import { Hus, Rum, bitAt, blocked, gridOf, husById, roomAt, touch } from './byggnad';
-import { bedTile, fnOf, rumFnOf, sovHus, sovKvar, sovPlats } from './byggnader';
+import { Hus, Rum, bitAt, blocked, gridOf, husById, roofed, roomAt, touch } from './byggnad';
+import { bedTile, fnOf, rumFnOf, samlingRum, sovHus, sovKvar, sovPlats } from './byggnader';
+import { coldOf, nederbord, temperature } from './vader';
 import { ACTS } from './handlingar';
 import { SAKER, isTool } from './saker';
 import { kvHaller, nyKvalitet } from './kvalitet';
@@ -51,6 +52,7 @@ import { paStrak } from './strak';
 
 // ---------- balanstal (regel 8) ----------
 export const STATION = balans('station', {
+  bordUte: 20, // när det är kallt eller regnar är ett bord ute så här många rutor längre bort än ett inne (steg 7.2.8)
   avstand: 2.5, // en station ute står helst så här många rutor utanför det byn omsluter (tillHoljet i omrade.ts), från stationens mitt
   lek: 2, // ... och får så här många poäng till (färre är bättre) om den står på lekplatsen (plats.ts, steg 2.10.4; förut norr × 4)
   slaktTill: 9, slaktAvst: 6, // slaktbänken står högst och helst så här många rutor från byn, eftersom den är smutsig (steg 2.10.16)
@@ -370,7 +372,9 @@ function hittaLek(s: State): Rekt {
 export const paLek = (l: Rekt, x: number, y: number, w = 1, h = 1) => x < l.x + l.w && x + w > l.x && y < l.y + l.h && y + h > l.y;
 
 // platsen för en station av sorten k: inne i ett hus om registret säger det, annars nära elden. Samma plats varje gång (ingen slump)
-export const stationSite = (s: State, k: string, p?: Person) => stationDef(k)?.forvar?.privat || stationDef(k)?.pynt ? p && siteKista(s, k, p) : stationDef(k)?.brasa ? siteBrasa(s) : stationDef(k)?.eld ? siteEld(s) : stationDef(k)?.forvar ? siteForvar(s, k) : stationDef(k)?.utkant ? siteUtkant(s, k) : stationDef(k)?.inne ? siteInne(s, k, undefined, h => farBygga(s, h, p)) : siteUte(s, k);
+// borden och scenen står hellre i samlingssalen när den har plats (steg 7.2.7 och 7.2.8)
+const siteSal = (s: State, k: string) => { const sal = (k === 'scen' || stationDef(k)?.platser) ? samlingRum(s) : undefined; return sal && siteInne(s, k, sal); };
+export const stationSite = (s: State, k: string, p?: Person) => siteSal(s, k) || (stationDef(k)?.forvar?.privat || stationDef(k)?.pynt ? p && siteKista(s, k, p) : stationDef(k)?.brasa ? siteBrasa(s) : stationDef(k)?.eld ? siteEld(s) : stationDef(k)?.forvar ? siteForvar(s, k) : stationDef(k)?.utkant ? siteUtkant(s, k) : stationDef(k)?.inne ? siteInne(s, k, undefined, h => farBygga(s, h, p)) : siteUte(s, k));
 // i byns utkant (latrinen och slaktbänken): lediga rutor på gräs, sand eller i glesare skog, högst u.till rutor från byn (lägret
 // och husen, utanforByn), helst u.avst och aldrig närmare än utkantMin, inte på lekplatsen, och för latrinen, när byn lärt sig
 // det (s.hygien), långt från vattnet. Avståndet räknas från stationens närmaste ruta
@@ -812,11 +816,13 @@ const VID_BORDET = new Set<Act>(['maltid', 'samtal', 'beratta']);
 export function ledigPlats(s: State, p: Person) {
   const borden = bordenOf(s);
   if (!borden.length) return undefined;
+  // när det är kallt eller regnar äter och pratar man under tak om det går (Matsal, steg 7.2.8)
+  const inneHellre = nederbord(s) || coldOf(temperature(s)) > 0;
   const tagen = new Set<number>();
   for (const q of living(s)) if (q !== p && q.task && VID_BORDET.has(q.task.act)) tagen.add(Math.floor(q.task.ty) * W + Math.floor(q.task.tx));
   let best: { x: number; y: number } | undefined, bd = Infinity;
   for (const t of borden) for (const q of bordPlatser(t)) {
-    const d = Math.hypot(q.x + 0.5 - p.x, q.y + 0.5 - p.y);
+    const d = Math.hypot(q.x + 0.5 - p.x, q.y + 0.5 - p.y) + (inneHellre && !roofed(s, q.x, q.y) ? STATION.bordUte : 0);
     if (d < bd && !tagen.has(q.y * W + q.x)) { bd = d; best = { x: q.x + 0.5, y: q.y + 0.5 }; }
   }
   return best;

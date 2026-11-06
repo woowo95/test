@@ -1077,3 +1077,42 @@ SCENARIER.byggplan = {
     ];
   },
 };
+
+SCENARIER.samlingssal = {
+  text: 'Steg 7.2.7–7.2.9: när byn har en scen vill den ha en samlingssal, som blir mötesplatsen året runt. Borden och scenen står hellre där, och en scen inne går att uppträda på när det regnar. Man äter under tak när det är kallt, och verkstaden får en lagerplats för sitt material',
+  kor: () => {
+    const s = createState(6, START);
+    klockan(s); byggare(s);
+    for (let i = 0; i < 8; i++) nyInvanare(s, i % 2 ? 'm' : 'k', 25);
+    SIM.planBuild(s); byggKlart(s);
+    const inget = !SIM.byggbehov(s).some(b => b.fn === 'samling');
+    (s.stationer ??= []).push({ id: (s.nextBit ??= 1), k: 'scen', x: housesOf(s)[0].x - 6, y: housesOf(s)[0].y - 6, kvar: 0 } as SIM.Station); s.nextBit++; SIM.touch(s);
+    const behov = SIM.byggbehov(s).find(b => b.fn === 'samling');
+    const h = housesOf(s)[0];
+    h.fn = 'samling'; h.rumFn = undefined; SIM.touch(s);
+    const sal = SIM.samlingRum(s)!, salenFinns = !!sal && !SIM.byggbehov(s).some(b => b.fn === 'samling');
+    const bord = SIM.stationSite(s, 'bord'), bordInne = !!bord && !!SIM.roomAt(s, bord.x, bord.y);
+    s.stationer.push({ id: s.nextBit++, k: 'bord', x: bord!.x, y: bord!.y, kvar: 0, inne: 1 } as SIM.Station); SIM.touch(s);
+    const matsal = SIM.rumTaggar(s, sal).has('matsal') || SIM.rumTaggar(s, gridOf(s).rooms.find(r => r.hus === h.id && r.tiles.length)!).has('matsal');
+    const p = living(s)[0], plats = SIM.ledigPlats(s, p);
+    const inneScen = () => SIM.scenen(s);
+    (s.stationer.find(t => t.k === 'scen')! as SIM.Station).inne = 1;
+    const scenInne = !!inneScen();
+    // verkstaden
+    h.fn = 'verkstad'; SIM.touch(s);
+    const r = gridOf(s).rooms.find(q => q.hus === h.id && q.tiles.length)!;
+    s.stationer = s.stationer.filter(t => t.k === 'bord');
+    s.stationer.push({ id: s.nextBit++, k: 'flatarbank', x: r.tiles[0] % SIM.W, y: Math.floor(r.tiles[0] / SIM.W), kvar: 0, inne: 1 } as SIM.Station); SIM.touch(s);
+    SIM.stepByggnader(s);
+    const hylla = SIM.zonesOf(s).filter(z => z.hus === h.id && z.slag === 'material').length;
+    return [
+      ['utan scen vill byn inte ha en samlingssal', inget],
+      [`med en scen vill den det (${behov?.a.plats} rutor)`, !!behov],
+      ['när salen finns försvinner behovet', salenFinns],
+      ['bordet ställs i salen, och rummet blir en matsal', bordInne && matsal],
+      ['man sätter sig vid bordet inne', !!plats && !!SIM.roomAt(s, plats.x, plats.y)],
+      ['en scen inne går att använda', scenInne],
+      [`verkstaden får en lagerplats för material (${hylla})`, hylla === 1],
+    ];
+  },
+};

@@ -141,6 +141,7 @@ export const VAL = balans('val', {
   nattSamtal: 0.9, // annars umgås man tills detta, sedan vilar man
   // borden (steg 2.2.15)
   maltidMin: 20, maltidSpann: 10, // en måltid vid bordet
+  salMote: 0.7, // året runt är samlingssalen mötesplatsen med denna chans, när byn har en (steg 7.2.7)
   bordSamtal: 0.5, // den som samtalar eller berättar sätter sig vid ett bord med denna chans, när det inte är kallt
   isar: 1.05, isarForsok: 24, // vid elden står man minst så här många rutor från de andra, så många försök (steg 3.6.8) ...
   isarVidga: 0.12, // ... och ringen blir så här mycket bredare för varje försök efter det fjärde, när det är trångt
@@ -232,7 +233,8 @@ function platsFor(s: State, act: Act, p: Person): { x: number; y: number } {
   if (plats === 'elden' || plats === 'station' || plats === 'bord') {
     // när det är kallt samtalar och berättar man i samlingshuset, om det är varmare där än vid elden (byggnader.ts)
     const sal = d.social ? samlingRum(s) : undefined, c = sal ? coldOf(temperature(s)) : 0;
-    if (sal && (c > 0 && varmareInne(s, sal, c, d.varmer) || nederbord(s))) return isarIRum(s, p, sal.tiles); // ... och när det regnar (steg 2.11.1)
+    // ... när det regnar (steg 2.11.1), och året runt är samlingssalen byns mötesplats (steg 7.2.7)
+    if (sal && (c > 0 && varmareInne(s, sal, c, d.varmer) || nederbord(s) || rnd(s, 'val', p) < VAL.salMote)) return isarIRum(s, p, sal.tiles);
     // annars sätter man sig ofta vid ett bord för att samtala och berätta, när det inte är kallt
     if (d.slag === 'prata' && bordenOf(s).length && coldOf(temperature(s)) === 0 && rnd(s, 'val', p) < VAL.bordSamtal) { const at = ledigPlats(s, p); if (at) return at; }
     // bredvid den bästa vännen om hen sitter vid samma eld, och inte nära en ovän (steg 3.1.1)

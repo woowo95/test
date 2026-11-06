@@ -201,8 +201,9 @@ function publik(s: State, p: Person) {
 }
 // scenen (steg 4.3.2.2): en färdig scen, när det inte är kallt eller regnar (då är man vid elden eller inne som förut)
 export function scenen(s: State) {
-  if (nederbord(s) || coldOf(temperature(s)) > 0) return undefined;
-  return stationerOf(s).find(t => t.k === 'scen' && isKlar(t));
+  // en scen inne i en sal (gillesalen, steg 7.2.7) går också när det är kallt eller regnar
+  const sc = stationerOf(s).filter(t => t.k === 'scen' && isKlar(t)), inne = sc.find(t => t.inne);
+  return inne ?? (nederbord(s) || coldOf(temperature(s)) > 0 ? undefined : sc[0]);
 }
 // instrumenten som ligger vid scenen, det som ger mest glädje först
 const instrumentVid = (s: State, sc: Station) => Object.keys(INSTRUMENT).filter(k => redskapVid(s, sc, k).length).sort((a, b) => INSTRUMENT[b].kval - INSTRUMENT[a].kval);

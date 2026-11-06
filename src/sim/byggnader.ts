@@ -35,6 +35,9 @@ export const HUS = balans('hus', {
   rivTillbaka: 0.5, // så mycket av materialet kommer tillbaka när ett hus rivs
   varmeMarg: 0.02, // ett samlingshus räknas som varmare än elden även om det är så här mycket kallare ...
   varmeY: 2.9, // ... mätt så här många rutor söder om elden
+  salAkut: 0.3, // hur akut det är med en samlingssal när byn har en scen (0 till 1, steg 7.2.7) ...
+  salMin: 8, // ... och så många rutor den har minst
+  verkstadHyllor: 2, // en lagerplats med det stationerna använder för så här många stationer i verkstaden (steg 7.2.9)
   verkstadAkut: 0.5, // hur akut det är att få plats inne för en station som inte får plats i något hus (0 till 1, steg 2.2.17) ...
   verkstadExtra: 2, // ... och så här många golvrutor fler än stationen och golvet framför den
 });
@@ -79,7 +82,7 @@ export const BYGGNADER = {
       if (f) return { v: HUS.familjAkut, plats: f.folk.length + HUS.familjExtra, ag: f.ag };
       // familjen har vuxit ur sitt hus (steg 7.2.6): huset behöver mer plats
       for (const h of housesOf(s)) {
-        if (fnId(h) !== 'familjehus' || h.ag === undefined || !h.klar) continue;
+        if (h.fn !== 'familjehus' || h.ag === undefined || !h.klar) continue;
         const folk = familjOf(s, h.ag).length, plats = gridOf(s).rooms.filter(r => r.hus === h.id).reduce((n, r) => n + sovplatser(s, r), 0);
         if (folk > plats) return { v: HUS.familjAkut, plats: folk - plats, ag: h.ag, hus: h.id };
       }
@@ -89,8 +92,9 @@ export const BYGGNADER = {
   },
   samling: {
     namn: 'Samlingshus', ikon: '🪑', behov: 'En plats att umgås under tak när det är kallt', fara: false, vikt: 1,
-    // byggs inte nytt: en sovsal som ingen sover i blir ett samlingshus (steg 1.6.4). När det är kallt samtalar och
-    // berättar man där i stället för vid elden, om det är varmare där (val.ts)
+    // en sovsal som ingen sover i blir ett samlingshus (steg 1.6.4). När scenen finns vill byn ha en sal under tak (steg 7.2.7):
+    // den blir byns mötesplats i stället för elden, och scenen kan stå där (en samlingssal med en scen är en gillesal)
+    akut: s => stationerOf(s).some(t => t.k === 'scen' && isKlar(t)) && !housesOf(s).some(h => h.fn === 'samling') ? { v: HUS.salAkut, plats: Math.max(HUS.salMin, living(s).length) } : { v: 0, plats: 0 },
     namnFor: (_s, _w, _h, same) => same ? `Samlingshus ${same + 1}` : 'Samlingshuset',
   },
   verkstad: {
@@ -292,6 +296,21 @@ export function stepByggnader(s: State) {
     h.ag = undefined; log(s, `${h.namn} har ingen ägare längre och blir byns.`, 'world');
   }
   funktionsbyte(s);
+  verkstadensHyllor(s);
+}
+// verkstadens hyllor (steg 7.2.9): några rutor på verkstadens golv blir lagerplatser för material, så att den som arbetar har det
+// nära till hands. Bärarna fyller på dem från förrådet som alla andra lagerplatser, och hyllorna (förvaringen) ställs där när golvet är fullt
+function verkstadensHyllor(s: State) {
+  for (const h of housesOf(s)) {
+    if (fnId(h) !== 'verkstad' || !h.klar) continue;
+    const st = stationerOf(s).filter(t => isKlar(t) && stationRum(s, t)?.hus === h.id).length, vill = Math.ceil(st / HUS.verkstadHyllor), har = zonesOf(s).filter(z => z.hus === h.id).length;
+    if (har >= vill) continue;
+    const r = gridOf(s).rooms.find(q => q.hus === h.id && q.tiles.length), upp = stationRutor(s);
+    const i = r?.tiles.find(t => !upp.at.has(t) && !upp.sitt.has(t) && !zonesOf(s).some(z => z.x === t % W && z.y === Math.floor(t / W)));
+    if (i === undefined) continue;
+    zonesOf(s).push({ x: i % W, y: Math.floor(i / W), w: 1, h: 1, namn: `Hyllan i ${h.namn.toLowerCase()}`, slag: 'material', prio: 2, hus: h.id });
+    changed(s); count(s, 'verkstadHylla');
+  }
 }
 
 // ---------- funktionen följer behovet (steg 1.6.4) ----------
