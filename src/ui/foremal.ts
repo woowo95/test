@@ -10,7 +10,8 @@ import { ANIMTAKT } from '../animbilder';
 import { mix } from './pixel';
 import { iBruk } from './ibruk';
 import { framstegPunkter } from './framsteg';
-import { fargTal, narmast } from '../palett';
+import { farg, fargTal, narmast, rasterPa } from '../palett';
+import * as PIXI from 'pixi.js';
 
 // det som står på marken: lagerplatserna och stackarna, stationerna, husen, stubbar, fällda träd och elden
 const pileIcons = new Ikoner(pileLayer, true); // med skuggor på marken (steg 5.1.8)
@@ -132,12 +133,23 @@ function kant(rutor: number[]) {
   }
   overG.lineStyle(0);
 }
+// tonen under lagerplatserna (steg 6.8.9): en färg ur paletten i ett glest rastermönster, 4 × 4 punkter som upprepas
+const LAGERTON = { farg: ['senap', 3] as const, tathet: 3 / 16 };
+let lagerTonTex: PIXI.Texture | undefined;
+function lagerTon() {
+  if (lagerTonTex) return lagerTonTex;
+  const c = document.createElement('canvas'); c.width = c.height = 4;
+  const g = c.getContext('2d')!; g.fillStyle = farg(...LAGERTON.farg);
+  for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) if (rasterPa(LAGERTON.tathet, x, y)) g.fillRect(x, y, 1, 1);
+  return (lagerTonTex = PIXI.Texture.from(c, { scaleMode: PIXI.SCALE_MODES.NEAREST }));
+}
 export function drawStructures(t: number) {
   const tab = ui.tab;
   structG.clear(); overG.clear();
-  // lagerplatsen: en ram runt rutorna, och en stack per ruta
+  // lagerplatsen: en svag färgton under rutorna (steg 6.8.9), en ram runt dem och en stack per ruta
   zonesOf(s).forEach((z, i) => {
     const on = tab === 'lager' && ui.lagerNr === i;
+    structG.beginTextureFill({ texture: lagerTon() }).drawRect(z.x * TS, z.y * TS, z.w * TS, z.h * TS).endFill();
     structG.lineStyle(1, on ? 0xdad0bb : 0x5e3c24).drawRect(z.x * TS + 0.5, z.y * TS + 0.5, z.w * TS - 1, z.h * TS - 1).lineStyle(0);
   });
   drawBuild();
