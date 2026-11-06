@@ -17,37 +17,37 @@
   "delKb": 308
  },
  "42": {
-  "pop": 17,
+  "pop": 7,
   "atergrundad": 11,
   "invandrade": 16,
-  "utvandrade": 12,
-  "fodda": 57,
-  "doda": 58,
+  "utvandrade": 18,
+  "fodda": 50,
+  "doda": 55,
   "svalt": 28,
   "kyla": 1,
-  "hunger": 234,
-  "humor": 0.664,
-  "vintermat": 0,
+  "hunger": 187,
+  "humor": 0.673,
+  "vintermat": 21,
   "vinterved": 98,
-  "eld": 80,
-  "kb": 1265,
-  "delKb": 471
+  "eld": 78,
+  "kb": 1164,
+  "delKb": 382
  },
  "777": {
-  "pop": 7,
+  "pop": 6,
   "atergrundad": 0,
   "invandrade": 3,
   "utvandrade": 6,
   "fodda": 16,
-  "doda": 18,
+  "doda": 19,
   "svalt": 3,
   "kyla": 0,
-  "hunger": 28,
-  "humor": 0.598,
+  "hunger": 29,
+  "humor": 0.594,
   "vintermat": 41,
   "vinterved": 124,
   "eld": 92,
-  "kb": 934,
-  "delKb": 175
+  "kb": 931,
+  "delKb": 179
  }
 }
