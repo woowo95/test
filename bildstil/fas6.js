@@ -592,6 +592,19 @@
         }
       }));
     } }] },
+    // steg 6.9.3: banden överst i flikarna dubbelt så stora, och remsan går rakt ut till panelens kanter på båda sidor om
+    // medaljongen, i bandets vanligaste färg med konturen runt (så står det i spelet nu, src/ui/runstenar.ts bandHtml)
+    { id: 'f6_band', namn: 'Banden överst i flikarna', typ: 'janej', vad: S + '6.9.3: banden överst i flikarna är dubbelt så stora, och flikens färg går ut till panelens kanter på båda sidor om medaljongen. Överst Sederna, nederst Krönikan, i en panel som i spelet (360 punkter bred). Ja eller nej?', versioner: [{ text: 'Sedernas och Krönikans band i dubbel storlek, med remsan rakt ut till kanterna.', w: 360, h: 128, rita: B => {
+      const P = B.P;
+      for (let y = 0; y < 128; y++) for (let x = 0; x < 360; x++) B.satt(x, y, P.i('ben', 3));
+      ['seder', 'kronika'].forEach((id, r) => {
+        const b = GUI.band[id], y0 = 6 + r * 62, x0 = Math.round((360 - b.w * 2) / 2), n = {};
+        for (const rad of b.rader) for (const k of rad) if (k !== '.' && k !== 'a') n[k] = (n[k] || 0) + 1;
+        const mest = Object.keys(n).sort((p, q) => n[q] - n[p])[0], bf = P.av(b.pal[mest]), bk = P.av(b.pal.a);
+        for (let x = 0; x < 360; x++) for (let y = 19; y < 35; y++) B.satt(x, y0 + y, y < 21 || y >= 33 ? bk : bf);
+        for (let j = 0; j < b.h; j++) for (let i = 0; i < b.w; i++) { const ch = b.rader[j][i]; if (ch !== '.') for (let d = 0; d < 4; d++) B.satt(x0 + i * 2 + (d & 1), y0 + j * 2 + (d >> 1), P.av(b.pal[ch])); }
+      });
+    } }] },
     KORT('f6_strak', 'Gångstråken i testläget', S + '6.2.5: i testläget syns gångstråken, vägarna från dörrarna till elden, lagren, latrinen och vattnet där inget får byggas, som en tunn linje genom rutornas mitt, och rutan framför dörren som en liten ruta. Stugan och elden är bara för att visa platsen.', [
       STRAK('En tunn gul linje och en fylld gul ruta framför dörren.', 0), STRAK('Korta röda streck och en prickig ruta framför dörren.', 1), STRAK('Två ljusa kanter, som en väg, och en ljus ram framför dörren.', 2)]),
   );

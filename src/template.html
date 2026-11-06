@@ -164,7 +164,9 @@ body.vOppen .owned { display: none; }
 .runsten:not(:disabled):hover .sten { filter: brightness(1.12); }
 .runsten .stennamn { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 /* bandet överst i en flik */
-.band { display: flex; justify-content: center; margin: 2px 30px 8px 0; }
+/* bandet dubbelt så stort, och remsan ut till panelens kanter (steg 6.9.3): sju punkter i dubbel skala mitt i bandet */
+.band { display: flex; justify-content: center; margin: 2px -14px 8px; background: linear-gradient(to bottom, transparent 19px, var(--bk) 19px, var(--bk) 21px, var(--bf) 21px, var(--bf) 33px, var(--bk) 33px, var(--bk) 35px, transparent 35px); }
+.panelkropp > .band:first-child { margin-right: -14px; margin-top: 30px; }
 .band img { image-rendering: pixelated; display: block; }
 #installKnapp { position: fixed; z-index: 3; right: 6px; bottom: 10px; width: calc(var(--stenar) - 12px); height: 34px; border-radius: 4px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); font: inherit; font-size: 17px; cursor: pointer; padding: 0; }
 #installKnapp[aria-expanded="true"] { color: var(--accent-fg); background: var(--accent); border-color: var(--accent); }

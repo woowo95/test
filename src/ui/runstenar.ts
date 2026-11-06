@@ -27,7 +27,21 @@ export function stenHtml(flik: string, namn: string) {
   return (['stangd', 'oppen', 'blek'] as StenLage[]).map(l => img(s[l], 'sten ' + l)).join('') + `<span class="stennamn">${namn}</span>`;
 }
 // bandet överst i en flik (tomt för en flik som inte har något)
+// Bandet är dubbelt så stort (steg 6.9.3), och bandets remsa fortsätter rakt ut till panelens kanter på båda sidor om
+// medaljongen, i bandets vanligaste färg med konturen ('a') runt: --bf är remsan och --bk konturen
+const fargerna = new Map<GuiBild, [string, string]>();
+function bandFarg(b: GuiBild): [string, string] {
+  let f = fargerna.get(b);
+  if (f) return f;
+  const n: Record<string, number> = {};
+  for (const r of b.rader) for (const k of r) if (k !== '.' && k !== 'a') n[k] = (n[k] ?? 0) + 1;
+  const mest = Object.keys(n).sort((x, y) => n[y] - n[x])[0];
+  f = [b.pal[mest] ?? '#61767a', b.pal.a ?? '#24201d']; fargerna.set(b, f);
+  return f;
+}
 export function bandHtml(flik: string) {
   const b = GUI.band[STEN[flik]];
-  return b ? `<div class="band" aria-hidden="true">${img(b, '')}</div>` : '';
+  if (!b) return '';
+  const [bf, bk] = bandFarg(b);
+  return `<div class="band" aria-hidden="true" style="--bf:${bf};--bk:${bk}"><img src="${url(b)}" width="${b.w * 2}" height="${b.h * 2}" alt="" draggable="false"></div>`;
 }
