@@ -441,6 +441,10 @@ export function rovarTornado(s: State, f: Rovarflock, zon: number, dod: number, 
     return true;
   });
   if (till && f.folk.length) stallUpp(s, f, till.x + 0.5, till.y + 0.5);
+  if (f.strid) { // byborna i striden släpps, så att de inte står kvar i den när rövarna flugit iväg
+    const g = f.strid;
+    for (const id of [...g.u.kampar.map(k => k.pid), ...(g.in ?? []).map(q => q.k.pid)]) { const p = id !== undefined ? levande(s, id) : undefined; if (p?.task?.act === 'strid') p.task.until = s.now; }
+  }
   f.gor = 'flyr'; f.strid = undefined;
   const doda = fore - f.folk.length;
   log(s, doda === fore ? `Tornadon dödade rövarna ${fran(s, f)}.` : `Tornadon kastade rövarna ${fran(s, f)} åt sidan${doda ? ` och ${doda} dog` : ''}. De flyr.`, 'world');
