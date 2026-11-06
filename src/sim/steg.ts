@@ -47,6 +47,7 @@ import { facklorTimme, finishLjus, finishUppsatt, morkFart, morkHumor } from './
 import { arbetsTimme, chooseTask, dangers, nastaBuske, nastaRedskap, nastaRuta, spotFor } from './val';
 import { FAGEL, djurSteg } from './djur';
 import { vargSteg, vargjaktSteg } from './varg';
+import { bjornSteg } from './bjorn';
 import { rovarSteg, rovarTornado } from './rovare';
 import { handelSteg, handlaKlar, handlarMal, handlarPlats, handlarTornado, pratMedHandlare } from './handel';
 import { klanSteg } from './klaner';
@@ -233,6 +234,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   klanSteg(s, dtSec); // grannklanerna växer och glömmer (klaner.ts, steg 4.4.3)
   handelSteg(s, dtSec); // handlaren kommer, handlar och går (handel.ts, steg 4.4.1)
   vargSteg(s, dtSec); // vargarna under istiden (varg.ts, steg 3.7.1)
+  bjornSteg(s); // den som kommer nära björnen (bjorn.ts, steg 6.6.5)
   rovarSteg(s, dtSec); // rövarflocken (rovare.ts, steg 4.4.5)
   tornadoSteg(s, { rovarTornado, handlarTornado, handlarPlats }); // tornadon drar fram (tornado.ts, steg 3.8.4), och rövarna och handlaren drabbas (steg 6.4.12)
   brandSteg(s, dtSec); // gnistor, blixten och elden som sprider sig (brand.ts, steg 3.8.5)

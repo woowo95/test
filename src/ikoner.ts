@@ -3806,7 +3806,7 @@ for (const k of ['naver', 'talg', 'fackla', 'talgljus', 'vargdel', 'radjurdel', 
 // där hållet är sida, vast, fram eller bak. Vilken ritning och päls ett djur har räknas ur dess id (djurBild)
 export const DJUR_HALL = ['sida', 'vast', 'fram', 'bak'] as const;
 export type DjurHall = typeof DJUR_HALL[number];
-for (const art of ['varg', 'kanin', 'radjur', 'fagel', 'bjorn'] as const) DJURBILDER.ritningar[art].forEach((r, v) => DJURBILDER.pals[art].forEach((pals, p) => {
+for (const art of ['varg', 'kanin', 'radjur', 'fagel', 'bjorn', 'bjornunge'] as const) DJURBILDER.ritningar[art].forEach((r, v) => DJURBILDER.pals[art].forEach((pals, p) => {
   if (art === 'fagel' && v !== p) return; // varje fågel har sin egen palett (steg 6.6.3)
   const pal: Record<string, string> = {};
   for (const [ch, [ramp, ton]] of Object.entries({ ...DJURBILDER.fast, ...pals })) pal[ch] = farg(ramp, ton);
@@ -3819,7 +3819,7 @@ for (const art of ['varg', 'kanin', 'radjur', 'fagel', 'bjorn'] as const) DJURBI
 const idTal = (id: number, salt: number) => { let h = Math.imul(id ^ salt, 2654435761) >>> 0; h ^= h >>> 15; h = Math.imul(h, 2246822519) >>> 0; return (h ^ (h >>> 13)) >>> 0; };
 // fågeln (steg 6.6.3): utseendet (orre, ripa, skogsduva) kommer från platsen, inte från id:t
 export const fagelBild = (u: number, hall: DjurHall) => `djur_fagel_${u}_${u}_${hall}`;
-export function djurBild(art: 'varg' | 'kanin' | 'radjur' | 'bjorn', id: number, hall: DjurHall) {
+export function djurBild(art: 'varg' | 'kanin' | 'radjur' | 'bjorn' | 'bjornunge', id: number, hall: DjurHall) {
   const v = idTal(id, 0x51a7) % DJURBILDER.ritningar[art].length, p = idTal(id, 0x9e37) % DJURBILDER.pals[art].length;
   return `djur_${art}_${v}_${p}_${hall}`;
 }

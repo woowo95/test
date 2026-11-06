@@ -2156,7 +2156,7 @@ SCENARIER.bjorn = {
     const ar = new Map<number, { istid: boolean; bjorn: boolean }>();
     let flest = 0, iIstid = 0, nara = Infinity, iVatten = 0, hopp = 0, barOmogna = 0, barN = 0, fiskN = 0, fore: { id: number; x: number; y: number } | undefined;
     for (let t = s.now; t < s.now + 35 * DAY; t += STEG) {
-      const b = SIM.bjornarOf(s, t), ai = ageIndex(s, t), y = yearNo(s, t);
+      const b = SIM.bjornarOf(s, t).filter(d => d.art === 'bjorn'), ai = ageIndex(s, t), y = yearNo(s, t); // ungarna (steg 6.6.5) räknas inte
       const e = ar.get(y) ?? { istid: ai === SIM.ISTID, bjorn: false };
       e.bjorn ||= b.length > 0; ar.set(y, e);
       flest = Math.max(flest, b.length);
@@ -2181,6 +2181,57 @@ SCENARIER.bjorn = {
       [`bär bara när de är mogna (${barOmogna} gånger utan)`, barOmogna === 0],
       [`den går, den hoppar inte (${hopp} hopp)`, hopp === 0],
       [`den står aldrig i vattnet (${iVatten} gånger)`, iVatten === 0],
+    ];
+  },
+};
+
+SCENARIER.bjornmote = {
+  text: 'Steg 6.6.5: björnen möter folk. Ibland har den en eller två ungar med sig, som går tätt kring den och aldrig i vattnet. Den som är vaken, ute och kommer nära björnen möter den en gång per år: oftast blir hen rädd och drar sig undan, men björnen anfaller ibland, oftare när den har ungar, och då blir det en strid där den slår hårt',
+  kor: () => {
+    const s = createState(6, START), STEG = 20 * 60_000, vt = SIM.vattenNu(s);
+    // ett ögonblick med björnen ute utan ungar och ett med ungar, ur de första 60 dygnen
+    let utan: number | undefined, med: number | undefined, ungeLangt = 0, ungeVatten = 0, ungar = new Set<number>();
+    for (let t = s.now; t < s.now + 60 * DAY; t += STEG) {
+      const b = SIM.bjornarOf(s, t), mor = b.find(d => d.art === 'bjorn'), u = b.filter(d => d.art === 'bjornunge');
+      if (!mor) continue;
+      for (const d of u) { ungar.add(d.id); if (Math.hypot(d.x - mor.x, d.y - mor.y) > SIM.BJORN.ungeAvst + 0.01) ungeLangt++; if (vt[tileOf(d.x, d.y)] === T.Vatten) ungeVatten++; }
+      if (u.length) med ??= t; else utan ??= t;
+    }
+    if (utan === undefined || med === undefined) return [[`björnen med och utan ungar (${utan}, ${med})`, false]];
+    // många möten: en person ställs bredvid björnen, en gång i taget i en kopia av byn
+    const json = JSON.stringify(s);
+    const prova = (t: number, sover = false) => {
+      const k = migrate(JSON.parse(json)); k.now = t;
+      for (let r = 0; r < (t / 60_000) % 1000; r++) SIM.rnd(k, 'bjorn'); // en annan slump i varje försök
+      const mor = SIM.bjornarOf(k, t).find(d => d.art === 'bjorn')!, p = living(k)[0];
+      for (const q of living(k)) if (q !== p) { q.x = 2; q.y = 2; }
+      p.x = mor.x + 1; p.y = mor.y; p.task = sover ? { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: t + HOUR, carry: 0 } as SIM.Task : undefined;
+      SIM.bjornSteg(k);
+      const igen = (k.stat?.bjornmote ?? 0);
+      SIM.bjornSteg(k); // samma person samma år: inget nytt möte
+      return { mote: k.stat?.bjornmote ?? 0, igen: (k.stat?.bjornmote ?? 0) - igen, strid: k.stat?.bjornstrid ?? 0, skador: p.skador?.length ?? 0, rädd: (p.thoughts ?? []).some((x: { text: string }) => /björn/.test(x.text)) };
+    };
+    const N = 120;
+    let stridUtan = 0, stridMed = 0, mote = 0, igen = 0, skadad = 0, rädd = 0;
+    for (let i = 0; i < N; i++) {
+      // varje försök ett eget ögonblick, så att slumpen blir en annan
+      const a = prova(utan + i * 60_000), b = prova(med + i * 60_000);
+      stridUtan += a.strid; stridMed += b.strid; mote += a.mote + b.mote; igen += a.igen + b.igen;
+      if (a.strid) skadad += a.skador > 0 ? 1 : 0; if (b.strid) skadad += b.skador > 0 ? 1 : 0;
+      if (!a.strid && a.rädd) rädd++;
+    }
+    const sov = prova(utan, true);
+    return [
+      [`björnen har ungar vissa år (${ungar.size} ungar på 60 dygn)`, ungar.size > 0],
+      [`ungarna går tätt kring björnen (${ungeLangt} gånger längre bort)`, ungeLangt === 0],
+      [`ungarna står aldrig i vattnet (${ungeVatten} gånger)`, ungeVatten === 0],
+      [`den som kommer nära möter björnen (${mote} möten av ${2 * N})`, mote === 2 * N],
+      [`samma person möter den bara en gång per år (${igen} gånger till)`, igen === 0],
+      [`oftast drar man sig undan rädd (${rädd} av ${N - stridUtan} utan strid)`, rädd === N - stridUtan],
+      [`björnen anfaller sällan (${stridUtan} av ${N} utan ungar)`, stridUtan > 0 && stridUtan < N * 0.25],
+      [`oftare när den har ungar (${stridMed} av ${N})`, stridMed > stridUtan],
+      [`anfallet skadar (${skadad} av ${stridUtan + stridMed} strider)`, skadad > (stridUtan + stridMed) / 2],
+      [`den som sover möter den inte (${sov.mote})`, sov.mote === 0],
     ];
   },
 };

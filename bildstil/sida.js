@@ -972,9 +972,7 @@ const VAL = [
 // behålls) och steget där de byggs in. När saken är inbyggd tas raden bort här och ur VAL, och dess dokument i samlingen 'val'
 const BESLUT = {
   f6_bjornskinn: { val: 1, steg: '6.5.3.3' },
-  f6_bjornunge: { val: 1, steg: '6.5.3.2' },
   f7_stockvag: { val: 2, steg: '7.2.8.1' }, f7_brygga: { val: 2, steg: '7.2.3' },
-  f6_bjornunge_hall: { val: 1, text: 'Din ritning: björnungen från sidan, framifrån och bakifrån. Byggs in i steg 6.5.3.2.' },
   f6_bjorn_falld: { val: 2, steg: '6.5.3' },
   f6_tornado_storlek: { val: 1, steg: '6.3.5.8' },
   f6_rovare: { val: 1, text: 'Alla tre används: rövarluvan, rövarens duk, det mörka slitna skinnet och vargskinnet. Delarna är märkta rövare: byborna kan inte tillverka dem, men varje rövare har en chans att bära dem. Byggs in i steg 6.6.12.' },

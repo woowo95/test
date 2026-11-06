@@ -564,8 +564,6 @@
   VAL.push(
     KORT('f6_strak', 'Gångstråken i testläget', S + '6.2.5: i testläget syns gångstråken, vägarna från dörrarna till elden, lagren, latrinen och vattnet där inget får byggas, som en tunn linje genom rutornas mitt, och rutan framför dörren som en liten ruta. Stugan och elden är bara för att visa platsen.', [
       STRAK('En tunn gul linje och en fylld gul ruta framför dörren.', 0), STRAK('Korta röda streck och en prickig ruta framför dörren.', 1), STRAK('Två ljusa kanter, som en väg, och en ljus ram framför dörren.', 2)]),
-    KORT('f6_bjornunge', 'Björnungen', S + '6.5.3.2: björnungen som följer med björnhonan, bredvid en människa och din björn. Den är ritad i samma färger och med samma kontur som din björn, ungefär hälften så stor, med större huvud, runda öron, kort nos och korta ben.', [
-      UNGESCEN('Liten och rund, står på alla fyra.', 0), UNGESCEN('Sitter på bakbenen.', 1), UNGESCEN('Går, med en ljus krage runt halsen som många björnungar har.', 2)]),
     KORT('f6_bjornskinn', 'Björnfällen', S + '6.5.3.3: björnskinnet som slakten ger.', [
       PA_MARK('Utbredd med huvudet och klorna kvar.', FALL[0], BJ_L), PA_MARK('Utbredd utan huvud.', FALL[1], BJ_L), PA_MARK('Hopvikt.', FALL[2], BJ_L)]),
   );
@@ -723,7 +721,6 @@
 
   VAL.push(
     { id: 'f6_fagel_ligger', namn: 'Den fällda fågeln', typ: 'janej', vad: S + '6.6.3: du valde den fällda fågeln på sidan med vingen ute. Den är omritad i de tre fåglarnas egna former och färger (orren, ripan och skogsduvan), och så ligger den nu i spelet. Ja eller nej?', versioner: [PA_RAD('Orren, ripan och skogsduvan på sidan med vingen ute.', ['orre', 'ripa', 'duva'].map(a => [fagelLigger(a), { k: 'kol0', w: 'ben3', ...ARTER[a].L, ...(FAGEL_VAR[1][a].L || {}) }]), 4, 3)] },
-    { id: 'f6_bjornunge_hall', namn: 'Björnungen från tre håll', typ: 'janej', vad: S + '6.5.3.2: björnungen du valde, framifrån och bakifrån.', versioner: [UNGE_HALL] },
     KORT('f6_bjorn_falld', 'Fälld björn', S + '6.5.3: den fällda björnen som ligger på marken innan den styckas, som det fällda rådjuret: på sidan med huvudet på marken och ögat slutet, i din björns färger.', [
       PA_MARK('Benen utsträckta.', bjornFalld(0), BJ_FALLD_L), PA_MARK('Benen hopvikta under kroppen.', bjornFalld(1), BJ_FALLD_L), PA_MARK('Benen bundna ihop med rep, klar att släpas hem.', bjornFalld(2), BJ_FALLD_L)]),
     // ---------- steg 5.5.5: den unga grodden i hel skala ----------

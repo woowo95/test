@@ -24,7 +24,7 @@ import { ISTID, ageIndex, dygnStart, yearNo } from './tid';
 // En kanin sitter still en stund och skuttar sedan en bit. Den som kommer nära får den att hoppa undan en bit och sitta
 // still där. De enskilda kaninerna ritas bara; jakten ger mest nära en grupp (`narvaroAt`, via richness). Fler arter
 // (rådjur, fågel) blir egna lager och grupper senare.
-export interface Djur { id: number; art: 'kanin' | 'varg' | 'radjur' | 'fagel' | 'bjorn'; x: number; y: number; grupp: number; u?: number } // u: fågelns utseende (steg 6.6.3) // grupp = kaningruppen eller vargflocken
+export interface Djur { id: number; art: 'kanin' | 'varg' | 'radjur' | 'fagel' | 'bjorn' | 'bjornunge'; x: number; y: number; grupp: number; u?: number } // u: fågelns utseende (steg 6.6.3) // grupp = kaningruppen eller vargflocken
 export interface Kaningrupp { id: number; x: number; y: number; n: number } // n: så många kaniner gruppen har just nu
 // Balanstal (regel 8): kaninernas grupper (antal, storlek, hur länge de stannar och hur långt de rör sig), hur de flyr
 // från folk och hur mycket jakten ger nära dem. Jaktens ursprungliga värde finns i viltlagret (FYND.jakt i fynd.ts)
@@ -414,13 +414,18 @@ export const BJORN = balans('bjorn', {
   atTim: 2, // så länge (timmar) den äter vid bärbuskarna eller fiskar vid stranden innan den går vidare
   fart: 8, // så fort den går (rutor per timme)
   bar: 0.7, // när bären är mogna går den till bärbuskarna så här ofta, annars till stranden
+  ungar: 0.35, // så stor del av björnåren har den ungar med sig (steg 6.6.5), en eller två
+  tvaUngar: 0.5, // av dem har den två ungar så här ofta
+  ungeAvst: 1.4, // ungarna går så här nära (rutor) kring björnen
 });
 // björnens värden i striden (steg 6.6.5 och 6.6.6): hög styrka och uthållighet, långsam att vända men biter och slår hårt
-export const BJORN_STRID: DjurStrid = { namn: 'Björnen', art: 'Björn', alder: 25, styrka: 24, uthallighet: 22, mod: 14, smidighet: 8, skicklighet: 8, fart: 1.1, vapen: 'vargbett' };
+export const BJORN_STRID: DjurStrid = { namn: 'Björnen', art: 'Björn', alder: 25, styrka: 24, uthallighet: 22, mod: 14, smidighet: 8, skicklighet: 8, fart: 1.1, vapen: 'bjornram' };
 // artens värden i striden: djurregistret (DJUR i redskap.ts), björnen ur BJORN_STRID
-export const stridOf = (art: Djur['art']): DjurStrid => art === 'bjorn' ? BJORN_STRID : DJUR[art].strid;
-const BJ_G = 35_000_000; // björnens id: BJ_G * 8 + året
-export const arBjorn = (id: number) => id >= BJ_G * 8;
+// björnungen (steg 6.6.5): liten och svag, men björnen försvarar den
+export const BJORNUNGE_STRID: DjurStrid = { namn: 'Björnungen', art: 'Björnunge', alder: 2, styrka: 5, uthallighet: 6, mod: 4, smidighet: 10, skicklighet: 4, fart: 1.2, vapen: 'vargbett' };
+export const stridOf = (art: Djur['art']): DjurStrid => art === 'bjorn' ? BJORN_STRID : art === 'bjornunge' ? BJORNUNGE_STRID : DJUR[art].strid;
+const BJ_G = 35_000_000, BJ_U = 36_000_000; // björnens id: BJ_G * 8 + året; ungarnas BJ_U * 8 + året * 2 + ungen
+export const arBjorn = (id: number) => id >= BJ_G * 8 && id < BJ_U * 8;
 // stranden där björnen fiskar, en bit från byplatsen, så som kartan var när byn grundades
 const bjornStrand = perKarta((seed): number[] => {
   const m = getMap(seed), strand = shoreOf(seed), ut: number[] = [];
@@ -487,9 +492,24 @@ export function bjornarOf(s: State, t = s.now, bara?: (x: number, y: number) => 
   const m = vag[k], f = vag[k - 1];
   let x = m.x, y = m.y, ater: 'bar' | 'fisk' | undefined = m.bar ? 'bar' : 'fisk';
   if (f && t < m.fram) { const a = (t - f.gar) / (m.fram - f.gar); x = f.x + (m.x - f.x) * a; y = f.y + (m.y - f.y) * a; ater = undefined; }
-  if (bara && !bara(x, y)) return [];
-  return [{ id, art: 'bjorn', x, y, grupp: id, ater }];
+  const ut: (Djur & { ater?: 'bar' | 'fisk' })[] = [];
+  if (!bara || bara(x, y)) ut.push({ id, art: 'bjorn', x, y, grupp: id, ater });
+  // ungarna (steg 6.6.5) går tätt kring björnen, och aldrig ut i vattnet: där står de vid den
+  const ar = yearNo(s, t), salt = s.seed * 61 + ar * 7927, n = hash(salt, 5, 5) < BJORN.ungar ? hash(salt, 6, 6) < BJORN.tvaUngar ? 2 : 1 : 0;
+  if (n) {
+    const vt = vattenNu(s), doda = new Set(s.djurDoda?.map(d => d.id));
+    for (let j = 0; j < n; j++) {
+      const uid = BJ_U * 8 + ar * 2 + j, v = t / HOUR * 0.9 + j * 2.6 + hash(salt, 7, j) * 6;
+      if (doda.has(uid)) continue;
+      let ux = x + Math.cos(v) * BJORN.ungeAvst, uy = y + Math.sin(v) * BJORN.ungeAvst * 0.7;
+      if (!inMap(ux, uy) || vt[Math.floor(uy) * W + Math.floor(ux)] === T.Vatten) { ux = x; uy = y; }
+      if (!bara || bara(ux, uy)) ut.push({ id: uid, art: 'bjornunge', x: ux, y: uy, grupp: id, ater });
+    }
+  }
+  return ut;
 }
+// björnens ungar i år (steg 6.6.5): hur många som går med björnen just nu
+export const bjornungar = (s: State, t = s.now) => bjornarOf(s, t).filter(d => d.art === 'bjornunge').length;
 
 // vargarna (steg 3.7.1, varg.ts): flockarna är sparade i byn, och vargarna går tätt kring flockens mitt, ledaren först.
 // En varg står aldrig i vattnet (kodgenomgången 3.10.25): den går vid flockens mitt eller på närmaste land

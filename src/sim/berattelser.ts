@@ -852,6 +852,12 @@ const MDEF = {
     '{svara} skadades svårt när vargar anföll, och byn blev rädd.',
     { t: 'Mitt i natten anföll vargar, och {svara} skadades svårt.', om: f => f.natt === true },
   ],
+  k_bjornAnfall: [
+    'En björn anföll {folk}.{svara}',
+    'Det var {arstid} när en björn anföll {folk}.{svara}',
+    '{folk} kom för nära en björn, och den anföll.{svara}',
+    'Byn kommer ihåg dagen då björnen anföll {folk}.{svara}',
+  ],
   k_atergrundad: [
     '{namn} grundade byn på nytt.',
     'Byn hade stått tom. Sedan kom {namn} och grundade den på nytt.',
