@@ -1612,7 +1612,7 @@ SCENARIER.rovare = {
     // ett tyst anfall: alla sover, flocken går fram till förrådet och tar det mest värda
     const forrad = (x: State) => SIM.SAK_LIST.filter(k => !SAKER[k]!.redskap).reduce((n, k) => n + amountOf(x, k), 0);
     const malet = (x: State) => { const z = SIM.zoneOf(x)!; return { x: z.x + z.w / 2, y: z.y + z.h / 2 }; };
-    const flock = (x: State, n: number, d: number) => { SIM.rovarnaKommer(x, n); const m = malet(x); Object.assign(x.rovare!, { gor: 'kommer', x: m.x + d, y: m.y }); return x.rovare!; };
+    const flock = (x: State, n: number, d: number) => { SIM.rovarnaKommer(x, n); const m = malet(x); x.rovare!.gor = 'kommer'; SIM.stallUpp(x, x.rovare!, m.x + d, m.y); return x.rovare!; };
     const t = cloneState(bas); setAmount(t, 'skinn', 20);
     for (const p of living(t)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: t.now + 8 * HOUR, carry: 0 };
     const t0 = forrad(t); flock(t, 3, 3);
@@ -1650,6 +1650,60 @@ SCENARIER.rovare = {
       ['väntar byn med många fler vänder rövarna om', vande],
       ['flocken flyr ut ur kartan', borta],
       ['en ny flock kommer inte förrän vilan är slut', vila],
+    ];
+  },
+};
+
+SCENARIER.rovargang = {
+  text: 'Rövarna är människor (steg 6.6.9, rovare.ts): varje rövare står och går för sig i en bybos fart med samma vägsökning, i en lös klunga efter ledaren. Flocken stannar en bit från förrådet och väntar innan den går till anfall, och de som flyr springer var för sig mot kanten. Bilden följer vägen (rovarPlats), och en sparad by från före v450 får rövarna på plats.',
+  kor: () => {
+    const s = createState(6, START), dt = BEAT;
+    for (const c of SIM.klanerOf(s)) c.inst = -60;
+    for (const p of living(s)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 20 * HOUR, carry: 0 };
+    SIM.rovarnaKommer(s, 5);
+    const f = s.rovare!; f.till = s.now; f.folk.length = 5;
+    const z = SIM.zoneOf(s)!, m = { x: z.x + z.w / 2, y: z.y + z.h / 2 };
+    const iVatten = (r: { x?: number; y?: number }) => SIM.vattenNu(s)[Math.floor(r.y!) * SIM.W + Math.floor(r.x!)] === SIM.T.Vatten;
+    let fortast = 0, klunga = true, torrt = true, olika = true, vantade = false, lurAvst = 0, framme = false;
+    const fart = (r: SIM.Rovare) => { const sp = r.spar ?? []; for (let i = 3; i < sp.length; i += 3) { const dtt = (sp[i] - sp[i - 3]) / SIM.SEC; if (dtt > 0.05) fortast = Math.max(fortast, Math.hypot(sp[i + 1] - sp[i - 2], sp[i + 2] - sp[i - 1]) / dtt); } };
+    const steg = (x: State, sek: number) => { x.now += sek * SIM.SEC; SIM.rovarSteg(x, sek); };
+    for (let i = 0; i < 40 && s.rovare && s.rovare.gor !== 'flyr'; i++) {
+      steg(s, dt);
+      const g = s.rovare; if (!g) break;
+      g.folk.forEach(fart);
+      if (g.folk.some(iVatten)) torrt = false;
+      if (g.gor === 'vantar') {
+        vantade = true; lurAvst = Math.hypot(g.x - m.x, g.y - m.y);
+        if (g.folk.some(r => Math.hypot(r.x! - g.x, r.y! - g.y) > 4)) klunga = false;
+        if (new Set(g.folk.map(r => `${r.x!.toFixed(1)},${r.y!.toFixed(1)}`)).size < g.folk.length) olika = false;
+      }
+      if (g.gor === 'flyr' || (s.stat?.rovarPlundring ?? 0) > 0) framme = true;
+    }
+    framme ||= (s.stat?.rovarPlundring ?? 0) > 0;
+    // de som flyr springer var för sig
+    const fl = s.rovare;
+    let isar = false, ut = false;
+    if (fl) {
+      for (let i = 0; i < 6 && s.rovare; i++) { steg(s, 10); if (s.rovare && s.rovare.folk.length > 1) isar ||= s.rovare.folk.some(r => r.x !== s.rovare!.folk[0].x || r.y !== s.rovare!.folk[0].y); }
+      for (let i = 0; i < 200 && s.rovare; i++) steg(s, dt);
+      ut = !s.rovare;
+    }
+    // bilden: mitt emellan två punkter i spar
+    const r0: SIM.Rovare = { namn: 'A', sex: 'm', st: { styrka: 10, uthallighet: 10, mod: 10, smidighet: 10, skicklighet: 10 }, vapen: 'kniv', blod: 1, spar: [0, 1, 1, 10 * SIM.SEC, 3, 1] };
+    const mitt = SIM.rovarPlats(r0, 5 * SIM.SEC), mittOk = Math.abs(mitt.x - 2) < 1e-6 && mitt.y === 1;
+    // en sparad by från före v450: rövarna saknar plats
+    const g = createState(6, START); SIM.rovarnaKommer(g, 3); for (const r of g.rovare!.folk) { delete r.x; delete r.y; delete r.spar; }
+    steg(g, dt);
+    const gammal = !!g.rovare && g.rovare.folk.every(r => Number.isFinite(r.x) && Number.isFinite(r.y));
+    return [
+      [`ingen rövare går fortare än en bybo (${fortast.toFixed(2)} rutor i sekunden, en bybo ${SIM.GANG.fart})`, fortast > 0.5 && fortast <= SIM.GANG.fart * 1.02],
+      ['rövarna står var för sig i en lös klunga, högst 4 rutor från ledaren', klunga && olika],
+      ['ingen går ut i vattnet', torrt],
+      [`flocken väntar en bit från förrådet innan anfallet (${lurAvst.toFixed(1)} rutor, ROVARE.lur ${SIM.ROVARE.lur})`, vantade && Math.abs(lurAvst - SIM.ROVARE.lur) < 4],
+      ['sedan går de till förrådet och plundrar', framme],
+      ['de som flyr springer var för sig och kommer ut ur kartan', isar && ut],
+      ['bilden följer vägen mellan punkterna', mittOk],
+      ['en sparad by från före v450 får rövarna på plats', gammal],
     ];
   },
 };

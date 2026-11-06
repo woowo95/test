@@ -15,12 +15,15 @@ import { vattenNu } from './sjo';
 import { clamp, rnd } from './slump';
 import { SLAGSMAL, VAPEN, Uppstallning, Vapen, foljet, nyStrid, personKampe, slitKastat, sparaStrid, stridTillSlut, svartSkadad, vadretIStriden } from './strid';
 import { isLight } from './tid';
-import { DAY, HOUR, Person, SEC, State, T, W, H } from './typer';
+import { DAY, HOUR, MIN, Person, SEC, State, T, W, H } from './typer';
 import { vaderNu } from './vader';
 import { grundvarde, rikedom } from './varde';
 import { kanterna, soker } from './varg';
 import { foddNar, gastNyckel } from './gastliv';
 import { notis } from './notiser';
+import { groundOf, tileOf } from './mark';
+import { findPath, markFart } from './vag';
+import { GANG } from './gang';
 
 // ---------- rövarflocken (steg 4.4.5) ----------
 // En grundversion av anfallen (stora räder, krig, tribut och murar ligger i 11.2). När byn är rik (Byns rikedom, varde.ts, med
@@ -44,12 +47,12 @@ export const ROVARE = balans('rovare', {
   samlasTim: [2, 5], // så många timmar samlas flocken i kanten
   smaFlock: 3, // en flock med så här få väntar på mörkret ...
   morkerTim: 12, // ... högst så här många timmar till
-  fart: 0.03, // rutor i sekunden när flocken går in mot byn ...
-  flyFart: 0.06, // ... och när den flyr
+  lur: 22, // flocken stannar så här många rutor från förrådet och väntar (lurMin minuter) innan den går till anfall (steg 6.6.9) ...
+  lurMin: [15, 30], // ... minst, högst
   vaktSer: 26, folkSer: 12, nattSer: 0.5, dimmaSer: 0.5, // vakten ser rövare inom så här många rutor, andra inom folkSer, gånger nattSer i mörkret
   gissFel: 0.5, // vaktens gissning av antalet: fel med upp till så här stor del, gånger avståndet / vaktSer (andra gissar som på längsta avståndet)
   vack: 35, // vakten väcker byn när flocken är så här nära byns område (utanforByn)
-  ser: 14, // rövarna ser byns försvar så här långt bort ...
+  ser: 14, // rövarna ser byns försvar inom så här många rutor från förrådet, när de är så nära eller väntar utanför byn ...
   overmakt: 1.5, // ... och vänder om när fler än så här många gånger rövarna väntar med vapen
   nara: 1.5, // rövarna är framme vid förrådet så här nära
   motR: 10, // de vuxna som är vakna och så här nära möter rövarna ...
@@ -62,8 +65,11 @@ export const ROVARE = balans('rovare', {
 
 // rövarnas vapen (ett slumpas för var och en)
 const ROVARVAPEN: Vapen[] = ['kniv', 'yxa', 'fiskespjut', 'flintspjut', 'sten'];
-export interface Rovare { namn: string; sex: 'm' | 'k'; st: { styrka: number; uthallighet: number; mod: number; smidighet: number; skicklighet: number }; vapen: Vapen; blod: number; fodd?: number } // fodd: gästens liv (steg 4.5.7.7, gastliv.ts)
-export interface Rovarflock { id: number; klan?: number; folk: Rovare[]; x: number; y: number; mx: number; my: number; gor: 'samlas' | 'kommer' | 'flyr'; till: number; sedd?: number; gissning?: number; vackt?: boolean }
+// fodd: gästens liv (steg 4.5.7.7, gastliv.ts). x, y: var rövaren står (steg 6.6.9; saknas i sparade byar från före v450 och
+// sätts då vid flocken), path och pk: vägen och målrutan den gäller, spar: vägen för bilden, tid och plats efter varandra
+export interface Rovare { namn: string; sex: 'm' | 'k'; st: { styrka: number; uthallighet: number; mod: number; smidighet: number; skicklighet: number }; vapen: Vapen; blod: number; fodd?: number; x?: number; y?: number; path?: number[]; pk?: number; spar?: number[] }
+// x, y: ledaren (den första rövaren), mx, my: ledarens mål. lurat: flocken har väntat utanför byn
+export interface Rovarflock { id: number; klan?: number; folk: Rovare[]; x: number; y: number; mx: number; my: number; gor: 'samlas' | 'kommer' | 'vantar' | 'flyr'; till: number; sedd?: number; gissning?: number; vackt?: boolean; lurat?: boolean }
 
 const avst = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
 const vaken = (p: Person) => p.task?.act !== 'sova';
@@ -118,6 +124,7 @@ export function rovarnaKommer(s: State, tvinga?: number, direkt?: boolean) {
   for (const r of folk) r.fodd = foddNar(s.seed, gastNyckel(k?.id, r.namn), 'rovare', s.now); // drar ingen slump
   const nr = s.rovarNr = (s.rovarNr ?? 0) + 1;
   s.rovare = { id: nr, klan: k?.id, folk, x, y, mx: x, my: y, gor: direkt ? 'kommer' : 'samlas', till: direkt ? s.now : s.now + mellan(s, ROVARE.samlasTim) * HOUR };
+  stallUpp(s, s.rovare, x, y);
   s.rovarVila = s.now + ROVARE.vilaDygn * DAY;
   count(s, 'rovarflockar'); count(s, 'rovare', n);
 }
@@ -134,21 +141,78 @@ function narByn(s: State) {
 }
 const fran = (s: State, f: Rovarflock) => { const k = klanById(s, f.klan); return k ? `från ${k.namn}` : 'utan klan'; };
 
-// flocken går mot (mx, my), aldrig ut i vattnet; svarar hur långt det är kvar, eller −1 när den inte kommer fram
-const SNETT = [0, 0.8, -0.8, 1.6, -1.6];
-function ga(s: State, f: Rovarflock, fart: number, dtSec: number) {
-  const dx = f.mx - f.x, dy = f.my - f.y, d = Math.hypot(dx, dy);
-  if (d < 1e-6) return 0;
-  const l = Math.min(d, fart * dtSec), vt = vattenNu(s), vatten = (x: number, y: number) => vt[Math.floor(y) * W + Math.floor(x)] === T.Vatten;
-  const iVatten = vatten(f.x, f.y);
-  for (const v of SNETT) {
-    const c = Math.cos(v), sn = Math.sin(v), x = clamp(f.x + (dx * c - dy * sn) / d * l, 0.3, W - 0.3), y = clamp(f.y + (dx * sn + dy * c) / d * l, 0.3, H - 0.3);
-    if (!iVatten && vatten(x, y)) continue;
-    f.x = x; f.y = y;
-    return v ? Math.hypot(f.mx - f.x, f.my - f.y) : d - l;
-  }
-  return -1;
+// ---------- rövarna som människor (steg 6.6.9) ----------
+// Varje rövare står och går för sig, i en bybos fart (GANG.fart gånger marken) med samma vägsökning som byborna (findPath).
+// Ledaren (den första) går mot flockens mål och de andra efter, var och en mot sin plats i en lös klunga bakom ledaren
+// (KLUNGA). spar är vägen för bilden: tid och plats efter varandra, de senaste SPAR_SEK sekunderna
+const KLUNGA = [[0, 0], [-1, 0.8], [1, 0.8], [0, 1.6], [-1.6, 1.6], [1.6, 1.6], [-0.8, 2.4], [0.8, 2.4], [-2, 0.4], [2, 0.4]];
+const SPAR_SEK = 900;
+const iVatten = (s: State, x: number, y: number) => vattenNu(s)[tileOf(x, y)] === T.Vatten;
+// avståndet från q till den närmaste rövaren
+const narmast = (f: Rovarflock, q: { x: number; y: number }) => Math.min(...f.folk.map(r => Math.hypot(r.x! - q.x, r.y! - q.y)));
+// platsen i klungan kring (x, y) för rövare nummer j, på land
+function klungPlats(s: State, x: number, y: number, j: number) {
+  const [dx, dy] = KLUNGA[j % KLUNGA.length], px = clamp(x + dx, 0.3, W - 0.3), py = clamp(y + dy, 0.3, H - 0.3);
+  return iVatten(s, px, py) && !iVatten(s, x, y) ? { x, y } : { x: px, y: py };
 }
+function spara(s: State, r: Rovare, t: number) {
+  const sp = r.spar ??= [];
+  sp.push(Math.round(t), Math.round(r.x! * 1000) / 1000, Math.round(r.y! * 1000) / 1000);
+  let i = 0; while (i + 3 < sp.length && sp[i + 3] < s.now - SPAR_SEK * SEC) i += 3;
+  if (i) sp.splice(0, i);
+}
+// rövarna ställer sig i klungan kring (x, y): när flocken kommer, efter tornadon och i en sparad by från före v450
+export function stallUpp(s: State, f: Rovarflock, x: number, y: number) {
+  f.folk.forEach((r, j) => { const p = klungPlats(s, x, y, j); r.x = p.x; r.y = p.y; r.path = undefined; r.pk = undefined; spara(s, r, s.now); });
+  f.x = x; f.y = y;
+}
+// rövaren går mot (mx, my) i sek sekunder från tiden t0. Svarar hur långt det är kvar (rutor), eller −1 när det inte finns någon väg
+function gaMot(s: State, r: Rovare, mx: number, my: number, sek: number, t0: number) {
+  const g = groundOf(s), mal = tileOf(mx, my);
+  if (r.pk !== mal) {
+    r.pk = mal; r.path = findPath(g, r.x!, r.y!, mx, my) ?? undefined;
+    if (!r.path) { r.pk = undefined; return -1; }
+  }
+  if (!r.spar?.length) spara(s, r, t0);
+  let tid = 0;
+  for (;;) {
+    const sist = !r.path?.length, i = sist ? 0 : r.path![0];
+    const wx = sist ? mx : (i % W) + 0.5, wy = sist ? my : Math.floor(i / W) + 0.5;
+    const fart = GANG.fart * Math.max(0.5, markFart(g, tileOf(r.x!, r.y!)));
+    const d = Math.hypot(wx - r.x!, wy - r.y!), kan = (sek - tid) * fart;
+    if (d > kan) { r.x! += (wx - r.x!) / d * kan; r.y! += (wy - r.y!) / d * kan; spara(s, r, t0 + sek * SEC); return d - kan + (r.path?.length ?? 0); }
+    r.x = wx; r.y = wy; tid += d / fart;
+    if (sist) { spara(s, r, t0 + tid * SEC); return 0; }
+    r.path!.shift(); spara(s, r, t0 + tid * SEC);
+  }
+}
+// var rövaren syns vid tiden t (bilden): mellan punkterna i spar
+export function rovarPlats(r: Rovare, t: number) {
+  const sp = r.spar;
+  if (!sp?.length) return { x: r.x ?? 0, y: r.y ?? 0 };
+  if (t <= sp[0]) return { x: sp[1], y: sp[2] };
+  for (let i = 3; i < sp.length; i += 3) if (sp[i] >= t) { const a = (t - sp[i - 3]) / Math.max(1, sp[i] - sp[i - 3]); return { x: sp[i - 2] + (sp[i + 1] - sp[i - 2]) * a, y: sp[i - 1] + (sp[i + 2] - sp[i - 1]) * a }; }
+  return { x: sp[sp.length - 2], y: sp[sp.length - 1] };
+}
+// flocken går: ledaren mot (mx, my), de andra mot sin plats i klungan bakom ledaren. Svarar hur långt ledaren har kvar, eller
+// −1 när den inte kommer fram
+function flockGar(s: State, f: Rovarflock, sek: number) {
+  const t0 = s.now - sek * SEC, led = f.folk[0];
+  const kvar = gaMot(s, led, f.mx, f.my, sek, t0);
+  f.folk.forEach((r, j) => { if (j) { const p = klungPlats(s, led.x!, led.y!, j); gaMot(s, r, p.x, p.y, sek, t0); } });
+  f.x = led.x!; f.y = led.y!;
+  return kvar;
+}
+// platsen där flocken väntar utanför byn: ROVARE.lur rutor från förrådet på vägen dit, på land
+function lurPlats(s: State, f: Rovarflock, m: { x: number; y: number }) {
+  const d = avst(f, m), v = Math.atan2(f.y - m.y, f.x - m.x);
+  for (const dv of [0, 0.3, -0.3, 0.6, -0.6, 0.9, -0.9]) {
+    const x = clamp(m.x + Math.cos(v + dv) * Math.min(d, ROVARE.lur), 0.5, W - 0.5), y = clamp(m.y + Math.sin(v + dv) * Math.min(d, ROVARE.lur), 0.5, H - 0.5);
+    if (!iVatten(s, x, y) && !bitAt(s, Math.floor(x), Math.floor(y))) return { x: Math.floor(x) + 0.5, y: Math.floor(y) + 0.5 };
+  }
+  return undefined;
+}
+
 // förrådet (eller elden när byn inte har något förråd)
 function malet(s: State) {
   const z = zoneOf(s);
@@ -163,13 +227,13 @@ function ses(s: State, f: Rovarflock, folk: Person[]) {
   if (f.sedd !== undefined && f.vackt) return;
   const natt = isLight(s.now) ? 1 : ROVARE.nattSer, dimma = 1 - ROVARE.dimmaSer * vaderNu(s).dimma;
   const rad = (q: Person) => (q.task?.act === 'vakt' ? ROVARE.vaktSer : ROVARE.folkSer) * natt * dimma;
-  const ser = (q: Person) => vaken(q) && avst(q, f) < rad(q);
+  const ser = (q: Person) => vaken(q) && narmast(f, q) < rad(q);
   const vakt = folk.find(q => q.task?.act === 'vakt' && ser(q));
-  const vack = () => { if (vakt && !f.vackt && utanforByn(s, f.x, f.y) < ROVARE.vack) { f.vackt = true; vacka(s, f, vakt, folk); } };
+  const vack = () => { if (vakt && !f.vackt && Math.min(...f.folk.map(r => utanforByn(s, r.x!, r.y!))) < ROVARE.vack) { f.vackt = true; vacka(s, f, vakt, folk); } };
   if (f.sedd !== undefined) { vack(); return; }
   const p = vakt ?? folk.find(ser);
   if (!p) return;
-  const n = f.folk.length, fel = ROVARE.gissFel * (vakt ? avst(p, f) / rad(p) : 1) * (rnd(s, 'rovare') * 2 - 1);
+  const n = f.folk.length, fel = ROVARE.gissFel * (vakt ? narmast(f, p) / rad(p) : 1) * (rnd(s, 'rovare') * 2 - 1);
   f.sedd = s.now; f.gissning = Math.max(1, Math.round(n * (1 + fel)));
   count(s, 'rovarSedda');
   log(s, `${p.name} såg rövare ${f.gor === 'samlas' ? 'samlas vid kartans kant' : 'på väg mot byn'}, ungefär ${f.gissning} (${fran(s, f)}).`, 'world', [p.id]);
@@ -253,9 +317,14 @@ export function plundra(s: State, f: Rovarflock, tyst: boolean) {
 // vad flocken gör i det här slaget
 function flockSteg(s: State, f: Rovarflock, folk: Person[], dtSec: number) {
   if (f.gor === 'flyr') {
-    let kvar = -1;
-    for (const k of kanterna(f.x, f.y)) { f.mx = k.x; f.my = k.y; kvar = ga(s, f, ROVARE.flyFart, dtSec); if (kvar >= 0) break; }
-    if (kvar < 0.5) { f.folk = []; count(s, 'rovarBorta'); }
+    // var och en springer mot sin närmaste kant och är borta när hen når den
+    const t0 = s.now - dtSec * SEC;
+    f.folk = f.folk.filter(r => {
+      let kvar = -1;
+      for (const k of kanterna(r.x!, r.y!)) { kvar = gaMot(s, r, k.x, k.y, dtSec, t0); if (kvar >= 0) break; }
+      return kvar >= 0.5;
+    });
+    if (f.folk.length) { f.x = f.folk[0].x!; f.y = f.folk[0].y!; } else count(s, 'rovarBorta');
     return;
   }
   if (f.gor === 'samlas') {
@@ -264,14 +333,24 @@ function flockSteg(s: State, f: Rovarflock, folk: Person[], dtSec: number) {
     if (f.folk.length <= ROVARE.smaFlock && isLight(s.now) && s.now < f.till + ROVARE.morkerTim * HOUR) return;
     f.gor = 'kommer';
   }
-  const m = malet(s); f.mx = m.x; f.my = m.y;
+  const m = malet(s);
   // byn väntar med fler än rövarna: de vänder om
-  if (avst(f, m) < ROVARE.ser) {
-    const vantar = folk.filter(q => q.task?.act === 'forsvar' && avst(q, f) < ROVARE.ser).length;
+  if (avst(f, m) < ROVARE.ser || f.gor === 'vantar') {
+    const vantar = folk.filter(q => q.task?.act === 'forsvar' && avst(q, m) < ROVARE.ser).length;
     if (vantar > f.folk.length * ROVARE.overmakt) { f.gor = 'flyr'; count(s, 'rovarVande'); log(s, `Rövarna ${fran(s, f)} såg att byn väntade på dem med vapen och vände om.`, 'world'); return; }
   }
-  const kvar = ga(s, f, ROVARE.fart, dtSec);
+  if (f.gor === 'vantar') { if (s.now < f.till) return; f.gor = 'kommer'; }
+  // först till en plats utanför byn, där flocken väntar en stund; sedan till förrådet
+  const lur = !f.lurat && avst(f, m) > ROVARE.lur + 1 ? lurPlats(s, f, m) : undefined;
+  const mal = lur ?? m;
+  f.mx = mal.x; f.my = mal.y;
+  const kvar = flockGar(s, f, dtSec);
   if (kvar < 0) { f.gor = 'flyr'; return; }
+  if (lur) {
+    if (kvar > ROVARE.nara) return;
+    f.lurat = true; f.gor = 'vantar'; f.till = s.now + mellan(s, ROVARE.lurMin) * MIN;
+    return;
+  }
   if (kvar > ROVARE.nara) return;
   // framme vid förrådet
   const mot = motstand(s, f, folk);
@@ -291,7 +370,7 @@ export function rovarTornado(s: State, f: Rovarflock, zon: number, dod: number, 
     if (r(j, 2) < skadas) q.blod = Math.max(0.05, q.blod - (grad[0] + r(j, 3) * (grad[1] - grad[0])));
     return true;
   });
-  if (till) { f.x = till.x + 0.5; f.y = till.y + 0.5; }
+  if (till && f.folk.length) stallUpp(s, f, till.x + 0.5, till.y + 0.5);
   f.gor = 'flyr';
   const doda = fore - f.folk.length;
   log(s, doda === fore ? `Tornadon dödade rövarna ${fran(s, f)}.` : `Tornadon kastade rövarna ${fran(s, f)} åt sidan${doda ? ` och ${doda} dog` : ''}. De flyr.`, 'world');
@@ -304,6 +383,7 @@ export function rovarSteg(s: State, dtSec: number) {
   if (nyTimme && !s.rovare) rovarnaKommer(s);
   const f = s.rovare;
   if (!f) return;
+  if (f.folk.some(r => r.x === undefined)) stallUpp(s, f, f.x, f.y); // en sparad by från före v450
   const folk = living(s);
   if (f.gor !== 'flyr') ses(s, f, folk);
   if (f.folk.length) flockSteg(s, f, folk, dtSec);

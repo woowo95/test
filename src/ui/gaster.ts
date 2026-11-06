@@ -1,4 +1,4 @@
-import { HANDEL, HANDLAR_UTR, VAPEN, byId, gillar, handlarPerson, foddNar, gastLiv, gastNyckel, handlarFas, handlarPlats, klanById, grundvarde, handlarVarde, kgOf, kortTal, rymmer, sakNamn } from '../sim';
+import { HANDEL, HANDLAR_UTR, VAPEN, byId, gillar, handlarPerson, foddNar, gastLiv, gastNyckel, handlarFas, handlarPlats, rovarPlats, klanById, grundvarde, handlarVarde, kgOf, kortTal, rymmer, sakNamn } from '../sim';
 import type { ByteMinne, GastLiv, GastRel, Person, Roll, Skill, Stat, State } from '../sim';
 import { iconImg } from '../ikoner';
 import { esc } from './hjalp';
@@ -57,13 +57,13 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
     }];
   },
   // rövarflocken (steg 4.4.5): rövarna i en klunga där flocken står
-  s => {
+  (s, t) => {
     const r = s.rovare;
     if (!r) return [];
-    const gor = r.gor === 'samlas' ? 'Samlas i skogen' : r.gor === 'kommer' ? 'På väg mot byn' : 'Flyr', n = r.folk.length;
+    const gor = r.gor === 'samlas' ? 'Samlas i skogen' : r.gor === 'kommer' ? 'På väg mot byn' : r.gor === 'vantar' ? 'Väntar utanför byn' : 'Flyr', n = r.folk.length;
     return r.folk.map((q, i) => ({
       id: ROVAR_ID - r.id * 100 - i, namn: q.namn, sex: q.sex, sort: 'Rövare', farg: 0x5a5040,
-      x: r.x + (i % 3) * 0.7 - 0.7, y: r.y + Math.floor(i / 3) * 0.7, gor, fran: klanById(s, r.klan)?.namn,
+      ...rovarPlats(q, t), gor, // var och en går för sig (steg 6.6.9) fran: klanById(s, r.klan)?.namn,
       rader: [{ namn: 'Flocken', varde: `${n} rövare`, title: `En av ${n} i flocken` }],
       stats: { styrka: q.st.styrka, uthallighet: q.st.uthallighet, mod: q.st.mod, smidighet: q.st.smidighet }, skills: { narstrid: q.st.skicklighet },
       bar: [{ ikon: q.vapen, text: VAPEN[q.vapen].namn, title: `Vapnet: ${VAPEN[q.vapen].namn.toLowerCase()}` }],
