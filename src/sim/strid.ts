@@ -1,5 +1,6 @@
 // Striden (fas 3, system 3.7). Grunden byggdes med testarenan (steg 3.7.5): en strid är två sidor av kämpar (Kampe) på en
-import { kronikaBer, och, personFalt } from './berattelser';
+import { lista, och, skada as skadaOrd, stor, tal } from './ord';
+import { kronikaBer, personFalt } from './berattelser';
 // liten plats, med en avsikt (AVSIKTER) som avgör när den slutar. Den räknas i fasta tidssteg om STRID.tick sekunder
 // (stridSteg), så att den blir likadan i levande läge och i snabbläget. Var och en väljer mål, går fram och slår när målet
 // är inom räckhåll; ett slag träffar eller missar, och en träff hamnar på en kroppsdel (KROPPSDELAR i halsa.ts) och blir en
@@ -221,6 +222,8 @@ export const AVSIKTER = {
 } satisfies Record<string, AvsiktDef>;
 export type Avsikt = keyof typeof AVSIKTER;
 const AVS: Record<Avsikt, AvsiktDef> = AVSIKTER;
+// hur striden börjar, som en mening (steg 6.7.1): "Striden börjar: man slåss för att skada."
+const BORJAR: Record<Avsikt, string> = { lek: 'man brottas på lek', slagsmal: 'man slåss med händerna', skada: 'man slåss för att skada', doda: 'man slåss för att döda' };
 
 // ---------- händelserna i loggen (registret) ----------
 // tecken = symbolen först i loggen (platshållare tills bildstilen har dem), ord = hur meningen börjar
@@ -705,7 +708,6 @@ export function spelaUpp(g: StridGang, tid = Infinity) {
 }
 
 // ---------- texten ----------
-const GRAD = (g: number) => g >= 0.75 ? 'mycket svårt' : g >= 0.45 ? 'svårt' : g >= 0.2 ? 'måttligt' : 'lätt';
 export const delNamn = (d: Kroppsdel) => KROPPSDELAR[d].i;
 const namnOf = (st: Strid, id?: number) => st.kampar.find(k => k.id === id)?.namn ?? '?';
 // hela meningen för en rad i loggen (syns när man trycker på raden eller håller musen över den)
@@ -713,7 +715,7 @@ export function stridText(st: Strid, r: StridRad): string {
   const a = namnOf(st, r.a), b = namnOf(st, r.b), v = r.v ? VAP[r.v] : undefined;
   const med = v && r.v !== 'hand' && r.v !== 'bett' && r.v !== 'vargbett' ? ` med ${v.namn.toLowerCase()}` : '';
   switch (r.h) {
-    case 'borjar': return `Striden börjar: ${AVS[st.avsikt].namn.toLowerCase()}. ${AVS[st.avsikt].text}`;
+    case 'borjar': return `Striden börjar: ${BORJAR[st.avsikt]}. ${AVS[st.avsikt].text}`;
     case 'miss': return r.kast ? `${a} kastar ${v?.namn.toLowerCase()} mot ${b} men missar.` : `${a} ${v?.ord ?? 'slår'} efter ${b}${med} men missar.`;
     case 'avstand': return `${a} backar undan från ${b} och håller avståndet.`;
     case 'byter': return r.v === 'hand' ? `${a} har inget mer att kasta och slåss med händerna.` : `${a} tar ${v?.namn.toLowerCase()} ur bältet.`;
@@ -725,7 +727,7 @@ export function stridText(st: Strid, r: StridRad): string {
     case 'duck': return `${a} duckar undan slaget från ${b}.`;
     case 'backar': return `${a} drar sig bakom vännerna och hämtar andan.`;
     case 'tog': return `${a} ${r.kast ? 'träffar' : v?.ord ?? 'slår'} ${b} i ${delNamn(r.d!)}${med}, men ${sakNamn(r.kl ?? '').toLowerCase()} tar slaget.`;
-    case 'traff': return `${a} ${r.kast ? 'kastar och träffar' : v?.ord ?? 'slår'} ${b} i ${delNamn(r.d!)}${med}: ${SKADOR[r.k!].ett}, ${GRAD(r.g!)}${r.kl ? ` (${sakNamn(r.kl).toLowerCase()} tog en del)` : ''}.`;
+    case 'traff': return `${a} ${r.kast ? 'kastar och träffar' : v?.ord ?? 'slår'} ${b} i ${delNamn(r.d!)}${med}: ${skadaOrd(SKADOR[r.k!].ett, r.g!)}${r.kl ? ` (${sakNamn(r.kl).toLowerCase()} tog en del)` : ''}.`;
     case 'knuff': return `${a} knuffar ${b}, men ${b} står kvar.`;
     case 'omkull': return `${a} knuffar omkull ${b}.`;
     case 'halkar': return `${a} halkar och faller omkull.`;
@@ -747,7 +749,7 @@ export function stridText(st: Strid, r: StridRad): string {
     case 'slut': return st.slut?.vinnare === -1 ? 'Striden är slut utan att någon sida vann.' : `Striden är slut. ${sidaNamn(st, st.slut!.vinnare as 0 | 1)} vann.`;
   }
 }
-export const sidaNamn = (st: Strid, sd: 0 | 1) => { const n = st.kampar.filter(k => k.sida === sd).map(k => k.namn); return n.length <= 2 ? n.join(' och ') : `${n[0]} med ${n.length - 1} till`; };
+export const sidaNamn = (st: Strid, sd: 0 | 1) => { const n = st.kampar.filter(k => k.sida === sd).map(k => k.namn); return n.length <= 2 ? och(n) : `${n[0]} och ${tal(n.length - 1)} till`; };
 
 // ---------- rapporten efter striden ----------
 export const LAGE_ORD: Record<KampeLage, string> = { strid: 'står kvar', nere: 'ligger skadad', ger: 'gav upp', flykt: 'flydde', borta: 'flydde', dod: 'dog' };
@@ -761,7 +763,7 @@ export function stridRapport(st: Strid): StridRapport {
     sida: sd, namn: sidaNamn(st, sd),
     folk: st.kampar.filter(k => k.sida === sd).map(k => ({
       id: k.id, namn: k.namn, lage: k.lage, slag: k.slag, traffar: k.traffar,
-      skador: k.skador.map(w => `${SKADOR[w.k].namn} i ${delNamn(w.d)}, ${GRAD(w.g)}`),
+      skador: k.skador.map(w => `${stor(skadaOrd(SKADOR[w.k].ett, w.g))} i ${delNamn(w.d)}`),
     })),
   }));
   let mest: Kampe | undefined;
@@ -918,7 +920,7 @@ export function stridIByn(s: State, avsikt: Avsikt, sidor: [Person[], Person[]],
   const lek = !!(AVSIKTER[avsikt] as { lek?: true }).lek, vinnare = st.slut!.vinnare;
   sparaStrid(s, { t: s.now, orsak, u, fro, vinnare }); count(s, 'strid_' + avsikt);
   const folk = st.kampar.map(k => ({ k, p: sidor[k.sida][st.kampar.filter(o => o.sida === k.sida).indexOf(k)] }));
-  const namn = (sd: 0 | 1) => sidor[sd].map(p => p.name).join(' och ');
+  const namn = (sd: 0 | 1) => lista(sidor[sd].map(p => p.name));
   if (!lek) larma(s, 'slagsmål', kampar.length, [...sidor[0], ...sidor[1]].filter(p => p.task?.act !== 'sova')); // de som slåss ropar (steg 3.7.11)
   if (!lek) log(s, `${namn(0)} och ${namn(1)} slogs (${orsak}). ${vinnare === -1 ? 'Ingen vann.' : `${namn(vinnare as 0 | 1)} vann.`}`, 'rel', folk.map(f => f.p.id));
   for (const { k, p } of folk) {
@@ -929,7 +931,7 @@ export function stridIByn(s: State, avsikt: Avsikt, sidor: [Person[], Person[]],
     const kast = st.logg.filter(r => r.a === k.id && r.kast), vada = st.logg.filter(r => r.a === k.id && r.h === 'vada').length;
     if (kast.length) { gjort(s, p, 'kast', kast.length); const tr = kast.filter(r => r.h !== 'miss').length - vada; if (tr > 0) gjort(s, p, 'kastTraff', tr); }
     for (const w of k.skador) {
-      if (!dod && skada(s, p, w.d, w.k, w.g, 'drap', `i ett ${lek ? 'lekslagsmål' : 'slagsmål'} med ${mot.map(q => q.name).join(' och ')}`)) dod = true;
+      if (!dod && skada(s, p, w.d, w.k, w.g, 'drap', `i ett ${lek ? 'lekslagsmål' : 'slagsmål'} med ${lista(mot.map(q => q.name))}`)) dod = true;
       if (w.fast && p.skador?.length) p.skador[p.skador.length - 1].fast = 1; // spjutet sitter kvar till vården (steg 3.7.7)
     }
     slitKastat(s, p, st, k);

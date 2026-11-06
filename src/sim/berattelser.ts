@@ -11,6 +11,7 @@ import { upplev, upplevelseText } from './uppvaxt';
 import { isLight, kalender } from './tid';
 import { temperature, vaderNu } from './vader';
 import { hash3 } from './slump';
+import { ganger, goraNamn, och, talOrd } from './ord';
 
 // Berättelserna (steg 3.9, "Berättelser" i designdokumentet): texterna om människorna, händelserna och sakerna. Varje
 // text är en mall i registret BERATTELSER med många varianter; varianten väljs ur byns frö, personen och tiden (hash),
@@ -352,14 +353,14 @@ const MDEF = {
   ],
   // {vad} = det hen uppfann ('lerkrukor och rep')
   besk_uppfann: [
-    'Det var {namn} som kom på {vad}.',
-    '{Hen} uppfann {vad}, och byn har haft nytta av det sedan dess.',
-    'Utan {namn} hade byn inte haft {vad}.',
-    '{vad}: det var {namn} som kom på det.',
-    'Byn har {honom} att tacka för {vad}.',
-    'En dag kom {namn} på {vad}. Ingen hade tänkt på det förut.',
-    '{Hen} är den som kom på {vad}.',
-    'Det var i {hans} huvud som {vad} föddes.',
+    'Det var {namn} som kom på hur man kan {vad}.',
+    '{Hen} var den första som kunde {vad}, och byn har haft nytta av det sedan dess.',
+    'Utan {namn} hade ingen i byn kunnat {vad}.',
+    'Att {vad}: det var {namn} som kom på det.',
+    'Byn har {honom} att tacka för att den kan {vad}.',
+    'En dag kom {namn} på hur man kan {vad}. Ingen hade tänkt på det förut.',
+    '{Hen} är den som kom på hur man kan {vad}.',
+    'Det var i {hans} huvud som konsten att {vad} föddes.',
   ],
   // {vad} = det hen gjorde ('tände byns första eld och fällde byns första träd')
   besk_bedrift: [
@@ -692,16 +693,16 @@ const MDEF = {
     { t: 'I kylan tände {namn} byns första eld, och ingen behövde frysa den natten.', om: f => f.kallt === true },
   ],
   k_uppfann: [
-    '{namn} uppfann {teknik}.',
-    'Ingen hade gjort det förut: {namn} kom på {teknik}.',
-    'Det var {namn} som först förstod sig på {teknik}.',
-    '{namn} satt länge och funderade. Sedan kom {hen} på {teknik}.',
-    'Byn fick {teknik}, och det var {namn} som kom på det.',
-    'Det var {arstid} när {namn} kom på {teknik}.',
-    '{namn} prövade och misslyckades, prövade igen, och till sist hade {hen} uppfunnit {teknik}.',
-    'Alla kom för att se när {namn} visade {teknik} för första gången.',
-    { t: 'Medan regnet föll kom {namn} på {teknik}.', om: f => f.regn === true },
-    { t: 'En kall dag kom {namn} på {teknik}.', om: f => f.kallt === true },
+    '{namn} var den första i byn som kunde {lara}.',
+    'Ingen hade gjort det förut: {namn} kom på hur man kan {lara}.',
+    'Det var {namn} som först förstod hur man kan {lara}.',
+    '{namn} satt länge och funderade. Sedan kom {hen} på hur man kan {lara}.',
+    'Nu kan byn {lara}, och det var {namn} som kom på hur.',
+    'Det var {arstid} när {namn} kom på hur man kan {lara}.',
+    '{namn} prövade och misslyckades, prövade igen, och till sist kunde {hen} {lara}.',
+    'Alla kom för att se när {namn} för första gången visade hur man kan {lara}.',
+    { t: 'Medan regnet föll kom {namn} på hur man kan {lara}.', om: f => f.regn === true },
+    { t: 'En kall dag kom {namn} på hur man kan {lara}.', om: f => f.kallt === true },
   ],
   k_husKlar: [
     '{Hus} blev {klart}.',
@@ -860,28 +861,49 @@ const MDEF = {
     'Byn talade länge om björnjakten: {folk} mot björnen, och björnen föll.{svara}',
     'Med spjuten i händerna gick {folk} mot björnen, och de fällde den.{svara}',
     { t: 'I regnet följde {folk} björnens spår och fällde den.{svara}', om: f => f.regn === true },
+    'Björnen var stor och stark, men {folk} fällde den.{svara}',
+    'Det tog lång tid, men till slut låg björnen död framför {folk}.{svara}',
+    'När {folk} kom hem från björnjakten bar de björnen med sig.{svara}',
   ],
   k_bjornjaktMiss: [
     '{folk} gick på björnjakt, men björnen kom undan.{svara}',
     'Det var {arstid} när {folk} gick på björnjakt. Björnen var för stark, och den gick sin väg.{svara}',
     'Björnen stod emot {folk} på björnjakten och kom undan.{svara}',
+    'Det blev ingen björn den gången. {folk} fick gå hem utan den.{svara}',
+    'Björnen slog sig fri från {folk} och sprang in i skogen.{svara}',
+    '{folk} jagade björnen länge, men den var snabbare.{svara}',
+    'Björnen tog sig undan, och {folk} gick hem tomhänta.{svara}',
+    'Ingen fällde björnen den dagen, fast {folk} försökte.{svara}',
   ],
   k_bjornSprang: [
     '{namn} gick på björnjakt{med}, men björnen hörde dem och försvann in i skogen.',
     'Det var {arstid} när {namn} gick på björnjakt{med}. Björnen gick undan innan de hann fram.',
     'Björnen märkte {namn}{med} på björnjakten och gick sin väg.',
+    '{namn} smög efter björnen{med}, men den var borta innan de kom nära.',
+    'När {namn} kom fram{med} fanns bara björnens spår kvar.',
+    'Björnen var för vaksam. {namn}{med} såg den bara springa sin väg.',
+    '{namn} gick på björnjakt{med}, men skogen var tom när de kom fram.',
+    'Det blev ingen strid. Björnen hörde {namn}{med} och gav sig av.',
   ],
   k_forstaBjorn: [
     '{namn} dödade byns första björn.',
     'Det var {namn} som fällde byns första björn.',
     'Ingen i byn hade fällt en björn förut. Sedan gjorde {namn} det.',
     'Det var {arstid} när {namn} dödade byns första björn.',
+    'Byn hade aldrig fått en björn förut, men {namn} fällde en.',
+    'Den första björnen som byn fick, den fällde {namn}.',
+    'Länge var björnen det byn var räddast för. Sedan fällde {namn} den första.',
+    'Alla i byn kom ut för att se den första björnen. {namn} hade fällt den.',
   ],
   k_bjornAnfall: [
     'En björn anföll {folk}.{svara}',
     'Det var {arstid} när en björn anföll {folk}.{svara}',
     '{folk} kom för nära en björn, och den anföll.{svara}',
     'Byn kommer ihåg dagen då björnen anföll {folk}.{svara}',
+    'Björnen kom ur skogen och gick rakt mot {folk}.{svara}',
+    'Ingen hade sett björnen förrän den anföll {folk}.{svara}',
+    'Björnen reste sig och anföll {folk}.{svara}',
+    'Det var en arg björn som anföll {folk}.{svara}',
   ],
   k_atergrundad: [
     '{namn} grundade byn på nytt.',
@@ -1806,7 +1828,7 @@ function bastPa(s: State, p: Person): Skill | undefined {
   return bast;
 }
 // bedrifterna i tal (räknade i p.liv när de hände): [mallen, vikten, texten]
-const ggrOrd = (n: number) => n >= 10 ? 'många gånger' : `${talOrd(n)} gånger`;
+const ggrOrd = ganger;
 function talDel(p: Person): [MallId, number, string] | undefined {
   const l = p.liv ?? {};
   if (l.vargar) return ['besk_vargar', 0.65 + Math.min(0.2, 0.05 * l.vargar), l.vargar === 1 ? 'en varg' : `${talOrd(l.vargar)} vargar`];
@@ -1873,7 +1895,7 @@ function skammen(p: Person) {
   return ut.slice(0, 2);
 }
 const titlar = (p: Person) => p.fame.filter(x => TITEL.test(x));
-const uppfann = (p: Person) => p.fame.filter(x => x.startsWith('Uppfann ')).map(x => x.slice(8));
+const uppfann = (p: Person) => p.fame.filter(x => x.startsWith('Uppfann ')).map(x => goraNamn(x.slice(8))); // vad hen kom på: "odla" (ordlagret)
 const bedrifter = (p: Person) => p.fame.filter(x => !FAME_EGEN.test(x) && !TITEL.test(x));
 // två bedrifter med samma verb säger verbet en gång: 'byggde byns första bord och byns första slaktbänk'
 const ihop = (l: string[]) => l.length === 2 && l[0].split(' ')[0] === l[1].split(' ')[0] ? `${l[0]} och ${l[1].split(' ').slice(1).join(' ')}` : och(l);
@@ -1901,9 +1923,7 @@ export function beskrivning(s: State, p: Person) {
 
 // ---------- krönikan (steg 3.9.3) ----------
 export const ARSTIDER = ['istiden', 'våren', 'sommaren', 'hösten'];
-const TAL = ['ingen', 'en', 'två', 'tre', 'fyra', 'fem', 'sex', 'sju', 'åtta', 'nio', 'tio'];
-export const talOrd = (n: number) => TAL[n] ?? String(n);
-export const och = (l: string[]) => { l = [...l.filter(x => x.includes(' och ')), ...l.filter(x => !x.includes(' och '))]; return l.length > 1 ? `${l.slice(0, -1).join(', ')} och ${l[l.length - 1]}` : l[0] ?? ''; };
+export { talOrd, och }; // talen och listorna bor i ordlagret (steg 6.7.1)
 // en händelse som en liten berättelse i krönikan, med årstiden, vädret och natten (loggen behåller sin korta rad).
 // Raden får mallens id som slag, så att den kan hittas utan att läsa texten
 export function kronikaBer(s: State, mall: MallId, nyckel: number, f: Fyllning) {
@@ -2099,7 +2119,7 @@ export function relationText(s: State, p: Person, q: Person, r: Rel): string[] {
   const mall: MallId = p.partner === q.id ? 'r_partner' : r.op > REL.naraVan ? 'r_nara' : r.op > REL.vanOrd ? 'r_van' : r.op > REL.osams ? 'r_bekant' : r.op > REL.ovan ? 'r_ogillar' : 'r_ovan';
   const nyckel = p.id * 7919 + q.id, ut: string[] = [fyll(valjVariant(s, mall, nyckel, f, 0), f)];
   if (Math.abs(r.chem) >= BERATT.kemi) ut.push(valjVariant(s, r.chem > 0 ? 'r_kemiBra' : 'r_kemiDalig', nyckel, f, 0));
-  const ggr = (n: number) => n === 1 ? 'en gång' : `${talOrd(n)} gånger`;
+  const ggr = ganger;
   const m = r.minns ?? {}, gjort: string[] = [];
   if (r.talks) gjort.push(`pratat ${ggr(r.talks)}`);
   if (m.sida) gjort.push(`slagits sida vid sida ${ggr(m.sida)}`);

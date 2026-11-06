@@ -10,6 +10,7 @@ import {
 import * as PIXI from 'pixi.js';
 import { $, esc, personFarg } from './hjalp';
 import { s } from './lage';
+import { lista } from '../sim/ord';
 import { TS, cam, lagerEfter, layout, peopleG } from './scen';
 import { dolda } from './manniskor';
 import { stopFollow } from './portratt';
@@ -51,7 +52,7 @@ function starta(u = uppstallning(), fro = lag.fro, g?: StridGang) { senast = g ?
 // striderna som hänt i byn (steg 3.7.2, s.strider): samma uppställning och frö ger samma strid igen
 function visaByStrider() {
   const m = s.strider ?? [];
-  $('arByn').innerHTML = `<option value="-1">🏘️ ${m.length ? 'Striderna i byn' : 'Inga strider i byn än'}</option>` + m.map((x, i) => ({ x, i })).reverse().map(({ x, i }) => `<option value="${i}">${esc(timeLabel(s, x.t))}: ${esc(x.u.kampar.map(k => k.namn).join(' mot '))} (${esc(x.orsak)})</option>`).join('');
+  $('arByn').innerHTML = `<option value="-1">🏘️ ${m.length ? 'Striderna i byn' : 'Inga strider i byn än'}</option>` + m.map((x, i) => ({ x, i })).reverse().map(({ x, i }) => `<option value="${i}">${esc(timeLabel(s, x.t))}: ${esc(([0, 1] as const).map(sd => lista(x.u.kampar.filter(k => k.sida === sd).map(k => k.namn))).join(' mot '))} (${esc(x.orsak)})</option>`).join('');
 }
 
 // ---------- uppställningen ----------

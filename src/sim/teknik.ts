@@ -17,6 +17,7 @@ import type { SamtalDef } from './samtal';
 import { lartUt } from './relationer';
 import { gudHandelse } from './religion';
 import { notis } from './notiser';
+import { TEKNAMN, gora, goraUtan, lista, och } from './ord';
 
 // ---------- teknik ----------
 // Ingen föds med kunskapen om hur man gör en yxa. Den som arbetar med något kommer så småningom på hur det kan göras
@@ -144,6 +145,7 @@ export const TEKNIK: Tek[] = [
   { id: 'ledarskap', namn: 'Ledarskap', text: 'Att förstå vad som krävs för att byn ska lyssna på en: att höra alla, döma rättvist och tänka på hela byn.', effekt: 'Bara den som kan ledarskap kan bli byns ledare.',
     omr: [], krav: [], niva: 1, tid: 12, nar: 'i samtal' },
 ];
+for (const t of TEKNIK) TEKNAMN[t.namn.toLowerCase()] = t.id; // ordlagret hittar verbet efter namnet (ord.ts)
 export const TEK = Object.fromEntries(TEKNIK.map(t => [t.id, t])) as Record<string, Tek>;
 
 // Balanstal (regel 8): hur fort man kommer på något står i raden för tekniken (`tid`, arbetstimmar), och här vad det ger och hur man lär ut
@@ -203,16 +205,16 @@ function learn(s: State, p: Person, t: Tek, from?: Person) {
   p.tek![t.id] = 1;
   if (p.lar?.tek === t.id) p.lar = undefined; // lärlingen har lärt sig klart och kan själv bli mästare
   if (p.halvminne) { p.halvminne = p.halvminne.filter(k => k !== t.id); if (!p.halvminne.length) p.halvminne = undefined; }
-  if (from) { log(s, `${p.name} har lärt sig av ${from.name} att göra ${t.namn.toLowerCase()}.`, 'skill', [p.id, from.id]); return; }
+  if (from) { log(s, `${p.name} har lärt sig av ${from.name} ${gora(t)}.`, 'skill', [p.id, from.id]); return; }
   const first = !s.people.some(q => q !== p && knows(q, t.id)) && !(s.stat?.['tek_' + t.id]);
   count(s, 'tek_' + t.id);
   // nivå 4–5: det episka ögonblicket, en egen rad per teknik (steg 4.2.1.3); annars en berättelse ur mallen
   if (first && t.episk) kronika(s, fyll(t.episk, personFalt(p)), 'episk');
-  else if (first) kronikaBer(s, 'k_uppfann', p.id, { ...personFalt(p), teknik: t.namn.toLowerCase() });
-  log(s, `${p.name} kom på hur man gör ${t.namn.toLowerCase()}. ${t.effekt}`, 'skill', [p.id]);
-  if (first) notis(s, 'teknik', `${p.name} kom på hur man gör ${t.namn.toLowerCase()}. ${t.effekt}`, [p.id]);
-  think(p, `Kom på hur man gör ${t.namn.toLowerCase()}`, TEKTAL.kommaPa, s.now, TEKTAL.kommaPaTim * HOUR);
-  if (first) { p.fame.push(`Uppfann ${t.namn.toLowerCase()}`); allaBarn(s, 'uppfinning', `uppfann ${t.namn.toLowerCase()}`); upplev(s, p, 'egenTeknik', t.namn.toLowerCase()); gudHandelse(s, 'hantverk', `${t.namn.toLowerCase()} som ${p.name} kom på`); }
+  else if (first) kronikaBer(s, 'k_uppfann', p.id, { ...personFalt(p), teknik: t.namn.toLowerCase(), lara: goraUtan(t) });
+  log(s, `${p.name} kom på hur man kan ${goraUtan(t)}. ${t.effekt}`, 'skill', [p.id]);
+  if (first) notis(s, 'teknik', `${p.name} kom på hur man kan ${goraUtan(t)}. ${t.effekt}`, [p.id]);
+  think(p, `Kom på hur man kan ${goraUtan(t)}`, TEKTAL.kommaPa, s.now, TEKTAL.kommaPaTim * HOUR);
+  if (first) { p.fame.push(`Uppfann ${t.namn.toLowerCase()}`); allaBarn(s, 'uppfinning', `lärde sig ${gora(t)}`); upplev(s, p, 'egenTeknik', `hur man kan ${goraUtan(t)}`); gudHandelse(s, 'hantverk', `konsten ${gora(t)}, som ${p.name} kom på`); }
 }
 
 // arbete för tankarna framåt mot det som hör till arbetet (omr). Hantverk (slag hantverk i handlingar.ts: att tvinna rep,
@@ -352,7 +354,7 @@ export function stepLarlingar(s: State) {
       const c = ppl.filter(q => q !== m && !q.lar && ageOf(q, s.now) >= ALDER.uppfinner && canThink(q, t)).sort((a, b) => poang(b) - poang(a) || a.id - b.id)[0];
       if (!c) continue;
       c.lar = { av: m.id, tek: t.id }; count(s, 'larling');
-      log(s, `${c.name} blev lärling hos ${m.name} för att lära sig göra ${t.namn.toLowerCase()}.`, 'skill', [c.id, m.id]);
+      log(s, `${c.name} blev lärling hos ${m.name} för att lära sig ${goraUtan(t)}.`, 'skill', [c.id, m.id]);
       break;
     }
   }
@@ -371,8 +373,8 @@ export function kunskapDod(s: State, p: Person) {
   for (const q of larling) halvminne(s, q);
   if (!ppl.length || !borta.length) return; // byn dör ut, eller någon annan kan det
   count(s, 'tekForlorad', borta.length);
-  const namn = borta.map(t => t.namn.toLowerCase()), lista = namn.length > 1 ? namn.slice(0, -1).join(', ') + ' och ' + namn[namn.length - 1] : namn[0];
-  kronika(s, `Med ${p.name} dog konsten att göra ${lista}.${halv.length ? ` ${halv.map(q => q.name).join(' och ')} hade inte lärt sig klart och minns det bara till hälften.` : ''}`, 'forlust');
+  const konst = och(borta.map(t => gora(t))); // "att odla och att leda byn"
+  kronika(s, `Med ${p.name} dog konsten ${konst}.${halv.length ? ` ${lista(halv.map(q => q.name))} hade inte lärt sig klart och minns det bara till hälften.` : ''}`, 'forlust');
 }
 
 // äldre sparfiler: den som redan gjort yxor eller spjut kan det

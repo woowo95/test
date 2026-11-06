@@ -1,3 +1,4 @@
+import { lista, stor, tal } from './ord';
 import { utanforByn } from './omrade';
 import { balans } from './balans';
 import { kronikaBer, och, personFalt, sakVarg, talOrd } from './berattelser';
@@ -394,7 +395,7 @@ function borjaVanta(s: State, f: Vargflock, o: Bit, folk: Person[]) {
   const r = vantarVid(s, f), inne = folk.filter(q => r && roomAt(s, q.x, q.y) === r);
   // de som är vakna i huset slutar med det de gör och håller sig gömda
   for (const q of inne) if (q.task && larmAvbryter(q.task.act, 'varg') && q.task.act !== 'sova') { avbryt(s, q); q.task = undefined; }
-  log(s, `${f.vargar.length > 1 ? 'Vargarna' : 'Vargen'} väntar utanför dörren${inne.length ? `, och ${inne.map(q => q.name).join(', ')} är instängda` : ''}.`, 'world', inne.map(q => q.id));
+  log(s, `${f.vargar.length > 1 ? 'Vargarna' : 'Vargen'} väntar utanför dörren${inne.length ? `, och ${och(inne.map(q => q.name))} är instängda` : ''}.`, 'world', inne.map(q => q.id));
 }
 // de vuxna i huset som vågar gå ut och möta flocken: modet och hur många de är mot vargarna (som vargSkydd)
 function modiga(s: State, inne: Person[], f: Vargflock) {
@@ -568,8 +569,8 @@ export function vargStrid(s: State, f: Vargflock, folk: Person[], avsikt: Avsikt
   });
   if (doda.length > bar.size) { count(s, 'vargKvar', doda.length - bar.size); lamnaFallt(s, 'varg', doda.length - bar.size, folk[0].x, folk[0].y); } // fler fällda än det fanns bärare: de ligger kvar (steg 6.6.1)
   blodas(s, folk[0].x, folk[0].y, 'jakt', 1);
-  const namn = folk.map(p => p.name).join(' och ');
-  const stText = `${namn} slogs med ${n > 1 ? `${n} vargar` : 'en varg'} ${orsak}. ${doda.length ? `${doda.length} ${doda.length === 1 ? 'varg dog' : 'vargar dog'}. ` : ''}${vinnare === 0 ? 'Vargarna förlorade.' : vinnare === 1 ? 'Vargarna vann.' : 'Ingen vann.'}`;
+  const namn = lista(folk.map(p => p.name));
+  const stText = `${namn} slogs med ${n > 1 ? `${tal(n)} vargar` : 'en varg'} ${orsak}. ${doda.length ? `${stor(tal(doda.length))} ${doda.length === 1 ? 'varg dog' : 'vargar dog'}. ` : ''}${vinnare === 0 ? 'Vargarna förlorade.' : vinnare === 1 ? 'Vargarna vann.' : 'Ingen vann.'}`;
   log(s, stText, 'world', folk.map(p => p.id)); notis(s, 'strid', stText, folk.map(p => p.id), { x: Math.floor(folk[0].x), y: Math.floor(folk[0].y) });
   // krönikan (steg 3.7.16): varje vargjakt, och den som skadades svårt när vargarna anföll (döden skriver die)
   if (avsikt === 'doda') kronikaBer(s, 'k_vargjakt', folk[0].id, { folk: och(folk.map(p => p.name)), vargar: n > 1 ? `${talOrd(n)} vargar` : 'en varg', fallde: talOrd(doda.length), svara: svara.length ? ` ${och(svara)} skadades svårt.` : '' });

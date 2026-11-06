@@ -4,6 +4,7 @@ import { Act, GRANNAR4, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } fr
 import { eldPlats, getMap } from './karta';
 import { knows } from './teknik';
 import { ALDER, ageOf, alive, byId, count, doingAct, familjOf, forstaGang, gjort, living, log } from './folk';
+import { enOrd, han, sinOrd, stor } from './ord';
 import { getable, Recept, takeMaterial } from './behov';
 import { sparas } from './forradsmal';
 import { Ting, freeTools, tingOf, wearTool } from './agande';
@@ -1103,9 +1104,9 @@ function inredningen(s: State) {
     const egen = sovHus(s, o), namn = d.namn.toLowerCase();
     const at = utan(s, t, () => d.sover ? siteInne(s, t.k, undefined, q => egen !== undefined ? q.id === egen : q.ag === undefined) : siteKista(s, t.k, o));
     count(s, 'möbel utflyttad');
-    if (at) { flytta(s, t, at); log(s, `${o.name} bar sin ${namn} till ${husAv(s, t)?.namn.toLowerCase() ?? 'huset där hen sover'}.`, 'world', [o.id]); continue; }
-    if (!annans) { t.ag = undefined; touch(s); log(s, `${o.name} lämnade sin ${namn} i ${h?.namn.toLowerCase() ?? 'huset'} åt den som sover där.`, 'world', [o.id]); continue; }
-    taBort(s, t); log(s, `${o.name}s ${namn} i ${h.namn.toLowerCase()} togs isär, eftersom den inte fick plats där hen sover.`, 'world', [o.id]);
+    if (at) { flytta(s, t, at); log(s, `${o.name} bar ${sinOrd(d)} ${namn} till ${husAv(s, t)?.namn.toLowerCase() ?? `huset där ${han(o)} sover`}.`, 'world', [o.id]); continue; }
+    if (!annans) { t.ag = undefined; touch(s); log(s, `${o.name} lämnade ${sinOrd(d)} ${namn} i ${h?.namn.toLowerCase() ?? 'huset'} åt den som sover där.`, 'world', [o.id]); continue; }
+    taBort(s, t); log(s, `${o.name}s ${namn} i ${h.namn.toLowerCase()} togs isär, eftersom ${d.ett ? 'det' : 'den'} inte fick plats där ${han(o)} sover.`, 'world', [o.id]);
   }
   for (const t of stationerOf(s)) if (stationDef(t.k)?.sover && isKlar(t)) agaBadd(s, t);
 }
@@ -1116,7 +1117,7 @@ function barIn(s: State) {
     const at = siteInne(s, t.k);
     if (!at) continue;
     flytta(s, t, { ...at, inne: 1 });
-    log(s, `${d.namn}en bars in i ${husById(s, stationRum(s, t)?.hus ?? -1)?.namn ?? 'ett hus'}.`, 'world');
+    log(s, `${stor(enOrd(d))} ${d.namn.toLowerCase()} bars in i ${husById(s, stationRum(s, t)?.hus ?? -1)?.namn ?? 'ett hus'}.`, 'world');
   }
 }
 // stationen stod inne i ett hus som rivits: rutan har inget golv i ett hus längre. Efter en rasad vägg är rummet borta

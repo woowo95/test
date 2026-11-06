@@ -1,3 +1,4 @@
+import { lista, stor, tal } from './ord';
 import { delade } from './berattelser';
 import { ALDER, REL, ageOf, alive, byId, count, forstaGang, getRel, isKin, isParent, living, log, relKey, stat, think } from './folk';
 import { clamp, pickViktat, rnd } from './slump';
@@ -526,7 +527,7 @@ export function larma(s: State, vad: string, storlek: number, ropare: Person[], 
     ropar = nya;
   }
   count(s, falskt ? 'larm_falskt' : 'larm');
-  if (hort.length) log(s, `${ropare.map(p => p.name).join(' och ')} ropade ${falskt ? 'falskt larm' : 'larm'} (${vad}). ${hort.length} hörde det.`, 'rel', ropare.map(p => p.id));
+  if (hort.length) log(s, `${lista(ropare.map(p => p.name))} ropade ${falskt ? 'falskt larm' : 'larm'} (${vad}). ${stor(tal(hort.length))} hörde det.`, 'rel', ropare.map(p => p.id));
   return hort;
 }
 // minns p ett larm nu?

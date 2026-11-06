@@ -129,7 +129,7 @@ export function sportVal(s: State, p: Person): { why: string; spot: { x: number;
     }
   }
   const d = SPORT_AV[m.k];
-  return { why: ny ? `Vill ha ${d.namn.toLowerCase()} och samlar folk` : `Går med i ${d.namn.toLowerCase()}en`, spot: plats(s, p, m), dur: m.slut - s.now, ref: m.start, tool: d.id };
+  return { why: ny ? `Vill ha ${d.namn.toLowerCase()} och samlar folk` : `Är med i ${d.best}`, spot: plats(s, p, m), dur: m.slut - s.now, ref: m.start, tool: d.id };
 }
 // var den som går med ställer sig, aldrig i en vägg. I dragkampen (steg 4.5.6.10) två lag på en rad på var sin sida om
 // strecket i mitten: varannan till vänster och varannan till höger, de senare längre ut. De andra sporterna (steg 4.5.6.11)

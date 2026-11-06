@@ -1,3 +1,4 @@
+import { mark, tal } from './ord';
 import { tabortBuske } from './buskar';
 import { freeTools, tingOf } from './agande';
 import { balans } from './balans';
@@ -285,11 +286,11 @@ export function brandSteg(s: State, dtSec: number) {
   iElden(s, b, dtSec);
   if (b.r.length) return;
   // branden är slut
-  const delar = [`brände ${b.ut.length} ${b.ut.length === 1 ? 'ruta' : 'rutor'}`, b.trad && `${b.trad} träd`, b.vagg && `rev ${b.vagg} ${b.vagg === 1 ? 'vägg' : 'väggar'}`, b.saker && `${b.saker} saker`, b.brann && `och det här brann upp: ${brannText(b)}`].filter(Boolean);
-  log(s, `Elden har slocknat. Den ${delar.join(', ')}${b.skadade ? `, och ${b.skadade} brändes` : ''}.`, 'world');
+  const delar = [`brände ${mark(b.ut.length)}`, b.trad && `${tal(b.trad, true)} träd`, b.vagg && `rev ${b.vagg === 1 ? 'en vägg' : `${tal(b.vagg)} väggar`}`, b.saker && `${b.saker === 1 ? 'en sak' : `${tal(b.saker)} saker`}`, b.brann && `och det här brann upp: ${brannText(b)}`].filter(Boolean);
+  log(s, `Elden har slocknat. Den ${delar.join(', ')}${b.skadade ? `, och ${tal(b.skadade)} brändes` : ''}.`, 'world');
   if (b.hot || b.ut.length >= BRAND.stor) {
-    notis(s, 'motgang', `Elden har slocknat. Den ${delar.join(', ')}${b.skadade ? `, och ${b.skadade} brändes` : ''}.`);
-    kronika(s, `En eldsvåda ${b.kalla === 'blixt' ? 'efter ett blixtnedslag ' : ''}brände ${b.ut.length} ${b.ut.length === 1 ? 'ruta' : 'rutor'}${b.vagg ? ` och ${b.vagg} ${b.vagg === 1 ? 'vägg' : 'väggar'}` : ''}${b.hot ? ' nära byn' : ''}.`, 'motgang');
+    notis(s, 'motgang', `Elden har slocknat. Den ${delar.join(', ')}${b.skadade ? `, och ${tal(b.skadade)} brändes` : ''}.`);
+    kronika(s, `En eldsvåda ${b.kalla === 'blixt' ? 'efter ett blixtnedslag ' : ''}brände ${mark(b.ut.length)}${b.vagg ? ` och ${b.vagg === 1 ? 'en vägg' : `${tal(b.vagg)} väggar`}` : ''}${b.hot ? ' nära byn' : ''}.`, 'motgang');
     allaBarn(s, 'brand');
     for (const p of living(s)) if (p.born < b.t) livet(s, p, 'mg:brand'); // de som klarade den (steg 3.9.8)
   }
@@ -369,7 +370,7 @@ function slocknar(s: State, b: Brand) {
 // det som brann upp skrivs i branden (namnet och hur många)
 function brann(b: Brand, namn: string) { (b.brann ??= {})[namn] = (b.brann[namn] ?? 0) + 1; }
 // det som brann upp, i ord: "Kista, Trägolv ×3"
-const brannText = (b: Brand) => Object.entries(b.brann ?? {}).map(([k, n]) => n > 1 ? `${k.toLowerCase()} ×${n}` : k.toLowerCase()).join(', ');
+const brannText = (b: Brand) => Object.entries(b.brann ?? {}).map(([k, n]) => n > 1 ? `${k.toLowerCase()} (${tal(n)})` : k.toLowerCase()).join(', ');
 
 // brinner det nära byn (dess område, steg 6.2.4)? Då släcker de vuxna
 function hotar(s: State, b: Brand) {

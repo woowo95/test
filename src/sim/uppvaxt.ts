@@ -1,3 +1,4 @@
+import { liten, talOrd } from './ord';
 import { KROPP, ageOf, alive, count, isParent, isSick, livet, living, log } from './folk';
 import { pick, rnd } from './slump';
 import { DAY, Person, STATS, Stat, State, Upplevelse } from './typer';
@@ -165,7 +166,7 @@ export function upplev(s: State, p: Person, k: UpplevelseTyp, om?: string) {
   p.upp = lista;
   raknaPot(p);
   count(s, 'upp_' + k); if (vuxen) count(s, 'upp_vuxen');
-  log(s, `${p.name} (${u.a} år): ${upplevelseText(u)}.`, 'rel', [p.id]);
+  log(s, `${p.name}, ${talOrd(u.a)} år, ${liten(upplevelseText(u))}.`, 'rel', [p.id]);
 }
 // alla i byn var med om k (barnen och, sedan steg 4.1.1.2, de vuxna)
 export function allaBarn(s: State, k: UpplevelseTyp, om?: string) { for (const q of living(s)) upplev(s, q, k, om); }

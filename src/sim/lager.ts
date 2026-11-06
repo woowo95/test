@@ -812,7 +812,7 @@ export function tidyStore(s: State) {
     if (i < 0) break;
     zs[i] = growOf(s, i)!; grew = i;
   }
-  if (grew >= 0) log(s, `${zs[grew].namn ?? 'Lagret'} blev för litet, så byn gjorde det större.`, 'world');
+  if (grew >= 0) log(s, zs[grew].namn ? `${zs[grew].namn} blev för liten, så byn gjorde den större.` : 'Lagret blev för litet, så byn gjorde det större.', 'world');
   else if (over().length && vanliga(s) < LAGER.zoner) newZone(s);
   if (grew >= 0 || zs.length !== zonesOf(s).length) enPerRuta(s);
   // mindre: ta bort en kant när mer än hälften har stått tom i sex timmar (krympTim) och det som ligger där får plats i resten

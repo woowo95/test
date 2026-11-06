@@ -2,6 +2,8 @@
 import { createState, Person, State } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
+import * as O from '../../sim/ord';
+import { TEKNIK } from '../../sim/teknik';
 import { SCENARIER, klockan, kor, medBank, medHus, setFood, tandEld } from './hjalp';
 
 // en by med ett stort överskott av mat och ved, på förmiddagen
@@ -470,6 +472,21 @@ SCENARIER.matchrapport = {
       [`berättelsen: ${ber}`, hel(ber) && ber.includes(a.name) && ber === SIM.matchBerattelse(s, m!)],
       [`när den svagare vinner jämnt: ${sber}`, hel(sber) && sber.includes(b.name) && sber.includes(a.name)],
       [`när det kom för få: ${iber}`, hel(iber) && iber.includes(ep.name) || /ingen|för få|tom/.test(iber)],
+    ];
+  },
+};
+
+SCENARIER.ord = {
+  text: 'Ordlagret (steg 6.7.1, src/sim/ord.ts): tal skrivs med ord, sakerna med rätt artikel och form, teknikerna som vad man kan göra, listor fogas med komma och och, och skador med grad och genus',
+  kor: () => {
+    const utanGora = TEKNIK.filter(t => !O.GORA[t.id]).map(t => t.id);
+    return [
+      [`tal: ${O.tal(3)}, ${O.tal(1, true)}, ${O.tal(40)}, ${O.tal(500)}`, O.tal(3) === 'tre' && O.tal(1, true) === 'ett' && O.tal(40) === 'många' && O.tal(500) === 'otaliga'],
+      [`listor: "${O.och(['Åsa', 'Bo', 'Ylva'])}" och "${O.lista(['A', 'B', 'C', 'D', 'E', 'F'])}"`, O.och(['Åsa', 'Bo', 'Ylva']) === 'Åsa, Bo och Ylva' && O.lista(['A', 'B', 'C', 'D', 'E', 'F']) === 'A, B och fyra till'],
+      [`saker: "${O.antal(1, 'kott')}", "${O.antal(3, 'kott')}", "${O.antal(1, 'radjur')}"`, O.antal(1, 'kott') === 'en bit harkött' && O.antal(3, 'kott') === 'tre bitar harkött' && O.antal(1, 'radjur').startsWith('ett ')],
+      [`varje teknik har ett "att göra" (saknas: ${utanGora.join(', ') || 'inga'}); t.ex. "${O.gora(TEKNIK[0]!)}"`, utanGora.length === 0],
+      [`skador: "${O.skada('ett blåmärke', 0.1)}", "${O.skada('en blödning', 0.5)}", "${O.skada('ett skärsår', 0.9)}"`, O.skada('ett blåmärke', 0.1) === 'ett lätt blåmärke' && O.skada('en blödning', 0.5) === 'en svår blödning' && O.skada('ett skärsår', 0.9) === 'ett mycket svårt skärsår'],
+      [`pronomen: ${O.han({ sex: 'k' })}/${O.honom({ sex: 'm' })}/${O.hans({ sex: 'k' })}`, O.han({ sex: 'k' }) === 'hon' && O.honom({ sex: 'm' }) === 'honom' && O.hans({ sex: 'k' }) === 'hennes'],
     ];
   },
 };
