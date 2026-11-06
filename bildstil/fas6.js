@@ -559,6 +559,27 @@
     former(16, 9, [[rakt(0.5, 2.6, 15.5, 8.5), (x, y) => y < 4 ? 'l' : (Math.floor(x) + Math.floor(y) * 2) % 7 === 0 ? 'd' : 'm'], [rakt(1.5, 0.6, 14.5, 2.6), 'm'], [linje([[1.5, 1.6], [14.5, 1.6]], 0.4), 'l']]),
   ];
 
+  // ---------- siffrorna (steg 6.9.18): tre typsnitt, varje siffra som rader med # ----------
+  const SIFF_SILK = { 0: ['.###.', '#..##', '#.#.#', '##..#', '.###.'], 1: ['.#', '##', '.#', '.#', '.#'], 2: ['####.', '....#', '.###.', '#....', '#####'], 3: ['####.', '....#', '.###.', '....#', '####.'], 4: ['#...#', '#...#', '#####', '....#', '....#'], 5: ['#####', '#....', '####.', '....#', '####.'], 6: ['.###.', '#....', '####.', '#...#', '.###.'], 7: ['#####', '....#', '...#.', '..#..', '..#..'], 8: ['.###.', '#...#', '.###.', '#...#', '.###.'], 9: ['.###.', '#...#', '.####', '....#', '.###.'] };
+  const SIFF_EGEN = { 0: ['.###.', '#...#', '#..##', '#.#.#', '##..#', '#...#', '.###.'], 1: ['..#..', '.##..', '..#..', '..#..', '..#..', '..#..', '.###.'], 2: ['.###.', '#...#', '....#', '...#.', '..#..', '.#...', '#####'], 3: ['.###.', '#...#', '....#', '..##.', '....#', '#...#', '.###.'], 4: ['...#.', '..##.', '.#.#.', '#..#.', '#####', '...#.', '...#.'], 5: ['#####', '#....', '####.', '....#', '....#', '#...#', '.###.'], 6: ['..##.', '.#...', '#....', '####.', '#...#', '#...#', '.###.'], 7: ['#####', '....#', '...#.', '..#..', '.#...', '.#...', '.#...'], 8: ['.###.', '#...#', '#...#', '.###.', '#...#', '#...#', '.###.'], 9: ['.###.', '#...#', '#...#', '.####', '....#', '...#.', '.##..'] };
+  const SIFF_SMAL = { 0: ['###', '#.#', '#.#', '#.#', '###'], 1: ['.#.', '##.', '.#.', '.#.', '###'], 2: ['###', '..#', '###', '#..', '###'], 3: ['###', '..#', '.##', '..#', '###'], 4: ['#.#', '#.#', '###', '..#', '..#'], 5: ['###', '#..', '###', '..#', '###'], 6: ['###', '#..', '###', '#.#', '###'], 7: ['###', '..#', '.#.', '.#.', '.#.'], 8: ['###', '#.#', '###', '#.#', '###'], 9: ['###', '#.#', '###', '..#', '###'] };
+  // en version: raden 0–9 och raden med tal, mörka siffror på panelens ljusa botten, en punkts mellanrum mellan siffrorna
+  const SIFFROR = (text, F) => {
+    const rader = ['0123456789', '38 10:00 1038'], hojd = F[0].length, bred = t => [...t].reduce((s, c) => s + (F[c] ? F[c][0].length : c === ':' ? 1 : 3) + 1, -1);
+    const w = Math.max(...rader.map(bred)) + 8, h = hojd * 2 + 12;
+    return { text, w, h, rita: B => {
+      const P = B.P;
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) B.satt(x, y, P.i('ben', 3));
+      rader.forEach((t, r) => { let x = 4; const y0 = 4 + r * (hojd + 4);
+        for (const c of t) {
+          if (c === ':') { B.satt(x, y0 + Math.floor(hojd / 2) - 1, P.i('kol', 0)); B.satt(x, y0 + hojd - 2, P.i('kol', 0)); x += 2; continue; }
+          if (!F[c]) { x += 4; continue; }
+          F[c].forEach((rad, j) => [...rad].forEach((ch, i) => { if (ch === '#') B.satt(x + i, y0 + j, P.i('kol', 0)); }));
+          x += F[c][0].length + 1;
+        } });
+    } };
+  };
+
   // ---------- korten ----------
   const S = 'Steg ';
   const IK_BJ = { o: 'kol0', a: 'jord1', b: 'jord0', w: 'jord3', k: 'kol0' };
@@ -605,6 +626,12 @@
         for (let j = 0; j < b.h; j++) for (let i = 0; i < b.w; i++) { const ch = b.rader[j][i]; if (ch !== '.') for (let d = 0; d < 4; d++) B.satt(x0 + i * 2 + (d & 1), y0 + j * 2 + (d >> 1), P.av(b.pal[ch])); }
       });
     } }] },
+    // steg 6.9.18: siffrorna får ett eget litet typsnitt före Pixelify Sans (src/template.html, @font-face "Siffror"); i spelet
+    // står Silkscreens siffror som platshållare. Tre förslag med samma rader: siffrorna 0–9 och några tal som i spelet
+    KORT('f6_siffror', 'Siffrorna', S + '6.9.18: siffrorna i spelet (tiden, förrådet, graferna) får ett eget litet pixeltypsnitt i stället för Pixelify Sans. Överst 0–9, nederst några tal som de står i spelet.', [
+      SIFFROR('Som Silkscreen, som står i spelet nu: fem punkter höga och fyrkantiga; ettan är smalare än de andra.', SIFF_SILK),
+      SIFFROR('Egenritade i samma storlek som Pixelify Sans: sju punkter höga och alla lika breda, så att talen står i raka kolumner.', SIFF_EGEN),
+      SIFFROR('Smala som Tiny5: fem punkter höga och tre breda, alla lika breda; får plats där det är trångt.', SIFF_SMAL)]),
     KORT('f6_strak', 'Gångstråken i testläget', S + '6.2.5: i testläget syns gångstråken, vägarna från dörrarna till elden, lagren, latrinen och vattnet där inget får byggas, som en tunn linje genom rutornas mitt, och rutan framför dörren som en liten ruta. Stugan och elden är bara för att visa platsen.', [
       STRAK('En tunn gul linje och en fylld gul ruta framför dörren.', 0), STRAK('Korta röda streck och en prickig ruta framför dörren.', 1), STRAK('Två ljusa kanter, som en väg, och en ljus ram framför dörren.', 2)]),
   );
