@@ -128,7 +128,7 @@ export function forbrukat(s: State, k: string, n: number) {
 export function forbrukTimme(s: State) {
   const f = s.forbruk;
   if (!f) return;
-  for (const k in f) { f[k] = r3(f[k] * (1 - 1 / (24 * FORRAD.forbrukDygn))); if (f[k] <= 0) delete f[k]; }
+  for (const k in f) { f[k] = r3(f[k] * (1 - 1 / (24 * FORRAD.forbrukDygn))); if (f[k] < 0.05) delete f[k]; } // under 0,05 skulle avrundningen hålla talet kvar för alltid
 }
 // så mycket av slaget k lagerplatserna rymmer
 function rymmer(s: State, k: string) {
