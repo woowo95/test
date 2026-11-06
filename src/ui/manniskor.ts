@@ -244,11 +244,19 @@ const GANG: [Ben, Arm][] = [['gang1', 'gang1'], ['sta', 'hanga'], ['gang2', 'gan
 const GAR_MS = 300; // så länge efter senaste rörelsen (datorns tid) går figuren, så att den inte stannar mellan bildrutorna
 const gar = (id: number, nu: number) => nu - (forra.get(id)?.rord ?? -Infinity) < GAR_MS;
 vidNyBy.push(() => forra.clear());
+const SVANG = 2; // hur mycket större det nya hållet ska vara för att figuren ska vända sig (steg 6.8.2)
 function riktning(id: number, x: number, y: number): Rikt {
   const f = forra.get(id); let rikt: Rikt = f?.rikt ?? 'fram', rord = f?.rord ?? -Infinity;
   if (f) {
     const dx = x - f.x, dy = y - f.y;
-    if (Math.abs(dx) + Math.abs(dy) > 0.01) rikt = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'sida' : 'vast') : dy > 0 ? 'fram' : 'bak';
+    if (Math.abs(dx) + Math.abs(dy) > 0.01) {
+      const ny: Rikt = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'sida' : 'vast') : dy > 0 ? 'fram' : 'bak';
+      // den som går snett håller sin riktning tills hen svänger tydligt (steg 6.8.2): den gamla riktningen står kvar så
+      // länge hen fortfarande rör sig åt det hållet och det andra hållet inte är minst SVANG gånger större
+      const langs = rikt === 'sida' ? dx : rikt === 'vast' ? -dx : rikt === 'fram' ? dy : -dy;
+      const tvars = rikt === 'sida' || rikt === 'vast' ? Math.abs(dy) : Math.abs(dx);
+      if (!(langs > 0 && tvars < langs * SVANG)) rikt = ny;
+    }
     if (Math.abs(dx) + Math.abs(dy) > 1e-4) rord = performance.now();
   }
   forra.set(id, { x, y, rikt, rord });
