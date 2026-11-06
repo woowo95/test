@@ -35,7 +35,7 @@ export function sakVid(ik: Ikoner, k: string, x: number, y: number) {
 }
 // högen med kartbilder: en till fyra efter hur full den är, lite förskjutna, den bakersta först (som korten i bildstilen)
 // saker med flera bilder som variationer (steg 6.6.1: styckdelen som lår och som hög): högen tar en efter rutan
-const VARIANTER: Record<string, string[]> = { vargdel: ['vargdel', 'vargdel2'] };
+const VARIANTER: Record<string, string[]> = { vargdel: ['vargdel', 'vargdel2'], bjorndel: ['bjorndel', 'bjorndel2'] };
 const variant = (k: string, x: number, y: number) => { const v = VARIANTER[k]; return v ? v[(x * 31 + y * 17) % v.length] : k; };
 function kartHog(k: string, x0: number, y0: number, n: number) {
   const b = KARTBILDER[k]!, kb = kartbild(k)!, hw = b.w >> 1, hh = b.h >> 1;

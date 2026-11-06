@@ -561,11 +561,13 @@
 
   // ---------- korten ----------
   const S = 'Steg ';
+  const IK_BJ = { o: 'kol0', a: 'jord1', b: 'jord0', w: 'jord3', k: 'kol0' };
   VAL.push(
+    // steg 6.6.6: symbolen för ryktet björndödare (i personens intryck); i spelet står en platshållare (björnens huvud)
+    KORT('f6_i_bjorndodare', 'Björndödaren', S + '6.6.6: symbolen för ryktet björndödare, som den får som fällt en björn. Den står bland personens intryck, bredvid vargdödarens vargansikte.', [
+      PA_MARK('Björnens huvud framifrån med runda öron och ljus nos.', ['..ooo......ooo..', '.obbbo....obbbo.', '.obwbooooooobwbo', '.obboaaaaaaaobbo', '..ooaaaaaaaaaoo.', '..oaaaaaaaaaaao.', '.oaaakaaaaakaaao', '.oaaaaaaaaaaaabo', '.oaaaawwwwaaaabo', '.oaaawwwwwwaabo.', '..oaawwkkwwaabo.', '..oaaawwwwaabo..', '...oaaawwaabo...', '....oobbbbbo....', '......ooooo.....'], IK_BJ), PA_MARK('En björntass med fem ljusa trampdynor.', ['................', '..oo..oo..oo....', '.owwoowwoowwo...', '.owwoowwoowwo.oo', '..oo..oo..oo.oww', '..ooooooooooooww', '.oaaaaaaaaaaaoo.', 'oaaaaaaaaaaaaao.', 'oaaaaawwwaaaaao.', 'oaaaawwwwwaaaao.', 'oaaaawwwwwaaaao.', '.oaaaawwwaaaao..', '.oaaaaaaaaaaao..', '..oaaaaaaaaao...', '...ooooooooo....', '................'], IK_BJ), PA_MARK('Tre björnklor på ett band, som ett halsband.', ['......oo........', '.....owwo.......', '.oo..owwo..oo...', 'owwo.owwo.owwo..', 'owwo.owwo.owwo..', 'owwo.owwo.owwo..', '.owo..owo.owo...', '.ooooooooooo....', '.obbbbbbbbbbo...', '..obbbbbbbbo....', '..oo......oo....', '.o..........o...', '.o....oo....o...', '..o..owwo..o....', '...oo.oo.oo.....', '................'], IK_BJ)]),
     KORT('f6_strak', 'Gångstråken i testläget', S + '6.2.5: i testläget syns gångstråken, vägarna från dörrarna till elden, lagren, latrinen och vattnet där inget får byggas, som en tunn linje genom rutornas mitt, och rutan framför dörren som en liten ruta. Stugan och elden är bara för att visa platsen.', [
       STRAK('En tunn gul linje och en fylld gul ruta framför dörren.', 0), STRAK('Korta röda streck och en prickig ruta framför dörren.', 1), STRAK('Två ljusa kanter, som en väg, och en ljus ram framför dörren.', 2)]),
-    KORT('f6_bjornskinn', 'Björnfällen', S + '6.5.3.3: björnskinnet som slakten ger.', [
-      PA_MARK('Utbredd med huvudet och klorna kvar.', FALL[0], BJ_L), PA_MARK('Utbredd utan huvud.', FALL[1], BJ_L), PA_MARK('Hopvikt.', FALL[2], BJ_L)]),
   );
 
   // ---------- Björns lista efter bildstil v161: djuren från tre håll, den fällda björnen, rövaren och tornadons storlekar ----------
@@ -721,8 +723,6 @@
 
   VAL.push(
     { id: 'f6_fagel_ligger', namn: 'Den fällda fågeln', typ: 'janej', vad: S + '6.6.3: du valde den fällda fågeln på sidan med vingen ute. Den är omritad i de tre fåglarnas egna former och färger (orren, ripan och skogsduvan), och så ligger den nu i spelet. Ja eller nej?', versioner: [PA_RAD('Orren, ripan och skogsduvan på sidan med vingen ute.', ['orre', 'ripa', 'duva'].map(a => [fagelLigger(a), { k: 'kol0', w: 'ben3', ...ARTER[a].L, ...(FAGEL_VAR[1][a].L || {}) }]), 4, 3)] },
-    KORT('f6_bjorn_falld', 'Fälld björn', S + '6.5.3: den fällda björnen som ligger på marken innan den styckas, som det fällda rådjuret: på sidan med huvudet på marken och ögat slutet, i din björns färger.', [
-      PA_MARK('Benen utsträckta.', bjornFalld(0), BJ_FALLD_L), PA_MARK('Benen hopvikta under kroppen.', bjornFalld(1), BJ_FALLD_L), PA_MARK('Benen bundna ihop med rep, klar att släpas hem.', bjornFalld(2), BJ_FALLD_L)]),
     // ---------- steg 5.5.5: den unga grodden i hel skala ----------
     ...(() => {
       const ikon = (B, k, x, y, s = 1) => { const r = IKONER.PIX[k], pal = IKONER.PAL[k] || {}; if (!r) return; const n = Math.round(r[0].length * s);

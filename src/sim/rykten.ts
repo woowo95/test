@@ -107,6 +107,7 @@ const IDEF = {
   feg: { namn: 'feg', tecken: -1, op: -5, sym: '🐔', betyder: 'Har backat från en strid.' }, // backade från en strid (steg 3.7.9, strid.ts)
   smakfull: { namn: 'smakfull', tecken: 1, op: 5, sym: '🏺', betyder: 'Har ett vackert pynt där hen sover.' }, // pyntet (steg 4.3.4, pynt.ts)
   vargdodare: { namn: 'vargdödare', tecken: 1, op: 5, sym: '🐺', som: 'en vargdödare', betyder: 'Har dödat en varg.' }, // dödade en varg (steg 3.7.1, varg.ts)
+  bjorndodare: { namn: 'björndödare', tecken: 1, op: 10, sym: '🐻', som: 'en björndödare', betyder: 'Har dödat en björn.' }, // dödade en björn (steg 6.6.6, bjorn.ts)
 } satisfies Record<string, IntryckDef>;
 export type IntryckTyp = keyof typeof IDEF;
 export const INTRYCK: Record<IntryckTyp, IntryckDef> = IDEF;
@@ -139,6 +140,7 @@ const HDEF = {
   vannSlagsmal: { i: 'stark', vikt: 0.3, text: 'vann ett slagsmål mot {om}', prestation: true },
   backade: { i: 'feg', vikt: 0.2, text: 'backade från en strid med {om}' }, // steg 3.7.9
   vargdodare: { i: 'vargdodare', vikt: 0.5, text: 'dödade en varg', prestation: true }, // steg 3.7.1
+  bjorndodare: { i: 'bjorndodare', vikt: 1, text: 'dödade en björn', prestation: true }, // steg 6.6.6
   pynt: { i: 'smakfull', vikt: 1, text: 'har pyntat där hen sover med {sak}' }, // steg 4.3.4: vikten gånger pyntets (PYNT.syn i pynt.ts)
 } satisfies Record<string, HandelseDef>;
 export type HandelseTyp = keyof typeof HDEF;

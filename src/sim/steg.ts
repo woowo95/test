@@ -47,7 +47,7 @@ import { facklorTimme, finishLjus, finishUppsatt, morkFart, morkHumor } from './
 import { arbetsTimme, chooseTask, dangers, nastaBuske, nastaRedskap, nastaRuta, spotFor } from './val';
 import { FAGEL, djurSteg } from './djur';
 import { vargSteg, vargjaktSteg } from './varg';
-import { bjornSteg } from './bjorn';
+import { bjornSteg, bjornjaktSteg } from './bjorn';
 import { rovarSteg, rovarTornado } from './rovare';
 import { handelSteg, handlaKlar, handlarMal, handlarPlats, handlarTornado, pratMedHandlare } from './handel';
 import { klanSteg } from './klaner';
@@ -189,6 +189,7 @@ MEDAN.torka = (s, p, _t, dtSec) => torka(s, p, dtSec / HOUR_S); // torkställnin
 // redskap som görs och träd som fälls: arbetet sparas om det avbryts (paborjat.ts)
 for (const a of GOR_ACTS) { MEDAN[a] = workHalf; KLAR[a] = (s, p, t) => { if (finishHalf(s, p, t)) nastaRedskap(s, p, t); }; } // och ett till i samma pass (val.ts)
 MEDAN.falla = workHalf;
+MEDAN.bjornjakt = (s, p, t) => bjornjaktSteg(s, p, t); // jägarna går mot björnen och anfaller den (bjorn.ts, steg 6.6.6)
 MEDAN.vargjakt = (s, p, t) => vargjaktSteg(s, p, t); // jägarna anfaller flocken (varg.ts, steg 3.7.1)
 MEDAN.vakt = (s, p, t) => vaktSteg(s, p, t); // vakten går runt byn (vakt.ts, steg 3.7.4)
 MEDAN.leka = (s, p, _t, dtSec) => lekSteg(s, p, dtSec); // kastlek och brottning (strid.ts, steg 3.7.2)

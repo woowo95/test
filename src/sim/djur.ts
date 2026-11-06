@@ -419,11 +419,11 @@ export const BJORN = balans('bjorn', {
   ungeAvst: 1.4, // ungarna går så här nära (rutor) kring björnen
 });
 // björnens värden i striden (steg 6.6.5 och 6.6.6): hög styrka och uthållighet, långsam att vända men biter och slår hårt
-export const BJORN_STRID: DjurStrid = { namn: 'Björnen', art: 'Björn', alder: 25, styrka: 24, uthallighet: 22, mod: 14, smidighet: 8, skicklighet: 8, fart: 1.1, vapen: 'bjornram' };
+export const BJORN_STRID: DjurStrid = DJUR.bjorn.strid;
 // artens värden i striden: djurregistret (DJUR i redskap.ts), björnen ur BJORN_STRID
 // björnungen (steg 6.6.5): liten och svag, men björnen försvarar den
 export const BJORNUNGE_STRID: DjurStrid = { namn: 'Björnungen', art: 'Björnunge', alder: 2, styrka: 5, uthallighet: 6, mod: 4, smidighet: 10, skicklighet: 4, fart: 1.2, vapen: 'vargbett' };
-export const stridOf = (art: Djur['art']): DjurStrid => art === 'bjorn' ? BJORN_STRID : art === 'bjornunge' ? BJORNUNGE_STRID : DJUR[art].strid;
+export const stridOf = (art: Djur['art']): DjurStrid => art === 'bjornunge' ? BJORNUNGE_STRID : DJUR[art].strid;
 const BJ_G = 35_000_000, BJ_U = 36_000_000; // björnens id: BJ_G * 8 + året; ungarnas BJ_U * 8 + året * 2 + ungen
 export const arBjorn = (id: number) => id >= BJ_G * 8 && id < BJ_U * 8;
 // stranden där björnen fiskar, en bit från byplatsen, så som kartan var när byn grundades
@@ -486,7 +486,7 @@ export function bjornarOf(s: State, t = s.now, bara?: (x: number, y: number) => 
   const vag = bjornVag(s, t);
   if (!vag?.length) return [];
   const id = BJ_G * 8 + yearNo(s, t);
-  if (s.djurDoda?.some(d => d.id === id)) return [];
+  if (s.bjornFalld === yearNo(s, t) || s.djurDoda?.some(d => d.id === id)) return [];
   let k = vag.findIndex(m => t < m.gar);
   if (k < 0) k = vag.length - 1;
   const m = vag[k], f = vag[k - 1];

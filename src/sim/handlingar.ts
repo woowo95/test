@@ -192,6 +192,7 @@ const DEF = {
   slut: { namn: 'Gör slut', tecken: '💔', ikon: 'utb3', dygn: true, stilla: true },
   sla: { namn: 'Slår någon', tecken: '👊', ikon: 'utb3', verktyg: { misshandel: 'Misshandlar någon', drap: 'Slår ihjäl någon' }, dygn: true, stilla: true },
   strid: { namn: 'Slåss', tecken: '⚔️', stilla: true, fortsatter: ['brand', 'tornado', 'varg'] as const, nodFri: true }, // steg 3.7.2 (strid.ts): står kvar i striden medan de andra behoven väntar
+  bjornjakt: { namn: 'Jagar björn', slag: 'jaga', ger: 'bjorn', tungt: true, fortsatter: ['brand', 'tornado', 'varg'] as const }, // steg 6.6.6 (bjorn.ts): en stor grupp med spjut, och den fällda björnen styckas och bärs hem
   vargjakt: { namn: 'Jagar varg', slag: 'jaga', ger: 'varg', tungt: true, fortsatter: ['brand', 'tornado', 'varg'] as const }, // steg 3.7.1 (varg.ts): ledaren samlar jägare, och den fällda vargen bärs hem
   skrika: { namn: 'Skriker och gråter', tecken: '😭', ikon: 'utb1', dygn: true, stilla: true }, // barnens (steg 3.2.4)
 } satisfies Record<string, ActDef>;

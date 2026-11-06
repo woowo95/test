@@ -207,6 +207,7 @@ export const PAL: Record<string, Record<string, string>> = {
   i_orattvis: { a: '#bd753e', b: '#a14808', c: '#7d5b40', o: '#24201d', z: 'rgba(36,32,29,.30)' },
   i_stark: { a: '#bd753e', b: '#a14808', o: '#24201d', w: '#d8b25f', z: 'rgba(36,32,29,.30)' },
   i_feg: { c: '#7d5b40', o: '#24201d', v: '#bdb39b', w: '#dad0bb', z: 'rgba(36,32,29,.30)' },
+  i_bjorndodare: { a: '#7d5b40', b: '#5e3c24', k: '#24201d', o: '#24201d', w: '#a0947d', z: 'rgba(36,32,29,.30)' }, // steg 6.6.6: platshållare, björnens huvud
   i_vargdodare: { a: '#8a9c9e', b: '#61767a', k: '#24201d', o: '#24201d', w: '#dad0bb', z: 'rgba(36,32,29,.30)' },
   l_fara: { a: '#b2921b', b: '#906f0f', k: '#24201d', o: '#24201d', z: 'rgba(36,32,29,.30)' },
   a_varda: { w: '#dad0bb', a: '#8a9c9e', y: '#d8b25f', r: '#bd753e' },
@@ -3347,6 +3348,24 @@ export const PIX: Record<string, string[]> = {
     '..ooozz.........',
   ],
   // vargdödare (steg 3.10.8: intrycket hade bara en emoji; platshållare i paletten, Björn väljer i bildstilen)
+  i_bjorndodare: [ // steg 6.6.6: platshållare
+    '..ooo......ooo..',
+    '.obbbo....obbbo.',
+    '.obwbooooooobwbo',
+    '.obboaaaaaaaobbo',
+    '..ooaaaaaaaaaoo.',
+    '..oaaaaaaaaaaao.',
+    '.oaaakaaaaakaaao',
+    '.oaaaaaaaaaaaabo',
+    '.oaaaawwwwaaaabo',
+    '.oaaawwwwwwaaboz',
+    '..oaawwkkwwaaboz',
+    '..oaaawwwwaaboz.',
+    '...oaaawwaabozz.',
+    '....oobbbbbozz..',
+    '......oooooz....',
+    '................',
+  ],
   i_vargdodare: [
     '.o............o.',
     '.oo..........oo.',
@@ -3717,6 +3736,8 @@ PIX.rock_kaninskinn = ROCK16; PAL.rock_kaninskinn = { o: '#24201d', G: '#7d5b40'
 PIX.rock_vargskinn = ROCK16; PAL.rock_vargskinn = { o: '#24201d', G: '#61767a', H: '#8a9c9e', g: '#3e5156', W: '#dad0bb' };
 PIX.skor_kaninskinn = SKOR16; PAL.skor_kaninskinn = { o: '#24201d', G: '#7d5b40', H: '#987e62', d: '#3f2415', W: '#dad0bb' };
 PIX.skor_vargskinn = SKOR16; PAL.skor_vargskinn = { o: '#24201d', G: '#61767a', H: '#8a9c9e', d: '#233035', W: '#dad0bb' };
+PIX.rock_bjornskinn = ROCK16; PAL.rock_bjornskinn = { o: '#24201d', G: '#5e3c24', H: '#7d5b40', g: '#3f2415', W: '#dad0bb' }; // steg 6.6.6: i björnens färger
+PIX.skor_bjornskinn = SKOR16; PAL.skor_bjornskinn = { o: '#24201d', G: '#5e3c24', H: '#7d5b40', d: '#3f2415', W: '#dad0bb' };
 PIX.filt_by = [
   '................',
   '................',
@@ -3796,7 +3817,7 @@ for (const k of ['brand', 'tornado']) { PIX[k] = KARTBILDER[k].rader; PAL[k] = K
   PAL.vattensack = b.pal; }
 // fas 6:s nya saker som bara har bildstilens bild (nävern, steg 6.3.3): symbolen i listorna är bilden mitt i rutan på
 // 16 × 16 punkter, förstorad två gånger om den ryms
-for (const k of ['naver', 'talg', 'fackla', 'talgljus', 'vargdel', 'radjurdel', 'radjursskinn', 'radjur', 'fagel', 'fjadrar', 'agg']) {
+for (const k of ['naver', 'talg', 'fackla', 'talgljus', 'vargdel', 'radjurdel', 'radjursskinn', 'radjur', 'fagel', 'fjadrar', 'agg', 'bjorn', 'bjorndel', 'bjornskinn']) {
   const b = KARTBILDER[k]!, w = 16, f = 2 * b.w <= w && 2 * b.h <= w ? 2 : 1, x0 = (w - f * b.w) >> 1, y0 = (w - f * b.h) >> 1;
   PIX[k] = Array.from({ length: w }, (_, y) => Array.from({ length: w }, (_, x) => { const yy = Math.floor((y - y0) / f), xx = Math.floor((x - x0) / f); return yy >= 0 && xx >= 0 ? b.rader[yy]?.[xx] ?? '.' : '.'; }).join(''));
   PAL[k] = b.pal;

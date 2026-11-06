@@ -89,6 +89,10 @@ const DEF = {
   fjadrar: { namn: 'Fjädrar', skaffa: { min: 2, slag: 'bearbeta', tek: 'kniv' }, stack: 50, mapp: 'Material' }, // steg 6.6.3: från fåglarna, till pilar och prydnader senare
   agg: { namn: 'Ägg', skaffa: { act: 'samla' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 1, naring: { protein: 1.2, fett: 0.8, energi: 0.5, mineral: 0.3, vitamin: 0.4 }, ra: true, haller: 3 }, // steg 6.6.3: hittas ibland på våren när man samlar
   radjursskinn: { namn: 'Rådjursskinn', ett: true, skaffa: { min: 5, slag: 'bearbeta', tek: 'kniv' }, stack: 5, mapp: 'Material', slits: 0.0006 },
+  // björnen (steg 6.6.6, bjorn.ts): den fällda björnen väger som fyra vargar och styckas alltid där den föll, i sex stycken.
+  // Björnskinnet är det tjockaste skinnet och blir den varmaste klädern (klader.ts)
+  bjorn: { vikt: 60, namn: 'Fälld björn', skaffa: { act: 'jakt' }, stack: 1, mapp: 'Material', haller: 3 },
+  bjornskinn: { namn: 'Björnskinn', ett: true, skaffa: { min: 5, slag: 'bearbeta', tek: 'kniv' }, stack: 5, mapp: 'Material', slits: 0.0006 },
   // en hel fisk som den fångats (DJUR i redskap.ts). Den rensas vid elden till fiskkött (fisk), som är det man äter;
   // bara när inget annat finns äts den som den är
   abborre: { namn: 'Abborre', skaffa: { act: 'fiske' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 1.2, naring: { protein: 2, fett: 0.8, mineral: 0.7, energi: 0.6, vitamin: 0.3 }, ra: true, haller: 1 }, // den hela fisken äts strax efter fiskköttet: innan byn har en slaktbänk rensas den inte (steg 2.2.8)
@@ -161,6 +165,7 @@ const DEF = {
   // föll. Delarna är fortfarande vilt och slaktas vid slaktbänken (raden vargdel i DJUR, redskap.ts)
   vargdel: { namn: 'Vargstycke', ett: true, skaffa: { act: 'jakt' }, vikt: 10, stack: 1, mapp: 'Material', haller: 3 },
   radjurdel: { namn: 'Rådjursstycke', ett: true, skaffa: { act: 'jakt' }, vikt: 10, stack: 1, mapp: 'Material', haller: 3 },
+  bjorndel: { namn: 'Björnstycke', ett: true, skaffa: { act: 'jakt' }, vikt: 10, stack: 1, mapp: 'Material', haller: 3 }, // steg 6.6.6
 } satisfies Record<string, SakDef>;
 
 type Sak = keyof typeof DEF;

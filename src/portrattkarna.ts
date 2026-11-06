@@ -50,7 +50,8 @@ const PORTRATT = {
     {"id": "harskinn", "namn": "Harskinn", "toner": ["jord0", "jord1", "jord2", "ben0"]},
     {"id": "vargskinn", "namn": "Vargskinn", "toner": ["kol2", "kol3", "skiffer2", "skiffer3"]},
     {"id": "rep", "namn": "Rep", "toner": ["jord0", "senap0", "senap1", "senap2"]},
-    {"id": "rovarskinn", "namn": "Mörkt, slitet skinn", "toner": ["kol0", "kol1", "jord0", "jord1"], "rovare": true}
+    {"id": "rovarskinn", "namn": "Mörkt, slitet skinn", "toner": ["kol0", "kol1", "jord0", "jord1"], "rovare": true},
+    {"id": "bjornskinn", "namn": "Björnskinn", "toner": ["kol0", "jord0", "jord1", "jord2"]}
   ],
   "mallar": [
     {"id": "kvinna", "namn": "Kvinna", "ritad": 2, "huvud": {"cx": 32, "cy": 30, "rx": 15, "ry": 20, "under": [1, 1]}, "fast": {"oga": [[26, 30], [38, 30]], "ogonbryn": [[26, 25], [38, 25]], "nasa": [32, 31], "mun": [32, 43], "ora": [[16.5, 33], [47.5, 33]], "har": [32, 10], "skagg": [32, 43], "huvudbonad": [32, 10], "halsband": [32, 57], "redskap": [54, 52]}, "munruta": [26, 41, 37, 46], "karta": {"huvud": 1, "bal": [7, 12], "ben": [13, 18], "bredd": [4, 9], "armar": [3, 10]}, "zoner": [["oron", [12, 26, 19, 41], [45, 26, 52, 41]], ["oga-v", [21, 27, 30, 33]], ["oga-h", [33, 27, 42, 33]], ["mun", [26, 41, 37, 46]], ["skalle", [0, 0, 63, 18]], ["lugg", [18, 19, 45, 24]], ["sidor", [0, 19, 17, 52], [46, 19, 63, 52]]], "kropp": {"hals": 5.3, "axel0": 54, "axel1": 61, "bredd": 26.5, "nyckelben": true}, "vad": "Kvinnans mall: samma skalle som de andra, smalare hals och smalare, sluttande axlar. På kartan smalare axlar och bredare höfter."},
@@ -297,7 +298,7 @@ const PORTRATT = {
     {"id": "forband-huvud", "sort": "forband", "namn": "Runt huvudet", "karta": "huvud", "ritad": 2},
     {"id": "forband-oga", "sort": "forband", "namn": "Över ögat", "karta": "oga", "maskar": ["oga-v"], "ritad": 3, "forra": "bandaget var bättre på den förra versionen. Det var inte det som var problemet. Problemet är att ögat som INTE är täckt inte ritas på bilden. Ögat som inte är täckt med bandage ska fortfarande synas"},
     {"id": "ogonlapp", "sort": "ogonlapp", "namn": "Ögonlapp", "maskar": ["oga-h"], "ritad": 0},
-    {"id": "plagg-rock", "sort": "klader", "namn": "Rock", "plagg": "rock", "material": ["harskinn", "vargskinn", "rovarskinn"], "zoner": ["bal", "armar"], "lang": true, "ritad": 3},
+    {"id": "plagg-rock", "sort": "klader", "namn": "Rock", "plagg": "rock", "material": ["harskinn", "vargskinn", "rovarskinn", "bjornskinn"], "zoner": ["bal", "armar"], "lang": true, "ritad": 3},
     {"id": "plagg-skor", "sort": "klader", "namn": "Skor", "plagg": "skor", "material": ["harskinn"], "zoner": ["fotter"], "ritad": 0},
     {"id": "plagg-balte", "sort": "klader", "namn": "Bälte", "plagg": "balte", "material": ["rep"], "zoner": ["midja"], "portratt": false, "ritad": 0},
     {"id": "redskap-yxa", "sort": "redskap", "namn": "Flintyxa", "sak": "yxa", "form": "yxa", "ritad": 5},

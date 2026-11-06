@@ -2235,3 +2235,63 @@ SCENARIER.bjornmote = {
     ];
   },
 };
+
+SCENARIER.bjornjakt = {
+  lang: true,
+  text: 'Steg 6.6.6: björnjakten. När någon sett björnen kan byn gå på björnjakt, men bara en stor grupp med spjut: med för få spjut blir det ingen jakt. Jägarna följer björnen och anfaller den tillsammans. En fälld björn kommer inte tillbaka det året; den styckas där den föll, bärs hem i delar och ger björnskinnet, och den som fällde den blir björndödare',
+  kor: () => {
+    const s0 = createState(6, START);
+    // ett ögonblick i dagsljus med björnen ute utan ungar
+    let t0: number | undefined;
+    for (let t = s0.now; t < s0.now + 60 * DAY && t0 === undefined; t += 20 * 60_000) {
+      const b = SIM.bjornarOf(s0, t);
+      if (b.length === 1 && SIM.isLight(t) && SIM.isLight(t + 4 * HOUR)) t0 = t;
+    }
+    if (t0 === undefined) return [['ett ögonblick med björnen', false]];
+    const json = JSON.stringify(s0);
+    const by = (spjut: number, forsok: number) => {
+      const s = migrate(JSON.parse(json)); s.now = t0! + forsok * 7 * 60_000;
+      for (let r = 0; r < forsok * 13; r++) SIM.rnd(s, 'bjorn');
+      for (const [x, a] of [['m', 30], ['k', 28], ['m', 35], ['k', 24], ['m', 40], ['k', 33]] as const) nyInvanare(s, x, a);
+      setMat(s, { vilt: 30, bar: 30 });
+      const vuxna = living(s).filter(q => SIM.ageOf(q, s.now) >= 18 && SIM.ageOf(q, s.now) < 50);
+      vuxna.forEach((q, i) => { if (i < spjut) { const k = SIM.addTool(s, 'flintspjut', q); k.hos = q.id; } SIM.addTool(s, 'kniv', q).hos = q.id; q.pot.mod = 18; q.pot.styrka = 16; });
+      for (const q of living(s)) (q.tek ??= {}).kniv = 1;
+      const b = SIM.bjornarOf(s).find(d => d.art === 'bjorn')!;
+      s.bjornJakt = { ar: SIM.yearNo(s, s.now), sedd: s.now, sag: vuxna[0].id };
+      for (let i = 0; i < 30 && !s.bjornJakt?.jagare; i++) { s.bjornJakt!.timme = undefined; SIM.bjornSteg(s); }
+      const jagare = s.bjornJakt?.jagare?.length ?? 0;
+      if (!jagare) return { s, jagare, b };
+      for (let i = 0; i < 12 * 5 * 60 / 5 && (s.stat?.bjornstrid ?? 0) + (s.stat?.bjornjaktGick ?? 0) === 0; i++) step(s, BEAT);
+      for (let i = 0; i < 60; i++) step(s, BEAT); // styckningen och bärandet börjar
+      return { s, jagare, b };
+    };
+    const fa = by(3, 0);
+    let jakter = 0, strider = 0, falld = 0, borta = 0, dodare = 0, delar = 0, skinn = 0, gick = 0, maxJ = 0;
+    for (let f = 0; f < 10; f++) {
+      const { s, jagare } = by(6, f);
+      if (!jagare) continue;
+      jakter++; maxJ = Math.max(maxJ, jagare);
+      strider += s.stat?.bjornstrid ? 1 : 0; gick += s.stat?.bjornjaktGick ? 1 : 0;
+      if (s.bjornFalld !== undefined) {
+        falld++;
+        if (!SIM.bjornarOf(s).length && !SIM.bjornarOf(s, s.now + 30 * HOUR * 0 + 2 * HOUR).length) borta++;
+        if (living(s).some(q => SIM.ryktbarhet(s, q.id) && (q.liv?.bjornar ?? 0) > 0)) dodare++;
+        const ute = SIM.pilesOf(s).reduce((a, h) => a + (h.k === 'bjorndel' ? h.n : 0), 0) + living(s).reduce((a, q) => a + (q.task?.items?.bjorndel ?? 0), 0) + amountOf(s, 'bjorndel');
+        if (ute > 0) delar++;
+        if (SIM.pilesOf(s).some(h => h.k === 'bjornskinn') || amountOf(s, 'bjornskinn') > 0) skinn++;
+      }
+    }
+    return [
+      [`med för få spjut går ingen på björnjakt (${fa.jagare} jägare)`, fa.jagare === 0],
+      [`med sex spjut kallar byn till björnjakt (${jakter} av 10)`, jakter >= 8],
+      [`en stor grupp följer med (högst ${maxJ})`, maxJ >= SIM.BJORNJAKT.spjut],
+      [`jägarna når björnen och slåss, eller den går undan (${strider} strider, ${gick} gick undan)`, strider + gick === jakter && strider > 0],
+      [`björnen fälls ibland (${falld} av ${strider})`, falld > 0],
+      [`en fälld björn är borta resten av året (${borta} av ${falld})`, borta === falld],
+      [`den som fällde den är björndödare (${dodare} av ${falld})`, dodare === falld],
+      [`björnen styckas och bärs hem i delar (${delar} av ${falld})`, delar === falld],
+      [`skinnet ligger i högen eller i förrådet (${skinn} av ${falld})`, skinn === falld],
+    ];
+  },
+};

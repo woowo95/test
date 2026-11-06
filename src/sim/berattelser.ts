@@ -95,6 +95,7 @@ const BDEF: Record<IntryckTyp, BinamnDef> = {
   feg: { namn: [['Haren', 'Haren'], ['den rädde', 'den rädda'], ['Darraren', 'Darrerskan'], ['Hönan', 'Hönan']] },
   smakfull: { namn: [['den smakfulle', 'den smakfulla'], ['Prydnaden', 'Prydnaden'], ['den fine', 'den fina'], ['Blomkrukan', 'Blomkrukan']] }, // pyntet (steg 4.3.4)
   vargdodare: { namn: [['Vargdödaren', 'Vargdödaren'], ['Vargbane', 'Vargbane'], ['den modige', 'den modiga'], ['Ulvspjutet', 'Ulvspjutet']] },
+  bjorndodare: { namn: [['Björndödaren', 'Björndödaren'], ['Björnbane', 'Björnbane'], ['den orädde', 'den orädda'], ['Björnfällen', 'Björnfällen']] }, // steg 6.6.6
 };
 export const BINAMN: Record<IntryckTyp, BinamnDef> = BDEF;
 
@@ -851,6 +852,30 @@ const MDEF = {
     'Vargarna kom ur skogen, och {svara} skadades svårt.',
     '{svara} skadades svårt när vargar anföll, och byn blev rädd.',
     { t: 'Mitt i natten anföll vargar, och {svara} skadades svårt.', om: f => f.natt === true },
+  ],
+  // björnjakten (steg 6.6.6, bjorn.ts)
+  k_bjornjakt: [
+    '{folk} gick på björnjakt och fällde björnen.{svara}',
+    'Det var {arstid} när {folk} gick på björnjakt. De fällde björnen.{svara}',
+    'Byn talade länge om björnjakten: {folk} mot björnen, och björnen föll.{svara}',
+    'Med spjuten i händerna gick {folk} mot björnen, och de fällde den.{svara}',
+    { t: 'I regnet följde {folk} björnens spår och fällde den.{svara}', om: f => f.regn === true },
+  ],
+  k_bjornjaktMiss: [
+    '{folk} gick på björnjakt, men björnen kom undan.{svara}',
+    'Det var {arstid} när {folk} gick på björnjakt. Björnen var för stark, och den gick sin väg.{svara}',
+    'Björnen stod emot {folk} på björnjakten och kom undan.{svara}',
+  ],
+  k_bjornSprang: [
+    '{namn} gick på björnjakt{med}, men björnen hörde dem och försvann in i skogen.',
+    'Det var {arstid} när {namn} gick på björnjakt{med}. Björnen gick undan innan de hann fram.',
+    'Björnen märkte {namn}{med} på björnjakten och gick sin väg.',
+  ],
+  k_forstaBjorn: [
+    '{namn} dödade byns första björn.',
+    'Det var {namn} som fällde byns första björn.',
+    'Ingen i byn hade fällt en björn förut. Sedan gjorde {namn} det.',
+    'Det var {arstid} när {namn} dödade byns första björn.',
   ],
   k_bjornAnfall: [
     'En björn anföll {folk}.{svara}',

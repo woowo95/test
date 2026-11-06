@@ -5,6 +5,7 @@ import { iVattnetNu, strandNu, vattenNu } from './sjo';
 import { freeTools, take } from './agande';
 import { PLATS } from './plats';
 import { vargSkydd, vargjaktVal } from './varg';
+import { bjornjaktVal } from './bjorn';
 import { tornadoSkydd } from './tornado';
 import { brandVal, hjalpaVal, slackaSigVal } from './brand';
 import { foodDays, foodDaysAll } from './ekonomi';
@@ -505,6 +506,12 @@ export const ARBETEN: readonly Arbete[] = [
     const j = vargjaktVal(s, p);
     if (!j) return false;
     set(v, 'vargjakt', j.why); v.spot = j.spot; v.dur = j.dur; return true;
+  } },
+  // ... och den som ska följa med på björnjakten (bjorn.ts, steg 6.6.6)
+  { id: 'bjornjakt', niva: 3, prova: ({ s, p, v }) => {
+    const j = bjornjaktVal(s, p);
+    if (!j) return false;
+    set(v, 'bjornjakt', j.why); v.spot = j.spot; v.dur = j.dur; return true;
   } },
   // handlaren är här och byn har inte handlat (steg 4.4.1.3, handel.ts); på kvällen ligger filten ute (steg 4.5.4.11). Behovet
   // stiger under handlarens besök; den som står i kön eller handlar fortsätter

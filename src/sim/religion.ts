@@ -141,7 +141,7 @@ export const GUDAR = {
   sjon: { namn: 'Sjön och vattnet', om: 'sjön och vattnet', forled: ['Djup', 'Våg', 'Sjö', 'Strand'], i: ['den stora gäddan', 'djupet', 'forsen'], heder: [], sym: 'gud_sjon' },
   skord: { namn: 'Skörd och jord', om: 'skörden och jorden', forled: ['Ax', 'Korn', 'Mull', 'Fröd'], i: ['den första tuvan', 'det gamla äppelträdet', 'åkerns sten'], heder: ['generos', 'flitig', 'rattvis'], sym: 'gud_skord' },
   doden: { namn: 'Döden', om: 'döden', forled: ['Grav', 'Mörk', 'Natt', 'Skugg'], i: ['korpen', 'den döda granen', 'mossen'], heder: [], sym: 'gud_doden' },
-  jakt: { namn: 'Jakt och skog', om: 'jakten och skogen', forled: ['Varg', 'Hjort', 'Skog', 'Björk'], i: ['den vita hjorten', 'den gamla vargen', 'den stora granen'], heder: ['vargdodare'], sym: 'gud_jakt' },
+  jakt: { namn: 'Jakt och skog', om: 'jakten och skogen', forled: ['Varg', 'Hjort', 'Skog', 'Björk'], i: ['den vita hjorten', 'den gamla vargen', 'den stora granen'], heder: ['vargdodare', 'bjorndodare'], sym: 'gud_jakt' },
   elden: { namn: 'Elden', om: 'elden', forled: ['Eld', 'Glöd', 'Brand', 'Bål'], i: ['glöden', 'den svarta stenen vid elden', 'röken'], heder: [], sym: 'gud_elden' },
   vintern: { namn: 'Vintern och isen', om: 'vintern och isen', forled: ['Is', 'Frost', 'Snö', 'Rim'], i: ['isen på sjön', 'snöugglan', 'den frusna forsen'], heder: [], sym: 'gud_vintern' },
   solen: { namn: 'Solen', om: 'solen', forled: ['Sol', 'Ljus', 'Dag', 'Glans'], i: ['solstenen', 'lärkan', 'kullen i öster'], heder: [], sym: 'gud_solen' },
