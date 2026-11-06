@@ -80,8 +80,11 @@ SCENARIER.yxa = {
     const fallda = new Set<number>();
     let ved = 0;
     const rojs = new Set<number>(); // träd i ett lager i skogen (steg 3.6.9): de fälls i förväg och huggs upp när byn behöver ved
-    kor(s, 10 * 24, s => { ved = Math.max(ved, amountOf(s, 'ved')); for (const i of skaRojas(s)) rojs.add(i); for (const k of s.stockar ?? []) fallda.add(tileOf(k.x, k.y)); });
-    const liggande = (s.stockar ?? []).filter(k => !rojs.has(tileOf(k.x, k.y))).length;
+    // när varje stam blev liggande: sedan steg 7.1.1 följer yxan med i fällarens bälte, så stammarna huggs upp när byn behöver
+    // ved, inte genast; ingen ska ligga kvar längre än två dygn
+    const sedan = new Map<number, number>();
+    kor(s, 10 * 24, s => { ved = Math.max(ved, amountOf(s, 'ved')); for (const i of skaRojas(s)) rojs.add(i); for (const k of s.stockar ?? []) { fallda.add(tileOf(k.x, k.y)); if (!sedan.has(k.id)) sedan.set(k.id, s.now); } });
+    const liggande = (s.stockar ?? []).filter(k => !rojs.has(tileOf(k.x, k.y)) && s.now - (sedan.get(k.id) ?? s.now) > 2 * DAY).length;
     const g = groundOf(s);
     // på gångstråken trampas marken där träden stod till jord, så räkna bara utanför dem (byns område täcker sedan steg 6.2.1
     // också skogen där byn fäller, så området går inte att räkna bort)
@@ -92,7 +95,7 @@ SCENARIER.yxa = {
       ['träd har fällts', (s.fallda ?? 0) >= 3],
       ['ved har huggits', ved > 0],
       [`gräs där träden stod utanför stråken, minst hälften (${gras} av ${ute.length})`, ute.length >= 3 && gras >= ute.length / 2],
-      [`stammarna huggs upp (högst 2 liggande utanför lagret i skogen: ${liggande})`, liggande <= 2]];
+      [`stammarna huggs upp (ingen ligger mer än två dygn utanför lagret i skogen: ${liggande})`, liggande === 0]];
   },
 };
 

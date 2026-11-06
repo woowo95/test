@@ -44,7 +44,7 @@ const DEF = {
   balte: { namn: 'Bälte', ikon: '➰' },
   krok: { namn: 'Kroken i bältet', ikon: '🪝' }, // redskapet som hänger i bältet medan man bär
   krok2: { namn: 'Andra kroken i bältet', ikon: '🪝' }, // steg 7.1.1: ett eget redskap som hänger där medan man arbetar med ett annat
-  axelrem: { namn: 'Axelrem', ikon: '🎗️' }, // steg 7.1.2: plagget
+  axelrem: { namn: 'Axelrem', ikon: '➰' }, // steg 7.1.2: plagget
   axel: { namn: 'Axeln', ikon: '🔱' }, // och redskapet som hänger i det medan man bär
   rygg: { namn: 'Ryggen', ikon: '🎒' }, // steg 7.1.3: ryggsäcken, och bördan i den
 } satisfies Record<string, PlatsDef>;
