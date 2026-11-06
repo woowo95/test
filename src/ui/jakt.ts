@@ -1,4 +1,4 @@
-import { JAKTSYN, Jaktforsok, Person, SEC, Task, jaktForlopp, living, taskName, taskText } from '../sim';
+import { JAKTSYN, Jaktforsok, Person, SEC, Task, arRadjur, jaktForlopp, living, taskName, taskText } from '../sim';
 import { s, ui, vidNyBy } from './lage';
 
 // ---------- jakten som syns (Björn efter v159, omskriven i steg 4.5.4.1) ----------
@@ -31,20 +31,20 @@ const avst = (a: P, b: P) => Math.hypot(a.x - b.x, a.y - b.y);
 // vad jägaren gör vid tiden u (sekunder från början): var hen är, symbolen över huvudet och texten under Gör just nu
 type Fas = { x: number; y: number; mark?: string; text: string };
 function fasAv(f: Jaktforsok, u: number): Fas {
-  const o = jaktForlopp(f);
+  const o = jaktForlopp(f), dj = arRadjur(f.id) ? 'rådjuret' : 'haren'; // rådjuret (steg 6.6.2)
   if (u < o.tS) { // letar: slingrar sig fram mot platsen där hen börjar smyga, i jämn fart
     const k = u / o.tS, d = avst(o.S, o.Q), nx = d > 0.01 ? -(o.Q.y - o.S.y) / d : 0, ny = d > 0.01 ? (o.Q.x - o.S.x) / d : 0;
     const sv = Math.sin(k * Math.PI * 3) * Math.sin(k * Math.PI) * SLINGA * Math.min(1, d / 2);
     const at = mot(o.S, o.Q, k);
     return { x: at.x + nx * sv, y: at.y + ny * sv, text: 'letar efter harar' };
   }
-  if (u < o.tA) return { ...mot(o.Q, o.P, (u - o.tS) / (o.tA - o.tS)), mark: 'a_smyga', text: 'smyger mot en hare' };
-  if (u < o.tK) return { ...o.P, mark: o.kast ? 'a_sikta' : 'a_jaga', text: o.kast ? 'siktar' : f.hand ? 'griper haren' : 'sticker' };
+  if (u < o.tA) return { ...mot(o.Q, o.P, (u - o.tS) / (o.tA - o.tS)), mark: 'a_smyga', text: arRadjur(f.id) ? 'smyger mot ett rådjur' : 'smyger mot en hare' };
+  if (u < o.tK) return { ...o.P, mark: o.kast ? 'a_sikta' : 'a_jaga', text: o.kast ? 'siktar' : f.hand ? `griper ${dj}` : 'sticker' };
   if (u < o.tI) return { ...o.P, mark: 'a_sikta', text: 'kastar' };
   const G = o.G ?? o.P, fangad = f.ut === 'fangad';
-  const hamtar = o.kast ? (fangad ? 'hämtar haren' : f.v === 'sten' ? 'hämtar stenen' : 'hämtar spjutet') : fangad ? 'tar haren' : 'ser haren springa';
+  const hamtar = o.kast ? (fangad ? `hämtar ${dj}` : f.v === 'sten' ? 'hämtar stenen' : 'hämtar spjutet') : fangad ? `tar ${dj}` : `ser ${dj} springa`;
   if (u < o.tG) return { ...mot(o.P, G, Math.min(1, (u - o.tI) / Math.max(0.01, o.tG - o.tI - 3))), text: hamtar };
-  return { ...mot(G, o.S, Math.min(1, (u - o.tG) / Math.max(0.01, o.E - o.tG - 1))), text: fangad ? 'bär haren' : 'går tillbaka' };
+  return { ...mot(G, o.S, Math.min(1, (u - o.tG) / Math.max(0.01, o.E - o.tG - 1))), text: fangad ? (arRadjur(f.id) ? 'tar hand om rådjuret' : 'bär haren') : 'går tillbaka' };
 }
 
 // var jägaren syns och vilken symbol hen har över huvudet, när ett försök pågår vid tiden som visas
@@ -60,7 +60,7 @@ export function jaktText(p: Person): string | undefined {
 
 // kaninerna som någon jagar just nu: var de syns, om de ligger fångade, och om de nyss såg jägaren (utropstecknet).
 // Spjutet eller stenen i luften: från, till och hur långt det kommit
-export interface JagadKanin { id: number; x: number; y: number; ligger: boolean; larm: boolean }
+export interface JagadKanin { id: number; x: number; y: number; ligger: boolean; larm: boolean; radjur: boolean }
 export function jagade(): { kaniner: JagadKanin[]; kast: { fran: P; till: P; k: number; sten: boolean }[] } {
   const kaniner: JagadKanin[] = [], kast: { fran: P; till: P; k: number; sten: boolean }[] = [];
   for (const [pid] of forsok) {
@@ -71,7 +71,7 @@ export function jagade(): { kaniner: JagadKanin[]; kast: { fran: P; till: P; k: 
     const ligger = f.ut === 'fangad' && u >= o.tI;
     if (ligger && u >= o.tG - 3) continue; // jägaren har tagit upp den
     if (!ligger && u >= o.tF + JAKTSYN.flyS) continue; // den har flytt och syns med de andra i flocken igen (som flytt med den)
-    kaniner.push({ id: f.id, ...o.kanin(ligger ? o.tI : u), ligger, larm: u >= o.tF && u < o.tF + LARM_S });
+    kaniner.push({ id: f.id, ...o.kanin(ligger ? o.tI : u), ligger, larm: u >= o.tF && u < o.tF + LARM_S, radjur: arRadjur(f.id) });
   }
   return { kaniner, kast };
 }

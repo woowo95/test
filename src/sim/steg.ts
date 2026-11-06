@@ -51,7 +51,7 @@ import { rovarSteg, rovarTornado } from './rovare';
 import { handelSteg, handlaKlar, handlarMal, handlarPlats, handlarTornado, pratMedHandlare } from './handel';
 import { klanSteg } from './klaner';
 import { vaktSteg } from './vakt';
-import { JAKT, jaktForsok, jaktKlar } from './jakt';
+import { JAKT, jaktBar, jaktFallt, jaktForsok, jaktKlar } from './jakt';
 import { bristSteg, frysFaktor, naringSjunker, skorbjugg, trottFaktor } from './naring';
 import { stepByggnader } from './byggnader';
 import { sumOf } from './egendom';
@@ -668,13 +668,13 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
     // Försöket planeras när det börjar och avgörs när det är slut (Björn efter v159): prog = sekunder sedan det började
     tk.prog = (tk.prog ?? 0) + dtSec;
     if (tk.jf && s.now - tk.jf.t > (JAKT.smygSek + tk.jf.extra + dtSec + 1) * SEC) { tk.jf = undefined; tk.prog = dtSec; } // jägaren gick ifrån försöket: börja om
-    while (!tk.carry) {
+    while (!jaktBar(tk)) {
       if (!tk.jf && jaktForsok(s, p, tk, s.now - tk.prog * SEC) < 0) { tk.prog = 0; break; } // ingen kanin nära: hen går dit det finns kaniner eller letar vidare
       const lang = JAKT.smygSek + tk.jf!.extra;
       if (tk.prog < lang) break;
       tk.prog -= lang; jaktKlar(s, p, tk);
     }
-    if (tk.carry) tk.prog = 0;
+    if (jaktBar(tk)) tk.prog = 0;
     return true;
   },
 };
@@ -872,7 +872,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
     const n = d.fart && !full && tk.until > now + 2 * MIN ? nastaBuske(s, res!, tk.tx, tk.ty) : undefined;
     if (n) { tk.phase = 'go'; tk.tx = n.x; tk.ty = n.y; } else if (!(tk.tandmat && tinderShort(s, tk))) tk.until = now;
   }
-  if ((full || (d.hemVarje && tk.carry > 0)) && has) {
+  if ((full || (d.hemVarje && tk.carry > 0) || (tk.act === 'jakt' && jaktFallt(tk))) && has && !(tk.styckTill && tk.styckTill > now)) { // den som styckar ett djur gör det klart först (styckning.ts)
     if (tk.until > now + 2 * MIN) tk.res = { x: tk.tx, y: tk.ty, until: tk.until };
     tk.until = now; count(s, 'turer');
   }

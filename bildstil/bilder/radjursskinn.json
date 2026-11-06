@@ -1,0 +1,26 @@
+{
+ "id": "radjursskinn",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "val 1 i f6_radjursskinn: utbrett, med en ljus fläck där spegeln satt",
+ "w": 13,
+ "h": 10,
+ "rader": [
+  "mmo..ooo..omm",
+  "ommoomdmoommo",
+  ".ommmmdmmmmo.",
+  "..ommmdmmmo..",
+  "..ommmdmmmo..",
+  "..ommmdmmmo..",
+  "..ommmdmmmo..",
+  ".ommmmdmmmmo.",
+  "ommoocccoommo",
+  "mmo..oco..omm"
+ ],
+ "pal": {
+  "m": "#7d5b40",
+  "o": "#24201d",
+  "d": "#5e3c24",
+  "c": "#dad0bb"
+ }
+}

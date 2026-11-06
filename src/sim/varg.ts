@@ -425,7 +425,7 @@ function vanta(s: State, f: Vargflock, folk: Person[], dtSec: number) {
 
 // flocken tar mat ur förrådet: köttet först, hela saker. Listan går art för art (hela kroppar, kött, fisk, det lagade);
 // en fälld varg i förrådet kan också tas (det är avsiktligt, kodgenomgången 3.10.25)
-const STJALS = ['vilt', 'varg', 'vargdel', 'kott', 'vargkott', 'fisk', 'abborre', 'grillkott', 'torrkott'];
+const STJALS = ['vilt', 'varg', 'vargdel', 'radjur', 'radjurdel', 'kott', 'vargkott', 'fisk', 'abborre', 'grillkott', 'torrkott'];
 function stjal(s: State, f: Vargflock) {
   let n = Math.max(1, Math.round(f.vargar.length * VARG.stjalPer)), tog = 0;
   for (const k of STJALS) while (n > 0 && SAKER[k] && amountOf(s, k) >= 1) { addTo(s, k, -1); n--; tog++; }

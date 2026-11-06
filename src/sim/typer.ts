@@ -134,6 +134,7 @@ export interface Task {
   pk?: string; // nyckeln som vägen gäller för: målet och byggversionen. Ändras den räknas vägen om
   ref?: number; // det arbetet gäller: stammen som huggs, biten som byggs eller huset som ett träd fälls för
   prog?: number; // fiske: sekunder arbete mot nästa försök
+  styckTill?: number; // styckningen av ett fällt djur pågår till dess (styckning.ts, steg 6.6.2)
   jf?: Jaktforsok; // jakten: försöket som pågår (jakt.ts, Björn efter v159)
   mal?: string; // måltiden vid bordet: det som åts, som syns på bordet och i händerna (behov.ts, steg 3.10.3)
   leta?: 'grupp' | 'karta'; // jakten: hen går mot en grupp kaniner hen ser, eller letar dit kaninerna brukar vara (jakt.ts, steg 3.10.3)

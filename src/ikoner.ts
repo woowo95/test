@@ -3796,7 +3796,7 @@ for (const k of ['brand', 'tornado']) { PIX[k] = KARTBILDER[k].rader; PAL[k] = K
   PAL.vattensack = b.pal; }
 // fas 6:s nya saker som bara har bildstilens bild (nävern, steg 6.3.3): symbolen i listorna är bilden mitt i rutan på
 // 16 × 16 punkter, förstorad två gånger om den ryms
-for (const k of ['naver', 'talg', 'fackla', 'talgljus', 'vargdel']) {
+for (const k of ['naver', 'talg', 'fackla', 'talgljus', 'vargdel', 'radjurdel', 'radjursskinn', 'radjur']) {
   const b = KARTBILDER[k]!, w = 16, f = 2 * b.w <= w && 2 * b.h <= w ? 2 : 1, x0 = (w - f * b.w) >> 1, y0 = (w - f * b.h) >> 1;
   PIX[k] = Array.from({ length: w }, (_, y) => Array.from({ length: w }, (_, x) => { const yy = Math.floor((y - y0) / f), xx = Math.floor((x - x0) / f); return yy >= 0 && xx >= 0 ? b.rader[yy]?.[xx] ?? '.' : '.'; }).join(''));
   PAL[k] = b.pal;
@@ -3806,7 +3806,7 @@ for (const k of ['naver', 'talg', 'fackla', 'talgljus', 'vargdel']) {
 // där hållet är sida, vast, fram eller bak. Vilken ritning och päls ett djur har räknas ur dess id (djurBild)
 export const DJUR_HALL = ['sida', 'vast', 'fram', 'bak'] as const;
 export type DjurHall = typeof DJUR_HALL[number];
-for (const art of ['varg', 'kanin'] as const) DJURBILDER.ritningar[art].forEach((r, v) => DJURBILDER.pals[art].forEach((pals, p) => {
+for (const art of ['varg', 'kanin', 'radjur'] as const) DJURBILDER.ritningar[art].forEach((r, v) => DJURBILDER.pals[art].forEach((pals, p) => {
   const pal: Record<string, string> = {};
   for (const [ch, [ramp, ton]] of Object.entries({ ...DJURBILDER.fast, ...pals })) pal[ch] = farg(ramp, ton);
   for (const h of DJUR_HALL) {
@@ -3816,7 +3816,7 @@ for (const art of ['varg', 'kanin'] as const) DJURBILDER.ritningar[art].forEach(
 }));
 // djurets bild: ritningen och pälsen ur id:t (som djurets andra egenskaper, steg 3.7.13) och hållet det rör sig åt
 const idTal = (id: number, salt: number) => { let h = Math.imul(id ^ salt, 2654435761) >>> 0; h ^= h >>> 15; h = Math.imul(h, 2246822519) >>> 0; return (h ^ (h >>> 13)) >>> 0; };
-export function djurBild(art: 'varg' | 'kanin', id: number, hall: DjurHall) {
+export function djurBild(art: 'varg' | 'kanin' | 'radjur', id: number, hall: DjurHall) {
   const v = idTal(id, 0x51a7) % DJURBILDER.ritningar[art].length, p = idTal(id, 0x9e37) % DJURBILDER.pals[art].length;
   return `djur_${art}_${v}_${p}_${hall}`;
 }

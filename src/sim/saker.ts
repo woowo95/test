@@ -84,6 +84,8 @@ const DEF = {
   varg: { vikt: 15, namn: 'Fälld varg', skaffa: { act: 'jakt' }, stack: 1, mapp: 'Material', haller: 3 }, // en varg är en full famn
   vargkott: { namn: 'Vargkött', ett: true, skaffa: { min: 3, slag: 'bearbeta', tek: 'kniv' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2, fett: 1.2, energi: 0.8, mineral: 0.6, vitamin: 0.3 }, ra: true, haller: 2 },
   vargskinn: { namn: 'Vargskinn', ett: true, skaffa: { min: 5, slag: 'bearbeta', tek: 'kniv' }, stack: 5, mapp: 'Material', slits: 0.0006 },
+  radjur: { vikt: 15, namn: 'Fällt rådjur', skaffa: { act: 'jakt' }, stack: 1, mapp: 'Material', haller: 3 }, // steg 6.6.2: en full famn, som vargen
+  radjursskinn: { namn: 'Rådjursskinn', ett: true, skaffa: { min: 5, slag: 'bearbeta', tek: 'kniv' }, stack: 5, mapp: 'Material', slits: 0.0006 },
   // en hel fisk som den fångats (DJUR i redskap.ts). Den rensas vid elden till fiskkött (fisk), som är det man äter;
   // bara när inget annat finns äts den som den är
   abborre: { namn: 'Abborre', skaffa: { act: 'fiske' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 1.2, naring: { protein: 2, fett: 0.8, mineral: 0.7, energi: 0.6, vitamin: 0.3 }, ra: true, haller: 1 }, // den hela fisken äts strax efter fiskköttet: innan byn har en slaktbänk rensas den inte (steg 2.2.8)
@@ -155,6 +157,7 @@ const DEF = {
   // styckdelen (steg 6.6.1, styckning.ts): en bit av ett stort djur som var för tungt att bära helt och styckades där det
   // föll. Delarna är fortfarande vilt och slaktas vid slaktbänken (raden vargdel i DJUR, redskap.ts)
   vargdel: { namn: 'Vargstycke', ett: true, skaffa: { act: 'jakt' }, vikt: 10, stack: 1, mapp: 'Material', haller: 3 },
+  radjurdel: { namn: 'Rådjursstycke', ett: true, skaffa: { act: 'jakt' }, vikt: 10, stack: 1, mapp: 'Material', haller: 3 },
 } satisfies Record<string, SakDef>;
 
 type Sak = keyof typeof DEF;

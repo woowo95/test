@@ -2027,3 +2027,62 @@ SCENARIER.styckning = {
     ];
   },
 };
+
+SCENARIER.radjur = {
+  text: 'Steg 6.6.2: rådjur betar i små grupper i skogskanten, långt från byn, och flyr längre än hararna. Bara spjutet fäller ett rådjur; det bärs hem helt eller styckas där det föll, och slaktas till kött, ben, skinn och talg',
+  kor: () => {
+    const s0 = createState(6, START);
+    klockan(s0);
+    const g = SIM.radjurGrupper(s0), m = getMap(s0.seed), h = m.fire;
+    const kant = g.filter(q => isSoil(m.tiles[tileOf(q.x, q.y)])).length;
+    const langt = g.every(q => Math.hypot(q.x - h.x, q.y - h.y) >= SIM.RADJUR.hemAvst - 3);
+    const r0 = SIM.radjurOf(s0)[0];
+    // flykten: en människa nära rådjuret
+    const nara = { x: r0.x + 1, y: r0.y }, efter = SIM.radjurOf(s0, s0.now, [nara]).find(d => d.id === r0.id);
+    const flydde = !efter || Math.hypot(efter.x - nara.x, efter.y - nara.y) > Math.hypot(r0.x - nara.x, r0.y - nara.y) + 2;
+    // jakten: många försök från samma läge, med spjut och med stenar
+    const p0 = living(s0).find(q => SIM.ageOf(q, s0.now) >= 16)!;
+    const prova = (verktyg: string | undefined, n: number, styrka?: number) => {
+      const ut = { fallt: 0, radmal: 0, del: 0, hel: 0 };
+      const s = cloneState(s0), p = SIM.byId(s, p0.id)!;
+      if (styrka !== undefined) p.pot = { ...p.pot, styrka };
+      p.tek = { ...p.tek, kniv: 1 }; SIM.newTing(s, 'kniv', 1, p.id);
+      for (let i = 0; i < n; i++) {
+        Object.assign(s, { djurDoda: undefined, djurHalsa: undefined, djurSkramd: undefined, djurFlykt: undefined, stackar: [] }); s.ting = (s.ting ?? []).filter(t => t.k !== 'flintspjut');
+        if (verktyg) { const t = SIM.addTool(s, verktyg, p); t.hos = p.id; }
+        p.x = r0.x - 8; p.y = r0.y;
+        const tk = { act: 'jakt', phase: 'do', tx: r0.x, ty: r0.y, until: s.now + HOUR, carry: 0, tool: verktyg } as SIM.Task;
+        SIM.jaktForsok(s, p, tk);
+        if (!tk.jf) continue;
+        if (SIM.arRadjur(tk.jf.id)) ut.radmal++;
+        SIM.jaktKlar(s, p, tk);
+        if (tk.items?.radjur) { ut.fallt++; ut.hel++; }
+        if (tk.items?.radjurdel) { ut.fallt++; ut.del++; }
+        p.skador?.splice(0); p.health = 1;
+      }
+      return ut;
+    };
+    const spjut = prova('flintspjut', 150), sten = prova(undefined, 60), stark = prova('flintspjut', 150, 20);
+    // slakten
+    const s = createState(3, START);
+    medBank(s);
+    const q = living(s).find(x => SIM.ageOf(x, s.now) >= 16)!;
+    for (const r of s.people) r.tek = { ...r.tek, kniv: 1 };
+    s.ting = (s.ting ?? []).filter(t => t.k !== 'kniv'); SIM.newTing(s, 'kniv', 1, q.id);
+    setMat(s, {}); for (const k of ['kott', 'ben', 'radjursskinn', 'talg']) setAmount(s, k, 0); setAmount(s, 'radjur', 1);
+    SIM.bearbeta(s, q, SIM.DJUR.radjur, 1);
+    const fick = ['kott', 'ben', 'radjursskinn', 'talg'].map(k => `${k} ${amountOf(s, k)}`).join(', ');
+    return [
+      [`rådjursgrupper på kartan (${g.length}, ${g.reduce((a, x) => a + x.n, 0)} djur)`, g.length >= 1 && g.every(x => x.n >= SIM.RADJUR.storlek[0])],
+      [`grupperna står på mark, inte i vattnet (${kant} av ${g.length})`, kant === g.length],
+      ['grupperna betar långt från byns eld', langt],
+      ['rådjuret flyr från den som kommer nära', flydde],
+      [`med spjut går jägaren mot rådjuret (${spjut.radmal} av 150)`, spjut.radmal > 100],
+      [`med spjut fälls rådjur (${spjut.fallt} av 150)`, spjut.fallt > 0],
+      [`med stenar jagas inga rådjur (${sten.radmal})`, sten.radmal === 0],
+      [`den som inte orkar bära det helt styckar det (${spjut.del} styckade, ${spjut.hel} hela)`, spjut.del > 0],
+      [`den starka bär hem rådjuret helt (${stark.hel} hela, ${stark.del} styckade)`, stark.hel > 0],
+      [`slakten gav ${fick}`, amountOf(s, 'kott') >= 4 && amountOf(s, 'ben') === 2 && amountOf(s, 'radjursskinn') === 1 && amountOf(s, 'talg') === 2],
+    ];
+  },
+};

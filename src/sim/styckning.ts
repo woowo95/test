@@ -25,7 +25,7 @@ const artAv = (k: string): Djurart | undefined => Object.values(DJUR).find(a => 
 // kan p stycka ett djur av arten: arten styckas, hen kan kniven och byn har en
 const kanStycka = (s: State, p: Person, art: Djurart) => !!art.del && knows(p, 'kniv') && nTools(s, 'kniv') >= 1;
 
-// p ska bära hem ett fällt djur (saken k) från där hen står, och t är uppgiften som bär det (carry 1 av k). Väger det mer än
+// p ska bära hem ett fällt djur (saken k) från där hen står, och t är uppgiften som bär det (carry 1 av k, eller k bland sakerna). Väger det mer än
 // p orkar och hen kan stycka det, blir det delar: t bär så många delar som ryms, tiden förlängs med styckningen, och resten
 // läggs som en hög på platsen. Ger antalet delar som blev kvar (0 om djuret bärs helt)
 export function styckaFallt(s: State, p: Person, t: Task, k: string): number {
@@ -33,9 +33,13 @@ export function styckaFallt(s: State, p: Person, t: Task, k: string): number {
   if (!art || !art.del || viktOf(k) <= bordPlats(s, p) + 1e-9 || !kanStycka(s, p, art)) return 0;
   const delar = Math.ceil(viktOf(k) / STYCK.delVikt), dv = viktOf(art.del);
   const bar = Math.max(1, Math.min(delar, Math.floor(bordPlats(s, p) / dv + 1e-9)));
-  t.carry = 0;
-  t.items = { ...(t.items ?? {}), [art.del]: bar };
+  // djuret ligger i bördan (carry) eller bland sakerna (rådjuret från jakten, steg 6.6.2)
+  const items = { ...(t.items ?? {}) };
+  if (items[k]) { items[k]--; if (!items[k]) delete items[k]; } else t.carry = 0;
+  items[art.del] = (items[art.del] ?? 0) + bar;
+  t.items = items;
   t.until += delar * STYCK.minPerDel * MIN;
+  t.styckTill = s.now + delar * STYCK.minPerDel * MIN; // styckningen görs klart innan hen går hem (steg.ts)
   const kvar = delar - bar;
   // högen: delarna som inte bärs med och skinnet, som dras av när djuret styckas
   const hog: Record<string, number> = {};
