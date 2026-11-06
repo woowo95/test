@@ -212,6 +212,14 @@ const SALLSYNT: Record<string, string> = {
   flyEld: 'bara den som står nära en brinnande ruta och inte släcker går undan (steg 3.8.5); scenariot brand prövar branden',
   rock_vargskinn: 'en rock av vargskinn behöver två vargskinn, alltså två fällda vargar (steg 3.7.14), sällan på 35 dygn; scenariot plagg prövar den',
   skor_vargskinn: 'skor av vargskinn behöver ett vargskinn, alltså en fälld varg (steg 3.7.14), sällan på 35 dygn; scenariot plagg prövar dem',
+  vargdel: 'en styckdel av varg blir det bara när en fälld varg är för tung att bära hem (steg 6.6.1); scenariot styckning prövar det',
+  talgljus: 'talgljuset görs av två talg (steg 6.3.8), och talg blir det bara av slaktade rådjur och vargar, i 1 av 4 byar på 35 dygn; scenariot talgljus prövar det, och hur ofta det används ses över i fasens Balans (6.10)',
+  ljus: 'ett talgljus ställs bara fram när byn har ett (se talgljus); scenariot talgljus prövar det',
+  uppsatt: 'en fackla sätts bara upp när byn har en över (steg 6.3.7), och facklan görs i 1 av 4 byar på 35 dygn; scenariot uppsatt prövar det, och hur ofta det används ses över i fasens Balans (6.10)',
+  skinnfall: 'skinnfällen kommer man bara på när byn har skinn över och halmbäddar (steg 2.2.15), sällan på 35 dygn sedan skinnen blev kvar där djuret styckades (steg 6.6.1); scenariot skinnfall prövar det, och det ses över i fasens Balans (6.10)',
+  skinndorr: 'skinndörren kommer man bara på när byn har skinn över och ett hus med en öppen dörröppning (steg 2.2.16), sällan på 35 dygn; scenariot dorr prövar den, och det ses över i fasens Balans (6.10)',
+  skogsvard: 'skogsvården kommer man bara på när de närmaste träden att fälla står långt bort (steg 6.5.2), sällan på 35 dygn; scenariot skogsvard prövar den, och det ses över i fasens Balans (6.10)',
+  plantera: 'plantor flyttas bara av den som kan skogsvården (se skogsvard); scenariot skogsvard prövar det',
 };
 SCENARIER.aldrig = {
   text: 'Allt i registren används: varje handling, sak, husfunktion, djurart och teknik förekommer i minst en av fyra byar under 35 dygn (35 år i spelet, fem veckor i verkligheten)',
