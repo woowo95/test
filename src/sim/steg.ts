@@ -499,6 +499,8 @@ function walk(s: State, p: Person, tk: Task, left: number) {
     // den som själv är avskuren från lägret går rakt över. Den som bär en skadad eller vatten till någon går inte ifrån det
     const bara = tk.phase === 'back' && !LAMNA[tk.act];
     if (!v && (tk.phase === 'go' || bara) && pathFor(s, g, p.x, p.y, f.x + 0.5, f.y + 0.5)) { avbryt(s, p); return { used: Math.min(left, BIT), framme: false }; }
+    // nästa ruta på en runda eller promenad som inte går att nå (på andra sidan vattnet): rundan är slut, och man går inte rakt över
+    if (!v && tk.hopp) { tk.hopp = undefined; tk.tx = p.x; tk.ty = p.y; tk.pk = undefined; tk.until = Math.min(tk.until, s.now); return { used: Math.min(left, BIT), framme: false }; }
     tk.path = v ?? [];
   }
   const off = sida(p, 0.18), fart = kroppFart(p, s.now, tk.bar !== undefined), t0 = s.now; // åldern, skadorna, yrseln, att kravla och att bära någon (gångfartens register, gang.ts)
