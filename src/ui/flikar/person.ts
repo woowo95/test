@@ -53,7 +53,8 @@ export const person: Flik = {
 interface Del { id: string; tecken: string; namn: string; levande?: true; html(p: Person): string; kort?(p: Person): string; gast?(g: Gast): string }
 interface PFlik { id: string; tecken: string; namn: string; delar: string[] }
 const FLIKAR: PFlik[] = [
-  { id: 'om', tecken: '🪪', namn: 'Om', delar: ['pres', 'egen', 'tid'] },
+  { id: 'om', tecken: '🪪', namn: 'Om', delar: ['pres', 'tid'] },
+  { id: 'egen', tecken: '{sym_egenskaper}', namn: 'Egenskaper', delar: ['egen'] }, // en egen flik igen (steg 6.9.10)
   { id: 'kropp', tecken: '❤️', namn: 'Kropp', delar: ['behov', 'halsa'] },
   { id: 'saker', tecken: '🎒', namn: 'Saker', delar: ['utr', 'form'] },
   { id: 'folk', tecken: '👥', namn: 'Människor', delar: ['rel', 'ryk'] },
