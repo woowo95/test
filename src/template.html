@@ -18,7 +18,7 @@
   --bg: #24201d; --panel: #2f261d; --fg: #dad0bb; --muted: #a0947d; --line: #474138; --inner: #474138; --tartblek: #474138;
   --accent: #d8b25f; --accent-fg: #24201d; --good: #898b4c; --bad: #bd753e; --barbg: #372f25; color-scheme: dark;
 }
-header, .tabs, .controls { box-shadow: inset 0 0 0 1px var(--inner); }
+header, .controls { box-shadow: inset 0 0 0 1px var(--inner); }
 .controls { box-shadow: inset 0 0 0 1px var(--inner), 0 6px 24px rgba(36, 32, 29, 0.35); }
 /* Ramen på panelerna (steg 5.3.1.4), som hörnet Ormen i bildstilen: kol, grått, grått, kol på sidorna och två punkter kol
    överst och nederst. Hörnen (ui/ram.ts) ligger ovanpå och sticker ut utanför ramen */
@@ -148,7 +148,11 @@ body.hOppen .legend { right: calc(var(--stenar) + 14px + min(360px, 100vw - var(
 body.forradOppen .owned { display: block; }
 body.vOppen .owned { display: none; }
 /* flikknapparna i en kolumn längst till höger (runstenarna i steg 5.3.3.1) */
-.tabs { position: fixed; z-index: 2; right: 0; top: var(--topp); bottom: 0; width: var(--stenar); box-sizing: border-box; display: flex; flex-direction: column; gap: 6px; padding: 10px 6px; background: var(--panel); border-left: 1px solid var(--line); overflow-y: auto; }
+.tabs { position: fixed; z-index: 2; right: 0; top: var(--topp); bottom: 0; width: var(--stenar); box-sizing: border-box; display: flex; flex-direction: column; gap: 6px; padding: 10px 6px; background: none; overflow-y: auto; scrollbar-width: none; pointer-events: none; }
+/* runstenarna ligger direkt på kartan utan egen ruta (steg 6.9.4); bara stenarna tar emot musen, så kartan går att dra mellan dem.
+   Kugghjulet behåller sin ruta (#installKnapp) */
+.tabs > * { pointer-events: auto; }
+.runsten .sten { filter: drop-shadow(0 1px 1px rgba(0,0,0,0.55)); }
 .tabs button { background: none; border: 1px solid var(--line); border-radius: 18px 18px 4px 4px; color: var(--muted); font: inherit; font-size: 10px; font-weight: 500; padding: 14px 0 8px; cursor: pointer; overflow-wrap: normal; letter-spacing: -0.02em; } /* Pixelify Sans är bredare: hela ord på en rad */
 .tabs button[aria-selected="true"] { color: var(--accent-fg); background: var(--accent); border-color: var(--accent); font-weight: 700; }
 .tabs { padding-bottom: 52px; }
@@ -161,7 +165,7 @@ body.vOppen .owned { display: none; }
 .runsten[aria-selected="true"] .sten.oppen { display: block; }
 .runsten:disabled .sten.blek { display: block; }
 .runsten:disabled { cursor: default; }
-.runsten:not(:disabled):hover .sten { filter: brightness(1.12); }
+.runsten:not(:disabled):hover .sten { filter: brightness(1.12) drop-shadow(0 1px 1px rgba(0,0,0,0.55)); }
 .runsten .stennamn { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 /* bandet överst i en flik */
 /* bandet dubbelt så stort, och remsan ut till panelens kanter (steg 6.9.3): sju punkter i dubbel skala mitt i bandet */
