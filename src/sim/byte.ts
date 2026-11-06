@@ -2,7 +2,8 @@ import { ByteMinne, ByteVara, HOUR, LogEntry, MIN, SEC, Person, State } from './
 import { SAKER, isTool } from './saker';
 import { antal, och } from './ord';
 import { Ting } from './agande';
-import { ALDER, ageOf, log } from './folk';
+import { ALDER, ageOf } from './folk';
+import { loggBer } from './berattelser';
 import { ownMove } from './lager';
 import { grundvarde } from './varde';
 import { kvVarde } from './kvalitet';
@@ -160,9 +161,11 @@ export function byteKlart(s: State, m: Part, g: Part, fatt: Vara[], betal: Vara[
       { x, y: y + FILT_MOT / 2, slut, varor: betal.map(w => ({ k: w.k, n: w.t ? 1 : w.n, fran: m.id })), vem: m.id, par, byt: s.now });
     minne.fa = { x, y: y + FILT_MOT / 2 }; minne.fb = { x, y: y - FILT_MOT / 2 };
   } else { overlamna(s, fatt, g, m); overlamna(s, betal, m, g); }
-  const text = `${m.namn} och ${g.namn} bytte: ${varorText(fatt)} mot ${varorText(betal)}${desperat ? `. ${m.namn} höll på att dö` : ''}.`;
+  // raden ur mallen l_byte (steg 6.7.7); vardagens byten samlas (steg 6.7.5)
   const vardag = !hf && !stort && !desperat, slag = (v: Vara[]) => och([...new Set(v.map(w => SAKER[w.k]?.namn.toLowerCase() ?? w.k))]);
-  loggaByte(log(s, text, 'rel', [m.id, g.id].filter(i => i > 0), vardag ? { slag: 'byte', k: 0, n: '', d: `${slag(fatt)} mot ${slag(betal)}` } : undefined), minne, [m.p, g.p]); // vardagens byten samlas (steg 6.7.5)
+  const rad = loggBer(s, 'l_byte', Math.abs(m.id) * 997 + Math.abs(g.id), { namn: m.namn, med: g.namn, fatt: varorText(fatt), betal: varorText(betal), desperat }, 'rel', [m.id, g.id].filter(i => i > 0), vardag ? { slag: 'byte', k: 0, n: '', d: `${slag(fatt)} mot ${slag(betal)}` } : undefined);
+  const text = rad.text;
+  loggaByte(rad, minne, [m.p, g.p]);
   if (hf) notis(s, 'byte', text, [m.id, g.id].filter(i => i > 0));
   if (stort) kronika(s, text, 'byte');
   for (const f of vidByte) f(s, m, g, fatt, betal, minne);
@@ -173,7 +176,7 @@ export function byteKlart(s: State, m: Part, g: Part, fatt: Vara[], betal: Vara[
 export function gavaKlar(s: State, g: Part, m: Part, varor: Vara[], fara: boolean) {
   overlamna(s, varor, g, m);
   const barn = !!m.p && ageOf(m.p, s.now) < ALDER.vuxen && varor.some(w => w.t || isTool(w.k));
-  const text = `${g.namn} gav ${varorText(varor)} till ${m.namn}${fara ? `, som höll på att dö` : ''}.`;
-  if (fara || varor.some(w => w.t || isTool(w.k))) log(s, text, 'rel', [g.id, m.id].filter(i => i > 0)); // vardagens gåvor fyller inte loggen
-  if (fara || barn) kronika(s, text, 'gava');
+  // raden ur mallen l_gava (steg 6.7.7); vardagens gåvor fyller inte loggen
+  const f = { namn: g.namn, om: m.namn, varor: varorText(varor), fara, barn: !!m.p && ageOf(m.p, s.now) < ALDER.vuxen, honom2: m.p?.sex === 'k' ? 'henne' : 'honom' };
+  if (fara || varor.some(w => w.t || isTool(w.k))) { const rad = loggBer(s, 'l_gava', Math.abs(g.id) * 997 + Math.abs(m.id), f, 'rel', [g.id, m.id].filter(i => i > 0)); if (fara || barn) kronika(s, rad.text, 'gava'); }
 }

@@ -6,7 +6,7 @@ import { ALDER, REL, ageOf, alive, byId, count, isParent, living, log, newPerson
 import { pair } from './varld';
 import { avgMood } from './humor';
 import { chance, clamp, pick, rnd } from './slump';
-import { DAY, HOUR_S, Person, SEC, State } from './typer';
+import { Act, DAY, HOUR_S, Person, SEC, State } from './typer';
 import { foodDays } from './ekonomi';
 import { avbryt, put, releaseOwner } from './lager';
 import { inherit, packUp } from './arv';
@@ -94,14 +94,26 @@ export type Dodsorsak = keyof typeof DOD;
 export const DODSORSAKER: Record<Dodsorsak, DodDef> = DOD;
 
 // ---------- död, födsel, flytt ----------
+// vad den som dog i en olycka gjorde ({nar} i k_dog, steg 6.7.7): "när han fällde ett träd"
+const NAR_AKT: Partial<Record<Act, string>> = {
+  falla: 'fällde ett träd', hugga: 'högg ved', klyva: 'klöv virke', jakt: 'var ute på jakt', fiske: 'fiskade', ved: 'samlade grenar', samla: 'samlade bär',
+  bygga: 'byggde', odla: 'arbetade på fältet', bada: 'badade i sjön', vatten: 'hämtade vatten', slakta: 'slaktade', rensa: 'rensade fisk',
+  elda: 'lade ved på elden', promenad: 'var ute och gick', vakt: 'höll vakt', leka: 'lekte', sport: 'spelade', grilla: 'grillade mat',
+};
+const hen = (p: Person) => p.sex === 'm' ? 'han' : 'hon';
+// den som sörjer mest ({sorjer} i k_dog): partnern i livet, annars bästa vännen, annars en förälder i livet
+function sorjer(s: State, p: Person) {
+  const lev = (id?: number) => { const q = id !== undefined ? byId(s, id) : undefined; return q && alive(q) ? q.name : undefined; };
+  return lev(p.partner) ?? lev(p.bast) ?? lev(p.mother) ?? lev(p.father);
+}
 export function die(s: State, p: Person, orsak: Dodsorsak) {
-  const { text: cause, sorg } = DODSORSAKER[orsak];
+  const { text: cause, sorg } = DODSORSAKER[orsak], akt = p.task?.act;
   avbryt(s, p); // bördan läggs ner medan hen ännu lever, så att den ärvs
   p.died = s.now; p.cause = cause;
   if (p.gjort) p.gjort.t = {}; // de döda gör inget mer det senaste dygnet (steg 3.10.6)
   const a = Math.floor(ageOf(p, s.now));
   log(s, `${p.name} dog ${cause}, ${a} år gammal.`, 'death', [p.id]); notis(s, 'dod', `${p.name} dog ${cause}, ${a} år gammal.`, [p.id], { x: Math.floor(p.x), y: Math.floor(p.y) });
-  count(s, 'doda'); count(s, 'dog ' + cause); kronikaBer(s, a < 1 ? 'k_dogSpad' : 'k_dog', p.id, { ...personFalt(p), orsak: cause, alder: a, mor: byId(s, p.mother)?.name ?? 'Modern', partner: (q => q && alive(q) ? q.name : undefined)(byId(s, p.partner)), barn: s.people.filter(q => (q.mother === p.id || q.father === p.id) && alive(q)).length });
+  count(s, 'doda'); count(s, 'dog ' + cause); kronikaBer(s, a < 1 ? 'k_dogSpad' : 'k_dog', p.id, { ...personFalt(p), orsak: cause, alder: a, nar: orsak === 'olycka' && akt && NAR_AKT[akt] ? `när ${hen(p)} ${NAR_AKT[akt]}` : undefined, sorjer: sorjer(s, p), mor: byId(s, p.mother)?.name ?? 'Modern', partner: (q => q && alive(q) ? q.name : undefined)(byId(s, p.partner)), barn: s.people.filter(q => (q.mother === p.id || q.father === p.id) && alive(q)).length });
   inherit(s, p); // arvingarna får det hen ägde (arv.ts); efter dödsraden, så att orsaken står före verkan (steg 6.7.5)
   releaseOwner(s, p.id); // det som blev kvar blir byns
   gudHandelse(s, DODSORSAKER[orsak].gud ?? 'doden', `döden som tog ${p.name}`); // tron söker en gud för det (steg 4.1.5)
@@ -127,9 +139,10 @@ export function birth(s: State, mother: Person) {
   const ch = newPerson(s, rnd(s, 'folk') < 0.5 ? 'm' : 'k', s.now, mother, father);
   ch.x = mother.x; ch.y = mother.y;
   s.people.push(ch);
-  const ft = `${ch.name} föddes, ${ch.sex === 'k' ? 'dotter' : 'son'} till ${mother.name}${father ? ' och ' + father.name : ''}.`;
-  log(s, ft, 'birth', [ch.id, mother.id, ...(father ? [father.id] : [])]); notis(s, 'fodd', ft, [ch.id, mother.id, ...(father ? [father.id] : [])]);
-  count(s, 'fodda'); kronikaBer(s, 'k_fodd', ch.id, { namn: ch.name, barnet: ch.sex === 'k' ? 'dotter' : 'son', mor: mother.name, foraldrar: mother.name + (father ? ' och ' + father.name : ''), syskon: s.people.filter(q => q !== ch && q.mother === mother.id).length });
+  // loggen, notisen och krönikan får samma text ur mallen k_fodd (steg 6.7.7)
+  const ft = kronikaBer(s, 'k_fodd', ch.id, { namn: ch.name, barnet: ch.sex === 'k' ? 'dotter' : 'son', mor: mother.name, foraldrar: mother.name + (father ? ' och ' + father.name : ''), syskon: s.people.filter(q => q !== ch && q.mother === mother.id).length });
+  log(s, ft, 'birth', [ch.id, mother.id, ...(father ? [father.id] : [])]).m = 'k_fodd'; notis(s, 'fodd', ft, [ch.id, mother.id, ...(father ? [father.id] : [])]);
+  count(s, 'fodda');
   uppvaxtFodd(s, ch); startSmak(s, ch);
   gudHandelse(s, 'atten', `barnet ${ch.name} som föddes`); // steg 4.1.5
   think(mother, `Fick barnet ${ch.name}`, LIV.fodMor, s.now, LIV.fodDygn * DAY);

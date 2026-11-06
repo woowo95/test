@@ -1,6 +1,6 @@
 // Striden (fas 3, system 3.7). Grunden byggdes med testarenan (steg 3.7.5): en strid är två sidor av kämpar (Kampe) på en
 import { lista, och, skada as skadaOrd, stor, tal } from './ord';
-import { kronikaBer, personFalt } from './berattelser';
+import { kronikaBer, loggBer, personFalt } from './berattelser';
 // liten plats, med en avsikt (AVSIKTER) som avgör när den slutar. Den räknas i fasta tidssteg om STRID.tick sekunder
 // (stridSteg), så att den blir likadan i levande läge och i snabbläget. Var och en väljer mål, går fram och slår när målet
 // är inom räckhåll; ett slag träffar eller missar, och en träff hamnar på en kroppsdel (KROPPSDELAR i halsa.ts) och blir en
@@ -908,14 +908,16 @@ export function sparaStrid(s: State, m: StridMinne) {
 
 // raden i loggen efter en strid i byn: den säger hur striden slutade (steg 6.7.5), så att loggen inte säger emot arenan.
 // Den som gav sig av utan att någon slag tagit vågade inte slåss; annars gav upp, flydde eller vann
-function stridRad(st: Strid, namn: (sd: 0 | 1) => string, orsak: string) {
+// (s.log); när någon vann eller ingen vann skrivs raden ur mallen l_slagsmal (steg 6.7.7)
+function stridRad(s: State, st: Strid, namn: (sd: 0 | 1) => string, orsak: string, ids: number[]) {
   const v = st.slut!.vinnare, slogs = `${namn(0)} och ${namn(1)} slogs (${orsak}).`;
-  if (v === -1) return `${slogs} Ingen vann.`;
+  const mall = () => loggBer(s, 'l_slagsmal', ids[0] * 997 + (ids[1] ?? 0), { namn: namn(0), mot: namn(1), orsak, vinnare: v === -1 ? '' : namn(v as 0 | 1), ingen: v === -1 }, 'rel', ids);
+  if (v === -1) return mall();
   const f = (1 - v) as 0 | 1, fk = st.kampar.filter(k => k.sida === f), bort = (k: Kampe) => k.lage === 'flykt' || k.lage === 'borta' || k.lage === 'ger';
-  if (fk.every(bort) && st.kampar.every(k => !k.skador.length)) return `${namn(f)} vågade inte slåss med ${namn(v)} och drog sig undan (${orsak}).`;
-  if (fk.every(k => k.lage === 'ger')) return `${slogs} ${namn(f)} gav upp.`;
-  if (fk.every(k => k.lage === 'flykt' || k.lage === 'borta')) return `${slogs} ${namn(f)} flydde.`;
-  return `${slogs} ${namn(v)} vann.`;
+  if (fk.every(bort) && st.kampar.every(k => !k.skador.length)) return log(s, `${namn(f)} vågade inte slåss med ${namn(v)} och drog sig undan (${orsak}).`, 'rel', ids);
+  if (fk.every(k => k.lage === 'ger')) return log(s, `${slogs} ${namn(f)} gav upp.`, 'rel', ids);
+  if (fk.every(k => k.lage === 'flykt' || k.lage === 'borta')) return log(s, `${slogs} ${namn(f)} flydde.`, 'rel', ids);
+  return mall();
 }
 
 // en strid mellan två sidor av folk i byn. Returnerar striden (för scenarierna)
@@ -934,7 +936,7 @@ export function stridIByn(s: State, avsikt: Avsikt, sidor: [Person[], Person[]],
   const folk = st.kampar.map(k => ({ k, p: sidor[k.sida][st.kampar.filter(o => o.sida === k.sida).indexOf(k)] }));
   const namn = (sd: 0 | 1) => lista(sidor[sd].map(p => p.name));
   if (!lek) larma(s, 'slagsmål', kampar.length, [...sidor[0], ...sidor[1]].filter(p => p.task?.act !== 'sova')); // de som slåss ropar (steg 3.7.11)
-  if (!lek) log(s, stridRad(st, namn, orsak), 'rel', folk.map(f => f.p.id));
+  if (!lek) stridRad(s, st, namn, orsak, folk.map(f => f.p.id));
   for (const { k, p } of folk) {
     const mot = sidor[1 - k.sida];
     let dod = k.lage === 'dod';

@@ -2,7 +2,7 @@ import { bynsMitt, omrade, utanforByn } from './omrade';
 import { strandNu, vattenNu } from './sjo';
 import { PLATS } from './plats';
 import { byId, count, forstaGang, gjort, isParent, living, log, stat } from './folk';
-import { delade } from './berattelser';
+import { delade, larFalt, loggBer } from './berattelser';
 import { teach } from './teknik';
 import { FANGST, Kind, type Lager, prospect, regrowOf, richness, shoreOf, standAt, stoneDist, synsOf, toppOf, vaxerAt } from './fynd';
 import { getMap } from './karta';
@@ -334,7 +334,7 @@ export function share(s: State, a: Person, b: Person, r: Rel, slag: SamtalDef) {
       const before = kn(b, k), v = learnK(b, k, d * MINNE.larDel * (MINNE.larBas + stat(b, 'intelligens', now) / 20), now);
       e.t = now; // att lära ut håller kunskapen vid liv
       const larAv = KUNSKAPER[k]?.larAv;
-      if (larAv && before < MINNE.larKant && v >= MINNE.larKant) log(s, `${b.name} har lärt sig av ${a.name} att ${larAv}.`, 'skill', [b.id, a.id], { slag: 'lar', k: b.id, n: b.name, d: `${a.name}|att ${larAv}` });
+      if (larAv && before < MINNE.larKant && v >= MINNE.larKant) loggBer(s, 'l_lart', b.id * 997 + a.id, { ...larFalt(s, b), av: a.name, lara: larAv }, 'skill', [b.id, a.id], { slag: 'lar', k: b.id, n: b.name, d: `${a.name}|att ${larAv}` });
     }
   }
 }

@@ -1,5 +1,6 @@
 import { hans, honom } from './ord';
 import { upplev } from './uppvaxt';
+import { loggBer } from './berattelser';
 import { State, Person, HOUR, DAY } from './typer';
 import { FOOD, REDSKAP_SLAG, SAKER, SAK_LIST, isTool, viktOf } from './saker';
 import { ACTS, actsOf, usesTool } from './handlingar';
@@ -98,7 +99,7 @@ function eat(s: State, p: Person, fran?: Person) {
   if (q < 0.25 && rnd(s, 'halsa', p) < (0.25 - q) / 0.25 * 0.35) {
     p.sickUntil = Math.max(p.sickUntil ?? 0, now + (4 + rnd(s, 'halsa', p) * 8) * HOUR); p.sickWhy = 'Magsjuk av skämd mat';
     think(p, 'Åt skämd mat och blev magsjuk', -0.2, now, DAY / 2); count(s, 'skamdMat');
-    log(s, `${p.name} blev magsjuk av skämd mat.`, 'world', [p.id]);
+    loggBer(s, 'l_magsjuk', p.id, { namn: p.name, hen: p.sex === 'm' ? 'han' : 'hon' }, 'world', [p.id]);
   }
   return portion;
 }

@@ -13,7 +13,7 @@ import { ACTS } from './handlingar';
 import { balans } from './balans';
 import { RELT, arArke, arBast, arMentor, arRivaler, minnsRel, skiljGrans } from './relationer';
 import { tankePa } from './teknik';
-import { samtalAmne, samtalBorjar } from './berattelser';
+import { loggBer, samtalAmne, samtalBorjar } from './berattelser';
 import { predika } from './religion';
 
 // ---------- balanstal (regel 8) ----------
@@ -214,8 +214,8 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
   a.social = clamp(a.social + SAMTAL.umgange, 0, 1); b.social = clamp(b.social + SAMTAL.umgange, 0, 1);
   events?.push({ a: a.id, b: b.id, kind, good: kind !== 'gräl' && out > 0, t: now, i: a.prat?.i });
 
-  if (r.op > REL.naraVan && !(r.flags & 1) && !isKin(a, b) && a.partner !== b.id) { r.flags |= 1; log(s, `${a.name} och ${b.name} har blivit nära vänner.`, 'rel', [a.id, b.id]); }
-  if (r.op < REL.ovan && !(r.flags & 2)) { r.flags |= 2; log(s, `${a.name} och ${b.name} har blivit ovänner.`, 'rel', [a.id, b.id]); }
+  if (r.op > REL.naraVan && !(r.flags & 1) && !isKin(a, b) && a.partner !== b.id) { r.flags |= 1; loggBer(s, 'l_vanner', a.id * 997 + b.id, { namn: a.name, med: b.name }, 'rel', [a.id, b.id]); }
+  if (r.op < REL.ovan && !(r.flags & 2)) { r.flags |= 2; loggBer(s, 'l_ovanner', a.id * 997 + b.id, { namn: a.name, med: b.name }, 'rel', [a.id, b.id]); }
   if (r.rom > REL.parRom && r.op > REL.van && a.partner === undefined && b.partner === undefined && canFlirt) pair(s, a, b);
   if (a.partner === b.id && r.op < skiljGrans(r)) skiljas(s, a, b, r); // ett gift par håller mer (steg 3.1.1)
   return kind === 'gräl' ? b : undefined;

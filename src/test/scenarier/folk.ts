@@ -295,7 +295,7 @@ SCENARIER.relationer = {
     const fore = { ...s.stat };
     const rateFore = SIM.workRate(s, j1, 'jakt');
     SIM.stepRelationer(s);
-    const st = (n: string) => (s.stat?.[n] ?? 0) - (fore[n] ?? 0), loggat = (t: string) => s.log.some(l => l.text.includes(t));
+    const st = (n: string) => (s.stat?.[n] ?? 0) - (fore[n] ?? 0), loggat = (t: string) => s.log.some(l => l.text.includes(t) || l.m === t);
     const typ = (p: Person, q: Person) => SIM.relTyper(s, p, q).map(t => t.namn);
     // ett gift par skiljer sig först under RELT.skiljGift, ett ogift redan under REL.gral
     const haller = SIM.skiljGrans(r) < SIM.skiljGrans(r2);
@@ -308,11 +308,11 @@ SCENARIER.relationer = {
       [`paret som varit tillsammans i 15 dygn och är goda vänner gifter sig (${typ(m, k).join(', ')})`, r.gift !== undefined && st('gift') === 1 && loggat(`${m.name} och ${k.name} har gift sig`)],
       ['paret som inte längre är goda vänner gifter sig inte', r2.gift === undefined],
       ['ett gift par håller mer än ett ogift', haller],
-      [`två som tycker mycket om varandra blir bästa vänner (${typ(a, b).join(', ')})`, a.bast === b.id && b.bast === a.id && st('bastaVan') === 1 && loggat('bästa vänner')],
+      [`två som tycker mycket om varandra blir bästa vänner (${typ(a, b).join(', ')})`, a.bast === b.id && b.bast === a.id && st('bastaVan') === 1 && loggat('l_bastaVanner')],
       ['den bästa vännen delar som släkt', somFamilj],
       [`att den bästa vännen arbetar med trä lockar till vedarbetet, också när hen fäller eller hugger (${vedVan.map(x => x.toFixed(2)).join(', ')})`, vedVan.every(x => x === SIM.RELT.bastArbete)],
       [`den man hatar mest blir ärkefiende, och man ger hen aldrig något (${typ(c, d).join(', ')})`, c.arke === d.id && d.arke === c.id && st('arkefiende') === 2 && SIM.willing(s, c, d) === 0],
-      [`två jägare som inte är vänner blir rivaler och jagar lite hårdare (${typ(j1, j2).join(', ')})`, !!j1.rivaler?.includes(j2.id) && j1.rivalom === 'Jägare' && SIM.workRate(s, j1, 'jakt') > rateFore && loggat('rivaler')],
+      [`två jägare som inte är vänner blir rivaler och jagar lite hårdare (${typ(j1, j2).join(', ')})`, !!j1.rivaler?.includes(j2.id) && j1.rivalom === 'Jägare' && SIM.workRate(s, j1, 'jakt') > rateFore && loggat('l_rivaler')],
       [`den vuxna som lärt den unga mycket blir mentor (${typ(lar, ung).join(', ')} / ${typ(ung, lar).join(', ')})`, ung.mentor === lar.id && ung.mentorSk === 'hantverk' && st('mentor') === 1],
     ];
   },
@@ -1623,6 +1623,41 @@ SCENARIER.smatext = {
   },
 };
 
+SCENARIER.loggmallar = {
+  text: 'Steg 6.7.7: de vanligaste raderna i loggen skrivs ur mallar (l_byte, l_vanner, l_lart …) med minst åtta varianter, och raden minns mallen. Relationerna, samtalen, beskrivningen och döden har fått fler varianter med nya fält: vad de varit med om, årstiden och vädret, vad den döda gjorde vid olyckan och vem som sörjer mest',
+  kor: () => {
+    const t = createState(15, START);
+    klockan(t, 12);
+    const [p, q] = living(t);
+    // varje loggmall har minst åtta varianter, och alla blir hela meningar med fälten ifyllda
+    const mallar = Object.keys(SIM.BERATTELSER).filter(m => m.startsWith('l_')) as SIM.MallId[];
+    const f = { namn: 'Ask', med: 'Ylva', om: 'Ylva', mot: 'Ylva', vinnare: 'Ylva', orsak: 'efter ett gräl', hen: 'han', honom: 'honom', hans: 'hans', honom2: 'honom', fatt: 'tre harkött', betal: 'sex grenar', varor: 'ett träspjut', vad: 'rå fisk', vadtext: 'vargarna kommer', n: 'fem', lara: 'odla', av: 'Ylva', rykte: 'en lögnare', plats: 'vid stenarna' };
+    const texter = mallar.flatMap(m => (SIM.BERATTELSER[m] as SIM.Variant[]).map(v => SIM.fyll(typeof v === 'string' ? v : v.t, f)));
+    const hela = texter.filter(x => /[{}]|undefined|  /.test(x) || !/[.!]$/.test(x));
+    // raderna i spelet minns mallen: två blir vänner, någon lär sig, en flinta hittas
+    SIM.loggBer(t, 'l_vanner', p.id * 997 + q.id, { namn: p.name, med: q.name }, 'rel', [p.id, q.id]);
+    const vanner = t.log[t.log.length - 1];
+    // döden i en olycka: vad hen gjorde och vem som sörjer
+    const falt: SIM.Fyllning[] = [];
+    SIM.lyssnaPaTexter((m, _i, _t, fl) => { if (m === 'k_dog') falt.push(fl); });
+    q.partner = p.id; p.partner = q.id;
+    q.task = { act: 'falla', tx: Math.floor(q.x), ty: Math.floor(q.y), t0: t.now } as unknown as typeof q.task;
+    SIM.die(t, q, 'olycka');
+    SIM.lyssnaPaTexter(undefined);
+    const dod = falt[0] ?? {};
+    // relationen och samtalet får de nya fälten
+    const r = getRel(t, p, q); r.talks = 25; r.minns = { ...r.minns, sida: 2 };
+    const rel = SIM.relationText(t, p, q, r);
+    return [
+      [`${mallar.length} loggmallar med minst åtta varianter var`, mallar.length >= 14 && mallar.every(m => SIM.BERATTELSER[m].length >= 8)],
+      [`alla varianter blir hela meningar (${hela.slice(0, 2).join(' | ') || 'inga fel'})`, !hela.length],
+      [`raden minns sin mall (${vanner.text})`, vanner.m === 'l_vanner' && vanner.text.includes(p.name) && vanner.text.includes(q.name)],
+      [`den som dog i en olycka: ${dod.nar}, och ${dod.sorjer} sörjer`, /när (han|hon) fällde ett träd/.test(String(dod.nar)) && dod.sorjer === p.name],
+      [`relationen läses (${rel[0]})`, rel.length > 0 && !/[{}]|undefined/.test(rel.join(' '))],
+    ];
+  },
+};
+
 SCENARIER.vemibyn = {
   text: 'Steg 3.9.7: beskrivningen byggs av delar ur registret BESK_DELAR, med ett villkor och hur mycket delen sticker ut: grundare av byn, skönheten och äldst i byn står alltid med när de gäller; sedan namnet byn gav, yrket och ryktet, det hen är känd som, uppfinningarna, bedrifterna, relationerna, den döda hen saknar, smaken (också vapnet) och minnet. 2–4 meningar, 5 när det finns mycket att säga',
   kor: () => {
@@ -1772,12 +1807,12 @@ SCENARIER.kronika = {
     const hela = ber.every(([, x]) => !/[{}]|undefined|  | \.|^\s*$/.test(x) && /[.!]$/.test(x));
     const slag = new Set(ber.map(k => k[2]));
     const fodda = ber.filter(k => k[2] === 'k_fodd').map(k => k[1]);
-    const logFodd = t.log.find(l => / föddes, (son|dotter) till /.test(l.text))?.text ?? '';
+    const logFodd = t.log.find(l => l.kind === 'birth' && l.m === 'k_fodd')?.text ?? '';
     return [
       [`krönikan har berättelser (${ber.length} av ${rader.length} rader, ${slag.size} slag)`, ber.length >= 5 && slag.size >= 3],
       [`varje berättelse är hel (t.ex. ${ber.slice(0, 3).map(k => k[1]).join(' | ')})`, hela],
       [`födslarna berättas olika (${new Set(fodda).size} texter av ${fodda.length})`, fodda.length < 3 || new Set(fodda).size >= 2],
-      [`loggen behåller den korta raden (${logFodd})`, !fodda.length || !!logFodd],
+      [`loggen får samma rad ur mallen (${logFodd})`, !fodda.length || !!logFodd],
     ];
   },
 };

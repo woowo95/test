@@ -5,7 +5,7 @@ import { DAY, Person, Rel, SKILLS, Skill, State } from './typer';
 import { balans } from './balans';
 import { ACTS } from './handlingar';
 import { notis } from './notiser';
-import { kronikaBer } from './berattelser';
+import { kronikaBer, loggBer } from './berattelser';
 
 // ---------- balanstal (regel 8) ----------
 // Relationstyperna (steg 3.1.1, "Relationstyper" i designdokumentet). Relationen (op) går från -100 till 100; vän, nära vän,
@@ -113,7 +113,7 @@ export function stepRelationer(s: State) {
     const q = topp.get(p), ny = q && topp.get(q) === p ? q.id : undefined;
     if (ny !== undefined && p.bast !== ny && p.id < ny) {
       const r = rel(p, q!)!; count(s, 'bastaVan');
-      if (!(r.flags & 8)) { r.flags |= 8; log(s, `${p.name} och ${q!.name} har blivit bästa vänner.`, 'rel', [p.id, ny]); }
+      if (!(r.flags & 8)) { r.flags |= 8; loggBer(s, 'l_bastaVanner', p.id * 997 + ny, { namn: p.name, med: q!.name }, 'rel', [p.id, ny]); }
       upplev(s, p, 'bastaVan', q!.name); upplev(s, q!, 'bastaVan', p.name); // barn minns sin bästa vän (steg 3.1.2)
     }
     p.bast = ny;
@@ -127,7 +127,7 @@ export function stepRelationer(s: State) {
       const v = r.op - (p.arke === q.id ? RELT.arkeSlut - RELT.arke : 0);
       if (v < RELT.arke && v < wv) { wv = v; worst = q; }
     }
-    if (worst && p.arke !== worst.id) { count(s, 'arkefiende'); log(s, `${p.name} ser nu ${worst.name} som sin ärkefiende.`, 'rel', [p.id, worst.id]); }
+    if (worst && p.arke !== worst.id) { count(s, 'arkefiende'); loggBer(s, 'l_arke', p.id * 997 + worst.id, { namn: p.name, om: worst.name, hans: p.sex === 'm' ? 'hans' : 'hennes' }, 'rel', [p.id, worst.id]); }
     p.arke = worst?.id;
   }
   // äktenskap: ett par som varit tillsammans giftDygn dygn och fortfarande är goda vänner
@@ -156,7 +156,7 @@ export function stepRelationer(s: State) {
     }
     for (const id of nu) if (!fore.includes(id) && p.id < id) {
       const q = byId.get(id)!, r = getRel(s, p, q); count(s, 'rival');
-      if (!(r.flags & 4)) { r.flags |= 4; log(s, `${p.name} och ${q.name} har blivit rivaler.`, 'rel', [p.id, id]); }
+      if (!(r.flags & 4)) { r.flags |= 4; loggBer(s, 'l_rivaler', p.id * 997 + id, { namn: p.name, med: q.name }, 'rel', [p.id, id]); }
     }
     p.rivaler = nu.length ? nu : undefined; p.rivalom = om;
   }

@@ -1,7 +1,7 @@
 import { han } from './ord';
 import { tal } from './ord';
 import { allaBarn } from './uppvaxt';
-import { kronikaBer, personFalt } from './berattelser';
+import { kronikaBer, loggBer, personFalt } from './berattelser';
 import { addTo, amountOf, avbryt, fetchSpot, takeLimit, use } from './lager';
 import { Materialslag, TROSKEL, forbrukat, overTak, underBuffert } from './forradsmal';
 import { Behov, getable, takeMaterial } from './behov';
@@ -404,7 +404,7 @@ export function forageItems(s: State, p: Person, dtSec: number, fart = 1): Recor
     got.flinta = 1; count(s, ff > ELD.flintaStenar ? 'flintaSten' : 'flintaAnnan');
     if (p.task) takeFrom(s, 'flinta', p.task.tx, p.task.ty, 1);
     if (ff > ELD.flintaStenar && p.task) observe(s, p, 'flinta', p.task.tx, p.task.ty);
-    log(s, `${p.name} hittade en flintsten${ff > ELD.flintaStenar ? ' vid stenarna' : ff > ELD.flintaSand ? ' i sanden vid stranden' : ''}.`, 'world', [p.id]);
+    loggBer(s, 'l_flinta', p.id, { namn: p.name, plats: ff > ELD.flintaStenar ? 'vid stenarna' : ff > ELD.flintaSand ? 'i sanden vid stranden' : '' }, 'world', [p.id]);
   }
   return Object.keys(got).length ? got : undefined;
 }

@@ -1,6 +1,6 @@
 import { han, honom } from './ord';
-import { lista, stor, tal } from './ord';
-import { delade } from './berattelser';
+import { lista, tal } from './ord';
+import { delade, loggBer } from './berattelser';
 import { ALDER, REL, ageOf, alive, byId, count, forstaGang, getRel, isKin, isParent, living, log, relKey, stat, think } from './folk';
 import { clamp, pickViktat, rnd } from './slump';
 import { HOUR, Person, Rel, State } from './typer';
@@ -281,7 +281,7 @@ export function beratta(s: State, a: Person, b: Person, e: Intryck, r: Rel) {
   intryck(s, b, om, e.k, v * (q && alive(q) ? 1 : RYKTE.dodBer), c, ex ? { ...ex, sett: undefined } as Bevis : undefined, a.id, led);
   const ny = intryckOm(b, e.om, e.k);
   if (ny && ex) for (const x of e.bev!.slice(1)) addBevis(ny, { ...x, sett: undefined } as Bevis);
-  if (forstaGang(s, 'rykte:' + e.om + ':' + e.k) && q) log(s, `Det går rykten om att ${e.namn} är ${d.som ?? d.namn}.`, 'rel', [e.om]);
+  if (forstaGang(s, 'rykte:' + e.om + ':' + e.k) && q) loggBer(s, 'l_rykte', e.om * 31 + e.k.length, { namn: e.namn, hen: q.sex === 'm' ? 'han' : 'hon', rykte: d.som ?? d.namn, heder: d.tecken > 0 }, 'rel', [e.om]);
 }
 // b märker att a ljög eller överdrev om personen i e
 function ertappad(s: State, b: Person, a: Person, e: Intryck, h: 'logn' | 'overdrev') {
@@ -507,6 +507,8 @@ export interface Larm { t: number; vad: string; storlek: number; led: number; fa
 
 // ett larm om vad (storleken: hur många eller hur farligt). ropare ropar först (de vet redan). Returnerar de
 // som hörde det
+// vad ett larm gällde, med ord (l_larm, steg 6.7.7); nycklarna är vad i larma()
+export const LARM_VAD: Record<string, string> = { 'slagsmål': 'det slåss i byn', fara: 'det är fara på väg', varg: 'vargarna kommer', rovare: 'rövare är på väg', brand: 'det brinner', tornado: 'en storm är på väg' };
 export function larma(s: State, vad: string, storlek: number, ropare: Person[], falskt = false): Person[] {
   const hor = LARM.hor * (isLight(s.now) ? 1 : LARM.natt);
   const vet = new Set<Person>(ropare), hort: Person[] = [];
@@ -528,7 +530,8 @@ export function larma(s: State, vad: string, storlek: number, ropare: Person[], 
     ropar = nya;
   }
   count(s, falskt ? 'larm_falskt' : 'larm');
-  if (hort.length) log(s, `${lista(ropare.map(p => p.name))} ropade ${falskt ? 'falskt larm' : 'larm'} (${vad}). ${stor(tal(hort.length))} hörde det.`, 'rel', ropare.map(p => p.id));
+  // raden ur mallen l_larm (steg 6.7.7): vad ropet gällde med ord ur LARM_VAD
+  if (hort.length) loggBer(s, 'l_larm', ropare[0].id, { namn: lista(ropare.map(p => p.name)), vad, vadtext: LARM_VAD[vad] ?? vad, n: tal(hort.length), ensam: hort.length === 1, falskt }, 'rel', ropare.map(p => p.id));
   return hort;
 }
 // minns p ett larm nu?

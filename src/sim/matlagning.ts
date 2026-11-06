@@ -6,6 +6,7 @@ import { amountOf, put, use } from './lager';
 import { Station, isKlar, kanGoras, stationerOf } from './stationer';
 import { EKONOMI } from './ekonomi';
 import { SAKER } from './saker';
+import { loggBer } from './berattelser';
 import { balans } from './balans';
 
 // ---------- matlagning (steg 2.8.1) ----------
@@ -75,7 +76,7 @@ export function ratt(s: State, p: Person, per: Record<string, number>, full: num
   think(p, 'Blev matförgiftad av rått kött eller rå fisk', MATLAG.forgiftad, s.now, 12 * HOUR);
   count(s, 'matforgiftad');
   // det som åts står i raden, och ingen rad om hen redan blivit förgiftad samma timme (svampen, steg 6.7.5)
-  if (!s.log.some(e => e.t > s.now - HOUR && e.ids.length === 1 && e.ids[0] === p.id && e.text.includes('förgiftad'))) log(s, `${p.name} blev matförgiftad av ${vad}.`, 'world', [p.id]);
+  if (!s.log.some(e => e.t > s.now - HOUR && e.ids.length === 1 && e.ids[0] === p.id && (e.m === 'l_raMat' || e.text.includes('förgiftad')))) loggBer(s, 'l_raMat', p.id, { namn: p.name, hen: p.sex === 'm' ? 'han' : 'hon', vad }, 'world', [p.id]);
 }
 
 // ---------- torkning (steg 2.8.2) ----------
