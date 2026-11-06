@@ -12,7 +12,7 @@ import { kronika } from './historik';
 import { naVattnet } from './is';
 import { eldPlats, vaderstreck } from './karta';
 import { bynsAvstand, bynsMitt } from './omrade';
-import { avbryt, minska, stacksOf, tidy } from './lager';
+import { avbryt, minska, nagotPa, stacksOf, tidy } from './lager';
 import { die } from './liv';
 import { MARK, groundOf, markslag } from './mark';
 import { valjArt } from './trad';
@@ -499,7 +499,7 @@ export function hjalpaVal(s: State, p: Person) {
 // klart (KLAR i steg.ts): den som brann är släckt; ett plagg som slets av ligger på marken
 export function slackaSigKlar(s: State, p: Person, t: Task) {
   const pl = t.ref !== undefined ? tingOf(s).find(q => q.id === t.ref && q.bar === p.id) : undefined;
-  if (pl) { delete pl.bar; pl.x = Math.floor(p.x); pl.y = Math.floor(p.y); }
+  if (pl) { delete pl.bar; const x = Math.floor(p.x), y = Math.floor(p.y); if (!nagotPa(s, x, y)) { pl.x = x; pl.y = y; } } // ligger något redan där får plagget en plats i förrådet (placeTools)
   slacktP(s, p, pl ? 'plagget' : t.why?.includes('vattnet') ? 'vattnet' : 'rullade');
 }
 export function hjalpaKlar(s: State, p: Person, t: Task) {

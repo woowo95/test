@@ -210,6 +210,7 @@ SCENARIER.slump = {
     // var en person går (promenad, strand, flinta, trädet som fälls) väljs med personens egen följd, inte byns
     const h = createState(6, START), hv = () => living(h).filter(q => ageOf(q, h.now) >= ALDER.vuxen);
     h.now = new Date(h.now).setHours(10, 0, 0, 0); Object.assign(h.fire, { lit: true, fuel: 4, ring: true });
+    h.delning = { andel: 1 }; // byn delar all mat, så att ingen familj behöver samla egen mat (maten läggs hos byn här)
     for (const q of h.people) q.tek = { ...q.tek, yxa: 1 };
     const sett = new Set<string>();
     const hd = drag(h, 'val', () => {
