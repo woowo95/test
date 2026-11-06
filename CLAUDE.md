@@ -58,7 +58,7 @@ Sök i dokumentet i stället för att läsa allt; det är långt.
 - Publicera när ett system i Färdplanen är klart (Björn, efter v391): när det sista steget i t.ex. 6.1 är byggt, inte efter varje steg. Varje steg committas och pushas ändå för sig.
 - Publicera alltid till samma artefakt-URL så att Björns sparade by och länk finns kvar: `file_path` = `samhallssimulatorn.html`, `url` = spelets URL och `files` = innehållet i `publicera/filer.json`. Då kommer källkoden med under `kalla/`.
 - Uppdatera "Läget just nu" i designdokumentet när något nytt är byggt, och bocka av steget i Färdplanen.
-- Programmeras nu (Björn, efter v159): när du börjar programmera något, skriv först vad (steget eller uppgiften) under "Programmeras nu" i "Läget just nu". När det är klart och publicerat: skriv "avslutat" med versionen.
+- Programmeras nu (Björn, efter v159 och v501): "Programmeras nu" i "Läget just nu" visar bara det som görs exakt just nu, en kort rad per chatt som programmerar, aldrig en lista över det som gjorts. När du börjar: skriv steget eller uppgiften där. När det är klart och publicerat: ta bort raden; att steget är klart syns i Färdplanen, där det bockas av med versionen. Görs inget: skriv "(inget)". Det som återstår i ett avbrutet steg skrivs i `vantande-tester.md` om det väntar på MacBooken, annars i steget i Färdplanen.
 - Commiten som publiceras säger versionen inom parentes, t.ex. "(v44)". Då hittar `jamfor --mot v44` den (git-taggar går inte att pusha härifrån).
 
 ## Enklare modeller (spara tokens)
