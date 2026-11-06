@@ -651,6 +651,71 @@ SCENARIER.axelrem = {
   },
 };
 
+SCENARIER.ryggsack = {
+  text: 'Steg 7.1.3: ryggsäcken sys av tre skinn och ett rep vid slöjdbänken med bensylen av den som kan tekniken, och den som saknar en tar på sig en. Den sitter på ryggen, lämnar båda händerna fria och rymmer 20 i vikt, lika för alla, så en vuxen bär ungefär dubbelt så mycket. Den som samlar med ryggsäcken tar ingen korg utan plockar rakt ner i den, och säcken slits av det som samlas. Den går att ha på sig tillsammans med axelremmen',
+  kor: () => {
+    const s = createState(2, START); tandEld(s);
+    const st = medBank(s, 'flatarbank');
+    SIM.newTing(s, 'bensyl', 1, BYN).vid = st.id; // bensylen ligger vid bänken
+    for (const r of s.people) r.tek = { ...r.tek, kniv: 1, flatarbank: 1, rep: 1, bensyl: 1, korg: 1, skinnklader: 1, ryggsack: 1 };
+    for (const r of s.people) for (const k of ['rock_kaninskinn', 'skor_kaninskinn']) addTool(s, k, r).bar = r.id; // de andra plaggen har alla redan
+    setMat(s, { bar: 300 }); setAmount(s, 'ved', 60); setAmount(s, 'skinn', 30); setAmount(s, 'rep', 12); setAmount(s, 'ben', 3); setAmount(s, 'sten', 6);
+    const tek = SIM.TEKNIK.find(t => t.id === 'ryggsack');
+    const regTek = !!tek && tek.krav.includes('korg') && tek.krav.includes('skinnklader') && !!tek.forsok;
+    const sack = () => tingOf(s).find(t => t.k.startsWith('ryggsack_') && t.bar !== undefined);
+    let h = 0;
+    while (!sack() && h < 120) { kor(s, 1); h++; }
+    const r = sack(), p = r && byId(s, r.bar!);
+    const sytt = Object.keys(s.stat ?? {}).some(k => k.startsWith('ryggsack_') && (s.stat![k] ?? 0) > 0);
+    const recept = !!SAKER.ryggsack_kaninskinn && SAKER.ryggsack_kaninskinn.skaffa?.av?.skinn === 3 && SAKER.ryggsack_kaninskinn.skaffa?.av?.rep === 1 && SIM.STATIONER.flatarbank.kraver?.ryggsack === 'bensyl';
+    let dubbelt = false, lika = false, ryms20 = false, paRyggen = false, medRem = false, ingenKorg = false, slits = false, samlade = 0;
+    if (p) {
+      for (const t of tingOf(s)) { if (t.hos === p.id) t.hos = undefined; if (t.bar === p.id && t !== r) t.bar = undefined; }
+      const med = bordPlats(s, p); r.bar = undefined; const utan = bordPlats(s, p); r.bar = p.id;
+      dubbelt = Math.abs(med - utan - 20) < 1e-9 && med / utan > 1.7 && med / utan < 2.6;
+      // lika för alla: säcken på någon annan rymmer också 20
+      const q = living(s).find(x => x !== p);
+      if (q) { for (const t of tingOf(s)) if (t.bar === q.id || t.hos === q.id) { t.bar = undefined; t.hos = undefined; } const u0 = bordPlats(s, q); r.bar = q.id; lika = Math.abs(bordPlats(s, q) - u0 - 20) < 1e-9; r.bar = p.id; }
+      // bördan: en full säck och fulla händer ryms, mer gör det inte; bär ligger i säcken först
+      const ok = ryms(s, p), H = handOrkar(s, p);
+      ryms20 = ok({ bar: 20 + 2 * H - 0.5 }) && !ok({ bar: 20 + 2 * H + 3 }) && ok({ bar: 20, ved: H });
+      const u = utrustning(s, p, true);
+      paRyggen = u.rygg.ting === r && u.rygg.borda === true && u.hoger.borda === true && u.vanster.borda === true;
+      // med axelremmen och spjutet på axeln
+      const rem = addTool(s, 'axelrem_kaninskinn', p); rem.bar = p.id;
+      addTool(s, 'flintspjut', p); take(s, p, 'flintspjut');
+      medRem = Math.abs(bordPlats(s, p) - med) < 1e-9 && utrustning(s, p, true).rygg.ting === r && !!utrustning(s, p, true).axel.ting;
+      for (const t of tingOf(s)) if (t.hos === p.id) t.hos = undefined;
+      // samlandet: det finns korgar i förrådet, men den med ryggsäcken tar ingen
+      SIM.newTing(s, 'korg', 1, BYN); SIM.newTing(s, 'korg', 1, BYN);
+      const c0 = r.c; let korg = false;
+      setMat(s, { bar: 10 }); // maten tar slut, så byn samlar
+      for (let i = 0; i < 96 && samlade < 3; i++) {
+        kor(s, 1);
+        for (const q of living(s)) {
+          if (!SIM.ryggsack(s, q)) continue;
+          if (q.task?.act === 'samla') samlade++;
+          if (q.task?.tool === 'korg') korg = true;
+        }
+      }
+      ingenKorg = samlade > 0 && !korg;
+      slits = r.c < c0 - 1e-9 || !tingOf(s).includes(r);
+    }
+    return [
+      ['tekniken kräver korgen och skinnkläderna och prövas vid slöjdbänken', regTek],
+      ['ryggsäcken görs av tre skinn och ett rep, med bensylen', recept],
+      [`en ryggsäck sys och tas på (efter ${h} timmar)`, !!r && sytt],
+      ['med ryggsäcken bär en vuxen 20 mer, ungefär dubbelt så mycket', dubbelt],
+      ['säcken rymmer 20 för alla', lika],
+      ['en full säck och fulla händer ryms, mer gör det inte', ryms20],
+      ['säcken sitter på ryggen och bördan är i säcken och båda händerna', paRyggen],
+      ['ryggsäcken och axelremmen går att ha samtidigt', medRem],
+      [`den som samlar med ryggsäcken tar ingen korg (samlade ${samlade} timmar)`, ingenKorg],
+      ['ryggsäcken slits av det som samlas', slits],
+    ];
+  },
+};
+
 SCENARIER.balte = {
   text: 'Steg 2.3.3: bältet flätas av rep vid elden av den som kan tekniken, och den som saknar ett tar på sig ett. När man bär hem hänger redskapet i bältet: det tar inga händer, så den som har yxan i bältet bär lika mycket som med tomma händer. En korg hänger inte i bältet. Steg 7.1.1: bältet har två krokar, så ett eget redskap (kniven, yxan, spaden) hänger där medan man arbetar med ett annat och tas fram när det behövs. Spjutet hänger på axeln, inte i bältet',
   kor: () => {

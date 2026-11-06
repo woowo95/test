@@ -35,7 +35,7 @@ export interface SakDef {
 // ett klädesplagg: platsen på kroppen (PLATSER i utrustning.ts), så stor del mindre kyla för den som har det på sig, och hur
 // många dygn (år i spelet) det håller på kroppen
 // krok = så många redskap hänger i plagget (bältet, steg 2.3.3 och 7.1.1): de tar inga händer och väger inget för bördan
-interface Klad { plats: string; varme: number; dygn: number; krok?: number; axel?: number }
+interface Klad { plats: string; varme: number; dygn: number; krok?: number; axel?: number; rygg?: number }
 // ett redskap som görs: text = vad den som gör det gör, stat = räknas varje gång ett blir klart, forsta = loggen första
 // gången, fame = det den som gjorde det blir ihågkommen för, igen = loggen de andra gångerna
 // {namn} = den som gjorde det, {verktyg} = verktyget (skaffa.verktyg)

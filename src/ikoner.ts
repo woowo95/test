@@ -3763,6 +3763,30 @@ for (const [m, G, H] of [['kaninskinn', '#7d5b40', '#987e62'], ['vargskinn', '#6
   PIX['axelrem_' + m] = AXELREM16; PAL['axelrem_' + m] = { o: '#24201d', G, H, y: '#a0947d', Y: '#bdb39b', d: '#5e3c24' };
 }
 PIX.axelrem = PIX.axelrem_kaninskinn; PAL.axelrem = PAL.axelrem_kaninskinn; // tekniken har remmens bild
+// steg 7.1.3: ryggsäcken, en platshållare (en säck av skinn med en flik överst, två remmar av rep och en knut) tills Björn
+// valt bland versionerna i bildstilen (steg 7.1.4)
+const RYGGSACK16 = [
+  '................',
+  '.....oooooo.....',
+  '....oyHHHHyo....',
+  '...oyoooooooy...',
+  '...oyoHHHHoyo...',
+  '..oGoHGGGGHoGo..',
+  '..oGooooooooGo..',
+  '..oGHGGGGGGHGo..',
+  '..oGHGGddGGHGo..',
+  '..oGHGGddGGHGo..',
+  '..oGHGGGGGGHGo..',
+  '..oGHGGGGGGHGo..',
+  '..oGHHHHHHHHGo..',
+  '..oGGGGGGGGGGo..',
+  '...oooooooooo...',
+  '................',
+];
+for (const [m, G, H] of [['kaninskinn', '#7d5b40', '#987e62'], ['vargskinn', '#61767a', '#8a9c9e'], ['bjornskinn', '#5e3c24', '#7d5b40']]) {
+  PIX['ryggsack_' + m] = RYGGSACK16; PAL['ryggsack_' + m] = { o: '#24201d', G, H, y: '#a0947d', d: '#5e3c24' };
+}
+PIX.ryggsack = PIX.ryggsack_kaninskinn; PAL.ryggsack = PAL.ryggsack_kaninskinn; // tekniken har säckens bild
 PIX.filt_by = [
   '................',
   '................',
