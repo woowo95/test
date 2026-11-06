@@ -53,6 +53,10 @@ export const MORKARE: readonly (readonly string[])[] = [
 ];
 // djup natt (steg 5.1.7.2): tre steg mörkare, skymningens steg och sedan nattens, så att nästan allt blir kolsvart och bara
 // elden lyser (det ljusaste, snön och halmen, syns svagt)
+// molnskuggan (steg 6.8.19, Vädret under Tidsmodell): svagare än ett helt steg, varje färg den närmaste lite mörkare färgen i
+// paletten; en färg utan någon närmare mörkare granne blir som ett helt steg
+export const LITE_MORKARE: readonly string[] = mork(([L, a, b]) => [L * 0.84, a * 0.9, b * 0.9 - 0.006])
+  .map((h, i) => h === FARGER[i] ? MORKARE[1][i] : h);
 (MORKARE as string[][]).push(FARGER.map((_, i) => MORKARE[2][FARGER.indexOf(MORKARE[1][i])]));
 export const DJUPNATT = 3;
 const INDEX = new Map(FARGER.map((h, i) => [h, i]));
