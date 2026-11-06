@@ -1913,7 +1913,7 @@ SCENARIER.kronikalista = {
       [`personen: bara raderna där hen står med (${a.name} ${rader(medA)}, ${b.name} ${rader(medB)})`, rader(medA) === K.filter(r => r[1].includes(a.name)).length && rader(medB) === K.filter(r => r[1].includes(b.name)).length && medB.includes(`${b.name}</button> och`) && !medB.includes('hittade en sten')],
       ['ett år visar bara det årets rader', rader(iAr) === K.filter(r => SIM.kalender(s, r[0]).ar === SIM.kalender(s, s.now).ar).length && rader(iAr) < rader(alla)],
       [`Allt visar händelseloggen (${rader(allt)} rader)`, rader(allt) === s.log.length && s.log.length > K.length],
-      [`Grafer visar alla byns grafer under varandra (${(grafer.match(/data-graf=/g) ?? []).length} st, steg 6.9.12)`, ['folk', 'humor', 'eld', 'forrad'].every(g => grafer.includes(`data-graf="${g}"`)) && !grafer.includes(`class="logg"`)],
+      [`Grafer visar alla byns grafer under varandra (${(grafer.match(/data-graf=/g) ?? []).length} st, steg 6.9.12)`, ['folk', 'humor', 'eld', 'forrad', 'rik'].every(g => grafer.includes(`data-graf="${g}"`)) && !grafer.includes(`class="logg"`)],
     ];
   },
 };

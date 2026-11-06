@@ -1,17 +1,22 @@
 // Graferna (steg 5.4.1): byns historik (sim/historik.ts) som linjer, alla under varandra i Krönikans del Grafer (steg
-// 6.9.12): invånarna, humöret, veden på elden och maten och veden i förrådet. Grafen visar en vecka (sju dygn, sju år i
+// 6.9.12): invånarna, humöret, veden på elden, maten och veden i förrådet och byns rikedom (steg 6.9.13). Grafen visar en vecka (sju dygn, sju år i
 // spelet) och går att dra bakåt ända till byns början; Allt visar hela tiden på en gång. Bara utseende: spelet läser den aldrig.
 // En ny graf är en rad i GRAFER och `grafHtml('id')` där den ska stå; ett nytt tal är en rad i HISTORIK_TAL.
-import { AGES, DAY, HISTORIK_TAL, WEEK, historikSerie, kalender } from '../sim';
+import { AGES, DAY, HISTORIK_TAL, WEEK, historikSerie, kalender, rikSerie, type RikRad } from '../sim';
 import { farg } from '../palett';
 import { ritaOm, s } from './lage';
 
-interface Graf { namn: string; serier: { tal: string; farg: string }[]; max?: number; procent?: boolean }
+// en serie är ett tal i historiken (tal) eller punkter som räknas fram (punkter, t.ex. byns rikedom per dygn, steg 6.9.13)
+interface Serie { tal?: string; namn?: string; farg: string; punkter?: () => [number, number][] }
+interface Graf { namn: string; serier: Serie[] | (() => Serie[]); max?: number; procent?: boolean }
+// byns rikedom (steg 6.9.13): summan och delarna som i sidhuvudet, en punkt per dygn ur historikens rader
+const rik = (namn: string, ton: string, v: (r: RikRad) => number): Serie => ({ namn, farg: farg(ton, 2), punkter: () => rikSerie(s, v) });
 export const GRAFER: Record<string, Graf> = { // i den ordning de står i Krönikan
   folk: { namn: 'Invånare', serier: [{ tal: 'folk', farg: farg('skiffer', 2) }] },
   humor: { namn: 'Humör', serier: [{ tal: 'humor', farg: farg('senap', 2) }], max: 1, procent: true },
   eld: { namn: 'Trä på elden', serier: [{ tal: 'eld', farg: farg('rost', 2) }] },
   forrad: { namn: 'Förrådet', serier: [{ tal: 'mat', farg: farg('oliv', 2) }, { tal: 'tra', farg: farg('jord', 2) }] },
+  rik: { namn: 'Byns rikedom', serier: [rik('Hela byn', 'senap', r => r[1] + r[2] + r[3]), rik('Förrådet', 'oliv', r => r[1]), rik('Redskapen', 'skiffer', r => r[2]), rik('Husen', 'jord', r => r[3])] },
 };
 
 // fönstret per graf: slut = tiden längst till höger (undefined = nu), allt = hela tiden sedan byns början
@@ -29,11 +34,11 @@ const talTxt = (g: Graf, v: number) => g.procent ? `${Math.round(v * 100)} %` : 
 
 export function grafHtml(id: string) {
   const g = GRAFER[id], { fran, till } = spann(id), f = fonster[id];
-  const serier = g.serier.map(se => {
-    const alla = historikSerie(s, se.tal);
+  const serier = (typeof g.serier === 'function' ? g.serier() : g.serier).map(se => {
+    const alla = se.punkter ? se.punkter() : historikSerie(s, se.tal!);
     // punkterna i fönstret och en på var sida, så att linjen går ut till kanten
     const a = Math.max(0, alla.findIndex(p => p[0] >= fran) - 1), b = alla.findIndex(p => p[0] > till);
-    return { ...se, namn: HISTORIK_TAL.find(t => t.id === se.tal)?.namn ?? se.tal, p: alla.slice(a, b < 0 ? alla.length : b + 1) };
+    return { ...se, namn: se.namn ?? HISTORIK_TAL.find(t => t.id === se.tal)?.namn ?? se.tal ?? '', p: alla.slice(a, b < 0 ? alla.length : b + 1) };
   });
   const max = g.max ?? 1.1 * Math.max(1, ...serier.flatMap(se => se.p.filter(p => p[0] >= fran && p[0] <= till).map(p => p[1])));
   const x = (t: number) => ((t - fran) / (till - fran) * B).toFixed(1), y = (v: number) => (H - Math.min(v, max) / max * (H - 2) - 1).toFixed(1);

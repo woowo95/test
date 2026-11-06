@@ -2,9 +2,12 @@ import { living } from './folk';
 import { amountOf, foodOf } from './lager';
 import { skogAndel } from './mark';
 import { avgMood } from './humor';
-import { DAY, Historik, State, WEEK } from './typer';
+import { DAY, Historik, RikRad, State, WEEK } from './typer';
 import { TORST } from './torst';
 import { kartminneSteg } from './kartminne';
+import { formogenheter, rikedomDelar } from './varde';
+import { SAK_LIST, isTool } from './saker';
+import { tingOf } from './agande';
 
 // ---------- byns historik ----------
 // Några nyckeltal sparas en gång i timmen (en timme är ca 15 dagar i spelet). Efter en vecka (en tidsålder) slås
@@ -50,6 +53,7 @@ export function historikSteg(s: State) {
   if (h.tal.join() !== HISTORIK_TAL.map(t => t.id).join()) omordna(h); // registret har ändrats sedan byn sparades
   h.tim.push([s.now, ...HISTORIK_TAL.map(t => Math.round(t.varde(s) * 1000) / 1000)]);
   kartminneSteg(s); // en bild av kartan per dygn (steg 5.4.5.2)
+  rikSteg(s); // byns rikedom, var och ens förmögenhet och antalet av varje sak per dygn (steg 6.9.13)
   const grans = Math.floor((s.now - WEEK) / DAY) * DAY; // hela dygn som är äldre än en vecka
   while (h.tim.length && h.tim[0][0] < grans) {
     const d = Math.floor(h.tim[0][0] / DAY), rader: number[][] = [];
@@ -57,6 +61,35 @@ export function historikSteg(s: State) {
     h.dygn.push([d * DAY, ...HISTORIK_TAL.map((t, i) => slaIhop(t.hur, rader.map(r => r[i + 1])))]);
   }
 }
+// byns rikedom per dygn (steg 6.9.13): en rad när ett nytt dygn börjat (och den första när byn grundats), med rikedomen i
+// delar (förrådet, redskapen och husen, som i sidhuvudet), varje levande persons förmögenhet och hur många av varje sak byn
+// har (redskap räknas styck, annat i mängd). Hela tal och bara det som inte är noll, så att raden blir kort
+export function rikSteg(s: State) {
+  const h = s.hist; if (!h) return;
+  const r = (h.rik ??= []), dygn = Math.floor(s.now / DAY);
+  if (r.length && Math.floor(r[r.length - 1][0] / DAY) === dygn) return;
+  r.push(rikRad(s));
+}
+export function rikRad(s: State): RikRad {
+  const d = rikedomDelar(s), egen = formogenheter(s).egen, folk: Record<string, number> = {}, saker: Record<string, number> = {};
+  for (const p of living(s)) folk[p.id] = Math.round(egen.get(p.id) ?? 0);
+  const styck: Record<string, number> = {};
+  for (const t of tingOf(s)) styck[t.k] = (styck[t.k] ?? 0) + 1;
+  for (const k of SAK_LIST) { const n = Math.round(isTool(k) ? styck[k] ?? 0 : amountOf(s, k)); if (n) saker[k] = n; }
+  return [Math.round(s.now), Math.round(d.forrad), Math.round(d.redskap), Math.round(d.hus), folk, saker];
+}
+// raden just nu, räknad en gång per stund och by (grafens serier läser den var för sig)
+let nuRad: { s: State; t: number; r: RikRad } | undefined;
+const rikNu = (s: State) => (nuRad?.s === s && nuRad.t === s.now ? nuRad : (nuRad = { s, t: s.now, r: rikRad(s) })).r;
+// en serie ur rikedomens rader åt grafen (ui/graf.ts): [tid, värde], en punkt per dygn och sist värdet just nu
+export function rikSerie(s: State, varde: (r: RikRad) => number | undefined): [number, number][] {
+  const ut: [number, number][] = [];
+  for (const r of s.hist?.rik ?? []) { const v = varde(r); if (v !== undefined) ut.push([r[0], v]); }
+  const nu = varde(rikNu(s));
+  if (nu !== undefined) { if (ut.length && ut[ut.length - 1][0] >= s.now) ut.pop(); ut.push([s.now, nu]); }
+  return ut;
+}
+
 // ett dygns timmar till ett värde: bara de timmar som har ett värde räknas (steg 5.5.7). Ett tal som inte fanns då är NaN i
 // minnet och null i en inläst sparfil; utan värde någon timme blir dygnet också utan värde
 function slaIhop(hur: 'snitt' | 'sist', v: (number | null)[]) {
@@ -96,12 +129,13 @@ export function histParts(s: State, h: Historik): Record<string, Historik> {
   for (const r of h.tim) del(r[0]).tim.push(r);
   for (const k of h.kronika) del(k[0]).kronika.push(k);
   for (const k of h.kartor ?? []) (del(k[0]).kartor ??= []).push(k);
+  for (const k of h.rik ?? []) (del(k[0]).rik ??= []).push(k);
   return ut;
 }
 export function joinHist(delar: Historik[]): Historik {
   const h: Historik = { tal: delar[0].tal, tim: [], dygn: [], kronika: [] };
-  for (const d of delar) { h.tim.push(...d.tim); h.dygn.push(...d.dygn); h.kronika.push(...d.kronika); if (d.kartor) (h.kartor ??= []).push(...d.kartor); }
-  h.kartor?.sort((a, b) => a[0] - b[0]);
+  for (const d of delar) { h.tim.push(...d.tim); h.dygn.push(...d.dygn); h.kronika.push(...d.kronika); if (d.kartor) (h.kartor ??= []).push(...d.kartor); if (d.rik) (h.rik ??= []).push(...d.rik); }
+  h.kartor?.sort((a, b) => a[0] - b[0]); h.rik?.sort((a, b) => a[0] - b[0]);
   h.tim.sort((a, b) => a[0] - b[0]); h.dygn.sort((a, b) => a[0] - b[0]); h.kronika.sort((a, b) => a[0] - b[0]);
   return h;
 }
