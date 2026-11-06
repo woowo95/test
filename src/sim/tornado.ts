@@ -15,13 +15,14 @@ import { SAKER } from './saker';
 import { stamAv, stocks } from './skog';
 import { forvarAt, stationAt } from './stationer';
 import { isLight } from './tid';
-import { H, HOUR, MIN, Person, State, W, inMap } from './typer';
+import { H, HOUR, MIN, SEC, Person, State, W, inMap } from './typer';
 import { FOREST } from './vag';
 import { larmAvbryter } from './handlingar';
 
 // Tornadon (steg 3.8.4, "Motgångarna i spelet" i designdokumentet): den enda stormen. En av motgångarna i registret
-// MOTGANGAR (motgang.ts), på sommaren och hösten. Den kommer en gång under tidsåldern, varar några timmar och går långsamt
-// längs en rak bana från kartans kant till kartans kant, nära byn. I sin väg fäller den träd (som blir liggande stammar och
+// MOTGANGAR (motgang.ts), på sommaren och hösten. Den kommer en gång under tidsåldern och är på kartan i 20–60 minuter (steg 6.4.8):
+// den börjar vid kartans kant, går en ruta på 5 sekunder och svänger då och då, och den dras inte mot byn. När tiden är slut
+// löses den upp, eller går ut ur kartan om den når kanten först. I sin väg fäller den träd (som blir liggande stammar och
 // ger lätt trä), river väggar efter materialet (timmer håller bättre än ris: storm i MATERIAL, byggnad.ts) och lyfter
 // saker ur förrådet, som hamnar utspridda runt banan; en del går sönder. Det som ligger i kistor och på hyllor, och under
 // tak där väggarna håller, klarar sig. Folk ser den komma och ropar som vid vargen (larma i rykten.ts); de som är nära
@@ -32,8 +33,11 @@ import { larmAvbryter } from './handlingar';
 // Balanstal (regel 8)
 export const TORNADO = balans('tornado', {
   borjar: [0.5, 5.5], // tornadon kommer så här många dygn (år i spelet) in i tidsåldern (slumpas mellan, hela timmar) ...
-  tim: [3, 5], // ... och går över kartan på så här många timmar (slumpas mellan, hela timmar)
-  nara: 10, // banan går högst så här många rutor från byns mitt (bynsMitt i omrade.ts, slumpas)
+  min: [20, 60], // ... och är på kartan så här många minuter (spelets tid, slumpas mellan, hela minuter) om den inte går ut ur kartan först (steg 6.4.8)
+  fart: 5, // den går en ruta på så här många sekunder (spelets tid)
+  ben: [8, 30], // den går rakt så här många rutor (slumpas mellan) ...
+  svang: [0.15, 0.7], // ... och svänger sedan så här mycket (radianer, slumpas mellan, åt vänster eller höger)
+  in: 1, // den börjar vid kartans kant och går in mot kartan, högst så här många radianer från rakt in
   radie: 2, // den tar allt inom så här många rutor från mitten
   trad: 0.6, // chansen att ett vuxet träd i vägen fälls
   storm: [0.5, 1.5], // en vägg i vägen förlorar så här mycket av sitt skick gånger materialets storm (slumpas mellan)
@@ -50,32 +54,74 @@ export const TORNADO = balans('tornado', {
 
 // ett tal mellan 0 och 1 för tornadon som börjar vid start (salt skiljer talen åt)
 const tal = (s: State, start: number, salt: number) => motgangTal(s, start, salt);
-// när tornadon i tidsåldern som börjar vid start kommer, och när den har gått över kartan (hela timmar)
+// banan för tornadon som börjar vid start: en bruten linje [x, y, x, y, …] från kartans kant, ur tiden (inte byn), så att den
+// går att räkna ut i förväg. Den går in mot kartan, rakt en bit och svänger, tills tiden är slut eller den går ut ur kartan
+export function tornadoBana(s: State, start: number): number[] {
+  const kant = tal(s, start, 3823) * 2 * (W + H);
+  let x: number, y: number, inV: number;
+  if (kant < W) { x = kant; y = 0; inV = Math.PI / 2; }
+  else if (kant < W + H) { x = W; y = kant - W; inV = Math.PI; }
+  else if (kant < 2 * W + H) { x = 2 * W + H - kant; y = H; inV = -Math.PI / 2; }
+  else { x = 0; y = 2 * (W + H) - kant; inV = 0; }
+  let v = inV + (2 * tal(s, start, 3824) - 1) * TORNADO.in;
+  const min = Math.round(TORNADO.min[0] + tal(s, start, 3822) * (TORNADO.min[1] - TORNADO.min[0]));
+  let kvar = min * 60 / TORNADO.fart;
+  const bana = [x, y];
+  for (let n = 0; kvar > 0 && n < 100; n++) {
+    let l = Math.min(kvar, TORNADO.ben[0] + tal(s, start, 3900 + n) * (TORNADO.ben[1] - TORNADO.ben[0]));
+    const dx = Math.cos(v), dy = Math.sin(v);
+    // går den ut ur kartan på vägen tar den slut där
+    let ut = false;
+    for (const [p, q] of [[dx, W - x], [-dx, x], [dy, H - y], [-dy, y]]) if (p > 1e-9 && q / p < l) { l = Math.max(0, q / p); ut = true; }
+    x += dx * l; y += dy * l; kvar -= l;
+    bana.push(x, y);
+    if (ut) break;
+    v += (tal(s, start, 4000 + n) < 0.5 ? -1 : 1) * (TORNADO.svang[0] + tal(s, start, 4100 + n) * (TORNADO.svang[1] - TORNADO.svang[0]));
+  }
+  return bana;
+}
+const banLangd = (b: number[]) => { let L = 0; for (let k = 2; k < b.length; k += 2) L += Math.hypot(b[k] - b[k - 2], b[k + 1] - b[k - 1]); return L; };
+// när tornadon i tidsåldern som börjar vid start kommer, och när den har gått sin bana (hela sekunder)
 export function tornadoTid(s: State, start: number) {
   const fran = start + Math.round((TORNADO.borjar[0] + tal(s, start, 3821) * (TORNADO.borjar[1] - TORNADO.borjar[0])) * 24) * HOUR;
-  return { fran, till: fran + Math.round(TORNADO.tim[0] + tal(s, start, 3822) * (TORNADO.tim[1] - TORNADO.tim[0])) * HOUR };
+  return { fran, till: fran + Math.round(banLangd(tornadoBana(s, start)) * TORNADO.fart) * SEC };
 }
 // drar en tornado fram vid tiden t? (vädret, vader.ts)
 export const tornadoNu = (s: State, t = s.now) => motgangNu(s, t)?.id === 'tornado' || !!s.tornado?.test && t >= s.tornado.fran && t < s.tornado.till;
 
-// banan: en rak linje genom en punkt nära byn, i en riktning ur tiden, från kartans kant till kartans kant
 function nyBana(s: State, start: number): Tornado {
-  const e = bynsMitt(s), v = tal(s, start, 3823) * 2 * Math.PI, dx = Math.cos(v), dy = Math.sin(v);
-  const sida = (2 * tal(s, start, 3824) - 1) * TORNADO.nara, cx = e.x + 0.5 - dy * sida, cy = e.y + 0.5 + dx * sida;
-  // var linjen går in och ut ur kartan (Liang–Barsky)
-  let u0 = -Infinity, u1 = Infinity;
-  for (const [p, q] of [[-dx, cx], [dx, W - cx], [-dy, cy], [dy, H - cy]]) {
-    if (Math.abs(p) < 1e-9) continue;
-    const r = q / p;
-    if (p < 0) u0 = Math.max(u0, r); else u1 = Math.min(u1, r);
-  }
-  const { fran, till } = tornadoTid(s, start);
-  return { start, fran, till, x0: cx + dx * u0, y0: cy + dy * u0, x1: cx + dx * u1, y1: cy + dy * u1, u: 0, trad: 0, vagg: 0, lyft: 0, sonder: 0, skadade: 0 };
+  const bana = tornadoBana(s, start), { fran, till } = tornadoTid(s, start);
+  return { start, fran, till, bana, L: banLangd(bana), u: 0, trad: 0, vagg: 0, lyft: 0, sonder: 0, skadade: 0 };
 }
-export interface Tornado { test?: 1; start: number; fran: number; till: number; x0: number; y0: number; x1: number; y1: number; u: number; trad: number; vagg: number; lyft: number; sonder: number; skadade: number; traff?: number[]; lyftRutor?: number[] }
+export interface Tornado { test?: 1; start: number; fran: number; till: number; bana: number[]; L: number; u: number; trad: number; vagg: number; lyft: number; sonder: number; skadade: number; traff?: number[]; lyftRutor?: number[]; tagna?: number[] }
 // hur långt längs banan tornadon har kommit vid tiden t (0 till 1), och var den är
 export const tornadoAndel = (t: Tornado, nu: number) => Math.min(1, Math.max(0, (nu - t.fran) / (t.till - t.fran)));
-export const tornadoPos = (t: Tornado, u: number) => ({ x: t.x0 + (t.x1 - t.x0) * u, y: t.y0 + (t.y1 - t.y0) * u });
+export function tornadoPos(t: Tornado, u: number) {
+  const b = t.bana;
+  if (!b) return { x: -100, y: -100 }; // en tornado från en äldre sparning (tas bort i tornadoSteg)
+  let d = u * t.L;
+  for (let k = 2; k < b.length; k += 2) {
+    const l = Math.hypot(b[k] - b[k - 2], b[k + 1] - b[k - 1]);
+    if (d <= l || k === b.length - 2) { const f = l > 0 ? Math.min(1, d / l) : 0; return { x: b[k - 2] + (b[k] - b[k - 2]) * f, y: b[k - 1] + (b[k + 1] - b[k - 1]) * f }; }
+    d -= l;
+  }
+  return { x: b[0], y: b[1] };
+}
+// var på banan punkten (x, y) ligger närmast: hur långt längs banan (rutor), hur långt från den, och banans riktning där
+function narmastPa(t: Tornado, x: number, y: number) {
+  const b = t.bana;
+  let best = { f: 0, d: Infinity, ux: 1, uy: 0 }, f0 = 0;
+  for (let k = 2; k < b.length; k += 2) {
+    const vx = b[k] - b[k - 2], vy = b[k + 1] - b[k - 1], l = Math.hypot(vx, vy);
+    if (l > 0) {
+      const ux = vx / l, uy = vy / l, a = Math.max(0, Math.min(l, (x - b[k - 2]) * ux + (y - b[k - 1]) * uy));
+      const d = Math.hypot(x - b[k - 2] - ux * a, y - b[k - 1] - uy * a);
+      if (d < best.d) best = { f: f0 + a, d, ux, uy };
+    }
+    f0 += l;
+  }
+  return best;
+}
 
 // testläget (steg 6.4.7): en tornado kommer nu från kartans kant, med en bana genom byn som en vanlig och lika lång tid över
 // kartan. Den gäller som en tornado i vädret och för larmet tills den gått över kartan. Går inte medan en tornado pågår
@@ -86,8 +132,8 @@ export function skickaTornado(s: State): { ok: boolean; text: string } {
   const t = nyBana(s, s.now), tid = t.till - t.fran;
   t.fran = s.now; t.till = s.now + tid; t.test = 1;
   s.tornado = t;
-  const e = bynsMitt(s), v = Math.atan2(t.y0 - e.y - 0.5, t.x0 - e.x - 0.5);
-  const text = `Testläget: en tornado kommer från ${STRECK[(Math.round(v / (Math.PI / 4)) + 8) % 8]} och går över kartan på ${Math.round(tid / HOUR)} timmar`;
+  const e = bynsMitt(s), v = Math.atan2(t.bana[1] - e.y - 0.5, t.bana[0] - e.x - 0.5);
+  const text = `Testläget: en tornado kommer från ${STRECK[(Math.round(v / (Math.PI / 4)) + 8) % 8]} och är på kartan i ${Math.round(tid / MIN)} minuter`;
   log(s, text + '.', 'world');
   return { ok: true, text };
 }
@@ -101,6 +147,7 @@ export function tornadoSteg(s: State) {
   if (m?.id === 'tornado' && s.tornado?.start !== m.start && !s.tornado?.test) s.tornado = nyBana(s, m.start); // loggen och krönikan: stepMotgang
   const t = s.tornado;
   if (!t) return;
+  if (!t.bana) { delete s.tornado; return; } // en rak bana från en äldre sparning
   const u = tornadoAndel(t, s.now);
   if (u > t.u) { svep(s, t, t.u, u); t.u = u; }
   if (m?.id === 'tornado' || t.test && u < 1) { ser(s, t); soker(s, t); return; }
@@ -113,13 +160,22 @@ export function tornadoSteg(s: State) {
 // det tornadon tar på vägen från andelen a till b av banan: träden, väggarna, sakerna och den som är i vägen. Varje ruta
 // tas en gång, i steget då tornadon passerar den (där rutan ligger längs banan)
 function svep(s: State, t: Tornado, a: number, b: number) {
-  const p = tornadoPos(t, a), q = tornadoPos(t, b), R = TORNADO.radie;
-  const L = Math.hypot(t.x1 - t.x0, t.y1 - t.y0) || 1, ux = (t.x1 - t.x0) / L, uy = (t.y1 - t.y0) / L;
-  const nar = (x: number, y: number) => { const f = (x - t.x0) * ux + (y - t.y0) * uy; return f >= a * L && f < (b >= 1 ? L + R : b * L) && Math.abs(-(x - t.x0) * uy + (y - t.y0) * ux) <= R; };
-  const rutor: number[] = [];
-  for (let y = Math.max(0, Math.floor(Math.min(p.y, q.y) - R)); y <= Math.min(H - 1, Math.floor(Math.max(p.y, q.y) + R)); y++)
-    for (let x = Math.max(0, Math.floor(Math.min(p.x, q.x) - R)); x <= Math.min(W - 1, Math.floor(Math.max(p.x, q.x) + R)); x++)
-      if (nar(x + 0.5, y + 0.5)) rutor.push(y * W + x);
+  const R = TORNADO.radie, L = t.L || 1;
+  // punkter längs banan från a till b, en halv ruta isär (och till slutet när den är framme)
+  const pkt: { x: number; y: number }[] = [];
+  for (let d = a * L; ; d += 0.5) { const e = Math.min(d, b * L); pkt.push(tornadoPos(t, e / L)); if (e >= b * L) break; }
+  const vid = (x: number, y: number) => pkt.some(p => Math.hypot(x - p.x, y - p.y) <= R);
+  // rutorna den når, var och en en gång per tornado: när tornadon passerar den punkt på banan som ligger närmast rutan
+  const tagna = new Set(t.tagna), rutor: number[] = [], fa = a * L, fb = b * L;
+  const xs = pkt.map(p => p.x), ys = pkt.map(p => p.y);
+  for (let y = Math.max(0, Math.floor(Math.min(...ys) - R)); y <= Math.min(H - 1, Math.floor(Math.max(...ys) + R)); y++)
+    for (let x = Math.max(0, Math.floor(Math.min(...xs) - R)); x <= Math.min(W - 1, Math.floor(Math.max(...xs) + R)); x++) {
+      if (tagna.has(y * W + x)) continue;
+      const np = narmastPa(t, x + 0.5, y + 0.5);
+      if (np.d <= R && (np.f > fa || a === 0 && np.f >= 0) && (np.f <= fb || b >= 1)) rutor.push(y * W + x);
+    }
+  if (rutor.length) (t.tagna ??= []).push(...rutor);
+  const iRutor = new Set(rutor), nar = (x: number, y: number) => iRutor.has(Math.floor(y) * W + Math.floor(x));
   // träden: ett vuxet träd blir en liggande stam, och där det stod växer högt gräs
   const g = groundOf(s);
   for (const i of rutor) {
@@ -142,7 +198,6 @@ function svep(s: State, t: Tornado, a: number, b: number) {
   }
   if (rev) touch(s);
   // sakerna som ligger ute eller under ett tak som inte håller: en del går sönder, resten hamnar en bit från banan
-  const dx = t.x1 - t.x0, dy = t.y1 - t.y0;
   let flytt = false;
   for (const st of stacksOf(s)) {
     // en hög lyfts en gång: den som inte hittar en fri ruta blir liggande på banan och lyfts inte igen och igen
@@ -153,10 +208,11 @@ function svep(s: State, t: Tornado, a: number, b: number) {
     flytt = true;
     if (st.n < 1) continue;
     // åt sidan om banan, på samma sida som stacken låg, och en bit framåt
-    const sid = ((st.x + 0.5 - t.x0) * -dy + (st.y + 0.5 - t.y0) * dx) >= 0 ? 1 : -1;
+    const np = narmastPa(t, st.x + 0.5, st.y + 0.5), dx = np.ux, dy = np.uy, bp = tornadoPos(t, np.f / L);
+    const sid = ((st.x + 0.5 - bp.x) * -dy + (st.y + 0.5 - bp.y) * dx) >= 0 ? 1 : -1;
     for (let f = 0; f < 6; f++) {
       const d = TORNADO.sprid[0] + ur(s, t, i, 3828 + f) * (TORNADO.sprid[1] - TORNADO.sprid[0]), fram = (ur(s, t, i, 3834 + f) - 0.3) * d;
-      const nx = Math.floor(st.x + 0.5 - dy / L * d * sid + dx / L * fram), ny = Math.floor(st.y + 0.5 + dx / L * d * sid + dy / L * fram);
+      const nx = Math.floor(st.x + 0.5 - dy * d * sid + dx * fram), ny = Math.floor(st.y + 0.5 + dx * d * sid + dy * fram);
       if (!inMap(nx, ny) || blocked(s, nx, ny) || stationAt(s, nx, ny) || nagotPa(s, nx, ny)) continue;
       st.x = nx; st.y = ny; break;
     }
@@ -165,7 +221,7 @@ function svep(s: State, t: Tornado, a: number, b: number) {
   if (flytt) tidy(s);
   // den som är i vägen (nära tornadon nu)
   for (const pp of living(s)) {
-    if (!alive(pp) || avstTill(pp.x, pp.y, p, q) > R || t.traff?.includes(pp.id)) continue;
+    if (!alive(pp) || !vid(pp.x, pp.y) || t.traff?.includes(pp.id)) continue;
     (t.traff ??= []).push(pp.id); // en gång per tornado
     if (ur(s, t, pp.id, 3840) >= TORNADO.skadas) continue;
     const delar: Kroppsdel[] = ['huvud', 'bal', 'armV', 'armH', 'benV', 'benH'];
@@ -176,13 +232,6 @@ function svep(s: State, t: Tornado, a: number, b: number) {
     if (dod) die(s, pp, dod); else upplev(s, pp, 'drabbad', 'tornadon'); // steg 4.1.1.2
   }
 }
-// avståndet från punkten (x, y) till sträckan p–q
-function avstTill(x: number, y: number, p: { x: number; y: number }, q: { x: number; y: number }) {
-  const vx = q.x - p.x, vy = q.y - p.y, l2 = vx * vx + vy * vy;
-  const k = l2 > 0 ? Math.max(0, Math.min(1, ((x - p.x) * vx + (y - p.y) * vy) / l2)) : 0;
-  return Math.hypot(x - p.x - k * vx, y - p.y - k * vy);
-}
-
 // de som är vakna och ser tornadon ropar (som vid vargen)
 function ser(s: State, t: Tornado) {
   const pos = tornadoPos(t, t.u), sikt = TORNADO.sikt * (isLight(s.now) ? 1 : TORNADO.siktNatt);
@@ -200,11 +249,12 @@ function soker(s: State, t: Tornado) {
 }
 // är p nära banan som är kvar? Då: platsen åt sidan dit hen går, och hur länge tills tornadon har passerat
 function fara(s: State, t: Tornado, p: Person) {
-  const dx = t.x1 - t.x0, dy = t.y1 - t.y0, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
-  const fram = (p.x - t.x0) * ux + (p.y - t.y0) * uy, sid = -(p.x - t.x0) * uy + (p.y - t.y0) * ux, nu = t.u * L;
-  if (fram < nu - TORNADO.radie || fram > L + TORNADO.radie || Math.abs(sid) > TORNADO.fara + TORNADO.radie) return;
+  // den del av banan som är kvar: var den är närmast p, och åt vilket håll
+  const L = t.L || 1, np = narmastPa(t, p.x, p.y), nu = t.u * L, ux = np.ux, uy = np.uy, fram = np.f;
+  if (fram < nu - TORNADO.radie || np.d > TORNADO.fara + TORNADO.radie) return;
+  const bp = tornadoPos(t, fram / L), sid = -(p.x - bp.x) * uy + (p.y - bp.y) * ux;
   const tecken = sid > 0 || sid === 0 && ur(s, t, p.id, 3845) < 0.5 ? 1 : -1, d = (TORNADO.fara + TORNADO.radie + TORNADO.undan) * tecken;
-  const x = Math.min(W - 1.5, Math.max(1.5, t.x0 + ux * fram - uy * d)), y = Math.min(H - 1.5, Math.max(1.5, t.y0 + uy * fram + ux * d));
+  const x = Math.min(W - 1.5, Math.max(1.5, bp.x - uy * d)), y = Math.min(H - 1.5, Math.max(1.5, bp.y + ux * d));
   const dur = Math.max(10 * MIN, (fram + TORNADO.fara + TORNADO.radie - nu) / L * (t.till - t.fran));
   return { spot: { x, y }, dur };
 }
