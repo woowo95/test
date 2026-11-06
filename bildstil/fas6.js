@@ -748,6 +748,34 @@
       } }] },
       ];
     })(),
+    // ---------- 6.4.13: det som tornadon kastar flyger i en båge, och jordstigen den lämnar ----------
+    ...(() => {
+      const W = 96, H = 64;
+      const mark = (B) => { const P = B.P; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) B.satt(x, y, P.i('oliv', ((x * 7 + y * 3) % 11 === 0) ? 1 : 2)); };
+      const stig = (B, v) => { const P = B.P; // jordstigen snett över kortet nedtill
+        for (let x = 0; x < W; x++) { const yc = 50 - Math.round(x / 12), b = v === 2 ? 5 : 3;
+          for (let dy = -b; dy <= b; dy++) { const y = yc + dy; if (y < 0 || y >= H) continue;
+            if (v === 0) B.satt(x, y, P.i('jord', (dy + x) % 3 === 0 ? 0 : 1));
+            else if (v === 1) { if ((x * 5 + dy * 3) % 7 < 5) B.satt(x, y, P.i('jord', Math.abs(dy) === b ? 2 : 1)); else if (dy === -b) B.satt(x, y - 1, P.i('oliv', 3)); }
+            else B.satt(x, y, P.i('jord', Math.abs(dy) >= b - 1 ? 2 : (dy % 2 ? 0 : 1))); } } };
+      const sak = (B, k, x, y) => { const P = B.P, o = P.i('kol', 0);
+        if (k === 'folk') { for (let dy = 0; dy < 7; dy++) for (let dx = 0; dx < 4; dx++) B.satt(x + dx, y + dy, dx === 0 || dx === 3 || dy === 0 || dy === 6 ? o : P.i('rost', 3)); B.satt(x + 1, y + 1, P.i('ben', 2)); B.satt(x + 2, y + 1, P.i('ben', 2)); }
+        else if (k === 'glod') { for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) B.satt(x + dx, y + dy, P.i('senap', 3), true); }
+        else for (let dy = 0; dy < 4; dy++) for (let dx = 0; dx < 4; dx++) B.satt(x + dx, y + dy, dx === 0 || dx === 3 || dy === 0 || dy === 3 ? o : P.i('jord', 2)); };
+      const bage = (v) => (B) => { mark(B); stig(B, v);
+        const P = B.P, banor = [['folk', 10, 40, 60, 34, 18], ['sak', 20, 46, 84, 40, 14], ['glod', 34, 30, 70, 22, 22]];
+        for (const [k, fx, fy, tx, ty, hojd] of banor) {
+          const pos = (f) => [Math.round(fx + (tx - fx) * f), Math.round(fy + (ty - fy) * f - Math.sin(f * Math.PI) * hojd)];
+          if (v === 0) for (let f = 0; f < 0.6; f += 0.06) { const [x, y] = pos(f); B.satt(x, y, P.i('kol', 1)); }
+          if (v === 2) for (let f = 0.42; f < 0.6; f += 0.03) { const [x, y] = pos(f); B.satt(x + 1, y + 2, P.i('ben', 3)); }
+          const [x, y] = pos(0.6); if (v === 1) { const [gx] = pos(0.6); const gy = Math.round(fy + (ty - fy) * 0.6) + 4; for (let dx = 0; dx < 4; dx++) B.morka(gx + dx, gy); }
+          sak(B, k, x, y);
+        } };
+      return [KORT('f6_tornado_flyger', 'Det tornadon kastar, och jordstigen', S + '6.4.13: det som tornadon lyfter flyger i en båge till där det landar (en människa, en sak och en glöd), och efter tornadon syns en stig av uppriven jord där den gått fram, tills gräset vuxit igen. Platshållaren i spelet är den första versionen.', [
+        { text: 'Version 1: en prickad bana bakom det som flyger, och jordstigen i fåror.', w: W, h: H, rita: bage(0) },
+        { text: 'Version 2: ingen bana men en skugga på marken under, och jordstigen i lösa torvor med uppslitet gräs i kanten.', w: W, h: H, rita: bage(1) },
+        { text: 'Version 3: ljusa fartstreck bakom, och en bredare jordstig med ljusa kanter.', w: W, h: H, rita: bage(2) }])];
+    })(),
     // ---------- rövaren (Björn 2026-11-04: "Gör rövardelarna"): luvan eller duken och de mörka kläderna ----------
     ...(() => {
       const rov = (bonad, rock, arr, text) => ({ text, w: 4 + 64 + 3 + 64 + 6 + 5 * 15 + 2, h: 72, rita: B => {

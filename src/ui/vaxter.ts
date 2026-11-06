@@ -1,4 +1,5 @@
-import { Djur, FYND, H, HOUR, SEC, W, ageIndex, brinnande, djurOf, fyndAt, getMap, living, plockOf, tornadoAndel, tornadoPos, vargarOf } from '../sim';
+import { Djur, FLYGTID, FYND, H, HOUR, SEC, W, ageIndex, brinnande, djurOf, fyndAt, getMap, groundOf, living, plockOf, tornadoAndel, tornadoPos, vargarOf } from '../sim';
+import { farg, fargTal } from '../palett';
 import { s, ui, vidNyBy } from './lage';
 import { Ikoner, TS, djurFx, djurMarkLayer, figurLayer, plantG, rokBakLayer } from './scen';
 import { brandBild, brandRok, tornadoBild } from './animation';
@@ -105,6 +106,7 @@ export function drawAnimals() {
   // tornadon där den är (steg 3.8.4), foten mitt på banan, och lågorna där det brinner (steg 3.8.5): bildstilens animationer
   // (steg 5.1.9.1), tornadon som virvlar i åtta bilder och branden som slår ut i sex, med röken bakom alla lågorna
   if (s.tornado) { const p = tornadoPos(s.tornado, tornadoAndel(s.tornado, ui.nu)); djurIkoner.add(tornadoBild(), Math.round(p.x * TS - ANIMTAKT.tornado.cx), Math.round(p.y * TS - ANIMTAKT.tornado.fot), 1); }
+  ritaTornadoSpar();
   for (const [i] of brinnande(s)) {
     const x = (i % W) * TS, y = Math.floor(i / W) * TS;
     djurIkoner.add(brandBild(i), x, y, 1); brandRokIkoner.add(brandRok(i), x, y - 26, 1);
@@ -123,6 +125,26 @@ export function drawAnimals() {
     djurFx.lineStyle(1, 0xffffff, 0.9).drawRoundedRect(vald.x * TS - b.w / 2, vald.y * TS + b.fot - b.h, b.w, b.h, 3).lineStyle(0); }
   djurIkoner.end(); larmIkoner.end(); brandRokIkoner.end();
   synliga = ut;
+}
+// tornadons spår (steg 6.4.13), platshållare i paletten: jordstigen där gräset slets upp (mörka fåror i jordens ton, tills
+// gräset vuxit tillbaka) och det som flyger iväg, i en båge från där det låg till där det landar: saker som en liten
+// klump, människor som en liten figur och glöden som en gnista
+const FARA = fargTal(farg('jord', 0)), SAK = fargTal(farg('jord', 2)), FOLK = fargTal(farg('rost', 3)), FOLKK = fargTal(farg('kol', 0)), GLOD = fargTal(farg('senap', 3));
+function ritaTornadoSpar() {
+  const g = groundOf(s);
+  for (const i of s.tornadoStig ?? []) {
+    if (g.cover[i] >= 0.3) continue;
+    const x = (i % W) * TS, y = Math.floor(i / W) * TS, a = 0.6 * (1 - g.cover[i] / 0.3);
+    djurFx.beginFill(FARA, a).drawRect(x + 2, y + 4, 10, 1).drawRect(x + 5, y + 9, 9, 1).drawRect(x + 1, y + 13, 7, 1).endFill();
+  }
+  for (const f of s.tornado?.flyg ?? []) {
+    const k = (ui.nu - f.t) / FLYGTID;
+    if (k < 0 || k > 1) continue;
+    const d = Math.hypot(f.tx - f.fx, f.ty - f.fy), x = Math.round((f.fx + (f.tx - f.fx) * k) * TS), y = Math.round((f.fy + (f.ty - f.fy) * k) * TS - Math.sin(k * Math.PI) * d * 4);
+    if (f.k === 'folk') djurFx.beginFill(FOLKK).drawRect(x - 2, y - 5, 4, 7).endFill().beginFill(FOLK).drawRect(x - 1, y - 4, 2, 5).endFill();
+    else if (f.k === 'glod') djurFx.beginFill(GLOD).drawRect(x - 1, y - 1, 2, 2).endFill();
+    else djurFx.beginFill(FOLKK).drawRect(x - 2, y - 2, 4, 4).endFill().beginFill(SAK).drawRect(x - 1, y - 1, 2, 2).endFill();
+  }
 }
 // utropstecknet över kaninen som ser någon och flyr
 const larm = (x: number, y: number) => larmIkoner.add('kanin_larm', x * TS - 3, y * TS - 15, 1);

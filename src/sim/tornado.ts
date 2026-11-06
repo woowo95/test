@@ -117,7 +117,15 @@ function nyBana(s: State, start: number): Tornado {
   const bana = tornadoBana(s, start), { fran, till } = tornadoTid(s, start);
   return { start, fran, till, bana, L: banLangd(bana), u: 0, trad: 0, vagg: 0, lyft: 0, sonder: 0, skadade: 0 };
 }
-export interface Tornado { test?: 1; storlek?: TornadoStorlek; doda?: number; djur?: number; forstort?: number; start: number; fran: number; till: number; bana: number[]; L: number; u: number; trad: number; vagg: number; lyft: number; sonder: number; skadade: number; traff?: number[]; lyftRutor?: number[]; tagna?: number[] }
+export interface Tornado { test?: 1; storlek?: TornadoStorlek; doda?: number; djur?: number; forstort?: number; start: number; fran: number; till: number; bana: number[]; L: number; u: number; trad: number; vagg: number; lyft: number; sonder: number; skadade: number; traff?: number[]; lyftRutor?: number[]; tagna?: number[]; flyg?: Flygt[] }
+// det som flyger (steg 6.4.13, bara för bilden): slaget (en sak, 'folk' eller 'glod'), varifrån, vart och när
+export interface Flygt { k: string; fx: number; fy: number; tx: number; ty: number; t: number }
+// så länge något syns flyga (spelets tid, ms)
+export const FLYGTID = 3 * SEC;
+function flog(s: State, t: Tornado, k: string, fx: number, fy: number, tx: number, ty: number) {
+  t.flyg = (t.flyg ?? []).filter(f => f.t > s.now - FLYGTID);
+  if (t.flyg.length < 60) t.flyg.push({ k, fx, fy, tx, ty, t: s.now });
+}
 // hur långt längs banan tornadon har kommit vid tiden t (0 till 1), och var den är
 export const tornadoAndel = (t: Tornado, nu: number) => Math.min(1, Math.max(0, (nu - t.fran) / (t.till - t.fran)));
 export function tornadoPos(t: Tornado, u: number) {
@@ -154,6 +162,7 @@ export function skickaTornado(s: State): { ok: boolean; text: string } {
   const h = tornadoHinder(s);
   if (h) return { ok: false, text: h };
   const t = nyBana(s, s.now), tid = t.till - t.fran;
+  s.tornadoStig = undefined;
   t.fran = s.now; t.till = s.now + tid; t.test = 1;
   s.tornado = t;
   const e = bynsMitt(s), v = Math.atan2(t.bana[1] - e.y - 0.5, t.bana[0] - e.x - 0.5);
@@ -174,7 +183,7 @@ export interface TornadoGaster {
 }
 export function tornadoSteg(s: State, gaster?: TornadoGaster) {
   const m = motgangNu(s);
-  if (m?.id === 'tornado' && s.tornado?.start !== m.start && !s.tornado?.test) s.tornado = nyBana(s, m.start); // loggen och krönikan: stepMotgang
+  if (m?.id === 'tornado' && s.tornado?.start !== m.start && !s.tornado?.test) { s.tornado = nyBana(s, m.start); s.tornadoStig = undefined; } // loggen och krönikan: stepMotgang
   const t = s.tornado;
   if (!t) return;
   if (!t.bana) { delete s.tornado; return; } // en rak bana från en äldre sparning
@@ -268,7 +277,7 @@ function naraZon(s: State, t: Tornado, rutor: number[]) {
     const x = i % W, y = Math.floor(i / W);
     if (g.trees[i] >= FOREST && ur(s, t, i, 3825) < TORNADO.trad) fall(s, t, i);
     else if (g.trees[i] > 0 && g.trees[i] < FOREST) g.trees[i] = 0;
-    if (isSoil(g.tiles[i]) && !g.built?.[i] && g.trees[i] < FOREST) { if (g.cover[i] > 0) count(s, 'tornado stig'); g.cover[i] = 0; } // en jordstig
+    if (isSoil(g.tiles[i]) && !g.built?.[i] && g.trees[i] < FOREST) { if (g.cover[i] > 0) count(s, 'tornado stig'); g.cover[i] = 0; (s.tornadoStig ??= []).push(i); } // en jordstig (som syns efteråt, steg 6.4.13)
     const v = bitAt(s, x, y);
     if (v?.k === 'vagg' && v.b >= 1) {
       v.c -= (MATERIAL[v.m]?.storm ?? 1) * (TORNADO.storm[0] + ur(s, t, i, 3826) * (TORNADO.storm[1] - TORNADO.storm[0]));
@@ -317,6 +326,7 @@ function eldarna(s: State, t: Tornado, rutor: Set<number>) {
     count(s, 'tornado eld');
     const v = 2 * Math.PI * ur(s, t, i, 3849), d = TORNADO.flygNara[0] + ur(s, t, i, 3850) * (TORNADO.flygNara[1] - TORNADO.flygNara[0]);
     const nx = Math.floor(e.x + 0.5 + Math.cos(v) * d), ny = Math.floor(e.y + 0.5 + Math.sin(v) * d);
+    if (inMap(nx, ny)) flog(s, t, 'glod', e.x + 0.5, e.y + 0.5, nx + 0.5, ny + 0.5);
     if (inMap(nx, ny) && ur(s, t, i, 3851) < TORNADO.glod) { tand(s, ny * W + nx, 'gnista', ur(s, t, i, 3852)); if (brinner(s, ny * W + nx)) count(s, 'tornado glod'); }
   }
 }
@@ -334,7 +344,7 @@ function lyft(s: State, t: Tornado, nara: Set<number>, utkant: Set<number>) {
     flytt = true;
     if (st.n < 1) continue;
     const p = landar(s, t, st.x + 0.5, st.y + 0.5, i, zon, L);
-    if (p) { st.x = p.x; st.y = p.y; }
+    if (p) { flog(s, t, st.k, st.x + 0.5, st.y + 0.5, p.x + 0.5, p.y + 0.5); st.x = p.x; st.y = p.y; }
     (t.lyftRutor ??= []).push(st.y * W + st.x);
   }
   if (flytt) tidy(s);
@@ -355,7 +365,7 @@ function landar(s: State, t: Tornado, x: number, y: number, a: number, zon: numb
 // en människa nära tornadon eller i utkanten flyger och skadas när hen landar: nära långt och svårt, och hen kan dö direkt
 function flyger(s: State, t: Tornado, pp: Person, zon: number) {
   const L = t.L || 1, p = landar(s, t, pp.x, pp.y, 10000 + pp.id, zon, L, true);
-  if (p) { avbryt(s, pp); pp.x = p.x + 0.5; pp.y = p.y + 0.5; }
+  if (p) { avbryt(s, pp); flog(s, t, 'folk', pp.x, pp.y, p.x + 0.5, p.y + 0.5); pp.x = p.x + 0.5; pp.y = p.y + 0.5; }
   count(s, 'tornado flog');
   if (zon === 1 && ur(s, t, pp.id, 3853) < TORNADO.dodNara) { t.doda = (t.doda ?? 0) + 1; count(s, 'tornado dod'); die(s, pp, 'tornado'); return; }
   if (ur(s, t, pp.id, 3840) >= (zon === 1 ? 1 : TORNADO.skadas)) return;
