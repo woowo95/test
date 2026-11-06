@@ -99,18 +99,35 @@ export function plantaUppgravd(s: State, p: Person, t: Task) {
   if (t.tool) wearUsed(s, p, 1);
   t.phase = 'back'; t.tx = m % W + 0.5; t.ty = Math.floor(m / W) + 0.5; t.why = 'Bär en planta dit byn vill ha skog';
 }
-// framme med plantan (LAMNA i steg.ts): den sätts i jorden, om platsen fortfarande är fri
+// plantan sätts i jorden på rutan i, om den är fri
+function satt(s: State, i: number, t: Task) {
+  const g = groundOf(s);
+  if (!t.prog || !isSoil(g.tiles[i]) || g.trees[i] !== 0 || g.built?.[i]) return false;
+  g.trees[i] = t.prog; if (g.art) g.art[i] = t.ref ?? 0;
+  t.prog = 0;
+  return true;
+}
+// plantan som bärs sätts på närmaste fria jordruta runt (x, y), så att den inte försvinner: när platsen blivit upptagen
+// eller när bäraren avbryts på vägen (avbryt i lager.ts)
+export function slappPlanta(s: State, t: Task, x: number, y: number) {
+  if (t.act !== 'plantera' || t.phase !== 'back' || !t.prog) return;
+  const cx = Math.floor(x), cy = Math.floor(y);
+  for (let r = 0; r <= 4; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+    const xx = cx + dx, yy = cy + dy;
+    if (xx >= 0 && yy >= 0 && xx < W && yy < H && satt(s, yy * W + xx, t)) return;
+  }
+}
+// framme med plantan (LAMNA i steg.ts): den sätts i jorden, eller bredvid om platsen blivit upptagen
 export function plantaSatt(s: State, p: Person, t: Task) {
-  const g = groundOf(s), i = Math.floor(t.ty) * W + Math.floor(t.tx);
-  if (t.prog && isSoil(g.tiles[i]) && g.trees[i] === 0 && !g.built?.[i]) {
-    g.trees[i] = t.prog; if (g.art) g.art[i] = t.ref ?? 0;
+  const i = Math.floor(t.ty) * W + Math.floor(t.tx);
+  if (satt(s, i, t)) {
     count(s, 'plantorFlyttade');
     think(p, 'Satte en planta', SKOGSVARD.glad, s.now, SKOGSVARD.glatTim * HOUR);
     if (forstaGang(s, 'plantaForsta')) log(s, `${p.name} grävde upp en planta och satte den närmare byn, där skogen ska växa tillbaka.`, 'world', [p.id]);
-  }
+  } else slappPlanta(s, t, t.tx, t.ty);
   p.task = undefined;
 }
-
 // ---------- vindfällen (steg 6.5.5, "Skogen som byn sköter" i designdokumentet, stycket Vindfällen) ----------
 // När det blåser väldigt hårt utan en tornado (stormen under tornadon är tornado.ts) kan vuxna träd falla och bli liggande stammar
 // som ger lätt trä, med samma bild som ett träd fällt med yxa. Ju hårdare det blåser, desto större risk; under VINDFALL.fran

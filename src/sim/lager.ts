@@ -21,6 +21,7 @@ import { flodHotad, iVattnetNu, underMinnet } from './sjo';
 import { FLOD } from './flod';
 import { forbrukat } from './forradsmal';
 import { strakI } from './strak';
+import { slappPlanta } from './skogsvard';
 
 // ---------- balanstal (regel 8) ----------
 // Förrådet: hur lagerplatserna växer, hur fort saker slits och ruttnar, hur mycket en person bär och vad som bärs in först.
@@ -961,6 +962,7 @@ export function dropLoad(s: State, t: Task, x: number, y: number, owner = BYN) {
 export function avbryt(s: State, p: Person) {
   const t = p.task;
   if (t && (isCarrying(t) || t.ting?.length)) dropLoad(s, t, p.x, p.y, p.id);
+  if (t) slappPlanta(s, t, p.x, p.y); // plantan som bärs sätts i jorden där bäraren är (steg 6.5.3)
   p.task = undefined;
 }
 // stackar som någon borde bära: saker på marken långt bort, saker bredvid lagret när det finns plats i det, saker i
