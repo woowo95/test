@@ -387,7 +387,7 @@ const MDEF = {
     'När de unga vill veta hur det var förr frågar de {namn}. {Hen} är {ar} år och äldst i byn.',
     'Byns äldsta är {namn}, {ar} år.',
     '{ar} år har {namn} levt, längre än någon annan i byn.',
-    'Ingen har sett så många vintrar som {namn}: {ar} stycken.',
+    'Ingen har sett så många vintrar som {namn}, som nu är {ar} år.',
   ],
   // {vad} = det hen är känd som ('mästare i snickeri', 'byns första ledare')
   besk_titel: [
@@ -2039,7 +2039,7 @@ function gebinamn(s: State, p: Person, k: IntryckTyp, v: number) {
 export function binamnInfo(p: Person) {
   const b = p.binamn;
   if (!b) return undefined;
-  return { namn: b.namn, sym: arHeder(b) ? '🏅' : '🗯️', heder: arHeder(b), varfor: `${p.name} ${b.skal ?? `är ${tillstand(b.k)}`}`, intryck: INTRYCK[b.k].namn, alive: alive(p) };
+  return { namn: b.namn, sym: arHeder(b) ? '🏅' : '🗯️', heder: arHeder(b), varfor: `${p.name} ${b.skal ?? `är ${tillstand(b.k)}`}`, intryck: INTRYCK[b.k].namn, bevis: !!b.skal, alive: alive(p) }; // bevis: utan skäl säger varfor bara samma sak igen (steg 6.7.8)
 }
 
 // ---------- personen (steg 3.9.2) ----------

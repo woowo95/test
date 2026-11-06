@@ -411,7 +411,7 @@ function binamnHtml(p: Person) {
 }
 function binamnForkl(p: Person) {
   const b = binamnInfo(p);
-  return b ? hjalpText(`bn-${p.id}`, `<p class="forkl">${b.heder ? 'Hedersnamn' : 'Öknamn'}: byn ser ${esc(p.name)} som ${esc(b.intryck)}. ${esc(b.varfor)}.</p>`) : '';
+  return b ? hjalpText(`bn-${p.id}`, `<p class="forkl">${b.heder ? 'Hedersnamn' : 'Öknamn'}: byn ser ${esc(p.name)} som ${esc(b.intryck)}.${b.bevis ? ` ${esc(b.varfor)}.` : ''}</p>`) : '';
 }
 function anseende(p: Person) {
   const a = alive(p) ? anseendeSym(s, p.id) : dodSymbol(s, p.id);

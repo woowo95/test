@@ -457,6 +457,12 @@ export function smakDrag(p: Person, acts: readonly string[]) {
 export function bevisText(b: Bevis, om: string) {
   return HANDELSER[b.h].text.replace('{om}', b.motNamn ?? 'någon').replace('{sak}', b.sak ?? 'något').replace(/^/, om + ' ');
 }
+// samma bevis flera gånger står en gång med antalet i ord: "Frönvi vann ett slagsmål mot Ingrulf (tre gånger)" (steg 6.7.8)
+function sammaGanger(L: string[]) {
+  const n = new Map<string, number>();
+  for (const t of L) n.set(t, (n.get(t) ?? 0) + 1);
+  return [...n].map(([t, k]) => k > 1 ? `${t} (${tal(k)} gånger)` : t);
+}
 export function intryckText(s: State, e: Intryck) {
   const sure = e.c >= 0.75 ? 'säker' : e.c >= 0.4 ? 'ganska säker' : 'osäker';
   const q = byId(s, e.om), dod = !q || !alive(q);
@@ -464,7 +470,7 @@ export function intryckText(s: State, e: Intryck) {
   const slag = dod && (e.led ?? 0) >= RYKTE.legendLed ? 'en legend' : dod && (e.led ?? 0) >= RYKTE.berattelseLed ? 'en berättelse' : '';
   const falsk = e.bev?.some(b => b.falsk) ? 'påhittat' : '';
   const sant = falsk || (e.led && e.bev?.length && e.v > HANDELSER[e.bev[0].h].vikt * 1.4 ? 'överdrivet' : '');
-  return { namn: INTRYCK[e.k].namn, som: INTRYCK[e.k].som ?? INTRYCK[e.k].namn, sym: INTRYCK[e.k].sym, sure, varifran, slag, sant, bevis: (e.bev ?? []).map(b => bevisText(b, e.namn)), dod };
+  return { namn: INTRYCK[e.k].namn, som: INTRYCK[e.k].som ?? INTRYCK[e.k].namn, sym: INTRYCK[e.k].sym, sure, varifran, slag, sant, bevis: sammaGanger((e.bev ?? []).map(b => bevisText(b, e.namn))), dod };
 }
 // symbolen för en död som minns: en stjärna för en legend, en dödskalle för den ökända
 export function dodSymbol(s: State, om: number) {

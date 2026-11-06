@@ -68,7 +68,7 @@ export const sinOrd = (d: { ett?: boolean }) => d.ett ? 'sitt' : 'sin';
 export const enOrd = (d: { ett?: boolean }) => d.ett ? 'ett' : 'en';
 
 // ---------- teknikerna ----------
-// vad den som kan tekniken gör: "har lärt sig att odla", "kom på hur man kan leda byn", "Med Gunve dog konsten att odla"
+// vad den som kan tekniken gör: "har lärt sig att odla", "kom på hur man kan välja en ledare", "Med Gunve dog konsten att odla"
 export const GORA: Record<string, string> = {
   korg: 'fläta korgar', yxa: 'göra flintyxor', fiskespjut: 'tälja träspjut', rep: 'tvinna rep', flintspjut: 'göra flintspjut', metspo: 'göra metspön',
   kniv: 'slå flintknivar', timmervagg: 'bygga timmerhus', slaktbank: 'bygga en slaktbänk', flatarbank: 'bygga en slöjdbänk', halmbadd: 'göra halmbäddar',
@@ -76,7 +76,7 @@ export const GORA: Record<string, string> = {
   bensyl: 'slipa bensylar', skinnklader: 'sy kläder av skinn', vattensack: 'sy vattensäckar', balte: 'fläta bälten', mal: 'binda mål', boll: 'sy bollar',
   slagtra: 'tälja slagträn', scen: 'bygga en scen', trumma: 'göra trummor', benflojt: 'skära benflöjter', lyra: 'göra lyror', kruka: 'forma lerkrukor',
   bonad: 'göra bonader', vaggbrade: 'snida väggbräden', benspade: 'göra benspadar', latrin: 'gräva en latrin', grill: 'bygga en grillställning',
-  tork: 'bygga en torkställning', odling: 'odla', ledarskap: 'leda byn', fackla: 'göra facklor', skogsvard: 'flytta plantor dit skogen behövs',
+  tork: 'bygga en torkställning', odling: 'odla', ledarskap: 'välja en ledare', fackla: 'göra facklor', skogsvard: 'flytta plantor dit skogen behövs',
 };
 // teknikens namn med gemen till dess id; teknik.ts fyller i det när TEKNIK läses (för det som bara sparat namnet, som p.fame)
 export const TEKNAMN: Record<string, string> = {};

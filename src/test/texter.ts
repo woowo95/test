@@ -17,7 +17,7 @@ const res = await pool(Array.from({ length: byar }, (_, i) => seedAv(i)).map(see
 const alla: Samlat = {};
 for (const r of res) for (const m in r.ut) for (const i in r.ut[m]) {
   const v = ((alla[m] ??= {})[+i] ??= { n: 0, ex: [] }), w = r.ut[m][+i];
-  v.n += w.n;
+  v.n += w.n; v.u = (v.u ?? 0) + (w.u ?? w.n);
   for (const e of w.ex) if (v.ex.length < 6 && !v.ex.includes(e)) v.ex.push(e);
 }
 const fel: Fel = {};
@@ -34,14 +34,21 @@ const mallar = Object.keys(BERATTELSER) as (keyof typeof BERATTELSER)[];
 const oanvanda = mallar.filter(m => !alla[m]);
 let aldrig = 0, varianter = 0;
 const del: string[] = [];
+// steg 6.7.8 (roten r_prov): en variant utan villkor som valts mer än dubbelt så ofta som snittet i sin mall märks
+const forOfta: string[] = [];
 for (const m of mallar) {
   const v = BERATTELSER[m], a = alla[m] ?? {}, n = Object.values(a).reduce((x, y) => x + y.n, 0);
   const valda = v.filter((_, i) => a[i]).length;
   varianter += v.length; aldrig += v.length - valda;
   del.push(`== ${m}: använd ${n} gånger, ${valda} av ${v.length} varianter valda`);
+  // olika texter per variant utan villkor (en variant med villkor kan sällan väljas och drar ner snittet)
+  const fria = v.map((x, i) => typeof x === 'string' ? a[i]?.u ?? 0 : -1).filter(u => u >= 0);
+  const snitt = fria.reduce((x, y) => x + y, 0) / Math.max(1, fria.length);
   v.forEach((x, i) => {
     const w = a[i];
-    del.push(`  [${i}] ${w ? `${w.n}×`.padStart(6) : 'aldrig'}  ${raw(x)}`);
+    const ofta = typeof x === 'string' && fria.length > 1 && w && (w.u ?? 0) >= 10 && (w.u ?? 0) > 2 * snitt;
+    if (ofta) forOfta.push(`${m}[${i}] ${w.u} olika (snittet ${snitt.toFixed(1)})`);
+    del.push(`  [${i}] ${w ? `${w.n}×`.padStart(6) : 'aldrig'}${ofta ? ' ⚠ för ofta' : ''}  ${raw(x)}`);
     for (const e of w?.ex ?? []) if (e !== raw(x)) del.push(`           – ${e}`);
   });
   del.push('');
@@ -53,6 +60,7 @@ for (const d of BESK_DELAR) {
   for (const e of w?.ex ?? []) del.push(`           – ${e}`);
 }
 rader.push(`${mallar.length} mallar med ${varianter} varianter; ${aldrig} varianter valdes aldrig.`);
+rader.push(`Varianter utan villkor med mer än dubbelt så många olika texter som snittet i sin mall (${forOfta.length}): ${forOfta.join(', ') || 'inga'}`);
 rader.push(`Mallar som aldrig användes (${oanvanda.length}): ${oanvanda.join(', ') || 'inga'}`);
 const felRader: string[] = ['== Fel som kontrollerna hittade (steg 4.5.1.2)'];
 for (const k of [...KONTROLLER, ...STIL]) {

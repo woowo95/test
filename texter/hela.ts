@@ -31,7 +31,7 @@ const PLATSER: { id: string; rubrik: string; var: string; max: number }[] = [
   { id: 'kronika', rubrik: 'Krönikan', var: 'Byns krönika: sparas för alltid men visas inte i spelet än. Här de första 30 raderna.', max: 3 },
 ];
 const ut: Record<string, Text[]> = Object.fromEntries(PLATSER.map(p => [p.id, []]));
-const sett = new Set<string>();
+const sett = new Set<string>(), dodSett = new Set<number>(); // en död en gång, fast texten varierar
 // samma text en gång; varje ställe får lika många från varje by och tidpunkt, så att de blir olika
 function lagg(plats: string, by: number, s: State, vem: string, text: string) {
   if (!text || sett.has(text)) return;
@@ -59,7 +59,7 @@ function titta(s: State, by: number) {
   for (const p of urval(s)) {
     lagg('besk', by, s, vemAr(s, p), beskrivning(s, p));
     const b = binamnInfo(p);
-    if (b) lagg('binamn', by, s, `${p.name} ${b.namn}`, `${b.heder ? 'Hedersnamn' : 'Öknamn'}: byn ser ${p.name} som ${b.intryck}. ${b.varfor}.`);
+    if (b) lagg('binamn', by, s, `${p.name} ${b.namn}`, `${b.heder ? 'Hedersnamn' : 'Öknamn'}: byn ser ${p.name} som ${b.intryck}.${b.bevis ? ` ${b.varfor}.` : ''}`);
     // relationerna: de särskilda först och sedan den starkaste, som i personrutan
     const rels = living(s).filter(q => q.id !== p.id && s.rels[relKey(p.id, q.id)]).map(q => ({ q, r: s.rels[relKey(p.id, q.id)] }))
       .sort((x, y) => Math.abs(y.r.op) - Math.abs(x.r.op));
@@ -75,7 +75,7 @@ function titta(s: State, by: number) {
       lagg('intryck', by, s, `Vad ${p.name} tror om ${e.namn}`, `${t.namn[0].toUpperCase() + t.namn.slice(1)}: ${[t.sure, t.varifran, t.slag, t.sant].filter(Boolean).join(', ')}${t.bevis.length ? '\n' + t.bevis.join('\n') : ''}`);
     }
   }
-  for (const p of s.people.filter(p => !alive(p)).slice(-2)) lagg('dod', by, s, `${p.name} (död)`, beskrivning(s, p));
+  for (const p of s.people.filter(p => p.died !== undefined && !dodSett.has(p.id)).slice(-2)) dodSett.add(p.id), lagg('dod', by, s, `${p.name} (död)`, beskrivning(s, p));
   for (const t of (s.ting ?? []).filter(t => t.ber).slice(-2)) lagg('sak', by, s, sakNamn(t.k), sakBerattelse(s, t, sakNamn(t.k)));
   for (const st of (s.stationer ?? []).filter(st => st.ber).slice(-1)) {
     const namn = (STATIONER as Record<string, { namn: string }>)[st.k]?.namn ?? st.k;

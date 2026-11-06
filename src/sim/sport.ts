@@ -17,6 +17,7 @@ import { hourOf } from './tid';
 import { snoPaMarken } from './vader';
 import { balans } from './balans';
 import { notis } from './notiser';
+import { tal } from './ord';
 import { HOUR, HOUR_S, MIN, Person, Skill, State, Task } from './typer';
 
 export interface SportDef {
@@ -203,6 +204,6 @@ function vinnare(s: State, d: SportDef, m: Match, har: Person[]) {
   s.sportBast[d.id] = bast.id;
   const titel = `Den bästa i ${d.namn.toLowerCase()}${d.id === 'kast' ? '' : 'en'}`;
   if (!bast.fame.includes(titel)) bast.fame.push(titel);
-  const text = fore && alive(fore) ? `${bast.name} har vunnit fler matcher i ${d.namn.toLowerCase()} än ${fore.name} och är nu den bästa i byn.` : `${bast.name} har vunnit ${n} matcher i ${d.namn.toLowerCase()} och är den bästa i byn.`;
+  const text = fore && alive(fore) ? `${bast.name} har vunnit fler matcher i ${d.namn.toLowerCase()} än ${fore.name} och är nu den bästa i byn.` : `${bast.name} har vunnit ${tal(n)} matcher i ${d.namn.toLowerCase()} och är den bästa i byn.`;
   log(s, text, 'world', [bast.id]); kronika(s, text);
 }
