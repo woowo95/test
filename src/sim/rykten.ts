@@ -109,7 +109,7 @@ const IDEF = {
   feg: { namn: 'feg', tecken: -1, op: -5, sym: '🐔', betyder: 'Har backat från en strid.' }, // backade från en strid (steg 3.7.9, strid.ts)
   smakfull: { namn: 'smakfull', tecken: 1, op: 5, sym: '🏺', betyder: 'Har ett vackert pynt där den sover.' }, // pyntet (steg 4.3.4, pynt.ts)
   vargdodare: { namn: 'vargdödare', tecken: 1, op: 5, sym: '🐺', som: 'en vargdödare', betyder: 'Har dödat en varg.' }, // dödade en varg (steg 3.7.1, varg.ts)
-  bjorndodare: { namn: 'björndödare', tecken: 1, op: 10, sym: '🐻', som: 'en björndödare', betyder: 'Har dödat en björn.' }, // dödade en björn (steg 6.6.6, bjorn.ts)
+  bjorndodare: { namn: 'björndödare', tecken: 1, op: 10, sym: '🐾', som: 'en björndödare', betyder: 'Har dödat en björn.' }, // dödade en björn (steg 6.6.6, bjorn.ts)
 } satisfies Record<string, IntryckDef>;
 export type IntryckTyp = keyof typeof IDEF;
 export const INTRYCK: Record<IntryckTyp, IntryckDef> = IDEF;

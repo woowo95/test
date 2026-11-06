@@ -309,7 +309,9 @@ SCENARIER.skaldskap = {
     // i samtalen: de som berättar men aldrig uppträder blir också bättre
     let vaxte = 0;
     for (const seed of [5, 6, 7]) { // tre byar: i en enda by kan några berättelser avgöra
-      const d = rikDag(seed), fore = new Map(SIM.living(d).map(q => [q.id, q.skill.skaldskap]));
+      const d = rikDag(seed);
+      for (const q of SIM.living(d)) q.skill.berattande = Math.max(q.skill.berattande, 10); // vana berättare väljer oftare att berätta vid elden på kvällen
+      const fore = new Map(SIM.living(d).map(q => [q.id, q.skill.skaldskap]));
       kor(d, 48);
       vaxte += SIM.living(d).filter(q => !q.gjort?.t.upptradt && (q.skill.skaldskap ?? 0) > (fore.get(q.id) ?? Infinity)).length;
     }

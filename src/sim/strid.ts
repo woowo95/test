@@ -176,7 +176,7 @@ export const VAPEN = {
   sten: { namn: 'Stenen', skada: 0.25, takt: 1.1, rack: 0.9, slag: 'slag', ord: 'slår', tecken: '🪨', kast: { rack: 8, skada: 0.22, skott: 3 } }, // tre stenar att kasta, sedan slår man med den sista
   bett: { namn: 'Tänderna', skada: 0.1, takt: 0.8, rack: 0.7, slag: 'bett', ord: 'biter', tecken: '🦷' },
   vargbett: { namn: 'Vargens käftar', skada: 0.28, takt: 1.4, rack: 0.9, slag: 'bett', ord: 'biter', tecken: '🐺' }, // vargen biter hårt (steg 3.7.1)
-  bjornram: { namn: 'Björnens ramar', skada: 0.4, takt: 1.6, rack: 1.1, slag: 'hugg', ord: 'river', tecken: '🐻' }, // björnen river med klorna och slår hårt (steg 6.6.5)
+  bjornram: { namn: 'Björnens ramar', skada: 0.4, takt: 1.6, rack: 1.1, slag: 'hugg', ord: 'river', tecken: '🐾' }, // björnen river med klorna och slår hårt (steg 6.6.5)
 } satisfies Record<string, VapenDef>;
 export type Vapen = keyof typeof VAPEN;
 const VAP: Record<string, VapenDef> = VAPEN;

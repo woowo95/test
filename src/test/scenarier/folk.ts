@@ -403,6 +403,7 @@ SCENARIER.humor = {
 
 SCENARIER.utbrott = {
   text: 'Utbrotten (steg 3.2.2): den som mår mycket dåligt brister ut, behoven går före, den som är elak sänker den andras humör, en sak slås sönder och efteråt mår man lite bättre',
+  lang: true,
   kor: () => {
     // en by där alla mår mycket dåligt i åtta dygn (åtta år i spelet)
     // (med ved och en flinta i förrådet: utan dem frös flera ihjäl första natten, steg 5.1.4.1 och 6.1.8, och då mäts inte utbrotten)
