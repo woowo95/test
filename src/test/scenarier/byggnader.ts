@@ -985,10 +985,12 @@ SCENARIER.strakprov = {
     // samma körning som npm run prov, för en by: utan stråken med BALANS="strak.pa=0" (balanstalen går inte att ändra i en körning)
     const fil = fileURLToPath(new URL('../prov-en.ts', import.meta.url));
     const by = (env: Record<string, string>) => {
-      const u = spawnSync(process.execPath, ['--import', 'tsx', fil, '1001', '8'], { env: { ...process.env, ...env }, encoding: 'utf8' });
+      const u = spawnSync(process.execPath, ['--import', 'tsx', fil, '1002', '8'], { env: { ...process.env, ...env }, encoding: 'utf8' });
       if (u.status) throw new Error(`prov-en.ts kraschade:\n${(u.stderr ?? '').slice(-1500)}`);
       return JSON.parse(u.stdout.trim().split('\n').pop()!) as { hus: number; fran: number; samre: number; ingen: number; om: number; utan: boolean; vakter: string[] };
     };
+    // by 1002: by 1001 har sedan bärbuskarna (6.5.4) så mycket mat och fritid att ingen kommit på timmerväggen efter 8 dygn,
+    // och då byggs inget hus att pröva stråken på (balansen hör till 6.10)
     const med = by({}), utan = by({ BALANS: 'strak.pa=0' });
     return [
       [`båda byarna har hus efter 8 dygn (8 år i spelet): med ${med.hus}, utan ${utan.hus}`, med.hus > 0 && utan.hus > 0 && !med.utan && utan.utan],
