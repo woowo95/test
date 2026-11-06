@@ -835,3 +835,17 @@
     })(),
   );
 })();
+// prickarna vid figuren på kartan (sjuk och väntar barn) i pixlar i stället för mjuka cirklar: en sak som redan finns och
+// görs om, så ett kort att säga ja eller nej till
+(() => {
+  const PRICK = ['.oo.', 'oljo', 'ojjo', '.oo.'];
+  const prick = (B, x, y, ljus, mork) => PRICK.forEach((r, dy) => [...r].forEach((ch, dx) => { if (ch !== '.') B.satt(x + dx, y + dy, ch === 'o' ? B.P.i('kol', 0) : ch === 'l' ? B.P.i(...ljus) : B.P.i(...mork)); }));
+  const figur = (B, fro, x, fot) => { if (!window.BYBO) return; const F = window.BYBO(fro, 'fram', 'sta', 'hanga'); for (let y = 0; y < F.h; y++) for (let dx = 0; dx < F.w; dx++) { const c = F.px[y * F.w + dx]; if (c >= 0) B.satt(x + dx, fot - F.h + y, c); } for (let dx = 1; dx < F.w - 1; dx++) B.morka(x + dx, fot); return F; };
+  VAL.push({ id: 'f6_prickar', namn: 'Prickarna vid figuren', typ: 'janej', vad: 'Prickarna på kartan vid den som väntar barn (till vänster om huvudet) och den som är sjuk (till höger) ritades som mjuka cirklar i färger utanför paletten. Nu är de 4 × 4 punkter med mörk kant: ljus hud och rost för den som väntar barn, oliv för den som är sjuk. Ja eller nej?', versioner: [{ text: 'Till vänster den som väntar barn, i mitten den som är sjuk, till höger en med båda prickarna.', w: 72, h: 30, rita: B => {
+    for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) B.satt(x, y, window.MARK.grasPunkt(x, y, B.P, 0));
+    const fot = 26;
+    if (figur(B, 4242, 6, fot)) prick(B, 3, fot - 20 + 4, ['ben', 3], ['rost', 3]);
+    const F = figur(B, 777, 29, fot); if (F) prick(B, 29 + F.w - 1, fot - F.h + 4, ['oliv', 3], ['oliv', 2]);
+    const G = figur(B, 31337, 52, fot); if (G) { prick(B, 49, fot - G.h + 4, ['ben', 3], ['rost', 3]); prick(B, 52 + G.w - 1, fot - G.h + 4, ['oliv', 3], ['oliv', 2]); }
+  } }] });
+})();

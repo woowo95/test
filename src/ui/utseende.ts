@@ -12,7 +12,7 @@ import { s as visad, uppgiftVid } from './lage';
 export interface Skapad {
   kon: 'kvinna' | 'man'; alder: 'barn' | 'ung' | 'vuxen' | 'gammal'; del: Record<string, string | null>; hud: number; har: number; ogon: number;
   humor: string; skonhet: number; forband: string[]; ogonlapp: boolean; sjuk: boolean; kyla: boolean; blod: boolean;
-  klader: { rock: string | null; skor: boolean; balte: boolean }; lagen: Record<string, string>; lager: string[] | null; rynkor: number | null;
+  klader: { rock: string | null; skor: boolean; balte: boolean; axelrem?: boolean; ryggsack?: boolean; krokar?: number }; lagen: Record<string, string>; lager: string[] | null; rynkor: number | null;
   anlag?: { skagg: string | null; frisyr: string | null };
 }
 // åldern i skaparen: barn tills man är vuxen i byn, ung till 30, vuxen till 55 och sedan gammal (registret aldrar)
@@ -93,16 +93,19 @@ export function skapad(s: State, p: Person): Skapad {
 const REDSKAP = new Map<string, string>(KARNA.PR.delar.filter((d: { sort: string; sak?: string }) => d.sort === 'redskap' && d.sak).map((d: { id: string; sak: string }) => [d.sak, d.id]));
 function utrustad(s: State, p: Person, u: Skapad) {
   const t = s === visad ? uppgiftVid(p) : p.task, r = utrustning(s, p, !!t && load(t, s) > 0); // vid tiden som visas, som kartan (steg 6.1.1); en by som inte visas (texterna i testerna): nu
-  u.klader = { rock: null, skor: false, balte: false };
+  u.klader = { rock: null, skor: false, balte: false, axelrem: false, ryggsack: false, krokar: 0 };
   for (const pl of Object.values(r)) {
     const a = pl.ting && kladAv(pl.ting.k);
     if (!a) continue;
     if (a.plagg === 'rock') u.klader.rock = KLADMATERIAL[a.mat].namn;
     else if (a.plagg === 'skor') u.klader.skor = true;
     else if (a.plagg === 'balte') u.klader.balte = true;
+    else if (a.plagg === 'axelrem') u.klader.axelrem = true;
+    else if (a.plagg === 'ryggsack') u.klader.ryggsack = true;
   }
   const h = r.hoger.ting ?? r.axel.ting ?? (r.krok.ting?.hos === p.id ? r.krok.ting : undefined); // det i handen, också när det hänger i bältet medan hen bär
   u.del.redskap = (h && REDSKAP.get(h.k)) ?? null;
+  u.klader.krokar = [r.krok.ting, r.krok2.ting].filter(t => t && t !== h).length; // redskapen som hänger i bältets krokar (steg 7.1.4)
 }
 
 // det vackraste eller fulaste i ansiktet, med ord (steg 5.2.3.3): beskrivningen (3.9.7) säger det som syns i porträttet.
