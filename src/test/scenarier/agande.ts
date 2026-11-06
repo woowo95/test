@@ -731,7 +731,7 @@ SCENARIER.bytessystem = {
     ({ s, a, b } = ny());
     addTool(s, 'fiskespjut', a); addTool(s, 'fiskespjut', a); b.habit = { fiske: 10 }; b.mother = a.id; b.born = s.now - (SIM.ALDER.vuxen - 4) * SIM.DAY; // b är ett barn
     let gav = false; for (let i = 0; i < 30 && !gav; i++) gav = askForTool(s, a, b) === 'gåva';
-    const barnGava = gav && kron(s, ' gav en ') === 1;
+    const barnGava = gav && kron(s, ' gav ') === 1;
     // mat till den som håller på att dö: i krönikan
     ({ s, a, b } = ny());
     a.hunger = 0; a.health = 0.5; gain(s, b, 'bar', 6); getRel(s, b, a).op = 80; getRel(s, a, b).op = 80; b.pot.empati = 20;
