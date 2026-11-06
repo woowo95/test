@@ -166,14 +166,20 @@ export function skickaTornado(s: State): { ok: boolean; text: string } {
 const ur = (s: State, t: Tornado, a: number, salt: number) => motgangTal(s, t.start + a * HOUR, salt);
 
 // ---------- varje steg (steg.ts) ----------
-export function tornadoSteg(s: State) {
+// rövarnas och handlarens del (rovare.ts och handel.ts), som steg.ts skickar med (de kan inte importeras hit utan en cirkel)
+export interface TornadoGaster {
+  rovarTornado: typeof import('./rovare').rovarTornado;
+  handlarTornado: typeof import('./handel').handlarTornado;
+  handlarPlats: typeof import('./handel').handlarPlats;
+}
+export function tornadoSteg(s: State, gaster?: TornadoGaster) {
   const m = motgangNu(s);
   if (m?.id === 'tornado' && s.tornado?.start !== m.start && !s.tornado?.test) s.tornado = nyBana(s, m.start); // loggen och krönikan: stepMotgang
   const t = s.tornado;
   if (!t) return;
   if (!t.bana) { delete s.tornado; return; } // en rak bana från en äldre sparning
   const u = tornadoAndel(t, s.now);
-  if (u > t.u) { svep(s, t, t.u, u); t.u = u; }
+  if (u > t.u) { svep(s, t, t.u, u, gaster); t.u = u; }
   if (m?.id === 'tornado' || t.test && u < 1) { ser(s, t); soker(s, t); return; }
   // den har gått över kartan
   const delar = [t.doda && `dödade ${t.doda} ${t.doda === 1 ? 'människa' : 'människor'}`, t.forstort && `förstörde ${t.forstort} saker`, t.trad && `fällde ${t.trad} träd`, t.vagg && `rev ${t.vagg} ${t.vagg === 1 ? 'vägg' : 'väggar'}`, t.lyft && `spred ${t.lyft} saker${t.sonder ? ` (${t.sonder} gick sönder)` : ''}`].filter(Boolean);
@@ -184,7 +190,7 @@ export function tornadoSteg(s: State) {
 // det tornadon tar på vägen från andelen a till b av banan: varje ruta tas en gång, i steget då tornadon passerar den punkt
 // på banan som ligger närmast rutan, efter zonen den ligger i (kärnan, nära och utkanten: hela rutor från mitten, efter
 // storleken). Människorna och djuren efter hur nära tornadon de är i steget
-function svep(s: State, t: Tornado, a: number, b: number) {
+function svep(s: State, t: Tornado, a: number, b: number, gaster?: TornadoGaster) {
   const z = zonerOf(t), R = z[2] + 0.99, L = t.L || 1;
   // punkter längs banan från a till b, en halv ruta isär (och till slutet när den är framme)
   const pkt: { x: number; y: number }[] = [];
@@ -224,6 +230,32 @@ function svep(s: State, t: Tornado, a: number, b: number) {
   for (const d of djurOf(s)) {
     const zon = zonVid(d.x, d.y);
     if (zon === 0 || zon === 1 && ur(s, t, d.id, 3846) < TORNADO.djurNara) { dodaDjur(s, d.id); t.djur = (t.djur ?? 0) + 1; count(s, 'tornado djur'); }
+  }
+  if (gaster) gasterna(s, t, zonVid, L, gaster);
+}
+// rövarna och handlaren (steg 6.4.12) drabbas som byborna, en gång per tornado: i kärnan dör de, nära och i utkanten
+// flyger de och kan dö eller skadas. Handlaren tappar en del av packningen och går hem, rövarna flyr
+function gasterna(s: State, t: Tornado, zonVid: (x: number, y: number) => number, L: number, { rovarTornado, handlarTornado, handlarPlats }: TornadoGaster) {
+  const f = s.rovare, fk = -1e6 - (f?.id ?? 0);
+  if (f && !t.traff?.includes(fk)) {
+    const zon = zonVid(f.x, f.y);
+    if (zon >= 0) {
+      (t.traff ??= []).push(fk);
+      const till = zon > 0 ? landar(s, t, f.x, f.y, fk, zon, L, true) : undefined, doda0 = f.folk.length;
+      rovarTornado(s, f, zon, zon === 1 ? TORNADO.dodNara : 0, zon === 1 ? 1 : TORNADO.skadas, zon === 1 ? TORNADO.skadaNara : TORNADO.skadaGrad, (j, salt) => ur(s, t, fk - j, 3855 + salt), till);
+      t.doda = (t.doda ?? 0) + doda0 - (s.rovare?.folk.length ?? 0);
+    }
+  }
+  const h = s.handlare;
+  if (h && !t.traff?.includes(h.id)) {
+    const p = handlarPlats(h, s.now), zon = zonVid(p.x, p.y);
+    if (zon >= 0) {
+      (t.traff ??= []).push(h.id);
+      const dod = zon === 0 || zon === 1 && ur(s, t, h.id, 3859) < TORNADO.dodNara;
+      if (dod) { t.doda = (t.doda ?? 0) + 1; count(s, 'tornado dod'); }
+      h.x = p.x; h.y = p.y;
+      handlarTornado(s, h, dod, zon === 1 ? TORNADO.sonder : TORNADO.sonderUtkant, ur(s, t, h.id, 3860), dod ? undefined : landar(s, t, p.x, p.y, h.id, zon, L, true));
+    }
   }
 }
 // nära (steg 6.4.10): träden faller med stor risk och ungskogen slits upp, gräset blir en jordstig, väggarna tappar mycket

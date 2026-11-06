@@ -46,8 +46,8 @@ import { facklorTimme, finishLjus, finishUppsatt, morkFart, morkHumor } from './
 import { arbetsTimme, chooseTask, dangers, nastaBuske, nastaRedskap, nastaRuta, spotFor } from './val';
 import { djurSteg } from './djur';
 import { vargSteg, vargjaktSteg } from './varg';
-import { rovarSteg } from './rovare';
-import { handelSteg, handlaKlar, handlarMal, pratMedHandlare } from './handel';
+import { rovarSteg, rovarTornado } from './rovare';
+import { handelSteg, handlaKlar, handlarMal, handlarPlats, handlarTornado, pratMedHandlare } from './handel';
 import { klanSteg } from './klaner';
 import { vaktSteg } from './vakt';
 import { JAKT, jaktForsok, jaktKlar } from './jakt';
@@ -228,7 +228,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   handelSteg(s, dtSec); // handlaren kommer, handlar och går (handel.ts, steg 4.4.1)
   vargSteg(s, dtSec); // vargarna under istiden (varg.ts, steg 3.7.1)
   rovarSteg(s, dtSec); // rövarflocken (rovare.ts, steg 4.4.5)
-  tornadoSteg(s); // tornadon drar fram (tornado.ts, steg 3.8.4)
+  tornadoSteg(s, { rovarTornado, handlarTornado, handlarPlats }); // tornadon drar fram (tornado.ts, steg 3.8.4), och rövarna och handlaren drabbas (steg 6.4.12)
   brandSteg(s, dtSec); // gnistor, blixten och elden som sprider sig (brand.ts, steg 3.8.5)
   // förråd: ruttning och ved
   wearStore(s, dtSec); // slitage per slag, fortare utanför lagret

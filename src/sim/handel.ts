@@ -286,14 +286,38 @@ function lagUt(s: State, h: Handlare) {
 }
 
 // handlaren går: filten plockas ihop och hen går tillbaka mot kanten
-function gar(s: State, h: Handlare) {
+function gar(s: State, h: Handlare, tyst = false) {
+  packaIhop(s, h);
+  h.fas = 'gar'; h.mx = h.ut.x; h.my = h.ut.y; h.fran = { x: h.x, y: h.y, t: s.now }; h.framme = s.now + Math.hypot(h.mx - h.x, h.my - h.y) / HANDEL.fart * SEC;
+  if (!tyst) log(s, `${h.namn} plockade ihop sin filt och gick hemåt.`, 'world');
+}
+// affären som pågår slutar och filtarna plockas ihop
+function packaIhop(s: State, h: Handlare) {
   glomIrritation(s, h);
   if (h.affar) { const p = byId(s, h.affar.vem); slut(s, h, h.affar, p && alive(p) ? p : undefined); } // en affär som pågår slutar
   if (h.kopt) s.handlarKopt = { ...s.handlarKopt, ...h.kopt }; // byn minns vad handlarna brukar köpa (steg 6.2.11)
-  h.fas = 'gar'; h.affar = undefined; h.mx = h.ut.x; h.my = h.ut.y; h.fran = { x: h.x, y: h.y, t: s.now }; h.framme = s.now + Math.hypot(h.mx - h.x, h.my - h.y) / HANDEL.fart * SEC;
+  h.affar = undefined;
   const par = s.filtar?.find(f => f.handlare === h.id)?.par;
   if (s.filtar) { s.filtar = s.filtar.filter(f => f.handlare !== h.id && (par === undefined || f.par !== par)); if (!s.filtar.length) delete s.filtar; }
-  log(s, `${h.namn} plockade ihop sin filt och gick hemåt.`, 'world');
+}
+// tornadon (steg 6.4.12): handlaren drabbas som en bybo. Dör hen (dod) är hen och packningen borta, och filtarna plockas
+// ihop. Annars flyger hen till platsen till, en del av varje vara i packningen går sönder (del, och r avgör hur en rest
+// avrundas), och hen går hem
+export function handlarTornado(s: State, h: Handlare, dod: boolean, del: number, r: number, till?: { x: number; y: number }) {
+  if (dod) {
+    packaIhop(s, h);
+    s.handlare = undefined;
+    s.nastaHandlare = s.now + intervall(s) * DAY;
+    log(s, `Handlaren ${h.namn} från ${h.hem} dog i tornadon.`, 'world');
+    notis(s, 'gast', `Handlaren ${h.namn} från ${h.hem} dog i tornadon.`, [], { x: Math.floor(h.x), y: Math.floor(h.y) });
+    return;
+  }
+  let sonder = 0;
+  for (const w of h.varor) { const n = Math.min(w.n, Math.floor(w.n * del + r)); w.n -= n; sonder += n; }
+  h.varor = h.varor.filter(w => w.n >= 1);
+  if (till) { h.x = till.x + 0.5; h.y = till.y + 0.5; }
+  gar(s, h, true);
+  log(s, `Tornadon kastade handlaren ${h.namn} ${till ? 'en bit bort' : 'åt sidan'}${sonder ? ` och ${sonder} av varorna i packningen gick sönder` : ''}. Hen går hem.`, 'world');
 }
 
 // var handlaren är vid tiden t när hen går: rakt från där hen började mot målet (hen går runt det som är i vägen, men det

@@ -1345,6 +1345,41 @@ SCENARIER.tornadoutkant = {
   },
 };
 
+SCENARIER.tornadogast = {
+  text: 'Steg 6.4.12: rövarna och handlaren drabbas som byborna. En rövarflock mitt i tornadons väg dör, och en handlare i utkanten flyger en bit, tappar kanske något ur packningen och går hem',
+  kor: () => {
+    const s = createState(5, START);
+    tandEld(s);
+    SIM.skickaTornado(s);
+    const r = SIM.skickaRovare(s, 3), hh = SIM.skickaHandlare(s);
+    if (!r.ok || !hh.ok || !s.rovare || !s.handlare) return [[`rövarna och handlaren kom (${r.text}; ${hh.text})`, false]];
+    const t = s.tornado!, L = t.L, pos = (u: number) => SIM.tornadoPos(t, u);
+    const fran = (x: number, y: number) => { let m = Infinity; for (let u = 0; u <= 1; u += 0.1 / L) m = Math.min(m, Math.hypot(pos(u).x - x, pos(u).y - y)); return m; };
+    // rövarna mitt på banan, handlaren fem rutor vid sidan om
+    const f = s.rovare, h = s.handlare, pr = pos(0.4);
+    f.x = pr.x; f.y = pr.y; f.mx = pr.x; f.my = pr.y; f.gor = 'samlas'; f.till = s.now + 10 * HOUR;
+    let ph: { x: number; y: number } | undefined;
+    for (let d = 0; d < 80 && !ph; d++) {
+      const p = pos(0.6 + d / L), q = pos(0.6 + (d + 1) / L), l = Math.hypot(q.x - p.x, q.y - p.y) || 1;
+      for (const sd of [5, -5]) { const x = p.x - (q.y - p.y) / l * sd, y = p.y + (q.x - p.x) / l * sd, m = fran(x, y); if (!ph && SIM.inMap(Math.floor(x), Math.floor(y)) && m >= 4.6 && m < 6.2 && SIM.vattenNu(s)[Math.floor(y) * W + Math.floor(x)] !== T.Vatten) ph = { x, y }; }
+    }
+    if (!ph) return [['en plats för handlaren i utkanten', false]];
+    h.fas = 'vantar'; h.kvall = s.now + 10 * HOUR; h.x = h.mx = ph.x; h.y = h.my = ph.y;
+    const varor0 = h.varor.reduce((n, w) => n + w.n, 0), namn = h.namn;
+    let hFlog = -1;
+    for (let k = 0; k < 900 && s.tornado; k++) {
+      if (s.rovare === f && f.gor === 'samlas') { f.x = pr.x; f.y = pr.y; }
+      step(s, 5);
+      if (hFlog < 0 && (h.fas as string) === 'gar') hFlog = Math.hypot(h.fran.x - ph.x, h.fran.y - ph.y);
+    }
+    const st = s.stat ?? {}, varor1 = h.varor.reduce((n, w) => n + w.n, 0), dog = s.log.some(l => l.text.includes(`${namn} från ${h.hem} dog`));
+    return [
+      [`rövarflocken dog i tornadon (${s.rovare === f ? `${f.folk.length} kvar` : 'borta'}; ${st.rovarDoda ?? 0} döda)`, s.rovare !== f && (st.rovarDoda ?? 0) >= 3],
+      [`handlaren ${namn} flög ${hFlog.toFixed(1)} rutor och gick hem (${h.fas}${dog ? ', dog' : ''}; varorna ${varor0} → ${varor1})`, (h.fas as string) === 'gar' && !dog && hFlog >= 1 && varor1 <= varor0 && varor1 > 0],
+    ];
+  },
+};
+
 // en by på sommaren med en torr dag framför sig, och en plats 30 till 50 rutor från elden där en cirkel med radien 12 är jord
 // utan byggen och fält (scenarierna brandfart och slackning)
 function torrAng(): { s: State; mitt: number } | string {

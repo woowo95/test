@@ -281,6 +281,23 @@ function flockSteg(s: State, f: Rovarflock, folk: Person[], dtSec: number) {
   if (!mot.length) larma(s, 'rovare', f.folk.length, folk.filter(q => vaken(q) && avst(q, f) < ROVARE.folkSer));
 }
 
+// tornadon (steg 6.4.12): rövarna drabbas som byborna. zon 0 (kärnan): alla dör; zon 1 (nära) och 2 (utkanten): var och en
+// dör (med chansen dod) eller skadas (grad, med chansen skadas), och flocken kastas till platsen till och flyr. r(j, salt) är
+// ett tal mellan 0 och 1 för rövare nummer j
+export function rovarTornado(s: State, f: Rovarflock, zon: number, dod: number, skadas: number, grad: readonly number[], r: (j: number, salt: number) => number, till?: { x: number; y: number }) {
+  const fore = f.folk.length;
+  f.folk = f.folk.filter((q, j) => {
+    if (zon === 0 || r(j, 1) < dod) { count(s, 'rovarDoda'); count(s, 'tornado dod'); return false; }
+    if (r(j, 2) < skadas) q.blod = Math.max(0.05, q.blod - (grad[0] + r(j, 3) * (grad[1] - grad[0])));
+    return true;
+  });
+  if (till) { f.x = till.x + 0.5; f.y = till.y + 0.5; }
+  f.gor = 'flyr';
+  const doda = fore - f.folk.length;
+  log(s, doda === fore ? `Tornadon dödade rövarna ${fran(s, f)}.` : `Tornadon kastade rövarna ${fran(s, f)} åt sidan${doda ? ` och ${doda} dog` : ''}. De flyr.`, 'world');
+  if (!f.folk.length) s.rovare = undefined;
+}
+
 // varje slag (steg.ts): en flock kommer, ses, går in mot byn och flyr
 export function rovarSteg(s: State, dtSec: number) {
   const nyTimme = Math.floor(s.now / HOUR) !== Math.floor((s.now - dtSec * SEC) / HOUR);
