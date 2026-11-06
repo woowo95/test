@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bordVid, byId, homeKind, bordaIHander, utrustning, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats, Match, Task, dragLag, kastMal, SPORT, bakomFilt, blocked, stationAt } from '../sim';
+import { ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bordVid, byId, homeKind, bordaIHander, utrustning, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats, Match, Task, dragLag, kastMal, SPORT, bakomFilt, blocked, stationAt, isKlar, stationDef } from '../sim';
 import { PRICKAR } from './hjalp';
 const LAGA = [fargTal(farg('rost', 3)), fargTal(farg('senap', 3))]; // lågorna på den som brinner
 import { farg, fargTal } from '../palett';
@@ -339,9 +339,17 @@ export function drawPeople(t: number) {
     let arm: Arm = tk && load(tk, s) > 0 ? 'bara' : gor && SLA.has(gor) ? 'sla' : gor === 'station' ? 'framfor' : 'hanga';
     if (steg && arm === 'hanga') arm = steg[1];
     if (ab) arm = ab.arm;
-    sp.texture = figurTex(skapad(s, p), { rikt, ben, arm, ligga: ligger, tacke: sleeping, smabarn: liten || undefined }, p.id === ui.selected || p.id === harSaken);
+    // sängen (steg 6.8.5): den som sover i en färdig säng ligger mitt i den med huvudet i bäddens huvudände (vänster i den
+    // liggande bädden, uppåt i den stående), och bara under ett byggt täcke (ett tillbehör i bädden, skinnfällen) har hen täcke
+    const badd = sleeping ? stationAt(s, q.x, q.y) : undefined, sang = badd && isKlar(badd) && stationDef(badd.k)?.sover ? badd : undefined;
+    sp.texture = figurTex(skapad(s, p), { rikt, ben, arm, ligga: ligger, tacke: !!sang?.med?.length, smabarn: liten || undefined }, p.id === ui.selected || p.id === harSaken);
     const w = sp.texture.width, h = sp.texture.height;
-    if (ligger) sp.position.set(x - w / 2, y - h / 2);
+    sp.anchor.set(0); sp.rotation = 0; sp.scale.x = 1;
+    if (sang) {
+      const { w: bw, h: bh } = storlekAv(sang);
+      sp.anchor.set(0.5); sp.position.set((sang.x + bw / 2) * TS, (sang.y + bh / 2) * TS - 2);
+      if (bh > bw) sp.rotation = -Math.PI / 2; else sp.scale.x = -1;
+    } else if (ligger) sp.position.set(x - w / 2, y - h / 2);
     else sp.position.set(x - w / 2 + (ab?.b.ut ?? 0) * (rikt === 'vast' ? -1 : 1), y + r * 0.9 - h + 1);
     const hand = ab && figurHand(sp.texture);
     if (arb && ab && hand) ritaArbete(peopleG, arb, ab.b, sp.position.x + hand[0], sp.position.y + hand[1], rikt === 'vast' ? -1 : 1, 1);
