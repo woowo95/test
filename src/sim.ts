@@ -85,6 +85,7 @@ export * from './sim/byggnad';
 export * from './sim/bygg';
 export * from './sim/byggnader';
 export * from './sim/rum';
+export * from './sim/byggplan';
 export * from './sim/delning';
 export * from './sim/varde';
 export * from './sim/arv';

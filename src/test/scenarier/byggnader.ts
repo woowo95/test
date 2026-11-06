@@ -405,7 +405,7 @@ SCENARIER.bygg = {
     for (const p of living(k)) { const f = fore.get(p.id); if (!f) continue; if (f.inne) { varmInne += p.warm; ni++; } else if (f.ute) { varmUte += p.warm; nu++; } }
     const h = housesOf(q)[0], folk = living(q).length, b = gridOf(q).rooms.reduce((n, r) => n + sovplatser(q, r), 0);
     const iVagg = living(q).filter(p => isWall(q, p.x, p.y)).length;
-    // huset minns var materialet kom ifrån (steg 1.3.3): lika mycket som det byggdes med
+    // huset minns var materialet kom ifrån (steg 1.3.3): minst det som ligger i det, och lagningarnas material räknas också
     const lagt = bitsOf(q).filter(b => b.hus === h?.id).reduce((n, b) => n + b.mat, 0), kom = h ? komOf(h) : [];
     const minns = kom.reduce((n, x) => n + x.n, 0), satt = [...new Set(kom.map(x => x.hur))].join(', ');
     // nötning: väggarna slits och lagas
@@ -459,7 +459,7 @@ SCENARIER.bygg = {
       [`en lagning kostar hälften av det nya, i hela saker och minst en (trägolv ${golvLag} av ${MATERIAL.tra.n}, timmervägg ${vaggLag} av ${MATERIAL.timmer.n})`, golvLag === Math.max(1, Math.floor(MATERIAL.tra.n / 2)) && vaggLag === Math.max(1, Math.floor(MATERIAL.timmer.n / 2))],
       [`en rasad vägg som byggts om gör huset klart igen men inte färdigt en gång till (krönikan ${kronikaFore} → ${kronikaEfter}, de som byggde minns det ${gemFore} → ${gemEfter} gånger)`, omKlar && kronikaFore >= 1 && kronikaEfter === kronikaFore && gemEfter === gemFore],
       [`stockar som läggs i väggen medan någon bär material dit försvinner inte (väggen ${iVaggen} av ${behov}, ${iHanden} kvar i händerna)`, behov > 0 && iVaggen === behov && iHanden === 1],
-      [`huset minns var materialet kom ifrån (${Math.round(minns)} av ${Math.round(lagt)}: ${satt})`, lagt > 0 && Math.abs(minns - lagt) < 0.01 * lagt + 0.01],
+      [`huset minns var materialet kom ifrån (${Math.round(minns)} av ${Math.round(lagt)}: ${satt})`, lagt > 0 && minns >= lagt - 0.01],
     ];
   },
 };
@@ -1029,6 +1029,51 @@ SCENARIER.rumstyper = {
       [`verkstad och sovplatser passar dåligt ihop: man vilar sämre (${vilaFore} → ${vilaEfter.toFixed(2)})`, minus && vilaEfter < vilaFore],
       [`funktionen sitter på rummet: med samling som funktion försvinner sovplatserna (${fore} → 0), och huset är fortfarande en sovsal`, fnRum],
       [`rummets namn efter taggarna: ${namn}`, !!namn],
+    ];
+  },
+};
+
+SCENARIER.byggplan = {
+  text: 'Steg 7.2.2–7.2.6: behoven anmäls och Byggplanen tar det förslag som ger mest värde per kostnad. Ritningen prövas, ett behov måste ha funnits ett tag, och ett hus byggs ut i stället för att ett nytt byggs. Den nya delen byggs först och väggen öppnas sist',
+  kor: () => {
+    const s = createState(6, START);
+    klockan(s); byggare(s);
+    SIM.planBuild(s); byggKlart(s);
+    const h = housesOf(s)[0], fore = { w: h.w, h: h.h }, rumFore = gridOf(s).rooms.filter(r => r.hus === h.id && r.tiles.length).length;
+    const foreIngen = SIM.byggbehov(s).filter(b => b.fn === 'sovsal').length === 0;
+    for (let i = 0; i < 4; i++) nyInvanare(s, i % 2 ? 'm' : 'k', 25);
+    const behov = SIM.byggbehov(s)[0];
+    // ett behov som inte är en fara väntar
+    SIM.stepBehov(s);
+    const minns = Object.keys(s.byggBehov ?? {}).some(k => k.startsWith('sovsal'));
+    const kostar = SIM.ritningKostnad([{ x: 0, y: 0, m: 'timmer' }]) > 0;
+    SIM.planBuild(s);
+    const pagar = !!h.ut, ettHus = housesOf(s).length === 1;
+    const nya = bitsOf(s).filter(b => b.hus === h.id && b.b < 1).length;
+    // den nya delen byggs av arbetet: väggen står kvar tills den är klar
+    const p = living(s)[0], gamlaVaggar = (h.ut?.oppnas ?? []).length;
+    const stangd = (h.ut?.oppnas ?? []).every(([x, y]) => { const b = SIM.bitAt(s, x, y); return b && b.b >= 1 && b.k !== 'golv'; });
+    let varv = 0;
+    while (h.ut && varv++ < 2000) {
+      const b = bitsOf(s).find(q => q.hus === h.id && q.b < 1);
+      if (!b) break;
+      const M = MATERIAL[b.m];
+      if (M.item) b.mat = M.n;
+      SIM.workOn(s, p, b, 3600);
+    }
+    const rum = gridOf(s).rooms.filter(r => r.hus === h.id && r.tiles.length);
+    const storre = h.w * h.h > fore.w * fore.h, sov = rum.reduce((n, r) => n + SIM.sovplatser(s, r), 0);
+    const fel = SIM.husFel(s);
+    const rektangel = bitsOf(s).filter(b => b.hus === h.id).length === h.w * h.h;
+    return [
+      ['innan någon saknar sovplats finns inget sådant behov', foreIngen],
+      [`när folk saknar sovplats anmäls behovet (${behov?.fn}), och byn minns när det kom`, behov?.fn === 'sovsal' && minns],
+      ['en ritning har en kostnad', kostar],
+      ['Byggplanen väljer att bygga ut det befintliga huset, inte ett nytt', pagar && ettHus],
+      [`ritningen är nya rutor (${nya}), och den gamla väggen står kvar (${gamlaVaggar} rutor)`, nya > 0 && gamlaVaggar > 0 && stangd],
+      [`huset är större (${fore.w}×${fore.h} → ${h.w}×${h.h}) och fortfarande en rektangel, med ett rum (${rumFore} → ${rum.length})`, storre && rektangel && rum.length === 1 && !h.ut],
+      [`alla rutor går att sova på (${sov})`, sov === (h.w - 2) * (h.h - 2)],
+      [`vakten för husen är tyst${fel ? ': ' + fel : ''}`, !fel],
     ];
   },
 };

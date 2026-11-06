@@ -47,7 +47,7 @@ export const HUS = balans('hus', {
 // En ny sorts byggnad blir en rad.
 // v = hur akut (0 = behövs inte, 1 = mycket), plats = rutor under tak som behövs, slag = vad ett förrådshus ska rymma,
 // ag = vem som ska äga huset (ett familjehus)
-interface Akut { v: number; plats: number; slag?: 'mat' | 'material'; ag?: number }
+export interface Akut { v: number; plats: number; slag?: 'mat' | 'material'; ag?: number; hus?: number } // hus = just det här huset behöver mer plats (familjen har vuxit)
 export interface Byggnad {
   namn: string; ikon: string;
   behov: string; // vilket behov den fyller (förklaringen i gränssnittet)
@@ -76,7 +76,14 @@ export const BYGGNADER = {
     // en familj (ett par med barn) utan eget hus som äger så mycket att den kan betala huset själv
     akut: s => {
       const f = familjUtanHus(s);
-      return f ? { v: HUS.familjAkut, plats: f.folk.length + HUS.familjExtra, ag: f.ag } : { v: 0, plats: 0 };
+      if (f) return { v: HUS.familjAkut, plats: f.folk.length + HUS.familjExtra, ag: f.ag };
+      // familjen har vuxit ur sitt hus (steg 7.2.6): huset behöver mer plats
+      for (const h of housesOf(s)) {
+        if (fnId(h) !== 'familjehus' || h.ag === undefined || !h.klar) continue;
+        const folk = familjOf(s, h.ag).length, plats = gridOf(s).rooms.filter(r => r.hus === h.id).reduce((n, r) => n + sovplatser(s, r), 0);
+        if (folk > plats) return { v: HUS.familjAkut, plats: folk - plats, ag: h.ag, hus: h.id };
+      }
+      return { v: 0, plats: 0 };
     },
     namnFor: (s, _w, _h, _same, a) => husNamn(byId(s, a.ag)?.name ?? 'Familjens'),
   },
