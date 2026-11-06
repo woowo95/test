@@ -1,3 +1,4 @@
+import { blocked, freeNear } from './byggnad';
 // Framträdandena (steg 4.3.2, "Kulturen i fas 4" i designdokumentet): på kvällen när det är mörkt uppträder någon vid elden
 // (eller i långhuset när det är kallt eller regnar) för de andra, högst en gång per kväll. Den enklaste formen, ett kväde,
 // finns från början, så att även en liten by har framträdanden. Formerna är rader i registret FRAMTRADANDEN. Framträdandet
@@ -237,7 +238,7 @@ export function framVal(s: State, p: Person, plats: (q: Person) => { x: number; 
   count(s, 'framtradanden');
   for (const q of pub) {
     avbryt(s, q);
-    const u = plats(q);
+    const u0 = plats(q), u = blocked(s, u0.x, u0.y) ? freeNear(s, Math.floor(u0.x), Math.floor(u0.y)) : u0; // aldrig i en vägg (scenen kan stå inne, steg 7.2.7)
     q.task = { act: 'lyssna', phase: 'go', tx: u.x, ty: u.y, until: slut, carry: 0, ref: start, tool: d.id, dark: true, why: `Lyssnar på ${p.name}s ${d.namn.toLowerCase()}` };
   }
   return { act: 'upptrada', why: `${d.namn}: ${text}`, dur: slut - start, ref: start, tool: d.id, spot: sc && vidStation(sc) }; // på scenen när byn har en

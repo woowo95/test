@@ -653,6 +653,9 @@ export const ARBETEN: readonly Arbete[] = [
   } },
   // 7 Tak: att bygga åt den som saknar sovplats och laga det som är slitet. När bygget har sina arbetare går man vidare
   { id: 'bygga', niva: 7, nar: 'dag', kort: true, prova: c => { const d = dag(c); return d.works && !!d.job && !radFull(c.s, c.p, 'bygga') && bygg(c); } },
+  // 8 Förbättra (steg 6.1.17–6.2.15): det mest värda projekt byn eller p saknar, sedan teknik, varor, underhåll och lära
+  // (forbattra), och sist förråden till taket (fylla). Inte när kylan eller hungern är en fara
+  { id: 'projekt', niva: 8, nar: 'dag', kort: true, prova: c => { const f = faror(c); return dag(c).works && c.a >= ALDER.vuxen && !f.kyla && !f.svalt && projektArbete(c); } },
   // 8 Förbättra: det Byggplanen föreslagit när inget behov är akut (steg 7.2.10)
   { id: 'forbHus', niva: 8, nar: 'dag', kort: true, prova: c => {
     const { s, p, v } = c, d = dag(c), f = faror(c);
@@ -661,9 +664,6 @@ export const ARBETEN: readonly Arbete[] = [
     if (!j?.bit.forb || j.missing) return false;
     building(s, p, v, j); return true;
   } },
-  // 8 Förbättra (steg 6.1.17–6.2.15): det mest värda projekt byn eller p saknar, sedan teknik, varor, underhåll och lära
-  // (forbattra), och sist förråden till taket (fylla). Inte när kylan eller hungern är en fara
-  { id: 'projekt', niva: 8, nar: 'dag', kort: true, prova: c => { const f = faror(c); return dag(c).works && c.a >= ALDER.vuxen && !f.kyla && !f.svalt && projektArbete(c); } },
   { id: 'forbattra', niva: 8, nar: 'dag', kort: true, prova: c => {
     const { s, p, v } = c, d = dag(c), f = faror(c);
     if (!d.works || f.kyla || f.svalt) return false;

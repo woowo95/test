@@ -101,10 +101,10 @@ const DEF = {
   mort: { namn: 'Mört', skaffa: { act: 'fiske' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 0.6, naring: { protein: 1.8, fett: 1.2, mineral: 0.9, energi: 0.7, vitamin: 0.4 }, ra: true, haller: 1 }, // fångas i mjärden, och är ett bättre bete än masken (steg 7.4.4)
   gaddkott: { namn: 'Gäddkött', ett: true, skaffa: RECEPT.gaddkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 1, naring: { protein: 2.2, fett: 0.3, mineral: 0.7, energi: 0.5, vitamin: 0.3 }, ra: true, haller: 1 },
   mortkott: { namn: 'Mörtkött', ett: true, skaffa: RECEPT.mortkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 1, naring: { protein: 1.8, fett: 1.2, mineral: 0.9, energi: 0.7, vitamin: 0.4 }, ra: true, haller: 1 },
-  grillgadda: { namn: 'Grillad gädda', skaffa: { act: 'grilla' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 0.5, naring: { protein: 2.2, fett: 0.3, mineral: 0.7, energi: 0.5, vitamin: 0.3 }, haller: 2 },
-  grillmort: { namn: 'Grillad mört', skaffa: { act: 'grilla' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 0.5, naring: { protein: 1.8, fett: 1.2, mineral: 0.9, energi: 0.7, vitamin: 0.4 }, haller: 2 },
-  torrgadda: { namn: 'Torkad gädda', skaffa: { act: 'torka' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 7, naring: { protein: 2.2, fett: 0.3, mineral: 0.7, energi: 0.5, vitamin: 0.2 }, haller: 20 },
-  torrmort: { namn: 'Torkad mört', skaffa: { act: 'torka' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 7, naring: { protein: 1.8, fett: 1.2, mineral: 0.9, energi: 0.7, vitamin: 0.3 }, haller: 20 },
+  grillgadda: { namn: 'Grillad gädda', skaffa: RECEPT.grillgadda, stack: 25, ruta: 75, mapp: 'Mat', mat: 0.5, naring: { protein: 2.2, fett: 0.3, mineral: 0.7, energi: 0.5, vitamin: 0.3 }, haller: 2 },
+  grillmort: { namn: 'Grillad mört', skaffa: RECEPT.grillmort, stack: 25, ruta: 75, mapp: 'Mat', mat: 0.5, naring: { protein: 1.8, fett: 1.2, mineral: 0.9, energi: 0.7, vitamin: 0.4 }, haller: 2 },
+  torrgadda: { namn: 'Torkad gädda', skaffa: RECEPT.torrgadda, stack: 25, ruta: 75, mapp: 'Mat', mat: 7, naring: { protein: 2.2, fett: 0.3, mineral: 0.7, energi: 0.5, vitamin: 0.2 }, haller: 20 },
+  torrmort: { namn: 'Torkad mört', skaffa: RECEPT.torrmort, stack: 25, ruta: 75, mapp: 'Mat', mat: 7, naring: { protein: 1.8, fett: 1.2, mineral: 0.9, energi: 0.7, vitamin: 0.3 }, haller: 20 },
   mjarde: { namn: 'Mjärde', skaffa: RECEPT.mjarde, stack: 1, ruta: 1, mapp: 'Redskap' }, // en flätad korg som sätts ut i vattnet (steg 7.4.2)
   huggen_sten: { namn: 'Huggen sten', skaffa: RECEPT.huggen_sten, stack: 20, vikt: 4, mapp: 'Material' }, // steg 7.5.1
   plankor: { namn: 'Plankor', skaffa: RECEPT.plankor, stack: 20, vikt: 2, mapp: 'Material' },
