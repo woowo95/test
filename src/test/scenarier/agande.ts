@@ -16,6 +16,7 @@ import { taBortITest, testBortaIByn } from '../../ui/testborta';
 import { station as stationFlik } from '../../ui/flikar/station';
 import { lager as lagerFlik } from '../../ui/flikar/lager';
 import { kronika as kronikaFlik, val as kronikaVal } from '../../ui/flikar/kronika';
+import { rikVal } from '../../ui/graf';
 // handlaren väntar på kvällen innan filten läggs ut (steg 4.5.4.11): testerna som handlar på dagen hoppar över väntan
 const utanVantan = (s: State) => { if (s.handlare?.fas === 'vantar') s.handlare.kvall = s.now; };
 // p gör hela sin affär med handlaren (steg 4.5.7.4): hen får uppgiften handlaVal ger, står på platsen och gör klart den, steg för
@@ -1905,6 +1906,9 @@ SCENARIER.kronikalista = {
     kronikaVal.person = undefined; kronikaVal.ar = SIM.kalender(s, s.now).ar; const iAr = kronikaFlik.html();
     kronikaVal.ar = undefined; kronikaVal.visning = 'allt'; const allt = kronikaFlik.html();
     kronikaVal.visning = 'grafer'; const grafer = kronikaFlik.html();
+    Object.assign(rikVal, { vy: 'person', person: a.id }); const rikP = kronikaFlik.html();
+    Object.assign(rikVal, { vy: 'sak', sak: 'ved', person: undefined }); const rikS = kronikaFlik.html();
+    Object.assign(rikVal, { vy: 'byn', sak: undefined });
     Object.assign(kronikaVal, { visning: 'stort', ar: undefined, person: undefined });
     const forst = alla.indexOf(`${b.name}</button> och`), sen = alla.indexOf(`${a.name}</button> hittade`);
     return [
@@ -1914,6 +1918,7 @@ SCENARIER.kronikalista = {
       ['ett år visar bara det årets rader', rader(iAr) === K.filter(r => SIM.kalender(s, r[0]).ar === SIM.kalender(s, s.now).ar).length && rader(iAr) < rader(alla)],
       [`Allt visar händelseloggen (${rader(allt)} rader)`, rader(allt) === s.log.length && s.log.length > K.length],
       [`Grafer visar alla byns grafer under varandra (${(grafer.match(/data-graf=/g) ?? []).length} st, steg 6.9.12)`, ['folk', 'humor', 'eld', 'forrad', 'rik'].every(g => grafer.includes(`data-graf="${g}"`)) && !grafer.includes(`class="logg"`)],
+      ['rikedomens graf har en väljare överst: byn, en person eller en sak (steg 6.9.14)', grafer.includes('data-rikvy') && !grafer.includes('data-rikval') && living(s).every(p => rikP.includes(`<option value="${p.id}"`)) && rikP.includes('data-rikvy="person"') && rikS.includes('data-rikvy="sak"') && rikS.includes('data-rikval')],
     ];
   },
 };
