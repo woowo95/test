@@ -337,6 +337,7 @@ export interface State {
   djurSkramd?: { g: number; t: number }[]; // kaningrupper som skrämts av en jägare, och när (steg 3.7.3, jakt.ts)
   djurFlykt?: { g: number; t: number; dx: number; dy: number; sek?: number }[]; // kaningrupper som flytt från en jägare: från tiden t så här långt (steg 4.5.4.1, djur.ts)
   kaninStart?: Record<string, { x0: number; y0: number; x1: number; y1: number; n0: number } | null>; // där kaningrupperna dök upp och vart de glider, per grupp och tid (steg 6.6.8, djur.ts)
+  bjornVag?: { t0: number; v: { x: number; y: number; fram: number; gar: number; bar: boolean }[] | null }; // björnens väg i dag, räknad när dygnet började och sparad i byn, så att den är densamma efter inläsning (steg 6.6.4, djur.ts)
   faglarBorta?: { x: number; y: number; t: number }[]; // platser där fåglarna flugit bort från kartan, och när (steg 6.6.3, djur.ts)
   strider?: import('./strid').StridMinne[]; // de senaste striderna i byn, så att arenan kan visa dem igen (steg 3.7.2, strid.ts)
   sportBast?: Record<string, number>; // den bästa i varje sport (personens id, steg 4.3.1.2)
