@@ -1,7 +1,6 @@
 import { FOLDERS, amountOf, grundvarde, isTool, kortTal, ownedSum, sakNamn, wornOf } from '../sim';
 import { iconImg } from '../ikoner';
 import { eld } from './flikar/eld';
-import { folk } from './flikar/folk';
 import { kronika } from './flikar/kronika';
 import { hog, lager } from './flikar/lager';
 import { hus } from './flikar/hus';
@@ -32,7 +31,7 @@ export interface Flik {
   syns?(): boolean; // annars är knappen en blek sten som inte går att trycka på (grannarna när byn har grannar)
   band?(): string; // bandet överst är en annan fliks (Byn visar den öppna delens band, steg 5.3.3.2)
 }
-const FLIKAR = { byn, teknik, kronika, folk, grannar, person, eld, lager, hog, hus, station, sjo, falt, sak, djur, filt, fram, match } satisfies Record<string, Flik>;
+const FLIKAR = { byn, teknik, kronika, grannar, person, eld, lager, hog, hus, station, sjo, falt, sak, djur, filt, fram, match } satisfies Record<string, Flik>;
 export type FlikId = keyof typeof FLIKAR;
 const ALLA: Record<FlikId, Flik> = FLIKAR;
 const IDS = Object.keys(FLIKAR) as FlikId[];

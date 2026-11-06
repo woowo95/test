@@ -180,17 +180,6 @@ body.vOppen .owned { display: none; }
 #installKnapp[aria-expanded="true"] { color: var(--accent-fg); background: var(--accent); border-color: var(--accent); }
 .muted { color: var(--muted); }
 ul, ol { list-style: none; margin: 0; padding: 0; }
-.folk li + li { border-top: 1px solid var(--line); }
-.row { width: 100%; display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; grid-template-areas: "d n a" ". t b"; gap: 1px 8px; align-items: center; background: none; border: 0; color: inherit; font: inherit; text-align: left; padding: 7px 2px; cursor: pointer; border-radius: 4px; }
-.row:hover { background: color-mix(in srgb, var(--accent) 9%, transparent); }
-.row .dot { grid-area: d; }
-.row .nm { grid-area: n; font-weight: 700; }
-.row .age { grid-area: a; color: var(--muted); font-variant-numeric: tabular-nums; }
-.row .act { grid-area: t; color: var(--muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.row .rb { grid-area: b; display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
-.row .bar { width: 64px; }
-.row .form { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; gap: 2px; } /* förmögenheten (steg 3.10.5) */
-.row .ans { line-height: 0; }
 .matare { display: flex; flex-direction: column; gap: 3px; } /* humör överst, hälsa under */
 .matare > span { display: flex; align-items: center; justify-content: flex-end; }
 .bar.halsa > i.p { background: #61767a; } /* skiffer 2 */
@@ -201,7 +190,6 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 .pf { width: 32px; height: 32px; image-rendering: pixelated; flex: none; border-radius: 3px; display: block; }
 .pf.big { width: 64px; height: 64px; }
 .pf.stor { width: 128px; height: 128px; } /* porträttet överst i personens panel, dubbelt så stort (steg 6.9.7) */
-.row .pf { grid-row: 1 / span 2; grid-column: 1; }
 .tiphead { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
 .tiphead h4 { margin: 0; font-family: var(--display); font-size: 16px; font-weight: 400; }
 .prick { width: 8px; height: 8px; border-radius: 50%; display: inline-block; vertical-align: middle; box-shadow: 0 0 0 1px rgba(0,0,0,0.35); }
@@ -378,7 +366,7 @@ button.rw { border: none; background: none; padding: 0; font: inherit; color: in
 .pdelar { display: flex; gap: 4px; margin: 10px 0 0; border-bottom: 1px solid var(--line); }
 .pdelar button { flex: 1; min-width: 0; background: none; border: 0; border-bottom: 2px solid transparent; font-size: 18px; padding: 6px 0 4px; cursor: pointer; opacity: 0.55; }
 .pdelar button[aria-selected="true"] { border-bottom-color: var(--accent); opacity: 1; }
-.pdelar button[aria-pressed="true"] { border-bottom-color: var(--accent); opacity: 1; } .sortrad .pil { font-size: 9px; margin-left: 2px; vertical-align: top; }
+.pdelar button[aria-pressed="true"] { border-bottom-color: var(--accent); opacity: 1; }
 .delrub { display: flex; align-items: center; gap: 6px; cursor: pointer; border-bottom: 1px solid var(--line); padding-bottom: 3px; } /* en del i personens flik (steg 5.3.4.2) */
 .delrub .dtk { font-size: 14px; } .delrub .kort { margin-left: auto; font-weight: normal; text-transform: none; letter-spacing: 0; color: var(--muted); font-size: 11px; } .delrub .pil { font-size: 10px; color: var(--muted); } .delrub:not(:has(.kort)) .pil { margin-left: auto; }
 .delinne { margin-bottom: 6px; } .delinne h3 { font-size: 0.85em; opacity: 0.8; }

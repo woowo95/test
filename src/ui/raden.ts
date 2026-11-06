@@ -7,6 +7,7 @@ import { GUI } from '../guibilder';
 import { $ } from './hjalp';
 import { s, ui } from './lage';
 import { renderPanel, visa } from './panel';
+import { val as kronikaVal } from './flikar/kronika';
 import { harNotiser, notisHtml, notisKlick, notisKnapp, notisTitel, notisVal } from './notiser';
 
 interface Ruta {
@@ -36,11 +37,11 @@ export const RUTOR: Record<string, Ruta> = {
       return `Byns rikedom: ${Math.round(sum)} (ungefär arbetstimmar). Tryck för att öppna förrådet\nFörrådet ${Math.round(r.forrad)} · redskapen ${Math.round(r.redskap)} · husen ${Math.round(r.hus)}\n${a > 0 ? `${Math.round(a * 100)} % av det folk skaffar går till byn` : 'Byn är så rik att folk behåller det de skaffar'}`;
     },
   },
-  // kolonisterna i byn; ett tryck öppnar Folket
+  // kolonisterna i byn; porträttraden längst ner är listan över folket (steg 6.9.15), och ett tryck här öppnar graferna i Krönikan
   calFolk: {
     html: () => `${tecknet('sym_folk', '👥', 16)} ${living(s).length}`,
-    title: t => { const f = living(s), barn = f.filter(p => ageOf(p, t) < ALDER.vuxen).length; return `${f.length} i byn${barn ? `, varav ${barn} barn` : ''}. Tryck för att se folket`; },
-    klick: () => { if (ui.hoger === 'folk') { ui.hoger = undefined; renderPanel(true); } else visa('folk'); },
+    title: t => { const f = living(s), barn = f.filter(p => ageOf(p, t) < ALDER.vuxen).length; return `${f.length} i byn${barn ? `, varav ${barn} barn` : ''}. Tryck för att se graferna`; },
+    klick: () => { if (ui.hoger === 'kronika' && kronikaVal.visning === 'grafer') { ui.hoger = undefined; renderPanel(true); } else { kronikaVal.visning = 'grafer'; visa('kronika'); } },
   },
   // notiserna (steg 5.4.3.2, ui/notiser.ts): brevet med antalet olästa; ett tryck öppnar genomgången under raden
   calNotis: { html: notisKnapp, title: notisTitel, syns: harNotiser, klick: () => { notisKlick('oppna'); renderPanel(true); } },

@@ -7,7 +7,7 @@ import { GUI, type GuiBild, type StenLage } from '../guibilder';
 // Registret: vilken bild varje flik har (flikens id i panel.ts → bildens id i bildstilen). Byn har sedernas sten tills
 // Björn godkänt en egen (steg 5.3.3.2); seder, religion och styre är delarna i Byn och ger bara banden
 export const STEN: Record<string, string> = {
-  folk: 'folket', kronika: 'kronika', byn: 'seder', seder: 'seder', styre: 'styre', religion: 'tro', grannar: 'grannar', teknik: 'teknik', person: 'person', forrad: 'forrad',
+  kronika: 'kronika', byn: 'seder', seder: 'seder', styre: 'styre', religion: 'tro', grannar: 'grannar', teknik: 'teknik', person: 'person', forrad: 'forrad',
 };
 const urls = new Map<GuiBild, string>();
 function url(b: GuiBild) {
