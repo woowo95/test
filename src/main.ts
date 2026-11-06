@@ -138,16 +138,26 @@ function testKnappar() {
 }
 // inställningarna (testläget och ny by) öppnas med kugghjulet längst ner bland flikknapparna (steg 5.3.1.1)
 $('installKnapp').addEventListener('click', () => { const r = $('installningar'); r.hidden = !r.hidden; $('installKnapp').setAttribute('aria-expanded', String(!r.hidden)); });
-// ljust eller mörkt läge (steg 5.3.1.3): data-tema på html byter grundens färger i template.html; valet sparas i webbläsaren
+// ljust eller mörkt läge (steg 5.3.1.3): data-tema på html byter grundens färger i template.html. Läget följer datorns
+// inställning och byter direkt när datorn byter (steg 6.9.16); knappen ◐ växlar mellan Datorn, Ljust och Mörkt, och valet
+// sparas i webbläsaren. Står det på Ljust eller Mörkt följer spelet inte datorn förrän man väljer Datorn igen
 const TEMA_KEY = 'samhallssim-tema';
-function sattTema(morkt: boolean) {
+const TEMAN = { datorn: 'Datorn', ljust: 'Ljust', morkt: 'Mörkt' } as const;
+type Tema = keyof typeof TEMAN;
+const datornMork = typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: dark)') : undefined;
+let tema: Tema = 'datorn';
+function sattTema() {
+  const morkt = tema === 'morkt' || (tema === 'datorn' && !!datornMork?.matches);
   document.documentElement.dataset.tema = morkt ? 'morkt' : 'ljust';
-  const b = $('temaKnapp'); b.setAttribute('aria-pressed', String(morkt)); b.textContent = morkt ? '◐ Ljust' : '◐ Mörkt';
+  const b = $('temaKnapp'); b.textContent = `◐ ${TEMAN[tema]}`;
+  b.title = `Ljust eller mörkt läge: ${tema === 'datorn' ? `som datorn (nu ${morkt ? 'mörkt' : 'ljust'})` : TEMAN[tema].toLowerCase()}. Tryck för att byta`;
 }
-try { sattTema(localStorage.getItem(TEMA_KEY) === 'morkt'); } catch { sattTema(false); }
+try { const v = localStorage.getItem(TEMA_KEY); if (v && v in TEMAN) tema = v as Tema; } catch { /* ignoreras */ }
+sattTema();
+datornMork?.addEventListener('change', sattTema);
 $('temaKnapp').addEventListener('click', () => {
-  const morkt = document.documentElement.dataset.tema !== 'morkt'; sattTema(morkt);
-  try { localStorage.setItem(TEMA_KEY, morkt ? 'morkt' : 'ljust'); } catch { /* ignoreras */ }
+  const ids = Object.keys(TEMAN) as Tema[]; tema = ids[(ids.indexOf(tema) + 1) % ids.length]; sattTema();
+  try { localStorage.setItem(TEMA_KEY, tema); } catch { /* ignoreras */ }
 });
 $('newVillage').addEventListener('click', () => { $('confirmNew').hidden = false; });
 $('cancelNew').addEventListener('click', () => { $('confirmNew').hidden = true; });

@@ -6,7 +6,7 @@ Den här filen finns för att den som ändrar koden (oftast Claude) ska hitta r�
 
 - **`src/sim/`: simuleringen.** Byn, människorna, naturen och allt som händer. Ingen grafik och inget i webbläsaren. Den körs likadant i spelet och i testerna. `src/sim.ts` samlar allt så att resten kan skriva `import { … } from './sim'`.
 - **`src/ui/`: gränssnittet.** Det ritar kartan med PixiJS och bygger panelen med HTML. Det läser byns tillstånd varje bildruta och ändrar det aldrig, utom genom `step()`, sparningen och testläget.
-- **`src/main.ts`** binder ihop dem: klockan, knapparna, huvudloopen och uppstarten. Huvudloopen räknar högst `RAKNA_MS` per bildruta, så att testläget går långsammare i stället för att hacka när byn inte hinner med farten (steg 3.10.4); testläget öppnas med farten 1×.
+- **`src/main.ts`** binder ihop dem: klockan, knapparna, huvudloopen och uppstarten. Huvudloopen räknar högst `RAKNA_MS` per bildruta, så att testläget går långsammare i stället för att hacka när byn inte hinner med farten (steg 3.10.4); testläget öppnas med farten 1×. Ljust och mörkt läge (`data-tema` på html, färgerna i template.html) följer datorns inställning och byter direkt; knappen ◐ under ⚙ växlar Datorn, Ljust och Mörkt (registret `TEMAN`, steg 6.9.16).
 - **`src/template.html`** innehåller sidans HTML och CSS. Bygget lägger in skriptet där.
 
 Simuleringen importerar aldrig från `ui/`. Gränssnittet importerar bara från `../sim` och `src/ikoner.ts` (pixelbilderna). Testerna får också importera enskilda filer i `sim/`.
