@@ -1183,6 +1183,7 @@ export const KARNA: any = (() => {
     }
     if (p.ogonlapp && rikt !== 'bak') { if (rikt === 'fram') { satt(8, h + 2, 'kol0'); satt(7, h + 1, 'jord0'); } else satt(9, h + 2, 'kol0'); }
     if (arm === 'bara') for (let y = b0 + 1; y <= b0 + 3; y++) for (let x = rikt === 'sida' ? 9 : x0; x <= (rikt === 'sida' ? 12 : x1); x++) satt(x, y, 'jord' + (y === b0 + 1 ? 3 : 2));
+    if (arm === 'bara' && !hand) hand = [rikt === 'sida' ? 11 : Math.round((x0 + x1) / 2), b0 + 2]; // famnen, där det man bär sitter (steg 6.8.3)
     if (del.redskap && hand) {
       const d = DEL[del.redskap], [hx, hy] = hand;
       if (d.lang) { for (let y = hy - 7; y <= hy + 4; y++) satt(hx, y, 'jord2'); satt(hx, hy - 8, d.sak === 'flintspjut' ? 'skiffer3' : 'jord3'); }

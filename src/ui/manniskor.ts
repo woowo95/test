@@ -343,14 +343,17 @@ export function drawPeople(t: number) {
     // naturliga storlek (steg 5.1.2.1)
     // varje hand sitt eget (steg 6.1.2): två slag syns i var sin hand, ett slag framför kroppen som förut
     if (tk && load(tk, s) > 0) {
-      const ih = bordaIHander(s, p, tk, utrustning(s, p, true)), sv = rikt === 'vast' ? -1 : 1;
-      if (ih.hoger && ih.vanster && ih.hoger.k !== ih.vanster.k) { bar(ih.hoger.k, x + (r - 0.1) * sv, y + 1.4, 4.8); bar(ih.vanster.k, x - (r - 0.1) * sv, y + 1.4, 4.8); }
-      else bar(ih.hoger?.k ?? ih.vanster?.k ?? homeKind(tk), x + r - 0.1, y + 1.4, 4.8);
+      // i famnen (steg 6.8.3): figurens hand i armläget bära, räknat från figuren, så att saken följer den mjukt
+      const ih = bordaIHander(s, p, tk, utrustning(s, p, true)), sv = rikt === 'vast' ? -1 : 1, fh = !ligger && figurHand(sp.texture);
+      const fx = fh ? sp.position.x + fh[0] + 0.5 : x, fy = fh ? sp.position.y + fh[1] + 0.5 : y - r * 0.4;
+      if (ih.hoger && ih.vanster && ih.hoger.k !== ih.vanster.k) { bar(ih.hoger.k, fx + 2.5 * sv, fy, 4.8); bar(ih.vanster.k, fx - 2.5 * sv, fy, 4.8); }
+      else bar(ih.hoger?.k ?? ih.vanster?.k ?? homeKind(tk), fx, fy, 4.8);
     }
     const mal = tk?.act === 'maltid' && tk.phase === 'do' && tk.mal, bord = mal && hasIcon(mal) ? bordVid(s, q) : undefined; // (vid bordet där hen syns sitta)
     if (mal && bord) { // den som äter vid bordet har maten i händerna och framför sig på bordet (steg 3.10.3)
       const { w, h } = storlekAv(bord), dx = (bord.x + w / 2) * TS - x, dy = (bord.y + h / 2) * TS - y, d = Math.hypot(dx, dy) || 1, f = Math.min(1, TS * 0.7 / d);
-      bar(mal, x + r - 0.1, y + 1.4, 4.8);
+      const fh = figurHand(sp.texture);
+      bar(mal, fh ? sp.position.x + fh[0] + 0.5 : x + r - 0.1, fh ? sp.position.y + fh[1] + 0.5 : y - r * 0.4, 4.8);
       bar(mal, x + dx * f, y + dy * f, 4.8);
     }
   }
