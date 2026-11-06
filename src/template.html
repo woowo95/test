@@ -82,11 +82,12 @@ header::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; h
 .tip .bar { width: 100%; }
 /* lista till vänster över allt byn äger */
 /* Förrådet öppnas med rikedomen i sidhuvudet (steg 5.3.3.4) */
-.owned { position: absolute; left: 10px; top: 12px; width: 170px; max-height: calc(100% - 110px); display: none; overflow-y: auto; background: none; color: #f4f6f2; text-shadow: 0 1px 2px #000, 0 0 3px #000; padding: 0 2px; font-size: 12px; line-height: 1.4; scrollbar-width: thin; }
+/* förrådsspalten är smal (steg 6.9.2): en rad är bara symbolen och antalet */
+.owned { position: absolute; left: 10px; top: 12px; width: 120px; max-height: calc(100% - 110px); display: none; overflow-y: auto; background: none; color: #f4f6f2; text-shadow: 0 1px 2px #000, 0 0 3px #000; padding: 0 2px; font-size: 12px; line-height: 1.4; scrollbar-width: thin; }
 .owned h4 { margin: 0 0 3px; font-size: 16px; opacity: 0.8; font-family: var(--display); font-weight: 400; }
 .owned .fold { display: block; width: 100%; text-align: left; border: 0; background: none; color: inherit; font: inherit; font-weight: 700; padding: 2px 0; cursor: pointer; }
 .owned .fold .n { float: right; font-weight: 400; opacity: 0.8; }
-.owned ul { list-style: none; margin: 0 0 2px; padding: 0 0 0 12px; }
+.owned ul { list-style: none; margin: 0 0 2px; padding: 0 0 0 8px; }
 /* en sak per rad: symbolen och antalet */
 .owned li { display: flex; gap: 5px; align-items: center; cursor: pointer; }
 .sakval { display: inline-flex; align-items: center; gap: 1px; margin-right: 4px; } .sakval small { font-size: .75em; opacity: .8; }
