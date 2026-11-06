@@ -323,7 +323,7 @@ export function workOn(s: State, p: Person, b: Bit, dtSec: number, har = 0) {
     if (fnOf(h).sover) log(s, `${h.namn} är färdigt. Nu kan ${n} sova under tak.`, 'world', [p.id]);
     notis(s, 'hus', `${p.name} satte sista biten: ${h.namn} är färdigt.`, [p.id], { x: Math.floor(p.x), y: Math.floor(p.y) });
     { const hf = husFalt(h.namn); kronikaBer(s, 'k_husKlar', h.id, { ...personFalt(p), ...hf, hus2: hf.hus.replace(new RegExp(`^${gen(p.name)} `), `${hans(p)} `) }); } husKlar(s, h);
-    if ((h.byggare?.length ?? 0) > 1) for (const q of living(s)) if (h.byggare!.includes(q.id)) upplev(s, q, 'byggdeHus', h.namn.toLowerCase()); // de byggde tillsammans (steg 4.5.4.9)
+    if ((h.byggare?.length ?? 0) > 1) for (const q of living(s)) if (h.byggare!.includes(q.id)) upplev(s, q, 'byggdeHus', husFalt(h.namn).hus); // de byggde tillsammans (steg 4.5.4.9)
     h.byggare = undefined;
   }
   return true;
@@ -355,7 +355,7 @@ export function wearBuild(s: State, hours: number, ai: number) {
     if (b.c > 0) continue;
     if (b.k === 'vagg') {
       const h = rasar(s, b);
-      log(s, `En vägg i ${h ? h.namn.toLowerCase() : 'ett hus'} var så sliten att den rasade.`, 'world');
+      log(s, `En vägg i ${h ? husFalt(h.namn).hus : 'ett hus'} var så sliten att den rasade.`, 'world');
     } else { b.m = 'jord'; b.c = 1; }
     touch(s);
   }
