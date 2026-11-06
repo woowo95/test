@@ -2,7 +2,7 @@ import { balans } from './balans';
 import { ALDER, KROPP, REL, ageOf, alive, byId, count, isKin, isParent, living, log, namnSlut, relKey } from './folk';
 import { ACTS, Act, slagIkon } from './handlingar';
 import { TAGS } from './seder';
-import { kronika } from './historik';
+import { kronika, senasteKronika } from './historik';
 import { Bevis, HANDELSER, INTRYCK, IntryckTyp, bevisText, intryckOm, intryckText, samlatIntryck } from './rykten';
 import { SAKER, sakNamn } from './saker';
 import { moodOf } from './humor';
@@ -129,7 +129,7 @@ const MDEF = {
   // personen (steg 3.9.2). {alder} = 'ung kvinna', 'gammal man' osv., {drag1} och {drag2} = de egenskaper som sticker ut
   besk_drag2: [
     { t: '{namn} är en {alder}, {drag1} {bind} {drag2}.', om: f => !!f.alder },
-    { t: '{namn} är {drag1} {bind} {drag2}, säger de som känner {honom}.', om: f => !f.syns },
+    { t: 'De som känner {namn} säger att {hen} är {drag1} {bind} {drag2}.', om: f => !f.syns },
     { t: 'En {alder}, {drag1} men också {drag2}: så är {namn}.', om: f => !!f.alder && f.bind === 'men' },
     { t: 'Den som möter {namn} ser en {alder} som är {drag1} {bind} {drag2}.', om: f => !!f.alder },
     { t: '{namn} föddes {drag1}, och {drag2} har {hen} alltid varit.', om: f => !f.syns && f.bind === 'och' },
@@ -217,7 +217,7 @@ const MDEF = {
     'Vid elden säger man att {hen} är {rykte}.',
     'I byns ögon är {hen} {rykte}.',
     'Den som frågar i byn får höra att {hen} är {rykte}.',
-    '{rykte}, säger man om {honom}.',
+    'Man säger om {honom} att {hen} är {rykte}.',
     'Byn har bestämt sig: {hen} är {rykte}.',
   ],
   // {partner}, {van} = bästa vännen, {fiende} = ärkefienden
@@ -331,8 +331,10 @@ const MDEF = {
     '{namn} har {del}, och det vet {hen} om.',
     'Folk ser efter {namn}: {hen} har {del}.',
     'Det man minns hos {namn} är att {hen} har {del}.',
-    'Med {del} är {namn} den vackraste i byn, säger många.',
-    '{Hen} har {del}, och fler än en har tappat tråden i samtalet med {honom}.',
+    'Många säger att {namn} är den vackraste i byn, med {del}.',
+    { t: '{namn} har {del}, {verkan}.', om: f => !!f.verkan },
+    { t: '{Hen} har {del}, {verkan}.', om: f => !!f.verkan },
+    { t: 'Det första man ser hos {namn} är {del}, {verkan}.', om: f => !!f.verkan },
     'Ingen kan låta bli att se på {namn}; {hen} har {del}.',
     '{namn} är vacker, med {del}.',
     'Byn talar om att {namn} har {del}.',
@@ -344,7 +346,7 @@ const MDEF = {
     'Med {del} är {namn} lätt att känna igen på långt håll.',
     '{namn} har {del}, men {hen} bryr sig inte om vad de andra säger.',
     'Ingen kallar {namn} vacker; {hen} har {del}.',
-    'Man vänjer sig vid att {hen} har {del}, säger de som känner {honom}.',
+    'De som känner {honom} säger att man vänjer sig vid att {hen} har {del}.',
     '{Hen} har {del}, och det har {hen} fått höra.',
   ],
   // {ar} = åldern
@@ -633,7 +635,7 @@ const MDEF = {
     'Sin {fo} {vad} har {hen} fått i arv.',
     'Man känner igen {hans} {fo} {vad} i {honom}.',
     'Precis som {hans} {fo2} är {hen} {adj}.',
-    '{adj} som sin {fo2}, säger folk om {honom}.',
+    'Folk säger att {hen} är lika {adj} som sin {fo2}.',
     '{Hans} {vad} har {hen} efter sin {fo2}.',
   ],
   // längtan: {vem} = den hen är förälskad i
@@ -722,17 +724,18 @@ const MDEF = {
     { t: 'Medan regnet föll kom {namn} på hur man kan {lara}.', om: f => f.regn === true },
     { t: 'En kall dag kom {namn} på hur man kan {lara}.', om: f => f.kallt === true },
   ],
+  // {hus2} = huset när {namn} redan nämnts: 'hans hus' i stället för 'Fannbjörns hus' (textminnet, steg 6.7.3)
   k_husKlar: [
     '{Hus} blev {klart}.',
-    '{Hus} stod {klart}, och {namn} lade den sista biten.',
-    'Det sista lades på plats av {namn}: {hus} var {klart}.',
+    '{namn} lade den sista biten, och {hus2} stod {klart}.',
+    '{namn} lade det sista på plats, och nu var {hus2} {klart}.',
     'Efter mycket arbete stod {hus} {klart}.',
     'Det var {arstid} när {hus} blev {klart}.',
-    'Byn samlades och såg på när {namn} gjorde klart {hus}.',
-    '{namn} torkade svetten ur pannan. {Hus} var {klart}.',
+    'Byn samlades och såg på när {namn} gjorde klart {hus2}.',
+    '{namn} torkade svetten ur pannan. {Hus2} var {klart}.',
     'Nu stod {hus} {klart}, och byn var lite större.',
     { t: 'Precis före kylan blev {hus} {klart}.', om: f => f.kallt === true },
-    { t: 'I regnet gjorde {namn} klart {hus}, och nu kunde man sitta torrt.', om: f => f.regn === true },
+    { t: 'I regnet gjorde {namn} klart {hus2}, och nu kunde man sitta torrt.', om: f => f.regn === true },
   ],
   k_forstaLedare: [
     '{namn} blev byns första ledare ({titel}).',
@@ -1752,15 +1755,41 @@ function starkastUpp(p: Person) {
 // = gäller inte) och hur mycket den sticker ut (vikt upp till 1). Egenskaperna och åldern kommer alltid först; de fasta
 // delarna (grundare, skönheten, äldst i byn) står alltid med när de gäller, och sedan tas de som sticker ut mest. Texten
 // blir 2–4 meningar, och en mening längre (5) när det finns mycket att säga. Delarna står i registrets ordning
-interface Besk { s: State; p: Person; f: Fyllning; nyck: (i: number) => number; borjan: Set<string> }
+interface Besk { s: State; p: Person; f: Fyllning; nyck: (i: number) => number; borjan: Set<string>; hors?: boolean; sist?: boolean; andra?: RegExp }
 interface BeskDel { id: string; fast?: true; vikt: (b: Besk) => number; text: (b: Besk) => string }
 // början på en mening (de två första orden), så att två meningar i samma beskrivning inte börjar likadant
 const borjan = (t: string) => t.split(/(?<=[.!?])\s+/).map(x => x.split(' ').slice(0, 2).join(' ').toLowerCase());
+// hörsägen (steg 6.7.3, b_sager): "säger", "talar om" står bara en gång i en beskrivning
+const HORS = /\bsäger\b|\btalar om\b/;
 const mening = (b: Besk, m: MallId, i: number) => {
-  const t = fyll(valjVariant(b.s, m, b.nyck(i), b.f, 0, x => borjan(x).some(y => b.borjan.has(y))), b.f);
+  const t = namnMinne(b, fyll(valjVariant(b.s, m, b.nyck(i), b.f, 0, x => { const y = namnMinne(b, x, true); return borjan(y).some(z => b.borjan.has(z)) || (!!b.hors && HORS.test(y)); }), b.f));
   for (const y of borjan(t)) b.borjan.add(y);
+  if (HORS.test(t)) b.hors = true;
   return t.charAt(0).toUpperCase() + t.slice(1);
 };
+// textminnet (steg 6.7.3, m_namn): när personen var den som nämndes sist (ingen annan av samma kön sedan) byts namnet först i
+// meningen mot hon eller han, efter en preposition mot henne eller honom och i genitiv mot hennes eller hans. Har någon annan av
+// samma kön nämnts sedan, byts ett hon eller han först i meningen mot namnet. prov: bara pröva, minnet ändras inte
+const PREP = 'av|med|om|till|åt|för|utan|efter|hos|mot|kring|på|vid|från|bredvid|runt';
+function namnMinne(b: Besk, text: string, prov = false) {
+  const p = b.p, n = p.name, Han = p.sex === 'm' ? 'Han' : 'Hon', honom = p.sex === 'm' ? 'honom' : 'henne', hans = p.sex === 'm' ? 'hans' : 'hennes';
+  const fore = '(?<![\\wåäöÅÄÖ])', efter = '(?![\\wåäöÅÄÖ])', ord = (x: string) => new RegExp(fore + x + efter, 'g');
+  b.andra ??= ord(`(?:${b.s.people.filter(q => q.sex === p.sex && q.name !== n).map(q => q.name).join('|') || '\u0000'})`);
+  const inte = p.binamn ? `(?! ${p.binamn.namn})` : '';
+  let sist = b.sist;
+  const ut = text.split(/(?<=[.!?])\s+/).map(m => {
+    let x = m;
+    if (sist) x = x.replace(new RegExp(`^${n}s ${inte}`), `${hans[0].toUpperCase()}${hans.slice(1)} `).replace(new RegExp(`^${n}${efter}${inte}(?!,)`), Han)
+      .replace(new RegExp(`${fore}(${PREP}) ${n}${efter}${inte}`, 'g'), `$1 ${honom}`).replace(new RegExp(`${fore}${n}s `, 'g'), `${hans} `);
+    else if (sist === false) x = x.replace(new RegExp(`^${Han}${efter}`), n);
+    const iP = Math.max(x.lastIndexOf(n), ord('(?:hon|han|henne|honom|hennes|hans|Hon|Han|Hennes|Hans)').test(x) ? 0 : -1);
+    let iA = -1; for (const a of x.matchAll(b.andra!)) iA = Math.max(iA, a.index!);
+    if (iA >= 0 || iP >= 0) sist = iP > iA;
+    return x;
+  }).join(' ');
+  if (!prov) b.sist = sist;
+  return ut;
+}
 // de viktiga händelserna i hens liv (p.fame): uppfinningarna för sig, namnet byn gav och den höga åldern står i egna delar
 const FAME_EGEN = /^(Uppfann|Kallades|Blev \d+ år)/;
 const TITEL = /^(Mästare i|Byns första ledare|Mor till)/; // det hen är; resten är det hen gjorde ('Tände byns första eld')
@@ -1783,11 +1812,35 @@ const SKONA: Record<'vacker' | 'ful', string[]> = {
   vacker: ['förföriska ögon', 'ett leende som får folk att stanna upp', 'ett ansikte som folk vänder sig om efter', 'blankt, tjockt hår', 'en röst som man gärna lyssnar på', 'mörka, djupa ögon', 'en hy som lyser i solen', 'ett skratt som smittar'],
   ful: ['en näsa som pekar åt sidan', 'ett ansikte som barnen stirrar på', 'tänder som spretar åt alla håll', 'en käke som en sten', 'små, misstänksamma ögon', 'en röst som skär i öronen', 'öron som står ut', 'en gång som en anka'],
 };
+// det vackra gör något med dem som ser det (steg 6.7.3, b_vacker): en verkan som passar just den delen, i stället för ett fast slut
+const VERKAN: [RegExp, string][] = [
+  [/ögonfransar/, 'och den som möter blicken tittar gärna en gång till'],
+  [/ögon/, 'och den som möter dem glömmer vad den skulle säga'],
+  [/leende/, 'och den som får det blir glad en lång stund'],
+  [/röst/, 'och när {hen} sjunger vid elden blir alla tysta'],
+  [/hår|kalufs/, 'som barnen gärna vill fläta'],
+  [/skratt/, 'och det sprider sig runt elden'],
+  [/kinder/, 'som lyser upp även en grå dag'],
+  [/hy/, 'och den blir bara vackrare av sommaren'],
+  [/ansikte/, 'och främlingar stannar upp när de ser det'],
+];
+// delen ur SKONA när porträtten saknas: två levande i byn får inte samma, så grannar ser olika ut (de äldre väljer först)
+function skonaDel(s: State, p: Person) {
+  const sida = p.pot.skonhet > 10 ? 'vacker' : 'ful', l = SKONA[sida], tagna = new Set<number>();
+  for (const q of living(s).filter(q => q === p || (skonDel(s, q) && (q.pot.skonhet > 10 ? 'vacker' : 'ful') === sida)).sort((a, c) => a.id - c.id)) {
+    let i = Math.floor(hash(s.seed, q.id, 11) * l.length);
+    for (let k = 0; k < l.length && tagna.has(i); k++) i = (i + 1) % l.length;
+    if (q === p) return l[i];
+    tagna.add(i);
+  }
+  return l[Math.floor(hash(s.seed, p.id, 11) * l.length)];
+}
 export const BESK_DELAR: BeskDel[] = [
   { id: 'grundare', fast: true, vikt: b => b.p.grundare ? 1 : 0, text: b => mening(b, 'besk_grundare', 10) },
   { id: 'skonhet', fast: true, vikt: b => skonDel(b.s, b.p) ? 1 : 0, text: b => {
-    const l = SKONA[b.p.pot.skonhet > 10 ? 'vacker' : 'ful'];
-    b.f.del = BESK_ANSIKTE.del?.(b.s, b.p) ?? l[Math.floor(hash(b.s.seed, b.p.id, 11) * l.length)];
+    b.f.del = BESK_ANSIKTE.del?.(b.s, b.p) ?? skonaDel(b.s, b.p);
+    const v = b.p.pot.skonhet > 10 ? VERKAN.find(([r]) => r.test(String(b.f.del))) : undefined;
+    b.f.verkan = v ? v[1].replace('{hen}', hen(b.p)) : undefined;
     return mening(b, b.p.pot.skonhet > 10 ? 'besk_vacker' : 'besk_ful', 11);
   } },
   { id: 'aldst', fast: true, vikt: b => {
@@ -1960,10 +2013,15 @@ export const ARSTIDER = ['istiden', 'våren', 'sommaren', 'hösten'];
 export { talOrd, och }; // talen och listorna bor i ordlagret (steg 6.7.1)
 // en händelse som en liten berättelse i krönikan, med årstiden, vädret och natten (loggen behåller sin korta rad).
 // Raden får mallens id som slag, så att den kan hittas utan att läsa texten
+// början på en rad utan namnen (ord med stor bokstav): 'Sige prövade och misslyckades' och 'Gunve prövade och …' är samma början
+const tre = (x: string) => x.split(/\s+/).filter(o => !/^[A-ZÅÄÖ]/.test(o)).slice(0, 3).join(' ').toLowerCase().replace(/[^a-zåäö ]/g, '');
 export function kronikaBer(s: State, mall: MallId, nyckel: number, f: Fyllning) {
   const v = vaderNu(s);
   const g: Fyllning = { arstid: ARSTIDER[kalender(s).ai], kallt: temperature(s) < 0, sno: v.sno, regn: v.lage === 'regn', blast: v.lage === 'blast', natt: !isLight(s.now), ...f };
-  kronika(s, berattelse(s, mall, nyckel, g), mall); // varianten väljs ur nyckeln och timmen, inte ur historiken (som simuleringen inte läser)
+  // varianten väljs ur nyckeln och timmen; en som börjar som någon av de tre senaste raderna med samma mall hoppas över
+  // (textminnet, steg 6.7.3, m_upprepning). Krönikan läses bara här, för texten; simuleringen läser den inte
+  const forra = senasteKronika(s, mall, 3).map(x => tre(x));
+  kronika(s, fyll(valjVariant(s, mall, nyckel, g, undefined, x => forra.includes(tre(x))), g), mall);
 }
 // fälten för en person: namnet, namnet byn gav och hen
 export const personFalt = (p: Person): Fyllning => ({ namn: p.name, helt: heltNamn(p), hen: hen(p), honom: p.sex === 'm' ? 'honom' : 'henne' });
@@ -2170,9 +2228,16 @@ export function relationText(s: State, p: Person, q: Person, r: Rel): string[] {
   const gavor = (n: number) => n === 1 ? 'en gåva' : `${talOrd(n)} gåvor`;
   if (g) ut.push(`${p.name} har gett ${q.name} ${gavor(g)}${fick ? ` och fått ${fick === 1 ? 'en' : talOrd(fick)} tillbaka` : ' men aldrig fått något tillbaka'}.`);
   else if (fick) ut.push(`${q.name} har gett ${p.name} ${gavor(fick)}, men ${p.name} har aldrig gett något tillbaka.`);
-  for (const e of (p.intryck ?? []).filter(x => x.om === q.id).sort((x, y) => y.v * y.c - x.v * x.c).slice(0, BERATT.relIntryck)) {
-    const t = intryckText(s, e);
-    ut.push(`${cap(hen(p))} ser ${q.name} som ${t.som}: ${t.sure}, ${t.varifran}.${t.bevis.length ? ` ${cap(t.bevis[0])}.` : ''}`);
+  // intrycken som meningar (steg 6.7.3, m_intryck): de två starkaste, med vad hen såg eller vem hen hörde det av; lika bevis slås ihop
+  const Hen = cap(hen(p)), qHan = hen(q), honomP = p.sex === 'm' ? 'honom' : 'henne';
+  for (const e of (p.intryck ?? []).filter(x => x.om === q.id).sort((x, y) => y.v * y.c - x.v * x.c).slice(0, Math.min(2, BERATT.relIntryck))) {
+    const t = intryckText(s, e), sjalv = e.src === undefined && !e.led, osaker = e.c < 0.4 ? ', men är inte säker' : '';
+    const bev = new Map<string, number>();
+    for (const b of e.bev ?? []) { const x = HANDELSER[b.h].text.replace('{om}', b.motNamn === p.name ? honomP : b.motNamn ?? 'någon').replace('{sak}', b.sak ?? 'något'); bev.set(x, (bev.get(x) ?? 0) + 1); }
+    const [vad, n] = [...bev].sort((a, b) => b[1] - a[1])[0] ?? [];
+    const gjorde = vad ? `${q.name} ${vad}${n! > 1 ? ` ${ganger(n!)}` : ''}` : undefined;
+    if (sjalv) ut.push(gjorde ? `${Hen} har själv sett att ${gjorde} och tycker att ${qHan} är ${t.som}${osaker}.` : `${Hen} tycker att ${q.name} är ${t.som}${osaker}.`);
+    else { const fran = byId(s, e.src ?? -1)?.name; ut.push(`${fran ? `Från ${fran}` : 'Från andra'} har ${hen(p)} hört att ${gjorde ?? `${q.name} är ${t.som}`}${osaker}.`); }
   }
   return ut;
 }

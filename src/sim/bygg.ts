@@ -1,3 +1,4 @@
+import { gen, hans } from './ord';
 import { omrade, tillHoljet } from './omrade';
 import { upplev } from './uppvaxt';
 import { ALDER, ageOf, count, doingAct, forstaGang, livet, living, log, stat } from './folk';
@@ -321,7 +322,7 @@ export function workOn(s: State, p: Person, b: Bit, dtSec: number, har = 0) {
     const n = gridOf(s).rooms.filter(r => r.hus === h.id).reduce((a, r) => a + r.tiles.length, 0);
     if (fnOf(h).sover) log(s, `${h.namn} är färdigt. Nu kan ${n} sova under tak.`, 'world', [p.id]);
     notis(s, 'hus', `${p.name} satte sista biten: ${h.namn} är färdigt.`, [p.id], { x: Math.floor(p.x), y: Math.floor(p.y) });
-    kronikaBer(s, 'k_husKlar', h.id, { ...personFalt(p), ...husFalt(h.namn) }); husKlar(s, h);
+    { const hf = husFalt(h.namn); kronikaBer(s, 'k_husKlar', h.id, { ...personFalt(p), ...hf, hus2: hf.hus.replace(new RegExp(`^${gen(p.name)} `), `${hans(p)} `) }); } husKlar(s, h);
     if ((h.byggare?.length ?? 0) > 1) for (const q of living(s)) if (h.byggare!.includes(q.id)) upplev(s, q, 'byggdeHus', h.namn.toLowerCase()); // de byggde tillsammans (steg 4.5.4.9)
     h.byggare = undefined;
   }
