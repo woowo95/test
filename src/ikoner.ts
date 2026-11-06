@@ -3685,7 +3685,7 @@ const MATERIAL_FARG: Record<string, Record<string, string>> = {
   vargskinn: { d: '#474138', w: '#bdb39b', W: '#dad0bb', B: '#987e62', b: '#7d5b40', s: '#dad0bb' },
   rep: { e: '#7d5b40', Y: '#bdb39b', y: '#a0947d', d: '#5e3c24' },
 };
-for (const { k, plagg, mat } of KLADER_AV) { PIX[k] = PLAGG_BILD[plagg]; PAL[k] = MATERIAL_FARG[mat]; }
+for (const { k, plagg, mat } of KLADER_AV) if (PLAGG_BILD[plagg]) { PIX[k] = PLAGG_BILD[plagg]; PAL[k] = MATERIAL_FARG[mat]; }
 // tekniken Bälte har bältets bild
 PIX.balte = PIX.balte_rep; PAL.balte = PAL.balte_rep;
 // Björns val efter v193 (steg 3.10.13): den fångade kaninen på kartan ser ut som viltet i förrådet
@@ -3739,6 +3739,30 @@ PIX.skor_kaninskinn = SKOR16; PAL.skor_kaninskinn = { o: '#24201d', G: '#7d5b40'
 PIX.skor_vargskinn = SKOR16; PAL.skor_vargskinn = { o: '#24201d', G: '#61767a', H: '#8a9c9e', d: '#233035', W: '#dad0bb' };
 PIX.rock_bjornskinn = ROCK16; PAL.rock_bjornskinn = { o: '#24201d', G: '#5e3c24', H: '#7d5b40', g: '#3f2415', W: '#dad0bb' }; // steg 6.6.6: i björnens färger
 PIX.skor_bjornskinn = SKOR16; PAL.skor_bjornskinn = { o: '#24201d', G: '#5e3c24', H: '#7d5b40', d: '#3f2415', W: '#dad0bb' };
+// steg 7.1.2: axelremmen, en platshållare (en rem snett över bröstet från axeln till höften, med en knut av rep) tills Björn
+// valt bland versionerna i bildstilen (steg 7.1.4)
+const AXELREM16 = [
+  '................',
+  '..oo............',
+  '.oGHo...........',
+  '.oGHGo..........',
+  '..oGHGo.........',
+  '...oGHGo........',
+  '....oGHGo.......',
+  '.....oGHGo......',
+  '......oGHGo.....',
+  '.......oGHGo....',
+  '........oGHGo...',
+  '.........oyYyo..',
+  '.........oYdYo..',
+  '..........oyYGo.',
+  '...........oGHo.',
+  '............oo..',
+];
+for (const [m, G, H] of [['kaninskinn', '#7d5b40', '#987e62'], ['vargskinn', '#61767a', '#8a9c9e'], ['bjornskinn', '#5e3c24', '#7d5b40']]) {
+  PIX['axelrem_' + m] = AXELREM16; PAL['axelrem_' + m] = { o: '#24201d', G, H, y: '#a0947d', Y: '#bdb39b', d: '#5e3c24' };
+}
+PIX.axelrem = PIX.axelrem_kaninskinn; PAL.axelrem = PAL.axelrem_kaninskinn; // tekniken har remmens bild
 PIX.filt_by = [
   '................',
   '................',

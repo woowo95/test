@@ -598,6 +598,59 @@ SCENARIER.klader = {
   },
 };
 
+SCENARIER.axelrem = {
+  text: 'Steg 7.1.2: axelremmen sys av ett skinn och ett rep vid slöjdbänken av den som kan tekniken, och den som saknar en tar på sig en. När man bär hem hänger spjutet, metspöt eller vattensäcken på axeln och tar inga händer, så den som kommer hem med spjutet bär lika mycket som med tomma händer. Yxan och kniven hänger inte på axeln utan i bältet, och den som har både bälte och axelrem bär spjutet på axeln, yxan i bältet och bördan i båda händerna',
+  kor: () => {
+    const s = createState(2, START); tandEld(s);
+    medBank(s, 'flatarbank');
+    for (const r of s.people) r.tek = { ...r.tek, kniv: 1, flatarbank: 1, rep: 1, bensyl: 1, skinnklader: 1, axelrem: 1 };
+    setMat(s, { bar: 300 }); setAmount(s, 'ved', 60); setAmount(s, 'skinn', 30); setAmount(s, 'rep', 12);
+    (s.stat ??= {}).fiskeForsok = 1; // byn fiskar, så den vill ha spjut och axelremmar
+    const tek = SIM.TEKNIK.find(t => t.id === 'axelrem');
+    const regTek = !!tek && tek.krav.includes('skinnklader') && tek.krav.includes('balte') && !!tek.forsok;
+    const rem = () => tingOf(s).find(t => t.k.startsWith('axelrem_') && t.bar !== undefined);
+    let h = 0;
+    while (!rem() && h < 120) { kor(s, 1); h++; }
+    const r = rem(), p = r && byId(s, r.bar!);
+    const sytt = Object.keys(s.stat ?? {}).some(k => k.startsWith('axelrem_') && (s.stat![k] ?? 0) > 0);
+    const recept = !!SAKER.axelrem_kaninskinn && SAKER.axelrem_kaninskinn.skaffa?.av?.skinn === 1 && SAKER.axelrem_kaninskinn.skaffa?.av?.rep === 1;
+    let lika = false, paAxeln = false, mindreUtan = false, metspo = false, vattensack = false, yxaEj = false, bada = false;
+    if (p) {
+      for (const t of tingOf(s)) { if (t.hos === p.id) t.hos = undefined; if (t.bar === p.id && SAKER[t.k]?.klad?.krok) t.bar = undefined; }
+      const fri = bordPlats(s, p);
+      const spjut = addTool(s, 'flintspjut', p); take(s, p, 'flintspjut');
+      lika = Math.abs(bordPlats(s, p) - fri) < 1e-9;
+      const u = utrustning(s, p, true);
+      paAxeln = u.axel.ting === spjut && u.axelrem.ting === r && u.hoger.borda === true && u.vanster.borda === true && !u.hoger.ting;
+      r.bar = undefined; mindreUtan = bordPlats(s, p) < fri - 1e-6; r.bar = p.id;
+      const ms = addTool(s, 'metspo', p); take(s, p, 'metspo');
+      metspo = utrustning(s, p, true).axel.ting === ms && Math.abs(bordPlats(s, p) - fri) < 1e-9;
+      const vs = addTool(s, 'vattensack', p); take(s, p, 'vattensack');
+      vattensack = utrustning(s, p, true).axel.ting === vs;
+      // yxan hänger inte på axeln: utan bälte bär man mindre med den
+      const yxa = addTool(s, 'yxa', p); take(s, p, 'yxa');
+      yxaEj = !utrustning(s, p, true).axel.ting && bordPlats(s, p) < fri - 1e-6;
+      // med både bälte och axelrem: spjutet på axeln och yxan i bältet
+      const b = addTool(s, 'balte_rep', p); b.bar = p.id;
+      take(s, p, 'flintspjut');
+      const ub = utrustning(s, p, true);
+      bada = ub.axel.ting === spjut && ub.krok.ting === yxa && ub.hoger.borda === true && ub.vanster.borda === true && Math.abs(bordPlats(s, p) - fri) < 1e-9;
+    }
+    return [
+      ['tekniken kräver skinnkläderna och bältet och prövas vid slöjdbänken', regTek],
+      ['axelremmen görs av ett skinn och ett rep', recept],
+      [`en axelrem sys och tas på (efter ${h} timmar)`, !!r && sytt],
+      ['med spjutet på axeln bär man lika mycket som med tomma händer', lika],
+      ['spjutet hänger på axeln och bördan är i båda händerna', paAxeln],
+      ['utan axelremmen bär man mindre med spjutet i handen', mindreUtan],
+      ['metspöt hänger också på axeln', metspo],
+      ['vattensäcken hänger också på axeln', vattensack],
+      ['yxan hänger inte på axeln', yxaEj],
+      ['med bälte och axelrem: spjutet på axeln, yxan i bältet och bördan i båda händerna', bada],
+    ];
+  },
+};
+
 SCENARIER.balte = {
   text: 'Steg 2.3.3: bältet flätas av rep vid elden av den som kan tekniken, och den som saknar ett tar på sig ett. När man bär hem hänger redskapet i bältet: det tar inga händer, så den som har yxan i bältet bär lika mycket som med tomma händer. En korg hänger inte i bältet. Steg 7.1.1: bältet har två krokar, så ett eget redskap (kniven, yxan, spaden) hänger där medan man arbetar med ett annat och tas fram när det behövs. Spjutet hänger på axeln, inte i bältet',
   kor: () => {

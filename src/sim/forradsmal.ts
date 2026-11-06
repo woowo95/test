@@ -174,6 +174,7 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   rock: s => living(s).length, // en per person (steg 2.3.2), av vilket material som helst (klader.ts)
   skor: s => living(s).length,
   balte: s => living(s).length, // ett per person (steg 2.3.3)
+  axelrem: spjutVill, // en per spjut (steg 7.1.2)
   benspade: () => VILLTAL.spadar, // till latrinen och rötterna (steg 2.7.2)
   fackla: () => VILLTAL.facklor, // till den som går ut i mörkret (steg 6.3.6, ljus.ts)
   talgljus: s => ljusPlatser(s).length, // ett till varje bord och hylla inne där folk är vakna i mörker (steg 6.3.8, ljus.ts)

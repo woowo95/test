@@ -508,7 +508,7 @@ function gearHtml(p: Person) {
     const v = (x.ting ? viktOf(x.ting.k) / (tva ? 2 : 1) : 0) + (i?.v ?? 0);
     return `<div class="hbar"><i class="${i ? 'borda' : ''}" style="width:${Math.min(100, Math.round(v / Math.max(0.01, tak) * 100))}%"></i></div><div class="small"><b>${kortTal(v)}</b> / ${kg(tak)}</div>`;
   };
-  const paSig = PLATS_LIST.filter(k => !PLATSER[k].hand).reduce((a, k) => a + (u[k].ting && k !== 'krok' && k !== 'krok2' ? viktOf(u[k].ting!.k) : 0), 0);
+  const paSig = PLATS_LIST.filter(k => !PLATSER[k].hand).reduce((a, k) => a + (u[k].ting && k !== 'krok' && k !== 'krok2' && k !== 'axel' ? viktOf(u[k].ting!.k) : 0), 0);
   const rad = PLATS_LIST.filter(k => !PLATSER[k].hand).map(k => ruta(k)).join('');
   return `<div class="utrhander"><div class="utrhand">${ruta('hoger', true)}${handKg('hoger')}</div>${utrGubbe(p, u, ih)}<div class="utrhand">${ruta('vanster', true)}${handKg('vanster')}</div></div>
     <div class="tekrad utrrad">${rad}</div><p class="small muted utrkg">På sig <b>${kg(paSig)}</b>${bar ? ` · börda <b>${kg(borda)}</b>` : ''} · orkar <b>${kg(orkar)}</b></p>
@@ -522,7 +522,7 @@ function utrGubbe(p: Person, u: ReturnType<typeof utrustning>, ih: IHanden) {
   // och det av bördan som ligger i varje hand (steg 6.1.2), i den hand där det ligger
   const bild = (k: Plats) => u[k].ting && !(k === 'vanster' && u.vanster.ting === u.hoger.ting) ? u[k].ting!.halv?.gor ?? u[k].ting!.k : (k === 'hoger' || k === 'vanster') && !u[k].ting ? ih[k]?.k : undefined;
   const pa = (k: Plats, x: number, y: number) => (b => b ? `<span class="utrpa" style="left:${x}%;top:${y}%">${iconImg(b, 22)}</span>` : '')(bild(k));
-  return `<div class="utrgubbe">${fig}${pa('hoger', -12, 46)}${pa('vanster', 62, 46)}${pa('krok', 50, 52)}${pa('krok2', 36, 52)}</div>`;
+  return `<div class="utrgubbe">${fig}${pa('hoger', -12, 46)}${pa('vanster', 62, 46)}${pa('krok', 50, 52)}${pa('krok2', 36, 52)}${pa('axel', 60, 8)}</div>`;
 }
 // det hen äger i byns förråd (egendom.ts): symbolen och hur mycket, namnet när man håller över. Saker utan egen stack
 // (giftig svamp bland den ätliga) syns inte, som i förrådet
