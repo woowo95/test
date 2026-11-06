@@ -5,6 +5,7 @@ import { alive, count, living, log } from './folk';
 import { drabbadHus, upplev } from './uppvaxt';
 import { kanGa, skada, Kroppsdel } from './halsa';
 import { bynsMitt } from './omrade';
+import { STRECK } from './karta';
 import { avbryt, minska, nagotPa, stacksOf, tidy } from './lager';
 import { die } from './liv';
 import { groundOf } from './mark';
@@ -55,7 +56,7 @@ export function tornadoTid(s: State, start: number) {
   return { fran, till: fran + Math.round(TORNADO.tim[0] + tal(s, start, 3822) * (TORNADO.tim[1] - TORNADO.tim[0])) * HOUR };
 }
 // drar en tornado fram vid tiden t? (vädret, vader.ts)
-export const tornadoNu = (s: State, t = s.now) => motgangNu(s, t)?.id === 'tornado';
+export const tornadoNu = (s: State, t = s.now) => motgangNu(s, t)?.id === 'tornado' || !!s.tornado?.test && t >= s.tornado.fran && t < s.tornado.till;
 
 // banan: en rak linje genom en punkt nära byn, i en riktning ur tiden, från kartans kant till kartans kant
 function nyBana(s: State, start: number): Tornado {
@@ -71,10 +72,25 @@ function nyBana(s: State, start: number): Tornado {
   const { fran, till } = tornadoTid(s, start);
   return { start, fran, till, x0: cx + dx * u0, y0: cy + dy * u0, x1: cx + dx * u1, y1: cy + dy * u1, u: 0, trad: 0, vagg: 0, lyft: 0, sonder: 0, skadade: 0 };
 }
-export interface Tornado { start: number; fran: number; till: number; x0: number; y0: number; x1: number; y1: number; u: number; trad: number; vagg: number; lyft: number; sonder: number; skadade: number; traff?: number[]; lyftRutor?: number[] }
+export interface Tornado { test?: 1; start: number; fran: number; till: number; x0: number; y0: number; x1: number; y1: number; u: number; trad: number; vagg: number; lyft: number; sonder: number; skadade: number; traff?: number[]; lyftRutor?: number[] }
 // hur långt längs banan tornadon har kommit vid tiden t (0 till 1), och var den är
 export const tornadoAndel = (t: Tornado, nu: number) => Math.min(1, Math.max(0, (nu - t.fran) / (t.till - t.fran)));
 export const tornadoPos = (t: Tornado, u: number) => ({ x: t.x0 + (t.x1 - t.x0) * u, y: t.y0 + (t.y1 - t.y0) * u });
+
+// testläget (steg 6.4.7): en tornado kommer nu från kartans kant, med en bana genom byn som en vanlig och lika lång tid över
+// kartan. Den gäller som en tornado i vädret och för larmet tills den gått över kartan. Går inte medan en tornado pågår
+export const tornadoHinder = (s: State) => s.tornado ? 'En tornado drar redan fram' : undefined;
+export function skickaTornado(s: State): { ok: boolean; text: string } {
+  const h = tornadoHinder(s);
+  if (h) return { ok: false, text: h };
+  const t = nyBana(s, s.now), tid = t.till - t.fran;
+  t.fran = s.now; t.till = s.now + tid; t.test = 1;
+  s.tornado = t;
+  const e = bynsMitt(s), v = Math.atan2(t.y0 - e.y - 0.5, t.x0 - e.x - 0.5);
+  const text = `Testläget: en tornado kommer från ${STRECK[(Math.round(v / (Math.PI / 4)) + 8) % 8]} och går över kartan på ${Math.round(tid / HOUR)} timmar`;
+  log(s, text + '.', 'world');
+  return { ok: true, text };
+}
 
 // ett tal mellan 0 och 1 för en ruta eller en person under tornadon (drar inget ur slumpföljderna)
 const ur = (s: State, t: Tornado, a: number, salt: number) => motgangTal(s, t.start + a * HOUR, salt);
@@ -82,12 +98,12 @@ const ur = (s: State, t: Tornado, a: number, salt: number) => motgangTal(s, t.st
 // ---------- varje steg (steg.ts) ----------
 export function tornadoSteg(s: State) {
   const m = motgangNu(s);
-  if (m?.id === 'tornado' && s.tornado?.start !== m.start) s.tornado = nyBana(s, m.start); // loggen och krönikan: stepMotgang
+  if (m?.id === 'tornado' && s.tornado?.start !== m.start && !s.tornado?.test) s.tornado = nyBana(s, m.start); // loggen och krönikan: stepMotgang
   const t = s.tornado;
   if (!t) return;
   const u = tornadoAndel(t, s.now);
   if (u > t.u) { svep(s, t, t.u, u); t.u = u; }
-  if (m?.id === 'tornado') { ser(s, t); soker(s, t); return; }
+  if (m?.id === 'tornado' || t.test && u < 1) { ser(s, t); soker(s, t); return; }
   // den har gått över kartan
   const delar = [t.trad && `fällde ${t.trad} träd`, t.vagg && `rev ${t.vagg} ${t.vagg === 1 ? 'vägg' : 'väggar'}`, t.lyft && `spred ${t.lyft} saker${t.sonder ? ` (${t.sonder} gick sönder)` : ''}`].filter(Boolean);
   log(s, delar.length ? `Tornadon ${delar.join(', ')}.` : 'Tornadon gick fram där inget fanns att ta.', 'world');

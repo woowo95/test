@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { BAR, FALT_STEG, FOREST, GRODOR, isSoil, stadium, Falt, byId, faltAt, faltIndex, faltKlar, HIGH, MATERIAL, Person, T, W, bitAt, bynsMitt, condOf, dorrDef, emberOn, eldXY, eldarOf, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, tingOf, toaAt, tandTest, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, verbOf, zoneAt, zonesOf, Pile } from '../sim';
+import { BAR, FALT_STEG, FOREST, GRODOR, isSoil, stadium, Falt, byId, faltAt, faltIndex, faltKlar, HIGH, MATERIAL, Person, T, W, bitAt, bynsMitt, condOf, dorrDef, emberOn, eldXY, eldarOf, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, tingOf, toaAt, tandTest, blixtTest, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, verbOf, zoneAt, zonesOf, Pile } from '../sim';
 import { gorText } from './jakt';
 import { iconImg, tecknet } from '../ikoner';
 import { $, esc, fmtN, prickar } from './hjalp';
@@ -93,6 +93,7 @@ app.stage.on('pointertap', e => {
     if (r.ok) { ui.brandTest = false; brandKnapp(); renderPanel(true); } // brinner inget där är knappen kvar aktiv
     return;
   }
+  if (ui.testMode && ui.blixtTest) { testSvara(blixtTest(s, c.x, c.y).text); renderPanel(true); return; } // blixten slår ner där (steg 6.4.7), flera i rad
   const g = p ? undefined : gastAt(gx, gy), dj = p || g !== undefined ? undefined : djurAt(gx, gy);
   if (p) selectPerson(p.id);
   else if (g !== undefined) selectPerson(g); // handlaren och rövarna får samma sida som en bybo (steg 4.5.4.12)
@@ -119,7 +120,10 @@ export function testSvara(text: string) {
   el.textContent = t.charAt(0).toUpperCase() + t.slice(1);
 }
 // brandknappen lyser medan den är aktiv
-export function brandKnapp() { document.querySelector('#testSkicka button[data-brand]')?.classList.toggle('aktiv', ui.testMode && ui.brandTest); }
+export function brandKnapp() {
+  document.querySelector('#testSkicka button[data-brand]')?.classList.toggle('aktiv', ui.testMode && ui.brandTest);
+  document.querySelector('#testSkicka button[data-blixt]')?.classList.toggle('aktiv', ui.testMode && ui.blixtTest);
+}
 // ett tryck där inget finns: personen släpps och personrutan stängs
 function avmarkera() {
   if (ärRuta(ui.tab)) { stangRuta(); renderPanel(true); return; } // först stängs rutan (steg 5.3.5.1)

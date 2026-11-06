@@ -195,6 +195,31 @@ export function tandTest(s: State, x: number, y: number): { ok: boolean; text: s
   return { ok: true, text };
 }
 
+// testläget (steg 6.4.7): en vanlig blixt slår ner på rutan (x, y). Den tänder som blixten i vädret (gnistor nedan): bara
+// när det finns något som brinner och marken är torr nog, med en ny slumpsiffra för varje blixt. Svaret säger om den tände och varför
+let blixtNr = 0;
+export function blixtTest(s: State, x: number, y: number): { ok: boolean; text: string } {
+  if (!inMap(x, y)) return { ok: false, text: 'Rutan är utanför kartan' };
+  const i = y * W + x, k = s.brand && kartaOf(s.brand)[i], dry = torrhet(s), fu = bransleAv(s)(i);
+  const g = groundOf(s), vad = g.tiles[i] === T.Vatten ? 'i vattnet' : !isSoil(g.tiles[i]) ? 'i berget' : markslag(g, i) === 'bar' ? 'på bar jord' : 'där inget brinner';
+  const var_ = `${Math.round(Math.hypot(x - eldPlats(s).x, y - eldPlats(s).y))} rutor ${vaderstreck(s, x, y)} om elden`;
+  let text: string;
+  if (k === 1) text = `Blixten slog ner ${var_}, där det redan brinner`;
+  else if (k === 2) text = `Blixten slog ner ${var_}, där det redan har brunnit`;
+  else if (snoPaMarken(s) > BRAND.sno) text = `Blixten slog ner ${var_}, men snön ligger på marken och inget tog eld`;
+  else if (!fu) text = `Blixten slog ner ${var_} ${vad}, och inget tog eld`;
+  else if (dry <= 0) text = `Blixten slog ner ${var_}, men marken är för blöt och inget tog eld`;
+  else {
+    const ny = !s.brand, fore = s.brand?.n ?? 0;
+    tand(s, i, 'blixt', hash(s.seed + 3860, Math.round(s.now / SEC), ++blixtNr) / dry);
+    const tande = (s.brand?.n ?? 0) > fore;
+    if (tande && !ny) (s.brand!.kallor ??= []).push(i);
+    text = tande ? `Blixten slog ner ${var_} och tände marken` : `Blixten slog ner ${var_} men tände inte (marken är ${dry < 0.5 ? 'bara lite' : 'ganska'} torr, och det var tur)`;
+  }
+  log(s, 'Testläget: ' + text + '.', 'world');
+  return { ok: true, text };
+}
+
 // ---------- varje steg (steg.ts) ----------
 export function brandSteg(s: State, dtSec: number) {
   const dry = torrhet(s);

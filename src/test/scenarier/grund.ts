@@ -1199,6 +1199,39 @@ function angSlag(x: State, mitt: number, slag: 'hog' | 'kort' | 'skog') {
   }
 }
 
+SCENARIER.testknappar = {
+  text: 'Steg 6.4.7: testknapparna för tornado och blixt. Tornadon kommer direkt från kartans kant och raden säger varifrån; en till går inte medan den pågår, och den går över kartan och tar slut. Blixten slår ner där man trycker, flera gånger i rad, och raden säger om den tände och varför',
+  kor: () => {
+    const a = torrAng();
+    if (typeof a === 'string') return [[a, false]];
+    const { s, mitt } = a, x = cloneState(s);
+    const r = SIM.skickaTornado(x), t = x.tornado, kant = !!t && (Math.abs(t.x0) < 0.01 || Math.abs(t.y0) < 0.01 || Math.abs(t.x0 - W) < 0.01 || Math.abs(t.y0 - SIM.H) < 0.01);
+    const igen = SIM.skickaTornado(x);
+    step(x, 60);
+    const blast = vaderNu(x).vind, gar = !!x.tornado && x.tornado.u > 0;
+    for (let h = 0; h < 8 && x.tornado; h++) step(x, 3600);
+    const y = cloneState(s);
+    angSlag(y, mitt, 'hog');
+    if (y.vader) { y.vader.torr = 240; y.vader.fukt = 0; }
+    const g = groundOf(y);
+    let vatten = -1;
+    for (let i = 0; i < g.tiles.length && vatten < 0; i++) if (g.tiles[i] === T.Vatten) vatten = i;
+    const n0 = y.brand?.n ?? 0;
+    const iVatten = vatten >= 0 ? SIM.blixtTest(y, vatten % W, Math.floor(vatten / W)) : { ok: false, text: 'inget vatten' };
+    const torrVatten = (y.brand?.n ?? 0) === n0, svar: string[] = [];
+    for (let k = 0; k < 6 && (y.brand?.n ?? 0) === n0; k++) svar.push(SIM.blixtTest(y, mitt % W, Math.floor(mitt / W)).text);
+    return [
+      [`tornadon kommer: "${r.text}"`, r.ok && !!t?.test && /från (norr|söder|öster|väster|nordost|nordväst|sydost|sydväst)/.test(r.text)],
+      ['den börjar vid kartans kant', kant],
+      [`en till går inte medan den pågår ("${igen.text}")`, !igen.ok],
+      [`den drar fram och det stormar (vinden ${blast.toFixed(2)})`, gar && blast >= 0.99],
+      ['den har gått över kartan och tagit slut', !x.tornado],
+      [`blixten i vattnet: "${iVatten.text}"`, iVatten.ok && /inget tog eld/.test(iVatten.text) && torrVatten],
+      [`blixten på den torra ängen, ${svar.length} i rad: "${svar[svar.length - 1]}"`, (y.brand?.n ?? 0) > n0 && /tände marken/.test(svar[svar.length - 1] ?? '')],
+    ];
+  },
+};
+
 SCENARIER.brandkant = {
   text: 'Steg 6.4.5: bara brandens kant räknas. När en stor brand brinner på en torr äng hoppas rutorna mitt i branden över, och bara kanten prövar grannrutorna',
   kor: () => {
