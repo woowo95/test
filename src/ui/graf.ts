@@ -4,7 +4,7 @@
 // En ny graf är en rad i GRAFER och `grafHtml('id')` där den ska stå; ett nytt tal är en rad i HISTORIK_TAL.
 import { AGES, DAY, HISTORIK_TAL, WEEK, historikSerie, kalender, living, rikSerie, sakNamn, type RikRad } from '../sim';
 import { esc } from './hjalp';
-import { ritaOm, s } from './lage';
+import { ritaOm, s, vidNyBy } from './lage';
 
 // en serie är ett tal i historiken (tal) eller punkter som räknas fram (punkter, t.ex. byns rikedom per dygn, steg 6.9.13)
 // farg är en färg i paletten; linjen ritas i ton 2 i ljust läge och ton 3 i mörkt (--g-färg i template.html, steg 6.9.17)
@@ -23,6 +23,7 @@ export const GRAFER: Record<string, Graf> = { // i den ordning de står i Kröni
 // vad rikedomens graf visar (steg 6.9.14): hela byn (summan och delarna), en persons förmögenhet eller hur många av en sak
 // byn har. Personen väljs i listan eller i porträttraden (ett tryck på ett porträtt medan grafen visar en person)
 export const rikVal: { vy: 'byn' | 'person' | 'sak'; person?: number; sak?: string } = { vy: 'byn' };
+vidNyBy.push(() => { rikVal.person = undefined; rikVal.sak = undefined; }); // personen och saken fanns i den förra byn
 const RIK_VY = { byn: 'Hela byn', person: 'En person', sak: 'En sak' } as const;
 // de som finns i rikedomens rader eller lever nu, och de saker byn haft
 const rikFolk = () => { const ids = new Set(living(s).map(p => p.id)); for (const r of s.hist?.rik ?? []) for (const id in r[4]) ids.add(Number(id)); return s.people.filter(p => ids.has(p.id)).sort((a, b) => a.name.localeCompare(b.name, 'sv') || a.born - b.born); };

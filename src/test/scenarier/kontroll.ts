@@ -285,7 +285,7 @@ SCENARIER.rovardrakt = {
     const lika = JSON.stringify(a) === JSON.stringify(b);
     const luva = a.filter(q => q.del.huvudbonad === 'bonad-9').length, duk = a.filter(q => q.del.huvudbonad === 'bonad-10').length;
     const skinn = a.filter(q => q.klader.rock === 'rovarskinn').length, varg = a.filter(q => q.klader.rock === 'vargskinn').length;
-    const vapen = a.every((q, i) => q.del.redskap === (rov[i].vapen === 'yxa' ? 'redskap-yxa' : q.del.redskap) && !!q.del.redskap);
+    const vapen = a.every((q, i) => q.del.redskap === (rov[i].vapen === 'yxa' ? 'redskap-yxa' : 'redskap-flintspjut'));
     const by = living(s).map(p => skapad(s, p)), bybor = by.every(q => !RS.has(q.del.huvudbonad ?? '') && q.klader.rock !== 'rovarskinn');
     const kring = (n: number, p: number) => n > 60 * p * 0.4 && n < 60 * p * 1.8;
     return [

@@ -17,7 +17,7 @@ import { djur } from './flikar/djur';
 import { grannar } from './flikar/grannar';
 import { byn } from './flikar/byn';
 import { $, hjalpKlick } from './hjalp';
-import { piles, s, satRitaOm, ui } from './lage';
+import { piles, s, satRitaOm, ui, vidNyBy } from './lage';
 import { renderPorts } from './portratt';
 import { bandHtml, stenHtml } from './runstenar';
 
@@ -99,6 +99,7 @@ const VY = ['tab', 'hoger', 'selected', 'bynDel', 'personDel', 'eld', 'husId', '
 const BAKAT_MAX = 30;
 const bakat: string[] = [];
 let vyNu = '';
+vidNyBy.push(() => { bakat.length = 0; vyNu = ''; }); // en ny by har inget att gå tillbaka till
 const vyAv = () => JSON.stringify(VY.map(k => ui[k]));
 function minnsVy() {
   const v = vyAv();
