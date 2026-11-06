@@ -49,7 +49,7 @@ export const KONTROLLER: Kontroll[] = [
     for (const n of Object.values(f).filter((v): v is string => typeof v === 'string' && /^\p{Lu}/u.test(v))) if (/[ae]$/.test(n) && new RegExp(`${n}(en|n|na|et)(?=[^\\p{L}]|$)`, 'u').test(t)) return n;
     return /\p{Ll}(aen|een|aet|eet)(?=[^\p{L}]|$)/u.exec(t)?.[0];
   } },
-  { id: 'siffra', namn: 'En siffra före ett ord (1 rutor, efter 3 försök); utom ålder och år', hitta: t => { const m = /(^|[^\p{L}\d.,])(\d+) (\p{L}+)/u.exec(t); return m && !/^(år|års|dygn|timmar|timme|kg)$/u.test(m[3]) ? `${m[2]} ${m[3]}` : undefined; } },
+  { id: 'siffra', namn: 'En siffra före ett ord (1 rutor, efter 3 försök); utom ålder, år och årtal', hitta: t => { const m = /(^|[^\p{L}\d.,])(\d+) (\p{L}+)/u.exec(t); return m && !/^(år|års|dygn|timmar|timme|kg)$/u.test(m[3]) && !/(^|[^\p{L}])år $/u.test(t.slice(0, m.index + m[1].length)) ? `${m[2]} ${m[3]}` : undefined; } }, // "år 17 dog" är ett årtal
   { id: 'ochoch', namn: 'Namn fogade med och … och (A och B och C)', hitta: t => /(\p{Lu}\p{Ll}+) och (\p{Lu}\p{Ll}+) och (\p{Lu}\p{Ll}+)/u.exec(t)?.[0] },
 ];
 const ARTIKEL = new RegExp(`(^|[^\\p{L}])(som|är|var) (lögnare|tjuv|klåpare|vargdödare)(?=[^\\p{L}]|$)`, 'iu');
