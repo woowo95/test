@@ -172,6 +172,17 @@ SCENARIER.vakt = {
 
 // Det i registren som bara händer i vissa byar: namnet och varför. Allt annat ska hända i minst en av byarna
 const SALLSYNT: Record<string, string> = {
+  bjorn: 'björnen finns i få byar och fälls sällan (steg 6.6.4–6.6.6); scenarierna bjorn och bjornjakt prövar den',
+  bjornjakt: 'björnen jagas bara när den finns nära och jägarna är många nog (steg 6.6.6); scenariot bjornjakt prövar det',
+  bjornskinn: 'björnskinn blir det bara av en fälld björn (se bjorn); scenariot bjornjakt prövar slakten',
+  bjorndel: 'ett björnstycke blir det bara av en fälld björn (se bjorn); scenariot bjornjakt prövar det',
+  rock_bjornskinn: 'en rock av björnskinn behöver ett björnskinn (se bjorn); scenariot plagg prövar plaggen',
+  skor_bjornskinn: 'skor av björnskinn behöver ett björnskinn (se bjorn); scenariot plagg prövar plaggen',
+  rock: 'plaggen sys vid slöjdbänken med bensylen, som de hungrigare byarna efter 6.6 kommer på sent eller inte alls på 35 dygn; scenariot plagg prövar det, och det ses över i fasens Balans (6.10)',
+  skor: 'som rock; scenariot plagg prövar det, och det ses över i fasens Balans (6.10)',
+  rock_kaninskinn: 'som rock; scenariot plagg prövar det, och det ses över i fasens Balans (6.10)',
+  skor_kaninskinn: 'som rock; scenariot plagg prövar det, och det ses över i fasens Balans (6.10)',
+  koa: 'handlaren kommer först när byn är rik nog (HANDEL.rik), och de hungrigare byarna efter 6.6 hinner sällan dit på 35 dygn; scenariot handelsko prövar kön, och det ses över i fasens Balans (6.10)',
   fjadrar: 'fjädrar blir det bara när en fälld fågel slaktas och inte äts hel; fåglarna jagas bara när ingen kanin eller inget rådjur finns nära (steg 6.6.3), och i de hungriga byarna äts de; scenariot faglar prövar slakten, och hur ofta det blir fjädrar ses över i fasens Balans (6.10)',
   kol: 'kol blir det bara när elden brunnit ut helt',
   flyttaeld: 'elden flyttas bara när ett hus behöver platsen eller byn har minst tre hus och vuxit ifrån elden (steg 2.10.4); scenariot eldflytt prövar det',
