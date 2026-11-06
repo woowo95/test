@@ -1234,3 +1234,35 @@ SCENARIER.brygga = {
     ];
   },
 };
+
+SCENARIER.torget = {
+  text: 'Steg 7.3.8, 7.3.12 och 7.3.13: när byn vuxit märks ett torg ut, där inget byggs och dit gångstråken leder, och det är byns centrum. En infartsväg dras ut till kartans kant, med en bro över smalt vatten, och då kan handlaren komma på vintern',
+  kor: () => {
+    const s = createState(6, START);
+    klockan(s); byggare(s);
+    for (const p of living(s)) Object.assign((p.tek ??= {}), { stockvag: 1, brygga: 1 });
+    SIM.planBuild(s); byggKlart(s);
+    SIM.stepByggplan(s);
+    const inget = !s.torg;
+    for (let i = 0; i < 12; i++) nyInvanare(s, i % 2 ? 'm' : 'k', 25);
+    SIM.stepByggplan(s);
+    const t = s.torg!, finns = !!t && t.w === 10 && t.h === 10;
+    const inteHar = finns && !SIM.usable(s, t.x + 2, t.y + 2) ;
+    const mitt = finns && SIM.bynsMitt(s).x === t.x + 5;
+    // infarten
+    put(s, 'virke', 40);
+    for (let i = 0; i < 40; i++) bitsOf(s).push({ id: s.nextBit!++, x: 2 + i, y: 2, k: 'golv', m: 'stockvag', b: 1, mat: 1, c: 1 });
+    SIM.touch(s);
+    const f = SIM.BYGGATGARDER.infartA.foresla(s, { fn: 'forbattra', a: { v: 1, plats: 0 }, sc: 0 }, () => true);
+    const foreslas = f.length === 1 && f[0].ritning.every(a => a.m === 'stockvag' || a.m === 'brygga');
+    s.infart = { klar: 1 };
+    return [
+      ['en liten by har inget torg', inget],
+      [`när byn vuxit märks ett torg på 10×10 rutor ut (${t?.w}×${t?.h})`, finns],
+      ['på torget byggs inget', inteHar],
+      ['torget är byns centrum', mitt],
+      ['Byggplanen föreslår en infartsväg', foreslas],
+      ['när den är klar kan handlaren komma också på vintern', !!s.infart.klar],
+    ];
+  },
+};

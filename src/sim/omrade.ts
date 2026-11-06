@@ -117,7 +117,7 @@ export function utanforByn(s: State, x: number, y: number) {
 export const tillHoljet = (s: State, x: number, y: number) => tillHolje(x, y, omrade(s).holje);
 // områdets mitt (en ruta): det som behöver en punkt att utgå från (kamerans hemknapp, lekplatsen, åt vilket håll fältet
 // växer, var byn minns översvämningen). Den följer området, inte elden
-export const bynsMitt = (s: State) => omrade(s).mitt;
+export const bynsMitt = (s: State) => s.torg ? { x: s.torg.x + (s.torg.w >> 1), y: s.torg.y + (s.torg.h >> 1) } : omrade(s).mitt; // torget är byns centrum när det finns (steg 7.3.13)
 // rutnätet till utanforByn, sparat med området; en kartslinga kan läsa det direkt (bynsAvstand(s)[i])
 export const bynsAvstand = (s: State) => utGrid(omrade(s));
 function utGrid(o: Omrade) {

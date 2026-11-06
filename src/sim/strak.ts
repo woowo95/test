@@ -21,7 +21,7 @@ export const STRAK = balans('strak', {
 });
 
 // målen: varje dörr får en väg till det närmaste av varje slag
-const MAL = ['eld', 'lager', 'latrin', 'vatten'] as const;
+const MAL = ['eld', 'lager', 'latrin', 'vatten', 'torg'] as const; // torget när det finns (steg 7.3.13)
 type Mal = typeof MAL[number];
 
 interface Vag { dorr: number; mal: Mal; len: number; rutor: number[] }
@@ -60,6 +60,7 @@ function sokData(s: State): Sok {
     if (t === T.Vatten || t === T.Sten || g.at.has(i) && !MATERIAL[g.at.get(i)!.m].vag) continue; // på en väg går stråket som förut
     if (zs.some(z => x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h)) { mal[i] = MAL.indexOf('lager'); continue; }
     if (stationAt(s, x, y) || faltAt(s, x, y) || x === f.x && y === f.y) continue;
+    if (s.torg && x >= s.torg.x && y >= s.torg.y && x < s.torg.x + s.torg.w && y < s.torg.y + s.torg.h) { mal[i] = MAL.indexOf('torg'); continue; }
     gang[i] = 1;
     if (Math.max(Math.abs(x - f.x), Math.abs(y - f.y)) === 1) mal[i] = MAL.indexOf('eld');
     else if (latriner.some(l => { const { w, h } = storlekAv(l); return x >= l.x - 1 && x <= l.x + w && y >= l.y - 1 && y <= l.y + h; })) mal[i] = MAL.indexOf('latrin');

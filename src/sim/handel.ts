@@ -339,7 +339,7 @@ export function handelSteg(s: State, dtSec: number) {
   const nyTimme = Math.floor(s.now / HOUR) !== Math.floor((s.now - dtSec * SEC) / HOUR);
   if (nyTimme && !s.handlare) {
     if (s.nastaHandlare === undefined) { if (rikedom(s) >= HANDEL.rik) s.nastaHandlare = s.now + mellan(s, HANDEL.forsta) * DAY; }
-    else if (s.now >= s.nastaHandlare && !iIstiden(ageIndex(s)) && !kommer(s)) s.nastaHandlare = s.now + intervall(s) * DAY;
+    else if (s.now >= s.nastaHandlare && (!iIstiden(ageIndex(s)) || s.infart?.klar) && !kommer(s)) s.nastaHandlare = s.now + intervall(s) * DAY;
   }
   const h = s.handlare;
   if (!h) return;

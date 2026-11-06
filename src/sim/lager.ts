@@ -343,6 +343,7 @@ export function usable(s: State, x: number, y: number, utomElden = false) {
   const m = getMap(s.seed), f = eldPlats(s);
   if (!inMap(x, y)) return false;
   const t = m.tiles[y * W + x];
+  if (s.torg && x >= s.torg.x && y >= s.torg.y && x < s.torg.x + s.torg.w && y < s.torg.y + s.torg.h) return false; // på torget byggs och ställs inget (steg 7.3.13)
   if (t === T.Vatten || s.flod && iVattnetNu(s, y * W + x) || t === T.Sten || !utomElden && Math.max(Math.abs(x - f.x), Math.abs(y - f.y)) <= 1 || bitAt(s, x, y) || sittAt(s, x, y) || faltAt(s, x, y)) return false; // inte heller på ett fält (odling.ts)
   const st = stationAt(s, x, y);
   return !st || !!stationDef(st.k)?.forvar || utomElden && !!stationDef(st.k)?.eld; // i en hylla, kista eller ett ställ ligger saker (steg 2.3.6); grillen flyttas med elden
