@@ -49,6 +49,10 @@ const DEF = {
   // sakerna (saker.ts): redskapen, maten som lagas och det som slaktas
   kott: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' },
   fisk: { var: 'sak', av: { abborre: 1 }, min: 2, slag: 'bearbeta' },
+  gaddkott: { var: 'sak', av: { gadda: 1 }, min: 3, slag: 'bearbeta' }, // gäddan ger 2 kött (steg 7.4.3)
+  mortkott: { var: 'sak', av: { mort: 2 }, min: 2, slag: 'bearbeta' }, // 2 mörtar rensas till 1 kött
+  fangstbank: { var: 'station', av: { virke: 2, grenar: 2 }, min: 20, slag: 'stor', tek: 'fangstbank' }, // steg 7.4.1
+  mjarde: { var: 'sak', av: { torrgras: 3, rep: 1 }, min: 15, slag: 'stor', tek: 'mjarde' }, // steg 7.4.2: görs bara vid fångstbänken
   yxa: { var: 'sak', av: { flinta: 1, grenar: 1 }, min: 5, slag: 'stor', tek: 'yxa' },
   fiskespjut: { var: 'sak', av: { grenar: 1 }, min: 4, slag: 'liten', tek: 'fiskespjut', verktyg: { yxa: 'yxan', flinta: 'en flintsten' } },
   korg: { var: 'sak', av: { torrgras: 3 }, min: 5, slag: 'stor', tek: 'korg' },

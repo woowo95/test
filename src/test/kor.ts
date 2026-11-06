@@ -166,7 +166,7 @@ function vakta(s: State, larm: Larm, timme: boolean) {
     else if (tiles[tileOf(d.x, d.y)] === T.Vatten) larm(`${d.art} i vattnet`, () => `${d.art} ${d.id} på ${d.x.toFixed(1)},${d.y.toFixed(1)}`);
   }
   // varje rum har minst en dörr eller öppning, så att ingen behöver bryta en vägg (steg 3.7.21)
-  for (const r of gridOf(s).rooms) if (r.tiles.length && !r.open) larm('rum utan öppning', () => `rummet vid ${r.tiles[0] % W},${Math.floor(r.tiles[0] / W)}${r.hus !== undefined ? ` (hus ${r.hus})` : ''}`);
+  for (const r of gridOf(s).rooms) if (r.tiles.length && !r.open && !housesOf(s).find(h => h.id === r.hus)?.ut) larm('rum utan öppning', () => `rummet vid ${r.tiles[0] % W},${Math.floor(r.tiles[0] / W)}${r.hus !== undefined ? ` (hus ${r.hus})` : ''}`);
 }
 
 // en rad per by (npm test): hur byn mår, och efter | datorns mått

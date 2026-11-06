@@ -3859,6 +3859,10 @@ for (const [id, b] of Object.entries(STUBBILDER)) { PIX['sb_' + id] = b.rader; P
 for (const k of ['brand', 'tornado']) { PIX[k] = KARTBILDER[k].rader; PAL[k] = KARTBILDER[k].pal; }
 // platshållare tills bilderna byggs in (steg 7.8.1)
 for (const k of ['stockvag', 'brygga']) { PIX[k] = KARTBILDER.golv_tra.rader; PAL[k] = KARTBILDER.golv_tra.pal; }
+for (const k of ['gadda', 'mort', 'gaddkott', 'mortkott']) { PIX[k] = PIX.abborre; PAL[k] = PAL.abborre; }
+for (const k of ['grillgadda', 'grillmort']) { PIX[k] = PIX.grillfisk; PAL[k] = PAL.grillfisk; }
+for (const k of ['torrgadda', 'torrmort']) { PIX[k] = PIX.torrfisk; PAL[k] = PAL.torrfisk; }
+for (const k of ['fangstbank', 'fangstbank_karta', 'fangstbank_karta_v', 'mjarde', 'vittja']) { PIX[k] = PIX.korg; PAL[k] = PAL.korg; }
 // symbolen för en lägereld (stationen som lägger ringen till en lägereld till, steg 4.5.6.8): den nylagda med stenringen under
 // (bildstilens tecken har samma färg i alla bilder, så att två bilder kan läggas på varandra tecken för tecken)
 { const ring = KARTBILDER.lagereld_ring, ny = KARTBILDER.lagereld_ny;

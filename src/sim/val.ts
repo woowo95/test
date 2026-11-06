@@ -31,6 +31,7 @@ import { eldPlats, getMap } from './karta';
 import { ryggsack } from './utrustning';
 import { amountOf, avbryt, fetchSpot, flodUndan, haulJob, isStored, timKvar } from './lager';
 import { BYGG, bedFor, buildJob, siteOf } from './bygg';
+import { MJARDE, kanVittja } from './fisk';
 import { bitAt, bitsOf, blocked, freeNear, roomAt } from './byggnad';
 import { bedTile, homeless, samlingRum, varmareInne } from './byggnader';
 import { groundOf, isForest, punktIRuta, tileOf } from './mark';
@@ -142,6 +143,7 @@ export const VAL = balans('val', {
   // borden (steg 2.2.15)
   maltidMin: 20, maltidSpann: 10, // en måltid vid bordet
   bryggaSitt: 0.6, // finns en brygga sitter man eller badar där med denna chans (steg 7.3.11)
+  vittjaMin: 5, // så många minuter det tar att vittja en mjärde
   salMote: 0.7, // året runt är samlingssalen mötesplatsen med denna chans, när byn har en (steg 7.2.7)
   bordSamtal: 0.5, // den som samtalar eller berättar sätter sig vid ett bord med denna chans, när det inte är kallt
   isar: 1.05, isarForsok: 24, // vid elden står man minst så här många rutor från de andra, så många försök (steg 3.6.8) ...
@@ -593,7 +595,7 @@ export const ARBETEN: readonly Arbete[] = [
     if (!(a >= ALDER.vuxen && vilt && radda(s, p, lagrat(s, k => k === vilt.sak)))) return false;
     processTask(s, v, vilt, 'Det finns vilt att slakta innan det blir dåligt'); return true;
   } },
-  { id: 'rensa', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => a >= ALDER.rensar && canProcess(s, p, DJUR.abborre) && radda(s, p, lagrat(s, k => k === DJUR.abborre.sak)) && (processTask(s, v, DJUR.abborre, 'Det finns fisk att rensa innan den blir dålig'), true) },
+  { id: 'rensa', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => a >= ALDER.rensar && !!rensaArt(s, p) && radda(s, p, lagrat(s, k => RENSAS.some(q => q.sak === k))) && (processTask(s, v, rensaArt(s, p)!, 'Det finns fisk att rensa innan den blir dålig'), true) },
   { id: 'torka', niva: 5, nar: 'dag', kort: true, vader: 'torrt', prova: ({ s, p, v, a }) => a >= ALDER.grillar && kanTorka(s, p) && radda(s, p, lagrat(s, k => TORKAS.some(r => r.ra === k)), torkAndel(pabud(s, 'torkat'))) && (torkVal(s, v, 'Det finns kött och fisk att torka'), true) },
   { id: 'grilla', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => a >= ALDER.grillar && kanGrilla(s, p) && radda(s, p, lagrat(s, k => RATTER.some(r => r.ra === k))) && (grillVal(s, v, 'Det finns rått kött och rå fisk att grilla'), true) },
   // 6 Försörjning (steg 6.2.18): kolet i en utbrunnen lägereld (den första först, steg 4.5.6.8), barnen leker eller hjälper till,
@@ -640,6 +642,15 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'tand', niva: 6, nar: 'dag', kort: true, poang: c => { const d = dag(c); return d.works && needTinder(c.s) ? Math.max(d.wBy, d.wEgen) * d.rad.tand.sc : 0; },
     full: c => radFull(c.s, c.p, 'tand'),
     prova: c => { arbeta(c, dag(c).rad.tand.act, 'Byn behöver tändmaterial till elden', { tandmat: true }); return true; } },
+  // 6 Försörjning: att vittja en mjärde med fisk i (steg 7.4.2)
+  { id: 'vittja', niva: 6, nar: 'dag', kort: true, prova: c => {
+    const { s, p, v, a } = c;
+    if (a < ALDER.vuxen || !dag(c).works) return false;
+    const m = kanVittja(s).filter(q => q.n >= MJARDE.vittjaMin && !living(s).some(o => o !== p && o.task?.act === 'vittja' && o.task.ref === q.id)).sort((x, y) => Math.hypot(x.x - p.x, x.y - p.y) - Math.hypot(y.x - p.x, y.y - p.y))[0];
+    if (!m) return false;
+    set(v, 'vittja', 'Mjärden har fisk i sig.'); v.ref = m.id; v.spot = { x: m.x + 0.5, y: m.y + 0.5 }; v.dur = VAL.vittjaMin * MIN;
+    return true;
+  } },
   // 7 Tak: att bygga åt den som saknar sovplats och laga det som är slitet. När bygget har sina arbetare går man vidare
   { id: 'bygga', niva: 7, nar: 'dag', kort: true, prova: c => { const d = dag(c); return d.works && !!d.job && !radFull(c.s, c.p, 'bygga') && bygg(c); } },
   // 8 Förbättra: det Byggplanen föreslagit när inget behov är akut (steg 7.2.10)
@@ -1029,6 +1040,8 @@ export function toolGain(s: State, p: Person, act: Act, fara: Faror) {
 // slakta det fällda viltet eller rensa fisken vid slaktbänken (DJUR i redskap.ts), så länge det tar, med kniven om det behövs
 // det första djuret som p kan slakta (kaninen, vargen; steg 3.7.14)
 const slaktbart = (s: State, p: Person) => DJURARTER.find(art => art.act === 'slakta' && canProcess(s, p, art));
+const RENSAS = [DJUR.abborre, DJUR.gadda, DJUR.mort];
+const rensaArt = (s: State, p: Person) => RENSAS.find(a => canProcess(s, p, a));
 function processTask(s: State, v: Val, art: Djurart, why: string) {
   set(v, art.act, why); if (art.kniv) v.tool = 'kniv';
   v.dur = Math.min(art.maxTim * HOUR, (djurKvar(s, art) / art.timme) * HOUR + VAL.extraMin * MIN);
@@ -1043,7 +1056,7 @@ function torkVal(s: State, v: Val, why: string) { set(v, 'torka', why); v.dur = 
 function craft(s: State, p: Person, v: Val, why: string) {
   const vilt = slaktbart(s, p);
   if (vilt) { processTask(s, v, vilt, `${why}. Slaktar viltet med kniven.`); return; }
-  if (canProcess(s, p, DJUR.abborre)) { processTask(s, v, DJUR.abborre, `${why}. Rensar fisken.`); return; }
+  if (rensaArt(s, p)) { processTask(s, v, rensaArt(s, p)!, `${why}. Rensar fisken.`); return; }
   if (ageOf(p, s.now) >= ALDER.grillar && kanTorka(s, p)) { torkVal(s, v, `${why}. Torkar kött och fisk.`); return; }
   if (ageOf(p, s.now) >= ALDER.grillar && kanGrilla(s, p)) { grillVal(s, v, `${why}. Grillar maten.`); return; }
   if (gaILara(s, p, v, why)) return;

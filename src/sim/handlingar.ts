@@ -137,6 +137,8 @@ const DEF = {
   bada: { namn: 'Badar i sjön', tecken: '🏊', dygn: true },
   bara: { namn: 'Bär in saker till lagret', slag: 'bara' },
   strand: { namn: 'Sitter vid stranden och ser ut över vattnet', tecken: '🌊', dygn: true },
+  mjarde: { namn: 'Flätar en mjärde', slag: 'hantverk', hantverk: true, verb: 'flätar', plats: 'station' }, // bara vid fångstbänken (stationer.ts, steg 7.4.2)
+  vittja: { namn: 'Vittjar mjärden', slag: 'fiska', verb: 'vittjar', plats: 'skog' },
   korg: { namn: 'Flätar en korg av hö', slag: 'hantverk', hantverk: true, verb: 'flätar', plats: 'station' }, // bara vid slöjdbänken (stationer.ts)
   bensyl: { namn: 'Slipar en bensyl', slag: 'hantverk', hantverk: true, verb: 'slipar', plats: 'station' }, // steg 2.3.2
   rock: { namn: 'Syr en rock', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, // bara vid slöjdbänken med bensylen (stationer.ts). Plaggen heter som i PLAGG (klader.ts, steg 3.10.12)

@@ -17,7 +17,11 @@ import { SKOG, fallTid, fellingTiles, klyvStam, rojSpot, skaGravas, skaRojas, st
 import { freeTools, tingOf } from './agande';
 import { ACTS } from './handlingar';
 import { tileOf } from './mark';
-import { Recept, saknatAv } from './behov';
+import { Recept, getable, saknatAv } from './behov';
+import { mjardarOf, mjardarVill } from './fisk';
+import { RECEPT } from './recept';
+import { knows } from './teknik';
+import { kanGoras } from './stationer';
 import { SED } from './seder';
 import { bedTile } from './byggnader';
 import { stationRutor } from './stationer';
@@ -50,6 +54,7 @@ export const PROJEKT_TAL = balans('projekt', {
   kruka: 0.2, bonad: 0.2, vaggbrade: 0.2, // ... pyntet när alla vuxna som sover inne saknar ett (steg 4.3.4, pynt.ts)
   skinndorr: 0.6, // ... skinndörrarna när alla hus där man bor eller umgås har en öppen dörröppning (steg 2.2.16)
   tradorr: 0.6, // ... trädörrarna när alla sådana hus saknar en (steg 3.7.21)
+  mjarde: 0.7, fangstbank: 0.5, // ... mjärdarna och fångstbänken (steg 7.4.1 och 7.4.2)
   rep: 0.5, // ... repet när förrådet är tomt
   virke: 0.8, // ... virket när förrådet saknar det byn vill bygga av (steg 4.5.5.2)
   stubbe: 1, // ... att gräva bort stubbarna där något ska byggas (steg 6.5.7, skog.ts)
@@ -143,6 +148,15 @@ export const PROJEKT: Record<string, ProjektDef> = {
   ...Object.fromEntries(STATION_LIST.map(k => [k, station(k)])),
   ...Object.fromEntries(TILLBEHOR_LIST.map(k => [k, tillbehor(k)])),
   ...Object.fromEntries(DORR_LIST.map(k => [k, dorr(k)])),
+  // mjärden (steg 7.4.2): görs vid fångstbänken och sätts ut på stranden. Byn vill ha några för varje fiskare
+  mjarde: {
+    namn: SAKER.mjarde!.namn, vikt: PROJEKT_TAL.mjarde,
+    brist: s => { const v = mjardarVill(s); return v > 0 ? clamp((v - mjardarOf(s).length) / v, 0, 1) : 0; },
+    kostnad: () => varuVarde(RECEPT.mjarde.av!, RECEPT.mjarde.min / 60 * ARBETE),
+    kan: (s, p) => knows(p, 'mjarde') && mjardarOf(s).length < mjardarVill(s) && kanGoras(s, 'mjarde', p) && Object.entries(RECEPT.mjarde.av!).every(([k, n]) => getable(s, p, k) >= n),
+    recept: (s, p) => knows(p, 'mjarde') && mjardarOf(s).length < mjardarVill(s) && kanGoras(s, 'mjarde', p) ? { av: RECEPT.mjarde.av! } : undefined,
+    uppgift: () => ({ act: 'mjarde', text: 'Flätar en mjärde vid fångstbänken.', min: RECEPT.mjarde.min }),
+  },
   rep: {
     namn: SAKER.rep!.namn, vikt: PROJEKT_TAL.rep,
     brist: s => clamp(1 - amountOf(s, 'rep') / TROSKEL.repVill, 0, 1),

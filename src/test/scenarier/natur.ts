@@ -2419,3 +2419,33 @@ SCENARIER.trad = {
     ];
   },
 };
+
+SCENARIER.mjarde = {
+  text: 'Steg 7.4.1–7.4.4: fångstbänken, mjärden som fångar fisk när ingen är där och vittjas, gädda och mört med eget kött, och mört som bete',
+  kor: () => {
+    const s = SIM.createState(6, START);
+    const bank = SIM.STATIONER.fangstbank, bankOk = bank.w === 3 && bank.h === 2 && bank.gor.includes('mjarde');
+    const p = SIM.living(s)[0];
+    // arten följer årstiden och gäddan sliter dubbelt
+    const gadda = SIM.FISKAR.gadda, abb = SIM.FISKAR.abborre;
+    const artOk = gadda.slit === 2 && abb.slit === 1 && gadda.sasong[1] > abb.sasong[1] * 0.9 && abb.sasong[2] > gadda.sasong[2] && SIM.FISKAR.mort.mjarde === true;
+    const m = SIM.sattUtMjarde(s, p)!;
+    const ute = !!m && SIM.strandNu(s)[m.y * SIM.W + m.x] === 1;
+    m.fisk = { mort: 2 }; m.n = 2;
+    SIM.vittja(s, p, m);
+    const fick = SIM.amountOf(s, 'mort') === 2 && m.n === 0;
+    // rensa
+    const mortar = SIM.DJUR.mort.mat === 2 && SIM.DJUR.mort.slakt.mortkott === 1, gaddkott = SIM.DJUR.gadda.slakt.gaddkott === 2;
+    let napp = 0; for (let i = 0; i < 400; i++) if (SIM.valjFisk(s, p, true) === 'mort') napp++;
+    const naring = SIM.SAKER.gaddkott!.naring!.fett === 0.3 && SIM.SAKER.mortkott!.naring!.fett === 1.2 && SIM.SAKER.torrgadda!.naring!.protein === 2.2;
+    return [
+      ['fångstbänken är 3×2 rutor, och där görs mjärden', bankOk],
+      ['gäddan sliter dubbelt och nappar bäst på våren och hösten, abborren på sommaren, mörten i mjärden', artOk],
+      ['mjärden sätts ut på stranden', ute],
+      ['den som vittjar får fisken', fick],
+      ['2 mörtar rensas till 1 kött, en gädda till 2', mortar && gaddkott],
+      [`i mjärden fångas bara mört (${napp} av 400)`, napp === 400],
+      ['varje art har sin egen näring, också grillad och torkad', naring],
+    ];
+  },
+};

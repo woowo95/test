@@ -97,6 +97,15 @@ const DEF = {
   bjornskinn: { namn: 'Björnskinn', ett: true, skaffa: RECEPT.bjornskinn, stack: 5, mapp: 'Material', slits: 0.0006 },
   // en hel fisk som den fångats (DJUR i redskap.ts). Den rensas vid elden till fiskkött (fisk), som är det man äter;
   // bara när inget annat finns äts den som den är
+  gadda: { namn: 'Gädda', skaffa: { act: 'fiske' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 2.4, naring: { protein: 2.2, fett: 0.3, mineral: 0.7, energi: 0.5, vitamin: 0.3 }, ra: true, haller: 1 }, // steg 7.4.3: större, ger 2 gäddkött
+  mort: { namn: 'Mört', skaffa: { act: 'fiske' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 0.6, naring: { protein: 1.8, fett: 1.2, mineral: 0.9, energi: 0.7, vitamin: 0.4 }, ra: true, haller: 1 }, // fångas i mjärden, och är ett bättre bete än masken (steg 7.4.4)
+  gaddkott: { namn: 'Gäddkött', ett: true, skaffa: RECEPT.gaddkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 1, naring: { protein: 2.2, fett: 0.3, mineral: 0.7, energi: 0.5, vitamin: 0.3 }, ra: true, haller: 1 },
+  mortkott: { namn: 'Mörtkött', ett: true, skaffa: RECEPT.mortkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 1, naring: { protein: 1.8, fett: 1.2, mineral: 0.9, energi: 0.7, vitamin: 0.4 }, ra: true, haller: 1 },
+  grillgadda: { namn: 'Grillad gädda', skaffa: { act: 'grilla' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 0.5, naring: { protein: 2.2, fett: 0.3, mineral: 0.7, energi: 0.5, vitamin: 0.3 }, haller: 2 },
+  grillmort: { namn: 'Grillad mört', skaffa: { act: 'grilla' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 0.5, naring: { protein: 1.8, fett: 1.2, mineral: 0.9, energi: 0.7, vitamin: 0.4 }, haller: 2 },
+  torrgadda: { namn: 'Torkad gädda', skaffa: { act: 'torka' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 7, naring: { protein: 2.2, fett: 0.3, mineral: 0.7, energi: 0.5, vitamin: 0.2 }, haller: 20 },
+  torrmort: { namn: 'Torkad mört', skaffa: { act: 'torka' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 7, naring: { protein: 1.8, fett: 1.2, mineral: 0.9, energi: 0.7, vitamin: 0.3 }, haller: 20 },
+  mjarde: { namn: 'Mjärde', skaffa: RECEPT.mjarde, stack: 1, ruta: 1, mapp: 'Redskap' }, // en flätad korg som sätts ut i vattnet (steg 7.4.2)
   abborre: { namn: 'Abborre', skaffa: { act: 'fiske' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 1.2, naring: { protein: 2, fett: 0.8, mineral: 0.7, energi: 0.6, vitamin: 0.3 }, ra: true, haller: 1 }, // den hela fisken äts strax efter fiskköttet: innan byn har en slaktbänk rensas den inte (steg 2.2.8)
   // ett redskap som någon har börjat göra men inte gjort klart (paborjat.ts). Det slits och värderas där, inte här
   paborjat: { namn: 'Påbörjat', ett: true, vikt: 2, stack: 1, mapp: 'Redskap', redskap: true },

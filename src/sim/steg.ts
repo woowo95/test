@@ -1,5 +1,7 @@
 import { rumVila } from './rum';
 import { stepByggplan } from './byggplan';
+import { FISKAR, MJARDE, mjardarOf, sattUtMjarde, stepMjardar, valjFisk, vittja } from './fisk';
+import { RECEPT } from './recept';
 import { stepBlotVed } from './blotved';
 import { stepUppvaxt, upplev } from './uppvaxt';
 import { stepReligion } from './religion';
@@ -19,8 +21,8 @@ import { lyssnaSteg, upptradaKlar, upptradaSteg } from './framtradande';
 import { redskapIHanden, tidyTools } from './agande';
 import { kvEffekt } from './kvalitet';
 import { SKOG, chopStock, fellTree, rotStumps, stocks, stubbeGravd } from './skog';
-import { needLadder, noticeTheft, stole } from './behov';
-import { avbryt, bordSlag, carryKind, dropSpot, fetchSpot, helaIBordan, helt, homeKind, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore } from './lager';
+import { needLadder, noticeTheft, stole, takeMaterial } from './behov';
+import { avbryt, bordSlag, carryKind, dropSpot, fetchSpot, helaIBordan, helt, homeKind, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore, ownsAmount, use } from './lager';
 import { SAKER, viktOf } from './saker';
 import { DJURARTER, REDSKAP, bearbeta, djurKvar, twineRope, wearUsed } from './redskap';
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
@@ -186,6 +188,9 @@ MEDAN.buren = burenSteg; // den som bärs hem väntar så länge någon bär hen
 // att dricka (torst.ts): en gång när man kommit fram, och törsten hålls släckt så länge man dricker
 for (const act of DRICKA_ACTS) MEDAN[act] = (s, p, t) => { if (t.prog === undefined) { t.prog = 0; drick(s, p, t); } else p.torst = 1; };
 // slakt och rensning: den första arten med arbetet som finns i förrådet (kaninen före vargen, steg 3.7.14)
+// mjärden är klar: materialet tas, och den sätts ut på närmaste strand (steg 7.4.2)
+KLAR.mjarde = (s, p) => { for (const [k, n] of Object.entries(RECEPT.mjarde.av!)) takeMaterial(s, p, k, n); sattUtMjarde(s, p); };
+MEDAN.vittja = (s, p, t) => { const m = mjardarOf(s).find(q => q.id === t.ref); if (m) vittja(s, p, m); t.until = s.now; };
 for (const art of DJURARTER) MEDAN[art.act] ??= (s, p, _t, dtSec) => bearbeta(s, p, DJURARTER.find(a => a.act === art.act && djurKvar(s, a) > 0) ?? art, dtSec / HOUR_S);
 MEDAN.grilla = (s, p, _t, dtSec) => grilla(s, p, dtSec / HOUR_S); // grillen över elden (matlagning.ts)
 MEDAN.torka = (s, p, _t, dtSec) => torka(s, p, dtSec / HOUR_S); // torkställningen (matlagning.ts)
@@ -252,7 +257,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
     atSteg(s); stepSeder(s); updateTags(s); stepRelationer(s); stepUppvaxt(s); stepReligion(s); for (const p of living(s)) morkHumor(s, p); facklorTimme(s); stepHumor(s); stepDelning(s); stepLarlingar(s);
     stepVader(s); vindfallen(s); regnetTvattar(s); stepMotgang(s); stepTorka(s); stepFlod(s); stepIs(s); growGround(s, 1, ai); growFynd(s, 1, ai, vaxtFaktor(s)); forget(s, 1); stepRykten(s, moodOf); glomRykten(s, 1); stepBerattelser(s); stepStyre(s); rotStumps(s); tidyStore(s);
-    wearBuild(s, 1, ai); stepByggnader(s); stepByggplan(s); stepEldFlytt(s); stepPaborjat(s); stepStationer(s); stepPynt(s); stadaByten(s); stepBrasor(s); stepKlader(s); stepOdling(s);
+    wearBuild(s, 1, ai); stepByggnader(s); stepMjardar(s); stepByggplan(s); stepEldFlytt(s); stepPaborjat(s); stepStationer(s); stepPynt(s); stadaByten(s); stepBrasor(s); stepKlader(s); stepOdling(s);
     askaSteg(s); // det svarta efter en eldsvåda försvinner (brand.ts)
     forbrukTimme(s); // materialens förbrukning glöms långsamt (forradsmal.ts, steg 6.2.14)
     arbetsTimme(s); // byns behov för arbetsordningen (val.ts, steg 6.1.12)
@@ -611,8 +616,9 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
 interface Arbetsbit { y: number; rich: number; delar?: number[]; rd: ReturnType<typeof toolRow>; dtSec: number; a: number; bar: (k: string, n: number) => void }
 const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) => boolean | void>> = {
   // fiske med händerna, spjut eller metspö: ett försök i taget, och fiskaren går hem med varje fångst
-  fiske: (s, p, tk, { rd, dtSec, a }) => {
+  fiske: (s, p, tk, { rd, dtSec, a, bar }) => {
     tk.prog = (tk.prog ?? 0) + dtSec;
+    if (tk.mortBete === undefined) { tk.mortBete = ownsAmount(s, p, 'mort') >= 1 ? 1 : 0; if (tk.mortBete) { use(s, p, 'mort', 1); count(s, 'mortBete'); } } // en mört per fisketur (steg 7.4.4)
     // ligger isen hugger man först upp ett hål (is.ts), och sedan pimplar man genom det. Går det inte slutar man
     if (tk.hal === undefined && islagt(s)) {
       const h = halVal(s, p);
@@ -626,7 +632,12 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
       tk.prog -= TRY_SEC;
       if (rd?.bete && (tk.mask ?? 0) < 1) { tk.mask = (tk.mask ?? 0) + REDSKAP.maskPerGrav; continue; } // gräver fram mask först
       const napp = p.fiske?.n ?? 0;
-      tk.carry += handFish(s, p, tk.tx, tk.ty, ageF, rd);
+      const fick = handFish(s, p, tk.tx, tk.ty, ageF * (tk.mortBete ? MJARDE.beteNapp : 1), rd);
+      if (fick) { // arten efter årstiden (steg 7.4.3): gäddan sliter dubbelt så mycket på redskapet
+        const k = valjFisk(s, p);
+        if (k === 'abborre') tk.carry += fick;
+        else { bar(k, fick); count(s, 'fisk_' + k); if (rd) wearUsed(s, p, FISKAR[k].slit - 1); }
+      }
       if (rd?.bete && (p.fiske?.n ?? 0) > napp) tk.mask!--; // varje napp tar en mask
       if (rd) wearUsed(s, p, 1);
     }

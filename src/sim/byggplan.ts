@@ -63,7 +63,8 @@ export const PLAN = balans('byggplan', {
   jordFran: -0.5, // under det här (seden Dagens behov) lägger man jordgolv
   ringVikt: 0.2, // planen i en ring: så mycket mer än vanligt väger avståndet till mitten
   raderVikt: 1.5, // planen i rader: så många poäng mindre för ett hus nära ett gångstråk
-  sedStorlek: 0.25, // seden Förutseende bygger så här mycket större, Dagens behov så här mycket mindre
+  sedMarg: 0.5, // först när seden Dagens behov är starkare än så här bygger byn mindre
+  sedStorlek: 0.1, // seden Förutseende bygger så här mycket större, Dagens behov så här mycket mindre
   rikExtra: 2, // den rika bygger så här många rutor större ...
   rikGang: 1.5, // ... och är rik när familjen äger så här många gånger den övre kvartilen i byn
 });
@@ -177,7 +178,9 @@ export function ritningKostnad(ritning: Andring[]) {
 // önskad storlek (steg 7.2.6): efter behovet nu, lite större med seden Förutseende, mindre med Dagens behov, större för den rika
 export function onskadPlats(s: State, b: ByggBehov) {
   const sed = s.seder?.v?.forsiktighet ?? 0, rik = b.a.ag !== undefined && rikOf(s, b.a.ag) ? PLAN.rikExtra : 0;
-  return Math.min(BYGG.maxInne, Math.max(1, Math.round(b.a.plats * (1 + PLAN.sedStorlek * sed)) + rik));
+  // Dagens behov tar bort marginalen när seden är tydlig, men bygger aldrig för få
+  const f = sed > 0 ? 1 + PLAN.sedStorlek * sed : 1 + PLAN.sedStorlek * Math.min(0, sed + PLAN.sedMarg);
+  return Math.min(BYGG.maxInne, Math.max(1, Math.round(b.a.plats * f) + rik));
 }
 const rikOf = (s: State, ag: number) => { if (!byId(s, ag)) return false; const f = formogenheter(s).egen, v = f.get(ag) ?? 0, alla = [...f.values()].sort((x, y) => x - y); return alla.length > 1 && v >= alla[Math.floor(alla.length * 0.75)] * PLAN.rikGang; };
 
@@ -559,6 +562,7 @@ export function husFel(s: State): string | undefined {
   const g = gridOf(s);
   for (const r of g.rooms) {
     if (r.hus === undefined || !r.tiles.length || r.open > 0) continue;
+    if (housesOf(s).find(h => h.id === r.hus)?.ut) continue; // en utbyggnad pågår
     if (bitsOf(s).some(b => b.hus === r.hus && (b.b < 1 && b.k === 'vagg'))) continue;
     if (housesOf(s).find(h => h.id === r.hus)?.klar) return `ett rum i hus ${r.hus} saknar öppning`;
   }
@@ -667,6 +671,11 @@ function byggUt(s: State, f: Forslag, by: Person, forb: boolean) {
   s.nextBit ??= 1;
   for (const a of f.ritning) bitsOf(s).push({ id: s.nextBit++, x: a.x, y: a.y, k: MATERIAL[a.m].k, m: a.m, b: a.m === 'oppning' ? 1 : 0, mat: 0, c: 1, hus: h.id, ...(forb ? { forb: 1 as const } : {}) });
   h.ut = { x: f.x, y: f.y, w: f.w, h: f.h, oppnas: f.oppnas.map(a => [a.x, a.y, a.m]) };
+  // en öppning i den gamla väggen redan nu, så att ingen blir instängd i den nya delen (den blir golv som resten sist)
+  if (!f.ritning.some(a => a.m === 'oppning') && f.oppnas.length) {
+    const q = f.oppnas[f.oppnas.length >> 1], b = bitAt(s, q.x, q.y);
+    if (b && b.k === 'vagg') { const M = MATERIAL.oppning; b.m = 'oppning'; b.k = M.k; b.b = 1; b.c = 1; b.mat = 0; }
+  }
   touch(s); count(s, 'planerat_ut');
   log(s, `${by.name} planerar att bygga ut ${h.namn.toLowerCase()} med ${f.ritning.filter(a => MATERIAL[a.m].k === 'golv').length} rutor.`, 'world', [by.id]);
 }

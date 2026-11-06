@@ -121,6 +121,12 @@ export const STATIONER = {
     bygger: 'Bygger en slöjdbänk av virke och grenar.',
     forsta: '{namn} byggde byns första slöjdbänk. Där tvinnas rep fortare än för hand och flätas korgar.', // och sys kläder med bensylen (steg 2.3.2)
   },
+  // fångstbänken (steg 7.4.1): 3×2 rutor. Mjärdar, snaror och andra fällor görs bara här
+  fangstbank: {
+    namn: 'Fångstbänk', ikon: 'fangstbank', w: 3, h: 2, tek: ['fangstbank'], av: RECEPT.fangstbank.av, min: RECEPT.fangstbank.min, gor: ['mjarde'], bara: ['mjarde'],
+    bygger: 'Bygger en fångstbänk av virke och grenar.',
+    forsta: '{namn} byggde byns första fångstbänk. Där görs mjärdar och andra fällor.',
+  },
   halmbadd: {
     namn: 'Halmbädd', ikon: 'halmbadd', w: 2, h: 1, tek: ['halmbadd'], av: RECEPT.halmbadd.av, min: RECEPT.halmbadd.min, gor: [], inne: true, mobel: true, flera: true, sover: true,
     bygger: 'Bäddar en halmbädd av hö och grenar.',

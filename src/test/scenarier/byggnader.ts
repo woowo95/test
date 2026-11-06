@@ -209,6 +209,7 @@ SCENARIER.funktion = {
     const gaster = Array.from({ length: 8 }, (_, i) => ({ ...structuredClone(living(s)[0]), id: 1000 + i, name: `Gäst${i}`, partner: undefined, task: undefined }));
     const kom = () => { for (const g of gaster) g.left = undefined; }, gar = () => { for (const g of gaster) g.left = s.now; };
     s.people.push(...gaster);
+    SIM.BYGGATGARDER.byggaUt.foresla = () => []; // här prövas ett nytt hus, inte en utbyggnad
     const nyttHus = () => { s.byggSok = undefined; planBuild(s); return byggKlart(s)!; };
     const B = nyttHus();
     gar(); s.ruttet = undefined;
