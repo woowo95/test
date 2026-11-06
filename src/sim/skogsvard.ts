@@ -2,7 +2,10 @@ import { HOUR, H, Person, State, Task, W } from './typer';
 import { balans } from './balans';
 import { groundOf, skuggad } from './mark';
 import { FOREST, HIGH, isSoil } from './vag';
-import { SKOG, fallTid, skaRojas } from './skog';
+import { SKOG, fallTid, skaRojas, stamAv, stocks } from './skog';
+import { hash } from './karta';
+import { vaderNu } from './vader';
+import { tornadoNu } from './tornado';
 import { bynsMitt, utanforByn } from './omrade';
 import { count, forstaGang, living, log, think } from './folk';
 import { knows, tankePa } from './teknik';
@@ -106,4 +109,28 @@ export function plantaSatt(s: State, p: Person, t: Task) {
     if (forstaGang(s, 'plantaForsta')) log(s, `${p.name} grävde upp en planta och satte den närmare byn, där skogen ska växa tillbaka.`, 'world', [p.id]);
   }
   p.task = undefined;
+}
+
+// ---------- vindfällen (steg 6.5.5, "Skogen som byn sköter" i designdokumentet, stycket Vindfällen) ----------
+// När det blåser väldigt hårt utan en tornado (stormen under tornadon är tornado.ts) kan vuxna träd falla och bli liggande stammar
+// som ger lätt trä, med samma bild som ett träd fällt med yxa. Ju hårdare det blåser, desto större risk; under VINDFALL.fran
+// faller inga. Räknas en gång i timmen ur timmen och rutan (timsteget i steg.ts), så att levande läget och snabbläget blir lika
+export const VINDFALL = balans('vindfall', {
+  fran: 0.8, // vinden (0–1, vader.ts) ska vara starkare än så här för att träd ska falla (det blåser så hårt ungefär 3 % av timmarna) ...
+  chans: 0.0002, // ... och i den hårdaste vinden faller ett vuxet träd med den här chansen i timmen (mindre i svagare vind)
+});
+export function vindfallen(s: State) {
+  const v = vaderNu(s).vind;
+  if (v <= VINDFALL.fran || tornadoNu(s)) return;
+  const c = VINDFALL.chans * (v - VINDFALL.fran) / (1 - VINDFALL.fran), g = groundOf(s), tim = Math.floor(s.now / HOUR);
+  for (let i = 0; i < W * H; i++) {
+    if (g.trees[i] < FOREST || hash(s.seed + tim * 13 + 6505, i % W, Math.floor(i / W)) >= c) continue;
+    const x = i % W, y = Math.floor(i / W), stam = stamAv(g, i);
+    g.trees[i] = 0;
+    if (s.halvfallt) delete s.halvfallt[i];
+    stocks(s).push({ id: (s.nextStock = (s.nextStock ?? 0) + 1), x: x + 0.5, y: y + 0.5, ...stam });
+    if (!g.built?.[i]) (s.stubbar ??= []).push({ x, y, t: s.now });
+    count(s, 'vindfall');
+    if (forstaGang(s, 'vindfallForsta')) log(s, 'Ett träd föll i den hårda vinden och ligger nu i skogen.', 'world', []);
+  }
 }

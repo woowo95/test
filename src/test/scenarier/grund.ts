@@ -1919,3 +1919,26 @@ SCENARIER.barbuskar = {
     ];
   },
 };
+
+SCENARIER.vindfall = {
+  text: 'Steg 6.5.5: vindfällen. När det blåser väldigt hårt utan en tornado kan vuxna träd falla och bli liggande stammar med en stubbe där de stod; i svagare vind faller inga',
+  kor: () => {
+    const s = createState(1, START), g = groundOf(s), t0 = s.now;
+    const vuxna = () => { let n = 0; for (let i = 0; i < W * W; i++) if (g.trees[i] >= SIM.FOREST) n++; return n; };
+    let hard = 0, lugn = 0, fallnaHard = 0, fallnaLugn = 0;
+    for (let t = t0; t < t0 + 35 * DAY; t += HOUR) {
+      s.now = t;
+      const v = SIM.vaderNu(s).vind, fore = vuxna();
+      SIM.vindfallen(s);
+      const f = fore - vuxna();
+      if (v > SIM.VINDFALL.fran) { hard++; fallnaHard += f; } else { lugn++; fallnaLugn += f; }
+    }
+    const stammar = SIM.stocks(s).length, stubbar = (s.stubbar ?? []).length;
+    return [
+      [`träd faller i den hårda vinden (${fallnaHard} under ${hard} timmar)`, hard > 0 && fallnaHard > 0],
+      [`inga i svagare vind (${fallnaLugn} under ${lugn} timmar)`, fallnaLugn === 0],
+      [`de blir liggande stammar (${stammar}) med en stubbe (${stubbar})`, stammar >= fallnaHard && stubbar >= fallnaHard],
+      [`inte för många på 35 dygn (${fallnaHard})`, fallnaHard < 200],
+    ];
+  },
+};
