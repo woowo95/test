@@ -43,6 +43,7 @@
   "type": "module",
   "devDependencies": {
     "@types/node": "^22.20.5",
+    "playwright": "^1.65.0",
     "typescript": "^5.9.3"
   }
 }
