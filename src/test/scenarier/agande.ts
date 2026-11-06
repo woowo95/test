@@ -1624,7 +1624,7 @@ SCENARIER.rovare = {
     for (const p of living(c)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: c.now + 8 * HOUR, carry: 0 };
     const m = malet(c);
     for (const p of vuxna) { p.x = m.x; p.y = m.y; p.task = { act: 'forsvar', phase: 'do', tx: p.x, ty: p.y, until: c.now + HOUR, carry: 0 }; }
-    for (let i = 0; i < 400 && c.rovare?.gor !== 'flyr'; i++) SIM.rovarSteg(c, dt);
+    for (let i = 0; i < 400 && c.rovare?.gor !== 'flyr'; i++) { c.now += 60 * SIM.SEC; SIM.rovarSteg(c, 60); } // striden går i spelets tid (steg 6.6.10)
     const strid = (c.stat?.rovarStrid ?? 0) === 1 && !!c.strider?.some(x => /rövare/.test(x.orsak));
     // byn väntar med många fler: rövarna vänder om, och flyr sedan ut ur kartan
     const d = cloneState(bas), fd = flock(d, 2, 8); fd.sedd = d.now;
@@ -1704,6 +1704,52 @@ SCENARIER.rovargang = {
       ['de som flyr springer var för sig och kommer ut ur kartan', isar && ut],
       ['bilden följer vägen mellan punkterna', mittOk],
       ['en sparad by från före v450 får rövarna på plats', gammal],
+    ];
+  },
+};
+
+SCENARIER.rovarstrid = {
+  text: 'Striden med rövarna på kartan (steg 6.6.10, rovare.ts): striden börjar där de står vid förrådet och går i spelets tid, slag för slag. Varje slag räknas den om från början till tiden som gått, så att den slutar likadant med korta och långa slag (båda lägena). Den som kommer fram under striden ger sig in i den, rövarna står där striden har dem, och striden sparas i byn så att den kan visas igen.',
+  kor: () => {
+    const s = createState(6, START);
+    const z = SIM.zoneOf(s)!, m = { x: z.x + z.w / 2, y: z.y + z.h / 2 };
+    const vuxna = living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vaktFran && SIM.ageOf(p, s.now) < SIM.ALDER.vaktTill);
+    for (const p of living(s)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 20 * HOUR, carry: 0 };
+    const [a, b, c] = vuxna;
+    for (const p of [a, b]) { p.x = m.x + 0.5; p.y = m.y; p.task = { act: 'forsvar', phase: 'do', tx: p.x, ty: p.y, until: s.now + HOUR, carry: 0 }; }
+    SIM.rovarnaKommer(s, 3); const f = s.rovare!; f.gor = 'kommer'; f.sedd = s.now; SIM.stallUpp(s, f, m.x + 3, m.y);
+    const steg = (x: State, sek: number) => { x.now += sek * SIM.SEC; SIM.rovarSteg(x, sek); };
+    for (let i = 0; i < 40 && s.rovare?.gor !== 'slass'; i++) steg(s, 5);
+    const g = s.rovare?.strid, borjar = s.rovare?.gor === 'slass' && !!g && a.task?.act === 'strid' && b.task?.act === 'strid' && (s.stat?.rovarStrid ?? 0) === 1;
+    // samma strid med långa slag (300 s) och utan den som kommer till
+    const lang = cloneState(s);
+    // en till kommer fram och ger sig in
+    c.x = m.x - 0.5; c.y = m.y; c.task = { act: 'forsvar', phase: 'do', tx: c.x, ty: c.y, until: s.now + HOUR, carry: 0 };
+    let mitt = false, nara = true, slag = false;
+    for (let i = 0; i < 200 && s.rovare?.gor === 'slass'; i++) {
+      steg(s, 5);
+      const q = s.rovare?.strid; if (!q) break;
+      const st = SIM.rovarStridNu(q, s.now);
+      if (!st.slut) mitt = true;
+      for (const r of s.rovare!.folk) if (Math.hypot(r.x! - m.x, r.y! - m.y) > SIM.ROVARE.motR + 4) nara = false;
+      if (st.logg.some(r => (r.h === 'traff' || r.h === 'miss' || r.h === 'tog') && r.a !== undefined && r.b !== undefined && st.kampar.find(k => k.id === r.a)!.sida !== st.kampar.find(k => k.id === r.b)!.sida)) slag = true;
+    }
+    const minne = s.strider?.[s.strider.length - 1];
+    const kom = !!minne && minne.in?.length === 1 && minne.in[0].k.pid === c.id && SIM.spelaUpp(minne).logg.some(r => r.h === 'kommer');
+    const slut = s.rovare?.gor !== 'slass' && !!minne && /rövare/.test(minne.orsak) && SIM.spelaUpp(minne).slut!.vinnare === minne.vinnare && c.task?.act !== 'forsvar';
+    // långa slag: vargarna i lang har ingen som kommer till; samma strid räknad med korta slag ger samma utfall
+    const kort = cloneState(lang);
+    for (let i = 0; i < 4 && lang.rovare?.gor === 'slass'; i++) steg(lang, 300);
+    for (let i = 0; i < 400 && kort.rovare?.gor === 'slass'; i++) steg(kort, 5);
+    const utfall = (x: State) => JSON.stringify([x.strider?.[x.strider.length - 1]?.vinnare, x.stat?.rovarDoda ?? 0, x.rovare?.folk.map(r => Math.round(r.blod * 1000)), living(x).map(p => Math.round((p.blod ?? 1) * 1000))]);
+    const lika = lang.rovare?.gor !== 'slass' && kort.rovare?.gor !== 'slass' && utfall(lang) === utfall(kort);
+    return [
+      ['rövarna och de två försvararna börjar slåss vid förrådet, och de står kvar i striden', borjar],
+      ['striden går slag för slag i spelets tid, och rövarna står där striden har dem, nära förrådet', mitt && nara],
+      ['någon slår någon på den andra sidan', slag],
+      ['den som kommer fram under striden ger sig in i den', kom],
+      ['striden tar slut och sparas i byn, och räknad igen slutar den likadant', slut],
+      [`samma strid med slag på 5 s och på 300 s (båda lägena) slutar likadant (${utfall(lang)})`, lika],
     ];
   },
 };

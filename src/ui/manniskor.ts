@@ -11,6 +11,7 @@ import { ARBETEN, STRIDBILD, arbetsBild, ritaArbete } from './arbetsbild';
 import { skapad } from './utseende';
 import { fotSkugga, skuggFolk, skuggLangd } from './skugga';
 import { jaktPlats } from './jakt';
+import { iStridenNu } from './stridkarta';
 import { slag } from './animation';
 import { hasIcon, iconCanvas, kartbild, ljusSymbol } from '../ikoner';
 
@@ -36,6 +37,8 @@ export function addTalks(events: TalkEvent[], now: number, nu: number) {
 function platsAv(p: Person) {
   const j = jaktPlats(p); // jägaren som smyger, siktar och hämtar (jakt.ts)
   if (j) return { x: j.x, y: j.y, still: false };
+  const sk = iStridenNu(p.id, ui.nu); // i striden med rövarna (steg 6.6.10): där striden har hen
+  if (sk) return { x: sk.x, y: sk.y, still: false };
   const t = ui.nu, sp = sparPlats(p, t);
   let x = sp?.x ?? p.x, y = sp?.y ?? p.y;
   const still = sp?.still ?? true;
@@ -223,6 +226,8 @@ function figurAv(id: number) {
 const SITTA = new Set(['maltid', 'samtal', 'vila', 'lyssna', 'beratta']);
 // striden hen är med i just nu (steg 5.1.9.5): vapnet och var den närmaste motståndaren står, ur byns senaste strider
 function stridNu(p: Person) {
+  const sk = iStridenNu(p.id, ui.nu); // striden med rövarna som pågår (steg 6.6.10): målet hen går mot och slår
+  if (sk) return { vapen: sk.k.vapen as string, mot: sk.mot };
   for (let i = (s.strider?.length ?? 0) - 1; i >= 0; i--) {
     const m = s.strider![i], k = m.u.kampar.find(x => x.pid === p.id);
     if (!k) continue;
@@ -265,7 +270,7 @@ export function drawPeople(t: number) {
     const tk = uppgiftVid(p), sleeping = tk?.act === 'sova';
     // figuren ur porträttgeneratorn (steg 5.2.3.2, ui/folkbild.ts) med fötterna under punkten; den som sover eller inte kan
     // gå ligger ner (steg 3.7.19), under täcket när hen sover, och de minsta barnen har en egen, lägre mall i hel skala (steg 5.5.5)
-    const sp = figurAv(p.id), ligger = sleeping || !kanGa(p), liten = a < ALDER.smabarn;
+    const sp = figurAv(p.id), ligger = sleeping || !kanGa(p) || !!iStridenNu(p.id, ui.nu)?.ligger, liten = a < ALDER.smabarn;
     const gor = tk?.phase === 'do' ? tk.act : undefined, sitter = !ligger && !!gor && SITTA.has(gor);
     let rikt = riktning(p.id, q.x, q.y);
     if (sitter && rikt === 'bak') rikt = 'fram';

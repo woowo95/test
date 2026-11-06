@@ -254,6 +254,7 @@ export const STRIDHANDELSER = {
   leder: { tecken: '👑', namn: 'Går först' }, // steg 3.7.12
   skyddar: { tecken: '🛡', namn: 'Kliver emellan' },
   ledareFaller: { tecken: '😱', namn: 'Ledaren föll' },
+  kommer: { tecken: '🏃', namn: 'Kommer till' }, // steg 6.6.10
   dod: { tecken: '💀', namn: 'Död' },
   slut: { tecken: '🏁', namn: 'Striden är slut' },
 } as const;
@@ -300,11 +301,12 @@ export function slump(st: Strid) {
   return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
 }
 
+const kampeAv = (k: Uppstallning['kampar'][number]): Kampe => ({
+  ...k, st: { ...k.st }, klader: [...k.klader], skador: [], blod: 1, ork: 1,
+  modNu: clamp(STRID.modStart + (k.st.mod / 20) * STRID.modMod + (k.st.torst ?? 0) * STRID.torst, 0.05, 1), lage: 'strid', vant: 0, slag: 0, traffar: 0, gjort: 0,
+});
 export function nyStrid(u: Uppstallning, fro: number): Strid {
-  const kampar: Kampe[] = u.kampar.map(k => ({
-    ...k, st: { ...k.st }, klader: [...k.klader], skador: [], blod: 1, ork: 1,
-    modNu: clamp(STRID.modStart + (k.st.mod / 20) * STRID.modMod + (k.st.torst ?? 0) * STRID.torst, 0.05, 1), lage: 'strid', vant: 0, slag: 0, traffar: 0, gjort: 0,
-  }));
+  const kampar: Kampe[] = u.kampar.map(kampeAv);
   const st: Strid = { avsikt: u.avsikt, t: 0, w: u.w, h: u.h, r: fro | 0, vind: u.vind ?? 0, dimma: u.dimma ?? 0, halt: u.halt ?? 0, marken: [], kampar, logg: [{ t: 0, h: 'borjar' }] };
   if (u.hinder?.length) st.hinder = u.hinder.map(o => ({ ...o }));
   if (!AVS[u.avsikt].vapen) for (const k of kampar) if (!k.djur) { k.vapen = 'hand'; k.reserv = undefined; }
@@ -676,6 +678,32 @@ export function stridSteg(st: Strid) {
 // hela striden till slutet
 export function stridTillSlut(st: Strid) { while (!st.slut) stridSteg(st); return st; }
 
+// en strid som pågår på kartan (steg 6.6.10, rövarna vid förrådet): uppställningen och fröet, blodet som någon redan
+// förlorat när striden började (blod, efter kämpens id) och de som kommit till efter hand (in, med striden tid t). Striden
+// räknas om från början varje gång (spelaUpp), så att den blir likadan i båda lägena, i arenan och när den ritas
+export interface StridGang { u: Uppstallning; fro: number; blod?: Record<number, number>; in?: { t: number; k: Uppstallning['kampar'][number] }[] }
+// ett tidssteg i en strid som pågår: först kommer de som anslöt till striden vid den här tiden
+export function stegIGang(st: Strid, g: StridGang) {
+  const inn = g.in ?? [];
+  for (let j = st.kampar.length - g.u.kampar.length; j < inn.length && inn[j].t <= st.t; j++) laggTill(st, inn[j].k);
+  stridSteg(st);
+}
+// en kämpe kommer till en strid som pågår
+export function laggTill(st: Strid, k: Uppstallning['kampar'][number]) {
+  const n = kampeAv(k), kv = VAP[n.vapen].kast;
+  if (!AVS[st.avsikt].vapen && !n.djur) { n.vapen = 'hand'; n.reserv = undefined; }
+  if (kv) n.skott = kv.skott;
+  n.vant = slump(st) * VAP[n.vapen].takt;
+  st.kampar.push(n); st.logg.push({ t: st.t, h: 'kommer', a: n.id });
+}
+// striden från början till tiden tid (sekunder på klockan), eller till slutet
+export function spelaUpp(g: StridGang, tid = Infinity) {
+  const st = nyStrid(g.u, g.fro);
+  if (g.blod) for (const k of st.kampar) if (g.blod[k.id] !== undefined) k.blod = g.blod[k.id];
+  while (!st.slut && st.t < tid) stegIGang(st, g);
+  return st;
+}
+
 // ---------- texten ----------
 const GRAD = (g: number) => g >= 0.75 ? 'mycket svårt' : g >= 0.45 ? 'svårt' : g >= 0.2 ? 'måttligt' : 'lätt';
 export const delNamn = (d: Kroppsdel) => KROPPSDELAR[d].i;
@@ -712,6 +740,7 @@ export function stridText(st: Strid, r: StridRad): string {
     case 'borta': return `${a} har flytt från platsen.`;
     case 'avstar': return `${a} vågar inte och drar sig undan utan strid.`;
     case 'leder': return `${a} är byns ledare och går först. Det ger de andra mod.`;
+    case 'kommer': return `${a} kommer springande och ger sig in i striden.`;
     case 'skyddar': return `${a} kliver emellan och tar slaget som var menat för ${b}, ledaren.`;
     case 'ledareFaller': return `Ledaren ${a} har fallit, och modet sjunker hos de andra.`;
     case 'dod': return `${a} dör.`;
@@ -860,7 +889,7 @@ export const SLAGSMAL = balans('slagsmal', {
 // svårt skadad efter striden (krönikan, steg 3.7.16): föll av smärtan, eller en skada som är svår i personrutan (HALSA.avbryt)
 export function svartSkadad(k: Kampe) { return k.lage === 'nere' || k.skador.some(w => w.g >= HALSA.avbryt); }
 // en strid som sparats i byn: när, varför, uppställningen och fröet (samma strid kan räknas om i arenan) och vem som vann
-export interface StridMinne { t: number; orsak: string; u: Uppstallning; fro: number; vinnare: 0 | 1 | -1 }
+export interface StridMinne extends StridGang { t: number; orsak: string; vinnare: 0 | 1 | -1 }
 
 // blåsten, dimman och halkan (lera och snö, steg 3.7.8) i en strid i byn just nu
 export function vadretIStriden(s: State): Pick<Uppstallning, 'vind' | 'dimma' | 'halt'> {
