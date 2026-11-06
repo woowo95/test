@@ -114,7 +114,7 @@ export function facklaVal(s: State, p: Person) {
   const t = facklaHos(s, p), behov = behoverLjus(s, p);
   if (t) { if (!behov) slack(s, t); return; }
   if (!behov || !eldarOf(s).some(f => f.lit)) return;
-  const fri = tingOf(s).find(x => x.k === 'fackla' && x.tand === undefined && x.hos === undefined && !x.halv);
+  const fri = friFackla(s);
   if (!fri) return;
   fri.tand = p.id; fri.tandT = s.now; count(s, 'facklorTanda');
   if (forstaGang(s, 'facklaForsta')) log(s, `${p.name} tände en fackla vid elden och gick ut i mörkret.`, 'world', [p.id]);
