@@ -3,7 +3,6 @@ import { iconImg } from '../../ikoner';
 import { LAG, ansTecken, bar, esc, moodWord, num, prickar, trend } from '../hjalp';
 import { s, uppgiftVid } from '../lage';
 import type { Flik } from '../panel';
-import { grafHtml } from '../graf';
 import { portrattImg } from '../folkbild';
 import { skapad } from '../utseende';
 
@@ -31,7 +30,7 @@ export const folk: Flik = {
       const ans = a ? `<span class="ans" title="${a === '😇' ? 'Gott' : a === '😈' ? 'Dåligt' : 'Blandat'} anseende i byn">${ansTecken(a, 12)}</span>` : '';
       const matare = `<span class="matare"><span title="Humör: ${moodWord(m).toLowerCase()}">${bar(m, m < LAG.humor ? 'low' : '', trend(p, 'humor', m))}</span><span title="Hälsa: ${num(h * 100, 0)} %">${bar(h, h < LAG.halsa ? 'low' : 'halsa', trend(p, 'health', h))}</span></span>`;
       return `<li><button class="row" data-id="${p.id}" type="button">${portrattImg(skapad(s, p), "")}<span class="nm">${esc(p.name)}${yrkeNamn(s, p) ? ` <span class="tag">${esc(yrkeNamn(s, p)!)}</span>` : ''}${prickar(p)}</span><span class="age">${Math.floor(ageOf(p, s.now))} år</span><span class="act">${(t => t ? taskName(t) : '–')(uppgiftVid(p))}</span><span class="rb"><span class="form" title="Förmögenhet: värdet av allt hen äger, ungefär i arbetstimmar">${iconImg('i_rik', 12)}${f}</span>${ans}${matare}</span></button></li>`;
-    }).join('')}</ul>${grafHtml('folk')}${grafHtml('humor')}`;
+    }).join('')}</ul>`;
   },
   klick(el) {
     const b = el.closest<HTMLElement>('[data-fsort]');

@@ -1,5 +1,5 @@
-// Graferna (steg 5.4.1): byns historik (sim/historik.ts) som en linje i den panel där talet hör hemma: veden på elden i
-// Elden, maten och veden i förrådet i Lagret, invånarna och humöret i Folket. Grafen visar en vecka (sju dygn, sju år i
+// Graferna (steg 5.4.1): byns historik (sim/historik.ts) som linjer, alla under varandra i Krönikans del Grafer (steg
+// 6.9.12): invånarna, humöret, veden på elden och maten och veden i förrådet. Grafen visar en vecka (sju dygn, sju år i
 // spelet) och går att dra bakåt ända till byns början; Allt visar hela tiden på en gång. Bara utseende: spelet läser den aldrig.
 // En ny graf är en rad i GRAFER och `grafHtml('id')` där den ska stå; ett nytt tal är en rad i HISTORIK_TAL.
 import { AGES, DAY, HISTORIK_TAL, WEEK, historikSerie, kalender } from '../sim';
@@ -7,11 +7,11 @@ import { farg } from '../palett';
 import { ritaOm, s } from './lage';
 
 interface Graf { namn: string; serier: { tal: string; farg: string }[]; max?: number; procent?: boolean }
-export const GRAFER: Record<string, Graf> = {
-  eld: { namn: 'Trä på elden', serier: [{ tal: 'eld', farg: farg('rost', 2) }] },
-  forrad: { namn: 'Förrådet', serier: [{ tal: 'mat', farg: farg('oliv', 2) }, { tal: 'tra', farg: farg('jord', 2) }] },
+export const GRAFER: Record<string, Graf> = { // i den ordning de står i Krönikan
   folk: { namn: 'Invånare', serier: [{ tal: 'folk', farg: farg('skiffer', 2) }] },
   humor: { namn: 'Humör', serier: [{ tal: 'humor', farg: farg('senap', 2) }], max: 1, procent: true },
+  eld: { namn: 'Trä på elden', serier: [{ tal: 'eld', farg: farg('rost', 2) }] },
+  forrad: { namn: 'Förrådet', serier: [{ tal: 'mat', farg: farg('oliv', 2) }, { tal: 'tra', farg: farg('jord', 2) }] },
 };
 
 // fönstret per graf: slut = tiden längst till höger (undefined = nu), allt = hela tiden sedan byns början

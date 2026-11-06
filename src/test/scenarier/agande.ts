@@ -1889,7 +1889,7 @@ SCENARIER.forvarlista = {
 };
 
 SCENARIER.kronikalista = {
-  text: 'Krönikan och händelserna i en lista (steg 5.4.2, ui/flikar/kronika.ts): Stort visar krönikan, Allt händelseloggen, senast först under en rubrik per år. Man bläddrar år för år och kan välja en person: bara raderna där hen står med. Bara panelen.',
+  text: 'Krönikan och händelserna i en lista (steg 5.4.2, ui/flikar/kronika.ts): Stort visar krönikan, Allt händelseloggen, senast först under en rubrik per år, och Grafer alla byns grafer (steg 6.9.12). Man bläddrar år för år och kan välja en person: bara raderna där hen står med. Bara panelen.',
   kor: () => {
     utanWebblasare();
     const s = createState(6, START);
@@ -1904,6 +1904,7 @@ SCENARIER.kronikalista = {
     kronikaVal.person = b.id; const medB = kronikaFlik.html();
     kronikaVal.person = undefined; kronikaVal.ar = SIM.kalender(s, s.now).ar; const iAr = kronikaFlik.html();
     kronikaVal.ar = undefined; kronikaVal.visning = 'allt'; const allt = kronikaFlik.html();
+    kronikaVal.visning = 'grafer'; const grafer = kronikaFlik.html();
     Object.assign(kronikaVal, { visning: 'stort', ar: undefined, person: undefined });
     const forst = alla.indexOf(`${b.name}</button> och`), sen = alla.indexOf(`${a.name}</button> hittade`);
     return [
@@ -1912,6 +1913,7 @@ SCENARIER.kronikalista = {
       [`personen: bara raderna där hen står med (${a.name} ${rader(medA)}, ${b.name} ${rader(medB)})`, rader(medA) === K.filter(r => r[1].includes(a.name)).length && rader(medB) === K.filter(r => r[1].includes(b.name)).length && medB.includes(`${b.name}</button> och`) && !medB.includes('hittade en sten')],
       ['ett år visar bara det årets rader', rader(iAr) === K.filter(r => SIM.kalender(s, r[0]).ar === SIM.kalender(s, s.now).ar).length && rader(iAr) < rader(alla)],
       [`Allt visar händelseloggen (${rader(allt)} rader)`, rader(allt) === s.log.length && s.log.length > K.length],
+      [`Grafer visar alla byns grafer under varandra (${(grafer.match(/data-graf=/g) ?? []).length} st, steg 6.9.12)`, ['folk', 'humor', 'eld', 'forrad'].every(g => grafer.includes(`data-graf="${g}"`)) && !grafer.includes(`class="logg"`)],
     ];
   },
 };
