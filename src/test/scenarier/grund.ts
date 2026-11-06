@@ -1253,6 +1253,53 @@ SCENARIER.tornadokarna = {
   },
 };
 
+SCENARIER.tornadonara = {
+  text: 'Steg 6.4.10: nära tornadon (två och tre hela rutor från mitten för en medelstor) flyger en människa långt och skadas eller dör, gräset blir en jordstig, ungskogen slits upp, en eld släcks, och lösa saker flyger långt',
+  kor: () => {
+    const s = createState(5, START);
+    tandEld(s);
+    SIM.skickaTornado(s);
+    const t = s.tornado!, L = t.L, e = SIM.eldPlats(s), g = groundOf(s), pos = (u: number) => SIM.tornadoPos(t, u);
+    const fran = (x: number, y: number) => { let m = Infinity; for (let u = 0; u <= 1; u += 0.1 / L) m = Math.min(m, Math.hypot(pos(u).x - x - 0.5, pos(u).y - y - 0.5)); return m; };
+    const anv: { x: number; y: number }[] = [];
+    const ledig = (x: number, y: number) => SIM.vattenNu(s)[y * W + x] !== T.Vatten && !SIM.blocked(s, x, y) && !SIM.stationAt(s, x, y) && !SIM.bitAt(s, x, y) && Math.hypot(x - e.x, y - e.y) > 8 && !anv.some(r => Math.abs(r.x - x) + Math.abs(r.y - y) < 3);
+    const pa = (u0: number) => {
+      for (let d = 0; d < 80; d++) {
+        const u = u0 + d / L, p = pos(u), q = pos(u + 1 / L), l = Math.hypot(q.x - p.x, q.y - p.y) || 1;
+        for (const sd of [2.5, -2.5]) {
+          const x = Math.floor(p.x - (q.y - p.y) / l * sd), y = Math.floor(p.y + (q.x - p.x) / l * sd), m = fran(x, y);
+          if (SIM.inMap(x, y) && m >= 2 && m < 3.5 && ledig(x, y)) { anv.push({ x, y }); return { x, y }; }
+        }
+      }
+      return undefined;
+    };
+    const pp = pa(0.3), pg = pp && pa(0.4), pu = pg && pa(0.5), pe = pu && pa(0.6), pk = pe && pa(0.7);
+    if (!pp || !pg || !pu || !pe || !pk) return [['fem lediga rutor nära banan', false]];
+    g.trees[pg.y * W + pg.x] = 0; g.cover[pg.y * W + pg.x] = 0.8;
+    g.trees[pu.y * W + pu.x] = 0.3;
+    g.trees[pk.y * W + pk.x] = 0;
+    s.eldar = [{ ...structuredClone(s.fire), at: { x: pe.x, y: pe.y }, lit: true, fuel: 4 } as typeof s.fire];
+    s.stackar!.push({ k: 'sten', n: 6, c: 1, x: pk.x, y: pk.y }); SIM.tidy(s);
+    const offer = living(s)[0];
+    let flog = -1;
+    for (let k = 0; k < 900 && s.tornado; k++) {
+      if (flog < 0) {
+        if ((s.stat?.['tornado flog'] ?? 0) > 0 || !living(s).includes(offer)) flog = Math.hypot(offer.x - pp.x - 0.5, offer.y - pp.y - 0.5);
+        else { offer.x = pp.x + 0.5; offer.y = pp.y + 0.5; offer.task = undefined; }
+      }
+      step(s, 5);
+    }
+    const st = s.stat ?? {}, sten = (s.stackar ?? []).find(a => a.k === 'sten' && a.n >= 1 && (a.x !== pk.x || a.y !== pk.y));
+    const skadad = (st['tornado skadad'] ?? 0) + (st['tornado dod'] ?? 0);
+    return [
+      [`människan flög ${flog.toFixed(1)} rutor och ${living(s).includes(offer) ? 'skadades' : 'dog'} (${st['tornado flog'] ?? 0} flög, ${skadad} skadade eller döda)`, flog >= 4 && skadad >= 1],
+      [`gräset blev en jordstig (${g.cover[pg.y * W + pg.x].toFixed(2)}) och ungskogen slets upp (${g.trees[pu.y * W + pu.x].toFixed(2)})`, g.cover[pg.y * W + pg.x] < 0.3 && g.trees[pu.y * W + pu.x] === 0],
+      [`elden släcktes (${s.eldar?.[0]?.lit ? 'brinner' : 'släckt'}; ${st['tornado eld'] ?? 0})`, !s.eldar?.[0]?.lit && (st['tornado eld'] ?? 0) >= 1],
+      [`stenarna flög långt (${sten ? Math.hypot(sten.x - pk.x, sten.y - pk.y).toFixed(1) : 'inga kvar'} rutor)`, !!sten && Math.hypot(sten.x - pk.x, sten.y - pk.y) >= 4],
+    ];
+  },
+};
+
 // en by på sommaren med en torr dag framför sig, och en plats 30 till 50 rutor från elden där en cirkel med radien 12 är jord
 // utan byggen och fält (scenarierna brandfart och slackning)
 function torrAng(): { s: State; mitt: number } | string {
