@@ -123,7 +123,7 @@ function ritaSport(t: number) {
     for (let j = 0; j < 2; j++) { const P = 1.6, n = Math.floor(k / P + j * 0.5), f = k / P + j * 0.5 - n, fr = (n % 2 ? v : h), till = (n % 2 ? h : v), a = fr[Math.floor(hash(n) * fr.length)], b = till[Math.floor(hash(n + 7) * till.length)]; flyg(a.x, a.y - 3, b.x, b.y - 3, f, SP.ben, 3, 6); }
   } else if (m.k === 'bollspel') {
     const slag = med.length ? med.reduce((a, b) => (a.x < b.x ? a : b)) : { x: mx - SPORT.slagAvst * TS, y: my };
-    markIcons.add('slagtra', slag.x + 1, slag.y - 7, 7 / iconCanvas('slagtra').width);
+    markIcons.add('slagtra', Math.round(slag.x + 1), Math.round(slag.y - 16), 1); // i sina egna 16 punkter som i bildstilen (steg 5.5.1: hel skala)
     const P = 4, n = Math.floor(k / P), f = k / P - n, bx = mx + (hash(n) * 3) * TS, by = my + (hash(n + 3) - 0.5) * 4 * TS;
     if (!m.spelat) { markIcons.add('boll_liten', Math.round(mx - 3), Math.round(my - 3), 1); return; }
     if (f < 0.5) flyg(slag.x + 3, slag.y - 3, bx, by, f / 0.5, SP.jord, 2, 14); // slaget flyger ut på planen ...
