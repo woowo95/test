@@ -419,8 +419,9 @@ SCENARIER.knapphet = {
       [`mer plockat nära byn än långt bort (${nara.toFixed(3)} mot ${langt.toFixed(3)})`, nara > 0.005 && nara > langt],
       // kaninerna håller sig undan folk, så inom 12 rutor jagas nästan inget (ca 0,001). Inom 30 rutor ca 0,02–0,03 (v47), och
       // ca 0,01 sedan fälten blev större (steg 3.10.23, by 23–28), och ca 0,005 sedan de som pratar går till varandra (steg 4.5.6.7):
-      // det som prövas är att viltet jagas alls, inte hur mycket
-      [`vilt jagat inom 30 rutor från byn (${uttag(s, 'jakt', 0, 30).toFixed(3)}, ${st.kaniner ?? 0} kaniner)`, uttag(s, 'jakt', 0, 30) > 0.002],
+      // det som prövas är att viltet jagas alls, inte hur mycket. Sedan jakten är en strid (steg 3.7.3) tar en fångad hare inte
+      // ur viltlagret (den är ett djur som dör), så uttaget visas bara; det som räknas är hararna som fångats
+      [`vilt jagat (${st.jaktFangst ?? 0} harar fångade; uttaget ur viltlagret inom 30 rutor ${uttag(s, 'jakt', 0, 30).toFixed(3)})`, (st.jaktFangst ?? 0) > 0],
       // fiske väljs inte i alla byar; fisket testas utförligt i fiskespjut-scenariot
       [`fiske: ${st.fiskeForsok ?? 0} försök, ${st.fiskeNapp ?? 0} napp, ${st.fisk ?? 0} fiskar`, !st.fiskeForsok || ((st.fiskeForsok ?? 0) > (st.fiskeNapp ?? 0) && (st.fiskeNapp ?? 0) >= (st.fisk ?? 0))],
       // det fisket gett räknas som de andra arbetena (prod_fiske), så att npm run takt visar fisket (steg 6.1.4)
