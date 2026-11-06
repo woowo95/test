@@ -166,7 +166,7 @@ function budVal(s: State, p: Person, d: FramDef) {
 function betalning(s: State, l: Person): Ting | undefined {
   let best: Ting | undefined, bv = Infinity;
   for (const t of tingOf(s)) {
-    if (t.agare !== l.id || t.halv || t.hos !== undefined || t.lass !== undefined || t.vid !== undefined || t.bar !== undefined || t.c < 1) continue;
+    if (t.agare !== l.id || t.halv || t.hos !== undefined || t.krok !== undefined || t.lass !== undefined || t.vid !== undefined || t.bar !== undefined || t.c < 1) continue;
     const v = tingVarde(t);
     if (v > 0 && v < bv) { bv = v; best = t; }
   }

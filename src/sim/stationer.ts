@@ -583,7 +583,7 @@ export const forvarBrist = (s: State, k: string) => {
 // p:s kista, färdig eller halvbyggd
 export const kistaOf = (s: State, p: Person) => stationerOf(s).find(t => t.ag === p.id && !!stationDef(t.k)?.forvar?.privat);
 // p:s egna redskap och kläder som ingen använder: de ligger i lagret, på marken eller i kistan
-const egnaLediga = (s: State, p: Person) => tingOf(s).filter(t => t.agare === p.id && isTool(t.k) && !t.halv && t.hos === undefined && t.lass === undefined && t.bar === undefined);
+const egnaLediga = (s: State, p: Person) => tingOf(s).filter(t => t.agare === p.id && isTool(t.k) && !t.halv && t.hos === undefined && t.krok === undefined && t.lass === undefined && t.bar === undefined);
 // p vill ha en kista: hen sover inne, har ingen och har minst kistaVill egna saker som ingen använder
 export const villKista = (s: State, p: Person) => !kistaOf(s, p) && bedTile(s, p) !== undefined && egnaLediga(s, p).length >= STATION.kistaVill;
 // ---------- pyntet (steg 4.3.4, pynt.ts) ----------

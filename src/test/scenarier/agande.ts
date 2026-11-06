@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 // Scenarier. Ägande och ekonomi: ägande, gåvor, byte, egendom, delning, arv och värde.
 import { isDeepStrictEqual } from 'node:util';
-import { Person, Act, Task, createState, bearbeta, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, makeTool, step, living, pilesOf, amountOf, capacity, handOrkar, ryms, VIKT_STACK, isLight, isStored, spears, HOUR, State, migrate, die, bitsOf, KANIN, DJUR, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, foodOf, STACK_ORDER, needLadder, takeMaterial, BEAT, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELNING, packUp, releaseOwner, willing, tingOf, EKONOMI, SAK_LIST, ownedAll, leave, chooseTask, stackOf, birth, SAKER, viktOf, handerFor, bordPlats, utrustning, bordaIHander, PLATS_LIST, cloneState, pickUp, load, byId } from '../../sim';
+import { Person, Act, Task, createState, bearbeta, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, makeTool, step, living, pilesOf, amountOf, capacity, handOrkar, ryms, VIKT_STACK, isLight, isStored, spears, HOUR, State, migrate, die, bitsOf, KANIN, DJUR, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, foodOf, STACK_ORDER, needLadder, takeMaterial, BEAT, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELNING, packUp, releaseOwner, willing, tingOf, placeTools, EKONOMI, SAK_LIST, ownedAll, leave, chooseTask, stackOf, birth, SAKER, viktOf, handerFor, bordPlats, utrustning, bordaIHander, PLATS_LIST, cloneState, pickUp, load, byId } from '../../sim';
 import * as SIM from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import { setItems, setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank, utanWebblasare, nyInvanare } from './hjalp';
@@ -599,7 +599,7 @@ SCENARIER.klader = {
 };
 
 SCENARIER.balte = {
-  text: 'Steg 2.3.3: bältet flätas av rep vid elden av den som kan tekniken, och den som saknar ett tar på sig ett. När man bär hem hänger redskapet i bältet: det tar inga händer, så den som har yxan i bältet bär lika mycket som med tomma händer. En korg hänger inte i bältet',
+  text: 'Steg 2.3.3: bältet flätas av rep vid elden av den som kan tekniken, och den som saknar ett tar på sig ett. När man bär hem hänger redskapet i bältet: det tar inga händer, så den som har yxan i bältet bär lika mycket som med tomma händer. En korg hänger inte i bältet. Steg 7.1.1: bältet har två krokar, så ett eget redskap (kniven, yxan, spaden) hänger där medan man arbetar med ett annat och tas fram när det behövs. Spjutet hänger på axeln, inte i bältet',
   kor: () => {
     const s = createState(2, START); tandEld(s);
     for (const r of s.people) r.tek = { ...r.tek, rep: 1, balte: 1 };
@@ -609,7 +609,7 @@ SCENARIER.balte = {
     while (!balte() && h < 120) { kor(s, 1); h++; }
     const b = balte(), p = b && byId(s, b.bar!);
     const flatat = (s.stat?.balte_rep ?? 0) > 0;
-    let lika = false, mindreUtan = false, iKroken = false, korgEj = false;
+    let lika = false, mindreUtan = false, iKroken = false, korgEj = false, knivYxa = false, tillbaka = false, baraBada = false, kvar = false, spjutEj = false, spjutHangerEj = false, byns = false, utan = false, hela = true;
     if (p) {
       for (const t of tingOf(s)) if (t.hos === p.id) t.hos = undefined;
       const fri = bordPlats(s, p);
@@ -620,6 +620,33 @@ SCENARIER.balte = {
       b.bar = undefined; mindreUtan = bordPlats(s, p) < fri - 1e-6; b.bar = p.id;
       const korg = addTool(s, 'korg', p); yxa.hos = undefined; take(s, p, 'korg');
       korgEj = utrustning(s, p, true).hoger.ting === korg && !utrustning(s, p, true).krok.ting;
+      // två krokar (steg 7.1.1): den som tar kniven hänger sin yxa i bältet, och tar fram den igen när hen behöver den
+      korg.hos = undefined; take(s, p, 'yxa');
+      const kniv = addTool(s, 'kniv', p); take(s, p, 'kniv');
+      knivYxa = kniv.hos === p.id && yxa.krok === p.id && yxa.hos === undefined && utrustning(s, p, false).krok.ting === yxa;
+      take(s, p, 'yxa');
+      tillbaka = yxa.hos === p.id && yxa.krok === undefined && kniv.krok === p.id;
+      const ub = utrustning(s, p, true);
+      baraBada = ub.krok.ting === yxa && ub.krok2.ting === kniv && ub.hoger.borda === true && ub.vanster.borda === true;
+      tidyTools(s); placeTools(s);
+      kvar = kniv.krok === p.id && kniv.x === undefined;
+      // spjutet hänger på axeln, inte i bältet: med spjutet i handen bär man mindre
+      const spjut = addTool(s, 'flintspjut', p); take(s, p, 'flintspjut');
+      spjutEj = SAKER.flintspjut?.hanger === 'axel' && !utrustning(s, p, true).krok.ting?.k.includes('spjut') && bordPlats(s, p) < fri - 1e-6;
+      // spjutet hänger inte heller på kroken; yxan tar den lediga kroken och kniven (som redan hängde där) får stanna
+      take(s, p, 'yxa');
+      spjutHangerEj = spjut.krok === undefined && spjut.hos === undefined;
+      // byns kniv hänger inte i bältet: den läggs tillbaka när man tar ett annat redskap
+      kniv.agare = BYN; tidyTools(s);
+      byns = kniv.krok === undefined;
+      // utan bälte: ingen krok
+      take(s, p, 'kniv'); b.bar = undefined; kniv.agare = p.id; take(s, p, 'yxa');
+      utan = kniv.krok === undefined; b.bar = p.id;
+      // några timmar i byn: det som hänger i ett bälte ligger aldrig samtidigt i förrådet, hänger hos sin ägare och är ett bältesredskap
+      for (let i = 0; i < 48 && hela; i++) {
+        kor(s, 1);
+        for (const x of tingOf(s)) if (x.krok !== undefined && (x.x !== undefined || x.hos !== undefined || x.agare !== x.krok || SAKER[x.k]?.hanger !== 'balte')) hela = false;
+      }
     }
     return [
       [`ett bälte flätas och tas på (efter ${h} timmar)`, !!b && flatat],
@@ -627,6 +654,15 @@ SCENARIER.balte = {
       ['utan bältet bär man mindre med yxan i handen', mindreUtan],
       ['yxan hänger i bältet och bördan är i båda händerna', iKroken],
       ['korgen hänger inte i bältet', korgEj],
+      ['steg 7.1.1: den som tar kniven hänger sin yxa på den andra kroken', knivYxa],
+      ['... och tar fram yxan igen, och kniven hängs i bältet', tillbaka],
+      ['... och bär med båda i bältet och bördan i båda händerna', baraBada],
+      ['... och kniven läggs inte i förrådet medan den hänger i bältet', kvar],
+      ['spjutet hänger på axeln, inte i bältet: med spjutet i handen bär man mindre', spjutEj],
+      ['... och hängs inte på kroken när man tar yxan', spjutHangerEj],
+      ['byns kniv hänger inte i bältet', byns],
+      ['utan bälte hänger inget på kroken', utan],
+      ['i två dygn hänger det i bältena bara egna bältesredskap, som inte ligger i förrådet', hela],
     ];
   },
 };

@@ -8,12 +8,14 @@
 // sig ett som är fritt: sitt eget först, sedan byns, sedan ett lånat (stepKlader, varje timme). Plagget är på sig (Ting.bar)
 // tills det är utslitet (lager.ts, wearStore) eller den som har det dör. Kläderna väger: det man har på sig dras av från
 // inget mot händerna (steg 6.1.8), men i strid gör de en tung (strid.ts), och de skyddar mot kylan (kladVarme, steg.ts).
-// Bältet (steg 2.3.3) är ett plagg med en krok: när man bär hem hänger redskapet i det (iBaltet), så det tar inga händer
-// och bördan får båda händerna. En korg hänger inte där; den rymmer bördan.
+// Bältet (steg 2.3.3) är ett plagg med två krokar (steg 7.1.1): när man bär hem hänger redskapet i det (iBaltet), så det
+// tar inga händer och bördan får båda händerna, och på den andra kroken hänger ett eget redskap medan man arbetar med ett
+// annat (iKroken i agande.ts), så att kniven och yxan kan följa med. Bara det som sakregistret säger hänger i bältet
+// (SakDef.hanger: kniven, yxan och spaden) hänger där; spjuten, metspöt och vattensäcken hänger på axeln (steg 7.1.2).
 // En ny plats blir en rad i PLATSER.
 import { Person, State, Task } from './typer';
 import { KLAD_SLAG, SAKER, viktOf } from './saker';
-import { heldBy, Ting, tingOf } from './agande';
+import { heldBy, iKroken, Ting, tingOf } from './agande';
 import { kvEffekt } from './kvalitet';
 import { BYN, lends } from './egendom';
 import { KROPP, living } from './folk';
@@ -37,7 +39,8 @@ const DEF = {
   ben: { namn: 'Ben', ikon: '👖' },
   fotter: { namn: 'Fötter', ikon: '🥾' },
   balte: { namn: 'Bälte', ikon: '➰' },
-  krok: { namn: 'I bältet', ikon: '🪝' }, // redskapet som hänger i bältet medan man bär
+  krok: { namn: 'Kroken i bältet', ikon: '🪝' }, // redskapet som hänger i bältet medan man bär
+  krok2: { namn: 'Andra kroken i bältet', ikon: '🪝' }, // steg 7.1.1: ett eget redskap som hänger där medan man arbetar med ett annat
 } satisfies Record<string, PlatsDef>;
 export type Plats = keyof typeof DEF;
 export const PLATSER: Record<Plats, PlatsDef> = DEF;
@@ -56,9 +59,10 @@ export function iHanden(s: State, p: Person): { ting: Ting; hander: 1 | 2 } | un
   const t = heldBy(s, p);
   return t && { ting: t, hander: handerFor(s, p, t.k) === 1 ? 1 : 2 };
 }
-// redskapet i handen hänger i bältet när p bär: p har ett bälte på sig och redskapet är inte en korg (steg 2.3.3)
+// redskapet i handen hänger i bältet när p bär: p har ett bälte på sig och redskapet hänger i bältet enligt sakregistret
+// (steg 2.3.3 och 7.1.1)
 export function iBaltet(s: State, p: Person, h = iHanden(s, p)) {
-  return !!h && !SAKER[h.ting.k]?.rymmer && tingOf(s).some(t => t.bar === p.id && SAKER[t.k]!.klad!.krok);
+  return !!h && SAKER[h.ting.k]?.hanger === 'balte' && tingOf(s).some(t => t.bar === p.id && SAKER[t.k]!.klad!.krok);
 }
 // platserna för bördan (steg 6.1.8): de fria händerna, var och en med vad den orkar (i vikt) och ett slag i taget, eller
 // korgen, som tar en hand men rymmer mer av vilka slag som helst (aldrig mer än båda händerna orkar). Ett redskap i en
@@ -112,7 +116,11 @@ export const bordPlats = (s: State, p: Person) => handPlatser(s, p).reduce((a, x
 export function utrustning(s: State, p: Person, bar: boolean): Record<Plats, { ting?: Ting; borda?: true }> {
   const r = Object.fromEntries(PLATS_LIST.map(k => [k, {}])) as Record<Plats, { ting?: Ting; borda?: true }>;
   let h = iHanden(s, p);
-  if (h && bar && iBaltet(s, p, h)) { r.krok.ting = h.ting; h = undefined; }
+  const krokar: Ting[] = [];
+  if (h && bar && iBaltet(s, p, h)) { krokar.push(h.ting); h = undefined; }
+  krokar.push(...iKroken(s, p));
+  if (krokar[0]) r.krok.ting = krokar[0];
+  if (krokar[1]) r.krok2.ting = krokar[1];
   if (h) { r.hoger.ting = h.ting; if (h.hander === 2) r.vanster.ting = h.ting; }
   if (bar) {
     if (!h) { r.hoger.borda = true; r.vanster.borda = true; }

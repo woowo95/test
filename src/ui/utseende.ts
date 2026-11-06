@@ -101,7 +101,7 @@ function utrustad(s: State, p: Person, u: Skapad) {
     else if (a.plagg === 'skor') u.klader.skor = true;
     else if (a.plagg === 'balte') u.klader.balte = true;
   }
-  const h = r.hoger.ting ?? r.krok.ting;
+  const h = r.hoger.ting ?? (r.krok.ting?.hos === p.id ? r.krok.ting : undefined); // det i handen, också när det hänger i bältet medan hen bär
   u.del.redskap = (h && REDSKAP.get(h.k)) ?? null;
 }
 
