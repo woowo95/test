@@ -1146,7 +1146,19 @@ SCENARIER.tornado = {
     // punkten på banan närmast elden: där läggs en hög grenar, en risvägg och en ny timmervägg i vägen
     const e = SIM.eldPlats(s), pos = (u: number) => SIM.tornadoPos(t, u);
     const ledig = (x: number, y: number) => !SIM.blocked(s, x, y) && !SIM.stationAt(s, x, y) && !(s.stackar ?? []).some(a => a.x === x && a.y === y) && !SIM.bitAt(s, x, y) && !SIM.isStored(s, x, y) && Math.hypot(x - e.x, y - e.y) > 3;
-    const pa = (f: number) => { for (let d = 0; d < 30; d++) for (const sg of [1, -1]) { const u = f + sg * d / L, p = pos(u), x = Math.floor(p.x), y = Math.floor(p.y); if (u > 0.05 && u < 0.95 && ledig(x, y)) return { x, y, u }; } return undefined; };
+    // två hela rutor från banan: utanför kärnan, där tornadon skadar och lyfter (en ruta för varje sak)
+    const anv: { x: number; y: number }[] = [];
+    const fran = (x: number, y: number) => { let m = Infinity; for (let u = 0; u <= 1; u += 0.1 / L) m = Math.min(m, Math.hypot(pos(u).x - x - 0.5, pos(u).y - y - 0.5)); return m; };
+    const pa = (f: number) => {
+      for (let d = 0; d < 60; d++) {
+        const u = f + d / L, p = pos(u), q = pos(u + 1 / L), l = Math.hypot(q.x - p.x, q.y - p.y) || 1;
+        for (const sd of [2.4, -2.4]) {
+          const x = Math.floor(p.x - (q.y - p.y) / l * sd), y = Math.floor(p.y + (q.x - p.x) / l * sd), m = fran(x, y);
+          if (u > 0.05 && u < 0.95 && m >= 2 && m < 3 && ledig(x, y) && !anv.some(r => Math.abs(r.x - x) + Math.abs(r.y - y) < 3)) { anv.push({ x, y }); return { x, y, u }; }
+        }
+      }
+      return undefined;
+    };
     let fe = 0;
     for (let u = 0; u <= 1; u += 0.5 / L) if (Math.hypot(pos(u).x - e.x, pos(u).y - e.y) < Math.hypot(pos(fe).x - e.x, pos(fe).y - e.y)) fe = u;
     const ph = pa(fe), pr = ph && pa(ph.u + 4 / L), pt = pr && pa(pr.u + 4 / L);
@@ -1186,11 +1198,57 @@ SCENARIER.tornado = {
       [`det stormar medan den drar fram (blåsten ${vind.toFixed(2)})`, vind === 1],
       [`den fällde träd till liggande stammar (${st['tornado trad'] ?? 0} träd, ${stock0} → ${(s.stockar ?? []).length} stammar)`, (st['tornado trad'] ?? 0) > 0],
       [`risväggen rasade (${risRasad ? 'rasad' : 'stod kvar'}; ${st['tornado vagg'] ?? 0} väggar rivna), den nya timmerväggen stod kvar men skadades (lägst skick ${timmerC.toFixed(2)})`, risRasad && timmerC < 1 && timmerC > 0],
-      [`grenarna lyftes: ${efter ? `${10 - efter.n} av 10 gick sönder och resten hamnade ${avst.toFixed(1)} rutor från banan` : 'högen låg kvar'} (${st['tornado sonder'] ?? 0} saker gick sönder i allt)`, !!efter && efter.n >= 5 && efter.n < 10 && avst >= 2 && avst <= 9],
+      [`grenarna lyftes: ${efter ? `${10 - efter.n} av 10 gick sönder och resten hamnade ${avst.toFixed(1)} rutor från banan` : 'högen låg kvar'} (${st['tornado sonder'] ?? 0} saker gick sönder i allt)`, !!efter && efter.n >= 5 && efter.n < 10 && avst >= 2 && avst <= 11],
       [`folk såg den och ropade (${st['tornado sedd'] ?? 0}, ${st.larm ?? 0} larm) och ${undan} gick undan`, (st['tornado sedd'] ?? 0) >= 1 && undan >= 1],
       [`nästan ingen skadades (${skadade} skador, ${st['tornado skadad'] ?? 0} av tornadon)`, (st['tornado skadad'] ?? 0) <= 1],
       [`ingen stod i en vägg (${iVagg}) eller i vattnet (${iVattnet})`, iVagg === 0 && iVattnet === 0],
       [`tornadon är borta (${s.tornado ? 'kvar' : 'borta'}) och grenarna bars in i lagret efteråt`, !s.tornado && inburet],
+    ];
+  },
+};
+
+SCENARIER.tornadokarna = {
+  text: 'Steg 6.4.9: tornadons kärna förstör allt: en timmervägg rasar, en station försvinner med det som ligger i den, saker och liggande stammar går sönder, ett vuxet träd välts till en stam och en människa där dör (dödsorsaken tornado)',
+  kor: () => {
+    const s = createState(5, START);
+    tandEld(s);
+    SIM.skickaTornado(s);
+    const t = s.tornado!, L = t.L, e = SIM.eldPlats(s);
+    const ledig = (x: number, y: number) => SIM.vattenNu(s)[y * W + x] !== T.Vatten && !SIM.blocked(s, x, y) && !SIM.stationAt(s, x, y) && !SIM.bitAt(s, x, y) && Math.hypot(x - e.x, y - e.y) > 8;
+    // fyra rutor mitt på banan (en ruta isär), långt från byn
+    const pl: { x: number; y: number }[] = [];
+    for (let u = 0.3; u < 0.9 && pl.length < 5; u += 1.5 / L) {
+      const p = SIM.tornadoPos(t, u), x = Math.floor(p.x), y = Math.floor(p.y);
+      if (ledig(x, y) && !pl.some(q => Math.abs(q.x - x) < 2 && Math.abs(q.y - y) < 2)) pl.push({ x, y });
+    }
+    if (pl.length < 5) return [['fem lediga rutor mitt på banan', false]];
+    const [pv, ps, pk, pt, pp] = pl, g = groundOf(s);
+    const bits = SIM.bitsOf(s), id = Math.max(0, ...bits.map(b => b.id)) + 1;
+    bits.push({ id, x: pv.x, y: pv.y, k: 'vagg', m: 'timmer', b: 1, mat: 5, c: 1 });
+    const sid = Math.max(0, ...(s.stationer ?? []).map(q => q.id)) + 1;
+    (s.stationer ??= []).push({ id: sid, k: 'slaktbank', x: ps.x, y: ps.y, kvar: 0 });
+    SIM.touch(s);
+    s.stackar!.push({ k: 'sten', n: 6, c: 1, x: pk.x, y: pk.y });
+    (s.stockar ??= []).push({ id: (s.nextStock = (s.nextStock ?? 0) + 1), x: pk.x + 0.5, y: pk.y + 0.5, ...SIM.stamAv(g, pk.y * W + pk.x) });
+    g.trees[pt.y * W + pt.x] = 1; g.trees[pk.y * W + pk.x] = 0;
+    const offer = living(s)[0], stam0 = (s.stockar ?? []).length;
+    let iVagen = true;
+    for (let k = 0; k < 900 && s.tornado; k++) {
+      // offret står kvar på sin ruta tills tornadon kommit förbi
+      if (living(s).includes(offer)) { offer.x = pp.x + 0.5; offer.y = pp.y + 0.5; offer.task = undefined; } else iVagen = false;
+      step(s, 5);
+    }
+    const st = s.stat ?? {}, vagg = SIM.bitAt(s, pv.x, pv.y);
+    const stenKvar = (s.stackar ?? []).filter(a => a.k === 'sten' && a.x === pk.x && a.y === pk.y).reduce((n, a) => n + a.n, 0);
+    const stamKvar = (s.stockar ?? []).some(k => Math.floor(k.x) === pk.x && Math.floor(k.y) === pk.y);
+    const stamTrad = (s.stockar ?? []).some(k => Math.floor(k.x) === pt.x && Math.floor(k.y) === pt.y);
+    return [
+      [`timmerväggen rasade (${vagg && vagg.b >= 1 ? 'står kvar' : 'rasad'})`, !vagg || vagg.b < 1],
+      [`stationen försvann (${(s.stationer ?? []).some(q => q.id === sid) ? 'kvar' : 'borta'})`, !(s.stationer ?? []).some(q => q.id === sid)],
+      [`stenarna och stammen gick sönder (${stenKvar} stenar kvar, stammen ${stamKvar ? 'kvar' : 'borta'})`, stenKvar === 0 && !stamKvar],
+      [`trädet välttes till en liggande stam (${g.trees[pt.y * W + pt.x] >= FOREST ? 'står' : 'vält'}, ${stamTrad ? 'stam' : 'ingen stam'})`, g.trees[pt.y * W + pt.x] < FOREST && stamTrad],
+      [`människan dog i tornadon (${living(s).includes(offer) ? 'lever' : 'död'}; ${st['tornado dod'] ?? 0} döda)`, !living(s).includes(offer) && !iVagen && (st['tornado dod'] ?? 0) >= 1],
+      [`händelserna säger vad den gjorde (${st['tornado forstort'] ?? 0} saker förstörda, ${stam0} stammar före)`, (st['tornado forstort'] ?? 0) >= 2],
     ];
   },
 };

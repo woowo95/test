@@ -13,7 +13,9 @@ import { motgangNu, motgangTal } from './motgang';
 import { larma, larmNu } from './rykten';
 import { SAKER } from './saker';
 import { stamAv, stocks } from './skog';
-import { forvarAt, stationAt } from './stationer';
+import { forvarAt, stationAt, taBort } from './stationer';
+import { tingOf } from './agande';
+import { djurOf, dodaDjur } from './djur';
 import { isLight } from './tid';
 import { H, HOUR, MIN, SEC, Person, State, W, inMap } from './typer';
 import { FOREST } from './vag';
@@ -51,6 +53,16 @@ export const TORNADO = balans('tornado', {
   skadaGrad: [0.3, 0.9], // ... så här svårt (slumpas mellan)
   vind: 1, // det blåser så här mycket (0 till 1, vaderNu i vader.ts) medan den drar fram
 });
+
+// tornadons storlekar (steg 6.4.9 och 6.4.15), en rad var: hur stor del av tornadorna som har storleken, och zonerna i
+// hela rutor från mitten: kärnan (förstör allt), nära (stor skada) och utkanten (de vilda växterna, fälten, några träd)
+export const TORNADOSTORLEKAR = {
+  liten: { namn: 'liten', andel: 0.5, zon: [0, 2, 3] },
+  medel: { namn: 'medel', andel: 0.4, zon: [1, 3, 6] },
+  stor: { namn: 'stor', andel: 0.1, zon: [2, 5, 9] },
+} as const;
+export type TornadoStorlek = keyof typeof TORNADOSTORLEKAR;
+export const zonerOf = (t: Tornado) => TORNADOSTORLEKAR[t.storlek ?? 'medel'].zon;
 
 // ett tal mellan 0 och 1 för tornadon som börjar vid start (salt skiljer talen åt)
 const tal = (s: State, start: number, salt: number) => motgangTal(s, start, salt);
@@ -93,7 +105,7 @@ function nyBana(s: State, start: number): Tornado {
   const bana = tornadoBana(s, start), { fran, till } = tornadoTid(s, start);
   return { start, fran, till, bana, L: banLangd(bana), u: 0, trad: 0, vagg: 0, lyft: 0, sonder: 0, skadade: 0 };
 }
-export interface Tornado { test?: 1; start: number; fran: number; till: number; bana: number[]; L: number; u: number; trad: number; vagg: number; lyft: number; sonder: number; skadade: number; traff?: number[]; lyftRutor?: number[]; tagna?: number[] }
+export interface Tornado { test?: 1; storlek?: TornadoStorlek; doda?: number; djur?: number; forstort?: number; start: number; fran: number; till: number; bana: number[]; L: number; u: number; trad: number; vagg: number; lyft: number; sonder: number; skadade: number; traff?: number[]; lyftRutor?: number[]; tagna?: number[] }
 // hur långt längs banan tornadon har kommit vid tiden t (0 till 1), och var den är
 export const tornadoAndel = (t: Tornado, nu: number) => Math.min(1, Math.max(0, (nu - t.fran) / (t.till - t.fran)));
 export function tornadoPos(t: Tornado, u: number) {
@@ -152,7 +164,7 @@ export function tornadoSteg(s: State) {
   if (u > t.u) { svep(s, t, t.u, u); t.u = u; }
   if (m?.id === 'tornado' || t.test && u < 1) { ser(s, t); soker(s, t); return; }
   // den har gått över kartan
-  const delar = [t.trad && `fällde ${t.trad} träd`, t.vagg && `rev ${t.vagg} ${t.vagg === 1 ? 'vägg' : 'väggar'}`, t.lyft && `spred ${t.lyft} saker${t.sonder ? ` (${t.sonder} gick sönder)` : ''}`].filter(Boolean);
+  const delar = [t.doda && `dödade ${t.doda} ${t.doda === 1 ? 'människa' : 'människor'}`, t.forstort && `förstörde ${t.forstort} saker`, t.trad && `fällde ${t.trad} träd`, t.vagg && `rev ${t.vagg} ${t.vagg === 1 ? 'vägg' : 'väggar'}`, t.lyft && `spred ${t.lyft} saker${t.sonder ? ` (${t.sonder} gick sönder)` : ''}`].filter(Boolean);
   log(s, delar.length ? `Tornadon ${delar.join(', ')}.` : 'Tornadon gick fram där inget fanns att ta.', 'world');
   delete s.tornado;
 }
@@ -160,20 +172,24 @@ export function tornadoSteg(s: State) {
 // det tornadon tar på vägen från andelen a till b av banan: träden, väggarna, sakerna och den som är i vägen. Varje ruta
 // tas en gång, i steget då tornadon passerar den (där rutan ligger längs banan)
 function svep(s: State, t: Tornado, a: number, b: number) {
-  const R = TORNADO.radie, L = t.L || 1;
+  const z = zonerOf(t), R = Math.max(TORNADO.radie, z[2]) + 0.99, L = t.L || 1;
   // punkter längs banan från a till b, en halv ruta isär (och till slutet när den är framme)
   const pkt: { x: number; y: number }[] = [];
   for (let d = a * L; ; d += 0.5) { const e = Math.min(d, b * L); pkt.push(tornadoPos(t, e / L)); if (e >= b * L) break; }
   const vid = (x: number, y: number) => pkt.some(p => Math.hypot(x - p.x, y - p.y) <= R);
   // rutorna den når, var och en en gång per tornado: när tornadon passerar den punkt på banan som ligger närmast rutan
-  const tagna = new Set(t.tagna), rutor: number[] = [], fa = a * L, fb = b * L;
+  const tagna = new Set(t.tagna), rutor: number[] = [], karna: number[] = [], fa = a * L, fb = b * L;
   const xs = pkt.map(p => p.x), ys = pkt.map(p => p.y);
   for (let y = Math.max(0, Math.floor(Math.min(...ys) - R)); y <= Math.min(H - 1, Math.floor(Math.max(...ys) + R)); y++)
     for (let x = Math.max(0, Math.floor(Math.min(...xs) - R)); x <= Math.min(W - 1, Math.floor(Math.max(...xs) + R)); x++) {
       if (tagna.has(y * W + x)) continue;
       const np = narmastPa(t, x + 0.5, y + 0.5);
-      if (np.d <= R && (np.f > fa || a === 0 && np.f >= 0) && (np.f <= fb || b >= 1)) rutor.push(y * W + x);
+      if (np.d > R || !(np.f > fa || a === 0 && np.f >= 0) || !(np.f <= fb || b >= 1)) continue;
+      // kärnan (steg 6.4.9): rutorna högst så många hela rutor från mitten; resten tar det som förut inom radien
+      if (Math.floor(np.d) <= z[0]) karna.push(y * W + x); else if (Math.floor(np.d) <= TORNADO.radie) rutor.push(y * W + x);
+      else (t.tagna ??= []).push(y * W + x);
     }
+  if (karna.length) { (t.tagna ??= []).push(...karna); karnan(s, t, karna); }
   if (rutor.length) (t.tagna ??= []).push(...rutor);
   const iRutor = new Set(rutor), nar = (x: number, y: number) => iRutor.has(Math.floor(y) * W + Math.floor(x));
   // träden: ett vuxet träd blir en liggande stam, och där det stod växer högt gräs
@@ -219,7 +235,14 @@ function svep(s: State, t: Tornado, a: number, b: number) {
     (t.lyftRutor ??= []).push(st.y * W + st.x);
   }
   if (flytt) tidy(s);
-  // den som är i vägen (nära tornadon nu)
+  // den som är i vägen (nära tornadon nu): i kärnan dör hen, och djuren där dör (steg 6.4.9)
+  const iKarnan = (x: number, y: number) => pkt.some(p => Math.hypot(x - p.x, y - p.y) <= z[0] + 0.5);
+  for (const pp of living(s)) {
+    if (!alive(pp) || !iKarnan(pp.x, pp.y)) continue;
+    t.doda = (t.doda ?? 0) + 1; count(s, 'tornado dod');
+    die(s, pp, 'tornado');
+  }
+  for (const d of djurOf(s)) if (iKarnan(d.x, d.y)) { dodaDjur(s, d.id); t.djur = (t.djur ?? 0) + 1; count(s, 'tornado djur'); }
   for (const pp of living(s)) {
     if (!alive(pp) || !vid(pp.x, pp.y) || t.traff?.includes(pp.id)) continue;
     (t.traff ??= []).push(pp.id); // en gång per tornado
@@ -231,6 +254,45 @@ function svep(s: State, t: Tornado, a: number, b: number) {
     const dod = skada(s, pp, d, k, grad, 'tornado', 'i tornadon');
     if (dod) die(s, pp, dod); else upplev(s, pp, 'drabbad', 'tornadon'); // steg 4.1.1.2
   }
+}
+// kärnan (steg 6.4.9) förstör allt på rutorna: väggarna rasar, golven blir jord och dörrarna försvinner, stationerna och
+// möblerna med det som ligger i dem, alla saker, redskapen och de liggande stammarna. Träden välts till liggande stammar,
+// och ungskogen slits upp
+function karnan(s: State, t: Tornado, rutor: number[]) {
+  const g = groundOf(s), set = new Set(rutor), pa = (x: number, y: number) => set.has(Math.floor(y) * W + Math.floor(x));
+  let rev = false, flytt = false;
+  const borta = (n = 1) => { t.forstort = (t.forstort ?? 0) + n; count(s, 'tornado forstort', n); };
+  // de liggande stammarna går sönder (innan de nya läggs)
+  const fore = stocks(s).length;
+  s.stockar = stocks(s).filter(k => !pa(k.x, k.y));
+  if (s.stockar.length < fore) borta(fore - s.stockar.length);
+  for (const i of rutor) {
+    const x = i % W, y = Math.floor(i / W);
+    if (g.trees[i] >= FOREST) {
+      const stam = stamAv(g, i);
+      g.trees[i] = 0; g.cover[i] = 1;
+      stocks(s).push({ id: (s.nextStock = (s.nextStock ?? 0) + 1), x: x + 0.5, y: y + 0.5, ...stam });
+      if (!g.built?.[i]) (s.stubbar ??= []).push({ x, y, t: s.now });
+      t.trad++; count(s, 'tornado trad');
+    } else if (g.trees[i] > 0) g.trees[i] = 0;
+    if (s.halvfallt) delete s.halvfallt[i];
+    const v = bitAt(s, x, y);
+    if (v?.k === 'vagg' && v.b >= 1) { const h = rasar(s, v); t.vagg++; count(s, 'tornado vagg'); drabbadHus(s, h, 'tornadon som förstörde huset'); rev = true; }
+    else if (v?.k === 'golv' && v.m !== 'jord') { v.m = 'jord'; borta(); rev = true; }
+    else if (v?.k === 'oppning' && v.dorr) { delete v.dorr; borta(); rev = true; }
+    const st = s.stationer?.length ? stationAt(s, x, y) : undefined;
+    if (st) { s.ting = tingOf(s).filter(q => !(q.vid === st.id && q.hos === undefined && q.lass === undefined)); taBort(s, st); borta(); flytt = true; }
+  }
+  // redskapen på marken och alla saker på rutorna
+  const ting = tingOf(s), kvarTing = ting.filter(k => k.hos !== undefined || k.lass !== undefined || k.x === undefined || k.y === undefined || !pa(k.x, k.y));
+  if (kvarTing.length < ting.length) { borta(ting.length - kvarTing.length); s.ting = kvarTing; }
+  for (const st of stacksOf(s)) {
+    if (st.n < 1 || !set.has(st.y * W + st.x)) continue;
+    const n = Math.floor(st.n);
+    minska(s, st, n); t.sonder += n; count(s, 'tornado sonder', n); flytt = true;
+  }
+  if (rev) touch(s);
+  if (flytt) tidy(s);
 }
 // de som är vakna och ser tornadon ropar (som vid vargen)
 function ser(s: State, t: Tornado) {
@@ -250,12 +312,12 @@ function soker(s: State, t: Tornado) {
 // är p nära banan som är kvar? Då: platsen åt sidan dit hen går, och hur länge tills tornadon har passerat
 function fara(s: State, t: Tornado, p: Person) {
   // den del av banan som är kvar: var den är närmast p, och åt vilket håll
-  const L = t.L || 1, np = narmastPa(t, p.x, p.y), nu = t.u * L, ux = np.ux, uy = np.uy, fram = np.f;
-  if (fram < nu - TORNADO.radie || np.d > TORNADO.fara + TORNADO.radie) return;
+  const L = t.L || 1, np = narmastPa(t, p.x, p.y), nu = t.u * L, ux = np.ux, uy = np.uy, fram = np.f, R = Math.max(TORNADO.radie, zonerOf(t)[2]);
+  if (fram < nu - R || np.d > TORNADO.fara + R) return;
   const bp = tornadoPos(t, fram / L), sid = -(p.x - bp.x) * uy + (p.y - bp.y) * ux;
-  const tecken = sid > 0 || sid === 0 && ur(s, t, p.id, 3845) < 0.5 ? 1 : -1, d = (TORNADO.fara + TORNADO.radie + TORNADO.undan) * tecken;
+  const tecken = sid > 0 || sid === 0 && ur(s, t, p.id, 3845) < 0.5 ? 1 : -1, d = (TORNADO.fara + R + TORNADO.undan) * tecken;
   const x = Math.min(W - 1.5, Math.max(1.5, bp.x - uy * d)), y = Math.min(H - 1.5, Math.max(1.5, bp.y + ux * d));
-  const dur = Math.max(10 * MIN, (fram + TORNADO.fara + TORNADO.radie - nu) / L * (t.till - t.fran));
+  const dur = Math.max(10 * MIN, (fram + TORNADO.fara + R - nu) / L * (t.till - t.fran));
   return { spot: { x, y }, dur };
 }
 // tornadon kommer och p vet om det och är nära dess väg: hen går undan (val.ts, som vid vargen)
