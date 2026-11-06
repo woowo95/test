@@ -143,8 +143,11 @@ body.hOppen .legend { right: calc(var(--stenar) + 14px + min(360px, 100vw - var(
 .greppa { display: none; } /* greppet överst i arket syns bara på en liten skärm (steg 5.3.7) */
 .panel > .stang { position: absolute; top: 14px; right: 12px; z-index: 1; width: 26px; height: 26px; border-radius: 4px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); font: inherit; font-size: 14px; line-height: 1; cursor: pointer; padding: 0; }
 .panel > .stang:hover { color: var(--fg); }
+.panel > .bakat { position: absolute; top: 14px; right: 44px; z-index: 1; width: 26px; height: 26px; border-radius: 4px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); font: inherit; font-size: 14px; line-height: 1; cursor: pointer; padding: 0; } /* steg 6.9.5 */
+.panel > .bakat:hover { color: var(--fg); }
+.panel > .bakat[hidden] { display: none; }
 .panelkropp { overflow-y: auto; padding: 12px 14px 16px; min-width: 0; }
-.panelkropp > :first-child { margin-right: 30px; } /* plats för krysset */
+.panelkropp > :first-child { margin-right: 62px; } /* plats för krysset */
 body.forradOppen .owned { display: block; }
 body.vOppen .owned { display: none; }
 /* flikknapparna i en kolumn längst till höger (runstenarna i steg 5.3.3.1) */
@@ -494,10 +497,10 @@ body.testing .mapwrap { box-shadow: inset 0 0 0 3px var(--accent); }
         <button type="button" id="zHome">Byn</button>
       </div>
     </section>
-    <aside id="vPanel" class="panel vanster" aria-label="Personen och det valda" hidden><button type="button" class="stang" data-stang="v" aria-label="Stäng">✕</button><div id="vBody" class="panelkropp"></div></aside>
-    <aside id="hPanel" class="panel hoger" aria-label="Fliken" hidden><button type="button" class="stang" data-stang="h" aria-label="Stäng">✕</button><div id="panelBody" class="panelkropp"></div></aside>
+    <aside id="vPanel" class="panel vanster" aria-label="Personen och det valda" hidden><button type="button" class="stang" data-stang="v" aria-label="Stäng">✕</button><button type="button" class="bakat" aria-label="Tillbaka" title="Tillbaka till det du såg förut" hidden>←</button><div id="vBody" class="panelkropp"></div></aside>
+    <aside id="hPanel" class="panel hoger" aria-label="Fliken" hidden><button type="button" class="stang" data-stang="h" aria-label="Stäng">✕</button><button type="button" class="bakat" aria-label="Tillbaka" title="Tillbaka till det du såg förut" hidden>←</button><div id="panelBody" class="panelkropp"></div></aside>
     <aside id="notisRuta" class="notisruta" role="dialog" aria-label="Notiserna" hidden></aside>
-    <aside id="ruta" class="panel ruta" aria-label="Det man tryckte på" hidden><button type="button" class="stang" data-stang="r" aria-label="Stäng">✕</button><div id="rutaBody" class="panelkropp"></div></aside>
+    <aside id="ruta" class="panel ruta" aria-label="Det man tryckte på" hidden><button type="button" class="stang" data-stang="r" aria-label="Stäng">✕</button><button type="button" class="bakat" aria-label="Tillbaka" title="Tillbaka till det du såg förut" hidden>←</button><div id="rutaBody" class="panelkropp"></div></aside>
     <nav class="tabs" role="tablist" aria-label="Flikarna"></nav>
     <button type="button" class="stenvert" id="installKnapp" aria-label="Inställningar" title="Testläget och ny by">⚙</button>
     <div class="controls" id="installningar" hidden>

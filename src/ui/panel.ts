@@ -94,8 +94,31 @@ function skriv(sd: Sida, id: FlikId | undefined, force: boolean) {
   sd.html = html; sd.body.innerHTML = html;
 }
 satRitaOm(() => renderPanel(true));
+// bakåtknappen (steg 6.9.5): panelerna minns vad man tittat på. Det som bestämmer vad panelerna visar sparas när det ändras,
+// och ← (bredvid krysset) går tillbaka ett steg, så att man kommer tillbaka till personen, fliken eller saken man såg
+const VY = ['tab', 'hoger', 'selected', 'bynDel', 'personDel', 'eld', 'husId', 'stationId', 'sjoNr', 'faltId', 'faltRuta', 'hogAt', 'filtAt', 'framNr', 'matchNr', 'byteNr', 'djurId', 'sak', 'lagerNr'] as const;
+const BAKAT_MAX = 30;
+const bakat: string[] = [];
+let vyNu = '';
+const vyAv = () => JSON.stringify(VY.map(k => ui[k]));
+function minnsVy() {
+  const v = vyAv();
+  if (v === vyNu) return;
+  if (vyNu) { bakat.push(vyNu); if (bakat.length > BAKAT_MAX) bakat.shift(); }
+  vyNu = v;
+}
+export function tillbaka() {
+  const v = bakat.pop();
+  if (!v) return;
+  const x = JSON.parse(v) as unknown[];
+  VY.forEach((k, i) => { (ui as Record<string, unknown>)[k] = x[i] ?? undefined; });
+  vyNu = v; flytta = ärRuta(ui.tab);
+  renderPanel(true); renderPorts();
+}
 export function renderPanel(force = false) {
   if (ui.hoger && (ALLA[ui.hoger].syns?.() ?? true) === false) ui.hoger = undefined;
+  minnsVy();
+  for (const b of document.querySelectorAll<HTMLButtonElement>('.panel > .bakat')) b.hidden = !bakat.length;
   for (const b of nav.querySelectorAll<HTMLButtonElement>('button')) {
     const id = b.dataset.tab as FlikId;
     b.setAttribute('aria-selected', String(id === ui.hoger));
@@ -125,6 +148,7 @@ document.addEventListener('pointerdown', e => {
 }, true);
 document.addEventListener('click', e => {
   const el = e.target as HTMLElement;
+  if (el.closest('.panel > .bakat')) { tillbaka(); return; }
   const x = el.closest<HTMLElement>('[data-stang]');
   if (x) { stang(x.dataset.stang as 'v' | 'h' | 'r'); return; }
   const b = el.closest<HTMLElement>('[data-id]');
