@@ -4,8 +4,13 @@
 // per punkt i bilderna) vilket steg punkten får, så att övergången blir jämn utan nya färger. Elden lyser: nära en brinnande
 // eld (eller glöd) är mörkret mindre, och det minskar i steg utåt. Mitt i natten (steg 5.1.7.2) är det tre steg mörkare, så
 // att nästan allt är kolsvart och bara elden lyser. Bara utseende; filtret gör inget alls på dagen.
+// Mörkret ligger i hela steg över kartan (steg 6.8.17): rastret används bara i kanten av ljuset och i en smal rand (RAND, en
+// del av kartans bredd) som sveper över kartan från väster medan mörkret går från ett steg till nästa.
 import * as PIXI from 'pixi.js';
 import { FARGER, MORKARE } from '../palett';
+import { W } from '../sim';
+
+const RAND = 0.03, KART = W * 16; // randens bredd som del av kartan, och kartans bredd i världens punkter
 
 const MAX_ELDAR = 8;
 const FRAG = `
@@ -23,6 +28,8 @@ uniform float uMork;
 uniform vec2 uPos;
 uniform float uSkala;
 uniform vec4 uEld[${MAX_ELDAR}];
+uniform float uKart;
+uniform float uRand;
 void main() {
   vec4 c = texture2D(uSampler, vTextureCoord);
   if (c.a < 0.004) { gl_FragColor = c; return; }
@@ -34,7 +41,11 @@ void main() {
     float d = length(w - e.xy) / max(e.z, 1.0);
     if (e.z > 0.0) ljus = max(ljus, e.w < 0.0 ? -e.w * (1.0 - smoothstep(0.5, 1.0, d)) : e.w * clamp(1.0 - d, 0.0, 1.0));
   }
-  float m = max(0.0, uMork - 3.3 * ljus);
+  // mörkret på kartan i hela steg; i randen som sveper från väster går det jämnt till nästa steg
+  float hel = floor(uMork), del = uMork - hel;
+  float u = (w.x * 0.85 + w.y * 0.15) / uKart;
+  float bas = hel + clamp((del * (1.0 + uRand) - u) / uRand, 0.0, 1.0);
+  float m = max(0.0, bas - 3.3 * ljus);
   float bd = 1e9;
   vec3 b0 = col, b1 = col, b2 = col, b3 = col;
   for (int i = 0; i < 32; i++) {
@@ -57,7 +68,7 @@ const platt = (fs: readonly string[]) => new Float32Array(fs.flatMap(rgb));
 export const nattFilter = new PIXI.Filter(undefined, FRAG, {
   uPal: platt(FARGER), uM1: platt(MORKARE[1]), uM2: platt(MORKARE[2]), uM3: platt(MORKARE[3]),
   uBayer: new Float32Array([0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]),
-  uMork: 0, uPos: new Float32Array(2), uSkala: 1, uEld: new Float32Array(MAX_ELDAR * 4),
+  uMork: 0, uPos: new Float32Array(2), uSkala: 1, uEld: new Float32Array(MAX_ELDAR * 4), uKart: KART, uRand: RAND,
 });
 
 // mörkret m (0 dag, 1 skymning, 2 natt, 3 djup natt) och eldarna (x och y i världens punkter, hur långt ljuset når, styrkan 0–1).
