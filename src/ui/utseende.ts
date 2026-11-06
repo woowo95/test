@@ -4,7 +4,7 @@
 // som sparats före porträtten får dem slumpade ur byns frö och personens nummer. Allt räknas ur numret och föräldrarna,
 // så att samma person alltid ser likadan ut och simuleringen inte märker något. Bara utseende.
 import { ALDER, BERATT, BESK_ANSIKTE, KLADMATERIAL, KROPP, ageOf, blodning, byId, hash, isSick, kladAv, load, moodOf, utbrottNu, utrustning } from '../sim';
-import type { Person, State } from '../sim';
+import type { Person, Rovare, State } from '../sim';
 import { KARNA } from '../portrattkarna';
 import { s as visad, uppgiftVid } from './lage';
 
@@ -127,3 +127,27 @@ export function ansiktsDel(s: State, p: Person): string | undefined {
   return val([...lager, OGONORD[q.ogon], HARORD[q.har]].filter(Boolean));
 }
 BESK_ANSIKTE.del = ansiktsDel;
+
+// rövarna (steg 6.6.12): en figur ur skaparen som byborna, slumpad ur byns frö och rövarens namn, så att samma rövare alltid
+// ser likadan ut. Rövarens delar (märkta rövare i skaparen: luvan, duken och rocken av mörkt, slitet skinn) bärs bara av
+// rövarna, var och en med sin chans, och vargskinnsrocken likaså; byborna kan inte tillverka dem. Vapnet i handen när det
+// finns som del, humöret arg i striden och rädd på flykten
+export const ROVARDRAKT = { luva: 0.35, duk: 0.3, rovarskinn: 0.45, vargskinn: 0.2 };
+const RARV = new Map<string, Skapad>();
+export function rovarSkapad(s: State, r: Rovare, humor: string): Skapad {
+  const k = s.seed + ':' + r.namn + ':' + r.sex;
+  let d = RARV.get(k);
+  if (!d) {
+    let h = s.seed | 0;
+    for (let i = 0; i < k.length; i++) h = Math.imul(h ^ k.charCodeAt(i), 0x01000193);
+    const rn = KARNA.slumpFran(h), kon = r.sex === 'k' ? 'kvinna' : 'man';
+    d = KARNA.slumpPerson(rn, { kon, alder: 'vuxen' }) as Skapad;
+    const b = rn(), m = rn();
+    d.del.huvudbonad = b < ROVARDRAKT.luva ? 'bonad-9' : b < ROVARDRAKT.luva + ROVARDRAKT.duk ? 'bonad-10' : null;
+    d.del.smycke = null; d.forband = []; d.sjuk = false; d.kyla = false; d.blod = false;
+    d.klader = { rock: m < ROVARDRAKT.rovarskinn ? 'rovarskinn' : m < ROVARDRAKT.rovarskinn + ROVARDRAKT.vargskinn ? 'vargskinn' : null, skor: rn() < 0.6, balte: rn() < 0.5 };
+    if (RARV.size > 200) RARV.clear();
+    RARV.set(k, d);
+  }
+  return { ...d, del: { ...d.del, redskap: REDSKAP.get(r.vapen) ?? null }, humor, blod: r.blod < 0.7 };
+}

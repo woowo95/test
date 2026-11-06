@@ -62,7 +62,7 @@ export function drawHandel() {
   filtIkoner.start(); handIkoner.start(); framlingG.clear(); kantG.clear();
   const vf = ui.tab === 'filt' ? valdFilt() : undefined, markerad = vf ? [vf, filtMot(s, vf)] : [];
   drawGodkant();
-  for (const g of gaster()) cirkel(g.x * TS, g.y * TS, g.farg, g.id === ui.selected, g.ligger);
+  for (const g of gaster()) if (!g.rovare) cirkel(g.x * TS, g.y * TS, g.farg, g.id === ui.selected, g.ligger);
   ritaSlagen(framlingG, ui.nu, TS); // striden med rövarna: vem som slår vem (steg 6.6.10)
   for (const f of s.filtar ?? []) {
     if (!f.handlare && f.slut <= ui.nu) continue;

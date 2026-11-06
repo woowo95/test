@@ -1,5 +1,5 @@
 import { HANDEL, HANDLAR_UTR, VAPEN, byId, gillar, handlarPerson, foddNar, gastLiv, gastNyckel, handlarFas, handlarPlats, rovarPlats, klanById, grundvarde, handlarVarde, kgOf, kortTal, rymmer, sakNamn } from '../sim';
-import type { ByteMinne, GastLiv, GastRel, Person, Roll, Skill, Stat, State } from '../sim';
+import type { ByteMinne, GastLiv, GastRel, Person, Roll, Rovare, Skill, Stat, State } from '../sim';
 import { iconImg } from '../ikoner';
 import { esc } from './hjalp';
 import { s, ui } from './lage';
@@ -24,6 +24,7 @@ export interface Gast {
   liv: GastLiv; // livet i hemklanen (steg 4.5.7.7, gastliv.ts): familjen, händelserna, humöret och det hen kan
   blod?: number; // blodet kvar (rövarna, 0–1)
   ligger?: boolean; // har fallit i striden (rövarna, steg 6.6.10)
+  rovare?: Rovare; // rövaren själv: ritas som en figur ur skaparen (steg 6.6.12, ui/manniskor.ts), de andra gästerna som en cirkel
   rel?: { p: Person; r: GastRel; g: number }[]; // relationerna till byborna (handlaren, steg 4.5.7.11): g = hur mycket hen gillar bybon, −1 till 1
 }
 // gästens liv, räknat ur byns frö och hens namn och klan (drar ingen slump)
@@ -35,6 +36,7 @@ const livFor = (s: State, klan: number | undefined, namn: string, sex: 'm' | 'k'
 export const handlarPris = (k: string, q?: number) => Math.max(1, Math.round(grundvarde(k) * handlarVarde(s, s.handlare!, k) * (q === undefined ? 1 : 0.6 + 0.2 * q)));
 // rövarnas id: under handlarnas (-1, -2 …), en plats per rövare i flocken
 const ROVAR_ID = -1e6;
+export const rovarGastId = (flock: number, i: number) => ROVAR_ID - flock * 100 - i;
 export const GASTER: ((s: State, t: number) => Gast[])[] = [
   // handlaren (steg 4.4.1.2)
   (s, t) => {
@@ -66,9 +68,9 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
     return r.folk.map((q, i) => {
       const sk = rovarenNu(q.namn, t); // i striden (steg 6.6.10): där striden har hen, och liggande när hen fallit
       return {
-      id: ROVAR_ID - r.id * 100 - i, namn: q.namn, sex: q.sex, sort: 'Rövare', farg: 0x5a5040,
+      id: rovarGastId(r.id, i), namn: q.namn, sex: q.sex, sort: 'Rövare', farg: 0x5a5040,
       ...(sk ? { x: sk.x, y: sk.y } : rovarPlats(q, t)), // var och en går för sig (steg 6.6.9)
-      gor: sk ? (sk.k.lage === 'dod' ? 'Död' : sk.ligger ? 'Ligger nere' : sk.k.lage === 'flykt' ? 'Flyr' : 'Slåss vid förrådet') : gor, ligger: sk?.ligger,
+      rovare: q, gor: sk ? (sk.k.lage === 'dod' ? 'Död' : sk.ligger ? 'Ligger nere' : sk.k.lage === 'flykt' ? 'Flyr' : 'Slåss vid förrådet') : gor, ligger: sk?.ligger,
       fran: klanById(s, r.klan)?.namn,
       rader: [{ namn: 'Flocken', varde: `${n} rövare`, title: `En av ${n} i flocken` }],
       stats: { styrka: q.st.styrka, uthallighet: q.st.uthallighet, mod: q.st.mod, smidighet: q.st.smidighet }, skills: { narstrid: q.st.skicklighet },

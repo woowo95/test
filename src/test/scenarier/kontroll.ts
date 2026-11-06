@@ -11,7 +11,7 @@ import { symDelar, symUtan } from '../../ui/symboler';
 import { anvandsKant, skaffasKant } from '../../ui/skaffas';
 import * as fs from 'fs';
 import * as path from 'path';
-import { ANSIKTSORD, drag, glomArv, skapad, skonNiva } from '../../ui/utseende';
+import { ANSIKTSORD, ROVARDRAKT, drag, glomArv, rovarSkapad, skapad, skonNiva } from '../../ui/utseende';
 import { Koll, kor, klockan, uiLas, SCENARIER, grenarUte, barGrenar } from './hjalp';
 
 SCENARIER['ui-ren'] = {
@@ -272,6 +272,27 @@ SCENARIER.aldrig = {
       ...ut,
       [`listan över det sällsynta har bara sådant som finns i registren${okanda.length ? ` (inte: ${okanda.join(', ')})` : ''}`, !okanda.length],
       [`inga vaktlarm i byarna${vakter.length ? `: ${vakter.slice(0, 3).join('; ')}` : ''}`, !vakter.length],
+    ];
+  },
+};
+
+SCENARIER.rovardrakt = {
+  text: 'Rövarnas utseende (steg 6.6.12, ui/utseende.ts): rövarna är figurer ur skaparen som byborna, och samma rövare ser alltid likadan ut. De bär rövarens delar (luvan, duken och rocken av mörkt, slitet skinn) och vargskinnsrocken, var och en med sin chans, och vapnet i handen; byborna får aldrig rövarens delar.',
+  kor: () => {
+    const s = createState(4, START), RS = new Set(['bonad-9', 'bonad-10']);
+    const rov = Array.from({ length: 60 }, (_, i) => ({ namn: 'Rövare' + i, sex: i % 2 ? 'm' : 'k', st: { styrka: 10, uthallighet: 10, mod: 10, smidighet: 10, skicklighet: 10 }, vapen: i % 3 ? 'yxa' : 'flintspjut', blod: 1 }) as SIM.Rovare);
+    const a = rov.map(r => rovarSkapad(s, r, 'arg')), b = rov.map(r => rovarSkapad(s, r, 'arg'));
+    const lika = JSON.stringify(a) === JSON.stringify(b);
+    const luva = a.filter(q => q.del.huvudbonad === 'bonad-9').length, duk = a.filter(q => q.del.huvudbonad === 'bonad-10').length;
+    const skinn = a.filter(q => q.klader.rock === 'rovarskinn').length, varg = a.filter(q => q.klader.rock === 'vargskinn').length;
+    const vapen = a.every((q, i) => q.del.redskap === (rov[i].vapen === 'yxa' ? 'redskap-yxa' : q.del.redskap) && !!q.del.redskap);
+    const by = living(s).map(p => skapad(s, p)), bybor = by.every(q => !RS.has(q.del.huvudbonad ?? '') && q.klader.rock !== 'rovarskinn');
+    const kring = (n: number, p: number) => n > 60 * p * 0.4 && n < 60 * p * 1.8;
+    return [
+      ['samma rövare ser likadan ut varje gång', lika],
+      [`luvan ${luva}, duken ${duk}, rocken av slitet skinn ${skinn}, vargskinnet ${varg} av 60 (ROVARDRAKT)`, kring(luva, ROVARDRAKT.luva) && kring(duk, ROVARDRAKT.duk) && kring(skinn, ROVARDRAKT.rovarskinn) && kring(varg, ROVARDRAKT.vargskinn)],
+      ['rövaren har vapnet i handen', vapen],
+      ['byborna bär aldrig rövarens delar', bybor],
     ];
   },
 };

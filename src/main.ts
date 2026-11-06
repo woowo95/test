@@ -16,7 +16,8 @@ import { addTalks, drawPeople, posOf } from './ui/manniskor';
 import { drawHandel } from './ui/handel';
 import { renderPanel } from './ui/panel';
 import { renderRaden } from './ui/raden';
-import { renderPorts, stopFollow } from './ui/portratt';
+import { renderPorts, startFollow, stopFollow } from './ui/portratt';
+import { gaster, rovarGastId } from './ui/gaster';
 import { catchUp, ikapp, loadSaves, nyByVald, saveDb, saveLocal } from './ui/spara';
 import './ui/interaktion';
 import './ui/ram';
@@ -124,8 +125,8 @@ $('arenaKnapp').addEventListener('click', oppnaArena);
     if (b.dataset.blixt) { ui.blixtTest = !ui.blixtTest; ui.brandTest = false; brandKnapp(); testSvara(ui.blixtTest ? 'Tryck på kartan där blixten ska slå ner' : ''); return; }
     const r = b.dataset.flock ? skickaRovare(s, ROVARFLOCK[b.dataset.flock as keyof typeof ROVARFLOCK]) : b.dataset.tornado ? skickaTornado(s) : skickaHandlare(s);
     testSvara(r.text);
-    // kameran visar var flocken dök upp (steg 4.5.7.10)
-    if (r.ok && b.dataset.flock && s.rovare) { stopFollow(); cam.x = s.rovare.x * TS; cam.y = s.rovare.y * TS; layout(); }
+    // kameran visar var flocken dök upp (steg 4.5.7.10) och följer den första rövaren in (steg 6.6.12)
+    if (r.ok && b.dataset.flock && s.rovare) { stopFollow(); cam.x = s.rovare.x * TS; cam.y = s.rovare.y * TS; layout(); startFollow(rovarGastId(s.rovare.id, 0), s.rovare.folk[0]?.namn); }
     b.classList.remove('tryckt'); void b.offsetWidth; b.classList.add('tryckt');
     testKnappar(); renderPanel(true);
   });
@@ -200,8 +201,9 @@ function tick() {
   const now = performance.now();
   addTalks(events, now, ui.nu);
   if (ui.follow !== undefined) {
-    const p = byId(s, ui.follow);
-    if (p && alive(p)) { const q = posOf(p); cam.x = q.x * TS + TS / 2; cam.y = q.y * TS + TS / 2; layout(); } else stopFollow();
+    const p = ui.follow > 0 ? byId(s, ui.follow) : undefined, g = ui.follow < 0 ? gaster().find(x => x.id === ui.follow) : undefined;
+    const q = p && alive(p) ? posOf(p) : g;
+    if (q) { cam.x = q.x * TS + TS / 2; cam.y = q.y * TS + TS / 2; layout(); } else stopFollow();
   }
   ritaKartan(now);
   if (now - lastUi > PANEL_MS) { lastUi = now; renderClock(); renderPanel(); renderPorts(); testKnappar(); }

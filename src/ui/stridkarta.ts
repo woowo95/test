@@ -37,7 +37,8 @@ export function rovarenNu(namn: string, nu: number) {
   const v = stridVid(nu);
   const k = v?.st.kampar.find(x => x.sida === 1 && x.pid === undefined && x.namn === namn);
   if (!v || !k || k.lage === 'borta') return undefined;
-  return { k, ...kampePlats(v.g, k), ligger: liggerK(k) };
+  const mal = k.mal !== undefined ? v.st.kampar.find(x => x.id === k.mal) : undefined;
+  return { k, ...kampePlats(v.g, k), mot: mal ? kampePlats(v.g, mal) : undefined, ligger: liggerK(k) };
 }
 // strecken (TS punkter per ruta) mellan den som slår och den som träffas (rött), missar (grått)
 export function ritaSlagen(gr: PIXI.Graphics, nu: number, TS: number) {
