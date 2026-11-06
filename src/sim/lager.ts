@@ -429,6 +429,9 @@ function roomIn(s: State, occ: Occ, x: number, y: number, k: string) {
   if (st && stationDef(st.k)?.forvar?.redskap) return isTool(k) && !a; // ett ställ som byggs: ett redskap, som på marken
   return !a || (a.k === k && !isTool(k) && a.n < rymd(s, x, y, k) - 1e-9);
 }
+// en snabb kontroll före roomIn: stacken a på rutan gör att inget mer av slaget k ryms där (roomIn hade sagt nej). Ett annat
+// slag (utom redskap bredvid redskap i ett ställ) eller en full stack av samma slag. Bara för fart: samma svar som förut
+const stangd = (s: State, a: Stack | undefined, x: number, y: number, k: string) => !!a && (a.k !== k ? !(isTool(k) && isTool(a.k)) : !isTool(k) && a.n >= rymd(s, x, y, k) - 1e-9);
 // bästa plats i en lagerplats för ett slag: lagerplatserna i prioritetsordning, först en stack av samma slag som inte
 // är full, sedan en tom ruta. minPrio: bara lagerplatser med högre prioritet än så
 function zoneSpot(s: State, k: string, minPrio = -Infinity, occ = occupancy(s)) {
@@ -436,7 +439,9 @@ function zoneSpot(s: State, k: string, minPrio = -Infinity, occ = occupancy(s)) 
   for (const z of zs) {
     let empty: { x: number; y: number } | undefined;
     for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) {
-      const a = occ.get(key(x, y)), rum = roomIn(s, occ, x, y, k);
+      const a = occ.get(key(x, y));
+      if (a ? stangd(s, a, x, y, k) : empty) continue; // roomIn behöver inte frågas
+      const rum = roomIn(s, occ, x, y, k);
       if (a && rum) return { x, y };
       if (!a && rum && !empty) empty = { x, y };
     }
@@ -454,7 +459,7 @@ export function dropSpot(s: State, k: string) {
 // en ruta i ringen runt lagerplatserna där slaget k får plats (inte bredvid förrådshuset: där står väggarna)
 function ringSpot(s: State, k: string, occ: Occ) {
   const zs = zonesOf(s).filter(z => z.hus === undefined), base = zs.filter(z => allows(z, k));
-  for (const z of base.length ? base : zs) for (const r of ringTiles(s, z)) {
+  for (const z of base.length ? base : zs) for (const r of ringTiles(s, z, 1, LAGER.bredvid, (x, y) => !stangd(s, occ.get(key(x, y)), x, y, k))) {
     if (zoneAt(s, r.x, r.y) >= 0) continue;
     if (roomIn(s, occ, r.x, r.y, k)) return r;
   }
@@ -963,12 +968,14 @@ export function avbryt(s: State, p: Person) {
 // baraMat = bara maten (när byn svälter, steg 2.12.3)
 export function haulJob(s: State, near?: number, baraMat = false) {
   placeTools(s);
-  const taken = paVagAttBara(s), finns = new Set(things(s).map(q => `${q.x},${q.y},${q.k}`));
+  const taken = paVagAttBara(s);
+  // finns det slaget på rutan ännu? Frågas bara för de rader som klarat de andra villkoren (stackarna, sedan redskapen)
+  const finns = (x: number, y: number, k: string) => stacksOf(s).some(q => q.x === x && q.y === y && q.k === k) || tingOf(s).some(t => ligger(t) && t.x === x && t.y === y && t.k === k);
   let best: { x: number; y: number; why: string } | undefined, bs = Infinity;
   for (const a of barLista(s)) {
     if (a.sc >= bs || taken.has(key(a.x, a.y)) || baraMat && !isFood(a.k) || near !== undefined && a.d > near) continue;
     if (s.flod && (iVattnetNu(s, key(a.x, a.y)) || !nasIFloden(s, key(a.x, a.y)))) continue; // inte det som ligger i översvämningen eller bakom den (flod.ts)
-    if (!finns.has(`${a.x},${a.y},${a.k}`)) continue; // det har burits sedan listan räknades
+    if (!finns(a.x, a.y, a.k)) continue; // det har burits sedan listan räknades
     bs = a.sc; best = { x: a.x + 0.5, y: a.y + 0.5, why: a.why };
   }
   return best;
