@@ -566,6 +566,16 @@
     // steg 6.6.6: symbolen för ryktet björndödare (i personens intryck); i spelet står en platshållare (björnens huvud)
     KORT('f6_i_bjorndodare', 'Björndödaren', S + '6.6.6: symbolen för ryktet björndödare, som den får som fällt en björn. Den står bland personens intryck, bredvid vargdödarens vargansikte.', [
       PA_MARK('Björnens huvud framifrån med runda öron och ljus nos.', ['..ooo......ooo..', '.obbbo....obbbo.', '.obwbooooooobwbo', '.obboaaaaaaaobbo', '..ooaaaaaaaaaoo.', '..oaaaaaaaaaaao.', '.oaaakaaaaakaaao', '.oaaaaaaaaaaaabo', '.oaaaawwwwaaaabo', '.oaaawwwwwwaabo.', '..oaawwkkwwaabo.', '..oaaawwwwaabo..', '...oaaawwaabo...', '....oobbbbbo....', '......ooooo.....'], IK_BJ), PA_MARK('En björntass med fem ljusa trampdynor.', ['................', '..oo..oo..oo....', '.owwoowwoowwo...', '.owwoowwoowwo.oo', '..oo..oo..oo.oww', '..ooooooooooooww', '.oaaaaaaaaaaaoo.', 'oaaaaaaaaaaaaao.', 'oaaaaawwwaaaaao.', 'oaaaawwwwwaaaao.', 'oaaaawwwwwaaaao.', '.oaaaawwwaaaao..', '.oaaaaaaaaaaao..', '..oaaaaaaaaao...', '...ooooooooo....', '................'], IK_BJ), PA_MARK('Tre björnklor på ett band, som ett halsband.', ['......oo........', '.....owwo.......', '.oo..owwo..oo...', 'owwo.owwo.owwo..', 'owwo.owwo.owwo..', 'owwo.owwo.owwo..', '.owo..owo.owo...', '.ooooooooooo....', '.obbbbbbbbbbo...', '..obbbbbbbbo....', '..oo......oo....', '.o..........o...', '.o....oo....o...', '..o..owwo..o....', '...oo.oo.oo.....', '................'], IK_BJ)]),
+    // steg 6.8.9: en svag färgton i raster under lagerplatserna; i spelet står den här tonen (senap 3, 3 av 16 punkter)
+    { id: 'f6_lagerton', namn: 'Tonen under lagerplatserna', typ: 'janej', vad: S + '6.8.9: en lagerplats syns nu som en svag färgton i raster på marken under stackarna, inte bara som en ram. Till vänster utan tonen, till höger med den. Ja eller nej?', versioner: [{ text: 'Samma lagerplats med tre vedstackar, till vänster utan ton och till höger med en gles ljusgul raster (3 av 16 punkter) på marken.', w: 104, h: 40, rita: B => {
+      const P = B.P, BY = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+      for (let y = 0; y < 40; y++) for (let x = 0; x < 104; x++) B.satt(x, y, P.i('oliv', ((x * 7 + y * 3) % 11 === 0) ? 1 : 2));
+      for (const [x0, ton] of [[4, false], [56, true]]) {
+        if (ton) for (let y = 4; y < 36; y++) for (let x = x0; x < x0 + 44; x++) if (BY[(y & 3) * 4 + (x & 3)] < 3) B.satt(x, y, P.i('senap', 3));
+        for (const [sx, sy] of [[4, 8], [20, 8], [12, 22]]) for (let k = 0; k < 3; k++) for (let x = 0; x < 14; x++) for (let y = 0; y < 3; y++) {
+          const yy = x0 + sx + x, zz = sy + k * 3 + y + (k === 0 ? 0 : 0); B.satt(yy, zz, P.i('jord', x === 0 || x === 13 ? 3 : y === 0 ? 2 : 1)); }
+      }
+    } }] },
     KORT('f6_strak', 'Gångstråken i testläget', S + '6.2.5: i testläget syns gångstråken, vägarna från dörrarna till elden, lagren, latrinen och vattnet där inget får byggas, som en tunn linje genom rutornas mitt, och rutan framför dörren som en liten ruta. Stugan och elden är bara för att visa platsen.', [
       STRAK('En tunn gul linje och en fylld gul ruta framför dörren.', 0), STRAK('Korta röda streck och en prickig ruta framför dörren.', 1), STRAK('Två ljusa kanter, som en väg, och en ljus ram framför dörren.', 2)]),
   );
