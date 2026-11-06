@@ -734,7 +734,6 @@
     { id: 'f6_bjornunge_hall', namn: 'Björnungen från tre håll', typ: 'janej', vad: S + '6.5.3.2: björnungen du valde, framifrån och bakifrån.', versioner: [UNGE_HALL] },
     KORT('f6_bjorn_falld', 'Fälld björn', S + '6.5.3: den fällda björnen som ligger på marken innan den styckas, som det fällda rådjuret: på sidan med huvudet på marken och ögat slutet, i din björns färger.', [
       PA_MARK('Benen utsträckta.', bjornFalld(0), BJ_FALLD_L), PA_MARK('Benen hopvikta under kroppen.', bjornFalld(1), BJ_FALLD_L), PA_MARK('Benen bundna ihop med rep, klar att släpas hem.', bjornFalld(2), BJ_FALLD_L)]),
-    { id: 'f6_tornado_storlek', namn: 'Tornadons storlekar', typ: 'janej', stor: true, vad: S + '6.3.5.8: tornadon i tre storlekar, nära varandra i storlek. Den stora har nu mindre damm och fler vindstreck som går runt längre bort från tratten. Medel är exakt som förut. Din kommentar förra gången: ”på den stora tornadon. Ta bort lite dam men lägg till fler sträck som går runt längre bort från tornadon.”', versioner: [TORNADOSCEN] },
     // ---------- steg 5.5.5: den unga grodden i hel skala ----------
     ...(() => {
       const ikon = (B, k, x, y, s = 1) => { const r = IKONER.PIX[k], pal = IKONER.PAL[k] || {}; if (!r) return; const n = Math.round(r[0].length * s);

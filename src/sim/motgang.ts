@@ -6,7 +6,7 @@ import { clamp, hash3, rnd } from './slump';
 import { kalender, yearNo } from './tid';
 import { DAY, HOUR, Person, Rel, State } from './typer';
 import { allaBarn, formas, upplev } from './uppvaxt';
-import { tornadoTid } from './tornado';
+import { tornadoStorlek, tornadoTid } from './tornado';
 import { TeckenTyp, tecken } from './religion';
 import { notis } from './notiser';
 
@@ -46,7 +46,7 @@ export const MOTGANG = balans('motgang', {
 // (0 istid, 1 vår, 2 sommar, 3 höst), chans: att den kommer en sådan tidsålder, varsel: att de äldsta anar den,
 // text: vad som händer (när musen är över symbolen), anar: vad den som anar den tänker, borjar och slutar: händelseloggen,
 // tid: när den pågår i tidsåldern som börjar vid start, om den inte pågår hela tidsåldern (tornadon)
-interface MotgangDef { namn: string; tecken: string; ikon: string; tider: number[]; chans: number; varsel?: true; text: string; anar: string; borjar: string; slutar: string; tid?: (s: State, start: number) => { fran: number; till: number } }
+interface MotgangDef { namn: string; tecken: string; ikon: string; tider: number[]; chans: number; varsel?: true; text: string; anar: string; borjar: string; slutar: string; tid?: (s: State, start: number) => { fran: number; till: number }; borjarNu?: (s: State, start: number) => string }
 export const MOTGANGAR = {
   hardVinter: {
     namn: 'Hård vinter', tecken: '🥶', ikon: 'm_hardVinter', tider: [0], chans: 0.2, varsel: true,
@@ -76,6 +76,7 @@ export const MOTGANGAR = {
     borjar: 'En tornado kommer. Himlen är svart och det dånar.',
     slutar: 'Tornadon har dragit förbi.',
     tid: (s: State, start: number) => tornadoTid(s, start),
+    borjarNu: (s: State, start: number) => tornadoStorlek(s, start) === 'stor' ? 'En stor tornado kommer. Himlen är svart och det dånar.' : 'En tornado kommer. Himlen är svart och det dånar.', // steg 6.4.15
   },
 } satisfies Record<string, MotgangDef>;
 export type MotgangId = keyof typeof MOTGANGAR;
@@ -198,8 +199,9 @@ export function stepMotgang(s: State) {
   if (nu && m.pagar?.t !== nu.start) {
     m.pagar = { k: nu.id, t: nu.start, dog: deadCount(s) };
     count(s, 'motgang_' + nu.id);
-    log(s, DEF[nu.id].borjar, 'world'); notis(s, 'motgang', DEF[nu.id].borjar);
-    kronika(s, `År ${yearNo(s)}: ${DEF[nu.id].borjar.split('.')[0]}.`, 'motgang');
+    const borjar = DEF[nu.id].borjarNu?.(s, nu.start) ?? DEF[nu.id].borjar;
+    log(s, borjar, 'world'); notis(s, 'motgang', borjar);
+    kronika(s, `År ${yearNo(s)}: ${borjar.split('.')[0]}.`, 'motgang');
     allaBarn(s, nu.id);
   }
   for (const p of s.people) if (p.varsel && (!alive(p) || p.varsel.t < s.now - DAY * 7)) delete p.varsel;

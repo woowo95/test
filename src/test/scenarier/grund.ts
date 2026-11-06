@@ -1212,7 +1212,7 @@ SCENARIER.tornadokarna = {
   kor: () => {
     const s = createState(5, START);
     tandEld(s);
-    SIM.skickaTornado(s);
+    SIM.skickaTornado(s, 'medel');
     const t = s.tornado!, L = t.L, e = SIM.eldPlats(s);
     const ledig = (x: number, y: number) => SIM.vattenNu(s)[y * W + x] !== T.Vatten && !SIM.blocked(s, x, y) && !SIM.stationAt(s, x, y) && !SIM.bitAt(s, x, y) && Math.hypot(x - e.x, y - e.y) > 8;
     // fyra rutor mitt på banan (en ruta isär), långt från byn
@@ -1258,7 +1258,7 @@ SCENARIER.tornadonara = {
   kor: () => {
     const s = createState(5, START);
     tandEld(s);
-    SIM.skickaTornado(s);
+    SIM.skickaTornado(s, 'medel');
     const t = s.tornado!, L = t.L, e = SIM.eldPlats(s), g = groundOf(s), pos = (u: number) => SIM.tornadoPos(t, u);
     const fran = (x: number, y: number) => { let m = Infinity; for (let u = 0; u <= 1; u += 0.1 / L) m = Math.min(m, Math.hypot(pos(u).x - x - 0.5, pos(u).y - y - 0.5)); return m; };
     const anv: { x: number; y: number }[] = [];
@@ -1305,7 +1305,7 @@ SCENARIER.tornadoutkant = {
   kor: () => {
     const s = createState(5, START);
     tandEld(s);
-    SIM.skickaTornado(s);
+    SIM.skickaTornado(s, 'medel');
     const t = s.tornado!, L = t.L, e = SIM.eldPlats(s), g = groundOf(s), pos = (u: number) => SIM.tornadoPos(t, u);
     const fran = (x: number, y: number) => { let m = Infinity; for (let u = 0; u <= 1; u += 0.1 / L) m = Math.min(m, Math.hypot(pos(u).x - x - 0.5, pos(u).y - y - 0.5)); return m; };
     const anv: { x: number; y: number }[] = [];
@@ -1345,12 +1345,40 @@ SCENARIER.tornadoutkant = {
   },
 };
 
+SCENARIER.tornadostorlek = {
+  text: 'Steg 6.4.15: tornadon får en av tre storlekar, ungefär 5 av 10 små, 4 av 10 medel och 1 av 10 stora. En stor varar längre och fäller fler träd i stormen, och Händelser säger "En stor tornado kommer"',
+  kor: () => {
+    const s = createState(5, START);
+    const n: Record<string, number> = { liten: 0, medel: 0, stor: 0 };
+    let langre = 0, stora = 0, storStart = -1;
+    for (let k = 0; k < 400; k++) {
+      const start = START + k * 7 * DAY, st = SIM.tornadoStorlek(s, start);
+      n[st]++;
+      if (st === 'stor') {
+        stora++; if (storStart < 0) storStart = start;
+        const L = (b: number[]) => { let l = 0; for (let q = 2; q < b.length; q += 2) l += Math.hypot(b[q] - b[q - 2], b[q + 1] - b[q - 1]); return l; };
+        if (L(SIM.tornadoBana(s, start, 'stor')) >= L(SIM.tornadoBana(s, start, 'medel'))) langre++;
+      }
+    }
+    const text = storStart >= 0 ? SIM.MOTGANGAR.tornado.borjarNu(s, storStart) : '';
+    // stormen: samma tornado som stor och som medel, på samma karta
+    const fallda = (st: 'medel' | 'stor') => { const x = createState(5, START); SIM.skickaTornado(x, st); for (let i = 0; i < 400 && x.tornado; i++) step(x, 5); return x.stat?.['tornado storm'] ?? 0; };
+    const fm = fallda('medel'), fs = fallda('stor');
+    return [
+      [`storlekarna av 400 tornador: ${n.liten} små, ${n.medel} medel och ${n.stor} stora`, n.liten > 160 && n.liten < 240 && n.medel > 120 && n.medel < 200 && n.stor > 20 && n.stor < 70],
+      [`en stor tornado går minst lika långt som en medelstor (${langre} av ${stora})`, stora > 0 && langre === stora],
+      [`en stor tornado fäller fler träd i stormen (${fs} mot ${fm})`, fs > fm],
+      [`Händelser: "${text}"`, text.startsWith('En stor tornado kommer')],
+    ];
+  },
+};
+
 SCENARIER.tornadogast = {
   text: 'Steg 6.4.12: rövarna och handlaren drabbas som byborna. En rövarflock mitt i tornadons väg dör, och en handlare i utkanten flyger en bit, tappar kanske något ur packningen och går hem',
   kor: () => {
     const s = createState(5, START);
     tandEld(s);
-    SIM.skickaTornado(s);
+    SIM.skickaTornado(s, 'medel');
     const r = SIM.skickaRovare(s, 3), hh = SIM.skickaHandlare(s);
     if (!r.ok || !hh.ok || !s.rovare || !s.handlare) return [[`rövarna och handlaren kom (${r.text}; ${hh.text})`, false]];
     const t = s.tornado!, L = t.L, pos = (u: number) => SIM.tornadoPos(t, u);

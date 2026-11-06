@@ -67,21 +67,29 @@ export const TORNADO = balans('tornado', {
   vind: 1, // det blåser så här mycket (0 till 1, vaderNu i vader.ts) medan den drar fram
 });
 
-// tornadons storlekar (steg 6.4.9 och 6.4.15), en rad var: hur stor del av tornadorna som har storleken, och zonerna i
-// hela rutor från mitten: kärnan (förstör allt), nära (stor skada) och utkanten (de vilda växterna, fälten, några träd)
+// tornadons storlekar (steg 6.4.9 och 6.4.15), en rad var: hur stor del av tornadorna som har storleken, zonerna i
+// hela rutor från mitten (kärnan förstör allt, nära ger stor skada och utkanten tar de vilda växterna, fälten och några
+// träd), hur länge den är på kartan (gånger min i TORNADO) och hur många träd stormen fäller (gånger stormTrad)
 export const TORNADOSTORLEKAR = {
-  liten: { namn: 'liten', andel: 0.5, zon: [0, 2, 3] },
-  medel: { namn: 'medel', andel: 0.4, zon: [1, 3, 6] },
-  stor: { namn: 'stor', andel: 0.1, zon: [2, 5, 9] },
+  liten: { namn: 'liten', andel: 0.5, zon: [0, 2, 3], tid: 1, storm: 1 },
+  medel: { namn: 'medel', andel: 0.4, zon: [1, 3, 6], tid: 1, storm: 1 },
+  stor: { namn: 'stor', andel: 0.1, zon: [2, 5, 9], tid: 1.5, storm: 3 },
 } as const;
 export type TornadoStorlek = keyof typeof TORNADOSTORLEKAR;
 export const zonerOf = (t: Tornado) => TORNADOSTORLEKAR[t.storlek ?? 'medel'].zon;
+// storleken på tornadon som börjar vid start, lottad efter andelarna (steg 6.4.15)
+export function tornadoStorlek(s: State, start: number): TornadoStorlek {
+  const u = motgangTal(s, start, 3870);
+  let acc = 0;
+  for (const [k, d] of Object.entries(TORNADOSTORLEKAR) as [TornadoStorlek, (typeof TORNADOSTORLEKAR)[TornadoStorlek]][]) { acc += d.andel; if (u < acc) return k; }
+  return 'medel';
+}
 
 // ett tal mellan 0 och 1 för tornadon som börjar vid start (salt skiljer talen åt)
 const tal = (s: State, start: number, salt: number) => motgangTal(s, start, salt);
 // banan för tornadon som börjar vid start: en bruten linje [x, y, x, y, …] från kartans kant, ur tiden (inte byn), så att den
 // går att räkna ut i förväg. Den går in mot kartan, rakt en bit och svänger, tills tiden är slut eller den går ut ur kartan
-export function tornadoBana(s: State, start: number): number[] {
+export function tornadoBana(s: State, start: number, storlek = tornadoStorlek(s, start)): number[] {
   const kant = tal(s, start, 3823) * 2 * (W + H);
   let x: number, y: number, inV: number;
   if (kant < W) { x = kant; y = 0; inV = Math.PI / 2; }
@@ -89,7 +97,7 @@ export function tornadoBana(s: State, start: number): number[] {
   else if (kant < 2 * W + H) { x = 2 * W + H - kant; y = H; inV = -Math.PI / 2; }
   else { x = 0; y = 2 * (W + H) - kant; inV = 0; }
   let v = inV + (2 * tal(s, start, 3824) - 1) * TORNADO.in;
-  const min = Math.round(TORNADO.min[0] + tal(s, start, 3822) * (TORNADO.min[1] - TORNADO.min[0]));
+  const min = Math.round((TORNADO.min[0] + tal(s, start, 3822) * (TORNADO.min[1] - TORNADO.min[0])) * TORNADOSTORLEKAR[storlek].tid);
   let kvar = min * 60 / TORNADO.fart;
   const bana = [x, y];
   for (let n = 0; kvar > 0 && n < 100; n++) {
@@ -114,9 +122,9 @@ export function tornadoTid(s: State, start: number) {
 // drar en tornado fram vid tiden t? (vädret, vader.ts)
 export const tornadoNu = (s: State, t = s.now) => motgangNu(s, t)?.id === 'tornado' || !!s.tornado?.test && t >= s.tornado.fran && t < s.tornado.till;
 
-function nyBana(s: State, start: number): Tornado {
-  const bana = tornadoBana(s, start), { fran, till } = tornadoTid(s, start);
-  return { start, fran, till, bana, L: banLangd(bana), u: 0, trad: 0, vagg: 0, lyft: 0, sonder: 0, skadade: 0 };
+function nyBana(s: State, start: number, storlek = tornadoStorlek(s, start)): Tornado {
+  const bana = tornadoBana(s, start, storlek), fran = tornadoTid(s, start).fran, till = fran + Math.round(banLangd(bana) * TORNADO.fart) * SEC;
+  return { start, storlek, fran, till, bana, L: banLangd(bana), u: 0, trad: 0, vagg: 0, lyft: 0, sonder: 0, skadade: 0 };
 }
 export interface Tornado { test?: 1; storlek?: TornadoStorlek; doda?: number; djur?: number; forstort?: number; start: number; fran: number; till: number; bana: number[]; L: number; u: number; trad: number; vagg: number; lyft: number; sonder: number; skadade: number; traff?: number[]; lyftRutor?: number[]; tagna?: number[]; flyg?: Flygt[]; storm?: number[]; stormN?: number }
 // det som flyger (steg 6.4.13, bara för bilden): slaget (en sak, 'folk' eller 'glod'), varifrån, vart och när
@@ -159,15 +167,15 @@ function narmastPa(t: Tornado, x: number, y: number) {
 // testläget (steg 6.4.7): en tornado kommer nu från kartans kant, med en bana genom byn som en vanlig och lika lång tid över
 // kartan. Den gäller som en tornado i vädret och för larmet tills den gått över kartan. Går inte medan en tornado pågår
 export const tornadoHinder = (s: State) => s.tornado ? 'En tornado drar redan fram' : undefined;
-export function skickaTornado(s: State): { ok: boolean; text: string } {
+export function skickaTornado(s: State, storlek?: TornadoStorlek): { ok: boolean; text: string } {
   const h = tornadoHinder(s);
   if (h) return { ok: false, text: h };
-  const t = nyBana(s, s.now), tid = t.till - t.fran;
+  const t = nyBana(s, s.now, storlek), tid = t.till - t.fran;
   s.tornadoStig = undefined;
   t.fran = s.now; t.till = s.now + tid; t.test = 1;
   s.tornado = t;
   const e = bynsMitt(s), v = Math.atan2(t.bana[1] - e.y - 0.5, t.bana[0] - e.x - 0.5);
-  const text = `Testläget: en tornado kommer från ${STRECK[(Math.round(v / (Math.PI / 4)) + 8) % 8]} och är på kartan i ${Math.round(tid / MIN)} minuter`;
+  const text = `Testläget: en ${t.storlek === 'medel' ? 'medelstor' : t.storlek} tornado kommer från ${STRECK[(Math.round(v / (Math.PI / 4)) + 8) % 8]} och är på kartan i ${Math.round(tid / MIN)} minuter`;
   log(s, text + '.', 'world');
   return { ok: true, text };
 }
@@ -252,7 +260,7 @@ function stormen(s: State, t: Tornado, b: number) {
   const g = groundOf(s);
   if (!t.storm) {
     const v: number[] = [];
-    for (let i = 0; i < W * H; i++) if (g.trees[i] >= FOREST && ur(s, t, i, 3861) < TORNADO.stormTrad) v.push(i);
+    for (let i = 0; i < W * H; i++) if (g.trees[i] >= FOREST && ur(s, t, i, 3861) < TORNADO.stormTrad * TORNADOSTORLEKAR[t.storlek ?? 'medel'].storm) v.push(i);
     t.storm = v.sort((p, q) => stormU(s, t, p) - stormU(s, t, q) || p - q); t.stormN = 0;
   }
   let n = t.stormN ?? 0;

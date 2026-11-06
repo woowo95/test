@@ -2,8 +2,7 @@ import { Djur, FLYGTID, FYND, H, HOUR, SEC, W, ageIndex, brinnande, djurOf, fynd
 import { farg, fargTal } from '../palett';
 import { s, ui, vidNyBy } from './lage';
 import { Ikoner, TS, djurFx, djurMarkLayer, figurLayer, plantG, rokBakLayer } from './scen';
-import { brandBild, brandRok, tornadoBild } from './animation';
-import { ANIMTAKT } from '../animbilder'; // djuren står i figurLayer (steg 5.1.4.5)
+import { brandBild, brandRok, tornadoBild, tornadoFot } from './animation';
 import { jagade, samlaJakt } from './jakt';
 import { posOf } from './manniskor';
 import { OMRITA_MS } from './terrang';
@@ -105,7 +104,7 @@ export function drawAnimals() {
   for (const id of hallar.keys()) if (!riktade.has(id)) hallar.delete(id);
   // tornadon där den är (steg 3.8.4), foten mitt på banan, och lågorna där det brinner (steg 3.8.5): bildstilens animationer
   // (steg 5.1.9.1), tornadon som virvlar i åtta bilder och branden som slår ut i sex, med röken bakom alla lågorna
-  if (s.tornado) { const p = tornadoPos(s.tornado, tornadoAndel(s.tornado, ui.nu)); djurIkoner.add(tornadoBild(), Math.round(p.x * TS - ANIMTAKT.tornado.cx), Math.round(p.y * TS - ANIMTAKT.tornado.fot), 1); }
+  if (s.tornado) { const p = tornadoPos(s.tornado, tornadoAndel(s.tornado, ui.nu)), st = s.tornado.storlek ?? 'medel', f = tornadoFot(st); djurIkoner.add(tornadoBild(undefined, st), Math.round(p.x * TS - f.cx), Math.round(p.y * TS - f.fot), 1); } // i sin storlek (steg 6.4.15)
   ritaTornadoSpar();
   for (const [i] of brinnande(s)) {
     const x = (i % W) * TS, y = Math.floor(i / W) * TS;
