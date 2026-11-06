@@ -181,6 +181,7 @@ export function workOn(s: State, p: Person, b: Bit, dtSec: number, har = 0) {
   if (b.b < 1) return false;
   deliver(b, har, false);
   b.c = 1; b.forb = undefined; count(s, 'byggt_' + b.m); touch(s);
+  if (b.m === 'jord') stigAv(s, b.x, b.y); // jordgolvet är en stig inne (steg 7.3.2): gräset är borta och marken är bar
   if (b.k === 'vagg') clearTile(s, b);
   const h = husById(s, b.hus);
   if (h && !h.klar && h.varKlar === undefined && !h.byggare?.includes(p.id)) (h.byggare ??= []).push(p.id); // de som byggde (steg 4.5.4.9)
@@ -209,6 +210,10 @@ function glomKom(h: Hus, k: string, n: number) {
     h.kom![q] -= d; n -= d;
     if (h.kom![q] <= 1e-9) delete h.kom![q];
   }
+}
+// marken blir bar jord, som en upptrampad stig (jordgolvet, steg 7.3.2)
+function stigAv(s: State, x: number, y: number) {
+  groundOf(s).cover[y * W + x] = 0;
 }
 // utbyggnaden (steg 7.2.5): när den nya delen är byggd öppnas den gamla väggen, ruta för ruta med samma arbete: den blir golv.
 // Väggens material kommer tillbaka till den som äger huset (HUS.rivTillbaka). När de också är klara är huset ett större hus.

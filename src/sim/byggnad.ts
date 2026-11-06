@@ -25,7 +25,7 @@ type BitK = 'vagg' | 'golv' | 'oppning';
 // öppning (en rad i DORRAR), lera = när ett jordgolv som legat under vatten har torkat och blir jordgolv igen (steg 3.8.7, flod.ts)
 export interface Bit { id: number; x: number; y: number; k: BitK; m: string; b: number; mat: number; c: number; hus?: number; lp?: number; lm?: number; dorr?: string; lera?: number; forb?: 1 } // forb = en förbättring (steg 7.2.10): byggs på nivån Förbättra, inte Tak;
 // byggare = de som byggt en bit medan huset byggs första gången (steg 4.5.4.9), kom = var materialet kom ifrån (bygg.ts), fn = husets funktion (en rad i BYGGNADER, byggnader.ts; saknas = sovsal), ag = ägaren (ett familjehus), slag = vad ett förrådshus rymmer
-export interface Hus { id: number; namn: string; x: number; y: number; w: number; h: number; klar?: number; varKlar?: number; kom?: Record<string, number>; fn?: string; ag?: number; slag?: 'mat' | 'material'; tom?: number; byggare?: number[]; rumFn?: Record<string, string>; ut?: { x: number; y: number; w: number; h: number; oppnas: [number, number, string][] } } // ut = utbyggnaden som pågår (steg 7.2.5): husets nya mått och väggen som öppnas sist; // rumFn = funktionen per rum när den skiljer sig från husets (steg 7.2.1, rumFnId i byggnader.ts), med rummets minsta ruta som nyckel; tom = sedan när ingen sover i sovsalen; varKlar = när huset först blev färdigt, sparat när en vägg rasar (klar nollas då)
+export interface Hus { id: number; namn: string; x: number; y: number; w: number; h: number; klar?: number; varKlar?: number; kom?: Record<string, number>; fn?: string; ag?: number; slag?: 'mat' | 'material'; tom?: number; byggare?: number[]; rumFn?: Record<string, string>; skjul?: 1; ut?: { x: number; y: number; w: number; h: number; oppnas: [number, number, string][] } } // ut = utbyggnaden som pågår (steg 7.2.5): husets nya mått och väggen som öppnas sist; // rumFn = funktionen per rum när den skiljer sig från husets (steg 7.2.1, rumFnId i byggnader.ts), med rummets minsta ruta som nyckel; tom = sedan när ingen sover i sovsalen; varKlar = när huset först blev färdigt, sparat när en vägg rasar (klar nollas då)
 // per material: vad som går åt per ruta, timmar för en ovan byggare (riktlinjen, steg 2.12.8: 20 minuter per vägg, 5 per ruta
 // jordgolv och 10 trägolv; slaget är k, se TIDSLAG i tider.ts), slitage per timme, hur bra väggen håller värmen.
 // storm = hur illa tornadon river väggen (tornado.ts; 1 om inget sägs).
@@ -33,6 +33,7 @@ export interface Hus { id: number; namn: string; x: number; y: number; w: number
 export interface Material { namn: string; k: BitK; item?: string; n: number; tim: number; slit: number; isol?: number; storm?: number; brinner?: number; tek?: string; farg: number; ikon?: string } // brinner = hur lätt väggen eller golvet tar eld (eldsvådorna, brand.ts); ett golv som brunnit blir jordgolv
 export const MATERIAL: Record<string, Material> = {
   timmer: { namn: 'Timmervägg', k: 'vagg', item: 'ved', n: 5, tim: 20 / 60, slit: 0.0005, isol: 0.7, storm: 0.6, brinner: 1, tek: 'timmervagg', farg: 0x8a5e34, ikon: 'timmervagg' },
+  stolpe: { namn: 'Stolpe', k: 'vagg', item: 'ved', n: 2, tim: 10 / 60, slit: 0.0005, isol: 0, storm: 0.6, brinner: 1, tek: 'timmervagg', farg: 0x8a5e34, ikon: 'timmervagg' }, // bär skjulens tak (steg 7.3.1): tar en ruta och stänger vägen som en vägg. Platshållare: samma bild som väggen
   ris: { namn: 'Risvägg', k: 'vagg', item: 'grenar', n: 5, tim: 20 / 60, slit: 0.002, isol: 0.55, storm: 1.5, brinner: 1.5, farg: 0x6b4a2a, ikon: 'risvagg' }, // äldre sparfiler: risväggar byggs inte längre men kan lagas
   jord: { namn: 'Jordgolv', k: 'golv', n: 0, tim: 5 / 60, slit: 0, farg: 0x7a5a3a },
   tra: { namn: 'Trägolv', k: 'golv', item: 'ved', n: 1, tim: 10 / 60, slit: 0.0002, brinner: 1, tek: 'timmervagg', farg: 0xa07446, ikon: 'tragolv' },
@@ -76,7 +77,7 @@ export const touch = (s: State) => { s.byggV = (s.byggV ?? 0) + 1; };
 
 // ---------- rutnätet: vad som står var, och vilka rum det blir ----------
 export interface Rum { id: number; tiles: number[]; walls: number[]; open: number; hus?: number }
-interface Grid { v: number; at: Map<number, Bit>; solid: Uint8Array; tak: Int32Array; rooms: Rum[] }
+interface Grid { v: number; at: Map<number, Bit>; solid: Uint8Array; tak: Int32Array; rooms: Rum[]; skjul: Uint8Array }
 const grids = new WeakMap<State, Grid>();
 export function gridOf(s: State): Grid {
   const v = s.byggV ?? 0;
@@ -118,7 +119,10 @@ export function gridOf(s: State): Grid {
     for (const i of r.tiles) tak[i] = r.id;
     rooms.push(r);
   }
-  g = { v, at, solid, tak, rooms };
+  // skjulen (Skjul i designdokumentet): ett tak utan väggar när alla stolpar är klara. Taket skyddar mot väta men räknas inte som ett rum mot kylan
+  const skjul = new Uint8Array(W * H);
+  for (const h of housesOf(s)) if (h.skjul && h.klar) for (let y = h.y; y < h.y + h.h; y++) for (let x = h.x; x < h.x + h.w; x++) if (inMap(x, y)) skjul[y * W + x] = 1;
+  g = { v, at, solid, tak, rooms, skjul };
   grids.set(s, g);
   const gr = groundOf(s); gr.solid = solid; gr.built = built;
   return g;
@@ -146,7 +150,8 @@ export function roomAt(s: State, x: number, y: number): Rum | undefined {
   const g = gridOf(s), r = g.tak[tileOf(x, y)];
   return r >= 0 ? g.rooms[r] : undefined;
 }
-export const roofed = (s: State, x: number, y: number) => !!roomAt(s, x, y);
+export const roofed = (s: State, x: number, y: number) => !!roomAt(s, x, y) || underSkjul(s, x, y);
+export const underSkjul = (s: State, x: number, y: number) => inMap(x, y) && gridOf(s).skjul[tileOf(x, y)] === 1;
 // hur väl rummet håller värmen: väggarnas material och skick, sämre för varje öppning (mindre när en dörr hänger där)
 export function insulation(s: State, r: Rum) {
   const g = gridOf(s);

@@ -126,7 +126,7 @@ export const kvText = (t: { q?: number }) => kvOf(t) === NORMAL ? kvNamn(t) : `$
 // hållbarheten som en liten cirkel (steg 6.9.6): fylld efter hur hel saken är, med procenten när man håller över den
 export const hallCirkel = (c: number) => `<span class="hall${c < LAG.skick ? ' low' : ''}" title="Hållbarhet ${Math.round(c * 100)} %" aria-label="Hållbarhet ${Math.round(c * 100)} %">${framstegSvg(c, 5)}</span>`;
 export const kvMark = (t: { q?: number }, size = 10) => { const m = kvSvg(t.q, size); return m && `<span class="kvm" title="${esc(kvText(t))}">${m}</span>`; };
-export const pileTxt = (p: { k: string; n: number; max: number; gor?: string; klar?: number; q?: number }) => p.gor ? `${iconImg(p.gor)}${framstegSvg(p.klar ?? 0)}${sakNamn(p.gor)} (inte klar, ${Math.round((p.klar ?? 0) * 100)} %)` : `${iconImg(p.k)}${kvMark(p)}${sakNamn(p.k)}${p.max === 1 ? '' : ` ${fmtN(p.n)} st`}`;
+export const pileTxt = (p: { k: string; n: number; max: number; gor?: string; klar?: number; q?: number; blot?: 1 }) => p.blot ? `💧 ${iconImg(p.k)}${sakNamn(p.k)} ${fmtN(p.n)} st (blöt)` : p.gor ? `${iconImg(p.gor)}${framstegSvg(p.klar ?? 0)}${sakNamn(p.gor)} (inte klar, ${Math.round((p.klar ?? 0) * 100)} %)` : `${iconImg(p.k)}${kvMark(p)}${sakNamn(p.k)}${p.max === 1 ? '' : ` ${fmtN(p.n)} st`}`;
 // vad en person bär, vad det väger och hur mycket hen orkar (steg 2.3.1)
 // det p bär vid tiden som visas (uppgiftVid, steg 6.1.1), som kartan
 export function carryTxt(p: Person) {

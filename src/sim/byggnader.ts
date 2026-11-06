@@ -1,8 +1,9 @@
 import { KROPP, alive, byId, count, familjOf, living, log } from './folk';
-import { Hus, MATERIAL, Rum, bitById, bitsOf, gridOf, housesOf, husById, shelterOf, touch } from './byggnad';
+import { Hus, MATERIAL, Rum, bitById, bitsOf, gridOf, housesOf, husById, roofed, shelterOf, touch } from './byggnad';
+import { ageIndex, kallTid } from './tid';
 import { heatAt } from './eld';
 import { eldPlats } from './karta';
-import { changed, enPerRuta, ownedAll, put, storeFull, zonesOf } from './lager';
+import { changed, enPerRuta, ownedAll, put, stacksOf, storeFull, zoneAt, zonesOf } from './lager';
 import { kronika } from './historik';
 import { DAY, HOUR, W } from './typer';
 import { tingOf } from './agande';
@@ -35,6 +36,9 @@ export const HUS = balans('hus', {
   rivTillbaka: 0.5, // så mycket av materialet kommer tillbaka när ett hus rivs
   varmeMarg: 0.02, // ett samlingshus räknas som varmare än elden även om det är så här mycket kallare ...
   varmeY: 2.9, // ... mätt så här många rutor söder om elden
+  torkhusFran: 2, // så många torkställningar ute innan byn vill ha ett torkhus (steg 7.3.5)
+  vedbodFran: 40, // så mycket ved ute utan tak innan byn vill ha en vedbod (steg 7.3.6)
+  skjulAkut: 0.25, // hur akut ett skjul är (0 till 1), dubbelt så akut inför vintern för vedboden
   salAkut: 0.3, // hur akut det är med en samlingssal när byn har en scen (0 till 1, steg 7.2.7) ...
   salMin: 8, // ... och så många rutor den har minst
   verkstadHyllor: 2, // en lagerplats med det stationerna använder för så här många stationer i verkstaden (steg 7.2.9)
@@ -57,6 +61,7 @@ export interface Byggnad {
   fara: boolean; // behovet är en fara (kylan): går före all bekvämlighet
   vikt: number; // hur viktigt behovet är bland dem som är lika farliga
   sover?: boolean; // man sover här
+  skjul?: boolean; // ett tak utan väggar, med stolpar (steg 7.3.5)
   lager?: boolean; // golvet är en lagerplats under tak: det som ligger där ruttnar och slits mindre (LAGER.inne i lager.ts)
   akut?: (s: State) => Akut; // saknas: byn planerar inga nya hus för det
   namnFor?: (s: State, w: number, h: number, same: number, a: Akut) => string; // det nya husets namn
@@ -97,6 +102,17 @@ export const BYGGNADER = {
     akut: s => stationerOf(s).some(t => t.k === 'scen' && isKlar(t)) && !housesOf(s).some(h => h.fn === 'samling') ? { v: HUS.salAkut, plats: Math.max(HUS.salMin, living(s).length) } : { v: 0, plats: 0 },
     namnFor: (_s, _w, _h, same) => same ? `Samlingshus ${same + 1}` : 'Samlingshuset',
   },
+  // skjulen (steg 7.3.5 och 7.3.6): ett tak utan väggar över det som redan står. Byggs av Byggplanens åtgärd skjul (byggplan.ts)
+  torkhus: {
+    namn: 'Torkhus', ikon: 'tork', behov: 'Under tak torkar maten i alla väder', fara: false, vikt: 0.8, skjul: true,
+    akut: s => torkUte(s).length >= HUS.torkhusFran ? { v: HUS.skjulAkut, plats: 0 } : { v: 0, plats: 0 },
+    namnFor: (_s, _w, _h, same) => same ? `Torkhus ${same + 1}` : 'Torkhuset',
+  },
+  vedbod: {
+    namn: 'Vedbod', ikon: 'ved', behov: 'Under tak blir veden aldrig blöt och torkar fortare', fara: false, vikt: 0.8, skjul: true,
+    akut: s => { const n = vedUte(s).reduce((a, q) => a + q.n, 0); return n >= HUS.vedbodFran ? { v: HUS.skjulAkut * (kallTid(ageIndex(s)) ? 2 : 1), plats: 0 } : { v: 0, plats: 0 }; },
+    namnFor: (_s, _w, _h, same) => same ? `Vedbod ${same + 1}` : 'Vedboden',
+  },
   verkstad: {
     namn: 'Verkstad', ikon: 'verkstad', behov: 'Plats inne för en station som inte får plats i något annat hus (slöjdbänken)', fara: false, vikt: 1,
     // steg 2.2.17: byn vill bygga en station som står inne, men inget hus har plats för den (sovsalarna är fulla och i ett
@@ -111,6 +127,9 @@ export const BYGGNADER = {
     namnFor: (_s, _w, _h, same) => same ? `Verkstad ${same + 1}` : 'Verkstaden',
   },
 } satisfies Record<string, Byggnad>;
+// torkställningarna ute utan tak, och vedhögarna ute i lagret utan tak
+export const torkUte = (s: State) => stationerOf(s).filter(t => t.k === 'tork' && isKlar(t) && !roofed(s, t.x, t.y));
+export const vedUte = (s: State) => stacksOf(s).filter(a => a.k === 'ved' && zoneAt(s, a.x, a.y) >= 0 && !roofed(s, a.x, a.y));
 export type Fn = keyof typeof BYGGNADER;
 export const FN = Object.keys(BYGGNADER) as Fn[];
 export const fnId = (h: Hus): Fn => (h.fn ?? 'sovsal') as Fn; // husets funktion; hus från äldre sparfiler är sovsalar

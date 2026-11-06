@@ -114,6 +114,7 @@ export const GREN = 0.4; // en gren ger lika mycket bränsle som 0,4 ved: grenar
 export interface Thought { text: string; v: number; until: number }
 // Det en person håller på med (p.task, sparas med personen). Fälten utan frågetecken finns alltid
 export interface Task {
+  blotVed?: number; // så stor del av veden som bärs som är blöt (steg 7.3.4)
   act: Act; // handlingen (handlingar.ts)
   phase: 'go' | 'do' | 'back'; // på väg dit, arbetar där, på väg hem med det som bärs
   tx: number; ty: number; // platsen man går till och arbetar på
@@ -393,6 +394,7 @@ export interface Historik { tal: string[]; tim: number[][]; dygn: number[][]; kr
 export type RikRad = [number, number, number, number, Record<string, number>, Record<string, number>];
 export interface FireLog { t: number; k: 'tänd' | 'fyll' | 'slocknade' | 'glöd' | 'sprack'; id?: number; n?: number }
 export interface Fire {
+  blot?: number; // så stor del av bränslet som är blött (steg 7.3.4)
   hearth: string; fuel: number; lit: boolean; emberUntil?: number; ring?: boolean; // ringen av stenar runt eldplatsen
   litAt?: number; litBy?: number; burned: number; // denna eld
   totalBurned: number; litSec: number; lightings: number; outs: number;

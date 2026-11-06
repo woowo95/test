@@ -1159,3 +1159,42 @@ SCENARIER.byggplan2 = {
     ];
   },
 };
+
+SCENARIER.skjul = {
+  text: 'Steg 7.3.1–7.3.6: stolpen, jordgolvet som en stig, blöt ved och skjulen. Två torkställningar ute ger ett torkhus, mycket ved ute en vedbod: ett tak med stolpar, och under det blir veden aldrig blöt',
+  kor: () => {
+    const s = createState(6, START);
+    klockan(s); byggare(s);
+    const st = SIM.MATERIAL.stolpe, stolpen = st.k === 'vagg' && st.item === 'ved' && st.n === 2 && st.tek === 'timmervagg';
+    SIM.planBuild(s); byggKlart(s);
+    const hu = housesOf(s)[0], z = SIM.zonesOf(s)[0];
+    (s.stationer ??= []).push({ id: s.nextBit!++, k: 'tork', x: hu.x + hu.w + 6, y: hu.y, kvar: 0 } as SIM.Station, { id: s.nextBit!++, k: 'tork', x: hu.x + hu.w + 9, y: hu.y, kvar: 0 } as SIM.Station);
+    SIM.touch(s);
+    const behovTork = SIM.byggbehov(s).find(b => b.fn === 'torkhus');
+    s.byggBehov = undefined; SIM.planBuild(s);
+    const t = housesOf(s).find(h => h.fn === 'torkhus'), stolpar = t ? bitsOf(s).filter(b => b.hus === t.id && b.m === 'stolpe').length : 0;
+    if (t) { for (const b of bitsOf(s)) if (b.hus === t.id) { b.mat = 2; b.b = 1; } t.klar = s.now; SIM.touch(s); }
+    const under = t ? SIM.roofed(s, t.x + 1, t.y + 1) && !SIM.roomAt(s, t.x + 1, t.y + 1) : false;
+    // blöt ved
+    SIM.setAmount(s, 'ved', 0);
+    put(s, 'ved', 8);
+    const a = SIM.stacksOf(s).find(q => q.k === 'ved')!;
+    const v = SIM.vaderNu(s); v.nb = 1; v.sno = false; v.lage = 'regn';
+    const nb = SIM.nederbord(s);
+    SIM.stepBlotVed(s, 3600 * 2);
+    const blot = a.blot === 1, torrFore = SIM.torrVed(s);
+    v.nb = 0; v.lage = 'klart';
+    SIM.stepBlotVed(s, 3600 * 200);
+    const torr = a.blot === undefined, torrEfter = SIM.torrVed(s);
+    return [
+      ['stolpen är en byggdel som stänger vägen och kostar 2 ved, och låses upp av Timmerhus', stolpen],
+      ['två torkställningar ute: byn vill ha ett torkhus', !!behovTork],
+      [`Byggplanen sätter upp ett skjul med stolpar (${stolpar})`, !!t && stolpar >= 4],
+      ['under skjulet är det tak men inget rum', under],
+      [`ved ute i regnet blir blöt (${nb})`, !nb || blot],
+      [`torr ved räknas för sig (${torrFore} → ${torrEfter})`, torrEfter >= torrFore],
+      ['när det slutat regna torkar den', torr],
+      ['ett hus med zon utanför påverkas inte', !!z],
+    ];
+  },
+};

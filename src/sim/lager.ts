@@ -77,7 +77,7 @@ export const LAGER = balans('lager', {
 // hus = lagerplatsen är golvet i ett förrådshus (byggnader.ts): den växer och krymper inte och räknas inte bland de vanliga
 export interface Zone { x: number; y: number; w: number; h: number; namn?: string; slag?: 'mat' | 'material'; prio?: number; hus?: number; tom?: number; rojs?: boolean } // tom: sedan när lagerplatsen stått halvtom (tidyStore); rojs: lagd i skogen, träden fälls (steg 3.6.9)
 // dold: det som ligger gömt i stacken (giftig svamp bland svampen, saker.ts: i)
-interface Stack { k: string; n: number; c: number; x: number; y: number; ag?: Del; dold?: number; gor?: string; klar?: number; id?: number; q?: number } // gor = vad ett påbörjat redskap ska bli (paborjat.ts), klar = hur mycket av det som är gjort, id = tinget när stacken är ett redskap, q = dess kvalitet
+interface Stack { k: string; n: number; c: number; x: number; y: number; blot?: 1; vat?: number; tork?: number; ag?: Del; dold?: number; gor?: string; klar?: number; id?: number; q?: number } // gor = vad ett påbörjat redskap ska bli (paborjat.ts), klar = hur mycket av det som är gjort, id = tinget när stacken är ett redskap, q = dess kvalitet
 // en stack som den visas: out = utanför lagerplatserna, stored = hör till byns förråd (i lagret eller precis bredvid)
 export interface Pile extends Stack { max: number; out: boolean; stored: boolean; zone: number }
 const DOLD = SAK_LIST.filter(k => SAKER[k]!.i); // slag som ligger gömda i andra stackar
@@ -554,7 +554,7 @@ function takeOwn(s: State, k: string, n: number, p?: Person, common = false, fra
   const ag: Del = {};
   let got = 0, cw = 0, tagna = 0;
   if (n > 1e-12) {
-    const dold = !!SAKER[k]?.i, list = dold ? stored(s, SAKER[k]!.i!).filter(a => a.dold).sort((a, b) => b.dold! - a.dold!) : stored(s, k), shares: Del = { [BYN]: 0 };
+    const dold = !!SAKER[k]?.i, list = dold ? stored(s, SAKER[k]!.i!).filter(a => a.dold).sort((a, b) => b.dold! - a.dold!) : k === 'ved' ? [...stored(s, k)].sort((a, b) => (a.blot ?? 0) - (b.blot ?? 0)) : stored(s, k), shares: Del = { [BYN]: 0 };
     if (dold) for (const a of list) shares[BYN] += a.dold!; // det gömda är byns
     else for (const a of list) { shares[BYN] += a.n - sumOf(a.ag); addDel(shares, a.ag); }
     for (const o in s.delar ?? {}) { const v = pabörjat(s, +o, k); if (v > 0 && (+o === BYN || !dold)) shares[+o] = (shares[+o] ?? 0) + v; }

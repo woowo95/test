@@ -1,5 +1,6 @@
 import { rumVila } from './rum';
 import { stepByggplan } from './byggplan';
+import { stepBlotVed } from './blotved';
 import { stepUppvaxt, upplev } from './uppvaxt';
 import { stepReligion } from './religion';
 import { stepMotgang } from './motgang';
@@ -59,7 +60,7 @@ import { bristSteg, frysFaktor, naringSjunker, skorbjugg, trottFaktor } from './
 import { stepByggnader } from './byggnader';
 import { sumOf } from './egendom';
 import { avail, takeForHouse, buildJob, finishDorr, needOf, noteKom, siteOf, toWalls, wearBuild, workOn } from './bygg';
-import { MATERIAL, bitById, blocked, freeNear, gridOf, roomAt, shelterOf } from './byggnad';
+import { MATERIAL, bitById, blocked, freeNear, gridOf, roomAt, roofed, shelterOf } from './byggnad';
 import { histParts, historikSteg, joinHist } from './historik';
 import { migrate } from './varld';
 import { stepDelning } from './delning';
@@ -244,6 +245,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   brinnerSteg(s, dtSec); // den som brinner (brand.ts, steg 6.4.16)
   // förråd: ruttning och ved
   wearStore(s, dtSec); // slitage per slag, fortare utanför lagret
+  stepBlotVed(s, dtSec); // veden blir blöt och torkar (steg 7.3.4)
   stepFire(s, dtSec, ppl);
   const fh = hearthOf(s.fire), temp = temperature(s), coldRate = coldOf(temp);
   const learn = 1 + 0.1 * s.seder.v.nyfikenhet; // en nyfiken by lär sig snabbare
@@ -360,7 +362,7 @@ function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: numb
   bristSteg(p, now);
   p.rest = clamp(p.rest + dtSec / HOUR_S * vilaTim(p, vs), 0, 1);
   { // regnet blöter den som är ute; man torkar inne och vid elden (steg 2.11.1)
-    const ute = !roomAt(s, p.x, p.y);
+    const ute = !roofed(s, p.x, p.y); // också under ett skjul håller man sig torr (Skjul i designdokumentet)
     blotSteg(s, p, ute, ute && groundOf(s).trees[tileOf(p.x, p.y)] > KROPP.skugga, heatAt(s, p.x, p.y) > KROPP.eldNara, dtSec / HOUR_S);
     if ((p.blot ?? 0) > VADER.blotTanke) think(p, 'Blöt av regnet', -0.05, now, HOUR);
   }
