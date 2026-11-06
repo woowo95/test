@@ -348,6 +348,8 @@ SCENARIER.bostad = {
 
 SCENARIER.bygg = {
   text: 'Byn bygger själv ett timmerhus en bit från elden när någon kan det och sovplatser saknas: träden där huset ska stå fälls först och blir väggar, väggar stänger vägen, golvet under tak blir sovplatser, rummet håller värmen, och slitna väggar lagas eller rasar',
+  lang: true,
+  env: { BALANS: 'brand.gnista=0' }, // ingen gnista från elden: en brand kan bränna byn (steg 6.4.1), och här prövas bygget
   kor: () => {
     // handbyggt rum: 4×4 väggar med en öppning, 2×2 golv inuti
     const s = createState(5, START), f = getMap(s.seed).fire;

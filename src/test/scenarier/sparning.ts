@@ -46,6 +46,7 @@ SCENARIER.historik = {
 
 SCENARIER.notisispelet = {
   text: 'Notiserna i spelet (steg 5.4.3.3): det som händer i byn (födslar, död, ny kunskap, nya hus, flyttar, ledare, faror) blir notiser, och de ligger kvar när byn laddas igen',
+  lang: true,
   kor: () => {
     const s = createState(3, START);
     for (let i = 0; i < 8 * STEG_DYGN; i++) step(s, BEAT);
