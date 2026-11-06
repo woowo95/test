@@ -285,6 +285,10 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 .tinfo .tank { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; align-items: center; font-size: 13px; margin-top: 4px; }
 .sedtop { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
 /* sederna som köpmansvågar (steg 5.3.3.3, sedVag i flikar/seder.ts): balken, foten och två skålar; vikterna i senap */
+/* allt en person äger (steg 6.9.11): symbol, namn, antal, kvalitet, hållbarhet och värdet sist */
+.agtab { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+.agtab td { padding: 2px 4px; vertical-align: middle; } .agtab td:first-child { width: 18px; padding-left: 0; } .agtab td:nth-child(2) { width: 100%; }
+.agtab .tal { text-align: right; white-space: nowrap; } .agtab .hall, .agtab .kvm { display: inline-flex; vertical-align: middle; }
 /* köpmansvågen (steg 6.9.9): orden vid ändarna och vågen ritad i punkter i mitten (vagSvg i ui/framsteg.ts) */
 .sedvag { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; margin: 2px 0; }
 .sedvag .sedord { font-size: 15px; line-height: 1.15; min-width: 0; hyphens: auto; overflow-wrap: anywhere; }

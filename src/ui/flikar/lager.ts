@@ -1,16 +1,11 @@
 import { LAGER, condOf, lagerHinder, living, sakNamn, zonesOf } from '../../sim';
-import { carryTxt, esc, hjalpKnapp, hjalpText, pLink, pileTxt } from '../hjalp';
+import { carryTxt, esc, hallCirkel, hjalpKnapp, hjalpText, pLink, pileTxt } from '../hjalp';
 import { outPilesAt, piles, s, ui, uppgiftVid } from '../lage';
 import type { Flik } from '../panel';
 import { grafHtml } from '../graf';
 import { frystAttr, sakAttr } from './sak';
 import { taBortLagerITest } from '../testborta';
-import { framstegSvg } from '../framsteg';
 
-// hållbarheten som en liten cirkel (steg 6.9.6): fylld efter hur hel saken är, med procenten när man håller över den
-const hallCirkel = (c: number) => `<span class="hall${c < 0.5 ? ' low' : ''}" title="Hållbarhet ${Math.round(c * 100)} %" aria-label="Hållbarhet ${Math.round(c * 100)} %">${framstegSvg(c, 5)}</span>`;
-
-// en lagerplats: öppnas genom att trycka på den på kartan. Varje stack för sig, med sitt skick
 export const lager: Flik = {
   namn: 'Lagret',
   knapp: 'person',

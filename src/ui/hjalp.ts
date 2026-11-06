@@ -123,6 +123,8 @@ export function ansStapel(om: number) {
 // kvaliteten (steg 2.2.2): nivån och vad den gör jämfört med en normal sak, för texten när musen är över märket (kvSvg)
 const procent = (x: number) => `${x >= 1 ? '+' : '−'}${Math.round(Math.abs(x - 1) * 100)} %`;
 export const kvText = (t: { q?: number }) => kvOf(t) === NORMAL ? kvNamn(t) : `${kvNamn(t)}: håller ${procent(kvHaller(t))}, värde ${procent(kvVarde(t))}, fungerar ${procent(kvEffekt(t))}`;
+// hållbarheten som en liten cirkel (steg 6.9.6): fylld efter hur hel saken är, med procenten när man håller över den
+export const hallCirkel = (c: number) => `<span class="hall${c < LAG.skick ? ' low' : ''}" title="Hållbarhet ${Math.round(c * 100)} %" aria-label="Hållbarhet ${Math.round(c * 100)} %">${framstegSvg(c, 5)}</span>`;
 export const kvMark = (t: { q?: number }, size = 10) => { const m = kvSvg(t.q, size); return m && `<span class="kvm" title="${esc(kvText(t))}">${m}</span>`; };
 export const pileTxt = (p: { k: string; n: number; max: number; gor?: string; klar?: number; q?: number }) => p.gor ? `${iconImg(p.gor)}${framstegSvg(p.klar ?? 0)}${sakNamn(p.gor)} (inte klar, ${Math.round((p.klar ?? 0) * 100)} %)` : `${iconImg(p.k)}${kvMark(p)}${sakNamn(p.k)}${p.max === 1 ? '' : ` ${fmtN(p.n)} st`}`;
 // vad en person bär, vad det väger och hur mycket hen orkar (steg 2.3.1)

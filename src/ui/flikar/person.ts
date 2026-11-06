@@ -1,12 +1,12 @@
 import { klanById, FORMAGOR, gangDelar, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
-import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, handOrkar, handPlatser, capacity, kvNamn, handerFor, load, utrustning, bordaIHander, type IHanden, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, timeLabel, vidBordet, upplevelseText, uppEffekt, vuxenUpp, Upplevelse, yrkeNamn, andlighet, troOf, tolkning, teckenText, troNamn, pratarMed, gastRelationer, actIkon, utbIkon, AMNEN, type ByteMinne, type GastRel, type Slakting } from '../../sim';
+import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, handOrkar, handPlatser, capacity, kvNamn, handerFor, load, utrustning, bordaIHander, type IHanden, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, timeLabel, vidBordet, upplevelseText, uppEffekt, vuxenUpp, Upplevelse, yrkeNamn, andlighet, troOf, tolkning, teckenText, troNamn, pratarMed, gastRelationer, actIkon, utbIkon, AMNEN, type ByteMinne, type GastRel, type Slakting, stacksOf, grundvarde, tingVarde, housesOf, husVarde } from '../../sim';
 import { gorText } from '../jakt';
 import { figurSvg, portrattImg } from '../folkbild';
 import { FARGER, farg } from '../../palett';
 import { skapad } from '../utseende';
 import { hasIcon, iconImg, kvSvg, tecknet } from '../../ikoner';
 import { framstegSvg, ringSvg, tartFarg, tartSvg } from '../framsteg';
-import { LAG, byteKnapp, clockTxt, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, cssFarg, durTxt, esc, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
+import { LAG, byteKnapp, hallCirkel, kvMark, clockTxt, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, cssFarg, durTxt, esc, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
 import { s, ui, uppgiftVid } from '../lage';
 import { tekInfo } from './teknik';
 import { gastById, gastRad, type Gast } from '../gaster';
@@ -82,7 +82,7 @@ const DELAR: Del[] = [
   { id: 'egen', tecken: '{sym_egenskaper}', namn: 'Egenskaper', html: egenHtml, kort: egenKort, gast: gastEgen },
   { id: 'tid', tecken: '🕓', namn: 'Tiden', levande: true, html: tidHtml, kort: tidKort, gast: gastTid },
   { id: 'utr', tecken: '🎒', namn: 'Utrustning', levande: true, html: p => `<p class="muted">${carryTxt(p)}</p>${gearHtml(p)}`, kort: p => { const u = utrustning(s, p, false), n = PLATS_LIST.filter(k => u[k].ting).length; return n ? `${n} på sig` : 'Inget på sig'; }, gast: gastUtr },
-  { id: 'form', tecken: '💰', namn: 'Förmögenhet', html: p => `<dl class="kv">${formogenhetRad(p)}</dl>`, kort: p => String(Math.round(formogenhetDelar(s, p.id).sum)) },
+  { id: 'form', tecken: '💰', namn: 'Förmögenhet', html: formogenhetLista, kort: p => String(Math.round(formogenhetDelar(s, p.id).sum)) },
   { id: 'kun', tecken: '🧠', namn: 'Kunskap', html: knowledgeHtml, kort: p => { const n = Object.values(p.tek ?? {}).filter(v => v >= 1).length; return n === 1 ? '1 teknik' : `${n} tekniker`; }, gast: gastKun },
   { id: 'rel', tecken: '👥', namn: 'Relationer', html: relHtml, kort: p => { const n = s.people.filter(q => q.id !== p.id && alive(q) && s.rels[relKey(p.id, q.id)]).length; return `känner ${n}`; }, gast: gastRel },
   { id: 'ryk', tecken: '🗣️', namn: 'Rykten', html: ryktenHtml, kort: p => { const a = anseendeSym(s, p.id); return a === '😇' ? 'Gott anseende' : a === '😈' ? 'Dåligt anseende' : a ? 'Blandat anseende' : 'Inget rykte'; }, gast: gastRyk },
@@ -194,12 +194,23 @@ function livet(p: Person) {
   if (!barn.length && !vuxen.length) return '';
   return `<h3>Livet</h3>${barn.length ? `<p class="muted">Barndomen</p><ul class="fame">${barn.map(rad).join('')}</ul>` : ''}${vuxen.length ? `<p class="muted">Vuxenlivet</p><ul class="fame">${vuxen.map(rad).join('')}</ul>` : ''}`;
 }
-// förmögenheten (steg 3.6.4): värdet av allt hen äger, ungefär i arbetstimmar (varde.ts); delarna när man trycker
-function formogenhetRad(p: Person) {
-  const f = formogenhetDelar(s, p.id), id = `form-${p.id}`, v = (n: number) => String(Math.round(n));
-  const delar = ([['Redskap', f.redskap], ['Kläder', f.klader], ['I förrådet och kistan', f.forrad], ['Hus', f.hus]] as const).filter(x => x[1] >= 0.5);
-  return `<dt class="klick" data-hjalp="${id}" title="Värdet av allt hen äger" tabindex="0" role="button">Förmögenhet</dt><dd class="klick" data-hjalp="${id}">${v(f.sum)}</dd>
-    ${hjalpText(id, `<dd class="forkl"><ul class="thoughts">${delar.map(([n, x]) => `<li class="pos">${n} <span>${v(x)}</span></li>`).join('') || '<li>Äger inget</li>'}</ul><p class="muted">Ungefär i arbetstimmar: det det tar att skaffa eller göra sakerna.</p></dd>`)}`;
+// förmögenheten (steg 3.6.4, som en lista sedan steg 6.9.11): allt hen äger, som i ett lager: symbol, namn, antal, kvalitet,
+// hållbarhet och värdet sist (ungefär i arbetstimmar, varde.ts). Redskapen och kläderna en rad var, andelarna i förrådet en rad
+// per slag och husen. Summan står överst
+function formogenhetLista(p: Person) {
+  const v = (n: number) => String(Math.round(n));
+  type Rad = { ikon: string; namn: string; n: string; kv: string; c?: number; varde: number };
+  const rader: Rad[] = [];
+  for (const t of ownedBy(s, p)) rader.push({ ikon: iconImg(t.halv ? t.halv.gor : t.k, 16), namn: t.halv ? `${sakNamn(t.halv.gor)} (inte klar)` : sakNamn(t.k), n: '1', kv: t.halv ? '' : kvMark(t) ?? '', c: t.halv ? undefined : t.c, varde: tingVarde(t) });
+  const andel = new Map<string, { n: number; c: number }>();
+  for (const a of stacksOf(s)) { const m = a.ag?.[p.id] ?? 0; if (m <= 0) continue; const x = andel.get(a.k) ?? { n: 0, c: 0 }; x.n += m; x.c += m * a.c; andel.set(a.k, x); }
+  for (const [k, x] of andel) if (x.n >= 0.5) rader.push({ ikon: iconImg(k, 16), namn: sakNamn(k), n: fmtN(x.n), kv: '', c: x.c / x.n, varde: x.n * grundvarde(k) });
+  for (const h of housesOf(s)) if (h.ag === p.id) rader.push({ ikon: '<span class="tecken">🏠</span>', namn: 'Hus', n: '1', kv: '', varde: husVarde(s, h) });
+  rader.sort((a, b) => b.varde - a.varde);
+  const sum = formogenhetDelar(s, p.id).sum;
+  if (!rader.length) return '<p class="muted">Äger inget.</p>';
+  return `<p class="muted small" title="Ungefär i arbetstimmar: det det tar att skaffa eller göra sakerna">Värt ${v(sum)} sammanlagt.</p>
+    <table class="agtab"><tbody>${rader.map(r => `<tr><td>${r.ikon}</td><td>${esc(r.namn)}</td><td class="tal">${r.n}</td><td>${r.kv}</td><td>${r.c === undefined ? '' : hallCirkel(r.c)}</td><td class="tal" title="Värde, ungefär i arbetstimmar">${v(r.varde)}</td></tr>`).join('')}</tbody></table>`;
 }
 // egenskaper och färdigheter räknas 0–20 men visas på skalan 0–10 (steg 3.10.5): bara visningen ändras
 const SKALA = 2;
