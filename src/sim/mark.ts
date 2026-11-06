@@ -5,7 +5,7 @@ import { H, HOUR, OX, OY, Person, State, W, inMap } from './typer';
 import { BAR, FOREST, Ground, HIGH, VAG, decodeCover, encodeCover, isSoil } from './vag';
 import { balans } from './balans';
 import { vattenNu } from './sjo';
-import { aldras, lasAlder, lasArt, packaAlder, packaArt, startAlder, startArt, valjArt } from './trad';
+import { aldras, gammaltTrad, lasAlder, lasArt, packaAlder, packaArt, startAlder, startArt, valjArt } from './trad';
 
 // Balanstal (regel 8): ängarna, gläntan byn börjar i, hur gräset och skogen växer tillbaka och hur mycket stegen nöter. Hur
 // fort man går på marken och hur marken trampas ner står i VAG (vag.ts)
@@ -30,6 +30,10 @@ export const MARK = balans('mark', {
   fro: 0.0015, // chans per timme att ett frö gror: per skogsgranne ...
   froLangt: 0.00002, // ... och långt bort från skogen
   nyPlanta: 0.05, // en ny planta är så här stor (0 till 1)
+  // trängseln (steg 6.5.1): träden i de åtta rutorna runt, ett vuxet träd 1 och ett gammalt träd eller jätteträd så här mycket
+  // (plantor och ungträd 0). Ett frö gror bara där trängseln är högst trangsel, och en planta eller ett ungträd där det är
+  // trängre växer inte utan står skuggad, så att det blir gläntor och plats mellan de stora träden
+  trangsel: 3, trangGammal: 2,
   dungeAndel: 0.5, // urskogen har träd på ungefär så här stor del av jordrutorna, i dungar med gläntor emellan (steg 5.1.4.1)
   dungeSkala: 6, // dungarnas storlek i kartans brus (rutor)
   glantaSpridning: 0.15, // i urskogens gläntor slår frön rot så här många gånger så fort som i dungarna, så att gläntorna står kvar
@@ -144,12 +148,17 @@ export function growGround(s: State, hours: number, season: number) {
     }
     if (trees[i] >= 1) aldras(g, i, hours); // ett vuxet träd åldras året runt, och torrakan faller till sist (trad.ts)
     if (!ts || old[i] < HIGH) continue; // stigar och kort gräs stoppar ny skog
-    if (trees[i] > 0) { if (trees[i] < 1) { trees[i] = Math.min(1, trees[i] + hours * TREE_GROW * ts); if (trees[i] >= 1) g.alder![i] = 0; } continue; }
-    let n = 0;
+    if (trees[i] >= 1) continue;
+    let n = 0, tr = 0;
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
       const xx = x + dx, yy = y + dy;
-      if ((dx || dy) && inMap(xx, yy) && trees[yy * W + xx] >= FOREST) n++;
+      if ((!dx && !dy) || !inMap(xx, yy)) continue;
+      const j = yy * W + xx, t = trees[j];
+      if (t >= FOREST) n++;
+      if (t >= 1) tr += gammaltTrad(g, j) ? MARK.trangGammal : 1;
     }
+    if (tr > MARK.trangsel) continue; // för trångt: plantan står skuggad, och inget frö gror (steg 6.5.1)
+    if (trees[i] > 0) { trees[i] = Math.min(1, trees[i] + hours * TREE_GROW * ts); if (trees[i] >= 1) g.alder![i] = 0; continue; }
     if (hash(s.seed + hr, x, y) < hours * (MARK.fro * n + MARK.froLangt) * ts * (ang[i] ? MARK.angSpridning : 1) * (dunge[i] ? 1 : MARK.glantaSpridning)) { trees[i] = MARK.nyPlanta; g.art![i] = valjArt(s.seed, g, i, false); } // sorten (steg 5.1.6)
   }
 }

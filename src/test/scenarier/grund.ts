@@ -1747,3 +1747,37 @@ SCENARIER.brinner = {
 };
 const uppg = (o: Person) => o.task;
 const ACTS_NAMN = (a: string) => (SIM.ACTS as Record<string, { namn: string }>)[a]?.namn ?? (a || 'inget');
+
+SCENARIER.trangsel = {
+  text: 'Steg 6.5.1: trängseln. Ett frö gror bara där träden runt om (ett vuxet träd 1, ett gammalt 2) är högst 3, och en planta där det är trängre står skuggad och växer inte. Det ger gläntor och tät skog',
+  kor: () => {
+    const s = createState(3, START), g = groundOf(s), f = SIM.eldPlats(s);
+    // en ruta med högt gräs långt från byn, och ringen runt den: tom, med två vuxna träd eller med åtta
+    let mitt = -1;
+    for (let i = 0; i < W * W && mitt < 0; i++) {
+      const x = i % W, y = Math.floor(i / W);
+      if (x < 2 || y < 2 || x > W - 3 || y > W - 3 || Math.hypot(x - f.x, y - f.y) < 30) continue;
+      let ok = true;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (!isSoil(g.tiles[i + dy * W + dx])) ok = false;
+      if (ok) mitt = i;
+    }
+    if (mitt < 0) return [['en ruta med jord runt om', false]];
+    const ring = [-W - 1, -W, -W + 1, -1, 1, W - 1, W, W + 1].map(d => mitt + d);
+    const prov = (antal: number, planta: boolean) => {
+      const x = cloneState(s), gx = groundOf(x);
+      for (const j of [mitt, ...ring]) { gx.cover[j] = 1; gx.trees[j] = 0; }
+      ring.slice(0, antal).forEach(j => { gx.trees[j] = 1; gx.alder![j] = 0; });
+      if (planta) gx.trees[mitt] = 0.2;
+      // 400 timmar på sommaren (plantor i ringen tas bort, så att bara de vuxna träden räknas)
+      for (let h = 0; h < 400; h++) { x.now += HOUR; SIM.growGround(x, 1, 2); for (const j of ring) if (gx.trees[j] > 0 && gx.trees[j] < 1) gx.trees[j] = 0; }
+      return gx.trees[mitt];
+    };
+    const tva = prov(2, false), atta = prov(8, false), pTva = prov(2, true), pAtta = prov(8, true);
+    return [
+      [`med två vuxna träd runt om gror ett frö (${tva.toFixed(2)})`, tva > 0],
+      [`med åtta vuxna träd runt om gror inget (${atta.toFixed(2)})`, atta === 0],
+      [`en planta med två träd runt om växer (0,20 → ${pTva.toFixed(2)})`, pTva > 0.2],
+      [`en planta med åtta träd runt om står skuggad (0,20 → ${pAtta.toFixed(2)})`, Math.abs(pAtta - 0.2) < 1e-6],
+    ];
+  },
+};
