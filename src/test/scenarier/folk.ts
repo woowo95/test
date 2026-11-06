@@ -1569,6 +1569,37 @@ SCENARIER.beskrivning = {
   },
 };
 
+SCENARIER.loggen = {
+  text: 'Steg 6.7.5: loggen är en helhet. Det någon lär sig av andra samma timme blir en rad, vardagens byten under samma del av dygnet blir en rad, döden står före arvet och statistiken räknar som förut',
+  kor: () => {
+    const t = createState(12, START);
+    klockan(t, 12);
+    const [p, q, r] = living(t);
+    const n0 = t.log.length;
+    SIM.log(t, `${p.name} har lärt sig av ${q.name} att odla.`, 'skill', [p.id, q.id], { slag: 'lar', k: p.id, n: p.name, d: `${q.name}|att odla` });
+    SIM.log(t, 'Något annat hände.', 'world', []);
+    for (const [vem, vad] of [[q, 'att bygga timmerhus'], [r, 'att fiska'], [r, 'att göra rep'], [q, 'att elda']] as const) SIM.log(t, 'x', 'skill', [p.id, vem.id], { slag: 'lar', k: p.id, n: p.name, d: `${vem.name}|${vad}` });
+    const lar = t.log[t.log.length - 1];
+    const larRader = t.log.slice(n0).filter(e => e.sam?.slag === 'lar').length;
+    t.now += 2 * HOUR; // en ny timme: en ny rad
+    SIM.log(t, 'ny', 'skill', [p.id, q.id], { slag: 'lar', k: p.id, n: p.name, d: `${q.name}|att jaga` });
+    const ny = t.log[t.log.length - 1].text === 'ny';
+    for (let i = 0; i < 5; i++) SIM.log(t, 'ett byte', 'rel', [p.id], { slag: 'byte', k: 0, n: '', d: i < 3 ? 'harkött mot grenar' : 'rötter mot ved' });
+    const byte = t.log[t.log.length - 1];
+    // döden före arvet
+    SIM.addTool(t, 'kniv', q);
+    SIM.die(t, q, 'sjukdom');
+    const dog = t.log.findIndex(e => e.text.startsWith(`${q.name} dog`)), arv = t.log.findIndex(e => e.text.includes(`efter ${q.name}`));
+    return [
+      [`det hen lärt sig samma timme blir en rad (${lar.text})`, larRader === 1 && /lärde sig mycket av/.test(lar.text) && lar.text.includes('och tre saker till') && lar.text.includes(q.name) && lar.text.includes(r.name)],
+      ['raden som byggs på flyttas överst', t.log.indexOf(lar) > t.log.findIndex(e => e.text === 'Något annat hände.')],
+      ['en ny timme ger en ny rad', ny],
+      [`vardagens byten blir en rad (${byte.text})`, byte.sam?.d.length === 5 && /gjorde byn fem byten, mest harkött mot grenar\.$/.test(byte.text)],
+      [`döden står före arvet (${dog}, ${arv})`, dog >= 0 && arv > dog],
+    ];
+  },
+};
+
 SCENARIER.vemibyn = {
   text: 'Steg 3.9.7: beskrivningen byggs av delar ur registret BESK_DELAR, med ett villkor och hur mycket delen sticker ut: grundare av byn, skönheten och äldst i byn står alltid med när de gäller; sedan namnet byn gav, yrket och ryktet, det hen är känd som, uppfinningarna, bedrifterna, relationerna, den döda hen saknar, smaken (också vapnet) och minnet. 2–4 meningar, 5 när det finns mycket att säga',
   kor: () => {

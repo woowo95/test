@@ -334,7 +334,7 @@ export function share(s: State, a: Person, b: Person, r: Rel, slag: SamtalDef) {
       const before = kn(b, k), v = learnK(b, k, d * MINNE.larDel * (MINNE.larBas + stat(b, 'intelligens', now) / 20), now);
       e.t = now; // att lära ut håller kunskapen vid liv
       const larAv = KUNSKAPER[k]?.larAv;
-      if (larAv && before < MINNE.larKant && v >= MINNE.larKant) log(s, `${b.name} har lärt sig av ${a.name} att ${larAv}.`, 'skill', [b.id, a.id]);
+      if (larAv && before < MINNE.larKant && v >= MINNE.larKant) log(s, `${b.name} har lärt sig av ${a.name} att ${larAv}.`, 'skill', [b.id, a.id], { slag: 'lar', k: b.id, n: b.name, d: `${a.name}|att ${larAv}` });
     }
   }
 }

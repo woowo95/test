@@ -99,11 +99,11 @@ export function die(s: State, p: Person, orsak: Dodsorsak) {
   avbryt(s, p); // bördan läggs ner medan hen ännu lever, så att den ärvs
   p.died = s.now; p.cause = cause;
   if (p.gjort) p.gjort.t = {}; // de döda gör inget mer det senaste dygnet (steg 3.10.6)
-  inherit(s, p); // arvingarna får det hen ägde (arv.ts)
-  releaseOwner(s, p.id); // det som blev kvar blir byns
   const a = Math.floor(ageOf(p, s.now));
   log(s, `${p.name} dog ${cause}, ${a} år gammal.`, 'death', [p.id]); notis(s, 'dod', `${p.name} dog ${cause}, ${a} år gammal.`, [p.id], { x: Math.floor(p.x), y: Math.floor(p.y) });
   count(s, 'doda'); count(s, 'dog ' + cause); kronikaBer(s, a < 1 ? 'k_dogSpad' : 'k_dog', p.id, { ...personFalt(p), orsak: cause, alder: a, mor: byId(s, p.mother)?.name ?? 'Modern', partner: (q => q && alive(q) ? q.name : undefined)(byId(s, p.partner)), barn: s.people.filter(q => (q.mother === p.id || q.father === p.id) && alive(q)).length });
+  inherit(s, p); // arvingarna får det hen ägde (arv.ts); efter dödsraden, så att orsaken står före verkan (steg 6.7.5)
+  releaseOwner(s, p.id); // det som blev kvar blir byns
   gudHandelse(s, DODSORSAKER[orsak].gud ?? 'doden', `döden som tog ${p.name}`); // tron söker en gud för det (steg 4.1.5)
   if (a >= ALDER.hogAlder) p.fame.push(`Blev ${a} år gammal`);
   uppvaxtDod(s, p); // barnen som miste hen eller såg det (steg 3.1.2)

@@ -1,5 +1,5 @@
 import { ByteMinne, ByteVara, HOUR, LogEntry, MIN, SEC, Person, State } from './typer';
-import { isTool } from './saker';
+import { SAKER, isTool } from './saker';
 import { antal, och } from './ord';
 import { Ting } from './agande';
 import { ALDER, ageOf, log } from './folk';
@@ -131,6 +131,7 @@ export function loggaByte(rad: LogEntry, minne: ByteMinne, folk: (Person | undef
     const b = (p.byten ??= []); b.push(minne);
     if (b.length > BYTE.minnas) b.splice(minne.avbruten ? b.findIndex(x => x.avbruten) : 0, 1);
   }
+  if ((rad.sam?.d.length ?? 1) > 1) return; // raden samlar flera byten (steg 6.7.5) och pekar inte på något av dem
   if (vem.some(p => p.byten!.includes(minne))) rad.bnr = minne.nr; else rad.byte = minne;
 }
 // bytet en rad i loggen handlar om: hela bytet på raden eller det någon minns med numret (filt.ts, gränssnittet)
@@ -160,7 +161,8 @@ export function byteKlart(s: State, m: Part, g: Part, fatt: Vara[], betal: Vara[
     minne.fa = { x, y: y + FILT_MOT / 2 }; minne.fb = { x, y: y - FILT_MOT / 2 };
   } else { overlamna(s, fatt, g, m); overlamna(s, betal, m, g); }
   const text = `${m.namn} och ${g.namn} bytte: ${varorText(fatt)} mot ${varorText(betal)}${desperat ? `. ${m.namn} höll på att dö` : ''}.`;
-  loggaByte(log(s, text, 'rel', [m.id, g.id].filter(i => i > 0)), minne, [m.p, g.p]);
+  const vardag = !hf && !stort && !desperat, slag = (v: Vara[]) => och([...new Set(v.map(w => SAKER[w.k]?.namn.toLowerCase() ?? w.k))]);
+  loggaByte(log(s, text, 'rel', [m.id, g.id].filter(i => i > 0), vardag ? { slag: 'byte', k: 0, n: '', d: `${slag(fatt)} mot ${slag(betal)}` } : undefined), minne, [m.p, g.p]); // vardagens byten samlas (steg 6.7.5)
   if (hf) notis(s, 'byte', text, [m.id, g.id].filter(i => i > 0));
   if (stort) kronika(s, text, 'byte');
   for (const f of vidByte) f(s, m, g, fatt, betal, minne);

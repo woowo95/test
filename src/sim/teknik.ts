@@ -205,7 +205,7 @@ function learn(s: State, p: Person, t: Tek, from?: Person) {
   p.tek![t.id] = 1;
   if (p.lar?.tek === t.id) p.lar = undefined; // lärlingen har lärt sig klart och kan själv bli mästare
   if (p.halvminne) { p.halvminne = p.halvminne.filter(k => k !== t.id); if (!p.halvminne.length) p.halvminne = undefined; }
-  if (from) { log(s, `${p.name} har lärt sig av ${from.name} ${gora(t)}.`, 'skill', [p.id, from.id]); return; }
+  if (from) { log(s, `${p.name} har lärt sig av ${from.name} ${gora(t)}.`, 'skill', [p.id, from.id], { slag: 'lar', k: p.id, n: p.name, d: `${from.name}|${gora(t)}` }); return; }
   const first = !s.people.some(q => q !== p && knows(q, t.id)) && !(s.stat?.['tek_' + t.id]);
   count(s, 'tek_' + t.id);
   // nivå 4–5: det episka ögonblicket, en egen rad per teknik (steg 4.2.1.3); annars en berättelse ur mallen

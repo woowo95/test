@@ -906,6 +906,18 @@ export function sparaStrid(s: State, m: StridMinne) {
   count(s, 'strider');
 }
 
+// raden i loggen efter en strid i byn: den säger hur striden slutade (steg 6.7.5), så att loggen inte säger emot arenan.
+// Den som gav sig av utan att någon slag tagit vågade inte slåss; annars gav upp, flydde eller vann
+function stridRad(st: Strid, namn: (sd: 0 | 1) => string, orsak: string) {
+  const v = st.slut!.vinnare, slogs = `${namn(0)} och ${namn(1)} slogs (${orsak}).`;
+  if (v === -1) return `${slogs} Ingen vann.`;
+  const f = (1 - v) as 0 | 1, fk = st.kampar.filter(k => k.sida === f), bort = (k: Kampe) => k.lage === 'flykt' || k.lage === 'borta' || k.lage === 'ger';
+  if (fk.every(bort) && st.kampar.every(k => !k.skador.length)) return `${namn(f)} vågade inte slåss med ${namn(v)} och drog sig undan (${orsak}).`;
+  if (fk.every(k => k.lage === 'ger')) return `${slogs} ${namn(f)} gav upp.`;
+  if (fk.every(k => k.lage === 'flykt' || k.lage === 'borta')) return `${slogs} ${namn(f)} flydde.`;
+  return `${slogs} ${namn(v)} vann.`;
+}
+
 // en strid mellan två sidor av folk i byn. Returnerar striden (för scenarierna)
 export function stridIByn(s: State, avsikt: Avsikt, sidor: [Person[], Person[]], orsak: string): Strid {
   const lek0 = !!(AVSIKTER[avsikt] as { lek?: true }).lek;
@@ -922,7 +934,7 @@ export function stridIByn(s: State, avsikt: Avsikt, sidor: [Person[], Person[]],
   const folk = st.kampar.map(k => ({ k, p: sidor[k.sida][st.kampar.filter(o => o.sida === k.sida).indexOf(k)] }));
   const namn = (sd: 0 | 1) => lista(sidor[sd].map(p => p.name));
   if (!lek) larma(s, 'slagsmål', kampar.length, [...sidor[0], ...sidor[1]].filter(p => p.task?.act !== 'sova')); // de som slåss ropar (steg 3.7.11)
-  if (!lek) log(s, `${namn(0)} och ${namn(1)} slogs (${orsak}). ${vinnare === -1 ? 'Ingen vann.' : `${namn(vinnare as 0 | 1)} vann.`}`, 'rel', folk.map(f => f.p.id));
+  if (!lek) log(s, stridRad(st, namn, orsak), 'rel', folk.map(f => f.p.id));
   for (const { k, p } of folk) {
     const mot = sidor[1 - k.sida];
     let dod = k.lage === 'dod';
