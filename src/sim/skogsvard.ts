@@ -2,7 +2,7 @@ import { HOUR, H, Person, State, Task, W } from './typer';
 import { balans } from './balans';
 import { groundOf, skuggad } from './mark';
 import { FOREST, HIGH, isSoil } from './vag';
-import { SKOG, fallTid, skaRojas, stamAv, stocks } from './skog';
+import { SKOG, fallTid, nyStubbe, skaRojas, stamAv, stocks } from './skog';
 import { hash } from './karta';
 import { vaderNu } from './vader';
 import { tornadoNu } from './tornado';
@@ -129,7 +129,7 @@ export function vindfallen(s: State) {
     g.trees[i] = 0;
     if (s.halvfallt) delete s.halvfallt[i];
     stocks(s).push({ id: (s.nextStock = (s.nextStock ?? 0) + 1), x: x + 0.5, y: y + 0.5, ...stam });
-    if (!g.built?.[i]) (s.stubbar ??= []).push({ x, y, t: s.now });
+    nyStubbe(s, x, y, stam.ved);
     count(s, 'vindfall');
     if (forstaGang(s, 'vindfallForsta')) log(s, 'Ett träd föll i den hårda vinden och ligger nu i skogen.', 'world', []);
   }

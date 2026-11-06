@@ -1,3 +1,4 @@
+import { stubbeOn } from './stubbar';
 import { tabortBuske } from './buskar';
 import { OMRADE_DELAR, bynsMitt, iByn, omrade, utanforByn } from './omrade';
 import { ALDER, ageOf, alive, count, familjOf, forstaGang, living, log } from './folk';
@@ -272,13 +273,15 @@ function hittaSite(s: State, w: number, n: number) {
 
 // uppgiften på fältet för p (projektet falt i projekt.ts, och skörden i val.ts): nästa steg på hens fält, där arbetet
 // fortsätter, eller att röja ett nytt om hen inte har något och har frön. Inget i mörkret
+// ett träd fälls och en stubbe grävs bort innan rutan röjs (skog.ts, steg 3.6.9 och 6.5.7)
+const iVagen = (s: State, i: number) => groundOf(s).trees[i] >= FOREST || stubbeOn(s, i % W, Math.floor(i / W));
 export interface FaltUppgift { tool: FaltSteg; text: string; min: number; spot: { x: number; y: number }; ref?: number }
 export function faltUppgift(s: State, p: Person): FaltUppgift | undefined {
   if (!isLight(s.now) || !kanOdla(s, p)) return undefined;
   const f = egetFalt(s, p);
   if (f) {
     if (f.steg === 'vaxer') return undefined;
-    if (f.steg === 'roja' && f.klara < f.n && groundOf(s).trees[faltRuta(f, f.klara)] >= FOREST) return undefined; // trädet fälls först (skog.ts, steg 3.6.9)
+    if (f.steg === 'roja' && f.klara < f.n && iVagen(s, faltRuta(f, f.klara))) return undefined; // trädet fälls först (skog.ts, steg 3.6.9)
     // sådden: frön till en ruta till, eller att sådden avslutas när fröna tagit slut
     if (f.steg === 'sa' && f.klara === 0 && !grodaFor(s, p, f.n)) return undefined;
     return { tool: f.steg, text: `${FALT_STEG[f.steg].gor}.`, min: ODLING.pass, spot: nastaRuta(f), ref: f.id };
@@ -347,7 +350,7 @@ export function workOdla(s: State, p: Person, tk: Task, dtSec: number) {
   if (!f || f.steg === 'vaxer' || f.steg !== tk.tool) { tk.until = s.now; return; } // steget ändrades (grödan frös, eller en annan blev klar)
   let t = dtSec * SEC * fart(s, p, f);
   while (t > 0 && f.klara < antal(f) && !froSlut(s, p, f)) {
-    if (f.steg === 'roja' && groundOf(s).trees[faltRuta(f, f.klara)] >= FOREST) { tk.until = s.now; break; } // ett träd fälls först (steg 3.6.9)
+    if (f.steg === 'roja' && iVagen(s, faltRuta(f, f.klara))) { tk.until = s.now; break; } // ett träd fälls först (steg 3.6.9)
     if (t < f.kvar - 1) { f.kvar -= t; break; } // en millisekund kvar räknas som klar (avrundningen)
     t -= f.kvar;
     rutaKlar(s, p, f);

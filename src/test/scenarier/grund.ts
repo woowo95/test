@@ -1942,3 +1942,36 @@ SCENARIER.vindfall = {
     ];
   },
 };
+
+SCENARIER.stubbar = {
+  lang: true,
+  text: 'Steg 6.5.7: stubbarna. Stubben blir alltid kvar när ett träd fälls, också där ett hus ska stå. Där något ska byggas grävs den bort först, fortare med benspaden, och ger 1–2 trä men inga grenar. Inget byggs eller läggs på en stubbe',
+  kor: () => {
+    const s = createState(1, START), g = groundOf(s), p = living(s)[0];
+    // ett vuxet träd där ett hus ska stå fälls: stubben blir kvar
+    const i = Array.from({ length: W * W }, (_, j) => j).find(j => g.trees[j] >= SIM.FOREST && SIM.utanforByn(s, j % W, Math.floor(j / W)) < 12)!;
+    const x = i % W, y = Math.floor(i / W), stor = SIM.stamAv(g, i).ved;
+    const fore = g.built; g.built = new Uint8Array(W * W); g.built[i] = 1;
+    SIM.fellTree(s, p, x + 0.5, y + 0.5);
+    const kvar = SIM.stubbeOn(s, x, y), ska = SIM.skaGravas(s).some(k => k.x === x && k.y === y);
+    const u = SIM.stubbeUppgift(s, p);
+    // stubben grävs bort: lite trä och inga grenar
+    const stammar = SIM.stocks(s).length;
+    SIM.stubbeGravd(s, p, { act: 'stubbe', ref: u?.ref } as SIM.Task);
+    const ny = SIM.stocks(s).length > stammar ? SIM.stocks(s)[SIM.stocks(s).length - 1] : undefined, borta = !SIM.stubbeOn(s, x, y);
+    g.built = fore;
+    // i en hel by: stubbarna där husen ska stå grävs bort, och inget hus byggs på en stubbe
+    const b = createState(3, START); let pa = 0;
+    kor(b, 10 * 24, q => { for (const bit of SIM.bitsOf(q)) if (bit.b > 0 && bit.b < 1 && SIM.stubbeOn(q, bit.x, bit.y)) pa++; });
+    const gravda = b.stat?.stubbarGravda ?? 0;
+    return [
+      ['stubben blir kvar där ett hus ska stå', kvar],
+      ['den ska grävas bort', ska],
+      [`att gräva tar ${u?.min} minuter för hand, kortare med benspaden`, u?.min === SIM.SKOG.stubbeMin && SIM.SKOG.stubbeSpade < 1],
+      ['stubben är borta när den grävts bort', borta],
+      [`den ger ${ny?.ved} trä (trädet gav ${stor}) och inga grenar`, !!ny && ny.ved === (stor >= SIM.SKOG.stamVed * SIM.SKOG.stubbeStor ? 2 : 1) && ny.grenar === 0],
+      [`byn gräver bort stubbar på 10 dygn (${gravda})`, gravda > 0],
+      [`inget byggs på en stubbe (${pa})`, pa === 0],
+    ];
+  },
+};

@@ -12,7 +12,7 @@ import { groundOf } from './mark';
 import { motgangNu, motgangTal } from './motgang';
 import { larma, larmNu } from './rykten';
 import { SAKER } from './saker';
-import { stamAv, stocks } from './skog';
+import { nyStubbe, stamAv, stocks } from './skog';
 import { forvarAt, stationAt, taBort } from './stationer';
 import { eldXY, eldarOf } from './eld';
 import { brinner, tand } from './brand';
@@ -329,7 +329,7 @@ function fall(s: State, t: Tornado, i: number) {
   g.trees[i] = 0;
   if (s.halvfallt) delete s.halvfallt[i];
   stocks(s).push({ id: (s.nextStock = (s.nextStock ?? 0) + 1), x: x + 0.5, y: y + 0.5, ...stam });
-  if (!g.built?.[i]) (s.stubbar ??= []).push({ x, y, t: s.now });
+  nyStubbe(s, x, y, stam.ved);
   t.trad++; count(s, 'tornado trad');
 }
 // utkanten (steg 6.4.11): några vuxna träd faller (det som flyger far kortare, i lyft och flyger)
@@ -422,7 +422,7 @@ function karnan(s: State, t: Tornado, rutor: number[]) {
       const stam = stamAv(g, i);
       g.trees[i] = 0; g.cover[i] = 1;
       stocks(s).push({ id: (s.nextStock = (s.nextStock ?? 0) + 1), x: x + 0.5, y: y + 0.5, ...stam });
-      if (!g.built?.[i]) (s.stubbar ??= []).push({ x, y, t: s.now });
+      nyStubbe(s, x, y, stam.ved);
       t.trad++; count(s, 'tornado trad');
     } else if (g.trees[i] > 0) g.trees[i] = 0;
     if (s.halvfallt) delete s.halvfallt[i];

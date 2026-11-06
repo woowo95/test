@@ -1,3 +1,4 @@
+import { stubbeOn } from './stubbar';
 import { OMRADE, omrade, utanforByn } from './omrade';
 import { groundOf } from './mark';
 import { FOREST, findPath, nasbara } from './vag';
@@ -416,6 +417,7 @@ function roomIn(s: State, occ: Occ, x: number, y: number, k: string) {
   if (!nasIFloden(s, key(x, y))) return false;
   if (s.flodHot && isFood(k) && flodHotad(s, key(x, y)) && !forvarAt(s, x, y)) return false; // vattnet stiger hit: maten bärs undan (steg 3.8.7)
   if (groundOf(s).trees[key(x, y)] >= FOREST && zonesOf(s).some(z => z.rojs && inZone(z, x, y))) return false; // ett träd i lagret i skogen fälls först (steg 3.6.9)
+  if (stubbeOn(s, x, y)) return false; // på en stubbe läggs inget: den grävs bort först (skog.ts, steg 6.5.7)
   const a = occ.get(key(x, y)), f = forvarAt(s, x, y), st = stationAt(s, x, y);
   if (f?.redskap) return isTool(k) && (!a || isTool(a.k)) && (occ.redskap.get(key(x, y)) ?? 0) < f.rymmer;
   if (st && stationDef(st.k)?.forvar?.redskap) return isTool(k) && !a; // ett ställ som byggs: ett redskap, som på marken

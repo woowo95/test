@@ -17,6 +17,7 @@ import { freeTools, tingOf } from './agande';
 import { getable, Recept, takeMaterial } from './behov';
 import { Del } from './egendom';
 import { fellingTiles } from './skog';
+import { stubbeOn } from './stubbar';
 import { FOREST, findPath } from './vag';
 import { BYGGNADER, Byggnad, Fn, HUS, antalLika, bedTile, familjOf, fnOf, husKlar, mostUrgent } from './byggnader';
 import { GRANNAR4, H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
@@ -232,7 +233,7 @@ export function buildJob(s: State, p: Person): Job | undefined {
   }
   let best: Job | undefined, bs = Infinity;
   for (const b of bitsOf(s)) {
-    if (taken.has(b.id) || b.k === 'oppning' || (b.b < 1 && (treeOn(s, b) || vidElden(s, b.x, b.y)))) continue; // där elden står byggs inget förrän den flyttats (eldflytt.ts)
+    if (taken.has(b.id) || b.k === 'oppning' || (b.b < 1 && (treeOn(s, b) || stubbeOn(s, b.x, b.y) || vidElden(s, b.x, b.y)))) continue; // där elden står byggs inget förrän den flyttats (eldflytt.ts)
     const M = MATERIAL[b.m], repair = b.b >= 1;
     if (repair && b.c >= BYGG.laga) continue;
     if (M.tek && !knows(p, M.tek)) continue;

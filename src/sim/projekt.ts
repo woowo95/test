@@ -13,7 +13,7 @@ import { brasaLeta, kanLetaBrasaSten } from './brasor';
 import { DORRAR, DORR_LIST, DorrDef, DorrSlag } from './byggnad';
 import { dorrOppningar, dorrSpot, kanHangaDorr, receptDorr, utanDorr } from './bygg';
 import { GRODOR, ODLING, faltBrist, faltUppgift } from './odling';
-import { SKOG, fallTid, fellingTiles, klyvStam, rojSpot, skaRojas, treeSpot } from './skog';
+import { SKOG, fallTid, fellingTiles, klyvStam, rojSpot, skaGravas, skaRojas, stubbeSpot, stubbeUppgift, treeSpot } from './skog';
 import { freeTools, tingOf } from './agande';
 import { ACTS } from './handlingar';
 import { tileOf } from './mark';
@@ -52,6 +52,7 @@ export const PROJEKT_TAL = balans('projekt', {
   tradorr: 0.6, // ... trädörrarna när alla sådana hus saknar en (steg 3.7.21)
   rep: 0.5, // ... repet när förrådet är tomt
   virke: 0.8, // ... virket när förrådet saknar det byn vill bygga av (steg 4.5.5.2)
+  stubbe: 1, // ... att gräva bort stubbarna där något ska byggas (steg 6.5.7, skog.ts)
   plantera: 0.6, // ... att flytta plantor när de närmaste träden att fälla står långt bort (steg 6.5.2, skogsvard.ts)
   rojning: 1, // ... att fälla träden på en lagerplats eller ett fält i skogen (steg 3.6.9)
   ljus: 0.4, // ... att ställa fram ett talgljus på ett bord eller en hylla inne (steg 6.3.8, ljus.ts)
@@ -169,6 +170,14 @@ export const PROJEKT: Record<string, ProjektDef> = {
     kostnad: () => SKOG.fallTim * ARBETE,
     kan: (s, p, f) => !f.kyla && freeTools(s, p, 'yxa') > 0 && !!rojSpot(s, p),
     uppgift: (s, p) => { const t = rojSpot(s, p); return t && { act: 'falla', text: 'Fäller ett träd där byn ska ha lager eller fält.', min: fallTid(s, t.i) / 60000, tool: 'yxa', spot: { x: t.x, y: t.y } }; },
+  },
+  // stubbarna där något ska stå grävs bort först (steg 6.5.7, skog.ts)
+  stubbe: {
+    namn: 'Gräva bort stubbar', vikt: PROJEKT_TAL.stubbe,
+    brist: s => skaGravas(s).length ? 1 : 0,
+    kostnad: () => SKOG.stubbeMin / 60 * ARBETE,
+    kan: (s, p, f) => !f.kyla && !!stubbeSpot(s, p),
+    uppgift: (s, p) => stubbeUppgift(s, p),
   },
   // skogsvården (steg 6.5.2, skogsvard.ts): en planta flyttas dit byn vill ha skog närmare
   plantera: {
