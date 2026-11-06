@@ -69,10 +69,10 @@ export const station: Flik = {
     // redskap och kläder som ingen använder
     const har = d.forvar && st.ag === undefined ? pilesOf(s).filter(a => a.x === st.x && a.y === st.y) : [], agare = byId(s, st.ag);
     const forvar = !d.forvar ? '' : st.ag !== undefined ? `Rymmer ${STATION.kistaTing} redskap och kläder som ägaren inte använder, och de slits som under tak.` : d.forvar.redskap ? `Rymmer ${d.forvar.rymmer} redskap eller vapen.` : `Rymmer ${d.forvar.rymmer} högar av ett slag${d.forvar.tak ? ', och det som ligger i den slits som under tak' : ''}.`;
-    // innehållet visas som i ett lager (steg 4.5.7.9): samma lista med symbol, antal, kvalitet och skick
+    // innehållet visas som i ett lager (steg 4.5.7.9); det som någon tagit ur kistan står inte där förrän det läggs tillbaka (steg 6.8.11): samma lista med symbol, antal, kvalitet och skick
     const rad = (attr: string, txt: string, c: number, k: string) => `<dt class="tryck${frystAttr(k)}" ${attr}>${txt}</dt><dd>${condBar(c)}<span>${Math.round(c * 100)} %</span></dd>`;
     const inne = (st.ag !== undefined
-      ? tingOf(s).filter(k => k.vid === st.id).map(k => rad(`data-sak="t:${k.id}"`, pileTxt({ k: k.k, n: 1, max: 1, q: k.q }), k.c, k.k))
+      ? tingOf(s).filter(k => k.vid === st.id && k.hos === undefined && k.lass === undefined && k.bar === undefined).map(k => rad(`data-sak="t:${k.id}"`, pileTxt({ k: k.k, n: 1, max: 1, q: k.q }), k.c, k.k))
       : [...har].sort((a, b) => sakNamn(a.k).localeCompare(sakNamn(b.k), 'sv') || b.n - a.n || condOf(b) - condOf(a)).map(a => rad(sakAttr(a), pileTxt(a), condOf(a), a.k))).join('');
     // smutsen (steg 2.7.1): blodet vid slaktbänken, som bleknar på ett par dygn. Bara utseende
     const { w: bw, h: bh } = storlekAv(st), bv = blodVid(s, st, bw, bh);
