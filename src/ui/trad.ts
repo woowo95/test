@@ -11,7 +11,7 @@ import * as PIXI from 'pixi.js';
 import { FARGER, kornPa } from '../palett';
 import { brus as vn, platsHash as hash } from './pixel';
 import { fotSkugga, skuggTrad } from './skugga';
-import { buskPx } from './buske';
+import { BUSK_FORMER, buskPx } from './buske';
 
 const KOL = 0, JORD = 4, BARR = 20, BEN = 28;
 const RGBA = FARGER.map(h => parseInt(h.slice(1), 16));
@@ -181,10 +181,10 @@ const bjorkPx = (h: number, lov: Lov, sno: number, s: number) => {
 const torrBjorkPx = (h: number, sno: number) => { const M = torrBjorkM(h); return iBild(sno > 0 ? snoPa(M, sno) : M); };
 
 // bjork: björken i stället för granen (steg 5.1.6); lov: björkens löv nu (steg 5.1.13, sommar om inget anges)
-// typ 'buske': en buske (steg 6.5.3, ui/buske.ts), s = vilken av de tre formerna
+// typ 'buske': en buske (steg 6.5.3, ui/buske.ts), s = vilken av de tre formerna, + 3 med bären på (bärbusken, steg 6.5.4)
 export type TradBild = { typ: 'gran' | 'torr' | 'buske'; h: number; s: number; mork?: boolean; bjork?: boolean; lov?: Lov };
 function tradPx(b: TradBild, sno: number): { w: number; h: number; px: Int8Array; fot?: number } {
-  if (b.typ === 'buske') return buskPx(b.s);
+  if (b.typ === 'buske') return buskPx(b.s % BUSK_FORMER.length, b.s >= BUSK_FORMER.length); // s >= 3: med bären på (steg 6.5.4)
   if (b.bjork) {
     const p = b.typ === 'torr' ? torrBjorkPx(b.h, sno) : bjorkPx(b.h, b.lov ?? 'sommar', sno, b.s);
     if (b.mork) for (let i = 0; i < p.px.length; i++) if (p.px[i] > 16 && p.px[i] < 20) p.px[i]--; // den gamla björken är mörkare

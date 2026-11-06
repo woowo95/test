@@ -15,6 +15,7 @@ import { DAY, H, HOUR, HOUR_S, OX, OY, Person, State, T, W, egen, inMap, mapKey,
 import { FOREST, Ground, isSoil } from './vag';
 import { ACTS, RedskapDef, SNABBARE } from './handlingar';
 import { balans } from './balans';
+import { BARBUSKE, BUSKE, BUSKTAL, barKrok, busksort } from './buskar';
 import { djupOf, iVattnetNu, sjoRakna, sjoarna, strandAv, vattenNu } from './sjo';
 import { smakGift } from './rykten';
 
@@ -122,14 +123,17 @@ const intillSkog = (g: Ground, i: number) => {
 const ROTTER_PASSAR: Record<Markslag, number> = { skog: 0.5, ung: 0.5, buske: 0.5, hog: 0.5, kort: 0.4, bar: 0.1 };
 // Ordningen bland lagren med uttag är ordningen i sparfilen: nya lager med uttag läggs sist.
 const DEF = {
-  // bärbuskar i små täta snår i skog och högt gräs; de flyttar sig mycket långsamt. Inga bär i istiden.
+  // bären växer på bärbuskarna (steg 6.5.4, buskar.ts). Mönstret är var bären växer i dag: små täta snår i skog och högt gräs
+  // som flyttar sig mycket långsamt. Där det ligger sås bärbuskar ut när byn grundas, och en buske som växer upp där blir en
+  // bärbuske; en bärbuske ger mest där mönstret är starkt och minst BUSKTAL.barGolv. Inga bär i istiden.
   // Sedan steg 2.3.9 lite ovanligare än svampen, men de växer tillbaka fortare och kommer tidigare på våren
   bar: {
     namn: 'Bär', grupp: 'vaxter', ikon: 'bar', farg: 0x9a5cff, topp: 3, arstid: [0, 0.75, 1, 1.15], torka: 0.6,
     monster: { salt: 71, skala: 2.5, period: 70, troskel: 0.77 }, // hälften så många rutor som med 0,72 före steg 3.10.23.7
     bas(s, i, m) {
       if (!land(s, i)) return 0;
-      return BAR_PASSAR[markslag(groundOf(s), i)] * 4 * m;
+      const g = groundOf(s);
+      return busksort(g, i)?.bar ? BAR_PASSAR[markslag(g, i)] * 4 * Math.max(m, BUSKTAL.barGolv) : 0;
     },
     uttag: { full: FANGST.barFull, reach: 1, regrow: [0, 1 / 120, 1 / 48, 1 / 60] },
   },
@@ -197,6 +201,13 @@ const DEF = {
     uttag: { full: 1, reach: 1, regrow: [0, 1 / 240, 1 / 96, 1 / 120] },
   },
 } satisfies Record<string, FyndDef>;
+// bärbuskarna (buskar.ts): bär växer på rutan i dag där bärens mönster ligger, och bärbuskarna sås ut där när byn grundas
+// (inte på bar jord, i lägret eller där något är byggt)
+barKrok.vaxer = (s, i) => monsterOf(s, 'bar').m[i] > 0;
+barKrok.saUt = (s, g) => {
+  const m = monsterOf(s, 'bar').m;
+  for (let i = 0; i < W * H; i++) if (m[i] > 0 && isSoil(g.tiles[i]) && !g.built?.[i] && BAR_PASSAR[markslag(g, i)] > 0) g.buske![i] = BUSKE + BARBUSKE;
+};
 export type FyndId = keyof typeof DEF;
 export const FYND: Record<FyndId, FyndDef> = DEF;
 export const FYND_IDS = Object.keys(FYND) as FyndId[];

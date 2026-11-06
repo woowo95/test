@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { BJORK, BRAND, busksort, DAY, H, HOUR, STADIER, T, VAG, W, tradArt, valjArt, ageIndex, stadium, emberOn, fireHeat, eldXY, eldarOf, groundOf, isCm, kalender, lightLevel, snoPaMarken, vaderNu, LJUSKALLOR } from '../sim';
+import { BJORK, BRAND, busksort, FYND, fyndAt, DAY, H, HOUR, STADIER, T, VAG, W, tradArt, valjArt, ageIndex, stadium, emberOn, fireHeat, eldXY, eldarOf, groundOf, isCm, kalender, lightLevel, snoPaMarken, vaderNu, LJUSKALLOR } from '../sim';
 import { s, ui } from './lage';
 import { TS, app, figurLayer, husLayer, mork, pileLayer, terrainG, world } from './scen';
 import { ritaSkuggor, sattMoln, skuggLangd } from './skugga';
@@ -38,9 +38,11 @@ function lovAt(x: number, y: number): Lov {
 export const OMRITA_MS = 1000;
 // trädets stadium och storlek i steg: 0 = inget träd, plantan och ungträdet i fyra steg var, sedan vuxet, gammalt och torraka
 const STAD = Object.fromEntries(STADIER.map((d, k) => [d.id, k]));
+// bärbusken har mogna bär att plocka just nu (steg 6.5.4): då ritas bären på busken
+const mognaBar = (i: number) => fyndAt(s, 'bar', i) >= FYND.bar.topp * 0.15;
 function treeLevel(g: ReturnType<typeof groundOf>, i: number) {
   const st = stadium(g, i);
-  return st === null ? (busksort(g, i) ? 20 : 0) : st === 'planta' || st === 'ungtrad' ? 1 + STAD[st] * 4 + Math.floor(g.trees[i] * 4) : 9 + STAD[st];
+  return st === null ? (busksort(g, i) ? 20 + (mognaBar(i) ? 1 : 0) : 0) : st === 'planta' || st === 'ungtrad' ? 1 + STAD[st] * 4 + Math.floor(g.trees[i] * 4) : 9 + STAD[st];
 }
 function coverSig() {
   const g = groundOf(s); let h = 0;
@@ -86,7 +88,7 @@ function ritaTrad(g: ReturnType<typeof groundOf>, sno: number) {
   stallTrad(figurLayer, W, H, i => {
     const x = i % W, y = (i / W) | 0, st = jord(g.tiles[i]) ? stadium(g, i) : null;
     const b = st ? tradBild(st, g.trees[i], x, y, VAG.ungskog, tradArt(g, i).id === 'bjork')
-      : jord(g.tiles[i]) && busksort(g, i) ? buskBild(x, y) // busken (steg 6.5.3), en av tre former efter rutan
+      : jord(g.tiles[i]) && busksort(g, i) ? buskBild(x, y, mognaBar(i)) // busken (steg 6.5.3), en av tre former efter rutan, med bären på när de är mogna (steg 6.5.4)
       // ett ungt träd i skogskanten, med den sort som skulle slå rot där (steg 5.1.6)
       : kant(i) && kantHash(x, y) < 0.3 ? tradBild('ungtrad', VAG.ungskog + (1 - VAG.ungskog) * kantHash(y, x) * 0.7, x, y, VAG.ungskog, valjArt(s.seed, g, i, true) === BJORK) : null;
     if (b?.bjork) b.lov = lovAt(x, y);

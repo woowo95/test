@@ -1845,15 +1845,15 @@ SCENARIER.buskar = {
     const oppen: number[] = [];
     for (let i = 0; i < W * W; i++) if (isSoil(g.tiles[i]) && g.trees[i] === 0 && SIM.utanforByn(s, i % W, Math.floor(i / W)) >= 6) { g.cover[i] = 1; oppen.push(i); }
     const trampad = oppen.filter((_, k) => k % 7 === 0), tramp = new Set(trampad);
-    const fore = SIM.antalBuskar(g);
+    const fore = SIM.antalBuskar(g, SIM.VANLIG); // bärbuskarna finns från början (steg 6.5.4)
     let forsta = Infinity;
     for (let h = 0; h < 40 * 24; h++) {
       s.now += HOUR;
       for (const i of trampad) g.cover[i] = 0.97; // någon går här varje timme
       growGround(s, 1, 2);
-      if (forsta === Infinity && SIM.antalBuskar(g) > 0) forsta = h;
+      if (forsta === Infinity && SIM.antalBuskar(g, SIM.VANLIG) > 0) forsta = h;
     }
-    const buskar = oppen.filter(i => SIM.arBuske(g, i)), iTramp = buskar.filter(i => tramp.has(i)).length;
+    const buskar = oppen.filter(i => g.buske![i] === SIM.BUSKE + SIM.VANLIG), iTramp = buskar.filter(i => tramp.has(i)).length;
     const glest = oppen.filter(i => !tramp.has(i) && SIM.trangsel(g, i) === 0), trangt = oppen.filter(i => !tramp.has(i) && SIM.trangsel(g, i) >= 3);
     const andel = (l: number[]) => l.length ? l.filter(i => SIM.arBuske(g, i)).length / l.length : 0;
     const b = buskar[0] ?? -1;
@@ -1867,7 +1867,7 @@ SCENARIER.buskar = {
     const bort = b >= 0 && !SIM.arBuske(g, b); g.built = fore2;
     const pc = (v: number) => `${Math.round(v * 100)} %`;
     return [
-      [`inga buskar när byn grundas (${fore})`, fore === 0],
+      [`inga vanliga buskar när byn grundas (${fore})`, fore === 0],
       [`den första busken kommer efter tio dygn utan steg (efter ${Math.floor(forsta / 24)} dygn)`, forsta >= SIM.ORORD && forsta < 40 * 24],
       [`buskar på den öppna marken (${buskar.length} av ${oppen.length})`, buskar.length > oppen.length * 0.05],
       [`ingen buske där någon går (${iTramp})`, iTramp === 0],
@@ -1877,6 +1877,45 @@ SCENARIER.buskar = {
       ['en buske brinner lätt', SIM.BRAND.buske[0] >= SIM.BRAND.hog[0]],
       ['buskarna sparas med byn', lika],
       ['där något byggs försvinner busken', bort],
+    ];
+  },
+};
+
+SCENARIER.barbuskar = {
+  text: 'Steg 6.5.4: bärbuskarna. De sås ut där bären växer när byn grundas, en buske som växer upp där bären växer blir en bärbuske, och bären i fyndkartan finns bara på bärbuskarna. De ger bär efter årstiden men inga grenar, och står kvar när skogen växer upp',
+  kor: () => {
+    const s = createState(3, START), g = groundOf(s), N = W * W;
+    const bar = (i: number) => g.buske![i] === SIM.BUSKE + SIM.BARBUSKE;
+    const fran = SIM.antalBuskar(g, SIM.BARBUSKE);
+    // bären finns bara på bärbuskarna
+    let utan = 0, med = 0;
+    for (let i = 0; i < N; i++) { const v = SIM.vaxerAt(s, 'bar', i); if (v > 0 && !bar(i)) utan++; if (v > 0 && bar(i)) med++; }
+    const b = Array.from({ length: N }, (_, i) => i).find(i => bar(i) && g.trees[i] === 0 && SIM.vaxerAt(s, 'bar', i) > 0) ?? -1;
+    const sort = b >= 0 ? SIM.busksort(g, b) : undefined;
+    // en buske som växer upp där bären växer blir en bärbuske: all mark utanför byn står orörd i 40 dygn
+    for (let i = 0; i < N; i++) if (isSoil(g.tiles[i]) && SIM.utanforByn(s, i % W, Math.floor(i / W)) >= 6 && !SIM.arBuske(g, i)) g.cover[i] = 1;
+    for (let h = 0; h < 40 * 24; h++) { s.now += HOUR; growGround(s, 1, 2); }
+    const sedan = SIM.antalBuskar(g, SIM.BARBUSKE), vanliga = SIM.antalBuskar(g, SIM.VANLIG);
+    // bärbusken står kvar när skogen växer upp, och utan busken finns inga bär
+    let iSkog = false, borta = false;
+    if (b >= 0 && bar(b)) {
+      const t0 = g.trees[b]; g.trees[b] = SIM.FOREST; growGround(s, 1, 2); iSkog = bar(b); g.trees[b] = t0;
+      SIM.tabortBuske(g, b); borta = SIM.vaxerAt(s, 'bar', b) === 0;
+    }
+    // en sparfil från före steg 6.5.4 får bärbuskarna utsådda
+    const c = cloneState(s); delete c.buskar; delete c.barbuskar;
+    const gamla = SIM.antalBuskar(groundOf(c), SIM.BARBUSKE);
+    const c2 = cloneState(s), sparad = SIM.antalBuskar(groundOf(c2), SIM.BARBUSKE) === SIM.antalBuskar(g, SIM.BARBUSKE);
+    return [
+      [`bärbuskar när byn grundas (${fran})`, fran > 20],
+      [`bär bara på bärbuskarna (${med} med, ${utan} utan)`, med > 0 && utan === 0],
+      [`bärbusken heter ${sort?.namn} och ger bär men inga grenar`, !!sort?.bar && !sort.grenar],
+      [`nya bärbuskar där bären växer (${fran} blev ${sedan}, och ${vanliga} vanliga)`, sedan > fran && vanliga > sedan - fran],
+      ['inga bär i istiden', SIM.FYND.bar.arstid![0] === 0],
+      ['bärbusken står kvar när skogen växer upp', iSkog],
+      ['där busken tas bort finns inga bär', borta],
+      [`en äldre sparfil får bärbuskar (${gamla})`, gamla > 20],
+      ['bärbuskarna sparas med byn', sparad],
     ];
   },
 };

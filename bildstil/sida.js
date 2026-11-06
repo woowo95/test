@@ -973,12 +973,11 @@ const VAL = [
 const BESLUT = {
   f6_agg: { val: 3, steg: '6.5.1.3' },
   f6_radjursskinn: { val: 1, steg: '6.5.1.2' }, f6_bjornskinn: { val: 1, steg: '6.5.3.3' },
-  f6_barbuske: { val: 1, steg: '6.4.1.4' }, f6_fagel: { val: 2, steg: '6.5.1.3' }, f6_fjadrar: { val: 2, steg: '6.5.1.3' },
+  f6_fagel: { val: 2, steg: '6.5.1.3' }, f6_fjadrar: { val: 2, steg: '6.5.1.3' },
   f6_fagel_falld: { val: 1, text: 'Byggs in i steg 6.5.1.3, ritad om i de tre fåglarnas egna former och färger från fåglarna du valde (version 2).' },
   f6_radjur: { val: 1, text: 'Hinden (1) och bocken (2) används båda, i färgerna från version 3 (gråbrun päls). Byggs in i steg 6.5.1.2.' },
   f6_bjorn: { val: 1, text: 'Björns egen ritning (1) är björnen som den står och går; när den anfaller öppnar den munnen (2). Byggs in i steg 6.5.3.' },
   f6_radjur_fallt: { val: 2, steg: '6.5.1.2' },
-  f6_buske: { val: 1, text: 'Alla tre används, som variationer (rund, gles och låg). Byggs in i steg 6.4.1.3.' },
   f6_bjornunge: { val: 1, steg: '6.5.3.2' },
   f7_stockvag: { val: 2, steg: '7.2.8.1' }, f7_brygga: { val: 2, steg: '7.2.3' },
   f6_bjorn_hall: { val: 1, text: 'Din ritning: björnen från sidan, framifrån och bakifrån, utan den öppna munnen. Byggs in i steg 6.5.3.' },

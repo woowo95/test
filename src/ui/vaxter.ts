@@ -20,12 +20,13 @@ export function drawPlants(force = false) {
   if (!force && (key === ritad || nu - ritadNar < OMRITA_MS)) return; // högst en gång i sekunden, som marken
   ritad = key; ritadNar = nu;
   plantG.clear();
-  const sh = getMap(s.seed).shade;
+  const sh = getMap(s.seed).shade, g = groundOf(s);
   const bar = FYND.bar, kant = FYND.kantarell, spin = FYND.spindling;
   for (let i = 0; i < W * H; i++) {
     const x = (i % W) * TS, y = Math.floor(i / W) * TS;
-    // bärbuske: en mörkgrön tuva med några prickar i bärens färg, två buskar där det finns mycket
-    const b = fyndAt(s, 'bar', i) / bar.topp;
+    // bären syns på bärbuskarna (steg 6.5.4, terrang.ts). Där ett träd står på rutan syns inte busken, och där ritas en mörkgrön
+    // tuva med några prickar i bärens färg under trädet, två där det finns mycket
+    const b = g.trees[i] > 0 ? fyndAt(s, 'bar', i) / bar.topp : 0;
     if (b >= 0.25) {
       const n = b >= 0.6 ? 2 : 1;
       for (let j = 0; j < n; j++) {

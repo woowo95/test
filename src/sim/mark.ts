@@ -5,7 +5,7 @@ import { H, HOUR, OX, OY, Person, State, W, inMap } from './typer';
 import { BAR, BUSKE, FOREST, Ground, HIGH, VAG, decodeCover, encodeCover, isSoil } from './vag';
 import { balans } from './balans';
 import { vattenNu } from './sjo';
-import { nyaBuskar, tabortBuske, vaxBuske } from './buskar';
+import { barKrok, nyaBuskar, tabortBuske, vaxBuske } from './buskar';
 import { aldras, gammaltTrad, lasAlder, lasArt, packaAlder, packaArt, startAlder, startArt, valjArt } from './trad';
 
 // Balanstal (regel 8): ängarna, gläntan byn börjar i, hur gräset och skogen växer tillbaka och hur mycket stegen nöter. Hur
@@ -54,6 +54,7 @@ export function groundOf(s: State): Ground {
     g.art = s.tradSort ? lasArt(s.tradSort) : startArt(s.seed, g.trees, g.tiles); // och sorterna (steg 5.1.6)
     g.buske = s.buskar ? lasArt(s.buskar) : nyaBuskar(); // buskarna (steg 6.5.3), inga i en äldre sparfil
     grounds.set(s, g);
+    if (!s.barbuskar) { barKrok.saUt(s, g); s.barbuskar = 1; } // bärbuskarna där bären växer (steg 6.5.4)
   }
   return g;
 }
