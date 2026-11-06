@@ -564,14 +564,6 @@
   VAL.push(
     KORT('f6_strak', 'Gångstråken i testläget', S + '6.2.5: i testläget syns gångstråken, vägarna från dörrarna till elden, lagren, latrinen och vattnet där inget får byggas, som en tunn linje genom rutornas mitt, och rutan framför dörren som en liten ruta. Stugan och elden är bara för att visa platsen.', [
       STRAK('En tunn gul linje och en fylld gul ruta framför dörren.', 0), STRAK('Korta röda streck och en prickig ruta framför dörren.', 1), STRAK('Två ljusa kanter, som en väg, och en ljus ram framför dörren.', 2)]),
-    KORT('f6_fagel', 'Fåglarna', S + '6.5.1.3: tre fåglar som skiljer sig i storlek och form: orren stor och svart med lyrformad stjärt, ripan rund och vit med fjäderklädda fötter, skogsduvan liten och smal. Version 1 är den du ville behålla; 2 och 3 är andra utseenden av samma tre. Din kommentar förra gången: ”Jag vill se olika versioner av djuren inte olika positioner. Behåll version 1 och gör två nya”.', [
-      FAGEL_UT(0), FAGEL_UT(1), FAGEL_UT(2)]),
-    KORT('f6_fagel_falld', 'Fälld fågel', S + '6.5.1.3: den fällda fågeln, i samma tre färger.', [
-      I_FARGER('På sidan med vingen ute.', fagelFalld(0), FAGEL_L), I_FARGER('På rygg med fötterna upp.', fagelFalld(1), FAGEL_L), I_FARGER('Hängande i fötterna i en snodd.', fagelFalld(2), FAGEL_L)]),
-    KORT('f6_fjadrar', 'Fjädern', S + '6.5.1.3: en ny sak från fåglarna, till pilar och prydnader senare. En enda tydlig fjäder: en spetsig fan på båda sidor om pennan, en bar spole nertill och två skåror i kanten. Din kommentar förra gången: ”Inget ser ut som fjädrar. Gör EN tydlig fjäder”.', [
-      PA_MARK('Duvans grå fjäder, ljus i spetsen.', FJADRAR[0], FJ1_L[0]), PA_MARK('Ripans vita fjäder med svart spets.', FJADRAR[1], FJ1_L[1]), PA_MARK('Orrhönans bruna fjäder med mörka band.', FJADRAR[2], FJ1_L[2])]),
-    KORT('f6_agg', 'Ägg', S + '6.5.1.3: ägg som hittas på våren när man samlar, en ny mat.', [
-      PA_MARK('Två ägg i ett litet bo av gräs.', AGG[0], AGG_L), PA_MARK('Tre prickiga ägg på rad.', AGG[1], AGG_L), PA_MARK('Ett enda ägg.', AGG[2], AGG_L)]),
     KORT('f6_bjorn', 'Björnen', S + '6.5.3: björnen på kartan, sedd från sidan, bredvid en människa och en varg. Din egen ritning är björnen som den står och går, och när den anfaller öppnar den munnen med tänderna från min förra version. Din kommentar: ”min version. som standard. öppen mun när den attackerar som i din version”.', [
       BJORNSCEN('Din björn, som den står och går.', 0), BJORNSCEN('Din björn när den anfaller, med öppen mun.', 1)]),
     KORT('f6_bjornunge', 'Björnungen', S + '6.5.3.2: björnungen som följer med björnhonan, bredvid en människa och din björn. Den är ritad i samma färger och med samma kontur som din björn, ungefär hälften så stor, med större huvud, runda öron, kort nos och korta ben.', [
@@ -676,6 +668,24 @@
   } else if (art === 'orre') L.push([och(punkt(Math.floor(c - A.hr * 0.7) - 1, Math.floor(hy - 0.3)), punkt(Math.floor(c + A.hr * 0.7) + 1, Math.floor(hy - 0.3))), 'a']);
   return former(Math.ceil(W) + 0, H, L).filter(r => /[^.]/.test(r));
 }
+  function fagelLigger(art) {
+    // på sidan med vingen ute (Björns val 1), i artens egen form och färger: kroppen ligger, vingen står ut uppåt,
+    // huvudet vilar på marken med ögat slutet och fötterna sticker ut under
+    const A = { ...ARTER[art], ...FAGEL_VAR[1][art] }, ry = A.ry * 0.78, W = A.W + 2, H = Math.ceil(ry * 2 + A.rx * 0.9) + 2, by = H - ry - 1, bx = A.bx, L = [];
+    const bak = bx - A.rx, fram = bx + A.rx, vt = by - ry - A.rx * 0.85;
+    if (art === 'orre') L.push([och(linje([[bak + 1, by], [bak - 3, by - 0.6], [bak - 4.6, by - 2]], 0.9, 0.5), linje([[bak + 1, by + 0.6], [bak - 3.4, by + 1], [bak - 5.2, by + 0.2]], 0.9, 0.5)), 'd']);
+    if (art === 'ripa') L.push([tri([bak + 1.4, by - 0.6], [bak - 1.8, by + 0.4], [bak + 1.2, by + 1.4]), 's']);
+    if (art === 'duva') L.push([tri([bak + 1, by - 0.6], [bak - 2.4, by + 0.2], [bak + 1, by + 0.9]), 'd']);
+    L.push([ell(bx, by, A.rx, ry), (x, y) => y > by + ry * 0.35 ? 'l' : y < by - ry * 0.3 ? 'd' : 'm']);
+    L.push([tri([bx - A.rx * 0.6, by - ry * 0.4], [bx + A.rx * 1.1, vt], [bx + A.rx * 0.4, by - ry * 0.2]), (x) => x > bx + A.rx * 0.6 ? 'l' : 'm']); // vingen ute
+    if (art === 'orre') L.push([linje([[bx + A.rx * 0.1, by - ry * 0.5], [bx + A.rx * 0.8, vt + 1]], 0.5), 's']); // det vita vingbandet
+    const hx = fram + A.hr * 0.9, hy = H - A.hr - 0.6;
+    L.push([linje([[fram - 0.8, by + 0.4], [hx, hy]], A.hr * 0.8), art === 'duva' && A.halsflack ? 'l' : 'd'], [ell(hx, hy, A.hr, A.hr * 0.85), art === 'duva' ? 'm' : 'd']);
+    L.push([tri([hx + A.hr * 0.7, hy - 0.2], [hx + A.hr * 0.7 + 1.4, hy + 0.5], [hx + A.hr * 0.7, hy + 0.9]), 'n']);
+    if (art === 'orre') L.push([punkt(Math.floor(hx), Math.floor(hy - A.hr * 0.6)), 'a']);
+    L.push([och(linje([[bx - 0.6, by + ry - 0.2], [bx - 1.2, H - 0.4]], 0.35), linje([[bx + 0.8, by + ry - 0.2], [bx + 1.4, H - 0.4]], 0.35)), art === 'ripa' ? 'f' : 'n']);
+    return former(W, H, L).filter(r => /[^.]/.test(r));
+  }
   const FAGEL_HALL = PA_RAD('Från sidan, framifrån och bakifrån: ripan och skogsduvan.', ['ripa', 'duva'].flatMap(a => {
     const L = { k: 'kol0', w: 'ben3', ...ARTER[a].L, ...(FAGEL_VAR[1][a].L || {}) };
     return [[fagelArt(a, 0, 1), L], [fagelFram(a, 0), L], [fagelFram(a, 1), L]];
@@ -714,7 +724,7 @@
     } };
 
   VAL.push(
-    { id: 'f6_fagel_hall', namn: 'Fåglarna från tre håll', typ: 'janej', vad: S + '6.5.1.3: ripan och skogsduvan framifrån och bakifrån, i utseendet du valde (version 2).', versioner: [FAGEL_HALL] },
+    { id: 'f6_fagel_ligger', namn: 'Den fällda fågeln', typ: 'janej', vad: S + '6.6.3: du valde den fällda fågeln på sidan med vingen ute. Den är omritad i de tre fåglarnas egna former och färger (orren, ripan och skogsduvan), och så ligger den nu i spelet. Ja eller nej?', versioner: [PA_RAD('Orren, ripan och skogsduvan på sidan med vingen ute.', ['orre', 'ripa', 'duva'].map(a => [fagelLigger(a), { k: 'kol0', w: 'ben3', ...ARTER[a].L, ...(FAGEL_VAR[1][a].L || {}) }]), 4, 3)] },
     { id: 'f6_bjorn_hall', namn: 'Björnen från tre håll', typ: 'janej', vad: S + '6.5.3: din björn framifrån och bakifrån, lika stor som sidobilden och i dina färger, och framifrån med munnen öppen när den anfaller.', versioner: [BJORN_HALL] },
     { id: 'f6_bjornunge_hall', namn: 'Björnungen från tre håll', typ: 'janej', vad: S + '6.5.3.2: björnungen du valde, framifrån och bakifrån.', versioner: [UNGE_HALL] },
     KORT('f6_bjorn_falld', 'Fälld björn', S + '6.5.3: den fällda björnen som ligger på marken innan den styckas, som det fällda rådjuret: på sidan med huvudet på marken och ögat slutet, i din björns färger.', [

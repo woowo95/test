@@ -1,0 +1,29 @@
+{
+ "id": "fagel",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "f6_fagel_falld: den fällda fågeln på rygg, ritad om i ripans form och färger (version 2 i f6_fagel)",
+ "w": 16,
+ "h": 10,
+ "rader": [
+  ".........oo.....",
+  "........ollo....",
+  ".......omlo.....",
+  "....ooommlo.....",
+  "..oodmmmmoo.....",
+  ".oddmmmmmddo....",
+  "osmmmmmmmdddoo..",
+  ".ollllllldddddo.",
+  "..oolllllooddno.",
+  "....ofofo..ooo.."
+ ],
+ "pal": {
+  "o": "#24201d",
+  "l": "#dad0bb",
+  "m": "#7d5b40",
+  "d": "#5e3c24",
+  "s": "#24201d",
+  "n": "#2f261d",
+  "f": "#dad0bb"
+ }
+}

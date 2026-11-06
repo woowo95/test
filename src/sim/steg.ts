@@ -38,14 +38,14 @@ import { RELT, stepRelationer } from './relationer';
 import { MINNE, areaOf, fearPlace, forget, lookAround, radslaVid, trorOm } from './minne';
 import { PLATS } from './plats';
 import { chance, clamp, hash3, rnd } from './slump';
-import { ARSTID, ageIndex, hourOf, iIstiden, isLight } from './tid';
+import { ARSTID, VAR, ageIndex, hourOf, iIstiden, isLight } from './tid';
 import { ACTS, toolRow } from './handlingar';
 import { AGES_BORJAR, Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, Historik, simulera, T, inMap } from './typer';
 import { FOREST, findPath, wear } from './vag';
 import { kroppFart, rutFart, smidig } from './gang';
 import { facklorTimme, finishLjus, finishUppsatt, morkFart, morkHumor } from './ljus';
 import { arbetsTimme, chooseTask, dangers, nastaBuske, nastaRedskap, nastaRuta, spotFor } from './val';
-import { djurSteg } from './djur';
+import { FAGEL, djurSteg } from './djur';
 import { vargSteg, vargjaktSteg } from './varg';
 import { rovarSteg, rovarTornado } from './rovare';
 import { handelSteg, handlaKlar, handlarMal, handlarPlats, handlarTornado, pratMedHandlare } from './handel';
@@ -660,6 +660,7 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
     const vild = froFynd(s, p, tk, dt); // frön och lite mat från de vilda grödorna (steg 2.10.2, 3.10.23.8)
     for (const k in vild) bar(k, vild[k]);
     for (const k in got) bar(k, got[k]);
+    if (ageIndex(s) === VAR) bar('agg', FAGEL.agg * dt / HOUR_S); // fåglarnas ägg, som man ibland hittar på våren (steg 6.6.3)
     return true;
   },
   // jakten (steg 3.7.3, jakt.ts): ett försök i taget, där jägaren smyger sig fram till en kanin och sticker eller kastar.

@@ -20,7 +20,7 @@ import { DJUR } from './redskap';
 // En kanin sitter still en stund och skuttar sedan en bit. Den som kommer nära får den att hoppa undan en bit och sitta
 // still där. De enskilda kaninerna ritas bara; jakten ger mest nära en grupp (`narvaroAt`, via richness). Fler arter
 // (rådjur, fågel) blir egna lager och grupper senare.
-export interface Djur { id: number; art: 'kanin' | 'varg' | 'radjur'; x: number; y: number; grupp: number } // grupp = kaningruppen eller vargflocken
+export interface Djur { id: number; art: 'kanin' | 'varg' | 'radjur' | 'fagel'; x: number; y: number; grupp: number; u?: number } // u: fågelns utseende (steg 6.6.3) // grupp = kaningruppen eller vargflocken
 export interface Kaningrupp { id: number; x: number; y: number; n: number } // n: så många kaniner gruppen har just nu
 // Balanstal (regel 8): kaninernas grupper (antal, storlek, hur länge de stannar och hur långt de rör sig), hur de flyr
 // från folk och hur mycket jakten ger nära dem. Jaktens ursprungliga värde finns i viltlagret (FYND.jakt i fynd.ts)
@@ -230,8 +230,8 @@ export const RADJUR = balans('radjur', {
   jaktR: 14, // en jägare med spjut går hellre mot ett rådjur än en kanin om det finns ett inom så här många rutor
 });
 const RAD_LIV = RADJUR.livTim * HOUR, RAD_G = 25_000_000; // gruppernas id börjar här, rådjurens vid RAD_G * 8
-export const arRadjur = (id: number) => id >= RAD_G * 8;
-const arRadjurGrupp = (g: number) => g >= RAD_G;
+export const arRadjur = (id: number) => id >= RAD_G * 8 && id < FAG_G * 8; // fåglarnas id ligger över (steg 6.6.3)
+const arRadjurGrupp = (g: number) => g >= RAD_G && g < FAG_G;
 // skogskanten: rutorna där rådjur kan dyka upp, så som marken var när byn grundades
 const radjurPlatser = perKarta((seed): number[] => {
   const g = startGround(seed), m = getMap(seed), ut: number[] = [], k = RADJUR.kant;
@@ -298,6 +298,103 @@ export function radjurOf(s: State, t = s.now, folk?: readonly { x: number; y: nu
   }
   return out;
 }
+
+// ---------- fåglarna (steg 6.6.3) ----------
+// En enda fågel i registret med tre utseenden efter platsen: skogsduvan inne i skogen, ripan på öppen mark och orren i
+// skogskanten däremellan. De är samma djur och ger samma saker. Fåglarna sitter i små flockar (1–3) på marken, i skogen och
+// på öppen mark, och en flock håller till på samma plats en tid (livTim) innan den dyker upp på en ny. Den som kommer inom
+// FAGEL.radd rutor får fågeln att flyga upp och landa en bit bort (fly). Missar en jägare, eller fäller en, flyger alla
+// fåglar inom FAGEL.bort rutor bort från kartan, och nya kommer tillbaka efter aterTim timmar (s.faglarBorta). Spjutet
+// träffar en fågel sällan (traff); snaran kommer senare (steg 7.5.10). Allt räknas ur kartan och klockan, som rådjuren;
+// bara de fällda och platserna där fåglarna flugit bort sparas. Fåglarnas id ligger över FAG_G * 8
+export const FAGEL = balans('fagel', {
+  grupper: 5, // så många flockar på kartan samtidigt
+  storlek: [1, 3], // fåglar i en flock (minst, högst)
+  livTim: 12, // så många timmar håller en flock till på samma plats
+  hemAvst: 8, // och minst så här långt från byplatsen
+  startAvst: 10, // en flock dyker upp minst så här långt från en annan
+  spridd: 1.2, // så långt (rutor) från flockens mitt fåglarna pickar
+  pickSek: 25, // så länge en fågel pickar på en plats innan den tar några steg till nästa (ungefär)
+  radd: 3, // så nära (rutor) en människa kommer innan fågeln flyger upp ...
+  fly: 4, // ... och landar så här långt bort
+  bort: 6, // en miss eller en fälld fågel: alla fåglar inom så här många rutor flyger bort från kartan ...
+  aterTim: 6, // ... och nya kommer tillbaka efter så här många timmar
+  traff: 0.25, // spjutet (eller stenen) träffar en fågel så här mycket sämre än en kanin
+  upptack: 1.2, // fågeln ser jägaren så här mycket längre bort än en kanin med samma skygghet (jakt.ts)
+  dod: 0.05, // en fågel dör av träffar av den här graden sammanlagt
+  kant: 2, // orren: en öppen ruta med skog inom så här många rutor
+  agg: 0.01, // ägg per timme samlande på våren, räknat i samlandets fart (ACTS.samla.fart): ett ägg ibland, några om dygnet i byn (steg 6.6.3, steg.ts)
+});
+export const FAGEL_UTSEENDE = ['orre', 'ripa', 'duva'] as const; // orren i skogskanten, ripan på öppen mark, skogsduvan i skogen
+const FAG_LIV = FAGEL.livTim * HOUR, FAG_G = 30_000_000; // flockarnas id börjar här, fåglarnas vid FAG_G * 8
+export const arFagel = (id: number) => id >= FAG_G * 8;
+// platserna där fåglar kan dyka upp: jord i skogen och på öppen mark, så som marken var när byn grundades, med utseendet
+// efter platsen (0 orre, 1 ripa, 2 skogsduva)
+const fagelPlatser = perKarta((seed): { i: number; u: number }[] => {
+  const g = startGround(seed), m = getMap(seed), ut: { i: number; u: number }[] = [], k = FAGEL.kant;
+  for (let y = k; y < H - k; y++) for (let x = k; x < W - k; x++) {
+    const i = y * W + x;
+    if (!isSoil(m.tiles[i]) || Math.hypot(x - m.fire.x, y - m.fire.y) < FAGEL.hemAvst) continue;
+    if (g.trees[i] >= FOREST) { ut.push({ i, u: 2 }); continue; }
+    let skog = false;
+    for (let dy = -k; dy <= k && !skog; dy++) for (let dx = -k; dx <= k; dx++) if (g.trees[i + dy * W + dx] >= FOREST) { skog = true; break; }
+    ut.push({ i, u: skog ? 0 : 1 });
+  }
+  return ut;
+});
+const fagTid = (k: number) => (k * FAG_LIV) / FAGEL.grupper;
+export interface Fagelflock extends Kaningrupp { u: number } // u: utseendet (FAGEL_UTSEENDE)
+function fagStart(s: State, k: number, e: number): { x: number; y: number; n: number; u: number } | undefined {
+  const pl = fagelPlatser(s.seed);
+  if (!pl.length) return undefined;
+  const salt = s.seed * 59 + k * 1031 + e * 7919, andra: { x: number; y: number }[] = [];
+  for (let j = 0; j < k; j++) { const a = fagStart(s, j, Math.floor((fagTid(k) + e * FAG_LIV - fagTid(j)) / FAG_LIV)); if (a) andra.push(a); }
+  for (let f = 0; f < 12; f++) {
+    const p = pl[Math.floor(hash(salt, f, 3) * pl.length)], x = (p.i % W) + 0.5, y = Math.floor(p.i / W) + 0.5;
+    if (f < 11 && andra.some(a => Math.hypot(a.x - x, a.y - y) < FAGEL.startAvst)) continue;
+    return { x, y, u: p.u, n: FAGEL.storlek[0] + Math.floor(hash(salt, 1, 5) * (FAGEL.storlek[1] - FAGEL.storlek[0] + 1)) };
+  }
+  return undefined;
+}
+// har fåglarna vid (x, y) flugit bort från kartan vid tiden t
+const borta = (s: State, x: number, y: number, t: number) => !!s.faglarBorta?.some(b => t >= b.t && t < b.t + FAGEL.aterTim * HOUR && Math.hypot(b.x - x, b.y - y) < FAGEL.bort);
+// fåglarna inom FAGEL.bort rutor från (x, y) flyger bort från kartan vid tiden t; det som är äldre än återkomsten glöms
+export function faglarFlygerBort(s: State, x: number, y: number, t: number) {
+  s.faglarBorta = [...(s.faglarBorta ?? []).filter(b => s.now - b.t < FAGEL.aterTim * HOUR), { x, y, t }];
+}
+// flockarna vid tiden t (de som inte flugit bort)
+export function fagelFlockar(s: State, t = s.now, bara?: (x: number, y: number) => boolean): Fagelflock[] {
+  const ut: Fagelflock[] = [];
+  for (let k = 0; k < FAGEL.grupper; k++) {
+    const e = Math.floor((t - fagTid(k)) / FAG_LIV), st = fagStart(s, k, e);
+    if (!st || (bara && !bara(st.x, st.y)) || borta(s, st.x, st.y, t)) continue;
+    ut.push({ id: FAG_G + e * FAGEL.grupper + k, x: st.x, y: st.y, n: st.n, u: st.u });
+  }
+  return ut;
+}
+export const FAGEL_UT = FAGEL.spridd + 1 + FAGEL.fly + 1; // så långt (rutor) en fågel kan sitta från flockens mitt
+// fåglarna vid tiden t: var och en pickar kring flockens mitt och flyger upp och landar en bit bort när någon kommer nära
+// (folk: var folket syns, från gränssnittet). En fälld fågel är borta
+export function faglarOf(s: State, t = s.now, folk?: readonly { x: number; y: number }[], bara?: (x: number, y: number) => boolean): Djur[] {
+  const ppl = folk ?? living(s), out: Djur[] = [], vt = vattenNu(s), torr = (q: { x: number; y: number }) => vt[Math.floor(q.y) * W + Math.floor(q.x)] !== T.Vatten;
+  const doda = new Set(s.djurDoda?.map(d => d.id)), PICK = FAGEL.pickSek * SEC;
+  for (const g of fagelFlockar(s, t, bara)) for (let j = 0; j < g.n; j++) {
+    const id = g.id * 8 + j;
+    if (doda.has(id)) continue;
+    const u = t / PICK + hash(id, 3, 5) * 10, k = Math.floor(u), f = u - k;
+    const at = (n: number) => { const a = hash(id, n, 1) * Math.PI * 2, r = FAGEL.spridd * Math.sqrt(hash(id, n, 2)); return { x: g.x + Math.cos(a) * r, y: g.y + Math.sin(a) * r }; };
+    const a = at(k), b = at(k + 1), ga = f > 0.85 ? (f - 0.85) / 0.15 : 0;
+    let x = a.x + (b.x - a.x) * ga, y = a.y + (b.y - a.y) * ga, near: { x: number; y: number } | undefined, nd = FAGEL.radd;
+    for (const p of ppl) { const d = Math.hypot(x - p.x, y - p.y); if (d < nd) { nd = d; near = p; } }
+    if (near) { const d = Math.max(0.01, nd); x += (x - near.x) / d * FAGEL.fly; y += (y - near.y) / d * FAGEL.fly; }
+    let q = { x: clamp(x, 0.2, W - 0.2), y: clamp(y, 0.2, H - 0.2) };
+    if (!torr(q)) q = [a, g].map(c => ({ x: clamp(c.x, 0.2, W - 0.2), y: clamp(c.y, 0.2, H - 0.2) })).find(torr) ?? landNara(vt, q);
+    out.push({ id, art: 'fagel', x: q.x, y: q.y, grupp: g.id, u: g.u });
+  }
+  return out;
+}
+// fågelns utseende ur dess id (flockens plats bestämmer det; fågeln är borta när flocken bytt plats)
+export const fagelUtseende = (s: State, id: number, t = s.now) => fagelFlockar(s, t).find(g => g.id === Math.floor(id / 8))?.u ?? 1;
 
 // vargarna (steg 3.7.1, varg.ts): flockarna är sparade i byn, och vargarna går tätt kring flockens mitt, ledaren först.
 // En varg står aldrig i vattnet (kodgenomgången 3.10.25): den går vid flockens mitt eller på närmaste land

@@ -85,6 +85,9 @@ const DEF = {
   vargkott: { namn: 'Vargkött', ett: true, skaffa: { min: 3, slag: 'bearbeta', tek: 'kniv' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2, fett: 1.2, energi: 0.8, mineral: 0.6, vitamin: 0.3 }, ra: true, haller: 2 },
   vargskinn: { namn: 'Vargskinn', ett: true, skaffa: { min: 5, slag: 'bearbeta', tek: 'kniv' }, stack: 5, mapp: 'Material', slits: 0.0006 },
   radjur: { vikt: 15, namn: 'Fällt rådjur', skaffa: { act: 'jakt' }, stack: 1, mapp: 'Material', haller: 3 }, // steg 6.6.2: en full famn, som vargen
+  fagel: { namn: 'Fälld fågel', ett: true, skaffa: { act: 'jakt' }, stack: 5, vikt: 8, ruta: 20, mapp: 'Mat', mat: 1, naring: { protein: 2, fett: 0.8, energi: 0.7, mineral: 0.5, vitamin: 0.3 }, ra: true, haller: 2 }, // steg 6.6.3: orre, ripa eller skogsduva, samma sak
+  fjadrar: { namn: 'Fjädrar', skaffa: { min: 2, slag: 'bearbeta', tek: 'kniv' }, stack: 50, mapp: 'Material' }, // steg 6.6.3: från fåglarna, till pilar och prydnader senare
+  agg: { namn: 'Ägg', skaffa: { act: 'samla' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 1, naring: { protein: 1.2, fett: 0.8, energi: 0.5, mineral: 0.3, vitamin: 0.4 }, ra: true, haller: 3 }, // steg 6.6.3: hittas ibland på våren när man samlar
   radjursskinn: { namn: 'Rådjursskinn', ett: true, skaffa: { min: 5, slag: 'bearbeta', tek: 'kniv' }, stack: 5, mapp: 'Material', slits: 0.0006 },
   // en hel fisk som den fångats (DJUR i redskap.ts). Den rensas vid elden till fiskkött (fisk), som är det man äter;
   // bara när inget annat finns äts den som den är

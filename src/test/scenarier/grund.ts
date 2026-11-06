@@ -2088,3 +2088,63 @@ SCENARIER.radjur = {
     ];
   },
 };
+
+SCENARIER.faglar = {
+  text: 'Steg 6.6.3: fåglar i små flockar på marken, i tre utseenden efter platsen. De flyger upp när någon kommer nära, och efter ett försök att fälla en flyger alla nära iväg för en stund. Spjutet eller stenen fäller dem sällan; en fågel slaktas till kött och fjädrar, och samlarna hittar ägg på våren',
+  kor: () => {
+    const s0 = createState(6, START);
+    klockan(s0);
+    const g = SIM.fagelFlockar(s0, s0.now), m = getMap(s0.seed);
+    const mark = g.filter(q => isSoil(m.tiles[tileOf(q.x, q.y)])).length, utseenden = new Set(g.map(q => q.u)).size;
+    const f0 = SIM.faglarOf(s0, s0.now)[0];
+    const nara = { x: f0.x + 1, y: f0.y }, efter = SIM.faglarOf(s0, s0.now, [nara]).find(d => d.id === f0.id);
+    const flog = !efter || Math.hypot(efter.x - nara.x, efter.y - nara.y) > Math.hypot(f0.x - nara.x, f0.y - nara.y) + 2;
+    const sb = cloneState(s0); SIM.faglarFlygerBort(sb, f0.x, f0.y, sb.now);
+    const borta = !SIM.faglarOf(sb, sb.now).some(d => Math.hypot(d.x - f0.x, d.y - f0.y) < SIM.FAGEL.bort - 1);
+    const tillbaka = SIM.faglarOf(sb, sb.now + (SIM.FAGEL.aterTim + 1) * HOUR).length > 0;
+    // jakten: många försök mot fåglarna där ingen hare eller inget rådjur är nära
+    const p0 = living(s0).find(q => SIM.ageOf(q, s0.now) >= 16)!;
+    const mal = SIM.faglarOf(s0, s0.now).find(d => !SIM.djurOf(s0, s0.now).some(k => Math.hypot(k.x - d.x, k.y - d.y) < 12) && !SIM.radjurOf(s0, s0.now).some(k => Math.hypot(k.x - d.x, k.y - d.y) < 30));
+    const ut = { forsok: 0, fagel: 0, fallt: 0 };
+    if (mal) {
+      const s = cloneState(s0), p = SIM.byId(s, p0.id)!;
+      for (let i = 0; i < 200; i++) {
+        Object.assign(s, { djurDoda: undefined, djurHalsa: undefined, djurSkramd: undefined, djurFlykt: undefined, faglarBorta: undefined, stackar: [] }); s.ting = (s.ting ?? []).filter(t => t.k !== 'flintspjut');
+        const t = SIM.addTool(s, 'flintspjut', p); t.hos = p.id;
+        p.x = mal.x - 6; p.y = mal.y;
+        const tk = { act: 'jakt', phase: 'do', tx: mal.x, ty: mal.y, until: s.now + HOUR, carry: 0, tool: 'flintspjut' } as SIM.Task;
+        SIM.jaktForsok(s, p, tk);
+        if (!tk.jf) continue;
+        ut.forsok++;
+        if (SIM.arFagel(tk.jf.id)) ut.fagel++;
+        SIM.jaktKlar(s, p, tk);
+        if (tk.items?.fagel) ut.fallt++;
+        p.skador?.splice(0); p.health = 1;
+      }
+    }
+    // slakten
+    const s = createState(3, START);
+    medBank(s);
+    const q = living(s).find(x => SIM.ageOf(x, s.now) >= 16)!;
+    for (const r of s.people) r.tek = { ...r.tek, kniv: 1 };
+    s.ting = (s.ting ?? []).filter(t => t.k !== 'kniv'); SIM.newTing(s, 'kniv', 1, q.id);
+    setMat(s, {}); for (const k of ['kott', 'fjadrar']) setAmount(s, k, 0); setAmount(s, 'fagel', 1);
+    SIM.bearbeta(s, q, SIM.DJUR.fagel, 1);
+    // äggen: en by på våren några dygn
+    const sv = createState(4, START);
+    const varen = ageIndex(sv) === 1;
+    let agg = 0;
+    kor(sv, 72, x => { agg = Math.max(agg, amountOf(x, 'agg') + x.people.reduce((a, r) => a + (r.task?.items?.agg ?? 0), 0)); });
+    return [
+      [`fågelflockar på kartan (${g.length}, ${g.reduce((a, x) => a + x.n, 0)} fåglar, ${utseenden} utseenden)`, g.length >= 1 && utseenden >= 1],
+      [`flockarna är på marken, inte i vattnet (${mark} av ${g.length})`, mark === g.length],
+      ['fågeln flyger upp när någon kommer nära', flog],
+      ['efter ett försök flyger fåglarna nära iväg', borta],
+      ['och kommer tillbaka efter en stund', tillbaka],
+      [`jägaren går mot fåglarna när inget annat vilt är nära (${ut.fagel} av ${ut.forsok})`, !!mal && ut.fagel > 0],
+      [`fåglar fälls, men sällan (${ut.fallt} av ${ut.forsok})`, ut.fallt > 0 && ut.fallt < ut.forsok / 2],
+      [`slakten gav kött ${amountOf(s, 'kott')} och fjädrar ${amountOf(s, 'fjadrar')}`, amountOf(s, 'kott') === 1 && amountOf(s, 'fjadrar') === 1],
+      [`samlarna hittar ägg på våren (${agg}${varen ? '' : ', byn startade inte på våren'})`, agg > 0],
+    ];
+  },
+};

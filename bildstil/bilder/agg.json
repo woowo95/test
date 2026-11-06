@@ -1,0 +1,21 @@
+{
+ "id": "agg",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "val 3 i f6_agg: ett enda ägg",
+ "w": 5,
+ "h": 6,
+ "rader": [
+  ".oEo.",
+  "oeEEo",
+  "eeEEE",
+  "EEEEE",
+  "oEEEo",
+  "oEEEo"
+ ],
+ "pal": {
+  "o": "#24201d",
+  "E": "#bdb39b",
+  "e": "#dad0bb"
+ }
+}
