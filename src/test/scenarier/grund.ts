@@ -1975,3 +1975,24 @@ SCENARIER.stubbar = {
     ];
   },
 };
+
+SCENARIER.kartkant = {
+  text: 'Steg 6.5.8: kartkanten räknas som skog när fröna sprids, så att ny skog kan växa in från kanten även om all skog på kartan huggits ner',
+  kor: () => {
+    const s = createState(2, START), g = groundOf(s), N = W * W;
+    for (let i = 0; i < N; i++) { g.trees[i] = 0; if (isSoil(g.tiles[i])) g.cover[i] = 1; }
+    for (let h = 0; h < 20 * 24; h++) { s.now += HOUR; growGround(s, 1, 2); }
+    let kant = 0, kantN = 0, inne = 0, inneN = 0;
+    for (let i = 0; i < N; i++) {
+      if (!isSoil(g.tiles[i])) continue;
+      const x = i % W, y = Math.floor(i / W), vid = x === 0 || y === 0 || x === W - 1 || y === W - 1;
+      if (vid) { kantN++; if (g.trees[i] > 0) kant++; } else if (x > 5 && y > 5 && x < W - 6 && y < W - 6) { inneN++; if (g.trees[i] > 0) inne++; }
+    }
+    const pc = (a: number, b: number) => b ? Math.round(a / b * 1000) / 10 : 0;
+    return [
+      [`jord vid kartkanten (${kantN} rutor)`, kantN > 20],
+      [`plantor vid kanten efter 20 dygn utan skog (${kant}, ${pc(kant, kantN)} %)`, kant > 0],
+      [`fler vid kanten än inne på kartan (${pc(kant, kantN)} % mot ${pc(inne, inneN)} %)`, pc(kant, kantN) > pc(inne, inneN) * 3],
+    ];
+  },
+};

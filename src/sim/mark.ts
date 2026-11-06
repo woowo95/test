@@ -156,7 +156,8 @@ export function growGround(s: State, hours: number, season: number) {
     if (skuggad(g, i)) continue; // för trångt: plantan står skuggad, och inget frö gror (steg 6.5.1)
     if (trees[i] > 0) { trees[i] = Math.min(1, trees[i] + hours * TREE_GROW * ts); if (trees[i] >= 1) g.alder![i] = 0; continue; }
     let n = 0;
-    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && inMap(x + dx, y + dy) && trees[(y + dy) * W + x + dx] >= FOREST) n++;
+    // utanför kartkanten står skog (steg 6.5.8): därifrån sprids frön in, också om all skog på kartan huggits ner
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && (!inMap(x + dx, y + dy) || trees[(y + dy) * W + x + dx] >= FOREST)) n++;
     if (hash(s.seed + hr, x, y) < hours * (MARK.fro * n + MARK.froLangt) * ts * (ang[i] ? MARK.angSpridning : 1) * (dunge[i] ? 1 : MARK.glantaSpridning)) { trees[i] = MARK.nyPlanta; g.art![i] = valjArt(s.seed, g, i, false); } // sorten (steg 5.1.6)
   }
 }
