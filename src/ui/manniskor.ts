@@ -148,6 +148,25 @@ function ritaDragkamp(m: Match, t: number) {
 // långt från sin plats man högst flyttar sig
 const SPRID = 0.55, NARMRE = 0.4;
 let synlig = new Map<number, { x: number; y: number }>(), synligNu = NaN;
+// inga hopp (steg 6.8.4): flyttar sig någon mer än en bit på en bildruta, när hen byter aktivitet och platsen vid arbetet
+// skiljer sig från den där hen stod, ritas hen där hen var och glider till den nya platsen. Längre hopp (in i ett hus,
+// en ny by) sker direkt
+const HOPP = 0.35, HOPP_MAX = 4, GLID_MS = 130; // rutor på en bildruta som räknas som ett hopp, det längsta som glider, glidningens halva tid
+const glidning = new Map<number, { x: number; y: number; ox: number; oy: number; t: number }>();
+vidNyBy.push(() => glidning.clear());
+function glid(id: number, q: { x: number; y: number }, nu: number) {
+  const e = glidning.get(id);
+  let ox = 0, oy = 0;
+  if (e) {
+    const f = Math.exp(-Math.max(0, nu - e.t) / GLID_MS * Math.LN2), dx = q.x - e.x, dy = q.y - e.y, d = Math.hypot(dx, dy);
+    ox = e.ox * f; oy = e.oy * f;
+    if (d > HOPP && d < HOPP_MAX) { ox -= dx; oy -= dy; }
+    else if (d >= HOPP_MAX) ox = oy = 0;
+    if (Math.abs(ox) + Math.abs(oy) < 0.01) ox = oy = 0;
+  }
+  glidning.set(id, { x: q.x, y: q.y, ox, oy, t: nu });
+  return ox || oy ? { x: q.x + ox, y: q.y + oy } : q;
+}
 function sprid(ppl: Person[]) {
   const q = ppl.map(p => ({ id: p.id, ...platsAv(p) })), bas = q.map(o => ({ x: o.x, y: o.y }));
   for (let varv = 0; varv < 3; varv++) for (let i = 0; i < q.length; i++) for (let j = i + 1; j < q.length; j++) {
@@ -293,6 +312,7 @@ export function drawPeople(t: number) {
   const skugga = skuggFolk().clear().beginFill(0xffffff); // skuggorna vid fötterna (steg 5.1.8, ui/skugga.ts)
   const ppl = dolda.size ? living(s).filter(p => !dolda.has(p.id)) : living(s), pos = new Map<number, { x: number; y: number }>();
   synlig = sprid(ppl); synligNu = ui.nu;
+  { const nu = performance.now(); for (const [id, q] of synlig) synlig.set(id, glid(id, q, nu)); }
   markIcons.start();
   ritaSport(t);
   const sv = ui.tab === 'sak' ? sakVar() : undefined, harSaken = sv && 'person' in sv ? sv.person : undefined; // den som har den markerade saken (steg 3.10.4)
