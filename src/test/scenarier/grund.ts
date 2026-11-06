@@ -1195,7 +1195,7 @@ SCENARIER.tornado = {
     const inburet = gs.n < 1e-6 || SIM.isStored(s, gs.x, gs.y);
     return [
       [`tornadon kom på sommaren (${st.motgang_tornado ?? 0}) och var på kartan i ${((tid.till - tid.fran) / SIM.MIN).toFixed(0)} minuter`, (st.motgang_tornado ?? 0) === 1],
-      [`det stormar medan den drar fram (blåsten ${vind.toFixed(2)})`, vind === 1],
+      [`det stormar medan den drar fram (blåsten ${vind.toFixed(2)}) och vuxna träd långt från banan faller (${st['tornado storm'] ?? 0} av stormen)`, vind === 1 && (st['tornado storm'] ?? 0) > 0],
       [`den fällde träd till liggande stammar (${st['tornado trad'] ?? 0} träd, ${stock0} → ${(s.stockar ?? []).length} stammar)`, (st['tornado trad'] ?? 0) > 0],
       [`risväggen rasade (${risRasad ? 'rasad' : 'stod kvar'}; ${st['tornado vagg'] ?? 0} väggar rivna), den nya timmerväggen stod kvar men skadades (lägst skick ${timmerC.toFixed(2)})`, risRasad && timmerC < 1 && timmerC > 0],
       [`grenarna lyftes: ${efter ? `${10 - efter.n} av 10 gick sönder och resten hamnade ${avst.toFixed(1)} rutor från banan` : 'högen låg kvar'} (${st['tornado sonder'] ?? 0} saker gick sönder i allt)`, !!efter && efter.n >= 5 && efter.n < 10 && avst >= 2 && avst <= 11],

@@ -47,6 +47,7 @@ export const TORNADO = balans('tornado', {
   in: 1, // den börjar vid kartans kant och går in mot kartan, högst så här många radianer från rakt in
   trad: 0.6, // nära (steg 6.4.10): chansen att ett vuxet träd fälls ...
   tradUtkant: 0.1, // ... och i utkanten (steg 6.4.11)
+  stormTrad: 0.01, // stormen (steg 6.4.14): chansen att ett vuxet träd någonstans på kartan faller medan tornadon drar fram
   storm: [0.5, 1.5], // nära: en vägg förlorar så här mycket av sitt skick gånger materialets storm (slumpas mellan)
   trasig: 0.5, // nära: chansen att en dörr slits loss och att en station eller möbel går sönder
   djurNara: 0.5, // nära: chansen att ett djur dör
@@ -117,7 +118,7 @@ function nyBana(s: State, start: number): Tornado {
   const bana = tornadoBana(s, start), { fran, till } = tornadoTid(s, start);
   return { start, fran, till, bana, L: banLangd(bana), u: 0, trad: 0, vagg: 0, lyft: 0, sonder: 0, skadade: 0 };
 }
-export interface Tornado { test?: 1; storlek?: TornadoStorlek; doda?: number; djur?: number; forstort?: number; start: number; fran: number; till: number; bana: number[]; L: number; u: number; trad: number; vagg: number; lyft: number; sonder: number; skadade: number; traff?: number[]; lyftRutor?: number[]; tagna?: number[]; flyg?: Flygt[] }
+export interface Tornado { test?: 1; storlek?: TornadoStorlek; doda?: number; djur?: number; forstort?: number; start: number; fran: number; till: number; bana: number[]; L: number; u: number; trad: number; vagg: number; lyft: number; sonder: number; skadade: number; traff?: number[]; lyftRutor?: number[]; tagna?: number[]; flyg?: Flygt[]; storm?: number[]; stormN?: number }
 // det som flyger (steg 6.4.13, bara för bilden): slaget (en sak, 'folk' eller 'glod'), varifrån, vart och när
 export interface Flygt { k: string; fx: number; fy: number; tx: number; ty: number; t: number }
 // så länge något syns flyga (spelets tid, ms)
@@ -241,6 +242,26 @@ function svep(s: State, t: Tornado, a: number, b: number, gaster?: TornadoGaster
     if (zon === 0 || zon === 1 && ur(s, t, d.id, 3846) < TORNADO.djurNara) { dodaDjur(s, d.id); t.djur = (t.djur ?? 0) + 1; count(s, 'tornado djur'); }
   }
   if (gaster) gasterna(s, t, zonVid, L, gaster);
+  stormen(s, t, b);
+}
+// stormen (steg 6.4.14): medan tornadon drar fram blåser det hårt överallt (vind i TORNADO, vader.ts) och vuxna träd var
+// som helst på kartan kan falla. Vilka träd och när (en punkt på banan) lottas en gång, när tornadon kommer, och de faller
+// när tornadon passerar sin punkt, om de står kvar
+const stormU = (s: State, t: Tornado, i: number) => ur(s, t, i, 3862);
+function stormen(s: State, t: Tornado, b: number) {
+  const g = groundOf(s);
+  if (!t.storm) {
+    const v: number[] = [];
+    for (let i = 0; i < W * H; i++) if (g.trees[i] >= FOREST && ur(s, t, i, 3861) < TORNADO.stormTrad) v.push(i);
+    t.storm = v.sort((p, q) => stormU(s, t, p) - stormU(s, t, q) || p - q); t.stormN = 0;
+  }
+  let n = t.stormN ?? 0;
+  for (; n < t.storm.length; n++) {
+    const i = t.storm[n];
+    if (stormU(s, t, i) > b && b < 1) break;
+    if (g.trees[i] >= FOREST) { fall(s, t, i); count(s, 'tornado storm'); }
+  }
+  t.stormN = n;
 }
 // rövarna och handlaren (steg 6.4.12) drabbas som byborna, en gång per tornado: i kärnan dör de, nära och i utkanten
 // flyger de och kan dö eller skadas. Handlaren tappar en del av packningen och går hem, rövarna flyr
