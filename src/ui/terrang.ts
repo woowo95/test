@@ -103,13 +103,15 @@ function kantHash(x: number, y: number) {
 // mörkret och eldens sken
 // (steg 5.1.1.4, 5.1.7.2): paletten ett steg mörkare i skymningen och tre mitt i natten, med raster, och ljuset runt varje eld (ui/natt.ts)
 // Molnen och regnet gör också bilden mörkare på samma sätt, en del av ett steg (vaderMork i ui/vaderbild.ts, steg 5.5.1)
+// eldens ljus når så många rutor när den brinner för fullt (steg 6.8.15); glöden och en svag eld lyser mindre, i samma förhållande
+const ELD_LJUS = 14;
 export function drawNight(t: number) {
   const m = DJUPNATT * (1 - lightLevel(t)) + vaderMork(t), eldar: { x: number; y: number; r: number; k: number }[] = [];
   if (m > 0) for (const e of eldarOf(s)) { // varje lägereld lyser (steg 4.5.6.8)
     const I = fireHeat(s, e);
     if (!(I > 0 || emberOn(s, e))) continue;
     const f = eldXY(s, e), k = I > 0 ? 0.45 + 0.55 * I : 0.12;
-    eldar.push({ x: f.x * TS + TS / 2, y: f.y * TS + TS / 2, r: TS * 6 * k, k: I > 0 ? 1 : 0.5 });
+    eldar.push({ x: f.x * TS + TS / 2, y: f.y * TS + TS / 2, r: TS * ELD_LJUS * k, k: -(I > 0 ? 1 : 0.5) }); // negativ: eldens form (natt.ts)
   }
   // facklorna och de andra ljuskällorna (steg 6.3.6–6.3.8, LJUSKALLOR i sim/ljus.ts); elden har sitt sken ovan
   if (m > 0) for (const [n, k] of Object.entries(LJUSKALLOR)) if (n !== 'eld') for (const l of k.kallor(s)) eldar.push({ x: l.x * TS, y: l.y * TS, r: TS * l.r, k: 0.8 });

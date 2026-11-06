@@ -31,7 +31,8 @@ void main() {
   float ljus = 0.0;
   for (int i = 0; i < ${MAX_ELDAR}; i++) {
     vec4 e = uEld[i];
-    if (e.z > 0.0) ljus = max(ljus, e.w * clamp(1.0 - length(w - e.xy) / e.z, 0.0, 1.0));
+    float d = length(w - e.xy) / max(e.z, 1.0);
+    if (e.z > 0.0) ljus = max(ljus, e.w < 0.0 ? -e.w * (1.0 - smoothstep(0.5, 1.0, d)) : e.w * clamp(1.0 - d, 0.0, 1.0));
   }
   float m = max(0.0, uMork - 3.3 * ljus);
   float bd = 1e9;
@@ -59,7 +60,8 @@ export const nattFilter = new PIXI.Filter(undefined, FRAG, {
   uMork: 0, uPos: new Float32Array(2), uSkala: 1, uEld: new Float32Array(MAX_ELDAR * 4),
 });
 
-// mörkret m (0 dag, 1 skymning, 2 natt, 3 djup natt) och eldarna (x och y i världens punkter, hur långt ljuset når, styrkan 0–1)
+// mörkret m (0 dag, 1 skymning, 2 natt, 3 djup natt) och eldarna (x och y i världens punkter, hur långt ljuset når, styrkan 0–1).
+// En negativ styrka är elden (steg 6.8.15): fullt ljus ut till halva vägen och sedan mjukt avtagande; de andra avtar jämnt
 export function stallNatt(lager: PIXI.Container, varld: PIXI.Container, m: number, eldar: { x: number; y: number; r: number; k: number }[]) {
   if (m <= 0) { if (lager.filters) lager.filters = null; return; }
   if (!lager.filters) lager.filters = [nattFilter];
