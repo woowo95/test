@@ -59,4 +59,6 @@ function hideTip() { tipId = undefined; $('portTip').hidden = true; }
 const portOf = (e: Event) => (e.target as HTMLElement).closest<HTMLElement>('.port');
 $('ports').addEventListener('pointerover', e => { const b = portOf(e); if (b) showTip(Number(b.dataset.id)); });
 $('ports').addEventListener('pointerleave', hideTip);
+// porträttraden går att scrolla (steg 6.8.13): hjulet uppåt och nedåt flyttar raden i sidled när den inte får plats
+$('ports').addEventListener('wheel', e => { const el = $('ports'); if (el.scrollWidth <= el.clientWidth || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return; e.preventDefault(); el.scrollLeft += e.deltaY; hideTip(); }, { passive: false });
 $('ports').addEventListener('dblclick', e => { const b = portOf(e); if (b) startFollow(Number(b.dataset.id)); });
