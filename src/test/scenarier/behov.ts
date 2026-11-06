@@ -253,7 +253,7 @@ SCENARIER.promenad = {
       [`folk tar promenader (${prom})`, prom >= 3],
       [`varje promenad går mellan flera punkter (${(punkter / Math.max(1, prom)).toFixed(1)} i snitt)`, punkter >= 2 * prom],
       [`man stannar ibland och ser sig omkring (${stopp} steg i ett stopp)`, stopp > 0],
-      [`punkterna ligger inom ${r} rutor från platsen man valde (längst ${maxR.toFixed(1)})`, maxR <= r + 1],
+      [`punkterna ligger inom ${r} rutor från platsen man valde (längst ${maxR.toFixed(1)})`, maxR <= r + 2], // en punkt i en vägg eller i vattnet flyttas till rutan bredvid
       ['den som promenerar går aldrig i vattnet eller i en vägg', land],
       ['promenaden svänger inte i bilden (ingen vandra i handlingens rad)', !ACTS.promenad.vandra],
     ];

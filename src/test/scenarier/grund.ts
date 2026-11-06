@@ -1635,7 +1635,9 @@ SCENARIER.brand = {
       // gnistorna: i en by med torr mark tänder lägerelden förr eller senare marken (en gnista i timmen är ovanlig: vänta upp till 720 timmar, 30 dygn)
       const gn = cloneState(s);
       let gnistTim = 0;
+      const gnista0 = SIM.BRAND.gnista; (SIM.BRAND as { gnista: number }).gnista = gnista0 * 5; // gnistorna är sällsynta efter fas 6:s balans: här prövas att de kan tända, inte hur ofta
       while (!(gn.stat?.['brand gnista']) && gnistTim < 720) { kor(gn, 1, torr); gnistTim++; }
+      (SIM.BRAND as { gnista: number }).gnista = gnista0;
       // skogsbranden: en ruta mitt i tät skog 25 till 35 rutor från elden (gnistor från lägerelden blir en del av samma brand)
       const e = SIM.eldPlats(s), g = groundOf(s);
       const tat = (i: number) => { let n = 0; const x = i % W, y = Math.floor(i / W); for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (SIM.inMap(x + dx, y + dy) && g.trees[(y + dy) * W + x + dx] >= FOREST) n++; return n; };
