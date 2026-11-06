@@ -796,6 +796,14 @@
     if (opt.zoner && !opt.ligga) ut.zon = spegel ? zn.map((_, i) => zn[((i / W) | 0) * W + (W - 1 - (i % W))]) : zn.slice();
     return ut;
   }
+  // hudtonen när den slumpas (steg 6.8.8): de mellersta vanligast, blek och väderbiten en på tio vardera
+  const HUDVIKT = { blek: 1, ljus: 4, mellan: 4, vaderbiten: 1 };
+  function hudSlump(r) {
+    const v = PR.farger.hud.map(h => HUDVIKT[h.id] ?? 1), sum = v.reduce((a, b) => a + b, 0);
+    let x = r() * sum;
+    for (let i = 0; i < v.length; i++) { x -= v[i]; if (x < 0) return i; }
+    return v.length - 1;
+  }
   // speglingen, den liggande figuren och täcket, konturen och färgerna
   function kartUt(p, kt, W, H, spegel, opt) {
     let ut = { w: W, h: H, kt };
@@ -871,7 +879,7 @@
     p.del.arr = r() < 0.15 ? radAv(r, 'arr', m, p.kon) : null;
     p.del.blamarke = r() < 0.06 ? radAv(r, 'blamarke', m, p.kon) : null;
     p.del.redskap = r() < 0.35 ? radAv(r, 'redskap', m, p.kon) : null;
-    p.hud = Math.floor(r() * PR.farger.hud.length);
+    p.hud = hudSlump(r);
     p.har = viktat(r, PR.farger.har.map((f, i) => [i, f.sallsynt ? 0.6 : 2]));
     p.ogon = Math.floor(r() * PR.farger.oga.length);
     p.humor = viktat(r, [['glad', 2], ['nojd', 3], ['lugn', 4], ['ledsen', 1.5], ['arg', 1], ['radd', 0.5], ['sover', 0.4]]);
@@ -888,7 +896,7 @@
     for (const s of ['huvudform', 'ora', 'nasa', 'oga', 'ogonbryn', 'mun']) c.del[s] = r() < 0.1 ? radAv(r, s, 'barn', c.kon) : fran(a.del[s], b.del[s]);
     const far = a.kon === 'man' ? a : b.kon === 'man' ? b : null;
     c.anlag = { skagg: far && far.del.skagg && r() >= 0.1 ? far.del.skagg : radAv(r, 'skagg', 'man', 'man') };
-    c.hud = r() < 0.1 ? Math.floor(r() * PR.farger.hud.length) : fran(a.hud, b.hud);
+    c.hud = r() < 0.1 ? hudSlump(r) : fran(a.hud, b.hud);
     c.har = r() < 0.1 ? Math.floor(r() * PR.farger.har.length) : fran(a.har, b.har);
     c.ogon = r() < 0.1 ? Math.floor(r() * PR.farger.oga.length) : fran(a.ogon, b.ogon);
     c.del.frisyr = radAv(r, 'frisyr', 'barn', c.kon);
