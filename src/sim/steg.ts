@@ -4,6 +4,7 @@ import { stepMotgang } from './motgang';
 import { stepTorka } from './torka';
 import { stepFlod } from './flod';
 import { tornadoSteg } from './tornado';
+import { fallTanke, plantaSatt, plantaUppgravd } from './skogsvard';
 import { askaSteg, brandSteg, brinnerSteg, hjalpaKlar, slackaFram, slackaFylld, slackaSigKlar, slackaSteg } from './brand';
 import { stepBerattelser } from './berattelser';
 import { UTBROTT_ACTS, moodOf, stepHumor, utbrottKlar } from './humor';
@@ -161,6 +162,7 @@ const MEDAN: Partial<Record<Act, Krok>> = {
 const KLAR: Partial<Record<Act, Krok>> = {
   falla: (s, p, t) => { // ett träd där ett hus ska stå, eller som fälldes för bygget, blir stockar i husets väggar direkt; resten huggs till trä
     if (!t.tool) return; // utan yxa står trädet kvar halvfällt, och nästa fällare gör resten
+    fallTanke(s, p, tileOf(t.tx, t.ty)); // långt från byn tänker man på skogsvården (skogsvard.ts, steg 6.5.2)
     const k = fellTree(s, p, t.tx, t.ty);
     if (k) { // yxan slits för varje träd som faller (steg 2.3.12), också för trä som huggs ur det sedan; ibland har stammen mossa (steg 2.5.2)
       wearUsed(s, p, 1); mossaPaStam(s, p, k);
@@ -196,6 +198,7 @@ MEDAN.station = workStation; KLAR.station = finishStation; // en station som byg
 KLAR.tillbehor = finishTillbehor; // ett tillbehör till en möbel (stationer.ts)
 KLAR.dorr = finishDorr; // en dörr i en öppning (bygg.ts)
 KLAR.uppsatt = (s, p, t) => finishUppsatt(s, p, t);
+KLAR.plantera = plantaUppgravd; // plantan är uppgrävd och bärs till platsen (skogsvard.ts, steg 6.5.2)
 KLAR.ljus = (s, p, t) => finishLjus(s, p, t); // ett talgljus på ett bord eller en hylla (ljus.ts, steg 6.3.8) // en uppsatt fackla (ljus.ts, steg 6.3.7)
 MEDAN.forsok = forsokSteg; KLAR.forsok = forsokKlar; // försöken mot en teknik på nivå 4–5 (teknik.ts, steg 4.2.1.1)
 MEDAN.odla = workOdla; KLAR.odla = finishOdla; // fälten (odling.ts)
@@ -206,6 +209,7 @@ const LAMNA: Partial<Record<Act, (s: State, p: Person, tk: Task) => void>> = {
   varda: lamnaAv, // hemma med den som bars (halsa.ts)
   vatten: vattenFram, // vattnet i säcken till den som inte kan gå (torst.ts)
   slacka: slackaFram, // vattnet i säcken på elden (brand.ts)
+  plantera: plantaSatt, // plantan sätts i jorden (skogsvard.ts)
 };
 
 // ---------- huvudsteg ----------

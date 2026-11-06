@@ -23,6 +23,7 @@ import { bedTile } from './byggnader';
 import { stationRutor } from './stationer';
 import { LJUS, UPPSATT, friFackla, friLjus, ljusPlatser, morkStalle } from './ljus';
 import { doingAct } from './folk';
+import { SKOGSVARD, kanPlantera, planteraUppgift, skogsvardBrist } from './skogsvard';
 
 // ---------- byns projekt: vad den bygger och gör (steg 2.2.7) ----------
 // Allt byn kan bygga eller göra av handarbete är en rad i registret PROJEKT: redskapen (en rad per grupp i GORS,
@@ -51,6 +52,7 @@ export const PROJEKT_TAL = balans('projekt', {
   tradorr: 0.6, // ... trädörrarna när alla sådana hus saknar en (steg 3.7.21)
   rep: 0.5, // ... repet när förrådet är tomt
   virke: 0.8, // ... virket när förrådet saknar det byn vill bygga av (steg 4.5.5.2)
+  plantera: 0.6, // ... att flytta plantor när de närmaste träden att fälla står långt bort (steg 6.5.2, skogsvard.ts)
   rojning: 1, // ... att fälla träden på en lagerplats eller ett fält i skogen (steg 3.6.9)
   ljus: 0.4, // ... att ställa fram ett talgljus på ett bord eller en hylla inne (steg 6.3.8, ljus.ts)
   uppsatt: 0.4, // ... att sätta upp en fackla där folk ofta är vakna i mörker (steg 6.3.7, ljus.ts)
@@ -167,6 +169,14 @@ export const PROJEKT: Record<string, ProjektDef> = {
     kostnad: () => SKOG.fallTim * ARBETE,
     kan: (s, p, f) => !f.kyla && freeTools(s, p, 'yxa') > 0 && !!rojSpot(s, p),
     uppgift: (s, p) => { const t = rojSpot(s, p); return t && { act: 'falla', text: 'Fäller ett träd där byn ska ha lager eller fält.', min: fallTid(s, t.i) / 60000, tool: 'yxa', spot: { x: t.x, y: t.y } }; },
+  },
+  // skogsvården (steg 6.5.2, skogsvard.ts): en planta flyttas dit byn vill ha skog närmare
+  plantera: {
+    namn: 'Flytta plantor', vikt: PROJEKT_TAL.plantera,
+    brist: s => skogsvardBrist(s),
+    kostnad: () => SKOGSVARD.gravMin / 60 * ARBETE,
+    kan: (s, p, f) => !f.kyla && kanPlantera(s, p),
+    uppgift: (s, p) => planteraUppgift(s, p),
   },
   // en uppsatt fackla (steg 6.3.7, ljus.ts): där folk ofta är vakna i mörker, med en av byns facklor
   uppsatt: {

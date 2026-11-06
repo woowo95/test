@@ -79,6 +79,8 @@ export const PAL: Record<string, Record<string, string>> = {
   rovfron: { o: '#24201d', R: '#a14808', r: '#742a01', j: '#3f2415' },
   artfron: { o: '#24201d', L: '#d8b25f', Y: '#898b4c', y: '#647025' },
   odling: { k: '#3f2415', j: '#5e3c24', J: '#7d5b40', g: '#4b4f00', G: '#647025', L: '#898b4c' },
+  // skogsvården (steg 6.5.2, platshållare): en planta med rotklump bredvid en spade
+  skogsvard: { k: '#3f2415', j: '#5e3c24', g: '#4b4f00', G: '#647025', L: '#898b4c', b: '#d8c8a8', o: '#24201d' },
   // ledarskapet: ledaren och folket (Björn valde version 3 efter v193, steg 3.10.13)
   ledarskap: { o: '#24201d', a: '#d8b25f', b: '#61767a' },
   // grödorna från fälten och grodden på fältet (steg 2.10.3, platshållare i bildstilens palett)
@@ -1558,6 +1560,25 @@ export const PIX: Record<string, string[]> = {
     'obbbboo..oobbbbo',
     'oboobo....oboobo',
     '.o..o......o..o.',
+  ],
+  // skogsvården (steg 6.5.2, platshållare): en planta med rotklump som lyfts, och benspaden bredvid
+  skogsvard: [
+    '.....L.......b..',
+    '....LGL......b..',
+    '...LGGGL.....b..',
+    '..GLGGGLG....b..',
+    '...GGGGG.....b..',
+    '..GGgGgGG....b..',
+    '....g.g......b..',
+    '.....g......bbb.',
+    '.....g......bbb.',
+    '....jjj.....bbb.',
+    '...jjkjj.....b..',
+    '...jkjkj........',
+    '....jjj.........',
+    '................',
+    'jjjjjjjjjjjjjjjj',
+    'kkkkkkkkkkkkkkkk',
   ],
   // odlingen (steg 2.10.2, platshållare): en grodd i en fåra i jorden
   odling: [

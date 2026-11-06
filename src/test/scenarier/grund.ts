@@ -1781,3 +1781,58 @@ SCENARIER.trangsel = {
     ];
   },
 };
+SCENARIER.skogsvard = {
+  text: 'Steg 6.5.2: skogsvården. Den som fäller träd långt från byn kommer på Skogsvård. När de närmaste träden att fälla står långt bort gräver byn upp en skuggad planta och sätter den nära byn, bredvid en stubbe, där inget ska byggas',
+  kor: () => {
+    const s = createState(3, START), g = groundOf(s), f = SIM.bynsMitt(s);
+    const iRutan = (i: number) => Math.abs(i % W - f.x) <= SIM.SKOG.sokX && Math.abs(Math.floor(i / W) - f.y) <= SIM.SKOG.sokY;
+    const vuxna = living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.ansvar), p = vuxna[0];
+    // tekniken: att fälla ett träd långt bort för tanken framåt, nära byn inte
+    const langt = (() => { for (let i = 0; i < W * W; i++) if (g.trees[i] >= 1 && SIM.utanforByn(s, i % W, Math.floor(i / W)) >= SIM.SKOGSVARD.langt + 2) return i; return -1; })();
+    const nara = (() => { for (let i = 0; i < W * W; i++) if (g.trees[i] >= 1 && SIM.utanforByn(s, i % W, Math.floor(i / W)) < 3) return i; return -1; })();
+    p.tek = { ...(p.tek ?? {}), yxa: 1 };
+    if (nara >= 0) SIM.fallTanke(s, p, nara);
+    const fore = p.tek.skogsvard ?? 0;
+    for (let k = 0; k < 2000 && !SIM.knows(p, 'skogsvard'); k++) SIM.fallTanke(s, p, langt);
+    const kom = SIM.knows(p, 'skogsvard');
+    // skogen nära byn fälls: inget träd att fälla närmare än 2 × SKOGSVARD.langt (byns område växer under körningen), och stubbar där träden stod
+    s.stubbar = [];
+    for (let y = 0; y < W; y++) for (let x = 0; x < W; x++) {
+      const i = y * W + x, d = SIM.utanforByn(s, x, y);
+      if (d < 2 * SIM.SKOGSVARD.langt && g.trees[i] > 0) { if (g.trees[i] >= 1 && d <= SIM.SKOGSVARD.maxAvst) s.stubbar.push({ x, y, t: s.now }); g.trees[i] = 0; g.cover[i] = 1; }
+    }
+    // en planta i den täta skogen längre bort: skuggad
+    let kalla = -1;
+    for (let i = W + 1; i < W * W - W - 1 && kalla < 0; i++) if (iRutan(i) && g.trees[i] >= 1 && SIM.utanforByn(s, i % W, Math.floor(i / W)) >= 2 * SIM.SKOGSVARD.langt && SIM.trangsel(g, i) >= 6) kalla = i;
+    if (kalla >= 0) g.trees[kalla] = 0.2;
+    const fall = SIM.narmasteFall(s), skugg = kalla >= 0 && SIM.skuggad(g, kalla);
+    const utan = SIM.PROJEKT.plantera.kan(s, vuxna[1], { kyla: false, gras: 0 });
+    const brist = SIM.PROJEKT.plantera.brist(s), kan = SIM.PROJEKT.plantera.kan(s, p, { kyla: false, gras: 0 });
+    const u = SIM.PROJEKT.plantera.uppgift(s, p);
+    const t = { act: 'plantera', phase: 'do', tx: u?.spot?.x ?? 0, ty: u?.spot?.y ?? 0, until: s.now, carry: 0, ref: u?.ref } as SIM.Task;
+    p.task = t;
+    SIM.plantaUppgravd(s, p, t);
+    const uppe = kalla >= 0 && g.trees[kalla] === 0 && t.phase === 'back', mal = Math.floor(t.ty) * W + Math.floor(t.tx), md = SIM.utanforByn(s, mal % W, Math.floor(mal / W));
+    const vidStubbe = s.stubbar.some(k => Math.abs(k.x - mal % W) <= 1 && Math.abs(k.y - Math.floor(mal / W)) <= 1);
+    SIM.plantaSatt(s, p, t);
+    const satt = Math.abs(g.trees[mal] - 0.2) < 1e-6;
+    // i byn: alla vuxna kan skogsvård, och byn flyttar plantor av sig själv
+    for (const q of vuxna) q.tek = { ...(q.tek ?? {}), skogsvard: 1 };
+    setMat(s, { bar: 300, torkat: 100 });
+    for (let i = W + 1; i < W * W - W - 1; i++) if (g.trees[i] >= 1 && SIM.utanforByn(s, i % W, Math.floor(i / W)) >= 2 * SIM.SKOGSVARD.langt && SIM.trangsel(g, i) >= 7 && iRutan(i) && (i % 3 === 0)) g.trees[i] = 0.3;
+    kor(s, 48);
+    const flyttade = s.stat?.plantorFlyttade ?? 0;
+    return [
+      [`ett träd nära byn ger ingen tanke på skogsvård (${fore})`, fore === 0],
+      ['den som fäller träd långt bort kommer på Skogsvård', kom],
+      [`de närmaste träden att fälla står långt bort (${fall} rutor)`, fall >= SIM.SKOGSVARD.langt],
+      ['plantan i den täta skogen står skuggad', skugg],
+      ['den som inte kan skogsvård flyttar inga plantor', !utan],
+      ['byn vill flytta plantor, och den som kan gör det', brist > 0 && kan && !!u && u.ref === kalla],
+      ['plantan grävs upp och bärs', uppe],
+      [`den sätts nära byn (${md} rutor utanför), bredvid en stubbe`, md >= SIM.SKOGSVARD.minAvst && md <= SIM.SKOGSVARD.maxAvst && vidStubbe],
+      ['den står i jorden med samma storlek', satt],
+      [`byn flyttar plantor av sig själv (${flyttade} på 48 timmar)`, flyttade > 1],
+    ];
+  },
+};

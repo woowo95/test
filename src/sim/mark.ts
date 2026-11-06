@@ -149,19 +149,27 @@ export function growGround(s: State, hours: number, season: number) {
     if (trees[i] >= 1) aldras(g, i, hours); // ett vuxet träd åldras året runt, och torrakan faller till sist (trad.ts)
     if (!ts || old[i] < HIGH) continue; // stigar och kort gräs stoppar ny skog
     if (trees[i] >= 1) continue;
-    let n = 0, tr = 0;
-    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-      const xx = x + dx, yy = y + dy;
-      if ((!dx && !dy) || !inMap(xx, yy)) continue;
-      const j = yy * W + xx, t = trees[j];
-      if (t >= FOREST) n++;
-      if (t >= 1) tr += gammaltTrad(g, j) ? MARK.trangGammal : 1;
-    }
-    if (tr > MARK.trangsel) continue; // för trångt: plantan står skuggad, och inget frö gror (steg 6.5.1)
+    if (skuggad(g, i)) continue; // för trångt: plantan står skuggad, och inget frö gror (steg 6.5.1)
     if (trees[i] > 0) { trees[i] = Math.min(1, trees[i] + hours * TREE_GROW * ts); if (trees[i] >= 1) g.alder![i] = 0; continue; }
+    let n = 0;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && inMap(x + dx, y + dy) && trees[(y + dy) * W + x + dx] >= FOREST) n++;
     if (hash(s.seed + hr, x, y) < hours * (MARK.fro * n + MARK.froLangt) * ts * (ang[i] ? MARK.angSpridning : 1) * (dunge[i] ? 1 : MARK.glantaSpridning)) { trees[i] = MARK.nyPlanta; g.art![i] = valjArt(s.seed, g, i, false); } // sorten (steg 5.1.6)
   }
 }
+
+// trängseln på ruta i (steg 6.5.1): träden i de åtta rutorna runt den, ett vuxet träd 1 och ett gammalt 2, plantor och ungträd 0
+export function trangsel(g: Ground, i: number) {
+  const x = i % W, y = (i - x) / W; let tr = 0;
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+    const xx = x + dx, yy = y + dy;
+    if ((!dx && !dy) || !inMap(xx, yy)) continue;
+    const j = yy * W + xx;
+    if (g.trees[j] >= 1) tr += gammaltTrad(g, j) ? MARK.trangGammal : 1;
+  }
+  return tr;
+}
+// för trångt på ruta i: ett frö gror inte, och en planta står skuggad och växer inte
+export const skuggad = (g: Ground, i: number) => trangsel(g, i) > MARK.trangsel;
 
 export const tileOf = (x: number, y: number) => clampI(y, H) * W + clampI(x, W); // rutans index, närmaste ruta på kartan om punkten ligger utanför
 // en slumpad punkt nära mitten av rutan med index i (p:s följd 'val')
