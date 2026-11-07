@@ -47,14 +47,14 @@ const nyckelAv = (s: State) => {
 };
 // Frågorna ställs tusentals gånger per slag: inom samma slag, utan att något byggts, räknas nyckeln inte om. En lagerplats som växer
 // under slaget räknas in i nästa slag
-const senast = new WeakMap<State, { now: number; v: number; o: Omrade }>();
+const senast = new WeakMap<State, { now: number; v: number; h: number; z: number; o: Omrade }>();
 export function omrade(s: State): Omrade {
-  const m = senast.get(s), v = s.byggV ?? 0;
-  if (m && m.now === s.now && m.v === v) return m.o;
+  const m = senast.get(s), v = s.byggV ?? 0, h = housesOf(s).length, z = zonesOf(s).length;
+  if (m && m.now === s.now && m.v === v && m.h === h && m.z === z) return m.o;
   const key = nyckelAv(s), c = cache.get(s);
   const o = c && c.key === key ? c : rakna(key, Object.values(OMRADE_DELAR).flatMap(d => d.rutor(s)));
   if (o !== c) cache.set(s, o);
-  senast.set(s, { now: s.now, v, o });
+  senast.set(s, { now: s.now, v, h, z, o });
   return o;
 }
 

@@ -81,6 +81,8 @@ export function vagBort(s: State, b: Bit) {
   s.byggen = bitsOf(s).filter(q => q !== b);
   if (brygga) s.bryggV = (s.bryggV ?? 0) + 1;
   touch(s);
+  // den som stod på bryggan när den försvann hamnar på närmaste lediga ruta, inte i vattnet
+  if (brygga) for (const p of s.people) if (p.died === undefined && p.left === undefined && Math.floor(p.x) === b.x && Math.floor(p.y) === b.y) { const f = freeNear(s, b.x, b.y); p.x = f.x + 0.5; p.y = f.y + 0.5; }
 }
 export const touch = (s: State) => { s.byggV = (s.byggV ?? 0) + 1; };
 

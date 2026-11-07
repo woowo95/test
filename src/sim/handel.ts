@@ -6,7 +6,7 @@ import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, stat, think 
 import { SAMTAL, TalkEvent, isSocial } from './samtal';
 import { kronika } from './historik';
 import { eldPlats, getMap, vaderstreck } from './karta';
-import { bitAt, freeNear } from './byggnad';
+import { bitAt, blocked, freeNear } from './byggnad';
 import { ledig } from './stationer';
 import { clamp, rnd } from './slump';
 import { iIstiden, ageIndex, hourOf } from './tid';
@@ -516,7 +516,11 @@ export function handlarNu(s: State, p: Person): { bybo: string[]; handlare: stri
 // längst från handlaren. Kön (i = platsen i kön, 1 = den första som väntar) står bakom hen, på en rad bort från filtarna
 function kundPlats(s: State, h: Handlare, i = 0) {
   const hf = s.filtar?.find(f => f.handlare === h.id) ?? { x: h.x, y: h.y + BYTE.bakom };
-  return { x: hf.x, y: hf.y + FILT_MOT + BYTE.bakom + i * HANDEL.koAvstand };
+  const x = hf.x, y = hf.y + FILT_MOT + BYTE.bakom + i * HANDEL.koAvstand;
+  if (inMap(x, y) && !blocked(s, x, y)) return { x, y };
+  // kön når kartans kant, vatten eller en vägg: närmaste lediga ruta (vaktlarmet i by 777, där kön gick utanför kartan)
+  const f = freeNear(s, Math.floor(x), Math.min(H - 1, Math.floor(y)));
+  return { x: f.x + 0.5, y: f.y + 0.5 };
 }
 
 // ---------- förhandlingen (steg 4.5.7.4) ----------

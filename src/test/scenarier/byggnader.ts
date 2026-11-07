@@ -1083,6 +1083,22 @@ SCENARIER.byggplan = {
   },
 };
 
+SCENARIER.bryggaBort = {
+  text: 'Den som står på en brygga när den försvinner (brand, tornado, slitage) hamnar på närmaste lediga ruta, inte i vattnet',
+  kor: () => {
+    const s = createState(6, START), g = SIM.getMap(s.seed).tiles, p = living(s)[0];
+    let i = g.findIndex(t => t === SIM.T.Vatten);
+    const x = i % SIM.W, y = Math.floor(i / SIM.W), b: SIM.Bit = { id: (s.nextBit ??= 1), x, y, k: 'golv', m: 'brygga', b: 1, mat: 1, c: 1 };
+    s.nextBit++; SIM.bitsOf(s).push(b); s.bryggV = (s.bryggV ?? 0) + 1; SIM.touch(s);
+    const paBryggan = SIM.vattenNu(s)[i] !== SIM.T.Vatten;
+    p.x = x + 0.5; p.y = y + 0.5;
+    SIM.vagBort(s, b);
+    return [
+      ['bryggan går att stå på', paBryggan],
+      [`när den är borta står hen på land (${p.x}, ${p.y})`, SIM.vattenNu(s)[SIM.tileOf(p.x, p.y)] !== SIM.T.Vatten],
+    ];
+  },
+};
 SCENARIER.scenflytt = {
   text: 'Steg 7.2.7: en scen som står ute bärs in när byn har en samlingssal med plats, så att salen blir en gillesal. Den flyttar inte medan någon uppträder',
   kor: () => {
