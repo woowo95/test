@@ -34,7 +34,7 @@ export const GANG = balans('gang', {
   fartUng: 0.85, // ... med ungskog
   fartHog: 0.9, // ... med högt gräs (kort gräs och stigar går man fortast på: 1)
   fartSaker: 0.9, // över lösa saker och högar på golvet (steg 2.3.6), gånger marken
-  snoBroms: 0.1, // med snö på hela marken går man så här mycket långsammare ute; under tak inget (snöskorna tar bort det mesta, snoTar i PLAGG)
+  snoBroms: 0.05, // med snö på hela marken går man så här mycket långsammare ute; under tak inget (snöskorna tar bort det mesta, snoTar i PLAGG)
   smidTerr: 0.3, // i skog och snår (marken långsammare än 1) tar den smidiga igen så här stor del av det man förlorar, gånger (smidigheten − 10) / 10 (steg 3.7.6)
 });
 
