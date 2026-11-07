@@ -568,7 +568,7 @@ SCENARIER.lagerplatser = {
     const startFel = [54, 990, 2612].filter(seed => { const k = createState(seed, START), z = zonesOf(k)[0]; for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (!usable(k, x, y)) return true; return false; });
     const s = createState(9, START);
     setFood(s, 600); setAmount(s, 'ved', 200); setAmount(s, 'grenar', 400); setAmount(s, 'flinta', 1); s.fire.ring = true; // byn kan tända sin eld och har tid att sortera
-    kor(s, 72); // sorteringen tar två till tre dygn: en tur bär det som ryms i händerna (steg 6.1.8)
+    kor(s, 96); // sorteringen tar några dygn: en tur bär det som ryms i händerna (steg 6.1.8), och en lagerplats i vägen för ett hus flyttas (steg 8.1.15)
     const zs = zonesOf(s), ps = pilesOf(s);
     const fel = ps.filter(p => p.zone >= 0 && !allows(zs[p.zone], p.k)).length;
     const summaOk = Object.keys(STACK).filter(k => !SIM.isTool(k)).every(k => Math.abs(ps.filter(p => p.k === k && p.stored).reduce((a, p) => a + p.n, 0) - amountOf(s, k)) < 1e-3); // ett redskap kan vara i bruk eller hänga vid en station
@@ -583,7 +583,7 @@ SCENARIER.lagerplatser = {
       [`den första lagerplatsen går att använda (${startFel.length ? 'inte i by ' + startFel.join(', ') : 'i alla tre byarna'})`, startFel.length === 0],
       [`en ny lagerplats görs när den första inte kan växa mer (${zs.length} lagerplatser)`, zs.length >= 2],
       [`maten får den första och material den nya (${zs.map(z => z.namn).join(', ')})`, zs[0].slag === 'mat' && zs[1]?.slag === 'material'],
-      [`sakerna sorteras till rätt lagerplats (${fel} stackar ligger fel efter 72 timmar)`, fel <= 2],
+      [`sakerna sorteras till rätt lagerplats (${fel} stackar ligger fel efter 96 timmar)`, fel <= 4],
       ['stackarna innehåller allt i förrådet', summaOk && ps.every(p => p.n <= p.max + 1e-9)],
     ];
   },
@@ -1100,7 +1100,7 @@ SCENARIER.bryggaBort = {
   },
 };
 SCENARIER.scenflytt = {
-  text: 'Steg 7.2.7: en scen som står ute bärs in när byn har en samlingssal med plats, så att salen blir en gillesal. Den flyttar inte medan någon uppträder',
+  text: 'Steg 7.2.7 och 8.1.16: en scen som står ute rivs när byn har en samlingssal med plats, en del av materialet kommer tillbaka och en ny byggs i salen, som blir en gillesal. Den rivs inte medan någon uppträder',
   kor: () => {
     const s = createState(6, START), g = SIM.getMap(s.seed).tiles, c = SIM.bynsMitt(s);
     klockan(s);
@@ -1124,19 +1124,70 @@ SCENARIER.scenflytt = {
     const sc = { id: s.nextBit++, k: 'scen', x: pl.x - 6, y: pl.y - 4, kvar: 0 } as SIM.Station;
     (s.stationer ??= []).push(sc); SIM.touch(s);
     SIM.stepStationer(s);
-    const uteUtanSal = !sc.inne;
+    const uteUtanSal = s.stationer.includes(sc);
     h.fn = 'samling'; h.rumFn = undefined; SIM.touch(s);
     s.fram = { k: 'sang', p: living(s)[0].id, start: s.now, slut: s.now + 3600000, publik: [], text: '', scen: sc.id };
     SIM.stepStationer(s);
-    const uteUnder = !sc.inne;
+    const uteUnder = s.stationer.includes(sc);
     delete s.fram;
+    const virke = amountOf(s, 'virke');
     SIM.stepStationer(s);
-    const tagg = sc.inne ? [...SIM.rumTaggar(s, gridOf(s).rooms.find(r => r.hus === h.id && r.tiles.length)!)] : [];
+    const riven = !s.stationer.includes(sc), tillbaka = amountOf(s, 'virke') - virke, ska = Math.floor(SIM.RECEPT.scen.av.virke! * SIM.HUS.rivTillbaka);
+    const plats = SIM.stationSite(s, 'scen');
+    const ny = plats && !!SIM.roomAt(s, plats.x, plats.y);
     return [
-      ['utan sal står scenen kvar ute', uteUtanSal],
-      ['den flyttar inte medan någon uppträder', uteUnder],
-      [`med en sal bärs den in (${sc.x},${sc.y}), och rummet blir en scensal (${tagg.join(', ')})`, !!sc.inne && !!SIM.roomAt(s, sc.x, sc.y) && tagg.includes('scensal')],
-      ['en scen inne går att använda', SIM.scenen(s) === sc],
+      ['utan sal står scenen kvar', uteUtanSal],
+      ['den rivs inte medan någon uppträder', uteUnder],
+      [`med en sal rivs den, och hälften av materialet kommer tillbaka (${tillbaka} av ${ska} virke)`, riven && tillbaka === ska],
+      ['den nya scenen får sin plats i salen', !!ny],
+    ];
+  },
+};
+SCENARIER.stockihus = {
+  text: 'Steg 8.1.13: ett hus är inte klart förrän de fällda träden inne i det är huggna och veden burna ut, och det arbetet görs först',
+  kor: () => {
+    const s = createState(6, START);
+    byggare(s); setAmount(s, 'yxa', 2);
+    const g = groundOf(s), c = SIM.bynsMitt(s);
+    let pl: { x: number; y: number } | undefined;
+    for (let r = 6; r < 30 && !pl; r++) for (let dy = -r; dy <= r && !pl; dy++) for (let dx = -r; dx <= r && !pl; dx++) {
+      let ok = true;
+      for (let yy = 0; yy < 4 && ok; yy++) for (let xx = 0; xx < 4 && ok; xx++) ok = SIM.ledig(s, c.x + dx + xx, c.y + dy + yy) && g.trees[(c.y + dy + yy) * W + c.x + dx + xx] < FOREST;
+      if (ok) pl = { x: c.x + dx, y: c.y + dy };
+    }
+    if (!pl) return [['en plats för huset', false]];
+    const h: SIM.Hus = { id: (s.nextBit ??= 1), namn: 'Hydda', x: pl.x, y: pl.y, w: 4, h: 4, fn: 'sovsal' };
+    s.nextBit++;
+    for (let y = pl.y; y < pl.y + 4; y++) for (let x = pl.x; x < pl.x + 4; x++) {
+      const kant = x === pl.x || y === pl.y || x === pl.x + 3 || y === pl.y + 3, m = x === pl.x + 1 && y === pl.y + 3 ? 'oppning' : kant ? 'timmer' : 'jord';
+      SIM.bitsOf(s).push({ id: s.nextBit++, x, y, k: SIM.MATERIAL[m].k, m, b: 1, mat: SIM.MATERIAL[m].n, c: 1, hus: h.id });
+    }
+    housesOf(s).push(h); SIM.touch(s);
+    const k: SIM.Stock = { id: 99, x: pl.x + 1.5, y: pl.y + 1.5, ved: 4, grenar: 0 };
+    (s.stockar ??= []).push(k);
+    const p = living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!, annan = living(s).filter(q => q !== p);
+    SIM.husKlart(s, h, p);
+    const inteKlart = !h.klar;
+    for (const q of annan) q.task = undefined;
+    const jobb = SIM.buildJob(s, p);
+    s.stockar = s.stockar.filter(q => q !== k); SIM.husKlart(s, h, p);
+    return [
+      ['med en stock kvar inne är huset inte klart', inteKlart],
+      [`det första jobbet är att hugga stocken (${jobb?.hugg})`, jobb?.hugg === 99],
+      ['när stocken är borta är huset klart', !!h.klar],
+    ];
+  },
+};
+SCENARIER.lagerivagen = {
+  text: 'Steg 8.1.15: en lagerplats påverkar inte var ett hus byggs. Ligger den i vägen flyttas den till en ny plats med samma namn, och sakerna bärs dit',
+  kor: () => {
+    const s = createState(6, START), z = SIM.zonesOf(s)[0], namn = z.namn, gx = z.x, gy = z.y;
+    SIM.flyttaLager(s, z);
+    const ny = SIM.zonesOf(s)[0];
+    return [
+      [`lagerplatsen flyttade (${gx},${gy} → ${ny.x},${ny.y})`, ny.x !== gx || ny.y !== gy],
+      ['den har kvar sitt namn', ny.namn === namn],
+      ['det som låg där ligger nu utanför och ska bäras in', SIM.overflow(s).length > 0 || SIM.pilesOf(s).length === 0],
     ];
   },
 };

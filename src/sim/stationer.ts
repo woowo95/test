@@ -10,11 +10,11 @@ import { getable, Recept, takeMaterial } from './behov';
 import { sparas } from './forradsmal';
 import { Ting, freeTools, tingOf, wearTool } from './agande';
 import { BYN } from './egendom';
-import { Zone, inZone, pilesInne, stallBorta, usable, zoneAt, zonesOf } from './lager';
+import { Zone, inZone, pilesInne, put, stallBorta, usable, zoneAt, zonesOf } from './lager';
 import { PLATS } from './plats';
 import { balans } from './balans';
 import { Hus, Rum, bitAt, blocked, gridOf, husById, roofed, roomAt, touch } from './byggnad';
-import { bedTile, fnOf, rumFnOf, samlingRum, sovHus, sovKvar, sovPlats } from './byggnader';
+import { HUS, bedTile, fnOf, rumFnOf, samlingRum, sovHus, sovKvar, sovPlats } from './byggnader';
 import { coldOf, nederbord, temperature } from './vader';
 import { ACTS } from './handlingar';
 import { SAKER, isTool } from './saker';
@@ -105,7 +105,7 @@ export const STATION = balans('station', {
 // privata saker (kistan, steg 2.10.18): byggs inte i byns lager utan av var och en i rummet där hen sover (kistorna nedan)
 // pynt = bara till för att pynta (steg 4.3.4, pynt.ts): var och en bygger ett åt sig själv i rummet där hen sover, som kistan
 // brasa = ringen till en lägereld till medan den läggs (steg 2.9.1, 4.5.6.8, brasor.ts): står nära sovplatserna den är till för (siteBrasa), och alla vuxna kan bygga den (tek är tom: den som är gammal nog att ta ansvar, ALDER.ansvar). När den är klar blir den en lägereld (nyEld) och ingen station
-export interface Utkant { till: number; avst: number; vatten?: true; falt?: true }
+export interface Utkant { till: number; avst: number; vatten?: true; falt?: true; tradFri?: true } // tradFri: söker en plats utan träd (bara latrinen, steg 8.1.14)
 export interface Forvar { rymmer: number; redskap?: true; tak?: true; stangd?: true; privat?: true }
 export interface StationDef { hard?: true; namn: string; ett?: true; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: Utkant; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar; pynt?: true; samtidigt?: number }
 // de enkla redskapen: görs vid slöjdbänken om byn har en, lite fortare där (fart), annars vid elden som förut (Björn, efter v90)
@@ -193,7 +193,7 @@ export const STATIONER = {
   },
   // latrinen (steg 2.7.2, smuts.ts): en grop som grävs med benspaden i byns utkant. Där går man på toa, och när den är full fylls den igen
   latrin: {
-    namn: 'Latrin', ikon: 'latrin', w: 1, h: 1, tek: ['latrin'], av: RECEPT.latrin.av, min: RECEPT.latrin.min, gor: ['toa'], verktyg: 'benspade', utkant: { till: STATION.latrinTill, avst: STATION.latrinAvst, vatten: true, falt: true }, flera: true,
+    namn: 'Latrin', ikon: 'latrin', w: 1, h: 1, tek: ['latrin'], av: RECEPT.latrin.av, min: RECEPT.latrin.min, gor: ['toa'], verktyg: 'benspade', utkant: { tradFri: true, till: STATION.latrinTill, avst: STATION.latrinAvst, vatten: true, falt: true }, flera: true,
     bygger: 'Gräver en latrin med benspaden.',
     forsta: '{namn} grävde byns första latrin. Där går man på toa, så att smutsen hamnar på ett ställe.',
   },
@@ -423,7 +423,7 @@ function siteUtkant(s: State, k: string) {
       let d = Infinity, ok = true;
       for (const q of rutor) {
         const t = m.tiles[q.y * W + q.x];
-        if (t !== T.Gras && t !== T.Sand && t !== T.Skog || g.trees[q.y * W + q.x] >= FOREST || !ledig(s, q.x, q.y)) { ok = false; break; }
+        if (t !== T.Gras && t !== T.Sand && t !== T.Skog || u.tradFri && g.trees[q.y * W + q.x] >= FOREST || !ledig(s, q.x, q.y)) { ok = false; break; }
         d = Math.min(d, utanforByn(s, q.x, q.y));
       }
       if (!ok || d < STATION.utkantMin || d > u.till || !friRunt(s, rutor) || arbetar(stationDef(k)) && !framLand(s, x, y, w, h)) continue;
@@ -1068,6 +1068,7 @@ function iVagen(s: State) {
   const var_ = rutorAv(t.x, t.y, w, h).some(q => fram.has(q.y * W + q.x)) ? 'där man arbetar vid en bänk' : arbetar(d) && !framLand(s, t.x, t.y, w, h) ? 'så att man fick stå i vattnet' : 'i ingången';
   const at = utan(s, t, () => stationSite(s, t.k, byId(s, t.ag)));
   count(s, 'station i vägen');
+  if (t.k === 'scen') { rivScen(s, t, `Scenen revs eftersom den stod ${var_}.`); return; } // scenen bärs aldrig (steg 8.1.16)
   if (at) { flytta(s, t, at); log(s, `${d.namn} flyttades eftersom den stod ${var_}.`, 'world'); return; }
   taBort(s, t);
   log(s, `${d.namn} togs isär eftersom den stod ${var_} och inte fick plats någon annanstans.`, 'world');
@@ -1139,17 +1140,23 @@ function inredningen(s: State) {
   }
   for (const t of stationerOf(s)) if (stationDef(t.k)?.sover && isKlar(t)) agaBadd(s, t);
 }
-// scenen flyttar in (steg 7.2.7): står den ute och byn har en samlingssal med plats bärs den in, och salen blir en gillesal. Instrumenten
-// följer med. Inte medan någon uppträder på den
+// scenen flyttar in (steg 7.2.7 och 8.1.16): står den ute och byn har en samlingssal med plats rivs den, och en ny byggs i salen, som blir
+// en gillesal. Inte medan någon uppträder på den
 function scenIn(s: State) {
   const t = stationerOf(s).find(q => q.k === 'scen' && !q.inne && isKlar(q));
   if (!t || s.fram?.scen === t.id) return;
   if (!samlingRum(s)) return;
   const at = utan(s, t, () => { const sal = samlingRum(s); return sal && siteInne(s, t.k, sal); }); // rummen räknas om när scenen är borta
   if (!at) return;
-  flytta(s, t, { ...at, inne: 1 });
-  count(s, 'scen inburen');
-  log(s, `Scenen bars in i ${husById(s, samlingRum(s)?.hus ?? -1)?.namn.toLowerCase() ?? 'salen'}. Nu går det att uppträda också när det är kallt eller regnar.`, 'world');
+  rivScen(s, t, `Scenen revs för att byggas upp igen i ${husById(s, samlingRum(s)?.hus ?? -1)?.namn.toLowerCase() ?? 'salen'}. Där går det att uppträda också när det är kallt eller regnar.`);
+}
+// scenen bärs aldrig (steg 8.1.16): ska den flyttas rivs den, och en del av materialet kommer tillbaka som när ett hus rivs.
+// Byn bygger en ny (scenen i STATIONER, med platsen i salen när det finns en). Instrumenten blir kvar i byn
+function rivScen(s: State, t: Station, text: string) {
+  taBort(s, t);
+  for (const [k, n] of Object.entries(stationDef(t.k)!.av)) { const m = Math.floor(n * HUS.rivTillbaka); if (m > 0) put(s, k, m); }
+  count(s, 'scen riven');
+  log(s, text, 'world');
 }
 function barIn(s: State) {
   for (const t of s.stationer ?? []) {

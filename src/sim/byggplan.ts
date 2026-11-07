@@ -7,9 +7,9 @@ import { PLATS, rektAvstand } from './plats';
 import { lekplats, paLek, stangerIn, stationRutor, storlekAv, uteStation } from './stationer';
 import { knows } from './teknik';
 import { villHaMer } from './forradsmal';
-import { amountOf, changed, lagerFullt, lagerNy, overflow, lagerStorre, nearZone, ownedAll, put, usable, zonesOf } from './lager';
+import { amountOf, changed, flyttaLager, inZone, lagerFullt, lagerNy, overflow, overlaps, lagerStorre, ownedAll, put, usable, zonesOf } from './lager';
 import { tingOf } from './agande';
-import { FOREST, findPath } from './vag';
+import { findPath } from './vag';
 import { Akut, BYGGNADER, Byggnad, FN, Fn, HUS, antalLika, fnId, fnOf, husNamn, sovHus, sovplatser, torkUte, vedUte } from './byggnader';
 import { kronika } from './historik';
 import { clamp } from './slump';
@@ -52,6 +52,7 @@ export const PLAN = balans('byggplan', {
   forbVed: 30, // en förbättring föreslås först när byn har så mycket trä
   forbGolv: 0.3, forbRum: 0.5, forbRik: 0.4, // hur mycket förbättringen är värd (0 till 1)
   egetRumFolk: 4, // en familj med så här många vill ha ett eget rum
+  barUtTim: 24, // så länge väntar ett hus på att det som låg i en lagerplats ska bäras ut (timmar i spelet)
   lagerKostnad: 0.5, // att göra en lagerplats större eller ny kostar så här mycket (arbetet med att bära om)
   forStort: 2, // ett hus är för stort när det har så här många gånger fler sovplatser än familjen
   husVanta: 2, husMote: 8, // ett husbyte väntar så här många dygn (år i spelet) på att köparen och säljaren står så här många rutor från varandra
@@ -77,16 +78,17 @@ export const PLAN = balans('byggplan', {
 const tileOk = (s: State, x: number, y: number, utomElden: boolean) => {
   if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1) return false;
   if (!usable(s, x, y, utomElden)) return false; // inte vatten, sten, inpå elden (utom när elden kan flyttas) eller på ett annat bygge (träden spelar ingen roll: de fälls innan bygget börjar)
-  if (zonesOf(s).some(z => nearZone(z, x, y, BYGG.lagerMarg))) return false;
   if (underMinnet(s, y * W + x)) return false; // byn minns att vattnet nådde hit (steg 3.8.7, flod.ts)
-  if ((s.stackar ?? []).some(a => a.x === x && a.y === y) || tingOf(s).some(k => k.x === x && k.y === y && k.hos === undefined && k.lass === undefined) || (s.stockar ?? []).some(k => Math.floor(k.x) === x && Math.floor(k.y) === y) || (s.stubbar ?? []).some(k => k.x === x && k.y === y)) return false;
+  // en lagerplats påverkar inte var huset står (steg 8.1.15): det som ligger i den räknas inte, utan bärs ut när bygget börjar
+  const iLager = zonesOf(s).some(z => inZone(z, x, y));
+  if (!iLager && ((s.stackar ?? []).some(a => a.x === x && a.y === y) || tingOf(s).some(k => k.x === x && k.y === y && k.hos === undefined && k.lass === undefined)) || (s.stockar ?? []).some(k => Math.floor(k.x) === x && Math.floor(k.y) === y) || (s.stubbar ?? []).some(k => k.x === x && k.y === y)) return false;
   return true;
 };
 // en plats för ett hus med yttermåtten w×h inom byområdet, PLATS.husMellan rutor från andra hus och PLATS.uteFri från stationer
 // som står ute, helst en bit från elden och inte på lekplatsen, och inte så att väggarna stänger in mark. Träden där
-// huset ska stå fälls först, men en plats med färre träd går fortare
+// huset ska stå fälls först
 function siteFor(s: State, w: number, h: number, okAt: (i: number) => boolean) {
-  const f = eldPlats(s), R = BYGG.radieBas + living(s).length * BYGG.radiePerPerson, g = groundOf(s), lekR = lekplats(s), M = Math.max(PLATS.husMellan + ((s.byplan?.tat ?? 0) < -0.5 ? 1 : 0), PLATS.uteFri);
+  const f = eldPlats(s), R = BYGG.radieBas + living(s).length * BYGG.radiePerPerson, lekR = lekplats(s), M = Math.max(PLATS.husMellan + ((s.byplan?.tat ?? 0) < -0.5 ? 1 : 0), PLATS.uteFri);
   const platser: { x: number; y: number; sc: number }[] = [], o = omrade(s), r = Math.ceil(R) + w + h;
   for (let y = Math.max(1, o.y0 - r); y + h < H && y <= o.y1 + r; y++) for (let x = Math.max(1, o.x0 - r); x + w < W && x <= o.x1 + r; x++) {
     const cx = x + w / 2, cy = y + h / 2;
@@ -103,11 +105,9 @@ function siteFor(s: State, w: number, h: number, okAt: (i: number) => boolean) {
     if (!ok) continue;
     const near = rektAvstand(f.x, f.y, x, y, w, h), m = o.mitt;
     const lek = paLek(lekR, x, y, w, h) ? BYGG.lekStraff : 0; // lekplatsen räknas från byns inre (plats.ts, steg 2.10.4)
-    let trad = 0; // helst en plats med få träd: varje träd ska fällas först
-    for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) if (g.trees[yy * W + xx] >= FOREST) trad++;
     const eld = rektAvstand(f.x, f.y, x - 1, y - 1, w + 2, h + 2) === 0 ? ELDFLYTT.husStraff : 0; // där elden står bara om ingen annan plats finns: elden flyttas först
     const form = s.byplan?.form ?? 'ring', rad = form === 'rader' && strakNara(s, x, y, w, h) ? PLAN.raderVikt : 0;
-    const sc = Math.max(0, BYGG.husAvst - near) + BYGG.utomVikt * Math.max(0, ut - Math.min(w, h) / 2) + (BYGG.mittVikt + (form === 'ring' ? PLAN.ringVikt : 0)) * Math.hypot(cx - m.x - 0.5, cy - m.y - 0.5) + lek + BYGG.tradVikt * trad + eld - rad;
+    const sc = Math.max(0, BYGG.husAvst - near) + BYGG.utomVikt * Math.max(0, ut - Math.min(w, h) / 2) + (BYGG.mittVikt + (form === 'ring' ? PLAN.ringVikt : 0)) * Math.hypot(cx - m.x - 0.5, cy - m.y - 0.5) + lek + eld - rad; // träden spelar ingen roll: de fälls som en del av bygget (steg 8.1.14)
     platser.push({ x, y, sc });
   }
   // den bästa platsen som inte stänger in någon mark (stationer.ts); lika bra platser i samma ordning som de söktes
@@ -673,11 +673,14 @@ function utfor(s: State, f: Forslag, u: ByggBehov, byggare: Person[], ppl: Perso
 }
 // ett nytt hus: ritningen blir bitar
 function bygg(s: State, f: Forslag, u: ByggBehov, by: Person) {
+  const iVagen = zonesOf(s).filter(z => z.hus === undefined && overlaps(z, f, 0));
   const row: Byggnad = BYGGNADER[u.fn as Fn], iw = f.w - 2, ih = f.h - 2, same = antalLika(s, u.fn as Fn, iw, ih);
   const hus: Hus = { id: (s.nextBit ??= 1), namn: row.namnFor!(s, iw, ih, same, u.a), x: f.x, y: f.y, w: f.w, h: f.h, fn: u.fn, slag: u.a.slag, ag: u.a.ag, ...(row.skjul ? { skjul: 1 as const } : {}) };
   s.nextBit++;
   for (const a of f.ritning) bitsOf(s).push({ id: s.nextBit++, x: a.x, y: a.y, k: MATERIAL[a.m].k, m: a.m, b: a.m === 'oppning' ? 1 : 0, mat: 0, c: 1, hus: hus.id });
   housesOf(s).push(hus); touch(s);
+  // lagret i vägen (steg 8.1.15): en ny lagerplats, och sakerna bärs dit innan bygget börjar
+  if (iVagen.length) { for (const z of iVagen) flyttaLager(s, z); hus.barUt = s.now + PLAN.barUtTim * HOUR; }
   if (f.ny) s.fire.flytt = { x: f.ny.x, y: f.ny.y, varfor: 'plats' };
   log(s, planText(by, u.fn as Fn, hus, iw * ih, same) + (f.ny ? ' Elden måste flyttas först.' : ''), 'world', [by.id]); count(s, 'planerat_' + u.fn);
   if (u.fn === 'sovsal' && iw * ih >= HUS.langhus) count(s, 'planerat_langhus'); // ett långhus (så ofta det händer, samhalle-192)

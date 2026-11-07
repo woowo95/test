@@ -1,3 +1,4 @@
+import { storlekAv } from './stationer';
 import { bynsMitt, utanforByn } from './omrade';
 import { freeTools } from './agande';
 import { count, forstaGang, gjort, living, log, think } from './folk';
@@ -46,6 +47,8 @@ export function skaRojas(s: State) {
   const g = groundOf(s), ut: number[] = [];
   for (const z of s.lagren ?? []) if (z.rojs && z.hus === undefined) for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (g.trees[y * W + x] >= FOREST) ut.push(y * W + x);
   for (const f of faltOf(s)) if (f.steg === 'roja') for (let k = f.klara; k < f.n; k++) { const i = faltRuta(f, k); if (g.trees[i] >= FOREST) ut.push(i); }
+  // en station på en plats med träd: de fälls som en del av bygget (steg 8.1.14)
+  for (const t of s.stationer ?? []) if (!t.inne) { const { w, h } = storlekAv(t); for (let y = t.y; y < t.y + h; y++) for (let x = t.x; x < t.x + w; x++) if (g.trees[y * W + x] >= FOREST) ut.push(y * W + x); }
   return ut;
 }
 // det närmaste trädet att fälla i ett lager eller på ett fält i skogen, som ingen annan fäller (projektet rojning i projekt.ts)

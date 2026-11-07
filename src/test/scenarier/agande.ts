@@ -2154,7 +2154,7 @@ function berattelseKoll(s: SIM.State): [string, boolean][] {
     ut.push([`några timmar utan något i krönikan: en mening om att det var lugnt ("${tom[0]}")`, tom.length === 1 && (SIM.BERATTELSER.b_lugnt as SIM.Variant[]).some(v => (typeof v === 'string' ? v : v.t) === tom[0])]);
     rad(s.now - 170 * SIM.MIN, 'Ugge bytte en skål.', 'byte'); rad(s.now - 160 * SIM.MIN, 'Mira föddes.', 'k_fodd'); rad(s.now - 150 * SIM.MIN, 'Något smått.');
     rad(s.now - 140 * SIM.MIN, 'Den första handlaren kom.', 'handel'); rad(s.now - 130 * SIM.MIN, 'Arvid dog.', 'k_dog');
-    const kort = bortaBerattelse(s, b(s.now - 3 * H)), k = kort.join(' ');
+    const kort = bortaBerattelse(s, b(s.now - 3 * H)), k = kort.join(' ').replace(/\n/g, ' ');
     ut.push([`några timmar: ett stycke med de tre viktigaste i tidsordning och resten som småsaker (${k})`,
       kort.length === 1 && /^Mira föddes\. Den första handlaren kom\. Arvid dog\. /.test(k) && !k.includes('skål') && !k.includes('smått')]);
     // några dygn: en inledning och ett stycke per år (ett lugnt år får sin mening); en vecka: per tidsålder och sist byn nu
