@@ -836,3 +836,10 @@
     })(),
   );
 })();
+// prickarna vid figuren på kartan (sjuk och väntar barn) i pixlar i stället för mjuka cirklar: en sak som redan finns och
+// görs om, så ett kort att säga ja eller nej till
+(() => {
+  const PRICK = ['.oo.', 'oljo', 'ojjo', '.oo.'];
+  const prick = (B, x, y, ljus, mork) => PRICK.forEach((r, dy) => [...r].forEach((ch, dx) => { if (ch !== '.') B.satt(x + dx, y + dy, ch === 'o' ? B.P.i('kol', 0) : ch === 'l' ? B.P.i(...ljus) : B.P.i(...mork)); }));
+  const figur = (B, fro, x, fot) => { if (!window.BYBO) return; const F = window.BYBO(fro, 'fram', 'sta', 'hanga'); for (let y = 0; y < F.h; y++) for (let dx = 0; dx < F.w; dx++) { const c = F.px[y * F.w + dx]; if (c >= 0) B.satt(x + dx, fot - F.h + y, c); } for (let dx = 1; dx < F.w - 1; dx++) B.morka(x + dx, fot); return F; };
+})();
