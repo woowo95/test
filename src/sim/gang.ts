@@ -15,6 +15,10 @@ import { yrselFaktor } from './naring';
 import { groundOf, tileOf } from './mark';
 import { FOREST, Ground, HIGH, VAG, isSoil, markFart, speedAt } from './vag';
 import { Person, State } from './typer';
+import { SAKER } from './saker';
+import { tingOf } from './agande';
+import { snoPaMarken } from './vader';
+import { roofed } from './byggnad';
 
 // Balanstalen (regel 8): farten för en frisk vuxen och det som gör den långsammare
 export const GANG = balans('gang', {
@@ -30,17 +34,28 @@ export const GANG = balans('gang', {
   fartUng: 0.85, // ... med ungskog
   fartHog: 0.9, // ... med högt gräs (kort gräs och stigar går man fortast på: 1)
   fartSaker: 0.9, // över lösa saker och högar på golvet (steg 2.3.6), gånger marken
+  snoBroms: 0.1, // med snö på hela marken går man så här mycket långsammare ute; under tak inget (snöskorna tar bort det mesta, snoTar i PLAGG)
   smidTerr: 0.3, // i skog och snår (marken långsammare än 1) tar den smidiga igen så här stor del av det man förlorar, gånger (smidigheten − 10) / 10 (steg 3.7.6)
 });
 
 // en rad: namnet, symbolen och farten gånger detta (1 = ingen skillnad). kropp = gäller hela vägen; annars marken, för rutan i
 // i marken g. text = vad det är just nu, när raden drar ner farten
-export interface GangLage { p: Person; now: number; bar: boolean; g: Ground; i: number; sm: number }
+export interface GangLage { s: State; p: Person; now: number; bar: boolean; g: Ground; i: number; sm: number }
 interface GangRad { namn: string; tecken: string; kropp?: true; varde(l: GangLage): number; text?(l: GangLage): string }
 const MARKNAMN = ['Vatten', 'Sand', 'Jord', 'Jord', 'Sten', 'Torr sjöbotten'];
 // rutan utan saker och smidighet, och med (det steg.ts går med)
 const utanSaker = (l: GangLage) => kanGa(l.p) ? markFart(l.g, l.i) || 1 : 1; // den som kravlar: marken drar inte ner farten
 const medSaker = (l: GangLage) => utanSaker(l) * (kanGa(l.p) && l.g.lost?.[l.i] ? GANG.fartSaker : 1);
+// snön på marken (steg 7.7.3): farten ute gånger detta, 1 när det inte ligger någon snö. Den som kravlar har redan sin fasta fart.
+// Snöskorna tar bort det mesta (snoTar på plagget). Räknas en gång per gångsträcka; taket frågas för rutan (snoPaRutan)
+export function snoFart(s: State, p: Person) {
+  const sno = snoPaMarken(s);
+  if (sno <= 0 || !kanGa(p)) return 1;
+  let tar = 0;
+  for (const t of tingOf(s)) if (t.bar === p.id) tar = Math.max(tar, SAKER[t.k]?.klad?.snoTar ?? 0);
+  return 1 - GANG.snoBroms * sno * (1 - tar);
+}
+export const snoPaRutan = (s: State, p: Person, x: number, y: number) => { const f = snoFart(s, p); return f < 1 && roofed(s, x, y) ? 1 : f; };
 export const GANGFART = {
   alder: { namn: 'Åldern', tecken: '🧒', kropp: true, varde: l => { const a = ageOf(l.p, l.now); return a < ALDER.gangBarn ? GANG.fartBarn / GANG.fart : a > ALDER.gangGammal ? GANG.fartGammal / GANG.fart : 1; }, text: l => ageOf(l.p, l.now) < ALDER.gangBarn ? 'Barn' : 'Gammal' },
   skador: { namn: 'Skadade ben och fötter', tecken: '🦵', kropp: true, varde: l => kanGa(l.p) ? rorlighetSkador(l.p) : 1 },
@@ -52,6 +67,7 @@ export const GANGFART = {
     if (!isSoil(t)) return MARKNAMN[t] ?? 'Marken';
     return l.g.trees[l.i] >= FOREST ? 'Skog' : l.g.trees[l.i] >= VAG.ungskog ? 'Ungskog' : busksort(l.g, l.i)?.namn ?? (l.g.cover[l.i] >= HIGH ? 'Högt gräs' : 'Marken');
   } },
+  sno: { namn: 'Snö på marken', tecken: '❄', varde: l => snoPaRutan(l.s, l.p, l.p.x, l.p.y) },
   saker: { namn: 'Saker på golvet', tecken: '📦', varde: l => kanGa(l.p) && l.g.lost?.[l.i] ? GANG.fartSaker : 1 },
   smidig: { namn: 'Smidigheten i skog och snår', tecken: '🤸', varde: l => { const sp0 = medSaker(l); return markFaktor(sp0, l.sm) / sp0; },
     text: l => l.sm > 0 ? 'Smidig: tar igen en del i skog och snår' : 'Klumpig: ännu långsammare i skog och snår' },
@@ -78,7 +94,7 @@ export const kroppFaktor = (p: Person, now: number, bar = false) => kroppFart(p,
 // personrutan: farten nu som del av en frisk vuxens på en stig, och raderna som ändrar den (v = farten gånger detta, minus 1)
 export function gangDelar(s: State, p: Person) {
   const g = groundOf(s), i = tileOf(p.x, p.y);
-  const l: GangLage = { p, now: s.now, bar: p.task?.bar !== undefined, g, i: Math.max(0, Math.min(g.tiles.length - 1, i)), sm: smidig(p, s.now) };
+  const l: GangLage = { s, p, now: s.now, bar: p.task?.bar !== undefined, g, i: Math.max(0, Math.min(g.tiles.length - 1, i)), sm: smidig(p, s.now) };
   const delar: { k: GangOrsak; namn: string; tecken: string; v: number }[] = [];
   let f = 1;
   for (const k of Object.keys(GANGFART) as GangOrsak[]) {

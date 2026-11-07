@@ -964,6 +964,24 @@ SCENARIER.kryper = {
   },
 };
 
+SCENARIER.snogang = {
+  text: 'Steg 7.7.3: med snö på marken går man lite långsammare ute, inte under tak, och snöskorna tar bort det mesta av det. Personrutan visar snön bland det som saktar gången',
+  kor: () => {
+    const s = createState(4, START), p = living(s)[0], { GANG, snoFart, gangDelar, newTing, PLAGG } = SIM;
+    s.vader = { fukt: 0.5, sno: 0 };
+    const utan = snoFart(s, p);
+    s.vader.sno = 1;
+    const sno = snoFart(s, p), rad = gangDelar(s, p).delar.find(d => d.k === 'sno');
+    const skor = newTing(s, 'snoskor_kaninskinn', 1, p.id); skor.bar = p.id;
+    const medSkor = snoFart(s, p);
+    return [
+      [`utan snö ingen skillnad (${utan})`, utan === 1],
+      [`snö på hela marken saktar lite (${sno.toFixed(2)})`, Math.abs(sno - (1 - GANG.snoBroms)) < 1e-9 && sno >= 0.85],
+      [`snöskorna tar bort det mesta (${medSkor.toFixed(2)})`, medSkor > sno && 1 - medSkor <= (1 - sno) * (1 - PLAGG.snoskor.snoTar!) + 1e-9],
+      ['personrutan visar snön', !!rad],
+    ];
+  },
+};
 SCENARIER.gangfart = {
   text: 'Gångfarten i ett register (steg 3.10.10): åldern, skadade ben och fötter, yrseln, att kravla, att bära någon, marken, saker på golvet och smidigheten är rader i GANGFART som multipliceras. Ingen går väldigt långsamt (steg 6.2.7): marken bromsar som mest till 0,75, barn och gamla går 0,75 av en vuxens fart, krypandet 0,3 och marken drar inte ner det, skadade ben aldrig under GANG.rorGolv, och personrutan visar det som drar ner farten just nu',
   kor: () => {

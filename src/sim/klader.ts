@@ -36,7 +36,8 @@ type Skadeslag = 'hugg' | 'stick' | 'slag' | 'bett';
 interface PlaggDef {
   namn: string; ord: string; verb: 'Syr' | 'Flätar'; plats: string; mangd: number; med?: Record<string, number>;
   varme: number; dygn: number; vikt: number; tek: string; min: number; slag: MaterialSlag[];
-  krok?: number; axel?: number; rygg?: number; tung?: true; skydd?: { delar: Kroppsdel[]; tar: Partial<Record<Skadeslag, number>> };
+  krok?: number; axel?: number; rygg?: number; tung?: true; snoTar?: number; // snoTar = så stor del av det snön bromsar som plagget tar bort (snöskorna, steg 7.7.3; snoFart i gang.ts)
+  skydd?: { delar: Kroppsdel[]; tar: Partial<Record<Skadeslag, number>> };
   forsta: string; fame?: string; // loggen första gången ({namn} = den som gjorde det, {plagg} = plaggets namn i en mening) och det hen minns för
 }
 const PLAGG_DEF = {
@@ -54,7 +55,7 @@ const PLAGG_DEF = {
     skydd: { delar: ['benV', 'benH'], tar: { hugg: 0.2, stick: 0.15, slag: 0.15, bett: 0.25 } }, forsta: '{namn} sydde byns första par {plagg}.' }, // steg 7.7.1
   mossa: { namn: 'Mössa', ord: 'en mössa', verb: 'Syr', plats: 'huvud', mangd: RECEPT.mossa.mangd, varme: 0.1, dygn: 4, vikt: 1, tek: 'skinnklader', min: RECEPT.mossa.min, slag: ['skinn', 'lader'],
     skydd: { delar: ['huvud'], tar: { hugg: 0.15, stick: 0.1, slag: 0.15, bett: 0.2 } }, forsta: '{namn} sydde byns första {plagg}.' }, // steg 7.7.2
-  snoskor: { namn: 'Snöskor', ord: 'ett par snöskor', verb: 'Syr', plats: 'fotter', mangd: RECEPT.snoskor.mangd, med: RECEPT.snoskor.av, varme: 0.1, dygn: 3, vikt: 3, tek: 'skinnklader', min: RECEPT.snoskor.min, slag: ['skinn'],
+  snoskor: { namn: 'Snöskor', ord: 'ett par snöskor', verb: 'Syr', plats: 'fotter', mangd: RECEPT.snoskor.mangd, med: RECEPT.snoskor.av, varme: 0.1, dygn: 3, vikt: 3, tek: 'skinnklader', min: RECEPT.snoskor.min, slag: ['skinn'], snoTar: 0.8,
     skydd: { delar: ['fotV', 'fotH'], tar: { hugg: 0.2, stick: 0.2, slag: 0.1, bett: 0.3 } }, forsta: '{namn} gjorde byns första par {plagg}. Snön saktar dem nästan inte.' }, // steg 7.7.3
   halsband: { namn: 'Halsband', ord: 'ett halsband', verb: 'Syr', plats: 'smycke', mangd: RECEPT.halsband.mangd, med: RECEPT.halsband.av, varme: 0, dygn: 20, vikt: 0.2, tek: 'skinnklader', min: RECEPT.halsband.min, slag: ['smycke'],
     forsta: '{namn} trädde byns första {plagg}. Den som bär det får anseende.' }, // steg 7.7.5
@@ -120,7 +121,7 @@ export function kladSaker() {
     const P: PlaggDef = PLAGG[pl], M = KLADMATERIAL[m], namn = kladNamn(pl, m), iMening = `${P.namn.toLowerCase()} av ${M.namn}`;
     r[k] = {
       namn, skaffa: { av: receptAv(pl, m), min: P.min, slag: 'stor', tek: P.tek }, vikt: +(P.vikt * M.vikt).toFixed(3), stack: 1, mapp: 'Kläder', slits: 0.0003, redskap: true, grupp: pl, ...(P.ord === `ett ${P.namn.toLowerCase()}` ? { ett: true as const } : {}),
-      klad: { plats: P.plats, varme: +(P.varme * M.varme).toFixed(4), dygn: P.dygn * M.hallbar, ...(P.krok ? { krok: P.krok } : {}), ...(P.axel ? { axel: P.axel } : {}), ...(P.rygg ? { rygg: P.rygg } : {}) },
+      klad: { plats: P.plats, varme: +(P.varme * M.varme).toFixed(4), dygn: P.dygn * M.hallbar, ...(P.krok ? { krok: P.krok } : {}), ...(P.axel ? { axel: P.axel } : {}), ...(P.rygg ? { rygg: P.rygg } : {}), ...(P.snoTar ? { snoTar: P.snoTar } : {}) },
       gors: { text: `${P.verb} ${P.ord} av ${M.namn}.`, stat: k, forsta: P.forsta.replace('{plagg}', iMening), ...(P.fame ? { fame: P.fame.replace('{plagg}', iMening) } : {}) },
     };
   }

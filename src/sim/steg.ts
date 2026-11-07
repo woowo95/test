@@ -48,7 +48,7 @@ import { ARSTID, VAR, ageIndex, hourOf, iIstiden, isLight } from './tid';
 import { ACTS, toolRow } from './handlingar';
 import { AGES_BORJAR, Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, Historik, simulera, T, inMap } from './typer';
 import { FOREST, findPath, wear } from './vag';
-import { kroppFart, rutFart, smidig } from './gang';
+import { kroppFart, rutFart, smidig, snoFart } from './gang';
 import { facklorTimme, finishLjus, finishUppsatt, morkFart, morkHumor } from './ljus';
 import { arbetsTimme, chooseTask, dangers, nastaBuske, nastaRedskap, nastaRuta, spotFor } from './val';
 import { FAGEL, djurSteg } from './djur';
@@ -523,14 +523,14 @@ function walk(s: State, p: Person, tk: Task, left: number) {
   }
   const off = sida(p, 0.18), fart = kroppFart(p, s.now, tk.bar !== undefined), t0 = s.now; // åldern, skadorna, yrseln, att kravla och att bära någon (gångfartens register, gang.ts)
   let budget = fart * left;
-  const sm = smidig(p, s.now);
+  const sm = smidig(p, s.now), snoF = snoFart(s, p); // snön på marken (steg 7.7.3)
   const klocka = () => t0 + (fart * left - budget) / fart * SEC;
   if (budget <= 0) return { used: left, framme: false };
   // punkt för punkt längs vägen (var och en lite vid sidan av) och sist till målet. Marken nöts där man går
   for (;;) {
     const sist = !tk.path?.length, i = sist ? 0 : tk.path![0];
     const wx = sist ? tk.tx : (i % W) + 0.5 + off, wy = sist ? tk.ty : Math.floor(i / W) + 0.5 - off;
-    const ci = tileOf(p.x, p.y), sp = rutFart(p, g, ci, sm) * morkFart(s, p); // i totalmörker går man långsammare (ljus.ts)
+    const ci = tileOf(p.x, p.y), sp = rutFart(p, g, ci, sm) * morkFart(s, p) * (snoF < 1 && !roofed(s, p.x, p.y) ? snoF : 1); // i totalmörker går man långsammare (ljus.ts), och ute i snön
     const dx = wx - p.x, dy = wy - p.y, d = Math.hypot(dx, dy), can = budget * sp;
     wear(g, ci, MARK.nott * STEG.markNot * Math.min(d, can));
     if (d > can) { p.x += dx / d * can; p.y += dy / d * can; return { used: left, framme: false }; } // tiden räckte inte hela vägen
