@@ -1,5 +1,6 @@
 // Kör en by med eller utan gångstråken (provet i steg 6.2.6) och skriver husens placering, stråken och en karta över byn
 // som JSON på sista raden (används av prov.ts). Utan stråken: BALANS="strak.pa=0", då räknas och ritas de men hindrar inget.
+import './utc';
 import { korBy } from './kor';
 import { bitsOf, bynsMitt, eldPlats, getMap, groundOf, housesOf, markslag, omrade, stationerOf, storlekAv, straken, STRAK, zonesOf, faltAt, H, W, T } from '../sim';
 

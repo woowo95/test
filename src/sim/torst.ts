@@ -19,7 +19,12 @@ import { halMin, halVal, islagt, naVattnet } from './is';
 import { Act, GRANNAR4, H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
 import { hemma, kanGa } from './halsa';
-import { freeTools, nTools } from './agande';
+import { fylldSack, freeTools, nTools, toolsOf } from './agande';
+import { TILLVERKA, TILLVERKA_LIST } from './tillverka';
+import { amountOf } from './lager';
+import { getable } from './behov';
+import { kanGoras } from './stationer';
+import { knows } from './teknik';
 import { wearUsed } from './redskap';
 import { Falt, faltById, faltOf, faltRutor } from './odling';
 import { TORKA } from './torka';
@@ -127,7 +132,7 @@ export function drickPlats(s: State, p: Person) {
   let best: { x: number; y: number } | undefined, bs = Infinity;
   const prova = (x: number, y: number, nara: boolean) => {
     const i = y * W + x;
-    if (!inMap(x, y) || !sh[i] || !nb[i] && m[i] !== T.Vatten || bitAt(s, x, y) || (mitt.size && !mitt.has(id[i]))) return;
+    if (!inMap(x, y) || !sh[i] || !nb[i] && m[i] !== T.Vatten && bitAt(s, x, y)?.m !== 'brygga' || bitAt(s, x, y) && bitAt(s, x, y)!.m !== 'brygga' || (mitt.size && !mitt.has(id[i]))) return;
     const a = areaOf(x, y);
     let t = tro.get(a);
     if (t === undefined) tro.set(a, t = tror(p, a));
@@ -178,6 +183,13 @@ const hamtas = (s: State, q: Person) => living(s).some(o => o.task?.act === 'vat
 // under torkan (steg 3.8.2) vattnar ägaren sitt fält med säcken när grödan snart vissnar, om ingen annan redan gör det
 const vattnas = (s: State, f: Falt) => living(s).some(o => o.task?.act === 'vatten' && o.task.falt && o.task.ref === f.id);
 const torrtFalt = (s: State, p: Person) => s.sjoTorr?.pa ? faltOf(s).find(f => f.agare === p.id && f.steg === 'vaxer' && (f.vatten ?? 1) < TORKA.vattna && !vattnas(s, f)) : undefined;
+// örtköket behöver vatten (steg 7.6.6): ingen säck står fylld, ingen fyller en, och byn vill ha något som kokas med vatten och som
+// någon kan göra. ref = FYLL i uppgiften: säcken fylls och blir stående fylld
+const FYLL = 0;
+const villFylla = (s: State, p: Person) => !fylldSack(s) && !living(s).some(o => o.task?.act === 'vatten' && !o.task.falt && o.task.ref === FYLL) && TILLVERKA_LIST.some(k => {
+  const d = TILLVERKA[k];
+  return d.vatten && amountOf(s, d.ger) < d.vill && kanGoras(s, d.act) && living(s).some(q => knows(q, d.tek)) && Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n);
+});
 // det som väljs (val.ts): den närmaste som behöver vatten och som ingen annan redan hämtar åt, och vattnet att fylla säcken vid
 export function vattenVal(s: State, p: Person): { spot: { x: number; y: number }; ref: number; why: string; falt?: true } | undefined {
   if (ageOf(p, s.now) < ALDER.vuxen || !kanGa(p) || freeTools(s, p, 'vattensack') < 1) return undefined;
@@ -188,13 +200,19 @@ export function vattenVal(s: State, p: Person): { spot: { x: number; y: number }
     if (d >= bd || hamtas(s, q)) continue;
     best = q; bd = d;
   }
-  const f = best ? undefined : torrtFalt(s, p);
-  const spot = (best || f) && naVattnet(s, p) && drickPlats(s, p); // genom isen bara med ett hål (is.ts)
+  const f = best ? undefined : torrtFalt(s, p), kok = !best && !f && villFylla(s, p);
+  const spot = (best || f || kok) && naVattnet(s, p) && drickPlats(s, p); // genom isen bara med ett hål (is.ts)
   if (!spot) return undefined;
+  if (kok) return { spot, ref: FYLL, why: 'Fyller vattensäcken till örtköket' };
   return best ? { spot, ref: best.id, why: `Hämtar vatten i säcken åt ${best.name}` } : { spot, ref: f!.id, why: 'Hämtar vatten till sitt fält', falt: true };
 }
-// säcken är fylld (KLAR i steg.ts): bär den till den törstige. Utan säck i handen blir det inget
+// säcken är fylld (KLAR i steg.ts): bär den till den törstige, eller låt den stå fylld till örtköket (FYLL). Utan säck i handen blir det inget
 export function vattenFylld(s: State, p: Person, t: Task) {
+  if (t.ref === FYLL && !t.falt) { // till örtköket: säcken står fylld tills någon kokar med den
+    const k = toolsOf(s, 'vattensack').find(q => q.hos === p.id) ?? toolsOf(s, 'vattensack')[0];
+    if (t.tool && k) { k.fylld = 1; wearUsed(s, p, 1); count(s, 'sack fylld'); }
+    return;
+  }
   if (t.falt) { const f = faltById(s, t.ref); if (!t.tool || !f) return; const r = faltRutor(f), i = r[Math.floor(r.length / 2)]; t.phase = 'back'; t.tx = i % W + 0.5; t.ty = Math.floor(i / W) + 0.5; t.why = 'Vattnar sitt fält'; return; }
   const q = byId(s, t.ref);
   if (!t.tool || !q || !alive(q)) return;

@@ -1,0 +1,24 @@
+{
+"id": "trad",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 7.8.1)",
+"w": 14,
+"h": 6,
+"rader": [
+"...kkkkkkkk...",
+"kkkllllllllkk.",
+"mnnrlrlrlrlnnk",
+"kssrlrlrlrlsss",
+".kkttttttttkkk",
+"...kkkkkkkk..."
+],
+"pal": {
+"k": "#24201d",
+"l": "#dad0bb",
+"m": "#7d5b40",
+"n": "#987e62",
+"r": "#bdb39b",
+"s": "#5e3c24",
+"t": "#a0947d"
+}
+}

@@ -1,3 +1,4 @@
+import { blocked, freeNear } from './byggnad';
 // Framträdandena (steg 4.3.2, "Kulturen i fas 4" i designdokumentet): på kvällen när det är mörkt uppträder någon vid elden
 // (eller i långhuset när det är kallt eller regnar) för de andra, högst en gång per kväll. Den enklaste formen, ett kväde,
 // finns från början, så att även en liten by har framträdanden. Formerna är rader i registret FRAMTRADANDEN. Framträdandet
@@ -166,7 +167,7 @@ function budVal(s: State, p: Person, d: FramDef) {
 function betalning(s: State, l: Person): Ting | undefined {
   let best: Ting | undefined, bv = Infinity;
   for (const t of tingOf(s)) {
-    if (t.agare !== l.id || t.halv || t.hos !== undefined || t.lass !== undefined || t.vid !== undefined || t.bar !== undefined || t.c < 1) continue;
+    if (t.agare !== l.id || t.halv || t.hos !== undefined || t.krok !== undefined || t.lass !== undefined || t.vid !== undefined || t.bar !== undefined || t.c < 1) continue;
     const v = tingVarde(t);
     if (v > 0 && v < bv) { bv = v; best = t; }
   }
@@ -201,8 +202,9 @@ function publik(s: State, p: Person) {
 }
 // scenen (steg 4.3.2.2): en färdig scen, när det inte är kallt eller regnar (då är man vid elden eller inne som förut)
 export function scenen(s: State) {
-  if (nederbord(s) || coldOf(temperature(s)) > 0) return undefined;
-  return stationerOf(s).find(t => t.k === 'scen' && isKlar(t));
+  // en scen inne i en sal (gillesalen, steg 7.2.7) går också när det är kallt eller regnar
+  const sc = stationerOf(s).filter(t => t.k === 'scen' && isKlar(t)), inne = sc.find(t => t.inne);
+  return inne ?? (nederbord(s) || coldOf(temperature(s)) > 0 ? undefined : sc[0]);
 }
 // instrumenten som ligger vid scenen, det som ger mest glädje först
 const instrumentVid = (s: State, sc: Station) => Object.keys(INSTRUMENT).filter(k => redskapVid(s, sc, k).length).sort((a, b) => INSTRUMENT[b].kval - INSTRUMENT[a].kval);
@@ -236,7 +238,7 @@ export function framVal(s: State, p: Person, plats: (q: Person) => { x: number; 
   count(s, 'framtradanden');
   for (const q of pub) {
     avbryt(s, q);
-    const u = plats(q);
+    const u0 = plats(q), u = blocked(s, u0.x, u0.y) ? freeNear(s, Math.floor(u0.x), Math.floor(u0.y)) : u0; // aldrig i en vägg (scenen kan stå inne, steg 7.2.7)
     q.task = { act: 'lyssna', phase: 'go', tx: u.x, ty: u.y, until: slut, carry: 0, ref: start, tool: d.id, dark: true, why: `Lyssnar på ${p.name}s ${d.namn.toLowerCase()}` };
   }
   return { act: 'upptrada', why: `${d.namn}: ${text}`, dur: slut - start, ref: start, tool: d.id, spot: sc && vidStation(sc) }; // på scenen när byn har en

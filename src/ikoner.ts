@@ -3685,7 +3685,7 @@ const MATERIAL_FARG: Record<string, Record<string, string>> = {
   vargskinn: { d: '#474138', w: '#bdb39b', W: '#dad0bb', B: '#987e62', b: '#7d5b40', s: '#dad0bb' },
   rep: { e: '#7d5b40', Y: '#bdb39b', y: '#a0947d', d: '#5e3c24' },
 };
-for (const { k, plagg, mat } of KLADER_AV) { PIX[k] = PLAGG_BILD[plagg]; PAL[k] = MATERIAL_FARG[mat]; }
+for (const { k, plagg, mat } of KLADER_AV) if (PLAGG_BILD[plagg]) { PIX[k] = PLAGG_BILD[plagg]; PAL[k] = MATERIAL_FARG[mat]; }
 // tekniken Bälte har bältets bild
 PIX.balte = PIX.balte_rep; PAL.balte = PAL.balte_rep;
 // Björns val efter v193 (steg 3.10.13): den fångade kaninen på kartan ser ut som viltet i förrådet
@@ -3739,6 +3739,54 @@ PIX.skor_kaninskinn = SKOR16; PAL.skor_kaninskinn = { o: '#24201d', G: '#7d5b40'
 PIX.skor_vargskinn = SKOR16; PAL.skor_vargskinn = { o: '#24201d', G: '#61767a', H: '#8a9c9e', d: '#233035', W: '#dad0bb' };
 PIX.rock_bjornskinn = ROCK16; PAL.rock_bjornskinn = { o: '#24201d', G: '#5e3c24', H: '#7d5b40', g: '#3f2415', W: '#dad0bb' }; // steg 6.6.6: i björnens färger
 PIX.skor_bjornskinn = SKOR16; PAL.skor_bjornskinn = { o: '#24201d', G: '#5e3c24', H: '#7d5b40', d: '#3f2415', W: '#dad0bb' };
+// steg 7.1.2: axelremmen, en platshållare (en rem snett över bröstet från axeln till höften, med en knut av rep) tills Björn
+// valt bland versionerna i bildstilen (steg 7.1.4)
+const AXELREM16 = [
+  '................',
+  '..oo............',
+  '.oGHo...........',
+  '.oGHGo..........',
+  '..oGHGo.........',
+  '...oGHGo........',
+  '....oGHGo.......',
+  '.....oGHGo......',
+  '......oGHGo.....',
+  '.......oGHGo....',
+  '........oGHGo...',
+  '.........oyYyo..',
+  '.........oYdYo..',
+  '..........oyYGo.',
+  '...........oGHo.',
+  '............oo..',
+];
+for (const [m, G, H] of [['kaninskinn', '#7d5b40', '#987e62'], ['vargskinn', '#61767a', '#8a9c9e'], ['bjornskinn', '#5e3c24', '#7d5b40']]) {
+  PIX['axelrem_' + m] = AXELREM16; PAL['axelrem_' + m] = { o: '#24201d', G, H, y: '#a0947d', Y: '#bdb39b', d: '#5e3c24' };
+}
+PIX.axelrem = PIX.axelrem_kaninskinn; PAL.axelrem = PAL.axelrem_kaninskinn; // tekniken har remmens bild
+// steg 7.1.3: ryggsäcken, en platshållare (en säck av skinn med en flik överst, två remmar av rep och en knut) tills Björn
+// valt bland versionerna i bildstilen (steg 7.1.4)
+const RYGGSACK16 = [
+  '................',
+  '.....oooooo.....',
+  '....oyHHHHyo....',
+  '...oyoooooooy...',
+  '...oyoHHHHoyo...',
+  '..oGoHGGGGHoGo..',
+  '..oGooooooooGo..',
+  '..oGHGGGGGGHGo..',
+  '..oGHGGddGGHGo..',
+  '..oGHGGddGGHGo..',
+  '..oGHGGGGGGHGo..',
+  '..oGHGGGGGGHGo..',
+  '..oGHHHHHHHHGo..',
+  '..oGGGGGGGGGGo..',
+  '...oooooooooo...',
+  '................',
+];
+for (const [m, G, H] of [['kaninskinn', '#7d5b40', '#987e62'], ['vargskinn', '#61767a', '#8a9c9e'], ['bjornskinn', '#5e3c24', '#7d5b40']]) {
+  PIX['ryggsack_' + m] = RYGGSACK16; PAL['ryggsack_' + m] = { o: '#24201d', G, H, y: '#a0947d', d: '#5e3c24' };
+}
+PIX.ryggsack = PIX.ryggsack_kaninskinn; PAL.ryggsack = PAL.ryggsack_kaninskinn; // tekniken har säckens bild
 PIX.filt_by = [
   '................',
   '................',
@@ -3809,6 +3857,22 @@ for (const [id, b] of Object.entries(ANIMBILDER)) { PIX['an_' + id] = b.rader; P
 // stubbarna och de fällda träden (steg 6.8.16, stubbilder.ts) med id:t sb_<id>; ui/foremal.ts väljer bild efter trädet och tiden
 for (const [id, b] of Object.entries(STUBBILDER)) { PIX['sb_' + id] = b.rader; PAL['sb_' + id] = b.pal; }
 for (const k of ['brand', 'tornado']) { PIX[k] = KARTBILDER[k].rader; PAL[k] = KARTBILDER[k].pal; }
+// platshållare tills bilderna byggs in (steg 7.8.1)
+// huset på filten vid ett husbyte (steg 7.2.12): platshållare tills Björn valt (f7_hus i bildstilen)
+PIX.hus = ['................', '.......ff.......', '......ffff......', '.....effffr.....', '....eeeffrrr....', '...eeeeffrrrr...', '..eeeeeffrrrrr..', '...cccccccccc...', '...bbbbbbbbbb...', '...ccccoocccc...', '...bbbboobbbb...', '...ccccoocccc...', '...bbbboobbbb...', '...ccccoocccc...', '...bbbboobbbb...', '................'];
+PAL.hus = { f: '#d8b25f', e: '#b2921b', r: '#906f0f', c: '#7d5b40', b: '#5e3c24', o: '#233035' };
+for (const pl of ['byxor', 'mossa', 'snoskor', 'tunika', 'skjorta', 'halsband']) for (const m of ['kaninskinn', 'vargskinn', 'bjornskinn', 'lader', 'lintyg', 'benband', 'tandband']) { PIX[`${pl}_${m}`] = PIX.rock_kaninskinn; PAL[`${pl}_${m}`] = PAL.rock_kaninskinn; }
+for (const m of ['lader', 'lintyg']) for (const pl of ['rock', 'skor']) if (!PIX[`${pl}_${m}`]) { PIX[`${pl}_${m}`] = PIX.rock_kaninskinn; PAL[`${pl}_${m}`] = PAL.rock_kaninskinn; }
+for (const k of ['grillgadda', 'grillmort']) { PIX[k] = PIX.grillfisk; PAL[k] = PAL.grillfisk; }
+for (const k of ['torrgadda', 'torrmort']) { PIX[k] = PIX.torrfisk; PAL[k] = PAL.torrfisk; }
+for (const st of ['fangstbank', 'stenhuggarplats', 'klyvplats', 'ortkok', 'garvning', 'harden', 'vavstol']) for (const k of [st, st + '_karta', st + '_karta_v']) { PIX[k] = PIX.korg; PAL[k] = PAL.korg; }
+for (const k of ['vittja', 'snara', 'grop', 'leksak', 'rolleka', 'salva', 'tjara', 'benlim', 'tval', 'lin', 'ratlin', 'linfron', 'lintyg', 'slanda']) { PIX[k] = PIX.korg; PAL[k] = PAL.korg; }
+// fas 7:s bilder ur Björns val (steg 7.8.1): symbolen i listorna är bilden mitt i rutan på 16 × 16 punkter, förminskad om den är större
+for (const k of ['stockvag', 'brygga', 'gadda', 'mort', 'gaddkott', 'mortkott', 'mjarde', 'lader', 'trad', 'vargtand', 'huggen_sten', 'plankor', 'vavstol', 'tunika_lintyg', 'i_bjorndodare']) {
+  const b = KARTBILDER[k]!, w = 16, f = Math.min(1, w / Math.max(b.w, b.h)), x0 = (w - f * b.w) / 2, y0 = (w - f * b.h) / 2;
+  PIX[k] = Array.from({ length: w }, (_, y) => Array.from({ length: w }, (_, x) => { const yy = Math.floor((y - y0) / f), xx = Math.floor((x - x0) / f); return yy >= 0 && xx >= 0 ? b.rader[yy]?.[xx] ?? '.' : '.'; }).join(''));
+  PAL[k] = b.pal;
+}
 // symbolen för en lägereld (stationen som lägger ringen till en lägereld till, steg 4.5.6.8): den nylagda med stenringen under
 // (bildstilens tecken har samma färg i alla bilder, så att två bilder kan läggas på varandra tecken för tecken)
 { const ring = KARTBILDER.lagereld_ring, ny = KARTBILDER.lagereld_ny;

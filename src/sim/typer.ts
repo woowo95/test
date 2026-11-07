@@ -114,6 +114,8 @@ export const GREN = 0.4; // en gren ger lika mycket bränsle som 0,4 ved: grenar
 export interface Thought { text: string; v: number; until: number }
 // Det en person håller på med (p.task, sparas med personen). Fälten utan frågetecken finns alltid
 export interface Task {
+  mortBete?: 0 | 1; // fiske: en mört används som bete (steg 7.4.4)
+  blotVed?: number; // så stor del av veden som bärs som är blöt (steg 7.3.4)
   act: Act; // handlingen (handlingar.ts)
   phase: 'go' | 'do' | 'back'; // på väg dit, arbetar där, på väg hem med det som bärs
   tx: number; ty: number; // platsen man går till och arbetar på
@@ -303,7 +305,7 @@ export interface State {
   matSnitt?: number; // maten i förrådet i dygn för alla, glidande snitt över ungefär ett år (liv.ts)
   halvfallt?: Record<number, number>; // träd som någon har börjat fälla: ruta -> hur länge (ms) man har arbetat med det (paborjat.ts)
   fynd?: string; // hur mycket som tagits ur varje plats (bär, vilt, fisk), packat
-  byggen?: import('./byggnad').Bit[]; hus?: import('./byggnad').Hus[]; byggV?: number; nextBit?: number; byggSok?: number; // väggar, golv och öppningar, husen byn planerat, ändringsräknare
+  byggen?: import('./byggnad').Bit[]; hus?: import('./byggnad').Hus[]; byggV?: number; nextBit?: number; byggSok?: number; byggBehov?: Record<string, number>; mjardar?: import('./fisk').Mjarde[]; torg?: { x: number; y: number; w: number; h: number }; infart?: { klar?: 1; stopp?: 1 }; bryggV?: number; byplan?: import('./byggplan').Byplan; // väggar, golv och öppningar, husen byn planerat, ändringsräknare
   kunskap?: Record<string, number>; // äldre sparfiler: byns gemensamma kunskap, flyttas till varje person
   kal?: { t0: number; a0: number; b0: number }; // kalendern: tidsåldern a0 började t0 och slutar måndagen b0 (dagens nummer), se tid.ts
   ruttet?: number; // mat som ruttnat bort på sistone (glöms med tiden, byggnader.ts)
@@ -326,6 +328,7 @@ export interface State {
   bjornJakt?: { ar: number; sedd: number; sag: number; timme?: number; jagare?: number[]; kallare?: number; kallTill?: number; jaktTill?: number; samlas?: number };
   bjornFalld?: number;
   flod?: { niva: number; hogst?: number; mindes?: 1 }; // översvämningen (steg 3.8.3, flod.ts): så många rutor upp på land som vattnet står, det högsta det nått och om byn redan minns det (steg 3.8.7)
+  husAffar?: { hus: number; ag: number; t: number }; // ett hus som ska byta ägare när köparen och säljaren möts (steg 7.2.12, byggplan.ts)
   flodHot?: number; flodBlot?: number; flodMinne?: number; // medan vattnet stiger: så många rutor upp på land som byn bär undan maten från; så många som är blöta (vattnet står där nu eller stod där nyss, ingen sover där); och så högt som byn minns att vattnet nått (inget byggs där). Räknas varje timme (steg 3.8.7, flod.ts, flodHotad i sjo.ts)
   tornadoStig?: number[]; // rutorna där tornadon slet upp gräset till en jordstig, bara för bilden (steg 6.4.13): de syns tills gräset vuxit tillbaka
   tornado?: import('./tornado').Tornado; // tornadon som drar fram (steg 3.8.4, tornado.ts): banan, hur långt den kommit och vad den gjort
@@ -393,6 +396,7 @@ export interface Historik { tal: string[]; tim: number[][]; dygn: number[][]; kr
 export type RikRad = [number, number, number, number, Record<string, number>, Record<string, number>];
 export interface FireLog { t: number; k: 'tänd' | 'fyll' | 'slocknade' | 'glöd' | 'sprack'; id?: number; n?: number }
 export interface Fire {
+  blot?: number; // så stor del av bränslet som är blött (steg 7.3.4)
   hearth: string; fuel: number; lit: boolean; emberUntil?: number; ring?: boolean; // ringen av stenar runt eldplatsen
   litAt?: number; litBy?: number; burned: number; // denna eld
   totalBurned: number; litSec: number; lightings: number; outs: number;

@@ -14,10 +14,11 @@ import { takYtor, vaggSkuggor } from './skugga';
 // är påbörjat ritas som förut (foremal.ts).
 
 const VAGG = KARTBILDER.timmervagg!;
-const GOLV: Record<string, string> = { tra: 'golv_tra', jord: 'golv_jord', ho: 'golv_jord', lera: 'golv_lera' };
+const GOLV: Record<string, string> = { tra: 'golv_tra', ho: 'golv_jord', lera: 'golv_lera' }; // jordgolvet är en stig inne (steg 7.3.2): marken syns, inget golv ritas
 const mod = (a: number, n: number) => ((a % n) + n) % n;
 const golvPx = (m: string | undefined, gx: number, gy: number) => {
-  const b = KARTBILDER[GOLV[m ?? 'jord'] ?? 'golv_jord']!;
+  if (!m || m === 'jord') return '';
+  const b = KARTBILDER[GOLV[m] ?? 'golv_jord']!;
   return b.pal[b.rader[mod(gy, b.h)]![mod(gx, b.w)]!] ?? '';
 };
 const mallPx = (x: number, y: number) => VAGG.pal[VAGG.rader[y]![x]!] ?? '';

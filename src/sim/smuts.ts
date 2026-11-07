@@ -20,7 +20,7 @@ import { groundOf, tileOf } from './mark';
 import { FOREST } from './vag';
 import { smutsOf } from './sjo';
 import { BLODFORM, blodNu, blodOf, blodas } from './blod';
-import { roomAt } from './byggnad';
+import { roomAt, gridOf } from './byggnad';
 import { vaderNu } from './vader';
 
 // ---------- balanstal (regel 8) ----------
@@ -131,7 +131,7 @@ export const toaNara = (s: State, i: number) => s.flackar?.length ? toaKarta(s).
 // så mycket av vattnets smuts på rutan i som kommer från toaletten (fläckar och latriner i närheten)
 export const toaVatten = (s: State, i: number) => (s.flackar?.length || s.stationer?.length) ? toaKarta(s).vatten[i] ?? 0 : 0;
 // hur smutsigt vattnet är på rutan i (0–1): mönstret längs stränderna (smutsOf i sjo.ts) och toa-smutsen i närheten
-export const vattenSmuts = (s: State, i: number) => clamp(smutsOf(s.seed)[i] + toaVatten(s, i), 0, 1);
+export const vattenSmuts = (s: State, i: number) => gridOf(s).brygga[i] ? 0 : clamp(smutsOf(s.seed)[i] + toaVatten(s, i), 0, 1); // ute vid bryggan är vattnet rent (steg 7.3.10)
 // man plockar inte där det är toa-smuts (spotFor i val.ts)
 export const forSmutsigt = (s: State, x: number, y: number) => toaNara(s, y * W + x) > SMUTS.plock;
 

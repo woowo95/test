@@ -252,10 +252,10 @@
       PLAGG('Korta ärmar, en spetsig hals och ett band om livet; den når till knäna.', tunika[0]),
       PLAGG('Långa ärmar, en rund hals och en rostbrun bård nertill.', tunika[1]),
       PLAGG('Utan ärmar och längre, ner till vaderna, med sprund i sidorna, av grått, oblekt lin.', tunika[2])]),
-    KORT('f7_skjorta', 'Skjortan', S + '7.7.11: skjortan, sydd av 2 lintyg: ett kortare och tunnare plagg än tunikan, på platsen inre (under rocken). Bilden visar den som sak och på en människa på kartan framifrån.', [
-      PLAGG('Korta ärmar och en snörning i halsen; den når till höfterna.', skjorta[0]),
-      PLAGG('Långa ärmar, en rund hals och en fåll som syns nertill.', skjorta[1]),
-      PLAGG('Långa ärmar och en dragsko i halsen, av grått, oblekt lin.', skjorta[2])]),
+    KORT('f7_skjorta', 'Skjortan', S + '7.7.11: skjortan, sydd av 2 lintyg: ett kortare och tunnare plagg än tunikan, på platsen inre (under rocken). Bilden visar den som sak och på en människa på kartan framifrån. Din kommentar förra gången: "Behåll version 3 och gör sen två helt nya versioner". Version 3 är nu den första.', [
+      PLAGG('Långa ärmar och en dragsko i halsen, av grått, oblekt lin.', skjorta[2]),
+      PLAGG('Vit, utan ärmar, med en snörning hela vägen ner i bröstet.', [MED_KONTUR(['.WW..wv.', '.WWkkwv.', '.WWWkwv.', '.WWkwwv.', '.WWWkwv.', '.WWwwwv.', '.WWwwvv.']), ['...WWk.wwv....', '...WWWkwwv....', '....WWkwv.....', '....WWkwv.....', '....WWwwv.....', '....WWwwv.....', '....WWwwv.....', '....WWwvv.....'], L]),
+      PLAGG('Grå med breda ärmar och en rostbrun rand över axlarna.', [MED_KONTUR(['rrrrrrrrrrr', 'WWWWWwwwwvv', 'WWWWWwwwwvv', 'WW.WWwwv.vv', '...WWwwv...', '...WWwwv...', '...WWwvv...']), ['..rrrr..rrrr..', '..WWWWWwwwwv..', '.WWW.WWwv.vvv.', '.WW..WWwv..vv.', '.....WWwv.....', '.....WWwv.....', '.....WWwv.....', '.....WWvv.....'], GRA])]),
   );
   function PA_SAK(text, rader) { return RAD(text, [[rader, L]]); }
 })();

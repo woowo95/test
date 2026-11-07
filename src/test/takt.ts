@@ -1,6 +1,7 @@
 // npm run takt -- [by = 3] [live|snabb] [timmar = 24]: hur mycket en arbetstimme ger i varje arbete som bär hem något, hur många
 // turer hem som gjorts (s.stat.turer) och hur många jordrutor som är stigar (bar jord enligt markslag i mark.ts).
 // Ordet live eller snabb får stå med, men betyder inget sedan v29: levande läge och snabbläget räknar likadant (npm run likhet)
+import './utc';
 import { ACTS, Act, BEAT, createState, step, living } from '../sim';
 import { START, STEG_TIM, markStat } from './kor';
 

@@ -1,6 +1,6 @@
 // Kör en by utan grafik och samlar nyckeltalen (registret NYCKELTAL i nyckeltal.ts säger vad de heter och betyder).
 // Vakterna larmar om något blir omöjligt (NaN, negativa förråd, folk i vattnet).
-import { BEAT, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, vattenNu, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP, forvarAt, isTool, faltOf, faltRutor, faltAt, stationById, gridOf, getMap, djurOf, vargarOf, MATERIAL } from '../sim';
+import { husFel, BEAT, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, vattenNu, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP, forvarAt, isTool, faltOf, faltRutor, faltAt, stationById, gridOf, getMap, djurOf, vargarOf, MATERIAL } from '../sim';
 import { NYCKELTAL, Nyckeltal, tal } from './nyckeltal';
 import { lyssnaPaTexter } from '../sim/berattelser';
 import { kollaText, konI, titta } from './textkoll';
@@ -34,6 +34,7 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
     step(s, BEAT);
     varjeSteg?.(s);
     steg++; if (s.fire.lit) lit++;
+    if (steg % 288 === 0) { const hf = husFel(s); if (hf) larm('hus', () => hf); } // en gång om dagen (steg 7.2.4)
     if (!(foodOf(s) >= 0) || !(amountOf(s, 'ved') >= 0)) larm('förråd', () => `mat ${foodOf(s)}, ved ${amountOf(s, 'ved')}`);
     for (const t of s.ting ?? []) if (!(t.c > 0 && t.c <= 1 + 1e-9) || [t.hos, t.lass, t.x].filter(v => v !== undefined).length > 1) larm('redskap', () => JSON.stringify(t));
     // saker i hela tal (steg 2.10.7): stackarna, det gömda och ägarnas delar, och det påbörjade under 1
@@ -165,7 +166,7 @@ function vakta(s: State, larm: Larm, timme: boolean) {
     else if (tiles[tileOf(d.x, d.y)] === T.Vatten) larm(`${d.art} i vattnet`, () => `${d.art} ${d.id} på ${d.x.toFixed(1)},${d.y.toFixed(1)}`);
   }
   // varje rum har minst en dörr eller öppning, så att ingen behöver bryta en vägg (steg 3.7.21)
-  for (const r of gridOf(s).rooms) if (r.tiles.length && !r.open) larm('rum utan öppning', () => `rummet vid ${r.tiles[0] % W},${Math.floor(r.tiles[0] / W)}${r.hus !== undefined ? ` (hus ${r.hus})` : ''}`);
+  for (const r of gridOf(s).rooms) if (r.tiles.length && !r.open && !housesOf(s).find(h => h.id === r.hus)?.ut) larm('rum utan öppning', () => `rummet vid ${r.tiles[0] % W},${Math.floor(r.tiles[0] / W)}${r.hus !== undefined ? ` (hus ${r.hus})` : ''}`);
 }
 
 // en rad per by (npm test): hur byn mår, och efter | datorns mått

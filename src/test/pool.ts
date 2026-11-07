@@ -9,7 +9,7 @@ export interface Utfall { code: number; out: string; err: string }
 // en process som inte är klar efter så här lång tid (datorns tid) stoppas och räknas som kraschad
 const TIDSGRANS_MIN = 35; // sedan Förbättra aldrig är tom (steg 6.1.18) arbetar byarna mer, och testerna tar längre tid
 
-// ett skript i src/test, kört med tsx i en egen process (env läggs till datorns miljö, t.ex. { TZ: 'Europe/Stockholm' })
+// ett skript i src/test, kört med tsx i en egen process (env läggs till datorns miljö, t.ex. { TIDSZON: 'Europe/Stockholm' })
 export function korSkript(fil: string, args: string[] = [], env: Record<string, string> = {}): Promise<Utfall> {
   const path = fileURLToPath(new URL('./' + fil, import.meta.url));
   return korProcess(process.execPath, ['--import', 'tsx', path, ...args], env);

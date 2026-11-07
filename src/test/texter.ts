@@ -3,6 +3,7 @@
 // hur många av varianterna som valdes, och för varje variant hur ofta den valdes, mallen och några exempel ifyllda. Varianter
 // som aldrig valdes står med "aldrig". Delarna av beskrivningen (BESK_DELAR) står sist, med exempel. Mallar som aldrig
 // användes alls står överst i sammanfattningen. texter.json har samma sak för kontrollerna (steg 4.5.1.2)
+import './utc';
 import { writeFileSync } from 'node:fs';
 import { BERATTELSER, BESK_DELAR } from '../sim/berattelser';
 import { korJson, pool, seedAv, sek } from './pool';

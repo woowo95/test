@@ -13,6 +13,7 @@ const ARBETE: Record<string, string> = {
 };
 // det som skaffas på annat sätt än i ett arbete eller av andra saker
 const HITTAS: Record<string, string> = {
+  ratlin: 'Odlas på fältet', linfron: 'Köps av handlaren, och kommer tillbaka vid skörden', lin: 'Rötas på torkställningen', vargtand: 'Fås när en varg slaktas',
   torrgras: 'Hittas när man samlar', sten: 'Hittas när man samlar, mest vid stenarna och i sanden',
   flinta: 'Hittas ibland när man samlar, mest vid stenarna', kol: 'Blir kvar när en eld brunnit ut',
   rovor: 'Odlas på fältet', arter: 'Odlas på fältet', silver: 'Fås av handlaren',
@@ -23,10 +24,11 @@ const HITTAS: Record<string, string> = {
 };
 // det den används till som inte är ett recept
 const ANVANDS: Record<string, string[]> = {
+  mjarde: ['Sätts ut i vattnet'], snara: ['Sätts ut i skogen'], grop: ['Grävs i skogen'], plankor: ['Golv och möbler, senare'], salva: ['Läkekonsten, senare'], tjara: ['Skyddar trä, senare'], benlim: ['Limmar trä, senare'], tval: ['Tvätta sig, senare'], ratlin: ['Rötas på torkställningen'], linfron: ['Sås på fälten'], leksak: ['Barnen leker med den'], huggen_sten: ['Härden'], rolleka: ['Salva'],
   torrgras: ['Tänder elden'], naver: ['Tänder elden'], flinta: ['Tänder elden'], sten: ['Eldringen'], mossa: ['Förband'], silver: ['Handel'],
   vilt: ['Slaktas'], varg: ['Slaktas'], vargdel: ['Slaktas'], radjur: ['Slaktas'], fagel: ['Slaktas'], fjadrar: ['Pilar och prydnader senare'], radjurdel: ['Slaktas'], radjursskinn: ['Handel'], bjorn: ['Slaktas'], bjorndel: ['Slaktas'], abborre: ['Rensas'],
   bensyl: ['Syr kläder vid slöjdbänken'], boll: ['Sport'], slagtra: ['Sport'], mal: ['Sport'],
-  fackla: ['Lyser i mörkret, i handen eller uppsatt'], talgljus: ['Lyser inomhus'],
+  slanda: ['Spinner lin till tråd'], fackla: ['Lyser i mörkret, i handen eller uppsatt'], talgljus: ['Lyser inomhus'],
   trumma: ['Spelas på scenen'], benflojt: ['Spelas på scenen'], lyra: ['Spelas på scenen'], rovfron: ['Sås på fältet'], artfron: ['Sås på fältet'],
 };
 

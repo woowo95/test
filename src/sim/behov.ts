@@ -416,6 +416,7 @@ function spare(s: State, p: Person, k: string, tot = habitTotal(p)) {
 function give(t: Ting, g: Person, m: Person) {
   t.agare = m.id;
   if (t.hos === g.id) t.hos = undefined;
+  t.krok = undefined; // ett redskap som hängde i bältet (steg 7.1.1) läggs i förrådet
 }
 // a talar med b. Saknar någon av dem ett redskap som den andra har över? Returnerar vad som hände
 export function askForTool(s: State, a: Person, b: Person): 'gåva' | 'byte' | undefined {
@@ -476,8 +477,8 @@ function payable(s: State, p: Person, utom: readonly string[]): Vara[] {
   }
   return ut;
 }
-// bybon p som part i ett byte (byte.ts). Silver byts bara med handlaren (steg 4.4.1.3); silver inom byn kommer i steg 9.5.1.2
-export function personPart(s: State, p: Person, silver = false): Part {
+// bybon p som part i ett byte (byte.ts). Silver går att betala med också inom byn (steg 7.2.13), värt sitt grundvärde för alla
+export function personPart(s: State, p: Person, silver = true): Part {
   return { id: p.id, namn: p.name, p, x: p.x, y: p.y, handel: p.skill.handel ?? 0, varde: k => behovAv(s, p, k), over: utom => payable(s, p, silver ? utom : [...utom, 'silver']) };
 }
 // byn (det gemensamma förrådet) som part i ett byte med handlaren (steg 4.4.1.3). Byn värderar efter knappheten i hela byn:
@@ -594,7 +595,7 @@ function lurad(s: State, X: Part, L: Part) {
 // mindre silver i stället
 function vaxelSilver(G: Part, M: Part, for_: number, betal: Vara[]) {
   const per = grundvarde('silver') * G.varde('silver');
-  if (G.id > 0 || for_ < per || M.varde('silver') <= 0) return 0; // bara byn och handlaren har silver att ge
+  if (for_ < per || M.varde('silver') <= 0) return 0; // den som fått för mycket betalt ger växel i hela silver (steg 7.2.13)
   let n = Math.floor(for_ / per + 1e-9);
   const b = betal.find(w => w.k === 'silver');
   if (b) { const m = Math.min(n, b.n - 1); b.n -= m; n -= m; if (n <= 0) return 0; }

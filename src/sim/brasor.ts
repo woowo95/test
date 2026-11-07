@@ -3,7 +3,7 @@ import { balans } from './balans';
 import { eldPlats } from './karta';
 import { ALDER, ageOf, count, living, log } from './folk';
 import { coldOf, temperature } from './vader';
-import { amountOf, changed, isStored } from './lager';
+import { amountOf, changed, isStored, enPerRuta } from './lager';
 import { bedFor } from './bygg';
 import { newFire, woodDays } from './eld';
 import { Station } from './stationer';
@@ -95,7 +95,7 @@ export function stepBrasor(s: State) {
     const g = borta.filter(b => Math.hypot(a.x - b.x, a.y - b.y) <= BRASA.samman);
     if (g.length > grupp.length) grupp = g;
   }
-  const tomma = br.filter(f => !f.lit && !f.folk!.length);
+  const tomma = br.filter(f => !f.lit && !f.folk!.length && f.hearth !== 'hard'); // härden står kvar i huset (steg 7.5.3)
   const vill = grupp.length >= BRASA.grupp && s.fire.lit && coldOf(temperature(s)) > BRASA.kyla && br.length - tomma.length < BRASA.max && vedPerEld(s, 1 - tomma.length) >= BRASA.vedDygn;
   s.brasa = vill ? { vill: Math.min(1, grupp.length / BRASA.gruppFull), x: grupp.reduce((n, b) => n + b.x, 0) / grupp.length, y: grupp.reduce((n, b) => n + b.y, 0) / grupp.length } : undefined;
   // en lägereld som ingen sover nära tas isär: genast om byn vill ha en annanstans, annars när den stått släckt i tomDygn
@@ -110,7 +110,7 @@ function taIsar(s: State, f: Fire) {
   const st = (s.stackar ??= []), { x, y } = f.at!;
   let g = st.find(q => q.x === x && q.y === y && q.k === 'sten');
   if (!g) st.push(g = { x, y, k: 'sten', n: 0, c: 1 });
-  g.n += RT.brasaSten; changed(s);
+  g.n += RT.brasaSten; changed(s); enPerRuta(s);
   count(s, 'brasaIsar');
   log(s, 'En lägereld som ingen längre sov nära togs isär. Stenarna ligger kvar och används till nästa.', 'world');
 }

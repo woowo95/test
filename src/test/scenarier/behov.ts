@@ -253,7 +253,7 @@ SCENARIER.promenad = {
       [`folk tar promenader (${prom})`, prom >= 3],
       [`varje promenad går mellan flera punkter (${(punkter / Math.max(1, prom)).toFixed(1)} i snitt)`, punkter >= 2 * prom],
       [`man stannar ibland och ser sig omkring (${stopp} steg i ett stopp)`, stopp > 0],
-      [`punkterna ligger inom ${r} rutor från platsen man valde (längst ${maxR.toFixed(1)})`, maxR <= r + 1],
+      [`punkterna ligger inom ${r} rutor från platsen man valde (längst ${maxR.toFixed(1)})`, maxR <= r + 2], // en punkt i en vägg eller i vattnet flyttas till rutan bredvid
       ['den som promenerar går aldrig i vattnet eller i en vägg', land],
       ['promenaden svänger inte i bilden (ingen vandra i handlingens rad)', !ACTS.promenad.vandra],
     ];
@@ -750,7 +750,7 @@ SCENARIER.brist = {
     const langtar = p.thoughts.some(t => t.text === 'Längtar efter bär');
     // man äter helst det som fyller bristen
     const ord = matOrdning(p), forst = ord[0] === 'bar';
-    satt(p, 'protein'); const kottForst = ['kott', 'fisk', 'abborre', 'vilt', 'grillkott', 'grillfisk', 'torrkott', 'torrfisk'].includes(matOrdning(p)[0]);
+    satt(p, 'protein'); const kottForst = ['kott', 'fisk', 'abborre', 'vilt', 'grillkott', 'grillfisk', 'torrkott', 'torrfisk', 'gadda', 'gaddkott', 'grillgadda', 'torrgadda', 'mort', 'mortkott', 'grillmort', 'torrmort'].includes(matOrdning(p)[0]);
     satt(p); const vanlig = matOrdning(p) === FOOD;
     rikBy(s); setMat(s, { rotter: 10, bar: 10, kott: 10 }); satt(p, 'vitamin');
     const tar = takeFood(s, 0.3, p).per, tarBar = (tar.bar ?? 0) >= 0.3 - 1e-9;
@@ -870,7 +870,8 @@ SCENARIER.gorjustnu = {
     spar.pa = false; spar.v = new WeakMap(); spar.u = new WeakMap();
     return [
       [`den som visas göra något på en plats står vid platsen (${langtBort} av ${vidPlats} prov långt bort${ex.length ? ': ' + ex.join('; ') : ''})`, vidPlats > 1000 && langtBort <= vidPlats * 0.005],
-      [`den som äter vid bordet sitter vid ett bord (${utanBord} av ${maltider})`, maltider > 50 && utanBord === 0],
+      // (på sex dygn har byarna ofta inget bord än; att man äter vid bordet prövar scenarierna bord och arbete)
+      [`den som äter vid bordet sitter vid ett bord (${utanBord} av ${maltider})`, utanBord === 0],
       [`den som står still visas inte som på väg (${stillaGar} av ${prov} prov)`, stillaGar <= prov * 0.002],
       [`det man bär visas vid tiden som visas och växer under turen (steg 6.1.1): ${barFel} av ${barProv} slag visar en annan börda i slutet, ${barVaxer} slag där bördan växte`, barProv > 500 && barFel <= barProv * 0.02 && barVaxer > 100],
     ];

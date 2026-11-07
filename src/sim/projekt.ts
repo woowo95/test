@@ -14,10 +14,15 @@ import { DORRAR, DORR_LIST, DorrDef, DorrSlag } from './byggnad';
 import { dorrOppningar, dorrSpot, kanHangaDorr, receptDorr, utanDorr } from './bygg';
 import { GRODOR, ODLING, faltBrist, faltUppgift } from './odling';
 import { SKOG, fallTid, fellingTiles, klyvStam, rojSpot, skaGravas, skaRojas, stubbeSpot, stubbeUppgift, treeSpot } from './skog';
-import { freeTools, tingOf } from './agande';
+import { fylldSack, freeTools, tingOf } from './agande';
 import { ACTS } from './handlingar';
 import { tileOf } from './mark';
-import { Recept, saknatAv } from './behov';
+import { Recept, getable, saknatAv } from './behov';
+import { FALLOR, fallorAv, mjardarVill } from './fisk';
+import { TILLVERKA, TILLVERKA_LIST } from './tillverka';
+import { RECEPT } from './recept';
+import { knows } from './teknik';
+import { kanGoras, stationDef, stationFor, verktygVid } from './stationer';
 import { SED } from './seder';
 import { bedTile } from './byggnader';
 import { stationRutor } from './stationer';
@@ -37,7 +42,7 @@ import { SKOGSVARD, kanPlantera, planteraUppgift, skogsvardBrist } from './skogs
 
 // ---------- balanstal (regel 8) ----------
 export const PROJEKT_TAL = balans('projekt', {
-  kniv: 1.2, yxa: 1.2, spjut: 1, metspo: 0.8, korg: 0.8, bensyl: 1, rock: 0.8, skor: 0.5, balte: 0.6, benspade: 0.6, vattensack: 0.5, fackla: 0.4, talgljus: 0.3, boll: 0.3, slagtra: 0.3, mal: 0.3, trumma: 0.3, benflojt: 0.3, lyra: 0.3, // hur mycket varje redskap väger när byn saknar alla den vill ha
+  kniv: 1.2, yxa: 1.2, spjut: 1, metspo: 0.8, korg: 0.8, bensyl: 1, rock: 0.8, skor: 0.5, balte: 0.6, axelrem: 0.4, ryggsack: 0.5, benspade: 0.6, vattensack: 0.5, slanda: 0.5, fackla: 0.4, talgljus: 0.3, boll: 0.3, slagtra: 0.3, mal: 0.3, trumma: 0.3, benflojt: 0.3, lyra: 0.3, // hur mycket varje redskap väger när byn saknar alla den vill ha
   slaktbank: 1, flatarbank: 0.6, scen: 0.3, // ... varje station när byn saknar den
   grill: 0.8, // ... grillställningen (steg 2.8.1)
   tork: 0.6, // ... torkställningen (steg 2.8.2)
@@ -50,6 +55,9 @@ export const PROJEKT_TAL = balans('projekt', {
   kruka: 0.2, bonad: 0.2, vaggbrade: 0.2, // ... pyntet när alla vuxna som sover inne saknar ett (steg 4.3.4, pynt.ts)
   skinndorr: 0.6, // ... skinndörrarna när alla hus där man bor eller umgås har en öppen dörröppning (steg 2.2.16)
   tradorr: 0.6, // ... trädörrarna när alla sådana hus saknar en (steg 3.7.21)
+  tillverka: 0.35, // ... det som görs vid stationerna, när byn vill ha mer av det (tillverka.ts)
+  stenhuggarplats: 0.4, klyvplats: 0.4, ortkok: 0.3, garvning: 0.3, vavstol: 0.3, harden: 0.5, snara: 0.5, grop: 0.4,
+  mjarde: 0.7, fangstbank: 0.5, // ... mjärdarna och fångstbänken (steg 7.4.1 och 7.4.2)
   rep: 0.5, // ... repet när förrådet är tomt
   virke: 0.8, // ... virket när förrådet saknar det byn vill bygga av (steg 4.5.5.2)
   stubbe: 1, // ... att gräva bort stubbarna där något ska byggas (steg 6.5.7, skog.ts)
@@ -138,11 +146,38 @@ const dorr = (k: DorrSlag): ProjektDef => {
     uppgift: s => { const sp = dorrSpot(s, k); return sp ? { act: 'dorr', text: d.gor, min: d.min, tool: k, spot: sp } : undefined; },
   };
 };
+// det som görs av material vid en station (TILLVERKA, tillverka.ts): bristen är hur mycket av det byn vill ha som saknas
+const tillverk = (k: string): ProjektDef => {
+  const d = TILLVERKA[k], har = (s: State, p: Person) => knows(p, d.tek) && kanGoras(s, d.act, p) && (!d.vatten || !!fylldSack(s)) && (!d.verktyg || freeTools(s, p, d.verktyg) > 0 || verktygVid(s, d.act, d.verktyg));
+  return {
+    namn: SAKER[d.ger]!.namn, vikt: PROJEKT_TAL.tillverka,
+    brist: s => clamp(1 - amountOf(s, d.ger) / d.vill, 0, 1),
+    kostnad: () => varuVarde(d.av, d.min / 60 * ARBETE),
+    kan: (s, p) => har(s, p) && amountOf(s, d.ger) < d.vill && Object.entries(d.av).every(([q, n]) => getable(s, p, q) >= n),
+    recept: (s, p) => har(s, p) && amountOf(s, d.ger) < d.vill ? { av: d.av } : undefined,
+    // i en station som går fortare (sländan i vävstolen, steg 7.7.9), med redskapet som ligger där
+    uppgift: s => { const t = stationFor(s, d.act); return { act: d.act, text: d.text, min: d.min / (t && stationDef(t.k)?.fart?.[d.act] || 1), tool: d.verktyg && !verktygVid(s, d.act, d.verktyg) ? d.verktyg : undefined }; },
+  };
+};
 export const PROJEKT: Record<string, ProjektDef> = {
+  ...Object.fromEntries(TILLVERKA_LIST.map(k => [k, tillverk(k)])),
   ...Object.fromEntries(Object.keys(GORS).map(g => [g, redskap(g)])),
   ...Object.fromEntries(STATION_LIST.map(k => [k, station(k)])),
   ...Object.fromEntries(TILLBEHOR_LIST.map(k => [k, tillbehor(k)])),
   ...Object.fromEntries(DORR_LIST.map(k => [k, dorr(k)])),
+  // fällorna (steg 7.4.2, 7.5.10 och 7.5.11): görs vid fångstbänken och sätts ut. Byn vill ha några för varje den som fångar
+  ...Object.fromEntries(Object.keys(FALLOR).map(k => [k, ((): ProjektDef => {
+    const r = RECEPT[k as keyof typeof RECEPT] as { av: Record<string, number>; min: number };
+    const kan = (s: State, p: Person) => knows(p, k) && fallorAv(s, k).length < mjardarVill(s) && kanGoras(s, k as Act, p);
+    return {
+      namn: SAKER[k]!.namn, vikt: (PROJEKT_TAL as Record<string, number>)[k] ?? 0.5,
+      brist: s => { const v = mjardarVill(s); return v > 0 ? clamp((v - fallorAv(s, k).length) / v, 0, 1) : 0; },
+      kostnad: () => varuVarde(r.av, r.min / 60 * ARBETE),
+      kan: (s, p) => kan(s, p) && Object.entries(r.av).every(([q, n]) => getable(s, p, q) >= n),
+      recept: (s, p) => kan(s, p) ? { av: r.av } : undefined,
+      uppgift: () => ({ act: k as Act, text: `${ACTS[k as Act].namn}.`, min: r.min }),
+    };
+  })()])),
   rep: {
     namn: SAKER.rep!.namn, vikt: PROJEKT_TAL.rep,
     brist: s => clamp(1 - amountOf(s, 'rep') / TROSKEL.repVill, 0, 1),

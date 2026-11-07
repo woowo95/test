@@ -1,0 +1,21 @@
+{
+"id": "huggen_sten",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 7.8.1)",
+"w": 11,
+"h": 6,
+"rader": [
+".kkkkkkkkk.",
+"kllllllllmk",
+"kmmmmmmmnnk",
+"kmmmmmmmnnk",
+"kmmmmmmmmnk",
+".kkkkkkkkk."
+],
+"pal": {
+"k": "#24201d",
+"l": "#8a9c9e",
+"m": "#61767a",
+"n": "#3e5156"
+}
+}

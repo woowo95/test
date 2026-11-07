@@ -1,0 +1,37 @@
+{
+"id": "lin_mogen",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 7.8.1)",
+"w": 16,
+"h": 20,
+"rader": [
+"..kl...kl...kl..",
+"..l....l....l...",
+"l.m.ll.m.ll.m.l.",
+"m.m.nm.m.nm.m.n.",
+"mrmrklrmrklrmrkl",
+"rmmnlrmmnlrmmnlr",
+"rmlnmrllnmrllnmr",
+"rsmsmsnmsmsnmsmr",
+"rrklmrnklmrnklmr",
+"rrlmmnrlmmnrlmmn",
+"lrmmllrmmllrmmln",
+"msmsnmsmsnmsmsnr",
+"mrmrklrmrklrmrkl",
+"rmmnlrmmnlrmmnlr",
+"rmlnmrllnmrllnmr",
+"rsmsmsnmsmsnmsmr",
+"rrmrmrnmrmrnmrmr",
+"rrrmmnrrmmnrrmmn",
+"rrrmnnrrmnnrrmnn",
+"rssssssssssssssr"
+],
+"pal": {
+"k": "#d8b25f",
+"l": "#7d5b40",
+"m": "#b2921b",
+"n": "#906f0f",
+"r": "#5e3c24",
+"s": "#3f2415"
+}
+}

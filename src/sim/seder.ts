@@ -168,9 +168,17 @@ export function habitShare(p: Person, acts: readonly Act[], tot = habitTotal(p))
 // yrke står i handlingens rad (yrke i handlingar.ts). Ett nytt yrke blir en rad här och ett yrke på handlingarna
 const YRKEN: Record<string, number> = {
   Mästare: 0.04, // den som prövar sig fram mycket (handlingen forsok, steg 4.2.2.3): försöken är få, så en liten andel räcker
+  // de snävare yrkena (steg 7.5.5–7.5.8) går före de breda: den som mest slaktar är slaktare och inte jägare
+  Slaktare: 0.1, Korgmakare: 0.06, Snickare: 0.1, Spjutmakare: 0.05, Skinnsömmare: 0.08, Garvare: 0.06, Stenhuggare: 0.08, Odlare: 0.15, Kock: 0.1, Vattenbärare: 0.06, Läkekunnig: 0.05,
+  Lärare: 0.04, Vargjägare: 0.03, Kämpe: 0.03, Handlare: 0.05,
   Jägare: 0.2, Fiskare: 0.2, Samlare: 0.2, Trähuggare: 0.15, Hantverkare: 0.15, Byggare: 0.12, Berättare: 0.06, Eldvaktare: 0.02, Väktare: 0.08, Dagdrivare: 0.3,
 };
-export const TAGS = Object.entries(YRKEN).map(([tag, min]) => ({ tag, min, acts: ACT_LIST.filter(a => ACTS[a].yrke === tag) }));
+// de snävare yrkenas handlingar (steg 7.5.5–7.5.8). En rad med ett yrke vars handling inte finns ännu räknas inte
+const YRKE_AV: Partial<Record<string, string[]>> = {
+  Slaktare: ['slakta', 'rensa'], Korgmakare: ['korg'], Snickare: ['station', 'tillbehor', 'klyva_plank'], Spjutmakare: ['spjut'], Skinnsömmare: ['rock', 'skor', 'byxor', 'mossa', 'snoskor'], Garvare: ['garva'],
+  Stenhuggare: ['hugga_sten'], Odlare: ['odla'], Kock: ['grilla', 'torka'], Vattenbärare: ['vatten'], Läkekunnig: ['varda'], Lärare: ['lara'], Vargjägare: ['vargjakt'], Kämpe: ['strid', 'forsvar'], Handlare: ['handla'],
+};
+export const TAGS = Object.entries(YRKEN).map(([tag, min]) => ({ tag, min, acts: ACT_LIST.filter(a => ACTS[a].yrke === tag || YRKE_AV[tag]?.includes(a)) }));
 // taggen går till den som gör något klart mer än andra i byn; den som redan har en tagg behåller den lättare
 export function updateTags(s: State) {
   const ppl = living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen);

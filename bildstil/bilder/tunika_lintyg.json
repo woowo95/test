@@ -1,0 +1,28 @@
+{
+"id": "tunika_lintyg",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 7.8.1)",
+"w": 11,
+"h": 11,
+"rader": [
+".kkk...kkk.",
+"klllk.kmmnk",
+"kllllkmmmnk",
+"kllllmmmnnk",
+".klllmmmnk.",
+".krsssssrk.",
+".klllmmmnk.",
+".kllmmmnnk.",
+"klllmmmmnnk",
+"kllmmmmnnnk",
+".kkkkkkkkk."
+],
+"pal": {
+"k": "#24201d",
+"l": "#dad0bb",
+"m": "#bdb39b",
+"n": "#a0947d",
+"r": "#5e3c24",
+"s": "#7d5b40"
+}
+}

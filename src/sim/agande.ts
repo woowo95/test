@@ -21,15 +21,26 @@ import { BYN, lends } from './egendom';
 interface Halv { gor: string; av: Record<string, number>; kvar: number; ag: number }
 // vid = stationen tinget hör till och ligger vid när ingen använder det (kniven vid slaktbänken, stationer.ts), bar = den
 // som har plagget på sig (utrustning.ts, steg 2.3.2)
-export interface Ting { id: number; k: string; c: number; agare: number; hos?: number; lass?: number; x?: number; y?: number; halv?: Halv; vid?: number; bar?: number; av?: number; gjord?: number; kopt?: number; q?: number; ber?: import('./berattelser').SakMinne; tand?: number; tandT?: number } // av, gjord: vem som gjorde det och när (steg 2.3.5), kopt: när det köptes av en handlare (steg 5.3.5.3), q = kvaliteten (kvalitet.ts), ber = berättelsen om ett mästerverk eller en usel sak (steg 3.9.4), tand = den som bär facklan tänd och tandT = när den senast räknades (ljus.ts, steg 6.3.6)
+export interface Ting { id: number; k: string; c: number; agare: number; hos?: number; lass?: number; x?: number; y?: number; halv?: Halv; vid?: number; bar?: number; av?: number; gjord?: number; kopt?: number; q?: number; ber?: import('./berattelser').SakMinne; tand?: number; tandT?: number; krok?: number; fylld?: 1 } // av, gjord: vem som gjorde det och när (steg 2.3.5), kopt: när det köptes av en handlare (steg 5.3.5.3), q = kvaliteten (kvalitet.ts), ber = berättelsen om ett mästerverk eller en usel sak (steg 3.9.4), tand = den som bär facklan tänd och tandT = när den senast räknades (ljus.ts, steg 6.3.6), krok = den i vars bälte redskapet hänger medan hen arbetar med ett annat (steg 7.1.1)
 export const tingOf = (s: State) => (s.ting ??= []);
 // hur stor del av arbetet med ett påbörjat redskap som är gjort (0 till 1), för framstegscirkeln på kartan och i panelerna
 export const halvKlar = (h: Halv) => Math.min(1, Math.max(0, 1 - h.kvar / ((SAKER[h.gor]?.skaffa?.min ?? 1) * MIN)));
 export const toolsOf = (s: State, k: string) => tingOf(s).filter(t => t.k === k);
+// en vattensäck som står fylld (steg 7.6.6): örtköket tar vattnet ur den, och säcken töms men finns kvar
+export const fylldSack = (s: State) => tingOf(s).find(t => t.k === 'vattensack' && t.fylld);
 export const nTools = (s: State, k: string) => tingOf(s).reduce((n, t) => n + (t.k === k ? 1 : 0), 0);
 // det redskap av slagen ks som p har påbörjat (paborjat.ts)
 export const halvOf = (s: State, p: Person, ks: readonly string[]) => tingOf(s).find(t => t.halv?.ag === p.id && ks.includes(t.halv.gor));
 export const heldBy = (s: State, p: Person) => tingOf(s).find(t => t.hos === p.id);
+// redskapen som hänger i p:s bälte medan hen arbetar med ett annat (steg 7.1.1)
+export const iKroken = (s: State, p: Person) => tingOf(s).filter(t => t.krok === p.id);
+// har p tinget med sig: i handen eller i bältet
+export const harMed = (p: Person, t: Ting) => t.hos === p.id || t.krok === p.id;
+// hur många krokar p:s bälte har (0 utan bälte)
+const krokar = (s: State, p: Person) => { let n = 0; for (const t of tingOf(s)) if (t.bar === p.id) n = Math.max(n, SAKER[t.k]?.klad?.krok ?? 0); return n; };
+// kan tinget t hänga i p:s bälte när hen tar ett annat redskap i handen (steg 7.1.1)? Det är hens eget, hänger i bältet
+// enligt sakregistret, och bältet har en ledig krok utöver den som redskapet i handen hänger i när hen bär
+const kanHanga = (s: State, p: Person, t: Ting) => t.agare === p.id && SAKER[t.k]?.hanger === 'balte' && !t.halv && iKroken(s, p).filter(x => x !== t).length < krokar(s, p) - 1;
 // redskapet av slaget k som p har i handen
 export const redskapIHanden = (s: State, p: Person, k: string) => tingOf(s).find(t => t.hos === p.id && t.k === k);
 
@@ -43,7 +54,7 @@ export function addTool(s: State, k: string, p: Person) { return newTing(s, k, 1
 
 // kan p ta tinget? Inte om någon bär det i bördan, arbetar med det eller har det på sig
 function usable(s: State, p: Person, t: Ting) {
-  if (t.lass !== undefined || (t.bar !== undefined && t.bar !== p.id)) return false;
+  if (t.lass !== undefined || (t.bar !== undefined && t.bar !== p.id) || (t.krok !== undefined && t.krok !== p.id)) return false;
   if (t.hos !== undefined && t.hos !== p.id) {
     const q = byId(s, t.hos);
     if (q && alive(q) && usesTool(q.task) === t.k) return false;
@@ -51,15 +62,17 @@ function usable(s: State, p: Person, t: Ting) {
   return lends(s, t.agare, p);
 }
 // i vilken ordning p tar: det hen har i handen, sitt eget, byns, och sist lånat. Inom det: bäst skick
-const rank = (p: Person, t: Ting) => t.hos === p.id ? 0 : t.agare === p.id ? 1 : t.agare === BYN ? 2 : t.hos === undefined ? 3 : 4;
+const rank = (p: Person, t: Ting) => harMed(p, t) ? 0 : t.agare === p.id ? 1 : t.agare === BYN ? 2 : t.hos === undefined ? 3 : 4;
 const freeOf = (s: State, p: Person, k: string) => toolsOf(s, k).filter(t => usable(s, p, t));
 export const freeTools = (s: State, p: Person, k: string) => freeOf(s, p, k).length;
 export const ownsFree = (s: State, p: Person, k: string) => freeOf(s, p, k).some(t => t.agare === p.id);
-// p tar ett redskap av slaget k i handen. Det hen hade i handen läggs i förrådet
+// p tar ett redskap av slaget k i handen, ur bältet om det hänger där. Det hen hade i handen hängs i bältet om det får
+// plats där (steg 7.1.1), annars läggs det i förrådet
 export function take(s: State, p: Person, k: string): Ting | undefined {
   const c = freeOf(s, p, k).sort((a, b) => rank(p, a) - rank(p, b) || b.c - a.c)[0];
   if (!c) return;
-  for (const t of tingOf(s)) if (t.hos === p.id && t !== c) t.hos = undefined;
+  c.krok = undefined;
+  for (const t of tingOf(s)) if (t.hos === p.id && t !== c) { t.hos = undefined; if (kanHanga(s, p, t)) t.krok = p.id; }
   c.hos = p.id; c.x = c.y = c.lass = undefined;
   return c;
 }
@@ -80,6 +93,7 @@ export function tidyTools(s: State) {
   for (const t of tingOf(s)) {
     if (t.agare !== BYN) { const o = byId(s, t.agare); if (!o || !alive(o)) t.agare = BYN; }
     if (t.bar !== undefined) { const q = byId(s, t.bar); if (!q || !alive(q)) t.bar = undefined; } // den döde har inte plagget på sig
+    if (t.krok !== undefined) { const q = byId(s, t.krok); if (!q || !alive(q) || t.hos !== undefined || !kanHanga(s, q, t)) t.krok = undefined; } // bältet har slitits ut, eller tinget har bytt ägare
     if (t.lass !== undefined) { const q = byId(s, t.lass); if (!q || !alive(q) || !q.task?.ting?.includes(t.id)) t.lass = undefined; }
     if (t.hos === undefined) continue;
     const q = byId(s, t.hos);

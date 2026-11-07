@@ -6,7 +6,7 @@
 // STRAK.omvag rutors omväg (strakHindrar). Rutan framför en dörr står fast, liksom ett stråk som inte går att dra om.
 // Stråken räknas om när något byggs, flyttas eller rivs (samma nyckel som området, och fälten), och sparas per by.
 import { balans } from './balans';
-import { bitsOf, gridOf } from './byggnad';
+import { MATERIAL, bitsOf, gridOf } from './byggnad';
 import { eldPlats, getMap } from './karta';
 import { zonesOf } from './lager';
 import { faltAt } from './odling';
@@ -21,7 +21,7 @@ export const STRAK = balans('strak', {
 });
 
 // målen: varje dörr får en väg till det närmaste av varje slag
-const MAL = ['eld', 'lager', 'latrin', 'vatten'] as const;
+const MAL = ['eld', 'lager', 'latrin', 'vatten', 'torg'] as const; // torget när det finns (steg 7.3.13)
 type Mal = typeof MAL[number];
 
 interface Vag { dorr: number; mal: Mal; len: number; rutor: number[] }
@@ -57,9 +57,10 @@ function sokData(s: State): Sok {
   const zs = zonesOf(s), latriner = stationerOf(s).filter(t => t.k === 'latrin');
   for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
     const i = y * W + x, t = m.tiles[i];
-    if (t === T.Vatten || t === T.Sten || g.at.has(i)) continue;
+    if (t === T.Vatten || t === T.Sten || g.at.has(i) && !MATERIAL[g.at.get(i)!.m].vag) continue; // på en väg går stråket som förut
     if (zs.some(z => x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h)) { mal[i] = MAL.indexOf('lager'); continue; }
     if (stationAt(s, x, y) || faltAt(s, x, y) || x === f.x && y === f.y) continue;
+    if (s.torg && x >= s.torg.x && y >= s.torg.y && x < s.torg.x + s.torg.w && y < s.torg.y + s.torg.h) { mal[i] = MAL.indexOf('torg'); continue; }
     gang[i] = 1;
     if (Math.max(Math.abs(x - f.x), Math.abs(y - f.y)) === 1) mal[i] = MAL.indexOf('eld');
     else if (latriner.some(l => { const { w, h } = storlekAv(l); return x >= l.x - 1 && x <= l.x + w && y >= l.y - 1 && y <= l.y + h; })) mal[i] = MAL.indexOf('latrin');

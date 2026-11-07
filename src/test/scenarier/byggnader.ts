@@ -6,7 +6,7 @@ import { MIN, Person, Act, createState, addTool, FOREST, HOUR_S, toolsOf, BYN, s
 import * as SIM from '../../sim';
 import { findPath } from '../../sim/vag';
 import { KANIN } from '../../sim/redskap';
-import { START } from '../kor';
+import { START, STEG_TIM } from '../kor';
 import { setItems, setFood, kor, klockan, tandEld, byggare, byggKlart, nyInvanare, medBank, STOCKHOLM, SCENARIER } from './hjalp';
 
 SCENARIER.byggnader = {
@@ -209,6 +209,7 @@ SCENARIER.funktion = {
     const gaster = Array.from({ length: 8 }, (_, i) => ({ ...structuredClone(living(s)[0]), id: 1000 + i, name: `Gäst${i}`, partner: undefined, task: undefined }));
     const kom = () => { for (const g of gaster) g.left = undefined; }, gar = () => { for (const g of gaster) g.left = s.now; };
     s.people.push(...gaster);
+    SIM.BYGGATGARDER.byggaUt.foresla = () => []; // här prövas ett nytt hus, inte en utbyggnad
     const nyttHus = () => { s.byggSok = undefined; planBuild(s); return byggKlart(s)!; };
     const B = nyttHus();
     gar(); s.ruttet = undefined;
@@ -405,7 +406,7 @@ SCENARIER.bygg = {
     for (const p of living(k)) { const f = fore.get(p.id); if (!f) continue; if (f.inne) { varmInne += p.warm; ni++; } else if (f.ute) { varmUte += p.warm; nu++; } }
     const h = housesOf(q)[0], folk = living(q).length, b = gridOf(q).rooms.reduce((n, r) => n + sovplatser(q, r), 0);
     const iVagg = living(q).filter(p => isWall(q, p.x, p.y)).length;
-    // huset minns var materialet kom ifrån (steg 1.3.3): lika mycket som det byggdes med
+    // huset minns var materialet kom ifrån (steg 1.3.3): minst det som ligger i det, och lagningarnas material räknas också
     const lagt = bitsOf(q).filter(b => b.hus === h?.id).reduce((n, b) => n + b.mat, 0), kom = h ? komOf(h) : [];
     const minns = kom.reduce((n, x) => n + x.n, 0), satt = [...new Set(kom.map(x => x.hur))].join(', ');
     // nötning: väggarna slits och lagas
@@ -453,13 +454,13 @@ SCENARIER.bygg = {
       [`en kall natt utan eld är de som är inne varmare (${(varmInne / (ni || 1)).toFixed(2)} mot ${(varmUte / (nu || 1)).toFixed(2)})`, ni > 0 && nu > 0 && varmInne / ni > varmUte / nu],
       [`ingen står i en vägg (${iVagg})`, iVagg === 0],
       [`träden där huset ska stå fälls innan väggarna byggs där (${trad} träd på platsen, ${iTrad} väggar byggda på ett träd)`, trad >= 0 && iTrad === 0 && !!h && bitsOf(q).every(b => b.hus !== h.id || !treeOn(q, b))],
-      [`huset står en bit från elden (${avst.toFixed(1)} rutor)`, avst >= 4],
+      [`huset står en bit från elden (${avst.toFixed(1)} rutor; helst BYGG.husAvst, men närheten till byns mitt väger också)`, avst >= 3],
       ['slitna väggar lagas', lagat],
       [`ett långhus räknas när det planeras (${langhus} långhus, ${langRaknat} räknade)`, langhus > 0 && langRaknat === langhus],
       [`en lagning kostar hälften av det nya, i hela saker och minst en (trägolv ${golvLag} av ${MATERIAL.tra.n}, timmervägg ${vaggLag} av ${MATERIAL.timmer.n})`, golvLag === Math.max(1, Math.floor(MATERIAL.tra.n / 2)) && vaggLag === Math.max(1, Math.floor(MATERIAL.timmer.n / 2))],
       [`en rasad vägg som byggts om gör huset klart igen men inte färdigt en gång till (krönikan ${kronikaFore} → ${kronikaEfter}, de som byggde minns det ${gemFore} → ${gemEfter} gånger)`, omKlar && kronikaFore >= 1 && kronikaEfter === kronikaFore && gemEfter === gemFore],
       [`stockar som läggs i väggen medan någon bär material dit försvinner inte (väggen ${iVaggen} av ${behov}, ${iHanden} kvar i händerna)`, behov > 0 && iVaggen === behov && iHanden === 1],
-      [`huset minns var materialet kom ifrån (${Math.round(minns)} av ${Math.round(lagt)}: ${satt})`, lagt > 0 && Math.abs(minns - lagt) < 0.01 * lagt + 0.01],
+      [`huset minns var materialet kom ifrån (${Math.round(minns)} av ${Math.round(lagt)}: ${satt})`, lagt > 0 && minns >= lagt - 0.01],
     ];
   },
 };
@@ -532,9 +533,10 @@ SCENARIER.lager = {
     // sedan bara en sak på varje ruta i förrådet, och inget försvinner (riktad-körningen i steg 3.10.25, by 8920)
     const vx = createState(3, START), vz = zoneOf(vx), ut = br + 1, tot = () => (vx.stackar ?? []).reduce((a, q) => a + q.n, 0);
     vx.ting = []; vx.stackar = [{ k: 'sten', n: 1, c: 1, x: vz.x - 1, y: vz.y }]; // bredvid lagerplatsen: lagret är fullt och växer
+    for (let y = vz.y; y < vz.y + vz.h; y++) for (let x = vz.x; x < vz.x + vz.w; x++) vx.stackar.push({ k: 'grenar', n: 1, c: 1, x, y });
     for (let y = vz.y - ut; y < vz.y + vz.h + ut; y++) for (let x = vz.x - ut; x < vz.x + vz.w + ut; x++) if (!isStored(vx, x, y) && usable(vx, x, y)) vx.stackar.push({ k: 'grenar', n: 1, c: 1, x, y }, { k: 'ved', n: 1, c: 1, x, y });
     const vxFore = tot(), vxYta = vz.w * vz.h;
-    SIM.tidyStore(vx);
+    (SIM.planLager(vx), SIM.tidyStore(vx));
     const vxRutor = new Map<number, number>();
     for (const q of vx.stackar) if (isStored(vx, q.x, q.y)) vxRutor.set(q.y * SIM.W + q.x, (vxRutor.get(q.y * SIM.W + q.x) ?? 0) + 1);
     const vxTva = [...vxRutor.values()].filter(n => n > 1).length, vxStor = zoneOf(vx).w * zoneOf(vx).h;
@@ -575,7 +577,7 @@ SCENARIER.lagerplatser = {
     for (const z of zonesOf(tom)) z.tom = undefined; // klockan börjar när lagret töms, inte när det blev halvtomt tidigare
     const zi = zonesOf(tom).findIndex(z => z.hus === undefined && z.w * z.h > SIM.LAGER.krympMin), yta = () => { const z = zonesOf(tom)[zi]; return z.w * z.h; };
     const yta0 = zi >= 0 ? yta() : 0, ytor: number[] = [];
-    for (let h = 0; h < 8 && zi >= 0; h++) { SIM.tidyStore(tom); ytor.push(yta()); tom.now += HOUR; }
+    for (let h = 0; h < 8 && zi >= 0; h++) { (SIM.planLager(tom), SIM.tidyStore(tom)); ytor.push(yta()); tom.now += HOUR; }
     return [
       [`ett tomt lager krymper inte de första sex timmarna, sedan krymper det (${yta0} rutor, sedan ${ytor.join(', ')} timme för timme)`, zi >= 0 && ytor.slice(0, SIM.LAGER.krympTim).every(n => n === yta0) && ytor[ytor.length - 1] < yta0],
       [`den första lagerplatsen går att använda (${startFel.length ? 'inte i by ' + startFel.join(', ') : 'i alla tre byarna'})`, startFel.length === 0],
@@ -938,27 +940,31 @@ SCENARIER.strak = {
     const s = createState(9, START);
     byggare(s); setAmount(s, 'yxa', 2);
     setFood(s, 600); setAmount(s, 'ved', 200); setAmount(s, 'grenar', 200); setAmount(s, 'flinta', 2); s.fire.ring = true;
-    // varje timme: det som står på rutor som var stråk timmen innan och som inte stod där då
-    let paStrak = 0, husPa = 0, timmar = 0, maxRutor = 0;
+    // varje steg: det som står på rutor som var stråk steget innan och som inte stod där då (på en hel timme hinner stråket flyttas innan något ställs där)
+    let paStrak = 0, husPa = 0, maxRutor = 0;
+    const timmar = 120;
     const nyttPa: string[] = [];
-    for (let t = 0; t < 120; t++) {
-      const fore = SIM.straken(s).ruta.slice(), vagar0 = SIM.straken(s).vagar.map(v => ({ mal: v.mal, rutor: v.rutor.slice() }));
-      // den sista rutan på ett stråk till ett lager: växer lagret över den blir stråket bara kortare
-      const sistaTillLager = (r: number) => vagar0.every(v => !v.rutor.includes(r) || v.mal === 'lager' && v.rutor.indexOf(r) === v.rutor.length - 1);
-      const st0 = new Set(SIM.stationerOf(s)), z0 = zonesOf(s).map(z => `${z.x},${z.y},${z.w},${z.h}`), f0 = new Set(s.falt ?? []), h0 = new Set(housesOf(s));
-      kor(s, 1); timmar++;
+    for (let t = 0; t < timmar * STEG_TIM; t++) {
+      const fore = SIM.straken(s).ruta.slice();
+      const st0 = new Set(SIM.stationerOf(s)), f0 = new Set(s.falt ?? []), h0 = new Set(housesOf(s));
+      kor(s, 1 / STEG_TIM);
       const pa = (x: number, y: number, w: number, h: number) => { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) if (fore[j * W + i]) return true; return false; };
       for (const st of SIM.stationerOf(s)) if (!st0.has(st) && !SIM.stationDef(st.k)?.inne && !SIM.stationDef(st.k)?.forvar) { const m = SIM.storlekAv(st); if (pa(st.x, st.y, m.w, m.h)) { paStrak++; nyttPa.push(st.k); } }
-      for (const z of zonesOf(s)) if (!z0.includes(`${z.x},${z.y},${z.w},${z.h}`)) { // en ny eller växande lagerplats: bara de nya rutorna räknas
-        const gammal = zonesOf(s).length && z0.map(k => k.split(',').map(Number)).find(([x, y]) => Math.abs(x - z.x) <= 1 && Math.abs(y - z.y) <= 1);
-        for (let j = z.y; j < z.y + z.h; j++) for (let i = z.x; i < z.x + z.w; i++) {
-          const forut = gammal && i >= gammal[0] && i < gammal[0] + gammal[2] && j >= gammal[1] && j < gammal[1] + gammal[3];
-          if (!forut && fore[j * W + i] && !sistaTillLager(j * W + i)) { paStrak++; nyttPa.push('lager'); }
+      // lagerplatserna prövas i en kopia varje timme: en ny plats och en större, mot stråken just då (i spelet hinner stråken flyttas i samma steg)
+      if (t % STEG_TIM === 0) {
+        const c = cloneState(s), ruta = SIM.straken(c).ruta.slice(), vagarNu = SIM.straken(c).vagar;
+        const zFore = zonesOf(c).map(z => ({ ...z }));
+        setAmount(c, 'ved', amountOf(c, 'ved') + 300);
+        SIM.lagerNy(c); SIM.lagerStorre(c);
+        for (const z of zonesOf(c)) for (let j = z.y; j < z.y + z.h; j++) for (let i = z.x; i < z.x + z.w; i++) {
+          const r = j * W + i, forut = zFore.some(o => i >= o.x && i < o.x + o.w && j >= o.y && j < o.y + o.h);
+          if (!forut && ruta[r] && !vagarNu.every(v => !v.rutor.includes(r) || v.mal === 'lager' && v.rutor.indexOf(r) === v.rutor.length - 1)) { paStrak++; nyttPa.push('lager'); }
         }
       }
       for (const f of s.falt ?? []) if (!f0.has(f) && SIM.faltRutor(f).some(i => fore[i])) { paStrak++; nyttPa.push('fält'); }
-      for (const h of housesOf(s)) if (!h0.has(h)) { for (let j = h.y; j < h.y + h.h; j++) for (let i = h.x; i < h.x + h.w; i++) if (fore[j * W + i] === 2) husPa++; }
-      maxRutor = Math.max(maxRutor, SIM.straken(s).ruta.reduce((a, v) => a + (v ? 1 : 0), 0));
+      // ett skjul är öppet: bara stolparna står på marken
+      for (const h of housesOf(s)) if (!h0.has(h)) { if (h.skjul) { for (const b of SIM.bitsOf(s)) if (b.hus === h.id && fore[b.y * W + b.x] === 2) husPa++; } else for (let j = h.y; j < h.y + h.h; j++) for (let i = h.x; i < h.x + h.w; i++) if (fore[j * W + i] === 2) husPa++; }
+      if (t % STEG_TIM === 0) maxRutor = Math.max(maxRutor, SIM.straken(s).ruta.reduce((a, v) => a + (v ? 1 : 0), 0));
     }
     const st = SIM.straken(s), hus = housesOf(s).filter(h => h.klar);
     const dorrar = new Set(st.vagar.map(v => v.dorr));
@@ -979,25 +985,377 @@ SCENARIER.strak = {
 };
 
 SCENARIER.strakprov = {
-  text: 'Provet med gångstråken (steg 6.2.6): samma by i 8 dygn med och utan stråken. Med stråken står husen inte mer än lite längre från byns mitt, och utan stråken räknas inga hus som fick sämre plats för ett stråk',
+  text: 'Provet med gångstråken (steg 6.2.6): samma by i 12 dygn (12 år i spelet, knappt två veckor i verkligheten) med och utan stråken. Med stråken står husen inte mer än lite längre från byns mitt, och utan stråken räknas inga hus som fick sämre plats för ett stråk',
   lang: true,
   kor: () => {
     // samma körning som npm run prov, för en by: utan stråken med BALANS="strak.pa=0" (balanstalen går inte att ändra i en körning)
     const fil = fileURLToPath(new URL('../prov-en.ts', import.meta.url));
     const by = (env: Record<string, string>) => {
-      const u = spawnSync(process.execPath, ['--import', 'tsx', fil, '1002', '8'], { env: { ...process.env, ...env }, encoding: 'utf8' });
+      const u = spawnSync(process.execPath, ['--import', 'tsx', fil, '1002', '12'], { env: { ...process.env, ...env }, encoding: 'utf8' });
       if (u.status) throw new Error(`prov-en.ts kraschade:\n${(u.stderr ?? '').slice(-1500)}`);
       return JSON.parse(u.stdout.trim().split('\n').pop()!) as { hus: number; fran: number; samre: number; ingen: number; om: number; utan: boolean; vakter: string[] };
     };
-    // by 1002: by 1001 har sedan bärbuskarna (6.5.4) så mycket mat och fritid att ingen kommit på timmerväggen efter 8 dygn,
-    // och då byggs inget hus att pröva stråken på (balansen hör till 6.10)
+    // 12 dygn: efter 8 dygn har ingen kommit på timmerväggen, och då byggs inget hus att pröva stråken på
     const med = by({}), utan = by({ BALANS: 'strak.pa=0' });
     return [
-      [`båda byarna har hus efter 8 dygn (8 år i spelet): med ${med.hus}, utan ${utan.hus}`, med.hus > 0 && utan.hus > 0 && !med.utan && utan.utan],
+      [`båda byarna har hus efter 12 dygn (12 år i spelet): med ${med.hus}, utan ${utan.hus}`, med.hus > 0 && utan.hus > 0 && !med.utan && utan.utan],
       [`med stråken står inget hus mer än 4 rutor längre från byns mitt än utan (längst bort ${med.fran.toFixed(1)} mot ${utan.fran.toFixed(1)})`, med.fran <= utan.fran + 4],
       [`utan stråken räknas inga hus som fick sämre plats eller stråk som drogs om (${utan.samre}, ${utan.om})`, utan.samre === 0 && utan.om === 0 && utan.ingen === 0],
       [`med stråken räknas det (sämre plats ${med.samre}, ingen plats ${med.ingen}, stråk som drogs om ${med.om})`, true],
       [`vakterna larmar inte (${[...med.vakter, ...utan.vakter].join('; ')})`, !med.vakter.length && !utan.vakter.length],
+    ];
+  },
+};
+
+SCENARIER.rumstyper = {
+  text: 'Steg 7.2.1: rummen räknas fram och funktionen sitter på rummet, inte på hela huset. Registret RUMSTYPER ger rummet en tagg för varje krav det uppfyller, och taggar som passar dåligt ihop ger ett minus',
+  kor: () => {
+    const s = createState(6, START);
+    klockan(s); byggare(s);
+    SIM.planBuild(s); byggKlart(s);
+    const h = housesOf(s)[0], r = () => gridOf(s).rooms.find(q => q.hus === h.id && q.tiles.length)!, rum = r();
+    const gammal = SIM.rumFnId(s, rum) === SIM.fnId(h) && h.rumFn === undefined;
+    const sov = SIM.rumTaggar(s, rum).has('sovsal') && SIM.sovplatser(s, rum) === rum.tiles.length;
+    const vilaFore = SIM.rumVila(s, rum);
+    const stall = (k: string, i: number) => { (s.stationer ??= []).push({ id: (s.nextBit ??= 1), k, x: i % SIM.W, y: Math.floor(i / SIM.W), kvar: 0, inne: 1 } as SIM.Station); s.nextBit++; SIM.touch(s); };
+    stall('bord', rum.tiles[0]);
+    const matsal = SIM.rumTaggar(s, r()).has('matsal');
+    stall('flatarbank', rum.tiles[rum.tiles.length - 1]);
+    const verkstad = SIM.rumTaggar(s, r()).has('verkstad'), minus = SIM.rumMinus(s, r()).length > 0, vilaEfter = SIM.rumVila(s, r());
+    const fore = SIM.sovplatser(s, r());
+    SIM.setRumFn(s, r(), 'samling');
+    const fnRum = SIM.rumFnId(s, r()) === 'samling' && SIM.fnId(h) === 'sovsal' && SIM.sovplatser(s, r()) === 0 && SIM.samlingRum(s)?.id === r().id;
+    const namn = SIM.rumNamn(s, r());
+    return [
+      ['ett hus från en gammal sparfil är ett rum med husets funktion', gammal],
+      [`rummet är en sovsal med en sovplats per ruta (${SIM.sovplatser(s, rum)})`, sov],
+      ['ett bord inne gör rummet till en matsal', matsal],
+      ['en arbetsbänk gör det till en verkstad', verkstad],
+      [`verkstad och sovplatser passar dåligt ihop: man vilar sämre (${vilaFore} → ${vilaEfter.toFixed(2)})`, minus && vilaEfter < vilaFore],
+      [`funktionen sitter på rummet: med samling som funktion försvinner sovplatserna (${fore} → 0), och huset är fortfarande en sovsal`, fnRum],
+      [`rummets namn efter taggarna: ${namn}`, !!namn],
+    ];
+  },
+};
+
+SCENARIER.byggplan = {
+  text: 'Steg 7.2.2–7.2.6: behoven anmäls och Byggplanen tar det förslag som ger mest värde per kostnad. Ritningen prövas, ett behov måste ha funnits ett tag, och ett hus byggs ut i stället för att ett nytt byggs. Den nya delen byggs först och väggen öppnas sist',
+  kor: () => {
+    const s = createState(6, START);
+    klockan(s); byggare(s);
+    SIM.planBuild(s); byggKlart(s);
+    const h = housesOf(s)[0], fore = { w: h.w, h: h.h }, rumFore = gridOf(s).rooms.filter(r => r.hus === h.id && r.tiles.length).length;
+    const foreIngen = SIM.byggbehov(s).filter(b => b.fn === 'sovsal').length === 0;
+    for (let i = 0; i < 4; i++) nyInvanare(s, i % 2 ? 'm' : 'k', 25);
+    const behov = SIM.byggbehov(s)[0];
+    // ett behov som inte är en fara väntar
+    SIM.stepBehov(s);
+    const minns = Object.keys(s.byggBehov ?? {}).some(k => k.startsWith('sovsal'));
+    const kostar = SIM.ritningKostnad([{ x: 0, y: 0, m: 'timmer' }]) > 0;
+    SIM.planBuild(s);
+    const pagar = !!h.ut, ettHus = housesOf(s).length === 1;
+    const nya = bitsOf(s).filter(b => b.hus === h.id && b.b < 1).length;
+    // den nya delen byggs av arbetet: väggen står kvar tills den är klar
+    const p = living(s)[0], gamlaVaggar = (h.ut?.oppnas ?? []).length;
+    const stangd = (h.ut?.oppnas ?? []).every(([x, y]) => { const b = SIM.bitAt(s, x, y); return b && b.b >= 1 && b.k !== 'golv'; });
+    let varv = 0;
+    while (h.ut && varv++ < 2000) {
+      const b = bitsOf(s).find(q => q.hus === h.id && q.b < 1);
+      if (!b) break;
+      const M = MATERIAL[b.m];
+      if (M.item) b.mat = M.n;
+      SIM.workOn(s, p, b, 3600);
+    }
+    const rum = gridOf(s).rooms.filter(r => r.hus === h.id && r.tiles.length);
+    const storre = h.w * h.h > fore.w * fore.h, sov = rum.reduce((n, r) => n + SIM.sovplatser(s, r), 0);
+    const fel = SIM.husFel(s);
+    const rektangel = bitsOf(s).filter(b => b.hus === h.id).length === h.w * h.h;
+    return [
+      ['innan någon saknar sovplats finns inget sådant behov', foreIngen],
+      [`när folk saknar sovplats anmäls behovet (${behov?.fn}), och byn minns när det kom`, behov?.fn === 'sovsal' && minns],
+      ['en ritning har en kostnad', kostar],
+      ['Byggplanen väljer att bygga ut det befintliga huset, inte ett nytt', pagar && ettHus],
+      [`ritningen är nya rutor (${nya}), och den gamla väggen står kvar (${gamlaVaggar} rutor)`, nya > 0 && gamlaVaggar > 0 && stangd],
+      [`huset är större (${fore.w}×${fore.h} → ${h.w}×${h.h}) och fortfarande en rektangel, med ett rum (${rumFore} → ${rum.length})`, storre && rektangel && rum.length === 1 && !h.ut],
+      [`alla rutor går att sova på (${sov})`, sov === (h.w - 2) * (h.h - 2)],
+      [`vakten för husen är tyst${fel ? ': ' + fel : ''}`, !fel],
+    ];
+  },
+};
+
+SCENARIER.bryggaBort = {
+  text: 'Den som står på en brygga när den försvinner (brand, tornado, slitage) hamnar på närmaste lediga ruta, inte i vattnet',
+  kor: () => {
+    const s = createState(6, START), g = SIM.getMap(s.seed).tiles, p = living(s)[0];
+    let i = g.findIndex(t => t === SIM.T.Vatten);
+    const x = i % SIM.W, y = Math.floor(i / SIM.W), b: SIM.Bit = { id: (s.nextBit ??= 1), x, y, k: 'golv', m: 'brygga', b: 1, mat: 1, c: 1 };
+    s.nextBit++; SIM.bitsOf(s).push(b); s.bryggV = (s.bryggV ?? 0) + 1; SIM.touch(s);
+    const paBryggan = SIM.vattenNu(s)[i] !== SIM.T.Vatten;
+    p.x = x + 0.5; p.y = y + 0.5;
+    SIM.vagBort(s, b);
+    return [
+      ['bryggan går att stå på', paBryggan],
+      [`när den är borta står hen på land (${p.x}, ${p.y})`, SIM.vattenNu(s)[SIM.tileOf(p.x, p.y)] !== SIM.T.Vatten],
+    ];
+  },
+};
+SCENARIER.scenflytt = {
+  text: 'Steg 7.2.7: en scen som står ute bärs in när byn har en samlingssal med plats, så att salen blir en gillesal. Den flyttar inte medan någon uppträder',
+  kor: () => {
+    const s = createState(6, START), g = SIM.getMap(s.seed).tiles, c = SIM.bynsMitt(s);
+    klockan(s);
+    const fritt = (x: number, y: number) => x > 0 && y > 0 && x < SIM.W - 1 && y < SIM.W - 1 && g[y * SIM.W + x] !== SIM.T.Sten && g[y * SIM.W + x] !== SIM.T.Vatten && SIM.ledig(s, x, y) && !SIM.bitAt(s, x, y);
+    let pl: { x: number; y: number } | undefined, bd = Infinity;
+    for (let y = 2; y < SIM.W - 10; y++) for (let x = 2; x < SIM.W - 10; x++) {
+      const d = Math.hypot(x - c.x, y - c.y);
+      if (d >= bd || d < 8) continue;
+      let ok = true;
+      for (let yy = y; yy < y + 6 && ok; yy++) for (let xx = x; xx < x + 7 && ok; xx++) ok = fritt(xx, yy);
+      if (ok) { bd = d; pl = { x, y }; }
+    }
+    if (!pl) return [['en plats för salen', false]];
+    const h: SIM.Hus = { id: (s.nextBit ??= 1), namn: 'Samlingshus', x: pl.x, y: pl.y, w: 7, h: 6, fn: 'verkstad', klar: s.now };
+    s.nextBit++;
+    for (let yy = pl.y; yy < pl.y + 6; yy++) for (let xx = pl.x; xx < pl.x + 7; xx++) {
+      const kant = xx === pl.x || yy === pl.y || xx === pl.x + 6 || yy === pl.y + 5, m = xx === pl.x + 3 && yy === pl.y + 5 ? 'oppning' : kant ? 'timmer' : 'tra';
+      SIM.bitsOf(s).push({ id: s.nextBit++, x: xx, y: yy, k: SIM.MATERIAL[m].k, m, b: 1, mat: SIM.MATERIAL[m].n, c: 1, hus: h.id });
+    }
+    housesOf(s).push(h); SIM.touch(s);
+    const sc = { id: s.nextBit++, k: 'scen', x: pl.x - 6, y: pl.y - 4, kvar: 0 } as SIM.Station;
+    (s.stationer ??= []).push(sc); SIM.touch(s);
+    SIM.stepStationer(s);
+    const uteUtanSal = !sc.inne;
+    h.fn = 'samling'; h.rumFn = undefined; SIM.touch(s);
+    s.fram = { k: 'sang', p: living(s)[0].id, start: s.now, slut: s.now + 3600000, publik: [], text: '', scen: sc.id };
+    SIM.stepStationer(s);
+    const uteUnder = !sc.inne;
+    delete s.fram;
+    SIM.stepStationer(s);
+    const tagg = sc.inne ? [...SIM.rumTaggar(s, gridOf(s).rooms.find(r => r.hus === h.id && r.tiles.length)!)] : [];
+    return [
+      ['utan sal står scenen kvar ute', uteUtanSal],
+      ['den flyttar inte medan någon uppträder', uteUnder],
+      [`med en sal bärs den in (${sc.x},${sc.y}), och rummet blir en scensal (${tagg.join(', ')})`, !!sc.inne && !!SIM.roomAt(s, sc.x, sc.y) && tagg.includes('scensal')],
+      ['en scen inne går att använda', SIM.scenen(s) === sc],
+    ];
+  },
+};
+SCENARIER.husbyte = {
+  text: 'Steg 7.2.12: ett hus säljs genom samma bytessystem som allt annat: när köparen och säljaren möts ligger huset som en symbol på filten, och det blir handslag och en rad i loggen. Går det inte att betala blir det inget. En handlare kan aldrig köpa ett hus',
+  kor: () => {
+    const s = createState(6, START);
+    klockan(s); byggare(s);
+    for (let i = 0; i < 6; i++) nyInvanare(s, i % 2 ? 'm' : 'k', 25);
+    SIM.planBuild(s); byggKlart(s);
+    const [a, b] = living(s).filter(q => !q.mother && !q.father);
+    a.partner = b.partner = undefined;
+    const h = housesOf(s)[0]; h.ag = b.id; h.fn = 'familjehus'; SIM.touch(s);
+    const pris = SIM.saljPris(s, h);
+    const utanPengar = SIM.kopHus(s, h, a.id) === false && h.ag === b.id;
+    SIM.put(s, 'silver', 400, { [a.id]: 400 });
+    const silver0 = SIM.ownsAmount(s, b, 'silver');
+    const gick = SIM.kopHus(s, h, a.id);
+    const f = (s.filtar ?? []).filter(q => q.varor.some(w => w.k === 'hus'));
+    const ha = createState(7, START), hp = { id: -5, namn: 'Handlaren', x: 0, y: 0, varde: () => 1, over: () => [] };
+    let fel = false;
+    try { SIM.flytta(ha, { k: 'hus', n: 1, hus: 1, varde: 1 }, hp, hp); } catch { fel = true; }
+    const rad = [a, b].some(q => q.byten?.some(m => m.bg.some(v => v.k === 'hus') || m.ag.some(v => v.k === 'hus')));
+    return [
+      [`huset är värt minst ${Math.round(pris)} för säljaren`, pris > 0],
+      ['utan något att betala med blir det inget', utanPengar],
+      [`med silver byter huset ägare (${h.namn})`, gick && h.ag === a.id],
+      [`säljaren fick betalt (${silver0} → ${SIM.ownsAmount(s, b, 'silver')} silver)`, SIM.ownsAmount(s, b, 'silver') > silver0],
+      ['huset ligger som en symbol på filten, mitt emot betalningen', f.length === 1 && (s.filtar ?? []).filter(q => q.par === f[0].par).length === 2],
+      ['bytet minns köparen och säljaren, med huset', rad],
+      ['en handlare kan aldrig köpa ett hus', fel && !SIM.kanTaHus(hp)],
+    ];
+  },
+};
+SCENARIER.samlingssal = {
+  text: 'Steg 7.2.7–7.2.9: när byn har en scen vill den ha en samlingssal, som blir mötesplatsen året runt. Borden och scenen står hellre där, och en scen inne går att uppträda på när det regnar. Man äter under tak när det är kallt, och verkstaden får en lagerplats för sitt material',
+  kor: () => {
+    const s = createState(6, START);
+    klockan(s); byggare(s);
+    for (let i = 0; i < 8; i++) nyInvanare(s, i % 2 ? 'm' : 'k', 25);
+    SIM.planBuild(s); byggKlart(s);
+    const inget = !SIM.byggbehov(s).some(b => b.fn === 'samling');
+    (s.stationer ??= []).push({ id: (s.nextBit ??= 1), k: 'scen', x: housesOf(s)[0].x - 6, y: housesOf(s)[0].y - 6, kvar: 0 } as SIM.Station); s.nextBit++; SIM.touch(s);
+    const behov = SIM.byggbehov(s).find(b => b.fn === 'samling');
+    const h = housesOf(s)[0];
+    h.fn = 'samling'; h.rumFn = undefined; SIM.touch(s);
+    const sal = SIM.samlingRum(s)!, salenFinns = !!sal && !SIM.byggbehov(s).some(b => b.fn === 'samling');
+    const bord = SIM.stationSite(s, 'bord'), bordInne = !!bord && !!SIM.roomAt(s, bord.x, bord.y);
+    s.stationer.push({ id: s.nextBit++, k: 'bord', x: bord!.x, y: bord!.y, kvar: 0, inne: 1 } as SIM.Station); SIM.touch(s);
+    const matsal = SIM.rumTaggar(s, sal).has('matsal') || SIM.rumTaggar(s, gridOf(s).rooms.find(r => r.hus === h.id && r.tiles.length)!).has('matsal');
+    const p = living(s)[0], plats = SIM.ledigPlats(s, p);
+    const inneScen = () => SIM.scenen(s);
+    (s.stationer.find(t => t.k === 'scen')! as SIM.Station).inne = 1;
+    const scenInne = !!inneScen();
+    // verkstaden
+    h.fn = 'verkstad'; SIM.touch(s);
+    const r = gridOf(s).rooms.find(q => q.hus === h.id && q.tiles.length)!;
+    s.stationer = s.stationer.filter(t => t.k === 'bord');
+    s.stationer.push({ id: s.nextBit++, k: 'flatarbank', x: r.tiles[0] % SIM.W, y: Math.floor(r.tiles[0] / SIM.W), kvar: 0, inne: 1 } as SIM.Station); SIM.touch(s);
+    SIM.stepByggnader(s);
+    const hylla = SIM.zonesOf(s).filter(z => z.hus === h.id && z.slag === 'material').length;
+    return [
+      ['utan scen vill byn inte ha en samlingssal', inget],
+      [`med en scen vill den det (${behov?.a.plats} rutor)`, !!behov],
+      ['när salen finns försvinner behovet', salenFinns],
+      ['bordet ställs i salen, och rummet blir en matsal', bordInne && matsal],
+      ['man sätter sig vid bordet inne', !!plats && !!SIM.roomAt(s, plats.x, plats.y)],
+      ['en scen inne går att använda', scenInne],
+      [`verkstaden får en lagerplats för material (${hylla})`, hylla === 1],
+    ];
+  },
+};
+
+SCENARIER.byggplan2 = {
+  text: 'Steg 7.2.10–7.2.18: när inget är akut föreslår Byggplanen ett bättre golv och ett eget rum på nivån Förbättra. Planens tal följer seden, byn och varje familj har var sin ändring, silver går att betala med i byn, ett hus kan köpas och rivas, och lagret är ett byggbehov utan tak på lagerplatserna',
+  kor: () => {
+    const s = createState(6, START);
+    klockan(s); byggare(s);
+    SIM.planBuild(s); byggKlart(s);
+    const h = housesOf(s)[0];
+    put(s, 'ved', 32); // över gränsen för förbättringar, under den för en vedbod
+    // ett bättre golv
+    const j = bitsOf(s).find(b => b.hus === h.id && b.k === 'golv')!;
+    j.m = 'jord'; SIM.touch(s);
+    SIM.planBuild(s);
+    const golvForb = j.m === 'tra' && j.forb === 1 && !SIM.buildJob(s, living(s)[0])?.bit.forb && SIM.buildJob(s, living(s)[0], true)?.bit === j;
+    j.b = 1; j.forb = undefined; j.mat = 1; SIM.touch(s);
+    // byns planering
+    s.seder.v.gemenskap = 1; s.seder.v.nyfikenhet = 1;
+    const plan = SIM.byplanNu(s);
+    const planOk = plan.tat > 0 && plan.form === 'rader';
+    s.seder.v.forsiktighet = -1;
+    const jord = SIM.byplanNu(s).golv === 'jord';
+    s.seder.v.forsiktighet = 0; s.seder.v.nyfikenhet = 0; SIM.byplanNu(s);
+    // silver inom byn
+    const [a, b] = living(s);
+    const silverMed = SIM.personPart(s, a).over === undefined ? false : true;
+    // köpa ett tomt hus av byn: en familj med råd
+    h.tom = s.now; h.fn = 'sovsal';
+    const ag = a.id;
+    put(s, 'silver', 500, { [ag]: 500 });
+    const fore = amountOf(s, 'silver');
+    const saljs = SIM.saljPris(s, h) > 0, kop = SIM.kopPris(s, ag, 1000);
+    // lagret
+    const zonFore = SIM.zonesOf(s).length;
+    return [
+      ['ett jordgolv föreslås bli trägolv, på nivån Förbättra och inte Tak', golvForb],
+      [`planens tal följer seden: tätt och i rader (${plan.tat.toFixed(1)}, ${plan.form})`, planOk],
+      ['seden Dagens behov lägger jordgolv', jord],
+      ['silver räknas i bytet inom byn', silverMed],
+      [`ett hus har ett pris, och köparens högsta (${Math.round(kop)}) räcker när hen har råd`, saljs && kop > 0 && fore >= 500 && b !== undefined],
+      [`lagerplatserna har inget tak (${zonFore})`, zonFore >= 1 && (SIM.LAGER as Record<string, number>).zoner === undefined],
+    ];
+  },
+};
+
+SCENARIER.skjul = {
+  text: 'Steg 7.3.1–7.3.6: stolpen, jordgolvet som en stig, blöt ved och skjulen. Två torkställningar ute ger ett torkhus, mycket ved ute en vedbod: ett tak med stolpar, och under det blir veden aldrig blöt',
+  kor: () => {
+    const s = createState(6, START);
+    klockan(s); byggare(s);
+    const st = SIM.MATERIAL.stolpe, stolpen = st.k === 'vagg' && st.item === 'ved' && st.n === 2 && st.tek === 'timmervagg';
+    SIM.planBuild(s); byggKlart(s);
+    const hu = housesOf(s)[0], z = SIM.zonesOf(s)[0];
+    (s.stationer ??= []).push({ id: s.nextBit!++, k: 'tork', x: hu.x + hu.w + 6, y: hu.y, kvar: 0 } as SIM.Station, { id: s.nextBit!++, k: 'tork', x: hu.x + hu.w + 9, y: hu.y, kvar: 0 } as SIM.Station);
+    SIM.touch(s);
+    const behovTork = SIM.byggbehov(s).find(b => b.fn === 'torkhus');
+    s.byggBehov = undefined; SIM.planBuild(s);
+    const t = housesOf(s).find(h => h.fn === 'torkhus'), stolpar = t ? bitsOf(s).filter(b => b.hus === t.id && b.m === 'stolpe').length : 0;
+    if (t) { for (const b of bitsOf(s)) if (b.hus === t.id) { b.mat = 2; b.b = 1; } t.klar = s.now; SIM.touch(s); }
+    const under = t ? SIM.roofed(s, t.x + 1, t.y + 1) && !SIM.roomAt(s, t.x + 1, t.y + 1) : false;
+    // blöt ved
+    SIM.setAmount(s, 'ved', 0);
+    put(s, 'ved', 8);
+    const a = SIM.stacksOf(s).find(q => q.k === 'ved')!;
+    const v = SIM.vaderNu(s); v.nb = 1; v.sno = false; v.lage = 'regn';
+    const nb = SIM.nederbord(s);
+    SIM.stepBlotVed(s, 3600 * 2);
+    const blot = a.blot === 1, torrFore = SIM.torrVed(s);
+    v.nb = 0; v.lage = 'klart';
+    SIM.stepBlotVed(s, 3600 * 200);
+    const torr = a.blot === undefined, torrEfter = SIM.torrVed(s);
+    return [
+      ['stolpen är en byggdel som stänger vägen och kostar 2 ved, och låses upp av Timmerhus', stolpen],
+      ['två torkställningar ute: byn vill ha ett torkhus', !!behovTork],
+      [`Byggplanen sätter upp ett skjul med stolpar (${stolpar})`, !!t && stolpar >= 4],
+      ['under skjulet är det tak men inget rum', under],
+      [`ved ute i regnet blir blöt (${nb})`, !nb || blot],
+      [`torr ved räknas för sig (${torrFore} → ${torrEfter})`, torrEfter >= torrFore],
+      ['när det slutat regna torkar den', torr],
+      ['ett hus med zon utanför påverkas inte', !!z],
+    ];
+  },
+};
+
+SCENARIER.brygga = {
+  text: 'Steg 7.3.7, 7.3.9 och 7.3.10: stockvägen läggs på gångstråken på nivån Förbättra och försvinner när den brinner. Bryggan byggs rakt ut i vattnet, man kan stå på den, den räknas som strand och vattnet där är rent',
+  kor: () => {
+    const s = createState(6, START);
+    klockan(s); byggare(s);
+    for (const p of living(s)) Object.assign((p.tek ??= {}), { stockvag: 1, brygga: 1 });
+    SIM.planBuild(s); byggKlart(s);
+    put(s, 'virke', 30);
+    s.byggBehov = undefined; SIM.planBuild(s);
+    const vag = bitsOf(s).filter(b => b.m === 'stockvag'), bryggaBit = bitsOf(s).filter(b => b.m === 'brygga');
+    const valdes = vag.length + bryggaBit.length > 0;
+    const forb = [...vag, ...bryggaBit].every(b => b.forb === 1 && b.hus === undefined);
+    // en brygga direkt: båda rutorna klara
+    const m = SIM.getMap(s.seed).tiles;
+    let x = -1, y = -1;
+    for (let i = 0; i < SIM.W * SIM.H && x < 0; i++) if (m[i] === SIM.T.Vatten && m[i + 1] !== SIM.T.Vatten && m[i - 1] === SIM.T.Vatten) { x = i % SIM.W; y = Math.floor(i / SIM.W); }
+    const iVatten = SIM.blocked(s, x, y), vattenFore = SIM.vattenNu(s)[y * SIM.W + x] === SIM.T.Vatten;
+    const b: SIM.Bit = { id: s.nextBit!++, x, y, k: 'golv', m: 'brygga', b: 0, mat: 1, c: 1 };
+    bitsOf(s).push(b); SIM.touch(s);
+    const site = SIM.siteOf(s, b), inteIVatten = !SIM.blocked(s, Math.floor(site.x), Math.floor(site.y));
+    SIM.workOn(s, living(s)[0], b, 36000);
+    const gar = !SIM.blocked(s, x, y), tile = SIM.vattenNu(s)[y * SIM.W + x] !== SIM.T.Vatten, strand = SIM.strandNu(s)[y * SIM.W + x] === 1, rent = SIM.vattenSmuts(s, y * SIM.W + x) === 0;
+    SIM.vagBort(s, b);
+    const borta = SIM.blocked(s, x, y) && SIM.vattenNu(s)[y * SIM.W + x] === SIM.T.Vatten;
+    return [
+      ['Byggplanen föreslår en väg eller brygga när byn kan det och har virke', valdes],
+      ['de byggs på nivån Förbättra och hör inte till något hus', forb],
+      ['vattnet går inte att stå i före bryggan', iVatten && vattenFore],
+      ['den som bygger står inte i vattnet', inteIVatten],
+      ['på en klar brygga kan man gå och stå', gar && tile],
+      ['bryggan räknas som strand, och vattnet där är rent', strand && rent],
+      ['när den förstörs är rutan vatten igen', borta],
+    ];
+  },
+};
+
+SCENARIER.torget = {
+  text: 'Steg 7.3.8, 7.3.12 och 7.3.13: när byn vuxit märks ett torg ut, där inget byggs och dit gångstråken leder, och det är byns centrum. En infartsväg dras ut till kartans kant, med en bro över smalt vatten, och då kan handlaren komma på vintern',
+  kor: () => {
+    const s = createState(6, START);
+    klockan(s); byggare(s);
+    for (const p of living(s)) Object.assign((p.tek ??= {}), { stockvag: 1, brygga: 1 });
+    SIM.planBuild(s); byggKlart(s);
+    SIM.stepByggplan(s);
+    const inget = !s.torg;
+    for (let i = 0; i < 12; i++) nyInvanare(s, i % 2 ? 'm' : 'k', 25);
+    SIM.stepByggplan(s);
+    const t = s.torg!, finns = !!t && t.w === 10 && t.h === 10;
+    const inteHar = finns && !SIM.usable(s, t.x + 2, t.y + 2) ;
+    const mitt = finns && SIM.bynsMitt(s).x === t.x + 5;
+    // infarten
+    put(s, 'virke', 40);
+    for (let i = 0; i < 40; i++) bitsOf(s).push({ id: s.nextBit!++, x: 2 + i, y: 2, k: 'golv', m: 'stockvag', b: 1, mat: 1, c: 1 });
+    SIM.touch(s);
+    const f = SIM.BYGGATGARDER.infartA.foresla(s, { fn: 'forbattra', a: { v: 1, plats: 0 }, sc: 0 }, () => true);
+    const foreslas = f.length === 1 && f[0].ritning.every(a => a.m === 'stockvag' || a.m === 'brygga');
+    s.infart = { klar: 1 };
+    return [
+      ['en liten by har inget torg', inget],
+      [`när byn vuxit märks ett torg på 10×10 rutor ut (${t?.w}×${t?.h})`, finns],
+      ['på torget byggs inget', inteHar],
+      ['torget är byns centrum', mitt],
+      ['Byggplanen föreslår en infartsväg', foreslas],
+      ['när den är klar kan handlaren komma också på vintern', !!s.infart.klar],
     ];
   },
 };

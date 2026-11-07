@@ -1,0 +1,29 @@
+{
+"id": "mjarde",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 7.8.1)",
+"w": 16,
+"h": 10,
+"rader": [
+".kk.............",
+"klmkkkkkk.......",
+"knnmlmrlrkkk....",
+"knsrlrmlmrlrkkk.",
+"knsmlmnlnmltttuk",
+"knsnlnmlmnlttttk",
+"knsmlmnlnmlmkkk.",
+"knnnlnmlmkkk....",
+"klnkkkkkk.......",
+".kk............."
+],
+"pal": {
+"k": "#24201d",
+"l": "#694902",
+"m": "#b2921b",
+"n": "#906f0f",
+"r": "#d8b25f",
+"s": "#2f261d",
+"t": "#a0947d",
+"u": "#bdb39b"
+}
+}

@@ -1,12 +1,14 @@
 // npm run balans -- [antal byar = 20] [dygn = 90]
 // Kör många slumpade byar parallellt och visar median, sämsta och bästa värde för varje nyckeltal. Vad som är bättre
 // står i registret NYCKELTAL (nyckeltal.ts); tal som bara är information visas med lägsta och högsta värde.
+import './utc';
+import { writeFileSync } from 'node:fs';
 import { korJson, pool, seedAv, sek } from './pool';
 import { NYCKELTAL, Matt, Nyckeltal, median, snittTal, vardeAv } from './nyckeltal';
 
 const [antal = 20, dagar = 90] = process.argv.slice(2).map(Number);
 const seeds = Array.from({ length: antal }, (_, i) => seedAv(i));
-type Ut = { seed: number; n: Nyckeltal; vakter: string[] };
+type Ut = { seed: number; n: Nyckeltal; vakter: string[]; stat?: Record<string, number>; tek?: string[] };
 
 const t0 = Date.now();
 const res = await pool(seeds.map(seed => () => korJson<Ut>('en.ts', [String(seed), String(dagar)], `by ${seed}`)));
@@ -32,4 +34,6 @@ tabell(visas.filter(m => m.bra === 0));
 const utdoda = res.filter(r => r.n.atergrundad > 0).map(r => `${r.seed}: ${r.n.atergrundad} ggr`);
 console.log(`utdöda och återgrundade byar: ${utdoda.length}${utdoda.length ? ' (' + utdoda.join(', ') + ')' : ''}, under 6 invånare: ${res.filter(r => r.n.pop < 6).length}`);
 const vakter = res.flatMap(r => r.vakter.map(v => `by ${r.seed}: ${v}`));
+// statistiken och teknikerna per by sparas i balans-stat.json (används för gräns 4: varje nytt system används i de flesta byarna)
+writeFileSync('balans-stat.json', JSON.stringify(res.map(r => ({ seed: r.seed, stat: r.stat, tek: r.tek }))));
 console.log(vakter.length ? 'VAKTER LARMAR:\n  ' + vakter.join('\n  ') : 'Vakter: inga fel.');

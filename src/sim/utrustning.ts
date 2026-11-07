@@ -8,15 +8,20 @@
 // sig ett som är fritt: sitt eget först, sedan byns, sedan ett lånat (stepKlader, varje timme). Plagget är på sig (Ting.bar)
 // tills det är utslitet (lager.ts, wearStore) eller den som har det dör. Kläderna väger: det man har på sig dras av från
 // inget mot händerna (steg 6.1.8), men i strid gör de en tung (strid.ts), och de skyddar mot kylan (kladVarme, steg.ts).
-// Bältet (steg 2.3.3) är ett plagg med en krok: när man bär hem hänger redskapet i det (iBaltet), så det tar inga händer
-// och bördan får båda händerna. En korg hänger inte där; den rymmer bördan.
+// Bältet (steg 2.3.3) är ett plagg med två krokar (steg 7.1.1): när man bär hem hänger redskapet i det (iBaltet), så det
+// tar inga händer och bördan får båda händerna, och på den andra kroken hänger ett eget redskap medan man arbetar med ett
+// annat (iKroken i agande.ts), så att kniven och yxan kan följa med. Bara det som sakregistret säger hänger i bältet
+// (SakDef.hanger: kniven, yxan och spaden) hänger där; spjuten, metspöt och vattensäcken hänger på axeln.
+// Axelremmen (steg 7.1.2) är ett plagg av skinn över axeln: när man bär hem hänger redskapet som hör till axeln i den (platsen
+// Axeln), så det tar inga händer, precis som bältets redskap. Var redskapet hänger säger hangerVid.
 // En ny plats blir en rad i PLATSER.
 import { Person, State, Task } from './typer';
 import { KLAD_SLAG, SAKER, viktOf } from './saker';
-import { heldBy, Ting, tingOf } from './agande';
-import { kvEffekt } from './kvalitet';
+import { heldBy, iKroken, Ting, tingOf } from './agande';
+import { kvEffekt, kvHaller } from './kvalitet';
+import { ACTS } from './handlingar';
 import { BYN, lends } from './egendom';
-import { KROPP, living } from './folk';
+import { KROPP, count, living } from './folk';
 import { temperature } from './vader';
 import { bordSlag, carryKind, handOrkar } from './lager';
 import { balans } from './balans';
@@ -37,7 +42,12 @@ const DEF = {
   ben: { namn: 'Ben', ikon: '👖' },
   fotter: { namn: 'Fötter', ikon: '🥾' },
   balte: { namn: 'Bälte', ikon: '➰' },
-  krok: { namn: 'I bältet', ikon: '🪝' }, // redskapet som hänger i bältet medan man bär
+  krok: { namn: 'Kroken i bältet', ikon: '🪝' }, // redskapet som hänger i bältet medan man bär
+  krok2: { namn: 'Andra kroken i bältet', ikon: '🪝' }, // steg 7.1.1: ett eget redskap som hänger där medan man arbetar med ett annat
+  axelrem: { namn: 'Axelrem', ikon: '➰' }, // steg 7.1.2: plagget
+  axel: { namn: 'Axeln', ikon: '🔱' }, // och redskapet som hänger i det medan man bär
+  smycke: { namn: 'Smycke', ikon: '➰' }, // steg 7.7.5
+  rygg: { namn: 'Ryggen', ikon: '🎒' }, // steg 7.1.3: ryggsäcken, och bördan i den
 } satisfies Record<string, PlatsDef>;
 export type Plats = keyof typeof DEF;
 export const PLATSER: Record<Plats, PlatsDef> = DEF;
@@ -56,15 +66,28 @@ export function iHanden(s: State, p: Person): { ting: Ting; hander: 1 | 2 } | un
   const t = heldBy(s, p);
   return t && { ting: t, hander: handerFor(s, p, t.k) === 1 ? 1 : 2 };
 }
-// redskapet i handen hänger i bältet när p bär: p har ett bälte på sig och redskapet är inte en korg (steg 2.3.3)
-export function iBaltet(s: State, p: Person, h = iHanden(s, p)) {
-  return !!h && !SAKER[h.ting.k]?.rymmer && tingOf(s).some(t => t.bar === p.id && SAKER[t.k]!.klad!.krok);
+// var redskapet i handen hänger när p bär: i bältet när hen har ett bälte på sig och sakregistret säger bältet (steg 2.3.3
+// och 7.1.1), på axeln när hen har en axelrem på sig och registret säger axeln (steg 7.1.2), annars ingenstans
+export function hangerVid(s: State, p: Person, h = iHanden(s, p)): 'balte' | 'axel' | undefined {
+  const v = h && SAKER[h.ting.k]?.hanger;
+  if (!v) return;
+  const f = v === 'balte' ? 'krok' : 'axel';
+  return tingOf(s).some(t => t.bar === p.id && SAKER[t.k]?.klad?.[f]) ? v : undefined;
 }
+// redskapet i handen hänger på kroppen när p bär (i bältet eller på axeln), så det tar inga händer
+export const iBaltet = (s: State, p: Person, h = iHanden(s, p)) => !!hangerVid(s, p, h);
 // platserna för bördan (steg 6.1.8): de fria händerna, var och en med vad den orkar (i vikt) och ett slag i taget, eller
 // korgen, som tar en hand men rymmer mer av vilka slag som helst (aldrig mer än båda händerna orkar). Ett redskap i en
-// hand lämnar den andra fri, och ett redskap i bältet lämnar båda
-export interface HandPlats { hand: 'hoger' | 'vanster'; kap: number; korg?: true }
+// hand lämnar den andra fri, och ett redskap i bältet lämnar båda. Ryggsäcken (steg 7.1.3) är en plats till, på ryggen,
+// som rymmer lika mycket för alla och av vilka slag som helst
+export interface HandPlats { hand: 'hoger' | 'vanster' | 'rygg'; kap: number; korg?: true }
+// ryggsäcken p har på sig (steg 7.1.3)
+export const ryggsack = (s: State, p: Person) => tingOf(s).find(t => t.bar === p.id && SAKER[t.k]?.klad?.rygg);
 export function handPlatser(s: State, p: Person): HandPlats[] {
+  const pl = iHanderna(s, p), r = ryggsack(s, p);
+  return r ? [...pl, { hand: 'rygg', kap: SAKER[r.k]!.klad!.rygg! }] : pl;
+}
+function iHanderna(s: State, p: Person): HandPlats[] {
   const H = handOrkar(s, p), h = iHanden(s, p);
   if (!h || iBaltet(s, p, h)) return [{ hand: 'hoger', kap: H }, { hand: 'vanster', kap: H }];
   const rymmer = SAKER[h.ting.k]?.rymmer;
@@ -76,6 +99,8 @@ export function handPlatser(s: State, p: Person): HandPlats[] {
 // ett. Man bär alltid minst en sak, hur tung den än är för en (barnet med en sten)
 export type Fordelning = [string, number][][];
 export function fordela(pl: HandPlats[], b: Record<string, number>): Fordelning | undefined {
+  const ri = pl.findIndex(x => x.hand === 'rygg');
+  if (ri >= 0) return medRygg(pl, ri, b);
   const slag = Object.entries(b).filter(x => x[1] > 1e-9).sort((x, y) => y[1] - x[1] || (x[0] < y[0] ? -1 : 1));
   const r: Fordelning = pl.map(() => []);
   if (!slag.length) return r;
@@ -98,7 +123,42 @@ export function fordela(pl: HandPlats[], b: Record<string, number>): Fordelning 
   for (let i = 0; i < slag.length; i++) { if (slag[i][1] > pl[i].kap + E && !en) return undefined; r[i].push(slag[i]); }
   return r;
 }
-// ryms bördan b i p:s fria händer?
+// med ryggsäcken (steg 7.1.3): varje slag läggs i ryggsäcken eller i händerna, och ett slag kan delas mellan dem. Det
+// som får plats läggs helst i ryggsäcken; den som samlar plockar rakt ner i den
+function medRygg(pl: HandPlats[], ri: number, b: Record<string, number>): Fordelning | undefined {
+  const E = 1e-9, R = pl[ri].kap, ov = pl.filter((_, i) => i !== ri);
+  const slag = Object.entries(b).filter(x => x[1] > E).sort((x, y) => y[1] - x[1] || (x[0] < y[0] ? -1 : 1));
+  const ut = (f: Fordelning, iR: [string, number][]) => { let j = 0; return pl.map((_, i) => i === ri ? iR : f[j++]); };
+  const n = slag.length;
+  for (let m = (1 << n) - 1; m >= 0; m--) {
+    const iR = slag.filter((_, i) => m >> i & 1), sum = iR.reduce((a, x) => a + x[1], 0);
+    if (sum > R + E) continue;
+    const rest = slag.filter((_, i) => !(m >> i & 1));
+    for (const c of rest) { // det som ryms till i ryggsäcken tas av ett av slagen i händerna
+      const del = Math.min(c[1], R - sum);
+      if (del <= E) break;
+      const f = fordela(ov, Object.fromEntries(rest.map(x => x === c ? [x[0], x[1] - del] : x)));
+      if (f) return ut(f, [...iR, [c[0], del]]);
+    }
+    const f = fordela(ov, Object.fromEntries(rest));
+    if (f) return ut(f, iR);
+  }
+  return undefined;
+}
+// ryggsäcken i stället för korgen (steg 7.1.3): den som har en ryggsäck på sig och arbetar utan korg i ett arbete där korgen
+// hjälper plockar rakt ner i ryggsäcken och får det korgen ger (korgens rad i handlingen, handlingar.ts)
+export function ryggKorg(s: State, p: Person, tk?: Task) {
+  const rad = tk && tk.tool !== 'korg' ? ACTS[tk.act].redskap?.korg : undefined, t = rad && ryggsack(s, p);
+  return t ? { t, rad: rad! } : undefined;
+}
+// ryggsäcken slits som korgen, för det som samlas i den (y), och läggs bort när den är utsliten
+export function slitRygg(s: State, t: Ting, y: number, haller: number) {
+  t.c -= y / haller / kvHaller(t);
+  if (t.c > 1e-9) return;
+  s.ting = tingOf(s).filter(x => x !== t);
+  count(s, 'kladerSlitna');
+}
+// ryms bördan b i p:s fria händer (och ryggsäcken)?
 export const ryms = (s: State, p: Person) => { const pl = handPlatser(s, p); return (b: Record<string, number>) => !!fordela(pl, b); };
 // är bördan full: ryms inte en sak till av det arbetet ger (steg 6.1.8)?
 export function fullBorda(s: State, p: Person, t: Task) {
@@ -112,11 +172,18 @@ export const bordPlats = (s: State, p: Person) => handPlatser(s, p).reduce((a, x
 export function utrustning(s: State, p: Person, bar: boolean): Record<Plats, { ting?: Ting; borda?: true }> {
   const r = Object.fromEntries(PLATS_LIST.map(k => [k, {}])) as Record<Plats, { ting?: Ting; borda?: true }>;
   let h = iHanden(s, p);
-  if (h && bar && iBaltet(s, p, h)) { r.krok.ting = h.ting; h = undefined; }
+  const krokar: Ting[] = [];
+  const vid = h && bar ? hangerVid(s, p, h) : undefined;
+  if (vid === 'balte') { krokar.push(h!.ting); h = undefined; }
+  else if (vid === 'axel') { r.axel.ting = h!.ting; h = undefined; }
+  krokar.push(...iKroken(s, p));
+  if (krokar[0]) r.krok.ting = krokar[0];
+  if (krokar[1]) r.krok2.ting = krokar[1];
   if (h) { r.hoger.ting = h.ting; if (h.hander === 2) r.vanster.ting = h.ting; }
   if (bar) {
     if (!h) { r.hoger.borda = true; r.vanster.borda = true; }
     else { if (SAKER[h.ting.k]?.rymmer) r.hoger.borda = true; if (h.hander === 1) r.vanster.borda = true; }
+    if (ryggsack(s, p)) r.rygg.borda = true;
   }
   for (const t of paSig(s, p)) r[SAKER[t.k]!.klad!.plats as Plats].ting = t;
   return r;
@@ -124,10 +191,10 @@ export function utrustning(s: State, p: Person, bar: boolean): Record<Plats, { t
 
 // vad av bördan som ligger i varje hand, och hur mycket (i vikt), som fliken, figuren i Utrustning och kartan visar
 // (steg 6.1.2): fördelningen i händerna (fordela, steg 6.1.8). Ryms bördan inte (fler slag än händer) läggs resten i höger
-export type IHanden = Partial<Record<'hoger' | 'vanster', { k: string; v: number }>>;
+export type IHanden = Partial<Record<'hoger' | 'vanster' | 'rygg', { k: string; v: number }>>;
 export function bordaIHander(s: State, p: Person, t: Task | undefined, u: ReturnType<typeof utrustning>): IHanden {
   const r: IHanden = {};
-  if (!t || (!u.hoger.borda && !u.vanster.borda)) return r;
+  if (!t || (!u.hoger.borda && !u.vanster.borda && !u.rygg.borda)) return r;
   const b = bordSlag(t), pl = handPlatser(s, p), f = fordela(pl, b);
   if (!Object.keys(b).length || !pl.length) return r;
   const sum = (x: [string, number][]) => x.reduce((a, y) => a + y[1], 0);

@@ -1,8 +1,9 @@
 import { KROPP, alive, byId, count, familjOf, living, log } from './folk';
-import { Hus, MATERIAL, Rum, bitById, bitsOf, gridOf, housesOf, husById, shelterOf, touch } from './byggnad';
-import { heatAt } from './eld';
+import { Hus, MATERIAL, Rum, bitById, bitsOf, gridOf, housesOf, husById, roofed, shelterOf, touch } from './byggnad';
+import { ageIndex, kallTid } from './tid';
+import { canLight, heatAt } from './eld';
 import { eldPlats } from './karta';
-import { changed, enPerRuta, ownedAll, put, storeFull, zonesOf } from './lager';
+import { changed, enPerRuta, ownedAll, put, stacksOf, storeFull, zoneAt, zonesOf } from './lager';
 import { kronika } from './historik';
 import { DAY, HOUR, W } from './typer';
 import { tingOf } from './agande';
@@ -35,6 +36,12 @@ export const HUS = balans('hus', {
   rivTillbaka: 0.5, // så mycket av materialet kommer tillbaka när ett hus rivs
   varmeMarg: 0.02, // ett samlingshus räknas som varmare än elden även om det är så här mycket kallare ...
   varmeY: 2.9, // ... mätt så här många rutor söder om elden
+  torkhusFran: 2, // så många torkställningar ute innan byn vill ha ett torkhus (steg 7.3.5)
+  vedbodFran: 40, // så mycket ved ute utan tak innan byn vill ha en vedbod (steg 7.3.6)
+  skjulAkut: 0.25, // hur akut ett skjul är (0 till 1), dubbelt så akut inför vintern för vedboden
+  salAkut: 0.3, // hur akut det är med en samlingssal när byn har en scen (0 till 1, steg 7.2.7) ...
+  salMin: 8, // ... och så många rutor den har minst
+  verkstadHyllor: 2, // en lagerplats med det stationerna använder för så här många stationer i verkstaden (steg 7.2.9)
   verkstadAkut: 0.5, // hur akut det är att få plats inne för en station som inte får plats i något hus (0 till 1, steg 2.2.17) ...
   verkstadExtra: 2, // ... och så här många golvrutor fler än stationen och golvet framför den
 });
@@ -47,13 +54,14 @@ export const HUS = balans('hus', {
 // En ny sorts byggnad blir en rad.
 // v = hur akut (0 = behövs inte, 1 = mycket), plats = rutor under tak som behövs, slag = vad ett förrådshus ska rymma,
 // ag = vem som ska äga huset (ett familjehus)
-interface Akut { v: number; plats: number; slag?: 'mat' | 'material'; ag?: number }
+export interface Akut { v: number; plats: number; slag?: 'mat' | 'material'; ag?: number; hus?: number } // hus = just det här huset behöver mer plats (familjen har vuxit)
 export interface Byggnad {
   namn: string; ikon: string;
   behov: string; // vilket behov den fyller (förklaringen i gränssnittet)
   fara: boolean; // behovet är en fara (kylan): går före all bekvämlighet
   vikt: number; // hur viktigt behovet är bland dem som är lika farliga
   sover?: boolean; // man sover här
+  skjul?: boolean; // ett tak utan väggar, med stolpar (steg 7.3.5)
   lager?: boolean; // golvet är en lagerplats under tak: det som ligger där ruttnar och slits mindre (LAGER.inne i lager.ts)
   akut?: (s: State) => Akut; // saknas: byn planerar inga nya hus för det
   namnFor?: (s: State, w: number, h: number, same: number, a: Akut) => string; // det nya husets namn
@@ -76,15 +84,34 @@ export const BYGGNADER = {
     // en familj (ett par med barn) utan eget hus som äger så mycket att den kan betala huset själv
     akut: s => {
       const f = familjUtanHus(s);
-      return f ? { v: HUS.familjAkut, plats: f.folk.length + HUS.familjExtra, ag: f.ag } : { v: 0, plats: 0 };
+      if (f) return { v: HUS.familjAkut, plats: f.folk.length + HUS.familjExtra, ag: f.ag };
+      // familjen har vuxit ur sitt hus (steg 7.2.6): huset behöver mer plats
+      for (const h of housesOf(s)) {
+        if (h.fn !== 'familjehus' || h.ag === undefined || !h.klar) continue;
+        const folk = familjOf(s, h.ag).length, plats = gridOf(s).rooms.filter(r => r.hus === h.id).reduce((n, r) => n + sovplatser(s, r), 0);
+        if (folk > plats) return { v: HUS.familjAkut, plats: folk - plats, ag: h.ag, hus: h.id };
+      }
+      return { v: 0, plats: 0 };
     },
     namnFor: (s, _w, _h, _same, a) => husNamn(byId(s, a.ag)?.name ?? 'Familjens'),
   },
   samling: {
     namn: 'Samlingshus', ikon: '🪑', behov: 'En plats att umgås under tak när det är kallt', fara: false, vikt: 1,
-    // byggs inte nytt: en sovsal som ingen sover i blir ett samlingshus (steg 1.6.4). När det är kallt samtalar och
-    // berättar man där i stället för vid elden, om det är varmare där (val.ts)
+    // en sovsal som ingen sover i blir ett samlingshus (steg 1.6.4). När scenen finns vill byn ha en sal under tak (steg 7.2.7):
+    // den blir byns mötesplats i stället för elden, och scenen kan stå där (en samlingssal med en scen är en gillesal)
+    akut: s => stationerOf(s).some(t => t.k === 'scen' && isKlar(t)) && !housesOf(s).some(h => h.fn === 'samling') ? { v: HUS.salAkut, plats: Math.max(HUS.salMin, living(s).length) } : { v: 0, plats: 0 },
     namnFor: (_s, _w, _h, same) => same ? `Samlingshus ${same + 1}` : 'Samlingshuset',
+  },
+  // skjulen (steg 7.3.5 och 7.3.6): ett tak utan väggar över det som redan står. Byggs av Byggplanens åtgärd skjul (byggplan.ts)
+  torkhus: {
+    namn: 'Torkhus', ikon: 'tork', behov: 'Under tak torkar maten i alla väder', fara: false, vikt: 0.8, skjul: true,
+    akut: s => torkUte(s).length >= HUS.torkhusFran ? { v: HUS.skjulAkut, plats: 0 } : { v: 0, plats: 0 },
+    namnFor: (_s, _w, _h, same) => same ? `Torkhus ${same + 1}` : 'Torkhuset',
+  },
+  vedbod: {
+    namn: 'Vedbod', ikon: 'ved', behov: 'Under tak blir veden aldrig blöt och torkar fortare', fara: false, vikt: 0.8, skjul: true,
+    akut: s => { const n = vedUte(s).reduce((a, q) => a + q.n, 0); return n >= HUS.vedbodFran ? { v: HUS.skjulAkut * (kallTid(ageIndex(s)) ? 2 : 1), plats: 0 } : { v: 0, plats: 0 }; },
+    namnFor: (_s, _w, _h, same) => same ? `Vedbod ${same + 1}` : 'Vedboden',
   },
   verkstad: {
     namn: 'Verkstad', ikon: 'verkstad', behov: 'Plats inne för en station som inte får plats i något annat hus (slöjdbänken)', fara: false, vikt: 1,
@@ -100,10 +127,25 @@ export const BYGGNADER = {
     namnFor: (_s, _w, _h, same) => same ? `Verkstad ${same + 1}` : 'Verkstaden',
   },
 } satisfies Record<string, Byggnad>;
+// torkställningarna ute utan tak, och vedhögarna ute i lagret utan tak
+export const torkUte = (s: State) => stationerOf(s).filter(t => t.k === 'tork' && isKlar(t) && !roofed(s, t.x, t.y));
+export const vedUte = (s: State) => stacksOf(s).filter(a => a.k === 'ved' && zoneAt(s, a.x, a.y) >= 0 && !roofed(s, a.x, a.y));
 export type Fn = keyof typeof BYGGNADER;
 export const FN = Object.keys(BYGGNADER) as Fn[];
 export const fnId = (h: Hus): Fn => (h.fn ?? 'sovsal') as Fn; // husets funktion; hus från äldre sparfiler är sovsalar
 export const fnOf = (h: Hus): Byggnad => BYGGNADER[fnId(h)] ?? BYGGNADER.sovsal;
+// funktionen sitter på rummet (steg 7.2.1): rummets egen om den har någon, annars husets, så att ett hus från en gammal sparfil
+// blir ett rum med husets funktion. Ett rum utanför något hus räknas som en sovsal
+export const rumNyckel = (r: Rum) => String(r.tiles.length ? Math.min(...r.tiles) : -1);
+export function rumFnId(s: State, r: Rum): Fn {
+  const h = husById(s, r.hus);
+  return (h?.rumFn?.[rumNyckel(r)] ?? (h ? fnId(h) : 'sovsal')) as Fn;
+}
+export const rumFnOf = (s: State, r: Rum): Byggnad => BYGGNADER[rumFnId(s, r)] ?? BYGGNADER.sovsal;
+export function setRumFn(s: State, r: Rum, fn: Fn) {
+  const h = husById(s, r.hus);
+  if (h) { (h.rumFn ??= {})[rumNyckel(r)] = fn; touch(s); }
+}
 // så många andra hus (utom `utom`) har samma sorts namn som ett nytt hus för funktionen fn med yta w×h inuti väggarna
 export function antalLika(s: State, fn: Fn, w: number, h: number, utom?: Hus) {
   const big = w * h >= HUS.langhus, hs = housesOf(s).filter(q => q !== utom);
@@ -188,7 +230,7 @@ function boende(s: State): Boende {
   const baddar: number[] = [];
   for (const r of [...gridOf(s).rooms].sort((a, c) => ordning(a) - ordning(c))) {
     const h = husById(s, r.hus);
-    if (h && !fnOf(h).sover) continue;
+    if (h && !rumFnOf(s, r).sover) continue;
     const t = sovRutor(s, r);
     if (h?.ag !== undefined) egnaTiles.set(h.id, [...(egnaTiles.get(h.id) ?? []), ...t]);
     else { const st = stationRutor(s).sov; baddar.push(...t.filter(i => st.has(i))); gemensamt.push(...t.filter(i => !st.has(i))); }
@@ -231,12 +273,12 @@ function sovRutor(s: State, r: Rum) {
 }
 // sovplatserna i ett rum: en per golvruta under tak där ingen station står eller en per halmbädd, och inga i ett hus där man
 // inte sover (som i boende)
-export const sovplatser = (s: State, r: Rum) => { const h = husById(s, r.hus); return h && !fnOf(h).sover ? 0 : sovRutor(s, r).length; };
+export const sovplatser = (s: State, r: Rum) => husById(s, r.hus) && !rumFnOf(s, r).sover ? 0 : sovRutor(s, r).length;
 // så många sovplatser i rummet som ingen behöver: i ett familjehus de som familjen inte behöver, i byns hus de som ingen
 // behöver i något av dem, och alla i ett hus där man inte sover (steg 2.2.5: där får en möbel stå)
 export function sovKvar(s: State, r: Rum) {
   const h = husById(s, r.hus);
-  if (h && !fnOf(h).sover) return Infinity;
+  if (h && !rumFnOf(s, r).sover) return Infinity;
   const b = boende(s);
   if (h?.ag !== undefined) {
     const tiles = gridOf(s).rooms.filter(q => q.hus === h.id).reduce((n, q) => n + sovRutor(s, q).length, 0);
@@ -273,6 +315,21 @@ export function stepByggnader(s: State) {
     h.ag = undefined; log(s, `${h.namn} har ingen ägare längre och blir byns.`, 'world');
   }
   funktionsbyte(s);
+  verkstadensHyllor(s);
+}
+// verkstadens hyllor (steg 7.2.9): några rutor på verkstadens golv blir lagerplatser för material, så att den som arbetar har det
+// nära till hands. Bärarna fyller på dem från förrådet som alla andra lagerplatser, och hyllorna (förvaringen) ställs där när golvet är fullt
+function verkstadensHyllor(s: State) {
+  for (const h of housesOf(s)) {
+    if (fnId(h) !== 'verkstad' || !h.klar) continue;
+    const st = stationerOf(s).filter(t => isKlar(t) && stationRum(s, t)?.hus === h.id).length, vill = Math.ceil(st / HUS.verkstadHyllor), har = zonesOf(s).filter(z => z.hus === h.id).length;
+    if (har >= vill) continue;
+    const r = gridOf(s).rooms.find(q => q.hus === h.id && q.tiles.length), upp = stationRutor(s);
+    const i = r?.tiles.find(t => !upp.at.has(t) && !upp.sitt.has(t) && !zonesOf(s).some(z => z.x === t % W && z.y === Math.floor(t / W)));
+    if (i === undefined) continue;
+    zonesOf(s).push({ x: i % W, y: Math.floor(i / W), w: 1, h: 1, namn: `Hyllan i ${h.namn.toLowerCase()}`, slag: 'material', prio: 2, hus: h.id });
+    changed(s); count(s, 'verkstadHylla');
+  }
 }
 
 // ---------- funktionen följer behovet (steg 1.6.4) ----------
@@ -288,7 +345,7 @@ function nyttNamn(s: State, h: Hus, fn: Fn, a: Akut) {
 // ett förrådshus byter aldrig funktion, så lagerplatsen behöver inte tas bort här
 function bytFn(s: State, h: Hus, fn: Fn, slag?: 'mat' | 'material') {
   const fore = h.namn;
-  h.fn = fn; h.slag = slag; h.tom = undefined;
+  h.fn = fn; h.slag = slag; h.tom = undefined; h.rumFn = undefined;
   h.namn = nyttNamn(s, h, fn, { v: 0, plats: 0, slag, ag: h.ag });
   touch(s); count(s, 'bytt_' + fn);
   log(s, `${fore} blev ${h.namn.toLowerCase()}.`, 'world'); kronika(s, `${fore} blev ${h.namn.toLowerCase()}.`);
@@ -325,13 +382,14 @@ function funktionsbyte(s: State) {
 }
 // är det varmare inne i rummet än vid elden? c = kylan (coldOf): hur kallt det är ute
 export function varmareInne(s: State, rum: Rum, c: number, varmer = false) {
+  if (varmer && !s.fire.lit && canLight(s)) return false; // elden går att tända: då går man inte in och fryser, utan någon tänder den
   const f = eldPlats(s), inne = -c * (1 - shelterOf(s, rum, Math.min(living(s).length, rum.tiles.length))), ute = heatAt(s, f.x + 0.5, f.y + HUS.varmeY) * KROPP.eldVarme - c;
   return varmer ? inne >= ute : inne >= Math.min(0, ute) - HUS.varmeMarg; // den som ska värma sig går bara in om det är minst lika varmt som vid elden
 }
 // samlingshusets rum, där man umgås när det är kallt (val.ts)
 export const samlingRum = (s: State): Rum | undefined => {
-  const ids = new Set(housesOf(s).filter(h => h.fn === 'samling' && h.klar).map(h => h.id));
-  return ids.size ? gridOf(s).rooms.find(r => r.hus !== undefined && ids.has(r.hus) && r.tiles.length) : undefined;
+  const ids = new Set(housesOf(s).filter(h => h.klar).map(h => h.id));
+  return ids.size ? gridOf(s).rooms.find(r => r.hus !== undefined && ids.has(r.hus) && r.tiles.length && rumFnId(s, r) === 'samling') : undefined;
 };
 
 // ---------- rummets funktion av det som står i det (steg 2.2.17) ----------

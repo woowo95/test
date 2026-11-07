@@ -73,26 +73,26 @@
   const BALTE = [
     { // 1: repet med två krokar av böjda grenar; kniven och yxan hänger rakt ner
       sak: () => [ring(18, 9, (x, y) => (Math.floor(x) + Math.floor(y)) % 2 ? 'R' : 'r', [krok(5.5, 7, 'k'), krok(11.5, 7, 'k')]), { R: 'ben2', r: 'ben1', k: 'jord1' }],
-      lager: balteLager((x, y) => y === 11 ? (x % 2 ? 'ben1' : 'ben3') : null,
+      lager: balteLager(() => null, // bältet som i spelet (kartfiguren ritar det)
         [[3, 12, 'jord0', 1], [3, 13, 'jord1', 1], [3, 14, 'skiffer3', 1], [3, 15, 'skiffer2', 1]],
         [[10, 12, 'jord0', 1], [9, 13, 'skiffer2', 1], [10, 13, 'skiffer1', 1], [10, 14, 'jord1', 1], [10, 15, 'jord1', 1], [10, 16, 'jord1', 1]]),
     },
     { // 2: ett brett bälte av mörkt skinn med ett spänne av ben; kniven i en slida och yxan genom en ögla
       sak: () => [ring(18, 9, (x, y) => y < 2.5 ? 'L' : y > 6.5 ? 'm' : 'l', [[och(rakt(4.5, 4, 6.5, 8.5), rakt(11.5, 4, 13.5, 8.5)), (x, y) => y < 5 ? 'm' : x < 5.5 || (x > 11.5 && x < 12.5) ? 'L' : 'l']], [[rakt(7.5, 6, 10.5, 9), (x, y) => y < 7 || x < 8.5 ? 'B' : 'b']]), { L: 'jord1', l: 'jord0', m: 'kol1', B: 'ben3', b: 'ben1' }],
-      lager: balteLager((x, y) => y === 11 ? (x === 6 ? 'ben3' : x === 7 ? 'ben2' : 'jord0') : 'kol1',
+      lager: balteLager(() => null, // bältet som i spelet (kartfiguren ritar det)
         [[3, 10, 'ben2', 1], [3, 11, 'ben1', 1], [3, 13, 'jord0', 1], [3, 14, 'jord0', 1], [3, 15, 'kol1', 1]],
         [[9, 10, 'skiffer2', 1], [10, 10, 'skiffer1', 1], [10, 13, 'jord1', 1], [10, 14, 'jord1', 1], [10, 15, 'jord1', 1]]),
     },
     { // 3: flätat rep med krokar av horn; kniven i en slida av skinn och yxan instucken snett
       sak: () => [ring(18, 9, (x, y) => (Math.floor(x) + (y < 4.5 ? 0 : 1)) % 2 ? 'R' : 'r', [krok(5.5, 7, 'H'), krok(11.5, 7, 'H')]), { R: 'senap2', r: 'senap1', H: 'ben3' }],
-      lager: balteLager((x, y) => y === 11 ? (x % 2 ? 'senap2' : 'senap1') : null,
+      lager: balteLager(() => null, // bältet som i spelet (kartfiguren ritar det)
         [[3, 12, 'ben3', 1], [3, 13, 'jord1', 1], [3, 14, 'jord0', 1], [3, 15, 'jord0', 1], [3, 16, 'kol1', 1]],
         [[7, 9, 'skiffer2'], [8, 9, 'skiffer1'], [7, 10, 'skiffer2'], [8, 10, 'jord1'], [9, 12, 'jord1'], [10, 13, 'jord1', 1], [10, 14, 'jord1', 1], [11, 15, 'jord1', 1]]),
     },
   ];
   const balteKort = (v, text) => { const V = BALTE[v], L = V.lager;
-    const b = r => bybo(r, 'sta', 'hanga', MED_ROCK);
-    return kort(text, V.sak(), [[() => b('fram'), L.fram], [() => b('sida'), L.sida], [() => b('bak'), L.bak], [() => b('vast'), { pa: spegla(L.sida.pa), over: spegla(L.sida.over) }]]); };
+    const b = r => window.BYBO ? window.BYBO(MED_ROCK, r === 'vast' ? 'vast' : r, 'sta', 'hanga', null, { balte: true, krokar: 0 }) : null;
+    return kort(text, null, [[() => b('fram'), L.fram], [() => b('sida'), L.sida], [() => b('bak'), L.bak], [() => b('vast'), { pa: spegla(L.sida.pa), over: spegla(L.sida.over) }]]); };
 
   // ---------- 7.1.2 axelremmen, med ett spjut på ryggen ----------
   // remmen går från höger axel snett ner till vänster höft; spjutet ligger snett över ryggen med spetsen upp vid vänster axel
@@ -101,25 +101,25 @@
     { // 1: en smal rem av skinn
       sak: () => [former(14, 9, [[utan(ell(7, 4.5, 6.5, 4), ell(7, 4.5, 4, 1.8)), (x, y) => y < 3 ? 'L' : y > 6 ? 'm' : 'l'], [rakt(9, 6, 12, 9), 'r']]), { L: 'jord1', l: 'jord0', m: 'kol1', r: 'ben2' }],
       rem: (a, b, c, d) => streck(a, b, c, d, 'jord0'),
-      port: forst(paRock(band(55, 48, 24, 64, 4, s => ['ben1', 'jord1', 'jord0', 'kol0'][s]))),
+      port: forst(paRock(band(46, 48, 35, 64, 4, s => ['ben1', 'jord1', 'jord0', 'kol0'][s]))),
     },
     { // 2: ett tvinnat rep med en dyna av skinn på axeln
       sak: () => [former(14, 10, [[utan(ell(7, 4.5, 6.5, 4), ell(7, 4.5, 4.5, 2.2)), (x, y) => (Math.floor(x) + Math.floor(y)) % 2 ? 'R' : 'r'], [rakt(2, 6, 7, 10), (x, y) => y < 7 ? 'L' : 'l']]), { R: 'ben2', r: 'ben1', L: 'jord2', l: 'jord1' }],
       rem: (a, b, c, d) => streck(a, b, c, d, i => i % 2 ? 'jord2' : 'senap2'),
-      port: forst(paRock(band(55, 48, 24, 64, 2, (s, t, x, y) => (x + y + s) % 3 === 0 ? 'ben1' : 'ben2')), paRock(band(57, 47, 46, 53, 5, s => s === 0 ? 'jord2' : s === 4 ? 'kol1' : 'jord1'), 46)),
+      port: forst(paRock(band(46, 48, 35, 64, 2, (s, t, x, y) => (x + y + s) % 3 === 0 ? 'ben1' : 'ben2')), paRock(band(47, 46, 44, 54, 5, s => s === 0 ? 'jord2' : s === 4 ? 'kol1' : 'jord1'), 46)),
     },
     { // 3: en bred rem av skinn med öglor av rep som håller spjutet
       sak: () => [former(15, 10, [[utan(ell(7.5, 5, 7, 4.5), ell(7.5, 5, 3.8, 1.6)), (x, y) => y < 3 ? 'L' : y > 7 ? 'm' : 'l'], [och(rakt(3, 1, 4, 4), rakt(11, 1, 12, 4)), 'r']]), { L: 'jord2', l: 'jord1', m: 'jord0', r: 'ben3' }],
       rem: (a, b, c, d) => [...streck(a, b, c, d, 'jord0'), ...streck(a + 1, b, c, d - 1, 'jord1')],
       ogla: true,
-      port: forst(paRock(band(55, 47, 24, 64, 5, (s, t) => s === 0 ? 'ben2' : s === 4 ? 'kol0' : s === 2 && Math.floor(t * 16) % 2 === 0 ? 'ben3' : 'jord0'))),
+      port: forst(paRock(band(46, 47, 35, 64, 5, (s, t) => s === 0 ? 'ben2' : s === 4 ? 'kol0' : s === 2 && Math.floor(t * 16) % 2 === 0 ? 'ben3' : 'jord0'))),
     },
   ];
   const axelKort = (v, text) => {
     const V = AXEL[v], olja = V.ogla ? (pts) => pts : () => [];
-    const fram = { bakom: spjut(12, -4, 0, 17), pa: V.rem(4, 7, 9, 12) };
+    const fram = { bakom: spjut(12, -4, 0, 17), pa: V.rem(7, 7, 8, 12) };
     const sida = { over: [...spjut(2, -4, 5, 16), ...olja([[3, 8, 'ben3'], [4, 13, 'ben3']])], pa: V.rem(5, 7, 8, 11) };
-    const bak = { over: spjut(1, -4, 12, 16), pa: [...V.rem(9, 7, 4, 12), ...olja([[3, 3, 'ben3'], [10, 13, 'ben3']])] };
+    const bak = { over: spjut(1, -4, 12, 16), pa: [...V.rem(6, 7, 5, 12), ...olja([[3, 3, 'ben3'], [10, 13, 'ben3']])] };
     return kort(text, V.sak(), [[() => bybo('fram'), fram], [() => bybo('sida'), sida], [() => bybo('bak'), bak], [() => bybo('sida', 'gang1', 'gang1'), sida]], [{ redskap: 'redskap-flintspjut' }, V.port]);
   };
 
@@ -132,13 +132,20 @@
   });
   const remmar = toner => [paRock(band(19, 49, 17, 64, toner.length, s => toner[s])), paRock(band(45, 49, 47, 64, toner.length, s => toner[s]))];
   const SACK = [
-    { // 1: en mjuk säck av skinn, ihopdragen upptill med ett rep
-      sak: () => [former(16, 14, [[och(linje([[4.5, 4.5], [1, 8], [3.5, 12.5]], 0.55), linje([[11.5, 4.5], [15, 8], [12.5, 12.5]], 0.55)), 'm'], [ell(8, 8.5, 5.2, 5), (x, y) => x < 6 && y < 8 ? 'S' : x > 10 || y > 11 ? 's' : 'T'], [rakt(5, 2, 11, 4.5), (x, y) => y < 3 ? 'S' : 'T'], [rakt(4.5, 4, 11.5, 5), 'r'], [linje([[6, 2], [7, 0.6], [9, 0.6], [10, 2]], 0.5), 'r']]), { S: 'ben2', T: 'ben1', s: 'ben0', r: 'jord1', m: 'jord0' }],
-      bak: () => spr(['.oooooo.', 'oSSTTTTo', 'orrrrrro', 'oSTTTTso', 'oSTTTTso', 'oSTTTTso', 'oTTTTsso', '.osssso.', '..oooo..'], { S: 'ben2', T: 'ben1', s: 'ben0', r: 'jord1' }, 3, 6),
-      sidan: () => spr(['.oo.', 'oSTo', 'orro', 'oSTo', 'oTTo', 'oTso', 'oTso', '.oo.'], { S: 'ben2', T: 'ben1', s: 'ben0', r: 'jord1' }, 1, 7),
-      rem: 'jord0', fram: [],
-      port: remmar(['jord3', 'jord1', 'jord0', 'kol0']),
-    },
+    // 1: en mjuk säck av skinn, ihopdragen upptill med ett rep. L är tonerna (S ljus, T mellan, s mörk, r repet, m remmarna),
+    // och de tre varianterna nedan utgår från den
+    ...[
+      { S: 'ben2', T: 'ben1', s: 'ben0', r: 'jord1', m: 'jord0' },
+      { S: 'senap3', T: 'senap2', s: 'senap1', r: 'jord1', m: 'jord0' }, // gulare: gult skinn
+      { S: 'jord2', T: 'jord1', s: 'jord0', r: 'ben2', m: 'kol1' }, // mörkt skinn med ljust rep
+      { S: 'senap2', T: 'ben2', s: 'ben1', r: 'rost1', m: 'jord0', ficka: true }, // ljust och gult skinn, rött rep och en ficka
+    ].map(L => ({
+      sak: () => [former(16, 14, [[och(linje([[4.5, 4.5], [1, 8], [3.5, 12.5]], 0.55), linje([[11.5, 4.5], [15, 8], [12.5, 12.5]], 0.55)), 'm'], [ell(8, 8.5, 5.2, 5), (x, y) => L.ficka && x > 6 && x < 10.5 && y > 8 && y < 11.5 ? (y < 9 ? 'r' : 'S') : x < 6 && y < 8 ? 'S' : x > 10 || y > 11 ? 's' : 'T'], [rakt(5, 2, 11, 4.5), (x, y) => y < 3 ? 'S' : 'T'], [rakt(4.5, 4, 11.5, 5), 'r'], [linje([[6, 2], [7, 0.6], [9, 0.6], [10, 2]], 0.5), 'r']]), L],
+      bak: () => spr(['.oooooo.', 'oSSTTTTo', 'orrrrrro', 'oSTTTTso', L.ficka ? 'oSTrrrso' : 'oSTTTTso', L.ficka ? 'oSTSSTso' : 'oSTTTTso', 'oTTTTsso', '.osssso.', '..oooo..'], L, 3, 6),
+      sidan: () => spr(['.oo.', 'oSTo', 'orro', 'oSTo', 'oTTo', 'oTso', 'oTso', '.oo.'], L, 1, 7),
+      rem: L.m, fram: [],
+      port: remmar(L.m === 'kol1' ? ['jord2', 'jord1', 'kol1', 'kol0'] : ['jord3', 'jord1', 'jord0', 'kol0']),
+    })),
     { // 2: en fyrkantig packning med ett lock som viks ner och två remmar av rep
       sak: () => [former(12, 13, [[rakt(1, 2, 11, 13), (x, y) => x < 2 ? 'L' : x > 9 ? 'm' : 'l'], [rakt(0.5, 1, 11.5, 6), (x, y) => y < 2 ? 'S' : y > 5 ? 's' : 'T'], [och(rakt(3, 6, 4, 11), rakt(8, 6, 9, 11)), 'r'], [rakt(5, 5, 7, 7), 'b']]), { L: 'jord2', l: 'jord1', m: 'jord0', S: 'senap2', T: 'senap1', s: 'senap0', r: 'ben2', b: 'ben3' }],
       bak: () => spr(['oooooooo', 'oSSTTTTo', 'osTTTTso', 'oLrbbrmo', 'oLrllrmo', 'oLrllrmo', 'oLlllmmo', 'oooooooo'], { S: 'senap2', T: 'senap1', s: 'senap0', L: 'jord2', l: 'jord1', m: 'jord0', r: 'ben2', b: 'ben3' }, 3, 6),
@@ -165,20 +172,21 @@
   };
 
   VAL.push(
-    KORT('f7_balte', 'Bältet med krokarna', 'Steg 7.1.1: bältet har två krokar där kniven och yxan hänger, så att händerna är fria. Till vänster bältet som sak, sedan bybon på kartan framifrån, från sidan, bakifrån och åt väster: kniven vid ena höften och yxan vid den andra.', [
-      balteKort(0, 'Ett rep runt midjan med två krokar av böjda grenar; kniven och yxan hänger rakt ner.'),
-      balteKort(1, 'Ett brett bälte av mörkt skinn med ett spänne av ben och öglor av skinn.'),
-      balteKort(2, 'Flätat rep med krokar av horn; kniven sitter i en slida av skinn och yxan är instucken snett.'),
+    KORT('f7_balte', 'Två redskap i bältet', 'Steg 7.1.4: bältet är ritat och finns i spelet; det som är nytt är de två redskap som hänger i dess krokar, så att händerna är fria. Bybon har bältet som i spelet, och kniven och yxan hänger i det: på kartan framifrån, från sidan, bakifrån och åt väster. Din kommentar förra gången: ”Bältet är väl redan ritat och inlagt i spelet?”', [
+      balteKort(0, 'Kniven och yxan hänger rakt ner från var sin höft.'),
+      balteKort(1, 'Kniven i en slida av skinn med ett ljust skaft, och yxan genom en ögla.'),
+      balteKort(2, 'Kniven i en slida och yxan instucken snett med bladet upp vid midjan.'),
     ]),
-    KORT('f7_axelrem', 'Axelremmen', 'Steg 7.1.2: axelremmen av skinn och rep bär ett långt redskap på ryggen. Till vänster remmen som sak, sedan bybon med ett spjut på ryggen framifrån, från sidan, bakifrån och i ett gångsteg, och sist i porträttet med remmen snett över bröstet. Spjutets spets sticker upp några punkter över huvudet.', [
+    KORT('f7_axelrem', 'Axelremmen', 'Steg 7.1.2: axelremmen av skinn och rep bär ett långt redskap på ryggen. Remmen går nu brantare, nästan rakt ner från axeln. Till vänster remmen som sak, sedan bybon med ett spjut på ryggen framifrån, från sidan, bakifrån och i ett gångsteg, och sist i porträttet. Din kommentar förra gången: ”Sen måste gå i en mer lodrät vinkel”.', [
       axelKort(0, 'En smal, mörk rem av skinn.'),
       axelKort(1, 'Ett tvinnat rep med en dyna av skinn där det ligger på axeln.'),
       axelKort(2, 'En bred skinnrem med ljusa öglor av rep som håller spjutet.'),
     ]),
-    KORT('f7_ryggsack', 'Ryggsäcken', 'Steg 7.1.3: ryggsäcken av skinn med remmar av rep. Till vänster säcken som sak, sedan bybon på kartan framifrån (remmarna över axlarna), från sidan (säcken bakom ryggen), bakifrån (säcken) och åt väster, och sist i porträttet med remmarna över axlarna.', [
-      sackKort(0, 'En mjuk säck av ljust skinn, ihopdragen upptill med ett rep.'),
-      sackKort(1, 'En fyrkantig packning med ett gult lock som viks ner; locket syns över axlarna.'),
-      sackKort(2, 'En bärställning av två käppar med en packning av skinn fastsurrad med rep; käpparna sticker upp över axlarna.'),
+    KORT('f7_ryggsack', 'Ryggsäcken', 'Steg 7.1.3: ryggsäcken av skinn med remmar av rep. Du valde version 1; den står kvar som den var, och de tre nya utgår från den. Till vänster säcken som sak, sedan bybon på kartan framifrån (remmarna över axlarna), från sidan, bakifrån och åt väster, och sist i porträttet med remmarna över axlarna. Din kommentar förra gången: ”Gör tre nya versioner av version 1. Behåll originalet. Gör bland annat en gulare version”.', [
+      sackKort(0, 'Version 1 som förut: en mjuk säck av ljust skinn, ihopdragen upptill med ett rep.'),
+      sackKort(1, 'Gulare: samma säck av gult skinn.'),
+      sackKort(2, 'Samma säck av mörkt skinn med ett ljust rep.'),
+      sackKort(3, 'Samma säck av ljust, gulaktigt skinn med ett rött rep och en ficka.'),
     ]),
   );
 })();

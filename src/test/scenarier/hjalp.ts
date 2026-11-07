@@ -15,7 +15,7 @@ export const setFood = (s: State, n: number) => { const f = foodOf(s); if (f > 0
 
 export type Koll = [string, boolean];
 export const kor = (s: State, timmar: number, varje?: (s: State) => void) => { for (let i = 0; i < timmar * STEG_TIM; i++) { step(s, BEAT); varje?.(s); } };
-// klockan h samma dag, i datorns tidszon (här UTC; ett scenario med env: STOCKHOLM får svensk tid)
+// klockan h samma dag, i testernas tidszon (UTC, se utc.ts; ett scenario med env: STOCKHOLM får svensk tid)
 export const klockan = (s: State, h = 10) => { s.now = new Date(s.now).setHours(h, 0, 0, 0); };
 // elden brinner (med en stenring), så att ingen behöver leta stenar och flinta för att tända den
 export const tandEld = (s: State, fuel = 4, ring = true) => { Object.assign(s.fire, ring ? { lit: true, fuel, ring: true } : { lit: true, fuel }); };
@@ -144,7 +144,7 @@ function uiLasNu(s: State, t: number) {
 // env: scenariot körs i en egen process med den miljön, t.ex. Björns tidszon för det som beror på klockslag
 // (testerna i övrigt körs i datorns tidszon, här UTC, där byn startar 06:00)
 export const LANG_S = 13;
-export const STOCKHOLM = { TZ: 'Europe/Stockholm' };
+export const STOCKHOLM = { TIDSZON: 'Europe/Stockholm' };
 export const SCENARIER: Record<string, { text: string; lang?: boolean; env?: Record<string, string>; kor: () => Koll[] }> = {};
 
 export const flyttLitenBy = (s: State) => hungerFlytt(s, 6) === 0 && barnMat(s, 6) === 1 ? 'ingen' : `flytt ${hungerFlytt(s, 6)}, barn ${barnMat(s, 6)}`;

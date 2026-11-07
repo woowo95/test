@@ -22,6 +22,7 @@ import { moodOf } from './humor';
 import { duty } from './seder';
 import { kunnighet } from './ekonomi';
 import { chance, clamp, rnd } from './slump';
+import { BLOTVED, torrVed } from './blotved';
 import { ARSTID, ageIndex, iIstiden, isLight } from './tid';
 import { SNABBARE } from './handlingar';
 import { Act, DAY, Fire, FireLog, GREN, HEARTHS, HOUR, HOUR_S, IGNITERS, Person, SEC, State, Task, W, H } from './typer';
@@ -112,6 +113,7 @@ export const fuelFor = (s: State, p: Person, fran?: Person) => takeLimit(s, 'ved
 // p = den som tar det: byns ved först, sedan sin egen (egendom.ts). ag får vems bränslet var, räknat i ved
 export function takeFuel(s: State, n: number, p?: Person, ag?: Del, fran?: Person) {
   const v = Math.min(n, takeLimit(s, 'ved', p, fran));
+  if (p?.task && v > 0) p.task.blotVed = Math.min(1, Math.max(0, v - torrVed(s)) / v); // torr ved tas först (steg 7.3.4)
   const w = use(s, p, 'ved', v, true, fran?.id);
   const g = Math.min(Math.floor(takeLimit(s, 'grenar', p, fran) + 1e-9), Math.ceil((n - v) / GREN - 1e-9)); // hela grenar (steg 3.6.13)
   if (g > 0) { const d = use(s, p, 'grenar', g, true, fran?.id); forbrukat(s, 'grenar', -g); if (ag) addDel(ag, d, GREN); } // grenarna som bränsle räknas i veden, inte som förbrukat material (steg 6.2.14)
@@ -224,7 +226,7 @@ export function tryLight(s: State, p: Person, f = s.fire) {
 
   f.tries++; f.tryTotal++; gjort(s, p, 'tandForsok');
   // eldandet är ingen egen färdighet (steg 3.10.8): chansen räknas ur hantverket, och ingen övar av att tända eller fylla på
-  const c = ig.chance * (ELD.tandBas + p.skill.hantverk / ELD.tandSkill + stat(p, 'intelligens', s.now) / ELD.tandInt) * (iIstiden(ageIndex(s)) ? ARSTID.tandIstid : 1) * ((f.ash ?? 0) >= 1 ? ELD.tandKol : 1) // en gammal kolhög tar lättare fyr
+  const c = ig.chance * (ELD.tandBas + p.skill.hantverk / ELD.tandSkill + stat(p, 'intelligens', s.now) / ELD.tandInt) * (iIstiden(ageIndex(s)) ? ARSTID.tandIstid : 1) * ((f.ash ?? 0) >= 1 ? ELD.tandKol : 1) * (amountOf(s, 'ved') > 0 && torrVed(s) <= 0 ? BLOTVED.tand : 1) // en gammal kolhög tar lättare fyr
     * (1 + (f.tries - 1) / ELD.forsokLara) // varje misslyckat försök sedan elden brann gör nästa lättare
     * (naver ? ELD.naverChans : 1); // nävern tar lättare eld än höet
   if (rnd(s, 'eld', p) < c) { gjort(s, p, 'tande'); lightFire(s, p, f); return true; }
@@ -257,6 +259,8 @@ export function addFuel(s: State, p: Person, n: number, f = s.fire) {
     log(s, `${p.name} blåste liv i glöden och ${eldOrd(s, f, 'elden').replace('en lägereld', 'lägerelden')} brinner igen.`, 'world', [p.id]);
   }
   const put = Math.min(n, h.maxFuel - f.fuel);
+  const vat = p.task?.blotVed ?? 0;
+  if (put > 0) f.blot = (f.fuel * (f.blot ?? 0) + put * vat) / (f.fuel + put); // så mycket av det som brinner som är blött (steg 7.3.4)
   f.fuel += put; giveBack(s, n - put);
   f.fills[p.id] = (f.fills[p.id] ?? 0) + 1;
   fireLog(s, { k: 'fyll', id: p.id, n: put }, f);
@@ -295,7 +299,7 @@ function brinner(s: State, f: Fire, dtSec: number) {
   if (f !== s.fire && f.lit && iVatten) { f.fuel = 0; count(s, 'flod brasa'); } // vattnet släcker den (steg 3.8.7, flod.ts gör det för den första)
   if (f.lit) {
     const [fr, fv] = eldFaktor(s, f);
-    const b = Math.min(f.fuel, h.burn / HOUR_S * dtSec * fr * fv);
+    const b = Math.min(f.fuel, h.burn / HOUR_S * dtSec * fr * fv * (1 + (f.blot ?? 0) * BLOTVED.brann)); // blöt ved brinner fortare och ger mindre värme per vedträ
     f.fuel -= b; f.burned += b; f.totalBurned += b; f.litSec += dtSec;
     if (f.fuel <= 1e-6) {
       f.fuel = 0; f.lit = false; f.emberUntil = now + ELD.glodTim * HOUR; f.outs++; f.ut = now;

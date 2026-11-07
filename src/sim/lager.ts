@@ -29,9 +29,9 @@ import { slappPlanta } from './skogsvard';
 // temperaturen som maten ruttnar efter i vader.ts
 export const LAGER = balans('lager', {
   // lagerplatserna (zoner)
+  forradFran: 4, // med så här många vanliga lagerplatser är ett förrådshus värt mer än en lagerplats till (inget tak på lagerplatserna, steg 7.2.18)
   startBredd: 2, startHojd: 2, // byns första lagerplats, vid kartans lagerplats
   zonBredd: 6, zonHojd: 5, // en lagerplats växer till högst så här många rutor på bredden och på höjden
-  zoner: 4, // högst så här många vanliga lagerplatser (förrådshusets golv räknas inte)
   fullt: 3, // förrådet är fullt när lagerplatserna inte kan bli fler och så här många saker ligger bredvid dem
   vaxSteg: 4, // högst så här många förstoringar av lagerplatserna per timme
   mellan: 1, // lagerplatser ligger minst så här långt ifrån varandra
@@ -77,7 +77,7 @@ export const LAGER = balans('lager', {
 // hus = lagerplatsen är golvet i ett förrådshus (byggnader.ts): den växer och krymper inte och räknas inte bland de vanliga
 export interface Zone { x: number; y: number; w: number; h: number; namn?: string; slag?: 'mat' | 'material'; prio?: number; hus?: number; tom?: number; rojs?: boolean } // tom: sedan när lagerplatsen stått halvtom (tidyStore); rojs: lagd i skogen, träden fälls (steg 3.6.9)
 // dold: det som ligger gömt i stacken (giftig svamp bland svampen, saker.ts: i)
-interface Stack { k: string; n: number; c: number; x: number; y: number; ag?: Del; dold?: number; gor?: string; klar?: number; id?: number; q?: number } // gor = vad ett påbörjat redskap ska bli (paborjat.ts), klar = hur mycket av det som är gjort, id = tinget när stacken är ett redskap, q = dess kvalitet
+interface Stack { k: string; n: number; c: number; x: number; y: number; blot?: 1; vat?: number; tork?: number; ag?: Del; dold?: number; gor?: string; klar?: number; id?: number; q?: number } // gor = vad ett påbörjat redskap ska bli (paborjat.ts), klar = hur mycket av det som är gjort, id = tinget när stacken är ett redskap, q = dess kvalitet
 // en stack som den visas: out = utanför lagerplatserna, stored = hör till byns förråd (i lagret eller precis bredvid)
 export interface Pile extends Stack { max: number; out: boolean; stored: boolean; zone: number }
 const DOLD = SAK_LIST.filter(k => SAKER[k]!.i); // slag som ligger gömda i andra stackar
@@ -343,6 +343,7 @@ export function usable(s: State, x: number, y: number, utomElden = false) {
   const m = getMap(s.seed), f = eldPlats(s);
   if (!inMap(x, y)) return false;
   const t = m.tiles[y * W + x];
+  if (s.torg && x >= s.torg.x && y >= s.torg.y && x < s.torg.x + s.torg.w && y < s.torg.y + s.torg.h) return false; // på torget byggs och ställs inget (steg 7.3.13)
   if (t === T.Vatten || s.flod && iVattnetNu(s, y * W + x) || t === T.Sten || !utomElden && Math.max(Math.abs(x - f.x), Math.abs(y - f.y)) <= 1 || bitAt(s, x, y) || sittAt(s, x, y) || faltAt(s, x, y)) return false; // inte heller på ett fält (odling.ts)
   const st = stationAt(s, x, y);
   return !st || !!stationDef(st.k)?.forvar || utomElden && !!stationDef(st.k)?.eld; // i en hylla, kista eller ett ställ ligger saker (steg 2.3.6); grillen flyttas med elden
@@ -372,7 +373,7 @@ function* ringTiles(s: State, z: Zone, fran = 1, till = LAGER.bredvid, fore?: (x
 const key = (x: number, y: number) => y * W + x;
 // redskapen som ligger på en ruta (inte i någons hand eller börda). En kniv vid slaktbänken (vid, stationer.ts) ligger kvar
 // där och räknas inte till det som ligger i förrådet eller på marken
-const ligger = (t: Ting) => t.x !== undefined && t.hos === undefined && t.lass === undefined && t.vid === undefined && t.bar === undefined;
+const ligger = (t: Ting) => t.x !== undefined && t.hos === undefined && t.lass === undefined && t.vid === undefined && t.bar === undefined && t.krok === undefined;
 const lying = (s: State) => tingOf(s).filter(ligger);
 // det som ligger i förrådet, per ruta: stackarna och sedan redskapen ts (det sista på en ruta gäller, som i things), och hur
 // många redskap som ligger på varje ruta (i ett ställ står flera, steg 2.3.6)
@@ -390,7 +391,7 @@ const things = (s: State): Stack[] => [...stacksOf(s), ...lying(s).map(asStack)]
 // ligger något på rutan (x, y), en stack eller ett redskap? (tornadon sprider saker bara till tomma rutor)
 export const nagotPa = (s: State, x: number, y: number) => things(s).some(a => a.x === x && a.y === y);
 // redskap som ingen har och som inte har någon ruta (nygjorda, tillbakalagda) läggs i förrådet, ett på varje ruta
-const utanRuta = (t: Ting) => t.hos === undefined && t.lass === undefined && t.x === undefined && t.bar === undefined;
+const utanRuta = (t: Ting) => t.hos === undefined && t.lass === undefined && t.x === undefined && t.bar === undefined && t.krok === undefined;
 function placeOn(s: State, ts: Ting[]) {
   for (const t of ts) {
     if (!utanRuta(t) || tillbakaVid(s, t)) continue; // stationens kniv läggs tillbaka vid stationen
@@ -470,11 +471,12 @@ function besideSpot(s: State, k: string, occ: Occ) {
   const r = ringSpot(s, k, occ);
   if (r) return r;
   const zs = zonesOf(s).filter(z => z.hus === undefined), base = zs.filter(z => allows(z, k));
-  // nödlösning när också ringen är full: längre ut, på en ruta där inget annat ligger (aldrig ovanpå en annan sak)
+  // nödlösning när också ringen är full: längre ut, på en ruta där inget annat ligger (aldrig ovanpå en annan sak) och
+  // ingen stubbe står (där lägger roomIn inget, och då hamnade det ovanpå något annat i lagret)
   const upptagen = new Set<number>();
   for (const a of things(s)) if (!(a.k === k && !isTool(k) && a.n < rymd(s, a.x, a.y, k) - 1e-9)) upptagen.add(key(a.x, a.y));
   const z0 = (base.length ? base : zs)[0];
-  for (const r of ringTiles(s, z0, LAGER.bredvid + 1, Math.max(W, H), (x, y) => inMap(x, y) && !upptagen.has(key(x, y)))) if (zoneAt(s, r.x, r.y) < 0 && nasIFloden(s, key(r.x, r.y)) && !(s.flodHot && isFood(k) && flodHotad(s, key(r.x, r.y)))) return r; // inte dit vattnet stiger (steg 3.8.7)
+  for (const r of ringTiles(s, z0, LAGER.bredvid + 1, Math.max(W, H), (x, y) => inMap(x, y) && !upptagen.has(key(x, y)))) if (zoneAt(s, r.x, r.y) < 0 && !stubbeOn(s, r.x, r.y) && nasIFloden(s, key(r.x, r.y)) && !(s.flodHot && isFood(k) && flodHotad(s, key(r.x, r.y)))) return r; // inte dit vattnet stiger (steg 3.8.7)
   return { x: zs[0].x, y: zs[0].y }; // hela kartan är full
 }
 export const fetchSpot = (s: State, k: string) => {
@@ -553,7 +555,7 @@ function takeOwn(s: State, k: string, n: number, p?: Person, common = false, fra
   const ag: Del = {};
   let got = 0, cw = 0, tagna = 0;
   if (n > 1e-12) {
-    const dold = !!SAKER[k]?.i, list = dold ? stored(s, SAKER[k]!.i!).filter(a => a.dold).sort((a, b) => b.dold! - a.dold!) : stored(s, k), shares: Del = { [BYN]: 0 };
+    const dold = !!SAKER[k]?.i, list = dold ? stored(s, SAKER[k]!.i!).filter(a => a.dold).sort((a, b) => b.dold! - a.dold!) : k === 'ved' ? [...stored(s, k)].sort((a, b) => (a.blot ?? 0) - (b.blot ?? 0)) : stored(s, k), shares: Del = { [BYN]: 0 };
     if (dold) for (const a of list) shares[BYN] += a.dold!; // det gömda är byns
     else for (const a of list) { shares[BYN] += a.n - sumOf(a.ag); addDel(shares, a.ag); }
     for (const o in s.delar ?? {}) { const v = pabörjat(s, +o, k); if (v > 0 && (+o === BYN || !dold)) shares[+o] = (shares[+o] ?? 0) + v; }
@@ -696,7 +698,7 @@ export function slitageNu(s: State, a: { k: string; x?: number; y?: number }, t?
   const temp = temperature(s), kl = t?.bar !== undefined ? SAKER[a.k]?.klad : undefined;
   const hq = kvHaller(t); // ett bättre ting håller längre (kvalitet.ts); en stack har ingen kvalitet
   if (kl) return { orsak: 'pasig', per: 1 / (kl.dygn * 24) / hq };
-  const bars = t && (t.hos !== undefined || t.lass !== undefined);
+  const bars = t && (t.hos !== undefined || t.lass !== undefined || t.krok !== undefined);
   if (bars) {
     const q = t.hos !== undefined ? byId(s, t.hos) : undefined, tk = q?.task, r = tk && usesTool(tk) === a.k ? toolRow(tk) : undefined;
     const slits = tk ? ACTS[tk.act]?.slits : undefined, bas = wearAt(a.k, 1, false, temp) / hq;
@@ -759,7 +761,7 @@ export function wearStore(s: State, dtSec: number) {
   for (const t of tingOf(s)) {
     const kl = t.bar !== undefined ? SAKER[t.k]?.klad : undefined;
     if (kl) { t.c -= Math.min(t.c, h / (kl.dygn * 24) / kvHaller(t)); if (t.c <= 1e-6) count(s, 'kladerSlitna'); continue; }
-    const nere = t.hos === undefined && t.lass === undefined; // på marken, vid en station eller i förrådet (utan plats än)
+    const nere = t.hos === undefined && t.lass === undefined && t.krok === undefined; // på marken, vid en station eller i förrådet (utan plats än)
     t.c -= Math.min(t.c, wearAt(t.k, nere && t.x !== undefined ? wearMult(s, t.x, t.y!) : 1, nere, temp) * h / kvHaller(t));
   }
   s.ting = tingOf(s).filter(t => t.c > 1e-6);
@@ -783,11 +785,11 @@ export function sakerPaGolvet(s: State) {
 
 // ---------- lagerplatserna ----------
 // en gång i timmen: större när något inte får plats, en ny lagerplats när de inte kan växa mer, mindre när de står tomma
+const vanliga = (s: State) => zonesOf(s).filter(z => z.hus === undefined).length;
 // det i förrådet som inte fått plats i en lagerplats utan ligger bredvid
 export const overflow = (s: State) => things(s).filter(a => zoneAt(s, a.x, a.y) < 0 && isStored(s, a.x, a.y));
-const vanliga = (s: State) => zonesOf(s).filter(z => z.hus === undefined).length;
-// förrådet är fullt: lagerplatserna kan inte bli fler och det ligger saker bredvid dem (förrådshuset, byggnader.ts)
-export const storeFull = (s: State) => vanliga(s) >= LAGER.zoner && overflow(s).length >= LAGER.fullt;
+// förrådet är fullt: det finns många lagerplatser och det ligger saker bredvid dem (förrådshuset, byggnader.ts)
+export const storeFull = (s: State) => vanliga(s) >= LAGER.forradFran && overflow(s).length >= LAGER.fullt;
 // när förrådet växer över marken (eller ett förrådshus blir klart) kan det ligga flera saker på en ruta som nu hör till
 // förrådet (den som högg lade grenar och ved på samma ruta). Det första ligger kvar, resten läggs på andra platser i
 // förrådet och redskapen får en plats av placeTools i slutet av steget
@@ -806,16 +808,7 @@ export function enPerRuta(s: State) {
 }
 export function tidyStore(s: State) {
   const zs = zonesOf(s);
-  const over = () => overflow(s);
-  let grew = -1;
-  for (let rep = 0; rep < LAGER.vaxSteg && over().length; rep++) {
-    const o = over(), i = zs.findIndex((z, j) => z.hus === undefined && o.some(a => allows(z, a.k)) && growOf(s, j));
-    if (i < 0) break;
-    zs[i] = growOf(s, i)!; grew = i;
-  }
-  if (grew >= 0) log(s, zs[grew].namn ? `${zs[grew].namn} blev för liten, så byn gjorde den större.` : 'Lagret blev för litet, så byn gjorde det större.', 'world');
-  else if (over().length && vanliga(s) < LAGER.zoner) newZone(s);
-  if (grew >= 0 || zs.length !== zonesOf(s).length) enPerRuta(s);
+  // större och nya lagerplatser föreslås av Byggplanen (steg 7.2.18, lagerStorre och lagerNy nedan)
   // mindre: ta bort en kant när mer än hälften har stått tom i sex timmar (krympTim) och det som ligger där får plats i resten
   for (let i = 0; i < zs.length; i++) {
     const z = zs[i], all = things(s), have = z.w * z.h, n = all.filter(a => inZone(z, a.x, a.y)).length;
@@ -830,11 +823,37 @@ export function tidyStore(s: State) {
   }
   changed(s);
 }
+// finns ingen ledig ruta i någon lagerplats där saken får ligga?
+export const lagerFullt = (s: State, k: string) => { const all = things(s); return !zonesOf(s).some(z => allows(z, k) && all.filter(a => inZone(z, a.x, a.y)).length < z.w * z.h); };
+// Lagret är ett byggbehov (steg 7.2.18): det som inte fått plats ligger bredvid, och Byggplanen väljer mellan att göra en
+// lagerplats större, en ny lagerplats och ett förrådshus. Antalet lagerplatser har inget tak, utom marken själv
+export function lagerStorre(s: State) {
+  const zs = zonesOf(s);
+  let grew = -1;
+  for (let rep = 0; rep < LAGER.vaxSteg; rep++) {
+    // bara det som inte har någon ledig ruta: det andra väntar bara på att bäras in
+    const o = overflow(s).filter(a => lagerFullt(s, a.k)), i = zs.findIndex((z, j) => z.hus === undefined && o.some(a => allows(z, a.k)) && growOf(s, j));
+    if (i < 0) break;
+    zs[i] = growOf(s, i)!; grew = i;
+  }
+  if (grew < 0) return false;
+  log(s, zs[grew].namn ? `${zs[grew].namn} blev för liten, så byn gjorde den större.` : 'Lagret blev för litet, så byn gjorde det större.', 'world');
+  enPerRuta(s); changed(s);
+  return true;
+}
+export function lagerNy(s: State) {
+  const n = zonesOf(s).length;
+  newZone(s);
+  if (zonesOf(s).length === n) return false;
+  enPerRuta(s); changed(s);
+  return true;
+}
 function growOf(s: State, i: number): Zone | undefined {
   const zs = zonesOf(s), z = zs[i];
   const n = [{ ...z, w: z.w + 1 }, { ...z, h: z.h + 1 }, { ...z, x: z.x - 1, w: z.w + 1 }, { ...z, y: z.y - 1, h: z.h + 1 }]
     .filter(n => n.w <= LAGER.zonBredd && n.h <= LAGER.zonHojd && allUsable(s, n) && !strakI(s, n.x, n.y, n.w, n.h) && skogI(s, n) < Infinity && !zs.some((o, j) => j !== i && overlaps(n, o, LAGER.mellan)))
     .sort((a, b) => Math.abs(a.w - a.h) - Math.abs(b.w - b.h))[0];
+  if (n) n.tom = undefined; // den nya kanten är tom, men räkningen mot att krympa börjar om
   return n && !n.rojs && skogI(s, n) > 0 ? { ...n, rojs: true } : n;
 }
 // en ny lagerplats nära byns läger (eld och andra lagerplatser), men inte inpå elden. Den första uppdelningen sorterar: maten får den gamla platsen, materialet den nya.

@@ -9,7 +9,7 @@ import { eldPlats, getMap, vaderstreck } from './karta';
 import { Klan, andraInst, klanById, klanerOf } from './klaner';
 import { addTo, amountOf, avbryt, dropLoad, zoneOf } from './lager';
 import { die } from './liv';
-import { bitAt } from './byggnad';
+import { bitAt, isWall } from './byggnad';
 import { larma } from './rykten';
 import { SAKER, SAK_LIST } from './saker';
 import { vattenNu } from './sjo';
@@ -324,7 +324,7 @@ function stridSlut(s: State, f: Rovarflock, st: Strid) {
     slitKastat(s, p, st, k);
     if (dod) { count(s, 'dodRovare'); die(s, p, 'rovare'); continue; }
     const x = g.ox + k.x, y = g.oy + k.y;
-    if (!iVatten(s, x, y)) { p.x = x; p.y = y; } // där striden lämnade hen
+    if (!iVatten(s, x, y) && !isWall(s, x, y)) { p.x = x; p.y = y; } // där striden lämnade hen, men aldrig i vattnet eller en vägg
     if (svartSkadad(k)) svara.push(p.name);
     p.blod = Math.min(p.blod ?? 1, Math.max(0, k.blod));
     ovning(p, 'narstrid', SLAGSMAL.ovning);

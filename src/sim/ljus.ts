@@ -30,8 +30,8 @@ export const FACKLA = balans('fackla', {
 
 // de uppsatta facklorna (steg 6.3.7)
 export const UPPSATT = balans('uppsatt', {
-  trosk: 3, // en plats där folk varit vakna i mörker så här många timmar (som avtar) blir ett behov att sätta upp en fackla
-  avta: 0.97, // ... och timmarna avtar så här mycket varje timme (hälften på ett dygn)
+  trosk: 1.5, // en plats där folk varit vakna i mörker så här många timmar (som avtar) blir ett behov att sätta upp en fackla
+  avta: 0.99, // ... och timmarna avtar så här mycket varje timme (hälften på knappt tre dygn)
   nara: 1, // facklan tänds när någon vaken är inom dess ljus och så här många rutor till, eller ska dit
   min: 20, // minuter att sätta upp en
 });

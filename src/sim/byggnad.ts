@@ -23,16 +23,19 @@ type BitK = 'vagg' | 'golv' | 'oppning';
 // en byggd eller planerad ruta. b = hur långt bygget kommit (1 = klart), mat = material som lagts på bygget,
 // c = skick (1 = nytt), lp/lm = lagning: hur långt den kommit och material som lagts på den, dorr = dörren som hänger i en
 // öppning (en rad i DORRAR), lera = när ett jordgolv som legat under vatten har torkat och blir jordgolv igen (steg 3.8.7, flod.ts)
-export interface Bit { id: number; x: number; y: number; k: BitK; m: string; b: number; mat: number; c: number; hus?: number; lp?: number; lm?: number; dorr?: string; lera?: number }
+export interface Bit { id: number; x: number; y: number; k: BitK; m: string; b: number; mat: number; c: number; hus?: number; lp?: number; lm?: number; dorr?: string; lera?: number; forb?: 1 } // forb = en förbättring (steg 7.2.10): byggs på nivån Förbättra, inte Tak;
 // byggare = de som byggt en bit medan huset byggs första gången (steg 4.5.4.9), kom = var materialet kom ifrån (bygg.ts), fn = husets funktion (en rad i BYGGNADER, byggnader.ts; saknas = sovsal), ag = ägaren (ett familjehus), slag = vad ett förrådshus rymmer
-export interface Hus { id: number; namn: string; x: number; y: number; w: number; h: number; klar?: number; varKlar?: number; kom?: Record<string, number>; fn?: string; ag?: number; slag?: 'mat' | 'material'; tom?: number; byggare?: number[] } // tom = sedan när ingen sover i sovsalen; varKlar = när huset först blev färdigt, sparat när en vägg rasar (klar nollas då)
+export interface Hus { id: number; namn: string; x: number; y: number; w: number; h: number; klar?: number; varKlar?: number; kom?: Record<string, number>; fn?: string; ag?: number; slag?: 'mat' | 'material'; tom?: number; byggare?: number[]; rumFn?: Record<string, string>; skjul?: 1; ut?: { x: number; y: number; w: number; h: number; oppnas: [number, number, string][] } } // ut = utbyggnaden som pågår (steg 7.2.5): husets nya mått och väggen som öppnas sist; // rumFn = funktionen per rum när den skiljer sig från husets (steg 7.2.1, rumFnId i byggnader.ts), med rummets minsta ruta som nyckel; tom = sedan när ingen sover i sovsalen; varKlar = när huset först blev färdigt, sparat när en vägg rasar (klar nollas då)
 // per material: vad som går åt per ruta, timmar för en ovan byggare (riktlinjen, steg 2.12.8: 20 minuter per vägg, 5 per ruta
 // jordgolv och 10 trägolv; slaget är k, se TIDSLAG i tider.ts), slitage per timme, hur bra väggen håller värmen.
 // storm = hur illa tornadon river väggen (tornado.ts; 1 om inget sägs).
 // farg och ikon är bara bilden: färgen på kartan och symbolen i rutan under musen (simuleringen läser dem aldrig)
-export interface Material { namn: string; k: BitK; item?: string; n: number; tim: number; slit: number; isol?: number; storm?: number; brinner?: number; tek?: string; farg: number; ikon?: string } // brinner = hur lätt väggen eller golvet tar eld (eldsvådorna, brand.ts); ett golv som brunnit blir jordgolv
+export interface Material { namn: string; k: BitK; item?: string; n: number; tim: number; slit: number; isol?: number; storm?: number; brinner?: number; tek?: string; farg: number; ikon?: string; vag?: true; brygga?: true } // vag = väg eller brygga: ingen del av något hus, och när den förstörs blir rutan som förut // brinner = hur lätt väggen eller golvet tar eld (eldsvådorna, brand.ts); ett golv som brunnit blir jordgolv
 export const MATERIAL: Record<string, Material> = {
   timmer: { namn: 'Timmervägg', k: 'vagg', item: 'ved', n: 5, tim: 20 / 60, slit: 0.0005, isol: 0.7, storm: 0.6, brinner: 1, tek: 'timmervagg', farg: 0x8a5e34, ikon: 'timmervagg' },
+  stolpe: { namn: 'Stolpe', k: 'vagg', item: 'ved', n: 2, tim: 20 / 60, slit: 0.0005, isol: 0, storm: 0.6, brinner: 1, tek: 'timmervagg', farg: 0x8a5e34, ikon: 'timmervagg' }, // bär skjulens tak (steg 7.3.1): tar en ruta och stänger vägen som en vägg. Platshållare: samma bild som väggen
+  stockvag: { namn: 'Stockväg', k: 'golv', item: 'virke', n: 1, tim: 10 / 60, slit: 1 / (50 * 24), brinner: 1, tek: 'stockvag', vag: true, farg: 0x8a6a3a, ikon: 'stockvag' }, // en väg (steg 7.3.7): utslitet efter ungefär 50 dygn (50 år i spelet)
+  brygga: { namn: 'Brygga', k: 'golv', item: 'virke', n: 1, tim: 10 / 60, slit: 1 / (50 * 24), brinner: 1, tek: 'brygga', vag: true, brygga: true, farg: 0x8a6a3a, ikon: 'brygga' }, // över vatten (steg 7.3.9): man kan gå och stå på den
   ris: { namn: 'Risvägg', k: 'vagg', item: 'grenar', n: 5, tim: 20 / 60, slit: 0.002, isol: 0.55, storm: 1.5, brinner: 1.5, farg: 0x6b4a2a, ikon: 'risvagg' }, // äldre sparfiler: risväggar byggs inte längre men kan lagas
   jord: { namn: 'Jordgolv', k: 'golv', n: 0, tim: 5 / 60, slit: 0, farg: 0x7a5a3a },
   tra: { namn: 'Trägolv', k: 'golv', item: 'ved', n: 1, tim: 10 / 60, slit: 0.0002, brinner: 1, tek: 'timmervagg', farg: 0xa07446, ikon: 'tragolv' },
@@ -72,11 +75,20 @@ export const bitsOf = (s: State) => (s.byggen ??= []);
 export const housesOf = (s: State) => (s.hus ??= []);
 export const husById = (s: State, id?: number) => housesOf(s).find(h => h.id === id);
 export const bitById = (s: State, id?: number) => bitsOf(s).find(b => b.id === id);
+// en väg eller brygga försvinner: en brand, en tornado eller slitaget (steg 7.3.7)
+export function vagBort(s: State, b: Bit) {
+  const brygga = MATERIAL[b.m].brygga;
+  s.byggen = bitsOf(s).filter(q => q !== b);
+  if (brygga) s.bryggV = (s.bryggV ?? 0) + 1;
+  touch(s);
+  // den som stod på bryggan när den försvann hamnar på närmaste lediga ruta, inte i vattnet
+  if (brygga) for (const p of s.people) if (p.died === undefined && p.left === undefined && Math.floor(p.x) === b.x && Math.floor(p.y) === b.y) { const f = freeNear(s, b.x, b.y); p.x = f.x + 0.5; p.y = f.y + 0.5; }
+}
 export const touch = (s: State) => { s.byggV = (s.byggV ?? 0) + 1; };
 
 // ---------- rutnätet: vad som står var, och vilka rum det blir ----------
 export interface Rum { id: number; tiles: number[]; walls: number[]; open: number; hus?: number }
-interface Grid { v: number; at: Map<number, Bit>; solid: Uint8Array; tak: Int32Array; rooms: Rum[] }
+interface Grid { v: number; at: Map<number, Bit>; solid: Uint8Array; tak: Int32Array; rooms: Rum[]; skjul: Uint8Array; brygga: Uint8Array }
 const grids = new WeakMap<State, Grid>();
 export function gridOf(s: State): Grid {
   const v = s.byggV ?? 0;
@@ -118,7 +130,12 @@ export function gridOf(s: State): Grid {
     for (const i of r.tiles) tak[i] = r.id;
     rooms.push(r);
   }
-  g = { v, at, solid, tak, rooms };
+  // skjulen (Skjul i designdokumentet): ett tak utan väggar när alla stolpar är klara. Taket skyddar mot väta men räknas inte som ett rum mot kylan
+  const skjul = new Uint8Array(W * H);
+  for (const h of housesOf(s)) if (h.skjul && h.klar) for (let y = h.y; y < h.y + h.h; y++) for (let x = h.x; x < h.x + h.w; x++) if (inMap(x, y)) skjul[y * W + x] = 1;
+  const brygga = new Uint8Array(W * H);
+  for (const b of bitsOf(s)) if (b.b >= 1 && MATERIAL[b.m].brygga) brygga[b.y * W + b.x] = 1;
+  g = { v, at, solid, tak, rooms, skjul, brygga };
   grids.set(s, g);
   const gr = groundOf(s); gr.solid = solid; gr.built = built;
   return g;
@@ -126,7 +143,7 @@ export function gridOf(s: State): Grid {
 export const bitAt = (s: State, x: number, y: number) => gridOf(s).at.get(Math.floor(y) * W + Math.floor(x));
 export const isWall = (s: State, x: number, y: number) => inMap(x, y) && gridOf(s).solid[tileOf(x, y)] === 1;
 // man kan inte stå här: vatten eller en vägg
-export const blocked = (s: State, x: number, y: number) => { const i = Math.floor(y) * W + Math.floor(x); return getMap(s.seed).tiles[i] === T.Vatten || !!s.flod && iVattnetNu(s, i) || isWall(s, x, y); }; // och översvämningens vatten (flod.ts)
+export const blocked = (s: State, x: number, y: number) => { const i = Math.floor(y) * W + Math.floor(x); return getMap(s.seed).tiles[i] === T.Vatten && !gridOf(s).brygga[i] || !!s.flod && iVattnetNu(s, i) || isWall(s, x, y); }; // och översvämningens vatten (flod.ts)
 // lägrets mitt under en översvämning (steg 3.8.7): elden, eller närmaste torra ruta när vattnet står över elden. Därifrån räknas
 // vad man kan gå till; från en ruta under vattnet nås nästan ingenting, och då hamnade allt i lagret på samma ruta (by 42)
 export function lagretsMitt(s: State) { const f = eldPlats(s); return s.flod ? freeNear(s, f.x, f.y) : f; }
@@ -146,7 +163,8 @@ export function roomAt(s: State, x: number, y: number): Rum | undefined {
   const g = gridOf(s), r = g.tak[tileOf(x, y)];
   return r >= 0 ? g.rooms[r] : undefined;
 }
-export const roofed = (s: State, x: number, y: number) => !!roomAt(s, x, y);
+export const roofed = (s: State, x: number, y: number) => !!roomAt(s, x, y) || underSkjul(s, x, y);
+export const underSkjul = (s: State, x: number, y: number) => inMap(x, y) && gridOf(s).skjul[tileOf(x, y)] === 1;
 // hur väl rummet håller värmen: väggarnas material och skick, sämre för varje öppning (mindre när en dörr hänger där)
 export function insulation(s: State, r: Rum) {
   const g = gridOf(s);

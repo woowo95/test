@@ -45,11 +45,16 @@ const nyckelAv = (s: State) => {
   for (const z of zonesOf(s)) h = blanda(blanda(blanda(blanda(h, z.x), z.y), z.w), z.h);
   return h;
 };
+// Frågorna ställs tusentals gånger per slag: inom samma slag, utan att något byggts, räknas nyckeln inte om. En lagerplats som växer
+// under slaget räknas in i nästa slag
+const senast = new WeakMap<State, { now: number; v: number; h: number; z: number; o: Omrade }>();
 export function omrade(s: State): Omrade {
+  const m = senast.get(s), v = s.byggV ?? 0, h = housesOf(s).length, z = zonesOf(s).length;
+  if (m && m.now === s.now && m.v === v && m.h === h && m.z === z) return m.o;
   const key = nyckelAv(s), c = cache.get(s);
-  if (c && c.key === key) return c;
-  const o = rakna(key, Object.values(OMRADE_DELAR).flatMap(d => d.rutor(s)));
-  cache.set(s, o);
+  const o = c && c.key === key ? c : rakna(key, Object.values(OMRADE_DELAR).flatMap(d => d.rutor(s)));
+  if (o !== c) cache.set(s, o);
+  senast.set(s, { now: s.now, v, h, z, o });
   return o;
 }
 
@@ -117,7 +122,7 @@ export function utanforByn(s: State, x: number, y: number) {
 export const tillHoljet = (s: State, x: number, y: number) => tillHolje(x, y, omrade(s).holje);
 // områdets mitt (en ruta): det som behöver en punkt att utgå från (kamerans hemknapp, lekplatsen, åt vilket håll fältet
 // växer, var byn minns översvämningen). Den följer området, inte elden
-export const bynsMitt = (s: State) => omrade(s).mitt;
+export const bynsMitt = (s: State) => s.torg ? { x: s.torg.x + (s.torg.w >> 1), y: s.torg.y + (s.torg.h >> 1) } : omrade(s).mitt; // torget är byns centrum när det finns (steg 7.3.13)
 // rutnätet till utanforByn, sparat med området; en kartslinga kan läsa det direkt (bynsAvstand(s)[i])
 export const bynsAvstand = (s: State) => utGrid(omrade(s));
 function utGrid(o: Omrade) {

@@ -35,7 +35,8 @@ export const BYTE = balans('byte', {
   bakom: 1,
 });
 
-export interface Vara { k: string; n: number; t?: Ting; q?: number } // q = kvaliteten på handlarens redskap, som inte är ett ting i byn än
+export interface Vara { k: string; n: number; t?: Ting; q?: number; hus?: number; varde?: number } // hus = huset som byts (k = 'hus', en symbol på filten, steg 7.2.12), varde = vad det är värt i bytet
+// // q = kvaliteten på handlarens redskap, som inte är ett ting i byn än
 // en part i ett byte. id = personens id, BYN för byn och ett negativt tal för handlaren. p = personen (bybon eller ingen)
 export interface Part {
   id: number;
@@ -49,13 +50,19 @@ export interface Part {
   handel?: number; // färdigheten Handel hos den som förhandlar (steg 4.4.1.4; bybon, den som handlar för byn, handlaren)
   rymmer?(): number; // så många kg till kan parten ta emot (handlarens packning); saknas = hur mycket som helst
 }
-export const vardeOf = (v: Vara) => grundvarde(v.k) * (v.t ? v.t.c * kvVarde(v.t) : 1);
+export const vardeOf = (v: Vara) => v.varde ?? grundvarde(v.k) * (v.t ? v.t.c * kvVarde(v.t) : 1);
 // varorna i en mening (ordlagret, steg 6.7.1): "ett träspjut", "tre rötter och en flintkniv"
 export const varorText = (v: Vara[]) => och(v.map(x => antal(x.t ? 1 : x.n, x.k)));
 
 // w går från fran till till. Mellan två bybor byter bara ägaren i förrådet (ownMove) eller redskapet (tinget); handlaren
 // och byn har egna sätt att lämna och ta emot (lamna, ta)
+// ett hus byts bara mellan dem som bor i byn eller till byn: en handlare eller annan utifrån (negativt id) kan aldrig köpa ett hus
+export const kanTaHus = (p: Part) => p.id >= 0;
 export function flytta(s: State, w: Vara, fran: Part, till: Part) {
+  if (w.hus !== undefined) { // huset står kvar; byggplan.ts sätter den nya ägaren när bytet är klart
+    if (!kanTaHus(till)) throw new Error('en handlare kan inte köpa ett hus');
+    return;
+  }
   if (!fran.lamna && !till.ta) {
     if (w.t) { w.t.agare = till.id; if (w.t.hos === fran.id) w.t.hos = undefined; }
     else ownMove(s, w.k, w.n, fran.id, till.id);
@@ -107,7 +114,7 @@ function overlamna(s: State, varor: Vara[], a: Part, b: Part) {
 
 // är bytet stort? Ett redskap, flera slag av saker eller mycket värt
 export function stortByte(varor: Vara[]) {
-  if (varor.some(w => w.t || isTool(w.k))) return true;
+  if (varor.some(w => w.t || w.hus !== undefined || isTool(w.k))) return true;
   if (new Set(varor.map(w => w.k)).size >= BYTE.stortSlag) return true;
   return varor.reduce((x, w) => x + w.n * vardeOf(w), 0) >= BYTE.stort;
 }
@@ -122,7 +129,7 @@ function prisAv(s: State, fran: Part, till: Part, k: string) {
   for (const f of BYTESPRIS) { const p = f(s, fran, till, k); if (p !== undefined) return Math.max(1, Math.round(p)); }
   return Math.max(1, Math.round(grundvarde(k)));
 }
-const byteVaror = (s: State, varor: Vara[], fran: Part, till: Part): ByteVara[] => varor.map(w => ({ k: w.k, n: w.t ? 1 : Math.round(w.n), p: prisAv(s, fran, till, w.k) }));
+const byteVaror = (s: State, varor: Vara[], fran: Part, till: Part): ByteVara[] => varor.map(w => ({ k: w.k, n: w.t ? 1 : Math.round(w.n), p: w.varde !== undefined ? Math.max(1, Math.round(w.varde)) : prisAv(s, fran, till, w.k) }));
 // bytet i loggen och i bybornas minne (steg 5.5.6): minns en bybo det (p.byten) har raden bara numret (bnr), annars hela
 // bytet. Minnet rymmer BYTE.minnas byten; en affär som inte blev av tar bort den äldsta som inte heller blev av, aldrig ett
 // riktigt byte

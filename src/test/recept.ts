@@ -1,6 +1,7 @@
 // npm run recept [-- filter …]: alla recept i registret RECEPT (src/sim/recept.ts), grupperade efter vad de gör
 // (sak, station, tillbehör, dörr, plagg), med material, arbetsminuter, tekniken som krävs och verktygen.
 // Med filter visas bara de recept vars namn eller grupp innehåller något av orden, t.ex. `npm run recept -- kniv plagg`.
+import './utc';
 import { RECEPT, RECEPT_LIST } from '../sim/recept';
 import type { ReceptRad } from '../sim/recept';
 

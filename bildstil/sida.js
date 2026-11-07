@@ -971,7 +971,6 @@ const VAL = [
 // Björns val som är bestämda men inte inbyggda i spelet: de visas under Valt med den valda versionen (0 = förut-versionen
 // behålls) och steget där de byggs in. När saken är inbyggd tas raden bort här och ur VAL, och dess dokument i samlingen 'val'
 const BESLUT = {
-  f7_stockvag: { val: 2, steg: '7.3.7' }, f7_brygga: { val: 2, steg: '7.3.9' },
 };
 // räknas när valdelen ritas, så att korten från filerna efter denna (mark.js, djur.js, gui.js) också kommer med
 const VALT = [];
