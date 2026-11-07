@@ -207,18 +207,19 @@
   };
   // figuren ensam, utan gräset kartBild lägger runt den: det som skiljer sig från samma gräs (markBild med samma mått och
   // plats) är figuren. Fötterna når bildens kant, så konturen läggs om runt allt, en punkt större åt varje håll
-  function ensam(M, P) {
+  // (med M2, samma figur med en annan hudton: hud säger vilka punkter som är hud)
+  function ensam(M, P, M2 = null) {
     const G = markBild(M.w, M.h, P, 420, 400), w = M.w + 2, h = M.h + 2, kol = P.i('kol', 0);
-    const px = new Array(w * h).fill(-1);
-    for (let y = 0; y < M.h; y++) for (let x = 0; x < M.w; x++) { const i = y * M.w + x; if (M.px[i] !== G.px[i]) px[(y + 1) * w + x + 1] = M.px[i]; }
+    const px = new Array(w * h).fill(-1), hud = new Array(w * h).fill(false);
+    for (let y = 0; y < M.h; y++) for (let x = 0; x < M.w; x++) { const i = y * M.w + x; if (M.px[i] !== G.px[i]) { px[(y + 1) * w + x + 1] = M.px[i]; hud[(y + 1) * w + x + 1] = !!M2 && M2.px[i] !== M.px[i]; } }
     const ut = px.slice();
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (px[y * w + x] < 0 && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => { const X = x + dx, Y = y + dy; return X >= 0 && Y >= 0 && X < w && Y < h && px[Y * w + X] >= 0 && px[Y * w + X] !== kol; })) ut[y * w + x] = kol;
     // beskär till det som syns
     let x0 = w, y0 = h, x1 = -1, y1 = -1;
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (ut[y * w + x] >= 0) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
-    const W = x1 - x0 + 1, H = y1 - y0 + 1, q = new Array(W * H).fill(-1);
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) q[y * W + x] = ut[(y + y0) * w + x + x0];
-    return { w: W, h: H, px: q };
+    const W = x1 - x0 + 1, H = y1 - y0 + 1, q = new Array(W * H).fill(-1), qh = new Array(W * H).fill(false);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { q[y * W + x] = ut[(y + y0) * w + x + x0]; qh[y * W + x] = hud[(y + y0) * w + x + x0]; }
+    return { w: W, h: H, px: q, hud: qh };
   }
   // ett kvarts varv: medsols (huvudet åt höger) eller motsols (huvudet åt vänster)
   const vrid = (F, medsols) => {
@@ -251,9 +252,8 @@
       for (let x = 3; x < L.w - 3; x++) B.morka(x0 + x, fot);
       // död, liggande: samma figur och en med en annan hudton, så att huden syns där de skiljer sig
       const M1 = PR.kartBild(person(o, true), V.rikt, V.ben, V.arm), M2 = PR.kartBild(person(o, true, (o.hud + 2) % 4), V.rikt, V.ben, V.arm);
-      const F = ensam(M1, B.P), H = ensam({ ...M1, px: M1.px.map((c, i) => c === M2.px[i] ? -2 : c) }, B.P);
-      const arHud = F.px.map((c, i) => H.px[i] >= 0 && H.px[i] !== B.P.i('kol', 0));
-      let D = vrid(omfarga(F, B.P, V.hud, V.ovrigt, arHud), false);
+      const F = ensam(M1, B.P, M2);
+      const D = vrid(omfarga(F, B.P, V.hud, V.ovrigt, F.hud), false);
       const dx = x0 + L.w + 2, dy = fot - D.h;
       klistra(B, D, dx, dy);
       if (V.skugga) { const s = fyllda(D); for (const k of s) { const [x, y] = k.split(',').map(Number); if (!s.has(x + ',' + (y + 1))) B.morka(dx + x, dy + y + 1); } }
