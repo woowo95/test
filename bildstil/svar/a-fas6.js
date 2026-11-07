@@ -88,20 +88,27 @@
     const SIFF_SILK = { 0: ['.###.', '#..##', '#.#.#', '##..#', '.###.'], 1: ['.#', '##', '.#', '.#', '.#'], 2: ['####.', '....#', '.###.', '#....', '#####'], 3: ['####.', '....#', '.###.', '....#', '####.'], 4: ['#...#', '#...#', '#####', '....#', '....#'], 5: ['#####', '#....', '####.', '....#', '####.'], 6: ['.###.', '#....', '####.', '#...#', '.###.'], 7: ['#####', '....#', '...#.', '..#..', '..#..'], 8: ['.###.', '#...#', '.###.', '#...#', '.###.'], 9: ['.###.', '#...#', '.####', '....#', '.###.'] };
     const SIFF_EGEN = { 0: ['.###.', '#...#', '#..##', '#.#.#', '##..#', '#...#', '.###.'], 1: ['..#..', '.##..', '..#..', '..#..', '..#..', '..#..', '.###.'], 2: ['.###.', '#...#', '....#', '...#.', '..#..', '.#...', '#####'], 3: ['.###.', '#...#', '....#', '..##.', '....#', '#...#', '.###.'], 4: ['...#.', '..##.', '.#.#.', '#..#.', '#####', '...#.', '...#.'], 5: ['#####', '#....', '####.', '....#', '....#', '#...#', '.###.'], 6: ['..##.', '.#...', '#....', '####.', '#...#', '#...#', '.###.'], 7: ['#####', '....#', '...#.', '..#..', '.#...', '.#...', '.#...'], 8: ['.###.', '#...#', '#...#', '.###.', '#...#', '#...#', '.###.'], 9: ['.###.', '#...#', '#...#', '.####', '....#', '...#.', '.##..'] };
     const SIFF_SMAL = { 0: ['###', '#.#', '#.#', '#.#', '###'], 1: ['.#.', '##.', '.#.', '.#.', '###'], 2: ['###', '..#', '###', '#..', '###'], 3: ['###', '..#', '.##', '..#', '###'], 4: ['#.#', '#.#', '###', '..#', '..#'], 5: ['###', '#..', '###', '..#', '###'], 6: ['###', '#..', '###', '#.#', '###'], 7: ['###', '..#', '.#.', '.#.', '.#.'], 8: ['###', '#.#', '###', '#.#', '###'], 9: ['###', '#.#', '###', '..#', '###'] };
-    const TYPSNITT = '11px "Pixelify Sans"', RAD = 12, BAS = 9; // radavståndet och baslinjen i raden (punkter från radens topp)
+    // storleken och förskjutningen där typsnittets former hamnar bäst på hela punkter (prövat: minst halvtäckta punkter)
+    const STORLEK = 10.8125, DX = 0.375, DY = -0.125, K = 8, RAD = 12, BAS = 9; // radavståndet och baslinjen i raden (punkter från radens topp)
+    const typsnitt = s => s + 'px "Pixelify Sans"';
     const RADER = ['Ved 12', 'Hälsa 85 %', 'Dag 3, 14:05', 'Bär 2 ved, 16 vikt', 'Torkat kött 1038'];
     let duk = null;
-    const harTypsnitt = () => { try { return document.fonts.check(TYPSNITT); } catch (e) { return false; } };
-    // texten t i Pixelify Sans med vänsterkanten i x och baslinjen i y; ger bredden i punkter
+    const harTypsnitt = () => { try { return document.fonts.check(typsnitt(16)); } catch (e) { return false; } };
+    // texten t i Pixelify Sans med vänsterkanten i x och foten på raden ovanför y; ger bredden i punkter. Texten skrivs
+    // åtta gånger större och varje punkt blir text om minst hälften av den är täckt, så att inget blir utjämnat
     function skriv(B, t, x, y, farg) {
-      if (!harTypsnitt()) { try { document.fonts.load(TYPSNITT); } catch (e) { /* laddas senare */ } }
+      if (!harTypsnitt()) { try { document.fonts.load(typsnitt(16)); } catch (e) { /* laddas senare */ } }
       duk ??= document.createElement('canvas');
-      const g = duk.getContext('2d', { willReadFrequently: true }); g.font = TYPSNITT;
-      const bred = Math.ceil(g.measureText(t).width), hog = 16;
-      duk.width = bred + 2; duk.height = hog; g.font = TYPSNITT; g.fillStyle = '#000'; g.textBaseline = 'alphabetic'; g.fillText(t, 0, BAS + 3);
-      const d = g.getImageData(0, 0, duk.width, hog).data;
-      for (let yy = 0; yy < hog; yy++) for (let xx = 0; xx < duk.width; xx++) if (d[(yy * duk.width + xx) * 4 + 3] >= 128) B.satt(x + xx, y - BAS - 3 + yy, farg);
-      return Math.round(g.measureText(t).width);
+      const g = duk.getContext('2d', { willReadFrequently: true }); g.font = typsnitt(STORLEK);
+      const bred = Math.round(g.measureText(t).width), w = bred + 3, hog = 16;
+      duk.width = w * K; duk.height = hog * K; g.font = typsnitt(STORLEK * K); g.fillStyle = '#000'; g.textBaseline = 'alphabetic';
+      g.fillText(t, DX * K, (12 + DY) * K);
+      const d = g.getImageData(0, 0, w * K, hog * K).data;
+      for (let yy = 0; yy < hog; yy++) for (let xx = 0; xx < w; xx++) {
+        let s = 0; for (let a = 0; a < K; a++) for (let b = 0; b < K; b++) s += d[((yy * K + a) * w * K + xx * K + b) * 4 + 3];
+        if (s >= K * K * 255 / 2) B.satt(x + xx, y - 12 + yy, farg);
+      }
+      return bred;
     }
     const SIFFROR = (text, F) => {
       const w = 124, h = RADER.length * RAD + 8;
