@@ -22,6 +22,7 @@ import { temperature, vaxtFaktor } from './vader';
 import { TORKA } from './torka';
 import { iVattnetNu } from './sjo';
 import { ISTID, iIstiden, isLight, kalender } from './tid';
+import { tecken } from './religion';
 
 // ---------- odling (steg 2.10.2–) ----------
 // Vilda grödor växer på kartan som andra växter: vild rova på ängarna och vilda ärter i skogsbrynet (registret VILDA, lager i
@@ -368,6 +369,7 @@ function rutaKlar(s: State, p: Person, f: Falt) {
   else if (f.steg === 'sa') { takeMaterial(s, p, GRODOR[f.groda!].fro, ODLING.froPerRuta); count(s, 'fronSadda', ODLING.froPerRuta); } // fröna som såtts (scenariot falt)
   else if (f.steg === 'mogen') {
     const d = GRODOR[f.groda!], a = skordAndel(s, f);
+    if (forstaGang(s, 'skord_tecken')) tecken(s, p, 'skord'); else if (a >= 1.5) tecken(s, p, 'dubbelt'); // den första skörden och fältet som gav mycket (steg 8.5.18)
     if (a > 0) { gain(s, p, d.sak, d.perRuta * a); gain(s, p, d.fro, froTillbaka(s, f, f.klara, d) * a); count(s, 'skord', d.perRuta * a); }
   }
 }

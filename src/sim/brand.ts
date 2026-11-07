@@ -294,6 +294,7 @@ export function brandSteg(s: State, dtSec: number) {
     allaBarn(s, 'brand');
     for (const p of living(s)) if (p.born < b.t) livet(s, p, 'mg:brand'); // de som klarade den (steg 3.9.8)
   }
+  for (const p of living(s)) if (Math.hypot(p.x - b.x, p.y - b.y) < 14) tecken(s, p, 'brandStopp'); // branden som stannade (steg 8.5.18)
   delete s.brand;
 }
 

@@ -25,6 +25,7 @@ import { bjornarOf, djurOf, dodaDjur, faglarOf, radjurOf } from './djur';
 import { isLight } from './tid';
 import { H, HOUR, MIN, SEC, Person, State, T, W, inMap } from './typer';
 import { larmAvbryter } from './handlingar';
+import { tecken } from './religion';
 
 // Tornadon (steg 3.8.4, "Motgångarna i spelet" i designdokumentet): den enda stormen. En av motgångarna i registret
 // MOTGANGAR (motgang.ts), på sommaren och hösten. Den kommer en gång under tidsåldern och är på kartan i 20–60 minuter (steg 6.4.8):
@@ -202,6 +203,7 @@ export function tornadoSteg(s: State, gaster?: TornadoGaster) {
   // den har gått över kartan
   const delar = [t.doda && `dödade ${t.doda} ${t.doda === 1 ? 'människa' : 'människor'}`, t.forstort && `förstörde ${t.forstort} saker`, t.trad && `fällde ${t.trad} träd`, t.vagg && `rev ${t.vagg} ${t.vagg === 1 ? 'vägg' : 'väggar'}`, t.lyft && `spred ${t.lyft} saker${t.sonder ? ` (${t.sonder} gick sönder)` : ''}`].filter(Boolean);
   log(s, delar.length ? `Tornadon ${delar.join(', ')}.` : 'Tornadon gick fram där inget fanns att ta.', 'world');
+  for (const p of living(s)) tecken(s, p, 'tornado'); // tornadon som gick förbi (steg 8.5.18)
   delete s.tornado;
 }
 
