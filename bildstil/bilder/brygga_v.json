@@ -1,0 +1,36 @@
+{
+"id": "brygga_v",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 7.8.1)",
+"w": 16,
+"h": 16,
+"rader": [
+"kkklklkkkkkkkkkm",
+"nnnnnnlnnnnnlnnm",
+"nnnnnnnnnnnnnnnm",
+"lllllllllllllllr",
+"snlssssssssssnls",
+"tttttttttttttttr",
+"kkkkkklkkkkkkklm",
+"nnnnnnnnnnnnnnnm",
+"nnnlnnnnnnnnlnnm",
+"lllllllllllllllr",
+"snlssssssssssnls",
+"kkkkkkkkkkkkuuuu",
+"nnnnnnlnnnnnoooo",
+"llllllllllllllll",
+"llllllllllllllll",
+"llllllllllllllll"
+],
+"pal": {
+"k": "#7d5b40",
+"l": "#3f2415",
+"m": "#b2921b",
+"n": "#5e3c24",
+"r": "#906f0f",
+"s": "#24201d",
+"t": "#987e62",
+"u": "#647025",
+"o": "#4b4f00"
+}
+}

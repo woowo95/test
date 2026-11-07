@@ -1,4 +1,4 @@
-import { clamp, MASTERVERK, PERFEKT, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, W, bordPlatser, sjoarna, stationById, MATERIAL, Pile, STUBBE_LIV, Station, bitAt, bitsOf, dorrDef, condOf, emberOn, eldById, eldXY, eldarOf, fireHeat, forvarAt, Fire, heatRadius, TORK, torrDel, isKlar, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, zonesOf, groundOf, snoPaMarken, ageIndex, tradArt } from '../sim';
+import { clamp, handlarPlats, MASTERVERK, PERFEKT, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, W, bordPlatser, sjoarna, stationById, MATERIAL, Pile, STUBBE_LIV, Station, bitAt, bitsOf, dorrDef, condOf, emberOn, eldById, eldXY, eldarOf, fireHeat, forvarAt, Fire, heatRadius, TORK, torrDel, isKlar, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, zonesOf, groundOf, snoPaMarken, ageIndex, tradArt } from '../sim';
 import { hasIcon, iconCanvas, kartbild, kartbildEnsam } from '../ikoner';
 import { KARTBILDER } from '../kartbilder';
 import { STUBBILDER } from '../stubbilder';
@@ -55,7 +55,7 @@ function drawPile(pl: Pile, t: number) {
   if (pl.gor) { ensam(pl.gor); framsteg(x0 + 12.5, y0 + 1.5, pl.klar ?? 0); return; } // påbörjat: framstegscirkeln i hörnet
   const n = clamp(Math.ceil(f * 4), 1, 4);
   if (kartbild(pl.k)) {
-    kartHog(variant(pl.k, pl.x, pl.y), x0, y0, pl.max === 1 || kartbildEnsam(pl.k) ? 1 : n);
+    kartHog(pl.blot && KARTBILDER.ved_blot ? 'ved_blot' : variant(pl.k, pl.x, pl.y), x0, y0, pl.max === 1 || kartbildEnsam(pl.k) ? 1 : n);
     if ((pl.q ?? 0) >= MASTERVERK) glans(x0 + 12, y0 + 3, t, pl.id ?? 0, pl.q === PERFEKT);
     return;
   }
@@ -73,11 +73,19 @@ function glans(x: number, y: number, t: number, id: number, perfekt: boolean) {
 }
 // fälten (steg 2.10.3, 2.10.13, odling.ts), ruta för ruta: en ram runt rutan som ska röjas, ljus jord när den är röjd och mörk
 // jord med fåror när den är uppgrävd. Grodden mitt på varje sådd ruta medan grödan växer (liten den första halvan) och
+// handlarens kärra (steg 7.3.8): när infartsvägen når ända ut drar handlaren en kärra, en av tre efter vem hen är
+function drawKarra() {
+  const h = s.handlare;
+  if (!h || !s.infart?.klar) return;
+  const p = handlarPlats(h, ui.nu), b = KARTBILDER.karra1!;
+  pileIcons.add('kb_karra' + (1 + Math.abs(h.id) % 3), Math.round(p.x * TS - b.w - 3), Math.round(p.y * TS - b.h + 6), 1);
+}
 // grödans symbol när den är mogen, tills rutan skördats. Framstegscirkeln över rutan där någon röjer, gräver eller sår
 function drawFalt() {
   for (const f of faltOf(s)) {
     const vaxer = f.steg === 'vaxer', mogen = f.steg === 'mogen', liten = vaxer && (f.vuxit ?? 0) < 0.5;
-    const bild = mogen && f.groda ? GRODOR[f.groda].sak : vaxer ? 'grodd' : undefined;
+    const lin = f.groda === 'lin'; // linet har egna bilder för fältet (steg 7.7.8)
+    const bild = mogen && f.groda ? (lin ? 'lin_mogen' : GRODOR[f.groda].sak) : vaxer ? (lin ? ((f.vuxit ?? 0) < 0.5 ? 'lin_ung' : 'lin_bla') : 'grodd') : undefined;
     for (let k = 0; k < f.n; k++) {
       const i = faltRuta(f, k), X = (i % W) * TS, Y = Math.floor(i / W) * TS;
       const klar = k < f.klara, rojd = f.steg !== 'roja' || klar, grav = f.steg === 'bereda' ? klar : f.steg !== 'roja';
@@ -156,6 +164,7 @@ export function drawStructures(t: number) {
   drawBuild();
   pileIcons.start(); rokIkoner.start();
   drawFalt();
+  drawKarra();
   for (const f of eldarOf(s)) lagereld(f); // den första och lägereldarna till (steg 4.5.6.8)
   for (const pl of piles()) if (!forvarAt(s, pl.x, pl.y)?.stangd) drawPile(pl, t); // det som ligger i en kista syns bara när man trycker på den
   // stationerna (stationer.ts) i blandperspektiv över alla rutorna de tar: de som är högre än rutan sticker upp över rutan
@@ -247,12 +256,25 @@ function lagereld(f: Fire) {
 // stubben att sitta på: bildstilens (steg 5.1.2.3) i en ruta
 const SITT = hasIcon('kb_sittplats') ? 'kb_sittplats' : 'sittplats';
 const stationBild = (ikon: string, v: string) => { const id = ikon + v, b = KARTBILDER[id]; return b && (b.sort === 'kar-station' || b.sort === 'kar-mobel') ? id : undefined; };
+// vägens och bryggans bild: längs den längsta raden av samma material; en brygga med en granne åt sidan är en bro
+function vagBild(b: { x: number; y: number; m: string }) {
+  const lika = (x: number, y: number) => bitAt(s, x, y)?.m === b.m;
+  const langd = (dx: number, dy: number) => { let n = 0; for (let i = 1; i <= 3; i++) { if (lika(b.x + dx * i, b.y + dy * i)) n++; else break; } return n; };
+  const ostVast = langd(1, 0) + langd(-1, 0), nordSyd = langd(0, 1) + langd(0, -1), lodrat = nordSyd > ostVast;
+  if (b.m === 'stockvag') return lodrat ? 'stockvag_v' : 'stockvag';
+  const bro = Math.min(ostVast, nordSyd) > 0;
+  return (bro ? 'bro' : 'brygga') + (lodrat ? '_v' : '');
+}
 // husen: golv, väggar av timmer (eller flätat ris i äldre byar) och öppningar. Det som är planerat syns som en svag kontur, det som byggs fylls i
 function drawBuild() {
   const klara = ritaHus(s, bitsOf(s)); // timmerväggarna, golven och öppningarna med golv (husbild.ts)
   for (const b of bitsOf(s)) {
     if (klara.has(b.id)) continue;
     const x = b.x * TS, y = b.y * TS;
+    if (b.k === 'golv' && b.b >= 1 && (b.m === 'stockvag' || b.m === 'brygga')) { // stockarna tvärs över vägen (steg 7.3.7, 7.3.9 och 7.3.12)
+      const ik = vagBild(b); pileIcons.add('kb_' + ik, x, y, 1);
+      continue;
+    }
     if (b.k === 'golv') {
       const col = palTal(MATERIAL[b.m]?.farg ?? MATERIAL.jord.farg); // närmaste färg i paletten; ett golv som byggs är bara en ram
       if (b.b >= 1) structG.beginFill(col).drawRect(x, y, TS, TS).endFill(); else structG.lineStyle(1, col).drawRect(x + 0.5, y + 0.5, TS - 1, TS - 1).lineStyle(0);

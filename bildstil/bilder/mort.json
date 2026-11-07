@@ -1,0 +1,26 @@
+{
+"id": "mort",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 7.8.1)",
+"w": 14,
+"h": 8,
+"rader": [
+"....kkk.....k.",
+"...klllkk..kmk",
+"..knnnnnnkkmmk",
+".knrsrrrnlmmk.",
+"kmlssssrsslmk.",
+".ktssssstnlmmk",
+"..kllmkllkkkmk",
+"...kkk.kk...k."
+],
+"pal": {
+"k": "#24201d",
+"l": "#a14808",
+"m": "#bd753e",
+"n": "#3e5156",
+"r": "#8a9c9e",
+"s": "#dad0bb",
+"t": "#bdb39b"
+}
+}

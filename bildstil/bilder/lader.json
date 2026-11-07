@@ -1,0 +1,25 @@
+{
+"id": "lader",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 7.8.1)",
+"w": 11,
+"h": 7,
+"rader": [
+".kkkkkkkkk.",
+"klmmnmmmnmk",
+"lrlstssstsk",
+"rrrsnsssnsk",
+"lrlstssstsk",
+"klllnlllnlk",
+".kkkkkkkkk."
+],
+"pal": {
+"k": "#24201d",
+"l": "#5e3c24",
+"m": "#987e62",
+"n": "#bdb39b",
+"r": "#3f2415",
+"s": "#7d5b40",
+"t": "#a0947d"
+}
+}

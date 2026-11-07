@@ -1,0 +1,21 @@
+{
+"id": "mortkott",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 7.8.1)",
+"w": 12,
+"h": 6,
+"rader": [
+".......kkk..",
+".kkkk.klllk.",
+"kmmmmkmmmmmk",
+"knlnnkkmmmk.",
+"knnnnk.kkk..",
+".kkkk......."
+],
+"pal": {
+"k": "#24201d",
+"l": "#bd753e",
+"m": "#dad0bb",
+"n": "#bdb39b"
+}
+}

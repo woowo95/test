@@ -1,0 +1,32 @@
+{
+"id": "i_bjorndodare",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 7.8.1)",
+"w": 16,
+"h": 16,
+"rader": [
+"..k...k...k.....",
+"..kk..kk..kk....",
+"..lk..lk..lk.m..",
+".lnl.lnl.lnl.m..",
+".lnnlnnnlnnnl.m.",
+"lnnnnnnnnnnnnl.m",
+"lnnrrnnrrnnrrnl.",
+"lnnrrnnrrnnrrnl.",
+"lnnnnnnnnnnnnl..",
+"lnnnnrrrrrnnnl..",
+"lnnnrrrrrrrnnl..",
+"lnnnrrrrrrrnnl..",
+".lnnnrrrrrnnl...",
+".lnnnnnnnnnnl...",
+"..lnnnnnnnnl....",
+"...lllllllll...."
+],
+"pal": {
+"k": "#dad0bb",
+"l": "#24201d",
+"m": "#a14808",
+"n": "#5e3c24",
+"r": "#987e62"
+}
+}

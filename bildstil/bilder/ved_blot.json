@@ -1,0 +1,27 @@
+{
+"id": "ved_blot",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 7.8.1)",
+"w": 16,
+"h": 9,
+"rader": [
+".......kkkkkk...",
+"..kkkkklmlnrnrrk",
+".klmlnksnsrtrtrk",
+".kkkkkkkksttkttk",
+"klslnrkkkkkkkkk.",
+"ksnsrmlslnrnrrk.",
+"klsstksnsrmrtrk.",
+".kkkkklssttkttk.",
+"......kkkkkkkk.."
+],
+"pal": {
+"k": "#2f261d",
+"l": "#505e3e",
+"m": "#8a9c9e",
+"n": "#324726",
+"r": "#3f2415",
+"s": "#5e3c24",
+"t": "#24201d"
+}
+}

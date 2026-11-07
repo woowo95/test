@@ -1,0 +1,33 @@
+{
+"id": "stockvag_v",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 7.8.1)",
+"w": 16,
+"h": 16,
+"rader": [
+"kkklkklkkkkkkkkk",
+"lllllllllmmmllll",
+"nnnmmmnnnmmlllll",
+"rrrrrrrrrrrrrrrr",
+"ssssssssmmmmslss",
+"kkkkkkkkklkkkklk",
+"kkkkkkkllkkkkkkk",
+"llllllllllllllll",
+"mmmnnnnnnmmmmmmm",
+"nnnmmmnnnnnnnnnn",
+"mmmrrrrrrrrrnnnn",
+"ssslssmmmsssmmmm",
+"lkkklkkkkkkkkkkk",
+"llllllllllllllll",
+"mlllllmmmmmlllll",
+"rrrrrrrrrrrrrrrn"
+],
+"pal": {
+"k": "#5e3c24",
+"l": "#3f2415",
+"m": "#4b4f00",
+"n": "#647025",
+"r": "#987e62",
+"s": "#7d5b40"
+}
+}

@@ -1,0 +1,25 @@
+{
+"id": "plankor",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 7.8.1)",
+"w": 14,
+"h": 8,
+"rader": [
+".kkkkkkkkkkkk.",
+"kllmllnnnmnnrk",
+"kssrsssssrssmk",
+"kkkmkkkkkmkkkk",
+"kssrsssssrssmk",
+"kkkmkkkkkmkkkk",
+"kssrsssssrssmk",
+".kkkkkkkkkkkk."
+],
+"pal": {
+"k": "#24201d",
+"l": "#7d5b40",
+"m": "#a0947d",
+"n": "#987e62",
+"r": "#bdb39b",
+"s": "#5e3c24"
+}
+}

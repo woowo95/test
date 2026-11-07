@@ -1,0 +1,21 @@
+{
+"id": "gaddkott",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 7.8.1)",
+"w": 12,
+"h": 6,
+"rader": [
+"...kkkkkk...",
+".kkllllllkk.",
+"kmmmmnnnnnnk",
+"knnmnnnnnnnk",
+".kknnnnnnkk.",
+"...kkkkkk..."
+],
+"pal": {
+"k": "#24201d",
+"l": "#4b4f00",
+"m": "#dad0bb",
+"n": "#bdb39b"
+}
+}

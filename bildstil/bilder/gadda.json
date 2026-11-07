@@ -1,0 +1,28 @@
+{
+"id": "gadda",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 7.8.1)",
+"w": 22,
+"h": 9,
+"rader": [
+".............kk.....k.",
+"....kkkkkkkkkllk...klk",
+"..kkmmmmmmmmmmmmk.kllk",
+".kmnrsnnsnnnsnnmmkllk.",
+"kmtnnsnnnsnnnsnnmmlk..",
+".kuuutuuuutuuuutmkllk.",
+"..kkllkkkkkkkllkk.kllk",
+"....kk.......kk....klk",
+"....................k."
+],
+"pal": {
+"k": "#24201d",
+"l": "#a14808",
+"m": "#21310e",
+"n": "#647025",
+"r": "#2f261d",
+"s": "#898b4c",
+"t": "#bdb39b",
+"u": "#dad0bb"
+}
+}

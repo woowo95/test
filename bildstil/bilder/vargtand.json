@@ -1,0 +1,24 @@
+{
+"id": "vargtand",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 7.8.1)",
+"w": 5,
+"h": 8,
+"rader": [
+".kkk.",
+"klmmk",
+"knrrk",
+"knrrk",
+".krrk",
+".krrk",
+".krk.",
+"..k.."
+],
+"pal": {
+"k": "#24201d",
+"l": "#987e62",
+"m": "#7d5b40",
+"n": "#dad0bb",
+"r": "#bdb39b"
+}
+}
