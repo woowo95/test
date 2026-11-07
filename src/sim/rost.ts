@@ -14,6 +14,7 @@ import { notis } from './notiser';
 import { stridIByn } from './strid';
 import { rikedom } from './varde';
 import { rivScenen } from './stationer';
+import { lagGaller, utanRost } from './lagar';
 
 export const ROST = balans('rost', {
   sparas: 14, // så många omröstningar sparas
@@ -61,7 +62,7 @@ export const ministrarNu = (s: State) => Object.values(s.styre?.ministrar ?? {})
 // varje persons vikt, och andelen av hela byns vikt. Grunden är inflytandet. Sederna flyttar sedan vikt till grupper: Allmogen – Envälde till
 // ledaren, Härkomst till släkternas äldste, Fejd till krigarna och Sammanhållning till ministrarna. En rad i GRUPPER per sed som flyttar vikt
 const GRUPPER: { andel: (s: State) => number; vem: (s: State) => Person[] }[] = [
-  { andel: s => { const l = ledarVikt(s); if (!l) return 0; return Math.max(l.w / (1 + l.w), VIKT.envalde * Math.max(0, s.seder.v.rang ?? 0) ** 2); }, vem: s => { const l = ledareOf(s); return l ? [l] : []; } },
+  { andel: s => { const l = ledarVikt(s); if (!l) return 0; const a = Math.max(l.w / (1 + l.w), VIKT.envalde * Math.max(0, s.seder.v.rang ?? 0) ** 2); return lagGaller(s, 'ledarBunden') ? Math.min(a, 0.5) : a; }, vem: s => { const l = ledareOf(s); return l ? [l] : []; } },
   { andel: s => VIKT.harkomst * Math.max(0, s.seder.v.fortjanst ?? 0), vem: aldste },
   { andel: s => VIKT.fejd * Math.max(0, s.seder.v.fejd ?? 0), vem: krigare },
   { andel: s => VIKT.minister * Math.max(0, s.seder.v.gemenskap ?? 0), vem: ministrarNu },
@@ -82,7 +83,7 @@ export function vikter(s: State) {
 
 // ---------- registret ----------
 export interface Rost { id: number; namn: string; w: number; ja: boolean; why: string; }
-export interface Omrostning { t: number; f: string; namn: string; fram: number; framNamn: string; roster: Rost[]; ja: number; nej: number; gick: boolean }
+export interface Omrostning { t: number; f: string; namn: string; fram: number; framNamn: string; roster: Rost[]; ja: number; nej: number; gick: boolean; varfor?: string }
 export interface Fraga { f: string; d: FragaData; fram: number; prio?: number }
 export type FragaData = Record<string, string | number | undefined>;
 export interface FragaDef {
@@ -126,7 +127,7 @@ export function laggFram(s: State, f: string, d: FragaData, fram: Person, prio =
 const vuxenRost = (s: State, p: Person) => ageOf(p, s.now) >= ALDER.vuxen;
 export function rostaOm(s: State, fr: Fraga) {
   const def = FRAGOR[fr.f], fram = byId(s, fr.fram), st = styreAv(s);
-  const v = vikter(s).filter(x => vuxenRost(s, x.p) && (!s.styre?.utanRost || !s.styre.utanRost.includes(x.p.id)));
+  const v = vikter(s).filter(x => vuxenRost(s, x.p) && !utanRost(s, x.p));
   const roster: Rost[] = v.map(({ p, andel }) => {
     const r = def.rost(s, p, fr.d), gillar = fram && fram !== p ? (s.rels[relKey(p.id, fram.id)]?.op ?? 0) / 100 * ROST.gillar : fram === p ? 1 : 0;
     return { id: p.id, namn: p.name, w: andel, ja: r.v + gillar > 0, why: fram === p ? 'La fram frågan' : r.why };
@@ -150,24 +151,15 @@ export function rostKvall(s: State) {
     if (fram && alive(fram)) rostaOm(s, fr);
   }
 }
-// ledaren eller ministern som har frågan lägger fram det påbud hen vill ändra, en gång varje årstid
-export function pabudFragor(s: State) {
-  const st = styreAv(s), l = ledareOf(s);
-  if (!l) return;
-  for (const k of Object.keys(PABUD) as Pabud[]) {
-    const fram = framFor(s, k) ?? l, ny = PABUD[k].asikt(s, fram), gamla = st.pabud?.[k];
-    if (gamla === undefined || Math.abs(ny - gamla) >= ROST.skillnad) laggFram(s, 'pabud', { k, v: Math.round(ny * 100) / 100 }, fram);
-  }
-}
-
 // ---------- ministrarna (steg 8.3.8) ----------
 export interface MinisterDef { namn: string; nar(s: State): boolean; vem(s: State): Person | undefined; pabud?: Pabud[]; sektion(s: State): number }
 const basta = (s: State, f: (p: Person) => number) => { let b: Person | undefined, bv = -Infinity; for (const p of living(s)) if (vuxenRost(s, p) && f(p) > bv) { bv = f(p); b = p; } return b; };
 export const MINISTRAR: Record<string, MinisterDef> = {
   krigshovding: { namn: 'Krigshövding', nar: s => (s.stat?.vargjakt ?? 0) + (s.stat?.vargstrid ?? 0) + (s.stat?.rovarstrid ?? 0) >= 6 && krigare(s).length >= 3, vem: s => basta(s, p => p.skill.narstrid + p.pot.mod / 4), sektion: s => krigare(s).length },
+  domare: { namn: 'Domare', nar: s => (s.styre?.lagar?.length ?? 0) >= 2, vem: s => basta(s, p => p.pot.intelligens + p.pot.empati / 2), sektion: () => 1 }, // steg 8.4.16
   forvaltare: { namn: 'Förvaltare', nar: s => rikedom(s) >= 800, vem: s => basta(s, p => p.pot.intelligens + p.skill.handel / 2), pabud: ['matlager', 'vedlager', 'torkat'], sektion: s => living(s).length / 4 },
 };
-const framFor = (s: State, k: Pabud) => { for (const [id, m] of Object.entries(MINISTRAR)) if (m.pabud?.includes(k)) { const p = byId(s, s.styre?.ministrar?.[id]); if (p && alive(p)) return p; } return undefined; };
+export const framFor = (s: State, k: Pabud) => { for (const [id, m] of Object.entries(MINISTRAR)) if (m.pabud?.includes(k)) { const p = byId(s, s.styre?.ministrar?.[id]); if (p && alive(p)) return p; } return undefined; };
 // posterna ses över varje årstid, som titeln. Vid Envälde utser ledaren, annars väljer byn
 export function seOverMinistrar(s: State) {
   const l = ledareOf(s), st = styreAv(s);

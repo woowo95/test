@@ -1,3 +1,6 @@
+import { LAG, efterlevs, lagGaller } from './lagar';
+import { think } from './folk';
+import { HOUR } from './typer';
 import { ALDER, ageOf, isParent, living, log } from './folk';
 import { clamp } from './slump';
 import { Act, DAY, Person, Seder, State } from './typer';
@@ -12,6 +15,7 @@ import { UpplevelseTyp, upplevelseSed } from './uppvaxt';
 // Sederna (arbete, gemenskap, barn, nyfikenhet, försiktighet, rang, från -1 till 1) rör sig långsamt mot det invånarna drar åt:
 // var och en efter sin personlighet och de upplevelser hen minns (steg 4.5.4.9). Åldrarna för rösten i sederna och för yrkestaggarna står i ALDER (folk.ts)
 export const SED = balans('seder', {
+  varnaFran: -0.2, varnaTanke: 0.05, // den som drar mer åt Värna än så här blir ledsen, så här mycket per steg
   mitt: 10, // en vanlig människas egenskap (egenskaper går från 1 till 20) ...
   spann: 6, // ... och så mycket över eller under är ett helt steg åt ena hållet
   // åt vilket håll personen drar sederna, efter sin personlighet
@@ -60,6 +64,9 @@ const DEF = {
   // den första vågskålen (steg 3.5.1): låst (står på 0) tills byn fått sin första ledare (sedOppen i styre.ts)
   fortjanst: { pos: 'Härkomst', neg: 'Förtjänst', effect: 'Den duglige eller släkten: Härkomst flyttar vikt till släkternas äldste och ger arv när ledaren byts.', dra: (q, barn) => -dev(q.intelligens) * 0.5 + (barn ? 0.15 : -0.05) },
   fejd: { pos: 'Fejd', neg: 'Förlikning', effect: 'Om konflikter löses med ord eller med styrka: Fejd flyttar vikt till krigarna, och ledaren kan störtas i strid.', dra: q => dev(q.aggression) - dev(q.empati) },
+  krig: { pos: 'Krig', neg: 'Fred', effect: 'Om byn går i strid eller söker fred: Krig gör fler villiga att slåss.', dra: q => dev(q.aggression) * 0.7 + dev(q.mod) * 0.3 - dev(q.empati) * 0.5 }, // steg 8.4.11
+  delning: { pos: 'Delning', neg: 'Ägande', effect: 'Om byn delar lika eller har rika och fattiga: Delning ger mer av det man skaffar till byn.', dra: q => dev(q.empati) * 0.8 - dev(q.intelligens) * 0.1 }, // steg 8.4.12
+  natur: { pos: 'Bruka', neg: 'Värna', effect: 'Om naturen är till för att brukas: fällda träd och dödade djur ger sämre humör för dem som drar åt Värna.', dra: q => dev(q.flit) * 0.5 - dev(q.empati) * 0.5 }, // steg 8.4.13
   rang: { pos: 'Envälde', neg: 'Allmogen', effect: 'Hur mycket ledaren bestämmer: ledarens vikt i sederna och påbuden, och hur hårt ledaren straffar.', dra: q => (dev(q.mod) - dev(q.empati)) * SED.rangDra },
 } satisfies Record<string, SedDef>;
 export type Sed = keyof typeof DEF;
@@ -124,7 +131,13 @@ export function stepSeder(s: State) {
 // ---------- vilja ----------
 // pliktkänsla 0–1: hur mycket personen jobbar för byn i stället för sig själv
 export function duty(s: State, p: Person) {
-  return clamp(SED.pliktBas + (p.pot.flit - SED.mitt) * SED.pliktFlit + (p.pot.empati - SED.mitt) * SED.pliktEmpati + s.seder.v.arbete * SED.pliktSed, SED.pliktMin, SED.pliktMax);
+  const lag = (lagGaller(s, 'arbetsplikt') ? LAG.plikt * efterlevs(s) : 0) + ((p.tjanst ?? 0) > s.now ? LAG.plikt : 0); // arbetsplikten och samhällstjänsten (steg 8.4.1, 8.4.8)
+  return clamp(SED.pliktBas + (p.pot.flit - SED.mitt) * SED.pliktFlit + (p.pot.empati - SED.mitt) * SED.pliktEmpati + s.seder.v.arbete * SED.pliktSed + lag, SED.pliktMin, SED.pliktMax);
+}
+// Värna – Bruka (steg 8.4.13): fällda träd och dödade djur ger sämre humör för dem som drar åt Värna, mer ju starkare de tycker
+export function naturTanke(s: State, text: string) {
+  if (!s.styre?.oppna?.includes('natur')) return;
+  for (const p of living(s)) { const d = drar(s, p).natur; if (d < SED.varnaFran) think(p, text, SED.varnaTanke * d, s.now, 2 * HOUR); }
 }
 // tid räknas mot yrkestaggar och bleknar, så att de senaste åren väger mest
 export const HABIT_FADE = SED.vanaDygn * DAY;

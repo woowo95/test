@@ -1,3 +1,4 @@
+import { LAG, lagGaller } from './lagar';
 import { han } from './ord';
 import { facklaVal } from './ljus';
 import { OMRADE, bynsAvstand, bynsMitt, iByn, omrade, utanforByn } from './omrade';
@@ -443,7 +444,7 @@ export function arbetsTimme(s: State) {
   const fler = 1 + PAB.hander * Math.max(0, pabud(s, 'vinter')); // påbudet Samla för vintern ger fler händer (steg 6.1.19)
   const arb: Record<ArbRad, number> = {
     mat: Math.max(1, Math.ceil(matFattas / VAL.matPass * fler)), ved: Math.max(1, Math.ceil(vedFattas / VAL.vedPass * fler)),
-    bygga: Math.max(1, hus.size * BYGG.perHus), tand: Math.max(1, Math.ceil(n / VAL.tandPer)), leta: Math.max(1, Math.ceil(n / VAL.letaPer)), kol: Math.max(1, kol),
+    bygga: Math.max(1, hus.size * BYGG.perHus * (lagGaller(s, 'dagsverke') ? LAG.dagsverke : 1)), tand: Math.max(1, Math.ceil(n / VAL.tandPer)), leta: Math.max(1, Math.ceil(n / VAL.letaPer)), kol: Math.max(1, kol),
   };
   // och materialens buffert och tak (forradsmal.ts, steg 6.2.14) och byns del av projektens värde (steg 6.2.21: hur mycket
   // byn saknar av varje projekt, frågat en gång i timmen i stället för av varje person i varje val)

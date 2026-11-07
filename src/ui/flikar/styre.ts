@@ -1,4 +1,4 @@
-import { MINISTRAR, TRONFOLJD_TEXT, tronfoljd, DAY, LED, PABUD, PABUD_LIST, Pabud, Rattegang, SEDER, STR, STRAFF_NAMN, VAGSKALAR, byId, legitimitet, ledareOf, onskatDygn, pabud, pabudAndel, rattegang, styrelseform, timeLabel, torkAndel } from '../../sim';
+import { LAG, LAGAR, efterlevs, lagTak, lagarNu, MINISTRAR, TRONFOLJD_TEXT, tronfoljd, DAY, LED, PABUD, PABUD_LIST, Pabud, Rattegang, SEDER, STR, STRAFF_NAMN, VAGSKALAR, byId, legitimitet, ledareOf, onskatDygn, pabud, pabudAndel, rattegang, styrelseform, timeLabel, torkAndel } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { bar, esc, hjalpKnapp, hjalpText, num, pLink } from '../hjalp';
 import { s } from '../lage';
@@ -35,7 +35,7 @@ export const styre: Flik = {
       return `<li title="${esc(d.effect)}">${sedVag(x, esc(d.neg), esc(d.pos))}</li>`;
     }).join('');
     const hist = st.historia.slice().reverse().map(h => `<li><span class="when">${timeLabel(s, h.fran)}</span>${pLink(byId(s, h.id)) === '–' ? esc(h.namn) : pLink(byId(s, h.id))}, ${esc([...(h.forr ?? []), h.titel].map(x => x.toLowerCase()).join(', sedan '))}${h.till !== undefined ? ` – ${dygnTxt(h.till - h.fran)}, ${esc(h.slut ?? '')}` : ''}</li>`).join('');
-    return `${ledare}<h3>Vågskålar</h3><ul class="seder">${skalar}</ul>${omrostningar()}${rattegangar()}<h3>Byns ledare</h3><ol class="logg">${hist}</ol>`;
+    return `${ledare}<h3>Vågskålar</h3><ul class="seder">${skalar}</ul>${lagarDel()}${omrostningar()}${rattegangar()}<h3>Byns ledare</h3><ol class="logg">${hist}</ol>`;
   },
 };
 
@@ -60,6 +60,12 @@ export function pabudDel() {
       : `<div class="ruta bred"><div class="rutnamn">${esc(namn)}</div><dl class="kv smal">${ks.map(k => rad(k, false)).join('')}</dl></div>`).join('')}</div>`;
 }
 
+// lagarna (steg 8.4.1): en symbol per lag och en för straffet; texten kommer fram vid hovring. Hur väl de efterlevs och taket (steg 8.4.3, 8.4.9)
+function lagarDel() {
+  const lagar = lagarNu(s);
+  if (!lagar.length) return '';
+  return `<h3>Lagar <span class="muted small">${lagar.length} av ${lagTak(s)} · efterlevs ${Math.round(efterlevs(s) * 100)} %</span></h3><ul class="rels">${lagar.slice(0, LAG.takVisas).map(l => { const d = LAGAR[l.id]; return `<li title="${esc(`${d.text}. ${d.om ? `Kom efter ${d.om}. ` : ''}Straffet: ${STRAFF_NAMN[l.straff].toLowerCase()}.`)}">${d.sym} ${esc(d.namn)} <span class="muted">${esc(STRAFF_NAMN[l.straff])}</span></li>`; }).join('')}</ul>`;
+}
 // ministrarna (steg 8.3.8): en rad per post
 function ministrar() {
   return Object.entries(s.styre?.ministrar ?? {}).map(([id, pid]) => { const q = byId(s, pid); return q ? `<li>${pLink(q)}<span></span><span></span><span class="muted">${esc(MINISTRAR[id]?.namn ?? id)}</span></li>` : ''; }).join('');
@@ -70,7 +76,7 @@ function omrostningar() {
   if (!lista?.length) return '';
   return `<h3>Omröstningar</h3><ol class="logg">${lista.slice().reverse().map(o => {
     const id = `rost-${o.t}-${o.f}`, val = o.f === 'ledare';
-    return `<li class="klick" data-hjalp="${id}" data-hjalp-grupp="rost-" title="Tryck för alla röster" tabindex="0" role="button"><span class="when">${timeLabel(s, o.t)}</span>${esc(o.namn)}${val ? `: ${esc(o.framNamn)}` : ` ${o.gick ? '✅' : '❌'}`} <span class="muted">${val ? '' : `(${Math.round(o.ja * 100)} % mot ${Math.round(o.nej * 100)} %)`}</span></li>${hjalpText(id, `<li class="small"><p class="muted">${val ? '' : `Lades fram av ${esc(o.framNamn)}.`}</p><ul class="rels">${o.roster.slice().sort((a, b) => b.w - a.w).map(r => `<li title="${esc(r.why)}">${val ? '🗳️' : r.ja ? '👍' : '👎'} ${esc(r.namn)} <span class="muted">${Math.round(r.w * 100)} % · ${esc(r.why)}</span></li>`).join('')}</ul></li>`)}`;
+    return `<li class="klick" data-hjalp="${id}" data-hjalp-grupp="rost-" title="Tryck för alla röster" tabindex="0" role="button"><span class="when">${timeLabel(s, o.t)}</span>${esc(o.namn)}${val ? `: ${esc(o.framNamn)}` : ` ${o.gick ? '✅' : '❌'}`} <span class="muted">${val ? '' : `(${Math.round(o.ja * 100)} % mot ${Math.round(o.nej * 100)} %)`}</span></li>${hjalpText(id, `<li class="small"><p class="muted">${val ? '' : `Lades fram av ${esc(o.framNamn)}.`} ${o.varfor ? esc(o.varfor) : ''}</p><ul class="rels">${o.roster.slice().sort((a, b) => b.w - a.w).map(r => `<li title="${esc(r.why)}">${val ? '🗳️' : r.ja ? '👍' : '👎'} ${esc(r.namn)} <span class="muted">${Math.round(r.w * 100)} % · ${esc(r.why)}</span></li>`).join('')}</ul></li>`)}`;
   }).join('')}</ol>`;
 }
 // rättegångarna (steg 3.10.17): en rad per dom, nyast först. Ett tryck visar berättelsen och hur domen gick till

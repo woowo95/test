@@ -691,6 +691,7 @@ SCENARIER.ryggsack = {
       const c0 = r.c; let korg = false;
       setMat(s, { bar: 0 }); // maten är slut, så byn samlar
       for (let i = 0; i < 480 && samlade < 3; i++) {
+        setMat(s, { bar: 0 }); // maten är fortfarande slut
         kor(s, 1);
         for (const q of living(s)) {
           if (!SIM.ryggsack(s, q)) continue;

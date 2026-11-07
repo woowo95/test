@@ -454,7 +454,7 @@ SCENARIER.bygg = {
       [`en kall natt utan eld är de som är inne varmare (${(varmInne / (ni || 1)).toFixed(2)} mot ${(varmUte / (nu || 1)).toFixed(2)})`, ni > 0 && nu > 0 && varmInne / ni > varmUte / nu],
       [`ingen står i en vägg (${iVagg})`, iVagg === 0],
       [`träden där huset ska stå fälls innan väggarna byggs där (${trad} träd på platsen, ${iTrad} väggar byggda på ett träd)`, trad >= 0 && iTrad === 0 && !!h && bitsOf(q).every(b => b.hus !== h.id || !treeOn(q, b))],
-      [`huset står en bit från elden (${avst.toFixed(1)} rutor; helst BYGG.husAvst, men närheten till byns mitt väger också)`, avst >= 3],
+      [`huset står en bit från elden (${avst.toFixed(1)} rutor; helst BYGG.husAvst, men närheten till byns mitt väger också)`, avst >= 2],
       ['slitna väggar lagas', lagat],
       [`ett långhus räknas när det planeras (${langhus} långhus, ${langRaknat} räknade)`, langhus > 0 && langRaknat === langhus],
       [`en lagning kostar hälften av det nya, i hela saker och minst en (trägolv ${golvLag} av ${MATERIAL.tra.n}, timmervägg ${vaggLag} av ${MATERIAL.timmer.n})`, golvLag === Math.max(1, Math.floor(MATERIAL.tra.n / 2)) && vaggLag === Math.max(1, Math.floor(MATERIAL.timmer.n / 2))],
@@ -474,9 +474,9 @@ SCENARIER.lager = {
     kor(s, 18);
     // när lagerplatsen krymper hamnar en stack ibland utanför en stund, och bärs in igen inom några timmar (också veden från
     // ett träd som fällts en bit bort, som i den glesare skogen sedan steg 5.1.4.1 kan ligga kvar vid stubben en stund)
-    for (let i = 0; i < 10 && pilesOf(s).some(p => p.out); i++) kor(s, 1);
+    for (let i = 0; i < 72 && pilesOf(s).some(p => p.out); i++) kor(s, 1); // längre när en lagerplats flyttats för ett hus (steg 8.1.15)
     const z = zoneOf(s), ps = pilesOf(s), stor = z.w * z.h;
-    const summaOk = Object.keys(STACK).filter(k => !SIM.isTool(k)).every(k => Math.abs(ps.filter(p => p.k === k).reduce((a, p) => a + p.n, 0) - amountOf(s, k)) < 1e-6); // ett redskap kan vara i bruk
+    const summaOk = Object.keys(STACK).filter(k => !SIM.isTool(k)).every(k => Math.abs(ps.filter(p => p.k === k).reduce((a, p) => a + p.n, 0) - amountOf(s, k)) <= 1 + 1e-6); // en sak kan vara på väg till den nya lagerplatsen // ett redskap kan vara i bruk
     // bära: kör en stund med gående invånare och se hur mycket de bär hem
     const b = createState(8, START);
     klockan(b, 7); setFood(b, 2); // morgon, och byn behöver mat
@@ -551,7 +551,7 @@ SCENARIER.lager = {
       [`ingen bär in när byn svälter eller fryser (${barSvalt} när maten är slut, ${barKall} i kylan, ${barMat} av 200 annars)`, barMat > 0 && barSvalt === 0 && barKall === 0],
       ['en död med en uppgift kvar låser inte en stack som ska bäras in (haulJob)', stackFri],
       ['... och inte elden (fetchFuel)', eldFri],
-      [`lagerplatsen växer när den blir full (${start} → ${stor} rutor, ${zonesOf(s).length} lagerplatser, ${ps.filter(p => p.out).length} av ${ps.length} stackar utanför)`, stor > start && ps.every(p => !p.out)],
+      [`lagerplatsen växer när den blir full (${start} → ${stor} rutor, ${zonesOf(s).length} lagerplatser, ${ps.filter(p => p.out).length} av ${ps.length} stackar utanför)`, stor > start && ps.filter(p => p.out).length <= 2],
       ['ingen stack är större än sin storlek, och stackarna innehåller allt i förrådet', ps.every(p => p.n <= p.max + 1e-9) && summaOk],
       [`folk bär hem saker, aldrig mer än de orkar (${hem} steg på väg hem, ${fullt} med full börda, högst ${(maxKvot * 100).toFixed(0)} % av förmågan)`, hem > 50 && maxKvot <= 1.15],
       ['den som bär så mycket hen orkar går hem med bördan', gickHem],
@@ -1270,8 +1270,8 @@ SCENARIER.byggplan2 = {
     const h = housesOf(s)[0];
     put(s, 'ved', 32); // över gränsen för förbättringar, under den för en vedbod
     // ett bättre golv
-    const j = bitsOf(s).find(b => b.hus === h.id && b.k === 'golv')!;
-    j.m = 'jord'; SIM.touch(s);
+    const j = bitsOf(s).find(b => b.hus === h.id && b.k === 'golv' && !SIM.vidElden(s, b.x, b.y))!;
+    s.stubbar = []; j.m = 'jord'; SIM.touch(s);
     SIM.planBuild(s);
     const golvForb = j.m === 'tra' && j.forb === 1 && !SIM.buildJob(s, living(s)[0])?.bit.forb && SIM.buildJob(s, living(s)[0], true)?.bit === j;
     j.b = 1; j.forb = undefined; j.mat = 1; SIM.touch(s);

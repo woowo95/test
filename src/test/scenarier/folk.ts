@@ -1757,7 +1757,7 @@ SCENARIER.merliv = {
     const bma = besk(ma);
     // räknarna fylls i en vanlig by
     const by = createState(3, START);
-    kor(by, 8 * 24);
+    kor(by, 14 * 24);
     const liv = by.people.filter(p => p.liv && Object.keys(p.liv).some(k => !k.startsWith('t:'))).length;
     const alla = [...living(t), ...living(by)].map(besk);
     const nya = ['besk_barn', 'besk_foraldralos', 'besk_forstFodd', 'besk_grundarbarn', 'besk_bast', 'besk_vargar', 'besk_vardat', 'besk_hus', 'besk_larare', 'besk_larling', 'besk_raddVarg', 'besk_overlevt', 'besk_mastarverk', 'besk_egetHus', 'besk_rik', 'besk_fattig', 'besk_ledare', 'besk_skam', 'besk_arv', 'besk_langtan'];

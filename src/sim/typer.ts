@@ -191,6 +191,7 @@ export interface Person {
   sinnen?: number; // karisman gånger detta, när synen, hörseln eller talet är sämre (steg 8.2.2)
   svimmat?: boolean; // ligger medvetslös (steg 8.2.6)
   missnoje?: number; // missnöjet med styret, 0–1 (steg 8.3.10, rost.ts)
+  straffad?: boolean; utanRost?: boolean; tjanst?: number; brottsling?: boolean; // straffen (steg 8.4.8): straffad, förlorad röst, samhällstjänsten till, avrättad
   naring?: Record<import('./naring').Naring, number>; // näringsvärdena 0–1; mättnaden (hunger) är en sammanfattning av dem (steg 2.6.1, naring.ts)
   langtan?: Partial<Record<import('./naring').Naring, number>>; // vad andra berättat att de längtar efter, och till när man minns det (steg 2.6.2)
   habit: Record<string, number>; // timmar per aktivitet, bleknar med tiden (ger yrkestaggar)
@@ -294,6 +295,7 @@ export interface State {
   barbuskar?: number; // 1 = bärbuskarna är utsådda (steg 6.5.4, buskar.ts)
   tradAlder?: string; // trädens ålder efter att de vuxit klart, dygn per ruta, packat (trad.ts, steg 5.1.4.2)
   stockar?: Stock[]; // fällda träd som ligger och väntar på att huggas
+  tabun?: import('./lagar').Tabu[]; // farliga platser som hela byn undviker (steg 8.4.10)
   kvarlevor?: import('./kvarlevor').Kvarleva[]; nextKvar?: number; // det som blir kvar av en människa (steg 8.2.3, kvarlevor.ts)
   lager?: { x: number; y: number; w: number; h: number }; // lagerplatsen, rutor
   mat?: Record<string, number>; // äldre sparfiler (före v40): maten per slag

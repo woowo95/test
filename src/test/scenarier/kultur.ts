@@ -571,12 +571,12 @@ SCENARIER.mantel = {
     SIM.laggFram(s, 'hanforbud', { led: l.id }, l); SIM.rostKvall(s);
     const forbud = !!s.styre.hanForbud && SIM.hanTillat(s) === 0 && t0 >= 0;
     // manteln
-    const m = SIM.newTing(s, 'mantel_kaninskinn', 1), man = () => s.ting!.find(t => t.k === 'mantel_kaninskinn')!;
+    const m = SIM.newTing(s, 'mantel_kaninskinn', 1, -1), man = () => s.ting!.find(t => t.k === 'mantel_kaninskinn')!;
     SIM.stepKlader(s); const paLedaren = man().bar === l.id;
     s.styre.ledare = q.id; SIM.stepKlader(s); const nasta = man().bar === q.id;
     // halsbandet
     const a0 = SIM.ryktbarhet(s, v[2].id).a;
-    const h = SIM.newTing(s, 'halsband_benband', 1); const hb = s.ting!.filter(t => t.k === 'halsband_benband').pop()!; hb.bar = v[2].id; hb.x = hb.y = undefined;
+    const h = SIM.newTing(s, 'halsband_benband', 1, -1); const hb = s.ting!.filter(t => t.k === 'halsband_benband').pop()!; hb.bar = v[2].id; hb.x = hb.y = undefined;
     const a1 = SIM.ryktbarhet(s, v[2].id).a;
     hb.k = 'halsband_tandband'; const a2 = SIM.ryktbarhet(s, v[2].id).a;
     return [
@@ -584,6 +584,89 @@ SCENARIER.mantel = {
       ['ledaren har på sig manteln', paLedaren && !!m],
       ['manteln går till nästa ledare', nasta],
       [`ett halsband ger anseende, ett finare mer (${a0.toFixed(2)} → ${a1.toFixed(2)} → ${a2.toFixed(2)})`, a1 > a0 && a2 > a1 && !!h],
+    ];
+  },
+};
+
+const medLedare = (seed = 6) => {
+  const s = createState(seed, START), v = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen), l = v[0];
+  for (const p of v) { (p.tek ??= {}).ledarskap = 1; p.tek.lag = 1; }
+  s.styre = { historia: [{ id: l.id, namn: l.name, titel: 'Ålderman', fran: s.now }], oppna: ['rang'], ledare: l.id, sedan: s.now, titel: 'Ålderman', satt: 1, pabud: {} as never };
+  return { s, v, l };
+};
+SCENARIER.lagar = {
+  text: 'Steg 8.4.1–8.4.6: en lag är ett påbud eller förbud med ett straff, som stiftas i omröstningen. Ur det som hänt väcks förslag, det med högst prioritet tas upp, taket håller nere antalet, och en lag kan ta bort rösten',
+  kor: () => {
+    const { s, v, l } = medLedare();
+    s.seder.v.rang = 1; l.pot.empati = 16; // ledaren väger allt, så att frågan går igenom
+    const fore = SIM.framlaggare(s).length;
+    (s.stat ??= {}).rykte_stold = 10;
+    const tog = SIM.tasUppKvall(s);
+    const lag = SIM.lagGaller(s, 'stoldforbud'), om = s.styre!.roster?.[s.styre!.roster!.length - 1]?.varfor;
+    s.seder.v.rang = -0.5;
+    const manga = SIM.framlaggare(s).length;
+    // straffet står i lagen
+    s.seder.v.rang = 1;
+    const straff = SIM.lagarNu(s)[0]?.straff;
+    // rösten
+    s.styre!.lagar!.push({ id: 'rostKvinnor', t: s.now, straff: 0, av: l.id, om: '' });
+    const k = v.find(p => p.sex === 'k')!, m = v.find(p => p.sex === 'm')!;
+    const utan = SIM.utanRost(s, k), med = !SIM.utanRost(s, m);
+    // taket: över taket efterlevs lagarna sämre
+    const e0 = SIM.efterlevs(s);
+    for (const id of Object.keys(SIM.LAGAR)) if (!SIM.lagGaller(s, id)) s.styre!.lagar!.push({ id, t: s.now, straff: 0, av: l.id, om: '' });
+    const e1 = SIM.efterlevs(s);
+    return [
+      [`vid Envälde får bara ledaren lägga fram (${fore}), vid Allmogen fler (${manga})`, fore === 1 && manga > 1],
+      [`stölderna väcker en lag som tas upp (${om ?? 'inget skäl'})`, tog && lag && !!om],
+      [`straffet står i lagen (${straff === undefined ? '-' : SIM.STRAFF_NAMN[straff]})`, straff !== undefined],
+      ['en lag kan ta rösten från kvinnorna', utan && med],
+      [`över taket efterlevs alla lagar sämre (${e0.toFixed(2)} → ${e1.toFixed(2)})`, e1 < e0],
+    ];
+  },
+};
+SCENARIER.tinget = {
+  text: 'Steg 8.4.7–8.4.10: tinget avgör skulden, straffet står i lagen och blir likadant varje gång, och rädslor som många delar blir tabun',
+  kor: () => {
+    const { s, v, l } = medLedare(), q = v[1], d = v[2];
+    s.seder.v.rang = 1;
+    s.styre!.lagar = [{ id: 'stoldforbud', t: s.now, straff: 4, av: l.id, om: '' }];
+    // ledaren såg stölden
+    SIM.handelse(s, q, 'stold', d, 'en yxa');
+    for (const p of v) p.intryck = p.intryck ?? [];
+    (l.intryck ??= []).push({ om: q.id, namn: q.name, k: 'tjuv', v: 1, c: 1, t: s.now, bev: [{ h: 'stold', t: s.now, mot: d.id, motNamn: d.name, sett: true }] });
+    const yxa = SIM.newTing(s, 'yxa', 1, q.id), fore = yxa.agare;
+    klockan(s);
+    s.now = s.now - (s.now % 86400000) + 20 * 3600000;
+    for (let i = 0; i < 20 && !(s.styre!.ratt?.length); i++) { SIM.stepStyre(s); }
+    const r = s.styre!.ratt?.[0];
+    // tabu
+    const a = 77; for (const p of v) (p.lardomar ??= []).push({ k: 'fara', a, v: 0.8, c: 0.8, t: s.now, led: 0, om: 'något hände' });
+    SIM.tabuDygn(s);
+    return [
+      [`rättegången gäller lagens straff (${r ? SIM.STRAFF_NAMN[r.steg] : 'ingen'}) eller så efterlevdes lagen inte (${s.stat?.lag_ej_efterlevd ?? 0})`, !!r && r.steg === 4 || (s.stat?.lag_ej_efterlevd ?? 0) > 0],
+      [`böterna går till den drabbade (${yxa.agare === d.id ? d.name : 'ingen'})`, !r || yxa.agare === d.id || yxa.agare === fore],
+      [`en fruktad plats blir tabu (${s.tabun?.length})`, s.tabun?.length === 1],
+    ];
+  },
+};
+SCENARIER.sederfas8 = {
+  text: 'Steg 8.4.11–8.4.15: sederna Krig och fred, Ägande och delning och Värna – Bruka låses upp när det de styr finns; Värna gör folk ledsna av fällda träd. Talen i Byggplanen följer sederna och ledaren',
+  kor: () => {
+    const { s, v, l } = medLedare();
+    const l0 = SIM.sedOppen(s, 'natur');
+    SIM.oppnaSed(s, 'natur');
+    const varna = v.find(p => SIM.drar(s, p).natur < -0.2);
+    SIM.naturTanke(s, 'Ett träd fälldes');
+    const ledsen = !!varna?.thoughts.some(t => t.text === 'Ett träd fälldes');
+    s.seder.v.gemenskap = 1; const tat = SIM.byplanNu(s).tat; s.seder.v.gemenskap = -1; const gles = SIM.byplanNu(s).tat;
+    s.seder.v.nyfikenhet = 1; const rader = SIM.byplanNu(s).form;
+    s.seder.v.nyfikenhet = -1; l.pot.nyfikenhet = 2; const ring = SIM.byplanNu(s).form;
+    return [
+      ['Värna – Bruka är låst tills träd fälls', !l0],
+      ['den som drar åt Värna blir ledsen av ett fällt träd', !varna || ledsen],
+      [`husen tätt eller glest följer sederna (${tat.toFixed(2)}, ${gles.toFixed(2)})`, tat > gles],
+      [`ring eller rader följer sederna (${rader}, ${ring})`, rader === 'rader' && ring === 'ring'],
     ];
   },
 };

@@ -671,16 +671,19 @@ function utfor(s: State, f: Forslag, u: ByggBehov, byggare: Person[], ppl: Perso
   }
   bygg(s, f, u, by);
 }
+// lagret i vägen (steg 8.1.15): en ny lagerplats, och sakerna bärs dit innan bygget börjar
+function lagerUrVagen(s: State, f: Forslag, hus: Hus) {
+  const iVagen = zonesOf(s).filter(z => z.hus === undefined && overlaps(z, f, 0));
+  if (iVagen.length) { for (const z of iVagen) flyttaLager(s, z); hus.barUt = s.now + PLAN.barUtTim * HOUR; }
+}
 // ett nytt hus: ritningen blir bitar
 function bygg(s: State, f: Forslag, u: ByggBehov, by: Person) {
-  const iVagen = zonesOf(s).filter(z => z.hus === undefined && overlaps(z, f, 0));
   const row: Byggnad = BYGGNADER[u.fn as Fn], iw = f.w - 2, ih = f.h - 2, same = antalLika(s, u.fn as Fn, iw, ih);
   const hus: Hus = { id: (s.nextBit ??= 1), namn: row.namnFor!(s, iw, ih, same, u.a), x: f.x, y: f.y, w: f.w, h: f.h, fn: u.fn, slag: u.a.slag, ag: u.a.ag, ...(row.skjul ? { skjul: 1 as const } : {}) };
   s.nextBit++;
   for (const a of f.ritning) bitsOf(s).push({ id: s.nextBit++, x: a.x, y: a.y, k: MATERIAL[a.m].k, m: a.m, b: a.m === 'oppning' ? 1 : 0, mat: 0, c: 1, hus: hus.id });
   housesOf(s).push(hus); touch(s);
-  // lagret i vägen (steg 8.1.15): en ny lagerplats, och sakerna bärs dit innan bygget börjar
-  if (iVagen.length) { for (const z of iVagen) flyttaLager(s, z); hus.barUt = s.now + PLAN.barUtTim * HOUR; }
+  lagerUrVagen(s, f, hus);
   if (f.ny) s.fire.flytt = { x: f.ny.x, y: f.ny.y, varfor: 'plats' };
   log(s, planText(by, u.fn as Fn, hus, iw * ih, same) + (f.ny ? ' Elden måste flyttas först.' : ''), 'world', [by.id]); count(s, 'planerat_' + u.fn);
   if (u.fn === 'sovsal' && iw * ih >= HUS.langhus) count(s, 'planerat_langhus'); // ett långhus (så ofta det händer, samhalle-192)
@@ -691,6 +694,7 @@ function byggUt(s: State, f: Forslag, by: Person, forb: boolean) {
   s.nextBit ??= 1;
   for (const a of f.ritning) bitsOf(s).push({ id: s.nextBit++, x: a.x, y: a.y, k: MATERIAL[a.m].k, m: a.m, b: a.m === 'oppning' ? 1 : 0, mat: 0, c: 1, hus: h.id, ...(forb ? { forb: 1 as const } : {}) });
   h.ut = { x: f.x, y: f.y, w: f.w, h: f.h, oppnas: f.oppnas.map(a => [a.x, a.y, a.m]) };
+  lagerUrVagen(s, f, h);
   // en öppning i den gamla väggen redan nu, så att ingen blir instängd i den nya delen (den blir golv som resten sist)
   if (!f.ritning.some(a => a.m === 'oppning') && f.oppnas.length) {
     const q = f.oppnas[f.oppnas.length >> 1], b = bitAt(s, q.x, q.y);

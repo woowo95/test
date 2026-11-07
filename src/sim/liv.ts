@@ -88,6 +88,7 @@ const DOD = {
   tornado: { text: 'i en tornado', gud: 'aska' }, // steg 3.8.4 (tornado.ts)
   brand: { text: 'i en eldsvåda', gud: 'elden' }, // steg 3.8.5 (brand.ts)
   rovare: { text: 'av rövare', gud: 'kriget', sorg: true }, // steg 4.4.5 (rovare.ts)
+  avrattad: { text: 'för sitt brott', gud: 'kriget' }, // dödsstraffet (steg 8.4.8)
   drap: { text: 'av våld', gud: 'kriget' }, // slagen till döds i ett utbrott (steg 3.2.3, humor.ts)
 } satisfies Record<string, DodDef>;
 export type Dodsorsak = keyof typeof DOD;

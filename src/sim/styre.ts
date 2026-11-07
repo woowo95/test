@@ -1,6 +1,8 @@
 import { honom, slaktOrd } from './ord';
 import { ALDER, REL, ageOf, alive, byId, count, franMitt, isKin, isParent, living, log, relKey, stat, think } from './folk';
-import { ROST, missnojeLatt, missnojeNoll, missnojeStrafft, missnojeTimme, oppnaSed, pabudFragor, rostKvall, seOverMinistrar, vikter } from './rost';
+import { efterlevs, lagForBrott, tasUppKvall, tabuDygn } from './lagar';
+import type { Lag } from './lagar';
+import { ROST, FRAGOR, rostaOm, missnojeLatt, missnojeNoll, missnojeStrafft, missnojeTimme, oppnaSed, rostKvall, seOverMinistrar, vikter } from './rost';
 import type { Fraga, Fraktion, Omrostning, Rost } from './rost';
 import { stridIByn } from './strid';
 import { ARSTIDER, Fyllning, fyll, kronikaBer, och, personFalt, valjVariant } from './berattelser';
@@ -10,6 +12,10 @@ import { moodOf } from './humor';
 import { clamp } from './slump';
 import { DAY, HOUR, Person, State } from './typer';
 import { balans } from './balans';
+import { grundvarde } from './varde';
+import { sakNamn } from './saker';
+import { ownMove, ownsAmount } from './lager';
+import { rnd } from './slump';
 import { UPPV, upplev } from './uppvaxt';
 import { kronika } from './historik';
 import { Sed, drar, influence } from './seder';
@@ -75,6 +81,10 @@ export const TRON = balans('tron', {
   krisMiss: 0.15, // tronföljdskrisen gör byn så här missnöjd
 });
 export const STR = balans('straff', {
+  holmgang: 0.5, // vid så här mycket Fejd avgörs tvister med holmgång (steg 8.4.7)
+  tingRost: 0, // vid så här lite Envälde avgör byn skulden i en omröstning
+  tjanstDygn: 2, // samhällstjänsten varar så här många dygn (år i spelet)
+  bot: 5, // så många saker betalas i böter när den dömde inte äger något redskap
   dygn: 2, // ledaren dömer för det som hänt de senaste så här många dygnen
   timme: 20, // på kvällen vid den här timmen
   rang: 1, // hårdheten: 1 + rang × Envälde + empati × (10 - empatin) / 10 + humor × (0,5 - humöret), mellan min och max
@@ -176,7 +186,7 @@ export interface Styre {
   satt?: number; vunna?: number; // hur väl sättet ledaren tillsattes på passar sederna, och strider som vunnits (steg 8.3.9)
   frak?: Fraktion; frakVald?: number; lugn?: number; // fraktionen, dess ledare efter ett skifte och när nästa fraktion tidigast bildas (steg 8.3.11–8.3.12)
   hanForbud?: boolean; hanSedd?: number; // förbudet mot hån (steg 8.3.13)
-  utanRost?: number[]; // de som en lag tagit rösten från (steg 8.4.6)
+  lagar?: Lag[]; nedrostat?: Record<string, number>; // lagarna och det som nyss röstats ned (system 8.4, lagar.ts)
 }
 // en rättegång (steg 3.10.17): det som behövs för att visa den. Texten skrivs när den visas (rattegang nedan), med domens timme
 export interface Rattegang {
@@ -194,7 +204,8 @@ export const styreAv = styreOf;
 export const ledareOf = (s: State) => { const id = s.styre?.ledare; const p = id === undefined ? undefined : byId(s, id); return p && alive(p) ? p : undefined; };
 // makt-sederna (Skalor som låses upp) syns i Styre och är låsta tills det de styr finns i byn
 export const MAKT_SEDER: readonly Sed[] = ['rang', 'fortjanst', 'fejd'];
-export const sedOppen = (s: State, k: Sed) => !MAKT_SEDER.includes(k) || !!s.styre?.oppna.includes(k);
+const LASTA_SEDER: readonly Sed[] = [...MAKT_SEDER, 'krig', 'delning', 'natur'];
+export const sedOppen = (s: State, k: Sed) => !LASTA_SEDER.includes(k) || !!s.styre?.oppna.includes(k);
 
 // ---------- legitimiteten ----------
 export function legitimitet(s: State) {
@@ -235,7 +246,6 @@ function sattPabud(s: State, l: Person, ai: number) {
   const st = styreOf(s), forr = st.pabud;
   st.pabud ??= Object.fromEntries(PABUD_LIST.map(k => { const d: PabudDef = PABUD[k]; return [k, d.sed ? s.seder.v[d.sed] : 0]; }));
   st.pabudAi = ai;
-  pabudFragor(s);
   if (!forr) log(s, `${l.name} vill bestämma hur stora förråd byn ska ha.`, 'world', [l.id]);
 }
 
@@ -376,7 +386,18 @@ function slutar(s: State, varfor: string) {
 }
 
 // ---------- straffen ----------
-const STRAFF = ['tillrättavisar', 'skämmer ut', 'slår', 'driver ut'] as const;
+// straffen (steg 8.4.8), från mildast till hårdast. Numren är de som rättegångarna sparar. Kräver = det som måste finnas i byn
+export const STRAFF_REG = [
+  { id: 0, namn: 'Tillrättavisning', da: 'tillrättavisade', inf: 'få höra hur fel det var', nu: 'tillrättavisar' },
+  { id: 1, namn: 'Skam', da: 'skämde ut', inf: 'skämmas ut inför alla', nu: 'skämmer ut' },
+  { id: 2, namn: 'Slag', da: 'slog', inf: 'få stryk', nu: 'slår' },
+  { id: 3, namn: 'Utvisning', da: 'drev ut', inf: 'drivas ut ur byn', nu: 'driver ut' },
+  { id: 4, namn: 'Böter', da: 'dömde till böter', inf: 'betala böter till den drabbade', nu: 'dömer till böter' },
+  { id: 5, namn: 'Samhällstjänst', da: 'dömde till extra arbete', inf: 'arbeta extra för byn', nu: 'dömer till extra arbete' },
+  { id: 6, namn: 'Döden', da: 'dömde till döden', inf: 'dö', nu: 'dömer till döden' },
+  { id: 7, namn: 'Förlorad rätt', da: 'tog rösten från', inf: 'förlora rösten', nu: 'tar rösten från' },
+] as const;
+const STRAFF = STRAFF_REG.map(r => r.nu);
 const BROTT = new Set<HandelseTyp>(['stold', 'stoldLindrig', 'sla', 'misshandel', 'drap', 'logn', 'overdrev']);
 // straffets steg (0 till 3) för vikten v gånger hårdheten
 function stegOf(v: number, h: HandelseTyp, rang: number) {
@@ -410,10 +431,23 @@ function doma(s: State, l: Person) {
     const q = byId(s, id)!;
     for (const e of l.intryck ?? []) if (e.om === id) for (const x of e.bev ?? []) if (BROTT.has(x.h)) domt.push(`${id}:${x.h}:${Math.round(x.t)}`);
     const nara = l.partner === id || isKin(l, q) || (s.rels[relKey(l.id, id)]?.op ?? 0) > REL.van;
-    const vikt = HANDELSER[b.h].vikt, steg = stegOf(vikt * hard0 * (nara ? STR.nara : 1), b.h, rang);
+    // lagen (steg 8.4.2): straffet står i lagen och blir likadant varje gång. Den efterlevs inte alltid (steg 8.4.9)
+    const lag = lagForBrott(s, b.h);
+    if (lag && rnd(s, 'val') >= efterlevs(s)) { count(s, 'lag_ej_efterlevd'); continue; }
+    // tinget (steg 8.4.7): vid Allmoge avgör byn skulden i en omröstning. Vid Fejd kan den anklagade kräva holmgång med den drabbade: den som vinner har rätt
+    const drabbad = b.mot !== undefined ? byId(s, b.mot) : undefined;
+    if (lag && (s.seder.v.fejd ?? 0) >= STR.holmgang && drabbad && alive(drabbad) && drabbad !== q && ageOf(drabbad, now) >= ALDER.vuxen) {
+      const hg = stridIByn(s, 'skada', [[q], [drabbad]], 'en holmgång');
+      count(s, 'holmgang');
+      log(s, `${q.name} och ${drabbad.name} gjorde upp i en holmgång.`, 'rel', [q.id, drabbad.id]);
+      if (hg.slut!.vinnare === 0 || !alive(q)) continue;
+    } else if (lag && rang <= STR.tingRost && !Object.values(st.ministrar ?? {}).length && FRAGOR.skuld) {
+      if (!rostaOm(s, { f: 'skuld', d: { om: id, namn: q.name }, fram: l.id })) { count(s, 'friad'); log(s, `Byn friade ${q.name} på tinget.`, 'rel', [q.id]); continue; }
+    }
+    const vikt = HANDELSER[b.h].vikt, steg = lag ? lag.straff : stegOf(vikt * hard0 * (nara ? STR.nara : 1), b.h, rang);
     // det byn tycker är lagom: vikten gånger hårdheten som sederna godtar
-    const lagom = stegOf(vikt * clamp(1 + STR.rang * rang, STR.min, STR.max), b.h, rang);
-    const orattvist = steg > lagom || (nara && steg < lagom) || !!b.falsk;
+    const lagom = lag ? lag.straff : stegOf(vikt * clamp(1 + STR.rang * rang, STR.min, STR.max), b.h, rang);
+    const orattvist = lag ? !!b.falsk : steg > lagom || (nara && steg < lagom) || !!b.falsk;
     const sett = vittnen(s, l).filter(x => x !== q);
     const r: Rattegang = { t: now, led: l.id, ledNamn: l.name, om: id, namn: q.name, b: { ...b }, ...kanner(s, l, q, b), hard: hard0, ...delar,
       ...(nara ? { nara: true } : {}), steg, lagom, publik: sett.length, ...(v.lage === 'regn' ? { regn: true } : {}), ...(v.sno ? { sno: true } : {}),
@@ -424,6 +458,11 @@ function doma(s: State, l: Person) {
     allmant(s, q, b, STR.hord, sett); // de som ser straffet får höra om brottet
     think(q, `Straffades av ${l.name}`, -STR.tanke * (steg + 1), now, STR.tankeDygn * DAY);
     const familj = living(s).filter(f => f !== l && (f === q || f.partner === id || isKin(f, q))); // innan den utvisade har lämnat byn och partnern
+    q.straffad = true;
+    if (steg === 4 && drabbad && alive(drabbad)) botes(s, q, drabbad);
+    if (steg === 5) q.tjanst = now + STR.tjanstDygn * DAY;
+    if (steg === 7) q.utanRost = true;
+    if (steg === 6) { r.dog = true; q.brottsling = true; kronika(s, `${q.name} dömdes till döden.`, 'ledare'); die(s, q, 'avrattad'); continue; }
     if (steg === 1) q.skam = now + STR.skamDygn * DAY;
     if (steg === 2) { const dod = skada(s, q, 'bal', 'blamarke', STR.slagG, 'drap', `när ${l.name} straffade hen`); if (dod) { r.dog = true; die(s, q, dod); continue; } }
     if (steg === 3) { kronikaBer(s, 'k_utvisad', q.id, { ...personFalt(q), ledare: l.name, varfor: `för att ${hon(q)} ${brottText(b)}` }); count(s, 'utvisad'); notis(s, 'utflytt', `${q.name} blev utvisad ur byn av ${l.name}.`, [q.id, l.id]); leave(s, q); }
@@ -442,6 +481,12 @@ function doma(s: State, l: Person) {
   if (domt.length > 200) domt.splice(0, domt.length - 200);
   if (ratt.length > STR.sparas) ratt.splice(0, ratt.length - STR.sparas);
 }
+// böterna går till den drabbade ur den dömdes ägodelar (steg 8.4.7): det dyraste hen äger, en hel sak
+function botes(s: State, q: Person, d: Person) {
+  const ag = (s.ting ?? []).filter(t => t.agare === q.id && t.bar === undefined && t.hos === undefined && t.lass === undefined);
+  if (ag.length) { const t = ag.sort((a, b) => grundvarde(b.k) - grundvarde(a.k))[0]; t.agare = d.id; count(s, 'boter'); log(s, `${q.name} gav ${sakNamn(t.k).toLowerCase()} till ${d.name} i böter.`, 'rel', [q.id, d.id]); return; }
+  for (const k of ['grenar', 'ved', 'sten', 'flinta', 'rep']) if (ownsAmount(s, q, k) >= 1) { ownMove(s, k, Math.min(STR.bot, ownsAmount(s, q, k)), q.id, d.id); count(s, 'boter'); return; }
+}
 // de levande (utom ledaren och den dömda) som har brottet b om q bland sina bevis: själva sett, eller hört som rykte
 function kanner(s: State, l: Person, q: Person, b: Bevis) {
   const sett: number[] = [], hort: number[] = [];
@@ -455,9 +500,9 @@ function kanner(s: State, l: Person, q: Person, b: Bevis) {
 }
 
 // ---------- rättegångarna i fliken Styre (steg 3.10.17) ----------
-const STRAFF_DA = ['tillrättavisade', 'skämde ut', 'slog', 'drev ut'];
-const STRAFF_INF = ['få höra hur fel det var', 'skämmas ut inför alla', 'få stryk', 'drivas ut ur byn'];
-export const STRAFF_NAMN = ['Tillrättavisning', 'Skam', 'Slag', 'Utvisning'];
+const STRAFF_DA = STRAFF_REG.map(r => r.da);
+const STRAFF_INF = STRAFF_REG.map(r => r.inf);
+export const STRAFF_NAMN = STRAFF_REG.map(r => r.namn);
 // texten om en rättegång: berättelsen ur mallarna r_ratt och r_folk (berattelser.ts), brottet och namnen på dem som visste
 export function rattegang(s: State, r: Rattegang) {
   const q = byId(s, r.om), l = byId(s, r.led), namn = (ids: number[]) => och(ids.map(id => byId(s, id)?.name ?? 'någon som glömts'));
@@ -500,9 +545,13 @@ export function stepStyre(s: State) {
   if (s.styre!.pabudAi !== ai) sattPabud(s, l, ai);
   // Förlikning – Fejd låses upp första gången en konflikt avgörs med våld (steg 8.3.5)
   if (!s.styre!.oppna.includes('fejd') && ((s.stat?.strid_skada ?? 0) + (s.stat?.strid_doda ?? 0) + (s.stat?.drap ?? 0) > 0)) oppnaSed(s, 'fejd');
+  // de andra skalorna låses upp när det de styr finns i byn (steg 8.4.11–8.4.13)
+  if (!s.styre!.oppna.includes('krig') && (s.stat?.rovarstrid ?? 0) + (s.stat?.vargstrid ?? 0) > 0) oppnaSed(s, 'krig');
+  if (!s.styre!.oppna.includes('delning') && (s.delning?.andel ?? 1) < 0.5) oppnaSed(s, 'delning');
+  if (!s.styre!.oppna.includes('natur') && (s.fallda ?? 0) > 0) oppnaSed(s, 'natur');
   missnojeTimme(s);
   if (!ledareOf(s)) return;
-  if (Math.floor(hourOf(s.now)) === STR.timme) { doma(s, l); rostKvall(s); }
+  if (Math.floor(hourOf(s.now)) === STR.timme) { doma(s, l); rostKvall(s); if (!s.styre?.fragor?.length) tasUppKvall(s); tabuDygn(s); }
 }
 // skammen: den straffade håller sig undan bordet och elden (val.ts)
 export const skams = (p: Person, now: number) => p.skam !== undefined && p.skam > now;

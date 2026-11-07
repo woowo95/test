@@ -170,6 +170,8 @@ export const TEKNIK: Tek[] = [
   // ledarskapet kommer man på i samtal (steg 3.5.1, styre.ts): bara den som kan det kan bli byns ledare
   { id: 'ledarskap', namn: 'Ledarskap', text: 'Att förstå vad som krävs för att byn ska lyssna på en: att höra alla, döma rättvist och tänka på hela byn.', effekt: 'Bara den som kan ledarskap kan bli byns ledare.',
     omr: [], krav: [], niva: 1, tid: 12, nar: 'i samtal' },
+  // lagarna (steg 8.4.1): samma mönster som Ledarskap. Bara den som kan den kan stifta en lag, så en by kan glömma sina lagar
+  { id: 'lag', namn: 'Lag', text: 'Att bestämma i förväg vad som är fel och vad det kostar, så att det blir likadant varje gång.', effekt: 'Den som kan lag kan lägga fram en lag.', omr: [], krav: ['ledarskap'], niva: 2, tid: 14, nar: 'i samtal' },
 ];
 for (const t of TEKNIK) TEKNAMN[t.namn.toLowerCase()] = t.id; // ordlagret hittar verbet efter namnet (ord.ts)
 export const TEK = Object.fromEntries(TEKNIK.map(t => [t.id, t])) as Record<string, Tek>;

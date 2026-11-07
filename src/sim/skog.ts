@@ -1,3 +1,5 @@
+import { LAG_SKOG, lagGaller } from './lagar';
+import { naturTanke } from './seder';
 import { storlekAv } from './stationer';
 import { bynsMitt, utanforByn } from './omrade';
 import { freeTools } from './agande';
@@ -73,10 +75,11 @@ export function treeSpot(s: State, taken: Set<number>, p: Person): { x: number; 
   let half = -1, hd = Infinity;
   for (const k in s.halvfallt ?? {}) { const i = +k, d = utanforByn(s, i % W, Math.floor(i / W)); if (isForest(s, i) && !taken.has(i) && d < hd) { hd = d; half = i; } }
   if (half >= 0) return { x: (half % W) + 0.5, y: Math.floor(half / W) + 0.5 };
-  const c: { i: number; d: number }[] = [];
+  const c: { i: number; d: number }[] = [], skogsfred = lagGaller(s, 'skogsfred');
   for (let y = Math.max(0, f.y - SKOG.sokY); y < Math.min(H, f.y + SKOG.sokY + 1); y++) for (let x = Math.max(0, f.x - SKOG.sokX); x < Math.min(W, f.x + SKOG.sokX + 1); x++) {
     const i = y * W + x;
     if (g.trees[i] < SKOG.tradMin || taken.has(i)) continue;
+    if (skogsfred && utanforByn(s, x, y) <= LAG_SKOG) continue; // lagen om skogen (steg 8.4.1)
     c.push({ i, d: utanforByn(s, x, y) });
   }
   if (!c.length) return undefined;
@@ -104,7 +107,7 @@ export function fellTree(s: State, p: Person, x: number, y: number) {
   const k: Stock = { id: (s.nextStock = (s.nextStock ?? 0) + 1), x: Math.floor(x) + 0.5, y: Math.floor(y) + 0.5, ...stam };
   stocks(s).push(k);
   nyStubbe(s, Math.floor(x), Math.floor(y), stam.ved); // stubben blir alltid kvar, också där ett hus ska stå (steg 6.5.7)
-  s.fallda = (s.fallda ?? 0) + 1; gjort(s, p, 'trad');
+  s.fallda = (s.fallda ?? 0) + 1; gjort(s, p, 'trad'); naturTanke(s, 'Ett träd fälldes');
   if (s.fallda === 1) {
     log(s, `${p.name} fällde byns första träd med flintyxan.`, 'world', [p.id]);
     p.fame.push('Fällde byns första träd');
