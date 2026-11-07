@@ -216,7 +216,13 @@ export const medDelar = (p: Person) => {
   lagg('Skador i huvudet', HALSA.medHuvud * delFel(p, 'huvud'));
   return ut;
 };
-export function medvetande(p: Person) { let v = 1; for (const d of medDelar(p)) v += d.v; return clamp(v, 0, 1); }
+// medvetandet som tal: samma räkning utan listan, eftersom det frågas i varje arbetsbit
+export function medvetande(p: Person) {
+  let v = 1 - HALSA.medTrott * (1 - p.rest) - HALSA.medTorst * clamp(1 - p.torst / TORST.laker, 0, 1) - HALSA.medSvalt * clamp(1 - p.hunger / KROPP.lakerMat, 0, 1);
+  if (p.blod !== undefined && p.blod < 1) v -= HALSA.medBlod * clamp((1 - p.blod) / (1 - HALSA.blodDod), 0, 1);
+  if (p.skador?.length || p.men?.length || p.saknas?.length) v -= HALSA.medSmarta * smarta(p) + HALSA.medInf * infektion(p) + HALSA.medHuvud * delFel(p, 'huvud');
+  return clamp(v, 0, 1);
+}
 const medArbete = (p: Person) => { const m = medvetande(p); return m >= HALSA.medLag ? 1 : HALSA.medArbete + (1 - HALSA.medArbete) * m / HALSA.medLag; };
 export function smarta(p: Person) {
   let v = 0;

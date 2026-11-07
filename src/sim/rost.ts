@@ -71,7 +71,18 @@ const GRUPPER: { andel: (s: State) => number; vem: (s: State) => Person[] }[] = 
   { andel: s => VIKT.minister * Math.max(0, s.seder.v.gemenskap ?? 0), vem: ministrarNu },
   { andel: s => VIKT.prast * Math.max(0, s.seder.v.andlig ?? 0), vem: s => (s.tron ?? []).flatMap(t => { const p = byId(s, t.prast); return p && alive(p) ? [p] : []; }) }, // Andlig flyttar vikt till prästerna (steg 8.6.1)
 ];
-export function vikter(s: State) {
+// en gång per timme och läge: frågas av sederna, lagarna och rösterna (regel 4)
+const vikterCache = new WeakMap<State, { key: string; v: Viktad[] }>();
+type Viktad = { p: Person; w: number; andel: number };
+export function vikter(s: State): Viktad[] {
+  const sv = s.seder.v, st = s.styre, key = `${Math.floor(s.now / 3600000)}:${st?.ledare}:${st?.oppna.length}:${Object.keys(st?.ministrar ?? {}).length}:${sv.rang}:${sv.fortjanst}:${sv.fejd}:${sv.gemenskap}:${sv.andlig}:${living(s).length}:${st?.lagar?.length}:${s.tron?.length}`;
+  const c = vikterCache.get(s);
+  if (c?.key === key && c.v.every(x => alive(x.p))) return c.v;
+  const v = raknaVikter(s);
+  vikterCache.set(s, { key, v });
+  return v;
+}
+function raknaVikter(s: State): Viktad[] {
   const ppl = living(s).map(p => ({ p, w: influence(s, p), andel: 0 })).filter(x => x.w);
   const tw = ppl.reduce((a, x) => a + x.w, 0);
   if (!tw) return ppl;
