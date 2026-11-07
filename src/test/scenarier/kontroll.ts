@@ -312,8 +312,8 @@ const SALLSYNT: Record<string, string> = {
   plantera: 'plantor flyttas bara av den som kan skogsvården (se skogsvard); scenariot skogsvard prövar det',
 };
 // fas 8 (system 8.2, 8.3, 8.5 och 8.6): det som kräver en ledare, en präst eller en tro på en viss nivå hinner sällan komma på 35 dygn
-for (const k of ['medvetslos', 'mantel', 'prastdrakt', 'tecken', 'mask', 'koka_rokelse', 'koka_olja', 'hovbygge', 'rokelse', 'brannolja', 'lag']) SALLSYNT[k] ??= 'kräver en ledare eller en tro på en viss nivå; scenarierna mantel, ritualer och kyrkan prövar det';
-for (const k of SIM.KLAD_SLAG) if (/^(mantel|prastdrakt|tecken|mask)_/.test(k)) SALLSYNT[k] ??= 'bara ledaren eller en präst, och de troende när tron har nått långt; scenarierna mantel och kyrkan prövar det';
+for (const k of ['medvetslos', 'mantel', 'prastdrakt', 'tecken', 'mask', 'koka_rokelse', 'koka_olja', 'hovbygge', 'rokelse', 'brannolja', 'rustning', 'hjalm', 'skold', 'bage', 'slunga', 'horn', 'pilar', 'gor_pilar', 'avrusta', 'rusta']) SALLSYNT[k] ??= 'kräver en ledare eller en tro på en viss nivå; scenarierna mantel, ritualer och kyrkan prövar det';
+for (const k of SIM.KLAD_SLAG) if (/^(mantel|prastdrakt|tecken|mask|rustning|hjalm)_/.test(k)) SALLSYNT[k] ??= 'bara ledaren eller en präst, och de troende när tron har nått långt; scenarierna mantel och kyrkan prövar det';
 SCENARIER.aldrig = {
   text: 'Allt i registren används: varje handling, sak, husfunktion, djurart och teknik förekommer i minst en av fyra byar under 35 dygn (35 år i spelet, fem veckor i verkligheten)',
   lang: true,

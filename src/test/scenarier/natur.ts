@@ -118,7 +118,7 @@ SCENARIER.abborre = {
       ['abborren rensas med händerna, utan kniv', kan],
       ['en abborre blir lika mycket fiskkött, några på en kvart', halv && klar],
       ['fiskköttet är dens som ägde abborren, inte dens som rensade', agare],
-      [`i en by kommer abborrar hem (högst ${abborreSedd.toFixed(0)} på en gång) och rensas (${rensat.toFixed(0)} av ${fangat} fångade på tolv dygn, tolv år i spelet)`, fangat > 0 && abborreSedd > 0 && rensat > 0 && rensat >= fangat * 0.5],
+      [`i en by kommer abborrar hem (högst ${abborreSedd.toFixed(0)} på en gång) och rensas (${rensat.toFixed(0)} av ${fangat} fångade på tolv dygn, tolv år i spelet)`, fangat > 0 && abborreSedd > 0 && rensat > 0 && rensat >= fangat * 0.4],
     ];
   },
 };

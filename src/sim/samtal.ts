@@ -21,6 +21,7 @@ import { predika } from './religion';
 // Samtalen: vem man pratar med, vilket slags samtal det blir, hur det går och vad det ger, och humöret. Relationen (op) går från
 // -100 till 100 och humöret från 0 till 1 (gränserna för relationen, REL, står i folk.ts, åldern för flirt i ALDER)
 export const SAMTAL = balans('samtal', {
+  lagTanke: 0.5, // lag kommer man på hälften så fort som ledarskap, när man redan kan det
   radie: 4, // så nära (rutor) måste två vara för att prata
   // den som väljer att samtala går fram till någon (steg 4.5.6.7): bland dem som gör något socialt inom sokR rutor från platsen
   // man skulle gått till, och ställer sig isar rutor från hen; när samtalet är slut går man isarGa rutor åt andra hållet och
@@ -206,6 +207,7 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
     samtalBorjar(); // det som delas nu blir samtalets ämne (steg 3.9.5, berattelser.ts)
     share(s, a, b, r, SAMTALSSLAG[kind]); // man berättar vad man vet och lär ut vad man kan
     predika(s, a, b, r, kind); // och den som tror försöker övertyga (steg 4.1.2.2, religion.ts)
+    if (a.tek?.ledarskap) tankePa(s, a, 'lag', SAMTAL.ledTanke * SAMTAL.lagTanke); // och sedan på lag (steg 8.4.1)
     tankePa(s, a, 'ledarskap', SAMTAL.ledTanke); // och kommer på vad som krävs för att leda (steg 3.5.1)
     berattaBrist(a, b, now); // och vad man längtar efter ("jag längtar efter kött", steg 2.6.2)
     samtalAmne(s, a, b, kind);
