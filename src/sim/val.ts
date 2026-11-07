@@ -244,7 +244,7 @@ function platsFor(s: State, act: Act, p: Person): { x: number; y: number } {
     // när det är kallt samtalar och berättar man i samlingshuset, om det är varmare där än vid elden (byggnader.ts)
     const sal = d.social ? samlingRum(s) : undefined, c = sal ? coldOf(temperature(s)) : 0;
     // ... när det regnar (steg 2.11.1), och året runt är samlingssalen byns mötesplats (steg 7.2.7)
-    if (sal && (c > 0 && varmareInne(s, sal, c, d.varmer) || nederbord(s) || rnd(s, 'val', p) < VAL.salMote)) return isarIRum(s, p, sal.tiles);
+    if (sal && (c > 0 && varmareInne(s, sal, c, d.varmer) || nederbord(s) || c === 0 && rnd(s, 'val', p) < VAL.salMote)) return isarIRum(s, p, sal.tiles);
     // annars sätter man sig ofta vid ett bord för att samtala och berätta, när det inte är kallt
     if (d.slag === 'prata' && bordenOf(s).length && coldOf(temperature(s)) === 0 && rnd(s, 'val', p) < VAL.bordSamtal) { const at = ledigPlats(s, p); if (at) return at; }
     // bredvid den bästa vännen om hen sitter vid samma eld, och inte nära en ovän (steg 3.1.1)

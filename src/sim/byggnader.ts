@@ -1,7 +1,7 @@
 import { KROPP, alive, byId, count, familjOf, living, log } from './folk';
 import { Hus, MATERIAL, Rum, bitById, bitsOf, gridOf, housesOf, husById, roofed, shelterOf, touch } from './byggnad';
 import { ageIndex, kallTid } from './tid';
-import { heatAt } from './eld';
+import { canLight, heatAt } from './eld';
 import { eldPlats } from './karta';
 import { changed, enPerRuta, ownedAll, put, stacksOf, storeFull, zoneAt, zonesOf } from './lager';
 import { kronika } from './historik';
@@ -382,6 +382,7 @@ function funktionsbyte(s: State) {
 }
 // är det varmare inne i rummet än vid elden? c = kylan (coldOf): hur kallt det är ute
 export function varmareInne(s: State, rum: Rum, c: number, varmer = false) {
+  if (varmer && !s.fire.lit && canLight(s)) return false; // elden går att tända: då går man inte in och fryser, utan någon tänder den
   const f = eldPlats(s), inne = -c * (1 - shelterOf(s, rum, Math.min(living(s).length, rum.tiles.length))), ute = heatAt(s, f.x + 0.5, f.y + HUS.varmeY) * KROPP.eldVarme - c;
   return varmer ? inne >= ute : inne >= Math.min(0, ute) - HUS.varmeMarg; // den som ska värma sig går bara in om det är minst lika varmt som vid elden
 }

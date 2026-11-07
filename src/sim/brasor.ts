@@ -3,7 +3,7 @@ import { balans } from './balans';
 import { eldPlats } from './karta';
 import { ALDER, ageOf, count, living, log } from './folk';
 import { coldOf, temperature } from './vader';
-import { amountOf, changed, isStored } from './lager';
+import { amountOf, changed, isStored, enPerRuta } from './lager';
 import { bedFor } from './bygg';
 import { newFire, woodDays } from './eld';
 import { Station } from './stationer';
@@ -110,7 +110,7 @@ function taIsar(s: State, f: Fire) {
   const st = (s.stackar ??= []), { x, y } = f.at!;
   let g = st.find(q => q.x === x && q.y === y && q.k === 'sten');
   if (!g) st.push(g = { x, y, k: 'sten', n: 0, c: 1 });
-  g.n += RT.brasaSten; changed(s);
+  g.n += RT.brasaSten; changed(s); enPerRuta(s);
   count(s, 'brasaIsar');
   log(s, 'En lägereld som ingen längre sov nära togs isär. Stenarna ligger kvar och används till nästa.', 'world');
 }
