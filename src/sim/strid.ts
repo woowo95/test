@@ -65,7 +65,7 @@ import { notis } from './notiser';
 export const STRID = balans('strid', {
   smitta: 0.1, // så mycket de andras mod sjunker när någon ger upp (steg 8.8.8)
   pilSonder: 0.25, // så stor del av pilarna går sönder
-  ringad: 0.25, // så mycket lättare det är att träffa den som redan slåss med en annan, per extra motståndare (steg 8.7.7)
+  ringad: 0.1, // så mycket lättare det är att träffa den som redan slåss med en annan, per extra motståndare (steg 8.7.7)
   bakomTrad: 0.5, // en pil mot någon bakom ett träd träffar trädet så här ofta
   skoldSlag: 0.3, skoldPil: 0.6, // skölden blockerar 3 av 10 slag och 6 av 10 pilar och kast (steg 8.7.3)
   smidPer: 1, // varje steg rustning tar så här mycket smidighet

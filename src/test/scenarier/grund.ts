@@ -2078,7 +2078,7 @@ SCENARIER.radjur = {
       }
       return ut;
     };
-    const spjut = prova('flintspjut', 150), sten = prova(undefined, 60), stark = prova('flintspjut', 150, 20);
+    const spjut = prova('flintspjut', 150, 12), sten = prova(undefined, 60), stark = prova('flintspjut', 150, 20);
     // slakten
     const s = createState(3, START);
     medBank(s);
