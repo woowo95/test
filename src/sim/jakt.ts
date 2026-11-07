@@ -5,7 +5,7 @@ import { blocked, freeNear } from './byggnad';
 import { FAGEL, FAGEL_UT, KANINER, KANIN_UT, RADJUR, RADJUR_UT, arFagel, arRadjur, dodaDjur, faglarFlygerBort, faglarOf, djurOf, dragOf, gruppFlyr, halsaOf, radjurOf, satDjurHalsa } from './djur';
 import { styckaFallt } from './styckning';
 import { count, forstaGang, gjort, log, ovning, stat } from './folk';
-import { skada } from './halsa';
+import { skada, syn } from './halsa';
 import { groundOf, markslag, tileOf } from './mark';
 import { KANIN } from './redskap';
 import { clamp, rnd } from './slump';
@@ -168,7 +168,7 @@ export function jaktForsok(s: State, p: Person, tk: Task, t = s.now): number {
   const u: Uppstallning = {
     avsikt: 'doda', w: 20, h: 20, vind: vader.vind, dimma: vader.dimma,
     kampar: [
-      { id: 1, namn: p.name, sida: 0, pid: p.id, vapen: v, klader: [], fart: 1, x: 1, y: 10, st: { styrka: stat(p, 'styrka', now), uthallighet: stat(p, 'uthallighet', now), mod: stat(p, 'mod', now), smidighet: stat(p, 'smidighet', now), skicklighet: 5 + (p.skill.narstrid ?? 0) / 2, sikte: 5 + (p.skill.traff ?? 0) / 2 } },
+      { id: 1, namn: p.name, sida: 0, pid: p.id, vapen: v, klader: [], fart: 1, x: 1, y: 10, st: { styrka: stat(p, 'styrka', now), uthallighet: stat(p, 'uthallighet', now), mod: stat(p, 'mod', now), smidighet: stat(p, 'smidighet', now), skicklighet: 5 + (p.skill.narstrid ?? 0) / 2, sikte: (5 + (p.skill.traff ?? 0) / 2) * syn(p) } },
       { ...djurKampe(m.art, 2, 1, 10, 10), fart: drag.snabbhet },
     ],
   };

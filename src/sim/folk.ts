@@ -213,6 +213,7 @@ export function stat(p: Person, k: Stat, now: number) {
   else if (k === 'minne' && a > ALDER.minneFran) g *= clamp(1 - (a - ALDER.minneFran) / ALDER.minneSpann, ALDER.minneGolv, 1);
   else if (k === 'skonhet' && a > ALDER.skonhetFran) g *= clamp(1 - (a - ALDER.skonhetFran) / ALDER.skonhetSpann, ALDER.skonhetGolv, 1);
   else if ((k === 'intelligens' || k === 'nyfikenhet' || k === 'flit' || k === 'mod') && a > ALDER.sinneFran) g *= clamp(1 - (a - ALDER.sinneFran) / ALDER.sinneSpann, ALDER.sinneGolv, 1);
+  if (k === 'karisma' && p.sinnen !== undefined) g *= p.sinnen; // blicken, hörseln och talet (steg 8.2.2)
   return p.pot[k] * g;
 }
 // egenskapen k från mitten: 0 för den som har 10, −0,9 och +1 i ändarna (för det som ska bli som förut i snitt, steg 3.7.6)

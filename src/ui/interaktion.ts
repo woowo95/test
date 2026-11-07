@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { BAR, busksort, FALT_STEG, FOREST, GRODOR, isSoil, stadium, Falt, byId, faltAt, faltIndex, faltKlar, HIGH, MATERIAL, Person, T, W, bitAt, bynsMitt, condOf, dorrDef, emberOn, eldXY, eldarOf, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, stationerOf, framfor, bordPlatser, tingOf, toaAt, tandTest, blixtTest, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, verbOf, zoneAt, zonesOf, Pile } from '../sim';
+import { kvarAt, BAR, busksort, FALT_STEG, FOREST, GRODOR, isSoil, stadium, Falt, byId, faltAt, faltIndex, faltKlar, HIGH, MATERIAL, Person, T, W, bitAt, bynsMitt, condOf, dorrDef, emberOn, eldXY, eldarOf, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, stationerOf, framfor, bordPlatser, tingOf, toaAt, tandTest, blixtTest, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, verbOf, zoneAt, zonesOf, Pile } from '../sim';
 import { gorText } from './jakt';
 import { iconImg, tecknet } from '../ikoner';
 import { $, esc, fmtN, prickar } from './hjalp';
@@ -102,6 +102,7 @@ app.stage.on('pointertap', e => {
   else if (!inMap(c.x, c.y)) avmarkera(); // utanför kartan finns inget att visa
   else if (filtAt(gx, gy)) { ui.filtAt = filtAt(gx, gy)!; ui.byteNr = -1; if (valdFilt()) visa('filt'); }
   else if (fireAt(gx, gy) !== undefined) { const id = fireAt(gx, gy)!; ui.eld = id ? id - 1 : undefined; visa('eld'); }
+  else if (kvarAt(s, c.x, c.y)) { ui.sak = `k:${kvarAt(s, c.x, c.y)!.id}`; visa('sak'); } // det som blivit kvar av en människa (steg 8.2.3)
   else if (s.stockar?.some(q => Math.floor(q.x) === c.x && Math.floor(q.y) === c.y)) { ui.sak = `v:${s.stockar.find(q => Math.floor(q.x) === c.x && Math.floor(q.y) === c.y)!.id}`; visa('sak'); } // stocken, också på ett fält, en lagerplats eller vid en station (steg 8.1.6)
   else if (stubbeAt(c.x, c.y)) { ui.sak = `u:${c.y * W + c.x}`; visa('sak'); } // stubben (steg 3.10.6)
   else if (zi) valjLager(zi - 1, c);

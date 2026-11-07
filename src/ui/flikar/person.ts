@@ -296,8 +296,8 @@ function skadeFarg(f: number, ton: number) {
   return f < SKADEFARG.latt ? farg('senap', ton as 0) : farg('rost', Math.max(0, ton - (f < SKADEFARG.svar ? 1 : 2)) as 0);
 }
 function halsaHtml(p: Person) {
-  const rader = skadeLista(p, s.now), delar = Object.keys(KROPPSDELAR) as Kroppsdel[];
-  const vad = (d: Kroppsdel) => rader.filter(r => r.d === d);
+  const rader = skadeLista(p, s.now), delar = (Object.keys(KROPPSDELAR) as Kroppsdel[]).filter(d => !(KROPPSDELAR[d] as { under?: string }).under);
+  const vad = (d: Kroppsdel) => rader.filter(r => r.d === d || (KROPPSDELAR[r.d] as { under?: string }).under === d); // de finare delarna syns på delen de sitter på (steg 8.2.1)
   const titel = (d: Kroppsdel) => `${KROPPSDELAR[d].namn}: ${vad(d).length ? vad(d).map(x => `${x.namn.split(' i ')[0].toLowerCase()}, ${x.grad}`).join('; ') : 'hel'}`;
   const q = skapad(s, p), naken = { ...q, klader: { rock: null, skor: false, balte: false }, del: { ...q.del, redskap: null, huvudbonad: null } };
   const gubbe = figurSvg(naken, 'gubbe', 'Kroppen', {

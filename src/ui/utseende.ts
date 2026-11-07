@@ -76,13 +76,15 @@ function kropp(s: State, p: Person, del: Record<string, string | null>) {
   const huvud = (p.skador ?? []).filter(w => w.d === 'huvud');
   const forband = huvud.some(w => w.f) ? ['forband-huvud'] : [];
   if (huvud.some(w => !w.f && (w.k === 'blamarke' || w.k === 'krossar'))) del.blamarke = 'blamarke-1';
-  return { humor, forband, ogonlapp: false, sjuk: isSick(p, s.now), kyla: p.warm < KROPP.kallt, blod: blodning(p) > 0 };
+  return { humor, forband, ogonlapp: !!p.saknas?.some(d => d === 'ogaV' || d === 'ogaH'), sjuk: isSick(p, s.now), kyla: p.warm < KROPP.kallt, blod: blodning(p) > 0 };
 }
 export function skapad(s: State, p: Person): Skapad {
   const d = drag(s, p), alder = alderAv(ageOf(p, s.now));
   const u: Skapad = alder !== 'barn' && d.anlag ? KARNA.somUng(d) : { ...d, del: { ...d.del } };
   u.alder = alder;
-  u.del = { ...u.del, huvudbonad: null, arr: null, blamarke: null, redskap: null };
+  // ärren i ansiktet (steg 8.2.4): samma ärr hela livet, ur rader i PORTRATT; ögonlappen när ett öga är borta
+  const arr = p.arr?.find(a => a.d === 'huvud' || a.d === 'kake' || a.d === 'ogaV' || a.d === 'ogaH');
+  u.del = { ...u.del, huvudbonad: null, arr: arr ? `arr-${arr.n}` : null, blamarke: null, redskap: null };
   Object.assign(u, kropp(s, p, u.del));
   utrustad(s, p, u);
   return u;

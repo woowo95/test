@@ -1,4 +1,4 @@
-import { clamp, living, handlarPlats, MASTERVERK, PERFEKT, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, W, bordPlatser, sjoarna, stationById, MATERIAL, Pile, STUBBE_LIV, Station, bitAt, bitsOf, dorrDef, condOf, emberOn, eldById, eldXY, eldarOf, fireHeat, forvarAt, Fire, heatRadius, TORK, torrDel, isKlar, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, zonesOf, groundOf, snoPaMarken, ageIndex, tradArt } from '../sim';
+import { KVARLEVOR, clamp, living, handlarPlats, MASTERVERK, PERFEKT, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, W, bordPlatser, sjoarna, stationById, MATERIAL, Pile, STUBBE_LIV, Station, bitAt, bitsOf, dorrDef, condOf, emberOn, eldById, eldXY, eldarOf, fireHeat, forvarAt, Fire, heatRadius, TORK, torrDel, isKlar, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, zonesOf, groundOf, snoPaMarken, ageIndex, tradArt } from '../sim';
 import { hasIcon, iconCanvas, kartbild, kartbildEnsam } from '../ikoner';
 import { KARTBILDER } from '../kartbilder';
 import { STUBBILDER } from '../stubbilder';
@@ -243,6 +243,7 @@ export function drawStructures(t: number) {
     const id = `fa_${sortAt(k.x, k.y)}_${k.ved <= 3 ? 0 : k.ved <= 7 ? 1 : 2}_${tid}`, b = STUBBILDER[id];
     stubbIkoner.add('sb_' + id, Math.round(k.x * TS) - 4 - b.fx, Math.round(k.y * TS) + 4 - b.fy, 1);
   }
+  for (const q of s.kvarlevor ?? []) if (q.bars === undefined) stubbIkoner.add(KVARLEVOR[q.k].ikon, q.x * TS, q.y * TS, 1); // det som blivit kvar av en människa (steg 8.2.3)
   stubbIkoner.end();
   pileIcons.end();
   // eldarna: värmeområdet för varje brinnande lägereld när eldens flik är öppen, och en ring runt den som fliken visar (ui.eld)

@@ -1,6 +1,9 @@
 import { han, honom } from './ord';
 import { utanforByn } from './omrade';
 import { UPPV, upplev } from './uppvaxt';
+import { gen } from './ord';
+import { nyKvarleva } from './kvarlevor';
+import { gebinamn } from './berattelser';
 // Kroppen (steg 2.5.1). Kroppen har tio delar (KROPPSDELAR): huvud, bål, två armar, två händer, två ben och två fötter (Björn, efter
 // v55). Olyckor i farliga arbeten (OLYCKOR) ger skador (SKADOR) i en del: ett sår blöder tills det levrat sig, gör ont och
 // gör delen sämre tills det läkt. Den som skadat benen eller fötterna går långsammare (rorlighet), den som skadat armarna eller
@@ -24,7 +27,7 @@ import { freeNear, roomAt } from './byggnad';
 import { isForest, tileOf } from './mark';
 import { eldPlats } from './karta';
 import { chance, clamp, pick, rnd } from './slump';
-import { Act, HOUR, HOUR_S, Person, Skill, State, Stock, Task } from './typer';
+import { Act, DAY, HOUR, HOUR_S, Person, Skill, State, Stock, Task } from './typer';
 import { balans } from './balans';
 import { GANG } from './gang';
 import { blodDroppar, blodas } from './blod';
@@ -72,23 +75,57 @@ export const HALSA = balans('halsa', {
   mossaVill: 8, // man tar med sig mossa hem tills byn har så här mycket
   mossaTrad: 0.3, // chansen att ett fällt träd har mossa på sig ...
   mossaStam: 2, // ... och så mycket
+  finChans: 0.25, // chansen att en skada på en del hamnar på en av de finare delarna under den (steg 8.2.1)
+  forloraGrad: 0.8, // ett skärsår eller bett av minst den här graden på en del som sticker ut ...
+  forloraChans: 0.4, // ... tar delen med den här chansen (steg 8.2.3)
+  forfrysVarm: 0.15, // under den här värmen kan fingrar och tår frysa ...
+  forfrysRisk: 0.15, // ... med den här risken i timmen ...
+  forfrysGrad: 0.5, // ... en förfrysning av den här graden; förlorad vid forloraGrad (steg 8.2.3)
+  arrGrad: 0.35, // en skada av minst den här graden kan ge ett ärr när den läker ...
+  arrChans: 0.5, // ... med den här chansen (steg 8.2.4)
+  arrFulare: 0.7, // ... de flesta blir fulare av det ...
+  arrSkonhet: 1.2, // ... så här mycket skönhet upp eller ner, av 20
+  arrBinamn: 0.25, // ... och ett ärr i ansiktet ger så här ofta ett binamn
+  menGrad: 0.6, // en skada av minst den här graden kan läka fel ...
+  menChans: 0.3, // ... med den här chansen
+  menFel: 0.25, // ... och delen blir så här mycket sämre för alltid
+  menOnt: 0.15, // ... eller så här mycket kronisk smärta
+  medSmarta: 0.35, medBlod: 0.6, medInf: 0.3, medTrott: 0.12, medTorst: 0.25, medSvalt: 0.25, medHuvud: 0.5, // så mycket medvetandet sjunker av var sak (steg 8.2.5)
+  medLag: 0.7, // under det här medvetandet går arbetet långsammare ...
+  medArbete: 0.5, // ... ned till så här fort när medvetandet är noll
+  svimma: 0.2, // under det här medvetandet svimmar man (steg 8.2.6) ...
+  vakna: 0.3, // ... och man vaknar över det här
 });
 
 // ---------- kroppsdelarna (registret) ----------
 // livsviktig = en mycket svår skada där dödar direkt; rorlighet och handighet = hur mycket delen betyder för gången och
 // händerna (summan över alla delar är 1)
-interface DelDef { namn: string; i: string; livsviktig?: true; rorlighet?: number; handighet?: number }
+interface DelDef { namn: string; i: string; livsviktig?: true; rorlighet?: number; handighet?: number; syn?: number; horsel?: number; tal?: number; under?: string; ute?: true }
 export const KROPPSDELAR = {
   huvud: { namn: 'Huvud', i: 'huvudet', livsviktig: true },
   bal: { namn: 'Bål', i: 'bålen', livsviktig: true },
-  armV: { namn: 'Vänster arm', i: 'vänstra armen', handighet: 0.2 },
-  armH: { namn: 'Höger arm', i: 'högra armen', handighet: 0.2 },
-  handV: { namn: 'Vänster hand', i: 'vänstra handen', handighet: 0.3 },
-  handH: { namn: 'Höger hand', i: 'högra handen', handighet: 0.3 },
-  benV: { namn: 'Vänster ben', i: 'vänstra benet', rorlighet: 0.3 },
-  benH: { namn: 'Höger ben', i: 'högra benet', rorlighet: 0.3 },
-  fotV: { namn: 'Vänster fot', i: 'vänstra foten', rorlighet: 0.2 },
-  fotH: { namn: 'Höger fot', i: 'högra foten', rorlighet: 0.2 },
+  armV: { namn: 'Vänster arm', i: 'vänstra armen', handighet: 0.2, ute: true },
+  armH: { namn: 'Höger arm', i: 'högra armen', handighet: 0.2, ute: true },
+  handV: { namn: 'Vänster hand', i: 'vänstra handen', handighet: 0.2, ute: true },
+  handH: { namn: 'Höger hand', i: 'högra handen', handighet: 0.2, ute: true },
+  benV: { namn: 'Vänster ben', i: 'vänstra benet', rorlighet: 0.3, ute: true },
+  benH: { namn: 'Höger ben', i: 'högra benet', rorlighet: 0.3, ute: true },
+  fotV: { namn: 'Vänster fot', i: 'vänstra foten', rorlighet: 0.15, ute: true },
+  fotH: { namn: 'Höger fot', i: 'högra foten', rorlighet: 0.15, ute: true },
+  // de finare delarna (steg 8.2.1): en skada på delen under kan hamna här (finDel)
+  ogaV: { namn: 'Vänster öga', i: 'vänstra ögat', under: 'huvud', syn: 0.5 },
+  ogaH: { namn: 'Höger öga', i: 'högra ögat', under: 'huvud', syn: 0.5 },
+  oraV: { namn: 'Vänster öra', i: 'vänstra örat', under: 'huvud', horsel: 0.5, ute: true },
+  oraH: { namn: 'Höger öra', i: 'högra örat', under: 'huvud', horsel: 0.5, ute: true },
+  kake: { namn: 'Käke', i: 'käken', under: 'huvud', tal: 1 },
+  fingrarV: { namn: 'Fingrar på vänster hand', i: 'fingrarna på vänster hand', under: 'handV', handighet: 0.1, ute: true },
+  fingrarH: { namn: 'Fingrar på höger hand', i: 'fingrarna på höger hand', under: 'handH', handighet: 0.1, ute: true },
+  tarV: { namn: 'Tår på vänster fot', i: 'tårna på vänster fot', under: 'fotV', rorlighet: 0.05, ute: true },
+  tarH: { namn: 'Tår på höger fot', i: 'tårna på höger fot', under: 'fotH', rorlighet: 0.05, ute: true },
+  hjarta: { namn: 'Hjärta', i: 'hjärtat', under: 'bal', livsviktig: true },
+  lungor: { namn: 'Lungor', i: 'lungorna', under: 'bal', livsviktig: true },
+  lever: { namn: 'Lever', i: 'levern', under: 'bal', livsviktig: true },
+  mage: { namn: 'Mage', i: 'magen', under: 'bal' },
 } satisfies Record<string, DelDef>;
 export type Kroppsdel = keyof typeof KROPPSDELAR;
 const DEL: Record<Kroppsdel, DelDef> = KROPPSDELAR;
@@ -107,13 +144,15 @@ export const SKADOR = {
   blamarke: { namn: 'Blåmärke', ett: 'ett blåmärke', tecken: '🟣', blod: 0, smarta: 0.4, fel: 0.2, lakTim: 24 }, // efter ett slag (steg 3.2.3)
   sticksar: { namn: 'Sticksår', ett: 'ett sticksår', tecken: '🗡️', blod: 1.5, smarta: 0.7, fel: 0.5, lakTim: 48 }, // ett djupt stick (steg 3.7.2, strid.ts)
   hjarnskakning: { namn: 'Hjärnskakning', ett: 'en hjärnskakning', tecken: '💫', blod: 0, smarta: 0.6, fel: 0.3, lakTim: 48 }, // ett hårt slag mot huvudet
+  forfrysning: { namn: 'Förfrysning', ett: 'en förfrysning', tecken: '🥶', blod: 0, smarta: 0.5, fel: 0.6, lakTim: 72 }, // av kylan (steg 8.2.3)
   brannskada: { namn: 'Brännskada', ett: 'en brännskada', tecken: '🔥', blod: 0, smarta: 0.8, fel: 0.4, lakTim: 72 }, // av elden i en eldsvåda (steg 3.8.5, brand.ts)
 } satisfies Record<string, SkadaDef>;
 export type SkadaTyp = keyof typeof SKADOR;
 const SKADA: Record<SkadaTyp, SkadaDef> = SKADOR;
 // en skada: del, typ, grad (0–1, sjunker när den läker) och blödningen kvar (1 = som nyss, 0 = levrad).
 // f = ett förband av mossa ligger på, inf = infektionen (0–1; vid 1 dör man), ren = rengjord till den tiden (steg 2.5.2)
-export interface Skada { d: Kroppsdel; k: SkadaTyp; g: number; b: number; f?: 1; inf?: number; ren?: number; fast?: 1 } // fast = ett spjut sitter kvar i såret (steg 3.7.7)
+export interface Men { d: Kroppsdel; fel: number; ont: number }
+export interface Skada { d: Kroppsdel; k: SkadaTyp; g: number; b: number; g0?: number; f?: 1; inf?: number; ren?: number; fast?: 1 } // fast = ett spjut sitter kvar i såret (steg 3.7.7)
 const oppet = (w: Skada) => SKADA[w.k].blod > 0; // ett öppet sår (inte ett benbrott)
 
 // ---------- olyckorna (registret) ----------
@@ -132,30 +171,57 @@ export const OLYCKOR: Partial<Record<Act, OlyckaDef>> = {
 // ---------- det kroppen ger ----------
 // hur mycket sämre en del är just nu (0 = hel, 1 = går inte att använda)
 export function delFel(p: Person, d: Kroppsdel) {
+  if (p.saknas?.includes(d)) return 1; // en förlorad del kommer inte tillbaka (steg 8.2.3)
   let f = 0;
   for (const w of p.skador ?? []) if (w.d === d) f += SKADA[w.k].fel * w.g;
+  for (const m of p.men ?? []) if (m.d === d) f += m.fel; // det som läkte fel (steg 8.2.4)
   return Math.min(1, f);
 }
-function forlust(p: Person, vikt: 'rorlighet' | 'handighet') {
-  if (!p.skador?.length) return 1;
+const harFel = (p: Person) => !!(p.skador?.length || p.saknas?.length || p.men?.length);
+type Vikt = 'rorlighet' | 'handighet' | 'syn' | 'horsel' | 'tal';
+function forlust(p: Person, vikt: Vikt) {
+  if (!harFel(p)) return 1;
   let v = 0;
   for (const d of Object.keys(DEL) as Kroppsdel[]) v += (DEL[d][vikt] ?? 0) * delFel(p, d);
-  return Math.max(vikt === 'rorlighet' ? GANG.rorGolv : HALSA.minst, 1 - v);
+  return Math.max(vikt === 'rorlighet' ? GANG.rorGolv : vikt === 'handighet' ? HALSA.minst : 0, 1 - v);
 }
+// synen, hörseln och talet (steg 8.2.2), 0–1, räknade ur ögonen, öronen och käken
+export const syn = (p: Person) => forlust(p, 'syn');
+export const horsel = (p: Person) => forlust(p, 'horsel');
+export const tal = (p: Person) => forlust(p, 'tal');
+// karisman och skaldskapet gånger detta: blicken, att höra och att tala (steg 8.2.2). Räknas när kroppen ändras (folk.ts läser det)
+export const uppdateraSinnen = (p: Person) => { const v = (syn(p) + horsel(p) + tal(p)) / 3; if (v < 1) p.sinnen = v; else delete p.sinnen; };
 // skadade ben och fötter: gången gånger detta, aldrig under GANG.rorGolv (steg 3.10.10)
 export const rorlighetSkador = (p: Person) => forlust(p, 'rorlighet');
 // gången gånger detta (steg.ts): skadorna och yrseln av brist på mineraler (steg 2.6.2)
 export const rorlighet = (p: Person) => forlust(p, 'rorlighet') * yrselFaktor(p);
 // den som har ett ben eller en fot som är för skadad kan inte gå, utan kravlar (steg 2.5.2)
 export const GADELAR: readonly Kroppsdel[] = [...BEN, ...FOTTER]; // delarna man går med
-export const kanGa = (p: Person) => !p.skador?.length || !GADELAR.some(d => delFel(p, d) >= HALSA.krypFel);
+// ett förlorat ben eller en fot: man går ändå, sämre, så länge det andra benet och den andra foten håller. Den som svimmat går inte
+export const kanGa = (p: Person) => !p.svimmat && (!harFel(p) || !GADELAR.some(d => !p.saknas?.includes(d) && delFel(p, d) >= HALSA.krypFel)) && (p.saknas?.filter(d => GADELAR.includes(d)).length ?? 0) < 2;
 export const hemma = (s: State, p: Person) => utanforByn(s, Math.floor(p.x), Math.floor(p.y)) <= HALSA.hemma;
 const infektion = (p: Person) => { let v = 0; for (const w of p.skador ?? []) v = Math.max(v, w.inf ?? 0); return v; };
 // arbetet gånger detta (workRate i ekonomi.ts): skadorna och styrkan, som sjunker av brist på protein och mineraler (steg 2.6.2)
-export const handighet = (p: Person) => forlust(p, 'handighet') * styrkaFaktor(p);
+export const handighet = (p: Person) => forlust(p, 'handighet') * styrkaFaktor(p) * medArbete(p);
+// medvetandet (steg 8.2.5), 0–1: smärtan, blodet, febern av en infektion, tröttheten, törsten, svälten och skador i huvudet
+export const medDelar = (p: Person) => {
+  const blod = 1 - (p.blod ?? 1), ut: { namn: string; v: number }[] = [];
+  const lagg = (namn: string, v: number) => { if (v > 0.005) ut.push({ namn, v: -v }); };
+  lagg('Smärta', HALSA.medSmarta * smarta(p));
+  lagg('Blodförlust', HALSA.medBlod * clamp(blod / (1 - HALSA.blodDod), 0, 1));
+  lagg('Feber av en infektion', HALSA.medInf * infektion(p));
+  lagg('Trötthet', HALSA.medTrott * (1 - p.rest));
+  lagg('Törst', HALSA.medTorst * clamp(1 - p.torst / TORST.laker, 0, 1));
+  lagg('Svält', HALSA.medSvalt * clamp(1 - p.hunger / KROPP.lakerMat, 0, 1));
+  lagg('Skador i huvudet', HALSA.medHuvud * delFel(p, 'huvud'));
+  return ut;
+};
+export function medvetande(p: Person) { let v = 1; for (const d of medDelar(p)) v += d.v; return clamp(v, 0, 1); }
+const medArbete = (p: Person) => { const m = medvetande(p); return m >= HALSA.medLag ? 1 : HALSA.medArbete + (1 - HALSA.medArbete) * m / HALSA.medLag; };
 export function smarta(p: Person) {
   let v = 0;
   for (const w of p.skador ?? []) v += SKADA[w.k].smarta * w.g + HALSA.infSmarta * (w.inf ?? 0);
+  for (const m of p.men ?? []) v += m.ont; // kronisk smärta (steg 8.2.4)
   return Math.min(1, v);
 }
 // blodet personen förlorar i timmen just nu
@@ -167,7 +233,7 @@ export function blodning(p: Person) {
 // hälsan som visas och som valet läser: den gamla hälsan (svält, kyla, törst, sjukdom), blodet och smärtan
 export function halsa(p: Person) {
   const b = p.blod ?? 1;
-  if (b >= 1 && !p.skador?.length) return p.health;
+  if (b >= 1 && !p.skador?.length && !p.men?.length) return p.health;
   return Math.max(0, Math.min(p.health, (b - HALSA.blodDod) / (1 - HALSA.blodDod), 1 - HALSA.smarta * smarta(p), 1 - infektion(p)));
 }
 // mätt och inte törstig: såren läker fullt, blodet kommer tillbaka och hälsan stiger (halsaLage i steg.ts)
@@ -179,7 +245,8 @@ export const lakerFullt = (p: Person) => p.hunger > KROPP.lakerMat && p.torst > 
 export interface SkadeRad { d: Kroppsdel; tecken: string; ikon: string; namn: string; grad: string; bloder: boolean; gjort: string[]; vard: string[]; gar: string; battre: boolean }
 export function skadeLista(p: Person, now: number): SkadeRad[] {
   const lak = (lakerFullt(p) ? 1 : HALSA.lakSamre) * lakFaktor(p);
-  return (p.skador ?? []).map(w => {
+  const fast = (d: Kroppsdel, namn: string, tecken: string, gar: string): SkadeRad => ({ d, tecken, ikon: 's_' + tecken, namn, grad: 'bestående', bloder: false, gjort: [], vard: [], gar, battre: false });
+  return [...(p.saknas ?? []).map(d => fast(d, `Saknar ${DEL[d].i}`, '✂️', 'kommer inte tillbaka')), ...(p.men ?? []).map(m => fast(m.d, `${MEN_NAMN(m)} (${DEL[m.d].i})`, '🩹', 'läkte fel, blir inte bättre')), ...(p.skador ?? []).map(w => {
     const sk = SKADA[w.k], ren = (w.ren ?? 0) > now, kall = (w.inf ?? 0) >= HALSA.kallbrand;
     const gar = w.inf === undefined ? `läker, ungefär ${Math.ceil(w.g * sk.lakTim / lak)} timmar kvar` : kall ? 'kallbrand, blir sämre' : ren ? 'infekterat men rengjort, blir bättre' : 'infekterat, blir sämre';
     return {
@@ -187,13 +254,15 @@ export function skadeLista(p: Person, now: number): SkadeRad[] {
       grad: w.g >= HALSA.radd ? 'mycket svårt' : w.g >= HALSA.avbryt ? 'svårt' : 'lätt', bloder: w.b > 0 && oppet(w),
       gjort: [...w.f ? ['förband av mossa'] : [], ...ren ? ['rengjort'] : []], vard: [...w.f ? ['s_forb'] : [], ...ren ? ['s_ren'] : []], gar, battre: w.inf === undefined || (ren && !kall),
     };
-  });
+  })];
 }
+const MEN_NAMN = (m: Men) => m.ont ? 'Kronisk smärta' : GADELAR.includes(m.d) ? 'Haltar' : DEL[m.d].syn ? 'Sämre öga' : 'Stel';
 export const skadeText = (p: Person, now: number) => skadeLista(p, now).map(r => `${r.namn}${r.grad === 'lätt' ? '' : ', ' + r.grad}${r.bloder ? ', blöder' : ''}${r.gjort.map(g => ', ' + g).join('')}, ${r.gar}`);
 // hur skadad en del ser ut i bilden (0 = hel, 1 = förstörd): det sämsta av hur mycket sämre den är och infektionen där
 export function delSkada(p: Person, d: Kroppsdel) {
   let v = delFel(p, d);
   for (const w of p.skador ?? []) if (w.d === d) v = Math.max(v, w.inf ?? 0);
+  for (const k of Object.keys(DEL) as Kroppsdel[]) if (DEL[k].under === d) v = Math.max(v, delSkada(p, k) * 0.5); // de finare delarna syns på delen de sitter på
   return Math.min(1, v);
 }
 
@@ -202,14 +271,19 @@ export function delSkada(p: Person, d: Kroppsdel) {
 // det påverkar. Syn, hörsel, tal och medvetande kommer med de finare kroppsdelarna (ögon, öron, käke)
 interface FormagaDef { namn: string; tecken: string; ont?: true; varde(p: Person): number; delar(p: Person): { namn: string; v: number }[]; gor: string }
 // skadade delar, och sist bristen (steg 2.6.2), så att 1 + summan blir värdet
-const delarAv = (p: Person, vikt: 'rorlighet' | 'handighet') => {
+const delarAv = (p: Person, vikt: Vikt) => {
   const r = (Object.keys(DEL) as Kroppsdel[]).filter(d => (DEL[d][vikt] ?? 0) * delFel(p, d) > 0).map(d => ({ namn: DEL[d].namn, v: -(DEL[d][vikt] ?? 0) * delFel(p, d) }));
+  if (vikt !== 'rorlighet' && vikt !== 'handighet') return r;
   const f = forlust(p, vikt), b = vikt === 'rorlighet' ? yrselFaktor(p) : styrkaFaktor(p);
   return b < 1 ? [...r, { namn: vikt === 'rorlighet' ? 'Yrsel (brist på mineraler)' : 'Brist på protein eller mineraler', v: -f * (1 - b) }] : r;
 };
 export const FORMAGOR = {
   rorlighet: { namn: 'Rörlighet', tecken: '🦵', varde: rorlighet, delar: p => delarAv(p, 'rorlighet'), gor: 'Gångfarten. Den som har ett ben eller en fot som är mycket skadad kan inte gå, utan kravlar hem eller bärs.' },
   handighet: { namn: 'Händighet', tecken: '✋', varde: handighet, delar: p => delarAv(p, 'handighet'), gor: 'Hur fort arbetet går, och om man kan vårda en annan.' },
+  syn: { namn: 'Syn', tecken: '👁️', varde: syn, delar: p => delarAv(p, 'syn'), gor: 'Jakten, fisket och samlandet, träffsäkerheten med spjut, båge och slunga, och karisman.' },
+  horsel: { namn: 'Hörsel', tecken: '👂', varde: horsel, delar: p => delarAv(p, 'horsel'), gor: 'Samtalen, att höra fara, skaldskapet och karisman.' },
+  tal: { namn: 'Tal', tecken: '👄', varde: tal, delar: p => delarAv(p, 'tal'), gor: 'Samtalen, att berätta och att övertyga, skaldskapet och karisman.' },
+  medvetande: { namn: 'Medvetande', tecken: '🧠', varde: medvetande, delar: medDelar, gor: `Är det lågt går arbetet långsammare och sämre. Under ${Math.round(HALSA.svimma * 100)} % svimmar man, faller ihop där man är och måste bäras hem.` },
   blod: { namn: 'Blod', tecken: '🩸', varde: p => p.blod ?? 1, delar: p => blodning(p) > 0 ? [{ namn: 'Blöder i timmen', v: -blodning(p) }] : [], gor: `Hälsan. Under ${Math.round(HALSA.blodDod * 100)} % förblöder man. Blodet kommer tillbaka på ${HALSA.blodTillbaka} timmar för den som inte blöder och är mätt och otörstig.` },
   smarta: { namn: 'Smärta', tecken: '😣', ont: true, varde: smarta, delar: p => (p.skador ?? []).map(w => ({ namn: `${SKADA[w.k].namn} i ${DEL[w.d].i}`, v: -(SKADA[w.k].smarta * w.g + HALSA.infSmarta * (w.inf ?? 0)) })), gor: 'Hälsan och humöret. Den som har mycket ont vilar hellre än arbetar.' },
 } satisfies Record<string, FormagaDef>;
@@ -219,7 +293,11 @@ export const FORMAGOR = {
 // hen i texten om när det hände: efter ett verb som slog eller straffade är den skadade föremålet (honom), annars subjektet (han)
 const narOm = (nar: string, p: Person) => nar.replace(/(slog|straffade) hen\b/, (_m, v: string) => `${v} ${honom(p)}`).replace(/\bhen\b/g, han(p));
 export function skada(s: State, p: Person, d: Kroppsdel, k: SkadaTyp, g: number, dod: Dodsorsak, nar: string): Dodsorsak | undefined {
-  (p.skador ??= []).push({ d, k, g, b: SKADA[k].blod > 0 ? 1 : 0 });
+  d = finDel(s, p, d);
+  if (p.saknas?.includes(d)) d = (DEL[d].under as Kroppsdel | undefined) ?? 'bal'; // delen finns inte längre
+  (p.skador ??= []).push({ d, k, g, b: SKADA[k].blod > 0 ? 1 : 0, g0: g });
+  uppdateraSinnen(p);
+  if ((k === 'skarsar' || k === 'bett') && DEL[d].ute && g >= HALSA.forloraGrad && !HALSA_PROV.grov && rnd(s, 'halsa', p) < HALSA.forloraChans) forlora(s, p, d, k === 'bett' ? 'bets av' : 'höggs av');
   if (SKADA[k].blod > 0) blodas(s, p.x, p.y, 'skada', g * SKADA[k].blod);
   count(s, 'skador'); count(s, 'skada ' + SKADA[k].namn.toLowerCase());
   if (g >= UPPV.skadaGrad) livet(s, p, 'skadad', true); // det hen överlevt (steg 3.9.8)
@@ -231,6 +309,48 @@ export function skada(s: State, p: Person, d: Kroppsdel, k: SkadaTyp, g: number,
   if (g >= HALSA.radd) fearPlace(s, p, '', `${p.name} skadades svårt där`);
   if (g >= HALSA.avbryt) avbryt(s, p);
   return undefined;
+}
+// skadan kan hamna på en av de finare delarna under den (steg 8.2.1). Scenarierna som prövar en skada på just en viss del stänger av det
+export const HALSA_PROV = { grov: false };
+function finDel(s: State, p: Person, d: Kroppsdel): Kroppsdel {
+  const fina = FINA[d];
+  if (!fina || HALSA_PROV.grov || rnd(s, 'halsa', p) >= HALSA.finChans) return d;
+  return fina[Math.floor(rnd(s, 'halsa', p) * fina.length)];
+}
+const FINA = {} as Partial<Record<Kroppsdel, Kroppsdel[]>>;
+for (const k of Object.keys(DEL) as Kroppsdel[]) { const u = DEL[k].under as Kroppsdel | undefined; if (u) (FINA[u] ??= []).push(k); }
+// en del går förlorad (steg 8.2.3): avbiten, avhuggen, förfrusen eller amputerad. Det som sitter på den försvinner med den, och utom när
+// den fryser av blir den en sak på marken med ägarens namn och delen, som ruttnar som maten
+export function forlora(s: State, p: Person, d: Kroppsdel, hur: string) {
+  if (p.saknas?.includes(d)) return;
+  const delar = [d, ...FINA[d] ?? []];
+  for (const q of delar) if (!p.saknas?.includes(q)) (p.saknas ??= []).push(q);
+  p.skador = p.skador?.filter(w => !delar.includes(w.d));
+  p.men = p.men?.filter(m => !delar.includes(m.d));
+  if (!p.skador?.length) p.skador = undefined;
+  uppdateraSinnen(p);
+  nyKvarleva(s, 'del', p, `${gen(p.name)} ${/^(vänstra|högra) /.test(DEL[d].i) ? DEL[d].i.replace(/(en|et|t)$/, '') : DEL[d].i}`); // "Häggs vänstra hand"
+  count(s, 'delar förlorade');
+  const text = `${gen(p.name)} ${DEL[d].i} ${hur}.`;
+  log(s, text, 'world', [p.id]); p.fame.push(`Förlorade ${DEL[d].i}`);
+  think(p, `Förlorade ${DEL[d].i}`, -0.3, s.now, 3 * DAY);
+}
+// en skada som läkt (steg 8.2.4): den kan läka fel och ge ett bestående men, och lämna ett ärr som ändrar utseendet
+function laktSkada(s: State, p: Person, w: Skada) {
+  const g0 = w.g0 ?? 0;
+  if (g0 >= HALSA.menGrad && rnd(s, 'halsa', p) < HALSA.menChans) {
+    const ont = !GADELAR.includes(w.d) && !DEL[w.d].syn;
+    (p.men ??= []).push({ d: w.d, fel: ont ? 0 : HALSA.menFel, ont: ont ? HALSA.menOnt : 0 });
+    uppdateraSinnen(p); count(s, 'men');
+    log(s, `${gen(p.name)} ${SKADA[w.k].namn.toLowerCase()} läkte fel.`, 'world', [p.id]);
+  }
+  if (g0 >= HALSA.arrGrad && w.k !== 'blamarke' && rnd(s, 'halsa', p) < HALSA.arrChans) {
+    const fulare = rnd(s, 'halsa', p) < HALSA.arrFulare, ansikte = w.d === 'huvud' || DEL[w.d].under === 'huvud';
+    (p.arr ??= []).push({ d: w.d, n: Math.floor(rnd(s, 'halsa', p) * 10) + 1 }); count(s, 'arr');
+    if (ansikte) p.pot.skonhet = clamp(p.pot.skonhet + (fulare ? -1 : 0.5) * HALSA.arrSkonhet, 0, 20); // oftast fulare, ibland snyggare
+    p.fame.push(`Fick ett ärr i ${DEL[w.d].i}`);
+    if (ansikte && !p.binamn && rnd(s, 'halsa', p) < HALSA.arrBinamn) gebinamn(s, p, 'arrig', 1);
+  }
 }
 // olyckor i det farliga arbete man gör just nu (OLYCKOR)
 function olyckaSteg(s: State, p: Person, dtSec: number): Dodsorsak | undefined {
@@ -247,6 +367,8 @@ function olyckaSteg(s: State, p: Person, dtSec: number): Dodsorsak | undefined {
 export function halsaSteg(s: State, p: Person, dtSec: number): Dodsorsak | undefined {
   const dod = olyckaSteg(s, p, dtSec);
   if (dod) return dod;
+  forfrysning(s, p, dtSec);
+  svimmaSteg(s, p);
   if (!p.skador?.length) { if ((p.blod ?? 1) < 1 && lakerFullt(p)) p.blod = Math.min(1, p.blod! + dtSec / (HALSA.blodTillbaka * HOUR_S)); return undefined; }
   const h = dtSec / HOUR_S, blod = blodning(p), mat = lakerFullt(p), lak = (mat ? 1 : HALSA.lakSamre) * vilaLak(s, p) * lakFaktor(p);
   p.blod = clamp((p.blod ?? 1) - blod * h, 0, 1);
@@ -258,13 +380,34 @@ export function halsaSteg(s: State, p: Person, dtSec: number): Dodsorsak | undef
     if (w.inf === undefined) w.g -= h * lak / SKADA[w.k].lakTim; // ett infekterat sår läker inte
   }
   if (p.skador.some(w => (w.inf ?? 0) >= 1)) return 'kallbrand';
+  for (const w of p.skador) if (w.g <= 0) laktSkada(s, p, w);
   p.skador = p.skador.filter(w => w.g > 0);
+  uppdateraSinnen(p);
   if (!p.skador.length) p.skador = undefined;
   else if (blod === 0 && mat) p.blod = Math.min(1, p.blod + h / HALSA.blodTillbaka);
   if (p.blod < HALSA.blodDod) { blodas(s, p.x, p.y, 'forblodning', 1); return 'blod'; }
   const ont = smarta(p);
   if (ont > HALSA.ontGrans) think(p, 'Har ont', -HALSA.smartaHumor * ont, s.now, HOUR);
   return undefined;
+}
+
+// den som är mycket kall kan få förfrysta fingrar och tår (steg 8.2.3)
+function forfrysning(s: State, p: Person, dtSec: number) {
+  if (p.warm >= HALSA.forfrysVarm || !chance(s, HALSA.forfrysRisk / HOUR_S, dtSec, 'halsa', p)) return;
+  const fina: Kroppsdel[] = ['fingrarV', 'fingrarH', 'tarV', 'tarH'], d = fina[Math.floor(rnd(s, 'halsa', p) * fina.length)];
+  if (p.saknas?.includes(d)) return;
+  const fore = (p.skador ?? []).filter(w => w.d === d && w.k === 'forfrysning').reduce((a, w) => a + w.g, 0);
+  (p.skador ??= []).push({ d, k: 'forfrysning', g: HALSA.forfrysGrad, b: 0, g0: HALSA.forfrysGrad });
+  count(s, 'förfrysningar');
+  if (fore + HALSA.forfrysGrad >= HALSA.forloraGrad) forlora(s, p, d, 'frös bort');
+}
+// att svimma och vakna (steg 8.2.6). Den som svimmat ligger där hen är (ARBETEN i val.ts) och bärs hem som den som inte kan gå
+function svimmaSteg(s: State, p: Person) {
+  if (!p.svimmat) {
+    if (medvetande(p) >= HALSA.svimma) return;
+    p.svimmat = true; avbryt(s, p); p.task = undefined; count(s, 'svimmat');
+    log(s, `${p.name} svimmade.`, 'world', [p.id]);
+  } else if (medvetande(p) >= HALSA.vakna) { p.svimmat = undefined; if (p.task?.act === 'medvetslos') p.task = undefined; }
 }
 
 // ---------- infektionen och läkningen (steg 2.5.2) ----------
@@ -296,14 +439,15 @@ function infSteg(s: State, p: Person, w: Skada, h: number, dtSec: number) {
 // det q behöver av den som vårdar (g): trycka på ett sår som blöder, ett förband av mossa, rengöra ett infekterat sår och
 // att bäras hem. undefined = inget
 export function vardBehov(s: State, q: Person, g: Person) {
-  const sk = q.skador;
-  if (!sk?.length) return undefined;
+  const sk = q.skador ?? [];
+  if (!sk.length && !(g !== q && !kanGa(q) && !hemma(s, q))) return undefined; // den som svimmat bärs hem också utan sår
   const stor = (w: Skada) => oppet(w) && w.g >= HALSA.vardFel;
   const blod = sk.some(w => stor(w) && w.b > 0);
   const forband = sk.some(w => stor(w) && !w.f && w.inf === undefined) && getable(s, g, 'mossa') >= 1;
   const rengor = sk.some(w => w.inf !== undefined && w.inf < HALSA.kallbrand && !((w.ren ?? 0) > s.now));
   const bara = g !== q && !kanGa(q) && !hemma(s, q) && q.task?.act !== 'buren';
-  return blod || forband || rengor || bara ? { blod, forband, rengor, bara } : undefined;
+  const amputera = g !== q && sk.some(w => (w.inf ?? 0) >= HALSA.kallbrand && DEL[w.d].ute) && getable(s, g, 'flintkniv') >= 1;
+  return blod || forband || rengor || bara || amputera ? { blod, forband, rengor, bara } : undefined;
 }
 const vardas = (s: State, q: Person, g: Person) => living(s).some(o => o !== g && o.task?.act === 'varda' && o.task.ref === q.id);
 // vården som väljs (val.ts): sjalv = sina egna sår (före det mesta), annars den närmaste andra som behöver vård och som ingen
@@ -317,7 +461,7 @@ export function vardVal(s: State, p: Person, sjalv: boolean): { spot: { x: numbe
   if (ageOf(p, s.now) < ALDER.vuxen || !kanGa(p) || handighet(p) < HALSA.vardHand) return undefined;
   let best: Person | undefined, bd = HALSA.vardR;
   for (const q of living(s)) {
-    if (q === p || !q.skador?.length) continue;
+    if (q === p || !q.skador?.length && !q.svimmat) continue;
     const d = Math.hypot(q.x - p.x, q.y - p.y);
     if (d >= bd || !vardBehov(s, q, p) || vardas(s, q, p)) continue;
     best = q; bd = d;
@@ -343,6 +487,8 @@ export function vardKlar(s: State, p: Person, t: Task) {
     if (w.b > 0) { w.b = 0; count(s, 'sar tryckta'); }
     if (!w.f && w.inf === undefined && getable(s, p, 'mossa') >= 1) { takeMaterial(s, p, 'mossa', 1); w.f = 1; count(s, 'forband'); }
   }
+  // kallbrand i en del man kan vara utan: den tas av med kniven, så att personen lever (steg 8.2.3)
+  for (const w of [...q.skador ?? []]) if (w.inf !== undefined && w.inf >= HALSA.kallbrand && DEL[w.d].ute && q !== p && getable(s, p, 'flintkniv') >= 1) { forlora(s, q, w.d, 'amputerades'); count(s, 'amputerat'); }
   for (const w of q.skador ?? []) if (w.inf !== undefined && w.inf < HALSA.kallbrand) { w.ren = s.now + HALSA.renTim * HOUR; count(s, 'sar rengjorda'); }
   count(s, 'vard');
   if (q !== p && q.health < UPPV.naraHalsa) { upplev(s, p, 'raddade', q.name); upplev(s, q, 'raddad', p.name); } // nära döden (steg 4.1.1.2)

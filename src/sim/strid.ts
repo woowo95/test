@@ -33,7 +33,7 @@ import { kronikaBer, loggBer, personFalt } from './berattelser';
 // (3.7.1) och räderna (11.2.5).
 import { balans } from './balans';
 import { GANG } from './gang';
-import { GADELAR, HALSA, KROPPSDELAR, Kroppsdel, SKADOR, SkadaTyp, skada } from './halsa';
+import { GADELAR, HALSA, KROPPSDELAR, Kroppsdel, SKADOR, SkadaTyp, skada, syn } from './halsa';
 import { blodas } from './blod';
 import { DJUR } from './redskap';
 import { KLAD_SLAG, SAKER, sakNamn } from './saker';
@@ -201,7 +201,7 @@ const skadaAv = (sl: Slag, g: number, d: Kroppsdel): SkadaTyp => {
 
 // ---------- var slagen träffar ----------
 // hur ofta en träff hamnar på varje del (huvudet sällan)
-const TRAFFDEL: Record<Kroppsdel, number> = { huvud: 0.07, bal: 0.33, armV: 0.11, armH: 0.11, handV: 0.05, handH: 0.05, benV: 0.1, benH: 0.1, fotV: 0.04, fotH: 0.04 };
+const TRAFFDEL: Partial<Record<Kroppsdel, number>> = { huvud: 0.07, bal: 0.33, armV: 0.11, armH: 0.11, handV: 0.05, handH: 0.05, benV: 0.1, benH: 0.1, fotV: 0.04, fotH: 0.04 };
 const DELAR = Object.keys(TRAFFDEL) as Kroppsdel[];
 
 // ---------- det kläderna tar ----------
@@ -484,7 +484,7 @@ export function traffa(st: Strid, a: Kampe, b: Kampe, skada0: number, sl: Slag, 
   const kastad = kast ? VAP[a.vapen].kast : undefined;
   let x = slump(st);
   let d: Kroppsdel = 'bal';
-  for (const del of DELAR) { x -= TRAFFDEL[del]; if (x <= 0) { d = del; break; } }
+  for (const del of DELAR) { x -= TRAFFDEL[del]!; if (x <= 0) { d = del; break; } }
   let g = skada0 * (1 + (a.st.styrka - 10) * STRID.styrka) * (1 - STRID.slump / 2 + slump(st) * STRID.slump);
   let kl: string | undefined;
   for (const c of b.klader) { const sk = SKYDD[c]; if (sk?.delar.includes(d)) { g *= 1 - (sk.tar[sl] ?? 0); kl = c; } }
@@ -811,7 +811,7 @@ export function personKampe(s: State, p: Person, id: number, sida: 0 | 1, x: num
   const reserv = res && (p.reservAlltid || (harBalte(s, p) && paSigVikt(s, p) + viktOf(res) <= capacity(s, p) * UTRUSTNING.kropp)) ? res : undefined;
   return {
     id, namn: p.name, sida, pid: p.id, vapen, reserv, ledare: ledareOf(s) === p ? ledarPlats(s, p) : undefined, klader: bar.filter(k => SKYDD[k]), fart: 1, x, y, tung: clamp(paSigVikt(s, p) / UTRUSTNING.kropp / Math.max(1, capacity(s, p)), 0, 1),
-    st: { styrka: stat(p, 'styrka', s.now), uthallighet: stat(p, 'uthallighet', s.now), mod: stat(p, 'mod', s.now), smidighet: stat(p, 'smidighet', s.now), skicklighet: 5 + (p.skill.narstrid ?? 0) / 2 + STRID.tyckeSkick * smakAv(p, 'v:' + vapen), sikte: 5 + (p.skill.traff ?? 0) / 2, torst: blodtorst(s, p) },
+    st: { styrka: stat(p, 'styrka', s.now), uthallighet: stat(p, 'uthallighet', s.now), mod: stat(p, 'mod', s.now), smidighet: stat(p, 'smidighet', s.now), skicklighet: 5 + (p.skill.narstrid ?? 0) / 2 + STRID.tyckeSkick * smakAv(p, 'v:' + vapen), sikte: (5 + (p.skill.traff ?? 0) / 2) * syn(p), torst: blodtorst(s, p) },
   };
 }
 // ledaren i strid (steg 3.7.12): en modig och aggressiv ledare går först, en försiktig står bakom och leder. Seden

@@ -1,4 +1,4 @@
-import { amountOf, busksort, fallTid, living, tileOf, isTool, FOREST, stamAv, MARK, STADIER, VAG, groundOf, stadium, tradAlder, tradArt, STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf } from '../../sim';
+import { kvarById, KVARLEVOR, DAY, amountOf, busksort, fallTid, living, tileOf, isTool, FOREST, stamAv, MARK, STADIER, VAG, groundOf, stadium, tradAlder, tradArt, STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { condBar, durTxt, esc, kvMark, kvText, pLink } from '../hjalp';
 import { piles, s, ui } from '../lage';
@@ -53,6 +53,14 @@ function toaHog(i: number) {
       <dt>Ligger kvar</dt><dd>${durTxt(inf.kvar * HOUR)} till</dd>
       <dt>Gör</dt><dd>${gor.length ? gor.join('<br>') : 'Inget längre, den har nästan bleknat bort'}</dd>
     </dl>`;
+}
+// det som blivit kvar av en människa (steg 8.2.3, kvarlevor.ts)
+function kvarleva(id: number) {
+  const q = kvarById(s, id);
+  if (!q) return '<p class="muted">Det finns inte kvar längre.</p>';
+  const d = KVARLEVOR[q.k];
+  return `<div class="phead">${iconImg(d.ikon, 32)}<div><h2>${esc(q.text)}</h2></div></div>
+    <p>${esc(d.namn)}. Ruttnar bort om ${durTxt(q.t + d.haller * DAY - s.now)}.</p>`;
 }
 // stubben efter ett fällt träd (steg 3.10.6): när trädet fälldes och hur länge det dröjer innan den ruttnat bort (STUBBE_LIV, skog.ts)
 function stubbe(i: number) {
@@ -162,6 +170,7 @@ export const sak: Flik = {
   html() {
     if (ui.sak.startsWith('f:')) return toaHog(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('u:')) return stubbe(Number(ui.sak.slice(2)));
+    if (ui.sak.startsWith('k:')) return kvarleva(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('r:')) return trad(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('b:')) return buske(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('a:')) return fackla(Number(ui.sak.slice(2)));

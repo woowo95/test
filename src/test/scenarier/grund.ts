@@ -2309,3 +2309,64 @@ SCENARIER.bjornjakt = {
     ];
   },
 };
+
+SCENARIER.kropp8 = {
+  text: 'Steg 8.2: de finare kroppsdelarna, synen, hörseln och talet, förlorade delar som blir saker, ärr och men, medvetandet och att svimma',
+  kor: () => {
+    const s = createState(6, START), p = living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    const f0 = SIM.syn(p), h0 = SIM.horsel(p), t0 = SIM.tal(p), k0 = SIM.stat(p, 'karisma', s.now);
+    (p.skador ??= []).push({ d: 'ogaV', k: 'skarsar', g: 1, b: 0 }, { d: 'kake', k: 'benbrott', g: 0.5, b: 0 });
+    SIM.uppdateraSinnen(p);
+    const syn1 = SIM.syn(p), tal1 = SIM.tal(p), k1 = SIM.stat(p, 'karisma', s.now);
+    p.skador = undefined; SIM.uppdateraSinnen(p);
+    // en hand går förlorad: en sak på marken, fingrarna med den, händigheten sjunker
+    const q = living(s).filter(x => SIM.ageOf(x, s.now) >= SIM.ALDER.vuxen)[1]!, ha = SIM.handighet(q);
+    SIM.forlora(s, q, 'handV', 'höggs av');
+    const kv = SIM.kvarlevor(s)[0];
+    const fing = !!q.saknas?.includes('fingrarV');
+    // den ena foten borta: går ändå; den andra också: kan inte gå
+    const r = living(s).filter(x => SIM.ageOf(x, s.now) >= SIM.ALDER.vuxen)[2]!;
+    SIM.forlora(s, r, 'fotV', 'höggs av'); const gar1 = SIM.kanGa(r), rorl = SIM.rorlighet(r);
+    SIM.forlora(s, r, 'fotH', 'höggs av'); const gar2 = SIM.kanGa(r);
+    // ruttnar som maten
+    const kvar = s.kvarlevor!.length; s.now += SIM.KVARLEVOR.del.haller * 86400000 + 1; SIM.kvarTimme(s); const rott = s.kvarlevor!.length < kvar;
+    // medvetandet: full frisk nära 1, mycket ont och blodförlust lågt, arbetet långsammare, svimmar
+    const u = living(s).filter(x => SIM.ageOf(x, s.now) >= SIM.ALDER.vuxen)[3]!;
+    u.rest = 1; u.hunger = 1; u.torst = 1;
+    const m0 = SIM.medvetande(u), a0 = SIM.handighet(u);
+    u.blod = 0.5; (u.skador ??= []).push({ d: 'bal', k: 'krossar', g: 1, b: 0 }, { d: 'huvud', k: 'hjarnskakning', g: 1, b: 0 });
+    const m1 = SIM.medvetande(u), a1 = SIM.handighet(u);
+    SIM.halsaSteg(s, u, 1);
+    const svimmat = !!u.svimmat, gor = (SIM.chooseTask(s, u), u.task?.act), kanInte = !SIM.kanGa(u);
+    u.skador = undefined; u.blod = 1;
+    SIM.halsaSteg(s, u, 1);
+    return [
+      [`frisk: full syn, hörsel och tal (${f0}, ${h0}, ${t0})`, f0 === 1 && h0 === 1 && t0 === 1],
+      [`ett skadat öga sänker synen (${syn1}), en bruten käke talet (${tal1}), och båda karisman (${k0.toFixed(1)} → ${k1.toFixed(1)})`, syn1 < 1 && tal1 < 1 && k1 < k0],
+      [`en avhuggen hand blir en sak med ägarens namn ("${kv?.text}"), fingrarna följer med och händigheten sjunker (${ha.toFixed(2)} → ${SIM.handighet(q).toFixed(2)})`, !!kv && kv.text.includes(q.name) && fing && SIM.handighet(q) < ha],
+      [`med en fot kvar går man sämre (${rorl.toFixed(2)}), utan fötter inte alls`, gar1 && rorl < 1 && !gar2],
+      ['delen ruttnar bort', rott],
+      [`medvetandet sjunker (${m0.toFixed(2)} → ${m1.toFixed(2)}) och arbetet går långsammare (${a0.toFixed(2)} → ${a1.toFixed(2)})`, m0 > 0.9 && m1 < m0 && a1 < a0],
+      [`den som svimmat ligger där hen är (${gor}) och kan inte gå`, svimmat && gor === 'medvetslos' && kanInte],
+      ['och vaknar när hen mår bättre', !u.svimmat],
+    ];
+  },
+};
+SCENARIER.arr = {
+  text: 'Steg 8.2.4: en svår skada som läkt kan läka fel och ge ett bestående men, och lämnar ofta ett ärr, som oftast gör ansiktet fulare',
+  kor: () => {
+    let men = 0, arr = 0, ful = 0, N = 60;
+    for (let i = 0; i < N; i++) {
+      const s = createState(6 + i, START), p = living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!, sk = p.pot.skonhet;
+      p.rest = 1; p.hunger = 1; p.torst = 1;
+      p.skador = [{ d: 'huvud', k: 'skarsar', g: 0.001, b: 0, g0: 0.9 }];
+      SIM.halsaSteg(s, p, 3600);
+      if (p.men?.length) men++; if (p.arr?.length) arr++; if (p.pot.skonhet < sk) ful++;
+    }
+    return [
+      [`ibland läker det fel (${men} av ${N})`, men > 5 && men < N],
+      [`ibland blir det ett ärr (${arr} av ${N})`, arr > 10 && arr < N],
+      [`de flesta ärr i ansiktet gör fulare (${ful} av ${arr})`, ful > arr / 2],
+    ];
+  },
+};

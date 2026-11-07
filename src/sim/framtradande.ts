@@ -103,7 +103,7 @@ export interface FramLyss { id: number; namn: string; r0: number; r1: number; l0
 // kvällen: tolv timmar bakåt, så att kvällen och natten efter hör till samma dygn
 const kvall = (t: number) => Math.floor((t - 12 * HOUR) / DAY);
 // kvaliteten: färdigheten och karisman, 0 till 2
-export const framKval = (s: State, p: Person) => (p.skill[FRAM_SKILL] + stat(p, 'karisma', s.now)) / 20;
+export const framKval = (s: State, p: Person) => (p.skill[FRAM_SKILL] * (p.sinnen ?? 1) + stat(p, 'karisma', s.now)) / 20; // skaldskapet och karisman sjunker med hörseln och talet (steg 8.2.2)
 // det den som uppträder minns starkast om en annan, helst en död, och hur starkt
 function starkast(s: State, p: Person) {
   let bast: Intryck | undefined, b = 0;

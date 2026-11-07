@@ -711,6 +711,7 @@ function vinnare(c: Ctx, rader: Arbete[]) {
 }
 
 export function chooseTask(s: State, p: Person) {
+  if (p.svimmat) { p.task = { act: 'medvetslos', phase: 'do', tx: p.x, ty: p.y, until: s.now + 30 * MIN, carry: 0, dark: false, why: 'Har svimmat' }; return; } // kan inte göra något (steg 8.2.6)
   const a = ageOf(p, s.now), light = isLight(s.now), lazy = 1 - duty(s, p);
   const v: Val = { act: 'vila', why: '', dur: (VAL.vilaMin + rnd(s, 'val', p) * VAL.vilaSpann) * MIN }; // 20–60 min
   const c: Ctx = { s, p, v, a, lazy, light }, nar = light ? 'dag' : 'natt';

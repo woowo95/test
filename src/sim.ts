@@ -81,6 +81,7 @@ export * from './sim/lager';
 export * from './sim/omrade';
 export * from './sim/strak';
 export * from './sim/plats';
+export * from './sim/kvarlevor';
 export * from './sim/byggnad';
 export * from './sim/bygg';
 export * from './sim/byggnader';

@@ -140,6 +140,8 @@ export const PAL: Record<string, Record<string, string>> = {
   tragolv: { b: '#7e7362', B: '#987e62', d: '#5e3c24' },
   paborjat: { w: '#dad0bb', d: '#24201d', y: '#d8b25f' },
   a_samla: AKT,
+  kroppsdel: { o: '#372f25', H: '#bd753e', r: '#a14808', R: '#742a01' },
+  dodkropp: { o: '#372f25', H: '#a0947d', w: '#7e7362' },
   zzz: { w: '#dad0bb' },
   a_odla: AKT,
   a_jaga: AKT,
@@ -255,6 +257,18 @@ const PIX_TRADORR = [
   'oooooooooooooooo',
 ];
 export const PIX: Record<string, string[]> = {
+  kroppsdel: [ // platshållare (steg 8.2.3): en avhuggen kroppsdel, gemensam bild för alla delar
+    '................','................','................','................',
+    '................','......HHH.......','....oHHHHHo.....','...oHHHHHHHrr...',
+    '...oHHHHHHHrR...','....ooooooorr...','................','................',
+    '................','................','................','................',
+  ],
+  dodkropp: [ // platshållare (steg 8.5.1): en död kropp på marken
+    '................','................','................','................',
+    '.....oo.........','....oHHo...oo...','....oHHoooowwo..','..oowwwwwwwwwo..',
+    '..oowwwwwwwwwo..','....oHHoooowwo..','....oHHo...oo...','.....oo.........',
+    '................','................','................','................',
+  ],
   zzz: [ // den som sover (steg 8.1.1), i 8 punkter som de andra små symbolerna
     '...wwwww',
     '......w.',

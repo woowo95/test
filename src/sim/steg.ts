@@ -74,7 +74,8 @@ import { stepBrasor } from './brasor';
 import { sjoRakna } from './sjo';
 import { akel, regnetTvattar, toaBesok } from './smuts';
 import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from './torst';
-import { barMed, burenSteg, halsa, halsaSteg, lakerFullt, lamnaAv, mossaFynd, mossaPaStam, vardKlar, vardMal } from './halsa';
+import { kvarTimme } from './kvarlevor';
+import { tal, horsel, barMed, burenSteg, halsa, halsaSteg, lakerFullt, lamnaAv, mossaFynd, mossaPaStam, vardKlar, vardMal } from './halsa';
 import { bordPlats, fullBorda, kladVarme, ryggKorg, ryms, slitRygg, stepKlader } from './utrustning';
 import { stepPynt } from './pynt';
 import { stadaByten } from './byte';
@@ -101,7 +102,7 @@ const STEG = balans('steg', {
   sedBarn: 0.2, // så mycket mer (eller mindre) vilja ger seden Barn fullt ut
   chans: 0.6, // chansen per dygn att bli gravid, gånger viljan (0,3 före steg 2.12.6: byarna stannade vid ca 9 invånare med gott om mat)
   // samtal och relationer
-  samtalSek: 240, samtalBas: 0.6, samtalEmpati: 25, // den som är i en social aktivitet samtalar en gång per samtalSek sekunder, gånger samtalBas + empati / samtalEmpati
+  samtalTal: 0.3, samtalHorsel: 0.3, samtalSek: 240, samtalBas: 0.6, samtalEmpati: 25, // den som är i en social aktivitet samtalar en gång per samtalSek sekunder, gånger samtalBas + empati / samtalEmpati
   blekSek: 600, blek: 0.04, // relationerna bleknar ungefär var blekSek:e sekund, med blek per dygn
   // lärande och minne
   ovningHant: 0.1, // övning i hantverk per timme med hantverk
@@ -270,7 +271,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
     atSteg(s); stepSeder(s); updateTags(s); stepRelationer(s); stepUppvaxt(s); stepReligion(s); for (const p of living(s)) morkHumor(s, p); facklorTimme(s); stepHumor(s); stepDelning(s); stepLarlingar(s);
     stepVader(s); vindfallen(s); regnetTvattar(s); stepMotgang(s); stepTorka(s); stepFlod(s); stepIs(s); growGround(s, 1, ai); growFynd(s, 1, ai, vaxtFaktor(s)); forget(s, 1); stepRykten(s, moodOf); glomRykten(s, 1); stepBerattelser(s); stepStyre(s); rotStumps(s); tidyStore(s);
-    wearBuild(s, 1, ai); stepByggnader(s); stepMjardar(s); stepNaken(s); stepByggplan(s); stepEldFlytt(s); stepPaborjat(s); stepStationer(s); stepPynt(s); stadaByten(s); stepBrasor(s); stepKlader(s); stepOdling(s);
+    kvarTimme(s); wearBuild(s, 1, ai); stepByggnader(s); stepMjardar(s); stepNaken(s); stepByggplan(s); stepEldFlytt(s); stepPaborjat(s); stepStationer(s); stepPynt(s); stadaByten(s); stepBrasor(s); stepKlader(s); stepOdling(s);
     askaSteg(s); // det svarta efter en eldsvåda försvinner (brand.ts)
     forbrukTimme(s); // materialens förbrukning glöms långsamt (forradsmal.ts, steg 6.2.14)
     arbetsTimme(s); // byns behov för arbetsordningen (val.ts, steg 6.1.12)
@@ -298,7 +299,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   if (social.length > 1) {
     for (const p of social) {
       if (!alive(p)) continue;
-      const expect = dtSec / STEG.samtalSek * (STEG.samtalBas + stat(p, 'empati', now) / STEG.samtalEmpati);
+      const expect = dtSec / STEG.samtalSek * (STEG.samtalBas + stat(p, 'empati', now) / STEG.samtalEmpati) * (p.sinnen === undefined ? 1 : tal(p) * STEG.samtalTal + horsel(p) * STEG.samtalHorsel + 1 - STEG.samtalTal - STEG.samtalHorsel); // talet och hörseln (steg 8.2.2)
       let n = Math.floor(expect); if (rnd(s, 'samtal', p) < expect - n) n++;
       // bara med dem som är nära när slaget slutar
       const nara = social.filter(q => q !== p && alive(q) && Math.hypot(q.x - p.x, q.y - p.y) < SAMTAL.radie);

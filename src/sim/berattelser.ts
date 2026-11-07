@@ -97,6 +97,7 @@ const BDEF: Record<IntryckTyp, BinamnDef> = {
   orattvis: { namn: [['den orättvise', 'den orättvisa'], ['den hårde', 'den hårda'], ['Snedvågen', 'Snedvågen'], ['den stränge', 'den stränga']] },
   stark: { namn: [['den starke', 'den starka'], ['Björnen', 'Björnen'], ['Järnarmen', 'Järnarmen'], ['Eken', 'Eken']] },
   feg: { namn: [['Haren', 'Haren'], ['den rädde', 'den rädda'], ['Darraren', 'Darrerskan'], ['Hönan', 'Hönan']] },
+  arrig: { namn: [['Ärret', 'Ärret'], ['Sneansikte', 'Sneansikte'], ['den ärrade', 'den ärrade'], ['Krokkäke', 'Krokkäke']] }, // ett ärr i ansiktet (steg 8.2.4)
   smakfull: { namn: [['den smakfulle', 'den smakfulla'], ['Prydnaden', 'Prydnaden'], ['den fine', 'den fina'], ['Pärlan', 'Pärlan']] }, // pyntet (steg 4.3.4)
   vargdodare: { namn: [['Vargdödaren', 'Vargdödaren'], ['Vargbane', 'Vargbane'], ['den modige', 'den modiga'], ['Ulvspjutet', 'Ulvspjutet']] },
   bjorndodare: { namn: [['Björndödaren', 'Björndödaren'], ['Björnbane', 'Björnbane'], ['den orädde', 'den orädda'], ['Björnfällen', 'Björnfällen']] }, // steg 6.6.6
@@ -2021,7 +2022,7 @@ export function lekNamn(s: State, p: Person) {
   const q = living(s).find(x => x !== p && (isParent(x, p) || isParent(p, x)) && namnSlut(x.name) === slut);
   return q ? (p.born > q.born ? 'Lill' : 'Stor') + slut : undefined;
 }
-function gebinamn(s: State, p: Person, k: IntryckTyp, v: number) {
+export function gebinamn(s: State, p: Person, k: IntryckTyp, v: number) {
   const val = BINAMN[k].namn, i = Math.floor(hash(s.seed, p.id, val.length + k.length) * val.length);
   const namnet = lekNamn(s, p) ?? val[i][p.sex === 'm' ? 0 : 1];
   const { skal, tillst } = skalTill(s, p, k), fore = p.binamn;

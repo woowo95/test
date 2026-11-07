@@ -185,6 +185,11 @@ export interface Person {
   brinner?: number; // när hen började brinna, tills elden släckts (steg 6.4.16, brand.ts)
   blod: number; // 1 = allt blod, under HALSA.blodDod förblöder man (steg 2.5.1, halsa.ts)
   skador?: import('./halsa').Skada[]; // skadorna som inte läkt än (halsa.ts)
+  saknas?: import('./halsa').Kroppsdel[]; // förlorade kroppsdelar (steg 8.2.3)
+  men?: import('./halsa').Men[]; // det som läkt fel (steg 8.2.4)
+  arr?: { d: import('./halsa').Kroppsdel; n: number }[]; // ärren (steg 8.2.4)
+  sinnen?: number; // karisman gånger detta, när synen, hörseln eller talet är sämre (steg 8.2.2)
+  svimmat?: boolean; // ligger medvetslös (steg 8.2.6)
   naring?: Record<import('./naring').Naring, number>; // näringsvärdena 0–1; mättnaden (hunger) är en sammanfattning av dem (steg 2.6.1, naring.ts)
   langtan?: Partial<Record<import('./naring').Naring, number>>; // vad andra berättat att de längtar efter, och till när man minns det (steg 2.6.2)
   habit: Record<string, number>; // timmar per aktivitet, bleknar med tiden (ger yrkestaggar)
@@ -288,6 +293,7 @@ export interface State {
   barbuskar?: number; // 1 = bärbuskarna är utsådda (steg 6.5.4, buskar.ts)
   tradAlder?: string; // trädens ålder efter att de vuxit klart, dygn per ruta, packat (trad.ts, steg 5.1.4.2)
   stockar?: Stock[]; // fällda träd som ligger och väntar på att huggas
+  kvarlevor?: import('./kvarlevor').Kvarleva[]; nextKvar?: number; // det som blir kvar av en människa (steg 8.2.3, kvarlevor.ts)
   lager?: { x: number; y: number; w: number; h: number }; // lagerplatsen, rutor
   mat?: Record<string, number>; // äldre sparfiler (före v40): maten per slag
   marken?: { x: number; y: number; k: string; n: number }[]; // gamla sparfiler: saker på marken (nu i stackar)

@@ -1,3 +1,4 @@
+import { horsel } from './halsa';
 import { han, honom } from './ord';
 import { lista, tal } from './ord';
 import { delade, loggBer } from './berattelser';
@@ -105,6 +106,7 @@ const IDEF = {
   rik: { namn: 'rik', tecken: 1, op: 0, sym: '💰', betyder: 'Äger mycket mer än de andra i byn.' },
   rattvis: { namn: 'rättvis', tecken: 1, op: 10, sym: '⚖️', betyder: 'Har dömt rättvist som ledare.' }, // ledarens straff (steg 3.5.3, styre.ts)
   orattvis: { namn: 'orättvis', tecken: -1, op: -15, sym: '🙅', betyder: 'Har dömt orättvist som ledare.' },
+  arrig: { namn: 'ärrig', tecken: -1, op: 0, sym: '🪡', som: 'ärrig', betyder: 'Har ett ärr i ansiktet.' }, // steg 8.2.4
   stark: { namn: 'stark', tecken: 1, op: 4, sym: '🥊', betyder: 'Har vunnit ett slagsmål.' }, // vann ett slagsmål (steg 3.7.2, strid.ts)
   feg: { namn: 'feg', tecken: -1, op: -5, sym: '🐔', betyder: 'Har backat från en strid.' }, // backade från en strid (steg 3.7.9, strid.ts)
   smakfull: { namn: 'smakfull', tecken: 1, op: 5, sym: '🏺', betyder: 'Har ett vackert pynt där den sover.' }, // pyntet (steg 4.3.4, pynt.ts)
@@ -500,6 +502,7 @@ export function anseendeText(s: State, om: number) {
 // (3.7.1) och räderna (11.2.5), och anfallarna som samlas i utkanten och vakten som ser dem med räderna. Horn, trumma och
 // vakthund kommer senare som tekniker
 export const LARM = balans('larm', {
+  dov: 0.25, // under den här hörseln hör man inte rop (steg 8.2.2)
   hor: 15, // ropet hörs så här många rutor ...
   natt: 1.5, // ... gånger så här mycket på natten
   vidare: 0.8, // den som hör ropar vidare med den här chansen
@@ -523,7 +526,7 @@ export function larma(s: State, vad: string, storlek: number, ropare: Person[], 
   for (let led = 1; ropar.length; led++) {
     const nya: Person[] = [];
     for (const q of living(s)) {
-      if (vet.has(q)) continue;
+      if (vet.has(q) || horsel(q) < LARM.dov) continue; // den som knappt hör hör inte ropet (steg 8.2.2)
       const fran = ropar.find(r => Math.hypot(r.x - q.x, r.y - q.y) <= hor);
       if (!fran) continue;
       vet.add(q); hort.push(q);

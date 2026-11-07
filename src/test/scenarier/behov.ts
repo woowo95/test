@@ -644,7 +644,7 @@ SCENARIER.halsoflik = {
   kor: () => {
     const s = createState(5, START);
     const p = living(s)[0];
-    Object.assign(p, { hunger: 1, torst: 1, health: 1, blod: 1, skador: undefined });
+    Object.assign(p, { hunger: 1, torst: 1, health: 1, blod: 1, rest: 1, skador: undefined });
     const hel = skadeLista(p, s.now).length === 0 && Object.values(FORMAGOR).every(f => f.delar(p).length === 0) && delSkada(p, 'huvud') === 0;
     skada(s, p, 'handH', 'skarsar', 0.4, 'olycka', ''); skada(s, p, 'benV', 'benbrott', 0.8, 'olycka', '');
     const [sar, brott] = skadeLista(p, s.now);
@@ -909,3 +909,9 @@ SCENARIER.arbetare = {
     ];
   },
 };
+
+// de här scenarierna prövar en skada på just den del de säger, utan de finare delarna och utan att delen går förlorad (steg 8.2.1 och 8.2.3)
+for (const n of ['kropp', 'halsoflik']) {
+  const kor0 = SCENARIER[n]?.kor;
+  if (kor0) SCENARIER[n].kor = () => { SIM.HALSA_PROV.grov = true; try { return kor0(); } finally { SIM.HALSA_PROV.grov = false; } };
+}
