@@ -184,8 +184,6 @@ const SALLSYNT: Record<string, string> = {
   skjorta_lintyg: 'sen teknik i fas 7, hinner inte alltid komma på 35 dygn; scenariot hantverk7 prövar den',
   byxor_lader: 'sen teknik i fas 7, hinner inte alltid komma på 35 dygn; scenariot hantverk7 prövar den',
   mossa_lader: 'sen teknik i fas 7, hinner inte alltid komma på 35 dygn; scenariot hantverk7 prövar den',
-  rock_lader: 'sen teknik i fas 7, hinner inte alltid komma på 35 dygn; scenariot hantverk7 prövar den',
-  skor_lader: 'sen teknik i fas 7, hinner inte alltid komma på 35 dygn; scenariot hantverk7 prövar den',
   byxor_kaninskinn: 'sen teknik i fas 7, hinner inte alltid komma på 35 dygn; scenariot hantverk7 prövar den',
   mossa_kaninskinn: 'sen teknik i fas 7, hinner inte alltid komma på 35 dygn; scenariot hantverk7 prövar den',
   snoskor_kaninskinn: 'sen teknik i fas 7, hinner inte alltid komma på 35 dygn; scenariot hantverk7 prövar den',
