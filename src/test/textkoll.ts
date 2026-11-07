@@ -46,7 +46,8 @@ export const KONTROLLER: Kontroll[] = [
   { id: 'hen', namn: 'hen, hens eller henom om en viss person', hitta: t => /(^|[^\p{L}])(hen|hens|henom)(?=[^\p{L}]|$)/iu.exec(t)?.[2] },
   { id: 'artikel', namn: 'Ett rykte utan en framför (som lögnare, är tjuv)', hitta: t => ARTIKEL.exec(t)?.[0].trim() },
   { id: 'andelse', namn: 'En ändelse hängd på ett namn (Lerkrukaen, väggbrädeen)', hitta: (t, f) => {
-    for (const n of Object.values(f).filter((v): v is string => typeof v === 'string' && /^\p{Lu}/u.test(v))) if (/[ae]$/.test(n) && [...t.matchAll(new RegExp(`${n}(en|n|na|et)(?=[^\\p{L}]|$)`, 'gu'))].some(m => !VANLIGA.has(m[0].toLowerCase()))) return n;
+    const namn = Object.values(f).filter((v): v is string => typeof v === 'string' && /^\p{Lu}/u.test(v));
+    for (const n of namn) if (/[ae]$/.test(n) && [...t.matchAll(new RegExp(`${n}(en|n|na|et)(?=[^\\p{L}]|$)`, 'gu'))].some(m => !VANLIGA.has(m[0].toLowerCase()) && !namn.includes(m[0]))) return n; // Arka och Arkan är två namn
     return /\p{Ll}(aen|een|aet|eet)(?=[^\p{L}]|$)/u.exec(t)?.[0];
   } },
   { id: 'siffra', namn: 'En siffra före ett ord (1 rutor, efter 3 försök); utom ålder, år och årtal', hitta: t => { const m = /(^|[^\p{L}\d.,])(\d+) (\p{L}+)/u.exec(t); return m && !/^(år|års|dygn|timmar|timme|kg)$/u.test(m[3]) && !/(^|[^\p{L}])år $/u.test(t.slice(0, m.index + m[1].length)) ? `${m[2]} ${m[3]}` : undefined; } }, // "år 17 dog" är ett årtal
