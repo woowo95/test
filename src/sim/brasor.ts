@@ -1,3 +1,4 @@
+import { freeNear, isWall } from './byggnad';
 import { DAY, Fire, Person, State } from './typer';
 import { balans } from './balans';
 import { eldPlats } from './karta';
@@ -107,7 +108,7 @@ function taIsar(s: State, f: Fire) {
   s.eldar = (s.eldar ?? []).filter(q => q !== f);
   if (!s.eldar.length) s.eldar = undefined;
   s.byggV = (s.byggV ?? 0) + 1; // rutan är ledig igen: vägarna och platserna räknas om
-  const st = (s.stackar ??= []), { x, y } = f.at!;
+  const st = (s.stackar ??= []), { x, y } = isWall(s, f.at!.x + 0.5, f.at!.y + 0.5) ? freeNear(s, f.at!.x, f.at!.y, true) : f.at!; // har en vägg byggts där läggs högen bredvid
   let g = st.find(q => q.x === x && q.y === y && q.k === 'sten');
   if (!g) st.push(g = { x, y, k: 'sten', n: 0, c: 1 });
   g.n += RT.brasaSten; changed(s); enPerRuta(s);

@@ -2,7 +2,7 @@ import { gen, hans } from './ord';
 import { upplev } from './uppvaxt';
 import { ALDER, ageOf, count, doingAct, forstaGang, livet, living, log } from './folk';
 import { kronikaBer, personFalt } from './berattelser';
-import { bitAt, vagBort, Bit, DORRAR, DorrDef, DorrSlag, Hus, MATERIAL, bitById, dorrDef, dorrRang, bitsOf, blocked, freeNear, gridOf, housesOf, husById, touch } from './byggnad';
+import { bitAt, vagBort, Bit, DORRAR, DorrDef, DorrSlag, Hus, MATERIAL, bitById, dorrDef, dorrRang, bitsOf, blocked, freeNear, gridOf, isWall, housesOf, husById, touch } from './byggnad';
 import { vaderSlit } from './vader';
 import { groundOf, nyttVatten, punktIRuta } from './mark';
 import { kunnighet } from './ekonomi';
@@ -205,8 +205,8 @@ export function workOn(s: State, p: Person, b: Bit, dtSec: number, har = 0) {
 const stockInne = (s: State, h: Hus) => nTools(s, 'yxa') > 0 && (s.stockar ?? []).some(k => bitAt(s, Math.floor(k.x), Math.floor(k.y))?.hus === h.id);
 // en gång i timmen: det som ändå hamnat på en färdig vägg läggs bredvid (en lagerplats kan ha flyttat, steg 8.1.15)
 export function vaggRensa(s: State) {
-  for (const a of s.stackar ?? []) { const b = bitAt(s, a.x, a.y); if (b?.k === 'vagg' && b.b >= 1) { const f = freeNear(s, a.x, a.y, true); a.x = Math.floor(f.x); a.y = Math.floor(f.y); changed(s); } }
-  for (const t of tingOf(s)) { if (t.x === undefined || t.y === undefined || t.hos !== undefined || t.lass !== undefined) continue; const b = bitAt(s, t.x, t.y); if (b?.k === 'vagg' && b.b >= 1) { const f = freeNear(s, t.x, t.y, true); t.x = Math.floor(f.x); t.y = Math.floor(f.y); t.vid = undefined; } }
+  for (const a of s.stackar ?? []) { if (isWall(s, a.x + 0.5, a.y + 0.5)) { const f = freeNear(s, a.x, a.y, true); a.x = Math.floor(f.x); a.y = Math.floor(f.y); changed(s); } }
+  for (const t of tingOf(s)) { if (t.x === undefined || t.y === undefined || t.hos !== undefined || t.lass !== undefined) continue; if (isWall(s, t.x + 0.5, t.y + 0.5)) { const f = freeNear(s, t.x, t.y, true); t.x = Math.floor(f.x); t.y = Math.floor(f.y); t.vid = undefined; } }
   enPerRuta(s);
 }
 // huset är färdigt: alla bitar byggda och inga fällda träd kvar inne i det. Prövas när en bit blir klar och när en stock huggits slut
