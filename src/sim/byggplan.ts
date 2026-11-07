@@ -7,7 +7,7 @@ import { PLATS, rektAvstand } from './plats';
 import { lekplats, paLek, stangerIn, stationRutor, storlekAv, uteStation } from './stationer';
 import { knows } from './teknik';
 import { villHaMer } from './forradsmal';
-import { amountOf, changed, lagerNy, overflow, lagerStorre, nearZone, ownMove, ownedAll, put, usable, zonesOf } from './lager';
+import { amountOf, changed, lagerFullt, lagerNy, overflow, lagerStorre, nearZone, ownMove, ownedAll, put, usable, zonesOf } from './lager';
 import { tingOf } from './agande';
 import { FOREST, findPath } from './vag';
 import { Akut, BYGGNADER, Byggnad, FN, Fn, HUS, antalLika, fnId, fnOf, husNamn, sovHus, sovplatser, torkUte, vedUte } from './byggnader';
@@ -23,7 +23,7 @@ import { underMinnet } from './sjo';
 import { balans } from './balans';
 import { ELDFLYTT, nyEldplats } from './eldflytt';
 import { canLight } from './eld';
-import { strakHindrar, strakI, straken } from './strak';
+import { paStrak, strakHindrar, strakI, straken } from './strak';
 import { strandNu } from './sjo';
 
 // ---------- balanstal (regel 8) ----------
@@ -482,7 +482,7 @@ const skjulA: AtgardDef = {
     stolpe(x, y); stolpe(x + w - 1, y); stolpe(x, y + h - 1); stolpe(x + w - 1, y + h - 1);
     if (w - 2 > PLAN.skjulSida) { stolpe(x + (w >> 1), y); stolpe(x + (w >> 1), y + h - 1); }
     if (h - 2 > PLAN.skjulSida) { stolpe(x, y + (h >> 1)); stolpe(x + w - 1, y + (h >> 1)); }
-    if (ritning.some(a => !inMap(a.x, a.y) || gridOf(s).at.has(a.y * W + a.x) || stationRutor(s).at.has(a.y * W + a.x) || zonesOf(s).some(z => a.x >= z.x && a.x < z.x + z.w && a.y >= z.y && a.y < z.y + z.h) || (s.stackar ?? []).some(q => q.x === a.x && q.y === a.y) || !okAt(a.y * W + a.x) && !zonesOf(s).some(z => a.x >= z.x - 1 && a.x <= z.x + z.w && a.y >= z.y - 1 && a.y <= z.y + z.h))) return [];
+    if (ritning.some(a => !inMap(a.x, a.y) || paStrak(s, a.x, a.y) || gridOf(s).at.has(a.y * W + a.x) || stationRutor(s).at.has(a.y * W + a.x) || zonesOf(s).some(z => a.x >= z.x && a.x < z.x + z.w && a.y >= z.y && a.y < z.y + z.h) || (s.stackar ?? []).some(q => q.x === a.x && q.y === a.y) || !okAt(a.y * W + a.x) && !zonesOf(s).some(z => a.x >= z.x - 1 && a.x <= z.x + z.w && a.y >= z.y - 1 && a.y <= z.y + z.h))) return [];
     return [{ at: 'skjulA', x, y, w, h, ritning, oppnas: [], kostnad: ritningKostnad(ritning), varde: Math.min(1, med.length / Math.max(1, under.length)), plats: 0 }];
   },
 };
@@ -584,7 +584,7 @@ export function stepByggplan(s: State) {
 // lagret (steg 7.2.18): det som inte fått plats ligger bredvid. Byggplanen väger en större lagerplats mot en ny. Marken märks bara
 // ut, så det behövs ingen byggare, och det väntar inte på annat bygge
 export function planLager(s: State) {
-  if (!overflow(s).some(a => villHaMer(s, a.k))) return;
+  if (!overflow(s).some(a => villHaMer(s, a.k) && lagerFullt(s, a.k))) return;
   const u: ByggBehov = { fn: 'lagerplats', a: { v: 1, plats: 0 }, sc: 0 }, f = valj(s, u, () => true);
   if (f?.at === 'lagerNyA') { if (!lagerNy(s)) lagerStorre(s); } else if (!lagerStorre(s)) lagerNy(s);
 }

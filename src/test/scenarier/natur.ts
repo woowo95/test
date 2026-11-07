@@ -111,7 +111,7 @@ SCENARIER.abborre = {
         step(v, BEAT);
         abborreSedd = Math.max(abborreSedd, amountOf(v, 'abborre'));
       }
-      fangat = v.stat?.fisk ?? 0; rensat = v.stat?.rensat ?? 0;
+      fangat = (v.stat?.fisk ?? 0) - (v.stat?.fisk_gadda ?? 0) - (v.stat?.fisk_mort ?? 0); rensat = v.stat?.rensat ?? 0;
       if (fangat >= 3) break; // en enstaka fisk säger inget om rensningen
     }
     return [

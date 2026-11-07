@@ -6,7 +6,7 @@ import { MIN, Person, Act, createState, addTool, FOREST, HOUR_S, toolsOf, BYN, s
 import * as SIM from '../../sim';
 import { findPath } from '../../sim/vag';
 import { KANIN } from '../../sim/redskap';
-import { START } from '../kor';
+import { START, STEG_TIM } from '../kor';
 import { setItems, setFood, kor, klockan, tandEld, byggare, byggKlart, nyInvanare, medBank, STOCKHOLM, SCENARIER } from './hjalp';
 
 SCENARIER.byggnader = {
@@ -533,6 +533,7 @@ SCENARIER.lager = {
     // sedan bara en sak på varje ruta i förrådet, och inget försvinner (riktad-körningen i steg 3.10.25, by 8920)
     const vx = createState(3, START), vz = zoneOf(vx), ut = br + 1, tot = () => (vx.stackar ?? []).reduce((a, q) => a + q.n, 0);
     vx.ting = []; vx.stackar = [{ k: 'sten', n: 1, c: 1, x: vz.x - 1, y: vz.y }]; // bredvid lagerplatsen: lagret är fullt och växer
+    for (let y = vz.y; y < vz.y + vz.h; y++) for (let x = vz.x; x < vz.x + vz.w; x++) vx.stackar.push({ k: 'sten', n: 1, c: 1, x, y });
     for (let y = vz.y - ut; y < vz.y + vz.h + ut; y++) for (let x = vz.x - ut; x < vz.x + vz.w + ut; x++) if (!isStored(vx, x, y) && usable(vx, x, y)) vx.stackar.push({ k: 'grenar', n: 1, c: 1, x, y }, { k: 'ved', n: 1, c: 1, x, y });
     const vxFore = tot(), vxYta = vz.w * vz.h;
     (SIM.planLager(vx), SIM.tidyStore(vx));
@@ -939,27 +940,31 @@ SCENARIER.strak = {
     const s = createState(9, START);
     byggare(s); setAmount(s, 'yxa', 2);
     setFood(s, 600); setAmount(s, 'ved', 200); setAmount(s, 'grenar', 200); setAmount(s, 'flinta', 2); s.fire.ring = true;
-    // varje timme: det som står på rutor som var stråk timmen innan och som inte stod där då
-    let paStrak = 0, husPa = 0, timmar = 0, maxRutor = 0;
+    // varje steg: det som står på rutor som var stråk steget innan och som inte stod där då (på en hel timme hinner stråket flyttas innan något ställs där)
+    let paStrak = 0, husPa = 0, maxRutor = 0;
+    const timmar = 120;
     const nyttPa: string[] = [];
-    for (let t = 0; t < 120; t++) {
-      const fore = SIM.straken(s).ruta.slice(), vagar0 = SIM.straken(s).vagar.map(v => ({ mal: v.mal, rutor: v.rutor.slice() }));
-      // den sista rutan på ett stråk till ett lager: växer lagret över den blir stråket bara kortare
-      const sistaTillLager = (r: number) => vagar0.every(v => !v.rutor.includes(r) || v.mal === 'lager' && v.rutor.indexOf(r) === v.rutor.length - 1);
-      const st0 = new Set(SIM.stationerOf(s)), z0 = zonesOf(s).map(z => `${z.x},${z.y},${z.w},${z.h}`), f0 = new Set(s.falt ?? []), h0 = new Set(housesOf(s));
-      kor(s, 1); timmar++;
+    for (let t = 0; t < timmar * STEG_TIM; t++) {
+      const fore = SIM.straken(s).ruta.slice();
+      const st0 = new Set(SIM.stationerOf(s)), f0 = new Set(s.falt ?? []), h0 = new Set(housesOf(s));
+      kor(s, 1 / STEG_TIM);
       const pa = (x: number, y: number, w: number, h: number) => { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) if (fore[j * W + i]) return true; return false; };
       for (const st of SIM.stationerOf(s)) if (!st0.has(st) && !SIM.stationDef(st.k)?.inne && !SIM.stationDef(st.k)?.forvar) { const m = SIM.storlekAv(st); if (pa(st.x, st.y, m.w, m.h)) { paStrak++; nyttPa.push(st.k); } }
-      for (const z of zonesOf(s)) if (!z0.includes(`${z.x},${z.y},${z.w},${z.h}`)) { // en ny eller växande lagerplats: bara de nya rutorna räknas
-        const gammal = zonesOf(s).length && z0.map(k => k.split(',').map(Number)).find(([x, y]) => Math.abs(x - z.x) <= 1 && Math.abs(y - z.y) <= 1);
-        for (let j = z.y; j < z.y + z.h; j++) for (let i = z.x; i < z.x + z.w; i++) {
-          const forut = gammal && i >= gammal[0] && i < gammal[0] + gammal[2] && j >= gammal[1] && j < gammal[1] + gammal[3];
-          if (!forut && fore[j * W + i] && !sistaTillLager(j * W + i)) { paStrak++; nyttPa.push('lager'); }
+      // lagerplatserna prövas i en kopia varje timme: en ny plats och en större, mot stråken just då (i spelet hinner stråken flyttas i samma steg)
+      if (t % STEG_TIM === 0) {
+        const c = cloneState(s), ruta = SIM.straken(c).ruta.slice(), vagarNu = SIM.straken(c).vagar;
+        const zFore = zonesOf(c).map(z => ({ ...z }));
+        setAmount(c, 'ved', amountOf(c, 'ved') + 300);
+        SIM.lagerNy(c); SIM.lagerStorre(c);
+        for (const z of zonesOf(c)) for (let j = z.y; j < z.y + z.h; j++) for (let i = z.x; i < z.x + z.w; i++) {
+          const r = j * W + i, forut = zFore.some(o => i >= o.x && i < o.x + o.w && j >= o.y && j < o.y + o.h);
+          if (!forut && ruta[r] && !vagarNu.every(v => !v.rutor.includes(r) || v.mal === 'lager' && v.rutor.indexOf(r) === v.rutor.length - 1)) { paStrak++; nyttPa.push('lager'); }
         }
       }
       for (const f of s.falt ?? []) if (!f0.has(f) && SIM.faltRutor(f).some(i => fore[i])) { paStrak++; nyttPa.push('fält'); }
-      for (const h of housesOf(s)) if (!h0.has(h)) { for (let j = h.y; j < h.y + h.h; j++) for (let i = h.x; i < h.x + h.w; i++) if (fore[j * W + i] === 2) husPa++; }
-      maxRutor = Math.max(maxRutor, SIM.straken(s).ruta.reduce((a, v) => a + (v ? 1 : 0), 0));
+      // ett skjul är öppet: bara stolparna står på marken
+      for (const h of housesOf(s)) if (!h0.has(h)) { if (h.skjul) { for (const b of SIM.bitsOf(s)) if (b.hus === h.id && fore[b.y * W + b.x] === 2) husPa++; } else for (let j = h.y; j < h.y + h.h; j++) for (let i = h.x; i < h.x + h.w; i++) if (fore[j * W + i] === 2) husPa++; }
+      if (t % STEG_TIM === 0) maxRutor = Math.max(maxRutor, SIM.straken(s).ruta.reduce((a, v) => a + (v ? 1 : 0), 0));
     }
     const st = SIM.straken(s), hus = housesOf(s).filter(h => h.klar);
     const dorrar = new Set(st.vagar.map(v => v.dorr));

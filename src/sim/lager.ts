@@ -823,13 +823,16 @@ export function tidyStore(s: State) {
   }
   changed(s);
 }
+// finns ingen ledig ruta i någon lagerplats där saken får ligga?
+export const lagerFullt = (s: State, k: string) => { const all = things(s); return !zonesOf(s).some(z => allows(z, k) && all.filter(a => inZone(z, a.x, a.y)).length < z.w * z.h); };
 // Lagret är ett byggbehov (steg 7.2.18): det som inte fått plats ligger bredvid, och Byggplanen väljer mellan att göra en
 // lagerplats större, en ny lagerplats och ett förrådshus. Antalet lagerplatser har inget tak, utom marken själv
 export function lagerStorre(s: State) {
   const zs = zonesOf(s);
   let grew = -1;
-  for (let rep = 0; rep < LAGER.vaxSteg && overflow(s).length; rep++) {
-    const o = overflow(s), i = zs.findIndex((z, j) => z.hus === undefined && o.some(a => allows(z, a.k)) && growOf(s, j));
+  for (let rep = 0; rep < LAGER.vaxSteg; rep++) {
+    // bara det som inte har någon ledig ruta: det andra väntar bara på att bäras in
+    const o = overflow(s).filter(a => lagerFullt(s, a.k)), i = zs.findIndex((z, j) => z.hus === undefined && o.some(a => allows(z, a.k)) && growOf(s, j));
     if (i < 0) break;
     zs[i] = growOf(s, i)!; grew = i;
   }
@@ -850,6 +853,7 @@ function growOf(s: State, i: number): Zone | undefined {
   const n = [{ ...z, w: z.w + 1 }, { ...z, h: z.h + 1 }, { ...z, x: z.x - 1, w: z.w + 1 }, { ...z, y: z.y - 1, h: z.h + 1 }]
     .filter(n => n.w <= LAGER.zonBredd && n.h <= LAGER.zonHojd && allUsable(s, n) && !strakI(s, n.x, n.y, n.w, n.h) && skogI(s, n) < Infinity && !zs.some((o, j) => j !== i && overlaps(n, o, LAGER.mellan)))
     .sort((a, b) => Math.abs(a.w - a.h) - Math.abs(b.w - b.h))[0];
+  if (n) n.tom = undefined; // den nya kanten är tom, men räkningen mot att krympa börjar om
   return n && !n.rojs && skogI(s, n) > 0 ? { ...n, rojs: true } : n;
 }
 // en ny lagerplats nära byns läger (eld och andra lagerplatser), men inte inpå elden. Den första uppdelningen sorterar: maten får den gamla platsen, materialet den nya.
