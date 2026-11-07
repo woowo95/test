@@ -304,7 +304,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
       const nara = social.filter(q => q !== p && alive(q) && Math.hypot(q.x - p.x, q.y - p.y) < SAMTAL.radie);
       const med = p.task?.med !== undefined ? nara.find(q => q.id === p.task!.med) : undefined, others = med ? [med] : nara; // den man står bredvid (steg 4.5.6.7)
       for (let i = 0; i < n; i++) { const g = converse(s, p, others, events); if (g) gralBlirSlagsmal(s, p, g); } // ett gräl kan bli ett slagsmål (strid.ts)
-      if (n && others.length) count(s, 'samtal', n);
+      if (n && others.length) { count(s, 'samtal', n); if (p.task && !ACTS[p.task.act].social) p.pratArbete = (p.pratArbete ?? 0) + n; } // samtalen under arbetet (steg 8.1.12)
     }
   }
   pratMedHandlare(s, dtSec, events); // småprat med handlaren (steg 4.5.4.15, handel.ts)
@@ -434,13 +434,15 @@ function healthStep(s: State, p: Person, a: number, ai: number, dtSec: number) {
   return false;
 }
 
+// hur långt graviditeten gått, 0–1 (steg 8.1.11), eller inget
+export const gravidDel = (p: Person, now: number) => p.pregnantSince === undefined ? undefined : Math.min(1, (now - p.pregnantSince) / (STEG.dragtid * DAY));
 // graviditet: en kvinna med partner kan bli gravid; viljan styrs av hur många byn är, maten och sederna
 function pregnancy(s: State, p: Person, a: number, pop: number, dtSec: number) {
   const now = s.now;
   if (p.pregnantSince !== undefined) { if (now - p.pregnantSince > STEG.dragtid * DAY) birth(s, p); }
   else if (p.sex === 'k' && p.partner !== undefined && a >= ALDER.gravFran && a <= ALDER.gravTill && (!p.lastBirth || now - p.lastBirth > STEG.mellanFodslar * DAY)) {
     const f = birthWish(pop) * clamp(foodDays(s) / STEG.matDygn, STEG.matMin, 1) * barnMat(s, pop) * (1 + STEG.sedBarn * s.seder.v.barn);
-    if (chance(s, STEG.chans * f / 86400, dtSec, 'halsa', p)) { p.pregnantSince = now; p.pregnantBy = p.partner; }
+    if (chance(s, STEG.chans * f / 86400, dtSec, 'halsa', p)) { p.pregnantSince = now; p.pregnantBy = p.partner; notis(s, 'gravid', `${p.name} väntar barn.`, [p.id]); }
   }
 }
 

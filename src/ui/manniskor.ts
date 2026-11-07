@@ -7,7 +7,7 @@ import { s, sakVar, ui, uppgiftVid, vidNyBy } from './lage';
 import { Ikoner, TS, bubbleG, figurLayer, labels, symbolLayer, peopleG } from './scen';
 import { type Arm, type Ben, type Rikt, figurHand, figurTex } from './folkbild';
 import { ARBETEN, STRIDBILD, arbetsBild, ritaArbete } from './arbetsbild';
-import { rovarSkapad, skapad } from './utseende';
+import { rovarSkapad, handlarSkapad, skapad } from './utseende';
 import { gaster } from './gaster';
 import { fotSkugga, skuggFolk, skuggLangd } from './skugga';
 import { jaktPlats } from './jakt';
@@ -242,6 +242,8 @@ function figurAv(id: number) {
 // bildrutan (står kvar när hen står still), sittande vid måltiden, samtalet och vilan, armarna fulla när hen bär något, i
 // slaget vid de tunga arbetena och framför sig vid stationen. Den som rört sig nyss går (steg 5.1.9.3): gångsteg 1, stå,
 // gångsteg 2, stå, som bildstilens gång, en bild per slag i animationernas klocka (ui/animation.ts) och förskjutet per person
+const huvud = new Map<number, number>(), SYMBOL_LUFT = 8; // figurens översta punkt i bildrutan, och så långt ovanför den symbolens mitt står
+vidNyBy.push(() => huvud.clear());
 const SITTA = new Set(['maltid', 'samtal', 'vila', 'lyssna', 'beratta']);
 // striden hen är med i just nu (steg 5.1.9.5): vapnet och var den närmaste motståndaren står, ur byns senaste strider
 function stridNu(p: Person) {
@@ -257,13 +259,14 @@ function stridNu(p: Person) {
   return undefined;
 }
 const SLA = new Set(['falla', 'bygga', 'krossa', 'slakta', 'yxa', 'dorr']);
-const forra = new Map<number, { x: number; y: number; rikt: Rikt; rord: number }>();
+const forra = new Map<number, { x: number; y: number; rx: number; ry: number; rikt: Rikt; rord: number }>();
 const GANG: [Ben, Arm][] = [['gang1', 'gang1'], ['sta', 'hanga'], ['gang2', 'gang2'], ['sta', 'hanga']];
 const GAR_MS = 300; // så länge efter senaste rörelsen (datorns tid) går figuren, så att den inte stannar mellan bildrutorna
 const gar = (id: number, nu: number) => nu - (forra.get(id)?.rord ?? -Infinity) < GAR_MS;
 vidNyBy.push(() => forra.clear());
 const SVANG = 2; // hur mycket större det nya hållet ska vara för att figuren ska vända sig (steg 6.8.2)
-function riktning(id: number, x: number, y: number): Rikt {
+// (rx, ry) = platsen utan knuffarna och glidningen i bilden: bara den räknas som att hen går (steg 8.1.2), så att den som står vid latrinen eller dricker vatten står stilla i bilden
+function riktning(id: number, x: number, y: number, rx = x, ry = y): Rikt {
   const f = forra.get(id); let rikt: Rikt = f?.rikt ?? 'fram', rord = f?.rord ?? -Infinity;
   if (f) {
     const dx = x - f.x, dy = y - f.y;
@@ -275,20 +278,18 @@ function riktning(id: number, x: number, y: number): Rikt {
       const tvars = rikt === 'sida' || rikt === 'vast' ? Math.abs(dy) : Math.abs(dx);
       if (!(langs > 0 && tvars < langs * SVANG)) rikt = ny;
     }
-    if (Math.abs(dx) + Math.abs(dy) > 1e-4) rord = performance.now();
+    if (Math.abs(rx - f.rx) + Math.abs(ry - f.ry) > 1e-4) rord = performance.now();
   }
-  forra.set(id, { x, y, rikt, rord });
+  forra.set(id, { x, y, rx, ry, rikt, rord });
   return rikt;
 }
-// rövarna (steg 6.6.12): figurer ur skaparen som byborna (rovarSkapad i ui/utseende.ts), som går, slåss med sitt vapen mot
+// gästerna: handlaren som en person (steg 8.1.8) och rövarna (steg 6.6.12), figurer ur skaparen som byborna (ui/utseende.ts), som går, slåss med sitt vapen mot
 // den de slår och ligger när de fallit. Arga i striden och rädda på flykten
 // markeringen runt den valda försvinner när man markerar något annat (steg 6.8.12): då är en ruta för det andra öppen
 const markeradNu = () => ui.tab === undefined || ui.tab === 'person' ? ui.selected : undefined;
 function ritaRovarna(skugga: PIXI.Graphics) {
   for (const g of gaster()) {
-    const r = g.rovare;
-    if (!r) continue;
-    const sk = rovarenNu(r.namn, ui.nu), ligger = !!g.ligger, x = g.x * TS, y = g.y * TS;
+    const r = g.rovare, sk = r && rovarenNu(r.namn, ui.nu), ligger = !!g.ligger, x = g.x * TS, y = g.y * TS;
     let rikt = riktning(g.id, g.x, g.y);
     const strid = sk && !ligger ? STRIDBILD[sk.k.vapen as string] ?? STRIDBILD.hand : undefined, ab = strid ? arbetsBild(strid, slag() - g.id) : undefined;
     if (sk?.mot) rikt = sk.mot.x < g.x ? 'vast' : 'sida';
@@ -296,7 +297,7 @@ function ritaRovarna(skugga: PIXI.Graphics) {
     const ben: Ben = ab ? ab.ben : steg ? steg[0] : 'sta', arm: Arm = ab ? ab.arm : steg ? steg[1] : 'hanga';
     const humor = sk ? 'arg' : s.rovare?.gor === 'flyr' ? 'radd' : 'lugn';
     const sp = figurAv(g.id);
-    sp.texture = figurTex(rovarSkapad(s, r, humor), { rikt, ben, arm, ligga: ligger }, g.id === markeradNu());
+    sp.texture = figurTex(r ? rovarSkapad(s, r, humor) : handlarSkapad(s, g.namn, g.sex), { rikt, ben, arm, ligga: ligger }, g.id === markeradNu());
     const w = sp.texture.width, h = sp.texture.height;
     if (ligger) sp.position.set(x - w / 2, y - h / 2);
     else sp.position.set(x - w / 2 + (ab?.b.ut ?? 0) * (rikt === 'vast' ? -1 : 1), y + 5 * 0.9 - h + 1);
@@ -334,7 +335,8 @@ export function drawPeople(t: number) {
     const bank = gor && !ligger ? stationAt(s, q.x, q.y - 1) : undefined, bd = bank && isKlar(bank) ? stationDef(bank.k) : undefined;
     const vidBank = !!(bank && bd?.sitt && bd.gor.includes(gor as never) && Math.floor(q.y) === bank.y + storlekAv(bank).h);
     const sitter = !ligger && !!gor && (SITTA.has(gor) || vidBank);
-    let rikt = riktning(p.id, q.x, q.y);
+    const ra = platsAv(p);
+    let rikt = riktning(p.id, q.x, q.y, ra.x, ra.y);
     if (sitter && rikt === 'bak') rikt = 'fram';
     if (vidBank) { rikt = 'bak'; x = (bank!.x + storlekAv(bank!).w / 2) * TS; y = (bank!.y + storlekAv(bank!).h) * TS + TS / 2 - r * 0.9; }
     // arbetet i bild (steg 5.1.9.4, ui/arbetsbild.ts): rörelsen från sidan, en bild per slag, förskjutet per person
@@ -363,6 +365,7 @@ export function drawPeople(t: number) {
     const hand = ab && figurHand(sp.texture);
     if (arb && ab && hand) ritaArbete(peopleG, arb, ab.b, sp.position.x + hand[0], sp.position.y + hand[1], rikt === 'vast' ? -1 : 1, 1);
     sp.zIndex = y + r * 0.9; // fötterna (ordningen söderut, steg 5.1.4.5)
+    huvud.set(p.id, sang ? sp.position.y - h / 2 : sp.position.y);
     if (!ligger) fotSkugga(skugga, x - 4, Math.round(sp.zIndex) - 1, 4, 2, skuggLangd());
     sp.visible = true; sedd.add(p.id);
     // den som brinner (steg 6.4.16): fladdrande lågor över figuren (platshållare tills Björn valt i bildstilen)
@@ -399,7 +402,8 @@ export function drawPeople(t: number) {
   const flashIkon = new Map<number, string | undefined>();
   for (let i = bubbles.length - 1; i >= 0; i--) { const b = bubbles[i]; if (b.until < t) bubbles.splice(i, 1); else { flash.set(b.id, b.kind); flashIkon.set(b.id, b.i); } }
   for (const p of ppl) {
-    const pp = pos.get(p.id)!, x = pp.x * TS, y = pp.y * TS, a = ageOf(p, s.now), top = y - (a < ALDER.smabarn ? 8 : a < ALDER.vuxen ? 11 : 13);
+    // symbolerna står ovanför huvudet med lite luft emellan, så att ansiktet alltid syns (steg 8.1.17): räknat från figurens egen topp
+    const pp = pos.get(p.id)!, x = pp.x * TS, top = (huvud.get(p.id) ?? pp.y * TS - 13) - SYMBOL_LUFT;
     const o = talkWith.get(p.id), q = o !== undefined ? byId(s, o) : undefined;
     // bara medan de pratar: en stund efter samtalet (steg 3.10.3), inte så länge de sitter nära varandra
     const talking = !!q && pratarMed(s, p) === q;
@@ -425,12 +429,7 @@ export function drawPeople(t: number) {
       continue;
     }
     const m = markOf(p);
-    if (m === 'zzz') { // z som stiger och bleknar
-      for (let k = 0; k < 2; k++) {
-        const f = ((t / 1800 + p.id * 0.37 + k * 0.5) % 1), w = 2 + f * 2, zx = x + 3 + f * 3, zy = top + 2 - f * 6;
-        bubbleG.lineStyle(1, 0xdad0bb).moveTo(zx, zy).lineTo(zx + w, zy).lineTo(zx, zy + w).lineTo(zx + w, zy + w).lineStyle(0);
-      }
-    } else if (m) {
+    if (m) {
       const bob = Math.sin(t / 500 + p.id) * 0.6;
       bubbleG.beginFill(0x24201d).drawRoundedRect(x - 5, top - 5 + bob, 10, 10, 3).endFill();
       markIcons.add(m, x - 4, top - 4 + bob, 8 / iconCanvas(m).width);

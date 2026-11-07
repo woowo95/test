@@ -135,6 +135,21 @@ BESK_ANSIKTE.del = ansiktsDel;
 // ser likadan ut. Rövarens delar (märkta rövare i skaparen: luvan, duken och rocken av mörkt, slitet skinn) bärs bara av
 // rövarna, var och en med sin chans, och vargskinnsrocken likaså; byborna kan inte tillverka dem. Vapnet i handen när det
 // finns som del, humöret arg i striden och rädd på flykten
+// handlaren (steg 8.1.8): en person som kolonisterna, slumpad en gång ur namnet och byns frö
+const HARV = new Map<string, Skapad>();
+export function handlarSkapad(s: State, namn: string, sex: 'm' | 'k'): Skapad {
+  const k = s.seed + ':' + namn + ':' + sex;
+  let d = HARV.get(k);
+  if (!d) {
+    let h = s.seed | 0;
+    for (let i = 0; i < k.length; i++) h = Math.imul(h ^ k.charCodeAt(i), 0x01000193);
+    d = KARNA.slumpPerson(KARNA.slumpFran(h), { kon: sex === 'k' ? 'kvinna' : 'man', alder: 'vuxen' }) as Skapad;
+    d.sjuk = false; d.kyla = false; d.blod = false; d.forband = [];
+    if (HARV.size > 200) HARV.clear();
+    HARV.set(k, d);
+  }
+  return d;
+}
 export const ROVARDRAKT = { luva: 0.35, duk: 0.3, rovarskinn: 0.45, vargskinn: 0.2 };
 const RARV = new Map<string, Skapad>();
 export function rovarSkapad(s: State, r: Rovare, humor: string): Skapad {

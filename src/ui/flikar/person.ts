@@ -6,6 +6,7 @@ import { FARGER, farg } from '../../palett';
 import { skapad } from '../utseende';
 import { hasIcon, iconImg, kvSvg, tecknet } from '../../ikoner';
 import { framstegSvg, ringSvg, tartFarg, tartSvg } from '../framsteg';
+import { gravidDel } from '../../sim/steg';
 import { LAG, byteKnapp, hallCirkel, kvMark, clockTxt, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, cssFarg, durTxt, esc, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
 import { s, ui, uppgiftVid } from '../lage';
 import { tekInfo } from './teknik';
@@ -28,7 +29,7 @@ export const person: Flik = {
     const status = alive(p) ? statusRad(p, med) : p.died !== undefined ? `Dog ${p.cause} (${timeLabel(s, p.died)})` : `Flyttade från byn (${timeLabel(s, p.left!)})`;
     return `
       <div class="phead">${portrattImg(skapad(s, p), "big stor")}<div><h2>${esc(p.name)}${binamnHtml(p)}${alive(p) ? prickar(p) : ''}${anseende(p)}</h2>${binamnForkl(p)}
-      <p class="status">${status}</p></div></div>
+      <p class="status">${status}${alive(p) && gravidText(p) ? ` · ${esc(gravidText(p))}` : ''}</p></div></div>
       ${flikRad(flikar, flik)}
       ${delar.map((d, i) => delHtml(d, i, d.kort?.(p), () => d.html(p))).join('')}`;
   },
@@ -88,10 +89,12 @@ const DELAR: Del[] = [
   { id: 'ryk', tecken: '🗣️', namn: 'Rykten', html: ryktenHtml, kort: p => { const a = anseendeSym(s, p.id); return a === '😇' ? 'Gott anseende' : a === '😈' ? 'Dåligt anseende' : a ? 'Blandat anseende' : 'Inget rykte'; }, gast: gastRyk },
 ];
 // sammanfattningarna (steg 5.3.4.2): det som syns på rubriken
+// den som väntar barn (steg 8.1.11): i sammanfattningen överst och i fliken Hälsa, med hur långt det har gått
+const gravidText = (p: Person) => { const d = gravidDel(p, s.now); return d === undefined ? '' : `väntar barn, ${Math.round(d * 100)} % av tiden`; };
 function halsaKort(p: Person) {
   const n = skadeLista(p, s.now).length, l = halsaLage(p, s.now);
   const lage = l === 'svalt' ? 'svälter' : l === 'frys' ? 'fryser' : l === 'torst' ? 'törstar' : l === 'laker' ? 'läker' : '';
-  return [n ? `${n} ${n === 1 ? 'skada' : 'skador'}` : '', lage].filter(Boolean).join(' · ') || 'Frisk';
+  return [n ? `${n} ${n === 1 ? 'skada' : 'skador'}` : '', lage, gravidText(p)].filter(Boolean).join(' · ') || 'Frisk';
 }
 function egenKort(p: Person) {
   const k = STATS.slice().sort((a, b) => stat(p, b, s.now) - stat(p, a, s.now))[0];
@@ -569,8 +572,8 @@ const HABIT_GROUPS = () => habitGroups ??= (() => {
   const m = new Map<string, { name: string; ikon: string; acts: Act[] }>();
   for (const a of Object.keys(ACTS) as Act[]) {
     if (a === 'sova') continue;
-    const sl = ACTS[a].slag, name = sl ? SLAG[sl] : ACTS[a].namn, px = sl && slagIkon(sl);
-    const egen = !sl && (ACTS[a].ikon ?? 'a_' + a), ikon = px && hasIcon(px) ? iconImg(px, 16) : egen && hasIcon(egen) ? iconImg(egen, 16) : `<span class="tecken">${(sl ? SLAG_TECKEN[sl] : ACTS[a].tecken) ?? '•'}</span>`;
+    const sl = ACTS[a].slag, handel = a === 'handla' || a === 'koa', name = handel ? 'Handel' : sl === 'prata' ? 'Umgås' : sl ? SLAG[sl] : ACTS[a].namn, px = sl && slagIkon(sl); // Umgås är tid utan annat arbete, handeln en egen skiva (steg 8.1.12)
+    const egen = !sl && (ACTS[a].ikon ?? 'a_' + a), ikon = handel ? iconImg('silver', 16) : px && hasIcon(px) ? iconImg(px, 16) : egen && hasIcon(egen) ? iconImg(egen, 16) : `<span class="tecken">${(sl ? SLAG_TECKEN[sl] : ACTS[a].tecken) ?? '•'}</span>`;
     (m.get(name) ?? m.set(name, { name, ikon, acts: [] }).get(name)!).acts.push(a);
   }
   return [...m.values()];
@@ -592,6 +595,7 @@ function tidHtml(p: Person) {
   const vald = bitar.some(b => b.name === tidVald);
   return `<div class="tid${vald ? ' har-vald' : ''}">${tart}
     <ul class="tidlista">${bitar.map((b, i) => `<li title="${esc(b.name)}: ${Math.round(b.v * 100)} %" data-i="${i}" data-t="${esc(b.name)}"${b.name === tidVald ? ' class="vald"' : ''}><span class="fg" style="background:${farg(i)}"></span>${b.ikon}<span class="namn">${esc(b.name)}</span><span class="pc">${Math.round(b.v * 100)} %</span></li>`).join('')}</ul></div>
+    ${p.pratArbete ? `<p class="muted small">${iconImg('a_prata', 12)} ${p.pratArbete} samtal under arbetet</p>` : ''}
     <p class="muted small">Den vakna tiden de senaste dygnen. Tryck på en del eller en rad, eller håll musen över den, så lyser båda.</p>`;
 }
 

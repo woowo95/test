@@ -48,7 +48,7 @@ function stycke(st: State, rader: Rad[], max: number, nyckel: number, forst?: st
   const { ut, over } = valj(rader, max);
   const m = ut.map(r => utanAr(r.text));
   if (over) m.push(berattelse(st, 'b_ovrigt', nyckel, { n: talOrd(over) }));
-  return [forst, ...m].filter(Boolean).join(' ');
+  return [forst, ...m].filter(Boolean).join('\n'); // en rad per händelse (steg 8.1.10)
 }
 const tal = (rader: Rad[]) => ({ dodaTal: rader.filter(isDod).length, foddaTal: rader.filter(isFodd).length });
 
@@ -106,7 +106,7 @@ export function bortaHtml(b: Borta) {
   const man = Math.max(1, Math.round(years * 12));
   const yrs = years >= 1 ? `${num(years)} år` : `${man} ${man === 1 ? 'månad' : 'månader'}`;
   const n = olasta(s);
-  const ber = bortaBerattelse(s, b).map(p => `<p class="ovBer">${esc(p)}</p>`).join('');
+  const ber = bortaBerattelse(s, b).map(p => `<p class="ovBer">${p.split('\n').map(esc).join('<br>')}</p>`).join('');
   return `
     <p class="ovLead">Medan du var borta gick ${durTxt(s.now - b.fran)} (${yrs} i spelet).</p>
     <div class="ovBerattelse">${ber}</div>

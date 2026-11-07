@@ -168,6 +168,7 @@ export interface Jaktforsok {
 }
 
 export interface Person {
+  pratArbete?: number; // samtalen hen haft medan hen arbetat (steg 8.1.12)
   id: number; name: string; sex: 'm' | 'k';
   born: number; died?: number; cause?: string; left?: number;
   fran?: number; // grannklanen hen kom ifrån (en främling, steg 4.4.4.2)

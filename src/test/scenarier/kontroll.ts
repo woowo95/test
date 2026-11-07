@@ -66,7 +66,7 @@ SCENARIER.ikoner = {
       ['grupper i filtret', saknas(Object.values(GRUPPER).map(g => g.ikon))],
       ['lager', saknas(FYND_IDS.map(k => FYND[k].ikon))],
       ['byggmaterial', saknas(Object.values(MATERIAL).map(m => m.ikon))],
-      ['slag av arbete', saknas(Object.values(ACTS).map(a => a.slag && slagIkon(a.slag)).filter(k => k !== 'zzz'))], // vila ritas som z
+      ['slag av arbete', saknas(Object.values(ACTS).map(a => a.slag && slagIkon(a.slag)))],
       ['påbörjat redskap', saknas(['paborjat'])],
       ['stationer', saknas(SIM.STATION_LIST.map(k => SIM.STATIONER[k].ikon))],
       ['relationstyper', saknas(Object.values(SIM.RELATIONER).map(t => t.ikon))],

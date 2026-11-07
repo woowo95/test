@@ -1,14 +1,13 @@
-import { clamp, handlarPlats, MASTERVERK, PERFEKT, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, W, bordPlatser, sjoarna, stationById, MATERIAL, Pile, STUBBE_LIV, Station, bitAt, bitsOf, dorrDef, condOf, emberOn, eldById, eldXY, eldarOf, fireHeat, forvarAt, Fire, heatRadius, TORK, torrDel, isKlar, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, zonesOf, groundOf, snoPaMarken, ageIndex, tradArt } from '../sim';
+import { clamp, living, handlarPlats, MASTERVERK, PERFEKT, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, W, bordPlatser, sjoarna, stationById, MATERIAL, Pile, STUBBE_LIV, Station, bitAt, bitsOf, dorrDef, condOf, emberOn, eldById, eldXY, eldarOf, fireHeat, forvarAt, Fire, heatRadius, TORK, torrDel, isKlar, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, zonesOf, groundOf, snoPaMarken, ageIndex, tradArt } from '../sim';
 import { hasIcon, iconCanvas, kartbild, kartbildEnsam } from '../ikoner';
 import { KARTBILDER } from '../kartbilder';
 import { STUBBILDER } from '../stubbilder';
 import { ritaHus } from './husbild';
 import { smutsGrad, smutsIkon } from './slitbild';
-import { outPilesAt, piles, s, sakVar, ui } from './lage';
-import { Ikoner, TS, overG, pileLayer, rokLayer, structG } from './scen';
+import { outPilesAt, piles, s, sakVar, ui, uppgiftVid } from './lage';
+import { Ikoner, TS, figurLayer, overG, pileLayer, rokLayer, structG } from './scen';
 import { eldBild, gnistBild, rokBild } from './animation';
 import { ANIMTAKT } from '../animbilder';
-import { mix } from './pixel';
 import { iBruk } from './ibruk';
 import { framstegPunkter } from './framsteg';
 import { farg, fargTal, narmast, rasterPa } from '../palett';
@@ -16,6 +15,7 @@ import * as PIXI from 'pixi.js';
 
 // det som står på marken: lagerplatserna och stackarna, stationerna, husen, stubbar, fällda träd och elden
 const pileIcons = new Ikoner(pileLayer, true); // med skuggor på marken (steg 5.1.8)
+const stubbIkoner = new Ikoner(figurLayer, true);
 const rokIkoner = new Ikoner(rokLayer); // gnistorna och röken över elden (steg 5.1.9.1)
 // skicket som färg: grönt, gult, rött
 // en färg i talform till närmaste färg i paletten
@@ -94,7 +94,8 @@ function drawFalt() {
       if (grav) for (let r = 0; r < 4; r++) structG.lineStyle(1, 0x3f2415).moveTo(X + 1, Y + 2.5 + r * 4).lineTo(X + TS - 1, Y + 2.5 + r * 4).lineStyle(0);
       if (bild && grodaPa(f, k)) { const kb = liten ? (bild === 'grodd' ? 'grodd_liten' : bild) : kartbild(bild) || bild, b = iconCanvas(kb).width, bh = iconCanvas(kb).height; pileIcons.add(kb, Math.round(X + (TS - b) / 2), Math.round(Y + (TS - bh) / 2), 1); }
     }
-    if (!vaxer && !mogen) { const i = faltRuta(f, Math.min(f.klara, f.n - 1)); framsteg((i % W) * TS + TS / 2, Math.floor(i / W) * TS + 3, faltKlar(f)); }
+    // cirkeln syns bara när någon arbetar på fältet (steg 8.1.3)
+    if (!vaxer && !mogen && living(s).some(p => { const t = uppgiftVid(p); return t?.act === 'odla' && t.phase === 'do' && t.ref === f.id; })) { const i = faltRuta(f, Math.min(f.klara, f.n - 1)); framsteg((i % W) * TS + TS / 2, Math.floor(i / W) * TS + 3, faltKlar(f)); }
   }
 }
 // framstegscirkeln för det som inte är klart: en mörk bricka med ljus kant som fylls med gult medsols från klockan tolv,
@@ -115,17 +116,26 @@ const YTA: Record<string, Yta & { v?: Yta }> = {
 };
 // maten som hänger på torkställningen (steg 2.8.2): köttet i remsor och fisken i stjärten under slån, åtta platser som fylls
 // efter hur mycket som hänger. Den byter färg från rött till mörkbrunt medan den torkar (torrDel). Bara utseende
+const tonPar = (a: string, i: number, b: string, j: number) => [fargTal(farg(a as 'jord', i as 0)), fargTal(farg(b as 'jord', j as 0))] as const;
+const TORK_KOTT = [tonPar('rost', 3, 'rost', 2), tonPar('rost', 2, 'rost', 1), tonPar('jord', 1, 'jord', 0)];
+const TORK_FISK = [tonPar('ben', 1, 'skiffer', 2), tonPar('jord', 3, 'jord', 2), tonPar('jord', 2, 'jord', 1)];
 function hangande(st: Station, x0: number, y0: number) {
   const platser = 8, per = TORK.rymd / platser;
   let i = 0;
   for (const q of st.tork!) {
     const f = torrDel(s, q), n = Math.max(1, Math.round(q.n / per)), fisk = q.k !== 'kott' && q.k !== 'vargkott';
-    const farg = mix(fisk ? 0xb87a5a : 0xb0342a, fisk ? 0x5a3a22 : 0x4a2416, f);
+    // i pixlar och palettens färger (steg 8.1.9): ljusare och rödare färskt, mörkbrunt torrt; ljus sida till vänster
+    const steg = f < 0.34 ? 0 : f < 0.67 ? 1 : 2, [ljus, mork] = (fisk ? TORK_FISK : TORK_KOTT)[steg];
     for (let j = 0; j < n && i < platser; j++, i++) {
-      const x = st.rot ? x0 + 8.3 : x0 + 9 + i * 1.8, y = st.rot ? y0 + 4 + i * 3 : y0 + 3; // den stående: längs slån uppifrån och ner
-      overG.beginFill(farg);
-      if (fisk) overG.drawRect(x, y, 1, 1.5).drawEllipse(x + 0.5, y + 4.5, 0.9, 3).endFill(); // stjärten i slån och kroppen under
-      else overG.drawRect(x, y, 1.4, 7 - (i % 3)).endFill(); // en köttremsa
+      const x = st.rot ? x0 + 8 : Math.round(x0 + 9 + i * 1.8), y = st.rot ? y0 + 4 + i * 3 : y0 + 3; // den stående: längs slån uppifrån och ner
+      if (fisk) { // stjärten i slån och kroppen under
+        overG.beginFill(mork).drawRect(x, y, 1, 2).drawRect(x, y + 6, 1, 1).endFill();
+        overG.beginFill(ljus).drawRect(x, y + 2, 1, 4).endFill();
+      } else { // en köttremsa
+        const l = 7 - (i % 3);
+        overG.beginFill(ljus).drawRect(x, y, 1, l - 1).endFill();
+        overG.beginFill(mork).drawRect(x, y + l - 1, 1, 1).endFill();
+      }
     }
   }
 }
@@ -222,15 +232,18 @@ export function drawStructures(t: number) {
   // och vintern. Stubben bleknar i fyra steg medan den ruttnar; det fällda trädet ligger med roten på sin ruta
   const g = groundOf(s), sno = snoPaMarken(s) >= 0.25, tid = sno ? 'vinter' : ageIndex(s) === 3 ? 'host' : 'sommar';
   const sortAt = (x: number, y: number) => tradArt(g, Math.floor(y) * W + Math.floor(x)).id === 'bjork' ? 'bjork' : 'gran';
+  // i trädens lager, rad för rad (steg 8.1.5), så att de syns i den vanliga vyn
+  stubbIkoner.start();
   for (const k of s.stubbar ?? []) {
     const r = Math.min(3, Math.max(0, Math.floor((s.now - k.t) / STUBBE_LIV * 4)));
     const id = `st_${sortAt(k.x, k.y)}_${k.v === 2 ? 2 : 1}_${r}${sno ? '_v' : ''}`, b = STUBBILDER[id];
-    pileIcons.add('sb_' + id, k.x * TS + 10 - b.fx, k.y * TS + 11 - b.fy, 1);
+    stubbIkoner.add('sb_' + id, k.x * TS + 10 - b.fx, k.y * TS + 11 - b.fy, 1);
   }
   for (const k of s.stockar ?? []) {
     const id = `fa_${sortAt(k.x, k.y)}_${k.ved <= 3 ? 0 : k.ved <= 7 ? 1 : 2}_${tid}`, b = STUBBILDER[id];
-    pileIcons.add('sb_' + id, Math.round(k.x * TS) - 4 - b.fx, Math.round(k.y * TS) + 4 - b.fy, 1);
+    stubbIkoner.add('sb_' + id, Math.round(k.x * TS) - 4 - b.fx, Math.round(k.y * TS) + 4 - b.fy, 1);
   }
+  stubbIkoner.end();
   pileIcons.end();
   // eldarna: värmeområdet för varje brinnande lägereld när eldens flik är öppen, och en ring runt den som fliken visar (ui.eld)
   if (tab === 'eld') for (const f of eldarOf(s)) {

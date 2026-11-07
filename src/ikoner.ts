@@ -140,6 +140,7 @@ export const PAL: Record<string, Record<string, string>> = {
   tragolv: { b: '#7e7362', B: '#987e62', d: '#5e3c24' },
   paborjat: { w: '#dad0bb', d: '#24201d', y: '#d8b25f' },
   a_samla: AKT,
+  zzz: { w: '#dad0bb' },
   a_odla: AKT,
   a_jaga: AKT,
   a_smyga: AKT,
@@ -254,6 +255,16 @@ const PIX_TRADORR = [
   'oooooooooooooooo',
 ];
 export const PIX: Record<string, string[]> = {
+  zzz: [ // den som sover (steg 8.1.1), i 8 punkter som de andra små symbolerna
+    '...wwwww',
+    '......w.',
+    '.....w..',
+    '....wwww',
+    'www.....',
+    '..w.....',
+    '.w......',
+    'www.....',
+  ],
   gud_aska: [ // amulett i guld (Björn valde stil 3 efter v245, steg 4.5.2)
     '.......ee.......',
     '....eooooeee....',

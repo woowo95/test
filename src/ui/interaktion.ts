@@ -102,6 +102,8 @@ app.stage.on('pointertap', e => {
   else if (!inMap(c.x, c.y)) avmarkera(); // utanför kartan finns inget att visa
   else if (filtAt(gx, gy)) { ui.filtAt = filtAt(gx, gy)!; ui.byteNr = -1; if (valdFilt()) visa('filt'); }
   else if (fireAt(gx, gy) !== undefined) { const id = fireAt(gx, gy)!; ui.eld = id ? id - 1 : undefined; visa('eld'); }
+  else if (s.stockar?.some(q => Math.floor(q.x) === c.x && Math.floor(q.y) === c.y)) { ui.sak = `v:${s.stockar.find(q => Math.floor(q.x) === c.x && Math.floor(q.y) === c.y)!.id}`; visa('sak'); } // stocken, också på ett fält, en lagerplats eller vid en station (steg 8.1.6)
+  else if (stubbeAt(c.x, c.y)) { ui.sak = `u:${c.y * W + c.x}`; visa('sak'); } // stubben (steg 3.10.6)
   else if (zi) valjLager(zi - 1, c);
   else if (stationAt(s, c.x, c.y)) { ui.stationId = stationAt(s, c.x, c.y)!.id; visa('station'); }
   else if (stolAt(c.x, c.y)) { ui.stationId = stolAt(c.x, c.y)!.id; visa('station'); } // stolen vid bänken eller bordet (steg 6.8.10)
@@ -109,8 +111,6 @@ app.stage.on('pointertap', e => {
   else if (toaAt(s, c.x, c.y)) { ui.sak = `f:${c.y * W + c.x}`; visa('sak'); }
   else if (faltAt(s, c.x, c.y)) valjFalt(faltAt(s, c.x, c.y)!, c.x, c.y);
   else if (s.uppsatta?.some(q => q.x === c.x && q.y === c.y)) { ui.sak = `a:${c.y * W + c.x}`; visa('sak'); } // den uppsatta facklan (steg 6.3.7)
-  else if (s.stockar?.some(q => Math.floor(q.x) === c.x && Math.floor(q.y) === c.y)) { ui.sak = `v:${s.stockar.find(q => Math.floor(q.x) === c.x && Math.floor(q.y) === c.y)!.id}`; visa('sak'); } // stocken
-  else if (stubbeAt(c.x, c.y)) { ui.sak = `u:${c.y * W + c.x}`; visa('sak'); } // stubben (steg 3.10.6)
   else if (husAt(c.x, c.y) !== undefined) { ui.husId = husAt(c.x, c.y)!; visa('hus'); }
   else if (tradAt(c.x, c.y)) { ui.sak = `r:${c.y * W + c.x}`; visa('sak'); } // trädet (steg 5.1.4.3)
   else if (buskeAt(c.x, c.y)) { ui.sak = `b:${c.y * W + c.x}`; visa('sak'); } // busken (steg 6.5.3)
