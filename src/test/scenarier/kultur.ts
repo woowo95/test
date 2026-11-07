@@ -712,7 +712,7 @@ SCENARIER.bonen = {
       ['bönen stärker tron', p.troStyrka! > t0 || t0 >= 100],
       ['en vardagsbön om dagen', b === undefined],
       [`bönen i nöd för den som tror nog (${n?.o})`, n?.id === 'nod' && !inte],
-      ['en bön som hjälpte blir en upplevelse', !!p.upp?.some(x => x.k === 'bonHjalpte')],
+      ['en bön som hjälpte räknas', (s.stat?.bon_hjalpte ?? 0) === 1],
     ];
   },
 };

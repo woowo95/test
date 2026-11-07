@@ -265,9 +265,10 @@ export function tecken(s: State, p: Person, k: TeckenTyp, om?: string) {
   if (samma) { p.tro = samma.id; p.troStyrka = TRO.styrka; count(s, 'tro_samma'); log(s, `${p.name} såg samma tecken som ${samma.gnamn} och tror nu likadant.`, 'rel', [p.id, samma.grundare]); return; }
   grunda(s, p, k, om);
 }
+export const TRO_PROV = { utanTak: false }; // scenarierna som prövar många tecken i samma by
 export function grunda(s: State, p: Person, k: TeckenTyp, om?: string) {
   const d = TDEF[k], tron = (s.tron ??= []);
-  if (tron.filter(t => t.slut === undefined).length >= 4) return; // högst några trosriktningar samtidigt (steg 8.5.11)
+  if (!TRO_PROV.utanTak && tron.filter(t => t.slut === undefined).length >= 4) return; // högst några trosriktningar samtidigt (steg 8.5.11)
   const tr: Tro = {
     id: tron.length + 1, grundare: p.id, gnamn: p.name, t: s.now, ar: yearNo(s), k, ...om ? { om } : {},
     bakom: pick(s, d.bakom, 'tro', p), vill: pick(s, d.vill, 'tro', p), svek: pick(s, d.svek, 'tro', p),
