@@ -8,7 +8,7 @@ import { app } from './scen';
 // Det ritas ovanpå hela kartan i skärmens punkter (inte världens), så att det ser likadant ut hur långt man än zoomat.
 // Vädret självt räknas i sim/vader.ts; här bara hur det ser ut. Björn valde version 3 efter v102 (steg 2.10.10): droppar med
 // ljus topp och snöflingor som små kors, i bildstilens palett. Bara palettens färger (steg 5.5.1): molnen och regnet gör
-// bilden mörkare som skymningen, med palettens mörkare toner och raster (vaderMork, ritas av ui/natt.ts), dimman och blixten
+// bilden mörkare som skymningen, med palettens mörkare toner och raster (vaderMork, ritas av ui/natt.ts), dimman tonar ner bilden på samma sätt, blixten
 // är ett rastermönster av palettens ljusaste ton i stället för en halvgenomskinlig ruta, och dropparna och flingorna täcker
 const BILD = {
   molnMork: 0.5, // så mycket mörkare blir det (steg i paletten, ett steg = skymningen) när himlen är helt mulen ...
@@ -25,31 +25,32 @@ const BILD = {
   vindNer: 0.4, // ... och så mycket fortare (eller långsammare) det faller nedåt på skärmen när vinden blåser mot söder (eller norr)
   blixtVar: 9000, // i åskan blixtrar det ungefär så här ofta (millisekunder, datorns tid) ...
   blixtMs: 180, // ... och blixten lyser så här länge
-  dimma: 0.4, dimmaFarg: '#dad0bb', // dimman (steg 3.7.11): så här tät (andel av punkterna) i den tätaste dimman, i ben 3
+  dimmaMork: 0.5, // dimman (steg 3.7.11) tonar ner bilden så här många steg i paletten när den är som tätast; den ritas inte som ett raster över skärmen
+  blixtFarg: '#dad0bb', // blixten i ben 3
   blixt: 0.35, // blixten täcker så här stor del av punkterna när den lyser som mest, i ben 3
 };
 export const vaderG = new PIXI.Graphics();
-// dimman och blixten: ett rutmönster av punkter (BILD.punkt skärmpunkter stora) i ett Bayer-raster, 17 tätheter
+// blixten: ett rutmönster av punkter (BILD.punkt skärmpunkter stora) i ett Bayer-raster, 17 tätheter
 const raster: PIXI.Texture[] = [];
 function rasterTex(del: number) {
   const n = Math.max(0, Math.min(16, Math.round(del * 16)));
   if (!raster[n]) {
     const px = BILD.punkt, c = document.createElement('canvas'); c.width = c.height = 4 * px;
-    const g = c.getContext('2d')!; g.fillStyle = BILD.dimmaFarg;
+    const g = c.getContext('2d')!; g.fillStyle = BILD.blixtFarg;
     for (let i = 0; i < 16; i++) if (BAYER[i]! < n) g.fillRect((i % 4) * px, Math.floor(i / 4) * px, px, px);
     raster[n] = PIXI.Texture.from(c, { scaleMode: PIXI.SCALE_MODES.NEAREST });
   }
   return raster[n]!;
 }
-const dimmaSp = new PIXI.TilingSprite(PIXI.Texture.EMPTY, 1, 1), blixtSp = new PIXI.TilingSprite(PIXI.Texture.EMPTY, 1, 1);
-app.stage.addChild(vaderG, dimmaSp, blixtSp);
+const blixtSp = new PIXI.TilingSprite(PIXI.Texture.EMPTY, 1, 1);
+app.stage.addChild(vaderG, blixtSp);
 function tackRaster(sp: PIXI.TilingSprite, del: number, w: number, h: number) {
   sp.visible = del >= 1 / 32;
   if (!sp.visible) return;
   sp.texture = rasterTex(del); sp.width = w; sp.height = h;
 }
 // hur mycket mörkare molnen och regnet gör bilden, i steg i paletten (ui/terrang.ts lägger det till nattens mörker)
-export function vaderMork(t: number) { const v = vaderNu(s, t); return v.moln * BILD.molnMork + v.nb * BILD.nbMork; }
+export function vaderMork(t: number) { const v = vaderNu(s, t); return v.moln * BILD.molnMork + v.nb * BILD.nbMork + v.dimma * BILD.dimmaMork; }
 
 // en fast slumpsiffra 0–1 för droppe i (samma droppe på samma ställe varje bildruta)
 const fast = (i: number, salt: number) => { const x = Math.sin(i * 127.1 + salt * 311.7) * 43758.5453; return x - Math.floor(x); };
@@ -58,7 +59,6 @@ let blixtTill = 0, nastaBlixt = 0;
 export function drawVader(ms: number) {
   vaderG.clear();
   const v = vaderNu(s, ui.nu), w = app.screen.width, h = app.screen.height;
-  tackRaster(dimmaSp, v.dimma > 0.01 ? v.dimma * BILD.dimma : 0, w, h);
   if (v.nb > 0.01) {
     // regnet och snön faller med vinden (steg 6.4.6): sidled efter vindens riktning, och fortare när den blåser nedåt på skärmen
     const yta = w * h / (1280 * 800), snett = Math.cos(v.rikt) * v.vind * BILD.vindSnett, ner = Math.max(0.5, 1 + Math.sin(v.rikt) * v.vind * BILD.vindNer);
