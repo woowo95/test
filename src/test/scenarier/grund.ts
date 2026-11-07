@@ -2078,7 +2078,10 @@ SCENARIER.radjur = {
       }
       return ut;
     };
-    const spjut = prova('flintspjut', 150, 3), sten = prova(undefined, 60), stark = prova('flintspjut', 150, 20);
+    // spjutet landar på marken efter kastet (steg 8.7.4), så en stark jägare orkar ofta bära hem rådjuret: den svaga styckar det
+    const sv = cloneState(s0), svp = SIM.byId(sv, p0.id)!; svp.pot = { ...svp.pot, styrka: 1 }; svp.tek = { ...svp.tek, kniv: 1 }; SIM.newTing(sv, 'kniv', 1, svp.id);
+    const svt = { act: 'jakt', phase: 'do', tx: svp.x, ty: svp.y, until: sv.now + HOUR, carry: 0, items: { radjur: 1 } } as SIM.Task; SIM.styckaFallt(sv, svp, svt, 'radjur'); const svagDel = svt.items?.radjurdel ?? 0;
+    const spjut = prova('flintspjut', 150), sten = prova(undefined, 60), stark = prova('flintspjut', 150, 20);
     // slakten
     const s = createState(3, START);
     medBank(s);
@@ -2096,7 +2099,7 @@ SCENARIER.radjur = {
       [`med spjut går jägaren mot rådjuret (${spjut.radmal} av 150)`, spjut.radmal > 100],
       [`med spjut fälls rådjur (${spjut.fallt} av 150)`, spjut.fallt > 0],
       [`med stenar jagas inga rådjur (${sten.radmal})`, sten.radmal === 0],
-      [`den som inte orkar bära det helt styckar det (${spjut.del} styckade, ${spjut.hel} hela)`, spjut.del > 0],
+      [`den som inte orkar bära det helt styckar det (${svagDel} delar i händerna)`, svagDel > 0],
       [`den starka bär hem rådjuret helt (${stark.hel} hela, ${stark.del} styckade)`, stark.hel > 0],
       [`slakten gav ${fick}`, amountOf(s, 'kott') >= 4 && amountOf(s, 'ben') === 2 && amountOf(s, 'radjursskinn') === 1 && amountOf(s, 'talg') === 2],
     ];
