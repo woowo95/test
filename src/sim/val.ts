@@ -57,7 +57,7 @@ import { utbrottBorjar, utbrottNu } from './humor';
 import { smakDrag } from './rykten';
 import { PAB, pabud, skams } from './styre';
 import { BONER, bonFritid, bonNod, bonVikt, ritualVal, satFaror } from './kult';
-import { begravaVal } from './grav';
+import { avrustaVal, begravaVal, rustaVal } from './grav';
 import { budBrutet, budForbjuder, hovVal, viltBikta, vilodagNu } from './kyrka';
 import { LAG, lagGaller } from './lagar';
 
@@ -586,6 +586,8 @@ export const ARBETEN: readonly Arbete[] = [
   } },
   // 5 Rädda: det som blir dåligt först räddas först (radda nedan, steg 6.1.15). Att bära in är en förbättring: inte när byn fryser (talet dras ändå, så att personens följd är som förut). När byn
   // svälter bärs bara maten in, så att den inte blir liggande ute (steg 2.12.3)
+  { id: 'avrusta', niva: 5, nar: 'dag', prova: ({ s, p, v, a }) => { if (a < ALDER.vuxen || !kanGa(p)) return false; const g = avrustaVal(s, p); if (!g) return false; v.spot = g.spot; v.ref = g.ref; v.dur = g.min * MIN; return set(v, 'avrusta', g.why); } }, // steg 8.7.5
+  { id: 'rusta', niva: 3, prova: ({ s, p, v }) => { const r = rustaVal(s, p); if (!r) return false; v.spot = r.spot; v.ref = r.ref; v.dur = 2 * MIN; return set(v, 'rusta', r.why); } }, // byta om inför strid (steg 8.7.8)
   { id: 'begrava', niva: 5, nar: 'dag', prova: ({ s, p, v, a }) => { if (a < ALDER.vuxen || !kanGa(p)) return false; const g = begravaVal(s, p); if (!g) return false; v.spot = g.spot; v.ref = g.ref; v.dur = 2 * MIN; return set(v, 'begrava', g.why); } }, // kroppen och graven (steg 8.5.1)
   { id: 'bara', niva: 5, nar: 'dag', kort: true, prova: c => {
     const { s, p, v } = c; let gt: ReturnType<typeof haulJob>;

@@ -14,13 +14,14 @@ export const KVAR = balans('kvar', {
 export interface KvarDef { namn: string; ikon: string; haller: number; se: number; tanke: string }
 export const KVARLEVOR = {
   del: { namn: 'Kroppsdel', ikon: 'kroppsdel', haller: 4, se: -0.04, tanke: 'Såg en avhuggen kroppsdel' },
+  fiende: { namn: 'Fallen fiende', ikon: 'dodkropp', haller: 6, se: -0.03, tanke: 'Såg en fallen fiende' }, // steg 8.7.5
   kropp: { namn: 'Död kropp', ikon: 'dodkropp', haller: 8, se: -0.1, tanke: 'Såg en död kropp' },
 } satisfies Record<string, KvarDef>;
 export type KvarSlag = keyof typeof KVARLEVOR;
 export const gravAt = (s: State, x: number, y: number) => s.gravar?.find(g => g.x === x && g.y === y);
 export type GravStil = 'jord' | 'hog' | 'bal' | 'vatten';
 export interface Grav { x: number; y: number; t: number; vem: number; namn: string; stil: GravStil; tro?: number; ovardig?: true }
-export interface Kvarleva { id: number; k: KvarSlag; x: number; y: number; t: number; vem: number; namn: string; text: string; bars?: number }
+export interface Kvarleva { id: number; k: KvarSlag; x: number; y: number; t: number; vem: number; namn: string; text: string; bars?: number; saker?: Record<string, number> }
 export const kvarlevor = (s: State) => (s.kvarlevor ??= []);
 export function nyKvarleva(s: State, k: KvarSlag, p: Person, text: string) {
   const q: Kvarleva = { id: (s.nextKvar = (s.nextKvar ?? 0) + 1), k, x: Math.floor(p.x), y: Math.floor(p.y), t: s.now, vem: p.id, namn: p.name, text };

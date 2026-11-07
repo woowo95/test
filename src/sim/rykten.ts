@@ -517,6 +517,7 @@ export function anseendeText(s: State, om: number) {
 // (3.7.1) och räderna (11.2.5), och anfallarna som samlas i utkanten och vakten som ser dem med räderna. Horn, trumma och
 // vakthund kommer senare som tekniker
 export const LARM = balans('larm', {
+  trumma: 2.5, // trumman hörs så många gånger längre än ett rop (steg 8.7.12)
   dov: 0.25, // under den här hörseln hör man inte rop (steg 8.2.2)
   hor: 15, // ropet hörs så här många rutor ...
   natt: 1.5, // ... gånger så här mycket på natten
@@ -534,7 +535,9 @@ export interface Larm { t: number; vad: string; storlek: number; led: number; fa
 // vad ett larm gällde, med ord (l_larm, steg 6.7.7); nycklarna är vad i larma()
 export const LARM_VAD: Record<string, string> = { 'slagsmål': 'det slåss i byn', fara: 'det är fara på väg', varg: 'vargarna kommer', rovare: 'rövare är på väg', brand: 'det brinner', tornado: 'en storm är på väg' };
 export function larma(s: State, vad: string, storlek: number, ropare: Person[], falskt = false): Person[] {
-  const hor = LARM.hor * (isLight(s.now) ? 1 : LARM.natt);
+  // hornet hörs över hela kartan och trumman längre än ett rop (steg 8.7.11–8.7.12)
+  const harHorn = ropare.some(p => (s.ting ?? []).some(t => t.k === 'horn' && (t.hos === p.id || t.agare === p.id || t.agare === undefined))), harTrumma = !harHorn && ropare.some(p => (s.ting ?? []).some(t => t.k === 'trumma' && (t.hos === p.id || t.agare === p.id)));
+  const hor = harHorn ? 1e4 : LARM.hor * (isLight(s.now) ? 1 : LARM.natt) * (harTrumma ? LARM.trumma : 1);
   const vet = new Set<Person>(ropare), hort: Person[] = [];
   for (const p of ropare) p.larm = { t: s.now, vad, storlek, led: 0, ...(falskt ? { falskt: true as const } : {}) };
   let ropar = [...ropare];

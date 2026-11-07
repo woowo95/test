@@ -35,7 +35,7 @@ type Skadeslag = 'hugg' | 'stick' | 'slag' | 'bett';
 // att ducka i (STRID.duckTung), skydd = kroppsdelarna det täcker och hur stor del av skadan det tar per slag i ett kaninskinn
 interface PlaggDef {
   namn: string; ord: string; verb: 'Syr' | 'Flätar'; plats: string; mangd: number; med?: Record<string, number>;
-  varme: number; dygn: number; vikt: number; tek: string; min: number; slag: MaterialSlag[];
+  varme: number; dygn: number; vikt: number; tek: string; min: number; slag: MaterialSlag[]; smid?: number; // smid = så mycket smidighet plagget tar (steg 8.7.1)
   krok?: number; axel?: number; rygg?: number; tung?: true; snoTar?: number; // snoTar = så stor del av det snön bromsar som plagget tar bort (snöskorna, steg 7.7.3; snoFart i gang.ts)
   skydd?: { delar: Kroppsdel[]; tar: Partial<Record<Skadeslag, number>> };
   forsta: string; fame?: string; // loggen första gången ({namn} = den som gjorde det, {plagg} = plaggets namn i en mening) och det hen minns för
@@ -63,6 +63,10 @@ const PLAGG_DEF = {
     forsta: '{namn} gjorde ett {plagg}. De troende bär det gärna.' }, // steg 8.5.15
   mask: { namn: 'Schamanens mask', ord: 'en mask', verb: 'Syr', plats: 'huvud', mangd: RECEPT.mask.mangd, varme: 0, dygn: 15, vikt: 1, tek: 'skinnklader', min: RECEPT.mask.min, slag: ['skinn'],
     forsta: '{namn} gjorde en mask åt schamanen.' }, // steg 8.5.17
+  rustning: { namn: 'Läderrustning', ord: 'en läderrustning', verb: 'Syr', plats: 'yttre', mangd: RECEPT.rustning.mangd, med: RECEPT.rustning.av, varme: 0.1, dygn: 12, vikt: 8, smid: 2, tek: 'rustning', min: RECEPT.rustning.min, slag: ['lader'],
+    skydd: { delar: ['bal', 'armV', 'armH'], tar: { hugg: 0.5, stick: 0.5, slag: 0.33, bett: 0.4 } }, forsta: '{namn} sydde byns första {plagg}.' }, // steg 8.7.1
+  hjalm: { namn: 'Läderhjälm', ord: 'en läderhjälm', verb: 'Syr', plats: 'huvud', mangd: RECEPT.hjalm.mangd, med: RECEPT.hjalm.av, varme: 0.05, dygn: 12, vikt: 1.5, tek: 'rustning', min: RECEPT.hjalm.min, slag: ['lader'],
+    skydd: { delar: ['huvud'], tar: { slag: 0.33, hugg: 0.2, stick: 0.2 } }, forsta: '{namn} sydde byns första {plagg}.' }, // steg 8.7.2
   mantel: { namn: 'Mantel', ord: 'en mantel', verb: 'Syr', plats: 'yttre', mangd: RECEPT.mantel.mangd, med: RECEPT.mantel.av, varme: 0.2, dygn: 12, vikt: 5, tek: 'skinnklader', min: RECEPT.mantel.min, slag: ['skinn'],
     forsta: '{namn} sydde en {plagg} åt ledaren. Den följer ämbetet, inte personen.' }, // steg 8.3.14
   halsband: { namn: 'Halsband', ord: 'ett halsband', verb: 'Syr', plats: 'smycke', mangd: RECEPT.halsband.mangd, med: RECEPT.halsband.av, varme: 0, dygn: 20, vikt: 0.2, tek: 'skinnklader', min: RECEPT.halsband.min, slag: ['smycke'],

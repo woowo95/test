@@ -170,6 +170,12 @@ export const TEKNIK: Tek[] = [
   // ledarskapet kommer man på i samtal (steg 3.5.1, styre.ts): bara den som kan det kan bli byns ledare
   { id: 'ledarskap', namn: 'Ledarskap', text: 'Att förstå vad som krävs för att byn ska lyssna på en: att höra alla, döma rättvist och tänka på hela byn.', effekt: 'Bara den som kan ledarskap kan bli byns ledare.',
     omr: [], krav: [], niva: 1, tid: 12, nar: 'i samtal' },
+  // vapnen och rustningen (system 8.7): kommer man på vid slöjdbänken
+  { id: 'rustning', namn: 'Läderrustning', text: 'Tjockt läder som tar emot det vassa.', effekt: 'Rustningen och hjälmen skyddar i striden.', omr: ['hantverk'], krav: ['garvning'], niva: 4, tid: 10, forsok: { vid: ['flatarbank'], skill: 'hantverk' }, episk: '{Namn} sydde läder i lager tills det höll för en kniv.' },
+  { id: 'skold', namn: 'Sköld', text: 'Ved och rep som man håller framför sig.', effekt: 'Skölden tar emot slag och pilar.', omr: ['hantverk'], krav: ['yxa'], niva: 3, tid: 10 },
+  { id: 'bage', namn: 'Pilbåge', text: 'En böjd stav och ett spänt rep, och pilar av ved och flinta.', effekt: 'Bågen når långt.', omr: ['hantverk', 'jakt'], krav: ['kniv'], niva: 4, tid: 10, forsok: { vid: ['flatarbank'], skill: 'hantverk' }, episk: '{Namn} spände repet över staven, och pilen flög längre än något spjut.' },
+  { id: 'slunga', namn: 'Slunga', text: 'En läderrem som kastar stenar långt.', effekt: 'Slungan kastar stenar långt.', omr: ['hantverk', 'jakt'], krav: ['garvning'], niva: 4, tid: 8, forsok: { vid: ['flatarbank'], skill: 'hantverk' }, episk: '{Namn} snurrade läderremmen, och stenen for över sjön.' },
+  { id: 'horn', namn: 'Horn', text: 'Ett urholkat ben som ljuder långt.', effekt: 'Hornet hörs över hela kartan, och trumman längre än ett rop.', omr: ['hantverk'], krav: ['kniv'], niva: 3, tid: 8 },
   // lagarna (steg 8.4.1): samma mönster som Ledarskap. Bara den som kan den kan stifta en lag, så en by kan glömma sina lagar
   { id: 'lag', namn: 'Lag', text: 'Att bestämma i förväg vad som är fel och vad det kostar, så att det blir likadant varje gång.', effekt: 'Den som kan lag kan lägga fram en lag.', omr: [], krav: ['ledarskap'], niva: 2, tid: 14, nar: 'i samtal' },
 ];

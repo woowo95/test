@@ -360,6 +360,7 @@ export interface State {
   framtradanden?: import('./framtradande').FramMinne[]; // de senaste framträdandena
   matcher?: import('./sport').MatchMinne[]; matchNr?: number; // de senaste matcherna (steg 5.4.8.1)
   overl?: import('./byte').Overl[]; filtar?: import('./byte').Filt[]; filtNr?: number; byteNr?: number; bytt?: import('./byte').Bytt[];
+  rovareFler?: import('./rovare').Rovarflock[]; // flockar som väntar på att få gå (steg 8.7.18)
   rovare?: import('./rovare').Rovarflock; rovarNr?: number; rovarVila?: number; // rövarflocken på kartan, hur många som kommit och när nästa tidigast kommer (steg 4.4.5, rovare.ts)
   klaner?: import('./klaner').Klan[]; klanNr?: number; // grannklanerna (steg 4.4.3, klaner.ts)
   handlarKopt?: Record<string, number>; // det handlarna köpt av byn och byborna, per slag, på det senaste besök då slaget köptes (steg 6.2.11, handel.ts)

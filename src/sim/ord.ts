@@ -72,7 +72,7 @@ export const enOrd = (d: { ett?: boolean }) => d.ett ? 'ett' : 'en';
 // ---------- teknikerna ----------
 // vad den som kan tekniken gör: "har lärt sig att odla", "kom på hur man kan välja en ledare", "Med Gunve dog konsten att odla"
 export const GORA: Record<string, string> = {
-  lag: 'stifta lagar', stenhuggarplats: 'hugga sten', klyvplats: 'klyva plankor', harden: 'lägga härdar', ortkok: 'koka örter', leksak: 'tälja leksaker', snara: 'sätta snaror', grop: 'gräva fångstgropar', garvning: 'garva skinn', lin: 'odla lin', slanda: 'spinna lin', vavstol: 'väva lintyg', fangstbank: 'göra fällor', mjarde: 'fläta mjärdar', stockvag: 'lägga stockvägar', brygga: 'bygga bryggor',
+  rustning: 'sy läderrustningar', skold: 'göra sköldar', bage: 'göra pilbågar', slunga: 'göra slungor', horn: 'göra horn', lag: 'stifta lagar', stenhuggarplats: 'hugga sten', klyvplats: 'klyva plankor', harden: 'lägga härdar', ortkok: 'koka örter', leksak: 'tälja leksaker', snara: 'sätta snaror', grop: 'gräva fångstgropar', garvning: 'garva skinn', lin: 'odla lin', slanda: 'spinna lin', vavstol: 'väva lintyg', fangstbank: 'göra fällor', mjarde: 'fläta mjärdar', stockvag: 'lägga stockvägar', brygga: 'bygga bryggor',
   korg: 'fläta korgar', yxa: 'göra flintyxor', fiskespjut: 'tälja träspjut', rep: 'tvinna rep', flintspjut: 'göra flintspjut', metspo: 'göra metspön',
   kniv: 'slå flintknivar', timmervagg: 'bygga timmerhus', slaktbank: 'bygga en slaktbänk', flatarbank: 'bygga en slöjdbänk', halmbadd: 'göra halmbäddar',
   bord: 'bygga bord', hylla: 'göra hyllor och kistor', skinnfall: 'sy skinnfällar', skinndorr: 'hänga dörrar av skinn', tradorr: 'göra trädörrar',

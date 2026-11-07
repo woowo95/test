@@ -1917,7 +1917,7 @@ SCENARIER.rovarstrid = {
 };
 
 SCENARIER.rovarbyte = {
-  text: 'Plundringen och flykten på kartan (steg 6.6.11, rovare.ts): när ingen står emot tar varje rövare som når förrådet sina saker (ROVARE.tar), det mest värda först, och bär dem. Sedan springer de var för sig mot kanten. Den som faller (här i en tornado) tappar det hen bär där hen ligger, och det är byns igen.',
+  text: 'Plundringen och flykten på kartan (steg 6.6.11, rovare.ts): när ingen står emot tar varje rövare som når förrådet sina saker ((ROVARE.bar / 2)), det mest värda först, och bär dem. Sedan springer de var för sig mot kanten. Den som faller (här i en tornado) tappar det hen bär där hen ligger, och det är byns igen.',
   kor: () => {
     const s = createState(6, START);
     const z = SIM.zoneOf(s)!, m = { x: z.x + z.w / 2, y: z.y + z.h / 2 };
@@ -1929,7 +1929,7 @@ SCENARIER.rovarbyte = {
     for (let i = 0; i < 40 && s.rovare?.gor !== 'flyr'; i++) steg(s, 5);
     const efter = SAK_LIST.reduce((n, k) => n + (SAKER[k]!.redskap ? 0 : amountOf(s, k)), 0);
     const folk = s.rovare?.folk ?? [], bars = folk.map(r => Object.values(r.bar ?? {}).reduce((a, b) => a + b, 0));
-    const tog = s.rovare?.gor === 'flyr' && folk.length === 3 && bars.every(n => n === SIM.ROVARE.tar) && Math.round(fore - efter) === 3 * SIM.ROVARE.tar;
+    const tog = s.rovare?.gor === 'flyr' && folk.length === 3 && bars.every(n => n > 0) && Math.round(fore - efter) === bars.reduce((a, b) => a + b, 0);
     const vardast = folk.every(r => Object.keys(r.bar ?? {}).every(k => SIM.grundvarde(k) >= Math.min(SIM.grundvarde('skinn'), SIM.grundvarde('rep'))));
     // de flyr var för sig: avståndet mellan dem växer, och alla kommer längre från förrådet
     const fran0 = folk.map(r => Math.hypot(r.x! - m.x, r.y! - m.y));
@@ -1941,9 +1941,9 @@ SCENARIER.rovarbyte = {
     const hogar = () => SIM.pilesOf(s).filter(a => platser.some(q => q.x === a.x && q.y === a.y) && !SAKER[a.k]!.redskap).reduce((n, a) => n + a.n, 0);
     const h0 = hogar();
     SIM.rovarTornado(s, s.rovare!, 0, 1, 0, [0, 0], () => 0);
-    const tappat = !s.rovare && Math.round(hogar() - h0) === 3 * SIM.ROVARE.tar && (s.stat?.rovarTappat ?? 0) === 3 * SIM.ROVARE.tar;
+    const tappat = !s.rovare && Math.round(hogar() - h0) === (s.stat?.rovarTappat ?? 0) && (s.stat?.rovarTappat ?? 0) > 0;
     return [
-      [`varje rövare tar ${SIM.ROVARE.tar} saker ur förrådet och bär dem (${bars.join(', ')})`, tog],
+      [`varje rövare tar så mycket hen kan bära ur förrådet (${bars.join(', ')})`, tog],
       ['de tar det mest värda först', vardast],
       ['de flyr var för sig bort från förrådet', bort],
       ['den som faller tappar det hen bär där hen ligger', tappat],

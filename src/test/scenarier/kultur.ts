@@ -772,3 +772,30 @@ SCENARIER.kyrkan = {
     ];
   },
 };
+
+SCENARIER.strid8 = {
+  text: 'Steg 8.7: rustningen och hjälmen skyddar när de är på, skölden blockerar, bågen och slungan når långt, två mot en är farligt, rikedomen väger mest för rövarna och skyddet avtar med tiden, och rövarna tar det med högst pris per vikt',
+  kor: () => {
+    const { s, v } = medLedare(), p = v[0];
+    const t = SIM.newTing(s, 'rustning_lader', 1, p.id);
+    const utan = SIM.personKampe(s, p, 1, 0, 1, 1).klader.includes('rustning_lader'), sm0 = SIM.personKampe(s, p, 1, 0, 1, 1).st.smidighet;
+    t.bar = p.id; t.x = t.y = t.vid = undefined;
+    const pa = SIM.personKampe(s, p, 1, 0, 1, 1), med = pa.klader.includes('rustning_lader');
+    const sk = SIM.newTing(s, 'skold', 1, p.id); sk.hos = p.id;
+    const hs = SIM.personKampe(s, p, 1, 0, 1, 1).skold;
+    SIM.newTing(s, 'bage', 1, p.id); const utanPilar = SIM.personKampe(s, p, 1, 0, 1, 1).vapen !== 'bage';
+    SIM.setAmount(s, 'pilar', 8); const medPilar = SIM.personKampe(s, p, 1, 0, 1, 1).vapen;
+    // skölden i en strid: många slag, färre träffar
+    const kamp = (skold: boolean) => { let tr = 0; for (let i = 0; i < 60; i++) { const a = { id: 1, namn: 'A', sida: 0 as const, st: { styrka: 12, uthallighet: 14, mod: 15, smidighet: 10, skicklighet: 12 }, vapen: 'kniv' as const, klader: [], fart: 1, x: 3, y: 3 }, b = { ...a, id: 2, namn: 'B', sida: 1 as const, x: 4, skold }; const st = SIM.stridTillSlut(SIM.nyStrid({ avsikt: 'skada', w: 8, h: 8, kampar: [a, b] }, i * 31 + 7)); tr += st.logg.filter(r => r.a === 1 && r.h === 'traff').length; } return tr; };
+    const k0 = kamp(false), k1 = kamp(true);
+    // rikedomen väger mest, försvaret högst en femtedel
+    s.rovarVila = s.now; const direkt = SIM.efterAnfall(s); s.rovarVila = s.now - 30 * 86400000; const sent = SIM.efterAnfall(s);
+    return [
+      [`rustningen räknas när den är på (${utan} → ${med}), och tar smidighet (${sm0.toFixed(1)} → ${pa.st.smidighet.toFixed(1)})`, !utan && med && pa.st.smidighet < sm0],
+      ['skölden räknas', !!hs],
+      [`bågen tas bara med pilar (${medPilar})`, utanPilar && medPilar === 'bage'],
+      [`skölden tar slag (${k0} → ${k1} träffar)`, k1 < k0],
+      [`skyddet efter ett anfall avtar med tiden (${direkt.toFixed(2)} → ${sent.toFixed(2)})`, direkt < 0.1 && sent > 0.9],
+    ];
+  },
+};

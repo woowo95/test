@@ -162,6 +162,10 @@ const DEF = {
   snoskor: { namn: 'Gör snöskor', slag: 'hantverk', hantverk: true, stilla: true, verb: 'gör', plats: 'station' },
   prastdrakt: { namn: 'Syr prästens dräkt', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, tecken: { namn: 'Gör ett trons tecken', slag: 'hantverk', hantverk: true, stilla: true, verb: 'gör', plats: 'station' }, mask: { namn: 'Gör schamanens mask', slag: 'hantverk', hantverk: true, stilla: true, verb: 'gör', plats: 'station' },
   koka_rokelse: { namn: 'Kokar rökelse', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' }, koka_olja: { namn: 'Kokar brännolja', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' }, // steg 8.5.16
+  rustning: { namn: 'Syr en läderrustning', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, hjalm: { namn: 'Syr en läderhjälm', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' },
+  skold: { namn: 'Gör en sköld', slag: 'hantverk', hantverk: true, plats: 'station' }, bage: { namn: 'Gör en pilbåge', slag: 'hantverk', hantverk: true, plats: 'station' }, slunga: { namn: 'Gör en slunga', slag: 'hantverk', hantverk: true, plats: 'station' }, horn: { namn: 'Gör ett horn', slag: 'hantverk', hantverk: true, plats: 'station' },
+  gor_pilar: { namn: 'Gör pilar', slag: 'hantverk', hantverk: true, verb: 'gör', plats: 'station' },
+  avrusta: { namn: 'Tar av den fallne det hen bar', tecken: '✨', ikon: 'a_be', framme: true, stilla: true }, rusta: { namn: 'Hämtar sin rustning', tecken: '✨', ikon: 'a_be', framme: true, stilla: true }, // steg 8.7.5, 8.7.8
   mantel: { namn: 'Syr ledarens mantel', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, // steg 8.3.14
   halsband: { namn: 'Trär ett halsband', slag: 'hantverk', hantverk: true, stilla: true, verb: 'trär', plats: 'station' },
   tunika: { namn: 'Syr en tunika', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' },

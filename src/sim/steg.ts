@@ -75,7 +75,7 @@ import { sjoRakna } from './sjo';
 import { akel, regnetTvattar, toaBesok } from './smuts';
 import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from './torst';
 import { kvarTimme } from './kvarlevor';
-import { gravKlar, kroppUpp } from './grav';
+import { avrustaKlar, gravKlar, kroppUpp, rustaKlar } from './grav';
 import { bonKlar, kultTimme } from './kult';
 import { hovArbete, kyrkaRegister, kyrkaTimme, satBudHandelse, satOppnaAndlig } from './kyrka';
 import { lagRegister } from './lagar';
@@ -189,6 +189,7 @@ const KLAR: Partial<Record<Act, Krok>> = {
   strand: (s, p) => { p.rest = Math.min(1, p.rest + KROPP.strandVila); think(p, 'Satt vid vattnet och fick ro', 0.06, s.now, 6 * HOUR); },
   varda: vardKlar, // såren trycks på, förband läggs, infekterade sår rengörs, och den som inte kan gå bärs hem (halsa.ts)
   vatten: vattenFylld, // vattensäcken är fylld och bärs till den som inte kan gå (torst.ts)
+  avrusta: avrustaKlar, rusta: rustaKlar,
   hovbygge: (s, p, t) => hovArbete(s, p, 60 * (1 + 0 * t.carry)), be: (s, p, t) => bonKlar(s, p, t), begrava: kroppUpp, grava: gravKlar, // tron och graven (system 8.5)
   flyttaeld: (s, p) => flyttaElden(s, p), // elden står på en ny plats (eldflytt.ts)
 };
