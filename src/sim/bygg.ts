@@ -9,7 +9,7 @@ import { kunnighet } from './ekonomi';
 import { sparas } from './forradsmal';
 import { ARSTID, iIstiden } from './tid';
 import { knows } from './teknik';
-import { amountOf, changed, ownMove, ownsAmount, put, use, zonesOf } from './lager';
+import { amountOf, changed, enPerRuta, ownMove, ownsAmount, put, use, zonesOf } from './lager';
 import { freeTools, tingOf } from './agande';
 import { getable, Recept, takeMaterial } from './behov';
 import { Del } from './egendom';
@@ -256,6 +256,7 @@ function clearTile(s: State, b: Bit) {
   for (const a of s.stackar ?? []) if (a.x === b.x && a.y === b.y) { a.x = free.x; a.y = free.y; }
   // ett redskap som ligger på rutan (inte i handen eller en börda) läggs bredvid
   for (const t of tingOf(s)) if (t.x === b.x && t.y === b.y && t.hos === undefined && t.lass === undefined) { t.x = free.x; t.y = free.y; }
+  enPerRuta(s); // det som flyttats kan ha hamnat på en ruta där något redan låg
   changed(s); // summorna i förrådet räknas om (lager.ts)
 }
 

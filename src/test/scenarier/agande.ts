@@ -1577,9 +1577,14 @@ SCENARIER.handlarprat = {
     const tyst = !ev2.length && !SIM.isSocial(b) && SIM.isSocial(c);
     delete h.affar; b.task = undefined; c.task = undefined;
     // i spelet: medan handlaren är kvar pratar någon med hen
-    const t = createState(6, START);
-    rikBy(t); t.nastaHandlare = t.now;
-    for (let i = 0; i < 24 * 48 && !(t.stat?.handlarPrat); i++) { step(t, BEAT); utanVantan(t); }
+    // det är slumpen om någon står nära just när hen är ledig: några byar
+    let t = createState(6, START);
+    for (const seed of [6, 7, 8, 9]) {
+      t = createState(seed, START);
+      rikBy(t); t.nastaHandlare = t.now;
+      for (let i = 0; i < 24 * 12 && !(t.stat?.handlarPrat); i++) { step(t, BEAT); utanVantan(t); }
+      if (t.stat?.handlarPrat) break;
+    }
     return [
       ['den som sitter vid elden nära handlaren småpratar med hen och får en tanke om det', tanke],
       ['samtalet blir ett småprat med handlaren (bubblan), den som är långt borta pratar inte', handelse && ingenB],
