@@ -9,6 +9,7 @@ Notis (Björn, efter v112): skicka en notis till mobilen (PushNotification) varj
 Björn förklarar inte i prompten var fakta finns. Gör därför alltid så här innan du skriver kod:
 
 1. Läs "Läget just nu" i designdokumentet: vad som är byggt, nästa steg och kända brister.
+   Dokumentet har sju flikar, och sökningen görs i fliken där avsnittet ligger: Läget (Läget just nu, Teknisk plattform, Öppna frågor), Färdplan (alla faser och steg), Människan (individer, relationer, hälsa och strid, humör, behov och arbete, ekonomi och ägande, minne, berättelser, kunskap, vilja och seder), Samhället (lagar, ledarskap, religion, teknologi, kultur, flera samhällen), Världen (tidsmodell, motgångar, bestar, väsen, landskapet, mark och skog, värmekartor, byns område), Bygga, odla och äta (byggsystemet, odlingen, maten, arbetsstationer, förvaring, eld) och Spelaren och bilden (vision, spelaren, fornnordiska influenser, statistik, det visuella, kartbilden och panelerna).
 2. Hitta steget i Färdplanen (sök på numret, t.ex. mönstret `^1\.5\.`). Nämner Björn inget nummer: hitta systemet som berörs och se om det redan finns ett steg.
 3. Läs avsnitten som systemets "Läs:" pekar på, och sök i dokumentet på orden prompten handlar om (saker, handlingar, system). Det som står gäller; står det "förslag" i äldre text är det inte bestämt.
 4. Fråga först om steget säger "Björn avgör", om dokumentet säger emot sig självt eller prompten, eller om det saknas det som behövs. Säg i så fall vad som saknas.
