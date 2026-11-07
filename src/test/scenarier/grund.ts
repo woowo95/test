@@ -1056,8 +1056,14 @@ SCENARIER.flodrest = {
     const c0 = [vNara.c, vLangt.c];
     let lera = false, brasaUt = false, hogst = 0, rotterKvarVid1 = -1, blotSang = 0, flyttad = 0, cSlut: number[] = [];
     const rotter = () => (s.stackar ?? []).filter(a => a.k === 'rotter' && a.x === pm.x && a.y === pm.y).reduce((n, a) => n + a.n, 0);
+    let iFloden = 0, valtIFloden = 0; // ett golv som inte är färdigt, där vattnet står: ingen väljer att bygga det
     for (let h2 = 0; h2 < 8 * 24; h2++) {
       kor(s, 1);
+      if (s.flod && SIM.iVattnetNu(s, pj.y * W + pj.x)) {
+        const u = cloneState(s), gv = SIM.bitsOf(u).find(q => q.id === jord.id)!, by = living(u).find(q => SIM.ageOf(q, u.now) >= SIM.ALDER.bygger);
+        gv.b = 0; gv.mat = 0; SIM.touch(u);
+        if (by) { iFloden++; if (SIM.buildJob(u, by)?.bit.id === gv.id) valtIFloden++; }
+      }
       const niva = s.flod?.niva ?? 0;
       hogst = Math.max(hogst, niva);
       if (niva === 1 && hogst === 1) { if (rotterKvarVid1 < 0) { s.stackar!.push({ k: 'rotter', n: 12, c: 1, x: pm.x, y: pm.y }); SIM.tidy(s); } rotterKvarVid1 = rotter(); }
@@ -1082,6 +1088,7 @@ SCENARIER.flodrest = {
     vk.sjoTorr = { niva: 0, tomma: [], v: 1, t: vk.now }; const utanFlod = vattenRutor();
     vk.sjoTorr = { niva: 0, tomma: [], v: 0, t: vk.now }; vk.flod = { niva: 4 }; const medFlod = vattenRutor();
     return [
+      [`där vattnet står byggs inget (${valtIFloden} av ${iFloden} timmar väljs golvet under vatten)`, iFloden > 0 && valtIFloden === 0],
       [`vattenkartan följer översvämningen också när den når fyra rutor upp (${utanFlod} rutor vatten utan, ${medFlod} med)`, medFlod > utanFlod],
       [`vattnet nådde ${hogst} rutor upp på land`, hogst >= 2],
       [`de vuxna bar undan maten innan vattnet kom (${s.stat?.['flod undan'] ?? 0} gånger; ${rotterKvarVid1} av 12 rötter kvar två rutor från vattnet medan det stod en ruta upp)`, (s.stat?.['flod undan'] ?? 0) >= 1 && rotterKvarVid1 === 0],

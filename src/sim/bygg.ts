@@ -96,7 +96,7 @@ export function buildJob(s: State, p: Person, forb = false): Job | undefined {
     const felling = fellingTiles(s, p);
     let fb: Bit | undefined, fs = Infinity;
     for (const b of bitsOf(s)) {
-      if ((b.b >= 1 && b.k !== 'oppning') || !treeOn(s, b) || felling.has(b.y * W + b.x)) continue;
+      if ((b.b >= 1 && b.k !== 'oppning') || !treeOn(s, b) || felling.has(b.y * W + b.x) || s.flod && iVattnetNu(s, b.y * W + b.x)) continue;
       const d = Math.hypot(b.x - p.x, b.y - p.y);
       if (d < fs) { fs = d; fb = b; }
     }
@@ -105,6 +105,7 @@ export function buildJob(s: State, p: Person, forb = false): Job | undefined {
   let best: Job | undefined, bs = Infinity;
   for (const b of bitsOf(s)) {
     if (b.forb && !forb) continue; // en förbättring väntar till nivån Förbättra (steg 7.2.10)
+    if (s.flod && iVattnetNu(s, b.y * W + b.x)) continue; // där vattnet står byggs och lagas inget förrän det sjunkit undan (flod.ts)
     if (taken.has(b.id) || b.k === 'oppning' || (b.b < 1 && (treeOn(s, b) || stubbeOn(s, b.x, b.y) || vidElden(s, b.x, b.y)))) continue; // där elden står byggs inget förrän den flyttats (eldflytt.ts)
     const M = MATERIAL[b.m], repair = b.b >= 1;
     if (repair && b.c >= BYGG.laga) continue;
