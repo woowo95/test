@@ -1119,7 +1119,7 @@ SCENARIER.scenflytt = {
     return [
       ['utan sal står scenen kvar ute', uteUtanSal],
       ['den flyttar inte medan någon uppträder', uteUnder],
-      [`med en sal bärs den in (${sc.x},${sc.y}), och salen blir en gillesal (${tagg.join(', ')})`, !!sc.inne && !!SIM.roomAt(s, sc.x, sc.y) && tagg.includes('gillesal')],
+      [`med en sal bärs den in (${sc.x},${sc.y}), och rummet blir en scensal (${tagg.join(', ')})`, !!sc.inne && !!SIM.roomAt(s, sc.x, sc.y) && tagg.includes('scensal')],
       ['en scen inne går att använda', SIM.scenen(s) === sc],
     ];
   },

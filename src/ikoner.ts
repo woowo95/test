@@ -3858,6 +3858,9 @@ for (const [id, b] of Object.entries(ANIMBILDER)) { PIX['an_' + id] = b.rader; P
 for (const [id, b] of Object.entries(STUBBILDER)) { PIX['sb_' + id] = b.rader; PAL['sb_' + id] = b.pal; }
 for (const k of ['brand', 'tornado']) { PIX[k] = KARTBILDER[k].rader; PAL[k] = KARTBILDER[k].pal; }
 // platshållare tills bilderna byggs in (steg 7.8.1)
+// huset på filten vid ett husbyte (steg 7.2.12): platshållare tills Björn valt (f7_hus i bildstilen)
+PIX.hus = ['................', '.......ff.......', '......ffff......', '.....effffr.....', '....eeeffrrr....', '...eeeeffrrrr...', '..eeeeeffrrrrr..', '...cccccccccc...', '...bbbbbbbbbb...', '...ccccoocccc...', '...bbbboobbbb...', '...ccccoocccc...', '...bbbboobbbb...', '...ccccoocccc...', '...bbbboobbbb...', '................'];
+PAL.hus = { f: '#d8b25f', e: '#b2921b', r: '#906f0f', c: '#7d5b40', b: '#5e3c24', o: '#233035' };
 for (const pl of ['byxor', 'mossa', 'snoskor', 'tunika', 'skjorta', 'halsband']) for (const m of ['kaninskinn', 'vargskinn', 'bjornskinn', 'lader', 'lintyg', 'benband', 'tandband']) { PIX[`${pl}_${m}`] = PIX.rock_kaninskinn; PAL[`${pl}_${m}`] = PAL.rock_kaninskinn; }
 for (const m of ['lader', 'lintyg']) for (const pl of ['rock', 'skor']) if (!PIX[`${pl}_${m}`]) { PIX[`${pl}_${m}`] = PIX.rock_kaninskinn; PAL[`${pl}_${m}`] = PAL.rock_kaninskinn; }
 for (const k of ['grillgadda', 'grillmort']) { PIX[k] = PIX.grillfisk; PAL[k] = PAL.grillfisk; }
