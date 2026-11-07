@@ -189,32 +189,36 @@
 
   // ---------- 8.5.1 den döda kroppen ----------
   // Ritas ur personens vanliga kartfigur (samma mall, hår, kläder och hud), med en regel som gäller vilken figur som helst:
-  // figuren vrids ett kvarts varv så att den ligger ner, ögonen är slutna och huden får dödens bleka ton (humöret "död"
-  // i porträtten), och färgerna ändras lite. Varje regel visas på tre olika personer: levande till vänster, död till höger.
+  // figuren vrids ett kvarts varv så att den ligger ner, ögonen är slutna (som när man sover) och huden blir blek och grå,
+  // och resten av färgerna ändras lite. Huden hittas utan att något ritas för hand: samma figur med en annan hudton, och de
+  // punkter som skiljer är huden (i spelet är huden en egen kanal, så där räcker det att byta hudens färger).
+  // Varje regel visas på tre olika personer: levande till vänster, död till höger.
   const PERSONER = [
     { mall: 'man', hud: 2, har: 3, frisyr: 'har-2', skagg: 'skagg-2', rock: 'harskinn', skor: true, balte: true },
-    { mall: 'kvinna', hud: 0, har: 5, frisyr: 'har-9', rock: null, skor: false },
+    { mall: 'kvinna', hud: 0, har: 5, frisyr: 'har-9', rock: 'bjornskinn', skor: false },
     { mall: 'kvinna', hud: 3, har: 6, frisyr: 'har-13', rock: 'vargskinn', skor: true },
   ];
-  const person = (o, dod) => {
+  const person = (o, sover, hud = o.hud) => {
     const PR = window.PORTRATTEN, p = PR.neutral(o.mall); p.alder = 'vuxen';
-    p.hud = o.hud; p.har = o.har; p.del.frisyr = o.frisyr; p.del.skagg = o.skagg || null;
+    p.hud = hud; p.har = o.har; p.del.frisyr = o.frisyr; p.del.skagg = o.skagg || null;
     p.klader = { rock: o.rock, skor: o.skor, balte: !!o.balte, axelrem: false, ryggsack: false, krokar: 0 };
-    if (dod) p.humor = 'dod';
+    if (sover) p.humor = 'sover';
     return p;
   };
-  // figuren ensam (utan gräset kartBild lägger runt den): allt som nås från kanten utan att gå över konturen är gräs
+  // figuren ensam, utan gräset kartBild lägger runt den: det som skiljer sig från samma gräs (markBild med samma mått och
+  // plats) är figuren. Fötterna når bildens kant, så konturen läggs om runt allt, en punkt större åt varje håll
   function ensam(M, P) {
-    const kol = P.i('kol', 0), ute = new Uint8Array(M.w * M.h), kö = [];
-    for (let x = 0; x < M.w; x++) kö.push([x, 0], [x, M.h - 1]);
-    for (let y = 0; y < M.h; y++) kö.push([0, y], [M.w - 1, y]);
-    while (kö.length) {
-      const [x, y] = kö.pop(); if (x < 0 || y < 0 || x >= M.w || y >= M.h) continue;
-      const i = y * M.w + x; if (ute[i] || M.px[i] === kol) continue;
-      ute[i] = 1; kö.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
-    }
-    const px = Array.from(M.px, (c, i) => ute[i] ? -1 : c);
-    return { w: M.w, h: M.h, px };
+    const G = markBild(M.w, M.h, P, 420, 400), w = M.w + 2, h = M.h + 2, kol = P.i('kol', 0);
+    const px = new Array(w * h).fill(-1);
+    for (let y = 0; y < M.h; y++) for (let x = 0; x < M.w; x++) { const i = y * M.w + x; if (M.px[i] !== G.px[i]) px[(y + 1) * w + x + 1] = M.px[i]; }
+    const ut = px.slice();
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (px[y * w + x] < 0 && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => { const X = x + dx, Y = y + dy; return X >= 0 && Y >= 0 && X < w && Y < h && px[Y * w + X] >= 0 && px[Y * w + X] !== kol; })) ut[y * w + x] = kol;
+    // beskär till det som syns
+    let x0 = w, y0 = h, x1 = -1, y1 = -1;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (ut[y * w + x] >= 0) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+    const W = x1 - x0 + 1, H = y1 - y0 + 1, q = new Array(W * H).fill(-1);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) q[y * W + x] = ut[(y + y0) * w + x + x0];
+    return { w: W, h: H, px: q };
   }
   // ett kvarts varv: medsols (huvudet åt höger) eller motsols (huvudet åt vänster)
   const vrid = (F, medsols) => {
@@ -222,33 +226,38 @@
     for (let y = 0; y < F.h; y++) for (let x = 0; x < F.w; x++) { const nx = medsols ? F.h - 1 - y : y, ny = medsols ? x : F.w - 1 - x; px[ny * w + nx] = F.px[y * F.w + x]; }
     return { w, h, px };
   };
-  // färgerna: varje punkt (utom konturen) flyttas i färgrymden och får närmaste färg i paletten
-  const omfarga = (F, P, [kL, kC, dL = 0]) => ({ ...F, px: F.px.map(c => { if (c < 0 || c === P.i('kol', 0)) return c; const [L, a, b] = P.cols[c].lab; return P.near([L * kL + dL, a * kC, b * kC]); }) });
+  // färgerna: f = [ljushet, färgmättnad] gånger det den var; varje punkt (utom konturen) får närmaste färg i paletten
+  const om = (P, c, f) => { const [L, a, b] = P.cols[c].lab; return P.near([L * f[0], a * f[1], b * f[1]]); };
+  const omfarga = (F, P, hud, ovrigt, arHud) => ({ ...F, px: F.px.map((c, i) => c < 0 || c === P.i('kol', 0) ? c : arHud[i] ? om(P, c, hud) : ovrigt ? om(P, c, ovrigt) : c) });
   const klistra = (B, F, x0, y0) => { for (let y = 0; y < F.h; y++) for (let x = 0; x < F.w; x++) { const c = F.px[y * F.w + x]; if (c >= 0) B.satt(x0 + x, y0 + y, c); } };
   const fyllda = F => { const s = new Set(); for (let y = 0; y < F.h; y++) for (let x = 0; x < F.w; x++) if (F.px[y * F.w + x] >= 0) s.add(x + ',' + y); return s; };
+  // hud: hudens färgändring, ovrigt: resten (null = som den var), skugga: en skugga under, flugor: två flugor ovanför
   const DODA = [
-    { text: 'På rygg: figuren framifrån vriden ett kvarts varv, slutna ögon och blek hud. Kläderna och håret som de var, och en skugga under.',
-      rikt: 'fram', ben: 'sta', arm: 'hanga', medsols: false, farg: null, skugga: true },
-    { text: 'På sidan: figuren från sidan vriden ett kvarts varv, slutna ögon och blek hud, och allt ett steg blekare och gråare. Ingen skugga, den ligger platt mot marken.',
-      rikt: 'sida', ben: 'sta', arm: 'hanga', medsols: false, farg: [1.04, 0.5, 2], skugga: false },
-    { text: 'Hopsjunken: figuren från sidan med ena armen utsträckt och benet böjt, vriden ett kvarts varv, slutna ögon, och allt ett steg mörkare och gråare, som i skugga.',
-      rikt: 'sida', ben: 'gang1', arm: 'lyfta', medsols: false, farg: [0.86, 0.55], skugga: true },
+    { text: 'På rygg: figuren framifrån vriden ett kvarts varv, slutna ögon och blek, grå hud. Kläderna och håret som de var, och en skugga under.',
+      rikt: 'fram', ben: 'sta', arm: 'hanga', hud: [1.02, 0.4], ovrigt: null, skugga: true, flugor: false },
+    { text: 'På sidan: figuren från sidan vriden ett kvarts varv, slutna ögon och blek hud, och kläderna och håret ett steg blekare och gråare. Ingen skugga: den ligger platt mot marken.',
+      rikt: 'sida', ben: 'sta', arm: 'hanga', hud: [1.04, 0.35], ovrigt: [1.08, 0.55], skugga: false, flugor: false },
+    { text: 'Hopsjunken: figuren från sidan med ena armen utsträckt och benet böjt, vriden ett kvarts varv, slutna ögon, grå hud och allt ett steg mörkare, som i skugga, och två flugor över kroppen.',
+      rikt: 'sida', ben: 'gang1', arm: 'lyfta', hud: [0.92, 0.35], ovrigt: [0.88, 0.7], skugga: true, flugor: true },
   ];
-  const dodVersion = V => ({ text: V.text, w: 4 + PERSONER.length * 46, h: 30, rita: B => {
+  const dodVersion = V => ({ text: V.text, w: 4 + PERSONER.length * 46, h: 32, rita: B => {
     gras(B);
     const PR = window.PORTRATTEN; if (!PR) return;
     PERSONER.forEach((o, n) => {
-      const x0 = 4 + n * 46;
+      const x0 = 4 + n * 46, fot = 29;
       // levande, stående framifrån
       const L = ensam(PR.kartBild(person(o, false), 'fram', 'sta', 'hanga'), B.P);
-      klistra(B, L, x0 - 2, 27 - L.h + 2);
-      for (let x = 3; x < 13; x++) B.morka(x0 + x, 26);
-      // död, liggande
-      let D = vrid(ensam(PR.kartBild(person(o, true), V.rikt, V.ben, V.arm), B.P), V.medsols);
-      if (V.farg) D = omfarga(D, B.P, V.farg);
-      const dx = x0 + 16, dy = 27 - D.h + 2;
+      klistra(B, L, x0, fot - L.h);
+      for (let x = 3; x < L.w - 3; x++) B.morka(x0 + x, fot);
+      // död, liggande: samma figur och en med en annan hudton, så att huden syns där de skiljer sig
+      const M1 = PR.kartBild(person(o, true), V.rikt, V.ben, V.arm), M2 = PR.kartBild(person(o, true, (o.hud + 2) % 4), V.rikt, V.ben, V.arm);
+      const F = ensam(M1, B.P), H = ensam({ ...M1, px: M1.px.map((c, i) => c === M2.px[i] ? -2 : c) }, B.P);
+      const arHud = F.px.map((c, i) => H.px[i] >= 0 && H.px[i] !== B.P.i('kol', 0));
+      let D = vrid(omfarga(F, B.P, V.hud, V.ovrigt, arHud), false);
+      const dx = x0 + L.w + 2, dy = fot - D.h;
       klistra(B, D, dx, dy);
       if (V.skugga) { const s = fyllda(D); for (const k of s) { const [x, y] = k.split(',').map(Number); if (!s.has(x + ',' + (y + 1))) B.morka(dx + x, dy + y + 1); } }
+      if (V.flugor) for (const [fx, fy] of [[6, -4], [13, -6]]) { B.satt(dx + fx, dy + fy, B.P.i('kol', 0)); B.satt(dx + fx + 1, dy + fy - 1, B.P.i('ben', 1)); }
     });
   } });
   byt(KORT('f8_kropp', 'Den döda kroppen', 'Steg 8.5.1: kroppen ligger där personen dog tills någon bär den till graven. Nu ritad ur personens egen kartfigur, så att den ser ut som personen gjorde, med en regel som fungerar på vilken figur som helst (inga egna döda bilder): figuren vrids ett kvarts varv så att den ligger ner, ögonen sluts, huden blir blek och färgerna ändras lite. Varje regel visas på tre olika personer, levande till vänster och död till höger. Din kommentar förra gången: "Använd personen som den såg ut. Lägg den på sidan. Ändra färgen lite. Och kanske någon mer skillnad? Men så vi inte behöver rita nya döda versioner av alla olika kombinationer av människor som finns".', DODA.map(dodVersion)));
