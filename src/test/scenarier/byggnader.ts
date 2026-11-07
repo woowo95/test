@@ -533,7 +533,7 @@ SCENARIER.lager = {
     // sedan bara en sak på varje ruta i förrådet, och inget försvinner (riktad-körningen i steg 3.10.25, by 8920)
     const vx = createState(3, START), vz = zoneOf(vx), ut = br + 1, tot = () => (vx.stackar ?? []).reduce((a, q) => a + q.n, 0);
     vx.ting = []; vx.stackar = [{ k: 'sten', n: 1, c: 1, x: vz.x - 1, y: vz.y }]; // bredvid lagerplatsen: lagret är fullt och växer
-    for (let y = vz.y; y < vz.y + vz.h; y++) for (let x = vz.x; x < vz.x + vz.w; x++) vx.stackar.push({ k: 'sten', n: 1, c: 1, x, y });
+    for (let y = vz.y; y < vz.y + vz.h; y++) for (let x = vz.x; x < vz.x + vz.w; x++) vx.stackar.push({ k: 'grenar', n: 1, c: 1, x, y });
     for (let y = vz.y - ut; y < vz.y + vz.h + ut; y++) for (let x = vz.x - ut; x < vz.x + vz.w + ut; x++) if (!isStored(vx, x, y) && usable(vx, x, y)) vx.stackar.push({ k: 'grenar', n: 1, c: 1, x, y }, { k: 'ved', n: 1, c: 1, x, y });
     const vxFore = tot(), vxYta = vz.w * vz.h;
     (SIM.planLager(vx), SIM.tidyStore(vx));
