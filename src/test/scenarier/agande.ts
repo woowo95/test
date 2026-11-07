@@ -1797,8 +1797,8 @@ SCENARIER.rovare = {
     const vande = d.rovare?.gor === 'flyr' && (d.stat?.rovarVande ?? 0) === 1;
     for (let i = 0; i < 3000 && d.rovare; i++) SIM.rovarSteg(d, dt);
     const borta = !d.rovare && (d.stat?.rovarBorta ?? 0) === 1;
-    // en ny flock kommer inte förrän vilan är slut
-    const vila = (d.rovarVila ?? 0) > d.now;
+    // direkt efter ett anfall är chansen liten, och den växer med tiden
+    const vila = SIM.efterAnfall(d) < 0.1; // skyddet efter ett anfall avtar med tiden (steg 8.7.14)
     return [
       [`testläget skickar en liten, mellanstor och stor flock (${tl.join(', ')} rövare) ungefär ${SIM.ROVARE.testNara} rutor från elden och når byn inom en timme (steg 4.5.7.10), och en handlare, med en rad i Händelser (${tlRad}) och ett skäl när det inte går (${tlSkal})`, tl[0] > 0 && tl[0] < tl[1] && tl[1] < tl[2] && testHandlare],
       ['en ny och fattig by lockar inga rövare', fattig],
@@ -1811,7 +1811,7 @@ SCENARIER.rovare = {
       ['de vuxna som står emot slåss med rövarna', strid],
       ['väntar byn med många fler vänder rövarna om', vande],
       ['flocken flyr ut ur kartan', borta],
-      ['en ny flock kommer inte förrän vilan är slut', vila],
+      ['direkt efter ett anfall är chansen liten, och den växer med tiden', vila],
     ];
   },
 };
@@ -1917,7 +1917,7 @@ SCENARIER.rovarstrid = {
 };
 
 SCENARIER.rovarbyte = {
-  text: 'Plundringen och flykten på kartan (steg 6.6.11, rovare.ts): när ingen står emot tar varje rövare som når förrådet sina saker ((ROVARE.bar / 2)), det mest värda först, och bär dem. Sedan springer de var för sig mot kanten. Den som faller (här i en tornado) tappar det hen bär där hen ligger, och det är byns igen.',
+  text: 'Plundringen och flykten på kartan (steg 6.6.11, rovare.ts): när ingen står emot tar varje rövare som når förrådet så mycket de kan bära, det med högst pris per vikt först, och bär dem. Sedan springer de var för sig mot kanten. Den som faller (här i en tornado) tappar det hen bär där hen ligger, och det är byns igen.',
   kor: () => {
     const s = createState(6, START);
     const z = SIM.zoneOf(s)!, m = { x: z.x + z.w / 2, y: z.y + z.h / 2 };

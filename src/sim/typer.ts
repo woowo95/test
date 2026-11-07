@@ -191,6 +191,7 @@ export interface Person {
   sinnen?: number; // karisman gånger detta, när synen, hörseln eller talet är sämre (steg 8.2.2)
   svimmat?: boolean; // ligger medvetslös (steg 8.2.6)
   bonD?: number; bonNodD?: number; bonVan?: { t: number; o: string }; tack?: string; tvivel?: number; profet?: boolean; sedDod?: number[]; fasta?: number; skuld?: number; // bönen och tron (system 8.5)
+  drag?: { namn: string; v: number; t: number }; // anfallarnas tro som en dragning efter att ha svurit trohet (steg 8.8.6)
   missnoje?: number; // missnöjet med styret, 0–1 (steg 8.3.10, rost.ts)
   straffad?: boolean; utanRost?: boolean; tjanst?: number; brottsling?: boolean; // straffen (steg 8.4.8): straffad, förlorad röst, samhällstjänsten till, avrättad
   naring?: Record<import('./naring').Naring, number>; // näringsvärdena 0–1; mättnaden (hunger) är en sammanfattning av dem (steg 2.6.1, naring.ts)
@@ -296,6 +297,7 @@ export interface State {
   barbuskar?: number; // 1 = bärbuskarna är utsådda (steg 6.5.4, buskar.ts)
   tradAlder?: string; // trädens ålder efter att de vuxit klart, dygn per ruta, packat (trad.ts, steg 5.1.4.2)
   stockar?: Stock[]; // fällda träd som ligger och väntar på att huggas
+  stridRapporter?: { t: number; orsak: string; vinnare?: number; n: number }[]; // de äldre striderna (steg 8.8.10)
   tabun?: import('./lagar').Tabu[]; // farliga platser som hela byn undviker (steg 8.4.10)
   gravar?: import('./kvarlevor').Grav[]; gravplatser?: Record<string, { x: number; y: number }>; heliga?: import('./kult').HeligPlats[]; ritual?: import('./kult').Ritual; ritualKo?: import('./kult').Ritual[]; // graven, de heliga platserna och ritualerna (system 8.5)
   kvarlevor?: import('./kvarlevor').Kvarleva[]; nextKvar?: number; // det som blir kvar av en människa (steg 8.2.3, kvarlevor.ts)

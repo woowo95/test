@@ -1,4 +1,4 @@
-import { BEAT, Borta, MIN, State, joinParts, living, migrate, serialize, serializeParts, step, timeLabel } from '../sim';
+import { storRad, BEAT, Borta, MIN, State, joinParts, living, migrate, serialize, serializeParts, step, timeLabel } from '../sim';
 import { $, esc } from './hjalp';
 import { bortaHtml, ikappHtml, spolaText } from './borta';
 import { s, ui } from './lage';
@@ -163,7 +163,8 @@ export async function catchUp(target: number) {
   await new Promise<void>((resolve, reject) => {
     const chunk = () => {
       const t0 = performance.now();
-      try { while (s.now < target && performance.now() - t0 < 30) step(s, BEAT); } catch (e) { reject(e); return; }
+      try { while (s.now < target && performance.now() - t0 < 30 && !(storRad(s.rovare) && s.rovare?.gor === 'slass')) step(s, BEAT); } catch (e) { reject(e); return; }
+      if (storRad(s.rovare) && s.rovare?.gor === 'slass') { resolve(); return; } // en stor strid stannar ikappräkningen och visas i levande läge (steg 8.8.9); klockan hinner ikapp efteråt
       if (showOverlay) {
         const f = Math.min(1, (s.now - from) / span);
         const bar = document.getElementById('progBar'); if (bar) bar.style.width = (f * 100).toFixed(1) + '%';

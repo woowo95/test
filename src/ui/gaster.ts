@@ -62,13 +62,13 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
   },
   // rövarflocken (steg 4.4.5): rövarna i en klunga där flocken står
   (s, t) => {
-    const r = s.rovare;
+    return [s.rovare, ...s.rovareFler ?? []].flatMap(r => {
     if (!r) return [];
     const gor = r.gor === 'samlas' ? 'Samlas i skogen' : r.gor === 'kommer' ? 'På väg mot byn' : r.gor === 'vantar' ? 'Väntar utanför byn' : r.gor === 'slass' ? 'Slåss vid förrådet' : 'Flyr', n = r.folk.length;
     return r.folk.map((q, i) => {
       const sk = rovarenNu(q.namn, t); // i striden (steg 6.6.10): där striden har hen, och liggande när hen fallit
       return {
-      id: rovarGastId(r.id, i), namn: q.namn, sex: q.sex, sort: 'Rövare', farg: 0x5a5040,
+      id: rovarGastId(r.id, i), namn: q.namn, sex: q.sex, sort: r.rad ? 'Anfallare' : 'Rövare', farg: 0x5a5040,
       ...(sk ? { x: sk.x, y: sk.y } : rovarPlats(q, t)), // var och en går för sig (steg 6.6.9)
       rovare: q, gor: sk ? (sk.k.lage === 'dod' ? 'Död' : sk.ligger ? 'Ligger nere' : sk.k.lage === 'flykt' ? 'Flyr' : 'Slåss vid förrådet') : gor, ligger: sk?.ligger,
       fran: klanById(s, r.klan)?.namn,
@@ -76,8 +76,9 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
       stats: { styrka: q.st.styrka, uthallighet: q.st.uthallighet, mod: q.st.mod, smidighet: q.st.smidighet }, skills: { narstrid: q.st.skicklighet },
       bar: [{ ikon: q.vapen, text: VAPEN[q.vapen].namn, title: `Vapnet: ${VAPEN[q.vapen].namn.toLowerCase()}` },
         ...Object.entries(q.bar ?? {}).map(([k, m]) => ({ ikon: k, text: m > 1 ? String(m) : '', title: `${sakNamn(k)}: taget ur byns förråd` }))], // bytet (steg 6.6.11)
-      handelser: [], liv: livFor(s, r.klan, q.namn, q.sex, 'rovare', q.fodd), blod: q.blod,
+      handelser: q.anhorig ? [q.anhorig] : [], liv: livFor(s, r.klan, q.namn, q.sex, 'rovare', q.fodd), blod: q.blod, // anhörig till den som hämnas (steg 8.8.4)
       };
+    });
     });
   },
 ];

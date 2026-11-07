@@ -63,6 +63,7 @@ import { notis } from './notiser';
 
 // ---------- balanstal (regel 8) ----------
 export const STRID = balans('strid', {
+  smitta: 0.1, // så mycket de andras mod sjunker när någon ger upp (steg 8.8.8)
   pilSonder: 0.25, // så stor del av pilarna går sönder
   ringad: 0.25, // så mycket lättare det är att träffa den som redan slåss med en annan, per extra motståndare (steg 8.7.7)
   bakomTrad: 0.5, // en pil mot någon bakom ett träd träffar trädet så här ofta
@@ -277,6 +278,7 @@ export type Handelse = keyof typeof STRIDHANDELSER;
 export interface KampeStats { styrka: number; uthallighet: number; mod: number; smidighet: number; skicklighet: number; torst?: number; sikte?: number }
 export type KampeLage = 'strid' | 'nere' | 'ger' | 'flykt' | 'borta' | 'dod';
 export interface Kampe {
+  jagar?: number; // hämnden riktar sig mot just den personen (steg 8.8.5)
   skold?: boolean; // håller en sköld (steg 8.7.3)
   id: number; namn: string; sida: 0 | 1; pid?: number; djur?: string; // pid = personen i byn, djur = arten i DJUR
   st: KampeStats; vapen: Vapen; klader: string[]; fart: number; // fart = gånger STRID.fart
@@ -356,6 +358,7 @@ const dist = (a: Kampe, b: Kampe) => Math.hypot(a.x - b.x, a.y - b.y);
 
 // målet: den närmaste fienden som går att slå (den som ligger eller flyr bara om avsikten är att döda)
 function valjMal(st: Strid, k: Kampe) {
+  if (k.jagar !== undefined) { const m = st.kampar.find(o => o.pid === k.jagar && iStrid(o)); if (m) return m; }
   const nere = AVS[st.avsikt].nere;
   const led = k.skyddar !== undefined ? st.kampar.find(o => o.id === k.skyddar && iStrid(o)) : undefined;
   if (led) { // vännen går mot den som anfaller ledaren (steg 3.7.12)
@@ -438,6 +441,7 @@ function ga(st: Strid, k: Kampe, mx: number, my: number, langd: number) {
 
 function falla(st: Strid, k: Kampe, h: 'nere' | 'dod' | 'ger' | 'flykt', rad: Handelse = h) {
   k.lage = h; k.mal = undefined; k.ligger = undefined; k.bocker = undefined;
+  if (h === 'ger') for (const v of st.kampar) if (v.sida === k.sida && v !== k && iStrid(v)) v.modNu -= STRID.smitta; // varje bybo som gett upp sänker de andras mod (steg 8.8.8)
   st.logg.push({ t: st.t, h: rad, a: k.id });
   // när en faller sjunker modet hos de andra på samma sida; i en flock också när en varg flyr svårt skadad (steg 3.7.1)
   if (h === 'nere' || h === 'dod' || (h === 'flykt' && k.djur)) for (const v of st.kampar) if (v.sida === k.sida && v !== k && iStrid(v)) v.modNu -= STRID.modVan + (k.ledare ? STRID.ledFaller : 0) + (k.djur ? STRID.flock : 0);
@@ -902,6 +906,7 @@ export function slitKastat(s: State, p: Person, st: Strid, k: Kampe) {
 // dricker mitt i striden. Skadorna blir riktiga skador (halsa.ts), den som dog i striden dör, och den som vann ett
 // slagsmål blir ett rykte (rykten.ts). De senaste striderna sparas i byn (s.strider) så att arenan kan visa dem igen
 export const SLAGSMAL = balans('slagsmal', {
+  rapporter: 60, // så många äldre strider sparas som rapport (steg 8.8.10)
   gral: 0.02, // (0,04 före steg 3.10.26: intrycket stark dominerade) chansen att ett gräl mellan två som är minst småbarn blir ett slagsmål ...
   gralTorst: 4, // ... gånger 1 + gralTorst × blodtörsten hos den som grälar (humor.ts)
   lek: 0.12, // chansen i timmen att ett barn som leker brottas med ett annat barn som leker nära ...
@@ -930,7 +935,9 @@ export function vadretIStriden(s: State): Pick<Uppstallning, 'vind' | 'dimma' | 
 // striden sparas så att arenan kan visa den igen; de äldsta faller bort efter SLAGSMAL.sparas
 export function sparaStrid(s: State, m: StridMinne) {
   (s.strider ??= []).push(m);
-  if (s.strider.length > SLAGSMAL.sparas) s.strider.splice(0, s.strider.length - SLAGSMAL.sparas);
+  // de senaste striderna sparas med hela loggen, äldre bara som rapport (steg 8.8.10)
+  while (s.strider.length > SLAGSMAL.sparas) { const a = s.strider.shift()!; (s.stridRapporter ??= []).push({ t: a.t, orsak: a.orsak, vinnare: a.vinnare, n: a.u.kampar.length }); }
+  if ((s.stridRapporter?.length ?? 0) > SLAGSMAL.rapporter) s.stridRapporter!.splice(0, s.stridRapporter!.length - SLAGSMAL.rapporter);
   count(s, 'strider');
 }
 

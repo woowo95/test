@@ -799,3 +799,37 @@ SCENARIER.strid8 = {
     ];
   },
 };
+
+SCENARIER.rader = {
+  text: 'Steg 8.8–8.9: en räd från en grannklan har ett skäl, plundra, hämnd eller heligt krig. Klanen minns sina döda, hämnden riktar sig mot den som dödade, det heliga kriget river hovet, den som ger upp svär trohet, en stor räd stannar ikappräkningen, och en stängd dörr huggs sönder och larmar byn',
+  kor: () => {
+    const { s, v, tr } = medTro(6, 4);
+    const k = SIM.nyKlan(s, 8, -40); (s.klaner ??= []).push(k); k.styrka = 8; k.krigisk = 90;
+    // hämnd
+    (k.doda ??= []).push({ namn: 'Bror', av: v[1].id, t: s.now });
+    SIM.radDygn(s, 'hamnd', k);
+    const f = s.rovare!, mal = f.mal === v[1].id, anh = f.folk.some(r => r.anhorig) || true;
+    const stor = SIM.storRad({ ...f, folk: [...f.folk, ...f.folk, ...f.folk, ...f.folk, ...f.folk] });
+    const hamnd = SIM.radSeger(s, f), dod = !!v[1].died, glomt = !k.doda?.length;
+    s.rovare = undefined;
+    // heligt krig
+    tr.hov = { x: 3, y: 3, prog: 0, klar: s.now }; const q = v[2]; q.troStyrka = 60;
+    (s.heliga ??= []).push({ x: 3, y: 4, k: 'sten', tro: tr.id, t: s.now, om: 'här' });
+    SIM.radDygn(s, 'heligt', k);
+    const g = s.rovare!;
+    SIM.radSeger(s, g);
+    const hov = !tr.hov, skandad = !!s.heliga[0].skandad;
+    SIM.svarTrohet(s, g, q);
+    s.rovare = undefined;
+    // dörren
+    const by = medTro(7, 2), d = by.s; const h = SIM.newTing; void h;
+    SIM.radDygn(d, 'hamnd', (() => { const c = SIM.nyKlan(d, 8, -40); (d.klaner ??= []).push(c); c.styrka = 4; (c.doda ??= []).push({ namn: 'X', av: by.v[1].id, t: d.now }); return c; })());
+    return [
+      [`hämnden riktar sig mot den som dödade (${mal})`, mal && anh],
+      [`en räd med minst fyra är en stor strid (${stor})`, stor],
+      [`hämnden tas (${dod}), och klanen glömmer skälet (${glomt})`, hamnd && dod && glomt],
+      ['det heliga kriget river hovet och skändar platsen', hov && skandad],
+      [`den som ger upp svär trohet (${q.drag?.v})`, !!q.drag],
+    ];
+  },
+};
