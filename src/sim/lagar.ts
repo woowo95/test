@@ -43,16 +43,16 @@ export const LAGAR: Record<string, LagDef> = {
   stoldforbud: { namn: 'Förbud mot stöld', sym: '🖐️', text: 'Den som stjäl straffas', straff: 4, brott: ['stold', 'stoldLindrig'], om: 'stölderna', prio: s => clamp(antal(s, 'rykte_stold') / 4, 0, 1), rost: (_s, p) => ({ v: 0.3 + dev(p.pot.empati) * 0.5, why: 'Vill inte bli bestulen' }) },
   slagsmalforbud: { namn: 'Förbud mot slagsmål', sym: '🥊', text: 'Den som slår någon straffas', straff: 1, brott: ['sla', 'misshandel'], om: 'slagsmålen', prio: s => clamp(antal(s, 'rykte_sla') / 8, 0, 1), rost: (_s, p) => ({ v: dev(p.pot.empati) - dev(p.pot.aggression), why: dev(p.pot.aggression) > 0 ? 'Vill kunna göra upp själv' : 'Vill ha lugn i byn' }) },
   drapforbud: { namn: 'Förbud mot dråp', sym: '⚔️', text: 'Den som dödar någon straffas hårt', straff: 3, brott: ['drap'], om: 'ett dråp', prio: s => clamp(antal(s, 'rykte_drap') / 1, 0, 1), rost: (_s, p) => ({ v: 0.4 + dev(p.pot.empati) * 0.5 - dev(p.pot.aggression) * 0.3, why: 'Vill inte bli dräpt' }) },
-  arbetsplikt: { namn: 'Arbetsplikt', sym: '⛏️', text: 'Den som kan arbeta ska arbeta', straff: 0, om: 'en vinter med svält', prio: s => clamp(antal(s, 'dog av svält') / 2, 0, 1), rost: (_s, p) => ({ v: dev(p.pot.flit), why: dev(p.pot.flit) > 0 ? 'Arbetar ändå' : 'Vill bestämma sin tid själv' }) },
-  matdelning: { namn: 'Förrådet delas lika', sym: '🥣', text: 'Det man skaffar går till byn', straff: 1, om: 'en vinter med svält', prio: s => clamp(antal(s, 'dog av svält') / 3, 0, 1) * (1 + (s.seder.v.gemenskap ?? 0)) / 2, rost: (s, p) => { const rik = living(s).length && amountOf(s, 'ved') >= 0 ? dev(p.pot.empati) : 0; return { v: rik + (s.seder.v.gemenskap ?? 0) * 0.5, why: rik > 0 ? 'Vill att alla får äta' : 'Vill behålla det hen skaffar' }; } },
+  arbetsplikt: { namn: 'Arbetsplikt', sym: '📜', text: 'Den som kan arbeta ska arbeta', straff: 0, om: 'en vinter med svält', prio: s => clamp(antal(s, 'dog av svält') / 2, 0, 1), rost: (_s, p) => ({ v: dev(p.pot.flit), why: dev(p.pot.flit) > 0 ? 'Arbetar ändå' : 'Vill bestämma sin tid själv' }) },
+  matdelning: { namn: 'Förrådet delas lika', sym: '📜', text: 'Det man skaffar går till byn', straff: 1, om: 'en vinter med svält', prio: s => clamp(antal(s, 'dog av svält') / 3, 0, 1) * (1 + (s.seder.v.gemenskap ?? 0)) / 2, rost: (s, p) => { const rik = living(s).length && amountOf(s, 'ved') >= 0 ? dev(p.pot.empati) : 0; return { v: rik + (s.seder.v.gemenskap ?? 0) * 0.5, why: rik > 0 ? 'Vill att alla får äta' : 'Vill behålla det hen skaffar' }; } },
   skogsfred: { namn: 'Inte fälla träd nära byn', sym: '🌲', text: `Ingen fäller träd inom ${LAG_SKOG} rutor från byn`, straff: 0, om: 'att skogen tog slut nära byn', prio: s => clamp((s.fallda ?? 0) / 120, 0, 1) * clamp(1 - (s.seder.v.natur ?? 0), 0, 1), rost: (s, p) => ({ v: -(s.seder.v.natur ?? 0) * 0.5 + (p.tag === 'Trähuggare' ? -0.5 : 0.05), why: p.tag === 'Trähuggare' ? 'Hugger trä och vill ha det nära' : 'Vill ha skogen kvar' }) },
   // skatt före silvret (steg 8.4.17)
-  skatt: { namn: 'Skatt på fångst och skörd', sym: '🧺', text: 'En del av fångsten och skörden går till byn', straff: 4, om: 'att förrådet var tomt', prio: s => clamp(living(s).length / 30, 0, 1) * clamp(1 - (s.delning?.andel ?? 1) * 2, 0, 1), rost: (s, p) => ({ v: (s.seder.v.gemenskap ?? 0) * 0.5 + dev(p.pot.empati) * 0.5 - 0.1, why: 'Tycker att alla ska bidra' }) },
-  dagsverke: { namn: 'Dagsverken på byns byggen', sym: '🪵', text: 'De vuxna hjälper till på byns byggen', straff: 0, om: 'att byggena stod stilla', prio: s => clamp((s.byggen?.filter(b => b.b < 1).length ?? 0) / 60, 0, 1), rost: (s, p) => ({ v: dev(p.pot.flit) * 0.5 + (s.seder.v.arbete ?? 0) * 0.5, why: 'Vill ha husen klara' }) },
+  skatt: { namn: 'Skatt på fångst och skörd', sym: '📜', text: 'En del av fångsten och skörden går till byn', straff: 4, om: 'att förrådet var tomt', prio: s => clamp(living(s).length / 30, 0, 1) * clamp(1 - (s.delning?.andel ?? 1) * 2, 0, 1), rost: (s, p) => ({ v: (s.seder.v.gemenskap ?? 0) * 0.5 + dev(p.pot.empati) * 0.5 - 0.1, why: 'Tycker att alla ska bidra' }) },
+  dagsverke: { namn: 'Dagsverken på byns byggen', sym: '📜', text: 'De vuxna hjälper till på byns byggen', straff: 0, om: 'att byggena stod stilla', prio: s => clamp((s.byggen?.filter(b => b.b < 1).length ?? 0) / 60, 0, 1), rost: (s, p) => ({ v: dev(p.pot.flit) * 0.5 + (s.seder.v.arbete ?? 0) * 0.5, why: 'Vill ha husen klara' }) },
   // lagar om rösten (steg 8.4.6)
-  rostKvinnor: { namn: 'Kvinnorna röstar inte', sym: '🤐', text: 'Bara männen får rösta', straff: 0, om: 'ledarens vilja', prio: s => clamp((s.seder.v.rang ?? 0) - 0.6, 0, 1) * 0.6, rost: (_s, p) => ({ v: p.sex === 'k' ? -1 : dev(p.pot.mod) * 0.5 - dev(p.pot.empati) * 0.5, why: p.sex === 'k' ? 'Vill ha kvar sin röst' : 'Tycker att männen ska bestämma' }) },
+  rostKvinnor: { namn: 'Kvinnorna röstar inte', sym: '📜', text: 'Bara männen får rösta', straff: 0, om: 'ledarens vilja', prio: s => clamp((s.seder.v.rang ?? 0) - 0.6, 0, 1) * 0.6, rost: (_s, p) => ({ v: p.sex === 'k' ? -1 : dev(p.pot.mod) * 0.5 - dev(p.pot.empati) * 0.5, why: p.sex === 'k' ? 'Vill ha kvar sin röst' : 'Tycker att männen ska bestämma' }) },
   rostEgendom: { namn: 'Bara de med egendom röstar', sym: '💰', text: 'Den som inget äger får inte rösta', straff: 0, om: 'ledarens vilja', prio: s => clamp((s.seder.v.rang ?? 0) - 0.4, 0, 1) * 0.5 * clamp(-(s.seder.v.delning ?? 0), 0, 1), rost: (s, p) => ({ v: agerNagot(s, p) ? 0.2 : -1, why: agerNagot(s, p) ? 'Äger något' : 'Äger inget' }) },
-  rostStraffade: { namn: 'De straffade röstar inte', sym: '🚫', text: 'Den som straffats hårt förlorar rösten', straff: 0, om: 'brotten i byn', prio: s => clamp(antal(s, 'straff') / 12, 0, 1) * 0.6, rost: (_s, p) => ({ v: 0.2 - (p.straffad ? 1 : 0), why: p.straffad ? 'Har själv straffats' : 'Vill inte att brottslingar bestämmer' }) },
+  rostStraffade: { namn: 'De straffade röstar inte', sym: '📜', text: 'Den som straffats hårt förlorar rösten', straff: 0, om: 'brotten i byn', prio: s => clamp(antal(s, 'straff') / 12, 0, 1) * 0.6, rost: (_s, p) => ({ v: 0.2 - (p.straffad ? 1 : 0), why: p.straffad ? 'Har själv straffats' : 'Vill inte att brottslingar bestämmer' }) },
   ledarBunden: { namn: 'Ledaren väger inte mer än hälften', sym: '⚖️', text: 'Ledarens vikt är begränsad', straff: 0, om: 'missnöjet med ledaren', prio: s => clamp(living(s).reduce((a, p) => a + (p.missnoje ?? 0), 0) / Math.max(1, living(s).length) * 2, 0, 1) * clamp(s.seder.v.rang ?? 0, 0, 1), rost: (s, p) => ({ v: p.id === s.styre?.ledare ? -1 : 0.3, why: p.id === s.styre?.ledare ? 'Vill behålla sin makt' : 'Vill ha en röst som räknas' }) },
 };
 const agerNagot = (s: State, p: Person) => (s.ting ?? []).some(t => t.agare === p.id);
@@ -81,34 +81,6 @@ const startStraff = (s: State, id: string) => {
 };
 
 // ---------- frågorna (steg 8.3.1 och 8.4.1–8.4.2) ----------
-FRAGOR.nylag = {
-  namn: (_s, d) => `Ny lag: ${LAGAR[d.id as string].namn}`, krets: 'byn',
-  rost: (s, p, d) => LAGAR[d.id as string].rost(s, p),
-  gor: (s, d, fram) => {
-    const id = d.id as string, def = LAGAR[id], st = styreAv(s);
-    (st.lagar ??= []).push({ id, t: s.now, straff: startStraff(s, id), av: fram?.id ?? -1, om: def.om ?? '' });
-    count(s, 'lag_ny');
-    const t = `Byn stiftade en lag: ${def.namn.toLowerCase()}.`;
-    log(s, t, 'world', fram ? [fram.id] : []); kronika(s, t, 'ledare');
-  },
-};
-FRAGOR.bortlag = {
-  namn: (_s, d) => `Ta bort lagen: ${LAGAR[d.id as string].namn}`, krets: 'byn',
-  rost: (s, p, d) => { const r = LAGAR[d.id as string].rost(s, p); return { v: -r.v, why: r.v < 0 ? r.why : 'Vill behålla lagen' }; },
-  gor: (s, d) => { const st = styreAv(s); st.lagar = st.lagar?.filter(l => l.id !== d.id); count(s, 'lag_bort'); log(s, `Byn tog bort lagen: ${LAGAR[d.id as string].namn.toLowerCase()}.`, 'world'); },
-};
-FRAGOR.lagstraff = {
-  namn: (_s, d) => `Ändra straffet: ${LAGAR[d.id as string].namn}`, krets: 'byn',
-  rost: (_s, p, d) => ({ v: (d.ny as number) === 3 || (d.ny as number) === 6 ? dev(p.pot.aggression) - dev(p.pot.empati) : dev(p.pot.empati) * 0.5, why: 'Tycker att straffet ska vara ett annat' }),
-  gor: (s, d) => { const l = s.styre?.lagar?.find(x => x.id === d.id); if (l) l.straff = d.ny as number; },
-};
-// skulden på tinget vid Allmoge (steg 8.4.7): var och en röstar efter vad hen vet och vad hen tycker om den anklagade
-FRAGOR.skuld = {
-  namn: (_s, d) => `Är ${d.namn} skyldig?`, krets: 'byn',
-  rost: (s, p, d) => { const op = s.rels[relKey(p.id, d.om as number)]?.op ?? 0, vet = p.intryck?.some(e => e.om === d.om && e.bev?.length) ? 0.5 : 0; return { v: vet + 0.1 - op / 200, why: vet ? 'Vet vad som hände' : op > 20 ? `Litar på ${d.namn}` : 'Tror på anklagelsen' }; },
-  gor: () => {},
-};
-
 // ---------- vem som får lägga fram (steg 8.4.4) ----------
 export function framlaggare(s: State): Person[] {
   const l = ledareOf(s), r = s.seder.v.rang ?? 0;
@@ -169,4 +141,35 @@ export function tabuDygn(s: State) {
     log(s, t, 'world'); kronika(s, t, 'tabu');
   }
   for (const t of s.tabun) for (const p of vuxna) { const l = p.lardomar?.find(x => x.k === 'fara' && x.a === t.a); if (l) { l.t = s.now; continue; } (p.lardomar ??= []).push({ k: 'fara', a: t.a, v: 0.6, c: 0.6, t: s.now, led: 2, om: t.om }); }
+}
+// raderna i FRAGOR som hör till lagarna läggs till när allt är laddat (steg.ts)
+export function lagRegister() {
+FRAGOR.nylag = {
+  namn: (_s, d) => `Ny lag: ${LAGAR[d.id as string].namn}`, krets: 'byn',
+  rost: (s, p, d) => LAGAR[d.id as string].rost(s, p),
+  gor: (s, d, fram) => {
+    const id = d.id as string, def = LAGAR[id], st = styreAv(s);
+    (st.lagar ??= []).push({ id, t: s.now, straff: startStraff(s, id), av: fram?.id ?? -1, om: def.om ?? '' });
+    count(s, 'lag_ny');
+    const t = `Byn stiftade en lag: ${def.namn.toLowerCase()}.`;
+    log(s, t, 'world', fram ? [fram.id] : []); kronika(s, t, 'ledare');
+  },
+};
+FRAGOR.bortlag = {
+  namn: (_s, d) => `Ta bort lagen: ${LAGAR[d.id as string].namn}`, krets: 'byn',
+  rost: (s, p, d) => { const r = LAGAR[d.id as string].rost(s, p); return { v: -r.v, why: r.v < 0 ? r.why : 'Vill behålla lagen' }; },
+  gor: (s, d) => { const st = styreAv(s); st.lagar = st.lagar?.filter(l => l.id !== d.id); count(s, 'lag_bort'); log(s, `Byn tog bort lagen: ${LAGAR[d.id as string].namn.toLowerCase()}.`, 'world'); },
+};
+FRAGOR.lagstraff = {
+  namn: (_s, d) => `Ändra straffet: ${LAGAR[d.id as string].namn}`, krets: 'byn',
+  rost: (_s, p, d) => ({ v: (d.ny as number) === 3 || (d.ny as number) === 6 ? dev(p.pot.aggression) - dev(p.pot.empati) : dev(p.pot.empati) * 0.5, why: 'Tycker att straffet ska vara ett annat' }),
+  gor: (s, d) => { const l = s.styre?.lagar?.find(x => x.id === d.id); if (l) l.straff = d.ny as number; },
+};
+// skulden på tinget vid Allmoge (steg 8.4.7): var och en röstar efter vad hen vet och vad hen tycker om den anklagade
+FRAGOR.skuld = {
+  namn: (_s, d) => `Är ${d.namn} skyldig?`, krets: 'byn',
+  rost: (s, p, d) => { const op = s.rels[relKey(p.id, d.om as number)]?.op ?? 0, vet = p.intryck?.some(e => e.om === d.om && e.bev?.length) ? 0.5 : 0; return { v: vet + 0.1 - op / 200, why: vet ? 'Vet vad som hände' : op > 20 ? `Litar på ${d.namn}` : 'Tror på anklagelsen' }; },
+  gor: () => {},
+};
+
 }

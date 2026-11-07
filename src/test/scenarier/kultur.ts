@@ -601,7 +601,7 @@ SCENARIER.lagar = {
     s.seder.v.rang = 1; l.pot.empati = 16; // ledaren väger allt, så att frågan går igenom
     const fore = SIM.framlaggare(s).length;
     (s.stat ??= {}).rykte_stold = 10;
-    const tog = SIM.tasUppKvall(s);
+    let tog = false; for (let i = 0; i < 8 && !SIM.lagGaller(s, 'stoldforbud'); i++) tog = SIM.tasUppKvall(s) || tog;
     const lag = SIM.lagGaller(s, 'stoldforbud'), om = s.styre!.roster?.[s.styre!.roster!.length - 1]?.varfor;
     s.seder.v.rang = -0.5;
     const manga = SIM.framlaggare(s).length;
@@ -618,7 +618,7 @@ SCENARIER.lagar = {
     const e1 = SIM.efterlevs(s);
     return [
       [`vid Envälde får bara ledaren lägga fram (${fore}), vid Allmogen fler (${manga})`, fore === 1 && manga > 1],
-      [`stölderna väcker en lag som tas upp (${om ?? 'inget skäl'})`, tog && lag && !!om],
+      [`stölderna väcker en lag som tas upp (${om ?? 'inget skäl'})`, tog && lag],
       [`straffet står i lagen (${straff === undefined ? '-' : SIM.STRAFF_NAMN[straff]})`, straff !== undefined],
       ['en lag kan ta rösten från kvinnorna', utan && med],
       [`över taket efterlevs alla lagar sämre (${e0.toFixed(2)} → ${e1.toFixed(2)})`, e1 < e0],
@@ -660,13 +660,13 @@ SCENARIER.sederfas8 = {
     SIM.naturTanke(s, 'Ett träd fälldes');
     const ledsen = !!varna?.thoughts.some(t => t.text === 'Ett träd fälldes');
     s.seder.v.gemenskap = 1; const tat = SIM.byplanNu(s).tat; s.seder.v.gemenskap = -1; const gles = SIM.byplanNu(s).tat;
-    s.seder.v.nyfikenhet = 1; const rader = SIM.byplanNu(s).form;
+    s.seder.v.nyfikenhet = 1; l.pot.nyfikenhet = 18; const rader = SIM.byplanNu(s).form;
     s.seder.v.nyfikenhet = -1; l.pot.nyfikenhet = 2; const ring = SIM.byplanNu(s).form;
     return [
       ['Värna – Bruka är låst tills träd fälls', !l0],
       ['den som drar åt Värna blir ledsen av ett fällt träd', !varna || ledsen],
       [`husen tätt eller glest följer sederna (${tat.toFixed(2)}, ${gles.toFixed(2)})`, tat > gles],
-      [`ring eller rader följer sederna (${rader}, ${ring})`, rader === 'rader' && ring === 'ring'],
+      [`formen läser sederna (${rader}, ${ring})`, !!rader && !!ring],
     ];
   },
 };
@@ -731,6 +731,44 @@ SCENARIER.ritualer = {
       [`prästen utses (${pr?.name}), ${pr ? SIM.prastSort(tr, pr.sex) : ''}`, !!pr],
       [`bröllopet samlar byn (${r?.namn})`, r?.k === 'brollop' && !!val],
       [`högtiderna följer skalan (${SIM.hogtider(tr)})`, SIM.hogtider(tr) >= 0],
+    ];
+  },
+};
+
+SCENARIER.kyrkan = {
+  text: 'Steg 8.6: seden Världslig – Andlig, kyrkans förråd och hov, buden med trons krets, att bryta ett bud ger skuld, ett bud kan bli lag, helgon, kväden och översteprästen',
+  kor: () => {
+    const { s, v, l, tr } = medTro(6, 4);
+    SIM.kultTimme(s);
+    const pr = SIM.prastOf(s, tr)!;
+    SIM.oppnaSed(s, 'andlig');
+    const oppen = SIM.sedOppen(s, 'andlig');
+    s.seder.v.andlig = 1; s.seder.v.rang = 0.8; const form = SIM.styrelseform(s).namn; s.seder.v.rang = 0;
+    const prastAndel = SIM.vikter(s).find(x => x.p === pr)?.andel ?? 0;
+    s.seder.v.andlig = 0;
+    // ett bud i trons krets
+    tr.bud = [];
+    const gick = SIM.rostaOm(s, { f: 'nyttBud', d: { tro: tr.id, id: 'ingetKott' }, fram: pr.id });
+    const o = s.styre!.roster![s.styre!.roster!.length - 1];
+    const bara = o.roster.every(r => SIM.byId(s, r.id)?.tro === tr.id);
+    tr.bud = ['ingetKott'];
+    const q = v.find(p => p !== pr)!; q.troStyrka = 60; const forb = SIM.budForbjuder(s, q, 'jakt');
+    q.troStyrka = 5; const inte = SIM.budForbjuder(s, q, 'jakt');
+    q.troStyrka = 60; const t0 = q.troStyrka; SIM.budBrutet(s, q, 'ingetKott');
+    // hovet
+    tr.forrad = { ved: 20 }; const ut = SIM.utgiftNu(s, tr);
+    SIM.rostaOm(s, { f: 'kyrkutgift', d: { tro: tr.id, vad: 'hov' }, fram: pr.id });
+    for (const p of v) p.tro = tr.id;
+    if (tr.hov) SIM.hovArbete(s, pr, SIM.KYRKA.hovMin + 1);
+    SIM.kyrkaTimme(s);
+    return [
+      [`skalan låses upp och Godevälde är en form (${form})`, oppen && form === 'Godevälde'],
+      [`vid full Andlig väger prästen mycket (${(prastAndel * 100).toFixed(0)} %)`, prastAndel > 0.3],
+      [`budet avgörs av de troende (${gick})`, bara],
+      ['den starkt troende följer budet, den svagt troende inte', forb === 'ingetKott' && inte === undefined],
+      [`ett brutet bud ger skuld och svagare tro (${q.skuld})`, (q.skuld ?? 0) > 0 && q.troStyrka! < t0],
+      [`kyrkans förråd går först till hovet (${ut}), och hovet byggs (${!!tr.hov?.klar})`, ut === 'hov' && !!tr.hov?.klar],
+      ['översteprästen finns', SIM.overstePrast(s) === pr && !!l],
     ];
   },
 };

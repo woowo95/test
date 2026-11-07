@@ -107,7 +107,7 @@ const IDEF = {
   rik: { namn: 'rik', tecken: 1, op: 0, sym: '💰', betyder: 'Äger mycket mer än de andra i byn.' },
   rattvis: { namn: 'rättvis', tecken: 1, op: 10, sym: '⚖️', betyder: 'Har dömt rättvist som ledare.' }, // ledarens straff (steg 3.5.3, styre.ts)
   orattvis: { namn: 'orättvis', tecken: -1, op: -15, sym: '🙅', betyder: 'Har dömt orättvist som ledare.' },
-  arrig: { namn: 'ärrig', tecken: -1, op: 0, sym: '🪡', som: 'ärrig', betyder: 'Har ett ärr i ansiktet.' }, // steg 8.2.4
+  arrig: { namn: 'ärrig', tecken: -1, op: 0, sym: '😣', som: 'ärrig', betyder: 'Har ett ärr i ansiktet.' }, // steg 8.2.4
   stark: { namn: 'stark', tecken: 1, op: 4, sym: '🥊', betyder: 'Har vunnit ett slagsmål.' }, // vann ett slagsmål (steg 3.7.2, strid.ts)
   feg: { namn: 'feg', tecken: -1, op: -5, sym: '🐔', betyder: 'Har backat från en strid.' }, // backade från en strid (steg 3.7.9, strid.ts)
   smakfull: { namn: 'smakfull', tecken: 1, op: 5, sym: '🏺', betyder: 'Har ett vackert pynt där den sover.' }, // pyntet (steg 4.3.4, pynt.ts)
@@ -123,6 +123,7 @@ const vikt = (e: Intryck) => styrka(e) * (INTRYCK[e.k].vikt ?? 1);
 // `prestation` = man blir imponerad, eller avundsjuk (3.3.2)
 interface HandelseDef { i: IntryckTyp; vikt: number; text: string; prestation?: true }
 const HDEF = {
+  budbrott: { i: 'valdsam', vikt: 0.2, text: 'bröt mot ett bud som är lag' }, // steg 8.6.12
   stold: { i: 'tjuv', vikt: 0.5, text: 'stal {sak} av {om}' },
   stoldLindrig: { i: 'tjuv', vikt: 0.2, text: 'tog {sak} av {om}' },
   ranVald: { i: 'valdsam', vikt: 0.3, text: 'gick på {om} för att ta {sak}' }, // rånet (steg 3.7.17)

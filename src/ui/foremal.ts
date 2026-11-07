@@ -245,6 +245,7 @@ export function drawStructures(t: number) {
   }
   for (const q of s.kvarlevor ?? []) if (q.bars === undefined) stubbIkoner.add(KVARLEVOR[q.k].ikon, q.x * TS, q.y * TS, 1); // det som blivit kvar av en människa (steg 8.2.3)
   for (const g of s.gravar ?? []) stubbIkoner.add('grav', g.x * TS, g.y * TS, 1); // graven (steg 8.5.1)
+  for (const t of s.tron ?? []) if (t.hov && t.slut === undefined) stubbIkoner.add(t.hov.klar ? 'hov' : 'hov_bygge', t.hov.x * TS, t.hov.y * TS, 1); // hovet (steg 8.6.14)
   for (const h of s.heliga ?? []) stubbIkoner.add(HELIGA_PLATSER[h.k].ikon, h.x * TS, h.y * TS, 1); // de heliga platserna (steg 8.5.5)
   stubbIkoner.end();
   pileIcons.end();

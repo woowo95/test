@@ -232,7 +232,7 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     }
   }],
   [24, 'v378: historikens kolumner (eld sedan v357) i registrets ordning redan när byn läses in (steg 5.5.7)', s => historikKolumner(s)],
-  [25, 'v510: de nya vågskålarna (steg 8.3.4 och 8.3.5) börjar på noll', s => { s.seder.v.fortjanst ??= 0; s.seder.v.fejd ??= 0; s.seder.v.krig ??= 0; s.seder.v.delning ??= 0; s.seder.v.natur ??= 0; }],
+  [25, 'v510: de nya vågskålarna (steg 8.3.4 och 8.3.5) börjar på noll', s => { s.seder.v.fortjanst ??= 0; s.seder.v.fejd ??= 0; s.seder.v.krig ??= 0; s.seder.v.delning ??= 0; s.seder.v.natur ??= 0; s.seder.v.andlig ??= 0; }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

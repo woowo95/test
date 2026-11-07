@@ -76,8 +76,8 @@ export const HALSA = balans('halsa', {
   mossaTrad: 0.3, // chansen att ett fällt träd har mossa på sig ...
   mossaStam: 2, // ... och så mycket
   finChans: 0.25, // chansen att en skada på en del hamnar på en av de finare delarna under den (steg 8.2.1)
-  forloraGrad: 0.8, // ett skärsår eller bett av minst den här graden på en del som sticker ut ...
-  forloraChans: 0.4, // ... tar delen med den här chansen (steg 8.2.3)
+  forloraGrad: 0.9, // ett skärsår eller bett av minst den här graden på en del som sticker ut ...
+  forloraChans: 0.15, // ... tar delen med den här chansen (steg 8.2.3)
   forfrysVarm: 0.15, // under den här värmen kan fingrar och tår frysa ...
   forfrysRisk: 0.15, // ... med den här risken i timmen ...
   forfrysGrad: 0.5, // ... en förfrysning av den här graden; förlorad vid forloraGrad (steg 8.2.3)
@@ -246,7 +246,7 @@ export interface SkadeRad { d: Kroppsdel; tecken: string; ikon: string; namn: st
 export function skadeLista(p: Person, now: number): SkadeRad[] {
   const lak = (lakerFullt(p) ? 1 : HALSA.lakSamre) * lakFaktor(p);
   const fast = (d: Kroppsdel, namn: string, tecken: string, gar: string): SkadeRad => ({ d, tecken, ikon: 's_' + tecken, namn, grad: 'bestående', bloder: false, gjort: [], vard: [], gar, battre: false });
-  return [...(p.saknas ?? []).map(d => fast(d, `Saknar ${DEL[d].i}`, '✂️', 'kommer inte tillbaka')), ...(p.men ?? []).map(m => fast(m.d, `${MEN_NAMN(m)} (${DEL[m.d].i})`, '🩹', 'läkte fel, blir inte bättre')), ...(p.skador ?? []).map(w => {
+  return [...(p.saknas ?? []).map(d => fast(d, `Saknar ${DEL[d].i}`, '🦴', 'kommer inte tillbaka')), ...(p.men ?? []).map(m => fast(m.d, `${MEN_NAMN(m)} (${DEL[m.d].i})`, '🩹', 'läkte fel, blir inte bättre')), ...(p.skador ?? []).map(w => {
     const sk = SKADA[w.k], ren = (w.ren ?? 0) > now, kall = (w.inf ?? 0) >= HALSA.kallbrand;
     const gar = w.inf === undefined ? `läker, ungefär ${Math.ceil(w.g * sk.lakTim / lak)} timmar kvar` : kall ? 'kallbrand, blir sämre' : ren ? 'infekterat men rengjort, blir bättre' : 'infekterat, blir sämre';
     return {
@@ -282,7 +282,7 @@ export const FORMAGOR = {
   handighet: { namn: 'Händighet', tecken: '✋', varde: handighet, delar: p => delarAv(p, 'handighet'), gor: 'Hur fort arbetet går, och om man kan vårda en annan.' },
   syn: { namn: 'Syn', tecken: '👁️', varde: syn, delar: p => delarAv(p, 'syn'), gor: 'Jakten, fisket och samlandet, träffsäkerheten med spjut, båge och slunga, och karisman.' },
   horsel: { namn: 'Hörsel', tecken: '👂', varde: horsel, delar: p => delarAv(p, 'horsel'), gor: 'Samtalen, att höra fara, skaldskapet och karisman.' },
-  tal: { namn: 'Tal', tecken: '👄', varde: tal, delar: p => delarAv(p, 'tal'), gor: 'Samtalen, att berätta och att övertyga, skaldskapet och karisman.' },
+  tal: { namn: 'Tal', tecken: '💬', varde: tal, delar: p => delarAv(p, 'tal'), gor: 'Samtalen, att berätta och att övertyga, skaldskapet och karisman.' },
   medvetande: { namn: 'Medvetande', tecken: '🧠', varde: medvetande, delar: medDelar, gor: `Är det lågt går arbetet långsammare och sämre. Under ${Math.round(HALSA.svimma * 100)} % svimmar man, faller ihop där man är och måste bäras hem.` },
   blod: { namn: 'Blod', tecken: '🩸', varde: p => p.blod ?? 1, delar: p => blodning(p) > 0 ? [{ namn: 'Blöder i timmen', v: -blodning(p) }] : [], gor: `Hälsan. Under ${Math.round(HALSA.blodDod * 100)} % förblöder man. Blodet kommer tillbaka på ${HALSA.blodTillbaka} timmar för den som inte blöder och är mätt och otörstig.` },
   smarta: { namn: 'Smärta', tecken: '😣', ont: true, varde: smarta, delar: p => (p.skador ?? []).map(w => ({ namn: `${SKADA[w.k].namn} i ${DEL[w.d].i}`, v: -(SKADA[w.k].smarta * w.g + HALSA.infSmarta * (w.inf ?? 0)) })), gor: 'Hälsan och humöret. Den som har mycket ont vilar hellre än arbetar.' },
@@ -317,6 +317,7 @@ function finDel(s: State, p: Person, d: Kroppsdel): Kroppsdel {
   if (!fina || HALSA_PROV.grov || rnd(s, 'halsa', p) >= HALSA.finChans) return d;
   return fina[Math.floor(rnd(s, 'halsa', p) * fina.length)];
 }
+const STUMP: Partial<Record<Kroppsdel, Kroppsdel>> = { handV: 'armV', handH: 'armH', fotV: 'benV', fotH: 'benH' };
 const FINA = {} as Partial<Record<Kroppsdel, Kroppsdel[]>>;
 for (const k of Object.keys(DEL) as Kroppsdel[]) { const u = DEL[k].under as Kroppsdel | undefined; if (u) (FINA[u] ??= []).push(k); }
 // en del går förlorad (steg 8.2.3): avbiten, avhuggen, förfrusen eller amputerad. Det som sitter på den försvinner med den, och utom när
@@ -327,7 +328,8 @@ export function forlora(s: State, p: Person, d: Kroppsdel, hur: string) {
   for (const q of delar) if (!p.saknas?.includes(q)) (p.saknas ??= []).push(q);
   p.skador = p.skador?.filter(w => !delar.includes(w.d));
   p.men = p.men?.filter(m => !delar.includes(m.d));
-  if (!p.skador?.length) p.skador = undefined;
+  // stumpen blöder och gör ont på delen ovanför
+  (p.skador ??= []).push({ d: (DEL[d].under as Kroppsdel | undefined) ?? STUMP[d] ?? 'bal', k: 'skarsar', g: 0.5, b: 1, g0: 0.5 });
   uppdateraSinnen(p);
   nyKvarleva(s, 'del', p, `${gen(p.name)} ${/^(vänstra|högra) /.test(DEL[d].i) ? DEL[d].i.replace(/(en|et|t)$/, '') : DEL[d].i}`); // "Häggs vänstra hand"
   count(s, 'delar förlorade');

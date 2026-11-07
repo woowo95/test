@@ -100,7 +100,7 @@ export const NIVAER: NivaDef[] = [
   { namn: 'Präst', text: `Minst ${NIVA.prast} tror, och en av dem är andlig och karismatisk nog att bli präst. Prästen och de svaga buden kommer med 10.1.`,
     krav: (s, n, folk) => n >= NIVA.prast && folk.some(p => andlighet(s, p) >= NIVA.prastAnde && stat(p, 'karisma', s.now) >= NIVA.prastKarisma) },
   { namn: 'Kyrka', text: `Minst ${NIVA.kyrka} tror, en präst och en helig byggnad (hov, steg 7.2.10). Starka bud, kyrkskatt och makt över styret kommer med 10.1.`,
-    krav: () => false }, // hovet finns inte än (steg 7.2.10)
+    krav: (s, n, folk) => n >= NIVA.kyrka && folk.some(p => s.tron?.some(t => t.prast === p.id && t.id === p.tro && t.hov?.klar)) },
 ];
 export const PRAST_NIVA = 3; // nivån Präst: den första tron som når den ger den första schamanen (skalan Var och en – Präster)
 export const troNiva = (tr: Tro) => tr.niva ?? 0;
@@ -245,7 +245,7 @@ export const teckenText = (k: TeckenTyp, om?: string) => TDEF[k].text.replace('{
 // första skalorna (0–100: Natur – Människa och Många – En). bekr: när ett tecken senast bekräftade den. slut: när den sista
 // som trodde dog. ar: året den kom. namn, sym och ber (berättelsen om hur den började) får den när TRO.namn tror (steg 4.1.2.3).
 // niva: index i NIVAER (steg 4.1.4), sk: värdet på de skalor som låsts upp efter de två första, gudar: trons gudar (steg 4.1.5)
-export interface Tro { x?: number; y?: number; prast?: number; prastRegel?: 'k' | 'm' | 'bada'; hogtid?: number; leddBon?: number; profeter?: number[]; gravSlag?: 'helig' | 'vatten' | 'bryn' | 'by'; id: number; grundare: number; gnamn: string; t: number; k: TeckenTyp; om?: string; bakom: string; vill: string; svek: string; natur: number; manga: number; bekr: number; slut?: number; ar: number; namn?: string; sym?: string; ber?: string; niva?: number; sk?: Partial<Record<SkalaId, number>>; gudar?: Gud[] }
+export interface Tro { bud?: import('./kyrka').BudId[]; forrad?: Record<string, number>; hov?: { x: number; y: number; prog: number; klar?: number }; gudabild?: number; helgon?: { id: number; namn: string; t: number; krönika: string; myt: string }[]; kvade?: { t: number; text: string; av: number; larjunge?: number }; x?: number; y?: number; prast?: number; prastRegel?: 'k' | 'm' | 'bada'; hogtid?: number; leddBon?: number; profeter?: number[]; gravSlag?: 'helig' | 'vatten' | 'bryn' | 'by'; id: number; grundare: number; gnamn: string; t: number; k: TeckenTyp; om?: string; bakom: string; vill: string; svek: string; natur: number; manga: number; bekr: number; slut?: number; ar: number; namn?: string; sym?: string; ber?: string; niva?: number; sk?: Partial<Record<SkalaId, number>>; gudar?: Gud[] }
 export const troOf = (s: State, id: number | undefined) => id === undefined ? undefined : s.tron?.find(t => t.id === id);
 export const troende = (s: State, tr: Tro) => living(s).filter(p => p.tro === tr.id);
 // tolkningen som meningar: "Den som bor i åskmolnen vill att man tystnar när det mullrar. Om man sviker: blixten slår ner i ens hus."

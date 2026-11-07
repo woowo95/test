@@ -5,6 +5,7 @@ import type { Lag } from './lagar';
 import { ROST, FRAGOR, rostaOm, missnojeLatt, missnojeNoll, missnojeStrafft, missnojeTimme, oppnaSed, rostKvall, seOverMinistrar, vikter } from './rost';
 import type { Fraga, Fraktion, Omrostning, Rost } from './rost';
 import { stridIByn } from './strid';
+import { kyrkaKvall, overstePrast } from './kyrka';
 import { ARSTIDER, Fyllning, fyll, kronikaBer, och, personFalt, valjVariant } from './berattelser';
 import { skada } from './halsa';
 import { die, leave } from './liv';
@@ -74,6 +75,7 @@ export const FORM = balans('form', {
   starkt: 0.7, lut: 0.25, mitt: 0.1, // gränserna mellan styrelseformerna, i sederna (steg 8.3.7)
 });
 export const TRON = balans('tron', {
+  prast: 0.4, // så här mycket Andlig ger att översteprästen utser (steg 8.6.16)
   arv: 0.3, // så här mycket Härkomst ger arv (steg 8.3.6)
   utse: 0.4, // ... så här mycket Envälde att ledaren utser sin efterträdare
   strid: 0.4, // ... så här mycket Fejd en strid om makten
@@ -126,6 +128,8 @@ const stor = (t: string) => t[0].toUpperCase() + t.slice(1);
 // styrelseformerna: namnet och texten byggs ur sederna (fler former när de finns, 9.2), den första som passar
 const fort = (s: State) => s.seder.v.fortjanst ?? 0, fejdNu = (s: State) => s.seder.v.fejd ?? 0, rangNu = (s: State) => s.seder.v.rang ?? 0;
 const FORMER: { namn: string; passar: (s: State) => boolean; text: (l: Person, titel: string) => string }[] = [
+  { namn: 'Godevälde', passar: s => (s.seder.v.andlig ?? 0) >= FORM.starkt && rangNu(s) >= FORM.lut, // den främsta prästen leder (steg 8.6.1)
+    text: (l, t) => `${l.name}, ${t.toLowerCase()}, styr i gudarnas namn, och de starka buden är lag.` },
   { namn: 'Envälde', passar: s => rangNu(s) >= FORM.starkt && fejdNu(s) >= FORM.lut && fort(s) <= 0,
     text: (l, t) => `${l.name}, ${t.toLowerCase()}, tog makten och styr ensam. Byn gör som ${hon(l)} säger, men trycket kan bli stort.` },
   { namn: 'Krigarvälde', passar: s => rangNu(s) >= LED.hovding && fejdNu(s) >= FORM.lut,
@@ -144,6 +148,7 @@ export const VAGSKALAR: { id: string; sed?: Sed; namn: string; steg?: string }[]
   { id: 'rang', sed: 'rang', namn: 'Allmogen – Envälde' },
   { id: 'fortjanst', sed: 'fortjanst', namn: 'Förtjänst – Härkomst' },
   { id: 'fejd', sed: 'fejd', namn: 'Förlikning – Fejd' },
+  { id: 'andlig', sed: 'andlig', namn: 'Världslig – Andlig' },
 ];
 // påbuden: vad ledaren tycker (åt vilket håll från byns egen sed, som en sed från -1 till 1). sed = byns egen sed som påbudet
 // blandas med (saknas: 0). ruta = påbuden som visas tillsammans i en ruta i Styre (steg 4.5.4.2; saknas: en egen ruta).
@@ -187,6 +192,7 @@ export interface Styre {
   satt?: number; vunna?: number; // hur väl sättet ledaren tillsattes på passar sederna, och strider som vunnits (steg 8.3.9)
   frak?: Fraktion; frakVald?: number; lugn?: number; // fraktionen, dess ledare efter ett skifte och när nästa fraktion tidigast bildas (steg 8.3.11–8.3.12)
   dogVinter?: number;
+  kyrka?: number; kyrkaVikt?: number; // översteprästens välsignelse (1) eller fördömelse (−1) och vad den är värd (steg 8.6.16)
   hanForbud?: boolean; hanSedd?: number; // förbudet mot hån (steg 8.3.13)
   lagar?: Lag[]; nedrostat?: Record<string, number>; // lagarna och det som nyss röstats ned (system 8.4, lagar.ts)
 }
@@ -205,7 +211,7 @@ const styreOf = (s: State) => s.styre ??= { historia: [], oppna: [] };
 export const styreAv = styreOf;
 export const ledareOf = (s: State) => { const id = s.styre?.ledare; const p = id === undefined ? undefined : byId(s, id); return p && alive(p) ? p : undefined; };
 // makt-sederna (Skalor som låses upp) syns i Styre och är låsta tills det de styr finns i byn
-export const MAKT_SEDER: readonly Sed[] = ['rang', 'fortjanst', 'fejd'];
+export const MAKT_SEDER: readonly Sed[] = ['rang', 'fortjanst', 'fejd', 'andlig'];
 const LASTA_SEDER: readonly Sed[] = [...MAKT_SEDER, 'krig', 'delning', 'natur'];
 export const sedOppen = (s: State, k: Sed) => !LASTA_SEDER.includes(k) || !!s.styre?.oppna.includes(k);
 
@@ -223,7 +229,7 @@ export function legitimitet(s: State) {
   const satt = st.satt ?? 1, fram = clamp((st.vunna ?? 0) / LED.vunna + (living(s).length - (st.folk0 ?? living(s).length)) / LED.vaxt, 0, 1); // hur ledaren tillsattes och framgångarna (steg 8.3.9)
   const vint = Math.min(1, (st.vintrar ?? 0) / LED.vintrar);
   const oratt = (st.oratt ?? 0) * Math.exp(-(s.now - (st.orattT ?? s.now)) / (LED.orattDygn * DAY));
-  return { v: clamp(stod * LED.wStod + satt * LED.wSatt + fram * LED.wFram + vint * LED.wVint - oratt, 0, 1), stod, satt, fram, vint, oratt };
+  return { v: clamp(stod * LED.wStod + satt * LED.wSatt + fram * LED.wFram + vint * LED.wVint - oratt + (st.kyrka ?? 0) * (st.kyrkaVikt ?? 0), 0, 1), stod, satt, fram, vint, oratt };
 }
 // ledarens vikt i sederna (seder.ts): en del av byns samlade vikt
 export function ledarVikt(s: State): { p: Person; w: number } | undefined {
@@ -254,13 +260,13 @@ function sattPabud(s: State, l: Person, ai: number) {
 // ---------- valet ----------
 const vuxnaOf = (s: State) => living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen);
 // hur nästa ledare väljs (steg 8.3.6), det sätt som passar sederna bäst. Prästernas val kommer med kyrkan
-export type Tronfoljd = 'arv' | 'utse' | 'strid' | 'val';
+export type Tronfoljd = 'arv' | 'utse' | 'strid' | 'val' | 'prast';
 export function tronfoljd(s: State): Tronfoljd {
-  const v = s.seder.v, c: [Tronfoljd, number][] = [['arv', (v.fortjanst ?? 0) - TRON.arv], ['utse', s.styre?.arvinge !== undefined ? (v.rang ?? 0) - TRON.utse : -1], ['strid', (v.fejd ?? 0) - TRON.strid]];
+  const v = s.seder.v, c: [Tronfoljd, number][] = [['arv', (v.fortjanst ?? 0) - TRON.arv], ['utse', s.styre?.arvinge !== undefined ? (v.rang ?? 0) - TRON.utse : -1], ['strid', (v.fejd ?? 0) - TRON.strid], ['prast', overstePrast(s) ? (v.andlig ?? 0) - TRON.prast : -1]];
   const b = c.sort((a, d) => d[1] - a[1])[0];
   return b[1] >= 0 ? b[0] : 'val';
 }
-export const TRONFOLJD_TEXT: Record<Tronfoljd, string> = { arv: 'Ledarens barn eller närmaste släkting ärver makten', utse: 'Ledaren har utsett sin efterträdare', strid: 'De som vill slåss om makten', val: 'De vuxna väljer en ny' };
+export const TRONFOLJD_TEXT: Record<Tronfoljd, string> = { arv: 'Ledarens barn eller närmaste släkting ärver makten', utse: 'Ledaren har utsett sin efterträdare', strid: 'De som vill slåss om makten', val: 'De vuxna väljer en ny', prast: 'Översteprästen utser den nya' };
 const kanLeda = (s: State, c: Person) => knows(c, 'ledarskap') && ryktbarhet(s, c.id).a >= LED.anseende;
 // kandidaterna enligt ett sätt
 function arvinge(s: State, vuxna: Person[]) {
@@ -298,6 +304,7 @@ function valj(s: State) {
   else {
     const satet = tronfoljd(s);
     if (satet === 'arv') best = arvinge(s, vuxna);
+    else if (satet === 'prast') { const o = overstePrast(s); if (o) best = vuxna.filter(c => kanLeda(s, c) && c.tro === o.tro).sort((a, b) => (s.rels[relKey(o.id, b.id)]?.op ?? 0) - (s.rels[relKey(o.id, a.id)]?.op ?? 0))[0]; }
     else if (satet === 'utse') { const u = byId(s, stn.arvinge); if (u && alive(u) && vuxna.includes(u) && kanLeda(s, u)) best = u; }
     else if (satet === 'strid') {
       const kand = vuxna.filter(c => kanLeda(s, c)).sort((a, b) => stat(b, 'mod', s.now) + b.skill.narstrid - stat(a, 'mod', s.now) - a.skill.narstrid);
@@ -400,7 +407,7 @@ export const STRAFF_REG = [
   { id: 7, namn: 'Förlorad rätt', da: 'tog rösten från', inf: 'förlora rösten', nu: 'tar rösten från' },
 ] as const;
 const STRAFF = STRAFF_REG.map(r => r.nu);
-const BROTT = new Set<HandelseTyp>(['stold', 'stoldLindrig', 'sla', 'misshandel', 'drap', 'logn', 'overdrev']);
+const BROTT = new Set<HandelseTyp>(['budbrott', 'stold', 'stoldLindrig', 'sla', 'misshandel', 'drap', 'logn', 'overdrev']);
 // straffets steg (0 till 3) för vikten v gånger hårdheten
 function stegOf(v: number, h: HandelseTyp, rang: number) {
   if (h === 'drap' && rang >= STR.utvisRang && v >= STR.utvis) return 3;
@@ -548,12 +555,13 @@ export function stepStyre(s: State) {
   // Förlikning – Fejd låses upp första gången en konflikt avgörs med våld (steg 8.3.5)
   if (!s.styre!.oppna.includes('fejd') && ((s.stat?.strid_skada ?? 0) + (s.stat?.strid_doda ?? 0) + (s.stat?.drap ?? 0) > 0)) oppnaSed(s, 'fejd');
   // de andra skalorna låses upp när det de styr finns i byn (steg 8.4.11–8.4.13)
+  if (!s.styre!.oppna.includes('andlig') && living(s).filter(p => p.tro !== undefined).length >= 3) oppnaSed(s, 'andlig'); // steg 8.6.1
   if (!s.styre!.oppna.includes('krig') && (s.stat?.rovarstrid ?? 0) + (s.stat?.vargstrid ?? 0) > 0) oppnaSed(s, 'krig');
   if (!s.styre!.oppna.includes('delning') && (s.delning?.andel ?? 1) < 0.5) oppnaSed(s, 'delning');
   if (!s.styre!.oppna.includes('natur') && (s.fallda ?? 0) > 0) oppnaSed(s, 'natur');
   missnojeTimme(s);
   if (!ledareOf(s)) return;
-  if (Math.floor(hourOf(s.now)) === STR.timme) { doma(s, l); rostKvall(s); if (!s.styre?.fragor?.length) tasUppKvall(s); tabuDygn(s); }
+  if (Math.floor(hourOf(s.now)) === STR.timme) { doma(s, l); rostKvall(s); if (!s.styre?.fragor?.length) tasUppKvall(s); kyrkaKvall(s); tabuDygn(s); }
 }
 // skammen: den straffade håller sig undan bordet och elden (val.ts)
 export const skams = (p: Person, now: number) => p.skam !== undefined && p.skam > now;

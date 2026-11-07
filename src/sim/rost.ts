@@ -14,7 +14,9 @@ import { notis } from './notiser';
 import { stridIByn } from './strid';
 import { rikedom } from './varde';
 import { rivScenen } from './stationer';
+import { overstePrast } from './kyrka';
 import { lagGaller, utanRost } from './lagar';
+import { Tro, skalaV, troOf, troende } from './religion';
 
 export const ROST = balans('rost', {
   sparas: 14, // så många omröstningar sparas
@@ -29,6 +31,7 @@ export const VIKT = balans('vikt', {
   harkomst: 0.5, // ... släkternas äldste vid full Härkomst
   fejd: 0.5, // ... krigarna vid full Fejd
   minister: 0.9, // ... ministrarna vid full Sammanhållning
+  prast: 0.7, // ... prästerna vid full Andlig
   krigare: 8, // den som har minst så här i närstrid räknas som krigare
 });
 export const MISS = balans('missnoje', {
@@ -66,6 +69,7 @@ const GRUPPER: { andel: (s: State) => number; vem: (s: State) => Person[] }[] = 
   { andel: s => VIKT.harkomst * Math.max(0, s.seder.v.fortjanst ?? 0), vem: aldste },
   { andel: s => VIKT.fejd * Math.max(0, s.seder.v.fejd ?? 0), vem: krigare },
   { andel: s => VIKT.minister * Math.max(0, s.seder.v.gemenskap ?? 0), vem: ministrarNu },
+  { andel: s => VIKT.prast * Math.max(0, s.seder.v.andlig ?? 0), vem: s => (s.tron ?? []).flatMap(t => { const p = byId(s, t.prast); return p && alive(p) ? [p] : []; }) }, // Andlig flyttar vikt till prästerna (steg 8.6.1)
 ];
 export function vikter(s: State) {
   const ppl = living(s).map(p => ({ p, w: influence(s, p), andel: 0 })).filter(x => x.w);
@@ -81,6 +85,10 @@ export function vikter(s: State) {
   return ppl;
 }
 
+function kretsVikter(s: State, tr: Tro) {
+  const folk = troende(s, tr).filter(p => vuxenRost(s, p)), pr = byId(s, tr.prast), a = (skalaV(tr, 'prast') ?? 0) / 100;
+  return folk.map(p => ({ p, w: 1, andel: (1 - (pr && folk.includes(pr) ? a : 0)) / folk.length + (p === pr ? a : 0) }));
+}
 // ---------- registret ----------
 export interface Rost { id: number; namn: string; w: number; ja: boolean; why: string; }
 export interface Omrostning { t: number; f: string; namn: string; fram: number; framNamn: string; roster: Rost[]; ja: number; nej: number; gick: boolean; varfor?: string }
@@ -127,7 +135,9 @@ export function laggFram(s: State, f: string, d: FragaData, fram: Person, prio =
 const vuxenRost = (s: State, p: Person) => ageOf(p, s.now) >= ALDER.vuxen;
 export function rostaOm(s: State, fr: Fraga) {
   const def = FRAGOR[fr.f], fram = byId(s, fr.fram), st = styreAv(s);
-  const v = vikter(s).filter(x => vuxenRost(s, x.p) && !utanRost(s, x.p));
+  // kretsen: byn, eller en tros troende (steg 8.6.7). De troende väger lika, och Var och en – Präster flyttar vikten till prästerna
+  const tr = def.krets === 'tro' ? troOf(s, fr.d.tro as number) : undefined;
+  const v = tr ? kretsVikter(s, tr) : vikter(s).filter(x => vuxenRost(s, x.p) && !utanRost(s, x.p));
   const roster: Rost[] = v.map(({ p, andel }) => {
     const r = def.rost(s, p, fr.d), gillar = fram && fram !== p ? (s.rels[relKey(p.id, fram.id)]?.op ?? 0) / 100 * ROST.gillar : fram === p ? 1 : 0;
     return { id: p.id, namn: p.name, w: andel, ja: r.v + gillar > 0, why: fram === p ? 'La fram frågan' : r.why };
@@ -155,6 +165,7 @@ export function rostKvall(s: State) {
 export interface MinisterDef { namn: string; nar(s: State): boolean; vem(s: State): Person | undefined; pabud?: Pabud[]; sektion(s: State): number }
 const basta = (s: State, f: (p: Person) => number) => { let b: Person | undefined, bv = -Infinity; for (const p of living(s)) if (vuxenRost(s, p) && f(p) > bv) { bv = f(p); b = p; } return b; };
 export const MINISTRAR: Record<string, MinisterDef> = {
+  overstePrast: { namn: 'Överstepräst', nar: s => !!overstePrast(s), vem: s => overstePrast(s), sektion: s => living(s).filter(p => p.tro !== undefined).length / 3 }, // steg 8.6.16
   krigshovding: { namn: 'Krigshövding', nar: s => (s.stat?.vargjakt ?? 0) + (s.stat?.vargstrid ?? 0) + (s.stat?.rovarstrid ?? 0) >= 6 && krigare(s).length >= 3, vem: s => basta(s, p => p.skill.narstrid + p.pot.mod / 4), sektion: s => krigare(s).length },
   domare: { namn: 'Domare', nar: s => (s.styre?.lagar?.length ?? 0) >= 2, vem: s => basta(s, p => p.pot.intelligens + p.pot.empati / 2), sektion: () => 1 }, // steg 8.4.16
   forvaltare: { namn: 'Förvaltare', nar: s => rikedom(s) >= 800, vem: s => basta(s, p => p.pot.intelligens + p.skill.handel / 2), pabud: ['matlager', 'vedlager', 'torkat'], sektion: s => living(s).length / 4 },

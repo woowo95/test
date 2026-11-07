@@ -83,6 +83,7 @@ export * from './sim/strak';
 export * from './sim/plats';
 export * from './sim/kvarlevor';
 export * from './sim/kult';
+export * from './sim/kyrka';
 export * from './sim/kultlatt';
 export * from './sim/grav';
 export * from './sim/rost';

@@ -56,8 +56,9 @@ import { framVal } from './framtradande';
 import { utbrottBorjar, utbrottNu } from './humor';
 import { smakDrag } from './rykten';
 import { PAB, pabud, skams } from './styre';
-import { BONER, bonFritid, bonNod, bonVikt, ritualVal } from './kult';
+import { BONER, bonFritid, bonNod, bonVikt, ritualVal, satFaror } from './kult';
 import { begravaVal } from './grav';
+import { budBrutet, budForbjuder, hovVal, viltBikta, vilodagNu } from './kyrka';
 import { LAG, lagGaller } from './lagar';
 
 // ---------- val av aktivitet ----------
@@ -413,6 +414,7 @@ export function dangers(s: State) {
   const cold = coldOf(temperature(s)) > 0 || freezing > VAL.fryserAndel;
   return { kyla: cold && !nagonGlod(s), svalt: foodDays(s) < VAL.svaltDygn, gras: kallTid(ai) || cold ? TROSKEL.torrgrasKyla : 0 };
 }
+satFaror(dangers);
 type Faror = ReturnType<typeof dangers>;
 // elden är släckt och kan inte tändas för att det saknas tändmaterial, och för få hämtar det
 const tinderNeeded = (s: State) => !nagonGlod(s) && !canLight(s) && needTinder(s);
@@ -694,6 +696,7 @@ export const ARBETEN: readonly Arbete[] = [
     arbeta(c, d.best, ACTS[d.best].behov === 'ved' ? `Byn behöver ved, förrådet räcker ${dygn(d.wd)}` : `Byn behöver mat, förrådet räcker ${dygn(d.fd)}`); return true;
   } },
   // 9 Fritid: vila, hantverk, umgänge, promenad, bad eller att sitta vid stranden
+  { id: 'hov', niva: 8, nar: 'dag', kort: true, prova: ({ s, p, v }) => { const h = hovVal(s, p); if (!h) return false; v.spot = h.spot; v.dur = h.min * MIN; return set(v, 'hovbygge', h.why); } }, // kyrkans bygge (steg 8.6.14)
   { id: 'fritid', niva: 9, nar: 'dag', kort: true, prova: c => { leisure(c.s, c.p, c.v, dag(c).u, c.lazy); return true; } },
   // på natten håller man sig vid elden och berättar, gör handarbete, umgås eller sover
   { id: 'kvall', niva: 9, nar: 'natt', prova: ({ s, p, v, a }) => { night(s, p, v, a); return true; } },
@@ -738,6 +741,15 @@ export function chooseTask(s: State, p: Person) {
     const b = r.bradska?.(c) ?? 1;
     if (b < 1 && rnd(s, 'val', p) >= b) { senare.push(r); continue; }
     if (r.prova(c)) { rad = r; break; }
+  }
+  // buden (steg 8.6.8): den troende låter bli det som är förbjudet och vilar på vilodagen. Svält och kyla går före, men kostar
+  if (rad && rad.niva > 2) {
+    const id = budForbjuder(s, p, v.act);
+    if (id || (vilodagNu(s, p) && ACTS[v.act].arbete)) {
+      const f = faror(c);
+      if (f.svalt || f.kyla) { if (id) budBrutet(s, p, id); }
+      else { set(v, 'vila', id ? 'Tron förbjuder det' : 'Det är vilodag'); v.spot = undefined; v.tool = undefined; v.ref = undefined; }
+    }
   }
   // straffet skam (steg 3.5.3, styre.ts): inte det faran väljer (vargarna, tornadon, branden, vattnet) och inte det som skyddar (skamfri i ACTS)
   if (rad?.niva !== 1 && ACTS[v.act].social && !ACTS[v.act].skamfri && skams(p, s.now)) { v.act = 'skams'; v.why = 'Skäms och håller sig undan de andra'; v.spot = undefined; }
@@ -1129,6 +1141,7 @@ function leisure(s: State, p: Person, v: Val, u: number, lazy: number) {
   const wsp = sportVikt(s, p, calm); // sporten när byn har ett överskott (steg 4.3.1, sport.ts)
   // bönen (steg 8.5.2): lusten följer andligheten, bredvid vilan och umgänget
   if (rnd(s, 'val', p) < bonVikt(s, p) / (bonVikt(s, p) + wv + wh + wsoc + wp + 1e-9)) {
+    if (viltBikta(s, p)) { set(v, 'be', BONER.bikt.text()); v.tool = 'bikt'; v.dur = BONER.bikt.min * MIN; return; } // bikten (steg 8.6.9)
     const b = bonFritid(s, p);
     if (b) { set(v, 'be', BONER[b.id].text(s, p, b.o)); v.tool = b.id; v.spot = b.spot ?? { x: p.x, y: p.y }; v.dur = BONER[b.id].min * MIN; return; }
   }

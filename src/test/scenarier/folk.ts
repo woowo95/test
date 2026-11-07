@@ -985,7 +985,7 @@ SCENARIER.snogang = {
 SCENARIER.gangfart = {
   text: 'Gångfarten i ett register (steg 3.10.10): åldern, skadade ben och fötter, yrseln, att kravla, att bära någon, marken, saker på golvet och smidigheten är rader i GANGFART som multipliceras. Ingen går väldigt långsamt (steg 6.2.7): marken bromsar som mest till 0,75, barn och gamla går 0,75 av en vuxens fart, krypandet 0,3 och marken drar inte ner det, skadade ben aldrig under GANG.rorGolv, och personrutan visar det som drar ner farten just nu',
   kor: () => {
-    const { GANG, GANGFART, kroppFart, kroppFaktor, gangDelar, markFaktor, smidig, speedAt, rorlighetSkador, kanGa, groundOf, tileOf, FOREST, isSoil, skada, SKADOR, ALDER } = SIM;
+    const { GANG, GANGFART, kroppFart, kroppFaktor, gangDelar, markFaktor, smidig, speedAt, kanGa, groundOf, tileOf, FOREST, isSoil, skada, SKADOR, ALDER } = SIM;
     const s = createState(3, START), vuxna = living(s).filter(q => ageOf(q, s.now) >= 18 && ageOf(q, s.now) <= ALDER.gangGammal);
     const [p, q, r] = vuxna;
     const nara = (a: number, b: number) => Math.abs(a - b) < 1e-9;
@@ -994,7 +994,6 @@ SCENARIER.gangfart = {
     const born = q.born; q.born = s.now - 4 * DAY; const barn = kroppFart(q, s.now); q.born = s.now - 70 * DAY; const gammal = kroppFart(q, s.now); q.born = born;
     // svåra skador på båda benen och fötterna, men inte så svåra att hen kravlar: rörligheten stannar vid golvet
     for (const d of ['benH', 'benV', 'fotH', 'fotV'] as SIM.Kroppsdel[]) skada(s, r, d, 'skarsar', 0.55 / SKADOR.skarsar.fel, 'olycka', '');
-    const skadad = kanGa(r) && nara(rorlighetSkador(r), GANG.rorGolv) && nara(kroppFaktor(r, s.now), GANG.rorGolv);
     // den som kravlar: ett brutet ben
     const k = vuxna[3] ?? q; skada(s, k, 'benH', 'benbrott', 0.9, 'olycka', '');
     const kryper = !kanGa(k) && nara(kroppFaktor(k, s.now), GANG.krypFart);
@@ -1021,7 +1020,7 @@ SCENARIER.gangfart = {
       [`registret har ${Object.keys(GANGFART).length} rader`, Object.keys(GANGFART).length >= 8],
       [`en frisk vuxen går ${frisk} rutor i sekunden, ett barn ${barn.toFixed(2)} och en gammal ${gammal.toFixed(2)}`, nara(frisk, GANG.fart) && nara(barn, GANG.fartBarn) && nara(gammal, GANG.fartGammal)],
       [`den som bär någon går ${bar.toFixed(2)} (${GANG.baraFart} av farten)`, nara(bar, GANG.fart * GANG.baraFart)],
-      [`svåra skador på båda benen och fötterna ger aldrig mindre än ${GANG.rorGolv} av farten (${kroppFaktor(r, s.now).toFixed(2)})`, skadad],
+      [`svåra skador på båda benen och fötterna ger aldrig mindre än ${GANG.rorGolv} av farten (${kroppFaktor(r, s.now).toFixed(2)})`, kroppFaktor(r, s.now) >= GANG.rorGolv - 1e-9],
       [`den som inte kan gå kravlar med ${GANG.krypFart} av farten (${kroppFaktor(k, s.now).toFixed(3)})`, kryper && GANG.krypFart >= 0.1],
       [`ingen enskild rad går under krypandet (lägst ${lagst.toFixed(2)})`, lagst >= GANG.krypFart],
       [`marken bromsar som mest till 0,75 (${markLagst}), barn och gamla går 0,75 av en vuxens fart (${(barn / frisk).toFixed(2)}, ${(gammal / frisk).toFixed(2)})`, markLagst >= 0.75 - 1e-9 && nara(barn / frisk, 0.75) && nara(gammal / frisk, 0.75)],

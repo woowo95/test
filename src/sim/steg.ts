@@ -62,7 +62,7 @@ import { JAKT, jaktBar, jaktFallt, jaktForsok, jaktKlar } from './jakt';
 import { bristSteg, frysFaktor, naringSjunker, skorbjugg, trottFaktor } from './naring';
 import { stepByggnader } from './byggnader';
 import { sumOf } from './egendom';
-import { husKlart, avail, takeForHouse, buildJob, finishDorr, needOf, noteKom, siteOf, toWalls, wearBuild, workOn } from './bygg';
+import { vaggRensa, husKlart, avail, takeForHouse, buildJob, finishDorr, needOf, noteKom, siteOf, toWalls, wearBuild, workOn } from './bygg';
 import { bitAt, husById, MATERIAL, bitById, blocked, freeNear, gridOf, roomAt, roofed, shelterOf } from './byggnad';
 import { histParts, historikSteg, joinHist } from './historik';
 import { migrate } from './varld';
@@ -77,6 +77,10 @@ import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from '.
 import { kvarTimme } from './kvarlevor';
 import { gravKlar, kroppUpp } from './grav';
 import { bonKlar, kultTimme } from './kult';
+import { hovArbete, kyrkaRegister, kyrkaTimme, satBudHandelse, satOppnaAndlig } from './kyrka';
+import { lagRegister } from './lagar';
+import { oppnaSed } from './rost';
+import { handelse } from './rykten';
 import { tal, horsel, barMed, burenSteg, halsa, halsaSteg, lakerFullt, lamnaAv, mossaFynd, mossaPaStam, vardKlar, vardMal } from './halsa';
 import { bordPlats, fullBorda, kladVarme, ryggKorg, ryms, slitRygg, stepKlader } from './utrustning';
 import { stepPynt } from './pynt';
@@ -185,7 +189,7 @@ const KLAR: Partial<Record<Act, Krok>> = {
   strand: (s, p) => { p.rest = Math.min(1, p.rest + KROPP.strandVila); think(p, 'Satt vid vattnet och fick ro', 0.06, s.now, 6 * HOUR); },
   varda: vardKlar, // såren trycks på, förband läggs, infekterade sår rengörs, och den som inte kan gå bärs hem (halsa.ts)
   vatten: vattenFylld, // vattensäcken är fylld och bärs till den som inte kan gå (torst.ts)
-  be: (s, p, t) => bonKlar(s, p, t), begrava: kroppUpp, grava: gravKlar, // tron och graven (system 8.5)
+  hovbygge: (s, p, t) => hovArbete(s, p, 60 * (1 + 0 * t.carry)), be: (s, p, t) => bonKlar(s, p, t), begrava: kroppUpp, grava: gravKlar, // tron och graven (system 8.5)
   flyttaeld: (s, p) => flyttaElden(s, p), // elden står på en ny plats (eldflytt.ts)
 };
 for (const a of UTBROTT_ACTS) KLAR[a] = utbrottKlar; // efter ett utbrott (humor.ts, steg 3.2.2)
@@ -195,6 +199,9 @@ for (const act of DRICKA_ACTS) MEDAN[act] = (s, p, t) => { if (t.prog === undefi
 // slakt och rensning: den första arten med arbetet som finns i förrådet (kaninen före vargen, steg 3.7.14)
 // mjärden är klar: materialet tas, och den sätts ut på närmaste strand (steg 7.4.2)
 for (const k of Object.keys(FALLOR)) KLAR[k as Act] = (s, p) => { for (const [q, n] of Object.entries((RECEPT as Record<string, { av?: Record<string, number> }>)[k].av!)) takeMaterial(s, p, q, n); sattUt(s, p, k); };
+lagRegister(); kyrkaRegister();
+satOppnaAndlig(s => oppnaSed(s, 'andlig'));
+satBudHandelse((s, p) => handelse(s, p, 'budbrott'));
 export const KLAR_FOR = KLAR; // scenarierna prövar det som händer när ett arbete är klart
 // det som görs vid en station är klart: materialet tas och saken läggs i förrådet, och är hens som gjorde den (tillverka.ts)
 for (const k of TILLVERKA_LIST) { const d = TILLVERKA[k]; KLAR[d.act] = (s, p) => {
@@ -274,7 +281,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
     atSteg(s); stepSeder(s); updateTags(s); stepRelationer(s); stepUppvaxt(s); stepReligion(s); for (const p of living(s)) morkHumor(s, p); facklorTimme(s); stepHumor(s); stepDelning(s); stepLarlingar(s);
     stepVader(s); vindfallen(s); regnetTvattar(s); stepMotgang(s); stepTorka(s); stepFlod(s); stepIs(s); growGround(s, 1, ai); growFynd(s, 1, ai, vaxtFaktor(s)); forget(s, 1); stepRykten(s, moodOf); glomRykten(s, 1); stepBerattelser(s); stepStyre(s); rotStumps(s); tidyStore(s);
-    kvarTimme(s); kultTimme(s); wearBuild(s, 1, ai); stepByggnader(s); stepMjardar(s); stepNaken(s); stepByggplan(s); stepEldFlytt(s); stepPaborjat(s); stepStationer(s); stepPynt(s); stadaByten(s); stepBrasor(s); stepKlader(s); stepOdling(s);
+    vaggRensa(s); kvarTimme(s); kultTimme(s); kyrkaTimme(s); wearBuild(s, 1, ai); stepByggnader(s); stepMjardar(s); stepNaken(s); stepByggplan(s); stepEldFlytt(s); stepPaborjat(s); stepStationer(s); stepPynt(s); stadaByten(s); stepBrasor(s); stepKlader(s); stepOdling(s);
     askaSteg(s); // det svarta efter en eldsvåda försvinner (brand.ts)
     forbrukTimme(s); // materialens förbrukning glöms långsamt (forradsmal.ts, steg 6.2.14)
     arbetsTimme(s); // byns behov för arbetsordningen (val.ts, steg 6.1.12)

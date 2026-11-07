@@ -9,6 +9,7 @@ import { kortTal } from './format';
 import { ACTS, ACT_LIST } from './handlingar';
 import { sedOppen } from './styre';
 import { vikter } from './rost';
+import { andlighet } from './religion';
 import { UpplevelseTyp, upplevelseSed } from './uppvaxt';
 
 // ---------- balanstal (regel 8) ----------
@@ -67,6 +68,7 @@ const DEF = {
   krig: { pos: 'Krig', neg: 'Fred', effect: 'Om byn går i strid eller söker fred: Krig gör fler villiga att slåss.', dra: q => dev(q.aggression) * 0.7 + dev(q.mod) * 0.3 - dev(q.empati) * 0.5 }, // steg 8.4.11
   delning: { pos: 'Delning', neg: 'Ägande', effect: 'Om byn delar lika eller har rika och fattiga: Delning ger mer av det man skaffar till byn.', dra: q => dev(q.empati) * 0.8 - dev(q.intelligens) * 0.1 }, // steg 8.4.12
   natur: { pos: 'Bruka', neg: 'Värna', effect: 'Om naturen är till för att brukas: fällda träd och dödade djur ger sämre humör för dem som drar åt Värna.', dra: q => dev(q.flit) * 0.5 - dev(q.empati) * 0.5 }, // steg 8.4.13
+  andlig: { pos: 'Andlig', neg: 'Världslig', effect: 'Om makten kommer från folket eller från gudarna: Andlig flyttar vikt till prästerna, och kyrkan välsignar eller fördömer ledaren.', dra: q => dev(q.minne) * 0.05 }, // steg 8.6.1
   rang: { pos: 'Envälde', neg: 'Allmogen', effect: 'Hur mycket ledaren bestämmer: ledarens vikt i sederna och påbuden, och hur hårt ledaren straffar.', dra: q => (dev(q.mod) - dev(q.empati)) * SED.rangDra },
 } satisfies Record<string, SedDef>;
 export type Sed = keyof typeof DEF;
@@ -87,6 +89,7 @@ export function influence(s: State, p: Person) {
 export function drar(s: State, p: Person) {
   const barn = s.people.some(c => isParent(p, c)), d = nollor();
   for (const k of SED_LIST) d[k] = SEDER[k].dra(p.pot, barn);
+  d.andlig = (andlighet(s, p) - 50) / 50; // byns snitt av andlighet drar seden Världslig – Andlig (steg 8.6.1)
   for (const u of p.upp ?? []) {
     const e = upplevelseSed(u.k);
     if (e) for (const k in e) d[k as Sed] += e[k as Sed]! * SED.uppSteg;

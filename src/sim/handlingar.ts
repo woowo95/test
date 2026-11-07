@@ -121,11 +121,12 @@ const DEF = {
   // vården (steg 2.5.2, halsa.ts): platsen är den skadade, och den som inte kan gå bärs hem eller får vatten där hen ligger
   varda: { namn: 'Vårdar', tecken: '🩹', under: { back: 'bär den skadade' }, stilla: true, framme: true, fortsatter: ['brand', 'tornado', 'varg'] as const },
   // tron och graven (system 8.5, kult.ts och kvarlevor.ts)
-  be: { namn: 'Ber', tecken: '🙏', ikon: 'a_be', framme: true, stilla: true, skamfri: true },
-  ritual: { namn: 'Är med på en ritual', tecken: '🕯️', ikon: 'a_be', stilla: true, social: true, dygn: true },
-  begrava: { namn: 'Går för att ta hand om en död', tecken: '⚰️', ikon: 'a_be', framme: true, stilla: true },
+  hovbygge: { namn: 'Bygger hovet', slag: 'bygga', tungt: true, framme: true, stilla: true }, // steg 8.6.14
+  be: { namn: 'Ber', tecken: '✨', ikon: 'a_be', framme: true, stilla: true, skamfri: true },
+  ritual: { namn: 'Är med på en ritual', tecken: '✨', ikon: 'a_be', stilla: true, social: true, dygn: true },
+  begrava: { namn: 'Går för att ta hand om en död', tecken: '✨', ikon: 'a_be', framme: true, stilla: true },
   grava: { namn: 'Gräver en grav', slag: 'bygga', tungt: true, framme: true, stilla: true, redskap: { benspade: { tar: 'Tar benspaden.', haller: 40 } }, slits: { enhet: 'gravar', per: 'gang' } },
-  medvetslos: { namn: 'Ligger medvetslös', tecken: '😵', stilla: true, fortsatter: ['brand', 'tornado', 'varg'] as const, nodFri: true },
+  medvetslos: { namn: 'Ligger medvetslös', tecken: '✨', stilla: true, fortsatter: ['brand', 'tornado', 'varg'] as const, nodFri: true },
   buren: { namn: 'Bärs hem', tecken: '🫂', stilla: true, fortsatter: ['brand', 'tornado', 'varg'] as const, nodFri: true },
   fatt: { namn: 'Får vatten av de andra', tecken: '🥤', stilla: true, fortsatter: ['brand', 'tornado', 'varg'] as const },
   // vattensäcken (steg 2.10.1, torst.ts): fylls vid vattnet och bärs till den som inte kan gå. Den slits en gång per tur

@@ -203,6 +203,11 @@ export function workOn(s: State, p: Person, b: Bit, dtSec: number, har = 0) {
 }
 // ett fällt träd ligger inne i huset (steg 8.1.13); i en by utan yxa kan ingen hugga det, och då står huset ändå
 const stockInne = (s: State, h: Hus) => nTools(s, 'yxa') > 0 && (s.stockar ?? []).some(k => bitAt(s, Math.floor(k.x), Math.floor(k.y))?.hus === h.id);
+// en gång i timmen: det som ändå hamnat på en färdig vägg läggs bredvid (en lagerplats kan ha flyttat, steg 8.1.15)
+export function vaggRensa(s: State) {
+  for (const a of s.stackar ?? []) { const b = bitAt(s, a.x, a.y); if (b?.k === 'vagg' && b.b >= 1) { const f = freeNear(s, a.x, a.y, true); a.x = Math.floor(f.x); a.y = Math.floor(f.y); changed(s); } }
+  for (const t of tingOf(s)) { if (t.x === undefined || t.y === undefined || t.hos !== undefined || t.lass !== undefined) continue; const b = bitAt(s, t.x, t.y); if (b?.k === 'vagg' && b.b >= 1) { const f = freeNear(s, t.x, t.y, true); t.x = Math.floor(f.x); t.y = Math.floor(f.y); t.vid = undefined; } }
+}
 // huset är färdigt: alla bitar byggda och inga fällda träd kvar inne i det. Prövas när en bit blir klar och när en stock huggits slut
 export function husKlart(s: State, h: Hus, p: Person) {
   if (!h.klar && bitsOf(s).every(q => q.hus !== h.id || q.b >= 1) && !stockInne(s, h)) {
