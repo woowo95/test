@@ -10,6 +10,9 @@
 // bufferten är materialet ett behov under Försörjning, och över taket plockar ingen av det (eld.ts, val.ts, projekt.ts).
 // Målen räknas en gång i timmen med arbetarna (arbetsTimme i val.ts) och sparas i s.arbBehov, så att alla lägen räknar likadant.
 import { balans } from './balans';
+import { woodDays } from './eld';
+import { foodDaysAll } from './ekonomi';
+import { isFood } from './saker';
 import { ljusPlatser } from './ljus';
 import { allows, amountOf, rymd, zonesOf } from './lager';
 import { Pabud, pabud } from './styre';
@@ -153,6 +156,14 @@ export function materialBuffert(s: State, k: Materialslag, m = s.arbBehov?.mal?.
 export function materialTak(s: State, k: Materialslag) {
   const m = s.arbBehov?.mal?.[k], b = materialBuffert(s, k, m);
   return Math.max(b, Math.min(FORRAD.materialMatt * b, m?.t ?? Infinity));
+}
+// vill byn ha mer av slaget k än det har (steg 7.2.18)? Målen före begränsningen mot platsen: lagret görs större bara för det som
+// fattas upp till lyxtaket, inte för allt som råkar ligga bredvid
+export function villHaMer(s: State, k: string) {
+  if (k === 'ved' || k === 'grenar') return woodDays(s) < lyxtak(s, 'ved');
+  if (isFood(k)) return foodDaysAll(s) < lyxtak(s, 'mat');
+  if (k in MATERIALMAL) return amountOf(s, k) < FORRAD.materialMatt * Math.max(1, materialBuffert(s, k as Materialslag));
+  return true;
 }
 // är materialet under bufferten (ett behov), eller vid eller över taket (ingen plockar det)? Det man bär räknas med
 export const underBuffert = (s: State, k: Materialslag, extra = 0) => amountOf(s, k) + extra < materialBuffert(s, k);

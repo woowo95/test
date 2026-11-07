@@ -825,7 +825,6 @@ export function tidyStore(s: State) {
 }
 // Lagret är ett byggbehov (steg 7.2.18): det som inte fått plats ligger bredvid, och Byggplanen väljer mellan att göra en
 // lagerplats större, en ny lagerplats och ett förrådshus. Antalet lagerplatser har inget tak, utom marken själv
-export const lagerOver = (s: State) => overflow(s).length;
 export function lagerStorre(s: State) {
   const zs = zonesOf(s);
   let grew = -1;

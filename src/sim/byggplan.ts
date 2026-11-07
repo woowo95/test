@@ -6,7 +6,8 @@ import { groundOf } from './mark';
 import { PLATS, rektAvstand } from './plats';
 import { lekplats, paLek, stangerIn, stationRutor, storlekAv, uteStation } from './stationer';
 import { knows } from './teknik';
-import { amountOf, changed, lagerNy, lagerOver, lagerStorre, nearZone, ownMove, ownedAll, put, usable, zonesOf } from './lager';
+import { villHaMer } from './forradsmal';
+import { amountOf, changed, lagerNy, overflow, lagerStorre, nearZone, ownMove, ownedAll, put, usable, zonesOf } from './lager';
 import { tingOf } from './agande';
 import { FOREST, findPath } from './vag';
 import { Akut, BYGGNADER, Byggnad, FN, Fn, HUS, antalLika, fnId, fnOf, husNamn, sovHus, sovplatser, torkUte, vedUte } from './byggnader';
@@ -583,7 +584,7 @@ export function stepByggplan(s: State) {
 // lagret (steg 7.2.18): det som inte fått plats ligger bredvid. Byggplanen väger en större lagerplats mot en ny. Marken märks bara
 // ut, så det behövs ingen byggare, och det väntar inte på annat bygge
 export function planLager(s: State) {
-  if (!lagerOver(s)) return;
+  if (!overflow(s).some(a => villHaMer(s, a.k))) return;
   const u: ByggBehov = { fn: 'lagerplats', a: { v: 1, plats: 0 }, sc: 0 }, f = valj(s, u, () => true);
   if (f?.at === 'lagerNyA') { if (!lagerNy(s)) lagerStorre(s); } else if (!lagerStorre(s)) lagerNy(s);
 }
