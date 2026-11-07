@@ -200,7 +200,7 @@ for (const k of TILLVERKA_LIST) { const d = TILLVERKA[k]; KLAR[d.act] = (s, p) =
   if (sack) delete sack.fylld; // säcken töms men finns kvar (steg 7.6.6)
   if (p.task?.tool && d.verktyg) wearUsed(s, p, 1);
   for (const [q, n] of Object.entries(d.av)) takeMaterial(s, p, q, n);
-  put(s, d.ger, d.n, { [p.id]: d.n }); count(s, 'gjort_' + d.ger);
+  put(s, d.ger, d.n, { [p.id]: d.n });
   if (forstaGang(s, 'gjort_' + d.ger)) log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]);
 }; }
 MEDAN.vittja = (s, p, t) => { const m = mjardarOf(s).find(q => q.id === t.ref); if (m) vittja(s, p, m); t.until = s.now; };

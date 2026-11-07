@@ -695,7 +695,8 @@ SCENARIER.hardvinter = {
     SIM.UPPLEVELSER.hardVinter.chans = ch;
     const kron = v.hist?.kronika.some(([, t]) => /hård vinter/.test(t)) ?? false;
     const minns = barn.upp?.some(u => u.k === 'hardVinter');
-    const fs = (q: Person) => { const c = q.varsel; return c ? SIM.varselSamla(v!, { ...q, varsel: { ...c, t: v!.now + DAY } }) : 0; };
+    const varselet = living(v).find(q => q.varsel)?.varsel; // den äldsta kan ha dött i den hårda vintern
+    const fs = (q: Person) => varselet ? SIM.varselSamla(v!, { ...q, varsel: { ...varselet, t: v!.now + DAY } }) : 0;
     const merForsiktig = (() => { const q = gammal, s0 = v.seder.v.forsiktighet; v.seder.v.forsiktighet = 1; const hog = fs(q); v.seder.v.forsiktighet = -1; const lag = fs(q); v.seder.v.forsiktighet = s0; return hog > lag; })();
     return [
       [`ungefär var femte istid blir hård (${harda} av ${istider})`, harda > istider * 0.13 && harda < istider * 0.27],

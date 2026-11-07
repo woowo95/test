@@ -1035,7 +1035,7 @@ function flytta(s: State, t: Station, at: { x: number; y: number; rot?: 1; inne?
   t.x = at.x; t.y = at.y;
   if (at.rot) t.rot = 1; else delete t.rot;
   if (at.inne) t.inne = 1; else delete t.inne;
-  for (const k of tingOf(s)) if (k.vid === t.id && k.hos === undefined && k.lass === undefined) { k.x = t.x; k.y = t.y; }
+  for (const k of tingOf(s)) if (k.vid === t.id && k.hos === undefined && k.lass === undefined) Object.assign(k, vidRuta(t, k.k)); // var och en på sin ruta, inte alla på samma
   s.byggV = (s.byggV ?? 0) + 1; // stationen står på ett nytt ställe: vägarna och platserna räknas om
 }
 // stationerna som tagits bort: det som låg i dem (en kista, ett redskapsställ, stationens kniv) får en ny plats var, ett på
