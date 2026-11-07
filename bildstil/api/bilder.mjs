@@ -89,6 +89,7 @@ Bildstilens guide (regler för allt som ritas):
 - Mid century: dämpat, och starkt bara där det betyder något. De mättade tonerna sparas till det man ska se: elden, blodet, maten och det som går att ta.
 - Det man ska se syns först: saker har kontur och är ljusare än marken (gräset är oliv och barr i mellantoner), så att de syns på den.
 - Läsbart i liten storlek: hellre en tydlig silhuett och två eller tre toner än många små detaljer.
+- Stationerna ovanifrån: stationer, bänkar, bord, bäddar och härdar ses snett ovanifrån, som slaktbänken och borden. Arbetsytan (skivan, stocken, hällen) ritas ovanifrån och tar hälften till tre fjärdedelar av höjden; framkanten är ett smalt band på 2–3 punkter i en mörkare ton; bara de främre benen syns, som korta stumpar på 3–6 punkter; det som ligger på ytan ritas ovanifrån; höga delar (stolpar, ramar, en gryta) står upp vid bakkanten, förkortade. Aldrig rakt från sidan.
 
 Svara bara med JSON enligt schemat.`;
 }
