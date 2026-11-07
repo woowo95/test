@@ -127,17 +127,17 @@
   // ======================================================================================================
   // tra: ljus, mellan, mörk; grepp: lindningen mitt på; spets: ändarna; rep: strängen; rc: hur mycket ändarna böjer bakåt
   const BAGAR = [
-    { tra: ['d', 'c', 'b'], grepp: 'b', spets: 'b', rep: 'k', rc: 0, bula: 2.6 }, // 1: enkel självbåge av ljust virke
-    { tra: ['q', 'p', 'n'], grepp: 'a', spets: 'a', rep: 'l', rc: 0, bula: 2.4, band: 't' }, // 2: gul båge, lindat grepp, mörka ändar
-    { tra: ['c', 'b', 'a'], grepp: 'p', spets: 'k', rep: 'k', rc: 1.4, bula: 1.8 }, // 3: mörk, lång båge med bakåtböjda ändar
+    { tra: ['d', 'c', 'b'], grepp: 'b', spets: 'b', rep: 'k', rc: 0, bula: 4 }, // 1: enkel självbåge av ljust virke
+    { tra: ['q', 'p', 'n'], grepp: 'a', spets: 'a', rep: 'l', rc: 0, bula: 3.6, band: 't' }, // 2: gul båge, lindat grepp, mörka ändar
+    { tra: ['c', 'b', 'a'], grepp: 'p', spets: 'k', rep: 'k', rc: 1.6, bula: 2.8 }, // 3: mörk, lång båge med bakåtböjda ändar
   ];
   const BH = 22;
   const bageSak = (v) => {
-    const o = BAGAR[v], xs = 6.5, y0 = 0.8, y1 = BH - 0.8;
+    const o = BAGAR[v], xs = 7.5, y0 = 0.8, y1 = BH - 0.8;
     const ext = t => [o.rc ? -o.rc * Math.max(0, 1 - Math.min(t, 1 - t) / 0.14) ** 2 : 0, 0];
     const pts = kurva([xs, y0], [xs, y1], o.bula, 20, ext), stav = ror(pts, 0.9, 0.9);
     const topp = pts[0], botten = pts[pts.length - 1];
-    return former(9, BH, [
+    return former(10, BH, [
       [ror([[topp[0] + 0.2, topp[1] + 0.6], [botten[0] + 0.2, botten[1] - 0.6]], 0.45), o.rep],
       [(x, y) => !!stav(x, y), (x, y) => { const r = stav(x, y); if (r.t < 0.07 || r.t > 0.93) return o.spets; if (Math.abs(r.t - 0.5) < 0.07) return o.grepp; if (o.band && Math.abs(Math.abs(r.t - 0.5) - 0.1) < 0.02) return o.band; return ton3(r.ljus, ...o.tra, 0.2); }],
     ]);
@@ -152,7 +152,7 @@
     const o = BAGAR[v];
     return kort(text, bageSak(v), [
       ['fram', 'hanga', f => { const hand = f.las(2, 13); bageFig(f, v, [0, 5], [0, 20], 2); f.o(1, 13, hand); f.o(0, 13, hand); f.o(-1, 13, hand); }],
-      ['sida', 'framfor', f => { const hand = f.las(9, 10); bageFig(f, v, [11, 3], [11, 17], -2); f.o(10, 10, hand); f.o(11, 10, hand); f.o(12, 10, hand); }],
+      ['sida', 'framfor', f => { const hand = f.las(9, 10); bageFig(f, v, [11, 3], [11, 17], -2); f.o(10, 10, hand); }],
       ['bak', 'hanga', f => bageFig(f, v, [12, 1], [1, 16], 2, f.o, f.o)],
     ], p => {
       // på ryggen, snett bakom huvudet: syns nere till vänster och uppe till höger
@@ -174,7 +174,7 @@
   // spets: rader för flintspetsen (5 breda), A och B: fjädrarnas två sidor, skaft, band: ett färgat band under fjädrarna
   const PILAR = [
     { spets: ['..h..', '.hgf.', '.hgf.', '..g..'], A: 'l', B: 'k', skaft: 'c', rep: null }, // 1: grå flinta, ljusa fjädrar
-    { spets: ['..h..', '.hg..', '.hgf.', '.hgf.', '..g..'], A: 'y', B: 'x', skaft: 'd', band: 't', rep: 'p' }, // 2: mörka fjädrar, rött band, buntade med rep
+    { spets: ['..h..', '.hg..', '.hgf.', '.hgf.', '..g..'], A: 'g', B: 'f', skaft: 'd', band: 't', rep: 'p' }, // 2: grå fjädrar, rött band, buntade med rep
     { spets: ['..z..', '.zyx.', 'zyxxx', 'z...x'], A: 't', B: 's', skaft: 'c', rep: null, svart: true }, // 3: svart flinta med hullingar, röda fjädrar
   ];
   const pilRader = (v, langd) => {
@@ -201,7 +201,7 @@
       if (s >= 1.6 && s < 11 && Math.abs(d) >= 0.6 && Math.abs(d) < 3.1 - s * 0.12) return d < 0 ? o.A : o.B;
       if (o.band && s >= 11.5 && s < 13 && Math.abs(d) < 1.1) return o.band;
       if (o.rep && s >= 20 && s < 22 && Math.abs(d) < 1.3) return o.rep;
-      if (Math.abs(d) < 1) return d < 0 ? o.skaft === 'c' ? 'd' : 'q' : o.skaft;
+      if (Math.abs(d) < 1) return d < 0 ? (o.skaft === 'c' ? 'd' : 'l') : o.skaft;
       return null;
     });
   };
@@ -215,7 +215,7 @@
   };
   byt(KORT('f8_pil', 'Pilarna', 'Steg 8.7.6: pilarna av ved och flinta, ett eget kort. Till vänster tre pilar som sak, sedan bybon med pilarna i en bunt på ryggen (framifrån syns fjädrarna över axeln, från sidan bunten bakom ryggen och bakifrån hela bunten), och sist i porträttet med fjädrarna över axeln. Din kommentar förra gången: ”Gör tre olika versioner av varje objekt och hur det ser ut på en person och i porträtt”', [
     pilKort(0, 'Pilar med en grå flintspets och ljusa fjädrar.'),
-    pilKort(1, 'Pilar med mörka fjädrar och ett rött band under dem, buntade med ett rep.'),
+    pilKort(1, 'Pilar med grå fjädrar och ett rött band under dem, buntade med ett rep.'),
     pilKort(2, 'Pilar med en svart flintspets med hullingar och röda fjädrar.'),
   ]), 'f8_bage');
 
@@ -245,7 +245,7 @@
     return kort(text, slungSak(v), [
       ['fram', 'hanga', f => { sp(f.o, [`${R[0]}..`, `${R[0]}.${R[1]}`, `${R[1]}.${R[0]}`, `${P0[0]}${P0[1]}${P0[2]}`, `.${P0[2]}.`], 11, 14); }],
       ['sida', 'lyfta', f => { sp(f.o, [`...${P0[0]}${P0[1]}`, `..${R[0]}${P0[1]}${P0[2]}`, `.${R[1]}${R[0]}..`, `${R[0]}....`], 8, -4); f.o(13, -2, 'l'); f.o(12, -5, 'l'); }],
-      ['bak', 'hanga', f => { sp(f.o, [`${R[0]}`, `${P0[1]}${P0[2]}`, `${P0[2]}.`], 10, 12); }],
+      ['bak', 'hanga', f => { sp(f.o, [`${R[0]}.`, `${R[1]}${R[0]}`, `${P0[0]}${P0[1]}`, `${P0[2]}${P0[2]}`], 12, 11); }],
     ], p => {
       const rem = (x, y) => (Math.floor(x) + Math.floor(y)) % 2 ? R[0] : R[1];
       if (v === 0) { // runt halsen, med pungen på bröstet
@@ -301,10 +301,10 @@
       ['bak', 'hanga', f => { streck(3, 7, 10, 12).forEach(([x, y]) => f.p(x, y, rem)); hornFig(f.o, v, [[14, 13, 0], [13, 13, 0.3], [13, 14, 0.4], [12, 14, 0.6], [11, 14, 0.8], [10, 13, 0.95]]); }],
     ], p => {
       // hänger i en rem över axlarna, tvärs över bröstet
-      fyll(p.f, 2, 44, 61, 61, (x, y) => (ror([[11, 52], [18, 46]], 1)(x, y) || ror([[50, 53], [45, 46]], 1)(x, y)) ? rem : null);
-      const tub = ror([[9, 53], [16, 58.5], [27, 61], [39, 60], [49.5, 54.5]], 4.6, 1.3);
+      fyll(p.f, 2, 44, 61, 61, (x, y) => (ror([[13, 53], [19, 46]], 1)(x, y) || ror([[47, 54], [44, 46]], 1)(x, y)) ? rem : null);
+      const tub = ror([[11, 54], [17, 58.5], [27, 60.5], [38, 59.5], [47, 55]], 3.6, 1.1);
       fyll(p.f, 2, 44, 61, 61, (x, y) => { const r = tub(x, y); return r ? o.ton(r.t, r.ljus) : null; });
-      fyll(p.f, 2, 44, 61, 61, (x, y) => ell(8.2, 52.6, 1.8, 3.6)(x, y) ? 'x' : null);
+      fyll(p.f, 2, 44, 61, 61, (x, y) => ell(10.4, 53.6, 1.5, 2.8)(x, y) ? 'x' : null);
     });
   };
   byt(KORT('f8_horn', 'Hornet', 'Steg 8.7.11: hornet hörs över hela kartan. Hornet har nu ett eget kort med tre versioner (trumman har fått ett eget). Till vänster hornet som sak, sedan bybon på kartan med hornet i en rem vid höften framifrån, när han blåser i det från sidan och bakifrån, och sist i porträttet med hornet hängande över bröstet. Din kommentar förra gången: ”Gör tre versioner av varje objekt”', [
@@ -316,7 +316,7 @@
   // ======================================================================================================
   // 8.7.12 trumman
   // ======================================================================================================
-  // 1: en trumma med skinn och snören i sicksack; 2: en flat ramtrumma med målade tecken och en klubba av ben;
+  // 1: en trumma med skinn och snören i sicksack; 2: en flat ramtrumma med en målad sol och en klubba av ben;
   // 3: en urholkad stock med barken kvar och skinnet surrat med rep
   const trumSak = (v) => {
     if (v === 0) return former(16, 13, [
@@ -327,9 +327,8 @@
     if (v === 1) return former(20, 16, [
       [ell(7.5, 8, 6.2, 7.2), (x, y) => ell(7.5, 8, 5, 6)(x, y) ? null : (x < 5 ? 'c' : 'b')],
       [ell(7.5, 8, 5, 6), (x, y) => { const X = Math.floor(x), Y = Math.floor(y);
-        if ((X === 7 && Y >= 5 && Y <= 9) || (Y === 6 && X >= 6 && X <= 8) || (Y === 10 && (X === 6 || X === 8))) return 't'; // en människa
-        if ((X === 4 && Y === 4) || (X === 10 && Y === 4) || (X === 4 && Y === 12) || (X === 10 && Y === 12)) return 's'; // fyra prickar
-        if (Y === 8 && (X === 3 || X === 11)) return 't';
+        const sol = ['t.t.t', '.ttt.', 'tt.tt', '.ttt.', 't.t.t'][Y - 6]; if (sol && sol[X - 5] === 't') return 't'; // en sol
+        if ((X === 4 && Y === 3) || (X === 10 && Y === 3) || (X === 4 && Y === 13) || (X === 10 && Y === 13)) return 's'; // fyra prickar
         return x < 6 ? 'l' : x > 10 ? 'j' : 'k'; }],
       [ror([[15, 14], [18.2, 2.5]], 0.5), 'k'], [ell(18.4, 2, 1.1, 1.1), 'l'],
     ]);
@@ -356,22 +355,23 @@
         if (!ell(12, 50, 11, 13)(x, y)) return null;
         if (!ell(12, 50, 9, 11)(x, y)) return x < 9 ? 'c' : 'b';
         const X = Math.floor(x), Y = Math.floor(y);
-        if ((X === 12 && Y >= 44 && Y <= 54) || (Y === 47 && X >= 9 && X <= 15) || ((X === 10 || X === 14) && Y >= 55 && Y <= 57)) return 't';
-        if ((X === 6 && Y === 43) || (X === 18 && Y === 43) || (X === 7 && Y === 57) || (X === 17 && Y === 57)) return 's';
+        const d = Math.hypot(x - 12, y - 50), vinkel = Math.atan2(y - 50, x - 12) / (Math.PI / 4), straleV = Math.abs(vinkel - Math.round(vinkel)) < 0.12;
+        if ((d > 2.2 && d < 3.8) || (d > 5 && d < 7.6 && straleV)) return 't'; // solen och strålarna
+        if ([[6, 41], [18, 41], [6, 59], [18, 59]].some(([px, py]) => Math.hypot(x - px - 0.5, y - py - 0.5) < 1)) return 's';
         return x < 8 ? 'l' : x > 17 ? 'j' : 'k';
       });
       return;
     }
     // trumman framför bröstet i en rem över axlarna
-    const kropp = v === 0 ? (x, y) => { const k = Math.floor(x), r = Math.floor(y); return (k + r) % 6 === 0 || (k - r + 60) % 6 === 0 ? 'k' : x < 18 ? 'd' : x > 44 ? 'b' : 'c'; }
-      : (x, y) => { const X = Math.floor(x), Y = Math.floor(y); if (Y === 57 || Y === 58) return Y === 57 ? 'q' : 'p'; return (X * 7 + Math.floor(Y / 3) * 3) % 5 === 0 ? 'c' : x < 18 ? 'c' : x > 44 ? 'a' : 'b'; };
-    fyll(p.f, 2, 40, 61, 61, (x, y) => (ror([[16, 52], [20, 46]], 1)(x, y) || ror([[47, 52], [43, 46]], 1)(x, y)) ? 'a' : null);
-    fyll(p.f, 2, 40, 61, 61, (x, y) => x > 13 && x < 50 && y > 54 ? kropp(x, y) : null);
-    fyll(p.f, 2, 40, 61, 61, (x, y) => ell(31.5, 54, 18, 4.6)(x, y) ? (ell(31.5, 53.8, 16.5, 3.4)(x, y) ? (x < 26 ? 'l' : x > 42 ? 'j' : 'k') : v === 0 ? 'a' : 'j') : null);
+    const kropp = v === 0 ? (x, y) => { const k = Math.floor(x), r = Math.floor(y); return (k + r) % 6 === 0 || (k - r + 60) % 6 === 0 ? 'k' : x < 21 ? 'd' : x > 42 ? 'b' : 'c'; }
+      : (x, y) => { const X = Math.floor(x), Y = Math.floor(y); if (Y === 55 || Y === 56) return Y === 55 ? 'q' : 'p'; return (X * 7 + Math.floor(Y / 3) * 3) % 5 === 0 ? 'c' : x < 21 ? 'c' : x > 42 ? 'a' : 'b'; };
+    fyll(p.f, 2, 40, 61, 61, (x, y) => (ror([[19, 52], [21, 46]], 1)(x, y) || ror([[44, 52], [42, 46]], 1)(x, y)) ? 'a' : null);
+    fyll(p.f, 2, 40, 61, 61, (x, y) => x > 17 && x < 46 && y > 52 ? kropp(x, y) : null);
+    fyll(p.f, 2, 40, 61, 61, (x, y) => ell(31.5, 52, 14, 3.8)(x, y) ? (ell(31.5, 51.8, 12.6, 2.7)(x, y) ? (x < 27 ? 'l' : x > 40 ? 'j' : 'k') : v === 0 ? 'a' : 'j') : null);
   });
   byt(KORT('f8_trumma', 'Trumman', 'Steg 8.7.12: trumman hörs längre än ett rop. Trumman har nu ett eget kort med tre versioner. Till vänster trumman som sak, sedan bybon på kartan framifrån och från sidan, och sist i porträttet. Din kommentar förra gången: ”Gör tre versioner av varje objekt”', [
     trumKort(0, 'En trumma med skinn och snören i sicksack, som bärs framför magen.'),
-    trumKort(1, 'En flat ramtrumma med målade tecken och en klubba av ben. Han håller den i ena handen och slår med den andra.'),
+    trumKort(1, 'En flat ramtrumma med en målad sol och en klubba av ben. Han håller den i ena handen och slår med den andra.'),
     trumKort(2, 'En urholkad stock med barken kvar och skinnet surrat med gult rep.'),
   ]), 'f8_horn');
 
@@ -381,17 +381,20 @@
   const HJALM_SAK = gammal(['.....oooooo.....', '....obbbbbbo....', '...obcccccbbo...', '...obcccccbbo...', '...oooooooooo...', '...o........o...']);
   const hjalm = { text: 'Version 1, en enkel kalott med en kant: som sak, på bybon framifrån, från sidan och bakifrån, och i porträttet.' };
   Object.assign(hjalm, kort(hjalm.text, HJALM_SAK, [
-    ['fram', 'hanga', f => { sp(f.o, ['..dccb..', '.dcccccb', '.ccccccb', 'aaaaaaaa'], 2, -2); }],
-    ['sida', 'hanga', f => { sp(f.o, ['..dccb..', '.dcccccb', '.ccccccb', 'aaaaaaaa'], 3, -2); }],
-    ['bak', 'hanga', f => { sp(f.o, ['..dccb..', '.dcccccb', '.ccccccb', 'aaaaaaaa'], 2, -2); }],
+    ['fram', 'hanga', f => sp(f.o, ['..dccb..', '.dccccb.', 'baaaaaaa'], 3, -1)],
+    ['sida', 'hanga', f => sp(f.o, ['..dccb..', '.dccccb.', 'baaaaaaa'], 4, -1)],
+    ['bak', 'hanga', f => sp(f.o, ['..dccb..', '.dccccb.', 'baaaaaaa'], 3, -1)],
   ], p => {
     // kalotten över skallen, med en mörk kant över pannan
+    // kalotten är sydd av fyra stycken: sömmarna går från kanten upp mot hjässan
     fyll(p.f, 2, 2, 61, 26, (x, y) => {
       if (y > 23.5) return null;
-      if (y > 19.5 && x > 9 && x < 54) return y > 22.5 ? 'a' : 'b';
-      if (!ell(31.5, 21, 20.5, 17.5)(x, y)) return null;
-      const u = (x - 11) / 41;
-      return u < 0.2 ? 'd' : u > 0.78 ? 'b' : (Math.floor(x) * 3 + Math.floor(y) * 5) % 23 === 0 ? 'b' : 'c';
+      if (y > 20 && x > 11 && x < 52) return y > 22.5 ? 'a' : x < 16 ? 'c' : 'b'; // kanten
+      if (!ell(31.5, 21.5, 19, 16.5)(x, y)) return null;
+      const u = (x - 12.5) / 38, som = [-0.55, 0, 0.55].some(k => Math.abs((x - 31.5) - k * 19 * Math.sqrt(Math.max(0, 1 - ((21.5 - y) / 16.5) ** 2))) < 0.6);
+      if (som && y > 7) return 'b';
+      if (ell(24, 12, 5, 3.5)(x, y)) return 'd'; // ljuset uppe till vänster
+      return u < 0.16 ? 'd' : u > 0.8 ? 'b' : 'c';
     });
   }));
   byt(JANEJ('f8_hjalm', 'Läderhjälmen', 'Steg 8.7.2: av 2 läder och 1 rep. Tar bort en del av slagen mot huvudet. Du valde version 1; här är den på bybon på kartan och i porträttet. Din kommentar förra gången: ”Visa hur den ser ut på en person och i porträttet”', hjalm), 'f8_hjalm');
@@ -414,11 +417,13 @@
     fyll(p.r, 2, 48, 61, 61, (x, y) => {
       const X = Math.floor(x), Y = Math.floor(y);
       if (Y <= 49) return Y === 48 ? 'a' : 'b'; // kragen
-      const rad = Math.floor((Y - 50) / 4), u = ((X + (rad % 2 ? 3 : 0)) % 6 + 6) % 6, w = (Y - 50) % 4;
-      if (X < 13 || X > 50) return w === 3 ? 'a' : u === 0 ? 'b' : w === 0 ? 'c' : 'b'; // axelskydden
-      if (w === 3 && u > 0 && u < 5) return 'a';
-      if (u === 0) return 'a';
-      return w === 0 && u < 3 ? 'd' : u > 3 ? 'b' : 'c';
+      const rad = Math.floor((Y - 50) / 4), u = ((X + (rad % 2 ? 3 : 0)) % 6 + 6) % 6 + 0.5, w = (Y - 50) % 4 + 0.5;
+      const axel = X < 14 || X > 49; // axelskydden: en ton mörkare
+      const inne = ((u - 3) / 2.9) ** 2 + ((w + 0.6) / 4.2) ** 2 <= 1, kant = ((u - 3) / 2.1) ** 2 + ((w + 0.6) / 3.3) ** 2 > 1;
+      if (!inne) return 'a';
+      if (kant) return axel ? 'a' : 'b';
+      if (axel) return u < 3 ? 'c' : 'b';
+      return u < 2.5 && w < 2 ? 'd' : u > 4 ? 'b' : 'c';
     });
   });
   byt(JANEJ('f8_rustning', 'Läderrustningen', 'Steg 8.7.1: av 4 läder och 2 rep, på platsen yttre. Skyddar bålen och armarna. Du valde version 2; här är den på bybon på kartan och i porträttet. Din kommentar förra gången: ”Visa hur den ser ut på en person och i porträttet”', rustning), 'f8_rustning');
@@ -430,7 +435,7 @@
     ['....oooooooo....', '...occccccccо...'.replace('о', 'o'), '..occccyyccccо..'.replace('о', 'o'), '..occcyyyycccо..'.replace('о', 'o'), '..occccyyccccо..'.replace('о', 'o'), '...occccccccо...'.replace('о', 'o'), '....oooooooo....'],
     ['...oooooooooo...', '...occdccdccо...'.replace('о', 'o'), '...occdccdccо...'.replace('о', 'o'), '...occdccdccо...'.replace('о', 'o'), '...occdccdccо...'.replace('о', 'o'), '...occdccdccо...'.replace('о', 'o'), '...oooooooooo...'],
     ['....oooooooo....', '...orrrrcccco...', '..orrrrrccccco..', '..orrrrrccccco..', '..orrrrrccccco..', '...orrrrcccco...', '....oooooooo....'],
-  ].map(r => gammal(r).map(s => s.replace(/^\.\.\./, '').replace(/\.\.\.$/, '')));
+  ].map(gammal);
   // på kartan framifrån och bakifrån (8 × 8 med kontur) och från sidan (kanten)
   const SKOLD_FIG = [
     ['..oooo..', '.odccbo.', 'odccccbo', 'odcppcbo', 'odcppcbo', 'odccccbo', '.occbbo.', '..oooo..'],
@@ -448,11 +453,11 @@
     ['bak', 'hanga', f => sp(f.o, SKOLD_FIG[v], v === 1 ? 3 : 3, 7)],
   ], p => {
     // skölden hålls upp framför bröstet, nere till vänster
-    const cx = 11, cy = 63, R = 18;
+    const cx = 9, cy = 64, R = 18;
     if (v === 1) {
       fyll(p.f, 2, 40, 28, 61, (x, y) => {
-        if (x > 27 || y < 42) return null;
-        if (x > 25.5 || y < 43.5) return 'a';
+        if (x > 25 || y < 45) return null;
+        if (x > 23.5 || y < 46.5) return 'a';
         const k = Math.floor(x - 2) % 6; return k === 5 ? 'b' : k === 0 ? 'd' : 'c';
       });
       return;
@@ -461,8 +466,8 @@
       const d = Math.hypot(x - cx, y - cy); if (d > R) return null;
       if (d > R - 1.6) return 'a';
       if (v === 0 && d < 4.5) return d < 2.5 ? 'q' : x < cx ? 'p' : 'n';
-      if (v === 2 && x < cx) return d > R - 3 ? 's' : 't';
-      const k = Math.floor(x - 1) % 6; return k === 5 ? 'b' : x < 12 ? 'd' : 'c';
+      if (v === 2 && x < cx + 4) return d > R - 3 ? 's' : 't';
+      const k = Math.floor(x - 1) % 6; return k === 5 ? 'b' : k === 0 ? 'd' : 'c';
     });
   });
   byt(KORT('f8_skold', 'Skölden', 'Steg 8.7.3: av 3 ved och 1 rep, hålls i en hand och slits som ett redskap. Samma tre versioner som förut, var och en också på bybon på kartan (i handen framifrån, framför sig från sidan och på ryggen bakifrån) och i porträttet, där han håller upp den framför bröstet. Din kommentar förra gången: ”Visa hur den ser ut på en person och i porträttet”', [
