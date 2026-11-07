@@ -86,7 +86,7 @@
     { // 1: ett tvinnat rep som i spelet, med två små krokar av böjda grenar vid höfterna
       sak: () => [ring(18, 9, (x, y) => (Math.floor(x) + Math.floor(y)) % 2 ? 'R' : 'r', [krok(5.5, 7, 'k'), krok(11.5, 7, 'k')]), { R: 'senap2', r: 'senap1', k: 'jord1' }],
       lager: balteLager([11], (x) => x % 2 ? 'senap2' : 'senap1', {
-        fram: { pa: [[4, 12, 'jord1'], [9, 12, 'jord1']] }, bak: { pa: [[4, 12, 'jord1'], [9, 12, 'jord1']] }, sida: { pa: [[8, 12, 'jord1']] } }),
+        fram: { pa: [[4, 12, 'jord3'], [9, 12, 'jord3']] }, bak: { pa: [[4, 12, 'jord3'], [9, 12, 'jord3']] }, sida: { pa: [[8, 12, 'jord3']] } }),
     },
     { // 2: ett brett bälte av mörkt skinn med ett spänne av ben framtill
       sak: () => [ring(18, 9, (x, y) => y < 2.5 ? 'L' : y > 6.5 ? 'm' : 'l', [[rakt(7.5, 6, 10.5, 9), (x, y) => y < 7 || x < 8.5 ? 'B' : 'b']]), { L: 'jord1', l: 'jord0', m: 'kol1', B: 'ben3', b: 'ben1' }],
@@ -237,16 +237,19 @@
   };
   // mössan i porträttet: huvudet når från rad 7 till hakan vid rad 47, x 13–51; pannan börjar vid rad 16
   const pmossa = (v) => {
+    const fur = (mat, x0, x1, seed) => (x, y) => { const r = hash(Math.floor(x), Math.floor(y), seed), t = sida(x, x0, x1); return T(mat, r < 0.16 ? t + 1 : r > 0.86 ? t - 1 : t); };
     if (v === 0) return PORT([ // rund av kaninskinn med öronlappar och band som knyts under hakan
-      [och(utan(ell(32, 20, 21, 16.5), (x, y) => y > 20), rakt(11, 18, 20, 36), rakt(44, 18, 53, 36), ell(15.5, 36, 4.5, 3), ell(48.5, 36, 4.5, 3)), (x, y) => { const s = x < 32 ? 0 : 1, t = x < 20 ? (s ? 1 : 3) : x > 44 ? 1 : sida(x, 11, 53), r = hash(Math.floor(x), Math.floor(y), 6); return T('kanin', y > 22 && (x < 20 || x > 44) ? (x < 14 || (x > 44 && x < 47) ? 3 : x > 50 || (x > 17 && x < 20) ? 1 : 2) + (r < 0.16 ? 1 : r > 0.86 ? -1 : 0) : t + (r < 0.16 ? 1 : r > 0.86 ? -1 : 0)); }],
-      [utan(och(rakt(11, 16, 53, 21), rakt(11, 16, 20, 23), rakt(44, 16, 53, 23)), rakt(20, 21, 44, 30)), (x, y) => (Math.floor(x / 2) % 3 ? 'd' : 'c')],
+      [och(utan(ell(32, 21, 20.5, 17), (x, y) => y > 21), poly([[11.5, 20], [20.5, 20], [20.5, 30], [18.5, 37.5], [14, 37.5], [11.5, 32]]), poly([[43.5, 20], [52.5, 20], [52.5, 32], [50, 37.5], [45.5, 37.5], [43.5, 30]])), fur('kanin', 11, 53, 6)],
+      [utan(rakt(11.5, 16, 52.5, 22), rakt(20.5, 20, 43.5, 30)), (x, y) => { const r = hash(Math.floor(x), Math.floor(y), 9); return y < 17 ? 'd' : x > 46 ? (r < 0.5 ? 'b' : 'c') : r < 0.6 ? 'd' : 'c'; }],
     ], [
-      [och(linje([[15.5, 39], [20, 45], [28, 49.5], [31, 50]], 0.6), linje([[48.5, 39], [44, 45], [36, 49.5], [33, 50]], 0.6)), (x, y) => (Math.floor(x) + Math.floor(y)) % 2 ? 'k' : 'j'],
-      [och(rakt(31, 49, 33, 51)), 'l'], [och(punkt(31, 51), punkt(32, 52), punkt(33, 51)), 'j'],
+      [och(linje([[16, 38], [19, 44], [26, 48.6], [31, 49.5]], 0.6), linje([[48, 38], [45, 44], [38, 48.6], [33, 49.5]], 0.6)), (x, y) => (x > 32 ? 'a' : 'b')],
+      [och(rakt(30.5, 49, 33.5, 51), punkt(30, 51), punkt(33, 51), punkt(30, 52), punkt(34, 52)), (x, y) => (y < 50 ? 'b' : 'a')],
     ], { har: 5 });
     if (v === 1) return PORT([ // hög och spetsig av vargskinn, toppen faller åt sidan
-      [och(poly([[11, 21], [13, 11], [19, 5], [27, 2.5], [37, 2.5], [45, 5], [51, 11], [53, 21]]), linje([[40, 4], [49, 3], [55, 6], [57.5, 12], [57.5, 17]], 4.2, 2)), (x, y) => { const r = hash(Math.floor(x), Math.floor(y), 41); const t = x > 53 ? (x < 56 ? 2 : 1) : sida(x, 11, 53); return T('varg', r < 0.16 ? t + 1 : r > 0.86 ? t - 1 : t); }],
-      [ell(57.5, 20, 2.6, 2.6), (x, y) => (x < 57 && y < 20 ? 'h' : 'g')],
+      [och(poly([[11, 21], [14, 13], [20, 7], [28, 3.5], [37, 3], [43, 6], [48, 12], [53, 21]]), linje([[34, 4], [44, 2.8], [52, 4.5], [57, 9], [58.5, 15], [58, 20]], 3.6, 1.6)), (x, y) => {
+        const r = hash(Math.floor(x), Math.floor(y), 41), skugga = x > 43 && y > 7 && y < 14 && x < 53; // skuggan under toppen som faller ner
+        const t = skugga ? 1 : x > 54 ? (x < 57 ? 2 : 1) : sida(x, 11, 53); return T('varg', r < 0.16 ? t + 1 : r > 0.86 ? t - 1 : t); }],
+      [ell(57.8, 22, 2.4, 2.4), (x, y) => (x < 57.5 && y < 22 ? 'h' : 'g')],
       [och(rakt(10, 16, 54, 22), ell(32, 16, 22, 2)), (x, y) => (hash(Math.floor(x / 2), Math.floor(y), 12) < 0.5 ? 'h' : 'g')],
       [rakt(10, 21, 54, 22), (x) => (x > 46 ? 'e' : 'f')],
     ], [], { har: 5 });
@@ -276,10 +279,11 @@
   const snoSak = () => { const s = SNOSKO, w = bredd(s); return ytter(s.map(r => r.padEnd(w, '.') + '.' + r.padEnd(w, '.'))); };
   // en sko per fot: [rader, x för radens första punkt per fot, första raden]. Punkterna ritas bara där figuren inte är
   // (benen och fötterna står framför skon), och under fötterna överallt
+  // 'l' är snön som syns i hålen i flätan
   const SNOVY = {
-    fram: { rader: ['.cbb.', 'ck.kb', 'c.k.b', 'cdddb', 'ckjkb', 'cjkjb', '.abb.'], x: [2, 7], y: 16 },
-    bak: { rader: ['.cbb.', 'ck.kb', 'c.k.b', 'ckjkb', 'cdddb', '.cfb.', '.ckb.', '.jkj.', '..b..'], x: [2, 7], y: 14 },
-    sida: { rader: ['.................cb', '..cbbbbbbbbbbbbbbb.', 'jkcdkjkjkjkjkdkjkb.', '..abbbbbbbbbbbbbba.'], x: [-3], y: 18 },
+    fram: { rader: ['.cbbb.', 'cklklb', 'cddddb', 'cklklb', 'clklkb', '.abba.'], x: [1, 7], y: 17 },
+    bak: { rader: ['.cbbb.', 'cklklb', 'clklkb', 'cddddb', '.cklb.', '..ckb.', '..jkj.', '...b..'], x: [1, 7], y: 15 },
+    sida: { rader: ['....cbbbbbbbbbb..', '..cbklklklklklkbb', 'jkcdlklkdklklklkb', '...abbbbbbbbbbba.'], x: [-2], y: 18 },
   };
   const snoFig = (rikt) => (satt, las, P, C) => {
     const V = SNOVY[rikt];
@@ -320,17 +324,17 @@
   };
   // halsbandet i porträttet: repet i en båge runt halsens nederdel, ner över rocken, och de tre sakerna längst ner
   const phals = (v) => {
-    const o = HALS[v], lista = [[utan(ell(32, 43, 13, 13.5), ell(32, 43, 11.4, 12)), (x, y) => (y < 47 ? null : rep(x, y))]];
-    const fasten = [[24, 53], [32, 56], [40, 53]];
+    const o = HALS[v], lista = [[utan(ell(32, 41, 13, 12.5), ell(32, 41, 11.4, 11)), (x, y) => (y < 46 ? null : rep(x, y))]];
+    const fasten = [[24, 50], [32, 52.5], [40, 50]];
     o.delar.forEach((d, n) => {
       const [x0, y0] = fasten[n], ljus = (x, y, mork) => (x < x0 - 0.5 ? 'l' : x > x0 + 0.5 ? 'j' : y > y0 + mork ? 'j' : 'k');
       // benet: en knöl i varje ände och en smal mitt; tanden: roten upptill och en böjd spets; den stora tanden är längre
       if (d === 'ben') lista.push([och(ell(x0, y0 + 0.5, 2, 1.3), rakt(x0 - 0.8, y0, x0 + 0.8, y0 + 4.5), ell(x0, y0 + 4.5, 2, 1.3)), (x, y) => ljus(x, y, 3.5)]);
       if (d === 'tand') lista.push([och(rakt(x0 - 1.5, y0, x0 + 1.5, y0 + 2), poly([[x0 - 1.5, y0 + 1.5], [x0 + 1.5, y0 + 1.5], [x0 + 0.8, y0 + 5], [x0 - 0.2, y0 + 6.5]])), (x, y) => (y < y0 + 1 ? 'q' : ljus(x, y, 4))]);
-      if (d === 'tandL') lista.push([och(rakt(x0 - 2, y0, x0 + 2, y0 + 2.5), poly([[x0 - 2, y0 + 2], [x0 + 2, y0 + 2], [x0 + 1.4, y0 + 6], [x0 + 0.4, y0 + 8.5], [x0 - 0.6, y0 + 9.5]])), (x, y) => (y < y0 + 1.2 ? 'q' : ljus(x, y, 6))]);
+      if (d === 'tandL') lista.push([och(rakt(x0 - 2, y0, x0 + 2, y0 + 2.5), poly([[x0 - 2, y0 + 2], [x0 + 2, y0 + 2], [x0 + 1.4, y0 + 5.5], [x0 + 0.4, y0 + 7.5], [x0 - 0.6, y0 + 8.5]])), (x, y) => (y < y0 + 1.2 ? 'q' : ljus(x, y, 5))]);
     });
-    const tunt = o.knut ? [[och(rakt(27.5, 54.5, 29, 56), rakt(35, 54.5, 36.5, 56), rakt(20, 50, 21.5, 51.5), rakt(42.5, 50, 44, 51.5)), 'a']] : [];
-    return PORT(lista, tunt, { hud: 3 });
+    const tunt = o.knut ? [[och(rakt(27.5, 51, 29, 52.5), rakt(35, 51, 36.5, 52.5), rakt(20.5, 47.5, 22, 49), rakt(42, 47.5, 43.5, 49)), 'a']] : [];
+    return PORT(lista, tunt, { hud: 3, har: 1 });
   };
   byt(KORT('f7_halsband', 'Halsbandet', 'Steg 7.7.5: ett halsband av rep med tre ben eller tre vargtänder, en prydnad. Samma tre halsband som förut, och nu också i porträttet. Bilden visar halsbandet som sak, på en bybo på kartan och i porträttet. Din kommentar förra gången: "Visa hur det ser ut i porträtten"', [
     SCEN(HALS[0].text, halsSak(0), [[halsFig(0), 4242]], { port: phals(0) }),

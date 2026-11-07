@@ -25,12 +25,12 @@
     const ikon = (B, k, x, y, s = 1) => { const r = IKONER.PIX[k], pal = IKONER.PAL[k] || {}; if (!r) return; const n = Math.round(r[0].length * s);
       for (let ty = 0; ty < n; ty++) for (let tx = 0; tx < n; tx++) { const ch = r[Math.floor(ty / s)][Math.floor(tx / s)], c = pal[ch]; if (ch === '.' || !c) continue; if (c.startsWith('rgba')) B.morka(x + tx, y + ty); else B.satt(x + tx, y + ty, B.P.fran(c)); } };
     const GRODD = [
-      '.....hH.',
-      '....LLHh',
-      '...LGGL.',
-      'LLLgg...',
-      '.GGg....',
-      '...g....',
+      '.....LLh',
+      '....LGGH',
+      '...gGGL.',
+      '.LLg....',
+      'LGGg....',
+      '.GLg....',
       '...g....',
       '..dJd...',
     ];
@@ -91,7 +91,7 @@
     // storleken och förskjutningen där typsnittets former hamnar bäst på hela punkter (prövat: minst halvtäckta punkter)
     const STORLEK = 10.8125, DX = 0.375, DY = -0.125, K = 8, RAD = 12, BAS = 9; // radavståndet och baslinjen i raden (punkter från radens topp)
     const typsnitt = s => s + 'px "Pixelify Sans"';
-    const RADER = ['Ved 12', 'Hälsa 85 %', 'Dag 3, 14:05', 'Bär 2 ved, 16 vikt', 'Torkat kött 1038'];
+    const RADER = ['Ved 12', 'Hälsa 85 %', 'Dag 3, 14:05', 'Mat för 6 dagar', 'Torkat kött 1038'];
     let duk = null;
     const harTypsnitt = () => { try { return document.fonts.check(typsnitt(16)); } catch (e) { return false; } };
     // texten t i Pixelify Sans med vänsterkanten i x och foten på raden ovanför y; ger bredden i punkter. Texten skrivs
@@ -103,12 +103,12 @@
       const bred = Math.round(g.measureText(t).width), w = bred + 3, hog = 16;
       duk.width = w * K; duk.height = hog * K; g.font = typsnitt(STORLEK * K); g.fillStyle = '#000'; g.textBaseline = 'alphabetic';
       g.fillText(t, DX * K, (12 + DY) * K);
-      const d = g.getImageData(0, 0, w * K, hog * K).data;
+      const d = g.getImageData(0, 0, w * K, hog * K).data; let hoger = -1;
       for (let yy = 0; yy < hog; yy++) for (let xx = 0; xx < w; xx++) {
         let s = 0; for (let a = 0; a < K; a++) for (let b = 0; b < K; b++) s += d[((yy * K + a) * w * K + xx * K + b) * 4 + 3];
-        if (s >= K * K * 255 / 2) B.satt(x + xx, y - 12 + yy, farg);
+        if (s >= K * K * 255 / 2) { B.satt(x + xx, y - 12 + yy, farg); hoger = Math.max(hoger, xx); }
       }
-      return bred;
+      return t.endsWith(' ') ? Math.max(bred, hoger + 4) : Math.max(bred, hoger + 2); // ett ordmellanrum före siffrorna
     }
     const SIFFROR = (text, F) => {
       const w = 124, h = RADER.length * RAD + 8;
@@ -142,7 +142,7 @@
   // färgerna steg för steg mot det torra: köttet mot det torkade köttets bruna färger i lagret, fisken mot gråbrunt
   {
     const HALV = {
-      '#521100': '#3f2415', '#742a01': '#521100', '#a14808': '#742a01', '#bd753e': '#a14808', '#dad0bb': '#bdb39b', '#bdb39b': '#a0947d', '#a0947d': '#987e62',
+      '#521100': '#3f2415', '#742a01': '#521100', '#a14808': '#5e3c24', '#bd753e': '#7d5b40', '#dad0bb': '#bdb39b', '#bdb39b': '#a0947d', '#a0947d': '#987e62',
       '#898b4c': '#647025', '#647025': '#4b4f00', '#353204': '#353204',
     };
     const TORR = {

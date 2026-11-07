@@ -163,29 +163,36 @@
   byt(KORT('f8_mantel', 'Ledarens mantel', 'Steg 8.3.14: en mantel som byn gör åt ledaren när hen suttit en tidsålder och har mer än hälften av legitimiteten. Den värmer som en kappa, ger anseende och följer ämbetet till nästa ledare. Samma tre mantlar som förut, nu också på en bybo: till vänster manteln som sak, sedan bybon på kartan framifrån, från sidan, bakifrån och åt väster, och sist i porträttet. Din kommentar förra gången: "Rita den på en person så jag kan se hur det kommer se ut".', MANTLAR.map(mantelVersion)));
 
   // ---------- 8.5.1 graven: en enkel gravsten ----------
-  // en jordkulle (en ruta lång) med en sten i huvudänden. j/J/k jorden (jord0–2), T/S/s stenen (skiffer3–1), G gräs
-  const GL = { j: 'jord0', J: 'jord1', k: 'jord2', T: 'skiffer3', S: 'skiffer2', s: 'skiffer1', G: 'oliv2', g: 'oliv1' };
-  const kulle = (cy = 15) => [ell(9, cy, 7.6, 3.3), (x, y) => y < cy - 2 ? 'k' : y > cy + 1.8 ? 'j' : hash(Math.floor(x), Math.floor(y), 4) < 0.15 ? 'k' : 'J'];
-  const sten = (x, y, a, b) => x < a ? 'T' : x > b ? 's' : 'S';
+  // en avlång jordkulle (en ruta) sedd snett ovanifrån, med en sten som står i huvudänden bakom den.
+  // j/J/k jorden (jord0–2), T/S/s stenen (skiffer3–1), g mossa (oliv1)
+  const GL = { j: 'jord0', J: 'jord1', k: 'jord2', T: 'skiffer3', S: 'skiffer2', s: 'skiffer1', g: 'oliv1' };
+  // kullen: en rundad rektangel, ljusare upptill och till vänster, mörkare nedtill och till höger; kanten upptill får en
+  // mörk kontur mot stenen bakom
+  const rr = (x0, y0, x1, y1, r) => (x, y) => { const cx = Math.max(x0 + r, Math.min(x1 - r, x)), cy = Math.max(y0 + r, Math.min(y1 - r, y)); return (x - cx) ** 2 + (y - cy) ** 2 <= r * r; };
+  const KU = rr(3.5, 11.5, 14.5, 25.5, 3.2), KU1 = rr(2.5, 10.5, 15.5, 26.5, 4.2);
+  const kulle = [
+    [(x, y) => KU1(x, y) && !KU(x, y) && y < 12.5 && x > 3.5 && x < 14.5, 'o'],
+    [KU, (x, y) => { const u = (x - 9) / 5.5, v = (y - 18.5) / 7; return u > 0.62 || v > 0.84 ? 'j' : ((x - 7.6) / 2.4) ** 2 + ((y - 17) / 6) ** 2 < 1 ? 'k' : hash(Math.floor(x), Math.floor(y), 4) < 0.14 ? 'k' : 'J'; }],
+  ];
+  const sten = (a, b) => (x) => x < a ? 'T' : x > b ? 's' : 'S';
   const GRAVAR = [
-    { text: 'En upprest sten med rundad topp, i huvudänden av jordkullen.', rader: () => former(19, 20, [
-      kulle(15.5),
-      [och(rakt(5.5, 4, 12.5, 14), ell(9, 4.5, 3.5, 3)), (x, y) => sten(x, y, 7, 11)],
-      [rakt(5.5, 13, 12.5, 14), 's'],
+    { text: 'En upprest sten med rundad topp.', rader: () => former(19, 26, [
+      [och(rakt(6, 4.5, 12, 13), ell(9, 4.8, 3, 2.8)), sten(7, 10.8)],
+      ...kulle,
     ]) },
-    { text: 'En grov, otuktad sten som står lite snett, med mossa vid foten.', rader: () => former(19, 20, [
-      kulle(15.5),
-      [poly([[6, 14], [5.5, 7], [7, 3], [9.5, 1.5], [11.5, 3.5], [12.5, 9], [12, 14]]), (x, y) => y > 12.5 && hash(Math.floor(x), 1, 2) < 0.6 ? 'g' : sten(x, y, 7.5 + (y < 5 ? 1 : 0), 10.5)],
+    { text: 'En grov, otuktad sten som står lite snett, med mossa vid foten.', rader: () => former(19, 26, [
+      [poly([[6, 13], [5.6, 7.5], [6.8, 4], [9.2, 2.2], [11.6, 4.2], [12.4, 8.5], [12, 13]]), (x, y) => y > 10 && hash(Math.floor(x), Math.floor(y), 2) < 0.5 ? 'g' : sten(7.5 + (y < 5 ? 1 : 0), 10.6)(x)],
+      ...kulle,
     ]) },
-    { text: 'En låg, bred sten med ett enkelt streck ristat i, och några småstenar på kullen.', rader: () => former(19, 20, [
-      kulle(15),
-      [och(rakt(3.5, 7, 14.5, 13), ell(9, 7.5, 5.5, 1.6)), (x, y) => sten(x, y, 5, 13)],
-      [rakt(6.5, 9.5, 11.5, 10.5), 's'],
-      [och(ell(5, 15.5, 0.9, 0.8), ell(13, 16, 0.9, 0.8), ell(9.5, 17, 0.9, 0.8)), 'T'],
+    { text: 'En låg, bred sten med ett enkelt streck ristat i, och några småstenar på kullen.', rader: () => former(19, 26, [
+      [och(rakt(4.5, 7, 13.5, 13), ell(9, 7.2, 4.5, 1.5)), sten(6, 12)],
+      [rakt(6.5, 9, 11.5, 10), 's'],
+      ...kulle,
+      [och(ell(6.5, 18, 0.9, 0.8), ell(11.5, 16.5, 0.9, 0.8), ell(9.5, 21, 0.9, 0.8)), 'T'],
     ]) },
   ];
-  const gravVersion = V => ({ text: V.text, w: 28, h: 28, rita: B => { gras(B); lagg(B, V.rader(), GL, 4, 4, true); } });
-  byt({ ...KORT('f8_grav', 'Graven', 'Steg 8.5.1: graven är en ruta på gravplatsen, som 10.1.3 bygger vidare på. Nu tre enkla gravstenar, var och en i huvudänden av en jordkulle. Din kommentar förra gången: "Gör en enkel gravsten."', GRAVAR.map(gravVersion)) });
+  const gravVersion = V => ({ text: V.text, w: 27, h: 32, rita: B => { gras(B); lagg(B, V.rader(), GL, 4, 3, true); } });
+  byt(KORT('f8_grav', 'Graven', 'Steg 8.5.1: graven är en ruta på gravplatsen, som 10.1.3 bygger vidare på. Nu tre enkla gravstenar, var och en i huvudänden av en jordkulle. Din kommentar förra gången: "Gör en enkel gravsten."', GRAVAR.map(gravVersion)));
 
   // ---------- 8.5.1 den döda kroppen ----------
   // Ritas ur personens vanliga kartfigur (samma mall, hår, kläder och hud), med en regel som gäller vilken figur som helst:
@@ -229,17 +236,20 @@
   };
   // färgerna: f = [ljushet, färgmättnad] gånger det den var; varje punkt (utom konturen) får närmaste färg i paletten
   const om = (P, c, f) => { const [L, a, b] = P.cols[c].lab; return P.near([L * f[0], a * f[1], b * f[1]]); };
-  const omfarga = (F, P, hud, ovrigt, arHud) => ({ ...F, px: F.px.map((c, i) => c < 0 || c === P.i('kol', 0) ? c : arHud[i] ? om(P, c, hud) : ovrigt ? om(P, c, ovrigt) : c) });
+  // huden: samma ljushet (gånger k) men i de gråa tonerna, skifferns och benets; ljus hud blir benvit, mörk hud skiffergrå
+  const GRA = ['skiffer', 'ben'];
+  const gra = (P, c, k) => { const L = P.cols[c].lab[0] * k; let bast = c, bd = 9; for (const r of GRA) for (let t = 0; t < 4; t++) { const i = P.i(r, t), d = Math.abs(P.cols[i].lab[0] - L); if (d < bd) { bd = d; bast = i; } } return bast; };
+  const omfarga = (F, P, hud, ovrigt, arHud) => ({ ...F, px: F.px.map((c, i) => c < 0 || c === P.i('kol', 0) ? c : arHud[i] ? gra(P, c, hud) : ovrigt === 'skugga' ? P.smuts[c] : ovrigt ? om(P, c, ovrigt) : c) });
   const klistra = (B, F, x0, y0) => { for (let y = 0; y < F.h; y++) for (let x = 0; x < F.w; x++) { const c = F.px[y * F.w + x]; if (c >= 0) B.satt(x0 + x, y0 + y, c); } };
   const fyllda = F => { const s = new Set(); for (let y = 0; y < F.h; y++) for (let x = 0; x < F.w; x++) if (F.px[y * F.w + x] >= 0) s.add(x + ',' + y); return s; };
-  // hud: hudens färgändring, ovrigt: resten (null = som den var), skugga: en skugga under, flugor: två flugor ovanför
+  // hud: hudens ljushet i de gråa tonerna, ovrigt: resten (null = som den var, 'skugga' = palettens ton ett steg mörkare), skugga: en skugga under, flugor: två flugor ovanför
   const DODA = [
     { text: 'På rygg: figuren framifrån vriden ett kvarts varv, slutna ögon och blek, grå hud. Kläderna och håret som de var, och en skugga under.',
-      rikt: 'fram', ben: 'sta', arm: 'hanga', hud: [1.02, 0.4], ovrigt: null, skugga: true, flugor: false },
+      rikt: 'fram', ben: 'sta', arm: 'hanga', hud: 1, ovrigt: null, skugga: true, flugor: false },
     { text: 'På sidan: figuren från sidan vriden ett kvarts varv, slutna ögon och blek hud, och kläderna och håret ett steg blekare och gråare. Ingen skugga: den ligger platt mot marken.',
-      rikt: 'sida', ben: 'sta', arm: 'hanga', hud: [1.04, 0.35], ovrigt: [1.08, 0.55], skugga: false, flugor: false },
+      rikt: 'sida', ben: 'sta', arm: 'hanga', hud: 1.05, ovrigt: [1.08, 0.55], skugga: false, flugor: false },
     { text: 'Hopsjunken: figuren från sidan med ena armen utsträckt och benet böjt, vriden ett kvarts varv, slutna ögon, grå hud och allt ett steg mörkare, som i skugga, och två flugor över kroppen.',
-      rikt: 'sida', ben: 'gang1', arm: 'lyfta', hud: [0.92, 0.35], ovrigt: [0.88, 0.7], skugga: true, flugor: true },
+      rikt: 'sida', ben: 'gang1', arm: 'lyfta', hud: 0.9, ovrigt: [0.84, 0.45], skugga: true, flugor: true },
   ];
   const dodVersion = V => ({ text: V.text, w: 4 + PERSONER.length * 46, h: 32, rita: B => {
     gras(B);
