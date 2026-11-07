@@ -25,6 +25,7 @@ import { ISTID, ageIndex, hourOf, isLight, kallTid } from './tid';
 import { temperature, vaderNu } from './vader';
 import { notis } from './notiser';
 import { homeless } from './byggnader';
+import { tecken } from './religion';
 
 // Styret (steg 3.5, "Ledarskap och makt" i designdokumentet).
 // Ledarskap är en teknik som man kommer på och lär ut i samtal (teknik.ts). Bara den som kan den kan bli ledare: när byn har
@@ -185,6 +186,7 @@ export interface Styre {
   arvinge?: number; // den ledaren utsett till sin efterträdare (steg 8.3.6)
   satt?: number; vunna?: number; // hur väl sättet ledaren tillsattes på passar sederna, och strider som vunnits (steg 8.3.9)
   frak?: Fraktion; frakVald?: number; lugn?: number; // fraktionen, dess ledare efter ett skifte och när nästa fraktion tidigast bildas (steg 8.3.11–8.3.12)
+  dogVinter?: number;
   hanForbud?: boolean; hanSedd?: number; // förbudet mot hån (steg 8.3.13)
   lagar?: Lag[]; nedrostat?: Record<string, number>; // lagarna och det som nyss röstats ned (system 8.4, lagar.ts)
 }
@@ -533,7 +535,7 @@ export function stepStyre(s: State) {
   if (st?.ledare !== undefined) {
     const l = byId(s, st.ledare);
     if (!l || !alive(l)) slutar(s, l?.left !== undefined ? 'lämnade byn' : 'dog');
-    else if (st.ai === ISTID && ai !== ISTID) { st.vintrar = (st.vintrar ?? 0) + 1; ledarensVinter(s, l, st); missnojeLatt(s); }
+    else if (st.ai === ISTID && ai !== ISTID) { st.vintrar = (st.vintrar ?? 0) + 1; ledarensVinter(s, l, st); missnojeLatt(s); if (nodDod(s) === (st.dogVinter ?? 0)) for (const q of vuxnaOf(s)) tecken(s, q, 'ingenDog'); st.dogVinter = nodDod(s); } // vintern där ingen dog (steg 8.5.18)
   }
   if (st) st.ai = ai;
   if (s.styre?.ledare === undefined) valj(s);

@@ -102,6 +102,8 @@ export const UPPLEVELSER = {
   barnFott: { text: 'Fick ett barn, {om}', chans: 0.4, e: [{ empati: 1 }, { flit: 1 }, { uthallighet: 1 }], vem: 'vuxen', sed: { barn: 1 }, vuxenTal: true, ande: true },
   gammal: { text: 'Blev gammal och såg alla jämnåriga dö', chans: 0.6, e: [{ empati: 1 }], vem: 'vuxen', sed: { nyfikenhet: -1 }, vuxenTal: true, ande: true },
   // det oförklarliga (steg 4.1.2.1, TECKEN i religion.ts): om = vad det var
+  bonHjalpte: { text: 'Bönen i nöd hjälpte', chans: 0.5, e: [{ mod: 1 }, { empati: 1 }], vem: 'bada', sed: { forsiktighet: 1 }, vuxenTal: true, ande: true }, // steg 8.5.4
+  bonInte: { text: 'Bönen i nöd hjälpte inte', chans: 0.5, e: [{ mod: -1 }, { nyfikenhet: 1 }], vem: 'bada', sed: { nyfikenhet: 1 }, vuxenTal: true, ande: true },
   tecken: { text: 'Var med om något oförklarligt: {om}', chans: 0.5, e: [{ nyfikenhet: 1 }, { mod: -1 }, { minne: 1 }], vem: 'bada', sed: { forsiktighet: 1, nyfikenhet: -1 }, vuxenTal: true, ande: true },
   // de som formar sederna i stället för de gamla händelserna (steg 4.5.4.9)
   byggdeHus: { text: 'Byggde {om} tillsammans med andra', chans: 0.5, e: [{ empati: 1 }, { flit: 1 }], vem: 'bada', vuxenTal: true, sed: { gemenskap: 1 }, kort: 'Byggde ett hus tillsammans med andra' },

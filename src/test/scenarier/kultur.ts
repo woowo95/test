@@ -670,3 +670,67 @@ SCENARIER.sederfas8 = {
     ];
   },
 };
+
+const medTro = (seed = 6, niva = 2) => {
+  const x = medLedare(seed), { s, v } = x;
+  const tr: SIM.Tro = { id: 1, grundare: v[0].id, gnamn: v[0].name, t: s.now, ar: 1, k: 'drom', bakom: 'Rösten', vill: 'att man lyssnar', svek: 'det blir tyst', natur: 60, manga: 40, bekr: s.now, x: Math.floor(v[0].x), y: Math.floor(v[0].y), niva, namn: 'Rösternas väg' };
+  s.tron = [tr];
+  for (const p of v) { p.tro = 1; p.troStyrka = 60; p.andlig = 80; p.pot.karisma = 14; }
+  return { ...x, tr };
+};
+SCENARIER.graven = {
+  text: 'Steg 8.5.1 och 8.5.7: kroppen blir en sak där personen dog, en vuxen bär den till gravplatsen och gräver, och graven blir en ruta. Att se kroppen sänker humöret, mer för den som stod nära',
+  kor: () => {
+    const { s, v } = medLedare(), d = v[1], x0 = Math.floor(d.x);
+    klockan(s, 10); tandEld(s); setFood(s, 200);
+    SIM.die(s, d, 'alderdom');
+    const kr = s.kvarlevor?.find(k => k.k === 'kropp' && k.vem === d.id);
+    let h = 0;
+    while (s.kvarlevor?.some(k => k.vem === d.id) && h < 72) { kor(s, 1); h++; }
+    const g = s.gravar?.find(q => q.vem === d.id);
+    return [
+      [`kroppen ligger där hen dog (${kr?.x}, x0 ${x0})`, !!kr && kr.x === x0],
+      [`kroppen begravs (${h} timmar)`, !!g],
+      ['graven är en ruta som man kan fråga efter', !!g && SIM.gravAt(s, g.x, g.y) === g],
+    ];
+  },
+};
+SCENARIER.bonen = {
+  text: 'Steg 8.5.2–8.5.4: bönen är fritid för den troende och ger humör och tro, bönen i nöd låses upp av andligheten och tron, och en bön som hjälpte eller inte hjälpte blir en upplevelse',
+  kor: () => {
+    const { s, v } = medTro(), p = v[1];
+    const vikt = SIM.bonVikt(s, p);
+    const t0 = p.troStyrka!;
+    SIM.bonKlar(s, p, { tool: 'vardag' });
+    const b = SIM.bonFritid(s, p);
+    setFood(s, 0);
+    const n = SIM.bonNod(s, p);
+    const u = v[2]; u.troStyrka = 10; const inte = SIM.bonNod(s, u);
+    p.bonVan = { t: s.now, o: 'svalt' }; setFood(s, 500); SIM.kultTimme(s);
+    return [
+      [`den andlige ber gärna (${vikt.toFixed(2)})`, vikt > 0.5],
+      ['bönen stärker tron', p.troStyrka! > t0 || t0 >= 100],
+      ['en vardagsbön om dagen', b === undefined],
+      [`bönen i nöd för den som tror nog (${n?.o})`, n?.id === 'nod' && !inte],
+      ['en bön som hjälpte blir en upplevelse', !!p.upp?.some(x => x.k === 'bonHjalpte')],
+    ];
+  },
+};
+SCENARIER.ritualer = {
+  text: 'Steg 8.5.5–8.5.14: en plats blir helig ur en händelse och där fälls och byggs inget, ritualerna samlar dem de gäller, prästen utses efter skalan, profeten ändrar tron och tron kan bytas när den svikit en',
+  kor: () => {
+    const { s, v, tr } = medTro(6, 3);
+    SIM.kultTimme(s);
+    const h = s.heliga?.[0], ingen = !!h && !SIM.usable(s, h.x, h.y);
+    const pr = SIM.prastOf(s, tr);
+    SIM.nyRitual(s, 'brollop', { om: [v[0].id, v[1].id], namn: 'Bröllopet' });
+    s.ritual = undefined; SIM.ritualTimme(s);
+    const r = s.ritual as SIM.Ritual | undefined, val = SIM.ritualVal(s, v[2]);
+    return [
+      [`platsen där tron föddes blir helig (${h ? SIM.HELIGA_PLATSER[h.k].namn : 'ingen'}), och där byggs inget`, ingen],
+      [`prästen utses (${pr?.name}), ${pr ? SIM.prastSort(tr, pr.sex) : ''}`, !!pr],
+      [`bröllopet samlar byn (${r?.namn})`, r?.k === 'brollop' && !!val],
+      [`högtiderna följer skalan (${SIM.hogtider(tr)})`, SIM.hogtider(tr) >= 0],
+    ];
+  },
+};

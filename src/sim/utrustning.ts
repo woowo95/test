@@ -1,4 +1,3 @@
-import { kladAv } from './klader';
 // Utrustningen (steg 2.3.1): platserna där en person har saker (händerna, kroppen i två lager, huvudet, benen och
 // fötterna), vad saker väger och hur många händer de tar. Vikten står i sakregistret (vikt, hander, rymmer i saker.ts,
 // viktOf). Hur mycket en hand orkar räknas i lager.ts (handOrkar, steg 6.1.8). En sak tar en hand om den som håller den
@@ -26,6 +25,8 @@ import { KROPP, count, living } from './folk';
 import { temperature } from './vader';
 import { bordSlag, carryKind, handOrkar } from './lager';
 import { balans } from './balans';
+import { arPrast } from './kultlatt';
+import { kladAv } from './klader';
 
 export const UTRUSTNING = balans('utrustning', {
   kropp: 5, // det man har på sig väger lätt mot vad händerna orkar: i strid är man tung av kläder som väger så här många gånger det händerna orkar (strid.ts)
@@ -227,6 +228,8 @@ const rang = (p: Person, t: Ting) => t.agare === p.id ? 0 : t.agare === BYN ? 1 
 // varje timme: den som saknar ett plagg på en plats tar på sig ett som är fritt (ingen har det på sig, i handen eller i
 // bördan), och som hen får ta
 const arMantel = (k: string) => kladAv(k)?.plagg === 'mantel';
+// plagg som bara vissa bär: prästens dräkt och masken åt prästen, trons tecken åt de troende (system 8.5)
+const kladFor = (s: State, p: Person, k: string) => { const pl = kladAv(k)?.plagg; return pl === 'prastdrakt' || pl === 'mask' ? arPrast(s, p) : pl === 'tecken' ? p.tro !== undefined : true; };
 export function stepKlader(s: State) {
   if (!tingOf(s).some(t => SAKER[t.k]?.klad)) return;
   const kallt = temperature(s) < KROPP.kladTemp;
@@ -244,7 +247,7 @@ export function stepKlader(s: State) {
     const har = new Set(paSig(s, p).map(t => SAKER[t.k]!.klad!.plats));
     for (const k of KLAD_SLAG) {
       const pl = SAKER[k]!.klad!.plats;
-      if (har.has(pl) || arMantel(k) || (SAKER[k]!.klad!.varme > 0 && (!kallt || p.warm > 1))) continue;
+      if (har.has(pl) || arMantel(k) || !kladFor(s, p, k) || (SAKER[k]!.klad!.varme > 0 && (!kallt || p.warm > 1))) continue;
       let best: Ting | undefined;
       for (const t of tingOf(s)) {
         if (t.k !== k || t.bar !== undefined || t.hos !== undefined || t.lass !== undefined || t.halv || !lends(s, t.agare, p)) continue;

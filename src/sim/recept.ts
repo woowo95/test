@@ -72,6 +72,8 @@ const DEF = {
   byxor: { var: 'plagg', mangd: 2, av: { rep: 1 }, min: 5 },
   mossa: { var: 'plagg', mangd: 1, av: {}, min: 4 },
   snoskor: { var: 'plagg', mangd: 1, av: { grenar: 2, rep: 1 }, min: 5 },
+  prastdrakt: { var: 'plagg', mangd: 3, av: { rep: 1 }, min: 8 }, tecken: { var: 'plagg', mangd: 1, av: { rep: 1 }, min: 3 }, mask: { var: 'plagg', mangd: 2, av: {}, min: 8 }, // system 8.5
+  rokelse: { var: 'sak', av: { talg: 1, ved: 1 }, min: 5, slag: 'stor', tek: 'ortkok' }, brannolja: { var: 'sak', av: { talg: 1 }, min: 5, slag: 'stor', tek: 'ortkok' }, // steg 8.5.16
   mantel: { var: 'plagg', mangd: 3, av: { rep: 1 }, min: 8 }, // steg 8.3.14
   halsband: { var: 'plagg', mangd: 3, av: { rep: 1 }, min: 5 },
   tunika: { var: 'plagg', mangd: 3, av: {}, min: 5 },

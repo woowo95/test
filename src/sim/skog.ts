@@ -1,6 +1,3 @@
-import { LAG_SKOG, lagGaller } from './lagar';
-import { naturTanke } from './seder';
-import { storlekAv } from './stationer';
 import { bynsMitt, utanforByn } from './omrade';
 import { freeTools } from './agande';
 import { count, forstaGang, gjort, living, log, think } from './folk';
@@ -14,6 +11,10 @@ import { SNABBARE } from './handlingar';
 import { balans } from './balans';
 import { faltOf, faltRuta } from './odling';
 import { stubbeOn, stubbRutor } from './stubbar';
+import { heligRuta } from './kultlatt';
+import { LAG_SKOG, lagGaller } from './lagar';
+import { naturTanke } from './seder';
+import { storlekAv } from './stationer';
 export { stubbeOn, stubbRutor };
 
 // ---------- skog: fälla träd, hugga ved, flinta och yxa ----------
@@ -80,6 +81,7 @@ export function treeSpot(s: State, taken: Set<number>, p: Person): { x: number; 
     const i = y * W + x;
     if (g.trees[i] < SKOG.tradMin || taken.has(i)) continue;
     if (skogsfred && utanforByn(s, x, y) <= LAG_SKOG) continue; // lagen om skogen (steg 8.4.1)
+    if (s.heliga?.length && heligRuta(s, x, y)) continue; // den heliga platsen fälls inte (steg 8.5.5)
     c.push({ i, d: utanforByn(s, x, y) });
   }
   if (!c.length) return undefined;

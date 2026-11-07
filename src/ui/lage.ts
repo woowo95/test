@@ -66,7 +66,7 @@ export const outPilesAt = (x: number, y: number) => piles().filter(q => q.out &&
 // den står vid eller den som har den på sig, i handen eller bär den
 export function sakVar(): { x: number; y: number } | { station: number } | { person: number } | undefined {
   const [slag, rest = ''] = ui.sak.split(':');
-  if (slag === 'f' || slag === 'u' || slag === 'r' || slag === 'b') { const i = Number(rest); return { x: i % W, y: Math.floor(i / W) }; } // toa-högen, stubben (steg 3.10.6), trädet (steg 5.1.4.3) och busken (steg 6.5.3)
+  if (slag === 'f' || slag === 'u' || slag === 'r' || slag === 'b' || slag === 'g' || slag === 'h') { const i = Number(rest); return { x: i % W, y: Math.floor(i / W) }; } // toa-högen, stubben (steg 3.10.6), trädet (steg 5.1.4.3) och busken (steg 6.5.3)
   if (slag === 's') { const [x, y] = rest.split(',').map(Number); return { x, y }; }
   if (slag === 'a') { const i = Number(rest); return { x: i % W, y: Math.floor(i / W) }; } // den uppsatta facklan (steg 6.3.7)
   if (slag === 'k') { const k = kvarById(s, Number(rest)); return k && { x: k.x, y: k.y }; } // det som blivit kvar av en människa (steg 8.2.3)

@@ -140,6 +140,12 @@ export const PAL: Record<string, Record<string, string>> = {
   tragolv: { b: '#7e7362', B: '#987e62', d: '#5e3c24' },
   paborjat: { w: '#dad0bb', d: '#24201d', y: '#d8b25f' },
   a_samla: AKT,
+  a_be: AKT,
+  grav: { o: '#372f25', j: '#5e3c24', J: '#7d5b40', s: '#61767a', S: '#8a9c9e' },
+  helig_sten: { o: '#372f25', s: '#61767a', S: '#8a9c9e', y: '#d8b25f' },
+  helig_vatten: { o: '#372f25', b: '#61767a', B: '#8a9c9e', y: '#d8b25f' },
+  helig_lund: { o: '#372f25', g: '#647025', G: '#898b4c', y: '#d8b25f' },
+  helig_trad: { o: '#372f25', g: '#647025', j: '#5e3c24', y: '#d8b25f' },
   kroppsdel: { o: '#372f25', H: '#bd753e', r: '#a14808', R: '#742a01' },
   dodkropp: { o: '#372f25', H: '#a0947d', w: '#7e7362' },
   zzz: { w: '#dad0bb' },
@@ -257,6 +263,12 @@ const PIX_TRADORR = [
   'oooooooooooooooo',
 ];
 export const PIX: Record<string, string[]> = {
+  a_be: ['........', '...ww...', '...ww...', '..wwww..', '..wwww..', '.wwwwww.', '.w.ww.w.', '........'], // den som ber (platshållare, system 8.5)
+  grav: ['................', '................', '................', '......ssS.......', '......ssS.......', '....jjssSjj.....', '...jJJJJJJJj....', '..jJJJJJJJJJj...', '..jJJJJJJJJJj...', '..jjjjjjjjjjj...', '................', '................', '................', '................', '................', '................'], // platshållare (steg 8.5.1)
+  helig_sten: ['................', '................', '.......y........', '......oSo.......', '.....oSSso......', '.....oSSso......', '....oSSSsso.....', '....oSSSsso.....', '...oSSSSssso....', '...oooooooo.....', '................', '................', '................', '................', '................', '................'], // platshållare (steg 8.5.5)
+  helig_vatten: ['................', '................', '.......y........', '.....oooooo.....', '....oBBBbbbo....', '...oBBbBbbbbo...', '...oBBBbbBbbo...', '....oBbbbbbo....', '.....oooooo.....', '................', '................', '................', '................', '................', '................', '................'],
+  helig_lund: ['................', '.......y........', '....gg....gg....', '...gGGg..gGGg...', '...gGGg..gGGg...', '....gg....gg....', '.....o....o.....', '.....o....o.....', '................', '................', '................', '................', '................', '................', '................', '................'],
+  helig_trad: ['................', '.......y........', '.....gggggg.....', '....gggggggg....', '....gggggggg....', '.....gggggg.....', '.......jj.......', '.......jj.......', '.......jj.......', '......ojjo......', '................', '................', '................', '................', '................', '................'],
   kroppsdel: [ // platshållare (steg 8.2.3): en avhuggen kroppsdel, gemensam bild för alla delar
     '................','................','................','................',
     '................','......HHH.......','....oHHHHHo.....','...oHHHHHHHrr...',
@@ -3886,7 +3898,7 @@ for (const k of ['brand', 'tornado']) { PIX[k] = KARTBILDER[k].rader; PAL[k] = K
 // huset på filten vid ett husbyte (steg 7.2.12): platshållare tills Björn valt (f7_hus i bildstilen)
 PIX.hus = ['................', '.......ff.......', '......ffff......', '.....effffr.....', '....eeeffrrr....', '...eeeeffrrrr...', '..eeeeeffrrrrr..', '...cccccccccc...', '...bbbbbbbbbb...', '...ccccoocccc...', '...bbbboobbbb...', '...ccccoocccc...', '...bbbboobbbb...', '...ccccoocccc...', '...bbbboobbbb...', '................'];
 PAL.hus = { f: '#d8b25f', e: '#b2921b', r: '#906f0f', c: '#7d5b40', b: '#5e3c24', o: '#233035' };
-for (const pl of ['mantel', 'byxor', 'mossa', 'snoskor', 'tunika', 'skjorta', 'halsband']) for (const m of ['kaninskinn', 'vargskinn', 'bjornskinn', 'lader', 'lintyg', 'benband', 'tandband']) { PIX[`${pl}_${m}`] = PIX.rock_kaninskinn; PAL[`${pl}_${m}`] = PAL.rock_kaninskinn; }
+for (const pl of ['prastdrakt', 'tecken', 'mask', 'mantel', 'byxor', 'mossa', 'snoskor', 'tunika', 'skjorta', 'halsband']) for (const m of ['kaninskinn', 'vargskinn', 'bjornskinn', 'lader', 'lintyg', 'benband', 'tandband']) { PIX[`${pl}_${m}`] = PIX.rock_kaninskinn; PAL[`${pl}_${m}`] = PAL.rock_kaninskinn; }
 for (const m of ['lader', 'lintyg']) for (const pl of ['rock', 'skor']) if (!PIX[`${pl}_${m}`]) { PIX[`${pl}_${m}`] = PIX.rock_kaninskinn; PAL[`${pl}_${m}`] = PAL.rock_kaninskinn; }
 for (const k of ['grillgadda', 'grillmort']) { PIX[k] = PIX.grillfisk; PAL[k] = PAL.grillfisk; }
 for (const k of ['torrgadda', 'torrmort']) { PIX[k] = PIX.torrfisk; PAL[k] = PAL.torrfisk; }

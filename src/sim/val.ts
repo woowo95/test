@@ -1,4 +1,3 @@
-import { LAG, lagGaller } from './lagar';
 import { han } from './ord';
 import { facklaVal } from './ljus';
 import { OMRADE, bynsAvstand, bynsMitt, iByn, omrade, utanforByn } from './omrade';
@@ -57,6 +56,9 @@ import { framVal } from './framtradande';
 import { utbrottBorjar, utbrottNu } from './humor';
 import { smakDrag } from './rykten';
 import { PAB, pabud, skams } from './styre';
+import { BONER, bonFritid, bonNod, bonVikt, ritualVal } from './kult';
+import { begravaVal } from './grav';
+import { LAG, lagGaller } from './lagar';
 
 // ---------- val av aktivitet ----------
 // Balanstalen (regel 8): vikter, chanser, avstånd och hur länge ett pass varar. Kroppens gränser (KROPP) och åldrarna (ALDER)
@@ -530,6 +532,8 @@ export const ARBETEN: readonly Arbete[] = [
   } },
   // handlaren är här och byn har inte handlat (steg 4.4.1.3, handel.ts); på kvällen ligger filten ute (steg 4.5.4.11). Behovet
   // stiger under handlarens besök; den som står i kön eller handlar fortsätter
+  { id: 'ritual', niva: 3, prova: ({ s, p, v }) => { const r = ritualVal(s, p); if (!r) return false; v.spot = r.spot; v.dur = r.dur; return set(v, 'ritual', r.why); } }, // ritualerna (steg 8.5.6)
+  { id: 'bonNod', niva: 3, prova: ({ s, p, v }) => { const b = bonNod(s, p); if (!b) return false; v.tool = b.id; v.spot = { x: p.x, y: p.y }; v.dur = BONER[b.id].min * MIN; return set(v, 'be', BONER[b.id].text(s, p, b.o)); } }, // bönen i nöd (steg 8.5.3)
   { id: 'handla', niva: 3, bradska: ({ s, p }) => {
     const h = s.handlare;
     return !h || h.fas !== 'handlar' || h.affar?.vem === p.id || h.ko?.includes(p.id) ? 1 : tillfalle(h.kom, h.gar, s.now);
@@ -580,6 +584,7 @@ export const ARBETEN: readonly Arbete[] = [
   } },
   // 5 Rädda: det som blir dåligt först räddas först (radda nedan, steg 6.1.15). Att bära in är en förbättring: inte när byn fryser (talet dras ändå, så att personens följd är som förut). När byn
   // svälter bärs bara maten in, så att den inte blir liggande ute (steg 2.12.3)
+  { id: 'begrava', niva: 5, nar: 'dag', prova: ({ s, p, v, a }) => { if (a < ALDER.vuxen || !kanGa(p)) return false; const g = begravaVal(s, p); if (!g) return false; v.spot = g.spot; v.ref = g.ref; v.dur = 2 * MIN; return set(v, 'begrava', g.why); } }, // kroppen och graven (steg 8.5.1)
   { id: 'bara', niva: 5, nar: 'dag', kort: true, prova: c => {
     const { s, p, v } = c; let gt: ReturnType<typeof haulJob>;
     if (!(s.stackar?.length && radda(s, p, a => !isStored(s, a.x, a.y)) && !faror(c).kyla && (gt = haulJob(s, undefined, faror(c).svalt)))) return false;
@@ -1122,6 +1127,11 @@ function leisure(s: State, p: Person, v: Val, u: number, lazy: number) {
   const ws = shore ? (VAL.strandBas + (20 - stat(p, 'empati', now)) / VAL.strandDiv) * calm : 0;
   if (gaILara(s, p, v, 'Har tid över')) return; // lärlingen går hellre till mästaren än vilar eller umgås
   const wsp = sportVikt(s, p, calm); // sporten när byn har ett överskott (steg 4.3.1, sport.ts)
+  // bönen (steg 8.5.2): lusten följer andligheten, bredvid vilan och umgänget
+  if (rnd(s, 'val', p) < bonVikt(s, p) / (bonVikt(s, p) + wv + wh + wsoc + wp + 1e-9)) {
+    const b = bonFritid(s, p);
+    if (b) { set(v, 'be', BONER[b.id].text(s, p, b.o)); v.tool = b.id; v.spot = b.spot ?? { x: p.x, y: p.y }; v.dur = BONER[b.id].min * MIN; return; }
+  }
   let r = rnd(s, 'val', p) * (wv + wh + wsoc + wp + wb + ws + wsp);
   if (r >= wv + wh + wsoc + wp + wb + ws) {
     const sp = sportVal(s, p);

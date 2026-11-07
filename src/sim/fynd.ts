@@ -18,6 +18,7 @@ import { balans } from './balans';
 import { BARBUSKE, BUSKE, BUSKTAL, barKrok, busksort } from './buskar';
 import { djupOf, iVattnetNu, sjoRakna, sjoarna, strandAv, vattenNu } from './sjo';
 import { smakGift } from './rykten';
+import { tecken } from './religion';
 
 // ---------- balanstal (regel 8) ----------
 // Fångst och insamling: var viltet håller sig borta, hur fort platserna tömmas och växer tillbaka, fiske, flinta och svamp.
@@ -580,6 +581,7 @@ export function pickMushrooms(s: State, p: Person, x: number, y: number, dtSec: 
 }
 // när någon äter: finns giftig svamp i förrådet kan hen få i sig den
 export function eatPoison(s: State, p: Person) {
+  if (rnd(s, 'halsa', p) < 0.2) tecken(s, p, 'svampsyn'); // svampen som gav syner (steg 8.5.18)
   const gift = amountOf(s, GIFT);
   // en ensam giftsvamp förfaller lite redan första slaget, så gränsen är nära noll och inte 1
   if (gift < 1e-3 || rnd(s, 'halsa', p) >= Math.min(FANGST.giftMax, gift / Math.max(1, foodOf(s)) * FANGST.giftAndel)) return;

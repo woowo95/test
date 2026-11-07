@@ -57,6 +57,12 @@ const PLAGG_DEF = {
     skydd: { delar: ['huvud'], tar: { hugg: 0.15, stick: 0.1, slag: 0.15, bett: 0.2 } }, forsta: '{namn} sydde byns första {plagg}.' }, // steg 7.7.2
   snoskor: { namn: 'Snöskor', ord: 'ett par snöskor', verb: 'Syr', plats: 'fotter', mangd: RECEPT.snoskor.mangd, med: RECEPT.snoskor.av, varme: 0.1, dygn: 3, vikt: 3, tek: 'skinnklader', min: RECEPT.snoskor.min, slag: ['skinn'], snoTar: 0.8,
     skydd: { delar: ['fotV', 'fotH'], tar: { hugg: 0.2, stick: 0.2, slag: 0.1, bett: 0.3 } }, forsta: '{namn} gjorde byns första par {plagg}. Snön saktar dem nästan inte.' }, // steg 7.7.3
+  prastdrakt: { namn: 'Prästdräkt', ord: 'en prästdräkt', verb: 'Syr', plats: 'yttre', mangd: RECEPT.prastdrakt.mangd, med: RECEPT.prastdrakt.av, varme: 0.15, dygn: 12, vikt: 4, tek: 'skinnklader', min: RECEPT.prastdrakt.min, slag: ['skinn'],
+    forsta: '{namn} sydde en {plagg} åt prästen. Den behövs vid offer och fester.' }, // steg 8.5.15
+  tecken: { namn: 'Trons tecken', ord: 'ett trons tecken', verb: 'Syr', plats: 'smycke', mangd: RECEPT.tecken.mangd, med: RECEPT.tecken.av, varme: 0, dygn: 20, vikt: 0.2, tek: 'skinnklader', min: RECEPT.tecken.min, slag: ['smycke'],
+    forsta: '{namn} gjorde ett {plagg}. De troende bär det gärna.' }, // steg 8.5.15
+  mask: { namn: 'Schamanens mask', ord: 'en mask', verb: 'Syr', plats: 'huvud', mangd: RECEPT.mask.mangd, varme: 0, dygn: 15, vikt: 1, tek: 'skinnklader', min: RECEPT.mask.min, slag: ['skinn'],
+    forsta: '{namn} gjorde en mask åt schamanen.' }, // steg 8.5.17
   mantel: { namn: 'Mantel', ord: 'en mantel', verb: 'Syr', plats: 'yttre', mangd: RECEPT.mantel.mangd, med: RECEPT.mantel.av, varme: 0.2, dygn: 12, vikt: 5, tek: 'skinnklader', min: RECEPT.mantel.min, slag: ['skinn'],
     forsta: '{namn} sydde en {plagg} åt ledaren. Den följer ämbetet, inte personen.' }, // steg 8.3.14
   halsband: { namn: 'Halsband', ord: 'ett halsband', verb: 'Syr', plats: 'smycke', mangd: RECEPT.halsband.mangd, med: RECEPT.halsband.av, varme: 0, dygn: 20, vikt: 0.2, tek: 'skinnklader', min: RECEPT.halsband.min, slag: ['smycke'],

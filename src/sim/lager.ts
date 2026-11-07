@@ -22,6 +22,7 @@ import { FLOD } from './flod';
 import { forbrukat } from './forradsmal';
 import { strakI } from './strak';
 import { slappPlanta } from './skogsvard';
+import { heligRuta } from './kultlatt';
 
 // ---------- balanstal (regel 8) ----------
 // Förrådet: hur lagerplatserna växer, hur fort saker slits och ruttnar, hur mycket en person bär och vad som bärs in först.
@@ -345,6 +346,7 @@ export function usable(s: State, x: number, y: number, utomElden = false) {
   const t = m.tiles[y * W + x];
   if (s.torg && x >= s.torg.x && y >= s.torg.y && x < s.torg.x + s.torg.w && y < s.torg.y + s.torg.h) return false; // på torget byggs och ställs inget (steg 7.3.13)
   if (t === T.Vatten || s.flod && iVattnetNu(s, y * W + x) || t === T.Sten || !utomElden && Math.max(Math.abs(x - f.x), Math.abs(y - f.y)) <= 1 || bitAt(s, x, y) || sittAt(s, x, y) || faltAt(s, x, y)) return false; // inte heller på ett fält (odling.ts)
+  if (s.heliga?.length && heligRuta(s, x, y)) return false; // på en helig plats byggs inget (steg 8.5.5)
   const st = stationAt(s, x, y);
   return !st || !!stationDef(st.k)?.forvar || utomElden && !!stationDef(st.k)?.eld; // i en hylla, kista eller ett ställ ligger saker (steg 2.3.6); grillen flyttas med elden
 }

@@ -64,7 +64,7 @@ export function storreKarta(s: State) {
     }
     for (const l of p.lardomar ?? []) l.a = (Math.floor(l.a / aw0) + oy / AREA) * Math.ceil(W / AREA) + l.a % aw0 + ox / AREA;
   }
-  for (const lista of [s.kvarlevor, s.stackar, s.marken, s.stubbar, s.stockar, s.lagren, s.byggen, s.hus, s.stationer, s.falt, s.blod]) for (const o of lista ?? []) flytta(o);
+  for (const lista of [s.gravar, s.heliga, s.kvarlevor, s.stackar, s.marken, s.stubbar, s.stockar, s.lagren, s.byggen, s.hus, s.stationer, s.falt, s.blod]) for (const o of lista ?? []) flytta(o);
   for (const t of s.ting ?? []) if (t.x !== undefined && t.y !== undefined) { t.x += ox; t.y += oy; }
   flytta(s.lager); flytta(s.brasa); flytta(s.fire.at); flytta(s.fire.flytt); for (const e of s.eldar ?? []) flytta(e.at); // en flyttad eld och dit den ska (eldflytt.ts), och lägereldarna till (brasor.ts)
   for (const f of s.flackar ?? []) f.i = ny(f.i);
