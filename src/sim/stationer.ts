@@ -109,7 +109,7 @@ export interface Utkant { till: number; avst: number; vatten?: true; falt?: true
 export interface Forvar { rymmer: number; redskap?: true; tak?: true; stangd?: true; privat?: true }
 export interface StationDef { hard?: true; namn: string; ett?: true; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: Utkant; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar; pynt?: true; samtidigt?: number }
 // de enkla redskapen: görs vid slöjdbänken om byn har en, lite fortare där (fart), annars vid elden som förut (Björn, efter v90)
-const ENKLA: Act[] = ['yxa', 'spjut', 'metspo', 'kniv', 'bensyl', 'balte', 'boll', 'slagtra', 'mal', 'trumma', 'benflojt', 'lyra', 'fackla', 'talgljus'];
+const ENKLA: Act[] = ['yxa', 'spjut', 'metspo', 'kniv', 'bensyl', 'balte', 'boll', 'slagtra', 'mal', 'trumma', 'benflojt', 'lyra', 'fackla', 'talgljus', 'slanda'];
 export const STATIONER = {
   slaktbank: {
     namn: 'Slaktbänk', ikon: 'slaktbank', w: 3, h: 1, tek: ['slaktbank'], av: RECEPT.slaktbank.av, min: RECEPT.slaktbank.min, gor: ['slakta', 'rensa'], bara: ['slakta', 'rensa'], vid: { kniv: STATION.knivplatser }, smutsar: { slakta: 'blod' }, utkant: { till: STATION.slaktTill, avst: STATION.slaktAvst }, // står en bit från byn (steg 2.10.16) // blir blodig när det slaktas (blod.ts)
@@ -146,7 +146,7 @@ export const STATIONER = {
     bygger: 'Sätter upp en garvningsställning.', forsta: '{namn} satte upp byns första garvningsställning. Där blir skinn till läder.',
   },
   vavstol: {
-    namn: 'Vävstol', ikon: 'vavstol', w: 2, h: 1, tek: ['vavstol'], av: RECEPT.vavstol.av, min: RECEPT.vavstol.min, gor: ['vava'], bara: ['vava'],
+    namn: 'Vävstol', ikon: 'vavstol', w: 2, h: 1, tek: ['vavstol'], av: RECEPT.vavstol.av, min: RECEPT.vavstol.min, gor: ['vava', 'spinna'], bara: ['vava'], vid: { slanda: 1 }, fart: { spinna: 2 }, // sländan läggs i vävstolen, och där spinns tråden fortare (steg 7.7.9)
     bygger: 'Bygger en vävstol.', forsta: '{namn} byggde byns första vävstol.',
   },
   // härden (steg 7.5.3): en eldstad inne i ett hus; när den är byggd blir den en eld som värmer huset (nyHard i brasor.ts)
@@ -954,6 +954,8 @@ export function tillbehorVarme(s: State, p: Person, rum: unknown) {
 // ---------- redskapsplatserna (knivplatsen, bensylen) ----------
 // redskapen av slaget k som hör till stationen
 export const redskapVid = (s: State, t: Station, k: string) => tingOf(s).filter(q => q.vid === t.id && q.k === k);
+// ligger redskapet k i stationen där man gör act (sländan i vävstolen, steg 7.7.9)?
+export const verktygVid = (s: State, act: Act, k: string) => { const t = stationFor(s, act); return !!t && redskapVid(s, t, k).length > 0; };
 const platserFor = (t: Station, k: string) => stationDef(t.k)?.vid?.[k] ?? 0;
 // så många platser för redskap av slaget k som står tomma i byns färdiga stationer
 export function tommaPlatser(s: State, k: string) {
@@ -1137,6 +1139,18 @@ function inredningen(s: State) {
   }
   for (const t of stationerOf(s)) if (stationDef(t.k)?.sover && isKlar(t)) agaBadd(s, t);
 }
+// scenen flyttar in (steg 7.2.7): står den ute och byn har en samlingssal med plats bärs den in, och salen blir en gillesal. Instrumenten
+// följer med. Inte medan någon uppträder på den
+function scenIn(s: State) {
+  const t = stationerOf(s).find(q => q.k === 'scen' && !q.inne && isKlar(q));
+  if (!t || s.fram?.scen === t.id) return;
+  if (!samlingRum(s)) return;
+  const at = utan(s, t, () => { const sal = samlingRum(s); return sal && siteInne(s, t.k, sal); }); // rummen räknas om när scenen är borta
+  if (!at) return;
+  flytta(s, t, { ...at, inne: 1 });
+  count(s, 'scen inburen');
+  log(s, `Scenen bars in i ${husById(s, samlingRum(s)?.hus ?? -1)?.namn.toLowerCase() ?? 'salen'}. Nu går det att uppträda också när det är kallt eller regnar.`, 'world');
+}
 function barIn(s: State) {
   for (const t of s.stationer ?? []) {
     const d = stationDef(t.k);
@@ -1158,6 +1172,7 @@ export function stepStationer(s: State) {
   fyllPlatser(s);
   kistorna(s);
   barIn(s);
+  scenIn(s);
   inredningen(s);
   iVagen(s);
   utanLager(s);

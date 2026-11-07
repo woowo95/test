@@ -1083,6 +1083,78 @@ SCENARIER.byggplan = {
   },
 };
 
+SCENARIER.scenflytt = {
+  text: 'Steg 7.2.7: en scen som står ute bärs in när byn har en samlingssal med plats, så att salen blir en gillesal. Den flyttar inte medan någon uppträder',
+  kor: () => {
+    const s = createState(6, START), g = SIM.getMap(s.seed).tiles, c = SIM.bynsMitt(s);
+    klockan(s);
+    const fritt = (x: number, y: number) => x > 0 && y > 0 && x < SIM.W - 1 && y < SIM.W - 1 && g[y * SIM.W + x] !== SIM.T.Sten && g[y * SIM.W + x] !== SIM.T.Vatten && SIM.ledig(s, x, y) && !SIM.bitAt(s, x, y);
+    let pl: { x: number; y: number } | undefined, bd = Infinity;
+    for (let y = 2; y < SIM.W - 10; y++) for (let x = 2; x < SIM.W - 10; x++) {
+      const d = Math.hypot(x - c.x, y - c.y);
+      if (d >= bd || d < 8) continue;
+      let ok = true;
+      for (let yy = y; yy < y + 6 && ok; yy++) for (let xx = x; xx < x + 7 && ok; xx++) ok = fritt(xx, yy);
+      if (ok) { bd = d; pl = { x, y }; }
+    }
+    if (!pl) return [['en plats för salen', false]];
+    const h: SIM.Hus = { id: (s.nextBit ??= 1), namn: 'Samlingshus', x: pl.x, y: pl.y, w: 7, h: 6, fn: 'verkstad', klar: s.now };
+    s.nextBit++;
+    for (let yy = pl.y; yy < pl.y + 6; yy++) for (let xx = pl.x; xx < pl.x + 7; xx++) {
+      const kant = xx === pl.x || yy === pl.y || xx === pl.x + 6 || yy === pl.y + 5, m = xx === pl.x + 3 && yy === pl.y + 5 ? 'oppning' : kant ? 'timmer' : 'tra';
+      SIM.bitsOf(s).push({ id: s.nextBit++, x: xx, y: yy, k: SIM.MATERIAL[m].k, m, b: 1, mat: SIM.MATERIAL[m].n, c: 1, hus: h.id });
+    }
+    housesOf(s).push(h); SIM.touch(s);
+    const sc = { id: s.nextBit++, k: 'scen', x: pl.x - 6, y: pl.y - 4, kvar: 0 } as SIM.Station;
+    (s.stationer ??= []).push(sc); SIM.touch(s);
+    SIM.stepStationer(s);
+    const uteUtanSal = !sc.inne;
+    h.fn = 'samling'; h.rumFn = undefined; SIM.touch(s);
+    s.fram = { k: 'sang', p: living(s)[0].id, start: s.now, slut: s.now + 3600000, publik: [], text: '', scen: sc.id };
+    SIM.stepStationer(s);
+    const uteUnder = !sc.inne;
+    delete s.fram;
+    SIM.stepStationer(s);
+    const tagg = sc.inne ? [...SIM.rumTaggar(s, gridOf(s).rooms.find(r => r.hus === h.id && r.tiles.length)!)] : [];
+    return [
+      ['utan sal står scenen kvar ute', uteUtanSal],
+      ['den flyttar inte medan någon uppträder', uteUnder],
+      [`med en sal bärs den in (${sc.x},${sc.y}), och salen blir en gillesal (${tagg.join(', ')})`, !!sc.inne && !!SIM.roomAt(s, sc.x, sc.y) && tagg.includes('gillesal')],
+      ['en scen inne går att använda', SIM.scenen(s) === sc],
+    ];
+  },
+};
+SCENARIER.husbyte = {
+  text: 'Steg 7.2.12: ett hus säljs genom samma bytessystem som allt annat: när köparen och säljaren möts ligger huset som en symbol på filten, och det blir handslag och en rad i loggen. Går det inte att betala blir det inget. En handlare kan aldrig köpa ett hus',
+  kor: () => {
+    const s = createState(6, START);
+    klockan(s); byggare(s);
+    for (let i = 0; i < 6; i++) nyInvanare(s, i % 2 ? 'm' : 'k', 25);
+    SIM.planBuild(s); byggKlart(s);
+    const [a, b] = living(s).filter(q => !q.mother && !q.father);
+    a.partner = b.partner = undefined;
+    const h = housesOf(s)[0]; h.ag = b.id; h.fn = 'familjehus'; SIM.touch(s);
+    const pris = SIM.saljPris(s, h);
+    const utanPengar = SIM.kopHus(s, h, a.id) === false && h.ag === b.id;
+    SIM.put(s, 'silver', 400, { [a.id]: 400 });
+    const silver0 = SIM.ownsAmount(s, b, 'silver');
+    const gick = SIM.kopHus(s, h, a.id);
+    const f = (s.filtar ?? []).filter(q => q.varor.some(w => w.k === 'hus'));
+    const ha = createState(7, START), hp = { id: -5, namn: 'Handlaren', x: 0, y: 0, varde: () => 1, over: () => [] };
+    let fel = false;
+    try { SIM.flytta(ha, { k: 'hus', n: 1, hus: 1, varde: 1 }, hp, hp); } catch { fel = true; }
+    const rad = [a, b].some(q => q.byten?.some(m => m.bg.some(v => v.k === 'hus') || m.ag.some(v => v.k === 'hus')));
+    return [
+      [`huset är värt minst ${Math.round(pris)} för säljaren`, pris > 0],
+      ['utan något att betala med blir det inget', utanPengar],
+      [`med silver byter huset ägare (${h.namn})`, gick && h.ag === a.id],
+      [`säljaren fick betalt (${silver0} → ${SIM.ownsAmount(s, b, 'silver')} silver)`, SIM.ownsAmount(s, b, 'silver') > silver0],
+      ['huset ligger som en symbol på filten, mitt emot betalningen', f.length === 1 && (s.filtar ?? []).filter(q => q.par === f[0].par).length === 2],
+      ['bytet minns köparen och säljaren, med huset', rad],
+      ['en handlare kan aldrig köpa ett hus', fel && !SIM.kanTaHus(hp)],
+    ];
+  },
+};
 SCENARIER.samlingssal = {
   text: 'Steg 7.2.7–7.2.9: när byn har en scen vill den ha en samlingssal, som blir mötesplatsen året runt. Borden och scenen står hellre där, och en scen inne går att uppträda på när det regnar. Man äter under tak när det är kallt, och verkstaden får en lagerplats för sitt material',
   kor: () => {

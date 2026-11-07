@@ -168,6 +168,9 @@ const DEF = {
     gors: { text: 'Doppar en veke av torrt gräs i smält talg tills den blivit ett ljus.', stat: 'ljusGjorda', forsta: '{namn} gjorde byns första talgljus. Det står på bordet inne och lyser upp rummet på kvällen.' } },
   fackla: { namn: 'Fackla', skaffa: RECEPT.fackla, vikt: 1, hander: 1, stack: 5, mapp: 'Redskap', slits: 0.0003, redskap: true,
     gors: { text: 'Klyver en käpp i toppen och binder torrt gräs och talg i klykan till en fackla.', stat: 'facklorGjorda', forsta: '{namn} gjorde byns första fackla. Med den kan man gå ut i mörkret och se vart man går.' } }, // brinner FACKLA.brinnTim timmar och bärs tänd i en hand (ljus.ts, steg 6.3.6)
+  // sländan (steg 7.7.8): med den spinner man lin till tråd var som helst, och i vävstolen fortare (steg 7.7.9)
+  slanda: { namn: 'Slända', hanger: 'balte', skaffa: RECEPT.slanda, vikt: 0.3, stack: 5, mapp: 'Redskap', slits: 0.002, redskap: true, trasig: { stat: 'slandorTrasiga', text: '{namn}s slända gick sönder.' },
+    gors: { text: 'Gör en slända av en pinne och en tyngd av sten.', stat: 'slandorGjorda', forsta: '{namn} gjorde byns första slända. Med den spinner man lin till tråd var som helst.' } },
   vattensack: { namn: 'Vattensäck', hanger: 'axel', skaffa: RECEPT.vattensack, vikt: 2, hander: 1, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'vattensackarTrasiga', text: '{namn}s vattensäck gick sönder.' },
     gors: { text: 'Syr en vattensäck av skinn.', stat: 'vattensackarGjorda', forsta: '{namn} sydde byns första vattensäck. Med den kan man bära vatten till den som inte kan gå.' } },
   // fröna (steg 2.10.2, odling.ts): tas med från de vilda grödorna när man samlar, rovfrön från den vilda rovan och ärtfrön
@@ -200,7 +203,7 @@ type Sak = keyof typeof DEF;
 export const SAKER: Record<string, SakDef | undefined> = DEF;
 export const SAK_LIST = Object.keys(DEF) as Sak[];
 export const sak = (k: string) => SAKER[k];
-export const sakNamn = (k: string) => SAKER[k]?.namn ?? k;
+export const sakNamn = (k: string) => SAKER[k]?.namn ?? (k === 'hus' ? 'Hus' : k); // huset är ingen sak, men ligger som en symbol på filten vid ett husbyte (steg 7.2.12)
 // namnet på ett ting: ett påbörjat redskap (paborjat.ts) heter som det ska bli
 export const tingNamn = (t: { k: string; halv?: { gor: string } }) => t.halv ? `${sakNamn(t.halv.gor)} (inte klar)` : sakNamn(t.k);
 

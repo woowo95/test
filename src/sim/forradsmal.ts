@@ -70,6 +70,7 @@ export const VILLTAL = balans('vill', {
   yxaPerVuxna: 4, yxaMin: 1, yxaMax: 3, yxaFran: 16, yxaBygge: 1, // ... en yxa, räknat på dem som är över Fran år, och Bygge till medan ett hus byggs (träden där det ska stå)
   knivar: 1, // ... så många knivar, och en till för varje tom knivplats vid en station (stationer.ts)
   spadar: 1, // så många benspadar byn vill ha (steg 2.7.2)
+  slandor: 2,
   vattensackar: 1, // så många vattensäckar byn vill ha (steg 2.10.1)
   facklor: 3, // så många facklor byn vill ha när den kan göra dem (steg 6.3.6)
 });
@@ -196,6 +197,7 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   benspade: () => VILLTAL.spadar, // till latrinen och rötterna (steg 2.7.2)
   fackla: () => VILLTAL.facklor, // till den som går ut i mörkret (steg 6.3.6, ljus.ts)
   talgljus: s => ljusPlatser(s).length, // ett till varje bord och hylla inne där folk är vakna i mörker (steg 6.3.8, ljus.ts)
+  slanda: () => VILLTAL.slandor, // till dem som spinner, och en i vävstolen (steg 7.7.8)
   vattensack: () => VILLTAL.vattensackar, // till den som inte kan gå (steg 2.10.1)
   boll: s => sportFor(s, 'boll'), slagtra: s => sportFor(s, 'slagtra'), mal: s => sportFor(s, 'mal'), // en av varje när byn har vuxna nog till sporten (sport.ts, steg 4.3.1.2)
   trumma: s => tommaPlatser(s, 'trumma'), benflojt: s => tommaPlatser(s, 'benflojt'), lyra: s => tommaPlatser(s, 'lyra'), // ett av varje till scenen (steg 4.3.2.2)

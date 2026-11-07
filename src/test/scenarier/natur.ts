@@ -2450,6 +2450,56 @@ SCENARIER.mjarde = {
   },
 };
 
+SCENARIER.ortvatten = {
+  text: 'Steg 7.6.6: benlim och tvål kokas med vatten ur vattensäcken. Någon fyller säcken vid vattnet när örtköket behöver det, och när det är kokt är säcken tom men finns kvar',
+  kor: () => {
+    const s = createState(5, START), { TILLVERKA, PROJEKT, newTing, fylldSack, vattenVal, KLAR_FOR } = SIM;
+    klockan(s);
+    const p = living(s)[0];
+    p.x = 30; p.y = 30; p.tek = { ...p.tek, ortkok: 1 } as typeof p.tek;
+    (s.stationer ??= []).push({ id: (s.nextBit ??= 1), k: 'ortkok', x: Math.floor(s.fire.at?.x ?? 30) + 4, y: Math.floor(s.fire.at?.y ?? 30) + 4, kvar: 0 } as SIM.Station); s.nextBit++; SIM.touch(s);
+    SIM.put(s, 'ben', 4, { [p.id]: 4 }); SIM.put(s, 'ved', 4, { [p.id]: 4 });
+    const utan = PROJEKT.koka_lim.kan(s, p, { kyla: false, gras: 0 });
+    const sack = newTing(s, 'vattensack', 1, p.id);
+    const val = vattenVal(s, p);
+    sack.fylld = 1;
+    const med = PROJEKT.koka_lim.kan(s, p, { kyla: false, gras: 0 }), ingaFler = !vattenVal(s, p);
+    const ben0 = SIM.amountOf(s, 'ben');
+    KLAR_FOR.koka_lim!(s, p, { act: 'koka_lim' } as SIM.Task, 0);
+    return [
+      ['raderna säger att benlim och tvål tar vatten', !!TILLVERKA.koka_lim.vatten && !!TILLVERKA.koka_tval.vatten],
+      ['utan fylld säck kokas inget', !utan],
+      [`när örtköket behöver vatten går någon och fyller säcken (${val?.why})`, !!val && val.ref === 0],
+      ['med en fylld säck går det att koka, och ingen fyller en till', med && ingaFler],
+      [`limmet blev gjort av benen (${ben0} → ${SIM.amountOf(s, 'ben')})`, SIM.amountOf(s, 'benlim') === 1],
+      ['säcken är tom men finns kvar', !fylldSack(s) && SIM.tingOf(s).includes(sack)],
+    ];
+  },
+};
+SCENARIER.slanda = {
+  text: 'Steg 7.7.8–7.7.9: sländan är ett redskap av en pinne och en sten. Utan en slända spinner ingen. Med den spinner man var som helst, och i vävstolen fortare, med sländan som ligger där',
+  kor: () => {
+    const s = createState(5, START), { SAKER, RECEPT, PROJEKT, GORS, newTing, STATIONER, nyttVid } = SIM;
+    klockan(s);
+    const p = living(s)[0];
+    p.tek = { ...p.tek, slanda: 1 } as typeof p.tek;
+    SIM.put(s, 'lin', 6, { [p.id]: 6 });
+    const utan = PROJEKT.spinna.kan(s, p, { kyla: false, gras: 0 });
+    const t = newTing(s, 'slanda', 1, p.id);
+    const med = PROJEKT.spinna.kan(s, p, { kyla: false, gras: 0 }), upp = PROJEKT.spinna.uppgift(s, p)!;
+    const v = { id: (s.nextBit ??= 1), k: 'vavstol', x: 34, y: 34, kvar: 0 } as SIM.Station; s.nextBit++;
+    (s.stationer ??= []).push(v); SIM.touch(s);
+    nyttVid(s, t);
+    const iStol = PROJEKT.spinna.uppgift(s, p)!;
+    return [
+      ['sländan är ett redskap av en gren och en sten', !!SAKER.slanda?.redskap && RECEPT.slanda.av!.grenar === 1 && RECEPT.slanda.av!.sten === 1 && Object.values(GORS).some(g => g.includes('slanda'))],
+      ['utan slända spinner ingen', !utan],
+      [`med sländan går det (${upp.tool})`, med && upp.tool === "slanda"],
+      ['vävstolen har en plats för sländan', STATIONER.vavstol.vid?.slanda === 1],
+      [`i vävstolen går det fortare med sländan som ligger där (${iStol.min} mot ${upp.min} min)`, PROJEKT.spinna.kan(s, p, { kyla: false, gras: 0 }) && !iStol.tool && iStol.min! < upp.min!],
+    ];
+  },
+};
 SCENARIER.hantverk7 = {
   text: 'Steg 7.5–7.7: stationerna på nivå 2 och örtköket gör saker ur registret TILLVERKA, snaran och gropen fångar, härden blir en eld inne, de nya plaggen finns, linet rötas på torkställningen, och yrkena har fått sina titlar',
   kor: () => {

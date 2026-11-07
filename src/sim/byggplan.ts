@@ -7,11 +7,10 @@ import { PLATS, rektAvstand } from './plats';
 import { lekplats, paLek, stangerIn, stationRutor, storlekAv, uteStation } from './stationer';
 import { knows } from './teknik';
 import { villHaMer } from './forradsmal';
-import { amountOf, changed, lagerFullt, lagerNy, overflow, lagerStorre, nearZone, ownMove, ownedAll, put, usable, zonesOf } from './lager';
+import { amountOf, changed, lagerFullt, lagerNy, overflow, lagerStorre, nearZone, ownedAll, put, usable, zonesOf } from './lager';
 import { tingOf } from './agande';
 import { FOREST, findPath } from './vag';
 import { Akut, BYGGNADER, Byggnad, FN, Fn, HUS, antalLika, fnId, fnOf, husNamn, sovHus, sovplatser, torkUte, vedUte } from './byggnader';
-import { BYN } from './egendom';
 import { kronika } from './historik';
 import { clamp } from './slump';
 import { ledareOf } from './styre';
@@ -21,6 +20,8 @@ import { BYGG } from './bygg';
 import { DAY, GRANNAR4, H, HOUR, Person, State, T, W, inMap } from './typer';
 import { underMinnet } from './sjo';
 import { balans } from './balans';
+import { betalVaror, betalaAv, bynPart, genomfor, personPart } from './behov';
+import { kanTaHus } from './byte';
 import { ELDFLYTT, nyEldplats } from './eldflytt';
 import { canLight } from './eld';
 import { paStrak, strakHindrar, strakI, straken } from './strak';
@@ -53,6 +54,7 @@ export const PLAN = balans('byggplan', {
   egetRumFolk: 4, // en familj med så här många vill ha ett eget rum
   lagerKostnad: 0.5, // att göra en lagerplats större eller ny kostar så här mycket (arbetet med att bära om)
   forStort: 2, // ett hus är för stort när det har så här många gånger fler sovplatser än familjen
+  husVanta: 2, husMote: 8, // ett husbyte väntar så här många dygn (år i spelet) på att köparen och säljaren står så här många rutor från varandra
   salj: 1.2, bynSalj: 0.6, // säljarens lägsta pris: så här många gånger husets värde (byn säljer billigt det den inte behöver)
   kopMax: 0.9, // köparens högsta pris är så här stor del av vad det kostar att bygga nytt
   prisRel: 0.3, // en vän betalar mindre ...
@@ -355,7 +357,7 @@ export function kopPris(s: State, ag: number, nybygge: number) {
 const kopaHus: AtgardDef = {
   namn: 'Köpa ett hus', steg: 2,
   foresla: (s, b) => {
-    if (b.a.ag === undefined || b.a.hus !== undefined || b.fn !== 'familjehus') return [];
+    if (b.a.ag === undefined || b.a.hus !== undefined || b.fn !== 'familjehus' || s.husAffar) return [];
     const ut: Forslag[] = [], want = onskadPlats(s, b), ny = husKostnadAv(want);
     for (const h of housesOf(s)) {
       if (h.ag === b.a.ag || !saljbart(s, h)) continue;
@@ -367,26 +369,40 @@ const kopaHus: AtgardDef = {
   },
 };
 const husKostnadAv = (n: number) => { const w = Math.max(HUS.minSida, Math.ceil(Math.sqrt(n))), h = Math.max(HUS.minSida, Math.ceil(n / w)); return ((2 * (w + 2) + 2 * h - 1) * (MATERIAL.timmer.n * grundvarde('ved') + MATERIAL.timmer.tim * ARBETE)) + w * h * (MATERIAL.tra.n * grundvarde('ved') + MATERIAL.tra.tim * ARBETE); };
-// affären: köparen betalar med silver först och sedan med det hen äger, efter grundvärdet. Vän eller släkt betalar mindre
-function kop(s: State, h: Hus, ag: number, by: Person) {
-  const kopare = byId(s, ag)!, saljare = h.ag !== undefined ? byId(s, h.ag) : undefined, salj = saljPris(s, h), hog = kopPris(s, ag, husKostnadAv((h.w - 2) * (h.h - 2)));
-  const rel = saljare ? getRel(s, saljare, kopare).op / 100 : 0, skill = clamp(((kopare.skill.handel ?? 0) - (saljare?.skill.handel ?? 0)) / 100, -1, 1);
-  const andel = clamp(0.5 - rel * PLAN.prisRel - skill * PLAN.prisSkill, 0, 1);
-  let rest = Math.ceil(salj + (hog - salj) * andel);
-  const pris = rest, till = saljare?.id ?? BYN;
-  for (const k of ['silver', ...Object.keys(ownedAll(s, ag)).filter(q => q !== 'silver').sort()]) {
-    const v = grundvarde(k);
-    if (rest <= 0 || v <= 0) continue;
-    const n = Math.min(Math.floor(ownedAll(s, ag)[k] ?? 0), Math.ceil(rest / v));
-    if (n <= 0) continue;
-    ownMove(s, k, n, ag, till); rest -= n * v;
-  }
-  if (rest > 0) return false;
-  const namn = h.namn;
+// husbytet (steg 7.2.12) är ett vanligt stort byte (genomfor i behov.ts): två filtar, huset som en symbol på den enas och betalningen på
+// den andras, handslag, en rad i loggen och krönikan, relationen och Handel som i alla byten. Priset hamnar mellan säljarens lägsta och
+// köparens högsta: vän eller släkt betalar mindre, och den skickligare får det bättre. Köparen betalar med det som hen behöver minst, i
+// hela saker, efter grundvärdet. Går det inte att betala blir det inget. Bara en bybo kan köpa (kanTaHus i byte.ts), aldrig en handlare
+export function kopHus(s: State, h: Hus, ag: number, bud?: Person) {
+  const kopare = byId(s, ag), saljare = h.ag !== undefined ? byId(s, h.ag) : undefined;
+  if (!kopare || h.ag === ag) return false;
+  const salj = saljPris(s, h), hog = kopPris(s, ag, husKostnadAv((h.w - 2) * (h.h - 2)));
+  const rel = saljare ? getRel(s, saljare, kopare).op / 100 : 0, skill = clamp(((kopare.skill.handel ?? 0) - ((saljare ?? bud)?.skill.handel ?? 0)) / 100, -1, 1);
+  const pris = Math.ceil(salj + (hog - salj) * clamp(0.5 - rel * PLAN.prisRel - skill * PLAN.prisSkill, 0, 1));
+  const M = personPart(s, kopare), G0 = saljare ? personPart(s, saljare) : bynPart(s, kopare.x, kopare.y, bud);
+  if (!kanTaHus(M)) return false;
+  const G = { ...G0, varde: () => 1 }; // betalningen räknas i grundvärdet
+  const { betal, fick } = betalaAv(betalVaror(M, G, ['hus']), G, pris);
+  if (fick < pris - 1e-9) return false;
+  genomfor(s, M, G, [{ k: 'hus', n: 1, hus: h.id, varde: pris }], betal, 'hus');
   h.ag = ag; h.fn = 'familjehus'; h.tom = undefined; h.rumFn = undefined; h.namn = husNamn(kopare.name); touch(s); count(s, 'husKopt');
-  log(s, `${kopare.name} köpte ${namn.toLowerCase()} ${saljare ? `av ${saljare.name}` : 'av byn'} för ungefär ${pris} i värde.`, 'world', [kopare.id, by.id]);
-  kronika(s, `${kopare.name} köpte ${namn.toLowerCase()}.`);
   return true;
+}
+// ett hus byter ägare när köparen och säljaren möts (som i alla stora byten): varje timme tills de gör det, högst PLAN.husVanta dygn.
+// När det är byn som säljer görs bytet med en vuxen som står nära köparen, helst ledaren
+function husAffar(s: State) {
+  const a = s.husAffar;
+  if (!a) return;
+  const h = husById(s, a.hus), k = byId(s, a.ag);
+  if (!h || !k || !living(s).includes(k) || h.ag === a.ag || !saljbart(s, h) || s.now - a.t > PLAN.husVanta * DAY) { delete s.husAffar; return; }
+  if (k.task?.act === 'sova') return;
+  const naraK = (q: Person) => q !== k && q.task?.act !== 'sova' && Math.hypot(q.x - k.x, q.y - k.y) <= PLAN.husMote;
+  const saljare = h.ag !== undefined ? byId(s, h.ag) : undefined;
+  if (h.ag !== undefined && (!saljare || !naraK(saljare))) return;
+  const led = ledareOf(s), bud = h.ag !== undefined ? undefined : led && naraK(led) ? led : living(s).find(q => naraK(q) && ageOf(q, s.now) >= ALDER.vuxen);
+  if (h.ag === undefined && !bud) return;
+  delete s.husAffar;
+  kopHus(s, h, a.ag, bud);
 }
 // en familj river sitt eget hus när ingen vill köpa det och det står tomt (steg 7.2.15): hälften av materialet går till ägaren
 export function rivOmTomt(s: State) {
@@ -578,6 +594,7 @@ export function stepByggplan(s: State) {
   planLager(s);
   byplanNu(s);
   torgNu(s);
+  husAffar(s);
   rivOmTomt(s);
   if (Math.floor(s.now / HOUR) % PLAN.varTim === 0) planBuild(s);
 }
@@ -608,7 +625,7 @@ export function planBuild(s: State) {
   let inget = behov.length > 0;
   for (const u of behov) {
     const ag = u.a.ag ?? -1;
-    if (klara.has(ag) || upptagen(s, ag)) continue;
+    if (klara.has(ag) || upptagen(s, ag) || s.husAffar?.ag === ag) continue; // den som väntar på att köpa ett hus bygger inget under tiden
     const bast = valj(s, u, okAt);
     if (!bast) continue;
     inget = false;
@@ -637,7 +654,7 @@ function valj(s: State, u: ByggBehov, okAt: (i: number) => boolean) {
 }
 function utfor(s: State, f: Forslag, u: ByggBehov, byggare: Person[], ppl: Person[]) {
   const fam = u.a.ag !== undefined ? familjOf(s, u.a.ag) : [], by = byggare.find(p => fam.includes(p)) ?? (fam.find(p => p.id === u.a.ag) ?? byggare[0] ?? ppl[0]);
-  if (f.at === 'kopaHus') { kop(s, f.hus!, u.a.ag!, by); return; }
+  if (f.at === 'kopaHus') { s.husAffar = { hus: f.hus!.id, ag: u.a.ag!, t: s.now }; return; }
   if (f.at === 'stockvagA' || f.at === 'bryggaA' || f.at === 'infartA') {
     s.nextBit ??= 1;
     for (const a of f.ritning) bitsOf(s).push({ id: s.nextBit++, x: a.x, y: a.y, k: MATERIAL[a.m].k, m: a.m, b: 0, mat: 0, c: 1, forb: 1 });

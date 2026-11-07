@@ -19,7 +19,7 @@ import { stepStyre } from './styre';
 import { gralBlirSlagsmal, lekSteg } from './strid';
 import { sportKlar, sportSteg } from './sport';
 import { lyssnaSteg, upptradaKlar, upptradaSteg } from './framtradande';
-import { redskapIHanden, tidyTools } from './agande';
+import { fylldSack, redskapIHanden, tidyTools } from './agande';
 import { kvEffekt } from './kvalitet';
 import { SKOG, chopStock, fellTree, rotStumps, stocks, stubbeGravd } from './skog';
 import { needLadder, noticeTheft, stole, takeMaterial, getable } from './behov';
@@ -191,9 +191,14 @@ for (const act of DRICKA_ACTS) MEDAN[act] = (s, p, t) => { if (t.prog === undefi
 // slakt och rensning: den första arten med arbetet som finns i förrådet (kaninen före vargen, steg 3.7.14)
 // mjärden är klar: materialet tas, och den sätts ut på närmaste strand (steg 7.4.2)
 for (const k of Object.keys(FALLOR)) KLAR[k as Act] = (s, p) => { for (const [q, n] of Object.entries((RECEPT as Record<string, { av?: Record<string, number> }>)[k].av!)) takeMaterial(s, p, q, n); sattUt(s, p, k); };
+export const KLAR_FOR = KLAR; // scenarierna prövar det som händer när ett arbete är klart
 // det som görs vid en station är klart: materialet tas och saken läggs i förrådet, och är hens som gjorde den (tillverka.ts)
 for (const k of TILLVERKA_LIST) { const d = TILLVERKA[k]; KLAR[d.act] = (s, p) => {
   for (const [q, n] of Object.entries(d.av)) { if (getable(s, p, q) < n) return; }
+  const sack = d.vatten ? fylldSack(s) : undefined;
+  if (d.vatten && !sack) return; // vattnet är borta: inget blir gjort, och materialet ligger kvar
+  if (sack) delete sack.fylld; // säcken töms men finns kvar (steg 7.6.6)
+  if (p.task?.tool && d.verktyg) wearUsed(s, p, 1);
   for (const [q, n] of Object.entries(d.av)) takeMaterial(s, p, q, n);
   put(s, d.ger, d.n, { [p.id]: d.n }); count(s, 'gjort_' + d.ger);
   if (forstaGang(s, 'gjort_' + d.ger)) log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]);
