@@ -1197,7 +1197,8 @@ SCENARIER.tornado = {
     const skadade = (st.skador ?? 0) - skadade0;
     // efteråt bärs grenarna in
     kor(s, 24);
-    const inburet = gs.n < 1e-6 || SIM.isStored(s, gs.x, gs.y);
+    // (det byn redan har nog av får ligga: lagret görs inte större för det, steg 7.2.18)
+    const inburet = gs.n < 1e-6 || SIM.isStored(s, gs.x, gs.y) || !SIM.villHaMer(s, 'grenar');
     return [
       [`tornadon kom på sommaren (${st.motgang_tornado ?? 0}) och var på kartan i ${((tid.till - tid.fran) / SIM.MIN).toFixed(0)} minuter`, (st.motgang_tornado ?? 0) === 1],
       [`det stormar medan den drar fram (blåsten ${vind.toFixed(2)}) och vuxna träd långt från banan faller (${st['tornado storm'] ?? 0} av stormen)`, vind === 1 && (st['tornado storm'] ?? 0) > 0],

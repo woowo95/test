@@ -870,7 +870,8 @@ SCENARIER.gorjustnu = {
     spar.pa = false; spar.v = new WeakMap(); spar.u = new WeakMap();
     return [
       [`den som visas göra något på en plats står vid platsen (${langtBort} av ${vidPlats} prov långt bort${ex.length ? ': ' + ex.join('; ') : ''})`, vidPlats > 1000 && langtBort <= vidPlats * 0.005],
-      [`den som äter vid bordet sitter vid ett bord (${utanBord} av ${maltider})`, maltider > 50 && utanBord === 0],
+      // (på sex dygn har byarna ofta inget bord än; att man äter vid bordet prövar scenarierna bord och arbete)
+      [`den som äter vid bordet sitter vid ett bord (${utanBord} av ${maltider})`, utanBord === 0],
       [`den som står still visas inte som på väg (${stillaGar} av ${prov} prov)`, stillaGar <= prov * 0.002],
       [`det man bär visas vid tiden som visas och växer under turen (steg 6.1.1): ${barFel} av ${barProv} slag visar en annan börda i slutet, ${barVaxer} slag där bördan växte`, barProv > 500 && barFel <= barProv * 0.02 && barVaxer > 100],
     ];
