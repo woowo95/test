@@ -114,7 +114,7 @@ export function buildJob(s: State, p: Person, forb = false): Job | undefined {
     if (b.forb && !forb) continue; // en förbättring väntar till nivån Förbättra (steg 7.2.10)
     if (lagerIVagen(s, b)) continue; // sakerna i den gamla lagerplatsen bärs ut först (steg 8.1.15)
     if (s.flod && iVattnetNu(s, b.y * W + b.x)) continue; // där vattnet står byggs och lagas inget förrän det sjunkit undan (flod.ts)
-    if (taken.has(b.id) || b.k === 'oppning' || (b.b < 1 && (treeOn(s, b) || stubbeOn(s, b.x, b.y) || vidElden(s, b.x, b.y)))) continue; // där elden står byggs inget förrän den flyttats (eldflytt.ts)
+    if (taken.has(b.id) || b.k === 'oppning' || (b.b < 1 && (treeOn(s, b) || stubbeOn(s, b.x, b.y) || vidElden(s, b.x, b.y) || (b.k === 'vagg' && (s.stockar ?? []).some(k => Math.floor(k.x) === b.x && Math.floor(k.y) === b.y))))) continue; // en vägg byggs inte på en stock (steg 8.1.13) // där elden står byggs inget förrän den flyttats (eldflytt.ts)
     const M = MATERIAL[b.m], repair = b.b >= 1;
     if (repair && b.c >= BYGG.laga) continue;
     if (M.tek && !knows(p, M.tek)) continue;
@@ -207,6 +207,7 @@ const stockInne = (s: State, h: Hus) => nTools(s, 'yxa') > 0 && (s.stockar ?? []
 export function vaggRensa(s: State) {
   for (const a of s.stackar ?? []) { const b = bitAt(s, a.x, a.y); if (b?.k === 'vagg' && b.b >= 1) { const f = freeNear(s, a.x, a.y, true); a.x = Math.floor(f.x); a.y = Math.floor(f.y); changed(s); } }
   for (const t of tingOf(s)) { if (t.x === undefined || t.y === undefined || t.hos !== undefined || t.lass !== undefined) continue; const b = bitAt(s, t.x, t.y); if (b?.k === 'vagg' && b.b >= 1) { const f = freeNear(s, t.x, t.y, true); t.x = Math.floor(f.x); t.y = Math.floor(f.y); t.vid = undefined; } }
+  enPerRuta(s);
 }
 // huset är färdigt: alla bitar byggda och inga fällda träd kvar inne i det. Prövas när en bit blir klar och när en stock huggits slut
 export function husKlart(s: State, h: Hus, p: Person) {

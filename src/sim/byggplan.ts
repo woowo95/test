@@ -694,7 +694,7 @@ function byggUt(s: State, f: Forslag, by: Person, forb: boolean) {
   s.nextBit ??= 1;
   for (const a of f.ritning) bitsOf(s).push({ id: s.nextBit++, x: a.x, y: a.y, k: MATERIAL[a.m].k, m: a.m, b: a.m === 'oppning' ? 1 : 0, mat: 0, c: 1, hus: h.id, ...(forb ? { forb: 1 as const } : {}) });
   h.ut = { x: f.x, y: f.y, w: f.w, h: f.h, oppnas: f.oppnas.map(a => [a.x, a.y, a.m]) };
-  lagerUrVagen(s, f, h);
+  touch(s); lagerUrVagen(s, f, h);
   // en öppning i den gamla väggen redan nu, så att ingen blir instängd i den nya delen (den blir golv som resten sist)
   if (!f.ritning.some(a => a.m === 'oppning') && f.oppnas.length) {
     const q = f.oppnas[f.oppnas.length >> 1], b = bitAt(s, q.x, q.y);

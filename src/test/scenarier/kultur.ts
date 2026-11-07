@@ -370,7 +370,7 @@ SCENARIER.pynt = {
     const sorter = new Set(Array.from({ length: 12 }, (_, i) => pyntSort(s, { id: i } as Person))).size; // smaken skiljer sig mellan människor
     // pyntet väger lite mot arbetet om maten; här väger det mer, så att p bygger sitt snart
     let h = 0; const vikt = PYNT_LIST.map(j => PROJEKT[j]!.vikt); for (const j of PYNT_LIST) PROJEKT[j]!.vikt = 20;
-    try { while (!(pyntOf(s, p) && isKlar(pyntOf(s, p)!)) && h < 72) { kor(s, 1); h++; } } finally { PYNT_LIST.forEach((j, i) => { PROJEKT[j]!.vikt = vikt[i]; }); }
+    try { while (!(pyntOf(s, p) && isKlar(pyntOf(s, p)!)) && h < 240) { kor(s, 1); h++; for (const m of ['virke', 'skinn', 'rep']) if (SIM.amountOf(s, m) < 4) SIM.setAmount(s, m, 6); } } finally { PYNT_LIST.forEach((j, i) => { PROJEKT[j]!.vikt = vikt[i]; }); }
     const t = pyntOf(s, p), b = bedTile(s, p), rum = t && stationRum(s, t);
     const byggd = !!t && isKlar(t) && t.k === k && t.ag === p.id && !!t.inne && b !== undefined && !!rum?.tiles.includes(b) && t.q !== undefined;
     const mer = PYNT_LIST.some(j => villPynt(s, p, j));

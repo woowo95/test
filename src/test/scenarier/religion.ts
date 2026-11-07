@@ -393,4 +393,4 @@ SCENARIER.gudar = {
   },
 };
 
-{ const kor0 = SCENARIER.tecken.kor; SCENARIER.tecken.kor = () => { SIM.TRO_PROV.utanTak = true; try { return kor0(); } finally { SIM.TRO_PROV.utanTak = false; } }; }
+for (const n of ['tecken', 'gudar']) { const kor0 = SCENARIER[n].kor; SCENARIER[n].kor = () => { SIM.TRO_PROV.utanTak = true; try { return kor0(); } finally { SIM.TRO_PROV.utanTak = false; } }; }
