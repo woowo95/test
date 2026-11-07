@@ -57,6 +57,8 @@ const PLAGG_DEF = {
     skydd: { delar: ['huvud'], tar: { hugg: 0.15, stick: 0.1, slag: 0.15, bett: 0.2 } }, forsta: '{namn} sydde byns första {plagg}.' }, // steg 7.7.2
   snoskor: { namn: 'Snöskor', ord: 'ett par snöskor', verb: 'Syr', plats: 'fotter', mangd: RECEPT.snoskor.mangd, med: RECEPT.snoskor.av, varme: 0.1, dygn: 3, vikt: 3, tek: 'skinnklader', min: RECEPT.snoskor.min, slag: ['skinn'], snoTar: 0.8,
     skydd: { delar: ['fotV', 'fotH'], tar: { hugg: 0.2, stick: 0.2, slag: 0.1, bett: 0.3 } }, forsta: '{namn} gjorde byns första par {plagg}. Snön saktar dem nästan inte.' }, // steg 7.7.3
+  mantel: { namn: 'Mantel', ord: 'en mantel', verb: 'Syr', plats: 'yttre', mangd: RECEPT.mantel.mangd, med: RECEPT.mantel.av, varme: 0.2, dygn: 12, vikt: 5, tek: 'skinnklader', min: RECEPT.mantel.min, slag: ['skinn'],
+    forsta: '{namn} sydde en {plagg} åt ledaren. Den följer ämbetet, inte personen.' }, // steg 8.3.14
   halsband: { namn: 'Halsband', ord: 'ett halsband', verb: 'Syr', plats: 'smycke', mangd: RECEPT.halsband.mangd, med: RECEPT.halsband.av, varme: 0, dygn: 20, vikt: 0.2, tek: 'skinnklader', min: RECEPT.halsband.min, slag: ['smycke'],
     forsta: '{namn} trädde byns första {plagg}. Den som bär det får anseende.' }, // steg 7.7.5
   tunika: { namn: 'Tunika', ord: 'en tunika', verb: 'Syr', plats: 'yttre', mangd: RECEPT.tunika.mangd, varme: 0.1, dygn: 5, vikt: 2, tek: 'vavstol', min: RECEPT.tunika.min, slag: ['tyg'],

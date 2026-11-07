@@ -492,3 +492,98 @@ SCENARIER.ord = {
     ];
   },
 };
+
+SCENARIER.omrostning = {
+  text: 'Steg 8.3.1–8.3.3: allt byn avgör är en fråga i FRAGOR. Klockan 20 röstar alla vuxna efter åsikter och intresse, summan av vikterna avgör, och vid Envälde väger nästan bara ledaren. Omröstningarna sparas',
+  kor: () => {
+    const s = createState(6, START), v = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen), l = v[0];
+    (s.styre = { historia: [{ id: l.id, namn: l.name, titel: 'Ålderman', fran: s.now }], oppna: ['rang'], ledare: l.id, sedan: s.now, titel: 'Ålderman', satt: 1, pabud: { matlager: 0, vedlager: 0, torkat: 0 } as never });
+    const allmoge = SIM.vikter(s), lika = Math.max(...allmoge.filter(x => x.p !== l).map(x => x.andel));
+    s.seder.v.rang = 1;
+    const envalde = SIM.vikter(s), led = envalde.find(x => x.p === l)!.andel;
+    s.seder.v.rang = 0;
+    const fr = { f: 'pabud', d: { k: 'matlager', v: 0.9 }, fram: l.id };
+    SIM.rostaOm(s, fr);
+    const o = s.styre!.roster![0];
+    const allaVuxna = o.roster.length === v.length && o.roster.every(r => r.why);
+    // en fråga i kön tas upp klockan 20, och ett ja gör det raden säger
+    s.seder.v.rang = 1;
+    SIM.laggFram(s, 'pabud', { k: 'vedlager', v: 0.7 }, l); SIM.laggFram(s, 'pabud', { k: 'vedlager', v: 0.7 }, l);
+    const iKo = s.styre!.fragor!.length;
+    SIM.rostKvall(s);
+    const satt = s.styre!.pabud!.vedlager === 0.7;
+    return [
+      [`vid Allmogen väger ingen annan än ledaren mycket (högst ${(lika * 100).toFixed(0)} %)`, lika < 0.4],
+      [`vid Envälde väger ledaren nästan allt (${(led * 100).toFixed(0)} %)`, led > 0.85],
+      [`alla vuxna röstar, och varje röst har ett skäl (${o.roster.length})`, allaVuxna],
+      ['samma fråga läggs inte fram två gånger', iKo === 1],
+      ['frågan avgörs vid elden och ett ja gör det raden säger', satt],
+    ];
+  },
+};
+SCENARIER.makten = {
+  text: 'Steg 8.3.4–8.3.12: Förtjänst – Härkomst och Förlikning – Fejd låses upp och börjar där byn lutar, tronföljden följer sederna, formen har tidens namn, missnöjet växer och bleknar, och en fraktion som väger mer än legitimiteten avsätter ledaren fredligt eller slåss',
+  kor: () => {
+    const ny = () => {
+      const s = createState(6, START), v = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
+      for (const p of v) (p.tek ??= {}).ledarskap = 1;
+      return { s, v };
+    };
+    const { s, v } = ny(), l = v[0];
+    s.styre = { historia: [{ id: l.id, namn: l.name, titel: 'Ålderman', fran: s.now }], oppna: ['rang'], ledare: l.id, sedan: s.now, titel: 'Ålderman', satt: 1, pabud: {} as never, lugn: 0 };
+    SIM.oppnaSed(s, 'fejd');
+    const oppen = SIM.sedOppen(s, 'fejd');
+    // former
+    s.seder.v.rang = 0.8; s.seder.v.fortjanst = 0.5; s.seder.v.fejd = 0; const kung = SIM.styrelseform(s).namn;
+    s.seder.v.fortjanst = -0.5; s.seder.v.fejd = 0.5; const envalde = SIM.styrelseform(s).namn;
+    s.seder.v.rang = 0; s.seder.v.fortjanst = 0; s.seder.v.fejd = 0; const ting = SIM.styrelseform(s).namn;
+    // tronföljden
+    s.seder.v.fortjanst = 0.6; const arv = SIM.tronfoljd(s);
+    s.seder.v.fortjanst = 0; s.seder.v.fejd = 0.8; const strid = SIM.tronfoljd(s);
+    s.seder.v.fejd = 0; const val = SIM.tronfoljd(s);
+    // missnöjet växer av svält och bleknar
+    const q = v[1]; q.warm = 1; q.hunger = 0.01; SIM.missnojeTimme(s); const m1 = q.missnoje ?? 0;
+    q.hunger = 1; for (let i = 0; i < 24 * 30; i++) SIM.missnojeTimme(s);
+    // fraktionen avsätter fredligt vid Förlikning
+    for (const p of v.slice(1)) p.missnoje = 1;
+    s.styre.lugn = 0;
+    for (const r of Object.keys(s.rels)) s.rels[r].op = -50;
+    s.styre.frak = { led: v[1].id, med: v.slice(1).map(p => p.id) };
+    SIM.missnojeTimme(s);
+    const avsatt = s.styre.ledare !== l.id && s.styre.historia[s.styre.historia.length - 1].slut === 'avsattes';
+    return [
+      [`skalan låses upp (${oppen})`, oppen],
+      [`formerna har tidens namn: ${kung}, ${envalde}, ${ting}`, kung === 'Kungadöme' && envalde === 'Envälde' && ting === 'Folkting'],
+      [`tronföljden följer sederna: ${arv}, ${strid}, ${val}`, arv === 'arv' && strid === 'strid' && val === 'val'],
+      [`missnöjet växer av svält (${m1.toFixed(3)}) och bleknar (${(q.missnoje ?? 0).toFixed(3)})`, m1 > 0 && (q.missnoje ?? 0) < m1],
+      ['en fraktion som väger mer än legitimiteten avsätter ledaren fredligt vid Förlikning', avsatt],
+    ];
+  },
+};
+
+SCENARIER.mantel = {
+  text: 'Steg 8.3.13–8.3.15: ett förbud mot hån är en fråga, och går den igenom rivs scenen. Ledarens mantel följer ämbetet, och ett halsband ger anseende, ett finare mer',
+  kor: () => {
+    const s = createState(6, START), v = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen), l = v[0], q = v[1];
+    s.styre = { historia: [{ id: l.id, namn: l.name, titel: 'Ålderman', fran: s.now }], oppna: ['rang'], ledare: l.id, sedan: s.now, titel: 'Ålderman', satt: 1 };
+    s.seder.v.rang = 1;
+    const t0 = SIM.hanTillat(s);
+    SIM.laggFram(s, 'hanforbud', { led: l.id }, l); SIM.rostKvall(s);
+    const forbud = !!s.styre.hanForbud && SIM.hanTillat(s) === 0 && t0 >= 0;
+    // manteln
+    const m = SIM.newTing(s, 'mantel_kaninskinn', 1), man = () => s.ting!.find(t => t.k === 'mantel_kaninskinn')!;
+    SIM.stepKlader(s); const paLedaren = man().bar === l.id;
+    s.styre.ledare = q.id; SIM.stepKlader(s); const nasta = man().bar === q.id;
+    // halsbandet
+    const a0 = SIM.ryktbarhet(s, v[2].id).a;
+    const h = SIM.newTing(s, 'halsband_benband', 1); const hb = s.ting!.filter(t => t.k === 'halsband_benband').pop()!; hb.bar = v[2].id; hb.x = hb.y = undefined;
+    const a1 = SIM.ryktbarhet(s, v[2].id).a;
+    hb.k = 'halsband_tandband'; const a2 = SIM.ryktbarhet(s, v[2].id).a;
+    return [
+      ['förbudet mot hån går igenom och stoppar hånet', forbud],
+      ['ledaren har på sig manteln', paLedaren && !!m],
+      ['manteln går till nästa ledare', nasta],
+      [`ett halsband ger anseende, ett finare mer (${a0.toFixed(2)} → ${a1.toFixed(2)} → ${a2.toFixed(2)})`, a1 > a0 && a2 > a1 && !!h],
+    ];
+  },
+};

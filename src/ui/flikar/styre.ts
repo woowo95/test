@@ -1,4 +1,4 @@
-import { DAY, LED, PABUD, PABUD_LIST, Pabud, Rattegang, SEDER, STR, STRAFF_NAMN, VAGSKALAR, byId, legitimitet, ledareOf, onskatDygn, pabud, pabudAndel, rattegang, styrelseform, timeLabel, torkAndel } from '../../sim';
+import { MINISTRAR, TRONFOLJD_TEXT, tronfoljd, DAY, LED, PABUD, PABUD_LIST, Pabud, Rattegang, SEDER, STR, STRAFF_NAMN, VAGSKALAR, byId, legitimitet, ledareOf, onskatDygn, pabud, pabudAndel, rattegang, styrelseform, timeLabel, torkAndel } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { bar, esc, hjalpKnapp, hjalpText, num, pLink } from '../hjalp';
 import { s } from '../lage';
@@ -17,12 +17,13 @@ export const styre: Flik = {
     const st = s.styre, l = ledareOf(s);
     if (!st) return '<p class="muted">Byn har ingen ledare.</p>';
     const f = styrelseform(s), lg = legitimitet(s);
-    const delar: [string, number, number][] = [['Folkets stöd', lg.stod, LED.wStod], ['Tiden vid makten', lg.tid, LED.wTid], ['Vintrar byn klarat', lg.vint, LED.wVint]];
+    const delar: [string, number, number][] = [['Folkets stöd', lg.stod, LED.wStod], ['Hur ledaren tillsattes', lg.satt, LED.wSatt], ['Framgångar', lg.fram, LED.wFram], ['Vintrar byn klarat', lg.vint, LED.wVint]];
     const lyss = st.pabud ? pabudAndel(s) : undefined;
     // formens namn överst i mitten, ledaren under, och legitimiteten och hur många som lyssnar på påbuden bredvid varandra (steg 4.5.4.2)
     const ledare = l ? `<div class="formnamn">${iconImg('ledarskap', 24)} <b>${esc(f.namn)}</b> ${hjalpKnapp('styre', 'Vad är styret?')}</div>
       ${hjalpText('styre', `<p class="muted">${esc(f.text(l, st.titel ?? ''))} Bara den som kan ledarskap kan bli ledare. Ledaren drar byns seder åt sitt håll, bestämmer påbuden och straffar det hen sett eller hört om.</p>`)}
-      <ul class="rels"><li>${pLink(l)}<span></span><span></span><span class="muted">${esc(st.titel ?? '')}, ${dygnTxt(s.now - (st.sedan ?? s.now))}</span></li></ul>
+      <ul class="rels"><li>${pLink(l)}<span></span><span></span><span class="muted">${esc(st.titel ?? '')}, ${dygnTxt(s.now - (st.sedan ?? s.now))}</span></li>${ministrar()}</ul>
+      <p class="muted small" title="Så väljs nästa ledare">👑 ${esc(TRONFOLJD_TEXT[tronfoljd(s)])}</p>
       <div class="rutor"><div class="ruta" title="Hur mycket byn godtar ledaren"><div class="rutnamn">⚖️ Legitimitet</div><div class="rutbar">${bar(lg.v, lg.v < 0.3 ? 'low' : '')}<span>${Math.round(lg.v * 100)} %</span></div>
       ${hjalpText('styre', `<dl class="kv smal">${delar.map(([n, v, w]) => `<dt class="small">${n}</dt><dd class="small">${bar(v)}<span>${Math.round(v * 100)} % · väger ${num(w)}</span></dd>`).join('') + (lg.oratt > 0.005 ? `<dt class="small">Orättvisa straff</dt><dd class="small">−${Math.round(lg.oratt * 100)} %</dd>` : '')}</dl>`)}</div>
       ${lyss !== undefined ? `<div class="ruta" title="Hur mycket byn rättar sig efter påbuden"><div class="rutnamn">📜 Lyssnar</div><div class="rutbar">${bar(lyss)}<span>${Math.round(lyss * 100)} %</span></div></div>` : ''}</div>`
@@ -34,7 +35,7 @@ export const styre: Flik = {
       return `<li title="${esc(d.effect)}">${sedVag(x, esc(d.neg), esc(d.pos))}</li>`;
     }).join('');
     const hist = st.historia.slice().reverse().map(h => `<li><span class="when">${timeLabel(s, h.fran)}</span>${pLink(byId(s, h.id)) === '–' ? esc(h.namn) : pLink(byId(s, h.id))}, ${esc([...(h.forr ?? []), h.titel].map(x => x.toLowerCase()).join(', sedan '))}${h.till !== undefined ? ` – ${dygnTxt(h.till - h.fran)}, ${esc(h.slut ?? '')}` : ''}</li>`).join('');
-    return `${ledare}<h3>Vågskålar</h3><ul class="seder">${skalar}</ul>${rattegangar()}<h3>Byns ledare</h3><ol class="logg">${hist}</ol>`;
+    return `${ledare}<h3>Vågskålar</h3><ul class="seder">${skalar}</ul>${omrostningar()}${rattegangar()}<h3>Byns ledare</h3><ol class="logg">${hist}</ol>`;
   },
 };
 
@@ -59,6 +60,19 @@ export function pabudDel() {
       : `<div class="ruta bred"><div class="rutnamn">${esc(namn)}</div><dl class="kv smal">${ks.map(k => rad(k, false)).join('')}</dl></div>`).join('')}</div>`;
 }
 
+// ministrarna (steg 8.3.8): en rad per post
+function ministrar() {
+  return Object.entries(s.styre?.ministrar ?? {}).map(([id, pid]) => { const q = byId(s, pid); return q ? `<li>${pLink(q)}<span></span><span></span><span class="muted">${esc(MINISTRAR[id]?.namn ?? id)}</span></li>` : ''; }).join('');
+}
+// omröstningarna (steg 8.3.3): frågan, vem som la fram den och utfallet. Ett tryck visar varje röst som en symbol med vikten och varför
+function omrostningar() {
+  const lista = s.styre?.roster;
+  if (!lista?.length) return '';
+  return `<h3>Omröstningar</h3><ol class="logg">${lista.slice().reverse().map(o => {
+    const id = `rost-${o.t}-${o.f}`, val = o.f === 'ledare';
+    return `<li class="klick" data-hjalp="${id}" data-hjalp-grupp="rost-" title="Tryck för alla röster" tabindex="0" role="button"><span class="when">${timeLabel(s, o.t)}</span>${esc(o.namn)}${val ? `: ${esc(o.framNamn)}` : ` ${o.gick ? '✅' : '❌'}`} <span class="muted">${val ? '' : `(${Math.round(o.ja * 100)} % mot ${Math.round(o.nej * 100)} %)`}</span></li>${hjalpText(id, `<li class="small"><p class="muted">${val ? '' : `Lades fram av ${esc(o.framNamn)}.`}</p><ul class="rels">${o.roster.slice().sort((a, b) => b.w - a.w).map(r => `<li title="${esc(r.why)}">${val ? '🗳️' : r.ja ? '👍' : '👎'} ${esc(r.namn)} <span class="muted">${Math.round(r.w * 100)} % · ${esc(r.why)}</span></li>`).join('')}</ul></li>`)}`;
+  }).join('')}</ol>`;
+}
 // rättegångarna (steg 3.10.17): en rad per dom, nyast först. Ett tryck visar berättelsen och hur domen gick till
 const plus = (v: number) => `${v < 0 ? '−' : '+'}${num(Math.abs(v))}`;
 function rattegangar() {

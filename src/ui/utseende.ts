@@ -99,7 +99,7 @@ function utrustad(s: State, p: Person, u: Skapad) {
   for (const pl of Object.values(r)) {
     const a = pl.ting && kladAv(pl.ting.k);
     if (!a) continue;
-    if (a.plagg === 'rock') u.klader.rock = KLADMATERIAL[a.mat].namn;
+    if (a.plagg === 'rock' || a.plagg === 'mantel') u.klader.rock = KLADMATERIAL[a.mat].namn; // manteln syns som en rock tills Björn valt (steg 8.3.14)
     else if (a.plagg === 'skor') u.klader.skor = true;
     else if (a.plagg === 'balte') u.klader.balte = true;
     else if (a.plagg === 'axelrem') u.klader.axelrem = true;

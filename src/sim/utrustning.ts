@@ -1,3 +1,4 @@
+import { kladAv } from './klader';
 // Utrustningen (steg 2.3.1): platserna där en person har saker (händerna, kroppen i två lager, huvudet, benen och
 // fötterna), vad saker väger och hur många händer de tar. Vikten står i sakregistret (vikt, hander, rymmer i saker.ts,
 // viktOf). Hur mycket en hand orkar räknas i lager.ts (handOrkar, steg 6.1.8). En sak tar en hand om den som håller den
@@ -225,17 +226,25 @@ export function kladVarme(s: State, p: Person) {
 const rang = (p: Person, t: Ting) => t.agare === p.id ? 0 : t.agare === BYN ? 1 : 2;
 // varje timme: den som saknar ett plagg på en plats tar på sig ett som är fritt (ingen har det på sig, i handen eller i
 // bördan), och som hen får ta
+const arMantel = (k: string) => kladAv(k)?.plagg === 'mantel';
 export function stepKlader(s: State) {
   if (!tingOf(s).some(t => SAKER[t.k]?.klad)) return;
   const kallt = temperature(s) < KROPP.kladTemp;
+  const ledare = s.styre?.ledare;
   for (const p of living(s)) {
+    // ledarens mantel (steg 8.3.14): den tillhör byn och följer ämbetet. Ledaren byter till den; den som inte längre leder tappar den
+    for (const t of paSig(s, p)) if (arMantel(t.k) && p.id !== ledare) t.bar = undefined;
+    if (p.id === ledare && !paSig(s, p).some(t => arMantel(t.k))) {
+      const m = tingOf(s).find(t => arMantel(t.k) && t.bar === undefined && t.hos === undefined && t.lass === undefined && !t.halv);
+      if (m) { for (const t of paSig(s, p)) if (SAKER[t.k]!.klad!.plats === 'yttre') t.bar = undefined; m.bar = p.id; m.x = m.y = m.vid = undefined; }
+    }
     // för varm (steg 2.3.4): de varma plaggen tas av, och tas på igen först när det är kallt och kroppen inte är varmare än idealet.
     // Bältet värmer inte och sitter kvar
     if (p.warm > KROPP.forVarm) for (const t of paSig(s, p)) if (SAKER[t.k]!.klad!.varme > 0) t.bar = undefined;
     const har = new Set(paSig(s, p).map(t => SAKER[t.k]!.klad!.plats));
     for (const k of KLAD_SLAG) {
       const pl = SAKER[k]!.klad!.plats;
-      if (har.has(pl) || (SAKER[k]!.klad!.varme > 0 && (!kallt || p.warm > 1))) continue;
+      if (har.has(pl) || arMantel(k) || (SAKER[k]!.klad!.varme > 0 && (!kallt || p.warm > 1))) continue;
       let best: Ting | undefined;
       for (const t of tingOf(s)) {
         if (t.k !== k || t.bar !== undefined || t.hos !== undefined || t.lass !== undefined || t.halv || !lends(s, t.agare, p)) continue;

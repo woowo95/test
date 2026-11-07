@@ -154,6 +154,7 @@ const DEF = {
   byxor: { namn: 'Syr byxor', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, // steg 7.7
   mossa: { namn: 'Syr en mössa', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' },
   snoskor: { namn: 'Gör snöskor', slag: 'hantverk', hantverk: true, stilla: true, verb: 'gör', plats: 'station' },
+  mantel: { namn: 'Syr ledarens mantel', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, // steg 8.3.14
   halsband: { namn: 'Trär ett halsband', slag: 'hantverk', hantverk: true, stilla: true, verb: 'trär', plats: 'station' },
   tunika: { namn: 'Syr en tunika', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' },
   skjorta: { namn: 'Syr en skjorta', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' },

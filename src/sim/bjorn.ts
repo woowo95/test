@@ -8,7 +8,7 @@ import { balans } from './balans';
 import { kronikaBer, och, personFalt, talOrd } from './berattelser';
 import { blodas } from './blod';
 import { blocked, freeNear, roomAt } from './byggnad';
-import { BJORN_STRID, bjornarOf, dodaDjur, halsaOf, satDjurHalsa } from './djur';
+import { bjornVarden, bjornarOf, dodaDjur, halsaOf, satDjurHalsa } from './djur';
 import { ALDER, KROPP, ageOf, byId, count, forstaGang, getRel, isSick, livet, living, log, ovning, stat, think } from './folk';
 import { isLight, yearNo } from './tid';
 import { halsa, kanGa, skada } from './halsa';
@@ -158,7 +158,7 @@ export function bjornjaktSteg(s: State, p: Person, tk: Task) {
 // en strid med björnen: den anfaller den som kom för nära (skada), eller jägarna anfaller den (doda). En fälld björn
 // styckas och bärs hem av den första som står kvar och kan stycka den; annars ligger den kvar där den föll
 function bjornStrid(s: State, id: number, folk: Person[], medUngar: boolean, avsikt: Avsikt): Strid {
-  const W0 = 14, H0 = 8, d = BJORN_STRID;
+  const W0 = 14, H0 = 8, d = bjornVarden();
   const kampar: Uppstallning['kampar'] = folk.map((p, i) => personKampe(s, p, 0, 0, 3, H0 / 2 + (i - (folk.length - 1) / 2)));
   kampar.push({ id: 0, namn: d.namn, sida: 1, djur: 'bjorn', st: { styrka: d.styrka, uthallighet: d.uthallighet, mod: d.mod * (medUngar ? BJORNJAKT.ungarMod : 1), smidighet: d.smidighet, skicklighet: d.skicklighet }, vapen: d.vapen, klader: [], fart: d.fart, x: W0 - 4, y: H0 / 2 });
   kampar.forEach((k, i) => { k.id = i + 1; });

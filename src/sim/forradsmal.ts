@@ -15,7 +15,7 @@ import { foodDaysAll } from './ekonomi';
 import { isFood } from './saker';
 import { ljusPlatser } from './ljus';
 import { allows, amountOf, rymd, zonesOf } from './lager';
-import { Pabud, pabud } from './styre';
+import { Pabud, legitimitet, pabud } from './styre';
 import { ALDER, ageOf, living } from './folk';
 import { clamp } from './slump';
 import { sportFor } from './sport';
@@ -24,7 +24,7 @@ import { brasaBrist } from './brasor';
 import { utanBadd } from './byggnader';
 import { latrinBrist } from './smuts';
 import { torkBrist } from './matlagning';
-import { HOUR, State } from './typer';
+import { HOUR, State, WEEK } from './typer';
 
 export const FORRAD = balans('forrad', {
   forsiktig: 0.25, // en försiktig by (seden Förutseende eller påbudet) vill ha så mycket större förråd
@@ -190,6 +190,8 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   byxor: s => living(s).length, mossa: s => living(s).length,
   snoskor: s => Math.ceil(living(s).length / VILLTAL.snoskorPer), // några par till dem som går ut i snön
   halsband: s => Math.ceil(living(s).length / VILLTAL.halsbandPer), // det är få som bär smycken
+  // ledarens mantel (steg 8.3.14): byn gör en åt den som suttit en tidsålder med mer än hälften av legitimiteten
+  mantel: s => s.styre?.sedan !== undefined && s.now - s.styre.sedan >= WEEK && legitimitet(s).v > 0.5 ? 1 : 0,
   tunika: s => amountOf(s, 'lintyg') > 0 ? living(s).length : 0, skjorta: s => amountOf(s, 'lintyg') > 0 ? living(s).length : 0,
   balte: s => living(s).length, // ett per person (steg 2.3.3)
   axelrem: spjutVill, // en per spjut (steg 7.1.2)

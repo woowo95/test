@@ -72,6 +72,7 @@ const DEF = {
   byxor: { var: 'plagg', mangd: 2, av: { rep: 1 }, min: 5 },
   mossa: { var: 'plagg', mangd: 1, av: {}, min: 4 },
   snoskor: { var: 'plagg', mangd: 1, av: { grenar: 2, rep: 1 }, min: 5 },
+  mantel: { var: 'plagg', mangd: 3, av: { rep: 1 }, min: 8 }, // steg 8.3.14
   halsband: { var: 'plagg', mangd: 3, av: { rep: 1 }, min: 5 },
   tunika: { var: 'plagg', mangd: 3, av: {}, min: 5 },
   skjorta: { var: 'plagg', mangd: 2, av: {}, min: 5 },

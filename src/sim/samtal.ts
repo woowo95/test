@@ -1,3 +1,4 @@
+import { fraktionSamtal } from './rost';
 import { barnTill, upplev } from './uppvaxt';
 import { ALDER, REL, ageOf, alive, byId, count, franMitt, getRel, isKin, living, log, similarity, stat, think } from './folk';
 import { blocked } from './byggnad';
@@ -161,6 +162,7 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
   if (!others.length) return;
   // välj samtalspartner viktad efter relation
   const b = pickViktat(s, others, others.map(o => valVikt(s, a, o)), 'samtal', a); // bästa vänner och mentorer (steg 3.1.1)
+  fraktionSamtal(s, a, b); // viljan att byta ledare sprids (steg 8.3.11)
   const r = getRel(s, a, b);
   const aa = ageOf(a, now), ba = ageOf(b, now);
   const mood = moodOf(a, now);

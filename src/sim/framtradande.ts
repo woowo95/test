@@ -1,3 +1,4 @@
+import { laggFram } from './rost';
 import { blocked, freeNear } from './byggnad';
 // Framträdandena (steg 4.3.2, "Kulturen i fas 4" i designdokumentet): på kvällen när det är mörkt uppträder någon vid elden
 // (eller i långhuset när det är kallt eller regnar) för de andra, högst en gång per kväll. Den enklaste formen, ett kväde,
@@ -132,7 +133,7 @@ export type Bud = 'person' | 'hylla' | 'hana' | 'tro';
 interface BudDef { namn: string; vikt: (s: State, p: Person, x: BudLage) => number; amne: (s: State, p: Person, x: BudLage) => string; verkan: (s: State, p: Person, b: Person, q: number, f: Fram) => boolean | void } // verkan: sant när ryktet spreds
 interface BudLage { e?: Intryck; ev: number; l?: Person; op: number }
 // det tillåtna hånet: 1 = fritt, 0 = förbjudet av ledaren (påbudet Hån, styre.ts)
-export const hanTillat = (s: State) => (1 + pabud(s, 'han')) / 2;
+export const hanTillat = (s: State) => s.styre?.hanForbud ? 0 : (1 + pabud(s, 'han')) / 2; // ett förbud är ett förbud (steg 8.3.13)
 // publikens relation till ledaren ändras med d
 function stod(s: State, b: Person, l: Person | undefined, d: number) {
   if (!l || b === l) return;
@@ -288,6 +289,7 @@ export function upptradaKlar(s: State, p: Person, t: Task) {
   // den som hånar ledaren får sämre relation med ledaren (steg 4.3.2.3)
   if (f.bud) count(s, 'framBud_' + f.bud);
   const l = f.bud === 'hana' ? byId(s, f.om!) : undefined;
+  if (l && !s.styre?.hanForbud) laggFram(s, 'hanforbud', { led: l.id }, l); // efter ett hån lägger ledaren fram ett förbud (steg 8.3.13)
   if (l && alive(l)) { const r = getRel(s, l, p); r.op = clamp(r.op - FRAM.hanOp, -100, 100); }
   if (pub.length >= FRAM.publik) think(p, `Uppträdde för ${pub.length} vid elden`, FRAM.egen, s.now, FRAM.gladjeTim * HOUR);
   count(s, 'framPublik', pub.length);

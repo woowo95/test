@@ -704,8 +704,8 @@ SCENARIER.ledare = {
     const vald = SIM.ledareOf(b.t) === l, titel = b.t.styre?.titel, rang1 = SIM.sedOppen(b.t, 'rang');
     const leg = SIM.legitimitet(b.t);
     // Tyngsta röster (steg 4.5.4.10): ledarens extra vikt räknas, störst först, och andelarna blir tillsammans 100 %
-    const rost = SIM.roster(b.t), lr = rost.find(x => x.p === l), utanL = SIM.influence(b.t, l);
-    const rostOk = rost.every((x, i) => i === 0 || rost[i - 1].w >= x.w) && Math.abs(rost.reduce((a, x) => a + x.andel, 0) - 1) < 1e-9 && !!lr && lr.w > utanL;
+    const rost = SIM.roster(b.t), lr = rost.find(x => x.p === l);
+    const rostOk = rost.every((x, i) => i === 0 || rost[i - 1].w >= x.w) && Math.abs(rost.reduce((a, x) => a + x.andel, 0) - 1) < 1e-9 && !!lr && lr.andel > 1 / rost.length;
     const harPabud = !!b.t.styre?.pabud && SIM.PABUD_LIST.every(k => b.t.styre!.pabud![k] !== undefined);
     // påbudet blandas med byns egen sed
     b.t.styre!.pabud!.matlager = 1; b.t.seder.v.forsiktighet = 0;

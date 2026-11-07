@@ -1,4 +1,5 @@
 import { horsel } from './halsa';
+import { KLADMATERIAL, kladAv } from './klader';
 import { han, honom } from './ord';
 import { lista, tal } from './ord';
 import { delade, loggBer } from './berattelser';
@@ -356,9 +357,22 @@ export function stepRykten(s: State, mood: (p: Person, now: number) => number) {
 
 // ---------- glömska och döden (steg 3.4.1) ----------
 // ryktbarheten (hur starka alla intryck i byn av personen är tillsammans) och anseendet (gott minus ont)
+// det man bär: ett halsband ger anseende, ett finare mer (steg 8.3.15), och ledarens mantel som ett halsband (steg 8.3.14)
+export const PRYD = balans('pryd', { smycke: 0.05, finhet: 0.05, mantel: 0.1 });
+function prydnadAnseende(s: State, om: number) {
+  let a = 0;
+  for (const t of s.ting ?? []) {
+    if (t.bar !== om) continue;
+    const r = kladAv(t.k);
+    if (r?.plagg === 'halsband') a += PRYD.smycke + PRYD.finhet * KLADMATERIAL[r.mat].finhet;
+    else if (r?.plagg === 'mantel') a += PRYD.mantel;
+  }
+  return a * living(s).length;
+}
 export function ryktbarhet(s: State, om: number) {
   let r = 0, a = 0;
   for (const q of living(s)) for (const e of q.intryck ?? []) if (e.om === om) { r += vikt(e); a += INTRYCK[e.k].tecken * vikt(e); }
+  a += prydnadAnseende(s, om);
   return { r, a };
 }
 // de viktigaste intrycken av personen i byn (det samlade intrycket), starkast först

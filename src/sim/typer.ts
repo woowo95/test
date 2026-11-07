@@ -190,6 +190,7 @@ export interface Person {
   arr?: { d: import('./halsa').Kroppsdel; n: number }[]; // ärren (steg 8.2.4)
   sinnen?: number; // karisman gånger detta, när synen, hörseln eller talet är sämre (steg 8.2.2)
   svimmat?: boolean; // ligger medvetslös (steg 8.2.6)
+  missnoje?: number; // missnöjet med styret, 0–1 (steg 8.3.10, rost.ts)
   naring?: Record<import('./naring').Naring, number>; // näringsvärdena 0–1; mättnaden (hunger) är en sammanfattning av dem (steg 2.6.1, naring.ts)
   langtan?: Partial<Record<import('./naring').Naring, number>>; // vad andra berättat att de längtar efter, och till när man minns det (steg 2.6.2)
   habit: Record<string, number>; // timmar per aktivitet, bleknar med tiden (ger yrkestaggar)

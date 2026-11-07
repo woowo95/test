@@ -4,7 +4,8 @@ import { Act, DAY, Person, Seder, State } from './typer';
 import { balans } from './balans';
 import { kortTal } from './format';
 import { ACTS, ACT_LIST } from './handlingar';
-import { ledarVikt, sedOppen } from './styre';
+import { sedOppen } from './styre';
+import { vikter } from './rost';
 import { UpplevelseTyp, upplevelseSed } from './uppvaxt';
 
 // ---------- balanstal (regel 8) ----------
@@ -57,6 +58,8 @@ const DEF = {
   nyfikenhet: { pos: 'Förnyelse', neg: 'Tradition', effect: 'Hur snabbt invånarna lär sig nya färdigheter.', dra: q => dev((q.nyfikenhet + q.intelligens) / 2) },
   forsiktighet: { pos: 'Förutseende', neg: 'Dagens behov', effect: 'Hur stora förråd byn vill ha innan man slappnar av, och om elden hålls vid liv.', dra: q => -dev(q.mod) * SED.forsMod + dev(q.intelligens) * SED.forsInt },
   // den första vågskålen (steg 3.5.1): låst (står på 0) tills byn fått sin första ledare (sedOppen i styre.ts)
+  fortjanst: { pos: 'Härkomst', neg: 'Förtjänst', effect: 'Den duglige eller släkten: Härkomst flyttar vikt till släkternas äldste och ger arv när ledaren byts.', dra: (q, barn) => -dev(q.intelligens) * 0.5 + (barn ? 0.15 : -0.05) },
+  fejd: { pos: 'Fejd', neg: 'Förlikning', effect: 'Om konflikter löses med ord eller med styrka: Fejd flyttar vikt till krigarna, och ledaren kan störtas i strid.', dra: q => dev(q.aggression) - dev(q.empati) },
   rang: { pos: 'Envälde', neg: 'Allmogen', effect: 'Hur mycket ledaren bestämmer: ledarens vikt i sederna och påbuden, och hur hårt ledaren straffar.', dra: q => (dev(q.mod) - dev(q.empati)) * SED.rangDra },
 } satisfies Record<string, SedDef>;
 export type Sed = keyof typeof DEF;
@@ -88,12 +91,7 @@ export function drar(s: State, p: Person) {
 // rösterna i sederna: varje persons inflytande plus ledarens extra vikt (som i sederTarget), och andelen av hela byns röst
 // (Tyngsta röster i fliken Seder, steg 4.5.4.10). Störst först
 export function roster(s: State) {
-  const ppl = living(s).map(p => ({ p, w: influence(s, p), andel: 0 })).filter(x => x.w), l = ledarVikt(s);
-  let tw = ppl.reduce((a, x) => a + x.w, 0);
-  const lx = l && tw ? ppl.find(x => x.p === l.p) : undefined, extra = l && tw ? tw * l.w : 0;
-  if (l && extra) { if (lx) lx.w += extra; else ppl.push({ p: l.p, w: extra, andel: 0 }); tw += extra; }
-  for (const x of ppl) x.andel = x.w / tw;
-  return ppl.sort((a, b) => b.w - a.w);
+  return vikter(s).sort((a, b) => b.andel - a.andel).map(x => ({ ...x, w: x.andel }));
 }
 export function sedDrag(s: State) {
   const ppl = roster(s), tw = ppl.reduce((a, x) => a + x.w, 0);
@@ -109,16 +107,9 @@ export function sedDrag(s: State) {
 }
 export function sederTarget(s: State): Record<Sed, number> {
   const t = nollor();
-  let tw = 0;
-  for (const p of living(s)) {
-    const w = influence(s, p); if (!w) continue;
-    tw += w; const d = drar(s, p);
-    for (const k of SED_LIST) t[k] += d[k] * w;
-  }
-  // ledaren drar med en del av byns samlade vikt (steg 3.5.1, styre.ts)
-  const l = tw ? ledarVikt(s) : undefined;
-  if (l) { const d = drar(s, l.p), w = tw * l.w; for (const k of SED_LIST) t[k] += d[k] * w; tw += w; }
-  for (const k of SED_LIST) t[k] = sedOppen(s, k) ? clamp((tw ? t[k] / tw : 0) * SED.snittVikt, -1, 1) : 0;
+  // varje persons vikt (steg 8.3.2, rost.ts), med ledaren och de andra som sederna flyttar vikt till
+  for (const { p, andel } of vikter(s)) { if (!andel) continue; const d = drar(s, p); for (const k of SED_LIST) t[k] += d[k] * andel; }
+  for (const k of SED_LIST) t[k] = sedOppen(s, k) ? clamp(t[k] * SED.snittVikt, -1, 1) : 0;
   return t;
 }
 // sederna rör sig långsamt mot det invånarna drar mot
@@ -127,7 +118,7 @@ export function stepSeder(s: State) {
   sd.at = s.now;
   if (dt <= 0) return;
   const t = sederTarget(s), f = 1 - Math.exp(-dt / (SED.rorDygn * DAY));
-  for (const k of SED_LIST) sd.v[k] += (t[k] - sd.v[k]) * f;
+  for (const k of SED_LIST) sd.v[k] = (sd.v[k] ?? 0) + (t[k] - (sd.v[k] ?? 0)) * f;
 }
 
 // ---------- vilja ----------
