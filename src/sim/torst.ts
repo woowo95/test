@@ -206,7 +206,7 @@ export function vattenVal(s: State, p: Person): { spot: { x: number; y: number }
   if (kok) return { spot, ref: FYLL, why: 'Fyller vattensäcken till örtköket' };
   return best ? { spot, ref: best.id, why: `Hämtar vatten i säcken åt ${best.name}` } : { spot, ref: f!.id, why: 'Hämtar vatten till sitt fält', falt: true };
 }
-// säcken är fylld (KLAR i steg.ts): bär den till den törstige. Utan säck i handen blir det inget
+// säcken är fylld (KLAR i steg.ts): bär den till den törstige, eller låt den stå fylld till örtköket (FYLL). Utan säck i handen blir det inget
 export function vattenFylld(s: State, p: Person, t: Task) {
   if (t.ref === FYLL && !t.falt) { // till örtköket: säcken står fylld tills någon kokar med den
     const k = toolsOf(s, 'vattensack').find(q => q.hos === p.id) ?? toolsOf(s, 'vattensack')[0];

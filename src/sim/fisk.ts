@@ -76,7 +76,7 @@ export function sattUt(s: State, p: Person, k: string) {
   for (let r = d.plats === 'skog' ? MJARDE.skogUt : 1; r < 40; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
     if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
     const x = Math.floor(p.x) + dx, y = Math.floor(p.y) + dy, i = y * W + x;
-    if (i < 0 || i >= W * H || (d.plats === 'strand' ? !sh[i] : !sh[i] && m0[i] === T.Vatten) || gridOf(s).at.has(i) || mjardarOf(s).some(m => m.x === x && m.y === y)) continue;
+    if (i < 0 || i >= W * H || (d.plats === 'strand' && !sh[i]) || gridOf(s).at.has(i) || mjardarOf(s).some(m => m.x === x && m.y === y)) continue;
     if (d.plats === 'skog' && (m0[i] === T.Vatten || m0[i] === T.Sten || iByn(s, x, y))) continue;
     const m: Mjarde = { id: (s.nextBit ??= 1), k, x, y, ag: p.id, fisk: {}, n: 0 };
     s.nextBit++;

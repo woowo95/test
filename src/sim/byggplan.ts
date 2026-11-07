@@ -442,8 +442,7 @@ const infartA: AtgardDef = {
       if (t === T.Sten || vatten > PLAN.broMax) { s.infart = { ...s.infart, stopp: 1 }; return []; }
       if (ritning.length >= PLAN.vagBatch) break;
       const bit = bitAt(s, q.x, q.y);
-      if (bit && !MATERIAL[bit.m].vag) continue; // ett hus står i vägen: vägen fortsätter på andra sidan
-      if (bit) continue;
+      if (bit) continue; // ett hus står i vägen eller vägen finns redan: den fortsätter på andra sidan
       const mat = t === T.Vatten ? 'brygga' : 'stockvag', px = q.x + dy, py = q.y + dx;
       ritning.push({ x: q.x, y: q.y, m: mat });
       if (inMap(px, py) && !gridOf(s).at.has(py * W + px) && (m[py * W + px] === T.Vatten) === (t === T.Vatten) && m[py * W + px] !== T.Sten) ritning.push({ x: px, y: py, m: mat });
@@ -708,7 +707,7 @@ export function byplanNu(s: State): Byplan {
   const form = (v.nyfikenhet ?? 0) + egen('nyfikenhet') > PLAN.raderFran ? 'rader' as const : 'ring' as const;
   const golv = (v.forsiktighet ?? 0) < PLAN.jordFran ? 'jord' as const : 'tra' as const;
   const ny: Byplan = { form, tat, golv };
-  if (s.byplan?.form !== form || s.byplan?.golv !== golv) { if (s.byplan && led) log(s, `${led.name} vill att husen byggs ${form === 'ring' ? 'i en ring kring mitten' : 'i rader längs gångstråken'}.`, 'world', [led.id]); }
+  if (s.byplan && s.byplan.form !== form && led) { log(s, `${led.name} vill att husen byggs ${form === 'ring' ? 'i en ring kring mitten' : 'i rader längs gångstråken'}.`, 'world', [led.id]); }
   return s.byplan = ny;
 }
 function planText(by: Person, fn: Fn, h: Hus, n: number, same: number) {
