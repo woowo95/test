@@ -18,7 +18,7 @@
     for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) {
       if (!inne(x + 0.5, y + 0.5)) continue;
       const kant = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => !inne(x + dx + 0.5, y + dy + 0.5));
-      B.satt(x, y, fg(B, kant ? 'rost0' : hash(x, y, 3) < 0.12 ? 'rost2' : 'rost1'));
+      const r = hash(x, y, 3); B.satt(x, y, fg(B, kant ? 'rost0' : r < 0.08 ? 'rost2' : r < 0.45 ? 'rost0' : 'rost1'));
     }
     for (const [x, y, s] of droppar) { B.satt(x, y, fg(B, 'rost0')); if (s) B.satt(x + 1, y, fg(B, 'rost1')); }
   }
@@ -26,13 +26,12 @@
     { // 1: en bit av en arm eller ett ben; benet sticker ut ur snittet till höger
       text: 'En bit av en arm eller ett ben, med en vit benstump som sticker ut ur snittet och en stor pöl blod.',
       rader: () => former(24, 11, [
-        [linje([[2.5, 5.5], [13.5, 5.5]], 3.2, 2.9), hud(5.5)],
-        [ell(14, 5.5, 1.6, 2.9), kott],
-        [linje([[14, 5.2], [19.5, 5.2]], 1.1), ben(5.2)],
-        [och(ell(20.6, 4.2, 1.3, 1.1), ell(20.6, 6.2, 1.3, 1.1)), ben(5.2)],
-        [ell(14.6, 3.2, 0.7, 0.6), 'R'],
+        [och(rakt(3, 2.4, 13.5, 8.6), ell(3, 5.5, 1.8, 3.1)), hud(5.5)],
+        [ell(13.5, 5.5, 1.7, 3.1), (x, y) => ((x - 13.5) / 1.7) ** 2 + ((y - 5.5) / 3.1) ** 2 > 0.45 ? 'R' : 'r'],
+        [linje([[14, 5.5], [18.6, 5.5]], 0.95), ben(5.5)],
+        [och(ell(19.4, 4.3, 1.3, 1.2), ell(19.4, 6.7, 1.3, 1.2)), ben(5.5)],
       ]),
-      x: 3, y: 4, pölar: [[17, 13.5, 8, 2.6], [9, 14.5, 4, 1.6]], droppar: [[26, 11, 1], [4, 15, 0], [27, 15, 0], [23, 9, 0]],
+      x: 3, y: 2, pölar: [[19, 13, 8, 3.2], [11, 14, 6, 2], [25, 9.5, 2.4, 1.6]], droppar: [[29, 12, 1], [4, 17, 0], [29, 17, 0], [26, 5, 0]],
     },
     { // 2: en hand med fingrarna utåt; handleden är avhuggen till vänster, med benet ute
       text: 'En hand med fingrarna utåt. Ur den avhuggna handleden sticker en vit benstump ut, och blodet har runnit ut på marken.',
@@ -45,7 +44,7 @@
         [linje([[1.5, 6.4], [5, 6.4]], 0.95), ben(6.4)],
         [och(ell(1.4, 5.4, 1.1, 1), ell(1.4, 7.3, 1.1, 1)), ben(6.4)],
       ]),
-      x: 3, y: 4, pölar: [[6, 14, 6.5, 2.4], [12, 15.5, 3, 1.2]], droppar: [[2, 9, 1], [15, 17, 0], [22, 15, 0], [1, 16, 0]],
+      x: 5, y: 2, pölar: [[8, 13.5, 7, 3.2], [4, 9.5, 2.6, 2], [16, 15.5, 4, 1.5]], droppar: [[1, 6, 1], [21, 18, 0], [26, 16, 0], [2, 18, 0]],
     },
     { // 3: en klump kött med en benstump snett uppåt
       text: 'En klump man inte vill titta på länge: rött kött, en bit hud och en vit benstump som sticker upp, i en pöl blod.',
@@ -56,10 +55,10 @@
         [och(ell(16.4, 1.6, 1.1, 1.1), ell(18, 2.8, 1.1, 1.1)), (x, y) => x + y > 19.6 ? 'w' : 'W'],
         [ell(12, 7.2, 1.6, 1), 'R'],
       ]),
-      x: 5, y: 3, pölar: [[14, 15, 9, 2.8], [6, 15.5, 4, 1.8]], droppar: [[2, 12, 1], [26, 13, 0], [25, 10, 0], [4, 18, 0]],
+      x: 5, y: 1, pölar: [[17, 14.5, 10, 3.2], [7, 15.5, 5, 2], [25, 11.5, 2.8, 1.8]], droppar: [[2, 12, 1], [29, 15, 0], [28, 8, 0], [4, 19, 0]],
     },
   ];
-  const kdelVersion = V => ({ text: V.text, w: 32, h: 20, rita: B => { gras(B); blod(B, V.pölar, V.droppar); lagg(B, V.rader(), KD, V.x, V.y, false); } });
+  const kdelVersion = V => ({ text: V.text, w: 32, h: 21, rita: B => { gras(B); blod(B, V.pölar, V.droppar); lagg(B, V.rader(), KD, V.x, V.y, false); } });
   byt(KORT('f8_kroppsdel', 'Den avhuggna kroppsdelen', 'Steg 8.2.3: en förlorad kroppsdel blir en sak på marken med ägarens namn och delen ("Häggs vänstra hand"). Den ruttnar som maten. Samma bild för alla delar. Samma tre bilder som förut, nu med en vit benstump som syns i ena änden och mycket mer blod: på snittet och i en pöl på marken. Din kommentar förra gången: "En benstump ska vara synlig i ena änden. Och mer blod".', KDEL.map(kdelVersion)));
 
   // ---------- 8.3.14 ledarens mantel ----------
@@ -88,10 +87,11 @@
     for (let y = -M; y < F.h + M; y++) for (let x = -M; x < F.w + M; x++) { const c = ut[i(x, y)]; if (c >= 0) B.satt(x0 + x, y0 + y, c); }
     for (let x = 2; x < F.w - 2; x++) B.morka(x0 + x, y0 + F.h); // skuggan under fötterna
   }
-  const FRO = 1; // samma man som bär bältet och ryggsäcken i 7.1
+  const FRO = 22; // samma man med rock som bär bältet i 7.1
   const bybo = (rikt, ben = 'sta', arm = 'hanga') => window.BYBO ? window.BYBO(FRO, rikt, ben, arm, null) : null;
   // manteln på kartfiguren (mannen: bålen x 4–9, axlarna x 3 och 10, armarna x 2 och 11, bålen rad 7–12, benen 13–18).
-  // Framifrån: manteln ligger över axlarna och armarna och hänger ner till vaderna, öppen framtill med spännet vid halsen.
+  // Framifrån: manteln ligger över axlarna och armarna (händerna sticker fram) och hänger ner till vaderna, öppen framtill
+  // med spännet vid halsen.
   // Från sidan: den hänger bakom ryggen. Bakifrån: den täcker ryggen och armarna.
   function mantelLager(V) {
     const fram = [], sida = [], bak = [], NED = 16;
@@ -100,8 +100,8 @@
     for (let y = 7; y <= NED; y++) {
       const v = y === 7 ? [3, 4] : y === 8 ? [2, 4] : y >= 14 ? [0, 3] : [1, 3];
       const h = y === 7 ? [9, 10] : y === 8 ? [9, 11] : y >= 14 ? [10, 13] : [10, 12];
-      for (let x = v[0]; x <= v[1]; x++) fram.push([x, y, V.kant && x === v[1] && y > 7 ? V.kant : y === NED ? V.mork : ton(x, 1, 99)]);
-      for (let x = h[0]; x <= h[1]; x++) fram.push([x, y, V.kant && x === h[0] && y > 7 ? V.kant : y === NED || x >= h[1] ? V.mork : V.mitt]);
+      for (let x = v[0]; x <= v[1]; x++) if (!(y === 13 && x === 2)) fram.push([x, y, V.kant && x === v[1] && y > 7 ? V.kant : y === NED ? V.mork : ton(x, 1, 99)]);
+      for (let x = h[0]; x <= h[1]; x++) if (!(y === 13 && x === 11)) fram.push([x, y, V.kant && x === h[0] && y > 7 ? V.kant : y === NED || x >= h[1] ? V.mork : V.mitt]);
     }
     for (const x of [5, 8]) fram.push([x, 7, V.mork]); // snöret över bröstet
     fram.push([6, 7, V.spanne], [7, 7, V.spanne]);
@@ -115,7 +115,7 @@
     for (let y = 7; y <= NED; y++) {
       const a = y === 7 ? 3 : y === 8 ? 2 : y >= 14 ? 0 : 1, b = 13 - a;
       for (let x = a; x <= b; x++) {
-        const veck = y >= 10 && (x === 5 || x === 9) && (y + x) % 3 !== 0; // veck nedåt
+        const veck = y >= 10 && y < NED && (x === 5 || x === 9); // två veck nedåt
         bak.push([x, y, V.kant && (x === a || x === b || y === NED) && y > 7 ? V.kant : y === NED || x === b ? V.mork : x === a ? V.ljus : veck ? V.mork : V.mitt]);
       }
     }
@@ -145,7 +145,7 @@
     if (y >= 49 && y <= 50 && mitt < 5 && mitt >= 2) return V.mork; // snöret
     if (!kropp || y < 49) return null;
     if (mitt < oppning) return null;
-    if (V.kant && mitt < oppning + 1.5) return V.kant;
+    if (mitt < oppning + 1.5) return V.kant || V.mork; // kanten mot rocken: den gula kanten eller en mörk söm
     const ut = mitt / 31; // ljuset från vänster, mörkare ut mot höger kant
     if (x < 32) return ut > 0.85 ? V.mitt : V.ljus;
     return ut > 0.75 ? V.mork : V.mitt;
@@ -177,16 +177,16 @@
   const sten = (a, b) => (x) => x < a ? 'T' : x > b ? 's' : 'S';
   const GRAVAR = [
     { text: 'En upprest sten med rundad topp.', rader: () => former(19, 26, [
-      [och(rakt(6, 4.5, 12, 13), ell(9, 4.8, 3, 2.8)), sten(7, 10.8)],
+      [och(rakt(6, 5.5, 12, 13), ell(9, 5.8, 3, 2.6)), sten(7, 10.8)],
       ...kulle,
     ]) },
     { text: 'En grov, otuktad sten som står lite snett, med mossa vid foten.', rader: () => former(19, 26, [
-      [poly([[6, 13], [5.6, 7.5], [6.8, 4], [9.2, 2.2], [11.6, 4.2], [12.4, 8.5], [12, 13]]), (x, y) => y > 10 && hash(Math.floor(x), Math.floor(y), 2) < 0.5 ? 'g' : sten(7.5 + (y < 5 ? 1 : 0), 10.6)(x)],
+      [poly([[6, 13], [5.6, 7.5], [6.8, 4], [9.2, 2.2], [11.6, 4.2], [12.4, 8.5], [12, 13]]), (x, y) => y > 8.5 && hash(Math.floor(x), Math.floor(y), 2) < 0.5 ? 'g' : sten(7.5 + (y < 5 ? 1 : 0), 10.6)(x)],
       ...kulle,
     ]) },
-    { text: 'En låg, bred sten med ett enkelt streck ristat i, och några småstenar på kullen.', rader: () => former(19, 26, [
-      [och(rakt(4.5, 7, 13.5, 13), ell(9, 7.2, 4.5, 1.5)), sten(6, 12)],
-      [rakt(6.5, 9, 11.5, 10), 's'],
+    { text: 'En låg, bred sten med ett enkelt streck ristat i mitten, och några småstenar på kullen.', rader: () => former(19, 26, [
+      [och(rakt(4.5, 5.5, 13.5, 13), ell(9, 5.6, 4.5, 1.4)), (x, y) => y < 6.5 ? 'T' : sten(6, 12)(x)],
+      [rakt(8.5, 7.5, 9.5, 10.5), 's'],
       ...kulle,
       [och(ell(6.5, 18, 0.9, 0.8), ell(11.5, 16.5, 0.9, 0.8), ell(9.5, 21, 0.9, 0.8)), 'T'],
     ]) },

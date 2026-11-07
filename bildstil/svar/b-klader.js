@@ -241,10 +241,10 @@
     if (v === 0) return PORT([ // rund av kaninskinn med öronlappar och band som knyts under hakan
       [och(utan(ell(32, 21, 20.5, 17), (x, y) => y > 21), poly([[11.5, 20], [20.5, 20], [20.5, 30], [18.5, 37.5], [14, 37.5], [11.5, 32]]), poly([[43.5, 20], [52.5, 20], [52.5, 32], [50, 37.5], [45.5, 37.5], [43.5, 30]])), fur('kanin', 11, 53, 6)],
       [utan(rakt(11.5, 16, 52.5, 22), rakt(20.5, 20, 43.5, 30)), (x, y) => { const r = hash(Math.floor(x), Math.floor(y), 9); return y < 17 ? 'd' : x > 46 ? (r < 0.5 ? 'b' : 'c') : r < 0.6 ? 'd' : 'c'; }],
-    ], [
-      [och(linje([[16, 38], [19, 44], [26, 48.6], [31, 49.5]], 0.6), linje([[48, 38], [45, 44], [38, 48.6], [33, 49.5]], 0.6)), (x, y) => (x > 32 ? 'a' : 'b')],
-      [och(rakt(30.5, 49, 33.5, 51), punkt(30, 51), punkt(33, 51), punkt(30, 52), punkt(34, 52)), (x, y) => (y < 50 ? 'b' : 'a')],
-    ], { har: 5 });
+      // banden av ljust skinn från lapparna ner under hakan, knutna i en rosett
+      [och(linje([[16, 37], [18.5, 43], [24, 47.6], [30.5, 49.5]], 0.75), linje([[48, 37], [45.5, 43], [40, 47.6], [33.5, 49.5]], 0.75)), (x, y) => (x > 32 ? 'j' : 'k')],
+      [och(ell(32, 49.8, 1.6, 1.4), linje([[31, 50.5], [29.5, 53.5]], 0.6), linje([[33, 50.5], [34.5, 53.5]], 0.6)), (x, y) => (x < 31.5 && y < 50.5 ? 'l' : x > 33 ? 'j' : 'k')],
+    ], [], { har: 5 });
     if (v === 1) return PORT([ // hög och spetsig av vargskinn, toppen faller åt sidan
       [och(poly([[11, 21], [14, 13], [20, 7], [28, 3.5], [37, 3], [43, 6], [48, 12], [53, 21]]), linje([[34, 4], [44, 2.8], [52, 4.5], [57, 9], [58.5, 15], [58, 20]], 3.6, 1.6)), (x, y) => {
         const r = hash(Math.floor(x), Math.floor(y), 41), skugga = x > 43 && y > 7 && y < 14 && x < 53; // skuggan under toppen som faller ner
@@ -324,16 +324,17 @@
   };
   // halsbandet i porträttet: repet i en båge runt halsens nederdel, ner över rocken, och de tre sakerna längst ner
   const phals = (v) => {
-    const o = HALS[v], lista = [[utan(ell(32, 41, 13, 12.5), ell(32, 41, 11.4, 11)), (x, y) => (y < 46 ? null : rep(x, y))]];
-    const fasten = [[24, 50], [32, 52.5], [40, 50]];
+    const o = HALS[v], lista = [], snore = [utan(ell(32, 41, 12.4, 13.1), ell(32, 41, 11.1, 11.8)), (x, y) => (y < 45 ? null : rep(x, y))];
+    const fasten = [[25, 52], [32, 54], [39, 52]];
     o.delar.forEach((d, n) => {
       const [x0, y0] = fasten[n], ljus = (x, y, mork) => (x < x0 - 0.5 ? 'l' : x > x0 + 0.5 ? 'j' : y > y0 + mork ? 'j' : 'k');
       // benet: en knöl i varje ände och en smal mitt; tanden: roten upptill och en böjd spets; den stora tanden är längre
       if (d === 'ben') lista.push([och(ell(x0, y0 + 0.5, 2, 1.3), rakt(x0 - 0.8, y0, x0 + 0.8, y0 + 4.5), ell(x0, y0 + 4.5, 2, 1.3)), (x, y) => ljus(x, y, 3.5)]);
       if (d === 'tand') lista.push([och(rakt(x0 - 1.5, y0, x0 + 1.5, y0 + 2), poly([[x0 - 1.5, y0 + 1.5], [x0 + 1.5, y0 + 1.5], [x0 + 0.8, y0 + 5], [x0 - 0.2, y0 + 6.5]])), (x, y) => (y < y0 + 1 ? 'q' : ljus(x, y, 4))]);
-      if (d === 'tandL') lista.push([och(rakt(x0 - 2, y0, x0 + 2, y0 + 2.5), poly([[x0 - 2, y0 + 2], [x0 + 2, y0 + 2], [x0 + 1.4, y0 + 5.5], [x0 + 0.4, y0 + 7.5], [x0 - 0.6, y0 + 8.5]])), (x, y) => (y < y0 + 1.2 ? 'q' : ljus(x, y, 5))]);
+      if (d === 'tandL') lista.push([och(rakt(x0 - 2, y0, x0 + 2, y0 + 2.5), poly([[x0 - 2, y0 + 2], [x0 + 2, y0 + 2], [x0 + 1.4, y0 + 4.5], [x0 + 0.4, y0 + 6], [x0 - 0.6, y0 + 7]])), (x, y) => (y < y0 + 1.2 ? 'q' : ljus(x, y, 4.5))]);
     });
-    const tunt = o.knut ? [[och(rakt(27.5, 51, 29, 52.5), rakt(35, 51, 36.5, 52.5), rakt(20.5, 47.5, 22, 49), rakt(42, 47.5, 43.5, 49)), 'a']] : [];
+    // repet utan kontur, så att det blir ett tunt snöre; knutarna mörka på repet
+    const tunt = [snore, ...(o.knut ? [[och(rakt(28, 53, 29.5, 54.5), rakt(34.5, 53, 36, 54.5), rakt(21, 48, 22.5, 49.5), rakt(41.5, 48, 43, 49.5)), 'a']] : [])];
     return PORT(lista, tunt, { hud: 3, har: 1 });
   };
   byt(KORT('f7_halsband', 'Halsbandet', 'Steg 7.7.5: ett halsband av rep med tre ben eller tre vargtänder, en prydnad. Samma tre halsband som förut, och nu också i porträttet. Bilden visar halsbandet som sak, på en bybo på kartan och i porträttet. Din kommentar förra gången: "Visa hur det ser ut i porträtten"', [
