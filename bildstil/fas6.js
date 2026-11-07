@@ -590,11 +590,11 @@
       PA_MARK('Björnens huvud från sidan som morrar, med nosen rynkad och tänderna blottade.', ['........oo......', '.......obbo.....', '.....oooaaoooo..', '....oaaaaaaaaao.', '...oakkaaaaaaaao', '..oaaarkaaaaaaao', '.oaaaaaaaaaaaaao', 'okwwwwaaaaaaaaao', 'oowwwwwaaaaaaaao', 'otototwaaaaaaao.', '.rrrrrwaaaaaaao.', 'otototwaaaaaaao.', '.owwwwaaaaaaao..', '..ooooaaaaaaao..', '.....oaaaaaao...', '......ooooooo...'], IK_BJF),
       PA_MARK('En björntass med långa ljusa klor och tre blodiga klösmärken.', ['..t...t...t.....', '..tt..tt..tt....', '..ot..ot..ot.r..', '.oao.oao.oao.r..', '.oaaoaaaoaaao.r.', 'oaaaaaaaaaaaao.r', 'oaawwaawwaawwao.', 'oaawwaawwaawwao.', 'oaaaaaaaaaaaao..', 'oaaaawwwwwaaao..', 'oaaawwwwwwwaao..', 'oaaawwwwwwwaao..', '.oaaawwwwwaao...', '.oaaaaaaaaaao...', '..oaaaaaaaao....', '...ooooooooo....'], IK_BJF)]),
     // steg 6.8.9: en svag färgton i raster under lagerplatserna; i spelet står den här tonen (senap 3, 3 av 16 punkter)
-    { id: 'f6_lagerton', namn: 'Tonen under lagerplatserna', typ: 'janej', vad: S + '6.8.9: en lagerplats syns nu som en svag färgton i raster på marken under stackarna, inte bara som en ram. Till vänster utan tonen, till höger med den. Ja eller nej?', versioner: [{ text: 'Samma lagerplats med tre vedstackar, till vänster utan ton och till höger med en gles ljusgul raster (3 av 16 punkter) på marken.', w: 104, h: 40, rita: B => {
+    { id: 'f6_lagerton', namn: 'Tonen under lagerplatserna', typ: 'janej', vad: S + '6.8.9: en lagerplats syns nu som en svag färgton på marken under stackarna, inte bara som en ram. Till vänster utan tonen, till höger med den. Din kommentar förra gången: "Gör inte raster för en enfärgad bakgrund". Ja eller nej?', versioner: [{ text: 'Samma lagerplats med tre vedstackar, till vänster utan ton och till höger med en enfärgad, ljusare ton på hela marken under.', w: 104, h: 40, rita: B => {
       const P = B.P, BY = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
       for (let y = 0; y < 40; y++) for (let x = 0; x < 104; x++) B.satt(x, y, P.i('oliv', ((x * 7 + y * 3) % 11 === 0) ? 1 : 2));
       for (const [x0, ton] of [[4, false], [56, true]]) {
-        if (ton) for (let y = 4; y < 36; y++) for (let x = x0; x < x0 + 44; x++) if (BY[(y & 3) * 4 + (x & 3)] < 3) B.satt(x, y, P.i('senap', 3));
+        if (ton) for (let y = 4; y < 36; y++) for (let x = x0; x < x0 + 44; x++) B.satt(x, y, P.i('oliv', 3));
         for (const [sx, sy] of [[4, 8], [20, 8], [12, 22]]) for (let k = 0; k < 3; k++) for (let x = 0; x < 14; x++) for (let y = 0; y < 3; y++) {
           const yy = x0 + sx + x, zz = sy + k * 3 + y + (k === 0 ? 0 : 0); B.satt(yy, zz, P.i('jord', x === 0 || x === 13 ? 3 : y === 0 ? 2 : 1)); }
       }
@@ -793,12 +793,13 @@
       const ikon = (B, k, x, y, s = 1) => { const r = IKONER.PIX[k], pal = IKONER.PAL[k] || {}; if (!r) return; const n = Math.round(r[0].length * s);
         for (let ty = 0; ty < n; ty++) for (let tx = 0; tx < n; tx++) { const ch = r[Math.floor(ty / s)][Math.floor(tx / s)], c = pal[ch]; if (ch === '.' || !c) continue; if (c.startsWith('rgba')) B.morka(x + tx, y + ty); else B.satt(x + tx, y + ty, B.P.fran(c)); } };
       return [
-      { id: 'f5_grodd', namn: 'Den unga grodden i hel skala', typ: 'janej', vad: S + '5.5.5: grodden på fälten ritades den första halvan av växandet i halv skala (16 punkter i 8). Nu har den en egen bild på 8 punkter. Till vänster som förut, till höger den nya: en ny ritning med två hjärtblad i ett V på en kort stjälk och en liten jordhög. Du sa nej till förra versionen, utan kommentar.', versioner: [{ text: 'Till vänster grodden i halv skala, till höger den nya bilden på 8 punkter, båda på en sådd jordruta.', w: 44, h: 22, rita: B => {
+      { id: 'f5_grodd', namn: 'Den unga grodden i hel skala', typ: 'janej', vad: S + '5.5.5: grodden på fälten ritades den första halvan av växandet i halv skala (16 punkter i 8). Nu har den en egen bild på 8 punkter. Till vänster som förut, till höger den nya: en ny ritning med två hjärtblad i ett V på en kort stjälk och en liten jordhög. Din kommentar förra gången: "Gör så rovan sitter i mitten av fältet". Grodden står nu mitt i rutan, och den mogna rovan också.', versioner: [{ text: 'Till vänster grodden i halv skala, i mitten den nya bilden på 8 punkter och till höger den mogna rovan, alla mitt på en sådd jordruta.', w: 66, h: 22, rita: B => {
         const P = B.P, jord = P.i('jord', 1), fara = P.i('jord', 0);
-        for (const x0 of [3, 25]) for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) B.satt(x0 + x, 3 + y, (y + 1) % 4 === 0 && x > 0 && x < 15 ? fara : jord);
+        for (const x0 of [3, 25, 47]) for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) B.satt(x0 + x, 3 + y, (y + 1) % 4 === 0 && x > 0 && x < 15 ? fara : jord);
         if (IKONER.PIX.grodd) ikon(B, 'grodd', 7, 7, 0.5);
         const NY = ['........', '.LL..LL.', 'LGGL.GGL', '.GGggGG.', '...gg...', '...gg...', '..jjjj..', '.jjjjjj.'], L = { L: P.i('oliv', 3), G: P.i('oliv', 2), g: P.i('oliv', 1), j: P.i('jord', 2) };
         NY.forEach((r, y) => [...r].forEach((ch, x) => { if (L[ch] !== undefined) B.satt(29 + x, 7 + y, L[ch]); }));
+        { const o = BILDFILER.rovor; if (o) o.rader.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== '.' && o.pal[ch]) B.satt(47 + ((16 - r.length) >> 1) + x, 3 + ((16 - o.rader.length) >> 1) + y, P.fran(o.pal[ch])); })); }
       } }] },
       ];
     })(),
@@ -818,18 +819,18 @@
         const fot = 44;
         if (v === 0) { // små lågor på axlarna, armarna och i håret
           const F = folk(B, 24, fot, false, 4242), h = F.h, w = F.w >> 1;
-          for (const [dx, dy, l] of [[-w + 1, 0.62, 4], [w - 2, 0.62, 4], [-1, 0.95, 3], [1, 0.97, 4], [-w, 0.42, 3], [w - 1, 0.42, 3]]) laga(B, 24 + dx, fot - Math.round(h * dy), l);
-          const G = folk(B, 70, fot, false, 777); for (const [dx, dy, l] of [[-(G.w >> 1) + 1, 0.65, 5], [(G.w >> 1) - 2, 0.5, 3]]) laga(B, 70 + dx, fot - Math.round(G.h * dy), l);
+          for (const [dx, dy, l] of [[-w + 1, 0.62, 9], [w - 2, 0.62, 9], [-1, 0.95, 7], [1, 0.97, 9], [-w, 0.42, 7], [w - 1, 0.42, 7]]) laga(B, 24 + dx, fot - Math.round(h * dy), l);
+          const G = folk(B, 70, fot, false, 777); for (const [dx, dy, l] of [[-(G.w >> 1) + 1, 0.65, 10], [(G.w >> 1) - 2, 0.5, 7]]) laga(B, 70 + dx, fot - Math.round(G.h * dy), l);
         } else if (v === 1) { // en stor låga över hela ryggen, och marken lyser under
           const F = folk(B, 24, fot, false, 4242); for (let dx = -(F.w >> 1) + 1; dx < (F.w >> 1) - 1; dx++) laga(B, 24 + dx, fot - Math.round(F.h * 0.3) - (dx % 2 ? 0 : 2), 9 + (dx + 8) % 3);
           for (let dx = -8; dx <= 8; dx++) B.satt(24 + dx, fot + 2, B.P.i('senap', 2), true);
-          const G = folk(B, 70, fot, false, 777); for (let dx = -3; dx <= 2; dx += 2) laga(B, 70 + dx, fot - Math.round(G.h * 0.55), 6);
+          const G = folk(B, 70, fot, false, 777); for (let dx = -3; dx <= 2; dx += 2) laga(B, 70 + dx, fot - Math.round(G.h * 0.55), 11);
         } else { // rullar på marken med lågor och rök, och en som springer dit med ett skinn
-          const F = folk(B, 30, fot, true, 4242); for (const dx of [-8, -3, 3, 8]) laga(B, 30 + dx, fot - F.w + 2, 3 + (dx & 1)); rok(B, 27, fot - F.w - 3); rok(B, 34, fot - F.w - 5);
+          const F = folk(B, 30, fot, true, 4242); for (const dx of [-8, -3, 3, 8]) laga(B, 30 + dx, fot - F.w + 2, 8 + (dx & 1)); rok(B, 27, fot - F.w - 3); rok(B, 34, fot - F.w - 5);
           const G = folk(B, 72, fot, false, 777, 'lyfta'); const P = B.P; for (let dy = 0; dy < 5; dy++) for (let dx = 0; dx < 8; dx++) B.satt(60 + dx, fot - G.h - 2 + dy, P.i('jord', dy === 0 ? 3 : 1));
         } };
-      return [KORT('f6_brinner', 'Den som brinner', S + '6.4.16: en människa som börjar brinna i en eldsvåda: lågor på kläderna tills elden är släckt. Hen rullar på marken, går i vattnet eller sliter av sig plagget, och de som står nära hjälper till. Platshållaren i spelet är fyra fladdrande lågor över figuren. Nu med bybornas riktiga figurer. Din kommentar förra gången: "Använd dem riktiga människorna som du ritar elden på".', [
-        { text: 'Version 1: små lågor på axlarna, armarna och i håret.', w: W, h: H, rita: scen(0) },
+      return [KORT('f6_brinner', 'Den som brinner', S + '6.4.16: en människa som börjar brinna i en eldsvåda: lågor på kläderna tills elden är släckt. Hen rullar på marken, går i vattnet eller sliter av sig plagget, och de som står nära hjälper till. Platshållaren i spelet är fyra fladdrande lågor över figuren. Nu med bybornas riktiga figurer. Din kommentar förra gången: "Gör större lågor än version 1". Nu har alla tre större lågor.', [
+        { text: 'Version 1: stora lågor på axlarna, armarna och i håret.', w: W, h: H, rita: scen(0) },
         { text: 'Version 2: en stor låga över hela ryggen, och marken lyser under.', w: W, h: H, rita: scen(1) },
         { text: 'Version 3: den som rullar på marken, med lågor och rök, och en som springer dit med ett skinn.', w: W, h: H, rita: scen(2) }])];
     })(),

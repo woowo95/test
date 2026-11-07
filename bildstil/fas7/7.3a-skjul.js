@@ -127,10 +127,15 @@
     bildfil(B, 'lagereld_stort', x + 5 * R + 6, y + 4 * R + 2);
   } });
 
-  VAL.push(KORT('f7_stolpe', 'Stolpen', 'Steg 7.3.1: stolpen som bär taken i skjulen, torkhuset och vedboden. Den tar en ruta; till vänster en ensam stolpe i sin ruta och till höger fyra i en fyrkant, som de står i hörnen av ett skjul.', [
-    stolpKort('En rund stolpe sedd rakt ovanifrån, med årsringarna i ändträet som hörnen i timmerväggen.', 0),
-    stolpKort('En stående rund stolpe med barken kvar och ljust ändträ överst; den når upp över sin ruta som ett träd.', 1),
-    stolpKort('En bilad, fyrkantig stolpe med stenar kilade runt foten.', 2),
+  // stolparna i ett rum: trägolv, timmervägg bak och två stolpar mitt i rummet
+  const rumKort = (text, v) => ({ text, w: 7 * R, h: 6 * R, rita: (B) => {
+    for (let ty = 0; ty < 6; ty++) for (let tx = 0; tx < 7; tx++) bildfil(B, ty === 0 ? 'timmervagg' : 'golv_tra', tx * R, ty * R);
+    for (const tx of [1.5, 4.5]) stolpe(B, v, tx * R, 3 * R);
+  } });
+  VAL.push(KORT('f7_stolpe', 'Stolpen', 'Steg 7.3.1: stolpen som bär taken. Din kommentar förra gången: "Visa hur det ser ut i ett sammanhang i ett rum". Här står två stolpar mitt i ett rum, med trägolv och en timmervägg bakom.', [
+    rumKort('En rund stolpe sedd rakt ovanifrån, med årsringarna i ändträet som hörnen i timmerväggen.', 0),
+    rumKort('En stående rund stolpe med barken kvar och ljust ändträ överst; den når upp över sin ruta som ett träd.', 1),
+    rumKort('En bilad, fyrkantig stolpe med stenar kilade runt foten.', 2),
   ]));
   VAL.push(KORT('f7_blot_ved', 'Blöt ved', 'Steg 7.3.4: ved som blivit blöt i regnet eller snön. Till vänster en torr vedhög och till höger en blöt: mörkare och med en droppe. Versionerna visar droppen på tre sätt.', [
     vedKort('Droppsymbolen ovanför högen.', 0),
