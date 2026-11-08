@@ -348,10 +348,21 @@ let somTomt = false;
 const lagerRuta = (s: State, x: number, y: number) => zonesOf(s).some(z => (!somTomt || z.hus !== undefined) && x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h);
 const iLagret = (s: State, x: number, y: number) => somTomt && zonesOf(s).some(z => z.hus === undefined && inZone(z, x, y));
 function somUtanLager<T>(f: () => T): T { somTomt = true; try { return f(); } finally { somTomt = false; } }
-export function ledig(s: State, x: number, y: number) {
+export function ledig(s: State, x: number, y: number, upp?: Set<number>) {
   if (!usable(s, x, y) || underMinnet(s, y * W + x) || paStrak(s, x, y) || stationAt(s, x, y) || sittAt(s, x, y) || lagerRuta(s, x, y)) return false;
   if (iLagret(s, x, y)) return true; // det som ligger i lagret bärs bort med det
+  if (upp) return !upp.has(y * W + x);
   return !((s.stackar ?? []).some(a => a.x === x && a.y === y) || tingOf(s).some(k => k.x === x && k.y === y) || (s.stockar ?? []).some(k => Math.floor(k.x) === x && Math.floor(k.y) === y) || (s.stubbar ?? []).some(k => k.x === x && k.y === y));
+}
+// rutorna där en stack, ett redskap, en stock eller en stubbe ligger, samlade en gång när en sökning prövar många rutor med
+// ledig (samma svar som att gå igenom listorna för varje ruta, men utan att göra det tusentals gånger)
+export function upptagna(s: State) {
+  const u = new Set<number>();
+  for (const a of s.stackar ?? []) u.add(a.y * W + a.x);
+  for (const k of tingOf(s)) if (k.x !== undefined && k.y !== undefined) u.add(k.y * W + k.x);
+  for (const k of s.stockar ?? []) u.add(Math.floor(k.y) * W + Math.floor(k.x));
+  for (const k of s.stubbar ?? []) u.add(k.y * W + k.x);
+  return u;
 }
 // ---------- avståndet ute (steg 2.10.8) ----------
 // står det en station eller en stubbe ute på rutan (x, y)? Det som står inne står i ett hus, och möblerna i lagren i en lagerplats
@@ -388,10 +399,10 @@ export function lekplats(s: State): Rekt {
 function hittaLek(s: State): Rekt {
   const m = getMap(s.seed), g = groundOf(s), o = omrade(s), mid = o.mitt, w = PLATS.lekBredd, h = PLATS.lekDjup, R = PLATS.lekSok;
   const x0 = Math.max(0, o.x0 - R - w), y0 = Math.max(0, o.y0 - R - h), x1 = Math.min(W - 1, o.x1 + R + w), y1 = Math.min(H - 1, o.y1 + R + h), bw = x1 - x0 + 1, bh = y1 - y0 + 1;
-  const kost = new Float64Array(bw * bh); // vad varje ruta i sökområdet kostar: Infinity för vatten och sten
+  const kost = new Float64Array(bw * bh), upp = upptagna(s); // vad varje ruta i sökområdet kostar: Infinity för vatten och sten
   for (let j = 0; j < bh; j++) for (let i = 0; i < bw; i++) {
     const x = x0 + i, y = y0 + j, tt = m.tiles[y * W + x];
-    kost[j * bw + i] = tt === T.Vatten || tt === T.Sten ? Infinity : !ledig(s, x, y) || g.trees[y * W + x] >= FOREST ? PLATS.lekHinder : 0;
+    kost[j * bw + i] = tt === T.Vatten || tt === T.Sten ? Infinity : !ledig(s, x, y, upp) || g.trees[y * W + x] >= FOREST ? PLATS.lekHinder : 0;
   }
   let best: Rekt = { x: mid.x - w / 2, y: o.y1 + PLATS.lekFran, w, h }, bs = Infinity;
   for (let y = y0; y + h - 1 <= y1; y++) for (let x = x0; x + w - 1 <= x1; x++) {
@@ -419,7 +430,7 @@ export const stationSite = (s: State, k: string, p?: Person) => siteSal(s, k) ||
 // och husen, utanforByn), helst u.avst och aldrig närmare än utkantMin, inte på lekplatsen, och för latrinen, när byn lärt sig
 // det (s.hygien), långt från vattnet. Avståndet räknas från stationens närmaste ruta
 function siteUtkant(s: State, k: string) {
-  const u = stationDef(k)!.utkant!, m = getMap(s.seed), g = groundOf(s), lekR = lekplats(s);
+  const u = stationDef(k)!.utkant!, m = getMap(s.seed), g = groundOf(s), lekR = lekplats(s), upp = upptagna(s);
   // sökområdet: byns område och u.till rutor runt
   const { x0, y0, x1, y1 } = omrade(s), R = Math.ceil(u.till) + 1;
   const yxa = nTools(s, 'yxa') > 0; // träden på platsen fälls som en del av bygget (steg 8.1.14), men utan yxa kan ingen fälla dem
@@ -431,7 +442,7 @@ function siteUtkant(s: State, k: string) {
       let d = Infinity, ok = true;
       for (const q of rutor) {
         const t = m.tiles[q.y * W + q.x];
-        if (t !== T.Gras && t !== T.Sand && t !== T.Skog || (u.tradFri || !yxa) && g.trees[q.y * W + q.x] >= FOREST || !ledig(s, q.x, q.y)) { ok = false; break; }
+        if (t !== T.Gras && t !== T.Sand && t !== T.Skog || (u.tradFri || !yxa) && g.trees[q.y * W + q.x] >= FOREST || !ledig(s, q.x, q.y, upp)) { ok = false; break; }
         d = Math.min(d, utanforByn(s, q.x, q.y));
       }
       if (!ok || d < STATION.utkantMin || d > u.till || !friRunt(s, rutor) || arbetar(stationDef(k)) && (!framLand(s, x, y, w, h) || Array.from({ length: w }, (_, i) => g.trees[(y + h) * W + x + i] >= FOREST).some(Boolean))) continue;
@@ -514,14 +525,14 @@ function siteUte(s: State, k: string) {
   return at;
 }
 function sokUte(s: State, k: string) {
-  const lekR = lekplats(s), o = omrade(s);
+  const lekR = lekplats(s), o = omrade(s), upp = upptagna(s);
   let best: { x: number; y: number; rot?: 1 } | undefined, bs = Infinity;
   for (const rot of [0, 1] as const) {
     const { w, h } = storlek(k, rot), R = Math.ceil(STATION.avstand) + 2 + Math.max(w, h);
     for (let y = o.y0 - R; y <= o.y1 + R; y++) for (let x = o.x0 - R; x <= o.x1 + R; x++) {
       let fri = true;
-      for (let j = 0; j < h && fri; j++) for (let i = 0; i < w && fri; i++) fri = ledig(s, x + i, y + j);
-      if (fri && stationDef(k)?.platser) fri = bordPlatser({ k, x, y, rot }).every(q => ledig(s, q.x, q.y)); // stubbarna runt bordet
+      for (let j = 0; j < h && fri; j++) for (let i = 0; i < w && fri; i++) fri = ledig(s, x + i, y + j, upp);
+      if (fri && stationDef(k)?.platser) fri = bordPlatser({ k, x, y, rot }).every(q => ledig(s, q.x, q.y, upp)); // stubbarna runt bordet
       if (fri) fri = friRunt(s, [...rutorAv(x, y, w, h), ...(stationDef(k)?.platser ? bordPlatser({ k, x, y, rot }) : [])], true); // plats för en stig runt (steg 2.10.8)
       for (let i = 0; i < w && fri; i++) fri = !gridOf(s).at.has((y + h) * W + x + i) && !stationAt(s, x + i, y + h) && !(s.stackar ?? []).some(q => q.x === x + i && q.y === y + h && !iLagret(s, q.x, q.y)); // man står framför den, inte i en vägg, en annan station eller på en hög
       if (fri) fri = gangFri(s, [...rutorAv(x, y, w, h), ...(stationDef(k)?.platser ? bordPlatser({ k, x, y, rot }) : [])]);
