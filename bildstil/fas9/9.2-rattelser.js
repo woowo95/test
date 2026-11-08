@@ -83,4 +83,10 @@
     { id: 'f9_bjorn_anfall', namn: 'Björnens anfall', typ: 'tre', vad: 'Steg 9.2.31: i striden på kartan reser sig björnen och slår med ramen, en bild per slag i animationernas klocka, som människornas slag.', versioner: BJORNAR.map(([text, r]) => ({ text, w: 23, h: 23, rita: B => { GRAS(B, 23, 23); ritaSprite(B, r, DJ, 4, 3); } })) },
     { id: 'f9_varg_anfall', namn: 'Vargens anfall', typ: 'tre', vad: 'Steg 9.2.31: i striden på kartan hugger vargen med käftarna, en bild per slag i animationernas klocka.', versioner: VARGAR.map(([text, r]) => ({ text, w: 24, h: 14, rita: B => { GRAS(B, 24, 14); ritaSprite(B, r, DJ, 4, 3); } })) },
   );
+  // steg 9.2.34: bältets bild i lagret, mindre (12 × 6 punkter i stället för 18 × 9), i samma skala som de andra sakerna
+  const BL = { a: 'kol0', b: 'senap2', c: 'senap1', d: 'jord1' };
+  const BALTE_NU = ['....aaaaaaaaaa....', '..aabcbcbcbcbcaa..', '.acbcbaaaaaacbcba.', 'acbaaaaa...aaaacba', 'abcaaddda.adddabca', 'acbcbdaaaaadacbcba', '.acbcdcbcbcdcbcba.', '..aabdbcbcbdbcaa..', '....aaaaaaaaaa....'];
+  const BALTE_NY = ['..aaaaaaaa..', '.abcbcbcbca.', 'abaaaddaaaba', 'acaadaadaaca', '.acbcbcbcba.', '..aaaaaaaa..'];
+  const LAGER = (B, w, h) => { for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) B.satt(x, y, B.P.i('jord', (x + y) % 7 ? 2 : 1)); };
+  VAL.push({ id: 'f9_balte_mindre', namn: 'Bältet i lagret, mindre', typ: 'janej', vad: 'Steg 9.2.34: bältets bild i lagret är större än de andra sakerna. Till vänster som i dag (18 × 9 punkter), till höger mindre (12 × 6), bredvid en kniv i samma skala. Ja eller nej?', versioner: [{ text: 'Bältet i dag till vänster och det mindre till höger, på lagrets jord.', w: 44, h: 15, rita: B => { LAGER(B, 44, 15); ritaSprite(B, BALTE_NU, BL, 2, 3); ritaSprite(B, BALTE_NY, BL, 26, 5); } }] });
 })();
