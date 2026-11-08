@@ -179,4 +179,15 @@
     for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) B.satt(x, y, B.P.i('ben', 2));
     R.runsten(B, 5, 9, f, 'stangd'); R.runsten(B, 5 + R.SW + 4, 9, f, 'oppen'); R.nyttBand(B, 2 * (R.SW + 4) + 8, 5, hu, an, monster, f[4]);
   } })) });
+  // steg 9.3.4: höet till elden som saker på rutan, en bild per antal (1, 2, 3), i 16 punkter per ruta
+  const HO = [
+    ['Små tofsar av torrt gräs, som i spelet nu.', ['h.y.h', '.hyh.', '..H..']],
+    ['Ett knippe strån som lutar, med en ljus topp.', ['..y.y', '.yhh.', 'hhH..', '.H...']],
+    ['En liten hög av hö, rundad, med skugga under.', ['.yhy.', 'hhyhh', 'hHhHh', '.kkk.']],
+  ];
+  const HO_L = { h: 'senap2', H: 'senap1', y: 'senap3', k: 'kol1' };
+  VAL.push({ id: 'f9_ho', namn: 'Höet på rutan', typ: 'tre', vad: 'Steg 9.3.4: höet till elden är nu saker på rutan, ett eller två strån där det växer gräs, och bilden visar antalet. Från vänster en, två och tre.', versioner: HO.map(([text, r]) => ({ text, w: 3 * 18 + 2, h: 20, rita: B => {
+    for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) B.satt(x, y, B.P.i('oliv', 1));
+    [1, 2, 3].forEach((n, kol) => { const x0 = 2 + kol * 18, y0 = 2; for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) B.satt(x0 + x, y0 + y, B.P.i('oliv', (x * 5 + y * 3) % 9 ? 3 : 2)); [[2, 3], [9, 9], [8, 2]].slice(0, n).forEach(([dx, dy]) => ritaSprite(B, r, HO_L, x0 + dx, y0 + dy)); });
+  } })) });
 })();
