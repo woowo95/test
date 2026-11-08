@@ -2,7 +2,7 @@ import { omrade } from './omrade';
 import { eldPlats, getMap, hash, perKarta, vnoise } from './karta';
 import { clampI, rnd } from './slump';
 import { H, HOUR, OX, OY, Person, State, W, inMap } from './typer';
-import { BAR, BUSKE, FOREST, Ground, HIGH, VAG, decodeCover, encodeCover, isSoil } from './vag';
+import { BAR, BUSKE, FOREST, Ground, HIGH, VAG, decodeCover, isSoil } from './vag';
 import { balans } from './balans';
 import { vattenNu } from './sjo';
 import { barKrok, nyaBuskar, tabortBuske, vaxBuske } from './buskar';
@@ -48,7 +48,7 @@ export function nyttVatten(s: State) { const g = grounds.get(s); if (g) g.tiles 
 export function groundOf(s: State): Ground {
   let g = grounds.get(s);
   if (!g) {
-    g = { tiles: vattenNu(s), cover: decodeCover(s.mark), trees: s.skog ? decodeCover(s.skog, 0) : startForest(s.seed) };
+    g = { tiles: vattenNu(s), cover: lasMark(s.mark, () => () => 1), trees: s.skog ? lasMark(s.skog, () => { const f = startForest(s.seed); return (i: number) => f[i]; }, 0) : startForest(s.seed) };
     if (!s.skog) for (let i = 0; i < g.trees.length; i++) if (g.cover[i] < HIGH) g.trees[i] = 0; // äldre sparfil: inga träd på stigarna
     g.alder = s.tradAlder ? lasAlder(s.tradAlder) : startAlder(s.seed, g.trees); // en äldre sparfil får trädens åldrar som urskogen
     g.art = s.tradSort ? lasArt(s.tradSort) : startArt(s.seed, g.trees, g.tiles); // och sorterna (steg 5.1.6)
@@ -59,7 +59,39 @@ export function groundOf(s: State): Ground {
   return g;
 }
 export const coverOf = (s: State) => groundOf(s).cover;
-export function packGround(s: State) { const g = groundOf(s); s.mark = encodeCover(g.cover); s.skog = encodeCover(g.trees); s.tradAlder = packaAlder(g.alder!); s.tradSort = packaArt(g.art!); s.buskar = packaArt(g.buske!); }
+// sparningen av gräset och skogen (steg 9.1.4): bara rutorna som skiljer sig från startkartan, så att sparfilen växer med det
+// byn gjort och inte med kartans storlek. En byte per ruta som förut (0–255); en följd av orörda rutor skrivs som 0 och hur
+// många (1–255), och en ändrad ruta med värdet 0 som 0 0. Det packade börjar med ~; en äldre sparfil utan ~ har en byte per
+// ruta rakt av. En orörd ruta läses som startkartans värde avrundat till en byte, precis som det gamla formatet gav
+const byte = (v: number) => Math.round(v * 255);
+function packaMark(v: Float32Array, start: (i: number) => number) {
+  const ut: string[] = [];
+  let orord = 0;
+  for (let i = 0; i < v.length; i++) {
+    const b = byte(v[i]);
+    if (b === byte(start(i)) && orord < 255) { orord++; continue; }
+    if (orord) { ut.push('\0', String.fromCharCode(orord)); orord = 0; }
+    if (b === byte(start(i))) orord = 1; else ut.push(b === 0 ? '\0\0' : String.fromCharCode(b));
+  }
+  if (orord) ut.push('\0', String.fromCharCode(orord));
+  return '~' + btoa(ut.join(''));
+}
+function lasMark(txt: string | undefined, startAv: () => (i: number) => number, fill = 1): Float32Array {
+  if (!txt?.startsWith('~')) return decodeCover(txt, fill);
+  const c = new Float32Array(W * H), start = startAv();
+  for (let i = 0; i < c.length; i++) c[i] = byte(start(i)) / 255;
+  try {
+    const p = atob(txt.slice(1));
+    for (let k = 0, i = 0; k < p.length && i < c.length; k++) {
+      const b = p.charCodeAt(k);
+      if (b !== 0) { c[i++] = b / 255; continue; }
+      const n = p.charCodeAt(++k);
+      if (n === 0) c[i++] = 0; else i += n;
+    }
+  } catch { /* ny mark */ }
+  return c;
+}
+export function packGround(s: State) { const g = groundOf(s), sf = startForest(s.seed); s.mark = packaMark(g.cover, () => 1); s.skog = packaMark(g.trees, i => sf[i]); s.tradAlder = packaAlder(g.alder!); s.tradSort = packaArt(g.art!); s.buskar = packaArt(g.buske!); }
 
 // ängar: fläckar av fuktig mark där det växer högt gräs och träd har svårt att få fäste
 export const angOf = perKarta(seed => {

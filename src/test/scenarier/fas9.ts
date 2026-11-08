@@ -41,3 +41,21 @@ SCENARIER.bynsavstand = {
     ];
   },
 };
+
+SCENARIER.sparmark = {
+  text: 'Steg 9.1.4: gräset och skogen sparas som det som skiljer sig från startkartan. En sparad och inläst by får exakt samma mark som med det gamla formatet (en byte per ruta), och sparningen blir mindre',
+  kor: () => {
+    const s = createState(3, START);
+    kor(s, 48);
+    const g = SIM.groundOf(s), kopia = SIM.groundOf(SIM.cloneState(s));
+    const gammalC = SIM.decodeCover(SIM.encodeCover(g.cover)), gammalT = SIM.decodeCover(SIM.encodeCover(g.trees), 0);
+    let fel = 0;
+    for (let i = 0; i < g.cover.length; i++) if (kopia.cover[i] !== gammalC[i] || kopia.trees[i] !== gammalT[i]) fel++;
+    SIM.packGround(s);
+    const ny = (s.mark?.length ?? 0) + (s.skog?.length ?? 0), gammal = SIM.encodeCover(g.cover).length + SIM.encodeCover(g.trees).length;
+    return [
+      [`samma mark efter inläsning som med det gamla formatet (${fel} rutor skiljer)`, fel === 0],
+      [`sparningen är mindre (${Math.round(ny / 1024)} KB mot ${Math.round(gammal / 1024)} KB)`, ny < gammal],
+    ];
+  },
+};
