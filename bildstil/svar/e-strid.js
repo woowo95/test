@@ -444,7 +444,7 @@
   // och bucklan kastar en skugga nedåt till höger.
   const skoldYta = (v, w, h, ligg, m) => (x, y) => {
     const o = SKOLDAR[v], [A, Lg, AW, LW] = ligg ? [y, x, h, w] : [x, y, w, h];
-    const inne = (a, l) => { const u = Math.abs(a - AW / 2) / (AW / 2), t = Math.abs(l - LW / 2) / (LW / 2); return o.rund ? u ** 2.4 + t ** 2.4 <= 1 : u ** 6 + t ** 6 <= 1; };
+    const inne = (a, l) => { const u = Math.abs(a - AW / 2) / (AW / 2), t = Math.abs(l - LW / 2) / (LW / 2); return o.rund ? u ** 2.4 + t ** 2.4 <= 1 : u ** (m.exp || 6) + t ** (m.exp || 6) <= 1; };
     if (!inne(A, Lg)) return null;
     const da = A - AW / 2, dl = Lg - LW / 2, r = m.r;
     if (o.kant && [[r, 0], [-r, 0], [0, r], [0, -r]].some(([p, q]) => !inne(A + p, Lg + q))) return o.kant;
@@ -480,4 +480,142 @@
     skoldKort(1, 'Oval, av tre brädor, med kanten lindad i rå hud.'),
     skoldKort(2, 'Avlång, målad med rödockra, med åsen och bucklan i omålat trä och kanten lindad i rå hud.'),
 ]), 'f8_skold');
+
+
+  // ======================================================================================================
+  // Björns svar 2026-11-08: bågen bara lite bakom axeln, pilarna med och utan bågen, hjälmen som inte sticker ut,
+  // rustningen med långa ärmar och skölden (version 1) med smalare kontur på kartan och större och lägre i porträttet
+  // ======================================================================================================
+  // två bilder (rader) bredvid varandra med fötterna på samma rad
+  const bredvid = (a, b, mellan = 2) => {
+    const wa = bredd(a), wb = bredd(b), h = Math.max(a.length, b.length);
+    return [...Array(h)].map((_, y) => (a[y - (h - a.length)] || '').padEnd(wa, '.') + '.'.repeat(mellan) + (b[y - (h - b.length)] || '').padEnd(wb, '.'));
+  };
+  // bågen i porträttet: bara ändan syns bakom axeln (hoger: bybons vänstra axel, till höger i bilden)
+  const bageAxel = (p, v, hoger = true, hog = false) => {
+    const o = BAGAR[v], a = hoger ? (hog ? [43, 72] : [40, 70]) : [23, 70], b = hoger ? (hog ? [57, 27] : [55, 37]) : [8, 37];
+    const pts = kurva(a, b, hoger ? -3 : 3, 24), stav = ror(pts, 1.5, 1.1), rep = ror([pts[0], pts[pts.length - 1]], 0.55);
+    fyll(p.b, 2, 24, 61, 54, (x, y) => rep(x, y) ? o.rep : null);
+    fyll(p.b, 2, 24, 61, 54, (x, y) => { const r = stav(x, y); if (!r) return null; if (r.t > 0.95) return o.spets; return ton3(r.ljus, ...o.tra); });
+  };
+  // pilarna i porträttet: bara fjädrarna och en bit av skaften syns bakom axeln
+  const pilAxel = (p, v, hoger = true) => {
+    const ut = hoger ? [[50, 37, 41, 68], [53, 39, 45, 68], [56, 42, 48, 68]] : [[13, 37, 22, 68], [10, 39, 18, 68], [7, 42, 15, 68]];
+    const ovan = (x, y, c) => { if (y <= 54) p.b(x, y, c); }; // inte i raden längst ner, där rocken slutar
+    for (const [ax, ay, bx, by] of ut) pilPort(ovan, v, [ax, ay], [bx, by]);
+  };
+
+  // ---------- bågen ----------
+  {
+    const ny = kort('Den enkla bågen av ljust virke. I porträttet syns bara den övre ändan och strängen lite bakom axeln; resten är dold bakom ryggen.', bageSak(0), [
+      ['fram', 'hanga', f => { const hand = f.las(2, 13); bageFig(f, 0, [0, 5], [0, 20], 2); f.o(1, 13, hand); f.o(0, 13, hand); f.o(-1, 13, hand); }],
+      ['sida', 'framfor', f => { const hand = f.las(9, 10); bageFig(f, 0, [11, 3], [11, 17], -2); f.o(10, 10, hand); }],
+      ['bak', 'hanga', f => bageFig(f, 0, [12, 1], [1, 16], 2, f.o, f.o)],
+    ], p => bageAxel(p, 0));
+    byt(JANEJ('f8_bage', 'Bågen', 'Steg 8.7.6: bågen av 2 virke och 1 rep. Ritad om från version 1, den enkla bågen av ljust virke: på kartan som förut, och i porträttet bara som en ända bakom axeln. Din kommentar förra gången: ”bilbågen sitter för högt upp på alla porträtt. Den ska bara synas lite bakom axeln.”', ny), 'f8_bage');
+  }
+
+  // ---------- pilarna, med och utan bågen ----------
+  {
+    const fj = (f, v, x, y, n, satt) => { const o = PILAR[v]; satt(x, y, o.A); satt(x, y + 1, o.B); for (let k = 2; k < n; k++) satt(x, y + k, o.skaft); };
+    const pilarFram = (f, v) => { fj(f, v, 11, 2, 5, f.b); fj(f, v, 12, 3, 5, f.b); fj(f, v, 10, 1, 2, f.b); };
+    const pilarSida = (f, v) => { const o = PILAR[v]; for (const [ax, ay, bx, by] of [[1, 1, 4, 14], [2, 0, 5, 13], [3, 1, 5, 9]]) streck(ax, ay, bx, by).forEach(([x, y], k) => f.b(x, y, k === 0 ? o.A : k === 1 ? o.B : o.skaft)); };
+    const pilarBak = (f, v) => { const o = PILAR[v]; for (const [ax, ay, bx, by] of [[10, 0, 6, 13], [11, 1, 7, 14], [12, 2, 8, 14]]) streck(ax, ay, bx, by).forEach(([x, y], k) => f.o(x, y, k === 0 ? o.A : k === 1 ? o.B : o.skaft)); if (o.rep) { f.o(8, 7, o.rep); f.o(9, 7, o.rep); f.o(10, 7, o.rep); } };
+    const v1 = kort('Bara pilarna, med grå flintspetsar och ljusa fjädrar, i en bunt på ryggen. I porträttet syns bara fjädrarna bakom axeln.', pilSak(0), [
+      ['fram', 'hanga', f => pilarFram(f, 0)],
+      ['sida', 'hanga', f => pilarSida(f, 0)],
+      ['bak', 'hanga', f => pilarBak(f, 0)],
+    ], p => pilAxel(p, 0));
+    const v2 = kort('Pilarna med grå fjädrar och rött band, och bågen, båda på ryggen. På kartan syns bågen snett över ryggen bakifrån och sticker fram bakom figuren framifrån och från sidan. I porträttet syns bågens ända och fjädrarna bakom samma axel.', bredvid(bageSak(0), pilSak(1)), [
+      ['fram', 'hanga', f => { bageFig(f, 0, [12, 1], [1, 16], 2, f.b, f.b); pilarFram(f, 1); }],
+      ['sida', 'hanga', f => { bageFig(f, 0, [1, 0], [7, 16], -2, f.b, f.b); pilarSida(f, 1); }],
+      ['bak', 'hanga', f => { bageFig(f, 0, [12, 1], [1, 16], 2, f.o, f.o); pilarBak(f, 1); }],
+    ], p => { bageAxel(p, 0, true, true); pilAxel(p, 1); });
+    const v3 = kort('Bågen i handen och pilarna med svarta spetsar och röda fjädrar på ryggen, som när han är ute och jagar. På kartan: bågen i handen framifrån, armen sträckt framåt från sidan och bågen hängande ur handen bakifrån. I porträttet syns fjädrarna bakom ena axeln och bågens ända bakom den andra.', bredvid(bageSak(0), pilSak(2)), [
+      ['fram', 'hanga', f => { const hand = f.las(2, 13); bageFig(f, 0, [0, 5], [0, 20], 2); f.o(1, 13, hand); f.o(0, 13, hand); f.o(-1, 13, hand); pilarFram(f, 2); }],
+      ['sida', 'framfor', f => { const hand = f.las(9, 10); bageFig(f, 0, [11, 3], [11, 17], -2); f.o(10, 10, hand); pilarSida(f, 2); }],
+      ['bak', 'hanga', f => { pilarBak(f, 2); const hand = f.las(11, 13); bageFig(f, 0, [13, 5], [13, 20], -2); f.o(12, 13, hand); f.o(13, 13, hand); }],
+    ], p => { bageAxel(p, 0, false); pilAxel(p, 2); });
+    byt(KORT('f8_pil', 'Pilarna', 'Steg 8.7.6: pilarna av ved och flinta. Version 1 visar bara pilarna, version 2 och 3 pilarna tillsammans med bågen (den enkla bågen av ljust virke), eftersom de ofta bärs samtidigt. Varje version har också sitt eget utseende på pilarna. Till vänster saken, sedan bybon på kartan framifrån, från sidan och bakifrån, och sist i porträttet, där bara ändarna syns bakom axeln. Din kommentar förra gången: ”pilarna och pilbågen används ofta samtidigt. Rita versioner med bara pilarna men också med både pilar och pilbåge samtidigt.”', [v1, v2, v3]), 'f8_bage');
+  }
+
+  // ---------- hjälmen: inte bredare än huvudet ----------
+  {
+    const KALOTT = ['..dccb..', '.dccccb.', '.baaaaa.'];
+    const ny = kort('Version 1, kalotten med kanten, nu inte bredare än huvudet: på kartan ligger kanten innanför huvudets kontur, och i porträttet följer kalotten skallen och kanten slutar där huvudet slutar.', HJALM_SAK, [
+      ['fram', 'hanga', f => sp(f.o, KALOTT, 3, -1)],
+      ['sida', 'hanga', f => sp(f.o, KALOTT, 4, -1)],
+      ['bak', 'hanga', f => sp(f.o, KALOTT, 3, -1)],
+    ], p => {
+      fyll(p.f, 2, 2, 61, 26, (x, y) => {
+        if (y > 23.5) return null;
+        if (!ell(31.5, 22, 17.6, 16.2)(x, y)) return null;
+        if (y > 20) return y > 22.5 ? 'a' : x < 18 ? 'c' : 'b'; // kanten
+        const u = (x - 14) / 35, som = [-0.55, 0, 0.55].some(k => Math.abs((x - 31.5) - k * 17.6 * Math.sqrt(Math.max(0, 1 - ((22 - y) / 16.2) ** 2))) < 0.6);
+        if (som && y > 7) return 'b';
+        if (ell(24, 12, 5, 3.5)(x, y)) return 'd';
+        return u < 0.16 ? 'd' : u > 0.8 ? 'b' : 'c';
+      });
+    });
+    byt(JANEJ('f8_hjalm', 'Läderhjälmen', 'Steg 8.7.2: av 2 läder och 1 rep. Tar bort en del av slagen mot huvudet. Version 1, ritad om så att den inte sticker ut på sidorna: kalotten följer skallen och kanten är lika bred som huvudet, både på kartan och i porträttet. Din kommentar förra gången: ”Den sticker ut för långt på sidorna av huvudet.”', ny), 'f8_hjalm');
+  }
+
+  // ---------- rustningen med långa ärmar ----------
+  {
+    // fjällen i porträttet; armar: ärmarna (utanför armhålan) får samma fjäll och en söm mot bålen
+    const fjall = (armar) => (x, y) => {
+      const X = Math.floor(x), Y = Math.floor(y);
+      if (Y <= 49) return Y === 48 ? 'a' : 'b';
+      const vs = 14 - (Y - 50) * 0.25, hs = 49 + (Y - 50) * 0.25, arm = X < vs || X > hs;
+      if (armar && (Math.abs(X + 0.5 - vs) < 0.6 || Math.abs(X + 0.5 - hs) < 0.6)) return Y % 2 ? 'k' : 'a'; // sömmen vid armhålan, sydd med ljus tråd
+      const rad = Math.floor((Y - 50) / 4), u = ((X + (rad % 2 ? 3 : 0)) % 6 + 6) % 6 + 0.5, w = (Y - 50) % 4 + 0.5;
+      const mork = arm && !armar;
+      const inne = ((u - 3) / 2.9) ** 2 + ((w + 0.6) / 4.2) ** 2 <= 1, kant = ((u - 3) / 2.1) ** 2 + ((w + 0.6) / 3.3) ** 2 > 1;
+      if (!inne) return 'a';
+      if (kant) return mork ? 'a' : 'b';
+      if (mork) return u < 3 ? 'c' : 'b';
+      return u < 2.5 && w < 2 ? 'd' : u > 4 ? 'b' : 'c';
+    };
+    const KROPP_F = [3, 4, 5, 6, 7, 8, 9, 10], RADER = [7, 8, 9, 10, 12, 13];
+    const kortaArmar = [[2, 7], [2, 8], [2, 9], [11, 7], [11, 8], [11, 9], [3, 7], [10, 7]];
+    const langaArmar = [...[7, 8, 9, 10, 11, 12].flatMap(y => [[2, y], [11, y]]), [3, 7], [10, 7]];
+    const lang = (f, xs, armar) => { fjallFig(f, xs, RADER, []); for (const [x, y] of armar) f.p(x, y, y % 2 ? 'b' : 'a'); };
+    const forra = kort('', RUST_SAK, [
+      ['fram', 'hanga', f => fjallFig(f, KROPP_F, RADER, kortaArmar)],
+      ['sida', 'hanga', f => fjallFig(f, [5, 6, 7, 8], RADER, [[7, 7], [7, 8], [7, 9]])],
+      ['bak', 'hanga', f => fjallFig(f, KROPP_F, RADER, kortaArmar)],
+    ], p => fyll(p.r, 2, 48, 61, 61, fjall(false)));
+    // saken: rustningen utlagd med ärmarna snett nedåt, fjällen som ljusa prickar i rader
+    const RUST_LANG = former(19, 12, [
+      [ror([[5.5, 2.5], [2, 9.5]], 1.4), (x, y) => Math.floor(y) >= 9 ? 'a' : Math.floor(y) % 2 ? 'b' : 'c'],
+      [ror([[13.5, 2.5], [17, 9.5]], 1.4), (x, y) => Math.floor(y) >= 9 ? 'a' : Math.floor(y) % 2 ? 'b' : 'a'],
+      [(x, y) => x > 5 && x < 14 && y > 1 && y < 11 && !ell(9.5, 1.6, 1.8, 1.2)(x, y), (x, y) => { const X = Math.floor(x), Y = Math.floor(y); if (Y === 2) return 'a'; if (X === 6) return 'c'; if (X === 13) return 'a'; return (X + Y) % 2 ? 'd' : 'b'; }],
+    ]).filter(r => /[^.]/.test(r));
+    const ny = kort('Med långa ärmar: fjällen går ända ner till handlederna, i samma ton som på bålen, med en söm vid armhålan.', RUST_LANG, [
+      ['fram', 'hanga', f => lang(f, KROPP_F, langaArmar)],
+      ['sida', 'hanga', f => lang(f, [5, 6, 7, 8], [7, 8, 9, 10, 11, 12].map(y => [7, y]))],
+      ['bak', 'hanga', f => lang(f, KROPP_F, langaArmar)],
+    ], p => fyll(p.r, 2, 48, 61, 61, fjall(true)));
+    const kortet = JANEJ('f8_rustning', 'Läderrustningen', 'Steg 8.7.1: av 4 läder och 2 rep, på platsen yttre. Skyddar bålen och armarna. Den gamla (version 2, med korta ärmar och mörkare axelskydd) står kvar till vänster, och den nya med långa ärmar bredvid. Säger du ja används den nya; vill du ha båda, skriv det. Din kommentar förra gången: ”prova en version med långa ärmar. Behåll den gamla”', ny);
+    kortet.idag = forra; kortet.idagText = 'Den gamla, version 2 med korta ärmar, som sak, på bybon och i porträttet.';
+    byt(kortet, 'f8_rustning');
+  }
+
+  // ---------- skölden, version 1: smal kontur på kartan, större och lägre i porträttet ----------
+  {
+    // på kartan utan egen kontur: figuren får en kontur runt allt, och mot kroppen en mörk kant i trä
+    const tunn = (w, h) => { const t = skoldYta(0, w, h, false, SMA); return former(w, h, [[(x, y) => !!t(x, y), (x, y) => t(x, y)]], false); };
+    const FIG = tunn(5, 9).map(r => r.slice(0, -1) + (r.slice(-1) === '.' ? '.' : 'a'));
+    const FIG_BAK = tunn(5, 9).map(r => (r[0] === '.' ? '.' : 'a') + r.slice(1));
+    const SIDA = SKOLD_SIDA[0].map(r => r.replace(/d/g, 'c'));
+    const ny = kort('Version 1, en bräda ljust trä med åsen och bucklan. På kartan har skölden ingen egen kontur längre, bara figurens tunna kontur runt allt och en mörkare kant mot kroppen. I porträttet hänger den lägre, nere i hörnet, och är större.', SKOLD_SAK[0], [
+      ['fram', 'hanga', f => sp(f.o, FIG, -2, 7)],
+      ['sida', 'framfor', f => { sp(f.o, SIDA, 10, 5); f.o(10, 10, f.las(9, 10)); }],
+      ['bak', 'hanga', f => sp(f.o, FIG_BAK, 11, 7)],
+    ], p => {
+      const x0 = -2, y0 = 40, t = skoldYta(0, 27, 54, false, { sw: 1.4, bw: 5, bl: 10, r: 2, korn: true, exp: 3 });
+      fyll(p.f, 0, 36, 34, 61, (x, y) => t(x - x0, y - y0));
+    });
+    byt(JANEJ('f8_skold', 'Skölden', 'Steg 8.7.3: av 3 ved och 1 rep, hålls i en hand och slits som ett redskap. Du valde version 1, den avlånga skölden av en enda bräda ljust trä, som Hjortspringsköldarna. Här ritad om: smalare kontur när bybon håller den på kartan, och i porträttet lägre och större. Din kommentar förra gången: ”Utgå från version 1. Gör konturerna smalare när den hålls av personen i den lilla variationen. I porträttet ska skölden hamna längre ner och vara större”', ny), 'f8_skold');
+  }
 })();

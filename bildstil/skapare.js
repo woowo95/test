@@ -887,6 +887,8 @@
     let a = alternativ(sort, mall, kon).filter(Boolean).filter(id => !DEL[id]?.rovare); // rövarens delar bärs bara av rövarna
     // skönheten styr de fula delarna (ful i registret, Björn efter 5.2.2.3): de vanliga och vackra får aldrig en ful del, de
     // fula får en ibland och de fulaste ofta
+    // de vackra delarna (vacker i registret, Björn 2026-11-08) bärs bara av de vackra
+    if (skon !== null) a = a.filter(id => !DEL[id]?.vacker || skon > 0);
     if (skon !== null) { const ful = a.filter(id => DEL[id]?.ful), fin = a.filter(id => !DEL[id]?.ful); a = skon < 0 && ful.length && r() < (skon <= -2 ? 0.6 : 0.3) ? ful : fin.length ? fin : a; }
     return a.length ? valj(r, a) : null;
   };

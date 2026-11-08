@@ -154,45 +154,49 @@
     const L = mantelLager(V), sw = 16, w = 4 + sw + 6 + 4 * 18 + 66 + 4, h = 72, fot = 50;
     return { text: V.text, w, h, rita: B => {
       gras(B);
-      lagg(B, V.sak, ML, 4, fot - V.sak.length);
+      lagg(B, V.sak, V.legend || ML, 4, fot - V.sak.length);
       const F = [['fram', L.fram], ['sida', L.sida], ['bak', L.bak], ['vast', L.vast]];
       F.forEach(([r, lager], n) => figur(B, bybo(r), 4 + sw + 6 + n * 18 + 2, fot - 19, lager));
       portratt(B, w - 4 - 64, 4, mantelPortratt(V));
     } };
   };
-  byt(KORT('f8_mantel', 'Ledarens mantel', 'Steg 8.3.14: en mantel som byn gör åt ledaren när hen suttit en tidsålder och har mer än hälften av legitimiteten. Den värmer som en kappa, ger anseende och följer ämbetet till nästa ledare. Samma tre mantlar som förut, nu också på en bybo: till vänster manteln som sak, sedan bybon på kartan framifrån, från sidan, bakifrån och åt väster, och sist i porträttet. Din kommentar förra gången: "Rita den på en person så jag kan se hur det kommer se ut".', MANTLAR.map(mantelVersion)));
+  // Björn valde version 1, utan guldspännet: manteln knyts med ett snöre vid halsen, och färgen följer materialet i receptet.
+  // Samma mantel i tre material, en rad per material.
+  const MATERIAL = [
+    { namn: 'rött ylle', ljus: 'rost3', mitt: 'rost2', mork: 'rost1' },
+    { namn: 'brunt skinn', ljus: 'jord2', mitt: 'jord1', mork: 'jord0' },
+    { namn: 'ofärgat ylle', ljus: 'ben3', mitt: 'ben2', mork: 'ben1' },
+  ];
+  const utanSpanne = MATERIAL.map(m => ({ ...MANTLAR[0], ...m, spanne: m.mork, kant: null, krage: null, sak: MANTLAR[0].sak.map(r => r.replace('f', 'c')), legend: { a: m.mork, b: m.mitt, c: m.ljus } }));
+  const MATERIAL_H = 72;
+  byt({ id: 'f8_mantel', namn: 'Ledarens mantel', typ: 'janej', vad: 'Steg 8.3.14: en mantel som byn gör åt ledaren när hen suttit en tidsålder och har mer än hälften av legitimiteten. Du valde version 1. Nu utan guldspännet: manteln knyts med ett mörkt snöre vid halsen. Färgen följer det manteln görs av i receptet; här i rött ylle, brunt skinn och ofärgat ylle, en rad var: manteln som sak, bybon på kartan framifrån, från sidan, bakifrån och åt väster, och i porträttet. Din kommentar förra gången: ”ta bort guldspännet. manteln kan vara gjort av olika saker och färgen följer receptet”', versioner: [
+    { text: 'Version 1 utan guldspännet, i rött ylle, brunt skinn och ofärgat ylle.', w: mantelVersion(utanSpanne[0]).w, h: MATERIAL_H * utanSpanne.length, rita: B => {
+      utanSpanne.forEach((V, n) => {
+        const v = mantelVersion(V), dy = n * MATERIAL_H;
+        const B2 = { ...B, satt: (x, y, c) => B.satt(x, y + dy, c), morka: (x, y) => B.morka(x, y + dy), w: B.w, h: MATERIAL_H };
+        v.rita(Object.setPrototypeOf(B2, Object.getPrototypeOf(B)));
+      });
+    } },
+  ] });
 
   // ---------- 8.5.1 graven: en enkel gravsten ----------
-  // en avlång jordkulle (en ruta) sedd snett ovanifrån, med en sten som står i huvudänden bakom den.
-  // j/J/k jorden (jord0–2), T/S/s stenen (skiffer3–1), g mossa (oliv1)
-  const GL = { j: 'jord0', J: 'jord1', k: 'jord2', T: 'skiffer3', S: 'skiffer2', s: 'skiffer1', g: 'oliv1' };
-  // kullen: en rundad rektangel, ljusare upptill och till vänster, mörkare nedtill och till höger; kanten upptill får en
-  // mörk kontur mot stenen bakom
-  const rr = (x0, y0, x1, y1, r) => (x, y) => { const cx = Math.max(x0 + r, Math.min(x1 - r, x)), cy = Math.max(y0 + r, Math.min(y1 - r, y)); return (x - cx) ** 2 + (y - cy) ** 2 <= r * r; };
-  const KU = rr(3.5, 11.5, 14.5, 25.5, 3.2), KU1 = rr(2.5, 10.5, 15.5, 26.5, 4.2);
-  const kulle = [
-    [(x, y) => KU1(x, y) && !KU(x, y) && y < 12.5 && x > 3.5 && x < 14.5, 'o'],
-    [KU, (x, y) => { const u = (x - 9) / 5.5, v = (y - 18.5) / 7; return u > 0.62 || v > 0.84 ? 'j' : ((x - 7.6) / 2.4) ** 2 + ((y - 17) / 6) ** 2 < 1 ? 'k' : hash(Math.floor(x), Math.floor(y), 4) < 0.14 ? 'k' : 'J'; }],
-  ];
+  // bara stenen, utan jordkullen (Björn: "gör bara stenen"), stående i gräset
+  const GL = { T: 'skiffer3', S: 'skiffer2', s: 'skiffer1', g: 'oliv1' };
   const sten = (a, b) => (x) => x < a ? 'T' : x > b ? 's' : 'S';
   const GRAVAR = [
-    { text: 'En upprest sten med rundad topp.', rader: () => former(19, 26, [
+    { text: 'En upprest sten med rundad topp.', rader: () => former(19, 15, [
       [och(rakt(6, 5.5, 12, 13), ell(9, 5.8, 3, 2.6)), sten(7, 10.8)],
-      ...kulle,
     ]) },
-    { text: 'En grov, otuktad sten som står lite snett, med mossa vid foten.', rader: () => former(19, 26, [
+    { text: 'En grov, otuktad sten som står lite snett, med mossa vid foten.', rader: () => former(19, 15, [
       [poly([[6, 13], [5.6, 7.5], [6.8, 4], [9.2, 2.2], [11.6, 4.2], [12.4, 8.5], [12, 13]]), (x, y) => y > 8.5 && hash(Math.floor(x), Math.floor(y), 2) < 0.5 ? 'g' : sten(7.5 + (y < 5 ? 1 : 0), 10.6)(x)],
-      ...kulle,
     ]) },
-    { text: 'En låg, bred sten med ett enkelt streck ristat i mitten, och några småstenar på kullen.', rader: () => former(19, 26, [
+    { text: 'En låg, bred sten med ett enkelt streck ristat i mitten.', rader: () => former(19, 15, [
       [och(rakt(4.5, 5.5, 13.5, 13), ell(9, 5.6, 4.5, 1.4)), (x, y) => y < 6.5 ? 'T' : sten(6, 12)(x)],
       [rakt(8.5, 7.5, 9.5, 10.5), 's'],
-      ...kulle,
-      [och(ell(6.5, 18, 0.9, 0.8), ell(11.5, 16.5, 0.9, 0.8), ell(9.5, 21, 0.9, 0.8)), 'T'],
     ]) },
   ];
-  const gravVersion = V => ({ text: V.text, w: 27, h: 32, rita: B => { gras(B); lagg(B, V.rader(), GL, 4, 3, true); } });
-  byt(KORT('f8_grav', 'Graven', 'Steg 8.5.1: graven är en ruta på gravplatsen, som 10.1.3 bygger vidare på. Nu tre enkla gravstenar, var och en i huvudänden av en jordkulle. Din kommentar förra gången: "Gör en enkel gravsten."', GRAVAR.map(gravVersion)));
+  const gravVersion = V => ({ text: V.text, w: 27, h: 22, rita: B => { gras(B); lagg(B, V.rader(), GL, 4, 3, true); } });
+  byt(KORT('f8_grav', 'Graven', 'Steg 8.5.1: graven är en ruta på gravplatsen, som 10.1.3 bygger vidare på. Nu bara stenen, utan jordkullen: tre enkla gravstenar som står i gräset. Din kommentar förra gången: ”gör bara stenen”', GRAVAR.map(gravVersion)));
 
   // ---------- 8.5.1 den döda kroppen ----------
   // Ritas ur personens vanliga kartfigur (samma mall, hår, kläder och hud), med en regel som gäller vilken figur som helst:

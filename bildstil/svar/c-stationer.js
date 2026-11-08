@@ -85,28 +85,6 @@
   const vidjor = (B, x0, y0, n, len) => { for (let k = 0; k < n; k++) for (let i = 0; i < len; i++) B.satt(x0 + i + (k % 2), y0 + k, B.P.i('senap', k % 3 === 0 ? 3 : 2)); for (let k = -1; k <= n; k++) B.satt(x0 + 5, y0 + k, B.P.i('jord', 1)); };
   const KNIV = former(14, 4, [[rakt(1, 1, 8, 3), (x, y) => y < 2 ? 'T' : 'S'], [rakt(8, 1, 13, 3), 'b']]);
   const BX = 4, BY = 8, BW = 46, BD = 14; // bänken i fångstbänkens ruta (benen på samma rad som slaktbänkens)
-  const BANK = [
-    B => { stallBank(B, BX, BY, BW, BD, 5, 1); sp(B, halvMjarde, BX + 4, BY + 3); vidjor(B, BX + 30, BY + 5, 5, 13); },
-    B => { // en ställning vid bakkanten där färdiga snaror hänger; stolparna står bakom bänken
-      sp(B, former(48, 15, [[rakt(4, 1, 6, 15), 'b'], [rakt(42, 1, 44, 15), 'a'], [rakt(2, 1, 46, 3), (x, y) => y < 2 ? 'd' : 'c']]), BX, BY - 11, false);
-      stallBank(B, BX, BY, BW, BD, 5, 2);
-      [12, 20, 28, 36].forEach(x => sp(B, snaran(9), BX + x - 4, BY - 9, false));
-      sp(B, former(10, 7, [[(x, y) => { const d = Math.hypot((x - 5) / 1.4, y - 3.5); return d <= 3.3 && d >= 1.6; }, (x, y) => y < 3 ? 'y' : 'x']]), BX + 8, BY + 6);
-      sp(B, KNIV, BX + 26, BY + 9);
-    },
-    B => { // en kluven stock med den flata sidan upp på två kryss; buren som byggs och kniven ligger på den
-      const w = 46, d = 13, x0 = BX, y0 = BY + 1;
-      skuggaUnder(B, x0, y0 + d - 1, w, 7);
-      const kryss = x => [linje([[x, d], [x - 3.5, d + 6]], 0.9), linje([[x, d], [x + 3.5, d + 6]], 0.9), linje([[x, 4], [x - 3.5, 0.5]], 0.9), linje([[x, 4], [x + 3.5, 0.5]], 0.9)];
-      sp(B, former(w + 2, d + 9, [[och(...kryss(7), ...kryss(w - 6)), x => fx(x) % 2 ? 'a' : 'b']]), x0, y0 - 3, false);
-      sp(B, former(w + 2, d + 2, [
-        [rakt(1, 1, w, d + 1), (x, y) => { const j = fx(y) - 1; if (j < d - 4) return j === 0 ? 'x' : hash(fx(x / 4), j, 6) < 0.16 ? 'c' : (fx(x) + j * 7) % 19 === 0 ? 'c' : hash(fx(x), j, 7) < 0.3 ? 'x' : 'd'; return j === d - 4 ? 'c' : j < d - 1 ? ((fx(x) * 3 + j) % 10 === 0 ? 'a' : 'b') : 'a'; }], // snittet ovanifrån och barken fram
-        [ell(w - 0.5, 1 + (d - 4) / 2, 1.8, (d - 4) / 2), 'w'],
-      ]), x0, y0, false);
-      const bur = former(22, 10, [[rakt(1, 1, 21, 2), 'b'], [rakt(1, 8, 21, 9), 'a'], ...[1, 4, 7, 10, 13, 16, 20].map(x => [rakt(x, 1, x + 1, 9), x === 1 ? 'b' : 'a'])]);
-      sp(B, bur.map(r => r.replace(/o/g, '.')), x0 + 6, y0 + 1, false); sp(B, KNIV, x0 + 31, y0 + 3, false);
-    },
-  ];
   // slaktbänken till vänster och fångstbänken till höger, med benen på samma rad
   const VID_SLAKT = (text, f) => ({ text, w: 106, h: 42, rita: B => { gras(B); bildfil(B, 'slaktbank', 0, 14); f(flytt(B, 50, 4)); } });
 
@@ -196,6 +174,7 @@
   // en stor förrådskruka snett ovanifrån: buken och mynningen som en mörk ellips
   const STORKRUKA_OVAN = former(15, 16, [[ell(7.5, 9.5, 6.3, 5.8), (x, y) => x + y < 13 ? 'u' : x + y < 18 ? 't' : 's'], [ell(7.5, 4.2, 4.6, 2.4), 'u'], [ell(7.5, 4.2, 3.2, 1.4), (x, y) => y < 4.2 ? 'K' : 'l']]);
   const knippen = (B, xs, y) => xs.forEach((x, i) => sp(B, STORT_KNIPPE_H, x, y + (i % 2), false));
+<<<<<<< ours
   const ORT = [
     B => { // den lilla elden med krukan och en lång arbetsbänk under en torkställning där fem knippen hänger
       sp(B, ram(46, 20), 30, 0); knippen(B, [34, 42, 50, 58, 66], 4);
@@ -230,6 +209,8 @@
     },
   ];
   const ORTKOK = (text, f) => ({ text, w: 80, h: 48, rita: B => { gras(B); f(B); } });
+=======
+>>>>>>> theirs
 
   // ---------- 4. härden: tre nya former ----------
   // husets hörn uppe till vänster (timmerväggen och golvet), härden på golvet och röken som stiger mot rökhålet
@@ -281,16 +262,6 @@
   const HARDEN = (text, f) => ({ text, w: 48, h: 48, rita: B => f(B) });
 
   // ---------- 5. klyvplatsen: version 1 utan klubban ----------
-  const KLYV = B => { // stocken snett ovanifrån: barken ovanpå, sprickan längs mitten med två kilar, snittet i högra änden och kryssen under
-    gras(B);
-    const x0 = 3, y0 = 9, w = 40, d = 12;
-    skuggaUnder(B, x0, y0 + d, w, 7);
-    const kryss = x => [linje([[x, d], [x - 3.5, d + 7]], 0.9), linje([[x, d], [x + 3.5, d + 7]], 0.9), linje([[x, 4], [x - 3.5, 0.5]], 0.9), linje([[x, 4], [x + 3.5, 0.5]], 0.9)];
-    sp(B, former(w + 4, d + 10, [[och(...kryss(7), ...kryss(w - 6)), x => fx(x) % 2 ? 'a' : 'b']]), x0, y0 - 3, false);
-    sp(B, stockOvan(w, d), x0, y0, false);
-    for (let x = x0 + 5; x < x0 + w - 3; x++) { const y = y0 + 5 + (hash(fx(x / 3), 0, 14) < 0.3 ? 1 : 0); B.satt(x, y, B.P.i('jord', 0)); if (x < x0 + 30) B.satt(x, y + 1, B.P.i('kol', 1)); } // sprickan
-    for (const x of [x0 + 12, x0 + 24]) sp(B, former(6, 8, [[rakt(1, 1, 5, 4), (xx, y) => y < 2 ? 'y' : xx < 3 ? 'x' : 'w'], [rakt(1.5, 4, 4.5, 7), 'w']]), x - 2, y0 + 1, false); // kilarna, drivna ned i sprickan
-  };
 
   // ---------- 6. snaran, ritad utan förlaga ----------
   // En snara är en ögla av sena eller tvinnad tråd som hänger över en djurstig i harens huvudhöjd: haren springer in i öglan,
@@ -360,29 +331,265 @@
   function punkt2(px, py) { return (x, y) => fx(x) === px && fx(y) === py; }
   const SNARA = (text, f) => ({ text, w: SW, h: SH, rita: B => f(B) });
 
-  byt(KORT('f7_fangstbank', 'Fångstbänken', 'Steg 7.4.1: arbetsbänken där byn gör fällor och mjärdar, tre rutor bred och två djup. Var och en står bredvid slaktbänken (till vänster) på marken, så att du ser dem tillsammans. Nu ritad om snett ovanifrån, som slaktbänken och borden: ytan ovanifrån, en mörk framkant och korta ben. Din kommentar förra gången: "Sätt den bredvid slaktbänken så jag kan se den i ett sammanhang"', [
-    VID_SLAKT('En låg bänk på fyra grenar, med en halvflätad mjärde och en bunt vidjor.', BANK[0]),
-    VID_SLAKT('En bänk med en ställning bak där färdiga snaror hänger.', BANK[1]),
-    VID_SLAKT('En kluven stock på två kryss, den flata sidan upp, med en bur som byggs och en kniv.', BANK[2]),
+  // ---------- Björns svar på fyra stationer (efter bildstil v208) ----------
+  // ett ställe att sätta en punkt med en bokstav ur L
+  const pt = (B, x, y, ch, lys) => { const v = L[ch]; B.satt(x, y, B.P.i(v.slice(0, -1), +v.slice(-1)), lys); };
+  // en bänk på längden tvärs, alltså nord–syd: skivan smal och djup med plankorna på längden, framkanten och två ben bara fram
+  const bankTvars = (w, d, ben = 5, s = 0, plank = 4) => former(w + 2, d + ben + 5, [
+    [rakt(1, 1, w + 1, d + 1), (x, y) => {
+      const i = fx(x) - 1, j = fx(y) - 1, p = fx(i / plank);
+      if (i % plank === plank - 1 || (j + p * 11 + s * 5) % 19 === 0) return 'b'; // fogarna
+      if (i === 0) return 'd';
+      const r = hash(i, fx(y / 3), s); return r < 0.1 ? 'b' : r < (j < d * 0.3 ? 0.5 : 0.28) ? 'd' : 'c';
+    }],
+    [rakt(1, d + 1, w + 1, d + 4), (x, y) => fx(y) === d + 1 ? 'b' : 'a'],
+    [och(rakt(2, d + 4, 4, d + 4 + ben), rakt(w - 2, d + 4, w, d + 4 + ben)), x => fx(x) === 2 || fx(x) === w - 2 ? 'b' : 'a'],
+  ]);
+  const stallTvars = (B, x, y, w, d, ben = 5, s = 0) => { skuggaUnder(B, x, y + 3, w, d + ben + 3); sp(B, bankTvars(w, d, ben, s), x, y, false); };
+  // en kort stock som ligger tvärs (nord–syd) ovanifrån: barken på sidorna och snittet fram
+  const tvarStock = (w, h) => former(w + 2, h + 2, [
+    [rakt(1, 1, w + 1, h), x => { const i = fx(x) - 1; return i === 0 ? 'd' : i >= w - 1 ? 'a' : i < w / 2 ? 'c' : 'b'; }],
+    [ell(1 + w / 2, h - 0.6, w / 2, 1.7), (x, y) => Math.hypot((x - 1 - w / 2) / (w / 2), (y - h + 0.6) / 1.7) > 0.6 ? 'b' : 'd'],
+  ]);
+  // en korg ovanifrån: den flätade kanten, sidan under och det som ligger i den
+  const korgOvan = (w, h, inne) => { const cx = 1 + w / 2, cy = 1 + h / 2, ovan = (x, y) => ((x - cx) / (w / 2)) ** 2 + ((y - cy) / (h / 2)) ** 2 <= 1; return former(w + 2, h + 5, [
+    [och(ovan, ell(cx, cy + 3, w / 2, h / 2), rakt(1, cy, w + 1, cy + 3)), (x, y) => ovan(x, y) ? ((fx(x) + fx(y)) % 2 ? 'g' : 'h') : (fx(x) + fx(y)) % 2 ? (x > cx + w / 4 ? 'e' : 'f') : 'g'],
+    [ell(cx, cy, w / 2 - 1.3, h / 2 - 1.1), inne],
+  ]); };
+  // ett kar av stavar ovanifrån: kanten, stavarna och ett band på sidan, och vätskan i två toner
+  const karOvan = (w, h, inne, ton2) => { const cx = 1 + w / 2, cy = 1 + h / 2, ovan = (x, y) => ((x - cx) / (w / 2)) ** 2 + ((y - cy) / (h / 2)) ** 2 <= 1; return former(w + 2, h + 6, [
+    [och(ovan, ell(cx, cy + 4, w / 2, h / 2), rakt(1, cy, w + 1, cy + 4)), (x, y) => { if (ovan(x, y)) return 'd'; if (fx(y) === fx(cy) + 2) return 'K'; return fx(x) % 3 === 0 ? 'a' : x > cx + w * 0.25 ? 'b' : 'c'; }],
+    [ell(cx, cy, w / 2 - 1.2, h / 2 - 1), (x, y) => hash(fx(x), fx(y), 7) < 0.25 ? ton2 : inne],
+  ]); };
+  // ett knippe vidjor på marken, bundet på mitten
+  const vidjeknippe = (len, n) => former(len + 2, n + 2, [
+    ...Array.from({ length: n }, (_, k) => [rakt(1 + (k % 2) * 2, 1 + k, len + 1 - ((k + 1) % 2) * 2, 2 + k), (x) => (fx(x) + k * 5) % 9 === 0 ? 'f' : k % 2 ? 'g' : 'h']),
+    [rakt(1 + fx(len * 0.45), 1, 3 + fx(len * 0.45), n + 1), 'b'],
+  ]);
+  // en kil ovanifrån: nacken ljus där den slagits, spetsen nere i sprickan
+  const KIL = former(6, 8, [[rakt(1, 1, 5, 4), (x, y) => y < 2 ? 'y' : x < 3 ? 'x' : 'w'], [rakt(1.5, 4, 4.5, 7), 'w']]);
+  const KIL_LIGG = former(9, 5, [[poly([[1, 1], [6, 1.5], [8.5, 2.5], [6, 3.5], [1, 4]]), (x, y) => y < 2.5 ? 'y' : 'w']]);
+  const spanen = (B, x0, y0, w, h, s) => { for (let i = 0; i < 14; i++) { const x = x0 + fx(hash(i, s, 1) * w), y = y0 + fx(hash(i, s, 2) * h); pt(B, x, y, hash(i, s, 3) < 0.5 ? 'y' : 'x'); if (hash(i, s, 4) < 0.5) pt(B, x + 1, y, 'w'); } };
+
+  // ---------- 1. fångstbänken som flera delar ----------
+  // varje del står för sig med gräs emellan, så att delarna kan ställas olika i varje by; till höger om slaktbänken som förut
+  const snaraHang = (w) => former(w, 11, [[linje([[w / 2, 0], [w / 2, 4]], 0.5), 'w'], [(x, y) => { const d = Math.hypot(x - w / 2, y - 7); return d <= 3.4 && d >= 2.2; }, 'x']]);
+  const ringla = former(10, 7, [[(x, y) => { const d = Math.hypot((x - 5) / 1.4, y - 3.5); return d <= 3.3 && d >= 1.6; }, (x, y) => y < 3 ? 'y' : 'x']]);
+  const LADFALLA = former(16, 12, [ // en halvbyggd bur ovanifrån: två ramar av käppar, bara några av spjälorna på plats, och lösa spjälor bredvid
+    [och(rakt(1, 1, 15, 2), rakt(1, 1, 2, 9), rakt(14, 1, 15, 9)), (x, y) => fx(y) === 1 ? 'd' : 'c'],
+    [och(...[4, 7].map(x => rakt(x, 1, x + 1, 9))), 'b'],
+    [rakt(1, 8, 15, 10), (x, y) => fx(y) === 8 ? 'c' : 'a'],
+    [linje([[9, 4.5], [14.5, 3.5]], 0.45), 'y'], [linje([[9, 6.5], [14.5, 6]], 0.45), 'x'],
+  ]);
+  const FANG = [
+    B => { // en kort bänk med en kniv och en ringlad sena, en stubbe att sitta på, en korg med vidjor och en halvflätad mjärde på marken
+      stallBank(B, 1, 10, 28, 10, 4, 1);
+      sp(B, KNIV, 4, 13); sp(B, ringla, 17, 12);
+      sp(B, stubbeOvan(9, 6, 3), 33, 14);
+      sp(B, korgOvan(14, 8, (x, y) => ['h', 'g', 'K', 'g'][(fx(x) + fx(y) * 3) % 4]), 44, 3);
+      sp(B, halvMjarde, 32, 26);
+    },
+    B => { // en ställning där färdiga snaror hänger, en kort bänk, en stubbe och ett knippe vidjor på marken
+      sp(B, former(26, 15, [[rakt(3, 1, 5, 15), 'b'], [rakt(21, 1, 23, 15), 'a'], [rakt(1, 1, 25, 3), (x, y) => y < 2 ? 'd' : 'c']]), 30, 0, false);
+      [7, 13, 19].forEach(x => sp(B, snaraHang(9), 30 + x - 4, 2, false));
+      for (const x of [33, 34, 51, 52]) B.morka(x, 15);
+      stallBank(B, 1, 12, 26, 10, 4, 2);
+      sp(B, KNIV, 13, 15); sp(B, ringla, 3, 14);
+      sp(B, stubbeOvan(8, 5, 3), 4, 0);
+      sp(B, vidjeknippe(20, 4), 32, 28);
+    },
+    B => { // en kluven stock på två korta stockar, ett kar där vidjorna blöts och en halvbyggd lådfälla
+      const x0 = 1, y0 = 12, w = 32, d = 11;
+      for (const x of [x0 + 4, x0 + w - 9]) { skuggaUnder(B, x, y0 + d + 2, 6, 3); sp(B, tvarStock(5, d + 7), x, y0 - 3, false); }
+      skuggaUnder(B, x0, y0 + d - 1, w, 4);
+      sp(B, former(w + 2, d + 2, [
+        [rakt(1, 1, w, d + 1), (x, y) => { const j = fx(y) - 1; if (j < d - 4) return j === 0 ? 'x' : hash(fx(x / 4), j, 6) < 0.16 ? 'c' : hash(fx(x), j, 7) < 0.3 ? 'x' : 'd'; return j === d - 4 ? 'c' : j < d - 1 ? ((fx(x) * 3 + j) % 10 === 0 ? 'a' : 'b') : 'a'; }],
+        [ell(w - 0.5, 1 + (d - 4) / 2, 1.8, (d - 4) / 2), 'w'],
+      ]), x0, y0, false);
+      sp(B, KNIV, x0 + 4, y0 + 2, false); sp(B, ringla, x0 + 18, y0 + 1, false);
+      sp(B, karOvan(12, 7, 'R', 'Q'), 41, 2);
+      for (const [x, y, l] of [[44, 2, 7], [47, 1, 8], [50, 3, 6]]) for (let k = 0; k < l; k++) pt(B, x + fx(k / 3), y - k + 4, k % 3 ? 'g' : 'h'); // vidjorna som sticker upp ur karet
+      sp(B, LADFALLA, 38, 23);
+    },
+  ];
+
+  // ---------- 2. garvningsställningen snett ovanifrån ----------
+  // en hud ovanifrån: kroppen, fyra benflikar, nacken och svansen
+  const hudForm = (x0, y0, w, h) => { const cx = x0 + w / 2, cy = y0 + h / 2, ax = w / 2 - 3, ay = h / 2 - 2; return och(ell(cx, cy, ax, ay), ...[[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([sx, sy]) => linje([[cx + sx * ax * 0.6, cy + sy * ay * 0.6], [cx + sx * (w / 2 - 1.2), cy + sy * (h / 2 - 1.2)]], 1.5, 1)), ell(cx, y0 + 2.2, 2.2, 2.2), linje([[cx, cy + ay - 1], [cx, y0 + h - 0.6]], 0.8)); };
+  const pals = s => (x, y) => { const r = hash(fx(x), fx(y), s); return r < 0.2 ? 'b' : r < 0.55 ? 'c' : r < 0.85 ? 'd' : 'c'; };
+  const skrapad = s => (x, y) => { const r = hash(fx(x), fx(y / 2), s); return fx(y) % 3 === 0 && r < 0.5 ? 'w' : r < 0.12 ? 'y' : 'x'; };
+  const repDrag = (B, ax, ay, bx, by) => { const n = Math.max(Math.abs(bx - ax), Math.abs(by - ay)); for (let i = 0; i <= n; i++) pt(B, Math.round(ax + (bx - ax) * i / n), Math.round(ay + (by - ay) * i / n), i % 2 ? 'x' : 'w'); };
+  const pinne = (B, x, y) => { pt(B, x, y, 'c'); pt(B, x, y + 1, 'a'); pt(B, x - 1, y, 'o'); pt(B, x + 1, y, 'o'); B.morka(x + 1, y + 1); };
+  const SKRAPA = former(9, 5, [[poly([[1, 2], [5, 1], [8, 2], [8, 3.5], [1, 4]]), (x, y) => y < 2.5 ? 'y' : x > 5 ? 'w' : 'x']]);
+  const GARV_N = [
+    B => { // en låg ram av fyra stänger på korta ben, med huden snörad i ramen; ett garvkar med barklag bredvid
+      const x0 = 1, y0 = 4, w = 24, d = 17;
+      skuggaUnder(B, x0, y0 + 3, w, d + 3);
+      sp(B, former(w + 2, d + 9, [
+        [och(rakt(2, d + 2, 4, d + 8), rakt(w - 2, d + 2, w, d + 8)), x => fx(x) % 2 ? 'b' : 'a'], // de främre benen
+        [och(rakt(1, 1, 4, d + 3), rakt(w - 2, 1, w + 1, d + 3)), x => fx(x) === 1 || fx(x) === w - 2 ? 'd' : 'c'], // sidostängerna
+        [rakt(1, 1, w + 1, 3), (x, y) => fx(y) === 1 ? 'd' : 'c'], // den bakre stången
+        [rakt(1, d + 1, w + 1, d + 4), (x, y) => fx(y) === d + 1 ? 'd' : fx(y) === d + 2 ? 'c' : 'a'], // den främre, med en mörk framkant
+        ...[[2, 2], [w - 1, 2], [2, d + 2], [w - 1, d + 2]].map(([x, y]) => [rakt(x - 1, y - 1, x + 1, y + 1), (xx, yy) => (fx(xx) + fx(yy)) % 2 ? 'x' : 'w']), // repet runt hörnen
+      ]), x0, y0, false);
+      const hx = x0 + 6, hy = y0 + 4, hw = w - 10, hh = d - 5;
+      for (const t of [0.2, 0.5, 0.8]) { const yy = Math.round(hy + hh * t), xx = Math.round(hx + hw * t); repDrag(B, x0 + 4, yy, hx, yy); repDrag(B, hx + hw, yy, x0 + w - 1, yy); repDrag(B, xx, y0 + 3, xx, hy); repDrag(B, xx, hy + hh, xx, y0 + d + 1); }
+      sp(B, former(hw + 2, hh + 2, [[hudForm(1, 1, hw, hh), pals(61)]]), hx - 1, hy - 1, false);
+      sp(B, karOvan(7, 4, 'r', 'a'), 28, 24);
+      for (const [x, y] of [[30, 22], [32, 21]]) { pt(B, x, y, 's'); pt(B, x + 1, y, 'r'); } // barkbitar på kanten
+    },
+    B => { // huden fäst med pinnar på marken, köttsidan upp och halvskrapad; skrapan av ben och en skål med fett bredvid
+      for (let y = 3; y < 33; y++) for (let x = 0; x < 36; x++) { const d = ((x - 17) / 17) ** 2 + ((y - 16) / 13) ** 2; if (d < 1 && hash(x, y, 90) < 1.1 - d) B.satt(x, y, B.P.i('jord', hash(x, y, 91) < 0.15 ? 1 : 2)); } // den trampade marken
+      const hx = 4, hy = 4, hw = 26, hh = 22;
+      sp(B, former(hw + 2, hh + 2, [[hudForm(1, 1, hw, hh), (x, y) => x < hw * 0.55 ? skrapad(62)(x, y) : hash(fx(x), fx(y), 65) < 0.3 ? 'r' : 's']]), hx - 1, hy - 1);
+      for (const [x, y] of [[4, 4], [hx + hw / 2, 2], [hx + hw, 4], [6, 15], [hx + hw - 2, 15], [4, hy + hh], [hx + hw / 2 + 2, hy + hh], [hx + hw, hy + hh]]) pinne(B, Math.round(x), Math.round(y));
+      sp(B, SKRAPA, 2, 28);
+      sp(B, skalOvan(7, 4, 'y', 'x'), 28, 26);
+    },
+    B => { // en ram som lutar bakåt mot två stöd, sedd snett ovanifrån: huden skrapas där den hänger; stödens fötter syns bakom
+      skuggaUnder(B, 4, 26, 26, 5);
+      sp(B, former(34, 12, [[och(linje([[5, 1], [2, 10]], 0.6), linje([[29, 1], [32, 10]], 0.6)), 'a']]), 0, 3, false); // stöden bakåt
+      sp(B, former(34, 32, [
+        [och(linje([[7, 3], [5, 27]], 0.9), linje([[27, 3], [29, 27]], 0.9)), x => fx(x) < 17 ? 'c' : 'b'], // sidostängerna, toppen längre bak
+        [linje([[4, 4], [30, 4]], 0.9), (x, y) => y < 4 ? 'd' : 'c'],
+        [rakt(2, 24, 32, 27), (x, y) => fx(y) === 24 ? 'd' : fx(y) === 25 ? 'c' : 'a'], // den nedre stången med framkanten
+        [och(rakt(4, 27, 6, 30), rakt(28, 27, 30, 30)), 'a'], // fötterna
+        ...[[6, 4], [28, 4], [5, 25], [29, 25]].map(([x, y]) => [rakt(x - 1, y - 1, x + 1, y + 1), (xx, yy) => (fx(xx) + fx(yy)) % 2 ? 'x' : 'w']),
+      ]), 0, 0, false);
+      const hx = 10, hy = 7, hw = 15, hh = 14;
+      for (const t of [0.25, 0.5, 0.75]) { const yy = Math.round(hy + hh * t), xx = Math.round(hx + hw * t); repDrag(B, 7, yy, hx, yy); repDrag(B, hx + hw, yy, 27, yy); repDrag(B, xx, 5, xx, hy); repDrag(B, xx, hy + hh, xx, 23); }
+      sp(B, former(hw + 2, hh + 2, [[hudForm(1, 1, hw, hh), (x, y) => y < hh * 0.45 ? pals(63)(x, y) : skrapad(64)(x, y)]]), hx - 1, hy - 1, false);
+      sp(B, SKRAPA, 31, 28);
+    },
+  ];
+  const VID_SLAKT2 = (text, f) => ({ text, w: 118, h: 44, rita: B => { gras(B); bildfil(B, 'slaktbank', 0, 16); f(flytt(B, 52, 4)); } });
+  const GARVN = (text, f) => ({ text, w: 40, h: 40, rita: B => { gras(B); f(flytt(B, 2, 4)); } });
+
+  // ---------- 3. klyvplatsen: tre nya ----------
+  const spricka = (B, x0, x1, y, s) => { for (let x = x0; x < x1; x++) { const yy = y + (hash(fx(x / 3), 0, s) < 0.3 ? 1 : 0); pt(B, x, yy, 'a'); pt(B, x, yy + 1, 'K'); } };
+  const halva = (w, d, s) => former(w + 2, d + 4, [ // en kluven halva ovanifrån: den flata klyvytan upp, barken i kanterna och sidan fram
+    [rakt(1, 1, w, d + 3), (x, y) => { const j = fx(y) - 1; if (j === 0) return 'b'; if (j >= d) return j === d ? 'b' : 'a'; return (j + fx(x / 9) + s) % 4 === 0 ? 'w' : hash(fx(x / 3), j, s) < 0.2 ? 'x' : 'y'; }],
+    [ell(w - 0.4, 1 + d / 2, 1.6, d / 2 + 0.5), (x, y) => Math.abs(y - 1 - d / 2) < 1 ? 'x' : 'w'],
+  ]);
+  const planka = (w, d) => former(w + 2, d + 4, [[rakt(1, 1, w + 1, d + 3), (x, y) => { const j = fx(y) - 1; if (j >= d) return j === d ? 'c' : 'a'; return j === 0 ? 'y' : (fx(x) * 5 + j) % 13 === 0 ? 'w' : 'x'; }]]);
+  const KLY = [
+    B => { // en stock på två korta stockar, med en spricka längs ovansidan, tre kilar och spån på marken
+      const x0 = 3, y0 = 9, w = 38, d = 11;
+      for (const x of [x0 + 5, x0 + w - 11]) { skuggaUnder(B, x, y0 + d + 2, 6, 3); sp(B, tvarStock(5, d + 8), x, y0 - 3, false); }
+      skuggaUnder(B, x0, y0 + d, w, 4);
+      sp(B, stockOvan(w, d), x0, y0, false);
+      spricka(B, x0 + 4, x0 + w - 2, y0 + 5, 14);
+      for (const x of [x0 + 9, x0 + 19, x0 + 29]) sp(B, KIL, x - 2, y0 + 1, false);
+      spanen(B, 6, 26, 36, 5, 1);
+    },
+    B => { // stocken kluven i två halvor som ligger bredvid varandra med klyvytan upp, och en färdig planka framför
+      sp(B, halva(36, 6, 1), 4, 2); sp(B, halva(36, 6, 3), 7, 12);
+      sp(B, planka(30, 2), 3, 23);
+      sp(B, KIL_LIGG, 37, 23); sp(B, KIL_LIGG, 2, 24);
+      spanen(B, 30, 22, 14, 7, 2);
+    },
+    B => { // stocken ligger på marken mellan par av störar som håller den; kilarna i rad längs sprickan, som har öppnat sig
+      const x0 = 3, y0 = 10, w = 38, d = 11;
+      const stor = (x, y) => sp(B, former(4, 9, [[rakt(1, 1, 3, 8), x => fx(x) === 1 ? 'c' : 'a'], [rakt(1, 1, 3, 2), 'd']]), x, y, false);
+      for (const x of [x0 + 7, x0 + w - 11]) { stor(x, y0 - 6); stor(x + 3, y0 - 5); }
+      skuggaUnder(B, x0, y0 + d - 2, w, 4);
+      sp(B, stockOvan(w, d), x0, y0, false);
+      for (let x = x0 + 2; x < x0 + w - 1; x++) { const o = x < x0 + 24 ? 2 : 1; for (let k = 0; k < o; k++) pt(B, x, y0 + 5 + k, k ? 'K' : 'a'); pt(B, x, y0 + 5 + o, 'y'); } // sprickan, bredast vid kilarna
+      for (const x of [x0 + 6, x0 + 14, x0 + 22]) sp(B, KIL, x - 2, y0 + 1, false);
+      for (const x of [x0 + 7, x0 + w - 11]) { stor(x, y0 + d - 3); stor(x + 3, y0 + d - 2); }
+      spanen(B, 4, 25, 40, 5, 3);
+    },
+  ];
+  const KLYVN = (text, f) => ({ text, w: 48, h: 32, rita: B => { gras(B); f(B); } });
+
+  // ---------- 4. örtköket i fyra delar, vridna ----------
+  // rikt: 0 som i version 2 (öppningen och framsidan mot dig), 1 ett kvarts varv medsols, 2 ett halvt varv, 3 ett kvarts varv motsols
+  const torkDel = (B, x, y, rikt) => { // (x, y): det övre vänstra hörnet av en ruta 36 bred
+    if (rikt % 2 === 0) {
+      const bak = rikt === 2;
+      if (bak) knippen(B, [x + 6, x + 12, x + 18, x + 24], y + 5);
+      sp(B, ram(24, 22), x + 5, y + 2);
+      if (!bak) knippen(B, [x + 6, x + 12, x + 18, x + 24], y + 6);
+      return;
+    }
+    const cx = x + 17, D = 16, H = 20, stolpe = former(4, H + 2, [[rakt(1, 1, 3, H + 1), x => fx(x) === 1 ? 'c' : 'b']]);
+    sp(B, stolpe, cx - 2, y, false); B.morka(cx + 1, y + H); B.morka(cx + 2, y + H);
+    sp(B, former(5, D + 4, [[rakt(1, 1, 4, D + 3), x => fx(x) === 1 ? 'd' : fx(x) === 3 ? 'b' : 'c']]), cx - 2, y - 1, false); // slån ovanifrån
+    for (let k = 0; k < 4; k++) sp(B, STORT_KNIPPE_H, cx - 4 + (rikt === 1 ? -1 : 1) * (k % 2), y + 1 + k * 4, false);
+    sp(B, stolpe, cx - 2, y + D, true);
+  };
+  const hardDel = (B, x, y, rikt) => { // (x, y): eldens mitt på marken
+    const [dx, dy] = [[0, 1], [-1, 0], [0, -1], [1, 0]][rikt]; // åt vilket håll öppningen vetter
+    const lista = [];
+    for (let k = 0; k < 8; k++) {
+      const v = k / 8 * Math.PI * 2, gx = Math.cos(v), gy = Math.sin(v);
+      if (gx * dx + gy * dy > 0.5) continue; // öppningen och stenarna bredvid den
+      lista.push({ y: y + gy * 4.5, f: () => sp(B, rundOvan(5, 3, 2, SK, k + 1), Math.round(x + gx * 8) - 3, Math.round(y + gy * 4.5) - 3) });
+    }
+    const eld = () => { glod(B, ell(x + 0.5, y + 0.5, 4.5, 2.6), x - 5, y - 3, 11, 7, 6 + rikt); laga(B, x - 1, y + 1, 4); laga(B, x + 2, y + 1, 3); pt(B, x, y + 1, 'h', true); };
+    lista.push({ y: y + 0.1, f: eld });
+    lista.sort((a, b) => a.y - b.y).forEach(o => o.f());
+    const px = Math.round(x - dx * 4) - 4, py = Math.round(y - dy * 2.5) - 8; // krukan står på stenarna mitt emot öppningen
+    sp(B, KRUKA, px, py, false); anga(B, px + 3, py - 1, rikt + 2);
+  };
+  const bankDel = (B, x, y, rikt) => { // (x, y): det övre vänstra hörnet av en ruta 36 bred
+    if (rikt % 2 === 0) {
+      stallBank(B, x + 4, y + 4, 26, 12, 5, 4);
+      const [m, s] = rikt === 0 ? [x + 6, x + 18] : [x + 17, x + 6];
+      sp(B, MORTEL_OVAN, m, y + 6); sp(B, skalOvan(10, 5, 'p', 'n'), s, y + 7);
+      return;
+    }
+    stallTvars(B, x + 10, y, 14, 20, 5, 4);
+    const [m, s] = rikt === 1 ? [y + 1, y + 13] : [y + 11, y + 1];
+    sp(B, MORTEL_OVAN, x + 11, m); sp(B, skalOvan(10, 5, 'p', 'n'), x + 11, s);
+  };
+  const ORTDELAR = B => {
+    gras(B);
+    for (let r = 0; r < 4; r++) {
+      const cx = 4 + r * 38;
+      torkDel(B, cx, 2, r);
+      hardDel(B, cx + 18, 58, r);
+      bankDel(B, cx, 68, r);
+    }
+    sp(B, STORKRUKA_OVAN, 14, 102);
+  };
+
+  byt(KORT('f7_fangstbank', 'Fångstbänken', 'Steg 7.4.1: arbetsbänken där byn gör fällor och mjärdar, tre rutor bred och två djup. Tre nya försök där stationen är flera delar som står var för sig med gräs emellan, så att delarna kan ställas olika från by till by: en bänk, en stubbe, en korg, en ställning, ett kar och det som byggs. Var och en står bredvid slaktbänken (till vänster), snett ovanifrån. Din kommentar förra gången: ”gör fler versioner. Experimentera med hur det kan se ut om stationer är en kombination av flera separata element.”', [
+    VID_SLAKT2('En kort bänk med kniven och en ringlad sena, en stubbe att sitta på, en korg med vidjor och en halvflätad mjärde på marken: fyra delar.', FANG[0]),
+    VID_SLAKT2('En ställning där färdiga snaror hänger, en kort bänk, en stubbe och ett knippe vidjor på marken: fyra delar.', FANG[1]),
+    VID_SLAKT2('En kluven stock på två korta stockar, ett kar där vidjorna ligger i blöt och en halvbyggd lådfälla: tre delar.', FANG[2]),
   ]));
+  byt(KORT('f7_garvning', 'Garvningsställningen', 'Steg 7.7.6: en station av 4 grenar och 2 rep där ett skinn spänns upp, skrapas och garvas till läder. Nu ritad snett ovanifrån som de andra stationerna: det som ligger ned syns ovanifrån, med en mörkare framkant, korta ben fram och skuggan nedåt till höger. Två rutor stor, på gräs. Din kommentar förra gången: ”rita den något ovanifrån som dem andra stationerna”', [
+    GARVN('En låg ram av fyra stänger på korta ben, med huden snörad i ramen, och ett garvkar med barklag bredvid.', GARV_N[0]),
+    GARVN('Huden fäst med pinnar på den trampade marken, köttsidan upp och halvskrapad, med skrapan av ben och en skål med fett.', GARV_N[1]),
+    GARVN('En ram som lutar bakåt mot två stöd: huden skrapas där den hänger, och stödens fötter syns bakom.', GARV_N[2]),
+  ]));
+  byt(KORT('f7_klyvplats', 'Klyvplatsen', 'Steg 7.5.1: platsen där en stock klyvs till plankor, tre gånger två rutor. Tre nya versioner, snett ovanifrån och utan klubban. Din kommentar förra gången: ”gör tre nya versioner”', [
+    KLYVN('En stock på två korta stockar, med en spricka längs ovansidan, tre kilar och spån på marken.', KLY[0]),
+    KLYVN('Stocken kluven i två halvor som ligger bredvid varandra med klyvytan upp, en färdig planka framför och kilarna på marken.', KLY[1]),
+    KLYVN('Stocken på marken mellan par av störar som håller den, med kilarna i rad längs sprickan som öppnat sig.', KLY[2]),
+  ]));
+  byt({ id: 'f7_ortkok', namn: 'Örtkökets delar', typ: 'janej', vad: 'Steg 7.6.1: örtköket. Du valde version 2. Nu är torkställningen, härden (med den lilla krukan på stenarna), bänken och förrådskrukan fyra delar som kan ställas var för sig och vridas, och verktygen på marken är borta. Raderna uppifrån: torkställningen, härden, bänken och krukan. Kolumnerna: som i version 2, ett kvarts varv medsols, ett halvt varv och ett kvarts varv motsols. Krukan är rund och ser likadan ut åt alla håll. Din kommentar förra gången: ”härden, torkställningen, bänken, och krukan blir separata element som kan placeras separat och roteras. Gör roterade versioner av alla elementen. Ta bort verktygen på marken.”', versioner: [
+    { text: 'De fyra delarna, var och en åt fyra håll: torkställningen, härden, bänken och krukan.', w: 156, h: 120, rita: ORTDELAR },
+  ] });
   byt(KORT('f7_stenhuggarplats', 'Stenhuggarplatsen', 'Steg 7.5.1: platsen där man hugger sten, fyra gånger tre rutor. Den står på en bit av kartan, åtta gånger sex rutor: gräs, en stig förbi, granar runt om och en bybo till höger, så att du ser hur stor den är. Nu ritad om snett ovanifrån, som slaktbänken och borden: stenarna och bocken ovanifrån med en mörkare sida fram. Din kommentar förra gången: "Sätt den i ett sammanhang på kartan"', [
     PA_KARTAN('Ett stort runt huggblock med ett block på, en stubbe att sitta på och råa stenar.', HUGG[0]),
     PA_KARTAN('En lång sten på en kraftig träbock; råa stenar till vänster och färdiga block staplade till höger.', HUGG[1]),
     PA_KARTAN('En stor flat häll ovanifrån med ett block, en mejsel och en slagsten; en stock och stenar bakom.', HUGG[2]),
   ]));
+<<<<<<< ours
   byt(KORT('f7_ortkok', 'Örtköket', 'Steg 7.6.1: stationen där örter kokas. Stationen är nu fem gånger tre rutor, med längre bänkar, större torkställningar och större krukor och skålar, men elden, krukan på elden och grytan är lika små som i de första versionerna. Nu ritad om snett ovanifrån, som slaktbänken och borden: ytan ovanifrån, en mörk framkant och korta ben. Krukorna och skålarna syns ovanifrån, och torkställningarna står vid bakkanten. Din kommentar förra gången: ”Version 2 ser avklippt ut.” Nu står hela bänken i version 2 inom bilden.', [
     ORTKOK('Den lilla elden med en kruka i, och en lång arbetsbänk med mortel, örter och skålar under en torkställning där fem knippen hänger.', ORT[0]),
     ORTKOK('Den låga härden: stenar i ett U runt elden med krukan på de bakre, en torkställning till vänster och en bänk till höger.', ORT[1]),
     ORTKOK('Grytan i en låg trefot över elden mellan fyra stenar, och ett långt bord med mortel och örter under ett torkställ.', ORT[2]),
   ]));
+=======
+>>>>>>> theirs
   byt(KORT('f7_harden', 'Härden', 'Steg 7.5.3: eldstaden inne i huset, med rökhålet i taket ovanför (röken visar var det är). Bilden visar husets hörn uppe till vänster. Tre nya former, inte upphöjda med block som förra gången. Nu ritade snett ovanifrån: hällarna ligger i jämnhöjd med golvet, och bara den stående bakstenen i version 2 reser sig. Du sa nej till alla tre förra gången, utan kommentar.', [
     HARDEN('En rund härd av kullerstenar i golvet, med aska, glöd och vedträn i kryss innanför.', HARD[0]),
     HARDEN('En stor flat sten som står upp bakom elden och kastar värmen tillbaka in i rummet, flata hällar i golvet runt elden och ved bredvid.', HARD[1]),
     HARDEN('En långhärd: en smal ränna i golvet kantad av kantställda hällar, med glöd längs hela och två små eldar.', HARD[2]),
   ]));
-  byt({ id: 'f7_klyvplats', namn: 'Klyvplatsen', typ: 'janej', vad: 'Steg 7.5.1: platsen där en stock klyvs till plankor, tre gånger två rutor. Du valde version 1 utan klubban och sa ja. Nu ritad om snett ovanifrån, som slaktbänken och borden: stocken ovanifrån med sprickan och kilarna längs mitten, och kryssen sticker fram bak och under.', versioner: [
-    { text: 'En lång stock på två kryss, sedd snett ovanifrån, med en spricka längs ovansidan och två kilar.', w: 48, h: 32, rita: KLYV },
-  ] });
   byt(KORT('f7_snara', 'Snaran', 'Steg 7.5.10: snaran på en harstig: en ögla av sena som hänger tvärs över stigen i harens huvudhöjd. Tre helt nya ritningar utan förlaga. Stigen går rakt mot dig, så att öglan syns hel, och en hare visar storleken. Din kommentar förra gången: "Ingen ser bra ut gör om alla utan förlaga"', [
     SNARA('Två klykor på var sin sida om stigen med en tvärslå mellan dem, och öglan som hänger från slåns mitt. En hare kommer längre upp på stigen.', SNAR[0]),
     SNARA('Ett lågt gärde av nedstuckna kvistar tvärs över stigen, med en öppning där haren går; öglan hänger i öppningen från en pinne mellan två högre käppar.', SNAR[1]),
