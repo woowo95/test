@@ -1517,7 +1517,12 @@ SCENARIER.testknappar = {
     const iVatten = vatten >= 0 ? SIM.blixtTest(y, vatten % W, Math.floor(vatten / W)) : { ok: false, text: 'inget vatten' };
     const torrVatten = (y.brand?.n ?? 0) === n0, svar: string[] = [];
     for (let k = 0; k < 6 && (y.brand?.n ?? 0) === n0; k++) svar.push(SIM.blixtTest(y, mitt % W, Math.floor(mitt / W)).text);
+    // steg 9.2.24: testelden säger hur torr marken är och hur fort den sprider sig, och knappen torkar marken helt, också i istiden
+    const z = cloneState(s); angSlag(z, mitt, 'hog'); if (z.vader) { z.vader.torr = 0; z.vader.fukt = 1; }
+    const fore = SIM.torrhet(z), tork = SIM.torkaTest(z), efter = SIM.torrhet(z), eld = SIM.tandTest(z, mitt % W, Math.floor(mitt / W));
     return [
+      [`knappen torkar marken helt (torrhet ${Math.round(fore * 100)} % → ${Math.round(efter * 100)} %): "${tork.text}"`, fore < 1 && efter === 1],
+      [`testelden säger torrheten och farten: "${eld.text}"`, eld.ok && /torrhet 100 %/.test(eld.text) && /en ruta på ungefär/.test(eld.text)],
       [`tornadon kommer: "${r.text}"`, r.ok && !!t?.test && /från (norr|söder|öster|väster|nordost|nordväst|sydost|sydväst)/.test(r.text)],
       ['den börjar vid kartans kant', kant],
       [`en till går inte medan den pågår ("${igen.text}")`, !igen.ok],

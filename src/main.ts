@@ -1,4 +1,4 @@
-import { storStridNu, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, spar, step, visning, yearNo, State, motgangNu, motgangNasta, motgangDef, varslade, ROVARFLOCK, skickaRovare, skickaHandlare, rovarHinder, handlarHinder, skickaTornado, tornadoHinder, lightLevel } from './sim';
+import { torkaTest, storStridNu, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, spar, step, visning, yearNo, State, motgangNu, motgangNasta, motgangDef, varslade, ROVARFLOCK, skickaRovare, skickaHandlare, rovarHinder, handlarHinder, skickaTornado, tornadoHinder, lightLevel } from './sim';
 import { brandKnapp, testSvara } from './ui/interaktion';
 import { testBortaIByn } from './ui/testborta';
 import { $ } from './ui/hjalp';
@@ -118,7 +118,8 @@ $('arenaKnapp').addEventListener('click', oppnaArena);
     + `<button type="button" data-handlare="1" title="En handlare kommer nu">${iconImg('handlare', 14)}</button>`
     + `<button type="button" data-brand="1" title="Tänd en brand: tryck sedan på kartan där den ska börja">${iconImg('brand', 14)}</button>`
     + `<button type="button" data-blixt="1" title="Blixten: tryck sedan på kartan där den ska slå ner, flera gånger; tryck här igen för att sluta">${iconImg('n_energi', 14)}</button>`
-    + `<button type="button" data-tornado="1" title="En tornado kommer nu från kartans kant">${iconImg('tornado', 14)}</button><span id="testSvar"></span>`;
+    + `<button type="button" data-tornado="1" title="En tornado kommer nu från kartans kant">${iconImg('tornado', 14)}</button>`
+    + `<button type="button" data-torka="1" title="Torka marken helt, så att en brand kan provas när som helst">${iconImg('torrgras', 14)}</button><span id="testSvar"></span>`;
   // knappen svarar direkt (steg 4.5.6.4): den lyser upp, och raden under knapparna säger vad som skickats och varifrån, eller
   // varför det inte går just nu. En knapp som inte kan användas är grå (testKnappar)
   $('testSkicka').addEventListener('click', e => {
@@ -128,6 +129,7 @@ $('arenaKnapp').addEventListener('click', oppnaArena);
     if (b.dataset.brand) { ui.brandTest = !ui.brandTest; ui.blixtTest = false; brandKnapp(); testSvara(ui.brandTest ? 'Tryck på kartan där branden ska börja' : ''); return; }
     // blixtknappen (steg 6.4.7): som brandknappen, men den är kvar aktiv så att flera blixtar kan slå ner i rad
     if (b.dataset.blixt) { ui.blixtTest = !ui.blixtTest; ui.brandTest = false; brandKnapp(); testSvara(ui.blixtTest ? 'Tryck på kartan där blixten ska slå ner' : ''); return; }
+    if (b.dataset.torka) { testSvara(torkaTest(s).text); return; } // (steg 9.2.24)
     const r = b.dataset.flock ? skickaRovare(s, ROVARFLOCK[b.dataset.flock as keyof typeof ROVARFLOCK]) : b.dataset.tornado ? skickaTornado(s) : skickaHandlare(s);
     testSvara(r.text);
     // kameran visar var flocken dök upp (steg 4.5.7.10) och följer den första rövaren in (steg 6.6.12)
