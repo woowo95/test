@@ -31,6 +31,9 @@ export const HISTORIK_TAL: { id: string; namn: string; hur: 'snitt' | 'sist'; va
   { id: 'fodda', namn: 'Födda sedan byns början', hur: 'sist', varde: s => (s.stat?.fodda as number) ?? 0 },
   { id: 'doda', namn: 'Döda sedan byns början', hur: 'sist', varde: s => (s.stat?.doda as number) ?? 0 },
   { id: 'utbrott', namn: 'Utbrott sedan byns början', hur: 'sist', varde: s => (s.stat?.utbrott as number) ?? 0 }, // steg 3.2.2
+  // matlagningen (steg 9.2.62): det som grillats och det som bränts sedan byns början, ur byns statistik
+  { id: 'grillat', namn: 'Grillat sedan byns början', hur: 'sist', varde: s => Math.round((s.stat?.grillat as number) ?? 0) },
+  { id: 'brant', namn: 'Bränt sedan byns början', hur: 'sist', varde: s => Math.round((s.stat?.brant as number) ?? 0) },
 ];
 
 const ny = (): Historik => ({ tal: HISTORIK_TAL.map(t => t.id), tim: [], dygn: [], kronika: [] });

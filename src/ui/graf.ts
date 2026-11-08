@@ -18,6 +18,7 @@ export const GRAFER: Record<string, Graf> = { // i den ordning de står i Kröni
   eld: { namn: 'Trä på elden', serier: [{ tal: 'eld', farg: 'rost' }] },
   forrad: { namn: 'Förrådet', serier: [{ tal: 'mat', farg: 'oliv' }, { tal: 'tra', farg: 'jord' }] },
   rik: { namn: 'Byns rikedom', serier: () => rikSerier(), topp: () => rikTopp() },
+  matlagning: { namn: 'Matlagningen', serier: [{ tal: 'grillat', farg: 'senap' }, { tal: 'brant', farg: 'rost' }] }, // det som grillats och bränts (steg 9.2.62)
 };
 
 // vad rikedomens graf visar (steg 6.9.14): hela byn (summan och delarna), en persons förmögenhet eller hur många av en sak
