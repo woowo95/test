@@ -7,7 +7,7 @@ import * as SIM from '../../sim';
 import { findPath } from '../../sim/vag';
 import { KANIN } from '../../sim/redskap';
 import { START, STEG_TIM } from '../kor';
-import { setItems, setFood, kor, klockan, tandEld, byggare, byggKlart, nyInvanare, medBank, STOCKHOLM, SCENARIER } from './hjalp';
+import { setItems, setFood, kor, klockan, tandEld, byggare, byggKlart, nyInvanare, medBank, medHus, STOCKHOLM, SCENARIER } from './hjalp';
 
 SCENARIER.byggnader = {
   text: 'Varje sorts byggnad är en rad i ett register med behov och vikt. Byn bygger för det mest akuta behovet, faror först: den som saknar tak över huvudet får en sovsal',
@@ -1162,7 +1162,7 @@ SCENARIER.stockihus = {
   },
 };
 SCENARIER.lagerivagen = {
-  text: 'Steg 8.1.15: en lagerplats påverkar inte var ett hus eller en station ute byggs. Ligger den i vägen flyttas den till en ny plats med samma namn, och sakerna bärs dit',
+  text: 'Steg 8.1.15: en lagerplats påverkar inte var ett hus eller en station ute byggs. Ligger den i vägen flyttas den till en ny plats med samma namn, och sakerna bärs dit. Steg 9.2.15: likadant när ett stråk går igenom den',
   kor: () => {
     const s = createState(6, START), z = SIM.zonesOf(s)[0], namn = z.namn, gx = z.x, gy = z.y;
     SIM.flyttaLager(s, z);
@@ -1183,9 +1183,27 @@ SCENARIER.lagerivagen = {
       ['det som låg där ligger nu utanför och ska bäras in', SIM.overflow(s).length > 0 || SIM.pilesOf(s).length === 0],
       [`en station ute får sin plats fast lagret ligger där (${plats.x},${plats.y} och ${plats2?.x},${plats2?.y})`, !!plats2 && plats2.x === plats.x && plats2.y === plats.y],
       ['när stationen börjar byggas där flyttas lagret', !!st && st.x === plats.x && !!z3 && !(z3.x === plats.x && z3.y === plats.y)],
+      ...lagerIStraket(),
     ];
   },
 };
+// steg 9.2.15: vägarna dras utan hänsyn till lagerplatserna; en lagerplats som ett stråk går igenom flyttas
+function lagerIStraket(): [string, boolean][] {
+  const s = createState(1, START);
+  medHus(s);
+  const v = SIM.straken(s).vagar.filter(q => q.mal !== 'lager' && q.rutor.length >= 4).sort((a, b) => b.len - a.len)[0];
+  if (!v) return [['ett stråk från dörren att lägga ett lager på', false]];
+  const r = v.rutor[Math.floor(v.rutor.length / 2)], x = r % W, y = Math.floor(r / W), z0 = SIM.zonesOf(s)[0];
+  const z = { ...z0, x, y, w: 1, h: 1, namn: 'Lagret i vägen' };
+  s.lagren = [...SIM.zonesOf(s), z]; SIM.touch(s);
+  const genom = SIM.straken(s).vagar.some(q => q.mal !== 'lager' && q.rutor.includes(r));
+  SIM.lagerIStraket(s);
+  const ny = SIM.zonesOf(s).find(q => q.namn === 'Lagret i vägen');
+  return [
+    [`stråket till ${v.mal === 'vatten' ? 'vattnet' : v.mal} går genom en lagerplats som ligger i vägen`, genom],
+    [`och lagerplatsen flyttas bort från stråket (${x},${y} → ${ny ? `${ny.x},${ny.y}` : 'borta'})`, !ny || !(ny.x === x && ny.y === y)],
+  ];
+}
 SCENARIER.husbyte = {
   text: 'Steg 7.2.12: ett hus säljs genom samma bytessystem som allt annat: när köparen och säljaren möts ligger huset som en symbol på filten, och det blir handslag och en rad i loggen. Går det inte att betala blir det inget. En handlare kan aldrig köpa ett hus',
   kor: () => {
