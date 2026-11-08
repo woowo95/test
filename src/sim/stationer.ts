@@ -301,8 +301,9 @@ const samtidigt = (d?: StationDef) => d?.samtidigt ?? (arbetar(d) ? 1 : Infinity
 function arbetarVid(t: Station, q: Person) {
   const k = q.task;
   if (!k || k.phase === 'back' || !stationDef(t.k)?.gor.includes(k.act)) return false;
-  const at = vidStation(t);
-  return Math.abs(k.ty - at.y) < 0.3 && Math.abs(k.tx - at.x) <= 0.3 * storlekAv(t).w + 0.05; // platsen spotFor ger vid stationen (val.ts)
+  // platsen spotFor ger vid stationen (val.ts), också för den som först hämtar materialet till arbetet (k.site, steg 9.2.43)
+  const at = vidStation(t), x = k.hamta && k.site ? k.site.x : k.tx, y = k.hamta && k.site ? k.site.y : k.ty;
+  return Math.abs(y - at.y) < 0.3 && Math.abs(x - at.x) <= 0.3 * storlekAv(t).w + 0.05;
 }
 // är stationen full för p: arbetar så många andra där som får plats?
 // fler som arbetar vid en station än det finns plats (steg 9.2.52, vakten i testerna): stationen och hur många, eller undefined
