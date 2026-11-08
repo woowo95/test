@@ -1,0 +1,48 @@
+{
+ "id": "oga-14",
+ "ritad": 1,
+ "av": "Claude (bildstilschatten)",
+ "om": "Breda: långa och låga ögon, åtta punkter breda och två rader öppna.",
+ "bilder": {
+  "oppna": {
+   "x": -4,
+   "y": -2,
+   "rader": [
+    ".aaaaaa.",
+    "avvjjiva",
+    "bvvikkvb",
+    ".bccccb."
+   ]
+  },
+  "glada": {
+   "x": -4,
+   "y": -2,
+   "rader": [
+    ".aaaaaa.",
+    "avvjjiva",
+    ".cddddc.",
+    "........"
+   ]
+  },
+  "ledsna": {
+   "x": -4,
+   "y": -2,
+   "rader": [
+    "bbbbb.a.",
+    "aaaaaaaa",
+    "bvvikkvb",
+    ".bccccb."
+   ]
+  },
+  "slutna": {
+   "x": -4,
+   "y": -2,
+   "rader": [
+    ".bbbbbb.",
+    ".cccccc.",
+    "aaaaaaaa",
+    ".bccccb."
+   ]
+  }
+ }
+}

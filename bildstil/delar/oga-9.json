@@ -1,0 +1,52 @@
+{
+ "id": "oga-9",
+ "ritad": 1,
+ "av": "Claude (bildstilschatten)",
+ "om": "Små: små ögon, sex punkter breda och bara en rad öppna.",
+ "bilder": {
+  "oppna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "......",
+    ".aaaa.",
+    "avikva",
+    ".bjib.",
+    ".bccb."
+   ]
+  },
+  "glada": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "......",
+    ".aaaa.",
+    "acikca",
+    ".cddc.",
+    "......"
+   ]
+  },
+  "ledsna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "......",
+    "bbba..",
+    "aaaaaa",
+    "bvikvb",
+    ".bccb."
+   ]
+  },
+  "slutna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "......",
+    ".bbbb.",
+    ".cccc.",
+    "aaaaaa",
+    ".bccb."
+   ]
+  }
+ }
+}

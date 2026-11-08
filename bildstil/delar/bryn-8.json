@@ -1,0 +1,48 @@
+{
+ "id": "bryn-8",
+ "ritad": 1,
+ "av": "Claude (bildstilschatten)",
+ "om": "Sneda uppåt: den yttre änden högre än den inre, så att blicken ser bestämd ut.",
+ "bilder": {
+  "lugna": {
+   "x": -3,
+   "y": -3,
+   "rader": [
+    ".......",
+    "gg.....",
+    "ffggg..",
+    "..ffeee"
+   ]
+  },
+  "arga": {
+   "x": -3,
+   "y": -3,
+   "rader": [
+    "gg.....",
+    "ffgg...",
+    "..ffgg.",
+    "....eee"
+   ]
+  },
+  "ledsna": {
+   "x": -3,
+   "y": -3,
+   "rader": [
+    ".......",
+    ".....gg",
+    "gggggff",
+    "ff....."
+   ]
+  },
+  "forvanade": {
+   "x": -3,
+   "y": -3,
+   "rader": [
+    "gg.....",
+    "ffggg..",
+    "..fffge",
+    "......."
+   ]
+  }
+ }
+}

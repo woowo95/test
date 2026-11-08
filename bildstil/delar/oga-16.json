@@ -1,0 +1,52 @@
+{
+ "id": "oga-16",
+ "ritad": 1,
+ "av": "Claude (bildstilschatten)",
+ "om": "Med skrattrynkor: små rynkor som strålar ut från ytterhörnet.",
+ "bilder": {
+  "oppna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "b.aaaaa.",
+    ".avjjiva",
+    "bbvikkvb",
+    "..vjiiv.",
+    "b.bcccb."
+   ]
+  },
+  "glada": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "b.aaaaa.",
+    "bavjjiva",
+    ".bcikkcb",
+    "b.cdddc.",
+    ".b......"
+   ]
+  },
+  "ledsna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "bbbbb.a.",
+    ".aaaaava",
+    "bbvjjivb",
+    "..vikkv.",
+    "b.bcccb."
+   ]
+  },
+  "slutna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "b.......",
+    "..bbbbb.",
+    "b.ccccc.",
+    ".aaaaaaa",
+    "b.bcccb."
+   ]
+  }
+ }
+}

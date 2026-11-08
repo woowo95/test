@@ -1,0 +1,52 @@
+{
+ "id": "bryn-10",
+ "ritad": 1,
+ "av": "Claude (bildstilschatten)",
+ "om": "Kantiga: brynet går rakt upp från näsan till en spets och faller sedan brant mot tinningen.",
+ "bilder": {
+  "lugna": {
+   "x": -4,
+   "y": -4,
+   "rader": [
+    ".........",
+    "..gg.....",
+    ".gffggg..",
+    "gf...ffee",
+    "f........"
+   ]
+  },
+  "arga": {
+   "x": -4,
+   "y": -4,
+   "rader": [
+    ".........",
+    ".gg......",
+    "gffgg....",
+    "f..ffgg..",
+    ".....ffee"
+   ]
+  },
+  "ledsna": {
+   "x": -4,
+   "y": -4,
+   "rader": [
+    ".......gg",
+    "....ggffe",
+    "..ggff...",
+    ".gf......",
+    "gf......."
+   ]
+  },
+  "forvanade": {
+   "x": -4,
+   "y": -4,
+   "rader": [
+    "..gg.....",
+    ".gffggg..",
+    "gf...ffee",
+    "f........",
+    "........."
+   ]
+  }
+ }
+}

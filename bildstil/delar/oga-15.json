@@ -1,0 +1,60 @@
+{
+ "id": "oga-15",
+ "ritad": 1,
+ "av": "Claude (bildstilschatten)",
+ "om": "Med lockveck: ett tydligt veck i huden ovanför det övre ögonlocket.",
+ "bilder": {
+  "oppna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".bbbbb.",
+    "bcccccb",
+    ".aaaaa.",
+    "avjjiva",
+    "bvikkvb",
+    ".vjiiv.",
+    ".bcccb."
+   ]
+  },
+  "glada": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".bbbbb.",
+    "bcccccb",
+    ".aaaaa.",
+    "avjjiva",
+    "bcikkcb",
+    ".cdddc.",
+    "......."
+   ]
+  },
+  "ledsna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".bbbbb.",
+    "bbbbcab",
+    "aaaaava",
+    "bvjjivb",
+    ".vikkv.",
+    ".bcccb.",
+    "......."
+   ]
+  },
+  "slutna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".bbbbb.",
+    "bcccccb",
+    ".bbbbb.",
+    ".ccccc.",
+    "aaaaaaa",
+    ".bcccb.",
+    "......."
+   ]
+  }
+ }
+}

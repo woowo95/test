@@ -1,0 +1,52 @@
+{
+ "id": "oga-19",
+ "ritad": 1,
+ "av": "Claude (bildstilschatten)",
+ "om": "Mjuka: ett ljusare övre ögonlock utan den mörka linjen, så att blicken blir mjuk.",
+ "bilder": {
+  "oppna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".bbbbb.",
+    "bvjjivb",
+    "cvikkvc",
+    ".vjiiv.",
+    ".cdddc."
+   ]
+  },
+  "glada": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".bbbbb.",
+    "bvjjivb",
+    "ccikkcc",
+    ".cdddc.",
+    "......."
+   ]
+  },
+  "ledsna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "cccc.b.",
+    "bbbbbvb",
+    "cvjjivc",
+    ".vikkv.",
+    ".cdddc."
+   ]
+  },
+  "slutna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".......",
+    ".ccccc.",
+    ".ddddd.",
+    "bbbbbbb",
+    ".cdddc."
+   ]
+  }
+ }
+}

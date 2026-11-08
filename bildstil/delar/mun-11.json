@@ -1,0 +1,80 @@
+{
+ "id": "mun-11",
+ "ritad": 1,
+ "av": "Claude (bildstilschatten)",
+ "om": "Tjock underläpp: en tunn överläpp och en fyllig underläpp.",
+ "bilder": {
+  "glad": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "..........",
+    "r........r",
+    ".rqqqqqqr.",
+    ".rccccbbr.",
+    "..cccbbb..",
+    "...bbaa..."
+   ]
+  },
+  "nojd": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "..........",
+    "r........r",
+    ".rrrrrrrr.",
+    ".ccccccbb.",
+    "..cccbbb..",
+    "...bbaa..."
+   ]
+  },
+  "lugn": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "..........",
+    "..........",
+    ".rrrrrrrr.",
+    ".ccccccbb.",
+    "..cccbbb..",
+    "...bbaa..."
+   ]
+  },
+  "ledsen": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "..........",
+    "..........",
+    "..rrrrrr..",
+    ".rccccbbr.",
+    "..cccbbb..",
+    "...bbaa..."
+   ]
+  },
+  "arg": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "..........",
+    "..........",
+    ".rkkkkkkr.",
+    ".rccccbbr.",
+    "..cccbbb..",
+    "...bbaa..."
+   ]
+  },
+  "oppen": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "..........",
+    "....rr....",
+    "...rkkr...",
+    "...rkkr...",
+    "..ccccbb..",
+    "...bbaa..."
+   ]
+  }
+ }
+}

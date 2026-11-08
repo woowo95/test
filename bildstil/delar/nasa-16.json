@@ -1,0 +1,36 @@
+{
+ "id": "nasa-16",
+ "ritad": 1,
+ "av": "Claude (bildstilschatten)",
+ "om": "Breda näsborrar: en rak näsrygg och breda, utsvängda näsborrar.",
+ "bilder": {
+  "standard": {
+   "x": -5,
+   "y": 1,
+   "rader": [
+    "....db...",
+    "....db...",
+    "....cb...",
+    "...dcb...",
+    "..dcccb..",
+    ".bdcccbb.",
+    "adcbbbcba",
+    ".aa...aa."
+   ]
+  }
+ },
+ "barn": {
+  "standard": {
+   "x": -4,
+   "y": 1,
+   "rader": [
+    "...db..",
+    "...cb..",
+    "..dcb..",
+    ".bdccbb",
+    "adbbbba",
+    ".a...a."
+   ]
+  }
+ }
+}

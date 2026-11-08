@@ -1,0 +1,30 @@
+{
+ "id": "nasa-15",
+ "ritad": 1,
+ "av": "Claude (bildstilschatten)",
+ "om": "Knappnäsa: en kort näsa med en liten, rund spets.",
+ "bilder": {
+  "standard": {
+   "x": -4,
+   "y": 2,
+   "rader": [
+    "...d...",
+    "...db..",
+    "..dccb.",
+    ".dcccbb",
+    "..abba."
+   ]
+  }
+ },
+ "barn": {
+  "standard": {
+   "x": -3,
+   "y": 2,
+   "rader": [
+    "..d..",
+    ".dcb.",
+    ".abb."
+   ]
+  }
+ }
+}

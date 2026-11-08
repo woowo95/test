@@ -1,0 +1,56 @@
+{
+ "id": "oga-12",
+ "ritad": 1,
+ "av": "Claude (bildstilschatten)",
+ "om": "Med fransar: en tjock, mörk franslinje över ögat som slutar i en spets uppåt i ytterhörnet.",
+ "bilder": {
+  "oppna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "k.......",
+    ".kkkkkk.",
+    ".kvjjivk",
+    ".bvikkvb",
+    "..bjiib.",
+    "..bcccb."
+   ]
+  },
+  "glada": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "k.......",
+    ".kkkkkk.",
+    ".kvjjivk",
+    ".bcikkcb",
+    "..cdddc.",
+    "........"
+   ]
+  },
+  "ledsna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".bbbb...",
+    "kkkkkkk.",
+    ".kkkjivk",
+    ".bvikkvb",
+    "..bjiib.",
+    "..bcccb."
+   ]
+  },
+  "slutna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "k.......",
+    ".bbbbbb.",
+    ".cccccc.",
+    ".kkkkkkk",
+    "..bcccb.",
+    "........"
+   ]
+  }
+ }
+}

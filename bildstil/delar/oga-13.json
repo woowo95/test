@@ -1,0 +1,52 @@
+{
+ "id": "oga-13",
+ "ritad": 1,
+ "av": "Claude (bildstilschatten)",
+ "om": "Kisande: ögonen kisar: bara en rad öppen, med det undre locket uppskjutet.",
+ "bilder": {
+  "oppna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".......",
+    ".aaaaa.",
+    "avikkva",
+    "bcdddcb",
+    "......."
+   ]
+  },
+  "glada": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".......",
+    ".aaaaa.",
+    "acikkca",
+    ".cdddc.",
+    "......."
+   ]
+  },
+  "ledsna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".......",
+    "bbb.a..",
+    "aaaaaaa",
+    "bcikkcb",
+    ".cdddc."
+   ]
+  },
+  "slutna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".......",
+    ".bbbbb.",
+    "aaaaaaa",
+    ".cdddc.",
+    "......."
+   ]
+  }
+ }
+}
