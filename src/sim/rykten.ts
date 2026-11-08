@@ -3,7 +3,7 @@ import { KLADMATERIAL, kladAv } from './klader';
 import { han, honom } from './ord';
 import { lista, tal } from './ord';
 import { delade, loggBer } from './berattelser';
-import { ALDER, REL, ageOf, alive, byId, count, forstaGang, getRel, isKin, isParent, living, log, relKey, stat, think } from './folk';
+import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, forstaGang, getRel, isKin, isParent, living, log, relKey, stat, think } from './folk';
 import { clamp, pickViktat, rnd } from './slump';
 import { HOUR, Person, Rel, State } from './typer';
 import { balans } from './balans';
@@ -227,6 +227,7 @@ export function handelse(s: State, p: Person, h: HandelseTyp, offer?: Person, sa
   const b: Bevis = { h, t: s.now, ...(offer ? { mot: offer.id, motNamn: offer.name } : {}), ...(sak ? { sak } : {}), sett: true };
   count(s, 'rykte_' + h);
   for (const q of bara ? [bara] : vittnen(s, p, offer)) intryck(s, q, p, d.i, d.vikt * ganger, q === offer ? RYKTE.offerSaker : RYKTE.sjalvSaker, { ...b }, undefined, 0, q === offer, !!d.prestation);
+  if (offer && d.i === 'valdsam') budTillfalle(s, 'skadad', offer, p); // hämnd är en plikt (budet, steg 8.6.6)
 }
 
 // det som p gjort (beviset b) blir känt för alla i till (när ledaren straffar p, styre.ts): de hör det med del av vikten
@@ -256,11 +257,13 @@ function skyddar(s: State, a: Person, om: number) {
   return a.partner === om || isKin(a, q) || (s.rels[relKey(a.id, om)]?.op ?? 0) > REL.van;
 }
 // a berättar ibland för b om ett intryck hen har av någon annan (aldrig för den det gäller)
+// de döda talar man inte illa om, om tron har det budet (steg 8.6.6)
+const dodTiger = (s: State, a: Person, om: number) => { const q = byId(s, om); return !!q && !alive(q) && budTillfalle(s, 'talaIlla', a); };
 export function skvaller(s: State, a: Person, b: Person, r: Rel, berattelse: boolean) {
   if (!a.intryck?.length) return;
   const chans = RYKTE.delaBas + stat(a, 'karisma', s.now) / RYKTE.delaDiv + (berattelse ? RYKTE.delaBerattelse : 0);
   if (rnd(s, 'rykte', a) >= chans) return;
-  const val = a.intryck.filter(e => e.om !== b.id && !(INTRYCK[e.k].tecken < 0 && skyddar(s, a, e.om)));
+  const val = a.intryck.filter(e => e.om !== b.id && !(INTRYCK[e.k].tecken < 0 && (skyddar(s, a, e.om) || dodTiger(s, a, e.om))));
   if (!val.length) return;
   const e = pickViktat(s, val, val.map(x => styrka(x) * (INTRYCK[x.k].tecken < 0 ? RYKTE.delaNeg : 1)), 'rykte', a);
   beratta(s, a, b, e, r);

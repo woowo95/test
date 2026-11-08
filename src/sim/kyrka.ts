@@ -4,13 +4,14 @@
 import { Act, DAY, HOUR, Person, State } from './typer';
 import { balans } from './balans';
 import { clamp, rnd } from './slump';
-import { ALDER, ageOf, count, living, log, stat, think } from './folk';
+import { ALDER, type BudTillfalle, ageOf, count, living, log, relKey, satBudTillfalle, stat, think } from './folk';
+import { FOOD } from './saker';
 import { kronika } from './historik';
 import { Tro, andlighet, gudarOf, skalaV, troNamn, troNiva, troOf, troende } from './religion';
 import { helga, helig, prastOf } from './kult';
 import { FRAGOR, FragaData, rostaOm } from './rost';
 import { LAGAR, lagGaller } from './lagar';
-import { amountOf, ownsAmount, use } from './lager';
+import { addTo, amountOf, ownMove, ownedStock, ownsAmount, use } from './lager';
 import { freeNear } from './byggnad';
 import { eldPlats } from './karta';
 import { ledareOf } from './styre';
@@ -34,6 +35,15 @@ export const KYRKA = balans('kyrka', {
   andligPrast: 0.5, // Andlig – så här mycket flyttas vikten till prästerna
   valsigna: 0.15, // så mycket översteprästens välsignelse eller fördömelse är värd i legitimiteten
   kvadeDygn: 7, // prästen diktar ett kväde en gång så här ofta
+  // budens verkan (steg 8.6.6–8.6.10)
+  kravTro: 0.5, kravHumor: 0.01, // ett krav som följs (tacka, hälsa elden, be vid födsel och död) ger så här mycket tro och humör
+  forstaPer: 3, // den första fångsten: en hel sak mat till tron per så många som följer budet
+  tionde: 0.1, tiondeMin: 10, // tionde: så stor del av den egna maten till prästen, när man äger minst så här mycket
+  djur: 2, // djuroffret: så mycket kött en gång i veckan (sju dygn, sju år i spelet)
+  djurSakna: -0.03, // den troende mår så här mycket sämre när det inte finns något att offra
+  offerDygn: 28, // människooffret: högst en gång på så här många dygn (år i spelet), och bara den som dömts
+  framlingRel: 10, framlingMat: 0.2, // främlingen: så mycket bättre relation och så mycket mättare
+  hamndRel: 15, // hämnden: relationen till den som gjort en våldsam handling blir så här mycket sämre
 });
 
 export interface BudDef { namn: string; sort: 'forbud' | 'krav' | 'offer'; storlek: 1 | 2 | 3 | 4; niva: number; skala?: 'natur' | 'manga' | 'prast' | 'livet' | 'forlat' | 'fest' | 'krig' | 'oppen' | 'sprid'; sida?: 0 | 1; acts?: Act[]; text: string; kyla?: boolean }
@@ -206,10 +216,74 @@ function valsignaDygn(s: State) {
   if (ny !== (st.kyrka ?? 0) && andlig > 0.2) log(s, ny > 0 ? `${o.name} välsignade ${l.name}.` : ny < 0 ? `${o.name} fördömde ${l.name}.` : `${o.name} teg om ${l.name}.`, 'rel', [o.id, l.id]);
   st.kyrka = ny; st.kyrkaVikt = andlig * KYRKA.valsigna;
 }
+// ---------- budens verkan (steg 8.6.6–8.6.10) ----------
+// förbuden mot handlingar frågar valet av aktivitet (budForbjuder). Resten verkar här: kraven vid sin tid och offren vid sitt
+// tillfälle varje dygn (budDygn), och de bud som rör andra system när det händer (budTillfalle, via folk.ts). Bara den som
+// följer budet (foljer) påverkas; kyla och svält går före, som i fastan (behov.ts)
+const harBud = (s: State, p: Person | undefined, id: BudId) => { const tr = p && troOf(s, p.tro); return !!tr?.bud?.includes(id) && foljer(p!, id); };
+const FASTA = 7;
+let doda: (s: State, p: Person) => void = () => {};
+export const satOffrad = (f: typeof doda) => { doda = f; };
+function budDygn(s: State) {
+  const dag = Math.floor(s.now / DAY), fodda = (s.stat?.fodda ?? 0) + (s.stat?.doda ?? 0);
+  for (const tr of s.tron ?? []) {
+    if (tr.slut !== undefined || !tr.bud?.length) continue;
+    const vuxna = troende(s, tr).filter(p => ageOf(p, s.now) >= ALDER.vuxen), med = (id: BudId) => tr.bud!.includes(id) ? vuxna.filter(p => foljer(p, id)) : [];
+    const krav = (id: BudId, text: string) => { for (const p of med(id)) { p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + KYRKA.kravTro); think(p, text, KYRKA.kravHumor, s.now, 12 * HOUR); } };
+    // kraven: att tacka före maten och hälsa elden på morgonen, och att be när någon fötts eller dött
+    krav('tacka', 'Tackade gudarna för maten'); krav('halsa', 'Hälsade elden i morse');
+    if (fodda !== (tr.fodda ?? fodda)) krav('fodsel', 'Bad för den som fötts eller dött');
+    tr.fodda = fodda;
+    // fastan: en dag av sju äter den troende inte (p.fasta, behov.ts)
+    if ((dag + tr.id) % FASTA === 3) for (const p of med('fasta')) p.fasta = s.now + DAY;
+    // den första fångsten går till tron: en hel sak mat ur byns förråd per forstaPer som följer budet
+    const ff = med('forstaFangst').length;
+    if (ff) { const n = Math.ceil(ff / KYRKA.forstaPer), k = FOOD.filter(q => amountOf(s, q) >= n).sort((a, b) => amountOf(s, b) - amountOf(s, a))[0]; if (k) { addTo(s, k, -n); gavaIn(tr, k, n); count(s, 'forstaFangst'); } }
+    // tionde till prästen: en tiondel av den egna maten, i hela saker
+    const pr = prastOf(s, tr);
+    if (pr) for (const p of med('tionde')) {
+      if (p === pr) continue;
+      const egen = ownedStock(s, p);
+      if (FOOD.reduce((a, k) => a + (egen[k] ?? 0), 0) < KYRKA.tiondeMin) continue;
+      let gav = 0;
+      for (const k of FOOD) { const m = Math.floor((egen[k] ?? 0) * KYRKA.tionde); if (m >= 1) gav += ownMove(s, k, m, p.id, pr.id); }
+      if (gav >= 1) count(s, 'tionde');
+    }
+    // djuroffret en gång i veckan, och människooffret: bara den som dömts, högst en gång på offerDygn
+    if ((dag + tr.id) % FASTA === 0 && tr.bud.includes('djuroffer')) {
+      if (amountOf(s, 'kott') >= KYRKA.djur) { addTo(s, 'kott', -KYRKA.djur); count(s, 'djuroffer'); for (const p of med('djuroffer')) p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + 2); }
+      else for (const p of med('djuroffer')) think(p, 'Tron kräver djur, och det finns inget att offra', KYRKA.djurSakna, s.now, DAY);
+    }
+    if (tr.bud.includes('manniskooffer') && dag - (tr.offrad ?? -Infinity) >= KYRKA.offerDygn) {
+      const q = living(s).find(p => p.brottsling && p.tro !== tr.id);
+      if (q) { tr.offrad = dag; count(s, 'manniskooffer'); const t = `${troNamn(tr)} offrade ${q.name}, som dömts för sitt brott.`; log(s, t, 'death', [q.id]); kronika(s, t); doda(s, q); }
+    }
+  }
+}
+// de bud som verkar i andra system (folk.ts budTillfalle): true = budet stoppar det
+function budTillfalleK(s: State, typ: BudTillfalle, p: Person, q?: Person): boolean {
+  if (!s.tron?.length) return false;
+  if (typ === 'framling') { // främlingar ska få mat: de som följer budet ger, och relationen blir bättre
+    let gav = false;
+    for (const f of living(s)) if (f !== p && harBud(s, f, 'framling')) { const r = s.rels[relKey(f.id, p.id)]; if (r) r.op = Math.min(100, r.op + KYRKA.framlingRel); gav = true; }
+    if (gav) { p.hunger = Math.min(1, p.hunger + KYRKA.framlingMat); count(s, 'framling_mat'); }
+    return false;
+  }
+  if (typ === 'par') return !!q && ((harBud(s, p, 'giftaTro') || harBud(s, q, 'giftaTro')) && p.tro !== q.tro || [p, q].some(x => harBud(s, x, 'ogifta') && prastOf(s, troOf(s, x.tro)!) === x));
+  if (typ === 'skadad') { // hämnd är en plikt: den drabbade glömmer inte
+    if (!q || !harBud(s, p, 'hamnd')) return false;
+    const r = s.rels[relKey(p.id, q.id)]; if (r) r.op = Math.max(-100, r.op - KYRKA.hamndRel);
+    think(p, `Måste hämnas på ${q.name}`, -0.03, s.now, 2 * DAY); count(s, 'hamnd_plikt');
+    return false;
+  }
+  if (typ === 'talaIlla') return harBud(s, p, 'deDoda');
+  if (typ === 'falla') return harBud(s, p, 'lunden');
+  return false;
+}
 // ---------- varje timme ----------
 export function kyrkaTimme(s: State) {
   for (const tr of s.tron ?? []) { if (tr.slut !== undefined) continue; const folk = troende(s, tr); if (folk.length) offerTimme(s, tr, folk); }
-  if (Math.floor(s.now / HOUR) % 24 === 12) { skattDygn(s); helgonDygn(s); kvadeDygn(s); valsignaDygn(s); }
+  if (Math.floor(s.now / HOUR) % 24 === 12) { skattDygn(s); helgonDygn(s); kvadeDygn(s); valsignaDygn(s); budDygn(s); }
   const f = s.tron?.length ? living(s).filter(p => p.tro !== undefined).length : 0;
   if (f >= 3 && s.styre) oppnaAndlig(s);
 }
@@ -219,6 +293,7 @@ export const satOppnaAndlig = (f: typeof oppnaAndlig) => { oppnaAndlig = f; };
 // hovet och templet som rader i PROJEKT (steg 8.6.14); steg.ts lägger in dem när allt är laddat
 export const kyrkProjekt = (): Record<string, ProjektDef> => ({ hov: kyrkBygge('hov'), tempel: kyrkBygge('tempel') });
 export function kyrkaRegister() {
+satBudTillfalle((s, typ, p, q) => budTillfalleK(s, typ, p, q));
 for (const id of Object.keys(BUD) as BudId[]) if (BDEF[id].sort === 'forbud' && BDEF[id].acts) LAGAR[budLag(id)] = { namn: BDEF[id].namn, sym: '📜', text: BDEF[id].text, straff: 4, brott: ['budbrott'], kan: s => (s.seder.v.andlig ?? 0) > 0.2 && !!s.tron?.some(t => t.bud?.includes(id)), prio: s => (s.seder.v.andlig ?? 0) > 0.2 && s.tron?.some(t => t.bud?.includes(id)) ? clamp((s.seder.v.andlig ?? 0), 0, 1) * 0.6 : 0, rost: (s, p) => { const ja = !!troOf(s, p.tro)?.bud?.includes(id); return { v: ja ? 0.6 : -0.4, why: ja ? 'Tror på budet' : 'Delar inte tron' }; }, om: 'kyrkans önskan' };
 LAGAR.kyrkskatt = { namn: 'Kyrkskatt', sym: '📜', text: 'En del av byns förråd går till kyrkan', straff: 4, om: 'kyrkans krav', kan: s => !!s.tron?.some(t => troNiva(t) >= 4), prio: s => (s.seder.v.andlig ?? 0) > 0.4 ? clamp(s.seder.v.andlig, 0, 1) * 0.7 : 0, rost: (_s, p) => ({ v: p.tro !== undefined ? 0.4 : -0.5, why: p.tro !== undefined ? 'Vill stödja tron' : 'Betalar inte för en tro hen inte har' }) };
 LAGAR.ejKyrkskatt = { namn: 'Förbud mot kyrkskatt', sym: '📜', text: 'Kyrkan tar inget ur byns förråd', straff: 0, om: 'kyrkans makt', kan: s => !!s.tron?.length, prio: s => (s.seder.v.andlig ?? 0) < -0.4 ? clamp(-s.seder.v.andlig, 0, 1) * 0.6 : 0, rost: (_s, p) => ({ v: p.tro === undefined ? 0.5 : -0.4, why: p.tro === undefined ? 'Delar inte tron' : 'Vill stödja tron' }) };

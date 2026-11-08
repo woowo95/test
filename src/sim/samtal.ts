@@ -1,6 +1,6 @@
 import { fraktionSamtal } from './rost';
 import { barnTill, upplev } from './uppvaxt';
-import { ALDER, REL, ageOf, alive, byId, count, franMitt, getRel, isKin, living, log, similarity, stat, think } from './folk';
+import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, franMitt, getRel, isKin, living, log, similarity, stat, think } from './folk';
 import { blocked } from './byggnad';
 import { sittAt, stationAt } from './stationer';
 import { berattaBrist } from './naring';
@@ -220,7 +220,7 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
 
   if (r.op > REL.naraVan && !(r.flags & 1) && !isKin(a, b) && a.partner !== b.id) { r.flags |= 1; loggBer(s, 'l_vanner', a.id * 997 + b.id, { namn: a.name, med: b.name }, 'rel', [a.id, b.id]); }
   if (r.op < REL.ovan && !(r.flags & 2)) { r.flags |= 2; loggBer(s, 'l_ovanner', a.id * 997 + b.id, { namn: a.name, med: b.name }, 'rel', [a.id, b.id]); }
-  if (r.rom > REL.parRom && r.op > REL.van && a.partner === undefined && b.partner === undefined && canFlirt) pair(s, a, b);
+  if (r.rom > REL.parRom && r.op > REL.van && a.partner === undefined && b.partner === undefined && canFlirt && !budTillfalle(s, 'par', a, b)) pair(s, a, b); // buden om giftermål (steg 8.6.6)
   if (a.partner === b.id && r.op < skiljGrans(r)) skiljas(s, a, b, r); // ett gift par håller mer (steg 3.1.1)
   return kind === 'gräl' ? b : undefined;
 }

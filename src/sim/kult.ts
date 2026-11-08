@@ -14,7 +14,8 @@ import { groundOf } from './mark';
 import { FOREST } from './vag';
 import { freeNear } from './byggnad';
 import { eldPlats } from './karta';
-import { amountOf } from './lager';
+import { addTo, amountOf } from './lager';
+import { FOOD } from './saker';
 import { takeMaterial } from './behov';
 import { kladAv } from './klader';
 import { nyRitual } from './kultlatt';
@@ -35,6 +36,7 @@ export const KULT = balans('kult', {
   vanhelgaChans: 0.01, // chansen per dygn att en sluten tro vanhelgar en annan tros plats
   slutenFran: 70, // Öppen – Sluten: så sluten ska tron vara
   ritualFonster: 6, // en ritual väntar högst så här många timmar på att börja
+  festMat: 0.15, // bröllopets fest gör alla så här mycket mättare (steg 8.5.13)
   fest: 50, forsakelse: 50, // Fest – Försakelse: över så här mycket på respektive sida (0 = Fest, 100 = Försakelse)
   livetEfter: 60, // Nuet – Livet efter: över så här blir det gravhög med gåvor
   bal: 4, // så mycket ved ett bål tar
@@ -211,7 +213,13 @@ export function ritualTimme(s: State) {
   if (n.k === 'brollop') festMat(s);
   if (n.k === 'begravning' && !s.stat?.ritual_begravning) count(s, 'ritual_forsta_begravning');
 }
-const festMat = (_s: State) => {};
+// bröllopets fest (steg 8.5.13): en hel sak mat per två i byn ur förrådet, av det byn har mest av, och alla blir mättare
+function festMat(s: State) {
+  const folk = living(s), n = Math.ceil(folk.length / 2), k = FOOD.filter(q => amountOf(s, q) >= n).sort((a, b) => amountOf(s, b) - amountOf(s, a))[0];
+  if (!k) return;
+  addTo(s, k, -n); count(s, 'festmat');
+  for (const p of folk) p.hunger = Math.min(1, p.hunger + KULT.festMat);
+}
 // högtiderna (steg 8.5.14): en tro har 0–4, var och en knuten till en tidsålder, och firas när den tidsåldern kommer. Fest ger fler, Försakelse färre
 export const hogtider = (tr: Tro) => { const f = skalaV(tr, 'fest') ?? 50; return f < KULT.fest ? 2 + (f < 25 ? 2 : 0) : f > 75 ? 0 : 1; };
 const HOGTIDSNAMN = ['Isblotet', 'Vårfesten', 'Midsommarnatten', 'Skördenatten'];

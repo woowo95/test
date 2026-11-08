@@ -383,6 +383,14 @@ type AktRadd = (s: State, p: Person, act: Act | undefined, om: string, orsak?: s
 let aktRaddF: AktRadd = () => {};
 export const satAktRadd = (f: AktRadd) => { aktRaddF = f; };
 export const raddAkt: AktRadd = (s, p, act, om, orsak) => aktRaddF(s, p, act, om, orsak);
+// buden som verkar i andra system (steg 8.6.6–8.6.10, kyrka.ts sätter funktionen när allt är laddat). Tillfället säger var:
+// en främling kommer (p), två ska bli ett par (p och q), p skadades av q, p vill tala illa om en död, p vill fälla trädet (x, y).
+// true = budet stoppar det
+export type BudTillfalle = 'framling' | 'par' | 'skadad' | 'talaIlla' | 'falla';
+type BudH = (s: State, typ: BudTillfalle, p: Person, q?: Person, x?: number, y?: number) => boolean;
+let budH: BudH = () => false;
+export const satBudTillfalle = (f: BudH) => { budH = f; };
+export const budTillfalle: BudH = (s, typ, p, q, x, y) => budH(s, typ, p, q, x, y);
 // det en person gjort (steg 3.10.6), för färdigheterna i personrutan (SKILL_STAT i typer.ts): totalt (n) och timme för timme
 // det senaste dygnet (t[k][timmen % 24]). Timmarna sparas bara för det hen gjort det senaste dygnet, så att sparfilen inte
 // växer, och de döda har inga (die i liv.ts). Drar ingen slump

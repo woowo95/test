@@ -820,6 +820,41 @@ SCENARIER.kyrkan = {
   },
 };
 
+SCENARIER.buden = {
+  text: 'Steg 8.6.6–8.6.10: buden verkar. Fastan en dag av sju, den första fångsten till tron, tionde till prästen, djuroffret, att tacka före maten; främlingar får mat, man gifter sig inom tron, hämnd är en plikt, de döda talar man inte illa om och lunden fälls inte',
+  kor: () => {
+    const { s, v, tr } = medTro(6, 4);
+    for (const p of v) p.troStyrka = 90;
+    SIM.kultTimme(s);
+    const pr = SIM.prastOf(s, tr)!, q = v.find(p => p !== pr)!;
+    tr.bud = ['fasta', 'forstaFangst', 'tionde', 'tacka', 'djuroffer', 'framling', 'giftaTro', 'hamnd', 'deDoda', 'lunden'];
+    setFood(s, 100); SIM.put(s, 'kott', 10); SIM.put(s, 'bar', 30, { [q.id]: 30 });
+    // ett dygn i taget klockan tolv, en vecka (sju år i spelet)
+    let fastade = false, djur = 0;
+    const kott0 = SIM.amountOf(s, 'kott'), t0 = q.troStyrka!, prast0 = SIM.ownedStock(s, pr).bar ?? 0;
+    const dag0 = s.now - (s.now % 86400000);
+    for (let d = 1; d <= 7; d++) { s.now = dag0 + d * 86400000 + 12 * 3600000; SIM.kyrkaTimme(s); fastade ||= (q.fasta ?? 0) > s.now; djur = s.stat?.djuroffer ?? 0; }
+    const forst = SIM.forradSum(tr) > 0, tiond = (SIM.ownedStock(s, pr).bar ?? 0) > prast0;
+    // främlingen, giftermålet, hämnden, de döda och lunden
+    const ny = nyInvanare(s, 'm', 25); ny.hunger = 0.3; SIM.budTillfalle(s, 'framling', ny);
+    const annan = nyInvanare(s, 'k', 25); annan.tro = undefined;
+    const hinder = SIM.budTillfalle(s, 'par', q, annan), inget = !SIM.budTillfalle(s, 'par', q, v.find(p => p !== q && p !== pr)!);
+    const r0 = SIM.getRel(s, q, ny).op; SIM.handelse(s, ny, 'sla', q); const hamnd = SIM.getRel(s, q, ny).op < r0;
+    return [
+      [`fastan en dag i veckan (${fastade})`, fastade],
+      [`den första fångsten går till tron (${JSON.stringify(tr.forrad)})`, forst],
+      ['tionde till prästen ur den egna maten', tiond],
+      [`djuroffret en gång i veckan (${djur}, kött ${kott0} → ${SIM.amountOf(s, 'kott')})`, djur === 1 && SIM.amountOf(s, 'kott') < kott0],
+      [`att tacka före maten stärker tron (${t0} → ${q.troStyrka})`, q.troStyrka! > t0 || t0 >= 100],
+      [`främlingen fick mat (${ny.hunger.toFixed(2)})`, ny.hunger > 0.3],
+      ['man gifter sig inte utanför tron, men inom den', hinder && inget],
+      [`hämnden: relationen till den som slog blir sämre (${r0} → ${SIM.getRel(s, q, ny).op})`, hamnd],
+      ['de döda talar man inte illa om', SIM.budTillfalle(s, 'talaIlla', q)],
+      ['lunden fälls inte', SIM.budTillfalle(s, 'falla', q)],
+    ];
+  },
+};
+
 SCENARIER.strid8 = {
   text: 'Steg 8.7: rustningen och hjälmen skyddar när de är på, skölden blockerar, bågen och slungan når långt, två mot en är farligt, rikedomen väger mest för rövarna och skyddet avtar med tiden, och rövarna tar det med högst pris per vikt',
   kor: () => {

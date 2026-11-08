@@ -1,6 +1,6 @@
 import { bynsMitt, utanforByn } from './omrade';
 import { freeTools } from './agande';
-import { count, forstaGang, gjort, living, log, think } from './folk';
+import { budTillfalle, count, forstaGang, gjort, living, log, think } from './folk';
 import { wearUsed } from './redskap';
 import { groundOf, isForest, tileOf } from './mark';
 import { FOREST, Ground } from './vag';
@@ -63,6 +63,7 @@ export function rojSpot(s: State, p: Person) {
 // rutorna där någon annan än utom håller på att fälla ett träd
 export const fellingTiles = (s: State, utom: Person) => new Set(living(s).filter(q => q !== utom && q.task?.act === 'falla').map(q => tileOf(q.task!.tx, q.task!.ty)));
 // närmaste vuxna träd att fälla, helst i skogskanten nära byn (p väljer med sin egen slumpföljd)
+const LUND_R = 4; // så många rutor runt en helig plats är den heliga lunden (budet, steg 8.6.6)
 export function treeSpot(s: State, taken: Set<number>, p: Person): { x: number; y: number } | undefined {
   const g = groundOf(s), f = bynsMitt(s);
   // först träden där ett hus ska stå: de måste bort ändå, och stockarna blir husets väggar. Sedan träden på en lagerplats
@@ -76,12 +77,12 @@ export function treeSpot(s: State, taken: Set<number>, p: Person): { x: number; 
   let half = -1, hd = Infinity;
   for (const k in s.halvfallt ?? {}) { const i = +k, d = utanforByn(s, i % W, Math.floor(i / W)); if (isForest(s, i) && !taken.has(i) && d < hd) { hd = d; half = i; } }
   if (half >= 0) return { x: (half % W) + 0.5, y: Math.floor(half / W) + 0.5 };
-  const c: { i: number; d: number }[] = [], skogsfred = lagGaller(s, 'skogsfred');
+  const c: { i: number; d: number }[] = [], skogsfred = lagGaller(s, 'skogsfred'), lund = !!s.heliga?.length && budTillfalle(s, 'falla', p);
   for (let y = Math.max(0, f.y - SKOG.sokY); y < Math.min(H, f.y + SKOG.sokY + 1); y++) for (let x = Math.max(0, f.x - SKOG.sokX); x < Math.min(W, f.x + SKOG.sokX + 1); x++) {
     const i = y * W + x;
     if (g.trees[i] < SKOG.tradMin || taken.has(i)) continue;
     if (skogsfred && utanforByn(s, x, y) <= LAG_SKOG) continue; // lagen om skogen (steg 8.4.1)
-    if (s.heliga?.length && heligRuta(s, x, y)) continue; // den heliga platsen fälls inte (steg 8.5.5)
+    if (s.heliga?.length && (heligRuta(s, x, y) || lund && s.heliga.some(h => h.tro === p.tro && !h.skandad && Math.hypot(h.x - x, h.y - y) <= LUND_R))) continue; // den heliga platsen fälls inte (steg 8.5.5), och inte lunden runt den om budet säger så (steg 8.6.6)
     c.push({ i, d: utanforByn(s, x, y) });
   }
   if (!c.length) return undefined;
