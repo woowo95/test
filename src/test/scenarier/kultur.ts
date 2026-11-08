@@ -4,7 +4,7 @@ import * as SIM from '../../sim';
 import { START } from '../kor';
 import * as O from '../../sim/ord';
 import { TEKNIK } from '../../sim/teknik';
-import { SCENARIER, klockan, kor, medBank, medHus, setFood, tandEld } from './hjalp';
+import { SCENARIER, klockan, kor, medBank, medHus, nyInvanare, setFood, tandEld } from './hjalp';
 
 // en by med ett stort överskott av mat och ved, på förmiddagen
 export function rikDag(seed = 3, mer: Record<string, number> = {}): State {
@@ -626,7 +626,7 @@ SCENARIER.lagar = {
   },
 };
 SCENARIER.tinget = {
-  text: 'Steg 8.4.7–8.4.10: tinget avgör skulden, straffet står i lagen och blir likadant varje gång, och rädslor som många delar blir tabun',
+  text: 'Steg 8.4.7–8.4.10: tinget avgör skulden, straffet står i lagen och blir likadant varje gång, och rädslor som många delar blir tabun: platser och handlingar',
   kor: () => {
     const { s, v, l } = medLedare(), q = v[1], d = v[2];
     s.seder.v.rang = 1;
@@ -643,10 +643,22 @@ SCENARIER.tinget = {
     // tabu
     const a = 77; for (const p of v) (p.lardomar ??= []).push({ k: 'fara', a, v: 0.8, c: 0.8, t: s.now, led: 0, om: 'något hände' });
     SIM.tabuDygn(s);
+    // en handling blir tabu: en dör under björnjakten där de andra ser det, och de blir rädda för att jaga björn
+    const s2 = medLedare(7).s; nyInvanare(s2, 'm', 25); nyInvanare(s2, 'k', 25);
+    const v2 = SIM.living(s2), offer = v2[0];
+    offer.task = { act: 'bjornjakt', phase: 'do', tx: offer.x, ty: offer.y, until: s2.now, carry: 0, why: '' } as SIM.Task;
+    for (const p of v2) { p.x = offer.x + 1; p.y = offer.y; }
+    SIM.die(s2, offer, 'bjorn');
+    const radda = SIM.living(s2).filter(p => (p.raddAkt?.bjornjakt ?? 0) > 0).length;
+    SIM.tabuDygn(s2);
+    const kvar = SIM.living(s2)[0];
     return [
       [`rättegången gäller lagens straff (${r ? SIM.STRAFF_NAMN[r.steg] : 'ingen'}) eller så efterlevdes lagen inte (${s.stat?.lag_ej_efterlevd ?? 0})`, !!r && r.steg === 4 || (s.stat?.lag_ej_efterlevd ?? 0) > 0],
       [`böterna går till den drabbade (${yxa.agare === d.id ? d.name : 'ingen'})`, !r || yxa.agare === d.id || yxa.agare === fore],
       [`en fruktad plats blir tabu (${s.tabun?.length})`, s.tabun?.length === 1],
+      [`de som såg björnen döda ${offer.name} blir rädda för att jaga björn (${radda})`, radda === SIM.living(s2).length],
+      [`att jaga björn blir tabu (${s2.tabuAkt?.map(t => t.k).join(', ')})`, !!s2.tabuAkt?.some(t => t.k === 'bjornjakt')],
+      [`och byn låter bli det (${SIM.tabuAkt(s2, kvar, 'bjornjakt')}), men inte annat`, SIM.tabuAkt(s2, kvar, 'bjornjakt') === 'jaga björn' && !SIM.tabuAkt(s2, kvar, 'fiske')],
     ];
   },
 };

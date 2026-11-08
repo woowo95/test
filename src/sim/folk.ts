@@ -378,6 +378,11 @@ export const SAMLA = {
 export type SamSlag = keyof typeof SAMLA;
 // räknar det som händer i byn (statistiken i s.stat)
 export const count = (s: State, k: string, n = 1) => { (s.stat ??= {})[k] = (s.stat[k] ?? 0) + n; };
+// en olycka gör de som såg den rädda för handlingen (steg 8.4.10, lagar.ts sätter funktionen när allt är laddat)
+type AktRadd = (s: State, p: Person, act: Act | undefined, om: string, orsak?: string) => void;
+let aktRaddF: AktRadd = () => {};
+export const satAktRadd = (f: AktRadd) => { aktRaddF = f; };
+export const raddAkt: AktRadd = (s, p, act, om, orsak) => aktRaddF(s, p, act, om, orsak);
 // det en person gjort (steg 3.10.6), för färdigheterna i personrutan (SKILL_STAT i typer.ts): totalt (n) och timme för timme
 // det senaste dygnet (t[k][timmen % 24]). Timmarna sparas bara för det hen gjort det senaste dygnet, så att sparfilen inte
 // växer, och de döda har inga (die i liv.ts). Drar ingen slump

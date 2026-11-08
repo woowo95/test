@@ -1,10 +1,13 @@
 // Lagarna (system 8.4). En lag är en rad i registret LAGAR: vad den gäller, vilket straff den har från början och hur den väcks av det
 // som hänt. Att stifta, ändra och ta bort en lag är frågor i röstsystemet (FRAGOR i rost.ts). Vad som tas upp en kväll väljs ur registret
 // TAS_UPP, efter prioritet (steg 8.4.5). En lag läser spelet med `lagGaller`; ett brott i `doma` (styre.ts) får straffet i lagen.
-import { HOUR, Person, State } from './typer';
+import { Act, HOUR, Person, State } from './typer';
+import { rnd } from './slump';
+import { REL } from './folk';
+import type { Dodsorsak } from './liv';
 import { balans } from './balans';
 import { clamp } from './slump';
-import { ALDER, ageOf, count, living, log, relKey } from './folk';
+import { ALDER, ageOf, count, living, log, relKey, satAktRadd, stat } from './folk';
 import { kronika } from './historik';
 import { FRAGOR, ROST, Fraga, framFor, laggFram, rostaOm, vikter } from './rost';
 import { PABUD, Pabud, legitimitet, ledareOf, styreAv } from './styre';
@@ -27,7 +30,13 @@ export const LAG = balans('lag', {
   plikt: 0.2, // arbetsplikten höjer viljan att arbeta för byn så här mycket
   bas: 0.25, viktSamlad: 0.4, viktLeg: 0.5, // hur konsekvent lagarna efterlevs (steg 8.4.9): grunden, hur samlad vikten är och legitimiteten
   stegHardare: 0.5, // Envälde och Fejd över det här gör straffet ett steg hårdare när lagen stiftas
-  tabuAndel: 0.34, // en farlig plats blir tabu när så stor del av de vuxna fruktar den (steg 8.4.10)
+  tabuAndel: 0.34, // en farlig plats eller handling blir tabu när så stor del av de vuxna fruktar den (steg 8.4.10)
+  aktSett: 0.8, aktHort: 0.5, // rädslan för en handling hos den som såg olyckan och hos de närmaste
+  aktRadd: 0.3, // över det här räknas man som rädd för handlingen
+  aktSprid: 0.15, // chansen per dygn att en rädd berättar för en god vän, som blir så här mycket rädd ...
+  aktSpridV: 0.7, // ... gånger berättarens rädsla
+  aktGlom: 0.97, // rädslan för en handling blir så här mycket svagare per dygn (år i spelet), om den inte är tabu
+  aktUndvik: 0.35, // den som är så här rädd (efter modet) låter bli handlingen fast den inte är tabu
   tabuMin: 4, // ... och minst så här många
 });
 export const LAG_SKOG = 8; // förbudet att fälla nära byn: inom så många rutor från byns område
@@ -142,9 +151,75 @@ export function tabuDygn(s: State) {
     log(s, t, 'world'); kronika(s, t, 'tabu');
   }
   for (const t of s.tabun) for (const p of vuxna) { const l = p.lardomar?.find(x => x.k === 'fara' && x.a === t.a); if (l) { l.t = s.now; continue; } (p.lardomar ??= []).push({ k: 'fara', a: t.a, v: 0.6, c: 0.6, t: s.now, led: 2, om: t.om }); }
+  tabuAktDygn(s, vuxna);
 }
+// ---------- handlingar som blir tabun (steg 8.4.10) ----------
+// en död eller en svår skada medan någon gjorde något gör de som såg det och de närmaste rädda för handlingen. Rädslan
+// berättas vidare bland vännerna och blir svagare med tiden. När många vuxna fruktar den blir den tabu: hela byn låter
+// bli den, utom i nöd (svält och kyla går före). Raderna är handlingar som kan ta livet av någon och som byn klarar sig utan
+export interface TabuAktDef { namn: string; acts: Act[]; orsak?: Dodsorsak[] }
+export const TABU_AKT: Record<string, TabuAktDef> = {
+  bjornjakt: { namn: 'jaga björn', acts: ['bjornjakt'] },
+  vargjakt: { namn: 'jaga varg', acts: ['vargjakt'] },
+  bada: { namn: 'bada i sjön', acts: ['bada'] },
+  sport: { namn: 'spela', acts: ['sport'] },
+  svamp: { namn: 'plocka svamp', acts: ['samla'], orsak: ['svamp'] }, // den som dog av svampen samlade inte, men byn minns svampen
+};
+export interface TabuAkt { k: string; t: number; om: string }
+const aktRad = (act: Act | undefined, orsak?: Dodsorsak) => Object.keys(TABU_AKT).find(k => { const r = TABU_AKT[k]; return r.orsak ? !!orsak && r.orsak.includes(orsak) : !!act && r.acts.includes(act); });
+// offret dog eller skadades svårt (orsak saknas vid en skada) medan hen gjorde act
+export function raddForAkt(s: State, offer: Person, act: Act | undefined, om: string, orsak?: Dodsorsak) {
+  const k = aktRad(act, orsak);
+  if (!k) return;
+  for (const q of living(s)) {
+    if (q === offer) continue;
+    const sag = Math.hypot(q.x - offer.x, q.y - offer.y) < LAG_SYN, nara = offer.partner === q.id || offer.mother === q.id || offer.father === q.id || q.mother === offer.id || q.father === offer.id;
+    if (!sag && !nara) continue;
+    const r = (q.raddAkt ??= {});
+    r[k] = Math.max(r[k] ?? 0, sag ? LAG.aktSett : LAG.aktHort);
+    (s.aktOm ??= {})[k] = om;
+  }
+}
+const LAG_SYN = 12; // så nära ser man olyckan (rutor)
+// den som är rädd för handlingen låter bli den om den är tabu, eller om rädslan är stor och modet litet (steg 8.4.10)
+export function tabuAkt(s: State, p: Person, act: Act): string | undefined {
+  if (!s.tabuAkt?.length && !p.raddAkt) return undefined;
+  for (const k in TABU_AKT) {
+    if (!TABU_AKT[k].acts.includes(act)) continue;
+    if (s.tabuAkt?.some(t => t.k === k)) return TABU_AKT[k].namn;
+    const v = p.raddAkt?.[k] ?? 0;
+    if (v * clamp(1.5 - stat(p, 'mod', s.now) / 20, 0.5, 1.5) > LAG.aktUndvik) return TABU_AKT[k].namn;
+  }
+  return undefined;
+}
+function tabuAktDygn(s: State, vuxna: Person[]) {
+  // rädslan berättas för goda vänner och blir svagare med tiden
+  for (const p of vuxna) {
+    if (!p.raddAkt) continue;
+    for (const k in p.raddAkt) {
+      const v = p.raddAkt[k];
+      if (!s.tabuAkt?.some(t => t.k === k)) p.raddAkt[k] = v * LAG.aktGlom;
+      if (v < LAG.aktRadd) continue;
+      for (const q of vuxna) if (q !== p && (s.rels[relKey(p.id, q.id)]?.op ?? 0) > REL.van && rnd(s, 'minne', p) < LAG.aktSprid) { const r = (q.raddAkt ??= {}); r[k] = Math.max(r[k] ?? 0, v * LAG.aktSpridV); }
+    }
+    for (const k in p.raddAkt) if (p.raddAkt[k] < 0.05) delete p.raddAkt[k];
+    if (!Object.keys(p.raddAkt).length) p.raddAkt = undefined;
+  }
+  for (const k in TABU_AKT) {
+    if (s.tabuAkt?.some(t => t.k === k)) continue;
+    const n = vuxna.filter(p => (p.raddAkt?.[k] ?? 0) >= LAG.aktRadd).length;
+    if (n < Math.max(LAG.tabuMin, vuxna.length * LAG.tabuAndel)) continue;
+    const om = s.aktOm?.[k] ?? '';
+    (s.tabuAkt ??= []).push({ k, t: s.now, om }); count(s, 'tabuAkt');
+    const t = `Ingen i byn vill ${TABU_AKT[k].namn} längre${om ? `: ${om}` : ''}. Det har blivit tabu.`;
+    log(s, t, 'world'); kronika(s, t, 'tabu');
+  }
+  for (const t of s.tabuAkt ?? []) for (const p of vuxna) { const r = (p.raddAkt ??= {}); r[t.k] = Math.max(r[t.k] ?? 0, LAG.aktRadd); } // tabut hålls vid liv
+}
+
 // raderna i FRAGOR som hör till lagarna läggs till när allt är laddat (steg.ts)
 export function lagRegister() {
+satAktRadd((s, p, act, om, orsak) => raddForAkt(s, p, act, om, orsak as Dodsorsak | undefined));
 FRAGOR.nylag = {
   namn: (_s, d) => `Ny lag: ${LAGAR[d.id as string].namn}`, krets: 'byn',
   rost: (s, p, d) => LAGAR[d.id as string].rost(s, p),
