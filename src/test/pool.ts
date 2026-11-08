@@ -31,7 +31,7 @@ for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP'] as const) process.on(sig, () =
 export function korProcess(cmd: string, args: string[], env: Record<string, string> = {}, prio = 0, grans = TIDSGRANS_MIN * 60_000): Promise<Utfall> {
   return new Promise(ok => {
     let out = '', err = '', klar = false;
-    const c = spawn(cmd, args, { env: { ...process.env, ...env }, detached: process.platform !== 'win32' });
+    const c = spawn(cmd, args, { env: { ...process.env, MATARE_BARN: '1', ...env }, detached: process.platform !== 'win32' });
     if (c.pid) igang.add(c.pid);
     if (prio && c.pid) try { setPriority(c.pid, prio); } catch { /* går det inte körs jobbet med vanlig prioritet */ }
     const sluta = (code: number) => { if (!klar) { klar = true; clearTimeout(tid); if (c.pid) igang.delete(c.pid); ok({ code, out, err }); } };

@@ -7,6 +7,8 @@ import './utc';
 import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { korSkript, scenarioSammanfattning, sek, typkontroll, typRad } from './pool';
+import { matUnderTestet } from './matare';
+matUnderTestet(); // datorns kärnor och minne under testet (steg 9.2.61)
 
 const rot = (f: string) => fileURLToPath(new URL('../../' + f, import.meta.url));
 // utkasten i en egen fil per körning, så att två koll samtidigt (t.ex. i en kopia med länkad node_modules) inte blandas ihop

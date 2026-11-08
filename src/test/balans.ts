@@ -5,6 +5,8 @@ import './utc';
 import { writeFileSync } from 'node:fs';
 import { korJson, pool, seedAv, sek } from './pool';
 import { NYCKELTAL, Matt, Nyckeltal, median, snittTal, vardeAv } from './nyckeltal';
+import { matUnderTestet } from './matare';
+matUnderTestet(); // datorns kärnor och minne under testet (steg 9.2.61)
 
 const [antal = 20, dagar = 90] = process.argv.slice(2).map(Number);
 const seeds = Array.from({ length: antal }, (_, i) => seedAv(i));
