@@ -185,9 +185,17 @@ function presHtml(p: Person) {
       <dt>Yrke</dt><dd>${esc(yrkeNamn(s, p) ?? '–')}${p.tag && yrkeNamn(s, p) !== p.tag ? ` <span class="muted">(${esc(p.tag.toLowerCase())})</span>` : ''}</dd>
       <dt>Föräldrar</dt><dd>${p.mother || p.father ? [byId(s, p.mother), byId(s, p.father)].filter(Boolean).map(q => pLink(q)).join(' och ') : 'Bland de första i byn'}</dd>
       <dt>Partner</dt><dd>${pLink(byId(s, p.partner))}</dd><dt>Barn</dt><dd>${kids.length ? kids.map(pLink).join(', ') : '–'}</dd>
-      <dt>Övertygelser</dt><dd>${tro.length ? tro.join(' ') : '–'}</dd></dl>
+      <dt>Övertygelser</dt><dd>${tro.length ? tro.join(' ') : '–'}</dd>${alive(p) ? gangRad(p) : ''}</dl>
       <h3>Viktiga händelser</h3>${p.fame.length ? `<ul class="fame">${p.fame.map(f => `<li>${esc(f.replace(/^Kom på /, 'Uppfann '))}</li>`).join('')}</ul>` : '<p class="muted">Inget som minns ännu.</p>'}
       ${bytenHtml(p.byten)}${livet(p)}`;
+}
+// gångfarten (steg 3.10.10, i presentationen sedan steg 9.2.28): som del av en frisk vuxens på en stig, och raderna i
+// registret som ändrar den just nu (gangDelar: skadorna, bördan, marken, åldern) när man trycker på den. Rörligheten, kroppens
+// förmåga, står kvar under Hälsa
+function gangRad(p: Person) {
+  const gf = gangDelar(s, p);
+  return rad(p, 'gang', '🚶 Gångfart', `${bar(gf.fart, gf.fart < LAG.halsa ? 'low' : '')}<span>${Math.round(gf.fart * 100)} %</span>`, gf.delar.map(d => ({ namn: `${d.tecken} ${d.namn}`, v: d.v })), ' %',
+    'Hur fort hen går, mot en frisk vuxen på kort gräs eller en stig. Det som drar ner farten tas gånger varandra.');
 }
 // Livet (steg 4.1.1.2): upplevelserna från barndomen och från vuxenlivet, var för sig
 function livet(p: Person) {
@@ -317,10 +325,6 @@ function halsaHtml(p: Person) {
     const f = FORMAGOR[k], v = f.varde(p), ont = 'ont' in f;
     return rad(p, 'f_' + k, `${f.tecken} ${f.namn}`, `${bar(v, (ont ? v > 0.5 : v < LAG.halsa) ? 'low' : '')}<span>${Math.round(v * 100)} %</span>`, f.delar(p), '', `Påverkar: ${f.gor}`);
   }).join('');
-  // gångfarten (steg 3.10.10): som del av en frisk vuxens på en stig, och raderna i registret som ändrar den just nu (gangDelar)
-  const gf = gangDelar(s, p);
-  const gang = rad(p, 'gang', '🚶 Gångfart', `${bar(gf.fart, gf.fart < LAG.halsa ? 'low' : '')}<span>${Math.round(gf.fart * 100)} %</span>`, gf.delar.map(d => ({ namn: `${d.tecken} ${d.namn}`, v: d.v })), ' %',
-    'Hur fort hen går, mot en frisk vuxen på kort gräs eller en stig. Det som drar ner farten tas gånger varandra.');
   // näringen (steg 2.6.1): mättnaden är en sammanfattning av de fem värdena
   const n = naringNu(p), barn = ageOf(p, s.now) < ALDER.matBarn ? KROPP.hungerBarn : 1;
   const vs = viloSlag(p), svett = (k: (typeof NARINGAR)[number]) => k === 'mineral' && vs === 'restArbete' && p.warm > KROPP.forVarm ? NARINGBAL.svett : 0;
@@ -330,7 +334,7 @@ function halsaHtml(p: Person) {
   // vätskan står först under näringen (Björn efter v89): samma värde som törsten i simuleringen, fullt = otörstig
   const vatska = rad(p, 'torst', '💧 Vätska', `${bar(p.torst, p.torst < TORST.torstig ? 'low' : '', trend(p, 'torst', p.torst))}<span>${Math.round(p.torst * 100)} %</span>`, torstRad(p), ' i timmen', 'Att dricka fyller den. Vattnet är olika smutsigt på olika ställen, och i istiden smälter man snö vid elden.');
   return `<div class="kropp">${gubbe}${oppen ? `<div class="kroppinfo">${oppen}</div>` : ''}</div>
-    <h3>Det som är fel</h3>${lista}<h3>Status</h3><dl class="kv">${formagor}${gang}</dl><h3>Näring</h3><dl class="kv">${vatska}${naring}</dl>`;
+    <h3>Det som är fel</h3>${lista}<h3>Status</h3><dl class="kv">${formagor}</dl><h3>Näring</h3><dl class="kv">${vatska}${naring}</dl>`;
 }
 // det en egenskap eller färdighet gör: arbetena som går fortare (ACTS) och raderna i STAT_GOR och SKILL_GOR
 function gorHtml(rader: string[], nu: string, extra = '') {
