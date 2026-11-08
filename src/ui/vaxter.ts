@@ -9,6 +9,8 @@ import { posOf } from './manniskor';
 import { OMRITA_MS } from './terrang';
 import { type DjurHall, djurBild, fagelBild, iconCanvas, kartbild } from '../ikoner';
 
+// bärtuvan under träden (steg 9.2.42): 6 × 5 punkter, i 16 punkter per ruta
+const TUVA = ['..gG..', '.gGrg.', 'gGgGrG', '.rgGg.', '..gg..'], TUVA_FARG: Record<string, number> = { g: 0x4b4f00, G: 0x647025, r: 0xa14808 };
 // det som växer just nu, diskret i vanliga vyn: små bärbuskar och svampar där det finns något att hämta.
 // Var det kan växa syns inte, inte heller rötterna under jorden. Ritas om varje timme och när någon tagit något. Kaninerna ritas varje
 // bildruta vid tiden som visas (ui.nu), som folket, eftersom de skuttar omkring (djur.ts).
@@ -41,11 +43,9 @@ export function drawPlants(force = false) {
     if (b >= 0.25) {
       const n = b >= 0.6 ? 2 : 1;
       for (let j = 0; j < n; j++) {
-        const bx = x + 3 + plats(i, j) * 10, by = y + 4 + plats(i, j + 5) * 9, r = 1.8 + Math.min(1, b) * 0.8;
-        plantG.beginFill(0x3f6a34, 0.85).drawCircle(bx, by, r).endFill();
-        plantG.beginFill(bar.farg, 0.85);
-        for (let k = 0; k < 3; k++) plantG.drawCircle(bx + (plats(i, j * 7 + k) - 0.5) * r * 1.4, by + (plats(i, j * 7 + k + 3) - 0.5) * r * 1.4, 0.7);
-        plantG.endFill();
+        // tuvan i pixlar (steg 9.2.42, platshållare tills Björn valt i bildstilen): bladen i oliv och bären i rost, inga cirklar
+        const bx = Math.round(x + 2 + plats(i, j) * 8), by = Math.round(y + 3 + plats(i, j + 5) * 8);
+        TUVA.forEach((rad, dy) => { for (let dx = 0; dx < rad.length; dx++) { const c = TUVA_FARG[rad[dx]]; if (c !== undefined) plantG.beginFill(c).drawRect(bx + dx, by + dy, 1, 1).endFill(); } });
       }
     }
     // svamp: en liten fot och hatt i svampens färg, dämpad mot marken. På våren växer det lite, då syns färre och mindre

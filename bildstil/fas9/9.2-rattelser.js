@@ -125,4 +125,12 @@
     for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) B.satt(x, y, B.P.i('oliv', 3));
     Object.values(SAKER40).forEach((s, i) => [1, 3, 6].forEach((n, j) => rita(B, s, 6 + j * 38, 14 + i * 22, n)));
   } })) });
+  // steg 9.2.42: bären under träden, tre versioner av tuvan med bär (16 punkter per ruta), under en gran på skogens mark
+  const TL = { g: 'oliv1', G: 'oliv2', l: 'oliv3', r: 'rost2', R: 'rost3', b: 'skiffer1', B: 'skiffer2', k: 'kol1' };
+  const TUVOR = [
+    ['En låg tuva av lingonris med tre röda bär.', ['...gGg...', '..gGlGg..', '.gGrGlRg.', 'gGlGgRrG.', '.rRgGlGg.', '..gGgGg..']],
+    ['Blåbärsris med blåa bär som hänger under bladen.', ['..g.G.g..', '.gGlGgGg.', 'gGbGlGBgG', '.gBbgGbG.', '..gGgBg..', '...g.g...']],
+    ['En tät tuva med några få stora bär överst, och en mörk skugga under.', ['...rR....', '..gRrGg..', '.gGlGlGg.', 'gGgGlGgGg', '.gGgGgGg.', '..kkkkk..']],
+  ];
+  VAL.push({ id: 'f9_bartuva', namn: 'Bären under träden', typ: 'tre', vad: 'Steg 9.2.42: bären under träden ritas i dag av koden som cirklar och prickar. I stället en tuva med bär som en bild i 16 punkter per ruta, på skogens mark.', versioner: TUVOR.map(([text, r]) => ({ text, w: 32, h: 24, rita: B => { for (let y = 0; y < 24; y++) for (let x = 0; x < 32; x++) B.satt(x, y, B.P.i('barr', (x * 3 + y * 5) % 7 ? 2 : 1)); ritaSprite(B, r, TL, 4, 10); ritaSprite(B, r, TL, 18, 6); } })) });
 })();
