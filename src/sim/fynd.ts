@@ -341,6 +341,23 @@ export function takenOf(s: State) {
   }
   return d;
 }
+// rutorna där något tagits (steg 9.1.1): bara där växer platserna tillbaka (growFynd), i stället för att gå igenom hela
+// kartan varje timme. En lista per lager utan dubbletter, byggd ur lagret första gången. Den som sätter ett värde i ett
+// lager över 0 anropar tagits, så att rutan kommer med; ett lager som blivit 0 igen tas bort ur listan i growFynd
+const aktiva = new WeakMap<State, Partial<Record<string, { lista: number[]; med: Uint8Array }>>>();
+function aktivOf(s: State, k: string) {
+  let m = aktiva.get(s);
+  if (!m) aktiva.set(s, m = {});
+  let a = m[k];
+  if (!a) {
+    const d = takenOf(s)[k as keyof ReturnType<typeof takenOf>]!, lista: number[] = [], med = new Uint8Array(W * H);
+    for (let i = 0; i < d.length; i++) if (d[i] > 0) { med[i] = 1; lista.push(i); }
+    m[k] = a = { lista, med };
+  }
+  return a;
+}
+export const aktivaRutor = (s: State, k: string) => aktivOf(s, k).lista; // för scenariot andrade
+export function tagits(s: State, k: string, i: number) { const a = aktivOf(s, k); if (!a.med[i]) { a.med[i] = 1; a.lista.push(i); } }
 // I sparfilen: en byte per ruta och slag (0–255), där en följd av orörda rutor (0) skrivs som 0 och hur många (1–255),
 // eftersom det mesta av kartan är orört (sedan kartan blev 120 × 120, steg 2.10.9). Det packade börjar med ~; en äldre
 // sparfil utan ~ har en byte per ruta rakt av
@@ -487,7 +504,7 @@ export function takeFrom(s: State, k: Lager, x: number, y: number, amount: numbe
     for (const { dx, dy, w } of kv) if (iVattnet(tiles, cx, cy, dx, dy, w) >= 0) n += w;
     if (n) for (const { dx, dy, w } of kv) {
       const j = iVattnet(tiles, cx, cy, dx, dy, w);
-      if (j >= 0) d[j] = Math.min(1, d[j] + amount * w / n / u.full);
+      if (j >= 0) { d[j] = Math.min(1, d[j] + amount * w / n / u.full); tagits(s, k, j); }
     }
     return;
   }
@@ -496,7 +513,7 @@ export function takeFrom(s: State, k: Lager, x: number, y: number, amount: numbe
     const xx = cx + dx, yy = cy + dy;
     if (!inMap(xx, yy)) continue;
     const i = yy * W + xx;
-    d[i] = Math.min(1, d[i] + amount * w / sum * (r + 1) / u.full);
+    d[i] = Math.min(1, d[i] + amount * w / sum * (r + 1) / u.full); tagits(s, k, i);
   }
 }
 // en timme: platserna växer tillbaka
@@ -506,9 +523,14 @@ export function growFynd(s: State, hours: number, season: number, vaxt = 1) {
   for (const k of UTTAG_IDS) {
     const f = Math.exp(-FYND[k].uttag!.regrow[season] * hours * (FYND[k].grupp === 'vaxter' ? vaxt : 1)), a = d[k]!;
     if (f >= 1) continue;
-    // fisken växer tillbaka långsammare i en liten sjö (steg 3.8.2)
-    if (k === 'fiske') { const ft = fiskAter(s.seed); for (let i = 0; i < a.length; i++) if (a[i] > 0) { const fi = ft[i] < 1 ? Math.pow(f, ft[i]) : f; a[i] = a[i] * fi < FANGST.aterTom ? 0 : a[i] * fi; } }
-    else for (let i = 0; i < a.length; i++) if (a[i] > 0) a[i] = a[i] * f < FANGST.aterTom ? 0 : a[i] * f;
+    const ak = aktivOf(s, k), L = ak.lista, ft = k === 'fiske' ? fiskAter(s.seed) : undefined;
+    let w = 0;
+    for (let n = 0; n < L.length; n++) {
+      const i = L[n];
+      if (a[i] > 0) { const fi = ft && ft[i] < 1 ? Math.pow(f, ft[i]) : f; a[i] = a[i] * fi < FANGST.aterTom ? 0 : a[i] * fi; } // fisken växer tillbaka långsammare i en liten sjö (steg 3.8.2)
+      if (a[i] > 0) L[w++] = i; else ak.med[i] = 0;
+    }
+    L.length = w;
   }
 }
 // hur mycket de bästa platserna inom räckhåll ger just nu (snitt av de tio bästa), räknas om en gång i timmen

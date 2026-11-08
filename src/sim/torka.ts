@@ -4,7 +4,7 @@ import { motgangNu } from './motgang';
 import { freeNear, lagretsMitt, touch } from './byggnad';
 import { groundOf, nyttVatten, tileOf } from './mark';
 import { nasbara } from './vag';
-import { takenOf } from './fynd';
+import { tagits, takenOf } from './fynd';
 import { avbryt } from './lager';
 import { sjoNamn, sjoarna, vattenNu } from './sjo';
 import { vaderNu } from './vader';
@@ -76,7 +76,7 @@ export function vattnetAndrat(s: State, fore: Uint8Array, flytta = true) {
   const blot = (x: number, y: number) => { const cx = Math.floor(x), cy = Math.floor(y); return inMap(cx, cy) && efter[cy * W + cx] === T.Vatten && fore[cy * W + cx] !== T.Vatten; };
   // fisken i en sjö som torkat ut är borta, och den kommer tillbaka långsamt
   const fisk = takenOf(s).fiske;
-  if (fisk) for (let i = 0; i < W * H; i++) if (efter[i] === T.Vatten && fore[i] !== T.Vatten) fisk[i] = 1;
+  if (fisk) for (let i = 0; i < W * H; i++) if (efter[i] === T.Vatten && fore[i] !== T.Vatten) { fisk[i] = 1; tagits(s, 'fiske', i); }
   for (const p of living(s)) {
     const t = p.task, mal = t && blot(t.tx, t.ty);
     if (blot(p.x, p.y)) { const f = freeNear(s, Math.floor(p.x), Math.floor(p.y)); p.x = f.x + 0.5; p.y = f.y + 0.5; }

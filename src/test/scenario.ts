@@ -15,6 +15,7 @@ import './scenarier/kontroll';
 import './scenarier/religion';
 import './scenarier/mastare';
 import './scenarier/kultur';
+import './scenarier/fas9';
 import { LANG_S, SCENARIER } from './scenarier/hjalp';
 import { Utfall, korSkript, pool } from './pool';
 

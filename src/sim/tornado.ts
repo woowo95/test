@@ -19,7 +19,7 @@ import { brinner, tand } from './brand';
 import { vattenNu } from './sjo';
 import { FOREST, isSoil } from './vag';
 import { tingOf } from './agande';
-import { FYND, UTTAG_IDS, takenOf } from './fynd';
+import { FYND, UTTAG_IDS, tagits, takenOf } from './fynd';
 import { faltTornado } from './odling';
 import { bjornarOf, djurOf, dodaDjur, faglarOf, radjurOf } from './djur';
 import { isLight } from './tid';
@@ -345,7 +345,7 @@ function utkanten(s: State, t: Tornado, rutor: number[]) {
 const VAXTER = UTTAG_IDS.filter(k => FYND[k].grupp === 'vaxter');
 function vaxterna(s: State, rutor: number[]) {
   const d = takenOf(s);
-  for (const k of VAXTER) { const a = d[k]; if (a) for (const i of rutor) a[i] = 1; }
+  for (const k of VAXTER) { const a = d[k]; if (a) for (const i of rutor) { a[i] = 1; tagits(s, k, i); } }
   faltTornado(s, new Set(rutor));
 }
 // eldarna i kärnan och nära släcks, och glöden kan slängas iväg och tända en brand där den landar (steg 6.4.10)
