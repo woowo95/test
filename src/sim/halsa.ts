@@ -17,7 +17,7 @@ import { gebinamn } from './berattelser';
 // vilar eller sover, och fortare inne. Smuts och hygien kommer med hygienen (2.7). Fliken Hälsa (steg 2.5.3) läser skadeLista,
 // delSkada och förmågorna (FORMAGOR)
 import { ACTS } from './handlingar';
-import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, franMitt, livet, living, log, raddAkt, think } from './folk';
+import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, franMitt, gjort, livet, living, log, ovning, raddAkt, think } from './folk';
 import { amountOf, avbryt } from './lager';
 import { fearPlace } from './minne';
 import { SJUK, foljd } from './sjukdom';
@@ -61,6 +61,7 @@ export const HALSA = balans('halsa', {
   infTim: 36, // timmar för en infektion som inte rengörs att växa från ingenting till döden
   infLak: 8, // timmar för en rengjord infektion att gå tillbaka helt ...
   renTim: 6, // ... och så länge ett rengjort sår håller sig rent
+  lakeRen: 0.05, lakeOvning: 0.3, // läkekonsten (steg 9.5.7): rent så här mycket längre per poäng, och så mycket övning per vårdtillfälle
   kallbrand: 0.6, // från här är infektionen kallbrand, och att rengöra hjälper inte längre
   infSmarta: 0.5, // infektionen gör så här ont (gånger infektionen)
   vardFel: 0.15, // man trycker på och lägger förband på sår av minst den här graden
@@ -507,8 +508,9 @@ export function vardKlar(s: State, p: Person, t: Task) {
   }
   // kallbrand i en del man kan vara utan: den tas av med kniven, så att personen lever (steg 8.2.3)
   for (const w of [...q.skador ?? []]) if (w.inf !== undefined && w.inf >= HALSA.kallbrand && DEL[w.d].ute && q !== p && getable(s, p, 'flintkniv') >= 1) { forlora(s, q, w.d, 'amputerades'); count(s, 'amputerat'); }
-  for (const w of q.skador ?? []) if (w.inf !== undefined && w.inf < HALSA.kallbrand) { w.ren = s.now + HALSA.renTim * HOUR; count(s, 'sar rengjorda'); }
+  for (const w of q.skador ?? []) if (w.inf !== undefined && w.inf < HALSA.kallbrand) { w.ren = s.now + HALSA.renTim * (1 + p.skill.lakekonst * HALSA.lakeRen) * HOUR; count(s, 'sar rengjorda'); } // läkekonsten håller såret rent längre (steg 9.5.7)
   count(s, 'vard');
+  ovning(p, 'lakekonst', HALSA.lakeOvning); gjort(s, p, 'vardat'); // läkekonsten växer när man vårdar (steg 9.5.7)
   if (q !== p && q.health < UPPV.naraHalsa) { upplev(s, p, 'raddade', q.name); upplev(s, q, 'raddad', p.name); } // nära döden (steg 4.1.1.2)
   if (q !== p) { count(s, 'vard av andra'); livet(s, p, 'vardat'); think(q, `${p.name} tog hand om mig`, 0.1, s.now, 12 * HOUR); }
   if (b.bara) bara(s, p, q, t);

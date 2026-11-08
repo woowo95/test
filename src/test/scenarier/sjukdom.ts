@@ -127,3 +127,30 @@ SCENARIER.epidemi = {
     ];
   },
 };
+
+SCENARIER.lakekonst = {
+  text: 'Steg 9.5.7: Läkekonst är en färdighet som växer när man vårdar en skadad, och den skicklige håller ett rengjort sår rent längre. En äldre sparning får färdigheten med noll',
+  kor: () => {
+    const s = createState(4, START), [p, q] = living(s).filter(x => SIM.ageOf(x, s.now) >= 20);
+    const iReg = SIM.SKILLS.includes('lakekonst') && SIM.SKILL_NAMES.lakekonst === 'Läkekonst';
+    const fore = p.skill.lakekonst;
+    const sar = (inf: number): SIM.Skada => ({ d: 'armV' as SIM.Kroppsdel, k: 'skarsar' as SIM.SkadaTyp, g: 0.5, b: 0, inf });
+    q.x = p.x; q.y = p.y;
+    q.skador = [sar(0.1)];
+    SIM.vardKlar(s, p, { act: 'varda', phase: 'do', tx: q.x, ty: q.y, until: s.now, carry: 0, ref: q.id });
+    const ren0 = (q.skador[0].ren ?? s.now) - s.now, vaxte = p.skill.lakekonst > fore;
+    p.skill.lakekonst = 16; q.skador = [sar(0.1)];
+    SIM.vardKlar(s, p, { act: 'varda', phase: 'do', tx: q.x, ty: q.y, until: s.now, carry: 0, ref: q.id });
+    const ren1 = (q.skador[0].ren ?? s.now) - s.now;
+    // en äldre sparning utan färdigheten
+    const g = SIM.cloneState(s); g.v = 25; for (const x of g.people) delete (x.skill as Partial<Record<string, number>>).lakekonst; // sparad före uppgradering 26
+    const m = SIM.migrate(JSON.parse(SIM.serialize(g)));
+    const noll = m.people.every(x => x.skill.lakekonst === 0);
+    return [
+      ['Läkekonst finns i registret över färdigheter', iReg],
+      [`den som vårdar får mer läkekonst (${fore.toFixed(2)} → ${p.skill.lakekonst === 16 ? '' : ''}${vaxte ? 'mer' : 'lika'})`, vaxte],
+      [`den skicklige håller såret rent längre (${(ren0 / 3600e3).toFixed(1)} mot ${(ren1 / 3600e3).toFixed(1)} timmar)`, ren1 > ren0],
+      ['en äldre sparning får läkekonsten med noll', noll],
+    ];
+  },
+};
