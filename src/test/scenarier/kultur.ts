@@ -872,12 +872,20 @@ SCENARIER.strid8 = {
     const k0 = kamp(false), k1 = kamp(true);
     // rikedomen väger mest, försvaret högst en femtedel
     s.rovarVila = s.now; const direkt = SIM.efterAnfall(s); s.rovarVila = s.now - 30 * 86400000; const sent = SIM.efterAnfall(s);
+    // två flockar på kartan samtidigt (steg 8.7.18): den andra går också
+    const s2 = medLedare(8).s;
+    SIM.rovarnaKommer(s2, 3); SIM.rovarnaKommer(s2, 3);
+    const o = s2.rovareFler?.[0], x0 = o?.x, y0 = o?.y;
+    if (o) o.till = s2.now;
+    for (let i = 0; i < 24; i++) SIM.rovarSteg(s2, 300);
+    const tva = !!o && !!s2.rovare && (o.x !== x0 || o.y !== y0);
     return [
       [`rustningen räknas när den är på (${utan} → ${med}), och tar smidighet (${sm0.toFixed(1)} → ${pa.st.smidighet.toFixed(1)})`, !utan && med && pa.st.smidighet < sm0],
       ['skölden räknas', !!hs],
       [`bågen tas bara med pilar (${medPilar})`, utanPilar && medPilar === 'bage'],
       [`skölden tar slag (${k0} → ${k1} träffar)`, k1 < k0],
       [`skyddet efter ett anfall avtar med tiden (${direkt.toFixed(2)} → ${sent.toFixed(2)})`, direkt < 0.1 && sent > 0.9],
+      [`två flockar går samtidigt (${tva})`, tva],
     ];
   },
 };
@@ -892,6 +900,16 @@ SCENARIER.rader = {
     SIM.radDygn(s, 'hamnd', k);
     const f = s.rovare!, mal = f.mal === v[1].id, anh = f.folk.some(r => r.anhorig) || true;
     const stor = SIM.storRad({ ...f, folk: [...f.folk, ...f.folk, ...f.folk, ...f.folk, ...f.folk] });
+    // långt bort: flocken letar hus för hus; byn har inga hus, så de ger sig av utan hen
+    f.x = v[1].x + 20; f.y = v[1].y;
+    SIM.radSeger(s, f); const letar = f.gor === 'letar';
+    SIM.rovarSteg(s, 60); const miste = (s.stat?.hamnd_miste ?? 0) === 1 && f.gor === 'flyr' && !v[1].died;
+    // är anfallarna fler än försvararna går de som blir över förbi slagfältet och letar
+    f.gor = 'kommer'; f.letat = undefined; f.folk.push(...f.folk.map(r => ({ ...r, namn: r.namn + ' d.y.' })));
+    SIM.borjaStrid(s, f, [v[2]]); const forbi = s.rovareFler?.[0]?.gor === 'letar';
+    s.rovareFler = undefined; f.strid = undefined;
+    // nära: hämnden tas
+    f.x = v[1].x; f.y = v[1].y; f.letat = undefined;
     const hamnd = SIM.radSeger(s, f), dod = !!v[1].died, glomt = !k.doda?.length;
     s.rovare = undefined;
     // heligt krig
@@ -903,15 +921,28 @@ SCENARIER.rader = {
     const hov = !tr.hov, skandad = !!s.heliga[0].skandad;
     SIM.svarTrohet(s, g, q);
     s.rovare = undefined;
-    // dörren
+    // dörren är bommad när någon är inne i huset, och då tar det längre tid att hugga sönder den
+    const hs = medLedare(6).s; medHus(hs);
+    const hus = SIM.housesOf(hs)[0], rum = SIM.gridOf(hs).rooms.find(r => r.hus === hus?.id), dorrBit = SIM.bitsOf(hs).find(b => b.hus === hus?.id && b.k === 'oppning');
+    let bom = false, obom = false;
+    if (hus && rum && dorrBit) {
+      dorrBit.dorr = 'tradorr'; SIM.touch(hs);
+      for (const p of SIM.living(hs)) { p.x = 1.5; p.y = 1.5; }
+      obom = !SIM.bommad(hs, dorrBit);
+      const inne = SIM.living(hs)[0], i0 = rum.tiles[0]; inne.x = i0 % SIM.W + 0.5; inne.y = Math.floor(i0 / SIM.W) + 0.5;
+      bom = SIM.bommad(hs, dorrBit);
+    }
     const by = medTro(7, 2), d = by.s; const h = SIM.newTing; void h;
     SIM.radDygn(d, 'hamnd', (() => { const c = SIM.nyKlan(d, 8, -40); (d.klaner ??= []).push(c); c.styrka = 4; (c.doda ??= []).push({ namn: 'X', av: by.v[1].id, t: d.now }); return c; })());
     return [
       [`hämnden riktar sig mot den som dödade (${mal})`, mal && anh],
       [`en räd med minst fyra är en stor strid (${stor})`, stor],
+      [`är hen inte där letar de hus för hus (${letar}), och hittar de inte hen ger de sig av (${miste})`, letar && miste],
+      [`är anfallarna fler går de som blir över förbi slagfältet och letar (${forbi})`, forbi],
       [`hämnden tas (${dod}), och klanen glömmer skälet (${glomt})`, hamnd && dod && glomt],
       ['det heliga kriget river hovet och skändar platsen', hov && skandad],
       [`den som ger upp svär trohet (${q.drag?.v})`, !!q.drag],
+      [`en dörr är bommad när någon är inne (${bom}), annars inte (${obom})`, bom && obom],
     ];
   },
 };

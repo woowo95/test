@@ -17,7 +17,7 @@ import { amountOf, addTo, ownsAmount } from './lager';
 import { SAKER, SAK_LIST } from './saker';
 import { grundvarde } from './varde';
 import { vaderNu } from './vader';
-import { bitsOf, housesOf } from './byggnad';
+import { Bit, bitsOf, housesOf, roomAt } from './byggnad';
 import { DORRAR } from './byggnad';
 import { tand } from './brand';
 
@@ -31,6 +31,7 @@ export const RADER = balans('rader', {
   ifarten: 0.5, // chansen att den som flyr griper en sak i farten
   anhorig: 0.7, // chansen att en till tre av anfallarna i en hämndräd är anhöriga till den döde
   hamndSaker: 2, // bytet i hämnd och heligt krig, saker per anfallare
+  hittaNara: 3, // hämnden: så nära (rutor) måste anfallarna komma för att hitta den de söker (steg 8.8.5)
   troTapp: 30, troNy: 40, utanTro: 50, // den som ger upp i ett heligt krig: tappar så mycket i tron, och får anfallarnas tro som en dragning
   skandad: 20, // de troende tappar så mycket när deras heliga plats skändas
   smitta: 0.1, // för varje bybo som gett upp sjunker de andras mod så här mycket
@@ -96,13 +97,26 @@ export function radSeger(s: State, f: Rovarflock): boolean {
   const k = klanById(s, f.klan);
   if (f.skal === 'hamnd') {
     const m = byId(s, f.mal);
-    if (m && alive(m)) { count(s, 'hamnd_doda'); log(s, `${f.folk[0]?.namn ?? 'Anfallarna'} hittade ${m.name} och hämnades.`, 'world', [m.id]); die(s, m, 'rovare'); }
-    if (k) k.doda = k.doda?.filter(q => q.av !== f.mal);
-    taMedSaker(s, f, m);
+    if (m && alive(m) && Math.hypot(m.x - f.x, m.y - f.y) > RADER.hittaNara) { if (f.letat) f.gor = 'letar'; else borjaLeta(s, f, m); return true; } // hen är inte här: hus för hus
+    hamndKlar(s, f, m, true);
     return true;
   }
   if (f.skal === 'heligt') { riverHeligt(s, k); taMedSaker(s, f); return true; }
   return false;
+}
+// hämndens gång (steg 8.8.5): är den de söker inte på slagfältet letar flocken hus för hus, närmast först (letaSteg i rovare.ts)
+export function borjaLeta(s: State, f: Rovarflock, m: Person) {
+  f.letar = housesOf(s).filter(h => h.klar).sort((a, b) => Math.hypot(a.x - f.x, a.y - f.y) - Math.hypot(b.x - f.x, b.y - f.y)).map(h => h.id);
+  f.gor = 'letar'; f.letat = true; count(s, 'hamnd_letar');
+  log(s, `${f.folk[0]?.namn ?? 'Anfallarna'} letar efter ${m.name}, hus för hus.`, 'world', [m.id]);
+}
+// hämnden är klar: den de sökte dör om de hittade hen, och de tar med sig högst två saker var, ur hens och familjens först
+export function hamndKlar(s: State, f: Rovarflock, m: Person | undefined, hittad: boolean) {
+  const k = klanById(s, f.klan);
+  if (m && alive(m) && hittad) { count(s, 'hamnd_doda'); log(s, `${f.folk[0]?.namn ?? 'Anfallarna'} hittade ${m.name} och hämnades.`, 'world', [m.id]); die(s, m, 'rovare'); }
+  else if (m && alive(m)) { count(s, 'hamnd_miste'); log(s, `${f.folk[0]?.namn ?? 'Anfallarna'} hittade inte ${m.name} och gav sig av.`, 'world', [m.id]); }
+  if (k && (!m || !alive(m))) k.doda = k.doda?.filter(q => q.av !== f.mal); // klanen glömmer den döde när hämnden är tagen
+  taMedSaker(s, f, m);
 }
 function taMedSaker(s: State, f: Rovarflock, m?: Person) {
   const familj = m ? living(s).filter(p => isKin(p, m) || p.partner === m.id) : [];
@@ -145,7 +159,10 @@ export function iFarten(s: State, r: Rovare) {
 // plundrare går hellre till ett öppet hus eller förrådet (steg 8.9.2): en stängd trädörr huggs bara sönder om inget annat finns att ta, eller av den
 // som vill döda någon. Det tar tid, fortare med yxa och långsammare om den är bommad, och det larmar byn
 const stangdDorrBit = (s: State) => bitsOf(s).find(b => b.dorr && (DORRAR as Record<string, { stanger?: boolean }>)[b.dorr]?.stanger);
-export function huggDorr(s: State, f: Rovarflock, folk: Person[]) {
+// en dörr är bommad när någon är inne i huset (steg 8.9.1): de som är inne bommar den. Att hålla emot dörren kommer i 11.4.18
+export const bommad = (s: State, b: Bit) => b.hus !== undefined && living(s).some(q => roomAt(s, q.x, q.y)?.hus === b.hus);
+// mal = dörren till huset där den de söker är (hämnden, letaSteg i rovare.ts); annars en stängd dörr när det inte finns något ute
+export function huggDorr(s: State, f: Rovarflock, folk: Person[], mal?: Bit) {
   const d = f.hugger;
   if (d) {
     if (s.now < d.till) return true;
@@ -154,12 +171,13 @@ export function huggDorr(s: State, f: Rovarflock, folk: Person[]) {
     f.hugger = undefined;
     return false;
   }
-  const vill = f.skal === 'hamnd' || !SAK_LIST.some(k => amountOf(s, k) >= 1);
+  const vill = !!mal || f.skal === 'hamnd' || !SAK_LIST.some(k => amountOf(s, k) >= 1);
   if (!vill) return false;
-  const b = stangdDorrBit(s);
+  const b = mal ?? stangdDorrBit(s);
   if (!b) return false;
-  const yxa = f.folk.some(r => r.vapen === 'yxa'), bom = (b as { bom?: boolean }).bom ? RADER.dorrBom : 1;
+  const yxa = f.folk.some(r => r.vapen === 'yxa'), bom = bommad(s, b) ? RADER.dorrBom : 1;
   f.hugger = { bit: b.id, till: s.now + (yxa ? RADER.dorrYxa : RADER.dorrMin) * bom * MIN };
+  count(s, bom > 1 ? 'dorr_bommad' : 'dorr_hugg');
   larma(s, 'rovare', f.folk.length, folk.slice(0, 1));
   return true;
 }
