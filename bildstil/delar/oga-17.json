@@ -1,0 +1,56 @@
+{
+ "id": "oga-17",
+ "ritad": 1,
+ "av": "Claude (bildstilschatten)",
+ "om": "Mörka ringar: mörka ringar under ögonen, som efter många nätter utan sömn.",
+ "bilder": {
+  "oppna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".aaaaa.",
+    "avjjiva",
+    "bvikkvb",
+    "bvjiivb",
+    ".bbbbb.",
+    "..bbb.."
+   ]
+  },
+  "glada": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".aaaaa.",
+    "avjjiva",
+    "bbikkbb",
+    ".bbbbb.",
+    "..bbb..",
+    "......."
+   ]
+  },
+  "ledsna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "bbbb.a.",
+    "aaaaava",
+    "bvjjivb",
+    "bvikkvb",
+    ".bbbbb.",
+    "..bbb.."
+   ]
+  },
+  "slutna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".......",
+    ".bbbbb.",
+    ".bbbbb.",
+    "aaaaaaa",
+    ".bbbbb.",
+    "..bbb.."
+   ]
+  }
+ }
+}

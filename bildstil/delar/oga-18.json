@@ -1,0 +1,60 @@
+{
+ "id": "oga-18",
+ "ritad": 1,
+ "av": "Claude (bildstilschatten)",
+ "om": "Utstående: stora, runda ögon som buktar ut, med det vita runt hela irisen.",
+ "bilder": {
+  "oppna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "..aaaa..",
+    ".avvvva.",
+    "avvjivva",
+    "avikkiva",
+    "bvjkkjvb",
+    ".bvvvvb.",
+    "..bccb.."
+   ]
+  },
+  "glada": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "..aaaa..",
+    ".avvvva.",
+    "avvjivva",
+    "acikkica",
+    ".cddddc.",
+    "........",
+    "........"
+   ]
+  },
+  "ledsna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "bbbbba..",
+    "aaaaaaaa",
+    "avvjivva",
+    "avikkiva",
+    "bvjiijvb",
+    ".bvvvvb.",
+    "..bccb.."
+   ]
+  },
+  "slutna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "..bbbb..",
+    ".bccccb.",
+    "bccccccb",
+    "bccccccb",
+    "aaaaaaaa",
+    ".bccccb.",
+    "..bccb.."
+   ]
+  }
+ }
+}

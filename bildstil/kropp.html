@@ -15,6 +15,21 @@
     <div class="vallista" id="vallista"></div>
   </section>
 
+  <section id="granskning" aria-labelledby="h-granskning">
+    <div class="rubrik">
+      <span class="ogon">Svara här · porträttens delar</span>
+      <h2 id="h-granskning">Granskningen</h2>
+      <p>Nya ansiktsdelar att gå igenom, mest ögon. Ja om delen är bra, Nej om den ska ritas om.</p>
+      <details class="mer"><summary>Mer om korten</summary><p>Varje kort visar delen på ett helt ansikte för varje mall den passar, i alla sina lägen, och på kartan. En kommentar går också att skicka för sig. Svaret sparas direkt och nästa kort visas. De nya delarna kommer in i spelet först när du sagt ja; säger du nej ritas de om, och kortet står obesvarat igen med din förra kommentar överst. Med Alla visas också de delar du redan godkänt.</p></details>
+    </div>
+    <div class="gr-topp">
+      <div class="gr-filter" role="group" aria-label="Vilka kort"><button type="button" class="gr-knapp" data-grfilter="obesvarade">Obesvarade <b id="gr-antal-obesvarade">0</b></button><button type="button" class="gr-knapp" data-grfilter="alla">Alla <b id="gr-antal-alla">0</b></button></div>
+      <div class="gr-sorter" id="gr-sorter" aria-label="Sorterna, med hur många som är godkända"></div>
+      <p class="not" id="gr-status" aria-live="polite"></p>
+    </div>
+    <article class="grkort" id="grkort" aria-live="polite"></article>
+  </section>
+
   <section id="rita" aria-labelledby="h-rita">
     <div class="rubrik">
       <span class="ogon">Rita själv · bara palettens färger</span>

@@ -249,3 +249,38 @@ details.mer p { color: var(--dim); max-width: 62ch; margin: 4px 0 0; }
 .rita-mina { display: flex; flex-wrap: wrap; gap: 12px; }
 .rita-mitt { margin: 0; background: var(--panel2); padding: 10px; display: grid; gap: 6px; max-width: 220px; }
 .rita-mitt canvas { image-rendering: pixelated; }
+/* granskningen: ett kort i taget, stora knappar för fingret */
+.gr-topp { display: grid; gap: 10px; }
+.gr-filter { display: flex; flex-wrap: wrap; gap: 6px; }
+.gr-sorter { display: flex; flex-wrap: wrap; gap: 4px; }
+.gr-sorter button { min-height: 36px; padding: 3px 9px; background: var(--panel); border: 1px solid var(--line); cursor: pointer; font-size: 14px; }
+.gr-sorter button small { color: var(--dim); font-variant-numeric: tabular-nums; }
+.gr-sorter button.klar { border-color: var(--gron); }
+.gr-sorter button.klar small { color: var(--gron); }
+.gr-sorter button.kommenterad { border-color: var(--mustard); }
+.gr-sorter button[aria-current="true"] { background: var(--panel2); outline: 2px solid var(--dim); outline-offset: -2px; }
+.grkort { background: var(--panel); border: 2px solid var(--line); padding: 14px 16px; display: grid; gap: 14px; min-width: 0; scroll-margin-top: 12px; }
+.grkort.ja { border-color: var(--gron); background: var(--gronbg); }
+.grkort.kommentar { border-color: var(--mustard); }
+.grkort header { display: grid; gap: 4px; }
+.grkort .typ { font: 400 8px/1.2 var(--pixel); letter-spacing: 0.04em; text-transform: uppercase; color: var(--dim); }
+.grkort .forra { color: var(--mustard); }
+.gr-nav { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; }
+.gr-nav span { color: var(--dim); font-variant-numeric: tabular-nums; text-align: center; }
+.gr-nav button:last-child { justify-self: end; }
+.gr-nav button:first-child { justify-self: start; }
+.gr-bilder { display: grid; gap: 14px; }
+.gr-mall { display: grid; gap: 6px; }
+.gr-mall > b { font-weight: 400; color: var(--dim); }
+.gr-rad { display: flex; flex-wrap: wrap; gap: 10px; }
+.gr-svar { display: grid; gap: 8px; }
+.gr-svar label { color: var(--dim); }
+.gr-ja { min-height: 52px; font-size: 20px; background: var(--panel2); border: 2px solid var(--gron); color: var(--ink); cursor: pointer; }
+.gr-ja[aria-pressed="true"] { background: var(--gron); color: var(--bg); }
+.gr-svarknappar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.gr-nej { min-height: 52px; font-size: 20px; background: var(--panel2); border: 2px solid var(--rost); color: var(--ink); cursor: pointer; }
+.gr-nej[aria-pressed="true"] { background: var(--rost); color: var(--ink); }
+.grkort.nej { border-color: var(--rost); }
+.gr-svar .gr-knapp { justify-self: start; }
+.gr-sparat { color: var(--dim); min-height: 1.5em; }
+.grkort button:disabled, .grkort textarea:disabled { opacity: 0.5; cursor: not-allowed; }

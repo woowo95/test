@@ -1,0 +1,35 @@
+{
+ "id": "nasa-17",
+ "ritad": 1,
+ "av": "Claude (bildstilschatten)",
+ "om": "Hängande spets: näsans spets hänger ner en bit under näsborrarna.",
+ "bilder": {
+  "standard": {
+   "x": -4,
+   "y": 1,
+   "rader": [
+    "...db..",
+    "...db..",
+    "...cb..",
+    "...cb..",
+    "..dcbb.",
+    ".adccba",
+    "..dccb.",
+    "...bb.."
+   ]
+  }
+ },
+ "barn": {
+  "standard": {
+   "x": -3,
+   "y": 1,
+   "rader": [
+    "..db.",
+    "..cb.",
+    ".dccb",
+    ".adcb",
+    "..bb."
+   ]
+  }
+ }
+}

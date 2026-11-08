@@ -1056,11 +1056,11 @@
   // ---------- databasen: Björns svar (samlingen val) och de sparade kombinationerna ----------
   let DBS = null; const SVARDEL = {}; let KOMBOS = [];
   async function anslut() {
-    const st = [$('#sk-sparstatus')]; // granskningen är borttagen från sidan (Björn 2026-11-04: alla kort klara)
+    const st = [$('#gr-status'), $('#sk-sparstatus')].filter(Boolean);
     st.forEach(e => { e.textContent = 'Ansluter till sidans databas …'; });
     try { DBS = await window.claude?.use?.('db'); } catch (e) { DBS = null; }
     if (!DBS) { st.forEach(e => { e.textContent = 'Svaren och kombinationerna går bara att spara när sidan är öppen i Claude och du är inloggad.'; }); visaGranskning(); visaKombos(); return; }
-    $('#sk-sparstatus').textContent = '';
+    if ($('#gr-status')) $('#gr-status').textContent = 'Ditt svar sparas direkt.'; $('#sk-sparstatus').textContent = '';
     DBS.collection('val').onSnapshot(snap => {
       for (const k of Object.keys(SVARDEL)) delete SVARDEL[k];
       snap.docs.forEach(d => { if (d.exists && d.id.startsWith('del-')) SVARDEL[d.id.slice(4)] = d.data(); });
@@ -1115,8 +1115,8 @@
     k.kon = k.rad.sort ? t : null; k.barn = barn;
     k.vem = [...(t === 'bada' ? ['kvinna', 'man'] : [t]).map(m => ({ mall: m, kon: m })), ...(barn ? [{ mall: 'barn', kon: t === 'man' ? 'man' : 'kvinna' }] : [])];
   });
-  // granskningen visar bara de ritade delarna (Björn efter 5.2.2.3: sidan var förvirrande); de grå platshållarna kommer dit när de ritas
-  const GKORT = KORT.filter(k => k.ritad > 0);
+  // granskningen visar bara de nya delarna (ny: true i portratt.json) som Björn inte godkänt än; de godkända ligger i skaparen
+  const GKORT = KORT.filter(k => k.ritad > 0 && k.rad?.ny);
   let grFilter = lagra.las('granskning-filter') || 'obesvarade', grId = lagra.las('granskning-kort') || GKORT[0]?.id, grVantar = null;
   const svarFor = k => { const s = SVARDEL[k.id]; return s && (s.ritad ?? 0) === k.ritad ? s : null; };
   const lage = k => { const s = svarFor(k); return !s ? 'obesvarad' : s.svar === 'ja' || s.svar === 'nej' ? s.svar : 'kommentar'; };

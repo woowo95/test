@@ -1,0 +1,48 @@
+{
+ "id": "bryn-7",
+ "ritad": 1,
+ "av": "Claude (bildstilschatten)",
+ "om": "Korta: korta bryn, bara den inre halvan närmast näsan.",
+ "bilder": {
+  "lugna": {
+   "x": -1,
+   "y": -3,
+   "rader": [
+    "....",
+    "....",
+    ".ggf",
+    "ffee"
+   ]
+  },
+  "arga": {
+   "x": -1,
+   "y": -3,
+   "rader": [
+    "....",
+    "gg..",
+    "ffgf",
+    "..ee"
+   ]
+  },
+  "ledsna": {
+   "x": -1,
+   "y": -3,
+   "rader": [
+    "...g",
+    ".ggf",
+    "ff..",
+    "...."
+   ]
+  },
+  "forvanade": {
+   "x": -1,
+   "y": -3,
+   "rader": [
+    ".gg.",
+    "gffg",
+    "f..e",
+    "...."
+   ]
+  }
+ }
+}

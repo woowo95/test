@@ -1,0 +1,56 @@
+{
+ "id": "oga-11",
+ "ritad": 1,
+ "av": "Claude (bildstilschatten)",
+ "om": "Trötta: påsar under ögonen, som en mörkare båge under det undre ögonlocket.",
+ "bilder": {
+  "oppna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".aaaaa.",
+    "avjjiva",
+    "bvikkvb",
+    ".bjiib.",
+    ".cbbbc.",
+    "..bbb.."
+   ]
+  },
+  "glada": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".aaaaa.",
+    "avjjiva",
+    "bcikkcb",
+    ".cdddc.",
+    ".cbbbc.",
+    "......."
+   ]
+  },
+  "ledsna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "bbbb.a.",
+    "aaaaava",
+    "bvikkvb",
+    ".bjiib.",
+    ".cbbbc.",
+    "..bbb.."
+   ]
+  },
+  "slutna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".......",
+    ".bbbbb.",
+    ".ccccc.",
+    "aaaaaaa",
+    ".cbbbc.",
+    "..bbb.."
+   ]
+  }
+ }
+}

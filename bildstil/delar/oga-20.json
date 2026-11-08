@@ -1,0 +1,52 @@
+{
+ "id": "oga-20",
+ "ritad": 1,
+ "av": "Claude (bildstilschatten)",
+ "om": "Skelande: irisarna dras in mot näsan, så att ögonen skelar.",
+ "bilder": {
+  "oppna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".aaaaa.",
+    "avvjjia",
+    "bvvikkb",
+    ".vvjii.",
+    ".bcccb."
+   ]
+  },
+  "glada": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".aaaaa.",
+    "avvjjia",
+    "bcvikkb",
+    ".cdddc.",
+    "......."
+   ]
+  },
+  "ledsna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "bbbb.a.",
+    "aaaaaaa",
+    "bvvjjib",
+    ".vvikk.",
+    ".bcccb."
+   ]
+  },
+  "slutna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".......",
+    ".bbbbb.",
+    ".ccccc.",
+    "aaaaaaa",
+    ".bcccb."
+   ]
+  }
+ }
+}

@@ -1,0 +1,56 @@
+{
+ "id": "oga-10",
+ "ritad": 1,
+ "av": "Claude (bildstilschatten)",
+ "om": "Vidöppna: stora och vidöppna, med det vita synligt både över och under irisen.",
+ "bilder": {
+  "oppna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".aaaaa.",
+    "avvjvva",
+    "avikkvb",
+    "bvjiivb",
+    ".vvvvv.",
+    ".bcccb."
+   ]
+  },
+  "glada": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".aaaaa.",
+    "avvjvva",
+    "acikkcb",
+    ".cdddc.",
+    ".......",
+    "......."
+   ]
+  },
+  "ledsna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "bbbb.a.",
+    "aaaaava",
+    "avikkvb",
+    "bvjiivb",
+    ".vvvvv.",
+    ".bcccb."
+   ]
+  },
+  "slutna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".......",
+    ".bbbbb.",
+    ".ccccc.",
+    ".ccccc.",
+    "aaaaaaa",
+    ".bcccb."
+   ]
+  }
+ }
+}

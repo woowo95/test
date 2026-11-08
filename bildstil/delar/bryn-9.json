@@ -1,0 +1,48 @@
+{
+ "id": "bryn-9",
+ "ritad": 1,
+ "av": "Claude (bildstilschatten)",
+ "om": "Glesa: glesa bryn med luckor mellan stråna.",
+ "bilder": {
+  "lugna": {
+   "x": -3,
+   "y": -3,
+   "rader": [
+    ".......",
+    ".......",
+    "..g.ggf",
+    "f.f.e.e"
+   ]
+  },
+  "arga": {
+   "x": -3,
+   "y": -3,
+   "rader": [
+    ".......",
+    "g......",
+    ".f.g...",
+    "...f.fe"
+   ]
+  },
+  "ledsna": {
+   "x": -3,
+   "y": -3,
+   "rader": [
+    ".......",
+    ".....g.",
+    "...g.f.",
+    "f.f...."
+   ]
+  },
+  "forvanade": {
+   "x": -3,
+   "y": -3,
+   "rader": [
+    "..g.g..",
+    ".f...g.",
+    "f.....e",
+    "......."
+   ]
+  }
+ }
+}
