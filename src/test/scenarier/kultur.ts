@@ -363,9 +363,11 @@ SCENARIER.pynt = {
   kor: () => {
     const { PROJEKT, PYNT_LIST, isKlar, pyntOf, pyntSort, villPynt, bedTile, stationRum, stepPynt, intryckOm } = SIM;
     const s = createState(6, START); klockan(s); tandEld(s); medHus(s);
-    for (const r of s.people) r.tek = { ...r.tek, kruka: 1, bonad: 1, vaggbrade: 1 };
     setFood(s, 300); SIM.setAmount(s, 'ved', 40); SIM.setAmount(s, 'virke', 6); SIM.setAmount(s, 'skinn', 4); SIM.setAmount(s, 'rep', 4);
-    const p = vuxna(s).find(q => bedTile(s, q) !== undefined)!, k = pyntSort(s, p);
+    // bara p kan göra pynt: rummet har plats för färre pynt än de som sover där, och de andra hann annars ta platserna först
+    const p = vuxna(s).find(q => bedTile(s, q) !== undefined)!;
+    p.tek = { ...p.tek, kruka: 1, bonad: 1, vaggbrade: 1 };
+    const k = pyntSort(s, p);
     const vill = villPynt(s, p, k), bara = PYNT_LIST.filter(j => villPynt(s, p, j)).length, brist = PROJEKT[k]!.brist(s);
     const sorter = new Set(Array.from({ length: 12 }, (_, i) => pyntSort(s, { id: i } as Person))).size; // smaken skiljer sig mellan människor
     // pyntet väger lite mot arbetet om maten; här väger det mer, så att p bygger sitt snart
