@@ -101,4 +101,14 @@
     for (let y = 0; y < 44; y++) for (let x = 0; x < 112; x++) B.satt(x, y, B.P.i('oliv', (x * 7 + y * 3) % 11 === 0 ? 1 : 2));
     LAGERMARK(B, 4, 6, 48, 32, false); LAGERMARK(B, 60, 6, 48, 32, true);
   } }] });
+  // steg 9.2.39: vedhögen i lagret, en version: i dag fyra vedträn om varandra med ljusa ändar; förslaget är en enda lugn hög,
+  // mindre (12 × 7 punkter), med ändarna i en ton och bara kanten mörkare
+  const VEDL = { E: 'jord0', q: 'ben2', p: 'ben1', H: 'jord3', G: 'jord2', F: 'jord1' };
+  const VED_NU = ['.EEEEEEEE.', 'EqpqHGHGGE', 'EpHpGFGFGE', 'EqppFFEFFE', '.EEEEEEEE.'];
+  const VED_NY = ['...EEEEEE...', '..EpGpGpGE..', '.EGpGpGpGpE.', 'EpGpGpGpGpGE', 'EGpGpGpGpGpE', 'EpGpGpGpGpGE', '.EEEEEEEEEE.'];
+  VAL.push({ id: 'f9_vedhog', namn: 'Vedhögen i lagret', typ: 'janej', vad: 'Steg 9.2.39: vedhögen i lagret är för stor och orolig. Till vänster en full vedstack som i dag (fyra vedträn om varandra), till höger förslaget: en enda lugn hög, mindre, med ändarna i en ton. Ja eller nej?', versioner: [{ text: 'En lagerruta med full vedstack, i dag till vänster och förslaget till höger.', w: 44, h: 20, rita: B => {
+    for (let y = 0; y < 20; y++) for (let x = 0; x < 44; x++) B.satt(x, y, B.P.i('oliv', 3));
+    for (const [dx, dy] of [[0, -1], [5, 0], [-1, 2], [4, 3]].sort((a, c) => a[1] - c[1])) ritaSprite(B, VED_NU, VEDL, 3 + dx, 6 + dy);
+    ritaSprite(B, VED_NY, VEDL, 28, 7);
+  } }] });
 })();
