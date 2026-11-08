@@ -609,6 +609,10 @@ function statusRad(p: Person, med: Person | undefined) {
   const akt = `<span class="akt"${why ? ` title="${esc(why)}" tabindex="0"` : ''}>${ik && hasIcon(ik) ? iconImg(ik, 14) + ' ' : ''}${esc(gorText(p, t))}</span>`;
   if (!med) return akt;
   const x = p.prat, om = x ? (x.k === 'vader' && x.o ? x.o : AMNEN[x.k].namn.toLowerCase()) : '', hel = pratText(s, p);
-  const tips = [om && `Pratar om ${om}`, hel].filter(Boolean).join('. ');
-  return `${akt} · <span class="akt"${tips ? ` title="${esc(tips)}" tabindex="0"` : ''}>${x?.i && hasIcon(x.i) ? iconImg(x.i, 14) : '💬'} med ${pLink(med)}</span>`;
+  const tips = [om && `Pratar om ${om}`, hel].filter(Boolean).join('. '), amne = om ? `om ${om} ` : '';
+  const sym = x?.i && hasIcon(x.i) ? iconImg(x.i, 14) : '💬', titel = tips ? ` title="${esc(tips)}" tabindex="0"` : '';
+  // steg 9.2.9: raden nämner ämnet. Är samtalet själva aktiviteten står ämnet i den ("Samtalar om regnet vid elden med Gerrkar")
+  const gor = gorText(p, t);
+  if (amne && /^Samtalar\b/.test(gor)) return `<span class="akt"${titel}>${sym} ${esc(gor.replace(/^Samtalar/, 'Samtalar ' + amne.trim()))} med ${pLink(med)}</span>`;
+  return `${akt} · <span class="akt"${titel}>${sym} ${esc(amne)}med ${pLink(med)}</span>`;
 }
