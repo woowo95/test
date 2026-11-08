@@ -12,7 +12,7 @@ import { s as visad, uppgiftVid } from './lage';
 export interface Skapad {
   kon: 'kvinna' | 'man'; alder: 'barn' | 'ung' | 'vuxen' | 'gammal'; del: Record<string, string | null>; hud: number; har: number; ogon: number;
   humor: string; skonhet: number; forband: string[]; ogonlapp: boolean; sjuk: boolean; kyla: boolean; blod: boolean;
-  klader: { rock: string | null; skor: boolean; balte: boolean; axelrem?: boolean; ryggsack?: boolean; krokar?: number }; lagen: Record<string, string>; lager: string[] | null; rynkor: number | null;
+  klader: { rock: string | null; skor: boolean; balte: boolean; axelrem?: boolean; ryggsack?: boolean; krokar?: number; byxor?: string; skjorta?: boolean }; lagen: Record<string, string>; lager: string[] | null; rynkor: number | null;
   anlag?: { skagg: string | null; frisyr: string | null };
 }
 // åldern i skaparen: barn tills man är vuxen i byn, ung till 30, vuxen till 55 och sedan gammal (registret aldrar)
@@ -101,6 +101,8 @@ function utrustad(s: State, p: Person, u: Skapad) {
     if (!a) continue;
     if (a.plagg === 'rock' || a.plagg === 'mantel') u.klader.rock = KLADMATERIAL[a.mat].namn; // manteln syns som en rock tills Björn valt (steg 8.3.14)
     else if (a.plagg === 'skor') u.klader.skor = true;
+    else if (a.plagg === 'byxor') u.klader.byxor = KLADMATERIAL[a.mat].namn; // byxorna och skjortan syns på kartfiguren (steg 9.2.58)
+    else if (a.plagg === 'skjorta') u.klader.skjorta = true;
     else if (a.plagg === 'balte') u.klader.balte = true;
     else if (a.plagg === 'axelrem') u.klader.axelrem = true;
     else if (a.plagg === 'ryggsack') u.klader.ryggsack = true;
