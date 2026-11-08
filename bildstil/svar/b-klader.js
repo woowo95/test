@@ -279,32 +279,29 @@
     ], [[och(punkt(32, 4), punkt(31, 5), punkt(32, 6), punkt(31, 7), punkt(32, 8)), 'a'], [och(punkt(24, 7), punkt(40, 7)), 'b']], { har: 5 });
   };
   // ---------- 7.7.2 mössan: version 2, ritad på nytt som sak och på kartfiguren ----------
-  // Björn valde version 2 och tyckte att porträttet var bra, men att mössan såg konstig ut på den lilla bybon och som sak.
-  // Porträttet är detsamma. Som sak och på kartan ritas mössan nu som i porträttet, framifrån: en rund kulle av vargskinn,
-  // ljusast till vänster, med en bred uppvikt kant runt pannan, och toppen som faller åt höger och hänger ner till kanten
-  // med en tofs. På kartan täcker kanten pannan och kullen sticker upp två punkter över huvudet, som i porträttet.
+  // Björn valde version 2 (kullen av läder med en kant av vargpäls) och tyckte att porträttet var bra, men att mössan såg
+  // konstig ut på den lilla bybon och som sak. Porträttet är detsamma. På kartan låg pälskanten i två ljusa rader över
+  // ögonen och såg ut som glasögon: nu är kullen tre rader över huvudet och kanten en enda rad pälstoner över pannan,
+  // ovanför ögonen. Som sak är mössan större och tydligare: en kulle av brunt läder, ljus till vänster, med en söm
+  // och en knut i toppen, och en bred kant av grå vargpäls med ojämn ovankant.
   const mossSak2 = () => MED_KONTUR([
-    '.....hggg.......',
-    '...hhgggggfg....',
-    '..hhgggggff.gf..',
-    '..hggghggff..f..',
-    '.hhgggggfff..f..',
-    '.hgggggggff..g..',
-    'hhgghhgghhgg.hg.',
-    'gghhgghhgghh.gf.',
-    'ffffffffffee....',
+    '......ab......',
+    '....dccbbb....',
+    '...dccbbbba...',
+    '..ddccbbbbba..',
+    '..dcccbbbbba..',
+    '.hghhghggfgf..',
+    'hhghgghgfgffe.',
+    'hgghggfgffefe.',
+    '.ffffffeeeee..',
   ]);
   const mossFig2 = (satt, las, P, C) => {
-    const f = (x, y, t) => satt(x, y, C(T('varg', t)));
-    // kullen: ljusast till vänster, mörkare till höger
-    for (const [y, x0, x1] of [[-2, 5, 8], [-1, 4, 9], [0, 3, 10]]) for (let x = x0; x <= x1; x++) f(x, y, x <= x0 + 1 ? 3 : x >= x1 - 1 ? 1 : 2);
-    // toppen faller åt höger och hänger ner vid kanten, med tofsen längst ner
-    f(9, -3, 2); f(10, -3, 2); f(11, -2, 1); f(12, -1, 1); f(12, 0, 1); f(12, 1, 0); f(12, 2, 3);
-    // den uppvikta kanten runt pannan, bredare än huvudet: ljus päls överst och en mörk rad nertill
-    for (let x = 2; x <= 11; x++) { satt(x, 1, C(hash(x, 1, 12) < 0.5 ? 'h' : 'g')); satt(x, 2, C(x > 9 ? 'e' : 'f')); }
+    zon(satt, C, fran(5, 8), [-2], (x) => T('lader', sida(x, 5, 8)));
+    zon(satt, C, fran(4, 9), [-1, 0], (x) => T('lader', sida(x, 4, 9)));
+    zon(satt, C, fran(4, 9), [1], (x) => (x < 6 ? (x % 2 ? 'g' : 'h') : x > 8 ? 'f' : hash(x, 1, 12) < 0.5 ? 'g' : 'f'));
   };
-  byt(JANEJ('f7_mossa', 'Mössan', 'Steg 7.7.2: en mössa av 1 skinn som håller huvudet varmt. Du valde version 2, den höga av vargskinn med toppen som faller åt sidan. Porträttet är detsamma. Som sak och på bybon på kartan är mössan nu ritad som i porträttet, framifrån: en rund kulle med en bred uppvikt kant runt pannan och toppen som faller åt höger och hänger ner till kanten med en tofs. Din kommentar förra gången: ”den ser bra ut i portsättet men konstigt på den lilla gubben och som föremål i lagret.”',
-    SCEN('Mössan av vargskinn som sak, på en bybo på kartan och i porträttet.', mossSak2(), [[mossFig2, 5]], { port: pmossa(1) })));
+  byt(JANEJ('f7_mossa', 'Mössan', 'Steg 7.7.2: en mössa av 1 skinn som håller huvudet varmt. Du valde version 2, kullen av läder med en kant av vargpäls. Porträttet är detsamma. På bybon på kartan ligger pälskanten nu i en rad över pannan, ovanför ögonen, i stället för två ljusa rader som såg ut som glasögon, och som sak är mössan större och tydligare: läderkullen med en söm och en knut i toppen och en bred kant av grå vargpäls. Din kommentar förra gången: ”den ser bra ut i portsättet men konstigt på den lilla gubben och som föremål i lagret.”',
+    SCEN('Mössan av läder och vargpäls som sak, på en bybo på kartan och i porträttet.', mossSak2(), [[mossFig2, 5]], { port: pmossa(3) })));
 
   // ---------- 7.7.3 snöskorna: tvåans symbol, från olika håll ----------
   // Björn: "Använd tvåans symbol. Visa hur dem ser ut från olika vinklar". Snöskon är lång som en racket med grenarna knutna
