@@ -7,7 +7,8 @@ import { groundOf, isForest, tileOf } from './mark';
 import { FOREST, Ground } from './vag';
 import { stadium, stadiumAv } from './trad';
 import { pickNarmaste } from './slump';
-import { Act, DAY, H, HOUR, Person, State, Stock, Task, W } from './typer';
+import { Act, DAY, H, HOUR, Person, State, Stock, Task, W, inMap } from './typer';
+import { housesOf } from './byggnad';
 import { SNABBARE } from './handlingar';
 import { balans } from './balans';
 import { faltOf, faltRuta } from './odling';
@@ -47,13 +48,30 @@ export const fallTid = (s: State, i: number) => FALL_TID * Math.max(SKOG.fallMin
 
 // rutorna med vuxna träd som ska fällas för att något ska ligga där: lagerplatserna som lagts i skogen och fälten som
 // röjs, de rutor som inte är röjda än (steg 3.6.9)
-// där träd ska fällas: lagerplatser och fält som röjs, stationer ute och gångstråken
+// träden vars krona når in över huset h (steg 9.2.49): kronan reser sig uppåt från stammen, en rad för ett vuxet träd, två för
+// ett gammalt och tre för ett jätteträd, så ett träd under huset kan skugga in över det fast stammen står utanför väggen
+const KRONA: Record<string, number> = { vuxet: 1, gammalt: 2, jatte: 3, torraka: 1 };
+export function kronaOver(s: State, h: { x: number; y: number; w: number; h: number }) {
+  const g = groundOf(s), ut: number[] = [];
+  for (let y = h.y + h.h; y <= h.y + h.h + 3; y++) for (let x = h.x; x < h.x + h.w; x++) {
+    if (!inMap(x, y)) continue;
+    const i = y * W + x, st = g.trees[i] >= FOREST ? stadium(g, i) : null;
+    if (st && y - (KRONA[st] ?? 0) < h.y + h.h) ut.push(i);
+  }
+  return ut;
+}
+// där träd ska fällas: lagerplatser och fält som röjs, stationer ute, runt husen och gångstråken
 export function skaRojas(s: State) {
   const g = groundOf(s), ut: number[] = [];
   for (const z of s.lagren ?? []) if (z.rojs && z.hus === undefined) for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (g.trees[y * W + x] >= FOREST) ut.push(y * W + x);
   for (const f of faltOf(s)) if (f.steg === 'roja') for (let k = f.klara; k < f.n; k++) { const i = faltRuta(f, k); if (g.trees[i] >= FOREST) ut.push(i); }
   // en station på en plats med träd: de fälls som en del av bygget (steg 8.1.14)
   for (const t of s.stationer ?? []) if (!t.inne) { const { w, h } = storlekAv(t); for (let y = t.y; y < t.y + h; y++) for (let x = t.x; x < t.x + w; x++) if (g.trees[y * W + x] >= FOREST) ut.push(y * W + x); }
+  // träden runt husen (steg 9.2.49): en ruta fri från träd runt varje byggnad och station ute, och de träd vars krona når in över
+  // ett hus (kronaOver)
+  { const sett = new Set(ut), lagg = (i: number) => { if (g.trees[i] >= FOREST && !sett.has(i)) { sett.add(i); ut.push(i); } };
+    for (const h of housesOf(s)) { for (let y = h.y - 1; y <= h.y + h.h; y++) for (let x = h.x - 1; x <= h.x + h.w; x++) if (inMap(x, y)) lagg(y * W + x); for (const i of kronaOver(s, h)) lagg(i); }
+    for (const t of s.stationer ?? []) if (!t.inne) { const { w, h } = storlekAv(t); for (let y = t.y - 1; y <= t.y + h; y++) for (let x = t.x - 1; x <= t.x + w; x++) if (inMap(x, y)) lagg(y * W + x); } }
   // ett träd som står i ett gångstråk fälls (steg 9.2.35, strak.ts)
   if (STRAK.pa) { const sett = new Set(ut); for (const v of straken(s).vagar) for (const i of v.rutor) if (g.trees[i] >= FOREST && !sett.has(i)) { sett.add(i); ut.push(i); } }
   return ut;

@@ -1458,3 +1458,23 @@ SCENARIER.hamtning = {
     ];
   },
 };
+
+SCENARIER.tradhus = {
+  text: 'Steg 9.2.49: byn vill ha en ruta fri från träd runt varje byggnad och station, och ett träd vars krona ligger över ett hus hindrar huset från att bli klart och fälls först, också när stammen står utanför väggen',
+  kor: () => {
+    const s = createState(1, START);
+    const h = medHus(s)!, g = groundOf(s), p = living(s)[0];
+    const bredvid = (h.y + 1) * W + h.x - 1, under = (h.y + h.h + 1) * W + h.x + 1; // en ruta väster om väggen, och två rader under huset
+    g.trees[bredvid] = 1; g.trees[under] = 1; g.alder![under] = SIM.GAMMAL(g.art, under) + 1; // det under är gammalt: kronan når två rader upp
+    if (SIM.stadium(g, under) !== 'gammalt') g.alder![under] = SIM.GAMMAL(g.art, under) + 0.5;
+    const roj = SIM.skaRojas(s), over = SIM.kronaOver(s, h);
+    h.klar = undefined; SIM.husKlart(s, h, p);
+    const hindrad = h.klar === undefined;
+    g.trees[under] = 0; SIM.husKlart(s, h, p);
+    return [
+      ['trädet bredvid huset ska fällas', roj.includes(bredvid)],
+      [`trädet under huset, vars krona når in över det, ska fällas (${SIM.stadium(g, under) ?? 'fällt'})`, roj.includes(under) && over.includes(under)],
+      ['huset blir inte klart medan kronan ligger över det, och blir klart när trädet är fällt', hindrad && h.klar !== undefined],
+    ];
+  },
+};

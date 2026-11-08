@@ -13,7 +13,7 @@ import { amountOf, changed, enPerRuta, ownMove, ownsAmount, put, use, zonesOf } 
 import { freeTools, nTools, tingOf } from './agande';
 import { getable, Recept, takeMaterial } from './behov';
 import { Del } from './egendom';
-import { fellingTiles } from './skog';
+import { fellingTiles, kronaOver } from './skog';
 import { stubbeOn } from './stubbar';
 import { FOREST } from './vag';
 import { HUS, bedTile, familjOf, fnOf, husKlar } from './byggnader';
@@ -209,8 +209,10 @@ export function vaggRensa(s: State) {
   enPerRuta(s);
 }
 // huset är färdigt: alla bitar byggda och inga fällda träd kvar inne i det. Prövas när en bit blir klar och när en stock huggits slut
+// en gång i timmen (stepByggnader): ett hus som väntade på att ett träd över det skulle fällas blir klart när det är borta
+export function husKlaraTimme(s: State) { const p = living(s)[0]; if (p) for (const h of housesOf(s)) if (!h.klar) husKlart(s, h, p); }
 export function husKlart(s: State, h: Hus, p: Person) {
-  if (!h.klar && bitsOf(s).every(q => q.hus !== h.id || q.b >= 1) && !stockInne(s, h)) {
+  if (!h.klar && bitsOf(s).every(q => q.hus !== h.id || q.b >= 1) && !stockInne(s, h) && !kronaOver(s, h).length) { // ett träd vars krona når över huset fälls först (steg 9.2.49)
     h.klar = s.now;
     if (h.varKlar !== undefined) return;
     livet(s, p, 'hus'); // satte sista biten (steg 3.9.8)
