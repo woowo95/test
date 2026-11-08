@@ -50,7 +50,7 @@ import { PLATS } from './plats';
 import { chance, clamp, hash3, rnd } from './slump';
 import { ARSTID, VAR, ageIndex, hourOf, iIstiden, isLight } from './tid';
 import { ACTS, toolRow } from './handlingar';
-import { AGES_BORJAR, Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, Historik, simulera, T, inMap } from './typer';
+import { AGES_BORJAR, Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, Historik, simulera, T, inMap, GRANNAR4 } from './typer';
 import { FOREST, findPath, wear } from './vag';
 import { barKropp, kroppFart, rutFart, smidig, snoFart } from './gang';
 import { facklorTimme, finishLjus, finishUppsatt, morkFart, morkHumor } from './ljus';
@@ -533,12 +533,29 @@ function pathFor(s: State, g: ReturnType<typeof groundOf>, x0: number, y0: numbe
   return v ? v.slice() : null; // null = ingen väg dit
 }
 // att gå mot målet ruta för ruta runt vatten, gärna längs stigar. Ger tiden det tog och om man kom fram
+// arbetaren står framför rutan hen arbetar på, aldrig i den (steg 9.2.47): stubben och graven grävs från en granne, huden
+// hängs från rutan utanför dörröppningen och byggrutan byggs från en granne. Målet blir den grannruta man kan stå på som ligger
+// närmast, och arbetet gäller fortfarande rutan (tx, ty)
+const FRAMFOR = new Set<string>(['stubbe', 'grava', 'dorr', 'bygga']);
+function malFor(s: State, p: Person, tk: Task): { x: number; y: number } {
+  if (!FRAMFOR.has(tk.act) || tk.phase !== 'go' || tk.site) return { x: tk.tx, y: tk.ty };
+  const X = Math.floor(tk.tx), Y = Math.floor(tk.ty);
+  let bast: { x: number; y: number } | undefined, bd = Infinity;
+  for (const [dx, dy] of GRANNAR4) {
+    const x = X + dx, y = Y + dy;
+    if (!inMap(x, y) || blocked(s, x, y)) continue; // (blocked tar också vattnet)
+    const d = Math.hypot(x + 0.5 - p.x, y + 0.5 - p.y);
+    if (d < bd) { bd = d; bast = { x: x + 0.5, y: y + 0.5 }; }
+  }
+  return bast ?? { x: tk.tx, y: tk.ty };
+}
 function walk(s: State, p: Person, tk: Task, left: number) {
   const g = groundOf(s);
   const key = `${tk.tx.toFixed(2)},${tk.ty.toFixed(2)},${s.byggV ?? 0}`; // en ny vägg kan stänga vägen
   if (tk.pk !== key) {
     tk.pk = key;
-    const v = pathFor(s, g, p.x, p.y, tk.tx, tk.ty), f = eldPlats(s);
+    const m = malFor(s, p, tk); tk.mx = m.x; tk.my = m.y;
+    const v = pathFor(s, g, p.x, p.y, m.x, m.y), f = eldPlats(s);
     // målet går inte att nå (en ö, ett förråd bakom en översvämning): man lägger ner det man bär och väljer något annat. Bara
     // den som själv är avskuren från lägret går rakt över. Den som bär en skadad eller vatten till någon går inte ifrån det
     const bara = tk.phase === 'back' && !LAMNA[tk.act];
@@ -555,7 +572,7 @@ function walk(s: State, p: Person, tk: Task, left: number) {
   // punkt för punkt längs vägen (var och en lite vid sidan av) och sist till målet. Marken nöts där man går
   for (;;) {
     const sist = !tk.path?.length, i = sist ? 0 : tk.path![0];
-    const wx = sist ? tk.tx : (i % W) + 0.5 + off, wy = sist ? tk.ty : Math.floor(i / W) + 0.5 - off;
+    const wx = sist ? tk.mx ?? tk.tx : (i % W) + 0.5 + off, wy = sist ? tk.my ?? tk.ty : Math.floor(i / W) + 0.5 - off;
     const ci = tileOf(p.x, p.y), sp = rutFart(p, g, ci, sm) * morkFart(s, p) * (snoF < 1 && !roofed(s, p.x, p.y) ? snoF : 1); // i totalmörker går man långsammare (ljus.ts), och ute i snön
     const dx = wx - p.x, dy = wy - p.y, d = Math.hypot(dx, dy), can = budget * sp;
     wear(g, ci, MARK.nott * STEG.markNot * Math.min(d, can));

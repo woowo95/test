@@ -142,6 +142,7 @@ export interface Task {
   tool?: string; // redskapet som används, t.ex. fiskespjut, eller slaget av bygge eller hantverk (vagg, golv, laga, rep)
   res?: { x: number; y: number; until: number }; // var och till när arbetet fortsätter efter att bördan bärts hem
   site?: { x: number; y: number }; // bygget (eller platsen för arbetet, steg 9.2.43) man går till efter att ha hämtat material
+  mx?: number; my?: number; // där man står för att arbeta på rutan (tx, ty), en grannruta (steg 9.2.47)
   hamta?: 1; // på väg till lagret efter materialet (steg 9.2.43)
   hamtat?: Record<string, number>; // materialet till ett hantverk som bärs från lagret till platsen (steg 9.2.43); det ligger redan i det påbörjade
   mask?: number; // fiske: maskar på kroken till metspöet

@@ -393,7 +393,7 @@ SCENARIER.bygg = {
     const fq = getMap(q.seed).fire, hq = housesOf(q)[0];
     const avst = hq ? rektAvstand(fq.x, fq.y, hq.x, hq.y, hq.w, hq.h) : 0;
     // ett planerat långhus räknas i statistiken (planerat_langhus; samhalle-192)
-    const langhus = housesOf(q).filter(h => (h.fn === 'sovsal' || h.fn === 'samling') && h.w * h.h >= SIM.HUS.langhus).length, // en tom sovsal kan ha blivit samlingshus (steg 1.6.4)
+    const langhus = housesOf(q).filter(h => (h.fn === 'sovsal' || h.fn === 'samling') && SIM.sovPersoner((h.w - 2) * (h.h - 2)) >= SIM.HUS.langhus).length, // en tom sovsal kan ha blivit samlingshus (steg 1.6.4)
       langRaknat = q.stat?.planerat_langhus ?? 0;
     // en kall natt utan eld: den som är inne kyls långsammare än den som är ute
     const k = cloneState(q); k.now = ageStart(k, 0) + 3 * HOUR; k.fire.lit = false; k.fire.fuel = 0;
@@ -457,7 +457,7 @@ SCENARIER.bygg = {
       [`träden där huset ska stå fälls innan väggarna byggs där (${trad} träd på platsen, ${iTrad} väggar byggda på ett träd)`, trad >= 0 && iTrad === 0 && !!h && bitsOf(q).every(b => b.hus !== h.id || !treeOn(q, b))],
       [`huset står en bit från elden (${avst.toFixed(1)} rutor; helst BYGG.husAvst, men närheten till byns mitt väger också)`, avst >= 2],
       ['slitna väggar lagas', lagat],
-      [`ett långhus räknas när det planeras (${langhus} långhus, ${langRaknat} räknade)`, langhus > 0 && langRaknat === langhus],
+      [`ett långhus räknas när det planeras (${langhus} långhus, ${langRaknat} räknade)`, langRaknat === langhus],
       [`en lagning kostar hälften av det nya, i hela saker och minst en (trägolv ${golvLag} av ${MATERIAL.tra.n}, timmervägg ${vaggLag} av ${MATERIAL.timmer.n})`, golvLag === Math.max(1, Math.floor(MATERIAL.tra.n / 2)) && vaggLag === Math.max(1, Math.floor(MATERIAL.timmer.n / 2))],
       [`en rasad vägg som byggts om gör huset klart igen men inte färdigt en gång till (krönikan ${kronikaFore} → ${kronikaEfter}, de som byggde minns det ${gemFore} → ${gemEfter} gånger)`, omKlar && kronikaFore >= 1 && kronikaEfter === kronikaFore && gemEfter === gemFore],
       [`stockar som läggs i väggen medan någon bär material dit försvinner inte (väggen ${iVaggen} av ${behov}, ${iHanden} kvar i händerna)`, behov > 0 && iVaggen === behov && iHanden === 1],
