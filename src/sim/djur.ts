@@ -248,7 +248,8 @@ export const RADJUR = balans('radjur', {
   kant: 2, // skogskanten: en öppen ruta med skog inom så här många rutor
   hemAvst: 18, // och minst så här långt från byplatsen
   startAvst: 15, // en grupp dyker upp minst så här långt från en annan
-  spridd: 2, // så långt (rutor) från gruppens mitt rådjuren betar
+  spridd: 3, // så långt (rutor) från gruppens mitt rådjuren betar (3 sedan steg 9.2.50) ...
+  avstand: 1.5, // ... och minst så här långt (rutor) från varandra, så att flocken betar över flera rutor (steg 9.2.50)
   betaSek: 40, // så länge ett rådjur betar på en plats innan det går till nästa (ungefär)
   radd: 5.5, // så nära (rutor) en människa kommer innan rådjuret springer undan ...
   fly: 6, // ... så långt (rutor) springer det ...
@@ -323,6 +324,14 @@ export function radjurOf(s: State, t = s.now, folk?: readonly { x: number; y: nu
     }
     let q = { x: clamp(x, 0.2, W - 0.2), y: clamp(y, 0.2, H - 0.2) };
     if (!torr(q)) q = [a, g].map(c => ({ x: clamp(c.x, 0.2, W - 0.2), y: clamp(c.y, 0.2, H - 0.2) })).find(torr) ?? landNara(vt, q);
+    // flocken sprider ut sig (steg 9.2.50): ett rådjur som står för nära ett annat i gruppen går undan till RADJUR.avstand
+    for (const o of out) {
+      if (o.grupp !== g.id) continue;
+      const dx = q.x - o.x, dy = q.y - o.y, d = Math.hypot(dx, dy);
+      if (d >= RADJUR.avstand) continue;
+      const v = d > 0.01 ? Math.atan2(dy, dx) : hash(id, 9, 3) * Math.PI * 2, nq = { x: clamp(o.x + Math.cos(v) * RADJUR.avstand, 0.2, W - 0.2), y: clamp(o.y + Math.sin(v) * RADJUR.avstand, 0.2, H - 0.2) };
+      if (torr(nq)) q = nq;
+    }
     out.push({ id, art: 'radjur', x: q.x, y: q.y, grupp: g.id });
   }
   return out;
