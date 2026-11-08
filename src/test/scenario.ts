@@ -32,9 +32,11 @@ const val = !snabb && !grupp && arg.length === 1 ? arg[0] : undefined;
 async function korHar(namn: string) {
   const sc = SCENARIER[namn];
   if (!sc) { console.log(`Okänt scenario: ${namn}. Finns: ${Object.keys(SCENARIER).join(', ')}`); process.exit(1); }
-  const env = Object.entries(sc.env ?? {}).filter(([k, v]) => process.env[k] !== v);
+  // SCENARIO_MILJO: den här processen startades redan med scenariots miljö. Miljön kan ändå se fel ut (storlek.ts lägger
+  // till karta.bredd och karta.hojd i BALANS), och utan märket startade scenariot sig självt i en evig kedja
+  const env = process.env.SCENARIO_MILJO ? [] : Object.entries(sc.env ?? {}).filter(([k, v]) => process.env[k] !== v);
   if (env.length) { // fel miljö (t.ex. tidszon): scenariot körs om i en egen process med rätt miljö
-    const u = await korSkript('scenario.ts', [namn], Object.fromEntries(env));
+    const u = await korSkript('scenario.ts', [namn], { ...Object.fromEntries(env), SCENARIO_MILJO: '1' });
     process.stdout.write(u.out + u.err); if (u.code) process.exitCode = u.code;
     return;
   }
