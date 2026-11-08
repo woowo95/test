@@ -1,0 +1,25 @@
+{
+"id": "skjorta_lintyg",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 8.10.1)",
+"w": 12,
+"h": 9,
+"rader": [
+"..aa.aa.aa..",
+".abbaccadea.",
+"abbbbaaddeea",
+"abbabcbdeaea",
+"abbabcbdeaea",
+"abaabbddeaea",
+".a.abbddeaa.",
+"...abbdeea..",
+"....aaaaa..."
+],
+"pal": {
+"a": "#24201d",
+"b": "#bdb39b",
+"c": "#7d5b40",
+"d": "#a0947d",
+"e": "#7e7362"
+}
+}

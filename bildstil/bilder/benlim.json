@@ -1,0 +1,33 @@
+{
+"id": "benlim",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 8.10.1)",
+"w": 18,
+"h": 14,
+"rader": [
+".....aaaaaaaa.....",
+"...aabbbbbbbbaa...",
+"..abbccccccccdda..",
+".abeeeeeeeeeeefda.",
+"abeeegggeeeeefffda",
+"abeeegggeeeeffffda",
+"abbeeeeeeefffffdca",
+".abbeeeeefffffdca.",
+".abbbbbbbdddffcca.",
+"..abbdddddddffca..",
+"...accccccccffa...",
+"....aaccccccffa...",
+".....ahhhhhhaa....",
+"......aaaaaa......"
+],
+"pal": {
+"a": "#24201d",
+"b": "#987e62",
+"c": "#5e3c24",
+"d": "#7d5b40",
+"e": "#906f0f",
+"f": "#694902",
+"g": "#b2921b",
+"h": "#3f2415"
+}
+}

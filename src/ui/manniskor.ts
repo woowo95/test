@@ -1,6 +1,19 @@
 import * as PIXI from 'pixi.js';
 import { ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bordVid, byId, homeKind, bordaIHander, utrustning, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats, Match, Task, dragLag, kastMal, SPORT, bakomFilt, blocked, stationAt, isKlar, stationDef } from '../sim';
-const LAGA = [fargTal(farg('rost', 3)), fargTal(farg('senap', 3))]; // lågorna på den som brinner
+// lågorna på den som brinner (steg 6.4.16, Björns val f6_brinner i steg 8.10.1): en låga med foten i (x, y) och längden l i
+// bilden f (0–3): ljus kärna, gul mitt och röd spets, en tunga vid sidan som byter sida, och ibland en lös flamma överst
+const BRAND_TAKT = 140, HOJD = [0, 2, 1, -1], SVAJ = [0, 1, 0, -1];
+const LAGFARG = { karna: fargTal(farg('ben', 3)), gul: fargTal(farg('senap', 3)), mitt: fargTal(farg('senap', 2)), spets: fargTal(farg('rost', 2)), los: fargTal(farg('rost', 1)) };
+function laga(g: PIXI.Graphics, x: number, y: number, l: number, f: number) {
+  const h = l + HOJD[f], sv = SVAJ[f], prick = (px: number, py: number, c: number) => g.beginFill(c).drawRect(px, py, 1, 1).endFill();
+  for (let i = 0; i < h; i++) {
+    const dx = i >= h - 3 ? sv : 0;
+    prick(x + dx, y - i, i === 0 ? LAGFARG.karna : i < h - 2 ? (i > 2 ? LAGFARG.mitt : LAGFARG.gul) : LAGFARG.spets);
+    if (i > 0 && i < h - 2) prick(x + dx + ((i + f) % 2 ? -1 : 1), y - i, LAGFARG.mitt);
+  }
+  if (f === 1) prick(x + sv * 2, y - h - 1, LAGFARG.spets);
+  if (f === 2) prick(x - 1, y - h, LAGFARG.los);
+}
 import { farg, fargTal } from '../palett';
 import { sinHash as hash } from './pixel';
 import { s, sakVar, ui, uppgiftVid, vidNyBy } from './lage';
@@ -368,14 +381,13 @@ export function drawPeople(t: number) {
     huvud.set(p.id, sang ? sp.position.y - h / 2 : sp.position.y);
     if (!ligger) fotSkugga(skugga, x - 4, Math.round(sp.zIndex) - 1, 4, 2, skuggLangd());
     sp.visible = true; sedd.add(p.id);
-    // den som brinner (steg 6.4.16): fladdrande lågor över figuren (platshållare tills Björn valt i bildstilen)
+    // den som brinner (steg 6.4.16): Björns val i bildstilen (f6_brinner, den vänstra figuren, steg 8.10.1): sex lågor på
+    // axlarna, armarna och i håret som fladdrar var och en i sin takt (fyra bilder): varje låga växer och krymper, toppen
+    // slår åt sidan och ibland slits en lös flamma av
     if (p.brinner !== undefined) {
-      const f = (slag() + p.id) % 3, topp = sp.position.y + 2;
-      for (let i = 0; i < 4; i++) {
-        const lx = Math.round(sp.position.x + 2 + i * (w - 4) / 3), hoj = 3 + ((i + f) % 3);
-        peopleG.beginFill(LAGA[0]).drawRect(lx - 1, topp + 6 - hoj, 2, hoj).endFill();
-        peopleG.beginFill(LAGA[1]).drawRect(lx - 1, topp + 7 - Math.ceil(hoj / 2), 2, Math.ceil(hoj / 2)).endFill();
-      }
+      const ruta = Math.floor(performance.now() / BRAND_TAKT), cx = Math.round(sp.position.x + w / 2), fot = Math.round(sp.position.y + h) - 1, hw = Math.floor(w / 2);
+      ([[-hw + 1, 0.62, 9], [hw - 2, 0.62, 9], [-1, 0.95, 7], [1, 0.97, 9], [-hw, 0.42, 7], [hw - 1, 0.42, 7]] as const)
+        .forEach(([dx, dy, l], k) => laga(peopleG, cx + dx, fot - Math.round(h * dy), l, (ruta + k * 3 + p.id) % 4));
     }
     // det man bär syns på figuren, hur lite det än är (steg 3.6.5): framför kroppen, och med en kartbild ur bildstilen i sin
     // naturliga storlek (steg 5.1.2.1)

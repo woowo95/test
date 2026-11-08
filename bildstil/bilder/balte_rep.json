@@ -1,15 +1,24 @@
 {
- "id": "balte_rep",
- "ritad": 4,
- "av": "Claude",
- "om": "Claude: symmetrisk ring med knuten i mitten och två lika hängande ändar.",
- "w": 8,
- "h": 4,
- "rader": [
-  ".owqwqo.",
-  "oq....po",
-  ".oqFFpo.",
-  "..p..p.."
- ],
- "pal": {"o":"#7e7362","w":"#dad0bb","q":"#bdb39b","p":"#a0947d","F":"#5e3c24"}
+"id": "balte_rep",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 8.10.1)",
+"w": 18,
+"h": 9,
+"rader": [
+"....aaaaaaaaaa....",
+"..aabcbcbcbcbcaa..",
+".acbcbaaaaaacbcba.",
+"acbaaaaa...aaaacba",
+"abcaaddda.adddabca",
+"acbcbdaaaaadacbcba",
+".acbcdcbcbcdcbcba.",
+"..aabdbcbcbdbcaa..",
+"....aaaaaaaaaa...."
+],
+"pal": {
+"a": "#24201d",
+"b": "#b2921b",
+"c": "#906f0f",
+"d": "#5e3c24"
+}
 }

@@ -1103,7 +1103,8 @@ export const KARNA: any = (() => {
       zon(armLista(aL, 0), 'armar');
       const R = armLista(aR, 1); zon(R, 'armar'); hand = R[R.length - 1];
     }
-    if (p.klader.balte) (rikt === 'sida' ? [5, 6, 7, 8] : [...Array(x1 - x0 + 1)].map((_, i) => x0 + i)).forEach(x => { if (zn[(b1 - 1) * W + x] === 'bal') satt(x, b1 - 1, 'rep', 'balte'); });
+    // bältet (Björns val f7_balte, version 1, steg 8.10.1): ett tvinnat rep i två toner
+    if (p.klader.balte) (rikt === 'sida' ? [5, 6, 7, 8] : [...Array(x1 - x0 + 1)].map((_, i) => x0 + i)).forEach(x => { if (zn[(b1 - 1) * W + x] === 'bal') satt(x, b1 - 1, x % 2 ? 'senap2' : 'senap1', 'balte'); });
     // det man bär (steg 7.1.4, platshållare tills Björn valt i bildstilens valdel): axelremmen snett över bålen, ryggsäcken
     // (bakifrån säcken, från sidan säcken bakom ryggen, framifrån remmarna över axlarna) och två redskap i bältets krokar
     const paBal = (x, y, v, z) => { const q = zn[y * W + x]; if (q === 'bal' || q === 'balte') satt(x, y, v, z); };
@@ -1117,10 +1118,8 @@ export const KARNA: any = (() => {
       else if (rikt === 'sida') { const xs = barn ? [4, 5] : [3, 4]; for (let y = b0; y <= b1; y++) xs.forEach(x => { if (!zn[y * W + x] || zn[y * W + x] === 'armar') satt(x, y, y === b0 + 1 ? 'jord1' : 'ben', 'ryggsack'); }); paBal(barn ? 6 : 5, b0, 'jord0', null); paBal(barn ? 6 : 5, b0 + 1, 'jord0', null); }
       else for (let y = b0; y <= b0 + 2; y++) for (const x of [x0 + 1, x1 - 1]) paBal(x, y, 'jord0', null);
     }
-    if (p.klader.balte && p.klader.krokar) {
-      const xs = (rikt === 'sida' ? [8, 5] : rikt === 'bak' ? [x1 - 1, x0 + 1] : [x0 + 1, x1 - 1]).slice(0, p.klader.krokar);
-      xs.forEach((x, n) => { satt(x, b1, 'jord0'); satt(x, b1 + 1, 'jord1'); satt(x, b1 + 2, n ? 'skiffer2' : 'skiffer3'); if (n) satt(x + (x < 7 ? -1 : 1), b1 + 2, 'skiffer1'); });
-    }
+    // bältets två krokar av böjda grenar vid höfterna; redskapen i dem syns inte (Björns val f7_balte, steg 8.10.1)
+    if (p.klader.balte && p.klader.krokar) (rikt === 'sida' ? [8] : [x0, x1]).forEach(x => satt(x, b1, 'jord3'));
     // huvudet: skallen ur mallen, käken efter huvudformen, ögonen som en punkt var
     const kak = (DEL[del.huvudform] || DEL['huvud-rund']).kartbild[rikt === 'sida' ? 'sida' : 'fram'];
     for (let y = h; y <= h + 5; y++) for (let x = 4; x <= 9; x++) {
