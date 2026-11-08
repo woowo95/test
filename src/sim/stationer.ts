@@ -106,7 +106,8 @@ export const STATION = balans('station', {
 // brasa = ringen till en lägereld till medan den läggs (steg 2.9.1, 4.5.6.8, brasor.ts): står nära sovplatserna den är till för (siteBrasa), och alla vuxna kan bygga den (tek är tom: den som är gammal nog att ta ansvar, ALDER.ansvar). När den är klar blir den en lägereld (nyEld) och ingen station
 export interface Utkant { till: number; avst: number; vatten?: true; falt?: true; tradFri?: true } // tradFri: söker en plats utan träd (bara latrinen, steg 8.1.14)
 export interface Forvar { rymmer: number; redskap?: true; tak?: true; stangd?: true; privat?: true }
-export interface StationDef { hard?: true; namn: string; ett?: true; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: Utkant; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar; pynt?: true; samtidigt?: number }
+export interface StationDel { namn: string; ikon?: string; w: number; h: number; arbete?: true } // en del i en station med delar (steg 9.4.1)
+export interface StationDef { delar?: StationDel[]; hard?: true; namn: string; ett?: true; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: Utkant; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar; pynt?: true; samtidigt?: number }
 // de enkla redskapen: görs vid slöjdbänken om byn har en, lite fortare där (fart), annars vid elden som förut (Björn, efter v90)
 const ENKLA: Act[] = ['yxa', 'spjut', 'metspo', 'kniv', 'bensyl', 'balte', 'boll', 'slagtra', 'mal', 'trumma', 'benflojt', 'lyra', 'fackla', 'talgljus', 'slanda'];
 export const STATIONER = {
@@ -250,7 +251,7 @@ export const stationDef = (k: string): StationDef | undefined => (STATIONER as R
 // med = tillbehören som ligger i den (TILLBEHOR, t.ex. skinnfällen i bädden), fyllt = hur full latrinen är (0–1, smuts.ts)
 // tork = det som hänger på torkställningen (matlagning.ts): råvaran, hur mycket, när det hängdes upp och vems det är
 // ag = ägaren till en kista i sovrummet (steg 2.10.18)
-export interface Station { id: number; k: string; x: number; y: number; kvar: number; vem?: number[]; klar?: number; rot?: 1; inne?: 1; med?: string[]; fyllt?: number; q?: number; ber?: import('./berattelser').SakMinne; tork?: { k: string; n: number; t: number; ag?: Record<string, number> }[]; ag?: number }
+export interface Station { delar?: { x: number; y: number; rot?: 1 }[]; id: number; k: string; x: number; y: number; kvar: number; vem?: number[]; klar?: number; rot?: 1; inne?: 1; med?: string[]; fyllt?: number; q?: number; ber?: import('./berattelser').SakMinne; tork?: { k: string; n: number; t: number; ag?: Record<string, number> }[]; ag?: number }
 const NONE: Station[] = [];
 export const stationerOf = (s: State) => s.stationer ?? NONE;
 export const stationById = (s: State, id?: number) => id === undefined ? undefined : stationerOf(s).find(t => t.id === id);
@@ -258,8 +259,44 @@ export const isKlar = (t: Station) => t.kvar <= 0;
 // hur stor del av bygget som är gjort (0 till 1), för framstegscirkeln på kartan
 export const stationKlar = (t: Station) => Math.min(1, Math.max(0, 1 - t.kvar / ((stationDef(t.k)?.min ?? 1) * MIN)));
 // rutorna stationen tar (bredd och djup i registret, bytta när den står vriden; en okänd sort tar en ruta)
-export const storlek = (k: string, rot?: unknown) => { const d = stationDef(k), w = d?.w ?? 1, h = d?.h ?? 1; return rot ? { w: h, h: w } : { w, h }; };
-export const storlekAv = (t: { k: string; rot?: unknown }) => storlek(t.k, t.rot);
+// En station med delar (steg 9.4.1) tar så mycket som delarna i en rad, bredvid varandra, när den byggs; står delarna sedan
+// var för sig är storleken rutan runt dem alla (storlekAv), och t.x, t.y dess hörn uppe till vänster
+export const storlek = (k: string, rot?: unknown) => {
+  const d = stationDef(k);
+  if (d?.delar) { const w = d.delar.reduce((n, q) => n + q.w, 0), h = Math.max(...d.delar.map(q => q.h)); return rot ? { w: h, h: w } : { w, h }; }
+  const w = d?.w ?? 1, h = d?.h ?? 1; return rot ? { w: h, h: w } : { w, h };
+};
+export const storlekAv = (t: { k: string; rot?: unknown; delar?: Station['delar'] }) => {
+  if (!t.delar?.length) return storlek(t.k, t.rot);
+  const r = delarAv(t as Station);
+  return { w: Math.max(...r.map(q => q.x + q.w)) - Math.min(...r.map(q => q.x)), h: Math.max(...r.map(q => q.y + q.h)) - Math.min(...r.map(q => q.y)) };
+};
+// ---------- stationer i flera delar (steg 9.4.1–9.4.2, "Stationer i flera delar" i designdokumentet) ----------
+// Delarna står var för sig och var och en kan vridas; stationen byggs, flyttas och tas bort som en helhet. En station utan
+// delar har en enda del: hela stationen. Delen med arbete är där man står och arbetar (annars den första)
+export interface DelRuta { i: number; x: number; y: number; w: number; h: number; rot?: 1; del?: StationDel }
+export function delarAv(t: Station): DelRuta[] {
+  const d = stationDef(t.k);
+  if (!d?.delar || !t.delar?.length) { const { w, h } = storlek(t.k, t.rot); return [{ i: 0, x: t.x, y: t.y, w, h, rot: t.rot }]; }
+  return d.delar.map((del, i) => { const at = t.delar![i] ?? { x: t.x, y: t.y }, w = at.rot ? del.h : del.w, h = at.rot ? del.w : del.h; return { i, x: at.x, y: at.y, w, h, rot: at.rot, del }; });
+}
+// delarna i en rad från (x, y), som stationen byggs (åt höger, eller nedåt när den står vriden)
+export function delarIRad(k: string, x: number, y: number, rot?: unknown): Station['delar'] {
+  const d = stationDef(k);
+  if (!d?.delar) return undefined;
+  let o = 0;
+  return d.delar.map(del => { const at = rot ? { x, y: y + o, rot: 1 as const } : { x: x + o, y }; o += rot ? del.h : del.w; return at; });
+}
+// hörnet uppe till vänster av rutan runt delarna
+function horn(t: Station) { if (t.delar?.length) { const r = delarAv(t); t.x = Math.min(...r.map(q => q.x)); t.y = Math.min(...r.map(q => q.y)); } }
+// delen man arbetar vid
+export const arbetsDel = (t: Station) => { const r = delarAv(t); return r.find(q => q.del?.arbete) ?? r[0]; };
+// är stationen hel: alla delar i samma rum (eller alla ute). Bara en hel station går att arbeta vid
+export function helStation(s: State, t: Station) {
+  if (!t.delar?.length) return true;
+  const rum = delarAv(t).map(q => roomAt(s, q.x, q.y)?.id ?? -1);
+  return rum.every(r => r === rum[0]);
+}
 // rutorna (index i kartan) som stationerna tar, och sovplatserna i de färdiga möbler man sover i (rutan uppe till vänster).
 // Räknas om när något byggs (s.byggV)
 // och borden: platserna runt dem (sitt, där inget annat får stå), och rutan framför en arbetsstation, där man står eller
@@ -273,8 +310,8 @@ export function stationRutor(s: State): Rutor {
   if (!r || r.v !== v || r.n !== st.length) {
     const at = new Map<number, Station>(), sov = new Set<number>(), sitt = new Set<number>(), hinder = new Uint8Array(W * H);
     for (const t of st) {
-      const { w, h } = storlekAv(t), d = stationDef(t.k);
-      for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { at.set((t.y + j) * W + t.x + i, t); if (d?.forvar && t.ag === undefined) hinder[(t.y + j) * W + t.x + i] = 1; }
+      const d = stationDef(t.k);
+      for (const q of delarAv(t)) for (let j = 0; j < q.h; j++) for (let i = 0; i < q.w; i++) { at.set((q.y + j) * W + q.x + i, t); if (d?.forvar && t.ag === undefined) hinder[(q.y + j) * W + q.x + i] = 1; } // varje del för sig (steg 9.4.1)
       if (isKlar(t) && d?.sover) sov.add(t.y * W + t.x);
       for (const q of bordPlatser(t)) sitt.add(q.y * W + q.x);
       for (const q of framfor(t)) sitt.add(q.y * W + q.x);
@@ -293,7 +330,7 @@ export function stationAt(s: State, x: number, y: number) {
 // är rutan en plats vid ett bord (en stubbe)?
 export const sittAt = (s: State, x: number, y: number) => !!s.stationer?.length && x >= 0 && y >= 0 && x < W && stationRutor(s).sitt.has(Math.floor(y) * W + Math.floor(x));
 // den färdiga station där handlingen görs, om byn har en. Med p: bara en station där det finns plats åt p (steg 4.5.3.6)
-export const stationFor = (s: State, act: Act, p?: Person) => stationerOf(s).find(t => isKlar(t) && stationDef(t.k)?.gor.includes(act) && framFri(s, t) && (!p || !upptagen(s, t, p)));
+export const stationFor = (s: State, act: Act, p?: Person) => stationerOf(s).find(t => isKlar(t) && helStation(s, t) && stationDef(t.k)?.gor.includes(act) && framFri(s, t) && (!p || !upptagen(s, t, p))); // bara en hel station (steg 9.4.2)
 // hur många som kan arbeta vid stationen samtidigt (steg 4.5.3.6): registrets `samtidigt`, annars en vid en arbetsstation
 // (arbetsbänkarna) och hur många som helst vid de andra
 const samtidigt = (d?: StationDef) => d?.samtidigt ?? (arbetar(d) ? 1 : Infinity);
@@ -339,7 +376,7 @@ export function kanGoras(s: State, act: Act, p?: Person) {
   return !!t && (!k || redskapVid(s, t, k).length > 0);
 }
 // platsen där man står och arbetar vid stationen: mitt för den på rutan söder om den
-export const vidStation = (t: Station) => { const { w, h } = storlekAv(t); return { x: t.x + w / 2, y: t.y + h + 0.1 }; };
+export const vidStation = (t: Station) => { if (t.delar?.length) { const q = arbetsDel(t); return { x: q.x + q.w / 2, y: q.y + q.h + 0.1 }; } const { w, h } = storlekAv(t); return { x: t.x + w / 2, y: t.y + h + 0.1 }; }; // framför delen man arbetar vid (steg 9.4.1)
 // hur många gånger fortare p gör act just där hen står: stationens fart för den som står vid den, annars 1
 export const fartVid = (s: State, p: { x: number; y: number }, act: Act) => {
   // vid den station p står vid (det kan finnas flera av samma sort, steg 4.5.3.6)
@@ -786,6 +823,7 @@ export function startStation(s: State, p: Person, tk: Task) {
       t = { id: s.nextStation = (s.nextStation ?? 0) + 1, k, x: at.x, y: at.y, kvar: d.min * MIN };
       if (at.rot) t.rot = 1;
       if ('inne' in at) t.inne = 1;
+      const delar = delarIRad(k, at.x, at.y, at.rot); if (delar) t.delar = delar; // delarna i en rad, som de byggs (steg 9.4.1)
       if (d.forvar?.privat || d.pynt) t.ag = p.id; // kistan och pyntet är hens (steg 2.10.18, 4.3.4)
       (s.stationer ??= []).push(t);
       if (!t.inne && !d.forvar) { const { w, h } = storlekAv(t); for (const z of zonesOf(s).filter(z => z.hus === undefined && rutorAv(t!.x, t!.y, w, h).some(q => inZone(z, q.x, q.y)))) flyttaLager(s, z); } // lagret i vägen (steg 8.1.15)
@@ -1027,6 +1065,7 @@ function utan<R>(s: State, t: Station, f: () => R): R {
 }
 // stationen t står på en ny plats: redskapen som hör till den följer med
 function flytta(s: State, t: Station, at: { x: number; y: number; rot?: 1; inne?: 1 }) {
+  if (t.delar?.length) { const dx = at.x - t.x, dy = at.y - t.y; t.delar = (at.rot ? 1 : 0) !== (t.rot ? 1 : 0) ? delarIRad(t.k, at.x, at.y, at.rot) : t.delar.map(q => ({ ...q, x: q.x + dx, y: q.y + dy })); } // delarna följer med (steg 9.4.1)
   t.x = at.x; t.y = at.y;
   if (at.rot) t.rot = 1; else delete t.rot;
   if (at.inne) t.inne = 1; else delete t.inne;
@@ -1081,7 +1120,7 @@ export function taBortStation(s: State, t: Station) {
 // kan ligga (lager.ts), där ingen annan station och ingen sittplats står. Byns regler gäller sedan som vanligt (det som ska
 // stå inne bärs in, förvaringen utanför ett lager tas isär). false = den fick inte plats
 export function flyttaStation(s: State, t: Station, x: number, y: number) {
-  const { w, h } = storlekAv(t), rutor = rutorAv(x, y, w, h);
+  const rutor = delarAv(t).flatMap(q => rutorAv(q.x - t.x + x, q.y - t.y + y, q.w, q.h)); // alla delar flyttas lika långt (steg 9.4.1)
   const ok = utan(s, t, () => rutor.every(q => {
     if (!inMap(q.x, q.y) || stationAt(s, q.x, q.y) || sittAt(s, q.x, q.y)) return false;
     const b = bitAt(s, q.x, q.y);
@@ -1090,6 +1129,24 @@ export function flyttaStation(s: State, t: Station, x: number, y: number) {
   if (!ok) return false;
   flytta(s, t, { x, y, rot: t.rot ? 1 : undefined, inne: bitAt(s, x, y) ? 1 : undefined });
   log(s, `${stationDef(t.k)?.namn ?? 'En station'} flyttades i testläget.`, 'world');
+  return true;
+}
+// testläget (steg 9.4.2): en del flyttas så att dess hörn uppe till vänster hamnar på (x, y), eller vrids ett kvarts varv där den
+// står, med samma regler som när hela stationen flyttas. false = den fick inte plats
+export function flyttaDel(s: State, t: Station, i: number, x: number, y: number, vrid = false) {
+  const r = delarAv(t)[i];
+  if (!t.delar?.length || !r?.del) return false;
+  const rot = vrid ? (r.rot ? undefined : 1 as const) : r.rot, w = rot ? r.del.h : r.del.w, h = rot ? r.del.w : r.del.h;
+  const ok = utan(s, t, () => rutorAv(x, y, w, h).every(q => {
+    if (!inMap(q.x, q.y) || stationAt(s, q.x, q.y) || sittAt(s, q.x, q.y)) return false;
+    const b = bitAt(s, q.x, q.y);
+    return b ? b.k === 'golv' && !!roomAt(s, q.x, q.y) : usable(s, q.x, q.y, true);
+  }) && delarAv(t).every(o => o.i === i || o.x + o.w <= x || x + w <= o.x || o.y + o.h <= y || y + h <= o.y));
+  if (!ok) return false;
+  t.delar[i] = { x, y, ...(rot ? { rot } : {}) };
+  horn(t);
+  s.byggV = (s.byggV ?? 0) + 1;
+  log(s, `${r.del.namn} ${vrid ? 'vreds' : 'flyttades'} i testläget.`, 'world');
   return true;
 }
 // ---------- ägandet i husen (steg 3.10.2) ----------

@@ -1,4 +1,4 @@
-import { HELIGA_PLATSER, KVARLEVOR, clamp, living, handlarPlats, MASTERVERK, PERFEKT, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, W, bordPlatser, sjoarna, stationById, MATERIAL, Pile, STUBBE_LIV, Station, bitAt, bitsOf, dorrDef, condOf, emberOn, eldById, eldXY, eldarOf, fireHeat, forvarAt, Fire, heatRadius, TORK, torrDel, isKlar, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, zonesOf, groundOf, snoPaMarken, ageIndex, tradArt } from '../sim';
+import { delarAv, HELIGA_PLATSER, KVARLEVOR, clamp, living, handlarPlats, MASTERVERK, PERFEKT, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, W, bordPlatser, sjoarna, stationById, MATERIAL, Pile, STUBBE_LIV, Station, bitAt, bitsOf, dorrDef, condOf, emberOn, eldById, eldXY, eldarOf, fireHeat, forvarAt, Fire, heatRadius, TORK, torrDel, isKlar, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, zonesOf, groundOf, snoPaMarken, ageIndex, tradArt } from '../sim';
 import { hasIcon, iconCanvas, kartbild, kartbildEnsam } from '../ikoner';
 import { KARTBILDER } from '../kartbilder';
 import { STUBBILDER } from '../stubbilder';
@@ -178,6 +178,11 @@ export function drawStructures(t: number) {
     // den som står vriden har en egen bild (_v, steg 3.10.7): ingenting ritas genom att bilden vrids
     const d = stationDef(st.k), v = vriden(st);
     if (d?.brasa) { pileIcons.add('kb_lagereld_ring', st.x * TS + TS / 2 - ELD.x, st.y * TS + TS / 2 - ELD.y, 1); framsteg(st.x * TS + TS / 2, st.y * TS - 6, stationKlar(st)); continue; } // ringen till en lägereld till medan den läggs
+    if (st.delar?.length && d?.delar) { // en station i flera delar (steg 9.4.1): varje del där den står, platshållare tills delarna har bilder (9.4.3)
+      for (const q of delarAv(st)) overG.beginFill(0x3f2415).drawRect(q.x * TS, q.y * TS, q.w * TS, q.h * TS).endFill().beginFill(isKlar(st) ? 0x7d5b40 : 0x5e3c24).drawRect(q.x * TS + 1, q.y * TS + 1, q.w * TS - 2, q.h * TS - 2).endFill();
+      if (!isKlar(st)) framsteg(st.x * TS + storlekAv(st).w * TS / 2, st.y * TS + 3, stationKlar(st));
+      continue;
+    }
     const kb = stationBild(d?.ikon ?? 'slaktbank', v), { w: bw, h: bh } = storlekAv(st), w = bw * TS;
     const ik = kb ? 'kb_' + kb : (d?.ikon ?? 'slaktbank') + '_karta' + v, sk = kb ? 1 : iconCanvas(ik).width > 8 * bw ? 1 : 2, upp = iconCanvas(ik).height * sk - bh * TS; // sk: 16 punkter per ruta (steg 4.3.2.2) eller 8 som förut
     const x0 = st.x * TS + (kb ? Math.round((w - iconCanvas(ik).width) / 2) : 0);

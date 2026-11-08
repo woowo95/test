@@ -1,6 +1,6 @@
 import { PYNT } from '../../sim/pynt';
 import { kvOf } from '../../sim/kvalitet';
-import { flyttaStation, sakBerattelse, ACTS, DJURARTER, STATION, bordPlatser, pilesOf, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, actIkon, verbOf, stationById, stationDef, stationKlar, tillbehorDef, tingOf, timeLabel, FLACKAR, condOf, smutsVid, blodVid, storlekAv, TORK, torrDel } from '../../sim';
+import { delarAv, flyttaDel, helStation, flyttaStation, sakBerattelse, ACTS, DJURARTER, STATION, bordPlatser, pilesOf, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, actIkon, verbOf, stationById, stationDef, stationKlar, tillbehorDef, tingOf, timeLabel, FLACKAR, condOf, smutsVid, blodVid, storlekAv, TORK, torrDel } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { frystAttr, sakAttr } from './sak';
 import { iBruk } from '../ibruk';
@@ -24,21 +24,37 @@ function testRad(id: number) {
   if (!ui.testMode) return '';
   const val = ui.flytta === id;
   return `<h3>Testläget</h3><p><button type="button" class="ghost" data-test="flytta" aria-pressed="${val}" ${tip('Flytta: tryck sedan på rutan på kartan där hörnet uppe till vänster ska stå')}>✥</button> <button type="button" class="ghost" data-test="bort" ${tip('Ta bort')}>🗑️</button>`
-    + `${val ? ' <span class="muted">Tryck på kartan där den ska stå.</span>' : ui.flyttFel ? ' <span class="muted">Den fick inte plats där.</span>' : ''}</p>`;
+    + `${val ? ' <span class="muted">Tryck på kartan där den ska stå.</span>' : ui.flyttFel ? ' <span class="muted">Den fick inte plats där.</span>' : ''}</p>`
+    + delRader(id);
+}
+// en station med delar (steg 9.4.2): varje del flyttas och vrids för sig
+function delRader(id: number) {
+  const st = stationById(s, id);
+  if (!st?.delar?.length) return '';
+  return `<p class="muted small">${helStation(s, st) ? 'Hel: alla delar står i samma rum.' : 'Inte hel: delarna står i olika rum, och ingen kan arbeta vid den.'}</p><ul class="rels">${delarAv(st).map(q => `<li>${esc(q.del?.namn ?? '')}<span></span><span><button type="button" class="ghost" data-del="${q.i}" data-delgor="flytta" aria-pressed="${ui.flytta === id && ui.flyttaDel === q.i}" ${tip('Flytta delen: tryck sedan på kartan')}>✥</button> <button type="button" class="ghost" data-del="${q.i}" data-delgor="vrid" ${tip('Vrid delen ett kvarts varv')}>⟳</button></span></li>`).join('')}</ul>`;
 }
 // den markerade stationen flyttas hit (trycket på kartan i testläget). false = den fick inte plats
 export function flyttaHit(x: number, y: number) {
   const st = stationById(s, ui.flytta);
-  ui.flytta = -1;
-  ui.flyttFel = !!st && !flyttaStation(s, st, x, y);
+  const del = ui.flyttaDel;
+  ui.flytta = -1; ui.flyttaDel = -1;
+  ui.flyttFel = !!st && !(del >= 0 ? flyttaDel(s, st, del, x, y) : flyttaStation(s, st, x, y));
 }
 export const station: Flik = {
   namn: 'Stationen',
   knapp: 'person',
   klick(el) {
+    const d = el.closest<HTMLElement>('[data-delgor]'), sd = d && ui.testMode ? stationById(s, ui.stationId) : undefined;
+    if (d && sd) { // en del (steg 9.4.2): vrid den där den står, eller välj den och tryck sedan på kartan
+      const i = Number(d.dataset.del), q = delarAv(sd)[i];
+      ui.flyttFel = false;
+      if (d.dataset.delgor === 'vrid') ui.flyttFel = !flyttaDel(s, sd, i, q.x, q.y, true);
+      else { const val = ui.flytta === sd.id && ui.flyttaDel === i; ui.flytta = val ? -1 : sd.id; ui.flyttaDel = val ? -1 : i; }
+      return true;
+    }
     const b = el.closest<HTMLElement>('[data-test="flytta"],[data-test="bort"]'), st = b && ui.testMode ? stationById(s, ui.stationId) : undefined;
     if (!b || !st) return false;
-    ui.flyttFel = false;
+    ui.flyttFel = false; ui.flyttaDel = -1;
     if (b.dataset.test === 'bort') { taBortITest(s, st); ui.flytta = -1; } else ui.flytta = ui.flytta === st.id ? -1 : st.id;
     return true;
   },
