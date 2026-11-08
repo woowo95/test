@@ -1,4 +1,4 @@
-import { bynsAvstand, bynsMitt } from './omrade';
+import { Avst, bynsAvstand, bynsMitt } from './omrade';
 import { upplev } from './uppvaxt';
 import { PLATS, rektAvstand } from './plats';
 import { count, forstaGang, franMitt, gjort, stat, log, think } from './folk';
@@ -249,7 +249,7 @@ function monsterDag(fro: number, k: FyndId, dag: number) {
 }
 // i byns läger växer inget (FANGST.lagerR)
 const iLagret = (s: State, i: number) => iLagretI(bynsAvstand(s), getMap(s.seed).tiles, i);
-const iLagretI = (lager: Float32Array, tiles: Uint8Array, i: number) => lager[i] < FANGST.lagerR && tiles[i] !== T.Vatten;
+const iLagretI = (lager: Avst, tiles: Uint8Array, i: number) => tiles[i] !== T.Vatten && lager.at(i) < FANGST.lagerR;
 // vilt skyr människor: ett stort område runt lägret, och marken där många går (stigar och nött mark).
 // Räknas om en gång per dygn (av gränssnittet i en egen del, typer.ts).
 const skygghet = tvaDelar<{ dag: number; v: Float32Array }>();
@@ -267,7 +267,7 @@ function bortaOf(s: State, c2: typeof skygghet, inne: number, r: number) {
   for (let i = 0; i < W * H; i++) nott[i] = isSoil(g.tiles[i]) && markslag(g, i) === 'bar' ? 1 : 0;
   const lager = bynsAvstand(s); // lägret ändras inte under slingan
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const d = clamp((lager[y * W + x] - inne) / r, 0, 1);
+    const i0 = y * W + x, d = lager.minst(i0) > inne + r + 1e-3 ? 1 : clamp((lager.at(i0) - inne) / r, 0, 1); // långt från byn behöver avståndet inte räknas (steg 9.1.5)
     let n = 0;
     for (let dy = -FANGST.nottR; dy <= FANGST.nottR; dy++) for (let dx = -FANGST.nottR; dx <= FANGST.nottR; dx++) if (inMap(x + dx, y + dy)) n += nott[(y + dy) * W + x + dx];
     v[y * W + x] = d * d * (3 - 2 * d) * (1 - Math.min(FANGST.nottMax, n / FANGST.nottDiv));
@@ -542,7 +542,7 @@ export function prospect(s: State, k: Kind) {
   if (c.v[k] === undefined) {
     const f = bynsMitt(s), top: number[] = [], lager = bynsAvstand(s);
     for (let y = Math.max(0, f.y - PLATS.dagY); y < Math.min(H, f.y + PLATS.dagY + 1); y++) for (let x = Math.max(0, f.x - PLATS.dagX); x < Math.min(W, f.x + PLATS.dagX + 1); x++) {
-      const d = lager[y * W + x];
+      const d = lager.at(y * W + x);
       if (d > FANGST.syn) continue;
       const v = richness(s, k, x + 0.5, y + 0.5) - d * PLATS.avstandPris;
       if (v > 0) top.push(v);
@@ -568,7 +568,7 @@ export function flintSpot(s: State, q: Person, area?: (x: number, y: number) => 
   const m = getMap(s.seed), sd = stoneDist(s.seed), c: { x: number; y: number; d: number }[] = [], lager = bynsAvstand(s);
   for (let i = 0; i < W * H; i++) {
     if (sd[i] < 1 || sd[i] > FANGST.stenNara || m.tiles[i] === T.Vatten || m.tiles[i] === T.Sten) continue;
-    const x = i % W, y = Math.floor(i / W), d = lager[i];
+    const x = i % W, y = Math.floor(i / W), d = lager.at(i);
     if (d < FANGST.flintaAvstand && (!area || area(x, y)) && flintFactor(s, x, y) > FANGST.flintaRik) c.push({ x, y, d });
   }
   if (!c.length) return undefined;

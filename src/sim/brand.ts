@@ -376,13 +376,13 @@ const brannText = (b: Brand) => Object.entries(b.brann ?? {}).map(([k, n]) => n 
 // brinner det nära byn (dess område, steg 6.2.4)? Då släcker de vuxna
 function hotar(s: State, b: Brand) {
   const ut = bynsAvstand(s);
-  return b.r.some(r => ut[r[0]] <= BRAND.hot);
+  return b.r.some(r => ut.at(r[0]) <= BRAND.hot);
 }
 // den brinnande rutan närmast byns område
 function narmastByn(s: State, b: Brand) {
   const ut = bynsAvstand(s);
   let best = -1, bd = Infinity;
-  for (const r of b.r) if (ut[r[0]] < bd) { bd = ut[r[0]]; best = r[0]; }
+  for (const r of b.r) { const d = ut.at(r[0]); if (d < bd) { bd = d; best = r[0]; } }
   return best;
 }
 // den närmaste brinnande rutan till (x, y) och avståndet dit
@@ -522,7 +522,7 @@ function brandMal(s: State, b: Brand, p: Person, hot: boolean): BrandMal | undef
       const spot = drickPlats(s, p);
       if (spot) return { act: 'slacka', why: 'Hämtar vatten i säcken till elden', spot, dur: BRAND.fyllMin * MIN, tool: 'vattensack', ref: mal };
     }
-    const ut = bynsAvstand(s), m = narmast(b, p.x, p.y, i => slacks(s, i, p) || ut[i] > BRAND.hot); // bara det som brinner nära byn
+    const ut = bynsAvstand(s), m = narmast(b, p.x, p.y, i => slacks(s, i, p) || ut.at(i) > BRAND.hot); // bara det som brinner nära byn
     if (m.i >= 0) return { act: 'slacka', why: 'Släcker elden med händerna', spot: bredvid(b, m.i, p), dur: BRAND.handMin * MIN, ref: m.i };
   }
   if (n.d > BRAND.fara) return;

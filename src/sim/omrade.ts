@@ -30,7 +30,7 @@ export interface Omrade {
   x0: number; y0: number; x1: number; y1: number; // den minsta rektangeln runt området (rutorna, båda kanterna med)
   holje: { x: number; y: number }[]; // hörnen i det konvexa höljet (rutornas mitt), moturs
   n: number; // antalet rutor innanför
-  ut?: Float32Array; // hur många rutor utanför varje ruta ligger (0 innanför), räknas första gången någon frågar
+  ut?: Avst; // hur många rutor utanför varje ruta ligger (0 innanför), räknas för en ruta i taget första gången någon frågar (steg 9.1.5)
   mitt: { x: number; y: number }; // områdets mitt: medelpunkten av rutorna innanför, avrundad till en ruta
 }
 
@@ -113,7 +113,7 @@ export const iByn = (s: State, x: number, y: number) => { const i = Math.floor(y
 // rutor ur ett rutnät som räknas en gång per område; en punkt mellan rutorna (någon som går) räknas för sig
 export function utanforByn(s: State, x: number, y: number) {
   const o = omrade(s);
-  if (Number.isInteger(x) && Number.isInteger(y) && inMap(x, y)) return utGrid(o)[y * W + x];
+  if (Number.isInteger(x) && Number.isInteger(y) && inMap(x, y)) return utGrid(o).at(y * W + x);
   if (inMap(Math.floor(x), Math.floor(y)) && o.inne[Math.floor(y) * W + Math.floor(x)]) return 0;
   return Math.max(0, tillHolje(x, y, o.holje) - OMRADE.kant);
 }
@@ -123,13 +123,19 @@ export const tillHoljet = (s: State, x: number, y: number) => tillHolje(x, y, om
 // områdets mitt (en ruta): det som behöver en punkt att utgå från (kamerans hemknapp, lekplatsen, åt vilket håll fältet
 // växer, var byn minns översvämningen). Den följer området, inte elden
 export const bynsMitt = (s: State) => s.torg ? { x: s.torg.x + (s.torg.w >> 1), y: s.torg.y + (s.torg.h >> 1) } : omrade(s).mitt; // torget är byns centrum när det finns (steg 7.3.13)
-// rutnätet till utanforByn, sparat med området; en kartslinga kan läsa det direkt (bynsAvstand(s)[i])
+// avståndet till byn för en ruta i taget (steg 9.1.5): at(i) räknar rutan första gången någon frågar och sparar svaret med
+// området, i stället för att räkna hela kartan varje gång området ändras. minst(i) är en snabb undre gräns (avståndet till
+// höljets rektangel), för en kartslinga som bara behöver veta att rutan ligger långt ut
+export interface Avst { at(i: number): number; minst(i: number): number }
 export const bynsAvstand = (s: State) => utGrid(omrade(s));
-function utGrid(o: Omrade) {
+function utGrid(o: Omrade): Avst {
   if (o.ut) return o.ut;
-  const ut = new Float32Array(W * H), k = OMRADE.kant;
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const i = y * W + x; ut[i] = o.inne[i] ? 0 : Math.max(0, tillHolje(x, y, o.holje) - k); }
-  return (o.ut = ut);
+  const ut = new Float32Array(W * H).fill(NaN), k = OMRADE.kant, h = o.holje;
+  const hx0 = Math.min(...h.map(p => p.x)), hx1 = Math.max(...h.map(p => p.x)), hy0 = Math.min(...h.map(p => p.y)), hy1 = Math.max(...h.map(p => p.y));
+  return (o.ut = {
+    at: i => { const v = ut[i]; if (v === v) return v; const x = i % W, y = (i - x) / W; ut[i] = o.inne[i] ? 0 : Math.max(0, tillHolje(x, y, h) - k); return ut[i]; }, // läst ur fältet, avrundat som förut
+    minst: i => { if (o.inne[i]) return 0; const x = i % W, y = (i - x) / W; return Math.max(0, Math.hypot(Math.max(hx0 - x, 0, x - hx1), Math.max(hy0 - y, 0, y - hy1)) - k); },
+  });
 }
 // en fri ruta (ledig i stationer.ts, och ok om det anges) innanför byn eller högst max rutor utanför: den som ligger minst
 // utanför, sedan närmast fran (om det anges), sedan den första i rutnätets ordning. Samma ruta varje gång (ingen slump)
@@ -137,7 +143,7 @@ export function friRuta(s: State, max = 0, ok?: (x: number, y: number) => boolea
   const o = omrade(s), ut = utGrid(o), r = Math.ceil(max) + 1;
   let best: { x: number; y: number } | undefined, bu = Infinity, bd = Infinity;
   for (let y = Math.max(0, o.y0 - r); y <= Math.min(H - 1, o.y1 + r); y++) for (let x = Math.max(0, o.x0 - r); x <= Math.min(W - 1, o.x1 + r); x++) {
-    const u = ut[y * W + x];
+    const u = ut.at(y * W + x);
     if (u > max || u > bu) continue;
     const d = fran ? Math.hypot(x - fran.x, y - fran.y) : 0;
     if (u === bu && d >= bd) continue;

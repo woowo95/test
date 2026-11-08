@@ -1761,7 +1761,7 @@ SCENARIER.kaninbyn = {
         starter++;
         const v0 = f[Math.floor(st.y0) * W + Math.floor(st.x0)], v1 = f[Math.floor(st.y1) * W + Math.floor(st.x1)];
         minF = Math.min(minF, v0, v1);
-        if (SIM.bynsAvstand(q)[Math.floor(st.y0) * W + Math.floor(st.x0)] < FANGST.skyggIn) nara++;
+        if (SIM.bynsAvstand(q).at(Math.floor(st.y0) * W + Math.floor(st.x0)) < FANGST.skyggIn) nara++;
       }
     });
     delete (s as State & { _sedda?: Set<string> })._sedda;

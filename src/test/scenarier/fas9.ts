@@ -21,3 +21,23 @@ SCENARIER.andrade = {
     ];
   },
 };
+
+SCENARIER.bynsavstand = {
+  text: 'Steg 9.1.5: avståndet till byn räknas för en ruta i taget när någon frågar, med samma svar som när hela kartan räknades, och den snabba undre gränsen är aldrig större än avståndet',
+  kor: () => {
+    const s = createState(1, START);
+    kor(s, 48);
+    const a = SIM.bynsAvstand(s), o = SIM.omrade(s), f = new Float32Array(1);
+    let fel = 0, over = 0;
+    for (let i = 0; i < SIM.W * SIM.H; i++) {
+      const x = i % SIM.W, y = (i - x) / SIM.W;
+      f[0] = o.inne[i] ? 0 : Math.max(0, SIM.tillHoljet(s, x, y) - SIM.OMRADE.kant);
+      if (a.at(i) !== f[0]) fel++;
+      if (a.minst(i) > a.at(i) + 1e-4) over++; // Float32 i fältet
+    }
+    return [
+      [`samma avstånd som över hela kartan (${fel} rutor skiljer)`, fel === 0],
+      [`den undre gränsen håller (${over} rutor över)`, over === 0],
+    ];
+  },
+};

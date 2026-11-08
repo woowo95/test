@@ -346,7 +346,7 @@ export function nastaRuta(s: State, varde: (x: number, y: number) => number, x0:
     if (tiles[i] === T.Vatten || bitAt(s, x, y) || forSmutsigt(s, x, y)) continue;
     const v0 = utan ? 0 : drag?.tror ? drag.tror(x, y) : varde(x, y);
     if (v0 < minst) continue; // rutan ger för lite för alla kraven
-    const v = v0 - d * MINNE.sokPris + hash3(id, i, n) * 0.1 + (drag ? drag.ut * (lager[i] - d0) - (drag.tror && !utan ? 0 : drag.radsla(x, y)) : 0);
+    const v = v0 - d * MINNE.sokPris + hash3(id, i, n) * 0.1 + (drag ? drag.ut * (lager.at(i) - d0) - (drag.tror && !utan ? 0 : drag.radsla(x, y)) : 0);
     for (let j = 0; j < krav.length; j++) if (v0 >= krav[j].minst && v > bv[j] && !krav[j].sett.includes(i)) { bv[j] = v; best[j] = { x: x + 0.5, y: y + 0.5 }; }
   }
   return best.find(b => b);
@@ -360,7 +360,7 @@ function nearestWanted(s: State, want: (t: number, x: number, y: number) => bool
     const x0 = Math.max(0, o.x0 - r), y0 = Math.max(0, o.y0 - r), x1 = Math.min(W - 1, o.x1 + r), y1 = Math.min(H - 1, o.y1 + r);
     let best: { x: number; y: number } | undefined, bd = Infinity;
     for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
-      const i = y * W + x, d = lager[i];
+      const i = y * W + x, d = lager.at(i);
       if (d < min || d >= bd || !want(m.tiles[i], x, y)) continue; // inte närmare lägret än min (toa: inte mitt i byn, steg 3.10.3)
       bd = d; best = { x, y };
     }
@@ -391,7 +391,7 @@ function strandOf(s: State) {
       if (!sh[i]) continue;
       const x = i % W, y = Math.floor(i / W);
       if (bitAt(s, x, y)) continue;
-      const d = lager[i];
+      const d = lager.at(i);
       if (d < VAL.strandNara) ok.push(i);
       if (d < bd) { bd = d; bad = { x: x + 0.5, y: y + 0.5 }; }
     }
