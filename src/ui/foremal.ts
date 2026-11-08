@@ -53,6 +53,9 @@ function drawPile(pl: Pile, t: number) {
   const ensam = (k: string) => { const w = iconCanvas(k).width || 8; if (w > 8) pileIcons.add(k, x0, y0 - 3, 1); else pileIcons.add(k, x0 + 4, y0 + 3, 1); };
   if (pl.gor) { ensam(pl.gor); framsteg(x0 + 12.5, y0 + 1.5, pl.klar ?? 0); return; } // påbörjat: framstegscirkeln i hörnet
   const n = clamp(Math.ceil(f * 4), 1, 4);
+  // en, några eller många (steg 9.2.40): har saken en egen bild för några eller många i bildstilen ritas den en gång, annars som förut
+  const mangd = pl.max === 1 || kartbildEnsam(pl.k) ? '' : f > 2 / 3 ? '_manga' : f > 1 / 3 ? '_nagra' : '';
+  if (mangd && KARTBILDER[pl.k + mangd]) { kartHog(pl.k + mangd, x0, y0, 1); if ((pl.q ?? 0) >= MASTERVERK) glans(x0 + 12, y0 + 3, t, pl.id ?? 0, pl.q === PERFEKT); return; }
   if (kartbild(pl.k)) {
     kartHog(pl.blot && KARTBILDER.ved_blot ? 'ved_blot' : variant(pl.k, pl.x, pl.y), x0, y0, pl.max === 1 || kartbildEnsam(pl.k) ? 1 : n);
     if ((pl.q ?? 0) >= MASTERVERK) glans(x0 + 12, y0 + 3, t, pl.id ?? 0, pl.q === PERFEKT);

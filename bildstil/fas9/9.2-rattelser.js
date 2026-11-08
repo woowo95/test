@@ -111,4 +111,18 @@
     for (const [dx, dy] of [[0, -1], [5, 0], [-1, 2], [4, 3]].sort((a, c) => a[1] - c[1])) ritaSprite(B, VED_NU, VEDL, 3 + dx, 6 + dy);
     ritaSprite(B, VED_NY, VEDL, 28, 7);
   } }] });
+  // steg 9.2.40: stackarna när de är många. Varje sak får tre bilder (en, några, många); här tre sätt att rita dem, för fyra saker
+  // ur bildstilen. Björn väljer sättet, och sedan ritas varje sak så
+  const SAKER40 = {"fisk":{"r":["..uuuut..",".uqwqqput","uqpqwqpts",".tuuttts."],"pal":{"p":"#a0947d","q":"#bdb39b","s":"#742a01","t":"#a14808","u":"#bd753e","w":"#dad0bb"}},"ved":{"r":[".EEEEEEEE.","EqpqHGHGGE","EpHpGFGFGE","EqppFFEFFE",".EEEEEEEE."],"pal":{"E":"#3f2415","q":"#bdb39b","p":"#a0947d","H":"#987e62","G":"#7d5b40","F":"#5e3c24"}},"ben":{"r":["qo...qo","wqqwqpo","qpqppoo","po...oo"],"pal":{"o":"#7e7362","p":"#a0947d","q":"#bdb39b","w":"#dad0bb"}},"abborre":{"r":["..MUMUM...",".MPPUPUMtu","MkPOUOUMtt",".MqwqqpMts","...s.s...."],"pal":{"M":"#353204","O":"#647025","P":"#898b4c","U":"#21290d","k":"#24201d","p":"#a0947d","q":"#bdb39b","s":"#742a01","t":"#a14808","u":"#bd753e","w":"#dad0bb"}}};
+  const HEX = (B, h) => B.P.fran(h);
+  const LAGG = (B, s, x0, y0) => s.r.forEach((rad, y) => [...rad].forEach((c, x) => { if (c !== '.' && s.pal[c]) B.satt(x0 + x, y0 + y, HEX(B, s.pal[c])); }));
+  const SATT40 = [
+    ['En tät hög: några är tre om varandra i en triangel, många är sex i en pyramid.', (B, s, x0, y0, n) => { const w = s.r[0].length, h = s.r.length, pos = n === 1 ? [[0, 0]] : n === 3 ? [[0, 0], [w * 0.6, 0], [w * 0.3, -h * 0.5]] : [[0, 0], [w * 0.6, 0], [w * 1.2, 0], [w * 0.3, -h * 0.5], [w * 0.9, -h * 0.5], [w * 0.6, -h]]; pos.forEach(([dx, dy]) => LAGG(B, s, x0 + Math.round(dx), y0 + Math.round(dy))); }],
+    ['I rader: några ligger två bredvid varandra, många i två rader om tre.', (B, s, x0, y0, n) => { const w = s.r[0].length, h = s.r.length; const pos = n === 1 ? [[0, 0]] : n === 3 ? [[0, 0], [w + 1, 0]] : [[0, 0], [w + 1, 0], [2 * w + 2, 0], [0, -h + 1], [w + 1, -h + 1], [2 * w + 2, -h + 1]]; pos.forEach(([dx, dy]) => LAGG(B, s, x0 + dx, y0 + dy)); }],
+    ['En lös hög: några är tre huller om buller, många är en stor hög med en sak överst.', (B, s, x0, y0, n) => { const w = s.r[0].length, h = s.r.length; const pos = n === 1 ? [[0, 0]] : n === 3 ? [[0, 0], [w * 0.7, 1], [w * 0.35, -h * 0.4]] : [[0, 1], [w * 0.5, 0], [w, 1], [w * 0.25, -h * 0.35], [w * 0.75, -h * 0.35], [w * 0.5, -h * 0.7]]; pos.forEach(([dx, dy]) => LAGG(B, s, x0 + Math.round(dx), y0 + Math.round(dy))); }],
+  ];
+  VAL.push({ id: 'f9_stackar', namn: 'Stackarna: en, några och många', typ: 'tre', vad: 'Steg 9.2.40: i dag ser vissa stackar ut som en sak fast de är många, och andra blir röriga när samma bild ritas tiotals gånger. Varje sak får tre bilder: en, några och många. Här tre sätt att rita dem, med fyra saker ur bildstilen: varje rad är en sak, från vänster en, några och många.', versioner: SATT40.map(([text, rita]) => ({ text, w: 120, h: 4 + Object.keys(SAKER40).length * 22, rita: B => {
+    for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) B.satt(x, y, B.P.i('oliv', 3));
+    Object.values(SAKER40).forEach((s, i) => [1, 3, 6].forEach((n, j) => rita(B, s, 6 + j * 38, 14 + i * 22, n)));
+  } })) });
 })();
