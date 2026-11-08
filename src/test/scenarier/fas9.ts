@@ -59,3 +59,26 @@ SCENARIER.sparmark = {
     ];
   },
 };
+
+SCENARIER.djurantal = {
+  text: 'Steg 9.1.2: djuren blir inte fler för att kartan blir större. Antalet kaningrupper, rådjursgrupper, fågelflockar och björnar är högst det registret säger, på en karta med 120 och med 240 rutor i sidan',
+  kor: () => {
+    const rakna = (sida: number) => {
+      const s = createState(5, START, { W: sida, H: sida });
+      const m = { kaniner: 0, radjur: 0, faglar: 0, bjorn: 0 };
+      for (let h = 0; h < 48; h += 6) {
+        s.now += 6 * SIM.HOUR;
+        m.kaniner = Math.max(m.kaniner, SIM.grupperOf(s).length);
+        m.radjur = Math.max(m.radjur, SIM.radjurGrupper(s).length);
+        m.faglar = Math.max(m.faglar, new Set(SIM.faglarOf(s).map(d => Math.floor(d.id / 100))).size);
+        m.bjorn = Math.max(m.bjorn, SIM.bjornarOf(s).filter(d => d.art === 'bjorn').length);
+      }
+      return m;
+    };
+    const a = rakna(120), b = rakna(240), t = (m: typeof a) => `${m.kaniner} kaningrupper, ${m.radjur} rådjursgrupper, ${m.bjorn} björnar`;
+    return [
+      [`120 rutor: ${t(a)}; 240 rutor: ${t(b)}`, b.kaniner <= SIM.KANINER.grupper && b.radjur <= SIM.RADJUR.grupper && b.bjorn <= 1],
+      ['lika många grupper på den större kartan', b.kaniner === a.kaniner && b.radjur === a.radjur],
+    ];
+  },
+};

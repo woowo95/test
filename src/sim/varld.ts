@@ -5,12 +5,12 @@ import { put, setStock, storeFromSums } from './lager';
 import { isTool } from './saker';
 import { migrateTools, toolsFromItems } from './agande';
 import { migrateFalt } from './odling';
-import { behoverStorreKarta, storreKarta } from './kartflytt';
+import { KARTA, behoverStorreKarta, storreKarta } from './kartflytt';
 import { VAR, inFas, nyKalender } from './tid';
 import { ageOf, alive, byId, getRel, log, newPerson, startSkills, stridSkills, think, SKALD_START, handelStart } from './folk';
 import { newSeder, sederTarget, TAGS } from './seder';
 import { clamp, gauss, rnd } from './slump';
-import { Act, DAY, NEW_H, NEW_W, Person, SEC, State, simulera, useMap } from './typer';
+import { Act, DAY, Person, SEC, State, simulera, useMap } from './typer';
 import { startSmak } from './rykten';
 import { nyAndlighet } from './religion';
 import { newFire } from './eld';
@@ -18,8 +18,8 @@ import { UPPREPAT, lasAlder, lasArt, packaAlder, packaArt } from './trad';
 import { historikKolumner } from './historik';
 
 // ---------- skapa värld ----------
-// storlek: kartans storlek, för testerna av äldre byar (en ny by får alltid NEW_W × NEW_H)
-export function createState(seed: number, now: number, storlek = { W: NEW_W, H: NEW_H }): State { return simulera(() => skapaBy(seed, now, storlek)); } // som simuleringen (typer.ts)
+// storlek: kartans storlek, för testerna av äldre byar (en ny by får KARTA.bredd × KARTA.hojd, kartflytt.ts)
+export function createState(seed: number, now: number, storlek = { W: KARTA.bredd, H: KARTA.hojd }): State { return simulera(() => skapaBy(seed, now, storlek)); } // som simuleringen (typer.ts)
 function skapaBy(seed: number, now: number, storlek: { W: number; H: number }): State {
   // en liten koloni: två par och ett barn, utan eld och med lite mat och grenar
   const s: State = { v: SPARVERSION, seed, founded: now, now, people: [], rels: {}, nextId: 1, log: [], lastAgeIdx: VAR, fire: newFire(), seder: newSeder(), W: storlek.W, H: storlek.H, kal: nyKalender(now) };

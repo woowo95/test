@@ -2,28 +2,36 @@ import { UTTAG_IDS, fyndBin } from './fynd';
 import { startGround } from './mark';
 import { AREA } from './minne';
 import { sjoarna } from './sjo';
-import { H, NEW_H, NEW_W, State, W, useMap } from './typer';
+import { H, State, W, useMap } from './typer';
+import { balans } from './balans';
+
+// kartans storlek för en ny by (steg 9.1.9). En äldre by med en mindre karta får den här storleken när den laddas, med den
+// gamla kartan i mitten. Läses bara inne i funktioner (regel 8)
+export const KARTA = balans('karta', {
+  bredd: 120, // så många rutor bred ...
+  hojd: 120, // ... och så många rutor hög
+});
 import { decodeCover, encodeCover } from './vag';
 
 // ---------- den stora kartan i en äldre by (steg 2.10.9) ----------
-// En äldre by (64×40 eller 80×50) får den stora kartan NEW_W×NEW_H när den laddas. Den gamla kartan läggs i mitten och
+// En äldre by (64×40 eller 80×50, eller en mindre karta än KARTA) får den stora kartan KARTA.bredd × KARTA.hojd när den laddas. Den gamla kartan läggs i mitten och
 // allt i byn flyttas lika mycket: människorna och det de är på väg till, stackarna, redskapen, lagerplatserna, husen,
 // stationerna, fälten, stubbarna, stockarna, fläckarna och blodet, markens stigar och skog, det som tagits ur platserna,
 // sjöarnas fiske och lärdomarna om platserna. Hörnet hamnar på ett helt antal lärdomsområden (AREA rutor, minne.ts), så att
 // varje lärdom gäller samma rutor som förut. Kartan räknas från den gamla kartans hörn (karta.ts), så det gamla ser ut som
 // förut, och utanför den fortsätter samma brus med orörd mark: gräs och skog som när byn grundades.
 // Det görs först av allt när byn laddas (varld.ts), innan något har räknats på den gamla kartan
-export const behoverStorreKarta = (s: State) => (s.W ?? 64) !== NEW_W || (s.H ?? 40) !== NEW_H;
+export const behoverStorreKarta = (s: State) => (s.W ?? 64) < KARTA.bredd || (s.H ?? 40) < KARTA.hojd;
 
 export function storreKarta(s: State) {
   useMap(s);
   const w0 = W, h0 = H, n0 = w0 * h0, aw0 = Math.ceil(w0 / AREA);
-  const ox = Math.max(0, Math.round((NEW_W - w0) / 2 / AREA) * AREA), oy = Math.max(0, Math.round((NEW_H - h0) / 2 / AREA) * AREA);
+  const ox = Math.max(0, Math.round((KARTA.bredd - w0) / 2 / AREA) * AREA), oy = Math.max(0, Math.round((KARTA.hojd - h0) / 2 / AREA) * AREA);
   // det som är packat per ruta och sjöarnas nummer, läst på den gamla kartan
   const cover0 = decodeCover(s.mark), trees0 = s.skog ? decodeCover(s.skog, 0) : undefined, sjo0 = sjoarna(s.seed).id;
   const fynd0 = fyndBin(s);
 
-  s.W = NEW_W; s.H = NEW_H;
+  s.W = KARTA.bredd; s.H = KARTA.hojd;
   s.kart = { x: (s.kart?.x ?? 0) + ox, y: (s.kart?.y ?? 0) + oy, w: s.kart?.w ?? w0, h: s.kart?.h ?? h0 };
   useMap(s);
   const N = W * H, ny = (i: number) => (i % w0 + ox) + (Math.floor(i / w0) + oy) * W; // en ruta på den gamla kartan

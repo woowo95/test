@@ -1,5 +1,5 @@
 // Scenarier. Grunden: gläntan, yxan, vintern, knapphet, svamp och flinta, kunskap, temperatur och kalender.
-import { createState, growGround, step, living, temperature, coldOf, ageIndex, ageStart, kalender, yearNo, AGES, amountOf, groundOf, getMap, DAY, HOUR, W, tileOf, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, angOf, setAmount, BEAT, tingOf, eatPoison, HOST, vaderNu, VADER, VADERLAGE, VaderId, blotSteg, varmeDelar, stepVader, vaxtFaktor, stepFire, hearthOf, cloneState, wearMult, vaderSlit, NEW_W, NEW_H, allaTider, tiderUtanfor, skaRojas, straken } from '../../sim';
+import { KARTA, createState, growGround, step, living, temperature, coldOf, ageIndex, ageStart, kalender, yearNo, AGES, amountOf, groundOf, getMap, DAY, HOUR, W, tileOf, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, angOf, setAmount, BEAT, tingOf, eatPoison, HOST, vaderNu, VADER, VADERLAGE, VaderId, blotSteg, varmeDelar, stepVader, vaxtFaktor, stepFire, hearthOf, cloneState, wearMult, vaderSlit, allaTider, tiderUtanfor, skaRojas, straken } from '../../sim';
 import { BAR, FOREST, HIGH, isSoil } from '../../sim/vag';
 import { T } from '../../sim/typer';
 import * as SIM from '../../sim';
@@ -17,7 +17,7 @@ SCENARIER.glanta = {
     const ang = angar / jord, skog0 = skogsandel(s, 9, 99);
     const forst: Koll[] = [
       [`en liten koloni: ${s.people.length} personer, ingen eld`, s.people.length === 5 && !s.fire.lit],
-      [`större karta (${s.W}×${s.H})`, s.W === NEW_W && s.H === NEW_H],
+      [`större karta (${s.W}×${s.H})`, s.W === KARTA.bredd && s.H === KARTA.hojd],
       ['gläntan är tom på träd', skogsandel(s, 0, 3) === 0],
       ['gläntan är liten: skog sex rutor från elden', skogsandel(s, 6, 9) > 0.8],
       [`skog på det mesta av jorden utanför gläntan och ängarna, i dungar med gläntor emellan (steg 5.1.4.1): ${(skog0 * 100).toFixed(0)} %`, skog0 > 0.65 && skog0 < 0.95],
@@ -40,7 +40,7 @@ SCENARIER.glanta = {
 function stigLigger(): Koll[] {
   const s = createState(11, START), g = groundOf(s), m = getMap(s.seed);
   let rad = -1;
-  for (let y = 2; y < NEW_H - 2 && rad < 0; y++) for (let x = 2; x < NEW_W - 8; x++) {
+  for (let y = 2; y < KARTA.hojd - 2 && rad < 0; y++) for (let x = 2; x < KARTA.bredd - 8; x++) {
     if (Math.hypot(x - m.fire.x, y - m.fire.y) < 20) continue;
     let ok = true; for (let dy = -1; dy <= 1; dy++) for (let dx = 0; dx < 6; dx++) if (!isSoil(g.tiles[(y + dy) * W + x + dx])) ok = false;
     if (ok) { rad = y * W + x; break; }

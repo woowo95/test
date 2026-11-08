@@ -11,14 +11,13 @@ export const HOUR_S = 3600; // en timme i sekunder (dtSec / HOUR_S = timmar)
 export const DAY = 24 * HOUR; // = ett levnadsår
 export const WEEK = 7 * DAY; // = en tidsålder
 
-// kartans storlek: varje by har sin egen (nya NEW_W×NEW_H). useMap(s) väljer byns karta och anropas när en by skapas,
+// kartans storlek: varje by har sin egen (nya KARTA.bredd × KARTA.hojd, balanstalen i kartflytt.ts, steg 9.1.9). useMap(s) väljer byns karta och anropas när en by skapas,
 // räknas fram eller visas. En äldre by (64×40 eller 80×50) får den stora kartan när den laddas (steg 2.10.9, kartflytt.ts):
 // den gamla kartan ligger kvar i mitten med sitt hörn i (OX, OY) och sin storlek W0×H0, och allt som kommer ur kartans brus
 // räknas från det hörnet, så att det gamla ser ut som förut. Utanför den fortsätter samma brus. En ny by har OX = OY = 0
 export let W = 64;
 export let H = 40;
 export let OX = 0, OY = 0, W0 = 64, H0 = 40;
-export const NEW_W = 120, NEW_H = 120;
 export interface Kart { x: number; y: number; w: number; h: number } // den gamla kartans hörn och storlek
 let KARTA = '64x40';
 export function useMap(s: { W?: number; H?: number; kart?: Kart }) {
