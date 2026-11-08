@@ -742,7 +742,6 @@ SCENARIER.mobler = {
     const tog = amountOf(s, 'torrgras') <= 40 - RT.halmbaddHo + 1e-9;
     // en sovplats per bädd: rutorna den tar är inga andra sovplatser, och den första som sover i huset får bädden
     const platser1 = rum().reduce((n, r) => n + sovplatser(s, r), 0);
-    const tar = stationerOf(s).reduce((n, t) => { const z = SIM.storlekAv(t); return n + z.w * z.h - (isKlar(t) ? 1 : 0); }, 0); // en halvbäddad är ingen sovplats än
     const W_ = SIM.W, head = b ? b.y * W_ + b.x : -1;
     const sover = living(s).find(q => bedTile(s, q) === head);
     let vilan: string | undefined;
@@ -771,7 +770,8 @@ SCENARIER.mobler = {
     const rivet = !stationerOf(r).some(t => t.inne) && stationerOf(r).some(t => t.id === 99) && stationRutor(r).sov.size === 0;
     return [
       [`halmbädden bäddas av hö och grenar inne i sovsalen på ${h} timmar`, !!b && inne && tog],
-      [`bädden tar ${w * bh} golvrutor men är en sovplats (${platser0} sovplatser före, ${platser1} efter med ${stationerOf(s).length} bäddar, klara och påbörjade)`, !!b && platser1 === platser0 - tar],
+      [`bädden tar ${w * bh} golvrutor men är en del av sovplatsen (tre rutor per person, steg 9.2.36): ${platser0} sovplatser före, ${platser1} efter med ${stationerOf(s).length} bäddar, klara och påbörjade`, !!b && platser1 === platser0],
+      [`alla som sover i huset får en bädd (${baddar} bäddar åt ${platser0})`, baddar >= platser0],
       [`den som sover i bädden vilar fortare (${vilan ?? 'ingen sover där'}: ${KROPP.restBadd} mot ${KROPP.restGolv} på golvet)`, vilan === 'restBadd' && KROPP.restBadd > KROPP.restGolv],
       [`byn vill ha bäddar när man sover utan (brist ${brist0.toFixed(2)})`, brist0 > 0],
       [`bäddarna tar aldrig en sovplats som någon behöver (${baddar} bäddar; ${hemlos0} utan sovplats före, ${hemlos1} efter)`, hemlos1 <= hemlos0 && baddar >= 1],

@@ -17,10 +17,13 @@ import { inneUtanPlats, isKlar, stationDef, stationRum, stationRutor, stationerO
 // Husens storlek, vad de är till för och när de byter funktion eller rivs. Var de står och hur de byggs står i BYGG (bygg.ts)
 export const HUS = balans('hus', {
   minSida: 2, // ett hus är minst så här många rutor på varje sida inuti väggarna ...
-  maxSida: 4, // ... och högst så här många på den kortare sidan ...
+  maxSida: 6, // ... och högst så här många på den kortare sidan (6 sedan steg 9.2.36, när sovrummen fick tre rutor per person) ...
   langSida: 2, // ... med den längre sidan högst så här många gånger den kortare
-  langhus: 8, // en sovsal med så här många sovplatser (rutor) eller fler är ett långhus, annars en hydda
-  sovExtra: 2, // ett nytt sovhus rymmer så här många fler än de som saknar sovplats (barn som kommer)
+  langhus: 8, // en sovsal med så här många sovplatser (personer) eller fler är ett långhus, annars en hydda
+  // tre rutor per person (steg 9.2.36): ett sovrum byggs med så här många golvrutor per person som ska sova där (halmbädden
+  // på två rutor och en ruta att gå på) ...
+  sovPer: 3,
+  sovFast: 2, // ... plus så här många för gångar och rymd, lika för alla hus. Sovplatserna räknas i personer (sovPersoner)
   faraBonus: 100, // en fara (kylan) går före all bekvämlighet: så många poäng över vikten gånger hur akut det är
   ruttMin: 10, // så mycket mat som ruttnat bort på sistone innan byn bygger ett förrådshus
   ruttFullt: 4, // behovet av förrådshus är som störst när så här många gånger ruttMin ruttnat
@@ -30,7 +33,6 @@ export const HUS = balans('hus', {
   forradFullt: 0.5, // hur akut ett fullt förråd är (0 till 1)
   familjAkut: 0.5, // hur akut det är att en familj får eget hus (0 till 1)
   familjMin: 3, // en familj med färre än så här många ger inget familjehus
-  familjExtra: 1, // ett familjehus rymmer så här många fler än familjen, och familjen ska ha råd med det
   tomDygn: 1, // en sovsal som ingen sovit i så här länge (dygn, år i spelet) får en ny funktion eller rivs
   tomTim: 4, // ... men behöver byn ett förrådshus blir den det redan efter så här många timmar, före ett nytt hus (steg 2.12.5)
   rivTillbaka: 0.5, // så mycket av materialet kommer tillbaka när ett hus rivs
@@ -70,8 +72,8 @@ export const BYGGNADER = {
   sovsal: {
     namn: 'Sovsal', ikon: '🛏️', behov: 'Sovplatser under tak åt alla, mot kylan', fara: true, vikt: 3, sover: true,
     // så många som saknar en sovplats, och lite till för barn som kommer
-    akut: s => { const n = living(s).length, u = homeless(s); return { v: n ? u / n : 0, plats: u + HUS.sovExtra }; },
-    namnFor: (_s, w, h, same) => { const big = w * h >= HUS.langhus; return same ? `${big ? 'Långhus' : 'Hydda'} ${same + 1}` : big ? 'Långhuset' : 'Hyddan'; },
+    akut: s => { const n = living(s).length, u = homeless(s); return { v: n ? u / n : 0, plats: u }; },
+    namnFor: (_s, w, h, same) => { const big = sovPersoner(w * h) >= HUS.langhus; return same ? `${big ? 'Långhus' : 'Hydda'} ${same + 1}` : big ? 'Långhuset' : 'Hyddan'; },
   },
   forrad: {
     namn: 'Förrådshus', ikon: '📦', behov: 'Maten ruttnar eller förrådet är fullt: under tak ruttnar och slits det mindre', fara: false, vikt: 2, lager: true,
@@ -84,7 +86,7 @@ export const BYGGNADER = {
     // en familj (ett par med barn) utan eget hus som äger så mycket att den kan betala huset själv
     akut: s => {
       const f = familjUtanHus(s);
-      if (f) return { v: HUS.familjAkut, plats: f.folk.length + HUS.familjExtra, ag: f.ag };
+      if (f) return { v: HUS.familjAkut, plats: f.folk.length, ag: f.ag };
       // familjen har vuxit ur sitt hus (steg 7.2.6): huset behöver mer plats
       for (const h of housesOf(s)) {
         if (h.fn !== 'familjehus' || h.ag === undefined || !h.klar) continue;
@@ -148,7 +150,7 @@ export function setRumFn(s: State, r: Rum, fn: Fn) {
 }
 // så många andra hus (utom `utom`) har samma sorts namn som ett nytt hus för funktionen fn med yta w×h inuti väggarna
 export function antalLika(s: State, fn: Fn, w: number, h: number, utom?: Hus) {
-  const big = w * h >= HUS.langhus, hs = housesOf(s).filter(q => q !== utom);
+  const big = sovPersoner(w * h) >= HUS.langhus, hs = housesOf(s).filter(q => q !== utom);
   return fn === 'sovsal' ? hs.filter(q => q.namn.startsWith(big ? 'Långhus' : 'Hydda')).length : hs.filter(q => fnId(q) === fn).length;
 }
 
@@ -205,7 +207,7 @@ function familjUtanHus(s: State) {
     if (!pa || !alive(pa) || pa.id < o.id) continue; // paret räknas en gång, från den med lägst id
     const folk = familjOf(s, o.id);
     if (folk.length < HUS.familjMin || hs.some(h => h.ag === o.id || h.ag === pa.id)) continue;
-    if (formogenhet(s, folk) >= husKostnad(folk.length + HUS.familjExtra)) return { ag: o.id, folk };
+    if (formogenhet(s, folk) >= husKostnad(folk.length)) return { ag: o.id, folk };
   }
   return undefined;
 }
@@ -231,7 +233,7 @@ function boende(s: State): Boende {
   for (const r of [...gridOf(s).rooms].sort((a, c) => ordning(a) - ordning(c))) {
     const h = husById(s, r.hus);
     if (h && !rumFnOf(s, r).sover) continue;
-    const t = sovRutor(s, r);
+    const st0 = stationRutor(s).sov, t = [...sovRutor(s, r).filter(i => st0.has(i)), ...sovRutor(s, r).filter(i => !st0.has(i))].slice(0, rumPlatser(s, r)); // bäddarna först, och bara så många som rummet rymmer (steg 9.2.36)
     if (h?.ag !== undefined) egnaTiles.set(h.id, [...(egnaTiles.get(h.id) ?? []), ...t]);
     else { const st = stationRutor(s).sov; baddar.push(...t.filter(i => st.has(i))); gemensamt.push(...t.filter(i => !st.has(i))); }
   }
@@ -271,20 +273,30 @@ function sovRutor(s: State, r: Rum) {
   const st = stationRutor(s);
   return st.at.size ? r.tiles.filter(i => !st.at.has(i) || st.sov.has(i)) : r.tiles;
 }
-// sovplatserna i ett rum: en per golvruta under tak där ingen station står eller en per halmbädd, och inga i ett hus där man
-// inte sover (som i boende)
-export const sovplatser = (s: State, r: Rum) => husById(s, r.hus) && !rumFnOf(s, r).sover ? 0 : sovRutor(s, r).length;
-// så många sovplatser i rummet som ingen behöver: i ett familjehus de som familjen inte behöver, i byns hus de som ingen
-// behöver i något av dem, och alla i ett hus där man inte sover (steg 2.2.5: där får en möbel stå)
+// tre rutor per person (steg 9.2.36): så många golvrutor ett sovrum för n personer byggs med, och så många personer som får
+// plats på ett golv. Golvet räknas utan stationerna, men med halmbäddarna (de är en del av sovplatsen)
+export const sovRutorFor = (n: number) => n * HUS.sovPer + HUS.sovFast;
+export const sovPersoner = (rutor: number) => rutor <= 0 ? 0 : Math.max(1, Math.floor((rutor - HUS.sovFast) / HUS.sovPer));
+function golvRutor(s: State, r: Rum) {
+  const st = stationRutor(s);
+  return st.at.size ? r.tiles.filter(i => { const t = st.at.get(i); return !t || !!stationDef(t.k)?.sover; }).length : r.tiles.length;
+}
+const rumPlatser = (s: State, r: Rum) => sovPersoner(golvRutor(s, r));
+// sovplatserna i ett rum, i personer, och inga i ett hus där man inte sover (som i boende)
+export const sovplatser = (s: State, r: Rum) => husById(s, r.hus) && !rumFnOf(s, r).sover ? 0 : rumPlatser(s, r);
+// så många golvrutor i rummet som ingen behöver (en möbel får stå där): i ett familjehus det familjen inte behöver, i byns hus
+// det som ingen behöver i något av dem, och alla i ett hus där man inte sover (steg 2.2.5). En sovande behöver HUS.sovPer
+// rutor och huset HUS.sovFast till (steg 9.2.36)
 export function sovKvar(s: State, r: Rum) {
   const h = husById(s, r.hus);
   if (h && !rumFnOf(s, r).sover) return Infinity;
   const b = boende(s);
   if (h?.ag !== undefined) {
-    const tiles = gridOf(s).rooms.filter(q => q.hus === h.id).reduce((n, q) => n + sovRutor(s, q).length, 0);
-    return tiles - familjOf(s, h.ag).length;
+    const golv = gridOf(s).rooms.filter(q => q.hus === h.id).reduce((n, q) => n + golvRutor(s, q), 0);
+    return golv - sovRutorFor(familjOf(s, h.ag).length);
   }
-  return b.gemensamt.length - b.ovriga.length;
+  const golv = gridOf(s).rooms.filter(q => { const hh = husById(s, q.hus); return (!hh || rumFnOf(s, q).sover) && hh?.ag === undefined; }).reduce((n, q) => n + golvRutor(s, q), 0);
+  return golv - sovRutorFor(b.ovriga.length);
 }
 // så många som sover under tak men inte i en halmbädd
 export function utanBadd(s: State) {

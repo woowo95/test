@@ -1063,7 +1063,7 @@ SCENARIER.byggplan = {
       ['Byggplanen väljer att bygga ut det befintliga huset, inte ett nytt', pagar && ettHus],
       [`ritningen är nya rutor (${nya}), och den gamla väggen står kvar (${gamlaVaggar} rutor)`, nya > 0 && gamlaVaggar > 0 && stangd],
       [`huset är större (${fore.w}×${fore.h} → ${h.w}×${h.h}) och fortfarande en rektangel, med ett rum (${rumFore} → ${rum.length})`, storre && rektangel && rum.length === 1 && !h.ut],
-      [`alla rutor går att sova på (${sov})`, sov === (h.w - 2) * (h.h - 2)],
+      [`huset rymmer så många som rutorna räcker till, tre per person (${sov} sovplatser på ${(h.w - 2) * (h.h - 2)} rutor)`, sov === SIM.sovPersoner((h.w - 2) * (h.h - 2))],
       [`vakten för husen är tyst${fel ? ': ' + fel : ''}`, !fel],
     ];
   },

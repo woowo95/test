@@ -29,7 +29,7 @@ import { notis } from './notiser';
 // Planeringen (var ett nytt hus står) och arbetet (i vilken ordning och hur fort det byggs och lagas). Husens storlek och
 // funktion står i HUS (byggnader.ts)
 export const BYGG = balans('bygg', {
-  maxInne: 24, // största hus: så många sovplatser
+  maxInne: 72, // största hus: så många golvrutor inne (24 sovplatser med tre rutor per person, steg 9.2.36)
   husAvst: 5.5, // ett hus står helst minst så här långt från elden (rutor till husets närmaste vägg), för röken och gnistorna
   radieBas: 9, // ett hus planeras högst så här många rutor utanför det byn omsluter (tillHoljet i omrade.ts) ...
   radiePerPerson: 0.25, // ... plus så många per invånare

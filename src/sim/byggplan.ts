@@ -11,7 +11,7 @@ import { villHaMer } from './forradsmal';
 import { amountOf, changed, flyttaLager, inZone, lagerFullt, lagerNy, overflow, overlaps, lagerStorre, ownedAll, put, usable, zonesOf } from './lager';
 import { tingOf } from './agande';
 import { findPath } from './vag';
-import { Akut, BYGGNADER, Byggnad, FN, Fn, HUS, antalLika, fnId, fnOf, husNamn, sovHus, sovplatser, torkUte, vedUte } from './byggnader';
+import { Akut, BYGGNADER, Byggnad, FN, Fn, HUS, antalLika, fnId, fnOf, husNamn, sovHus, sovPersoner, sovRutorFor, sovplatser, torkUte, vedUte } from './byggnader';
 import { kronika } from './historik';
 import { clamp } from './slump';
 import { ledareOf } from './styre';
@@ -178,12 +178,16 @@ export function ritningKostnad(ritning: Andring[]) {
   for (const a of ritning) { const M = MATERIAL[a.m]; k += (M.item ? M.n * grundvarde(M.item) : 0) + M.tim * ARBETE; }
   return k;
 }
+// sover man i det som byggs? Då är platsen personer, och ett sovrum har tre rutor per person (steg 9.2.36, sovRutorFor)
+const sover = (b: ByggBehov) => !!(BYGGNADER as Record<string, Byggnad>)[b.fn]?.sover;
+const rutorFor = (b: ByggBehov, plats: number) => sover(b) ? sovRutorFor(plats) : plats;
+const platsAv = (b: ByggBehov, rutor: number) => sover(b) ? sovPersoner(rutor) : rutor;
 // önskad storlek (steg 7.2.6): efter behovet nu, lite större med seden Förutseende, mindre med Dagens behov, större för den rika
 export function onskadPlats(s: State, b: ByggBehov) {
   const sed = s.seder?.v?.forsiktighet ?? 0, rik = b.a.ag !== undefined && rikOf(s, b.a.ag) ? PLAN.rikExtra : 0;
   // Dagens behov tar bort marginalen när seden är tydlig, men bygger aldrig för få
   const f = sed > 0 ? 1 + PLAN.sedStorlek * sed : 1 + PLAN.sedStorlek * Math.min(0, sed + PLAN.sedMarg);
-  return Math.min(BYGG.maxInne, Math.max(1, Math.round(b.a.plats * f) + rik));
+  return Math.min(sover(b) ? sovPersoner(BYGG.maxInne) : BYGG.maxInne, Math.max(1, Math.round(b.a.plats * f) + rik));
 }
 const rikOf = (s: State, ag: number) => { if (!byId(s, ag)) return false; const f = formogenheter(s).egen, v = f.get(ag) ?? 0, alla = [...f.values()].sort((x, y) => x - y); return alla.length > 1 && v >= alla[Math.floor(alla.length * 0.75)] * PLAN.rikGang; };
 
@@ -194,8 +198,8 @@ const nyttHus: AtgardDef = {
     // storleken efter behovet; så nära kvadratiskt som möjligt
     const sizes: { w: number; h: number }[] = [];
     for (let h = HUS.minSida; h <= HUS.maxSida; h++) for (let w = h; w <= HUS.langSida * h; w++) sizes.push({ w, h });
-    const want = onskadPlats(s, b);
-    sizes.sort((a, c) => (a.w * a.h < want ? 1000 - a.w * a.h : 0) - (c.w * c.h < want ? 1000 - c.w * c.h : 0) || a.w * a.h - c.w * c.h || (a.w - a.h) - (c.w - c.h));
+    const want = onskadPlats(s, b), wantR = rutorFor(b, want);
+    sizes.sort((a, c) => (a.w * a.h < wantR ? 1000 - a.w * a.h : 0) - (c.w * c.h < wantR ? 1000 - c.w * c.h : 0) || a.w * a.h - c.w * c.h || (a.w - a.h) - (c.w - c.h));
     for (const { w, h } of sizes) {
       const at = siteFor(s, w + 2, h + 2, okAt);
       if (!at) continue;
@@ -210,7 +214,7 @@ const nyttHus: AtgardDef = {
         const edge = x === at.x || y === at.y || x === at.x + w + 1 || y === at.y + h + 1;
         ritning.push({ x, y, m: x === dorr.x && y === dorr.y ? 'oppning' : edge ? 'timmer' : s.byplan?.golv ?? 'tra' });
       }
-      return [{ at: 'nyttHus', x: at.x, y: at.y, w: w + 2, h: h + 2, ritning, oppnas: [], kostnad: ritningKostnad(ritning), varde: Math.min(1, w * h / Math.max(1, want)), plats: w * h, ny }];
+      return [{ at: 'nyttHus', x: at.x, y: at.y, w: w + 2, h: h + 2, ritning, oppnas: [], kostnad: ritningKostnad(ritning), varde: Math.min(1, platsAv(b, w * h) / Math.max(1, want)), plats: platsAv(b, w * h), ny }];
     }
     return [];
   },
@@ -237,14 +241,15 @@ const byggaUt: AtgardDef = {
     const hs = housesOf(s).filter(h => h.klar && !h.ut && !h.skjul && (b.a.hus !== undefined ? h.id === b.a.hus : b.a.ag !== undefined ? h.ag === b.a.ag : h.ag === undefined && fnId(h) === b.fn && !fnOf(h).lager));
     const ut: Forslag[] = [], want = onskadPlats(s, b);
     for (const h of hs) for (const side of ['v', 'o', 'n', 's'] as const) {
-      const lodrat = side === 'n' || side === 's', iw = h.w - 2, ih = h.h - 2, tvars = lodrat ? iw : ih;
+      const lodrat = side === 'n' || side === 's', iw = h.w - 2, ih = h.h - 2;
       for (let k = 1; k <= HUS.maxSida; k++) {
         const nw = iw + (lodrat ? 0 : k), nh = ih + (lodrat ? k : 0);
         if (Math.min(nw, nh) > HUS.maxSida || Math.max(nw, nh) > HUS.langSida * Math.min(nw, nh) || nw * nh > BYGG.maxInne) break;
         const f = utbyggnad(s, h, side, k, okAt);
         if (!f) break;
-        ut.push({ ...f, varde: Math.min(1, k * tvars / Math.max(1, want)) });
-        if (k * tvars >= want) break;
+        const mer = platsAv(b, nw * nh) - platsAv(b, iw * ih); // så många fler får plats (personer i ett sovrum, steg 9.2.36)
+        ut.push({ ...f, plats: mer, varde: Math.min(1, mer / Math.max(1, want)) });
+        if (mer >= want) break;
       }
     }
     return ut;
@@ -358,10 +363,10 @@ const kopaHus: AtgardDef = {
   namn: 'Köpa ett hus', steg: 2,
   foresla: (s, b) => {
     if (b.a.ag === undefined || b.a.hus !== undefined || b.fn !== 'familjehus' || s.husAffar) return [];
-    const ut: Forslag[] = [], want = onskadPlats(s, b), ny = husKostnadAv(want);
+    const ut: Forslag[] = [], want = onskadPlats(s, b), ny = husKostnadAv(sovRutorFor(want));
     for (const h of housesOf(s)) {
       if (h.ag === b.a.ag || !saljbart(s, h)) continue;
-      const plats = (h.w - 2) * (h.h - 2), salj = saljPris(s, h), kop = kopPris(s, b.a.ag, ny);
+      const plats = sovPersoner((h.w - 2) * (h.h - 2)), salj = saljPris(s, h), kop = kopPris(s, b.a.ag, ny);
       if (plats < b.a.plats || kop < salj) continue;
       ut.push({ at: 'kopaHus', hus: h, x: h.x, y: h.y, w: h.w, h: h.h, ritning: [], oppnas: [], kostnad: (salj + kop) / 2, varde: Math.min(1, plats / Math.max(1, want)), plats });
     }
@@ -687,8 +692,8 @@ function bygg(s: State, f: Forslag, u: ByggBehov, by: Person) {
   housesOf(s).push(hus); touch(s);
   lagerUrVagen(s, f, hus);
   if (f.ny) s.fire.flytt = { x: f.ny.x, y: f.ny.y, varfor: 'plats' };
-  log(s, planText(by, u.fn as Fn, hus, iw * ih, same) + (f.ny ? ' Elden måste flyttas först.' : ''), 'world', [by.id]); count(s, 'planerat_' + u.fn);
-  if (u.fn === 'sovsal' && iw * ih >= HUS.langhus) count(s, 'planerat_langhus'); // ett långhus (så ofta det händer, samhalle-192)
+  log(s, planText(by, u.fn as Fn, hus, (BYGGNADER as Record<string, Byggnad>)[u.fn]?.sover ? sovPersoner(iw * ih) : iw * ih, same) + (f.ny ? ' Elden måste flyttas först.' : ''), 'world', [by.id]); count(s, 'planerat_' + u.fn);
+  if (u.fn === 'sovsal' && sovPersoner(iw * ih) >= HUS.langhus) count(s, 'planerat_langhus'); // ett långhus (så ofta det händer, samhalle-192)
 }
 // en utbyggnad: den nya delen blir bitar i huset, och den gamla väggen öppnas när den är klar (slutUt i bygg.ts)
 function byggUt(s: State, f: Forslag, by: Person, forb: boolean) {

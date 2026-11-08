@@ -536,7 +536,7 @@ function siteInne(s: State, k: string, bara?: Rum, far?: (h: Hus) => boolean) {
     if (d.sover ? !fn.sover : fn.lager) continue;
     const rum = new Set(r.tiles), kvar = sovKvar(s, r), bonus = !d.sover && !fn.sover ? -STATION.samling : 0;
     for (const rot of [0, 1] as const) {
-      const { w, h } = storlek(k, rot), tar = w * h - (d.sover ? 1 : 0);
+      const { w, h } = storlek(k, rot), tar = d.sover ? 0 : w * h; // halmbädden är en del av sovplatsen (steg 9.2.36)
       if (tar > kvar) continue;
       for (const i0 of r.tiles) {
         const x = i0 % W, y = (i0 - x) / W;
