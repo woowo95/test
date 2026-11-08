@@ -652,6 +652,7 @@ SCENARIER.axelrem = {
 };
 
 SCENARIER.ryggsack = {
+  lang: true,
   text: 'Steg 7.1.3: ryggsäcken sys av tre skinn och ett rep vid slöjdbänken med bensylen av den som kan tekniken, och den som saknar en tar på sig en. Den sitter på ryggen, lämnar båda händerna fria och rymmer 20 i vikt, lika för alla, så en vuxen bär ungefär dubbelt så mycket. Den som samlar med ryggsäcken tar ingen korg utan plockar rakt ner i den, och säcken slits av det som samlas. Den går att ha på sig tillsammans med axelremmen',
   kor: () => {
     const s = createState(2, START); tandEld(s);

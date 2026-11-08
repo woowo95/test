@@ -2331,6 +2331,9 @@ SCENARIER.kropp8 = {
     const r = living(s).filter(x => SIM.ageOf(x, s.now) >= SIM.ALDER.vuxen)[2]!;
     SIM.forlora(s, r, 'fotV', 'höggs av'); const gar1 = SIM.kanGa(r), rorl = SIM.rorlighet(r);
     SIM.forlora(s, r, 'fotH', 'höggs av'); const gar2 = SIM.kanGa(r);
+    // en avhuggen arm tar handen och fingrarna med sig
+    const a8 = living(s).filter(x => SIM.ageOf(x, s.now) >= SIM.ALDER.vuxen)[1]!;
+    SIM.forlora(s, a8, 'armH', 'höggs av'); const armMed = ['armH', 'handH', 'fingrarH'].every(d => a8.saknas?.includes(d as never));
     // ruttnar som maten
     const kvar = s.kvarlevor!.length; s.now += SIM.KVARLEVOR.del.haller * 86400000 + 1; SIM.kvarTimme(s); const rott = s.kvarlevor!.length < kvar;
     // medvetandet: full frisk nära 1, mycket ont och blodförlust lågt, arbetet långsammare, svimmar
@@ -2348,6 +2351,7 @@ SCENARIER.kropp8 = {
       [`ett skadat öga sänker synen (${syn1}), en bruten käke talet (${tal1}), och båda karisman (${k0.toFixed(1)} → ${k1.toFixed(1)})`, syn1 < 1 && tal1 < 1 && k1 < k0],
       [`en avhuggen hand blir en sak med ägarens namn ("${kv?.text}"), fingrarna följer med och händigheten sjunker (${ha.toFixed(2)} → ${SIM.handighet(q).toFixed(2)})`, !!kv && kv.text.includes(q.name) && fing && SIM.handighet(q) < ha],
       [`med en fot kvar går man sämre (${rorl.toFixed(2)}), utan fötter inte alls`, gar1 && rorl < 1 && !gar2],
+      [`en avhuggen arm tar handen och fingrarna med sig (${a8.saknas?.join(', ')})`, armMed],
       ['delen ruttnar bort', rott],
       [`medvetandet sjunker (${m0.toFixed(2)} → ${m1.toFixed(2)}) och arbetet går långsammare (${a0.toFixed(2)} → ${a1.toFixed(2)})`, m0 > 0.9 && m1 < m0 && a1 < a0],
       [`den som svimmat ligger där hen är (${gor}) och kan inte gå`, svimmat && gor === 'medvetslos' && kanInte],
