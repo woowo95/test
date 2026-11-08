@@ -3,6 +3,7 @@ import { $, LAG, bar, esc, tempBar, trend } from './hjalp';
 import { s, ui, uppgiftVid, vidNyBy } from './lage';
 import { figurSvg, portrattImg, portrattUrl } from './folkbild';
 import { skapad } from './utseende';
+import { bytesNu } from './jakt';
 
 // porträttraden överst på kartan: en knapp per invånare, med mer om personen när musen är över den.
 // Ett tryck väljer personen (data-id, fångas i panel.ts), ett dubbeltryck följer hen med kameran
@@ -15,7 +16,7 @@ export function startFollow(id: number, namn?: string) {
 $('followChip').addEventListener('click', stopFollow);
 vidNyBy.push(stopFollow);
 const portEls = new Map<number, HTMLButtonElement>();
-const shortAct = (p: Person) => { const t = uppgiftVid(p); return t ? taskName(t) : '–'; }; // vid tiden som visas (steg 4.5.6.5)
+const shortAct = (p: Person) => { const b = bytesNu(p); if (b) return b.split(':')[0]; const t = uppgiftVid(p); return t ? taskName(t) : '–'; }; // den som byter visar det (steg 9.2.46) // vid tiden som visas (steg 4.5.6.5)
 export function renderPorts() {
   const row = $('ports'), ppl = living(s).sort((a, b) => a.born - b.born);
   const ids = new Set(ppl.map(p => p.id));

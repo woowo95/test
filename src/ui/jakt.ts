@@ -76,4 +76,12 @@ export function jagade(): { kaniner: JagadKanin[]; kast: { fran: P; till: P; k: 
   return { kaniner, kast };
 }
 // texten under Gör just nu: det jägaren gör i bilden, annars uppgiftens text (handlingar.ts)
-export const gorText = (p: Person, t: Task) => { const j = t.act === 'jakt' ? jaktText(p) : undefined; return j ? `${taskName(t)}: ${j}` : taskText(t); };
+export const gorText = (p: Person, t: Task) => { const b = bytesNu(p); if (b) return b; const j = t.act === 'jakt' ? jaktText(p) : undefined; return j ? `${taskName(t)}: ${j}` : taskText(t); };
+// den som byter (steg 9.2.46): Köpslår medan hen förhandlar med handlaren, Byter medan filtarna med ett byte ligger ute, i
+// stället för arbetet som avbröts
+export function bytesNu(p: Person): string | undefined {
+  const a = s.handlare?.affar;
+  if (a && a.vem === p.id && a.fas !== 'hem') return a.fas === 'hamta' ? 'Köpslår: hämtar det hen ska bjuda' : 'Köpslår med handlaren';
+  const f = (s.filtar ?? []).find(x => x.vem === p.id && x.byt !== undefined && x.handlare === undefined && ui.nu >= x.byt && ui.nu < x.slut);
+  return f ? 'Byter' : undefined;
+}
