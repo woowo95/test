@@ -8,7 +8,7 @@ import { Person } from './typer';
 export const KUNSKAPER: Record<string, { namn: string; larAv?: string } | undefined> = {
   svamp: { namn: 'Skilja kantarellen från den giftiga orangea spindlingen', larAv: 'skilja kantarellen från den giftiga spindlingen' },
   motvind: { namn: 'Smyga på djuren i motvind', larAv: 'smyga på djuren i motvind' },
-  smitta: { namn: 'Smittan: de sjuka hålls för sig', larAv: 'att sjukdomar smittar och att de sjuka ska hållas för sig' }, // steg 9.5.5, sjukdom.ts
+  smitta: { namn: 'Smittan: de sjuka hålls för sig', larAv: 'hålla de sjuka för sig, eftersom sjukdomar smittar' }, // steg 9.5.5, sjukdom.ts
 };
 export const kn = (p: Person, k: string) => p.kunskap?.[k]?.v ?? 0;
 export function learnK(p: Person, k: string, dv: number, now: number) {
