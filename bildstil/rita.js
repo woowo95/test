@@ -27,6 +27,8 @@
 
   // ---------- rutnätet ----------
   let ZOOM = 16;
+  // bakgrunden bakom det genomskinliga: mörk eller ljus (◐), så att både ljusa delar och mörka konturer syns
+  let ljus = false; try { ljus = localStorage.getItem('rita-ljus') === '1'; } catch (e) {}
   function rutor() {
     const c = $r('#rita-duk'), bredd = Math.min(560, c.parentElement.clientWidth || 560);
     ZOOM = Math.max(4, Math.min(48, Math.floor(bredd / B.w), Math.floor(560 / B.h)));
@@ -34,7 +36,7 @@
     const g = c.getContext('2d');
     for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) {
       const v = B.px[y * B.w + x];
-      if (v < 0) { g.fillStyle = (x + y) % 2 ? '#2c2722' : '#35302a'; } else g.fillStyle = P.cols[v].hex;
+      if (v < 0) { g.fillStyle = ljus ? ((x + y) % 2 ? '#e4d9c3' : '#d4c8af') : ((x + y) % 2 ? '#2c2722' : '#35302a'); } else g.fillStyle = P.cols[v].hex;
       g.fillRect(x * ZOOM, y * ZOOM, ZOOM, ZOOM);
     }
     if (ZOOM >= 8) {
@@ -42,7 +44,7 @@
       for (let x = 1; x < B.w; x++) { g.moveTo(x * ZOOM + 0.5, 0); g.lineTo(x * ZOOM + 0.5, c.height); }
       for (let y = 1; y < B.h; y++) { g.moveTo(0, y * ZOOM + 0.5); g.lineTo(c.width, y * ZOOM + 0.5); }
       g.stroke();
-      g.strokeStyle = 'rgba(228,217,195,0.35)'; g.beginPath(); // var sextonde punkt: en ruta på kartan
+      g.strokeStyle = ljus ? 'rgba(60,40,30,0.45)' : 'rgba(228,217,195,0.35)'; g.beginPath(); // var sextonde punkt: en ruta på kartan
       for (let x = 16; x < B.w; x += 16) { g.moveTo(x * ZOOM + 0.5, 0); g.lineTo(x * ZOOM + 0.5, c.height); }
       for (let y = 16; y < B.h; y += 16) { g.moveTo(0, y * ZOOM + 0.5); g.lineTo(c.width, y * ZOOM + 0.5); }
       g.stroke();
@@ -149,6 +151,8 @@
     document.querySelectorAll('#rita [data-flytta]').forEach(b => { b.onclick = () => { const [dx, dy] = b.dataset.flytta.split(',').map(Number); flytta(dx, dy); }; });
     document.querySelectorAll('#rita [data-storre]').forEach(b => { b.onclick = () => { const [dw, dh] = b.dataset.storre.split(',').map(Number); const w = Math.max(4, Math.min(128, B.w + dw)), h = Math.max(4, Math.min(128, B.h + dh)); if (w !== B.w || h !== B.h) storlek(w, h); }; });
     $r('#rita-rensa').onclick = () => { spara(); B.px.fill(-1); rutor(); };
+    const bakgrund = $r('#rita-bakgrund'); bakgrund.setAttribute('aria-pressed', String(ljus));
+    bakgrund.onclick = () => { ljus = !ljus; bakgrund.setAttribute('aria-pressed', String(ljus)); try { localStorage.setItem('rita-ljus', ljus ? '1' : '0'); } catch (e) {} rutor(); };
     $r('#rita-spara').onclick = sparaRitning;
     const c = $r('#rita-duk');
     c.addEventListener('pointerdown', e => { e.preventDefault(); c.setPointerCapture(e.pointerId); spara(); ritar = true; sist = null; vid(...punkt(e)); });
