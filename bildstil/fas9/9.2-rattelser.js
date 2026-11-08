@@ -89,4 +89,16 @@
   const BALTE_NY = ['..aaaaaaaa..', '.abcbcbcbca.', 'abaaaddaaaba', 'acaadaadaaca', '.acbcbcbcba.', '..aaaaaaaa..'];
   const LAGER = (B, w, h) => { for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) B.satt(x, y, B.P.i('jord', (x + y) % 7 ? 2 : 1)); };
   VAL.push({ id: 'f9_balte_mindre', namn: 'Bältet i lagret, mindre', typ: 'janej', vad: 'Steg 9.2.34: bältets bild i lagret är större än de andra sakerna. Till vänster som i dag (18 × 9 punkter), till höger mindre (12 × 6), bredvid en kniv i samma skala. Ja eller nej?', versioner: [{ text: 'Bältet i dag till vänster och det mindre till höger, på lagrets jord.', w: 44, h: 15, rita: B => { LAGER(B, 44, 15); ritaSprite(B, BALTE_NU, BL, 2, 3); ritaSprite(B, BALTE_NY, BL, 26, 5); } }] });
+  // steg 9.2.38: lagerplatsernas bakgrund, en version: i dag en ljus ton (oliv 3) och en hel mörk ram; förslaget är marken
+  // nedtrampad till jord (jord 3 med prickar av jord 2) och bara hörnen markerade, så att platsen ser ut som en plats och inte en ruta
+  const LAGERMARK = (B, x0, y0, w, h, ny) => {
+    const P = B.P;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) B.satt(x0 + x, y0 + y, ny ? P.i('jord', (x * 7 + y * 5) % 9 ? 3 : 2) : P.i('oliv', 3));
+    if (ny) { for (const [cx, cy, dx, dy] of [[0, 0, 1, 1], [w - 1, 0, -1, 1], [0, h - 1, 1, -1], [w - 1, h - 1, -1, -1]]) for (let k = 0; k < 4; k++) { B.satt(x0 + cx + dx * k, y0 + cy, P.i('jord', 1)); B.satt(x0 + cx, y0 + cy + dy * k, P.i('jord', 1)); } }
+    else for (let x = 0; x < w; x++) for (let y = 0; y < h; y++) if (x === 0 || y === 0 || x === w - 1 || y === h - 1) B.satt(x0 + x, y0 + y, P.i('jord', 1));
+  };
+  VAL.push({ id: 'f9_lagermark', namn: 'Marken under lagerplatserna', typ: 'janej', vad: 'Steg 9.2.38: lagerplatsens bakgrund ritas om. Till vänster som i dag: en ljus ton och en hel ram. Till höger: marken nedtrampad till jord, utan raster, och bara hörnen markerade. Ja eller nej?', versioner: [{ text: 'En lagerplats på 3 × 2 rutor med gräs runt om, i dag till vänster och förslaget till höger.', w: 112, h: 44, rita: B => {
+    for (let y = 0; y < 44; y++) for (let x = 0; x < 112; x++) B.satt(x, y, B.P.i('oliv', (x * 7 + y * 3) % 11 === 0 ? 1 : 2));
+    LAGERMARK(B, 4, 6, 48, 32, false); LAGERMARK(B, 60, 6, 48, 32, true);
+  } }] });
 })();
