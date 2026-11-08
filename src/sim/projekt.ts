@@ -205,7 +205,7 @@ export const PROJEKT: Record<string, ProjektDef> = {
     brist: s => skaRojas(s).length ? 1 : 0,
     kostnad: () => SKOG.fallTim * ARBETE,
     kan: (s, p, f) => !f.kyla && freeTools(s, p, 'yxa') > 0 && !!rojSpot(s, p),
-    uppgift: (s, p) => { const t = rojSpot(s, p); return t && { act: 'falla', text: 'Fäller ett träd där byn ska ha lager eller fält.', min: fallTid(s, t.i) / 60000, tool: 'yxa', spot: { x: t.x, y: t.y } }; },
+    uppgift: (s, p) => { const t = rojSpot(s, p); return t && { act: 'falla', text: 'Fäller ett träd där byn ska ha lager, fält eller ett stråk.', min: fallTid(s, t.i) / 60000, tool: 'yxa', spot: { x: t.x, y: t.y } }; },
   },
   // stubbarna där något ska stå grävs bort först (steg 6.5.7, skog.ts)
   stubbe: {

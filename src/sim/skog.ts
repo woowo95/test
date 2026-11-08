@@ -1,3 +1,4 @@
+import { STRAK, straken } from './strak';
 import { bynsMitt, utanforByn } from './omrade';
 import { freeTools } from './agande';
 import { budTillfalle, count, forstaGang, gjort, living, log, think } from './folk';
@@ -46,12 +47,15 @@ export const fallTid = (s: State, i: number) => FALL_TID * Math.max(SKOG.fallMin
 
 // rutorna med vuxna träd som ska fällas för att något ska ligga där: lagerplatserna som lagts i skogen och fälten som
 // röjs, de rutor som inte är röjda än (steg 3.6.9)
+// där träd ska fällas: lagerplatser och fält som röjs, stationer ute och gångstråken
 export function skaRojas(s: State) {
   const g = groundOf(s), ut: number[] = [];
   for (const z of s.lagren ?? []) if (z.rojs && z.hus === undefined) for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (g.trees[y * W + x] >= FOREST) ut.push(y * W + x);
   for (const f of faltOf(s)) if (f.steg === 'roja') for (let k = f.klara; k < f.n; k++) { const i = faltRuta(f, k); if (g.trees[i] >= FOREST) ut.push(i); }
   // en station på en plats med träd: de fälls som en del av bygget (steg 8.1.14)
   for (const t of s.stationer ?? []) if (!t.inne) { const { w, h } = storlekAv(t); for (let y = t.y; y < t.y + h; y++) for (let x = t.x; x < t.x + w; x++) if (g.trees[y * W + x] >= FOREST) ut.push(y * W + x); }
+  // ett träd som står i ett gångstråk fälls (steg 9.2.35, strak.ts)
+  if (STRAK.pa) { const sett = new Set(ut); for (const v of straken(s).vagar) for (const i of v.rutor) if (g.trees[i] >= FOREST && !sett.has(i)) { sett.add(i); ut.push(i); } }
   return ut;
 }
 // det närmaste trädet att fälla i ett lager eller på ett fält i skogen, som ingen annan fäller (projektet rojning i projekt.ts)
