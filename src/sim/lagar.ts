@@ -7,13 +7,16 @@ import { REL } from './folk';
 import type { Dodsorsak } from './liv';
 import { balans } from './balans';
 import { clamp } from './slump';
-import { ALDER, ageOf, count, living, log, relKey, satAktRadd, stat } from './folk';
+import { ALDER, ageOf, count, living, log, relKey, satAktRadd, stat, think } from './folk';
 import { kronika } from './historik';
 import { FRAGOR, ROST, Fraga, framFor, laggFram, rostaOm, vikter } from './rost';
 import { PABUD, Pabud, legitimitet, ledareOf, styreAv } from './styre';
 import { knows } from './teknik';
 import type { HandelseTyp } from './rykten';
-import { amountOf } from './lager';
+import { amountOf, ownMove, ownedStock } from './lager';
+import { FOOD } from './saker';
+import { BYN } from './egendom';
+import { DAY } from './typer';
 
 export const LAG = balans('lag', {
   tak: 6, // så många lagar klarar byn utan skrift (steg 8.4.3) ...
@@ -27,6 +30,11 @@ export const LAG = balans('lag', {
   nedrostat: 3, // det som röstats ned tas inte upp igen på så här många dygn (år i spelet)
   skatt: 0.15, // så stor del av det man skaffar går till byn med en lag om skatt (steg 8.4.17) ...
   dagsverke: 1.5, // ... och så många gånger fler bygger med en lag om dagsverken
+  skattLedare: 0.3, // över den här Envälde-seden går skatten till ledarens förråd i stället för byns
+  skattMiss: 0.01, // missnöjet växer så här mycket per dygn (år i spelet) hos den som betalar skatt till ledaren ...
+  gastabud: 40, // ... och när ledaren äger så här mycket mat bjuder hen byn på gästabud: ...
+  gastabudDel: 0.5, // ... så stor del av maten går till byns förråd ...
+  gastabudMiss: 0.15, // ... och missnöjet sjunker så här mycket
   plikt: 0.2, // arbetsplikten höjer viljan att arbeta för byn så här mycket
   bas: 0.25, viktSamlad: 0.4, viktLeg: 0.5, // hur konsekvent lagarna efterlevs (steg 8.4.9): grunden, hur samlad vikten är och legitimiteten
   stegHardare: 0.5, // Envälde och Fejd över det här gör straffet ett steg hårdare när lagen stiftas
@@ -152,6 +160,23 @@ export function tabuDygn(s: State) {
   }
   for (const t of s.tabun) for (const p of vuxna) { const l = p.lardomar?.find(x => x.k === 'fara' && x.a === t.a); if (l) { l.t = s.now; continue; } (p.lardomar ??= []).push({ k: 'fara', a: t.a, v: 0.6, c: 0.6, t: s.now, led: 2, om: t.om }); }
   tabuAktDygn(s, vuxna);
+  skattDygn(s, vuxna);
+}
+// skatten till ledaren (steg 8.4.17): den som betalar blir missnöjd, och när ledarens förråd är fullt bjuder hen byn på gästabud
+function skattDygn(s: State, vuxna: Person[]) {
+  const la = s.delning?.ledare, l = la ? vuxna.find(p => p.id === la.id) : undefined;
+  if (!la || !l) return;
+  for (const p of vuxna) if (p !== l) p.missnoje = clamp((p.missnoje ?? 0) + LAG.skattMiss, 0, 1);
+  const mat = ownedStock(s, l);
+  let n = 0;
+  for (const k of FOOD) n += mat[k] ?? 0;
+  if (n < LAG.gastabud) return;
+  let gav = 0;
+  for (const k of FOOD) { const m = Math.floor((mat[k] ?? 0) * LAG.gastabudDel); if (m >= 1) gav += ownMove(s, k, m, l.id, BYN); }
+  if (gav < 1) return;
+  count(s, 'gastabud');
+  for (const p of vuxna) { p.missnoje = clamp((p.missnoje ?? 0) - LAG.gastabudMiss, 0, 1); if (p !== l) think(p, `${l.name} bjöd på gästabud`, 0.1, s.now, DAY); }
+  log(s, `${l.name} bjöd byn på gästabud av skatten: ${Math.round(gav)} mat till byns förråd.`, 'world', [l.id]);
 }
 // ---------- handlingar som blir tabun (steg 8.4.10) ----------
 // en död eller en svår skada medan någon gjorde något gör de som såg det och de närmaste rädda för handlingen. Rädslan

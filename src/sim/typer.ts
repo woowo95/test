@@ -301,6 +301,7 @@ export interface State {
   stridRapporter?: { t: number; orsak: string; vinnare?: number; n: number }[]; // de äldre striderna (steg 8.8.10)
   tabun?: import('./lagar').Tabu[]; // farliga platser som hela byn undviker (steg 8.4.10)
   tabuAkt?: import('./lagar').TabuAkt[]; // handlingar som hela byn låter bli (steg 8.4.10)
+  skattLedare?: number; // så mycket har gått till ledarens förråd som skatt (steg 8.4.17)
   aktOm?: Record<string, string>; // vad byn minns om olyckan bakom rädslan för en handling
   gravar?: import('./kvarlevor').Grav[]; gravplatser?: Record<string, { x: number; y: number }>; heliga?: import('./kult').HeligPlats[]; ritual?: import('./kult').Ritual; ritualKo?: import('./kult').Ritual[]; // graven, de heliga platserna och ritualerna (system 8.5)
   kvarlevor?: import('./kvarlevor').Kvarleva[]; nextKvar?: number; // det som blir kvar av en människa (steg 8.2.3, kvarlevor.ts)

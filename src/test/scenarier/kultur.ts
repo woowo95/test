@@ -662,6 +662,31 @@ SCENARIER.tinget = {
     ];
   },
 };
+SCENARIER.skatt = {
+  text: 'Steg 8.4.17: med en lag om skatt går en del av fångsten till byns förråd, eller till ledarens under Envälde. Den som betalar till ledaren blir missnöjd, och när ledarens förråd är fullt bjuder hen byn på gästabud',
+  kor: () => {
+    const { s, v, l } = medLedare(), q = v[1];
+    s.styre!.lagar = [{ id: 'skatt', t: s.now, straff: 4, av: l.id, om: '' }];
+    s.seder.v.rang = -0.5; SIM.stepDelning(s);
+    const tillByn = !s.delning?.ledare;
+    s.seder.v.rang = 1; SIM.stepDelning(s);
+    const tillLedaren = s.delning?.ledare?.id === l.id;
+    s.delning = { andel: 0.2, ledare: { id: l.id, andel: 0.3 } };
+    const fore = SIM.ownedStock(s, l).bar ?? 0;
+    SIM.storeLoad(s, { act: 'samla', phase: 'do', tx: 0, ty: 0, until: s.now, carry: 0, why: '', items: { bar: 20 } } as SIM.Task, undefined, undefined, q.id);
+    const fick = (SIM.ownedStock(s, l).bar ?? 0) - fore, egen = SIM.ownedStock(s, q).bar ?? 0;
+    SIM.put(s, 'bar', 60, { [l.id]: 60 });
+    const miss0 = q.missnoje ?? 0, mat0 = SIM.ownedStock(s, l).bar ?? 0;
+    SIM.tabuDygn(s);
+    return [
+      ['under Allmogen går skatten till byns förråd', tillByn],
+      ['under Envälde går den till ledarens', tillLedaren],
+      [`av 20 bär fick ledaren ${fick} och den som samlade ${egen}, i hela bär`, fick === 6 && egen === 10],
+      [`ledaren bjöd på gästabud (${mat0} → ${SIM.ownedStock(s, l).bar ?? 0} bär hos ledaren)`, (s.stat?.gastabud ?? 0) === 1 && (SIM.ownedStock(s, l).bar ?? 0) < mat0],
+      [`och missnöjet sjönk (${miss0.toFixed(2)} → ${(q.missnoje ?? 0).toFixed(2)})`, (q.missnoje ?? 0) <= miss0],
+    ];
+  },
+};
 SCENARIER.sederfas8 = {
   text: 'Steg 8.4.11–8.4.15: sederna Krig och fred, Ägande och delning och Värna – Bruka låses upp när det de styr finns; Värna gör folk ledsna av fällda träd. Talen i Byggplanen följer sederna och ledaren',
   kor: () => {

@@ -328,9 +328,16 @@ function shareOf(ag: Del | undefined, n: number, owner = BYN, s?: State): Del {
   addDel(d, ag, f);
   const r = n - sum * f;
   if (s && owner !== BYN && r > HEL) {
-    const ar = (s.andelRest ??= {}), t = r * (1 - (s.delning?.andel ?? 0)) + (ar[owner] ?? 0), w = Math.min(helt(r), helt(t));
+    // skatten till ledaren (steg 8.4.17): ledarens del samlas på samma sätt i hela saker
+    const la = s.delning?.ledare, egen = la?.id === owner, fo = 1 - (s.delning?.andel ?? 0) - (la && !egen ? la.andel : 0);
+    const ar = (s.andelRest ??= {}), t = r * fo + (ar[owner] ?? 0), w = Math.min(helt(r), helt(t));
     if (t - w > HEL) ar[owner] = Math.min(t - w, 1 - HEL); else delete ar[owner];
     if (w > 0) d[owner] = (d[owner] ?? 0) + w;
+    if (la && !egen) {
+      const tl = r * la.andel + (ar[la.id] ?? 0), wl = Math.min(helt(r) - w, helt(tl));
+      if (tl - wl > HEL) ar[la.id] = Math.min(tl - wl, 1 - HEL); else delete ar[la.id];
+      if (wl > 0) { d[la.id] = (d[la.id] ?? 0) + wl; s.skattLedare = (s.skattLedare ?? 0) + wl; }
+    }
     if (r - helt(r) > HEL) d[owner] = (d[owner] ?? 0) + (r - helt(r)) * (1 - (s.delning?.andel ?? 0)); // en del av en sak: påbörjad hos ägaren (hela)
   } else if (owner !== BYN && r > 1e-12) d[owner] = (d[owner] ?? 0) + r;
   delete d[BYN];
