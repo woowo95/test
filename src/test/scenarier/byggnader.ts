@@ -1179,15 +1179,27 @@ SCENARIER.stockihus = {
   },
 };
 SCENARIER.lagerivagen = {
-  text: 'Steg 8.1.15: en lagerplats påverkar inte var ett hus byggs. Ligger den i vägen flyttas den till en ny plats med samma namn, och sakerna bärs dit',
+  text: 'Steg 8.1.15: en lagerplats påverkar inte var ett hus eller en station ute byggs. Ligger den i vägen flyttas den till en ny plats med samma namn, och sakerna bärs dit',
   kor: () => {
     const s = createState(6, START), z = SIM.zonesOf(s)[0], namn = z.namn, gx = z.x, gy = z.y;
     SIM.flyttaLager(s, z);
     const ny = SIM.zonesOf(s)[0];
+    // en station ute väljer sin plats som om lagret inte fanns: lagret och det som ligger i det läggs där platsen är, och
+    // platsen är densamma (vägarna räknas inte om, så området och byns mitt är desamma). Lagret flyttas när bygget börjar
+    const k = 'klyvplats', s2 = createState(6, START), plats = SIM.stationSite(s2, k)!, z2 = SIM.zonesOf(s2)[0];
+    for (const a of SIM.pilesOf(s2)) if (SIM.inZone(z2, a.x, a.y)) { a.x += plats.x - z2.x; a.y += plats.y - z2.y; }
+    z2.x = plats.x; z2.y = plats.y;
+    const plats2 = SIM.stationSite(s2, k);
+    for (const [m, n] of Object.entries(SIM.stationDef(k)!.av)) SIM.put(s2, m, n + 5);
+    const p = living(s2)[0], tk = { act: 'station', tool: k, until: s2.now } as unknown as Task;
+    SIM.startStation(s2, p, tk);
+    const st = SIM.stationerOf(s2).find(t => t.k === k), z3 = SIM.zonesOf(s2).find(q => q.namn === z2.namn);
     return [
       [`lagerplatsen flyttade (${gx},${gy} → ${ny.x},${ny.y})`, ny.x !== gx || ny.y !== gy],
       ['den har kvar sitt namn', ny.namn === namn],
       ['det som låg där ligger nu utanför och ska bäras in', SIM.overflow(s).length > 0 || SIM.pilesOf(s).length === 0],
+      [`en station ute får sin plats fast lagret ligger där (${plats.x},${plats.y} och ${plats2?.x},${plats2?.y})`, !!plats2 && plats2.x === plats.x && plats2.y === plats.y],
+      ['när stationen börjar byggas där flyttas lagret', !!st && st.x === plats.x && !!z3 && !(z3.x === plats.x && z3.y === plats.y)],
     ];
   },
 };

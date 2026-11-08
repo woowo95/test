@@ -10,7 +10,7 @@ import { getable, Recept, takeMaterial } from './behov';
 import { sparas } from './forradsmal';
 import { Ting, freeTools, nTools, tingOf, wearTool } from './agande';
 import { BYN } from './egendom';
-import { Zone, inZone, pilesInne, put, stallBorta, usable, zoneAt, zonesOf } from './lager';
+import { Zone, flyttaLager, inZone, pilesInne, put, stallBorta, usable, zoneAt, zonesOf } from './lager';
 import { PLATS } from './plats';
 import { balans } from './balans';
 import { Hus, Rum, bitAt, blocked, gridOf, husById, roofed, roomAt, touch } from './byggnad';
@@ -342,8 +342,15 @@ export const fartVid = (s: State, p: { x: number; y: number }, act: Act) => {
 // ---------- var den står ----------
 // en ruta där inget annat ligger eller står: inte på en lagerplats, ett hus, en stack, ett redskap, en stock eller en stubbe,
 // och inte där byn minns att vattnet nådde (steg 3.8.7, flod.ts)
+// somTomt: platsen för en station ute väljs som om lagerplatserna utanför husen inte fanns (steg 8.1.15); ligger lagret i
+// vägen flyttas det när bygget börjar (startStation)
+let somTomt = false;
+const lagerRuta = (s: State, x: number, y: number) => zonesOf(s).some(z => (!somTomt || z.hus !== undefined) && x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h);
+const iLagret = (s: State, x: number, y: number) => somTomt && zonesOf(s).some(z => z.hus === undefined && inZone(z, x, y));
+function somUtanLager<T>(f: () => T): T { somTomt = true; try { return f(); } finally { somTomt = false; } }
 export function ledig(s: State, x: number, y: number) {
-  if (!usable(s, x, y) || underMinnet(s, y * W + x) || paStrak(s, x, y) || stationAt(s, x, y) || sittAt(s, x, y) || zonesOf(s).some(z => x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h)) return false;
+  if (!usable(s, x, y) || underMinnet(s, y * W + x) || paStrak(s, x, y) || stationAt(s, x, y) || sittAt(s, x, y) || lagerRuta(s, x, y)) return false;
+  if (iLagret(s, x, y)) return true; // det som ligger i lagret bärs bort med det
   return !((s.stackar ?? []).some(a => a.x === x && a.y === y) || tingOf(s).some(k => k.x === x && k.y === y) || (s.stockar ?? []).some(k => Math.floor(k.x) === x && Math.floor(k.y) === y) || (s.stubbar ?? []).some(k => k.x === x && k.y === y));
 }
 // ---------- avståndet ute (steg 2.10.8) ----------
@@ -360,7 +367,7 @@ export function friRunt(s: State, rutor: { x: number; y: number }[], motVagg = f
   for (const q of rutor) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
     const x = q.x + dx, y = q.y + dy, i = y * W + x;
     if (!inMap(x, y) || egna.has(i)) continue;
-    if (!motVagg && g.at.has(i) || uteStation(s, x, y) || zs.some(z => x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h)) return false;
+    if (!motVagg && g.at.has(i) || uteStation(s, x, y) || zs.some(z => (!somTomt || z.hus !== undefined) && x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h)) return false;
   }
   return true;
 }
@@ -407,7 +414,7 @@ export const paLek = (l: Rekt, x: number, y: number, w = 1, h = 1) => x < l.x + 
 // platsen för en station av sorten k: inne i ett hus om registret säger det, annars nära elden. Samma plats varje gång (ingen slump)
 // borden och scenen står hellre i samlingssalen när den har plats (steg 7.2.7 och 7.2.8)
 const siteSal = (s: State, k: string) => { const sal = (k === 'scen' || stationDef(k)?.platser) ? samlingRum(s) : undefined; return sal && siteInne(s, k, sal); };
-export const stationSite = (s: State, k: string, p?: Person) => siteSal(s, k) || (stationDef(k)?.forvar?.privat || stationDef(k)?.pynt ? p && siteKista(s, k, p) : stationDef(k)?.brasa ? siteBrasa(s) : stationDef(k)?.eld ? siteEld(s) : stationDef(k)?.forvar ? siteForvar(s, k) : stationDef(k)?.utkant ? siteUtkant(s, k) : stationDef(k)?.inne ? siteInne(s, k, undefined, h => farBygga(s, h, p)) : siteUte(s, k));
+export const stationSite = (s: State, k: string, p?: Person) => siteSal(s, k) || (stationDef(k)?.forvar?.privat || stationDef(k)?.pynt ? p && siteKista(s, k, p) : stationDef(k)?.brasa ? siteBrasa(s) : stationDef(k)?.eld ? siteEld(s) : stationDef(k)?.forvar ? siteForvar(s, k) : stationDef(k)?.utkant ? somUtanLager(() => siteUtkant(s, k)) : stationDef(k)?.inne ? siteInne(s, k, undefined, h => farBygga(s, h, p)) : somUtanLager(() => siteUte(s, k)));
 // i byns utkant (latrinen och slaktbänken): lediga rutor på gräs, sand eller i glesare skog, högst u.till rutor från byn (lägret
 // och husen, utanforByn), helst u.avst och aldrig närmare än utkantMin, inte på lekplatsen, och för latrinen, när byn lärt sig
 // det (s.hygien), långt från vattnet. Avståndet räknas från stationens närmaste ruta
@@ -516,7 +523,7 @@ function sokUte(s: State, k: string) {
       for (let j = 0; j < h && fri; j++) for (let i = 0; i < w && fri; i++) fri = ledig(s, x + i, y + j);
       if (fri && stationDef(k)?.platser) fri = bordPlatser({ k, x, y, rot }).every(q => ledig(s, q.x, q.y)); // stubbarna runt bordet
       if (fri) fri = friRunt(s, [...rutorAv(x, y, w, h), ...(stationDef(k)?.platser ? bordPlatser({ k, x, y, rot }) : [])], true); // plats för en stig runt (steg 2.10.8)
-      for (let i = 0; i < w && fri; i++) fri = !gridOf(s).at.has((y + h) * W + x + i) && !stationAt(s, x + i, y + h) && !(s.stackar ?? []).some(q => q.x === x + i && q.y === y + h); // man står framför den, inte i en vägg, en annan station eller på en hög
+      for (let i = 0; i < w && fri; i++) fri = !gridOf(s).at.has((y + h) * W + x + i) && !stationAt(s, x + i, y + h) && !(s.stackar ?? []).some(q => q.x === x + i && q.y === y + h && !iLagret(s, q.x, q.y)); // man står framför den, inte i en vägg, en annan station eller på en hög
       if (fri) fri = gangFri(s, [...rutorAv(x, y, w, h), ...(stationDef(k)?.platser ? bordPlatser({ k, x, y, rot }) : [])]);
       if (fri && arbetar(stationDef(k))) fri = framLand(s, x, y, w, h); // och inte i vattnet (steg 4.5.4.3)
       if (!fri) continue;
@@ -795,6 +802,7 @@ export function startStation(s: State, p: Person, tk: Task) {
       if ('inne' in at) t.inne = 1;
       if (d.forvar?.privat || d.pynt) t.ag = p.id; // kistan och pyntet är hens (steg 2.10.18, 4.3.4)
       (s.stationer ??= []).push(t);
+      if (!t.inne && !d.forvar) { const { w, h } = storlekAv(t); for (const z of zonesOf(s).filter(z => z.hus === undefined && rutorAv(t!.x, t!.y, w, h).some(q => inZone(z, q.x, q.y)))) flyttaLager(s, z); } // lagret i vägen (steg 8.1.15)
       s.byggV = (s.byggV ?? 0) + 1; // en ny sak på kartan: vägarna och platserna räknas om
     }
   } else if (t) count(s, 'fortsatt');
