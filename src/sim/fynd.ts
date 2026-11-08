@@ -104,10 +104,12 @@ interface FyndDef {
   arstid?: number[]; // hur mycket som finns per tidsålder (istid, vår, sommar, höst), annars lika året om
   torka?: number; // så mycket finns under en torka (steg 3.8.2, torka.ts), annars som vanligt
   uttag?: Uttag;
+  saker?: number; // så många hela saker har en full ruta (steg 9.2.53, sakerPaRutan i steg.ts): rikedomen delad med topp gånger det, nedåt
   vatten?: number; // lagret finns i vattnet; man står på stranden och når så många rutor ut
 }
 const SVAMP_SEASON = [0, 0.15, 0.8, 1.5];
 const SVAMP_UTTAG: Uttag = { full: 2.5, reach: 1, regrow: [1 / 1200, 1 / 450, 1 / 120, 1 / 120] };
+const SVAMP_SAKER = 0.3; // svampar på en full ruta (steg 9.2.53)
 const land = (s: State, i: number) => isSoil(groundOf(s).tiles[i]);
 // hur väl varje slags mark passar lagret (gånger resten av värdet)
 const BAR_PASSAR: Record<Markslag, number> = { skog: 0.8, ung: 1, buske: 1, hog: 1, kort: 0, bar: 0 };
@@ -136,7 +138,7 @@ const DEF = {
       const g = groundOf(s);
       return busksort(g, i)?.bar ? BAR_PASSAR[markslag(g, i)] * 4 * Math.max(m, BUSKTAL.barGolv) : 0;
     },
-    uttag: { full: FANGST.barFull, reach: 1, regrow: [0, 1 / 120, 1 / 48, 1 / 60] },
+    uttag: { full: FANGST.barFull, reach: 1, regrow: [0, 1 / 120, 1 / 48, 1 / 60] }, saker: 0.3,
   },
   // kaniner trivs bäst i gräs, högt eller lågt, men finns också i skogen. Glest över stora områden som vandrar
   jakt: {
@@ -159,14 +161,14 @@ const DEF = {
     namn: 'Kantarell', grupp: 'vaxter', ikon: 'svamp', farg: 0xffd21f, topp: 0.8, arstid: SVAMP_SEASON, torka: 0.1,
     monster: { salt: 83, skala: 8, period: 28, troskel: 0.66, gles: 0.5 }, // hälften så många rutor som med 0,5 före steg 3.10.23.7
     bas: (s, i, m) => land(s, i) && groundOf(s).trees[i] >= FOREST ? 0.9 * m : 0,
-    uttag: SVAMP_UTTAG,
+    uttag: SVAMP_UTTAG, saker: SVAMP_SAKER,
   },
   // den giftiga orangea spindlingen liknar kantarellen. Den har egna områden som kan gå in i kantarellens
   spindling: {
     namn: 'Orange spindling (giftig)', grupp: 'vaxter', ikon: 'spindling', farg: 0xff2d6f, topp: 0.8, arstid: SVAMP_SEASON, torka: 0.1,
     monster: { salt: 89, skala: 8, period: 28, troskel: 0.685, gles: 0.35 }, // som kantarellen, hälften så många rutor (0,55 före steg 3.10.23.7)
     bas: (s, i, m) => land(s, i) && groundOf(s).trees[i] >= FOREST ? 0.9 * m : 0,
-    uttag: SVAMP_UTTAG,
+    uttag: SVAMP_UTTAG, saker: SVAMP_SAKER,
   },
   // flinta vid stenarna, ibland i sanden vid stranden och sällan annars. Den växer sakta tillbaka och flyttar sig aldrig
   flinta: {
@@ -182,7 +184,7 @@ const DEF = {
       if (!land(s, i)) return 0;
       return ROTTER_PASSAR[markslag(groundOf(s), i)] * m;
     },
-    uttag: { full: 0.35, reach: 1, regrow: [1 / 600, 1 / 180, 1 / 180, 1 / 240] },
+    uttag: { full: 0.35, reach: 1, regrow: [1 / 600, 1 / 180, 1 / 180, 1 / 240] }, saker: 0.3,
   },
   // de vilda grödorna (steg 2.10.2, odling.ts): vild rova (åkerkål) i fläckar på ängarna (högt gräs) och vilda ärter i
   // skogsbrynet (gräs eller ungskog intill skogen). Inget i istiden; de växer under sommaren och mognar på hösten. Den som samlar
@@ -600,6 +602,15 @@ export function pickMushrooms(s: State, p: Person, x: number, y: number, dtSec: 
   count(s, GIFT);
   got[GIFT] = (got[GIFT] ?? 0) + 1;
   return 1; // den ser ut som mat och läggs i förrådet
+}
+// en svamp plockad på rundan (steg 9.2.53–9.2.55): kantarellen är mat, och den giftiga spindlingen låter den stå som känner igen
+// den; annars läggs den i bördan som giftsvamp (samma som pickMushrooms). Svarar med det som hamnar i bördan
+export function svampPlock(s: State, p: Person, slag: 'kantarell' | 'spindling'): Record<string, number> {
+  if (slag === 'kantarell') { if (forstaGang(s, 'svamp')) log(s, `${p.name} hittade kantareller i skogen.`, 'world', [p.id]); return { svamp: 1 }; }
+  const sure = clamp(kn(p, 'svamp') + p.skill.samla / FANGST.kandSkill + stat(p, 'intelligens', s.now) / FANGST.kandInt, 0, FANGST.kandMax);
+  if (rnd(s, 'arbete', p) < sure) { count(s, 'giftsvampKand'); useK(p, 'svamp', s.now); return {}; }
+  count(s, GIFT);
+  return { svamp: 1, [GIFT]: 1 };
 }
 // när någon äter: finns giftig svamp i förrådet kan hen få i sig den
 export function eatPoison(s: State, p: Person) {

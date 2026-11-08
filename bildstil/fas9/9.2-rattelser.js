@@ -133,4 +133,32 @@
     ['En tät tuva med några få stora bär överst, och en mörk skugga under.', ['...rR....', '..gRrGg..', '.gGlGlGg.', 'gGgGlGgGg', '.gGgGgGg.', '..kkkkk..']],
   ];
   VAL.push({ id: 'f9_bartuva', namn: 'Bären under träden', typ: 'tre', vad: 'Steg 9.2.42: bären under träden ritas i dag av koden som cirklar och prickar. I stället en tuva med bär som en bild i 16 punkter per ruta, på skogens mark.', versioner: TUVOR.map(([text, r]) => ({ text, w: 32, h: 24, rita: B => { for (let y = 0; y < 24; y++) for (let x = 0; x < 32; x++) B.satt(x, y, B.P.i('barr', (x * 3 + y * 5) % 7 ? 2 : 1)); ritaSprite(B, r, TL, 4, 10); ritaSprite(B, r, TL, 18, 6); } })) });
+  // steg 9.2.53: sakerna på rutan, en bild per antal (1, 2, 3) för bären, svampen, rötterna och grenarna, i 16 punkter per ruta.
+  // Det som ritas är det som går att plocka, och en ruta utan saker ritas inte. Tre sätt; varje rad är en sak, från vänster en, två och tre
+  const RL = { g: 'oliv1', G: 'oliv2', l: 'oliv3', r: 'rost2', R: 'rost3', s: 'rost1', h: 'senap2', H: 'senap1', y: 'senap3', f: 'ben2', F: 'ben1', j: 'jord1', J: 'jord2', k: 'kol1' };
+  const RUTSAKER = [
+    ['Små bilder utspridda på rutan, som i spelet nu: en tuva med ett till tre bär, och en svamp, en rot eller en gren per sak.', {
+      bar: n => [['..gG..', '.gG' + (n > 1 ? 'r' : 'g') + 'g.', 'gGrG' + (n > 2 ? 'r' : 'g') + 'G', '.ggGg.', '..gg..']],
+      svamp: () => ['.hh.', 'hHHh', '.ff.'], rot: () => ['.l.', 'jJj', '.j.'], gren: () => ['....j', '...J.', '.jJ..', 'j....'],
+    }, 'sprid'],
+    ['Samlat i en klunga mitt på rutan, tätare ju fler det är, med en mörk skugga under.', {
+      bar: n => [['...gG...', '..gGlg..', '.g' + 'r'.repeat(n).padEnd(4, 'G') + 'g.', 'gGgGlGgG', '.kkkkkk.']],
+      svamp: () => ['.yhh.', 'hHHHh', '..f..', '.kfk.'], rot: () => ['.l.l.', '.jJj.', 'jJJJj', '.kjk.'], gren: () => ['.....J', '..jJJ.', 'jJj...', 'kk....'],
+    }, 'klunga'],
+    ['Större bilder, en per sak, som syns tydligt också när kartan är utzoomad.', {
+      bar: n => [['..gGGg..', '.gGlGlGg', 'gG' + (n > 0 ? 'Rr' : 'Gg') + 'G' + (n > 1 ? 'Rr' : 'gG').slice(0, 1) + 'G', '.gG' + (n > 2 ? 'rR' : 'lG') + 'Gg', '..gGGg..']],
+      svamp: () => ['.yhhy.', 'hHHHHh', '..ff..', '..Ff..'], rot: () => ['.l..l.', '..ll..', '.jJJj.', 'jJJJJj', '.jJJj.'], gren: () => ['......J.', '....JJ.J', '..jJj...', 'jJj.....', 'j.......'],
+    }, 'stor'],
+  ];
+  const RUTA = (B, x0, y0) => { for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) B.satt(x0 + x, y0 + y, B.P.i('oliv', (x * 5 + y * 3) % 9 ? 3 : 2)); };
+  const PLATSER = { sprid: [[1, 2], [8, 8], [9, 1]], klunga: [[4, 5], [7, 6], [5, 8]], stor: [[0, 1], [7, 8], [8, 0]] };
+  VAL.push({ id: 'f9_rutsaker', namn: 'Sakerna på rutan', typ: 'tre', vad: 'Steg 9.2.53: allt som samlas är nu hela saker på rutan, och bilden visar antalet: bären som ett, två eller tre bär i tuvan, och svampen, rötterna och grenarna med en bild per sak. En ruta utan saker ritas inte. Varje rad är en sak (bär, svamp, rötter, grenar), från vänster en, två och tre.', versioner: RUTSAKER.map(([text, b, satt]) => ({ text, w: 3 * 18 + 2, h: 4 * 18 + 2, rita: B => {
+    for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) B.satt(x, y, B.P.i('oliv', 1));
+    ['bar', 'svamp', 'rot', 'gren'].forEach((k, rad) => [1, 2, 3].forEach((n, kol) => {
+      const x0 = 2 + kol * 18, y0 = 2 + rad * 18;
+      RUTA(B, x0, y0);
+      if (k === 'bar') { ritaSprite(B, b.bar(n)[0], RL, x0 + 4, y0 + 5); return; }
+      for (let j = 0; j < n; j++) { const [dx, dy] = PLATSER[satt][j]; ritaSprite(B, b[k](), RL, x0 + dx, y0 + dy); }
+    }));
+  } })) });
 })();

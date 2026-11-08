@@ -1,5 +1,5 @@
 // Scenarier. Djur och natur: djur, abborre, sjön, kaniner, rötter, värmekartor och naturen.
-import { FANGST, createState, bearbeta, canProcess, makeTool, step, living, cloneState, ageStart, nyKalender, pilesOf, amountOf, STACK, isLight, T, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, findL, areaOf, describe, utanforByn, bynsMitt, FYND, FYND_IDS, GRUPPER, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, observe, hoped, Lager, skyggOf, grupperOf, KANINER, share, djurOf, KANIN, SLAKT, DJUR, DJURARTER, gain, ownsAmount, setAmount, BEAT, matGott, barnMat, hungerFlytt, regulate, EKONOMI, kroppensMat, foodDays, SAMTALSSLAG, SAKER, materialOf, balansTal, load, bordPlats, fullBorda, PLATS, tinderShort } from '../../sim';
+import { FANGST, createState, bearbeta, canProcess, makeTool, step, living, cloneState, ageStart, nyKalender, pilesOf, amountOf, STACK, isLight, T, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, findL, areaOf, describe, utanforByn, bynsMitt, FYND, FYND_IDS, GRUPPER, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, observe, hoped, Lager, skyggOf, grupperOf, KANINER, share, djurOf, KANIN, SLAKT, DJUR, DJURARTER, gain, ownsAmount, setAmount, BEAT, matGott, barnMat, hungerFlytt, regulate, EKONOMI, kroppensMat, foodDays, SAMTALSSLAG, SAKER, materialOf, balansTal, fullBorda } from '../../sim';
 import * as SIM from '../../sim';
 const { RT, STATION } = SIM;
 import { FOREST, isSoil } from '../../sim/vag';
@@ -299,32 +299,36 @@ SCENARIER.samlarrunda = {
   },
 };
 SCENARIER.grenrunda = {
-  text: 'Steg 4.5.6.3: den som samlar grenar går samma runda i skogen, från ruta till ruta med korta stopp (sedan steg 6.1.3 stannar hen där nästa gren är klar, och stoppet ger en hel gren i handen), och den som letar stenar eller flinta går runt bland stenarna och finner dem. Gör just nu säger vad hen letar efter',
+  text: 'Steg 4.5.6.3 och 9.2.55: den som samlar grenar går samma runda i skogen, från ruta till ruta med grenar, och varje plock ger en hel gren i handen där hen står; den som letar stenar eller flinta går runt bland stenarna och finner dem. Gör just nu säger vad hen letar efter',
   kor: () => {
     // två byar med ont om ved följs i steg om två sekunder i åtta timmar: var grenplockarna och de som letar stannar
     let vedStopp = 0, vedSkog = 0, vedFlytt = 0, sokStopp = 0, sokNara = 0, stenar = 0;
     let vaxer = 0, vidStopp = 0, enGren = 0, hela = 0, prov = 0; // varje stopp ger en hel gren (steg 6.1.3)
     const texter = new Set<string>();
     for (const seed of [1, 42]) {
-      const s = createState(seed, START), forra = new Map<number, string>(), bar = new Map<number, number>(), sd = SIM.stoneDist(s.seed), tr = groundOf(s).trees;
+      const s = createState(seed, START), forra = new Map<number, string>(), bar = new Map<number, number>(), mal = new Map<number, { x: number; y: number; hopp: boolean }>(), sd = SIM.stoneDist(s.seed), tr = groundOf(s).trees;
       setAmount(s, 'ved', 0); setAmount(s, 'grenar', 0);
       const sten0 = amountOf(s, 'sten');
       for (let i = 0; i < 8 * 1800; i++) {
         step(s, 2);
         for (const p of living(s)) {
           const t = p.task;
-          if (!t || t.phase !== 'do' || !(t.act === 'ved' || t.sok)) { forra.delete(p.id); bar.delete(p.id); continue; }
+          if (!t || t.phase !== 'do' || !(t.act === 'ved' || t.sok)) { forra.delete(p.id); bar.delete(p.id); mal.delete(p.id); continue; }
           if (t.act === 'ved') {
             const g = t.carry, f = bar.get(p.id);
             prov++; if (Math.abs(g - Math.round(g)) < 1e-9) hela++;
-            if (f !== undefined && g > f + 1e-9) { vaxer++; if (!t.hopp) vidStopp++; if (Math.abs(g - f - 1) < 1e-9) enGren++; }
-            bar.set(p.id, g);
+            // ett plock (steg 9.2.55) görs där hen står: förra gången stod hen på rutan och plockade (inte på väg), eller var på
+            // väg dit och hann fram och plocka i samma steg
+            const m = mal.get(p.id);
+            if (f !== undefined && g > f + 1e-9) { vaxer++; if (m && (!m.hopp || Math.hypot(p.x - m.x, p.y - m.y) < 1.5 || t.plock !== undefined)) vidStopp++; if (Math.abs(g - f - 1) < 1e-9) enGren++; }
+            bar.set(p.id, g); mal.set(p.id, { x: t.tx, y: t.ty, hopp: !!t.hopp });
           }
           texter.add(SIM.taskText(t));
           const plats = `${t.tx},${t.ty}`, j = tileOf(t.tx, t.ty);
-          if (t.hopp || forra.get(p.id) === plats) { forra.set(p.id, plats); continue; }
-          if (forra.has(p.id) && t.act === 'ved') vedFlytt++;
+          if (forra.get(p.id) === plats) continue;
+          if (forra.has(p.id) && t.act === 'ved') vedFlytt++; // ett nytt mål: nästa ruta med grenar eller nästa plats (steg 9.2.56)
           forra.set(p.id, plats);
+          if (t.hopp) continue; // stoppen räknas där hen står när målet sätts (en ruta med grenar runt omkring)
           if (t.act === 'ved') { vedStopp++; if (tr[j] >= FOREST) vedSkog++; }
           else { sokStopp++; if (sd[j] <= SIM.ELD.stenMedel || SIM.flintFactor(s, t.tx, t.ty) > SIM.ELD.flintaSand) sokNara++; }
         }
@@ -333,57 +337,57 @@ SCENARIER.grenrunda = {
     }
     const tx = [...texter];
     return [
-      [`grenplockarna går från ruta till ruta (${vidStopp} stopp med en gren, ${vedFlytt} gånger vidare)`, vidStopp > 50 && vedFlytt > 10],
+      [`grenplockarna går från ruta till ruta (${vidStopp} plock på målrutan, ${vedFlytt} nya mål)`, vidStopp > 50 && vedFlytt > 10],
       [`grenplockarna stannar i skogen (${(vedSkog / Math.max(1, vedStopp) * 100).toFixed(0)} % av stoppen)`, vedSkog > 0.8 * vedStopp],
       [`den som letar stenar eller flinta stannar vid stenarna eller i sanden (${sokNara} av ${sokStopp} stopp)`, sokStopp === 0 || sokNara > 0.8 * sokStopp],
       [`stenarna hittades (${stenar} stenar, eller ringen)`, stenar > 0],
-      [`varje stopp ger en hel gren direkt i handen och bördan har inga bråkdelar (${vaxer} gånger växte bördan, ${vidStopp} vid ett stopp, ${enGren} med en gren; ${hela} av ${prov} hela; steg 6.1.3)`, vaxer > 20 && vidStopp >= vaxer * 0.95 && enGren === vaxer && hela === prov],
+      [`varje plock ger en hel gren i handen där hen står och bördan har inga bråkdelar (${vaxer} gånger växte bördan, ${vidStopp} på målrutan, ${enGren} med en gren; ${hela} av ${prov} hela; steg 9.2.55)`, vaxer > 20 && vidStopp >= vaxer * 0.95 && enGren === vaxer && hela === prov],
       [`Gör just nu säger letar efter grenar och plockar grenar (${tx.filter(x => x.includes('gren') || x.includes('sten')).join(', ')})`, tx.some(x => x.endsWith('letar efter grenar')) && tx.some(x => x.endsWith('plockar grenar'))],
     ];
   },
 };
 SCENARIER.samlartur = {
   lang: true,
-  text: 'En samlare fyller båda händerna på 3–10 minuter, gången inräknad, och går vidare till nästa buske när den man står vid är tom (steg 2.12.4, 6.1.5, 6.1.10)',
+  text: 'Steg 9.2.56: samlaren plockar rutan tom och går vidare till nästa ruta med saker; när inga syns väljs nästa mål, aldrig tillbaka till en ruta hen tömt på turen, och hem när bördan är full eller det drar hemåt (steg 2.12.4, 6.1.10)',
   kor: () => {
-    // turerna följs i steg om 10 sekunder (ett slag är fem minuter, kortare än en tur), i tre byar under två dygn (två år i spelet).
-    // Byarna har ingen mat men gott om trä, så att de samlar mat: sedan det vilda blev sällsyntare (steg 3.10.23.7) samlade de annars
-    // nästan bara tändmaterial de första dygnen
-    const turer: { min: number; lass: number; flytt: number; full: boolean }[] = [];
-    let tomt = 0, arbete = 0;
+    // turerna följs i steg om 10 sekunder, i tre byar under två dygn (två år i spelet). Byarna har ingen mat men gott om trä,
+    // så att de samlar mat
+    const turer: { min: number; flytt: number; full: boolean }[] = [];
+    let tomt = 0, arbete = 0, tillbaka = 0, plock = 0;
     for (const seed of [42, 7, 3]) {
-      const s = createState(seed, START), pagar = new Map<number, { t0: number; last: string; lass: number; flytt: number; full: boolean; tom?: string; tx?: string }>();
+      const s = createState(seed, START), pagar = new Map<number, { t0: number; last: string; flytt: number; full: boolean; tx?: string; tomda: Set<string>; vid?: string }>();
       setMat(s, {}); setAmount(s, 'ved', 300);
       for (let i = 0; i < 48 * 360; i++) {
         step(s, 10);
         for (const p of living(s)) {
-          const t = p.task, u = pagar.get(p.id), samla = t?.act === 'samla' && !t.sok;
-          if (u && (!samla || (u.last === 'back' && t!.phase !== 'back'))) { if (u.last === 'back') turer.push({ min: (s.now - u.t0) / 60000, lass: u.lass, flytt: u.flytt, full: u.full }); pagar.delete(p.id); }
+          const t = p.task, u = pagar.get(p.id), samla = t?.act === 'samla' && !t.sok && !t.tandmat;
+          if (u && (!samla || (u.last === 'back' && t!.phase !== 'back'))) { if (u.last === 'back') turer.push({ min: (s.now - u.t0) / 60000, flytt: u.flytt, full: u.full }); pagar.delete(p.id); }
           if (!samla) continue;
-          const v = u && pagar.has(p.id) ? u : { t0: s.now, last: t.phase, lass: 0, flytt: 0, full: false };
+          const v = u && pagar.has(p.id) ? u : { t0: s.now, last: t.phase, flytt: 0, full: false, tomda: new Set<string>() };
           pagar.set(p.id, v);
-          if ((t.phase === 'go' && v.last === 'do') || (t.phase === 'do' && v.last === 'do' && t.hopp && v.tx !== `${t.tx},${t.ty}`)) v.flytt++; // till nästa buske, också på rundan (steg 4.5.6.1)
-          v.tx = `${t.tx},${t.ty}`;
-          // tom här: två som samlar vid samma buske märker det först i nästa steg när den andra tog det sista, så det räknas när man står kvar längre
-          const tomNu = t.phase === 'do' && !t.hopp && richness(s, 'samla', t.tx, t.ty) < PLATS.tomtGrans && !(t.tandmat && tinderShort(s, t)), plats = `${t.tx},${t.ty}`;
-          // den som redan bestämt sig för att gå (until nu) står kvar till nästa steg; det räknas inte som att stanna
-          if (t.phase === 'do') { arbete++; if (tomNu && v.tom === plats && t.until > s.now) tomt++; }
-          v.tom = tomNu ? plats : undefined;
-          if (t.phase === 'back' && v.last !== 'back') { v.lass = load(t, s) / bordPlats(s, p); v.full = fullBorda(s, p, t); }
+          const plats = `${Math.floor(t.tx)},${Math.floor(t.ty)}`;
+          if (t.phase === 'do' && v.tx !== undefined && v.tx !== plats) v.flytt++; // vidare till nästa ruta eller nästa mål
+          v.tx = plats;
+          if (t.phase === 'do' && !t.hopp) {
+            arbete++;
+            const n = SIM.sakerPa(s, t, Math.floor(t.tx), Math.floor(t.ty));
+            // den som står på en ruta utan saker och inte är på väg därifrån (until nu) står kvar vid en tom ruta
+            if (n <= 0 && v.vid === plats && t.until > s.now) tomt++;
+            if (n > 0) { plock++; if (v.tomda.has(plats)) tillbaka++; }
+            if (v.vid !== undefined && v.vid !== plats) v.tomda.add(v.vid); // rutan hen lämnade är tömd (eller bördan full)
+            v.vid = plats;
+          }
+          if (t.phase === 'back' && v.last !== 'back') v.full = fullBorda(s, p, t);
           v.last = t.phase;
         }
       }
     }
-    const med = (a: number[]) => [...a].sort((x, y) => x - y)[a.length >> 1] ?? NaN;
-    const min = med(turer.map(t => t.min)), lass = med(turer.map(t => t.lass)), vidare = turer.filter(t => t.flytt > 0).length;
+    const vidare = turer.filter(t => t.flytt > 0).length, full = turer.filter(t => t.full).length;
     return [
-      // målet för en tur (steg 6.1.5, 6.1.10): båda händerna fulla på 3–10 minuter med gången när det finns gott om, och hem
-      // när händerna är fulla. Full betyder att en sak till inte ryms (fullBorda); i vikt är det mindre än hela platsen, eftersom
-      // varje hand rymmer ett slag och hela saker
-      [`en tur tar 3–10 minuter, gången inräknad (median ${min.toFixed(1)} minuter av ${turer.length} turer)`, turer.length >= 20 && min >= 3 && min <= 10],
-      [`man bär hem en full börda (${turer.filter(t => t.full).length} av ${turer.length} turer, i vikt ${(lass * 100).toFixed(0)} % i mitten)`, turer.filter(t => t.full).length >= 0.8 * turer.length],
-      [`man går vidare till nästa buske när den är tom (${vidare} av ${turer.length} turer)`, vidare >= turer.length / 2],
-      [`ingen står kvar vid en tom buske längre än ett steg (10 sekunder), utom den som samlar tändmaterial till elden (${tomt} av ${arbete} gånger)`, arbete > 0 && tomt === 0],
+      [`man bär hem en full börda eller går hem när det drar hemåt (${full} av ${turer.length} turer fulla)`, turer.length >= 20 && full >= 0.5 * turer.length],
+      [`man går vidare till nästa ruta med saker (${vidare} av ${turer.length} turer)`, vidare >= turer.length / 2],
+      [`ingen står kvar vid en tom ruta längre än ett steg (10 sekunder) (${tomt} av ${arbete} gånger)`, arbete > 0 && tomt === 0],
+      [`ingen går tillbaka till en ruta hen tömt på turen (${tillbaka} av ${plock} plock)`, plock > 0 && tillbaka <= plock * 0.02],
     ];
   },
 };

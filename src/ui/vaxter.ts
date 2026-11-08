@@ -1,4 +1,4 @@
-import { Djur, FLYGTID, FYND, H, HOUR, SEC, W, ageIndex, bjornarOf, brinnande, djurOf, faglarOf, radjurOf, fyndAt, getMap, groundOf, living, plockOf, tornadoAndel, tornadoPos, vargarOf } from '../sim';
+import { Djur, FLYGTID, H, sakerPaMarken, HOUR, SEC, W, ageIndex, bjornarOf, brinnande, djurOf, faglarOf, radjurOf, groundOf, living, plockOf, tornadoAndel, tornadoPos, vargarOf } from '../sim';
 import { farg, fargTal } from '../palett';
 import { s, ui, vidNyBy } from './lage';
 import { Ikoner, TS, app, djurFx, djurMarkLayer, figurLayer, plantG, rokBakLayer, world } from './scen';
@@ -9,10 +9,25 @@ import { posOf } from './manniskor';
 import { OMRITA_MS } from './terrang';
 import { type DjurHall, djurBild, fagelBild, iconCanvas, kartbild } from '../ikoner';
 
-// bärtuvan under träden (steg 9.2.42): 6 × 5 punkter, i 16 punkter per ruta
-const TUVA = ['..gG..', '.gGrg.', 'gGgGrG', '.rgGg.', '..gg..'], TUVA_FARG: Record<string, number> = { g: 0x4b4f00, G: 0x647025, r: 0xa14808 };
+// sakerna på rutan (steg 9.2.53, platshållare tills Björn valt i bildstilen), i 16 punkter per ruta och bara i palettens färger.
+// Det som ritas är det som går att plocka (sakerPaMarken): bärtuvan under träden med ett, två eller tre bär, och en bild per sak
+// för svampen, rötterna och grenarna. En ruta utan saker ritas inte
+const BILD_FARG: Record<string, number> = { g: 0x4b4f00, G: 0x647025, r: 0xa14808, h: 0xb2921b, H: 0x906f0f, s: 0x742a01, S: 0xa14808, f: 0xbdb39b, j: 0x5e3c24, J: 0x7d5b40, l: 0x647025 };
+// bärtuvan (steg 9.2.42) med så många bär som finns på rutan (1–3)
+const TUVA = [
+  ['..gG..', '.gGgg.', 'gGrGgG', '.ggGg.', '..gg..'],
+  ['..gG..', '.gGrg.', 'gGgGgG', '.rgGg.', '..gg..'],
+  ['..gG..', '.gGrg.', 'gGgGrG', '.rgGg.', '..gg..'],
+];
+const BILDER: Record<string, string[]> = {
+  kantarell: ['.hh.', 'hHHh', '.ff.'],
+  spindling: ['.SS.', 'SssS', '.ff.'],
+  rotter: ['.l.', 'jJj', '.j.'],
+  grenar: ['....j', '...J.', '.jJ..', 'j....'],
+};
+const ritaBild = (rad: string[], x: number, y: number) => rad.forEach((r, dy) => { for (let dx = 0; dx < r.length; dx++) { const c = BILD_FARG[r[dx]]; if (c !== undefined) plantG.beginFill(c).drawRect(x + dx, y + dy, 1, 1).endFill(); } });
 // det som växer just nu, diskret i vanliga vyn: små bärbuskar och svampar där det finns något att hämta.
-// Var det kan växa syns inte, inte heller rötterna under jorden. Ritas om varje timme och när någon tagit något. Kaninerna ritas varje
+// Var det kan växa syns inte. Ritas om varje timme och när någon tagit något. Kaninerna ritas varje
 // bildruta vid tiden som visas (ui.nu), som folket, eftersom de skuttar omkring (djur.ts).
 let ritad = '', ritadNar = -Infinity;
 // en fast plats i rutan för varje sak, så att buskarna inte hoppar runt när kartan ritas om
@@ -28,34 +43,24 @@ function synligaRutor() {
 }
 export function drawPlants(force = false) {
   const v = synligaRutor();
-  const key = `${s.seed},${Math.floor(s.now / HOUR)},${ageIndex(s)},${plockOf(s)},${v.x0},${v.y0},${v.x1},${v.y1}`;
+  const key = `${s.seed},${Math.floor(s.now / HOUR)},${ageIndex(s)},${plockOf(s)},${Object.keys(s.plockat ?? {}).length},${v.x0},${v.y0},${v.x1},${v.y1}`;
   const nu = performance.now();
   if (!force && (key === ritad || nu - ritadNar < OMRITA_MS)) return; // högst en gång i sekunden, som marken
   ritad = key; ritadNar = nu;
   plantG.clear();
-  const sh = getMap(s.seed).shade, g = groundOf(s);
-  const bar = FYND.bar, kant = FYND.kantarell, spin = FYND.spindling;
+  const g = groundOf(s);
   for (let ry = v.y0; ry <= v.y1; ry++) for (let rx = v.x0; rx <= v.x1; rx++) {
     const i = ry * W + rx, x = rx * TS, y = ry * TS;
-    // bären syns på bärbuskarna (steg 6.5.4, terrang.ts). Där ett träd står på rutan syns inte busken, och där ritas en mörkgrön
-    // tuva med några prickar i bärens färg under trädet, två där det finns mycket
-    const b = g.trees[i] > 0 ? fyndAt(s, 'bar', i) / bar.topp : 0;
-    if (b >= 0.25) {
-      const n = b >= 0.6 ? 2 : 1;
-      for (let j = 0; j < n; j++) {
-        // tuvan i pixlar (steg 9.2.42, platshållare tills Björn valt i bildstilen): bladen i oliv och bären i rost, inga cirklar
-        const bx = Math.round(x + 2 + plats(i, j) * 8), by = Math.round(y + 3 + plats(i, j + 5) * 8);
-        TUVA.forEach((rad, dy) => { for (let dx = 0; dx < rad.length; dx++) { const c = TUVA_FARG[rad[dx]]; if (c !== undefined) plantG.beginFill(c).drawRect(bx + dx, by + dy, 1, 1).endFill(); } });
-      }
+    let j = 0; // varje sak får en fast plats i rutan, så att bilden inte hoppar runt när kartan ritas om
+    for (const q of sakerPaMarken(s, 'samla', rx, ry)) {
+      const n = Math.min(3, q.n);
+      if (n <= 0) continue;
+      // bären syns på bärbuskarna (steg 6.5.4, terrang.ts); där ett träd står syns inte busken, och där ritas tuvan under trädet
+      if (q.k === 'bar') { if (g.trees[i] > 0) ritaBild(TUVA[n - 1], Math.round(x + 2 + plats(i, 0) * 8), Math.round(y + 3 + plats(i, 5) * 8)); continue; }
+      for (let k = 0; k < n; k++, j++) ritaBild(BILDER[q.k], Math.round(x + 1 + plats(i, 10 + j) * 11), Math.round(y + 1 + plats(i, 20 + j) * 12));
     }
-    // svamp: en liten fot och hatt i svampens färg, dämpad mot marken. På våren växer det lite, då syns färre och mindre
-    for (const [k, f, j0] of [['kantarell', kant, 10], ['spindling', spin, 20]] as const) {
-      const v = fyndAt(s, k, i) / f.topp;
-      if (v < 0.1) continue;
-      const mx = x + 3 + plats(i, j0) * 10, my = y + 4 + plats(i, j0 + 1) * 9, sz = 0.7 + Math.min(1, v) * 0.5 + sh[i] * 0.2;
-      plantG.beginFill(0xe8dcc0, 0.7).drawRect(mx - 0.4 * sz, my, 0.8 * sz, 1.6 * sz).endFill();
-      plantG.beginFill(f.farg, 0.65).drawEllipse(mx, my, 1.4 * sz, 0.8 * sz).endFill();
-    }
+    const gr = Math.min(3, sakerPaMarken(s, 'grenar', rx, ry)[0]?.n ?? 0);
+    for (let k = 0; k < gr; k++, j++) ritaBild(BILDER.grenar, Math.round(x + 1 + plats(i, 10 + j) * 10), Math.round(y + 1 + plats(i, 20 + j) * 11));
   }
 }
 

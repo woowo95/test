@@ -450,7 +450,8 @@ SCENARIER.knapphet = {
     const st = s.stat ?? {};
     return [
       // sedan samlandet går fortare (steg 2.12.4, v132) töms buskarna nära byn snabbt och man plockar mer långt bort än förut
-      [`mer plockat nära byn än långt bort (${nara.toFixed(3)} mot ${langt.toFixed(3)})`, nara > 0.005 && nara > langt],
+      // sedan samlaren väljer mål där färre redan plockar (steg 9.2.54) sprids uttaget, så nära byn töms ungefär lika mycket som långt bort
+      [`nära byn plockas minst nästan lika mycket som långt bort (${nara.toFixed(3)} mot ${langt.toFixed(3)})`, nara > 0.005 && nara > langt * 0.8],
       // kaninerna håller sig undan folk, så inom 12 rutor jagas nästan inget (ca 0,001). Inom 30 rutor ca 0,02–0,03 (v47), och
       // ca 0,01 sedan fälten blev större (steg 3.10.23, by 23–28), och ca 0,005 sedan de som pratar går till varandra (steg 4.5.6.7):
       // det som prövas är att viltet jagas alls, inte hur mycket. Sedan jakten är en strid (steg 3.7.3) tar en fångad hare inte

@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { BJORK, BRAND, busksort, FYND, fyndAt, DAY, H, HOUR, STADIER, T, VAG, W, tradArt, valjArt, ageIndex, stadium, emberOn, fireHeat, eldXY, eldarOf, groundOf, isCm, kalender, lightLevel, snoPaMarken, vaderNu, LJUSKALLOR } from '../sim';
+import { sakerPaMarken, BJORK, BRAND, busksort, DAY, H, HOUR, STADIER, T, VAG, W, tradArt, valjArt, ageIndex, stadium, emberOn, fireHeat, eldXY, eldarOf, groundOf, isCm, kalender, lightLevel, snoPaMarken, vaderNu, LJUSKALLOR } from '../sim';
 import { s, ui } from './lage';
 import { TS, app, figurLayer, husLayer, mork, pileLayer, terrainG, world } from './scen';
 import { ritaSkuggor, sattMoln, skuggLangd } from './skugga';
@@ -39,7 +39,7 @@ export const OMRITA_MS = 1000;
 // trädets stadium och storlek i steg: 0 = inget träd, plantan och ungträdet i fyra steg var, sedan vuxet, gammalt och torraka
 const STAD = Object.fromEntries(STADIER.map((d, k) => [d.id, k]));
 // bärbusken har mogna bär att plocka just nu (steg 6.5.4): då ritas bären på busken
-const mognaBar = (i: number) => fyndAt(s, 'bar', i) >= FYND.bar.topp * 0.15;
+const mognaBar = (i: number) => (sakerPaMarken(s, 'samla', i % W, Math.floor(i / W)).find(q => q.k === 'bar')?.n ?? 0) > 0; // bär som går att plocka (steg 9.2.53)
 function treeLevel(g: ReturnType<typeof groundOf>, i: number) {
   const st = stadium(g, i);
   return st === null ? (busksort(g, i) ? 20 + (mognaBar(i) ? 1 : 0) : 0) : st === 'planta' || st === 'ungtrad' ? 1 + STAD[st] * 4 + Math.floor(g.trees[i] * 4) : 9 + STAD[st];
