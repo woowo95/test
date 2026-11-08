@@ -60,7 +60,7 @@ header::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; h
 .nyckel img { image-rendering: pixelated; vertical-align: middle; }
 .notisruta { position: fixed; z-index: 4; top: calc(var(--topp) + 8px); left: 50%; transform: translateX(-50%); width: min(380px, calc(100vw - 32px)); box-sizing: border-box; padding: 8px 10px; background: var(--panel); color: var(--fg); border: 2px solid var(--ram); box-shadow: 0 3px 0 rgba(36,32,29,.35); }
 .notishuvud { display: flex; align-items: center; gap: 6px; padding-bottom: 4px; border-bottom: 2px solid var(--line); } .notishuvud b { flex: 1; } .notisnr { font-size: 12px; color: var(--muted, inherit); }
-.notis-fara { border-color: #a14808; } .notis-dod { border-color: var(--ram); } .notis-folk { border-color: #647025; } .notis-framsteg { border-color: #b2921b; } .notis-handel { border-color: var(--handel); }
+.notis-fara { border-color: var(--fara); } .notis-dod { border-color: var(--ram); } .notis-folk { border-color: var(--g-oliv); } .notis-framsteg { border-color: var(--g-senap); } .notis-handel { border-color: var(--handel); }
 .notisrader { margin: 6px 0; padding-left: 18px; max-height: 40vh; overflow-y: auto; } .notisrader li { margin: 2px 0; }
 .notisknappar { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; } .notisknappar button { display: inline-flex; align-items: center; gap: 3px; min-height: 28px; }
 .calknapp { font: inherit; color: inherit; background: none; border: 0; padding: 0 4px; }
@@ -195,7 +195,7 @@ body.vOppen .owned { display: none; }
 ul, ol { list-style: none; margin: 0; padding: 0; }
 .matare { display: flex; flex-direction: column; gap: 3px; } /* humör överst, hälsa under */
 .matare > span { display: flex; align-items: center; justify-content: flex-end; }
-.bar.halsa > i.p { background: #61767a; } /* skiffer 2 */
+.bar.halsa > i.p { background: var(--g-skiffer); } /* skiffer 2 */
 .mark { display: inline-block; vertical-align: middle; line-height: 0; } /* ledaren och skadan vid namnet */
 .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; box-shadow: 0 0 0 1px rgba(36,32,29,0.35); }
 .dot.big { width: 22px; height: 22px; flex: none; margin-top: 6px; }
@@ -209,9 +209,9 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 /* mätarna: tio rutor i en mörk ram (steg 5.3.2.4, som personrutan i bildstilen) */
 .bar { display: inline-flex; box-sizing: border-box; width: 64px; height: 10px; gap: 1px; padding: 2px; background: var(--ram); vertical-align: middle; }
 .bar > i { flex: 1; min-width: 1px; background: var(--tom); } /* ramen kol 0, tomma rutor kol 2, fyllda ton 2 i sin färg */
-.bar > i.p { background: #647025; } /* oliv */
-.bar.low > i.p { background: #a14808; } /* rost */
-.bar.skill > i.p { background: #b2921b; } /* senap */
+.bar > i.p { background: var(--g-oliv); } /* oliv */
+.bar.low > i.p { background: var(--g-rost); } /* rost */
+.bar.skill > i.p { background: var(--g-senap); } /* senap */
 .trend { font-size: 9px; margin-left: 3px; vertical-align: middle; line-height: 1; }
 .trend.up { color: var(--good); }
 .trend.down { color: var(--bad); }
@@ -256,7 +256,7 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 .anseende { font-size: 0.8em; cursor: help; }
 .besk { font-style: italic; margin: 4px 0 8px; line-height: 1.4; }
 .binamn { font-family: var(--body); font-size: 16px; font-weight: normal; } /* pixeltypsnittet har ingen kursiv */
-.binamn.heder { color: #b2921b; }
+.binamn.heder { color: var(--g-senap); }
 .binamn.skam { color: var(--skam); }
 .tnod .brist { cursor: help; position: absolute; left: -6px; top: -6px; width: 16px; height: 16px; border-radius: 50%; background: var(--bad); color: var(--panel); font-size: 11px; line-height: 16px; text-align: center; font-weight: bold; }
 .tekrad { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -268,7 +268,7 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 .tnod.liten.stor { width: 56px; height: 56px; border-radius: 12px; }
 .tnod.hand.tom.stor { font-size: 26px; }
 .hbar { width: 64px; height: 6px; border-radius: 3px; background: var(--barbg); overflow: hidden; }
-.hbar i { display: block; height: 100%; background: #b2921b; } .hbar i.borda { background: #61767a; }
+.hbar i { display: block; height: 100%; background: var(--g-senap); } .hbar i.borda { background: var(--g-skiffer); }
 .utrgubbe { position: relative; width: 70px; height: 100px; flex: none; }
 .utrgubbe svg { width: 100%; height: 100%; display: block; }
 .utrpa { position: absolute; width: 22px; height: 22px; pointer-events: none; }
