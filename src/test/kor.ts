@@ -1,5 +1,6 @@
 // Kör en by utan grafik och samlar nyckeltalen (registret NYCKELTAL i nyckeltal.ts säger vad de heter och betyder).
 // Vakterna larmar om något blir omöjligt (NaN, negativa förråd, folk i vattnet).
+import { trangtVidStation as SIM_TRANGT } from '../sim/stationer';
 import { husFel, BEAT, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, vattenNu, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP, forvarAt, isTool, faltOf, faltRutor, faltAt, stationById, gridOf, getMap, djurOf, vargarOf, MATERIAL } from '../sim';
 import { NYCKELTAL, Nyckeltal, tal } from './nyckeltal';
 import { lyssnaPaTexter } from '../sim/berattelser';
@@ -37,6 +38,7 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
     varjeSteg?.(s);
     steg++; if (s.fire.lit) lit++;
     if (steg % 288 === 0) { const hf = husFel(s); if (hf) larm('hus', () => hf); } // en gång om dagen (steg 7.2.4)
+    if (steg % 12 === 0) { const tv = SIM_TRANGT(s); if (tv) larm('två vid en station', () => tv); } // en gång i timmen (steg 9.2.52)
     if (!(foodOf(s) >= 0) || !(amountOf(s, 'ved') >= 0)) larm('förråd', () => `mat ${foodOf(s)}, ved ${amountOf(s, 'ved')}`);
     for (const t of s.ting ?? []) if (!(t.c > 0 && t.c <= 1 + 1e-9) || [t.hos, t.lass, t.x].filter(v => v !== undefined).length > 1) larm('redskap', () => JSON.stringify(t));
     // saker i hela tal (steg 2.10.7): stackarna, det gömda och ägarnas delar, och det påbörjade under 1

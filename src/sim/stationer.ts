@@ -305,6 +305,14 @@ function arbetarVid(t: Station, q: Person) {
   return Math.abs(k.ty - at.y) < 0.3 && Math.abs(k.tx - at.x) <= 0.3 * storlekAv(t).w + 0.05; // platsen spotFor ger vid stationen (val.ts)
 }
 // är stationen full för p: arbetar så många andra där som får plats?
+// fler som arbetar vid en station än det finns plats (steg 9.2.52, vakten i testerna): stationen och hur många, eller undefined
+export function trangtVidStation(s: State): string | undefined {
+  for (const t of stationerOf(s)) {
+    const d = stationDef(t.k), n = living(s).filter(q => q.task?.phase === 'do' && arbetarVid(t, q)).length;
+    if (n > samtidigt(d)) return `${d?.namn ?? t.k} vid ${t.x},${t.y}: ${n} arbetar, plats för ${samtidigt(d)}`;
+  }
+  return undefined;
+}
 export const upptagen = (s: State, t: Station, p?: Person) => living(s).filter(q => q !== p && arbetarVid(t, q)).length >= samtidigt(stationDef(t.k));
 // rutorna framför en arbetsstation (steg 3.6.6): där står den som arbetar, och där får inget annat stå än sittplatsen.
 // Inte förvaringen, sängarna, borden (stubbarna runt), grillen över elden eller en lägereld som läggs
