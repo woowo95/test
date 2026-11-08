@@ -1,4 +1,4 @@
-import { GravStil, HELIGA_PLATSER, gravAt, heligAt, troNamn, troOf, kvarById, KVARLEVOR, DAY, amountOf, busksort, fallTid, living, tileOf, isTool, FOREST, stamAv, MARK, STADIER, VAG, groundOf, stadium, tradAlder, tradArt, STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf } from '../../sim';
+import { SKYDD, KROPPSDELAR, GravStil, HELIGA_PLATSER, gravAt, heligAt, troNamn, troOf, kvarById, KVARLEVOR, DAY, amountOf, busksort, fallTid, living, tileOf, isTool, FOREST, stamAv, MARK, STADIER, VAG, groundOf, stadium, tradAlder, tradArt, STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { condBar, durTxt, esc, kvMark, kvText, pLink } from '../hjalp';
 import { piles, s, ui } from '../lage';
@@ -205,7 +205,10 @@ export const sak: Flik = {
       : sl.per > 0 ? `<dt>Håller</dt><dd>${durTxt(c / sl.per * HOUR)} till i den takten</dd>` : '';
     // vad den är värd (steg 3.10.6, varde.ts): ungefär så många timmars arbete det tar att skaffa eller göra den, efter skick och kvalitet
     const v1 = t ? tingVarde(t) : grundvarde(a.k) * c, varde = `<dt title="Ungefär i arbetstimmar: det det tar att skaffa eller göra den">Värde</dt><dd>${kortTal(v1)}${!t && p && p.n >= 2 ? `, ${kortTal(v1 * Math.round(p.n))} alla` : ''}</dd>`;
-    const klad = SAKER[a.k]?.klad?.varme ? `<dt>Värme</dt><dd>Skyddar ${Math.round(kladSkydd(a.k, t) * 100)} % mot kylan</dd>` : '';
+    // vad plagget skyddar mot, i tal (steg 9.2.14): kylan, och i striden hur stor del av skadan det tar per slag, på delarna det täcker
+    const strid = SKYDD[a.k], PAR: Record<string, string> = { arm: 'armarna', ben: 'benen', fot: 'fötterna', hand: 'händerna' }, SLAGORD: Record<string, string> = { hugg: 'hugg', stick: 'stick', slag: 'slag', bett: 'bett' };
+    const klad = (SAKER[a.k]?.klad?.varme ? `<dt>Kylan</dt><dd>Skyddar ${Math.round(kladSkydd(a.k, t) * 100)} % mot kylan</dd>` : '')
+      + (strid ? `<dt>Slag och stick</dt><dd>Tar ${Object.entries(strid.tar).map(([k, v]) => `${Math.round(v! * 100)} % av ${SLAGORD[k] ?? k}`).join(', ')}, på ${[...new Set(strid.delar.map(d => PAR[d.replace(/[VH]$/, '')] ?? KROPPSDELAR[d].i))].join(' och ')}</dd>` : '');
     const kv = t && !t.halv && t.q !== undefined ? `<dt>Kvalitet</dt><dd>${kvMark(t, 12)} ${esc(kvText(t))}</dd>` : ''; // (steg 2.2.2)
     const ber = t && !t.halv ? sakBerattelse(s, t, sakNamn(k)) : ''; // mästerverken och de usla sakerna (steg 3.9.4)
     return `
