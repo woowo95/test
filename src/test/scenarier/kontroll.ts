@@ -1,3 +1,5 @@
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 // Scenarier. Kontroller av hela spelet: gränssnittet läser utan att ändra, ikoner, vakter och det som aldrig händer.
 import { Person, createState, step, living, serializeParts, serialize, isLight, ageOf, TEKNIK, knows, housesOf, FYND, FYND_IDS, GRUPPER, DJUR, BEAT, tingOf, FN, fnId, SEC, MATERIAL, ACTS, isSick, SAKER, slagIkon } from '../../sim';
 import * as SIM from '../../sim';
@@ -439,5 +441,17 @@ SCENARIER.portratt = {
       [`beskrivningen säger det vackraste eller fulaste som syns i ansiktet (${sagt} av ${skona})`, sagt === skona],
       [`porträttet (64 × 64) och kartfiguren (14 × 20) ritas för alla ${alla.length} (${ritade}) med bara palettens färger (${utanfor} utanför)`, ritade === alla.length && utanfor === 0],
     ] as Koll[];
+  },
+};
+
+SCENARIER.processgrupp = {
+  text: 'Steg 9.2.60: när testet stoppar en process efter tidsgränsen (korProcess i pool.ts) stoppas hela gruppen av processer den startat, inte bara den',
+  kor: () => {
+    const ut = execFileSync(process.execPath, ['--import', 'tsx', fileURLToPath(new URL('../processgrupp.ts', import.meta.url))], { encoding: 'utf8' });
+    const r = JSON.parse(ut.trim().split('\n').pop()!) as { pid: number; kvar: boolean; stoppad: boolean };
+    return [
+      ['processen som aldrig blev klar stoppades efter tidsgränsen', r.stoppad],
+      [`och den den startade (pid ${r.pid}) lever inte kvar`, r.pid > 0 && !r.kvar],
+    ];
   },
 };

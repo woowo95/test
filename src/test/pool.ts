@@ -20,13 +20,25 @@ export function korSkript(fil: string, args: string[] = [], env: Record<string, 
   const path = fileURLToPath(new URL('./' + fil, import.meta.url));
   return korProcess(process.execPath, ['--import', 'tsx', path, ...args], env, prio);
 }
-export function korProcess(cmd: string, args: string[], env: Record<string, string> = {}, prio = 0): Promise<Utfall> {
+// processerna som går just nu (var och en i sin egen grupp): avbryts testet (Ctrl-C) eller stoppas det stoppas de också, eftersom
+// de inte längre är i samma grupp som testet
+const igang = new Set<number>();
+const stoppaAlla = () => { for (const pid of igang) try { process.kill(-pid, 'SIGKILL'); } catch { /* redan borta */ } igang.clear(); };
+process.on('exit', stoppaAlla);
+for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP'] as const) process.on(sig, () => { stoppaAlla(); process.exit(130); });
+// grans: tidsgränsen i ms (TIDSGRANS_MIN om inget anges). Processen startas i en egen grupp, så att hela gruppen (det den själv
+// startat, som ett scenario med egen miljö) stoppas när tiden är ute (steg 9.2.60)
+export function korProcess(cmd: string, args: string[], env: Record<string, string> = {}, prio = 0, grans = TIDSGRANS_MIN * 60_000): Promise<Utfall> {
   return new Promise(ok => {
     let out = '', err = '', klar = false;
-    const c = spawn(cmd, args, { env: { ...process.env, ...env } });
+    const c = spawn(cmd, args, { env: { ...process.env, ...env }, detached: process.platform !== 'win32' });
+    if (c.pid) igang.add(c.pid);
     if (prio && c.pid) try { setPriority(c.pid, prio); } catch { /* går det inte körs jobbet med vanlig prioritet */ }
-    const sluta = (code: number) => { if (!klar) { klar = true; clearTimeout(tid); ok({ code, out, err }); } };
-    const tid = setTimeout(() => { err += `\n(stoppad efter ${TIDSGRANS_MIN} min, datorns tid)`; c.kill('SIGKILL'); }, TIDSGRANS_MIN * 60_000);
+    const sluta = (code: number) => { if (!klar) { klar = true; clearTimeout(tid); if (c.pid) igang.delete(c.pid); ok({ code, out, err }); } };
+    const tid = setTimeout(() => {
+      err += `\n(stoppad efter ${Math.round(grans / 60_000)} min, datorns tid)`;
+      try { if (c.pid && process.platform !== 'win32') process.kill(-c.pid, 'SIGKILL'); else c.kill('SIGKILL'); } catch { c.kill('SIGKILL'); } // hela gruppen
+    }, grans);
     // som text, så att å, ä och ö inte delas mellan två bitar av utskriften
     c.stdout.setEncoding('utf8'); c.stderr.setEncoding('utf8');
     c.stdout.on('data', d => out += d); c.stderr.on('data', d => err += d);
