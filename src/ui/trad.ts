@@ -182,8 +182,10 @@ const torrBjorkPx = (h: number, sno: number) => { const M = torrBjorkM(h); retur
 
 // bjork: björken i stället för granen (steg 5.1.6); lov: björkens löv nu (steg 5.1.13, sommar om inget anges)
 // typ 'buske': en buske (steg 6.5.3, ui/buske.ts), s = vilken av de tre formerna, + 3 med bären på (bärbusken, steg 6.5.4)
-export type TradBild = { typ: 'gran' | 'torr' | 'buske'; h: number; s: number; mork?: boolean; bjork?: boolean; lov?: Lov };
+export type TradBild = { typ: 'gran' | 'torr' | 'buske'; h: number; s: number; mork?: boolean; bjork?: boolean; lov?: Lov; kol?: boolean }; // kol: en kolnad stam efter en brand (steg 9.2.26)
 function tradPx(b: TradBild, sno: number): { w: number; h: number; px: Int8Array; fot?: number } {
+  // den kolnade stammen (steg 9.2.26, platshållare tills Björn valt i bildstilen): torrakan i kolets två mörkaste toner
+  if (b.kol) { const p = tradPx({ ...b, kol: false }, 0); for (let i = 0; i < p.px.length; i++) if (p.px[i] >= 0) p.px[i] = p.px[i] === BEN || p.px[i] === KOL + 3 ? KOL + 1 : KOL; return p; }
   if (b.typ === 'buske') return buskPx(b.s % BUSK_FORMER.length, b.s >= BUSK_FORMER.length); // s >= 3: med bären på (steg 6.5.4)
   if (b.bjork) {
     const p = b.typ === 'torr' ? torrBjorkPx(b.h, sno) : bjorkPx(b.h, b.lov ?? 'sommar', sno, b.s);
@@ -209,7 +211,7 @@ const bilder = new Map<string, { t: PIXI.Texture; fot: number }>();
 function nyckel(b: TradBild, sno: number) {
   const lov = b.bjork && b.typ !== 'torr' ? b.lov ?? 'sommar' : '';
   const sn = (b.typ === 'torr' && !b.bjork) || b.typ === 'buske' || (lov && lov !== 'kal') ? 0 : sno;
-  return `${b.bjork ? 'b' : ''}${b.typ}|${b.h}|${b.s}|${b.mork ? 1 : 0}|${sn}|${lov}`;
+  return `${b.bjork ? 'b' : ''}${b.typ}|${b.h}|${b.s}|${b.mork ? 1 : 0}|${sn}|${lov}${b.kol ? '|kol' : ''}`;
 }
 function tradTex(b: TradBild, sno: number) {
   const k = nyckel(b, sno);

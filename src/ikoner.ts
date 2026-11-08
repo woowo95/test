@@ -14,6 +14,7 @@ const VADER_PAL = { K: '#61767a', S: '#dad0bb', W: '#dad0bb', a: '#906f0f', b: '
 const AMNE_PAL = { k: '#24201d', r: '#a14808', R: '#bd753e', y: '#906f0f', Y: '#b2921b', j: '#7d5b40', s: '#61767a', b: '#3e5156' };
 export const PAL: Record<string, Record<string, string>> = {
   // facklan på väggen (steg 9.2.11, platshållare): en järnhållare i väggen, skaftet snett upp och huvudet av näver och talg
+  kolstubbe: { k: '#24201d', K: '#2f261d', g: '#474138' }, // den svarta stubben efter en brand (steg 9.2.26, platshållare)
   uppsatt_vagg: { k: '#24201d', K: '#474138', j: '#5e3c24', J: '#7d5b40', y: '#906f0f', Y: '#b2921b' },
   uppsatt_vagg_tand: { k: '#24201d', K: '#474138', j: '#5e3c24', J: '#7d5b40', y: '#906f0f', Y: '#b2921b', r: '#a14808', o: '#bd753e', g: '#d8b25f', w: '#dad0bb' },
   // samtalens ämnen i 8 punkter (steg 9.2.10, platshållare): en symbol per ämne i den lilla pratbubblan
@@ -3714,6 +3715,8 @@ export const PIX: Record<string, string[]> = {
     '...aa...',
     '........',
   ],
+  // den svarta stubben efter en brand (steg 9.2.26, platshållare tills Björn valt i bildstilen)
+  kolstubbe: ['..gKK...', '.KkkkK..', '.KkgkK..', '.KkkkKg.', 'KkkkkkK.', '.kkkkk..'],
   // facklan på väggen (steg 9.2.11, platshållare tills Björn valt i bildstilen): släckt och tänd
   uppsatt_vagg: ['........', '........', '........', '........', '...yY...', '...YY...', '...Jj...', '...jJ...', '..KjJK..', '..kKKk..', '...jJ...', '...Jj...'],
   uppsatt_vagg_tand: ['...w....', '..gwg...', '..ogo...', '.rgogr..', '..ryY...', '...YY...', '...Jj...', '...jJ...', '..KjJK..', '..kKKk..', '...jJ...', '...Jj...'],

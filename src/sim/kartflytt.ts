@@ -106,6 +106,7 @@ export function storreKarta(s: State) {
   if (s.halvfallt) s.halvfallt = Object.fromEntries(Object.entries(s.halvfallt).map(([i, v]) => [ny(Number(i)), v]));
   if (s.morkPlats) s.morkPlats = Object.fromEntries(Object.entries(s.morkPlats).map(([i, v]) => [ny(Number(i)), v]));
   if (s.aska) s.aska = s.aska.map(([i, t]) => [ny(i), t]);
+  if (s.kolnad) s.kolnad = s.kolnad.map(ny); // de kolnade stammarna (steg 9.2.26)
   if (s.tornadoStig) s.tornadoStig = s.tornadoStig.map(ny);
   // det som bara gäller en stund räknas om på den nya kartan: en brand eller tornado mitt i (de slutar), djurens flykt och
   // var kaningrupperna och björnen går i dag

@@ -85,6 +85,7 @@ function ritaTrad(g: ReturnType<typeof groundOf>, sno: number) {
     const x = i % W, y = (i / W) | 0;
     return skog(x - 1, y) || skog(x + 1, y) || skog(x, y - 1) || skog(x, y + 1);
   };
+  const kol = new Set(s.kolnad ?? []); // de kolnade stammarna (steg 9.2.26)
   stallTrad(figurLayer, W, H, i => {
     const x = i % W, y = (i / W) | 0, st = jord(g.tiles[i]) ? stadium(g, i) : null;
     const b = st ? tradBild(st, g.trees[i], x, y, VAG.ungskog, tradArt(g, i).id === 'bjork')
@@ -92,6 +93,7 @@ function ritaTrad(g: ReturnType<typeof groundOf>, sno: number) {
       // ett ungt träd i skogskanten, med den sort som skulle slå rot där (steg 5.1.6)
       : kant(i) && kantHash(x, y) < 0.3 ? tradBild('ungtrad', VAG.ungskog + (1 - VAG.ungskog) * kantHash(y, x) * 0.7, x, y, VAG.ungskog, valjArt(s.seed, g, i, true) === BJORK) : null;
     if (b?.bjork) b.lov = lovAt(x, y);
+    if (b && st === 'torraka' && kol.has(i)) b.kol = true;
     return b;
   }, sno);
 }

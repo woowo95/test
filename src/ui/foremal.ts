@@ -226,6 +226,7 @@ export function drawStructures(t: number) {
   // i trädens lager, rad för rad (steg 8.1.5), så att de syns i den vanliga vyn
   stubbIkoner.start();
   for (const k of s.stubbar ?? []) {
+    if (k.kol) { stubbIkoner.add('kolstubbe', k.x * TS + 4, k.y * TS + 8, 1); continue; } // den svarta stubben efter en brand (steg 9.2.26)
     const r = Math.min(3, Math.max(0, Math.floor((s.now - k.t) / STUBBE_LIV * 4)));
     const id = `st_${sortAt(k.x, k.y)}_${k.v === 2 ? 2 : 1}_${r}${sno ? '_v' : ''}`, b = STUBBILDER[id];
     stubbIkoner.add('sb_' + id, k.x * TS + 10 - b.fx, k.y * TS + 11 - b.fy, 1);

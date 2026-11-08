@@ -1712,18 +1712,18 @@ SCENARIER.brand = {
       kor(s, 18, torr);
       const rutor = s.stat?.['brand ruta'] ?? 0, trad = s.stat?.['brand trad'] ?? 0;
       const brunnen = [...new Set((s.aska ?? []).map(a => a[0]))].filter(i => skog0.has(i));
-      const planta = (t: number) => t > 0 && t <= SIM.MARK.nyPlanta + 1e-6, plantor = brunnen.filter(i => planta(groundOf(s).trees[i])).length;
+      // brandens spår (steg 9.2.26): där skogen brann står kolnade stammar som torrakor
+      const kolSet = new Set(s.kolnad ?? []), kolnade = brunnen.filter(i => kolSet.has(i) && SIM.stadium(groundOf(s), i) === 'torraka').length;
       const askan = brunnen.length ? Math.max(...brunnen.map(i => groundOf(s).cover[i])) : 1;
       // samma ruta när marken är blöt: elden tar sig inte vidare
       if (vat.vader) { vat.vader.torr = 0; vat.vader.fukt = 1; } // blött redan när den tänds: elden sprids fort (steg 6.4.1)
       SIM.tand(vat, mitt, 'blixt', 0);
       kor(vat, 18, x => { if (x.vader) x.vader.torr = 0; });
       const vatRutor = vat.stat?.['brand ruta'] ?? 0;
-      // återväxten: gräset kommer tillbaka och plantorna växer (bara marken, en sommar i taget)
-      const gr = cloneState(s), gg = groundOf(gr);
-      let vaxtTim = 0;
-      while (vaxtTim < 30 * 24 && brunnen.filter(i => gg.trees[i] > SIM.MARK.nyPlanta + 1e-6).length < brunnen.length / 2) { growGround(gr, 6, 2); vaxtTim += 6; }
-      const vuxna = brunnen.filter(i => gg.trees[i] > SIM.MARK.nyPlanta + 1e-6).length;
+      // den kolnade stammen faller efter torrakans tid och lämnar en glänta (steg 9.2.26)
+      const gr = cloneState(s), gg = groundOf(gr), ki = (gr.kolnad ?? [])[0];
+      if (ki !== undefined) { gg.alder![ki] = SIM.FALL(gg.art, ki) - 0.01; SIM.aldras(gg, ki, 1); }
+      const fallit = ki !== undefined && gg.trees[ki] === 0;
       // elden nära byn: en risvägg fem rutor från elden tar eld, och en vuxen har en vattensäck
       const ledig = (x: number, y: number) => !SIM.blocked(by, x, y) && !SIM.stationAt(by, x, y) && !(by.stackar ?? []).some(a => a.x === x && a.y === y) && !SIM.bitAt(by, x, y) && !SIM.isStored(by, x, y) && isSoil(groundOf(by).tiles[y * W + x]);
       let pv: { x: number; y: number } | undefined;
@@ -1759,14 +1759,14 @@ SCENARIER.brand = {
         [`gnistor från lägerelden tände marken efter ${gnistTim} timmar med torr mark`, (gn.stat?.['brand gnista'] ?? 0) >= 1],
         [`skogsbranden spred sig i torr skog (${rutor} rutor på 18 timmar, ${trad} träd dog)`, rutor >= 8 && trad >= 5],
         [`när marken är blöt tar den sig inte vidare (${vatRutor} ruta)`, vatRutor <= 2],
-        [`där skogen brann står plantor (${plantor} av ${brunnen.length}; en torraka kan ha fallit av ålder, och en planta kan vara nedtrampad) i aska (gräset högst ${askan.toFixed(2)})`, brunnen.length > 0 && plantor >= brunnen.length * 0.95 && askan < HIGH],
-        [`plantorna växer när gräset kommit tillbaka (${vuxna} av ${brunnen.length} efter ${vaxtTim} timmar sommar)`, vuxna >= brunnen.length / 2],
+        [`där skogen brann står kolnade stammar som torrakor (${kolnade} av ${brunnen.length}; en kan ha huggits eller fallit av ålder) i aska (gräset högst ${askan.toFixed(2)})`, brunnen.length > 0 && kolnade >= brunnen.length * 0.95 && askan < HIGH],
+        ['den kolnade stammen faller efter torrakans tid', fallit],
         [`elden nära byn sågs (${st['brand sedd'] ?? 0}) och hotade byn (${st['brand hot'] ?? 0})`, (st['brand sedd'] ?? 0) >= 1 && (st['brand hot'] ?? 0) >= 1],
         [`de vuxna släckte: ${sack} med vattensäcken (${st['brand sack'] ?? 0} säckar), ${hand} med händerna, ${st['brand slackt'] ?? 0} rutor släckta, ${st['brand skadad'] ?? 0} brännskador`, sack >= 1 && hand >= 1 && (st['brand slackt'] ?? 0) >= 1],
         [`risväggen brann (skick ${risC.toFixed(2)}${ris.b < 1 ? ', rasade' : ''})`, risC < 1],
         [`ingen stod i en vägg (${iVagg}) eller i vattnet (${iVattnet})`, iVagg === 0 && iVattnet === 0],
         [`elden nära byn slocknade efter ${(tim / 12).toFixed(1)} timmar${by.brand ? ` (${by.brand.r.length} rutor brinner längre bort)` : ''}`, by.brand ? !naraByn() : slocknat],
-        [`marken var svart (${svart0} rutor) och det svarta är borta efter ${SIM.BRAND.svart} dygn`, svart0 > 0 && !sv.aska],
+        [`marken var svart (${svart0} rutor) och det svarta är borta efter ${SIM.BRAND.svart} dygn, utom där en kolnad stam står`, svart0 > 0 && (!sv.aska || sv.aska.every(a => (sv.kolnad ?? []).includes(a[0])))],
       ];
     }
   },

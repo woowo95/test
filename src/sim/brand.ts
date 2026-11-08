@@ -15,8 +15,9 @@ import { eldPlats, vaderstreck } from './karta';
 import { bynsAvstand, bynsMitt } from './omrade';
 import { avbryt, minska, nagotPa, stacksOf, tidy } from './lager';
 import { die } from './liv';
-import { MARK, groundOf, markslag } from './mark';
-import { valjArt } from './trad';
+import { groundOf, markslag } from './mark';
+import { TORR } from './trad';
+import { nyStubbe } from './skog';
 import { faltAt, faltBrann, faltIndex, grodaPa } from './odling';
 import { wearUsed } from './redskap';
 import { larma, larmNu } from './rykten';
@@ -25,7 +26,7 @@ import { isLight, kalender } from './tid';
 import { drickPlats } from './torst';
 import { DAY, H, HEARTHS, HOUR, HOUR_S, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { allaBarn, drabbadHus, upplev } from './uppvaxt';
-import { FOREST, VAG, isSoil } from './vag';
+import { VAG, isSoil } from './vag';
 import { blixtNu, snoPaMarken, torrTim, vaderNu } from './vader';
 import { hash3 } from './slump';
 import { larmAvbryter } from './handlingar';
@@ -237,6 +238,8 @@ export function torkaTest(s: State): { ok: boolean; text: string } {
 }
 // blixten slog ner på rutan (steg 9.2.21): den syns i gränssnittet en kort stund. Bara nedslagen den senaste timmen sparas
 export function nedslag(s: State, x: number, y: number) {
+  const i = y * W + x, g = groundOf(s);
+  if (isSoil(g.tiles[i]) && !g.built?.[i]) (s.aska ??= []).push([i, Math.round(s.now)]); // rutan svärtas alltid (steg 9.2.26)
   s.nedslag = [...(s.nedslag ?? []).filter(n => s.now - n.t < HOUR).slice(-7), { x, y, t: s.now }];
 }
 // testläget (steg 6.4.7): en vanlig blixt slår ner på rutan (x, y). Den tänder som blixten i vädret (gnistor nedan): bara
@@ -359,10 +362,17 @@ function slocknar(s: State, b: Brand) {
     if (isSoil(g.tiles[i]) && !g.built?.[i]) {
       if (g.cover[i] > BRAND.aska) g.cover[i] -= a * (g.cover[i] - BRAND.aska);
       if (a >= BRAND.trad) tabortBuske(g, i); // busken brinner upp (steg 6.5.3)
+      // brandens spår (steg 9.2.26): ett stort träd blir en kolnad stam som står kvar som torrakan (s.kolnad) tills den faller
+      // eller huggs, ett litet blir en svart stubbe, och en planta brinner upp
       if (g.trees[i] > 0 && a >= BRAND.trad) {
         if (g.trees[i] >= VAG.ungskog) { b.trad++; count(s, 'brand trad'); }
-        g.trees[i] = g.trees[i] >= FOREST ? MARK.nyPlanta : 0;
-        if (g.trees[i] > 0 && g.art) g.art[i] = valjArt(s.seed, g, i, true); // efter branden kommer björken (steg 5.1.6)
+        if (g.trees[i] >= 1 && g.alder) {
+          if ((g.alder[i] ?? 0) < TORR(g.art, i)) g.alder[i] = TORR(g.art, i);
+          if (!(s.kolnad ??= []).includes(i)) s.kolnad.push(i);
+        } else {
+          if (g.trees[i] >= VAG.ungskog) { nyStubbe(s, x, y, 0); s.stubbar![s.stubbar!.length - 1].kol = 1; }
+          g.trees[i] = 0;
+        }
         if (s.halvfallt) delete s.halvfallt[i];
       }
       (s.aska ??= []).push([i, Math.round(s.now)]);
@@ -627,8 +637,11 @@ export function slackaFram(s: State, p: Person, _t: Task) {
 
 // det svarta efter elden: rutorna som brann och när (gränssnittet ritar dem mörka). Det gamla tas bort (timblocket i steg.ts)
 export function askaSteg(s: State) {
+  // de kolnade stammarna som fallit eller huggits glöms (steg 9.2.26), och det svarta ligger kvar där en stam står
+  if (s.kolnad?.length) { const g = groundOf(s); s.kolnad = s.kolnad.filter(i => g.trees[i] >= 1 && (g.alder?.[i] ?? 0) >= TORR(g.art, i)); if (!s.kolnad.length) delete s.kolnad; }
   if (s.aska?.length && s.aska[0][1] < s.now - BRAND.svart * DAY) {
-    s.aska = s.aska.filter(a => a[1] >= s.now - BRAND.svart * DAY);
+    const stam = new Set(s.kolnad ?? []);
+    s.aska = s.aska.filter(a => a[1] >= s.now - BRAND.svart * DAY || stam.has(a[0]));
     if (!s.aska.length) delete s.aska;
   }
 }

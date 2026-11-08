@@ -51,4 +51,19 @@
     ['En blixt i trappsteg, kantig som pixlarna, och ett litet hårt sken.', [[28, 0], [28, 10], [20, 10], [20, 24], [27, 24], [27, 40], [22, 40], [22, 58]], 1, 6],
   ];
   VAL.push({ id: 'f9_nedslag', namn: 'Blixtens nedslag', typ: 'tre', vad: 'Steg 9.2.21: blixten syns där den slår ner, ett kort ögonblick, från himlen ner till rutan och med ett starkare sken runt nedslaget. Både när åskan slår ner av sig själv och i testläget.', versioner: BLIXTAR.map(([text, pts, bred, r]) => ({ text, w: 48, h: 72, rita: B => { NATT(B); SKEN(B, pts[pts.length - 1][0], pts[pts.length - 1][1], r); BLIXT(B, pts, bred); if (bred > 1) BLIXT(B, [[21, 26], [12, 34], [9, 42]], 1); } })) });
+  // steg 9.2.26: brandens spår, tre versioner: den kolnade stammen (ett stort träd som brunnit) och den svarta stubben (ett litet), på svart mark
+  const KL = { k: 'kol0', K: 'kol1', g: 'kol3', b: 'ben1', r: 'rost2', a: 'jord0' };
+  const SVART = (B) => { for (let y = 0; y < 44; y++) for (let x = 0; x < 52; x++) B.satt(x, y, B.P.i(y < 30 ? 'oliv' : 'kol', y < 30 ? 2 : ((x * 7 + y * 3) % 5 ? 0 : 2))); };
+  const KOLVER = [
+    ['Stammen rak och svart med två avbrutna grenar och glöd kvar i en spricka; stubben låg och kantig.',
+      ['....kg....', '....kk....', '..k.kk....', '...kkk....', '....kk.k..', '....kkk...', '....kk....', '....kkr...', '....kk....', '...kKkk...', '...kkKk...', '..kkkkkk..'],
+      ['.kgkk.', 'kkkkKk', 'kKkkkk', 'kkkkkk']],
+    ['Stammen kluven i toppen, med ljusa sprickor av aska; stubben rund med en ljus ring.',
+      ['...k..k...', '...kk.k...', '....kkk...', '....kk....', '...bkk....', '....kkb...', '....kk....', '...bkk....', '....kk....', '...kkkk...', '..kkKKkk..', '.kkkkkkkk.'],
+      ['.kkkk.', 'kgbbgk', 'kbkkbk', 'kkkkkk']],
+    ['Stammen kortare och tjockare, avbruten snett, med rötterna synliga; stubben med en brand som pyr.',
+      ['..........', '..........', '....k.....', '....kk....', '...kkk....', '...kkkk...', '...kKkk...', '...kkkk...', '...kkKk...', '..kkkkkk..', '.kkk..kkk.', 'kk......kk'],
+      ['..r...', '.kkkk.', 'kkrkkk', 'kkkkkk']],
+  ];
+  VAL.push({ id: 'f9_kolstam', namn: 'Den kolnade stammen och den svarta stubben', typ: 'tre', vad: 'Steg 9.2.26: ett träd som brinner blir en kolnad stam (ett stort träd) som står kvar som torrakan tills den faller eller huggs, eller en svart stubbe (ett litet träd). Marken runt är svart.', versioner: KOLVER.map(([text, stam, stubbe]) => ({ text, w: 52, h: 44, rita: B => { SVART(B); ritaSprite(B, stam, KL, 8, 20); ritaSprite(B, stubbe, KL, 34, 30); } })) });
 })();
