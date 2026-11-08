@@ -156,9 +156,9 @@ export const VAGSKALAR: { id: string; sed?: Sed; namn: string; steg?: string }[]
 // Hur påbudet används står i val.ts
 interface PabudDef { namn: string; text: string; sed?: Sed; ruta?: string; asikt: (s: State, l: Person) => number }
 const PDEF = {
-  matlager: { ruta: 'Lagret', namn: 'Matlager', text: 'Hur många dygn mat byn ska ha i förrådet innan den slappnar av', sed: 'forsiktighet', asikt: (s, l) => lagerAsikt(s, l) },
-  vedlager: { ruta: 'Lagret', namn: 'Vedlager', text: 'Hur många dygn ved byn ska ha i förrådet', sed: 'forsiktighet', asikt: (s, l) => lagerAsikt(s, l) },
-  torkat: { ruta: 'Lagret', namn: 'Torkat', text: 'Hur mycket av köttet och fisken som torkas på torkställningen', asikt: (s, l) => lagerAsikt(s, l) },
+  matlager: { ruta: 'Förrådsmålen', namn: 'Matlager', text: 'Hur många dygn mat byn ska ha i förrådet innan den slappnar av', sed: 'forsiktighet', asikt: (s, l) => lagerAsikt(s, l) },
+  vedlager: { ruta: 'Förrådsmålen', namn: 'Vedlager', text: 'Hur många dygn ved byn ska ha i förrådet', sed: 'forsiktighet', asikt: (s, l) => lagerAsikt(s, l) },
+  torkat: { ruta: 'Förrådsmålen', namn: 'Torkat', text: 'Hur mycket av köttet och fisken som torkas på torkställningen', asikt: (s, l) => lagerAsikt(s, l) },
   // arbetsordningen (steg 6.1.19, val.ts): ett påbud kan flytta en rad en nivå upp eller ge den fler händer
   bygg: { ruta: 'Arbetet', namn: 'Bygg före allt', text: 'Hur ofta bygget går före försörjningen med mat och ved', asikt: s => clamp(PAB.byggUtan * homeless(s) / Math.max(1, living(s).length) - 1, -1, 1) },
   vinter: { ruta: 'Arbetet', namn: 'Samla för vintern', text: 'Hur många fler som arbetar med maten och veden', asikt: (s, l) => lagerAsikt(s, l) },
