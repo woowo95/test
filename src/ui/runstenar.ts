@@ -4,10 +4,10 @@ import { GUI, type GuiBild, type StenLage } from '../guibilder';
 // stängd, öppen (fylld med flikens färg) och blek (fliken går inte att öppna än). Överst i varje flik står dess band med
 // emblemet. Bilderna är Björns val i bildstilen (g_runsten, g_band, q_tro, q_person, q_grannar), ritade med bildstilens
 // funktioner i src/guibilder.ts (bildstil/guitillspelet.cjs). En punkt i bilden är en punkt på skärmen, som hörnen.
-// Registret: vilken bild varje flik har (flikens id i panel.ts → bildens id i bildstilen). Byn har sedernas sten tills
-// Björn godkänt en egen (steg 5.3.3.2); seder, religion och styre är delarna i Byn och ger bara banden
+// Registret: vilken bild varje flik har (flikens id i panel.ts → bildens id i bildstilen). Seder, Tro och Styre är var sin sten
+// (steg 9.3.1)
 export const STEN: Record<string, string> = {
-  kronika: 'kronika', byn: 'seder', seder: 'seder', styre: 'styre', religion: 'tro', grannar: 'grannar', teknik: 'teknik', person: 'person', forrad: 'forrad',
+  kronika: 'kronika', seder: 'seder', styre: 'styre', religion: 'tro', grannar: 'grannar', teknik: 'teknik', person: 'person', forrad: 'forrad',
 };
 const urls = new Map<GuiBild, string>();
 function url(b: GuiBild) {

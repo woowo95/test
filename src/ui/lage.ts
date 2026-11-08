@@ -19,7 +19,7 @@ export const ui = {
   hoger: undefined as FlikId | undefined, // kartan börjar fri (steg 5.3.7); Folket har ingen egen flik (steg 6.9.15)
   // ↑ den öppna flikens panel till höger (Byn, Teknik, Krönika …)
   selected: undefined as number | undefined, // personen som visas i panelen
-  bynDel: 'seder', // delen i fliken Byn (DELAR i flikar/byn.ts)
+  styreDel: 'styre', // delen i stenen Styre (DELAR i flikar/styre.ts, steg 9.3.1)
   personFall: {} as Record<string, boolean>, // delarna i personens flikar som man fällt ut eller ihop (steg 5.3.4.2)
   personDel: 'om', // fliken i personrutan (FLIKAR i flikar/person.ts), eller en del i den (DELAR)
   hovered: undefined as number | undefined, // personen under musen

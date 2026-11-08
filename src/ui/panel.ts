@@ -15,7 +15,9 @@ import { fram } from './flikar/fram';
 import { match } from './flikar/match';
 import { djur } from './flikar/djur';
 import { grannar } from './flikar/grannar';
-import { byn } from './flikar/byn';
+import { seder } from './flikar/seder';
+import { religion } from './flikar/religion';
+import { styre } from './flikar/styre';
 import { $, hjalpKlick } from './hjalp';
 import { piles, s, satRitaOm, ui, vidNyBy } from './lage';
 import { renderPorts } from './portratt';
@@ -31,7 +33,8 @@ export interface Flik {
   syns?(): boolean; // annars är knappen en blek sten som inte går att trycka på (grannarna när byn har grannar)
   band?(): string; // bandet överst är en annan fliks (Byn visar den öppna delens band, steg 5.3.3.2)
 }
-const FLIKAR = { byn, teknik, kronika, grannar, person, eld, lager, hog, hus, station, sjo, falt, sak, djur, filt, fram, match } satisfies Record<string, Flik>;
+// runstenarna uppifrån (steg 9.3.1): Seder, Tro, Styre, Teknik, Krönika och Grannar
+const FLIKAR = { seder, religion, styre, teknik, kronika, grannar, person, eld, lager, hog, hus, station, sjo, falt, sak, djur, filt, fram, match } satisfies Record<string, Flik>;
 export type FlikId = keyof typeof FLIKAR;
 const ALLA: Record<FlikId, Flik> = FLIKAR;
 const IDS = Object.keys(FLIKAR) as FlikId[];
@@ -95,7 +98,7 @@ function skriv(sd: Sida, id: FlikId | undefined, force: boolean) {
 satRitaOm(() => renderPanel(true));
 // bakåtknappen (steg 6.9.5): panelerna minns vad man tittat på. Det som bestämmer vad panelerna visar sparas när det ändras,
 // och ← (bredvid krysset) går tillbaka ett steg, så att man kommer tillbaka till personen, fliken eller saken man såg
-const VY = ['tab', 'hoger', 'selected', 'bynDel', 'personDel', 'eld', 'husId', 'stationId', 'sjoNr', 'faltId', 'faltRuta', 'hogAt', 'filtAt', 'framNr', 'matchNr', 'byteNr', 'djurId', 'sak', 'lagerNr'] as const;
+const VY = ['tab', 'hoger', 'selected', 'styreDel', 'personDel', 'eld', 'husId', 'stationId', 'sjoNr', 'faltId', 'faltRuta', 'hogAt', 'filtAt', 'framNr', 'matchNr', 'byteNr', 'djurId', 'sak', 'lagerNr'] as const;
 const BAKAT_MAX = 30;
 const bakat: string[] = [];
 let vyNu = '';
@@ -116,7 +119,7 @@ export function tillbaka() {
   renderPanel(true); renderPorts();
 }
 export function renderPanel(force = false) {
-  if (ui.hoger && (ALLA[ui.hoger].syns?.() ?? true) === false) ui.hoger = undefined;
+  if (ui.hoger && (!ALLA[ui.hoger] || (ALLA[ui.hoger].syns?.() ?? true) === false)) ui.hoger = undefined; // också en flik som inte finns längre (Byn, steg 9.3.1)
   minnsVy();
   for (const b of document.querySelectorAll<HTMLButtonElement>('.panel > .bakat')) b.hidden = !bakat.length;
   for (const b of nav.querySelectorAll<HTMLButtonElement>('button')) {

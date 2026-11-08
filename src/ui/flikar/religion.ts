@@ -60,7 +60,7 @@ function troHtml(tr: Tro) {
 }
 
 export const religion: Flik = {
-  namn: 'Religion',
+  namn: 'Tro',
   syns: () => andligSyns(s),
   html() {
     const tron = (s.tron ?? []).filter(tr => tr.slut === undefined).sort((a, b) => troende(s, b).length - troende(s, a).length || a.id - b.id);

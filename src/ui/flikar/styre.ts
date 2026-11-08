@@ -1,19 +1,16 @@
 import { LAG, LAGAR, TABU_AKT, placeName, efterlevs, lagTak, lagarNu, MINISTRAR, TRONFOLJD_TEXT, tronfoljd, DAY, LED, PABUD, PABUD_LIST, Pabud, Rattegang, SEDER, STR, STRAFF_NAMN, VAGSKALAR, byId, legitimitet, ledareOf, onskatDygn, pabud, pabudAndel, rattegang, styrelseform, timeLabel, torkAndel } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { bar, esc, hjalpKnapp, hjalpText, num, pLink } from '../hjalp';
-import { s } from '../lage';
+import { s, ui } from '../lage';
 import { sedFormat, sedVag } from './seder';
 import type { Flik } from '../panel';
 
 // styret (steg 3.5.4, styre.ts): ledaren, styrelseformen, legitimiteten, vågskålarna, rättegångarna och de ledare byn haft.
-// En del i fliken Byn (steg 5.3.3.2, byn.ts) som går att öppna först när byn fått sin första ledare; påbuden är en egen del där
+// En egen runsten (steg 9.3.1) som är blek tills byn fått sin första ledare, med delar överst: styret och påbuden (DELAR nedan)
 export const harHaft = () => !!s.styre?.historia.length;
 const dygnTxt = (ms: number) => { const d = ms / DAY; return d < 1 ? 'mindre än ett år' : `${Math.floor(d)} år`; };
 
-export const styre: Flik = {
-  namn: 'Styre',
-  syns: harHaft,
-  html() {
+function styretHtml() {
     const st = s.styre, l = ledareOf(s);
     if (!st) return '<p class="muted">Byn har ingen ledare.</p>';
     const f = styrelseform(s), lg = legitimitet(s);
@@ -36,11 +33,33 @@ export const styre: Flik = {
     }).join('');
     const hist = st.historia.slice().reverse().map(h => `<li><span class="when">${timeLabel(s, h.fran)}</span>${pLink(byId(s, h.id)) === '–' ? esc(h.namn) : pLink(byId(s, h.id))}, ${esc([...(h.forr ?? []), h.titel].map(x => x.toLowerCase()).join(', sedan '))}${h.till !== undefined ? ` – ${dygnTxt(h.till - h.fran)}, ${esc(h.slut ?? '')}` : ''}</li>`).join('');
     return `${ledare}<h3>Vågskålar</h3><ul class="seder">${skalar}</ul>${lagarDel()}${tabunDel()}${omrostningar()}${rattegangar()}<h3>Ledarna genom tiden</h3><ol class="logg">${hist}</ol>`;
+}
+
+// stenen Styre (steg 9.3.1): delarna i en rad knappar överst, styret och påbuden. Registret: en ny del är en rad i DELAR
+interface Del { id: string; tecken: string; namn: string; html(): string }
+const DELAR: Del[] = [
+  { id: 'styre', tecken: '👑', namn: 'Styret', html: styretHtml },
+  { id: 'pabud', tecken: '📜', namn: 'Påbud', html: () => pabudDel() },
+];
+const oppen = () => DELAR.find(d => d.id === ui.styreDel) ?? DELAR[0];
+export const styre: Flik = {
+  namn: 'Styre',
+  syns: harHaft,
+  html() {
+    const del = oppen();
+    return `<div class="pdelar" role="tablist">${DELAR.map(d => `<button type="button" role="tab" data-sdel="${d.id}" aria-selected="${d === del}" title="${d.namn}" aria-label="${d.namn}">${d.tecken}</button>`).join('')}</div>
+      <h3>${del.namn}</h3>${del.html()}`;
+  },
+  klick(el) {
+    const b = el.closest<HTMLButtonElement>('[data-sdel]');
+    if (!b) return false;
+    ui.styreDel = b.dataset.sdel!;
+    return true;
   },
 };
 
-// påbuden (steg 3.5.2): vad ledaren bestämt mot vad byn själv tycker, och hur mycket byn lyssnar. En egen del i fliken Byn
-// (steg 5.3.3.2; förr i Styre efter ledaren, och före 3.10.16 en egen flik). När lagarna kommer (9.2.6) blir delen Lagar
+// påbuden (steg 3.5.2): vad ledaren bestämt mot vad byn själv tycker, och hur mycket byn lyssnar. En del i stenen Styre
+// (steg 9.3.1; förr en del i fliken Byn, och före 3.10.16 en egen flik)
 const varde = (k: Pabud, v: number) => k === 'han' ? (v < -0.33 ? 'förbjudet' : v > 0.33 ? 'tillåtet' : 'ogillas') : k === 'torkat' ? `${Math.round(torkAndel(v) * 100)} %` : k === 'bygg' || k === 'vinter' ? `${Math.round(Math.max(0, v) * 100)} %` : `${num(onskatDygn(k === 'vedlager' ? 'ved' : 'mat', v))} dygn`;
 export function pabudDel() {
   const st = s.styre, l = ledareOf(s);
