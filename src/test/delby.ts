@@ -21,7 +21,7 @@ export interface BitSvar { seed: number; fran: number; till: number; ack: Ack[];
 // delarnas summor och den sista delens nyckeltal blir byns nyckeltal, som om allt gått i en körning
 export function laggIhop(bitar: BitSvar[]): { n: Nyckeltal; vakter: string[]; ms: number } {
   const ack = bitar.flatMap(b => b.ack), sist = bitar[bitar.length - 1].n, sum = (k: keyof Ack) => ack.reduce((a, x) => a + x[k], 0);
-  const minst = (k: 'vintermat' | 'vinterved') => Math.min(...ack.map(x => x[k]));
+  const minst = (k: 'vintermat' | 'vinterved') => Math.min(...ack.map(x => x[k] ?? Infinity)); // en del utan vintern har Infinity, som blir null i JSON
   const humorN = sum('humorN'), steg = sum('steg'), vm = minst('vintermat'), vv = minst('vinterved'), ms = bitar.reduce((a, b) => a + b.ms, 0);
   const n: Nyckeltal = {
     ...sist,

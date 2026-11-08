@@ -401,7 +401,7 @@ const asStack = (t: Ting): Stack => ({ k: t.k, n: t.c, c: t.c, x: t.x!, y: t.y!,
 // allt som ligger på marken och i förrådet: stackarna och redskapen
 const things = (s: State): Stack[] => [...stacksOf(s), ...lying(s).map(asStack)];
 // ligger något på rutan (x, y), en stack eller ett redskap? (tornadon sprider saker bara till tomma rutor)
-export const nagotPa = (s: State, x: number, y: number) => things(s).some(a => a.x === x && a.y === y);
+export const nagotPa = (s: State, x: number, y: number) => things(s).some(a => a.x === x && a.y === y) || tingOf(s).some(t => paRutan(t) && t.x === x && t.y === y); // också det som hör till en station (bensylen vid bänken)
 // redskap som ingen har och som inte har någon ruta (nygjorda, tillbakalagda) läggs i förrådet, ett på varje ruta
 const utanRuta = (t: Ting) => t.hos === undefined && t.lass === undefined && t.x === undefined && t.bar === undefined && t.krok === undefined;
 function placeOn(s: State, ts: Ting[]) {
