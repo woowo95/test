@@ -211,8 +211,8 @@
       for (const [x, y, i] of [[1, 0, 1], [7, -1, 2], [13, 0, 3], [-1, 5, 4], [15, 5, 5]]) sp(B, rundOvan(5, 3, 2, SK, i), hx + x, hy + y);
       laga(B, hx + 8, hy + 10, 4); laga(B, hx + 11, hy + 10, 3); B.satt(hx + 9, hy + 10, B.P.i('senap', 3), true);
       sp(B, KRUKA, hx + 6, hy - 6, false); anga(B, hx + 9, hy - 7, 2);
-      stallBank(B, 53, 15, 26, 12, 5, 4);
-      sp(B, MORTEL_OVAN, 55, 17); sp(B, skalOvan(10, 5, 'p', 'n'), 67, 18);
+      stallBank(B, 50, 15, 26, 12, 5, 4); // hela bänken inom bilden (Björn: version 2 såg avklippt ut)
+      sp(B, MORTEL_OVAN, 52, 17); sp(B, skalOvan(10, 5, 'p', 'n'), 64, 18);
       sp(B, STORKRUKA_OVAN, 4, 30); sp(B, skalOvan(12, 6, 'g', 'f'), 32, 36); sp(B, KNIPPE_L, 54, 38);
     },
     B => { // grytan i en låg trefot över elden mellan fyra stenar, och ett långt bord under ett torkställ
@@ -370,7 +370,7 @@
     PA_KARTAN('En lång sten på en kraftig träbock; råa stenar till vänster och färdiga block staplade till höger.', HUGG[1]),
     PA_KARTAN('En stor flat häll ovanifrån med ett block, en mejsel och en slagsten; en stock och stenar bakom.', HUGG[2]),
   ]));
-  byt(KORT('f7_ortkok', 'Örtköket', 'Steg 7.6.1: stationen där örter kokas. Stationen är nu fem gånger tre rutor, med längre bänkar, större torkställningar och större krukor och skålar, men elden, krukan på elden och grytan är lika små som i de första versionerna. Nu ritad om snett ovanifrån, som slaktbänken och borden: ytan ovanifrån, en mörk framkant och korta ben. Krukorna och skålarna syns ovanifrån, och torkställningarna står vid bakkanten. Din kommentar förra gången: "Elden ska inte vara större. Stationen ska vara större"', [
+  byt(KORT('f7_ortkok', 'Örtköket', 'Steg 7.6.1: stationen där örter kokas. Stationen är nu fem gånger tre rutor, med längre bänkar, större torkställningar och större krukor och skålar, men elden, krukan på elden och grytan är lika små som i de första versionerna. Nu ritad om snett ovanifrån, som slaktbänken och borden: ytan ovanifrån, en mörk framkant och korta ben. Krukorna och skålarna syns ovanifrån, och torkställningarna står vid bakkanten. Din kommentar förra gången: ”Version 2 ser avklippt ut.” Nu står hela bänken i version 2 inom bilden.', [
     ORTKOK('Den lilla elden med en kruka i, och en lång arbetsbänk med mortel, örter och skålar under en torkställning där fem knippen hänger.', ORT[0]),
     ORTKOK('Den låga härden: stenar i ett U runt elden med krukan på de bakre, en torkställning till vänster och en bänk till höger.', ORT[1]),
     ORTKOK('Grytan i en låg trefot över elden mellan fyra stenar, och ett långt bord med mortel och örter under ett torkställ.', ORT[2]),
@@ -388,4 +388,21 @@
     SNARA('Ett lågt gärde av nedstuckna kvistar tvärs över stigen, med en öppning där haren går; öglan hänger i öppningen från en pinne mellan två högre käppar.', SNAR[1]),
     SNARA('En rak käpp nedstucken vid stigkanten och lutad in över stigen, med öglan hängande från toppen och ris på båda sidor som leder haren in i den.', SNAR[2]),
   ]));
+
+  // ---------- 7.7.6 garvningsställningen i ett sammanhang ----------
+  // Björn: "Rita stationen i ett sammanhang". Ställningen är densamma som i de tre versionerna förut (ritfunktionen i
+  // fas7/7.7a-skinn-och-lader.js, lånad ur kortet), nu i byns utkant: vid en husvägg med skinn som väntar och färdigt läder,
+  // vid lägerelden med en hög ved, och mellan torkställningen och en skinnhög
+  {
+    const gammal = VAL.find(v => v.id === 'f7_garvning');
+    if (gammal) {
+      const rita = gammal.versioner.map(v => v.rita);
+      const GARV_SAM = (text, v, runt) => ({ text, w: 96, h: 48, rita: B => { gras(B); runt(B); rita[v](flytt(B, 34, 10)); } });
+      byt(KORT('f7_garvning', 'Garvningsställningen', 'Steg 7.7.6: en station av 4 grenar och 2 rep där ett skinn spänns upp, skrapas och garvas till läder. Samma tre ställningar som förut, nu i ett sammanhang i byns utkant med det som hör till: skinnen som väntar, lädret som är klart, en husvägg, lägerelden och torkställningen. Din kommentar förra gången: ”Rita stationen i ett sammanhang”', [
+        GARV_SAM('Den upprätta fyrkanten vid en husvägg, med en hög skinn som väntar och färdigt läder bredvid.', 0, B => { bildfil(B, 'timmervagg', 0, 0); bildfil(B, 'skinn', 70, 32); bildfil(B, 'vargskinn', 74, 26); bildfil(B, 'lader', 8, 36); }),
+        GARV_SAM('Ramen som lutar, nära lägerelden, med vedhögen och lädret som hänger på tork.', 1, B => { bildfil(B, 'lagereld_lite', 4, 20); bildfil(B, 'ved', 6, 38); bildfil(B, 'lader', 72, 34); bildfil(B, 'kniv', 74, 28); }),
+        GARV_SAM('A-ramen mellan torkställningen och en hög skinn, med en bensyl och ett skinn i taget.', 2, B => { bildfil(B, 'tork', 0, 8); bildfil(B, 'bjornskinn', 70, 30); bildfil(B, 'radjursskinn', 74, 22); bildfil(B, 'bensyl', 66, 40); }),
+      ]));
+    }
+  }
 })();
