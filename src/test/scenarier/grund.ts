@@ -1156,8 +1156,16 @@ SCENARIER.tornadobana = {
       if (!slutKant) hela++;
     }
     const med = min.slice().sort((a, b) => a - b)[20];
+    // steg 9.2.23: inget ben slutar i kantzonen (bara banans första och sista punkt ligger nära kanten), och i testläget siktar
+    // det första benet på byns mitt
+    let iZon = 0;
+    for (let k = 0; k < 40; k++) { const b = SIM.tornadoBana(s, s.now + k * 7 * DAY); for (let q = 2; q < b.length - 2; q += 2) if (Math.min(b[q], b[q + 1], W - b[q], SIM.H - b[q + 1]) < SIM.TORNADO.kantzon) iZon++; }
+    const m0 = SIM.bynsMitt(s), tb = SIM.tornadoBana(s, s.now, 'medel', m0);
+    const sikt = Math.abs(Math.atan2(m0.y - tb[1], m0.x - tb[0]) - Math.atan2(tb[3] - tb[1], tb[2] - tb[0])) < 1e-6;
     return [
       [`40 banor börjar vid kanten och går en ruta på 5 sekunder${fel ? ` (${fel})` : ''}`, ok === 40],
+      [`inget ben slutar närmare kanten än ${SIM.TORNADO.kantzon} rutor; det förlängs ut ur kartan (${iZon} gör det)`, iZon === 0],
+      ['i testläget siktar det första benet på byns mitt', sikt],
       [`de flesta svänger (${svanger} av 40)`, svanger >= 30],
       [`de som löses upp gör det efter 20–60 minuter (${hela}), de andra går ut ur kartan (${ut}); mitten är ${med.toFixed(0)} minuter`, ut + hela === 40 && med <= 60],
     ];
