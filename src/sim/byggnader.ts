@@ -12,6 +12,8 @@ import { Person, State } from './typer';
 import { balans } from './balans';
 import { flodBlot } from './sjo';
 import { inneUtanPlats, isKlar, stationDef, stationRum, stationRutor, stationerOf, storlek } from './stationer';
+import { SJUKDOMAR } from './sjukdom';
+import { kn } from './kunskap';
 
 // ---------- balanstal (regel 8) ----------
 // Husens storlek, vad de är till för och när de byter funktion eller rivs. Var de står och hur de byggs står i BYGG (bygg.ts)
@@ -308,8 +310,23 @@ export function utanBadd(s: State) {
 }
 // så många som saknar en egen sovplats under tak
 export const homeless = (s: State) => { const b = boende(s); return Math.max(0, b.ovriga.length - b.gemensamt.length); };
+// den sjuke sover för sig (steg 9.5.5, kunskapen Smittan): i ett färdigt hus där ingen bor, när någon i byn kan Smittan och
+// sjukdomen smittar. En ruta per sjuk i huset, ingen frisk sover där (ingen bor där)
+function sjukBadd(s: State, p: Person) {
+  if (!p.sjuk || p.sjuk.st === undefined || SJUKDOMAR[p.sjuk.k].smitta <= 0 || !living(s).some(q => kn(q, 'smitta') >= 0.5)) return undefined;
+  const b = boende(s), bor = new Set([...b.plats.values()]);
+  for (const h of housesOf(s)) {
+    if (!h.klar || h.ut) continue;
+    const rutor = gridOf(s).rooms.filter(r => r.hus === h.id).flatMap(r => r.tiles);
+    if (!rutor.length || rutor.some(i => bor.has(i))) continue;
+    const sjuka = living(s).filter(q => q.sjuk && q.sjuk.st !== undefined && SJUKDOMAR[q.sjuk.k].smitta > 0).sort((a, c) => a.id - c.id);
+    return rutor[sjuka.indexOf(p) % rutor.length];
+  }
+  return undefined;
+}
 // var p sover: en egen ruta under tak om det finns, annars ingenstans. Finns färre platser än folk delar man
 export function bedTile(s: State, p: Person) {
+  const iso = sjukBadd(s, p); if (iso !== undefined) return iso; // den sjuke i ett tomt hus när byn kan Smittan (steg 9.5.5)
   const b = boende(s), t = b.plats.get(p.id);
   if (t === undefined || !blot(s, t)) return t;
   return (b.egna.get(p.id)?.tiles ?? b.gemensamt).find(i => !blot(s, i)); // ingen sover på en blöt ruta: en annan, eller ingen (steg 3.8.7, flod.ts)

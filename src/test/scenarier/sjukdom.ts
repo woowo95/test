@@ -102,3 +102,28 @@ SCENARIER.sjukfoljd = {
     ];
   },
 };
+
+SCENARIER.epidemi = {
+  text: 'Steg 9.5.5: mässlingen och kopporna kommer bara utifrån, med handlare och främlingar (några procent per besök, mässlingen vanligast). Kopporna följs genom samma by med och utan kunskapen Smittan: den som kan den håller sig undan och lägger de sjuka för sig, så färre blir sjuka. Kunskapen lärs när flera i samma hus blir sjuka, och krönikan skriver om epidemin',
+  kor: () => {
+    const { insjukna, barSmitta } = SIM;
+    // risken utifrån
+    const r = createState(9, START); let bar = 0, mass = 0;
+    for (let i = 0; i < 4000; i++) { const k = barSmitta(r); if (k) { bar++; if (k === 'massling') mass++; } }
+    // samma by utan och med kunskapen, i sex dygn (sex år i spelet)
+    const kor = (vet: boolean) => {
+      const s = createState(21, START);
+      if (vet) for (const q of living(s)) SIM.learnK(q, 'smitta', 1, s.now);
+      const [p] = living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
+      insjukna(s, p, 'koppor');
+      for (let h = 0; h < 6 * 24; h++) for (let k = 0; k < 12; k++) SIM.step(s, 300);
+      return { s, smittade: Number(s.stat?.smittad_koppor ?? 0), larde: Number(s.stat?.larSmittan ?? 0), epidemi: (s.hist?.kronika ?? []).some(([, t]) => t.startsWith('Kopporna gick genom byn')) };
+    };
+    const utan = kor(false), med = kor(true);
+    return [
+      [`en handlare eller främling bär ibland en sjukdom (${(bar / 40).toFixed(1)} % av besöken, ${Math.round(mass / Math.max(1, bar) * 100)} % mässlingen)`, bar > 40 && bar < 250 && mass > bar / 2],
+      [`med kunskapen Smittan blir färre sjuka (${med.smittade} mot ${utan.smittade} utan)`, med.smittade < utan.smittade],
+      [`utan kunskapen lär sig byn den när flera i samma hus blir sjuka, eller krönikan skriver om epidemin (lärde ${utan.larde}, epidemin ${utan.epidemi ? 'ja' : 'nej'})`, utan.larde > 0 || utan.epidemi],
+    ];
+  },
+};

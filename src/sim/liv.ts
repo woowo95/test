@@ -20,6 +20,7 @@ import { notis } from './notiser';
 import { vaderNu } from './vader';
 import { nyKvarleva } from './kvarlevor';
 import { gravgava } from './kultlatt';
+import { barSmitta, insjukna } from './sjukdom';
 
 // ---------- balanstal (regel 8) ----------
 // Befolkningen regleras av naturen, inte av ett fast tak: en trång by får färre barn och fler som flyttar, en liten by lockar
@@ -236,6 +237,7 @@ function immigrate(s: State, alone: boolean) {
   const mk = (sex: 'm' | 'k') => {
     const age = LIV.nybyggareAlder + rnd(s, 'folk') * LIV.nybyggareAlderSpann, p = newPerson(s, sex, s.now - age * DAY);
     startSkills(s, p, age); startSmak(s, p);
+    { const k = barSmitta(s); if (k) insjukna(s, p, k, 'utifrån'); } // främlingen kan bära en sjukdom (steg 9.5.5)
     s.people.push(p);
     upplev(s, p, 'flyttade'); // steg 4.1.1.2
     for (const k in MEDHAVT) put(s, k, MEDHAVT[k], { [p.id]: MEDHAVT[k] }); // lite mat från vandringen, så att man hinner samla innan man svälter

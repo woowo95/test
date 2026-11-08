@@ -25,6 +25,7 @@ import { foddNar, gastNyckel } from './gastliv';
 import { affarMed, gastRel, gillar, glomIrritation, kravMax, kravRel, luradMed, nejTill } from './gastrel';
 import { handelsArg } from './handelsber';
 import { notis } from './notiser';
+import { barSmitta } from './sjukdom';
 
 // ---------- handlarna (steg 4.4.1) ----------
 // När byns rikedom (varde.ts) passerat en gräns (HANDEL.rik) kommer en handlare gående från kartans kant, ungefär en gång per
@@ -133,6 +134,7 @@ export interface Handlare {
   id: number; // negativt, så att det aldrig är en bybos id (en part i ett byte, byte.ts)
   namn: string; hem: string; sex: 'm' | 'k';
   klan?: number; // grannklanen hen kommer ifrån (steg 4.4.3, klaner.ts)
+  smitta?: import('./sjukdom').SjukId; // sjukdomen hen bär utan att någon ser det (steg 9.5.5)
   x: number; y: number; mx: number; my: number; // var hen är och vart hen går
   fran: { x: number; y: number; t: number }; framme: number; // varifrån och när hen började gå, och när hen är framme (bilden ritar hen på vägen)
   fas: 'kommer' | 'vantar' | 'handlar' | 'gar'; // vantar: framme, väntar på kvällen (steg 4.5.4.11)
@@ -249,6 +251,7 @@ function kommer(s: State, tvinga?: boolean) {
   h.sort = sort;
   h.fodd = kh.person.fodd ??= foddNar(s.seed, gastNyckel(kh.klan.id, kh.person.namn), 'handlare', s.now); // samma person varje gång, drar ingen slump
   h.varor = packa(s, rymmer(h), sort);
+  const smitta = barSmitta(s); if (smitta) h.smitta = smitta; // ibland bär hen en sjukdom utifrån (steg 9.5.5)
   s.handlare = h;
   count(s, 'handlare');
   log(s, `En handlare, ${h.namn} från ${kh.klan.namn} vid ${h.hem}, kommer gående mot byn.`, 'world');

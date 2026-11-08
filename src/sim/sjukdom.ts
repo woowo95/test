@@ -18,6 +18,9 @@ import { living, byId } from './folk';
 import { roomAt } from './byggnad';
 import { eldarOf, eldXY } from './eld';
 import { notis } from './notiser';
+import { kn, learnK } from './kunskap';
+import { kronika } from './historik';
+import { housesOf, roomAt as rumVid } from './byggnad';
 
 export type SjukOrsak = 'vatten' | 'skamd' | 'ratt' | 'svamp' | 'kyla' | 'smitta';
 export interface SjukStadium { fran: number; text: string } // från hur långt sjukdomen kommit (0–1): det kortet säger
@@ -93,6 +96,11 @@ export const SJUK = balans('sjuk', {
   vilaFran: 0.3, // från så här långt kommen sjukdom vilar den sjuke hellre (vilaHellre), och lägger sig med feber
   ligga: 0.6, // ... och utan feber när sjukdomen kommit så här långt
   kopparOga: 0.1, // så stor del av dem som överlever kopporna förlorar ett öga
+  // smittan utifrån (steg 9.5.5): risken att en handlare eller främling bär mässlingen eller kopporna, och hur stor del av dem
+  // som är mässlingen
+  utifran: 0.03, massling: 0.7,
+  vet: 0.3, // den som kan Smittan håller sig undan de sjuka: smittan nära och vid elden gånger det här
+  epidemi: 1 / 3, // krönikan skriver om en epidemi när så stor del av byn varit sjuk i samma sjukdom
 });
 
 // den sjukes tillstånd: raden, när hen smittades, när tecknen kommer (inkubationen), sjukdomen och motståndet (0–1), och
@@ -155,13 +163,44 @@ export function smittaTimme(s: State) {
     for (const q of living(s)) {
       if (q === p || q.sjuk || q.immun?.[k]) continue;
       const nara = Math.hypot(q.x - p.x, q.y - p.y) < SJUK.nara, rum = !!rp && roomAt(s, q.x, q.y) === rp, eld = ep >= 0 && vidEld(q) === ep;
-      const v = nara ? 1 : rum ? SJUK.rum : eld ? SJUK.eld : 0;
+      const v = (nara ? 1 : rum ? SJUK.rum : eld ? SJUK.eld : 0) * (kn(q, 'smitta') >= 0.5 ? SJUK.vet : 1); // den som kan Smittan håller sig undan (9.5.5)
       if (v > 0 && rnd(s, 'halsa', q) < d.smitta * v && insjukna(s, q, k)) { q.sjuk!.av = p.id; count(s, 'smittad_' + k); }
     }
   }
 }
+// smittan utifrån (steg 9.5.5): handlaren som bär en sjukdom smittar dem som står bredvid hen, så länge hen är i byn
+export function smittaUtifranTimme(s: State) {
+  const h = s.handlare;
+  if (!h?.smitta || h.fas === 'kommer') return;
+  const k = h.smitta, d = SJUKDOMAR[k];
+  for (const q of living(s)) if (!q.sjuk && !q.immun?.[k] && Math.hypot(q.x - h.x, q.y - h.y) < SJUK.nara * 2 && rnd(s, 'halsa', q) < d.smitta && insjukna(s, q, k, 'av handlaren')) count(s, 'smittadUtifran_' + k);
+}
+// en handlare eller främling som kommer bär ibland mässlingen eller kopporna (steg 9.5.5): mässlingen vanligare. Ingen ser det
+export function barSmitta(s: State): SjukId | undefined {
+  if (rnd(s, 'halsa') >= SJUK.utifran) return undefined;
+  return rnd(s, 'halsa') < SJUK.massling ? 'massling' : 'koppor';
+}
 // vem som smittade hen (steg 9.5.3), om någon
 export const smittadAv = (s: State, p: Person) => p.sjuk?.av !== undefined ? byId(s, p.sjuk.av) : undefined;
+
+// kunskapen Smittan (steg 9.5.5): lärs när flera i samma hus blir sjuka efter varandra i samma sjukdom, av alla som bor där
+function larSmittan(s: State, p: Person, k: SjukId) {
+  if (SJUKDOMAR[k].smitta <= 0) return;
+  const hus = (q: Person) => rumVid(s, q.x, q.y)?.hus;
+  const h = hus(p);
+  if (h === undefined) return;
+  const andra = living(s).filter(q => q !== p && q.sjuk?.k === k && q.sjuk.st !== undefined && hus(q) === h);
+  if (!andra.length) return;
+  for (const q of living(s)) if (hus(q) === h && kn(q, 'smitta') < 1) { learnK(q, 'smitta', 1, s.now); count(s, 'larSmittan'); }
+  void housesOf;
+}
+// epidemin i krönikan (steg 9.5.5): när en tredjedel av byn varit sjuk i samma sjukdom, en gång per utbrott (utbrottet är slut
+// när ingen längre är sjuk i den)
+function epidemi(s: State, p: Person, k: SjukId) {
+  const e = s.epidemi?.k === k && living(s).some(q => q !== p && q.sjuk?.k === k) ? s.epidemi : (s.epidemi = { k, ids: [] });
+  if (!e.ids.includes(p.id)) e.ids.push(p.id);
+  if (!e.skriven && e.ids.length >= Math.max(3, living(s).length * SJUK.epidemi)) { e.skriven = 1; kronika(s, `${SJUKDOMAR[k].namn} gick genom byn. ${e.ids.length} blev sjuka.`); count(s, 'epidemi'); }
+}
 
 // förloppet varje slag (steg.ts): sjukdomen och motståndet växer. Svarar med dödsorsaken om sjukdomen vann
 export function sjukSteg(s: State, p: Person, dtSec: number, sover: boolean, arbetar: boolean, lakeort = false): SjukId | undefined {
@@ -170,6 +209,8 @@ export function sjukSteg(s: State, p: Person, dtSec: number, sover: boolean, arb
   // tecknen syns (steg 9.5.4): en notis när hen insjuknar, och när en sjukdom som smittar kommit till byn (det första fallet)
   if (j.st === undefined) {
     j.st = 0;
+    larSmittan(s, p, j.k);
+    epidemi(s, p, j.k);
     if (SJUKDOMAR[j.k].smitta > 0 && !living(s).some(q => q !== p && q.sjuk?.k === j.k && q.sjuk.st !== undefined)) notis(s, 'smitta', `${SJUKDOMAR[j.k].namn} har kommit till byn. ${p.name} är sjuk.`, [p.id]);
     else notis(s, 'sjuk', `${p.name} har insjuknat: ${sjukText(p).toLowerCase()}.`, [p.id]);
   }
