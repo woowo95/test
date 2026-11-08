@@ -634,42 +634,26 @@ SCENARIER.verkstad = {
   },
 };
 
-SCENARIER.lekplats = {
-  text: 'Steg 2.10.4: lekplatsen räknas från byns inre (lagerplatserna och husen) och inte från elden. Den ligger på öppen mark där inget hus, lager eller station står, följer byn när den växer, och barnen leker där',
+SCENARIER.lekibyn = {
+  text: 'Byn har ingen lekplats: barnen leker var som helst inne i byn (platsIByn i omrade.ts), aldrig i vattnet eller i en vägg',
   kor: () => {
     const s = createState(3, START);
     klockan(s); tandEld(s);
-    let leker = 0, paPlats = 0, fel = 0;
+    let leker = 0, iByn = 0, fel = 0;
+    const platser = new Set<string>();
     for (let h = 0; h < 72; h++) {
       kor(s, 1);
-      const l = SIM.lekplats(s);
       for (const q of living(s)) if (q.task?.act === 'leka' && q.task.phase === 'do') {
         leker++;
-        if (q.x >= l.x - 2.5 && q.x <= l.x + l.w + 2.5 && q.y >= l.y - 2.5 && q.y <= l.y + l.h + 2.5) paPlats++; // de vandrar lite runt platsen
-      }
-      for (let y = l.y; y < l.y + l.h; y++) for (let x = l.x; x < l.x + l.w; x++) {
-        const t = getMap(s.seed).tiles[y * W + x];
-        if (t === T.Vatten || t === T.Sten || roomAt(s, x, y) || zonesOf(s).some(z => inZone(z, x, y))) fel++;
+        if (SIM.utanforByn(s, q.task.tx, q.task.ty) <= 0) iByn++;
+        if (SIM.blocked(s, q.task.tx, q.task.ty)) fel++;
+        platser.add(`${Math.floor(q.task.tx)},${Math.floor(q.task.ty)}`);
       }
     }
-    const l = SIM.lekplats(s), mid = SIM.bynsMitt(s), f = getMap(s.seed).fire;
-    const storlek = l.w === SIM.PLATS.lekBredd && l.h === SIM.PLATS.lekDjup;
-    // när byns inre flyttar (en ny lagerplats långt bort) följer lekplatsen med, men elden står kvar
-    const utom = (r: { x: number; y: number; w: number; h: number }) => { let d = Infinity; for (let j = 0; j < r.h; j++) for (let i = 0; i < r.w; i++) d = Math.min(d, SIM.utanforByn(s, r.x + i, r.y + j)); return d; }; // rutor utanför byns område (steg 6.2.4)
-    const z = zonesOf(s)[0], fore = utom(l);
-    const dir = l.x + l.w / 2 > mid.x ? -1 : 1; // åt andra hållet från lekplatsen, så att den måste flytta
-    const o = SIM.omrade(s); s.lagren!.push({ x: dir > 0 ? o.x1 + 12 : o.x0 - 14, y: z.y, w: 2, h: 2, namn: 'Prov', prio: 0 }); // utanför byns område (steg 6.2.4), så att dess mitt flyttar; // lagren krymper först efter sex timmar (steg 2.12.4) och är större, så den nya ligger längre bort (36 rutor sedan steg 3.10.9: med 24 flyttade mitten för lite för att lekplatsen skulle behöva flytta, när rutorna närmare var upptagna)
-    const mid2 = SIM.bynsMitt(s), l2 = SIM.lekplats(s);
-    // hur långt den flyttar beror på husen, lagren och skogen i vägen; den ska flytta åt rätt håll och komma närmare den nya mitten
-    const nu = utom(l2), kvar = rektAvstand(mid2.x, mid2.y, l.x, l.y, l.w, l.h);
-    const foljer = (mid2.x - mid.x) * dir > 3 && nu <= SIM.PLATS.lekSok; // den ligger fortfarande strax utanför det nya området
-    s.lagren!.pop();
     return [
-      [`lekplatsen är ${SIM.PLATS.lekBredd} × ${SIM.PLATS.lekDjup} rutor`, storlek],
-      [`den ligger strax utanför byns område (${fore.toFixed(1)} rutor därifrån, elden ${Math.hypot(f.x - mid.x, f.y - mid.y).toFixed(1)} rutor från byns mitt)`, fore <= SIM.PLATS.lekSok],
-      [`den ligger aldrig i vattnet, på sten, i ett hus eller på en lagerplats (${fel} rutor fel på 72 timmar)`, fel === 0],
-      [`barnen leker på lekplatsen (${paPlats} av ${leker} timmar)`, leker > 0 && paPlats >= leker * 0.85], // lekplatsen flyttar med byn, och ett barn som redan leker gör klart på den gamla platsen
-      [`när byns inre flyttar följer lekplatsen med (mitten ${mid.x.toFixed(1)} → ${mid2.x.toFixed(1)}, lekplatsen x ${l.x} → ${l2.x}, ${kvar.toFixed(1)} rutor från den nya mitten, ${nu.toFixed(1)} rutor utanför det nya området)`, foljer],
+      [`barnen leker inne i byn (${iByn} av ${leker} timmar)`, leker > 0 && iByn === leker],
+      [`aldrig i vattnet eller i en vägg (${fel})`, fel === 0],
+      [`på många olika ställen (${platser.size} rutor)`, platser.size >= 5],
     ];
   },
 };

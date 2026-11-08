@@ -72,7 +72,7 @@ export const UPPLEVELSER = {
   tornado: { text: 'Var med om en tornado', chans: 0.6, e: [{ mod: 1, flit: 1 }, { minne: 1 }, { mod: -2 }, { uthallighet: 1, flit: 1 }], vem: 'bada', sed: { gemenskap: 1, forsiktighet: 1 } }, // steg 3.8.4, tornado.ts
   brand: { text: 'Var med om en eldsvåda', chans: 0.5, e: [{ mod: 1, flit: 1 }, { minne: 1 }, { mod: -2 }, { empati: 1, flit: 1 }], vem: 'bada', sed: { gemenskap: 1, forsiktighet: 1 } }, // steg 3.8.5, brand.ts
   oversvamning: { text: 'Var med om en översvämning', chans: 0.5, e: [{ uthallighet: 1, flit: 1 }, { minne: 1 }, { mod: -1, flit: 1 }, { flit: 2 }], vem: 'bada', sed: { forsiktighet: 1 } }, // steg 3.8.3, flod.ts
-  lek: { text: 'Lekte mycket på lekplatsen', chans: 0.003, e: [{ karisma: 2 }, { nyfikenhet: 2 }, { smidighet: 2 }, { karisma: 1, smidighet: 1 }], vem: 'barn', sed: { barn: 1 } }, // barn som tumlar blir smidigare (steg 3.7.6)
+  lek: { text: 'Lekte mycket i byn', chans: 0.003, e: [{ karisma: 2 }, { nyfikenhet: 2 }, { smidighet: 2 }, { karisma: 1, smidighet: 1 }], vem: 'barn', sed: { barn: 1 } }, // barn som tumlar blir smidigare (steg 3.7.6)
   bastaVan: { text: 'Hade en bästa vän, {om}', chans: 0.35, e: [{ karisma: 1, empati: 1 }, { karisma: 2 }], vem: 'barn' },
   mentor: { text: 'Fick lära sig av {om}', chans: 0.25, e: [{ intelligens: 1, minne: 1 }, { intelligens: 2 }, { nyfikenhet: 2 }], vem: 'barn', sed: { nyfikenhet: 1 }, kort: 'Fick lära sig av någon' },
   uppfinning: { text: 'Var med när byn {om}', chans: 0.06, e: [{ nyfikenhet: 2 }, { intelligens: 1, nyfikenhet: 1 }], vem: 'bada', sed: { nyfikenhet: 2 }, kort: 'Var med när byn kom på något' },

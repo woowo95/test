@@ -27,7 +27,7 @@ import { notis } from './notiser';
 
 // ---------- balanstal (regel 8) ----------
 // Planeringen (var ett nytt hus står) och arbetet (i vilken ordning och hur fort det byggs och lagas). Husens storlek och
-// funktion står i HUS (byggnader.ts), lekplatsens läge i PLATS (plats.ts)
+// funktion står i HUS (byggnader.ts)
 export const BYGG = balans('bygg', {
   maxInne: 24, // största hus: så många sovplatser
   husAvst: 5.5, // ett hus står helst minst så här långt från elden (rutor till husets närmaste vägg), för röken och gnistorna
@@ -36,7 +36,6 @@ export const BYGG = balans('bygg', {
   utomVikt: 1, // en plats får så många poäng (färre är bättre) för varje ruta utanför det byn omsluter, så att byn håller ihop ...
   mittVikt: 0.2, // ... och så många för varje ruta från områdets mitt (bynsMitt), bland platserna innanför ...
   lagerMarg: 1, // ett hus står minst så här många rutor från en lagerplats
-  lekStraff: 3, // ... så många om huset står på lekplatsen ...
   byggareInt: 4, // när byn väljer byggare väger intelligensen så här många gånger mindre än hantverket
   omforsok: 12, // timmar innan byn försöker planera ett hus igen när det inte fanns någon plats
   perHus: 4, // så många får bygga på varje hus (platserna på bygget); fler väger en tredjedel (arbetarna, steg 6.1.13 i val.ts)

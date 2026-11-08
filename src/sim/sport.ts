@@ -1,7 +1,7 @@
 // Sporten (steg 4.3.1, Kultur, sport och konst): barnens lekar blir sport för de vuxna. Några sociala sporter med enkla
 // föremål, när byn har ett överskott av mat och ved och folk har fritid. Sporten ger glädje och tränar bara färdigheter
 // (brottning och dragkamp närstrid, kast och bollspel träffsäkerhet), aldrig egenskaperna. Den är ingen stor del av spelet.
-// En match i taget: den som har fritid börjar en på lekplatsen eller går med i den som väntar på spelare, och den spelas på
+// En match i taget: den som har fritid börjar en på en plats i byn eller går med i den som väntar på spelare, och den spelas på
 // dagen. Sporterna är rader i registret SPORTER; föremålen de kräver är saker i saker.ts som byn måste ha.
 import { ALDER, ageOf, alive, count, living, log, ovning, stat, think } from './folk';
 import { SAKER, isTool } from './saker';
@@ -10,7 +10,7 @@ import { kronika } from './historik';
 import { foodDays } from './ekonomi';
 import { woodDays } from './eld';
 import { amountOf, avbryt } from './lager';
-import { lekplats } from './stationer';
+import { platsIByn } from './omrade';
 import { freeNear } from './byggnad';
 import { rnd } from './slump';
 import { hourOf } from './tid';
@@ -49,7 +49,7 @@ export const SPORT = balans('sport', {
   vanta: 30, // minuter: har inte tillräckligt många kommit fram så här länge efter starten, blir det ingen match
   sent: 15, // minuter: så här nära slutet går ingen ny med
   fler: 2, // en sport som behöver upp till så här många fler än de som följer med kan börja: de andra kommer medan man väntar (vanta)
-  folj: 0.8, nara: 20, // den som har fritid (FRITID) och är högst nara rutor från lekplatsen när en match börjar följer med så här ofta, gånger (styrka + smidighet) / 20
+  folj: 0.8, nara: 20, // den som har fritid (FRITID) och är högst nara rutor från matchens plats när den börjar följer med så här ofta, gånger (styrka + smidighet) / 20
   ovning: 0.15, // övning i sportens färdighet per timme man spelar
   gladje: 0.08, gladjeTim: 8, // tanken efter en match (minst gladjeMin timmar spelat): så här glad i så här många timmar
   gladjeMin: 0.25,
@@ -114,14 +114,14 @@ export function sportVal(s: State, p: Person): { why: string; spot: { x: number;
   let m = oppen(s);
   const ny = !m;
   if (!m) {
-    // den som börjar en match samlar folk; följer ingen med blir det ingen match
-    const folj = foljare(s, p), n = vuxna(s);
+    // den som börjar en match väljer en plats i byn och samlar folk; följer ingen med blir det ingen match
+    const at = platsIByn(s, p, 'sport'), folj = foljare(s, p, at), n = vuxna(s);
     const kan = SPORTER.filter(d => d.min <= folj.length + 1 + SPORT.fler && kanSpela(s, d, n));
     const morkt = s.now + (19 - hourOf(s.now)) * HOUR; // sporten spelas på dagen (isLight i tid.ts): matchen slutar när det blir mörkt
     if (!kan.length || !folj.length || morkt - s.now < SPORT.minuter * MIN) return undefined;
     const sno = kan.filter(d => d.nar), val = sno.length && rnd(s, 'sport', p) < SPORT.snoVal ? sno : kan; // i snön blir det oftast snöbollskrig
-    const d = val[Math.floor(rnd(s, 'sport', p) * val.length)], l = lekplats(s);
-    m = s.sport = { k: d.id, x: l.x + l.w / 2, y: l.y + l.h / 2, start: s.now, slut: Math.min(morkt, s.now + (SPORT.minuter + rnd(s, 'sport', p) * SPORT.spann) * MIN) };
+    const d = val[Math.floor(rnd(s, 'sport', p) * val.length)];
+    m = s.sport = { k: d.id, x: at.x, y: at.y, start: s.now, slut: Math.min(morkt, s.now + (SPORT.minuter + rnd(s, 'sport', p) * SPORT.spann) * MIN) };
     count(s, 'sportMatcher');
     for (const q of folj.slice(0, d.max - 1)) {
       const u = plats(s, q, m);
@@ -153,7 +153,7 @@ export const kastMal = (m: Match) => ({ x: m.x + SPORT.kastAvst / 2, y: m.y });
 // de som följer med den som börjar en match: de vuxna som har fritid (vilar på dagen, samtalar, sitter vid stranden,
 // promenerar), de starka och smidiga oftare
 const FRITID = new Set<string>(['vila', 'samtal', 'strand', 'promenad']);
-const foljare = (s: State, p: Person) => { const l = lekplats(s), mx = l.x + l.w / 2, my = l.y + l.h / 2; return living(s).filter(q => {
+const foljare = (s: State, p: Person, at: { x: number; y: number }) => { const mx = at.x, my = at.y; return living(s).filter(q => {
   const t = q.task;
   return q !== p && Math.hypot(q.x - mx, q.y - my) <= SPORT.nara && !!t && FRITID.has(t.act) && t.phase !== 'back' && !t.dark && sportVikt(s, q, 1) > 0
     && rnd(s, 'sport', q) < SPORT.folj * (stat(q, 'styrka', s.now) + stat(q, 'smidighet', s.now)) / 20;

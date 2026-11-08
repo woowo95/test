@@ -1727,15 +1727,15 @@ const MDEF = {
   ],
   // Berättelsen om en match (steg 5.4.8.2, matchber.ts): början efter sporten ({sport} = sporten, {spelare} = namnen, {n} = hur många)
   m_start: [
-    { t: '{Spelare} brottades på lekplatsen.', om: f => f.sport === 'brottning' },
-    { t: 'Det blev brottning på lekplatsen, och {spelare} tog tag i varandra.', om: f => f.sport === 'brottning' },
+    { t: '{Spelare} brottades mitt i byn.', om: f => f.sport === 'brottning' },
+    { t: 'Det blev brottning i byn, och {spelare} tog tag i varandra.', om: f => f.sport === 'brottning' },
     { t: '{Spelare} drog i var sin ände av repet.', om: f => f.sport === 'dragkamp' },
-    { t: 'Det blev dragkamp på lekplatsen: {n} drog i repet.', om: f => f.sport === 'dragkamp' },
+    { t: 'Det blev dragkamp i byn: {n} drog i repet.', om: f => f.sport === 'dragkamp' },
     { t: '{Spelare} kastade mot målet i tur och ordning.', om: f => f.sport === 'kast' },
-    { t: 'Det blev kast mot mål på lekplatsen, och {n} ställde upp.', om: f => f.sport === 'kast' },
+    { t: 'Det blev kast mot mål i byn, och {n} ställde upp.', om: f => f.sport === 'kast' },
     { t: '{Spelare} byggde vallar av snö och kastade snöbollar på varandra.', om: f => f.sport === 'snoboll' },
-    { t: 'Det blev snöbollskrig på lekplatsen, med {n} som kastade.', om: f => f.sport === 'snoboll' },
-    { t: '{Spelare} spelade boll på lekplatsen.', om: f => f.sport === 'bollspel' },
+    { t: 'Det blev snöbollskrig i byn, med {n} som kastade.', om: f => f.sport === 'snoboll' },
+    { t: '{Spelare} spelade boll i byn.', om: f => f.sport === 'bollspel' },
     { t: 'Det blev bollspel, och {n} sprang efter bollen.', om: f => f.sport === 'bollspel' },
   ],
   // hur matchen gick: jämnt, överlägset eller däremellan, och hur länge den höll på
@@ -1776,14 +1776,14 @@ const MDEF = {
   ],
   // matchen som inte blev av: {sport} = sporten, {spelare} = de som kom
   m_installd: [
-    { t: '{Spelare} väntade på lekplatsen, men det kom för få för {sportnamn}.', om: f => !!f.spelare },
+    { t: '{Spelare} väntade på de andra, men det kom för få för {sportnamn}.', om: f => !!f.spelare },
     { t: '{Spelare} ville ha {sportnamn}, men ingen annan ville vara med.', om: f => !!f.spelare },
-    { t: '{Spelare} stod på lekplatsen en god stund, men det kom inte fler.', om: f => !!f.spelare },
+    { t: '{Spelare} stod och väntade en god stund, men det kom inte fler.', om: f => !!f.spelare },
     { t: '{Spelare} gav upp till slut: det kom för få för {sportnamn}.', om: f => !!f.spelare },
     'Det blev ingen {sportnamn}: det kom för få.',
     'Det skulle ha blivit {sportnamn}, men det kom för få.',
     'Ingen ville vara med, så det blev ingen {sportnamn}.',
-    'Lekplatsen stod tom. Det blev ingen {sportnamn}.',
+    'Ingen kom. Det blev ingen {sportnamn}.',
   ],
   // ---------- loggens vanligaste rader (steg 6.7.7) ----------
   // Skrivs med loggBer (nedan). Den första varianten är den gamla fasta raden, så att inget fakta försvinner

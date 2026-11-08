@@ -1,6 +1,6 @@
 import { han } from './ord';
 import { facklaVal } from './ljus';
-import { OMRADE, bynsAvstand, bynsMitt, iByn, omrade, utanforByn } from './omrade';
+import { OMRADE, bynsAvstand, bynsMitt, iByn, omrade, platsIByn, utanforByn } from './omrade';
 import { GANG } from './gang';
 import { iVattnetNu, strandNu, vattenNu } from './sjo';
 import { freeTools, take } from './agande';
@@ -47,7 +47,7 @@ import { balans } from './balans';
 import { islagt, naVattnet } from './is';
 import { drickVal, torstig, tortarFarligt, vattenVal } from './torst';
 import { forSmutsigt, latrinFor } from './smuts';
-import { bordenOf, ledigPlats, lekplats, sittAt, stationAt, stationFor, storlekAv, vidStation } from './stationer';
+import { bordenOf, ledigPlats, sittAt, stationAt, stationFor, storlekAv, vidStation } from './stationer';
 import { RATTER, TORKAS, grillTid, kanGrilla, kanTorka, torkTid } from './matlagning';
 import { TEK, forsokChans, forsokVal, knows, laraVal, tekArbete } from './teknik';
 import { sportVal, sportVikt } from './sport';
@@ -272,14 +272,7 @@ function platsFor(s: State, act: Act, p: Person): { x: number; y: number } {
     }
     return freeNear(s, f.x + 0.5, f.y + 2);
   }
-  if (plats === 'lek') { // lekplatsen räknas från byns inre, inte från elden (plats.ts, steg 2.10.4), men aldrig i vattnet
-    const l = lekplats(s);
-    for (let k = 0; k < 12; k++) {
-      const x = l.x + rnd(s, 'val', p) * l.w, y = l.y + rnd(s, 'val', p) * l.h;
-      if (inMap(x, y) && !blocked(s, x, y)) return { x, y };
-    }
-    return freeNear(s, l.x + l.w / 2, l.y + l.h / 2);
-  }
+  if (plats === 'lek') return platsIByn(s, p, 'val'); // barnen leker var som helst i byn (omrade.ts); byn har ingen lekplats
   // ute på marken: vid stranden, på ängen och i skogen, eller avsides (toa)
   const strand = plats === 'strand' ? strandNu(s) : undefined; // under en torka flyttar stranden ut (steg 3.8.2)
   const want = (t: number, x: number, y: number) => {

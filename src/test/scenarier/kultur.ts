@@ -26,7 +26,7 @@ export const fritid = (s: State, q: Person) => { q.pot.styrka = q.pot.smidighet 
 const vuxna = (s: State) => SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen);
 
 SCENARIER.sport = {
-  text: 'Sporten (steg 4.3.1.1): när byn har ett överskott spelar de vuxna brottning och dragkamp på lekplatsen under fritiden. Det tränar närstrid och gör dem glada',
+  text: 'Sporten (steg 4.3.1.1): när byn har ett överskott spelar de vuxna brottning och dragkamp i byn under fritiden. Det tränar närstrid och gör dem glada',
   kor: () => {
     const s = rikDag(3, { rep: 4 }), vill = vuxna(s).filter(q => SIM.sportVikt(s, q, 1) > 0).length;
     const f = rikDag(3, { rep: 4 }); setFood(f, 1);
@@ -52,10 +52,10 @@ SCENARIER.sport = {
   },
 };
 
-// en match i sporten k som börjar nu på lekplatsen, och de som går med i den
+// en match i sporten k som börjar nu mitt i byn, och de som går med i den
 function match(s: State, k: string, med: Person[]) {
-  const l = SIM.lekplats(s);
-  s.sport = { k, x: l.x + l.w / 2, y: l.y + l.h / 2, start: s.now, slut: s.now + SIM.HOUR };
+  const l = SIM.bynsMitt(s);
+  s.sport = { k, x: l.x + 0.5, y: l.y + 0.5, start: s.now, slut: s.now + SIM.HOUR };
   for (const q of med) spela(s, q);
 }
 SCENARIER.sportplats = {
@@ -63,7 +63,7 @@ SCENARIER.sportplats = {
   kor: () => {
     const rader: [string, boolean][] = [];
     for (const k of ['dragkamp', 'brottning', 'kast', 'snoboll', 'bollspel']) {
-      const s = rikDag(3), med = vuxna(s).slice(0, 4), l = SIM.lekplats(s), mx = l.x + l.w / 2, my = l.y + l.h / 2;
+      const s = rikDag(3), med = vuxna(s).slice(0, 4), l = SIM.bynsMitt(s), mx = l.x + 0.5, my = l.y + 0.5;
       match(s, k, med);
       const p = med.map(q => ({ x: q.task!.tx - mx, y: q.task!.ty - my })), d = p.map(o => Math.hypot(o.x, o.y));
       const f = (o: { x: number; y: number }) => `${o.x.toFixed(1)},${o.y.toFixed(1)}`;
@@ -104,7 +104,7 @@ SCENARIER.sportsaker = {
 };
 
 SCENARIER.snoboll = {
-  text: 'Lek i snön (steg 4.3.1.3): när snön ligger har de vuxna snöbollskrig på lekplatsen, och barnen leker i snön. Utan snö blir det inget snöbollskrig',
+  text: 'Lek i snön (steg 4.3.1.3): när snön ligger har de vuxna snöbollskrig i byn, och barnen leker i snön. Utan snö blir det inget snöbollskrig',
   kor: () => {
     let sno = 0, utan = 0;
     for (let i = 0; i < 12; i++) {
@@ -118,8 +118,8 @@ SCENARIER.snoboll = {
     const s = rikDag(3); (s.vader ??= { fukt: 0, sno: 0 }).sno = 5;
     const v = vuxna(s);
     fritid(s, v[1]!);
-    const l = SIM.lekplats(s);
-    s.sport = { k: 'snoboll', x: l.x + l.w / 2, y: l.y + l.h / 2, start: s.now, slut: s.now + SIM.HOUR };
+    const l = SIM.bynsMitt(s);
+    s.sport = { k: 'snoboll', x: l.x + 0.5, y: l.y + 0.5, start: s.now, slut: s.now + SIM.HOUR };
     const fore = v.slice(0, 2).map(q => q.skill.traff);
     spela(s, v[0]!); spela(s, v[1]!);
     kor(s, 2);
@@ -456,7 +456,7 @@ SCENARIER.matchrapport = {
     const m = s.matcher?.at(-1), rad = s.log.find(l => l.match !== undefined && l.match === m?.nr);
     const n = s.notiser?.lista.find(x => x.id === 'match'), nIdx = n?.match?.indexOf(m?.nr ?? -1) ?? -1;
     const fa = m?.spelare.find(x => x.id === a.id);
-    // det kommer för få: ensam på lekplatsen
+    // det kommer för få: ensam
     const e = rikDag(5), ep = vuxna(e)[0]!;
     match(e, 'dragkamp', [ep]);
     for (const q of SIM.living(e)) if (q !== ep) q.task = { act: 'sova', phase: 'do', tx: q.x, ty: q.y, until: e.now + 3 * SIM.HOUR, carry: 0, dark: true };

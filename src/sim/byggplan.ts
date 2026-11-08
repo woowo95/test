@@ -5,7 +5,7 @@ import { Hus, MATERIAL, bitAt, bitsOf, gridOf, housesOf, husById, touch } from '
 import { eldPlats, getMap } from './karta';
 import { groundOf } from './mark';
 import { PLATS, rektAvstand } from './plats';
-import { lekplats, paLek, stangerIn, stationRutor, storlekAv, uteStation } from './stationer';
+import { stangerIn, stationRutor, storlekAv, uteStation } from './stationer';
 import { knows } from './teknik';
 import { villHaMer } from './forradsmal';
 import { amountOf, changed, flyttaLager, inZone, lagerFullt, lagerNy, overflow, overlaps, lagerStorre, ownedAll, put, usable, zonesOf } from './lager';
@@ -86,10 +86,10 @@ const tileOk = (s: State, x: number, y: number, utomElden: boolean) => {
   return true;
 };
 // en plats för ett hus med yttermåtten w×h inom byområdet, PLATS.husMellan rutor från andra hus och PLATS.uteFri från stationer
-// som står ute, helst en bit från elden och inte på lekplatsen, och inte så att väggarna stänger in mark. Träden där
+// som står ute, helst en bit från elden, och inte så att väggarna stänger in mark. Träden där
 // huset ska stå fälls först
 function siteFor(s: State, w: number, h: number, okAt: (i: number) => boolean) {
-  const f = eldPlats(s), R = BYGG.radieBas + living(s).length * BYGG.radiePerPerson, lekR = lekplats(s), M = Math.max(PLATS.husMellan + ((s.byplan?.tat ?? 0) < -0.5 ? 1 : 0), PLATS.uteFri);
+  const f = eldPlats(s), R = BYGG.radieBas + living(s).length * BYGG.radiePerPerson, M = Math.max(PLATS.husMellan + ((s.byplan?.tat ?? 0) < -0.5 ? 1 : 0), PLATS.uteFri);
   const platser: { x: number; y: number; sc: number }[] = [], o = omrade(s), r = Math.ceil(R) + w + h;
   for (let y = Math.max(1, o.y0 - r); y + h < H && y <= o.y1 + r; y++) for (let x = Math.max(1, o.x0 - r); x + w < W && x <= o.x1 + r; x++) {
     const cx = x + w / 2, cy = y + h / 2;
@@ -105,10 +105,9 @@ function siteFor(s: State, w: number, h: number, okAt: (i: number) => boolean) {
     }
     if (!ok) continue;
     const near = rektAvstand(f.x, f.y, x, y, w, h), m = o.mitt;
-    const lek = paLek(lekR, x, y, w, h) ? BYGG.lekStraff : 0; // lekplatsen räknas från byns inre (plats.ts, steg 2.10.4)
     const eld = rektAvstand(f.x, f.y, x - 1, y - 1, w + 2, h + 2) === 0 ? ELDFLYTT.husStraff : 0; // där elden står bara om ingen annan plats finns: elden flyttas först
     const form = s.byplan?.form ?? 'ring', rad = form === 'rader' && strakNara(s, x, y, w, h) ? PLAN.raderVikt : 0;
-    const sc = Math.max(0, BYGG.husAvst - near) + BYGG.utomVikt * Math.max(0, ut - Math.min(w, h) / 2) + (BYGG.mittVikt + (form === 'ring' ? PLAN.ringVikt : 0)) * Math.hypot(cx - m.x - 0.5, cy - m.y - 0.5) + lek + eld - rad; // träden spelar ingen roll: de fälls som en del av bygget (steg 8.1.14)
+    const sc = Math.max(0, BYGG.husAvst - near) + BYGG.utomVikt * Math.max(0, ut - Math.min(w, h) / 2) + (BYGG.mittVikt + (form === 'ring' ? PLAN.ringVikt : 0)) * Math.hypot(cx - m.x - 0.5, cy - m.y - 0.5) + eld - rad; // träden spelar ingen roll: de fälls som en del av bygget (steg 8.1.14)
     platser.push({ x, y, sc });
   }
   // den bästa platsen som inte stänger in någon mark (stationer.ts); lika bra platser i samma ordning som de söktes

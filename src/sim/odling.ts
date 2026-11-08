@@ -16,7 +16,7 @@ import { getable, takeMaterial } from './behov';
 import { freeTools, nTools, wearTool } from './agande';
 import { SAKER } from './saker';
 import { PLATS } from './plats';
-import { ledig, lekplats, paLek, stationerOf, storlekAv } from './stationer';
+import { ledig, stationerOf, storlekAv } from './stationer';
 import { amountOf, gain } from './lager';
 import { temperature, vaxtFaktor } from './vader';
 import { TORKA } from './torka';
@@ -73,7 +73,6 @@ export const ODLING = balans('odling', {
   artMarg: 5, // ärter (korn före steg 3.10.23.8) sås bara om de hinner mogna med så här många dygn tillgodo före istiden (1,5 före steg 2.12.2); annars rovor ...
   rovMarg: 3, // ... med så här många dygn tillgodo
   // talen som stod lösa (kodgenomgången 3.10.25), med samma värden
-  lekStraff: 20, // ett fält på lekplatsen får så här många poäng till (färre är bättre)
   vildAvst: 8, // platsen för vilda frön är värd hälften så här många rutor från byn
 });
 
@@ -244,8 +243,7 @@ function rutaFri(s: State, g: Grans, x: number, y: number) {
 }
 
 // var ett nytt fält med n rutor och bredden w läggs: alla rutor fria och utanför byns gräns, första raden högst faltTill rutor
-// utanför byns område och så nära det som det går (utanforByn), lite ungskog och inte i
-// lekplatsen. Samma plats varje gång (ingen slump). Sparas per by och timme (regel 4)
+// utanför byns område och så nära det som det går (utanforByn), lite ungskog. Samma plats varje gång (ingen slump). Sparas per by och timme (regel 4)
 const siteCache = new WeakMap<State, { key: string; at?: { x: number; y: number } }>();
 export function faltSite(s: State, w: number, n: number) {
   const key = `${Math.floor(s.now / HOUR)}:${s.byggV ?? 0}:${faltOf(s).length}:${s.stackar?.length ?? 0}:${w}:${n}`;
@@ -256,7 +254,7 @@ export function faltSite(s: State, w: number, n: number) {
   return at;
 }
 function hittaSite(s: State, w: number, n: number) {
-  const o = omrade(s), gr = byGrans(s), g = groundOf(s), lekR = lekplats(s), rader = Math.ceil(n / w), b = Math.min(w, n);
+  const o = omrade(s), gr = byGrans(s), g = groundOf(s), rader = Math.ceil(n / w), b = Math.min(w, n);
   const R = ODLING.faltTill + w + rader + 1;
   let best: { x: number; y: number } | undefined, bs = Infinity;
   for (let y = Math.max(0, o.y0 - R); y <= Math.min(H - 1, o.y1 + R); y++) for (let x = Math.max(0, o.x0 - R); x <= Math.min(W - 1, o.x1 + R); x++) {
@@ -266,8 +264,7 @@ function hittaSite(s: State, w: number, n: number) {
     let ok = true, unga = 0;
     for (let k = 0; k < n && ok; k++) { const r = rutaXY(ny, k); if (!rutaFri(s, gr, r.x, r.y)) ok = false; else { const tr = g.trees[r.y * W + r.x]; unga += tr >= FOREST ? ODLING.skogKost : tr; if (u + unga >= bs) ok = false; } }
     if (!ok) continue;
-    const lek = paLek(lekR, x, ny.dir > 0 ? y : y - rader + 1, b, rader) ? ODLING.lekStraff : 0;
-    const sc = u + lek + unga;
+    const sc = u + unga;
     if (sc < bs) { bs = sc; best = { x, y }; }
   }
   return best;

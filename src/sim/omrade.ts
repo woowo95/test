@@ -5,11 +5,12 @@
 // av alla rektanglarna (det de omsluter) och rutorna högst kant från det. Det räknas om när något byggs, flyttas eller
 // rivs (s.byggV, elden, lagerplatserna och stationerna), och sparas per by tills dess (regel 4).
 import { balans } from './balans';
-import { bitsOf, housesOf } from './byggnad';
+import { bitsOf, blocked, freeNear, housesOf } from './byggnad';
+import { rnd } from './slump';
 import { eldPlats } from './karta';
 import { zonesOf } from './lager';
 import { Rekt, ledig, stationDef, stationerOf, storlekAv } from './stationer';
-import { H, State, W, inMap } from './typer';
+import { H, Person, State, W, inMap } from './typer';
 
 export const OMRADE = balans('omrade', {
   kant: 2, // så många rutor runt det byn omsluter hör till området
@@ -105,7 +106,7 @@ function rakna(key: number, r: Rekt[]): Omrade {
 }
 
 // ---------- frågorna (steg 6.2.2, "Byns område (Frågorna)") ----------
-// Alla system frågar området; inget räknas från elden, byns mitt eller lekplatsen, utom det som är elden själv
+// Alla system frågar området; inget räknas från elden eller byns mitt, utom det som är elden själv
 
 // ligger rutan (eller punkten) innanför byn?
 export const iByn = (s: State, x: number, y: number) => { const i = Math.floor(y) * W + Math.floor(x); return inMap(Math.floor(x), Math.floor(y)) && omrade(s).inne[i] === 1; };
@@ -120,7 +121,7 @@ export function utanforByn(s: State, x: number, y: number) {
 // avståndet från punkten till det byn omsluter, utan kanten runt (0 innanför höljet): för det som ska stå en bit från
 // det som redan står (ett nytt hus, en station ute), så att byn växer utåt i en ring
 export const tillHoljet = (s: State, x: number, y: number) => tillHolje(x, y, omrade(s).holje);
-// områdets mitt (en ruta): det som behöver en punkt att utgå från (kamerans hemknapp, lekplatsen, åt vilket håll fältet
+// områdets mitt (en ruta): det som behöver en punkt att utgå från (kamerans hemknapp, åt vilket håll fältet
 // växer, var byn minns översvämningen). Den följer området, inte elden
 export const bynsMitt = (s: State) => s.torg ? { x: s.torg.x + (s.torg.w >> 1), y: s.torg.y + (s.torg.h >> 1) } : omrade(s).mitt; // torget är byns centrum när det finns (steg 7.3.13)
 // avståndet till byn för en ruta i taget (steg 9.1.5): at(i) räknar rutan första gången någon frågar och sparar svaret med
@@ -136,6 +137,17 @@ function utGrid(o: Omrade): Avst {
     at: i => { const v = ut[i]; if (v === v) return v; const x = i % W, y = (i - x) / W; ut[i] = o.inne[i] ? 0 : Math.max(0, tillHolje(x, y, h) - k); return ut[i]; }, // läst ur fältet, avrundat som förut
     minst: i => { if (o.inne[i]) return 0; const x = i % W, y = (i - x) / W; return Math.max(0, Math.hypot(Math.max(hx0 - x, 0, x - hx1), Math.max(hy0 - y, 0, y - hy1)) - k); },
   });
+}
+// en slumpad punkt inne i byn där man kan stå (inte i vattnet eller en vägg): där barnen leker och sporten spelas. Byn
+// har ingen lekplats; leken sker var som helst i byn. Drar ur p:s följd (val för leken, sport för en match)
+export function platsIByn(s: State, p: Person, folj: 'val' | 'sport') {
+  const o = omrade(s);
+  for (let k = 0; k < 12; k++) {
+    const x = o.x0 + rnd(s, folj, p) * (o.x1 - o.x0 + 1), y = o.y0 + rnd(s, folj, p) * (o.y1 - o.y0 + 1);
+    if (inMap(x, y) && o.inne[Math.floor(y) * W + Math.floor(x)] && !blocked(s, x, y)) return { x, y };
+  }
+  const m = bynsMitt(s);
+  return freeNear(s, m.x + 0.5, m.y + 0.5);
 }
 // en fri ruta (ledig i stationer.ts, och ok om det anges) innanför byn eller högst max rutor utanför: den som ligger minst
 // utanför, sedan närmast fran (om det anges), sedan den första i rutnätets ordning. Samma ruta varje gång (ingen slump)

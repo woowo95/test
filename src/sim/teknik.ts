@@ -126,7 +126,7 @@ export const TEKNIK: Tek[] = [
     omr: ['samla', 'hantverk'], krav: ['korg', 'skinnklader'], niva: 5, tid: 5.4, forsok: { vid: ['flatarbank'], skill: 'hantverk' },
     episk: 'Säcken sprack i sömmarna gång på gång. Men {namn} sydde om den tills den höll, och {hen} bar hem dubbelt så mycket.' },
   // sportens föremål (steg 4.3.1.2, sport.ts): man kommer på dem när man spelar
-  { id: 'mal', namn: 'Mål', text: 'En ring av grenar som binds med rep och ställs upp på lekplatsen.', effekt: 'Man tävlar i att kasta mot målet.',
+  { id: 'mal', namn: 'Mål', text: 'En ring av grenar som binds med rep och ställs upp i byn.', effekt: 'Man tävlar i att kasta mot målet.',
     omr: ['sport', 'hantverk'], krav: ['rep'], niva: 2, tid: 4 },
   { id: 'boll', namn: 'Boll', text: 'Ett skinn som sys ihop runt en näve hö.', effekt: 'Med bollen och ett slagträ spelar man bollspel.',
     omr: ['sport', 'hantverk'], krav: ['kniv'], niva: 2, tid: 4 },
