@@ -30,6 +30,7 @@ import { balans } from './balans';
 import { num } from './format';
 import { brasaSten, vedPerEld, BRASA } from './brasor';
 import { iVattnetNu } from './sjo';
+import { tecken } from './religion';
 
 // ---------- balanstal (regel 8) ----------
 // Elden: hur stark den är, vad var och en vill ha på den, hur den tänds och fylls på, och hur tändmaterial, stenar och flinta
@@ -409,6 +410,7 @@ export function forageItems(s: State, p: Person, dtSec: number, fart = 1): Recor
     if (p.task) takeFrom(s, 'flinta', p.task.tx, p.task.ty, 1);
     if (ff > ELD.flintaStenar && p.task) observe(s, p, 'flinta', p.task.tx, p.task.ty);
     loggBer(s, 'l_flinta', p.id, { namn: p.name, plats: ff > ELD.flintaStenar ? 'vid stenarna' : ff > ELD.flintaSand ? 'i sanden vid stranden' : '' }, 'world', [p.id]);
+    if (ff <= ELD.flintaSand) tecken(s, p, 'fynd', 'flintan där ingen trodde att den fanns'); // fyndet på den märkliga platsen (steg 8.5.18)
   }
   return Object.keys(got).length ? got : undefined;
 }

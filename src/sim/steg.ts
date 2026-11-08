@@ -48,7 +48,7 @@ import { ARSTID, VAR, ageIndex, hourOf, iIstiden, isLight } from './tid';
 import { ACTS, toolRow } from './handlingar';
 import { AGES_BORJAR, Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, Historik, simulera, T, inMap } from './typer';
 import { FOREST, findPath, wear } from './vag';
-import { kroppFart, rutFart, smidig, snoFart } from './gang';
+import { barKropp, kroppFart, rutFart, smidig, snoFart } from './gang';
 import { facklorTimme, finishLjus, finishUppsatt, morkFart, morkHumor } from './ljus';
 import { arbetsTimme, chooseTask, dangers, nastaBuske, nastaRedskap, nastaRuta, spotFor } from './val';
 import { FAGEL, djurSteg } from './djur';
@@ -77,7 +77,8 @@ import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from '.
 import { kvarTimme } from './kvarlevor';
 import { avrustaKlar, gravKlar, kroppUpp, rustaKlar } from './grav';
 import { bonKlar, kultTimme } from './kult';
-import { hovArbete, kyrkaRegister, kyrkaTimme, satBudHandelse, satOppnaAndlig } from './kyrka';
+import { hovArbete, kyrkProjekt, kyrkaRegister, kyrkaTimme, satBudHandelse, satOppnaAndlig } from './kyrka';
+import { PROJEKT } from './projekt';
 import { lagRegister } from './lagar';
 import { oppnaSed } from './rost';
 import { handelse } from './rykten';
@@ -200,7 +201,7 @@ for (const act of DRICKA_ACTS) MEDAN[act] = (s, p, t) => { if (t.prog === undefi
 // slakt och rensning: den första arten med arbetet som finns i förrådet (kaninen före vargen, steg 3.7.14)
 // mjärden är klar: materialet tas, och den sätts ut på närmaste strand (steg 7.4.2)
 for (const k of Object.keys(FALLOR)) KLAR[k as Act] = (s, p) => { for (const [q, n] of Object.entries((RECEPT as Record<string, { av?: Record<string, number> }>)[k].av!)) takeMaterial(s, p, q, n); sattUt(s, p, k); };
-lagRegister(); kyrkaRegister();
+lagRegister(); kyrkaRegister(); Object.assign(PROJEKT, kyrkProjekt());
 satOppnaAndlig(s => oppnaSed(s, 'andlig'));
 satBudHandelse((s, p) => handelse(s, p, 'budbrott'));
 export const KLAR_FOR = KLAR; // scenarierna prövar det som händer när ett arbete är klart
@@ -540,7 +541,7 @@ function walk(s: State, p: Person, tk: Task, left: number) {
     if (!v && tk.hopp) { tk.hopp = undefined; tk.tx = p.x; tk.ty = p.y; tk.pk = undefined; tk.until = Math.min(tk.until, s.now); return { used: Math.min(left, BIT), framme: false }; }
     tk.path = v ?? [];
   }
-  const off = sida(p, 0.18), fart = kroppFart(p, s.now, tk.bar !== undefined), t0 = s.now; // åldern, skadorna, yrseln, att kravla och att bära någon (gångfartens register, gang.ts)
+  const off = sida(p, 0.18), fart = kroppFart(p, s.now, barKropp(tk)), t0 = s.now; // åldern, skadorna, yrseln, att kravla och att bära någon, också en död på väg till graven (gångfartens register, gang.ts)
   let budget = fart * left;
   const sm = smidig(p, s.now), snoF = snoFart(s, p); // snön på marken (steg 7.7.3)
   const klocka = () => t0 + (fart * left - budget) / fart * SEC;

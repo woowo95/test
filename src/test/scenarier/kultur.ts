@@ -722,11 +722,13 @@ SCENARIER.graven = {
     klockan(s, 10); tandEld(s); setFood(s, 200);
     SIM.die(s, d, 'alderdom');
     const kr = s.kvarlevor?.find(k => k.k === 'kropp' && k.vem === d.id);
-    let h = 0;
+    let h = 0, bar = false;
     while (s.kvarlevor?.some(k => k.vem === d.id) && h < 72) { kor(s, 1); h++; }
+    { const p = v[2], t0 = p.task; p.task = { act: 'grava', phase: 'go', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' } as SIM.Task; bar = SIM.gangDelar(s, p).delar.some(r => r.k === 'bar'); p.task = t0; } // den som bär kroppen dit
     const g = s.gravar?.find(q => q.vem === d.id);
     return [
       [`kroppen ligger där hen dog (${kr?.x}, x0 ${x0})`, !!kr && kr.x === x0],
+      ['den som bär kroppen till graven går långsammare', bar],
       [`kroppen begravs (${h} timmar)`, !!g],
       ['graven är en ruta som man kan fråga efter', !!g && SIM.gravAt(s, g.x, g.y) === g],
     ];
@@ -773,7 +775,7 @@ SCENARIER.ritualer = {
 };
 
 SCENARIER.kyrkan = {
-  text: 'Steg 8.6: seden Världslig – Andlig, kyrkans förråd och hov, buden med trons krets, att bryta ett bud ger skuld, ett bud kan bli lag, helgon, kväden och översteprästen',
+  text: 'Steg 8.6: seden Världslig – Andlig, kyrkans förråd, hovet och templet av sten som projekt, buden med trons krets, att bryta ett bud ger skuld, ett bud kan bli lag, helgon, kväden och översteprästen',
   kor: () => {
     const { s, v, l, tr } = medTro(6, 4);
     SIM.kultTimme(s);
@@ -796,8 +798,14 @@ SCENARIER.kyrkan = {
     tr.forrad = { ved: 20 }; const ut = SIM.utgiftNu(s, tr);
     SIM.rostaOm(s, { f: 'kyrkutgift', d: { tro: tr.id, vad: 'hov' }, fram: pr.id });
     for (const p of v) p.tro = tr.id;
+    const fara = { kyla: false, gras: 0 }, projHov = !!tr.hov && SIM.PROJEKT.hov.brist(s) > 0 && SIM.PROJEKT.hov.kan(s, q, fara) && SIM.PROJEKT.hov.uppgift(s, q)?.act === 'hovbygge';
     if (tr.hov) SIM.hovArbete(s, pr, SIM.KYRKA.hovMin + 1);
     SIM.kyrkaTimme(s);
+    // templet av sten där hovet står
+    tr.forrad = { sten: SIM.KYRKA.templeSten + 5 }; const ut2 = SIM.utgiftNu(s, tr);
+    SIM.rostaOm(s, { f: 'kyrkutgift', d: { tro: tr.id, vad: 'tempel' }, fram: pr.id });
+    const projTempel = !!tr.tempel && SIM.PROJEKT.tempel.kan(s, q, fara) && !SIM.PROJEKT.hov.kan(s, q, fara);
+    if (tr.tempel) SIM.hovArbete(s, pr, SIM.KYRKA.tempelMin + 1);
     return [
       [`skalan låses upp och Godevälde är en form (${form})`, oppen && form === 'Godevälde'],
       [`vid full Andlig väger prästen mycket (${(prastAndel * 100).toFixed(0)} %)`, prastAndel > 0.3],
@@ -805,6 +813,8 @@ SCENARIER.kyrkan = {
       ['den starkt troende följer budet, den svagt troende inte', forb === 'ingetKott' && inte === undefined],
       [`ett brutet bud ger skuld och svagare tro (${q.skuld})`, (q.skuld ?? 0) > 0 && q.troStyrka! < t0],
       [`kyrkans förråd går först till hovet (${ut}), och hovet byggs (${!!tr.hov?.klar})`, ut === 'hov' && !!tr.hov?.klar],
+      ['hovet är ett projekt som bara de troende bygger', projHov],
+      [`sedan ett tempel av sten (${ut2}) där hovet stod, också ett projekt (${!!tr.tempel?.klar})`, ut2 === 'tempel' && projTempel && !!tr.tempel?.klar && tr.tempel.x === tr.hov!.x],
       ['översteprästen finns', SIM.overstePrast(s) === pr && !!l],
     ];
   },

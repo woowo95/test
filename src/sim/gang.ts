@@ -82,6 +82,8 @@ export const smidig = (p: Person, now: number) => kanGa(p) ? GANG.smidTerr * Mat
 export const rutFart = (p: Person, g: Ground, i: number, sm: number) => kanGa(p) ? markFaktor(speedAt(g, i) || 1, sm) : 1;
 // farten på rutan (speedAt i vag.ts, 1 i vatten), med det den smidiga tar igen
 export const markFaktor = (sp0: number, sm: number) => sp0 < 1 ? Math.min(1, sp0 + (1 - sp0) * sm) : sp0;
+// bär hen någon: en levande (bar), eller en död till graven (steg 8.5.1: grava på väg dit)
+export const barKropp = (t: { bar?: number; act: string; phase: string } | undefined) => !!t && (t.bar !== undefined || t.act === 'grava' && t.phase === 'go');
 // rutor i sekunden för kroppen: GANG.fart gånger kroppens rader (marken räknas för varje ruta i steg.ts)
 export function kroppFart(p: Person, now: number, bar = false) {
   const l = { p, now, bar } as GangLage;
@@ -94,7 +96,7 @@ export const kroppFaktor = (p: Person, now: number, bar = false) => kroppFart(p,
 // personrutan: farten nu som del av en frisk vuxens på en stig, och raderna som ändrar den (v = farten gånger detta, minus 1)
 export function gangDelar(s: State, p: Person) {
   const g = groundOf(s), i = tileOf(p.x, p.y);
-  const l: GangLage = { s, p, now: s.now, bar: p.task?.bar !== undefined, g, i: Math.max(0, Math.min(g.tiles.length - 1, i)), sm: smidig(p, s.now) };
+  const l: GangLage = { s, p, now: s.now, bar: barKropp(p.task), g, i: Math.max(0, Math.min(g.tiles.length - 1, i)), sm: smidig(p, s.now) };
   const delar: { k: GangOrsak; namn: string; tecken: string; v: number }[] = [];
   let f = 1;
   for (const k of Object.keys(GANGFART) as GangOrsak[]) {

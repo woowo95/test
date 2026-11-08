@@ -58,7 +58,7 @@ import { smakDrag } from './rykten';
 import { PAB, pabud, skams } from './styre';
 import { BONER, bonFritid, bonNod, bonVikt, ritualVal, satFaror } from './kult';
 import { avrustaVal, begravaVal, rustaVal } from './grav';
-import { budBrutet, budForbjuder, hovVal, viltBikta, vilodagNu } from './kyrka';
+import { budBrutet, budForbjuder, viltBikta, vilodagNu } from './kyrka';
 import { LAG, lagGaller, tabuAkt } from './lagar';
 
 // ---------- val av aktivitet ----------
@@ -698,7 +698,6 @@ export const ARBETEN: readonly Arbete[] = [
     arbeta(c, d.best, ACTS[d.best].behov === 'ved' ? `Byn behöver ved, förrådet räcker ${dygn(d.wd)}` : `Byn behöver mat, förrådet räcker ${dygn(d.fd)}`); return true;
   } },
   // 9 Fritid: vila, hantverk, umgänge, promenad, bad eller att sitta vid stranden
-  { id: 'hov', niva: 8, nar: 'dag', kort: true, prova: ({ s, p, v }) => { const h = hovVal(s, p); if (!h) return false; v.spot = h.spot; v.dur = h.min * MIN; return set(v, 'hovbygge', h.why); } }, // kyrkans bygge (steg 8.6.14)
   { id: 'fritid', niva: 9, nar: 'dag', kort: true, prova: c => { leisure(c.s, c.p, c.v, dag(c).u, c.lazy); return true; } },
   // på natten håller man sig vid elden och berättar, gör handarbete, umgås eller sover
   { id: 'kvall', niva: 9, nar: 'natt', prova: ({ s, p, v, a }) => { night(s, p, v, a); return true; } },
