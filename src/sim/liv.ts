@@ -25,7 +25,7 @@ import { gravgava } from './kultlatt';
 // Befolkningen regleras av naturen, inte av ett fast tak: en trång by får färre barn och fler som flyttar, en liten by lockar
 // nybyggare, och en by med knapp mat får färre barn, fler som flyttar och färre nybyggare. Längder är i dygn (år i spelet),
 // åldrar i år i spelet. Åldrarna för vuxen och barn (ALDER) står i folk.ts
-const LIV = balans('liv', {
+export const LIV = balans('liv', {
   // trängsel: 0 upp till trangFran invånare, 1 vid trangFran + trangSpann, högst trangMax
   trangFran: 24, trangSpann: 16, trangMax: 3, // (14 före steg 2.12.6: spelet byggs för ca 30 invånare)
   // hur många barn byn vill ha (birthWish): fler i en liten by, färre i en stor
@@ -60,6 +60,9 @@ const LIV = balans('liv', {
   sorjPartner: -0.3, sorjPartnerDygn: 1.2, // partnern
   sorjNara: -0.25, sorjNaraDygn: 1, // förälder och barn
   saknar: -0.12, saknarDygn: 0.6, // en annan som tyckte om den döda (relationen över REL.saknar)
+  // sorgen i stadier (steg 9.2.33) hos partnern, föräldrar och barn och den bästa vännen: först "Förlorade sin vän" med
+  // tyngden gånger forlust i forlustDygn, sedan "Sörjer" med tyngden i sorgens dygn, och sist "Saknar" med saknar i saknasDygn
+  forlust: 1.5, forlustDygn: 2, saknasDygn: 6,
   saknarFlytt: -0.08, saknarFlyttDygn: 0.5, // den som tyckte om någon som flyttar
   fodMor: 0.2, fodFar: 0.18, fodDygn: 1, // glädjen över ett nytt barn
 });
@@ -132,9 +135,11 @@ export function die(s: State, p: Person, orsak: Dodsorsak) {
   for (const q of living(s)) {
     // den som var gift sörjer mer, den bästa vännen länge och en nära vän lite mer än en vän (steg 3.1.1)
     const r = s.rels[relKey(p.id, q.id)], varPartner = q.partner === p.id;
-    if (varPartner) { q.partner = undefined; const f = r?.gift !== undefined ? RELT.giftSorj : 1; think(q, `Sörjer ${p.name}`, LIV.sorjPartner * f, s.now, LIV.sorjPartnerDygn * f * DAY); }
-    else if (isParent(p, q) || isParent(q, p)) think(q, `Sörjer ${p.name}`, LIV.sorjNara, s.now, LIV.sorjNaraDygn * DAY);
-    else if (q.bast === p.id) think(q, `Sörjer ${p.name}`, RELT.bastSorj, s.now, RELT.bastSorjDygn * DAY);
+    // sorgen i stadier (steg 9.2.33): först förlusten med stor tyngd, sedan sorgen och sist saknaden, svag och länge (sorgTimme)
+    if (varPartner) { q.partner = undefined; const f = r?.gift !== undefined ? RELT.giftSorj : 1; sorj(s, q, p, 'sin partner', LIV.sorjPartner * f, LIV.sorjPartnerDygn * f); }
+    else if (isParent(q, p)) sorj(s, q, p, 'sitt barn', LIV.sorjNara, LIV.sorjNaraDygn);
+    else if (isParent(p, q)) sorj(s, q, p, p.sex === 'k' ? 'sin mor' : 'sin far', LIV.sorjNara, LIV.sorjNaraDygn);
+    else if (q.bast === p.id) sorj(s, q, p, 'sin vän', RELT.bastSorj, RELT.bastSorjDygn);
     else if (r && r.op > REL.saknar) { const f = r.op > REL.naraVan ? RELT.naraSorj : 1; think(q, `Saknar ${p.name}`, LIV.saknar * f, s.now, LIV.saknarDygn * f * DAY); }
     // familjen och vännerna sörjer en död som kom av svält, kyla, vargar eller rövare (steg 4.5.4.9)
     if (sorg && (varPartner || isParent(p, q) || isParent(q, p) || q.bast === p.id || (r && r.op > REL.saknar) || (q.mother !== undefined && q.mother === p.mother) || (q.father !== undefined && q.father === p.father))) upplev(s, q, 'sorjde', `${p.name}, som dog ${cause}`);
@@ -283,4 +288,23 @@ function emigrate(s: State) {
   log(s, `Byn blev trång. ${a.name} och ${b.name} lämnade byn${n ? ` med ${n} barn` : ''} för att grunda en egen boplats.`, 'move', group.map(g => g.id));
   for (const q of living(s)) for (const g of group) { const r = s.rels[relKey(q.id, g.id)]; if (r && r.op > REL.saknar) { think(q, `Saknar ${g.name}`, LIV.saknarFlytt, now, LIV.saknarFlyttDygn * DAY); break; } }
   utbrytning(s, group, pop); // ur en mycket stor by blir de en ny grannklan (steg 4.4.4.1)
+}
+
+// sorgen i stadier (steg 9.2.33): q förlorade p. Först förlusten, och sorgTimme byter till sorgen och saknaden
+function sorj(s: State, q: Person, p: Person, ord: string, v: number, dygn: number) {
+  think(q, `Förlorade ${ord}, ${p.name}`, v * LIV.forlust, s.now, LIV.forlustDygn * DAY);
+  (q.sorg ??= []).push({ namn: p.name, ord, v, dygn, t0: s.now });
+}
+// en gång i timmen (steg.ts): den som sörjer går från förlusten till sorgen och sedan till saknaden
+export function sorgTimme(s: State) {
+  for (const q of living(s)) {
+    if (!q.sorg?.length) continue;
+    for (const g of q.sorg) {
+      const t1 = g.t0 + LIV.forlustDygn * DAY, t2 = t1 + g.dygn * DAY;
+      if (s.now >= t1 && !g.s2) { g.s2 = 1; q.thoughts = q.thoughts.filter(x => x.text !== `Förlorade ${g.ord}, ${g.namn}`); think(q, `Sörjer ${g.namn}`, g.v, s.now, t2 - s.now); }
+      if (s.now >= t2 && !g.s3) { g.s3 = 1; think(q, `Saknar ${g.namn}`, LIV.saknar, s.now, LIV.saknasDygn * DAY); }
+    }
+    q.sorg = q.sorg.filter(g => !g.s3);
+    if (!q.sorg.length) delete q.sorg;
+  }
 }

@@ -1,3 +1,4 @@
+import { sorgTimme } from './liv';
 import { djurStriderSteg } from './djurstrid';
 import { lagerIStraket } from './strak';
 import { rumVila } from './rum';
@@ -288,6 +289,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
     stepVader(s); vindfallen(s); regnetTvattar(s); stepMotgang(s); stepTorka(s); stepFlod(s); stepIs(s); growGround(s, 1, ai); growFynd(s, 1, ai, vaxtFaktor(s)); forget(s, 1); stepRykten(s, moodOf); glomRykten(s, 1); stepBerattelser(s); stepStyre(s); rotStumps(s); tidyStore(s);
     vaggRensa(s); kvarTimme(s); kultTimme(s); kyrkaTimme(s); wearBuild(s, 1, ai); stepByggnader(s); stepMjardar(s); stepNaken(s); stepByggplan(s); stepEldFlytt(s); lagerIStraket(s); stepPaborjat(s); stepStationer(s); stepPynt(s); stadaByten(s); stepBrasor(s); stepKlader(s); stepOdling(s);
     askaSteg(s); // det svarta efter en eldsvåda försvinner (brand.ts)
+    sorgTimme(s); // sorgen i stadier (liv.ts, steg 9.2.33)
     forbrukTimme(s); // materialens förbrukning glöms långsamt (forradsmal.ts, steg 6.2.14)
     arbetsTimme(s); // byns behov för arbetsordningen (val.ts, steg 6.1.12)
     historikSteg(s); // nyckeltalen till byns historik (läses inte av simuleringen)

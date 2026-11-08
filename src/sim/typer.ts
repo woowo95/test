@@ -167,6 +167,7 @@ export interface Jaktforsok {
 }
 
 export interface Person {
+  sorg?: { namn: string; ord: string; v: number; dygn: number; t0: number; s2?: 1; s3?: 1 }[]; // sorgen i stadier efter en död (steg 9.2.33, liv.ts)
   pratArbete?: number; // samtalen hen haft medan hen arbetat (steg 8.1.12)
   id: number; name: string; sex: 'm' | 'k';
   born: number; died?: number; cause?: string; left?: number;

@@ -2033,3 +2033,25 @@ SCENARIER.samtalpar = {
     ];
   },
 };
+
+SCENARIER.sorg = {
+  text: 'Steg 9.2.33: sorgen i stadier. När någon nära dör kommer först förlusten ("Förlorade sin partner") med stor tyngd i några dygn, sedan "Sörjer" med mindre tyngd och sist "Saknar", svagt och länge',
+  kor: () => {
+    const s = createState(4, START);
+    const a = nyInvanare(s, 'k', 30), b = nyInvanare(s, 'm', 32);
+    a.partner = b.id; b.partner = a.id;
+    SIM.die(s, b, 'olycka');
+    const tanke = () => a.thoughts.filter(t => t.until > s.now && t.text.includes(b.name)).map(t => `${t.text} (${t.v.toFixed(2)})`);
+    const t1 = tanke().join(', ');
+    const v1 = a.thoughts.find(t => t.text.startsWith('Förlorade'))?.v ?? 0;
+    s.now += (SIM.LIV.forlustDygn + 0.1) * DAY; SIM.sorgTimme(s);
+    const t2 = tanke().join(', '), v2 = a.thoughts.find(t => t.text.startsWith('Sörjer'))?.v ?? 0;
+    s.now += 3 * DAY; SIM.sorgTimme(s);
+    const t3 = tanke().join(', '), v3 = a.thoughts.find(t => t.text.startsWith('Saknar'))?.v ?? 0;
+    return [
+      [`först förlusten: ${t1}`, /^Förlorade sin partner/.test(t1) && !/Sörjer/.test(t1)],
+      [`sedan sorgen, med mindre tyngd: ${t2}`, /Sörjer/.test(t2) && !/Förlorade/.test(t2) && Math.abs(v2) < Math.abs(v1)],
+      [`sist saknaden, svagast: ${t3}`, /Saknar/.test(t3) && Math.abs(v3) < Math.abs(v2)],
+    ];
+  },
+};

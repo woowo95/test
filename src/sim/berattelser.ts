@@ -2131,7 +2131,7 @@ function saknad(s: State, p: Person) {
   let bast: [Person, string, boolean] | undefined;
   for (const q of s.people) {
     if (q.died === undefined || q.id === p.id) continue;
-    const r = s.rels[relKey(p.id, q.id)], sorj = p.thoughts.some(t => t.text === `Sörjer ${q.name}` && t.until > s.now);
+    const r = s.rels[relKey(p.id, q.id)], sorj = p.thoughts.some(t => (t.text === `Sörjer ${q.name}` || t.text.startsWith('Förlorade ') && t.text.endsWith(`, ${q.name}`)) && t.until > s.now); // också förlusten, sorgens första stadium (steg 9.2.33)
     const vem = isParent(q, p) ? (q.sex === 'k' ? 'mor' : 'far') : isParent(p, q) ? (q.sex === 'k' ? 'dotter' : 'son')
       : r?.gift !== undefined || r?.par !== undefined ? (q.sex === 'k' ? 'hustru' : 'man') : sorj ? 'vän' : undefined;
     if (vem && (!bast || (sorj && !bast[2]) || (sorj === bast[2] && q.died > bast[0].died!))) bast = [q, vem, sorj];
