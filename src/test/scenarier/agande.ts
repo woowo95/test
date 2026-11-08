@@ -2172,3 +2172,19 @@ function berattelseKoll(s: SIM.State): [string, boolean][] {
   } finally { s.now = nu0; hist.kronika = k0; }
   return ut;
 }
+
+SCENARIER.filtplats = {
+  text: 'Steg 9.2.44: filten läggs aldrig på en lagerplats, en station, i en dörröppning eller på en byggruta',
+  kor: () => {
+    const s = createState(3, START);
+    const z = SIM.zonesOf(s)[0];
+    // mitt på lagerplatsen: filtarna hamnar bredvid den
+    const n = SIM.filtNara(s, z.x + 0.5, z.y + 0.5, SIM.FILT_MOT);
+    const fri = SIM.filtFri(s, n.x, n.y - SIM.FILT_MOT / 2) && SIM.filtFri(s, n.x, n.y + SIM.FILT_MOT / 2);
+    const lager = !SIM.filtFri(s, z.x + 0.5, z.y + 0.5);
+    return [
+      ['en ruta i lagret är inte fri för en filt', lager],
+      [`två filtar mitt på lagerplatsen flyttas bredvid den (${(n.x - z.x - 0.5).toFixed(0)}, ${(n.y - z.y - 0.5).toFixed(0)})`, fri],
+    ];
+  },
+};

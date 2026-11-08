@@ -233,7 +233,7 @@ function boende(s: State): Boende {
   for (const r of [...gridOf(s).rooms].sort((a, c) => ordning(a) - ordning(c))) {
     const h = husById(s, r.hus);
     if (h && !rumFnOf(s, r).sover) continue;
-    const st0 = stationRutor(s).sov, t = [...sovRutor(s, r).filter(i => st0.has(i)), ...sovRutor(s, r).filter(i => !st0.has(i))].slice(0, rumPlatser(s, r)); // bäddarna först, och bara så många som rummet rymmer (steg 9.2.36)
+    const st0 = stationRutor(s).sov, bb = sovRutor(s, r).filter(i => st0.has(i)), t = [...bb, ...sovRutor(s, r).filter(i => !st0.has(i))].slice(0, Math.max(bb.length, rumPlatser(s, r))); // bäddarna först, och bara så många som rummet rymmer (steg 9.2.36)
     if (h?.ag !== undefined) egnaTiles.set(h.id, [...(egnaTiles.get(h.id) ?? []), ...t]);
     else { const st = stationRutor(s).sov; baddar.push(...t.filter(i => st.has(i))); gemensamt.push(...t.filter(i => !st.has(i))); }
   }
@@ -281,22 +281,23 @@ function golvRutor(s: State, r: Rum) {
   const st = stationRutor(s);
   return st.at.size ? r.tiles.filter(i => { const t = st.at.get(i); return !t || !!stationDef(t.k)?.sover; }).length : r.tiles.length;
 }
-const rumPlatser = (s: State, r: Rum) => sovPersoner(golvRutor(s, r));
+// varje bädd är en sovplats, också om rummet egentligen är för litet för så många (steg 9.2.36)
+const rumPlatser = (s: State, r: Rum) => { const st = stationRutor(s).sov; return Math.max(sovPersoner(golvRutor(s, r)), r.tiles.filter(i => st.has(i)).length); };
 // sovplatserna i ett rum, i personer, och inga i ett hus där man inte sover (som i boende)
 export const sovplatser = (s: State, r: Rum) => husById(s, r.hus) && !rumFnOf(s, r).sover ? 0 : rumPlatser(s, r);
 // så många golvrutor i rummet som ingen behöver (en möbel får stå där): i ett familjehus det familjen inte behöver, i byns hus
 // det som ingen behöver i något av dem, och alla i ett hus där man inte sover (steg 2.2.5). En sovande behöver HUS.sovPer
-// rutor och huset HUS.sovFast till (steg 9.2.36)
+// rutor (steg 9.2.36); rutorna för rymd får ta en möbel
 export function sovKvar(s: State, r: Rum) {
   const h = husById(s, r.hus);
   if (h && !rumFnOf(s, r).sover) return Infinity;
   const b = boende(s);
   if (h?.ag !== undefined) {
     const golv = gridOf(s).rooms.filter(q => q.hus === h.id).reduce((n, q) => n + golvRutor(s, q), 0);
-    return golv - sovRutorFor(familjOf(s, h.ag).length);
+    return golv - familjOf(s, h.ag).length * HUS.sovPer; // rutorna för rymd (HUS.sovFast) får ta en möbel
   }
   const golv = gridOf(s).rooms.filter(q => { const hh = husById(s, q.hus); return (!hh || rumFnOf(s, q).sover) && hh?.ag === undefined; }).reduce((n, q) => n + golvRutor(s, q), 0);
-  return golv - sovRutorFor(b.ovriga.length);
+  return golv - b.ovriga.length * HUS.sovPer;
 }
 // så många som sover under tak men inte i en halmbädd
 export function utanBadd(s: State) {

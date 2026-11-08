@@ -13,7 +13,7 @@ import { iIstiden, ageIndex, hourOf } from './tid';
 import { grundvarde, rikedom } from './varde';
 import { SAKER, isTool, viktOf } from './saker';
 import { DELA, behovAv, betalVaror, betalaAv, bynPart, genomfor, luraI, personPart } from './behov';
-import { BYTE, BYTESPRIS, FILT_MOT, Part, Vara, filtMot, loggaByte, nyttPar, satPersonFlytt, vardeOf, vidByte, vidLura, varorText } from './byte';
+import { BYTE, BYTESPRIS, FILT_MOT, Part, Vara, filtFri, filtMot, filtNara, loggaByte, nyttPar, satPersonFlytt, vardeOf, vidByte, vidLura, varorText } from './byte';
 import { newTing, tingOf } from './agande';
 import { knows } from './teknik';
 import { dropSpot, put, stacksOf, use } from './lager';
@@ -216,7 +216,7 @@ export function handelFri(s: State, x: number, y: number) {
   for (let dy = -1; dy <= djup + 1; dy++) for (let dx = -FILT_BRED - 1; dx <= FILT_BRED + 1; dx++) {
     const tx = X + dx, ty = Y + dy, kant = dy < 0 || dy > djup || Math.abs(dx) > FILT_BRED;
     if (!inMap(tx, ty)) return false;
-    if (kant ? !!bitAt(s, tx, ty) : !ledig(s, tx, ty)) return false;
+    if (kant ? !!bitAt(s, tx, ty) : !ledig(s, tx, ty) || !filtFri(s, tx, ty)) return false; // (steg 9.2.44)
   }
   return !(s.filtar ?? []).some(f => f.x > X - FILT_BRED - 2 && f.x < X + FILT_BRED + 3 && f.y > Y - 2 && f.y < Y + djup + 3);
 }
@@ -229,7 +229,8 @@ function filtPlats(s: State) {
     if (ut < HANDEL.avstand || ut > HANDEL.avstand + HANDEL.letaLangre || !handelFri(s, x, y)) continue;
     return { x: x + 0.5, y: y + 0.5 };
   }
-  return freeNear(s, e.x + 0.5, e.y + 2.5);
+  const f = freeNear(s, e.x + 0.5, e.y + 2.5), n = filtNara(s, f.x, f.y + BYTE.bakom, 0); // filten ligger fritt (steg 9.2.44)
+  return { x: n.x, y: n.y - BYTE.bakom };
 }
 
 // en handlare kommer in från kanten närmast byn (en av de två närmaste, slumpat), på land

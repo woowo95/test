@@ -177,7 +177,8 @@ SCENARIER.agandet = {
     // familjens egen bädd i huset och byns slöjdbänk, som också står där
     const fri = () => rum.tiles.find(i => rum.tiles.includes(i + 1) && [i, i + 1].every(j => !SIM.stationAt(s, j % W, Math.floor(j / W))));
     const stall = (k: string, ag?: number) => { const i = fri() ?? i0, t: SIM.Station = { id: s.nextStation = (s.nextStation ?? 0) + 1, k, x: i % W, y: Math.floor(i / W), kvar: 0, inne: 1, ag }; s.stationer!.push(t); SIM.touch(s); return t; };
-    const egenB = stall('halmbadd', a.id), bank = stall('flatarbank');
+    // den egna bädden åt någon i familjen som inte redan har en (nu när familjens bäddar får plats i huset, steg 9.2.36)
+    const utan = fam.find(q => !SIM.baddOf(s, q)) ?? a, egenB = stall('halmbadd', utan.id), bank = stall('flatarbank');
     const iHus = iH(egenB);
     const iHuset = iHus && iH(bank);
     // huset byter ägare (som när det köps eller ärvs av någon utanför familjen): familjens bäddar flyttas ut eller tas isär
@@ -1001,7 +1002,7 @@ SCENARIER.rumstyper = {
     SIM.planBuild(s); byggKlart(s);
     const h = housesOf(s)[0], r = () => gridOf(s).rooms.find(q => q.hus === h.id && q.tiles.length)!, rum = r();
     const gammal = SIM.rumFnId(s, rum) === SIM.fnId(h) && h.rumFn === undefined;
-    const sov = SIM.rumTaggar(s, rum).has('sovsal') && SIM.sovplatser(s, rum) === rum.tiles.length;
+    const sov = SIM.rumTaggar(s, rum).has('sovsal') && SIM.sovplatser(s, rum) === SIM.sovPersoner(rum.tiles.length);
     const vilaFore = SIM.rumVila(s, rum);
     const stall = (k: string, i: number) => { (s.stationer ??= []).push({ id: (s.nextBit ??= 1), k, x: i % SIM.W, y: Math.floor(i / SIM.W), kvar: 0, inne: 1 } as SIM.Station); s.nextBit++; SIM.touch(s); };
     stall('bord', rum.tiles[0]);
@@ -1014,7 +1015,7 @@ SCENARIER.rumstyper = {
     const namn = SIM.rumNamn(s, r());
     return [
       ['ett hus från en gammal sparfil är ett rum med husets funktion', gammal],
-      [`rummet är en sovsal med en sovplats per ruta (${SIM.sovplatser(s, rum)})`, sov],
+      [`rummet är en sovsal med en sovplats per tre rutor (${SIM.sovplatser(s, rum)} på ${rum.tiles.length} rutor, steg 9.2.36)`, sov],
       ['ett bord inne gör rummet till en matsal', matsal],
       ['en arbetsbänk gör det till en verkstad', verkstad],
       [`verkstad och sovplatser passar dåligt ihop: man vilar sämre (${vilaFore} → ${vilaEfter.toFixed(2)})`, minus && vilaEfter < vilaFore],

@@ -4,7 +4,10 @@ import { antal, och } from './ord';
 import { Ting } from './agande';
 import { ALDER, ageOf } from './folk';
 import { loggBer } from './berattelser';
-import { ownMove } from './lager';
+import { ownMove, zoneAt } from './lager';
+import { bitAt } from './byggnad';
+import { stationAt } from './stationer';
+import { W, H, inMap } from './typer';
 import { grundvarde } from './varde';
 import { kvVarde } from './kvalitet';
 import { kronika } from './historik';
@@ -86,6 +89,18 @@ export interface Overl { k: string; a: number; b: number; t: number }
 // byn = det som ligger där är byns (den som handlar för byn)
 export interface Filt { x: number; y: number; slut: number; varor: { k: string; n: number; fran: number }[]; handlare?: number; vem?: number; par?: number; byn?: true; byt?: number } // byt = när bytet på filten godkändes (steg 4.5.4.17) // handlare: handlarens id, när det är handlarens filt (ligger tills hen går)
 const filtarOf = (s: State) => (s.filtar ??= []);
+// filten läggs aldrig på en lagerplats, en station, i en dörröppning eller på en byggruta (steg 9.2.44): rutan (x, y) är fri för en filt
+export const filtFri = (s: State, x: number, y: number) => { const X = Math.floor(x), Y = Math.floor(y); return inMap(X, Y) && zoneAt(s, X, Y) < 0 && !stationAt(s, X, Y) && !bitAt(s, X, Y); };
+// den närmaste platsen kring (x, y) där två filtar mitt emot varandra (dy isär) båda ligger fritt
+export function filtNara(s: State, x: number, y: number, dy: number) {
+  for (let r = 0; r <= 6; r++) for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) {
+    if (Math.max(Math.abs(i), Math.abs(j)) !== r) continue;
+    const nx = x + i, ny = y + j;
+    if (nx < 1 || ny < 1 || nx >= W - 1 || ny >= H - 1) continue;
+    if (filtFri(s, nx, ny - dy / 2) && filtFri(s, nx, ny + dy / 2)) return { x: nx, y: ny };
+  }
+  return { x, y };
+}
 // så långt isär (i rutor) ligger två filtar mitt emot varandra (BYTE.filtMot)
 export const FILT_MOT = BYTE.filtMot;
 // var den som äger filten f står: bakom sin filt, på den sida som är längst från filten mitt emot (steg 4.5.7.1). Bilden frågar
@@ -163,7 +178,7 @@ export function byteKlart(s: State, m: Part, g: Part, fatt: Vara[], betal: Vara[
     [minne.fa, minne.fb] = hf.handlare === m.id ? [xy(hf), xy(ena)] : [xy(ena), xy(hf)];
   } else if (stort) {
     // sakerna ligger på filtarna medan handslaget syns, går sedan över till den andra filten, och filtarna plockas ihop strax efter
-    const x = (m.x + g.x) / 2, y = (m.y + g.y) / 2, par = nyttPar(s), slut = s.now + (BYTE.handslagSek + BYTE.flyttSek) * SEC + BYTE.packaMin * MIN;
+    const { x, y } = filtNara(s, (m.x + g.x) / 2, (m.y + g.y) / 2, FILT_MOT), par = nyttPar(s), slut = s.now + (BYTE.handslagSek + BYTE.flyttSek) * SEC + BYTE.packaMin * MIN;
     filtarOf(s).push({ x, y: y - FILT_MOT / 2, slut, varor: fatt.map(w => ({ k: w.k, n: w.t ? 1 : w.n, fran: g.id })), vem: g.id, par, byt: s.now },
       { x, y: y + FILT_MOT / 2, slut, varor: betal.map(w => ({ k: w.k, n: w.t ? 1 : w.n, fran: m.id })), vem: m.id, par, byt: s.now });
     minne.fa = { x, y: y + FILT_MOT / 2 }; minne.fb = { x, y: y - FILT_MOT / 2 };
