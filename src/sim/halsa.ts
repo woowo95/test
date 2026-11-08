@@ -17,7 +17,7 @@ import { gebinamn } from './berattelser';
 // vilar eller sover, och fortare inne. Smuts och hygien kommer med hygienen (2.7). Fliken Hälsa (steg 2.5.3) läser skadeLista,
 // delSkada och förmågorna (FORMAGOR)
 import { ACTS } from './handlingar';
-import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, franMitt, gjort, livet, living, log, ovning, raddAkt, think } from './folk';
+import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, franMitt, gjort, isParent, livet, living, log, ovning, raddAkt, think } from './folk';
 import { amountOf, avbryt } from './lager';
 import { fearPlace } from './minne';
 import { SJUK, foljd } from './sjukdom';
@@ -36,6 +36,7 @@ import { GANG } from './gang';
 import { blodDroppar, blodas } from './blod';
 import { lakFaktor, styrkaFaktor, yrselFaktor } from './naring';
 import type { Dodsorsak } from './liv';
+import { ledareOf } from './styre';
 
 // ---------- balanstal (regel 8) ----------
 export const HALSA = balans('halsa', {
@@ -478,16 +479,30 @@ export function vardVal(s: State, p: Person, sjalv: boolean): { spot: { x: numbe
     return { spot: { x: p.x, y: p.y }, ref: p.id, why: b.blod ? 'Trycker på sitt sår så att det slutar blöda' : b.rengor ? 'Rengör sitt infekterade sår' : 'Lägger mossa på sitt sår' };
   }
   if (ageOf(p, s.now) < ALDER.vuxen || !kanGa(p) || handighet(p) < HALSA.vardHand) return undefined;
-  let best: Person | undefined, bd = HALSA.vardR;
+  // rätten till vård (steg 9.5.9): den närmaste, men sederna och styret flyttar fram somliga (vardRatt)
+  let best: Person | undefined, bd = Infinity;
   for (const q of living(s)) {
     if (q === p || !q.skador?.length && !q.svimmat) continue;
     const d = Math.hypot(q.x - p.x, q.y - p.y);
-    if (d >= bd || !vardBehov(s, q, p) || vardas(s, q, p)) continue;
-    best = q; bd = d;
+    if (d >= HALSA.vardR || d / vardRatt(s, p, q) >= bd || !vardBehov(s, q, p) || vardas(s, q, p)) continue;
+    best = q; bd = d / vardRatt(s, p, q);
   }
   if (!best) return undefined;
   const b = vardBehov(s, best, p)!;
   return { spot: { x: best.x, y: best.y }, ref: best.id, why: b.bara && !b.blod && !b.rengor ? `Går för att bära hem ${best.name}` : `Tar hand om ${best.name}s sår` };
+}
+// rätten till vård (steg 9.5.9, "Rätt till vård" i designdokumentet): hur mycket före de andra p vårdar q, efter sederna och
+// styret. Vid Sammanhållning vårdas alla lika; vid Självförsörjning vårdar släkten sina egna; vid Envälde går ledaren och hens
+// släkt före; vid Ättens växt barnen. 1 = som alla andra, större = före
+export const VARDRATT = balans('vardratt', { slakt: 2, frammande: 0.5, ledare: 2, barn: 2 });
+const slakt = (a: Person, b: Person) => a.partner === b.id || isParent(a, b) || isParent(b, a) || (a.mother !== undefined && a.mother === b.mother);
+export function vardRatt(s: State, p: Person, q: Person) {
+  const v = s.seder.v, g = v.gemenskap ?? 0, r = v.rang ?? 0, b = v.barn ?? 0, l = ledareOf(s);
+  let x = 1;
+  if (g < 0) x *= slakt(p, q) ? 1 + -g * (VARDRATT.slakt - 1) : 1 - -g * (1 - VARDRATT.frammande);
+  if (r > 0 && l && (q === l || slakt(l, q))) x *= 1 + r * (VARDRATT.ledare - 1);
+  if (b > 0 && ageOf(q, s.now) < ALDER.vuxen) x *= 1 + b * (VARDRATT.barn - 1);
+  return Math.max(0.1, x);
 }
 // på väg till den skadade, som kanske har flyttat sig (walk i steg.ts)
 export function vardMal(s: State, tk: Task) {

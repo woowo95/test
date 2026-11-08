@@ -154,3 +154,25 @@ SCENARIER.lakekonst = {
     ];
   },
 };
+
+SCENARIER.vardratt = {
+  text: 'Steg 9.5.9: rätten till vård. Vid Sammanhållning vårdas alla lika, vid Självförsörjning vårdar släkten sina egna först, vid Envälde går ledaren och hens släkt före, och vid Ättens växt barnen',
+  kor: () => {
+    const { vardRatt } = SIM;
+    const s = createState(6, START), p = living(s).find(x => SIM.ageOf(x, s.now) >= 20)!;
+    // en främling, en syster och ett barn (påhittade, bara för räkningen)
+    const frammande: Person = { ...p, id: 99990, mother: -1, father: -2, partner: undefined, born: s.now - 30 * DAY };
+    const syster: Person = { ...frammande, id: 99991, mother: p.mother ?? -5 };
+    if (p.mother === undefined) p.mother = -5;
+    const barn: Person = { ...frammande, id: 99992, born: s.now - 5 * DAY };
+    const sed = (k: string, v: number) => { for (const x of Object.keys(s.seder.v)) (s.seder.v as Record<string, number>)[x] = 0; (s.seder.v as Record<string, number>)[k] = v; };
+    sed('gemenskap', 1); const lika = vardRatt(s, p, frammande) === 1 && vardRatt(s, p, syster) === 1;
+    sed('gemenskap', -1); const egen = vardRatt(s, p, syster) > vardRatt(s, p, frammande);
+    sed('barn', 1); const barnFore = vardRatt(s, p, barn) > vardRatt(s, p, frammande);
+    return [
+      ['vid Sammanhållning vårdas alla lika', lika],
+      ['vid Självförsörjning vårdas släkten först', egen],
+      ['vid Ättens växt vårdas barnen först', barnFore],
+    ];
+  },
+};
