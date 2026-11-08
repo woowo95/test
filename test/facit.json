@@ -1,53 +1,94 @@
 {
- "1": {
-  "pop": 10,
-  "atergrundad": 0,
-  "invandrade": 1,
-  "utvandrade": 31,
-  "fodda": 57,
-  "doda": 23,
-  "svalt": 0,
-  "kyla": 0,
-  "hunger": 0,
-  "humor": 0.608,
-  "vintermat": 72,
-  "vinterved": 1150,
-  "eld": 95,
-  "kb": 1345,
-  "delKb": 439
- },
- "42": {
-  "pop": 4,
-  "atergrundad": 1,
-  "invandrade": 5,
-  "utvandrade": 17,
-  "fodda": 52,
-  "doda": 49,
-  "svalt": 24,
-  "kyla": 2,
-  "hunger": 74,
-  "humor": 0.621,
-  "vintermat": 182,
-  "vinterved": 229,
-  "eld": 95,
-  "kb": 1284,
-  "delKb": 393
- },
- "777": {
-  "pop": 1,
-  "atergrundad": 12,
-  "invandrade": 17,
-  "utvandrade": 9,
-  "fodda": 41,
-  "doda": 63,
-  "svalt": 34,
-  "kyla": 0,
-  "hunger": 102,
-  "humor": 0.633,
-  "vintermat": 75,
-  "vinterved": 157,
-  "eld": 80,
-  "kb": 1275,
-  "delKb": 378
+ "byar": {
+  "1": {
+   "granser": [
+    0,
+    50,
+    60,
+    90
+   ],
+   "bitMs": [
+    371878,
+    455734,
+    75525
+   ],
+   "n": {
+    "pop": 7,
+    "atergrundad": 1,
+    "invandrade": 6,
+    "utvandrade": 15,
+    "fodda": 47,
+    "doda": 41,
+    "svalt": 27,
+    "kyla": 0,
+    "hunger": 53,
+    "humor": 0.577,
+    "vintermat": 0,
+    "vinterved": 891,
+    "eld": 96,
+    "kb": 2467,
+    "delKb": 343
+   }
+  },
+  "42": {
+   "granser": [
+    0,
+    30,
+    50,
+    90
+   ],
+   "bitMs": [
+    283875,
+    360061,
+    301885
+   ],
+   "n": {
+    "pop": 13,
+    "atergrundad": 0,
+    "invandrade": 5,
+    "utvandrade": 25,
+    "fodda": 61,
+    "doda": 43,
+    "svalt": 0,
+    "kyla": 31,
+    "hunger": 0,
+    "humor": 0.643,
+    "vintermat": 409,
+    "vinterved": 434,
+    "eld": 80,
+    "kb": 2744,
+    "delKb": 497
+   }
+  },
+  "777": {
+   "granser": [
+    0,
+    30,
+    60,
+    90
+   ],
+   "bitMs": [
+    195765,
+    154979,
+    203311
+   ],
+   "n": {
+    "pop": 8,
+    "atergrundad": 3,
+    "invandrade": 11,
+    "utvandrade": 6,
+    "fodda": 23,
+    "doda": 36,
+    "svalt": 12,
+    "kyla": 16,
+    "hunger": 77,
+    "humor": 0.57,
+    "vintermat": 58,
+    "vinterved": 78,
+    "eld": 76,
+    "kb": 2408,
+    "delKb": 301
+   }
+  }
  }
 }
