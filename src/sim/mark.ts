@@ -91,6 +91,9 @@ function lasMark(txt: string | undefined, startAv: () => (i: number) => number, 
   } catch { /* ny mark */ }
   return c;
 }
+// gräset och skogen ur sparfilen på kartan som gäller nu (båda formaten), för flytten till en större karta (kartflytt.ts)
+export const lasGras = (s: State) => lasMark(s.mark, () => () => 1);
+export const lasSkog = (s: State) => s.skog ? lasMark(s.skog, () => { const f = startForest(s.seed); return (i: number) => f[i]; }, 0) : undefined;
 export function packGround(s: State) { const g = groundOf(s), sf = startForest(s.seed); s.mark = packaMark(g.cover, () => 1); s.skog = packaMark(g.trees, i => sf[i]); s.tradAlder = packaAlder(g.alder!); s.tradSort = packaArt(g.art!); s.buskar = packaArt(g.buske!); }
 
 // ängar: fläckar av fuktig mark där det växer högt gräs och träd har svårt att få fäste

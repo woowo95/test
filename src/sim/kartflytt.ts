@@ -1,5 +1,7 @@
 import { UTTAG_IDS, fyndBin } from './fynd';
-import { startGround } from './mark';
+import { lasGras, lasSkog, startGround } from './mark';
+import { lasKarta, packaKarta } from './kartminne';
+import { lasAlder, lasArt, packaAlder, packaArt, startAlder, startArt } from './trad';
 import { AREA } from './minne';
 import { sjoarna } from './sjo';
 import { H, State, W, useMap } from './typer';
@@ -8,10 +10,10 @@ import { balans } from './balans';
 // kartans storlek för en ny by (steg 9.1.9). En äldre by med en mindre karta får den här storleken när den laddas, med den
 // gamla kartan i mitten. Läses bara inne i funktioner (regel 8)
 export const KARTA = balans('karta', {
-  bredd: 120, // så många rutor bred ...
-  hojd: 120, // ... och så många rutor hög
+  bredd: 240, // så många rutor bred ...
+  hojd: 240, // ... och så många rutor hög
 });
-import { decodeCover, encodeCover } from './vag';
+import { encodeCover } from './vag';
 
 // ---------- den stora kartan i en äldre by (steg 2.10.9) ----------
 // En äldre by (64×40 eller 80×50, eller en mindre karta än KARTA) får den stora kartan KARTA.bredd × KARTA.hojd när den laddas. Den gamla kartan läggs i mitten och
@@ -23,25 +25,52 @@ import { decodeCover, encodeCover } from './vag';
 // Det görs först av allt när byn laddas (varld.ts), innan något har räknats på den gamla kartan
 export const behoverStorreKarta = (s: State) => (s.W ?? 64) < KARTA.bredd || (s.H ?? 40) < KARTA.hojd;
 
+// det som har en plats i byn: x och y, och målen (tx, ty), dit en flock går (mx, my) och varifrån något flyger (fx, fy).
+// Allt i byn flyttas utom kartans hörn, historiken (bilderna av kartan visas där den gamla kartan låg, ui/kartminne.ts),
+// striderna (i arenans egna rutor) och sammanfattningen för spelaren
+const PAR = [['x', 'y'], ['tx', 'ty'], ['mx', 'my'], ['fx', 'fy']] as const;
+const ROR_INTE = new Set(['kart', 'hist', 'strider', 'borta']);
+function flyttaAllt(o: unknown, ox: number, oy: number, sett: Set<object>) {
+  if (!o || typeof o !== 'object' || sett.has(o)) return;
+  sett.add(o);
+  if (Array.isArray(o)) { for (const v of o) flyttaAllt(v, ox, oy, sett); return; }
+  const r = o as Record<string, unknown>;
+  for (const [a, b] of PAR) if (typeof r[a] === 'number' && typeof r[b] === 'number') { r[a] = (r[a] as number) + ox; r[b] = (r[b] as number) + oy; }
+  for (const k of Object.keys(r)) if (!ROR_INTE.has(k)) flyttaAllt(r[k], ox, oy, sett);
+}
+
 export function storreKarta(s: State) {
   useMap(s);
   const w0 = W, h0 = H, n0 = w0 * h0, aw0 = Math.ceil(w0 / AREA);
   const ox = Math.max(0, Math.round((KARTA.bredd - w0) / 2 / AREA) * AREA), oy = Math.max(0, Math.round((KARTA.hojd - h0) / 2 / AREA) * AREA);
   // det som är packat per ruta och sjöarnas nummer, läst på den gamla kartan
-  const cover0 = decodeCover(s.mark), trees0 = s.skog ? decodeCover(s.skog, 0) : undefined, sjo0 = sjoarna(s.seed).id;
+  const cover0 = lasGras(s), trees0 = lasSkog(s), sjo0 = sjoarna(s.seed).id;
+  const alder0 = s.tradAlder ? lasAlder(s.tradAlder) : undefined, art0 = s.tradSort ? lasArt(s.tradSort) : undefined, busk0 = s.buskar ? lasArt(s.buskar) : undefined;
   const fynd0 = fyndBin(s);
 
   s.W = KARTA.bredd; s.H = KARTA.hojd;
   s.kart = { x: (s.kart?.x ?? 0) + ox, y: (s.kart?.y ?? 0) + oy, w: s.kart?.w ?? w0, h: s.kart?.h ?? h0 };
   useMap(s);
   const N = W * H, ny = (i: number) => (i % w0 + ox) + (Math.floor(i / w0) + oy) * W; // en ruta på den gamla kartan
-  const flytta = (o: { x: number; y: number } | undefined) => { if (o) { o.x += ox; o.y += oy; } };
+  const omArea = (a: number) => (Math.floor(a / aw0) + oy / AREA) * Math.ceil(W / AREA) + a % aw0 + ox / AREA; // ett lärdomsområde
 
-  // marken: stigarna och skogen i det gamla, orörd mark runt omkring (en äldre sparfil utan skog får skogen när den läses, mark.ts)
+  // marken: stigarna, skogen, trädens ålder och sort och buskarna i det gamla, orörd mark runt omkring (en äldre sparfil
+  // utan skog får skogen när den läses, mark.ts)
   const g = startGround(s.seed), cover = new Float32Array(N).fill(1), trees = g.trees.slice();
-  for (let i = 0; i < n0; i++) { cover[ny(i)] = cover0[i]; if (trees0) trees[ny(i)] = trees0[i]; }
+  const alder = startAlder(s.seed, trees), art = startArt(s.seed, trees, g.tiles), busk = new Uint8Array(N);
+  for (let i = 0; i < n0; i++) {
+    const j = ny(i);
+    cover[j] = cover0[i];
+    if (trees0) trees[j] = trees0[i];
+    if (alder0) alder[j] = alder0[i];
+    if (art0) art[j] = art0[i];
+    if (busk0) busk[j] = busk0[i];
+  }
   s.mark = encodeCover(cover);
   if (trees0) s.skog = encodeCover(trees);
+  if (alder0) s.tradAlder = packaAlder(alder);
+  if (art0) s.tradSort = packaArt(art);
+  if (busk0) s.buskar = packaArt(busk);
   // det som tagits ur varje plats (fynd.ts): en följd av rutor per slag
   if (fynd0) {
     const ut = new Uint8Array(UTTAG_IDS.length * N);
@@ -51,31 +80,43 @@ export function storreKarta(s: State) {
     s.fynd = btoa(bin); // rakt av; den packas när byn sparas (packFynd)
   }
   // sjöarna får nya nummer på den stora kartan (sjo.ts): varje sjö följer en av sina rutor. Växer två sjöar ihop vid den
-  // gamla kantens vatten behålls den största sjöns fiske
+  // gamla kantens vatten behålls den största sjöns fiske. Sjöarna som torkat ut följer med på samma sätt (torka.ts)
+  const id = sjoarna(s.seed).id, nySjo = (k: number) => { const i = sjo0.indexOf(k); return i >= 0 ? id[ny(i)] : -1; };
   if (s.sjoar) {
-    const id = sjoarna(s.seed).id, forr = s.sjoar;
+    const forr = s.sjoar;
     s.sjoar = {};
-    for (const [k, st] of Object.entries(forr)) {
-      const i = sjo0.indexOf(Number(k)), n = i >= 0 ? id[ny(i)] : -1;
-      if (n >= 0 && !s.sjoar[n]) s.sjoar[n] = st;
-    }
+    for (const [k, st] of Object.entries(forr)) { const n = nySjo(Number(k)); if (n >= 0 && !s.sjoar[n]) s.sjoar[n] = st; }
   }
+  if (s.sjoTorr) s.sjoTorr.tomma = s.sjoTorr.tomma.map(nySjo).filter(n => n >= 0);
 
+  // allt med en plats (flyttaAllt), och det som sparas som rutans nummer eller ett lärdomsområde
+  flyttaAllt(s, ox, oy, new Set());
   for (const p of s.people) {
-    flytta(p);
     const t = p.task;
     if (t) {
-      t.tx += ox; t.ty += oy; flytta(t.res); flytta(t.site);
       if (t.path) t.path = t.path.map(ny);
+      if (t.sett) t.sett = t.sett.map(ny);
       delete t.pk; // vägen räknas om
       if (t.vatten !== undefined) t.vatten = ny(t.vatten);
     }
-    for (const l of p.lardomar ?? []) l.a = (Math.floor(l.a / aw0) + oy / AREA) * Math.ceil(W / AREA) + l.a % aw0 + ox / AREA;
+    for (const l of p.lardomar ?? []) l.a = omArea(l.a);
   }
-  for (const lista of [s.gravar, s.heliga, s.kvarlevor, s.stackar, s.marken, s.stubbar, s.stockar, s.lagren, s.byggen, s.hus, s.stationer, s.falt, s.blod]) for (const o of lista ?? []) flytta(o);
-  for (const t of s.ting ?? []) if (t.x !== undefined && t.y !== undefined) { t.x += ox; t.y += oy; }
-  flytta(s.lager); flytta(s.brasa); flytta(s.fire.at); flytta(s.fire.flytt); for (const e of s.eldar ?? []) flytta(e.at); // en flyttad eld och dit den ska (eldflytt.ts), och lägereldarna till (brasor.ts)
+  for (const tb of s.tabun ?? []) tb.a = omArea(tb.a);
   for (const f of s.flackar ?? []) f.i = ny(f.i);
   if (s.halvfallt) s.halvfallt = Object.fromEntries(Object.entries(s.halvfallt).map(([i, v]) => [ny(Number(i)), v]));
+  if (s.morkPlats) s.morkPlats = Object.fromEntries(Object.entries(s.morkPlats).map(([i, v]) => [ny(Number(i)), v]));
+  if (s.aska) s.aska = s.aska.map(([i, t]) => [ny(i), t]);
+  if (s.tornadoStig) s.tornadoStig = s.tornadoStig.map(ny);
+  // det som bara gäller en stund räknas om på den nya kartan: en brand eller tornado mitt i (de slutar), djurens flykt och
+  // var kaningrupperna och björnen går i dag
+  // bilderna av kartan i historiken (kartminne.ts): den gamla bilden där den gamla kartan nu ligger, resten svart (okänt)
+  if (s.hist?.kartor) s.hist.kartor = s.hist.kartor.map(([t, p]) => {
+    const r0 = lasKarta(p);
+    if (r0.length !== n0) return [t, p];
+    const r: string[] = new Array(N).fill('?');
+    for (let i = 0; i < n0; i++) r[ny(i)] = r0[i];
+    return [t, packaKarta(r)];
+  });
+  s.brand = undefined; s.tornado = undefined; s.kaninStart = undefined; s.bjornVag = undefined; s.djurFlykt = undefined; s.djurSkramd = undefined;
   s.byggV = (s.byggV ?? 0) + 1; // husen och stationerna räknas om
 }
