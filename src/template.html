@@ -72,11 +72,11 @@ header::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; h
 .chips button.chip { pointer-events: auto; border: 0; font: inherit; font-size: 13px; cursor: pointer; }
 /* folket längst ner på kartan (steg 5.3.3.4) */
 .ports { position: absolute; left: 8px; right: calc(var(--stenar) + 8px + 132px); bottom: 8px; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: thin; padding-bottom: 2px; touch-action: pan-x; overscroll-behavior: contain; } /* zoomen står i hörnet till höger om raden (steg 6.8.13) */
-.port { flex: none; width: 92px; display: grid; grid-template-columns: 32px minmax(0, 1fr); grid-template-areas: "d n" "d i" "a a"; gap: 0 5px; align-items: center; text-align: left;
-  background: rgba(36, 32, 29, 0.72); color: #dad0bb; border: 1px solid transparent; border-radius: 4px; padding: 4px 6px; font: inherit; font-size: 12px; line-height: 1.25; cursor: pointer; }
+.port { flex: none; width: 150px; display: grid; grid-template-columns: 64px minmax(0, 1fr); grid-template-areas: "d n" "d i" "a a"; gap: 0 5px; align-items: center; text-align: left;
+  background: rgba(36, 32, 29, 0.72); color: #dad0bb; border: 1px solid transparent; border-radius: 4px; padding: 4px 6px; font: inherit; font-size: 14px; line-height: 1.25; cursor: pointer; } /* mycket större (steg 9.2.2) */
 .port:hover { background: rgba(36, 32, 29, 0.9); }
 .port[aria-pressed="true"] { border-color: #d8b25f; }
-.port .pf { grid-area: d; width: 32px; height: 32px; }
+.port .pf { grid-area: d; width: 64px; height: 64px; }
 .port .pn { grid-area: n; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .port .pi { grid-area: i; opacity: 0.75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .port .pa { grid-area: a; opacity: 0.9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -131,7 +131,7 @@ body.hOppen .legend { right: calc(var(--stenar) + 14px + min(360px, 100vw - var(
 .chip b { font-weight: 700; margin-right: 3px; }
 .chip span { opacity: 0.75; margin-left: 4px; }
 /* panelerna ovanpå kartan, med ett kryss som stänger dem */
-.panel { position: fixed; z-index: 2; top: calc(var(--topp) + 12px); bottom: 72px; width: 360px; max-width: calc(100vw - var(--stenar) - 24px); box-sizing: border-box; background: var(--panel); display: grid; grid-template-rows: minmax(0, 1fr); }
+.panel { position: fixed; z-index: 2; top: calc(var(--topp) + 12px); bottom: 112px; width: 360px; max-width: calc(100vw - var(--stenar) - 24px); box-sizing: border-box; background: var(--panel); display: grid; grid-template-rows: minmax(0, 1fr); }
 .panel.vanster { left: 16px; }
 .panel.hoger { right: calc(var(--stenar) + 14px); }
 /* rutan för det man trycker på kommer fram där man tryckte (steg 5.3.5.1) */
@@ -172,7 +172,7 @@ body.vOppen .owned { display: none; }
 /* runstenarna (steg 5.3.3.1): stenen i hel skala, i det läge som gäller; namnet bara för skärmläsare och när musen är över */
 .tabs button.runsten { border: none; border-radius: 0; background: none; padding: 2px 0; display: grid; place-items: center; }
 .tabs button.runsten[aria-selected="true"] { background: none; }
-.runsten .sten { display: none; image-rendering: pixelated; }
+.runsten .sten { display: none; image-rendering: pixelated; width: 44px; height: 56px; } /* stenen i dubbel skala (steg 9.2.2) */
 .runsten .sten.stangd { display: block; }
 .runsten[aria-selected="true"] .sten.stangd, .runsten:disabled .sten.stangd { display: none; }
 .runsten[aria-selected="true"] .sten.oppen { display: block; }
