@@ -1,4 +1,4 @@
-import { Djur, FLYGTID, H, sakerPaMarken, HOUR, SEC, W, ageIndex, bjornarOf, brinnande, djurOf, faglarOf, radjurOf, groundOf, living, plockOf, tornadoAndel, tornadoPos, vargarOf } from '../sim';
+import { Djur, FLYGTID, H, hoPaMarken, sakerPaMarken, HOUR, SEC, W, ageIndex, bjornarOf, brinnande, djurOf, faglarOf, radjurOf, groundOf, living, plockOf, tornadoAndel, tornadoPos, vargarOf } from '../sim';
 import { farg, fargTal } from '../palett';
 import { s, ui, vidNyBy } from './lage';
 import { Ikoner, TS, app, djurFx, djurMarkLayer, figurLayer, plantG, rokBakLayer, world } from './scen';
@@ -12,7 +12,7 @@ import { type DjurHall, djurBild, fagelBild, iconCanvas, kartbild } from '../iko
 // sakerna på rutan (steg 9.2.53, platshållare tills Björn valt i bildstilen), i 16 punkter per ruta och bara i palettens färger.
 // Det som ritas är det som går att plocka (sakerPaMarken): bärtuvan under träden med ett, två eller tre bär, och en bild per sak
 // för svampen, rötterna och grenarna. En ruta utan saker ritas inte
-const BILD_FARG: Record<string, number> = { g: 0x4b4f00, G: 0x647025, r: 0xa14808, h: 0xb2921b, H: 0x906f0f, s: 0x742a01, S: 0xa14808, f: 0xbdb39b, j: 0x5e3c24, J: 0x7d5b40, l: 0x647025 };
+const BILD_FARG: Record<string, number> = { y: 0xd8b25f, g: 0x4b4f00, G: 0x647025, r: 0xa14808, h: 0xb2921b, H: 0x906f0f, s: 0x742a01, S: 0xa14808, f: 0xbdb39b, j: 0x5e3c24, J: 0x7d5b40, l: 0x647025 };
 // bärtuvan (steg 9.2.42) med så många bär som finns på rutan (1–3)
 const TUVA = [
   ['..gG..', '.gGgg.', 'gGrGgG', '.ggGg.', '..gg..'],
@@ -24,6 +24,7 @@ const BILDER: Record<string, string[]> = {
   spindling: ['.SS.', 'SssS', '.ff.'],
   rotter: ['.l.', 'jJj', '.j.'],
   grenar: ['....j', '...J.', '.jJ..', 'j....'],
+  ho: ['h.y.h', '.hyh.', '..H..'], // hö till elden (steg 9.3.4)
 };
 const ritaBild = (rad: string[], x: number, y: number) => rad.forEach((r, dy) => { for (let dx = 0; dx < r.length; dx++) { const c = BILD_FARG[r[dx]]; if (c !== undefined) plantG.beginFill(c).drawRect(x + dx, y + dy, 1, 1).endFill(); } });
 // det som växer just nu, diskret i vanliga vyn: små bärbuskar och svampar där det finns något att hämta.
@@ -59,6 +60,8 @@ export function drawPlants(force = false) {
       if (q.k === 'bar') { if (g.trees[i] > 0) ritaBild(TUVA[n - 1], Math.round(x + 2 + plats(i, 0) * 8), Math.round(y + 3 + plats(i, 5) * 8)); continue; }
       for (let k = 0; k < n; k++, j++) ritaBild(BILDER[q.k], Math.round(x + 1 + plats(i, 10 + j) * 11), Math.round(y + 1 + plats(i, 20 + j) * 12));
     }
+    const ho = Math.min(3, hoPaMarken(s, rx, ry));
+    for (let k = 0; k < ho; k++, j++) ritaBild(BILDER.ho, Math.round(x + 1 + plats(i, 10 + j) * 11), Math.round(y + 1 + plats(i, 20 + j) * 12));
     const gr = Math.min(3, sakerPaMarken(s, 'grenar', rx, ry)[0]?.n ?? 0);
     for (let k = 0; k < gr; k++, j++) ritaBild(BILDER.grenar, Math.round(x + 1 + plats(i, 10 + j) * 10), Math.round(y + 1 + plats(i, 20 + j) * 11));
   }
