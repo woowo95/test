@@ -1878,6 +1878,7 @@ SCENARIER.masterverk = {
 };
 
 SCENARIER.amnen = {
+  lang: true,
   text: 'Steg 3.9.5: ett samtal handlar om det som delades i det (en motgång som kommer, en farlig plats, ett rykte, en teknik, en plats, det man längtar efter), annars om något som passar läget (en död nyss, vädret, maten, arbetet, barnen). Ämnet sparas hos båda, personrutan berättar om det senaste samtalet (mallarna p_* i BERATTELSER), och ämnets symbol står i pratbubblan',
   kor: () => {
     const hel = (x: string) => !/[{}]|undefined|  | \.|^\s*$/.test(x) && /[.!"]$/.test(x);

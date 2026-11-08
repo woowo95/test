@@ -592,6 +592,7 @@ SCENARIER.lagerplatser = {
 
 SCENARIER.verkstad = {
   text: 'Rummets funktion (steg 2.2.17): ett rum får sin funktion av det som står i det. När byn vill bygga en slöjdbänk men sovsalarna är fulla planerar den en verkstad åt den, och en sovsal som ingen sover i men där en station står blir en verkstad i stället för att rivas',
+  env: { BALANS: 'hus.sovFast=0' }, // utan rutor för rymd blir sovsalen precis full: alla har en sovplats och inget golv blir över (steg 9.2.36)
   kor: () => {
     const { HUS, stationDef, inneUtanPlats, rumsFunktioner, sovKvar, stationerOf, stationRum, stationSite, isKlar } = SIM;
     // en by med en sovsal som är så full att slöjdbänken inte får plats där, där alla kan bygga en slöjdbänk
@@ -601,6 +602,8 @@ SCENARIER.verkstad = {
     // fler flyttar in så länge det finns en sovplats till (HUS.sovPer golvrutor per person, steg 9.2.36); det som blir kvar är
     // mindre än slöjdbänken (2 × 2 rutor)
     for (let i = 0; sovKvar(s, rumA()) >= HUS.sovPer && i < 20; i++) nyInvanare(s, i % 2 ? 'm' : 'k', 30);
+    // byn kan ha fler än sovsalen rymmer (en sovande behöver HUS.sovPer rutor och huset HUS.sovFast till): de som blir över flyttar
+    while (homeless(s) > 0 && s.people.length > 2) s.people.pop();
     for (const r of s.people) r.tek = { ...r.tek, flatarbank: 1, timmervagg: 1, yxa: 1 };
     setFood(s, 400); setAmount(s, 'ved', 80); setAmount(s, 'grenar', 20); setAmount(s, 'virke', SIM.RT.flatarbankVirke); // virket finns: byn har ingen yxa att klyva med (steg 4.5.5.2)
     const vill = inneUtanPlats(s), a = BYGGNADER.verkstad.akut(s), hemlosa = homeless(s);
@@ -638,6 +641,7 @@ SCENARIER.verkstad = {
 };
 
 SCENARIER.lekibyn = {
+  lang: true,
   text: 'Byn har ingen lekplats: barnen leker var som helst inne i byn (platsIByn i omrade.ts), aldrig i vattnet eller i en vägg',
   kor: () => {
     const s = createState(3, START);

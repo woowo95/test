@@ -9,7 +9,8 @@ import { SEC, State, Person } from './typer';
 import { STRID, type Avsikt, type Strid, type StridGang, type Uppstallning, spelaUpp } from './strid';
 import { byId, count } from './folk';
 import { vattenNu } from './sjo';
-import { T } from './typer';
+import { T, inMap } from './typer';
+import { isWall } from './byggnad';
 import { tileOf } from './mark';
 
 export type DjurStridArt = 'bjorn' | 'varg';
@@ -58,12 +59,12 @@ export function djurStriderSteg(s: State) {
     if (k) { g.dx = g.ox + k.x; g.dy = g.oy + k.y; }
     if (!st.slut) continue;
     s.djurStrider = s.djurStrider.filter(q => q !== g);
-    // folket står där striden lämnade dem (den som flydde har sprungit undan), inte i vattnet
+    // folket står där striden lämnade dem (den som flydde har sprungit undan), inte i vattnet, i en vägg eller utanför kartan
     g.folk.forEach(id => {
       const p = byId(s, id), kp = st.kampar.find(q => q.pid === id);
       if (!p || !kp) return;
       const x = g.ox + kp.x, y = g.oy + kp.y;
-      if (vattenNu(s)[tileOf(x, y)] !== T.Vatten) { p.x = x; p.y = y; }
+      if (inMap(x, y) && vattenNu(s)[tileOf(x, y)] !== T.Vatten && !isWall(s, x, y)) { p.x = x; p.y = y; } // inte utanför kartan eller i en vägg
     });
     SLUT[g.art]?.(s, g, st);
   }
