@@ -1,5 +1,6 @@
 // npm test: tre byar i 90 dygn, en rad per by. Jämför med facit och skriver bara ut det som ändrats.
-// npm run facit sparar dagens resultat som nytt facit. Byarna körs samtidigt i egna processer.
+// npm run facit sparar dagens resultat som nytt facit (npm run koll gör det själv när allt är grönt). Byarna körs samtidigt i
+// egna processer.
 import './utc';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { DOK_KB, rad, Resultat } from './kor';
@@ -25,10 +26,14 @@ console.log(ater.length ? 'ÅTERGRUNDADE BYAR: ' + ater.map(r => `by ${r.seed} (
 const nu: Record<string, Nyckeltal> = {};
 for (const r of res) nu[r.seed] = r.n;
 const vakter = res.flatMap(r => r.vakter.map(v => `by ${r.seed}: ${v}`));
+const facitText = () => JSON.stringify(nu, (k, v) => k === 'ms' ? undefined : v, 1) + '\n'; // körtiden jämförs aldrig: facit ändras bara när spelet gör det
+// npm run koll ger --utkast och en fil: dagens resultat skrivs dit, och koll gör det till facit när allt är grönt
+const utkast = process.argv.indexOf('--utkast');
+if (utkast >= 0 && !vakter.length) writeFileSync(process.argv[utkast + 1], facitText());
 if (process.argv.includes('--spara')) {
   // en by där något omöjligt hänt blir inte facit (och npm run facit stannar då före samma-kollen)
   if (vakter.length) console.log('Facit sparas inte, eftersom vakterna larmar (se nedan).');
-  else { writeFileSync(FACIT, JSON.stringify(nu, (k, v) => k === 'ms' ? undefined : v, 1) + '\n'); console.log('Facit sparat.'); } // körtiden jämförs aldrig: facit ändras bara när spelet gör det
+  else { writeFileSync(FACIT, facitText()); console.log('Facit sparat.'); }
 } else if (!existsSync(FACIT)) {
   console.log('Inget facit ännu. Spara med: npm run facit');
 } else {
