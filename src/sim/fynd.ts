@@ -109,7 +109,7 @@ interface FyndDef {
 }
 const SVAMP_SEASON = [0, 0.15, 0.8, 1.5];
 const SVAMP_UTTAG: Uttag = { full: 2.5, reach: 1, regrow: [1 / 1200, 1 / 450, 1 / 120, 1 / 120] };
-const SVAMP_SAKER = 0.1; // svampar på en full ruta (steg 9.2.53)
+const SVAMP_SAKER = 0.01; // svampar på en full ruta (steg 9.2.53)
 const land = (s: State, i: number) => isSoil(groundOf(s).tiles[i]);
 // hur väl varje slags mark passar lagret (gånger resten av värdet)
 const BAR_PASSAR: Record<Markslag, number> = { skog: 0.8, ung: 1, buske: 1, hog: 1, kort: 0, bar: 0 };
@@ -138,7 +138,7 @@ const DEF = {
       const g = groundOf(s);
       return busksort(g, i)?.bar ? BAR_PASSAR[markslag(g, i)] * 4 * Math.max(m, BUSKTAL.barGolv) : 0;
     },
-    uttag: { full: FANGST.barFull, reach: 1, regrow: [0, 1 / 120, 1 / 48, 1 / 60] }, saker: 0.1,
+    uttag: { full: FANGST.barFull, reach: 1, regrow: [0, 1 / 120, 1 / 48, 1 / 60] }, saker: 0.01,
   },
   // kaniner trivs bäst i gräs, högt eller lågt, men finns också i skogen. Glest över stora områden som vandrar
   jakt: {
@@ -184,7 +184,7 @@ const DEF = {
       if (!land(s, i)) return 0;
       return ROTTER_PASSAR[markslag(groundOf(s), i)] * m;
     },
-    uttag: { full: 0.35, reach: 1, regrow: [1 / 600, 1 / 180, 1 / 180, 1 / 240] }, saker: 0.1,
+    uttag: { full: 0.35, reach: 1, regrow: [1 / 600, 1 / 180, 1 / 180, 1 / 240] }, saker: 0.01,
   },
   // de vilda grödorna (steg 2.10.2, odling.ts): vild rova (åkerkål) i fläckar på ängarna (högt gräs) och vilda ärter i
   // skogsbrynet (gräs eller ungskog intill skogen). Inget i istiden; de växer under sommaren och mognar på hösten. Den som samlar
