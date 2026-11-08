@@ -156,6 +156,7 @@ function kant(rutor: number[]) {
 }
 // tonen under lagerplatserna (steg 6.8.9): en enda färg ur paletten under hela platsen, utan raster (Björns val, steg 8.10.1)
 const LAGERTON = fargTal(farg('oliv', 3));
+const VAGG_KANT = 4; // så många punkter av en vägg bakom en station inne som bilden får täcka (steg 9.2.41)
 export function drawStructures(t: number) {
   const tab = ui.tab;
   structG.clear(); overG.clear();
@@ -179,7 +180,10 @@ export function drawStructures(t: number) {
     if (d?.brasa) { pileIcons.add('kb_lagereld_ring', st.x * TS + TS / 2 - ELD.x, st.y * TS + TS / 2 - ELD.y, 1); framsteg(st.x * TS + TS / 2, st.y * TS - 6, stationKlar(st)); continue; } // ringen till en lägereld till medan den läggs
     const kb = stationBild(d?.ikon ?? 'slaktbank', v), { w: bw, h: bh } = storlekAv(st), w = bw * TS;
     const ik = kb ? 'kb_' + kb : (d?.ikon ?? 'slaktbank') + '_karta' + v, sk = kb ? 1 : iconCanvas(ik).width > 8 * bw ? 1 : 2, upp = iconCanvas(ik).height * sk - bh * TS; // sk: 16 punkter per ruta (steg 4.3.2.2) eller 8 som förut
-    const x0 = st.x * TS + (kb ? Math.round((w - iconCanvas(ik).width) / 2) : 0), y0 = st.y * TS - upp; // bildens övre vänstra hörn: bildstilens bild mitt över rutorna och med foten på den nedersta
+    const x0 = st.x * TS + (kb ? Math.round((w - iconCanvas(ik).width) / 2) : 0);
+    // bildens övre vänstra hörn: bildstilens bild mitt över rutorna och med foten på den nedersta. Inne går den aldrig genom väggen
+    // (steg 9.2.41): står det en vägg bakom (ovanför) ritas bilden innanför väggens kant, och då längre ner i rummet
+    const vaggOvan = !!st.inne && bitAt(s, st.x, st.y - 1)?.k === 'vagg', y0 = vaggOvan ? Math.max(st.y * TS - upp, st.y * TS - VAGG_KANT) : st.y * TS - upp;
     pileIcons.add(isKlar(st) ? smutsIkon(ik, smutsGrad(s.now, st.klar)) : ik, x0, y0, sk); // en station i bruk blir smutsigare (steg 5.1.7.3)
     if (!isKlar(st)) { framsteg(st.x * TS + w / 2, y0 + 3, stationKlar(st)); continue; }
     if (st.fyllt && st.fyllt > 0.1) { const f = clamp(st.fyllt, 0, 1); overG.beginFill(0x2f261d).drawEllipse(st.x * TS + TS / 2, st.y * TS + TS / 2 + 1, 5 * f, 4 * f).endFill(); } // latrinen mörknar när den fylls (smuts.ts)
