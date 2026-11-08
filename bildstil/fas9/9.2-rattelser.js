@@ -161,4 +161,22 @@
       for (let j = 0; j < n; j++) { const [dx, dy] = PLATSER[satt][j]; ritaSprite(B, b[k](), RL, x0 + dx, y0 + dy); }
     }));
   } })) });
+  // steg 9.3.2: stenen Byns tal, med graferna. Tre förslag till sten (stängd och öppen) och band, ritade med runstenarnas och
+  // bandens egna funktioner (gui.js, window.GUIRITA), i flikens två färger
+  const TAL_MASK = (w, h, rita) => { const g = Array.from({ length: h }, () => Array(w).fill('.')); rita((x, y) => { if (x >= 0 && y >= 0 && x < w && y < h) g[y][x] = '#'; }); return g.map(r => r.join('')); };
+  const TAL_EMB = {
+    staplar: TAL_MASK(11, 10, s => { [[1, 6], [4, 3], [7, 5], [10, 1]].forEach(([x, y0]) => { for (let y = y0; y < 9; y++) { s(x - 1, y); s(x, y); } }); for (let x = 0; x < 11; x++) s(x, 9); }),
+    linje: TAL_MASK(11, 10, s => { const p = [[0, 8], [3, 5], [5, 6], [8, 2], [10, 3]]; for (let k = 0; k + 1 < p.length; k++) { const [a, b] = p[k], [c, d] = p[k + 1]; for (let i = 0; i <= 12; i++) s(Math.round(a + (c - a) * i / 12), Math.round(b + (d - b) * i / 12)); } for (let y = 0; y < 10; y++) s(0, y); for (let x = 0; x < 11; x++) s(x, 9); }),
+    rakna: TAL_MASK(11, 10, s => { for (const x of [1, 3, 5, 7]) for (let y = 1; y < 9; y++) s(x, y); for (let i = 0; i < 9; i++) s(i, 8 - i); }),
+  };
+  const TAL_FORSLAG = [
+    ['Skiffer och senap, staplar i medaljongen och stenar längs bandet.', 'skiffer', 'senap', 'stenar', 'staplar'],
+    ['Senap och kol, en kurva som stiger, och solar längs bandet.', 'senap', 'kol', 'sol', 'linje'],
+    ['Oliv och rost, fyra streck och ett snedstreck som man räknar med, och pärlor längs bandet.', 'oliv', 'rost', 'parlor', 'rakna'],
+  ];
+  VAL.push({ id: 'f9_tal', namn: 'Stenen Byns tal', typ: 'tre', vad: 'Steg 9.3.2: graferna flyttar ur Krönikan till en egen runsten, Byns tal. Här tre förslag: stenen stängd och öppen och bandet överst i fliken.', versioner: TAL_FORSLAG.map(([text, hu, an, monster, emb]) => ({ text, w: 2 * (window.GUIRITA.SW + 4) + 160 + 8, h: 46, stor: true, rita: B => {
+    const R = window.GUIRITA, f = ['tal', '', hu, an, TAL_EMB[emb]];
+    for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) B.satt(x, y, B.P.i('ben', 2));
+    R.runsten(B, 5, 9, f, 'stangd'); R.runsten(B, 5 + R.SW + 4, 9, f, 'oppen'); R.nyttBand(B, 2 * (R.SW + 4) + 8, 5, hu, an, monster, f[4]);
+  } })) });
 })();

@@ -18,6 +18,7 @@ import { grannar } from './flikar/grannar';
 import { seder } from './flikar/seder';
 import { religion } from './flikar/religion';
 import { styre } from './flikar/styre';
+import { tal } from './flikar/tal';
 import { $, hjalpKlick } from './hjalp';
 import { piles, s, satRitaOm, ui, vidNyBy } from './lage';
 import { renderPorts } from './portratt';
@@ -33,8 +34,8 @@ export interface Flik {
   syns?(): boolean; // annars är knappen en blek sten som inte går att trycka på (grannarna när byn har grannar)
   band?(): string; // bandet överst är en annan fliks (Byn visar den öppna delens band, steg 5.3.3.2)
 }
-// runstenarna uppifrån (steg 9.3.1): Seder, Tro, Styre, Teknik, Krönika och Grannar
-const FLIKAR = { seder, religion, styre, teknik, kronika, grannar, person, eld, lager, hog, hus, station, sjo, falt, sak, djur, filt, fram, match } satisfies Record<string, Flik>;
+// runstenarna uppifrån (steg 9.3.1–9.3.2): Seder, Tro, Styre, Teknik, Krönika, Byns tal och Grannar
+const FLIKAR = { seder, religion, styre, teknik, kronika, tal, grannar, person, eld, lager, hog, hus, station, sjo, falt, sak, djur, filt, fram, match } satisfies Record<string, Flik>;
 export type FlikId = keyof typeof FLIKAR;
 const ALLA: Record<FlikId, Flik> = FLIKAR;
 const IDS = Object.keys(FLIKAR) as FlikId[];

@@ -1,5 +1,5 @@
-// Graferna (steg 5.4.1): byns historik (sim/historik.ts) som linjer, alla under varandra i Krönikans del Grafer (steg
-// 6.9.12): invånarna, humöret, veden på elden, maten och veden i förrådet och byns rikedom (steg 6.9.13). Grafen visar Allt, 1 dygn,
+// Graferna (steg 5.4.1): byns historik (sim/historik.ts) som linjer, alla under varandra i stenen Byns tal (steg 9.3.2,
+// flikar/tal.ts): invånarna, humöret, veden på elden, maten och veden i förrådet och byns rikedom (steg 6.9.13). Grafen visar Allt, 1 dygn,
 // 1 säsong eller 4 säsonger (steg 9.2.8), och ett tryck eller drag längs den visar värdena där. Bara utseende: spelet läser den aldrig.
 // En ny graf är en rad i GRAFER och `grafHtml('id')` där den ska stå; ett nytt tal är en rad i HISTORIK_TAL.
 import { AGES, DAY, HISTORIK_TAL, WEEK, historikSerie, kalender, living, rikSerie, sakNamn, type RikRad } from '../sim';
@@ -12,7 +12,7 @@ interface Serie { tal?: string; namn?: string; farg: 'skiffer' | 'senap' | 'rost
 interface Graf { namn: string; serier: Serie[] | (() => Serie[]); max?: number; procent?: boolean; topp?: () => string } // topp: val överst i grafen
 // byns rikedom (steg 6.9.13): summan och delarna som i sidhuvudet, en punkt per dygn ur historikens rader
 const rik = (namn: string, ton: Serie['farg'], v: (r: RikRad) => number): Serie => ({ namn, farg: ton, punkter: () => rikSerie(s, v) });
-export const GRAFER: Record<string, Graf> = { // i den ordning de står i Krönikan
+export const GRAFER: Record<string, Graf> = { // i den ordning de står i Byns tal
   folk: { namn: 'Invånare', serier: [{ tal: 'folk', farg: 'skiffer' }] },
   humor: { namn: 'Humör', serier: [{ tal: 'humor', farg: 'senap' }], max: 1, procent: true },
   eld: { namn: 'Trä på elden', serier: [{ tal: 'eld', farg: 'rost' }] },

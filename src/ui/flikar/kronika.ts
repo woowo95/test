@@ -1,13 +1,12 @@
 // Krönikan (steg 5.4.2): byns viktiga händelser över hela tiden (krönikan i historik.ts, sparad för alltid) och
 // händelseloggen (s.log, de senaste 400 raderna) i en lista, senast först och under en rubrik per år. Filtret: Stort =
-// krönikan, Allt = loggen, Kartan = kartan över tid och Grafer = alla byns grafer (Krönikan är byns informationssten, steg 6.9.12). Man bläddrar år för år med pilarna (eller ser alla år) och kan välja en person: raderna där hen
+// krönikan, Allt = loggen och Kartan = kartan över tid; graferna har en egen sten, Byns tal (steg 9.3.2). Man bläddrar år för år med pilarna (eller ser alla år) och kan välja en person: raderna där hen
 // står med. Öppnas med runstenen Krönika. Ett nytt filter är en rad i VISNING.
 import { AGES, type LogEntry, type Person, kalender } from '../../sim';
 import { clockTxt, esc, linkify, namnI } from '../hjalp';
 import { ritaOm, s } from '../lage';
 import type { Flik } from '../panel';
 import { kartminneHtml } from '../kartminne';
-import { GRAFER, grafHtml } from '../graf';
 
 interface Rad { t: number; text: string; kind?: LogEntry['kind']; ids: number[]; byte?: LogEntry['byte']; bnr?: number; fram?: number; match?: number } // byte och fram ger knappen till redogörelsen
 // var en person står med i en krönikerad: krönikan sparar bara texten, så personen hittas på namnet
@@ -16,7 +15,6 @@ const VISNING: Record<string, { namn: string; title: string; rader(): Rad[] }> =
   stort: { namn: 'Stort', title: 'Krönikan: det viktiga som hänt sedan byns början', rader: () => (s.hist?.kronika ?? []).map(([t, text]) => ({ t, text, ids: iText(text, s.people) })) },
   allt: { namn: 'Allt', title: 'Allt som hänt i byn den senaste tiden (de senaste 400 raderna)', rader: () => s.log.map(l => ({ t: l.t, text: l.text, kind: l.kind, ids: l.ids, byte: l.byte, bnr: l.bnr, fram: l.fram, match: l.match })) },
   kartan: { namn: 'Kartan', title: 'Kartan år för år: skogen, stigarna och husen (steg 5.4.5.2)', rader: () => [] },
-  grafer: { namn: 'Grafer', title: 'Alla byns grafer under varandra (steg 6.9.12)', rader: () => [] },
 };
 export const val: { visning: string; ar?: number; person?: number } = { visning: 'stort' }; // det som visas (exporterat för scenariot kronikalista)
 
@@ -25,7 +23,6 @@ export const kronika: Flik = {
   namn: 'Krönika',
   html() {
     if (val.visning === 'kartan') return filterKnappar() + kartminneHtml(); // kartan över tid (ui/kartminne.ts)
-    if (val.visning === 'grafer') return filterKnappar() + Object.keys(GRAFER).map(grafHtml).join(''); // alla grafer (ui/graf.ts, steg 6.9.12)
     const v = VISNING[val.visning], alla = v.rader(), ar = (t: number) => kalender(s, t).ar;
     if (val.person !== undefined && !alla.some(r => r.ids.includes(val.person!))) val.person = undefined; // inte med här (t.ex. bara i krönikan)
     const folk = [...new Set(alla.flatMap(r => r.ids))].map(id => s.people.find(p => p.id === id)).filter((p): p is Person => !!p).sort((a, b) => a.name.localeCompare(b.name, 'sv') || a.born - b.born);
