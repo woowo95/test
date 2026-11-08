@@ -61,7 +61,13 @@ export const MORKARE: readonly (readonly string[])[] = [
 // paletten; en färg utan någon närmare mörkare granne blir som ett helt steg
 export const LITE_MORKARE: readonly string[] = mork(([L, a, b]) => [L * 0.84, a * 0.9, b * 0.9 - 0.006])
   .map((h, i) => h === FARGER[i] ? MORKARE[1][i] : h);
-(MORKARE as string[][]).push(FARGER.map((_, i) => MORKARE[2][FARGER.indexOf(MORKARE[1][i])]));
+// Mitt i natten något ljusare (steg 9.2.12): i stället för nattens steg två gånger (skymningens och sedan nattens, så att nästan
+// allt blev kolsvart) ett eget steg med ljusheten MORK_DJUP, aldrig ljusare än natten och aldrig mörkare än förut
+const MORK_DJUP = 0.46;
+const DJUP_FORUT = FARGER.map((_, i) => MORKARE[2][FARGER.indexOf(MORKARE[1][i])]);
+const ljushet = (h: string) => LAB[FARGER.indexOf(h)][0];
+(MORKARE as string[][]).push(mork(([L]) => [L * MORK_DJUP, SA * 1.3, SB * 1.3]).map((h, i) =>
+  ljushet(h) > ljushet(MORKARE[2][i]) ? MORKARE[2][i] : ljushet(h) < ljushet(DJUP_FORUT[i]) ? DJUP_FORUT[i] : h));
 export const DJUPNATT = 3;
 const INDEX = new Map(FARGER.map((h, i) => [h, i]));
 // färgen i mörkret m (0 = dag, 1 = skymning, 2 = natt, 3 = djup natt, och tal emellan) i punkten (x, y): mellan två steg väljer ett
