@@ -36,6 +36,8 @@ export const NOTISER: Record<string, { slag: NotisSlag; rubrik: string; vikt: nu
   masterverk: { slag: 'framsteg', rubrik: 'Ett mästerverk', vikt: 1 },
   byte: { slag: 'handel', rubrik: 'Byte med handlaren', vikt: 1 },
   gast: { slag: 'handel', rubrik: 'En gäst', vikt: 1 },
+  sjuk: { slag: 'folk', rubrik: 'Sjukdom', vikt: 2 }, // någon insjuknar, blir sämre eller frisk (steg 9.5.4, sjukdom.ts)
+  smitta: { slag: 'fara', rubrik: 'En smitta i byn', vikt: 3 }, // det första fallet av en sjukdom som smittar
 };
 export const NOTIS = {
   max: 300, // högst så många notiser sparas; den äldsta lästa (annars den äldsta) tas bort när det blir fler

@@ -28,7 +28,7 @@ import { knows } from './teknik';
 import { wearUsed } from './redskap';
 import { Falt, faltById, faltOf, faltRutor } from './odling';
 import { TORKA } from './torka';
-import { SJUK, insjukna } from './sjukdom';
+import { SJUK, foljd, insjukna } from './sjukdom';
 
 // ---------- balanstal (regel 8) ----------
 export const TORST = balans('torst', {
@@ -70,7 +70,8 @@ export const drickMin = (s: State, p: Person, act: Act) => (DRICKA.find(d => d.a
 export function torstDelar(p: Person) {
   const pd = p.task && ACTS[p.task.act];
   const somn = p.task?.act === 'sova', varm = Math.max(0, p.warm - 1), tungt = !!pd?.tungt && p.task!.phase === 'do';
-  const takt = (somn ? TORST.somn : 1) * (1 + TORST.varm * varm) * (tungt ? TORST.tungt : 1) / TORST.tim;
+  const diarre = p.sjuk?.st !== undefined ? foljd(p, p.sjuk.tecken, 'diarre') : 0; // diarrén ökar törsten (steg 9.5.4)
+  const takt = (somn ? TORST.somn : 1) * (1 + TORST.varm * varm) * (tungt ? TORST.tungt : 1) * (1 + SJUK.diarre * diarre) / TORST.tim;
   return { takt, somn, varm, tungt };
 }
 // törsten i behovsstegen (steg.ts). Små barn får dricka av de vuxna

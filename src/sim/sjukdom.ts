@@ -17,6 +17,7 @@ import { naringNu, mattnad } from './naring';
 import { living, byId } from './folk';
 import { roomAt } from './byggnad';
 import { eldarOf, eldXY } from './eld';
+import { notis } from './notiser';
 
 export type SjukOrsak = 'vatten' | 'skamd' | 'ratt' | 'svamp' | 'kyla' | 'smitta';
 export interface SjukStadium { fran: number; text: string } // från hur långt sjukdomen kommit (0–1): det kortet säger
@@ -87,11 +88,16 @@ export const SJUK = balans('sjuk', {
   // smittan (steg 9.5.3): så här nära (rutor) räknas som bredvid, och så här nära samma eld som att sitta vid den
   nara: 1.5, eldNara: 3,
   rum: 0.6, eld: 0.5, // i samma rum och vid samma eld smittar det så här mycket av radens smitta (bredvid: hela)
+  // följderna (steg 9.5.4): febern sänker medvetandet som en infektion (HALSA.medInf), hostan orken och diarrén ökar törsten
+  hosta: 0.3, diarre: 1,
+  vilaFran: 0.3, // från så här långt kommen sjukdom vilar den sjuke hellre (vilaHellre), och lägger sig med feber
+  ligga: 0.6, // ... och utan feber när sjukdomen kommit så här långt
+  kopparOga: 0.1, // så stor del av dem som överlever kopporna förlorar ett öga
 });
 
 // den sjukes tillstånd: raden, när hen smittades, när tecknen kommer (inkubationen), sjukdomen och motståndet (0–1), och
 // slumpfaktorn på sjukdomens takt (dras när hen insjuknar)
-export interface Sjuk { k: SjukId; t0: number; tecken: number; grad: number; mot: number; r: number; why?: string; av?: number } // av: den som smittade hen (9.5.3)
+export interface Sjuk { k: SjukId; t0: number; tecken: number; grad: number; mot: number; r: number; why?: string; av?: number; st?: number } // av: den som smittade hen (9.5.3); st: stadiet som syns (9.5.4)
 
 const mellan = ([a, b]: [number, number], r: number) => a + (b - a) * r;
 // farligheten för p: f så att slumpfaktorn gånger f är större än motståndets vanliga takt för radens andel (dod), när
@@ -121,12 +127,21 @@ export function sjukText(p: Person) {
   const d = SJUKDOMAR[j.k], st = [...d.stadier].reverse().find(q => j.grad >= q.fran) ?? d.stadier[0];
   return st.text + (j.why ? ` ${j.why}` : '');
 }
+// följderna (steg 9.5.4): hur mycket feber, hosta och diarré den sjuke har nu (0–1), mer ju längre sjukdomen kommit
+export function foljd(p: Person, now: number, k: 'feber' | 'hosta' | 'diarre') {
+  if (!p.sjuk || !isSick(p, now)) return 0;
+  return (SJUKDOMAR[p.sjuk.k].foljd[k] ?? 0) * (0.5 + 0.5 * p.sjuk.grad);
+}
 // svårt sjuk: sjukdomen har kommit över hälften (upplevelserna, uppvaxt.ts), eller den gamla klockan
 export const svartSjukNu = (p: Person, now: number) => isSick(p, now) && (!p.sjuk || p.sjuk.grad >= 0.5);
 // den sjuke lägger sig när febern är hög eller sjukdomen kommit långt (val.ts); annars arbetar hen med det hen orkar
-export const ligger = (p: Person, now: number) => isSick(p, now) && (!p.sjuk || !!SJUKDOMAR[p.sjuk.k].foljd.feber || p.sjuk.grad >= 0.5);
+export const ligger = (p: Person, now: number) => isSick(p, now) && (!p.sjuk || !!SJUKDOMAR[p.sjuk.k].foljd.feber && p.sjuk.grad >= SJUK.vilaFran || p.sjuk.grad >= SJUK.ligga);
+// när tecknen är tydliga vilar hen hellre än arbetar (vilaHellre i halsa.ts)
+export const sjukVilar = (p: Person, now: number) => isSick(p, now) && !!p.sjuk && p.sjuk.grad >= SJUK.vilaFran;
 // hur mycket den sjuke orkar i arbetet (1 för den som är frisk)
-export const sjukOrkar = (p: Person, now: number) => !isSick(p, now) ? 1 : p.sjuk ? SJUKDOMAR[p.sjuk.k].arbete : 0.3;
+export const sjukOrkar = (p: Person, now: number) => !isSick(p, now) ? 1 : p.sjuk ? SJUKDOMAR[p.sjuk.k].arbete * (1 - SJUK.hosta * foljd(p, now, 'hosta')) : 0.3; // hostan tar orken (9.5.4)
+// stadiet som syns nu (index i radens stadier)
+const stadiumNu = (j: Sjuk) => { const st = SJUKDOMAR[j.k].stadier; let i = 0; st.forEach((q, n) => { if (j.grad >= q.fran) i = n; }); return i; };
 
 // smittan varje timme (steg 9.5.3, steg.ts): de som står bredvid en sjuk som smittar, är i samma rum eller sitter vid samma eld
 // prövas med radens smitta; den som är immun eller redan sjuk smittas inte. Också den som ännu inte har tecken smittar
@@ -152,12 +167,30 @@ export const smittadAv = (s: State, p: Person) => p.sjuk?.av !== undefined ? byI
 export function sjukSteg(s: State, p: Person, dtSec: number, sover: boolean, arbetar: boolean, lakeort = false): SjukId | undefined {
   const j = p.sjuk;
   if (!j || s.now < j.tecken) return undefined;
+  // tecknen syns (steg 9.5.4): en notis när hen insjuknar, och när en sjukdom som smittar kommit till byn (det första fallet)
+  if (j.st === undefined) {
+    j.st = 0;
+    if (SJUKDOMAR[j.k].smitta > 0 && !living(s).some(q => q !== p && q.sjuk?.k === j.k && q.sjuk.st !== undefined)) notis(s, 'smitta', `${SJUKDOMAR[j.k].namn} har kommit till byn. ${p.name} är sjuk.`, [p.id]);
+    else notis(s, 'sjuk', `${p.name} har insjuknat: ${sjukText(p).toLowerCase()}.`, [p.id]);
+  }
   const d = SJUKDOMAR[j.k], h = dtSec / HOUR_S, bas = 1 / (((d.langd[0] + d.langd[1]) / 2) * 24); // i timmen: 1 på radens längd
   const naring = Math.max(SJUK.naringMin, mattnad(naringNu(p)));
   const mot = bas * naring * (sover ? SJUK.vila : 1) * (p.warm < KROPP.kallt ? SJUK.fryser : 1) * (lakeort ? SJUK.lakeort : 1);
   j.mot = Math.min(1, j.mot + mot * h);
   j.grad = Math.min(1, j.grad + bas * farlighet(d, p, s.now) * j.r * (arbetar ? SJUK.arbetar : 1) * h);
   if (j.grad >= 1 && j.mot < 1) { count(s, 'sjukDod_' + j.k); delete p.sjuk; return j.k; }
-  if (j.mot >= 1) { if (d.immun) (p.immun ??= {})[j.k] = 1; count(s, 'frisk_' + j.k); delete p.sjuk; }
+  if (j.mot >= 1) {
+    if (d.immun) (p.immun ??= {})[j.k] = 1;
+    count(s, 'frisk_' + j.k); delete p.sjuk;
+    // kopporna lämnar ärr i ansiktet, och var tionde förlorar ett öga (steg 9.5.4)
+    if (j.k === 'koppor') {
+      (p.arr ??= []).push({ d: 'huvud', n: 3 });
+      if (rnd(s, 'halsa', p) < SJUK.kopparOga) { const o = rnd(s, 'halsa', p) < 0.5 ? 'ogaV' : 'ogaH'; if (!p.saknas?.includes(o)) (p.saknas ??= []).push(o); }
+    }
+    notis(s, 'sjuk', `${p.name} har blivit frisk från ${d.namn.toLowerCase()}.`, [p.id]);
+    return undefined;
+  }
+  const st = stadiumNu(j);
+  if (st > (j.st ?? 0)) { j.st = st; notis(s, 'sjuk', `${p.name} är sämre: ${sjukText(p).toLowerCase()}.`, [p.id]); }
   return undefined;
 }

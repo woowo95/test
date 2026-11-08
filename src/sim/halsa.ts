@@ -20,6 +20,9 @@ import { ACTS } from './handlingar';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, franMitt, livet, living, log, raddAkt, think } from './folk';
 import { amountOf, avbryt } from './lager';
 import { fearPlace } from './minne';
+import { SJUK, foljd } from './sjukdom';
+// febern av en sjukdom: medvetandet utan klockan (sjukdomen vet när tecknen kommit, st)
+const sjukFeber = (p: Person) => p.sjuk?.st !== undefined ? foljd(p, p.sjuk.tecken, 'feber') : 0;
 import { TORST } from './torst';
 import { getable, takeMaterial } from './behov';
 import { bedFor } from './bygg';
@@ -210,6 +213,7 @@ export const medDelar = (p: Person) => {
   lagg('Smärta', HALSA.medSmarta * smarta(p));
   lagg('Blodförlust', HALSA.medBlod * clamp(blod / (1 - HALSA.blodDod), 0, 1));
   lagg('Feber av en infektion', HALSA.medInf * infektion(p));
+  lagg('Feber av en sjukdom', HALSA.medInf * sjukFeber(p)); // steg 9.5.4
   lagg('Trötthet', HALSA.medTrott * (1 - p.rest));
   lagg('Törst', HALSA.medTorst * clamp(1 - p.torst / TORST.laker, 0, 1));
   lagg('Svält', HALSA.medSvalt * clamp(1 - p.hunger / KROPP.lakerMat, 0, 1));
@@ -221,6 +225,7 @@ export function medvetande(p: Person) {
   let v = 1 - HALSA.medTrott * (1 - p.rest) - HALSA.medTorst * clamp(1 - p.torst / TORST.laker, 0, 1) - HALSA.medSvalt * clamp(1 - p.hunger / KROPP.lakerMat, 0, 1);
   if (p.blod !== undefined && p.blod < 1) v -= HALSA.medBlod * clamp((1 - p.blod) / (1 - HALSA.blodDod), 0, 1);
   if (p.skador?.length || p.men?.length || p.saknas?.length) v -= HALSA.medSmarta * smarta(p) + HALSA.medInf * infektion(p) + HALSA.medHuvud * delFel(p, 'huvud');
+  if (p.sjuk) v -= HALSA.medInf * sjukFeber(p); // febern av en sjukdom (steg 9.5.4)
   return clamp(v, 0, 1);
 }
 const medArbete = (p: Person) => { const m = medvetande(p); return m >= HALSA.medLag ? 1 : HALSA.medArbete + (1 - HALSA.medArbete) * m / HALSA.medLag; };
@@ -535,7 +540,7 @@ export function burenSteg(s: State, p: Person, t: Task) {
   if (!g || !alive(g) || g.task?.act !== 'varda' || g.task.bar !== p.id) p.task = undefined;
 }
 // den skadade vilar hellre än arbetar: när det gör mycket ont eller ett sår är infekterat
-export const vilaHellre = (p: Person) => !!p.skador?.length && (smarta(p) >= HALSA.vilaOnt || infektion(p) > 0);
+export const vilaHellre = (p: Person) => !!p.skador?.length && (smarta(p) >= HALSA.vilaOnt || infektion(p) > 0) || !!p.sjuk && p.sjuk.grad >= SJUK.vilaFran && p.sjuk.st !== undefined; // också den sjuke med tydliga tecken (steg 9.5.4)
 
 // ---------- mossan (steg 2.5.2) ----------
 // den som letar i naturen (UTFALL samla i steg.ts) hittar mossa, mer i skogen, tills byn har så mycket den vill ha

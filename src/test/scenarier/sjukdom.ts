@@ -71,3 +71,34 @@ SCENARIER.smitta = {
 };
 // kör byn h timmar, med fn efter varje timme
 function kor2(s: SIM.State, h: number, fn?: () => void) { for (let i = 0; i < h; i++) { for (let k = 0; k < 12; k++) SIM.step(s, 300); fn?.(); } }
+
+SCENARIER.sjukfoljd = {
+  text: 'Steg 9.5.4: febern sänker medvetandet, hostan orken och diarrén ökar törsten; den sjuke vilar när tecknen är tydliga och lägger sig med hög feber; kortet säger stadiet, notiserna följer insjuknandet, när det blir sämre och när hen blir frisk, och kopporna lämnar ärr',
+  kor: () => {
+    const { insjukna, sjukSteg, medvetande, torstDelar, sjukOrkar, ligger } = SIM;
+    const s = createState(3, START), [p] = living(s).filter(q => SIM.ageOf(q, s.now) >= 20);
+    const med0 = medvetande(p), torst0 = torstDelar(p).takt, ork0 = sjukOrkar(p, s.now);
+    // lunginflammation: feber och hosta. Tecknen kommer, och sjukdomen förs fram till mitten
+    insjukna(s, p, 'lunginflammation');
+    s.now = p.sjuk!.tecken + 1; sjukSteg(s, p, 1, false, false); p.sjuk!.grad = 0.6;
+    const med1 = medvetande(p), ork1 = sjukOrkar(p, s.now), lagg = ligger(p, s.now);
+    p.sjuk = undefined;
+    // magsjuka: diarré
+    insjukna(s, p, 'magsjuka'); s.now = p.sjuk!.tecken + 1; sjukSteg(s, p, 1, false, false); p.sjuk!.grad = 0.6;
+    const torst1 = torstDelar(p).takt;
+    p.sjuk = undefined;
+    const notiser = (s.notiser?.lista ?? []).filter(n => n.id === 'sjuk' || n.id === 'smitta').reduce((a, n) => a + n.n, 0); // raderna: notiser av samma slag slås ihop
+    // kopporna: den som blir frisk får ärr
+    const q = living(s).filter(x => x !== p && SIM.ageOf(x, s.now) >= 20)[0];
+    insjukna(s, q, 'koppor'); s.now = q.sjuk!.tecken + 1; sjukSteg(s, q, 1, false, false); q.sjuk!.mot = 0.999; q.sjuk!.grad = 0;
+    sjukSteg(s, q, 3600, true, false);
+    const arr = !q.sjuk && !!q.arr?.some(a => a.d === 'huvud') && !!q.immun?.koppor;
+    return [
+      [`febern sänker medvetandet (${med0.toFixed(2)} → ${med1.toFixed(2)}) och hostan orken (${ork0.toFixed(2)} → ${ork1.toFixed(2)})`, med1 < med0 - 0.05 && ork1 < ork0],
+      ['med hög feber lägger hen sig', lagg],
+      [`diarrén ökar törsten (${torst0.toFixed(3)} → ${torst1.toFixed(3)} i timmen)`, torst1 > torst0 * 1.2],
+      [`notiserna följer sjukdomen (${notiser})`, notiser >= 2],
+      ['den som överlevt kopporna har ärr och är immun', arr],
+    ];
+  },
+};
