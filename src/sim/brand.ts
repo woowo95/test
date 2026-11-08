@@ -61,7 +61,7 @@ export const BRAND = balans('brand', {
   ljusR: 4, // en brinnande ruta i brandens kant lyser så här många rutor bort (steg 9.2.20, raden brand i LJUSKALLOR)
   sprid: 0.7, // chansen per delsteg (5 sekunder) att elden tar sig från en ruta till en grannruta när marken är helt torr, gånger det som kan brinna där (antändning): i torrt högt gräs ungefär var femte sekund
   hornet: 0.7, // ... gånger det här till en ruta snett bredvid
-  torrTim: 120, // marken är helt torr efter så här många torra timmar (torrTim i vader.ts) ...
+  torrTim: 48, // marken är helt torr efter så här många torra timmar (torrTim i vader.ts; två dygn, två år i spelet, steg 9.2.25) ...
   arstid: [0, 0.6, 1, 0.8], // ... och så här torr i tidsåldern (istid, vår, sommar, höst)
   sno: 0.2, // inget brinner när det ligger mer snö än så här (snoPaMarken i vader.ts)
   vind: 1.5, // blåsten (0 till 1) sprider elden så här mycket mer med vinden, och mindre mot den (steg 6.4.4) ...
@@ -71,7 +71,8 @@ export const BRAND = balans('brand', {
   // det som kan brinna: [antändning 0 till 1, timmar det brinner, hur lätt det släcks]. Högt gräs brinner snabbast, kort gräs
   // medel, skogen och det som är av trä lite långsammare (steg 6.4.1). Det sista talet gångrar händerna och vattensäcken: kort
   // gräs väldigt lätt, högt gräs lätt, skog och trä väldigt svårt, så en brand som vuxit in i skogen är svår att släcka (steg 6.4.2)
-  skog: [0.2, 3, 0.3], ung: [0.3, 1, 0.6], buske: [1, 1, 1.2], hog: [1, 0.5, 2], kort: [0.4, 0.3, 4], groda: [0.5, 0.5, 2], vagg: [0.25, 2, 0.3], sak: [0.35, 1, 1],
+  // brandens fart (steg 9.2.25): skogen och det korta gräset tar eld lättare än förut (0,2 och 0,4)
+  skog: [0.35, 3, 0.3], ung: [0.3, 1, 0.6], buske: [1, 1, 1.2], hog: [1, 0.5, 2], kort: [0.6, 0.3, 4], groda: [0.5, 0.5, 2], vagg: [0.25, 2, 0.3], sak: [0.35, 1, 1],
   aska: 0.32, // gräset på en ruta som brunnit (0 till 1; just över bar jord, så att det inte blir en stig)
   trad: 0.5, // träden dör när så här stor del av rutan har brunnit
   vaggSkick: 1.2, // en vägg tappar så här mycket av sitt skick gånger andelen som brunnit
