@@ -32,6 +32,9 @@ export const ui = {
   molnFel: false, // byn i artefaktens databas gick inte att läsa, och sparas därför inte där (spara.ts)
   lokalFel: false, // senaste sparningen i webbläsaren misslyckades
   testMode: false, // testläget: en kopia av byn som kan spolas fram
+  annanBy: undefined as string | undefined, // en annan by än den egna är vald (steg 9.2.16, ui/byar.ts)
+  forskjut: 0, // ... och så långt efter klockan går den (ms); den egna byn går i klockans tid
+  byFel: '', // det som gick fel när en by lades till eller valdes
   lastPointer: 0, // när spelaren senast tryckte: panelen byts inte ut mitt i ett tryck
   husId: -1, // huset som visas i panelen
   stationId: -1, // stationen som visas i panelen

@@ -416,6 +416,13 @@ button.rw { border: none; background: none; padding: 0; font: inherit; color: in
 #speeds button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
 .primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 700; padding: 7px 14px; font-size: 15px; }
 .spacer { flex: 1; }
+/* byarna under kugghjulet (steg 9.2.16) */
+#byar { width: 100%; font-size: 14px; }
+.byar { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.byar li { display: flex; gap: 4px; align-items: center; }
+.byar li.vald button:first-child { font-weight: 700; }
+.nyTestby { display: flex; gap: 4px; margin-top: 4px; align-items: center; }
+.nyTestby input { width: 64px; font: inherit; }
 #confirmNew { width: 100%; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 14px; }
 button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 body.testing .mapwrap { box-shadow: inset 0 0 0 3px var(--accent); }
@@ -519,6 +526,7 @@ body.testing .mapwrap { box-shadow: inset 0 0 0 3px var(--accent); }
         <div id="testSkicka" hidden></div>
         <button type="button" class="ghost" id="arenaKnapp" title="Arenan: prova strider utan att byn påverkas">⚔️</button>
         <button type="button" class="ghost" id="temaKnapp" title="Ljust eller mörkt läge">◐ Datorn</button>
+        <div id="byar"></div>
         <span class="spacer"></span>
         <button type="button" class="ghost" id="newVillage">Ny by</button>
         <div id="confirmNew" hidden>
