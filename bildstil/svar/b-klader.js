@@ -210,7 +210,6 @@
   byt(JANEJ('f7_byxor', 'Byxorna', 'Steg 7.7.1: byxor som sys av 2 skinn och 1 rep och håller benen varma i kylan. Du valde version 3; formen är densamma, men byxorna är nu enfärgade: brunt läder med bara ljus och skugga, utan pälskanten i linningen och nertill och utan snörningen längs sidorna. Bilden visar byxorna som sak och på en bybo. Din kommentar förra gången: "Använd formen från version 3 men gör dem enfärgade"',
     SCEN('Långa byxor av enfärgat brunt läder.', byxSak(), [[byxFig]])));
 
-<<<<<<< ours
   // ---------- 7.7.2 mössan: samma tre, och i porträttet ----------
   const mossSak = (v) => {
     if (v === 3) return former(10, 8, [ // version 3 smalare: pälskanten sticker inte ut lika långt på sidorna
@@ -253,8 +252,6 @@
       zon(satt, C, fran(k0, k1), [2], (x) => T('varg', sida(x, k0, k1)));
     }
   };
-=======
->>>>>>> theirs
   // mössan i porträttet: huvudet når från rad 7 till hakan vid rad 47, x 13–51; pannan börjar vid rad 16
   const pmossa = (v) => {
     const fur = (mat, x0, x1, seed) => (x, y) => { const r = hash(Math.floor(x), Math.floor(y), seed), t = sida(x, x0, x1); return T(mat, r < 0.16 ? t + 1 : r > 0.86 ? t - 1 : t); };
@@ -281,11 +278,6 @@
       [rakt(a0 + 1, 21, a1 - 1, 22), (x) => (x > 46 ? 'e' : 'f')],
     ], [[och(punkt(32, 4), punkt(31, 5), punkt(32, 6), punkt(31, 7), punkt(32, 8)), 'a'], [och(punkt(24, 7), punkt(40, 7)), 'b']], { har: 5 });
   };
-<<<<<<< ours
-  byt(KORT('f7_mossa', 'Mössan', 'Steg 7.7.2: en mössa av 1 skinn som håller huvudet varmt. Version 1 som förut, och version 3 smalare: pälskanten sticker inte längre ut över huvudets sidor, varken på kartan eller i porträttet. Bilden visar mössan som sak, på en bybo på kartan och i porträttet. Din kommentar förra gången: ”Gör version 3 fast att den inte sticker ut lika långt på sidorna. Behåll version 1”', [
-    SCEN('Version 1 som förut: rund mössa av kaninskinn med öronlappar som knyts under hakan.', mossSak(0), [[mossFig(0), 5]], { port: pmossa(0) }),
-    SCEN('Version 3 smalare: en kulle av läder med en kant av vargpäls som slutar vid huvudets sidor.', mossSak(3), [[mossFig(3), 5]], { port: pmossa(3) })]));
-=======
   // ---------- 7.7.2 mössan: version 2, ritad på nytt som sak och på kartfiguren ----------
   // Björn valde version 2 och tyckte att porträttet var bra, men att mössan såg konstig ut på den lilla bybon och som sak.
   // Porträttet är detsamma. Som sak och på kartan ritas mössan nu som i porträttet, framifrån: en rund kulle av vargskinn,
@@ -313,7 +305,6 @@
   };
   byt(JANEJ('f7_mossa', 'Mössan', 'Steg 7.7.2: en mössa av 1 skinn som håller huvudet varmt. Du valde version 2, den höga av vargskinn med toppen som faller åt sidan. Porträttet är detsamma. Som sak och på bybon på kartan är mössan nu ritad som i porträttet, framifrån: en rund kulle med en bred uppvikt kant runt pannan och toppen som faller åt höger och hänger ner till kanten med en tofs. Din kommentar förra gången: ”den ser bra ut i portsättet men konstigt på den lilla gubben och som föremål i lagret.”',
     SCEN('Mössan av vargskinn som sak, på en bybo på kartan och i porträttet.', mossSak2(), [[mossFig2, 5]], { port: pmossa(1) })));
->>>>>>> theirs
 
   // ---------- 7.7.3 snöskorna: tvåans symbol, från olika håll ----------
   // Björn: "Använd tvåans symbol. Visa hur dem ser ut från olika vinklar". Snöskon är lång som en racket med grenarna knutna
@@ -374,25 +365,6 @@
     if (mitt === 'tandL') satt(7, 10, C('l'));
     if (sidor === 'ben') { satt(5, 9, C('l')); satt(8, 9, C('l')); } else { satt(5, 9, C('k')); satt(8, 9, C('k')); }
   };
-<<<<<<< ours
-  // halsbandet i porträttet: repet i en båge runt halsens nederdel, ner över rocken, och de tre sakerna längst ner
-  // form: snöret och var sakerna sitter. Förut en vid båge långt ner över rocken; nu (Björn: "Halsbandet följer inte halsen")
-  // tätt runt halsens nederdel, eller längs halsen ner mot nyckelbenen
-  const HALSFORM = {
-    vid: { cx: 32, cy: 41, rx: 12.4, ry: 13.1, fran: 45, fasten: [[25, 52], [32, 54], [39, 52]] },
-    tat: { cx: 32, cy: 42, rx: 8.6, ry: 6.4, fran: 42, fasten: [[27, 47], [32, 48.5], [37, 47]] },
-    halsen: { cx: 32, cy: 40, rx: 9.6, ry: 9.4, fran: 43, fasten: [[26.5, 48], [32, 49.5], [37.5, 48]] },
-  };
-  const phals = (v, form = 'vid') => {
-    const F = HALSFORM[form], o = HALS[v], lista = [], snore = [utan(ell(F.cx, F.cy, F.rx, F.ry), ell(F.cx, F.cy, F.rx - 1.3, F.ry - 1.3)), (x, y) => (y < F.fran ? null : rep(x, y))];
-    const fasten = F.fasten;
-    o.delar.forEach((d, n) => {
-      const [x0, y0] = fasten[n], ljus = (x, y, mork) => (x < x0 - 0.5 ? 'l' : x > x0 + 0.5 ? 'j' : y > y0 + mork ? 'j' : 'k');
-      // benet: en knöl i varje ände och en smal mitt; tanden: roten upptill och en böjd spets; den stora tanden är längre
-      if (d === 'ben') lista.push([och(ell(x0, y0 + 0.5, 2, 1.3), rakt(x0 - 0.8, y0, x0 + 0.8, y0 + 4.5), ell(x0, y0 + 4.5, 2, 1.3)), (x, y) => ljus(x, y, 3.5)]);
-      if (d === 'tand') lista.push([och(rakt(x0 - 1.5, y0, x0 + 1.5, y0 + 2), poly([[x0 - 1.5, y0 + 1.5], [x0 + 1.5, y0 + 1.5], [x0 + 0.8, y0 + 5], [x0 - 0.2, y0 + 6.5]])), (x, y) => (y < y0 + 1 ? 'q' : ljus(x, y, 4))]);
-      if (d === 'tandL') lista.push([och(rakt(x0 - 2, y0, x0 + 2, y0 + 2.5), poly([[x0 - 2, y0 + 2], [x0 + 2, y0 + 2], [x0 + 1.4, y0 + 4.5], [x0 + 0.4, y0 + 6], [x0 - 0.6, y0 + 7]])), (x, y) => (y < y0 + 1.2 ? 'q' : ljus(x, y, 4.5))]);
-=======
   // halsbandet i porträttet: repet kommer fram under hakan på båda sidor (rad 48; hakan går ner till rad 47, x 22–38) och
   // hänger i en båge ner över pälskragen och bröstet, med den lägsta punkten mitt på bröstet (x 31, där rocken möts). Repet
   // är en punkt tjockt, tvinnat i två toner, med en mörk skugga snett under på rocken. Sakerna hänger rakt ner från repet:
@@ -421,23 +393,15 @@
     o.delar.forEach((d, i) => {
       const S = HDEL[d], w = S[0].length, cx = Math.round(xc + plats[i]), x0 = cx - Math.floor(w / 2), y0 = repRad[cx] + 1;
       S.forEach((r, dy) => [...r].forEach((ch, dx) => { if (ch !== '.') { del[y0 + dy][x0 + dx] = ch; if (tunt[y0 + dy][x0 + dx] === 'a') tunt[y0 + dy][x0 + dx] = '.'; } }));
->>>>>>> theirs
     });
     // knutarna på repet mellan sakerna
     if (o.knut) for (const dx of [-3, 3]) { const x = Math.round(xc + dx), y = repRad[x]; tunt[y][x] = 'a'; tunt[y][x + 1] = 'b'; }
     const ur = g => [(x, y) => g[Math.floor(y)][Math.floor(x)] !== '.', (x, y) => g[Math.floor(y)][Math.floor(x)]];
     return PORT([ur(del)], [ur(tunt)], { hud: 3, har: 1 }, true);
   };
-<<<<<<< ours
   byt(KORT('f7_halsband', 'Halsbandet', 'Steg 7.7.5: ett halsband av rep med vargtänder, en prydnad. Tänderna från version 2, och nu följer snöret halsen i porträttet i stället för att hänga i en vid båge över rocken. Bilden visar halsbandet som sak, på en bybo på kartan och i porträttet. Din kommentar förra gången: ”Halsbandet följer inte halsen men tänderna är snygga i version 2”', [
     SCEN('Tre vargtänder på ett snöre som ligger tätt runt halsens nederdel.', halsSak(1), [[halsFig(1), 4242]], { port: phals(1, 'tat') }),
     SCEN('Tre vargtänder på ett snöre som följer halsen ner mot nyckelbenen.', halsSak(1), [[halsFig(1), 4242]], { port: phals(1, 'halsen') })]));
-=======
-  byt(KORT('f7_halsband', 'Halsbandet', 'Steg 7.7.5: ett halsband av rep med tre ben eller tre vargtänder, en prydnad. I porträttet hänger halsbandet nu runt halsen: repet kommer fram under hakan på båda sidor och hänger i en båge ner över kragen och bröstet, med en skugga under, och sakerna hänger rakt ner från repet, den mittersta lägst. Bilden visar halsbandet som sak, på en bybo på kartan och i porträttet. Din kommentar förra gången: ”mycket sämre. Rita halsbandet så det hänger naturligt runt halsen i portsättet.”', [
-    SCEN(HALS[0].text, halsSak(0), [[halsFig(0), 4242]], { port: phals(0) }),
-    SCEN(HALS[1].text, halsSak(1), [[halsFig(1), 4242]], { port: phals(1) }),
-    SCEN(HALS[2].text, halsSak(2), [[halsFig(2), 4242]], { port: phals(2) })]));
->>>>>>> theirs
 
   // =====================================================================================================================
   // ur 7.7b-lin.js: skjortan

@@ -174,43 +174,6 @@
   // en stor förrådskruka snett ovanifrån: buken och mynningen som en mörk ellips
   const STORKRUKA_OVAN = former(15, 16, [[ell(7.5, 9.5, 6.3, 5.8), (x, y) => x + y < 13 ? 'u' : x + y < 18 ? 't' : 's'], [ell(7.5, 4.2, 4.6, 2.4), 'u'], [ell(7.5, 4.2, 3.2, 1.4), (x, y) => y < 4.2 ? 'K' : 'l']]);
   const knippen = (B, xs, y) => xs.forEach((x, i) => sp(B, STORT_KNIPPE_H, x, y + (i % 2), false));
-<<<<<<< ours
-  const ORT = [
-    B => { // den lilla elden med krukan och en lång arbetsbänk under en torkställning där fem knippen hänger
-      sp(B, ram(46, 20), 30, 0); knippen(B, [34, 42, 50, 58, 66], 4);
-      stallBank(B, 30, 17, 46, 14, 5, 2);
-      sp(B, MORTEL_OVAN, 33, 19); sp(B, KNIPPE_L, 45, 21); sp(B, skalOvan(11, 6, 'p', 'n'), 56, 19); sp(B, skalOvan(8, 5, 'g', 'f'), 67, 23);
-      bildfil(B, 'lagereld_lite', 6, 13); sp(B, LITEN_KRUKA, 16, 19, false); anga(B, 19, 18, 1);
-      sp(B, STORKRUKA_OVAN, 2, 30); vedtrave(B, 16, 35); sp(B, skalOvan(12, 6, 'l', 'K'), 64, 39);
-    },
-    B => { // den låga härden av stenar ovanifrån med krukan ovanpå, en torkställning till vänster och en bänk till höger
-      sp(B, ram(24, 22), 1, 2); knippen(B, [3, 9, 15, 21].map(x => x - 1), 6);
-      const hx = 30, hy = 16; // härden, lika stor som från början: stenar i ett U runt elden, öppningen fram
-      glod(B, ell(hx + 9.5, hy + 9, 4.5, 2.6), hx + 4, hy + 6, 12, 6, 6);
-      for (const [x, y, i] of [[1, 0, 1], [7, -1, 2], [13, 0, 3], [-1, 5, 4], [15, 5, 5]]) sp(B, rundOvan(5, 3, 2, SK, i), hx + x, hy + y);
-      laga(B, hx + 8, hy + 10, 4); laga(B, hx + 11, hy + 10, 3); B.satt(hx + 9, hy + 10, B.P.i('senap', 3), true);
-      sp(B, KRUKA, hx + 6, hy - 6, false); anga(B, hx + 9, hy - 7, 2);
-      stallBank(B, 50, 15, 26, 12, 5, 4); // hela bänken inom bilden (Björn: version 2 såg avklippt ut)
-      sp(B, MORTEL_OVAN, 52, 17); sp(B, skalOvan(10, 5, 'p', 'n'), 64, 18);
-      sp(B, STORKRUKA_OVAN, 4, 30); sp(B, skalOvan(12, 6, 'g', 'f'), 32, 36); sp(B, KNIPPE_L, 54, 38);
-    },
-    B => { // grytan i en låg trefot över elden mellan fyra stenar, och ett långt bord under ett torkställ
-      sp(B, ram(36, 16), 42, 0); knippen(B, [46, 54, 62, 70], 4);
-      stallBank(B, 42, 15, 36, 14, 5, 5);
-      sp(B, MORTEL_OVAN, 45, 17); sp(B, KNIPPE_L, 57, 19); sp(B, skalOvan(10, 5, 'p', 'n'), 66, 22);
-      const cx = 18, fot = 34; // elden och trefoten, lika stora som från början
-      glod(B, ell(cx, fot - 1.5, 5, 2.6), cx - 5, fot - 4, 11, 6, 4);
-      for (const [x, y, i] of [[-12, -4, 1], [6, -4, 2], [-8, 2, 3], [2, 2, 5]]) sp(B, rundOvan(5, 3, 2, SK, i), cx + x, fot + y);
-      laga(B, cx - 2, fot - 1, 4); laga(B, cx + 2, fot - 1, 4); laga(B, cx, fot - 1, 5);
-      sp(B, former(24, 20, [[linje([[2, 18], [11.5, 2]], 0.6), 'b'], [linje([[21, 18], [11.5, 2]], 0.6), 'c'], [linje([[12.5, 13], [11.5, 2]], 0.5), 'b'], [rakt(11, 1, 13, 3), 'w']]), cx - 12, fot - 19, false);
-      for (let y = fot - 16; y < fot - 12; y++) B.satt(cx, y, B.P.i('ben', 1));
-      sp(B, GRYTA, cx - 5, fot - 13, false);
-      vedtrave(B, 26, 34); sp(B, STORKRUKA_OVAN, 64, 31); sp(B, skalOvan(12, 6, 'g', 'f'), 0, 39);
-    },
-  ];
-  const ORTKOK = (text, f) => ({ text, w: 80, h: 48, rita: B => { gras(B); f(B); } });
-=======
->>>>>>> theirs
 
   // ---------- 4. härden: tre nya former ----------
   // husets hörn uppe till vänster (timmerväggen och golvet), härden på golvet och röken som stiger mot rökhålet
@@ -577,14 +540,6 @@
     PA_KARTAN('En lång sten på en kraftig träbock; råa stenar till vänster och färdiga block staplade till höger.', HUGG[1]),
     PA_KARTAN('En stor flat häll ovanifrån med ett block, en mejsel och en slagsten; en stock och stenar bakom.', HUGG[2]),
   ]));
-<<<<<<< ours
-  byt(KORT('f7_ortkok', 'Örtköket', 'Steg 7.6.1: stationen där örter kokas. Stationen är nu fem gånger tre rutor, med längre bänkar, större torkställningar och större krukor och skålar, men elden, krukan på elden och grytan är lika små som i de första versionerna. Nu ritad om snett ovanifrån, som slaktbänken och borden: ytan ovanifrån, en mörk framkant och korta ben. Krukorna och skålarna syns ovanifrån, och torkställningarna står vid bakkanten. Din kommentar förra gången: ”Version 2 ser avklippt ut.” Nu står hela bänken i version 2 inom bilden.', [
-    ORTKOK('Den lilla elden med en kruka i, och en lång arbetsbänk med mortel, örter och skålar under en torkställning där fem knippen hänger.', ORT[0]),
-    ORTKOK('Den låga härden: stenar i ett U runt elden med krukan på de bakre, en torkställning till vänster och en bänk till höger.', ORT[1]),
-    ORTKOK('Grytan i en låg trefot över elden mellan fyra stenar, och ett långt bord med mortel och örter under ett torkställ.', ORT[2]),
-  ]));
-=======
->>>>>>> theirs
   byt(KORT('f7_harden', 'Härden', 'Steg 7.5.3: eldstaden inne i huset, med rökhålet i taket ovanför (röken visar var det är). Bilden visar husets hörn uppe till vänster. Tre nya former, inte upphöjda med block som förra gången. Nu ritade snett ovanifrån: hällarna ligger i jämnhöjd med golvet, och bara den stående bakstenen i version 2 reser sig. Du sa nej till alla tre förra gången, utan kommentar.', [
     HARDEN('En rund härd av kullerstenar i golvet, med aska, glöd och vedträn i kryss innanför.', HARD[0]),
     HARDEN('En stor flat sten som står upp bakom elden och kastar värmen tillbaka in i rummet, flata hällar i golvet runt elden och ved bredvid.', HARD[1]),
