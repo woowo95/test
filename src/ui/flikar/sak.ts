@@ -1,4 +1,4 @@
-import { kvOf, NORMAL, SKYDD, KROPPSDELAR, GravStil, HELIGA_PLATSER, gravAt, heligAt, troNamn, troOf, kvarById, KVARLEVOR, DAY, amountOf, busksort, fallTid, living, tileOf, isTool, FOREST, stamAv, MARK, STADIER, VAG, groundOf, stadium, tradAlder, tradArt, STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf } from '../../sim';
+import { tornadoAndel, tornadoPos, vaderstreck, kvOf, NORMAL, SKYDD, KROPPSDELAR, GravStil, HELIGA_PLATSER, gravAt, heligAt, troNamn, troOf, kvarById, KVARLEVOR, DAY, amountOf, busksort, fallTid, living, tileOf, isTool, FOREST, stamAv, MARK, STADIER, VAG, groundOf, stadium, tradAlder, tradArt, STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { condBar, durTxt, esc, kvOrd, kvText, pLink } from '../hjalp';
 import { piles, s, ui } from '../lage';
@@ -180,6 +180,7 @@ export const sak: Flik = {
   namn: 'Saken',
   knapp: 'person',
   html() {
+    if (ui.sak === 'tornado') return tornadoRuta(); // (steg 9.2.22)
     if (ui.sak.startsWith('f:')) return toaHog(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('u:')) return stubbe(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('k:')) return kvarleva(Number(ui.sak.slice(2)));
@@ -231,3 +232,17 @@ export const sak: Flik = {
     return true;
   },
 };
+
+// tornadon (steg 9.2.22): storleken, var den kom ifrån, hur långt den har kvar och vad den fällt, lyft och skadat hittills
+function tornadoRuta() {
+  const t = s.tornado;
+  if (!t) return '<div class="phead"><div><h2>Tornadon</h2></div></div><p class="muted">Tornadon har dragit förbi.</p>';
+  const u = tornadoAndel(t, ui.nu), kvar = Math.max(0, Math.round((1 - u) * t.L)), tid = Math.max(0, t.till - ui.nu);
+  const st = { liten: 'En liten tornado', medel: 'En tornado', stor: 'En stor tornado' }[t.storlek ?? 'medel'];
+  const fran = tornadoPos(t, 0), fx = Math.round(fran.x), fy = Math.round(fran.y);
+  const rad = (namn: string, n: number | undefined) => n ? `<dt>${namn}</dt><dd>${n}</dd>` : '';
+  const gjort = rad('Träd fällda', t.trad) + rad('Saker lyfta', t.lyft) + rad('Väggar rivna', t.vagg) + rad('Saker sönder', t.sonder) + rad('Skadade', t.skadade) + rad('Döda', t.doda) + rad('Djur dödade', t.djur) + rad('Förstört', t.forstort);
+  return `<div class="phead"><div><h2>${iconImg('tornado', 20)} Tornadon</h2><p class="muted">${st}${t.test ? ' (testläget)' : ''}</p></div></div>
+    <dl class="kv"><dt>Kom från</dt><dd>Kartans kant ${esc(vaderstreck(s, fx, fy))} om elden</dd><dt>Kvar</dt><dd>${kvar} rutor, ${durTxt(tid)}</dd></dl>
+    <h3>Hittills</h3>${gjort ? `<dl class="kv">${gjort}</dl>` : '<p class="muted">Inget än.</p>'}`;
+}

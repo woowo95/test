@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { gravAt, heligAt, kvarAt, BAR, busksort, FALT_STEG, FOREST, GRODOR, isSoil, stadium, Falt, byId, faltAt, faltIndex, faltKlar, HIGH, MATERIAL, Person, T, W, bitAt, bynsMitt, condOf, dorrDef, emberOn, eldXY, eldarOf, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, stationerOf, framfor, bordPlatser, tingOf, toaAt, tandTest, blixtTest, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, verbOf, zoneAt, zonesOf, Pile, Station, storlekAv } from '../sim';
+import { gravAt, heligAt, kvarAt, BAR, busksort, FALT_STEG, FOREST, GRODOR, isSoil, stadium, Falt, byId, faltAt, faltIndex, faltKlar, HIGH, MATERIAL, Person, T, W, bitAt, bynsMitt, condOf, dorrDef, emberOn, eldXY, eldarOf, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, stationerOf, framfor, bordPlatser, tingOf, toaAt, tandTest, blixtTest, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, verbOf, zoneAt, zonesOf, Pile, Station, storlekAv, tornadoPos, tornadoAndel } from '../sim';
 import { gorText } from './jakt';
 import { iconImg, tecknet } from '../ikoner';
 import { $, esc, fmtN, prickar } from './hjalp';
@@ -24,6 +24,12 @@ function personAt(gx: number, gy: number) {
   return best;
 }
 // ett djur under trycket (steg 3.7.13): de ritas där de är vid tiden som visas
+// tornadon under trycket (steg 9.2.22): där den ritas vid tiden som visas, inom två rutor från dess fot
+function tornadoAt(gx: number, gy: number) {
+  if (!s.tornado) return false;
+  const p = toWorld(gx, gy), q = tornadoPos(s.tornado, tornadoAndel(s.tornado, ui.nu));
+  return Math.hypot(q.x * TS + TS / 2 - p.x, q.y * TS - p.y) < TS * 2;
+}
 function djurAt(gx: number, gy: number) {
   const p = toWorld(gx, gy);
   let best: number | undefined, bd = 8;
@@ -99,6 +105,7 @@ app.stage.on('pointertap', e => {
   if (p) selectPerson(p.id);
   else if (g !== undefined) selectPerson(g); // handlaren och rövarna får samma sida som en bybo (steg 4.5.4.12)
   else if (dj !== undefined) { ui.djurId = dj; visa('djur'); }
+  else if (tornadoAt(gx, gy)) { ui.sak = 'tornado'; visa('sak'); } // tornadon (steg 9.2.22)
   else if (!inMap(c.x, c.y)) avmarkera(); // utanför kartan finns inget att visa
   else if (filtAt(gx, gy)) { ui.filtAt = filtAt(gx, gy)!; ui.byteNr = -1; if (valdFilt()) visa('filt'); }
   else if (fireAt(gx, gy) !== undefined) { const id = fireAt(gx, gy)!; ui.eld = id ? id - 1 : undefined; visa('eld'); }
@@ -180,7 +187,7 @@ app.stage.on('pointermove', e => {
   showHover(gx, gy);
   ui.hovered = personAt(gx, gy)?.id;
   const c = tileAt(gx, gy);
-  view.style.cursor = ui.hovered || djurAt(gx, gy) !== undefined || gastAt(gx, gy) !== undefined || !!filtAt(gx, gy) || inMap(c.x, c.y) && (fireAt(gx, gy) !== undefined || storeAt(gx, gy) || outPilesAt(c.x, c.y).length || toaAt(s, c.x, c.y) || faltAt(s, c.x, c.y) || stubbeAt(c.x, c.y) || husAt(c.x, c.y) !== undefined || stationAt(s, c.x, c.y) || stolAt(c.x, c.y) || tradAt(c.x, c.y) || buskeAt(c.x, c.y) || !!s.uppsatta?.some(q => q.x === c.x && q.y === c.y) || !!s.stockar?.some(q => Math.floor(q.x) === c.x && Math.floor(q.y) === c.y)) ? 'pointer' : 'grab';
+  view.style.cursor = ui.hovered || djurAt(gx, gy) !== undefined || tornadoAt(gx, gy) || gastAt(gx, gy) !== undefined || !!filtAt(gx, gy) || inMap(c.x, c.y) && (fireAt(gx, gy) !== undefined || storeAt(gx, gy) || outPilesAt(c.x, c.y).length || toaAt(s, c.x, c.y) || faltAt(s, c.x, c.y) || stubbeAt(c.x, c.y) || husAt(c.x, c.y) !== undefined || stationAt(s, c.x, c.y) || stolAt(c.x, c.y) || tradAt(c.x, c.y) || buskeAt(c.x, c.y) || !!s.uppsatta?.some(q => q.x === c.x && q.y === c.y) || !!s.stockar?.some(q => Math.floor(q.x) === c.x && Math.floor(q.y) === c.y)) ? 'pointer' : 'grab';
 });
 view.addEventListener('wheel', e => { e.preventDefault(); const r = view.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.06 : 1 / 1.06, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
 view.addEventListener('pointerleave', () => { $('hoverBox').hidden = true; ui.hovered = undefined; });
