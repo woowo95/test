@@ -1,17 +1,17 @@
 {
  "id": "bryn-8",
- "ritad": 1,
+ "ritad": 2,
  "av": "Claude (bildstilschatten)",
- "om": "Sneda uppåt: den yttre änden högre än den inre, så att blicken ser bestämd ut.",
+ "om": "Sneda uppåt: raka bryn där den yttre spetsen böjer uppåt.",
  "bilder": {
   "lugna": {
    "x": -3,
    "y": -3,
    "rader": [
     ".......",
-    "gg.....",
-    "ffggg..",
-    "..ffeee"
+    "g......",
+    "fgggggf",
+    ".ffeeee"
    ]
   },
   "arga": {
@@ -20,7 +20,7 @@
    "rader": [
     "gg.....",
     "ffgg...",
-    "..ffgg.",
+    "..ffgf.",
     "....eee"
    ]
   },
@@ -30,17 +30,17 @@
    "rader": [
     ".......",
     ".....gg",
-    "gggggff",
-    "ff....."
+    "g.gggff",
+    "ffee..."
    ]
   },
   "forvanade": {
    "x": -3,
    "y": -3,
    "rader": [
-    "gg.....",
-    "ffggg..",
-    "..fffge",
+    "g.ggg..",
+    "fgfffgg",
+    ".f...ee",
     "......."
    ]
   }

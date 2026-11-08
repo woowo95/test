@@ -1,6 +1,6 @@
 {
  "id": "mun-10",
- "ritad": 1,
+ "ritad": 2,
  "av": "Claude (bildstilschatten)",
  "om": "Nedåtvänd: mungiporna pekar nedåt också när personen är lugn.",
  "bilder": {
@@ -9,8 +9,8 @@
    "y": -2,
    "rader": [
     "..........",
-    "..........",
-    "rrqqqqqqrr",
+    "r........r",
+    ".rqqqqqqr.",
     "..rrrrrr..",
     "...bbbb..."
    ]
@@ -21,8 +21,8 @@
    "rader": [
     "..........",
     "..........",
-    "rrrrrrrrrr",
-    "...bbbb...",
+    ".rrrrrrrr.",
+    "s..bbbb..s",
     ".........."
    ]
   },
@@ -32,8 +32,8 @@
    "rader": [
     "..........",
     "..........",
-    "..rrrrrr..",
-    ".r.bbbb.r.",
+    ".rrrrrrrr.",
+    "r..bbbb..r",
     ".........."
    ]
   },
@@ -42,10 +42,10 @@
    "y": -2,
    "rader": [
     "..........",
-    "...rrrr...",
-    ".rr....rr.",
-    "r..bbbb..r",
-    ".........."
+    "..........",
+    "..rrrrrr..",
+    ".r......r.",
+    "r..bbbb..r"
    ]
   },
   "arg": {
@@ -54,8 +54,8 @@
    "rader": [
     "..........",
     "..........",
-    "..rkkkkr..",
-    ".r.bbbb.r.",
+    ".rkkkkkkr.",
+    "r..bbbb..r",
     ".........."
    ]
   },

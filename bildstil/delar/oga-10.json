@@ -1,18 +1,18 @@
 {
  "id": "oga-10",
- "ritad": 1,
+ "ritad": 2,
  "av": "Claude (bildstilschatten)",
- "om": "Vidöppna: stora och vidöppna, med det vita synligt både över och under irisen.",
+ "om": "Vidöppna: stora och vidöppna, med det vita synligt under irisen.",
  "bilder": {
   "oppna": {
    "x": -4,
    "y": -3,
    "rader": [
     ".aaaaa.",
-    "avvjvva",
+    "avjjiva",
     "avikkvb",
     "bvjiivb",
-    ".vvvvv.",
+    ".bvvvb.",
     ".bcccb."
    ]
   },
@@ -21,7 +21,7 @@
    "y": -3,
    "rader": [
     ".aaaaa.",
-    "avvjvva",
+    "avjjiva",
     "acikkcb",
     ".cdddc.",
     ".......",
@@ -36,7 +36,7 @@
     "aaaaava",
     "avikkvb",
     "bvjiivb",
-    ".vvvvv.",
+    ".bvvvb.",
     ".bcccb."
    ]
   },
