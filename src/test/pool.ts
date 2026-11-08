@@ -2,22 +2,29 @@
 // Här finns också det som flera testskript delar: typkontrollen, scenariernas sammanfattning och testbyarnas frön.
 // Filen importerar inget från simuleringen.
 import { spawn } from 'node:child_process';
-import { cpus } from 'node:os';
+import { cpus, setPriority } from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 export interface Utfall { code: number; out: string; err: string }
 // en process som inte är klar efter så här lång tid (datorns tid) stoppas och räknas som kraschad
 const TIDSGRANS_MIN = 35; // sedan Förbättra aldrig är tom (steg 6.1.18) arbetar byarna mer, och testerna tar längre tid
 
-// ett skript i src/test, kört med tsx i en egen process (env läggs till datorns miljö, t.ex. { TIDSZON: 'Europe/Stockholm' })
-export function korSkript(fil: string, args: string[] = [], env: Record<string, string> = {}): Promise<Utfall> {
+// Kärnorna till de långa jobben (steg 9.2.64): ett jobb som tog kortare tid än LANGT_JOBB_S förra gången körs med lägre
+// prioritet (LAG_PRIO, som nice), så att de långa jobben, som avgör när testet blir klart, får hela kärnor och de korta fyller
+// det som blir över. Mätt på Macen: med 25 processer på 10 kärnor fick varje jobb under en halv kärna
+export const LANGT_JOBB_S = 100, LAG_PRIO = 10;
+export const prioAv = (forraS: number | undefined) => forraS !== undefined && forraS >= LANGT_JOBB_S ? 0 : LAG_PRIO;
+// ett skript i src/test, kört med tsx i en egen process (env läggs till datorns miljö, t.ex. { TIDSZON: 'Europe/Stockholm' }).
+// prio: 0 vanlig, högre är lägre prioritet (som nice)
+export function korSkript(fil: string, args: string[] = [], env: Record<string, string> = {}, prio = 0): Promise<Utfall> {
   const path = fileURLToPath(new URL('./' + fil, import.meta.url));
-  return korProcess(process.execPath, ['--import', 'tsx', path, ...args], env);
+  return korProcess(process.execPath, ['--import', 'tsx', path, ...args], env, prio);
 }
-export function korProcess(cmd: string, args: string[], env: Record<string, string> = {}): Promise<Utfall> {
+export function korProcess(cmd: string, args: string[], env: Record<string, string> = {}, prio = 0): Promise<Utfall> {
   return new Promise(ok => {
     let out = '', err = '', klar = false;
     const c = spawn(cmd, args, { env: { ...process.env, ...env } });
+    if (prio && c.pid) try { setPriority(c.pid, prio); } catch { /* går det inte körs jobbet med vanlig prioritet */ }
     const sluta = (code: number) => { if (!klar) { klar = true; clearTimeout(tid); ok({ code, out, err }); } };
     const tid = setTimeout(() => { err += `\n(stoppad efter ${TIDSGRANS_MIN} min, datorns tid)`; c.kill('SIGKILL'); }, TIDSGRANS_MIN * 60_000);
     // som text, så att å, ä och ö inte delas mellan två bitar av utskriften
@@ -39,8 +46,8 @@ export async function pool<T>(jobb: (() => Promise<T>)[], n = cpus().length): Pr
 // sista raden i utskriften tolkad som JSON
 export const sistaJson = <T>(u: Utfall): T => JSON.parse(u.out.trim().split('\n').pop()!);
 // ett skript som skriver sitt svar som JSON på sista raden. Kraschar det kastas ett fel med slutet av felutskriften
-export async function korJson<T>(fil: string, args: string[], namn: string, env: Record<string, string> = {}): Promise<T> {
-  const u = await korSkript(fil, args, env);
+export async function korJson<T>(fil: string, args: string[], namn: string, env: Record<string, string> = {}, prio = 0): Promise<T> {
+  const u = await korSkript(fil, args, env, prio);
   if (u.code) throw new Error(`${namn} kraschade:\n${u.err.slice(-1500)}`);
   return sistaJson<T>(u);
 }

@@ -10,7 +10,7 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { DOK_KB, rad } from './kor';
 import { NYCKELTAL, Nyckeltal } from './nyckeltal';
-import { korJson, pool } from './pool';
+import { korJson, pool, prioAv } from './pool';
 import { BitSvar, DEL, laggIhop } from './delby';
 
 const FACIT = new URL('../../test/facit.json', import.meta.url), BYDIR = fileURLToPath(new URL('../../test/facit-byar/', import.meta.url));
@@ -64,7 +64,8 @@ if (spara) {
     granser.slice(1).forEach((till, i) => jobb.push({ seed, fran: granser[i], till, in: i ? byFil(BYDIR, seed, granser[i]) : '-', ut: ut && till < DAGAR ? byFil(ut, seed, till) : '-', forra: f?.bitMs[i] ?? till - granser[i] }));
   }
   const ordning = [...jobb].sort((a, b) => b.forra - a.forra); // den som tog längst tid förra gången först
-  const svar = await pool(ordning.map(j => () => korJson<BitSvar>('delby.ts', ['--bit', String(j.seed), String(j.fran), String(j.till), j.in, j.ut], `by ${j.seed}, dygn ${j.fran}–${j.till}`)
+  const f = (j: Jobb) => prioAv(facit?.byar[j.seed]?.bitMs.length ? j.forra / 1000 : undefined); // de korta bitarna med lägre prioritet (steg 9.2.64)
+  const svar = await pool(ordning.map(j => () => korJson<BitSvar>('delby.ts', ['--bit', String(j.seed), String(j.fran), String(j.till), j.in, j.ut], `by ${j.seed}, dygn ${j.fran}–${j.till}`, {}, f(j))
     .catch((e: Error) => { console.log(e.message); process.exit(1); })));
   res = BYAR.map(seed => {
     const bitar = svar.filter(b => b.seed === seed).sort((a, b) => a.fran - b.fran);

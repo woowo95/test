@@ -11,7 +11,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { BEAT, createState, serialize, step } from '../sim';
 import { START } from './kor';
-import { kanonisk, korSkript, sek } from './pool';
+import { kanonisk, korSkript, LAG_PRIO, sek } from './pool';
 
 const BYAR: [seed: number, dygn: number][] = [[42, 30], [1, 30], [3, 2], [139, 30], [121, 14]];
 const FIL = fileURLToPath(new URL('../../test/samma.json', import.meta.url));
@@ -25,7 +25,7 @@ if (i >= 0) { // en by i en egen process
   console.log(createHash('md5').update(kanonisk(serialize(s))).digest('hex').slice(0, 12));
 } else {
   const t0 = Date.now();
-  const nu = (await Promise.all(BYAR.map((_, k) => korSkript('samma.ts', ['--by', String(k)])))).map(u => u.code || !u.out.trim() ? 'KRASCH: ' + u.err.slice(-300) : u.out.trim());
+  const nu = (await Promise.all(BYAR.map((_, k) => korSkript('samma.ts', ['--by', String(k)], {}, LAG_PRIO)))).map(u => u.code || !u.out.trim() ? 'KRASCH: ' + u.err.slice(-300) : u.out.trim());
   const krasch = BYAR.map((b, k) => nu[k].startsWith('KRASCH') ? `${namn(b)}: ${nu[k]}` : '').filter(x => x);
   if (process.argv.includes('--spara')) {
     if (krasch.length) { console.log(`Sparar inte, eftersom en by kraschade:\n${krasch.join('\n')}`); process.exitCode = 1; }
