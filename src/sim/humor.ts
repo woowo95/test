@@ -281,20 +281,21 @@ export function utbrottRisk(s: State, p: Person, ljust: boolean) {
 // snitthumöret i byn; `tom` är värdet när ingen lever
 export function avgMood(s: State, tom: number) { const l = living(s); return l.length ? l.reduce((a, p) => a + moodOf(p, s.now), 0) / l.length : tom; }
 // humöret och, om ut finns med, delarna det består av (personrutan visar dem). Samma räkning i båda fallen
-export function moodOf(p: Person, now: number, ut?: { namn: string; v: number }[]) {
+// ut: raderna, med när de försvinner (till) för tankarna och mörkret (steg 9.2.32)
+export function moodOf(p: Person, now: number, ut?: { namn: string; v: number; till?: number }[]) {
   let m = HUMOR.bas;
-  const del = (namn: string, v: number) => { m += v; ut?.push({ namn, v }); };
+  const del = (namn: string, v: number, till?: number) => { m += v; ut?.push(till === undefined ? { namn, v } : { namn, v, till }); };
   if (p.hunger < HUMOR.hungerLag) del('Hungrig', -HUMOR.hungerMinus); else if (p.hunger > HUMOR.hungerHog) del('Mätt', HUMOR.hungerPlus);
   if (p.rest < HUMOR.viloLag) del('Trött', -HUMOR.viloMinus);
   if (p.social < HUMOR.socialLag) del('Ensam', -HUMOR.socialMinus); else if (p.social > HUMOR.socialHog) del('Umgåtts mycket', HUMOR.socialPlus);
   if (halsa(p) < HUMOR.halsaLag) del('Mår dåligt', -HUMOR.halsaMinus);
-  if (p.morkT !== undefined && now - p.morkT <= HUMOR.morkTim * HOUR) del('Mörkt', -HUMOR.morkMinus);
+  if (p.morkT !== undefined && now - p.morkT <= HUMOR.morkTim * HOUR) del('Mörkt', -HUMOR.morkMinus, p.morkT + HUMOR.morkTim * HOUR);
   if (p.forv) {
     const r = forvRikare(p.forv), v = forvVan(p.forv.f);
     if (Math.abs(r) >= HUMOR.visa) del(r > 0 ? 'Rikare än förut' : 'Fattigare än förut', r);
     if (Math.abs(v) >= HUMOR.visa) del(v < 0 ? 'Van vid mer' : 'Van vid lite', v);
   }
-  for (const t of p.thoughts) if (t.until > now) del(t.text, t.v);
+  for (const t of p.thoughts) if (t.until > now) del(t.text, t.v, t.until);
   return clamp(m, 0, 1);
 }
 

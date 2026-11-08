@@ -231,12 +231,12 @@ const plusMinus = (v: number) => (v > 0 ? '+' : '−') + visa(Math.abs(v));
 const effektText = (e: Partial<Record<Stat, number>>) => (Object.entries(e) as [Stat, number][]).map(([k, v]) => `${STAT_NAMES[k]} ${plusMinus(v)}`).join(', ');
 // en rad med stapel som går att trycka på, eller hålla musen över: då syns vad som påverkar den just nu.
 // delar = det som ändrar värdet (per timme, eller i humörpoäng när enhet är tom), mer = det som inte är en jämn takt
-type Orsak = { namn: string; v: number };
+type Orsak = { namn: string; v: number; till?: number }; // till: när raden försvinner (humörets tankar, steg 9.2.32)
 const tal = (v: number) => { const a = Math.abs(v * 100); return (v > 0 ? '+' : v < 0 ? '−' : '') + (a > 0 && a < 1 ? a.toFixed(1).replace('.', ',') : String(Math.round(a))); };
 function rad(p: Person, key: string, namn: string, inner: string, delar: Orsak[], enhet: string, mer = '') {
   const id = `b-${key}-${p.id}`, d = trendD(p, key);
   const title = [...delar.map(x => `${x.namn} ${tal(x.v)}${enhet}`), mer].filter(x => x).join(', ');
-  const lista = delar.length ? `<ul class="thoughts">${delar.map(x => `<li class="${x.v < 0 ? 'neg' : 'pos'}">${esc(x.namn)} <span>${tal(x.v)}${enhet}</span></li>`).join('')}</ul>` : '';
+  const lista = delar.length ? `<ul class="thoughts">${delar.map(x => `<li class="${x.v < 0 ? 'neg' : 'pos'}"${x.till !== undefined ? ` title="Stannar kvar ${esc(durTxt(x.till - s.now))} till"` : ''}>${esc(x.namn)} <span>${tal(x.v)}${enhet}</span></li>`).join('')}</ul>` : '';
   const matt = d === undefined ? '' : `<p class="muted">Har ändrats ${tal(d)} i timmen den senaste stunden.</p>`;
   return `<dt class="klick" data-hjalp="${id}" title="${esc(title)}" tabindex="0" role="button">${namn}</dt><dd class="klick" data-hjalp="${id}" title="${esc(title)}">${inner}</dd>
     ${hjalpText(id, `<dd class="forkl">${matt}${lista}${mer ? `<p class="muted">${esc(mer)}</p>` : ''}</dd>`)}`;
@@ -252,6 +252,7 @@ const VILA: Record<ReturnType<typeof viloSlag>, string> = { restVila: 'Vilar', r
 function behovHtml(p: Person) {
   const now = s.now, m = moodOf(p, now), a = ageOf(p, now);
   const humor: Orsak[] = [{ namn: 'Grundhumör', v: HUMOR.bas }]; moodOf(p, now, humor);
+  humor.sort((a, b) => (a.namn === 'Grundhumör' ? -1 : b.namn === 'Grundhumör' ? 1 : Math.abs(b.v) - Math.abs(a.v))); // störst först, grundhumöret överst (steg 9.2.32)
   // värmen: samma delar som simuleringen räknar (varmeDelar), med hur många som är i varje rum
   const inRum = new Map<number, number>();
   for (const q of living(s)) { const r = roomAt(s, q.x, q.y); if (r) inRum.set(r.id, (inRum.get(r.id) ?? 0) + 1); }
