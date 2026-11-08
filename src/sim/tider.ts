@@ -42,10 +42,11 @@ export const tiderUtanfor = () => allaTider().filter(t => !t.slag || t.min < TID
 // Vakten i npm test och npm run balans (forLangtArbete, kor.ts) larmar när ett arbete tar längre tid än sitt slag, också de
 // arbeten vars tid inte står i registren. Arbetet får ta TID_MARG gånger slagets längsta tid, för den som är långsam
 export const TID_MARG = 1.5;
-// Slaget räknas för varje handling i ACTS: ett hantverk efter sakerna det gör (skaffa.slag i saker.ts, den längsta), att slakta,
-// rensa, grilla och torka är att bearbeta mat, en station, ett tillbehör och en dörr är en station, och resten en stund. En ny
+// Slaget räknas för varje handling i ACTS: ett hantverk efter sakerna det gör (skaffa.slag i saker.ts, den längsta), en station, ett tillbehör och en dörr är en station, och resten en stund. En ny
 // handling får alltså alltid ett slag (en ny sak kräver redan sitt slag, steg 2.12.8)
-const BEARBETA = new Set(['slakta', 'rensa', 'grilla', 'torka']), STATION_AKT = new Set(['station', 'tillbehor', 'dorr']);
+// att slakta, rensa, grilla och torka görs i omgångar (en hel fångst i ett pass, SLAKT i redskap.ts), så passet är en stund;
+// tiden per bit står i SLAKT och prövas av scenariot tider
+const BEARBETA = new Set<string>(), STATION_AKT = new Set(['station', 'tillbehor', 'dorr']);
 let tidAkt: Record<Act, TidSlag | 'stund'> | undefined; // räknas när den behövs (saker.ts läser den här filen när den laddas)
 export function tidSlagAv(a: Act): TidSlag | 'stund' {
   tidAkt ??= Object.fromEntries((Object.keys(ACTS) as Act[]).map(x => {

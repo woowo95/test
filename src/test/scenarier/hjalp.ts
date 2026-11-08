@@ -35,6 +35,7 @@ export function byggKlart(s: State) {
   const h = housesOf(s).find(q => !q.klar);
   if (!h) return undefined;
   const bs = bitsOf(s).filter(b => b.hus === h.id), p = living(s)[0];
+  for (const i of SIM.kronaOver(s, h)) groundOf(s).trees[i] = 0; // träden vars krona når över huset fälls först (steg 9.2.49)
   for (const b of bs) { b.mat = SIM.MATERIAL[b.m]?.n ?? 0; b.b = b === bs[bs.length - 1] ? 0.999 : 1; }
   SIM.touch(s);
   SIM.workOn(s, p, bs[bs.length - 1], 3600);
