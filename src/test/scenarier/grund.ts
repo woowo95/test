@@ -220,6 +220,14 @@ SCENARIER.morker = {
     Object.assign(s.fire, { lit: false, fuel: 0 });
     p.x = e.x + 0.5; p.y = e.y + 1.5;
     const slocknad = SIM.morkFart(s, p);
+    // branden lyser (steg 9.2.20): en ruta som brinner tjugo rutor från elden lyser upp sin omgivning
+    let bx = e.x + 15, by = e.y, morktFore = 1;
+    for (let d = 15; d < 40 && !s.brand; d++) for (const [dx, dy] of [[d, 0], [0, d], [-d, 0], [0, -d]]) {
+      if (s.brand) break;
+      bx = e.x + dx; by = e.y + dy; morktFore = SIM.ljusAt(s, bx + 1.5, by + 0.5);
+      SIM.tand(s, by * SIM.W + bx, 'gnista', 0);
+    }
+    const brandLjus = SIM.ljusAt(s, bx + 1.5, by + 0.5);
     return [
       [`nära den brinnande elden på natten är det ljust (${ljus.toFixed(2)}) och farten som vanligt`, ljus > 0 && vidElden === 1],
       [`tjugo rutor bort i mörkret går man ${langtBort} gånger så fort`, langtBort === SIM.MORKER.fart],
@@ -227,6 +235,7 @@ SCENARIER.morker = {
       ['på dagen märks inget', dag === 1],
       ['den som sover bryr sig inte', q.morkT === undefined],
       ['vid en slocknad eld är det mörkt', slocknad === SIM.MORKER.fart],
+      [`en brand lyser upp sin omgivning på natten (${morktFore.toFixed(2)} → ${brandLjus.toFixed(2)})`, morktFore === 0 && brandLjus > 0],
     ];
   },
 };

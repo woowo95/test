@@ -58,6 +58,7 @@ export const BRAND = balans('brand', {
   gnistaR: 2, // ... så här många rutor bort (slumpas)
   blixt: 0.5, // chansen att blixten slår ner nära byn när den slår ner (blixtNu i vader.ts) ...
   blixtR: 30, // ... så här många rutor från byns mitt (bynsMitt i omrade.ts, slumpas)
+  ljusR: 4, // en brinnande ruta i brandens kant lyser så här många rutor bort (steg 9.2.20, raden brand i LJUSKALLOR)
   sprid: 0.7, // chansen per delsteg (5 sekunder) att elden tar sig från en ruta till en grannruta när marken är helt torr, gånger det som kan brinna där (antändning): i torrt högt gräs ungefär var femte sekund
   hornet: 0.7, // ... gånger det här till en ruta snett bredvid
   torrTim: 120, // marken är helt torr efter så här många torra timmar (torrTim i vader.ts) ...
@@ -173,6 +174,17 @@ function inreOf(b: Brand) {
 export const brandKant = (s: State) => s.brand ? s.brand.r.filter(r => !inreOf(s.brand!)[r[0]]).length : 0;
 // brinner ruta i?
 export const brinner = (s: State, i: number) => !!s.brand && kartaOf(s.brand)[i] === 1;
+// ljuset från branden (steg 9.2.20): rutorna i brandens kant som inte är släckta, en gång per tid (frågas ofta)
+const ljusMinne = new WeakMap<Brand, { t: number; r: number[] }>();
+export function brandLjus(s: State): readonly number[] {
+  const b = s.brand;
+  if (!b) return [];
+  const m = ljusMinne.get(b);
+  if (m && m.t === s.now) return m.r;
+  const inre = inreOf(b), r = b.r.filter(q => !inre[q[0]] && q[3] < 1).map(q => q[0]);
+  ljusMinne.set(b, { t: s.now, r });
+  return r;
+}
 // rutorna som brinner just nu (gränssnittet ritar lågorna)
 export const brinnande = (s: State): readonly BrandRuta[] => s.brand?.r ?? [];
 

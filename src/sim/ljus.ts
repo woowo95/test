@@ -6,6 +6,7 @@
 // så fort (gången i walk och arbetet i arbetsTakt, steg.ts) och får lite sämre humör (morkT; HUMOR.morkMinus i moodOf, humor.ts). Den som
 // sover eller vilar bryr sig inte. Ljus är neutralt för humöret
 import { balans } from './balans';
+import { BRAND, brandLjus } from './brand';
 import { eldXY, eldarOf, fireHeat } from './eld';
 import { roomAt } from './byggnad';
 import { ACTS } from './handlingar';
@@ -58,6 +59,8 @@ export const LJUSKALLOR = {
     return ut;
   } },
   ljus: { namn: 'Talgljusen', kallor: s => (s.ljus ?? []).filter(l => l.tand).flatMap(l => { const st = stationById(s, l.st); return st ? [{ x: st.x + 0.5, y: st.y + 0.5, r: LJUS.r, rum: roomAt(s, st.x, st.y) }] : []; }) },
+  // branden lyser (steg 9.2.20): rutorna i brandens kant, som ljus för dem som släcker eller arbetar och på kartan
+  brand: { namn: 'Branden', kallor: s => brandLjus(s).map(i => ({ x: i % W + 0.5, y: Math.floor(i / W) + 0.5, r: BRAND.ljusR })) },
   uppsatt: { namn: 'Uppsatta facklor', kallor: s => (s.uppsatta ?? []).filter(u => u.tand).map(u => ({ x: u.x + 0.5, y: u.y + 0.5, r: FACKLA.r, rum: roomAt(s, u.x, u.y) })) }, // inne lyser den upp rummet (steg 9.2.11)
 } satisfies Record<string, Ljuskalla>;
 const KALLOR = Object.values(LJUSKALLOR) as Ljuskalla[];
