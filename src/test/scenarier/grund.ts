@@ -292,7 +292,7 @@ SCENARIER.fackla = {
 };
 
 SCENARIER.uppsatt = {
-  text: 'Steg 6.3.7: där folk ofta är vakna i mörker blir det ett projekt att sätta upp en fackla. Den tänds när någon vaken är nära och släcks när ingen är kvar eller dagen kommer',
+  text: 'Steg 6.3.7: där folk ofta är vakna i mörker blir det ett projekt att sätta upp en fackla. Den tänds när någon vaken är nära och släcks när ingen är kvar eller dagen kommer. Steg 9.2.11: byn vill också ha ljus över hela byn, på den mörkaste platsen i byns område, och inne sitter facklan på väggen och lyser upp rummet',
   kor: () => {
     const s = createState(3, START);
     const [p, q] = living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.ansvar);
@@ -310,7 +310,7 @@ SCENARIER.uppsatt = {
     const u = SIM.PROJEKT.uppsatt.uppgift(s, p)!;
     SIM.finishUppsatt(s, p, { tx: u.spot!.x, ty: u.spot!.y });
     const upp = s.uppsatta?.[0], tingBorta = !SIM.tingOf(s).some(t => t.k === 'fackla');
-    const igen = !!SIM.morkStalle(s);
+    const nasta = SIM.morkStalle(s), igen = !!nasta && Math.hypot(nasta.x - x, nasta.y - y) < SIM.FACKLA.r;
     SIM.facklorTimme(s);
     const tand = !!upp?.tand, ljus = SIM.ljusAt(s, p.x, p.y);
     p.x = x + 30; p.task = { act: 'sova', tx: x + 30, ty: y } as SIM.Task; q.x = x + 30; q.task = { act: 'sova', tx: x + 30, ty: y } as SIM.Task;
@@ -327,6 +327,7 @@ SCENARIER.uppsatt = {
       ['utan en fackla i byn kan ingen sätta upp en', !utan && med],
       ['facklan sätts upp på platsen och tas ur byns saker', !!upp && upp.x === x && upp.y === y && tingBorta],
       ['där den står behövs ingen till', !igen],
+      ...helaByn(),
       [`den tänds när någon vaken är nära och lyser (${ljus.toFixed(2)})`, tand && ljus > 0],
       ['den släcks när alla sover långt bort, och har brunnit lite', slackt],
       ['den tänds när någon väljer att gå dit', vidVal],
@@ -334,6 +335,27 @@ SCENARIER.uppsatt = {
     ];
   },
 };
+
+// steg 9.2.11: utan platser där folk varit vakna i mörker vill byn ändå ha ljus över hela byn, långt från elden, och en fackla
+// inne sitter på väggen och lyser upp rummet
+function helaByn(): [string, boolean][] {
+  const s = createState(1, START), e = SIM.eldXY(s, s.fire), m = SIM.morkStalle(s);
+  const iByn = !!m && SIM.iByn(s, m.x, m.y), langt = !!m && Math.hypot(m.x - e.x, m.y - e.y) > SIM.FACKLA.r * 1.5;
+  const hus = medHus(s), bit = hus && SIM.bitsOf(s).find(b => b.hus === hus.id && SIM.roomAt(s, b.x, b.y) && [[0, -1], [-1, 0], [1, 0], [0, 1]].some(([dx, dy]) => SIM.isWall(s, b.x + dx, b.y + dy)));
+  let inne = false, rum = false;
+  if (bit) {
+    const [p] = living(s);
+    SIM.newTing(s, 'fackla', 1, SIM.BYN);
+    SIM.finishUppsatt(s, p, { tx: bit.x + 0.5, ty: bit.y + 0.5 });
+    const u = s.uppsatta?.find(v => v.x === bit.x && v.y === bit.y);
+    inne = !!u && u.vx !== undefined;
+    if (u) { u.tand = true; rum = SIM.LJUSKALLOR.uppsatt.kallor(s).some(k => !!k.rum); }
+  }
+  return [
+    [`utan mörka platser vill byn ändå ha ljus i byn, långt från elden (${m ? `${m.x - e.x}, ${m.y - e.y} från elden` : 'ingen'})`, iByn && langt],
+    ['inne sitter facklan på väggen och lyser upp rummet', inne && rum],
+  ];
+}
 
 SCENARIER.talgljus = {
   text: 'Steg 6.3.8: talgljuset görs av två talg och ett torrgräs. Det ställs på ett bord inne där folk är vakna i mörker, lyser upp rummet när någon vaken är där och släcks när ingen är kvar eller dagen kommer',

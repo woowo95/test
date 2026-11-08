@@ -13,6 +13,9 @@ const AKT = { w: '#dad0bb', a: '#8a9c9e' };
 const VADER_PAL = { K: '#61767a', S: '#dad0bb', W: '#dad0bb', a: '#906f0f', b: '#b2921b', c: '#d8b25f', d: '#8a9c9e', k: '#3e5156', o: '#24201d', s: '#bdb39b', v: '#bdb39b', w: '#a0947d', y: '#d8b25f' };
 const AMNE_PAL = { k: '#24201d', r: '#a14808', R: '#bd753e', y: '#906f0f', Y: '#b2921b', j: '#7d5b40', s: '#61767a', b: '#3e5156' };
 export const PAL: Record<string, Record<string, string>> = {
+  // facklan på väggen (steg 9.2.11, platshållare): en järnhållare i väggen, skaftet snett upp och huvudet av näver och talg
+  uppsatt_vagg: { k: '#24201d', K: '#474138', j: '#5e3c24', J: '#7d5b40', y: '#906f0f', Y: '#b2921b' },
+  uppsatt_vagg_tand: { k: '#24201d', K: '#474138', j: '#5e3c24', J: '#7d5b40', y: '#906f0f', Y: '#b2921b', r: '#a14808', o: '#bd753e', g: '#d8b25f', w: '#dad0bb' },
   // samtalens ämnen i 8 punkter (steg 9.2.10, platshållare): en symbol per ämne i den lilla pratbubblan
   ...Object.fromEntries(['amne_gral', 'amne_varsel', 'amne_fara', 'amne_rykte', 'amne_teknik', 'amne_kunskap', 'amne_plats', 'amne_langtan', 'amne_karlek', 'amne_trost', 'amne_dod', 'amne_vader_regn', 'amne_vader_sno', 'amne_vader_blast', 'amne_vader_aska', 'amne_vader_dimma', 'amne_vader_klart', 'amne_mat', 'amne_arbete', 'amne_barn', 'amne_vardag'].map(k => [k, AMNE_PAL])),
   // trons och gudarnas symboler: amuletter i guld på en mörk bricka (Björn valde stil 3 efter v245, steg 4.5.2)
@@ -3711,6 +3714,9 @@ export const PIX: Record<string, string[]> = {
     '...aa...',
     '........',
   ],
+  // facklan på väggen (steg 9.2.11, platshållare tills Björn valt i bildstilen): släckt och tänd
+  uppsatt_vagg: ['........', '........', '........', '........', '...yY...', '...YY...', '...Jj...', '...jJ...', '..KjJK..', '..kKKk..', '...jJ...', '...Jj...'],
+  uppsatt_vagg_tand: ['...w....', '..gwg...', '..ogo...', '.rgogr..', '..ryY...', '...YY...', '...Jj...', '...jJ...', '..KjJK..', '..kKKk..', '...jJ...', '...Jj...'],
   // samtalens ämnen i 8 punkter (steg 9.2.10, platshållare tills Björn valt i bildstilen)
   amne_gral: ['........', '.r...r..', 'rrr.rrr.', '.r...r..', '........', '.r...r..', '........', '........'],
   amne_varsel: ['...k....', '..kyk...', '.kyyyk..', '.kykyk..', 'kyyyyyk.', 'kykkkyk.', 'kkkkkkk.', '........'],
