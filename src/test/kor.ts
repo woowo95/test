@@ -1,6 +1,7 @@
 // Kör en by utan grafik och samlar nyckeltalen (registret NYCKELTAL i nyckeltal.ts säger vad de heter och betyder).
 // Vakterna larmar om något blir omöjligt (NaN, negativa förråd, folk i vattnet).
 import { trangtVidStation as SIM_TRANGT } from '../sim/stationer';
+import { forLangtArbete } from '../sim/tider';
 import { husFel, BEAT, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, vattenNu, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP, forvarAt, isTool, faltOf, faltRutor, faltAt, stationById, gridOf, getMap, djurOf, vargarOf, MATERIAL } from '../sim';
 import { NYCKELTAL, Nyckeltal, tal } from './nyckeltal';
 import { lyssnaPaTexter } from '../sim/berattelser';
@@ -27,6 +28,7 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
   const fel = new Map<string, { n: number; forsta: string }>();
   // texten görs bara första gången ett larm går, så att vakterna inte tar tid när allt är rätt
   const larm = (typ: string, text: () => string) => { const f = fel.get(typ); if (f) f.n++; else fel.set(typ, { n: 1, forsta: `dag ${dag()}: ${text()}` }); };
+  const sedda = new WeakSet<object>(); // arbetena som vakten för arbetstiderna redan sett (steg 9.2.63)
   let hunger = 0, humor = 0, humorN = 0, lit = 0, steg = 0, vintermat = Infinity, vinterved = Infinity, forraAlder = ageIndex(s);
   const ok01 = (v: number) => Number.isFinite(v) && v >= -1e-6 && v <= 1 + 1e-6;
   const dag = () => ((s.now - START) / DAY).toFixed(1);
@@ -39,6 +41,8 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
     steg++; if (s.fire.lit) lit++;
     if (steg % 288 === 0) { const hf = husFel(s); if (hf) larm('hus', () => hf); } // en gång om dagen (steg 7.2.4)
     if (steg % 12 === 0) { const tv = SIM_TRANGT(s); if (tv) larm('två vid en station', () => tv); } // en gång i timmen (steg 9.2.52)
+    // arbetstiderna (steg 9.2.63): ett arbete som börjar tar inte längre tid än sitt slag
+    for (const p of s.people) { const t = p.task; if (!t || t.phase !== 'do' || sedda.has(t)) continue; sedda.add(t); const f = forLangtArbete(t, s.now); if (f) larm('arbetstid', () => `${p.name}: ${f}`); }
     if (!(foodOf(s) >= 0) || !(amountOf(s, 'ved') >= 0)) larm('förråd', () => `mat ${foodOf(s)}, ved ${amountOf(s, 'ved')}`);
     for (const t of s.ting ?? []) if (!(t.c > 0 && t.c <= 1 + 1e-9) || [t.hos, t.lass, t.x].filter(v => v !== undefined).length > 1) larm('redskap', () => JSON.stringify(t));
     // saker i hela tal (steg 2.10.7): stackarna, det gömda och ägarnas delar, och det påbörjade under 1

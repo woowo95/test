@@ -455,3 +455,17 @@ SCENARIER.processgrupp = {
     ];
   },
 };
+
+SCENARIER.arbetstid = {
+  text: 'Steg 9.2.63: varje handling har ett tidsslag (ett arbete i TIDSLAG eller en stund), och vakten i npm test och npm run balans larmar när ett arbete tar längre tid än sitt slag',
+  kor: () => {
+    const nu = 0, MIN = 60_000;
+    const kniv30 = SIM.forLangtArbete({ act: 'kniv', until: nu + 30 * MIN }, nu), kniv3 = SIM.forLangtArbete({ act: 'kniv', until: nu + 3 * MIN }, nu);
+    const vila = SIM.forLangtArbete({ act: 'vila', until: nu + 300 * MIN }, nu);
+    return [
+      [`kniven har slaget ${SIM.tidSlagAv('kniv')}, och vakten larmar när den får 30 minuter (${kniv30 ?? 'inget larm'})`, SIM.tidSlagAv('kniv') !== 'stund' && !!kniv30],
+      ['men inte när den tar 3 minuter', !kniv3],
+      [`att vila är en stund (${SIM.tidSlagAv('vila')}) och får ta hur lång tid som helst`, SIM.tidSlagAv('vila') === 'stund' && !vila],
+    ];
+  },
+};
