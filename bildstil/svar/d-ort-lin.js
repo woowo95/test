@@ -168,10 +168,8 @@
     }
     return former(W, H, lista);
   }
-  const LINTYG = [
-    PA(hog([[1, 24, 4], [1, 24, 4], [1, 24, 4]], { topp: 5 }), 'Tre tyger vikta lika stora och staplade rakt på varandra, med väven och vikningen synliga på det översta.'),
-    PA(hog([[1, 23, 3], [2, 25, 3], [1, 24, 4], [3, 24, 3], [2, 23, 3]], { topp: 4, band: 11, lagerTon: [null, ['h', 'g', 'f', 'e'], null, ['h', 'g', 'f', 'e'], null] }), 'En högre hög av fem tyger, lite ojämnt staplade, några oblekta och gula, med ett rep om.'),
-    PA(hog([[1, 25, 4], [2, 24, 4], [1, 24, 4]], { topp: 5, flik: [13, 21] }), 'Tre vikta tyger där det översta har vikts upp och hänger ner över kanten med fransar.'),
-  ];
-  SET('f7_lintyg', KORT('f7_lintyg', 'Lintyg', 'Steg 7.7.10: lintyget, nu som en hög med vikt tyg. Tre versioner. Din kommentar förra gången: "Gör en vikt hög med tyg".', LINTYG));
+  // Björn valde version 1, de tre lika stora tygerna staplade rakt på varandra, med det röda bandet från version 2 om högen
+  SET('f7_lintyg', { id: 'f7_lintyg', namn: 'Lintyg', typ: 'janej', vad: 'Steg 7.7.10: lintyget som en hög med vikt tyg. Du valde version 1, de tre lika stora tygerna staplade rakt på varandra; nu med det röda bandet från version 2 knutet om högen. Din kommentar förra gången: ”gör denna bild fast med det röda bandet från version 2”', versioner: [
+    PA(hog([[1, 24, 4], [1, 24, 4], [1, 24, 4]], { topp: 5, band: 11 }), 'Tre tyger vikta lika stora och staplade rakt på varandra, med ett rött band om högen.'),
+  ] });
 })();

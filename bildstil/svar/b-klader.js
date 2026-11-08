@@ -101,15 +101,24 @@
         sida: { pa: [[7, 11, 'senap2'], [7, 12, 'ben2'], [8, 12, 'senap1'], [7, 13, 'senap1']] } }),
     },
   ];
-  const balteKort = (v, text) => { const V = BALTE[v], L = V.lager;
-    const b = r => window.BYBO ? window.BYBO(MED_ROCK, r, 'sta', 'hanga', null, { balte: false, krokar: 0 }) : null;
-    return kort(text, V.sak(), [[() => b('fram'), L.fram], [() => b('sida'), L.sida], [() => b('bak'), L.bak], [() => b('vast'), L.vast]]); };
-  byt(KORT('f7_balte', 'Bältet', 'Steg 7.1.4: bältet med krokarna, som bybon bär två redskap i så att händerna är fria. Redskapen syns inte längre; i stället är det bältet som är ritat på tre nya sätt. Till vänster bältet som sak, sedan bybon med rock på kartan framifrån, från sidan, bakifrån och åt väster. Din kommentar förra gången: "Verktygen i bältet behöver inte synas"', [
-    balteKort(0, 'Ett tvinnat rep som bältet i spelet, med två små krokar av böjda grenar vid höfterna.'),
-    balteKort(1, 'Ett brett bälte av mörkt skinn med ett spänne av ben framtill.'),
-    balteKort(2, 'Ett flätat rep i två färger, knutet i sidan med två ändar som hänger ner.'),
-  ]));
-
+  // Björn valde version 1 (det tvinnade repet, som redan är byggt i spelet) och vill se bältet i ett sammanhang i lagret, och
+  // mindre som symbol där. Symbolen är nu lika stor som de andra sakerna i förrådet (en fjärdedel av en ruta, 8 × 8 punkter):
+  // en liten ring av tvinnat rep med två krokar som hänger under. Bilden visar tre rutor av förrådet på marken, med fyra saker på
+  // varje som i spelet, och bybon med bältet på sig bredvid.
+  // konturen bara utanför, så att gräset syns i hålet; krokarna hänger under ringen
+  const balteSym = ['..oooo..', '.onpnpo.', 'op....no', 'on....po', '.opnpno.', '.odoodo.', '..o..o..'];
+  const LAGRET = [['rep', 'skinn', 'flinta', 'kniv'], ['grenar', 'BALTE', 'sten', 'kott'], ['fisk', 'svamp', 'torrgras', 'BALTE']];
+  byt(JANEJ('f7_balte', 'Bältet', 'Steg 7.1.4: bältet med krokarna, som bybon bär två redskap i så att händerna är fria. Du valde version 1, det tvinnade repet som redan är bältet i spelet. Som symbol i förrådet är bältet nu lika litet som de andra sakerna där (en fjärdedel av en ruta): en ring av tvinnat rep med två krokar som hänger under. Bilden visar tre rutor av förrådet med fyra saker på varje, två av dem bälten, och bybon med bältet på sig bredvid. Din kommentar förra gången: ”visa bältet i ett sammanhang när det ligger i ett lager. Gör bältet mindre som symbol i lagret”', {
+    text: 'Bältet som en liten symbol bland de andra sakerna i förrådet, och på bybon bredvid.', w: 4 + 48 + 6 + 14 + 4, h: 4 + 22 + 3, rita: (B) => {
+      window.F7.gras(B);
+      const y0 = 4 + 22 - 16 - 1;
+      LAGRET.forEach((l, t) => l.forEach((k, j) => {
+        const x = 4 + t * 16 + (j % 2) * 8, y = y0 + Math.floor(j / 2) * 8;
+        if (k === 'BALTE') lagg(B, balteSym, L, x, y); else if (typeof ritaIkon === 'function') ritaIkon(B, k, x, y);
+      }));
+      const b = window.BYBO ? window.BYBO(MED_ROCK, 'fram', 'sta', 'hanga', null, { balte: false, krokar: 0 }) : null;
+      figur(B, b, 4 + 48 + 6, 4 + 22 - 20, BALTE[0].lager.fram);
+    } }));
   // =====================================================================================================================
   // ur 7.7a-skinn-och-lader.js: plaggen på kartfiguren och som sak
   // =====================================================================================================================
@@ -150,12 +159,13 @@
   const sno = (B) => { for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) { const r = hash(x, y, 77); B.satt(x, y, B.P.i(r < 0.03 ? 'skiffer' : 'ben', r < 0.03 ? 3 : r < 0.14 ? 2 : 3)); } };
   // ett plagg i porträttet: lista är former i porträttets punkter (64 × 64) som får konturen, tunt ritas efteråt utan kontur.
   // Allt hålls innanför ramen (x och y 2–61)
-  const PORT = (lista, tunt = [], person = {}) => (B, x0, y0) => {
+  // paKropp: det tunna ritas bara på personen, inte på bakgrunden (färgerna 0–3)
+  const PORT = (lista, tunt = [], person = {}, paKropp = false) => (B, x0, y0) => {
     const ram = (f) => (x, y) => x >= 2 && x < 62 && y >= 2 && y < 62 && f(x, y);
     const g = former(64, 64, lista.map(([f, t]) => [ram(f), t])), h = tunt.length ? former(64, 64, tunt.map(([f, t]) => [ram(f), t]), false) : null;
-    portratt(B, x0, y0, {}, (x, y) => {
+    portratt(B, x0, y0, {}, (x, y, c) => {
       if (x < 2 || x >= 62 || y < 2 || y >= 62) return null;
-      const t = h && h[y][x] !== '.' ? h[y][x] : g[y][x];
+      const t = h && h[y][x] !== '.' && (!paKropp || c >= 4) ? h[y][x] : g[y][x];
       return t === '.' ? null : t === 'o' ? 'kol0' : L[t];
     }, person);
   };
@@ -199,42 +209,6 @@
   byt(JANEJ('f7_byxor', 'Byxorna', 'Steg 7.7.1: byxor som sys av 2 skinn och 1 rep och håller benen varma i kylan. Du valde version 3; formen är densamma, men byxorna är nu enfärgade: brunt läder med bara ljus och skugga, utan pälskanten i linningen och nertill och utan snörningen längs sidorna. Bilden visar byxorna som sak och på en bybo. Din kommentar förra gången: "Använd formen från version 3 men gör dem enfärgade"',
     SCEN('Långa byxor av enfärgat brunt läder.', byxSak(), [[byxFig]])));
 
-  // ---------- 7.7.2 mössan: samma tre, och i porträttet ----------
-  const mossSak = (v) => {
-    if (v === 0) return former(11, 9, [
-      [och(ell(5.5, 3.6, 4.4, 3.4), rakt(1.1, 3.6, 9.9, 5.6), rakt(1.1, 5, 3, 7.6), rakt(8, 5, 9.9, 7.6)), pals('kanin', 1, 10, 6)],
-      [rakt(1.1, 4.6, 9.9, 5.6), (x, y) => (Math.floor(x) % 3 ? 'd' : 'c')],
-      [och(punkt(1, 8), punkt(9, 8)), 'k']]);
-    if (v === 1) return former(12, 12, [
-      [poly([[1.5, 10.5], [2.5, 5], [4.5, 2], [7, 0.8], [9.2, 1.4], [8, 2.6], [9.5, 10.5]]), pals('varg', 1.5, 9.5, 8)],
-      [ell(9.6, 2.6, 1.3, 1.3), (x, y) => (y < 2.6 ? 'h' : 'g')],
-      [rakt(1.2, 8.2, 9.8, 10.5), (x, y) => (hash(Math.floor(x), Math.floor(y), 12) < 0.5 ? 'h' : 'g')]]);
-    return former(12, 8, [
-      [ell(6, 3.6, 3.6, 3.2), slat('lader', 2.5, 9.5)],
-      [och(rakt(0.8, 4.5, 11.2, 7.2), ell(6, 4.6, 5.3, 1.5)), pals('varg', 1, 11, 11)],
-      [rakt(0.8, 4.5, 11.2, 5.4), (x, y) => (hash(Math.floor(x), 7, 2) < 0.5 ? 'h' : 'g')],
-      [och(punkt(6, 0), punkt(5, 1)), 'b']]);
-  };
-  const mossFig = (v) => (satt, las, P, C) => {
-    if (v === 0) {
-      zon(satt, C, fran(5, 8), [-1], (x) => T('kanin', sida(x, 5, 8)));
-      zon(satt, C, fran(4, 9), [0, 1], (x, y) => { const r = hash(x, y, 31); const t = sida(x, 4, 9); return T('kanin', r < 0.2 ? t + 1 : t); });
-      zon(satt, C, fran(3, 10), [2], (x) => (x % 3 ? 'd' : 'c'));
-      zon(satt, C, [3, 10], [3, 4], (x) => T('kanin', x === 3 ? 3 : 1));
-      zon(satt, C, [3, 10], [5], () => 'k');
-    } else if (v === 1) {
-      const pr = [[7, -4], [8, -4], [6, -3], [7, -3], [9, -3], [5, -2], [6, -2], [7, -2], [8, -2], [10, -2]];
-      for (const [x, y] of pr) satt(x, y, C(T('varg', x === 10 ? 2 : sida(x, 5, 9))));
-      satt(10, -3, C('h')); satt(11, -2, C('g')); satt(11, -1, C('f'));
-      zon(satt, C, fran(4, 9), [-1, 0, 1], (x, y) => { const r = hash(x, y, 41); const t = sida(x, 4, 9); return T('varg', r < 0.2 ? t + 1 : r > 0.85 ? t - 1 : t); });
-      zon(satt, C, fran(3, 10), [2], (x) => T('varg', x < 5 ? 2 : 1));
-    } else {
-      zon(satt, C, fran(5, 8), [-2], (x) => T('lader', sida(x, 5, 8)));
-      zon(satt, C, fran(4, 9), [-1, 0], (x) => T('lader', sida(x, 4, 9)));
-      zon(satt, C, fran(3, 10), [1], (x) => (x % 2 ? 'h' : 'g'));
-      zon(satt, C, fran(3, 10), [2], (x) => T('varg', sida(x, 3, 10)));
-    }
-  };
   // mössan i porträttet: huvudet når från rad 7 till hakan vid rad 47, x 13–51; pannan börjar vid rad 16
   const pmossa = (v) => {
     const fur = (mat, x0, x1, seed) => (x, y) => { const r = hash(Math.floor(x), Math.floor(y), seed), t = sida(x, x0, x1); return T(mat, r < 0.16 ? t + 1 : r > 0.86 ? t - 1 : t); };
@@ -260,10 +234,33 @@
       [rakt(10, 21, 54, 22), (x) => (x > 46 ? 'e' : 'f')],
     ], [[och(punkt(32, 4), punkt(31, 5), punkt(32, 6), punkt(31, 7), punkt(32, 8)), 'a'], [och(punkt(24, 7), punkt(40, 7)), 'b']], { har: 5 });
   };
-  byt(KORT('f7_mossa', 'Mössan', 'Steg 7.7.2: en mössa av 1 skinn som håller huvudet varmt. Samma tre mössor som förut, och nu också i porträttet. Bilden visar mössan som sak, på en bybo på kartan och i porträttet. Din kommentar förra gången: "Visa hur den ser ut i porträtten också"', [
-    SCEN('Rund mössa av kaninskinn med öronlappar som knyts under hakan.', mossSak(0), [[mossFig(0), 5]], { port: pmossa(0) }),
-    SCEN('Hög, spetsig mössa av vargskinn med toppen som faller åt sidan.', mossSak(1), [[mossFig(1), 5]], { port: pmossa(1) }),
-    SCEN('En kulle av läder med en bred, uppvikt kant av vargpäls runt om.', mossSak(2), [[mossFig(2), 5]], { port: pmossa(2) })]));
+  // ---------- 7.7.2 mössan: version 2, ritad på nytt som sak och på kartfiguren ----------
+  // Björn valde version 2 och tyckte att porträttet var bra, men att mössan såg konstig ut på den lilla bybon och som sak.
+  // Porträttet är detsamma. Som sak och på kartan ritas mössan nu som i porträttet, framifrån: en rund kulle av vargskinn,
+  // ljusast till vänster, med en bred uppvikt kant runt pannan, och toppen som faller åt höger och hänger ner till kanten
+  // med en tofs. På kartan täcker kanten pannan och kullen sticker upp två punkter över huvudet, som i porträttet.
+  const mossSak2 = () => MED_KONTUR([
+    '.....hggg.......',
+    '...hhgggggfg....',
+    '..hhgggggff.gf..',
+    '..hggghggff..f..',
+    '.hhgggggfff..f..',
+    '.hgggggggff..g..',
+    'hhgghhgghhgg.hg.',
+    'gghhgghhgghh.gf.',
+    'ffffffffffee....',
+  ]);
+  const mossFig2 = (satt, las, P, C) => {
+    const f = (x, y, t) => satt(x, y, C(T('varg', t)));
+    // kullen: ljusast till vänster, mörkare till höger
+    for (const [y, x0, x1] of [[-2, 5, 8], [-1, 4, 9], [0, 3, 10]]) for (let x = x0; x <= x1; x++) f(x, y, x <= x0 + 1 ? 3 : x >= x1 - 1 ? 1 : 2);
+    // toppen faller åt höger och hänger ner vid kanten, med tofsen längst ner
+    f(9, -3, 2); f(10, -3, 2); f(11, -2, 1); f(12, -1, 1); f(12, 0, 1); f(12, 1, 0); f(12, 2, 3);
+    // den uppvikta kanten runt pannan, bredare än huvudet: ljus päls överst och en mörk rad nertill
+    for (let x = 2; x <= 11; x++) { satt(x, 1, C(hash(x, 1, 12) < 0.5 ? 'h' : 'g')); satt(x, 2, C(x > 9 ? 'e' : 'f')); }
+  };
+  byt(JANEJ('f7_mossa', 'Mössan', 'Steg 7.7.2: en mössa av 1 skinn som håller huvudet varmt. Du valde version 2, den höga av vargskinn med toppen som faller åt sidan. Porträttet är detsamma. Som sak och på bybon på kartan är mössan nu ritad som i porträttet, framifrån: en rund kulle med en bred uppvikt kant runt pannan och toppen som faller åt höger och hänger ner till kanten med en tofs. Din kommentar förra gången: ”den ser bra ut i portsättet men konstigt på den lilla gubben och som föremål i lagret.”',
+    SCEN('Mössan av vargskinn som sak, på en bybo på kartan och i porträttet.', mossSak2(), [[mossFig2, 5]], { port: pmossa(1) })));
 
   // ---------- 7.7.3 snöskorna: tvåans symbol, från olika håll ----------
   // Björn: "Använd tvåans symbol. Visa hur dem ser ut från olika vinklar". Snöskon är lång som en racket med grenarna knutna
@@ -322,22 +319,41 @@
     if (mitt === 'tandL') satt(7, 10, C('l'));
     if (sidor === 'ben') { satt(5, 9, C('l')); satt(8, 9, C('l')); } else { satt(5, 9, C('k')); satt(8, 9, C('k')); }
   };
-  // halsbandet i porträttet: repet i en båge runt halsens nederdel, ner över rocken, och de tre sakerna längst ner
-  const phals = (v) => {
-    const o = HALS[v], lista = [], snore = [utan(ell(32, 41, 12.4, 13.1), ell(32, 41, 11.1, 11.8)), (x, y) => (y < 45 ? null : rep(x, y))];
-    const fasten = [[25, 52], [32, 54], [39, 52]];
-    o.delar.forEach((d, n) => {
-      const [x0, y0] = fasten[n], ljus = (x, y, mork) => (x < x0 - 0.5 ? 'l' : x > x0 + 0.5 ? 'j' : y > y0 + mork ? 'j' : 'k');
-      // benet: en knöl i varje ände och en smal mitt; tanden: roten upptill och en böjd spets; den stora tanden är längre
-      if (d === 'ben') lista.push([och(ell(x0, y0 + 0.5, 2, 1.3), rakt(x0 - 0.8, y0, x0 + 0.8, y0 + 4.5), ell(x0, y0 + 4.5, 2, 1.3)), (x, y) => ljus(x, y, 3.5)]);
-      if (d === 'tand') lista.push([och(rakt(x0 - 1.5, y0, x0 + 1.5, y0 + 2), poly([[x0 - 1.5, y0 + 1.5], [x0 + 1.5, y0 + 1.5], [x0 + 0.8, y0 + 5], [x0 - 0.2, y0 + 6.5]])), (x, y) => (y < y0 + 1 ? 'q' : ljus(x, y, 4))]);
-      if (d === 'tandL') lista.push([och(rakt(x0 - 2, y0, x0 + 2, y0 + 2.5), poly([[x0 - 2, y0 + 2], [x0 + 2, y0 + 2], [x0 + 1.4, y0 + 4.5], [x0 + 0.4, y0 + 6], [x0 - 0.6, y0 + 7]])), (x, y) => (y < y0 + 1.2 ? 'q' : ljus(x, y, 4.5))]);
-    });
-    // repet utan kontur, så att det blir ett tunt snöre; knutarna mörka på repet
-    const tunt = [snore, ...(o.knut ? [[och(rakt(28, 53, 29.5, 54.5), rakt(34.5, 53, 36, 54.5), rakt(21, 48, 22.5, 49.5), rakt(41.5, 48, 43, 49.5)), 'a']] : [])];
-    return PORT(lista, tunt, { hud: 3, har: 1 });
+  // halsbandet i porträttet: repet kommer fram under hakan på båda sidor (rad 48; hakan går ner till rad 47, x 22–38) och
+  // hänger i en båge ner över pälskragen och bröstet, med den lägsta punkten mitt på bröstet (x 31, där rocken möts). Repet
+  // är en punkt tjockt, tvinnat i två toner, med en mörk skugga snett under på rocken. Sakerna hänger rakt ner från repet:
+  // den mittersta längst ner och de två andra högre upp på bågen, så som tyngden drar dem
+  const HDEL = {
+    ben: ['lkj', '.k.', '.k.', '.k.', 'lkj'],
+    tand: ['qqq', 'lkj', 'lkj', '.kj', '.k.'],
+    tandL: ['qqqq', 'lkkj', 'lkkj', '.kj.', '.k..'],
   };
-  byt(KORT('f7_halsband', 'Halsbandet', 'Steg 7.7.5: ett halsband av rep med tre ben eller tre vargtänder, en prydnad. Samma tre halsband som förut, och nu också i porträttet. Bilden visar halsbandet som sak, på en bybo på kartan och i porträttet. Din kommentar förra gången: "Visa hur det ser ut i porträtten"', [
+  const phals = (v) => {
+    const o = HALS[v], xc = 31, hw = 11.5, topp = 47.5, djup = 8.2, HAKA = 48;
+    const ry = x => topp + djup * (1 - Math.abs((x - xc) / hw) ** 2.4);
+    const tunt = Array.from({ length: 64 }, () => Array(64).fill('.')), del = Array.from({ length: 64 }, () => Array(64).fill('.'));
+    const repRad = {};
+    let n = 0;
+    for (let x = Math.floor(xc - hw); x < Math.ceil(xc + hw); x++) {
+      const a = Math.round(ry(x)), b = Math.round(ry(x + 1));
+      const rader = b > a ? fran(a, b - 1) : b < a ? fran(b + 1, a) : [a];
+      repRad[x] = Math.max(...rader);
+      for (const y of rader) if (y >= HAKA) tunt[y][x] = n++ % 2 ? 'j' : 'l';
+    }
+    // skuggan under repet
+    for (let y = 62; y >= 0; y--) for (let x = 0; x < 64; x++) if ('jl'.includes(tunt[y][x]) && tunt[y + 1][x] === '.') tunt[y + 1][x] = 'a';
+    // sakerna: mitten av saken under repets punkt
+    const plats = [-6.5, 0, 6.5];
+    o.delar.forEach((d, i) => {
+      const S = HDEL[d], w = S[0].length, cx = Math.round(xc + plats[i]), x0 = cx - Math.floor(w / 2), y0 = repRad[cx] + 1;
+      S.forEach((r, dy) => [...r].forEach((ch, dx) => { if (ch !== '.') { del[y0 + dy][x0 + dx] = ch; if (tunt[y0 + dy][x0 + dx] === 'a') tunt[y0 + dy][x0 + dx] = '.'; } }));
+    });
+    // knutarna på repet mellan sakerna
+    if (o.knut) for (const dx of [-3, 3]) { const x = Math.round(xc + dx), y = repRad[x]; tunt[y][x] = 'a'; tunt[y][x + 1] = 'b'; }
+    const ur = g => [(x, y) => g[Math.floor(y)][Math.floor(x)] !== '.', (x, y) => g[Math.floor(y)][Math.floor(x)]];
+    return PORT([ur(del)], [ur(tunt)], { hud: 3, har: 1 }, true);
+  };
+  byt(KORT('f7_halsband', 'Halsbandet', 'Steg 7.7.5: ett halsband av rep med tre ben eller tre vargtänder, en prydnad. I porträttet hänger halsbandet nu runt halsen: repet kommer fram under hakan på båda sidor och hänger i en båge ner över kragen och bröstet, med en skugga under, och sakerna hänger rakt ner från repet, den mittersta lägst. Bilden visar halsbandet som sak, på en bybo på kartan och i porträttet. Din kommentar förra gången: ”mycket sämre. Rita halsbandet så det hänger naturligt runt halsen i portsättet.”', [
     SCEN(HALS[0].text, halsSak(0), [[halsFig(0), 4242]], { port: phals(0) }),
     SCEN(HALS[1].text, halsSak(1), [[halsFig(1), 4242]], { port: phals(1) }),
     SCEN(HALS[2].text, halsSak(2), [[halsFig(2), 4242]], { port: phals(2) })]));
