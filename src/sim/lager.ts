@@ -384,6 +384,9 @@ const key = (x: number, y: number) => y * W + x;
 // där och räknas inte till det som ligger i förrådet eller på marken
 const ligger = (t: Ting) => t.x !== undefined && t.hos === undefined && t.lass === undefined && t.vid === undefined && t.bar === undefined && t.krok === undefined;
 const lying = (s: State) => tingOf(s).filter(ligger);
+// står redskapet på en ruta, också ett som hör till en station (lyran vid scenen): då lägger ingen något annat där. Ett hus
+// som blir förrådshus gör rutan till förråd, med det som redan står där (steg 9.1)
+const paRutan = (t: Ting) => t.x !== undefined && t.hos === undefined && t.lass === undefined && t.bar === undefined && t.krok === undefined;
 // det som ligger i förrådet, per ruta: stackarna och sedan redskapen ts (det sista på en ruta gäller, som i things), och hur
 // många redskap som ligger på varje ruta (i ett ställ står flera, steg 2.3.6)
 type Occ = Map<number, Stack> & { redskap: Map<number, number> };
@@ -391,7 +394,7 @@ function occupancy(s: State, ts = tingOf(s)) {
   const m = new Map<number, Stack>() as Occ;
   m.redskap = new Map();
   for (const a of stacksOf(s)) if (isStored(s, a.x, a.y)) m.set(key(a.x, a.y), a);
-  for (const t of ts) if (ligger(t) && isStored(s, t.x!, t.y!)) { const i = key(t.x!, t.y!); m.set(i, asStack(t)); m.redskap.set(i, (m.redskap.get(i) ?? 0) + 1); }
+  for (const t of ts) if (paRutan(t) && isStored(s, t.x!, t.y!)) { const i = key(t.x!, t.y!); m.set(i, asStack(t)); m.redskap.set(i, (m.redskap.get(i) ?? 0) + 1); }
   return m;
 }
 const asStack = (t: Ting): Stack => ({ k: t.k, n: t.c, c: t.c, x: t.x!, y: t.y!, ag: t.agare !== BYN ? { [t.agare]: t.c } : undefined, gor: t.halv?.gor, klar: t.halv && halvKlar(t.halv), id: t.id, q: t.q });
@@ -804,6 +807,7 @@ export const storeFull = (s: State) => vanliga(s) >= LAGER.forradFran && overflo
 // förrådet och redskapen får en plats av placeTools i slutet av steget
 export function enPerRuta(s: State) {
   const st = stacksOf(s), forst = new Set<number>(), flytt: Stack[] = [];
+  for (const t of tingOf(s)) if (t.vid !== undefined && paRutan(t) && isStored(s, t.x!, t.y!)) forst.add(key(t.x!, t.y!)); // det som hör till en station (lyran och trumman vid scenen) står kvar
   for (const a of st) if (isStored(s, a.x, a.y)) { const i = key(a.x, a.y); if (forst.has(i)) flytt.push(a); else forst.add(i); }
   for (const t of lying(s)) {
     if (!isStored(s, t.x!, t.y!) || forvarAt(s, t.x!, t.y!)?.redskap) continue; // i ett ställ står flera redskap
