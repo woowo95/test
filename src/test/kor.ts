@@ -12,7 +12,9 @@ export const STEG_TIM = 3600 / BEAT, STEG_DYGN = 86400 / BEAT;
 // ett dokument i artefaktens databas rymmer högst så här många KB (sparfilens delar, DELAR i steg.ts)
 export const DOK_KB = 256;
 
-export interface Resultat { seed: number; n: Nyckeltal; vakter: string[]; s: State }
+// ack: det som räknas under körningen och inte står i byn, så att flera körningar efter varandra kan läggas ihop (delby.ts, steg 9.2.17)
+export interface Ack { hunger: number; humor: number; humorN: number; lit: number; steg: number; vintermat: number; vinterved: number }
+export interface Resultat { seed: number; n: Nyckeltal; vakter: string[]; s: State; ack: Ack }
 
 // fran: kör vidare en by som redan finns (t.ex. en inläst sparfil, scenariot sparning) i stället för en ny by med seed
 export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => void, fran?: State): Resultat {
@@ -89,7 +91,7 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
     delKb: Math.round(Math.max(...Object.values(serializeParts(s)).map(d => new TextEncoder().encode(d).length)) / 1024),
   };
   const vakter = [...fel].map(([typ, f]) => `${typ} (${f.n} ggr), första: ${f.forsta}`);
-  return { seed, n, vakter, s };
+  return { seed, n, vakter, s, ack: { hunger, humor, humorN, lit, steg, vintermat, vinterved } };
 }
 
 // fler vakter efter varje steg: det som bara får finnas hos levande och sådant som håller ihop byn. De tunga körs en gång
