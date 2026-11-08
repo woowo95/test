@@ -349,6 +349,7 @@ export interface State {
   flodHot?: number; flodBlot?: number; flodMinne?: number; // medan vattnet stiger: så många rutor upp på land som byn bär undan maten från; så många som är blöta (vattnet står där nu eller stod där nyss, ingen sover där); och så högt som byn minns att vattnet nått (inget byggs där). Räknas varje timme (steg 3.8.7, flod.ts, flodHotad i sjo.ts)
   tornadoStig?: number[]; // rutorna där tornadon slet upp gräset till en jordstig, bara för bilden (steg 6.4.13): de syns tills gräset vuxit tillbaka
   tornado?: import('./tornado').Tornado; // tornadon som drar fram (steg 3.8.4, tornado.ts): banan, hur långt den kommit och vad den gjort
+  nedslag?: { x: number; y: number; t: number }[]; // blixtens senaste nedslag (steg 9.2.21, brand.ts): gränssnittet ritar blixten där
   brand?: import('./brand').Brand; // eldsvådan som brinner (steg 3.8.5, brand.ts): rutorna som brinner och det den gjort
   aska?: [number, number][]; // rutorna som brann nyss och när (steg 3.8.5, brand.ts): marken är svart en tid
   sjoTorr?: { niva: number; tomma: number[]; v: number; t: number; pa?: true; regn?: number }; // torkan (steg 3.8.2, torka.ts): så många rutor vid kanten som är torr sjöbotten, sjöarna som torkat ut, ändringsräknaren, när det senast ändrades, om torkan pågår och regnet sedan vattnet steg senast

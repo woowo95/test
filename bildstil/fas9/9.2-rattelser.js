@@ -41,4 +41,14 @@
     ['En böjd järnarm från väggen som håller facklan rakt upp.', ['........', '........', '........', '....yY..', '....YY..', '....Jj..', '....jJ..', '...KjJ..', '..K.jJ..', '.K..KK..', 'KKKKK...', 'K.......'], ['....w...', '...gwg..', '...ogo..', '..rgogr.', '...ryY..', '....YY..', '....Jj..', '...KjJ..', '..K.jJ..', '.K..KK..', 'KKKKK...', 'K.......']],
   ];
   VAL.push({ id: 'f9_uppsatt_vagg', namn: 'Facklan på väggen', typ: 'tre', vad: 'Steg 9.2.11: facklor sätts upp på väggar inne och ute, så att byn får ljus över hela byn. Varje version släckt till vänster och tänd till höger, framför en timmervägg.', versioner: FACKLOR.map(([text, slackt, tand]) => ({ text, w: 34, h: 22, rita: B => { vagg(B); ritaSprite(B, slackt, FL, 6, 6); ritaSprite(B, tand, FL, 20, 6); } })) });
+  // steg 9.2.21: blixtens nedslag, tre versioner: blixten från himlen ner till rutan och skenet runt nedslaget, på natten över gräs
+  const NATT = (B) => { for (let y = 0; y < 72; y++) for (let x = 0; x < 48; x++) B.satt(x, y, B.P.i(y > 56 ? 'barr' : 'kol', y > 56 ? ((x * 3 + y) % 7 ? 1 : 2) : ((x + y * 5) % 11 ? 0 : 1))); };
+  const SKEN = (B, cx, cy, r) => { for (let y = cy - r; y <= cy + r; y++) for (let x = cx - r; x <= cx + r; x++) { const d = Math.hypot((x - cx) * 0.8, y - cy) / r; if (d < 1 && ((x + y * 3) % 4 === 0 || d < 0.35)) B.satt(x, y, B.P.i('senap', d < 0.35 ? 3 : 2)); } };
+  const BLIXT = (B, pts, bred) => { for (let i = 0; i < pts.length - 1; i++) { const [ax, ay] = pts[i], [bx, by] = pts[i + 1], n = Math.max(Math.abs(bx - ax), Math.abs(by - ay)); for (let k = 0; k <= n; k++) { const x = Math.round(ax + (bx - ax) * k / n), y = Math.round(ay + (by - ay) * k / n); for (let d = -1; d <= bred; d++) B.satt(x + d, y, B.P.i(d < 0 || d === bred ? 'skiffer' : 'ben', d < 0 || d === bred ? 3 : 3)); } } };
+  const BLIXTAR = [
+    ['En tunn sicksack rakt ner, med ett runt sken i gult där den slår ner.', [[22, 0], [26, 12], [20, 22], [27, 34], [21, 46], [24, 58]], 1, 8],
+    ['En bredare blixt med en gren åt sidan halvvägs, och ett stort sken.', [[18, 0], [24, 14], [16, 26], [26, 40], [22, 58]], 2, 11],
+    ['En blixt i trappsteg, kantig som pixlarna, och ett litet hårt sken.', [[28, 0], [28, 10], [20, 10], [20, 24], [27, 24], [27, 40], [22, 40], [22, 58]], 1, 6],
+  ];
+  VAL.push({ id: 'f9_nedslag', namn: 'Blixtens nedslag', typ: 'tre', vad: 'Steg 9.2.21: blixten syns där den slår ner, ett kort ögonblick, från himlen ner till rutan och med ett starkare sken runt nedslaget. Både när åskan slår ner av sig själv och i testläget.', versioner: BLIXTAR.map(([text, pts, bred, r]) => ({ text, w: 48, h: 72, rita: B => { NATT(B); SKEN(B, pts[pts.length - 1][0], pts[pts.length - 1][1], r); BLIXT(B, pts, bred); if (bred > 1) BLIXT(B, [[21, 26], [12, 34], [9, 42]], 1); } })) });
 })();

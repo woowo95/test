@@ -222,10 +222,15 @@ export function tandTest(s: State, x: number, y: number): { ok: boolean; text: s
   return { ok: true, text };
 }
 
+// blixten slog ner på rutan (steg 9.2.21): den syns i gränssnittet en kort stund. Bara nedslagen den senaste timmen sparas
+export function nedslag(s: State, x: number, y: number) {
+  s.nedslag = [...(s.nedslag ?? []).filter(n => s.now - n.t < HOUR).slice(-7), { x, y, t: s.now }];
+}
 // testläget (steg 6.4.7): en vanlig blixt slår ner på rutan (x, y). Den tänder som blixten i vädret (gnistor nedan): bara
 // när det finns något som brinner och marken är torr nog, med en ny slumpsiffra för varje blixt. Svaret säger om den tände och varför
 export function blixtTest(s: State, x: number, y: number): { ok: boolean; text: string } {
   if (!inMap(x, y)) return { ok: false, text: 'Rutan är utanför kartan' };
+  nedslag(s, x, y);
   const i = y * W + x, k = s.brand && kartaOf(s.brand)[i], dry = torrhet(s), fu = bransleAv(s)(i);
   const g = groundOf(s), vad = g.tiles[i] === T.Vatten ? 'i vattnet' : !isSoil(g.tiles[i]) ? 'i berget' : markslag(g, i) === 'bar' ? 'på bar jord' : 'där inget brinner';
   const var_ = `${Math.round(Math.hypot(x - eldPlats(s).x, y - eldPlats(s).y))} rutor ${vaderstreck(s, x, y)} om elden`;
@@ -323,7 +328,7 @@ function gnistor(s: State, dtSec: number, dry: number) {
   for (const f of brasorOf(s)) if (f.lit) fran(f.at!.x, f.at!.y, hearthOf(f).spread, f.id! + 1); // de andra lägereldarna gnistrar som den första (steg 4.5.6.8)
   if (Math.floor(s.now / HOUR) !== Math.floor((s.now - dtSec * SEC) / HOUR) && blixtNu(s) && ur(s, 0, 3856) < BRAND.blixt) {
     const e = bynsMitt(s), R = BRAND.blixtR, nx = e.x + Math.round((ur(s, 0, 3857) * 2 - 1) * R), ny = e.y + Math.round((ur(s, 0, 3858) * 2 - 1) * R);
-    if (inMap(nx, ny)) { count(s, 'blixt nara'); tand(s, ny * W + nx, 'blixt', ur(s, 0, 3859) / dry); }
+    if (inMap(nx, ny)) { count(s, 'blixt nara'); nedslag(s, nx, ny); tand(s, ny * W + nx, 'blixt', ur(s, 0, 3859) / dry); }
   }
 }
 
