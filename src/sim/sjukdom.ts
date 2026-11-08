@@ -14,6 +14,9 @@ import { balans } from './balans';
 import { ageOf, ALDER, KROPP, count } from './folk';
 import { clamp, rnd } from './slump';
 import { naringNu, mattnad } from './naring';
+import { living, byId } from './folk';
+import { roomAt } from './byggnad';
+import { eldarOf, eldXY } from './eld';
 
 export type SjukOrsak = 'vatten' | 'skamd' | 'ratt' | 'svamp' | 'kyla' | 'smitta';
 export interface SjukStadium { fran: number; text: string } // från hur långt sjukdomen kommit (0–1): det kortet säger
@@ -81,11 +84,14 @@ export const SJUK = balans('sjuk', {
   // chansen är lika mycket mindre, och lika många är sjuka som förut. Vatten och skämd mat ger magsjuka, rått kött
   // matförgiftning och kylan förkylning
   vatten: 0.11, skamd: 0.22, ratt: 0.3, kyla: 0.12,
+  // smittan (steg 9.5.3): så här nära (rutor) räknas som bredvid, och så här nära samma eld som att sitta vid den
+  nara: 1.5, eldNara: 3,
+  rum: 0.6, eld: 0.5, // i samma rum och vid samma eld smittar det så här mycket av radens smitta (bredvid: hela)
 });
 
 // den sjukes tillstånd: raden, när hen smittades, när tecknen kommer (inkubationen), sjukdomen och motståndet (0–1), och
 // slumpfaktorn på sjukdomens takt (dras när hen insjuknar)
-export interface Sjuk { k: SjukId; t0: number; tecken: number; grad: number; mot: number; r: number; why?: string }
+export interface Sjuk { k: SjukId; t0: number; tecken: number; grad: number; mot: number; r: number; why?: string; av?: number } // av: den som smittade hen (9.5.3)
 
 const mellan = ([a, b]: [number, number], r: number) => a + (b - a) * r;
 // farligheten för p: f så att slumpfaktorn gånger f är större än motståndets vanliga takt för radens andel (dod), när
@@ -121,6 +127,26 @@ export const svartSjukNu = (p: Person, now: number) => isSick(p, now) && (!p.sju
 export const ligger = (p: Person, now: number) => isSick(p, now) && (!p.sjuk || !!SJUKDOMAR[p.sjuk.k].foljd.feber || p.sjuk.grad >= 0.5);
 // hur mycket den sjuke orkar i arbetet (1 för den som är frisk)
 export const sjukOrkar = (p: Person, now: number) => !isSick(p, now) ? 1 : p.sjuk ? SJUKDOMAR[p.sjuk.k].arbete : 0.3;
+
+// smittan varje timme (steg 9.5.3, steg.ts): de som står bredvid en sjuk som smittar, är i samma rum eller sitter vid samma eld
+// prövas med radens smitta; den som är immun eller redan sjuk smittas inte. Också den som ännu inte har tecken smittar
+// (inkubationen), så att sjukdomen hinner spridas innan någon märker det. Djuren smittas inte
+export function smittaTimme(s: State) {
+  const sjuka = living(s).filter(p => p.sjuk && SJUKDOMAR[p.sjuk.k].smitta > 0);
+  if (!sjuka.length) return;
+  const eldar = eldarOf(s).map(f => eldXY(s, f)), vidEld = (p: Person) => eldar.findIndex(e => Math.hypot(p.x - e.x - 0.5, p.y - e.y - 0.5) < SJUK.eldNara);
+  for (const p of sjuka) {
+    const k = p.sjuk!.k, d = SJUKDOMAR[k], rp = roomAt(s, p.x, p.y), ep = vidEld(p);
+    for (const q of living(s)) {
+      if (q === p || q.sjuk || q.immun?.[k]) continue;
+      const nara = Math.hypot(q.x - p.x, q.y - p.y) < SJUK.nara, rum = !!rp && roomAt(s, q.x, q.y) === rp, eld = ep >= 0 && vidEld(q) === ep;
+      const v = nara ? 1 : rum ? SJUK.rum : eld ? SJUK.eld : 0;
+      if (v > 0 && rnd(s, 'halsa', q) < d.smitta * v && insjukna(s, q, k)) { q.sjuk!.av = p.id; count(s, 'smittad_' + k); }
+    }
+  }
+}
+// vem som smittade hen (steg 9.5.3), om någon
+export const smittadAv = (s: State, p: Person) => p.sjuk?.av !== undefined ? byId(s, p.sjuk.av) : undefined;
 
 // förloppet varje slag (steg.ts): sjukdomen och motståndet växer. Svarar med dödsorsaken om sjukdomen vann
 export function sjukSteg(s: State, p: Person, dtSec: number, sover: boolean, arbetar: boolean, lakeort = false): SjukId | undefined {

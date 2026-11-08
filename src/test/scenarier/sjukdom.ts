@@ -43,3 +43,31 @@ SCENARIER.sjukdom = {
     ];
   },
 };
+
+SCENARIER.smitta = {
+  text: 'Steg 9.5.3: varje timme prövas de som står bredvid en sjuk, är i samma rum eller sitter vid samma eld med sjukdomens smitta. Inkubationen döljer sjukdomen så att den hinner spridas, den som är immun smittas inte, och det som inte smittar sprids inte',
+  kor: () => {
+    const { insjukna } = SIM;
+    // en by där en vuxen får mässlingen; en annan är immun. Byn följs i två dygn (två år i spelet)
+    const s = createState(5, START), folk = living(s), [p, imm] = folk.filter(q => SIM.ageOf(q, s.now) >= 18);
+    imm.immun = { massling: 1 };
+    insjukna(s, p, 'massling');
+    let doldSmittad = 0;
+    kor2(s, 48, () => { for (const q of living(s)) if (q.sjuk?.av !== undefined && !SIM.isSick(q, s.now)) doldSmittad = Math.max(doldSmittad, 1); });
+    const smittade = Number(s.stat?.smittad_massling ?? 0);
+    const immunFri = imm.sjuk?.k !== 'massling';
+    // matförgiftningen smittar inte
+    const m = createState(5, START), [mp] = living(m).filter(q => SIM.ageOf(q, m.now) >= 18);
+    insjukna(m, mp, 'matforgiftning');
+    kor2(m, 24);
+    const ingen = (m.stat?.smittad_matforgiftning ?? 0) === 0;
+    return [
+      [`mässlingen sprids i byn (${smittade} smittade, ${folk.length} i byn från början)`, smittade >= 2],
+      ['den som smittats har först inga tecken (inkubationen)', doldSmittad > 0],
+      ['den som är immun smittas inte', immunFri],
+      ['matförgiftningen smittar inte', ingen],
+    ];
+  },
+};
+// kör byn h timmar, med fn efter varje timme
+function kor2(s: SIM.State, h: number, fn?: () => void) { for (let i = 0; i < h; i++) { for (let k = 0; k < 12; k++) SIM.step(s, 300); fn?.(); } }
