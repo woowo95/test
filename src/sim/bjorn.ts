@@ -9,7 +9,7 @@ import { kronikaBer, och, personFalt, talOrd } from './berattelser';
 import { blodas } from './blod';
 import { blocked, freeNear, roomAt } from './byggnad';
 import { bjornVarden, bjornarOf, dodaDjur, halsaOf, satDjurHalsa } from './djur';
-import { ALDER, KROPP, ageOf, byId, count, forstaGang, getRel, isSick, livet, living, log, ovning, stat, think } from './folk';
+import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, getRel, isSick, livet, living, log, ovning, stat, think } from './folk';
 import { isLight, yearNo } from './tid';
 import { halsa, kanGa, skada } from './halsa';
 import { avbryt, foodOf } from './lager';
@@ -17,11 +17,13 @@ import { die } from './liv';
 import { notis } from './notiser';
 import { handelse, larmNu } from './rykten';
 import { clamp, rnd } from './slump';
-import { SLAGSMAL, VAPEN, Avsikt, Strid, Uppstallning, foljet, nyStrid, personKampe, slitKastat, sparaStrid, stridTillSlut, svartSkadad, vadretIStriden } from './strid';
+import { SLAGSMAL, VAPEN, Avsikt, Strid, Uppstallning, foljet, personKampe, slitKastat, sparaStrid, svartSkadad, vadretIStriden } from './strid';
+import { DjurKamp, SLUT, arena, borjaDjurStrid, djurIStrid, djurStridNu, gerSigIn, iArena } from './djurstrid';
 import { ledareOf } from './styre';
 import { lamnaFallt, styckaFallt } from './styckning';
 import { upplev } from './uppvaxt';
-import { HOUR, MIN, Person, SEC, State, Task } from './typer';
+import { H, HOUR, MIN, Person, SEC, State, Task, W } from './typer';
+import { bynsMitt } from './omrade';
 
 export const BJORNMOTE = balans('bjornmote', {
   nara: 2.5, // så nära (rutor) man ska komma björnen för att överraska den ...
@@ -31,6 +33,10 @@ export const BJORNMOTE = balans('bjornmote', {
   rädd: 0.25, // så mycket sämre humör den får som ser björnen på nära håll
   räddTim: 6, // i så många timmar
   med: 2.5, // de som är så här nära (rutor) den som anfalls slåss med
+  arena: 12, // striden på kartan (steg 9.2.29): arenan är så här många rutor i sidan, med björnen i mitten
+  undanTim: 4, // efter en strid som björnen vunnit eller gett upp går den bort från byn och kommer inte tillbaka på så här många timmar (steg 9.2.30) ...
+  undanR: 30, // ... så här många rutor bort från platsen
+  gaMed: 0.6, // den som jagar nära en björnstrid går med om modet (0 till 1) är minst så här stort, annars håller hen sig undan (steg 9.2.29)
 });
 
 export const BJORNJAKT = balans('bjornjakt', {
@@ -52,6 +58,7 @@ export const BJORNJAKT = balans('bjornjakt', {
   samlasTim: 0.5, // ... när de andra kommit fram, eller när den första väntat så här många timmar
   gar: 0.2, // björnen märker jägarna och går undan innan de hinner fram med den här chansen
   ungarMod: 1.4, // björnen med ungar slåss modigare
+  avstand: 5, // på björnjakten börjar jägarna så här många rutor från björnen i striden (steg 9.2.29)
 });
 
 const vaken = (p: Person) => p.task?.act !== 'sova';
@@ -62,6 +69,7 @@ export function bjornSteg(s: State) {
   const alla = bjornarOf(s);
   const b = alla.find(d => d.art === 'bjorn');
   if (!b) return;
+  if (djurIStrid(s, 'bjorn')) { jagareVidStriden(s); return; } // striden pågår på kartan (steg 9.2.29)
   const ungar = alla.filter(d => d.art === 'bjornunge'), R = ungar.length ? BJORNMOTE.naraUngar : BJORNMOTE.nara;
   const ar = yearNo(s, s.now);
   if (s.bjornMott && s.bjornMott.ar !== ar) s.bjornMott = undefined;
@@ -134,6 +142,16 @@ export function bjornjaktVal(s: State, p: Person) {
 // jägaren på väg (MEDAN i steg.ts): följer björnen och anfaller den med de jägare som är nära
 export function bjornjaktSteg(s: State, p: Person, tk: Task) {
   if (tk.carry || tk.prog || tk.items) return;
+  // striden med björnen har börjat (steg 9.2.29): jägarna som kommer efter går dit och ger sig in i den
+  const g = djurIStrid(s, 'bjorn');
+  if (g && !g.folk.includes(p.id) && g.dx !== undefined && g.dy !== undefined) {
+    if (Math.hypot(p.x - g.dx, p.y - g.dy) <= BJORNMOTE.med * 2) {
+      const st = djurStridNu(g, s.now), q = iArena({ ox: g.ox, oy: g.oy, w: g.u.w, h: g.u.h }, p.x, p.y), id = g.u.kampar.length + (g.in?.length ?? 0) + 1;
+      if (!st.slut) { gerSigIn(s, g, p, personKampe(s, p, id, 0, q.x, q.y), st); return; }
+    }
+    tk.tx = g.dx; tk.ty = g.dy; tk.phase = 'go';
+    return;
+  }
   const j = s.bjornJakt, alla = bjornarOf(s), b = alla.find(d => d.art === 'bjorn');
   if (!j?.jagare?.includes(p.id) || !b || s.now >= (j.jaktTill ?? 0)) { tk.until = s.now; tk.prog = 1; if (j && (!b || s.now >= (j.jaktTill ?? 0))) jaktSlut(s); return; }
   if (Math.hypot(p.x - b.x, p.y - b.y) > BJORNJAKT.na) {
@@ -155,25 +173,42 @@ export function bjornjaktSteg(s: State, p: Person, tk: Task) {
   bjornStrid(s, b.id, med, alla.some(d => d.art === 'bjornunge'), 'doda');
 }
 
-// en strid med björnen: den anfaller den som kom för nära (skada), eller jägarna anfaller den (doda). En fälld björn
-// styckas och bärs hem av den första som står kvar och kan stycka den; annars ligger den kvar där den föll
-function bjornStrid(s: State, id: number, folk: Person[], medUngar: boolean, avsikt: Avsikt): Strid {
-  const W0 = 14, H0 = 8, d = bjornVarden();
-  const kampar: Uppstallning['kampar'] = folk.map((p, i) => personKampe(s, p, 0, 0, 3, H0 / 2 + (i - (folk.length - 1) / 2)));
-  kampar.push({ id: 0, namn: d.namn, sida: 1, djur: 'bjorn', st: { styrka: d.styrka, uthallighet: d.uthallighet, mod: d.mod * (medUngar ? BJORNJAKT.ungarMod : 1), smidighet: d.smidighet, skicklighet: d.skicklighet }, vapen: d.vapen, klader: [], fart: d.fart, x: W0 - 4, y: H0 / 2 });
+// en strid med björnen: den anfaller den som kom för nära (skada), eller jägarna anfaller den (doda). Striden spelas upp på
+// kartan (steg 9.2.29, djurstrid.ts): björnen står där den är och människorna där de står, och när den är slut gör bjornSlut
+// skadorna riktiga. En fälld björn styckas och bärs hem av den första som står kvar och kan stycka den; annars ligger den
+// kvar där den föll
+function bjornStrid(s: State, id: number, folk: Person[], medUngar: boolean, avsikt: Avsikt) {
+  const d = bjornVarden(), b = bjornarOf(s).find(q => q.id === id) ?? { x: folk[0].x + 1, y: folk[0].y };
+  const a = arena(b.x, b.y, BJORNMOTE.arena, BJORNMOTE.arena), bp = iArena(a, b.x, b.y);
+  // på björnjakten börjar jägarna en bit från björnen (BJORNJAKT.avstand), åt det håll de kom ifrån, så att spjuten hinner kastas
+  const kampar: Uppstallning['kampar'] = folk.map((p, i) => {
+    let q = iArena(a, p.x, p.y);
+    const d = Math.hypot(q.x - bp.x, q.y - bp.y);
+    if (avsikt === 'doda' && d < BJORNJAKT.avstand) { const v = d > 0.01 ? Math.atan2(q.y - bp.y, q.x - bp.x) : Math.PI + i; q = iArena(a, a.ox + bp.x + Math.cos(v) * BJORNJAKT.avstand, a.oy + bp.y + Math.sin(v) * BJORNJAKT.avstand); }
+    return personKampe(s, p, i + 1, 0, q.x, q.y);
+  });
+  kampar.push({ id: 0, namn: d.namn, sida: 1, djur: 'bjorn', st: { styrka: d.styrka, uthallighet: d.uthallighet, mod: d.mod * (medUngar ? BJORNJAKT.ungarMod : 1), smidighet: d.smidighet, skicklighet: d.skicklighet }, vapen: d.vapen, klader: [], fart: d.fart, x: bp.x, y: bp.y });
   kampar.forEach((k, i) => { k.id = i + 1; });
   foljet(s, kampar);
-  const u: Uppstallning = { avsikt, w: W0, h: H0, ...vadretIStriden(s), kampar };
-  const fro = Math.floor(rnd(s, 'strid') * 2147483647), st = nyStrid(u, fro);
-  st.kampar[folk.length].blod = halsaOf(s, id).blod;
-  stridTillSlut(st);
+  const u: Uppstallning = { avsikt, w: a.w, h: a.h, ...vadretIStriden(s), kampar };
+  const jakt = avsikt === 'doda';
+  const g: DjurKamp = { art: 'bjorn', u, fro: Math.floor(rnd(s, 'strid') * 2147483647), blod: { [folk.length + 1]: halsaOf(s, id).blod }, in: [], t0: s.now, ox: a.ox, oy: a.oy,
+    folk: folk.map(p => p.id), djur: [id], avsikt, orsak: jakt ? 'På björnjakt' : 'Anfölls av en björn', ...(medUngar ? { ungar: 1 as const } : {}) };
+  borjaDjurStrid(s, g, folk);
+}
+// striden med björnen är slut (djurStriderSteg): det som hände blir riktigt
+function bjornSlut(s: State, g: DjurKamp, st: Strid) {
+  const id = g.djur[0], avsikt = g.avsikt, medUngar = !!g.ungar, u = g.u, fro = g.fro;
+  const folk = g.folk.map(pid => byId(s, pid)!).filter(p => !!p && alive(p));
+  if (!folk.length) return;
+  const kampeAv = (p: Person) => st.kampar.find(k => k.pid === p.id)!;
   const vinnare = st.slut!.vinnare, jakt = avsikt === 'doda';
-  sparaStrid(s, { t: s.now, orsak: jakt ? 'björnjakt' : 'björnen anföll', u, fro, vinnare }); count(s, 'bjornstrid');
-  const bk = st.kampar[folk.length], falld = bk.lage === 'dod';
+  sparaStrid(s, { t: g.t0, orsak: jakt ? 'björnjakt' : 'björnen anföll', u, fro, vinnare, ...(g.in?.length ? { in: g.in } : {}), ...(g.blod ? { blod: g.blod } : {}) }); count(s, 'bjornstrid');
+  const bk = st.kampar.find(k => k.djur === 'bjorn')!, falld = bk.lage === 'dod';
   if (falld) {
     dodaDjur(s, id); s.bjornFalld = yearNo(s, s.now); count(s, 'bjornDodadIStrid');
     const forsta = forstaGang(s, 'bjornDodad');
-    const r = [...st.logg].reverse().find(x => x.h === 'traff' && x.b === bk.id), fallde = r && folk[r.a! - 1];
+    const r = [...st.logg].reverse().find(x => x.h === 'traff' && x.b === bk.id), fk = r && st.kampar.find(k => k.id === r.a), fallde = fk?.pid !== undefined ? byId(s, fk.pid) : undefined;
     if (fallde) {
       handelse(s, fallde, 'bjorndodare'); livet(s, fallde, 'bjornar'); upplev(s, fallde, 'fallde');
       if (forsta) { log(s, `${fallde.name} dödade byns första björn.`, 'world', [fallde.id]); kronikaBer(s, 'k_forstaBjorn', fallde.id, personFalt(fallde)); }
@@ -181,8 +216,9 @@ function bjornStrid(s: State, id: number, folk: Person[], medUngar: boolean, avs
   } else satDjurHalsa(s, id, bk.blod, halsaOf(s, id).sar + bk.skador.reduce((a, w) => a + w.g, 0));
   const svara: string[] = [];
   let bar = false;
-  st.kampar.slice(0, folk.length).forEach((k, i) => {
-    const p = folk[i];
+  folk.forEach(p => {
+    const k = kampeAv(p);
+    if (!k) return;
     let dod = k.lage === 'dod';
     for (const w of k.skador) {
       if (!dod && skada(s, p, w.d, w.k, w.g, 'bjorn', jakt ? 'på björnjakt' : 'när en björn anföll')) dod = true;
@@ -197,7 +233,7 @@ function bjornStrid(s: State, id: number, folk: Person[], medUngar: boolean, avs
     if (jakt) think(p, falld ? 'Fällde björnen på björnjakten' : 'Björnen kom undan', falld ? SLAGSMAL.vann : -SLAGSMAL.forlora, s.now, SLAGSMAL.tankeTim * HOUR);
     else think(p, 'Anfölls av en björn', -SLAGSMAL.forlora, s.now, SLAGSMAL.tankeTim * HOUR);
     avbryt(s, p);
-    const tid = Math.max(SLAGSMAL.minst, st.slut!.t) * SEC;
+    const tid = SLAGSMAL.minst * SEC; // striden har redan pågått på kartan (steg 9.2.29)
     // den första som står kvar styckar den fällda björnen och bär hem det hen orkar; resten ligger i en hög där den föll
     if (falld && !bar && k.lage === 'strid') {
       const t: Task = { act: 'bjornjakt', phase: 'do', tx: p.x, ty: p.y, until: s.now + tid, carry: 1, prog: 1, why: 'Bär hem en fälld björn' };
@@ -214,5 +250,30 @@ function bjornStrid(s: State, id: number, folk: Person[], medUngar: boolean, avs
   log(s, text, 'world', folk.map(p => p.id)); notis(s, 'strid', text, folk.map(p => p.id), { x: Math.floor(folk[0].x), y: Math.floor(folk[0].y) });
   if (jakt) kronikaBer(s, falld ? 'k_bjornjakt' : 'k_bjornjaktMiss', folk[0].id, { folk: namn, svara: svaraText });
   else kronikaBer(s, 'k_bjornAnfall', folk[0].id, { folk: namn, svara: svaraText });
-  return st;
+  if (!falld) bjornGarUndan(s, folk[0].x, folk[0].y); // björnen som vunnit eller gett upp går bort från byn (steg 9.2.30)
+}
+SLUT.bjorn = bjornSlut;
+
+// den som jagar nära en björnstrid (steg 9.2.29) avbryter jakten: hen går med i striden om modet räcker, annars håller hen sig undan
+function jagareVidStriden(s: State) {
+  const g = djurIStrid(s, 'bjorn');
+  if (!g || g.dx === undefined || g.dy === undefined) return;
+  const st = djurStridNu(g, s.now);
+  for (const p of living(s)) {
+    if (g.folk.includes(p.id) || !p.task || !JAGAR.has(p.task.act) || Math.hypot(p.x - g.dx, p.y - g.dy) > BJORNMOTE.med) continue;
+    if (stat(p, 'mod', s.now) / 20 >= BJORNMOTE.gaMed) {
+      const q = iArena({ ox: g.ox, oy: g.oy, w: g.u.w, h: g.u.h }, p.x, p.y), id = g.u.kampar.length + (g.in?.length ?? 0) + 1;
+      gerSigIn(s, g, p, personKampe(s, p, id, 0, q.x, q.y), st); count(s, 'bjornstridGickMed');
+    } else {
+      avbryt(s, p); think(p, 'Såg en björn slåss med folk', -BJORNMOTE.rädd, s.now, BJORNMOTE.räddTim * HOUR); count(s, 'bjornstridUndan');
+    }
+  }
+}
+const JAGAR = new Set(['jakt', 'kaninjakt', 'radjurjakt', 'fageljakt']); // de som jagar byte (inte björnjakten, som redan slåss)
+// björnen som vunnit eller gett upp (steg 9.2.30) går bort från byn och människorna, och kommer inte tillbaka på några timmar
+function bjornGarUndan(s: State, x: number, y: number) {
+  const e = bynsMitt(s), v = Math.atan2(y - e.y, x - e.x) || 0;
+  const tx = Math.max(1, Math.min(W - 2, x + Math.cos(v) * BJORNMOTE.undanR)), ty = Math.max(1, Math.min(H - 2, y + Math.sin(v) * BJORNMOTE.undanR));
+  s.bjornUndan = { fran: s.now, till: s.now + BJORNMOTE.undanTim * HOUR, x0: x, y0: y, x1: tx, y1: ty };
+  count(s, 'bjornGickUndan');
 }

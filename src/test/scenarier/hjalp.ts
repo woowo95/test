@@ -201,3 +201,6 @@ export function utanWebblasare() {
   const g = globalThis as { document?: unknown };
   g.document ??= { createElement: () => ({ getContext: () => ({ fillRect() {}, createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }), toDataURL: () => 'data:,' }) };
 }
+
+// striderna mot djur spelas upp på kartan (steg 9.2.29): kör dem till slutet, fem sekunder i taget
+export function slutStrider(s: SIM.State) { for (let n = 0; s.djurStrider?.length && n < 200; n++) { s.now += 5_000; SIM.djurStriderSteg(s); } }

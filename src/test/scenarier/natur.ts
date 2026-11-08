@@ -4,7 +4,7 @@ import * as SIM from '../../sim';
 const { RT, STATION } = SIM;
 import { FOREST, isSoil } from '../../sim/vag';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
-import { setMat, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank, medHus, nyInvanare } from './hjalp';
+import { setMat, slutStrider, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank, medHus, nyInvanare } from './hjalp';
 
 SCENARIER.djur = {
   text: 'Kaniner syns där det finns vilt, skuttar omkring och hoppar undan folk. Jakt fångar hela kaniner som bärs hem hela och äts som de är; med flintkniv slaktas de till mer kött, ben, skinn och senor',
@@ -1902,6 +1902,7 @@ SCENARIER.kallar = {
     pa(); for (let i = 0; i < 40 && !is.f.jagare; i++) SIM.jaktBeslut(is.s, is.f, living(is.s));
     const isJag = is.f.jagare?.length ?? 0, isStrid0 = is.s.stat?.vargstrid ?? 0;
     for (let i = 0; i < 12 * 4 && is.f.jagare; i++) { pa(); step(is.s, SIM.BEAT); }
+    slutStrider(is.s);
     // står flocken längre ut än stranden når (ingen land inom fem rutor) kallar ingen till jakt (kodgenomgången 3.10.25)
     const ut = by(); ut.vuxna[3].pot.mod = 16; ut.f.sag = ut.vuxna[3].id; ut.s.is = { vatten: -5, cm: 30 };
     let utR = { x: -1, y: -1, d: Infinity };
@@ -2092,7 +2093,7 @@ SCENARIER.stridkronika = {
       const f: SIM.Vargflock = { id, vargar: [10_000_000 + id * 8], x: c.x + 5, y: c.y, mx: c.x + 5, my: c.y, gar: v.now + 48 * HOUR, hunger: 0.5, gor: 'stryker' };
       (v.vargar ??= []).push(f);
       const n0 = krn(v).length;
-      SIM.vargStrid(v, f, jag.filter(x => x.health > 0), 'doda', 'på vargjakt');
+      SIM.vargStrid(v, f, jag.filter(x => x.health > 0), 'doda', 'på vargjakt'); slutStrider(v);
       const nya = slag(v).slice(n0);
       if (nya.some(t => t === 'k_vargjakt' || t === 'k_vargSprang')) jakter++;
       forsta += slag(v).includes('k_forstaVarg') ? 1 : 0;

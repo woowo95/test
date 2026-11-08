@@ -8,7 +8,7 @@ import { bedFor } from './bygg';
 import { Bit, Rum, bitAt, blocked, dorrDef, roomAt, freeNear, gridOf } from './byggnad';
 import { dodaDjur, dragOf, djurOf, grupperOf, halsaOf, satDjurHalsa } from './djur';
 import { upplev } from './uppvaxt';
-import { ALDER, KROPP, ageOf, byId, count, forstaGang, franMitt, getRel, isSick, livet, living, log, ovning, stat, think } from './folk';
+import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, franMitt, getRel, isSick, livet, living, log, ovning, stat, think } from './folk';
 import { halsa, kanGa, skada } from './halsa';
 import { Act, larmAvbryter } from './handlingar';
 import { brinnerNara, eldXY, eldarOf } from './eld';
@@ -20,7 +20,8 @@ import { handelse, larma, larmNu, ryktbarhet } from './rykten';
 import { SAKER } from './saker';
 import { vattenNu } from './sjo';
 import { clamp, rnd } from './slump';
-import { SLAGSMAL, VAPEN, Avsikt, Strid, Uppstallning, djurKampe, foljet, nyStrid, personKampe, slitKastat, sparaStrid, stridTillSlut, svartSkadad, vadretIStriden } from './strid';
+import { SLAGSMAL, VAPEN, Avsikt, Strid, Uppstallning, djurKampe, foljet, personKampe, slitKastat, sparaStrid, svartSkadad, vadretIStriden } from './strid';
+import { DjurKamp, SLUT, arena, borjaDjurStrid, iArena } from './djurstrid';
 import { ledareOf } from './styre';
 import { ageIndex, iIstiden, isLight } from './tid';
 import { hardVinter } from './vader';
@@ -111,6 +112,8 @@ export const VARG = balans('varg', {
   kallarBas: 0.7, kallarMod: 0.6, // ... och kvoten gånger kallarBas + kallarMod × kallarens mod / 20
   stridModBas: 0.6, stridModDrag: 0.8, // vargens mod i striden gånger stridModBas + stridModDrag × vargens drag (0–1) ...
   stridHungerBas: 0.7, stridHunger: 0.6, // ... och gånger stridHungerBas + stridHunger × flockens hunger
+  arena: 14, // striden på kartan (steg 9.2.29): arenan är så här många rutor i sidan, med flocken i mitten ...
+  avstand: 5, // ... och på vargjakten börjar jägarna så här många rutor från flocken
 });
 
 const flockarna = (s: State) => s.vargar ?? [];
@@ -501,41 +504,56 @@ export function vargjaktSteg(s: State, p: Person, tk: Task) {
     kronikaBer(s, 'k_vargSprang', p.id, { ...personFalt(p), med: med.length > 1 ? ` med ${talOrd(med.length - 1)} till` : '' }); // steg 3.7.16
     return;
   }
-  vargStrid(s, f, med, 'doda', 'på vargjakt');
-  if (f.vargar.length) f.gor = 'flyr'; // de som är kvar drar vidare
+  vargStrid(s, f, med, 'doda', 'på vargjakt'); // de som är kvar drar vidare när striden är slut (vargSlut)
 }
 
-// en strid mellan folk och flocken. De dödade vargarna bärs hem av jägarna (på vargjakt)
-export function vargStrid(s: State, f: Vargflock, folk: Person[], avsikt: Avsikt, orsak: string): Strid {
-  const W0 = 16, H0 = 8, n = f.vargar.length, modF = 1 + VARG.flockMod * (n - 1);
-  const kampar: Uppstallning['kampar'] = folk.map((p, i) => personKampe(s, p, 0, 0, 3, H0 / 2 + (i - (folk.length - 1) / 2)));
+// en strid mellan folk och flocken, uppspelad på kartan (steg 9.2.29, djurstrid.ts): vargarna står där flocken är och
+// människorna där de står, och när den är slut gör vargSlut skadorna riktiga. De dödade vargarna bärs hem av jägarna (på vargjakt)
+export function vargStrid(s: State, f: Vargflock, folk: Person[], avsikt: Avsikt, orsak: string) {
+  const n = f.vargar.length, modF = 1 + VARG.flockMod * (n - 1), a = arena(f.x, f.y, VARG.arena, VARG.arena);
+  const kampar: Uppstallning['kampar'] = folk.map((p, i) => {
+    let q = iArena(a, p.x, p.y);
+    const c = iArena(a, f.x, f.y), d = Math.hypot(q.x - c.x, q.y - c.y);
+    if (avsikt === 'doda' && d < VARG.avstand) { const v = d > 0.01 ? Math.atan2(q.y - c.y, q.x - c.x) : Math.PI + i; q = iArena(a, f.x + Math.cos(v) * VARG.avstand, f.y + Math.sin(v) * VARG.avstand); }
+    return personKampe(s, p, i + 1, 0, q.x, q.y);
+  });
   f.vargar.forEach((id, j) => {
-    const d = dragOf('varg', id), k = djurKampe('varg', 0, 1, W0 - 3, H0 / 2 + (j - (n - 1) / 2));
+    const d = dragOf('varg', id), v = j / Math.max(1, n) * Math.PI * 2, q = iArena(a, f.x + (n > 1 ? Math.cos(v) : 0), f.y + (n > 1 ? Math.sin(v) : 0)), k = djurKampe('varg', 0, 1, q.x, q.y);
     k.fart = d.snabbhet; k.st.styrka = d.styrka; k.st.mod = clamp(k.st.mod * (VARG.stridModBas + VARG.stridModDrag * (d.mod ?? 0.5)) * modF * (VARG.stridHungerBas + VARG.stridHunger * f.hunger), 1, 20);
     if (j === 0 && n > 1) { k.ledare = 'fram'; k.namn = 'Ledarvargen'; } else if (n > 1) k.namn = `Varg ${j + 1}`; // ledarvargen: faller den sjunker modet hos de andra
     kampar.push(k);
   });
   kampar.forEach((k, i) => { k.id = i + 1; });
   foljet(s, kampar);
-  const u: Uppstallning = { avsikt, w: W0, h: H0, ...vadretIStriden(s), kampar };
-  const fro = Math.floor(rnd(s, 'strid') * 2147483647), st = nyStrid(u, fro);
-  f.vargar.forEach((id, j) => { st.kampar[folk.length + j].blod = halsaOf(s, id).blod; });
-  stridTillSlut(st);
+  const u: Uppstallning = { avsikt, w: a.w, h: a.h, ...vadretIStriden(s), kampar };
+  const blod: Record<number, number> = {};
+  f.vargar.forEach((id, j) => { const b = halsaOf(s, id).blod; if (b < 1) blod[folk.length + j + 1] = b; });
+  const g: DjurKamp = { art: 'varg', u, fro: Math.floor(rnd(s, 'strid') * 2147483647), blod, in: [], t0: s.now, ox: a.ox, oy: a.oy, folk: folk.map(p => p.id), djur: [...f.vargar], avsikt, orsak, flock: f.id };
+  borjaDjurStrid(s, g, folk);
+}
+// striden med vargarna är slut (djurStriderSteg): det som hände blir riktigt
+function vargSlut(s: State, g: DjurKamp, st: Strid) {
+  const f = flockarna(s).find(x => x.id === g.flock), avsikt = g.avsikt, orsak = g.orsak, u = g.u, fro = g.fro;
+  const folk = g.folk.map(pid => byId(s, pid)!).filter(p => !!p && alive(p));
+  if (!f || !folk.length) return;
+  const n = g.djur.length;
+  const kampeAv = (p: Person) => st.kampar.find(k => k.pid === p.id)!;
   const vinnare = st.slut!.vinnare;
-  sparaStrid(s, { t: s.now, orsak: 'vargar ' + orsak, u, fro, vinnare }); count(s, 'vargstrid');
+  sparaStrid(s, { t: g.t0, orsak: 'vargar ' + orsak, u, fro, vinnare, ...(g.in?.length ? { in: g.in } : {}), ...(Object.keys(g.blod ?? {}).length ? { blod: g.blod } : {}) }); count(s, 'vargstrid');
   soker(s, larma(s, 'varg', n, folk.filter(vaken)));
   // vargarna: de döda och de skadade, och vem som dödade
   const doda: Person[] = [], kvar: number[] = [];
-  f.vargar.forEach((id, j) => {
-    const k = st.kampar[folk.length + j];
+  g.djur.forEach((id, j) => {
+    const k = st.kampar.filter(q => q.djur)[j];
+    if (!k || !f.vargar.includes(id)) return;
     // en skadad varg som sprang under vargjakten: jägarna följer blodspåret och fäller den med en chans som växer med skadan
     const spar = avsikt === 'doda' && k.lage !== 'dod' && k.lage !== 'strid' && k.blod < 1 && rnd(s, 'varg') < VARG.spara * (1 - k.blod);
     if (spar) { count(s, 'vargSpar'); log(s, `Jägarna följde blodspåret och fällde den skadade vargen.`, 'world', folk.map(p => p.id)); }
     if (k.lage === 'dod' || spar) {
       dodaDjur(s, id);
       const forsta = forstaGang(s, 'vargDodad'); // räknar också
-      const r = [...st.logg].reverse().find(x => x.h === 'traff' && x.b === k.id), fallde = r && folk[r.a! - 1];
-      if (fallde) { handelse(s, fallde, 'vargdodare'); livet(s, fallde, 'vargar'); upplev(s, fallde, 'fallde'); if (r.v) sakVarg(s, redskapIHanden(s, fallde, r.v), fallde); // vapnet minns vargen (steg 3.9.4)
+      const r = [...st.logg].reverse().find(x => x.h === 'traff' && x.b === k.id), fk = r && st.kampar.find(q => q.id === r.a), fallde = fk?.pid !== undefined ? byId(s, fk.pid) : undefined;
+      if (fallde) { handelse(s, fallde, 'vargdodare'); livet(s, fallde, 'vargar'); upplev(s, fallde, 'fallde'); if (r?.v) sakVarg(s, redskapIHanden(s, fallde, r.v), fallde); // vapnet minns vargen (steg 3.9.4)
          if (forsta) { log(s, `${fallde.name} dödade byns första varg.`, 'world', [fallde.id]); kronikaBer(s, 'k_forstaVarg', fallde.id, personFalt(fallde)); } }
       doda.push(fallde ?? folk[0]);
     } else { kvar.push(id); satDjurHalsa(s, id, k.blod, halsaOf(s, id).sar + k.skador.reduce((a, w) => a + w.g, 0)); }
@@ -543,8 +561,9 @@ export function vargStrid(s: State, f: Vargflock, folk: Person[], avsikt: Avsikt
   f.vargar = kvar;
   // folket: skadorna blir riktiga skador, och vargbett blir ofta infekterade
   const bar = new Set<Person>(), svara: string[] = [];
-  st.kampar.slice(0, folk.length).forEach((k, i) => {
-    const p = folk[i];
+  folk.forEach(p => {
+    const k = kampeAv(p);
+    if (!k) return;
     let dod = k.lage === 'dod';
     for (const w of k.skador) {
       if (!dod && skada(s, p, w.d, w.k, w.g, 'varg', `i en strid med vargar`)) dod = true;
@@ -560,7 +579,7 @@ export function vargStrid(s: State, f: Vargflock, folk: Person[], avsikt: Avsikt
     ovning(p, 'narstrid', SLAGSMAL.ovning);
     think(p, vinnare === 0 ? 'Klarade sig mot vargarna' : 'Anfölls av vargar', vinnare === 0 ? SLAGSMAL.vann : -SLAGSMAL.forlora, s.now, SLAGSMAL.tankeTim * HOUR);
     avbryt(s, p);
-    const tid = Math.max(SLAGSMAL.minst, st.slut!.t) * SEC;
+    const tid = SLAGSMAL.minst * SEC; // striden har redan pågått på kartan (steg 9.2.29)
     // den som står kvar efter en vargjakt bär hem en fälld varg (den som dödade den först)
     if (avsikt === 'doda' && k.lage === 'strid' && doda.length > bar.size) {
       bar.add(p);
@@ -576,9 +595,9 @@ export function vargStrid(s: State, f: Vargflock, folk: Person[], avsikt: Avsikt
   // krönikan (steg 3.7.16): varje vargjakt, och den som skadades svårt när vargarna anföll (döden skriver die)
   if (avsikt === 'doda') kronikaBer(s, 'k_vargjakt', folk[0].id, { folk: och(folk.map(p => p.name)), vargar: n > 1 ? `${talOrd(n)} vargar` : 'en varg', fallde: talOrd(doda.length), svara: svara.length ? ` ${och(svara)} skadades svårt.` : '' });
   else if (svara.length) kronikaBer(s, 'k_vargAnfall', folk[0].id, { svara: och(svara) });
-  if (vinnare !== 1 || doda.length) f.gor = 'flyr';
-  return st;
+  if (vinnare !== 1 || doda.length || (avsikt === 'doda' && f.vargar.length)) f.gor = 'flyr'; // efter vargjakten drar de som är kvar vidare
 }
+SLUT.varg = vargSlut;
 
 // varje slag (steg.ts): flockar kommer och går, ser och ses, jagar kaniner och bestämmer om jakten
 export function vargSteg(s: State, dtSec: number) {
@@ -587,11 +606,12 @@ export function vargSteg(s: State, dtSec: number) {
   if (!s.vargar?.length) return;
   const folk = living(s);
   for (const f of s.vargar) {
+    if (s.djurStrider?.some(g => g.art === 'varg' && g.flock === f.id)) continue; // flocken slåss på kartan (steg 9.2.29)
     if (nyTimme) { f.hunger = Math.min(1, f.hunger + VARG.hungerTim); kaninJakt(s, f); }
     ses(s, f, folk);
     if (nyTimme) jaktBeslut(s, f, folk);
     if (f.vargar.length) flockSteg(s, f, folk, dtSec);
   }
-  s.vargar = s.vargar.filter(f => f.vargar.length);
+  s.vargar = s.vargar.filter(f => f.vargar.length || s.djurStrider?.some(g => g.art === 'varg' && g.flock === f.id));
   if (!s.vargar.length) s.vargar = undefined;
 }

@@ -3,6 +3,7 @@ import { farg, fargTal } from '../palett';
 import { s, ui, vidNyBy } from './lage';
 import { Ikoner, TS, app, djurFx, djurMarkLayer, figurLayer, plantG, rokBakLayer, world } from './scen';
 import { brandBild, brandRok, tornadoBild, tornadoFot } from './animation';
+import { djuretNu } from './stridkarta';
 import { jagade, samlaJakt } from './jakt';
 import { posOf } from './manniskor';
 import { OMRITA_MS } from './terrang';
@@ -114,8 +115,9 @@ export function drawAnimals() {
     ut.push({ ...d, x, y });
   }
   for (const id of visad.keys()) if (!sedda.has(id)) visad.delete(id);
-  for (const d of vargarOf(s)) { ritaDjur('varg', d.id, d.x, d.y, riktade); ut.push(d); }
-  for (const d of bjornarOf(s, ui.nu)) { ritaDjur(d.art, d.id, d.x, d.y, riktade); ut.push(d); } // björnen (steg 6.6.4) och ungarna (steg 6.6.5), i Björns ritningar // vargarna i verklig storlek (Björns val i bildstilen, steg 5.2.4.6)
+  // i en strid på kartan (steg 9.2.29) står vargen och björnen där striden har dem, vid tiden som visas
+  for (const d of vargarOf(s)) { const k = djuretNu('varg', d.id, ui.nu), x = k?.x ?? d.x, y = k?.y ?? d.y; ritaDjur('varg', d.id, x, y, riktade); ut.push({ ...d, x, y }); }
+  for (const d of bjornarOf(s, ui.nu)) { const k = d.art === 'bjorn' ? djuretNu('bjorn', d.id, ui.nu) : undefined, x = k?.x ?? d.x, y = k?.y ?? d.y; ritaDjur(d.art, d.id, x, y, riktade); ut.push({ ...d, x, y }); } // björnen (steg 6.6.4) och ungarna (steg 6.6.5), i Björns ritningar // vargarna i verklig storlek (Björns val i bildstilen, steg 5.2.4.6)
   for (const id of hallar.keys()) if (!riktade.has(id)) hallar.delete(id);
   // tornadon där den är (steg 3.8.4), foten mitt på banan, och lågorna där det brinner (steg 3.8.5): bildstilens animationer
   // (steg 5.1.9.1), tornadon som virvlar i åtta bilder och branden som slår ut i sex, med röken bakom alla lågorna

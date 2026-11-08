@@ -2246,6 +2246,41 @@ SCENARIER.bjorn = {
   },
 };
 
+SCENARIER.djurstrid = {
+  text: 'Steg 9.2.29–9.2.30: striderna mot djur spelas upp på kartan som striden med rövarna. Björnen står där striden har den, människan står kvar i striden och skadas först när den är slut, och efter en strid som björnen vunnit eller gett upp går den bort från byn',
+  kor: () => {
+    const s = createState(6, START);
+    let t0: number | undefined;
+    for (let t = s.now; t < s.now + 60 * DAY && t0 === undefined; t += 20 * 60_000) { const b = SIM.bjornarOf(s, t); if (b.length === 1) t0 = t; }
+    if (t0 === undefined) return [['ett ögonblick med björnen', false]];
+    const json = JSON.stringify(s);
+    let k: State | undefined, p: SIM.Person | undefined;
+    for (let i = 0; i < 400 && !k?.djurStrider; i++) {
+      k = migrate(JSON.parse(json)); k.now = t0 + i * 60_000;
+      for (let r = 0; r < i; r++) SIM.rnd(k, 'bjorn');
+      const mor = SIM.bjornarOf(k, k.now).find(d => d.art === 'bjorn')!;
+      p = living(k)[0];
+      for (const q of living(k)) if (q !== p) { q.x = 2; q.y = 2; }
+      p.x = mor.x + 1; p.y = mor.y; p.task = undefined;
+      SIM.bjornSteg(k);
+    }
+    if (!k?.djurStrider || !p) return [['björnen anföll någon gång', false]];
+    const g = k.djurStrider[0], iStrid = p.task?.act === 'strid', skadorFore = p.skador?.length ?? 0;
+    const b = SIM.bjornarOf(k).find(d => d.art === 'bjorn'), plats = !!b && b.x === g.dx && b.y === g.dy;
+    let n = 0;
+    while (k.djurStrider?.length && n < 200) { k.now += 5_000; SIM.djurStriderSteg(k); n++; }
+    const tid = n * 5, slut = !k.djurStrider && (k.stat?.bjornstrid ?? 0) === 1, falld = k.bjornFalld !== undefined;
+    const b2 = SIM.bjornarOf(k, k.now + SIM.HOUR).find(d => d.art === 'bjorn'), e = SIM.bynsMitt(k);
+    const bort = falld || (!!b2 && !!k.bjornUndan && Math.hypot(b2.x - e.x, b2.y - e.y) > Math.hypot(g.dx! - e.x, g.dy! - e.y));
+    return [
+      ['striden börjar och pågår på kartan, med björnen där striden har den', plats],
+      ['människan står i striden, utan skador medan den pågår', iStrid && skadorFore === 0],
+      [`striden tar tid (${tid} sekunder i spelet) och blir riktig när den är slut`, tid > 0 && slut],
+      [`björnen ${falld ? 'föll' : 'går bort från byn efteråt'}`, bort],
+    ];
+  },
+};
+
 SCENARIER.bjornmote = {
   text: 'Steg 6.6.5: björnen möter folk. Ibland har den en eller två ungar med sig, som går tätt kring den och aldrig i vattnet. Den som är vaken, ute och kommer nära björnen möter den en gång per år: oftast blir hen rädd och drar sig undan, men björnen anfaller ibland, oftare när den har ungar, och då blir det en strid där den slår hårt',
   kor: () => {
@@ -2270,6 +2305,7 @@ SCENARIER.bjornmote = {
       SIM.bjornSteg(k);
       const igen = (k.stat?.bjornmote ?? 0);
       SIM.bjornSteg(k); // samma person samma år: inget nytt möte
+      for (let n = 0; k.djurStrider?.length && n < 100; n++) { k.now += 5_000; SIM.djurStriderSteg(k); } // striden spelas upp på kartan tills den är slut (steg 9.2.29)
       return { mote: k.stat?.bjornmote ?? 0, igen: (k.stat?.bjornmote ?? 0) - igen, strid: k.stat?.bjornstrid ?? 0, skador: p.skador?.length ?? 0, rädd: (p.thoughts ?? []).some((x: { text: string }) => /björn/.test(x.text)) };
     };
     const N = 120;
