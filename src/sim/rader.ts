@@ -15,6 +15,7 @@ import { larma } from './rykten';
 import { die } from './liv';
 import { amountOf, addTo, ownsAmount } from './lager';
 import { SAKER, SAK_LIST } from './saker';
+import { tingOf } from './agande';
 import { grundvarde } from './varde';
 import { vaderNu } from './vader';
 import { Bit, bitsOf, housesOf, roomAt } from './byggnad';
@@ -66,8 +67,9 @@ export function radDygn(s: State, tvingaSkal?: RadSkal, tvingaKlan?: Klan) {
     for (const q of skal) { x -= SKAL[q].vikt(); if (x <= 0) { val = q; break; } }
     val = tvingaSkal ?? val;
     const n = clamp(Math.round(rikedom(s) / RADER.per * spridning(s)), 2, Math.max(2, k.styrka));
+    const forra = s.rovare;
     rovarnaKommer(s, n, false, k.id);
-    const f = s.rovare!;
+    const f = forra ? s.rovareFler![s.rovareFler!.length - 1] : s.rovare!; // fanns redan en flock väntar den nya bland flockarna (steg 8.7.18)
     f.skal = val; f.rad = true; k.radT = s.now;
     if (val === 'hamnd') hamndForbered(s, f, k);
     count(s, 'rad'); count(s, 'rad_' + val);
@@ -171,7 +173,7 @@ export function huggDorr(s: State, f: Rovarflock, folk: Person[], mal?: Bit) {
     f.hugger = undefined;
     return false;
   }
-  const vill = !!mal || f.skal === 'hamnd' || !SAK_LIST.some(k => amountOf(s, k) >= 1);
+  const vill = !!mal || f.skal === 'hamnd' || !SAK_LIST.some(k => SAKER[k]!.redskap ? tingOf(s).some(q => q.k === k && q.bar === undefined && q.hos === undefined && q.lass === undefined) : amountOf(s, k) >= 1); // inget ute att ta
   if (!vill) return false;
   const b = mal ?? stangdDorrBit(s);
   if (!b) return false;
@@ -192,3 +194,5 @@ export function tandaHus(s: State, f: Rovarflock) {
   tand(s, h.y * W + h.x, 'rovare' as never, 1);
 }
 export const storRad = (f: Rovarflock | undefined) => !!f?.rad && f.folk.length >= RADER.storStrid;
+// pågår en stor strid med någon av flockarna (steg 8.8.9): den stannar ikappräkningen
+export const storStridNu = (s: State) => [s.rovare, ...(s.rovareFler ?? [])].some(f => storRad(f) && f!.gor === 'slass');

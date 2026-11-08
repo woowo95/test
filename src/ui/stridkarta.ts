@@ -33,7 +33,6 @@ export function striderVid(nu: number): { g: RovarStrid; st: Strid }[] {
   minne = { nu, ut };
   return ut;
 }
-export const stridVid = (nu: number) => striderVid(nu)[0];
 // var en kämpe står på kartan (rutor)
 export const kampePlats = (g: RovarStrid, k: Kampe) => ({ x: g.ox + k.x, y: g.oy + k.y });
 export const liggerK = (k: Kampe) => k.lage === 'nere' || k.lage === 'dod' || !!k.ligger;

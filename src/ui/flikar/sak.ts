@@ -106,7 +106,7 @@ function fallning(i: number) {
   const gjort = s.halvfallt?.[i] ?? 0, vem = living(s).find(p => p.task?.act === 'falla' && p.task.phase === 'do' && tileOf(p.task.tx, p.task.ty) === i);
   if (!gjort && !vem) return '';
   const tid = fallTid(s, i), kvar = Math.max(0, tid - gjort), del = Math.min(1, gjort / tid);
-  return `<dt>${iconImg('yxa', 14)}</dt><dd>${vem ? `${pLink(vem)} fäller det` : 'Påbörjat'} · ${Math.round(del * 100)} % · ${durTxt(kvar)} kvar</dd>`;
+  return `<dt title="Fällningen">${iconImg('yxa', 14)}</dt><dd>${vem ? `${pLink(vem)} fäller det` : 'Påbörjat'} · ${Math.round(del * 100)} % · ${durTxt(kvar)} kvar</dd>`;
 }
 // en buske (steg 6.5.3): bilden, namnet och vad den gör
 function buske(i: number) {

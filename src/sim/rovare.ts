@@ -284,7 +284,7 @@ function motstand(s: State, f: Rovarflock, folk: Person[]) {
 const ARENA = 2 * ROVARE.motR + 4; // platsen är så här många rutor bred och hög, med förrådet i mitten
 const iArenan = (v: number) => clamp(v, 0.5, ARENA - 0.5);
 const rovarKampe = (r: Rovare, id: number, x: number, y: number, ledare: boolean): Uppstallning['kampar'][number] =>
-  ({ id, namn: r.namn, sida: 1, st: { ...r.st, sikte: r.st.skicklighet }, vapen: r.vapen, klader: [], fart: 1, x, y, ...(ledare ? { ledare: 'fram' as const } : {}) });
+  ({ id, namn: r.namn, sida: 1, blod0: r.blod, st: { ...r.st, sikte: r.st.skicklighet }, vapen: r.vapen, klader: [], fart: 1, x, y, ...(ledare ? { ledare: 'fram' as const } : {}) });
 // den som slåss står kvar i striden tills den är slut (eller högst STRID.maxTid sekunder)
 function iStriden(s: State, p: Person, g: RovarStrid) {
   avbryt(s, p);
@@ -390,7 +390,9 @@ export function plundra(s: State, f: Rovarflock, tyst: boolean) {
   const gavUpp = living(s).some(p => p.task?.act === 'fly' && ageOf(p, s.now) >= ALDER.vuxen);
   const bar = ROVARE.bar * (gavUpp ? ROVARE.gerUpp : 1);
   if (gavUpp) { count(s, 'byGavUpp'); log(s, 'Byn gav upp, och rövarna tog vad de ville.', 'world'); }
-  const varor = SAK_LIST.filter(k => amountOf(s, k) >= 1).sort((a, b) => grundvarde(b) / Math.max(0.1, viktOf(b)) - grundvarde(a) / Math.max(0.1, viktOf(a)));
+  // redskapen räknas styckvis (ett slitet redskap är ändå ett), det andra i hela saker
+  const fritt = (k: string) => tingOf(s).some(q => q.k === k && q.bar === undefined && q.hos === undefined && q.lass === undefined);
+  const varor = SAK_LIST.filter(k => SAKER[k]!.redskap ? fritt(k) : amountOf(s, k) >= 1).sort((a, b) => grundvarde(b) / Math.max(0.1, viktOf(b)) - grundvarde(a) / Math.max(0.1, viktOf(a)));
   const tagna: Record<string, number> = {};
   for (const r of f.folk) {
     let vikt = 0;
@@ -510,7 +512,7 @@ export function rovarTornado(s: State, f: Rovarflock, zon: number, dod: number, 
   f.gor = 'flyr'; f.strid = undefined;
   const doda = fore - f.folk.length;
   log(s, doda === fore ? `Tornadon dödade rövarna ${fran(s, f)}.` : `Tornadon kastade rövarna ${fran(s, f)} åt sidan${doda ? ` och ${doda} dog` : ''}. De flyr.`, 'world');
-  if (!f.folk.length) s.rovare = undefined;
+  if (!f.folk.length && s.rovare === f) s.rovare = undefined; // en tom flock bland de andra sållas bort i rovarSteg
 }
 
 // varje slag (steg.ts): en flock kommer, ses, går in mot byn och flyr
@@ -536,7 +538,7 @@ export function rovarSteg(s: State, dtSec: number) {
 }
 // två flockar från klaner som inte tycker om varandra: en strid mellan tre parter. Den svagaste flocken flyr
 function flockarMots(s: State, a: Rovarflock, b: Rovarflock) {
-  if (a.klan === b.klan || avst(a, b) > ROVARE.flockarMots) return;
+  if (a.klan === b.klan || avst(a, b) > ROVARE.flockarMots || a.strid || b.strid) return; // inte medan en av dem slåss med byn
   const ka = klanById(s, a.klan), kb = klanById(s, b.klan);
   if ((ka?.inst ?? 0) > 0 && (kb?.inst ?? 0) > 0) return;
   count(s, 'flockarSlass');
@@ -547,10 +549,11 @@ function flockarMots(s: State, a: Rovarflock, b: Rovarflock) {
 }
 // djuren bryr sig inte om klanen (steg 8.7.19): rovdjur anfaller rövare, handlare och gäster efter samma regler som byborna
 function djurMotRovare(s: State, f: Rovarflock) {
+  if (f.strid) return; // inte mitt i striden med byn: den har rövarna i sin ordning
   for (const d of vargarNara(s, f)) {
     const r = f.folk[0]; if (!r || rnd(s, 'rovare') >= ROVARE.djurChans) continue;
     r.blod = Math.max(0, r.blod - 0.3); count(s, 'djurMotRovare');
     if (r.blod <= 0.1) { f.folk.shift(); tappar(s, r); log(s, `${d} tog en av rövarna.`, 'world'); }
   }
 }
-const vargarNara = (s: State, f: Rovarflock) => bjornarOf(s, s.now).concat(vargarOf(s) as never).filter(d => Math.hypot(d.x - f.x, d.y - f.y) < ROVARE.djurR).map(d => d.art === 'bjorn' ? 'En björn' : 'En varg');
+const vargarNara = (s: State, f: Rovarflock) => bjornarOf(s, s.now).filter(d => d.art === 'bjorn').concat(vargarOf(s) as never).filter(d => Math.hypot(d.x - f.x, d.y - f.y) < ROVARE.djurR).map(d => d.art === 'bjorn' ? 'En björn' : 'En varg'); // björnungarna anfaller inte

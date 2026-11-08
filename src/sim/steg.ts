@@ -78,7 +78,7 @@ import { kvarTimme } from './kvarlevor';
 import { avrustaKlar, gravKlar, kroppUpp, rustaKlar } from './grav';
 import { bonKlar, kultTimme } from './kult';
 import { hovArbete, kyrkProjekt, kyrkaRegister, kyrkaTimme, satBudHandelse, satOffrad, satOppnaAndlig } from './kyrka';
-import { PROJEKT } from './projekt';
+import { laggTillProjekt } from './projekt';
 import { lagRegister } from './lagar';
 import { oppnaSed } from './rost';
 import { handelse } from './rykten';
@@ -201,7 +201,7 @@ for (const act of DRICKA_ACTS) MEDAN[act] = (s, p, t) => { if (t.prog === undefi
 // slakt och rensning: den första arten med arbetet som finns i förrådet (kaninen före vargen, steg 3.7.14)
 // mjärden är klar: materialet tas, och den sätts ut på närmaste strand (steg 7.4.2)
 for (const k of Object.keys(FALLOR)) KLAR[k as Act] = (s, p) => { for (const [q, n] of Object.entries((RECEPT as Record<string, { av?: Record<string, number> }>)[k].av!)) takeMaterial(s, p, q, n); sattUt(s, p, k); };
-lagRegister(); kyrkaRegister(); Object.assign(PROJEKT, kyrkProjekt()); satOffrad((s, p) => die(s, p, 'offrad'));
+lagRegister(); kyrkaRegister(); laggTillProjekt(kyrkProjekt()); satOffrad((s, p) => die(s, p, 'offrad'));
 satOppnaAndlig(s => oppnaSed(s, 'andlig'));
 satBudHandelse((s, p) => handelse(s, p, 'budbrott'));
 export const KLAR_FOR = KLAR; // scenarierna prövar det som händer när ett arbete är klart

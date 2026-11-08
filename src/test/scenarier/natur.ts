@@ -1781,8 +1781,7 @@ SCENARIER.kaninbyn = {
     const st = s.stat ?? {};
     return [
       [`${starter} nya platser på tre dygn, ingen där folk rör sig (lägsta skygghet på platsen ${minF.toFixed(2)}, ${nara} närmare byn än ${FANGST.skyggIn} rutor)`, starter >= 4 && minF > 0 && nara === 0],
-      [`den som går förbi får gruppen att flytta ${gick.toFixed(1)} rutor; en jägare som smyger ${smog.toFixed(1)} rutor`, gick >= SIM.KANINER.folkFly * 0.7 && smog < 0.5],
-      [`i byn flyttade grupperna undan för folk ${st.kaninerUndan ?? 0} gånger`, (st.kaninerUndan ?? 0) >= 0],
+      [`den som går förbi får gruppen att flytta ${gick.toFixed(1)} rutor; en jägare som smyger ${smog.toFixed(1)} rutor (i byn flyttade grupperna undan för folk ${st.kaninerUndan ?? 0} gånger)`, gick >= SIM.KANINER.folkFly * 0.7 && smog < 0.5],
       ['grupperna står på samma plats efter inläsning', fore === efter],
     ];
   },

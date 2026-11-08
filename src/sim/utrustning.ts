@@ -237,7 +237,8 @@ export function stepKlader(s: State) {
   for (const p of living(s)) {
     // ledarens mantel (steg 8.3.14): den tillhör byn och följer ämbetet. Ledaren byter till den; den som inte längre leder tappar den
     for (const t of paSig(s, p)) if (arMantel(t.k) && p.id !== ledare) t.bar = undefined;
-    if (p.id === ledare && !paSig(s, p).some(t => arMantel(t.k))) {
+    // ... utom när hen har rustningen på sig: den tas inte av för manteln
+    if (p.id === ledare && !paSig(s, p).some(t => arMantel(t.k) || kladAv(t.k)?.plagg === 'rustning')) {
       const m = tingOf(s).find(t => arMantel(t.k) && t.bar === undefined && t.hos === undefined && t.lass === undefined && !t.halv);
       if (m) { for (const t of paSig(s, p)) if (SAKER[t.k]!.klad!.plats === 'yttre') t.bar = undefined; m.bar = p.id; m.x = m.y = m.vid = undefined; }
     }

@@ -39,9 +39,12 @@ export const LAG = balans('lag', {
   bas: 0.25, viktSamlad: 0.4, viktLeg: 0.5, // hur konsekvent lagarna efterlevs (steg 8.4.9): grunden, hur samlad vikten är och legitimiteten
   stegHardare: 0.5, // Envälde och Fejd över det här gör straffet ett steg hårdare när lagen stiftas
   tabuAndel: 0.34, // en farlig plats eller handling blir tabu när så stor del av de vuxna fruktar den (steg 8.4.10)
+  rikEmot: 0.4, rikAndel: 1.5, // den som äger mer än rikAndel gånger sin del av byns mat röstar så här mycket emot att förrådet delas lika
   aktSett: 0.8, aktHort: 0.5, // rädslan för en handling hos den som såg olyckan och hos de närmaste
   aktRadd: 0.3, // över det här räknas man som rädd för handlingen
-  aktSprid: 0.15, // chansen per dygn att en rädd berättar för en god vän, som blir så här mycket rädd ...
+  aktSyn: 12, // så nära (rutor) ser man olyckan
+  modMax: 1.5, modMin: 0.5, // den rädde låter bli handlingen efter rädslan gånger detta (modMax − mod/20, aldrig under modMin)
+  aktSprid: 0.15, // chansen per dygn och god vän att en rädd berättar för hen, som blir så här mycket rädd ...
   aktSpridV: 0.7, // ... gånger berättarens rädsla
   aktGlom: 0.97, // rädslan för en handling blir så här mycket svagare per dygn (år i spelet), om den inte är tabu
   aktUndvik: 0.35, // den som är så här rädd (efter modet) låter bli handlingen fast den inte är tabu
@@ -56,12 +59,19 @@ const STEGEN = [0, 1, 4, 5, 2, 7, 3, 6]; // ordningen från mildast till hårdas
 export interface LagDef { namn: string; sym: string; text: string; straff: number; brott?: HandelseTyp[]; prio(s: State): number; rost(s: State, p: Person): { v: number; why: string }; kan?(s: State): boolean; om?: string }
 const dev = (v: number) => (v - 10) / 10;
 const antal = (s: State, k: string) => s.stat?.[k] ?? 0;
+// äger p mycket mer mat än sin del av byns (lagen om att förrådet delas lika)
+function rikPaMat(s: State, p: Person) {
+  const egen = ownedStock(s, p), n = Math.max(1, living(s).length);
+  let m = 0, alla = 0;
+  for (const k of FOOD) { m += egen[k] ?? 0; alla += amountOf(s, k); }
+  return m > 0 && m * n > alla * LAG.rikAndel;
+}
 export const LAGAR: Record<string, LagDef> = {
   stoldforbud: { namn: 'Förbud mot stöld', sym: '🖐️', text: 'Den som stjäl straffas', straff: 4, brott: ['stold', 'stoldLindrig'], om: 'stölderna', prio: s => clamp(antal(s, 'rykte_stold') / 4, 0, 1), rost: (_s, p) => ({ v: 0.3 + dev(p.pot.empati) * 0.5, why: 'Vill inte bli bestulen' }) },
   slagsmalforbud: { namn: 'Förbud mot slagsmål', sym: '🥊', text: 'Den som slår någon straffas', straff: 1, brott: ['sla', 'misshandel'], om: 'slagsmålen', prio: s => clamp(antal(s, 'rykte_sla') / 8, 0, 1), rost: (_s, p) => ({ v: dev(p.pot.empati) - dev(p.pot.aggression), why: dev(p.pot.aggression) > 0 ? 'Vill kunna göra upp själv' : 'Vill ha lugn i byn' }) },
   drapforbud: { namn: 'Förbud mot dråp', sym: '⚔️', text: 'Den som dödar någon straffas hårt', straff: 3, brott: ['drap'], om: 'ett dråp', prio: s => clamp(antal(s, 'rykte_drap') / 1, 0, 1), rost: (_s, p) => ({ v: 0.4 + dev(p.pot.empati) * 0.5 - dev(p.pot.aggression) * 0.3, why: 'Vill inte bli dräpt' }) },
   arbetsplikt: { namn: 'Arbetsplikt', sym: '📜', text: 'Den som kan arbeta ska arbeta', straff: 0, om: 'en vinter med svält', prio: s => clamp(antal(s, 'dog av svält') / 2, 0, 1), rost: (_s, p) => ({ v: dev(p.pot.flit), why: dev(p.pot.flit) > 0 ? 'Arbetar ändå' : 'Vill bestämma sin tid själv' }) },
-  matdelning: { namn: 'Förrådet delas lika', sym: '📜', text: 'Det man skaffar går till byn', straff: 1, om: 'en vinter med svält', prio: s => clamp(antal(s, 'dog av svält') / 3, 0, 1) * (1 + (s.seder.v.gemenskap ?? 0)) / 2, rost: (s, p) => { const rik = living(s).length && amountOf(s, 'ved') >= 0 ? dev(p.pot.empati) : 0; return { v: rik + (s.seder.v.gemenskap ?? 0) * 0.5, why: rik > 0 ? 'Vill att alla får äta' : 'Vill behålla det hen skaffar' }; } },
+  matdelning: { namn: 'Förrådet delas lika', sym: '📜', text: 'Det man skaffar går till byn', straff: 1, om: 'en vinter med svält', prio: s => clamp(antal(s, 'dog av svält') / 3, 0, 1) * (1 + (s.seder.v.gemenskap ?? 0)) / 2, rost: (s, p) => { const rik = rikPaMat(s, p); return { v: dev(p.pot.empati) * 0.5 + (s.seder.v.gemenskap ?? 0) * 0.5 - (rik ? LAG.rikEmot : 0), why: rik ? 'Vill behålla det hen skaffat' : 'Vill att alla får äta' }; } },
   skogsfred: { namn: 'Inte fälla träd nära byn', sym: '🌲', text: `Ingen fäller träd inom ${LAG_SKOG} rutor från byn`, straff: 0, om: 'att skogen tog slut nära byn', prio: s => clamp((s.fallda ?? 0) / 120, 0, 1) * clamp(1 - (s.seder.v.natur ?? 0), 0, 1), rost: (s, p) => ({ v: -(s.seder.v.natur ?? 0) * 0.5 + (p.tag === 'Trähuggare' ? -0.5 : 0.05), why: p.tag === 'Trähuggare' ? 'Hugger trä och vill ha det nära' : 'Vill ha skogen kvar' }) },
   // skatt före silvret (steg 8.4.17)
   skatt: { namn: 'Skatt på fångst och skörd', sym: '📜', text: 'En del av fångsten och skörden går till byn', straff: 4, om: 'att förrådet var tomt', prio: s => clamp(living(s).length / 30, 0, 1) * clamp(1 - (s.delning?.andel ?? 1) * 2, 0, 1), rost: (s, p) => ({ v: (s.seder.v.gemenskap ?? 0) * 0.5 + dev(p.pot.empati) * 0.5 - 0.1, why: 'Tycker att alla ska bidra' }) },
@@ -198,14 +208,13 @@ export function raddForAkt(s: State, offer: Person, act: Act | undefined, om: st
   if (!k) return;
   for (const q of living(s)) {
     if (q === offer) continue;
-    const sag = Math.hypot(q.x - offer.x, q.y - offer.y) < LAG_SYN, nara = offer.partner === q.id || offer.mother === q.id || offer.father === q.id || q.mother === offer.id || q.father === offer.id;
+    const sag = Math.hypot(q.x - offer.x, q.y - offer.y) < LAG.aktSyn, nara = offer.partner === q.id || offer.mother === q.id || offer.father === q.id || q.mother === offer.id || q.father === offer.id;
     if (!sag && !nara) continue;
     const r = (q.raddAkt ??= {});
     r[k] = Math.max(r[k] ?? 0, sag ? LAG.aktSett : LAG.aktHort);
     (s.aktOm ??= {})[k] = om;
   }
 }
-const LAG_SYN = 12; // så nära ser man olyckan (rutor)
 // den som är rädd för handlingen låter bli den om den är tabu, eller om rädslan är stor och modet litet (steg 8.4.10)
 export function tabuAkt(s: State, p: Person, act: Act): string | undefined {
   if (!s.tabuAkt?.length && !p.raddAkt) return undefined;
@@ -213,7 +222,7 @@ export function tabuAkt(s: State, p: Person, act: Act): string | undefined {
     if (!TABU_AKT[k].acts.includes(act)) continue;
     if (s.tabuAkt?.some(t => t.k === k)) return TABU_AKT[k].namn;
     const v = p.raddAkt?.[k] ?? 0;
-    if (v * clamp(1.5 - stat(p, 'mod', s.now) / 20, 0.5, 1.5) > LAG.aktUndvik) return TABU_AKT[k].namn;
+    if (v * clamp(LAG.modMax - stat(p, 'mod', s.now) / 20, LAG.modMin, LAG.modMax) > LAG.aktUndvik) return TABU_AKT[k].namn;
   }
   return undefined;
 }

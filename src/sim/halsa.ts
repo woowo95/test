@@ -324,8 +324,10 @@ function finDel(s: State, p: Person, d: Kroppsdel): Kroppsdel {
   return fina[Math.floor(rnd(s, 'halsa', p) * fina.length)];
 }
 const STUMP: Partial<Record<Kroppsdel, Kroppsdel>> = { handV: 'armV', handH: 'armH', fotV: 'benV', fotH: 'benH' };
+// det som sitter på en del, i alla led: fingrarna på handen och handen på armen (handen och foten sitter på armen och benet, STUMP)
 const FINA = {} as Partial<Record<Kroppsdel, Kroppsdel[]>>;
-for (const k of Object.keys(DEL) as Kroppsdel[]) { const u = DEL[k].under as Kroppsdel | undefined; if (u) (FINA[u] ??= []).push(k); }
+const forelder = (k: Kroppsdel) => (DEL[k].under as Kroppsdel | undefined) ?? STUMP[k];
+for (const k of Object.keys(DEL) as Kroppsdel[]) for (let u = forelder(k); u; u = forelder(u)) (FINA[u] ??= []).push(k);
 // en del går förlorad (steg 8.2.3): avbiten, avhuggen, förfrusen eller amputerad. Det som sitter på den försvinner med den, och utom när
 // den fryser av blir den en sak på marken med ägarens namn och delen, som ruttnar som maten
 export function forlora(s: State, p: Person, d: Kroppsdel, hur: string) {

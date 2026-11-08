@@ -599,8 +599,8 @@ export function eatPoison(s: State, p: Person) {
   }
   if (before < FANGST.giftKand && v >= FANGST.giftKand) log(s, `${p.name} har lärt sig skilja kantarellen från den giftiga orangea spindlingen.`, 'skill', [p.id]);
   // det hen nu vet: den giftiga svampen sorteras bort ur förrådet, och då är den inte längre svamp att äta
-  const bort = amountOf(s, GIFT) * v;
-  addTo(s, GIFT, -bort); addTo(s, 'svamp', -Math.min(amountOf(s, 'svamp'), bort));
+  const bort = Math.floor(amountOf(s, GIFT) * v); // hela svampar (regeln om hela resurser)
+  if (bort >= 1) { addTo(s, GIFT, -bort); addTo(s, 'svamp', -Math.min(Math.floor(amountOf(s, 'svamp')), bort)); }
 }
 
 // ---------- fiske med händerna ----------

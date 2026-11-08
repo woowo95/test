@@ -13,6 +13,7 @@ import { moodOf } from './humor';
 import { clamp } from './slump';
 import { DAY, HOUR, Person, State } from './typer';
 import { balans } from './balans';
+import { BYN } from './egendom';
 import { grundvarde } from './varde';
 import { sakNamn } from './saker';
 import { ownMove, ownsAmount } from './lager';
@@ -216,7 +217,9 @@ const LASTA_SEDER: readonly Sed[] = [...MAKT_SEDER, 'krig', 'delning', 'natur'];
 export const sedOppen = (s: State, k: Sed) => !LASTA_SEDER.includes(k) || !!s.styre?.oppna.includes(k);
 
 // ---------- legitimiteten ----------
-export function legitimitet(s: State) {
+type Leg = { v: number; stod: number; satt: number; fram: number; vint: number; oratt: number };
+export function legitimitet(s: State): Leg { return raknaLeg(s); }
+function raknaLeg(s: State): Leg {
   const st = s.styre, l = ledareOf(s);
   if (!st || !l) return { v: 0, stod: 0, satt: 0, fram: 0, vint: 0, oratt: 0 };
   let op = 0, w = 0;
@@ -324,10 +327,12 @@ function valj(s: State) {
     }
     best ??= valet;
     if (best && best === valet && satet !== 'val') satt = TRON.sattFel + 0.2; // det passade inte sederna
+    const rec = stn.roster?.[stn.roster.length - 1];
+    if (rec?.f === 'ledare' && rec.t === s.now) rec.gick = best === valet; // omröstningen avgjorde bara om den valda blev ledare
   }
   if (!best) return;
   const st = stn, forsta = forstaVal;
-  st.ledare = best.id; st.sedan = s.now; st.vintrar = 0; st.vunna = 0; st.satt = satt; st.arvinge = undefined; st.pabud = undefined; st.oratt = 0; st.krig0 = krig(s); st.folk0 = living(s).length; st.dog0 = nodDod(s);
+  st.ledare = best.id; st.sedan = s.now; st.vintrar = 0; st.vunna = 0; st.satt = satt; st.arvinge = undefined; st.pabud = undefined; st.oratt = 0; st.krig0 = krig(s); st.folk0 = living(s).length; st.dog0 = nodDod(s); st.dogVinter = nodDod(s); // vintern där ingen dog räknas från nu
   const titel = st.titel = titelFor(s, best, vuxna);
   st.historia.push({ id: best.id, namn: best.name, titel, fran: s.now });
   count(s, 'ledare_vald');
@@ -437,7 +442,8 @@ function doma(s: State, l: Person) {
   const hard0 = clamp(1 + delar.rang + delar.emp + delar.hum + delar.agg, STR.min, STR.max);
   const v = vaderNu(s), ratt = (st.ratt ??= []);
   for (const [id, b] of fall) {
-    const q = byId(s, id)!;
+    const q = byId(s, id);
+    if (!q || !alive(q)) continue; // dog i en holmgång tidigare i kvällens ting
     for (const e of l.intryck ?? []) if (e.om === id) for (const x of e.bev ?? []) if (BROTT.has(x.h)) domt.push(`${id}:${x.h}:${Math.round(x.t)}`);
     const nara = l.partner === id || isKin(l, q) || (s.rels[relKey(l.id, id)]?.op ?? 0) > REL.van;
     // lagen (steg 8.4.2): straffet står i lagen och blir likadant varje gång. Den efterlevs inte alltid (steg 8.4.9)
@@ -467,8 +473,8 @@ function doma(s: State, l: Person) {
     allmant(s, q, b, STR.hord, sett); // de som ser straffet får höra om brottet
     think(q, `Straffades av ${l.name}`, -STR.tanke * (steg + 1), now, STR.tankeDygn * DAY);
     const familj = living(s).filter(f => f !== l && (f === q || f.partner === id || isKin(f, q))); // innan den utvisade har lämnat byn och partnern
-    q.straffad = true;
-    if (steg === 4 && drabbad && alive(drabbad)) botes(s, q, drabbad);
+    if (steg >= 2 && steg !== 4) q.straffad = true; // straffad hårt: slag, utvisning, tjänst, döden eller förlorad rätt (lagen rostStraffade)
+    if (steg === 4) botes(s, q, drabbad && alive(drabbad) ? drabbad : undefined); // utan någon drabbad går böterna till byn
     if (steg === 5) q.tjanst = now + STR.tjanstDygn * DAY;
     if (steg === 7) q.utanRost = true;
     if (steg === 6) { r.dog = true; q.brottsling = true; kronika(s, `${q.name} dömdes till döden.`, 'ledare'); die(s, q, 'avrattad'); continue; }
@@ -490,11 +496,12 @@ function doma(s: State, l: Person) {
   if (domt.length > 200) domt.splice(0, domt.length - 200);
   if (ratt.length > STR.sparas) ratt.splice(0, ratt.length - STR.sparas);
 }
-// böterna går till den drabbade ur den dömdes ägodelar (steg 8.4.7): det dyraste hen äger, en hel sak
-function botes(s: State, q: Person, d: Person) {
+// böterna går till den drabbade ur den dömdes ägodelar (steg 8.4.7): det dyraste hen äger, en hel sak. Finns ingen drabbad
+// (ett bud som blivit lag) går de till byn
+function botes(s: State, q: Person, d: Person | undefined) {
   const ag = (s.ting ?? []).filter(t => t.agare === q.id && t.bar === undefined && t.hos === undefined && t.lass === undefined);
-  if (ag.length) { const t = ag.sort((a, b) => grundvarde(b.k) - grundvarde(a.k))[0]; t.agare = d.id; count(s, 'boter'); log(s, `${q.name} gav ${sakNamn(t.k).toLowerCase()} till ${d.name} i böter.`, 'rel', [q.id, d.id]); return; }
-  for (const k of ['grenar', 'ved', 'sten', 'flinta', 'rep']) if (ownsAmount(s, q, k) >= 1) { ownMove(s, k, Math.min(STR.bot, ownsAmount(s, q, k)), q.id, d.id); count(s, 'boter'); return; }
+  if (ag.length) { const t = ag.sort((a, b) => grundvarde(b.k) - grundvarde(a.k))[0]; t.agare = d?.id ?? BYN; count(s, 'boter'); log(s, `${q.name} gav ${sakNamn(t.k).toLowerCase()} till ${d?.name ?? 'byn'} i böter.`, 'rel', d ? [q.id, d.id] : [q.id]); return; }
+  for (const k of ['grenar', 'ved', 'sten', 'flinta', 'rep']) if (ownsAmount(s, q, k) >= 1) { ownMove(s, k, Math.min(STR.bot, ownsAmount(s, q, k)), q.id, d?.id ?? BYN); count(s, 'boter'); return; }
 }
 // de levande (utom ledaren och den dömda) som har brottet b om q bland sina bevis: själva sett, eller hört som rykte
 function kanner(s: State, l: Person, q: Person, b: Bevis) {

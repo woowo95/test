@@ -306,7 +306,7 @@ export interface Strid {
 // en vägg på platsen: rektangeln x, y, b(redd), h(öjd) i rutor (steg 3.7.20)
 export interface Hinder { x: number; y: number; b: number; h: number }
 // uppställningen som en strid börjar ur (arenan och, senare, byn)
-export interface Uppstallning { avsikt: Avsikt; w: number; h: number; vind?: number; dimma?: number; halt?: number; hinder?: Hinder[]; kampar: Omit<Kampe, 'skador' | 'blod' | 'ork' | 'modNu' | 'lage' | 'vant' | 'mal' | 'backar' | 'slag' | 'traffar' | 'gjort' | 'skott' | 'haller' | 'vantar' | 'ifatt' | 'vada' | 'ligger' | 'bocker' | 'later' | 'kryper'>[] }
+export interface Uppstallning { avsikt: Avsikt; w: number; h: number; vind?: number; dimma?: number; halt?: number; hinder?: Hinder[]; kampar: (Omit<Kampe, 'skador' | 'blod' | 'ork' | 'modNu' | 'lage' | 'vant' | 'mal' | 'backar' | 'slag' | 'traffar' | 'gjort' | 'skott' | 'haller' | 'vantar' | 'ifatt' | 'vada' | 'ligger' | 'bocker' | 'later' | 'kryper'> & { blod0?: number })[] } // blod0: blodet när striden börjar (1 om inget sägs)
 
 // stridens egen slumpföljd (samma blandning som rnd i slump.ts)
 export function slump(st: Strid) {
@@ -317,7 +317,7 @@ export function slump(st: Strid) {
 }
 
 const kampeAv = (k: Uppstallning['kampar'][number]): Kampe => ({
-  ...k, st: { ...k.st }, klader: [...k.klader], skador: [], blod: 1, ork: 1,
+  ...k, st: { ...k.st }, klader: [...k.klader], skador: [], blod: k.blod0 ?? 1, ork: 1, // den som redan blöder går in i striden med det blod hen har kvar
   modNu: clamp(STRID.modStart + (k.st.mod / 20) * STRID.modMod + (k.st.torst ?? 0) * STRID.torst, 0.05, 1), lage: 'strid', vant: 0, slag: 0, traffar: 0, gjort: 0,
 });
 export function nyStrid(u: Uppstallning, fro: number): Strid {
@@ -822,7 +822,7 @@ export function korManga(u: Uppstallning, fro: number, n: number): ManyResultat 
 // (steg 3.7.7): ett litet vapen i bältet, om hen har ett bälte på sig och orkar bära det; den som en gång blev ifattsprungen
 // utan reserv tar alltid med en
 const TVA_HAND = new Set<string>(['flintspjut', 'fiskespjut', 'bage']); // med båda händerna: ingen sköld
-const arRustning = (k: string) => { const p = kladAv(k)?.plagg; return p === 'rustning' || p === 'hjalm'; }; // rustningen räknas bara på den som tagit den på sig (steg 8.7.8)
+// kläderna skyddar bara den som har dem på sig, också rustningen och hjälmen (steg 8.7.8)
 export function personKampe(s: State, p: Person, id: number, sida: 0 | 1, x: number, y: number): Uppstallning['kampar'][number] {
   // det hen bär, äger och har i handen (man tar med sina saker), men inte det hen äger som någon annan har på sig, i handen
   // eller i bördan (samma regel som taVapen i vakt.ts)
@@ -834,7 +834,7 @@ export function personKampe(s: State, p: Person, id: number, sida: 0 | 1, x: num
   const res = (MANNISKOVAPEN.filter(v => v !== vapen && VAP[v].liten && bar.includes(v)) as Vapen[]).sort((a, b) => VAP[a].takt - VAP[b].takt)[0]; // den snabbaste (kniven)
   const reserv = res && (p.reservAlltid || (harBalte(s, p) && paSigVikt(s, p) + viktOf(res) <= capacity(s, p) * UTRUSTNING.kropp)) ? res : undefined;
   return {
-    id, namn: p.name, sida, pid: p.id, vapen, reserv, ledare: ledareOf(s) === p ? ledarPlats(s, p) : undefined, skold: bar.includes('skold') && !TVA_HAND.has(vapen) ? true : undefined, klader: bar.filter(k => SKYDD[k] && (!arRustning(k) || paSig(s, p).some(q => q.k === k))), fart: 1, x, y, tung: clamp(paSigVikt(s, p) / UTRUSTNING.kropp / Math.max(1, capacity(s, p)), 0, 1),
+    id, namn: p.name, sida, pid: p.id, blod0: p.blod, vapen, reserv, ledare: ledareOf(s) === p ? ledarPlats(s, p) : undefined, skold: bar.includes('skold') && !TVA_HAND.has(vapen) ? true : undefined, klader: [...new Set(paSig(s, p).map(q => q.k))].filter(k => SKYDD[k]), fart: 1, x, y, tung: clamp(paSigVikt(s, p) / UTRUSTNING.kropp / Math.max(1, capacity(s, p)), 0, 1),
     st: { styrka: stat(p, 'styrka', s.now), uthallighet: stat(p, 'uthallighet', s.now), mod: stat(p, 'mod', s.now), smidighet: stat(p, 'smidighet', s.now) - paSig(s, p).reduce((a, q) => a + (PLAGG[kladAv(q.k)?.plagg as keyof typeof PLAGG]?.smid ?? 0), 0), skicklighet: 5 + (p.skill.narstrid ?? 0) / 2 + STRID.tyckeSkick * smakAv(p, 'v:' + vapen), sikte: (5 + (p.skill.traff ?? 0) / 2) * syn(p), torst: blodtorst(s, p) },
   };
 }

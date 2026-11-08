@@ -1,4 +1,4 @@
-import { storRad, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, spar, step, visning, yearNo, State, motgangNu, motgangNasta, motgangDef, varslade, ROVARFLOCK, skickaRovare, skickaHandlare, rovarHinder, handlarHinder, skickaTornado, tornadoHinder, lightLevel } from './sim';
+import { storStridNu, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, spar, step, visning, yearNo, State, motgangNu, motgangNasta, motgangDef, varslade, ROVARFLOCK, skickaRovare, skickaHandlare, rovarHinder, handlarHinder, skickaTornado, tornadoHinder, lightLevel } from './sim';
 import { brandKnapp, testSvara } from './ui/interaktion';
 import { testBortaIByn } from './ui/testborta';
 import { $ } from './ui/hjalp';
@@ -201,7 +201,7 @@ function tick() {
   if (ui.testMode) vt = Math.max(ui.nu, s.now - BEAT * SEC) + realDt * speed * SEC;
   else {
     vt = Date.now();
-    if (vt - s.now > IKAPP_EFTER && !(storRad(s.rovare) && s.rovare?.gor === 'slass')) { catchUp(vt); return; } // en stor strid visas i levande läge (steg 8.8.9)
+    if (vt - s.now > IKAPP_EFTER && !storStridNu(s)) { catchUp(vt); return; } // en stor strid visas i levande läge (steg 8.8.9)
   }
   // spar.pa är på också här: varje slag börjar om vägen (steg.ts), så bara det sista slaget sparas och ritas
   const t0 = performance.now();

@@ -1,7 +1,7 @@
 import { LAG, efterlevs, lagGaller } from './lagar';
 import { think } from './folk';
 import { HOUR } from './typer';
-import { ALDER, ageOf, isParent, living, log } from './folk';
+import { ALDER, ageOf, living, log } from './folk';
 import { clamp } from './slump';
 import { Act, DAY, Person, Seder, State } from './typer';
 import { balans } from './balans';
@@ -86,8 +86,18 @@ export function influence(s: State, p: Person) {
 }
 // åt vilket håll personen drar varje sed: personligheten plus de upplevelser hen minns (steg 4.5.4.9). Byns mål och personens
 // övertygelser i personrutan
+// de som har barn (levande eller döda), en gång i timmen: drar frågas för varje person varje timme och vid varje fällt träd
+const foraldrarCache = new WeakMap<State, { key: string; ids: Set<number> }>();
+function foraldrar(s: State) {
+  const key = `${Math.floor(s.now / HOUR)}:${s.people.length}`, c = foraldrarCache.get(s);
+  if (c?.key === key) return c.ids;
+  const ids = new Set<number>();
+  for (const q of s.people) { if (q.mother !== undefined) ids.add(q.mother); if (q.father !== undefined) ids.add(q.father); }
+  foraldrarCache.set(s, { key, ids });
+  return ids;
+}
 export function drar(s: State, p: Person) {
-  const barn = s.people.some(c => isParent(p, c)), d = nollor();
+  const barn = foraldrar(s).has(p.id), d = nollor();
   for (const k of SED_LIST) d[k] = SEDER[k].dra(p.pot, barn);
   d.andlig = (andlighet(s, p) - 50) / 50; // byns snitt av andlighet drar seden Världslig – Andlig (steg 8.6.1)
   for (const u of p.upp ?? []) {
@@ -96,13 +106,14 @@ export function drar(s: State, p: Person) {
   }
   return d;
 }
+// rösterna i sederna: varje persons vikt (vikter i rost.ts, samma som sederTarget använder) och andelen av hela byns röst
+// (Tyngsta röster i fliken Seder, steg 4.5.4.10). Störst först. En kopia sorteras: vikter är en cache som simuleringen
+// går igenom i sin ordning, och fliken får inte ändra den (regel 2)
+export function roster(s: State) {
+  return [...vikter(s)].sort((a, b) => b.andel - a.andel).map(x => ({ ...x, w: x.andel }));
+}
 // det som format sederna (fliken Seder): hur mycket varje slags upplevelse drar byns mål, vägt efter inflytandet som i
 // sederTarget, och hur många som minns den. Störst först
-// rösterna i sederna: varje persons inflytande plus ledarens extra vikt (som i sederTarget), och andelen av hela byns röst
-// (Tyngsta röster i fliken Seder, steg 4.5.4.10). Störst först
-export function roster(s: State) {
-  return vikter(s).sort((a, b) => b.andel - a.andel).map(x => ({ ...x, w: x.andel }));
-}
 export function sedDrag(s: State) {
   const ppl = roster(s), tw = ppl.reduce((a, x) => a + x.w, 0);
   const m = new Map<UpplevelseTyp, { k: UpplevelseTyp; n: Set<number>; d: Record<Sed, number> }>();

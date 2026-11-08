@@ -79,8 +79,8 @@ export function rikRad(s: State): RikRad {
   return [Math.round(s.now), Math.round(d.forrad), Math.round(d.redskap), Math.round(d.hus), folk, saker];
 }
 // raden just nu, räknad en gång per stund och by (grafens serier läser den var för sig)
-let nuRad: { s: State; t: number; r: RikRad } | undefined;
-const rikNu = (s: State) => (nuRad?.s === s && nuRad.t === s.now ? nuRad : (nuRad = { s, t: s.now, r: rikRad(s) })).r;
+const nuRad = new WeakMap<State, { t: number; r: RikRad }>(); // per by (regel 4)
+const rikNu = (s: State) => { let c = nuRad.get(s); if (c?.t !== s.now) nuRad.set(s, c = { t: s.now, r: rikRad(s) }); return c.r; };
 // en serie ur rikedomens rader åt grafen (ui/graf.ts): [tid, värde], en punkt per dygn och sist värdet just nu
 export function rikSerie(s: State, varde: (r: RikRad) => number | undefined): [number, number][] {
   const ut: [number, number][] = [];

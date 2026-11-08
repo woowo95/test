@@ -75,7 +75,7 @@ const GRUPPER: { andel: (s: State) => number; vem: (s: State) => Person[] }[] = 
 const vikterCache = new WeakMap<State, { key: string; v: Viktad[] }>();
 type Viktad = { p: Person; w: number; andel: number };
 export function vikter(s: State): Viktad[] {
-  const sv = s.seder.v, st = s.styre, key = `${Math.floor(s.now / 3600000)}:${st?.ledare}:${st?.oppna.length}:${Object.keys(st?.ministrar ?? {}).length}:${sv.rang}:${sv.fortjanst}:${sv.fejd}:${sv.gemenskap}:${sv.andlig}:${living(s).length}:${st?.lagar?.length}:${s.tron?.length}`;
+  const sv = s.seder.v, st = s.styre, key = `${Math.floor(s.now / 3600000)}:${st?.ledare}:${st?.oppna.length}:${Object.keys(st?.ministrar ?? {}).length}:${sv.rang}:${sv.fortjanst}:${sv.fejd}:${sv.gemenskap}:${sv.andlig}:${s.people.length}:${st?.lagar?.length}:${s.tron?.length}`; // de döda och de som flyttat sållas bort nedan
   const c = vikterCache.get(s);
   if (c?.key === key && c.v.every(x => alive(x.p))) return c.v;
   const v = raknaVikter(s);
@@ -158,7 +158,8 @@ export function rostaOm(s: State, fr: Fraga) {
   if (st.roster.length > ROST.sparas) st.roster.splice(0, st.roster.length - ROST.sparas);
   count(s, 'omrostning'); count(s, gick ? 'omrostning_ja' : 'omrostning_nej');
   const envalde = Math.max(0, s.seder.v.rang ?? 0);
-  for (const r of roster) if (r.ja !== gick) { const p = byId(s, r.id); if (p) p.missnoje = clamp((p.missnoje ?? 0) + ROST.miss + ROST.missEnvalde * envalde, 0, 1); }
+  // missnöjet med styret: bara byns frågor, inte trons eller skulden på tinget
+  if (def.krets === 'byn' && fr.f !== 'skuld') for (const r of roster) if (r.ja !== gick) { const p = byId(s, r.id); if (p) p.missnoje = clamp((p.missnoje ?? 0) + ROST.miss + ROST.missEnvalde * envalde, 0, 1); }
   if (gick) def.gor(s, fr.d, fram); else def.nej?.(s, fr.d);
   return gick;
 }
@@ -234,7 +235,6 @@ export const missnojeNoll = (s: State) => { for (const p of living(s)) p.missnoj
 
 // ---------- fraktionen (steg 8.3.11) ----------
 export interface Fraktion { led: number; med: number[]; }
-export const fraktionNu = (s: State) => s.styre?.frak;
 function fraktionTimme(s: State) {
   const st = styreAv(s), l = ledareOf(s);
   if (!l || (st.lugn ?? 0) > s.now) return;
@@ -283,7 +283,8 @@ function stortas(s: State, l: Person, f: Fraktion) {
   const stor = f.med.length >= vuxna.length * MISS.uppror;
   const med = f.med.map(id => byId(s, id)!).filter(Boolean);
   const narmaste = (p: Person, n: number, utom: Person[]) => vuxna.filter(q => q !== p && !utom.includes(q) && (isKin(p, q) || (s.rels[relKey(p.id, q.id)]?.op ?? 0) > 30)).slice(0, n);
-  const a = stor ? med : [led, ...narmaste(led, 1, [l, ...med]).filter(q => med.includes(q))], b = stor ? vuxna.filter(q => !med.includes(q)) : [l, ...narmaste(l, 1, med)];
+  // vid en ledarstrid: utmanaren och en nära ur fraktionen mot ledaren och en nära som inte är med i den
+  const a = stor ? med : [led, ...narmaste(led, vuxna.length, [l]).filter(q => med.includes(q)).slice(0, 1)], b = stor ? vuxna.filter(q => !med.includes(q)) : [l, ...narmaste(l, 1, med)];
   if (!b.includes(l)) b.push(l);
   count(s, stor ? 'uppror' : 'ledarstrid');
   const text = stor ? `Upproret bröt ut: ${led.name} och de missnöjda gick mot ${l.name}.` : `${led.name} utmanade ${l.name} om ledarskapet.`;

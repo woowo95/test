@@ -1,7 +1,7 @@
 import { clamp, gauss, pick, rnd } from './slump';
 import { DAY, HOUR, Person, Rel, State } from './typer';
 import { balans } from './balans';
-import { ageOf, alive, count, isParent, living, log, stat } from './folk';
+import { ageOf, alive, count, isParent, living, log, relKey, stat } from './folk';
 import { UPPV, formas, upplev } from './uppvaxt';
 import { yearNo } from './tid';
 import { kronika } from './historik';
@@ -22,6 +22,7 @@ export const ANDE = balans('andlighet', {
   barn: 16, // ... och hos ett barn
 });
 export const TRO = balans('tro', {
+  takTro: 4, // högst så många trosriktningar samtidigt i byn (steg 8.5.11)
   spridBy: 0.5, // så mycket ett samtal kan få den som tvivlar att byta tro (steg 8.5.12)
   // den första tron (steg 4.1.2.1, "Den första tron" i designdokumentet)
   grunda: 70, // så andlig måste den vara som tolkar ett tecken till en egen tro ...
@@ -268,7 +269,7 @@ export function tecken(s: State, p: Person, k: TeckenTyp, om?: string) {
 export const TRO_PROV = { utanTak: false }; // scenarierna som prövar många tecken i samma by
 export function grunda(s: State, p: Person, k: TeckenTyp, om?: string) {
   const d = TDEF[k], tron = (s.tron ??= []);
-  if (!TRO_PROV.utanTak && tron.filter(t => t.slut === undefined).length >= 4) return; // högst några trosriktningar samtidigt (steg 8.5.11)
+  if (!TRO_PROV.utanTak && tron.filter(t => t.slut === undefined).length >= TRO.takTro) return; // högst några trosriktningar samtidigt (steg 8.5.11)
   const tr: Tro = {
     id: tron.length + 1, grundare: p.id, gnamn: p.name, t: s.now, ar: yearNo(s), k, ...om ? { om } : {},
     bakom: pick(s, d.bakom, 'tro', p), vill: pick(s, d.vill, 'tro', p), svek: pick(s, d.svek, 'tro', p),
@@ -422,7 +423,7 @@ export function predika(s: State, a: Person, b: Person, r: Rel, kind: string, ga
 export function stepReligion(s: State) {
   for (const p of living(s)) {
     if (p.task?.act === 'sova' && rnd(s, 'tro', p) < TRO.drom) {
-      const d = p.partner === undefined ? s.people.find(q => !alive(q) && q.died !== undefined && s.now - q.died < 7 * DAY && (s.rels[`${Math.min(p.id, q.id)}:${Math.max(p.id, q.id)}`]?.op ?? 0) > 50) : undefined;
+      const d = p.partner === undefined ? s.people.find(q => !alive(q) && q.died !== undefined && s.now - q.died < 7 * DAY && (s.rels[relKey(p.id, q.id)]?.op ?? 0) > 50) : undefined;
       if (d) tecken(s, p, 'dodDrom', d.name); else tecken(s, p, 'drom');
     }
     if (p.svartSjuk && !(p.sickUntil && p.sickUntil > s.now)) {

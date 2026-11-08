@@ -622,18 +622,19 @@ export function planBuild(s: State) {
   const okAt = (i: number) => (okMinne[i] < 0 ? okMinne[i] = tileOk(s, i % W, Math.floor(i / W), utomElden) ? 1 : 0 : okMinne[i]) === 1;
   // det mest akuta behovet för byn och för varje familj (steg 7.2.17), det första som går att göra något åt; är inget akut för byn, en förbättring
   const klara = new Set<number>();
-  let inget = behov.length > 0;
+  let provat = false, funnit = false; // det som väntar på ett bygge eller ett köp prövas inte
   for (const u of behov) {
     const ag = u.a.ag ?? -1;
     if (klara.has(ag) || upptagen(s, ag) || s.husAffar?.ag === ag) continue; // den som väntar på att köpa ett hus bygger inget under tiden
     const bast = valj(s, u, okAt);
+    provat = true;
     if (!bast) continue;
-    inget = false;
+    funnit = true;
     klara.add(ag);
     utfor(s, bast, u, byggare, ppl);
     okMinne.fill(-1);
   }
-  if (inget) s.byggSok = s.now + BYGG.omforsok * HOUR; // ingen plats nu: försök igen om ett tag
+  if (provat && !funnit) s.byggSok = s.now + BYGG.omforsok * HOUR; // ingen plats nu: försök igen om ett tag
   if (!byggbehov(s).some(b => b.a.ag === undefined) && !upptagen(s, -1) && !bitsOf(s).some(b => b.forb) && !klara.has(-1)) {
     const u: ByggBehov = { fn: 'forbattra', a: { v: 1, plats: 0 }, sc: 0 }, f = valj(s, u, okAt);
     if (f) utfor(s, f, u, byggare, ppl);

@@ -7,7 +7,7 @@ import { clamp, rnd } from './slump';
 import { ALDER, ageOf, alive, byId, count, isParent, living, log, stat, think } from './folk';
 import { kronika } from './historik';
 import { upplev } from './uppvaxt';
-import { Tro, andlighet, grunda, tecken, skalaV, troNamn, troNiva, troOf, troende } from './religion';
+import { TRO, Tro, andlighet, grunda, tecken, skalaV, troNamn, troNiva, troOf, troende } from './religion';
 import { ageIndex, ageStart } from './tid';
 import { getMap } from './karta';
 import { groundOf } from './mark';
@@ -32,13 +32,10 @@ export const KULT = balans('kult', {
   profetAnde: 88, profetKarisma: 13, profetChans: 0.0008, // profeten: andlighet, karisma och chansen per timme att få en syn
   nyTro: 0.3, // chansen att profeten grundar en ny tro i stället för att ändra den
   profetSkala: 18, // så mycket en syn flyttar trons skalor
-  takTro: 4, // högst så många trosriktningar samtidigt i byn
   vanhelgaChans: 0.01, // chansen per dygn att en sluten tro vanhelgar en annan tros plats
   slutenFran: 70, // Öppen – Sluten: så sluten ska tron vara
-  ritualFonster: 6, // en ritual väntar högst så här många timmar på att börja
   festMat: 0.15, // bröllopets fest gör alla så här mycket mättare (steg 8.5.13)
   fest: 50, forsakelse: 50, // Fest – Försakelse: över så här mycket på respektive sida (0 = Fest, 100 = Försakelse)
-  livetEfter: 60, // Nuet – Livet efter: över så här blir det gravhög med gåvor
   bal: 4, // så mycket ved ett bål tar
   vattenR: 20, // ... och så här nära ska vattnet vara för att den döde läggs i vatten
 });
@@ -67,13 +64,13 @@ export function bonFritid(s: State, p: Person): { id: BonId; o?: string; spot?: 
   return { id: 'vardag', spot };
 }
 // bönen i nöd: bara den som är andlig och troende nog, en gång per fara och dygn, när en fara är över byn eller någon nära lider
-export function bonNod(s: State, p: Person): { id: BonId; o: string } | undefined {
+export function bonNod(s: State, p: Person): { id: BonId; o: string; vem?: number } | undefined {
   if (p.tro === undefined || andlighet(s, p) < KULT.nodAnde || (p.troStyrka ?? 0) < KULT.nodTro || p.bonNodD === dygnNr(s.now)) return undefined;
   const f = dangers(s);
   if (f.svalt) return { id: 'nod', o: 'svälten' };
   if (f.kyla) return { id: 'nod', o: 'kylan' };
   const q = living(s).find(o => o !== p && (p.partner === o.id || isParent(p, o) || isParent(o, p)) && (o.skador?.some(w => w.g >= 0.5) || o.sickUntil && o.sickUntil > s.now));
-  return q ? { id: 'for', o: q.name } : undefined;
+  return q ? { id: 'for', o: q.name, vem: q.id } : undefined;
 }
 // bönen är klar (KLAR i steg.ts): humör, tro, och en bön i nöd får svar inom några dygn (steg 8.5.4)
 export function bonKlar(s: State, p: Person, t: { tool?: string; ref?: number; why?: string }) {
@@ -82,7 +79,7 @@ export function bonKlar(s: State, p: Person, t: { tool?: string; ref?: number; w
   p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + d.ger.tro * f);
   count(s, 'bon_' + id);
   if (id === 'vardag') p.bonD = dygnNr(s.now);
-  if (id === 'nod' || id === 'for') { p.bonNodD = dygnNr(s.now); p.bonVan = { t: s.now, o: id === 'nod' ? (dangers(s).svalt ? 'svalt' : 'kyla') : 'nara' }; }
+  if (id === 'nod' || id === 'for') { p.bonNodD = dygnNr(s.now); p.bonVan = { t: s.now, o: id === 'nod' ? (dangers(s).svalt ? 'svalt' : 'kyla') : 'nara', ...(id === 'for' && t.ref !== undefined ? { vem: t.ref } : {}) }; }
   if (id === 'bikt') { p.skuld = 0; count(s, 'bikt'); }
 }
 const rokelse = (s: State, p: Person) => { if (amountOf(s, 'rokelse') < 1 || rnd(s, 'tro', p) > 0.2) return false; takeMaterial(s, p, 'rokelse', 1); return true; };
@@ -91,8 +88,10 @@ const barTecken = (s: State, p: Person) => (s.ting ?? []).some(t => t.bar === p.
 function bonSvar(s: State, p: Person) {
   const b = p.bonVan;
   if (!b) return;
-  const f = dangers(s), over = b.o === 'svalt' ? !f.svalt : b.o === 'kyla' ? !f.kyla : true;
-  if (over && b.o !== 'nara' || s.now - b.t >= KULT.hjalpDygn * DAY) {
+  // bönen för en nära hjälpte om hen blivit frisk från sjukdomen och de svåra skadorna; dog hen hjälpte den inte
+  const q = b.vem !== undefined ? byId(s, b.vem) : undefined, frisk = !!q && alive(q) && !(q.sickUntil && q.sickUntil > s.now) && !q.skador?.some(w => w.g >= 0.5);
+  const f = dangers(s), over = b.o === 'svalt' ? !f.svalt : b.o === 'kyla' ? !f.kyla : frisk;
+  if (over || s.now - b.t >= KULT.hjalpDygn * DAY || b.o === 'nara' && (!q || !alive(q))) {
     p.bonVan = undefined;
     if (over) { upplev(s, p, 'bonHjalpte'); count(s, 'bon_hjalpte'); bonSvarPlats(s, p); tecken(s, p, 'bonSvar'); } else { upplev(s, p, 'bonInte'); p.tvivel = (p.tvivel ?? 0) + 1; count(s, 'bon_inte'); }
   }
@@ -145,7 +144,7 @@ function profetSteg(s: State, p: Person) {
   const tr = troOf(s, p.tro);
   if (!tr) return;
   p.profet = true; count(s, 'profet'); p.fame.push('Fick en syn');
-  if (rnd(s, 'tro', p) < KULT.nyTro && levande(s).length < KULT.takTro) {
+  if (rnd(s, 'tro', p) < KULT.nyTro && levande(s).length < TRO.takTro) {
     const t = `${p.name} fick en syn och lämnade ${troNamn(tr).toLowerCase()} för något nytt.`;
     log(s, t, 'rel', [p.id]); kronika(s, t);
     p.tro = undefined; grunda(s, p, 'drom'); return;
@@ -157,7 +156,6 @@ function profetSteg(s: State, p: Person) {
   (tr.profeter ??= []).push(p.id);
 }
 const levande = (s: State) => (s.tron ?? []).filter(t => t.slut === undefined);
-export const fridForTro = (s: State) => levande(s).length < KULT.takTro; // taket på antalet trosriktningar (steg 8.5.11)
 
 // ---------- flera religioner och tolerans (steg 8.5.11) ----------
 function vanhelga(s: State) {
@@ -185,7 +183,6 @@ export const RITUALER = {
 } satisfies Record<string, RitualDef>;
 export type RitualId = keyof typeof RITUALER;
 const RDEF: Record<RitualId, RitualDef> = RITUALER;
-export const ritualNu = (s: State) => s.ritual;
 // en rad i arbetsordningen (Tillfälle): den som ska vara med går dit medan ritualen pågår
 export function ritualVal(s: State, p: Person) {
   const r = s.ritual;

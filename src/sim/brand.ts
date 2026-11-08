@@ -212,7 +212,6 @@ export function tandTest(s: State, x: number, y: number): { ok: boolean; text: s
 
 // testläget (steg 6.4.7): en vanlig blixt slår ner på rutan (x, y). Den tänder som blixten i vädret (gnistor nedan): bara
 // när det finns något som brinner och marken är torr nog, med en ny slumpsiffra för varje blixt. Svaret säger om den tände och varför
-let blixtNr = 0;
 export function blixtTest(s: State, x: number, y: number): { ok: boolean; text: string } {
   if (!inMap(x, y)) return { ok: false, text: 'Rutan är utanför kartan' };
   const i = y * W + x, k = s.brand && kartaOf(s.brand)[i], dry = torrhet(s), fu = bransleAv(s)(i);
@@ -226,7 +225,8 @@ export function blixtTest(s: State, x: number, y: number): { ok: boolean; text: 
   else if (dry <= 0) text = `Blixten slog ner ${var_}, men marken är för blöt och inget tog eld`;
   else {
     const ny = !s.brand, fore = s.brand?.n ?? 0;
-    tand(s, i, 'blixt', hash(s.seed + 3860, Math.round(s.now / SEC), ++blixtNr) / dry);
+    count(s, 'blixtProv'); // varje blixt får en egen slumpsiffra, räknad i byn och inte i modulen (regel 4)
+    tand(s, i, 'blixt', hash(s.seed + 3860, Math.round(s.now / SEC), s.stat!.blixtProv) / dry);
     const tande = (s.brand?.n ?? 0) > fore;
     if (tande && !ny) (s.brand!.kallor ??= []).push(i);
     text = tande ? `Blixten slog ner ${var_} och tände marken` : `Blixten slog ner ${var_} men tände inte (marken är ${dry < 0.5 ? 'bara lite' : 'ganska'} torr, och det var tur)`;
