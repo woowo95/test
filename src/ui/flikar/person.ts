@@ -1,4 +1,4 @@
-import { paSigVikt, klanById, FORMAGOR, gangDelar, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
+import { kvOf, paSigVikt, klanById, FORMAGOR, gangDelar, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
 import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, handOrkar, handPlatser, capacity, kvNamn, handerFor, load, utrustning, bordaIHander, type IHanden, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, timeLabel, vidBordet, upplevelseText, uppEffekt, vuxenUpp, Upplevelse, yrkeNamn, andlighet, troOf, tolkning, teckenText, troNamn, pratarMed, gastRelationer, actIkon, utbIkon, AMNEN, type ByteMinne, type GastRel, type Slakting, stacksOf, grundvarde, tingVarde, housesOf, husVarde } from '../../sim';
 import { gorText } from '../jakt';
 import { figurSvg, portrattImg } from '../folkbild';
@@ -7,7 +7,7 @@ import { skapad } from '../utseende';
 import { hasIcon, iconImg, kvSvg, tecknet } from '../../ikoner';
 import { framstegSvg, ringSvg, tartFarg, tartSvg } from '../framsteg';
 import { gravidDel } from '../../sim/steg';
-import { LAG, byteKnapp, hallCirkel, kvMark, clockTxt, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, cssFarg, durTxt, esc, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
+import { LAG, byteKnapp, hallCirkel, kvOrd, clockTxt, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, cssFarg, durTxt, esc, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
 import { s, ui, uppgiftVid } from '../lage';
 import { tekInfo } from './teknik';
 import { gastById, gastRad, type Gast } from '../gaster';
@@ -202,17 +202,17 @@ function livet(p: Person) {
 // per slag och husen. Summan står överst
 function formogenhetLista(p: Person) {
   const v = (n: number) => String(Math.round(n));
-  type Rad = { ikon: string; namn: string; n: string; kv: string; c?: number; varde: number };
+  type Rad = { ikon: string; namn: string; n: string; kv: string; q?: number; c?: number; varde: number };
   const rader: Rad[] = [];
-  for (const t of ownedBy(s, p)) rader.push({ ikon: iconImg(t.halv ? t.halv.gor : t.k, 16), namn: t.halv ? `${sakNamn(t.halv.gor)} (inte klar)` : sakNamn(t.k), n: '1', kv: t.halv ? '' : kvMark(t) ?? '', c: t.halv ? undefined : t.c, varde: tingVarde(t) });
+  for (const t of ownedBy(s, p)) rader.push({ ikon: iconImg(t.halv ? t.halv.gor : t.k, 16), namn: t.halv ? `${sakNamn(t.halv.gor)} (inte klar)` : sakNamn(t.k), n: '1', kv: t.halv ? '' : kvOrd(t), q: t.halv ? undefined : t.q, c: t.halv ? undefined : t.c, varde: tingVarde(t) });
   const andel = new Map<string, { n: number; c: number }>();
   for (const a of stacksOf(s)) { const m = a.ag?.[p.id] ?? 0; if (m <= 0) continue; const x = andel.get(a.k) ?? { n: 0, c: 0 }; x.n += m; x.c += m * a.c; andel.set(a.k, x); }
   for (const [k, x] of andel) if (x.n >= 0.5) rader.push({ ikon: iconImg(k, 16), namn: sakNamn(k), n: fmtN(x.n), kv: '', c: x.c / x.n, varde: x.n * grundvarde(k) });
   for (const h of housesOf(s)) if (h.ag === p.id) rader.push({ ikon: '<span class="tecken">🏠</span>', namn: 'Hus', n: '1', kv: '', varde: husVarde(s, h) });
-  rader.sort((a, b) => b.varde - a.varde);
+  rader.sort((a, b) => (ui.kvSort ? kvOf(b) - kvOf(a) : 0) || b.varde - a.varde); // efter kvaliteten med ett tryck på rubriken (steg 9.2.18)
   const sum = formogenhetDelar(s, p.id).sum;
   if (!rader.length) return '<p class="muted">Äger inget.</p>';
-  return `<p class="muted small" title="Ungefär i arbetstimmar: det det tar att skaffa eller göra sakerna">Värt ${v(sum)} sammanlagt.</p>
+  return `<p class="muted small" title="Ungefär i arbetstimmar: det det tar att skaffa eller göra sakerna">Värt ${v(sum)} sammanlagt. <span class="tryck" data-kvsort="1">${ui.kvSort ? '↓ kvalitet' : 'Sortera efter kvalitet'}</span></p>
     <table class="agtab"><tbody>${rader.map(r => `<tr><td>${r.ikon}</td><td>${esc(r.namn)}</td><td class="tal">${r.n}</td><td>${r.kv}</td><td>${r.c === undefined ? '' : hallCirkel(r.c)}</td><td class="tal" title="Värde, ungefär i arbetstimmar">${v(r.varde)}</td></tr>`).join('')}</tbody></table>`;
 }
 // egenskaper och färdigheter räknas 0–20 men visas på skalan 0–10 (steg 3.10.5): bara visningen ändras

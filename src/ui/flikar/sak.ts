@@ -1,6 +1,6 @@
-import { SKYDD, KROPPSDELAR, GravStil, HELIGA_PLATSER, gravAt, heligAt, troNamn, troOf, kvarById, KVARLEVOR, DAY, amountOf, busksort, fallTid, living, tileOf, isTool, FOREST, stamAv, MARK, STADIER, VAG, groundOf, stadium, tradAlder, tradArt, STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf } from '../../sim';
+import { kvOf, NORMAL, SKYDD, KROPPSDELAR, GravStil, HELIGA_PLATSER, gravAt, heligAt, troNamn, troOf, kvarById, KVARLEVOR, DAY, amountOf, busksort, fallTid, living, tileOf, isTool, FOREST, stamAv, MARK, STADIER, VAG, groundOf, stadium, tradAlder, tradArt, STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf } from '../../sim';
 import { iconImg } from '../../ikoner';
-import { condBar, durTxt, esc, kvMark, kvText, pLink } from '../hjalp';
+import { condBar, durTxt, esc, kvOrd, kvText, pLink } from '../hjalp';
 import { piles, s, ui } from '../lage';
 import type { Flik } from '../panel';
 import { tradBild, tradBildUrl } from '../trad';
@@ -209,7 +209,7 @@ export const sak: Flik = {
     const strid = SKYDD[a.k], PAR: Record<string, string> = { arm: 'armarna', ben: 'benen', fot: 'fötterna', hand: 'händerna' }, SLAGORD: Record<string, string> = { hugg: 'hugg', stick: 'stick', slag: 'slag', bett: 'bett' };
     const klad = (SAKER[a.k]?.klad?.varme ? `<dt>Kylan</dt><dd>Skyddar ${Math.round(kladSkydd(a.k, t) * 100)} % mot kylan</dd>` : '')
       + (strid ? `<dt>Slag och stick</dt><dd>Tar ${Object.entries(strid.tar).map(([k, v]) => `${Math.round(v! * 100)} % av ${SLAGORD[k] ?? k}`).join(', ')}, på ${[...new Set(strid.delar.map(d => PAR[d.replace(/[VH]$/, '')] ?? KROPPSDELAR[d].i))].join(' och ')}</dd>` : '');
-    const kv = t && !t.halv && t.q !== undefined ? `<dt>Kvalitet</dt><dd>${kvMark(t, 12)} ${esc(kvText(t))}</dd>` : ''; // (steg 2.2.2)
+    const kv = t && !t.halv && t.q !== undefined ? `<dt>Kvalitet</dt><dd>${kvOrd(t) || 'Normal'}${kvOf(t) === NORMAL ? '' : ` <span class="muted">${esc(kvText(t).replace(/^[^:]*: /, ''))}</span>`}</dd>` : ''; // (steg 2.2.2)
     const ber = t && !t.halv ? sakBerattelse(s, t, sakNamn(k)) : ''; // mästerverken och de usla sakerna (steg 3.9.4)
     return `
     <div class="phead">${iconImg(k, 32)}<div><h2>${t?.ber?.namn ? `★ ${esc(t.ber.namn)}: ` : ''}${esc(sakNamn(k))}${halv}</h2></div></div>

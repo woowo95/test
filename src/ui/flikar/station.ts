@@ -5,7 +5,7 @@ import { iconImg } from '../../ikoner';
 import { frystAttr, sakAttr } from './sak';
 import { iBruk } from '../ibruk';
 import { taBortITest } from '../testborta';
-import { condBar, durTxt, esc, fmtN, kvMark, kvText, pLink, pileTxt } from '../hjalp';
+import { condBar, durTxt, esc, fmtN, kvMark, kvOrdning, kvText, pLink, pileTxt } from '../hjalp';
 import { s, ui } from '../lage';
 import type { Flik } from '../panel';
 
@@ -72,8 +72,8 @@ export const station: Flik = {
     // innehållet visas som i ett lager (steg 4.5.7.9); det som någon tagit ur kistan står inte där förrän det läggs tillbaka (steg 6.8.11): samma lista med symbol, antal, kvalitet och skick
     const rad = (attr: string, txt: string, c: number, k: string) => `<dt class="tryck${frystAttr(k)}" ${attr}>${txt}</dt><dd>${condBar(c)}<span>${Math.round(c * 100)} %</span></dd>`;
     const inne = (st.ag !== undefined
-      ? tingOf(s).filter(k => k.vid === st.id && k.hos === undefined && k.lass === undefined && k.bar === undefined).map(k => rad(`data-sak="t:${k.id}"`, pileTxt({ k: k.k, n: 1, max: 1, q: k.q }), k.c, k.k))
-      : [...har].sort((a, b) => sakNamn(a.k).localeCompare(sakNamn(b.k), 'sv') || b.n - a.n || condOf(b) - condOf(a)).map(a => rad(sakAttr(a), pileTxt(a), condOf(a), a.k))).join('');
+      ? tingOf(s).filter(k => k.vid === st.id && k.hos === undefined && k.lass === undefined && k.bar === undefined).sort(kvOrdning).map(k => rad(`data-sak="t:${k.id}"`, pileTxt({ k: k.k, n: 1, max: 1, q: k.q }), k.c, k.k))
+      : [...har].sort((a, b) => kvOrdning(a, b) || sakNamn(a.k).localeCompare(sakNamn(b.k), 'sv') || b.n - a.n || condOf(b) - condOf(a)).map(a => rad(sakAttr(a), pileTxt(a), condOf(a), a.k))).join('');
     // smutsen (steg 2.7.1): blodet vid slaktbänken, som bleknar på ett par dygn. Bara utseende
     const { w: bw, h: bh } = storlekAv(st), bv = blodVid(s, st, bw, bh);
     const smuts = (bv > 0 ? `<span ${tip(`Blod runt omkring, ${Math.round(bv * 100)} % färskt. Det bleknar bort på ett par dygn`)}>🩸 ${Math.round(bv * 100)} %</span> ` : '') + Object.entries(smutsVid(s, st)).filter(([, v]) => v > 0).map(([k, v]) => { const fd = (FLACKAR as Record<string, { namn: string; bleknar: number }>)[k]; return fd ? `<span ${tip(`${fd.namn} runt omkring, ${Math.round(v * 100)} %. Det bleknar bort på ${Math.round(fd.bleknar / 24)} dygn`)}>· ${Math.round(v * 100)} %</span>` : ''; }).join(' ');

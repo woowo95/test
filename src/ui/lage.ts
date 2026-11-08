@@ -35,6 +35,7 @@ export const ui = {
   annanBy: undefined as string | undefined, // en annan by än den egna är vald (steg 9.2.16, ui/byar.ts)
   forskjut: 0, // ... och så långt efter klockan går den (ms); den egna byn går i klockans tid
   byFel: '', // det som gick fel när en by lades till eller valdes
+  kvSort: false, // stackarna i förrådet, kistan och en persons saker sorteras efter kvalitet (steg 9.2.18)
   lastPointer: 0, // när spelaren senast tryckte: panelen byts inte ut mitt i ett tryck
   husId: -1, // huset som visas i panelen
   stationId: -1, // stationen som visas i panelen
