@@ -183,7 +183,7 @@ body.vOppen .owned { display: none; }
 /* bandet överst i en flik */
 /* bandet dubbelt så stort, och remsan ut till panelens kanter (steg 6.9.3): sju punkter i dubbel skala mitt i bandet */
 .band { display: flex; justify-content: center; margin: 2px -14px 8px; background: linear-gradient(to bottom, transparent 19px, var(--bk) 19px, var(--bk) 21px, var(--bf) 21px, var(--bf) 33px, var(--bk) 33px, var(--bk) 35px, transparent 35px); }
-.panelkropp > .band:first-child { margin-right: -14px; margin-top: 30px; }
+.panelkropp > .band:first-child { margin-right: -14px; margin-top: 16px; } /* bandet börjar högre (steg 9.2.1) */
 .band img { image-rendering: pixelated; display: block; }
 /* i mörkt läge får bilderna med kolkant (banden, den bleka runstenen) en ljus kant, så att de inte försvinner mot grunden (steg 6.9.17) */
 :root[data-tema="morkt"] .band img, :root[data-tema="morkt"] .runsten .sten.blek { filter: drop-shadow(1px 0 0 #7e7362) drop-shadow(-1px 0 0 #7e7362) drop-shadow(0 1px 0 #7e7362) drop-shadow(0 -1px 0 #7e7362); }
@@ -200,7 +200,7 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 /* porträtten ur porträttgeneratorn (steg 5.2.3.2): i punkter, utan utjämning */
 .pf { width: 32px; height: 32px; image-rendering: pixelated; flex: none; border-radius: 3px; display: block; }
 .pf.big { width: 64px; height: 64px; }
-.pf.stor { width: 128px; height: 128px; } /* porträttet överst i personens panel, dubbelt så stort (steg 6.9.7) */
+.pf.stor { width: 160px; height: 160px; } /* porträttet överst i personens panel, större (steg 6.9.7 och 9.2.1) */
 .tiphead { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
 .tiphead h4 { margin: 0; font-family: var(--display); font-size: 16px; font-weight: 400; }
 .prick { width: 8px; height: 8px; border-radius: 50%; display: inline-block; vertical-align: middle; box-shadow: 0 0 0 1px rgba(36,32,29,0.35); }
