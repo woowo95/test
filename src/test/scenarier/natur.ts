@@ -1303,7 +1303,9 @@ SCENARIER.brasa = {
     if (e) {
       e.lit = false; e.fuel = 0; e.emberUntil = undefined; e.ut = b.now - (BRASA.tomDygn * DAY + HOUR);
       e.at = { x: 1, y: 1 }; // ingen sover närmast den här
+      b.eldar = [e]; // de andra lägereldarna byn hunnit lägga under provet ovan räknas inte här: bara den som tas isär
       setAmount(b, 'sten', 0);
+      b.fire.lit = true; setAmount(b, 'ved', Math.max(amountOf(b, 'ved'), 150)); // som under provet ovan: den första elden brinner och veden räcker
       stepBrasor(b);
       isar = !brasorOf(b).includes(e) && ((b.stat?.brasaIsar as number) ?? 0) > 0;
       hog = (b.stackar ?? []).some(a => a.k === 'sten' && a.x === 1 && a.y === 1 && a.n >= RT.brasaSten);

@@ -598,7 +598,9 @@ SCENARIER.verkstad = {
     const s = createState(1, START); klockan(s); tandEld(s);
     byggare(s); planBuild(s); const A = byggKlart(s)!;
     const rumA = () => gridOf(s).rooms.find(r => r.hus === A.id && r.tiles.length)!;
-    for (let i = 0; sovKvar(s, rumA()) >= 2 && i < 20; i++) nyInvanare(s, i % 2 ? 'm' : 'k', 30);
+    // fler flyttar in så länge det finns en sovplats till (HUS.sovPer golvrutor per person, steg 9.2.36); det som blir kvar är
+    // mindre än slöjdbänken (2 × 2 rutor)
+    for (let i = 0; sovKvar(s, rumA()) >= HUS.sovPer && i < 20; i++) nyInvanare(s, i % 2 ? 'm' : 'k', 30);
     for (const r of s.people) r.tek = { ...r.tek, flatarbank: 1, timmervagg: 1, yxa: 1 };
     setFood(s, 400); setAmount(s, 'ved', 80); setAmount(s, 'grenar', 20); setAmount(s, 'virke', SIM.RT.flatarbankVirke); // virket finns: byn har ingen yxa att klyva med (steg 4.5.5.2)
     const vill = inneUtanPlats(s), a = BYGGNADER.verkstad.akut(s), hemlosa = homeless(s);

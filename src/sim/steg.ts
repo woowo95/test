@@ -34,7 +34,7 @@ import { DJURARTER, REDSKAP, bearbeta, djurKvar, twineRope, wearUsed } from './r
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
 import { arbetaBredvid, forsokKlar, forsokSteg, stepLarlingar, thinkWhileWorking } from './teknik';
 import { arbetsformaga, atSteg, foodDays, workRate } from './ekonomi';
-import { FYND, type FyndId, svampPlock, flintorOchYxor, TRY_SEC, flintFactor, growFynd, handFish, lagren, stoneDist, packFynd, pickMushrooms, richness, richnessDelar, sankning, takeFrom } from './fynd';
+import { FYND, type FyndId, svampPlock, flintorOchYxor, toppOf, TRY_SEC, flintFactor, growFynd, handFish, lagren, stoneDist, packFynd, pickMushrooms, richness, richnessDelar, sankning, takeFrom } from './fynd';
 import { halMin, halVal, islagt, stepIs } from './is';
 import { blotSteg, coldOf, stepVader, temperature, VADER, vaderGrader, vaderNu, vaxtFaktor } from './vader';
 import { ELD, VED, addFuel, canLight, eldById, eldXY, giveBack, needStones, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight } from './eld';
@@ -47,7 +47,7 @@ import { bynsMitt } from './omrade';
 import { SAMTAL, TalkEvent, converse, isSocial, skiljsAt } from './samtal';
 import { HABIT_FADE, addHabit, stepSeder, updateTags } from './seder';
 import { RELT, stepRelationer } from './relationer';
-import { MINNE, areaOf, fearPlace, forget, lookAround, observe, radslaVid, trorOm } from './minne';
+import { MINNE, areaOf, fearPlace, forget, lookAround, observe, radslaVid, sees, sightOf, trorOm } from './minne';
 import { PLATS } from './plats';
 import { chance, clamp, hash3, rnd } from './slump';
 import { ARSTID, VAR, ageIndex, hourOf, iIstiden, isLight } from './tid';
@@ -739,7 +739,10 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
       count(s, 'samlat_bar', y - r); count(s, 'samlat_rotter', r); // vad som samlats av varje slag (scenariot rotter)
       gjort(s, p, 'samlat', y);
     }
-    const fart = ACTS[tk.act].fart ?? 1, got = (plockSlag !== undefined ? utanStenar(forageItems(s, p, dtSec, fart)) : forageItems(s, p, dtSec, fart)) ?? {}, dt = dtSec * fart; // det som växer på platsen hittar man lika mycket fortare (steg 2.12.4); stenarna och flintan plockas på rundan
+    // på rundan hittar man det andra (hö, kvistar, mossa, ägg, frön) under hela tiden ute, också gången sedan förra plocket (tk.letat)
+    const pa = plockSlag !== undefined ? dtSec + (tk.letat ?? 0) : dtSec;
+    if (plockSlag !== undefined) tk.letat = undefined;
+    const fart = ACTS[tk.act].fart ?? 1, got = (plockSlag !== undefined ? utanStenar(forageItems(s, p, pa, fart)) : forageItems(s, p, pa, fart)) ?? {}, dt = pa * fart; // det som växer på platsen hittar man lika mycket fortare (steg 2.12.4); stenarna och flintan plockas på rundan
     if (plockSlag === undefined) bar('svamp', pickMushrooms(s, p, tk.tx, tk.ty, dt, got)); // på rundan plockas svampen som en sak (svampPlock)
     for (const k in got) bar(k, got[k]); // tändmaterialet först, så att mossan inte tar händerna från den som hämtar det
     bar('mossa', mossaFynd(s, tk, dt)); // mossa till förband (steg 2.5.2)
@@ -938,8 +941,12 @@ function rundaRuta(s: State, p: Person, tk: Task, left: number, a: number, learn
   if (tk.hopp) { // på väg: bara gången, inget arbete (steg 9.2.55)
     const w = walk(s, p, tk, Math.min(left, Math.max(slut, 1e-3))), used = Math.max(w.used, 1e-3);
     if (p.task !== tk) return used;
+    tk.letat = (tk.letat ?? 0) + used;
     if (w.framme && tk.phase === 'do') {
       tk.hopp = undefined;
+      // det hen hittat på vägen (hö, kvistar, mossa, ägg, frön) läggs i bördan när hen är framme, också där inget finns att plocka
+      plockSlag = ''; workStep(s, p, tk, 1e-3, a, learn, false, true, 0); plockSlag = undefined;
+      if (p.task !== tk || tk.until <= s.now) return used;
       const f = tk.sett?.[tk.sett.length - 1]; // i ett nytt område ser hen sig omkring: det blir platslärdomar (steg 4.5.6.2)
       if (f === undefined || areaOf(f % W, Math.floor(f / W)) !== areaOf(tk.tx, tk.ty)) lookAround(s, p, tk.tx, tk.ty);
     }
@@ -947,12 +954,6 @@ function rundaRuta(s: State, p: Person, tk: Task, left: number, a: number, learn
   }
   const x = Math.floor(tk.tx), y = Math.floor(tk.ty), full = fullBorda(s, p, tk);
   if (tk.sok && !tk.tandmat && !needStones(s) && !flintaBehovs(s, tk)) { tk.until = s.now; return 1e-3; } // byn har nog
-  // den som hämtar tändmaterial letar på marken där hen står tills det räcker (hö och kvistar ligger överallt, forageItems i eld.ts)
-  if (tk.tandmat && tinderShort(s, tk) && !full) {
-    const used = Math.max(1e-3, Math.min(left, slut, BIT));
-    s.now = now + used * SEC; plockSlag = ''; workStep(s, p, tk, used, a, learn, false, true, 0); plockSlag = undefined;
-    return used;
-  }
   // plocka (steg 9.2.55): stå still och plocka rutan tom, en hel sak per RUNDA.plock sekunder
   if (!full && sakerPa(s, tk, x, y) > 0) {
     tk.plock ??= RUNDA.plock;
@@ -964,8 +965,20 @@ function rundaRuta(s: State, p: Person, tk: Task, left: number, a: number, learn
     plockSlag = slag ?? ''; workStep(s, p, tk, used, a, learn, false, true, slag ? 1 : 0); plockSlag = undefined;
     return used;
   }
+  // den som hämtar tändmaterial plockar det som finns på rutan och i närheten och hittar hö och kvistar på vägen; ser hen inget
+  // att plocka letar hen på marken där hen står tills det räcker (hö och kvistar ligger överallt, forageItems i eld.ts)
+  if (tk.tandmat && tinderShort(s, tk) && !full && !narmastMedSaker(s, tk, x, y, RUNDA.syn)) {
+    const used = Math.max(1e-3, Math.min(left, slut, BIT));
+    s.now = now + used * SEC; plockSlag = ''; workStep(s, p, tk, used, a, learn, false, true, 0); plockSlag = undefined;
+    return used;
+  }
   tk.plock = undefined;
-  if (full || p.task !== tk || tk.phase !== 'do') return 1e-3;
+  if (p.task !== tk || tk.phase !== 'do') return 1e-3;
+  if (full) { // bördan är full: hem med den (som i workStep), och tillbaka hit sedan om tiden räcker
+    if (tk.until > s.now + 2 * MIN) tk.res = { x: tk.tx, y: tk.ty, until: tk.until };
+    tk.until = s.now; count(s, 'turer');
+    return 1e-3;
+  }
   // vidare (steg 9.2.56): den närmaste rutan med saker som hen ser; annars är platsen färdig och nästa mål väljs. Hem när det drar
   // hemåt (draget, men bara hemåt)
   const i = y * W + x;
@@ -996,7 +1009,11 @@ function platsTom(s: State, p: Person, tk: Task, x: number, y: number) { count(s
 // grenarna och stenarna syns) vägs mot vägen dit och rädslan, och som är mindre värd för varje bybo som redan är där eller på väg
 // dit. Aldrig tillbaka över rutor hen tömt (de har inga saker), och bara bort från det hen redan sett här. Scenariot samlarmal frågar den direkt
 export function nastaMal(s: State, p: Person, tk: Task, x0: number, y0: number, radsla: (x: number, y: number) => number) {
-  const res = ACTS[tk.act].resurs, tror = res && !tk.sok ? trorOm(s, p, res) : (x: number, y: number) => sakerPa(s, tk, x, y) / Math.max(1, RUNDA.grenSaker);
+  // det hen ser räknas som det är, i saker på rutan; längre bort det hen tror, räknat i saker (rikedomen delad med toppen, gånger
+  // sakerna på en full ruta), så att en plats som ser rik ut men är tom inte lockar
+  const res = ACTS[tk.act].resurs, sikt = sightOf(s, p);
+  const tror0 = res && !tk.sok ? trorOm(s, p, res) : undefined, iSaker = res && !tk.sok ? (FYND.bar.saker ?? 1) / Math.max(1e-9, toppOf(res)) : 0;
+  const tror = (x: number, y: number) => !tror0 || sees(s, p, x, y, sikt) ? sakerPa(s, tk, x, y) : tror0(x, y) * iSaker;
   const andra = living(s).filter(q => q !== p && q.task?.act === tk.act).map(q => ({ x: q.task!.tx, y: q.task!.ty }));
   const vt = vattenNu(s), R = RUNDA.malR;
   let bast: { x: number; y: number } | undefined, bv = 0;

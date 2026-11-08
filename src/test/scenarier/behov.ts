@@ -859,7 +859,7 @@ SCENARIER.gorjustnu = {
           const x = sp?.x ?? p.x, y = sp?.y ?? p.y;
           prov++;
           if (sp?.still && tk?.phase === 'go' && tk.path?.length !== 0) stillaGar++;
-          if (!tk || tk.phase !== 'do' || !AKT.has(tk.act)) continue;
+          if (!tk || tk.phase !== 'do' || !AKT.has(tk.act) || tk.hopp) continue; // på rundan på väg till nästa mål (steg 9.2.54): hen letar på vägen dit
           const d = ACTS[tk.act], r = (d.runda?.r ?? d.vandra?.r ?? 0) + 1.5, avst = Math.hypot(x - tk.tx, y - tk.ty);
           vidPlats++;
           if (avst > r) { langtBort++; if (ex.length < 4) ex.push(`${p.name} ${tk.act} ${avst.toFixed(1)} rutor från platsen`); }
