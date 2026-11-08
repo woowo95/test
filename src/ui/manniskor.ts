@@ -220,15 +220,19 @@ function pratRuta(x: number, top: number, bob: number, kind: string | undefined,
     : rel === 'karlek' ? 0xbd753e : rel === 'ovan' ? 0x742a01 : rel === 'van' ? 0x647025 : undefined;
   // en ljus, rundad pratbubbla med en spets ner mot den som pratar, så att den inte ser ut som arbetets mörka ruta (steg 4.5.6.9)
   const y0 = top + bob, linje = kant ?? PRAT_KANT, b = kant !== undefined ? 1.2 : 0.8;
-  // tecknet i sina egna punkter (steg 5.5.5): det vanliga tecknet i 8 punkter i den lilla bubblan, och ett ämne vars bild har
-  // 16 punkter i en större bubbla, så att inget ritas i halv storlek
-  const k = ikon && hasIcon(ikon) ? ikon : 'a_prata', w = iconCanvas(k).width || 8, stor = w > 8;
-  if (stor) bubbleG.lineStyle(b, linje).beginFill(PRAT_FARG).drawRoundedRect(x - 10, y0 - 14, 20, 19, 5).endFill();
-  else bubbleG.lineStyle(b, linje).beginFill(PRAT_FARG).drawRoundedRect(x - 6, y0 - 6, 12, 11, 4).endFill();
+  // en enda storlek, den lilla (steg 9.2.10): tecknet i 8 punkter. Ett ämne har sin egen symbol i 8 punkter (amneIkon), och en
+  // bild som är större än 8 punkter visas som det vanliga tecknet, så att inget ritas i halv storlek
+  const k = ikon && hasIcon(ikon) && (iconCanvas(ikon).width || 8) <= 8 ? ikon : 'a_prata';
+  bubbleG.lineStyle(b, linje).beginFill(PRAT_FARG).drawRoundedRect(x - 6, y0 - 6, 12, 11, 4).endFill();
   bubbleG.lineStyle(0).beginFill(PRAT_FARG).drawPolygon([x - 2.6, y0 + 4.4, x + 1.4, y0 + 4.4, x - 1.8, y0 + 8.2]).endFill();
   bubbleG.lineStyle(b, linje).moveTo(x - 2.6, y0 + 5).lineTo(x - 1.8, y0 + 8.2).lineTo(x + 1.4, y0 + 5).lineStyle(0);
-  if (stor) markIcons.add(k, x - 8, top - 12.5 + bob, 1, ljusSymbol(k) ? PRAT_KANT : 0xffffff);
-  else markIcons.add(k, x - 4, top - 4.5 + bob, 8 / w, ljusSymbol(k) ? PRAT_KANT : 0xffffff);
+  markIcons.add(k, x - 4, top - 4.5 + bob, 1, ljusSymbol(k) ? PRAT_KANT : 0xffffff);
+}
+// ämnets symbol i 8 punkter (steg 9.2.10): en per ämne i AMNEN, vädret efter sin sort
+function amneIkon(x: { k: string; i?: string } | undefined) {
+  if (!x) return undefined;
+  const k = x.k === 'vader' ? 'amne_vader_' + (x.i?.replace('vader_', '') ?? 'klart') : 'amne_' + x.k;
+  return hasIcon(k) ? k : undefined;
 }
 const markIcons = new Ikoner(symbolLayer);
 // en sak med mitten i (cx, cy): kartbilden i sin naturliga storlek, annars den gamla bilden storlek punkter stor
@@ -425,7 +429,7 @@ export function drawPeople(t: number) {
       const r = q ? s.rels[relKey(p.id, q.id)] : undefined;
       // bubblans färg: kär (partnern eller mycket romans), grälar (som i folk.ts), goda vänner eller annars
       const rel = q && (p.partner === q.id || (r?.rom ?? 0) > 40) ? 'karlek' : (r?.op ?? 0) < REL.gral ? 'ovan' : (r?.op ?? 0) > REL.van ? 'van' : 'neutral';
-      const ikon = flash.has(p.id) ? flashIkon.get(p.id) : q && p.prat?.m === q.id ? p.prat.i : undefined; // ämnet (steg 3.9.5)
+      const ikon = (flash.has(p.id) || q && p.prat?.m === q.id) ? amneIkon(p.prat) : undefined; // ämnet (steg 3.9.5, 9.2.10)
       pratRuta(x, top, Math.sin(t / 500 + p.id) * 0.6, flash.get(p.id), rel, ikon);
       if (medGast && s.handlare?.id === o) { const hp = handlarPlats(s.handlare, ui.nu); pratRuta(hp.x * TS, hp.y * TS - 13, Math.sin(t / 500) * 0.6, flash.get(p.id), 'neutral'); } // handlaren pratar också
       continue;
