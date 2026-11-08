@@ -1,6 +1,6 @@
 // Graferna (steg 5.4.1): byns historik (sim/historik.ts) som linjer, alla under varandra i Krönikans del Grafer (steg
-// 6.9.12): invånarna, humöret, veden på elden, maten och veden i förrådet och byns rikedom (steg 6.9.13). Grafen visar en vecka (sju dygn, sju år i
-// spelet) och går att dra bakåt ända till byns början; Allt visar hela tiden på en gång. Bara utseende: spelet läser den aldrig.
+// 6.9.12): invånarna, humöret, veden på elden, maten och veden i förrådet och byns rikedom (steg 6.9.13). Grafen visar Allt, 1 dygn,
+// 1 säsong eller 4 säsonger (steg 9.2.8), och ett tryck eller drag längs den visar värdena där. Bara utseende: spelet läser den aldrig.
 // En ny graf är en rad i GRAFER och `grafHtml('id')` där den ska stå; ett nytt tal är en rad i HISTORIK_TAL.
 import { AGES, DAY, HISTORIK_TAL, WEEK, historikSerie, kalender, living, rikSerie, sakNamn, type RikRad } from '../sim';
 import { esc } from './hjalp';
@@ -49,18 +49,21 @@ function rikTopp() {
   return `<div class="grafval">${vy}<select data-rikval aria-label="${namn}" title="${rikVal.vy === 'person' ? 'Välj personen här eller tryck på hen i porträttraden' : 'Välj saken'}">${val.join('')}</select></div>`;
 }
 
-// fönstret per graf: slut = tiden längst till höger (undefined = nu), allt = hela tiden sedan byns början
-const fonster: Record<string, { slut?: number; allt?: boolean }> = {};
+// fönstret per graf (steg 9.2.8): hur lång tid grafen visar (Allt = hela tiden sedan byns början), och tiden där man tryckt
+// eller drar längs grafen (visa), vars värden står under grafen
+const LANGD = { allt: { namn: 'Allt', t: Infinity }, dygn: { namn: '1 dygn', t: DAY }, sasong: { namn: '1 säsong', t: WEEK }, ar: { namn: '4 säsonger', t: 4 * WEEK } } as const;
+type Langd = keyof typeof LANGD;
+const fonster: Record<string, { langd?: Langd; visa?: number }> = {};
 const B = 300, H = 70; // ritytan i SVG:ns enheter
 
 function spann(id: string) {
-  const f = fonster[id] ??= {}, start = s.founded, nu = s.now;
-  if (f.allt || nu - start <= WEEK) return { fran: start, till: Math.max(nu, start + DAY / 24) };
-  const till = Math.min(nu, Math.max(start + WEEK, f.slut ?? nu));
-  return { fran: till - WEEK, till };
+  const f = fonster[id] ??= {}, start = s.founded, nu = s.now, l = LANGD[f.langd ?? 'sasong'].t;
+  return { fran: Math.max(start, nu - l), till: Math.max(nu, start + DAY / 24) };
 }
 const tidNamn = (t: number) => { const k = kalender(s, t); return `År ${k.ar}, ${AGES[k.ai].toLowerCase()}`; };
 const talTxt = (g: Graf, v: number) => g.procent ? `${Math.round(v * 100)} %` : v >= 10 || Number.isInteger(v) ? String(Math.round(v)) : v.toFixed(1).replace('.', ',');
+// seriens värde vid tiden t: den senaste punkten före eller vid t
+const vardeVid = (p: [number, number][], t: number) => { let v: number | undefined; for (const q of p) { if (q[0] > t) break; v = q[1]; } return v; };
 
 export function grafHtml(id: string) {
   const g = GRAFER[id], { fran, till } = spann(id), f = fonster[id];
@@ -73,34 +76,41 @@ export function grafHtml(id: string) {
   const max = g.max ?? 1.1 * Math.max(1, ...serier.flatMap(se => se.p.filter(p => p[0] >= fran && p[0] <= till).map(p => p[1])));
   const x = (t: number) => ((t - fran) / (till - fran) * B).toFixed(1), y = (v: number) => (H - Math.min(v, max) / max * (H - 2) - 1).toFixed(1);
   const linjer = serier.map(se => se.p.length ? `<polyline fill="none" style="stroke:var(--g-${se.farg})" stroke-width="1.5" vector-effect="non-scaling-stroke" points="${se.p.map(p => `${x(p[0])},${y(p[1])}`).join(' ')}"/>` : '').join('');
-  const sist = (se: typeof serier[0]) => { const i = se.p.findIndex(p => p[0] > till); const p = se.p[(i < 0 ? se.p.length : i) - 1]; return p ? talTxt(g, p[1]) : '–'; };
-  const nu = !f.allt && (f.slut === undefined || f.slut >= s.now);
-  const kanDra = !f.allt && s.now - s.founded > WEEK;
+  const sist = (se: typeof serier[0]) => { const v = vardeVid(se.p, till); return v === undefined ? '–' : talTxt(g, v); };
+  const visa = f.visa !== undefined && f.visa >= fran && f.visa <= till ? f.visa : undefined;
+  const strek = visa !== undefined ? `<line x1="${x(visa)}" y1="0" x2="${x(visa)}" y2="${H}" class="grafvisa" vector-effect="non-scaling-stroke"/>` : '';
+  const val = (Object.keys(LANGD) as Langd[]).map(l => `<button type="button" class="grafallt" data-graflangd="${id}:${l}" aria-pressed="${(f.langd ?? 'sasong') === l}">${LANGD[l].namn}</button>`).join('');
+  // under grafen: varje series färg och namn, och värdet där man tryckt (annars nu)
+  const forklaring = serier.map(se => { const v = vardeVid(se.p, visa ?? till); return `<span class="grafserie"><i style="background:var(--g-${se.farg})"></i>${esc(se.namn)} <b>${v === undefined ? '–' : talTxt(g, v)}</b></span>`; }).join('');
   return `<div class="graf" data-graf="${id}"${id === 'rik' ? ` data-rikvy="${rikVal.vy}"` : ''}>
-    <div class="grafhuvud"><span class="grafnamn">${g.namn}</span>${serier.map(se => `<span class="grafserie" title="${se.namn}"><i style="background:var(--g-${se.farg})"></i>${sist(se)}</span>`).join('')}
-    <button type="button" class="grafallt" data-grafallt="${id}" aria-pressed="${!!f.allt}" title="${f.allt ? 'Visa en vecka (sju år i spelet)' : 'Visa hela tiden sedan byns början'}">${f.allt ? '7 år' : 'Allt'}</button></div>${g.topp?.() ?? ''}
-    <div class="grafram"><span class="grafmax">${talTxt(g, max)}</span><svg class="grafyta${kanDra ? ' dra' : ''}" viewBox="0 0 ${B} ${H}" preserveAspectRatio="none" role="img" aria-label="${g.namn} från ${tidNamn(fran)} till ${nu ? 'nu' : tidNamn(till)}">
-      <line x1="0" y1="${H - 0.5}" x2="${B}" y2="${H - 0.5}" class="grafaxel" vector-effect="non-scaling-stroke"/>${linjer}</svg></div>
-    <div class="grafaxlar"><span>${tidNamn(fran)}</span><span class="muted">${kanDra ? '⇠ dra ⇢' : ''}</span><span>${nu ? 'nu' : tidNamn(till)}</span></div>
+    <div class="grafhuvud"><span class="grafnamn">${g.namn}</span>${serier.length === 1 ? `<span class="grafserie">${sist(serier[0])}</span>` : ''}</div>
+    <div class="grafval">${val}</div>${g.topp?.() ?? ''}
+    <div class="grafram"><span class="grafmax">${talTxt(g, max)}</span><svg class="grafyta dra" viewBox="0 0 ${B} ${H}" preserveAspectRatio="none" role="img" aria-label="${g.namn} från ${tidNamn(fran)} till nu">
+      <line x1="0" y1="${H - 0.5}" x2="${B}" y2="${H - 0.5}" class="grafaxel" vector-effect="non-scaling-stroke"/>${linjer}${strek}</svg></div>
+    <div class="grafaxlar"><span>${tidNamn(fran)}</span><span class="muted">${visa !== undefined ? tidNamn(visa) : 'tryck eller dra för värdet'}</span><span>nu</span></div>
+    <div class="grafforkl">${forklaring}</div>
   </div>`;
 }
 
-// att dra i grafen flyttar fönstret bakåt eller framåt i tiden; panelen skrivs om medan man drar, så rörelsen följs på
-// fönstret och inte på grafens element (det byts ut)
-let drag: { id: string; x: number; slut: number; bredd: number } | undefined;
+// ett tryck eller drag längs grafen visar värdena där (steg 9.2.8); panelen skrivs om medan man drar, så rörelsen följs på
+// dokumentet och inte på grafens element (det byts ut)
+let drag: { id: string; vanster: number; bredd: number } | undefined;
+const visaVid = (clientX: number) => {
+  if (!drag) return;
+  const { fran, till } = spann(drag.id), a = Math.min(1, Math.max(0, (clientX - drag.vanster) / drag.bredd));
+  fonster[drag.id].visa = fran + a * (till - fran);
+  ritaOm();
+};
 if (typeof document !== 'undefined') {
 document.addEventListener('pointerdown', e => {
   const el = (e.target as Element).closest<SVGElement>('.grafyta.dra'), id = el?.closest<HTMLElement>('[data-graf]')?.dataset.graf;
   if (!el || !id) return;
-  drag = { id, x: e.clientX, slut: spann(id).till, bredd: el.getBoundingClientRect().width };
+  const r = el.getBoundingClientRect();
+  drag = { id, vanster: r.left, bredd: r.width };
+  visaVid(e.clientX);
   e.preventDefault();
 });
-addEventListener('pointermove', e => {
-  if (!drag) return;
-  const t = drag.slut - (e.clientX - drag.x) / drag.bredd * WEEK;
-  fonster[drag.id].slut = t >= s.now ? undefined : t;
-  ritaOm();
-});
+addEventListener('pointermove', e => visaVid(e.clientX));
 const slapp = () => { drag = undefined; };
 addEventListener('pointerup', slapp);
 addEventListener('pointercancel', slapp);
@@ -119,10 +129,11 @@ document.addEventListener('click', e => {
   e.stopImmediatePropagation(); ritaOm();
 }, true);
 document.addEventListener('click', e => {
-  const b = (e.target as Element).closest<HTMLElement>('[data-grafallt]');
+  const b = (e.target as Element).closest<HTMLElement>('[data-graflangd]');
   if (!b) return;
-  const f = fonster[b.dataset.grafallt!] ??= {};
-  f.allt = !f.allt; f.slut = undefined;
+  const [id, l] = b.dataset.graflangd!.split(':');
+  const f = fonster[id] ??= {};
+  f.langd = l as Langd; f.visa = undefined;
   ritaOm();
 });
 }
