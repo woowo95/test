@@ -76,13 +76,15 @@ function kropp(s: State, p: Person, del: Record<string, string | null>) {
   const huvud = (p.skador ?? []).filter(w => w.d === 'huvud');
   const forband = huvud.some(w => w.f) ? ['forband-huvud'] : [];
   if (huvud.some(w => !w.f && (w.k === 'blamarke' || w.k === 'krossar'))) del.blamarke = 'blamarke-1';
-  return { humor, forband, ogonlapp: false, sjuk: isSick(p, s.now), kyla: p.warm < KROPP.kallt, blod: blodning(p) > 0 };
+  return { humor, forband, ogonlapp: !!p.saknas?.some(d => d === 'ogaV' || d === 'ogaH'), sjuk: isSick(p, s.now), kyla: p.warm < KROPP.kallt, blod: blodning(p) > 0 };
 }
 export function skapad(s: State, p: Person): Skapad {
   const d = drag(s, p), alder = alderAv(ageOf(p, s.now));
   const u: Skapad = alder !== 'barn' && d.anlag ? KARNA.somUng(d) : { ...d, del: { ...d.del } };
   u.alder = alder;
-  u.del = { ...u.del, huvudbonad: null, arr: null, blamarke: null, redskap: null };
+  // ärren i ansiktet (steg 8.2.4): samma ärr hela livet, ur rader i PORTRATT; ögonlappen när ett öga är borta
+  const arr = p.arr?.find(a => a.d === 'huvud' || a.d === 'kake' || a.d === 'ogaV' || a.d === 'ogaH');
+  u.del = { ...u.del, huvudbonad: null, arr: arr ? `arr-${arr.n}` : null, blamarke: null, redskap: null };
   Object.assign(u, kropp(s, p, u.del));
   utrustad(s, p, u);
   return u;
@@ -97,7 +99,7 @@ function utrustad(s: State, p: Person, u: Skapad) {
   for (const pl of Object.values(r)) {
     const a = pl.ting && kladAv(pl.ting.k);
     if (!a) continue;
-    if (a.plagg === 'rock') u.klader.rock = KLADMATERIAL[a.mat].namn;
+    if (a.plagg === 'rock' || a.plagg === 'mantel') u.klader.rock = KLADMATERIAL[a.mat].namn; // manteln syns som en rock tills Björn valt (steg 8.3.14)
     else if (a.plagg === 'skor') u.klader.skor = true;
     else if (a.plagg === 'balte') u.klader.balte = true;
     else if (a.plagg === 'axelrem') u.klader.axelrem = true;
@@ -135,6 +137,21 @@ BESK_ANSIKTE.del = ansiktsDel;
 // ser likadan ut. Rövarens delar (märkta rövare i skaparen: luvan, duken och rocken av mörkt, slitet skinn) bärs bara av
 // rövarna, var och en med sin chans, och vargskinnsrocken likaså; byborna kan inte tillverka dem. Vapnet i handen när det
 // finns som del, humöret arg i striden och rädd på flykten
+// handlaren (steg 8.1.8): en person som kolonisterna, slumpad en gång ur namnet och byns frö
+const HARV = new Map<string, Skapad>();
+export function handlarSkapad(s: State, namn: string, sex: 'm' | 'k'): Skapad {
+  const k = s.seed + ':' + namn + ':' + sex;
+  let d = HARV.get(k);
+  if (!d) {
+    let h = s.seed | 0;
+    for (let i = 0; i < k.length; i++) h = Math.imul(h ^ k.charCodeAt(i), 0x01000193);
+    d = KARNA.slumpPerson(KARNA.slumpFran(h), { kon: sex === 'k' ? 'kvinna' : 'man', alder: 'vuxen' }) as Skapad;
+    d.sjuk = false; d.kyla = false; d.blod = false; d.forband = [];
+    if (HARV.size > 200) HARV.clear();
+    HARV.set(k, d);
+  }
+  return d;
+}
 export const ROVARDRAKT = { luva: 0.35, duk: 0.3, rovarskinn: 0.45, vargskinn: 0.2 };
 const RARV = new Map<string, Skapad>();
 export function rovarSkapad(s: State, r: Rovare, humor: string): Skapad {

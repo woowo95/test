@@ -445,8 +445,8 @@ export const BJORN = balans('bjorn', {
   ungeAvst: 1.4, // ungarna går så här nära (rutor) kring björnen
 });
 // björnens värden i striden (steg 6.6.5 och 6.6.6): hög styrka och uthållighet, långsam att vända men biter och slår hårt
-export const BJORN_STRID: DjurStrid = DJUR.bjorn.strid;
-// artens värden i striden: djurregistret (DJUR i redskap.ts), björnen ur BJORN_STRID
+export const bjornVarden = (): DjurStrid => DJUR.bjorn.strid;
+// artens värden i striden: djurregistret (DJUR i redskap.ts), björnen ur bjornVarden
 // björnungen (steg 6.6.5): liten och svag, men björnen försvarar den
 export const BJORNUNGE_STRID: DjurStrid = { namn: 'Björnungen', art: 'Björnunge', alder: 2, styrka: 5, uthallighet: 6, mod: 4, smidighet: 10, skicklighet: 4, fart: 1.2, vapen: 'vargbett' };
 export const stridOf = (art: Djur['art']): DjurStrid => art === 'bjornunge' ? BJORNUNGE_STRID : DJUR[art].strid;

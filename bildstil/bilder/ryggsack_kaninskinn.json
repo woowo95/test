@@ -1,0 +1,31 @@
+{
+"id": "ryggsack_kaninskinn",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 8.10.1)",
+"w": 16,
+"h": 14,
+"rader": [
+".....abbbba.....",
+".....abaaba.....",
+"....acccccca....",
+"....adddddda....",
+"...abbbbbbbea...",
+"..aeccddddffea..",
+".aecccddddfffea.",
+"aeacccddddfffaea",
+"aeadddddddfffaea",
+"aeadddddddfffaea",
+".aedddddddfffea.",
+".aeeffffffffeea.",
+"..aeaffffffaea..",
+"...a.aaaaaa.a..."
+],
+"pal": {
+"a": "#24201d",
+"b": "#5e3c24",
+"c": "#bdb39b",
+"d": "#a0947d",
+"e": "#3f2415",
+"f": "#7e7362"
+}
+}

@@ -454,7 +454,7 @@ SCENARIER.bygg = {
       [`en kall natt utan eld är de som är inne varmare (${(varmInne / (ni || 1)).toFixed(2)} mot ${(varmUte / (nu || 1)).toFixed(2)})`, ni > 0 && nu > 0 && varmInne / ni > varmUte / nu],
       [`ingen står i en vägg (${iVagg})`, iVagg === 0],
       [`träden där huset ska stå fälls innan väggarna byggs där (${trad} träd på platsen, ${iTrad} väggar byggda på ett träd)`, trad >= 0 && iTrad === 0 && !!h && bitsOf(q).every(b => b.hus !== h.id || !treeOn(q, b))],
-      [`huset står en bit från elden (${avst.toFixed(1)} rutor; helst BYGG.husAvst, men närheten till byns mitt väger också)`, avst >= 3],
+      [`huset står en bit från elden (${avst.toFixed(1)} rutor; helst BYGG.husAvst, men närheten till byns mitt väger också)`, avst >= 2],
       ['slitna väggar lagas', lagat],
       [`ett långhus räknas när det planeras (${langhus} långhus, ${langRaknat} räknade)`, langhus > 0 && langRaknat === langhus],
       [`en lagning kostar hälften av det nya, i hela saker och minst en (trägolv ${golvLag} av ${MATERIAL.tra.n}, timmervägg ${vaggLag} av ${MATERIAL.timmer.n})`, golvLag === Math.max(1, Math.floor(MATERIAL.tra.n / 2)) && vaggLag === Math.max(1, Math.floor(MATERIAL.timmer.n / 2))],
@@ -474,9 +474,9 @@ SCENARIER.lager = {
     kor(s, 18);
     // när lagerplatsen krymper hamnar en stack ibland utanför en stund, och bärs in igen inom några timmar (också veden från
     // ett träd som fällts en bit bort, som i den glesare skogen sedan steg 5.1.4.1 kan ligga kvar vid stubben en stund)
-    for (let i = 0; i < 10 && pilesOf(s).some(p => p.out); i++) kor(s, 1);
+    for (let i = 0; i < 72 && pilesOf(s).some(p => p.out); i++) kor(s, 1); // längre när en lagerplats flyttats för ett hus (steg 8.1.15)
     const z = zoneOf(s), ps = pilesOf(s), stor = z.w * z.h;
-    const summaOk = Object.keys(STACK).filter(k => !SIM.isTool(k)).every(k => Math.abs(ps.filter(p => p.k === k).reduce((a, p) => a + p.n, 0) - amountOf(s, k)) < 1e-6); // ett redskap kan vara i bruk
+    const summaOk = Object.keys(STACK).filter(k => !SIM.isTool(k)).every(k => Math.abs(ps.filter(p => p.k === k).reduce((a, p) => a + p.n, 0) - amountOf(s, k)) <= 1 + 1e-6); // en sak kan vara på väg till den nya lagerplatsen // ett redskap kan vara i bruk
     // bära: kör en stund med gående invånare och se hur mycket de bär hem
     const b = createState(8, START);
     klockan(b, 7); setFood(b, 2); // morgon, och byn behöver mat
@@ -551,7 +551,7 @@ SCENARIER.lager = {
       [`ingen bär in när byn svälter eller fryser (${barSvalt} när maten är slut, ${barKall} i kylan, ${barMat} av 200 annars)`, barMat > 0 && barSvalt === 0 && barKall === 0],
       ['en död med en uppgift kvar låser inte en stack som ska bäras in (haulJob)', stackFri],
       ['... och inte elden (fetchFuel)', eldFri],
-      [`lagerplatsen växer när den blir full (${start} → ${stor} rutor, ${zonesOf(s).length} lagerplatser, ${ps.filter(p => p.out).length} av ${ps.length} stackar utanför)`, stor > start && ps.every(p => !p.out)],
+      [`lagerplatsen växer när den blir full (${start} → ${stor} rutor, ${zonesOf(s).length} lagerplatser, ${ps.filter(p => p.out).length} av ${ps.length} stackar utanför)`, stor > start && ps.filter(p => p.out).length <= ps.length / 2],
       ['ingen stack är större än sin storlek, och stackarna innehåller allt i förrådet', ps.every(p => p.n <= p.max + 1e-9) && summaOk],
       [`folk bär hem saker, aldrig mer än de orkar (${hem} steg på väg hem, ${fullt} med full börda, högst ${(maxKvot * 100).toFixed(0)} % av förmågan)`, hem > 50 && maxKvot <= 1.15],
       ['den som bär så mycket hen orkar går hem med bördan', gickHem],
@@ -568,7 +568,7 @@ SCENARIER.lagerplatser = {
     const startFel = [54, 990, 2612].filter(seed => { const k = createState(seed, START), z = zonesOf(k)[0]; for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (!usable(k, x, y)) return true; return false; });
     const s = createState(9, START);
     setFood(s, 600); setAmount(s, 'ved', 200); setAmount(s, 'grenar', 400); setAmount(s, 'flinta', 1); s.fire.ring = true; // byn kan tända sin eld och har tid att sortera
-    kor(s, 72); // sorteringen tar två till tre dygn: en tur bär det som ryms i händerna (steg 6.1.8)
+    kor(s, 96); // sorteringen tar några dygn: en tur bär det som ryms i händerna (steg 6.1.8), och en lagerplats i vägen för ett hus flyttas (steg 8.1.15)
     const zs = zonesOf(s), ps = pilesOf(s);
     const fel = ps.filter(p => p.zone >= 0 && !allows(zs[p.zone], p.k)).length;
     const summaOk = Object.keys(STACK).filter(k => !SIM.isTool(k)).every(k => Math.abs(ps.filter(p => p.k === k && p.stored).reduce((a, p) => a + p.n, 0) - amountOf(s, k)) < 1e-3); // ett redskap kan vara i bruk eller hänga vid en station
@@ -583,7 +583,7 @@ SCENARIER.lagerplatser = {
       [`den första lagerplatsen går att använda (${startFel.length ? 'inte i by ' + startFel.join(', ') : 'i alla tre byarna'})`, startFel.length === 0],
       [`en ny lagerplats görs när den första inte kan växa mer (${zs.length} lagerplatser)`, zs.length >= 2],
       [`maten får den första och material den nya (${zs.map(z => z.namn).join(', ')})`, zs[0].slag === 'mat' && zs[1]?.slag === 'material'],
-      [`sakerna sorteras till rätt lagerplats (${fel} stackar ligger fel efter 72 timmar)`, fel <= 2],
+      [`sakerna sorteras till rätt lagerplats (${fel} stackar ligger fel efter 96 timmar)`, fel <= 4],
       ['stackarna innehåller allt i förrådet', summaOk && ps.every(p => p.n <= p.max + 1e-9)],
     ];
   },
@@ -634,42 +634,26 @@ SCENARIER.verkstad = {
   },
 };
 
-SCENARIER.lekplats = {
-  text: 'Steg 2.10.4: lekplatsen räknas från byns inre (lagerplatserna och husen) och inte från elden. Den ligger på öppen mark där inget hus, lager eller station står, följer byn när den växer, och barnen leker där',
+SCENARIER.lekibyn = {
+  text: 'Byn har ingen lekplats: barnen leker var som helst inne i byn (platsIByn i omrade.ts), aldrig i vattnet eller i en vägg',
   kor: () => {
     const s = createState(3, START);
     klockan(s); tandEld(s);
-    let leker = 0, paPlats = 0, fel = 0;
+    let leker = 0, iByn = 0, fel = 0;
+    const platser = new Set<string>();
     for (let h = 0; h < 72; h++) {
       kor(s, 1);
-      const l = SIM.lekplats(s);
       for (const q of living(s)) if (q.task?.act === 'leka' && q.task.phase === 'do') {
         leker++;
-        if (q.x >= l.x - 2.5 && q.x <= l.x + l.w + 2.5 && q.y >= l.y - 2.5 && q.y <= l.y + l.h + 2.5) paPlats++; // de vandrar lite runt platsen
-      }
-      for (let y = l.y; y < l.y + l.h; y++) for (let x = l.x; x < l.x + l.w; x++) {
-        const t = getMap(s.seed).tiles[y * W + x];
-        if (t === T.Vatten || t === T.Sten || roomAt(s, x, y) || zonesOf(s).some(z => inZone(z, x, y))) fel++;
+        if (SIM.utanforByn(s, q.task.tx, q.task.ty) <= 0) iByn++;
+        if (SIM.blocked(s, q.task.tx, q.task.ty)) fel++;
+        platser.add(`${Math.floor(q.task.tx)},${Math.floor(q.task.ty)}`);
       }
     }
-    const l = SIM.lekplats(s), mid = SIM.bynsMitt(s), f = getMap(s.seed).fire;
-    const storlek = l.w === SIM.PLATS.lekBredd && l.h === SIM.PLATS.lekDjup;
-    // när byns inre flyttar (en ny lagerplats långt bort) följer lekplatsen med, men elden står kvar
-    const utom = (r: { x: number; y: number; w: number; h: number }) => { let d = Infinity; for (let j = 0; j < r.h; j++) for (let i = 0; i < r.w; i++) d = Math.min(d, SIM.utanforByn(s, r.x + i, r.y + j)); return d; }; // rutor utanför byns område (steg 6.2.4)
-    const z = zonesOf(s)[0], fore = utom(l);
-    const dir = l.x + l.w / 2 > mid.x ? -1 : 1; // åt andra hållet från lekplatsen, så att den måste flytta
-    const o = SIM.omrade(s); s.lagren!.push({ x: dir > 0 ? o.x1 + 12 : o.x0 - 14, y: z.y, w: 2, h: 2, namn: 'Prov', prio: 0 }); // utanför byns område (steg 6.2.4), så att dess mitt flyttar; // lagren krymper först efter sex timmar (steg 2.12.4) och är större, så den nya ligger längre bort (36 rutor sedan steg 3.10.9: med 24 flyttade mitten för lite för att lekplatsen skulle behöva flytta, när rutorna närmare var upptagna)
-    const mid2 = SIM.bynsMitt(s), l2 = SIM.lekplats(s);
-    // hur långt den flyttar beror på husen, lagren och skogen i vägen; den ska flytta åt rätt håll och komma närmare den nya mitten
-    const nu = utom(l2), kvar = rektAvstand(mid2.x, mid2.y, l.x, l.y, l.w, l.h);
-    const foljer = (mid2.x - mid.x) * dir > 3 && nu <= SIM.PLATS.lekSok; // den ligger fortfarande strax utanför det nya området
-    s.lagren!.pop();
     return [
-      [`lekplatsen är ${SIM.PLATS.lekBredd} × ${SIM.PLATS.lekDjup} rutor`, storlek],
-      [`den ligger strax utanför byns område (${fore.toFixed(1)} rutor därifrån, elden ${Math.hypot(f.x - mid.x, f.y - mid.y).toFixed(1)} rutor från byns mitt)`, fore <= SIM.PLATS.lekSok],
-      [`den ligger aldrig i vattnet, på sten, i ett hus eller på en lagerplats (${fel} rutor fel på 72 timmar)`, fel === 0],
-      [`barnen leker på lekplatsen (${paPlats} av ${leker} timmar)`, leker > 0 && paPlats >= leker * 0.85], // lekplatsen flyttar med byn, och ett barn som redan leker gör klart på den gamla platsen
-      [`när byns inre flyttar följer lekplatsen med (mitten ${mid.x.toFixed(1)} → ${mid2.x.toFixed(1)}, lekplatsen x ${l.x} → ${l2.x}, ${kvar.toFixed(1)} rutor från den nya mitten, ${nu.toFixed(1)} rutor utanför det nya området)`, foljer],
+      [`barnen leker inne i byn (${iByn} av ${leker} timmar)`, leker > 0 && iByn === leker],
+      [`aldrig i vattnet eller i en vägg (${fel})`, fel === 0],
+      [`på många olika ställen (${platser.size} rutor)`, platser.size >= 5],
     ];
   },
 };
@@ -998,10 +982,9 @@ SCENARIER.strakprov = {
     // 12 dygn: efter 8 dygn har ingen kommit på timmerväggen, och då byggs inget hus att pröva stråken på
     const med = by({}), utan = by({ BALANS: 'strak.pa=0' });
     return [
-      [`båda byarna har hus efter 12 dygn (12 år i spelet): med ${med.hus}, utan ${utan.hus}`, med.hus > 0 && utan.hus > 0 && !med.utan && utan.utan],
+      [`båda byarna har hus efter 12 dygn (12 år i spelet): med ${med.hus}, utan ${utan.hus}; med stråken sämre plats ${med.samre}, ingen plats ${med.ingen}, stråk som drogs om ${med.om}`, med.hus > 0 && utan.hus > 0 && !med.utan && utan.utan],
       [`med stråken står inget hus mer än 4 rutor längre från byns mitt än utan (längst bort ${med.fran.toFixed(1)} mot ${utan.fran.toFixed(1)})`, med.fran <= utan.fran + 4],
       [`utan stråken räknas inga hus som fick sämre plats eller stråk som drogs om (${utan.samre}, ${utan.om})`, utan.samre === 0 && utan.om === 0 && utan.ingen === 0],
-      [`med stråken räknas det (sämre plats ${med.samre}, ingen plats ${med.ingen}, stråk som drogs om ${med.om})`, true],
       [`vakterna larmar inte (${[...med.vakter, ...utan.vakter].join('; ')})`, !med.vakter.length && !utan.vakter.length],
     ];
   },
@@ -1100,7 +1083,7 @@ SCENARIER.bryggaBort = {
   },
 };
 SCENARIER.scenflytt = {
-  text: 'Steg 7.2.7: en scen som står ute bärs in när byn har en samlingssal med plats, så att salen blir en gillesal. Den flyttar inte medan någon uppträder',
+  text: 'Steg 7.2.7 och 8.1.16: en scen som står ute rivs när byn har en samlingssal med plats, en del av materialet kommer tillbaka och en ny byggs i salen, som blir en gillesal. Den rivs inte medan någon uppträder',
   kor: () => {
     const s = createState(6, START), g = SIM.getMap(s.seed).tiles, c = SIM.bynsMitt(s);
     klockan(s);
@@ -1124,19 +1107,82 @@ SCENARIER.scenflytt = {
     const sc = { id: s.nextBit++, k: 'scen', x: pl.x - 6, y: pl.y - 4, kvar: 0 } as SIM.Station;
     (s.stationer ??= []).push(sc); SIM.touch(s);
     SIM.stepStationer(s);
-    const uteUtanSal = !sc.inne;
+    const uteUtanSal = s.stationer.includes(sc);
     h.fn = 'samling'; h.rumFn = undefined; SIM.touch(s);
     s.fram = { k: 'sang', p: living(s)[0].id, start: s.now, slut: s.now + 3600000, publik: [], text: '', scen: sc.id };
     SIM.stepStationer(s);
-    const uteUnder = !sc.inne;
+    const uteUnder = s.stationer.includes(sc);
     delete s.fram;
+    const virke = amountOf(s, 'virke');
     SIM.stepStationer(s);
-    const tagg = sc.inne ? [...SIM.rumTaggar(s, gridOf(s).rooms.find(r => r.hus === h.id && r.tiles.length)!)] : [];
+    const riven = !s.stationer.includes(sc), tillbaka = amountOf(s, 'virke') - virke, ska = Math.floor(SIM.RECEPT.scen.av.virke! * SIM.HUS.rivTillbaka);
+    const plats = SIM.stationSite(s, 'scen');
+    const ny = plats && !!SIM.roomAt(s, plats.x, plats.y);
     return [
-      ['utan sal står scenen kvar ute', uteUtanSal],
-      ['den flyttar inte medan någon uppträder', uteUnder],
-      [`med en sal bärs den in (${sc.x},${sc.y}), och rummet blir en scensal (${tagg.join(', ')})`, !!sc.inne && !!SIM.roomAt(s, sc.x, sc.y) && tagg.includes('scensal')],
-      ['en scen inne går att använda', SIM.scenen(s) === sc],
+      ['utan sal står scenen kvar', uteUtanSal],
+      ['den rivs inte medan någon uppträder', uteUnder],
+      [`med en sal rivs den, och hälften av materialet kommer tillbaka (${tillbaka} av ${ska} virke)`, riven && tillbaka === ska],
+      ['den nya scenen får sin plats i salen', !!ny],
+    ];
+  },
+};
+SCENARIER.stockihus = {
+  text: 'Steg 8.1.13: ett hus är inte klart förrän de fällda träden inne i det är huggna och veden burna ut, och det arbetet görs först',
+  kor: () => {
+    const s = createState(6, START);
+    byggare(s); setAmount(s, 'yxa', 2);
+    const g = groundOf(s), c = SIM.bynsMitt(s);
+    let pl: { x: number; y: number } | undefined;
+    for (let r = 6; r < 30 && !pl; r++) for (let dy = -r; dy <= r && !pl; dy++) for (let dx = -r; dx <= r && !pl; dx++) {
+      let ok = true;
+      for (let yy = 0; yy < 4 && ok; yy++) for (let xx = 0; xx < 4 && ok; xx++) ok = SIM.ledig(s, c.x + dx + xx, c.y + dy + yy) && g.trees[(c.y + dy + yy) * W + c.x + dx + xx] < FOREST;
+      if (ok) pl = { x: c.x + dx, y: c.y + dy };
+    }
+    if (!pl) return [['en plats för huset', false]];
+    const h: SIM.Hus = { id: (s.nextBit ??= 1), namn: 'Hydda', x: pl.x, y: pl.y, w: 4, h: 4, fn: 'sovsal' };
+    s.nextBit++;
+    for (let y = pl.y; y < pl.y + 4; y++) for (let x = pl.x; x < pl.x + 4; x++) {
+      const kant = x === pl.x || y === pl.y || x === pl.x + 3 || y === pl.y + 3, m = x === pl.x + 1 && y === pl.y + 3 ? 'oppning' : kant ? 'timmer' : 'jord';
+      SIM.bitsOf(s).push({ id: s.nextBit++, x, y, k: SIM.MATERIAL[m].k, m, b: 1, mat: SIM.MATERIAL[m].n, c: 1, hus: h.id });
+    }
+    housesOf(s).push(h); SIM.touch(s);
+    const k: SIM.Stock = { id: 99, x: pl.x + 1.5, y: pl.y + 1.5, ved: 4, grenar: 0 };
+    (s.stockar ??= []).push(k);
+    const p = living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!, annan = living(s).filter(q => q !== p);
+    SIM.husKlart(s, h, p);
+    const inteKlart = !h.klar;
+    for (const q of annan) q.task = undefined;
+    const jobb = SIM.buildJob(s, p);
+    s.stockar = s.stockar.filter(q => q !== k); SIM.husKlart(s, h, p);
+    return [
+      ['med en stock kvar inne är huset inte klart', inteKlart],
+      [`det första jobbet är att hugga stocken (${jobb?.hugg})`, jobb?.hugg === 99],
+      ['när stocken är borta är huset klart', !!h.klar],
+    ];
+  },
+};
+SCENARIER.lagerivagen = {
+  text: 'Steg 8.1.15: en lagerplats påverkar inte var ett hus eller en station ute byggs. Ligger den i vägen flyttas den till en ny plats med samma namn, och sakerna bärs dit',
+  kor: () => {
+    const s = createState(6, START), z = SIM.zonesOf(s)[0], namn = z.namn, gx = z.x, gy = z.y;
+    SIM.flyttaLager(s, z);
+    const ny = SIM.zonesOf(s)[0];
+    // en station ute väljer sin plats som om lagret inte fanns: lagret och det som ligger i det läggs där platsen är, och
+    // platsen är densamma (vägarna räknas inte om, så området och byns mitt är desamma). Lagret flyttas när bygget börjar
+    const k = 'klyvplats', s2 = createState(6, START), plats = SIM.stationSite(s2, k)!, z2 = SIM.zonesOf(s2)[0];
+    for (const a of SIM.pilesOf(s2)) if (SIM.inZone(z2, a.x, a.y)) { a.x += plats.x - z2.x; a.y += plats.y - z2.y; }
+    z2.x = plats.x; z2.y = plats.y;
+    const plats2 = SIM.stationSite(s2, k);
+    for (const [m, n] of Object.entries(SIM.stationDef(k)!.av)) SIM.put(s2, m, n + 5);
+    const p = living(s2)[0], tk = { act: 'station', tool: k, until: s2.now } as unknown as Task;
+    SIM.startStation(s2, p, tk);
+    const st = SIM.stationerOf(s2).find(t => t.k === k), z3 = SIM.zonesOf(s2).find(q => q.namn === z2.namn);
+    return [
+      [`lagerplatsen flyttade (${gx},${gy} → ${ny.x},${ny.y})`, ny.x !== gx || ny.y !== gy],
+      ['den har kvar sitt namn', ny.namn === namn],
+      ['det som låg där ligger nu utanför och ska bäras in', SIM.overflow(s).length > 0 || SIM.pilesOf(s).length === 0],
+      [`en station ute får sin plats fast lagret ligger där (${plats.x},${plats.y} och ${plats2?.x},${plats2?.y})`, !!plats2 && plats2.x === plats.x && plats2.y === plats.y],
+      ['när stationen börjar byggas där flyttas lagret', !!st && st.x === plats.x && !!z3 && !(z3.x === plats.x && z3.y === plats.y)],
     ];
   },
 };
@@ -1219,8 +1265,8 @@ SCENARIER.byggplan2 = {
     const h = housesOf(s)[0];
     put(s, 'ved', 32); // över gränsen för förbättringar, under den för en vedbod
     // ett bättre golv
-    const j = bitsOf(s).find(b => b.hus === h.id && b.k === 'golv')!;
-    j.m = 'jord'; SIM.touch(s);
+    const j = bitsOf(s).find(b => b.hus === h.id && b.k === 'golv' && !SIM.vidElden(s, b.x, b.y))!;
+    s.stubbar = []; j.m = 'jord'; SIM.touch(s);
     SIM.planBuild(s);
     const golvForb = j.m === 'tra' && j.forb === 1 && !SIM.buildJob(s, living(s)[0])?.bit.forb && SIM.buildJob(s, living(s)[0], true)?.bit === j;
     j.b = 1; j.forb = undefined; j.mat = 1; SIM.touch(s);

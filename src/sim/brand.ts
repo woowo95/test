@@ -212,7 +212,6 @@ export function tandTest(s: State, x: number, y: number): { ok: boolean; text: s
 
 // testläget (steg 6.4.7): en vanlig blixt slår ner på rutan (x, y). Den tänder som blixten i vädret (gnistor nedan): bara
 // när det finns något som brinner och marken är torr nog, med en ny slumpsiffra för varje blixt. Svaret säger om den tände och varför
-let blixtNr = 0;
 export function blixtTest(s: State, x: number, y: number): { ok: boolean; text: string } {
   if (!inMap(x, y)) return { ok: false, text: 'Rutan är utanför kartan' };
   const i = y * W + x, k = s.brand && kartaOf(s.brand)[i], dry = torrhet(s), fu = bransleAv(s)(i);
@@ -226,7 +225,8 @@ export function blixtTest(s: State, x: number, y: number): { ok: boolean; text: 
   else if (dry <= 0) text = `Blixten slog ner ${var_}, men marken är för blöt och inget tog eld`;
   else {
     const ny = !s.brand, fore = s.brand?.n ?? 0;
-    tand(s, i, 'blixt', hash(s.seed + 3860, Math.round(s.now / SEC), ++blixtNr) / dry);
+    count(s, 'blixtProv'); // varje blixt får en egen slumpsiffra, räknad i byn och inte i modulen (regel 4)
+    tand(s, i, 'blixt', hash(s.seed + 3860, Math.round(s.now / SEC), s.stat!.blixtProv) / dry);
     const tande = (s.brand?.n ?? 0) > fore;
     if (tande && !ny) (s.brand!.kallor ??= []).push(i);
     text = tande ? `Blixten slog ner ${var_} och tände marken` : `Blixten slog ner ${var_} men tände inte (marken är ${dry < 0.5 ? 'bara lite' : 'ganska'} torr, och det var tur)`;
@@ -294,6 +294,7 @@ export function brandSteg(s: State, dtSec: number) {
     allaBarn(s, 'brand');
     for (const p of living(s)) if (p.born < b.t) livet(s, p, 'mg:brand'); // de som klarade den (steg 3.9.8)
   }
+  for (const p of living(s)) if (Math.hypot(p.x - b.x, p.y - b.y) < 14) tecken(s, p, 'brandStopp'); // branden som stannade (steg 8.5.18)
   delete s.brand;
 }
 
@@ -375,13 +376,13 @@ const brannText = (b: Brand) => Object.entries(b.brann ?? {}).map(([k, n]) => n 
 // brinner det nära byn (dess område, steg 6.2.4)? Då släcker de vuxna
 function hotar(s: State, b: Brand) {
   const ut = bynsAvstand(s);
-  return b.r.some(r => ut[r[0]] <= BRAND.hot);
+  return b.r.some(r => ut.at(r[0]) <= BRAND.hot);
 }
 // den brinnande rutan närmast byns område
 function narmastByn(s: State, b: Brand) {
   const ut = bynsAvstand(s);
   let best = -1, bd = Infinity;
-  for (const r of b.r) if (ut[r[0]] < bd) { bd = ut[r[0]]; best = r[0]; }
+  for (const r of b.r) { const d = ut.at(r[0]); if (d < bd) { bd = d; best = r[0]; } }
   return best;
 }
 // den närmaste brinnande rutan till (x, y) och avståndet dit
@@ -521,7 +522,7 @@ function brandMal(s: State, b: Brand, p: Person, hot: boolean): BrandMal | undef
       const spot = drickPlats(s, p);
       if (spot) return { act: 'slacka', why: 'Hämtar vatten i säcken till elden', spot, dur: BRAND.fyllMin * MIN, tool: 'vattensack', ref: mal };
     }
-    const ut = bynsAvstand(s), m = narmast(b, p.x, p.y, i => slacks(s, i, p) || ut[i] > BRAND.hot); // bara det som brinner nära byn
+    const ut = bynsAvstand(s), m = narmast(b, p.x, p.y, i => slacks(s, i, p) || ut.at(i) > BRAND.hot); // bara det som brinner nära byn
     if (m.i >= 0) return { act: 'slacka', why: 'Släcker elden med händerna', spot: bredvid(b, m.i, p), dur: BRAND.handMin * MIN, ref: m.i };
   }
   if (n.d > BRAND.fara) return;

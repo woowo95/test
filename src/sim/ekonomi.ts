@@ -1,5 +1,5 @@
 import { ALDER, KROPP, ageOf, isSick, living, stat } from './folk';
-import { handighet } from './halsa';
+import { handighet, syn } from './halsa';
 import { ageIndex } from './tid';
 import { ACTS, SNABBARE } from './handlingar';
 import { Act, HOUR_S, Person, State } from './typer';
@@ -18,6 +18,7 @@ export const EKONOMI = balans('ekonomi', {
   sjukArbete: 0.3, // den som är sjuk orkar så här stor del
   kunnigBas: 0.6, // en färdighet (0–20) hjälper i arbetet med kunnigBas + färdigheten / kunnigSteg: 0,6 utan, 1,4 med högsta
   kunnigSteg: 25,
+  synVikt: 0.6, // så mycket synen betyder i jakten, fisket och samlandet (steg 8.2.2)
   taktBas: 0.45, // arbetstakten gånger taktBas + färdigheten / taktFardighet + egenskapen som hjälper / taktEgenskap
   taktFardighet: 20,
   taktEgenskap: 40,
@@ -35,6 +36,7 @@ export function workRate(s: State, p: Person, act: Act) {
   const a = ageOf(p, s.now);
   const sk = ACTS[act].arbete!, d = ACTS[sk as Act];
   return d.bas! * (d.fart ?? 1) * SNABBARE / HOUR_S * d.sasong![ageIndex(s)] * (EKONOMI.taktBas + p.skill[sk] / EKONOMI.taktFardighet + stat(p, d.egenskap!, s.now) / EKONOMI.taktEgenskap) * ageFactor(a) * sickFactor(p, s.now) * handighet(p) // skadade armar och händer arbetar långsammare (halsa.ts)
+    * (d.syn ? syn(p) * EKONOMI.synVikt + 1 - EKONOMI.synVikt : 1) // den som ser dåligt jagar, fiskar och samlar sämre (steg 8.2.2)
     * (p.rivalom && ACTS[act].yrke === p.rivalom ? 1 + RELT.rivalFlit : 1); // den som har en rival i sitt yrke arbetar lite hårdare (steg 3.1.1)
 }
 // det p äter på ett dygn enligt kroppen: mättnaden sjunker 1 / hungerTim i timmen (ett barn långsammare) och en portion god mat

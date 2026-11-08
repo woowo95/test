@@ -2,7 +2,7 @@ import { honom } from './ord';
 import { upplev, uppvaxtDod, uppvaxtFodd } from './uppvaxt';
 import { kronikaBer, personFalt } from './berattelser';
 import { kronika } from './historik';
-import { ALDER, REL, ageOf, alive, byId, count, isParent, living, log, newPerson, relKey, startSkills, think } from './folk';
+import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, isParent, living, log, newPerson, raddAkt, relKey, startSkills, think } from './folk';
 import { pair } from './varld';
 import { avgMood } from './humor';
 import { chance, clamp, pick, rnd } from './slump';
@@ -13,10 +13,13 @@ import { inherit, packUp } from './arv';
 import { balans } from './balans';
 import { RELT } from './relationer';
 import { rykteDod, startSmak } from './rykten';
-import { GudOmr, gudHandelse } from './religion';
+import { tecken, GudOmr, gudHandelse } from './religion';
 import { TEK, TEKNIK, knows, kunskapDod } from './teknik';
 import { KLAN, andraInst, klanerOf, utbrytning } from './klaner';
 import { notis } from './notiser';
+import { vaderNu } from './vader';
+import { nyKvarleva } from './kvarlevor';
+import { gravgava } from './kultlatt';
 
 // ---------- balanstal (regel 8) ----------
 // Befolkningen regleras av naturen, inte av ett fast tak: en trång by får färre barn och fler som flyttar, en liten by lockar
@@ -88,7 +91,9 @@ const DOD = {
   tornado: { text: 'i en tornado', gud: 'aska' }, // steg 3.8.4 (tornado.ts)
   brand: { text: 'i en eldsvåda', gud: 'elden' }, // steg 3.8.5 (brand.ts)
   rovare: { text: 'av rövare', gud: 'kriget', sorg: true }, // steg 4.4.5 (rovare.ts)
-  drap: { text: 'av våld', gud: 'kriget' }, // slagen till döds i ett utbrott (steg 3.2.3, humor.ts)
+  avrattad: { text: 'för sitt brott', gud: 'kriget' }, // dödsstraffet (steg 8.4.8)
+  drap: { text: 'av våld', gud: 'kriget' },
+  offrad: { text: 'som offer', gud: 'kriget' }, // människooffret (budet, steg 8.6.6) // slagen till döds i ett utbrott (steg 3.2.3, humor.ts)
 } satisfies Record<string, DodDef>;
 export type Dodsorsak = keyof typeof DOD;
 export const DODSORSAKER: Record<Dodsorsak, DodDef> = DOD;
@@ -110,10 +115,13 @@ export function die(s: State, p: Person, orsak: Dodsorsak) {
   const { text: cause, sorg } = DODSORSAKER[orsak], akt = p.task?.act;
   avbryt(s, p); // bördan läggs ner medan hen ännu lever, så att den ärvs
   p.died = s.now; p.cause = cause;
+  raddAkt(s, p, akt, `${p.name} dog ${cause}`, orsak); // de som såg det blir rädda för det hen gjorde (steg 8.4.10)
   if (p.gjort) p.gjort.t = {}; // de döda gör inget mer det senaste dygnet (steg 3.10.6)
   const a = Math.floor(ageOf(p, s.now));
   log(s, `${p.name} dog ${cause}, ${a} år gammal.`, 'death', [p.id]); notis(s, 'dod', `${p.name} dog ${cause}, ${a} år gammal.`, [p.id], { x: Math.floor(p.x), y: Math.floor(p.y) });
   count(s, 'doda'); count(s, 'dog ' + cause); kronikaBer(s, a < 1 ? 'k_dogSpad' : 'k_dog', p.id, { ...personFalt(p), orsak: cause, alder: a, nar: orsak === 'olycka' && akt && NAR_AKT[akt] ? `när ${hen(p)} ${NAR_AKT[akt]}` : undefined, sorjer: sorjer(s, p), mor: byId(s, p.mother)?.name ?? 'Modern', partner: (q => q && alive(q) ? q.name : undefined)(byId(s, p.partner)), barn: s.people.filter(q => (q.mother === p.id || q.father === p.id) && alive(q)).length });
+  nyKvarleva(s, 'kropp', p, p.name); // kroppen ligger kvar där hen dog (steg 8.5.1)
+  gravgava(s, p); // gravgåvan läggs undan innan arvet (steg 8.5.6)
   inherit(s, p); // arvingarna får det hen ägde (arv.ts); efter dödsraden, så att orsaken står före verkan (steg 6.7.5)
   releaseOwner(s, p.id); // det som blev kvar blir byns
   gudHandelse(s, DODSORSAKER[orsak].gud ?? 'doden', `döden som tog ${p.name}`); // tron söker en gud för det (steg 4.1.5)
@@ -140,6 +148,7 @@ export function birth(s: State, mother: Person) {
   ch.x = mother.x; ch.y = mother.y;
   s.people.push(ch);
   // loggen, notisen och krönikan får samma text ur mallen k_fodd (steg 6.7.7)
+  if (vaderNu(s).aska) { for (const q of [mother, father]) if (q) tecken(s, q, 'barnAska'); count(s, 'barn i åska'); } // steg 8.5.18
   const ft = kronikaBer(s, 'k_fodd', ch.id, { namn: ch.name, barnet: ch.sex === 'k' ? 'dotter' : 'son', mor: mother.name, foraldrar: mother.name + (father ? ' och ' + father.name : ''), syskon: s.people.filter(q => q !== ch && q.mother === mother.id).length });
   log(s, ft, 'birth', [ch.id, mother.id, ...(father ? [father.id] : [])]).m = 'k_fodd'; notis(s, 'fodd', ft, [ch.id, mother.id, ...(father ? [father.id] : [])]);
   count(s, 'fodda');
@@ -209,7 +218,7 @@ export function framling(s: State, tvinga?: { tek?: string; ja?: boolean }) {
   s.people.push(p);
   upplev(s, p, 'flyttade');
   for (const m in MEDHAVT) put(s, m, MEDHAVT[m], { [p.id]: MEDHAVT[m] });
-  andraInst(k, KLAN.stannarInst); count(s, 'framling'); if (tek) count(s, 'framlingTek');
+  andraInst(k, KLAN.stannarInst); count(s, 'framling'); if (tek) count(s, 'framlingTek'); budTillfalle(s, 'framling', p); // främlingen får mat (budet, steg 8.6.6)
   const text = `${p.name} från ${k.namn} kom till byn${tek ? ` och kunde ${tekNamn}, som ingen i byn kunde` : ''}. ${vem} lät ${honom(p)} stanna.`;
   log(s, text, 'move', [p.id]); notis(s, 'inflytt', text, [p.id]);
   if (tek) kronika(s, text, 'flytt');

@@ -41,8 +41,9 @@ export function vaxBuske(s: State, g: Ground, i: number, hours: number, ts: numb
   if (g.cover[i] < 1 || g.trees[i] >= VAG.ungskog) { b[i] = 0; return; } // någon har gått här (gräset är inte helt uppvuxet), eller ungskog står här
   if (v < ORORD) { b[i] = Math.min(ORORD, v + hours); return; }
   if (!ts) return;
-  const x = i % W, y = (i - x) / W;
-  if (hash(s.seed + Math.floor(s.now / HOUR) * 7 + 911, x, y) < hours * BUSKTAL.chans / (1 + BUSKTAL.trang * trang(g, i))) b[i] = BUSKE + (barKrok.vaxer(s, i) ? BARBUSKE : VANLIG); // en bärbuske där bären växer i dag
+  const x = i % W, y = (i - x) / W, h = hash(s.seed + Math.floor(s.now / HOUR) * 7 + 911, x, y);
+  if (h >= hours * BUSKTAL.chans) return; // tärningen säger nej också utan träd runt om: trängseln behöver inte räknas (steg 9.1.1)
+  if (h < hours * BUSKTAL.chans / (1 + BUSKTAL.trang * trang(g, i))) b[i] = BUSKE + (barKrok.vaxer(s, i) ? BARBUSKE : VANLIG); // en bärbuske där bären växer i dag
 }
 // grenarna: den som samlar på en buske eller bredvid en (de fyra grannarna) hittar fler, om busken ger grenar
 export function grenFaktor(g: Ground, i: number) {

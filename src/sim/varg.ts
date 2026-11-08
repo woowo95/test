@@ -30,6 +30,7 @@ import { taVapen } from './vakt';
 import { vaderNu } from './vader';
 import { notis } from './notiser';
 import { lamnaFallt, styckaFallt } from './styckning';
+import { tecken } from './religion';
 
 // ---------- vargen och vakten (steg 3.7.1) ----------
 // Under istiden kommer vargar in på kartan från kanten, oftast i flock och ibland en ensam. En flock stryker omkring en tid
@@ -549,7 +550,7 @@ export function vargStrid(s: State, f: Vargflock, folk: Person[], avsikt: Avsikt
       if (!dod && skada(s, p, w.d, w.k, w.g, 'varg', `i en strid med vargar`)) dod = true;
       const sk = p.skador?.[p.skador.length - 1];
       if (!dod && sk && w.fast) sk.fast = 1;
-      if (!dod && w.k === 'bett') { livet(s, p, 'bett', true); upplev(s, p, 'vargbett'); } // rädd för vargar efteråt (steg 3.9.8, 4.1.1.2)
+      if (!dod && w.k === 'bett') { livet(s, p, 'bett', true); upplev(s, p, 'vargbett'); if (w.g >= 0.5) tecken(s, p, 'overlevde', p.name); } // rädd för vargar efteråt (steg 3.9.8, 4.1.1.2)
       if (!dod && sk && w.k === 'bett' && rnd(s, 'varg', p) < VARG.bettInf) { sk.inf ??= 0; count(s, 'vargbettInf'); }
     }
     slitKastat(s, p, st, k);

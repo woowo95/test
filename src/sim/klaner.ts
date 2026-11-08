@@ -58,6 +58,7 @@ export const KLAN_HEM = ['kusten i söder', 'fjällen i norr', 'skogarna i öste
 
 export interface KlanPerson { namn: string; sex: 'm' | 'k'; roll: string; id?: number; fodd?: number; rel?: Record<number, import('./gastrel').GastRel> } // id = personens id i byn, för den som kom därifrån; fodd = när hen föddes (gästens liv, steg 4.5.7.7, gastliv.ts); rel = handlarens relationer till byborna (steg 4.5.7.11, gastrel.ts)
 export interface Klan {
+  doda?: { namn: string; av: number; t: number }[]; krigisk?: number; radT?: number; // klanens döda, trons Fridsam – Krigisk och senaste räden (system 8.8)
   id: number; namn: string; hem: string;
   folk: number; styrka: number; resurser: number; // hur många, hur många som kan slåss och hur mycket de har (hela tal)
   inst: number; // inställningen till byn, −100 till 100 (byns anseende hos dem)
@@ -77,6 +78,7 @@ export function nyKlan(s: State, folk: number, inst: number, personer?: KlanPers
   const namn = egetNamn ?? (fria.length ? pick(s, fria, 'klan') : `${pick(s, KLAN_NAMN, 'klan')} ${id}`);
   const per = (r: string): KlanPerson => { const sex = rnd(s, 'klan') < 0.5 ? 'm' : 'k'; return { namn: makeName(s, sex, 'klan'), sex, roll: r }; };
   const k: Klan = {
+    krigisk: Math.round(rnd(s, 'klan') * 100), // klanens tro får sina skalor när den grundas (steg 8.8.6)
     id, namn, hem: pick(s, KLAN_HEM, 'klan'), folk: Math.round(folk), styrka: 0, resurser: 0, inst: Math.round(inst),
     personer: personer ?? [per('hovding'), per('aldste'), ...(rnd(s, 'klan') < 0.5 ? [per('jagare')] : [])],
   };

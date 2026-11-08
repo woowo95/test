@@ -112,6 +112,7 @@ const DEF = {
   salva: { namn: 'Salva', skaffa: RECEPT.salva, stack: 10, vikt: 0.2, mapp: 'Material' }, // steg 7.6.4–7.6.6: ingen funktion än
   tjara: { namn: 'Tjära', skaffa: RECEPT.tjara, stack: 10, vikt: 0.5, mapp: 'Material' },
   benlim: { namn: 'Benlim', skaffa: RECEPT.benlim, stack: 10, vikt: 0.3, mapp: 'Material' },
+  rokelse: { namn: 'Rökelse', skaffa: RECEPT.rokelse, stack: 10, vikt: 0.2, mapp: 'Material' }, brannolja: { namn: 'Brännolja', skaffa: RECEPT.brannolja, stack: 10, vikt: 0.5, mapp: 'Material' }, // steg 8.5.16
   tval: { namn: 'Tvål', skaffa: RECEPT.tval, stack: 10, vikt: 0.2, mapp: 'Material' },
   lader: { namn: 'Läder', skaffa: RECEPT.lader, stack: 10, vikt: 1, mapp: 'Material' }, // steg 7.7.6
   ratlin: { namn: 'Rått lin', skaffa: { tid: 0.25, tek: 'lin' }, stack: 25, vikt: 0.3, mapp: 'Material' }, // rötas på torkställningen innan det kan spinnas
@@ -153,6 +154,11 @@ const DEF = {
     gors: { text: 'Täljer en lyra av trä med {verktyg} och spänner strängar av rep.', stat: 'lyrorGjorda', forsta: '{namn} gjorde byns första lyra. Sången till den gör de som lyssnar gladare än något annat.' } },
   // benspaden (steg 2.7.2): tre ben som ett blad, surrade med rep vid en gren, görs vid slöjdbänken. Med den grävs latrinen
   // (stationer.ts) och rötterna fortare (samla i handlingar.ts)
+  skold: { namn: 'Sköld', hanger: 'balte', skaffa: RECEPT.skold, vikt: 3, stack: 1, mapp: 'Redskap', slits: 0.0005, redskap: true, gors: { text: 'Gör en sköld.', stat: 'skoldarGjorda', forsta: '{namn} gjorde byns första sköld.' }, trasig: { stat: 'skoldarTrasiga', text: '{namn}s sköld gick sönder.' } }, // steg 8.7.3
+  bage: { namn: 'Pilbåge', hanger: 'balte', skaffa: RECEPT.bage, vikt: 1, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, gors: { text: 'Gör en pilbåge.', stat: 'bagarGjorda', forsta: '{namn} gjorde byns första pilbåge.' }, trasig: { stat: 'bagarTrasiga', text: '{namn}s båge gick sönder.' } }, // steg 8.7.6
+  slunga: { namn: 'Slunga', hanger: 'balte', skaffa: RECEPT.slunga, vikt: 0.2, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, gors: { text: 'Gör en slunga.', stat: 'slungorGjorda', forsta: '{namn} gjorde byns första slunga.' }, trasig: { stat: 'slungorTrasiga', text: '{namn}s slunga gick sönder.' } },
+  horn: { namn: 'Horn', hanger: 'balte', skaffa: RECEPT.horn, vikt: 0.5, stack: 1, mapp: 'Redskap', slits: 0.0001, redskap: true, gors: { text: 'Gör ett horn.', stat: 'hornGjorda', forsta: '{namn} gjorde byns första horn.' }, trasig: { stat: 'hornTrasiga', text: '{namn}s horn gick sönder.' } }, // steg 8.7.11
+  pilar: { namn: 'Pilar', skaffa: RECEPT.pilar, vikt: 0.1, stack: 20, mapp: 'Redskap' },
   benspade: { namn: 'Benspade', hanger: 'balte', skaffa: RECEPT.benspade, vikt: 4, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'benspadarTrasiga', text: '{namn}s benspade gick sönder.' },
     gors: { text: 'Surrar ihop en benspade av ben, rep och en gren.', stat: 'benspadarGjorda', forsta: '{namn} gjorde byns första benspade av tre ben. Med den gräver man fram rötter fortare, och gropar.' } },
   // maten som grillats (steg 2.8.1, RATTER i matlagning.ts): en enkel rätt som håller längre än den råa och äts först

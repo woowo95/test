@@ -11,14 +11,13 @@ export const HOUR_S = 3600; // en timme i sekunder (dtSec / HOUR_S = timmar)
 export const DAY = 24 * HOUR; // = ett levnadsår
 export const WEEK = 7 * DAY; // = en tidsålder
 
-// kartans storlek: varje by har sin egen (nya NEW_W×NEW_H). useMap(s) väljer byns karta och anropas när en by skapas,
+// kartans storlek: varje by har sin egen (nya KARTA.bredd × KARTA.hojd, balanstalen i kartflytt.ts, steg 9.1.9). useMap(s) väljer byns karta och anropas när en by skapas,
 // räknas fram eller visas. En äldre by (64×40 eller 80×50) får den stora kartan när den laddas (steg 2.10.9, kartflytt.ts):
 // den gamla kartan ligger kvar i mitten med sitt hörn i (OX, OY) och sin storlek W0×H0, och allt som kommer ur kartans brus
 // räknas från det hörnet, så att det gamla ser ut som förut. Utanför den fortsätter samma brus. En ny by har OX = OY = 0
 export let W = 64;
 export let H = 40;
 export let OX = 0, OY = 0, W0 = 64, H0 = 40;
-export const NEW_W = 120, NEW_H = 120;
 export interface Kart { x: number; y: number; w: number; h: number } // den gamla kartans hörn och storlek
 let KARTA = '64x40';
 export function useMap(s: { W?: number; H?: number; kart?: Kart }) {
@@ -168,6 +167,7 @@ export interface Jaktforsok {
 }
 
 export interface Person {
+  pratArbete?: number; // samtalen hen haft medan hen arbetat (steg 8.1.12)
   id: number; name: string; sex: 'm' | 'k';
   born: number; died?: number; cause?: string; left?: number;
   fran?: number; // grannklanen hen kom ifrån (en främling, steg 4.4.4.2)
@@ -184,6 +184,15 @@ export interface Person {
   brinner?: number; // när hen började brinna, tills elden släckts (steg 6.4.16, brand.ts)
   blod: number; // 1 = allt blod, under HALSA.blodDod förblöder man (steg 2.5.1, halsa.ts)
   skador?: import('./halsa').Skada[]; // skadorna som inte läkt än (halsa.ts)
+  saknas?: import('./halsa').Kroppsdel[]; // förlorade kroppsdelar (steg 8.2.3)
+  men?: import('./halsa').Men[]; // det som läkt fel (steg 8.2.4)
+  arr?: { d: import('./halsa').Kroppsdel; n: number }[]; // ärren (steg 8.2.4)
+  sinnen?: number; // karisman gånger detta, när synen, hörseln eller talet är sämre (steg 8.2.2)
+  svimmat?: boolean; // ligger medvetslös (steg 8.2.6)
+  bonD?: number; bonNodD?: number; bonVan?: { t: number; o: string; vem?: number }; tack?: string; tvivel?: number; profet?: boolean; sedDod?: number[]; fasta?: number; skuld?: number; // bönen och tron (system 8.5)
+  drag?: { namn: string; v: number; t: number }; // anfallarnas tro som en dragning efter att ha svurit trohet (steg 8.8.6)
+  missnoje?: number; // missnöjet med styret, 0–1 (steg 8.3.10, rost.ts)
+  straffad?: boolean; utanRost?: boolean; tjanst?: number; brottsling?: boolean; // straffen (steg 8.4.8): straffad, förlorad röst, samhällstjänsten till, avrättad
   naring?: Record<import('./naring').Naring, number>; // näringsvärdena 0–1; mättnaden (hunger) är en sammanfattning av dem (steg 2.6.1, naring.ts)
   langtan?: Partial<Record<import('./naring').Naring, number>>; // vad andra berättat att de längtar efter, och till när man minns det (steg 2.6.2)
   habit: Record<string, number>; // timmar per aktivitet, bleknar med tiden (ger yrkestaggar)
@@ -197,6 +206,7 @@ export interface Person {
   halvminne?: string[]; // tekniker hen var lärling i när mästaren dog: det hen hunnit lära sig finns kvar i tek (steg 4.2.3.4)
   kunskap?: Record<string, { v: number; t: number }>; // det personen kan (alltid rätt), 0–1, och när det senast användes
   lardomar?: Lardom[]; // det personen tror om platser (kan vara fel, överdrivet eller inaktuellt)
+  raddAkt?: Record<string, number>; // rädslan för en handling efter en olycka, per rad i TABU_AKT (steg 8.4.10)
   thoughts: Thought[];
   x: number; y: number; task?: Task;
   fame: string[];
@@ -287,6 +297,13 @@ export interface State {
   barbuskar?: number; // 1 = bärbuskarna är utsådda (steg 6.5.4, buskar.ts)
   tradAlder?: string; // trädens ålder efter att de vuxit klart, dygn per ruta, packat (trad.ts, steg 5.1.4.2)
   stockar?: Stock[]; // fällda träd som ligger och väntar på att huggas
+  stridRapporter?: { t: number; orsak: string; vinnare?: number; n: number }[]; // de äldre striderna (steg 8.8.10)
+  tabun?: import('./lagar').Tabu[]; // farliga platser som hela byn undviker (steg 8.4.10)
+  tabuAkt?: import('./lagar').TabuAkt[]; // handlingar som hela byn låter bli (steg 8.4.10)
+  skattLedare?: number; // så mycket har gått till ledarens förråd som skatt (steg 8.4.17)
+  aktOm?: Record<string, string>; // vad byn minns om olyckan bakom rädslan för en handling
+  gravar?: import('./kvarlevor').Grav[]; gravplatser?: Record<string, { x: number; y: number }>; heliga?: import('./kult').HeligPlats[]; ritual?: import('./kult').Ritual; ritualKo?: import('./kult').Ritual[]; // graven, de heliga platserna och ritualerna (system 8.5)
+  kvarlevor?: import('./kvarlevor').Kvarleva[]; nextKvar?: number; // det som blir kvar av en människa (steg 8.2.3, kvarlevor.ts)
   lager?: { x: number; y: number; w: number; h: number }; // lagerplatsen, rutor
   mat?: Record<string, number>; // äldre sparfiler (före v40): maten per slag
   marken?: { x: number; y: number; k: string; n: number }[]; // gamla sparfiler: saker på marken (nu i stackar)
@@ -348,6 +365,7 @@ export interface State {
   framtradanden?: import('./framtradande').FramMinne[]; // de senaste framträdandena
   matcher?: import('./sport').MatchMinne[]; matchNr?: number; // de senaste matcherna (steg 5.4.8.1)
   overl?: import('./byte').Overl[]; filtar?: import('./byte').Filt[]; filtNr?: number; byteNr?: number; bytt?: import('./byte').Bytt[];
+  rovareFler?: import('./rovare').Rovarflock[]; // flockar som väntar på att få gå (steg 8.7.18)
   rovare?: import('./rovare').Rovarflock; rovarNr?: number; rovarVila?: number; // rövarflocken på kartan, hur många som kommit och när nästa tidigast kommer (steg 4.4.5, rovare.ts)
   klaner?: import('./klaner').Klan[]; klanNr?: number; // grannklanerna (steg 4.4.3, klaner.ts)
   handlarKopt?: Record<string, number>; // det handlarna köpt av byn och byborna, per slag, på det senaste besök då slaget köptes (steg 6.2.11, handel.ts)

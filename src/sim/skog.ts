@@ -1,6 +1,6 @@
 import { bynsMitt, utanforByn } from './omrade';
 import { freeTools } from './agande';
-import { count, forstaGang, gjort, living, log, think } from './folk';
+import { budTillfalle, count, forstaGang, gjort, living, log, think } from './folk';
 import { wearUsed } from './redskap';
 import { groundOf, isForest, tileOf } from './mark';
 import { FOREST, Ground } from './vag';
@@ -11,6 +11,10 @@ import { SNABBARE } from './handlingar';
 import { balans } from './balans';
 import { faltOf, faltRuta } from './odling';
 import { stubbeOn, stubbRutor } from './stubbar';
+import { heligRuta } from './kultlatt';
+import { LAG_SKOG, lagGaller } from './lagar';
+import { naturTanke } from './seder';
+import { storlekAv } from './stationer';
 export { stubbeOn, stubbRutor };
 
 // ---------- skog: fälla träd, hugga ved, flinta och yxa ----------
@@ -46,6 +50,8 @@ export function skaRojas(s: State) {
   const g = groundOf(s), ut: number[] = [];
   for (const z of s.lagren ?? []) if (z.rojs && z.hus === undefined) for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (g.trees[y * W + x] >= FOREST) ut.push(y * W + x);
   for (const f of faltOf(s)) if (f.steg === 'roja') for (let k = f.klara; k < f.n; k++) { const i = faltRuta(f, k); if (g.trees[i] >= FOREST) ut.push(i); }
+  // en station på en plats med träd: de fälls som en del av bygget (steg 8.1.14)
+  for (const t of s.stationer ?? []) if (!t.inne) { const { w, h } = storlekAv(t); for (let y = t.y; y < t.y + h; y++) for (let x = t.x; x < t.x + w; x++) if (g.trees[y * W + x] >= FOREST) ut.push(y * W + x); }
   return ut;
 }
 // det närmaste trädet att fälla i ett lager eller på ett fält i skogen, som ingen annan fäller (projektet rojning i projekt.ts)
@@ -57,6 +63,7 @@ export function rojSpot(s: State, p: Person) {
 // rutorna där någon annan än utom håller på att fälla ett träd
 export const fellingTiles = (s: State, utom: Person) => new Set(living(s).filter(q => q !== utom && q.task?.act === 'falla').map(q => tileOf(q.task!.tx, q.task!.ty)));
 // närmaste vuxna träd att fälla, helst i skogskanten nära byn (p väljer med sin egen slumpföljd)
+const LUND_R = 4; // så många rutor runt en helig plats är den heliga lunden (budet, steg 8.6.6)
 export function treeSpot(s: State, taken: Set<number>, p: Person): { x: number; y: number } | undefined {
   const g = groundOf(s), f = bynsMitt(s);
   // först träden där ett hus ska stå: de måste bort ändå, och stockarna blir husets väggar. Sedan träden på en lagerplats
@@ -70,10 +77,12 @@ export function treeSpot(s: State, taken: Set<number>, p: Person): { x: number; 
   let half = -1, hd = Infinity;
   for (const k in s.halvfallt ?? {}) { const i = +k, d = utanforByn(s, i % W, Math.floor(i / W)); if (isForest(s, i) && !taken.has(i) && d < hd) { hd = d; half = i; } }
   if (half >= 0) return { x: (half % W) + 0.5, y: Math.floor(half / W) + 0.5 };
-  const c: { i: number; d: number }[] = [];
+  const c: { i: number; d: number }[] = [], skogsfred = lagGaller(s, 'skogsfred'), lund = !!s.heliga?.length && budTillfalle(s, 'falla', p);
   for (let y = Math.max(0, f.y - SKOG.sokY); y < Math.min(H, f.y + SKOG.sokY + 1); y++) for (let x = Math.max(0, f.x - SKOG.sokX); x < Math.min(W, f.x + SKOG.sokX + 1); x++) {
     const i = y * W + x;
     if (g.trees[i] < SKOG.tradMin || taken.has(i)) continue;
+    if (skogsfred && utanforByn(s, x, y) <= LAG_SKOG) continue; // lagen om skogen (steg 8.4.1)
+    if (s.heliga?.length && (heligRuta(s, x, y) || lund && s.heliga.some(h => h.tro === p.tro && !h.skandad && Math.hypot(h.x - x, h.y - y) <= LUND_R))) continue; // den heliga platsen fälls inte (steg 8.5.5), och inte lunden runt den om budet säger så (steg 8.6.6)
     c.push({ i, d: utanforByn(s, x, y) });
   }
   if (!c.length) return undefined;
@@ -101,7 +110,7 @@ export function fellTree(s: State, p: Person, x: number, y: number) {
   const k: Stock = { id: (s.nextStock = (s.nextStock ?? 0) + 1), x: Math.floor(x) + 0.5, y: Math.floor(y) + 0.5, ...stam };
   stocks(s).push(k);
   nyStubbe(s, Math.floor(x), Math.floor(y), stam.ved); // stubben blir alltid kvar, också där ett hus ska stå (steg 6.5.7)
-  s.fallda = (s.fallda ?? 0) + 1; gjort(s, p, 'trad');
+  s.fallda = (s.fallda ?? 0) + 1; gjort(s, p, 'trad'); naturTanke(s, 'Ett träd fälldes');
   if (s.fallda === 1) {
     log(s, `${p.name} fällde byns första träd med flintyxan.`, 'world', [p.id]);
     p.fame.push('Fällde byns första träd');

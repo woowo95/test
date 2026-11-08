@@ -4,7 +4,7 @@ import { halsa } from './halsa';
 import { eldPlats } from './karta';
 import { avbryt } from './lager';
 import { canLight } from './eld';
-import { ledig, lekplats, paLek, stationDef, stationerOf } from './stationer';
+import { ledig, stationDef, stationerOf } from './stationer';
 import { bitsOf, gridOf, housesOf, roomAt } from './byggnad';
 import { isLight } from './tid';
 import { kronika } from './historik';
@@ -32,11 +32,10 @@ export const ELDFLYTT = balans('eldflytt', {
 export const vidElden = (s: State, x: number, y: number) => { const f = eldPlats(s); return Math.max(Math.abs(x - f.x), Math.abs(y - f.y)) <= 1; };
 
 // kan elden stå på rutan (x, y)? Rutan och de åtta runt den är lediga (inget vatten, sten, hus, fält, station, lager eller
-// något som ligger där), ute och inte på lekplatsen, och ingen vägg står inom ELDFLYTT.marg rutor. ut = en rektangel (ett
+// något som ligger där), ute, och ingen vägg står inom ELDFLYTT.marg rutor. ut = en rektangel (ett
 // hus som planeras) där elden inte får stå
 export function eldKanSta(s: State, x: number, y: number, ut?: { x: number; y: number; w: number; h: number }) {
   const M = ELDFLYTT.marg, at = gridOf(s).at;
-  if (paLek(lekplats(s), x - 1, y - 1, 3, 3)) return false;
   if (ut && x + 1 + M >= ut.x && x - 1 - M < ut.x + ut.w && y + 1 + M >= ut.y && y - 1 - M < ut.y + ut.h) return false;
   for (let dy = -1 - M; dy <= 1 + M; dy++) for (let dx = -1 - M; dx <= 1 + M; dx++) {
     const xx = x + dx, yy = y + dy;

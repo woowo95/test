@@ -352,9 +352,9 @@ function bytFn(s: State, h: Hus, fn: Fn, slag?: 'mat' | 'material') {
   husKlar(s, h);
 }
 function riv(s: State, h: Hus) {
-  const ved = bitsOf(s).filter(b => b.hus === h.id).reduce((a, b) => a + (MATERIAL[b.m].item === 'ved' ? b.mat : 0), 0) * HUS.rivTillbaka;
+  const ved = Math.floor(bitsOf(s).filter(b => b.hus === h.id).reduce((a, b) => a + (MATERIAL[b.m].item === 'ved' ? b.mat : 0), 0) * HUS.rivTillbaka); // hela trä
   s.byggen = bitsOf(s).filter(b => b.hus !== h.id); s.hus = housesOf(s).filter(q => q !== h);
-  if (ved > 1e-9) put(s, 'ved', ved);
+  if (ved >= 1) put(s, 'ved', ved);
   touch(s); changed(s); count(s, 'rivet');
   log(s, `${h.namn} behövdes inte längre och revs. ${Math.round(ved)} trä kom tillbaka till byn.`, 'world'); kronika(s, `${h.namn} revs.`);
 }

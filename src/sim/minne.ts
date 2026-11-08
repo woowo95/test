@@ -393,7 +393,7 @@ export function forget(s: State, hours: number) {
 
 // ---------- att visa ----------
 const DIRS = ['öster', 'sydost', 'söder', 'sydväst', 'väster', 'nordväst', 'norr', 'nordost'];
-function placeName(s: State, a: number) {
+export function placeName(s: State, a: number) {
   const m = getMap(s.seed), g = groundOf(s), f = bynsMitt(s);
   const x0 = (a % aw()) * AREA, y0 = Math.floor(a / aw()) * AREA;
   let n = 0, wat = 0, sten = 0, skog = 0, sand = 0;

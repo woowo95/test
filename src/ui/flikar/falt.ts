@@ -51,7 +51,7 @@ function rutaHtml() {
   const over = mogen && f.mogen !== undefined ? ODLING.overDygn * DAY - (s.now - f.mogen) : 0;
   return `
     <div class="phead">${iconImg(mogen ? d.sak : 'grodd', 32)}<div><h2>${esc(d.namn)}</h2>
-    <p class="muted">${vid} · ruta ${k + 1} av ${f.sadda ?? 0}</p></div></div>
+    <p class="muted">${vid} · ruta ${k + 1} av ${f.n}</p></div></div>
     <dl class="kv">
       <dt>${mogen ? 'Mogen' : 'Växer'}</dt><dd>${bar(mogen ? 1 : f.vuxit ?? 0)}<span>${Math.round((mogen ? 1 : f.vuxit ?? 0) * 100)} %</span></dd>
       ${mogen ? `<dt>Skörda</dt><dd>${over > 0 ? `inom ${durTxt(over)}, sedan blir den övermogen` : `övermogen, ${Math.round(a * 100)} % kvar`}</dd>`

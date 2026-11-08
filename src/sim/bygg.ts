@@ -2,7 +2,7 @@ import { gen, hans } from './ord';
 import { upplev } from './uppvaxt';
 import { ALDER, ageOf, count, doingAct, forstaGang, livet, living, log } from './folk';
 import { kronikaBer, personFalt } from './berattelser';
-import { vagBort, Bit, DORRAR, DorrDef, DorrSlag, Hus, MATERIAL, bitById, dorrDef, dorrRang, bitsOf, blocked, freeNear, gridOf, housesOf, husById, touch } from './byggnad';
+import { bitAt, vagBort, Bit, DORRAR, DorrDef, DorrSlag, Hus, MATERIAL, bitById, dorrDef, dorrRang, bitsOf, blocked, freeNear, gridOf, isWall, housesOf, husById, touch } from './byggnad';
 import { vaderSlit } from './vader';
 import { groundOf, nyttVatten, punktIRuta } from './mark';
 import { kunnighet } from './ekonomi';
@@ -10,7 +10,7 @@ import { sparas } from './forradsmal';
 import { ARSTID, iIstiden } from './tid';
 import { knows } from './teknik';
 import { amountOf, changed, enPerRuta, ownMove, ownsAmount, put, use, zonesOf } from './lager';
-import { freeTools, tingOf } from './agande';
+import { freeTools, nTools, tingOf } from './agande';
 import { getable, Recept, takeMaterial } from './behov';
 import { Del } from './egendom';
 import { fellingTiles } from './skog';
@@ -27,7 +27,7 @@ import { notis } from './notiser';
 
 // ---------- balanstal (regel 8) ----------
 // Planeringen (var ett nytt hus står) och arbetet (i vilken ordning och hur fort det byggs och lagas). Husens storlek och
-// funktion står i HUS (byggnader.ts), lekplatsens läge i PLATS (plats.ts)
+// funktion står i HUS (byggnader.ts)
 export const BYGG = balans('bygg', {
   maxInne: 24, // största hus: så många sovplatser
   husAvst: 5.5, // ett hus står helst minst så här långt från elden (rutor till husets närmaste vägg), för röken och gnistorna
@@ -36,8 +36,6 @@ export const BYGG = balans('bygg', {
   utomVikt: 1, // en plats får så många poäng (färre är bättre) för varje ruta utanför det byn omsluter, så att byn håller ihop ...
   mittVikt: 0.2, // ... och så många för varje ruta från områdets mitt (bynsMitt), bland platserna innanför ...
   lagerMarg: 1, // ett hus står minst så här många rutor från en lagerplats
-  lekStraff: 3, // ... så många om huset står på lekplatsen ...
-  tradVikt: 0.15, // ... och så många för varje träd som måste fällas först
   byggareInt: 4, // när byn väljer byggare väger intelligensen så här många gånger mindre än hantverket
   omforsok: 12, // timmar innan byn försöker planera ett hus igen när det inte fanns någon plats
   perHus: 4, // så många får bygga på varje hus (platserna på bygget); fler väger en tredjedel (arbetarna, steg 6.1.13 i val.ts)
@@ -60,7 +58,7 @@ export function bedFor(s: State, p: Person) {
 
 // ---------- arbete ----------
 // fell = ett träd står där biten ska byggas och måste fällas först
-interface Job { bit: Bit; repair: boolean; item?: string; need: number; missing: boolean; fell?: boolean }
+interface Job { bit: Bit; repair: boolean; item?: string; need: number; missing: boolean; fell?: boolean; hugg?: number } // hugg = stocken som ligger inne i huset (steg 8.1.13)
 // det som finns att bygga med (av p: det p kan få, behov.ts, och till ett familjehus också familjens), utom det som sparas.
 // Den som får ta av andra (getable = allt i byn) har redan familjens med: aldrig mer än allt
 export const avail = (s: State, k: string, p?: Person, hus?: number) => (p ? Math.min(amountOf(s, k), getable(s, p, k) + famOwn(s, p, k, hus)) : amountOf(s, k)) - sparas(k);
@@ -85,6 +83,8 @@ export function takeForHouse(s: State, p: Person, hus: number | undefined, k: st
   if (rest > 1e-9) for (const [o, v] of Object.entries(takeMaterial(s, p, k, rest, false, kom))) ag[+o] = (ag[+o] ?? 0) + v;
   return ag;
 }
+// huset står på en gammal lagerplats (steg 8.1.15): bitarna väntar tills det som låg där är utburet, men inte i det oändliga
+const lagerIVagen = (s: State, b: Bit) => { const h = husById(s, b.hus); return !!h?.barUt && s.now < h.barUt && b.b < 1 && (s.stackar ?? []).some(a => a.x === b.x && a.y === b.y); };
 export const treeOn = (s: State, b: Bit) => groundOf(s).trees[b.y * W + b.x] >= FOREST;
 // det p kan bygga härnäst: lagning av slitna väggar först, sedan jordgolv, väggar och sist trägolv. Det andra redan bygger tas inte
 export function buildJob(s: State, p: Person, forb = false): Job | undefined {
@@ -101,12 +101,19 @@ export function buildJob(s: State, p: Person, forb = false): Job | undefined {
       if (d < fs) { fs = d; fb = b; }
     }
     if (fb) return { bit: fb, repair: false, need: 0, missing: false, fell: true };
+    // sedan huggs de fällda träden inne i huset (steg 8.1.13), av den som har en ledig yxa: veden och virket bärs ut
+    const hugger = new Set(others.filter(q => q.task?.act === 'hugga').map(q => q.task!.ref));
+    for (const k of s.stockar ?? []) {
+      const b = bitAt(s, Math.floor(k.x), Math.floor(k.y)), h = b && husById(s, b.hus);
+      if (b && h && !h.klar && !hugger.has(k.id)) return { bit: b, repair: false, need: 0, missing: false, hugg: k.id };
+    }
   }
   let best: Job | undefined, bs = Infinity;
   for (const b of bitsOf(s)) {
     if (b.forb && !forb) continue; // en förbättring väntar till nivån Förbättra (steg 7.2.10)
+    if (lagerIVagen(s, b)) continue; // sakerna i den gamla lagerplatsen bärs ut först (steg 8.1.15)
     if (s.flod && iVattnetNu(s, b.y * W + b.x)) continue; // där vattnet står byggs och lagas inget förrän det sjunkit undan (flod.ts)
-    if (taken.has(b.id) || b.k === 'oppning' || (b.b < 1 && (treeOn(s, b) || stubbeOn(s, b.x, b.y) || vidElden(s, b.x, b.y)))) continue; // där elden står byggs inget förrän den flyttats (eldflytt.ts)
+    if (taken.has(b.id) || b.k === 'oppning' || (b.b < 1 && (treeOn(s, b) || stubbeOn(s, b.x, b.y) || vidElden(s, b.x, b.y) || (b.k === 'vagg' && (s.stockar ?? []).some(k => Math.floor(k.x) === b.x && Math.floor(k.y) === b.y))))) continue; // en vägg byggs inte på en stock (steg 8.1.13) // där elden står byggs inget förrän den flyttats (eldflytt.ts)
     const M = MATERIAL[b.m], repair = b.b >= 1;
     if (repair && b.c >= BYGG.laga) continue;
     if (M.tek && !knows(p, M.tek)) continue;
@@ -190,9 +197,22 @@ export function workOn(s: State, p: Person, b: Bit, dtSec: number, har = 0) {
   if (h?.ut && bitsOf(s).every(q => q.hus !== h.id || q.b >= 1)) slutUt(s, h, p);
   // huset är färdigt först när alla dess bitar är byggda: väggarna, öppningen och golvet (inte bara väggarna). Första gången
   // loggas det och skrivs i krönikan, och husKlar körs; efter en rasad vägg (varKlar) blir det bara klart igen
-  if (h && !h.klar && bitsOf(s).every(q => q.hus !== h.id || q.b >= 1)) {
+  if (h) husKlart(s, h, p);
+  return true;
+}
+// ett fällt träd ligger inne i huset (steg 8.1.13); i en by utan yxa kan ingen hugga det, och då står huset ändå
+const stockInne = (s: State, h: Hus) => nTools(s, 'yxa') > 0 && (s.stockar ?? []).some(k => bitAt(s, Math.floor(k.x), Math.floor(k.y))?.hus === h.id);
+// en gång i timmen: det som ändå hamnat på en färdig vägg läggs bredvid (en lagerplats kan ha flyttat, steg 8.1.15)
+export function vaggRensa(s: State) {
+  for (const a of s.stackar ?? []) { if (isWall(s, a.x + 0.5, a.y + 0.5)) { const f = freeNear(s, a.x, a.y, true); a.x = Math.floor(f.x); a.y = Math.floor(f.y); changed(s); } }
+  for (const t of tingOf(s)) { if (t.x === undefined || t.y === undefined || t.hos !== undefined || t.lass !== undefined) continue; if (isWall(s, t.x + 0.5, t.y + 0.5)) { const f = freeNear(s, t.x, t.y, true); t.x = Math.floor(f.x); t.y = Math.floor(f.y); t.vid = undefined; } }
+  enPerRuta(s);
+}
+// huset är färdigt: alla bitar byggda och inga fällda träd kvar inne i det. Prövas när en bit blir klar och när en stock huggits slut
+export function husKlart(s: State, h: Hus, p: Person) {
+  if (!h.klar && bitsOf(s).every(q => q.hus !== h.id || q.b >= 1) && !stockInne(s, h)) {
     h.klar = s.now;
-    if (h.varKlar !== undefined) return true;
+    if (h.varKlar !== undefined) return;
     livet(s, p, 'hus'); // satte sista biten (steg 3.9.8)
     const n = gridOf(s).rooms.filter(r => r.hus === h.id).reduce((a, r) => a + r.tiles.length, 0);
     if (fnOf(h).sover) log(s, `${h.namn} är färdigt. Nu kan ${n} sova under tak.`, 'world', [p.id]);
@@ -201,7 +221,6 @@ export function workOn(s: State, p: Person, b: Bit, dtSec: number, har = 0) {
     if ((h.byggare?.length ?? 0) > 1) for (const q of living(s)) if (h.byggare!.includes(q.id)) upplev(s, q, 'byggdeHus', husFalt(h.namn).hus); // de byggde tillsammans (steg 4.5.4.9)
     h.byggare = undefined;
   }
-  return true;
 }
 // material som inte längre finns i huset (en vägg som rasat eller rivits) räknas inte till det
 function glomKom(h: Hus, k: string, n: number) {

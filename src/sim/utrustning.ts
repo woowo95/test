@@ -25,6 +25,8 @@ import { KROPP, count, living } from './folk';
 import { temperature } from './vader';
 import { bordSlag, carryKind, handOrkar } from './lager';
 import { balans } from './balans';
+import { arPrast } from './kultlatt';
+import { kladAv } from './klader';
 
 export const UTRUSTNING = balans('utrustning', {
   kropp: 5, // det man har på sig väger lätt mot vad händerna orkar: i strid är man tung av kläder som väger så här många gånger det händerna orkar (strid.ts)
@@ -225,17 +227,28 @@ export function kladVarme(s: State, p: Person) {
 const rang = (p: Person, t: Ting) => t.agare === p.id ? 0 : t.agare === BYN ? 1 : 2;
 // varje timme: den som saknar ett plagg på en plats tar på sig ett som är fritt (ingen har det på sig, i handen eller i
 // bördan), och som hen får ta
+const arMantel = (k: string) => kladAv(k)?.plagg === 'mantel';
+// plagg som bara vissa bär: prästens dräkt och masken åt prästen, trons tecken åt de troende (system 8.5)
+const kladFor = (s: State, p: Person, k: string) => { const pl = kladAv(k)?.plagg; return pl === 'prastdrakt' || pl === 'mask' ? arPrast(s, p) : pl === 'tecken' ? p.tro !== undefined : true; };
 export function stepKlader(s: State) {
   if (!tingOf(s).some(t => SAKER[t.k]?.klad)) return;
   const kallt = temperature(s) < KROPP.kladTemp;
+  const ledare = s.styre?.ledare;
   for (const p of living(s)) {
+    // ledarens mantel (steg 8.3.14): den tillhör byn och följer ämbetet. Ledaren byter till den; den som inte längre leder tappar den
+    for (const t of paSig(s, p)) if (arMantel(t.k) && p.id !== ledare) t.bar = undefined;
+    // ... utom när hen har rustningen på sig: den tas inte av för manteln
+    if (p.id === ledare && !paSig(s, p).some(t => arMantel(t.k) || kladAv(t.k)?.plagg === 'rustning')) {
+      const m = tingOf(s).find(t => arMantel(t.k) && t.bar === undefined && t.hos === undefined && t.lass === undefined && !t.halv);
+      if (m) { for (const t of paSig(s, p)) if (SAKER[t.k]!.klad!.plats === 'yttre') t.bar = undefined; m.bar = p.id; m.x = m.y = m.vid = undefined; }
+    }
     // för varm (steg 2.3.4): de varma plaggen tas av, och tas på igen först när det är kallt och kroppen inte är varmare än idealet.
     // Bältet värmer inte och sitter kvar
     if (p.warm > KROPP.forVarm) for (const t of paSig(s, p)) if (SAKER[t.k]!.klad!.varme > 0) t.bar = undefined;
     const har = new Set(paSig(s, p).map(t => SAKER[t.k]!.klad!.plats));
     for (const k of KLAD_SLAG) {
       const pl = SAKER[k]!.klad!.plats;
-      if (har.has(pl) || (SAKER[k]!.klad!.varme > 0 && (!kallt || p.warm > 1))) continue;
+      if (har.has(pl) || arMantel(k) || !kladFor(s, p, k) || (SAKER[k]!.klad!.varme > 0 && (!kallt || p.warm > 1))) continue;
       let best: Ting | undefined;
       for (const t of tingOf(s)) {
         if (t.k !== k || t.bar !== undefined || t.hos !== undefined || t.lass !== undefined || t.halv || !lends(s, t.agare, p)) continue;

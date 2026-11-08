@@ -15,7 +15,7 @@ import { foodDaysAll } from './ekonomi';
 import { isFood } from './saker';
 import { ljusPlatser } from './ljus';
 import { allows, amountOf, rymd, zonesOf } from './lager';
-import { Pabud, pabud } from './styre';
+import { Pabud, legitimitet, pabud } from './styre';
 import { ALDER, ageOf, living } from './folk';
 import { clamp } from './slump';
 import { sportFor } from './sport';
@@ -24,7 +24,7 @@ import { brasaBrist } from './brasor';
 import { utanBadd } from './byggnader';
 import { latrinBrist } from './smuts';
 import { torkBrist } from './matlagning';
-import { HOUR, State } from './typer';
+import { HOUR, State, WEEK } from './typer';
 
 export const FORRAD = balans('forrad', {
   forsiktig: 0.25, // en försiktig by (seden Förutseende eller påbudet) vill ha så mycket större förråd
@@ -190,10 +190,15 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   byxor: s => living(s).length, mossa: s => living(s).length,
   snoskor: s => Math.ceil(living(s).length / VILLTAL.snoskorPer), // några par till dem som går ut i snön
   halsband: s => Math.ceil(living(s).length / VILLTAL.halsbandPer), // det är få som bär smycken
+  // ledarens mantel (steg 8.3.14): byn gör en åt den som suttit en tidsålder med mer än hälften av legitimiteten
+  prastdrakt: s => (s.tron ?? []).filter(t => t.prast !== undefined).length, tecken: s => s.tron?.some(t => t.slut === undefined && (t.niva ?? 0) >= 2) ? Math.ceil(living(s).filter(p => p.tro !== undefined).length / 3) : 0, // system 8.5
+  mask: s => (s.tron ?? []).filter(t => t.prast !== undefined && (t.sk?.prast ?? 100) < 34).length,
+  mantel: s => s.styre?.sedan !== undefined && s.now - s.styre.sedan >= WEEK && legitimitet(s).v > 0.5 ? 1 : 0,
   tunika: s => amountOf(s, 'lintyg') > 0 ? living(s).length : 0, skjorta: s => amountOf(s, 'lintyg') > 0 ? living(s).length : 0,
   balte: s => living(s).length, // ett per person (steg 2.3.3)
   axelrem: spjutVill, // en per spjut (steg 7.1.2)
   ryggsack: s => perVuxna(s, VILLTAL.korgPerVuxna, VILLTAL.korgMin, VILLTAL.korgMax), // lika många som korgarna, till dem som samlar (steg 7.1.3)
+  rustning: s => Math.ceil(living(s).length / 4), hjalm: s => Math.ceil(living(s).length / 4), skold: s => Math.ceil(living(s).length / 4), bage: () => 2, slunga: () => 2, horn: () => 1, // vapnen och rustningen (system 8.7)
   benspade: () => VILLTAL.spadar, // till latrinen och rötterna (steg 2.7.2)
   fackla: () => VILLTAL.facklor, // till den som går ut i mörkret (steg 6.3.6, ljus.ts)
   talgljus: s => ljusPlatser(s).length, // ett till varje bord och hylla inne där folk är vakna i mörker (steg 6.3.8, ljus.ts)

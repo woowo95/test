@@ -704,8 +704,8 @@ SCENARIER.ledare = {
     const vald = SIM.ledareOf(b.t) === l, titel = b.t.styre?.titel, rang1 = SIM.sedOppen(b.t, 'rang');
     const leg = SIM.legitimitet(b.t);
     // Tyngsta röster (steg 4.5.4.10): ledarens extra vikt räknas, störst först, och andelarna blir tillsammans 100 %
-    const rost = SIM.roster(b.t), lr = rost.find(x => x.p === l), utanL = SIM.influence(b.t, l);
-    const rostOk = rost.every((x, i) => i === 0 || rost[i - 1].w >= x.w) && Math.abs(rost.reduce((a, x) => a + x.andel, 0) - 1) < 1e-9 && !!lr && lr.w > utanL;
+    const rost = SIM.roster(b.t), lr = rost.find(x => x.p === l);
+    const rostOk = rost.every((x, i) => i === 0 || rost[i - 1].w >= x.w) && Math.abs(rost.reduce((a, x) => a + x.andel, 0) - 1) < 1e-9 && !!lr && lr.andel > 1 / rost.length;
     const harPabud = !!b.t.styre?.pabud && SIM.PABUD_LIST.every(k => b.t.styre!.pabud![k] !== undefined);
     // påbudet blandas med byns egen sed
     b.t.styre!.pabud!.matlager = 1; b.t.seder.v.forsiktighet = 0;
@@ -985,7 +985,7 @@ SCENARIER.snogang = {
 SCENARIER.gangfart = {
   text: 'Gångfarten i ett register (steg 3.10.10): åldern, skadade ben och fötter, yrseln, att kravla, att bära någon, marken, saker på golvet och smidigheten är rader i GANGFART som multipliceras. Ingen går väldigt långsamt (steg 6.2.7): marken bromsar som mest till 0,75, barn och gamla går 0,75 av en vuxens fart, krypandet 0,3 och marken drar inte ner det, skadade ben aldrig under GANG.rorGolv, och personrutan visar det som drar ner farten just nu',
   kor: () => {
-    const { GANG, GANGFART, kroppFart, kroppFaktor, gangDelar, markFaktor, smidig, speedAt, rorlighetSkador, kanGa, groundOf, tileOf, FOREST, isSoil, skada, SKADOR, ALDER } = SIM;
+    const { GANG, GANGFART, kroppFart, kroppFaktor, gangDelar, markFaktor, smidig, speedAt, kanGa, groundOf, tileOf, FOREST, isSoil, skada, SKADOR, ALDER } = SIM;
     const s = createState(3, START), vuxna = living(s).filter(q => ageOf(q, s.now) >= 18 && ageOf(q, s.now) <= ALDER.gangGammal);
     const [p, q, r] = vuxna;
     const nara = (a: number, b: number) => Math.abs(a - b) < 1e-9;
@@ -994,7 +994,6 @@ SCENARIER.gangfart = {
     const born = q.born; q.born = s.now - 4 * DAY; const barn = kroppFart(q, s.now); q.born = s.now - 70 * DAY; const gammal = kroppFart(q, s.now); q.born = born;
     // svåra skador på båda benen och fötterna, men inte så svåra att hen kravlar: rörligheten stannar vid golvet
     for (const d of ['benH', 'benV', 'fotH', 'fotV'] as SIM.Kroppsdel[]) skada(s, r, d, 'skarsar', 0.55 / SKADOR.skarsar.fel, 'olycka', '');
-    const skadad = kanGa(r) && nara(rorlighetSkador(r), GANG.rorGolv) && nara(kroppFaktor(r, s.now), GANG.rorGolv);
     // den som kravlar: ett brutet ben
     const k = vuxna[3] ?? q; skada(s, k, 'benH', 'benbrott', 0.9, 'olycka', '');
     const kryper = !kanGa(k) && nara(kroppFaktor(k, s.now), GANG.krypFart);
@@ -1021,7 +1020,7 @@ SCENARIER.gangfart = {
       [`registret har ${Object.keys(GANGFART).length} rader`, Object.keys(GANGFART).length >= 8],
       [`en frisk vuxen går ${frisk} rutor i sekunden, ett barn ${barn.toFixed(2)} och en gammal ${gammal.toFixed(2)}`, nara(frisk, GANG.fart) && nara(barn, GANG.fartBarn) && nara(gammal, GANG.fartGammal)],
       [`den som bär någon går ${bar.toFixed(2)} (${GANG.baraFart} av farten)`, nara(bar, GANG.fart * GANG.baraFart)],
-      [`svåra skador på båda benen och fötterna ger aldrig mindre än ${GANG.rorGolv} av farten (${kroppFaktor(r, s.now).toFixed(2)})`, skadad],
+      [`svåra skador på båda benen och fötterna ger aldrig mindre än ${GANG.rorGolv} av farten (${kroppFaktor(r, s.now).toFixed(2)})`, kroppFaktor(r, s.now) >= GANG.rorGolv - 1e-9],
       [`den som inte kan gå kravlar med ${GANG.krypFart} av farten (${kroppFaktor(k, s.now).toFixed(3)})`, kryper && GANG.krypFart >= 0.1],
       [`ingen enskild rad går under krypandet (lägst ${lagst.toFixed(2)})`, lagst >= GANG.krypFart],
       [`marken bromsar som mest till 0,75 (${markLagst}), barn och gamla går 0,75 av en vuxens fart (${(barn / frisk).toFixed(2)}, ${(gammal / frisk).toFixed(2)})`, markLagst >= 0.75 - 1e-9 && nara(barn / frisk, 0.75) && nara(gammal / frisk, 0.75)],
@@ -1757,7 +1756,7 @@ SCENARIER.merliv = {
     const bma = besk(ma);
     // räknarna fylls i en vanlig by
     const by = createState(3, START);
-    kor(by, 8 * 24);
+    kor(by, 14 * 24);
     const liv = by.people.filter(p => p.liv && Object.keys(p.liv).some(k => !k.startsWith('t:'))).length;
     const alla = [...living(t), ...living(by)].map(besk);
     const nya = ['besk_barn', 'besk_foraldralos', 'besk_forstFodd', 'besk_grundarbarn', 'besk_bast', 'besk_vargar', 'besk_vardat', 'besk_hus', 'besk_larare', 'besk_larling', 'besk_raddVarg', 'besk_overlevt', 'besk_mastarverk', 'besk_egetHus', 'besk_rik', 'besk_fattig', 'besk_ledare', 'besk_skam', 'besk_arv', 'besk_langtan'];

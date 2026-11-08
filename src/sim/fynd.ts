@@ -1,4 +1,4 @@
-import { bynsAvstand, bynsMitt } from './omrade';
+import { Avst, bynsAvstand, bynsMitt } from './omrade';
 import { upplev } from './uppvaxt';
 import { PLATS, rektAvstand } from './plats';
 import { count, forstaGang, franMitt, gjort, stat, log, think } from './folk';
@@ -18,6 +18,7 @@ import { balans } from './balans';
 import { BARBUSKE, BUSKE, BUSKTAL, barKrok, busksort } from './buskar';
 import { djupOf, iVattnetNu, sjoRakna, sjoarna, strandAv, vattenNu } from './sjo';
 import { smakGift } from './rykten';
+import { tecken } from './religion';
 
 // ---------- balanstal (regel 8) ----------
 // Fångst och insamling: var viltet håller sig borta, hur fort platserna tömmas och växer tillbaka, fiske, flinta och svamp.
@@ -248,7 +249,7 @@ function monsterDag(fro: number, k: FyndId, dag: number) {
 }
 // i byns läger växer inget (FANGST.lagerR)
 const iLagret = (s: State, i: number) => iLagretI(bynsAvstand(s), getMap(s.seed).tiles, i);
-const iLagretI = (lager: Float32Array, tiles: Uint8Array, i: number) => lager[i] < FANGST.lagerR && tiles[i] !== T.Vatten;
+const iLagretI = (lager: Avst, tiles: Uint8Array, i: number) => tiles[i] !== T.Vatten && lager.at(i) < FANGST.lagerR;
 // vilt skyr människor: ett stort område runt lägret, och marken där många går (stigar och nött mark).
 // Räknas om en gång per dygn (av gränssnittet i en egen del, typer.ts).
 const skygghet = tvaDelar<{ dag: number; v: Float32Array }>();
@@ -266,7 +267,7 @@ function bortaOf(s: State, c2: typeof skygghet, inne: number, r: number) {
   for (let i = 0; i < W * H; i++) nott[i] = isSoil(g.tiles[i]) && markslag(g, i) === 'bar' ? 1 : 0;
   const lager = bynsAvstand(s); // lägret ändras inte under slingan
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const d = clamp((lager[y * W + x] - inne) / r, 0, 1);
+    const i0 = y * W + x, d = lager.minst(i0) > inne + r + 1e-3 ? 1 : clamp((lager.at(i0) - inne) / r, 0, 1); // långt från byn behöver avståndet inte räknas (steg 9.1.5)
     let n = 0;
     for (let dy = -FANGST.nottR; dy <= FANGST.nottR; dy++) for (let dx = -FANGST.nottR; dx <= FANGST.nottR; dx++) if (inMap(x + dx, y + dy)) n += nott[(y + dy) * W + x + dx];
     v[y * W + x] = d * d * (3 - 2 * d) * (1 - Math.min(FANGST.nottMax, n / FANGST.nottDiv));
@@ -340,6 +341,23 @@ export function takenOf(s: State) {
   }
   return d;
 }
+// rutorna där något tagits (steg 9.1.1): bara där växer platserna tillbaka (growFynd), i stället för att gå igenom hela
+// kartan varje timme. En lista per lager utan dubbletter, byggd ur lagret första gången. Den som sätter ett värde i ett
+// lager över 0 anropar tagits, så att rutan kommer med; ett lager som blivit 0 igen tas bort ur listan i growFynd
+const aktiva = new WeakMap<State, Partial<Record<string, { lista: number[]; med: Uint8Array }>>>();
+function aktivOf(s: State, k: string) {
+  let m = aktiva.get(s);
+  if (!m) aktiva.set(s, m = {});
+  let a = m[k];
+  if (!a) {
+    const d = takenOf(s)[k as keyof ReturnType<typeof takenOf>]!, lista: number[] = [], med = new Uint8Array(W * H);
+    for (let i = 0; i < d.length; i++) if (d[i] > 0) { med[i] = 1; lista.push(i); }
+    m[k] = a = { lista, med };
+  }
+  return a;
+}
+export const aktivaRutor = (s: State, k: string) => aktivOf(s, k).lista; // för scenariot andrade
+export function tagits(s: State, k: string, i: number) { const a = aktivOf(s, k); if (!a.med[i]) { a.med[i] = 1; a.lista.push(i); } }
 // I sparfilen: en byte per ruta och slag (0–255), där en följd av orörda rutor (0) skrivs som 0 och hur många (1–255),
 // eftersom det mesta av kartan är orört (sedan kartan blev 120 × 120, steg 2.10.9). Det packade börjar med ~; en äldre
 // sparfil utan ~ har en byte per ruta rakt av
@@ -486,7 +504,7 @@ export function takeFrom(s: State, k: Lager, x: number, y: number, amount: numbe
     for (const { dx, dy, w } of kv) if (iVattnet(tiles, cx, cy, dx, dy, w) >= 0) n += w;
     if (n) for (const { dx, dy, w } of kv) {
       const j = iVattnet(tiles, cx, cy, dx, dy, w);
-      if (j >= 0) d[j] = Math.min(1, d[j] + amount * w / n / u.full);
+      if (j >= 0) { d[j] = Math.min(1, d[j] + amount * w / n / u.full); tagits(s, k, j); }
     }
     return;
   }
@@ -495,7 +513,7 @@ export function takeFrom(s: State, k: Lager, x: number, y: number, amount: numbe
     const xx = cx + dx, yy = cy + dy;
     if (!inMap(xx, yy)) continue;
     const i = yy * W + xx;
-    d[i] = Math.min(1, d[i] + amount * w / sum * (r + 1) / u.full);
+    d[i] = Math.min(1, d[i] + amount * w / sum * (r + 1) / u.full); tagits(s, k, i);
   }
 }
 // en timme: platserna växer tillbaka
@@ -505,9 +523,14 @@ export function growFynd(s: State, hours: number, season: number, vaxt = 1) {
   for (const k of UTTAG_IDS) {
     const f = Math.exp(-FYND[k].uttag!.regrow[season] * hours * (FYND[k].grupp === 'vaxter' ? vaxt : 1)), a = d[k]!;
     if (f >= 1) continue;
-    // fisken växer tillbaka långsammare i en liten sjö (steg 3.8.2)
-    if (k === 'fiske') { const ft = fiskAter(s.seed); for (let i = 0; i < a.length; i++) if (a[i] > 0) { const fi = ft[i] < 1 ? Math.pow(f, ft[i]) : f; a[i] = a[i] * fi < FANGST.aterTom ? 0 : a[i] * fi; } }
-    else for (let i = 0; i < a.length; i++) if (a[i] > 0) a[i] = a[i] * f < FANGST.aterTom ? 0 : a[i] * f;
+    const ak = aktivOf(s, k), L = ak.lista, ft = k === 'fiske' ? fiskAter(s.seed) : undefined;
+    let w = 0;
+    for (let n = 0; n < L.length; n++) {
+      const i = L[n];
+      if (a[i] > 0) { const fi = ft && ft[i] < 1 ? Math.pow(f, ft[i]) : f; a[i] = a[i] * fi < FANGST.aterTom ? 0 : a[i] * fi; } // fisken växer tillbaka långsammare i en liten sjö (steg 3.8.2)
+      if (a[i] > 0) L[w++] = i; else ak.med[i] = 0;
+    }
+    L.length = w;
   }
 }
 // hur mycket de bästa platserna inom räckhåll ger just nu (snitt av de tio bästa), räknas om en gång i timmen
@@ -519,7 +542,7 @@ export function prospect(s: State, k: Kind) {
   if (c.v[k] === undefined) {
     const f = bynsMitt(s), top: number[] = [], lager = bynsAvstand(s);
     for (let y = Math.max(0, f.y - PLATS.dagY); y < Math.min(H, f.y + PLATS.dagY + 1); y++) for (let x = Math.max(0, f.x - PLATS.dagX); x < Math.min(W, f.x + PLATS.dagX + 1); x++) {
-      const d = lager[y * W + x];
+      const d = lager.at(y * W + x);
       if (d > FANGST.syn) continue;
       const v = richness(s, k, x + 0.5, y + 0.5) - d * PLATS.avstandPris;
       if (v > 0) top.push(v);
@@ -545,7 +568,7 @@ export function flintSpot(s: State, q: Person, area?: (x: number, y: number) => 
   const m = getMap(s.seed), sd = stoneDist(s.seed), c: { x: number; y: number; d: number }[] = [], lager = bynsAvstand(s);
   for (let i = 0; i < W * H; i++) {
     if (sd[i] < 1 || sd[i] > FANGST.stenNara || m.tiles[i] === T.Vatten || m.tiles[i] === T.Sten) continue;
-    const x = i % W, y = Math.floor(i / W), d = lager[i];
+    const x = i % W, y = Math.floor(i / W), d = lager.at(i);
     if (d < FANGST.flintaAvstand && (!area || area(x, y)) && flintFactor(s, x, y) > FANGST.flintaRik) c.push({ x, y, d });
   }
   if (!c.length) return undefined;
@@ -580,6 +603,7 @@ export function pickMushrooms(s: State, p: Person, x: number, y: number, dtSec: 
 }
 // när någon äter: finns giftig svamp i förrådet kan hen få i sig den
 export function eatPoison(s: State, p: Person) {
+  if (rnd(s, 'halsa', p) < 0.2) tecken(s, p, 'svampsyn'); // svampen som gav syner (steg 8.5.18)
   const gift = amountOf(s, GIFT);
   // en ensam giftsvamp förfaller lite redan första slaget, så gränsen är nära noll och inte 1
   if (gift < 1e-3 || rnd(s, 'halsa', p) >= Math.min(FANGST.giftMax, gift / Math.max(1, foodOf(s)) * FANGST.giftAndel)) return;
@@ -597,8 +621,8 @@ export function eatPoison(s: State, p: Person) {
   }
   if (before < FANGST.giftKand && v >= FANGST.giftKand) log(s, `${p.name} har lärt sig skilja kantarellen från den giftiga orangea spindlingen.`, 'skill', [p.id]);
   // det hen nu vet: den giftiga svampen sorteras bort ur förrådet, och då är den inte längre svamp att äta
-  const bort = amountOf(s, GIFT) * v;
-  addTo(s, GIFT, -bort); addTo(s, 'svamp', -Math.min(amountOf(s, 'svamp'), bort));
+  const bort = Math.floor(amountOf(s, GIFT) * v); // hela svampar (regeln om hela resurser)
+  if (bort >= 1) { addTo(s, GIFT, -bort); addTo(s, 'svamp', -Math.min(Math.floor(amountOf(s, 'svamp')), bort)); }
 }
 
 // ---------- fiske med händerna ----------

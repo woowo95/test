@@ -1,5 +1,5 @@
 // Scenarier. Grunden: gläntan, yxan, vintern, knapphet, svamp och flinta, kunskap, temperatur och kalender.
-import { createState, growGround, step, living, temperature, coldOf, ageIndex, ageStart, kalender, yearNo, AGES, amountOf, groundOf, getMap, DAY, HOUR, W, tileOf, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, angOf, setAmount, BEAT, tingOf, eatPoison, HOST, vaderNu, VADER, VADERLAGE, VaderId, blotSteg, varmeDelar, stepVader, vaxtFaktor, stepFire, hearthOf, cloneState, wearMult, vaderSlit, NEW_W, NEW_H, allaTider, tiderUtanfor, skaRojas, straken } from '../../sim';
+import { KARTA, createState, growGround, step, living, temperature, coldOf, ageIndex, ageStart, kalender, yearNo, AGES, amountOf, groundOf, getMap, DAY, HOUR, W, tileOf, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, angOf, setAmount, BEAT, tingOf, eatPoison, HOST, vaderNu, VADER, VADERLAGE, VaderId, blotSteg, varmeDelar, stepVader, vaxtFaktor, stepFire, hearthOf, cloneState, wearMult, vaderSlit, allaTider, tiderUtanfor, skaRojas, straken } from '../../sim';
 import { BAR, FOREST, HIGH, isSoil } from '../../sim/vag';
 import { T } from '../../sim/typer';
 import * as SIM from '../../sim';
@@ -17,7 +17,7 @@ SCENARIER.glanta = {
     const ang = angar / jord, skog0 = skogsandel(s, 9, 99);
     const forst: Koll[] = [
       [`en liten koloni: ${s.people.length} personer, ingen eld`, s.people.length === 5 && !s.fire.lit],
-      [`större karta (${s.W}×${s.H})`, s.W === NEW_W && s.H === NEW_H],
+      [`större karta (${s.W}×${s.H})`, s.W === KARTA.bredd && s.H === KARTA.hojd],
       ['gläntan är tom på träd', skogsandel(s, 0, 3) === 0],
       ['gläntan är liten: skog sex rutor från elden', skogsandel(s, 6, 9) > 0.8],
       [`skog på det mesta av jorden utanför gläntan och ängarna, i dungar med gläntor emellan (steg 5.1.4.1): ${(skog0 * 100).toFixed(0)} %`, skog0 > 0.65 && skog0 < 0.95],
@@ -40,7 +40,7 @@ SCENARIER.glanta = {
 function stigLigger(): Koll[] {
   const s = createState(11, START), g = groundOf(s), m = getMap(s.seed);
   let rad = -1;
-  for (let y = 2; y < NEW_H - 2 && rad < 0; y++) for (let x = 2; x < NEW_W - 8; x++) {
+  for (let y = 2; y < KARTA.hojd - 2 && rad < 0; y++) for (let x = 2; x < KARTA.bredd - 8; x++) {
     if (Math.hypot(x - m.fire.x, y - m.fire.y) < 20) continue;
     let ok = true; for (let dy = -1; dy <= 1; dy++) for (let dx = 0; dx < 6; dx++) if (!isSoil(g.tiles[(y + dy) * W + x + dx])) ok = false;
     if (ok) { rad = y * W + x; break; }
@@ -2078,6 +2078,9 @@ SCENARIER.radjur = {
       }
       return ut;
     };
+    // spjutet landar på marken efter kastet (steg 8.7.4), så en stark jägare orkar ofta bära hem rådjuret: den svaga styckar det
+    const sv = cloneState(s0), svp = SIM.byId(sv, p0.id)!; svp.pot = { ...svp.pot, styrka: 1 }; svp.tek = { ...svp.tek, kniv: 1 }; SIM.newTing(sv, 'kniv', 1, svp.id);
+    const svt = { act: 'jakt', phase: 'do', tx: svp.x, ty: svp.y, until: sv.now + HOUR, carry: 0, items: { radjur: 1 } } as SIM.Task; SIM.styckaFallt(sv, svp, svt, 'radjur'); const svagDel = svt.items?.radjurdel ?? 0;
     const spjut = prova('flintspjut', 150), sten = prova(undefined, 60), stark = prova('flintspjut', 150, 20);
     // slakten
     const s = createState(3, START);
@@ -2096,7 +2099,7 @@ SCENARIER.radjur = {
       [`med spjut går jägaren mot rådjuret (${spjut.radmal} av 150)`, spjut.radmal > 100],
       [`med spjut fälls rådjur (${spjut.fallt} av 150)`, spjut.fallt > 0],
       [`med stenar jagas inga rådjur (${sten.radmal})`, sten.radmal === 0],
-      [`den som inte orkar bära det helt styckar det (${spjut.del} styckade, ${spjut.hel} hela)`, spjut.del > 0],
+      [`den som inte orkar bära det helt styckar det (${svagDel} delar i händerna)`, svagDel > 0],
       [`den starka bär hem rådjuret helt (${stark.hel} hela, ${stark.del} styckade)`, stark.hel > 0],
       [`slakten gav ${fick}`, amountOf(s, 'kott') >= 4 && amountOf(s, 'ben') === 2 && amountOf(s, 'radjursskinn') === 1 && amountOf(s, 'talg') === 2],
     ];
@@ -2306,6 +2309,72 @@ SCENARIER.bjornjakt = {
       [`den som fällde den är björndödare (${dodare} av ${falld})`, dodare === falld],
       [`björnen styckas och bärs hem i delar (${delar} av ${falld})`, delar === falld],
       [`skinnet ligger i högen eller i förrådet (${skinn} av ${falld})`, skinn === falld],
+    ];
+  },
+};
+
+SCENARIER.kropp8 = {
+  text: 'Steg 8.2: de finare kroppsdelarna, synen, hörseln och talet, förlorade delar som blir saker, ärr och men, medvetandet och att svimma',
+  kor: () => {
+    const s = createState(6, START), p = living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    const f0 = SIM.syn(p), h0 = SIM.horsel(p), t0 = SIM.tal(p), k0 = SIM.stat(p, 'karisma', s.now);
+    (p.skador ??= []).push({ d: 'ogaV', k: 'skarsar', g: 1, b: 0 }, { d: 'kake', k: 'benbrott', g: 0.5, b: 0 });
+    SIM.uppdateraSinnen(p);
+    const syn1 = SIM.syn(p), tal1 = SIM.tal(p), k1 = SIM.stat(p, 'karisma', s.now);
+    p.skador = undefined; SIM.uppdateraSinnen(p);
+    // en hand går förlorad: en sak på marken, fingrarna med den, händigheten sjunker
+    const q = living(s).filter(x => SIM.ageOf(x, s.now) >= SIM.ALDER.vuxen)[1]!, ha = SIM.handighet(q);
+    SIM.forlora(s, q, 'handV', 'höggs av');
+    const kv = SIM.kvarlevor(s)[0];
+    const fing = !!q.saknas?.includes('fingrarV');
+    // den ena foten borta: går ändå; den andra också: kan inte gå
+    const r = living(s).filter(x => SIM.ageOf(x, s.now) >= SIM.ALDER.vuxen)[2]!;
+    SIM.forlora(s, r, 'fotV', 'höggs av'); const gar1 = SIM.kanGa(r), rorl = SIM.rorlighet(r);
+    SIM.forlora(s, r, 'fotH', 'höggs av'); const gar2 = SIM.kanGa(r);
+    // en avhuggen arm tar handen och fingrarna med sig
+    const a8 = living(s).filter(x => SIM.ageOf(x, s.now) >= SIM.ALDER.vuxen)[1]!;
+    SIM.forlora(s, a8, 'armH', 'höggs av'); const armMed = ['armH', 'handH', 'fingrarH'].every(d => a8.saknas?.includes(d as never));
+    // ruttnar som maten
+    const kvar = s.kvarlevor!.length; s.now += SIM.KVARLEVOR.del.haller * 86400000 + 1; SIM.kvarTimme(s); const rott = s.kvarlevor!.length < kvar;
+    // medvetandet: full frisk nära 1, mycket ont och blodförlust lågt, arbetet långsammare, svimmar
+    const u = living(s).filter(x => SIM.ageOf(x, s.now) >= SIM.ALDER.vuxen)[3]!;
+    u.rest = 1; u.hunger = 1; u.torst = 1;
+    const m0 = SIM.medvetande(u), a0 = SIM.handighet(u);
+    u.blod = 0.5; (u.skador ??= []).push({ d: 'bal', k: 'krossar', g: 1, b: 0 }, { d: 'huvud', k: 'hjarnskakning', g: 1, b: 0 });
+    const m1 = SIM.medvetande(u), a1 = SIM.handighet(u);
+    SIM.halsaSteg(s, u, 1);
+    const svimmat = !!u.svimmat, gor = (SIM.chooseTask(s, u), u.task?.act), kanInte = !SIM.kanGa(u);
+    u.skador = undefined; u.blod = 1;
+    SIM.halsaSteg(s, u, 1);
+    return [
+      [`frisk: full syn, hörsel och tal (${f0}, ${h0}, ${t0})`, f0 === 1 && h0 === 1 && t0 === 1],
+      [`ett skadat öga sänker synen (${syn1}), en bruten käke talet (${tal1}), och båda karisman (${k0.toFixed(1)} → ${k1.toFixed(1)})`, syn1 < 1 && tal1 < 1 && k1 < k0],
+      [`en avhuggen hand blir en sak med ägarens namn ("${kv?.text}"), fingrarna följer med och händigheten sjunker (${ha.toFixed(2)} → ${SIM.handighet(q).toFixed(2)})`, !!kv && kv.text.includes(q.name) && fing && SIM.handighet(q) < ha],
+      [`med en fot kvar går man sämre (${rorl.toFixed(2)}), utan fötter inte alls`, gar1 && rorl < 1 && !gar2],
+      [`en avhuggen arm tar handen och fingrarna med sig (${a8.saknas?.join(', ')})`, armMed],
+      ['delen ruttnar bort', rott],
+      [`medvetandet sjunker (${m0.toFixed(2)} → ${m1.toFixed(2)}) och arbetet går långsammare (${a0.toFixed(2)} → ${a1.toFixed(2)})`, m0 > 0.9 && m1 < m0 && a1 < a0],
+      [`den som svimmat ligger där hen är (${gor}) och kan inte gå`, svimmat && gor === 'medvetslos' && kanInte],
+      ['och vaknar när hen mår bättre', !u.svimmat],
+    ];
+  },
+};
+SCENARIER.arr = {
+  text: 'Steg 8.2.4: en svår skada som läkt kan läka fel och ge ett bestående men, och lämnar ofta ett ärr, som oftast gör ansiktet fulare',
+  lang: true,
+  kor: () => {
+    let men = 0, arr = 0, ful = 0, N = 60;
+    for (let i = 0; i < N; i++) {
+      const s = createState(6 + i, START), p = living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!, sk = p.pot.skonhet;
+      p.rest = 1; p.hunger = 1; p.torst = 1;
+      p.skador = [{ d: 'huvud', k: 'skarsar', g: 0.001, b: 0, g0: 0.9 }];
+      SIM.halsaSteg(s, p, 3600);
+      if (p.men?.length) men++; if (p.arr?.length) arr++; if (p.pot.skonhet < sk) ful++;
+    }
+    return [
+      [`ibland läker det fel (${men} av ${N})`, men > 5 && men < N],
+      [`ibland blir det ett ärr (${arr} av ${N})`, arr > 10 && arr < N],
+      [`de flesta ärr i ansiktet gör fulare (${ful} av ${arr})`, ful > arr / 2],
     ];
   },
 };

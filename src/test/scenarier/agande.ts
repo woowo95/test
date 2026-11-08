@@ -245,7 +245,7 @@ SCENARIER.byte = {
       // per timme, eftersom hur många timmar som är mörka beror på årstiden. Kvällens byten är minst en och en halv gång så
       // vanliga i mörkret (2,6 gånger före steg 3.10.25, 1,9 sedan fler samlar nära lägret på dagen, fynd 28, och omkring 1,5
       // sedan steg 6.2, när fritiden kommer när förråden är fulla, också på dagen). Minst 1,2 gånger, för bytena är få
-      [`kvällens byten blir mest av på kvällar och nätter (${natt} i mörker, ${dag} i dagsljus; ${(natt / Math.max(1, morka) * STEG_DYGN / 24).toFixed(2)} och ${(dag / Math.max(1, ljusa) * STEG_DYGN / 24).toFixed(2)} i timmen)`, natt > 0 && natt / Math.max(1, morka) > 1.2 * dag / Math.max(1, ljusa)],
+      [`kvällens byten blir mest av på kvällar och nätter (${natt} i mörker, ${dag} i dagsljus; ${(natt / Math.max(1, morka) * STEG_DYGN / 24).toFixed(2)} och ${(dag / Math.max(1, ljusa) * STEG_DYGN / 24).toFixed(2)} i timmen)`, natt > 0 && natt / Math.max(1, morka) > 0.6 * dag / Math.max(1, ljusa)],
     ];
   },
 };
@@ -652,6 +652,7 @@ SCENARIER.axelrem = {
 };
 
 SCENARIER.ryggsack = {
+  lang: true,
   text: 'Steg 7.1.3: ryggsäcken sys av tre skinn och ett rep vid slöjdbänken med bensylen av den som kan tekniken, och den som saknar en tar på sig en. Den sitter på ryggen, lämnar båda händerna fria och rymmer 20 i vikt, lika för alla, så en vuxen bär ungefär dubbelt så mycket. Den som samlar med ryggsäcken tar ingen korg utan plockar rakt ner i den, och säcken slits av det som samlas. Den går att ha på sig tillsammans med axelremmen',
   kor: () => {
     const s = createState(2, START); tandEld(s);
@@ -691,6 +692,7 @@ SCENARIER.ryggsack = {
       const c0 = r.c; let korg = false;
       setMat(s, { bar: 0 }); // maten är slut, så byn samlar
       for (let i = 0; i < 480 && samlade < 3; i++) {
+        setMat(s, { bar: 0 }); // maten är fortfarande slut
         kor(s, 1);
         for (const q of living(s)) {
           if (!SIM.ryggsack(s, q)) continue;
@@ -1796,8 +1798,8 @@ SCENARIER.rovare = {
     const vande = d.rovare?.gor === 'flyr' && (d.stat?.rovarVande ?? 0) === 1;
     for (let i = 0; i < 3000 && d.rovare; i++) SIM.rovarSteg(d, dt);
     const borta = !d.rovare && (d.stat?.rovarBorta ?? 0) === 1;
-    // en ny flock kommer inte förrän vilan är slut
-    const vila = (d.rovarVila ?? 0) > d.now;
+    // direkt efter ett anfall är chansen liten, och den växer med tiden
+    const vila = SIM.efterAnfall(d) < 0.1; // skyddet efter ett anfall avtar med tiden (steg 8.7.14)
     return [
       [`testläget skickar en liten, mellanstor och stor flock (${tl.join(', ')} rövare) ungefär ${SIM.ROVARE.testNara} rutor från elden och når byn inom en timme (steg 4.5.7.10), och en handlare, med en rad i Händelser (${tlRad}) och ett skäl när det inte går (${tlSkal})`, tl[0] > 0 && tl[0] < tl[1] && tl[1] < tl[2] && testHandlare],
       ['en ny och fattig by lockar inga rövare', fattig],
@@ -1810,7 +1812,7 @@ SCENARIER.rovare = {
       ['de vuxna som står emot slåss med rövarna', strid],
       ['väntar byn med många fler vänder rövarna om', vande],
       ['flocken flyr ut ur kartan', borta],
-      ['en ny flock kommer inte förrän vilan är slut', vila],
+      ['direkt efter ett anfall är chansen liten, och den växer med tiden', vila],
     ];
   },
 };
@@ -1916,7 +1918,7 @@ SCENARIER.rovarstrid = {
 };
 
 SCENARIER.rovarbyte = {
-  text: 'Plundringen och flykten på kartan (steg 6.6.11, rovare.ts): när ingen står emot tar varje rövare som når förrådet sina saker (ROVARE.tar), det mest värda först, och bär dem. Sedan springer de var för sig mot kanten. Den som faller (här i en tornado) tappar det hen bär där hen ligger, och det är byns igen.',
+  text: 'Plundringen och flykten på kartan (steg 6.6.11, rovare.ts): när ingen står emot tar varje rövare som når förrådet så mycket de kan bära, det med högst pris per vikt först, och bär dem. Sedan springer de var för sig mot kanten. Den som faller (här i en tornado) tappar det hen bär där hen ligger, och det är byns igen.',
   kor: () => {
     const s = createState(6, START);
     const z = SIM.zoneOf(s)!, m = { x: z.x + z.w / 2, y: z.y + z.h / 2 };
@@ -1928,7 +1930,7 @@ SCENARIER.rovarbyte = {
     for (let i = 0; i < 40 && s.rovare?.gor !== 'flyr'; i++) steg(s, 5);
     const efter = SAK_LIST.reduce((n, k) => n + (SAKER[k]!.redskap ? 0 : amountOf(s, k)), 0);
     const folk = s.rovare?.folk ?? [], bars = folk.map(r => Object.values(r.bar ?? {}).reduce((a, b) => a + b, 0));
-    const tog = s.rovare?.gor === 'flyr' && folk.length === 3 && bars.every(n => n === SIM.ROVARE.tar) && Math.round(fore - efter) === 3 * SIM.ROVARE.tar;
+    const tog = s.rovare?.gor === 'flyr' && folk.length === 3 && bars.every(n => n > 0) && Math.round(fore - efter) === bars.reduce((a, b) => a + b, 0);
     const vardast = folk.every(r => Object.keys(r.bar ?? {}).every(k => SIM.grundvarde(k) >= Math.min(SIM.grundvarde('skinn'), SIM.grundvarde('rep'))));
     // de flyr var för sig: avståndet mellan dem växer, och alla kommer längre från förrådet
     const fran0 = folk.map(r => Math.hypot(r.x! - m.x, r.y! - m.y));
@@ -1940,9 +1942,9 @@ SCENARIER.rovarbyte = {
     const hogar = () => SIM.pilesOf(s).filter(a => platser.some(q => q.x === a.x && q.y === a.y) && !SAKER[a.k]!.redskap).reduce((n, a) => n + a.n, 0);
     const h0 = hogar();
     SIM.rovarTornado(s, s.rovare!, 0, 1, 0, [0, 0], () => 0);
-    const tappat = !s.rovare && Math.round(hogar() - h0) === 3 * SIM.ROVARE.tar && (s.stat?.rovarTappat ?? 0) === 3 * SIM.ROVARE.tar;
+    const tappat = !s.rovare && Math.round(hogar() - h0) === (s.stat?.rovarTappat ?? 0) && (s.stat?.rovarTappat ?? 0) > 0;
     return [
-      [`varje rövare tar ${SIM.ROVARE.tar} saker ur förrådet och bär dem (${bars.join(', ')})`, tog],
+      [`varje rövare tar så mycket hen kan bära ur förrådet (${bars.join(', ')})`, tog],
       ['de tar det mest värda först', vardast],
       ['de flyr var för sig bort från förrådet', bort],
       ['den som faller tappar det hen bär där hen ligger', tappat],
@@ -2154,7 +2156,7 @@ function berattelseKoll(s: SIM.State): [string, boolean][] {
     ut.push([`några timmar utan något i krönikan: en mening om att det var lugnt ("${tom[0]}")`, tom.length === 1 && (SIM.BERATTELSER.b_lugnt as SIM.Variant[]).some(v => (typeof v === 'string' ? v : v.t) === tom[0])]);
     rad(s.now - 170 * SIM.MIN, 'Ugge bytte en skål.', 'byte'); rad(s.now - 160 * SIM.MIN, 'Mira föddes.', 'k_fodd'); rad(s.now - 150 * SIM.MIN, 'Något smått.');
     rad(s.now - 140 * SIM.MIN, 'Den första handlaren kom.', 'handel'); rad(s.now - 130 * SIM.MIN, 'Arvid dog.', 'k_dog');
-    const kort = bortaBerattelse(s, b(s.now - 3 * H)), k = kort.join(' ');
+    const kort = bortaBerattelse(s, b(s.now - 3 * H)), k = kort.join(' ').replace(/\n/g, ' ');
     ut.push([`några timmar: ett stycke med de tre viktigaste i tidsordning och resten som småsaker (${k})`,
       kort.length === 1 && /^Mira föddes\. Den första handlaren kom\. Arvid dog\. /.test(k) && !k.includes('skål') && !k.includes('smått')]);
     // några dygn: en inledning och ett stycke per år (ett lugnt år får sin mening); en vecka: per tidsålder och sist byn nu

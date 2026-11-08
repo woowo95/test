@@ -249,6 +249,8 @@ export const PROJEKT: Record<string, ProjektDef> = {
   },
 };
 export const PROJEKT_LIST = Object.keys(PROJEKT);
+// rader som läggs till när allt är laddat (hovet och templet, kyrka.ts via steg.ts) kommer med i listan också
+export function laggTillProjekt(rader: Record<string, ProjektDef>) { for (const k in rader) { PROJEKT[k] = rader[k]; if (!PROJEKT_LIST.includes(k)) PROJEKT_LIST.push(k); } }
 // värdet av projektet just nu: vikten gånger bristen, delat med kostnaden
 export const projektVarde = (s: State, k: string) => { const d = PROJEKT[k]; return d.vikt * d.brist(s) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad()); };
 // hur mycket p bryr sig om det hen och familjen saknar, jämfört med byn (steg 6.1.16): mindre med empati och seden Sammanhållning

@@ -1,0 +1,38 @@
+{
+"id": "lerflaska",
+"ritad": 1,
+"av": "Claude, sparad ur bildstilen: tjärans version 3, som Björn vill spara till något annat (steg 8.10.1)",
+"w": 19,
+"h": 19,
+"rader": [
+".....aaa...........",
+"....abbba..........",
+"....acccaa.........",
+"...addddeda........",
+"....aeddea.........",
+"....aeddea.........",
+"....aeddea.........",
+"...affddeda........",
+"..afffddedda.......",
+".afffdddedgga......",
+".afffddddegga......",
+"afffdddddeggga.....",
+"afffdddddgegga.....",
+".afdddddggega......",
+".adddddgggggaaaaa..",
+"..addddggggeeeeeea.",
+"...addggggeeeheeeea",
+"....aaaaaaaaeeeeaa.",
+"............aaaa..."
+],
+"pal": {
+"a": "#24201d",
+"b": "#987e62",
+"c": "#7d5b40",
+"d": "#a14808",
+"e": "#2f261d",
+"f": "#bd753e",
+"g": "#742a01",
+"h": "#372f25"
+}
+}

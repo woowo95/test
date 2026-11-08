@@ -85,6 +85,7 @@ export const DELA = balans('dela', {
 const portionOf = (p: Person, now: number) => ageOf(p, now) < ALDER.matBarn ? KROPP.portionBarn : 1;
 // en hel portion, eller det som finns kvar. Maten under halva skicket mättar sämre, under en fjärdedel kan man bli sjuk
 function eat(s: State, p: Person, fran?: Person) {
+  if ((p.fasta ?? 0) > s.now && p.hunger > 0.2 && p.warm > 0.3) return 0; // fastan (steg 8.5.14): kyla och svält går före
   const now = s.now, full = portionOf(p, now);
   const { n: portion, c: q, per } = takeFood(s, full, p, fran), f = KROPP.mattar / full * (q >= 0.5 ? 1 : 0.5 + q);
   // maten fyller näringsvärdena, och mättnaden är en sammanfattning av dem (steg 2.6.1, naring.ts)

@@ -1,16 +1,22 @@
-import { ALDER, ageOf, isParent, living, log } from './folk';
+import { LAG, efterlevs, lagGaller } from './lagar';
+import { think } from './folk';
+import { HOUR } from './typer';
+import { ALDER, ageOf, living, log } from './folk';
 import { clamp } from './slump';
 import { Act, DAY, Person, Seder, State } from './typer';
 import { balans } from './balans';
 import { kortTal } from './format';
 import { ACTS, ACT_LIST } from './handlingar';
-import { ledarVikt, sedOppen } from './styre';
+import { sedOppen } from './styre';
+import { vikter } from './rost';
+import { andlighet } from './religion';
 import { UpplevelseTyp, upplevelseSed } from './uppvaxt';
 
 // ---------- balanstal (regel 8) ----------
 // Sederna (arbete, gemenskap, barn, nyfikenhet, försiktighet, rang, från -1 till 1) rör sig långsamt mot det invånarna drar åt:
 // var och en efter sin personlighet och de upplevelser hen minns (steg 4.5.4.9). Åldrarna för rösten i sederna och för yrkestaggarna står i ALDER (folk.ts)
 export const SED = balans('seder', {
+  varnaFran: -0.2, varnaTanke: 0.05, // den som drar mer åt Värna än så här blir ledsen, så här mycket per steg
   mitt: 10, // en vanlig människas egenskap (egenskaper går från 1 till 20) ...
   spann: 6, // ... och så mycket över eller under är ett helt steg åt ena hållet
   // åt vilket håll personen drar sederna, efter sin personlighet
@@ -57,6 +63,12 @@ const DEF = {
   nyfikenhet: { pos: 'Förnyelse', neg: 'Tradition', effect: 'Hur snabbt invånarna lär sig nya färdigheter.', dra: q => dev((q.nyfikenhet + q.intelligens) / 2) },
   forsiktighet: { pos: 'Förutseende', neg: 'Dagens behov', effect: 'Hur stora förråd byn vill ha innan man slappnar av, och om elden hålls vid liv.', dra: q => -dev(q.mod) * SED.forsMod + dev(q.intelligens) * SED.forsInt },
   // den första vågskålen (steg 3.5.1): låst (står på 0) tills byn fått sin första ledare (sedOppen i styre.ts)
+  fortjanst: { pos: 'Härkomst', neg: 'Förtjänst', effect: 'Den duglige eller släkten: Härkomst flyttar vikt till släkternas äldste och ger arv när ledaren byts.', dra: (q, barn) => -dev(q.intelligens) * 0.5 + (barn ? 0.15 : -0.05) },
+  fejd: { pos: 'Fejd', neg: 'Förlikning', effect: 'Om konflikter löses med ord eller med styrka: Fejd flyttar vikt till krigarna, och ledaren kan störtas i strid.', dra: q => dev(q.aggression) - dev(q.empati) },
+  krig: { pos: 'Krig', neg: 'Fred', effect: 'Om byn går i strid eller söker fred: Krig gör fler villiga att slåss.', dra: q => dev(q.aggression) * 0.7 + dev(q.mod) * 0.3 - dev(q.empati) * 0.5 }, // steg 8.4.11
+  delning: { pos: 'Delning', neg: 'Ägande', effect: 'Om byn delar lika eller har rika och fattiga: Delning ger mer av det man skaffar till byn.', dra: q => dev(q.empati) * 0.8 - dev(q.intelligens) * 0.1 }, // steg 8.4.12
+  natur: { pos: 'Bruka', neg: 'Värna', effect: 'Om naturen är till för att brukas: fällda träd och dödade djur ger sämre humör för dem som drar åt Värna.', dra: q => dev(q.flit) * 0.5 - dev(q.empati) * 0.5 }, // steg 8.4.13
+  andlig: { pos: 'Andlig', neg: 'Världslig', effect: 'Om makten kommer från folket eller från gudarna: Andlig flyttar vikt till prästerna, och kyrkan välsignar eller fördömer ledaren.', dra: q => dev(q.minne) * 0.05 }, // steg 8.6.1
   rang: { pos: 'Envälde', neg: 'Allmogen', effect: 'Hur mycket ledaren bestämmer: ledarens vikt i sederna och påbuden, och hur hårt ledaren straffar.', dra: q => (dev(q.mod) - dev(q.empati)) * SED.rangDra },
 } satisfies Record<string, SedDef>;
 export type Sed = keyof typeof DEF;
@@ -74,27 +86,34 @@ export function influence(s: State, p: Person) {
 }
 // åt vilket håll personen drar varje sed: personligheten plus de upplevelser hen minns (steg 4.5.4.9). Byns mål och personens
 // övertygelser i personrutan
+// de som har barn (levande eller döda), en gång i timmen: drar frågas för varje person varje timme och vid varje fällt träd
+const foraldrarCache = new WeakMap<State, { key: string; ids: Set<number> }>();
+function foraldrar(s: State) {
+  const key = `${Math.floor(s.now / HOUR)}:${s.people.length}`, c = foraldrarCache.get(s);
+  if (c?.key === key) return c.ids;
+  const ids = new Set<number>();
+  for (const q of s.people) { if (q.mother !== undefined) ids.add(q.mother); if (q.father !== undefined) ids.add(q.father); }
+  foraldrarCache.set(s, { key, ids });
+  return ids;
+}
 export function drar(s: State, p: Person) {
-  const barn = s.people.some(c => isParent(p, c)), d = nollor();
+  const barn = foraldrar(s).has(p.id), d = nollor();
   for (const k of SED_LIST) d[k] = SEDER[k].dra(p.pot, barn);
+  d.andlig = (andlighet(s, p) - 50) / 50; // byns snitt av andlighet drar seden Världslig – Andlig (steg 8.6.1)
   for (const u of p.upp ?? []) {
     const e = upplevelseSed(u.k);
     if (e) for (const k in e) d[k as Sed] += e[k as Sed]! * SED.uppSteg;
   }
   return d;
 }
+// rösterna i sederna: varje persons vikt (vikter i rost.ts, samma som sederTarget använder) och andelen av hela byns röst
+// (Tyngsta röster i fliken Seder, steg 4.5.4.10). Störst först. En kopia sorteras: vikter är en cache som simuleringen
+// går igenom i sin ordning, och fliken får inte ändra den (regel 2)
+export function roster(s: State) {
+  return [...vikter(s)].sort((a, b) => b.andel - a.andel).map(x => ({ ...x, w: x.andel }));
+}
 // det som format sederna (fliken Seder): hur mycket varje slags upplevelse drar byns mål, vägt efter inflytandet som i
 // sederTarget, och hur många som minns den. Störst först
-// rösterna i sederna: varje persons inflytande plus ledarens extra vikt (som i sederTarget), och andelen av hela byns röst
-// (Tyngsta röster i fliken Seder, steg 4.5.4.10). Störst först
-export function roster(s: State) {
-  const ppl = living(s).map(p => ({ p, w: influence(s, p), andel: 0 })).filter(x => x.w), l = ledarVikt(s);
-  let tw = ppl.reduce((a, x) => a + x.w, 0);
-  const lx = l && tw ? ppl.find(x => x.p === l.p) : undefined, extra = l && tw ? tw * l.w : 0;
-  if (l && extra) { if (lx) lx.w += extra; else ppl.push({ p: l.p, w: extra, andel: 0 }); tw += extra; }
-  for (const x of ppl) x.andel = x.w / tw;
-  return ppl.sort((a, b) => b.w - a.w);
-}
 export function sedDrag(s: State) {
   const ppl = roster(s), tw = ppl.reduce((a, x) => a + x.w, 0);
   const m = new Map<UpplevelseTyp, { k: UpplevelseTyp; n: Set<number>; d: Record<Sed, number> }>();
@@ -109,16 +128,9 @@ export function sedDrag(s: State) {
 }
 export function sederTarget(s: State): Record<Sed, number> {
   const t = nollor();
-  let tw = 0;
-  for (const p of living(s)) {
-    const w = influence(s, p); if (!w) continue;
-    tw += w; const d = drar(s, p);
-    for (const k of SED_LIST) t[k] += d[k] * w;
-  }
-  // ledaren drar med en del av byns samlade vikt (steg 3.5.1, styre.ts)
-  const l = tw ? ledarVikt(s) : undefined;
-  if (l) { const d = drar(s, l.p), w = tw * l.w; for (const k of SED_LIST) t[k] += d[k] * w; tw += w; }
-  for (const k of SED_LIST) t[k] = sedOppen(s, k) ? clamp((tw ? t[k] / tw : 0) * SED.snittVikt, -1, 1) : 0;
+  // varje persons vikt (steg 8.3.2, rost.ts), med ledaren och de andra som sederna flyttar vikt till
+  for (const { p, andel } of vikter(s)) { if (!andel) continue; const d = drar(s, p); for (const k of SED_LIST) t[k] += d[k] * andel; }
+  for (const k of SED_LIST) t[k] = sedOppen(s, k) ? clamp(t[k] * SED.snittVikt, -1, 1) : 0;
   return t;
 }
 // sederna rör sig långsamt mot det invånarna drar mot
@@ -127,13 +139,19 @@ export function stepSeder(s: State) {
   sd.at = s.now;
   if (dt <= 0) return;
   const t = sederTarget(s), f = 1 - Math.exp(-dt / (SED.rorDygn * DAY));
-  for (const k of SED_LIST) sd.v[k] += (t[k] - sd.v[k]) * f;
+  for (const k of SED_LIST) sd.v[k] = (sd.v[k] ?? 0) + (t[k] - (sd.v[k] ?? 0)) * f;
 }
 
 // ---------- vilja ----------
 // pliktkänsla 0–1: hur mycket personen jobbar för byn i stället för sig själv
 export function duty(s: State, p: Person) {
-  return clamp(SED.pliktBas + (p.pot.flit - SED.mitt) * SED.pliktFlit + (p.pot.empati - SED.mitt) * SED.pliktEmpati + s.seder.v.arbete * SED.pliktSed, SED.pliktMin, SED.pliktMax);
+  const lag = (lagGaller(s, 'arbetsplikt') ? LAG.plikt * efterlevs(s) : 0) + ((p.tjanst ?? 0) > s.now ? LAG.plikt : 0); // arbetsplikten och samhällstjänsten (steg 8.4.1, 8.4.8)
+  return clamp(SED.pliktBas + (p.pot.flit - SED.mitt) * SED.pliktFlit + (p.pot.empati - SED.mitt) * SED.pliktEmpati + s.seder.v.arbete * SED.pliktSed + lag, SED.pliktMin, SED.pliktMax);
+}
+// Värna – Bruka (steg 8.4.13): fällda träd och dödade djur ger sämre humör för dem som drar åt Värna, mer ju starkare de tycker
+export function naturTanke(s: State, text: string) {
+  if (!s.styre?.oppna?.includes('natur')) return;
+  for (const p of living(s)) { const d = drar(s, p).natur; if (d < SED.varnaFran) think(p, text, SED.varnaTanke * d, s.now, 2 * HOUR); }
 }
 // tid räknas mot yrkestaggar och bleknar, så att de senaste åren väger mest
 export const HABIT_FADE = SED.vanaDygn * DAY;

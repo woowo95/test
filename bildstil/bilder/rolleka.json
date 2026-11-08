@@ -1,0 +1,26 @@
+{
+"id": "rolleka",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 8.10.1)",
+"w": 14,
+"h": 8,
+"rader": [
+"..........jjj.",
+"......j..jghgj",
+".jjjjjcjjghhij",
+"jaakkaacaaiij.",
+"jaakkacaaaghgj",
+"jaakkaacaghhij",
+".jjjjjjcjjiij.",
+".......j..jj.."
+],
+"pal": {
+"a": "#21310e",
+"c": "#324726",
+"g": "#dad0bb",
+"h": "#bdb39b",
+"i": "#7e7362",
+"j": "#24201d",
+"k": "#a0947d"
+}
+}

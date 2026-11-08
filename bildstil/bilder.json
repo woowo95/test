@@ -90,7 +90,7 @@
     {"id": "rock_kaninskinn", "sort": "sak-klader", "namn": "Rock av harskinn", "w": 11, "h": 8, "vad": "en hopvikt rock av ljust gråbrunt harskinn", "ritad": 1, "godkand": true},
     {"id": "skor_vargskinn", "sort": "sak-klader", "namn": "Skor av vargskinn", "w": 10, "h": 5, "vad": "ett par skor av grått vargskinn med snören", "ritad": 5, "variantAv": "skor_kaninskinn", "byt": {"E": "Q", "F": "R", "G": "S", "H": "T"}, "godkand": true},
     {"id": "skor_kaninskinn", "sort": "sak-klader", "namn": "Skor av harskinn", "w": 10, "h": 5, "vad": "ett par skor av ljust harskinn med snören", "ritad": 3, "godkand": true},
-    {"id": "balte_rep", "sort": "sak-klader", "namn": "Bälte av rep", "w": 8, "h": 4, "vad": "ett hoprullat tunt bälte av tvinnat rep", "ritad": 4, "godkand": true},
+    {"id": "balte_rep", "sort": "sak-klader", "namn": "Bälte av rep", "w": 18, "h": 9, "vad": "det tvinnade repet med två krokar av grenar, version 1 som Björn valde (steg 8.10.1)", "ritad": 5, "godkand": true},
     {"id": "sym_svard", "sort": "sym-panel", "namn": "Korsade svärd", "w": 16, "h": 16, "vad": "två korsade svärd: att slåss, striden börjar och arenan", "tecken": ["⚔️"], "ritad": 1, "godkand": true},
     {"id": "sym_gott_rykte", "sort": "sym-panel", "namn": "Gott anseende", "w": 16, "h": 16, "vad": "ett snällt ansikte med gloria: gott anseende i byn", "tecken": ["😇"], "ritad": 1, "godkand": true},
     {"id": "sym_folk", "sort": "sym-panel", "namn": "Folk", "w": 16, "h": 16, "vad": "två människor: alla, relationer och så många är de", "tecken": ["👥"], "ritad": 1, "godkand": true},
@@ -320,6 +320,16 @@
     {"id": "brygga_v", "sort": "kar-mobel", "namn": "Brygga nord–syd", "w": 16, "h": 16, "vad": "bryggan, version 2 som Björn valde (steg 7.3.9)", "ritad": 1, "godkand": true},
     {"id": "brygga", "sort": "kar-mobel", "namn": "Brygga öst–väst", "w": 16, "h": 16, "vad": "samma, vriden", "ritad": 1, "godkand": true},
     {"id": "bro", "sort": "kar-mobel", "namn": "Bro", "w": 16, "h": 16, "vad": "bron, version 2 som Björn valde (steg 7.3.12)", "ritad": 1, "godkand": true},
-    {"id": "bro_v", "sort": "kar-mobel", "namn": "Bro nord–syd", "w": 16, "h": 16, "vad": "samma, vriden", "ritad": 1, "godkand": true}
+    {"id": "bro_v", "sort": "kar-mobel", "namn": "Bro nord–syd", "w": 16, "h": 16, "vad": "samma, vriden", "ritad": 1, "godkand": true},
+    {"id": "tval", "sort": "sak-material", "namn": "Tvål", "w": 9, "h": 8, "vad": "den grå klumpen med fingrarnas gropar, version 3 som Björn valde (steg 8.10.1)", "ritad": 1, "godkand": true},
+    {"id": "linfron", "sort": "sak-material", "namn": "Linfrön", "w": 7, "h": 3, "vad": "ett litet strö av fröna, version 1 som Björn valde (steg 8.10.1)", "ritad": 1, "godkand": true},
+    {"id": "slanda", "sort": "sak-redskap", "namn": "Slända", "w": 7, "h": 15, "vad": "Björns egen ritning (steg 8.10.1)", "ritad": 1, "godkand": true},
+    {"id": "rolleka", "sort": "sak-material", "namn": "Rölleka", "w": 14, "h": 8, "vad": "knippet som ligger, ur version 2 som Björn valde (steg 8.10.1)", "ritad": 1, "godkand": true},
+    {"id": "rustning_lader", "sort": "sak-klader", "namn": "Läderrustning", "w": 14, "h": 12, "vad": "Björns egen ritning, utan något på armarna (steg 8.10.1)", "ritad": 1, "godkand": true},
+    {"id": "ryggsack_kaninskinn", "sort": "sak-klader", "namn": "Ryggsäck", "w": 16, "h": 14, "vad": "säcken av ljust skinn, version 1 som Björn valde (steg 8.10.1)", "ritad": 1, "godkand": true},
+    {"id": "tjara", "sort": "sak-material", "namn": "Tjära", "w": 14, "h": 18, "vad": "kaggen av stavar med vidjeband, version 2 som Björn valde (steg 8.10.1)", "ritad": 1, "godkand": true},
+    {"id": "benlim", "sort": "sak-material", "namn": "Benlim", "w": 18, "h": 14, "vad": "den breda, låga skålen med en droppe över kanten, version 2 som Björn valde (steg 8.10.1)", "ritad": 1, "godkand": true},
+    {"id": "byxor_lader", "sort": "sak-klader", "namn": "Byxor av läder", "w": 11, "h": 12, "vad": "enfärgade byxor av brunt läder, version 3 som Björn valde (steg 8.10.1)", "ritad": 1, "godkand": true},
+    {"id": "skjorta_lintyg", "sort": "sak-klader", "namn": "Skjorta av lin", "w": 12, "h": 9, "vad": "den nya skjortan, rak nertill, som Björn valde (steg 8.10.1)", "ritad": 1, "godkand": true}
   ]
 }

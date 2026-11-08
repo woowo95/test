@@ -140,6 +140,18 @@ export const PAL: Record<string, Record<string, string>> = {
   tragolv: { b: '#7e7362', B: '#987e62', d: '#5e3c24' },
   paborjat: { w: '#dad0bb', d: '#24201d', y: '#d8b25f' },
   a_samla: AKT,
+  a_be: AKT,
+  hov: { o: '#372f25', j: '#5e3c24', J: '#7d5b40', y: '#d8b25f' },
+  hov_bygge: { o: '#372f25', j: '#5e3c24', J: '#7d5b40' },
+  tempel: { o: '#233035', s: '#61767a', S: '#8a9c9e', j: '#3e5156', y: '#d8b25f' },
+  grav: { o: '#372f25', j: '#5e3c24', J: '#7d5b40', s: '#61767a', S: '#8a9c9e' },
+  helig_sten: { o: '#372f25', s: '#61767a', S: '#8a9c9e', y: '#d8b25f' },
+  helig_vatten: { o: '#372f25', b: '#61767a', B: '#8a9c9e', y: '#d8b25f' },
+  helig_lund: { o: '#372f25', g: '#647025', G: '#898b4c', y: '#d8b25f' },
+  helig_trad: { o: '#372f25', g: '#647025', j: '#5e3c24', y: '#d8b25f' },
+  kroppsdel: { o: '#372f25', H: '#bd753e', r: '#a14808', R: '#742a01' },
+  dodkropp: { o: '#372f25', H: '#a0947d', w: '#7e7362' },
+  zzz: { w: '#dad0bb' },
   a_odla: AKT,
   a_jaga: AKT,
   a_smyga: AKT,
@@ -254,6 +266,37 @@ const PIX_TRADORR = [
   'oooooooooooooooo',
 ];
 export const PIX: Record<string, string[]> = {
+  hov: ['................', '.......y........', '......oJo.......', '.....oJJJo......', '....oJJJJJo.....', '...oJJJJJJJo....', '..oJJJJJJJJJo...', '..oooooooooo....', '..ojjjjjjjjo....', '..ojjj.jjjjo....', '..ojjj.jjjjo....', '..ooo.o.oooo....', '................', '................', '................', '................'], // platshållare (steg 8.6.14)
+  tempel: ['................', '.......y........', '......oSo.......', '.....oSSSo......', '....oSSSSSo.....', '...oSSSSSSSo....', '..oooooooooo....', '..osjsjsjsjo....', '..osjsj.sjso....', '..osjs...jso....', '..osjs...jso....', '..oooo...ooo....', '................', '................', '................', '................'], // platshållare (steg 8.6.14)
+  hov_bygge: ['................', '................', '................', '................', '................', '...o.......o....', '...o.......o....', '..ooooooooooo...', '..oj.......o....', '..oj.......o....', '..oj.......o....', '..oo.......o....', '................', '................', '................', '................'],
+  a_be: ['........', '...ww...', '...ww...', '..wwww..', '..wwww..', '.wwwwww.', '.w.ww.w.', '........'], // den som ber (platshållare, system 8.5)
+  grav: ['................', '................', '................', '......ssS.......', '......ssS.......', '....jjssSjj.....', '...jJJJJJJJj....', '..jJJJJJJJJJj...', '..jJJJJJJJJJj...', '..jjjjjjjjjjj...', '................', '................', '................', '................', '................', '................'], // platshållare (steg 8.5.1)
+  helig_sten: ['................', '................', '.......y........', '......oSo.......', '.....oSSso......', '.....oSSso......', '....oSSSsso.....', '....oSSSsso.....', '...oSSSSssso....', '...oooooooo.....', '................', '................', '................', '................', '................', '................'], // platshållare (steg 8.5.5)
+  helig_vatten: ['................', '................', '.......y........', '.....oooooo.....', '....oBBBbbbo....', '...oBBbBbbbbo...', '...oBBBbbBbbo...', '....oBbbbbbo....', '.....oooooo.....', '................', '................', '................', '................', '................', '................', '................'],
+  helig_lund: ['................', '.......y........', '....gg....gg....', '...gGGg..gGGg...', '...gGGg..gGGg...', '....gg....gg....', '.....o....o.....', '.....o....o.....', '................', '................', '................', '................', '................', '................', '................', '................'],
+  helig_trad: ['................', '.......y........', '.....gggggg.....', '....gggggggg....', '....gggggggg....', '.....gggggg.....', '.......jj.......', '.......jj.......', '.......jj.......', '......ojjo......', '................', '................', '................', '................', '................', '................'],
+  kroppsdel: [ // platshållare (steg 8.2.3): en avhuggen kroppsdel, gemensam bild för alla delar
+    '................','................','................','................',
+    '................','......HHH.......','....oHHHHHo.....','...oHHHHHHHrr...',
+    '...oHHHHHHHrR...','....ooooooorr...','................','................',
+    '................','................','................','................',
+  ],
+  dodkropp: [ // platshållare (steg 8.5.1): en död kropp på marken
+    '................','................','................','................',
+    '.....oo.........','....oHHo...oo...','....oHHoooowwo..','..oowwwwwwwwwo..',
+    '..oowwwwwwwwwo..','....oHHoooowwo..','....oHHo...oo...','.....oo.........',
+    '................','................','................','................',
+  ],
+  zzz: [ // den som sover (steg 8.1.1), i 8 punkter som de andra små symbolerna
+    '...wwwww',
+    '......w.',
+    '.....w..',
+    '....wwww',
+    'www.....',
+    '..w.....',
+    '.w......',
+    'www.....',
+  ],
   gud_aska: [ // amulett i guld (Björn valde stil 3 efter v245, steg 4.5.2)
     '.......ee.......',
     '....eooooeee....',
@@ -3859,20 +3902,26 @@ for (const [id, b] of Object.entries(STUBBILDER)) { PIX['sb_' + id] = b.rader; P
 for (const k of ['brand', 'tornado']) { PIX[k] = KARTBILDER[k].rader; PAL[k] = KARTBILDER[k].pal; }
 // platshållare tills bilderna byggs in (steg 7.8.1)
 // huset på filten vid ett husbyte (steg 7.2.12): platshållare tills Björn valt (f7_hus i bildstilen)
-PIX.hus = ['................', '.......ff.......', '......ffff......', '.....effffr.....', '....eeeffrrr....', '...eeeeffrrrr...', '..eeeeeffrrrrr..', '...cccccccccc...', '...bbbbbbbbbb...', '...ccccoocccc...', '...bbbboobbbb...', '...ccccoocccc...', '...bbbboobbbb...', '...ccccoocccc...', '...bbbboobbbb...', '................'];
-PAL.hus = { f: '#d8b25f', e: '#b2921b', r: '#906f0f', c: '#7d5b40', b: '#5e3c24', o: '#233035' };
-for (const pl of ['byxor', 'mossa', 'snoskor', 'tunika', 'skjorta', 'halsband']) for (const m of ['kaninskinn', 'vargskinn', 'bjornskinn', 'lader', 'lintyg', 'benband', 'tandband']) { PIX[`${pl}_${m}`] = PIX.rock_kaninskinn; PAL[`${pl}_${m}`] = PAL.rock_kaninskinn; }
+PIX.hus = ['................', '.......aa.......', '......abca......', '.....abccba.....', '...aabccbccaa...', '..acbccbccbcca..', '.acbccbccbccbca.', 'acbccbccbccbccba', '.abbbbbbbbbbbba.', '.adddddddddddda.', '.abbeeebbaaabba.', '.addeeeddaaadda.', '.abbeeebbaaabba.', '.adddddddaaadda.', '.abbbbbbbaaabba.', '..aaaaaaaaaaaa..']; // Björns val: stugan med tak av trä, en glugg och en dörr (steg 8.10.1)
+PAL.hus = { a: '#24201d', b: '#7d5b40', c: '#987e62', d: '#5e3c24', e: '#2f261d' };
+PIX.rustning = PIX.ledarskap; PAL.rustning = PAL.ledarskap; PIX.lag = PIX.ledarskap; PAL.lag = PAL.ledarskap; PIX.i_arrig = PIX.i_stark; PAL.i_arrig = PAL.i_stark; // platshållare
+for (const k of ['skold', 'bage', 'slunga', 'horn', 'pilar']) { PIX[k] = PIX.benspade; PAL[k] = PAL.benspade; } // platshållare (system 8.7)
+for (const pl of ['rustning', 'hjalm', 'prastdrakt', 'tecken', 'mask', 'mantel', 'byxor', 'mossa', 'snoskor', 'tunika', 'skjorta', 'halsband']) for (const m of ['kaninskinn', 'vargskinn', 'bjornskinn', 'lader', 'lintyg', 'benband', 'tandband']) { PIX[`${pl}_${m}`] = PIX.rock_kaninskinn; PAL[`${pl}_${m}`] = PAL.rock_kaninskinn; }
 for (const m of ['lader', 'lintyg']) for (const pl of ['rock', 'skor']) if (!PIX[`${pl}_${m}`]) { PIX[`${pl}_${m}`] = PIX.rock_kaninskinn; PAL[`${pl}_${m}`] = PAL.rock_kaninskinn; }
 for (const k of ['grillgadda', 'grillmort']) { PIX[k] = PIX.grillfisk; PAL[k] = PAL.grillfisk; }
 for (const k of ['torrgadda', 'torrmort']) { PIX[k] = PIX.torrfisk; PAL[k] = PAL.torrfisk; }
 for (const st of ['fangstbank', 'stenhuggarplats', 'klyvplats', 'ortkok', 'garvning', 'harden', 'vavstol']) for (const k of [st, st + '_karta', st + '_karta_v']) { PIX[k] = PIX.korg; PAL[k] = PAL.korg; }
-for (const k of ['vittja', 'snara', 'grop', 'leksak', 'rolleka', 'salva', 'tjara', 'benlim', 'tval', 'lin', 'ratlin', 'linfron', 'lintyg', 'slanda']) { PIX[k] = PIX.korg; PAL[k] = PAL.korg; }
+for (const k of ['rokelse', 'brannolja', 'vittja', 'snara', 'grop', 'leksak', 'rolleka', 'salva', 'tjara', 'benlim', 'tval', 'lin', 'ratlin', 'linfron', 'lintyg', 'slanda']) { PIX[k] = PIX.korg; PAL[k] = PAL.korg; }
 // fas 7:s bilder ur Björns val (steg 7.8.1): symbolen i listorna är bilden mitt i rutan på 16 × 16 punkter, förminskad om den är större
-for (const k of ['stockvag', 'brygga', 'gadda', 'mort', 'gaddkott', 'mortkott', 'mjarde', 'lader', 'trad', 'vargtand', 'huggen_sten', 'plankor', 'vavstol', 'tunika_lintyg', 'i_bjorndodare']) {
+// och steg 8.10.1: tvålen, linfröna, sländan, röllekan, läderrustningen och ryggsäcken
+for (const k of ['stockvag', 'brygga', 'gadda', 'mort', 'gaddkott', 'mortkott', 'mjarde', 'lader', 'trad', 'vargtand', 'huggen_sten', 'plankor', 'vavstol', 'tunika_lintyg', 'i_bjorndodare', 'tval', 'linfron', 'slanda', 'rolleka', 'rustning_lader', 'ryggsack_kaninskinn', 'tjara', 'benlim', 'balte_rep', 'byxor_lader', 'skjorta_lintyg']) {
   const b = KARTBILDER[k]!, w = 16, f = Math.min(1, w / Math.max(b.w, b.h)), x0 = (w - f * b.w) / 2, y0 = (w - f * b.h) / 2;
   PIX[k] = Array.from({ length: w }, (_, y) => Array.from({ length: w }, (_, x) => { const yy = Math.floor((y - y0) / f), xx = Math.floor((x - x0) / f); return yy >= 0 && xx >= 0 ? b.rader[yy]?.[xx] ?? '.' : '.'; }).join(''));
   PAL[k] = b.pal;
 }
+for (const [m, c, d, f] of [['vargskinn', '#8a9c9e', '#61767a', '#3e5156'], ['bjornskinn', '#987e62', '#7d5b40', '#5e3c24']]) { PIX['ryggsack_' + m] = PIX.ryggsack_kaninskinn; PAL['ryggsack_' + m] = { ...PAL.ryggsack_kaninskinn, c, d, f }; } // Björns ryggsäck i vargens och björnens skinn
+PIX.ryggsack = PIX.ryggsack_kaninskinn; PAL.ryggsack = PAL.ryggsack_kaninskinn;
+for (const [m, b, c, d] of [['kaninskinn', '#a0947d', '#7e7362', '#bdb39b'], ['vargskinn', '#61767a', '#3e5156', '#8a9c9e'], ['bjornskinn', '#5e3c24', '#3f2415', '#7d5b40']]) { PIX['byxor_' + m] = PIX.byxor_lader; PAL['byxor_' + m] = { ...PAL.byxor_lader, b, c, d }; } // Björns enfärgade byxor (steg 8.10.1) i skinnens färger
 // symbolen för en lägereld (stationen som lägger ringen till en lägereld till, steg 4.5.6.8): den nylagda med stenringen under
 // (bildstilens tecken har samma färg i alla bilder, så att två bilder kan läggas på varandra tecken för tecken)
 { const ring = KARTBILDER.lagereld_ring, ny = KARTBILDER.lagereld_ny;

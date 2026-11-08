@@ -1,7 +1,9 @@
+import { horsel } from './halsa';
+import { KLADMATERIAL, kladAv } from './klader';
 import { han, honom } from './ord';
 import { lista, tal } from './ord';
 import { delade, loggBer } from './berattelser';
-import { ALDER, REL, ageOf, alive, byId, count, forstaGang, getRel, isKin, isParent, living, log, relKey, stat, think } from './folk';
+import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, forstaGang, getRel, isKin, isParent, living, log, relKey, stat, think } from './folk';
 import { clamp, pickViktat, rnd } from './slump';
 import { HOUR, Person, Rel, State } from './typer';
 import { balans } from './balans';
@@ -105,6 +107,7 @@ const IDEF = {
   rik: { namn: 'rik', tecken: 1, op: 0, sym: '💰', betyder: 'Äger mycket mer än de andra i byn.' },
   rattvis: { namn: 'rättvis', tecken: 1, op: 10, sym: '⚖️', betyder: 'Har dömt rättvist som ledare.' }, // ledarens straff (steg 3.5.3, styre.ts)
   orattvis: { namn: 'orättvis', tecken: -1, op: -15, sym: '🙅', betyder: 'Har dömt orättvist som ledare.' },
+  arrig: { namn: 'ärrig', tecken: -1, op: 0, sym: '😣', som: 'ärrig', betyder: 'Har ett ärr i ansiktet.' }, // steg 8.2.4
   stark: { namn: 'stark', tecken: 1, op: 4, sym: '🥊', betyder: 'Har vunnit ett slagsmål.' }, // vann ett slagsmål (steg 3.7.2, strid.ts)
   feg: { namn: 'feg', tecken: -1, op: -5, sym: '🐔', betyder: 'Har backat från en strid.' }, // backade från en strid (steg 3.7.9, strid.ts)
   smakfull: { namn: 'smakfull', tecken: 1, op: 5, sym: '🏺', betyder: 'Har ett vackert pynt där den sover.' }, // pyntet (steg 4.3.4, pynt.ts)
@@ -120,6 +123,7 @@ const vikt = (e: Intryck) => styrka(e) * (INTRYCK[e.k].vikt ?? 1);
 // `prestation` = man blir imponerad, eller avundsjuk (3.3.2)
 interface HandelseDef { i: IntryckTyp; vikt: number; text: string; prestation?: true }
 const HDEF = {
+  budbrott: { i: 'valdsam', vikt: 0.2, text: 'bröt mot ett bud som är lag' }, // steg 8.6.12
   stold: { i: 'tjuv', vikt: 0.5, text: 'stal {sak} av {om}' },
   stoldLindrig: { i: 'tjuv', vikt: 0.2, text: 'tog {sak} av {om}' },
   ranVald: { i: 'valdsam', vikt: 0.3, text: 'gick på {om} för att ta {sak}' }, // rånet (steg 3.7.17)
@@ -223,6 +227,7 @@ export function handelse(s: State, p: Person, h: HandelseTyp, offer?: Person, sa
   const b: Bevis = { h, t: s.now, ...(offer ? { mot: offer.id, motNamn: offer.name } : {}), ...(sak ? { sak } : {}), sett: true };
   count(s, 'rykte_' + h);
   for (const q of bara ? [bara] : vittnen(s, p, offer)) intryck(s, q, p, d.i, d.vikt * ganger, q === offer ? RYKTE.offerSaker : RYKTE.sjalvSaker, { ...b }, undefined, 0, q === offer, !!d.prestation);
+  if (offer && d.i === 'valdsam') budTillfalle(s, 'skadad', offer, p); // hämnd är en plikt (budet, steg 8.6.6)
 }
 
 // det som p gjort (beviset b) blir känt för alla i till (när ledaren straffar p, styre.ts): de hör det med del av vikten
@@ -252,11 +257,13 @@ function skyddar(s: State, a: Person, om: number) {
   return a.partner === om || isKin(a, q) || (s.rels[relKey(a.id, om)]?.op ?? 0) > REL.van;
 }
 // a berättar ibland för b om ett intryck hen har av någon annan (aldrig för den det gäller)
+// de döda talar man inte illa om, om tron har det budet (steg 8.6.6)
+const dodTiger = (s: State, a: Person, om: number) => { const q = byId(s, om); return !!q && !alive(q) && budTillfalle(s, 'talaIlla', a); };
 export function skvaller(s: State, a: Person, b: Person, r: Rel, berattelse: boolean) {
   if (!a.intryck?.length) return;
   const chans = RYKTE.delaBas + stat(a, 'karisma', s.now) / RYKTE.delaDiv + (berattelse ? RYKTE.delaBerattelse : 0);
   if (rnd(s, 'rykte', a) >= chans) return;
-  const val = a.intryck.filter(e => e.om !== b.id && !(INTRYCK[e.k].tecken < 0 && skyddar(s, a, e.om)));
+  const val = a.intryck.filter(e => e.om !== b.id && !(INTRYCK[e.k].tecken < 0 && (skyddar(s, a, e.om) || dodTiger(s, a, e.om))));
   if (!val.length) return;
   const e = pickViktat(s, val, val.map(x => styrka(x) * (INTRYCK[x.k].tecken < 0 ? RYKTE.delaNeg : 1)), 'rykte', a);
   beratta(s, a, b, e, r);
@@ -354,9 +361,22 @@ export function stepRykten(s: State, mood: (p: Person, now: number) => number) {
 
 // ---------- glömska och döden (steg 3.4.1) ----------
 // ryktbarheten (hur starka alla intryck i byn av personen är tillsammans) och anseendet (gott minus ont)
+// det man bär: ett halsband ger anseende, ett finare mer (steg 8.3.15), och ledarens mantel som ett halsband (steg 8.3.14)
+export const PRYD = balans('pryd', { smycke: 0.05, finhet: 0.05, mantel: 0.1 });
+function prydnadAnseende(s: State, om: number) {
+  let a = 0;
+  for (const t of s.ting ?? []) {
+    if (t.bar !== om) continue;
+    const r = kladAv(t.k);
+    if (r?.plagg === 'halsband') a += PRYD.smycke + PRYD.finhet * KLADMATERIAL[r.mat].finhet;
+    else if (r?.plagg === 'mantel') a += PRYD.mantel;
+  }
+  return a * living(s).length;
+}
 export function ryktbarhet(s: State, om: number) {
   let r = 0, a = 0;
   for (const q of living(s)) for (const e of q.intryck ?? []) if (e.om === om) { r += vikt(e); a += INTRYCK[e.k].tecken * vikt(e); }
+  a += prydnadAnseende(s, om);
   return { r, a };
 }
 // de viktigaste intrycken av personen i byn (det samlade intrycket), starkast först
@@ -500,6 +520,8 @@ export function anseendeText(s: State, om: number) {
 // (3.7.1) och räderna (11.2.5), och anfallarna som samlas i utkanten och vakten som ser dem med räderna. Horn, trumma och
 // vakthund kommer senare som tekniker
 export const LARM = balans('larm', {
+  trumma: 2.5, // trumman hörs så många gånger längre än ett rop (steg 8.7.12)
+  dov: 0.25, // under den här hörseln hör man inte rop (steg 8.2.2)
   hor: 15, // ropet hörs så här många rutor ...
   natt: 1.5, // ... gånger så här mycket på natten
   vidare: 0.8, // den som hör ropar vidare med den här chansen
@@ -516,14 +538,16 @@ export interface Larm { t: number; vad: string; storlek: number; led: number; fa
 // vad ett larm gällde, med ord (l_larm, steg 6.7.7); nycklarna är vad i larma()
 export const LARM_VAD: Record<string, string> = { 'slagsmål': 'det slåss i byn', fara: 'det är fara på väg', varg: 'vargarna kommer', rovare: 'rövare är på väg', brand: 'det brinner', tornado: 'en storm är på väg' };
 export function larma(s: State, vad: string, storlek: number, ropare: Person[], falskt = false): Person[] {
-  const hor = LARM.hor * (isLight(s.now) ? 1 : LARM.natt);
+  // hornet hörs över hela kartan och trumman längre än ett rop (steg 8.7.11–8.7.12)
+  const harHorn = ropare.some(p => (s.ting ?? []).some(t => t.k === 'horn' && (t.hos === p.id || t.agare === p.id || t.agare === undefined))), harTrumma = !harHorn && ropare.some(p => (s.ting ?? []).some(t => t.k === 'trumma' && (t.hos === p.id || t.agare === p.id)));
+  const hor = harHorn ? 1e4 : LARM.hor * (isLight(s.now) ? 1 : LARM.natt) * (harTrumma ? LARM.trumma : 1);
   const vet = new Set<Person>(ropare), hort: Person[] = [];
   for (const p of ropare) p.larm = { t: s.now, vad, storlek, led: 0, ...(falskt ? { falskt: true as const } : {}) };
   let ropar = [...ropare];
   for (let led = 1; ropar.length; led++) {
     const nya: Person[] = [];
     for (const q of living(s)) {
-      if (vet.has(q)) continue;
+      if (vet.has(q) || horsel(q) < LARM.dov) continue; // den som knappt hör hör inte ropet (steg 8.2.2)
       const fran = ropar.find(r => Math.hypot(r.x - q.x, r.y - q.y) <= hor);
       if (!fran) continue;
       vet.add(q); hort.push(q);

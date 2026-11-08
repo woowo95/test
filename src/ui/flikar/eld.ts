@@ -1,4 +1,4 @@
-import { BRASA, ELD, FireLog, HOUR, amountOf, byId, eldById, eldFaktor, emberOn, fireHeat, fireWant, hearthOf, heatRadius, igniterOf, living } from '../../sim';
+import { BRASA, ELD, FireLog, HOUR, amountOf, byId, eldById, eldFaktor, brinnTakt, emberOn, fireHeat, fireWant, hearthOf, heatRadius, igniterOf, living } from '../../sim';
 import { bar, clockTxt, durTxt, esc, fmtN, num, pLink, times } from '../hjalp';
 import { s, ui } from '../lage';
 import type { Flik } from '../panel';
@@ -18,7 +18,7 @@ function fireEntry(e: FireLog) {
 }
 function fireHtml() {
   const f = eldById(s, ui.eld) ?? s.fire, forsta = f === s.fire, h = hearthOf(f), now = s.now, ig = igniterOf(s);
-  const glod = emberOn(s, f), [fr, fv] = eldFaktor(s, f), takt = h.burn * fr * fv; // som stepFire i eld.ts: regnet och den hårda vintern
+  const glod = emberOn(s, f), [fr, fv] = eldFaktor(s, f), takt = brinnTakt(s, f); // samma tal som simuleringen bränner (eld.ts), och varför
   const status = f.lit ? 'Brinner' : glod ? `Glöder. Ny ved får den att brinna igen (${durTxt(f.emberUntil! - now)} kvar).` : (f.ash ?? 0) >= 1 ? 'Utbrunnen. Kvar ligger en svart hög med kol.' : 'Släckt. Den måste tändas på nytt.';
   const hit = (p: { task?: { ref?: number } }) => forsta ? p.task?.ref === undefined : p.task?.ref === f.id;
   const tender = living(s).find(p => p.task?.act === 'elda' && hit(p)), lighter = living(s).find(p => p.task?.act === 'tanda' && hit(p));
@@ -30,7 +30,7 @@ function fireHtml() {
     <h3>Just nu</h3><dl class="kv">
       <dt>Trä på elden</dt><dd>${bar(f.fuel / h.maxFuel)}<span>${fmtN(f.fuel)} av ${h.maxFuel}</span></dd>
       <dt>Värme</dt><dd>${bar(fireHeat(s, f))}<span>${f.lit ? `${num(heatRadius(s, f))} rutor ut` : '–'}</span></dd>
-      <dt>Förbrukning</dt><dd>${num(takt)} ved i timmen${fr > 1 || fv > 1 ? ` <span class="muted">(${[fr > 1 ? 'regnet' : '', fv > 1 ? 'den hårda vintern' : ''].filter(Boolean).join(' och ')})</span>` : ''}</dd>
+      <dt>Förbrukning</dt><dd>${num(takt)} ved i timmen${fr > 1 || fv > 1 || f.blot ? ` <span class="muted">(${[fr > 1 ? 'regnet' : '', fv > 1 ? 'den hårda vintern' : '', f.blot ? 'den blöta veden' : ''].filter(Boolean).join(' och ')})</span>` : ''}</dd>
       <dt>Räcker</dt><dd>${f.lit ? `ca ${durTxt(f.fuel / takt * HOUR)}` : '–'}</dd>
       <dt>Önskat</dt><dd>${fmtN(tgt)} ved på elden</dd>
       ${f.wantWhy && byId(s, f.wantBy) ? `<dt>Önskas av</dt><dd>${pLink(byId(s, f.wantBy))}: ${esc(f.wantWhy).toLowerCase()}</dd>` : ''}

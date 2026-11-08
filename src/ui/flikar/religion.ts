@@ -4,6 +4,22 @@ import { bar, esc, hjalpKnapp, hjalpText, pLink } from '../hjalp';
 import { s } from '../lage';
 import { sedBar } from './seder';
 import type { Flik } from '../panel';
+import { BUD, HELIGA_PLATSER, RITUALER, forradSum, hogtider, prastOf, prastSort } from '../../sim';
+
+// det tron har: prästen, de heliga platserna och högtiderna (system 8.5)
+function kultHtml(tr: Tro) {
+  const pr = prastOf(s, tr), pl = (s.heliga ?? []).filter(h => h.tro === tr.id), hg = hogtider(tr), rad: string[] = [];
+  if (pr) rad.push(`<li>${esc(prastSort(tr, pr.sex))}: ${pLink(pr)}</li>`);
+  for (const h of pl) rad.push(`<li title="${esc(`Platsen ${h.om}`)}">${esc(HELIGA_PLATSER[h.k].namn)}${h.skandad ? ' (vanhelgad)' : ''}</li>`);
+  if (hg) rad.push(`<li>${hg} ${hg === 1 ? 'högtid' : 'högtider'} om året</li>`);
+  for (const b of tr.bud ?? []) rad.push(`<li title="${esc(BUD[b].text)}">📜 ${esc(BUD[b].namn)}</li>`);
+  if (tr.hov) rad.push(`<li>📜 ${tr.hov.klar ? 'Hovet står klart' : 'Hovet byggs'}</li>`);
+  if (forradSum(tr)) rad.push(`<li title="${esc(Object.entries(tr.forrad!).filter(([, n]) => n > 0).map(([k, n]) => `${n} ${k}`).join(', '))}">📜 Kyrkans förråd: ${forradSum(tr)}</li>`);
+  for (const h of tr.helgon ?? []) rad.push(`<li title="${esc(`Krönikan: ${h.krönika} Myten: ${h.myt}`)}">✨ Helgonet ${esc(h.namn)}</li>`);
+  if (tr.kvade) rad.push(`<li title="${esc(tr.kvade.text)}">📜 Heliga kväden</li>`);
+  if (s.ritual?.tro === tr.id) rad.push(`<li>Just nu: ${esc(s.ritual.namn ?? RITUALER[s.ritual.k].namn)}</li>`);
+  return rad.length ? `<h3>Prästen, platserna och högtiderna</h3><ul class="rels">${rad.join('')}</ul>` : '';
+}
 
 // religionen (steg 4.1.3, religion.ts): varje tro med symbol, namn, nivå (steg 4.1.4), berättelse, antal troende, de synliga skalorna, gudarna (steg 4.1.5), grundaren,
 // de troende och de upplevelser som rör tron; sist alla i byn med andlighet och tro. Fliken syns när den första tron finns
@@ -40,7 +56,7 @@ function troHtml(tr: Tro) {
     ${skalaHtml(tr)}
     ${gudarHtml(tr)}
     <ul class="rels">${folk.map(p => `<li>${pLink(p)}<span></span><span>${bar((p.troStyrka ?? 0) / 100)}</span><span class="muted">${Math.floor(ageOf(p, s.now))} år</span></li>`).join('')}</ul>
-    <h3>Upplevelser som rör tron</h3>${upplevHtml(folk)}`;
+    ${kultHtml(tr)}<h3>Upplevelser som rör tron</h3>${upplevHtml(folk)}`;
 }
 
 export const religion: Flik = {

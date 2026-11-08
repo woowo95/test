@@ -392,3 +392,5 @@ SCENARIER.gudar = {
     ];
   },
 };
+
+for (const n of ['tecken', 'gudar']) { const kor0 = SCENARIER[n].kor; SCENARIER[n].kor = () => { SIM.TRO_PROV.utanTak = true; try { return kor0(); } finally { SIM.TRO_PROV.utanTak = false; } }; }

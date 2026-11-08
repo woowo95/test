@@ -27,7 +27,7 @@ export function matchHtml(m?: MatchMinne) {
   const d = SPORT_AV[m.k], fard = d ? SKILL_NAMES[d.skill] : '';
   const huvud = `<h2>${iconImg('boll', 18)} ${esc(d?.namn ?? 'Matchen')}</h2><p class="muted">${esc(clockTxt(m.t))}</p>${ber ? `<p class="ovBer">${esc(ber)}</p>` : ''}`;
   const fakta = [
-    `<li title="Platsen">${iconImg('a_leka', 16)} Lekplatsen</li>`,
+    `<li title="Platsen">${iconImg('a_leka', 16)} I byn</li>`,
     `<li title="${esc(`Matchen varade i ${minuter(m.t, m.slut)} minuter`)}">{sym_klocka} ${minuter(m.t, m.slut)} min</li>`,
     m.vnamn ? `<li title="Den som vann">{sym_medalj} ${vemLank(m.vinnare!, m.vnamn)}</li>` : '',
     m.glad ? `<li title="${esc(`De som spelade blev gladare: +${m.glad} i humöret (av 100) i några timmar`)}">{sym_pil_upp} Glädje +${m.glad}</li>` : '',

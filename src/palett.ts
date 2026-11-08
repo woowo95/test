@@ -45,11 +45,15 @@ export const narmast = (hex: string) => FARGER[narmastLab(rgb2lab(hex2rgb(hex)))
 
 // ---------- skymningen och natten (steg 5.1.1.4) ----------
 // varje färg ett och två steg mörkare, som närmaste färgen i paletten (som bildstilens P.skymn och P.natt)
+// Mörkret drar mot de kalla tonerna (skiffer) i stället för bara mot svart (Björns val f6_nattfarg, steg 8.10.1): skymningen
+// blandar färgen med skifferns ton till hälften, och natten tar skifferns ton helt, starkare
 const mork = (f: (l: number[]) => number[]) => FARGER.map((_, i) => FARGER[narmastLab(f(LAB[i]))]);
+const SKIFFER = PALETT.find(r => r.id === 'skiffer')!.toner.map(h => rgb2lab(hex2rgb(h)));
+const SA = SKIFFER.reduce((s, l) => s + l[1], 0) / 4, SB = SKIFFER.reduce((s, l) => s + l[2], 0) / 4;
 export const MORKARE: readonly (readonly string[])[] = [
   FARGER,
-  mork(([L, a, b]) => [L * 0.68, a * 0.8, b * 0.8 - 0.012]),
-  mork(([L, a, b]) => [L * 0.5, a * 0.45 - 0.004, b * 0.45 - 0.028]),
+  mork(([L, a, b]) => [L * 0.67, a * 0.55 + SA * 0.5, b * 0.55 + SB * 0.5]),
+  mork(([L]) => [L * 0.54, SA * 1.3, SB * 1.3]),
 ];
 // djup natt (steg 5.1.7.2): tre steg mörkare, skymningens steg och sedan nattens, så att nästan allt blir kolsvart och bara
 // elden lyser (det ljusaste, snön och halmen, syns svagt)

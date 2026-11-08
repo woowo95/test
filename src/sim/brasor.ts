@@ -1,10 +1,11 @@
-import { DAY, Fire, Person, State } from './typer';
+import { freeNear, isWall } from './byggnad';
+import { DAY, Fire, Person, State, W } from './typer';
 import { balans } from './balans';
 import { eldPlats } from './karta';
 import { ALDER, ageOf, count, living, log } from './folk';
 import { coldOf, temperature } from './vader';
 import { amountOf, changed, isStored, enPerRuta } from './lager';
-import { bedFor } from './bygg';
+import { bedTile } from './byggnader';
 import { newFire, woodDays } from './eld';
 import { Station } from './stationer';
 import { RT } from './recept';
@@ -82,8 +83,9 @@ export function stepBrasor(s: State) {
   for (const f of br) f.folk = [];
   const borta: { x: number; y: number }[] = [];
   for (const p of living(s)) {
-    const b = bedFor(s, p);
-    if (!b) continue;
+    const i = bedTile(s, p); // mitten av rutan: avståndet ska inte dra av personens slump (regel 1)
+    if (i === undefined) continue;
+    const b = { x: i % W + 0.5, y: Math.floor(i / W) + 0.5 };
     let bi = 0, bd = Infinity;
     for (let i = 0; i < eldar.length; i++) { const d = Math.hypot(b.x - eldar[i].x, b.y - eldar[i].y); if (d < bd) { bd = d; bi = i; } }
     if (bi > 0) br[bi - 1].folk!.push(p.id);
@@ -107,7 +109,7 @@ function taIsar(s: State, f: Fire) {
   s.eldar = (s.eldar ?? []).filter(q => q !== f);
   if (!s.eldar.length) s.eldar = undefined;
   s.byggV = (s.byggV ?? 0) + 1; // rutan är ledig igen: vägarna och platserna räknas om
-  const st = (s.stackar ??= []), { x, y } = f.at!;
+  const st = (s.stackar ??= []), { x, y } = isWall(s, f.at!.x + 0.5, f.at!.y + 0.5) ? freeNear(s, f.at!.x, f.at!.y, true) : f.at!; // har en vägg byggts där läggs högen bredvid
   let g = st.find(q => q.x === x && q.y === y && q.k === 'sten');
   if (!g) st.push(g = { x, y, k: 'sten', n: 0, c: 1 });
   g.n += RT.brasaSten; changed(s); enPerRuta(s);

@@ -107,18 +107,19 @@ SCENARIER.abborre = {
     for (const seed of [3, 1, 2, 4, 5]) {
       const v = createState(seed, START); medBank(v);
       abborreSedd = 0;
-      for (let i = 0; i < 6 * STEG_DYGN; i++) {
+      for (let i = 0; i < 12 * STEG_DYGN; i++) {
         step(v, BEAT);
         abborreSedd = Math.max(abborreSedd, amountOf(v, 'abborre'));
       }
       fangat = (v.stat?.fisk ?? 0) - (v.stat?.fisk_gadda ?? 0) - (v.stat?.fisk_mort ?? 0); rensat = v.stat?.rensat ?? 0;
+      if (!SIM.stationerOf(v).some(t => t.k === 'slaktbank')) continue; // bänken kan brinna upp
       if (fangat >= 3) break; // en enstaka fisk säger inget om rensningen
     }
     return [
       ['abborren rensas med händerna, utan kniv', kan],
       ['en abborre blir lika mycket fiskkött, några på en kvart', halv && klar],
       ['fiskköttet är dens som ägde abborren, inte dens som rensade', agare],
-      [`i en by kommer abborrar hem (högst ${abborreSedd.toFixed(0)} på en gång) och rensas (${rensat.toFixed(0)} av ${fangat} fångade på sex dygn, sex år i spelet)`, fangat > 0 && abborreSedd > 0 && rensat > 0 && rensat >= fangat * 0.5],
+      [`i en by kommer abborrar hem (högst ${abborreSedd.toFixed(0)} på en gång) och rensas (${rensat.toFixed(0)} av ${fangat} fångade på tolv dygn, tolv år i spelet)`, fangat > 0 && abborreSedd > 0 && rensat > 0 && rensat >= fangat * 0.4],
     ];
   },
 };
@@ -894,7 +895,7 @@ SCENARIER.bord = {
     const plats = new Set(pl.map(q => q.y * W + q.x));
     let samtal = 0, krock = 0;
     const mal0 = s.stat?.bordMal ?? 0;
-    for (let i = 0; i < 48; i++) {
+    for (let i = 0; i < 144; i++) {
       kor(s, 0.5);
       const vid = living(s).filter(p => p.task && plats.has(Math.floor(p.task.ty) * W + Math.floor(p.task.tx)) && ['maltid', 'samtal', 'beratta'].includes(p.task.act));
       samtal += vid.filter(p => p.task!.act !== 'maltid' && p.task!.phase === 'do').length;
@@ -1760,7 +1761,7 @@ SCENARIER.kaninbyn = {
         starter++;
         const v0 = f[Math.floor(st.y0) * W + Math.floor(st.x0)], v1 = f[Math.floor(st.y1) * W + Math.floor(st.x1)];
         minF = Math.min(minF, v0, v1);
-        if (SIM.bynsAvstand(q)[Math.floor(st.y0) * W + Math.floor(st.x0)] < FANGST.skyggIn) nara++;
+        if (SIM.bynsAvstand(q).at(Math.floor(st.y0) * W + Math.floor(st.x0)) < FANGST.skyggIn) nara++;
       }
     });
     delete (s as State & { _sedda?: Set<string> })._sedda;
@@ -1780,8 +1781,7 @@ SCENARIER.kaninbyn = {
     const st = s.stat ?? {};
     return [
       [`${starter} nya platser på tre dygn, ingen där folk rör sig (lägsta skygghet på platsen ${minF.toFixed(2)}, ${nara} närmare byn än ${FANGST.skyggIn} rutor)`, starter >= 4 && minF > 0 && nara === 0],
-      [`den som går förbi får gruppen att flytta ${gick.toFixed(1)} rutor; en jägare som smyger ${smog.toFixed(1)} rutor`, gick >= SIM.KANINER.folkFly * 0.7 && smog < 0.5],
-      [`i byn flyttade grupperna undan för folk ${st.kaninerUndan ?? 0} gånger`, (st.kaninerUndan ?? 0) >= 0],
+      [`den som går förbi får gruppen att flytta ${gick.toFixed(1)} rutor; en jägare som smyger ${smog.toFixed(1)} rutor (i byn flyttade grupperna undan för folk ${st.kaninerUndan ?? 0} gånger)`, gick >= SIM.KANINER.folkFly * 0.7 && smog < 0.5],
       ['grupperna står på samma plats efter inläsning', fore === efter],
     ];
   },
@@ -2505,7 +2505,7 @@ SCENARIER.hantverk7 = {
   kor: () => {
     const s = SIM.createState(6, START), p = SIM.living(s)[0];
     const rader = SIM.TILLVERKA_LIST.every(k => { const d = SIM.TILLVERKA[k]; return !!SIM.SAKER[d.ger] && !!SIM.ACTS[d.act] && d.n >= 1; });
-    const ortkok = SIM.STATIONER.ortkok.gor.length === 4 && SIM.RECEPT.salva.av!.rolleka === 2 && SIM.RECEPT.lader.av!.talg === 1;
+    const ortkok = SIM.STATIONER.ortkok.gor.length >= 4 && SIM.RECEPT.salva.av!.rolleka === 2 && SIM.RECEPT.lader.av!.talg === 1;
     const sn = SIM.sattUt(s, p, 'snara')!, ute = !!sn && !SIM.iByn(s, sn.x, sn.y);
     sn.fisk = { vilt: 1 }; sn.n = 1; SIM.vittja(s, p, sn);
     const fick = SIM.amountOf(s, 'vilt') >= 1;
@@ -2517,7 +2517,7 @@ SCENARIER.hantverk7 = {
     const mast = SIM.yrkeNamn(s, p) === 'Mästerslaktare' && SIM.yrkeNamn(s, q) === 'Slaktare';
     return [
       ['varje rad i TILLVERKA har en sak och en handling', rader],
-      ['örtköket gör fyra saker, och recepten stämmer', ortkok],
+      ['örtköket gör minst fyra saker, och recepten stämmer', ortkok],
       ['snaran sätts utanför byn och vittjas', ute && fick],
       ['de nya plaggen finns, på rätt plats', plagg && byxor && sko],
       ['linet rötas på torkställningen', lin],

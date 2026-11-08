@@ -1,0 +1,37 @@
+{
+"id": "tjara",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 8.10.1)",
+"w": 14,
+"h": 18,
+"rader": [
+"...aaaaaaaa...",
+".aabbbbccccaa.",
+"abbbddddddccca",
+"abddefddddddca",
+"abddddddddddca",
+"abgdbddddcdgga",
+"accdccccccdcca",
+"ahhdhhhhhhdhha",
+"abgccgccggdgga",
+"abgccgccggdgga",
+"abgccgccggdgga",
+"abgccgccggdgga",
+"abgccgccggggga",
+"ahhhhhhhhhhhha",
+"acccccccccccca",
+"abgccgccggggga",
+"abgccgccggggga",
+".aaaaaaaaaaaa."
+],
+"pal": {
+"a": "#24201d",
+"b": "#987e62",
+"c": "#7d5b40",
+"d": "#2f261d",
+"e": "#474138",
+"f": "#372f25",
+"g": "#5e3c24",
+"h": "#3f2415"
+}
+}

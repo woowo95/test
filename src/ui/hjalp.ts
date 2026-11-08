@@ -93,22 +93,15 @@ export function relWord(p: Person, q: Person, op: number) {
   return op > REL.naraVan ? 'Nära vän' : op > REL.vanOrd ? 'Vän' : op > REL.osams ? 'Bekant' : op > REL.ovan ? 'Ogillar' : 'Ovän';
 }
 export const sickNow = (p: Person) => isSick(p, s.now);
-// prickarna på figuren på kartan (manniskor.ts ritar dem): färgen och vad de betyder
-export const PRICKAR = {
-  sjuk: { farg: { ljus: 0x898b4c, mork: 0x647025 }, namn: 'Sjuk', har: sickNow }, // oliv
-  gravid: { farg: { ljus: 0xdad0bb, mork: 0xbd753e }, namn: 'Väntar barn', har: (p: Person) => p.pregnantSince !== undefined }, // ljus hud
-};
-// de små symbolerna vid namnet utöver prickarna (steg 3.10.5): ledaren och den som är skadad, med symbolen för den
+// de små symbolerna vid namnet (steg 3.10.5): ledaren och den som är skadad, med symbolen för den
 // svåraste skadan. namn = det som står vid musen, ikon = bildens nyckel i ikoner.ts
 const MARKEN: { har: (p: Person) => boolean; namn: (p: Person) => string; ikon: (p: Person) => string }[] = [
   { har: p => ledareOf(s)?.id === p.id, namn: () => 'Byns ledare', ikon: () => 'ledarskap' },
   { har: p => !!p.skador?.length, namn: p => `Skadad: ${skadeLista(p, s.now).map(r => r.namn.toLowerCase()).join(', ')}`, ikon: p => skadeLista(p, s.now)[0].ikon },
 ];
-// prickarna och märkena som symboler med förklaringen vid musen; ord = ordet skrivs också ut (rutan i hörnet, som inte går
+// märkena som symboler med förklaringen vid musen; ord = ordet skrivs också ut (rutan i hörnet, som inte går
 // att hålla musen över)
-export const prickar = (p: Person, ord = false) => MARKEN.filter(m => m.har(p)).map(m => { const n = m.namn(p); return ` <span class="mark" title="${esc(n)}" aria-label="${esc(n)}">${iconImg(m.ikon(p), 12)}</span>${ord ? ' ' + esc(n.toLowerCase()) : ''}`; }).join('')
-  + Object.values(PRICKAR).filter(q => q.har(p))
-    .map(q => ` <span class="prick" style="background:${cssFarg(q.farg.mork)}" title="${q.namn}" aria-label="${q.namn}"></span>${ord ? ' ' + q.namn.toLowerCase() : ''}`).join('');
+export const prickar = (p: Person, ord = false) => MARKEN.filter(m => m.har(p)).map(m => { const n = m.namn(p); return ` <span class="mark" title="${esc(n)}" aria-label="${esc(n)}">${iconImg(m.ikon(p), 12)}</span>${ord ? ' ' + esc(n.toLowerCase()) : ''}`; }).join('');
 // anseendet och minnet efter döden som pixelsymboler (steg 3.6.11, anseendeSym och dodSymbol i rykten.ts), med tecknet om bilden saknas
 const ANS_IKON: Record<string, string> = { '★': 'i_legend', '☠': 'i_okand', '😇': 'a_gott', '😐': 'a_blandat', '😈': 'a_daligt' };
 export const ansTecken = (a: string, px = 16) => tecknet(ANS_IKON[a] ?? '', a, px);

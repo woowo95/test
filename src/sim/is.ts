@@ -12,6 +12,9 @@ import { amountOf } from './lager';
 import { freeOfKinds, SPJUT } from './redskap';
 import { snoPaMarken, temperature } from './vader';
 import { Person, State } from './typer';
+import { tecken } from './religion';
+import { living } from './folk';
+import { rnd } from './slump';
 
 export const IS = balans('is', {
   vattenTim: 48, // vattnets temperatur närmar sig luftens så här långsamt (timmar)
@@ -47,7 +50,7 @@ export function stepIs(s: State) {
   const m = minneOf(s), t = temperature(s);
   if (m.cm <= 0) {
     m.vatten += (t - m.vatten) / IS.vattenTim;
-    if (m.vatten < 0) { m.cm = -m.vatten * IS.forst; m.vatten = 0; }
+    if (m.vatten < 0) { if (m.cm === 0) for (const p of living(s)) if (rnd(s, 'tro', p) < 0.2) tecken(s, p, 'frosjo'); m.cm = -m.vatten * IS.forst; m.vatten = 0; } // sjön som frös (steg 8.5.18)
   } else if (t < 0) m.cm += IS.vaxer * -t / (IS.bas + m.cm) * (1 - IS.snoSkyddar * snoPaMarken(s));
   else m.cm = Math.max(0, m.cm - IS.smalter * t);
 }

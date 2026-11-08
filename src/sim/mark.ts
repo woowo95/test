@@ -2,7 +2,7 @@ import { omrade } from './omrade';
 import { eldPlats, getMap, hash, perKarta, vnoise } from './karta';
 import { clampI, rnd } from './slump';
 import { H, HOUR, OX, OY, Person, State, W, inMap } from './typer';
-import { BAR, BUSKE, FOREST, Ground, HIGH, VAG, decodeCover, encodeCover, isSoil } from './vag';
+import { BAR, BUSKE, FOREST, Ground, HIGH, VAG, decodeCover, isSoil } from './vag';
 import { balans } from './balans';
 import { vattenNu } from './sjo';
 import { barKrok, nyaBuskar, tabortBuske, vaxBuske } from './buskar';
@@ -48,7 +48,7 @@ export function nyttVatten(s: State) { const g = grounds.get(s); if (g) g.tiles 
 export function groundOf(s: State): Ground {
   let g = grounds.get(s);
   if (!g) {
-    g = { tiles: vattenNu(s), cover: decodeCover(s.mark), trees: s.skog ? decodeCover(s.skog, 0) : startForest(s.seed) };
+    g = { tiles: vattenNu(s), cover: lasMark(s.mark, () => () => 1), trees: s.skog ? lasMark(s.skog, () => { const f = startForest(s.seed); return (i: number) => f[i]; }, 0) : startForest(s.seed) };
     if (!s.skog) for (let i = 0; i < g.trees.length; i++) if (g.cover[i] < HIGH) g.trees[i] = 0; // äldre sparfil: inga träd på stigarna
     g.alder = s.tradAlder ? lasAlder(s.tradAlder) : startAlder(s.seed, g.trees); // en äldre sparfil får trädens åldrar som urskogen
     g.art = s.tradSort ? lasArt(s.tradSort) : startArt(s.seed, g.trees, g.tiles); // och sorterna (steg 5.1.6)
@@ -59,7 +59,42 @@ export function groundOf(s: State): Ground {
   return g;
 }
 export const coverOf = (s: State) => groundOf(s).cover;
-export function packGround(s: State) { const g = groundOf(s); s.mark = encodeCover(g.cover); s.skog = encodeCover(g.trees); s.tradAlder = packaAlder(g.alder!); s.tradSort = packaArt(g.art!); s.buskar = packaArt(g.buske!); }
+// sparningen av gräset och skogen (steg 9.1.4): bara rutorna som skiljer sig från startkartan, så att sparfilen växer med det
+// byn gjort och inte med kartans storlek. En byte per ruta som förut (0–255); en följd av orörda rutor skrivs som 0 och hur
+// många (1–255), och en ändrad ruta med värdet 0 som 0 0. Det packade börjar med ~; en äldre sparfil utan ~ har en byte per
+// ruta rakt av. En orörd ruta läses som startkartans värde avrundat till en byte, precis som det gamla formatet gav
+const byte = (v: number) => Math.round(v * 255);
+function packaMark(v: Float32Array, start: (i: number) => number) {
+  const ut: string[] = [];
+  let orord = 0;
+  for (let i = 0; i < v.length; i++) {
+    const b = byte(v[i]);
+    if (b === byte(start(i)) && orord < 255) { orord++; continue; }
+    if (orord) { ut.push('\0', String.fromCharCode(orord)); orord = 0; }
+    if (b === byte(start(i))) orord = 1; else ut.push(b === 0 ? '\0\0' : String.fromCharCode(b));
+  }
+  if (orord) ut.push('\0', String.fromCharCode(orord));
+  return '~' + btoa(ut.join(''));
+}
+function lasMark(txt: string | undefined, startAv: () => (i: number) => number, fill = 1): Float32Array {
+  if (!txt?.startsWith('~')) return decodeCover(txt, fill);
+  const c = new Float32Array(W * H), start = startAv();
+  for (let i = 0; i < c.length; i++) c[i] = byte(start(i)) / 255;
+  try {
+    const p = atob(txt.slice(1));
+    for (let k = 0, i = 0; k < p.length && i < c.length; k++) {
+      const b = p.charCodeAt(k);
+      if (b !== 0) { c[i++] = b / 255; continue; }
+      const n = p.charCodeAt(++k);
+      if (n === 0) c[i++] = 0; else i += n;
+    }
+  } catch { /* ny mark */ }
+  return c;
+}
+// gräset och skogen ur sparfilen på kartan som gäller nu (båda formaten), för flytten till en större karta (kartflytt.ts)
+export const lasGras = (s: State) => lasMark(s.mark, () => () => 1);
+export const lasSkog = (s: State) => s.skog ? lasMark(s.skog, () => { const f = startForest(s.seed); return (i: number) => f[i]; }, 0) : undefined;
+export function packGround(s: State) { const g = groundOf(s), sf = startForest(s.seed); s.mark = packaMark(g.cover, () => 1); s.skog = packaMark(g.trees, i => sf[i]); s.tradAlder = packaAlder(g.alder!); s.tradSort = packaArt(g.art!); s.buskar = packaArt(g.buske!); }
 
 // ängar: fläckar av fuktig mark där det växer högt gräs och träd har svårt att få fäste
 export const angOf = perKarta(seed => {
@@ -132,34 +167,48 @@ function built(s: State) {
 }
 
 const TREE_GROW = 1 / (MARK.tradDygn * 24); // plantans tillväxt per timme
+// gräsets värden när timmen började, en rad i taget (steg 9.1.1): raden ovanför och raden som räknas, i stället för en kopia av
+// hela kartan varje timme. Raden nedanför har inte räknats än, så där läses marken som den är
+const raderna = new WeakMap<State, { ovan: Float32Array; har: Float32Array }>();
 // en timme: gräset växer tillbaka från grannrutorna, skogen sprider sig som en våg och plantor växer
 export function growGround(s: State, hours: number, season: number) {
   const g = groundOf(s), b = built(s), ang = angOf(s.seed), dunge = dungeOf(s.seed), { tiles, cover, trees } = g;
-  const old = cover.slice(), hr = Math.floor(s.now / HOUR), ts = MARK.tradVaxt[season];
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const i = y * W + x;
-    if (!isSoil(tiles[i])) continue;
-    if (b[i] || g.built?.[i]) { cover[i] = Math.min(cover[i], MARK.lagerTak); if (b[i] === 1 || trees[i] < FOREST) trees[i] = 0; tabortBuske(g, i); continue; } // inget växer vid elden, i lagret eller i husen: gräset kapas och plantor och ungskog tas bort. Ett vuxet träd står kvar på en husplats och en lagerplats i skogen tills det fälls (steg 3.6.9), men vid elden och i det första lagret tas det bort
-    if (old[i] < 1) {
-      let n = 0, c = 0;
-      if (x > 0 && isSoil(tiles[i - 1])) { n += old[i - 1]; c++; }
-      if (x < W - 1 && isSoil(tiles[i + 1])) { n += old[i + 1]; c++; }
-      if (y > 0 && isSoil(tiles[i - W])) { n += old[i - W]; c++; }
-      if (y < H - 1 && isSoil(tiles[i + W])) { n += old[i + W]; c++; }
-      const nb = c ? n / c : MARK.grasIngen;
-      cover[i] = Math.min(1, old[i] + hours * MARK.grasAter * MARK.grasVaxt[season] * (MARK.grasBas + MARK.grasGrann * nb) * (old[i] < BAR ? MARK.stigAter : 1));
+  const hr = Math.floor(s.now / HOUR), ts = MARK.tradVaxt[season];
+  let r = raderna.get(s);
+  if (!r || r.har.length !== W) raderna.set(s, r = { ovan: new Float32Array(W), har: new Float32Array(W) });
+  let ovan = r.ovan, har = r.har;
+  for (let y = 0; y < H; y++) {
+    const t = ovan; ovan = har; har = t; // raden som räknades blir raden ovanför
+    har.set(cover.subarray(y * W, y * W + W));
+    for (let x = 0; x < W; x++) {
+      const i = y * W + x;
+      if (!isSoil(tiles[i])) continue;
+      if (b[i] || g.built?.[i]) { cover[i] = Math.min(cover[i], MARK.lagerTak); if (b[i] === 1 || trees[i] < FOREST) trees[i] = 0; tabortBuske(g, i); continue; } // inget växer vid elden, i lagret eller i husen: gräset kapas och plantor och ungskog tas bort. Ett vuxet träd står kvar på en husplats och en lagerplats i skogen tills det fälls (steg 3.6.9), men vid elden och i det första lagret tas det bort
+      const old = har[x];
+      if (old < 1) {
+        let n = 0, c = 0;
+        if (x > 0 && isSoil(tiles[i - 1])) { n += har[x - 1]; c++; }
+        if (x < W - 1 && isSoil(tiles[i + 1])) { n += har[x + 1]; c++; }
+        if (y > 0 && isSoil(tiles[i - W])) { n += ovan[x]; c++; }
+        if (y < H - 1 && isSoil(tiles[i + W])) { n += cover[i + W]; c++; }
+        const nb = c ? n / c : MARK.grasIngen;
+        cover[i] = Math.min(1, old + hours * MARK.grasAter * MARK.grasVaxt[season] * (MARK.grasBas + MARK.grasGrann * nb) * (old < BAR ? MARK.stigAter : 1));
+      }
+      vaxBuske(s, g, i, hours, ts, trangsel); // buskarna (steg 6.5.3, buskar.ts)
+      if (trees[i] >= 1) aldras(g, i, hours); // ett vuxet träd åldras året runt, och torrakan faller till sist (trad.ts)
+      if (!ts || old < HIGH) continue; // stigar och kort gräs stoppar ny skog
+      if (trees[i] >= 1) continue;
+      let h = 0;
+      if (trees[i] <= 0) { h = hash(s.seed + hr, x, y); if (h >= hours * (MARK.fro * 8 + MARK.froLangt) * ts * (ang[i] ? MARK.angSpridning : 1) * (dunge[i] ? 1 : MARK.glantaSpridning)) continue; } // tärningen först: säger den nej även med skog runt om behöver grannarna inte räknas (steg 9.1.1)
+      if (skuggad(g, i)) continue; // för trångt: plantan står skuggad, och inget frö gror (steg 6.5.1)
+      if (trees[i] > 0) { trees[i] = Math.min(1, trees[i] + hours * TREE_GROW * ts); if (trees[i] >= 1) g.alder![i] = 0; continue; }
+      let n = 0;
+      // utanför kartkanten står skog (steg 6.5.8): därifrån sprids frön in, också om all skog på kartan huggits ner
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && (!inMap(x + dx, y + dy) || trees[(y + dy) * W + x + dx] >= FOREST)) n++;
+      if (h < hours * (MARK.fro * n + MARK.froLangt) * ts * (ang[i] ? MARK.angSpridning : 1) * (dunge[i] ? 1 : MARK.glantaSpridning)) { trees[i] = MARK.nyPlanta; g.art![i] = valjArt(s.seed, g, i, false); } // sorten (steg 5.1.6)
     }
-    vaxBuske(s, g, i, hours, ts, trangsel); // buskarna (steg 6.5.3, buskar.ts)
-    if (trees[i] >= 1) aldras(g, i, hours); // ett vuxet träd åldras året runt, och torrakan faller till sist (trad.ts)
-    if (!ts || old[i] < HIGH) continue; // stigar och kort gräs stoppar ny skog
-    if (trees[i] >= 1) continue;
-    if (skuggad(g, i)) continue; // för trångt: plantan står skuggad, och inget frö gror (steg 6.5.1)
-    if (trees[i] > 0) { trees[i] = Math.min(1, trees[i] + hours * TREE_GROW * ts); if (trees[i] >= 1) g.alder![i] = 0; continue; }
-    let n = 0;
-    // utanför kartkanten står skog (steg 6.5.8): därifrån sprids frön in, också om all skog på kartan huggits ner
-    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && (!inMap(x + dx, y + dy) || trees[(y + dy) * W + x + dx] >= FOREST)) n++;
-    if (hash(s.seed + hr, x, y) < hours * (MARK.fro * n + MARK.froLangt) * ts * (ang[i] ? MARK.angSpridning : 1) * (dunge[i] ? 1 : MARK.glantaSpridning)) { trees[i] = MARK.nyPlanta; g.art![i] = valjArt(s.seed, g, i, false); } // sorten (steg 5.1.6)
   }
+  r.ovan = ovan; r.har = har;
 }
 
 // trängseln på ruta i (steg 6.5.1): träden i de åtta rutorna runt den, ett vuxet träd 1 och ett gammalt 2, plantor och ungträd 0

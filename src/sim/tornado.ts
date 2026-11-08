@@ -19,12 +19,13 @@ import { brinner, tand } from './brand';
 import { vattenNu } from './sjo';
 import { FOREST, isSoil } from './vag';
 import { tingOf } from './agande';
-import { FYND, UTTAG_IDS, takenOf } from './fynd';
+import { FYND, UTTAG_IDS, tagits, takenOf } from './fynd';
 import { faltTornado } from './odling';
 import { bjornarOf, djurOf, dodaDjur, faglarOf, radjurOf } from './djur';
 import { isLight } from './tid';
 import { H, HOUR, MIN, SEC, Person, State, T, W, inMap } from './typer';
 import { larmAvbryter } from './handlingar';
+import { tecken } from './religion';
 
 // Tornadon (steg 3.8.4, "Motgångarna i spelet" i designdokumentet): den enda stormen. En av motgångarna i registret
 // MOTGANGAR (motgang.ts), på sommaren och hösten. Den kommer en gång under tidsåldern och är på kartan i 20–60 minuter (steg 6.4.8):
@@ -202,6 +203,7 @@ export function tornadoSteg(s: State, gaster?: TornadoGaster) {
   // den har gått över kartan
   const delar = [t.doda && `dödade ${t.doda} ${t.doda === 1 ? 'människa' : 'människor'}`, t.forstort && `förstörde ${t.forstort} saker`, t.trad && `fällde ${t.trad} träd`, t.vagg && `rev ${t.vagg} ${t.vagg === 1 ? 'vägg' : 'väggar'}`, t.lyft && `spred ${t.lyft} saker${t.sonder ? ` (${t.sonder} gick sönder)` : ''}`].filter(Boolean);
   log(s, delar.length ? `Tornadon ${delar.join(', ')}.` : 'Tornadon gick fram där inget fanns att ta.', 'world');
+  for (const p of living(s)) tecken(s, p, 'tornado'); // tornadon som gick förbi (steg 8.5.18)
   delete s.tornado;
 }
 
@@ -275,15 +277,15 @@ function stormen(s: State, t: Tornado, b: number) {
 // rövarna och handlaren (steg 6.4.12) drabbas som byborna, en gång per tornado: i kärnan dör de, nära och i utkanten
 // flyger de och kan dö eller skadas. Handlaren tappar en del av packningen och går hem, rövarna flyr
 function gasterna(s: State, t: Tornado, zonVid: (x: number, y: number) => number, L: number, { rovarTornado, handlarTornado, handlarPlats }: TornadoGaster) {
-  const f = s.rovare, fk = -1e6 - (f?.id ?? 0);
-  if (f && !t.traff?.includes(fk)) {
+  for (const f of [s.rovare, ...(s.rovareFler ?? [])]) { // alla flockar på kartan (steg 8.7.18)
+    const fk = -1e6 - (f?.id ?? 0);
+    if (!f || t.traff?.includes(fk)) continue;
     const zon = zonVid(f.x, f.y);
-    if (zon >= 0) {
-      (t.traff ??= []).push(fk);
-      const till = zon > 0 ? landar(s, t, f.x, f.y, fk, zon, L, true) : undefined, doda0 = f.folk.length;
-      rovarTornado(s, f, zon, zon === 1 ? TORNADO.dodNara : 0, zon === 1 ? 1 : TORNADO.skadas, zon === 1 ? TORNADO.skadaNara : TORNADO.skadaGrad, (j, salt) => ur(s, t, fk - j, 3855 + salt), till);
-      t.doda = (t.doda ?? 0) + doda0 - (s.rovare?.folk.length ?? 0);
-    }
+    if (zon < 0) continue;
+    (t.traff ??= []).push(fk);
+    const till = zon > 0 ? landar(s, t, f.x, f.y, fk, zon, L, true) : undefined, doda0 = f.folk.length;
+    rovarTornado(s, f, zon, zon === 1 ? TORNADO.dodNara : 0, zon === 1 ? 1 : TORNADO.skadas, zon === 1 ? TORNADO.skadaNara : TORNADO.skadaGrad, (j, salt) => ur(s, t, fk - j, 3855 + salt), till);
+    t.doda = (t.doda ?? 0) + doda0 - f.folk.length;
   }
   const h = s.handlare;
   if (h && !t.traff?.includes(h.id)) {
@@ -343,7 +345,7 @@ function utkanten(s: State, t: Tornado, rutor: number[]) {
 const VAXTER = UTTAG_IDS.filter(k => FYND[k].grupp === 'vaxter');
 function vaxterna(s: State, rutor: number[]) {
   const d = takenOf(s);
-  for (const k of VAXTER) { const a = d[k]; if (a) for (const i of rutor) a[i] = 1; }
+  for (const k of VAXTER) { const a = d[k]; if (a) for (const i of rutor) { a[i] = 1; tagits(s, k, i); } }
   faltTornado(s, new Set(rutor));
 }
 // eldarna i kärnan och nära släcks, och glöden kan slängas iväg och tända en brand där den landar (steg 6.4.10)

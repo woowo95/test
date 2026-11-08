@@ -644,7 +644,7 @@ SCENARIER.halsoflik = {
   kor: () => {
     const s = createState(5, START);
     const p = living(s)[0];
-    Object.assign(p, { hunger: 1, torst: 1, health: 1, blod: 1, skador: undefined });
+    Object.assign(p, { hunger: 1, torst: 1, health: 1, blod: 1, rest: 1, skador: undefined });
     const hel = skadeLista(p, s.now).length === 0 && Object.values(FORMAGOR).every(f => f.delar(p).length === 0) && delSkada(p, 'huvud') === 0;
     skada(s, p, 'handH', 'skarsar', 0.4, 'olycka', ''); skada(s, p, 'benV', 'benbrott', 0.8, 'olycka', '');
     const [sar, brott] = skadeLista(p, s.now);
@@ -892,7 +892,7 @@ SCENARIER.arbetare = {
       const vuxna = living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen), [p0, ...andra] = vuxna;
       const upptagna = fullt ? Array.from({ length: s.arbBehov!.arb.mat }, (_, i) => andra[i % andra.length]) : [];
       let n = 0, alla = 0;
-      for (let i = 0; i < 60; i++) {
+      for (let i = 0; i < 400; i++) {
         for (const q of andra) q.task = upptagna.includes(q) ? { act: 'samla', phase: 'do', tx: q.x, ty: q.y, until: s.now + HOUR, carry: 0, why: 'Samlar.', dark: false } : { act: 'vila', phase: 'do', tx: q.x, ty: q.y, until: s.now + HOUR, carry: 0, why: 'Vilar.', dark: false };
         Object.assign(p0, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, warm: 0.9, health: 1, sickUntil: undefined, task: undefined });
         chooseTask(s, p0); alla++; if (['samla', 'jakt', 'fiske'].includes(p0.task!.act) && !p0.task!.sok && !p0.task!.tandmat) n++;
@@ -909,3 +909,9 @@ SCENARIER.arbetare = {
     ];
   },
 };
+
+// de här scenarierna prövar en skada på just den del de säger, utan de finare delarna och utan att delen går förlorad (steg 8.2.1 och 8.2.3)
+for (const n of ['kropp', 'halsoflik']) {
+  const kor0 = SCENARIER[n]?.kor;
+  if (kor0) SCENARIER[n].kor = () => { SIM.HALSA_PROV.grov = true; try { return kor0(); } finally { SIM.HALSA_PROV.grov = false; } };
+}

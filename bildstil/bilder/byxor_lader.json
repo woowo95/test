@@ -1,0 +1,27 @@
+{
+"id": "byxor_lader",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 8.10.1)",
+"w": 11,
+"h": 12,
+"rader": [
+".aaaaaaaaa.",
+"abbccccccca",
+"addbbbbbcca",
+"addbbcbbcca",
+"addbbcbbcca",
+"addbbabbcca",
+"addbbabbcca",
+"addbbabbcca",
+"addbbabbcca",
+"addbbabbcca",
+"addbbabbcca",
+".aaaa.aaaa."
+],
+"pal": {
+"a": "#24201d",
+"b": "#7d5b40",
+"c": "#5e3c24",
+"d": "#987e62"
+}
+}

@@ -286,7 +286,7 @@ export function stallTrad(lager: PIXI.Container, W: number, H: number, bild: (i:
     if (f?.k === k) continue;
     skuggaAndrad = true;
     if (!b) { if (f) { f.sp.destroy(); sprites.delete(i); } continue; }
-    const sp = f?.sp ?? new PIXI.Sprite();
+    const sp = f?.sp ?? Object.assign(new PIXI.Sprite(), { cullable: true }); // ett träd utanför skärmen ritas inte (steg 9.1.3)
     const tx = stam ? stamTex(b) : tradTex(b, sno), t = sp.texture = tx.t;
     const bx = x * 16 + 8 + Math.round((hash(x, y, 595) - 0.5) * 8), by = y * 16 + 14 + Math.round((hash(x, y, 596) - 0.5) * 4);
     sp.position.set(bx - (t.width >> 1), by - (t.height - tx.fot) + 1 + (b.typ === 'torr' ? 1 : 0)); sp.zIndex = by;

@@ -1,15 +1,16 @@
+import { faltAt } from './odling';
 import { bynsMitt, omrade, tillHoljet } from './omrade';
 import { ALDER, ageOf, byId, count, familjOf, forstaGang, getRel, living, log, stat } from './folk';
 import { Hus, MATERIAL, bitAt, bitsOf, gridOf, housesOf, husById, touch } from './byggnad';
 import { eldPlats, getMap } from './karta';
 import { groundOf } from './mark';
 import { PLATS, rektAvstand } from './plats';
-import { lekplats, paLek, stangerIn, stationRutor, storlekAv, uteStation } from './stationer';
+import { stangerIn, stationRutor, storlekAv, uteStation } from './stationer';
 import { knows } from './teknik';
 import { villHaMer } from './forradsmal';
-import { amountOf, changed, lagerFullt, lagerNy, overflow, lagerStorre, nearZone, ownedAll, put, usable, zonesOf } from './lager';
+import { amountOf, changed, flyttaLager, inZone, lagerFullt, lagerNy, overflow, overlaps, lagerStorre, ownedAll, put, usable, zonesOf } from './lager';
 import { tingOf } from './agande';
-import { FOREST, findPath } from './vag';
+import { findPath } from './vag';
 import { Akut, BYGGNADER, Byggnad, FN, Fn, HUS, antalLika, fnId, fnOf, husNamn, sovHus, sovplatser, torkUte, vedUte } from './byggnader';
 import { kronika } from './historik';
 import { clamp } from './slump';
@@ -52,6 +53,7 @@ export const PLAN = balans('byggplan', {
   forbVed: 30, // en förbättring föreslås först när byn har så mycket trä
   forbGolv: 0.3, forbRum: 0.5, forbRik: 0.4, // hur mycket förbättringen är värd (0 till 1)
   egetRumFolk: 4, // en familj med så här många vill ha ett eget rum
+  barUtTim: 24, // så länge väntar ett hus på att det som låg i en lagerplats ska bäras ut (timmar i spelet)
   lagerKostnad: 0.5, // att göra en lagerplats större eller ny kostar så här mycket (arbetet med att bära om)
   forStort: 2, // ett hus är för stort när det har så här många gånger fler sovplatser än familjen
   husVanta: 2, husMote: 8, // ett husbyte väntar så här många dygn (år i spelet) på att köparen och säljaren står så här många rutor från varandra
@@ -77,16 +79,17 @@ export const PLAN = balans('byggplan', {
 const tileOk = (s: State, x: number, y: number, utomElden: boolean) => {
   if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1) return false;
   if (!usable(s, x, y, utomElden)) return false; // inte vatten, sten, inpå elden (utom när elden kan flyttas) eller på ett annat bygge (träden spelar ingen roll: de fälls innan bygget börjar)
-  if (zonesOf(s).some(z => nearZone(z, x, y, BYGG.lagerMarg))) return false;
   if (underMinnet(s, y * W + x)) return false; // byn minns att vattnet nådde hit (steg 3.8.7, flod.ts)
-  if ((s.stackar ?? []).some(a => a.x === x && a.y === y) || tingOf(s).some(k => k.x === x && k.y === y && k.hos === undefined && k.lass === undefined) || (s.stockar ?? []).some(k => Math.floor(k.x) === x && Math.floor(k.y) === y) || (s.stubbar ?? []).some(k => k.x === x && k.y === y)) return false;
+  // en lagerplats påverkar inte var huset står (steg 8.1.15): det som ligger i den räknas inte, utan bärs ut när bygget börjar
+  const iLager = zonesOf(s).some(z => inZone(z, x, y));
+  if (!iLager && ((s.stackar ?? []).some(a => a.x === x && a.y === y) || tingOf(s).some(k => k.x === x && k.y === y && k.hos === undefined && k.lass === undefined)) || (s.stockar ?? []).some(k => Math.floor(k.x) === x && Math.floor(k.y) === y) || (s.stubbar ?? []).some(k => k.x === x && k.y === y)) return false;
   return true;
 };
 // en plats för ett hus med yttermåtten w×h inom byområdet, PLATS.husMellan rutor från andra hus och PLATS.uteFri från stationer
-// som står ute, helst en bit från elden och inte på lekplatsen, och inte så att väggarna stänger in mark. Träden där
-// huset ska stå fälls först, men en plats med färre träd går fortare
+// som står ute, helst en bit från elden, och inte så att väggarna stänger in mark. Träden där
+// huset ska stå fälls först
 function siteFor(s: State, w: number, h: number, okAt: (i: number) => boolean) {
-  const f = eldPlats(s), R = BYGG.radieBas + living(s).length * BYGG.radiePerPerson, g = groundOf(s), lekR = lekplats(s), M = Math.max(PLATS.husMellan + ((s.byplan?.tat ?? 0) < -0.5 ? 1 : 0), PLATS.uteFri);
+  const f = eldPlats(s), R = BYGG.radieBas + living(s).length * BYGG.radiePerPerson, M = Math.max(PLATS.husMellan + ((s.byplan?.tat ?? 0) < -0.5 ? 1 : 0), PLATS.uteFri);
   const platser: { x: number; y: number; sc: number }[] = [], o = omrade(s), r = Math.ceil(R) + w + h;
   for (let y = Math.max(1, o.y0 - r); y + h < H && y <= o.y1 + r; y++) for (let x = Math.max(1, o.x0 - r); x + w < W && x <= o.x1 + r; x++) {
     const cx = x + w / 2, cy = y + h / 2;
@@ -102,12 +105,9 @@ function siteFor(s: State, w: number, h: number, okAt: (i: number) => boolean) {
     }
     if (!ok) continue;
     const near = rektAvstand(f.x, f.y, x, y, w, h), m = o.mitt;
-    const lek = paLek(lekR, x, y, w, h) ? BYGG.lekStraff : 0; // lekplatsen räknas från byns inre (plats.ts, steg 2.10.4)
-    let trad = 0; // helst en plats med få träd: varje träd ska fällas först
-    for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) if (g.trees[yy * W + xx] >= FOREST) trad++;
     const eld = rektAvstand(f.x, f.y, x - 1, y - 1, w + 2, h + 2) === 0 ? ELDFLYTT.husStraff : 0; // där elden står bara om ingen annan plats finns: elden flyttas först
     const form = s.byplan?.form ?? 'ring', rad = form === 'rader' && strakNara(s, x, y, w, h) ? PLAN.raderVikt : 0;
-    const sc = Math.max(0, BYGG.husAvst - near) + BYGG.utomVikt * Math.max(0, ut - Math.min(w, h) / 2) + (BYGG.mittVikt + (form === 'ring' ? PLAN.ringVikt : 0)) * Math.hypot(cx - m.x - 0.5, cy - m.y - 0.5) + lek + BYGG.tradVikt * trad + eld - rad;
+    const sc = Math.max(0, BYGG.husAvst - near) + BYGG.utomVikt * Math.max(0, ut - Math.min(w, h) / 2) + (BYGG.mittVikt + (form === 'ring' ? PLAN.ringVikt : 0)) * Math.hypot(cx - m.x - 0.5, cy - m.y - 0.5) + eld - rad; // träden spelar ingen roll: de fälls som en del av bygget (steg 8.1.14)
     platser.push({ x, y, sc });
   }
   // den bästa platsen som inte stänger in någon mark (stationer.ts); lika bra platser i samma ordning som de söktes
@@ -621,18 +621,19 @@ export function planBuild(s: State) {
   const okAt = (i: number) => (okMinne[i] < 0 ? okMinne[i] = tileOk(s, i % W, Math.floor(i / W), utomElden) ? 1 : 0 : okMinne[i]) === 1;
   // det mest akuta behovet för byn och för varje familj (steg 7.2.17), det första som går att göra något åt; är inget akut för byn, en förbättring
   const klara = new Set<number>();
-  let inget = behov.length > 0;
+  let provat = false, funnit = false; // det som väntar på ett bygge eller ett köp prövas inte
   for (const u of behov) {
     const ag = u.a.ag ?? -1;
     if (klara.has(ag) || upptagen(s, ag) || s.husAffar?.ag === ag) continue; // den som väntar på att köpa ett hus bygger inget under tiden
     const bast = valj(s, u, okAt);
+    provat = true;
     if (!bast) continue;
-    inget = false;
+    funnit = true;
     klara.add(ag);
     utfor(s, bast, u, byggare, ppl);
     okMinne.fill(-1);
   }
-  if (inget) s.byggSok = s.now + BYGG.omforsok * HOUR; // ingen plats nu: försök igen om ett tag
+  if (provat && !funnit) s.byggSok = s.now + BYGG.omforsok * HOUR; // ingen plats nu: försök igen om ett tag
   if (!byggbehov(s).some(b => b.a.ag === undefined) && !upptagen(s, -1) && !bitsOf(s).some(b => b.forb) && !klara.has(-1)) {
     const u: ByggBehov = { fn: 'forbattra', a: { v: 1, plats: 0 }, sc: 0 }, f = valj(s, u, okAt);
     if (f) utfor(s, f, u, byggare, ppl);
@@ -653,6 +654,7 @@ function valj(s: State, u: ByggBehov, okAt: (i: number) => boolean) {
 }
 function utfor(s: State, f: Forslag, u: ByggBehov, byggare: Person[], ppl: Person[]) {
   const fam = u.a.ag !== undefined ? familjOf(s, u.a.ag) : [], by = byggare.find(p => fam.includes(p)) ?? (fam.find(p => p.id === u.a.ag) ?? byggare[0] ?? ppl[0]);
+  if (f.ritning.some(a => faltAt(s, a.x, a.y))) { count(s, 'planPaFalt'); return; } // aldrig på ett fält
   if (f.at === 'kopaHus') { s.husAffar = { hus: f.hus!.id, ag: u.a.ag!, t: s.now }; return; }
   if (f.at === 'stockvagA' || f.at === 'bryggaA' || f.at === 'infartA') {
     s.nextBit ??= 1;
@@ -671,6 +673,11 @@ function utfor(s: State, f: Forslag, u: ByggBehov, byggare: Person[], ppl: Perso
   }
   bygg(s, f, u, by);
 }
+// lagret i vägen (steg 8.1.15): en ny lagerplats, och sakerna bärs dit innan bygget börjar
+function lagerUrVagen(s: State, f: Forslag, hus: Hus) {
+  const iVagen = zonesOf(s).filter(z => z.hus === undefined && overlaps(z, f, 0));
+  if (iVagen.length) { for (const z of iVagen) flyttaLager(s, z); hus.barUt = s.now + PLAN.barUtTim * HOUR; }
+}
 // ett nytt hus: ritningen blir bitar
 function bygg(s: State, f: Forslag, u: ByggBehov, by: Person) {
   const row: Byggnad = BYGGNADER[u.fn as Fn], iw = f.w - 2, ih = f.h - 2, same = antalLika(s, u.fn as Fn, iw, ih);
@@ -678,6 +685,7 @@ function bygg(s: State, f: Forslag, u: ByggBehov, by: Person) {
   s.nextBit++;
   for (const a of f.ritning) bitsOf(s).push({ id: s.nextBit++, x: a.x, y: a.y, k: MATERIAL[a.m].k, m: a.m, b: a.m === 'oppning' ? 1 : 0, mat: 0, c: 1, hus: hus.id });
   housesOf(s).push(hus); touch(s);
+  lagerUrVagen(s, f, hus);
   if (f.ny) s.fire.flytt = { x: f.ny.x, y: f.ny.y, varfor: 'plats' };
   log(s, planText(by, u.fn as Fn, hus, iw * ih, same) + (f.ny ? ' Elden måste flyttas först.' : ''), 'world', [by.id]); count(s, 'planerat_' + u.fn);
   if (u.fn === 'sovsal' && iw * ih >= HUS.langhus) count(s, 'planerat_langhus'); // ett långhus (så ofta det händer, samhalle-192)
@@ -688,6 +696,7 @@ function byggUt(s: State, f: Forslag, by: Person, forb: boolean) {
   s.nextBit ??= 1;
   for (const a of f.ritning) bitsOf(s).push({ id: s.nextBit++, x: a.x, y: a.y, k: MATERIAL[a.m].k, m: a.m, b: a.m === 'oppning' ? 1 : 0, mat: 0, c: 1, hus: h.id, ...(forb ? { forb: 1 as const } : {}) });
   h.ut = { x: f.x, y: f.y, w: f.w, h: f.h, oppnas: f.oppnas.map(a => [a.x, a.y, a.m]) };
+  touch(s); lagerUrVagen(s, f, h);
   // en öppning i den gamla väggen redan nu, så att ingen blir instängd i den nya delen (den blir golv som resten sist)
   if (!f.ritning.some(a => a.m === 'oppning') && f.oppnas.length) {
     const q = f.oppnas[f.oppnas.length >> 1], b = bitAt(s, q.x, q.y);

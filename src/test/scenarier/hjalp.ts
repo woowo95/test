@@ -38,6 +38,15 @@ export function byggKlart(s: State) {
   for (const b of bs) { b.mat = SIM.MATERIAL[b.m]?.n ?? 0; b.b = b === bs[bs.length - 1] ? 0.999 : 1; }
   SIM.touch(s);
   SIM.workOn(s, p, bs[bs.length - 1], 3600);
+  // låg en lagerplats i vägen (steg 8.1.15) är sakerna redan burna till den nya
+  const inne = (s.stackar ?? []).filter(a => a.x >= h.x && a.y >= h.y && a.x < h.x + h.w && a.y < h.y + h.h);
+  s.stackar = (s.stackar ?? []).filter(a => !inne.includes(a));
+  for (const a of inne) SIM.put(s, a.k, a.n, a.ag, a.c);
+  SIM.changed(s); h.barUt = undefined;
+  // träden på platsen är fällda och stubbarna bortgrävda (steg 8.1.14: husen tar ingen hänsyn till träden)
+  const g = SIM.groundOf(s);
+  for (let y = h.y; y < h.y + h.h; y++) for (let x = h.x; x < h.x + h.w; x++) g.trees[y * SIM.W + x] = 0;
+  s.stubbar = s.stubbar?.filter(k => !(k.x >= h.x && k.y >= h.y && k.x < h.x + h.w && k.y < h.y + h.h)); SIM.touch(s);
   return h;
 }
 // ett färdigt hus för det mest akuta behovet (oftast en sovsal), utan att någon lär sig bygga

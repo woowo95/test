@@ -5,12 +5,12 @@ import { put, setStock, storeFromSums } from './lager';
 import { isTool } from './saker';
 import { migrateTools, toolsFromItems } from './agande';
 import { migrateFalt } from './odling';
-import { behoverStorreKarta, storreKarta } from './kartflytt';
+import { KARTA, behoverStorreKarta, storreKarta } from './kartflytt';
 import { VAR, inFas, nyKalender } from './tid';
 import { ageOf, alive, byId, getRel, log, newPerson, startSkills, stridSkills, think, SKALD_START, handelStart } from './folk';
 import { newSeder, sederTarget, TAGS } from './seder';
 import { clamp, gauss, rnd } from './slump';
-import { Act, DAY, NEW_H, NEW_W, Person, SEC, State, simulera, useMap } from './typer';
+import { Act, DAY, Person, SEC, State, simulera, useMap } from './typer';
 import { startSmak } from './rykten';
 import { nyAndlighet } from './religion';
 import { newFire } from './eld';
@@ -18,8 +18,8 @@ import { UPPREPAT, lasAlder, lasArt, packaAlder, packaArt } from './trad';
 import { historikKolumner } from './historik';
 
 // ---------- skapa värld ----------
-// storlek: kartans storlek, för testerna av äldre byar (en ny by får alltid NEW_W × NEW_H)
-export function createState(seed: number, now: number, storlek = { W: NEW_W, H: NEW_H }): State { return simulera(() => skapaBy(seed, now, storlek)); } // som simuleringen (typer.ts)
+// storlek: kartans storlek, för testerna av äldre byar (en ny by får KARTA.bredd × KARTA.hojd, kartflytt.ts)
+export function createState(seed: number, now: number, storlek = { W: KARTA.bredd, H: KARTA.hojd }): State { return simulera(() => skapaBy(seed, now, storlek)); } // som simuleringen (typer.ts)
 function skapaBy(seed: number, now: number, storlek: { W: number; H: number }): State {
   // en liten koloni: två par och ett barn, utan eld och med lite mat och grenar
   const s: State = { v: SPARVERSION, seed, founded: now, now, people: [], rels: {}, nextId: 1, log: [], lastAgeIdx: VAR, fire: newFire(), seder: newSeder(), W: storlek.W, H: storlek.H, kal: nyKalender(now) };
@@ -232,6 +232,7 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     }
   }],
   [24, 'v378: historikens kolumner (eld sedan v357) i registrets ordning redan när byn läses in (steg 5.5.7)', s => historikKolumner(s)],
+  [25, 'v510: de nya vågskålarna (steg 8.3.4 och 8.3.5) börjar på noll', s => { s.seder.v.fortjanst ??= 0; s.seder.v.fejd ??= 0; s.seder.v.krig ??= 0; s.seder.v.delning ??= 0; s.seder.v.natur ??= 0; s.seder.v.andlig ??= 0; }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

@@ -30,6 +30,7 @@ import { balans } from './balans';
 import { num } from './format';
 import { brasaSten, vedPerEld, BRASA } from './brasor';
 import { iVattnetNu } from './sjo';
+import { tecken } from './religion';
 
 // ---------- balanstal (regel 8) ----------
 // Elden: hur stark den är, vad var och en vill ha på den, hur den tänds och fylls på, och hur tändmaterial, stenar och flinta
@@ -89,9 +90,10 @@ export const ELD = balans('eld', {
 export function newFire(): Fire {
   return { hearth: 'lagereld', fuel: 0, lit: false, burned: 0, totalBurned: 0, litSec: 0, lightings: 0, outs: 0, tries: 0, tryTotal: 0, tryProg: 0, fills: {}, log: [] };
 }
-const ENSAM: Fire[] = [];
-// alla lägereldar, den första först
-export const eldarOf = (s: State): Fire[] => s.eldar?.length ? [s.fire, ...s.eldar] : (ENSAM[0] = s.fire, ENSAM.length = 1, ENSAM);
+// alla lägereldar, den första först. Utan fler eldar en lista med bara den första, sparad per by (regel 4: två byar delar
+// aldrig samma lista)
+const ensam = new WeakMap<State, Fire[]>();
+export const eldarOf = (s: State): Fire[] => { if (s.eldar?.length) return [s.fire, ...s.eldar]; let e = ensam.get(s); if (!e) ensam.set(s, e = [s.fire]); e[0] = s.fire; e.length = 1; return e; };
 // lägerelden med numret id (den första när id saknas); undefined om den tagits isär
 export const eldById = (s: State, id?: number) => id === undefined ? s.fire : s.eldar?.find(f => f.id === id);
 // var elden står (rutan)
@@ -127,14 +129,14 @@ export const emberOn = (s: State, f = s.fire) => !f.lit && f.emberUntil !== unde
 // eldens styrka 0–1 efter hur mycket ved som brinner
 export const eldStyrka = (fuel: number, h = HEARTHS[0]) => clamp(fuel / h.maxFuel * ELD.styrkaFaktor, ELD.styrkaMin, 1);
 export function fireHeat(s: State, f = s.fire) { return f.lit ? eldStyrka(f.fuel, hearthOf(f)) : 0; }
-// hur långt värmen når från en eld med styrkan I
-export const radieAv = (s: State, I: number) => hearthOf(s.fire).radius * (ELD.radieMin + ELD.radieStyrka * I);
-export function heatRadius(s: State, f = s.fire) { return radieAv(s, fireHeat(s, f)); }
+// hur långt värmen når från elden f med styrkan I (efter dess egen eldstad: lägereld, stenring eller härd)
+export const radieAv = (I: number, f: Fire) => hearthOf(f).radius * (ELD.radieMin + ELD.radieStyrka * I);
+export function heatRadius(s: State, f = s.fire) { return radieAv(fireHeat(s, f), f); }
 const varmeFran = (I: number, r: number, fx: number, fy: number, x: number, y: number) => { const d = Math.hypot(x - fx, y - fy); return d >= r ? 0 : I * (1 - d / r); };
 // värmen på platsen: från den lägereld som värmer mest där (steg 2.9.1)
 export function heatAt(s: State, x: number, y: number) {
   let v = 0;
-  for (const f of eldarOf(s)) { const I = fireHeat(s, f); if (I) { const e = eldXY(s, f); v = Math.max(v, varmeFran(I, radieAv(s, I), e.x + 0.5, e.y + 0.5, x, y)); } }
+  for (const f of eldarOf(s)) { const I = fireHeat(s, f); if (I) { const e = eldXY(s, f); v = Math.max(v, varmeFran(I, radieAv(I, f), e.x + 0.5, e.y + 0.5, x, y)); } }
   return v;
 }
 // hur mycket ved som önskas på elden just nu (den som vill ha mest av dem som använder den)
@@ -292,14 +294,16 @@ export function eldFaktor(s: State, f = s.fire) {
 }
 // står elden under flodens vatten (steg 3.8.7)? Där brinner den inte, glöden dör och ingen fyller på den
 export function eldIVatten(s: State, f: Fire) { if (!s.flod) return false; const e = eldXY(s, f); return iVattnetNu(s, tileOf(e.x, e.y)); }
+// så mycket ved elden bränner i timmen just nu: eldstaden, regnet och den hårda vintern (eldFaktor) och den blöta veden. Fliken
+// Elden visar samma tal
+export function brinnTakt(s: State, f: Fire) { const [fr, fv] = eldFaktor(s, f); return hearthOf(f).burn * fr * fv * (1 + (f.blot ?? 0) * BLOTVED.brann); }
 // en eld brinner, slocknar, glöder och lämnar en kolhög
 function brinner(s: State, f: Fire, dtSec: number) {
-  const h = hearthOf(f), now = s.now;
+  const now = s.now;
   const iVatten = eldIVatten(s, f);
   if (f !== s.fire && f.lit && iVatten) { f.fuel = 0; count(s, 'flod brasa'); } // vattnet släcker den (steg 3.8.7, flod.ts gör det för den första)
   if (f.lit) {
-    const [fr, fv] = eldFaktor(s, f);
-    const b = Math.min(f.fuel, h.burn / HOUR_S * dtSec * fr * fv * (1 + (f.blot ?? 0) * BLOTVED.brann)); // blöt ved brinner fortare och ger mindre värme per vedträ
+    const b = Math.min(f.fuel, brinnTakt(s, f) / HOUR_S * dtSec); // blöt ved brinner fortare och ger mindre värme per vedträ
     f.fuel -= b; f.burned += b; f.totalBurned += b; f.litSec += dtSec;
     if (f.fuel <= 1e-6) {
       f.fuel = 0; f.lit = false; f.emberUntil = now + ELD.glodTim * HOUR; f.outs++; f.ut = now;
@@ -409,6 +413,7 @@ export function forageItems(s: State, p: Person, dtSec: number, fart = 1): Recor
     if (p.task) takeFrom(s, 'flinta', p.task.tx, p.task.ty, 1);
     if (ff > ELD.flintaStenar && p.task) observe(s, p, 'flinta', p.task.tx, p.task.ty);
     loggBer(s, 'l_flinta', p.id, { namn: p.name, plats: ff > ELD.flintaStenar ? 'vid stenarna' : ff > ELD.flintaSand ? 'i sanden vid stranden' : '' }, 'world', [p.id]);
+    if (ff <= ELD.flintaSand) tecken(s, p, 'fynd', 'flintan där ingen trodde att den fanns'); // fyndet på den märkliga platsen (steg 8.5.18)
   }
   return Object.keys(got).length ? got : undefined;
 }

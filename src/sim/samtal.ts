@@ -1,5 +1,6 @@
+import { fraktionSamtal } from './rost';
 import { barnTill, upplev } from './uppvaxt';
-import { ALDER, REL, ageOf, alive, byId, count, franMitt, getRel, isKin, living, log, similarity, stat, think } from './folk';
+import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, franMitt, getRel, isKin, living, log, similarity, stat, think } from './folk';
 import { blocked } from './byggnad';
 import { sittAt, stationAt } from './stationer';
 import { berattaBrist } from './naring';
@@ -20,6 +21,7 @@ import { predika } from './religion';
 // Samtalen: vem man pratar med, vilket slags samtal det blir, hur det går och vad det ger, och humöret. Relationen (op) går från
 // -100 till 100 och humöret från 0 till 1 (gränserna för relationen, REL, står i folk.ts, åldern för flirt i ALDER)
 export const SAMTAL = balans('samtal', {
+  lagTanke: 0.5, // lag kommer man på hälften så fort som ledarskap, när man redan kan det
   radie: 4, // så nära (rutor) måste två vara för att prata
   // den som väljer att samtala går fram till någon (steg 4.5.6.7): bland dem som gör något socialt inom sokR rutor från platsen
   // man skulle gått till, och ställer sig isar rutor från hen; när samtalet är slut går man isarGa rutor åt andra hållet och
@@ -138,7 +140,7 @@ export function skiljsAt(s: State, p: Person) {
   const ang = Math.atan2(p.y - q.y, p.x - q.x);
   for (let k = 0; k < 6; k++) {
     const v = ang + (k % 2 ? -1 : 1) * Math.ceil(k / 2) * Math.PI / 5, x = p.x + Math.cos(v) * SAMTAL.isarGa, y = p.y + Math.sin(v) * SAMTAL.isarGa;
-    if (blocked(s, x, y) || stationAt(s, x, y)) continue;
+    if (blocked(s, x, y) || stationAt(s, x, y) || sittAt(s, x, y)) continue; // inte på en stubbe vid bordet
     t.tx = x; t.ty = y; t.phase = 'go'; t.skiljs = 1; t.until = s.now + SAMTAL.isarTid * SEC; t.path = undefined; t.pk = undefined;
     count(s, 'samtal isar');
     return true;
@@ -161,6 +163,7 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
   if (!others.length) return;
   // välj samtalspartner viktad efter relation
   const b = pickViktat(s, others, others.map(o => valVikt(s, a, o)), 'samtal', a); // bästa vänner och mentorer (steg 3.1.1)
+  fraktionSamtal(s, a, b); // viljan att byta ledare sprids (steg 8.3.11)
   const r = getRel(s, a, b);
   const aa = ageOf(a, now), ba = ageOf(b, now);
   const mood = moodOf(a, now);
@@ -204,6 +207,7 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
     samtalBorjar(); // det som delas nu blir samtalets ämne (steg 3.9.5, berattelser.ts)
     share(s, a, b, r, SAMTALSSLAG[kind]); // man berättar vad man vet och lär ut vad man kan
     predika(s, a, b, r, kind); // och den som tror försöker övertyga (steg 4.1.2.2, religion.ts)
+    if (a.tek?.ledarskap) tankePa(s, a, 'lag', SAMTAL.ledTanke * SAMTAL.lagTanke); // och sedan på lag (steg 8.4.1)
     tankePa(s, a, 'ledarskap', SAMTAL.ledTanke); // och kommer på vad som krävs för att leda (steg 3.5.1)
     berattaBrist(a, b, now); // och vad man längtar efter ("jag längtar efter kött", steg 2.6.2)
     samtalAmne(s, a, b, kind);
@@ -216,7 +220,7 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
 
   if (r.op > REL.naraVan && !(r.flags & 1) && !isKin(a, b) && a.partner !== b.id) { r.flags |= 1; loggBer(s, 'l_vanner', a.id * 997 + b.id, { namn: a.name, med: b.name }, 'rel', [a.id, b.id]); }
   if (r.op < REL.ovan && !(r.flags & 2)) { r.flags |= 2; loggBer(s, 'l_ovanner', a.id * 997 + b.id, { namn: a.name, med: b.name }, 'rel', [a.id, b.id]); }
-  if (r.rom > REL.parRom && r.op > REL.van && a.partner === undefined && b.partner === undefined && canFlirt) pair(s, a, b);
+  if (r.rom > REL.parRom && r.op > REL.van && a.partner === undefined && b.partner === undefined && canFlirt && !budTillfalle(s, 'par', a, b)) pair(s, a, b); // buden om giftermål (steg 8.6.6)
   if (a.partner === b.id && r.op < skiljGrans(r)) skiljas(s, a, b, r); // ett gift par håller mer (steg 3.1.1)
   return kind === 'gräl' ? b : undefined;
 }

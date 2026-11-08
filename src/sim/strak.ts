@@ -69,11 +69,16 @@ function sokData(s: State): Sok {
   return { mal, gang, x0, y0, x1, y1 };
 }
 
+// sökningens arbetsminne (steg 9.1.8), som i vägsökningen: en ruta har ett värde i fran bara om sett har sökningens nummer,
+// så att inget fält stort som kartan skapas och fylls för varje dörr. Nytt minne när kartans storlek ändras
+let sokNr = 0, franW = 0, franH = 0, franF = new Int32Array(0), sett = new Uint32Array(0);
 // den kortaste vägen från dörren till det närmaste av varje mål, med rektangeln hinder (ett nytt hus) i vägen
 function vagarFran(d: Sok, dorr: number, hinder?: { x: number; y: number; w: number; h: number }) {
   const ute = (i: number) => { if (!hinder) return false; const x = i % W, y = (i / W) | 0; return x >= hinder.x && x < hinder.x + hinder.w && y >= hinder.y && y < hinder.y + hinder.h; };
-  const fran = new Int32Array(W * H).fill(-2), ko = [dorr], hittad = new Map<Mal, number>();
-  fran[dorr] = -1;
+  if (franW !== W || franH !== H) { franF = new Int32Array(W * H); sett = new Uint32Array(W * H); franW = W; franH = H; sokNr = 0; }
+  if (++sokNr === 0xffffffff) { sett.fill(0); sokNr = 1; }
+  const nr = sokNr, fran = franF, ko = [dorr], hittad = new Map<Mal, number>();
+  fran[dorr] = -1; sett[dorr] = nr;
   for (let k = 0; k < ko.length && hittad.size < MAL.length; k++) {
     const i = ko[k], mi = d.mal[i];
     if (mi >= 0 && !hittad.has(MAL[mi])) hittad.set(MAL[mi], i);
@@ -83,8 +88,8 @@ function vagarFran(d: Sok, dorr: number, hinder?: { x: number; y: number; w: num
       const nx = x + dx, ny = y + dy;
       if (nx < d.x0 || ny < d.y0 || nx > d.x1 || ny > d.y1) continue;
       const j = ny * W + nx;
-      if (fran[j] !== -2 || !d.gang[j] && d.mal[j] < 0 || ute(j)) continue;
-      fran[j] = i; ko.push(j);
+      if (sett[j] === nr || !d.gang[j] && d.mal[j] < 0 || ute(j)) continue;
+      fran[j] = i; sett[j] = nr; ko.push(j);
     }
   }
   const ut = new Map<Mal, number[]>();

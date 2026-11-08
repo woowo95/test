@@ -58,11 +58,12 @@
   const remSak = () => [former(14, 9, [[utan(ell(7, 4.5, 6.5, 4), ell(7, 4.5, 4, 1.8)), (x, y) => y < 3 ? 'L' : y > 6 ? 'm' : 'l'], [rakt(9, 6, 12, 9), 'r']]), { L: 'jord1', l: 'jord0', m: 'kol1', r: 'ben2' }];
   // remmen: mörk, med en ljusare punkt där den ligger över axeln
   const rem = (pts) => pts.map(([x, y], n) => [x, y, n === 0 ? 'jord1' : 'jord0']);
-  const axelFram = { bakom: spjut(12, -4, 0, 17), pa: rem([[10, 7], [9, 8], [8, 9], [7, 10], [6, 11], [5, 12], [4, 13]]), over: [[10, 6, 'jord1'], [11, 6, 'jord0']] };
-  const axelBak = { over: [...spjut(1, -4, 12, 16), [3, 6, 'jord1'], [2, 6, 'jord0']], pa: rem([[3, 7], [4, 8], [5, 9], [6, 10], [7, 11], [8, 12], [9, 13]]) };
+  // närmare halsen än förut på den lilla bybon (Björn: "Den ska sitta lite närmre halsen i lilla vyn"), och längre ut i porträttet
+  const axelFram = { bakom: spjut(12, -4, 0, 17), pa: rem([[9, 7], [8, 8], [7, 9], [6, 10], [5, 11], [4, 12], [4, 13]]), over: [[9, 6, 'jord1'], [10, 6, 'jord0']] };
+  const axelBak = { over: [...spjut(1, -4, 12, 16), [4, 6, 'jord1'], [3, 6, 'jord0']], pa: rem([[4, 7], [5, 8], [6, 9], [7, 10], [8, 11], [9, 12], [9, 13]]) };
   const axelSida = { over: [...spjut(2, -4, 5, 16), [6, 6, 'jord1'], [7, 6, 'jord0']], pa: rem([[6, 7], [7, 8], [7, 9], [8, 10], [8, 11], [8, 12]]) };
-  const axelPort = paRock(band(46, 48, 35, 64, 4, s => ['ben1', 'jord1', 'jord0', 'kol0'][s]));
-  byt(JANEJ('f7_axelrem', 'Axelremmen', 'Steg 7.1.2: axelremmen av skinn bär ett långt redskap på ryggen. Du valde version 1, den smala, mörka remmen av skinn. På den lilla bybon går remmen nu över ena axeln och snett över bröstet ner till den andra höften (bakifrån åt andra hållet), parallellt med spjutet på ryggen. Till vänster remmen som sak, sedan bybon framifrån, från sidan, bakifrån och i ett gångsteg, och sist i porträttet som förut. Din kommentar förra gången: "Utgå från version 1. Se till att bältet går över ena axeln på den lilla karaktären."',
+  const axelPort = paRock(band(49, 48, 38, 64, 4, s => ['ben1', 'jord1', 'jord0', 'kol0'][s]));
+  byt(JANEJ('f7_axelrem', 'Axelremmen', 'Steg 7.1.2: axelremmen av skinn bär ett långt redskap på ryggen. Du valde version 1, den smala, mörka remmen av skinn. På den lilla bybon går remmen nu över ena axeln och snett över bröstet ner till den andra höften (bakifrån åt andra hållet), parallellt med spjutet på ryggen. Till vänster remmen som sak, sedan bybon framifrån, från sidan, bakifrån och i ett gångsteg, och sist i porträttet som förut. Nu sitter remmen närmare halsen på den lilla bybon och längre ut på axeln i porträttet. Din kommentar förra gången: ”Den ska sitta lite närmre halsen i lilla vyn. Och lite längre bort från halsen i porträttet.”',
     kort('En smal, mörk rem av skinn över ena axeln och snett över bröstet.', remSak(), [[() => bybo('fram'), axelFram], [() => bybo('sida'), axelSida], [() => bybo('bak'), axelBak], [() => bybo('sida', 'gang1', 'gang1'), axelSida]], [{ redskap: 'redskap-flintspjut' }, axelPort])));
 
   // ---------- 7.1.4 bältet med krokarna, utan redskapen ----------
@@ -209,6 +210,48 @@
   byt(JANEJ('f7_byxor', 'Byxorna', 'Steg 7.7.1: byxor som sys av 2 skinn och 1 rep och håller benen varma i kylan. Du valde version 3; formen är densamma, men byxorna är nu enfärgade: brunt läder med bara ljus och skugga, utan pälskanten i linningen och nertill och utan snörningen längs sidorna. Bilden visar byxorna som sak och på en bybo. Din kommentar förra gången: "Använd formen från version 3 men gör dem enfärgade"',
     SCEN('Långa byxor av enfärgat brunt läder.', byxSak(), [[byxFig]])));
 
+  // ---------- 7.7.2 mössan: samma tre, och i porträttet ----------
+  const mossSak = (v) => {
+    if (v === 3) return former(10, 8, [ // version 3 smalare: pälskanten sticker inte ut lika långt på sidorna
+      [ell(5, 3.6, 3.4, 3.2), slat('lader', 1.6, 8.4)],
+      [och(rakt(1.4, 4.5, 8.6, 7.2), ell(5, 4.6, 4, 1.5)), pals('varg', 1.4, 8.6, 11)],
+      [rakt(1.4, 4.5, 8.6, 5.4), (x, y) => (hash(Math.floor(x), 7, 2) < 0.5 ? 'h' : 'g')],
+      [och(punkt(5, 0), punkt(4, 1)), 'b']]);
+    if (v === 0) return former(11, 9, [
+      [och(ell(5.5, 3.6, 4.4, 3.4), rakt(1.1, 3.6, 9.9, 5.6), rakt(1.1, 5, 3, 7.6), rakt(8, 5, 9.9, 7.6)), pals('kanin', 1, 10, 6)],
+      [rakt(1.1, 4.6, 9.9, 5.6), (x, y) => (Math.floor(x) % 3 ? 'd' : 'c')],
+      [och(punkt(1, 8), punkt(9, 8)), 'k']]);
+    if (v === 1) return former(12, 12, [
+      [poly([[1.5, 10.5], [2.5, 5], [4.5, 2], [7, 0.8], [9.2, 1.4], [8, 2.6], [9.5, 10.5]]), pals('varg', 1.5, 9.5, 8)],
+      [ell(9.6, 2.6, 1.3, 1.3), (x, y) => (y < 2.6 ? 'h' : 'g')],
+      [rakt(1.2, 8.2, 9.8, 10.5), (x, y) => (hash(Math.floor(x), Math.floor(y), 12) < 0.5 ? 'h' : 'g')]]);
+    return former(12, 8, [
+      [ell(6, 3.6, 3.6, 3.2), slat('lader', 2.5, 9.5)],
+      [och(rakt(0.8, 4.5, 11.2, 7.2), ell(6, 4.6, 5.3, 1.5)), pals('varg', 1, 11, 11)],
+      [rakt(0.8, 4.5, 11.2, 5.4), (x, y) => (hash(Math.floor(x), 7, 2) < 0.5 ? 'h' : 'g')],
+      [och(punkt(6, 0), punkt(5, 1)), 'b']]);
+  };
+  const mossFig = (v) => (satt, las, P, C) => {
+    if (v === 0) {
+      zon(satt, C, fran(5, 8), [-1], (x) => T('kanin', sida(x, 5, 8)));
+      zon(satt, C, fran(4, 9), [0, 1], (x, y) => { const r = hash(x, y, 31); const t = sida(x, 4, 9); return T('kanin', r < 0.2 ? t + 1 : t); });
+      zon(satt, C, fran(3, 10), [2], (x) => (x % 3 ? 'd' : 'c'));
+      zon(satt, C, [3, 10], [3, 4], (x) => T('kanin', x === 3 ? 3 : 1));
+      zon(satt, C, [3, 10], [5], () => 'k');
+    } else if (v === 1) {
+      const pr = [[7, -4], [8, -4], [6, -3], [7, -3], [9, -3], [5, -2], [6, -2], [7, -2], [8, -2], [10, -2]];
+      for (const [x, y] of pr) satt(x, y, C(T('varg', x === 10 ? 2 : sida(x, 5, 9))));
+      satt(10, -3, C('h')); satt(11, -2, C('g')); satt(11, -1, C('f'));
+      zon(satt, C, fran(4, 9), [-1, 0, 1], (x, y) => { const r = hash(x, y, 41); const t = sida(x, 4, 9); return T('varg', r < 0.2 ? t + 1 : r > 0.85 ? t - 1 : t); });
+      zon(satt, C, fran(3, 10), [2], (x) => T('varg', x < 5 ? 2 : 1));
+    } else {
+      const k0 = v === 3 ? 4 : 3, k1 = v === 3 ? 9 : 10; // version 3 smalare: kanten går inte ut över huvudets sidor
+      zon(satt, C, fran(5, 8), [-2], (x) => T('lader', sida(x, 5, 8)));
+      zon(satt, C, fran(4, 9), [-1, 0], (x) => T('lader', sida(x, 4, 9)));
+      zon(satt, C, fran(k0, k1), [1], (x) => (x % 2 ? 'h' : 'g'));
+      zon(satt, C, fran(k0, k1), [2], (x) => T('varg', sida(x, k0, k1)));
+    }
+  };
   // mössan i porträttet: huvudet når från rad 7 till hakan vid rad 47, x 13–51; pannan börjar vid rad 16
   const pmossa = (v) => {
     const fur = (mat, x0, x1, seed) => (x, y) => { const r = hash(Math.floor(x), Math.floor(y), seed), t = sida(x, x0, x1); return T(mat, r < 0.16 ? t + 1 : r > 0.86 ? t - 1 : t); };
@@ -227,11 +270,12 @@
       [och(rakt(10, 16, 54, 22), ell(32, 16, 22, 2)), (x, y) => (hash(Math.floor(x / 2), Math.floor(y), 12) < 0.5 ? 'h' : 'g')],
       [rakt(10, 21, 54, 22), (x) => (x > 46 ? 'e' : 'f')],
     ], [], { har: 5 });
+    const sm = v === 3, a0 = sm ? 12 : 9, a1 = sm ? 52 : 55; // version 3 smalare: kanten slutar vid huvudets sidor (x 13–51)
     return PORT([ // en kulle av läder med en bred, uppvikt pälskant
       [utan(ell(32, 15, 17.5, 12.5), (x, y) => y > 16), (x) => slat('lader', 15, 49)(x)],
-      [och(rakt(9, 13, 55, 22), ell(32, 13.5, 23, 3), ell(9.5, 17.5, 1.5, 4.5), ell(54.5, 17.5, 1.5, 4.5)), (x, y) => { const r = hash(Math.floor(x), Math.floor(y), 11); const t = sida(x, 8, 56); return T('varg', r < 0.18 ? t + 1 : r > 0.84 ? t - 1 : t); }],
-      [rakt(10, 12, 54, 14), (x, y) => (hash(Math.floor(x), 7, 2) < 0.5 ? 'h' : 'g')],
-      [rakt(10, 21, 54, 22), (x) => (x > 46 ? 'e' : 'f')],
+      [och(rakt(a0, 13, a1, 22), ell(32, 13.5, sm ? 20 : 23, 3), ell(a0 + 0.5, 17.5, 1.5, 4.5), ell(a1 - 0.5, 17.5, 1.5, 4.5)), (x, y) => { const r = hash(Math.floor(x), Math.floor(y), 11); const t = sida(x, a0 - 1, a1 + 1); return T('varg', r < 0.18 ? t + 1 : r > 0.84 ? t - 1 : t); }],
+      [rakt(a0 + 1, 12, a1 - 1, 14), (x, y) => (hash(Math.floor(x), 7, 2) < 0.5 ? 'h' : 'g')],
+      [rakt(a0 + 1, 21, a1 - 1, 22), (x) => (x > 46 ? 'e' : 'f')],
     ], [[och(punkt(32, 4), punkt(31, 5), punkt(32, 6), punkt(31, 7), punkt(32, 8)), 'a'], [och(punkt(24, 7), punkt(40, 7)), 'b']], { har: 5 });
   };
   // ---------- 7.7.2 mössan: version 2, ritad på nytt som sak och på kartfiguren ----------
@@ -277,10 +321,12 @@
   // en sko per fot: [rader, x för radens första punkt per fot, första raden]. Punkterna ritas bara där figuren inte är
   // (benen och fötterna står framför skon), och under fötterna överallt
   // 'l' är snön som syns i hålen i flätan
+  // mindre än förut på figuren (Björn: "Gör snöskorna lite mindre på karaktären"): fem punkter breda framifrån och bakifrån,
+  // och från sidan tre rader i stället för fyra
   const SNOVY = {
-    fram: { rader: ['.cbbb.', 'cklklb', 'cddddb', 'cklklb', 'clklkb', '.abba.'], x: [1, 7], y: 17 },
-    bak: { rader: ['.cbbb.', 'cklklb', 'clklkb', 'cddddb', '.cklb.', '..ckb.', '..jkj.', '...b..'], x: [1, 7], y: 15 },
-    sida: { rader: ['....cbbbbbbbbbb..', '..cbklklklklklkbb', 'jkcdlklkdklklklkb', '...abbbbbbbbbbba.'], x: [-2], y: 18 },
+    fram: { rader: ['.cbb.', 'ckldb', 'cdddb', '.abb.'], x: [2, 8], y: 18 },
+    bak: { rader: ['.cbb.', 'cklkb', 'cdddb', '.ckb.', '..jk.', '..b..'], x: [2, 8], y: 16 },
+    sida: { rader: ['...cbbbbbbbbb.', 'jkcdlkdklklkbb', '..abbbbbbbbba.'], x: [-1], y: 19 },
   };
   const snoFig = (rikt) => (satt, las, P, C) => {
     const V = SNOVY[rikt];
@@ -289,7 +335,7 @@
     const fotter = rikt === 'sida' ? [6, 7, 8] : [3, 4, 5, 8, 9, 10];
     zon(satt, C, fotter, [19], (x) => T('varg', fotter.indexOf(x) % 3 === 0 ? 3 : fotter.indexOf(x) % 3 === 2 ? 1 : 2));
   };
-  byt(JANEJ('f7_snoskor', 'Snöskorna', 'Steg 7.7.3: snöskor av flätade grenar, rep och skinn, så att man inte sjunker ner i djup snö. Du valde version 2, den långa som en racket med grenarna knutna i en svans bak; symbolen är tvåans. Nu syns bybon på snöskorna från tre håll: framifrån (spetsen mot oss), bakifrån (svansen mot oss) och från sidan (skon lång och platt i snön). Din kommentar förra gången: "Använd tvåans symbol. Visa hur dem ser ut från olika vinklar"',
+  byt(JANEJ('f7_snoskor', 'Snöskorna', 'Steg 7.7.3: snöskor av flätade grenar, rep och skinn, så att man inte sjunker ner i djup snö. Du valde version 2, den långa som en racket med grenarna knutna i en svans bak; symbolen är tvåans. Bybon på snöskorna från tre håll: framifrån (spetsen mot oss), bakifrån (svansen mot oss) och från sidan (skon lång och platt i snön). Nu är snöskorna mindre på bybon. Din kommentar förra gången: ”Gör snöskorna lite mindre på karaktären”',
     SCEN('Paret som sak, och bybon på snöskorna framifrån, bakifrån och från sidan.', snoSak(), [[snoFig('fram'), 4, 'fram'], [snoFig('bak'), 4, 'bak'], [snoFig('sida'), 4, 'sida']], { sno: true })));
 
   // ---------- 7.7.5 halsbandet: samma tre, och i porträttet ----------
@@ -353,10 +399,9 @@
     const ur = g => [(x, y) => g[Math.floor(y)][Math.floor(x)] !== '.', (x, y) => g[Math.floor(y)][Math.floor(x)]];
     return PORT([ur(del)], [ur(tunt)], { hud: 3, har: 1 }, true);
   };
-  byt(KORT('f7_halsband', 'Halsbandet', 'Steg 7.7.5: ett halsband av rep med tre ben eller tre vargtänder, en prydnad. I porträttet hänger halsbandet nu runt halsen: repet kommer fram under hakan på båda sidor och hänger i en båge ner över kragen och bröstet, med en skugga under, och sakerna hänger rakt ner från repet, den mittersta lägst. Bilden visar halsbandet som sak, på en bybo på kartan och i porträttet. Din kommentar förra gången: ”mycket sämre. Rita halsbandet så det hänger naturligt runt halsen i portsättet.”', [
-    SCEN(HALS[0].text, halsSak(0), [[halsFig(0), 4242]], { port: phals(0) }),
-    SCEN(HALS[1].text, halsSak(1), [[halsFig(1), 4242]], { port: phals(1) }),
-    SCEN(HALS[2].text, halsSak(2), [[halsFig(2), 4242]], { port: phals(2) })]));
+  byt(KORT('f7_halsband', 'Halsbandet', 'Steg 7.7.5: ett halsband av rep med vargtänder, en prydnad. Tänderna från version 2, och nu följer snöret halsen i porträttet i stället för att hänga i en vid båge över rocken. Bilden visar halsbandet som sak, på en bybo på kartan och i porträttet. Din kommentar förra gången: ”Halsbandet följer inte halsen men tänderna är snygga i version 2”', [
+    SCEN('Tre vargtänder på ett snöre som ligger tätt runt halsens nederdel.', halsSak(1), [[halsFig(1), 4242]], { port: phals(1, 'tat') }),
+    SCEN('Tre vargtänder på ett snöre som följer halsen ner mot nyckelbenen.', halsSak(1), [[halsFig(1), 4242]], { port: phals(1, 'halsen') })]));
 
   // =====================================================================================================================
   // ur 7.7b-lin.js: skjortan

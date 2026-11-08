@@ -550,4 +550,21 @@
     SNARA('Ett lågt gärde av nedstuckna kvistar tvärs över stigen, med en öppning där haren går; öglan hänger i öppningen från en pinne mellan två högre käppar.', SNAR[1]),
     SNARA('En rak käpp nedstucken vid stigkanten och lutad in över stigen, med öglan hängande från toppen och ris på båda sidor som leder haren in i den.', SNAR[2]),
   ]));
+
+  // ---------- 7.7.6 garvningsställningen i ett sammanhang ----------
+  // Björn: "Rita stationen i ett sammanhang". Ställningen är densamma som i de tre versionerna förut (ritfunktionen i
+  // fas7/7.7a-skinn-och-lader.js, lånad ur kortet), nu i byns utkant: vid en husvägg med skinn som väntar och färdigt läder,
+  // vid lägerelden med en hög ved, och mellan torkställningen och en skinnhög
+  {
+    const gammal = VAL.find(v => v.id === 'f7_garvning');
+    if (gammal) {
+      const rita = gammal.versioner.map(v => v.rita);
+      const GARV_SAM = (text, v, runt) => ({ text, w: 96, h: 48, rita: B => { gras(B); runt(B); rita[v](flytt(B, 34, 10)); } });
+      byt(KORT('f7_garvning', 'Garvningsställningen', 'Steg 7.7.6: en station av 4 grenar och 2 rep där ett skinn spänns upp, skrapas och garvas till läder. Samma tre ställningar som förut, nu i ett sammanhang i byns utkant med det som hör till: skinnen som väntar, lädret som är klart, en husvägg, lägerelden och torkställningen. Din kommentar förra gången: ”Rita stationen i ett sammanhang”', [
+        GARV_SAM('Den upprätta fyrkanten vid en husvägg, med en hög skinn som väntar och färdigt läder bredvid.', 0, B => { bildfil(B, 'timmervagg', 0, 0); bildfil(B, 'skinn', 70, 32); bildfil(B, 'vargskinn', 74, 26); bildfil(B, 'lader', 8, 36); }),
+        GARV_SAM('Ramen som lutar, nära lägerelden, med vedhögen och lädret som hänger på tork.', 1, B => { bildfil(B, 'lagereld_lite', 4, 20); bildfil(B, 'ved', 6, 38); bildfil(B, 'lader', 72, 34); bildfil(B, 'kniv', 74, 28); }),
+        GARV_SAM('A-ramen mellan torkställningen och en hög skinn, med en bensyl och ett skinn i taget.', 2, B => { bildfil(B, 'tork', 0, 8); bildfil(B, 'bjornskinn', 70, 30); bildfil(B, 'radjursskinn', 74, 22); bildfil(B, 'bensyl', 66, 40); }),
+      ]));
+    }
+  }
 })();

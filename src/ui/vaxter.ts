@@ -1,7 +1,7 @@
 import { Djur, FLYGTID, FYND, H, HOUR, SEC, W, ageIndex, bjornarOf, brinnande, djurOf, faglarOf, radjurOf, fyndAt, getMap, groundOf, living, plockOf, tornadoAndel, tornadoPos, vargarOf } from '../sim';
 import { farg, fargTal } from '../palett';
 import { s, ui, vidNyBy } from './lage';
-import { Ikoner, TS, djurFx, djurMarkLayer, figurLayer, plantG, rokBakLayer } from './scen';
+import { Ikoner, TS, app, djurFx, djurMarkLayer, figurLayer, plantG, rokBakLayer, world } from './scen';
 import { brandBild, brandRok, tornadoBild, tornadoFot } from './animation';
 import { jagade, samlaJakt } from './jakt';
 import { posOf } from './manniskor';
@@ -14,16 +14,26 @@ import { type DjurHall, djurBild, fagelBild, iconCanvas, kartbild } from '../iko
 let ritad = '', ritadNar = -Infinity;
 // en fast plats i rutan för varje sak, så att buskarna inte hoppar runt när kartan ritas om
 const plats = (i: number, j: number) => { const h = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453; return h - Math.floor(h); };
+// rutorna som syns och en halv skärm runt om, avrundat till hela block om 8 rutor (steg 9.1.3): det utanför ritas inte
+const SYNS_BLOCK = 8;
+function synligaRutor() {
+  const a = world.toLocal({ x: 0, y: 0 }), b = world.toLocal({ x: app.screen.width, y: app.screen.height });
+  const mx = (b.x - a.x) / TS / 2, my = (b.y - a.y) / TS / 2, B = SYNS_BLOCK;
+  const x0 = Math.max(0, Math.floor((a.x / TS - mx) / B) * B), y0 = Math.max(0, Math.floor((a.y / TS - my) / B) * B);
+  const x1 = Math.min(W - 1, Math.ceil((b.x / TS + mx) / B) * B), y1 = Math.min(H - 1, Math.ceil((b.y / TS + my) / B) * B);
+  return { x0, y0, x1, y1 };
+}
 export function drawPlants(force = false) {
-  const key = `${s.seed},${Math.floor(s.now / HOUR)},${ageIndex(s)},${plockOf(s)}`;
+  const v = synligaRutor();
+  const key = `${s.seed},${Math.floor(s.now / HOUR)},${ageIndex(s)},${plockOf(s)},${v.x0},${v.y0},${v.x1},${v.y1}`;
   const nu = performance.now();
   if (!force && (key === ritad || nu - ritadNar < OMRITA_MS)) return; // högst en gång i sekunden, som marken
   ritad = key; ritadNar = nu;
   plantG.clear();
   const sh = getMap(s.seed).shade, g = groundOf(s);
   const bar = FYND.bar, kant = FYND.kantarell, spin = FYND.spindling;
-  for (let i = 0; i < W * H; i++) {
-    const x = (i % W) * TS, y = Math.floor(i / W) * TS;
+  for (let ry = v.y0; ry <= v.y1; ry++) for (let rx = v.x0; rx <= v.x1; rx++) {
+    const i = ry * W + rx, x = rx * TS, y = ry * TS;
     // bären syns på bärbuskarna (steg 6.5.4, terrang.ts). Där ett träd står på rutan syns inte busken, och där ritas en mörkgrön
     // tuva med några prickar i bärens färg under trädet, två där det finns mycket
     const b = g.trees[i] > 0 ? fyndAt(s, 'bar', i) / bar.topp : 0;

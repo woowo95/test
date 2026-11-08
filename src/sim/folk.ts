@@ -213,6 +213,7 @@ export function stat(p: Person, k: Stat, now: number) {
   else if (k === 'minne' && a > ALDER.minneFran) g *= clamp(1 - (a - ALDER.minneFran) / ALDER.minneSpann, ALDER.minneGolv, 1);
   else if (k === 'skonhet' && a > ALDER.skonhetFran) g *= clamp(1 - (a - ALDER.skonhetFran) / ALDER.skonhetSpann, ALDER.skonhetGolv, 1);
   else if ((k === 'intelligens' || k === 'nyfikenhet' || k === 'flit' || k === 'mod') && a > ALDER.sinneFran) g *= clamp(1 - (a - ALDER.sinneFran) / ALDER.sinneSpann, ALDER.sinneGolv, 1);
+  if (k === 'karisma' && p.sinnen !== undefined) g *= p.sinnen; // blicken, hörseln och talet (steg 8.2.2)
   return p.pot[k] * g;
 }
 // egenskapen k från mitten: 0 för den som har 10, −0,9 och +1 i ändarna (för det som ska bli som förut i snitt, steg 3.7.6)
@@ -377,6 +378,19 @@ export const SAMLA = {
 export type SamSlag = keyof typeof SAMLA;
 // räknar det som händer i byn (statistiken i s.stat)
 export const count = (s: State, k: string, n = 1) => { (s.stat ??= {})[k] = (s.stat[k] ?? 0) + n; };
+// en olycka gör de som såg den rädda för handlingen (steg 8.4.10, lagar.ts sätter funktionen när allt är laddat)
+type AktRadd = (s: State, p: Person, act: Act | undefined, om: string, orsak?: string) => void;
+let aktRaddF: AktRadd = () => {};
+export const satAktRadd = (f: AktRadd) => { aktRaddF = f; };
+export const raddAkt: AktRadd = (s, p, act, om, orsak) => aktRaddF(s, p, act, om, orsak);
+// buden som verkar i andra system (steg 8.6.6–8.6.10, kyrka.ts sätter funktionen när allt är laddat). Tillfället säger var:
+// en främling kommer (p), två ska bli ett par (p och q), p skadades av q, p vill tala illa om en död, p vill fälla trädet (x, y).
+// true = budet stoppar det
+export type BudTillfalle = 'framling' | 'par' | 'skadad' | 'talaIlla' | 'falla';
+type BudH = (s: State, typ: BudTillfalle, p: Person, q?: Person, x?: number, y?: number) => boolean;
+let budH: BudH = () => false;
+export const satBudTillfalle = (f: BudH) => { budH = f; };
+export const budTillfalle: BudH = (s, typ, p, q, x, y) => budH(s, typ, p, q, x, y);
 // det en person gjort (steg 3.10.6), för färdigheterna i personrutan (SKILL_STAT i typer.ts): totalt (n) och timme för timme
 // det senaste dygnet (t[k][timmen % 24]). Timmarna sparas bara för det hen gjort det senaste dygnet, så att sparfilen inte
 // växer, och de döda har inga (die i liv.ts). Drar ingen slump
