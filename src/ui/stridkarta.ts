@@ -79,7 +79,10 @@ export function djuretNu(art: 'bjorn' | 'varg', id: number, nu: number) {
     const k = v.st.kampar.filter(x => x.djur)[j];
     if (!k || k.lage === 'borta') return undefined;
     const mal = k.mal !== undefined ? v.st.kampar.find(x => x.id === k.mal) : undefined;
-    return { k, ...kampePlats(g, k), mot: mal ? kampePlats(g, mal) : undefined, ligger: liggerK(k) };
+    // slår det just nu (steg 9.2.31): ett slag eller bett i loggen den senaste stunden, en bild per slag
+    const tid = (nu - g.t0) / SEC, slag = [...v.st.logg].reverse().find(r => r.t >= tid - SLAG_SEK && r.t <= tid && r.a === k.id && (r.h === 'traff' || r.h === 'miss' || r.h === 'tog'));
+    const offer = slag ? v.st.kampar.find(x => x.id === slag.b) : undefined;
+    return { k, ...kampePlats(g, k), mot: mal ? kampePlats(g, mal) : undefined, ligger: liggerK(k), slar: offer ? kampePlats(g, offer) : undefined };
   }
   return undefined;
 }

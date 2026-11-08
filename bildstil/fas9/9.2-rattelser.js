@@ -66,4 +66,21 @@
       ['..r...', '.kkkk.', 'kkrkkk', 'kkkkkk']],
   ];
   VAL.push({ id: 'f9_kolstam', namn: 'Den kolnade stammen och den svarta stubben', typ: 'tre', vad: 'Steg 9.2.26: ett träd som brinner blir en kolnad stam (ett stort träd) som står kvar som torrakan tills den faller eller huggs, eller en svart stubbe (ett litet träd). Marken runt är svart.', versioner: KOLVER.map(([text, stam, stubbe]) => ({ text, w: 52, h: 44, rita: B => { SVART(B); ritaSprite(B, stam, KL, 8, 20); ritaSprite(B, stubbe, KL, 34, 30); } })) });
+  // steg 9.2.31: anfallsbilderna, tre versioner var: björnen reser sig och slår med ramen, vargen hugger med käftarna
+  const DJ = { o: 'kol0', b: 'jord0', B: 'jord1', c: 'jord2', w: 'ben3', r: 'rost2', g: 'kol3', v: 'ben1', V: 'ben2', k: 'kol1' };
+  const GRAS = (B, w, h) => { for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) B.satt(x, y, B.P.i('oliv', (x * 5 + y * 3) % 9 ? 2 : 1)); };
+  const BJORNAR = [
+    ['Björnen reser sig på bakbenen med ena ramen högt och klorna ute.', ['.....w.w.......', '....owowo......', '....oBBBo......', '...oBBBBo.oo...', '..oBBBBBBoBBo..', '..oBBwBwBBBo...', '..oBBBBBBBo....', '...oBBrrBBo....', '...oBBBBBBo....', '..oBBBBBBBBo...', '..oBBBcBBBBo...', '..oBBccBBBBo...', '..oBBBBBBBBo...', '...oBBBBBBo....', '...oBBo.oBBo...', '...oBo...oBo...', '..ooo....ooo...']],
+    ['Björnen på bakbenen slår snett nedåt med ramen, munnen öppen.', ['...............', '..oo...........', '.oBBo.oooo.....', '.ow.BoBBBBo....', '..o.oBwBwBo....', '....oBBBBBo....', '....oBrrrBo....', '...oBBBBBBBo...', '..oBBBcBBBBBo..', '..oBBccBBBBBo..', '..oBBBBBBBBo...', '...oBBBBBBo....', '...oBBo.oBBo...', '...oBo...oBo...', '..ooo....ooo...']],
+    ['Björnen reser sig med båda ramarna lyfta, stor och mörk.', ['.w.w.......w.w.', 'owowo.....owowo', 'oBBBo.ooo.oBBBo', '.oBBBoBBBoBBBo.', '..oBBBwBwBBBo..', '...oBBBBBBBo...', '...oBBrrrBBo...', '..oBBBBBBBBBo..', '..oBBBcccBBBo..', '..oBBBBcBBBBo..', '...oBBBBBBBo...', '...oBBo.oBBo...', '..oooo...oooo..']],
+  ];
+  const VARGAR = [
+    ['Vargen sträcker fram huvudet och hugger med öppna käftar, tänderna vita.', ['..........ooo...', '.........oVVVo...', '.oooooooovVgVVo..', 'oVVVVVVVVVVVVwwo.', 'oVVVVVVVVVVVo....', '.oVVVVVVVVVVwwo..', '.oVo.oVo..oVo....', '.oo..oo....oo....']],
+    ['Vargen kastar sig framåt med frambenen i luften och gapet öppet.', ['...........oooo.', '..........oVVVVo', '...ooooooovVgVVw', '..oVVVVVVVVVVVo.', '.oVVVVVVVVVVVww.', 'oVo.oVVVVVVo....', 'oo...oVo.oVo....', '......oo..oo....']],
+    ['Vargen sänker huvudet och biter, med ryggen krökt och svansen rak.', ['................', '.oooooooo.......', 'oVVVVVVVVoo.....', '.oVVVVVVVVVoo...', '..oVVVVVVVVVVoo.', '..oVo.oVo.oVgVVo', '..oo..oo..oVVwwo', '...........owwo.']],
+  ];
+  VAL.push(
+    { id: 'f9_bjorn_anfall', namn: 'Björnens anfall', typ: 'tre', vad: 'Steg 9.2.31: i striden på kartan reser sig björnen och slår med ramen, en bild per slag i animationernas klocka, som människornas slag.', versioner: BJORNAR.map(([text, r]) => ({ text, w: 23, h: 23, rita: B => { GRAS(B, 23, 23); ritaSprite(B, r, DJ, 4, 3); } })) },
+    { id: 'f9_varg_anfall', namn: 'Vargens anfall', typ: 'tre', vad: 'Steg 9.2.31: i striden på kartan hugger vargen med käftarna, en bild per slag i animationernas klocka.', versioner: VARGAR.map(([text, r]) => ({ text, w: 24, h: 14, rita: B => { GRAS(B, 24, 14); ritaSprite(B, r, DJ, 4, 3); } })) },
+  );
 })();

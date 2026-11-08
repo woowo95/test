@@ -72,6 +72,15 @@ let synliga: Djur[] = [];
 const FALLD = ['fagel_orre', 'fagel', 'fagel_duva']; // den fällda fågeln i varje utseende (orre, ripa, skogsduva)
 const hallar = new Map<number, { x: number; y: number; h: DjurHall }>();
 vidNyBy.push(() => hallar.clear());
+// anfallet i en strid på kartan (steg 9.2.31, platshållare tills Björn valt i bildstilen): djuret gör ett utfall mot den det slår,
+// och slaget syns där det träffar: björnens klor (an_klo) och vargens bett (an_bett)
+function anfall(k: ReturnType<typeof djuretNu>, d: { x: number; y: number }, ikon: string) {
+  if (!k) return { x: d.x, y: d.y };
+  if (!k.slar) return { x: k.x, y: k.y };
+  const dx = k.slar.x - k.x, dy = k.slar.y - k.y, l = Math.hypot(dx, dy) || 1;
+  djurIkoner.add(ikon, Math.round(k.slar.x * TS - 4), Math.round(k.slar.y * TS - 10), 1);
+  return { x: k.x + dx / l * 0.3, y: k.y + dy / l * 0.3 };
+}
 function ritaDjur(art: Djur['art'], id: number, x: number, y: number, sedd: Set<number>, u = 1) {
   const e = hallar.get(id), dx = e ? x - e.x : 0, dy = e ? y - e.y : 0;
   let h: DjurHall = e?.h ?? 'sida';
@@ -116,8 +125,8 @@ export function drawAnimals() {
   }
   for (const id of visad.keys()) if (!sedda.has(id)) visad.delete(id);
   // i en strid på kartan (steg 9.2.29) står vargen och björnen där striden har dem, vid tiden som visas
-  for (const d of vargarOf(s)) { const k = djuretNu('varg', d.id, ui.nu), x = k?.x ?? d.x, y = k?.y ?? d.y; ritaDjur('varg', d.id, x, y, riktade); ut.push({ ...d, x, y }); }
-  for (const d of bjornarOf(s, ui.nu)) { const k = d.art === 'bjorn' ? djuretNu('bjorn', d.id, ui.nu) : undefined, x = k?.x ?? d.x, y = k?.y ?? d.y; ritaDjur(d.art, d.id, x, y, riktade); ut.push({ ...d, x, y }); } // björnen (steg 6.6.4) och ungarna (steg 6.6.5), i Björns ritningar // vargarna i verklig storlek (Björns val i bildstilen, steg 5.2.4.6)
+  for (const d of vargarOf(s)) { const k = djuretNu('varg', d.id, ui.nu), { x, y } = anfall(k, d, 'an_bett'); ritaDjur('varg', d.id, x, y, riktade); ut.push({ ...d, x, y }); }
+  for (const d of bjornarOf(s, ui.nu)) { const k = d.art === 'bjorn' ? djuretNu('bjorn', d.id, ui.nu) : undefined, { x, y } = anfall(k, d, 'an_klo'); ritaDjur(d.art, d.id, x, y, riktade); ut.push({ ...d, x, y }); } // björnen (steg 6.6.4) och ungarna (steg 6.6.5), i Björns ritningar // vargarna i verklig storlek (Björns val i bildstilen, steg 5.2.4.6)
   for (const id of hallar.keys()) if (!riktade.has(id)) hallar.delete(id);
   // tornadon där den är (steg 3.8.4), foten mitt på banan, och lågorna där det brinner (steg 3.8.5): bildstilens animationer
   // (steg 5.1.9.1), tornadon som virvlar i åtta bilder och branden som slår ut i sex, med röken bakom alla lågorna

@@ -14,6 +14,7 @@ const VADER_PAL = { K: '#61767a', S: '#dad0bb', W: '#dad0bb', a: '#906f0f', b: '
 const AMNE_PAL = { k: '#24201d', r: '#a14808', R: '#bd753e', y: '#906f0f', Y: '#b2921b', j: '#7d5b40', s: '#61767a', b: '#3e5156' };
 export const PAL: Record<string, Record<string, string>> = {
   // facklan på väggen (steg 9.2.11, platshållare): en järnhållare i väggen, skaftet snett upp och huvudet av näver och talg
+  an_klo: { w: '#dad0bb', r: '#a14808', k: '#24201d' }, an_bett: { w: '#dad0bb', r: '#a14808', k: '#24201d' }, // björnens klor och vargens bett i striden (steg 9.2.31, platshållare)
   kolstubbe: { k: '#24201d', K: '#2f261d', g: '#474138' }, // den svarta stubben efter en brand (steg 9.2.26, platshållare)
   uppsatt_vagg: { k: '#24201d', K: '#474138', j: '#5e3c24', J: '#7d5b40', y: '#906f0f', Y: '#b2921b' },
   uppsatt_vagg_tand: { k: '#24201d', K: '#474138', j: '#5e3c24', J: '#7d5b40', y: '#906f0f', Y: '#b2921b', r: '#a14808', o: '#bd753e', g: '#d8b25f', w: '#dad0bb' },
@@ -3715,6 +3716,9 @@ export const PIX: Record<string, string[]> = {
     '...aa...',
     '........',
   ],
+  // björnens klor och vargens bett där slaget träffar (steg 9.2.31, platshållare tills Björn valt i bildstilen)
+  an_klo: ['w.......', '.w.w....', '..w.w.w.', '.r.w.w..', '..r.r.w.', '...r.r..', '....r...', '........'],
+  an_bett: ['.w.w.w..', 'wkwkwkw.', '........', '........', 'wkwkwkw.', '.w.w.w..', '..r.r...', '........'],
   // den svarta stubben efter en brand (steg 9.2.26, platshållare tills Björn valt i bildstilen)
   kolstubbe: ['..gKK...', '.KkkkK..', '.KkgkK..', '.KkkkKg.', 'KkkkkkK.', '.kkkkk..'],
   // facklan på väggen (steg 9.2.11, platshållare tills Björn valt i bildstilen): släckt och tänd
