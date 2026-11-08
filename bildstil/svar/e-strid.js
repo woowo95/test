@@ -429,50 +429,55 @@
   byt(JANEJ('f8_rustning', 'Läderrustningen', 'Steg 8.7.1: av 4 läder och 2 rep, på platsen yttre. Skyddar bålen och armarna. Du valde version 2; här är den på bybon på kartan och i porträttet. Din kommentar förra gången: ”Visa hur den ser ut på en person och i porträttet”', rustning), 'f8_rustning');
 
   // ======================================================================================================
-  // 8.7.3 skölden: samma tre versioner som förut, nu också på bybon och i porträttet
+  // 8.7.3 skölden: tidig järnålder utan järn, som skärvorna från Hjortspring. Helt av trä: en avlång sköld med en
+  // ås (spina) längs mitten som blir en spolformad buckla av trä över handtaget, och ett handtag av trä bakom.
   // ======================================================================================================
-  const SKOLD_SAK = [
-    ['....oooooooo....', '...occccccccо...'.replace('о', 'o'), '..occccyyccccо..'.replace('о', 'o'), '..occcyyyycccо..'.replace('о', 'o'), '..occccyyccccо..'.replace('о', 'o'), '...occccccccо...'.replace('о', 'o'), '....oooooooo....'],
-    ['...oooooooooo...', '...occdccdccо...'.replace('о', 'o'), '...occdccdccо...'.replace('о', 'o'), '...occdccdccо...'.replace('о', 'o'), '...occdccdccо...'.replace('о', 'o'), '...occdccdccо...'.replace('о', 'o'), '...oooooooooo...'],
-    ['....oooooooo....', '...orrrrcccco...', '..orrrrrccccco..', '..orrrrrccccco..', '..orrrrrccccco..', '...orrrrcccco...', '....oooooooo....'],
-  ].map(gammal);
-  // på kartan framifrån och bakifrån (8 × 8 med kontur) och från sidan (kanten)
-  const SKOLD_FIG = [
-    ['..oooo..', '.odccbo.', 'odccccbo', 'odcppcbo', 'odcppcbo', 'odccccbo', '.occbbo.', '..oooo..'],
-    ['ooooooo', 'odcdcbo', 'odcdcbo', 'odcdcbo', 'odcdcbo', 'odcdcbo', 'odcdcbo', 'ooooooo'],
-    ['..oooo..', '.ottcco.', 'otttccbo', 'otttccbo', 'otttccbo', 'otttccbo', '.ottcbo.', '..oooo..'],
+  // yta: ljus, mellan, mörk på framsidan; as: åsen och bucklan; kant: lindning av rå hud; fog: brädornas fogar
+  const SKOLDAR = [
+    { rund: false, yta: ['d', 'c', 'b'], as: ['d', 'd', 'a'], kant: null, fog: false }, // 1: en bräda, ljust trä
+    { rund: true, yta: ['c', 'c', 'b'], as: ['d', 'd', 'a'], kant: 'j', fog: true }, // 2: oval av tre brädor, lindad kant
+    { rund: false, yta: ['t', 's', 'r'], as: ['d', 'c', 'a'], kant: 'j', fog: false }, // 3: målad med rödockra
   ];
-  const SKOLD_SIDA = [
-    ['c.', 'cb', 'cb', 'cbp', 'cbp', 'cb', 'cb', 'c.'],
-    ['db', 'db', 'db', 'db', 'db', 'db', 'db', 'db'],
-    ['t.', 'tb', 'tb', 'tb', 'tb', 'tb', 'tb', 't.'],
-  ];
-  const skoldKort = (v, text) => kort(text, SKOLD_SAK[v], [
-    ['fram', 'hanga', f => sp(f.o, SKOLD_FIG[v], -3, 8)],
-    ['sida', 'framfor', f => { sp(f.o, SKOLD_SIDA[v], 10, 6); f.o(10, 10, f.las(9, 10)); }],
-    ['bak', 'hanga', f => sp(f.o, SKOLD_FIG[v], v === 1 ? 3 : 3, 7)],
-  ], p => {
-    // skölden hålls upp framför bröstet, nere till vänster
-    const cx = 9, cy = 64, R = 18;
-    if (v === 1) {
-      fyll(p.f, 2, 40, 28, 61, (x, y) => {
-        if (x > 25 || y < 45) return null;
-        if (x > 23.5 || y < 46.5) return 'a';
-        const k = Math.floor(x - 2) % 6; return k === 5 ? 'b' : k === 0 ? 'd' : 'c';
-      });
-      return;
+  const hasha = (a, b) => { const s = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return s - Math.floor(s); };
+  // skölden på w × h punkter, längden längs y (ligg: längs x). m: sw åsens halva bredd, bw och bl bucklans halva
+  // bredd och halva längd, r kantens bredd, korn ådringen (bara i stor storlek). Ljuset kommer uppifrån till vänster,
+  // och bucklan kastar en skugga nedåt till höger.
+  const skoldYta = (v, w, h, ligg, m) => (x, y) => {
+    const o = SKOLDAR[v], [A, Lg, AW, LW] = ligg ? [y, x, h, w] : [x, y, w, h];
+    const inne = (a, l) => { const u = Math.abs(a - AW / 2) / (AW / 2), t = Math.abs(l - LW / 2) / (LW / 2); return o.rund ? u ** 2.4 + t ** 2.4 <= 1 : u ** 6 + t ** 6 <= 1; };
+    if (!inne(A, Lg)) return null;
+    const da = A - AW / 2, dl = Lg - LW / 2, r = m.r;
+    if (o.kant && [[r, 0], [-r, 0], [0, r], [0, -r]].some(([p, q]) => !inne(A + p, Lg + q))) return o.kant;
+    const bred = d => m.bw * Math.max(0, 1 - (d / m.bl) ** 2), buckla = (a, d) => Math.abs(d) < m.bl && Math.abs(a) <= Math.max(bred(d), m.sw);
+    if (buckla(da, dl)) {
+      const bb = Math.max(bred(dl), 0.5), s = da / bb + dl / m.bl * 0.7;
+      return s > 0.6 ? o.as[2] : s < -0.2 ? o.as[0] : o.as[1];
     }
-    fyll(p.f, 2, 40, 32, 61, (x, y) => {
-      const d = Math.hypot(x - cx, y - cy); if (d > R) return null;
-      if (d > R - 1.6) return 'a';
-      if (v === 0 && d < 4.5) return d < 2.5 ? 'q' : x < cx ? 'p' : 'n';
-      if (v === 2 && x < cx + 4) return d > R - 3 ? 's' : 't';
-      const k = Math.floor(x - 1) % 6; return k === 5 ? 'b' : k === 0 ? 'd' : 'c';
-    });
+    if (Math.abs(da) <= m.sw) return m.sw < 1 ? o.as[0] : da > m.sw / 3 ? o.as[2] : o.as[0];
+    if (buckla(da - 1, dl - 1)) return o.yta[2];
+    if (o.fog && [-1, 1].some(k => Math.abs(da - k * AW * 0.3) < 0.5)) return o.yta[2];
+    if (m.korn && hasha(Math.floor(da), Math.floor(dl / 9)) < 0.05) return o.yta[2];
+    if (!m.korn) return o.yta[1];
+    return da > AW * 0.36 ? o.yta[2] : da < -AW * 0.36 ? o.yta[0] : o.yta[1];
+  };
+  const SMA = { sw: 0.5, bw: 1.5, bl: 2.6, r: 0.8 };
+  const SKOLD_SAK = [0, 1, 2].map(v => { const t = skoldYta(v, 14, 5, true, SMA); return former(16, 7, [[(x, y) => !!t(x - 1, y - 1), (x, y) => t(x - 1, y - 1)]]); });
+  // på kartan framifrån och bakifrån: 7 × 11 med kontur (den ovala 9 × 11)
+  const SKOLD_FIG = [0, 1, 2].map(v => { const w = SKOLDAR[v].rund ? 7 : 5, t = skoldYta(v, w, 9, false, SMA); return former(w + 2, 11, [[(x, y) => !!t(x - 1, y - 1), (x, y) => t(x - 1, y - 1)]]); });
+  // från sidan: brädans kant, och bucklan som sticker ut mitt på
+  const SKOLD_SIDA = [0, 1, 2].map(v => { const o = SKOLDAR[v]; return [...Array(11)].map((_, y) => y === 0 || y === 10 ? o.as[1] + '.' : y >= 4 && y <= 6 ? o.as[1] + o.yta[1] + (y === 6 ? o.as[2] : o.as[1]) : o.as[1] + o.yta[1]); });
+  const skoldKort = (v, text) => kort(text, SKOLD_SAK[v], [
+    ['fram', 'hanga', f => sp(f.o, SKOLD_FIG[v], SKOLDAR[v].rund ? -4 : -3, 6)],
+    ['sida', 'framfor', f => { sp(f.o, SKOLD_SIDA[v], 10, 5); f.o(10, 10, f.las(9, 10)); }],
+    ['bak', 'hanga', f => sp(f.o, SKOLD_FIG[v], SKOLDAR[v].rund ? 3 : 4, 6)],
+  ], p => {
+    // skölden hålls upp framför bröstet nere till vänster, med bucklan över handen
+    const x0 = 1, y0 = 36, t = skoldYta(v, SKOLDAR[v].rund ? 21 : 19, 40, false, { sw: 1.2, bw: 4, bl: 8, r: 1.6, korn: true });
+    fyll(p.f, 0, 30, 30, 61, (x, y) => t(x - x0, y - y0));
   });
-  byt(KORT('f8_skold', 'Skölden', 'Steg 8.7.3: av 3 ved och 1 rep, hålls i en hand och slits som ett redskap. Samma tre versioner som förut, var och en också på bybon på kartan (i handen framifrån, framför sig från sidan och på ryggen bakifrån) och i porträttet, där han håller upp den framför bröstet. Din kommentar förra gången: ”Visa hur den ser ut på en person och i porträttet”', [
-    skoldKort(0, 'Rund, av brädor, med en gul knopp.'),
-    skoldKort(1, 'Fyrkantig, av plankor.'),
-    skoldKort(2, 'Rund och halvt målad i rött.'),
-  ]), 'f8_skold');
+  byt(KORT('f8_skold', 'Skölden', 'Steg 8.7.3: av 3 ved och 1 rep, hålls i en hand och slits som ett redskap. Nu ritad om efter tidig järnålder, som sköldarna från Hjortspring: helt av trä utan järn, avlång, med en ås längs mitten som blir en spolformad buckla av trä över handtaget. Var och en visas också på bybon på kartan (i handen framifrån, framför sig från sidan och på ryggen bakifrån) och i porträttet, där han håller upp den framför bröstet. Din kommentar förra gången: ”Visa hur den ser ut på en person och i porträttet”', [
+    skoldKort(0, 'Avlång med rundade hörn, av en enda bräda ljust trä.'),
+    skoldKort(1, 'Oval, av tre brädor, med kanten lindad i rå hud.'),
+    skoldKort(2, 'Avlång, målad med rödockra, med åsen och bucklan i omålat trä och kanten lindad i rå hud.'),
+]), 'f8_skold');
 })();
