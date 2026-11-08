@@ -2364,14 +2364,14 @@ SCENARIER.trad = {
     // ett vuxet träd i en tät dunge som når slutet av sitt vuxna liv torkar; ett fritt blir gammalt
     const tat = [...g.trees.keys()].find(i => SIM.stadium(g, i) === 'vuxet' && !fri(i))!;
     const a = cloneState(s), ga = groundOf(a);
-    ga.alder![tat] = SIM.TRAD.vuxenDygn - 0.01; SIM.aldras(ga, tat, 1);
+    ga.alder![tat] = SIM.GAMMAL(ga.art, tat) - 0.01; SIM.aldras(ga, tat, 1);
     const torkade = SIM.stadium(ga, tat);
     const x0 = tat % W, y0 = Math.floor(tat / W);
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (dx || dy) ga.trees[(y0 + dy) * W + x0 + dx] = 0;
-    ga.trees[tat] = 1; ga.alder![tat] = SIM.TRAD.vuxenDygn - 0.01; SIM.aldras(ga, tat, 1);
+    ga.trees[tat] = 1; ga.alder![tat] = SIM.GAMMAL(ga.art, tat) - 0.01; SIM.aldras(ga, tat, 1);
     const blevGammalt = SIM.stadium(ga, tat);
     // torrakan faller efter torrDygn och lämnar en glänta
-    ga.alder![tat] = SIM.TRAD.vuxenDygn + SIM.TRAD.gammalDygn + SIM.TRAD.torrDygn - 0.01; SIM.aldras(ga, tat, 1);
+    ga.alder![tat] = SIM.FALL(ga.art, tat) - 0.01; SIM.aldras(ga, tat, 1);
     const fallen = ga.trees[tat] === 0 && !SIM.stadium(ga, tat);
     // en planta som växer klart börjar sitt vuxna liv
     const b = cloneState(s), gb = groundOf(b), pl = [...gb.trees.keys()].find(i => isSoil(gb.tiles[i]) && gb.trees[i] === 0 && gb.cover[i] >= SIM.HIGH && SIM.utanforByn(b, i % W, Math.floor(i / W)) > 8)!;
@@ -2399,7 +2399,7 @@ SCENARIER.trad = {
     const vedUng = SIM.stamAv(gu, ung).ved, vedVuxet = SIM.stamAv(g, forsta('vuxet')).ved, vedGammalt = SIM.stamAv(g, forsta('gammalt')).ved, torr = SIM.stamAv(g, forsta('torraka'));
     // jätteträden (steg 5.1.4.5): ett gammalt träd på en jätteruta
     const jr = [...g.trees.keys()].filter(i => SIM.arJatte(i)), jatteAndel = jr.length / g.trees.length;
-    const j = cloneState(s), gj = groundOf(j), ji = jr[0]; gj.trees[ji] = 1; gj.alder![ji] = SIM.TRAD.vuxenDygn + 1;
+    const j = cloneState(s), gj = groundOf(j), ji = jr[0]; gj.trees[ji] = 1; gj.alder![ji] = SIM.GAMMAL(gj.art, ji) + 1;
     const jatteSt = SIM.stadium(gj, ji), vedJatte = SIM.stamAv(gj, ji).ved;
     return [
       [`urskogen har träd på ungefär hälften av jorden (${(andel * 100).toFixed(0)} %)`, andel > 0.38 && andel < 0.55],
@@ -2407,6 +2407,7 @@ SCENARIER.trad = {
       [`de gamla träden står fritt (${gamlaFria} av ${gamla.length})`, gamla.length > 0 && gamlaFria === gamla.length],
       [`ett vuxet träd i en tät dunge torkar (${torkade}), ett som står fritt blir gammalt (${blevGammalt})`, torkade === 'torraka' && blevGammalt === 'gammalt'],
       ['torrakan faller till sist och rutan blir en glänta', fallen],
+      [`björken lever kortare än granen (steg 9.2.19): faller efter ${SIM.FALL([SIM.BJORK], 0)} mot ${SIM.FALL([SIM.GRAN], 0)} dygn som vuxen`, SIM.FALL([SIM.BJORK], 0) < SIM.FALL([SIM.GRAN], 0)],
       [`en planta som växer klart blir ett vuxet träd med åldern noll (${ny}, ${nyAlder})`, ny === 'vuxet' && nyAlder === 0],
       ['trädens åldrar följer med i sparfilen', lika && !!c.tradAlder],
       [`varje träd har en sort, gran eller björk (${[...arter].join(', ')}; björk ${pc(bjAlla)} av de vuxna)`, arter.has('gran') && arter.has('bjork') && bjAlla > 0.15 && bjAlla < 0.6],

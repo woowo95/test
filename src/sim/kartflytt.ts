@@ -57,7 +57,7 @@ export function storreKarta(s: State) {
   // marken: stigarna, skogen, trädens ålder och sort och buskarna i det gamla, orörd mark runt omkring (en äldre sparfil
   // utan skog får skogen när den läses, mark.ts)
   const g = startGround(s.seed), cover = new Float32Array(N).fill(1), trees = g.trees.slice();
-  const alder = startAlder(s.seed, trees), art = startArt(s.seed, trees, g.tiles), busk = new Uint8Array(N);
+  const art = startArt(s.seed, trees, g.tiles), alder = startAlder(s.seed, trees, art), busk = new Uint8Array(N);
   for (let i = 0; i < n0; i++) {
     const j = ny(i);
     cover[j] = cover0[i];
