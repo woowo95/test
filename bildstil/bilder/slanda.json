@@ -1,0 +1,35 @@
+{
+"id": "slanda",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 8.10.1)",
+"w": 7,
+"h": 15,
+"rader": [
+"..aba..",
+"..aca..",
+"..aca..",
+"..aca..",
+".addea.",
+"addffea",
+"addddea",
+"addffea",
+".addea.",
+".aacaa.",
+"agghhha",
+".aiiia.",
+"..aca..",
+"..aca..",
+"..aca.."
+],
+"pal": {
+"a": "#24201d",
+"b": "#5e3c24",
+"c": "#7d5b40",
+"d": "#dad0bb",
+"e": "#a0947d",
+"f": "#bdb39b",
+"g": "#8a9c9e",
+"h": "#61767a",
+"i": "#3e5156"
+}
+}

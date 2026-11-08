@@ -320,6 +320,12 @@
     {"id": "brygga_v", "sort": "kar-mobel", "namn": "Brygga nord–syd", "w": 16, "h": 16, "vad": "bryggan, version 2 som Björn valde (steg 7.3.9)", "ritad": 1, "godkand": true},
     {"id": "brygga", "sort": "kar-mobel", "namn": "Brygga öst–väst", "w": 16, "h": 16, "vad": "samma, vriden", "ritad": 1, "godkand": true},
     {"id": "bro", "sort": "kar-mobel", "namn": "Bro", "w": 16, "h": 16, "vad": "bron, version 2 som Björn valde (steg 7.3.12)", "ritad": 1, "godkand": true},
-    {"id": "bro_v", "sort": "kar-mobel", "namn": "Bro nord–syd", "w": 16, "h": 16, "vad": "samma, vriden", "ritad": 1, "godkand": true}
+    {"id": "bro_v", "sort": "kar-mobel", "namn": "Bro nord–syd", "w": 16, "h": 16, "vad": "samma, vriden", "ritad": 1, "godkand": true},
+    {"id": "tval", "sort": "sak-material", "namn": "Tvål", "w": 9, "h": 8, "vad": "den grå klumpen med fingrarnas gropar, version 3 som Björn valde (steg 8.10.1)", "ritad": 1, "godkand": true},
+    {"id": "linfron", "sort": "sak-material", "namn": "Linfrön", "w": 7, "h": 3, "vad": "ett litet strö av fröna, version 1 som Björn valde (steg 8.10.1)", "ritad": 1, "godkand": true},
+    {"id": "slanda", "sort": "sak-redskap", "namn": "Slända", "w": 7, "h": 15, "vad": "Björns egen ritning (steg 8.10.1)", "ritad": 1, "godkand": true},
+    {"id": "rolleka", "sort": "sak-material", "namn": "Rölleka", "w": 14, "h": 8, "vad": "knippet som ligger, ur version 2 som Björn valde (steg 8.10.1)", "ritad": 1, "godkand": true},
+    {"id": "rustning_lader", "sort": "sak-klader", "namn": "Läderrustning", "w": 14, "h": 12, "vad": "Björns egen ritning, utan något på armarna (steg 8.10.1)", "ritad": 1, "godkand": true},
+    {"id": "ryggsack_kaninskinn", "sort": "sak-klader", "namn": "Ryggsäck", "w": 16, "h": 14, "vad": "säcken av ljust skinn, version 1 som Björn valde (steg 8.10.1)", "ritad": 1, "godkand": true}
   ]
 }
