@@ -7,6 +7,7 @@
 // körs. En rad utanför alla funktioner (ett register, ett balansblock) eller i en funktion som kartan inte känner (en ny)
 // väljer alla scenarier som körde någon funktion i filen. En ändring inne i ett scenario väljer det scenariot, och scenarier
 // som saknas i kartan (nya) körs alltid. Kartan blir gammal när koden ändras: bygg om den efter det stora testet.
+import './scenarier/storlek'; // först: scenariernas byar på 120 × 120
 import './utc';
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';

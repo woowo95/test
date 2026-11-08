@@ -140,7 +140,7 @@ export function skiljsAt(s: State, p: Person) {
   const ang = Math.atan2(p.y - q.y, p.x - q.x);
   for (let k = 0; k < 6; k++) {
     const v = ang + (k % 2 ? -1 : 1) * Math.ceil(k / 2) * Math.PI / 5, x = p.x + Math.cos(v) * SAMTAL.isarGa, y = p.y + Math.sin(v) * SAMTAL.isarGa;
-    if (blocked(s, x, y) || stationAt(s, x, y)) continue;
+    if (blocked(s, x, y) || stationAt(s, x, y) || sittAt(s, x, y)) continue; // inte på en stubbe vid bordet
     t.tx = x; t.ty = y; t.phase = 'go'; t.skiljs = 1; t.until = s.now + SAMTAL.isarTid * SEC; t.path = undefined; t.pk = undefined;
     count(s, 'samtal isar');
     return true;

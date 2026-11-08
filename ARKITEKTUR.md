@@ -209,6 +209,8 @@ Simuleringen importerar aldrig från `ui/`. Gränssnittet importerar bara från 
 
 ## Testerna, fil för fil
 
+Scenarierna kör sina byar på kartan 120 × 120 (`src/test/scenarier/storlek.ts`, som scenario.ts och riktad.ts läser först: den sätter `karta.bredd` och `karta.hojd` i BALANS om inget annat står där), eftersom de skrevs för den kartan; spelet, `npm test`, samma-kollen och balansen går på 240 × 240 (steg 9.1.8). Ett scenario som vill ha en annan storlek anger den i `createState`.
+
 Allt i `src/test/` körs med tsx i Node och ingår inte i spelet. Filer som heter `tmp-*` är tillfälliga verktyg som inte committas.
 
 | Fil | Vad den gör |

@@ -2361,6 +2361,7 @@ SCENARIER.kropp8 = {
 };
 SCENARIER.arr = {
   text: 'Steg 8.2.4: en svår skada som läkt kan läka fel och ge ett bestående men, och lämnar ofta ett ärr, som oftast gör ansiktet fulare',
+  lang: true,
   kor: () => {
     let men = 0, arr = 0, ful = 0, N = 60;
     for (let i = 0; i < N; i++) {
