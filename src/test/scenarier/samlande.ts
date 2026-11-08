@@ -63,7 +63,7 @@ SCENARIER.samlarmal = {
     for (const seed of [42, 7, 3, 1]) for (let v = 0; v < 4; v++) {
       const s = createState(seed, START), at = tomPlats(s);
       if (!at) continue;
-      for (const k of SIM.lagren('samla')) for (let dy = -16; dy <= 16; dy++) for (let dx = -16; dx <= 16; dx++) if (inMap(at.x + dx, at.y + dy)) takenOf(s)[k]![SIM.tileOf(at.x + dx, at.y + dy)] = 1;
+      for (const k of [...SIM.lagren('samla'), 'kantarell', 'spindling'] as const) for (let dy = -16; dy <= 16; dy++) for (let dx = -16; dx <= 16; dx++) if (inMap(at.x + dx, at.y + dy)) takenOf(s)[k]![SIM.tileOf(at.x + dx, at.y + dy)] = 1; // också svampen: allt samlaren plockar
       const p = living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!, ang = v * Math.PI / 2, hx = Math.floor(at.x + Math.cos(ang) * 10), hy = Math.floor(at.y + Math.sin(ang) * 10);
       Object.assign(p, { x: at.x + 0.5, y: at.y + 0.5, lardomar: [] });
       p.task = { act: 'samla', phase: 'do', tx: at.x + 0.5, ty: at.y + 0.5, until: s.now + 2 * SIM.HOUR, carry: 0, why: 'prov' };
