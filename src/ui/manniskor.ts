@@ -457,7 +457,9 @@ export function drawPeople(t: number) {
     if (!p || !alive(p)) continue;
     const tx = nameTags[n++];
     if (tx.text !== p.name) tx.text = p.name;
-    const q = posOf(p); tx.position.set(q.x * TS, q.y * TS - 8); tx.visible = true;
+    // namnet ovanför figuren, det hen bär på huvudet och symbolen över huvudet (steg 9.2.27), så att det inte täcker figuren
+    // eller den som står bredvid
+    const q = posOf(p), topp = huvud.get(p.id) ?? q.y * TS - 13; tx.position.set(q.x * TS, topp - SYMBOL_LUFT - 6); tx.visible = true;
   }
   for (; n < nameTags.length; n++) nameTags[n].visible = false;
 }
