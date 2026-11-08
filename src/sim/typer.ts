@@ -141,7 +141,9 @@ export interface Task {
   leta?: 'grupp' | 'karta'; // jakten: hen går mot en grupp kaniner hen ser, eller letar dit kaninerna brukar vara (jakt.ts, steg 3.10.3)
   tool?: string; // redskapet som används, t.ex. fiskespjut, eller slaget av bygge eller hantverk (vagg, golv, laga, rep)
   res?: { x: number; y: number; until: number }; // var och till när arbetet fortsätter efter att bördan bärts hem
-  site?: { x: number; y: number }; // bygget man går till efter att ha hämtat material
+  site?: { x: number; y: number }; // bygget (eller platsen för arbetet, steg 9.2.43) man går till efter att ha hämtat material
+  hamta?: 1; // på väg till lagret efter materialet (steg 9.2.43)
+  hamtat?: Record<string, number>; // materialet till ett hantverk som bärs från lagret till platsen (steg 9.2.43); det ligger redan i det påbörjade
   mask?: number; // fiske: maskar på kroken till metspöet
   hal?: number; // fiske: sekunder kvar att hugga på hålet i isen (steg 2.11.3, is.ts); 0 = hålet är upphugget
   fran?: number; // den man tar ved av till elden (stöld, behov.ts)

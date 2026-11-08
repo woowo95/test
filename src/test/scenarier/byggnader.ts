@@ -1426,3 +1426,34 @@ SCENARIER.torget = {
     ];
   },
 };
+
+SCENARIER.hamtning = {
+  text: 'Steg 9.2.43: inget flyttas av sig självt. Den som ska göra en yxa går först till lagret där flintan och grenarna ligger, tar dem och bär dem till platsen där hen arbetar, och börjar först där',
+  kor: () => {
+    const s = createState(3, START);
+    const p = living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    (p.tek ??= {}).yxa = 1;
+    setAmount(s, 'flinta', 3); setAmount(s, 'grenar', 5);
+    const stack = SIM.stacksOf(s).find(a => a.k === 'flinta')!;
+    const e = SIM.eldPlats(s), spot = { x: e.x + 0.5, y: e.y + 3.5 };
+    p.x = spot.x + 6; p.y = spot.y; // en bit från både lagret och platsen
+    const tk = p.task = { act: 'yxa', phase: 'go', tx: spot.x, ty: spot.y, until: s.now + 3 * SIM.HOUR, carry: 0, why: 'Gör en yxa' } as SIM.Task;
+    const flinta0 = SIM.amountOf(s, 'flinta');
+    // framme vid platsen utan material: först till lagret
+    const tillLagret = SIM.hamtaForst(s, p, tk) && Math.hypot(tk.tx - stack.x - 0.5, tk.ty - stack.y - 0.5) < 1.5;
+    const orortFore = SIM.amountOf(s, 'flinta') === flinta0;
+    // vid lagret: materialet tas och bärs mot platsen
+    p.x = tk.tx; p.y = tk.ty;
+    SIM.hamtat(s, p, tk);
+    const tagits = SIM.amountOf(s, 'flinta') === flinta0 - 1 && SIM.tingOf(s).some(x => x.k === 'paborjat' && x.halv?.ag === p.id);
+    const bar = !!tk.hamtat?.flinta && tk.phase === 'go' && Math.hypot(tk.tx - spot.x, tk.ty - spot.y) < 0.01;
+    let borjade = false, borjadeVid: number | undefined;
+    for (let i = 0; i < 12 && !borjade; i++) { step(s, SIM.BEAT); if (p.task?.act === 'yxa' && p.task.phase === 'do') { borjade = true; borjadeVid = Math.hypot(p.x - spot.x, p.y - spot.y); } }
+    return [
+      ['framme vid platsen utan material går hen först till lagret, och inget har flyttats än', tillLagret && orortFore],
+      ['vid lagret tas materialet (det påbörjade skapas där)', tagits],
+      ['och bärs till platsen', bar],
+      [`arbetet börjar först framme vid platsen (${borjadeVid?.toFixed(1)} rutor därifrån), och då bärs inget längre`, borjade && borjadeVid !== undefined && borjadeVid < 1.5 && !p.task?.hamtat],
+    ];
+  },
+};

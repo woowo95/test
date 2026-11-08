@@ -938,6 +938,7 @@ export function bordSlag(t: Task): Record<string, number> {
   const r: Record<string, number> = {};
   if (t.carry > 0) r[carryKind(t.act)] = t.carry * viktOf(carryKind(t.act));
   for (const k in t.items ?? {}) if (t.items![k] > 0) r[k] = (r[k] ?? 0) + t.items![k] * viktOf(k);
+  for (const k in t.hamtat ?? {}) if (t.hamtat![k] > 0) r[k] = (r[k] ?? 0) + t.hamtat![k] * viktOf(k); // materialet till ett hantverk (steg 9.2.43)
   return r;
 }
 // hur tung bördan är, i vikt (steg 6.1.8). Redskapen i bördan väger det de väger

@@ -1,3 +1,4 @@
+import { hamtaForst, hamtat } from './paborjat';
 import { sorgTimme } from './liv';
 import { djurStriderSteg } from './djurstrid';
 import { lagerIStraket } from './strak';
@@ -629,7 +630,8 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
       for (const id in ag) mitt[id] = (mitt[id] ?? 0) + ag[id];
       tk.items = { ...tk.items, [k]: har + sumOf(ag) }; tk.tx = tk.site.x; tk.ty = tk.site.y; tk.site = undefined;
     }
-  } else if (tk.phase === 'back' && LAMNA[tk.act]) LAMNA[tk.act]!(s, p, tk); // framme hos den man bär till (LAMNA)
+  } else if (tk.hamta && tk.site && tk.phase === 'go') hamtat(s, p, tk); // vid lagret: materialet till hantverket (steg 9.2.43)
+  else if (tk.phase === 'back' && LAMNA[tk.act]) LAMNA[tk.act]!(s, p, tk); // framme hos den man bär till (LAMNA)
   else if (tk.phase === 'back') {
     storeLoad(s, tk, p.x, p.y, p.id);
     // ett arbetspass är klart: gå tillbaka och fortsätt om arbetet inte är slut och dagen inte vänt
@@ -637,6 +639,7 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
     if (r && r.until > now + 2 * MIN && tk.dark === !light) { tk.phase = 'go'; tk.tx = r.x; tk.ty = r.y; tk.until = r.until; tk.res = undefined; }
     else p.task = undefined;
   } else {
+    if (hamtaForst(s, p, tk)) return; // materialet hämtas först (steg 9.2.43)
     tk.phase = 'do'; tk.hopp = undefined; tk.plock = undefined; if (tk.act === 'bara') { pickUp(s, p, tk, ryms(s, p)); tk.until = now; }
     if (tk.act === 'flyttaeld') tk.until = now + ELDFLYTT.tim * HOUR; // vid elden: släcka den och bära stenarna (eldflytt.ts)
     startWork(s, p, tk); // ett redskap eller ett träd: arbetet räknas härifrån, och det påbörjade fortsätter
