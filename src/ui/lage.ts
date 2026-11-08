@@ -20,6 +20,7 @@ export const ui = {
   // ↑ den öppna flikens panel till höger (Byn, Teknik, Krönika …)
   selected: undefined as number | undefined, // personen som visas i panelen
   styreDel: 'styre', // delen i stenen Styre (DELAR i flikar/styre.ts, steg 9.3.1)
+  omvDel: 'grannar', // delen i stenen Omvärlden (DELAR i flikar/grannar.ts, steg 9.3.3)
   personFall: {} as Record<string, boolean>, // delarna i personens flikar som man fällt ut eller ihop (steg 5.3.4.2)
   personDel: 'om', // fliken i personrutan (FLIKAR i flikar/person.ts), eller en del i den (DELAR)
   hovered: undefined as number | undefined, // personen under musen
