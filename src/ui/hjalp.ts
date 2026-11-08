@@ -98,7 +98,7 @@ export const sickNow = (p: Person) => isSick(p, s.now);
 const MARKEN: { har: (p: Person) => boolean; namn: (p: Person) => string; forkl: string; ikon: (p: Person) => string }[] = [
   { har: p => ledareOf(s)?.id === p.id, namn: () => 'Byns ledare', forkl: 'Lägger fram påbud och lagar och väger tyngst i sederna och omröstningarna', ikon: () => 'ledarskap' },
   { har: p => !!p.skador?.length, namn: p => `Skadad: ${skadeLista(p, s.now).map(r => r.namn.toLowerCase()).join(', ')}`, forkl: 'Går och arbetar sämre tills skadorna läkt', ikon: p => skadeLista(p, s.now)[0].ikon },
-  { har: p => !!p.sickUntil && p.sickUntil > s.now, namn: () => 'Sjuk', forkl: 'Vilar mer och orkar mindre tills hen blivit frisk', ikon: () => 's_inf' },
+  { har: p => isSick(p, s.now), namn: () => 'Sjuk', forkl: 'Vilar mer och orkar mindre tills hen blivit frisk', ikon: () => 's_inf' },
   { har: p => p.pregnantSince !== undefined, namn: () => 'Väntar barn', forkl: 'Barnet föds inom några dygn', ikon: () => 's_barn' },
 ];
 // märkena som symboler med namnet och förklaringen vid musen (steg 9.2.6); ord = ordet skrivs också ut (rutan i hörnet, som inte går

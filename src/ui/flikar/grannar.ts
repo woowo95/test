@@ -52,7 +52,7 @@ function forsvarHtml() {
 // utanför. Registret: en ny del är en rad i DELAR
 interface Del { id: string; tecken: string; namn: string; html(): string }
 const DELAR: Del[] = [
-  { id: 'grannar', tecken: '🏕️', namn: 'Grannarna', html: grannarHtml },
+  { id: 'grannar', tecken: '👥', namn: 'Grannarna', html: grannarHtml },
   { id: 'handlare', tecken: '⚖️', namn: 'Handlarna', html: handlareHtml },
   { id: 'rader', tecken: '⚔️', namn: 'Räderna', html: raderHtml },
   { id: 'forsvar', tecken: '🛡️', namn: 'Försvaret', html: forsvarHtml },

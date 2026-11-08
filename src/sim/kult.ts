@@ -19,6 +19,7 @@ import { FOOD } from './saker';
 import { takeMaterial } from './behov';
 import { kladAv } from './klader';
 import { nyRitual } from './kultlatt';
+import { isSick } from './sjukdom';
 
 // farorna över byn (dangers i val.ts, som sätter den här när den laddas: val.ts läser det mesta i spelet)
 let dangers: (s: State) => { kyla: boolean; svalt: boolean } = () => ({ kyla: false, svalt: false });
@@ -69,7 +70,7 @@ export function bonNod(s: State, p: Person): { id: BonId; o: string; vem?: numbe
   const f = dangers(s);
   if (f.svalt) return { id: 'nod', o: 'svälten' };
   if (f.kyla) return { id: 'nod', o: 'kylan' };
-  const q = living(s).find(o => o !== p && (p.partner === o.id || isParent(p, o) || isParent(o, p)) && (o.skador?.some(w => w.g >= 0.5) || o.sickUntil && o.sickUntil > s.now));
+  const q = living(s).find(o => o !== p && (p.partner === o.id || isParent(p, o) || isParent(o, p)) && (o.skador?.some(w => w.g >= 0.5) || isSick(o, s.now)));
   return q ? { id: 'for', o: q.name, vem: q.id } : undefined;
 }
 // bönen är klar (KLAR i steg.ts): humör, tro, och en bön i nöd får svar inom några dygn (steg 8.5.4)
@@ -89,7 +90,7 @@ function bonSvar(s: State, p: Person) {
   const b = p.bonVan;
   if (!b) return;
   // bönen för en nära hjälpte om hen blivit frisk från sjukdomen och de svåra skadorna; dog hen hjälpte den inte
-  const q = b.vem !== undefined ? byId(s, b.vem) : undefined, frisk = !!q && alive(q) && !(q.sickUntil && q.sickUntil > s.now) && !q.skador?.some(w => w.g >= 0.5);
+  const q = b.vem !== undefined ? byId(s, b.vem) : undefined, frisk = !!q && alive(q) && !isSick(q, s.now) && !q.skador?.some(w => w.g >= 0.5);
   const f = dangers(s), over = b.o === 'svalt' ? !f.svalt : b.o === 'kyla' ? !f.kyla : frisk;
   if (over || s.now - b.t >= KULT.hjalpDygn * DAY || b.o === 'nara' && (!q || !alive(q))) {
     p.bonVan = undefined;

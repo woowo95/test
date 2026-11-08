@@ -19,6 +19,7 @@ import { BARBUSKE, BUSKE, BUSKTAL, barKrok, busksort } from './buskar';
 import { djupOf, iVattnetNu, sjoRakna, sjoarna, strandAv, vattenNu } from './sjo';
 import { smakGift } from './rykten';
 import { tecken } from './religion';
+import { insjukna } from './sjukdom';
 
 // ---------- balanstal (regel 8) ----------
 // Fångst och insamling: var viltet håller sig borta, hur fort platserna tömmas och växer tillbaka, fiske, flinta och svamp.
@@ -620,8 +621,8 @@ export function eatPoison(s: State, p: Person) {
   if (gift < 1e-3 || rnd(s, 'halsa', p) >= Math.min(FANGST.giftMax, gift / Math.max(1, foodOf(s)) * FANGST.giftAndel)) return;
   addTo(s, GIFT, -Math.min(1, gift));
   count(s, 'forgiftad');
-  p.sickUntil = Math.max(p.sickUntil ?? 0, s.now + (FANGST.giftSjukMin + rnd(s, 'halsa', p) * FANGST.giftSjukSpann) * HOUR);
-  p.poisonUntil = p.sickUntil; p.sickWhy = 'Förgiftad av svamp';
+  insjukna(s, p, 'svampforgiftning'); // steg 9.5.1: förgiftningen är en sjukdom som kan döda (motgiftet kommer i 9.5.14)
+  p.poisonUntil = s.now + (FANGST.giftSjukMin + rnd(s, 'halsa', p) * FANGST.giftSjukSpann) * HOUR; p.sickWhy = 'Förgiftad av svamp';
   p.health = clamp(p.health - FANGST.giftHalsa, 0, 1);
   think(p, 'Blev förgiftad av en svamp', FANGST.giftTanke, s.now, FANGST.giftTankeDygn * DAY);
   upplev(s, p, 'svamp'); smakGift(p); // avsmak för svamp (steg 3.3.5)

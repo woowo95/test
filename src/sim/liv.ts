@@ -85,6 +85,8 @@ const DOD = {
   svamp: { text: 'av svampförgiftning' },
   skorbjugg: { text: 'av skörbjugg' }, // brist på vitaminer (steg 2.6.2)
   sjukdom: { text: 'av sjukdom' },
+  magsjuka: { text: 'av magsjuka' }, matforgiftning: { text: 'av matförgiftning' }, forkylning: { text: 'av förkylning' }, // sjukdomarna (steg 9.5.1, sjukdom.ts): dödsorsaken heter som raden
+  lunginflammation: { text: 'av lunginflammation' }, massling: { text: 'av mässlingen', sorg: true }, koppor: { text: 'av kopporna', sorg: true },
   alderdom: { text: 'av ålderdom' },
   barnsjukdom: { text: 'av en barnsjukdom' },
   olycka: { text: 'i en olycka' },

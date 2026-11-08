@@ -28,6 +28,7 @@ import { knows } from './teknik';
 import { wearUsed } from './redskap';
 import { Falt, faltById, faltOf, faltRutor } from './odling';
 import { TORKA } from './torka';
+import { SJUK, insjukna } from './sjukdom';
 
 // ---------- balanstal (regel 8) ----------
 export const TORST = balans('torst', {
@@ -168,8 +169,8 @@ export function drick(s: State, p: Person, t: Task) {
 // vattnet från rutan i kan ge ont i magen, efter hur smutsigt det är där (med toa-smutsen i närheten, steg 2.7.2)
 function smutsigt(s: State, p: Person, i: number) {
   const smuts = vattenSmuts(s, i);
-  if (smuts > 0 && !isSick(p, s.now) && rnd(s, 'halsa', p) < smuts * TORST.mag) {
-    p.sickUntil = s.now + (TORST.magMin + rnd(s, 'halsa', p) * TORST.magSpann) * HOUR; p.sickWhy = 'Ont i magen av smutsigt vatten';
+  if (smuts > 0 && !isSick(p, s.now) && rnd(s, 'halsa', p) < smuts * TORST.mag * SJUK.vatten) {
+    insjukna(s, p, 'magsjuka', 'av smutsigt vatten'); // steg 9.5.1
     think(p, 'Fick ont i magen av vattnet', -0.1, s.now, 6 * HOUR);
     count(s, 'magont av vatten');
     magont(s, i); // kom smutsen från toaletten lär sig byn något om hygien (smuts.ts)

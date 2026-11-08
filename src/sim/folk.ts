@@ -196,7 +196,7 @@ export function livet(s: State, p: Person, k: string, episod = false) {
 export const ageOf = (p: Person, now: number) => ((p.died ?? p.left ?? now) - p.born) / DAY;
 export function living(s: State) { return s.people.filter(alive); }
 // sjuk just nu (sickUntil är aldrig 0 eller NaN i spelet; då ger uttrycket ändå samma svar som !!sickUntil &&)
-export const isSick = (p: Person, now: number) => p.sickUntil !== undefined && p.sickUntil > now;
+export { isSick } from './sjukdom'; // sjukdomarna (steg 9.5.1, sjukdom.ts); den gamla klockan sickUntil räknas tills den gått ut
 export function byId(s: State, id?: number) { return id === undefined ? undefined : s.people.find(p => p.id === id); }
 // gör någon levande (utom `utom`) handlingen act just nu? (drar ingen slump)
 export function doingAct(s: State, act: Act, utom?: Person) {

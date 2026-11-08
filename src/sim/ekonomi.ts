@@ -6,6 +6,7 @@ import { Act, HOUR_S, Person, State } from './typer';
 import { foodOf, matSomHaller } from './lager';
 import { balans } from './balans';
 import { RELT } from './relationer';
+import { sjukOrkar } from './sjukdom';
 
 // ---------- ekonomi ----------
 // Balanstalen (regel 8). Den som ger mat till någon utanför familjen behåller matPerDygn själv (MAT.kvar i behov.ts), och
@@ -28,7 +29,7 @@ export const EKONOMI = balans('ekonomi', {
 // arbetsförmågan: ålder (barn och gamla orkar mindre) gånger sjukdom. workRate multiplicerar de två delarna var för sig
 // sist i sin kedja; (kedja * a) * b är inte alltid samma flyttal som kedja * (a * b)
 export const ageFactor = (a: number) => a < ALDER.vuxen ? EKONOMI.barnArbete : a > ALDER.gammal ? EKONOMI.gammalArbete : 1;
-export const sickFactor = (p: Person, now: number) => isSick(p, now) ? EKONOMI.sjukArbete : 1;
+export const sickFactor = (p: Person, now: number) => p.sjuk ? sjukOrkar(p, now) : isSick(p, now) ? EKONOMI.sjukArbete : 1; // radens ork (steg 9.5.1), eller den gamla klockan
 // hur mycket en färdighet (0–20) hjälper i arbetet
 export const kunnighet = (skill: number) => EKONOMI.kunnigBas + skill / EKONOMI.kunnigSteg;
 export const arbetsformaga = (p: Person, a: number, now: number) => ageFactor(a) * sickFactor(p, now);

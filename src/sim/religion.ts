@@ -7,6 +7,7 @@ import { yearNo } from './tid';
 import { kronika } from './historik';
 import { bytaChans } from './kultlatt';
 import type { IntryckTyp } from './rykten';
+import { isSick } from './sjukdom';
 
 // Religionen (fas 4.1, "Religion" i designdokumentet). Andligheten (steg 4.1.1.1) är en egenskap hos varje person, 0–100:
 // hur viktigt det heliga är för hen, inte vad hen tror på. Den ärvs delvis och flyttas av upplevelserna (uppvaxt.ts, steg
@@ -426,7 +427,7 @@ export function stepReligion(s: State) {
       const d = p.partner === undefined ? s.people.find(q => !alive(q) && q.died !== undefined && s.now - q.died < 7 * DAY && (s.rels[relKey(p.id, q.id)]?.op ?? 0) > 50) : undefined;
       if (d) tecken(s, p, 'dodDrom', d.name); else tecken(s, p, 'drom');
     }
-    if (p.svartSjuk && !(p.sickUntil && p.sickUntil > s.now)) {
+    if (p.svartSjuk && !isSick(p, s.now)) {
       delete p.svartSjuk;
       if (formas(s, p)) for (const q of living(s)) if (isParent(q, p)) tecken(s, q, 'barnFrisk', p.name);
     }

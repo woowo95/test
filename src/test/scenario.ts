@@ -12,6 +12,7 @@ import './scenarier/behov';
 import './scenarier/natur';
 import './scenarier/samlande';
 import './scenarier/stationsdelar';
+import './scenarier/sjukdom';
 import './scenarier/byggnader';
 import './scenarier/folk';
 import './scenarier/kontroll';
