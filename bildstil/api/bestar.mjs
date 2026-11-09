@@ -35,6 +35,7 @@ const PLAN = {
   horn: { namn: 'Horn', antal: 10, kod: 'HORN', over: { plattor: null } },
   svans: { namn: 'Svans', antal: 8, kod: 'SVANSAR', over: {} },
   huvud: { namn: 'Huvud', antal: 8, kod: 'HUVUDEN', over: {} },
+  ogon: { namn: 'Ögon', antal: 8, kod: 'OGON', over: {} },
   ben: { namn: 'Ben', antal: 6, kod: 'BEN', over: {} },
   vingar: { namn: 'Vingar', antal: 6, kod: 'VINGAR', over: { plattor: null } },
   skal: { namn: 'Skal', antal: 6, kod: 'SKAL', over: { plattor: null } },
@@ -44,7 +45,7 @@ const PLAN = {
 };
 
 // källkoden för ett lagers handgjorda delar, som exempel för API:t
-const kodFor = namn => { const a = KALLA.indexOf(`  const ${namn} = [`); const b = KALLA.indexOf('\n  ];', a); return a < 0 ? '' : KALLA.slice(a, b + 5); };
+const kodFor = namn => { const a = KALLA.indexOf(`  const ${namn} = [`); const b = KALLA.indexOf('\n  ]', a), c = KALLA.indexOf('\n', b + 1); return a < 0 ? '' : KALLA.slice(a, c < 0 ? undefined : c); };
 
 // ---------- sidan ----------
 let webblasare = null, sida = null;
@@ -55,7 +56,7 @@ async function oppnaSidan() {
   if (!fs.existsSync(html)) throw new Error('Bygg sidan först: node bildstil/bygg.cjs');
   webblasare = await pw.chromium.launch(); sida = await webblasare.newPage();
   await sida.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
-  await sida.goto('file://' + html); await sida.waitForFunction(() => window.BESTAR?.prov);
+  await sida.setContent('<meta charset="utf-8">' + fs.readFileSync(html, 'utf8'), { waitUntil: 'load' }); // utan charset gissar Chromium ibland fel på filen await sida.waitForFunction(() => window.BESTAR?.prov);
   return sida;
 }
 const stangSidan = async () => { if (webblasare) await webblasare.close(); webblasare = sida = null; };
@@ -111,6 +112,7 @@ Den första punkten är [0, 0]: leden vid kroppen (höften eller bogen). dx är 
   vingar: `Vingen sitter vid vingens rot (0,0) på ryggen. Data: {"delar": [{"former": [former], "mat": material (hinna, kropp, fjader, klo, horn), "monster": mönster, "kontur": true/false}]} i ordningen bakifrån och fram. Vingen reser sig uppåt och bakåt: högst 34 punkter upp (y ≥ −34), högst 32 bakåt (x ≥ −32) och högst 8 framåt. Koden ritar den bortre vingen bakom besten, 5 punkter längre fram och 3 högre upp, en ton mörkare. Variera: trasiga läderhinnor, insektsvingar, stubbiga vingar, fenor, korpvinge, vingar av ben med hinnor emellan …`,
   skal: `Skalet ligger över ryggen. Data: {"typ": "band" (följer ryggens linje) | "kupol" (en välvd kupol över ryggen), "fran", "till": 0–1 (var på ryggen mellan lang[0] och lang[1] det börjar och slutar), "over": punkter ovanför ryggens linje (band), "under": punkter under (band och kupol), "hojd": kupolens höjd över ryggen, "monster": mönster för plattorna eller fogarna}. Variera: sköldpadda, bältdjur, en sadel av ben, fjällpansar, en ryggsköld som en skalbagge …`,
   plattor: `Plattor står i rad längs ryggen. Data: {"fran": "svans" (från svansen över ryggen och nacken) | "rygg" (bara på ryggen), "avstand": punkter mellan plattorna (2–12), "bredd": halva bredden i punkter, "hojd": [höjden vid ändarna, höjden mitt på], "form": plattans form som en månghörning i enhetspunkter [[u,v],…], där u går från −1 till 1 (gånger bredden) och v är 0 på ryggens linje, −1 i toppen (gånger höjden) och positivt in i kroppen (0,3–0,6 vid foten så att plattan sitter fast), "monster": mönster}. Variera: sågtänder, rundade fjäll, krokar bakåt, fenor, höga spjut, dubbla rader …`,
+  ogon: `Ögonen sitter på huvudet vid ögats punkt (0,0), och huvudet tittar åt höger. Data: {"delar": [{"pkt": [[x,y], …] enskilda punkter, "former": [former] (valfritt, för större ögon), "mat": material (oga för det som lyser, kol (konturens svarta) för ögonbryn och hålor, tand för mjölkvita blinda ögon, kristall, glod …), "ton": tonändring (−9 ger materialets mörkaste ton), "lyser": true om det lyser i mörkret, "kontur": false (standard; ögon har sällan kontur)}]} i ordningen bakifrån och fram (det som ritas sist hamnar överst). Allt klipps till huvudet och kroppen. Huvudena är 18–28 punkter långa och ögat sitter 4–7 punkter under skallens överkant, så ögonen ska vara små: högst 6 punkter breda och 5 höga, från x −10 till +5 och y −4 till +3. De handgjorda ögonen är gjorda i samma form (koden ovan). Variera: ett enda stort öga, ögon som en get med tvärgående pupill, insektsögon, lysande ögon utan bryn, tårar av glöd, ögon som sitter i rad, ögon i en mask av ben, kristallögon …`,
   hard: `Förhårdnader är hårda delar (materialet hard) på huden. Data: {"delar": [{"ankare": fästpunkt, "former": [former från fästpunkten]}]}. Fästpunkterna: panna, oga (ögat), nos, hornet (där hornen sitter), nacke0 (halsens början), nacke1 (halsens slut), rygg (mitt på ryggen, överst), f (bogen), h (höften), vinge (vingens rot), svans (svansroten), spets (svansens spets), led (varje led på de främre benen, upprepas) och skena (varje skenben, upprepas). Variera: kranium av ben, armbågssporrar, knölar längs halsen, pansarplattor på bogen, horniga ögonbryn …`,
   pryd: `Prydnader sitter på besten. Data: {"delar": [{"ankare": fästpunkt (samma som förhårdnader: panna, oga, nos, hornet, nacke0, nacke1, rygg, f, h, vinge, svans, spets, led, skena), "former": [former från fästpunkten], "mat": material (man, tecken, hinna, fjader, horn, klo, hard, mossa, kristall, glod …), "lyser": true om den lyser i mörkret, "kontur": true/false, "inomKroppen": true om delen ska klippas till kroppen (tecken och ränder på huden), "bak": true om den ritas bakom kroppen (taggar och fenor som sticker upp bakom ryggen), "monster": mönster}]}. Variera: skägg, kam på huvudet, krigsmålning, runor som lyser, fjäderkrage, mossa och lavar som hänger, kedjor av ben, brinnande ränder …`,
 };
@@ -201,6 +203,7 @@ function datafel(lager, d) {
     case 'vingar': f.push(...delarFel(d.delar, 'delar')); break;
     case 'skal': if (!['band', 'kupol'].includes(d.typ)) f.push('typ ska vara band eller kupol'); f.push(...monsterFel(d.monster, 'monster')); break;
     case 'plattor': if (!Array.isArray(d.form) || d.form.length < 3 || !d.form.every(pkt)) f.push('form behöver minst 3 punkter [u,v]'); if (!Array.isArray(d.hojd) || d.hojd.length !== 2) f.push('hojd ska vara [min, max]'); f.push(...monsterFel(d.monster, 'monster')); break;
+    case 'ogon': if (!Array.isArray(d.delar) || !d.delar.length) f.push('delar saknas'); else d.delar.forEach((p, i) => { if (!(Array.isArray(p.pkt) && p.pkt.length && p.pkt.every(pkt)) && !p.former) f.push(`del ${i + 1}: pkt eller former saknas`); if (p.former) f.push(...formerFel(p.former, `del ${i + 1}`)); if (p.pkt?.some(q => Math.abs(q[0]) > 12 || Math.abs(q[1]) > 8)) f.push(`del ${i + 1}: punkter för långt från ögat`); }); break;
     case 'hard': f.push(...delarFel(d.delar, 'delar', true)); break;
     case 'pryd': f.push(...delarFel(d.delar, 'delar', true)); break;
   }

@@ -298,3 +298,8 @@ details.mer p { color: var(--dim); max-width: 62ch; margin: 4px 0 0; }
 .sk-versioner button { min-width: 40px; min-height: 40px; padding: 2px 8px; background: var(--bg); border: 1px dashed var(--line); cursor: pointer; }
 .sk-versioner button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); border-style: solid; }
 @media (max-width: 420px) { .sk-versioner { grid-column: 1; } }
+.bs-kortbilder { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 544px)); gap: 10px; }
+.bs-kortbilder figure { margin: 0; display: grid; gap: 4px; min-width: 0; }
+.bs-kortbilder canvas { width: 100%; height: auto; aspect-ratio: 136 / 99; image-rendering: pixelated; }
+.bs-kortbilder figcaption { color: var(--dim); font-size: 14px; }
+#bs-granska .gr-sorter { margin: 4px 0; }

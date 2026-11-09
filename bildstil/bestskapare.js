@@ -319,7 +319,7 @@
         const tand = (x, y, ner, l = 2.4) => poly(ner ? [[x - 0.6, y], [x + 1.4, y], [x + 0.4, y + l]] : [[x - 0.6, y], [x + 1.4, y], [x + 0.4, y - l]]);
         const tander = eller(tand(nx + 11, ny + 2.6, true), tand(nx + 14, ny + 2.6, true), tand(nx + 17, ny + 2.5, true), tand(nx + 20.5, ny + 2.4, true, 4.2), tand(nx + 13, ny + 7.2, false), tand(nx + 16.5, ny + 8, false));
         return { delar: [{ mask: fyll(gap), mat: 'mun', z: Z.huvud - 0.3, kontur: false }, { mask: fyll(kak), mat: 'kropp', z: Z.huvud - 0.2 }, { mask: fyll(tander), mat: 'tand', z: Z.huvud + 0.1, kontur: false }],
-          skalle: fyll(skalle), oga: [nx + 11, ny - 4], horn: [nx + 5, ny - 7], nos: [nx + 21, ny - 1], panna: [nx + 9, ny - 7] };
+          skalle: fyll(skalle), oga: [nx + 11, ny - 3], horn: [nx + 5, ny - 7], nos: [nx + 21, ny - 1], panna: [nx + 9, ny - 7] };
       } },
     { id: 'nabb', namn: 'Näbb', text: 'rund skalle med en krokig näbb av horn',
       huvud([nx, ny]) {
@@ -327,7 +327,7 @@
         const ovre = poly([[nx + 12, ny - 6], [nx + 19, ny - 5], [nx + 24, ny - 1], [nx + 25, ny + 5], [nx + 22.5, ny + 2], [nx + 13, ny + 1.5]]);
         const nedre = poly([[nx + 12, ny + 2.5], [nx + 21, ny + 2.5], [nx + 18, ny + 6], [nx + 12, ny + 6]]);
         return { delar: [{ mask: fyll(nedre), mat: 'horn', z: Z.huvud + 0.1 }, { mask: fyll(ovre), mat: 'horn', z: Z.huvud + 0.2 }],
-          skalle: fyll(skalle), oga: [nx + 9, ny - 4], horn: [nx + 3, ny - 8], nos: null, panna: [nx + 7, ny - 8] };
+          skalle: fyll(skalle), oga: [nx + 9, ny - 3], horn: [nx + 3, ny - 8], nos: null, panna: [nx + 7, ny - 8] };
       } },
   ];
 
@@ -496,6 +496,38 @@
     return A[n] ? [A[n]] : [];
   };
   const FASTEN = ['panna', 'oga', 'nos', 'hornet', 'nacke0', 'nacke1', 'rygg', 'f', 'h', 'vinge', 'svans', 'spets', 'led', 'skena'];
+  // ---------- ögonen ----------
+  // ett öga är en lista av delar räknade från ögats punkt på huvudet (0,0 är ögats vänstra punkt): enskilda punkter (pkt) eller
+  // former, i ett material och en ton (kol är konturens svarta: ögonbrynet och hålan). Allt klipps till huvudet och kroppen.
+  // De handgjorda är skrivna i samma form som API:ts, så att de ritas på samma sätt.
+  function ogonDelar(lista, [ox, oy], klipp) {
+    return (lista || []).map((p, i) => {
+      const m = p.former ? fyll(formerAv(p.former, ox + 0.5, oy + 0.5)) : tom();
+      for (const q of p.pkt || []) { const x = Math.round(ox + q[0]), y = Math.round(oy + q[1]); if (x >= 0 && y >= 0 && x < W && y < H) m[y * W + x] = 1; }
+      if (klipp) m.forEach((v, k) => { if (v && !klipp[k]) m[k] = 0; });
+      return { mask: m, mat: p.mat === 'kol' ? 'kol' : matAv(p.mat, 'oga'), ton: typeof p.ton === 'number' ? p.ton : 0, lyser: !!p.lyser, kontur: !!p.kontur, monster: monsterAv(p.monster), z: Z.oga + i * 0.01 };
+    });
+  }
+  // runt varje punkt i lista: punkterna ovanför och till vänster (en mörk håla)
+  const halaRunt = lista => { const s = new Set(lista.map(String)), ut = []; for (const [x, y] of lista) for (const q of [[x, y - 1], [x - 1, y], [x - 1, y - 1], [x + 1, y - 1]]) if (!s.has(String(q)) && !ut.some(u => String(u) === String(q))) ut.push(q); return ut; };
+  const MORK = { mat: 'kol' };
+  const OGON = [
+    { id: 'djupt', namn: 'Djupa', text: 'små ögon djupt under en mörk panna, och de lyser',
+      delar: [{ ...MORK, pkt: [[-1, -1], [0, -1], [1, -1], [2, -1], [-1, 0]] }, { mat: 'oga', lyser: true, pkt: [[0, 0], [1, 0]] }] },
+    { id: 'stort', namn: 'Stora', text: 'ett stort runt öga med en mörk pupill, som stirrar', ny: true,
+      delar: [{ ...MORK, pkt: [[-1, -2], [0, -2], [1, -2], [2, -2], [-2, -1], [-1, -1], [3, -1]] }, { mat: 'oga', lyser: true, pkt: [[0, -1], [1, -1], [-1, 0], [0, 0], [1, 0], [2, 0], [0, 1], [1, 1]] }, { ...MORK, pkt: [[1, 0]] }] },
+    { id: 'spalt', namn: 'Spalter', text: 'en smal lysande spalt i en mörk håla, som hos en orm', ny: true,
+      delar: [{ ...MORK, pkt: [[-1, -1], [0, -1], [1, -1], [2, -1], [3, -1], [-1, 0], [3, 0], [0, 1], [1, 1], [2, 1]] }, { mat: 'oga', lyser: true, pkt: [[0, 0], [1, 0], [2, 0]] }] },
+    { id: 'manga', namn: 'Många', text: 'en klunga små lysande ögon, som hos en spindel', ny: true,
+      delar: [{ ...MORK, pkt: halaRunt([[0, 0], [3, 0], [1, -2], [-2, -1], [2, 2]]) }, { mat: 'oga', lyser: true, pkt: [[0, 0], [3, 0], [1, -2], [-2, -1], [2, 2]] }] },
+    { id: 'rad', namn: 'Ögonrad', text: 'tre par ögon i rad bakåt längs huvudet', ny: true,
+      delar: [{ ...MORK, pkt: [[-1, -1], [0, -1], [1, -1], [2, -1], [-5, 0], [-4, 0], [-3, 0], [-9, 1], [-8, 1], [-7, 1]] }, { mat: 'oga', lyser: true, pkt: [[0, 0], [1, 0], [-4, 1], [-3, 1], [-8, 2], [-7, 2]] }] },
+    { id: 'blind', namn: 'Blinda', text: 'mjölkvita ögon utan pupill, som inte lyser: besten är blind och luktar sig fram', ny: true,
+      delar: [{ ...MORK, pkt: [[-1, -2], [0, -2], [1, -2], [2, -2], [-1, -1], [2, -1]] }, { mat: 'tand', ton: -1, pkt: [[0, -1], [1, -1], [0, 0], [1, 0]] }] },
+    { id: 'hala', namn: 'Tomma hålor', text: 'tomma ögonhålor som på en dödskalle, med en glödande punkt längst in', ny: true,
+      delar: [{ mat: 'kol', pkt: [[-1, -1], [0, -1], [1, -1], [2, -1], [-1, 0], [0, 0], [2, 0], [0, 1], [1, 1]] }, { mat: 'oga', lyser: true, pkt: [[1, 0]] }] },
+  ].map(d => ({ ...d, ogon: (o, klipp) => ogonDelar(d.delar, o, klipp) }));
+
   const tillApi = {
     textur(d) {
       const kr = monsterAv(d.monster), be = monsterAv(d.ben) || kr, fri = d.kanter !== true;
@@ -560,6 +592,7 @@
       });
       return { mask: fyll(eller(...f)), monster: monsterAv(d.monster) };
     } }),
+    ogon: d => ({ ogon: (o, klipp) => ogonDelar(d.delar, o, klipp) }),
     hard: d => ({ hard: A => fyll(eller(...(d.delar || []).flatMap(p => ankare(A, p.ankare).map(([ax, ay]) => formerAv(p.former, ax, ay))))) }),
     pryd: d => ({ pryd: (A, kropp) => (d.delar || []).map((p, i) => {
       const m = fyll(eller(...ankare(A, p.ankare).map(([ax, ay]) => formerAv(p.former, ax, ay))));
@@ -569,8 +602,10 @@
     }) }),
   };
   const API = typeof BESTDATA !== 'undefined' ? BESTDATA : {};
-  const REG = { kropp: KROPPAR, ben: BEN, huvud: HUVUDEN, horn: HORN, vingar: VINGAR, svans: SVANSAR, textur: TEXTURER, skal: SKAL, plattor: PLATTOR, hard: HARDA, pryd: PRYDNADER, farg: FARGER };
-  const apiDel = (lager, d) => ({ ...tillApi[lager](d), id: d.id, namn: d.namn, text: d.text, grupp: d.grupp || d.id, api: true });
+  const REG = { kropp: KROPPAR, ben: BEN, huvud: HUVUDEN, ogon: OGON, horn: HORN, vingar: VINGAR, svans: SVANSAR, textur: TEXTURER, skal: SKAL, plattor: PLATTOR, hard: HARDA, pryd: PRYDNADER, farg: FARGER };
+  // avtrycket ändras när delen ritas om, så att Björns svar på den förra versionen inte gäller den nya
+  const avtryck = t => { let h = 2166136261; for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
+  const apiDel = (lager, d) => ({ ...tillApi[lager](d), id: d.id, namn: d.namn, text: d.text, grupp: d.grupp || d.id, api: true, avtryck: avtryck(JSON.stringify(d)), forra: d.forra || null });
   for (const [lager, fil] of Object.entries(API)) {
     if (!REG[lager] || !tillApi[lager]) continue;
     for (const d of fil.delar || []) { try { REG[lager].push(apiDel(lager, d)); } catch (e) { console.warn('bestskaparen: kunde inte läsa', lager, d.id, e); } }
@@ -584,6 +619,7 @@
     { id: 'kropp', namn: 'Kropp', delar: KROPPAR, maste: true },
     { id: 'ben', namn: 'Ben', delar: BEN, maste: true },
     { id: 'huvud', namn: 'Huvud', delar: HUVUDEN, maste: true },
+    { id: 'ogon', namn: 'Ögon', delar: OGON, maste: true },
     { id: 'horn', namn: 'Horn', delar: HORN },
     { id: 'vingar', namn: 'Vingar', delar: VINGAR },
     { id: 'svans', namn: 'Svans', delar: SVANSAR, maste: true },
@@ -598,8 +634,9 @@
 
   // ---------- en del i bilden: kontur, skuggning och mönster ----------
   function mala(L, d, fr) {
-    const [ramp, b0] = fr.m[d.mat] || fr.m.kropp, b = b0 - (d.far ? 1 : 0) + Math.round(d.ton || 0), m = d.mask;
-    const lagst = ramp === 'kol' ? 1 : 0, kl = t => Math.max(lagst, Math.min(3, t));
+    // materialet kol är konturens svarta (ögonhålor och bryn) och står utanför färgschemat
+    const [ramp, b0] = d.mat === 'kol' ? ['kol', 0] : fr.m[d.mat] || fr.m.kropp, b = b0 - (d.far ? 1 : 0) + Math.round(d.ton || 0), m = d.mask;
+    const lagst = ramp === 'kol' && d.mat !== 'kol' ? 1 : 0, kl = t => Math.max(lagst, Math.min(3, t));
     const inne = (x, y) => x >= 0 && y >= 0 && x < W && y < H && m[y * W + x];
     if (d.kontur !== false) for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       if (!m[y * W + x]) continue;
@@ -686,13 +723,9 @@
     if (TX.extra) TX.extra(kroppF, A, narBen).forEach(d => lagg(d, d.z));
     if (HA) lagg({ mask: HA.hard(A), mat: 'hard' }, Z.hard);
     if (PR) [].concat(PR.pryd(A, kropp)).forEach(p => lagg(p, p.z));
-    // ögat: litet och djupt under en mörk panna, och det lyser
-    const [ox, oy] = hu.oga, oga = tom(), bryn = tom();
-    oga[oy * W + ox] = 1; oga[oy * W + ox + 1] = 1;
-    for (let x = ox - 1; x <= ox + 2; x++) bryn[(oy - 1) * W + x] = 1;
-    bryn[oy * W + ox - 1] = 1;
-    lagg({ mask: bryn, mat: 'kropp', ton: -9, kontur: false }, Z.oga);
-    lagg({ mask: oga, mat: 'oga', kontur: false, lyser: true }, Z.oga + 0.1);
+    // ögonen, klippta till huvudet och kroppen
+    const OG = dels(val, 'ogon') || OGON[0];
+    OG.ogon(hu.oga, ihop(kropp, ...hu.delar.map(d => d.mask))).forEach(d => lagg(d, d.z));
     return D.sort((a, b) => a.z - b.z);
   }
 
@@ -761,10 +794,9 @@
     visa();
   });
   rot.querySelector('#bs-spegla').addEventListener('click', e => { spegel = !spegel; e.currentTarget.setAttribute('aria-pressed', String(spegel)); visa(); });
-  rot.querySelector('#bs-slumpa').addEventListener('click', () => {
-    for (const l of LAGER) { const m = l.delar.map(d => d.id); if (!l.maste) m.push(null); val[l.id] = m[Math.floor(Math.random() * m.length)]; }
-    visa();
-  });
+  // alla lager utom ett får en slumpad del (utom = null slumpar alla)
+  const slumpaUtom = (v, utom) => { for (const l of LAGER) { if (l.id === utom) continue; const m = l.delar.map(d => d.id); if (!l.maste) m.push(null); v[l.id] = m[Math.floor(Math.random() * m.length)]; } return v; };
+  rot.querySelector('#bs-slumpa').addEventListener('click', () => { slumpaUtom(val, null); visa(); });
   visa();
 
   // ---------- spara kombinationen (samlingen bestar) ----------
@@ -793,6 +825,12 @@
       SPARADE = snap.docs.filter(d => d.exists).map(d => ({ id: d.id, ...d.data() })).sort((a, b) => String(b.nar).localeCompare(String(a.nar)));
       visaSparade();
     }, () => { st.textContent = 'Kontakten med databasen bröts. Ladda om sidan.'; });
+    DB.collection('val').onSnapshot(snap => {
+      for (const k of Object.keys(SVAR)) delete SVAR[k];
+      snap.docs.forEach(d => { if (d.exists && d.id.startsWith('best-')) SVAR[d.id] = d.data(); });
+      bkVisa();
+    }, () => { bkStatus('Kontakten med databasen bröts. Ladda om sidan.'); });
+    bkVisa();
   })();
   rot.querySelector('#bs-spara').addEventListener('click', async () => {
     const ta = rot.querySelector('#bs-kommentar');
@@ -800,6 +838,98 @@
     try { await DB.collection('bestar').add({ val: { ...val }, kommentar: ta.value.trim(), text: beskriv(val), nar: new Date().toISOString() }); ta.value = ''; st.textContent = 'Sparat.'; }
     catch (e) { st.textContent = 'Kunde inte spara. Har du rätt att ändra sidan?'; }
   });
+  // ---------- granskningen: ett kort per ny del (API:ts och de nya handgjorda) ----------
+  // Björns svar sparas i samlingen val som 'best-<lager>-<del>' med delens avtryck: ritas delen om står kortet obesvarat
+  // igen, med hans förra kommentar överst. 🎲 byter alla andra delar, så att delen syns på olika bestar.
+  const BKORT = LAGER.flatMap(l => l.delar.filter(d => d.api || d.ny).map(d => ({ id: `best-${l.id}-${d.id}`, lager: l, del: d, avtryck: d.avtryck || 'hand' })));
+  const SVAR = {}, gr = rot.querySelector('#bs-kort'), sett = [];
+  let bkFilter = 'obesvarade', bkId = BKORT[0]?.id, bkVal = null, bkVantar = null, bkVisad = null;
+  const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const bkSvar = k => { const s = SVAR[k.id]; return s && s.avtryck === k.avtryck ? s : null; };
+  const bkLage = k => { const s = bkSvar(k); return !s ? 'obesvarad' : s.svar === 'ja' || s.svar === 'nej' ? s.svar : 'kommentar'; };
+  const bkStatus = t => { const e = gr.querySelector('.gr-sparat'); if (e) e.textContent = t; };
+  // versionen av en handgjord del (texturerna) visas bredvid den handgjorda
+  const handFor = k => (k.del.grupp && k.del.grupp !== k.del.id ? k.lager.delar.find(x => x.id === k.del.grupp) : null);
+  function bkRita() {
+    const k = BKORT.find(x => x.id === bkId); if (!k) return;
+    const [a, b] = gr.querySelectorAll('.bs-kortbilder canvas'), h = handFor(k);
+    if (a) tillCanvas(ritaBest(bkVal, false), a, 0);
+    if (b && h) tillCanvas(ritaBest({ ...bkVal, [k.lager.id]: h.id }, false), b, 0);
+    const t = gr.querySelector('.bs-kortbeskriv'); if (t) t.textContent = beskriv(bkVal);
+  }
+  function bkFlytta(steg, svarat = false) {
+    if (steg < 0 && sett.length) { bkId = sett.pop(); bkVisa(true); return; }
+    const fran = bkId, i = BKORT.findIndex(k => k.id === bkId);
+    for (let n = 1; n <= BKORT.length; n++) {
+      const k = BKORT[(i + steg * n + BKORT.length * n) % BKORT.length];
+      if (bkFilter === 'alla' || bkLage(k) === 'obesvarad') { bkId = k.id; break; }
+      if (svarat && n === BKORT.length) break;
+    }
+    if (steg > 0 && bkId !== fran) sett.push(fran);
+    bkVisa(true);
+  }
+  function bkVisa(nytt = false) {
+    const obesv = BKORT.filter(k => bkLage(k) === 'obesvarad').length;
+    rot.querySelector('#bs-antal-obesv').textContent = obesv; rot.querySelector('#bs-antal-alla').textContent = BKORT.length;
+    rot.querySelectorAll('[data-bsfilter]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.bsfilter === bkFilter)));
+    const k = BKORT.find(x => x.id === bkId) || BKORT[0];
+    const lk = rot.querySelector('#bs-lagerknappar'); lk.textContent = '';
+    for (const l of LAGER) {
+      const ks = BKORT.filter(x => x.lager === l); if (!ks.length) continue;
+      const ja = ks.filter(x => bkLage(x) === 'ja').length, kom = ks.filter(x => ['kommentar', 'nej'].includes(bkLage(x))).length;
+      const b = document.createElement('button'); b.type = 'button'; b.dataset.bslager = l.id;
+      b.className = ja === ks.length ? 'klar' : kom ? 'kommenterad' : ''; b.innerHTML = `${esc(l.namn)} <small>${ja}/${ks.length}</small>`;
+      if (k?.lager === l) b.setAttribute('aria-current', 'true');
+      lk.append(b);
+    }
+    if (!k) { gr.className = 'grkort'; gr.innerHTML = '<p>Inget att granska just nu.</p>'; bkVisad = null; return; }
+    bkId = k.id;
+    if (bkFilter === 'obesvarade' && !obesv && bkLage(k) !== 'obesvarad') {
+      gr.className = 'grkort'; gr.innerHTML = '<p>Alla kort är besvarade.</p><p><button type="button" class="gr-knapp" data-bsfilter="alla">Visa alla kort</button></p>'; bkVisad = null; return;
+    }
+    const synliga = BKORT.filter(x => bkFilter === 'alla' || bkLage(x) === 'obesvarad' || x.id === bkId), pos = synliga.indexOf(k) + 1;
+    const nav = `<nav class="gr-nav" aria-label="Bläddra bland korten"><button type="button" class="gr-knapp" data-bssteg="-1">‹ Förra</button><span>${pos} av ${synliga.length}</span><button type="button" class="gr-knapp" data-bssteg="1">Nästa ›</button></nav>`;
+    if (nytt || bkVisad !== k.id || !gr.querySelector('.bs-kortbilder')) {
+      bkVal = { ...val, [k.lager.id]: k.del.id };
+      const h = handFor(k), s = SVAR[k.id], forra = !bkSvar(k) && s?.kommentar ? s.kommentar : k.del.forra;
+      gr.innerHTML = `${nav}<header><span class="typ">${esc(k.lager.namn)} · ${k.del.api ? 'ritad av Claude API:t' : 'handgjord'}${h ? ' · version av ' + esc(h.namn.toLowerCase()) : ''}</span>
+        <h3>${esc(k.del.namn)}</h3><p class="not">${esc(k.del.text)}</p>${forra ? `<p class="forra">Din kommentar förra gången: ${esc(forra)}</p>` : ''}</header>
+        <div class="bs-kortbilder"><figure><canvas role="img" aria-label="${esc(k.del.namn)} på besten"></canvas><figcaption>${esc(k.del.namn)}</figcaption></figure>${h ? `<figure><canvas role="img" aria-label="Den handgjorda på samma best"></canvas><figcaption>Den handgjorda</figcaption></figure>` : ''}</div>
+        <p class="not bs-kortbeskriv"></p>
+        <div class="sk-knapprad"><button type="button" class="gr-knapp" data-bsslumpa title="Byt alla andra delar">🎲 Slumpa resten</button><button type="button" class="gr-knapp" data-bsiskaparen title="Visa den här besten i skaparen ovanför">Till skaparen</button></div>
+        <div class="gr-svar"><div class="gr-svarknappar"><button type="button" class="gr-ja" data-bssvar="ja">Ja</button><button type="button" class="gr-nej" data-bssvar="nej">Nej</button></div>
+        <label for="bs-gr-kommentar">Kommentar: vad ska ändras?</label><textarea id="bs-gr-kommentar" rows="3" placeholder="Till exempel: fjällen är för små och syns inte på den svarta besten"></textarea>
+        <button type="button" class="gr-knapp" data-bssvar="kommentar">Skicka kommentaren</button></div>
+        <p class="gr-sparat" aria-live="polite"></p>${nav}`;
+      gr.querySelector('#bs-gr-kommentar').value = bkSvar(k)?.kommentar || '';
+      bkVisad = k.id; bkRita();
+    } else gr.querySelectorAll('.gr-nav span').forEach(e => { e.textContent = `${pos} av ${synliga.length}`; });
+    gr.className = 'grkort ' + bkLage(k);
+    const sv = bkSvar(k);
+    bkStatus(!DB ? 'Svaren går bara att spara när sidan är öppen i Claude och du är inloggad.' : bkVantar === k.id ? 'Sparar …'
+      : sv ? (sv.svar === 'ja' ? 'Godkänd.' : sv.svar === 'nej' ? 'Nej: tas bort eller ritas om.' : 'Kommentaren är sparad.') + ' ' + new Date(sv.nar).toLocaleString('sv-SE', { dateStyle: 'short', timeStyle: 'short' }) : '');
+    gr.querySelectorAll('[data-bssvar]').forEach(b => { b.disabled = !DB; b.setAttribute('aria-pressed', String(sv?.svar === b.dataset.bssvar)); });
+    gr.querySelector('#bs-gr-kommentar').disabled = !DB;
+  }
+  async function bkSvara(svar) {
+    const k = BKORT.find(x => x.id === bkId); if (!k || !DB) return;
+    const ta = gr.querySelector('#bs-gr-kommentar'), kommentar = ta ? ta.value.trim() : '';
+    if (svar === 'kommentar' && !kommentar) { bkStatus('Skriv först vad som ska ändras.'); ta?.focus(); return; }
+    const data = { svar, kommentar, nar: new Date().toISOString(), avtryck: k.avtryck, lager: k.lager.id, del: k.del.id, namn: k.del.namn };
+    const forut = SVAR[k.id]; SVAR[k.id] = data; bkVantar = k.id; bkVisa();
+    try { await DB.doc('val/' + k.id).set(data); bkVantar = null; bkVisa(); setTimeout(() => { if (bkId === k.id) bkFlytta(1, true); }, 450); }
+    catch (e) { bkVantar = null; if (forut) SVAR[k.id] = forut; else delete SVAR[k.id]; bkVisa(); bkStatus('Kunde inte spara. Har du rätt att ändra sidan?'); }
+  }
+  rot.querySelector('#bs-granska').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.bssteg) bkFlytta(+b.dataset.bssteg);
+    else if (b.dataset.bsfilter) { bkFilter = b.dataset.bsfilter; bkVisa(true); }
+    else if (b.dataset.bslager) { const k = BKORT.find(x => x.lager.id === b.dataset.bslager && (bkFilter === 'alla' || bkLage(x) === 'obesvarad')) || BKORT.find(x => x.lager.id === b.dataset.bslager); if (k) { sett.push(bkId); bkId = k.id; bkVisa(true); } }
+    else if ('bsslumpa' in b.dataset) { const k = BKORT.find(x => x.id === bkId); slumpaUtom(bkVal, k.lager.id); bkRita(); }
+    else if ('bsiskaparen' in b.dataset) { Object.assign(val, bkVal); visa(); duk.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    else if (b.dataset.bssvar) bkSvara(b.dataset.bssvar);
+  });
+  bkVisa();
   // för bildstil/api/bestar.mjs: en del från API:t ritad i besten, som png, med det som inte stämmer
   function prov(lager, d, over = {}, skala = 4, spegel = false) {
     const L = LAGER.find(x => x.id === lager), fel = [];
