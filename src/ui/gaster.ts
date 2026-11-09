@@ -1,4 +1,4 @@
-import { HANDEL, HANDLAR_UTR, VAPEN, byId, gillar, handlarPerson, foddNar, gastLiv, gastNyckel, handlarFas, handlarPlats, rovarPlats, klanById, grundvarde, handlarVarde, kgOf, kortTal, rymmer, sakNamn } from '../sim';
+import { hp, HANDEL, HANDLAR_UTR, VAPEN, byId, gillar, handlarPerson, foddNar, gastLiv, gastNyckel, handlarFas, handlarPlats, rovarPlats, klanById, grundvarde, handlarVarde, kgOf, kortTal, rymmer, sakNamn } from '../sim';
 import type { ByteMinne, GastLiv, GastRel, Person, Roll, Rovare, Skill, Stat, State } from '../sim';
 import { iconImg } from '../ikoner';
 import { esc } from './hjalp';
@@ -42,21 +42,21 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
   (s, t) => {
     const h = s.handlare;
     if (!h) return [];
-    const p = handlarPlats(h, t), utr = HANDLAR_UTR[h.utr]?.namn ?? h.utr, ko = h.ko?.length ?? 0;
+    const p = handlarPlats(s, h, t), utr = HANDLAR_UTR[h.utr]?.namn ?? h.utr, ko = h.ko?.length ?? 0;
     return [{
-      id: h.id, namn: h.namn, sex: h.sex, sort: 'Handlare', farg: 0x4e6a8a, x: p.x, y: p.y, gor: handlarFas(h),
-      fran: `${klanById(s, h.klan)?.namn ?? 'en grannklan'} vid ${h.hem}`,
+      id: h.id, namn: hp(s, h).name, sex: hp(s, h).sex, sort: 'Handlare', farg: 0x4e6a8a, x: p.x, y: p.y, gor: handlarFas(h),
+      fran: `${klanById(s, hp(s, h).gast!.klan)?.namn ?? 'en grannklan'} vid ${hp(s, h).gast!.hem!}`,
       rader: [
         { namn: 'Silver', varde: `${iconImg('silver', 12)} ${Math.round(h.silver)}`, title: 'Silvret handlaren har med sig' },
         { namn: 'Packning', varde: `${kortTal(kgOf(h.varor))} / ${rymmer(h)} kg`, title: `${utr}: så mycket bär hen och så mycket rymmer den` },
         ...ko ? [{ namn: 'Kö', varde: String(ko), title: 'Så många står i kö vid filten' }] : [],
       ],
-      stats: {}, skills: { handel: h.handel },
+      stats: {}, skills: { handel: hp(s, h).skill.handel },
       bar: [{ ikon: 'ryggsack', text: utr, title: `${utr}, rymmer ${rymmer(h)} kg` },
         ...h.varor.map(w => ({ ikon: w.k, text: `${w.n > 1 ? `${w.n} ` : ''}${handlarPris(w.k, w.q)}${iconImg('silver', 12)}`, title: `${sakNamn(w.k)}: ungefär ${handlarPris(w.k, w.q)} silver styck (hen tar ${Math.round(HANDEL.vinst * 100)} % över värdet)` }))],
       handelser: (h.bytt ?? []).filter(b => !b.m).reverse().map(b => `Bytte med ${b.vem}: ${b.fick} mot ${b.gav}`), // från före v271
       byten: (h.bytt ?? []).flatMap(b => b.m ? [b.m] : []),
-      liv: livFor(s, h.klan, h.namn, h.sex, 'handlare', h.fodd),
+      liv: livFor(s, hp(s, h).gast!.klan, hp(s, h).name, hp(s, h).sex, 'handlare', hp(s, h).born),
       rel: Object.entries(handlarPerson(s, h)?.rel ?? {}).flatMap(([id, r]) => { const q = byId(s, Number(id)); return q ? [{ p: q, r, g: gillar(s, h, q) }] : []; }),
     }];
   },

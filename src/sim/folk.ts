@@ -185,7 +185,7 @@ export function makeName(s: State, sex: 'm' | 'k', strom: Strom = 'folk', forald
 }
 
 // ---------- personer ----------
-export const alive = (p: Person) => p.died === undefined && p.left === undefined;
+export const alive = (p: Person) => p.died === undefined && p.left === undefined && !p.gast; // bara byborna: en gäst lever i gast.ts (steg 9.2.111)
 // personens statistik över livet (steg 3.9.8): räknas när det händer. Med en episod räknas samma slag bara en gång
 // per dygn (en svältperiod, en strid med flera bett). Drar ingen slump
 export function livet(s: State, p: Person, k: string, episod = false) {

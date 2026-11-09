@@ -79,7 +79,7 @@ function glans(x: number, y: number, t: number, id: number, perfekt: boolean) {
 function drawKarra() {
   const h = s.handlare;
   if (!h || !s.infart?.klar) return;
-  const p = handlarPlats(h, ui.nu), b = KARTBILDER.karra1!;
+  const p = handlarPlats(s, h, ui.nu), b = KARTBILDER.karra1!;
   pileIcons.add('kb_karra' + (1 + Math.abs(h.id) % 3), Math.round(p.x * TS - b.w - 3), Math.round(p.y * TS - b.h + 6), 1);
 }
 // grödans symbol när den är mogen, tills rutan skördats. Framstegscirkeln över rutan där någon röjer, gräver eller sår

@@ -1,4 +1,4 @@
-import { KLAN_ROLLER, VAPEN, amountOf, isTool, nTools, instText, klanerOf, living, sakNamn, timeLabel } from '../../sim';
+import { hp, KLAN_ROLLER, VAPEN, amountOf, isTool, nTools, instText, klanerOf, living, sakNamn, timeLabel } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { bar, esc } from '../hjalp';
 import { s, ui } from '../lage';
@@ -28,7 +28,7 @@ function grannarHtml() {
 function handlareHtml() {
   const h = s.handlare, n = s.handlarNr ?? 0;
   if (!n && !h) return '<p class="muted">Ingen handlare har kommit än.</p>';
-  const nu = h ? `<p>${iconImg('handlare', 16)} <b>${esc(h.namn)}</b> från ${esc(h.hem)} ${h.fas === 'kommer' ? 'är på väg hit' : h.fas === 'gar' ? 'går hem' : 'är här'}.</p>` : '';
+  const nu = h ? `<p>${iconImg('handlare', 16)} <b>${esc(hp(s, h).name)}</b> från ${esc(hp(s, h).gast!.hem!)} ${h.fas === 'kommer' ? 'är på väg hit' : h.fas === 'gar' ? 'går hem' : 'är här'}.</p>` : '';
   return `${nu}<dl class="kv smal"><dt>Handlare som kommit</dt><dd>${n}</dd>${!h && s.nastaHandlare ? `<dt>Nästa väntas</dt><dd>${esc(timeLabel(s, s.nastaHandlare))}</dd>` : ''}</dl>`;
 }
 // räderna (steg 4.4.5, rovare.ts): flocken som är här nu och det som hänt

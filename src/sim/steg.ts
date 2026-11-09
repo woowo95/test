@@ -39,6 +39,7 @@ import { FYND, type FyndId, svampPlock, flintorOchYxor, toppOf, TRY_SEC, flintFa
 import { halMin, halVal, islagt, stepIs } from './is';
 import { blotSteg, coldOf, stepVader, temperature, VADER, vaderGrader, vaderNu, vaxtFaktor } from './vader';
 import { ELD, VED, addFuel, canLight, eldById, eldXY, giveBack, needStones, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight } from './eld';
+import { gastLever } from './gast';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, gjort, isSick, living, log, ovning, stat, think } from './folk';
 import { SJUK, type SjukId, insjukna, sjukSteg, smittaTimme, smittaUtifranTimme } from './sjukdom';
 import { eldPlats, getMap } from './karta';
@@ -1196,12 +1197,13 @@ export const joinParts = (delar: string[]) => {
 // tas bort, så att byn och sparfilen hålls små. Sparningen bara läser byn
 const MINNS_DODA = 120;
 function compact(s: State) {
-  let n = 0; for (const p of s.people) if (!alive(p)) n++;
+  const borta = (p: Person) => !alive(p) && !gastLever(p); // en gäst på kartan är inte borta (steg 9.2.111)
+  let n = 0; for (const p of s.people) if (borta(p)) n++;
   if (n > MINNS_DODA) {
-    const gone = s.people.filter(p => !alive(p)).sort((a, b) => (b.died ?? b.left ?? 0) - (a.died ?? a.left ?? 0));
+    const gone = s.people.filter(borta).sort((a, b) => (b.died ?? b.left ?? 0) - (a.died ?? a.left ?? 0));
     const drop = new Set(gone.slice(MINNS_DODA).map(p => p.id));
     s.people = s.people.filter(p => !drop.has(p.id));
   }
-  const ids = new Set(s.people.filter(alive).map(p => p.id));
-  for (const k in s.rels) { const [a, b] = k.split('-').map(Number); if (!ids.has(a) && !ids.has(b)) delete s.rels[k]; }
+  const ids = new Set(s.people.filter(p => !borta(p)).map(p => p.id));
+  for (const k in s.rels) { const m = /^(-?\d+)-(-?\d+)$/.exec(k), a = Number(m?.[1]), b = Number(m?.[2]); /* gästernas id är negativa */ if (!ids.has(a) && !ids.has(b)) delete s.rels[k]; }
 }

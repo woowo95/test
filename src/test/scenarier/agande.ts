@@ -956,10 +956,10 @@ SCENARIER.handlare = {
     // kvällsmarknaden (steg 4.5.4.11): på dagen väntar hen vid filtens plats till kvällen och går på morgonen
     const v0 = s.handlare, med = v0 && { varor: structuredClone(v0.varor), silver: v0.silver }, dagNu = SIM.hourOf(s.now), vantar = !!v0 && v0.fas === 'vantar' && !(s.filtar ?? []).some(f => f.handlare === v0.id) && SIM.hourOf(v0.kvall!) === SIM.HANDEL.kvall && SIM.handlarFas(v0) === 'Väntar på kvällen';
     for (let i = 0; i < 30 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); }
-    const h = s.handlare, morgon = !!h && Math.abs(SIM.hourOf(h.gar) - SIM.HANDEL.morgon) < 0.05;
+    const h = s.handlare, hNamn = h ? SIM.hp(s, h).name : '', morgon = !!h && Math.abs(SIM.hourOf(h.gar) - SIM.HANDEL.morgon) < 0.05;
     const kom = !!h && !!med && h.id < 0 && med.varor.length > 0 && SIM.kgOf(med.varor) <= SIM.rymmer(h) && med.silver >= SIM.HANDEL.silver[0] // det hen kom med (byn kan redan ha handlat)
       && (h.ut.x < 1 || h.ut.y < 1 || h.ut.x > SIM.W - 1 || h.ut.y > SIM.H - 1);
-    const filt = !!h && h.fas === 'handlar' && SIM.utanforByn(s, h.x, h.y) <= SIM.HANDEL.avstand + SIM.HANDEL.letaLangre + 1
+    const filt = !!h && h.fas === 'handlar' && SIM.utanforByn(s, SIM.hp(s, h).x, SIM.hp(s, h).y) <= SIM.HANDEL.avstand + SIM.HANDEL.letaLangre + 1
       && (s.filtar ?? []).some(f => f.handlare === h.id && f.varor.length === 0); // varorna ligger i packningen (steg 4.5.7.4)
     const kron = (s.hist?.kronika ?? []).filter(k => k[1].includes('första handlaren')).length === 1;
     // på kvällen väljer den som handlar för byn att gå till filten (night i val.ts)
@@ -979,7 +979,7 @@ SCENARIER.handlare = {
     return [
       [`en fattig by får ingen handlare (rikedom ${Math.round(rikedom(createState(6, START)))})`, fattig],
       [`när byn är rik nog bestäms den första handlaren (rikedom ${Math.round(rikedom(s))})`, bestamd],
-      [`handlaren kommer från kanten med varor som ryms i ryggsäcken (${h && med ? `${h.namn}, ${SIM.kgOf(med.varor).toFixed(1)} kg av ${SIM.rymmer(h)}` : 'ingen'})`, kom],
+      [`handlaren kommer från kanten med varor som ryms i ryggsäcken (${h && med ? `${hNamn}, ${SIM.kgOf(med.varor).toFixed(1)} kg av ${SIM.rymmer(h)}` : 'ingen'})`, kom],
       [`handlaren som kommer klockan ${dagNu.toFixed(1)} väntar vid filtens plats till kvällen (${v0?.kvall ? SIM.hourOf(v0.kvall).toFixed(1) : '–'})`, vantar],
       ['handlaren breder ut en filt strax utanför byns område, med varorna kvar i packningen, och går på morgonen', filt && morgon],
       ['den första handlaren står i krönikan', kron],
@@ -1046,7 +1046,7 @@ SCENARIER.handelsfardighet = {
     const fram = (s: State) => { rikBy(s); s.nastaHandlare = s.now; for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); } return s.handlare!; };
     const vuxna = (s: State) => living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
     const bas = createState(6, START), h0 = fram(bas);
-    setAmount(bas, 'torrfisk', 120); setAmount(bas, 'silver', 0); h0.varor = []; h0.silver = 400; h0.handel = 10;
+    setAmount(bas, 'torrfisk', 120); setAmount(bas, 'silver', 0); h0.varor = []; h0.silver = 400; SIM.hp(bas, h0).skill.handel = 10;
     if (bas.styre) bas.styre.ledare = undefined;
     // byn säljer fisk för silver med en ovan och en skicklig i Handel
     const salj = (skill: number, i = 0) => {
@@ -1270,7 +1270,7 @@ SCENARIER.gastliv = {
     const samma = JSON.stringify(igen.liv) === JSON.stringify(h.liv);
     const utanSlump = (() => { const x = SIM.cloneState(fore); SIM.gastLiv(x.seed, 1, 'A', 'm', 'handlare', 'K', 'h', x.now - 30 * SIM.DAY, x.now); return JSON.stringify(x.rngs) === JSON.stringify(fore.rngs) && !!x.rngs; })();
     // handlaren kommer igen: samma person, äldre och med fler år bakom sig
-    const kp = SIM.klanById(s, s.handlare!.klan)!.personer.find(p => p.namn === h.namn)!;
+    const kp = SIM.klanById(s, SIM.hp(s, s.handlare!).gast!.klan)!.personer.find(p => p.namn === h.namn)!;
     const fodd = kp.fodd, alder0 = h.liv.alder, n0 = h.liv.liv.length;
     s.handlare = undefined; s.now += 6 * SIM.DAY;
     const kl = SIM.klanerOf(s).find(k => k.personer.includes(kp))!;
@@ -1426,7 +1426,7 @@ SCENARIER.handlarrel = {
     // irritationen när hen går hem: en liten del finns kvar
     const fore = r.irr; SIM.glomIrritation(s, h); const kvar = Math.abs(r.irr - fore * SIM.GASTREL.kvar) < 1e-9 && r.irr > 0;
     // sparas med byn
-    const sp = JSON.parse(JSON.stringify(s)) as State, sparas = SIM.klanById(sp, h.klan)?.personer.find(q => q.namn === h.namn)?.rel?.[a.id]?.lurad === 1;
+    const sp = JSON.parse(JSON.stringify(s)) as State, sparas = SIM.klanById(sp, SIM.hp(s, h).gast!.klan)?.personer.find(q => q.namn === SIM.hp(s, h).name)?.rel?.[a.id]?.lurad === 1;
     // flikarna
     ui.selected = a.id; ui.personDel = 'rel'; const stangd = person.html();
     hjalpKlick({ closest: () => ({ dataset: { hjalp: `utanfor-${a.id}` } }) } as unknown as HTMLElement);
@@ -1443,8 +1443,8 @@ SCENARIER.handlarrel = {
       ['i förhandlingen ger dåliga bud från en bybo hen inte gillar nej och irritation', viaSvar],
       [`när handlaren går hem finns ${Math.round(SIM.GASTREL.kvar * 100)} % av irritationen kvar`, kvar],
       ['relationen sparas med byn', sparas],
-      ['bybons relationsflik: handlaren i listan märkt gäst, och Utanför byn hopfällt', stangd.includes(h.namn) && stangd.includes('gäst') && stangd.includes('Utanför byn') && !/affär.*affär/.test(stangd.replace(/\n/g, ''))],
-      ['Utanför byn visar handlaren med klanen när man trycker', oppen.split(h.namn).length > stangd.split(h.namn).length && oppen.includes(SIM.klanById(s, h.klan)!.namn)],
+      ['bybons relationsflik: handlaren i listan märkt gäst, och Utanför byn hopfällt', stangd.includes(SIM.hp(s, h).name) && stangd.includes('gäst') && stangd.includes('Utanför byn') && !/affär.*affär/.test(stangd.replace(/\n/g, ''))],
+      ['Utanför byn visar handlaren med klanen när man trycker', oppen.split(SIM.hp(s, h).name).length > stangd.split(SIM.hp(s, h).name).length && oppen.includes(SIM.klanById(s, SIM.hp(s, h).gast!.klan)!.namn)],
       ['handlarens relationsflik visar bybon under I byn', hos.includes('I byn') && hos.includes(a.name) && hos.includes('lurade bybon 1 gång')],
     ];
   },
@@ -1467,7 +1467,7 @@ SCENARIER.filtar = {
     ui.nu = s.now;
     ui.filtAt = { x: hf?.x ?? 0, y: hf?.y ?? 0 }; const r1 = filtFlik.html();
     ui.filtAt = { x: mot?.x ?? 0, y: mot?.y ?? 0 }; const r2 = filtFlik.html();
-    const ruta = r1 === r2 && r1.includes('Bytet') && r1.includes('filtpar') && r1.includes(h.namn) && !!forByn && r1.includes(forByn.name) && r1.includes('för byn') && /silver/.test(r1) && r1.includes('Värt');
+    const ruta = r1 === r2 && r1.includes('Bytet') && r1.includes('filtpar') && r1.includes(SIM.hp(s, h).name) && !!forByn && r1.includes(forByn.name) && r1.includes('för byn') && /silver/.test(r1) && r1.includes('Värt');
     // när bytet är klart plockas bybons filt ihop
     if (forByn) helAffar(s, forByn);
     for (let i = 0; i < 3; i++) step(s, BEAT);
@@ -1509,7 +1509,7 @@ SCENARIER.filtplats = {
     if (forByn) helAffar(s, forByn, false, 'bud');
     const mot = hf && SIM.filtMot(s, hf);
     const isar = !!hf && !!mot && mot.y - hf.y >= 2.3;
-    const bakom = !!hf && !!mot && !!forByn && h.y < hf.y && forByn.task!.ty > mot.y && Math.abs(forByn.task!.ty - SIM.bakomFilt(s, mot).y) < 1e-9;
+    const bakom = !!hf && !!mot && !!forByn && SIM.hp(s, h).y < hf.y && forByn.task!.ty > mot.y && Math.abs(forByn.task!.ty - SIM.bakomFilt(s, mot).y) < 1e-9;
     const fri = !!hf && !!mot && [hf, mot].every(f => [-1, 0, 1].every(dx => SIM.ledig(s, Math.floor(f.x) + dx, Math.floor(f.y))));
     const z = SIM.zonesOf(s)[0], inteLager = !!z && !SIM.handelFri(s, z.x + 1, z.y - 1);
     return [
@@ -1564,18 +1564,18 @@ SCENARIER.handlarprat = {
     for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); }
     const h = s.handlare!, [a, b] = living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
     const social = (p: Person, x: number, y: number) => { p.x = x; p.y = y; p.task = { act: 'samtal', phase: 'do', tx: x, ty: y, until: s.now + HOUR, carry: 0, dark: false, why: '' } as Task; };
-    social(a, h.x + 1, h.y + 1); social(b, h.x + 30, h.y); // a är nära handlaren, b långt borta
+    social(a, SIM.hp(s, h).x + 1, SIM.hp(s, h).y + 1); social(b, SIM.hp(s, h).x + 30, SIM.hp(s, h).y); // a är nära handlaren, b långt borta
     const rels = JSON.stringify(s.rels), kan = JSON.stringify(a.tek ?? null), skill = JSON.stringify(a.skill);
     const ev: SIM.TalkEvent[] = [];
     SIM.pratMedHandlare(s, SIM.HANDEL.pratSek * 2, ev); // så lång tid att hen säkert pratar
-    const tanke = a.thoughts.some(x => x.text.includes(h.namn) && x.text.startsWith('Småprat')), ingenB = !b.thoughts.some(x => x.text.includes(h.namn));
+    const tanke = a.thoughts.some(x => x.text.includes(SIM.hp(s, h).name) && x.text.startsWith('Småprat')), ingenB = !b.thoughts.some(x => x.text.includes(SIM.hp(s, h).name));
     const handelse = ev.some(e => e.a === a.id && e.b === h.id && e.kind === 'småprat') && !ev.some(e => e.a === b.id);
     const bara = JSON.stringify(s.rels) === rels && JSON.stringify(a.tek ?? null) === kan && JSON.stringify(a.skill) === skill;
     // medan någon handlar pratar varken hen eller handlaren med någon annan; den som står i kö får prata (steg 4.5.7.5)
     const c = living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen)[2];
     h.affar = { vem: b.id, namn: b.name, fas: 'bud', kop: [], bud: [], hamta: [], framme: [], nej: 0, f: SIM.HANDEL.forstaBud, t: s.now };
-    b.x = h.x + 1; b.y = h.y + 2; b.task = { act: 'handla', phase: 'do', tx: b.x, ty: b.y, until: s.now + HOUR, carry: 0, ref: h.id, dark: false, why: '' } as Task;
-    c.x = h.x + 1; c.y = h.y + 3; c.task = { act: 'koa', phase: 'do', tx: c.x, ty: c.y, until: s.now + HOUR, carry: 0, ref: h.id, dark: false, why: '' } as Task;
+    b.x = SIM.hp(s, h).x + 1; b.y = SIM.hp(s, h).y + 2; b.task = { act: 'handla', phase: 'do', tx: b.x, ty: b.y, until: s.now + HOUR, carry: 0, ref: h.id, dark: false, why: '' } as Task;
+    c.x = SIM.hp(s, h).x + 1; c.y = SIM.hp(s, h).y + 3; c.task = { act: 'koa', phase: 'do', tx: c.x, ty: c.y, until: s.now + HOUR, carry: 0, ref: h.id, dark: false, why: '' } as Task;
     const ev2: SIM.TalkEvent[] = [];
     SIM.pratMedHandlare(s, SIM.HANDEL.pratSek * 2, ev2);
     const tyst = !ev2.length && !SIM.isSocial(b) && SIM.isSocial(c);
@@ -1703,14 +1703,14 @@ SCENARIER.grannklaner = {
     rikBy(s); k[0].inst = 40; for (const c of k.slice(1)) c.inst = -80;
     s.nastaHandlare = s.now;
     for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); }
-    const h = s.handlare, fran = !!h && h.klan === k[0].id && h.hem === k[0].hem && k[0].personer.some(p => p.roll === 'handlare' && p.namn === h.namn);
+    const h = s.handlare, fran = !!h && SIM.hp(s, h).gast!.klan === k[0].id && SIM.hp(s, h).gast!.hem! === k[0].hem && k[0].personer.some(p => p.roll === 'handlare' && p.namn === SIM.hp(s, h).name);
     // ett byte gör klanen vänligare, en upptäckt lurendrejeri mindre vänlig
     const [a] = living(s), pa = { id: a.id, namn: a.name, x: a.x, y: a.y, varde: () => 0, over: () => [] } as SIM.Part;
-    const ph = { ...pa, id: h?.id ?? -1, namn: h?.namn ?? '' } as SIM.Part;
+    const ph = { ...pa, id: h?.id ?? -1, namn: h ? SIM.hp(s, h).name : '' } as SIM.Part;
     const i0 = k[0].inst;
     for (const fn of SIM.vidByte) fn(s, pa, ph, [], [], { nr: 0, t: s.now, a: pa.id, an: pa.namn, b: ph.id, bn: ph.namn, ag: [], bg: [] });
     const vanligare = k[0].inst === i0 + SIM.KLAN.handel;
-    if (h) h.handel = 1000; // märker det säkert
+    if (h) SIM.hp(s, h).skill.handel = 1000; // märker det säkert
     const i1 = k[0].inst;
     for (const fn of SIM.vidLura) fn(s, pa, ph, false);
     const lurad = k[0].inst === i1 - SIM.KLAN.lurad;
@@ -2365,6 +2365,43 @@ SCENARIER.filtplats = {
     return [
       ['en ruta i lagret är inte fri för en filt', lager],
       [`två filtar mitt på lagerplatsen flyttas bredvid den (${(n.x - z.x - 0.5).toFixed(0)}, ${(n.y - z.y - 0.5).toFixed(0)})`, fri],
+    ];
+  },
+};
+
+SCENARIER.gastperson = {
+  text: 'Gästen är en person (steg 9.2.111, gast.ts): handlaren ligger bland folket med en gästrad (sort, klan, hem) och samma negativa id som i bytena, och handlarens egen data har bara det som gäller handeln. Byns tal räknar bara byborna, gästens kropp och egenskaper drar ingen slump ur byns följder, hen tas ur folket när hen lämnar kartan, och en sparad by med den gamla handlaren görs om när den laddas',
+  kor: () => {
+    const s = createState(6, START); rikBy(s);
+    const folk0 = living(s).length;
+    const sk = SIM.skickaHandlare(s), h = s.handlare!, p = s.people.find(q => q.id === h?.id);
+    const rad = !!p && p.gast?.sort === 'handlare' && p.gast.klan !== undefined && !!p.gast.hem && p.id < 0;
+    const bara = !!h && !('namn' in h) && !('hem' in h) && !('x' in h) && !('handel' in h) && Array.isArray(h.varor) && typeof h.silver === 'number' && !!h.fas;
+    const kropp = !!p && p.skill.handel > 0 && SIM.STATS.every(k => p.pot[k] >= 1 && p.pot[k] <= 20) && p.health === 1 && p.blod === 1;
+    const utanByn = living(s).length === folk0 && !living(s).includes(p!) && !SIM.alive(p!) && SIM.gastLever(p!);
+    // samma person ur samma frö och nyckel, utan att byns slumpföljder rör sig
+    const rng0 = JSON.stringify(s.rngs), igen = SIM.nyGast(s, { id: -99, namn: p!.name, sex: p!.sex, fodd: p!.born, rad: p!.gast!, x: 0, y: 0, nyckel: SIM.gastNyckel(p!.gast!.klan, p!.name) });
+    const samma = JSON.stringify(igen.pot) === JSON.stringify(p!.pot) && igen.hue === p!.hue, ingenSlump = JSON.stringify(s.rngs) === rng0;
+    // handlaren går: hen tas ur folket
+    const g = SIM.cloneState(s); g.handlare!.fas = 'gar'; g.handlare!.framme = g.now; g.handlare!.fran = { x: 0.5, y: 0.5, t: g.now }; g.handlare!.mx = 0.5; g.handlare!.my = 0.5;
+    step(g, 5);
+    const borta = !g.handlare && !g.people.some(q => q.id === h.id);
+    // en sparad by från före v518: handlarens namn, hem och plats stod i handlarens data
+    const gl = JSON.parse(SIM.serialize(s));
+    const gp = gl.people.find((q: Person) => q.id === h.id);
+    Object.assign(gl.handlare, { namn: gp.name, hem: gp.gast.hem, klan: gp.gast.klan, sex: gp.sex, x: gp.x, y: gp.y, handel: gp.skill.handel, fodd: gp.born });
+    gl.people = gl.people.filter((q: Person) => q.id !== h.id); gl.v = 26;
+    const m = SIM.migrate(gl), mp = m.people.find(q => q.id === h.id);
+    const gjordOm = !!mp && mp.name === p!.name && mp.gast?.sort === 'handlare' && mp.skill.handel === p!.skill.handel && !('namn' in m.handlare!) && living(m).length === folk0;
+    return [
+      [`handlaren kommer (${sk.text})`, sk.ok],
+      [`handlaren är en person bland folket med en gästrad och samma negativa id (${p ? `${p.name} från ${p.gast?.hem}, id ${p.id}` : 'ingen'})`, rad],
+      ['handlarens egen data har bara det som gäller handeln (varor, silver, fas, affären)', bara],
+      [`gästen har en kropp, egenskaper och färdigheten Handel (${p?.skill.handel ?? 0})`, kropp],
+      [`byns invånare räknar bara byborna (${living(s).length} av ${folk0})`, utanByn],
+      ['gästen drar ingen slump ur byns följder, och samma frö och nyckel ger samma person', ingenSlump && samma],
+      ['när handlaren lämnat kartan finns hen inte kvar bland folket', borta],
+      ['en sparad by med den gamla handlaren görs om när den laddas', gjordOm],
     ];
   },
 };

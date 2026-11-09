@@ -1,4 +1,4 @@
-import { sjukText, personRader, PERSONLOGG } from '../../sim';
+import { hp, sjukText, personRader, PERSONLOGG } from '../../sim';
 import { kvOf, paSigVikt, klanById, FORMAGOR, gangDelar, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
 import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, handOrkar, handPlatser, capacity, kvNamn, handerFor, load, utrustning, bordaIHander, type IHanden, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, timeLabel, vidBordet, upplevelseText, uppEffekt, vuxenUpp, Upplevelse, yrkeNamn, andlighet, troOf, tolkning, teckenText, troNamn, pratarMed, gastRelationer, actIkon, utbIkon, AMNEN, type ByteMinne, type GastRel, type Slakting, stacksOf, grundvarde, tingVarde, housesOf, husVarde } from '../../sim';
 import { gorText } from '../jakt';
@@ -24,7 +24,7 @@ export const person: Flik = {
     const g = gastById(ui.selected); // handlaren eller en rövare (steg 4.5.4.12): samma sida med de flikar som finns för hen
     if (g) return gastHtml(g);
     const p = byId(s, ui.selected);
-    if (!p && ui.selected !== undefined && ui.selected < 0) return '<p class="muted">Hen har lämnat byn.</p>';
+    if ((!p || p.gast) && ui.selected !== undefined && ui.selected < 0) return '<p class="muted">Hen har lämnat byn.</p>';
     if (!p) return `<p class="muted">Klicka på en person på kartan eller i listan för att se allt om hen.</p>`;
     const { flikar, flik, delar } = valda(d => alive(p) || !d.levande);
     const med = alive(p) ? pratarMed(s, p) : undefined;
@@ -419,15 +419,15 @@ function utanforHtml(p: Person) {
   const g = gastRelationer(s, p);
   if (!g.length) return '';
   const id = `utanfor-${p.id}`, h = s.handlare;
-  const rad = (x: (typeof g)[number]) => { const har = h && h.namn === x.q.namn && klanById(s, h.klan)?.namn === x.klan; return gastRelRad(har ? `<button class="plink" data-id="${h!.id}" type="button">${esc(x.q.namn)}</button>` : `<span>${esc(x.q.namn)}</span>`, x.r, undefined, false, x.klan); };
+  const rad = (x: (typeof g)[number]) => { const har = h && hp(s, h).name === x.q.namn && klanById(s, hp(s, h).gast!.klan)?.namn === x.klan; return gastRelRad(har ? `<button class="plink" data-id="${h!.id}" type="button">${esc(x.q.namn)}</button>` : `<span>${esc(x.q.namn)}</span>`, x.r, undefined, false, x.klan); };
   return `<h3 class="klick" data-hjalp="${id}" title="Gästerna hen känner" tabindex="0" role="button">Utanför byn ${hjalpOppen(id) ? '▾' : '▸'}</h3>${hjalpOppen(id) ? `<ul class="rels">${g.map(rad).join('')}</ul>` : ''}`;
 }
 function relInne(p: Person) {
   const sarskild = (q: Person) => p.partner === q.id || p.bast === q.id || p.arke === q.id || p.mentor === q.id || q.mentor === p.id || !!p.rivaler?.includes(q.id);
   const rels = s.people.filter(q => q.id !== p.id && s.rels[relKey(p.id, q.id)] && alive(q)).map(q => ({ q, r: s.rels[relKey(p.id, q.id)], sv: sarskild(q) }))
     .sort((x, y) => +y.sv - +x.sv || Math.abs(y.r.op) - Math.abs(x.r.op)).slice(0, 10);
-  const h = s.handlare, hr = h ? gastRelationer(s, p).find(x => x.q.namn === h.namn && klanById(s, h.klan)?.namn === x.klan) : undefined;
-  const gast = h && hr ? gastRelRad(`<button class="plink" data-id="${h.id}" type="button">${esc(h.namn)}</button>`, hr.r, undefined, true) : '';
+  const h = s.handlare, hr = h ? gastRelationer(s, p).find(x => x.q.namn === hp(s, h).name && klanById(s, hp(s, h).gast!.klan)?.namn === x.klan) : undefined;
+  const gast = h && hr ? gastRelRad(`<button class="plink" data-id="${h.id}" type="button">${esc(hp(s, h).name)}</button>`, hr.r, undefined, true) : '';
   return rels.length || gast ? `<ul class="rels">${gast}${rels.map(({ q, r }) => {
     const typer = relTyper(s, p, q), id = (k: string) => `rt-${p.id}-${q.id}-${k}`;
     const sym = typer.map(t => `<button type="button" class="relsym" data-hjalp="${id(t.id)}" data-hjalp-grupp="rt-${p.id}-${q.id}-" title="${esc(t.namn)}" aria-label="${esc(t.namn)}">${iconImg(t.ikon)}</button>`).join('');

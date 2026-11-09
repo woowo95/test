@@ -177,6 +177,7 @@ export interface Person {
   sorg?: { namn: string; ord: string; v: number; dygn: number; t0: number; s2?: 1; s3?: 1 }[]; // sorgen i stadier efter en död (steg 9.2.33, liv.ts)
   pratArbete?: number; // samtalen hen haft medan hen arbetat (steg 8.1.12)
   id: number; name: string; sex: 'm' | 'k';
+  gast?: import('./gast').GastRad; smitta?: import('./sjukdom').SjukId; // en gäst: handlaren, en rövare eller en främling (steg 9.2.111, gast.ts); id är då negativt; smitta: sjukdomen en gäst bär utan att någon ser det (steg 9.5.5)
   born: number; died?: number; cause?: string; left?: number;
   fran?: number; // grannklanen hen kom ifrån (en främling, steg 4.4.4.2)
   grundare?: true | 'ny'; // grundade byn, eller grundade den på nytt (steg 3.9.7)

@@ -9,6 +9,7 @@
 // raden säger det. Dödligheten per ålder ställs alltså in med farligheten, inte med en tärning vid slutet: farligheten f ger
 // döden när slumpfaktorn (jämnt mellan 1 − SJUK.spann och 1 + SJUK.spann) gånger f är större än 1, för en frisk och vilad.
 // Filen är systemets enda ställe: registret, insjuknandet, förloppet och texterna.
+import { hp } from './gast';
 import { DAY, HOUR_S, State, Person } from './typer';
 import { balans } from './balans';
 import { ageOf, ALDER, KROPP, count } from './folk';
@@ -170,10 +171,10 @@ export function smittaTimme(s: State) {
 }
 // smittan utifrån (steg 9.5.5): handlaren som bär en sjukdom smittar dem som står bredvid hen, så länge hen är i byn
 export function smittaUtifranTimme(s: State) {
-  const h = s.handlare;
-  if (!h?.smitta || h.fas === 'kommer') return;
-  const k = h.smitta, d = SJUKDOMAR[k];
-  for (const q of living(s)) if (!q.sjuk && !q.immun?.[k] && Math.hypot(q.x - h.x, q.y - h.y) < SJUK.nara * 2 && rnd(s, 'halsa', q) < d.smitta && insjukna(s, q, k, 'av handlaren')) count(s, 'smittadUtifran_' + k);
+  const h = s.handlare, P = h && hp(s, h), k = P?.smitta;
+  if (!h || !P || !k || h.fas === 'kommer') return;
+  const d = SJUKDOMAR[k];
+  for (const q of living(s)) if (!q.sjuk && !q.immun?.[k] && Math.hypot(q.x - P.x, q.y - P.y) < SJUK.nara * 2 && rnd(s, 'halsa', q) < d.smitta && insjukna(s, q, k, 'av handlaren')) count(s, 'smittadUtifran_' + k);
 }
 // en handlare eller främling som kommer bär ibland mässlingen eller kopporna (steg 9.5.5): mässlingen vanligare. Ingen ser det
 export function barSmitta(s: State): SjukId | undefined {

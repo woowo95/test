@@ -1,4 +1,6 @@
 import { nyaKlaner } from './klaner';
+import { gastAv, nyGast } from './gast';
+import { gastNyckel } from './gastliv';
 import { migrateTek } from './teknik';
 import { stepDelning } from './delning';
 import { put, setStock, storeFromSums } from './lager';
@@ -234,6 +236,14 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
   [24, 'v378: historikens kolumner (eld sedan v357) i registrets ordning redan när byn läses in (steg 5.5.7)', s => historikKolumner(s)],
   [25, 'v510: de nya vågskålarna (steg 8.3.4 och 8.3.5) börjar på noll', s => { s.seder.v.fortjanst ??= 0; s.seder.v.fejd ??= 0; s.seder.v.krig ??= 0; s.seder.v.delning ??= 0; s.seder.v.natur ??= 0; s.seder.v.andlig ??= 0; }],
   [26, 'v513: färdigheten Läkekonst (steg 9.5.7) börjar på noll', s => { for (const p of s.people) p.skill.lakekonst ??= 0; }],
+  [27, 'v518: handlaren är en person bland folket (steg 9.2.111, gast.ts): namnet, hemmet, klanen, platsen och färdigheten flyttar till personen', s => {
+    const h = s.handlare as (import('./handel').Handlare & { namn?: string; hem?: string; klan?: number; sex?: 'm' | 'k'; x?: number; y?: number; handel?: number; fodd?: number; smitta?: import('./sjukdom').SjukId }) | undefined;
+    if (!h || h.namn === undefined || gastAv(s, h.id)) return;
+    const p = nyGast(s, { id: h.id, namn: h.namn, sex: h.sex ?? 'm', fodd: h.fodd ?? s.now - 35 * DAY, rad: { sort: 'handlare', klan: h.klan, hem: h.hem }, x: h.x ?? h.mx, y: h.y ?? h.my, nyckel: gastNyckel(h.klan, h.namn), skill: { handel: h.handel ?? 0 } });
+    if (h.smitta) p.smitta = h.smitta;
+    s.people.push(p);
+    for (const k of ['namn', 'hem', 'klan', 'sex', 'x', 'y', 'handel', 'fodd', 'smitta'] as const) delete h[k];
+  }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

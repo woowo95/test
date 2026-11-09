@@ -1452,15 +1452,15 @@ SCENARIER.tornadogast = {
       for (const sd of [5, -5]) { const x = p.x - (q.y - p.y) / l * sd, y = p.y + (q.x - p.x) / l * sd, m = fran(x, y); if (!ph && SIM.inMap(Math.floor(x), Math.floor(y)) && m >= 4.6 && m < 6.2 && SIM.vattenNu(s)[Math.floor(y) * W + Math.floor(x)] !== T.Vatten) ph = { x, y }; }
     }
     if (!ph) return [['en plats för handlaren i utkanten', false]];
-    h.fas = 'vantar'; h.kvall = s.now + 10 * HOUR; h.x = h.mx = ph.x; h.y = h.my = ph.y;
-    const varor0 = h.varor.reduce((n, w) => n + w.n, 0), namn = h.namn;
+    h.fas = 'vantar'; h.kvall = s.now + 10 * HOUR; SIM.hp(s, h).x = h.mx = ph.x; SIM.hp(s, h).y = h.my = ph.y;
+    const varor0 = h.varor.reduce((n, w) => n + w.n, 0), namn = SIM.hp(s, h).name, hem = SIM.hp(s, h).gast!.hem!;
     let hFlog = -1;
     for (let k = 0; k < 900 && s.tornado; k++) {
       if (s.rovare === f && f.gor === 'samlas') { f.x = pr.x; f.y = pr.y; }
       step(s, 5);
       if (hFlog < 0 && (h.fas as string) === 'gar') hFlog = Math.hypot(h.fran.x - ph.x, h.fran.y - ph.y);
     }
-    const st = s.stat ?? {}, varor1 = h.varor.reduce((n, w) => n + w.n, 0), dog = s.log.some(l => l.text.includes(`${namn} från ${h.hem} dog`));
+    const st = s.stat ?? {}, varor1 = h.varor.reduce((n, w) => n + w.n, 0), dog = s.log.some(l => l.text.includes(`${namn} från ${hem} dog`));
     return [
       [`rövarflocken dog i tornadon (${s.rovare === f ? `${f.folk.length} kvar` : 'borta'}; ${st.rovarDoda ?? 0} döda)`, s.rovare !== f && (st.rovarDoda ?? 0) >= 3],
       [`handlaren ${namn} flög ${hFlog.toFixed(1)} rutor och gick hem (${h.fas}${dog ? ', dog' : ''}; varorna ${varor0} → ${varor1})`, (h.fas as string) === 'gar' && !dog && hFlog >= 1 && varor1 <= varor0 && varor1 > 0],

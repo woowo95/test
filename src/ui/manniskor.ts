@@ -433,7 +433,7 @@ export function drawPeople(t: number) {
       const rel = q && (p.partner === q.id || (r?.rom ?? 0) > 40) ? 'karlek' : (r?.op ?? 0) < REL.gral ? 'ovan' : (r?.op ?? 0) > REL.van ? 'van' : 'neutral';
       const ikon = (flash.has(p.id) || q && p.prat?.m === q.id) ? amneIkon(p.prat) : undefined; // ämnet (steg 3.9.5, 9.2.10)
       pratRuta(x, top, Math.sin(t / 500 + p.id) * 0.6, flash.get(p.id), rel, ikon);
-      if (medGast && s.handlare?.id === o) { const hp = handlarPlats(s.handlare, ui.nu); pratRuta(hp.x * TS, hp.y * TS - 13, Math.sin(t / 500) * 0.6, flash.get(p.id), 'neutral'); } // handlaren pratar också
+      if (medGast && s.handlare?.id === o) { const hp = handlarPlats(s, s.handlare, ui.nu); pratRuta(hp.x * TS, hp.y * TS - 13, Math.sin(t / 500) * 0.6, flash.get(p.id), 'neutral'); } // handlaren pratar också
       continue;
     }
     // vid handlarens filt (steg 4.4.1.5 och 4.5.7.4): bybon frågar vad handlaren har och hen svarar med varornas symboler, en i
@@ -442,7 +442,7 @@ export function drawPeople(t: number) {
     if (hn && s.handlare) {
       const i = Math.floor(t / 1400 + p.id), en = (v: string[]) => v.length ? v[i % v.length] : undefined;
       pratRuta(x, top, Math.sin(t / 500 + p.id) * 0.6, undefined, 'neutral', en(hn.bybo));
-      const hp = handlarPlats(s.handlare, ui.nu);
+      const hp = handlarPlats(s, s.handlare, ui.nu);
       pratRuta(hp.x * TS, hp.y * TS - 13, Math.sin(t / 500) * 0.6, undefined, 'neutral', en(hn.handlare));
       continue;
     }

@@ -1,4 +1,5 @@
 import { balans } from './balans';
+import { hp } from './gast';
 import { rasar } from './bygg';
 import { MATERIAL, bitAt, blocked, roofed, touch, vagBort } from './byggnad';
 import { alive, count, living, log } from './folk';
@@ -298,12 +299,12 @@ function gasterna(s: State, t: Tornado, zonVid: (x: number, y: number) => number
   }
   const h = s.handlare;
   if (h && !t.traff?.includes(h.id)) {
-    const p = handlarPlats(h, s.now), zon = zonVid(p.x, p.y);
+    const p = handlarPlats(s, h, s.now), zon = zonVid(p.x, p.y);
     if (zon >= 0) {
       (t.traff ??= []).push(h.id);
       const dod = zon === 0 || zon === 1 && ur(s, t, h.id, 3859) < TORNADO.dodNara;
       if (dod) { t.doda = (t.doda ?? 0) + 1; count(s, 'tornado dod'); }
-      h.x = p.x; h.y = p.y;
+      hp(s, h).x = p.x; hp(s, h).y = p.y;
       handlarTornado(s, h, dod, zon === 1 ? TORNADO.sonder : TORNADO.sonderUtkant, ur(s, t, h.id, 3860), dod ? undefined : landar(s, t, p.x, p.y, h.id, zon, L, true));
     }
   }
