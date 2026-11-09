@@ -354,7 +354,7 @@ const lagerNyA: AtgardDef = {
 // relationen och handelsfärdigheten
 const salesPlats = (s: State, h: Hus) => gridOf(s).rooms.filter(r => r.hus === h.id).reduce((n, r) => n + sovplatser(s, r), 0);
 // säljaren vill bli av med huset: det är tomt eller för stort för familjen; byn säljer sina tomma hus
-function saljbart(s: State, h: Hus): boolean {
+export function saljbart(s: State, h: Hus): boolean {
   if (!h.klar || h.ut) return false;
   if (h.ag === undefined) return fnId(h) === 'sovsal' && h.tom !== undefined;
   return familjOf(s, h.ag).length * PLAN.forStort <= salesPlats(s, h) || !familjOf(s, h.ag).length;
@@ -378,7 +378,7 @@ const kopaHus: AtgardDef = {
     return ut;
   },
 };
-const husKostnadAv = (n: number) => { const w = Math.max(HUS.minSida, Math.ceil(Math.sqrt(n))), h = Math.max(HUS.minSida, Math.ceil(n / w)); return ((2 * (w + 2) + 2 * h - 1) * (MATERIAL.timmer.n * grundvarde('ved') + MATERIAL.timmer.tim * ARBETE)) + w * h * (MATERIAL.tra.n * grundvarde('ved') + MATERIAL.tra.tim * ARBETE); };
+export const husKostnadAv = (n: number) => { const w = Math.max(HUS.minSida, Math.ceil(Math.sqrt(n))), h = Math.max(HUS.minSida, Math.ceil(n / w)); return ((2 * (w + 2) + 2 * h - 1) * (MATERIAL.timmer.n * grundvarde('ved') + MATERIAL.timmer.tim * ARBETE)) + w * h * (MATERIAL.tra.n * grundvarde('ved') + MATERIAL.tra.tim * ARBETE); };
 // husbytet (steg 7.2.12) är ett vanligt stort byte (genomfor i behov.ts): två filtar, huset som en symbol på den enas och betalningen på
 // den andras, handslag, en rad i loggen och krönikan, relationen och Handel som i alla byten. Priset hamnar mellan säljarens lägsta och
 // köparens högsta: vän eller släkt betalar mindre, och den skickligare får det bättre. Köparen betalar med det som hen behöver minst, i
