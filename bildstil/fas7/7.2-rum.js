@@ -82,21 +82,10 @@
     timmerhus(B, o.x, o.y, TW, TH, 6);
     MOBLERING[mob](B, typ, o);
   } });
-  // bänkarna ensamma, på bredden och på höjden, intill ett långbord
-  const bankar = (text, typ) => ({ text, w: 128, h: 80, rita: (B) => {
-    for (let ty = 0; ty < 5; ty++) for (let tx = 0; tx < 8; tx++) bildfil(B, 'golv_tra', tx * R, ty * R);
-    bank(B, typ, 'h', 48, 6, 6); mobel(B, 'bord3', 6, 16); bank(B, typ, 'h', 48, 6, 54);
-    bank(B, typ, 'v', 48, 70, 8); bank(B, typ, 'v', 24, 88, 8); bank(B, typ, 'h', 24, 100, 10);
-  } });
 
   VAL.push(KORT('f7_samlingssal', 'Samlingssalen', 'Steg 7.2.7: samlingssalen, där byn äter tillsammans, håller gille och ser på det som framförs, sedd som i spelet utan tak: timmerväggar, trägolv, långborden och scenen. Det nya är salen som helhet och den långa bänken vid långborden. Varje version möblerar salen på sitt sätt och har sin egen bänk; under salen bänken ensam vid ett långbord, på bredden och på höjden.', [
     sal('Två långbord på längden med bänkar på båda sidor och scenen vid kortväggen. Bänken är en tjock planka på två par ben.', 0, 0),
     sal('Borden i en hästsko som öppnar sig mot scenen, med golvet fritt i mitten för dans och lekar. Bänken är en kluven stock med den flata sidan upp, på två stubbar.', 1, 1),
     sal('Ett enda långt bord genom salen fram mot scenen, med bänkar på båda sidor och fasta bänkar längs väggarna. Bänken är en hel, rund stock med barken kvar, på två klossar.', 2, 2),
-  ]));
-  VAL.push(KORT('f7_sal_bank', 'Bänken i samlingssalen', 'Steg 7.2.7: den långa bänken vid långborden, ensam: på bredden framför och bakom ett långbord, och på höjden. Samma tre bänkar som i salens tre versioner.', [
-    bankar('En tjock planka på två par ben.', 0),
-    bankar('En kluven stock med den flata sidan upp, på två stubbar.', 1),
-    bankar('En hel, rund stock med barken kvar, på två klossar.', 2),
   ]));
 })();
