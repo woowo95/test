@@ -50,6 +50,9 @@ export function startWork(s: State, p: Person, tk: Task) {
   if (tk.act === 'vatten') { tk.until = s.now + (TORST.fyllMin + halMin(s, p)) * MIN; return; } // vattensäcken fylls (torst.ts), med hålet i isen (is.ts)
   if (tk.act === 'tillbehor') { tk.until = s.now + (tillbehorDef(tk.tool ?? '')?.min ?? 0) * MIN; return; } // ett tillbehör till en möbel (stationer.ts)
   if (tk.act === 'falla') { const i = tileOf(tk.tx, tk.ty); tk.until = s.now + Math.max(0, fallTid(s, i) - (s.halvfallt?.[i] ?? 0)); return; }
+  // framme: arbetet tar sin tid från framkomsten, inte det som blev över av tiden för vägen dit; den som redan stod där står inte
+  // och väntar (steg 9.2.130)
+  if (tk.arbTid !== undefined && ACTS[tk.act]?.framme) { tk.until = s.now + tk.arbTid; tk.arbTid = undefined; return; }
   const ger = GORS[tk.act];
   if (!ger) return;
   tk.hamtat = undefined; // materialet som bars hit ligger redan i det påbörjade (steg 9.2.43)

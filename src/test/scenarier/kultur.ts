@@ -831,14 +831,22 @@ SCENARIER.graven = {
     klockan(s, 10); tandEld(s); setFood(s, 200);
     SIM.die(s, d, 'alderdom');
     const kr = s.kvarlevor?.find(k => k.k === 'kropp' && k.vem === d.id);
-    let h = 0, bar = false;
-    while (s.kvarlevor?.some(k => k.vem === d.id) && h < 72) { kor(s, 1); h++; }
+    let h = 0, bar = false, stod = 0, kort = '';
+    // steg 9.2.130: den som går för att ta hand om den döde går dit, tar upp kroppen direkt och står inte still vid den, och kortet
+    // säger vems kropp hen går till
+    while (s.kvarlevor?.some(k => k.vem === d.id) && h < 72 * 12) {
+      kor(s, 1 / 12); h++;
+      for (const p of SIM.living(s)) { const tk = p.task; if (tk?.act !== 'begrava') continue; if (tk.phase === 'do') stod++; if (tk.phase === 'go' && !kort) kort = SIM.taskName(tk); }
+    }
+    h = Math.round(h / 12);
     { const p = v[2], t0 = p.task; p.task = { act: 'grava', phase: 'go', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' } as SIM.Task; bar = SIM.gangDelar(s, p).delar.some(r => r.k === 'bar'); p.task = t0; } // den som bär kroppen dit
     const g = s.gravar?.find(q => q.vem === d.id);
     return [
       [`kroppen ligger där hen dog (${kr?.x}, x0 ${x0})`, !!kr && kr.x === x0],
       ['den som bär kroppen till graven går långsammare', bar],
       [`kroppen begravs (${h} timmar)`, !!g],
+      [`den som tar hand om den döde står inte still vid kroppen (${stod * 5} minuter)`, stod <= 1],
+      [`kortet säger vems kropp hen går till ("${kort || SIM.taskName({ act: 'begrava', phase: 'go', tx: 0, ty: 0, until: 0, carry: 0, why: `Bär ${d.name} till graven` })}")`, (kort || SIM.taskName({ act: 'begrava', phase: 'go', tx: 0, ty: 0, until: 0, carry: 0, why: `Bär ${d.name} till graven` })) === `Går till ${/[sxz]$/i.test(d.name) ? d.name : d.name + 's'} kropp`],
       ['graven är en ruta som man kan fråga efter', !!g && SIM.gravAt(s, g.x, g.y) === g],
     ];
   },
