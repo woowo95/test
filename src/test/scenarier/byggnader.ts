@@ -661,6 +661,7 @@ SCENARIER.lekibyn = {
       [`barnen leker inne i byn (${iByn} av ${leker} timmar)`, leker > 0 && iByn === leker],
       [`aldrig i vattnet eller i en vägg (${fel})`, fel === 0],
       [`på många olika ställen (${platser.size} rutor)`, platser.size >= 5],
+      ...lekFart(s),
     ];
   },
 };
@@ -1632,3 +1633,18 @@ SCENARIER.byggstar = {
     ];
   },
 };
+// steg 9.2.91: leken och sporten rör sig i bilden i vanlig gångfart, och står still mellan förflyttningarna
+function lekFart(s: State): [string, boolean][] {
+  const barn = living(s).find(q => ageOf(q, s.now) < ALDER.hjalper) ?? living(s)[0], w = SIM.ACTS.leka.vandra!;
+  const fart = SIM.kroppFart(barn, s.now), dt = 0.05;
+  let still = 0, ratt = 0, langsam = 0, n = 0, prev = SIM.lekGang(barn.id, w.r * 0.6, (w.h0 + w.h1) / 2, fart, s.now);
+  for (let i = 1; i <= 12000; i++) {
+    const q = SIM.lekGang(barn.id, w.r * 0.6, (w.h0 + w.h1) / 2, fart, s.now + i * dt * 1000), v = Math.hypot(q.dx - prev.dx, q.dy - prev.dy) / dt;
+    n++; if (v < 1e-6) still++; else if (Math.abs(v - fart) < 0.1 * fart) ratt++; else if (v < 0.5 * fart) langsam++;
+    prev = q;
+  }
+  return [
+    [`leken går i vanlig gångfart ${fart.toFixed(2)} rutor/s (${ratt} stunder, ${langsam} mycket långsamt)`, ratt > 0 && langsam <= 0.02 * n],
+    [`och står still en stund mellan förflyttningarna (${Math.round(still / n * 100)} %)`, still >= 0.3 * n],
+  ];
+}

@@ -106,3 +106,16 @@ export function gangDelar(s: State, p: Person) {
   }
   return { fart: f, rutor: GANG.fart * f, delar };
 }
+
+// lek och sport (steg 9.2.91): man rör sig på platsen i sin vanliga gångfart (rutor i sekunden, kroppFart) till en ny punkt
+// högst r rutor bort och står sedan still där tills nästa förflyttning, hellre än att glida runt mycket långsamt. Bara i bilden:
+// punkterna kommer ur personens id och tiden t (millisekunder), så att bilden blir densamma varje gång
+const lekHash = (a: number, b: number) => { const v = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return v - Math.floor(v); };
+export function lekGang(id: number, r: number, still: number, fart: number, t: number) {
+  const L = still + 2 * r / Math.max(0.05, fart), k = t / 1000 + lekHash(id, 0.5) * L, i = Math.floor(k / L), u = k - i * L;
+  const pkt = (j: number) => { const a = lekHash(id, j) * Math.PI * 2, d = r * Math.sqrt(lekHash(j, id + 0.3)); return { x: Math.cos(a) * d, y: Math.sin(a) * d }; };
+  const a = pkt(i - 1), b = pkt(i), dist = Math.hypot(b.x - a.x, b.y - a.y), gang = dist / Math.max(0.05, fart);
+  if (u >= gang) return { dx: b.x, dy: b.y, gar: false };
+  const f = u / gang;
+  return { dx: a.x + (b.x - a.x) * f, dy: a.y + (b.y - a.y) * f, gar: true };
+}
