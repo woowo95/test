@@ -1,5 +1,5 @@
 import { omrade, tillHoljet, utanforByn } from './omrade';
-import { RECEPT } from './recept';
+import { RECEPT, type ReceptRad } from './recept';
 import { hash3 } from './slump';
 import { Act, GRANNAR4, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { eldPlats, getMap } from './karta';
@@ -109,7 +109,12 @@ export interface Forvar { rymmer: number; redskap?: true; tak?: true; stangd?: t
 export interface StationDel { namn: string; ikon?: string; w: number; h: number; arbete?: true } // en del i en station med delar (steg 9.4.1)
 export interface StationDef { delar?: StationDel[]; hard?: true; namn: string; ett?: true; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: Utkant; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar; pynt?: true; samtidigt?: number }
 // de enkla redskapen: görs vid slöjdbänken om byn har en, lite fortare där (fart), annars vid elden som förut (Björn, efter v90)
-const ENKLA: Act[] = ['yxa', 'spjut', 'metspo', 'kniv', 'bensyl', 'balte', 'boll', 'slagtra', 'mal', 'trumma', 'benflojt', 'lyra', 'fackla', 'talgljus', 'slanda'];
+const ENKLA: Act[] = ['yxa', 'kniv', 'bensyl', 'balte', 'boll', 'benflojt', 'fackla', 'talgljus'];
+// träsakerna vid snickarbänken (steg 9.4.5): receptets kolumn bank säger var det görs fortare och bättre, bara att det bara görs
+// där och kniv att det täljs med kniven på bänken. Handlingen som gör varje recept
+const TRA_ACT: Partial<Record<keyof typeof RECEPT, Act>> = { leksak: 'gor_leksak', fiskespjut: 'spjut', flintspjut: 'spjut', metspo: 'metspo', slagtra: 'slagtra', mal: 'mal', trumma: 'trumma', slanda: 'slanda', pilar: 'gor_pilar', skold: 'skold', bage: 'bage', lyra: 'lyra' };
+const traVid = (b: string, f: (r: ReceptRad) => boolean = () => true) => [...new Set((Object.keys(TRA_ACT) as (keyof typeof RECEPT)[]).filter(k => { const r: ReceptRad = RECEPT[k]; return r.bank === b && f(r); }).map(k => TRA_ACT[k]!))];
+const SNICKAR = traVid('snickarbank');
 export const STATIONER = {
   slaktbank: {
     namn: 'Slaktbänk', ikon: 'slaktbank', w: 3, h: 1, tek: ['slaktbank'], av: RECEPT.slaktbank.av, min: RECEPT.slaktbank.min, gor: ['slakta', 'rensa'], bara: ['slakta', 'rensa'], vid: { kniv: STATION.knivplatser }, smutsar: { slakta: 'blod' }, utkant: { till: STATION.slaktTill, avst: STATION.slaktAvst }, // står en bit från byn (steg 2.10.16) // blir blodig när det slaktas (blod.ts)
@@ -117,7 +122,7 @@ export const STATIONER = {
     forsta: '{namn} byggde byns första slaktbänk av virke. Där slaktas viltet och rensas fisken, och en kniv ligger kvar vid bänken.',
   },
   flatarbank: { // slöjdbänken: id:t är kvar från när den hette flätarbänken, så att sparade byar fungerar
-    namn: 'Slöjdbänk', ikon: 'flatarbank', w: 2, h: 1, tek: ['flatarbank'], av: RECEPT.flatarbank.av, min: RECEPT.flatarbank.min, gor: ['tvinna', 'korg', 'rock', 'skor', 'byxor', 'mossa', 'snoskor', 'gor_pilar', 'rustning', 'hjalm', 'skold', 'bage', 'slunga', 'horn', 'prastdrakt', 'tecken', 'mask', 'mantel', 'halsband', 'tunika', 'skjorta', 'axelrem', 'ryggsack', 'benspade', 'vattensack', ...ENKLA], fart: { tvinna: STATION.repFart, ...Object.fromEntries(ENKLA.map(a => [a, STATION.redskapFart])) }, bara: ['korg', 'rock', 'skor', 'byxor', 'mossa', 'snoskor', 'halsband', 'tunika', 'skjorta', 'axelrem', 'ryggsack', 'benspade', 'vattensack'], vid: { bensyl: 1 }, kraver: { rock: 'bensyl', skor: 'bensyl', ryggsack: 'bensyl', vattensack: 'bensyl' }, inne: true, sitt: true,
+    namn: 'Slöjdbänk', ikon: 'flatarbank', w: 2, h: 1, tek: ['flatarbank'], av: RECEPT.flatarbank.av, min: RECEPT.flatarbank.min, gor: ['tvinna', 'korg', 'rock', 'skor', 'byxor', 'mossa', 'snoskor', 'rustning', 'hjalm', 'slunga', 'horn', 'prastdrakt', 'tecken', 'mask', 'mantel', 'halsband', 'tunika', 'skjorta', 'axelrem', 'ryggsack', 'benspade', 'vattensack', ...ENKLA], fart: { tvinna: STATION.repFart, ...Object.fromEntries(ENKLA.map(a => [a, STATION.redskapFart])) }, bara: ['korg', 'rock', 'skor', 'byxor', 'mossa', 'snoskor', 'halsband', 'tunika', 'skjorta', 'axelrem', 'ryggsack', 'benspade', 'vattensack'], vid: { bensyl: 1 }, kraver: { rock: 'bensyl', skor: 'bensyl', ryggsack: 'bensyl', vattensack: 'bensyl' }, inne: true, sitt: true,
     bygger: 'Bygger en slöjdbänk av virke och grenar.',
     forsta: '{namn} byggde byns första slöjdbänk. Där tvinnas rep fortare än för hand och flätas korgar.', // och sys kläder med bensylen (steg 2.3.2)
   },
@@ -146,7 +151,7 @@ export const STATIONER = {
   },
   // snickarbänken (steg 9.4.4): står inne som slöjdbänken och har en sittplats. Snickaren arbetar där (seder.ts)
   snickarbank: {
-    namn: 'Snickarbänk', ikon: 'flatarbank', w: 2, h: 1, tek: ['snickarbank'], av: RECEPT.snickarbank.av, min: RECEPT.snickarbank.min, gor: [], inne: true, sitt: true, // bilden är slöjdbänkens tills Björn valt i bildstilen
+    namn: 'Snickarbänk', ikon: 'flatarbank', w: 2, h: 1, tek: ['snickarbank'], av: RECEPT.snickarbank.av, min: RECEPT.snickarbank.min, gor: SNICKAR, fart: Object.fromEntries(SNICKAR.map(a => [a, STATION.redskapFart])), bara: traVid('snickarbank', r => !!r.bara), vid: { kniv: 1 }, kraver: Object.fromEntries(traVid('snickarbank', r => !!r.kniv).map(a => [a, 'kniv'])), inne: true, sitt: true, // bilden är slöjdbänkens tills Björn valt i bildstilen
     bygger: 'Bygger en snickarbänk av virke och plankor.', forsta: '{namn} byggde byns första snickarbänk. Där görs träsakerna fortare och bättre.',
   },
   garvning: {

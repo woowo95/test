@@ -1674,8 +1674,30 @@ function lekFart(s: State): [string, boolean][] {
   ];
 }
 
+// träsakerna vid snickarbänken (steg 9.4.5): de görs fortare där än för hand, bara där för bågen, lyran och skölden, och
+// bågen och lyran kräver kniven på bänken. Slöjdbänken gör dem inte längre
+function traSaker(): [string, boolean][] {
+  const { STATIONER, kanGoras, fartVid, vidStation, tingOf, addTool, nyttVid, TEKNIK } = SIM;
+  const tra: Act[] = ['gor_leksak', 'slagtra', 'spjut', 'gor_pilar', 'mal', 'trumma', 'metspo', 'slanda'], bara: Act[] = ['bage', 'lyra', 'skold'];
+  const slojd = STATIONER.flatarbank.gor as Act[], sn = STATIONER.snickarbank;
+  const s = createState(1, START); medHus(s);
+  const utan = bara.map(a => kanGoras(s, a));
+  const t = medBank(s, 'snickarbank'), at = vidStation(t);
+  const utanKniv = bara.map(a => kanGoras(s, a));
+  const kniv = addTool(s, 'kniv', s.people[0]); kniv.agare = BYN; nyttVid(s, kniv);
+  const medKniv = bara.map(a => kanGoras(s, a)), fort = [...tra, ...bara].every(a => fartVid(s, at, a) > 1);
+  const pa = tingOf(s).some(q => q === kniv && q.vid === t.id);
+  const tekBara = bara.every(a => TEKNIK.find(q => q.id === a)?.krav.includes('snickarbank'));
+  return [
+    [`slöjdbänken gör inte träsakerna (${tra.filter(a => slojd.includes(a)).join(', ') || 'ingen'})`, !tra.some(a => slojd.includes(a)) && !bara.some(a => slojd.includes(a))],
+    [`träsakerna görs fortare (och bättre) vid snickarbänken (${tra.filter(a => !sn.gor.includes(a)).join(', ') || 'alla'})`, tra.every(a => sn.gor.includes(a)) && fort],
+    [`bågen, lyran och skölden görs bara där och deras tekniker kräver den (utan bänk ${utan.join('/')})`, utan.every(v => !v) && tekBara],
+    [`bågen och lyran kräver kniven på bänken (utan kniv ${utanKniv.join('/')}, med ${medKniv.join('/')}, kniven ${pa ? 'på bänken' : 'inte där'})`, !utanKniv[0] && !utanKniv[1] && utanKniv[2] && medKniv.every(v => v) && pa],
+  ];
+}
+
 SCENARIER.snickarbank = {
-  text: 'Steg 9.4.4: snickarbänken är en station av 2 virke och 2 plankor och 15 minuters arbete. Tekniken kräver klyvplatsen och kommer i hantverket, och bänken står inne som slöjdbänken med en sittplats',
+  text: 'Steg 9.4.4–9.4.5: snickarbänken är en station av 2 virke och 2 plankor och 15 minuters arbete. Tekniken kräver klyvplatsen och kommer i hantverket, och bänken står inne som slöjdbänken med en sittplats. Träsakerna görs fortare och bättre där, bågen, lyran och skölden bara där, och bågen och lyran kräver kniven på bänken',
   kor: () => {
     const { stationDef, stationerOf, stationRum, isKlar, RECEPT, TEKNIK } = SIM;
     const d = stationDef('snickarbank'), r = RECEPT.snickarbank, tek = TEKNIK.find(t => t.id === 'snickarbank');
@@ -1692,6 +1714,7 @@ SCENARIER.snickarbank = {
       [`tekniken kräver klyvplatsen och kommer i hantverket (${tek?.krav.join(', ')}; ${tek?.omr.join(', ')})`, !!tek && tek.krav.includes('klyvplats') && tek.omr.includes('hantverk')],
       ['bänken står inne och har en sittplats', !!d?.inne && !!d?.sitt],
       [`byn bygger en snickarbänk när den kan (${t ? `efter ${h} timmar` : 'aldrig'}) och den står inne`, !!t && inne],
+      ...traSaker(),
     ];
   },
 };
