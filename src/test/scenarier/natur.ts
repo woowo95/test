@@ -2021,7 +2021,7 @@ SCENARIER.vargskydd = {
       [`utan hus håller sig barnen och de gamla vid elden (${sum(ute, 'vidEld')} av ${sum(ute, 'svaga')} som hört ropet)`, sum(ute, 'vidEld') > 0 && sum(ute, 'iHus') === 0],
       [`med hus gömmer de sig i huset (${sum(inne, 'iHus')} av ${sum(inne, 'svaga')})`, sum(inne, 'iHus') > sum(inne, 'svaga') / 2],
       [`de modiga vuxna väntar vid elden (${sum(ute, 'forsvar') + sum(inne, 'forsvar')}), med vapen i handen (${sum(ute, 'medVapen') + sum(inne, 'medVapen')})`, sum(ute, 'forsvar') + sum(inne, 'forsvar') > 0 && sum(ute, 'medVapen') + sum(inne, 'medVapen') > 0],
-      [`en förälder stannar hos sina små barn (${sum(ute, 'foralder') + sum(inne, 'foralder')} gånger)`, sum(ute, 'foralder') + sum(inne, 'foralder') > 0],
+      [`ingen förälder stannar hos barnen: barnen gömmer sig själva (${sum(ute, 'foralder') + sum(inne, 'foralder')} gånger)`, sum(ute, 'foralder') + sum(inne, 'foralder') === 0],
       [`efter en stund går man tillbaka till det vanliga (${sum(ute, 'kvar') + sum(inne, 'kvar')} gömmer sig eller väntar kvar) och vapnen läggs tillbaka (${sum(ute, 'iHanden') + sum(inne, 'iHanden')} spjut i handen utom hos vakten)`, sum(ute, 'kvar') + sum(inne, 'kvar') === 0 && sum(ute, 'iHanden') + sum(inne, 'iHanden') === 0],
     ];
   },

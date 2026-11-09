@@ -7,7 +7,7 @@ import { median } from './nyckeltal';
 
 const [antal = 16, dagar = 35] = process.argv.slice(2).map(Number);
 const seeds = Array.from({ length: antal }, (_, i) => seedAv(i));
-type Sida = { n: number; folk: number; dod: number; ger: number; flykt: number; nere: number; skadade: number; skador: number; slag: number; traffar: number };
+type Sida = { vapen?: string; n: number; folk: number; dod: number; ger: number; flykt: number; nere: number; skadade: number; skador: number; slag: number; traffar: number };
 type Rad = { dag: number; orsak: string; vinnare: number; sek: number; vuxna: number; kom: number; by: Sida; mot: Sida; h: Record<string, number> };
 type Ut = { seed: number; pop: number; rader: Rad[]; vakter: number; larm: string[] };
 const t0 = Date.now();
@@ -24,6 +24,10 @@ for (const o of orsaker) {
   console.log(`  andel av byns vuxna som var med (median) ${m(x.map(q => q.vuxna ? 100 * q.by.folk / q.vuxna : 0))} %`);
   console.log(`  längd: median ${m(x.map(q => q.sek))} s, kortast ${Math.min(...x.map(q => q.sek))} s, längst ${Math.max(...x.map(q => q.sek))} s (sekunder i verkligheten, som striden spelas)`);
   console.log(`  byns sida vann ${x.filter(q => q.vinnare === 0).length}, förlorade ${x.filter(q => q.vinnare === 1).length}, oavgjort ${x.filter(q => q.vinnare === -1).length}`);
+  const fler = x.filter(q => q.by.n + q.kom >= q.mot.n), farre = x.filter(q => q.by.n + q.kom < q.mot.n);
+  console.log(`  när byn var minst lika många (med dem som kom till) vann den ${fler.filter(q => q.vinnare === 0).length} av ${fler.length}; när den var färre ${farre.filter(q => q.vinnare === 0).length} av ${farre.length}`);
+  const vap: Record<string, number> = {}; for (const q of x) for (const w of (q.by.vapen ?? '').split(',').filter(Boolean)) vap[w] = (vap[w] ?? 0) + 1;
+  if (Object.keys(vap).length) console.log(`  byns vapen när striden börjar: ${Object.entries(vap).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${k} ${n}`).join(', ')}`);
   const sida = (n: 'by' | 'mot', namn: string) => console.log(`  ${namn}: döda ${sum(x.map(q => q[n].dod))}, skadade ${sum(x.map(q => q[n].skadade))} (${sum(x.map(q => q[n].skador))} skador), gav upp ${sum(x.map(q => q[n].ger))}, flydde ${sum(x.map(q => q[n].flykt))}, låg nere ${sum(x.map(q => q[n].nere))}; slag ${sum(x.map(q => q[n].slag))}, träffar ${sum(x.map(q => q[n].traffar))} (${(100 * sum(x.map(q => q[n].traffar)) / Math.max(1, sum(x.map(q => q[n].slag)))).toFixed(0)} %)`);
   sida('by', 'byns sida'); sida('mot', 'motståndarna');
   const h: Record<string, number> = {}; for (const q of x) for (const k in q.h) h[k] = (h[k] ?? 0) + q.h[k];

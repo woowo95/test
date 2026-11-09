@@ -106,7 +106,6 @@ export const VARG = balans('varg', {
   bakom: 3, // hjälparna står så här många rutor bakom kämparna vid elden
   seddTim: 3, // larmet håller så länge flocken är nära byn och har setts de senaste så här många timmarna ...
   naraByn: 25, // ... och är så här nära byns område (utanforByn)
-  smaBarn: 8, // en förälder stannar hos sina barn under den här åldern
   // dörren (steg 3.7.21): en hungrig flock som inte ser någon ensam väntar utanför en stängd dörr så här många timmar
   vantaTim: 2,
   // talen som stod lösa i flockens val och i striden (kodgenomgången 3.10.25), med samma värden
@@ -242,7 +241,6 @@ export const vargarNara = (s: State) => flockarna(s).some(f => f.gor !== 'flyr' 
 // elden. Det varar VARG.vakenTim; sedan läggs vapnet tillbaka (agande.ts: tidyTools)
 export const skyddas = (s: State, p: Person) => { const a = ageOf(p, s.now); return a < ALDER.vaktFran || a >= ALDER.gammal || isSick(p, s.now) || halsa(p) < KROPP.svag; };
 export const iHus = (s: State, p: Person) => !!roomAt(s, Math.floor(p.x), Math.floor(p.y));
-export const smaBarnOf = (s: State, p: Person) => living(s).filter(c => (c.mother === p.id || c.father === p.id) && ageOf(c, s.now) < VARG.smaBarn);
 // närmaste plats under tak: den egna sängen om den är under tak, annars en ruta i närmaste rum
 export function husPlats(s: State, p: Person) {
   const bed = bedFor(s, p);
@@ -272,8 +270,6 @@ export function vargSkydd(s: State, p: Person): { act: Act; why: string; spot?: 
     const hus = husPlats(s, p);
     return hus ? { act: 'gomma', why: `${fi2} är nära, gömmer sig i huset`, spot: hus, dur } : { act: 'gomma', why: `${fi2} är nära, håller sig vid elden nära de vuxna`, spot: skyddVidElden(s), dur };
   }
-  const barn = smaBarnOf(s, p)[0];
-  if (barn) { const hus = husPlats(s, barn); return { act: 'gomma', why: `${fi2} är nära, stannar hos barnen`, spot: hus ?? skyddVidElden(s), dur }; }
   // rollerna (steg 9.2.121): kämpe, hjälpare eller gömd, med samma värde som mot rövarna; ingen står och pratar vid elden
   const vuxna = living(s).filter(q => !skyddas(s, q) && kanGa(q)).length, v = hotVilja(s, p);
   if (v + VARG.fler * vuxna / Math.max(1, l.storlek) > VARG.vagar) return { act: 'forsvar', why: `${fi2} är nära, tar ${taVapen(s, p) ? 'ett vapen' : 'det som finns'} och väntar vid elden`, dur };

@@ -72,6 +72,7 @@ export const STRID = balans('strid', {
   tick: 0.2, // sekunder i spelet per tidssteg i striden (samma i båda lägena)
   tempo: 2, // striden går så här många gånger långsammare än den räknas: allt i den (slagen, stegen, blodet, orken) tar längre tid men slutar likadant (steg 3.7.18)
   maxTid: 480, // en strid slutar senast efter så här många sekunder (oavgjort)
+  efterTid: 20, // när ena sidan inte har någon kvar som slåss slutar striden senast så här många sekunder senare, också om någon ännu flyr eller ligger (den som inte kommer undan blir kvar på platsen)
   krypNara: 1, // den som kryper stannar så här många rutor från vännen hen kryper mot (steg 3.7.19) ...
   krypBlod: 0.5, // ... och lämnar så här mycket släpspår per ruta i byn
   kropp: 0.6, // man kommer inte närmare än så här (rutor) till en fiende som står: man går runt hen (steg 3.7.20)
@@ -299,6 +300,7 @@ export interface Kampe {
   ledare?: 'fram' | 'bak'; skyddar?: number; // steg 3.7.12: byns ledare (går först eller står bakom), och ledaren (kämpens id) som vännen skyddar
   kryper?: number; // steg 3.7.19: hen kan inte gå och kryper undan; rutorna hen krupit
   fly?: { x: number; y: number }; // steg 9.2.76: dit hen flyr (rutor på platsen), i stället för mot närmaste kanten
+  hemma?: number; // den som försvarar sin by (ROVARE.hemma i rovare.ts): så här mycket mer stridsmod med hotet, så att hen inte flyr så lätt
 }
 // en rad i loggen: tiden (sekunder), vem (a) och mot vem (b), del, skada och grad, och det kläderna tog
 export interface StridRad { t: number; h: Handelse; a?: number; b?: number; d?: Kroppsdel; k?: SkadaTyp; g?: number; v?: Vapen; kl?: string; kast?: 1 }
@@ -308,6 +310,7 @@ export interface Strid {
   hinder?: Hinder[]; // väggarna på platsen (steg 3.7.20)
   kampar: Kampe[]; logg: StridRad[];
   slut?: { t: number; vinnare: 0 | 1 | -1 };
+  avgjord?: number; // när ena sidan inte längre hade någon som slåss (STRID.efterTid)
 }
 // en vägg på platsen: rektangeln x, y, b(redd), h(öjd) i rutor (steg 3.7.20)
 export interface Hinder { x: number; y: number; b: number; h: number }
@@ -597,7 +600,7 @@ function hotet(st: Strid): { andel: [number, number]; framst: [number, number]; 
   const sum = kr[0] + kr[1] || 1;
   return { andel: [kr[0] / sum, kr[1] / sum], framst: fr, led };
 }
-const modMed = (k: Kampe, h: ReturnType<typeof hotet>) => k.modNu + STRID.hot * (h.andel[k.sida] - 0.5) * 2 + STRID.framst * (h.framst[k.sida] - 0.5) + h.led[k.sida];
+const modMed = (k: Kampe, h: ReturnType<typeof hotet>) => k.modNu + (k.hemma ?? 0) + STRID.hot * (h.andel[k.sida] - 0.5) * 2 + STRID.framst * (h.framst[k.sida] - 0.5) + h.led[k.sida];
 
 const farten = (k: Kampe) => STRID.fart * k.fart * smidFart(k) * rorlighet(k);
 // den som kan kasta (steg 3.7.7): håller avståndet och kastar. Den som nåtts av en fiende backar om hen är snabbare, byter
@@ -710,7 +713,8 @@ export function stridSteg(st: Strid) {
   // döda, tills de som ligger är döda
   const kvar = [0, 1].map(sd => st.kampar.some(k => k.sida === sd && iStrid(k)));
   const ofardig = st.kampar.some(k => k.lage === 'flykt' || (avs.nere && k.lage === 'nere' && kvar[1 - k.sida]));
-  if ((!kvar[0] || !kvar[1]) && !ofardig || st.t >= STRID.maxTid) {
+  if (kvar[0] && kvar[1]) st.avgjord = undefined; else st.avgjord ??= st.t; // när ena sidan inte längre har någon som slåss
+  if ((!kvar[0] || !kvar[1]) && (!ofardig || st.t - (st.avgjord ?? st.t) >= STRID.efterTid) || st.t >= STRID.maxTid) {
     const vinnare = kvar[0] && !kvar[1] ? 0 : kvar[1] && !kvar[0] ? 1 : -1;
     st.slut = { t: st.t, vinnare };
     st.logg.push({ t: st.t, h: 'slut' });
