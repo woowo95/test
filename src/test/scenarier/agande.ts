@@ -17,7 +17,7 @@ import { taBortITest, testBortaIByn } from '../../ui/testborta';
 import { station as stationFlik } from '../../ui/flikar/station';
 import { lager as lagerFlik } from '../../ui/flikar/lager';
 import { kronika as kronikaFlik, val as kronikaVal } from '../../ui/flikar/kronika';
-import { tal as talFlik } from '../../ui/flikar/tal';
+import { tal as talFlik, talVal } from '../../ui/flikar/tal';
 import { rikVal } from '../../ui/graf';
 // handlaren väntar på kvällen innan filten läggs ut (steg 4.5.4.11): testerna som handlar på dagen hoppar över väntan
 const utanVantan = (s: State) => { if (s.handlare?.fas === 'vantar') s.handlare.kvall = s.now; };
@@ -358,6 +358,9 @@ SCENARIER.arv = {
     die(s, d, 'sjukdom');
     const partner = Math.abs(varde(s, a) - dVarde) < 1e-6 && varde(s, b) === 0 && yxor(s, a) === 1;
     const syns = s.log.some(l => l.text.startsWith(`${a.name} ärvde`) && l.text.includes('flintyxa') && l.text.includes(d.name));
+    // krönikan (steg 9.2.127): det värdefullaste och resten som ett värde; loggen hela listan
+    const kr = (s.hist?.kronika ?? []).filter(r => r[2] === 'arv').map(r => r[1]).find(x => x.startsWith(`${a.name} ärvde`)) ?? '', helaRaden = s.log.find(l => l.text.startsWith(`${a.name} ärvde`))?.text ?? '';
+    const kort = / och saker värda \d+ silver efter /.test(kr) && (helaRaden.match(/,/g) ?? []).length >= 1 && !kr.includes(',');
     const arv1 = s.stat?.arv ?? 0;
     // den som inte äger något lämnar inget arv, också när hen har en partner (samhalle-123)
     ({ s, d, a, b, c, e } = ny());
@@ -437,6 +440,7 @@ SCENARIER.arv = {
     return [
       ['partnern ärver allt', partner],
       ['det syns i loggen vem som ärvde vad', syns],
+      [`krönikan nämner det värdefullaste och resten som ett värde ("${kr}"), loggen hela listan ("${helaRaden}")`, kort],
       [`ett arv räknas när något ärvs (${arv1}), inte när den döda inte ägde något (${arv0})`, arv1 === 1 && cTom && arv0 === 0],
       [`utan partner delar barnen jämnt efter värde (${va.toFixed(0)} och ${vb.toFixed(0)})`, barnen],
       [`huset delas ut först (värt ${husV.toFixed(1)}), även till ett barn som redan har ett hus, och får hens namn; yxan går till det andra barnet`, husForst],
@@ -2345,7 +2349,7 @@ SCENARIER.kronikakat = {
     const fodd = K[K.length - 1];
     K.push([s.now, 'En rad ur en gammal sparfil.']);
     setByn(s);
-    Object.assign(kronikaVal, { visning: 'stort', ar: undefined, person: undefined, kat: undefined });
+    Object.assign(kronikaVal, { viktigt: true, nyast: true, ar: undefined, person: undefined, kat: undefined });
     const alla = kronikaFlik.html();
     kronikaVal.kat = 'liv';
     const liv = kronikaFlik.html();
@@ -2373,24 +2377,29 @@ SCENARIER.kronikalista = {
     const [a, b] = living(s), K = s.hist!.kronika, D = SIM.DAY;
     K.push([s.now - D, `${a.name} hittade en sten.`], [s.now, `${b.name} och ${a.name} byggde ett hus.`]);
     const rader = (h: string) => (h.match(/<li/g) ?? []).length;
-    Object.assign(kronikaVal, { visning: 'stort', ar: undefined, person: undefined });
+    Object.assign(kronikaVal, { viktigt: true, nyast: true, ar: undefined, person: undefined });
     const alla = kronikaFlik.html();
     kronikaVal.person = a.id; const medA = kronikaFlik.html();
     kronikaVal.person = b.id; const medB = kronikaFlik.html();
     kronikaVal.person = undefined; kronikaVal.ar = SIM.kalender(s, s.now).ar; const iAr = kronikaFlik.html();
-    kronikaVal.ar = undefined; kronikaVal.visning = 'allt'; const allt = kronikaFlik.html();
+    kronikaVal.ar = undefined; kronikaVal.viktigt = false; const allt = kronikaFlik.html();
+    kronikaVal.viktigt = true; kronikaVal.nyast = false; const aldst = kronikaFlik.html(); kronikaVal.nyast = true;
+    talVal.vy = 'kartan'; const kartan = talFlik.html(); talVal.vy = 'grafer';
     const grafer = talFlik.html(); // graferna i stenen Byns tal (steg 9.3.2)
     Object.assign(rikVal, { vy: 'person', person: a.id }); const rikP = talFlik.html();
     Object.assign(rikVal, { vy: 'sak', sak: 'ved', person: undefined }); const rikS = talFlik.html();
     Object.assign(rikVal, { vy: 'byn', sak: undefined });
-    Object.assign(kronikaVal, { visning: 'stort', ar: undefined, person: undefined });
+    Object.assign(kronikaVal, { viktigt: true, nyast: true, ar: undefined, person: undefined });
     const forst = alla.indexOf(`${b.name}</button> och`), sen = alla.indexOf(`${a.name}</button> hittade`);
     return [
       [`Stort visar hela krönikan (${rader(alla)} rader av ${K.length})`, rader(alla) === K.length],
       ['senast först, med en rubrik per år', forst >= 0 && sen > forst && /<h4 class="kar">År \d+<\/h4>/.test(alla)],
       [`personen: bara raderna där hen står med (${a.name} ${rader(medA)}, ${b.name} ${rader(medB)})`, rader(medA) === K.filter(r => r[1].includes(a.name)).length && rader(medB) === K.filter(r => r[1].includes(b.name)).length && medB.includes(`${b.name}</button> och`) && !medB.includes('hittade en sten')],
       ['ett år visar bara det årets rader', rader(iAr) === K.filter(r => SIM.kalender(s, r[0]).ar === SIM.kalender(s, s.now).ar).length && rader(iAr) < rader(alla)],
-      [`Allt visar händelseloggen (${rader(allt)} rader)`, rader(allt) === s.log.length && s.log.length > K.length],
+      [`Allt visar krönikan och händelseloggen i en lista (${rader(allt)} rader, ${s.log.length} i loggen; steg 9.2.125)`, rader(allt) >= s.log.length && allt.includes('hittade en sten') && s.log.length > K.length],
+      ['äldst först vänder ordningen', aldst.indexOf(`${a.name}</button> hittade`) >= 0 && aldst.indexOf(`${a.name}</button> hittade`) < aldst.indexOf(`${b.name}</button> och`)],
+      ['symbolerna överst: det viktiga eller allt, ordningen och kategorierna, och ingen Karta i Krönikan', /data-kvis="viktigt"/.test(alla) && /data-kordning="aldst"/.test(alla) && /data-kkat=/.test(alla) && !/kmReglage|Kartan/.test(alla)],
+      ['Kartan är en flik i Byns tal bredvid graferna (steg 9.2.126)', kartan.includes('kmReglage') && /data-tvy="grafer"/.test(kartan) && /data-tvy="kartan"/.test(grafer)],
       [`Byns tal visar alla byns grafer under varandra (${(grafer.match(/data-graf=/g) ?? []).length} st, steg 9.3.2)`, ['folk', 'humor', 'eld', 'forrad', 'rik'].every(g => grafer.includes(`data-graf="${g}"`)) && !grafer.includes(`class="logg"`)],
       ['rikedomens graf har en väljare överst: byn, en person eller en sak (steg 6.9.14)', grafer.includes('data-rikvy') && !grafer.includes('data-rikval') && living(s).every(p => rikP.includes(`<option value="${p.id}"`)) && rikP.includes('data-rikvy="person"') && rikS.includes('data-rikvy="sak"') && rikS.includes('data-rikval')],
     ];

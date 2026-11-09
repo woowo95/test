@@ -76,7 +76,7 @@ function platsAv(p: Person) {
 // dragkampen (steg 4.5.6.10), bara i bilden: lagen står på sina platser (sport.ts), hela raden glider fram och tillbaka med
 // repet och lutar sig bakåt. Repet ligger på marken medan de samlas och spänns mellan lagen när de drar; strecket i mitten
 const DRAG = { glid: 0.3, takt: 0.5, luta: 0.12 };
-// sportens saker i punkter ur paletten, som Björn valde i bildstilen (steg 5.5.2): strecket, repet och tofsen, snövallarna,
+// sportens saker i punkter ur paletten, som Björn valde i bildstilen (steg 5.5.2): strecket, repet och tofsen,
 // stenarna som missat och det som flyger i en båge (en boll med mörk kant)
 const SP = { jord: [0, 1, 2, 3].map(i => fargTal(farg('jord', i as 0))), rost: [0, 1, 2, 3].map(i => fargTal(farg('rost', i as 0))), ben: [0, 1, 2, 3].map(i => fargTal(farg('ben', i as 0))), skiffer: [0, 1, 2, 3].map(i => fargTal(farg('skiffer', i as 0))), kol: fargTal(farg('kol', 0)) };
 const pt = (x: number, y: number, c: number, w = 1, h = 1) => peopleG.beginFill(c).drawRect(Math.round(x), Math.round(y), w, h).endFill();
@@ -93,10 +93,20 @@ function sportPlats(m: Match, p: Person, x: number, y: number, t: number): { x: 
       if (Math.abs(x - m.x) < 0.7 && Math.abs(y - m.y) < 0.7) { const tryck = Math.sin(k * 0.9 + m.start % 5) * 0.15; return { x: m.x + Math.sign(x - m.x || 1) * (0.22 + Math.abs(Math.sin(k * 2.1)) * 0.08) + tryck, y: y + Math.sin(k * 1.7 + p.id) * 0.06 }; }
       return { x, y: y + Math.abs(Math.sin(k * 3 + p.id)) * -0.06 }; // hejar
     }
-    case 'kast': case 'snoboll': return { x, y };
+    case 'kast': return { x, y };
+    case 'snoboll': { const c = snoCykel(p.id, m, t); return { x: x + c.dx, y: y + c.dy }; }
     case 'bollspel': return x < m.x - 1.5 ? { x, y } : undefined;
   }
   return undefined;
+}
+// snöbollskriget (steg 9.2.129), bara i bilden: var och en i sin egen takt (P sekunder): böjer sig ner och gör en boll, kastar,
+// och flyttar sig sedan och duckar tills nästa boll. f = var i cykeln, n = vilken boll i ordningen, dx/dy = hur figuren flyttas
+const SNO = { pMin: 2.2, pVar: 1.4, bojaTill: 0.3, kast: 0.38, flyg: 0.7 };
+function snoCykel(id: number, m: Match, t: number) {
+  const k = t / SEC + hash(id * 13 + m.start % 89) * 10, P = SNO.pMin + hash(id * 7 + 3) * SNO.pVar, n = Math.floor(k / P), f = k / P - n;
+  const boj = f < SNO.bojaTill ? Math.sin(f / SNO.bojaTill * Math.PI) * 0.12 : 0; // böjer sig ner efter snö
+  const efter = f > SNO.kast ? (f - SNO.kast) / (1 - SNO.kast) : 0, sida = (hash(id + n * 3) - 0.5) * 0.5;
+  return { n, f, P, dx: Math.sin(efter * Math.PI) * sida, dy: boj + (efter > 0.6 && efter < 0.8 ? 0.08 : 0) }; // flyttar sig åt sidan och duckar
 }
 // något som flyger i en båge från a till b, f = 0–1 av vägen: en boll i punkter (kol runt om, rampens ton i mitten) och
 // dess skugga på marken
@@ -109,7 +119,13 @@ function flyg(ax: number, ay: number, bx: number, by: number, f: number, ramp: n
     pt(x + dx, y + dy, r >= 2 && !(Math.abs(dx) === 1 && Math.abs(dy) === 1) ? SP.kol : ramp[dx + dy < 0 ? ton : Math.max(0, ton - 1)]);
   }
 }
-// det som syns runt matchen, bara i bilden: repet och strecket, målet, snövallarna, bollen och det som kastas
+// ett litet stänk av snö där en snöboll träffar (steg 9.2.129): några punkter ur paletten som flyger ut och faller, g = 0–0.5 av tiden
+function snoStank(x: number, y: number, g: number) {
+  const r = 1 + g * 8, a = 1 - g * 2;
+  if (a <= 0) return;
+  for (let i = 0; i < 6; i++) { const v = i * Math.PI / 3 + 0.4; pt(x + Math.cos(v) * r, y + Math.sin(v) * r * 0.6 + g * 6, SP.ben[i % 2 ? 3 : 2]); }
+}
+// det som syns runt matchen, bara i bilden: repet och strecket, målet, bollen och det som kastas
 function ritaSport(t: number) {
   const m = s.sport;
   if (!m || s.now >= m.slut) return;
@@ -126,15 +142,19 @@ function ritaSport(t: number) {
     for (const d of [-12, 8]) pt(ax + d, ay + 5, SP.skiffer[2], 2, 1); // stenar som missat ligger i gräset
     if (f < 0.6) flyg(v.x + 3, v.y - 3, ax + (miss ? (hash(n) - 0.5) * 18 : 0), ay + (miss ? 5 : -2), f / 0.6, SP.skiffer, 3, 10); // i tur och ordning: träff eller miss
   } else if (m.k === 'snoboll') {
-    for (const sida of [-1, 1]) { // vallarna: sju punkter breda, kant i skiffer och snö i ben
-      const vx = Math.round(mx + sida * (SPORT.snoAvst - 0.8) * TS), y0 = Math.round(my - TS * 1.8), y1 = Math.round(my + TS * 1.8);
-      pt(vx - 3, y0, SP.skiffer[1], 7, y1 - y0 + 1); pt(vx - 2, y0 + 1, SP.ben[2], 2, y1 - y0 - 1); pt(vx, y0 + 1, SP.ben[3], 3, y1 - y0 - 1);
-      pt(vx - 3, y1 + 1, 0x372f25, 7, 1);
-    }
+    // inga vallar (steg 9.2.129): var och en kastar i sin egen takt mot någon i andra laget, så att flera bollar är i luften i olika
+    // bågar, och en träff ger ett litet stänk av snö (platshållare i paletten tills ett stänk valts i bildstilen)
     if (!m.spelat) return;
-    const v = med.filter(q => q.x < mx), h = med.filter(q => q.x >= mx);
-    if (!v.length || !h.length) return;
-    for (let j = 0; j < 2; j++) { const P = 1.6, n = Math.floor(k / P + j * 0.5), f = k / P + j * 0.5 - n, fr = (n % 2 ? v : h), till = (n % 2 ? h : v), a = fr[Math.floor(hash(n) * fr.length)], b = till[Math.floor(hash(n + 7) * till.length)]; flyg(a.x, a.y - 3, b.x, b.y - 3, f, SP.ben, 3, 6); }
+    const lag = [med.filter(q => q.x < mx), med.filter(q => q.x >= mx)];
+    if (!lag[0].length || !lag[1].length) return;
+    for (const p of living(s)) {
+      const tk = uppgiftVid(p), q = tk && iMatchen(tk) ? synlig.get(p.id) : undefined;
+      if (!q) continue;
+      const c = snoCykel(p.id, m, t), mot = lag[q.x * TS < mx ? 1 : 0], b = mot[Math.floor(hash(p.id * 5 + c.n) * mot.length)];
+      const a = { x: q.x * TS, y: q.y * TS }, ff = (c.f - SNO.kast) / (SNO.flyg - SNO.kast);
+      if (ff >= 0 && ff < 1) flyg(a.x + 2, a.y - 5, b.x, b.y - 4, ff, SP.ben, 3, 6 + hash(p.id + c.n * 11) * 12);
+      else if (ff >= 1 && ff < 1.5 && hash(p.id * 3 + c.n) < 0.6) snoStank(b.x, b.y - 4, ff - 1); // träff
+    }
   } else if (m.k === 'bollspel') {
     const slag = med.length ? med.reduce((a, b) => (a.x < b.x ? a : b)) : { x: mx - SPORT.slagAvst * TS, y: my };
     markIcons.add('slagtra', Math.round(slag.x + 1), Math.round(slag.y - 16), 1); // i sina egna 16 punkter som i bildstilen (steg 5.5.1: hel skala)
