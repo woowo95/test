@@ -8,86 +8,86 @@
     90
    ],
    "bitMs": [
-    15328,
-    19246,
-    22664
+    32833,
+    37874,
+    32880
    ],
    "n": {
-    "pop": 4,
+    "pop": 1,
     "atergrundad": 3,
-    "invandrade": 13,
-    "utvandrade": 10,
-    "fodda": 18,
-    "doda": 29,
-    "svalt": 7,
-    "kyla": 14,
-    "hunger": 311,
-    "humor": 0.56,
-    "vintermat": 3,
-    "vinterved": 92,
-    "eld": 78,
-    "kb": 2136,
-    "delKb": 288
+    "invandrade": 8,
+    "utvandrade": 1,
+    "fodda": 32,
+    "doda": 46,
+    "svalt": 14,
+    "kyla": 13,
+    "hunger": 212,
+    "humor": 0.481,
+    "vintermat": 0,
+    "vinterved": 66,
+    "eld": 87,
+    "kb": 2254,
+    "delKb": 278
    }
   },
   "42": {
    "granser": [
     0,
+    10,
     30,
-    70,
     90
    ],
    "bitMs": [
-    23279,
-    20199,
-    16781
+    22423,
+    29847,
+    38066
    ],
    "n": {
-    "pop": 7,
-    "atergrundad": 6,
-    "invandrade": 13,
-    "utvandrade": 15,
-    "fodda": 21,
-    "doda": 28,
-    "svalt": 6,
-    "kyla": 5,
-    "hunger": 269,
-    "humor": 0.451,
-    "vintermat": 0,
-    "vinterved": 39,
-    "eld": 81,
-    "kb": 2284,
-    "delKb": 295
+    "pop": 3,
+    "atergrundad": 4,
+    "invandrade": 12,
+    "utvandrade": 11,
+    "fodda": 22,
+    "doda": 33,
+    "svalt": 15,
+    "kyla": 8,
+    "hunger": 86,
+    "humor": 0.532,
+    "vintermat": 1,
+    "vinterved": 67,
+    "eld": 85,
+    "kb": 2260,
+    "delKb": 291
    }
   },
   "777": {
    "granser": [
     0,
-    20,
-    50,
+    40,
+    60,
     90
    ],
    "bitMs": [
-    14558,
-    12751,
-    16912
+    36694,
+    41705,
+    20939
    ],
    "n": {
-    "pop": 3,
-    "atergrundad": 8,
-    "invandrade": 20,
-    "utvandrade": 11,
-    "fodda": 16,
-    "doda": 38,
-    "svalt": 15,
+    "pop": 4,
+    "atergrundad": 5,
+    "invandrade": 10,
+    "utvandrade": 10,
+    "fodda": 20,
+    "doda": 29,
+    "svalt": 9,
     "kyla": 4,
-    "hunger": 139,
-    "humor": 0.428,
-    "vintermat": 5,
-    "vinterved": 109,
-    "eld": 63,
-    "kb": 2166,
-    "delKb": 294
+    "hunger": 143,
+    "humor": 0.492,
+    "vintermat": 21,
+    "vinterved": 120,
+    "eld": 72,
+    "kb": 2348,
+    "delKb": 293
    }
   }
  }
