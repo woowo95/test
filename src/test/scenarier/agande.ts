@@ -1949,9 +1949,9 @@ SCENARIER.rovarforsvar = {
 };
 
 SCENARIER.rovartest = {
-  text: 'Steg 9.2.103: rövarna i testläget kommer som en vanlig flock men kortare: de dyker upp ungefär 40 rutor utanför byns område, samlas en minut, går till väntplatsen, väntar en minut och anfaller inom ungefär två minuter. Väntplatsen ligger alltid utanför byns område, också för en vanlig flock. Prövas i en stor by (by 42 efter 70 dygn)',
+  text: 'Steg 9.2.103–9.2.104: rövarna i testläget kommer som en vanlig flock men kortare: de dyker upp ungefär 40 rutor utanför byns område, samlas en minut, går till väntplatsen, väntar en minut och anfaller inom ungefär två minuter. Väntplatsen ligger alltid utanför byns område, också för en vanlig flock. En flock som setts inne i byns område eller nära det gör att hela byn får larmet, och de som vågar går mot flocken, så att striden börjar där den står. Prövas i en stor by (by 42 efter 70 dygn)',
   kor: () => {
-    const { ROVARE, MIN, SEC, utanforByn } = SIM;
+    const { ROVARE, MIN, SEC, HOUR, utanforByn } = SIM;
     const stor = () => { const s = lasBy('test/facit-byar/42-70.json.gz'); for (const c of SIM.klanerOf(s)) c.inst = -60; return s; };
     const steg = (x: State, sek: number) => { x.now += sek * SEC; SIM.rovarSteg(x, sek); };
     const ut = (x: State, f: { x: number; y: number }) => utanforByn(x, f.x, f.y);
@@ -1970,7 +1970,27 @@ SCENARIER.rovartest = {
     SIM.rovarnaKommer(v, 3); const vf = v.rovare!; vf.till = v.now;
     let vVant = -1;
     for (let i = 0; i < 3000 && vVant < 0 && v.rovare; i++) { steg(v, 1); if (v.rovare?.gor === 'vantar') vVant = ut(v, v.rovare); }
+    // anfallsläget (steg 9.2.104): en flock som setts inne i byns område, 8–14 rutor från förrådet
+    const a = stor(), am = SIM.malet(a), avt = SIM.vattenNu(a);
+    let ap: { x: number; y: number } | undefined;
+    for (let r = 8; r <= 14 && !ap; r++) for (let i = 0; i < 32 && !ap; i++) { const v = i * Math.PI / 16, x = Math.floor(am.x + Math.cos(v) * r), y = Math.floor(am.y + Math.sin(v) * r); if (x > 1 && y > 1 && x < SIM.W - 2 && y < SIM.H - 2 && avt[y * SIM.W + x] !== SIM.T.Vatten && !SIM.bitAt(a, x, y) && !SIM.isWall(a, x, y) && utanforByn(a, x + 0.5, y + 0.5) <= 0) ap = { x: x + 0.5, y: y + 0.5 }; }
+    SIM.rovarnaKommer(a, 2); const af = a.rovare!; af.gor = 'vantar'; af.till = a.now + 60 * MIN; af.sedd = a.now; af.lurat = true; SIM.stallUpp(a, af, ap!.x, ap!.y);
+    const fplats = { x: af.x, y: af.y }, fran = Math.hypot(fplats.x - am.x, fplats.y - am.y);
+    steg(a, 1);
+    const alla = living(a), allaLarm = alla.every(p => p.larm?.vad === 'rovare' && p.larm.t === a.now);
+    for (const p of alla) if (!p.task) { const v = SIM.vargSkydd(a, p); if (v) p.task = { act: v.act, phase: 'do', tx: v.spot?.x ?? p.x, ty: v.spot?.y ?? p.y, until: a.now + HOUR, carry: 0, why: v.why }; }
+    const mot = alla.filter(p => p.task?.act === 'forsvarRovare'), motFlocken = mot.length > 0 && mot.every(p => Math.hypot(p.task!.tx - fplats.x, p.task!.ty - fplats.y) < 4);
+    const motWhy = mot[0]?.task?.why ?? '';
+    for (const p of mot) { p.x = p.task!.tx; p.y = p.task!.ty; } // de har gått dit
+    for (let i = 0; i < 10 && a.rovare?.gor !== 'slass'; i++) steg(a, 1);
+    const ag = a.rovare?.strid, rov = ag ? ag.u.kampar.filter(k => k.pid === undefined).map(k => ({ x: ag.ox + k.x, y: ag.oy + k.y })) : [];
+    const vidFlocken = rov.length > 0 && rov.every(q => Math.hypot(q.x - fplats.x, q.y - fplats.y) < 3);
     return [
+      [`anfallsläget: flocken står ${fran.toFixed(1)} rutor från förrådet, inne i byns område`, !!ap && fran >= 6],
+      [`... och byn går i anfallsläge när den setts (${a.stat?.rovarAnfall ?? 0})`, !!a.rovare?.anfall && (a.stat?.rovarAnfall ?? 0) === 1],
+      [`... alla i byn (${alla.length}) får larmet`, allaLarm],
+      [`... de som vågar (${mot.length}) går mot flocken, inte till förrådet: "${motWhy}"`, motFlocken],
+      [`... och striden börjar vid flocken (${a.rovare?.gor})`, a.rovare?.gor === 'slass' && vidFlocken],
       [`byn är stor (${SIM.omrade(u).n} rutor i området)`, SIM.omrade(u).n > 200],
       [`testknappen: "${svar.text}"`, svar.ok],
       [`flocken dyker upp ${start.toFixed(1)} rutor utanför byns område (ungefär ${ROVARE.testUt})`, Math.abs(start - ROVARE.testUt) <= 5],
@@ -1991,7 +2011,7 @@ SCENARIER.rovarstrid = {
     for (const p of living(s)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 20 * HOUR, carry: 0 };
     const [a, b, c] = vuxna;
     for (const p of [a, b]) { p.x = m.x + 0.5; p.y = m.y; p.task = { act: 'forsvar', phase: 'do', tx: p.x, ty: p.y, until: s.now + HOUR, carry: 0 }; }
-    SIM.rovarnaKommer(s, 3); const f = s.rovare!; f.gor = 'kommer'; f.sedd = s.now; SIM.stallUpp(s, f, m.x + 3, m.y);
+    SIM.rovarnaKommer(s, 3); const f = s.rovare!; f.gor = 'kommer'; f.sedd = s.now; f.anfall = true; SIM.stallUpp(s, f, m.x + 3, m.y); // redan i anfallsläget, så att ingen väcks (det prövas i rovartest)
     const steg = (x: State, sek: number) => { x.now += sek * SIM.SEC; SIM.rovarSteg(x, sek); };
     for (let i = 0; i < 40 && s.rovare?.gor !== 'slass'; i++) steg(s, 5);
     const g = s.rovare?.strid, borjar = s.rovare?.gor === 'slass' && !!g && a.task?.act === 'strid' && b.task?.act === 'strid' && (s.stat?.rovarStrid ?? 0) === 1;
