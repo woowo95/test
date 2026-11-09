@@ -9,7 +9,7 @@ export const PLATS = balans('plats', {
   toppArea: 5, // ett område räknas som snittet av så många av de bästa rutorna (minne.ts)
   tomtGrans: 0.08, // en plats som ger mindre än så (rikedom, richness) är tömd: man går därifrån (steg.ts)
   vidare: 0.2, // samlandet (steg 2.12.4): när busken är tom går man vidare till en ruta i närheten som ger minst så mycket (nastaBuske i val.ts), annars hem
-  husMellan: 3, // byn sprids ut (steg 2.10.8): så många rutor fritt mellan två hus, så att en väg (2–3 rutor bred) får plats (bygg.ts; 2 före steg 6.2.10). Hus som redan står flyttas inte ...
+  husMellan: 2, // så många rutor fritt mellan två hus (steg 2.10.8 och 9.2.132: 3 i steg 6.2.10–9.2.131), och Byggplanens husregler (byggplan.ts) följer samma tal. Hus som redan står flyttas inte ...
   uteFri: 1, // ... och så många fria rutor runt en station eller möbel som står ute, mot lagerplatser och andra stationer (stationer.ts; mot en husvägg får den stå)
 });
 
