@@ -618,7 +618,7 @@ function tidHtml(p: Person) {
 
 // överst i personrutan (steg 6.9.1, Sammanfattningen överst i personrutan): aktivitetens symbol och handlingen, och medan hen
 // pratar samtalets symbol och vem hen pratar med, på en rad. Skälet (task.why) kommer fram när man trycker på aktiviteten eller
-// håller musen över den; ämnet (symbolen och "Pratar om …") likaså på samtalet, med hela samtalets text
+// håller musen över den. Samtalet står med ämnet i texten, och hela samtalets text kommer fram på ämnets symbol
 function statusRad(p: Person, med: Person | undefined) {
   const t = uppgiftVid(p);
   if (!t) return '–';
@@ -626,10 +626,11 @@ function statusRad(p: Person, med: Person | undefined) {
   const akt = `<span class="akt"${why ? ` title="${esc(why)}" tabindex="0"` : ''}>${ik && hasIcon(ik) ? iconImg(ik, 14) + ' ' : ''}${esc(gorText(p, t))}</span>`;
   if (!med) return akt;
   const x = p.prat, om = x ? (x.k === 'vader' && x.o ? x.o : AMNEN[x.k].namn.toLowerCase()) : '', hel = pratText(s, p);
-  const tips = [om && `Pratar om ${om}`, hel].filter(Boolean).join('. '), amne = om ? `om ${om} ` : '';
-  const sym = x?.i && hasIcon(x.i) ? iconImg(x.i, 14) : '💬', titel = tips ? ` title="${esc(tips)}" tabindex="0"` : '';
-  // steg 9.2.9: raden nämner ämnet. Är samtalet själva aktiviteten står ämnet i den ("Samtalar om regnet vid elden med Gerrkar")
-  const gor = gorText(p, t);
-  if (amne && /^Samtalar\b/.test(gor)) return `<span class="akt"${titel}>${sym} ${esc(gor.replace(/^Samtalar/, 'Samtalar ' + amne.trim()))} med ${pLink(med)}</span>`;
-  return `${akt} · <span class="akt"${titel}>${sym} ${esc(amne)}med ${pLink(med)}</span>`;
+  const tips = [om && `Pratar om ${om}`, hel].filter(Boolean).join('. '), amne = om ? ` om ${esc(om)}` : '';
+  // steg 9.2.93: ämnet står direkt i texten ("Pratar med Boa om blåsten"), och den längre texten om samtalet kommer fram när
+  // man håller musen över ämnets symbol eller trycker på den
+  const sym = `<span class="amne"${tips ? ` title="${esc(tips)}" tabindex="0"` : ''}>${x?.i && hasIcon(x.i) ? iconImg(x.i, 14) : '💬'}</span>`;
+  // är samtalet själva aktiviteten står det i stället för den ("Samtalar med Gerrkar om regnet")
+  if (/^Samtalar\b/.test(gorText(p, t))) return `<span class="akt">${sym} Samtalar med ${pLink(med)}${amne}</span>`;
+  return `${akt} · <span class="akt">${sym} Pratar med ${pLink(med)}${amne}</span>`;
 }
