@@ -870,7 +870,8 @@ SCENARIER.gorjustnu = {
           prov++;
           if (sp?.still && tk?.phase === 'go' && tk.path?.length !== 0) stillaGar++;
           if (!tk || tk.phase !== 'do' || !AKT.has(tk.act) || tk.hopp) continue; // på rundan på väg till nästa mål (steg 9.2.54): hen letar på vägen dit
-          const d = ACTS[tk.act], r = (d.runda?.r ?? d.vandra?.r ?? 0) + 1.5, avst = Math.hypot(x - tk.tx, y - tk.ty);
+          const d = ACTS[tk.act], r = (d.runda?.r ?? d.vandra?.r ?? 0) + 1.5, bb = tk.act === 'bygga' ? SIM.bitById(s, tk.ref) : undefined; // den som bygger står intill väggen, inte på platsen bredvid den (steg 9.2.90)
+          const avst = bb ? Math.hypot(x - bb.x - 0.5, y - bb.y - 0.5) : Math.hypot(x - tk.tx, y - tk.ty);
           vidPlats++;
           if (avst > r) { langtBort++; if (ex.length < 4) ex.push(`${p.name} ${tk.act} ${avst.toFixed(1)} rutor från platsen`); }
           if (tk.act === 'maltid' && tk.mal) { maltider++; if (!SIM.bordVid(s, { x: Math.floor(x), y: Math.floor(y) })) utanBord++; }

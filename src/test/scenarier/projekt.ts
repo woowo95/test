@@ -164,19 +164,20 @@ SCENARIER.fullaforrad = {
       const vuxen = (q: SIM.Person, v: State) => ageOf(q, v.now) >= ALDER.vuxen;
       // det som fyller förråden mellan bufferten och taket (raden fylla). Den egna maten (bufferten per jag, steg 6.2.20), redskapen och
       // sängarna är andra rader; sängarna och repet drar hö och grenar, och taket för dem följer förbrukningen (steg 6.2.14)
-      const prov = (s: State) => { const r = { matVed: 0, mer: 0, overTak: 0 }; const sett = new WeakSet<object>(); kor(s, 8, v => { for (const q of living(v)) if (vuxen(q, v) && q.task && !sett.has(q.task)) {
+      // förrådet som det var när slaget började: valet görs mitt i slaget, och andras bördor kan läggas in efter det i samma slag
+      const prov = (s: State) => { const r = { matVed: 0, mer: 0, overTak: 0 }; const sett = new WeakSet<object>(), fore = { grenar: SIM.amountOf(s, 'grenar'), torrgras: SIM.amountOf(s, 'torrgras') }; kor(s, 8, v => { for (const q of living(v)) if (vuxen(q, v) && q.task && !sett.has(q.task)) {
         sett.add(q.task); const why = q.task.why ?? '';
         if (/^Mer (mat|ved) /.test(why)) r.matVed++;
         if (why.startsWith('Mer ')) r.mer++;
         const k = /^Mer (grenar|hö) /.exec(why)?.[1];
         const m = k === 'hö' ? 'torrgras' : 'grenar';
-        if (k && SIM.amountOf(v, m) > SIM.materialTak(v, m) + 1e-9) r.overTak++; // över taket (vid taket kan valet ha gjorts innan den sista bördan lades in)
-      } }); return r; };
+        if (k && fore[m] > SIM.materialTak(v, m) + 1e-9) r.overTak++; // över taket redan när slaget började
+      } fore.grenar = SIM.amountOf(v, 'grenar'); fore.torrgras = SIM.amountOf(v, 'torrgras'); }); return r; };
       const pf = prov(full), ph = prov(halv);
       const fri = (v: State) => v.stat?.fullaForrad ?? 0;
       return [
         [`i den fulla byn fyller ingen på maten eller veden (${pf.matVed} uppgifter), i byn vid bufferten fylls förråden (${ph.mer})`, pf.matVed === 0 && ph.mer > 0],
-        [`ingen samlar grenar eller hö till förrådet när det är över taket (${pf.overTak + ph.overTak} gånger; en kan ses efter att någon annan lagt in en börda i samma steg)`, pf.overTak + ph.overTak <= 1],
+        [`ingen samlar grenar eller hö till förrådet när det är över taket (${pf.overTak + ph.overTak} gånger)`, pf.overTak + ph.overTak <= 1],
         // också byn vid bufferten når taken under dagen när den fyllt på, så antalen jämförs inte (steg 6.2.21)
         [`de vuxna i den fulla byn får fritid när inget finns kvar att göra (${fri(full)} gånger; ${fri(halv)} i byn vid bufferten när den fyllt på)`, fri(full) > 0],
       ];

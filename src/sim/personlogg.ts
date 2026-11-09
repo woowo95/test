@@ -21,18 +21,18 @@ const ontOrd = /\bdog\b|[Bb]röt|[Ss]kilde|skilda vägar|förlorade|ökänd|säm
 const blandat = (text: string) => ontOrd.test(text) ? 'ont' as const : 'gott' as const;
 export const PERSONLOGG = {
   skada: { namn: 'Skador', ikon: '🩹', ton: 'ont' },
-  sjuk: { namn: 'Sjukdom', ikon: '🤒', notiser: ['sjuk'], ton: (x: string) => /frisk/.test(x) ? 'gott' : 'ont' },
+  sjuk: { namn: 'Sjukdom', ikon: '🦠', notiser: ['sjuk'], ton: (x: string) => /frisk/.test(x) ? 'gott' : 'ont' },
   strid: { namn: 'Strider', ikon: '⚔️', notiser: ['strid'], ton: 'ont' },
   fara: { namn: 'Faror hen sett', ikon: '⚠️', notiser: ['anfall', 'motgang', 'varsel'], ton: 'ont' },
-  lart: { namn: 'Det hen lärt sig', ikon: '💡', notiser: ['mastare'], ton: 'gott' },
-  masterverk: { namn: 'Mästerverk', ikon: '🏆', notiser: ['masterverk'], ton: 'gott' },
+  lart: { namn: 'Det hen lärt sig', ikon: '🧠', notiser: ['mastare'], ton: 'gott' },
+  masterverk: { namn: 'Mästerverk', ikon: '🏅', notiser: ['masterverk'], ton: 'gott' },
   titel: { namn: 'Titlar', ikon: '👑', notiser: ['ledare'], ton: blandat },
   hus: { namn: 'Hus', ikon: '🏠', notiser: ['hus'], ton: 'gott' },
   flytt: { namn: 'Flytt', ikon: '🎒', notiser: ['utflytt', 'inflytt'] },
-  yrke: { namn: 'Nytt yrke', ikon: '🔨', ton: 'gott' },
+  yrke: { namn: 'Nytt yrke', ikon: '🪪', ton: 'gott' },
   relation: { namn: 'Vänner och ovänner', ikon: '🤝', notiser: ['par'], ton: blandat },
   match: { namn: 'Matcher', ikon: '🏅', notiser: ['match'] },
-  nara: { namn: 'De som står hen nära', ikon: '👪', notiser: ['fodd', 'dod', 'gravid'], ton: blandat },
+  nara: { namn: 'De som står hen nära', ikon: '👥', notiser: ['fodd', 'dod', 'gravid'], ton: blandat },
 } satisfies Record<string, PersonloggSlag>;
 export type PersonloggId = keyof typeof PERSONLOGG;
 export type PersonRad = [t: number, k: PersonloggId, text: string, h?: number]; // h = humöret när det hände, 0–9

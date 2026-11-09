@@ -112,7 +112,7 @@ const DEF = {
   gomma: { namn: 'Gömmer sig för vargarna', tecken: '🫣', dygn: true, stilla: true, plats: 'sang', fortsatter: ['varg'] as const },
   forsvar: { namn: 'Väntar på vargarna med vapen', tecken: '🛡️', social: true, skamfri: true, dygn: true, stilla: true, vapen: true, plats: 'elden', radie: 2.2, fortsatter: ['varg'] as const },
   // mot rövare (steg 9.2.74, rovare.ts): man väntar vid förrådet, dit rövarna är på väg, och platsen sätts i rovarSkydd
-  budRovare: { namn: 'Hämtar folk', tecken: '📣', social: true, skamfri: true, dygn: true, fortsatter: ['varg'] as const }, // budbäraren (steg 9.2.117)
+  budRovare: { namn: 'Hämtar folk', tecken: '🏃', social: true, skamfri: true, dygn: true, fortsatter: ['varg'] as const }, // budbäraren (steg 9.2.117)
   hjalpaRovare: { namn: 'Håller sig bakom kämparna', tecken: '🤲', social: true, skamfri: true, dygn: true, stilla: true, fortsatter: ['varg'] as const }, // steg 9.2.116
   forsvarRovare: { namn: 'Väntar på rövarna med vapen', tecken: '🛡️', social: true, skamfri: true, dygn: true, stilla: true, vapen: true, fortsatter: ['varg'] as const },
   sova: { namn: 'Sover', slag: 'vila', under: { go: 'går och lägger sig' }, vila: true, stilla: true, plats: 'sang' },
@@ -240,7 +240,7 @@ const DEF = {
   vargjakt: { namn: 'Jagar varg', slag: 'jaga', ger: 'varg', tungt: true, fortsatter: ['brand', 'tornado', 'varg'] as const }, // steg 3.7.1 (varg.ts): ledaren samlar jägare, och den fällda vargen bärs hem
   // gästernas egna handlingar (steg 9.2.113, gastvardag.ts): sorten är kravet
   gastKommer: { namn: 'Går till byn', tecken: '🚶', gast: ['handlare', 'rovare', 'framling'] as const },
-  gastVantar: { namn: 'Väntar', tecken: '⏳', stilla: true, gast: ['handlare', 'rovare', 'framling'] as const },
+  gastVantar: { namn: 'Väntar', tecken: '🕓', stilla: true, gast: ['handlare', 'rovare', 'framling'] as const },
   gastHandla: { namn: 'Handlar vid filten', slag: 'prata', stilla: true, gast: ['handlare'] as const },
   plundra: { namn: 'Plundrar byn', tecken: '💰', gast: ['rovare'] as const },
   gastFly: { namn: 'Flyr från byn', tecken: '🏃', gast: ['rovare', 'framling'] as const },

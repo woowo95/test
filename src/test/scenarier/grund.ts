@@ -537,6 +537,8 @@ SCENARIER.kunskap = {
       led2 = Math.max(led2, l.filter(l => (l.led ?? 0) >= 2).length); hort = Math.max(hort, l.filter(l => l.src !== undefined).length);
       radd = Math.max(radd, living(s).filter(p => findL(p, 'fara', a)).length);
     });
+    // i andra hand: i en så liten by (och efter olyckan) händer det inte alltid på 8 dygn; då prövas två vanliga byar till
+    for (const fro of led2 > 0 ? [] : [6, 9]) { const u = createState(fro, START); kor(u, 8 * 24, u => { led2 = Math.max(led2, living(u).flatMap(p => p.lardomar ?? []).filter(l => (l.led ?? 0) >= 2).length); }); if (led2 > 0) break; }
     const L = living(s);
     const kan = L.filter(p => p !== larare && kn(p, 'svamp') > 0.1).length;
     const fel = L.flatMap(p => (p.lardomar ?? []).map(l => describe(s, l).wrong)).filter(Boolean).length;

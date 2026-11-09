@@ -1445,7 +1445,7 @@ SCENARIER.handlarrel = {
       ['relationen sparas med byn', sparas],
       ['bybons relationsflik: handlaren i listan märkt gäst, och Utanför byn hopfällt', stangd.includes(SIM.hp(s, h).name) && stangd.includes('gäst') && stangd.includes('Utanför byn') && !/affär.*affär/.test(stangd.replace(/\n/g, ''))],
       ['Utanför byn visar handlaren med klanen när man trycker', oppen.split(SIM.hp(s, h).name).length > stangd.split(SIM.hp(s, h).name).length && oppen.includes(SIM.klanById(s, SIM.hp(s, h).gast!.klan)!.namn)],
-      ['handlarens relationsflik visar bybon under I byn', hos.includes('I byn') && hos.includes(a.name) && hos.includes('lurade bybon 1 gång')],
+      ['handlarens relationsflik visar bybon under Affärerna i byn', hos.includes('Affärerna i byn') && hos.includes(a.name) && hos.includes('lurade bybon 1 gång')],
     ];
   },
 };

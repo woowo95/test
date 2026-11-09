@@ -566,6 +566,7 @@ function malFor(s: State, p: Person, tk: Task): { x: number; y: number } {
   for (const [dx, dy] of GRANNAR4) {
     const x = X + dx, y = Y + dy;
     if (!inMap(x, y) || blocked(s, x, y)) continue; // (blocked tar också vattnet)
+    if (bb && bitAt(s, x, y)?.k === 'vagg') continue; // inte där en vägg ska stå: den byggs kanske medan man står där
     const d = Math.hypot(x + 0.5 - p.x, y + 0.5 - p.y);
     if (d < bd) { bd = d; bast = { x: x + 0.5, y: y + 0.5 }; }
   }

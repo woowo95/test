@@ -1962,6 +1962,8 @@ const MDEF = {
     { t: 'Det lyfte {honom} lite.', om: f => f.nere === true },
     { t: '{Hen} vågar knappt tro att det är sant.', om: f => f.orolig === true },
     { t: '{Hen} har berättat det för alla.', om: f => f.talfor === true },
+    { t: 'Det gav {honom} mod.', om: f => f.orolig === true },
+    { t: '{Hen} tänker gärna tillbaka på det.', om: f => f.glad === true || f.nere === true },
     { t: '', om: f => !f.orolig && !f.modig && !f.nere && !f.glad && !f.talfor },
   ],
 } satisfies Record<string, Variant[]>;

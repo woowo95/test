@@ -900,7 +900,9 @@ function fylla(s: State, p: Person, best: Act, fd: number, wd: number): { act: A
   if (b === 'ved' && wd < vedTak) return { ...ved, act: best };
   if (!matFull) return mat;
   if (wd < vedTak) return ved;
-  for (const k of ['grenar', 'torrgras'] as const) if (!overTak(s, k)) return { act: 'samla', why: `Mer ${k === 'grenar' ? 'grenar' : 'hö'} till förrådet`, hamtar: k };
+  // det andra redan bär hem räknas med, så att inte flera fyller över taket samtidigt
+  const pavag = (k: string) => living(s).reduce((n, q) => n + (q !== p && q.task?.hamtar === k ? q.task.items?.[k] ?? 0 : 0), 0);
+  for (const k of ['grenar', 'torrgras'] as const) if (!overTak(s, k, pavag(k))) return { act: 'samla', why: `Mer ${k === 'grenar' ? 'grenar' : 'hö'} till förrådet`, hamtar: k };
   return undefined;
 }
 // varor till handlaren (steg 6.2.11): det handlarna brukar köpa (handlarMal i handel.ts), så många byn har över det den själv
