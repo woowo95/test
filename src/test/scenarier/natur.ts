@@ -130,7 +130,9 @@ SCENARIER.sjo = { // by 4: by 3 fiskade knappt efter steg 2.3.11
     const s = createState(4, START), sj = SIM.sjoarna(s.seed), tiles = getMap(s.seed).tiles;
     let vatten = true; for (let i = 0; i < W * H; i++) if ((tiles[i] === T.Vatten) !== (sj.id[i] >= 0)) vatten = false;
     const storst = sj.rutor.every((r, n) => n === 0 || r.length <= sj.rutor[n - 1].length);
-    kor(s, 6 * 24);
+    // den som sitter vid stranden ser ut över sjön eller tjärnen hen sitter vid (steg 9.2.131)
+    const strandNamn = new Set<string>();
+    kor(s, 6 * 24, v => { for (const p of living(v)) if (p.task?.act === 'strand') strandNamn.add(SIM.taskName(p.task)); });
     const st = Object.values(s.sjoar ?? {}), sum = (k: 'forsok' | 'napp' | 'fisk' | 'bad') => st.reduce((a, x) => a + x[k], 0);
     const fangst = s.people.reduce((a, p) => a + (p.fiske?.k ?? 0), 0);
     const perPers = st.every(x => Object.values(x.fiskare).reduce((a, n) => a + n, 0) === x.fisk && Object.values(x.badare).reduce((a, n) => a + n, 0) === x.bad);
@@ -151,6 +153,7 @@ SCENARIER.sjo = { // by 4: by 3 fiskade knappt efter steg 2.3.11
     return [
       [`fiskaren går till en annan plats när stranden är utfiskad (${f.stat?.fiskeByter ?? 0} byten)`, flyttat && (f.stat?.fiskeByter ?? 0) === 1],
       [`ett bad räknas vid sjön intill stranden (${SIM.sjoNamn(b, SIM.sjoVid(b, bx, by))}) och hos den som badade`, badSjo?.bad === 1 && badSjo.badare[bp.id] === 1 && badSjo.log[0]?.k === 'bad'],
+      [`den som sitter vid stranden ser ut över vattnet med namn (${[...strandNamn].join('; ') || 'ingen satt vid stranden'})`, [...strandNamn].every(n => /över (isen på )?(sjön|.*tjärnen)/.test(n))],
       [`${sj.rutor.length} sjöar, varje ruta vatten hör till en, den största först (${SIM.sjoNamn(s, 0)})`, vatten && storst && SIM.sjoNamn(s, 0) === 'Sjön'],
       [`alla fiskeförsök räknas vid en sjö (${sum('forsok')} av ${s.stat?.fiskeForsok ?? 0} på sex dygn, sex år i spelet)`, sum('forsok') > 0 && sum('forsok') === (s.stat?.fiskeForsok ?? 0)],
       [`napp och fångade fiskar stämmer med byns och personernas räkning (${sum('napp')} napp, ${sum('fisk')} fiskar)`, sum('napp') === (s.stat?.fiskeNapp ?? 0) && sum('fisk') === fangst && fangst > 0],

@@ -261,7 +261,9 @@ export const forsokVad: Record<string, string> = {};
 const gomFor = (why = '') => /^Rövar/.test(why) ? 'Gömmer sig för rövarna' : /^Varg/.test(why) ? 'Gömmer sig för vargarna' : /^Björn/.test(why) ? 'Gömmer sig för björnen' : undefined;
 // den som går till en död säger vems kropp (steg 9.2.130): skälet är "Bär Kamar till graven"
 const tillKroppen = (why = '') => { const m = /^Bär (.+) till graven/.exec(why); return m ? `Går till ${/[sxz]$/i.test(m[1]) ? m[1] : m[1] + 's'} kropp` : undefined; };
-export const taskName = (t: Task) => (t.act === 'gomma' ? gomFor(t.why) : t.act === 'begrava' && t.phase === 'go' ? tillKroppen(t.why) : undefined) || (t.act === 'forsok' && t.tool && forsokVad[t.tool] ? `Försöker komma på ${forsokVad[t.tool]}` : undefined) || (t.tool && (ACTS[t.act].redskap?.[t.tool]?.namn ?? ACTS[t.act].verktyg?.[t.tool])) || ACTS[t.act].namn;
+// den som sitter vid stranden ser ut över sjön eller tjärnen hen sitter vid, eller isen (steg 9.2.131; skälet sätts i val.ts)
+const strandVy = (why = '') => /^Ser ut över /.test(why) ? `Sitter vid stranden och ${why.charAt(0).toLowerCase()}${why.slice(1)}` : undefined;
+export const taskName = (t: Task) => (t.act === 'gomma' ? gomFor(t.why) : t.act === 'strand' ? strandVy(t.why) : t.act === 'begrava' && t.phase === 'go' ? tillKroppen(t.why) : undefined) || (t.act === 'forsok' && t.tool && forsokVad[t.tool] ? `Försöker komma på ${forsokVad[t.tool]}` : undefined) || (t.tool && (ACTS[t.act].redskap?.[t.tool]?.namn ?? ACTS[t.act].verktyg?.[t.tool])) || ACTS[t.act].namn;
 // undertexten (steg 3.10.3): det uppgiften är i just nu, kort, som i "Jagar: letar efter byte". Handlingens rad (under) först,
 // annars på väg dit, med material till bygget och hem med det som bärs. Jakten efter försöket (jakt.ts)
 export function underText(t: Task): string | undefined {
