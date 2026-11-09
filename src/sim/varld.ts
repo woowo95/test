@@ -1,3 +1,4 @@
+import { delarIRad } from './stationer';
 import { nyaKlaner } from './klaner';
 import { gastAv, nyGast, nyttGastId } from './gast';
 import { gastNyckel } from './gastliv';
@@ -256,6 +257,9 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
         return p.id;
       });
     }
+  }],
+  [29, 'v521: örtköket står i tre delar (steg 9.4.3): härden, torkstället och bänken i en rad där örtköket stod', s => {
+    for (const t of s.stationer ?? []) if (t.k === 'ortkok' && !t.delar?.length) { const d = delarIRad(t.k, t.x, t.y, t.rot); if (d) t.delar = d; }
   }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];

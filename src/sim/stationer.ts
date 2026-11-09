@@ -137,7 +137,10 @@ export const STATIONER = {
     bygger: 'Bygger en klyvplats.', forsta: '{namn} byggde byns första klyvplats. Där klyvs virket till plankor.',
   },
   // örtköket (steg 7.6.1): en egen liten eld, och varje recept tar 1 ved som bränsle (i receptet)
+  // örtköket i tre delar (steg 9.4.3, förebilden är örtkökets version 2 i bildstilen): härden med krukan över elden, torkstället
+  // med örterna och bänken med morteln, där man arbetar. Det går att arbeta vid först när alla delar står i samma rum
   ortkok: {
+    delar: [{ namn: 'Härden', ikon: 'ortkok_hard', w: 1, h: 2 }, { namn: 'Torkstället', ikon: 'ortkok_tork', w: 1, h: 2 }, { namn: 'Bänken', ikon: 'ortkok_bank', w: 1, h: 2, arbete: true }],
     namn: 'Örtkök', ikon: 'ortkok', w: 3, h: 2, tek: ['ortkok'], av: RECEPT.ortkok.av, min: RECEPT.ortkok.min, gor: ['koka_salva', 'koka_tjara', 'koka_lim', 'koka_tval', 'koka_rokelse', 'koka_olja'], bara: ['koka_salva', 'koka_tjara', 'koka_lim', 'koka_tval'],
     bygger: 'Bygger ett örtkök.', forsta: '{namn} byggde byns första örtkök. Där kokas och blandas örter, talg och annat.',
   },

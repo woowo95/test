@@ -179,7 +179,14 @@ export function drawStructures(t: number) {
     const d = stationDef(st.k), v = vriden(st);
     if (d?.brasa) { pileIcons.add('kb_lagereld_ring', st.x * TS + TS / 2 - ELD.x, st.y * TS + TS / 2 - ELD.y, 1); framsteg(st.x * TS + TS / 2, st.y * TS - 6, stationKlar(st)); continue; } // ringen till en lägereld till medan den läggs
     if (st.delar?.length && d?.delar) { // en station i flera delar (steg 9.4.1): varje del där den står, platshållare tills delarna har bilder (9.4.3)
-      for (const q of delarAv(st)) overG.beginFill(0x3f2415).drawRect(q.x * TS, q.y * TS, q.w * TS, q.h * TS).endFill().beginFill(isKlar(st) ? 0x7d5b40 : 0x5e3c24).drawRect(q.x * TS + 1, q.y * TS + 1, q.w * TS - 2, q.h * TS - 2).endFill();
+      for (const q of delarAv(st)) {
+        overG.beginFill(0x3f2415).drawRect(q.x * TS, q.y * TS, q.w * TS, q.h * TS).endFill().beginFill(isKlar(st) ? 0x7d5b40 : 0x5e3c24).drawRect(q.x * TS + 1, q.y * TS + 1, q.w * TS - 2, q.h * TS - 2).endFill();
+        // örtkökets delar (steg 9.4.3, platshållare tills Björn valt i bildstilen): elden under krukan, örterna på stället, morteln
+        const mx = q.x * TS + q.w * TS / 2, my = q.y * TS + q.h * TS / 2, ik = q.del?.ikon;
+        if (isKlar(st) && ik === 'ortkok_hard') overG.beginFill(0xa14808).drawRect(mx - 3, my + 1, 6, 3).endFill().beginFill(0x3f2415).drawRect(mx - 3, my - 4, 6, 5).endFill();
+        if (isKlar(st) && ik === 'ortkok_tork') for (let k = 0; k < 3; k++) overG.beginFill(0x647025).drawRect(mx - 4 + k * 3, my - 3 + (k % 2) * 2, 2, 4).endFill();
+        if (isKlar(st) && ik === 'ortkok_bank') overG.beginFill(0xbdb39b).drawRect(mx - 2, my - 2, 4, 4).endFill().beginFill(0x3f2415).drawRect(mx - 1, my - 1, 2, 1).endFill();
+      }
       if (!isKlar(st)) framsteg(st.x * TS + storlekAv(st).w * TS / 2, st.y * TS + 3, stationKlar(st));
       continue;
     }
