@@ -84,7 +84,7 @@ const DELAR: Del[] = [
   { id: 'halsa', tecken: '🩺', namn: 'Hälsa', levande: true, html: halsaHtml, kort: halsaKort, gast: gastHalsa },
   { id: 'egen', tecken: '{sym_egenskaper}', namn: 'Egenskaper', html: egenHtml, kort: egenKort, gast: gastEgen },
   { id: 'tid', tecken: '🕓', namn: 'Tiden', levande: true, html: tidHtml, kort: tidKort, gast: gastTid },
-  { id: 'utr', tecken: '🎒', namn: 'Utrustning', levande: true, html: p => `<p class="muted">${carryTxt(p)}</p>${gearHtml(p)}`, kort: p => { const u = utrustning(s, p, false), n = PLATS_LIST.filter(k => u[k].ting).length; return n ? `${n} på sig` : 'Inget på sig'; }, gast: gastUtr },
+  { id: 'utr', tecken: '🎒', namn: 'Utrustning', levande: true, html: p => `${barNu(p) ? `<p class="muted">${carryTxt(p)}</p>` : ''}${gearHtml(p)}`, kort: p => { const u = utrustning(s, p, false), n = PLATS_LIST.filter(k => u[k].ting).length; return n ? `${n} på sig` : 'Inget på sig'; }, gast: gastUtr },
   { id: 'form', tecken: '💰', namn: 'Förmögenhet', html: formogenhetLista, kort: p => String(Math.round(formogenhetDelar(s, p.id).sum)) },
   { id: 'kun', tecken: '🧠', namn: 'Kunskap', html: knowledgeHtml, kort: p => { const n = Object.values(p.tek ?? {}).filter(v => v >= 1).length; return n === 1 ? '1 teknik' : `${n} tekniker`; }, gast: gastKun },
   { id: 'rel', tecken: '👥', namn: 'Relationer', html: relHtml, kort: p => { const n = s.people.filter(q => q.id !== p.id && alive(q) && s.rels[relKey(p.id, q.id)]).length; return `känner ${n}`; }, gast: gastRel },
@@ -191,6 +191,8 @@ function pFakta(p: Person) {
   const a = Math.floor(ageOf(p, alive(p) ? s.now : (p.died ?? p.left ?? s.now))), y = yrkeNamn(s, p), q = byId(s, p.partner);
   return [p.sex === 'k' ? 'Kvinna' : 'Man', `${a} år`, y ? esc(y) : '', q ? `med ${pLink(q)}` : ''].filter(Boolean).join(' · ');
 }
+// bär personen något just nu? (steg 9.2.96: annars står inget om bördan under Utrustning)
+const barNu = (p: Person) => !carryTxt(p).startsWith('Bär inget');
 // en övertygelse: personen drar en sed minst så här mycket åt ena hållet (ett helt steg är 1, seder.ts)
 const OVERTYGAD = 0.35;
 function presHtml(p: Person) {
