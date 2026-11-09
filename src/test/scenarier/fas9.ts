@@ -238,3 +238,30 @@ SCENARIER.vatskor = {
   text: 'Steg 9.4.13–9.4.14: näveraskan är en liten ask av näver och rep med en egen teknik, som görs för hand eller fortare och bättre vid slöjdbänken. Vätskorna (vattnet, tjäran, salvan och benlimmet) finns bara i behållare: ett recept behöver en ledig behållare som passar, och när vätskan används blir den tomma behållaren kvar. Örtteet (steg 9.5.8) kokas i en liten lerkruka och värmer och stärker',
   kor: () => [...naveraskan(), ...vatskorna(), ...orteet()],
 };
+
+SCENARIER.salva = {
+  text: 'Steg 9.5.10: salvan blir läkesalva. Tekniken Läkesalva kräver Örtte och örtköket, salvan görs bara i örtköket och har kvalitet, och läggs på såret: den sänker risken för infektion, dämpar en infektion som börjat och hjälper brännskador att läka, mer ju bättre den är',
+  kor: () => {
+    const { TEKNIK, TILLVERKA, STATIONER, SALVA, salvaVerkan, vardKlar, halsaSteg, addTool } = SIM;
+    const tek = TEKNIK.find(t => t.id === 'lakesalva');
+    const s = createState(1, START), [g, q] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
+    addTool(s, 'naverask', g).inne = { v: 'salva', n: 1, q: 2 };
+    q.skador = [{ d: 'armV', k: 'skarsar', g: 0.5, b: 0 }];
+    g.x = q.x; g.y = q.y;
+    vardKlar(s, g, { act: 'varda', phase: 'do', tx: q.x, ty: q.y, until: s.now, carry: 0, why: '', ref: q.id });
+    const lagd = q.skador![0].salva === 2 && SIM.vatskaAv(s, 'salva') === 0;
+    const w = q.skador![0], risk = (k?: number) => 1 - SALVA.skydd * salvaVerkan({ ...w, salva: k });
+    // en infektion som börjat går tillbaka med salva och växer utan
+    const inf = (salva?: number) => { const c = SIM.cloneState(s), r = c.people.find(x => x.id === q.id)!; r.skador = [{ d: 'armV', k: 'skarsar', g: 0.5, b: 0, inf: 0.3, ...(salva !== undefined ? { salva } : {}) }]; halsaSteg(c, r, 4 * 3600); return r.skador?.[0]?.inf ?? 0; };
+    const med = inf(2), utan = inf();
+    // brännskadan läker fortare med salva
+    const bran = (salva?: number) => { const c = SIM.cloneState(s), r = c.people.find(x => x.id === q.id)!; r.skador = [{ d: 'armV', k: 'brannskada', g: 0.6, b: 0, ...(salva !== undefined ? { salva } : {}) }]; halsaSteg(c, r, 6 * 3600); return r.skador?.[0]?.g ?? 0; };
+    return [
+      [`tekniken Läkesalva kräver Örtte och örtköket (${tek?.krav.join(', ')}) och salvan görs bara i örtköket`, !!tek && tek.krav.includes('orte') && tek.krav.includes('ortkok') && TILLVERKA.koka_salva.tek === 'lakesalva' && STATIONER.ortkok.bara!.includes('koka_salva')],
+      [`salvan läggs på såret och tas ur näveraskan (${lagd ? 'ja' : 'nej'})`, lagd],
+      [`risken för infektion blir lägre, mer ju bättre salvan är (usel ${risk(0).toFixed(2)}, normal ${risk(2).toFixed(2)}, mästerverk ${risk(4).toFixed(2)}, utan 1)`, risk(4) < risk(2) && risk(2) < risk(0) && risk(0) < 1],
+      [`en infektion som börjat går tillbaka med salva (${med.toFixed(2)}) och växer utan (${utan.toFixed(2)})`, med < 0.3 && utan > 0.3],
+      [`brännskadan läker fortare med salva (${bran(2).toFixed(2)} mot ${bran().toFixed(2)})`, bran(2) < bran()],
+    ];
+  },
+};

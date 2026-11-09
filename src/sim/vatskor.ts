@@ -9,7 +9,7 @@ import { HOUR, Person, State } from './typer';
 import { balans } from './balans';
 import { KROPP, count, forstaGang, log } from './folk';
 import { isSick } from './sjukdom';
-import { hemma } from './halsa';
+import { hemma, salvaKrok } from './halsa';
 
 // örtteet (steg 9.5.8, Hälsosystemet i detalj: Teet och salvan): den som fryser eller är sjuk och är i byn dricker en del ur en
 // kruka med te. Det värmer, och den sjuke står emot bättre en stund (SJUK.lakeort i sjukdom.ts), mer ju bättre teet är, men
@@ -30,6 +30,9 @@ export function drickTe(s: State, p: Person) {
   count(s, 'teDrucket');
   if (forstaGang(s, 'teForsta')) log(s, `${p.name} drack ett örtte av rölleka.`, 'world', [p.id]);
 }
+// läkesalvan på såret (steg 9.5.10, halsa.ts): byns salva finns i näveraskarna och de små krukorna
+salvaKrok.har = s => vatskaAv(s, 'salva');
+salvaKrok.ta = s => { const k = medVatska(s, 'salva'); if (!k) return undefined; const q = k.inne!.q ?? 2; taVatska(s, 'salva', 1); return q; };
 // hur mycket teet hjälper motståndet just nu (1 = inget)
 export const teFaktor = (s: State, p: Person, lakeort: number) => (p.te?.till ?? 0) > s.now ? 1 + (lakeort - 1) * TE.verkan[p.te!.q] : 1;
 
