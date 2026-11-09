@@ -1127,7 +1127,7 @@ function buildStep(s: State, p: Person, tk: Task, dtSec: number) {
 // talen i sparfilen avrundas till tre decimaler. En stacks ägardelar avrundas nedåt om de annars blir mer än stacken
 const r3 = (v: number) => Math.round(v * 1000) / 1000;
 function avrunda(this: unknown, k: string, v: unknown) {
-  if (typeof v === 'number') return Number.isInteger(v) ? v : r3(v);
+  if (typeof v === 'number') return Number.isInteger(v) ? v : v < 1 && r3(v) >= 1 ? 0.999 : r3(v); // det som är under 1 (det påbörjade, s.delar) blir aldrig 1 av avrundningen
   const st = this as { n?: unknown } | null;
   if (k === 'ag' && v && typeof v === 'object' && typeof st?.n === 'number') {
     const d = v as Record<string, number>;

@@ -55,7 +55,7 @@ export const KRONIKA_KAT: KronikaKat[] = [
   { id: 'bygge', namn: 'Bygge och uppfinningar', ikon: 'kk_bygge', tecken: '🏠', slag: ['bygge', 'k_husKlar', 'k_uppfann', 'k_forstaEld', 'episk', 'forlust'] },
   { id: 'motgang', namn: 'Motgångar', ikon: 'kk_motgang', tecken: '⚡', slag: ['motgang', 'sjukdom'] },
   { id: 'grannar', namn: 'Handel och grannar', ikon: 'kk_grannar', tecken: '🤝', slag: ['handel', 'byte', 'gava', 'utbrytning'] },
-  { id: 'fritid', namn: 'Fritid', ikon: 'kk_fritid', tecken: '🎭', slag: ['fritid', 'hedersnamn', 'oknamn', 'k_skadadLek'] },
+  { id: 'fritid', namn: 'Fritid', ikon: 'kk_fritid', tecken: '🎲', slag: ['fritid', 'hedersnamn', 'oknamn', 'k_skadadLek'] },
 ];
 const KAT_AV = new Map(KRONIKA_KAT.flatMap(k => k.slag.map(sl => [sl, k.id] as const)));
 // kategorin för ett slag av krönikerad (undefined = ingen, t.ex. en rad i en gammal sparfil utan slag)

@@ -322,8 +322,8 @@ setRovarVal(rovarSkydd);
 
 // de vuxna som möter rövarna vid förrådet: vakna, nära och modiga nog (de som väntar med vapen och vakten står alltid kvar)
 const familjHotad = (s: State, q: Person, f: Rovarflock) => { const p = byId(s, q.partner); return !!p && avst(p, f) < ROVARE.motR; };
-function motstand(s: State, f: Rovarflock, folk: Person[]) {
-  const m = malet(s), kan = folk.filter(q => vaken(q) && vuxenKan(s, q) && avst(q, m) < ROVARE.motR && q.task?.act !== 'gomma'); // räknat från förrådet, dit rövarna går (steg 9.2.74)
+function motstand(s: State, f: Rovarflock, folk: Person[], vid: { x: number; y: number } = malet(s)) {
+  const m = vid, kan = folk.filter(q => alive(q) && vaken(q) && vuxenKan(s, q) && avst(q, m) < ROVARE.motR && q.task?.act !== 'gomma'); // räknat från förrådet, dit rövarna går (steg 9.2.74), eller från flocken när den letar hus för hus
   // vem som strider (steg 8.7.9): mod, åldern, vem som hotas, seden Förlikning – Fejd och styret. Vid Envälde lyder man ledaren, och lagen om stridsplikt säger vem som måste gå
   const l = ledareOf(s), lyder = (s.seder.v.rang ?? 0) > ROVARE.lyder && !!l && kan.includes(l), plikt = lagGaller(s, 'stridsplikt');
   const iver = ((s.seder.v.fejd ?? 0) + (s.seder.v.krig ?? 0)) * ROVARE.iver;
@@ -379,7 +379,7 @@ function stridGar(s: State, f: Rovarflock, folk: Person[]): boolean | undefined 
   if (st.slut) return stridSlut(s, f, st);
   slappFria(s, g, st);
   const med = new Set(st.kampar.map(k => k.pid).filter(x => x !== undefined));
-  for (const p of motstand(s, f, folk)) {
+  for (const p of motstand(s, f, folk, f)) {
     if (med.has(p.id) || p.task?.act === 'strid') continue;
     const id = n + g.in!.length + 1;
     g.in!.push({ t: st.t, k: { ...personKampe(s, p, id, 0, iArenan(p.x - g.ox, g.u.w), iArenan(p.y - g.oy, g.u.h)), fly: flyMal(s, p, g.ox, g.oy) } });
@@ -553,7 +553,7 @@ function flockSteg(s: State, f: Rovarflock, folk: Person[], dtSec: number) {
 function letaSteg(s: State, f: Rovarflock, folk: Person[], dtSec: number) {
   const m = byId(s, f.mal ?? -1);
   if (!m || !alive(m) || avst(f, m) <= RADER.hittaNara) { hamndKlar(s, f, m, !!m && alive(m)); tandaHus(s, f); f.gor = 'flyr'; return; }
-  const mot = motstand(s, f, folk);
+  const mot = motstand(s, f, folk, f);
   if (mot.length) { borjaStrid(s, f, mot); return; }
   const h = f.letar?.length ? husById(s, f.letar[0]) : undefined;
   if (!h) { if (f.letar?.length) { f.letar.shift(); return; } hamndKlar(s, f, m, false); f.gor = 'flyr'; return; }

@@ -1751,12 +1751,12 @@ SCENARIER.rovare = {
     const tl = (['liten', 'mellan', 'stor'] as const).map(k => {
       const q = cloneState(bas); const r = SIM.skickaRovare(q, SIM.ROVARFLOCK[k]), r2 = SIM.skickaRovare(q, 2);
       const rad = q.log.find(e => e.text.startsWith('Testläget:'))?.text ?? ''; tlRad = rad; tlSkal = r2.text;
-      // steg 4.5.7.10: flocken dyker upp ungefär ROVARE.testNara rutor från elden, på land och utanför husen
-      const f = q.rovare, e = SIM.eldPlats(q), d = f ? Math.hypot(f.x - e.x - 0.5, f.y - e.y - 0.5) : 0, vt = SIM.vattenNu(q);
-      const nara = !!f && Math.abs(d - SIM.ROVARE.testNara) <= 7 && vt[Math.floor(f.y) * SIM.W + Math.floor(f.x)] !== SIM.T.Vatten && !SIM.bitAt(q, f.x, f.y);
-      const a = cloneState(q); for (let i = 0; i < 12 && a.rovare?.gor === 'kommer'; i++) SIM.rovarSteg(a, BEAT); // en timme i spelet, slag för slag
-      if (a.rovare?.gor === 'kommer') return 0; // den har inte nått byn på en timme
-      return r.ok && nara && q.rovare?.folk.length === SIM.ROVARFLOCK[k] && q.rovare.gor === 'kommer' && /dyker upp \d+ rutor .+ om elden och går till anfall/.test(rad) && !r2.ok && !!r2.text && !!SIM.rovarHinder(q) ? SIM.ROVARFLOCK[k] : 0;
+      // steg 9.2.80: flocken står på väntplatsen, ROVARE.lur rutor från förrådet, på land och utanför husen, och väntar en minut
+      const f = q.rovare, z = SIM.zoneOf(q), m = z ? { x: z.x + z.w / 2, y: z.y + z.h / 2 } : { x: SIM.eldPlats(q).x + 0.5, y: SIM.eldPlats(q).y + 0.5 }, d = f ? Math.hypot(f.x - m.x, f.y - m.y) : 0, vt = SIM.vattenNu(q);
+      const nara = !!f && Math.abs(d - SIM.ROVARE.lur) <= 3 && vt[Math.floor(f.y) * SIM.W + Math.floor(f.x)] !== SIM.T.Vatten && !SIM.bitAt(q, f.x, f.y);
+      const a = cloneState(q); for (let i = 0; i < 12 && (a.rovare?.gor === 'vantar' || a.rovare?.gor === 'kommer'); i++) { a.now += BEAT * SIM.SEC; SIM.rovarSteg(a, BEAT); } // en timme i spelet, slag för slag
+      if (a.rovare?.gor === 'vantar' || a.rovare?.gor === 'kommer') return 0; // den har inte nått byn på en timme
+      return r.ok && nara && q.rovare?.folk.length === SIM.ROVARFLOCK[k] && q.rovare.gor === 'vantar' && /dyker upp \d+ rutor .+ om elden och går till anfall om en minut/.test(rad) && !r2.ok && !!r2.text && !!SIM.rovarHinder(q) ? SIM.ROVARFLOCK[k] : 0;
     });
     const th = cloneState(bas); for (const c of SIM.klanerOf(th)) c.inst = -60;
     const th1 = SIM.skickaHandlare(th), th2 = SIM.skickaHandlare(th);
@@ -1802,7 +1802,7 @@ SCENARIER.rovare = {
     // direkt efter ett anfall är chansen liten, och den växer med tiden
     const vila = SIM.efterAnfall(d) < 0.1; // skyddet efter ett anfall avtar med tiden (steg 8.7.14)
     return [
-      [`testläget skickar en liten, mellanstor och stor flock (${tl.join(', ')} rövare) ungefär ${SIM.ROVARE.testNara} rutor från elden och når byn inom en timme (steg 4.5.7.10), och en handlare, med en rad i Händelser (${tlRad}) och ett skäl när det inte går (${tlSkal})`, tl[0] > 0 && tl[0] < tl[1] && tl[1] < tl[2] && testHandlare],
+      [`testläget skickar en liten, mellanstor och stor flock (${tl.join(', ')} rövare) till väntplatsen ${SIM.ROVARE.lur} rutor från förrådet, och den når byn inom en timme (steg 4.5.7.10, 9.2.80), och en handlare, med en rad i Händelser (${tlRad}) och ett skäl när det inte går (${tlSkal})`, tl[0] > 0 && tl[0] < tl[1] && tl[1] < tl[2] && testHandlare],
       ['en ny och fattig by lockar inga rövare', fattig],
       ['en rik by lockar rövare', rik],
       ['försvaret räknas emot rikedomen', forsvar],
