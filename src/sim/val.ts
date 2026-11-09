@@ -792,7 +792,7 @@ function varda(s: State, p: Person, v: Val, sjalv: boolean) {
 function hamtaVatten(s: State, p: Person, v: Val) {
   const d = vattenVal(s, p);
   if (!d) return false;
-  v.spot = d.spot; v.ref = d.ref; v.tool = 'vattensack'; v.dur = 0; v.falt = d.falt;
+  v.spot = d.spot; v.ref = d.ref; v.tool = d.karl; v.dur = 0; v.falt = d.falt; // säcken eller en mellanstor lerkruka (steg 9.4.12)
   return set(v, 'vatten', d.why);
 }
 

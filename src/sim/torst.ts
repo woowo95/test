@@ -193,8 +193,11 @@ const villFylla = (s: State, p: Person) => !fylldSack(s) && !living(s).some(o =>
   return d.vatten && amountOf(s, d.ger) < d.vill && kanGoras(s, d.act) && living(s).some(q => knows(q, d.tek)) && Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n);
 });
 // det som väljs (val.ts): den närmaste som behöver vatten och som ingen annan redan hämtar åt, och vattnet att fylla säcken vid
-export function vattenVal(s: State, p: Person): { spot: { x: number; y: number }; ref: number; why: string; falt?: true } | undefined {
-  if (ageOf(p, s.now) < ALDER.vuxen || !kanGa(p) || freeTools(s, p, 'vattensack') < 1) return undefined;
+// det kärl p bär vatten i (steg 9.4.12): vattensäcken, eller annars en mellanstor lerkruka som i säcken
+export const vattenKarl = (s: State, p: Person) => freeTools(s, p, 'vattensack') >= 1 ? 'vattensack' : freeTools(s, p, 'lerkruka_mellan') >= 1 ? 'lerkruka_mellan' : undefined;
+export function vattenVal(s: State, p: Person): { spot: { x: number; y: number }; ref: number; why: string; falt?: true; karl: string } | undefined {
+  const karl = vattenKarl(s, p);
+  if (ageOf(p, s.now) < ALDER.vuxen || !kanGa(p) || !karl) return undefined;
   let best: Person | undefined, bd = TORST.hamtaR;
   for (const q of living(s)) {
     if (q === p || kanGa(q) || !torstig(q, 0) || ageOf(q, s.now) < ALDER.smabarn || !hemma(s, q)) continue;
@@ -205,13 +208,14 @@ export function vattenVal(s: State, p: Person): { spot: { x: number; y: number }
   const f = best ? undefined : torrtFalt(s, p), kok = !best && !f && villFylla(s, p);
   const spot = (best || f || kok) && naVattnet(s, p) && drickPlats(s, p); // genom isen bara med ett hål (is.ts)
   if (!spot) return undefined;
-  if (kok) return { spot, ref: FYLL, why: 'Fyller vattensäcken till örtköket' };
-  return best ? { spot, ref: best.id, why: `Hämtar vatten i säcken åt ${best.name}` } : { spot, ref: f!.id, why: 'Hämtar vatten till sitt fält', falt: true };
+  const i = karl === 'vattensack' ? 'säcken' : 'krukan';
+  if (kok) return { spot, ref: FYLL, why: `Fyller ${karl === 'vattensack' ? 'vattensäcken' : 'en lerkruka'} till örtköket`, karl };
+  return best ? { spot, ref: best.id, why: `Hämtar vatten i ${i} åt ${best.name}`, karl } : { spot, ref: f!.id, why: 'Hämtar vatten till sitt fält', falt: true, karl };
 }
 // säcken är fylld (KLAR i steg.ts): bär den till den törstige, eller låt den stå fylld till örtköket (FYLL). Utan säck i handen blir det inget
 export function vattenFylld(s: State, p: Person, t: Task) {
   if (t.ref === FYLL && !t.falt) { // till örtköket: säcken står fylld tills någon kokar med den
-    const k = toolsOf(s, 'vattensack').find(q => q.hos === p.id) ?? toolsOf(s, 'vattensack')[0];
+    const karl = t.tool ?? 'vattensack', k = toolsOf(s, karl).find(q => q.hos === p.id) ?? toolsOf(s, karl)[0];
     if (t.tool && k) { k.fylld = 1; wearUsed(s, p, 1); count(s, 'sack fylld'); }
     return;
   }

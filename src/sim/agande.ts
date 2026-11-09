@@ -54,6 +54,7 @@ export function addTool(s: State, k: string, p: Person) { return newTing(s, k, 1
 
 // kan p ta tinget? Inte om någon bär det i bördan, arbetar med det eller har det på sig
 function usable(s: State, p: Person, t: Ting) {
+  if (t.ler !== undefined) return false; // en lerkruka som torkar eller ska brännas är inte färdig (steg 9.4.11)
   if (t.lass !== undefined || (t.bar !== undefined && t.bar !== p.id) || (t.krok !== undefined && t.krok !== p.id)) return false;
   if (t.hos !== undefined && t.hos !== p.id) {
     const q = byId(s, t.hos);

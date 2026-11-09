@@ -5,11 +5,13 @@
 // Medan den torkar och bränns (t.ler) är den inte färdig och går inte att använda
 import { balans } from './balans';
 import { tingOf, Ting } from './agande';
+import { villAv } from './forradsmal';
+import { pyntOf, sittAt, sovrum, stationAt } from './stationer';
 import { temperature, vaderNu } from './vader';
-import { count, forstaGang, log } from './folk';
+import { ALDER, ageOf, count, forstaGang, living, log } from './folk';
 import { rnd } from './slump';
 import { kvOf } from './kvalitet';
-import { State } from './typer';
+import { State, W } from './typer';
 
 export interface KrukaDef { namn: string; lera: number; rymmer: number; vikt: number; min: number }
 export const KRUKOR = {
@@ -31,6 +33,7 @@ export const KRUKA = balans('kruka', {
 export function krukaFormad(t: Ting) { t.ler = 0; }
 // en gång i timmen: de råa krukorna torkar, och de torra bränns i elden när den brinner
 export function stepKrukor(s: State) {
+  krukorHem(s);
   const torka = Math.max(0.1, 1 + KRUKA.varm * (temperature(s) - 10)) * (vaderNu(s).nb > 0 ? KRUKA.regn : 1) / KRUKA.torkTim;
   for (const t of [...tingOf(s)]) {
     if (t.ler === undefined) continue;
@@ -49,4 +52,18 @@ export function stepKrukor(s: State) {
   }
 }
 export const krukaKlar = (t: Ting) => t.ler === undefined;
+// ägaren ställer sin lediga lerkruka i rummet där hen sover, som pynt (steg 9.4.12), när hen inte har något pynt där. Efter arbetet
+// ställs den tillbaka i förrådet som redskapen (placeTools), och sedan hit igen
+export function krukorHem(s: State) {
+  for (const p of living(s)) {
+    if (ageOf(p, s.now) < ALDER.vuxen || pyntOf(s, p)) continue;
+    const rum = sovrum(s, p), k = rum && tingOf(s).find(t => t.k.startsWith('lerkruka_') && t.agare === p.id && t.ler === undefined && t.hos === undefined && t.lass === undefined && t.bar === undefined && t.krok === undefined);
+    if (!rum || !k) continue;
+    const i = rum.tiles.find(j => { const x = j % W, y = Math.floor(j / W); return !stationAt(s, x, y) && !sittAt(s, x, y) && !tingOf(s).some(t => t.x === x && t.y === y) && !(s.stackar ?? []).some(a => a.x === x && a.y === y); });
+    if (i === undefined) continue;
+    k.x = i % W; k.y = Math.floor(i / W); k.vid = undefined;
+    count(s, 'krukaHem');
+  }
+}
+export const krukaVill = (s: State) => villAv(s, 'lerkruka'); // hur många lerkrukor byn vill ha (REDSKAPMAL i forradsmal.ts, steg 9.4.12)
 

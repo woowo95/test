@@ -675,9 +675,12 @@ export const villKista = (s: State, p: Person) => !kistaOf(s, p) && bedTile(s, p
 // ---------- pyntet (steg 4.3.4, pynt.ts) ----------
 // p:s pynt, färdigt eller halvbyggt. Var och en har högst ett, så att byn inte fylls av små saker
 export const PYNT_LIST = STATION_LIST.filter(k => (STATIONER[k] as StationDef).pynt);
-export const pyntOf = (s: State, p: Person) => stationerOf(s).find(t => t.ag === p.id && !!stationDef(t.k)?.pynt);
-// sorten p vill ha: smaken, fast för var och en (ingen slump)
-export const pyntSort = (s: State, p: Person) => PYNT_LIST[Math.floor(hash3(s.seed, p.id, 43) * PYNT_LIST.length)];
+// en lerkruka som står i rummet där p sover är också pynt (steg 9.4.12): pyntet räknas på tingen i rummet, inte bara på möblerna
+export const krukaHemma = (s: State, p: Person) => { const rum = sovrum(s, p); return rum ? tingOf(s).find(t => t.k.startsWith('lerkruka_') && t.agare === p.id && t.ler === undefined && t.hos === undefined && t.lass === undefined && t.bar === undefined && t.x !== undefined && roomAt(s, t.x, t.y!) === rum) : undefined; };
+export const pyntOf = (s: State, p: Person) => stationerOf(s).find(t => t.ag === p.id && !!stationDef(t.k)?.pynt) ?? krukaHemma(s, p);
+// sorten p vill ha: smaken, fast för var och en (ingen slump). Lerkrukan är en av sorterna fast den inte är en möbel
+export const PYNT_SMAK = ['kruka', ...PYNT_LIST];
+export const pyntSort = (s: State, p: Person) => PYNT_SMAK[Math.floor(hash3(s.seed, p.id, 43) * PYNT_SMAK.length)];
 // p vill ha pyntet k: hen är vuxen, sover inne, har inget och k är hens sort
 export const villPynt = (s: State, p: Person, k: string) => ageOf(p, s.now) >= ALDER.vuxen && !pyntOf(s, p) && pyntSort(s, p) === k && bedTile(s, p) !== undefined;
 // hur stor del av de vuxna som sover inne som vill ha pyntet k (projektets brist)

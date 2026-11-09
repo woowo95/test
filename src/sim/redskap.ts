@@ -1,4 +1,3 @@
-import { krukaAv, krukaFormad } from './kruka';
 import type { DjurStrid } from './strid';
 import { KROPP, count, doingAct, forstaGang, gjort, living, log } from './folk';
 import { knows } from './teknik';
@@ -21,6 +20,7 @@ import { utanDorr } from './bygg';
 import { balans } from './balans';
 import { fartVid, kvVid, kanGoras, nyttVid, slitVid } from './stationer';
 import { smutsa } from './smuts';
+import { krukaAv, krukaFormad } from './kruka';
 
 // ---------- balanstal (regel 8) ----------
 // Vad byn sparar när den gör redskap (hur många den vill ha står i REDSKAPMAL i forradsmal.ts, steg 6.2.17). Hur mycket ett redskap kräver står i receptet (skaffa.av

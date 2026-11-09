@@ -4,7 +4,7 @@ import { balans } from './balans';
 import { roomAt } from './byggnad';
 import { handelse } from './rykten';
 import { kvOf } from './kvalitet';
-import { isKlar, stationDef, stationRum, stationerOf } from './stationer';
+import { isKlar, krukaHemma, sovrum, stationDef, stationRum, stationerOf } from './stationer';
 
 // ---------- pyntet i hemmen (steg 4.3.4) ----------
 // Lerkrukan, bonaden och det snidade väggbrädet är möbler som bara är till för att pynta (pynt i STATIONER, stationer.ts).
@@ -26,17 +26,21 @@ const iRum = (s: State, p: Person, rum: unknown) => !!rum && roomAt(s, Math.floo
 
 // en gång i timmen (steg.ts)
 export function stepPynt(s: State) {
+  // pyntet räknas på det som står i rummet (steg 9.4.12): möblerna och lerkrukorna i rummet där ägaren sover
+  const pynt: { o: Person; rum: unknown; q: number; namn: string }[] = [];
   for (const t of stationerOf(s)) {
     const d = stationDef(t.k);
     if (!d?.pynt || !isKlar(t) || t.ag === undefined) continue;
     const o = byId(s, t.ag), rum = stationRum(s, t);
-    if (!o || !alive(o) || !rum) continue;
-    const q = kvOf(t);
+    if (o && alive(o) && rum) pynt.push({ o, rum, q: kvOf(t), namn: d.namn.toLowerCase() });
+  }
+  for (const o of living(s)) { const k = krukaHemma(s, o); if (k) pynt.push({ o, rum: sovrum(s, o), q: kvOf(k), namn: 'lerkruka' }); }
+  for (const { o, rum, q, namn } of pynt) {
     if (PYNT.glad[q] > 0 && iRum(s, o, rum)) { think(o, PYNT_TANKE, PYNT.glad[q], s.now, PYNT.gladTim * HOUR); count(s, 'pyntGlad'); }
     if (PYNT.syn[q] <= 0) continue;
     for (const v of living(s)) {
       if (v === o || v.task?.act === 'sova' || !iRum(s, v, rum)) continue;
-      handelse(s, o, 'pynt', undefined, d.namn.toLowerCase(), v, PYNT.syn[q]);
+      handelse(s, o, 'pynt', undefined, namn, v, PYNT.syn[q]);
       count(s, 'pyntSedd');
     }
   }

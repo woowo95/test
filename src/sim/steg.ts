@@ -1,4 +1,3 @@
-import { stepKrukor } from './kruka';
 import { leraGravd } from './lera';
 import { GASTVARD, gastVardag } from './gastvardag';
 import { husKlaraTimme } from './bygg';
@@ -101,6 +100,7 @@ import { stadaByten } from './byte';
 import { stationFlytta, finishStation, finishTillbehor, stationAt, stationRutor, stepStationer, tillbehorVarme, workStation } from './stationer';
 import { TROSKEL, forbrukTimme, overTak, underBuffert } from './forradsmal';
 import { notis } from './notiser';
+import { stepKrukor } from './kruka';
 
 // Simuleringen går i slag om fem minuter (BEAT), i spelet och vid ikappräkning likadant. Inom ett slag går tiden åt
 // till det som händer i tur och ordning (taskStep). Arbetet görs i bitar om högst BIT sekunder, och man bär aldrig mer
