@@ -1,6 +1,6 @@
 import { eldPlats, getMap } from './karta';
 import { RECEPT } from './recept';
-import { groundOf, tileOf } from './mark';
+import { groundOf, nyttVatten, tileOf } from './mark';
 import { H, State, T, W, inMap } from './typer';
 import { balans } from './balans';
 import { iVattnetNu } from './sjo';
@@ -82,7 +82,7 @@ export const bitById = (s: State, id?: number) => bitsOf(s).find(b => b.id === i
 export function vagBort(s: State, b: Bit) {
   const brygga = MATERIAL[b.m].brygga;
   s.byggen = bitsOf(s).filter(q => q !== b);
-  if (brygga) s.bryggV = (s.bryggV ?? 0) + 1;
+  if (brygga) { s.bryggV = (s.bryggV ?? 0) + 1; nyttVatten(s); } // vägsökningen ser att bryggan är borta (annars går man på en brygga som inte finns och hamnar i vattnet)
   touch(s);
   // den som stod på bryggan när den försvann hamnar på närmaste lediga ruta, inte i vattnet
   if (brygga) for (const p of s.people) if (p.died === undefined && p.left === undefined && Math.floor(p.x) === b.x && Math.floor(p.y) === b.y) { const f = freeNear(s, b.x, b.y); p.x = f.x + 0.5; p.y = f.y + 0.5; }

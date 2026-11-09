@@ -2445,7 +2445,7 @@ SCENARIER.bjornjakt = {
     };
     const fa = by(3, 0);
     let jakter = 0, strider = 0, falld = 0, borta = 0, dodare = 0, delar = 0, skinn = 0, gick = 0, nadd = 0, maxJ = 0;
-    for (let f = 0; f < 10; f++) {
+    for (let f = 0; f < 16; f++) { // 16 byar: björnen fälls bara ibland, och med färre försök avgör slumpen (steg 9.2.130)
       const { s, jagare } = by(6, f);
       if (!jagare) continue;
       jakter++; maxJ = Math.max(maxJ, jagare);
@@ -2461,7 +2461,7 @@ SCENARIER.bjornjakt = {
     }
     return [
       [`med för få spjut går ingen på björnjakt (${fa.jagare} jägare)`, fa.jagare === 0],
-      [`med sex spjut kallar byn till björnjakt (${jakter} av 10)`, jakter >= 8],
+      [`med sex spjut kallar byn till björnjakt (${jakter} av 16)`, jakter >= 13],
       [`en stor grupp följer med (högst ${maxJ})`, maxJ >= SIM.BJORNJAKT.spjut],
       [`jägarna når björnen och slåss, eller den går undan (${strider} strider, ${gick} gick undan, en björn kan först slåss och sedan gå undan)`, nadd === jakter && strider > 0],
       [`björnen fälls ibland (${falld} av ${strider})`, falld > 0],
