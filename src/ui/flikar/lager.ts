@@ -44,7 +44,7 @@ export const hog: Flik = {
     return `
     <div class="phead"><div><h2>${mark ? 'På marken' : 'Bredvid lagret'}</h2></div>${hjalpKnapp('hog', 'Varför ligger det här?')}</div>
     ${hjalpText('hog', `<p class="muted small">${mark ? 'Lades ner av någon som kallades bort till något annat.' : 'Fick inte plats i lagret.'} Slits ${LAGER.ute} gånger fortare än i lagret.</p>`)}
-    <dl class="kv">${ps.map(p => `<dt class="tryck${frystAttr(p.k)}" ${sakAttr(p)}>${pileTxt(p)}</dt><dd>${hallCirkel(condOf(p))}</dd>`).join('')}</dl>
+    <dl class="kv stk">${ps.map(p => `<dt class="tryck${frystAttr(p.k)}" ${sakAttr(p)}>${pileTxt(p)}</dt><dd>${hallCirkel(condOf(p))}</dd>`).join('')}</dl>
     ${who.length ? `<p class="muted">${who.map(p => pLink(p)).join(', ')} är på väg för att bära in det.</p>` : ''}`;
   },
 };

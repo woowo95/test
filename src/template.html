@@ -139,7 +139,6 @@ body.hOppen .legend { right: calc(var(--stenar) + 14px + min(360px, 100vw - var(
 .panel.hoger { right: calc(var(--stenar) + 14px); }
 /* rutan för det man trycker på kommer fram där man tryckte (steg 5.3.5.1) */
 .panel.ruta { z-index: 3; bottom: auto; width: 300px; max-height: min(62vh, 520px); box-shadow: 0 6px 18px rgba(36,32,29,.35); }
-.panel[data-flik="lager"] { width: 420px; } /* lagerplatsen är bredare åt höger, så att stackarna inte trängs (steg 9.2.97) */
 .graf { margin: 10px 0 6px; border: 1px solid var(--line); background: var(--bg); padding: 6px 8px 4px; } /* graferna (steg 5.4.1, ui/graf.ts) */
 .grafhuvud { display: flex; align-items: center; gap: 10px; font-size: 12px; }
 .grafval { display: flex; gap: 6px; margin: 4px 0 2px; } .grafval select { font: inherit; font-size: 12px; min-width: 0; } /* rikedomens val (steg 6.9.14) */
@@ -351,7 +350,7 @@ h3 { font-family: var(--display); font-size: 16px; text-transform: uppercase; le
 .kv dd { margin: 0; display: flex; align-items: center; gap: 8px; font-variant-numeric: tabular-nums; }
 .kv dd .bar { flex: 1; max-width: 140px; }
 .kv.fam dd { display: block; }
-.kv.stk { grid-template-columns: max-content minmax(0, 1fr); }
+.kv.stk { grid-template-columns: minmax(0, 1fr) max-content; } /* stackarna får panelens hela bredd och hållbarheten står längst till höger (steg 9.2.97) */
 .thoughts { margin-top: 8px; display: grid; gap: 3px; }
 .thoughts li { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
 .thoughts .pos span { color: var(--good); } .thoughts .neg span { color: var(--bad); }
