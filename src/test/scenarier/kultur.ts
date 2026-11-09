@@ -9,6 +9,9 @@ import { setByn, ui } from '../../ui/lage';
 import { station as stationFlik } from '../../ui/flikar/station';
 import { person as personFlik } from '../../ui/flikar/person';
 import { kronika as kronikaFlik, val as kronikaVal } from '../../ui/flikar/kronika';
+import { styre as styreFlik } from '../../ui/flikar/styre';
+import { seder as sederFlik } from '../../ui/flikar/seder';
+import { esc, hjalpKlick } from '../../ui/hjalp';
 
 // en by med ett stort överskott av mat och ved, på förmiddagen
 export function rikDag(seed = 3, mer: Record<string, number> = {}): State {
@@ -524,6 +527,65 @@ SCENARIER.omrostning = {
       [`alla vuxna röstar, och varje röst har ett skäl (${o.roster.length})`, allaVuxna],
       ['samma fråga läggs inte fram två gånger', iKo === 1],
       ['frågan avgörs vid elden och ett ja gör det raden säger', satt],
+    ];
+  },
+};
+SCENARIER.rostlista = {
+  text: 'Steg 9.2.65: omröstningarnas bild i fliken Styre. En utfälld omröstning har en stapel som delas i ja och nej efter vikten och en egen lista med en rad per röst (inte relationslistans rutnät): symbolen för ja eller nej, namnet och en stapel för vikten, ja-rösterna först och de tyngsta överst, och varför personen röstade så vid musen och med ett tryck',
+  kor: () => {
+    utanWebblasare();
+    const s = createState(6, START), v = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen), l = v[0];
+    s.styre = { historia: [{ id: l.id, namn: l.name, titel: 'Ålderman', fran: s.now }], oppna: ['rang'], ledare: l.id, sedan: s.now, titel: 'Ålderman', satt: 1, pabud: { matlager: 0, vedlager: 0, torkat: 0 } as never };
+    SIM.rostaOm(s, { f: 'pabud', d: { k: 'matlager', v: 0.9 }, fram: l.id });
+    const o = s.styre.roster![0];
+    setByn(s); ui.styreDel = 'styre';
+    const tryck = (id: string) => hjalpKlick({ closest: () => ({ dataset: { hjalp: id, hjalpGrupp: id.slice(0, id.indexOf('-') + 1) } }) } as unknown as HTMLElement);
+    tryck(`rost-${o.t}-${o.f}`);
+    const h = styreFlik.html();
+    const lista = h.match(/<ul class="roster">([\s\S]*?)<\/ul>/)?.[1] ?? '';
+    const rader = lista.match(/data-hjalp="rr-[^"]*"/g) ?? [];
+    // ordningen i bilden: ja först, sedan nej, och inom varje de tyngsta överst
+    const ord = rader.map(r => o.roster.find(x => r.endsWith(`-${x.id}"`))!);
+    const sorterad = ord.every((r, i) => i === 0 || (Number(ord[i - 1].ja) > Number(r.ja)) || (ord[i - 1].ja === r.ja && ord[i - 1].w >= r.w));
+    const r0 = ord[0]!;
+    tryck(`rr-${o.t}-${r0.id}`);
+    const h2 = styreFlik.html();
+    return [
+      [`stapeln för ja och nej efter vikten (${Math.round(o.ja * 100)} % ja)`, /class="rostbar"[\s\S]*class="ja"[\s\S]*class="nej"/.test(h)],
+      [`en rad per röst i en egen lista (${rader.length} av ${o.roster.length})`, rader.length === o.roster.length && !/<ul class="rels">[^]*?r_ja/.test(h)],
+      ['varje rad har symbolen för ja eller nej och en stapel för vikten', (lista.match(/class="rostw"/g) ?? []).length === o.roster.length && (lista.match(/<span title="(Ja|Nej)">/g) ?? []).length === o.roster.length],
+      ['ja-rösterna först och de tyngsta överst', sorterad],
+      ['den som lade fram frågan är märkt', lista.includes('Lade fram frågan')],
+      ['varför personen röstade så står vid musen och kommer fram med ett tryck', lista.includes(`title="${esc(r0.why)}"`) && h2.includes(`class="small muted rvarfor">${esc(r0.why)}`)],
+    ];
+  },
+};
+SCENARIER.sedlista = {
+  text: 'Steg 9.2.66: sederna går att trycka på. Ett tryck på en sed i Seder och i Styres vågskålar öppnar en lista under vågen med vad seden gör och en rad per upplevelse som drar den: namnet, åt vilket håll och hur mycket, och hur många och vilka som minns den. Ett tryck till stänger',
+  kor: () => {
+    utanWebblasare();
+    const s = createState(6, START), v = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen), l = v[0];
+    for (const x of v) x.upp = [...x.upp ?? [], { k: 'svalt', a: 20, e: {}, v: 1, t: s.now }];
+    s.styre = { historia: [{ id: l.id, namn: l.name, titel: 'Ålderman', fran: s.now }], oppna: ['rang'], ledare: l.id, sedan: s.now, titel: 'Ålderman', satt: 1, pabud: { matlager: 0, vedlager: 0, torkat: 0 } as never };
+    setByn(s); ui.styreDel = 'styre';
+    const k = SIM.SED_LIST.find(x => SIM.sedOppen(s, x) && !SIM.MAKT_SEDER.includes(x) && Math.abs(SIM.sedDrag(s).find(r => r.k === 'svalt')?.d[x] ?? 0) >= 0.005)!;
+    const tryck = (id: string) => hjalpKlick({ closest: () => ({ dataset: { hjalp: id, hjalpGrupp: 'sed-' } }) } as unknown as HTMLElement);
+    const stangd = sederFlik.html();
+    tryck(`sed-${k}`);
+    const oppen = sederFlik.html(), lista = oppen.match(/<div class="sedlista">([\s\S]*?)<\/div>/)?.[1] ?? '';
+    const namn = SIM.upplevelseKort('svalt'), mot = SIM.sedDrag(s).find(r => r.k === 'svalt')!.d[k] > 0 ? SIM.SEDER[k].pos : SIM.SEDER[k].neg;
+    const alla = v.every(p => lista.includes(`data-id="${p.id}"`));
+    // vågskålen Rang i Styre går också att trycka på
+    tryck('sed-rang');
+    const styreH = styreFlik.html(), iStyre = /data-hjalp="sed-rang"[^>]*>[\s\S]*?<div class="sedlista">/.test(styreH);
+    tryck('sed-rang');
+    const igen = styreFlik.html().includes('class="sedlista"');
+    return [
+      [`sederna går att trycka på och listan är stängd från början (${SIM.SEDER[k].neg} – ${SIM.SEDER[k].pos})`, stangd.includes(`data-hjalp="sed-${k}"`) && !stangd.includes('class="sedlista"')],
+      ['listan säger vad seden gör', lista.includes(esc(SIM.SEDER[k].effect))],
+      [`en rad för upplevelsen: "${namn}: drar mot ${mot.toLowerCase()}, N av 100"`, lista.includes(esc(namn)) && new RegExp(`drar mot ${mot.toLowerCase()}, \\d+ av 100`).test(lista)],
+      [`hur många och vilka som minns den (${v.length})`, lista.includes(`${v.length} minns det`) && alla],
+      ['vågskålen i Styre öppnar samma lista, och ett tryck till stänger', iStyre && !igen],
     ];
   },
 };

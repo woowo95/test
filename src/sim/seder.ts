@@ -124,7 +124,7 @@ export function sedDrag(s: State) {
     for (const k in e) if (sedOppen(s, k as Sed)) r.d[k as Sed] += e[k as Sed]! * SED.uppSteg * w / tw * SED.snittVikt;
   }
   const storst = (r: { d: Record<Sed, number> }) => Math.max(...SED_LIST.map(k => Math.abs(r.d[k])));
-  return [...m.values()].map(r => ({ k: r.k, n: r.n.size, d: r.d })).filter(r => storst(r) > 0).sort((a, b) => storst(b) - storst(a));
+  return [...m.values()].map(r => ({ k: r.k, n: r.n.size, vem: [...r.n], d: r.d })).filter(r => storst(r) > 0).sort((a, b) => storst(b) - storst(a));
 }
 export function sederTarget(s: State): Record<Sed, number> {
   const t = nollor();

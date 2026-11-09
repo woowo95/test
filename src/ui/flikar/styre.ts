@@ -2,7 +2,7 @@ import { type Omrostning, LAG, LAGAR, TABU_AKT, placeName, efterlevs, lagTak, la
 import { iconImg } from '../../ikoner';
 import { bar, esc, hjalpKnapp, hjalpText, num, pLink } from '../hjalp';
 import { s, ui } from '../lage';
-import { sedFormat, sedVag } from './seder';
+import { sedFormat, sedKlick, sedLista, sedVag } from './seder';
 import type { Flik } from '../panel';
 
 // styret (steg 3.5.4, styre.ts): ledaren, styrelseformen, legitimiteten, vågskålarna, rättegångarna och de ledare byn haft.
@@ -30,7 +30,7 @@ function styretHtml() {
       const oppen = v.sed ? st.oppna.includes(v.id) : false;
       if (!oppen) return `<li class="muted" title="${esc(v.steg ? `Kommer senare (steg ${v.steg})` : 'Inte upplåst än')}">❔ ${esc(v.namn)}</li>`;
       const d = SEDER[v.sed!], x = s.seder.v[v.sed!] ?? 0;
-      return `<li title="${esc(d.effect)}">${sedVag(x, esc(d.neg), esc(d.pos))}${sedFormat(v.sed!)}</li>`;
+      return `<li ${sedKlick(v.sed!)}>${sedVag(x, esc(d.neg), esc(d.pos))}${sedFormat(v.sed!)}${sedLista(v.sed!)}</li>`;
     }).join('');
     const hist = st.historia.slice().reverse().map(h => `<li><span class="when">${timeLabel(s, h.fran)}</span>${pLink(byId(s, h.id)) === '–' ? esc(h.namn) : pLink(byId(s, h.id))}, ${esc([...(h.forr ?? []), h.titel].map(x => x.toLowerCase()).join(', sedan '))}${h.till !== undefined ? ` – ${dygnTxt(h.till - h.fran)}, ${esc(h.slut ?? '')}` : ''}</li>`).join('');
     return `${ledare}<h3>Vågskålar</h3><ul class="seder">${skalar}</ul>${lagarDel()}${tabunDel()}${omrostningar()}${rattegangar()}<h3>Ledarna genom tiden</h3><ol class="logg">${hist}</ol>`;
