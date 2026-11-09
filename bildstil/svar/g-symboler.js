@@ -280,7 +280,7 @@
   const inPoly = (pts, x, y) => poly(pts)(x, y);
   function vedtra(spec, skala = 1) {
     const sec = spec.sec.map(([u, v]) => [u * skala, v * skala]), d = [spec.d[0] * skala, spec.d[1] * skala], pith = [spec.pith[0] * skala, spec.pith[1] * skala];
-    const F = { ande: 'W', ring: 'v', karna: 'J', ljus: 'Y', ljus2: 'y', mitt: 'b', mitt2: 'J', bark: 'E', bark2: 'k', ...spec.f };
+    const F = { ande: 'Y', ring: 'z', karna: 'J', kant: 'y', ljus: 'w', ljus2: 'W', mitt: 'v', mitt2: 'b', bark: 'E', bark2: 'k', ...spec.f };
     const xs = sec.flatMap(([u]) => [u, u + d[0]]), ys = sec.flatMap(([, v]) => [v, v + d[1]]);
     const x0 = Math.min(...xs), y0 = Math.min(...ys), w = Math.ceil(Math.max(...xs) - x0) + 2, h = Math.ceil(Math.max(...ys) - y0) + 2;
     const cx = sec.reduce((s, p) => s + p[0], 0) / sec.length, cy = sec.reduce((s, p) => s + p[1], 0) / sec.length;
@@ -298,11 +298,12 @@
       if (hit.t === 0) { // ändträet
         const r = Math.hypot(hit.qx - pith[0], hit.qy - pith[1]);
         if (n.k.typ === 'k' && n.dd < 0.85) c = F.bark;
-        else if (r < 0.7) c = F.karna;
-        else c = (r * (spec.ringtat || 1) / skala) % 1.8 < 0.6 ? F.ring : F.ande;
+        else if (n.k.typ === 's' && n.dd < 0.75) c = F.kant;
+        else if (r < 0.8 * skala) c = F.karna;
+        else c = (r / skala) % 2 < 0.65 ? F.ring : F.ande;
       } else if (n.k.typ === 'k') {
-        const v = hash(Math.floor(n.s * 1.4), spec.fro || 1, Math.floor(hit.t * (spec.flack || 0)));
-        c = v < 0.38 ? F.bark2 : F.bark;
+        if (spec.bjork) c = hash(Math.floor(n.s / skala * 0.7), Math.floor(hit.t * 7), spec.fro) < 0.3 ? 'o' : (hash(Math.floor(n.s * 2), 3) < 0.3 ? F.bark2 : F.bark);
+        else c = hash(Math.floor(n.s * 1.4), spec.fro || 1) < 0.38 ? F.bark2 : F.bark;
       } else {
         const ljus = -0.6 * n.k.n[0] - 0.8 * n.k.n[1] > 0.15, strimma = hash(Math.floor(n.s * 2.2), 7) < 0.22;
         c = ljus ? (strimma ? F.ljus2 : F.ljus) : (strimma ? F.mitt2 : F.mitt);
@@ -314,12 +315,12 @@
   const bage = (cx, cy, r, a0, a1, steg = 15) => { const p = []; for (let a = a0; a0 < a1 ? a <= a1 + 0.01 : a >= a1 - 0.01; a += a0 < a1 ? steg : -steg) p.push([cx + r * Math.cos(a * Math.PI / 180), cy + r * Math.sin(a * Math.PI / 180)]); return p; };
   const kanter = (n, typ) => Array(n).fill(typ);
   const VED = [
-    { text: 'En fjärdedel av en stock, kluven två gånger: spetsen med kärnan uppåt, två ljusa kluvna sidor, mörk tallbark undertill och ändträet med årsringar närmast.',
-      sec: [[0, -3.2], ...bage(0, -3.2, 6.2, 45, 135)], kant: ['s', ...kanter(6, 'k'), 's'], pith: [0, -3.2], d: [6, -3.4], f: { bark: 'D', bark2: 'E' }, fro: 3 },
+    { text: 'En fjärdedel av en stock, kluven två gånger: kärnan i spetsen uppåt, de två kluvna sidorna ljusa, rödbrun tallbark undertill och ändträet med årsringar närmast.',
+      sec: [[0, -3.6], ...bage(0, -3.6, 7.4, 48, 132, 12)], kant: ['s', ...kanter(7, 'k'), 's'], pith: [0, -3.6], d: [5.4, -3.2], f: { bark: 'j', bark2: 'E' }, fro: 3 },
     { text: 'En halv björkstock, kluven på längden: den platta kluvna sidan ljus uppåt, vit björkbark med svarta streck undertill och halva årsringarna i änden.',
-      sec: [[-4.4, 0], [4.4, 0], ...bage(0, 0, 4.4, 0, 180, 22.5).slice(1, -1)], kant: ['s', ...kanter(8, 'k')], pith: [0, 0], d: [6.4, -2.8], f: { bark: 'w', bark2: 'o', ande: 'W', mitt: 'Y' }, fro: 5, flack: 1.3 },
+      sec: bage(0, 0, 5, -20, 160, 15), kant: [...kanter(12, 'k'), 's'], pith: [0, 0], d: [5.6, -3], f: { bark: 'w', bark2: 'W', ande: 'y', ljus: 'Y', ljus2: 'y', kant: 'z' }, fro: 5, bjork: true },
     { text: 'Ett grovt vedträ som ligger ner: den kluvna ovansidan ljus, mörk granbark runt ytterkanten och ett stort ändträ med kärnan uppe i hörnet.',
-      sec: [[-3.2, -2.4], [3.4, -2.4], ...bage(-3.2, -2.4, 6.6, 0, 90).slice(1)], kant: ['s', ...kanter(6, 'k'), 's'], pith: [-3.2, -2.4], d: [6.2, -2.4], f: { bark: 'E', bark2: 'j', ande: 'Y', ring: 'y', ljus: 'w', ljus2: 'W' }, fro: 9 },
+      sec: [[-3.4, -2.6], [3.6, -2.6], ...bage(-3.4, -2.6, 7, 0, 90).slice(1)], kant: ['s', ...kanter(6, 'k'), 's'], pith: [-3.4, -2.6], d: [5.2, -2.6], f: { bark: 'E', bark2: 'k', ljus: 'w', ljus2: 'W' }, fro: 9 },
   ];
   // stackarna som Björn valde (f9_stackar version 1): en, några (tre i en triangel) och många (sex i en pyramid)
   const STACK = (n, w, h) => n === 1 ? [[0, 0]] : n === 3 ? [[0, 0], [w * 0.6, 0], [w * 0.3, -h * 0.5]] : [[0, 0], [w * 0.6, 0], [w * 1.2, 0], [w * 0.3, -h * 0.5], [w * 0.9, -h * 0.5], [w * 0.6, -h]];
@@ -328,7 +329,7 @@
     versioner: VED.map(v => ({ text: v.text, w: 124, h: 26, rita: B => {
       for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) B.satt(x, y, B.P.i('kol', 1));
       for (let y = 3; y < 23; y++) for (let x = 2; x < 22; x++) B.satt(x, y, B.P.i('ben', 2));
-      const sym = vedtra(v), sw = sym[0].length, sh = sym.length;
+      let sk = 1.4, sym = vedtra(v, sk); while (sym[0].length > 16 || sym.length > 16) sym = vedtra(v, sk -= 0.05); const sw = sym[0].length, sh = sym.length;
       ritaSprite(B, sym, L, 2 + 2 + Math.floor((16 - sw) / 2), 3 + 2 + Math.floor((16 - sh) / 2));
       window.F7.gras(B, 25, 0, 99, 26);
       const liten = vedtra(v, 0.58), w = liten[0].length, h = liten.length;

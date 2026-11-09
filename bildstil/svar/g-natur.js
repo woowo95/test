@@ -349,4 +349,200 @@
       ritaRutnat(B, vargFram(fram[ruta]), VL, 58, 2);
     } })) });
 
+  // ---------- den kolnade stammen och den svarta stubben (steg 9.2.26) ----------
+  // Träden ritas med spelets egen kod (src/ui/trad.ts: granPx, bjorkM med bjorkStam och kvistar), stubbarna med spelets
+  // stubbar (src/stubbilder.ts) och marken med spelets gräs och spelets brända mark (src/ui/mark.ts: aska i Bayer-raster).
+  // Talen för färgerna är spelets: ramp × 4 + ton.
+  const RAMPER = ['kol', 'jord', 'senap', 'rost', 'oliv', 'barr', 'skiffer', 'ben'];
+  const KOL = 0, JORD = 4, ROST = 12, OLIV = 16, BARR = 20, BEN = 28;
+  const pf = (B, n) => B.P.i(RAMPER[n >> 2], n & 3);
+  const hash = (x, y, s) => { let h = Math.imul(x | 0, 0x27d4eb2d) ^ Math.imul(y | 0, 0x165667b1) ^ Math.imul(s | 0, 0x2c1b3c6d); h = Math.imul(h ^ (h >>> 15), 0x85ebca6b); h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35); h ^= h >>> 16; return (h >>> 0) / 4294967296; };
+  const vn = (x, y, sk, s) => { const fx = x / sk, fy = y / sk, x0 = Math.floor(fx), y0 = Math.floor(fy), tx = fx - x0, ty = fy - y0, u = tx * tx * (3 - 2 * tx), v = ty * ty * (3 - 2 * ty); const a = hash(x0, y0, s), b = hash(x0 + 1, y0, s), c = hash(x0, y0 + 1, s), d = hash(x0 + 1, y0 + 1, s); return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v; };
+  const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5], bayer = (x, y) => (BAYER[(y & 3) * 4 + (x & 3)] + 0.5) / 16;
+  const flack = (x, y, sk, s, g) => vn(x, y, sk, s) * 0.75 + vn(x, y, sk / 3, s + 1) * 0.25 > g;
+  const hs = (x, y, s = 0) => { const h = Math.sin(x * 127.1 + y * 311.7 + s * 74.7) * 43758.5453; return h - Math.floor(h); };
+  // punkterna som en Map 'x,y' -> färg, med foten i (0, 0)
+  const sattM = (M, x, y, c) => M.set(Math.round(x) + ',' + Math.round(y), c);
+  const ritaM = (B, M, fx, fy) => { for (const [k, c] of M) { const [x, y] = k.split(',').map(Number); B.satt(fx + x, fy + y, pf(B, c)); } };
+  // granen (granPx i spelet), h punkter hög
+  function granM(h, s) {
+    const M = new Map(), r0 = hash(s, h, 401), skift = r0 < 0.3 ? -1 : r0 > 0.82 ? 1 : 0;
+    const ton = t => BARR + Math.max(0, Math.min(3, t + (t > 0 || skift > 0 ? skift : 0)));
+    const w2 = Math.max(1, Math.round(h * 0.28)), stam = Math.max(1, Math.round(h / 10));
+    for (let y = 0; y < stam + 1; y++) { sattM(M, 0, -y, JORD); if (h > 12) sattM(M, -1, -y, JORD + 1); }
+    const hc = h - stam - 1, topp = -h + 1;
+    for (let r = 0; r < hc; r++) {
+      const k = Math.floor(r / 5), tier = (r % 5) / 4, y = topp + r;
+      const aL = 0.78 + hash(k, s, 700) * 0.5, aR = 0.78 + hash(k, s, 701) * 0.5;
+      const off = k > 0 && k < hc / 5 - 1 ? Math.round((hash(k, s, 702) - 0.5) * 2.2) : 0;
+      const bas = (r / hc) * w2 * (0.55 + 0.45 * tier), hl = Math.round(bas * aL), hr = Math.round(bas * aR);
+      for (let dx = -hl; dx <= hr; dx++) {
+        const rel = dx < 0 ? dx / (hl || 1) : dx / (hr || 1);
+        const kant = dx === -hl || dx === hr || (r % 5 === 4 && Math.abs(rel) > 0.35);
+        const sl = 0.55 - rel * 0.35 - tier * 0.25 + (vn(s * 50 + dx, y, 4, 703) - 0.5) * 0.12;
+        sattM(M, off + dx, y, kant ? ton(0) : sl > 0.62 ? ton(3) : sl > 0.4 ? ton(2) : sl > 0.18 ? ton(1) : ton(0));
+      }
+    }
+    return M;
+  }
+  // den kolnade granen: samma gran (samma höjd, samma våningar åt samma håll), men barren har brunnit bort. Stammen går
+  // ända upp, och i varje våning sitter grenarna kvar, lika långa som våningen var bred, svarta och hängande.
+  // v: 0 helt svart, 1 svart med silvrig kolyta och grå aska på grenarna, kortare grenar och avbruten topp,
+  // 2 svart nedtill och grå torraka uppe (barken kvar högt upp, de nedersta grenarna borta)
+  function kolGranM(h, s, v) {
+    const M = new Map(), w2 = Math.max(1, Math.round(h * 0.28)), stam = Math.max(1, Math.round(h / 10)), hc = h - stam - 1, topp = -h + 1;
+    const grans = -Math.round(h * 0.5); // v 2: svart under den här raden
+    const svart = y => v !== 2 || y > grans;
+    const topY = v === 1 ? topp + 4 : topp;
+    for (let y = 0; y >= topY; y--) {
+      const tjock = h > 12 && y > -h * 0.62;
+      if (svart(y)) {
+        const kol = v === 1 && hash(Math.floor(y / 2), 3, 812) < 0.45; // kolytan spricker i rutor och glänser silvrigt
+        if (tjock) sattM(M, -1, y, kol ? BEN : KOL + 3);
+        sattM(M, 0, y, kol && !tjock ? KOL + 3 : KOL);
+      } else { if (tjock) sattM(M, -1, y, BEN); sattM(M, 0, y, KOL + 3); }
+    }
+    if (v === 1) { sattM(M, -1, topY - 1, KOL); sattM(M, 0, topY - 1 + 1, KOL + 2); } // den avbrutna toppen, kolad
+    for (let k = 0; k * 5 + 4 < hc; k++) {
+      const r = k * 5 + 4, y0 = topp + k * 5 + 1, y1 = topp + r;
+      const aL = 0.78 + hash(k, s, 700) * 0.5, aR = 0.78 + hash(k, s, 701) * 0.5;
+      const off = k > 0 && k < hc / 5 - 1 ? Math.round((hash(k, s, 702) - 0.5) * 2.2) : 0;
+      const bas = (r / hc) * w2;
+      for (const [sida, a, ned, kort] of [[-1, aL, 0, 1], [1, aR, 0, 1], [-1, aL, 2, 0.6], [1, aR, 2, 0.6]]) { // två grenar per våning och sida
+        let lang = Math.round(bas * a * kort);
+        if (v === 1) lang = Math.round(lang * (0.55 + hash(k, sida + 5, 813) * 0.25)); // spetsarna har brunnit av
+        if (v === 2 && y1 > grans + 2) lang = Math.min(lang, 1 + (hash(k, sida, 814) < 0.5 ? 1 : 0)); // de nedersta grenarna är borta, bara stumpar kvar
+        if (y0 < topY) continue;
+        for (let i = 1; i <= lang; i++) {
+          const t = i / Math.max(1, lang), x = (sida < 0 ? -1 : 0) + sida * i + Math.round(off * t), y = y0 + ned + Math.round(t * t * (y1 - y0 - ned) * 0.8);
+          const sv = svart(y);
+          sattM(M, x, y, sv ? (sida < 0 ? (i < lang * 0.6 ? KOL + 3 : KOL + 2) : i < lang * 0.6 ? KOL + 1 : KOL) : i > lang - 2 ? JORD + 1 : KOL + 3);
+          if (i > 1 && i < lang) sattM(M, x, y + 1, sv ? KOL : JORD + 1); // små kvistar som hänger, tätt som på en gran
+          if (i > 2 && i % 2 === 1 && i < lang - 1) sattM(M, x, y + 2, sv ? KOL : JORD + 1);
+          if (v === 1 && sv && hash(x, y, 815) < 0.35) sattM(M, x, y - 1, hash(x, y, 816) < 0.5 ? BEN : KOL + 3); // grå aska ovanpå grenen
+        }
+      }
+    }
+    return M;
+  }
+  function bjorkStam(M, h, top, f) { // f(x, y, c): färgen för en punkt i stammen
+    const w = h < 14 ? 1 : h < 36 ? 2 : 3;
+    for (let y = 0; y >= top; y--) for (let i = 0; i < w; i++) {
+      const x = -(w >> 1) + i, nere = -y < h * 0.12 && h > 20;
+      let c = i === w - 1 && w > 1 ? BEN + 1 : i === 0 ? BEN + 3 : BEN + 2;
+      if (nere) c = hs(x, y, 431) < 0.5 ? KOL + 2 : KOL + 1;
+      else if (hs(Math.floor(y / 2), 0, 432) < 0.18 && hs(x, y, 433) < 0.8) c = KOL + 1;
+      sattM(M, x, y, f ? f(x, y, c, i, w) : c);
+    }
+  }
+  function kvistar(M, x, y, vinkel, lang, djup, s, f) {
+    for (let i = 0; i < lang; i++) { const px = x + Math.cos(vinkel) * i, py = y - Math.sin(vinkel) * i, c = djup > 2 ? BEN + 1 : djup > 1 ? KOL + 3 : JORD + 1; sattM(M, px, py, f ? f(px, py, c, djup) : c); }
+    if (djup <= 0 || lang < 3) return;
+    const ex = x + Math.cos(vinkel) * lang, ey = y - Math.sin(vinkel) * lang, a = 0.45 + hs(x, y, s) * 0.3;
+    kvistar(M, ex, ey, vinkel + a, lang * 0.68, djup - 1, s + 1, f);
+    kvistar(M, ex, ey, vinkel - a * 0.9, lang * 0.62, djup - 1, s + 2, f);
+    if (djup > 2 && hs(x, y, s + 3) < 0.5) kvistar(M, ex, ey, vinkel - 0.1, lang * 0.5, djup - 2, s + 4, f);
+  }
+  // björken på sommaren (bjorkM i spelet)
+  function bjorkM(h, s) {
+    const M = new Map(), L = t => OLIV + t, kh = h < 10 ? h * 0.7 : h * 0.68, kw = Math.max(2, h * 0.3), ky = -h + kh / 2;
+    bjorkStam(M, h, -Math.round(h * 0.55));
+    if (h < 8) { for (const [dx, dy, t] of [[-1, 1, 2], [1, 2, 1], [0, 0, 3], [-1, 3, 1], [1, 0, 2]]) sattM(M, dx, -h + dy, L(t)); return M; }
+    const n = Math.round(5 + h / 4.5), kl = [], K = new Map();
+    for (let k = 0; k < n; k++) { const a = hs(k, 0, 490 + s) * 6.28, d = Math.sqrt(hs(k, 0, 491 + s)) * 0.72; kl.push([Math.cos(a) * kw * d, ky + Math.sin(a) * kh / 2 * d, Math.max(2, h * (0.12 + hs(k, 0, 492 + s) * 0.07))]); }
+    kl.sort((a, b) => a[1] - b[1]);
+    for (const [bx, byy, r] of kl) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+      if (Math.hypot(dx, dy * 1.15) / r > 1) continue;
+      const sl = -(dx + dy) / (2 * r) + 0.1 - ((byy - ky) / kh) * 0.6;
+      K.set(Math.round(bx + dx) + ',' + Math.round(byy + dy), sl > 0.35 ? L(3) : sl > -0.1 ? L(2) : L(1));
+    }
+    const har = (x, y) => K.has(x + ',' + y);
+    for (const [k, c] of K) { const [x, y] = k.split(',').map(Number); if ([har(x + 1, y), har(x - 1, y), har(x, y + 1), har(x, y - 1)].filter(Boolean).length < 2) continue; sattM(M, x, y, !har(x + 1, y) || !har(x, y + 1) ? L(0) : c); }
+    return M;
+  }
+  // den kolnade björken: samma björk, men lövet har brunnit bort och grenarna står kala som på vintern (kvistar i spelet)
+  function kolBjorkM(h, s, v) {
+    const M = new Map(), grans = -Math.round(h * 0.5), svart = y => v !== 2 || y > grans;
+    const topp = -Math.round(h * (v === 1 ? 0.75 : 0.85));
+    bjorkStam(M, h, topp, (x, y, c, i, w) => !svart(y) ? c : v === 1 && hash(Math.floor(y / 2), 4, 822) < 0.4 ? (i === 0 ? BEN : KOL + 3) : i === 0 && w > 1 ? KOL + 3 : KOL);
+    const f = (x, y, c, djup) => svart(y) ? (djup > 2 ? KOL + 3 : djup > 1 ? KOL + 2 : x < 0 ? KOL + 1 : KOL) : c;
+    const d = h > 30 ? 4 : 3, top = -Math.round(h * 0.55), dd = v === 1 ? d - 1 : d; // v 1: de finaste kvistarna har brunnit av
+    kvistar(M, 0, top, Math.PI / 2 + 0.25, h * 0.24, dd, 450 + s, f);
+    kvistar(M, 0, top, Math.PI / 2 - 0.35, h * 0.22, dd, 460 + s, f);
+    if (v !== 2) { kvistar(M, 0, top + h * 0.12, Math.PI / 2 + 0.9, h * 0.16, 2, 470 + s, f); kvistar(M, 0, top + h * 0.1, Math.PI / 2 - 0.95, h * 0.15, 2, 480 + s, f); }
+    if (v === 1) for (const [k, c] of [...M]) { const [x, y] = k.split(',').map(Number); if (x !== 0 && x !== -1 && !M.has(x + ',' + (y - 1)) && hash(x, y, 823) < 0.3) M.set(x + ',' + (y - 1), BEN); } // grå aska
+    return M;
+  }
+  // stubbarna (src/stubbilder.ts: st_gran_1_0 och st_bjork_1_0); fx och fy är foten
+  const STUBBE = {
+    gran: { rader: ['..a..', 'abcba', 'bbadd', 'bbadd', '.dad.'], f: { a: JORD + 1, b: JORD + 2, c: JORD + 3, d: JORD }, fx: 2, fy: 3 },
+    bjork: { rader: ['..a..', 'abcba', 'ddaaa', 'ddeaa', '.dea.'], f: { a: BEN + 1, b: JORD + 2, c: JORD + 3, d: BEN + 3, e: KOL + 1 }, fx: 2, fy: 3 },
+  };
+  // den svarta stubben: samma stubbe, kolad. v 0 helt svart med en kolad snittyta, v 1 svart med silvrig kolyta och grå
+  // aska ovanpå, v 2 svart på sidorna men med det ljusa träet kvar i snittytan
+  const KOLSTUBBE = [
+    { gran: { a: KOL + 2, b: KOL + 3, c: KOL + 3, d: KOL }, bjork: { a: KOL + 2, b: KOL + 3, c: KOL + 3, d: KOL + 3, e: KOL } },
+    { gran: { a: KOL + 3, b: BEN, c: BEN + 1, d: KOL }, bjork: { a: KOL + 3, b: BEN, c: BEN + 1, d: KOL + 3, e: KOL } },
+    { gran: { a: KOL + 2, b: JORD + 2, c: JORD + 3, d: KOL }, bjork: { a: KOL + 2, b: JORD + 2, c: JORD + 3, d: KOL + 3, e: KOL } },
+  ];
+  const ritaStubbe = (B, sort, f, x0, y0) => STUBBE[sort].rader.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== '.') B.satt(x0 + x - STUBBE[sort].fx, y0 + y - STUBBE[sort].fy, pf(B, f[ch])); }));
+  // marken: spelets gräs, och där det brunnit spelets aska (a = hur svart, 1 just efter branden och ljusare med tiden)
+  function mark(B, brand, a) {
+    for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) {
+      if (brand(Math.floor(x / 16), Math.floor(y / 16)) && bayer(x, y) < a) B.satt(x, y, pf(B, flack(x, y, 8, 530, 0.62) ? KOL + 2 : hash(x, y, 543) < 0.5 ? KOL : KOL + 1));
+      else B.satt(x, y, MARK.grasPunkt(x, y, B.P, 1));
+    }
+  }
+  const KOLSTAM = [
+    'Helt svart: stammen och alla grenar kolade, med lite ljusare kol på den sida som ljuset kommer från. Stubben är svart ända upp.',
+    'Kolat som träkol: stammen spricker i rutor som glänser silvrigt, grå aska ligger på grenarna, grenspetsarna och de finaste kvistarna har brunnit av och toppen är avbruten. Stubben har grå aska ovanpå.',
+    'Svart nedtill: elden nådde halvvägs upp. Nedtill är stammen svart och grenarna borta, högre upp står den som en grå torraka med kala grenar och björken med sin vita bark. Stubben är svart på sidorna men ljus i snittet.',
+  ];
+  byt({ id: 'f9_kolstam', namn: 'Den kolnade stammen och den svarta stubben', typ: 'tre',
+    vad: 'Steg 9.2.26: efter en brand blir ett stort träd en kolnad stam som står kvar tills den faller eller huggs, och ett litet träd blir en svart stubbe. Nu ritas de med spelets egna träd och stubbar, på spelets mark: granen och björken har samma storlek och stam som i spelet, men barren och löven har brunnit bort och grenarna står kvar svarta. Stubbarna är spelets stubbar efter ett ungt träd. Till vänster står de levande träden på gräset, till höger samma träd i samma ordning efter branden, på den brända marken en tid efter branden (när gräset börjat komma igenom askan): granen, björken, den unga granen och den unga björken. Din kommentar förra gången: ”detta är helt verklighetsfrånvänt från hur spelet ser ut idag.”',
+    versioner: KOLSTAM.map((text, v) => ({ text, w: 128, h: 48, rita: (B) => {
+      mark(B, (tx) => tx >= 4, 0.35);
+      const fot = 32 + 14, cx = tx => tx * 16 + 8;
+      ritaM(B, granM(31, 2), cx(0), fot); ritaM(B, kolGranM(31, 2, v), cx(4), fot);
+      ritaM(B, bjorkM(31, 1), cx(1), fot); ritaM(B, kolBjorkM(31, 1, v), cx(5), fot);
+      ritaM(B, granM(12, 4), cx(2), fot); ritaStubbe(B, 'gran', KOLSTUBBE[v].gran, cx(6) + 2, fot - 1);
+      ritaM(B, bjorkM(12, 3), cx(3), fot); ritaStubbe(B, 'bjork', KOLSTUBBE[v].bjork, cx(7) + 2, fot - 1);
+    } })) });
+
+  // ---------- bären under träden (steg 9.2.42) ----------
+  // Bärbusken är spelets (src/ui/buske.ts: BUSK_FORMER och BAR_FORMER, den första formen), med så många bär som finns på
+  // rutan. Där ett träd står ritas busken vid trädets fot, framför stammen, i stället för tuvan.
+  const BUSK_TON = { o: KOL, d: BARR + 1, m: OLIV + 1, l: OLIV + 2, L: OLIV + 3, g: JORD + 1, Q: 24, R: 25, S: 26, T: 27 };
+  const BUSKE = ['....oooooooooo..', '..ooLLLlllllllo.', '.oLLLlllllllllo.', '.oLllllllllllmmo', 'ollllllllllmmmmo', 'ollllllllmmmmmmo', 'ollllllmmmmmmmmo', 'ollllmmmmmmmmmmo', 'oddddddddddddddo', '.oddddddddddddo.', '..oddddddddddo..', '...ooddddddoo...'];
+  const BARBUSKE = ['....oooooooooo..', '..ooLLLlllllllo.', '.oLLLllllTSlllo.', '.oLllllllRQllmmo', 'olllTSlllllmmmmo', 'olllRQllTSmmmmmo', 'ollllllmRQmmmmmo', 'ollTSmmmmmmmTSmo', 'oddRQdTSddddRQdo', '.oddddRQddddddo.', '..oddddddddddo..', '...ooddddddoo...'];
+  // bären i bärbusken (T är bärets ljusa hörn uppe till vänster), i den ordning de visas: det första mitt i busken
+  const BAREN = []; BARBUSKE.forEach((r, y) => [...r].forEach((c, x) => { if (c === 'T') BAREN.push([x, y]); }));
+  const BAR_ORDNING = [2, 1, 4, 0, 3, 5, 6];
+  function buskeMedBar(n) { // n bär (alla om n saknas)
+    const kvar = new Set(BAR_ORDNING.slice(0, n ?? BAREN.length).map(i => BAREN[i].join(',')));
+    return BARBUSKE.map((r, y) => [...r].map((c, x) => {
+      if (!'QRST'.includes(c)) return c;
+      const tx = x - (c === 'S' || c === 'Q' ? 1 : 0), ty = y - (c === 'R' || c === 'Q' ? 1 : 0);
+      return kvar.has(tx + ',' + ty) ? c : BUSKE[y][x];
+    }).join(''));
+  }
+  // busken står som ett träd: foten mitt i bildens nedre kant
+  const ritaBuske = (B, rader, cx, fot) => rader.forEach((r, y) => [...r].forEach((c, x) => { if (c !== '.') B.satt(cx - 8 + x, fot - rader.length + 1 + y, pf(B, BUSK_TON[c])); }));
+  const TUVAN = [['..gG..', '.gGgg.', 'gGrGgG', '.ggGg.', '..gg..'], ['..gG..', '.gGrg.', 'gGgGgG', '.rgGg.', '..gg..'], ['..gG..', '.gGrg.', 'gGgGrG', '.rgGg.', '..gg..']];
+  const TUVA_TON = { g: OLIV + 1, G: OLIV + 2, r: ROST + 2 };
+  byt({ id: 'f9_bartuva', namn: 'Bären under träden', typ: 'janej',
+    vad: 'Steg 9.2.42: Bären växer bara på bärbuskarna. Där ett träd står på samma ruta skymde trädet busken, därför ritades en tuva. Nu syns bärbusken vid trädets fot i stället, och tuvan försvinner. Ja eller nej? Din kommentar förra gången: ”har vi inte redan bärbuskar? Räcker inte det för att symbolisera bären? jag förstår inte”',
+    idag: { w: 64, h: 48, rita: (B) => {
+      gras(B);
+      for (const [i, cx] of [[0, 16], [2, 48]]) { ritaM(B, granM(31, 2 + i), cx, 46); TUVAN[i].forEach((r, y) => [...r].forEach((c, x) => { if (c !== '.') B.satt(cx - 6 + x, 41 + y, pf(B, TUVA_TON[c])); })); }
+    } },
+    versioner: [{ text: 'Bärbusken från spelet står vid trädets fot, framför stammen, med så många bär som finns på rutan: från vänster ett, två och tre bär (under en gran, en björk och en gran). Längst till höger bärbusken utan träd, som den ser ut i dag.', w: 128, h: 48, rita: (B) => {
+      gras(B);
+      const fot = 46;
+      ritaM(B, granM(31, 2), 16, fot - 2); ritaBuske(B, buskeMedBar(1), 18, fot);
+      ritaM(B, bjorkM(31, 1), 48, fot - 2); ritaBuske(B, buskeMedBar(2), 50, fot);
+      ritaM(B, granM(31, 5), 80, fot - 2); ritaBuske(B, buskeMedBar(3), 82, fot);
+      ritaBuske(B, BARBUSKE, 112, fot);
+    } }] });
+
 })();
