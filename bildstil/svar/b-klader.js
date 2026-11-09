@@ -102,24 +102,6 @@
         sida: { pa: [[7, 11, 'senap2'], [7, 12, 'ben2'], [8, 12, 'senap1'], [7, 13, 'senap1']] } }),
     },
   ];
-  // Björn valde version 1 (det tvinnade repet, som redan är byggt i spelet) och vill se bältet i ett sammanhang i lagret, och
-  // mindre som symbol där. Symbolen är nu lika stor som de andra sakerna i förrådet (en fjärdedel av en ruta, 8 × 8 punkter):
-  // en liten ring av tvinnat rep med två krokar som hänger under. Bilden visar tre rutor av förrådet på marken, med fyra saker på
-  // varje som i spelet, och bybon med bältet på sig bredvid.
-  // konturen bara utanför, så att gräset syns i hålet; krokarna hänger under ringen
-  const balteSym = ['..oooo..', '.onpnpo.', 'op....no', 'on....po', '.opnpno.', '.odoodo.', '..o..o..'];
-  const LAGRET = [['rep', 'skinn', 'flinta', 'kniv'], ['grenar', 'BALTE', 'sten', 'kott'], ['fisk', 'svamp', 'torrgras', 'BALTE']];
-  byt(JANEJ('f7_balte', 'Bältet', 'Steg 7.1.4: bältet med krokarna, som bybon bär två redskap i så att händerna är fria. Du valde version 1, det tvinnade repet som redan är bältet i spelet. Som symbol i förrådet är bältet nu lika litet som de andra sakerna där (en fjärdedel av en ruta): en ring av tvinnat rep med två krokar som hänger under. Bilden visar tre rutor av förrådet med fyra saker på varje, två av dem bälten, och bybon med bältet på sig bredvid. Din kommentar förra gången: ”visa bältet i ett sammanhang när det ligger i ett lager. Gör bältet mindre som symbol i lagret”', {
-    text: 'Bältet som en liten symbol bland de andra sakerna i förrådet, och på bybon bredvid.', w: 4 + 48 + 6 + 14 + 4, h: 4 + 22 + 3, rita: (B) => {
-      window.F7.gras(B);
-      const y0 = 4 + 22 - 16 - 1;
-      LAGRET.forEach((l, t) => l.forEach((k, j) => {
-        const x = 4 + t * 16 + (j % 2) * 8, y = y0 + Math.floor(j / 2) * 8;
-        if (k === 'BALTE') lagg(B, balteSym, L, x, y); else if (typeof ritaIkon === 'function') ritaIkon(B, k, x, y);
-      }));
-      const b = window.BYBO ? window.BYBO(MED_ROCK, 'fram', 'sta', 'hanga', null, { balte: false, krokar: 0 }) : null;
-      figur(B, b, 4 + 48 + 6, 4 + 22 - 20, BALTE[0].lager.fram);
-    } }));
   // =====================================================================================================================
   // ur 7.7a-skinn-och-lader.js: plaggen på kartfiguren och som sak
   // =====================================================================================================================
