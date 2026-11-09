@@ -85,6 +85,9 @@ const tileOk = (s: State, x: number, y: number, utomElden: boolean) => {
   if (!iLager && ((s.stackar ?? []).some(a => a.x === x && a.y === y) || tingOf(s).some(k => k.x === x && k.y === y && k.hos === undefined && k.lass === undefined)) || (s.stockar ?? []).some(k => Math.floor(k.x) === x && Math.floor(k.y) === y) || (s.stubbar ?? []).some(k => k.x === x && k.y === y)) return false;
   return true;
 };
+// ligger ett annat hus (hela rektangeln, skjul och planerade hus också) närmare än m rutor från rektangeln?
+const husNara = (s: State, x: number, y: number, w: number, h: number, m: number, utom?: Hus) =>
+  housesOf(s).some(q => q !== utom && x < q.x + q.w + m && q.x < x + w + m && y < q.y + q.h + m && q.y < y + h + m);
 // en plats för ett hus med yttermåtten w×h inom byområdet, PLATS.husMellan rutor från andra hus och PLATS.uteFri från stationer
 // som står ute, helst en bit från elden, och inte så att väggarna stänger in mark. Träden där
 // huset ska stå fälls först
@@ -95,6 +98,7 @@ function siteFor(s: State, w: number, h: number, okAt: (i: number) => boolean) {
     const cx = x + w / 2, cy = y + h / 2;
     const ut = tillHoljet(s, cx, cy); // byns område (steg 6.2.4): inget räknas från elden eller byns mitt
     if (ut > R) continue;
+    if (husNara(s, x, y, w, h, PLATS.husMellan)) continue; // också ett skjul, som bara har stolpar i hörnen, och ett planerat hus
     let ok = true;
     for (let yy = y - M; yy < y + h + M && ok; yy++) for (let xx = x - M; xx < x + w + M && ok; xx++) {
       const inside = xx >= x && xx < x + w && yy >= y && yy < y + h;
@@ -265,6 +269,7 @@ function utbyggnad(s: State, h: Hus, side: 'v' | 'o' | 'n' | 's', k: number, okA
     if (!inne) { if (inMap(xx, yy) && g.at.has(yy * W + xx) && g.at.get(yy * W + xx)!.hus !== h.id) return undefined; continue; }
     if (nyRuta(xx, yy) && !okAt(yy * W + xx)) return undefined;
   }
+  if (husNara(s, x, y, w, hh, M, h)) return undefined; // ett skjul har bara stolpar i hörnen, så rutnätet ser inte hela huset
   const kant = (xx: number, yy: number) => xx === x || yy === y || xx === x + w - 1 || yy === y + hh - 1;
   // den gamla väggen mot den nya delen, och dörren om den ligger där
   const gammal = (xx: number, yy: number) => side === 'v' ? xx === h.x && yy > h.y && yy < h.y + h.h - 1 : side === 'o' ? xx === h.x + h.w - 1 && yy > h.y && yy < h.y + h.h - 1 : side === 'n' ? yy === h.y && xx > h.x && xx < h.x + h.w - 1 : yy === h.y + h.h - 1 && xx > h.x && xx < h.x + h.w - 1;

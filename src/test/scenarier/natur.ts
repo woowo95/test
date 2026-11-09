@@ -2298,7 +2298,7 @@ SCENARIER.gangar = {
     let minst = Infinity;
     for (let d = 0; d < 12; d++) {
       kor(b, 24);
-      const h = housesOf(b);
+      const h = housesOf(b).filter(q => !q.skjul); // ett skjul är ett tak över stationer som redan står (steg 7.3.5) och följer stationernas avstånd
       for (let i = 0; i < h.length; i++) for (let j = i + 1; j < h.length; j++) { const p = h[i], q = h[j]; minst = Math.min(minst, Math.max(p.x - (q.x + q.w), q.x - (p.x + p.w), p.y - (q.y + q.h), q.y - (p.y + p.h))); }
     }
     const antalHus = housesOf(b).length;
