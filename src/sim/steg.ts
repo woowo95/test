@@ -101,6 +101,7 @@ import { stationFlytta, finishStation, finishTillbehor, stationAt, stationRutor,
 import { TROSKEL, forbrukTimme, overTak, underBuffert } from './forradsmal';
 import { notis } from './notiser';
 import { stepKrukor } from './kruka';
+import { ar_vatska, fyllVatska, ledigFor } from './vatskor';
 
 // Simuleringen går i slag om fem minuter (BEAT), i spelet och vid ikappräkning likadant. Inom ett slag går tiden åt
 // till det som händer i tur och ordning (taskStep). Arbetet görs i bitar om högst BIT sekunder, och man bär aldrig mer
@@ -222,10 +223,12 @@ for (const k of TILLVERKA_LIST) { const d = TILLVERKA[k]; KLAR[d.act] = (s, p) =
   for (const [q, n] of Object.entries(d.av)) { if (getable(s, p, q) < n) return; }
   const sack = d.vatten ? fylldSack(s) : undefined;
   if (d.vatten && !sack) return; // vattnet är borta: inget blir gjort, och materialet ligger kvar
-  if (sack) delete sack.fylld; // säcken töms men finns kvar (steg 7.6.6)
+  const kar = ar_vatska(d.ger) ? ledigFor(s, d.ger) : undefined;
+  if (ar_vatska(d.ger) && !kar) return; // ingen ledig behållare som passar (steg 9.4.14): inget blir gjort
+  if (sack) sack.inne = undefined; // säcken töms men finns kvar (steg 7.6.6)
   if (p.task?.tool && d.verktyg) wearUsed(s, p, 1);
   for (const [q, n] of Object.entries(d.av)) takeMaterial(s, p, q, n);
-  put(s, d.ger, d.n, { [p.id]: d.n });
+  if (kar && ar_vatska(d.ger)) fyllVatska(s, d.ger, d.n, kar); else put(s, d.ger, d.n, { [p.id]: d.n }); // tjäran, salvan och limmet i sin behållare
   if (forstaGang(s, 'gjort_' + d.ger)) log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]);
 }; }
 MEDAN.vittja = (s, p, t) => { const m = mjardarOf(s).find(q => q.id === t.ref); if (m) vittja(s, p, m); t.until = s.now; };

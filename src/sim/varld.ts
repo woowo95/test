@@ -267,6 +267,18 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     }
     s.stationer = (s.stationer ?? []).filter(q => q.k !== 'kruka');
   }],
+  [31, 'v521: vätskorna i behållare (steg 9.4.14): en fylld vattensäck har vatten i sig, tjäran läggs i stora lerkrukor och salvan och benlimmet i näveraskar som är byns', s => {
+    const ting = (s.ting ??= []);
+    for (const t of ting) if (t.fylld) { t.inne = { v: 'vatten', n: 1 }; delete t.fylld; }
+    const ny = (k: string, x: number, y: number, v: 'tjara' | 'salva' | 'benlim', n: number) => ting.push({ id: s.nextTing = (s.nextTing ?? 0) + 1, k, c: 1, agare: 0, x, y, inne: { v, n } });
+    for (const a of s.stackar ?? []) {
+      if (a.k !== 'tjara' && a.k !== 'salva' && a.k !== 'benlim') continue;
+      let n = Math.floor(a.n + 1e-9);
+      while (n > 0) { const d = a.k === 'tjara' ? Math.min(10, n) : 1; ny(a.k === 'tjara' ? 'lerkruka_stor' : 'naverask', a.x, a.y, a.k, d); n -= d; }
+      a.n = 0;
+    }
+    s.stackar = (s.stackar ?? []).filter(a => a.n > 1e-9 || (a.k !== 'tjara' && a.k !== 'salva' && a.k !== 'benlim'));
+  }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

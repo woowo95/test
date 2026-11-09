@@ -216,7 +216,7 @@ export function vattenVal(s: State, p: Person): { spot: { x: number; y: number }
 export function vattenFylld(s: State, p: Person, t: Task) {
   if (t.ref === FYLL && !t.falt) { // till örtköket: säcken står fylld tills någon kokar med den
     const karl = t.tool ?? 'vattensack', k = toolsOf(s, karl).find(q => q.hos === p.id) ?? toolsOf(s, karl)[0];
-    if (t.tool && k) { k.fylld = 1; wearUsed(s, p, 1); count(s, 'sack fylld'); }
+    if (t.tool && k) { k.inne = { v: 'vatten', n: 1 }; wearUsed(s, p, 1); count(s, 'sack fylld'); } // vattnet i säcken eller krukan (steg 9.4.14)
     return;
   }
   if (t.falt) { const f = faltById(s, t.ref); if (!t.tool || !f) return; const r = faltRutor(f), i = r[Math.floor(r.length / 2)]; t.phase = 'back'; t.tx = i % W + 0.5; t.ty = Math.floor(i / W) + 0.5; t.why = 'Vattnar sitt fält'; return; }

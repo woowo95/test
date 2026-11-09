@@ -2488,8 +2488,9 @@ SCENARIER.ortvatten = {
     SIM.put(s, 'ben', 4, { [p.id]: 4 }); SIM.put(s, 'ved', 4, { [p.id]: 4 });
     const utan = PROJEKT.koka_lim.kan(s, p, { kyla: false, gras: 0 });
     const sack = newTing(s, 'vattensack', 1, p.id);
+    newTing(s, 'naverask', 1, p.id); // limmet förvaras i en näverask (steg 9.4.14)
     const val = vattenVal(s, p);
-    sack.fylld = 1;
+    sack.inne = { v: 'vatten', n: 1 }; // vattnet i säcken (steg 9.4.14)
     const med = PROJEKT.koka_lim.kan(s, p, { kyla: false, gras: 0 }), ingaFler = !vattenVal(s, p);
     const ben0 = SIM.amountOf(s, 'ben');
     KLAR_FOR.koka_lim!(s, p, { act: 'koka_lim' } as SIM.Task, 0);
@@ -2498,7 +2499,7 @@ SCENARIER.ortvatten = {
       ['utan fylld säck kokas inget', !utan],
       [`när örtköket behöver vatten går någon och fyller säcken (${val?.why})`, !!val && val.ref === 0],
       ['med en fylld säck går det att koka, och ingen fyller en till', med && ingaFler],
-      [`limmet blev gjort av benen (${ben0} → ${SIM.amountOf(s, 'ben')})`, SIM.amountOf(s, 'benlim') === 1],
+      [`limmet blev gjort av benen (${ben0} → ${SIM.amountOf(s, 'ben')}) och ligger i näveraskan`, SIM.vatskaAv(s, 'benlim') === 1],
       ['säcken är tom men finns kvar', !fylldSack(s) && SIM.tingOf(s).includes(sack)],
     ];
   },
