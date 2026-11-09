@@ -45,7 +45,7 @@ import { ELDFLYTT, flyttaElden, stepEldFlytt } from './eldflytt';
 import { DODSORSAKER, type Dodsorsak, barnMat, birth, birthWish, die, regulate } from './liv';
 import { MARK, groundOf, growGround, markslag, packGround, tileOf } from './mark';
 import { bynsMitt } from './omrade';
-import { SAMTAL, TalkEvent, converse, isSocial, skiljsAt } from './samtal';
+import { SAMTAL, TalkEvent, converse, kanPrata, skiljsAt } from './samtal';
 import { HABIT_FADE, addHabit, stepSeder, updateTags } from './seder';
 import { RELT, stepRelationer } from './relationer';
 import { MINNE, areaOf, fearPlace, forget, lookAround, observe, radslaVid, sees, sightOf, trorOm } from './minne';
@@ -301,7 +301,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
     compact(s); // här och inte i sparningen, så att alla lägen städar vid samma tid
   }
 
-  const social: Person[] = [];
+  let social: Person[] = [];
   const inRum = new Map<number, number>(); // hur många som är i varje rum
   for (const p of ppl) { const r = roomAt(s, p.x, p.y); if (r) inRum.set(r.id, (inRum.get(r.id) ?? 0) + 1); }
   for (const p of ppl) {
@@ -319,6 +319,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   // samtal: ca ett per 4 minuter per person i social aktivitet
   const e0 = events?.length ?? 0;
   if (social.length > 1) {
+    social = social.filter(p => kanPrata(s, p)); // en brottning kan ha börjat under steget (steg 9.2.100)
     for (const p of social) {
       if (!alive(p)) continue;
       const expect = dtSec / STEG.samtalSek * (STEG.samtalBas + stat(p, 'empati', now) / STEG.samtalEmpati) * (p.sinnen === undefined ? 1 : tal(p) * STEG.samtalTal + horsel(p) * STEG.samtalHorsel + 1 - STEG.samtalTal - STEG.samtalHorsel); // talet och hörseln (steg 8.2.2)
@@ -529,7 +530,7 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
   }
   s.now = t1;
   spara(s, p);
-  if (isSocial(p)) social.push(p);
+  if (kanPrata(s, p)) social.push(p); // inte den som brottas eller är med på en ritual (steg 9.2.100)
 }
 
 // var och en går lite vid sidan av, så att de inte täcker varandra

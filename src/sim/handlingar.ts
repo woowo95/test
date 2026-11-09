@@ -69,6 +69,7 @@ interface ActDef {
   hantverk?: true; // övar hantverk
   ovar?: Skill; // en färdighet till som övas (grilla övar matlagning, matlagning.ts); personrutan visar den som övad just nu
   social?: true; // man samtalar med dem som är nära
+  tyst?: true; // men pratar inte under den (steg 9.2.100): ritualen; sporten säger det för varje sport (SportDef.tyst)
   skamfri?: true; // skammen (straffet skam, styre.ts) byter inte ut den: måltiden och det som skyddar (värmen, skuggan, vakten, försvaret)
   varmer?: true; // görs för att bli varm: ett rum väljs bara om det är minst lika varmt som vid elden (varmareInne)
   dygn?: true; // avbryts när dag blir natt eller natt blir dag
@@ -125,7 +126,7 @@ const DEF = {
   // tron och graven (system 8.5, kult.ts och kvarlevor.ts)
   hovbygge: { namn: 'Bygger hovet', slag: 'bygga', tungt: true, framme: true, stilla: true }, // steg 8.6.14
   be: { namn: 'Ber', tecken: '✨', ikon: 'a_be', framme: true, stilla: true, skamfri: true },
-  ritual: { namn: 'Är med på en ritual', tecken: '✨', ikon: 'a_be', stilla: true, social: true, dygn: true },
+  ritual: { namn: 'Är med på en ritual', tecken: '✨', ikon: 'a_be', stilla: true, social: true, tyst: true, dygn: true },
   begrava: { namn: 'Går för att ta hand om en död', tecken: '✨', ikon: 'a_be', framme: true, stilla: true },
   grava: { namn: 'Gräver en grav', slag: 'bygga', tungt: true, framme: true, stilla: true, redskap: { benspade: { tar: 'Tar benspaden.', haller: 40 } }, slits: { enhet: 'gravar', per: 'gang' } },
   medvetslos: { namn: 'Ligger medvetslös', tecken: '✨', stilla: true, fortsatter: ['brand', 'tornado', 'varg'] as const, nodFri: true },

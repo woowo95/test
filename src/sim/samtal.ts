@@ -16,6 +16,7 @@ import { RELT, arArke, arBast, arMentor, arRivaler, minnsRel, skiljGrans } from 
 import { tankePa } from './teknik';
 import { loggBer, samtalAmne, samtalBorjar } from './berattelser';
 import { predika } from './religion';
+import { tystISporten } from './sport';
 
 // ---------- balanstal (regel 8) ----------
 // Samtalen: vem man pratar med, vilket slags samtal det blir, hur det går och vad det ger, och humöret. Relationen (op) går från
@@ -115,7 +116,7 @@ const valVikt = (s: State, a: Person, b: Person) => { const r = getRel(s, a, b);
 // Finns ingen, eller ingen plats bredvid, går man till platsen vid elden som förut
 export function samtalMed(s: State, p: Person) {
   const t = p.task!, now = s.now;
-  const kand = living(s).filter(q => q !== p && q.task?.phase === 'do' && isSocial(q) && q.task.med === undefined && !ACTS[q.task.act].vandra && !ACTS[q.task.act].tur && !ACTS[q.task.act].radie && ageOf(q, now) >= ALDER.smabarn
+  const kand = living(s).filter(q => q !== p && q.task?.phase === 'do' && kanPrata(s, q) && q.task.med === undefined && !ACTS[q.task.act].vandra && !ACTS[q.task.act].tur && !ACTS[q.task.act].radie && ageOf(q, now) >= ALDER.smabarn
     && Math.hypot(q.x - t.tx, q.y - t.ty) < SAMTAL.sokR);
   if (!kand.length) return;
   const q = pickViktat(s, kand, kand.map(b => valVikt(s, p, b)), 'samtal', p);
@@ -149,12 +150,14 @@ export function skiljsAt(s: State, p: Person) {
 }
 // om p håller på med något socialt just nu (vid elden, i samtal); hur nära man ska vara för att prata står i SAMTAL.radie
 export const isSocial = (p: Person) => !!p.task && p.task.phase === 'do' && !!ACTS[p.task.act].social;
+// kan p prata just nu (steg 9.2.100)? En social aktivitet där registret inte säger att man är tyst
+export const kanPrata = (s: State, p: Person) => isSocial(p) && !ACTS[p.task!.act].tyst && !(p.task!.act === 'sport' && tystISporten(s, p));
 // hur länge ett samtal syns efteråt: bubblan i byn och ämnet i personrutan (sekunder i spelet, steg 3.10.3 och 4.5.3.3)
 export const PRATAR_SEK = 20;
 // den som p pratar med just nu: båda gör något socialt, står nära och samtalet är färskt (bara för gränssnittet)
 export function pratarMed(s: State, p: Person) {
   const m = p.prat?.m, q = m !== undefined ? s.people.find(x => x.id === m) : undefined;
-  return q && alive(q) && isSocial(p) && isSocial(q) && Math.hypot(q.x - p.x, q.y - p.y) < SAMTAL.radie && s.now - p.prat!.t < PRATAR_SEK * SEC ? q : undefined;
+  return q && alive(q) && kanPrata(s, p) && kanPrata(s, q) && Math.hypot(q.x - p.x, q.y - p.y) < SAMTAL.radie && s.now - p.prat!.t < PRATAR_SEK * SEC ? q : undefined;
 }
 export interface TalkEvent { a: number; b: number; kind: Samtalsslag; good: boolean; t: number; i?: string } // i: ämnets symbol (steg 3.9.5)
 // ger den andra om samtalet blev ett gräl (steg 3.7.2: gräl kan bli slagsmål, strid.ts)

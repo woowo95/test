@@ -1086,11 +1086,25 @@ SCENARIER.fritidlista = {
 };
 // steg 9.2.92: brottningen går två och två med stridens system, utan vapen och med svaga slag. Ingen dör, en skada är ovanlig
 function brottning(): [string, boolean][] {
-  let kampar = 0, doda = 0, skadade = 0, kvar = 0, sedda = 0, vapen = 0;
+  let kampar = 0, doda = 0, skadade = 0, kvar = 0, sedda = 0, vapen = 0, pratIKampen = 0, kampTid = 0, pratRingen = 0;
   for (const fro of [3, 5, 7, 11]) {
     const s = rikDag(fro), med = vuxna(s).slice(0, 4), skador0 = med.map(q => q.skador?.length ?? 0);
     match(s, 'brottning', med);
-    kor(s, 1, () => { sedda += med.filter(q => q.task?.act === 'sport' && q.task.phase === 'do').length; });
+    // steg 9.2.100: de två som kämpar pratar inte; de andra i ringen gör det
+    let kamp: number[] | undefined, start = 0;
+    const sett = new Map<number, number>();
+    kor(s, 1, () => {
+      sedda += med.filter(q => q.task?.act === 'sport' && q.task.phase === 'do').length;
+      const m = s.sport;
+      if (m?.brottare && m.brottare !== kamp) { kamp = m.brottare; start = s.now; }
+      const pagar = !!m && !!kamp && s.now < (m.brott ?? 0);
+      if (pagar) kampTid++;
+      for (const q of med) {
+        const t = q.prat?.t; if (t === undefined || sett.get(q.id) === t) continue;
+        sett.set(q.id, t);
+        if (pagar && kamp!.includes(q.id) && t >= start) pratIKampen++; else if (q.task?.act === 'sport') pratRingen++;
+      }
+    });
     kampar += s.stat?.brottningar ?? 0;
     doda += med.filter(q => q.health <= 0 || q.died !== undefined).length;
     skadade += med.filter((q, i) => (q.skador?.length ?? 0) > skador0[i]!).length;
@@ -1103,5 +1117,7 @@ function brottning(): [string, boolean][] {
     [`ingen dör i brottningen (${doda})`, doda === 0],
     [`en skada är ovanlig (${skadade} av 16 brottare skadades)`, skadade <= 4],
     [`brottarna är kvar i matchen efter en kamp (${kvar} av 16)`, kvar >= 12 && sedda > 0],
+    [`ingen av de två som brottas börjar ett samtal under kampen (${pratIKampen} samtal på ${kampTid} steg med kamp)`, pratIKampen === 0 && kampTid > 0],
+    [`de andra i ringen pratar (${pratRingen} samtal)`, pratRingen > 0],
   ];
 }
