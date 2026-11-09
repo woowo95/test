@@ -45,6 +45,7 @@ SCENARIER.forsok = {
     return [
       ['teknikträdet säger att man prövar sig fram vid slöjdbänken, och för yxan som förut', info.includes('pröva sig fram till det vid slöjdbänk') && !vanlig.includes('pröva sig fram')],
       [`alla ${alla.length} tekniker på nivå 4–5 har en försöksplats, och inga lägre`, medPlats && lagre],
+      [`kortet säger vad den som prövar sig fram försöker komma på (steg 9.2.106): "${SIM.taskName({ act: 'forsok', phase: 'do', tx: 0, ty: 0, until: 0, carry: 0, tool: 'snara' })}"`, SIM.taskName({ act: 'forsok', phase: 'do', tx: 0, ty: 0, until: 0, carry: 0, tool: 'snara' }) === 'Försöker komma på hur man binder en snara' && alla.every(t => t.forsok?.vad.startsWith('hur'))],
       ['vanligt hantverk för inte närmare skinnkläderna', vanligt],
       [`den skicklige prövar sig fram till ${v ? SIM.TEK[v.id].namn.toLowerCase() : 'ingenting'} vid slöjdbänken`, v?.id === 'skinnklader' && vidBank],
       [`efter ${n} försök kan hen göra skinnkläder`, SIM.knows(p, 'skinnklader')],

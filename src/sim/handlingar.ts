@@ -245,7 +245,9 @@ export const ACT_NAMES = Object.fromEntries(ACT_LIST.map(a => [a, ACTS[a].namn])
 export const isWork = (a: Act) => ACTS[a].arbete !== undefined;
 // arbetena som väljs efter byns behov (de andra är sätt att göra dem, t.ex. att fälla och hugga är vedarbete med yxa)
 export const WORK = ACT_LIST.filter(a => ACTS[a].arbete === a);
-export const taskName = (t: Task) => (t.tool && (ACTS[t.act].redskap?.[t.tool]?.namn ?? ACTS[t.act].verktyg?.[t.tool])) || ACTS[t.act].namn;
+// den som prövar sig fram säger vad hen försöker komma på (steg 9.2.106; teknik.ts sätter texterna när modulen laddas)
+export const forsokVad: Record<string, string> = {};
+export const taskName = (t: Task) => (t.act === 'forsok' && t.tool && forsokVad[t.tool] ? `Försöker komma på ${forsokVad[t.tool]}` : undefined) || (t.tool && (ACTS[t.act].redskap?.[t.tool]?.namn ?? ACTS[t.act].verktyg?.[t.tool])) || ACTS[t.act].namn;
 // undertexten (steg 3.10.3): det uppgiften är i just nu, kort, som i "Jagar: letar efter byte". Handlingens rad (under) först,
 // annars på väg dit, med material till bygget och hem med det som bärs. Jakten efter försöket (jakt.ts)
 export function underText(t: Task): string | undefined {
