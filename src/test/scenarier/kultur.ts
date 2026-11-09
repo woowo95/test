@@ -6,6 +6,8 @@ import * as O from '../../sim/ord';
 import { TEKNIK } from '../../sim/teknik';
 import { SCENARIER, klockan, kor, medBank, medHus, nyInvanare, setFood, tandEld, utanWebblasare } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
+import { hjalpKlick } from '../../ui/hjalp';
+import { styre as styreFlik } from '../../ui/flikar/styre';
 import { station as stationFlik } from '../../ui/flikar/station';
 import { person as personFlik } from '../../ui/flikar/person';
 import { kronika as kronikaFlik, val as kronikaVal } from '../../ui/flikar/kronika';
@@ -504,7 +506,7 @@ SCENARIER.ord = {
 };
 
 SCENARIER.omrostning = {
-  text: 'Steg 8.3.1–8.3.3: allt byn avgör är en fråga i FRAGOR. Klockan 20 röstar alla vuxna efter åsikter och intresse, summan av vikterna avgör, och vid Envälde väger nästan bara ledaren. Omröstningarna sparas',
+  text: 'Steg 8.3.1–8.3.3 och 9.2.65: allt byn avgör är en fråga i FRAGOR. Klockan 20 röstar alla vuxna efter åsikter och intresse, summan av vikterna avgör, och vid Envälde väger nästan bara ledaren. Omröstningarna sparas',
   kor: () => {
     const s = createState(6, START), v = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen), l = v[0];
     (s.styre = { historia: [{ id: l.id, namn: l.name, titel: 'Ålderman', fran: s.now }], oppna: ['rang'], ledare: l.id, sedan: s.now, titel: 'Ålderman', satt: 1, pabud: { matlager: 0, vedlager: 0, torkat: 0 } as never });
@@ -522,7 +524,20 @@ SCENARIER.omrostning = {
     const iKo = s.styre!.fragor!.length;
     SIM.rostKvall(s);
     const satt = s.styre!.pabud!.vedlager === 0.7;
+    // bilden i fliken Styre (steg 9.2.65): en stapel för ja och nej och en rad per röst, ja först och de tyngsta överst
+    utanWebblasare(); setByn(s); ui.styreDel = 'styre';
+    const oppna = (id: string, g: string) => hjalpKlick({ closest: () => ({ dataset: { hjalp: id, hjalpGrupp: g } }) } as unknown as HTMLElement);
+    oppna(`rost-${o.t}-${o.f}`, 'rost-');
+    const html = styreFlik.html(), fran = html.lastIndexOf('<ul class="roster">'), lista = html.slice(fran, html.indexOf('</ul>', fran)); // den första omröstningen står sist (nyast först)
+    const rader = (lista.match(/data-hjalp-grupp="rr-"/g) ?? []).length;
+    const ordning = [...lista.matchAll(/title="(Ja|Nej)"/g)].map(m => m[1]);
+    const jaForst = ordning.indexOf('Nej') < 0 || ordning.lastIndexOf('Ja') < ordning.indexOf('Nej');
+    const varfor = o.roster[0]; oppna(`rr-${o.t}-${varfor.id}`, 'rr-');
+    const skal = styreFlik.html().includes('rvarfor');
     return [
+      [`omröstningen visar en stapel för ja och nej och en rad per röst (${rader} av ${o.roster.length})`, html.includes('class="rostbar"') && rader === o.roster.length],
+      [`ja-rösterna står först (${ordning.join(' ')})`, jaForst],
+      ['den som lade fram frågan har sin symbol, och ett tryck på en röst visar varför', html.includes('title="Lade fram frågan"') && skal],
       [`vid Allmogen väger ingen annan än ledaren mycket (högst ${(lika * 100).toFixed(0)} %)`, lika < 0.4],
       [`vid Envälde väger ledaren nästan allt (${(led * 100).toFixed(0)} %)`, led > 0.85],
       [`alla vuxna röstar, och varje röst har ett skäl (${o.roster.length})`, allaVuxna],
