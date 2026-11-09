@@ -153,6 +153,7 @@ const DEF = {
   strand: { namn: 'Sitter vid stranden och ser ut över vattnet', tecken: '🌊', dygn: true },
   hugga_sten: { namn: 'Hugger sten', slag: 'hantverk', hantverk: true, verb: 'hugger', plats: 'station' }, // vid stenhuggarplatsen (steg 7.5.1)
   klyva_plank: { namn: 'Klyver plankor', slag: 'hantverk', hantverk: true, verb: 'klyver', plats: 'station' }, // vid klyvplatsen
+  koka_te: { namn: 'Kokar örtte', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' }, // vid örtköket, annars vid elden (steg 9.5.8)
   koka_salva: { namn: 'Kokar salva', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' }, // vid örtköket (steg 7.6)
   koka_tjara: { namn: 'Kokar tjära', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' },
   koka_lim: { namn: 'Kokar benlim', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' },

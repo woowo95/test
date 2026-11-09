@@ -97,11 +97,12 @@ import { tal, horsel, barMed, burenSteg, halsa, halsaSteg, lakerFullt, lamnaAv, 
 import { bordPlats, fullBorda, kladVarme, ryggKorg, ryms, slitRygg, stepKlader } from './utrustning';
 import { stepPynt } from './pynt';
 import { stadaByten } from './byte';
-import { stationFlytta, finishStation, finishTillbehor, stationAt, stationRutor, stepStationer, tillbehorVarme, workStation } from './stationer';
+import { stationFor, kvVid, stationFlytta, finishStation, finishTillbehor, stationAt, stationRutor, stepStationer, tillbehorVarme, workStation } from './stationer';
 import { TROSKEL, forbrukTimme, overTak, underBuffert } from './forradsmal';
 import { notis } from './notiser';
 import { stepKrukor } from './kruka';
-import { ar_vatska, fyllVatska, ledigFor } from './vatskor';
+import { ar_vatska, drickTe, fyllVatska, ledigFor, teFaktor } from './vatskor';
+import { rullaKvalitet } from './kvalitet';
 
 // Simuleringen går i slag om fem minuter (BEAT), i spelet och vid ikappräkning likadant. Inom ett slag går tiden åt
 // till det som händer i tur och ordning (taskStep). Arbetet görs i bitar om högst BIT sekunder, och man bär aldrig mer
@@ -223,12 +224,13 @@ for (const k of TILLVERKA_LIST) { const d = TILLVERKA[k]; KLAR[d.act] = (s, p) =
   for (const [q, n] of Object.entries(d.av)) { if (getable(s, p, q) < n) return; }
   const sack = d.vatten ? fylldSack(s) : undefined;
   if (d.vatten && !sack) return; // vattnet är borta: inget blir gjort, och materialet ligger kvar
+  if (d.eld && !stationFor(s, d.act) && !s.fire.lit) return; // teet kokas vid en eld som brinner om byn inte har örtköket (steg 9.5.8)
   const kar = ar_vatska(d.ger) ? ledigFor(s, d.ger) : undefined;
   if (ar_vatska(d.ger) && !kar) return; // ingen ledig behållare som passar (steg 9.4.14): inget blir gjort
   if (sack) sack.inne = undefined; // säcken töms men finns kvar (steg 7.6.6)
   if (p.task?.tool && d.verktyg) wearUsed(s, p, 1);
   for (const [q, n] of Object.entries(d.av)) takeMaterial(s, p, q, n);
-  if (kar && ar_vatska(d.ger)) fyllVatska(s, d.ger, d.n, kar); else put(s, d.ger, d.n, { [p.id]: d.n }); // tjäran, salvan och limmet i sin behållare
+  if (kar && ar_vatska(d.ger)) { fyllVatska(s, d.ger, d.n, kar)!.inne!.q = rullaKvalitet(s, p, kvVid(s, p, d.act)); } else put(s, d.ger, d.n, { [p.id]: d.n }); // tjäran, salvan, limmet och teet i sin behållare, med kvalitet (steg 9.5.8)
   if (forstaGang(s, 'gjort_' + d.ger)) log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]);
 }; }
 MEDAN.vittja = (s, p, t) => { const m = mjardarOf(s).find(q => q.id === t.ref); if (m) vittja(s, p, m); t.until = s.now; };
@@ -460,7 +462,8 @@ function healthStep(s: State, p: Person, a: number, ai: number, dtSec: number) {
   else if (hl === 'laker') p.health = clamp(p.health + dtSec / (KROPP.lakerTim * HOUR_S), 0, 1);
   if (p.sickUntil !== undefined && p.sickUntil > now) p.health -= dtSec / (KROPP.sjukTim * HOUR_S); // den gamla klockan (en äldre sparning) tills den gått ut
   // sjukdomen mot motståndet (steg 9.5.2, sjukdom.ts): vinner sjukdomen dör hen av den
-  const sjukDod = sjukSteg(s, p, dtSec, p.task?.act === 'sova', !!p.task && !!ACTS[p.task.act].arbete && p.task.phase === 'do');
+  drickTe(s, p); // örtteet (steg 9.5.8, vatskor.ts)
+  const sjukDod = sjukSteg(s, p, dtSec, p.task?.act === 'sova', !!p.task && !!ACTS[p.task.act].arbete && p.task.phase === 'do', teFaktor(s, p, SJUK.lakeort));
   if (sjukDod) { die(s, p, SJUK_DOD[sjukDod]); return true; }
   if (p.sjuk && p.sjuk.grad >= 0.5 && !p.svartSjuk) { loggBer(s, 'l_svartSjuk', p.id, { namn: p.name }, 'world', [p.id]); p.svartSjuk = 1; } // svårt sjuk: ett tecken när hen blir frisk (steg 4.1.2.1)
   p.health -= dtSec / HOUR_S * skorbjugg(p); // brist på vitaminer (steg 2.6.2)

@@ -209,7 +209,32 @@ function vatskorna(): [string, boolean][] {
   ];
 }
 
+// örtteet (steg 9.5.8): kokas av rölleka och vatten i en liten lerkruka vid en eld som brinner, har kvalitet, och den som fryser
+// eller är sjuk dricker det: varmare, och motståndet växer mer ju bättre teet är
+function orteet(): [string, boolean][] {
+  const { KLAR_FOR, vatskaAv, addTool, setAmount, drickTe, teFaktor, SJUK, TE, KROPP } = SIM;
+  const s = createState(1, START), p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+  p.tek = { ...p.tek, orte: 1 };
+  setAmount(s, 'rolleka', 3);
+  addTool(s, 'vattensack', p).inne = { v: 'vatten', n: 1 };
+  const kruka = addTool(s, 'lerkruka_liten', p);
+  const koka = () => KLAR_FOR.koka_te!(s, p, { act: 'koka_te', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' }, 0);
+  s.fire.lit = false; koka();
+  const slocknad = vatskaAv(s, 'te') === 0;
+  s.fire.lit = true; s.fire.fuel = 10; koka();
+  const kokt = kruka.inne?.v === 'te' && kruka.inne.q !== undefined;
+  const q = SIM.living(s).find(r => r !== p)!; q.warm = KROPP.fryser - 0.1; q.x = p.x; q.y = p.y;
+  const w0 = q.warm; drickTe(s, q);
+  const varmare = q.warm > w0 && !kruka.inne, f = teFaktor(s, q, SJUK.lakeort);
+  const battre = TE.verkan.every((v, i, a) => i === 0 || v >= a[i - 1]) && TE.verkan[5] < 1;
+  return [
+    [`utan en eld som brinner kokas inget te (${slocknad ? 'inget' : 'kokades'}); med elden står teet i den lilla krukan med kvalitet (${kokt ? `kvalitet ${kruka.inne?.q}` : 'inget'})`, slocknad && kokt],
+    [`den som fryser dricker teet och blir varmare (${w0.toFixed(2)} → ${q.warm.toFixed(2)}), och krukan blir tom`, varmare],
+    [`teet hjälper motståndet (${f.toFixed(2)} gånger), mer ju bättre det är och mindre än läkeörten (${SJUK.lakeort})`, f > 1 && f < SJUK.lakeort && battre],
+  ];
+}
+
 SCENARIER.vatskor = {
-  text: 'Steg 9.4.13–9.4.14: näveraskan är en liten ask av näver och rep med en egen teknik, som görs för hand eller fortare och bättre vid slöjdbänken. Vätskorna (vattnet, tjäran, salvan och benlimmet) finns bara i behållare: ett recept behöver en ledig behållare som passar, och när vätskan används blir den tomma behållaren kvar',
-  kor: () => [...naveraskan(), ...vatskorna()],
+  text: 'Steg 9.4.13–9.4.14: näveraskan är en liten ask av näver och rep med en egen teknik, som görs för hand eller fortare och bättre vid slöjdbänken. Vätskorna (vattnet, tjäran, salvan och benlimmet) finns bara i behållare: ett recept behöver en ledig behållare som passar, och när vätskan används blir den tomma behållaren kvar. Örtteet (steg 9.5.8) kokas i en liten lerkruka och värmer och stärker',
+  kor: () => [...naveraskan(), ...vatskorna(), ...orteet()],
 };

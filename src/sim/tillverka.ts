@@ -6,10 +6,11 @@ import { Act } from './typer';
 // blir ett projekt (projekt.ts) och en handling (handlingar.ts, station i stationer.ts). vill = så många byn vill ha i förrådet.
 // Salvan, tjäran, benlimmet och tvålen har ingen funktion än, så byn vill bara ha några. vatten = vattnet tas ur en fylld vattensäck,
 // som töms men finns kvar (steg 7.6.6, torst.ts). verktyg = redskapet man arbetar med (sländan, steg 7.7.8).
-export interface TillverkDef { act: Act; ger: string; n: number; av: Record<string, number>; min: number; tek: string; vill: number; text: string; forsta: string; vatten?: true; verktyg?: string }
+export interface TillverkDef { act: Act; ger: string; n: number; av: Record<string, number>; min: number; tek: string; vill: number; text: string; forsta: string; vatten?: true; verktyg?: string; eld?: true } // eld = kokas vid en eld som brinner, om inte vid stationen
 export const TILLVERKA: Record<string, TillverkDef> = {
   hugga_sten: { act: 'hugga_sten', ger: 'huggen_sten', n: 1, av: RECEPT.huggen_sten.av!, min: RECEPT.huggen_sten.min, tek: 'stenhuggarplats', vill: 8, text: 'Hugger till en sten.', forsta: '{namn} högg byns första huggna sten.' },
   klyva_plank: { act: 'klyva_plank', ger: 'plankor', n: 2, av: RECEPT.plankor.av!, min: RECEPT.plankor.min, tek: 'klyvplats', vill: 8, text: 'Klyver virke till plankor.', forsta: '{namn} klöv byns första plankor.' },
+  koka_te: { act: 'koka_te', ger: 'te', n: 1, av: { rolleka: 1 }, min: 2, tek: 'orte', vill: 2, vatten: true, eld: true, text: 'Kokar ett örtte av rölleka i en liten lerkruka.', forsta: '{namn} kokade byns första örtte av rölleka.' }, // steg 9.5.8
   koka_salva: { act: 'koka_salva', ger: 'salva', n: 1, av: RECEPT.salva.av!, min: RECEPT.salva.min, tek: 'ortkok', vill: 3, text: 'Kokar en salva av rölleka och talg.', forsta: '{namn} kokade byns första salva.' },
   koka_tjara: { act: 'koka_tjara', ger: 'tjara', n: 1, av: RECEPT.tjara.av!, min: RECEPT.tjara.min, tek: 'ortkok', vill: 2, text: 'Kokar tjära av ved.', forsta: '{namn} kokade byns första tjära.' },
   koka_lim: { act: 'koka_lim', ger: 'benlim', n: 1, av: RECEPT.benlim.av!, min: RECEPT.benlim.min, tek: 'ortkok', vill: 2, vatten: true, text: 'Kokar lim av ben och vatten.', forsta: '{namn} kokade byns första benlim.' },

@@ -30,7 +30,7 @@ import { stationRutor } from './stationer';
 import { LJUS, UPPSATT, friFackla, friLjus, ljusPlatser, morkStalle } from './ljus';
 import { ALDER, ageOf, doingAct } from './folk';
 import { SKOGSVARD, kanPlantera, planteraUppgift, skogsvardBrist } from './skogsvard';
-import { ar_vatska, ledigFor, vatskaAv } from './vatskor';
+import { VATSKOR, ar_vatska, ledigFor, vatskaAv } from './vatskor';
 
 // ---------- byns projekt: vad den bygger och gör (steg 2.2.7) ----------
 // Allt byn kan bygga eller göra av handarbete är en rad i registret PROJEKT: redskapen (en rad per grupp i GORS,
@@ -167,9 +167,9 @@ const tillverk = (k: string): ProjektDef => {
   const d = TILLVERKA[k];
   // tjäran, salvan och limmet räknas i sina behållare och behöver en ledig som passar (steg 9.4.14, vatskor.ts)
   const antal = (s: State) => ar_vatska(d.ger) ? vatskaAv(s, d.ger) : amountOf(s, d.ger), kar = (s: State) => !ar_vatska(d.ger) || !!ledigFor(s, d.ger);
-  const har = (s: State, p: Person) => knows(p, d.tek) && kanGoras(s, d.act, p) && (!d.vatten || !!fylldSack(s)) && (!d.verktyg || freeTools(s, p, d.verktyg) > 0 || verktygVid(s, d.act, d.verktyg));
+  const har = (s: State, p: Person) => knows(p, d.tek) && kanGoras(s, d.act, p) && (!d.eld || !!stationFor(s, d.act) || s.fire.lit) && (!d.vatten || !!fylldSack(s)) && (!d.verktyg || freeTools(s, p, d.verktyg) > 0 || verktygVid(s, d.act, d.verktyg));
   return {
-    namn: SAKER[d.ger]!.namn, vikt: PROJEKT_TAL.tillverka,
+    namn: SAKER[d.ger]?.namn ?? (ar_vatska(d.ger) ? VATSKOR[d.ger].namn : d.ger), vikt: PROJEKT_TAL.tillverka, // teet är bara en vätska (steg 9.5.8)
     brist: s => clamp(1 - antal(s) / d.vill, 0, 1),
     kostnad: () => varuVarde(d.av, d.min / 60 * ARBETE),
     kan: (s, p) => har(s, p) && kar(s) && antal(s) < d.vill && Object.entries(d.av).every(([q, n]) => getable(s, p, q) >= n),
