@@ -4,7 +4,7 @@
 // som sparats före porträtten får dem slumpade ur byns frö och personens nummer. Allt räknas ur numret och föräldrarna,
 // så att samma person alltid ser likadan ut och simuleringen inte märker något. Bara utseende.
 import { ALDER, BERATT, BESK_ANSIKTE, KLADMATERIAL, KROPP, ageOf, blodning, byId, hash, isSick, kladAv, load, moodOf, utbrottNu, utrustning } from '../sim';
-import type { Person, Rovare, State } from '../sim';
+import type { Person, State } from '../sim';
 import { KARNA } from '../portrattkarna';
 import { s as visad, uppgiftVid } from './lage';
 
@@ -156,8 +156,8 @@ export function handlarSkapad(s: State, namn: string, sex: 'm' | 'k'): Skapad {
 }
 export const ROVARDRAKT = { luva: 0.35, duk: 0.3, rovarskinn: 0.45, vargskinn: 0.2 };
 const RARV = new Map<string, Skapad>();
-export function rovarSkapad(s: State, r: Rovare, humor: string): Skapad {
-  const k = s.seed + ':' + r.namn + ':' + r.sex;
+export function rovarSkapad(s: State, r: Person, humor: string): Skapad {
+  const k = s.seed + ':' + r.name + ':' + r.sex;
   let d = RARV.get(k);
   if (!d) {
     let h = s.seed | 0;
@@ -171,5 +171,5 @@ export function rovarSkapad(s: State, r: Rovare, humor: string): Skapad {
     if (RARV.size > 200) RARV.clear();
     RARV.set(k, d);
   }
-  return { ...d, del: { ...d.del, redskap: REDSKAP.get(r.vapen) ?? null }, humor, blod: r.blod < 0.7 };
+  return { ...d, del: { ...d.del, redskap: REDSKAP.get(r.gast?.vapen ?? '') ?? null }, humor, blod: r.blod < 0.7 };
 }

@@ -387,7 +387,7 @@ export interface State {
   klaner?: import('./klaner').Klan[]; klanNr?: number; // grannklanerna (steg 4.4.3, klaner.ts)
   handlarKopt?: Record<string, number>; // det handlarna köpt av byn och byborna, per slag, på det senaste besök då slaget köptes (steg 6.2.11, handel.ts)
   epidemi?: { k: import('./sjukdom').SjukId; ids: number[]; skriven?: 1 }; // utbrottet som pågår (steg 9.5.5, sjukdom.ts)
-  handlare?: import('./handel').Handlare; nastaHandlare?: number; handlarNr?: number; // handlaren som är på besök, när nästa kommer och hur många som kommit (steg 4.4.1.2, handel.ts) // det som syns gå från hand till hand och filtarna med det som byts (bara för bilden), och det som nyss bytts bort (steg 4.4.1.1, byte.ts)
+  handlare?: import('./handel').Handlare; nastaHandlare?: number; handlarNr?: number; gastNr?: number; // handlaren som är på besök, när nästa kommer och hur många som kommit (steg 4.4.1.2, handel.ts) // det som syns gå från hand till hand och filtarna med det som byts (bara för bilden), och det som nyss bytts bort (steg 4.4.1.1, byte.ts)
   sport?: import('./sport').Match; // matchen som pågår eller väntar på spelare (steg 4.3.1, sport.ts)
   borta?: Borta; // sammanfattningen efter bortavaron som spelaren inte stängt än (steg 3.10.22, ui/spara.ts); simuleringen rör den inte
 }

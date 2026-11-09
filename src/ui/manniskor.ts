@@ -308,7 +308,7 @@ function riktning(id: number, x: number, y: number, rx = x, ry = y): Rikt {
 const markeradNu = () => ui.tab === undefined || ui.tab === 'person' ? ui.selected : undefined;
 function ritaRovarna(skugga: PIXI.Graphics) {
   for (const g of gaster()) {
-    const r = g.rovare, sk = r && rovarenNu(r.namn, ui.nu), ligger = !!g.ligger, x = g.x * TS, y = g.y * TS;
+    const r = g.rovare, sk = r && rovarenNu(r.name, ui.nu), ligger = !!g.ligger, x = g.x * TS, y = g.y * TS;
     let rikt = riktning(g.id, g.x, g.y);
     const strid = sk && !ligger ? STRIDBILD[sk.k.vapen as string] ?? STRIDBILD.hand : undefined, ab = strid ? arbetsBild(strid, slag() - g.id) : undefined;
     if (sk?.mot) rikt = sk.mot.x < g.x ? 'vast' : 'sida';

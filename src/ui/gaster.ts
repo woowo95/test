@@ -1,5 +1,5 @@
-import { hp, HANDEL, HANDLAR_UTR, VAPEN, byId, gillar, handlarPerson, foddNar, gastLiv, gastNyckel, handlarFas, handlarPlats, rovarPlats, klanById, grundvarde, handlarVarde, kgOf, kortTal, rymmer, sakNamn } from '../sim';
-import type { ByteMinne, GastLiv, GastRel, Person, Roll, Rovare, Skill, Stat, State } from '../sim';
+import { hp, HANDEL, HANDLAR_UTR, VAPEN, byId, gillar, handlarPerson, foddNar, gastLiv, gastNyckel, handlarFas, handlarPlats, rovarPlats, rovarna, stat, klanById, grundvarde, handlarVarde, kgOf, kortTal, rymmer, sakNamn } from '../sim';
+import type { ByteMinne, GastLiv, GastRel, Person, Roll, Skill, Stat, State } from '../sim';
 import { iconImg } from '../ikoner';
 import { esc } from './hjalp';
 import { s, ui } from './lage';
@@ -24,7 +24,7 @@ export interface Gast {
   liv: GastLiv; // livet i hemklanen (steg 4.5.7.7, gastliv.ts): familjen, händelserna, humöret och det hen kan
   blod?: number; // blodet kvar (rövarna, 0–1)
   ligger?: boolean; // har fallit i striden (rövarna, steg 6.6.10)
-  rovare?: Rovare; // rövaren själv: ritas som en figur ur skaparen (steg 6.6.12, ui/manniskor.ts), de andra gästerna som en cirkel
+  rovare?: Person; // rövaren själv: ritas som en figur ur skaparen (steg 6.6.12, ui/manniskor.ts), de andra gästerna som en cirkel
   rel?: { p: Person; r: GastRel; g: number }[]; // relationerna till byborna (handlaren, steg 4.5.7.11): g = hur mycket hen gillar bybon, −1 till 1
 }
 // gästens liv, räknat ur byns frö och hens namn och klan (drar ingen slump)
@@ -65,18 +65,18 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
     return [s.rovare, ...s.rovareFler ?? []].flatMap(r => {
     if (!r) return [];
     const gor = r.gor === 'samlas' ? 'Samlas i skogen' : r.gor === 'kommer' ? 'På väg mot byn' : r.gor === 'vantar' ? 'Väntar utanför byn' : r.gor === 'slass' ? 'Slåss vid förrådet' : 'Flyr', n = r.folk.length;
-    return r.folk.map((q, i) => {
-      const sk = rovarenNu(q.namn, t); // i striden (steg 6.6.10): där striden har hen, och liggande när hen fallit
+    return rovarna(s, r).map((q, i) => {
+      const sk = rovarenNu(q.name, t); // i striden (steg 6.6.10): där striden har hen, och liggande när hen fallit
       return {
-      id: rovarGastId(r.id, i), namn: q.namn, sex: q.sex, sort: r.rad ? 'Anfallare' : 'Rövare', farg: 0x5a5040,
+      id: rovarGastId(r.id, i), namn: q.name, sex: q.sex, sort: r.rad ? 'Anfallare' : 'Rövare', farg: 0x5a5040,
       ...(sk ? { x: sk.x, y: sk.y } : rovarPlats(q, t)), // var och en går för sig (steg 6.6.9)
       rovare: q, gor: sk ? (sk.k.lage === 'dod' ? 'Död' : sk.ligger ? 'Ligger nere' : sk.k.lage === 'flykt' ? 'Flyr' : 'Slåss vid förrådet') : gor, ligger: sk?.ligger,
       fran: klanById(s, r.klan)?.namn,
       rader: [{ namn: 'Flocken', varde: `${n} rövare`, title: `En av ${n} i flocken` }],
-      stats: { styrka: q.st.styrka, uthallighet: q.st.uthallighet, mod: q.st.mod, smidighet: q.st.smidighet }, skills: { narstrid: q.st.skicklighet },
-      bar: [{ ikon: q.vapen, text: VAPEN[q.vapen].namn, title: `Vapnet: ${VAPEN[q.vapen].namn.toLowerCase()}` },
-        ...Object.entries(q.bar ?? {}).map(([k, m]) => ({ ikon: k, text: m > 1 ? String(m) : '', title: `${sakNamn(k)}: taget ur byns förråd` }))], // bytet (steg 6.6.11)
-      handelser: q.anhorig ? [q.anhorig] : [], liv: livFor(s, r.klan, q.namn, q.sex, 'rovare', q.fodd), blod: q.blod, // anhörig till den som hämnas (steg 8.8.4)
+      stats: { styrka: stat(q, 'styrka', s.now), uthallighet: stat(q, 'uthallighet', s.now), mod: stat(q, 'mod', s.now), smidighet: stat(q, 'smidighet', s.now) }, skills: { narstrid: q.skill.narstrid ?? 0 }, // rövaren är en person (steg 9.2.112)
+      bar: [...q.gast?.vapen ? [{ ikon: q.gast.vapen, text: VAPEN[q.gast.vapen].namn, title: `Vapnet: ${VAPEN[q.gast.vapen].namn.toLowerCase()}` }] : [],
+        ...Object.entries(q.gast?.bar ?? {}).map(([k, m]) => ({ ikon: k, text: m > 1 ? String(m) : '', title: `${sakNamn(k)}: taget ur byns förråd` }))], // bytet (steg 6.6.11)
+      handelser: q.gast?.anhorig ? [q.gast.anhorig] : [], liv: livFor(s, r.klan, q.name, q.sex, 'rovare', q.born), blod: q.blod, // anhörig till den som hämnas (steg 8.8.4)
       };
     });
     });

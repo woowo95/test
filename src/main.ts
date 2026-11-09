@@ -1,4 +1,4 @@
-import { torkaTest, storStridNu, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, spar, step, visning, yearNo, State, motgangNu, motgangNasta, motgangDef, varslade, ROVARFLOCK, skickaRovare, skickaHandlare, rovarHinder, handlarHinder, skickaTornado, tornadoHinder, lightLevel } from './sim';
+import { torkaTest, storStridNu, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, spar, step, visning, yearNo, State, motgangNu, motgangNasta, motgangDef, varslade, ROVARFLOCK, skickaRovare, skickaHandlare, rovarHinder, handlarHinder, skickaTornado, tornadoHinder, lightLevel, rovarna } from './sim';
 import { brandKnapp, testSvara } from './ui/interaktion';
 import { testBortaIByn } from './ui/testborta';
 import { $ } from './ui/hjalp';
@@ -132,7 +132,7 @@ $('arenaKnapp').addEventListener('click', oppnaArena);
     const r = b.dataset.flock ? skickaRovare(s, ROVARFLOCK[b.dataset.flock as keyof typeof ROVARFLOCK]) : b.dataset.tornado ? skickaTornado(s) : skickaHandlare(s);
     testSvara(r.text);
     // kameran visar var flocken dök upp (steg 4.5.7.10) och följer den första rövaren in (steg 6.6.12)
-    if (r.ok && b.dataset.flock && s.rovare) { stopFollow(); cam.x = s.rovare.x * TS; cam.y = s.rovare.y * TS; layout(); startFollow(rovarGastId(s.rovare.id, 0), s.rovare.folk[0]?.namn); }
+    if (r.ok && b.dataset.flock && s.rovare) { stopFollow(); cam.x = s.rovare.x * TS; cam.y = s.rovare.y * TS; layout(); startFollow(rovarGastId(s.rovare.id, 0), rovarna(s, s.rovare)[0]?.name); }
     b.classList.remove('tryckt'); void b.offsetWidth; b.classList.add('tryckt');
     testKnappar(); renderPanel(true);
   });

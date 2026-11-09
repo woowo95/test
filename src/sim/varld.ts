@@ -1,5 +1,5 @@
 import { nyaKlaner } from './klaner';
-import { gastAv, nyGast } from './gast';
+import { gastAv, nyGast, nyttGastId } from './gast';
 import { gastNyckel } from './gastliv';
 import { migrateTek } from './teknik';
 import { stepDelning } from './delning';
@@ -243,6 +243,19 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     if (h.smitta) p.smitta = h.smitta;
     s.people.push(p);
     for (const k of ['namn', 'hem', 'klan', 'sex', 'x', 'y', 'handel', 'fodd', 'smitta'] as const) delete h[k];
+  }],
+  [28, 'v518: rövarna är personer bland folket (steg 9.2.112, rovare.ts): flocken minns bara deras id', s => {
+    type Gammal = { namn: string; sex: 'm' | 'k'; st: { styrka: number; uthallighet: number; mod: number; smidighet: number; skicklighet: number }; vapen: import('./strid').Vapen; blod: number; fodd?: number; x?: number; y?: number; spar?: number[]; bar?: Record<string, number>; anhorig?: string };
+    for (const f of [s.rovare, ...(s.rovareFler ?? [])]) {
+      if (!f || !f.folk.some(r => typeof r !== 'number')) continue;
+      f.folk = (f.folk as unknown as Gammal[]).map(r => {
+        const ov = Math.max(0, (r.st.skicklighet - 5) * 2);
+        const p = nyGast(s, { id: nyttGastId(s), namn: r.namn, sex: r.sex, fodd: r.fodd ?? s.now - 30 * DAY, rad: { sort: 'rovare', klan: f.klan, vapen: r.vapen, ...(r.spar ? { spar: r.spar } : {}), ...(r.bar ? { bar: r.bar } : {}), ...(r.anhorig ? { anhorig: r.anhorig } : {}) }, x: r.x ?? f.x, y: r.y ?? f.y, nyckel: gastNyckel(f.klan, r.namn), pot: { styrka: r.st.styrka, uthallighet: r.st.uthallighet, mod: r.st.mod, smidighet: r.st.smidighet }, skill: { narstrid: ov, traff: ov } });
+        p.blod = r.blod;
+        s.people.push(p);
+        return p.id;
+      });
+    }
   }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];

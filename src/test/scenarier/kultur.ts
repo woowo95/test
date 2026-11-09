@@ -1007,14 +1007,14 @@ SCENARIER.rader = {
     // hämnd
     (k.doda ??= []).push({ namn: 'Bror', av: v[1].id, t: s.now });
     SIM.radDygn(s, 'hamnd', k);
-    const f = s.rovare!, mal = f.mal === v[1].id, anh = f.folk.some(r => r.anhorig) || true;
+    const f = s.rovare!, mal = f.mal === v[1].id, anh = SIM.rovarna(s, f).some(r => r.gast?.anhorig) || true;
     const stor = SIM.storRad({ ...f, folk: [...f.folk, ...f.folk, ...f.folk, ...f.folk, ...f.folk] });
     // långt bort: flocken letar hus för hus; byn har inga hus, så de ger sig av utan hen
     f.x = v[1].x + 20; f.y = v[1].y;
     SIM.radSeger(s, f); const letar = f.gor === 'letar';
     SIM.rovarSteg(s, 60); const miste = (s.stat?.hamnd_miste ?? 0) === 1 && f.gor === 'flyr' && !v[1].died;
     // är anfallarna fler än försvararna går de som blir över förbi slagfältet och letar
-    f.gor = 'kommer'; f.letat = undefined; f.folk.push(...f.folk.map(r => ({ ...r, namn: r.namn + ' d.y.' })));
+    f.gor = 'kommer'; f.letat = undefined; for (const r of SIM.rovarna(s, f)) { const q = { ...r, id: SIM.nyttGastId(s), name: r.name + ' d.y.', gast: { ...r.gast! } }; s.people.push(q); f.folk.push(q.id); }
     SIM.borjaStrid(s, f, [v[2]]); const forbi = s.rovareFler?.[0]?.gor === 'letar';
     s.rovareFler = undefined; f.strid = undefined;
     // nära: hämnden tas
