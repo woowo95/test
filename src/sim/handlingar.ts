@@ -109,6 +109,8 @@ const DEF = {
   // när vargar är nära (steg 3.7.15, varg.ts): de svaga gömmer sig i huset, de modiga väntar med vapen vid elden
   gomma: { namn: 'Gömmer sig för vargarna', tecken: '🫣', dygn: true, stilla: true, plats: 'sang', fortsatter: ['varg'] as const },
   forsvar: { namn: 'Väntar på vargarna med vapen', tecken: '🛡️', social: true, skamfri: true, dygn: true, stilla: true, vapen: true, plats: 'elden', radie: 2.2, fortsatter: ['varg'] as const },
+  // mot rövare (steg 9.2.74, rovare.ts): man väntar vid förrådet, dit rövarna är på väg, och platsen sätts i rovarSkydd
+  forsvarRovare: { namn: 'Väntar på rövarna med vapen', tecken: '🛡️', social: true, skamfri: true, dygn: true, stilla: true, vapen: true, fortsatter: ['varg'] as const },
   sova: { namn: 'Sover', slag: 'vila', under: { go: 'går och lägger sig' }, vila: true, stilla: true, plats: 'sang' },
   elda: { namn: 'Lägger ved på elden', yrke: 'Eldvaktare', slag: 'elda', under: { go: 'hämtar ved', back: 'bär ved till elden' }, ger: 'ved' },
   tanda: { namn: 'Försöker tända elden', yrke: 'Eldvaktare', slag: 'elda' },

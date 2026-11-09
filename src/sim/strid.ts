@@ -75,6 +75,8 @@ export const STRID = balans('strid', {
   krypNara: 1, // den som kryper stannar så här många rutor från vännen hen kryper mot (steg 3.7.19) ...
   krypBlod: 0.5, // ... och lämnar så här mycket släpspår per ruta i byn
   kropp: 0.6, // man kommer inte närmare än så här (rutor) till en fiende som står: man går runt hen (steg 3.7.20)
+  van: 0.5, // ... och inte närmare än så här till en på samma sida, i striden och på flykten (steg 9.2.78)
+  flyBort: 6, // den som flyr mot en plats (Kampe.fly) har lämnat striden så här många rutor från närmaste fiende som står (steg 9.2.76)
   fart: 1.6, // rutor i sekunden för en frisk vuxen som springer i strid (gånger djurets fart)
   traffBas: 0.6, // chansen att träffa någon som är lika skicklig
   traffPer: 0.03, // ... och så här mycket mer per poäng skicklighet över motståndarens
@@ -293,6 +295,7 @@ export interface Kampe {
   ligger?: number; bocker?: number; later?: number; // ... sekunder kvar på marken och kvar av att böja sig ner, den hen låter resa sig
   ledare?: 'fram' | 'bak'; skyddar?: number; // steg 3.7.12: byns ledare (går först eller står bakom), och ledaren (kämpens id) som vännen skyddar
   kryper?: number; // steg 3.7.19: hen kan inte gå och kryper undan; rutorna hen krupit
+  fly?: { x: number; y: number }; // steg 9.2.76: dit hen flyr (rutor på platsen), i stället för mot närmaste kanten
 }
 // en rad i loggen: tiden (sekunder), vem (a) och mot vem (b), del, skada och grad, och det kläderna tog
 export interface StridRad { t: number; h: Handelse; a?: number; b?: number; d?: Kroppsdel; k?: SkadaTyp; g?: number; v?: Vapen; kl?: string; kast?: 1 }
@@ -385,6 +388,10 @@ const ivagen = (st: Strid, k: Kampe, mx: number, my: number) => st.kampar.filter
 function fri(st: Strid, k: Kampe, x: number, y: number, fi: Kampe[]) {
   if (iVagg(st, x, y)) return false;
   for (const o of fi) { const d = Math.hypot(o.x - x, o.y - y); if (d < STRID.kropp && d < dist(k, o) - 1e-9) return false; } // bort från en som står för nära går alltid
+  for (const o of st.kampar) { // en på samma sida som står eller flyr: man står inte i varandra (steg 9.2.78)
+    if (o === k || o.sida !== k.sida || !(iStrid(o) || o.lage === 'flykt')) continue;
+    const d = Math.hypot(o.x - x, o.y - y); if (d < STRID.van && d < dist(k, o) - 1e-9) return false;
+  }
   return true;
 }
 // syns punkten bakom väggarna (en rak linje utan vägg)?
@@ -648,8 +655,14 @@ export function stridSteg(st: Strid) {
     if (k.blod < HALSA.blodDod) { falla(st, k, 'dod'); continue; }
     if (k.lage === 'nere' && k.kryper !== undefined) { krypa(st, k, dt); continue; }
     if (k.lage === 'flykt') { // springer mot närmaste kanten och är borta när hen når den
-      const ut = [k.x, st.w - k.x, k.y, st.h - k.y], i = ut.indexOf(Math.min(...ut));
       const lang = farten(k) * dt;
+      if (k.fly) { // eller mot sin plats (hus eller eld), och har lämnat striden en bit bort från fienderna (steg 9.2.76)
+        ga(st, k, k.fly.x, k.fly.y, lang);
+        const fi = st.kampar.filter(o => o.sida !== k.sida && iStrid(o)), nara = fi.length ? Math.min(...fi.map(o => dist(k, o))) : Infinity;
+        if (nara >= STRID.flyBort || Math.hypot(k.fly.x - k.x, k.fly.y - k.y) < 0.5 || Math.min(k.x, st.w - k.x, k.y, st.h - k.y) <= 0.31) { k.lage = 'borta'; st.logg.push({ t: st.t, h: 'borta', a: k.id }); }
+        continue;
+      }
+      const ut = [k.x, st.w - k.x, k.y, st.h - k.y], i = ut.indexOf(Math.min(...ut));
       ga(st, k, i === 0 ? 0 : i === 1 ? st.w : k.x, i === 2 ? 0 : i === 3 ? st.h : k.y, lang);
       if (Math.min(k.x, st.w - k.x, k.y, st.h - k.y) <= 0.31) { k.lage = 'borta'; st.logg.push({ t: st.t, h: 'borta', a: k.id }); }
       continue;
@@ -762,7 +775,10 @@ export function stridText(st: Strid, r: StridRad): string {
     case 'flykt': return `${a} vänder och flyr.`;
     case 'borta': return `${a} har flytt från platsen.`;
     case 'avstar': return `${a} vågar inte och drar sig undan utan strid.`;
-    case 'leder': return `${a} är byns ledare och går först. Det ger de andra mod.`;
+    case 'leder': { // byns ledare, eller rövarnas (steg 9.2.79)
+      const k = st.kampar.find(q => q.id === r.a);
+      return k?.pid !== undefined ? `${a} är byns ledare och går först. Det ger de andra mod.` : k?.sida === 1 && !k.djur ? `${a} leder rövarna och går först. Det ger de andra mod.` : `${a} leder och går först. Det ger de andra mod.`;
+    }
     case 'kommer': return `${a} kommer springande och ger sig in i striden.`;
     case 'skyddar': return `${a} kliver emellan och tar slaget som var menat för ${b}, ledaren.`;
     case 'ledareFaller': return `Ledaren ${a} har fallit, och modet sjunker hos de andra.`;

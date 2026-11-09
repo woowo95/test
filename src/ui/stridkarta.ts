@@ -40,7 +40,7 @@ export const liggerK = (k: Kampe) => k.lage === 'nere' || k.lage === 'dod' || !!
 export function iStridenNu(pid: number, nu: number) {
   const v = striderVid(nu).find(q => q.st.kampar.some(x => x.pid === pid));
   const k = v?.st.kampar.find(x => x.pid === pid);
-  if (!v || !k || k.lage === 'borta') return undefined;
+  if (!v || !k || k.lage === 'borta' || v.g.fri?.includes(pid)) return undefined; // den som lämnat striden står där hen gick (steg 9.2.77)
   const mal = k.mal !== undefined ? v.st.kampar.find(x => x.id === k.mal) : undefined;
   return { k, ...kampePlats(v.g, k), mot: mal ? kampePlats(v.g, mal) : undefined, ligger: liggerK(k) };
 }
