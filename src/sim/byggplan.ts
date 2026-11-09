@@ -1,3 +1,4 @@
+import { husNytt } from './byggnad';
 import { faltAt } from './odling';
 import { bynsMitt, omrade, tillHoljet } from './omrade';
 import { ALDER, ageOf, byId, count, familjOf, forstaGang, getRel, living, log, stat } from './folk';
@@ -436,7 +437,7 @@ export function kopHus(s: State, h: Hus, ag: number, bud?: Person) {
   for (const w of val) if (w.m !== kopare) flytta(s, { k: w.k, n: w.n, t: w.t }, personPart(s, w.m), M);
   const betal = val.map(w => ({ k: w.k, n: w.n, t: w.t }));
   genomfor(s, M, G, [{ k: 'hus', n: 1, hus: h.id, varde: pris }], betal, 'hus');
-  h.ag = ag; h.fn = 'familjehus'; h.tom = undefined; h.rumFn = undefined; h.namn = husNamn(kopare.name); touch(s); count(s, 'husKopt');
+  h.ag = ag; h.fn = 'familjehus'; h.tom = undefined; h.rumFn = undefined; h.namn = husNamn(kopare.name); husNytt(s, h, 'ag', `Nyss köpt av ${kopare.name}.`); touch(s); count(s, 'husKopt');
   return true;
 }
 // ett hus byter ägare när köparen och säljaren möts (som i alla stora byten): varje timme tills de gör det, högst PLAN.husVanta dygn.

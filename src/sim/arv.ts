@@ -9,6 +9,7 @@
 // Husen delas ut först, det mest värda först, även till en arvinge som redan har ett hus, och får den nya ägarens namn
 // (steg 2.12.5). Den som inte vill ha sitt kan längre fram byta bort, sälja eller riva det (steg 7.2.5).
 // Den som flyttar tar med sig så mycket av sitt eget som hen orkar bära, det mest värda för vikten först; resten blir byns.
+import { husNytt } from './byggnad';
 import { tingOf } from './agande';
 import { count, isKin, isParent, living, log } from './folk';
 import { kronika } from './historik';
@@ -39,7 +40,7 @@ export function inherit(s: State, p: Person) {
   const hus = housesOf(s).filter(q => q.ag === p.id).sort((a, b) => husVarde(s, b) - husVarde(s, a) || a.id - b.id);
   for (const h of hus) {
     const i = val.indexOf(Math.min(...val));
-    fick[i].push(h.namn); h.ag = heirs[i].id; val[i] += husVarde(s, h);
+    fick[i].push(h.namn); h.ag = heirs[i].id; husNytt(s, h, 'ag', `Nyss ärvt av ${heirs[i].name}.`); val[i] += husVarde(s, h);
     if (h.namn === husNamn(p.name)) h.namn = husNamn(heirs[i].name);
   }
   const tools = tingOf(s).filter(t => t.agare === p.id).sort((a, b) => tingVarde(b) - tingVarde(a) || a.id - b.id);

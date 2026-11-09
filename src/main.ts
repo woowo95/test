@@ -14,7 +14,7 @@ import { drawAnimals, drawPlants } from './ui/vaxter';
 import { drawFlackar } from './ui/smuts';
 import { addTalks, drawPeople, posOf } from './ui/manniskor';
 import { drawHandel } from './ui/handel';
-import { renderPanel } from './ui/panel';
+import { renderPanel, selectPerson, visa } from './ui/panel';
 import { renderRaden } from './ui/raden';
 import { renderPorts, startFollow, stopFollow } from './ui/portratt';
 import { gaster, rovarGastId } from './ui/gaster';
@@ -266,4 +266,4 @@ async function boot() {
 }
 boot();
 // byn och kartan tillgängliga för felsökning i konsolen
-(window as any).__byn = { get s() { return s; }, DAY, HOUR, getMap, coverOf, groundOf, get world() { return world; }, get app() { return app; } };
+(window as any).__byn = { get s() { return s; }, ui, selectPerson, visa, DAY, HOUR, getMap, coverOf, groundOf, get world() { return world; }, get app() { return app; } };

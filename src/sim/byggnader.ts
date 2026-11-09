@@ -1,3 +1,4 @@
+import { husNytt } from './byggnad';
 import { KROPP, alive, byId, count, familjOf, living, log } from './folk';
 import { Hus, MATERIAL, Rum, bitById, bitsOf, gridOf, housesOf, husById, roofed, shelterOf, touch } from './byggnad';
 import { ageIndex, kallTid } from './tid';
@@ -347,7 +348,7 @@ export function stepByggnader(s: State) {
     if (h.ag === undefined) continue;
     const o = byId(s, h.ag);
     if (o && alive(o)) continue;
-    h.ag = undefined; log(s, `${h.namn} har ingen ägare längre och blir byns.`, 'world');
+    h.ag = undefined; husNytt(s, h, 'ag', 'Har nyss blivit byns.'); log(s, `${h.namn} har ingen ägare längre och blir byns.`, 'world');
   }
   funktionsbyte(s);
   verkstadensHyllor(s);
@@ -380,6 +381,7 @@ function nyttNamn(s: State, h: Hus, fn: Fn, a: Akut) {
 // ett förrådshus byter aldrig funktion, så lagerplatsen behöver inte tas bort här
 function bytFn(s: State, h: Hus, fn: Fn, slag?: 'mat' | 'material') {
   const fore = h.namn;
+  husNytt(s, h, 'fn', `Var nyss ${fore.toLowerCase()}.`);
   h.fn = fn; h.slag = slag; h.tom = undefined; h.rumFn = undefined;
   h.namn = nyttNamn(s, h, fn, { v: 0, plats: 0, slag, ag: h.ag });
   touch(s); count(s, 'bytt_' + fn);

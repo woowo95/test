@@ -1,3 +1,4 @@
+import { husNytt } from './byggnad';
 import { gen, hans } from './ord';
 import { upplev } from './uppvaxt';
 import { ALDER, ageOf, count, doingAct, forstaGang, livet, living, log } from './folk';
@@ -262,7 +263,7 @@ function slutUt(s: State, h: Hus, p: Person) {
   }
   h.x = ut.x; h.y = ut.y; h.w = ut.w; h.h = ut.h; h.ut = undefined;
   if (fnOf(h).lager) for (const z of zonesOf(s)) if (z.hus === h.id) { z.x = h.x + 1; z.y = h.y + 1; z.w = h.w - 2; z.h = h.h - 2; changed(s); }
-  count(s, 'utbyggt'); touch(s);
+  count(s, 'utbyggt'); touch(s); husNytt(s, h, 'ut', 'Nyss utbyggt.');
   log(s, `${h.namn} är utbyggt.`, 'world', [p.id]);
 }
 // en vägg som just blivit klar: den som står där kliver åt sidan, och det som ligger där (stackar och redskap) flyttas
