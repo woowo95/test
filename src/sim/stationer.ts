@@ -917,7 +917,7 @@ export function ledigPlats(s: State, p: Person) {
   let best: { x: number; y: number } | undefined, bd = Infinity;
   for (const t of borden) for (const q of bordPlatser(t)) {
     const d = Math.hypot(q.x + 0.5 - p.x, q.y + 0.5 - p.y) + (inneHellre && !roofed(s, q.x, q.y) ? STATION.bordUte : 0);
-    if (d < bd && !tagen.has(q.y * W + q.x)) { bd = d; best = { x: q.x + 0.5, y: q.y + 0.5 }; }
+    if (d < bd && !tagen.has(q.y * W + q.x) && !blocked(s, q.x + 0.5, q.y + 0.5)) { bd = d; best = { x: q.x + 0.5, y: q.y + 0.5 }; } // inte en plats där något står i vägen (då flyttade freeNear i val.ts en bit från bordet)
   }
   return best;
 }
@@ -1086,6 +1086,8 @@ function utan<R>(s: State, t: Station, f: () => R): R {
 }
 // stationen t står på en ny plats: redskapen som hör till den följer med
 function flytta(s: State, t: Station, at: { x: number; y: number; rot?: 1; inne?: 1 }) {
+  // den som sitter vid bordet och äter reser sig när bordet flyttas, och väljer en ny plats (steg 9.4.8)
+  if (stationDef(t.k)?.platser) { const forr = new Set(bordPlatser(t).map(q => q.y * W + q.x)); for (const q of living(s)) if (q.task?.act === 'maltid' && forr.has(Math.floor(q.task.ty) * W + Math.floor(q.task.tx))) q.task.until = s.now; }
   if (t.delar?.length) { const dx = at.x - t.x, dy = at.y - t.y; t.delar = (at.rot ? 1 : 0) !== (t.rot ? 1 : 0) ? delarIRad(t.k, at.x, at.y, at.rot) : t.delar.map(q => ({ ...q, x: q.x + dx, y: q.y + dy })); } // delarna följer med (steg 9.4.1)
   t.x = at.x; t.y = at.y;
   if (at.rot) t.rot = 1; else delete t.rot;

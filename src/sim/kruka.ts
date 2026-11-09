@@ -17,7 +17,7 @@ export interface KrukaDef { namn: string; lera: number; rymmer: number; vikt: nu
 export const KRUKOR = {
   liten: { namn: 'Liten lerkruka', lera: 1, rymmer: 2, vikt: 0.5, min: 3 },
   mellan: { namn: 'Mellanstor lerkruka', lera: 2, rymmer: 5, vikt: 1, min: 4 },
-  stor: { namn: 'Stor lerkruka', lera: 4, rymmer: 10, vikt: 2, min: 6 },
+  stor: { namn: 'Stor lerkruka', lera: 4, rymmer: 10, vikt: 2, min: 4 },
 } satisfies Record<string, KrukaDef>;
 export type KrukSlag = keyof typeof KRUKOR;
 export const KRUK_LIST = Object.keys(KRUKOR) as KrukSlag[];

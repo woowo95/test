@@ -2532,7 +2532,7 @@ SCENARIER.hantverk7 = {
   text: 'Steg 7.5–7.7: stationerna på nivå 2 och örtköket gör saker ur registret TILLVERKA, snaran och gropen fångar, härden blir en eld inne, de nya plaggen finns, linet rötas på torkställningen, och yrkena har fått sina titlar',
   kor: () => {
     const s = SIM.createState(6, START), p = SIM.living(s)[0];
-    const rader = SIM.TILLVERKA_LIST.every(k => { const d = SIM.TILLVERKA[k]; return !!SIM.SAKER[d.ger] && !!SIM.ACTS[d.act] && d.n >= 1; });
+    const rader = SIM.TILLVERKA_LIST.every(k => { const d = SIM.TILLVERKA[k]; return (!!SIM.SAKER[d.ger] || d.ger in SIM.VATSKOR) && !!SIM.ACTS[d.act] && d.n >= 1; });
     const ortkok = SIM.STATIONER.ortkok.gor.length >= 4 && SIM.RECEPT.salva.av!.rolleka === 2 && SIM.RECEPT.lader.av!.talg === 1;
     const sn = SIM.sattUt(s, p, 'snara')!, ute = !!sn && !SIM.iByn(s, sn.x, sn.y);
     sn.fisk = { vilt: 1 }; sn.n = 1; SIM.vittja(s, p, sn);
@@ -2544,7 +2544,7 @@ SCENARIER.hantverk7 = {
     const q = SIM.living(s)[1]; p.tag = q.tag = 'Slaktare'; p.skill.jakt = 90;
     const mast = SIM.yrkeNamn(s, p) === 'Mästerslaktare' && SIM.yrkeNamn(s, q) === 'Slaktare';
     return [
-      ['varje rad i TILLVERKA har en sak och en handling', rader],
+      ['varje rad i TILLVERKA har en sak (eller en vätska, steg 9.5.8) och en handling', rader],
       ['örtköket gör minst fyra saker, och recepten stämmer', ortkok],
       ['snaran sätts utanför byn och vittjas', ute && fick],
       ['de nya plaggen finns, på rätt plats', plagg && byxor && sko],
