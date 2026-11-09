@@ -1,3 +1,4 @@
+import { gasterNu, gastLever } from './gast';
 import { han, honom } from './ord';
 import { personHand } from './personlogg';
 import { utanforByn } from './omrade';
@@ -467,7 +468,7 @@ export function vardBehov(s: State, q: Person, g: Person) {
   const blod = sk.some(w => stor(w) && w.b > 0);
   const forband = sk.some(w => stor(w) && !w.f && w.inf === undefined) && getable(s, g, 'mossa') >= 1;
   const rengor = sk.some(w => w.inf !== undefined && w.inf < HALSA.kallbrand && !((w.ren ?? 0) > s.now));
-  const bara = g !== q && !kanGa(q) && !hemma(s, q) && q.task?.act !== 'buren';
+  const bara = g !== q && !q.gast && !kanGa(q) && !hemma(s, q) && q.task?.act !== 'buren';
   const amputera = g !== q && sk.some(w => (w.inf ?? 0) >= HALSA.kallbrand && DEL[w.d].ute) && getable(s, g, 'flintkniv') >= 1;
   return blod || forband || rengor || bara || amputera ? { blod, forband, rengor, bara } : undefined;
 }
@@ -483,7 +484,7 @@ export function vardVal(s: State, p: Person, sjalv: boolean): { spot: { x: numbe
   if (ageOf(p, s.now) < ALDER.vuxen || !kanGa(p) || handighet(p) < HALSA.vardHand) return undefined;
   // rätten till vård (steg 9.5.9): den närmaste, men sederna och styret flyttar fram somliga (vardRatt)
   let best: Person | undefined, bd = Infinity;
-  for (const q of living(s)) {
+  for (const q of [...living(s), ...gasterNu(s).filter(g => g.gast!.sort !== 'rovare')]) { // gästerna vårdas också, utom rövarna (steg 9.2.113)
     if (q === p || !q.skador?.length && !q.svimmat) continue;
     const d = Math.hypot(q.x - p.x, q.y - p.y);
     if (d >= HALSA.vardR || d / vardRatt(s, p, q) >= bd || !vardBehov(s, q, p) || vardas(s, q, p)) continue;
@@ -514,7 +515,7 @@ export function vardMal(s: State, tk: Task) {
 // klart (KLAR i steg.ts): såren trycks på, förband läggs och infekterade sår rengörs. Den som inte kan gå bärs sedan hem
 export function vardKlar(s: State, p: Person, t: Task) {
   const q = byId(s, t.ref);
-  if (!q || !alive(q) || Math.hypot(q.x - p.x, q.y - p.y) > 2) return;
+  if (!q || !(alive(q) || gastLever(q)) || Math.hypot(q.x - p.x, q.y - p.y) > 2) return;
   const b = vardBehov(s, q, p);
   if (!b) return;
   for (const w of q.skador ?? []) {

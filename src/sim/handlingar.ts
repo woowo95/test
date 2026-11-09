@@ -84,6 +84,7 @@ interface ActDef {
   radie?: number; // avstånd från elden, för plats 'elden'
   fortsatter?: readonly Larmslag[]; // larmen som inte avbryter handlingen (brand.ts, tornado.ts, varg.ts)
   nodFri?: true; // nöden (toa) avbryter den inte (steg.ts)
+  gast?: readonly import('./gast').GastSort[]; // en gästs egen handling (steg 9.2.113, gastvardag.ts): bara de sorterna gör den, aldrig byborna
 }
 export type Larmslag = 'brand' | 'tornado' | 'varg';
 // avbryter larmet om en eldsvåda, en tornado eller vargar handlingen? (kodgenomgången 3.10.25: tre listor med namn blev en
@@ -235,6 +236,13 @@ const DEF = {
   strid: { namn: 'Slåss', tecken: '⚔️', stilla: true, fortsatter: ['brand', 'tornado', 'varg'] as const, nodFri: true }, // steg 3.7.2 (strid.ts): står kvar i striden medan de andra behoven väntar
   bjornjakt: { namn: 'Jagar björn', slag: 'jaga', ger: 'bjorn', tungt: true, fortsatter: ['brand', 'tornado', 'varg'] as const }, // steg 6.6.6 (bjorn.ts): en stor grupp med spjut, och den fällda björnen styckas och bärs hem
   vargjakt: { namn: 'Jagar varg', slag: 'jaga', ger: 'varg', tungt: true, fortsatter: ['brand', 'tornado', 'varg'] as const }, // steg 3.7.1 (varg.ts): ledaren samlar jägare, och den fällda vargen bärs hem
+  // gästernas egna handlingar (steg 9.2.113, gastvardag.ts): sorten är kravet
+  gastKommer: { namn: 'Går till byn', tecken: '🚶', gast: ['handlare', 'rovare', 'framling'] as const },
+  gastVantar: { namn: 'Väntar', tecken: '⏳', stilla: true, gast: ['handlare', 'rovare', 'framling'] as const },
+  gastHandla: { namn: 'Handlar vid filten', slag: 'prata', stilla: true, gast: ['handlare'] as const },
+  plundra: { namn: 'Plundrar byn', tecken: '💰', gast: ['rovare'] as const },
+  gastFly: { namn: 'Flyr från byn', tecken: '🏃', gast: ['rovare', 'framling'] as const },
+  gaHem: { namn: 'Går hem', tecken: '🚶', gast: ['handlare', 'rovare', 'framling'] as const },
   skrika: { namn: 'Skriker och gråter', tecken: '😭', ikon: 'utb1', dygn: true, stilla: true }, // barnens (steg 3.2.4)
 } satisfies Record<string, ActDef>;
 

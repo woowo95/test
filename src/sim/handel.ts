@@ -326,6 +326,14 @@ export function handlarTornado(s: State, h: Handlare, dod: boolean, del: number,
   log(s, `Tornadon kastade handlaren ${hp(s, h).name} ${till ? 'en bit bort' : 'åt sidan'}${sonder ? ` och ${sonder} av varorna i packningen gick sönder` : ''}. Hen går hem.`, 'world');
 }
 
+// handlaren dog av svält, kyla eller sjukdom (gastvardag.ts, steg 9.2.113): packningen tas ihop, besöket tar slut och nästa
+// handlare kommer en annan gång. Kroppen ligger kvar bland folket
+export function handlarenDog(s: State, h: Handlare) {
+  packaIhop(s, h);
+  s.handlare = undefined;
+  s.nastaHandlare = s.now + intervall(s) * DAY;
+}
+
 // var handlaren är vid tiden t när hen går: rakt från där hen började mot målet (hen går runt det som är i vägen, men det
 // syns inte i byn). Bilden frågar samma sak med sin tid
 export function handlarPlats(s: State, h: Handlare, t: number) {

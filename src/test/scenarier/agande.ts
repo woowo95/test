@@ -2440,3 +2440,37 @@ SCENARIER.rovarperson = {
     ];
   },
 };
+
+SCENARIER.gastvardag = {
+  text: 'Gästernas vardag (steg 9.2.113, gastvardag.ts): handlaren blir hungrig och äter ur sin egen packning, somnar när hen väntar och ingen handlar och vaknar utvilad, vårdas av en bybo när hen har ett sår som blöder, och gör gästernas egna handlingar ur registret (sorten är kravet, och byborna gör dem aldrig)',
+  kor: () => {
+    const s = createState(6, START); rikBy(s);
+    const sk = SIM.skickaHandlare(s), h = s.handlare!, p = s.people.find(q => q.id === h?.id)!;
+    // hungrig: äter en portion ur packningen, och byns förråd rörs inte
+    const mat0 = SIM.foodOf(s);
+    p.hunger = 0.2; p.naring = undefined;
+    step(s, 5);
+    const at = p.hunger > 0.3 && (p.gast!.mat ?? 0) === SIM.GASTVARD.matsack - 1 && SIM.foodOf(s) === mat0;
+    // trött medan hen väntar på kvällen: somnar, och vaknar när vilan är full
+    h.fas = 'vantar'; h.kvall = s.now + 30 * HOUR; p.rest = 0.2;
+    step(s, 5);
+    const somnar = p.gast!.sover === 1 && p.task?.act === 'sova';
+    for (let i = 0; i < 9 * 60 && p.gast!.sover; i++) step(s, 60);
+    const vaknar = !p.gast!.sover && p.rest >= SIM.GASTVARD.vaken - 0.01 && p.task?.act === 'gastVantar';
+    // ett sår som blöder: en bybo går för att vårda hen
+    p.skador = [{ d: 'armV', k: 'skarsar', g: 0.5, b: 1 }];
+    const by = living(s)[0]; p.x = by.x + 2; p.y = by.y; // handlaren står mitt i byn
+    const v = living(s).map(q => SIM.vardVal(s, q, false)).find(x => x?.ref === p.id);
+    const vardas = !!v;
+    // handlingarna: handlarens är hens, rövarens är inte hens, och ingen bybo får göra dem
+    const egna = SIM.kanGora(p, 'gastHandla') && !SIM.kanGora(p, 'plundra') && !living(s).some(q => SIM.kanGora(q, 'gaHem'));
+    return [
+      [`handlaren kommer (${sk.text})`, sk.ok],
+      [`hen äter ur sin packning när hen är hungrig (mättnaden ${p.hunger.toFixed(2)}, ${p.gast!.mat} portioner kvar), och byns mat rörs inte`, at],
+      ['hen somnar när hen väntar och är trött', somnar],
+      [`och vaknar utvilad (vilan ${p.rest.toFixed(2)})`, vaknar],
+      [`en bybo går för att vårda handlarens sår (${v?.why ?? 'ingen'})`, vardas],
+      ['gästernas handlingar kräver sorten, och byborna gör dem aldrig', egna],
+    ];
+  },
+};

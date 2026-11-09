@@ -16,9 +16,10 @@ export const GASTSORTER = {
   framling: { namn: 'Främling' },
 } as const;
 export type GastSort = keyof typeof GASTSORTER;
+// mat är portionerna kvar i packningen och sover att gästen sover (steg 9.2.113, gastvardag.ts).
 // vapen, bar, spar, pk och anhorig gäller rövarna (steg 9.2.112, rovare.ts): vapnet hen kom med, bytet hen bär, vägen för bilden
 // (tid och plats efter varandra), rutorna kvar på vägen och rutan hen hittat vägen till och vems anhörig hen är när flocken hämnas
-export interface GastRad { sort: GastSort; klan?: number; hem?: string; vapen?: import('./strid').Vapen; bar?: Record<string, number>; spar?: number[]; path?: number[]; pk?: number; anhorig?: string }
+export interface GastRad { sort: GastSort; klan?: number; hem?: string; vapen?: import('./strid').Vapen; bar?: Record<string, number>; spar?: number[]; path?: number[]; pk?: number; anhorig?: string; mat?: number; sover?: 1 }
 
 // lever gästen och är kvar på kartan
 export const gastLever = (p: Person) => !!p.gast && p.died === undefined && p.left === undefined;

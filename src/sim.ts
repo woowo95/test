@@ -43,6 +43,7 @@ export * from './sim/pynt';
 export * from './sim/byte';
 export * from './sim/handel';
 export * from './sim/gast';
+export * from './sim/gastvardag';
 export * from './sim/handelsber';
 export * from './sim/klaner';
 export * from './sim/rovare';

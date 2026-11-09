@@ -1,3 +1,4 @@
+import { GASTVARD, gastVardag } from './gastvardag';
 import { husKlaraTimme } from './bygg';
 import { personHand } from './personlogg';
 import { hamtaForst, hamtat } from './paborjat';
@@ -333,6 +334,8 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
       if (n && others.length) { count(s, 'samtal', n); if (p.task && !ACTS[p.task.act].social) p.pratArbete = (p.pratArbete ?? 0) + n; } // samtalen under arbetet (steg 8.1.12)
     }
   }
+  // gästernas vardag (steg 9.2.113, gastvardag.ts): värmen räknas som en bybos, men reskläderna tar det mesta av kylan
+  gastVardag(s, dtSec, g => { const v = varmeDelar(s, g, coldRate, inRum, temp); v.kyla *= 1 - GASTVARD.klad; return nyVarme(g.warm, v, dtSec / HOUR_S); });
   pratMedHandlare(s, dtSec, events); // småprat med handlaren (steg 4.5.4.15, handel.ts)
   // samtalen visas utspridda över slaget
   if (events) for (let i = e0; i < events.length; i++) events[i].t = t0 + (i - e0 + 0.5) / (events.length - e0) * dtSec * SEC;
