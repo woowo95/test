@@ -1873,6 +1873,39 @@ SCENARIER.rovargang = {
   },
 };
 
+SCENARIER.rovarbud = {
+  text: 'Budbäraren (steg 9.2.117): när en rövarflock väntar utanför byn och en vuxen som kan slåss är långt borta och inte hört ropet, springer den närmaste som har larmet och hämtar hen, och ropet sprids från budbäraren på vägen, så att den som är långt bort får larmet före anfallet',
+  kor: () => {
+    const s = createState(6, START); klockan(s);
+    for (const c of SIM.klanerOf(s)) c.inst = -60;
+    const z = SIM.zoneOf(s)!, m = { x: z.x + z.w / 2, y: z.y + z.h / 2 }, vt = SIM.vattenNu(s);
+    const vuxna = living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vaktFran && SIM.ageOf(p, s.now) < SIM.ALDER.gammal && !SIM.isSick(p, s.now));
+    const borta = vuxna[vuxna.length - 1];
+    // hen arbetar långt bort, på land, utom hörhåll
+    let plats: { x: number; y: number } | undefined;
+    for (let r = 34; r < 50 && !plats; r += 2) for (let i = 0; i < 64 && !plats; i++) { const v = i * Math.PI / 32, x = Math.floor(m.x + Math.cos(v) * r), y = Math.floor(m.y + Math.sin(v) * r); if (x > 1 && y > 1 && x < SIM.W - 2 && y < SIM.H - 2 && vt[y * SIM.W + x] !== SIM.T.Vatten && !SIM.bitAt(s, x, y) && SIM.findPath(SIM.groundOf(s), m.x, m.y, x + 0.5, y + 0.5)) plats = { x: x + 0.5, y: y + 0.5 }; }
+    if (!plats) return [['en plats långt bort på land', false]];
+    Object.assign(borta, plats); borta.task = { act: 'samla', phase: 'do', tx: borta.x, ty: borta.y, until: s.now + 4 * HOUR, carry: 0 };
+    const avstand = Math.hypot(borta.x - m.x, borta.y - m.y);
+    // flocken väntar utanför byn och har setts; alla utom hen har larmet
+    SIM.rovarnaKommer(s, 2); const f = s.rovare!; SIM.stallUpp(s, f, m.x - (borta.x - m.x) / avstand * 22, m.y - (borta.y - m.y) / avstand * 22); f.gor = 'vantar'; f.lurat = true; f.sedd = s.now; f.gissning = 2; f.till = s.now + 20 * SIM.MIN;
+    for (const p of living(s)) if (p !== borta) { p.larm = { t: s.now, vad: 'rovare', storlek: 2, led: 0 }; p.task = undefined; }
+    const fore = !!borta.larm;
+    let bud: string | undefined, iTid = false, budAct = false;
+    for (let i = 0; i < 2000 && s.rovare?.gor === 'vantar'; i++) {
+      step(s, 2);
+      if (s.rovare?.bud && !bud) bud = byId(s, s.rovare.bud.av)?.name;
+      if (living(s).some(p => p.task?.act === 'budRovare')) budAct = true;
+      if (borta.larm?.vad === 'rovare' && !iTid) iTid = s.rovare?.gor === 'vantar';
+    }
+    return [
+      [`den som arbetar ${avstand.toFixed(0)} rutor bort har inte hört ropet från början`, !fore],
+      [`en budbärare springer (${bud ?? 'ingen'}) med handlingen "${SIM.ACTS.budRovare.namn}"`, !!bud && budAct],
+      [`${borta.name} får larmet innan flocken anfaller (${s.stat?.rovarBudRop ?? 0} rop på vägen)`, iTid && (s.stat?.rovarBudRop ?? 0) > 0],
+    ];
+  },
+};
+
 SCENARIER.rovarforsvar = {
   text: 'Steg 9.2.74–9.2.80 och 9.2.116: försvaret mot rövarna. Ålder, mod och hälsa delar folket i kämpar, hjälpare (en bit bakom) och gömda. De som försvarar väntar vid förrådet ("Väntar på rövarna med vapen"), också när förrådet ligger tolv rutor från elden, och valet väger modet, rövarna mot dem som står emot, hälsan och barnen, så att de flesta friska och modiga vuxna står emot en liten flock. I striden står var och en där hen var, den som flyr springer mot sitt hus eller elden och är fri medan striden pågår, ingen står i en annan, rövarnas ledare "leder rövarna" (testknappen prövas i scenariot rovartest)',
   kor: () => {
