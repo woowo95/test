@@ -465,6 +465,8 @@ function healthStep(s: State, p: Person, a: number, ai: number, dtSec: number) {
 // dödsorsaken för varje sjukdom (steg 9.5.1): den heter som raden, och svampförgiftningen som förut
 const SJUK_DOD: Record<SjukId, Dodsorsak> = { magsjuka: 'magsjuka', matforgiftning: 'matforgiftning', svampforgiftning: 'svamp', forkylning: 'forkylning', lunginflammation: 'lunginflammation', massling: 'massling', koppor: 'koppor' };
 // hur långt graviditeten gått, 0–1 (steg 8.1.11), eller inget
+// tiden kvar tills barnet föds (ms), för panelen (steg 9.2.70)
+export const gravidKvar = (p: Person, now: number) => p.pregnantSince === undefined ? undefined : Math.max(0, p.pregnantSince + STEG.dragtid * DAY - now);
 export const gravidDel = (p: Person, now: number) => p.pregnantSince === undefined ? undefined : Math.min(1, (now - p.pregnantSince) / (STEG.dragtid * DAY));
 // graviditet: en kvinna med partner kan bli gravid; viljan styrs av hur många byn är, maten och sederna
 function pregnancy(s: State, p: Person, a: number, pop: number, dtSec: number) {

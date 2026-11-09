@@ -95,15 +95,16 @@ export function relWord(p: Person, q: Person, op: number) {
 export const sickNow = (p: Person) => isSick(p, s.now);
 // de små symbolerna vid namnet (steg 3.10.5): ledaren och den som är skadad, med symbolen för den
 // svåraste skadan. namn = det som står vid musen, ikon = bildens nyckel i ikoner.ts
-const MARKEN: { har: (p: Person) => boolean; namn: (p: Person) => string; forkl: string; ikon: (p: Person) => string }[] = [
+// oppnar = personens flik som ett tryck på symbolen öppnar (steg 9.2.70)
+const MARKEN: { har: (p: Person) => boolean; namn: (p: Person) => string; forkl: string; ikon: (p: Person) => string; oppnar?: string }[] = [
   { har: p => ledareOf(s)?.id === p.id, namn: () => 'Byns ledare', forkl: 'Lägger fram påbud och lagar och väger tyngst i sederna och omröstningarna', ikon: () => 'ledarskap' },
   { har: p => !!p.skador?.length, namn: p => `Skadad: ${skadeLista(p, s.now).map(r => r.namn.toLowerCase()).join(', ')}`, forkl: 'Går och arbetar sämre tills skadorna läkt', ikon: p => skadeLista(p, s.now)[0].ikon },
   { har: p => isSick(p, s.now), namn: () => 'Sjuk', forkl: 'Vilar mer och orkar mindre tills hen blivit frisk', ikon: () => 's_inf' },
-  { har: p => p.pregnantSince !== undefined, namn: () => 'Väntar barn', forkl: 'Barnet föds inom några dygn', ikon: () => 's_barn' },
+  { har: p => p.pregnantSince !== undefined, namn: () => 'Väntar barn', forkl: 'Barnet föds inom några dygn. Tryck för att se hur långt det gått', ikon: () => 's_barn', oppnar: 'kropp' },
 ];
 // märkena som symboler med namnet och förklaringen vid musen (steg 9.2.6); ord = ordet skrivs också ut (rutan i hörnet, som inte går
 // att hålla musen över)
-export const prickar = (p: Person, ord = false) => MARKEN.filter(m => m.har(p)).map(m => { const n = m.namn(p); return ` <span class="mark" title="${esc(`${n}. ${m.forkl}`)}" aria-label="${esc(n)}">${iconImg(m.ikon(p), 12)}</span>${ord ? ' ' + esc(n.toLowerCase()) : ''}`; }).join('');
+export const prickar = (p: Person, ord = false) => MARKEN.filter(m => m.har(p)).map(m => { const n = m.namn(p); return ` <span class="mark${m.oppnar ? ' klick' : ''}"${m.oppnar ? ` data-pdel="${m.oppnar}"` : ''} title="${esc(`${n}. ${m.forkl}`)}" aria-label="${esc(n)}">${iconImg(m.ikon(p), 12)}</span>${ord ? ' ' + esc(n.toLowerCase()) : ''}`; }).join('');
 // anseendet och minnet efter döden som pixelsymboler (steg 3.6.11, anseendeSym och dodSymbol i rykten.ts), med tecknet om bilden saknas
 const ANS_IKON: Record<string, string> = { '★': 'i_legend', '☠': 'i_okand', '😇': 'a_gott', '😐': 'a_blandat', '😈': 'a_daligt' };
 export const ansTecken = (a: string, px = 16) => tecknet(ANS_IKON[a] ?? '', a, px);

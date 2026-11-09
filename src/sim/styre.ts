@@ -126,23 +126,24 @@ const TITLAR: { namn: [string, string]; passar: (s: State, p: Person, x: TitelLa
 const TITELNAMN = new Set(TITLAR.flatMap(t => t.namn));
 const hon = (p: Person) => p.sex === 'k' ? 'hon' : 'han', hennes = (p: Person) => p.sex === 'k' ? 'hennes' : 'hans';
 const stor = (t: string) => t[0].toUpperCase() + t.slice(1);
-// styrelseformerna: namnet och texten byggs ur sederna (fler former när de finns, 9.2), den första som passar
+// styrelseformerna: namnet och texten byggs ur sederna. Texten står överst i fliken Styre och är skriven som en lagtext (steg 9.2.72):
+// kort, i tredje person och presens, utan vardagsord. (fler former när de finns, 9.2), den första som passar
 const fort = (s: State) => s.seder.v.fortjanst ?? 0, fejdNu = (s: State) => s.seder.v.fejd ?? 0, rangNu = (s: State) => s.seder.v.rang ?? 0;
 const FORMER: { namn: string; passar: (s: State) => boolean; text: (l: Person, titel: string) => string }[] = [
   { namn: 'Godevälde', passar: s => (s.seder.v.andlig ?? 0) >= FORM.starkt && rangNu(s) >= FORM.lut, // den främsta prästen leder (steg 8.6.1)
-    text: (l, t) => `${l.name}, ${t.toLowerCase()}, styr i gudarnas namn, och de starka buden är lag.` },
+    text: (l, t) => `${l.name}, ${t.toLowerCase()}, styr byn i gudarnas namn. De starka buden äga laga kraft.` },
   { namn: 'Envälde', passar: s => rangNu(s) >= FORM.starkt && fejdNu(s) >= FORM.lut && fort(s) <= 0,
-    text: (l, t) => `${l.name}, ${t.toLowerCase()}, tog makten och styr ensam. Byn gör som ${hon(l)} säger, men trycket kan bli stort.` },
+    text: (l, t) => `${l.name}, ${t.toLowerCase()}, har tagit makten och styr allena. ${stor(hennes(l))} ord är lag, och ingen må tala emot.` },
   { namn: 'Krigarvälde', passar: s => rangNu(s) >= LED.hovding && fejdNu(s) >= FORM.lut,
-    text: (l, t) => `Krigarna kring ${l.name}, ${t.toLowerCase()}, bestämmer över byn. Den som kan slåss väger mest.` },
+    text: (l, t) => `Krigarna kring ${l.name}, ${t.toLowerCase()}, råda över byn. Den som bär vapen väger tyngst.` },
   { namn: 'Kungadöme', passar: s => rangNu(s) >= LED.hovding && fort(s) >= FORM.lut,
-    text: (l, t) => `${l.name}, ${t.toLowerCase()}, styr byn, och makten ärvs inom ätten.` },
+    text: (l, t) => `${l.name}, ${t.toLowerCase()}, styr byn. Makten går i arv inom ätten.` },
   { namn: 'Hövdingadöme', passar: s => rangNu(s) >= LED.hovding,
-    text: (l, t) => `${l.name}, ${t.toLowerCase()}, bestämmer över byn med tinget bredvid sig. ${stor(hon(l))} dömer hårt, och byn gör som ${hon(l)} säger.` },
+    text: (l, t) => `${l.name}, ${t.toLowerCase()}, råder över byn med tinget vid sin sida. ${stor(hon(l))} dömer, och byn lyder.` },
   { namn: 'Ätternas råd', passar: s => rangNu(s) >= FORM.mitt && fort(s) >= FORM.lut,
-    text: (l, t) => `De gamla ätterna bestämmer, och ${l.name}, ${t.toLowerCase()}, talar för dem.` },
+    text: (l, t) => `De gamla ätterna råda över byn, och ${l.name}, ${t.toLowerCase()}, för deras talan.` },
   { namn: 'Folkting', passar: () => true,
-    text: (l, t) => `Byn lyssnar på ${l.name}, ${t.toLowerCase()}. ${stor(hon(l))} bestämmer inte mycket själv, men ${hennes(l)} ord väger tungt. När ${hon(l)} dör väljer byn en ny bland dem som kan leda.` },
+    text: (l, t) => `Byn råder över sig själv vid tinget. ${l.name}, ${t.toLowerCase()}, för ordet, men beslutet är folkets. Faller ${hon(l)}, väljer byn en ny bland dem som kan leda.` },
 ];
 // vågskålarna: sederna som låses upp av styret, i den ordning de visas. steg = när en låst vågskål byggs
 export const VAGSKALAR: { id: string; sed?: Sed; namn: string; steg?: string }[] = [

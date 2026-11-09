@@ -335,6 +335,12 @@ button.tnod.liten.ryk { cursor: pointer; width: 36px; height: 36px; }
 h3 { font-family: var(--display); font-size: 16px; text-transform: uppercase; letter-spacing: 0; color: var(--muted); margin: 16px 0 6px; font-weight: 400; }
 .kv { display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 4px 10px; margin: 0; align-items: center; }
 .kv dt { color: var(--muted); }
+/* styrets beskrivning (steg 9.2.72): högtidlig, som en lagtext */
+.lagtext { text-align: center; font-style: italic; margin: 4px 12px 10px; letter-spacing: 0.02em; }
+/* långa namn (steg 9.2.71): namnet på en egen rad över hela bredden och stapeln under */
+.kv.lang { grid-template-columns: minmax(0, 1fr); gap: 0 10px; }
+.kv.lang dt { overflow-wrap: anywhere; }
+.kv.lang dd { margin-bottom: 6px; }
 .kv dd { margin: 0; display: flex; align-items: center; gap: 8px; font-variant-numeric: tabular-nums; }
 .kv dd .bar { flex: 1; max-width: 140px; }
 .kv.fam dd { display: block; }

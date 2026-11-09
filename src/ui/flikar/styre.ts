@@ -18,7 +18,8 @@ function styretHtml() {
     const lyss = st.pabud ? pabudAndel(s) : undefined;
     // formens namn överst i mitten, ledaren under, och legitimiteten och hur många som lyssnar på påbuden bredvid varandra (steg 4.5.4.2)
     const ledare = l ? `<div class="formnamn">${iconImg('ledarskap', 24)} <b>${esc(f.namn)}</b> ${hjalpKnapp('styre', 'Vad är styret?')}</div>
-      ${hjalpText('styre', `<p class="muted">${esc(f.text(l, st.titel ?? ''))} Bara den som kan ledarskap kan bli ledare. Ledaren drar byns seder åt sitt håll, bestämmer påbuden och straffar det hen sett eller hört om.</p>`)}
+      <p class="lagtext">${esc(f.text(l, st.titel ?? ''))}</p>
+      ${hjalpText('styre', `<p class="muted">Bara den som kan ledarskap kan bli ledare. Ledaren drar byns seder åt sitt håll, bestämmer påbuden och straffar det hen sett eller hört om.</p>`)}
       <ul class="rels"><li>${pLink(l)}<span></span><span></span><span class="muted">${esc(st.titel ?? '')}, ${dygnTxt(s.now - (st.sedan ?? s.now))}</span></li>${ministrar()}</ul>
       <p class="muted small" title="Så väljs nästa ledare">👑 ${esc(TRONFOLJD_TEXT[tronfoljd(s)])}</p>
       <div class="rutor"><div class="ruta" title="Hur mycket byn godtar ledaren"><div class="rutnamn">⚖️ Legitimitet</div><div class="rutbar">${bar(lg.v, lg.v < 0.3 ? 'low' : '')}<span>${Math.round(lg.v * 100)} %</span></div>

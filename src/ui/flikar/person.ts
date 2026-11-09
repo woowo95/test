@@ -7,7 +7,7 @@ import { FARGER, farg } from '../../palett';
 import { skapad } from '../utseende';
 import { hasIcon, iconImg, kvSvg, tecknet } from '../../ikoner';
 import { framstegSvg, ringSvg, tartFarg, tartSvg } from '../framsteg';
-import { gravidDel } from '../../sim/steg';
+import { gravidDel, gravidKvar } from '../../sim/steg';
 import { LAG, byteKnapp, hallCirkel, kvOrd, clockTxt, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, cssFarg, durTxt, esc, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
 import { s, ui, uppgiftVid } from '../lage';
 import { tekInfo } from './teknik';
@@ -30,7 +30,7 @@ export const person: Flik = {
     const status = alive(p) ? statusRad(p, med) : p.died !== undefined ? `Dog ${p.cause} (${timeLabel(s, p.died)})` : `Flyttade från byn (${timeLabel(s, p.left!)})`;
     return `
       <div class="phead">${portrattImg(skapad(s, p), "big stor")}<div><h2>${esc(p.name)}${binamnHtml(p)}${alive(p) ? prickar(p) : ''}${anseende(p)}</h2>${binamnForkl(p)}
-      <p class="status">${status}${alive(p) && gravidText(p) ? ` · ${esc(gravidText(p))}` : ''}</p></div></div>
+      <p class="status">${status}</p></div></div>
       ${flikRad(flikar, flik)}
       ${delar.map((d, i) => delHtml(d, i, d.kort?.(p), () => d.html(p))).join('')}`;
   },
@@ -91,7 +91,16 @@ const DELAR: Del[] = [
 ];
 // sammanfattningarna (steg 5.3.4.2): det som syns på rubriken
 // den som väntar barn (steg 8.1.11): i sammanfattningen överst och i fliken Hälsa, med hur långt det har gått
-const gravidText = (p: Person) => { const d = gravidDel(p, s.now); return d === undefined ? '' : `väntar barn, ${Math.round(d * 100)} % av tiden`; };
+const gravidText = (p: Person) => gravidDel(p, s.now) === undefined ? '' : 'väntar barn';
+// graviditeten som en rad i fliken Hälsa (steg 9.2.70): en stapel för hur långt den gått och ungefär när barnet väntas
+function gravidRad(p: Person) {
+  const d = gravidDel(p, s.now);
+  if (d === undefined) return '';
+  // en timme i verkligheten är en halv månad i spelet (ett dygn är ett år)
+  const tim = Math.round((gravidKvar(p, s.now) ?? 0) / (DAY / 24)), man = Math.max(1, Math.round(tim / 2));
+  const nar = tim < 1 ? 'inom en timme (inom en halv månad i spelet)' : `om ungefär ${tim} ${tim === 1 ? 'timme' : 'timmar'} (${man} ${man === 1 ? 'månad' : 'månader'} i spelet)`;
+  return `<h3>Väntar barn</h3><dl class="kv"><dt>${iconImg('s_barn', 12)} Graviditeten</dt><dd>${bar(d)}<span>${Math.round(d * 100)} %</span></dd></dl><p class="muted">Barnet väntas ${esc(nar)}.</p>`;
+}
 function halsaKort(p: Person) {
   const n = skadeLista(p, s.now).length, l = halsaLage(p, s.now);
   const lage = l === 'svalt' ? 'svälter' : l === 'frys' ? 'fryser' : l === 'torst' ? 'törstar' : l === 'laker' ? 'läker' : '';
@@ -336,7 +345,7 @@ function halsaHtml(p: Person) {
   // vätskan står först under näringen (Björn efter v89): samma värde som törsten i simuleringen, fullt = otörstig
   const vatska = rad(p, 'torst', '💧 Vätska', `${bar(p.torst, p.torst < TORST.torstig ? 'low' : '', trend(p, 'torst', p.torst))}<span>${Math.round(p.torst * 100)} %</span>`, torstRad(p), ' i timmen', 'Att dricka fyller den. Vattnet är olika smutsigt på olika ställen, och i istiden smälter man snö vid elden.');
   return `<div class="kropp">${gubbe}${oppen ? `<div class="kroppinfo">${oppen}</div>` : ''}</div>
-    <h3>Det som är fel</h3>${lista}<h3>Status</h3><dl class="kv">${formagor}</dl><h3>Näring</h3><dl class="kv">${vatska}${naring}</dl>`;
+    ${gravidRad(p)}<h3>Det som är fel</h3>${lista}<h3>Status</h3><dl class="kv">${formagor}</dl><h3>Näring</h3><dl class="kv">${vatska}${naring}</dl>`;
 }
 // det en egenskap eller färdighet gör: arbetena som går fortare (ACTS) och raderna i STAT_GOR och SKILL_GOR
 function gorHtml(rader: string[], nu: string, extra = '') {
@@ -555,7 +564,7 @@ function knowledgeHtml(p: Person) {
     return `<button type="button" class="tnod liten ${kan ? 'kan' : 'pa'}${kunTek === x.id ? ' sel' : ''}" data-ptek="${x.id}" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(x.id, 16)}${kan ? '' : `<svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" pathLength="100" stroke-dasharray="${Math.round(v * 100)} 100"/></svg>`}</button>`;
   });
   const rows = ks.map(([k, e]) => ({ n: KUNSKAPER[k]?.namn ?? k, v: e.v }));
-  return `${tk.length ? `<h3>Teknik</h3><div class="tekrad">${tk.join('')}</div>${kunTek && (p.tek?.[kunTek] ?? 0) > 0.01 ? tekInfo(living(s), kunTek) : ''}` : ''}<h3>Kunskap</h3>${rows.length ? `<dl class="kv">${rows.map(r => `<dt>${esc(r.n)}</dt><dd>${bar(r.v, 'skill')}<span>${Math.round(r.v * 100)} %</span></dd>`).join('')}</dl>` : '<p class="muted">Ingen särskild kunskap ännu.</p>'}
+  return `${tk.length ? `<h3>Teknik</h3><div class="tekrad">${tk.join('')}</div>${kunTek && (p.tek?.[kunTek] ?? 0) > 0.01 ? tekInfo(living(s), kunTek) : ''}` : ''}<h3>Kunskap</h3>${rows.length ? `<dl class="kv lang">${rows.map(r => `<dt>${esc(r.n)}</dt><dd>${bar(r.v, 'skill')}<span>${Math.round(r.v * 100)} %</span></dd>`).join('')}</dl>` : '<p class="muted">Ingen särskild kunskap ännu.</p>'}
       <h3>Lärdomar</h3>${lv.length ? lardomHtml(p, lv) : '<p class="muted">Inga lärdomar ännu.</p>'}${lt.length ? `<h3>Tro</h3>${lardomHtml(p, lt)}` : ''}`;
 }
 // lärdomarna som en symbol per slag (steg 3.3.6) med antalet platser, och en varning när någon av dem inte stämmer.
