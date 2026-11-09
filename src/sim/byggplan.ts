@@ -9,7 +9,7 @@ import { PLATS, rektAvstand } from './plats';
 import { stangerIn, stationRutor, storlekAv, uteStation } from './stationer';
 import { knows } from './teknik';
 import { villHaMer } from './forradsmal';
-import { amountOf, changed, flyttaLager, inZone, lagerFullt, lagerNy, overflow, overlaps, lagerStorre, ownedAll, put, usable, zonesOf } from './lager';
+import { amountOf, changed, flyttaLager, lagerFlyttTimme, inZone, lagerFullt, lagerNy, overflow, overlaps, lagerStorre, ownedAll, put, usable, zonesOf } from './lager';
 import { tingOf } from './agande';
 import { findPath } from './vag';
 import { Akut, BYGGNADER, Byggnad, FN, Fn, HUS, antalLika, fnId, fnOf, husNamn, RUMSFUNKTIONER, satKanKopa, sovHus, sovPersoner, sovRutorFor, sovplatser, torkUte, vedUte } from './byggnader';
@@ -691,6 +691,7 @@ export function stepByggplan(s: State) {
   torgNu(s);
   husAffar(s);
   rivOmTomt(s);
+  lagerFlyttTimme(s); // en lagerplats närmare mitten (steg 9.4.7)
   if (Math.floor(s.now / HOUR) % PLAN.varTim === 0) planBuild(s);
 }
 // lagret (steg 7.2.18): det som inte fått plats ligger bredvid. Byggplanen väger en större lagerplats mot en ny. Marken märks bara

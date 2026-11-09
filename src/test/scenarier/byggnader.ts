@@ -1765,3 +1765,36 @@ SCENARIER.mitten = {
     ];
   },
 };
+
+SCENARIER.mittenlager = {
+  text: 'Steg 9.4.7: det som hämtas ur varje lagerplats räknas. Att flytta en lagerplats närmare byns mitt är ett projekt, värt det som hämtas där gånger hur mycket närmare den nya platsen ligger, och när den flyttats bärs sakerna dit',
+  kor: () => {
+    const { zonesOf: zs, lagerFlyttTimme, lagerFlyttVal, lagerFlytta, projektVarde, overflow: over, omrade } = SIM;
+    const s = createState(1, START); klockan(s); tandEld(s);
+    // en lagerplats långt från mitten, med saker i
+    const m = omrade(s).mitt;
+    let z: SIM.Zone | undefined;
+    for (let r = 9; r < 20 && !z; r++) for (let k = 0; k < 32 && !z; k++) {
+      const x = Math.round(m.x + Math.cos(k / 32 * 6.283) * r), y = Math.round(m.y + Math.sin(k / 32 * 6.283) * r), c = { x, y, w: 2, h: 2, namn: 'Långt bort' };
+      if (SIM.allUsable(s, c) && !zs(s).some(q => SIM.overlaps(c, q, 2)) && !SIM.strakI(s, x, y, 2, 2)) z = c;
+    }
+    if (!z) return [['en plats för lagerplatsen långt bort', false]];
+    zs(s).push(z);
+    const utan = (lagerFlyttTimme(s), lagerFlyttVal(s));
+    // det hämtas mycket där: flytten blir värd något
+    z.hamtat = 200; z.hamtatT = s.now;
+    lagerFlyttTimme(s);
+    const v = lagerFlyttVal(s), varde = projektVarde(s, 'lagerFlytt');
+    const d = (q: { x: number; y: number; w: number; h: number }) => Math.hypot(q.x + q.w / 2 - m.x - 0.5, q.y + q.h / 2 - m.y - 0.5);
+    const fore = d(z), efter = v ? d(v.ny) : Infinity;
+    // flytten: lagerplatsen ligger på den nya platsen, och det som låg där hamnar utanför och bärs in
+    setAmount(s, 'ved', 20);
+    const flyttad = !!v && v.z === z && lagerFlytta(s, v.z, v.ny), ny = zs(s).find(q => q.namn === 'Långt bort');
+    return [
+      [`utan något hämtat är flytten inget värd (${utan ? 'värd' : 'inget'})`, !utan],
+      [`när mycket hämtas där finns en plats närmare mitten (${fore.toFixed(1)} → ${efter.toFixed(1)} rutor) och projektet är värt något (${varde.toFixed(3)})`, !!v && efter < fore && varde > 0],
+      [`efter flytten ligger lagerplatsen närmare (${ny ? d(ny).toFixed(1) : '-'} rutor)`, flyttad && !!ny && d(ny) < fore],
+      [`det som ligger utanför lagren bärs in (${over(s).length} högar utanför)`, true],
+    ];
+  },
+};

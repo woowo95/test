@@ -1,7 +1,7 @@
 import { Act, Person, State } from './typer';
 import { familjOf, stat } from './folk';
 import { clamp } from './slump';
-import { amountOf } from './lager';
+import { LAGER, amountOf, lagerFlyttVal } from './lager';
 import { TROSKEL, materialBuffert, stationBrist, villAv } from './forradsmal';
 import { SAKER } from './saker';
 import { PLAGG, PLAGG_LIST } from './klader';
@@ -27,7 +27,7 @@ import { SED } from './seder';
 import { bedTile } from './byggnader';
 import { stationRutor } from './stationer';
 import { LJUS, UPPSATT, friFackla, friLjus, ljusPlatser, morkStalle } from './ljus';
-import { doingAct } from './folk';
+import { ALDER, ageOf, doingAct } from './folk';
 import { SKOGSVARD, kanPlantera, planteraUppgift, skogsvardBrist } from './skogsvard';
 
 // ---------- byns projekt: vad den bygger och gör (steg 2.2.7) ----------
@@ -73,6 +73,7 @@ export const PROJEKT_TAL = balans('projekt', {
   virke: 0.8, // ... virket när förrådet saknar det byn vill bygga av (steg 4.5.5.2)
   stubbe: 1, // ... att gräva bort stubbarna där något ska byggas (steg 6.5.7, skog.ts)
   plantera: 0.6, // ... att flytta plantor när de närmaste träden att fälla står långt bort (steg 6.5.2, skogsvard.ts)
+  lagerFlytt: 0.4, // ... att flytta en lagerplats närmare byns mitt (steg 9.4.7, lager.ts)
   rojning: 1, // ... att fälla träden på en lagerplats eller ett fält i skogen (steg 3.6.9)
   ljus: 0.4, // ... att ställa fram ett talgljus på ett bord eller en hylla inne (steg 6.3.8, ljus.ts)
   uppsatt: 0.4, // ... att sätta upp en fackla där folk ofta är vakna i mörker (steg 6.3.7, ljus.ts)
@@ -211,6 +212,15 @@ export const PROJEKT: Record<string, ProjektDef> = {
       const t = treeSpot(s, fellingTiles(s, p), p);
       return t && { act: 'falla', text: 'Fäller ett träd till virke.', min: fallTid(s, tileOf(t.x, t.y)) / 60000, tool: 'yxa', spot: t };
     },
+  },
+  // en lagerplats flyttas närmare byns mitt (steg 9.4.7, lager.ts): bristen är det som hämtas där gånger hur mycket närmare den
+  // nya platsen ligger, mindre ju fler saker som ska bäras om
+  lagerFlytt: {
+    namn: 'Flytta en lagerplats', vikt: PROJEKT_TAL.lagerFlytt,
+    brist: s => { const v = lagerFlyttVal(s); return v ? Math.min(1, v.vinst / LAGER.flyttFull) * LAGER.flyttMin / (LAGER.flyttMin + v.saker * LAGER.flyttPer) : 0; },
+    kostnad: () => LAGER.flyttMin / 60 * ARBETE,
+    kan: (s, p, f) => !f.kyla && ageOf(p, s.now) >= ALDER.vuxen && !!lagerFlyttVal(s) && !doingAct(s, 'flyttLager', p),
+    uppgift: s => { const v = lagerFlyttVal(s); return v && { act: 'flyttLager', text: 'Märker ut en ny lagerplats närmare byns mitt.', min: LAGER.flyttMin, spot: { x: v.ny.x + v.ny.w / 2, y: v.ny.y + v.ny.h / 2 } }; },
   },
   // träden på en lagerplats eller ett fält i skogen fälls först (steg 3.6.9, skog.ts), med en yxa; de blir trä
   rojning: {
