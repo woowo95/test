@@ -1,4 +1,4 @@
-import { hp, sjukText, personRader, PERSONLOGG, gastLever } from '../../sim';
+import { VARD, vardNasta, hp, sjukText, personRader, PERSONLOGG, gastLever } from '../../sim';
 import { kvOf, paSigVikt, klanById, FORMAGOR, gangDelar, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
 import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, handOrkar, handPlatser, capacity, kvNamn, handerFor, load, utrustning, bordaIHander, type IHanden, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, timeLabel, vidBordet, upplevelseText, uppEffekt, vuxenUpp, Upplevelse, yrkeNamn, andlighet, troOf, tolkning, teckenText, troNamn, pratarMed, gastRelationer, actIkon, utbIkon, AMNEN, type ByteMinne, type GastRel, type Slakting, stacksOf, grundvarde, tingVarde, housesOf, husVarde } from '../../sim';
 import { gorText } from '../jakt';
@@ -310,6 +310,8 @@ function halsaHtml(p: Person) {
   const brist = brister.map(k => `<li class="neg">${bristTecken(k)}<span>${esc(NARING[k].brist.namn)}<small class="muted">brist på ${esc(NARING[k].namn.toLowerCase())}, ${Math.round(bristGrad(p, k) * 100)} %</small></span><span class="gar">↘ äter helst ${esc(NARING[k].langtar)}</span></li>`).join('');
   const lista = rader.length || blod < 1 || brister.length ? `<ul class="skador">${rader.map(r => `<li class="${r.battre ? 'pos' : 'neg'}"><span class="tecken">${tecknet(r.ikon, r.tecken)}</span><span>${esc(r.namn)}${r.vard.map(k => iconImg(k, 12)).join('')}<small class="muted">${esc([r.grad, ...r.bloder ? ['blöder'] : [], ...r.gjort].join(', '))}</small></span><span class="gar">${r.battre ? '↗' : '↘'} ${esc(r.gar)}</span></li>`).join('')}
     ${blod < 1 ? `<li class="${blodning(p) > 0 ? 'neg' : 'pos'}"><span class="tecken">🩸</span><span>Har förlorat ${Math.round((1 - blod) * 100)} % av blodet</span><span class="gar">${blodning(p) > 0 ? '↘ blöder' : '↗ kommer tillbaka'}</span></li>` : ''}${brist}</ul>` : '<p class="muted">Inget är fel.</p>';
+  // vården härnäst (steg 9.5.6, VARD i halsa.ts): de behandlingar som behövs, mest brådskande först
+  const nasta = [...new Set(vardNasta(s, p, p).map(x => VARD[x.k].namn))], vardRad = nasta.length ? `<p class="muted">Behöver härnäst: ${esc(nasta.join(', ').toLowerCase())}</p>` : '';
   const formagor = (Object.keys(FORMAGOR) as (keyof typeof FORMAGOR)[]).map(k => {
     const f = FORMAGOR[k], v = f.varde(p), ont = 'ont' in f;
     return rad(p, 'f_' + k, `${f.tecken} ${f.namn}`, `${bar(v, (ont ? v > 0.5 : v < LAG.halsa) ? 'low' : '')}<span>${Math.round(v * 100)} %</span>`, f.delar(p), '', `Påverkar: ${f.gor}`);
@@ -323,7 +325,7 @@ function halsaHtml(p: Person) {
   // vätskan står först under näringen (Björn efter v89): samma värde som törsten i simuleringen, fullt = otörstig
   const vatska = rad(p, 'torst', '💧 Vätska', `${bar(p.torst, p.torst < TORST.torstig ? 'low' : '', trend(p, 'torst', p.torst))}<span>${Math.round(p.torst * 100)} %</span>`, torstRad(p), ' i timmen', 'Att dricka fyller den. Vattnet är olika smutsigt på olika ställen, och i istiden smälter man snö vid elden.');
   return `<div class="kropp">${gubbe}${oppen ? `<div class="kroppinfo">${oppen}</div>` : ''}</div>
-    ${gravidRad(p)}<h3>Det som är fel</h3>${lista}<h3>Status</h3><dl class="kv">${formagor}</dl><h3>Näring</h3><dl class="kv">${vatska}${naring}</dl>`;
+    ${gravidRad(p)}<h3>Det som är fel</h3>${lista}${vardRad}<h3>Status</h3><dl class="kv">${formagor}</dl><h3>Näring</h3><dl class="kv">${vatska}${naring}</dl>`;
 }
 // det en egenskap eller färdighet gör: arbetena som går fortare (ACTS) och raderna i STAT_GOR och SKILL_GOR
 function gorHtml(rader: string[], nu: string, extra = '') {
