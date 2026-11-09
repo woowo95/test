@@ -334,7 +334,9 @@ button.tnod.liten.ryk { cursor: pointer; width: 36px; height: 36px; }
 .kar { margin: 12px 0 2px; font-size: 13px; color: var(--muted); border-bottom: 1px solid var(--line); }
 .plink { background: none; border: 0; padding: 0; font: inherit; font-weight: 700; color: inherit; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent) 60%, transparent); text-underline-offset: 2px; cursor: pointer; }
 .phead { display: flex; gap: 10px; align-items: flex-start; }
-.phead h2 { font-family: var(--display); font-size: 24px; margin: 0; line-height: 1.1; }
+.phead h2 { font-family: var(--display); font-size: 24px; margin: 0; line-height: 1.1; overflow-wrap: anywhere; }
+.phead > div { min-width: 0; } /* namnet klipps aldrig (steg 9.2.128) */
+.pnamn { white-space: nowrap; }
 .phead p { margin: 2px 0 0; }
 .phead > .hjalp { margin-left: auto; flex: none; }
 .pfakta { font-size: 13px; color: var(--muted); }
