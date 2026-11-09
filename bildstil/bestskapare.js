@@ -754,48 +754,38 @@
   let spegel = false;
   const duk = rot.querySelector('#bs-bild'), text = rot.querySelector('#bs-text'), valen = rot.querySelector('#bs-val');
   const beskriv = v => LAGER.map(l => { const d = l.delar.find(x => x.id === v[l.id]); return `${l.namn}: ${d ? d.namn.toLowerCase() : 'inget'}`; }).join(' · ');
+  // delarna Björn sagt nej till syns inte i väljaren och slumpas inte; de godkända får ✓ (granskningen nedan fyller i dem)
+  const NEJ = new Set(), JA = new Set(), nyckel = (l, d) => l + '/' + d;
+  // versionerna av en handgjord del (samma grupp) står direkt efter den
+  const ordna = ds => { const g = new Map(); ds.forEach(d => { const k = d.grupp || d.id; if (!g.has(k)) g.set(k, []); g.get(k).push(d); }); return [...g.values()].flat(); };
+  const valbara = l => ordna(l.delar.filter(d => !NEJ.has(nyckel(l.id, d.id)) || val[l.id] === d.id));
   function visa() {
     tillCanvas(ritaBest(val, spegel), duk, 0);
     text.textContent = beskriv(val);
-    valen.querySelectorAll('button[data-lager]').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.grupp ? b.dataset.grupp.split(' ') : [b.dataset.del]).includes(val[b.dataset.lager] ?? ''))));
-    // versionerna av den valda delen: ✎ är den handgjorda, siffrorna API:ts
+    valen.querySelectorAll('button[data-lager]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.del === (val[b.dataset.lager] ?? ''))));
+  }
+  // väljaren: en knapp per del i registret (de handgjorda, versionerna och API:ts delar), byggs om när svaren ändras
+  function byggValjare() {
+    valen.textContent = '';
     for (const l of LAGER) {
-      const v = valen.querySelector(`.sk-versioner[data-lager="${l.id}"]`), d = l.delar.find(x => x.id === val[l.id]);
-      const g = d ? l.delar.filter(x => (x.grupp || x.id) === (d.grupp || d.id)) : [];
-      v.textContent = ''; v.hidden = g.length < 2;
-      if (g.length < 2) continue;
-      let k = 0;
-      for (const x of g) {
-        const b = document.createElement('button'); b.type = 'button'; b.dataset.version = l.id; b.dataset.del = x.id;
-        b.textContent = x.api ? String(++k) : '✎'; b.title = `${x.namn}: ${x.text}`; b.setAttribute('aria-label', `Version ${b.textContent === '✎' ? 'handgjord' : b.textContent}: ${x.namn}`);
-        b.setAttribute('aria-pressed', String(x.id === val[l.id])); v.append(b);
-      }
+      const rad = document.createElement('div'); rad.className = 'sk-rad';
+      const n = document.createElement('span'); n.className = 'sk-namn'; n.textContent = l.namn;
+      const chips = document.createElement('div'); chips.className = 'sk-chips';
+      const knapp = (del, namn, titel) => { const b = document.createElement('button'); b.type = 'button'; b.dataset.lager = l.id; b.dataset.del = del; b.textContent = namn; if (titel) b.title = titel; chips.append(b); };
+      if (!l.maste) knapp('', 'Inget');
+      valbara(l).forEach((d, i) => knapp(d.id, `${i + 1} ${d.namn}${JA.has(nyckel(l.id, d.id)) ? ' ✓' : ''}`, `${d.text}${d.api ? ' (ritad av Claude API:t)' : ''}`));
+      rad.append(n, chips); valen.append(rad);
     }
   }
-  for (const l of LAGER) {
-    const rad = document.createElement('div'); rad.className = 'sk-rad';
-    const n = document.createElement('span'); n.className = 'sk-namn'; n.textContent = l.namn;
-    const chips = document.createElement('div'); chips.className = 'sk-chips';
-    const knapp = (del, namn, titel, grupp) => { const b = document.createElement('button'); b.type = 'button'; b.dataset.lager = l.id; b.dataset.del = del; if (grupp) b.dataset.grupp = grupp.join(' '); b.textContent = namn; if (titel) b.title = titel; chips.append(b); };
-    if (!l.maste) knapp('', 'Inget');
-    // en knapp per del; versionerna av samma del (samma grupp) väljs på raden under
-    const grupper = new Map();
-    l.delar.forEach(d => { const k = d.grupp || d.id; if (!grupper.has(k)) grupper.set(k, []); grupper.get(k).push(d); });
-    [...grupper.values()].forEach((g, i) => knapp(g[0].id, `${i + 1} ${g[0].namn}`, g[0].text + (g.length > 1 ? ` (${g.length} versioner)` : ''), g.map(d => d.id)));
-    const ver = document.createElement('div'); ver.className = 'sk-versioner'; ver.dataset.lager = l.id; ver.hidden = true;
-    rad.append(n, chips, ver); valen.append(rad);
-  }
+  byggValjare();
   valen.addEventListener('click', e => {
-    const v = e.target.closest('button[data-version]');
-    if (v) { val[v.dataset.version] = v.dataset.del; visa(); return; }
     const b = e.target.closest('button[data-lager]'); if (!b) return;
-    // en annan del väljer dess första version; samma del behåller versionen
-    if (!(b.dataset.grupp || '').split(' ').includes(val[b.dataset.lager])) val[b.dataset.lager] = b.dataset.del || null;
+    val[b.dataset.lager] = b.dataset.del || null;
     visa();
   });
   rot.querySelector('#bs-spegla').addEventListener('click', e => { spegel = !spegel; e.currentTarget.setAttribute('aria-pressed', String(spegel)); visa(); });
   // alla lager utom ett får en slumpad del (utom = null slumpar alla)
-  const slumpaUtom = (v, utom) => { for (const l of LAGER) { if (l.id === utom) continue; const m = l.delar.map(d => d.id); if (!l.maste) m.push(null); v[l.id] = m[Math.floor(Math.random() * m.length)]; } return v; };
+  const slumpaUtom = (v, utom) => { for (const l of LAGER) { if (l.id === utom) continue; const m = l.delar.filter(d => !NEJ.has(nyckel(l.id, d.id))).map(d => d.id); if (!l.maste) m.push(null); v[l.id] = m[Math.floor(Math.random() * m.length)]; } return v; };
   rot.querySelector('#bs-slumpa').addEventListener('click', () => { slumpaUtom(val, null); visa(); });
   visa();
 
@@ -828,7 +818,7 @@
     DB.collection('val').onSnapshot(snap => {
       for (const k of Object.keys(SVAR)) delete SVAR[k];
       snap.docs.forEach(d => { if (d.exists && d.id.startsWith('best-')) SVAR[d.id] = d.data(); });
-      bkVisa();
+      bkValjare(); bkVisa();
     }, () => { bkStatus('Kontakten med databasen bröts. Ladda om sidan.'); });
     bkVisa();
   })();
@@ -911,12 +901,18 @@
     gr.querySelectorAll('[data-bssvar]').forEach(b => { b.disabled = !DB; b.setAttribute('aria-pressed', String(sv?.svar === b.dataset.bssvar)); });
     gr.querySelector('#bs-gr-kommentar').disabled = !DB;
   }
+  // väljaren ovanför följer svaren: nej tas bort, ja får ✓
+  function bkValjare() {
+    NEJ.clear(); JA.clear();
+    for (const k of BKORT) { const l = bkLage(k); if (l === 'nej') NEJ.add(nyckel(k.lager.id, k.del.id)); if (l === 'ja') JA.add(nyckel(k.lager.id, k.del.id)); }
+    byggValjare(); visa();
+  }
   async function bkSvara(svar) {
     const k = BKORT.find(x => x.id === bkId); if (!k || !DB) return;
     const ta = gr.querySelector('#bs-gr-kommentar'), kommentar = ta ? ta.value.trim() : '';
     if (svar === 'kommentar' && !kommentar) { bkStatus('Skriv först vad som ska ändras.'); ta?.focus(); return; }
     const data = { svar, kommentar, nar: new Date().toISOString(), avtryck: k.avtryck, lager: k.lager.id, del: k.del.id, namn: k.del.namn };
-    const forut = SVAR[k.id]; SVAR[k.id] = data; bkVantar = k.id; bkVisa();
+    const forut = SVAR[k.id]; SVAR[k.id] = data; bkVantar = k.id; bkValjare(); bkVisa();
     try { await DB.doc('val/' + k.id).set(data); bkVantar = null; bkVisa(); setTimeout(() => { if (bkId === k.id) bkFlytta(1, true); }, 450); }
     catch (e) { bkVantar = null; if (forut) SVAR[k.id] = forut; else delete SVAR[k.id]; bkVisa(); bkStatus('Kunde inte spara. Har du rätt att ändra sidan?'); }
   }

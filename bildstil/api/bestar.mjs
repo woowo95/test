@@ -118,7 +118,8 @@ Den första punkten är [0, 0]: leden vid kroppen (höften eller bogen). dx är 
 };
 const FARGNAMN = { skog: 'den gröna (skog och glöd)', aska: 'den svarta (aska och blod)' };
 
-async function ritfraga(lager, grupp, kommentar) {
+async function ritfraga(lager, grupp, kommentar, om = null) {
+  if (om) return omritfraga(lager, om, kommentar);
   const P = PLAN[lager], hg = await handgjorda(lager), bilder = [], text = [];
   if (lager === 'textur') {
     const g = hg.find(x => x.id === grupp);
@@ -138,6 +139,22 @@ async function ritfraga(lager, grupp, kommentar) {
   }
   if (kommentar) text.push(`Björns kommentar, som ska följas: ${kommentar}`);
   return { custom_id: lager === 'textur' ? `textur__${grupp}` : lager, lager, grupp, params: { model: MODELL, max_tokens: MAXTOKENS, thinking: { type: 'adaptive' }, output_config: { effort: INSATS, format: { type: 'json_schema', schema: SCHEMA } },
+    system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
+    messages: [{ role: 'user', content: [...bilder.map(bildBlock), { type: 'text', text: text.join('\n\n') }] }] } };
+}
+// en enda del ritas om efter Björns kommentar: API:t ser delen som den är nu (texturerna på båda färgerna) och dess data
+async function omritfraga(lager, om, kommentar) {
+  const P = PLAN[lager], bilder = [], text = [];
+  const { id, namn, text: t, grupp, forra, ...data } = om;
+  for (const f of (P.farger || [null])) { const r = await prov(lager, om, { ...P.over, ...(f ? { farg: f } : {}) }); if (r.png) bilder.push(r.png); }
+  text.push(`${bilder.length > 1 ? 'Bilderna visar' : 'Bilden visar'} delen "${namn}" (${t}) i lagret ${P.namn}, ritad i besten tre gånger större${P.farger ? ` på ${P.farger.map(f => FARGNAMN[f]).join(' och ')} besten` : ''}. Dess data: ${JSON.stringify(data)}`);
+  if (grupp && grupp !== id) {
+    const a = KALLA.indexOf(`{ id: '${grupp}'`), b = KALLA.indexOf("\n    { id: '", a + 5), slut = KALLA.indexOf('\n  ];', a);
+    text.push(`Den är en version av den handgjorda texturen, som är gjord med kod:\n${KALLA.slice(a, b > 0 && b < slut ? b : slut)}`);
+  } else text.push(`De handgjorda delarna i lagret är gjorda med kod:\n${kodFor(P.kod)}`);
+  text.push(FORMAT[lager]);
+  text.push(`Björn har sett delen och skriver: ${kommentar}\nRita om delen efter kommentaren. Svara med en enda del (namnet får ändras om delen blir något annat).`);
+  return { custom_id: `${lager}__om__${id}`, lager, grupp: grupp && grupp !== id ? grupp : null, om, kommentar, params: { model: MODELL, max_tokens: MAXTOKENS, thinking: { type: 'adaptive' }, output_config: { effort: INSATS, format: { type: 'json_schema', schema: SCHEMA } },
     system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
     messages: [{ role: 'user', content: [...bilder.map(bildBlock), { type: 'text', text: text.join('\n\n') }] }] } };
 }
@@ -215,8 +232,8 @@ async function provaDelar(fraga, svar) {
   for (const [i, s] of (svar.delar || []).entries()) {
     let data = null, fel = [];
     try { data = JSON.parse(s.data); } catch (e) { fel.push('data är inte JSON'); }
-    const id = fraga.lager === 'textur' ? `${fraga.grupp}-${i + 1}` : `${fraga.lager}-${i + 1}`;
-    const d = { ...(data || {}), id, namn: s.namn, text: s.text, ...(fraga.lager === 'textur' ? { grupp: fraga.grupp } : {}) };
+    const id = fraga.om ? fraga.om.id : fraga.lager === 'textur' ? `${fraga.grupp}-${i + 1}` : `${fraga.lager}-${i + 1}`;
+    const d = { ...(data || {}), id, namn: s.namn, text: s.text, ...(fraga.grupp ? { grupp: fraga.grupp } : {}), ...(fraga.om && fraga.kommentar ? { forra: fraga.kommentar } : {}) };
     if (data) fel.push(...datafel(fraga.lager, data));
     const bilder = [];
     if (data && !fel.length) for (const f of (P.farger || [null])) {
@@ -261,17 +278,21 @@ async function batch(client, fragor, namn) {
 
 // ---------- att spara ----------
 const lasFil = lager => { const f = path.join(MAPP, lager + '.json'); return fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : { lager, om: '', delar: [] }; };
-function spara(lager, grupp, delar, anteckning, dollar) {
+function spara(lager, grupp, delar, anteckning, dollar, om = null) {
   fs.mkdirSync(MAPP, { recursive: true });
   const o = lasFil(lager);
   // en ny körning ersätter det förra från samma fråga (texturerna: samma grupp)
-  o.delar = o.delar.filter(d => (lager === 'textur' ? d.grupp !== grupp : false)).concat(delar);
+  if (om) { const i = o.delar.findIndex(d => d.id === om.id); if (i >= 0 && delar[0]) o.delar[i] = delar[0]; }
+  else o.delar = o.delar.filter(d => (lager === 'textur' ? d.grupp !== grupp : false)).concat(delar);
   o.om = 'Ritat av Claude API:t med bildstil/api/bestar.mjs: former och mönster som bestskaparen gör om till delar.';
-  o.anteckningar = { ...(o.anteckningar || {}), [grupp || lager]: anteckning };
+  o.anteckningar = { ...(o.anteckningar || {}), [om ? om.id : grupp || lager]: anteckning };
   o.kostnad = +(((o.kostnad || 0) + dollar).toFixed(3));
   if (lager === 'textur') o.delar.sort((a, b) => a.id.localeCompare(b.id, 'sv', { numeric: true }));
+  skrivFil(o);
+}
+function skrivFil(o) {
   const rad = d => '    ' + JSON.stringify(d);
-  fs.writeFileSync(path.join(MAPP, lager + '.json'), `{\n  "lager": ${JSON.stringify(o.lager)},\n  "om": ${JSON.stringify(o.om)},\n  "kostnad": ${o.kostnad},\n  "anteckningar": ${JSON.stringify(o.anteckningar)},\n  "delar": [\n${o.delar.map(rad).join(',\n')}\n  ]\n}\n`);
+  fs.writeFileSync(path.join(MAPP, o.lager + '.json'), `{\n  "lager": ${JSON.stringify(o.lager)},\n  "om": ${JSON.stringify(o.om)},\n  "kostnad": ${o.kostnad},\n  "anteckningar": ${JSON.stringify(o.anteckningar)},\n  "delar": [\n${o.delar.map(rad).join(',\n')}\n  ]\n}\n`);
 }
 
 // ---------- kostnaden ----------
@@ -281,7 +302,7 @@ const BILD = Math.round((136 * 3) * (99 * 3) / 750);
 function uppskatta(fragor) {
   let s = 0;
   for (const f of fragor) {
-    const n = PLAN[f.lager].versioner || PLAN[f.lager].antal, bilder = f.params.messages[0].content.filter(c => c.type === 'image').length;
+    const n = f.om ? 1 : PLAN[f.lager].versioner || PLAN[f.lager].antal, bilder = f.params.messages[0].content.filter(c => c.type === 'image').length;
     const tin = Math.round((f.params.system[0].text.length + f.params.messages[0].content.filter(c => c.type === 'text').map(c => c.text).join('').length) / 3.5) + bilder * BILD;
     const tut = 6000 + 700 * n, granskIn = tin + 400 * n + n * (PLAN[f.lager].farger?.length || 1) * BILD;
     s += (tin * PRIS.in + tut * PRIS.ut + granskIn * PRIS.in + tut * PRIS.ut) / 1e6;
@@ -293,8 +314,21 @@ function uppskatta(fragor) {
 const argv = process.argv.slice(2), ki = argv.indexOf('--kommentar');
 const kommentar = ki >= 0 ? argv.splice(ki, 2)[1] : null;
 const [kommando, ...val] = argv;
+const omlage = kommando === 'omrita' || (kommando === 'torrt' && val[0] === 'omrita' && val.shift());
 async function fragorFor(val) {
   const fr = [];
+  if (omlage) {
+    // lager:id="kommentar" (eller --kommentar för alla)
+    for (const v of val) {
+      const e = v.indexOf('='), [lager, id] = (e >= 0 ? v.slice(0, e) : v).split(':'), k = e >= 0 ? v.slice(e + 1) : kommentar;
+      if (!PLAN[lager]) throw new Error('Okänt lager: ' + lager);
+      const om = lasFil(lager).delar.find(d => d.id === id);
+      if (!om) throw new Error(`${lager}:${id} finns inte`);
+      if (!k) throw new Error(`${lager}:${id} saknar kommentar`);
+      fr.push(await ritfraga(lager, null, k, om));
+    }
+    return fr;
+  }
   for (const v of (val.length ? val : Object.keys(PLAN))) {
     const [lager, grupp] = v.split(':');
     if (!PLAN[lager]) throw new Error('Okänt lager: ' + lager);
@@ -310,12 +344,12 @@ try {
     fs.writeFileSync(path.join(UT, 'fragor.json'), JSON.stringify(fr.map(f => ({ id: f.custom_id, text: f.params.messages[0].content.filter(c => c.type === 'text').map(c => c.text), bilder: f.params.messages[0].content.filter(c => c.type === 'image').length })), null, 1));
     const u = uppskatta(fr);
     console.log(`${fr.length} frågor: ungefär ${u.lag.toFixed(2)}–${u.hog.toFixed(2)} dollar med batch (väntat ${u.vantat.toFixed(2)}). Frågorna står i ${path.relative(process.cwd(), path.join(UT, 'fragor.json'))}.`);
-  } else if (kommando === 'rita' || kommando === 'granska') {
+  } else if (kommando === 'rita' || kommando === 'omrita' || kommando === 'granska') {
     const client = klient(), fr = await fragorFor(val);
     const u = uppskatta(fr);
     console.log(`${fr.length} frågor, ungefär ${u.lag.toFixed(2)}–${u.hog.toFixed(2)} dollar.`);
     let svar = {}, summa = 0;
-    if (kommando === 'rita') { const r = await batch(client, fr, 'ritningen'); svar = r.ut; summa += r.summa; }
+    if (kommando !== 'granska') { const r = await batch(client, fr, 'ritningen'); svar = r.ut; summa += r.summa; }
     else for (const f of fr) { const o = lasFil(f.lager), del = o.delar.filter(d => f.lager !== 'textur' || d.grupp === f.grupp); svar[f.custom_id] = { svar: { delar: del.map(d => { const { id, namn, text, grupp, ...data } = d; return { namn, text, data: JSON.stringify(data) }; }) } }; }
     // granskningen
     const forsta = {}, granska = [];
@@ -341,14 +375,27 @@ try {
         rapport.push(`${f.custom_id} ${i + 1}: ${v ? `"${v.namn}"${v === a ? '' : ' (den första, granskningen hade fel)'}` : `bortvald: ${(a || b).fel.join('; ')}`}`);
         if (v) valda.push(v.d);
       }
-      valda.forEach((d, i) => { d.id = f.lager === 'textur' ? `${f.grupp}-${i + 1}` : `${f.lager}-${i + 1}`; });
+      if (!f.om) valda.forEach((d, i) => { d.id = f.lager === 'textur' ? `${f.grupp}-${i + 1}` : `${f.lager}-${i + 1}`; });
+      else valda.splice(1);
       const per = summa / fr.length;
-      spara(f.lager, f.grupp, valda, s?.svar?.anteckning || svar[f.custom_id]?.svar?.anteckning || '', per);
+      spara(f.lager, f.grupp, valda, s?.svar?.anteckning || svar[f.custom_id]?.svar?.anteckning || '', per, f.om);
     }
     console.log(rapport.join('\n'));
     console.log(`Det kostade ungefär ${summa.toFixed(2)} dollar. Bygg sidan igen: node bildstil/bygg.cjs`);
     fs.writeFileSync(path.join(HAR, 'logg', 'bestar-' + new Date().toISOString().slice(0, 19).replace(/:/g, '') + '.json'), JSON.stringify({ kommando, val, kommentar, modell: MODELL, uppskattat: { lag: +u.lag.toFixed(2), hog: +u.hog.toFixed(2) }, dollar: +summa.toFixed(3), rapport }, null, 1));
+  } else if (kommando === 'ta-bort') {
+    // delar Björn sagt nej till tas bort ur sin fil; de andra behåller sina id, så att svaren på dem gäller
+    for (const v of val) {
+      const [lager, id] = v.split(':'), o = lasFil(lager), n = o.delar.length;
+      o.delar = o.delar.filter(d => d.id !== id);
+      if (o.delar.length === n) { console.log(`${v}: finns inte`); continue; }
+      skrivFil(o);
+      console.log(`${v}: borttagen`);
+    }
+    console.log('Bygg sidan igen: node bildstil/bygg.cjs');
   } else {
     console.log('Skriv: node bildstil/api/bestar.mjs torrt|rita|granska [lager|lager:grupp …] [--kommentar "…"]');
+    console.log('       node bildstil/api/bestar.mjs omrita lager:id="kommentar" …    ritar om delar efter Björns kommentarer');
+    console.log('       node bildstil/api/bestar.mjs ta-bort lager:id …              tar bort delar Björn sagt nej till');
   }
 } finally { await stangSidan(); }
