@@ -72,9 +72,9 @@ export const ELD = balans('eld', {
   hoTakt: 3, // hö (gånger tidsålderns ARSTID.hoPerTid)
   grenarTakt: 3, // grenar (gånger ARSTID.grenarIstid i istiden)
   // tändmaterialet på rutan (steg 9.3.4, tandPaRutan): hö i gräset och kvistar på all mark, hela saker, efter årstiden
-  hoSaker: 8, // hö på en gräsruta på sommaren (gånger ARSTID.hoPerTid och hur orörd marken är)
-  kvistSaker: 4, // kvistar på en ruta (gånger ARSTID.grenarIstid i istiden och fler vid buskarna)
-  tandAter: 12, // det som plockats av tändmaterialet växer tillbaka med så här många saker per dygn (år i spelet)
+  hoSaker: 24, // hö på en gräsruta på sommaren (gånger ARSTID.hoPerTid och hur orörd marken är)
+  kvistSaker: 12, // kvistar på en ruta (gånger ARSTID.grenarIstid i istiden och fler vid buskarna)
+  tandAter: 24, // det som plockats av tändmaterialet växer tillbaka med så här många saker per dygn (år i spelet)
   stenTakt: 0.8, // stenar till eldringen ...
   stenNara: 1, stenNaraDel: 3, // ... gånger Nara dit stenarna ligger inom så många rutor ...
   stenMedel: 3, stenMedelDel: 1.5, // ... Del inom så många ...

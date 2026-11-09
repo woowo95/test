@@ -77,7 +77,7 @@ SCENARIER.stenring = {
     Object.assign(th.task!, { tx: tom.x, ty: tom.y, phase: 'do', until: r.now + 3 * HOUR }); th.x = tom.x; th.y = tom.y;
     kor(r, 1 / 60); // ett slag (fem minuter): tändmaterialet hittas lika fort som bären (steg 2.12.4), så det räcker snart
     const nara = () => th.task?.act === 'samla' && th.task.phase === 'do' && Math.hypot(th.task.tx - tom.x, th.task.ty - tom.y) <= 6; // rundan (steg 4.5.6.1): hen går omkring på platsen
-    const fortsatt = nara() && (th.task!.items?.torrgras ?? 0) > 0;
+    const fortsatt = nara() && (th.task!.items?.torrgras ?? 0) + (th.task!.items?.grenar ?? 0) > 0; // hö eller kvistar: tändmaterialet ligger på rutorna (steg 9.3.4)
     setItems(r, { flinta: 1, torrgras: 50, grenar: 50 }); kor(r, 0.25);
     const slutat = !nara();
     // elden tänds bara om det finns bränsle kvar sedan grenarna till tändningen tagits (flintan tar 3 grenar)
@@ -651,7 +651,7 @@ SCENARIER.forradsmal = {
     const bGren = SIM.materialBuffert(s, 'grenar'), bHo = SIM.materialBuffert(s, 'torrgras'), tak = SIM.materialTak(s, 'grenar');
     // den som samlar: höet och grenarna är under bufferten och plockas
     setItems(s, { grenar: 10 }); s.forbruk = { grenar: 60 }; SIM.arbetsTimme(s);
-    q.task = { act: 'samla', phase: 'do', tx: 0, ty: 0, until: s.now + HOUR, carry: 0, why: '' };
+    q.task = { act: 'samla', phase: 'do', tx: q.x, ty: q.y, until: s.now + HOUR, carry: 0, why: '' }; // där hen står: tändmaterialet ligger på rutan (steg 9.3.4)
     const g1 = SIM.forageItems(s, q, 3600) ?? {};
     // över taket plockar ingen, inte heller den som hämtar grenar
     setItems(s, { grenar: Math.ceil(tak) + 1 }); s.forbruk = { grenar: 60 }; SIM.arbetsTimme(s);

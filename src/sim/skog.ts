@@ -79,9 +79,10 @@ export function skaRojas(s: State) {
   return ut;
 }
 // det närmaste trädet att fälla i ett lager eller på ett fält i skogen, som ingen annan fäller (projektet rojning i projekt.ts)
+// Träden i gångstråken fälls först (steg 9.2.35): de står där folk går varje dag
 export function rojSpot(s: State, p: Person) {
-  const taken = fellingTiles(s, p); let best = -1, bd = Infinity;
-  for (const i of skaRojas(s)) { const d = utanforByn(s, i % W, Math.floor(i / W)); if (!taken.has(i) && d < bd) { bd = d; best = i; } }
+  const taken = fellingTiles(s, p), strak = STRAK.pa ? straken(s).ruta : undefined; let best = -1, bd = Infinity;
+  for (const i of skaRojas(s)) { const d = utanforByn(s, i % W, Math.floor(i / W)) - (strak?.[i] ? 1000 : 0); if (!taken.has(i) && d < bd) { bd = d; best = i; } }
   return best < 0 ? undefined : { x: (best % W) + 0.5, y: Math.floor(best / W) + 0.5, i: best };
 }
 // rutorna där någon annan än utom håller på att fälla ett träd

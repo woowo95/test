@@ -26,7 +26,7 @@ const BILDER: Record<string, string[]> = {
   grenar: ['....j', '...J.', '.jJ..', 'j....'],
 };
 // höet på rutan (steg 9.3.4, platshållare tills Björn valt i bildstilen): en, två eller tre tuvor efter hur mycket som ligger där
-// (en tuva per tre hö), så att den tomplockade rutan syns
+// (en tuva per åtta hö), så att den tomplockade rutan syns
 const HO = ['h.H.h', '.hHh.', '..H..'];
 const ritaBild = (rad: string[], x: number, y: number) => rad.forEach((r, dy) => { for (let dx = 0; dx < r.length; dx++) { const c = BILD_FARG[r[dx]]; if (c !== undefined) plantG.beginFill(c).drawRect(x + dx, y + dy, 1, 1).endFill(); } });
 // det som växer just nu, diskret i vanliga vyn: små bärbuskar och svampar där det finns något att hämta.
@@ -62,7 +62,7 @@ export function drawPlants(force = false) {
       if (q.k === 'bar') { if (g.trees[i] > 0) ritaBild(TUVA[n - 1], Math.round(x + 2 + plats(i, 0) * 8), Math.round(y + 3 + plats(i, 5) * 8)); continue; }
       for (let k = 0; k < n; k++, j++) ritaBild(BILDER[q.k], Math.round(x + 1 + plats(i, 10 + j) * 11), Math.round(y + 1 + plats(i, 20 + j) * 12));
     }
-    const ho = Math.min(3, Math.floor(tandPaRutan(s, 'torrgras', rx, ry) / 3));
+    const ho = Math.min(3, Math.floor(tandPaRutan(s, 'torrgras', rx, ry) / 8));
     for (let k = 0; k < ho; k++, j++) ritaBild(HO, Math.round(x + 1 + plats(i, 30 + j) * 10), Math.round(y + 2 + plats(i, 40 + j) * 11));
     const gr = Math.min(3, sakerPaMarken(s, 'grenar', rx, ry)[0]?.n ?? 0);
     for (let k = 0; k < gr; k++, j++) ritaBild(BILDER.grenar, Math.round(x + 1 + plats(i, 10 + j) * 10), Math.round(y + 1 + plats(i, 20 + j) * 11));

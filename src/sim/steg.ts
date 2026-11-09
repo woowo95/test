@@ -1056,15 +1056,20 @@ function narmastMedSaker(s: State, tk: Task, x0: number, y0: number, r: number) 
 }
 // tändmaterialet som fattas (hö eller kvistar) finns på rutan (steg 9.3.4, tandPaRutan i eld.ts)
 const tandFattas = (s: State, tk: Task) => (['torrgras', 'grenar'] as Tand[]).filter(k => underBuffert(s, k, tk.items?.[k] ?? 0));
-const tandHar = (s: State, tk: Task, x: number, y: number) => tandFattas(s, tk).some(k => tandPaRutan(s, k, x, y) > 0);
-// den närmaste rutan inom r med det tändmaterial som fattas, och dit man kan gå (inte i vattnet)
+const tandHar = (s: State, tk: Task, x: number, y: number) => tandFattas(s, tk).every(k => tandPaRutan(s, k, x, y) > 0);
+// den närmaste rutan inom r med allt tändmaterial som fattas (hö och kvistar), och annars med något av det
 function narmastTand(s: State, tk: Task, x0: number, y0: number, r: number) {
   const slag = tandFattas(s, tk);
   let bast: { x: number; y: number } | undefined, bd = Infinity;
-  for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
-    const x = x0 + dx, y = y0 + dy, d = Math.hypot(dx, dy);
-    if ((!dx && !dy) || d > r + 0.01 || d >= bd || !inMap(x, y) || !slag.some(k => tandPaRutan(s, k, x, y) > 0)) continue;
-    bast = { x, y }; bd = d;
+  for (const alla of [true, false]) {
+    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+      const x = x0 + dx, y = y0 + dy, d = Math.hypot(dx, dy);
+      if ((!dx && !dy) || d > r + 0.01 || d >= bd || !inMap(x, y)) continue;
+      const har = slag.filter(k => tandPaRutan(s, k, x, y) > 0).length;
+      if (alla ? har < slag.length : har === 0) continue;
+      bast = { x, y }; bd = d;
+    }
+    if (bast) return bast;
   }
   return bast;
 }
