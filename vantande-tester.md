@@ -7,3 +7,5 @@ Raderna skrivs så här: committen, systemet och testerna, till exempel "abc1234
 ## Väntar
 
 65e10c7 9.2.8 (v512): graferna är inte provade i webbläsaren.
+4250dfc 9.2.65–9.2.82 (panelerna, rövarstriden, husen och skogen): snabbkoll, koll, likhet, riktad --karta, facit, utseende (9.2.69 ljuset); publiceras som v514.
+4250dfc 9.2.83 Skogen efter 9.2.81: `npm run natur` och `npm run jamfor -- 35 16 --mot v513` (35 dygn, 35 år i spelet, fem veckor i verkligheten) och en titt på en bys karta efter 35 dygn; skriv resultatet i steget 9.2.83 och bocka av det. I molnet: 21 % skog kvar mot 31 % i v512, 196 mot 157 fällda träd.
