@@ -324,7 +324,7 @@ function anfall(s: State, f: Rovarflock, folk: Person[]) {
 // ropar och söker skydd eller ger sig in, så att ingen går rakt igenom flocken
 function narFlocken(s: State, f: Rovarflock, folk: Person[]) {
   for (const q of folk) {
-    if (!alive(q) || !vaken(q) || q.task?.act === 'strid' || narmast(f, q) >= ROVARE.narR) continue;
+    if (!alive(q) || !vaken(q) || q.task?.act === 'strid' || forsvarar(q) || q.task?.act === 'gomma' || narmast(f, q) >= ROVARE.narR) continue; // den som redan står emot eller gömmer sig ropar inte igen
     if (q.larm?.vad === 'rovare' && s.now - q.larm.t < ROVARE.larmTim * HOUR) continue;
     const hort = larma(s, 'rovare', f.gissning ?? f.folk.length, [q]);
     count(s, 'rovarNara');
