@@ -31,8 +31,8 @@ export const SKOG = balans('skog', {
   fallTim: 0.1, // så många timmar tar det att fälla ett träd, delat med SNABBARE: fyra minuter (steg 2.3.8; 48 minuter förut)
   fallMin: 0.5, // ett litet träd fälls fortare, men aldrig på mindre än så här stor del av tiden
   stubbeDygn: 8, // en stubbe ruttnar bort efter så här många dygn (år i spelet)
-  stubbeMin: 20, // minuter att gräva bort en stubbe för hand (steg 6.5.7) ...
-  stubbeSpade: 0.5, // ... och så här stor del av tiden med benspaden
+  stubbeMin: 15, // minuter att gräva bort en stubbe för hand (steg 6.5.7) ...
+  stubbeSpade: 2 / 15, // ... och så här stor del av tiden med benspaden: två minuter
   stubbeStor: 0.75, // en stubbe efter ett träd som gav minst så här stor del av ett fullvuxet träds trä ger 2 trä, annars 1
   tradMin: 0.95, // ett träd att fälla är minst så här stort (0 till 1) ...
   sokR: 22, // ... och står högst så här många rutor från lägret, i en cirkel (steg 9.2.82), så att det kala växer ut som en ring

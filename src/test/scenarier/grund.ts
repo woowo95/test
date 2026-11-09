@@ -82,9 +82,15 @@ SCENARIER.yxa = {
     const rojs = new Set<number>(); // träd i ett lager i skogen (steg 3.6.9): de fälls i förväg och huggs upp när byn behöver ved
     // när varje stam blev liggande: sedan steg 7.1.1 följer yxan med i fällarens bälte, så stammarna huggs upp när byn behöver
     // ved, inte genast; ingen ska ligga kvar längre än två dygn
-    const sedan = new Map<number, number>();
-    kor(s, 10 * 24, s => { ved = Math.max(ved, amountOf(s, 'ved')); for (const i of skaRojas(s)) rojs.add(i); for (const k of s.stockar ?? []) { fallda.add(tileOf(k.x, k.y)); if (!sedan.has(k.id)) sedan.set(k.id, s.now); } });
-    const liggande = (s.stockar ?? []).filter(k => !rojs.has(tileOf(k.x, k.y)) && s.now - (sedan.get(k.id) ?? s.now) > 2 * DAY).length;
+    // ett träd som blåst omkull (vindfällen, steg 6.5.5) huggs bara upp när byn behöver ved, och får ligga när förrådet är fullt
+    const sedan = new Map<number, number>(), vind = new Set<number>();
+    let vf = s.stat?.vindfall ?? 0;
+    kor(s, 10 * 24, s => {
+      ved = Math.max(ved, amountOf(s, 'ved')); for (const i of skaRojas(s)) rojs.add(i);
+      const blaste = (s.stat?.vindfall ?? 0) > vf; vf = s.stat?.vindfall ?? 0;
+      for (const k of s.stockar ?? []) { if (!sedan.has(k.id)) { sedan.set(k.id, s.now); if (blaste) vind.add(k.id); } if (!vind.has(k.id)) fallda.add(tileOf(k.x, k.y)); }
+    });
+    const liggande = (s.stockar ?? []).filter(k => !vind.has(k.id) && !rojs.has(tileOf(k.x, k.y)) && s.now - (sedan.get(k.id) ?? s.now) > 2 * DAY).length;
     const g = groundOf(s);
     // på gångstråken trampas marken där träden stod till jord, så räkna bara utanför dem (byns område täcker sedan steg 6.2.1
     // också skogen där byn fäller, så området går inte att räkna bort)

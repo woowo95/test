@@ -860,7 +860,7 @@ export function flyttaLager(s: State, z: Zone) {
   const zs = zonesOf(s), andra = zs.filter(q => q !== z), f = eldPlats(s), g = groundOf(s), kand: { c: Zone; d: number }[] = [], o = omrade(s), r = Math.ceil(LAGER.nyLagerMax + OMRADE.kant) + Math.max(z.w, z.h) + 1;
   for (let y = Math.max(0, o.y0 - r); y < Math.min(H - z.h, o.y1 + r + 1); y++) for (let x = Math.max(0, o.x0 - r); x < Math.min(W - z.w, o.x1 + r + 1); x++) {
     const c: Zone = { ...z, x, y, tom: undefined, rojs: undefined }, df = Math.hypot(x + z.w / 2 - f.x, y + z.h / 2 - f.y);
-    if (df < LAGER.nyEldMin || utanforByn(s, x + (z.w - 1) / 2, y + (z.h - 1) / 2) > LAGER.nyLagerMax || !allUsable(s, c) || strakI(s, x, y, z.w, z.h) || andra.some(q => overlaps(c, q, LAGER.mellan))) continue;
+    if (df < LAGER.nyEldMin || utanforByn(s, x + (z.w - 1) / 2, y + (z.h - 1) / 2) > LAGER.nyLagerMax || !allUsable(s, c) || strakI(s, x, y, z.w, z.h) || overlaps(c, z, 0) || andra.some(q => overlaps(c, q, LAGER.mellan))) continue; // aldrig där den låg: där ska något byggas
     const skog = skogI(s, c);
     if (skog < Infinity) kand.push({ c, d: Math.hypot(x - z.x, y - z.y) + skog * LAGER.skogKost });
   }
