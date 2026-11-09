@@ -64,7 +64,7 @@ export const BRAND = balans('brand', {
   hornet: 0.7, // ... gånger det här till en ruta snett bredvid
   torrTim: 48, // marken är helt torr efter så här många torra timmar (torrTim i vader.ts; två dygn, två år i spelet, steg 9.2.25) ...
   arstid: [0, 0.6, 1, 0.8], // ... och så här torr i tidsåldern (istid, vår, sommar, höst)
-  sno: 0.2, // inget brinner när det ligger mer snö än så här (snoPaMarken i vader.ts)
+  sno: 0.85, // snön på marken gör den blöt (steg 9.2.102): torrheten gånger 1 − sno × snön (snoPaMarken i vader.ts, 0 till 1), så att branden sprids sämre ju mer snö som ligger men aldrig stoppas helt
   vind: 1.5, // blåsten (0 till 1) sprider elden så här mycket mer med vinden, och mindre mot den (steg 6.4.4) ...
   motvind: 0.15, // ... men aldrig mindre än så här mycket (gånger) rakt mot vinden
   gnistVind: 3, // gnistorna flyger så här många rutor till med vinden i full blåst
@@ -126,11 +126,11 @@ const chans = (takt: number, dtSec: number) => 1 - Math.exp(-takt * dtSec / HOUR
 
 // branden sprids högst BRAND.maxR rutor från där den började, eller från en ruta som tänts i testläget (kallor, steg 4.5.6.6)
 const nara = (b: Brand, x: number, y: number) => Math.hypot(x - b.x, y - b.y) <= BRAND.maxR || !!b.kallor?.some(i => Math.hypot(x - i % W, y - Math.floor(i / W)) <= BRAND.maxR);
-// hur torr marken är (0 till 1): torra timmar, tidsåldern, och ingenting under snön
+// hur torr marken är (0 till 1): torra timmar, tidsåldern, och snön som blöter marken
 export function torrhet(s: State) {
-  if (s.testTorr) return 1; // testläget: marken är torkad helt (steg 9.2.24)
-  if (snoPaMarken(s) > BRAND.sno) return 0;
-  return Math.min(1, torrTim(s) / BRAND.torrTim) * BRAND.arstid[kalender(s).ai];
+  const sno = 1 - BRAND.sno * Math.max(0, Math.min(1, snoPaMarken(s))); // snön blöter marken (steg 9.2.102)
+  if (s.testTorr) return sno; // testläget: marken är torkad helt (steg 9.2.24), men snön ligger kvar
+  return Math.min(1, torrTim(s) / BRAND.torrTim) * BRAND.arstid[kalender(s).ai] * sno;
 }
 // hur lätt biten v tar eld: en vägg eller ett golv efter materialet, en öppning med en dörr som en vägg (steg 6.4.3)
 const bitBrinner = (v: Bit | undefined) => !v ? undefined : v.k === 'oppning' ? (v.dorr ? 1 : undefined) : v.b >= 1 ? MATERIAL[v.m]?.brinner : undefined;
@@ -207,14 +207,13 @@ export function tand(s: State, i: number, kalla: Brand['kalla'], u: number, bran
 }
 
 // testläget (steg 4.5.6.6): rutan (x, y) tar eld, med tand som en blixt, och sedan sprids branden efter de vanliga reglerna.
-// Brinner inget på rutan (vatten, sten, bar jord, snö) tänds inget, och svaret säger varför. Bara i kopian av byn
+// Brinner inget på rutan (vatten, sten, bar jord) tänds inget; i snön tänds det, men branden sprids sämre (steg 9.2.102), och svaret säger varför. Bara i kopian av byn
 export function tandTest(s: State, x: number, y: number): { ok: boolean; text: string } {
   if (!inMap(x, y)) return { ok: false, text: 'Rutan är utanför kartan' };
   const i = y * W + x, k = s.brand && kartaOf(s.brand)[i];
   if (k === 1) return { ok: false, text: 'Det brinner redan där' };
   if (k === 2) return { ok: false, text: 'Rutan har redan brunnit' };
   const g = groundOf(s), vad = g.tiles[i] === T.Vatten ? 'vatten' : !isSoil(g.tiles[i]) ? 'sten' : markslag(g, i) === 'bar' ? 'bar jord' : 'inget som brinner';
-  if (!s.testTorr && snoPaMarken(s) > BRAND.sno) return { ok: false, text: 'Snön ligger på marken, och inget brinner där' };
   const fu = bransleAv(s)(i);
   if (!fu) return { ok: false, text: `Inget brinner där (${vad})` };
   const ny = !s.brand;
@@ -225,7 +224,7 @@ export function tandTest(s: State, x: number, y: number): { ok: boolean; text: s
   // delsteg (5 sekunder, spelets tid) på sprid × antändningen × torrheten
   const dry = torrhet(s), p5 = BRAND.sprid * fu[0] * dry, slag = MARKORD[markslag(g, i)] ?? 'där';
   const fart = p5 > 0 ? (() => { const sek = 5 / Math.min(1, p5); return sek < 90 ? `en ruta på ungefär ${Math.round(sek)} sekunder ${slag}` : `en ruta på ungefär ${Math.round(sek / 60)} minuter ${slag}`; })() : 'den sprider sig inte';
-  const text = `Testläget: en brand tändes ${d ? `${d} ${d === 1 ? 'ruta' : 'rutor'} ${vaderstreck(s, x, y)} om elden` : 'vid elden'} (torrhet ${Math.round(dry * 100)} %, ${fart}).` + (dry <= 0 ? ' Marken är för blöt för att den ska sprida sig.' : '');
+  const text = `Testläget: en brand tändes ${d ? `${d} ${d === 1 ? 'ruta' : 'rutor'} ${vaderstreck(s, x, y)} om elden` : 'vid elden'} (torrhet ${Math.round(dry * 100)} %, ${fart}).` + (dry <= 0 ? ' Marken är för blöt för att den ska sprida sig.' : snoPaMarken(s) > 0 ? ' Snön på marken gör att den sprids sämre.' : '');
   log(s, text, 'world');
   return { ok: true, text };
 }
@@ -234,7 +233,7 @@ const MARKORD: Record<string, string> = { skog: 'i skogen', ung: 'i ungskogen', 
 // testläget (steg 9.2.24): marken torkas helt, så att en brand kan provas när som helst (bara i kopian av byn)
 export function torkaTest(s: State): { ok: boolean; text: string } {
   s.testTorr = 1;
-  return { ok: true, text: 'Testläget: marken är helt torr, också i snön och istiden, tills testläget stängs' };
+  return { ok: true, text: 'Testläget: marken är helt torr, också i istiden, tills testläget stängs (snön blöter den ändå lite)' };
 }
 // blixten slog ner på rutan (steg 9.2.21): den syns i gränssnittet en kort stund. Bara nedslagen den senaste timmen sparas
 export function nedslag(s: State, x: number, y: number) {
@@ -253,7 +252,6 @@ export function blixtTest(s: State, x: number, y: number): { ok: boolean; text: 
   let text: string;
   if (k === 1) text = `Blixten slog ner ${var_}, där det redan brinner`;
   else if (k === 2) text = `Blixten slog ner ${var_}, där det redan har brunnit`;
-  else if (snoPaMarken(s) > BRAND.sno) text = `Blixten slog ner ${var_}, men snön ligger på marken och inget tog eld`;
   else if (!fu) text = `Blixten slog ner ${var_} ${vad}, och inget tog eld`;
   else if (dry <= 0) text = `Blixten slog ner ${var_}, men marken är för blöt och inget tog eld`;
   else {

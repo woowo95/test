@@ -1780,7 +1780,7 @@ SCENARIER.brand = {
 };
 
 SCENARIER.brinner = {
-  text: 'Steg 6.4.16: en människa kan börja brinna och får brännskador tills elden är släckt. Hen släcker sig själv först (rullar, går i vattnet eller sliter av sig plagget), och de som står nära springer dit och hjälper till; båda går före allt annat',
+  text: 'Steg 6.4.16: en människa kan börja brinna och får brännskador tills elden är släckt. Hen släcker sig själv först (rullar, går i vattnet eller sliter av sig plagget), och de som står nära springer dit och hjälper till; båda går före allt annat. Snön stoppar inte en brand helt men den sprids långsammare (steg 9.2.102)',
   kor: () => {
     const a = torrAng();
     if (typeof a === 'string') return [[a, false]];
@@ -1804,7 +1804,18 @@ SCENARIER.brinner = {
     r.brinner = z.now;
     for (let i = 0; i < 12; i++) { z.now += 60 * SIM.SEC; SIM.brinnerSteg(z, 60); }
     const st = z.stat ?? {}, sx = x.stat ?? {};
+    // 4: snön stoppar inte en brand helt (steg 9.2.102): samma äng med och utan snö, tänd med knappen Brand i testläget
+    const ang = (sno: number) => {
+      const w = cloneState(s); angSlag(w, a.mitt, 'hog');
+      if (w.vader) { w.vader.torr = 240; w.vader.fukt = 0; w.vader.sno = sno; }
+      const svar = SIM.tandTest(w, a.mitt % W, Math.floor(a.mitt / W));
+      step(w, 5 * 60);
+      return { ok: svar.ok, n: w.brand?.n ?? 0, dry: SIM.torrhet(w) };
+    };
+    const bar = ang(0), snoig = ang(1);
     return [
+      [`i snön tänds en brand med knappen Brand (${snoig.ok ? 'ja' : 'nej'}) och sprids (${snoig.n} rutor efter fem minuter, torrhet ${Math.round(snoig.dry * 100)} %)`, snoig.ok && snoig.n > 1],
+      [`... men långsammare än på bar mark (${bar.n} rutor, torrhet ${Math.round(bar.dry * 100)} %)`, snoig.n < bar.n],
       [`${p.name} börjar brinna (${brann ? 'ja' : 'nej'}) och väljer först att släcka sig själv (${ACTS_NAMN(valde)})`, brann && valde === 'slackaSig'],
       [`elden på ${p.name} är släckt efter ${(sek / 60).toFixed(1)} minuter (${Object.keys(sx).filter(k => k.startsWith('brinner slackt ')).join(', ')})`, slackt && sek <= 10 * 60],
       [`den som står bredvid springer dit och släcker (${ACTS_NAMN(qt?.act ?? '')})`, hjalper],
