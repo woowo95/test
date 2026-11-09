@@ -8,6 +8,8 @@ import { pair } from './varld';
 import { avgMood } from './humor';
 import { chance, clamp, pick, rnd } from './slump';
 import { Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, State, T, W } from './typer';
+import { vattenNu } from './sjo';
+import { tileOf } from './mark';
 import { foodDays } from './ekonomi';
 import { avbryt, put, releaseOwner } from './lager';
 import { inherit, packUp } from './arv';
@@ -20,7 +22,7 @@ import { KLAN, andraInst, klanById, klanerOf, utbrytning } from './klaner';
 import { gaMot } from './rovare';
 import { kanterna } from './varg';
 import { eldPlats, getMap } from './karta';
-import { freeNear } from './byggnad';
+import { freeNear, isWall } from './byggnad';
 import { gastGar, nyttGastId } from './gast';
 import { notis } from './notiser';
 import { vaderNu } from './vader';
@@ -276,6 +278,7 @@ export function framlingBeslut(s: State, p: Person) {
   // hen blir bybo: samma person, med bybons id
   const gid = p.id;
   p.id = g.blir!; p.gast = undefined; p.task = undefined;
+  if (isWall(s, p.x, p.y) || vattenNu(s)[tileOf(p.x, p.y)] === T.Vatten) { const f = freeNear(s, Math.floor(p.x), Math.floor(p.y)); p.x = f.x + 0.5; p.y = f.y + 0.5; } // gästen gick sista biten rakt fram: bybon står aldrig i en vägg eller i vattnet
   for (const q of s.people) if (q.task?.med === gid) q.task.med = p.id;
   upplev(s, p, 'flyttade');
   for (const m in MEDHAVT) put(s, m, MEDHAVT[m], { [p.id]: MEDHAVT[m] });
