@@ -568,6 +568,11 @@ export function rovarStrid(s: State, f: Rovarflock, folk: Person[]) {
 }
 
 // rövarna tar så mycket de kan bära, det med högst pris per vikt först, redskapen inräknade (steg 8.7.16)
+// de som rövarna kommit i kontakt med och som inte gett upp eller gömt sig (steg 9.2.119): nära flocken, vakna, och de står
+// emot, hjälper till eller håller vakt. Så länge någon står kvar tar rövarna ingenting; det blir strid först
+function starKvar(s: State, f: Rovarflock, folk: Person[]) {
+  return folk.filter(q => alive(q) && vaken(q) && vuxenKan(s, q) && avst(q, f) < ROVARE.motR && (forsvarar(q) || q.task?.act === 'hjalpaRovare' || q.task?.act === 'vakt'));
+}
 export function plundra(s: State, f: Rovarflock, tyst: boolean) {
   let tog = 0;
   // att fly är att ge upp (steg 8.7.17): flyr alla som möter rövarna tar de vad de vill, också ur kistor och hyllor
@@ -623,6 +628,7 @@ function flockSteg(s: State, f: Rovarflock, folk: Person[], dtSec: number) {
   if (f.gor === 'slass') { // striden pågår (steg 6.6.10)
     const vann = stridGar(s, f, folk);
     if (vann === undefined) return;
+    if (vann) { const kvar = starKvar(s, f, folk); if (kvar.length) { count(s, 'rovarStarKvar'); borjaStrid(s, f, kvar); return; } } // står någon kvar blir det strid igen (steg 9.2.119)
     f.gor = 'flyr';
     if (vann) { if (!radSeger(s, f)) plundra(s, f, false); if ((f.gor as Rovarflock['gor']) !== 'letar') tandaHus(s, f); } // radSeger kan sätta letar
     return;
@@ -658,6 +664,8 @@ function flockSteg(s: State, f: Rovarflock, folk: Person[], dtSec: number) {
   // framme vid förrådet: striden börjar, eller rövarna plundrar när ingen står emot
   const mot = motstand(s, f, folk);
   if (mot.length) { borjaStrid(s, f, mot); return; }
+  const star = starKvar(s, f, folk);
+  if (star.length) { count(s, 'rovarStarKvar'); borjaStrid(s, f, star); return; } // de som står bakom står också emot (steg 9.2.119)
   if (huggDorr(s, f, folk)) return; // en stängd dörr huggs sönder (steg 8.9.1–8.9.2)
   f.gor = 'flyr';
   if (!radSeger(s, f)) plundra(s, f, f.sedd === undefined);
