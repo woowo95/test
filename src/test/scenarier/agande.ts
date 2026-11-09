@@ -1781,7 +1781,7 @@ SCENARIER.rovare = {
     const t = cloneState(bas); setAmount(t, 'skinn', 20);
     for (const p of living(t)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: t.now + 8 * HOUR, carry: 0 };
     const t0 = forrad(t); flock(t, 3, 3);
-    for (let i = 0; i < 400 && t.rovare?.gor !== 'flyr'; i++) SIM.rovarSteg(t, dt);
+    for (let i = 0; i < 4000 && t.rovare?.gor !== 'flyr'; i++) { t.now += dt * SIM.SEC; SIM.rovarSteg(t, dt); } // tiden går: rövarna letar en stund i förråden (steg 9.2.120)
     const tyst = (t.stat?.rovarTyst ?? 0) === 1 && forrad(t) < t0 && (t.stat?.rovat ?? 0) >= 1 && (t.hist?.kronika ?? []).some(x => x[2] === 'rovare');
     // de vuxna står emot: en strid
     const c = cloneState(bas), fc = flock(c, 3, 3); fc.sedd = c.now;
@@ -1952,7 +1952,7 @@ SCENARIER.rovarstarkvar = {
       SIM.rovarnaKommer(s, 2); const f = s.rovare!; f.gor = 'kommer'; f.sedd = s.now; f.lurat = true; SIM.stallUpp(s, f, m.x + 3, m.y);
       const steg = (x: State, sek: number) => { x.now += sek * SIM.SEC; SIM.rovarSteg(x, sek); };
       let slass = false, rovatFore = 0;
-      for (let i = 0; i < 120 && s.rovare && s.rovare.gor !== 'flyr'; i++) { steg(s, 1); if (s.rovare?.gor === 'slass' && !slass) { slass = true; rovatFore = s.stat?.rovat ?? 0; } }
+      for (let i = 0; i < 900 && s.rovare && s.rovare.gor !== 'flyr'; i++) { steg(s, 1); if (s.rovare?.gor === 'slass' && !slass) { slass = true; rovatFore = s.stat?.rovat ?? 0; } }
       return { slass, rovatFore, rovat: s.stat?.rovat ?? 0, namn: h.name };
     };
     const h = prov(false), g = prov(true);
@@ -1960,6 +1960,33 @@ SCENARIER.rovarstarkvar = {
       [`${h.namn} hjälper till vid förrådet när flocken kommer: det blir strid`, h.slass],
       [`och inget togs innan striden började (${h.rovatFore})`, h.rovatFore === 0],
       [`gömmer sig alla plundrar rövarna utan strid (${g.rovat} saker)`, !g.slass && g.rovat > 0],
+    ];
+  },
+};
+
+SCENARIER.rovarrotar = {
+  text: 'Steg 9.2.120: rövarna går mellan förråden (lagerplatserna och förrådshusen) och letar en stund efter det mest värdefulla innan de tar något, så att byn hinner reagera. När de letat klart tar de det dyraste de kan bära',
+  kor: () => {
+    const s = createState(6, START);
+    for (const c of SIM.klanerOf(s)) c.inst = -60;
+    const z = SIM.zoneOf(s)!, m = { x: z.x + z.w / 2, y: z.y + z.h / 2 };
+    // två lagerplatser, och silver (dyrt och lätt) i förrådet
+    SIM.zonesOf(s).push({ ...z, x: z.x + 8, y: z.y, w: 2, h: 2, namn: 'Lagret bortom' }); SIM.touch(s);
+    setAmount(s, 'silver', 30);
+    for (const p of living(s)) { p.larm = { t: s.now, vad: 'rovare', storlek: 2, led: 0 }; Object.assign(p, SIM.freeNear(s, m.x + 30, m.y + 30)); p.task = { act: 'gomma', phase: 'do', tx: p.x, ty: p.y, until: s.now + 20 * HOUR, carry: 0 }; }
+    SIM.rovarnaKommer(s, 2); const f = s.rovare!; f.gor = 'kommer'; f.sedd = s.now; f.lurat = true; SIM.stallUpp(s, f, m.x + 3, m.y);
+    const steg = (x: State, sek: number) => { x.now += sek * SIM.SEC; SIM.rovarSteg(x, sek); };
+    let borjade = -1, tog = -1, stopp = 0;
+    for (let i = 0; i < 1200 && s.rovare && s.rovare.gor !== 'flyr'; i++) {
+      steg(s, 1);
+      if (s.rovare?.gor === 'rotar' && borjade < 0) { borjade = s.now; stopp = s.rovare.rotar?.length ?? 0; }
+    }
+    if ((s.stat?.rovat ?? 0) > 0) tog = s.now;
+    const min = (tog - borjade) / SIM.MIN;
+    return [
+      [`rövarna går mellan förråden (${stopp} platser)`, stopp >= 2],
+      [`de letar ${min.toFixed(1)} minuter (en minut är ungefär sex timmar i spelet) innan de tar något`, borjade > 0 && tog > 0 && min >= SIM.ROVARE.rotaMin - 0.01],
+      [`de tar det dyraste först: silvret (${30 - amountOf(s, 'silver')} av 30)`, amountOf(s, 'silver') < 30],
     ];
   },
 };
@@ -2069,7 +2096,7 @@ SCENARIER.rovartest = {
       const f = u.rovare;
       if (!f) break;
       if (f.gor === 'vantar' && vant < 0) { vant = ut(u, f); vantMin = (f.till - u.now) / MIN; }
-      if (f.gor === 'slass' || (u.stat?.rovarPlundring ?? 0) > 0 || f.gor === 'flyr') borjade = (u.now - u0) / SEC;
+      if (f.gor === 'slass' || f.gor === 'rotar' || (u.stat?.rovarPlundring ?? 0) > 0 || f.gor === 'flyr') borjade = (u.now - u0) / SEC;
     }
     // en vanlig flock i samma by: den väntar också utanför byns område
     const v = stor();
