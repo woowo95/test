@@ -115,9 +115,13 @@
   kk('bygge', 'Bygge och uppfinningar', 'Tre versioner som utgår från huset som spelet visar i dag. Din kommentar förra gången: ”utgå från symbolen som redan finns”',
     [['Huset som i dag, tydligare: taket ljust på vänster sida och mörkt på höger, timmerväggar i två toner och korsade gavelstockar överst.', HUS, L],
       ['Samma hus med en gnista uppe till höger: något nytt har kommit till, ett bygge eller en uppfinning.', husMed(gnista(13, 2)), L],
-      ['Samma hus medan det byggs: på den högra halvan av taket ligger bara ribborna, och torvan är inte lagd än.', husMed(g => {
-        for (let y = 3; y <= 7; y++) for (let x = 9; x < 15; x++) if (g.g[y][x] === 'j') g.satt(x, y, y % 2 ? 'J' : '.');
-        for (let y = 3; y <= 7; y++) if (g.g[y][9] === '.') g.satt(9, y, 'j');
+      ['Samma hus med en stenyxa lutad mot väggen: här byggs det.', husMed(g => {
+        g.fyll(linje([[9.5, 15.5], [13.2, 9.5]], 0.55), 'J');
+        g.fyll(poly([[11, 8.2], [14.6, 6.8], [15.6, 9.4], [12.4, 11]]), tre(13, 9, 'S', 's', 'q', -1.2, 1.2));
+        const f = g.g.map(r => r.slice());
+        for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) if (!'Ssq'.includes(f[y][x]) && !(f[y][x] === 'J' && x >= 9 && y >= 9) && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => f[y + dy] && ('Ssq'.includes(f[y + dy][x + dx] || '.') || (f[y + dy][x + dx] === 'J' && x + dx >= 9 && y + dy >= 9 && f[y][x] !== 'o' && !'Ssq'.includes(f[y][x])) ))) {
+          if (f[y][x] === '.' || 'bjk'.includes(f[y][x])) g.satt(x, y, 'o');
+        }
       }), L]],
     { idag: spelet(['................', '.......oo.......', '......ojjo......', '.....ojjjjo.....', '....ojjjjjjo....', '...ojjjjjjjjo...', '..ojjjjjjjjjjo..', '.oooooooooooooo.', '..obbbbbbbbbbo..', '..obbbbbbbbbbo..', '..obbboooobbbo..', '..obbbokkobbbo..', '..obbbokkobbbo..', '..obbbokkobbbo..', '..oooooooooooo..', '................'], { o: '#24201d', j: '#7d5b40', b: '#987e62', k: '#2f261d' }) });
 
@@ -150,7 +154,7 @@
       const g = Grid(16, 16);
       g.fyll(och(linje([[2, 14.5], [11, 5.5]], 0.55), linje([[14, 14.5], [5, 5.5]], 0.55)), 'J');
       // spjutspetsarna: smala och spetsiga, i spjutets riktning
-      g.fyll(och(poly([[15.2, 0.8], [10.4, 3.6], [12.4, 5.6]]), poly([[0.8, 0.8], [5.6, 3.6], [3.6, 5.6]])), (x, y) => (x < 8 ? x - y : y - x) > 0.3 ? 'q' : 'S');
+      g.fyll(och(poly([[15.2, 0.8], [11.4, 3.2], [12.8, 4.6]]), poly([[0.8, 0.8], [4.6, 3.2], [3.2, 4.6]])), (x, y) => (x < 8 ? x - y : y - x) > 0.3 ? 'q' : 'S');
       g.fyll(ell(8, 10.5, 4.2, 4.2), tre(8, 10.5, 'b', 'J', 'j', -2.5, 2.5));
       g.fyll((x, y) => ell(8, 10.5, 4.2, 4.2)(x, y) && !ell(8, 10.5, 3.3, 3.3)(x, y), 'j');
       g.fyll(ell(8, 10.5, 1.5, 1.5), tre(8, 10.5, 'S', 's', 'q', -0.6, 0.6));
@@ -171,20 +175,19 @@
         const klo = (x0) => linje([[x0 + 5, 1.5], [x0 + 3.2, 7], [x0 + 0.5, 14.5]], 0.3, 0.85);
         for (const x0 of [0.5, 4.8, 9.1]) g.fyll(klo(x0), (x, y) => y < 5 ? 'R' : 'r');
         for (const x0 of [0.5, 4.8, 9.1]) g.fyll(klo(x0 + 0.8), (x, y) => (g.g[Math.floor(y)][Math.floor(x)] === '.' ? 'D' : null));
-        return g.kontur().rader();
+        return g.rader();
       }, L]]);
 
   // Fritid: version 2 (trumman) först, och två nya trummor och instrument
   kk('fritid', 'Fritid', 'Version 1 är den du valde (trumman), och version 2 och 3 är två nya instrument. Din kommentar förra gången: ”gör fler versioner av trummor och instrument”',
     [['Den du valde: en trumma med skinn och en pinne.', ['............oo..', '...........owo..', '..........owo...', '.........owo....', '..oooooooowooo..', '.owwwwwwwwwwwwo.', '.oWwwwwwwwwwwWo.', '.oowwwwwwwwwwoo.', '.orjrjrjrjrjrjo.', '.ojrjrjrjrjrjro.', '.orjrjrjrjrjrjo.', '.ojrjrjrjrjrjro.', '..orrrrrrrrrro..', '...oooooooooo...', '................', '................'], KL],
-      ['En ramtrumma: ett tunt skinn i en träram, med en röd målad sol, och en klubba med en knopp.', () => {
+      ['En ramtrumma som lutar: ett tunt skinn i en träram med en röd målad ring, och en klubba med en knopp.', () => {
         const g = Grid(16, 16);
         // ramen syns som ett band av trä under skinnet, eftersom trumman lutar
-        g.fyll(ell(7, 9.8, 6.4, 5), tre(7, 9.8, 'J', 'j', 'E', -3, 3));
-        g.fyll(ell(7, 7.8, 6, 4.6), (x, y) => (x - 7) + (y - 7.8) < -3.5 ? 'w' : 'W');
+        g.fyll(ell(7, 10, 6.4, 4), tre(7, 10, 'J', 'j', 'E', -3, 3));
+        g.fyll(ell(7, 7.8, 6, 3.8), (x, y) => (x - 7) + (y - 7.8) < -3.5 ? 'w' : 'W');
         // en röd målad sol på skinnet: en ring med fyra strålar
-        g.fyll(utan(ell(7, 7.8, 2.2, 1.8), ell(7, 7.8, 1.1, 0.8)), 'r');
-        for (const [x, y] of [[7, 4], [7, 11], [2, 8], [3, 8], [11, 8], [10, 8]]) g.satt(x, y, 'r');
+        g.fyll(utan(ell(7, 7.8, 3, 1.9), ell(7, 7.8, 1.9, 0.9)), 'r');
         g.kontur();
         g.fyll(linje([[10.5, 9], [14.5, 2.5]], 0.6), 'J');
         g.fyll(ell(14.5, 2, 1.5, 1.5), (x, y) => x + y < 16 ? 'w' : 'W');
@@ -219,13 +222,120 @@
         return g.rader().map((r, y) => y >= 9 && y < 14 ? 'o' + r.slice(1, 15) + 'o' : r);
       }, KL],
       ['De två husen, grannens med rött tak, och en säck mellan dem på marken: något byts.', () => {
-        const g = Grid(16, 16).lagg(TVA_HUS, 0, 1);
+        const g = Grid(16, 16).lagg(TVA_HUS, 0, 0);
         // grannens tak i rött
-        for (let y = 1; y <= 4; y++) for (let x = 9; x < 16; x++) { const c = g.g[y][x]; if (c === 'J') g.satt(x, y, 'R'); else if (c === 'j') g.satt(x, y, 'r'); }
-        // säcken på marken mellan husen
-        g.lagg(['.oo.', 'oJJo', 'objo', 'ojjo', '.oo.'], 6, 8);
-        for (let x = 0; x < 16; x++) { g.satt(x, 13, x % 5 === 2 ? 'G' : 'g'); g.satt(x, 14, 'o'); g.satt(x, 12, 'o'); }
+        for (let y = 0; y <= 4; y++) for (let x = 9; x < 16; x++) { const c = g.g[y][x]; if (c === 'J') g.satt(x, y, 'R'); else if (c === 'j') g.satt(x, y, 'r'); }
+        for (let x = 0; x < 16; x++) { g.satt(x, 12, 'o'); g.satt(x, 13, x % 5 === 2 ? 'G' : 'g'); g.satt(x, 14, 'o'); }
         g.satt(0, 13, 'o'); g.satt(15, 13, 'o');
+        // säcken på marken mellan husen
+        g.lagg(['..oo..', '.oJJo.', 'oJbbjo', 'objjjo', 'ojjjjo', '.oooo.'], 5, 7);
         return g.rader();
       }, KL]]);
+  // ---------- 9.2.53 sakerna på rutan ----------
+  // spelets kartbilder (bilder/*.json, src/kartbilder.ts) av bären, svampen, rötterna och grenarna, en, två och tre på en ruta
+  const SAKER = [['bar', 'bären'], ['svamp', 'svampen'], ['rotter', 'rötterna'], ['grenar', 'grenarna']];
+  const farg = (B, hex) => B.P.near(rgb2lab(hex2rgb(hex)));
+  // en bild ur BILDFILER med en mörkare skugga under varje kolumn
+  const bild = (B, id, x0, y0, rx, ry, rw, rh) => {
+    const o = BILDFILER[id], inne = (x, y) => x >= rx && y >= ry && x < rx + rw && y < ry + rh;
+    o.rader.forEach((r, y) => [...r].forEach((c, x) => { if (c === '.' || !o.pal[c]) return; if (inne(x0 + x, y0 + y)) B.satt(x0 + x, y0 + y, farg(B, o.pal[c])); }));
+    for (let x = 0; x < o.w; x++) { let ned = -1; o.rader.forEach((r, y) => { if (r[x] && r[x] !== '.') ned = y; }); if (ned >= 0 && inne(x0 + x, y0 + ned + 1) && !(o.rader[ned + 1] && o.rader[ned + 1][x] !== '.')) B.morka(x0 + x, y0 + ned + 1); }
+  };
+  // var på rutan (16 × 16) sakerna ligger, för en bild som är w × h
+  const PLATS = {
+    rad: (n, w, h) => { const A = [1, 2], C = [15 - w, 14 - h], t = [[0.5], [0.15, 0.85], [0, 0.5, 1]][n - 1]; return t.map(s => [A[0] + (C[0] - A[0]) * s, A[1] + (C[1] - A[1]) * s]); },
+    klunga: (n, w, h) => { const cx = 8 - w / 2, cy = 8.5 - h / 2, d = [[[0, 0]], [[-0.3, -0.25], [0.3, 0.3]], [[0, -0.45], [-0.35, 0.3], [0.38, 0.35]]][n - 1]; return d.map(([a, b]) => [cx + a * w, cy + b * h]); },
+    sprid: (n, w, h) => [[[8 - w / 2, 8 - h / 2]], [[1, 1.5], [15 - w, 14.5 - h]], [[1, 1], [15 - w, 3.5], [Math.min(15 - w, 5), 14.5 - h]]][n - 1],
+  };
+  const RUTOR = (B, rita) => {
+    for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) B.satt(x, y, B.P.i('kol', 1));
+    SAKER.forEach(([id], rad) => [1, 2, 3].forEach((n, kol) => { const x0 = 2 + kol * 18, y0 = 2 + rad * 18; window.F7.gras(B, x0, y0, 16, 16); rita(id, n, x0, y0, rad * 3 + kol); }));
+  };
+  // spelet i dag (src/ui/vaxter.ts): små platshållare, tuvan för bären och en bild per svamp, rot och gren
+  const BF = { g: '#4b4f00', G: '#647025', r: '#a14808', h: '#b2921b', H: '#906f0f', f: '#bdb39b', j: '#5e3c24', J: '#7d5b40', l: '#647025' };
+  const TUVA = [['..gG..', '.gGgg.', 'gGrGgG', '.ggGg.', '..gg..'], ['..gG..', '.gGrg.', 'gGgGgG', '.rgGg.', '..gg..'], ['..gG..', '.gGrg.', 'gGgGrG', '.rgGg.', '..gg..']];
+  const SMA = { svamp: ['.hh.', 'hHHh', '.ff.'], rotter: ['.l.', 'jJj', '.j.'], grenar: ['....j', '...J.', '.jJ..', 'j....'] };
+  const plats = (i, j) => { const h = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453; return h - Math.floor(h); };
+  const smaBild = (B, r, x0, y0) => r.forEach((rad, y) => [...rad].forEach((c, x) => { if (BF[c]) B.satt(x0 + x, y0 + y, farg(B, BF[c])); }));
+  const SATT = [
+    ['rad', 'I rad: en, två eller tre av spelets bild i en sned rad över rutan, från uppe till vänster till nere till höger.'],
+    ['klunga', 'I en klunga: sakerna ligger tätt ihop mitt på rutan och skymmer varandra lite, som en liten hög.'],
+    ['sprid', 'Spridda: sakerna ligger var för sig, i olika hörn av rutan, som om de fallit eller vuxit där.'],
+  ];
+  byt({ id: 'f9_rutsaker', namn: 'Sakerna på rutan', typ: 'tre',
+    vad: 'Steg 9.2.53: allt som samlas är hela saker på rutan, och bilden visar antalet. Nu används spelets egna bilder av sakerna, de som syns när någon bär dem eller när de ligger i lagret, i stället för de små platshållarna. Varje rad är en sak (bär, svamp, rötter, grenar), från vänster en, två och tre på rutan. Till vänster hur spelet ritar det i dag. Din kommentar förra gången: ”börja med att utgå från hur symbolerna ser ut idag.”',
+    idag: { w: 56, h: 74, rita: B => RUTOR(B, (id, n, x0, y0, i) => {
+      if (id === 'bar') { smaBild(B, TUVA[n - 1], Math.round(x0 + 2 + plats(i, 0) * 8), Math.round(y0 + 3 + plats(i, 5) * 8)); return; }
+      for (let k = 0; k < n; k++) smaBild(B, SMA[id], Math.round(x0 + 1 + plats(i, 10 + k) * (id === 'grenar' ? 10 : 11)), Math.round(y0 + 1 + plats(i, 20 + k) * (id === 'grenar' ? 11 : 12)));
+    }) }, idagText: 'Så ritar spelet sakerna på rutan i dag: små platshållare (bären som en tuva med ett till tre bär).',
+    versioner: SATT.map(([satt, text]) => ({ text, w: 56, h: 74, rita: B => RUTOR(B, (id, n, x0, y0) => {
+      const o = BILDFILER[id], pos = PLATS[satt](n, o.w, o.h).map(([x, y]) => [Math.round(x), Math.round(y)]).sort((a, b) => a[1] - b[1]);
+      for (const [x, y] of pos) bild(B, id, x0 + x, y0 + y, x0, y0, 16, 16);
+    }) })) });
+
+  // ---------- 9.2.39 vedträt och vedhögen ----------
+  // Ett kluvet vedträ ritas som ett tvärsnitt (en polygon, varje kant bark 'k' eller kluven yta 's') som dras ut åt
+  // riktningen d: änden närmast är ändträet med årsringar, längs kroppen syns barken och de kluvna sidorna. Den
+  // kluvna sidan som vetter uppåt till vänster är ljus, den andra mörkare; barken mörk med fåror på längden.
+  const inPoly = (pts, x, y) => poly(pts)(x, y);
+  function vedtra(spec, skala = 1) {
+    const sec = spec.sec.map(([u, v]) => [u * skala, v * skala]), d = [spec.d[0] * skala, spec.d[1] * skala], pith = [spec.pith[0] * skala, spec.pith[1] * skala];
+    const F = { ande: 'W', ring: 'v', karna: 'J', ljus: 'Y', ljus2: 'y', mitt: 'b', mitt2: 'J', bark: 'E', bark2: 'k', ...spec.f };
+    const xs = sec.flatMap(([u]) => [u, u + d[0]]), ys = sec.flatMap(([, v]) => [v, v + d[1]]);
+    const x0 = Math.min(...xs), y0 = Math.min(...ys), w = Math.ceil(Math.max(...xs) - x0) + 2, h = Math.ceil(Math.max(...ys) - y0) + 2;
+    const cx = sec.reduce((s, p) => s + p[0], 0) / sec.length, cy = sec.reduce((s, p) => s + p[1], 0) / sec.length;
+    const kanter = sec.map((a, i) => { const b = sec[(i + 1) % sec.length]; let nx = b[1] - a[1], ny = -(b[0] - a[0]); const l = Math.hypot(nx, ny) || 1; nx /= l; ny /= l; if (nx * ((a[0] + b[0]) / 2 - cx) + ny * ((a[1] + b[1]) / 2 - cy) < 0) { nx = -nx; ny = -ny; } return { a, b, n: [nx, ny], typ: spec.kant[i] }; });
+    let s0 = 0; kanter.forEach(k => { k.s0 = s0; s0 += Math.hypot(k.b[0] - k.a[0], k.b[1] - k.a[1]); });
+    const narmast = (qx, qy) => { let bast = null; for (const k of kanter) { const dx = k.b[0] - k.a[0], dy = k.b[1] - k.a[1], L2 = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((qx - k.a[0]) * dx + (qy - k.a[1]) * dy) / L2)), dd = Math.hypot(qx - k.a[0] - t * dx, qy - k.a[1] - t * dy); if (!bast || dd < bast.dd) bast = { k, dd, s: k.s0 + t * Math.sqrt(L2) }; } return bast; };
+    const g = Grid(w, h);
+    for (let py = 0; py < h; py++) for (let px = 0; px < w; px++) {
+      const X = px + 0.5 + x0 - 1, Y = py + 0.5 + y0 - 1;
+      let hit = null;
+      for (let t = 0; t <= 1.0001; t += 0.02) { const qx = X - t * d[0], qy = Y - t * d[1]; if (inPoly(sec, qx, qy)) { hit = { t, qx, qy }; break; } }
+      if (!hit) continue;
+      const n = narmast(hit.qx, hit.qy);
+      let c;
+      if (hit.t === 0) { // ändträet
+        const r = Math.hypot(hit.qx - pith[0], hit.qy - pith[1]);
+        if (n.k.typ === 'k' && n.dd < 0.85) c = F.bark;
+        else if (r < 0.7) c = F.karna;
+        else c = (r * (spec.ringtat || 1) / skala) % 1.8 < 0.6 ? F.ring : F.ande;
+      } else if (n.k.typ === 'k') {
+        const v = hash(Math.floor(n.s * 1.4), spec.fro || 1, Math.floor(hit.t * (spec.flack || 0)));
+        c = v < 0.38 ? F.bark2 : F.bark;
+      } else {
+        const ljus = -0.6 * n.k.n[0] - 0.8 * n.k.n[1] > 0.15, strimma = hash(Math.floor(n.s * 2.2), 7) < 0.22;
+        c = ljus ? (strimma ? F.ljus2 : F.ljus) : (strimma ? F.mitt2 : F.mitt);
+      }
+      g.satt(px, py, c);
+    }
+    return g.kontur().rader().filter(r => /[^.]/.test(r));
+  }
+  const bage = (cx, cy, r, a0, a1, steg = 15) => { const p = []; for (let a = a0; a0 < a1 ? a <= a1 + 0.01 : a >= a1 - 0.01; a += a0 < a1 ? steg : -steg) p.push([cx + r * Math.cos(a * Math.PI / 180), cy + r * Math.sin(a * Math.PI / 180)]); return p; };
+  const kanter = (n, typ) => Array(n).fill(typ);
+  const VED = [
+    { text: 'En fjärdedel av en stock, kluven två gånger: spetsen med kärnan uppåt, två ljusa kluvna sidor, mörk tallbark undertill och ändträet med årsringar närmast.',
+      sec: [[0, -3.2], ...bage(0, -3.2, 6.2, 45, 135)], kant: ['s', ...kanter(6, 'k'), 's'], pith: [0, -3.2], d: [6, -3.4], f: { bark: 'D', bark2: 'E' }, fro: 3 },
+    { text: 'En halv björkstock, kluven på längden: den platta kluvna sidan ljus uppåt, vit björkbark med svarta streck undertill och halva årsringarna i änden.',
+      sec: [[-4.4, 0], [4.4, 0], ...bage(0, 0, 4.4, 0, 180, 22.5).slice(1, -1)], kant: ['s', ...kanter(8, 'k')], pith: [0, 0], d: [6.4, -2.8], f: { bark: 'w', bark2: 'o', ande: 'W', mitt: 'Y' }, fro: 5, flack: 1.3 },
+    { text: 'Ett grovt vedträ som ligger ner: den kluvna ovansidan ljus, mörk granbark runt ytterkanten och ett stort ändträ med kärnan uppe i hörnet.',
+      sec: [[-3.2, -2.4], [3.4, -2.4], ...bage(-3.2, -2.4, 6.6, 0, 90).slice(1)], kant: ['s', ...kanter(6, 'k'), 's'], pith: [-3.2, -2.4], d: [6.2, -2.4], f: { bark: 'E', bark2: 'j', ande: 'Y', ring: 'y', ljus: 'w', ljus2: 'W' }, fro: 9 },
+  ];
+  // stackarna som Björn valde (f9_stackar version 1): en, några (tre i en triangel) och många (sex i en pyramid)
+  const STACK = (n, w, h) => n === 1 ? [[0, 0]] : n === 3 ? [[0, 0], [w * 0.6, 0], [w * 0.3, -h * 0.5]] : [[0, 0], [w * 0.6, 0], [w * 1.2, 0], [w * 0.3, -h * 0.5], [w * 0.9, -h * 0.5], [w * 0.6, -h]];
+  byt({ id: 'f9_vedhog', namn: 'Vedhögen i lagret', typ: 'tre',
+    vad: 'Steg 9.2.39: vedsymbolen görs om helt. Tre nya vedträn, kluvna, med en ljus kluven sida, mörk bark och ändträet synligt. Till vänster symbolen i lagret (16 × 16 punkter), till höger samma ved på marken som en, några och många i stacken, ritade som stackarna du valde (version 1: några är tre i en triangel, många sex i en pyramid). Din kommentar förra gången: ”vi gör om hela vedsymbolen tycker jag”',
+    versioner: VED.map(v => ({ text: v.text, w: 124, h: 26, rita: B => {
+      for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) B.satt(x, y, B.P.i('kol', 1));
+      for (let y = 3; y < 23; y++) for (let x = 2; x < 22; x++) B.satt(x, y, B.P.i('ben', 2));
+      const sym = vedtra(v), sw = sym[0].length, sh = sym.length;
+      ritaSprite(B, sym, L, 2 + 2 + Math.floor((16 - sw) / 2), 3 + 2 + Math.floor((16 - sh) / 2));
+      window.F7.gras(B, 25, 0, 99, 26);
+      const liten = vedtra(v, 0.58), w = liten[0].length, h = liten.length;
+      [1, 3, 6].forEach((n, j) => STACK(n, w, h).forEach(([dx, dy]) => {
+        const x0 = 29 + j * 31 + Math.round(dx), y0 = 21 - h + Math.round(dy);
+        ritaSprite(B, liten, L, x0, y0);
+        if (dy === 0) for (let x = 1; x < w - 1; x++) B.morka(x0 + x, y0 + h);
+      }));
+    } })) });
 })();

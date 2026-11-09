@@ -83,10 +83,10 @@
   // =====================================================================================================================
   // Porträttet är detsamma som förut (version 3 i det första kortet, smalare). Björn: "den ser bra ut i porträttet men
   // konstigt på den lilla gubben och som föremål i lagret", och sedan "fortfarande samma fel". På kartan var kullen tre
-  // rader hög och lika smal som huvudet, med pälskanten i en tunn grå rad rakt över ögonen: det såg ut som ett band eller
-  // glasögon på ett avlångt huvud. Nu sitter mössan som hjälmen och håret: kullen bara en rad ovanför huvudet, och
-  // pälskanten två rader tjock över pannan och tinningarna (där håret annars är) och en punkt bredare än huvudet på varje
-  // sida, så som pälskanten är bredare än kullen i porträttet. Ögonen syns direkt under kanten.
+  // rader hög och lika smal som huvudet, med pälskanten i en tunn grå rad, och ögonen (en grå punkt var) under den: det
+  // såg ut som ett band eller glasögon på ett avlångt huvud. Nu sitter mössan som hjälmen: kullen två rader ovanför
+  // huvudet, rundad överst, och pälskanten en punkt bredare än huvudet på varje sida, med ändarna ner över tinningarna
+  // som de rundade ändarna i porträttet. Pannan mitt fram är fri, så att ögonen inte hänger under pälsen.
   const pmossa = () => {
     const a0 = 12, a1 = 52;
     return PORT([ // en kulle av läder med en bred, uppvikt pälskant
@@ -97,57 +97,19 @@
     ], [[och(punkt(32, 4), punkt(31, 5), punkt(32, 6), punkt(31, 7), punkt(32, 8)), 'a'], [och(punkt(24, 7), punkt(40, 7)), 'b']], { har: 5 });
   };
   // på kartfiguren: huvudet är raderna 1–6 (x 4–9 framifrån och bakifrån, 5–10 från sidan), håret ligger i rad 1 och
-  // ögonen i rad 3. Kullen: rad 0 (en rad ovanför huvudet) och rad 1 fyrkantig överst; pälskanten rad 1–2
-  const mossVar = (v, rikt) => (satt, las, P, C) => {
-    const s = rikt === 'sida' ? 1 : 0, xa = 4 + s, xb = 9 + s;
-    const lader = (x, x0, x1) => T('lader', sida(x, x0, x1));
-    const fur1 = (x, k0, k1) => { const u = (x - k0) / (k1 - k0); return u > 0.85 ? 'f' : (x + (v > 2 ? 1 : 0)) % 3 === 1 ? 'g' : 'h'; };
-    const fur2 = (x, k0, k1) => { const u = (x - k0) / (k1 - k0); return u > 0.8 ? 'e' : u < 0.15 ? 'g' : 'f'; };
-    if (v === 0) { // A: kullen rad -1 och 0, pälsen rad 1–2 bred, nedre raden jämn
-      for (let x = xa + 1; x <= xb - 1; x++) satt(x, -1, C(lader(x, xa + 1, xb - 1)));
-      for (let x = xa; x <= xb; x++) satt(x, 0, C(lader(x, xa, xb)));
-      for (let x = xa - 1; x <= xb + 1; x++) { satt(x, 1, C(fur1(x, xa - 1, xb + 1))); satt(x, 2, C(fur2(x, xa - 1, xb + 1))); }
-    } else if (v === 1) { // B: kullen rad 0 (smal) och 1 (bred) är lägre, pälsen rad 2 bred + öronen rad 3
-      for (let x = xa + 1; x <= xb - 1; x++) satt(x, 0, C(lader(x, xa + 1, xb - 1)));
-      for (let x = xa; x <= xb; x++) satt(x, 1, C(lader(x, xa, xb)));
-      for (let x = xa - 1; x <= xb + 1; x++) satt(x, 2, C(fur1(x, xa - 1, xb + 1)));
-      if (!s) { satt(xa - 1, 3, C('f')); satt(xb + 1, 3, C('e')); }
-    } else if (v === 2) { // C: kullen rad -1, 0; pälsen rad 1 som huvudet, rad 2 bredare (vidgas nedåt)
-      for (let x = xa + 1; x <= xb - 1; x++) satt(x, -1, C(lader(x, xa + 1, xb - 1)));
-      for (let x = xa; x <= xb; x++) satt(x, 0, C(lader(x, xa, xb)));
-      for (let x = xa; x <= xb; x++) satt(x, 1, C(fur1(x, xa, xb)));
-      for (let x = xa - 1; x <= xb + 1; x++) satt(x, 2, C(fur2(x, xa - 1, xb + 1)));
-    } else if (v === 3) { // E: pälsen rad 1 bred, och ändarna ner över tinningarna i rad 2 (x 3–4 och 9–10)
-      for (let x = xa + 1; x <= xb - 1; x++) satt(x, -1, C(lader(x, xa + 1, xb - 1)));
-      for (let x = xa; x <= xb; x++) satt(x, 0, C(lader(x, xa, xb)));
-      for (let x = xa - 1; x <= xb + 1; x++) satt(x, 1, C(fur1(x, xa - 1, xb + 1)));
-      for (const x of s ? [xa - 1, xa, xa + 1] : [xa - 1, xa, xb, xb + 1]) satt(x, 2, C(fur2(x, xa - 1, xb + 1)));
-    } else if (v === 4) { // F: pälsen bara rad 1, bred
-      for (let x = xa + 1; x <= xb - 1; x++) satt(x, -1, C(lader(x, xa + 1, xb - 1)));
-      for (let x = xa; x <= xb; x++) satt(x, 0, C(lader(x, xa, xb)));
-      for (let x = xa - 1; x <= xb + 1; x++) satt(x, 1, C(fur1(x, xa - 1, xb + 1)));
-    } else { // H: pälsen rad 1 bred och ändarna rad 2 bara utanför huvudet
-      for (let x = xa + 1; x <= xb - 1; x++) satt(x, -1, C(lader(x, xa + 1, xb - 1)));
-      for (let x = xa; x <= xb; x++) satt(x, 0, C(lader(x, xa, xb)));
-      for (let x = xa - 1; x <= xb + 1; x++) satt(x, 1, C(fur1(x, xa - 1, xb + 1)));
-      for (const x of s ? [xa - 1] : [xa - 1, xb + 1]) satt(x, 2, C(fur2(x, xa - 1, xb + 1)));
-    }
-  };
-  VAL.push({ id: 'test_mossa', namn: 'test', typ: 'tre', vad: '', versioner: [3, 4, 5, 0].map(v => SCEN('v' + v, null, [[mossVar(v, 'fram'), 22, 'fram'], [mossVar(v, 'sida'), 22, 'sida'], [mossVar(v, 'bak'), 22, 'bak'], [mossVar(v, 'fram'), 5, 'fram'], [mossVar(v, 'fram'), 3, 'fram']])) });
+  // ögonen i rad 3. Kullen i rad -1 och 0 (ovanför huvudet), pälskanten i rad 1 och ändarna i rad 2
   const mossKarta = (rikt) => (satt, las, P, C) => {
     const s = rikt === 'sida' ? 1 : 0, xa = 4 + s, xb = 9 + s; // huvudets bredd
     const lader = (x, x0, x1) => T('lader', sida(x, x0, x1));
-    // kullen av läder: ljus till vänster, mörk till höger, en mörk söm mitt fram
+    // kullen av läder (rad -1 smal, rad 0 lika bred som huvudet): ljus till vänster, mörk till höger
     for (let x = xa + 1; x <= xb - 1; x++) satt(x, -1, C(lader(x, xa + 1, xb - 1)));
-    for (let x = xa; x <= xb; x++) satt(x, 0, C(rikt === 'fram' && x === xa + 3 ? 'b' : lader(x, xa, xb)));
-    // pälskanten: två rader, en punkt bredare än huvudet på varje sida (från sidan sticker den ut lite över pannan och nacken),
-    // ljusare i den övre raden, ojämn som päls och mörkare åt höger
-    const k0 = xa - 1, k1 = xb + 1;
-    for (let x = k0; x <= k1; x++) {
-      const u = (x - k0) / (k1 - k0), r = hash(x, 3, 17);
-      satt(x, 1, C(u > 0.8 ? 'f' : r < 0.45 ? 'h' : 'g'));
-      satt(x, 2, C(u > 0.8 ? 'e' : u < 0.2 ? 'g' : r < 0.35 ? 'g' : 'f'));
-    }
+    for (let x = xa; x <= xb; x++) satt(x, 0, C(lader(x, xa, xb)));
+    // pälskanten: rad 1, en punkt bredare än huvudet på varje sida, ljus och ojämn som päls och mörkare åt höger; ändarna
+    // går ner över tinningarna i rad 2 (från sidan över nacken), som de rundade ändarna i porträttet. Pannan mellan dem är
+    // fri, så att ögonen inte ligger direkt under den grå pälsen (det var det som såg ut som glasögon)
+    const k0 = xa - 1, k1 = xb + 1, u = x => (x - k0) / (k1 - k0);
+    for (let x = k0; x <= k1; x++) satt(x, 1, C(u(x) > 0.85 ? 'f' : x % 3 === 1 ? 'g' : 'h'));
+    for (const x of s ? [xa - 1, xa, xa + 1] : [xa - 1, xa, xb, xb + 1]) satt(x, 2, C(u(x) > 0.8 ? 'e' : u(x) < 0.15 ? 'g' : 'f'));
   };
   // som sak i lagret: en symbol på 16 × 16 punkter som de andra sakerna. Kullen av brunt läder snett framifrån, ljus till
   // vänster, med en söm och en knut i toppen, och den tjocka, grå kanten av vargpäls nertill, bredare än kullen
@@ -156,15 +118,15 @@
     '................',
     '.......oo.......',
     '......obao......',
-    '....oodbcboo....',
+    '....odccbbbo....',
     '...oddcbcbbbo...',
-    '..oddccbccbbao..',
-    '..odcccbcbbbao..',
-    '.oddcccbccbbaao.',
-    'ohhghhhgghhggfgo',
-    'ohghhgghggfggffo',
-    'ogghgghgfgffeffo',
-    '.offgffgffefeeo.',
+    '..oddccccbbbao..',
+    '..odcccbccbbao..',
+    '.oddccccbbbbaao.',
+    'ohhghhghhgghgfgo',
+    'ohghhgghgggfgffo',
+    'ogghgggfgffefefo',
+    '.offgffffefeeeo.',
     '..oooooooooooo..',
     '................',
     '................',
@@ -182,7 +144,7 @@
       const dx = sw + 3; // resten av kortet förskjutet åt höger
       rita0({ ...B, satt: (x, y, c, l) => B.satt(x + dx, y, c, l), morka: (x, y) => B.morka(x + dx, y), get: (x, y) => B.get(x + dx, y) });
     } };
-    byt(JANEJ('f7_mossa', 'Mössan', 'Steg 7.7.2: en mössa av 1 skinn som håller huvudet varmt. Du valde version 2, kullen av läder med en kant av vargpäls. Porträttet är detsamma. Nytt: på bybon på kartan sitter mössan nu som hjälmen och håret gör, på huvudet: kullen bara en rad ovanför huvudet och pälskanten två rader tjock över pannan, lite bredare än huvudet, i stället för en tunn grå rad över ögonen på ett högt huvud. Som föremål i lagret är mössan en symbol på 16 × 16 punkter som de andra sakerna: läderkullen med söm och knut och den tjocka pälskanten. Från vänster: symbolen i lagret, bybon framifrån, från sidan och bakifrån, och porträttet. Din kommentar förra gången: ”fortfarande samma fel” (och innan dess: ”den ser bra ut i porträttet men konstigt på den lilla gubben och som föremål i lagret.”)', kort));
+    byt(JANEJ('f7_mossa', 'Mössan', 'Steg 7.7.2: en mössa av 1 skinn som håller huvudet varmt. Du valde version 2, kullen av läder med en kant av vargpäls. Porträttet är detsamma. Nytt: på bybon på kartan sitter mössan nu på huvudet som hjälmen: en rundad kulle av läder och pälskanten lite bredare än huvudet, med ändarna ner över tinningarna som i porträttet, och pannan fri över ögonen, så att den inte längre ser ut som ett band eller glasögon. Som föremål i lagret är mössan en symbol på 16 × 16 punkter som de andra sakerna: läderkullen med söm och knut och den tjocka pälskanten. Från vänster: symbolen i lagret, bybon framifrån, från sidan och bakifrån, och porträttet. Din kommentar förra gången: ”fortfarande samma fel” (och innan dess: ”den ser bra ut i porträttet men konstigt på den lilla gubben och som föremål i lagret.”)', kort));
   }
 
   // =====================================================================================================================
@@ -387,20 +349,23 @@
     for (const [x, y, t] of kurvPkt(a, b, bula)) satt(x, y, t < 0.08 || t > 0.92 ? o.spets : Math.abs(t - 0.5) < 0.08 ? o.grepp : t < 0.5 ? o.tra[1] : o.tra[2]);
   };
   {
-    const ny = kortE('Den enkla bågen av ljust virke på ryggen. På kartan hänger den likadant från alla håll: bakifrån snett över ryggen, framifrån syns ändarna över axeln och vid höften, och från sidan längs ryggen. I porträttet syns övre ändan och strängen tydligt över axeln.', bageSak(), [
+    const ny = kortE('Den enkla bågen av ljust virke på ryggen. På kartan hänger den likadant från alla håll: bakifrån snett över ryggen, framifrån övre ändan över axeln, strängen snett över bröstet och nedre ändan vid höften, och från sidan längs ryggen. I porträttet syns bågen bakom huvudet från övre ändan över axeln, och strängen går snett över bröstet.', bageSak(), [
       // framifrån: bakifrån speglad, bakom kroppen
-      ['fram', 'hanga', f => bageFig(f, [1, 1], [12, 16], -2, f.b, f.b)],
+      ['fram', 'hanga', f => bageFig(f, [1, 1], [12, 16], -2, f.b, (x, y, c) => (y >= 7 ? f.o : f.b)(x, y, c))],
       // från sidan: bågen ligger platt mot ryggen och syns nästan från kanten, från över axeln ner bakom benen
       ['sida', 'hanga', f => bageFig(f, [5, -1], [2, 16], -1, f.b, f.b)],
       ['bak', 'hanga', f => bageFig(f, [12, 1], [1, 16], 2, f.o, f.o)],
     ], p => {
       // som bakifrån, sedd framifrån: övre ändan över hans högra axel (till vänster i bilden), staven böjd utåt och
       // strängen rak in mot nacken; resten är dold bakom kroppen
-      const a = [9, 21], b = [66, 118], pts = kurva(a, b, 13, 40), stav = ror(pts, 1.8, 1.8), rep = ror([a, b], 0.6);
+      const a = [5, 3], b = [68, 112], pts = kurva(a, b, 14, 48), stav = ror(pts, 2.1, 2.1), rep = ror([a, b], 0.62);
+      const skugga = ror([[a[0], a[1] + 1.2], [b[0], b[1] + 1.2]], 0.62);
       fyll(p.b, 2, 2, 61, 61, (x, y) => rep(x, y) ? BAGE.rep : null);
-      fyll(p.b, 2, 2, 61, 61, (x, y) => { const r = stav(x, y); if (!r) return null; if (r.t < 0.035) return BAGE.spets; return ton3(r.ljus, ...BAGE.tra); });
+      // på bröstet går strängen snett över rocken som i den bakvända bilden, med en mörk skuggrad under
+      fyll(p.r, 2, 2, 61, 61, (x, y) => rep(x, y) ? BAGE.rep : skugga(x, y) ? 'a' : null);
+      fyll(p.b, 2, 2, 61, 61, (x, y) => { const r = stav(x, y); if (!r) return null; if (r.t < 0.03) return BAGE.spets; return ton3(r.ljus, ...BAGE.tra); });
     });
-    byt(JANEJ('f8_bage', 'Bågen', 'Steg 8.7.6: bågen av 2 virke och 1 rep, den enkla bågen av ljust virke. Bakifrån som förut, snett över ryggen. Nytt: framifrån och från sidan hänger bågen nu på ryggen likadant i stället för i handen; bara det som syns runt kroppen ritas (framifrån ändarna över axeln och vid höften, från sidan bågen längs ryggen). I porträttet är bågen ritad som i den lilla bakvända bilden och syns tydligare: övre ändan och strängen över axeln. Din kommentar förra gången: ”bortvända versionen är bra. Versionerna mot kameran och sidan hänger bågen inte rätt. Gör om porträttet också bågen syns inte tillräckligt nu. Ta inspiration från den lilla bakvända ritningen och rita pilbågen likadant”', ny));
+    byt(JANEJ('f8_bage', 'Bågen', 'Steg 8.7.6: bågen av 2 virke och 1 rep, den enkla bågen av ljust virke. Bakifrån som förut, snett över ryggen. Nytt: framifrån och från sidan hänger bågen nu på ryggen likadant i stället för i handen. Framifrån syns övre ändan över axeln, strängen snett över bröstet och nedre ändan vid höften; från sidan bågen längs ryggen. I porträttet är bågen ritad som i den lilla bakvända bilden och syns mycket mer: den stora böjda staven bakom huvudet från övre ändan över axeln, och strängen snett över bröstet. Din kommentar förra gången: ”bortvända versionen är bra. Versionerna mot kameran och sidan hänger bågen inte rätt. Gör om porträttet också bågen syns inte tillräckligt nu. Ta inspiration från den lilla bakvända ritningen och rita pilbågen likadant”', ny));
   }
 
   // =====================================================================================================================
