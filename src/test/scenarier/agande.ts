@@ -1937,6 +1937,33 @@ SCENARIER.rovarbud = {
   },
 };
 
+SCENARIER.rovarstarkvar = {
+  text: 'Steg 9.2.119: rövarna tar ingenting förrän alla de kommit i kontakt med har gett upp eller gömt sig. En hjälpare som står vid förrådet när flocken kommer gör att det blir strid först; när alla gömmer sig plundrar de',
+  kor: () => {
+    const prov = (gommer: boolean) => {
+      const s = createState(6, START);
+      for (const c of SIM.klanerOf(s)) c.inst = -60;
+      const z = SIM.zoneOf(s)!, m = { x: z.x + z.w / 2, y: z.y + z.h / 2 };
+      const folk = living(s), h = folk.find(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vaktFran && SIM.ageOf(p, s.now) < SIM.ALDER.gammal && !SIM.isSick(p, s.now))!;
+      // alla sover långt bort i huset utom hen, som står vid förrådet och hjälper (eller har gömt sig)
+      for (const p of folk) { p.larm = { t: s.now, vad: 'rovare', storlek: 2, led: 0 }; if (p !== h) { Object.assign(p, SIM.freeNear(s, m.x + 30, m.y + 30)); p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 20 * HOUR, carry: 0 }; } }
+      Object.assign(h, SIM.freeNear(s, m.x + 1, m.y));
+      h.task = { act: gommer ? 'gomma' : 'hjalpaRovare', phase: 'do', tx: h.x, ty: h.y, until: s.now + HOUR, carry: 0 };
+      SIM.rovarnaKommer(s, 2); const f = s.rovare!; f.gor = 'kommer'; f.sedd = s.now; f.lurat = true; SIM.stallUpp(s, f, m.x + 3, m.y);
+      const steg = (x: State, sek: number) => { x.now += sek * SIM.SEC; SIM.rovarSteg(x, sek); };
+      let slass = false, rovatFore = 0;
+      for (let i = 0; i < 120 && s.rovare && s.rovare.gor !== 'flyr'; i++) { steg(s, 1); if (s.rovare?.gor === 'slass' && !slass) { slass = true; rovatFore = s.stat?.rovat ?? 0; } }
+      return { slass, rovatFore, rovat: s.stat?.rovat ?? 0, namn: h.name };
+    };
+    const h = prov(false), g = prov(true);
+    return [
+      [`${h.namn} hjälper till vid förrådet när flocken kommer: det blir strid`, h.slass],
+      [`och inget togs innan striden började (${h.rovatFore})`, h.rovatFore === 0],
+      [`gömmer sig alla plundrar rövarna utan strid (${g.rovat} saker)`, !g.slass && g.rovat > 0],
+    ];
+  },
+};
+
 SCENARIER.rovarforsvar = {
   text: 'Steg 9.2.74–9.2.80 och 9.2.116: försvaret mot rövarna. Ålder, mod och hälsa delar folket i kämpar, hjälpare (en bit bakom) och gömda. De som försvarar väntar vid förrådet ("Väntar på rövarna med vapen"), också när förrådet ligger tolv rutor från elden, och valet väger modet, rövarna mot dem som står emot, hälsan och barnen, så att de flesta friska och modiga vuxna står emot en liten flock. I striden står var och en där hen var, den som flyr springer mot sitt hus eller elden och är fri medan striden pågår, ingen står i en annan, rövarnas ledare "leder rövarna" (testknappen prövas i scenariot rovartest)',
   kor: () => {
