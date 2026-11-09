@@ -1,7 +1,7 @@
-import { omrade, tillHoljet, utanforByn } from './omrade';
+import { bynsMitt, omrade, tillHoljet, utanforByn } from './omrade';
 import { RECEPT, type ReceptRad } from './recept';
 import { hash3 } from './slump';
-import { Act, GRANNAR4, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
+import { Act, DAY, GRANNAR4, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { eldPlats, getMap } from './karta';
 import { knows } from './teknik';
 import { ALDER, ageOf, alive, byId, count, doingAct, familjOf, forstaGang, gjort, living, log } from './folk';
@@ -13,7 +13,7 @@ import { BYN } from './egendom';
 import { Zone, flyttaLager, inZone, pilesInne, put, stallBorta, usable, zoneAt, zonesOf } from './lager';
 import { PLATS } from './plats';
 import { balans } from './balans';
-import { Hus, Rum, bitAt, blocked, gridOf, husById, roofed, roomAt, touch } from './byggnad';
+import { Hus, Rum, bitAt, blocked, gridOf, housesOf, husById, roofed, roomAt, touch } from './byggnad';
 import { HUS, bedTile, fnOf, rumFnOf, samlingRum, sovHus, sovKvar, sovPlats } from './byggnader';
 import { coldOf, nederbord, temperature } from './vader';
 import { ACTS } from './handlingar';
@@ -52,6 +52,9 @@ import { paStrak } from './strak';
 
 // ---------- balanstal (regel 8) ----------
 export const STATION = balans('station', {
+  // dragningen mot mitten (steg 9.4.8): hur mycket en station ute används glöms på brukatDygn dygn; att flytta den är värt det
+  // gånger hur många rutor närmare dem som använder den, delat med flyttFull, och den nya platsen ligger minst flyttMinste närmare
+  brukatDygn: 3, flyttFull: 60, flyttMin: 15, flyttMinste: 3,
   bordUte: 20, // när det är kallt eller regnar är ett bord ute så här många rutor längre bort än ett inne (steg 7.2.8)
   avstand: 2.5, // en station ute står helst så här många rutor utanför det byn omsluter (tillHoljet i omrade.ts), från stationens mitt
   slaktTill: 9, slaktAvst: 6, // slaktbänken står högst och helst så här många rutor från byn, eftersom den är smutsig (steg 2.10.16)
@@ -264,7 +267,7 @@ export const stationDef = (k: string): StationDef | undefined => (STATIONER as R
 // med = tillbehören som ligger i den (TILLBEHOR, t.ex. skinnfällen i bädden), fyllt = hur full latrinen är (0–1, smuts.ts)
 // tork = det som hänger på torkställningen (matlagning.ts): råvaran, hur mycket, när det hängdes upp och vems det är
 // ag = ägaren till en kista i sovrummet (steg 2.10.18)
-export interface Station { delar?: { x: number; y: number; rot?: 1 }[]; id: number; k: string; x: number; y: number; kvar: number; vem?: number[]; klar?: number; rot?: 1; inne?: 1; med?: string[]; fyllt?: number; q?: number; ber?: import('./berattelser').SakMinne; tork?: { k: string; n: number; t: number; ag?: Record<string, number> }[]; ag?: number }
+export interface Station { brukat?: number; brukatT?: number; delar?: { x: number; y: number; rot?: 1 }[]; id: number; k: string; x: number; y: number; kvar: number; vem?: number[]; klar?: number; rot?: 1; inne?: 1; med?: string[]; fyllt?: number; q?: number; ber?: import('./berattelser').SakMinne; tork?: { k: string; n: number; t: number; ag?: Record<string, number> }[]; ag?: number }
 const NONE: Station[] = [];
 export const stationerOf = (s: State) => s.stationer ?? NONE;
 export const stationById = (s: State, id?: number) => id === undefined ? undefined : stationerOf(s).find(t => t.id === id);
@@ -1119,6 +1122,52 @@ function iVagen(s: State) {
   if (at) { flytta(s, t, at); log(s, `${d.namn} flyttades eftersom den stod ${var_}.`, 'world'); return; }
   taBort(s, t);
   log(s, `${d.namn} togs isär eftersom den stod ${var_} och inte fick plats någon annanstans.`, 'world');
+}
+// ---------- dragningen mot mitten: stationerna ute (steg 9.4.8, Byggplanen: Dragningen mot mitten) ----------
+// Varje gång någon börjar arbeta vid en station räknas det (stationBrukad, val.ts) och glöms långsamt. Att flytta en station ute
+// som en helhet är ett projekt (projekt.ts): värdet är hur mycket den används gånger hur mycket närmare den nya platsen ligger
+// dem som använder den, räknat från tyngdpunkten av husen där folk sover och lagerplatserna, och kostnaden arbetet med flytten.
+// En station som står ensam när husen omkring den försvunnit får därför ett högt värde. Räknas en gång i timmen och sparas i byn
+const brukatNu = (s: State, t: Station) => (t.brukat ?? 0) * Math.exp(-(s.now - (t.brukatT ?? s.now)) / (STATION.brukatDygn * DAY));
+export function stationBrukad(s: State, t: Station) { t.brukat = brukatNu(s, t) + 1; t.brukatT = s.now; }
+function tyngdpunkt(s: State) {
+  const pts = [...housesOf(s).filter(h => h.klar && fnOf(h).sover).map(h => ({ x: h.x + h.w / 2, y: h.y + h.h / 2 })), ...zonesOf(s).filter(z => z.hus === undefined).map(z => ({ x: z.x + z.w / 2, y: z.y + z.h / 2 }))];
+  if (!pts.length) { const m = bynsMitt(s); return { x: m.x + 0.5, y: m.y + 0.5 }; }
+  return { x: pts.reduce((a, q) => a + q.x, 0) / pts.length, y: pts.reduce((a, q) => a + q.y, 0) / pts.length };
+}
+export function stationFlyttTimme(s: State) {
+  const c = tyngdpunkt(s);
+  let bast: { id: number; x: number; y: number; rot?: 1; vinst: number } | undefined;
+  for (const t of stationerOf(s)) {
+    const d = stationDef(t.k);
+    if (!d || !isKlar(t) || t.inne || d.inne || d.forvar || d.eld || d.brasa || d.utkant || d.sover || d.pynt || d.mobel) continue;
+    const b = brukatNu(s, t);
+    if (b < 1 || (bast && b * 1000 <= bast.vinst)) continue;
+    const at = utan(s, t, () => stationSite(s, t.k, byId(s, t.ag)));
+    if (!at || 'inne' in at && at.inne) continue;
+    const { w, h } = storlekAv(t), n = storlek(t.k, at.rot);
+    const fore = Math.hypot(t.x + w / 2 - c.x, t.y + h / 2 - c.y), efter = Math.hypot(at.x + n.w / 2 - c.x, at.y + n.h / 2 - c.y);
+    if (efter > fore - STATION.flyttMinste) continue;
+    const vinst = b * (fore - efter);
+    if (!bast || vinst > bast.vinst) bast = { id: t.id, x: at.x, y: at.y, ...(at.rot ? { rot: 1 as const } : {}), vinst };
+  }
+  s.stationFlytt = bast;
+}
+export function stationFlyttVal(s: State) {
+  const v = s.stationFlytt, t = v && stationById(s, v.id);
+  return v && t && isKlar(t) ? { t, at: { x: v.x, y: v.y, rot: v.rot }, vinst: v.vinst } : undefined;
+}
+// flytten är klar: stationen står på den nya platsen (det som hör till den följer med, flytta)
+export function stationFlytta(s: State) {
+  const v = stationFlyttVal(s);
+  s.stationFlytt = undefined;
+  if (!v) return false;
+  const { w, h } = storlek(v.t.k, v.at.rot);
+  if (!rutorAv(v.at.x, v.at.y, w, h).every(q => ledig(s, q.x, q.y))) return false; // platsen har tagits under tiden
+  flytta(s, v.t, v.at);
+  count(s, 'stationFlyttadIn');
+  log(s, `${stationDef(v.t.k)?.namn ?? 'En station'} flyttades närmare husen och lagren.`, 'world');
+  return true;
 }
 // ---------- testläget (steg 3.10.1) ----------
 // spelaren tar bort en station eller möbel

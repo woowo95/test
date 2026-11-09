@@ -22,7 +22,7 @@ import { FALLOR, fallorAv, mjardarVill } from './fisk';
 import { TILLVERKA, TILLVERKA_LIST } from './tillverka';
 import { RECEPT } from './recept';
 import { knows } from './teknik';
-import { kanGoras, stationDef, stationFor, verktygVid } from './stationer';
+import { STATION, kanGoras, stationDef, stationFlyttVal, stationFor, verktygVid, vidStation } from './stationer';
 import { SED } from './seder';
 import { bedTile } from './byggnader';
 import { stationRutor } from './stationer';
@@ -73,6 +73,7 @@ export const PROJEKT_TAL = balans('projekt', {
   virke: 0.8, // ... virket när förrådet saknar det byn vill bygga av (steg 4.5.5.2)
   stubbe: 1, // ... att gräva bort stubbarna där något ska byggas (steg 6.5.7, skog.ts)
   plantera: 0.6, // ... att flytta plantor när de närmaste träden att fälla står långt bort (steg 6.5.2, skogsvard.ts)
+  stationFlytt: 0.4, // ... att flytta en station ute närmare dem som använder den (steg 9.4.8, stationer.ts)
   lagerFlytt: 0.4, // ... att flytta en lagerplats närmare byns mitt (steg 9.4.7, lager.ts)
   rojning: 1, // ... att fälla träden på en lagerplats eller ett fält i skogen (steg 3.6.9)
   ljus: 0.4, // ... att ställa fram ett talgljus på ett bord eller en hylla inne (steg 6.3.8, ljus.ts)
@@ -221,6 +222,14 @@ export const PROJEKT: Record<string, ProjektDef> = {
     kostnad: () => LAGER.flyttMin / 60 * ARBETE,
     kan: (s, p, f) => !f.kyla && ageOf(p, s.now) >= ALDER.vuxen && !!lagerFlyttVal(s) && !doingAct(s, 'flyttLager', p),
     uppgift: s => { const v = lagerFlyttVal(s); return v && { act: 'flyttLager', text: 'Märker ut en ny lagerplats närmare byns mitt.', min: LAGER.flyttMin, spot: { x: v.ny.x + v.ny.w / 2, y: v.ny.y + v.ny.h / 2 } }; },
+  },
+  // en station ute flyttas närmare dem som använder den (steg 9.4.8, stationer.ts)
+  stationFlytt: {
+    namn: 'Flytta en station', vikt: PROJEKT_TAL.stationFlytt,
+    brist: s => { const v = stationFlyttVal(s); return v ? Math.min(1, v.vinst / STATION.flyttFull) : 0; },
+    kostnad: () => STATION.flyttMin / 60 * ARBETE,
+    kan: (s, p, f) => !f.kyla && ageOf(p, s.now) >= ALDER.vuxen && !!stationFlyttVal(s) && !doingAct(s, 'flyttStation', p),
+    uppgift: s => { const v = stationFlyttVal(s); return v && { act: 'flyttStation', text: `Flyttar ${stationDef(v.t.k)?.namn.toLowerCase() ?? 'en station'} närmare husen och lagren.`, min: STATION.flyttMin, spot: vidStation(v.t) }; },
   },
   // träden på en lagerplats eller ett fält i skogen fälls först (steg 3.6.9, skog.ts), med en yxa; de blir trä
   rojning: {

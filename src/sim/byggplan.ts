@@ -6,7 +6,7 @@ import { Hus, MATERIAL, bitAt, bitsOf, gridOf, housesOf, husById, touch } from '
 import { eldPlats, getMap } from './karta';
 import { groundOf } from './mark';
 import { PLATS, rektAvstand } from './plats';
-import { stangerIn, stationRutor, storlekAv, uteStation } from './stationer';
+import { stationFlyttTimme, stangerIn, stationRutor, storlekAv, uteStation } from './stationer';
 import { knows } from './teknik';
 import { villHaMer } from './forradsmal';
 import { amountOf, changed, flyttaLager, lagerFlyttTimme, inZone, lagerFullt, lagerNy, overflow, overlaps, lagerStorre, ownedAll, put, usable, zonesOf } from './lager';
@@ -692,6 +692,7 @@ export function stepByggplan(s: State) {
   husAffar(s);
   rivOmTomt(s);
   lagerFlyttTimme(s); // en lagerplats närmare mitten (steg 9.4.7)
+  stationFlyttTimme(s); // en station ute närmare dem som använder den (steg 9.4.8)
   if (Math.floor(s.now / HOUR) % PLAN.varTim === 0) planBuild(s);
 }
 // lagret (steg 7.2.18): det som inte fått plats ligger bredvid. Byggplanen väger en större lagerplats mot en ny. Marken märks bara

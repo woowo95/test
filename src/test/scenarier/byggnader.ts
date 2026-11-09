@@ -1798,3 +1798,29 @@ SCENARIER.mittenlager = {
     ];
   },
 };
+
+SCENARIER.mittenstation = {
+  text: 'Steg 9.4.8: hur mycket varje station används räknas. Att flytta en station ute som en helhet är ett projekt, värt hur mycket den används gånger hur mycket närmare den nya platsen ligger husen och lagren, och en station som står ensam långt bort flyttas närmare',
+  kor: () => {
+    const { stationFlyttTimme, stationFlyttVal, stationFlytta, projektVarde, flyttaStation, storlekAv: st, stationBrukad } = SIM;
+    const s = createState(1, START); klockan(s); tandEld(s);
+    byggare(s); planBuild(s); byggKlart(s);
+    const t = medBank(s, 'stenhuggarplats'), m = bynsMitt(s);
+    // stationen flyttas långt bort, där inga hus eller lager finns
+    let langt = false;
+    for (let r = 16; r < 30 && !langt; r++) for (let k = 0; k < 32 && !langt; k++) langt = flyttaStation(s, t, Math.round(m.x + Math.cos(k / 32 * 6.283) * r), Math.round(m.y + Math.sin(k / 32 * 6.283) * r));
+    if (!langt) return [['en plats långt bort för stationen', false]];
+    const d = () => { const { w, h } = st(t); return Math.hypot(t.x + w / 2 - m.x - 0.5, t.y + h / 2 - m.y - 0.5); };
+    stationFlyttTimme(s);
+    const oanvand = stationFlyttVal(s);
+    for (let i = 0; i < 30; i++) stationBrukad(s, t);
+    stationFlyttTimme(s);
+    const v = stationFlyttVal(s), varde = projektVarde(s, 'stationFlytt'), fore = d();
+    const flyttad = stationFlytta(s), efter = d();
+    return [
+      [`en station som ingen använder flyttas inte (${oanvand ? 'flyttas' : 'står kvar'})`, !oanvand],
+      [`en station som används mycket och står långt bort är värd att flytta (${varde.toFixed(3)})`, !!v && v.t === t && varde > 0],
+      [`efter flytten står den närmare byns mitt (${fore.toFixed(1)} → ${efter.toFixed(1)} rutor)`, flyttad && efter < fore],
+    ];
+  },
+};
