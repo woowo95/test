@@ -112,6 +112,7 @@ export function buildJob(s: State, p: Person, forb = false): Job | undefined {
   let best: Job | undefined, bs = Infinity;
   for (const b of bitsOf(s)) {
     if (b.forb && !forb) continue; // en förbättring väntar till nivån Förbättra (steg 7.2.10)
+    if (b.hus !== undefined && husById(s, b.hus)?.flyttas !== undefined) continue; // huset byggs upp på en ny plats (steg 9.4.6): det gamla lagas inte
     if (lagerIVagen(s, b)) continue; // sakerna i den gamla lagerplatsen bärs ut först (steg 8.1.15)
     if (s.flod && iVattnetNu(s, b.y * W + b.x)) continue; // där vattnet står byggs och lagas inget förrän det sjunkit undan (flod.ts)
     if (taken.has(b.id) || b.k === 'oppning' || (b.b < 1 && (treeOn(s, b) || stubbeOn(s, b.x, b.y) || vidElden(s, b.x, b.y) || (b.k === 'vagg' && (s.stockar ?? []).some(k => Math.floor(k.x) === b.x && Math.floor(k.y) === b.y))))) continue; // en vägg byggs inte på en stock (steg 8.1.13) // där elden står byggs inget förrän den flyttats (eldflytt.ts)
@@ -215,6 +216,7 @@ export function husKlaraTimme(s: State) { const p = living(s)[0]; if (p) for (co
 export function husKlart(s: State, h: Hus, p: Person) {
   if (!h.klar && bitsOf(s).every(q => q.hus !== h.id || q.b >= 1) && !stockInne(s, h) && !kronaOver(s, h).length) { // ett träd vars krona når över huset fälls först (steg 9.2.49)
     h.klar = s.now;
+    if (h.flyttFran !== undefined) flyttKlar(s, h);
     if (h.varKlar !== undefined) return;
     livet(s, p, 'hus'); // satte sista biten (steg 3.9.8)
     const n = gridOf(s).rooms.filter(r => r.hus === h.id).reduce((a, r) => a + r.tiles.length, 0);
@@ -224,6 +226,25 @@ export function husKlart(s: State, h: Hus, p: Person) {
     if ((h.byggare?.length ?? 0) > 1) for (const q of living(s)) if (h.byggare!.includes(q.id)) upplev(s, q, 'byggdeHus', husFalt(h.namn).hus); // de byggde tillsammans (steg 4.5.4.9)
     h.byggare = undefined;
   }
+}
+// ett hus rivs: bitarna och huset försvinner, och HUS.rivTillbaka av träet går till ägaren (eller byn). Ger hur mycket trä det blev
+export function rivHus(s: State, h: Hus) {
+  const ved = Math.floor(bitsOf(s).filter(b => b.hus === h.id).reduce((a, b) => a + (MATERIAL[b.m].item === 'ved' ? b.mat : 0), 0) * HUS.rivTillbaka + 1e-9);
+  s.byggen = bitsOf(s).filter(b => b.hus !== h.id); s.hus = housesOf(s).filter(q => q !== h);
+  if (ved > 0) put(s, 'ved', ved, h.ag !== undefined ? { [h.ag]: ved } : undefined);
+  touch(s); changed(s); count(s, 'rivet');
+  return ved;
+}
+// det skadade huset har byggts upp på den nya platsen (steg 9.4.6): det nya får det gamlas funktion och rummens funktioner, och
+// det gamla rivs
+function flyttKlar(s: State, h: Hus) {
+  const g = husById(s, h.flyttFran);
+  h.flyttFran = undefined;
+  if (!g) return;
+  h.fn = g.fn; h.slag = g.slag; h.ag = g.ag;
+  const ved = rivHus(s, g);
+  count(s, 'husFlyttat');
+  log(s, `${h.namn} står klart närmare byns mitt, och ${g.namn.toLowerCase()} som skadades revs.${ved ? ` ${ved} trä kom tillbaka.` : ''}`, 'world');
 }
 // material som inte längre finns i huset (en vägg som rasat eller rivits) räknas inte till det
 function glomKom(h: Hus, k: string, n: number) {

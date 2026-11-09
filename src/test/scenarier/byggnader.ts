@@ -1718,3 +1718,50 @@ SCENARIER.snickarbank = {
     ];
   },
 };
+
+// dragningen mot mitten (steg 9.4.6–9.4.8): det skadade huset, lagerplatserna och stationerna ute
+SCENARIER.mitten = {
+  text: 'Steg 9.4.6: ett hus som skadats byggs upp där det står eller på en ny plats närmare mitten, efter vad som är mest värt per kostnad. Med en rasad vägg lagas det där det står; när allt rasat i ett hus långt från mitten byggs ett nytt närmare, och när det är klart rivs det gamla',
+  kor: () => {
+    const { skadatVal, byggbart, rasar, bitsOf: bits, housesOf: hus, husKlart, lage, MATERIAL: M } = SIM;
+    const s = createState(1, START); klockan(s); tandEld(s);
+    byggare(s); planBuild(s); byggKlart(s);
+    for (const q of s.people) q.tek = { ...q.tek, timmervagg: 1, yxa: 1 };
+    // ett hus långt från mitten, byggt för hand: 5 × 5 rutor med väggar av timmer och jordgolv
+    const c = bynsMitt(s), { okAt } = byggbart(s);
+    let at: { x: number; y: number } | undefined;
+    for (let r = 14; r < 30 && !at; r++) for (let k = 0; k < 32 && !at; k++) {
+      const x = Math.round(c.x + Math.cos(k / 32 * 6.283) * r), y = Math.round(c.y + Math.sin(k / 32 * 6.283) * r);
+      let ok = true;
+      for (let j = -1; j < 6 && ok; j++) for (let i = -1; i < 6 && ok; i++) if (!SIM.inMap(x + i, y + j) || !okAt((y + j) * W + x + i) || gridOf(s).at.has((y + j) * W + x + i)) ok = false;
+      if (ok) at = { x, y };
+    }
+    if (!at) return [['en plats för huset långt från mitten', false]];
+    s.nextBit ??= 1;
+    const H0: SIM.Hus = { id: s.nextBit++, namn: 'Det gamla huset', x: at.x, y: at.y, w: 5, h: 5, fn: 'sovsal', klar: s.now };
+    for (let y = at.y; y < at.y + 5; y++) for (let x = at.x; x < at.x + 5; x++) {
+      const kant = x === at.x || y === at.y || x === at.x + 4 || y === at.y + 4, m = x === at.x + 2 && y === at.y + 4 ? 'oppning' : kant ? 'timmer' : 'jord';
+      bits(s).push({ id: s.nextBit++, x, y, k: M[m].k, m, b: 1, mat: M[m].n, c: 1, hus: H0.id });
+    }
+    hus(s).push(H0); touch(s);
+    const vaggar = bits(s).filter(b => b.hus === H0.id && b.k === 'vagg');
+    // en vägg rasar: den lagas där huset står
+    rasar(s, vaggar[0]);
+    const en = skadatVal(s, H0, byggbart(s).okAt);
+    // allt rasar: huset byggs upp närmare mitten
+    for (const b of vaggar) if (b.b >= 1) rasar(s, b);
+    const alla = skadatVal(s, H0, byggbart(s).okAt);
+    const narmre = !!alla?.ny && lage(s, alla.ny) > lage(s, H0);
+    s.byggSok = undefined; planBuild(s);
+    const nytt = hus(s).find(q => q.id === H0.flyttas), planerat = !!nytt && nytt.flyttFran === H0.id && !living(s).some(p => SIM.buildJob(s, p)?.bit.hus === H0.id);
+    // det nya huset blir klart: det gamla rivs och det nya tar över funktionen
+    if (nytt) { for (const b of bits(s)) if (b.hus === nytt.id) b.b = 1; husKlart(s, nytt, living(s)[0]); }
+    const borta = !hus(s).includes(H0) && !bits(s).some(b => b.hus === H0.id);
+    return [
+      [`med en rasad vägg är det mer värt att bygga upp huset där det står (${en ? `${en.stanna.toFixed(3)} mot ${en.flytta.toFixed(3)}` : 'inget val'})`, !!en && en.stanna > en.flytta],
+      [`när allt rasat är det mer värt att bygga ett nytt närmare mitten (${alla ? `${alla.stanna.toFixed(3)} mot ${alla.flytta.toFixed(3)}, läget ${lage(s, H0).toFixed(2)} mot ${alla.ny ? lage(s, alla.ny).toFixed(2) : '-'}` : 'inget val'})`, !!alla && alla.flytta > alla.stanna && narmre],
+      [`byggplanen planerar det nya huset (${nytt ? nytt.namn : 'inget'}), och det gamla lagas inte under tiden`, planerat],
+      [`när det nya är klart rivs det gamla och det nya är en sovsal (${nytt?.fn ?? '-'})`, borta && nytt?.fn === 'sovsal'],
+    ];
+  },
+};
