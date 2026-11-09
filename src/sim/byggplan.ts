@@ -57,7 +57,7 @@ export const PLAN = balans('byggplan', {
   lagerKostnad: 0.5, // att göra en lagerplats större eller ny kostar så här mycket (arbetet med att bära om)
   forStort: 2, // ett hus är för stort när det har så här många gånger fler sovplatser än familjen
   husVanta: 2, husMote: 8, // ett husbyte väntar så här många dygn (år i spelet) på att köparen och säljaren står så här många rutor från varandra
-  lagePerRuta: 0.015, lageMax: 0.4, // läget (steg 9.2.84): ett hus mitt i byn är värt så här mycket mer per ruta i byns radie, högst så här mycket mer
+  lagePerRuta: 0.015, lageMax: 0.4, // läget (steg 9.2.109): ett hus mitt i byn är värt så här mycket mer per ruta i byns radie, högst så här mycket mer
   salj: 0.8, bynSalj: 0.6, // säljarens lägsta pris för ett hus hen inte behöver: så här många gånger husets värde (byn säljer billigast; att riva ger hälften)
   kopMax: 0.9, // köparens högsta pris är så här stor del av vad det kostar att bygga nytt
   prisRel: 0.3, // en vän betalar mindre ...
@@ -354,7 +354,7 @@ const lagerNyA: AtgardDef = {
 // har råd med). Affären blir av när köparens högsta pris är minst säljarens lägsta, och priset hamnar däremellan efter
 // relationen och handelsfärdigheten
 const salesPlats = (s: State, h: Hus) => gridOf(s).rooms.filter(r => r.hus === h.id).reduce((n, r) => n + sovplatser(s, r), 0);
-// Alla hus där man bor eller umgås går att köpa (steg 9.2.84), men priset följer hur mycket säljaren behöver huset. Förrådshus,
+// Alla hus där man bor eller umgås går att köpa (steg 9.2.109), men priset följer hur mycket säljaren behöver huset. Förrådshus,
 // verkstäder (en station står där) och skjul är inga bostäder och säljs inte
 export function kopbart(s: State, h: Hus): boolean {
   return !!h.klar && !h.ut && !h.skjul && KOPBARA.has(fnId(h)) && !RUMSFUNKTIONER.verkstad.har(s, h);

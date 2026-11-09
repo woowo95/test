@@ -1215,7 +1215,7 @@ function lagerIStraket(): [string, boolean][] {
   ];
 }
 SCENARIER.husmarknad = {
-  text: 'Steg 9.2.84: alla bostäder går att köpa, men priset följer hur mycket säljaren behöver huset. Ett hus där folk bor kostar mer än att bygga nytt, ett hus som ägaren inte behöver säljs billigt, och en familj som inte har råd att bygga nytt köper ett sådant',
+  text: 'Steg 9.2.109: alla bostäder går att köpa, men priset följer hur mycket säljaren behöver huset. Ett hus där folk bor kostar mer än att bygga nytt, ett hus som ägaren inte behöver säljs billigt, och en familj som inte har råd att bygga nytt köper ett sådant',
   kor: () => {
     const s = createState(6, START);
     klockan(s); byggare(s);

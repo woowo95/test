@@ -58,7 +58,7 @@ export const HUS = balans('hus', {
 // En ny sorts byggnad blir en rad.
 // v = hur akut (0 = behövs inte, 1 = mycket), plats = rutor under tak som behövs, slag = vad ett förrådshus ska rymma,
 // ag = vem som ska äga huset (ett familjehus)
-export interface Akut { v: number; plats: number; slag?: 'mat' | 'material'; ag?: number; hus?: number; kop?: boolean } // hus = just det här huset behöver mer plats (familjen har vuxit); kop = familjen har bara råd att köpa ett hus (steg 9.2.84)
+export interface Akut { v: number; plats: number; slag?: 'mat' | 'material'; ag?: number; hus?: number; kop?: boolean } // hus = just det här huset behöver mer plats (familjen har vuxit); kop = familjen har bara råd att köpa ett hus (steg 9.2.109)
 export interface Byggnad {
   namn: string; ikon: string;
   behov: string; // vilket behov den fyller (förklaringen i gränssnittet)
@@ -205,7 +205,7 @@ function husKostnad(n: number) {
 let kanKopaF: (s: State, ag: number, folk: number) => boolean = () => false;
 export const satKanKopa = (f: typeof kanKopaF) => { kanKopaF = f; };
 // den första familjen (ett par med barn) som inte har något eget hus och har råd med ett: att bygga ett nytt, eller att köpa ett
-// som är till salu (kop, steg 9.2.84)
+// som är till salu (kop, steg 9.2.109)
 function familjUtanHus(s: State): { ag: number; folk: Person[]; kop?: boolean } | undefined {
   const hs = housesOf(s);
   for (const o of living(s).sort((a, b) => a.id - b.id)) {
