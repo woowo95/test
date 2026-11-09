@@ -2136,6 +2136,36 @@ SCENARIER.forvarlista = {
   },
 };
 
+SCENARIER.kronikakat = {
+  text: 'Steg 9.2.73: krönikans kategorier. Varje krönikerad har ett slag, och registret KRONIKA_KAT säger vilken kategori slaget hör till: en födsel under Liv. En rad med kategoriernas symboler överst filtrerar, och en rad utan slag ur en gammal sparfil står bara när ingen kategori är vald',
+  kor: () => {
+    utanWebblasare();
+    const s = createState(6, START);
+    for (let i = 0; i < 3 * STEG_DYGN; i++) step(s, BEAT);
+    const K = s.hist!.kronika, okanda = [...new Set(K.filter(r => r[2] !== undefined && !SIM.kronikaKat(r[2])).map(r => r[2]))];
+    const a = living(s)[0];
+    SIM.kronikaBer(s, 'k_fodd', a.id, { ...SIM.personFalt(a), mor: a.name, far: a.name });
+    const fodd = K[K.length - 1];
+    K.push([s.now, 'En rad ur en gammal sparfil.']);
+    setByn(s);
+    Object.assign(kronikaVal, { visning: 'stort', ar: undefined, person: undefined, kat: undefined });
+    const alla = kronikaFlik.html();
+    kronikaVal.kat = 'liv';
+    const liv = kronikaFlik.html();
+    kronikaVal.kat = 'strid';
+    const strid = kronikaFlik.html();
+    kronikaVal.kat = undefined;
+    const symboler = (alla.match(/data-kkat=/g) ?? []).length;
+    return [
+      [`alla slag i krönikan har en kategori${okanda.length ? ` (saknas: ${okanda.join(', ')})` : ''}`, okanda.length === 0],
+      [`en födsel hamnar under Liv (${fodd[2]} → ${SIM.kronikaKat(fodd[2])})`, SIM.kronikaKat(fodd[2]) === 'liv'],
+      [`raden med kategoriernas symboler (${symboler})`, symboler === SIM.KRONIKA_KAT.length],
+      ['Liv visar födseln, Strid inte', liv.includes(fodd[1].slice(0, 10)) && !strid.includes(fodd[1].slice(0, 10))],
+      ['raden utan slag står bara när ingen kategori är vald', alla.includes('En rad ur en gammal sparfil') && !liv.includes('En rad ur en gammal sparfil')],
+    ];
+  },
+};
+
 SCENARIER.kronikalista = {
   text: 'Krönikan och händelserna i en lista (steg 5.4.2, ui/flikar/kronika.ts): Stort visar krönikan, Allt händelseloggen, senast först under en rubrik per år, och stenen Byns tal alla byns grafer (steg 9.3.2). Man bläddrar år för år och kan välja en person: bara raderna där hen står med. Bara panelen.',
   kor: () => {

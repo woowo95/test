@@ -378,7 +378,7 @@ function bytFn(s: State, h: Hus, fn: Fn, slag?: 'mat' | 'material') {
   h.fn = fn; h.slag = slag; h.tom = undefined; h.rumFn = undefined;
   h.namn = nyttNamn(s, h, fn, { v: 0, plats: 0, slag, ag: h.ag });
   touch(s); count(s, 'bytt_' + fn);
-  log(s, `${fore} blev ${h.namn.toLowerCase()}.`, 'world'); kronika(s, `${fore} blev ${h.namn.toLowerCase()}.`);
+  log(s, `${fore} blev ${h.namn.toLowerCase()}.`, 'world'); kronika(s, `${fore} blev ${h.namn.toLowerCase()}.`, 'bygge');
   husKlar(s, h);
 }
 function riv(s: State, h: Hus) {
@@ -386,7 +386,7 @@ function riv(s: State, h: Hus) {
   s.byggen = bitsOf(s).filter(b => b.hus !== h.id); s.hus = housesOf(s).filter(q => q !== h);
   if (ved >= 1) put(s, 'ved', ved);
   touch(s); changed(s); count(s, 'rivet');
-  log(s, `${h.namn} behövdes inte längre och revs. ${Math.round(ved)} trä kom tillbaka till byn.`, 'world'); kronika(s, `${h.namn} revs.`);
+  log(s, `${h.namn} behövdes inte längre och revs. ${Math.round(ved)} trä kom tillbaka till byn.`, 'world'); kronika(s, `${h.namn} revs.`, 'bygge');
 }
 function funktionsbyte(s: State) {
   const hs = housesOf(s), arbete = new Set(living(s).filter(p => p.task?.act === 'bygga').map(p => bitById(s, p.task!.ref)?.hus));

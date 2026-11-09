@@ -1,3 +1,4 @@
+import { fritidLista } from './fram';
 import { PYNT } from '../../sim/pynt';
 import { kvOf } from '../../sim/kvalitet';
 import { delarAv, flyttaDel, helStation, flyttaStation, sakBerattelse, ACTS, DJURARTER, STATION, bordPlatser, pilesOf, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, actIkon, verbOf, stationById, stationDef, stationKlar, tillbehorDef, tingOf, timeLabel, FLACKAR, condOf, smutsVid, blodVid, storlekAv, TORK, torrDel } from '../../sim';
@@ -108,6 +109,7 @@ export const station: Flik = {
     return `
     <div class="phead"><div><h2>${iconImg(d.ikon, 20)} ${st.ber?.namn ? `★ ${esc(st.ber.namn)}: ` : ''}${esc(d.namn)}</h2><p class="muted">${status}${st.q !== undefined ? ` ${kvMark(st, 12)} ${esc(kvText(st))}.` : ''} ${st.inne ? 'Står inne.' : d.inne ? 'Står ute, men bärs in när ett hus har plats.' : 'Står ute.'}</p>${st.ber ? `<p class="besk">${esc(sakBerattelse(s, st, d.namn))}</p>` : ''}${smuts ? `<p>${smuts}</p>` : ''}${fyllt}${d.pynt && klar ? `<p ${tip(`Pynt: ägaren trivs i rummet med det (humör +${Math.round(PYNT.glad[kvOf(st)] * 100)} %), och de som ser det där tycker bättre om hen. Ju finare det är, desto mer`)}>😊 +${Math.round(PYNT.glad[kvOf(st)] * 100)} % 🏺</p>` : ''}${agare ? `<p>Ägs av ${pLink(agare)}.</p>` : ''}${vem.length ? `<p class="muted">Byggd av ${vem.map(p => pLink(p)).join(', ')}.</p>` : ''}</div></div>
     ${bruk}
+    ${st.k === 'scen' && fritidLista({ scen: st.id }) ? `<h3>Framträdanden här</h3>${fritidLista({ scen: st.id, antal: 10 })}` : ''}
     ${d.gor.length ? `<h3>Här görs</h3><dl class="kv">${d.gor.map(a => gorRad(a, !!d.bara?.includes(a))).join('')}</dl>` : ''}
     ${d.sover ? `<h3>Sovplats</h3><p class="muted">En sovplats. Den som sover här vilar upp sig fortare.</p>` : ''}
     ${d.platser ? `<h3>Platser</h3><p ${tip('Här äter man tillsammans och blir glad av det, och här samtalar man')}>${stubbar || `<span class="muted">${bordPlatser(st).length} stubbar när bordet är klart</span>`}</p>` : ''}

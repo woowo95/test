@@ -1,24 +1,28 @@
 // Krönikan (steg 5.4.2): byns viktiga händelser över hela tiden (krönikan i historik.ts, sparad för alltid) och
 // händelseloggen (s.log, de senaste 400 raderna) i en lista, senast först och under en rubrik per år. Filtret: Stort =
-// krönikan, Allt = loggen och Kartan = kartan över tid; graferna har en egen sten, Byns tal (steg 9.3.2). Man bläddrar år för år med pilarna (eller ser alla år) och kan välja en person: raderna där hen
+// krönikan (med kategorierna, steg 9.2.73), Allt = loggen och Kartan = kartan över tid; graferna har en egen sten, Byns tal (steg 9.3.2). Man bläddrar år för år med pilarna (eller ser alla år) och kan välja en person: raderna där hen
 // står med. Öppnas med runstenen Krönika. Ett nytt filter är en rad i VISNING.
-import { AGES, type LogEntry, type Person, kalender } from '../../sim';
+import { AGES, KRONIKA_KAT, type LogEntry, type Person, kalender, kronikaKat } from '../../sim';
+import { tecknet } from '../../ikoner';
+import { fritidLista } from './fram';
 import { clockTxt, esc, linkify, namnI } from '../hjalp';
 import { ritaOm, s } from '../lage';
 import type { Flik } from '../panel';
 import { kartminneHtml } from '../kartminne';
 
-interface Rad { t: number; text: string; kind?: LogEntry['kind']; ids: number[]; byte?: LogEntry['byte']; bnr?: number; fram?: number; match?: number } // byte och fram ger knappen till redogörelsen
+interface Rad { t: number; text: string; slag?: string; kind?: LogEntry['kind']; ids: number[]; byte?: LogEntry['byte']; bnr?: number; fram?: number; match?: number } // byte och fram ger knappen till redogörelsen
 // var en person står med i en krönikerad: krönikan sparar bara texten, så personen hittas på namnet
 const iText = (text: string, folk: Person[]) => folk.filter(p => namnI(text, p.name) >= 0).map(p => p.id);
 const VISNING: Record<string, { namn: string; title: string; rader(): Rad[] }> = {
-  stort: { namn: 'Stort', title: 'Krönikan: det viktiga som hänt sedan byns början', rader: () => (s.hist?.kronika ?? []).map(([t, text]) => ({ t, text, ids: iText(text, s.people) })) },
+  stort: { namn: 'Krönikan', title: 'Krönikan: det viktiga som hänt sedan byns början', rader: () => (s.hist?.kronika ?? []).map(([t, text, slag]) => ({ t, text, slag, ids: iText(text, s.people) })).filter(r => val.kat === undefined || kronikaKat(r.slag) === val.kat) },
   allt: { namn: 'Allt', title: 'Allt som hänt i byn den senaste tiden (de senaste 400 raderna)', rader: () => s.log.map(l => ({ t: l.t, text: l.text, kind: l.kind, ids: l.ids, byte: l.byte, bnr: l.bnr, fram: l.fram, match: l.match })) },
   kartan: { namn: 'Kartan', title: 'Kartan år för år: skogen, stigarna och husen (steg 5.4.5.2)', rader: () => [] },
 };
-export const val: { visning: string; ar?: number; person?: number } = { visning: 'stort' }; // det som visas (exporterat för scenariot kronikalista)
+export const val: { visning: string; ar?: number; person?: number; kat?: string } = { visning: 'stort' }; // det som visas (exporterat för scenariot kronikalista)
 
-const filterKnappar = () => `<div class="pdelar kfilter" role="toolbar" aria-label="Visa">${Object.entries(VISNING).map(([id, x]) => `<button type="button" data-kvis="${id}" aria-pressed="${id === val.visning}" title="${x.title}">${x.namn}</button>`).join('')}</div>`;
+// kategorierna i krönikan (steg 9.2.73, KRONIKA_KAT i historik.ts): en symbol per kategori; ett tryck visar bara den, ett till alla
+const katRad = () => val.visning !== 'stort' ? '' : `<div class="pdelar kkat" role="toolbar" aria-label="Kategori">${KRONIKA_KAT.map(k => `<button type="button" data-kkat="${k.id}" aria-pressed="${k.id === val.kat}" title="${k.namn}" aria-label="${k.namn}">${tecknet(k.ikon, k.tecken, 16)}</button>`).join('')}</div>`;
+const filterKnappar = () => `<div class="pdelar kfilter" role="toolbar" aria-label="Visa">${Object.entries(VISNING).map(([id, x]) => `<button type="button" data-kvis="${id}" aria-pressed="${id === val.visning}" title="${x.title}">${x.namn}</button>`).join('')}</div>${katRad()}`;
 export const kronika: Flik = {
   namn: 'Krönika',
   html() {
@@ -43,9 +47,13 @@ export const kronika: Flik = {
       const k = kalender(s, r.t);
       html += `<li${r.kind ? ` class="k-${r.kind}"` : ''}><span class="when">${r.kind ? clockTxt(r.t) : AGES[k.ai]}</span>${linkify({ t: r.t, text: r.text, kind: r.kind ?? 'world', ids: r.ids, byte: r.byte, bnr: r.bnr, fram: r.fram, match: r.match })}</li>`;
     }
-    return knappar + (html ? html + '</ol>' : '<p class="muted">Inget har hänt här än.</p>');
+    // Fritid (steg 9.2.67): de senaste framträdandena och matcherna överst, med knappen till redogörelsen
+    const fritid = val.visning === 'stort' && val.kat === 'fritid' ? fritidLista() : '';
+    return knappar + (fritid ? `<h4 class="kar">Framträdanden och matcher</h4>${fritid}` : '') + (html ? html + '</ol>' : fritid ? '' : '<p class="muted">Inget har hänt här än.</p>');
   },
   klick(el) {
+    const kk = el.closest<HTMLElement>('[data-kkat]');
+    if (kk) { val.kat = val.kat === kk.dataset.kkat ? undefined : kk.dataset.kkat; return true; }
     const b = el.closest<HTMLElement>('[data-kvis], [data-kar]');
     if (!b) return false;
     if (b.dataset.kvis) { val.visning = b.dataset.kvis; return true; }

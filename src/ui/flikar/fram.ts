@@ -2,9 +2,9 @@
 // minnet som sparades när framträdandet slutade (framMinneAv i sim/framtradande.ts), inte ur loggen: vem som uppträdde, formen,
 // instrumentet, budskapet och om ledaren betalade, publiken och mottagningen. Symbolerna först; texten kommer fram när man
 // håller över raden
-import { BUDSKAP, FRAM_AV, FramMinne, framBerattelse, framMinneAv, sakNamn } from '../../sim';
+import { BUDSKAP, FRAM_AV, FramMinne, SPORT_AV, framBerattelse, framMinneAv, sakNamn, timeLabel } from '../../sim';
 import { iconImg } from '../../ikoner';
-import { clockTxt, esc, vemLank } from '../hjalp';
+import { clockTxt, esc, framKnapp, matchKnapp, vemLank } from '../hjalp';
 import { s, ui } from '../lage';
 import { notisVal } from '../notiser';
 import type { Flik } from '../panel';
@@ -46,4 +46,18 @@ export function framHtml(m?: FramMinne) {
   ].join('');
   const lista = pub.map(x => `<li title="${esc(`${x.namn} gillar ${m.namn}: ${x.r0} före, ${x.r1} efter${x.l0 !== undefined ? `; ledaren: ${x.l0} före, ${x.l1} efter` : ''}`)}">${vemLank(x.id, x.namn)} <span class="muted">${x.r0} → ${x.r1}</span> ${andring(x.r0, x.r1)}</li>`).join('');
   return `${huvud}${text}<ul class="fame">${fakta}</ul><h3>Mottagningen</h3><ul class="fame">${mott}</ul><h3>Publiken (${m.n})</h3><ul class="fame">${lista}</ul>`;
+}
+
+// de senaste framträdandena och matcherna (steg 9.2.67): en rad per tillfälle, det nyaste först, med formens eller sportens namn,
+// vem och när; knappen öppnar redogörelsen. person = bara de hen var med i, scen = bara de på den scenen (där pågår ett
+// framträdande står det överst), matcher = false utan matcherna
+export function fritidLista(o: { person?: number; scen?: number; matcher?: boolean; antal?: number } = {}) {
+  const fr = (s.framtradanden ?? []).filter(m => m.nr !== undefined && (o.person === undefined || m.p === o.person) && (o.scen === undefined || m.scen === o.scen))
+    .map(m => ({ t: m.t, html: `${iconImg('scen', 12)} ${esc(FRAM_AV[m.k]?.namn ?? m.k)}: ${esc(m.namn)}${framKnapp(m.nr!)}` }));
+  const ma = o.matcher === false || o.scen !== undefined ? [] : (s.matcher ?? []).filter(m => !m.installd && (o.person === undefined || m.spelare.some(q => q.id === o.person)))
+    .map(m => ({ t: m.t, html: `${iconImg('boll', 12)} ${esc(SPORT_AV[m.k]?.namn ?? m.k)}: ${esc(m.spelare.map(q => q.namn).join(', '))}${m.vnamn ? `, ${esc(m.vnamn)} vann` : ''}${matchKnapp(m.nr)}` }));
+  const nu = s.fram && (o.scen === undefined || s.fram.scen === o.scen) && (o.person === undefined || s.fram.p === o.person)
+    ? `<li><span class="when">Pågår</span>${iconImg('scen', 12)} ${esc(FRAM_AV[s.fram.k]?.namn ?? s.fram.k)}: ${esc(s.people.find(p => p.id === s.fram!.p)?.name ?? '')}</li>` : '';
+  const rader = [...fr, ...ma].sort((a, b) => b.t - a.t).slice(0, o.antal ?? 20);
+  return nu || rader.length ? `<ol class="logg">${nu}${rader.map(r => `<li><span class="when">${esc(timeLabel(s, r.t))}</span>${r.html}</li>`).join('')}</ol>` : '';
 }

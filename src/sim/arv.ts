@@ -71,7 +71,7 @@ export function inherit(s: State, p: Person) {
   heirs.forEach((h, i) => {
     if (!fick[i].length) return;
     const text = `${h.name} ärvde ${lista(fick[i])} efter ${p.name}.`;
-    log(s, text, 'death', [h.id, p.id]); kronika(s, text);
+    log(s, text, 'death', [h.id, p.id]); kronika(s, text, 'arv');
   });
   if (tools.length || hus.length || Object.keys(eget).length) count(s, 'arv'); // bara när något gick till en arvinge
 }

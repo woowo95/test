@@ -120,7 +120,7 @@ export function helga(s: State, tr: Tro, x: number, y: number, om: string) {
   const k = (Object.keys(HELIGA_PLATSER) as HeligSlag[]).find(q => (HELIGA_PLATSER[q] as HeligDef).passar(s, x, y))!;
   heligaOf(s).push({ x, y, k, tro: tr.id, t: s.now, om }); count(s, 'helig');
   const t = `${HELIGA_PLATSER[k].namn}: platsen ${om} är nu helig för ${troNamn(tr).toLowerCase()}.`;
-  log(s, t, 'rel', []); kronika(s, t);
+  log(s, t, 'rel', []); kronika(s, t, 'tro');
 }
 
 // ---------- prästen (steg 8.5.9) ----------
@@ -136,7 +136,7 @@ function prastSteg(s: State, tr: Tro, folk: Person[]) {
   if (tr.prastRegel !== 'bada' && tr.prastRegel !== p.sex) return;
   tr.prast = p.id; count(s, 'prast');
   const t = `${p.name} blev ${prastSort(tr, p.sex).toLowerCase()} i ${troNamn(tr).toLowerCase()}.`;
-  log(s, t, 'rel', [p.id]); kronika(s, t); p.fame.push(`Blev ${prastSort(tr, p.sex).toLowerCase()}`);
+  log(s, t, 'rel', [p.id]); kronika(s, t, 'tro'); p.fame.push(`Blev ${prastSort(tr, p.sex).toLowerCase()}`);
 }
 
 // ---------- profeten (steg 8.5.10) ----------
@@ -147,13 +147,13 @@ function profetSteg(s: State, p: Person) {
   p.profet = true; count(s, 'profet'); p.fame.push('Fick en syn');
   if (rnd(s, 'tro', p) < KULT.nyTro && levande(s).length < TRO.takTro) {
     const t = `${p.name} fick en syn och lämnade ${troNamn(tr).toLowerCase()} för något nytt.`;
-    log(s, t, 'rel', [p.id]); kronika(s, t);
+    log(s, t, 'rel', [p.id]); kronika(s, t, 'tro');
     p.tro = undefined; grunda(s, p, 'drom'); return;
   }
   const skala = (['natur', 'manga'] as const)[Math.floor(rnd(s, 'tro', p) * 2)], d = (rnd(s, 'tro', p) < 0.5 ? -1 : 1) * KULT.profetSkala;
   tr[skala] = clamp(tr[skala] + d, 0, 100);
   const t = `${p.name} fick en syn, och ${troNamn(tr).toLowerCase()} blev inte sig lik.`;
-  log(s, t, 'rel', [p.id]); kronika(s, t);
+  log(s, t, 'rel', [p.id]); kronika(s, t, 'tro');
   (tr.profeter ??= []).push(p.id);
 }
 const levande = (s: State) => (s.tron ?? []).filter(t => t.slut === undefined);
@@ -166,7 +166,7 @@ function vanhelga(s: State) {
     if (!annan || rnd(s, 'tro') >= KULT.vanhelgaChans) continue;
     annan.skandad = s.now; count(s, 'vanhelgad');
     const t = `Några från ${troNamn(tr).toLowerCase()} vanhelgade ${HELIGA_PLATSER[annan.k].namn.toLowerCase()}.`;
-    log(s, t, 'rel', []); kronika(s, t);
+    log(s, t, 'rel', []); kronika(s, t, 'tro');
     for (const q of living(s)) if (q.tro === annan.tro) { q.troStyrka = Math.max(0, (q.troStyrka ?? 0) - 3); think(q, 'Någon vanhelgade vår heliga plats', -0.15, s.now, 2 * DAY); }
   }
 }

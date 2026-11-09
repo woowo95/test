@@ -199,7 +199,7 @@ function larSmittan(s: State, p: Person, k: SjukId) {
 function epidemi(s: State, p: Person, k: SjukId) {
   const e = s.epidemi?.k === k && living(s).some(q => q !== p && q.sjuk?.k === k) ? s.epidemi : (s.epidemi = { k, ids: [] });
   if (!e.ids.includes(p.id)) e.ids.push(p.id);
-  if (!e.skriven && e.ids.length >= Math.max(3, living(s).length * SJUK.epidemi)) { e.skriven = 1; kronika(s, `${SJUKDOMAR[k].namn} gick genom byn. ${e.ids.length} blev sjuka.`); count(s, 'epidemi'); }
+  if (!e.skriven && e.ids.length >= Math.max(3, living(s).length * SJUK.epidemi)) { e.skriven = 1; kronika(s, `${SJUKDOMAR[k].namn} gick genom byn. ${e.ids.length} blev sjuka.`, 'sjukdom'); count(s, 'epidemi'); }
 }
 
 // förloppet varje slag (steg.ts): sjukdomen och motståndet växer. Svarar med dödsorsaken om sjukdomen vann

@@ -4,7 +4,11 @@ import * as SIM from '../../sim';
 import { START } from '../kor';
 import * as O from '../../sim/ord';
 import { TEKNIK } from '../../sim/teknik';
-import { SCENARIER, klockan, kor, medBank, medHus, nyInvanare, setFood, tandEld } from './hjalp';
+import { SCENARIER, klockan, kor, medBank, medHus, nyInvanare, setFood, tandEld, utanWebblasare } from './hjalp';
+import { setByn, ui } from '../../ui/lage';
+import { station as stationFlik } from '../../ui/flikar/station';
+import { person as personFlik } from '../../ui/flikar/person';
+import { kronika as kronikaFlik, val as kronikaVal } from '../../ui/flikar/kronika';
 
 // en by med ett stort överskott av mat och ved, på förmiddagen
 export function rikDag(seed = 3, mer: Record<string, number> = {}): State {
@@ -945,6 +949,35 @@ SCENARIER.rader = {
       ['det heliga kriget river hovet och skändar platsen', hov && skandad],
       [`den som ger upp svär trohet (${q.drag?.v})`, !!q.drag],
       [`en dörr är bommad när någon är inne (${bom}), annars inte (${obom})`, bom && obom],
+    ];
+  },
+};
+
+SCENARIER.fritidlista = {
+  text: 'Steg 9.2.67: framträdandena och matcherna går att hitta. Ett tryck på scenen visar de senaste framträdandena där, den som uppträtt har dem i Presentationen, och Krönikans kategori Fritid listar de senaste framträdandena och matcherna; varje rad har knappen till redogörelsen',
+  kor: () => {
+    utanWebblasare();
+    let b: ReturnType<typeof medScen> | undefined, m: SIM.FramMinne | undefined;
+    for (let i = 0; i < 30 && !m; i++) {
+      const x = medScen(3 + i, []), p = x.v[0]!; p.skill[SIM.FRAM_SKILL] = 8;
+      if (!upptrad(x.s, p)) continue;
+      kor(x.s, 1.5);
+      m = x.s.framtradanden?.find(q => q.scen === x.sc.id); b = x;
+    }
+    if (!b || !m) return [['ett framträdande på scenen', false]];
+    setByn(b.s);
+    ui.stationId = b.sc.id;
+    const scen = stationFlik.html().includes(`data-fram="${m.nr}"`);
+    ui.selected = m.p; ui.personDel = 'om';
+    const pres = personFlik.html().includes(`data-fram="${m.nr}"`);
+    Object.assign(kronikaVal, { visning: 'stort', ar: undefined, person: undefined, kat: 'fritid' });
+    const kron = kronikaFlik.html().includes(`data-fram="${m.nr}"`);
+    kronikaVal.kat = undefined;
+    return [
+      [`${m.namn} uppträdde på scenen (${SIM.FRAM_AV[m.k]!.namn})`, true],
+      ['scenens ruta visar framträdandet som just slutat, med knappen till redogörelsen', scen],
+      ['det står i Presentationen hos den som uppträdde', pres],
+      ['Krönikans Fritid listar det', kron],
     ];
   },
 };

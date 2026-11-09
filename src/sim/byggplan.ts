@@ -421,7 +421,7 @@ export function rivOmTomt(s: State) {
     s.byggen = bitsOf(s).filter(b => b.hus !== h.id); s.hus = housesOf(s).filter(q => q !== h);
     if (ved > 0) put(s, 'ved', ved, { [o]: ved });
     touch(s); changed(s); count(s, 'rivet');
-    log(s, `${namn} stod tomt och revs. ${ved} trä gick till ägaren.`, 'world'); kronika(s, `${namn} revs.`);
+    log(s, `${namn} stod tomt och revs. ${ved} trä gick till ägaren.`, 'world'); kronika(s, `${namn} revs.`, 'bygge');
     return;
   }
 }
@@ -468,7 +468,7 @@ function torgNu(s: State) {
       const d = Math.hypot(x + S / 2 - o.mitt.x, y + S / 2 - o.mitt.y);
       if (d < bd && torgFritt(s, x, y, S, S)) { bd = d; bast = { x, y }; }
     }
-    if (bast) { s.torg = { ...bast, w: S, h: S }; touch(s); count(s, 'torg'); log(s, 'Byn märker ut ett torg mitt i byn. Dit leder stigarna från och med nu.', 'world'); kronika(s, 'Byn fick ett torg.'); }
+    if (bast) { s.torg = { ...bast, w: S, h: S }; touch(s); count(s, 'torg'); log(s, 'Byn märker ut ett torg mitt i byn. Dit leder stigarna från och med nu.', 'world'); kronika(s, 'Byn fick ett torg.', 'bygge'); }
     return;
   }
   // torget växer med byn, en rad åt gången

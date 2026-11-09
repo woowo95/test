@@ -205,5 +205,5 @@ function vinnare(s: State, d: SportDef, m: Match, har: Person[]) {
   const titel = `Den bästa i ${d.namn.toLowerCase()}${d.id === 'kast' ? '' : 'en'}`;
   if (!bast.fame.includes(titel)) bast.fame.push(titel);
   const text = fore && alive(fore) ? `${bast.name} har vunnit fler matcher i ${d.namn.toLowerCase()} än ${fore.name} och är nu den bästa i byn.` : `${bast.name} har vunnit ${tal(n)} matcher i ${d.namn.toLowerCase()} och är den bästa i byn.`;
-  log(s, text, 'world', [bast.id]); kronika(s, text);
+  log(s, text, 'world', [bast.id]); kronika(s, text, 'fritid');
 }

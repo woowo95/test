@@ -43,6 +43,23 @@ const histOf = (s: State) => (s.hist ??= ny());
 // slag: vad raden handlar om (mallens id i BERATTELSER, steg 3.9.3), så att den kan hittas utan att läsa texten
 // Raden läggs i tidsordning: i ett steg räknar var och en sin egen tid (taskStep i steg.ts), så den som skrivs sist kan ha
 // hänt lite tidigare. Då blir krönikan likadan när delarna läses in igen (joinHist sorterar på tiden)
+// krönikans kategorier (steg 9.2.73): en rad per kategori med namnet, symbolen (ikoner.ts) och de slag av krönikerader som hör
+// dit (mallens namn i berattelser.ts eller slaget som kronika får). Ett nytt slag är ett namn i en rad här; en rad med ett slag
+// som inte står här visas bara när ingen kategori är vald
+export interface KronikaKat { id: string; namn: string; ikon: string; tecken: string; slag: string[] }
+export const KRONIKA_KAT: KronikaKat[] = [
+  { id: 'liv', namn: 'Liv', ikon: 'kk_liv', tecken: '❤️', slag: ['k_fodd', 'k_dog', 'k_dogSpad', 'k_gift', 'k_atergrundad', 'arv', 'flytt'] },
+  { id: 'styre', namn: 'Styre', ikon: 'kk_styre', tecken: '👑', slag: ['ledare', 'tabu', 'k_ledare', 'k_forstaLedare', 'k_utvisad'] },
+  { id: 'strid', namn: 'Strid', ikon: 'kk_strid', tecken: '⚔️', slag: ['rovare', 'k_vargAnfall', 'k_vargSprang', 'k_vargjakt', 'k_forstaVarg', 'k_bjornAnfall', 'k_bjornSprang', 'k_bjornjakt', 'k_bjornjaktMiss', 'k_forstaBjorn', 'k_skadad'] },
+  { id: 'tro', namn: 'Tro', ikon: 'kk_tro', tecken: '☀️', slag: ['tro'] },
+  { id: 'bygge', namn: 'Bygge och uppfinningar', ikon: 'kk_bygge', tecken: '🏠', slag: ['bygge', 'k_husKlar', 'k_uppfann', 'k_forstaEld', 'episk', 'forlust'] },
+  { id: 'motgang', namn: 'Motgångar', ikon: 'kk_motgang', tecken: '⚡', slag: ['motgang', 'sjukdom'] },
+  { id: 'grannar', namn: 'Handel och grannar', ikon: 'kk_grannar', tecken: '🤝', slag: ['handel', 'byte', 'gava', 'utbrytning'] },
+  { id: 'fritid', namn: 'Fritid', ikon: 'kk_fritid', tecken: '🎭', slag: ['fritid', 'hedersnamn', 'oknamn', 'k_skadadLek'] },
+];
+const KAT_AV = new Map(KRONIKA_KAT.flatMap(k => k.slag.map(sl => [sl, k.id] as const)));
+// kategorin för ett slag av krönikerad (undefined = ingen, t.ex. en rad i en gammal sparfil utan slag)
+export const kronikaKat = (slag?: string) => slag === undefined ? undefined : KAT_AV.get(slag);
 export function kronika(s: State, text: string, slag?: string) {
   const k = histOf(s).kronika, t = Math.round(s.now);
   let i = k.length;

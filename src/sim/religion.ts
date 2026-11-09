@@ -310,7 +310,7 @@ function namnge(s: State, tr: Tro, folk: Person[]) {
   nyGud(s, tr, d.omr, teckenText(tr.k, tr.om), p); // den första guden kommer ur tecknet
   count(s, 'tro_namn');
   log(s, `${folk.length} tror nu på ${liten(tr.bakom)}. Tron har fått ett namn: ${tr.namn}.`, 'rel', folk.map(q => q.id));
-  kronika(s, `År ${yearNo(s)}: ${tr.namn} fick sitt namn. ${tr.ber}`);
+  kronika(s, `År ${yearNo(s)}: ${tr.namn} fick sitt namn. ${tr.ber}`, 'tro');
 }
 
 // ---------- gudarna (steg 4.1.5) ----------
@@ -351,7 +351,7 @@ function nyGud(s: State, tr: Tro, omr: GudOmr, h: string, p: Person | undefined)
   (tr.gudar ??= []).push(g);
   count(s, 'gud_ny'); count(s, 'gud_' + g.form);
   log(s, `${tro} har fått en ${formNamn(g.form)}: ${g.namn}, som råder över ${d.om}.`, 'rel', troende(s, tr).map(q => q.id));
-  kronika(s, `År ${ar}: ${g.ber}`);
+  kronika(s, `År ${ar}: ${g.ber}`, 'tro');
 }
 function forfader(s: State, tr: Tro, p: Person, omr: GudOmr): Gud {
   const namn = forfaderNamn(p), ar = yearNo(s), dar = yearNo(s, p.died!);
@@ -387,7 +387,7 @@ function gudSteg(s: State, tr: Tro) {
         const g = forfader(s, tr, fp, forfaderOmr(s, tr, fp)!);
         tr.gudar!.push(g); count(s, 'gud_ny'); count(s, 'gud_forfader');
         log(s, `${troNamn(tr)} har fått en förfader: ${g.namn}, som vakar över ${GUD_OMR[g.omr[0]].om}.`, 'rel', troende(s, tr).map(q => q.id));
-        kronika(s, `År ${yearNo(s)}: ${g.ber}`);
+        kronika(s, `År ${yearNo(s)}: ${g.ber}`, 'tro');
       }
     }
   }
@@ -457,6 +457,6 @@ function nivaSteg(s: State, tr: Tro, folk: Person[]) {
   } else if (n + 1 < NIVAER.length && NIVAER[n + 1].krav(s, folk.length, folk)) {
     tr.niva = n + 1; count(s, 'tro_niva' + (n + 1));
     log(s, `${namn} har vuxit och är nu ${NIVAER[n + 1].namn.toLowerCase()}.`, 'rel', folk.map(p => p.id));
-    if (n + 1 >= 2) kronika(s, `År ${yearNo(s)}: ${namn} blev ${NIVAER[n + 1].namn.toLowerCase()}.`);
+    if (n + 1 >= 2) kronika(s, `År ${yearNo(s)}: ${namn} blev ${NIVAER[n + 1].namn.toLowerCase()}.`, 'tro');
   }
 }
