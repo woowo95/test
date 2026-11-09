@@ -1979,6 +1979,18 @@ SCENARIER.vargskydd = {
       (s.vargar ??= []).push({ id, vargar: [10_000_000 + id * 8, 10_000_001 + id * 8], x: c.x + 9, y: c.y, mx: c.x + 9, my: c.y, gar: s.now + 48 * HOUR, hunger: 0.1, gor: 'stryker' });
       let gom = 0, svaga = 0, iHus = 0, vidEld = 0, forsvar = 0, medVapen = 0, foralder = 0;
       kor(s, 0.4);
+      // steg 9.2.121: medan flocken står nära och har setts nyligen håller larmet, också efter VARG.vakenTim, och ingen vuxen samtalar
+      const f0 = s.vargar![0], fast = { x: f0.x, y: f0.y };
+      let haller = 0, prat = 0, nara = 0;
+      kor(s, SIM.VARG.vakenTim + 0.5, v => {
+        const f = v.vargar?.[0]; if (!f) return;
+        Object.assign(f, { x: fast.x, y: fast.y, mx: fast.x, my: fast.y, gor: 'stryker' }); // flocken står kvar nära byn
+        if (!SIM.vargarNara(v)) return;
+        nara++;
+        for (const q of living(v)) if (q.larm?.vad === 'varg' && ageOf(q, v.now) >= SIM.ALDER.vaktFran) { if (q.task?.act === 'samtal') prat++; }
+      });
+      haller = living(s).filter(q => q.larm?.vad === 'varg' && ['gomma', 'forsvar', 'hjalpaRovare'].includes(q.task?.act ?? '')).length;
+      const roller = living(s).map(q => q.task ? SIM.taskName(q.task) : '').filter(n => /vargarna|bakom/.test(n));
       s.vargar = undefined; // flocken drar vidare
       const e = SIM.eldPlats(s);
       for (const q of living(s)) {
@@ -1992,12 +2004,16 @@ SCENARIER.vargskydd = {
       kor(s, 2);
       const kvar = living(s).filter(q => q.task?.act === 'gomma' || q.task?.act === 'forsvar').length;
       const iHanden = SIM.tingOf(s).filter(t => t.k === 'fiskespjut' && t.hos !== undefined && byIdTask(s, t.hos) !== 'vakt').length;
-      return { gom, svaga, iHus, vidEld, forsvar, medVapen, foralder, kvar, iHanden, skydd: s.stat?.vargSkydd ?? 0 };
+      return { gom, svaga, iHus, vidEld, forsvar, medVapen, foralder, kvar, iHanden, skydd: s.stat?.vargSkydd ?? 0, haller, prat, nara, roller: roller.length, namn: [...new Set(roller)].join(', ') };
     };
     const byIdTask = (s: State, id: number) => living(s).find(q => q.id === id)?.task?.act;
     const ute = [1, 2, 3].map(sd => prov(false, sd)), inne = [1, 2, 3].map(sd => prov(true, sd));
-    const sum = (r: ReturnType<typeof prov>[], k: keyof ReturnType<typeof prov>) => r.reduce((a, x) => a + x[k], 0);
+    const sum = (r: ReturnType<typeof prov>[], k: Exclude<keyof ReturnType<typeof prov>, 'namn'>) => r.reduce((a, x) => a + x[k], 0);
+    const alla = [...ute, ...inne];
     return [
+      [`medan flocken står nära håller skyddet efter mer än ${SIM.VARG.vakenTim} timme (${sum(ute, 'haller') + sum(inne, 'haller')} gömmer sig eller väntar)`, alla.every(r => r.nara > 0) && alla.every(r => r.haller > 0)],
+      [`ingen vuxen samtalar som om inget hänt medan flocken är nära (${sum(ute, 'prat') + sum(inne, 'prat')} prov)`, sum(ute, 'prat') + sum(inne, 'prat') === 0],
+      [`kortet säger vad var och en gör (${[...new Set(alla.flatMap(r => r.namn.split(', ')).filter(Boolean))].join(', ')})`, alla.some(r => r.roller > 0)],
       [`ropet får folk att söka skydd (${sum(ute, 'skydd') + sum(inne, 'skydd')} avbrutna uppgifter)`, sum(ute, 'skydd') + sum(inne, 'skydd') > 0],
       [`utan hus håller sig barnen och de gamla vid elden (${sum(ute, 'vidEld')} av ${sum(ute, 'svaga')} som hört ropet)`, sum(ute, 'vidEld') > 0 && sum(ute, 'iHus') === 0],
       [`med hus gömmer de sig i huset (${sum(inne, 'iHus')} av ${sum(inne, 'svaga')})`, sum(inne, 'iHus') > sum(inne, 'svaga') / 2],

@@ -19,7 +19,7 @@ import { isLight } from './tid';
 import { DAY, HOUR, MIN, Person, SEC, State, T, Task, W, H } from './typer';
 import { vaderNu } from './vader';
 import { grundvarde, rikedom } from './varde';
-import { husPlats, iHus, kanterna, setRovarVal, smaBarnOf, skyddVidElden, soker } from './varg';
+import { husPlats, iHus, kanterna, setHotVilja, setRovarVal, smaBarnOf, skyddVidElden, soker } from './varg';
 import { taVapen } from './vakt';
 import { foddNar, gastNyckel } from './gastliv';
 import { gastAv, gastGar, gastTillbaka, nyGast, nyttGastId } from './gast';
@@ -428,6 +428,7 @@ function rovarSkydd(s: State, p: Person, _storlek: number, dur: number) {
   return { act: 'gomma' as const, why: hus ? 'Rövare är nära, gömmer sig i huset' : 'Rövare är nära, håller sig vid elden nära de vuxna', spot: hus ?? skyddVidElden(s), dur };
 }
 setRovarVal(rovarSkydd);
+setHotVilja(rovarVilja);
 
 // de vuxna som möter rövarna vid förrådet: vakna, nära och modiga nog (de som väntar med vapen och vakten står alltid kvar)
 const familjHotad = (s: State, q: Person, f: Rovarflock) => { const p = byId(s, q.partner); return !!p && avst(p, f) < ROVARE.motR; };

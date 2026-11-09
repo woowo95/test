@@ -314,7 +314,7 @@ const SALLSYNT: Record<string, string> = {
   skogsvard: 'skogsvården kommer man bara på när de närmaste träden att fälla står långt bort (steg 6.5.2), sällan på 35 dygn; scenariot skogsvard prövar den; i fasens Balans (6.10.4) var det sällsynt utan att bryta någon gräns',
   plantera: 'plantor flyttas bara av den som kan skogsvården (se skogsvard); scenariot skogsvard prövar det',
   budRovare: 'budbäraren springer bara när en flock väntar utanför byn och någon inte hört ropet (steg 9.2.117); scenariot rovarbud prövar det',
-  hjalpaRovare: 'man håller sig bakom kämparna bara när rövare är nära byn (steg 9.2.116); scenariot rovarforsvar prövar det',
+  hjalpaRovare: 'man håller sig bakom kämparna bara när rövare eller vargar är nära byn (steg 9.2.116 och 9.2.121); scenarierna rovarforsvar och vargskydd prövar det',
   forsvarRovare: 'man väntar på rövarna med vapen bara när rövare är nära byn (steg 9.2.74), och de kommer bara till en rik by; scenariot rovarforsvar prövar det',
 };
 // fas 8 (system 8.2, 8.3, 8.5 och 8.6): det som kräver en ledare, en präst eller en tro på en viss nivå hinner sällan komma på 35 dygn

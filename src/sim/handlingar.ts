@@ -109,7 +109,7 @@ const DEF = {
   hantverk: { namn: 'Gör handarbete', yrke: 'Hantverkare', slag: 'hantverk', verktyg: { rep: 'Tvinnar rep' }, vila: true, hantverk: true, social: true, dygn: true, stilla: true, plats: 'elden' },
   vakt: { namn: 'Håller vakt', yrke: 'Väktare', tecken: '👁️', social: true, skamfri: true, dygn: true, stilla: true, vapen: true, plats: 'elden', radie: 2.6, fortsatter: ['varg'] as const },
   // när vargar är nära (steg 3.7.15, varg.ts): de svaga gömmer sig i huset, de modiga väntar med vapen vid elden
-  gomma: { namn: 'Gömmer sig för vargarna', tecken: '🫣', dygn: true, stilla: true, plats: 'sang', fortsatter: ['varg'] as const },
+  gomma: { namn: 'Gömmer sig', tecken: '🫣', dygn: true, stilla: true, plats: 'sang', fortsatter: ['varg'] as const },
   forsvar: { namn: 'Väntar på vargarna med vapen', tecken: '🛡️', social: true, skamfri: true, dygn: true, stilla: true, vapen: true, plats: 'elden', radie: 2.2, fortsatter: ['varg'] as const },
   // mot rövare (steg 9.2.74, rovare.ts): man väntar vid förrådet, dit rövarna är på väg, och platsen sätts i rovarSkydd
   budRovare: { namn: 'Hämtar folk', tecken: '🏃', social: true, skamfri: true, dygn: true, fortsatter: ['varg'] as const }, // budbäraren (steg 9.2.117)
@@ -257,7 +257,9 @@ export const isWork = (a: Act) => ACTS[a].arbete !== undefined;
 export const WORK = ACT_LIST.filter(a => ACTS[a].arbete === a);
 // den som prövar sig fram säger vad hen försöker komma på (steg 9.2.106; teknik.ts sätter texterna när modulen laddas)
 export const forsokVad: Record<string, string> = {};
-export const taskName = (t: Task) => (t.act === 'forsok' && t.tool && forsokVad[t.tool] ? `Försöker komma på ${forsokVad[t.tool]}` : undefined) || (t.tool && (ACTS[t.act].redskap?.[t.tool]?.namn ?? ACTS[t.act].verktyg?.[t.tool])) || ACTS[t.act].namn;
+// den som gömmer sig gör det för hotet (steg 9.2.121), som står först i skälet (vargSkydd i varg.ts)
+const gomFor = (why = '') => /^Rövar/.test(why) ? 'Gömmer sig för rövarna' : /^Varg/.test(why) ? 'Gömmer sig för vargarna' : /^Björn/.test(why) ? 'Gömmer sig för björnen' : undefined;
+export const taskName = (t: Task) => (t.act === 'gomma' ? gomFor(t.why) : undefined) || (t.act === 'forsok' && t.tool && forsokVad[t.tool] ? `Försöker komma på ${forsokVad[t.tool]}` : undefined) || (t.tool && (ACTS[t.act].redskap?.[t.tool]?.namn ?? ACTS[t.act].verktyg?.[t.tool])) || ACTS[t.act].namn;
 // undertexten (steg 3.10.3): det uppgiften är i just nu, kort, som i "Jagar: letar efter byte". Handlingens rad (under) först,
 // annars på väg dit, med material till bygget och hem med det som bärs. Jakten efter försöket (jakt.ts)
 export function underText(t: Task): string | undefined {
