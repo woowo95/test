@@ -56,6 +56,7 @@ SCENARIER.sport = {
       [`${foljer} går till ${sport0.toLowerCase()}en; ${(g.stat?.sportTim ?? 0).toFixed(1)} spelartimmar, högst ${sett} på planen samtidigt`, foljer === 3 && (g.stat?.sportTim ?? 0) >= 1 && sett >= 2],
       [`${glad} av tre är glada efter att ha spelat, och ${battre} blev bättre i närstrid`, glad >= 2 && battre >= 2],
       ['när ingen har fritid följer ingen med, och det blir ingen match', ensam],
+      ...brottning(),
     ];
   },
 };
@@ -1083,3 +1084,24 @@ SCENARIER.fritidlista = {
     ];
   },
 };
+// steg 9.2.92: brottningen går två och två med stridens system, utan vapen och med svaga slag. Ingen dör, en skada är ovanlig
+function brottning(): [string, boolean][] {
+  let kampar = 0, doda = 0, skadade = 0, kvar = 0, sedda = 0, vapen = 0;
+  for (const fro of [3, 5, 7, 11]) {
+    const s = rikDag(fro), med = vuxna(s).slice(0, 4), skador0 = med.map(q => q.skador?.length ?? 0);
+    match(s, 'brottning', med);
+    kor(s, 1, () => { sedda += med.filter(q => q.task?.act === 'sport' && q.task.phase === 'do').length; });
+    kampar += s.stat?.brottningar ?? 0;
+    doda += med.filter(q => q.health <= 0 || q.died !== undefined).length;
+    skadade += med.filter((q, i) => (q.skador?.length ?? 0) > skador0[i]!).length;
+    kvar += med.filter(q => q.task?.act === 'sport').length;
+    for (const m of s.strider ?? []) if (m.u.avsikt === 'brottning') vapen += m.u.kampar.filter(k => k.vapen !== 'hand').length;
+  }
+  return [
+    [`brottarna kämpar två och två med stridens system (${kampar} kamper)`, kampar >= 4],
+    [`utan vapen (${vapen} med vapen)`, vapen === 0],
+    [`ingen dör i brottningen (${doda})`, doda === 0],
+    [`en skada är ovanlig (${skadade} av 16 brottare skadades)`, skadade <= 4],
+    [`brottarna är kvar i matchen efter en kamp (${kvar} av 16)`, kvar >= 12 && sedda > 0],
+  ];
+}

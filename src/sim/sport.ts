@@ -18,7 +18,8 @@ import { snoPaMarken } from './vader';
 import { balans } from './balans';
 import { notis } from './notiser';
 import { tal } from './ord';
-import { HOUR, HOUR_S, MIN, Person, Skill, State, Task } from './typer';
+import { stridIByn } from './strid';
+import { HOUR, HOUR_S, MIN, SEC, Person, Skill, State, Task } from './typer';
 
 export interface SportDef {
   id: string; namn: string;
@@ -61,11 +62,12 @@ export const SPORT = balans('sport', {
   // lagen bakom snövallarna, den som slår i bollspelet, och avståndet mellan de som står på rad
   ring: 1.8, kastAvst: 5, snoAvst: 2.5, slagAvst: 3, rad: 0.8,
   sparas: 20, // så här många matcher sparas i s.matcher (steg 5.4.8.1)
+  brottTakt: 4, // brottningen (steg 9.2.92): så många gånger i timmen varje brottare i en ledig ring börjar en kamp med en annan spelare
   bastMin: 5, // den som har vunnit så här många matcher i en sport, och fler än någon annan, är den bästa i den (eftermälet)
 });
 
 // matchen som pågår eller väntar på spelare: sporten, platsen, när den började (spelarnas task.ref) och slutar
-export interface Match { k: string; x: number; y: number; start: number; slut: number; spelat?: true; avgjord?: true; n?: number } // n: så många som gått med (platsen i laget)
+export interface Match { k: string; x: number; y: number; start: number; slut: number; spelat?: true; avgjord?: true; n?: number; brott?: number } // brott: när kampen i brottningen (steg 9.2.92) är slut // n: så många som gått med (platsen i laget)
 
 // matchens sammanställning (steg 5.4.8.1, Sporten i designdokumentet): sparas när matchen avgörs eller ställs in, inte ur
 // loggen. Raden i Händelser och notisen pekar dit med numret (LogEntry.match), och fliken Matchen (ui/flikar/match.ts) visar
@@ -176,6 +178,14 @@ export function sportSteg(s: State, p: Person, t: Task, dtSec: number) {
   const h = dtSec / HOUR_S;
   if (!m.spelat) for (const k of d.foremal) if (isTool(k) && wearTool(s, p, k, SPORT.slit)) { const tr = SAKER[k]?.trasig; if (tr) { count(s, tr.stat); if (tr.text) log(s, tr.text.replace('{namn}', p.name), 'world', [p.id]); } } // föremålen slits en gång per match
   m.spelat = true;
+  // brottningen (steg 9.2.92): två och två med stridens system, utan vapen och med svaga slag. En kamp i taget i ringen
+  if (m.k === 'brottning' && s.now >= (m.brott ?? 0) && rnd(s, 'sport', p) < SPORT.brottTakt * h) {
+    const mot = har.filter(q => q !== p && q.health > 0);
+    if (mot.length) {
+      const st = stridIByn(s, 'brottning', [[p], [mot[Math.floor(rnd(s, 'sport', p) * mot.length)]]], 'i brottningen');
+      m.brott = s.now + Math.max(1, st.slut!.t) * SEC; count(s, 'brottningar');
+    }
+  }
   ovning(p, d.skill, SPORT.ovning * h);
   t.prog = (t.prog ?? 0) + h;
   count(s, 'sportTim', h);

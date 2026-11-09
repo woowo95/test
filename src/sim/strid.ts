@@ -98,6 +98,7 @@ export const STRID = balans('strid', {
   modSkada: 1.1, // stridsmodet sjunker så här mycket gånger graden av en skada ...
   modVan: 0.2, // ... och så här mycket när en vän faller
   lek: 0.2, // i lek slutar striden vid första skada av den här graden
+  brottning: 0.3, // i brottningen (steg 9.2.92) är slagen så här starka mot i ett slagsmål, och ingen dör
   utsatt: 1.5, // chansen att träffa den som ligger eller flyr, gånger detta
   takt: 0.3, // tiden mellan slagen gånger 1 − (uthållighet − 10) / 20 × detta
   // försvaret (steg 3.7.2): bara den som står och har den som slår som mål kan parera eller ducka
@@ -225,9 +226,10 @@ export const KLADER_STRID = Object.keys(SKYDD);
 // ---------- avsikten (registret) ----------
 // vapen = man slåss med vapen (annars med händerna), nere = man slår den som ligger, slut = vad som avslutar striden för
 // den drabbade: 'skada' vid första skadan av graden STRID.lek, 'ge' att man ger upp när modet tar slut, 'fly' att man flyr
-interface AvsiktDef { namn: string; text: string; vapen: boolean; nere: boolean; modSlut: 'ge' | 'fly'; lek?: true }
+interface AvsiktDef { namn: string; text: string; vapen: boolean; nere: boolean; modSlut: 'ge' | 'fly'; lek?: true; sport?: true } // sport = brottningen (steg 9.2.92): svaga slag, ingen dör, och man är kvar i matchen
 export const AVSIKTER = {
   lek: { namn: 'Lek', text: 'Man brottas och slår på skoj och slutar vid första riktiga smärta.', vapen: false, nere: false, modSlut: 'ge', lek: true },
+  brottning: { namn: 'Brottning', text: 'Två brottas för sportens skull utan vapen. Slagen är svaga och den som känner smärta ger sig; en skada är ovanlig.', vapen: false, nere: false, modSlut: 'ge', lek: true, sport: true },
   slagsmal: { namn: 'Slagsmål', text: 'Med händerna tills den ena ger upp eller ligger.', vapen: false, nere: false, modSlut: 'ge' },
   skada: { namn: 'Skada', text: 'Med vapen tills den andra ligger, flyr eller ger upp.', vapen: true, nere: false, modSlut: 'fly' },
   doda: { namn: 'Döda', text: 'Med vapen, och den som ligger slås ihjäl.', vapen: true, nere: true, modSlut: 'fly' },
@@ -235,7 +237,7 @@ export const AVSIKTER = {
 export type Avsikt = keyof typeof AVSIKTER;
 const AVS: Record<Avsikt, AvsiktDef> = AVSIKTER;
 // hur striden börjar, som en mening (steg 6.7.1): "Striden börjar: man slåss för att skada."
-const BORJAR: Record<Avsikt, string> = { lek: 'man brottas på lek', slagsmal: 'man slåss med händerna', skada: 'man slåss för att skada', doda: 'man slåss för att döda' };
+const BORJAR: Record<Avsikt, string> = { lek: 'man brottas på lek', brottning: 'man brottas i en match', slagsmal: 'man slåss med händerna', skada: 'man slåss för att skada', doda: 'man slåss för att döda' };
 
 // ---------- händelserna i loggen (registret) ----------
 // tecken = symbolen först i loggen (platshållare tills bildstilen har dem), ord = hur meningen börjar
@@ -516,6 +518,7 @@ export function traffa(st: Strid, a: Kampe, b: Kampe, skada0: number, sl: Slag, 
   let g = skada0 * (1 + (a.st.styrka - 10) * STRID.styrka) * (1 - STRID.slump / 2 + slump(st) * STRID.slump);
   let kl: string | undefined;
   for (const c of b.klader) { const sk = SKYDD[c]; if (sk?.delar.includes(d)) { g *= 1 - (sk.tar[sl] ?? 0); kl = c; } }
+  if (AVS[st.avsikt].sport) g *= STRID.brottning; // brottningen: svaga slag (steg 9.2.92)
   g = Math.min(1, g);
   a.traffar++;
   const kf = kast ? 1 as const : undefined;
@@ -530,7 +533,7 @@ export function traffa(st: Strid, a: Kampe, b: Kampe, skada0: number, sl: Slag, 
   st.logg.push({ t: st.t, h: 'traff', a: a.id, b: b.id, d, k, g, v: a.vapen, kl, kast: kf });
   if (fast) st.logg.push({ t: st.t, h: 'fastnar', a: b.id, d, v: a.vapen });
   if (iStrid(b) && d !== 'huvud' && d !== 'bal' && !d.startsWith('ben') && !d.startsWith('fot') && g >= STRID.tappaGrad && slump(st) < STRID.tappa) tappa(st, b); // en träff i armen eller handen
-  if (((KROPPSDELAR[d] as { livsviktig?: true }).livsviktig && g >= HALSA.dodGrad) || b.blod < HALSA.blodDod) return falla(st, b, 'dod');
+  if (!AVS[st.avsikt].sport && (((KROPPSDELAR[d] as { livsviktig?: true }).livsviktig && g >= HALSA.dodGrad) || b.blod < HALSA.blodDod)) return falla(st, b, 'dod'); // i brottningen dör ingen
   if (AVS[st.avsikt].lek && g >= STRID.lek) return falla(st, b, 'ger');
   if (b.lage === 'nere') return; // den som redan ligger
   if ((iStrid(b) || b.lage === 'flykt') && !kanGaK(b)) { b.kryper = 0; return falla(st, b, 'nere', 'kryper'); } // kan inte resa sig utan kryper undan (steg 3.7.19)
@@ -997,6 +1000,7 @@ export function stridIByn(s: State, avsikt: Avsikt, sidor: [Person[], Person[]],
     const kast = st.logg.filter(r => r.a === k.id && r.kast), vada = st.logg.filter(r => r.a === k.id && r.h === 'vada').length;
     if (kast.length) { gjort(s, p, 'kast', kast.length); const tr = kast.filter(r => r.h !== 'miss').length - vada; if (tr > 0) gjort(s, p, 'kastTraff', tr); }
     for (const w of k.skador) {
+      if (AVS[avsikt].sport && w.g < STRID.lek) continue; // brottningen: de svaga slagen gör ont men blir ingen skada (steg 9.2.92)
       if (!dod && skada(s, p, w.d, w.k, w.g, 'drap', `i ett ${lek ? 'lekslagsmål' : 'slagsmål'} med ${lista(mot.map(q => q.name))}`)) dod = true;
       if (w.fast && p.skador?.length) p.skador[p.skador.length - 1].fast = 1; // spjutet sitter kvar till vården (steg 3.7.7)
     }
@@ -1022,7 +1026,8 @@ export function stridIByn(s: State, avsikt: Avsikt, sidor: [Person[], Person[]],
     for (const q of mot) if (p.id < q.id) minnsRel(s, p, q, lek ? 'lek' : 'slag'); // det relationen minns, en gång per par (steg 3.9.6)
     if (!lek) for (const q of sidor[k.sida]) if (p.id < q.id) minnsRel(s, p, q, 'sida');
     if (!lek && vinnare !== -1) think(p, k.sida === vinnare ? `Vann slagsmålet mot ${mot[0].name}` : `Förlorade slagsmålet mot ${mot[0].name}`, k.sida === vinnare ? SLAGSMAL.vann : -SLAGSMAL.forlora, s.now, SLAGSMAL.tankeTim * HOUR);
-    // striden tar tid: hen står kvar och slåss medan de andra behoven väntar
+    // striden tar tid: hen står kvar och slåss medan de andra behoven väntar. Brottaren är kvar i matchen (steg 9.2.92)
+    if (AVS[avsikt].sport) continue;
     avbryt(s, p);
     p.task = { act: 'strid', phase: 'do', tx: p.x, ty: p.y, until: s.now + Math.max(SLAGSMAL.minst, st.slut!.t) * SEC, carry: 0, why: orsak };
   }
