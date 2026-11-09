@@ -385,7 +385,7 @@ export function kanKopa(s: State, ag: number, folk: number): boolean {
   return housesOf(s).some(h => (h.ag === undefined || !fam.has(h.ag)) && kopbart(s, h) && sovPersoner((h.w - 2) * (h.h - 2)) >= folk && kopPris(s, ag, nyttLika(s, h)) >= saljPris(s, h));
 }
 satKanKopa(kanKopa);
-// köparens högsta pris: aldrig mer än det kostar att bygga nytt, och aldrig mer än hela familjen äger tillsammans (steg 9.2.110)
+// köparens högsta pris: aldrig mer än det kostar att bygga nytt, och aldrig mer än hela familjen äger tillsammans (steg 9.2.114)
 export function kopPris(s: State, ag: number, nybygge: number) {
   const q = byId(s, ag);
   return q ? Math.min(nybygge * PLAN.kopMax, familjen(s, q).reduce((v, m) => varuVarde(ownedAll(s, m.id), v), 0)) : 0;
@@ -420,7 +420,7 @@ export function kopHus(s: State, h: Hus, ag: number, bud?: Person) {
   const M = personPart(s, kopare), G0 = saljare ? personPart(s, saljare) : bynPart(s, kopare.x, kopare.y, bud);
   if (!kanTaHus(M)) return false;
   const G = { ...G0, varde: () => 1 }; // betalningen räknas i grundvärdet
-  // hela familjen lägger ihop (steg 9.2.110): det var och en kan avvara, i samma ordning som i ett vanligt byte (betalaAv i behov.ts)
+  // hela familjen lägger ihop (steg 9.2.114): det var och en kan avvara, i samma ordning som i ett vanligt byte (betalaAv i behov.ts)
   const varor = familjen(s, kopare).flatMap(m => betalVaror(personPart(s, m), G, ['hus']).map(w => ({ ...w, m })))
     .sort((a, b) => b.ut / b.in - a.ut / a.in || +!!a.t - +!!b.t);
   const val: (typeof varor)[number][] = [];
