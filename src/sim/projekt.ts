@@ -13,7 +13,7 @@ import { brasaLeta, kanLetaBrasaSten } from './brasor';
 import { DORRAR, DORR_LIST, DorrDef, DorrSlag } from './byggnad';
 import { dorrOppningar, dorrSpot, kanHangaDorr, receptDorr, utanDorr } from './bygg';
 import { GRODOR, ODLING, faltBrist, faltUppgift } from './odling';
-import { SKOG, fallTid, fellingTiles, klyvStam, rojSpot, skaGravas, skaRojas, stubbeSpot, stubbeUppgift, treeSpot } from './skog';
+import { SKOG, fallTid, fellingTiles, klyvStam, stockOverHus, rojSpot, skaGravas, skaRojas, stubbeSpot, stubbeUppgift, treeSpot } from './skog';
 import { fylldSack, freeTools, tingOf } from './agande';
 import { ACTS } from './handlingar';
 import { tileOf } from './mark';
@@ -41,6 +41,12 @@ import { SKOGSVARD, kanPlantera, planteraUppgift, skogsvardBrist } from './skogs
 // Ett nytt redskap, en ny station eller möbel blir en rad här av sig själv; något annat som byggs blir en egen rad.
 
 // ---------- balanstal (regel 8) ----------
+// en fälld stam vars krona ligger över ett färdigt hus huggs före nästa fällning (steg 9.2.86, skog.ts)
+const overHusUppgift = (s: State): Uppgift | undefined => {
+  const o = stockOverHus(s);
+  return o && { act: 'hugga', text: 'Hugger en fälld stam som ligger över ett hus.', tool: 'yxa', spot: { x: o.x + 0.3, y: o.y + 0.2 }, ref: o.id };
+};
+
 export const PROJEKT_TAL = balans('projekt', {
   kniv: 1.2, yxa: 1.2, spjut: 1, metspo: 0.8, korg: 0.8, bensyl: 1, rock: 0.8, skor: 0.5, balte: 0.6, axelrem: 0.4, ryggsack: 0.5, benspade: 0.6, vattensack: 0.5, slanda: 0.5, fackla: 0.4, talgljus: 0.3, boll: 0.3, slagtra: 0.3, mal: 0.3, trumma: 0.3, benflojt: 0.3, lyra: 0.3, // hur mycket varje redskap väger när byn saknar alla den vill ha
   slaktbank: 1, flatarbank: 0.6, scen: 0.3, // ... varje station när byn saknar den
@@ -193,6 +199,8 @@ export const PROJEKT: Record<string, ProjektDef> = {
     kan: (s, p, f) => !f.kyla && freeTools(s, p, 'yxa') > 0 && (!!klyvStam(s) || !!treeSpot(s, fellingTiles(s, p), p)),
     // finns ingen fälld stam fälls ett träd först (steg 6.2.19)
     uppgift: (s, p) => {
+      const o = overHusUppgift(s);
+      if (o) return o;
       const k = klyvStam(s);
       if (k) return { act: 'klyva', text: 'Klyver virke ur en fälld stam.', tool: 'yxa', spot: { x: k.x + 0.3, y: k.y + 0.2 }, ref: k.id };
       const t = treeSpot(s, fellingTiles(s, p), p);
@@ -205,7 +213,7 @@ export const PROJEKT: Record<string, ProjektDef> = {
     brist: s => skaRojas(s).length ? 1 : 0,
     kostnad: () => SKOG.fallTim * ARBETE,
     kan: (s, p, f) => !f.kyla && freeTools(s, p, 'yxa') > 0 && !!rojSpot(s, p),
-    uppgift: (s, p) => { const t = rojSpot(s, p); return t && { act: 'falla', text: 'Fäller ett träd där byn ska ha lager, fält eller ett stråk.', min: fallTid(s, t.i) / 60000, tool: 'yxa', spot: { x: t.x, y: t.y } }; },
+    uppgift: (s, p) => { const o = overHusUppgift(s); if (o) return o; const t = rojSpot(s, p); return t && { act: 'falla', text: 'Fäller ett träd där byn ska ha lager, fält eller ett stråk.', min: fallTid(s, t.i) / 60000, tool: 'yxa', spot: { x: t.x, y: t.y } }; },
   },
   // stubbarna där något ska stå grävs bort först (steg 6.5.7, skog.ts)
   stubbe: {

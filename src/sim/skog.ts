@@ -119,7 +119,23 @@ export function stamAv(g: Ground, i: number) {
   const st = stadium(g, i), d = st ? stadiumAv(st) : { stam: 1, grenar: 1 }, size = g.trees[i];
   return { ved: Math.round(SKOG.stamVed * size * d.stam), grenar: Math.round(SKOG.stamGrenar * size * d.grenar) };
 }
+// stockens längd i bilden (0–2, efter träet), som kartan ritar den (ui/foremal.ts), och rutorna bilden täcker: foten på
+// stockens ruta och kronan åt höger, 1–3 rutor lång och upp i raden ovanför (steg 9.2.86)
+export const stockLangd = (ved: number) => ved <= 3 ? 0 : ved <= 7 ? 1 : 2;
+export function stockRutor(k: Stock) {
+  const x0 = Math.floor(k.x), y0 = Math.floor(k.y), r: number[] = [];
+  for (let y = y0 - 1; y <= y0; y++) for (let x = x0; x <= x0 + stockLangd(k.ved) + 1; x++) if (inMap(x, y)) r.push(y * W + x);
+  return r;
+}
+// ligger stockens krona över ett färdigt hus? Den huggs då före alla andra stockar och före nästa fällning
+export function overHus(s: State, k: Stock) {
+  const hus = housesOf(s).filter(h => h.klar);
+  return hus.length > 0 && stockRutor(k).some(i => { const x = i % W, y = Math.floor(i / W); return hus.some(h => x >= h.x && x < h.x + h.w && y >= h.y && y < h.y + h.h); });
+}
+export const stockOverHus = (s: State) => stocks(s).find(k => k.ved > 0 && overHus(s, k));
 const nearestStock = (s: State) => {
+  const over = stockOverHus(s);
+  if (over) return over;
   const b = groundOf(s).built, onSite = (k: Stock) => b?.[tileOf(k.x, k.y)] ? 0 : 1; // stammarna där huset ska stå först
   return stocks(s).filter(k => k.ved > 0).sort((a, c) => onSite(a) - onSite(c) || utanforByn(s, a.x, a.y) - utanforByn(s, c.x, c.y))[0];
 };

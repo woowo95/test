@@ -1171,6 +1171,37 @@ SCENARIER.stockihus = {
     ];
   },
 };
+SCENARIER.stockhus = {
+  text: 'Steg 9.2.86: en fälld stock vars krona ritas över ett färdigt hus huggs före alla andra stockar och före nästa fällning; det räknas på rutorna som stockens bild täcker',
+  kor: () => {
+    const s = createState(6, START);
+    byggare(s); setAmount(s, 'yxa', 2);
+    const c = SIM.bynsMitt(s), pl = { x: c.x + 8, y: c.y + 8 };
+    const h: SIM.Hus = { id: (s.nextBit ??= 1), namn: 'Hydda', x: pl.x, y: pl.y, w: 4, h: 4, fn: 'sovsal', klar: s.now };
+    s.nextBit++;
+    housesOf(s).push(h); SIM.touch(s);
+    // foten står till vänster om huset, kronan (tre rutor åt höger) ligger över det; en annan stock ligger närmare byn
+    const over: SIM.Stock = { id: 98, x: pl.x - 1.5, y: pl.y + 1.5, ved: 9, grenar: 0 };
+    const nara: SIM.Stock = { id: 97, x: c.x + 1.5, y: c.y + 1.5, ved: 9, grenar: 0 };
+    const kort: SIM.Stock = { id: 96, x: pl.x - 1.5, y: pl.y + 1.5, ved: 2, grenar: 0 };
+    s.stockar = [nara, over];
+    const p = living(s).find(q => ageOf(q, s.now) >= ALDER.vuxen)!;
+    for (const q of living(s)) q.task = undefined;
+    const ax = SIM.axeTask(s, p), virke = SIM.PROJEKT.virke.uppgift(s, p), roj = SIM.PROJEKT.rojning.uppgift(s, p);
+    const fotUtanfor = !(Math.floor(over.x) >= h.x && Math.floor(over.x) < h.x + h.w);
+    s.stockar = [nara, kort];
+    const ax2 = SIM.axeTask(s, p);
+    return [
+      ['stockens fot står utanför huset', fotUtanfor],
+      ['kronan ligger över huset', SIM.overHus(s, over)],
+      [`vedhuggaren hugger stocken över huset först (${ax?.act} ${ax?.ref})`, ax?.act === 'hugga' && ax.ref === 98],
+      [`virket fäller inget nytt träd förrän den är huggen (${virke?.act} ${virke?.ref})`, virke?.act === 'hugga' && virke.ref === 98],
+      [`inte heller röjningen (${roj?.act} ${roj?.ref})`, roj?.act === 'hugga' && roj.ref === 98],
+      ['en kort stock på samma plats når inte huset', !SIM.overHus(s, kort)],
+      [`då huggs den närmaste stocken som förut (${ax2?.ref})`, ax2?.act === 'hugga' && ax2.ref === 97],
+    ];
+  },
+};
 SCENARIER.lagerivagen = {
   text: 'Steg 8.1.15: en lagerplats påverkar inte var ett hus eller en station ute byggs. Ligger den i vägen flyttas den till en ny plats med samma namn, och sakerna bärs dit. Steg 9.2.15: likadant när ett stråk går igenom den',
   kor: () => {

@@ -35,7 +35,7 @@ import { MJARDE, kanVittja } from './fisk';
 import { bitAt, bitsOf, blocked, freeNear, roomAt } from './byggnad';
 import { bedTile, homeless, samlingRum, varmareInne } from './byggnader';
 import { groundOf, isForest, punktIRuta, tileOf } from './mark';
-import { axeTask, fallTid } from './skog';
+import { axeTask, fallTid, stockOverHus } from './skog';
 import { GA_TID, startWork, startsOnArrival } from './paborjat';
 import { duty, dygn, habitShare, habitTotal } from './seder';
 import { clamp, hash3, pick, pickNarmaste, rnd } from './slump';
@@ -994,6 +994,12 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
 // att bygga eller laga en del av ett hus. Saknas material hämtar man det först
 function building(s: State, p: Person, v: Val, job: NonNullable<ReturnType<typeof buildJob>>) {
   const b = job.bit, hus = s.hus?.find(h => h.id === b.hus)?.namn.toLowerCase() ?? 'huset';
+  const over = job.fell ? stockOverHus(s) : undefined; // en stam över ett färdigt hus huggs före nästa fällning (steg 9.2.86)
+  if (over) {
+    set(v, 'hugga', 'Hugger en fälld stam som ligger över ett hus.');
+    v.ref = over.id; v.tool = 'yxa'; v.spot = { x: over.x + 0.3, y: over.y + 0.2 };
+    return;
+  }
   if (job.fell) { // först fälls träden där huset ska stå
     set(v, 'falla', `Fäller ett träd där ${hus} ska stå.`);
     v.dur = fallTid(s, b.y * W + b.x); v.spot = { x: b.x + 0.5, y: b.y + 0.5 }; // ett litet träd fälls fortare
