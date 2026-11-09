@@ -1,4 +1,5 @@
 import { husKlaraTimme } from './bygg';
+import { personHand } from './personlogg';
 import { hamtaForst, hamtat } from './paborjat';
 import { sorgTimme } from './liv';
 import { djurStriderSteg } from './djurstrid';
@@ -1102,7 +1103,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   ovning(p, sk, dtSec / HOUR_S * STEG.ovningArbete * learn * vidMentor * (STEG.ovningBas + stat(p, 'intelligens', now) / 20));
   if (before < 16 && p.skill[sk] >= 16) {
     const title = `Mästare i ${SKILL_NAMES[sk].toLowerCase()}`, first = !s.people.some(q => q.fame.includes(title));
-    p.fame.push(title); log(s, `${p.name} har blivit en mästare i ${SKILL_NAMES[sk].toLowerCase()}.`, 'skill', [p.id]);
+    p.fame.push(title); personHand(s, p, 'titel', `Blev ${title.toLowerCase()}.`); log(s, `${p.name} har blivit en mästare i ${SKILL_NAMES[sk].toLowerCase()}.`, 'skill', [p.id]);
     if (first) notis(s, 'mastare', `${p.name} är byns första mästare i ${SKILL_NAMES[sk].toLowerCase()}.`, [p.id]);
     if (first) for (const q of living(s)) if (q !== p) upplev(s, q, 'forstaMastare', p.name); // de andra såg det (steg 4.5.4.9)
   }

@@ -2084,3 +2084,32 @@ SCENARIER.sorg = {
     ];
   },
 };
+
+SCENARIER.personlogg = {
+  text: 'Personens händelser (steg 9.2.107, personlogg.ts): en skada, en ny kunskap och en död hamnar hos rätt person, de som stod den döda nära får en rad, och ett dygn av vanligt arbete skriver inget nytt',
+  kor: () => {
+    const s = createState(3, START);
+    kor(s, 6);
+    const folk = living(s), a = folk[0];
+    for (const p of folk) p.hand = undefined;
+    kor(s, 24); // ett dygn av vardagsarbete
+    const rader = folk.flatMap(p => p.hand ?? []), mest = Math.max(...folk.map(p => p.hand?.length ?? 0));
+    const vardagRad = rader.filter(r => !(r[1] in SIM.PERSONLOGG) || /^(Samlade|Högg|Bar|Hämtade|Fiskade|Åt|Drack|Sov|Pratade|Gick)/.test(r[2])).length;
+    SIM.skada(s, a, 'armV', 'skarsar', 0.6, 'olycka', 'när hen högg ved');
+    const nara = SIM.naraAv(s, a), ovriga = living(s).filter(q => q !== a && !nara.includes(q));
+    const t = SIM.TEKNIK.find(x => !SIM.knows(a, x.id) && x.krav.every(k => SIM.knows(a, k)))!;
+    SIM.learn(s, a, t);
+    const fore = new Map(living(s).map(q => [q, q.hand?.length ?? 0]));
+    SIM.die(s, a, 'olycka');
+    const har = (p: Person, k: string) => !!p.hand?.some(r => r[1] === k);
+    return [
+      ['ett dygn ger bara rader av slagen i registret, inga om vardagsarbetet (' + rader.length + ' rader, ' + vardagRad + ' om vardagen)', vardagRad === 0],
+      ['ett dygn ger få rader hos varje person (högst ' + mest + ')', mest <= 12],
+      ['skadan står hos den skadade', har(a, 'skada')],
+      ['den nya kunskapen står hos den som lärde sig', har(a, 'lart')],
+      ['ingen annan fick skadan', !living(s).some(q => har(q, 'skada'))],
+      ['de som stod den döda nära fick en rad om döden (' + nara.length + ')', nara.length > 0 && nara.every(q => (q.hand?.length ?? 0) > fore.get(q)! && har(q, 'nara'))],
+      ['de andra fick ingen rad om döden', ovriga.every(q => (q.hand?.length ?? 0) === fore.get(q))],
+    ];
+  },
+};

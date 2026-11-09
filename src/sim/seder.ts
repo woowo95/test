@@ -1,4 +1,5 @@
 import { LAG, efterlevs, lagGaller } from './lagar';
+import { personHand } from './personlogg';
 import { think } from './folk';
 import { HOUR } from './typer';
 import { ALDER, ageOf, living, log } from './folk';
@@ -217,7 +218,7 @@ export function updateTags(s: State) {
       if (best) holders.set(best, (holders.get(best) ?? 0) + 1);
       p.tag = best;
       const txt = `${p.name} kallas nu för ${best?.toLowerCase()}.`;
-      if (best && best !== 'Dagdrivare' && !p.kallad?.includes(best)) { (p.kallad ??= []).push(best); log(s, txt, 'skill', [p.id]); }
+      if (best && best !== 'Dagdrivare' && !p.kallad?.includes(best)) { (p.kallad ??= []).push(best); log(s, txt, 'skill', [p.id]); personHand(s, p, 'yrke', `Kallas nu för ${best.toLowerCase()}.`); }
     }
   }
 }

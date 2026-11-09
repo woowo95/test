@@ -219,6 +219,7 @@ export interface Person {
   thoughts: Thought[];
   x: number; y: number; task?: Task;
   fame: string[];
+  hand?: import('./personlogg').PersonRad[]; // personens händelser, de senaste (steg 9.2.107, personlogg.ts)
   sportVinst?: Record<string, number>; // matcher personen vunnit i varje sport (steg 4.3.1.2, sport.ts)
   kallad?: string[]; // yrkestaggar personen redan fått, så att det bara står i loggen första gången
   hue: number;

@@ -1,4 +1,5 @@
 import { balans } from './balans';
+import { personHand } from './personlogg';
 import { ALDER, KROPP, REL, ageOf, alive, byId, count, isKin, isParent, living, log, namnSlut, relKey } from './folk';
 import { ACTS, Act, slagIkon } from './handlingar';
 import { TAGS } from './seder';
@@ -2034,7 +2035,7 @@ export function gebinamn(s: State, p: Person, k: IntryckTyp, v: number) {
   const text = berattelse(s, heder ? 'hedersnamn' : 'oknamn', p.id, f);
   log(s, `${heder ? '🏅' : '🗯️'} ${text}`, 'rel', [p.id]);
   kronika(s, text, heder ? 'hedersnamn' : 'oknamn');
-  p.fame.push(`Kallades ${heltNamn(p)}${fore ? ` (förut ${fore.namn})` : ''}`);
+  p.fame.push(`Kallades ${heltNamn(p)}${fore ? ` (förut ${fore.namn})` : ''}`); personHand(s, p, 'titel', `Kallas ${heltNamn(p)}.`);
   count(s, 'binamn'); count(s, heder ? 'hedersnamn' : 'oknamn');
 }
 // för personrutan: symbolen (heder eller skam) och förklaringen

@@ -3,6 +3,7 @@
 // (brottning och dragkamp närstrid, kast och bollspel träffsäkerhet), aldrig egenskaperna. Den är ingen stor del av spelet.
 // En match i taget: den som har fritid börjar en på en plats i byn eller går med i den som väntar på spelare, och den spelas på
 // dagen. Sporterna är rader i registret SPORTER; föremålen de kräver är saker i saker.ts som byn måste ha.
+import { personHand } from './personlogg';
 import { ALDER, ageOf, alive, count, living, log, ovning, stat, think } from './folk';
 import { SAKER, isTool } from './saker';
 import { nTools, wearTool } from './agande';
@@ -219,7 +220,7 @@ function vinnare(s: State, d: SportDef, m: Match, har: Person[]) {
   if (fore && (fore.sportVinst?.[d.id] ?? 0) >= n) return;
   s.sportBast[d.id] = bast.id;
   const titel = `Den bästa i ${d.namn.toLowerCase()}${d.id === 'kast' ? '' : 'en'}`;
-  if (!bast.fame.includes(titel)) bast.fame.push(titel);
+  if (!bast.fame.includes(titel)) { bast.fame.push(titel); personHand(s, bast, 'titel', `${titel}.`); }
   const text = fore && alive(fore) ? `${bast.name} har vunnit fler matcher i ${d.namn.toLowerCase()} än ${fore.name} och är nu den bästa i byn.` : `${bast.name} har vunnit ${tal(n)} matcher i ${d.namn.toLowerCase()} och är den bästa i byn.`;
   log(s, text, 'world', [bast.id]); kronika(s, text, 'fritid');
 }

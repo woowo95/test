@@ -1,4 +1,5 @@
 import { allaBarn, upplev } from './uppvaxt';
+import { personHand } from './personlogg';
 import { TROSKEL } from './forradsmal';
 import { delade, fyll, kronikaBer, larFalt, loggBer, personFalt } from './berattelser';
 import { kronika } from './historik';
@@ -236,17 +237,18 @@ export const hasMaterial = (s: State, t: Tek) => materialOf(t).every(g => g.some
 export const canThink = (p: Person, t: Tek) => !knows(p, t.id) && t.krav.every(k => knows(p, k));
 
 // den som kommer på eller lär sig något
-function learn(s: State, p: Person, t: Tek, from?: Person) {
+export function learn(s: State, p: Person, t: Tek, from?: Person) {
   p.tek![t.id] = 1;
   if (p.lar?.tek === t.id) p.lar = undefined; // lärlingen har lärt sig klart och kan själv bli mästare
   if (p.halvminne) { p.halvminne = p.halvminne.filter(k => k !== t.id); if (!p.halvminne.length) p.halvminne = undefined; }
-  if (from) { loggBer(s, 'l_lart', p.id * 997 + from.id, { ...larFalt(s, p), av: from.name, lara: goraUtan(t) }, 'skill', [p.id, from.id], { slag: 'lar', k: p.id, n: p.name, d: `${from.name}|${gora(t)}` }); return; }
+  if (from) { personHand(s, p, 'lart', `Lärde sig ${gora(t)} av ${from.name}.`); loggBer(s, 'l_lart', p.id * 997 + from.id, { ...larFalt(s, p), av: from.name, lara: goraUtan(t) }, 'skill', [p.id, from.id], { slag: 'lar', k: p.id, n: p.name, d: `${from.name}|${gora(t)}` }); return; }
   const first = !s.people.some(q => q !== p && knows(q, t.id)) && !(s.stat?.['tek_' + t.id]);
   count(s, 'tek_' + t.id);
   // nivå 4–5: det episka ögonblicket, en egen rad per teknik (steg 4.2.1.3); annars en berättelse ur mallen
   if (first && t.episk) kronika(s, fyll(t.episk, personFalt(p)), 'episk');
   else if (first) kronikaBer(s, 'k_uppfann', p.id, { ...personFalt(p), teknik: t.namn.toLowerCase(), lara: goraUtan(t) });
   log(s, `${p.name} kom på hur man kan ${goraUtan(t)}. ${t.effekt}`, 'skill', [p.id]);
+  personHand(s, p, 'lart', `Kom på hur man kan ${goraUtan(t)}.`); // steg 9.2.107
   if (first) notis(s, 'teknik', `${p.name} kom på hur man kan ${goraUtan(t)}. ${t.effekt}`, [p.id]);
   think(p, `Kom på hur man kan ${goraUtan(t)}`, TEKTAL.kommaPa, s.now, TEKTAL.kommaPaTim * HOUR);
   if (first) { p.fame.push(`Uppfann ${t.namn.toLowerCase()}`); allaBarn(s, 'uppfinning', `lärde sig ${gora(t)}`); upplev(s, p, 'egenTeknik', `hur man kan ${goraUtan(t)}`); gudHandelse(s, 'hantverk', `konsten ${gora(t)}, som ${p.name} kom på`); }

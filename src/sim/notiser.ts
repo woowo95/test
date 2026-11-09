@@ -6,6 +6,7 @@
 // får samma notiser. En ny sorts notis är en rad i NOTISER och ett anrop `notis(s, id, text, ids, plats)` där det händer.
 import { State } from './typer';
 import { kalender } from './tid';
+import { personNotis } from './personlogg';
 
 export type NotisSlag = 'fara' | 'dod' | 'folk' | 'framsteg' | 'handel';
 export const NOTIS_SLAG: Record<NotisSlag, { namn: string; farg: string; bild: string }> = {
@@ -67,6 +68,7 @@ export function notis(s: State, id: string, text: string, ids: number[] = [], pl
   n.rader.push(text); if (n.rader.length > NOTIS.rader) { n.rader.shift(); n.fram?.shift(); n.match?.shift(); }
   for (const i of ids) if (!n.ids.includes(i)) n.ids.push(i);
   if (plats) n.plats = plats;
+  personNotis(s, id, text, ids); // en rad hos dem den gäller (steg 9.2.107)
   return n;
 }
 // de som finns, viktigast och senast först (genomgången, ui/notiser.ts)

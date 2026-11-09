@@ -113,3 +113,4 @@ export * from './sim/gastliv';
 export * from './sim/gastrel';
 export * from './sim/djurstrid';
 export * from './sim/sjukdom';
+export * from './sim/personlogg';

@@ -1,6 +1,7 @@
 // Bönen, de heliga platserna, ritualerna, prästen och profeten (system 8.5). Tre register: BONER (en rad per sorts bön), HELIGA_PLATSER (en rad
 // per sort) och RITUALER (en rad per ritual). Graven och kroppen står i kvarlevor.ts, tron i religion.ts. Bön och offer påverkar nästan bara
 // humöret och tron, och går aldrig före maten eller veden.
+import { personHand } from './personlogg';
 import { DAY, HOUR, MIN, Person, State, T, W, inMap } from './typer';
 import { balans } from './balans';
 import { clamp, rnd } from './slump';
@@ -136,7 +137,7 @@ function prastSteg(s: State, tr: Tro, folk: Person[]) {
   if (tr.prastRegel !== 'bada' && tr.prastRegel !== p.sex) return;
   tr.prast = p.id; count(s, 'prast');
   const t = `${p.name} blev ${prastSort(tr, p.sex).toLowerCase()} i ${troNamn(tr).toLowerCase()}.`;
-  log(s, t, 'rel', [p.id]); kronika(s, t, 'tro'); p.fame.push(`Blev ${prastSort(tr, p.sex).toLowerCase()}`);
+  log(s, t, 'rel', [p.id]); kronika(s, t, 'tro'); p.fame.push(`Blev ${prastSort(tr, p.sex).toLowerCase()}`); personHand(s, p, 'titel', `Blev ${prastSort(tr, p.sex).toLowerCase()}.`);
 }
 
 // ---------- profeten (steg 8.5.10) ----------
