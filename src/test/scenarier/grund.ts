@@ -1754,7 +1754,7 @@ SCENARIER.brand = {
         risC = Math.min(risC, ris.b < 1 ? 0 : ris.c);
         for (const p of living(by)) {
           if (SIM.isWall(by, p.x, p.y)) iVagg++;
-          if (SIM.vattenNu(by)[Math.floor(p.y) * W + Math.floor(p.x)] === T.Vatten) iVattnet++;
+          if (SIM.vattenNu(by)[Math.floor(p.y) * W + Math.floor(p.x)] === T.Vatten && p.task?.act !== 'slackaSig' && p.brinner === undefined) iVattnet++; // den som brinner får gå i vattnet för att släcka sig (steg 6.4.16)
           if (p.task?.act === 'slacka' && !sedda.has(p.id * 2 + (p.task.tool ? 1 : 0))) { sedda.add(p.id * 2 + (p.task.tool ? 1 : 0)); if (p.task.tool) sack++; else hand++; }
         }
       }
@@ -1778,6 +1778,44 @@ SCENARIER.brand = {
         [`marken var svart (${svart0} rutor) och det svarta är borta efter ${SIM.BRAND.svart} dygn, utom där en kolnad stam står`, svart0 > 0 && (!sv.aska || sv.aska.every(a => (sv.kolnad ?? []).includes(a[0])))],
       ];
     }
+  },
+};
+
+SCENARIER.brandsmitta = {
+  text: 'Steg 9.2.134–9.2.136: elden smittar, är het och går att gå runt. Den som går genom en ruta som brinner börjar nästan säkert brinna, och den som står bredvid gräs som brinner kan göra det; hettan från branden gör den som står nära för varm; och vägen till andra sidan en brinnande rad går runt elden',
+  kor: () => {
+    const a = torrAng();
+    if (typeof a === 'string') return [[a, false]];
+    const { s, mitt } = a;
+    angSlag(s, mitt, 'skog'); // skogen brinner i timmar
+    { const g = groundOf(s); for (let dy = -6; dy <= 6; dy++) { const k = (Math.floor(mitt / W) + dy) * W + mitt % W + 1; g.cover[k] = 0; g.trees[k] = 0; } } // rutorna öster om raden är bar jord, som inte brinner
+    const cx = mitt % W, cy = Math.floor(mitt / W);
+    // en rad som brinner tvärs över ängen (nord–syd)
+    for (let dy = -4; dy <= 4; dy++) SIM.tand(s, (cy + dy) * W + cx, 'gnista', 0);
+    const vuxna = living(s).filter(q => SIM.ageOf(q, s.now) >= 18 && SIM.kanGa(q));
+    // 1: de som står i elden två sekunder (några minuter i spelet) börjar nästan alla brinna
+    const x = cloneState(s), fx = vuxna.map(q => x.people.find(r => r.id === q.id)!);
+    fx.forEach((p, j) => { p.x = cx + 0.5; p.y = cy - 4 + (j % 9) + 0.5; p.task = undefined; });
+    for (let i = 0; i < 2; i++) { x.now += SIM.SEC; SIM.brandSteg(x, 1); }
+    const iElden = fx.filter(p => p.brinner !== undefined).length;
+    // 2: de som står bredvid skogen som brinner (på bar jord öster om raden) i tre timmar: några börjar brinna, och de blir för varma
+    const y = cloneState(s), fy = vuxna.map(q => y.people.find(r => r.id === q.id)!);
+    fy.forEach((p, j) => { p.x = cx + 1.5; p.y = cy - 4 + (j % 9) + 0.5; p.task = undefined; });
+    let bredvid = 0, hett = 0;
+    for (let i = 0; i < 3 * 60 * 12; i++) {
+      y.now += 5 * SIM.SEC; SIM.brandSteg(y, 5);
+      for (const p of fy) { if (p.brinner === undefined && SIM.inMap(Math.floor(p.x), Math.floor(p.y))) { hett = Math.max(hett, SIM.brandHetta(y, p.x, p.y)); } p.x = cx + 1.5; }
+    }
+    bredvid = (y.log ?? []).filter(l => / brinner \(bredvid elden\)/.test(l.text)).length;
+    // 3: vägen från väster till öster om raden går runt elden, aldrig genom en ruta som brinner
+    const z = cloneState(s); z.now += SIM.SEC; SIM.brandSteg(z, 1); // kartan över elden för vägsökningen
+    const v = SIM.findPath(groundOf(z), cx - 3 + 0.5, cy + 0.5, cx + 3 + 0.5, cy + 0.5), genom = !!v && v.some(i => SIM.brinner(z, i));
+    return [
+      [`den som står i elden två sekunder (några minuter i spelet) börjar brinna (${iElden} av ${fx.length})`, iElden >= fx.length * 0.8],
+      [`den som står bredvid skog som brinner kan börja brinna (${bredvid} på tre timmar)`, bredvid >= 1],
+      [`hettan från branden gör den som står nära varm (${hett.toFixed(2)})`, hett > 0],
+      [`vägen till andra sidan den brinnande raden går runt elden (${v ? v.length : 0} steg)`, !!v && !genom],
+    ];
   },
 };
 
@@ -2407,7 +2445,7 @@ SCENARIER.bjornjakt = {
     };
     const fa = by(3, 0);
     let jakter = 0, strider = 0, falld = 0, borta = 0, dodare = 0, delar = 0, skinn = 0, gick = 0, nadd = 0, maxJ = 0;
-    for (let f = 0; f < 10; f++) {
+    for (let f = 0; f < 16; f++) { // 16 byar: björnen fälls bara ibland, och med färre försök avgör slumpen (steg 9.2.130)
       const { s, jagare } = by(6, f);
       if (!jagare) continue;
       jakter++; maxJ = Math.max(maxJ, jagare);
@@ -2423,7 +2461,7 @@ SCENARIER.bjornjakt = {
     }
     return [
       [`med för få spjut går ingen på björnjakt (${fa.jagare} jägare)`, fa.jagare === 0],
-      [`med sex spjut kallar byn till björnjakt (${jakter} av 10)`, jakter >= 8],
+      [`med sex spjut kallar byn till björnjakt (${jakter} av 16)`, jakter >= 13],
       [`en stor grupp följer med (högst ${maxJ})`, maxJ >= SIM.BJORNJAKT.spjut],
       [`jägarna når björnen och slåss, eller den går undan (${strider} strider, ${gick} gick undan, en björn kan först slåss och sedan gå undan)`, nadd === jakter && strider > 0],
       [`björnen fälls ibland (${falld} av ${strider})`, falld > 0],

@@ -206,7 +206,7 @@ const nyttHus: AtgardDef = {
     // både bredare än djupt och djupare än brett (steg 9.2.133), så att en smal men djup lucka i en trång by går att bygga i
     for (let h = HUS.minSida; h <= HUS.maxSida; h++) for (let w = h; w <= HUS.langSida * h; w++) { sizes.push({ w, h }); if (w !== h) sizes.push({ w: h, h: w }); }
     const want = onskadPlats(s, b), wantR = rutorFor(b, want);
-    sizes.sort((a, c) => (a.w * a.h < wantR ? 1000 - a.w * a.h : 0) - (c.w * c.h < wantR ? 1000 - c.w * c.h : 0) || a.w * a.h - c.w * c.h || (a.w - a.h) - (c.w - c.h));
+    sizes.sort((a, c) => (a.w * a.h < wantR ? 1000 - a.w * a.h : 0) - (c.w * c.h < wantR ? 1000 - c.w * c.h : 0) || a.w * a.h - c.w * c.h || Math.abs(a.w - a.h) - Math.abs(c.w - c.h) || +(a.h > a.w) - +(c.h > c.w)); // liggande före stående i samma form (steg 9.2.133)
     for (const { w, h } of sizes) {
       const at = siteFor(s, w + 2, h + 2, okAt);
       if (!at) continue;

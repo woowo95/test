@@ -8,7 +8,7 @@ import { PLATS } from './plats';
 import { vargSkydd, vargjaktVal } from './varg';
 import { bjornjaktVal } from './bjorn';
 import { tornadoSkydd } from './tornado';
-import { brandVal, hjalpaVal, slackaSigVal } from './brand';
+import { brandHetta, brandUndan, brandVal, hjalpaVal, slackaSigVal } from './brand';
 import { foodDays, foodDaysAll } from './ekonomi';
 import { ACTS, WORK, usesTool } from './handlingar';
 import { canLight, eldFor, eldXY, nagonEld, nagonGlod, eldarOf, emberOn, fuelStock, vidEld, needStones, needTinder, woodDays } from './eld';
@@ -555,6 +555,8 @@ export const ARBETEN: readonly Arbete[] = [
   // extremt varm i solen: man söker skugga under ett träd eller i ett hus, så som den som fryser söker sig till elden (steg 2.3.13).
   // Den som bara är för varm arbetar som vanligt (steg 2.10.20)
   { id: 'svalka', niva: 4, prova: ({ s, p, v }) => {
+    // extremt varm av branden: bort från den, inte in under träd som kan brinna (steg 9.2.135)
+    if (p.warm >= KROPP.extremVarm && brandHetta(s, p.x, p.y) > 0) { const bu = brandUndan(s, p); if (bu) { v.spot = bu.spot; v.dur = bu.dur; return set(v, bu.act, 'Är för varm av branden och går undan'); } }
     if (!forVarmISol(s, p, KROPP.extremVarm)) return false;
     const sk = skuggaHar(s, p);
     if (!sk) return false;
