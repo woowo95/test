@@ -27,6 +27,7 @@ ${fs.readdirSync(d + '/svar').filter(f => f.endsWith('.js')).sort().map(f => `<s
 <script>const GAMLA = ${fs.existsSync(d + '/gamla.json') ? fs.readFileSync(d + '/gamla.json', 'utf8') : '{}'};</script>
 <script>const BILDFILER = ${JSON.stringify(Object.fromEntries(fs.readdirSync(d + '/bilder').filter(f => f.endsWith('.json')).sort().map(f => { const o = JSON.parse(fs.readFileSync(d + '/bilder/' + f, 'utf8')); return [o.id, o]; })))};</script>
 <script>${fs.readFileSync(d + '/skapare.js', 'utf8')}</script>
+<script>const BESTDATA = ${JSON.stringify(fs.existsSync(d + '/bestar') ? Object.fromEntries(fs.readdirSync(d + '/bestar').filter(f => f.endsWith('.json')).sort().map(f => { const o = JSON.parse(fs.readFileSync(d + '/bestar/' + f, 'utf8')); return [o.lager, o]; })) : {})};</script>
 <script>${fs.readFileSync(d + '/bestskapare.js', 'utf8')}</script>
 <script>${fs.readFileSync(d + '/rita.js', 'utf8')}</script>`;
 fs.writeFileSync(process.env.BILDSTIL_UT || d + '/bildstil.html', html); console.log('ok', html.length);

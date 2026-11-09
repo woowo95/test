@@ -66,7 +66,6 @@
       bal: [[34, 56], [40, 50], [52, 47], [66, 47], [78, 49], [85, 54], [84, 60], [74, 64], [56, 65], [42, 64], [35, 61]],
       nacke: [[80, 53], [93, 50]], nackeR: [7.5, 5.5], h: [44, 59], f: [76, 59], svans: [36, 56], vinge: [66, 49], lang: [38, 84] },
   ];
-  for (const K of KROPPAR) { K.bal = flytta(K.bal, 0, OY); K.nacke = flytta(K.nacke, 0, OY); for (const k of ['h', 'f', 'svans', 'vinge']) K[k] = [K[k][0], K[k][1] + OY]; }
 
   // ---------- delarna i varje lager ----------
   // en del ger en lista av { mask, mat, far, kontur, monster(x, y, v), lyser, z }; z bestämmer ordningen (lågt först)
@@ -407,7 +406,7 @@
         });
         return { mask: fyll(eller(...f)), monster: (x, y, v, du, dl, dr) => (dl === 0 || dr === 0 ? -1 : 0) };
       } },
-    { id: 'taggar', namn: 'Taggar', text: 'en rad vassa taggar längs ryggen, nacken och svansen',
+    { id: 'taggar', namn: 'Taggar', text: 'en rad vassa taggar längs ryggen, nacken och svansen', hela: true,
       plattor(rygg) {
         const f = [];
         rygg.forEach(([x, y], i) => {
@@ -462,6 +461,123 @@
         return { mask: m, mat: 'tecken', z: Z.tecken, kontur: false, lyser: true };
       } },
   ];
+
+  // ---------- det API:t ritat (bildstil/bestar/<lager>.json, från bildstil/api/bestar.mjs) ----------
+  // API:t ritar inga färdiga bilder. Det ger former och mönster som data, och koden här gör om dem till delar i lagren,
+  // så att de skuggas och sitter ihop med resten precis som de handgjorda. En del med en grupp som redan finns är en
+  // version av den (texturerna); annars är den en ny del. Former: {typ:'poly',pts}, {typ:'kapsel',pts,r} eller
+  // {typ:'ell',c,r}, med punkterna i förhållande till delens fästpunkt. Mönster: {rader:['..-+', …], skift}, där
+  // = - . + * är tonändringarna −2 … +2 och skift flyttar varje rad av rutor så många punkter åt sidan.
+  const TECKEN = { '=': -2, '-': -1, '.': 0, '+': 1, '*': 2 };
+  const MATERIAL = Object.keys(FARGER[0].m);
+  const formAv = (s, dx = 0, dy = 0) => {
+    if (!s) return () => false;
+    if (s.typ === 'poly' && s.pts?.length >= 3) return poly(flytta(s.pts, dx, dy));
+    if (s.typ === 'kapsel' && s.pts?.length >= 2) return kapsel(flytta(s.pts, dx, dy), s.pts.map((_, i) => s.r?.[i] ?? s.r?.[s.r.length - 1] ?? 1));
+    if (s.typ === 'ell' && s.c && s.r) return ell(s.c[0] + dx, s.c[1] + dy, s.r[0], s.r[1] ?? s.r[0]);
+    return () => false;
+  };
+  const formerAv = (lista, dx = 0, dy = 0) => eller(...[].concat(lista || []).map(s => formAv(s, dx, dy)));
+  // tomt = null låter texturen synas där mönstret har en punkt (benen)
+  const monsterAv = (m, tomt = 0) => {
+    const R = m?.rader?.filter(r => typeof r === 'string' && r.length);
+    if (!R?.length) return null;
+    const h = R.length, w = Math.max(...R.map(r => r.length)), sk = Math.round(m.skift || 0);
+    return (x, y) => { const rad = Math.floor(y / h), r = R[((y % h) + h) % h], c = r[(((x + rad * sk) % w) + w) % w]; return c in TECKEN && c !== '.' ? TECKEN[c] : tomt; };
+  };
+  const matAv = (m, annars) => (MATERIAL.includes(m) ? m : annars);
+  // fästpunkterna som förhårdnader och prydnader kan sitta vid; led och skena finns en gång per ben
+  const ankare = (A, n) => {
+    if (n === 'led') return A.leder;
+    if (n === 'skena') return A.skenor.map(s => s[0]);
+    if (n === 'nacke0') return [A.nacke[0]];
+    if (n === 'nacke1') return [A.nacke[1]];
+    if (n === 'spets') return [A.svansSpets || A.klubbaPkt].filter(Boolean);
+    return A[n] ? [A[n]] : [];
+  };
+  const FASTEN = ['panna', 'oga', 'nos', 'hornet', 'nacke0', 'nacke1', 'rygg', 'f', 'h', 'vinge', 'svans', 'spets', 'led', 'skena'];
+  const tillApi = {
+    textur(d) {
+      const kr = monsterAv(d.monster), be = monsterAv(d.ben) || kr, fri = d.kanter !== true;
+      const t = { yta(x, y, v, du, dl, dr, h, del) { if (fri && (du === 0 || dl === 0)) return 0; const f = del && del.sida ? be : kr; return f ? f(x, y) : 0; } };
+      const KANT = { tofsar: 'pals', fransar: 'fjadrar', knolar: 'padda', trasig: 'rutten' };
+      if (KANT[d.kant]) t.form = TEXTURER.find(x => x.id === KANT[d.kant]).form;
+      if (d.kant === 'droppar') t.droppar = TEXTURER.find(x => x.id === 'slem').droppar;
+      const pa = (d.pa || []).slice(0, 3);
+      if (pa.length) t.extra = (kropp, A, ben) => {
+        const alla = ihop(kropp, ...ben);
+        return pa.map((o, i) => {
+          const s = Math.max(3, Math.min(16, o.storlek || 8)), fro = 90 + i * 7, tat = o.tathet ?? 0.6;
+          let m;
+          if (o.typ === 'sprickor') m = klipp(alla, (x, y) => { const c = celler(x, y, s, fro); return c.d2 - c.d1 < 0.9 && hash(c.id, 0, fro + 1) < tat && !kant(alla, x, y - 1) && !kant(alla, x, y + 1); });
+          else if (o.typ === 'rygg') {
+            m = klipp(kropp, (x, y) => djup(kropp, x, y) <= Math.round(s / 3) + Math.floor(hash(x >> 2, 0, fro) * s / 3) && hash(x >> 3, y >> 3, fro + 1) < tat);
+            if (o.tuvor) for (let k = W; k < m.length; k++) if (m[k] && !kropp[k - W] && hash(k, 0, fro + 2) < 0.4) m[k - W] = 1;
+          } else m = klipp(alla, (x, y) => { const f = celler(x, y, s, fro); return f.d1 < s * (0.2 + 0.2 * hash(f.id, 1, fro + 1)) && hash(f.id, 0, fro + 2) < tat && !kant(alla, x, y - 1) && !kant(alla, x - 1, y); });
+          return { mask: m, mat: matAv(o.mat, 'flack'), kontur: !!o.kontur, lyser: !!o.lyser, z: Z.kropp + 0.3 + i * 0.05, monster: monsterAv(o.monster) };
+        });
+      };
+      return t;
+    },
+    farg: d => ({ m: Object.fromEntries(MATERIAL.map(k => { const v = d.m?.[k]; return [k, Array.isArray(v) && RAMPER.some(r => r[0] === v[0]) ? [v[0], Math.max(0, Math.min(3, v[1] | 0))] : FARGER[0].m[k]]; })) }),
+    kropp: d => ({ bal: d.bal, nacke: d.nacke, nackeR: d.nackeR, h: d.h, f: d.f, svans: d.svans, vinge: d.vinge, lang: d.lang }),
+    horn: d => ({ horn: ([ax, ay]) => formerAv(d.former, ax, ay), monster: monsterAv(d.monster) || undefined }),
+    svans: d => ({ svans: ([bx, by]) => ({ mask: fyll(formerAv(d.former, bx, by)), spets: d.spets ? [bx + d.spets[0], by + d.spets[1]] : undefined,
+      delar: (d.delar || []).map((p, i) => ({ mask: fyll(formerAv(p.former, bx, by)), mat: matAv(p.mat, 'hard'), kontur: p.kontur !== false, lyser: !!p.lyser, monster: monsterAv(p.monster), z: Z.klubba + i * 0.01 })) }) }),
+    huvud: d => ({ huvud([nx, ny]) {
+      const pkt = p => (p ? [Math.round(nx + p[0]), Math.round(ny + p[1])] : null);
+      return { delar: (d.delar || []).map((p, i) => ({ mask: fyll(formerAv(p.former, nx, ny)), mat: matAv(p.mat, 'kropp'), kontur: p.kontur !== false, lyser: !!p.lyser, monster: monsterAv(p.monster) || undefined, z: Z.huvud + (p.fore ? 0.1 : -0.3) + i * 0.01 })),
+        skalle: fyll(formerAv(d.skalle, nx, ny)), oga: pkt(d.oga), horn: pkt(d.horn) || pkt(d.panna), nos: pkt(d.nos), panna: pkt(d.panna) || pkt(d.oga) };
+    } }),
+    ben: d => ({ ben(J, bak, far) {
+      const fy = far ? G - 2 : G - 1, L = (bak ? d.bak : d.fram) || d.fram || d.bak, dy = fy - J[1];
+      const pts = L.pts.map(([dx, t]) => [J[0] + dx, J[1] + t * dy]), [tx] = pts[pts.length - 1];
+      const r = pts.map((_, i) => L.r?.[i] ?? 3), n = pts.length;
+      return { mask: fyll(eller(kapsel(pts, r), formerAv(d.fot, tx, fy))), monster: monsterAv(d.monster, null),
+        extra: (d.tar || []).map((p, i) => ({ mask: fyll(formerAv(p.former, tx, fy)), mat: matAv(p.mat, 'klo'), kontur: p.kontur !== false, z: 0.05 + i * 0.01 })),
+        leder: [pts[Math.min(1, n - 1)], pts[Math.min(2, n - 1)]], skena: [pts[n - 2] || pts[0], pts[n - 1]] };
+    } }),
+    vingar: d => ({ vinge: ([rx, ry]) => (d.delar || []).map(p => ({ mask: fyll(formerAv(p.former, rx, ry)), mat: matAv(p.mat, 'hinna'), monster: monsterAv(p.monster), kontur: p.kontur !== false })) }),
+    skal: d => ({ skal(K, bal) {
+      const [x0, x1] = K.lang, a = x0 + (x1 - x0) * (d.fran ?? 0), b = x0 + (x1 - x0) * (d.till ?? 1);
+      let m;
+      if (d.typ === 'kupol') {
+        const cx = (a + b) / 2, rx = (b - a) / 2 + 1, topp = ryggen(bal, cx, cx)[0][1], cy = topp + (d.under ?? 8), ry = (d.hojd ?? 7) + (d.under ?? 8);
+        m = fyll((x, y) => ell(cx, cy, rx, ry)(x, y) && y <= cy + 2);
+      } else {
+        m = tom();
+        for (const [x, y] of ryggen(bal, a, b)) for (let yy = y - (d.over ?? 3); yy <= y + (d.under ?? 6); yy++) if (yy >= 0 && yy < H) m[yy * W + x] = 1;
+      }
+      return { mask: m, monster: monsterAv(d.monster) };
+    } }),
+    plattor: d => ({ hela: d.fran === 'svans', plattor(rygg) {
+      const f = [], n = Math.max(2, Math.round(d.avstand || 6)), [h0, h1] = d.hojd || [5, 10], b = d.bredd || 3;
+      const form = d.form?.length >= 3 ? d.form : [[-1, 0.4], [0, -1], [1, 0.4]];
+      rygg.forEach(([x, y], i) => {
+        if (i % n !== Math.floor(n / 2)) return;
+        const mitt = 1 - Math.abs(i / rygg.length - 0.5) * 2, h = h0 + (h1 - h0) * mitt;
+        f.push(poly(form.map(([u, v]) => [x + u * b, y + v * h])));
+      });
+      return { mask: fyll(eller(...f)), monster: monsterAv(d.monster) };
+    } }),
+    hard: d => ({ hard: A => fyll(eller(...(d.delar || []).flatMap(p => ankare(A, p.ankare).map(([ax, ay]) => formerAv(p.former, ax, ay))))) }),
+    pryd: d => ({ pryd: (A, kropp) => (d.delar || []).map((p, i) => {
+      const m = fyll(eller(...ankare(A, p.ankare).map(([ax, ay]) => formerAv(p.former, ax, ay))));
+      if (p.inomKroppen) m.forEach((v, k) => { if (v && !kropp[k]) m[k] = 0; });
+      const mat = matAv(p.mat, 'man');
+      return { mask: m, mat, kontur: p.kontur !== false, lyser: !!p.lyser, monster: monsterAv(p.monster), z: (p.bak ? Z.platta : mat === 'man' ? Z.man : Z.tecken) + i * 0.01 };
+    }) }),
+  };
+  const API = typeof BESTDATA !== 'undefined' ? BESTDATA : {};
+  const REG = { kropp: KROPPAR, ben: BEN, huvud: HUVUDEN, horn: HORN, vingar: VINGAR, svans: SVANSAR, textur: TEXTURER, skal: SKAL, plattor: PLATTOR, hard: HARDA, pryd: PRYDNADER, farg: FARGER };
+  const apiDel = (lager, d) => ({ ...tillApi[lager](d), id: d.id, namn: d.namn, text: d.text, grupp: d.grupp || d.id, api: true });
+  for (const [lager, fil] of Object.entries(API)) {
+    if (!REG[lager] || !tillApi[lager]) continue;
+    for (const d of fil.delar || []) { try { REG[lager].push(apiDel(lager, d)); } catch (e) { console.warn('bestskaparen: kunde inte läsa', lager, d.id, e); } }
+  }
+  // kropparna (de handgjorda och API:ts) är skrivna utan OY och flyttas ner här
+  const nerOY = K => { K.bal = flytta(K.bal, 0, OY); K.nacke = flytta(K.nacke, 0, OY); for (const k of ['h', 'f', 'svans', 'vinge']) K[k] = [K[k][0], K[k][1] + OY]; };
+  KROPPAR.forEach(nerOY);
 
   // ---------- registret: lagren i den ordning de väljs ----------
   const LAGER = [
@@ -535,6 +651,7 @@
       const [cx, cy] = sv.klubba;
       lagg({ mask: fyll(eller(ell(cx, cy, 6, 5), poly([[cx - 2, cy - 4], [cx, cy - 9], [cx + 2, cy - 4]]), poly([[cx - 5, cy - 1], [cx - 10, cy - 2], [cx - 5, cy + 2]]), poly([[cx - 2, cy + 4], [cx - 1, cy + 8], [cx + 2, cy + 4]]))), mat: 'hard' }, Z.klubba);
     }
+    if (sv.delar) sv.delar.forEach(p => lagg(p, Z.klubba));
     // benen: de bortre lite förskjutna och mörkare
     const leder = [], skenor = [], narBen = [];
     for (const [J, bak, far, dx] of [[K.h, true, true, 5], [K.f, false, true, -5], [K.h, true, false, 0], [K.f, false, false, 0]]) {
@@ -550,24 +667,25 @@
     let rygg = ihop(bal);
     if (SK) { const s = SK.skal(K, bal); lagg({ mask: s.mask, mat: 'skal', monster: s.monster }, Z.skal); rygg = ihop(bal, s.mask); }
     if (PL) {
-      const rx0 = PL.id === 'taggar' ? K.svans[0] - 10 : K.lang[0], rx1 = PL.id === 'taggar' ? K.nacke[1][0] - 2 : K.lang[1] - 4;
-      const r = ryggen(ihop(rygg, nacke, PL.id === 'taggar' ? sv.mask : null), rx0, rx1);
+      const rx0 = PL.hela ? K.svans[0] - 10 : K.lang[0], rx1 = PL.hela ? K.nacke[1][0] - 2 : K.lang[1] - 4;
+      const r = ryggen(ihop(rygg, nacke, PL.hela ? sv.mask : null), rx0, rx1);
       const p = PL.plattor(r); lagg({ mask: p.mask, mat: 'platta', monster: p.monster }, Z.platta);
     }
     // hornen: det bortre bakom huvudet
     if (HO) {
       lagg({ mask: fyll(HO.horn([hu.horn[0] + 3, hu.horn[1] + 1])), mat: 'horn', far: true }, Z.farHorn);
-      lagg({ mask: fyll(HO.horn(hu.horn)), mat: 'horn', monster: (x, y) => ((x + y) % 3 === 0 ? -1 : 0) }, Z.horn);
+      lagg({ mask: fyll(HO.horn(hu.horn)), mat: 'horn', monster: HO.monster || ((x, y) => ((x + y) % 3 === 0 ? -1 : 0)) }, Z.horn);
     }
     // vingarna: den bortre bakom allt
     if (VI) {
       VI.vinge([K.vinge[0] + 5, K.vinge[1] - 3]).forEach((d, i) => lagg({ ...d, far: true }, Z.farVinge + i * 0.01));
       VI.vinge(K.vinge).forEach((d, i) => lagg(d, Z.vinge + i * 0.01));
     }
-    const A = { h: K.h, f: K.f, nacke: K.nacke, vinge: K.vinge, svans: K.svans, svansSpets: sv.spets, klubbaPkt: sv.klubba, oga: hu.oga, panna: hu.panna, nos: hu.nos, leder, skenor };
+    const mx = Math.round((K.lang[0] + K.lang[1]) / 2);
+    const A = { h: K.h, f: K.f, nacke: K.nacke, vinge: K.vinge, svans: K.svans, svansSpets: sv.spets, klubbaPkt: sv.klubba, oga: hu.oga, panna: hu.panna, nos: hu.nos, hornet: hu.horn, rygg: ryggen(bal, mx, mx)[0], leder, skenor };
     if (TX.extra) TX.extra(kroppF, A, narBen).forEach(d => lagg(d, d.z));
     if (HA) lagg({ mask: HA.hard(A), mat: 'hard' }, Z.hard);
-    if (PR) { const p = PR.pryd(A, kropp); lagg(p, p.z); }
+    if (PR) [].concat(PR.pryd(A, kropp)).forEach(p => lagg(p, p.z));
     // ögat: litet och djupt under en mörk panna, och det lyser
     const [ox, oy] = hu.oga, oga = tom(), bryn = tom();
     oga[oy * W + ox] = 1; oga[oy * W + ox + 1] = 1;
@@ -606,18 +724,42 @@
   function visa() {
     tillCanvas(ritaBest(val, spegel), duk, 0);
     text.textContent = beskriv(val);
-    valen.querySelectorAll('button[data-lager]').forEach(b => b.setAttribute('aria-pressed', String((val[b.dataset.lager] ?? '') === b.dataset.del)));
+    valen.querySelectorAll('button[data-lager]').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.grupp ? b.dataset.grupp.split(' ') : [b.dataset.del]).includes(val[b.dataset.lager] ?? ''))));
+    // versionerna av den valda delen: ✎ är den handgjorda, siffrorna API:ts
+    for (const l of LAGER) {
+      const v = valen.querySelector(`.sk-versioner[data-lager="${l.id}"]`), d = l.delar.find(x => x.id === val[l.id]);
+      const g = d ? l.delar.filter(x => (x.grupp || x.id) === (d.grupp || d.id)) : [];
+      v.textContent = ''; v.hidden = g.length < 2;
+      if (g.length < 2) continue;
+      let k = 0;
+      for (const x of g) {
+        const b = document.createElement('button'); b.type = 'button'; b.dataset.version = l.id; b.dataset.del = x.id;
+        b.textContent = x.api ? String(++k) : '✎'; b.title = `${x.namn}: ${x.text}`; b.setAttribute('aria-label', `Version ${b.textContent === '✎' ? 'handgjord' : b.textContent}: ${x.namn}`);
+        b.setAttribute('aria-pressed', String(x.id === val[l.id])); v.append(b);
+      }
+    }
   }
   for (const l of LAGER) {
     const rad = document.createElement('div'); rad.className = 'sk-rad';
     const n = document.createElement('span'); n.className = 'sk-namn'; n.textContent = l.namn;
     const chips = document.createElement('div'); chips.className = 'sk-chips';
-    const knapp = (del, namn, titel) => { const b = document.createElement('button'); b.type = 'button'; b.dataset.lager = l.id; b.dataset.del = del; b.textContent = namn; if (titel) b.title = titel; chips.append(b); };
+    const knapp = (del, namn, titel, grupp) => { const b = document.createElement('button'); b.type = 'button'; b.dataset.lager = l.id; b.dataset.del = del; if (grupp) b.dataset.grupp = grupp.join(' '); b.textContent = namn; if (titel) b.title = titel; chips.append(b); };
     if (!l.maste) knapp('', 'Inget');
-    l.delar.forEach((d, i) => knapp(d.id, `${i + 1} ${d.namn}`, d.text));
-    rad.append(n, chips); valen.append(rad);
+    // en knapp per del; versionerna av samma del (samma grupp) väljs på raden under
+    const grupper = new Map();
+    l.delar.forEach(d => { const k = d.grupp || d.id; if (!grupper.has(k)) grupper.set(k, []); grupper.get(k).push(d); });
+    [...grupper.values()].forEach((g, i) => knapp(g[0].id, `${i + 1} ${g[0].namn}`, g[0].text + (g.length > 1 ? ` (${g.length} versioner)` : ''), g.map(d => d.id)));
+    const ver = document.createElement('div'); ver.className = 'sk-versioner'; ver.dataset.lager = l.id; ver.hidden = true;
+    rad.append(n, chips, ver); valen.append(rad);
   }
-  valen.addEventListener('click', e => { const b = e.target.closest('button[data-lager]'); if (!b) return; val[b.dataset.lager] = b.dataset.del || null; visa(); });
+  valen.addEventListener('click', e => {
+    const v = e.target.closest('button[data-version]');
+    if (v) { val[v.dataset.version] = v.dataset.del; visa(); return; }
+    const b = e.target.closest('button[data-lager]'); if (!b) return;
+    // en annan del väljer dess första version; samma del behåller versionen
+    if (!(b.dataset.grupp || '').split(' ').includes(val[b.dataset.lager])) val[b.dataset.lager] = b.dataset.del || null;
+    visa();
+  });
   rot.querySelector('#bs-spegla').addEventListener('click', e => { spegel = !spegel; e.currentTarget.setAttribute('aria-pressed', String(spegel)); visa(); });
   rot.querySelector('#bs-slumpa').addEventListener('click', () => {
     for (const l of LAGER) { const m = l.delar.map(d => d.id); if (!l.maste) m.push(null); val[l.id] = m[Math.floor(Math.random() * m.length)]; }
@@ -658,5 +800,30 @@
     try { await DB.collection('bestar').add({ val: { ...val }, kommentar: ta.value.trim(), text: beskriv(val), nar: new Date().toISOString() }); ta.value = ''; st.textContent = 'Sparat.'; }
     catch (e) { st.textContent = 'Kunde inte spara. Har du rätt att ändra sidan?'; }
   });
-  window.BESTAR = { LAGER, ritaBest, val, visa };
+  // för bildstil/api/bestar.mjs: en del från API:t ritad i besten, som png, med det som inte stämmer
+  function prov(lager, d, over = {}, skala = 4, spegel = false) {
+    const L = LAGER.find(x => x.id === lager), fel = [];
+    let del;
+    try { del = apiDel(lager, d); } catch (e) { return { fel: ['kunde inte läsas: ' + e.message] }; }
+    L.delar.push(del);
+    try {
+      const v = { ...val, ...over, [lager]: del.id }, B = Bild(W, H, P);
+      const fr = dels(v, 'farg');
+      for (const x of delarna(v)) mala(B, x, fr);
+      let x0 = W, x1 = -1, y0 = H, ute = 0;
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (B.get(x, y) >= 0) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); if (x === 0 || x === W - 1 || y === 0) ute++; }
+      if (ute) fel.push(`besten går utanför bilden (${ute} punkter vid kanten)`);
+      if (x1 > W - 20) fel.push(`besten går in i människan till höger (x ${x1}, högst ${W - 20})`);
+      return { png: png(ritaBest(v, spegel), skala), fel, ruta: [x0, y0, x1] };
+    } catch (e) { return { fel: ['kraschade: ' + e.message] }; }
+    finally { L.delar.pop(); }
+  }
+  // en handgjord del eller hela besten som png (underlaget för API:t)
+  function png(S, skala) {
+    const a = document.createElement('canvas'), c = document.createElement('canvas'); tillCanvas(S, a, 0);
+    c.width = S.w * skala; c.height = S.h * skala; const g = c.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(a, 0, 0, c.width, c.height);
+    return c.toDataURL('image/png').split(',')[1];
+  }
+  function bild(over = {}, skala = 4, spegel = false) { return png(ritaBest({ ...val, ...over }, spegel), skala); }
+  window.BESTAR = { LAGER, ritaBest, val, visa, prov, bild, MATERIAL, FASTEN };
 })();
