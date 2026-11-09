@@ -13,7 +13,7 @@ import { aldras, gammaltTrad, lasAlder, lasArt, packaAlder, packaArt, startAlder
 export const MARK = balans('mark', {
   angGrans: 0.56, // i kartans brus är det äng över detta (fuktig mark med högt gräs där skogen har svårt att få fäste)
   angSpridning: 0.1, // skogen sprider sig in på en äng så här många gånger så fort (tio gånger långsammare)
-  gladaRadie: 3.5, // byn börjar i en glänta: så här många rutor från elden är marken fri ...
+  gladaRadie: 5, // byn börjar i en glänta: så här många rutor från elden är marken fri ...
   gladaOjamn: 1.2, // ... plus upp till så mycket mer åt vissa håll (en ojämn kant)
   gladaHojd: 1.1, // ... och avstånden uppåt och nedåt räknas så här många gånger så stora (gläntan blir lite smalare)
   gladaKant: 1, // utanför kanten är det så här många rutor ung skog ...
@@ -50,8 +50,8 @@ export function groundOf(s: State): Ground {
   if (!g) {
     g = { tiles: vattenNu(s), cover: lasMark(s.mark, () => () => 1), trees: s.skog ? lasMark(s.skog, () => { const f = startForest(s.seed); return (i: number) => f[i]; }, 0) : startForest(s.seed) };
     if (!s.skog) for (let i = 0; i < g.trees.length; i++) if (g.cover[i] < HIGH) g.trees[i] = 0; // äldre sparfil: inga träd på stigarna
-    g.alder = s.tradAlder ? lasAlder(s.tradAlder) : startAlder(s.seed, g.trees); // en äldre sparfil får trädens åldrar som urskogen
-    g.art = s.tradSort ? lasArt(s.tradSort) : startArt(s.seed, g.trees, g.tiles); // och sorterna (steg 5.1.6)
+    g.art = s.tradSort ? lasArt(s.tradSort) : startArt(s.seed, g.trees, g.tiles); // sorterna (steg 5.1.6)
+    g.alder = s.tradAlder ? lasAlder(s.tradAlder) : startAlder(s.seed, g.trees, g.art); // en äldre sparfil får trädens åldrar som urskogen
     g.buske = s.buskar ? lasArt(s.buskar) : nyaBuskar(); // buskarna (steg 6.5.3), inga i en äldre sparfil
     grounds.set(s, g);
     if (!s.barbuskar) { barKrok.saUt(s, g); s.barbuskar = 1; } // bärbuskarna där bären växer (steg 6.5.4)
@@ -137,7 +137,7 @@ function startForest(seed: number) {
   return trees;
 }
 // marken som den var när byn grundades (bara ur kartan): för det som ska vara detsamma efter inläsning (djur.ts)
-export const startGround = perKarta((seed): Ground => { const trees = startForest(seed), tiles = getMap(seed).tiles; return { tiles, cover: new Float32Array(W * H).fill(1), trees, alder: startAlder(seed, trees), art: startArt(seed, trees, tiles), buske: nyaBuskar() }; });
+export const startGround = perKarta((seed): Ground => { const trees = startForest(seed), tiles = getMap(seed).tiles; const art = startArt(seed, trees, tiles); return { tiles, cover: new Float32Array(W * H).fill(1), trees, alder: startAlder(seed, trees, art), art, buske: nyaBuskar() }; });
 export const isForest = (s: State, i: number) => groundOf(s).trees[i] >= FOREST;
 // vad jordrutan i är: skog, ungskog, en buske (steg 6.5.3), högt gräs, kort gräs eller bar jord (en stig)
 export type Markslag = 'skog' | 'ung' | 'buske' | 'hog' | 'kort' | 'bar';

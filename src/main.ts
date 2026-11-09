@@ -1,4 +1,4 @@
-import { storStridNu, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, spar, step, visning, yearNo, State, motgangNu, motgangNasta, motgangDef, varslade, ROVARFLOCK, skickaRovare, skickaHandlare, rovarHinder, handlarHinder, skickaTornado, tornadoHinder, lightLevel } from './sim';
+import { torkaTest, storStridNu, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, spar, step, visning, yearNo, State, motgangNu, motgangNasta, motgangDef, varslade, ROVARFLOCK, skickaRovare, skickaHandlare, rovarHinder, handlarHinder, skickaTornado, tornadoHinder, lightLevel, rovarna } from './sim';
 import { brandKnapp, testSvara } from './ui/interaktion';
 import { testBortaIByn } from './ui/testborta';
 import { $ } from './ui/hjalp';
@@ -14,15 +14,15 @@ import { drawAnimals, drawPlants } from './ui/vaxter';
 import { drawFlackar } from './ui/smuts';
 import { addTalks, drawPeople, posOf } from './ui/manniskor';
 import { drawHandel } from './ui/handel';
-import { renderPanel } from './ui/panel';
+import { renderPanel, selectPerson, visa } from './ui/panel';
 import { renderRaden } from './ui/raden';
 import { renderPorts, startFollow, stopFollow } from './ui/portratt';
 import { gaster, rovarGastId } from './ui/gaster';
 import { catchUp, ikapp, loadSaves, nyByVald, saveDb, saveLocal } from './ui/spara';
+import { aktivBy, byarHtml, byte, bytTill, laggTillTestby, taBort, testbyIAdressen } from './ui/byar';
 import './ui/interaktion';
 import './ui/ram';
 import './ui/symboler'; // emojierna blir pixelsymboler (steg 5.3.2.1)
-import './ui/trycktips'; // förklaringarna kommer fram när man trycker (steg 5.3.7)
 import './ui/ark'; // panelerna som ark nerifrån på en liten skärm (steg 5.3.7)
 import { drawArena, oppnaArena } from './ui/arena';
 import { drawTona } from './ui/tona';
@@ -63,7 +63,10 @@ function leaveTest() { testSvara(''); ui.brandTest = false; ui.blixtTest = false
 // testläget stängs utan att den verkliga byn kommer tillbaka (en annan by tar dess plats)
 function dropTest() { if (ui.testMode) { ($('testToggle') as HTMLInputElement).checked = false; realState = null; ui.testBorta = { st: [], lager: [] }; leaveTest(); } }
 // en ny by med slumpat frö, sparad direkt
+// klockan för den valda byn: den egna går i klockans tid, en annan by så långt efter som den låg stilla (steg 9.2.16)
+const klockan = () => Date.now() - ui.forskjut;
 function nyBy() {
+  ui.annanBy = undefined; ui.forskjut = 0; // en ny by ersätter den egna byn
   setByn(createState(Math.floor(Math.random() * 2 ** 31), Date.now()));
   cam.x = -1; layout();
   drawTerrain(true); drawPlants(true); saveLocal(); saveDb();
@@ -74,10 +77,11 @@ async function laddaIn(by: State) {
   cam.x = -1; layout();
   drawTerrain(true); drawPlants(true);
   renderClock(); renderPanel(true);
-  await catchUp(Date.now());
+  await catchUp(klockan());
 }
 // byn i molnet gick att läsa först senare och är nyare än den som spelas: den tar över
 function nyareIMolnet(by: State) {
+  if (ui.annanBy) return; // en annan by är vald: den egna byn läses in när man byter tillbaka (steg 9.2.16)
   dropTest();
   ui.selected = undefined; ui.tab = undefined;
   laddaIn(by).then(() => { renderClock(); renderPanel(true); });
@@ -100,9 +104,9 @@ $('testToggle').addEventListener('change', async e => {
     leaveTest();
     if (realState) { testBortaIByn(realState); bytBy(realState); realState = null; } // det som togs bort i testläget tas bort i byn (steg 4.5.7.8)
     drawTerrain(true); drawPlants(true);
-    await catchUp(Date.now());
+    await catchUp(klockan());
   }
-  renderClock(); renderPanel(true);
+  renderClock(); renderPanel(true); renderByar();
 });
 for (const b of document.querySelectorAll<HTMLButtonElement>('#speeds button')) b.addEventListener('click', () => setSpeed(Number(b.dataset.v)));
 $('arenaKnapp').addEventListener('click', oppnaArena);
@@ -113,7 +117,8 @@ $('arenaKnapp').addEventListener('click', oppnaArena);
     + `<button type="button" data-handlare="1" title="En handlare kommer nu">${iconImg('handlare', 14)}</button>`
     + `<button type="button" data-brand="1" title="Tänd en brand: tryck sedan på kartan där den ska börja">${iconImg('brand', 14)}</button>`
     + `<button type="button" data-blixt="1" title="Blixten: tryck sedan på kartan där den ska slå ner, flera gånger; tryck här igen för att sluta">${iconImg('n_energi', 14)}</button>`
-    + `<button type="button" data-tornado="1" title="En tornado kommer nu från kartans kant">${iconImg('tornado', 14)}</button><span id="testSvar"></span>`;
+    + `<button type="button" data-tornado="1" title="En tornado kommer nu från kartans kant">${iconImg('tornado', 14)}</button>`
+    + `<button type="button" data-torka="1" title="Torka marken helt, så att en brand kan provas när som helst">${iconImg('torrgras', 14)}</button><span id="testSvar"></span>`;
   // knappen svarar direkt (steg 4.5.6.4): den lyser upp, och raden under knapparna säger vad som skickats och varifrån, eller
   // varför det inte går just nu. En knapp som inte kan användas är grå (testKnappar)
   $('testSkicka').addEventListener('click', e => {
@@ -123,10 +128,11 @@ $('arenaKnapp').addEventListener('click', oppnaArena);
     if (b.dataset.brand) { ui.brandTest = !ui.brandTest; ui.blixtTest = false; brandKnapp(); testSvara(ui.brandTest ? 'Tryck på kartan där branden ska börja' : ''); return; }
     // blixtknappen (steg 6.4.7): som brandknappen, men den är kvar aktiv så att flera blixtar kan slå ner i rad
     if (b.dataset.blixt) { ui.blixtTest = !ui.blixtTest; ui.brandTest = false; brandKnapp(); testSvara(ui.blixtTest ? 'Tryck på kartan där blixten ska slå ner' : ''); return; }
+    if (b.dataset.torka) { testSvara(torkaTest(s).text); return; } // (steg 9.2.24)
     const r = b.dataset.flock ? skickaRovare(s, ROVARFLOCK[b.dataset.flock as keyof typeof ROVARFLOCK]) : b.dataset.tornado ? skickaTornado(s) : skickaHandlare(s);
     testSvara(r.text);
     // kameran visar var flocken dök upp (steg 4.5.7.10) och följer den första rövaren in (steg 6.6.12)
-    if (r.ok && b.dataset.flock && s.rovare) { stopFollow(); cam.x = s.rovare.x * TS; cam.y = s.rovare.y * TS; layout(); startFollow(rovarGastId(s.rovare.id, 0), s.rovare.folk[0]?.namn); }
+    if (r.ok && b.dataset.flock && s.rovare) { stopFollow(); cam.x = s.rovare.x * TS; cam.y = s.rovare.y * TS; layout(); startFollow(rovarGastId(s.rovare.id, 0), rovarna(s, s.rovare)[0]?.name); }
     b.classList.remove('tryckt'); void b.offsetWidth; b.classList.add('tryckt');
     testKnappar(); renderPanel(true);
   });
@@ -159,13 +165,29 @@ $('temaKnapp').addEventListener('click', () => {
   const ids = Object.keys(TEMAN) as Tema[]; tema = ids[(ids.indexOf(tema) + 1) % ids.length]; sattTema();
   try { localStorage.setItem(TEMA_KEY, tema); } catch { /* ignoreras */ }
 });
+// byarna under kugghjulet (steg 9.2.16, ui/byar.ts): byt by, ta bort en, och i testläget lägg till en by ur testerna
+function renderByar() { $('byar').innerHTML = byarHtml(); }
+byte.fore = () => { saveLocal(); saveDb(); dropTest(); ui.selected = undefined; ui.tab = undefined; };
+byte.ladda = async by => { await laddaIn(by); renderClock(); renderPanel(true); renderByar(); };
+byte.egen = async () => { const by = await loadSaves(nyareIMolnet); if (by) await byte.ladda!(by); else { nyBy(); renderByar(); } };
+$('byar').addEventListener('click', async e => {
+  const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
+  if (!b) return;
+  if (b.dataset.bort) { taBort(b.dataset.bort); renderByar(); return; }
+  if (b.id === 'tbLagg') {
+    const fro = Number(($('tbFro') as HTMLInputElement).value), dag = Number(($('tbDag') as HTMLInputElement).value);
+    await laggTillTestby(fro, dag); renderByar(); return;
+  }
+  if (b.dataset.by !== undefined) { await bytTill(b.dataset.by || undefined); renderByar(); }
+});
+$('installKnapp').addEventListener('click', renderByar);
 $('newVillage').addEventListener('click', () => { $('confirmNew').hidden = false; });
 $('cancelNew').addEventListener('click', () => { $('confirmNew').hidden = true; });
 $('okNew').addEventListener('click', () => {
   $('confirmNew').hidden = true;
   dropTest(); nyByVald();
   ui.selected = undefined; ui.tab = undefined;
-  nyBy(); renderPanel(true);
+  nyBy(); renderPanel(true); renderByar();
 });
 
 // ---------- huvudloop ----------
@@ -200,7 +222,7 @@ function tick() {
   let vt: number;
   if (ui.testMode) vt = Math.max(ui.nu, s.now - BEAT * SEC) + realDt * speed * SEC;
   else {
-    vt = Date.now();
+    vt = klockan();
     if (vt - s.now > IKAPP_EFTER && !storStridNu(s)) { catchUp(vt); return; } // en stor strid visas i levande läge (steg 8.8.9)
   }
   // spar.pa är på också här: varje slag börjar om vägen (steg.ts), så bara det sista slaget sparas och ritas
@@ -230,13 +252,18 @@ async function boot() {
   $('map').appendChild(view);
   layout();
   new ResizeObserver(layout).observe($('map'));
-  const loaded = await loadSaves(nyareIMolnet);
-  if (loaded) await laddaIn(loaded);
-  else nyBy();
+  const annan = aktivBy();
+  if (annan) { $('loading').hidden = true; await bytTill(annan); }
+  if (!ui.annanBy) {
+    const loaded = await loadSaves(nyareIMolnet);
+    if (loaded) await laddaIn(loaded);
+    else nyBy();
+  }
   $('loading').hidden = true;
+  await testbyIAdressen(); // #testby=frö:dygn: en by ur testerna läggs till och väljs (steg 9.2.16)
   renderClock(); renderPanel(true);
   app.ticker.add(tick);
 }
 boot();
 // byn och kartan tillgängliga för felsökning i konsolen
-(window as any).__byn = { get s() { return s; }, DAY, HOUR, getMap, coverOf, groundOf, get world() { return world; }, get app() { return app; } };
+(window as any).__byn = { get s() { return s; }, ui, selectPerson, visa, DAY, HOUR, getMap, coverOf, groundOf, get world() { return world; }, get app() { return app; } };

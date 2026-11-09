@@ -103,6 +103,6 @@ export function flyttaElden(s: State, p: Person) {
   s.byggV = (s.byggV ?? 0) + 1; // husen, stationerna och vägarna räknas om
   count(s, 'eldflytt');
   log(s, `${p.name} släckte elden och bar stenarna i ringen till en ny eldplats ${mal.varfor === 'plats' ? 'där ett hus ska byggas' : 'mitt i byn'}.`, 'world', [p.id]);
-  if (s.stat!.eldflytt === 1) kronika(s, `${p.name} flyttade byns eld ${mal.varfor === 'plats' ? 'för att ge plats åt ett hus' : 'till byns mitt'}.`);
+  if (s.stat!.eldflytt === 1) kronika(s, `${p.name} flyttade byns eld ${mal.varfor === 'plats' ? 'för att ge plats åt ett hus' : 'till byns mitt'}.`, 'bygge');
   think(p, 'Flyttade elden', ELDFLYTT.tanke, s.now, ELDFLYTT.tankeTim * HOUR);
 }

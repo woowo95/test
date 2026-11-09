@@ -69,6 +69,7 @@ interface ActDef {
   hantverk?: true; // övar hantverk
   ovar?: Skill; // en färdighet till som övas (grilla övar matlagning, matlagning.ts); personrutan visar den som övad just nu
   social?: true; // man samtalar med dem som är nära
+  tyst?: true; // men pratar inte under den (steg 9.2.100): ritualen; sporten säger det för varje sport (SportDef.tyst)
   skamfri?: true; // skammen (straffet skam, styre.ts) byter inte ut den: måltiden och det som skyddar (värmen, skuggan, vakten, försvaret)
   varmer?: true; // görs för att bli varm: ett rum väljs bara om det är minst lika varmt som vid elden (varmareInne)
   dygn?: true; // avbryts när dag blir natt eller natt blir dag
@@ -83,6 +84,7 @@ interface ActDef {
   radie?: number; // avstånd från elden, för plats 'elden'
   fortsatter?: readonly Larmslag[]; // larmen som inte avbryter handlingen (brand.ts, tornado.ts, varg.ts)
   nodFri?: true; // nöden (toa) avbryter den inte (steg.ts)
+  gast?: readonly import('./gast').GastSort[]; // en gästs egen handling (steg 9.2.113, gastvardag.ts): bara de sorterna gör den, aldrig byborna
 }
 export type Larmslag = 'brand' | 'tornado' | 'varg';
 // avbryter larmet om en eldsvåda, en tornado eller vargar handlingen? (kodgenomgången 3.10.25: tre listor med namn blev en
@@ -107,8 +109,12 @@ const DEF = {
   hantverk: { namn: 'Gör handarbete', yrke: 'Hantverkare', slag: 'hantverk', verktyg: { rep: 'Tvinnar rep' }, vila: true, hantverk: true, social: true, dygn: true, stilla: true, plats: 'elden' },
   vakt: { namn: 'Håller vakt', yrke: 'Väktare', tecken: '👁️', social: true, skamfri: true, dygn: true, stilla: true, vapen: true, plats: 'elden', radie: 2.6, fortsatter: ['varg'] as const },
   // när vargar är nära (steg 3.7.15, varg.ts): de svaga gömmer sig i huset, de modiga väntar med vapen vid elden
-  gomma: { namn: 'Gömmer sig för vargarna', tecken: '🫣', dygn: true, stilla: true, plats: 'sang', fortsatter: ['varg'] as const },
+  gomma: { namn: 'Gömmer sig', tecken: '🫣', dygn: true, stilla: true, plats: 'sang', fortsatter: ['varg'] as const },
   forsvar: { namn: 'Väntar på vargarna med vapen', tecken: '🛡️', social: true, skamfri: true, dygn: true, stilla: true, vapen: true, plats: 'elden', radie: 2.2, fortsatter: ['varg'] as const },
+  // mot rövare (steg 9.2.74, rovare.ts): man väntar vid förrådet, dit rövarna är på väg, och platsen sätts i rovarSkydd
+  budRovare: { namn: 'Hämtar folk', tecken: '🏃', social: true, skamfri: true, dygn: true, fortsatter: ['varg'] as const }, // budbäraren (steg 9.2.117)
+  hjalpaRovare: { namn: 'Håller sig bakom kämparna', tecken: '🤲', social: true, skamfri: true, dygn: true, stilla: true, fortsatter: ['varg'] as const }, // steg 9.2.116
+  forsvarRovare: { namn: 'Väntar på rövarna med vapen', tecken: '🛡️', social: true, skamfri: true, dygn: true, stilla: true, vapen: true, fortsatter: ['varg'] as const },
   sova: { namn: 'Sover', slag: 'vila', under: { go: 'går och lägger sig' }, vila: true, stilla: true, plats: 'sang' },
   elda: { namn: 'Lägger ved på elden', yrke: 'Eldvaktare', slag: 'elda', under: { go: 'hämtar ved', back: 'bär ved till elden' }, ger: 'ved' },
   tanda: { namn: 'Försöker tända elden', yrke: 'Eldvaktare', slag: 'elda' },
@@ -123,7 +129,7 @@ const DEF = {
   // tron och graven (system 8.5, kult.ts och kvarlevor.ts)
   hovbygge: { namn: 'Bygger hovet', slag: 'bygga', tungt: true, framme: true, stilla: true }, // steg 8.6.14
   be: { namn: 'Ber', tecken: '✨', ikon: 'a_be', framme: true, stilla: true, skamfri: true },
-  ritual: { namn: 'Är med på en ritual', tecken: '✨', ikon: 'a_be', stilla: true, social: true, dygn: true },
+  ritual: { namn: 'Är med på en ritual', tecken: '✨', ikon: 'a_be', stilla: true, social: true, tyst: true, dygn: true },
   begrava: { namn: 'Går för att ta hand om en död', tecken: '✨', ikon: 'a_be', framme: true, stilla: true },
   grava: { namn: 'Gräver en grav', slag: 'bygga', tungt: true, framme: true, stilla: true, redskap: { benspade: { tar: 'Tar benspaden.', haller: 40 } }, slits: { enhet: 'gravar', per: 'gang' } },
   medvetslos: { namn: 'Ligger medvetslös', tecken: '✨', stilla: true, fortsatter: ['brand', 'tornado', 'varg'] as const, nodFri: true },
@@ -141,7 +147,7 @@ const DEF = {
   metspo: { namn: 'Gör ett metspö', slag: 'hantverk', hantverk: true, plats: 'station' },
   kniv: { namn: 'Gör en flintkniv', slag: 'hantverk', hantverk: true, plats: 'station' },
   slakta: { namn: 'Slaktar vilt med kniven', slag: 'hantverk', redskap: { kniv: { haller: 250, kravs: true } }, slits: { enhet: 'djur', per: 'gang' }, hantverk: true, social: true, stilla: true, verb: 'slaktar', plats: 'station' },
-  promenad: { namn: 'Tar en promenad', tecken: '🚶', tur: { r: 6, stopp: [20, 90], se: 0.35 }, dygn: true },
+  promenad: { namn: 'Tar en promenad', tecken: '🚶', tur: { r: 10, stopp: [20, 90], se: 0.35 }, dygn: true },
   bada: { namn: 'Badar i sjön', tecken: '🏊', dygn: true },
   bara: { namn: 'Bär in saker till lagret', slag: 'bara' },
   strand: { namn: 'Sitter vid stranden och ser ut över vattnet', tecken: '🌊', dygn: true },
@@ -232,6 +238,13 @@ const DEF = {
   strid: { namn: 'Slåss', tecken: '⚔️', stilla: true, fortsatter: ['brand', 'tornado', 'varg'] as const, nodFri: true }, // steg 3.7.2 (strid.ts): står kvar i striden medan de andra behoven väntar
   bjornjakt: { namn: 'Jagar björn', slag: 'jaga', ger: 'bjorn', tungt: true, fortsatter: ['brand', 'tornado', 'varg'] as const }, // steg 6.6.6 (bjorn.ts): en stor grupp med spjut, och den fällda björnen styckas och bärs hem
   vargjakt: { namn: 'Jagar varg', slag: 'jaga', ger: 'varg', tungt: true, fortsatter: ['brand', 'tornado', 'varg'] as const }, // steg 3.7.1 (varg.ts): ledaren samlar jägare, och den fällda vargen bärs hem
+  // gästernas egna handlingar (steg 9.2.113, gastvardag.ts): sorten är kravet
+  gastKommer: { namn: 'Går till byn', tecken: '🚶', gast: ['handlare', 'rovare', 'framling'] as const },
+  gastVantar: { namn: 'Väntar', tecken: '🕓', stilla: true, gast: ['handlare', 'rovare', 'framling'] as const },
+  gastHandla: { namn: 'Handlar vid filten', slag: 'prata', stilla: true, gast: ['handlare'] as const },
+  plundra: { namn: 'Plundrar byn', tecken: '💰', gast: ['rovare'] as const },
+  gastFly: { namn: 'Flyr från byn', tecken: '🏃', gast: ['rovare', 'framling'] as const },
+  gaHem: { namn: 'Går hem', tecken: '🚶', gast: ['handlare', 'rovare', 'framling'] as const },
   skrika: { namn: 'Skriker och gråter', tecken: '😭', ikon: 'utb1', dygn: true, stilla: true }, // barnens (steg 3.2.4)
 } satisfies Record<string, ActDef>;
 
@@ -242,7 +255,11 @@ export const ACT_NAMES = Object.fromEntries(ACT_LIST.map(a => [a, ACTS[a].namn])
 export const isWork = (a: Act) => ACTS[a].arbete !== undefined;
 // arbetena som väljs efter byns behov (de andra är sätt att göra dem, t.ex. att fälla och hugga är vedarbete med yxa)
 export const WORK = ACT_LIST.filter(a => ACTS[a].arbete === a);
-export const taskName = (t: Task) => (t.tool && (ACTS[t.act].redskap?.[t.tool]?.namn ?? ACTS[t.act].verktyg?.[t.tool])) || ACTS[t.act].namn;
+// den som prövar sig fram säger vad hen försöker komma på (steg 9.2.106; teknik.ts sätter texterna när modulen laddas)
+export const forsokVad: Record<string, string> = {};
+// den som gömmer sig gör det för hotet (steg 9.2.121), som står först i skälet (vargSkydd i varg.ts)
+const gomFor = (why = '') => /^Rövar/.test(why) ? 'Gömmer sig för rövarna' : /^Varg/.test(why) ? 'Gömmer sig för vargarna' : /^Björn/.test(why) ? 'Gömmer sig för björnen' : undefined;
+export const taskName = (t: Task) => (t.act === 'gomma' ? gomFor(t.why) : undefined) || (t.act === 'forsok' && t.tool && forsokVad[t.tool] ? `Försöker komma på ${forsokVad[t.tool]}` : undefined) || (t.tool && (ACTS[t.act].redskap?.[t.tool]?.namn ?? ACTS[t.act].verktyg?.[t.tool])) || ACTS[t.act].namn;
 // undertexten (steg 3.10.3): det uppgiften är i just nu, kort, som i "Jagar: letar efter byte". Handlingens rad (under) först,
 // annars på väg dit, med material till bygget och hem med det som bärs. Jakten efter försöket (jakt.ts)
 export function underText(t: Task): string | undefined {

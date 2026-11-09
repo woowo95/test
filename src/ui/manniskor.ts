@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bordVid, byId, homeKind, bordaIHander, utrustning, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats, Match, Task, dragLag, kastMal, SPORT, bakomFilt, blocked, stationAt, isKlar, stationDef } from '../sim';
+import { ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bordVid, byId, homeKind, bordaIHander, utrustning, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats, Match, Task, dragLag, kastMal, SPORT, bakomFilt, blocked, stationAt, isKlar, stationDef, soverNu, lekGang, kroppFart } from '../sim';
 // lågorna på den som brinner (steg 6.4.16, Björns val f6_brinner i steg 8.10.1): en låga med foten i (x, y) och längden l i
 // bilden f (0–3): ljus kärna, gul mitt och röd spets, en tunga vid sidan som byter sida, och ibland en lös flamma överst
 const BRAND_TAKT = 140, HOJD = [0, 2, 1, -1], SVAJ = [0, 1, 0, -1];
@@ -64,7 +64,9 @@ function platsAv(p: Person) {
   // vattnet eller en station: då blir den kortare, eller ingen alls
   if (still && tk?.phase === 'do' && d && !d.stilla && !d.tur) {
     const w = d.vandra, k = t / SEC, r = w ? w.r * 0.6 : 0.12, f = w ? w.v / (w.r * 6) : 0.05;
-    const dx = Math.sin(k * f + p.id * 1.7) * r * Math.sin(k * f * 0.37 + p.id), dy = Math.cos(k * f * 0.83 + p.id * 2.3) * r * Math.sin(k * f * 0.29 + p.id * 0.5);
+    // lek och sport (steg 9.2.91): i vanlig gångfart till en ny punkt, sedan står man still en stund där
+    const lek = w && d.slag === 'leka' ? lekGang(p.id, r, (w.h0 + w.h1) / 2, kroppFart(p, t), t) : undefined;
+    const dx = lek ? lek.dx : Math.sin(k * f + p.id * 1.7) * r * Math.sin(k * f * 0.37 + p.id), dy = lek ? lek.dy : Math.cos(k * f * 0.83 + p.id * 2.3) * r * Math.sin(k * f * 0.29 + p.id * 0.5);
     const hem = Math.floor(y) * 10000 + Math.floor(x);
     const fri = (nx: number, ny: number) => Math.floor(ny) * 10000 + Math.floor(nx) === hem || !blocked(s, nx, ny) && !stationAt(s, Math.floor(nx), Math.floor(ny));
     for (const del of [1, 0.5, 0.25]) if (fri(x + dx * del, y + dy * del)) { x += dx * del; y += dy * del; break; }
@@ -220,15 +222,19 @@ function pratRuta(x: number, top: number, bob: number, kind: string | undefined,
     : rel === 'karlek' ? 0xbd753e : rel === 'ovan' ? 0x742a01 : rel === 'van' ? 0x647025 : undefined;
   // en ljus, rundad pratbubbla med en spets ner mot den som pratar, så att den inte ser ut som arbetets mörka ruta (steg 4.5.6.9)
   const y0 = top + bob, linje = kant ?? PRAT_KANT, b = kant !== undefined ? 1.2 : 0.8;
-  // tecknet i sina egna punkter (steg 5.5.5): det vanliga tecknet i 8 punkter i den lilla bubblan, och ett ämne vars bild har
-  // 16 punkter i en större bubbla, så att inget ritas i halv storlek
-  const k = ikon && hasIcon(ikon) ? ikon : 'a_prata', w = iconCanvas(k).width || 8, stor = w > 8;
-  if (stor) bubbleG.lineStyle(b, linje).beginFill(PRAT_FARG).drawRoundedRect(x - 10, y0 - 14, 20, 19, 5).endFill();
-  else bubbleG.lineStyle(b, linje).beginFill(PRAT_FARG).drawRoundedRect(x - 6, y0 - 6, 12, 11, 4).endFill();
+  // en enda storlek, den lilla (steg 9.2.10): tecknet i 8 punkter. Ett ämne har sin egen symbol i 8 punkter (amneIkon), och en
+  // bild som är större än 8 punkter visas som det vanliga tecknet, så att inget ritas i halv storlek
+  const k = ikon && hasIcon(ikon) && (iconCanvas(ikon).width || 8) <= 8 ? ikon : 'a_prata';
+  bubbleG.lineStyle(b, linje).beginFill(PRAT_FARG).drawRoundedRect(x - 6, y0 - 6, 12, 11, 4).endFill();
   bubbleG.lineStyle(0).beginFill(PRAT_FARG).drawPolygon([x - 2.6, y0 + 4.4, x + 1.4, y0 + 4.4, x - 1.8, y0 + 8.2]).endFill();
   bubbleG.lineStyle(b, linje).moveTo(x - 2.6, y0 + 5).lineTo(x - 1.8, y0 + 8.2).lineTo(x + 1.4, y0 + 5).lineStyle(0);
-  if (stor) markIcons.add(k, x - 8, top - 12.5 + bob, 1, ljusSymbol(k) ? PRAT_KANT : 0xffffff);
-  else markIcons.add(k, x - 4, top - 4.5 + bob, 8 / w, ljusSymbol(k) ? PRAT_KANT : 0xffffff);
+  markIcons.add(k, x - 4, top - 4.5 + bob, 1, ljusSymbol(k) ? PRAT_KANT : 0xffffff);
+}
+// ämnets symbol i 8 punkter (steg 9.2.10): en per ämne i AMNEN, vädret efter sin sort
+function amneIkon(x: { k: string; i?: string } | undefined) {
+  if (!x) return undefined;
+  const k = x.k === 'vader' ? 'amne_vader_' + (x.i?.replace('vader_', '') ?? 'klart') : 'amne_' + x.k;
+  return hasIcon(k) ? k : undefined;
 }
 const markIcons = new Ikoner(symbolLayer);
 // en sak med mitten i (cx, cy): kartbilden i sin naturliga storlek, annars den gamla bilden storlek punkter stor
@@ -302,7 +308,7 @@ function riktning(id: number, x: number, y: number, rx = x, ry = y): Rikt {
 const markeradNu = () => ui.tab === undefined || ui.tab === 'person' ? ui.selected : undefined;
 function ritaRovarna(skugga: PIXI.Graphics) {
   for (const g of gaster()) {
-    const r = g.rovare, sk = r && rovarenNu(r.namn, ui.nu), ligger = !!g.ligger, x = g.x * TS, y = g.y * TS;
+    const r = g.rovare, sk = r && rovarenNu(r.name, ui.nu), ligger = !!g.ligger, x = g.x * TS, y = g.y * TS;
     let rikt = riktning(g.id, g.x, g.y);
     const strid = sk && !ligger ? STRIDBILD[sk.k.vapen as string] ?? STRIDBILD.hand : undefined, ab = strid ? arbetsBild(strid, slag() - g.id) : undefined;
     if (sk?.mot) rikt = sk.mot.x < g.x ? 'vast' : 'sida';
@@ -310,7 +316,7 @@ function ritaRovarna(skugga: PIXI.Graphics) {
     const ben: Ben = ab ? ab.ben : steg ? steg[0] : 'sta', arm: Arm = ab ? ab.arm : steg ? steg[1] : 'hanga';
     const humor = sk ? 'arg' : s.rovare?.gor === 'flyr' ? 'radd' : 'lugn';
     const sp = figurAv(g.id);
-    sp.texture = figurTex(r ? rovarSkapad(s, r, humor) : handlarSkapad(s, g.namn, g.sex), { rikt, ben, arm, ligga: ligger }, g.id === markeradNu());
+    sp.texture = figurTex(r ? rovarSkapad(s, r, humor) : g.sort === 'Främling' ? skapad(s, g.p) : handlarSkapad(s, g.namn, g.sex), { rikt, ben, arm, ligga: ligger }, g.id === markeradNu());
     const w = sp.texture.width, h = sp.texture.height;
     if (ligger) sp.position.set(x - w / 2, y - h / 2);
     else sp.position.set(x - w / 2 + (ab?.b.ut ?? 0) * (rikt === 'vast' ? -1 : 1), y + 5 * 0.9 - h + 1);
@@ -338,7 +344,7 @@ export function drawPeople(t: number) {
     const q = posOf(p);
     let x = q.x * TS, y = q.y * TS;
     pos.set(p.id, q);
-    const tk = uppgiftVid(p), sleeping = tk?.act === 'sova';
+    const tk = uppgiftVid(p), sleeping = !!tk && soverNu(p, tk); // den som går till sängen går upprätt och lägger sig först i bädden (steg 9.2.89)
     // figuren ur porträttgeneratorn (steg 5.2.3.2, ui/folkbild.ts) med fötterna under punkten; den som sover eller inte kan
     // gå ligger ner (steg 3.7.19), under täcket när hen sover, och de minsta barnen har en egen, lägre mall i hel skala (steg 5.5.5)
     const sp = figurAv(p.id), ligger = sleeping || !kanGa(p) || !!iStridenNu(p.id, ui.nu)?.ligger, liten = a < ALDER.smabarn;
@@ -354,13 +360,13 @@ export function drawPeople(t: number) {
     if (vidBank) { rikt = 'bak'; x = (bank!.x + storlekAv(bank!).w / 2) * TS; y = (bank!.y + storlekAv(bank!).h) * TS + TS / 2 - r * 0.9; }
     // arbetet i bild (steg 5.1.9.4, ui/arbetsbild.ts): rörelsen från sidan, en bild per slag, förskjutet per person
     const strid = gor === 'strid' && !ligger ? stridNu(p) : undefined;
-    const arb = strid ? STRIDBILD[strid.vapen] ?? STRIDBILD.hand : !ligger && (!sitter || vidBank) && gor && !(tk && load(tk, s) > 0) ? ARBETEN[gor] : undefined;
+    const arb = strid ? STRIDBILD[strid.vapen] ?? STRIDBILD.hand : !ligger && (!sitter || vidBank) && gor && (gor === 'bygga' || !(tk && load(tk, s) > 0)) ? ARBETEN[gor] : undefined; // byggaren har materialet i händerna medan hen bygger (steg 9.2.90)
     const ab = arb ? arbetsBild(arb, slag() + p.id) : undefined;
     if (strid?.mot) rikt = strid.mot.x < q.x ? 'vast' : 'sida'; // vänd mot motståndaren (steg 5.1.9.5)
     else if (ab && !vidBank && rikt !== 'sida' && rikt !== 'vast') rikt = p.id % 2 ? 'vast' : 'sida';
     const steg = !sitter && !ligger && gar(p.id, performance.now()) ? GANG[(slag() + p.id) % 4] : undefined;
     const ben: Ben = sitter ? 'sitta' : ab ? ab.ben : steg ? steg[0] : 'sta';
-    let arm: Arm = tk && load(tk, s) > 0 ? 'bara' : gor && SLA.has(gor) ? 'sla' : gor === 'station' ? 'framfor' : 'hanga';
+    let arm: Arm = tk && load(tk, s) > 0 && gor !== 'bygga' ? 'bara' : gor && SLA.has(gor) ? 'sla' : gor === 'station' ? 'framfor' : 'hanga';
     if (steg && arm === 'hanga') arm = steg[1];
     if (ab) arm = ab.arm;
     // sängen (steg 6.8.5): den som sover i en färdig säng ligger mitt i den med huvudet i bäddens huvudände (vänster i den
@@ -425,9 +431,9 @@ export function drawPeople(t: number) {
       const r = q ? s.rels[relKey(p.id, q.id)] : undefined;
       // bubblans färg: kär (partnern eller mycket romans), grälar (som i folk.ts), goda vänner eller annars
       const rel = q && (p.partner === q.id || (r?.rom ?? 0) > 40) ? 'karlek' : (r?.op ?? 0) < REL.gral ? 'ovan' : (r?.op ?? 0) > REL.van ? 'van' : 'neutral';
-      const ikon = flash.has(p.id) ? flashIkon.get(p.id) : q && p.prat?.m === q.id ? p.prat.i : undefined; // ämnet (steg 3.9.5)
+      const ikon = (flash.has(p.id) || q && p.prat?.m === q.id) ? amneIkon(p.prat) : undefined; // ämnet (steg 3.9.5, 9.2.10)
       pratRuta(x, top, Math.sin(t / 500 + p.id) * 0.6, flash.get(p.id), rel, ikon);
-      if (medGast && s.handlare?.id === o) { const hp = handlarPlats(s.handlare, ui.nu); pratRuta(hp.x * TS, hp.y * TS - 13, Math.sin(t / 500) * 0.6, flash.get(p.id), 'neutral'); } // handlaren pratar också
+      if (medGast && s.handlare?.id === o) { const hp = handlarPlats(s, s.handlare, ui.nu); pratRuta(hp.x * TS, hp.y * TS - 13, Math.sin(t / 500) * 0.6, flash.get(p.id), 'neutral'); } // handlaren pratar också
       continue;
     }
     // vid handlarens filt (steg 4.4.1.5 och 4.5.7.4): bybon frågar vad handlaren har och hen svarar med varornas symboler, en i
@@ -436,7 +442,7 @@ export function drawPeople(t: number) {
     if (hn && s.handlare) {
       const i = Math.floor(t / 1400 + p.id), en = (v: string[]) => v.length ? v[i % v.length] : undefined;
       pratRuta(x, top, Math.sin(t / 500 + p.id) * 0.6, undefined, 'neutral', en(hn.bybo));
-      const hp = handlarPlats(s.handlare, ui.nu);
+      const hp = handlarPlats(s, s.handlare, ui.nu);
       pratRuta(hp.x * TS, hp.y * TS - 13, Math.sin(t / 500) * 0.6, undefined, 'neutral', en(hn.handlare));
       continue;
     }
@@ -453,7 +459,9 @@ export function drawPeople(t: number) {
     if (!p || !alive(p)) continue;
     const tx = nameTags[n++];
     if (tx.text !== p.name) tx.text = p.name;
-    const q = posOf(p); tx.position.set(q.x * TS, q.y * TS - 8); tx.visible = true;
+    // namnet ovanför figuren, det hen bär på huvudet och symbolen över huvudet (steg 9.2.27), så att det inte täcker figuren
+    // eller den som står bredvid
+    const q = posOf(p), topp = huvud.get(p.id) ?? q.y * TS - 13; tx.position.set(q.x * TS, topp - SYMBOL_LUFT - 6); tx.visible = true;
   }
   for (; n < nameTags.length; n++) nameTags[n].visible = false;
 }

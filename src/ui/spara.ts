@@ -4,12 +4,14 @@ import { bortaHtml, ikappHtml, spolaText } from './borta';
 import { s, ui } from './lage';
 import { drawTerrain } from './terrang';
 import { drawPlants } from './vaxter';
+import { sparaAnnan } from './byar';
 
 // ---------- sparning: i webbläsaren och i artefaktens databas; den nyaste vinner när byn läses in ----------
 const SAVE_KEY = 'samhalle-save-v1';
 let lokalLarm = false; // felet skrivs i konsolen en gång, inte var tjugonde sekund
 export function saveLocal() {
   if (ui.testMode || !s) return;
+  if (ui.annanBy) { ui.lokalFel = !sparaAnnan(); return; } // en annan by sparas för sig (steg 9.2.16, byar.ts)
   try { localStorage.setItem(SAVE_KEY, serialize(s)); ui.lokalFel = lokalLarm = false; }
   catch (e) { ui.lokalFel = true; if (!lokalLarm) console.error('Byn kunde inte sparas i webbläsaren', e); lokalLarm = true; }
 }
@@ -28,7 +30,7 @@ const isHist = (d: string) => d.startsWith('historik-');
 const docOf = (d: any, id: string, namn: string) => d.doc(`data/users/${id}/${namn}`);
 const delNamn = (sl: string, d: string, i: number) => (isHist(d) ? `${d}-${i}` : `del-${sl}-${d}-${i}`);
 export async function saveDb() {
-  if (ui.testMode || !s || !db || !uid || sparar) return;
+  if (ui.testMode || !s || !db || !uid || sparar || ui.annanBy) return; // i molnet bara den egna byn (steg 9.2.16)
   sparar = true;
   try {
     const ny = slot === 'a' ? 'b' : 'a', delar: Record<string, number> = {};

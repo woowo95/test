@@ -1,4 +1,5 @@
 import { honom } from './ord';
+import { personNara } from './personlogg';
 import { upplev, uppvaxtDod, uppvaxtFodd } from './uppvaxt';
 import { kronikaBer, personFalt } from './berattelser';
 import { kronika } from './historik';
@@ -6,7 +7,7 @@ import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, isParent, living, 
 import { pair } from './varld';
 import { avgMood } from './humor';
 import { chance, clamp, pick, rnd } from './slump';
-import { Act, DAY, HOUR_S, Person, SEC, State } from './typer';
+import { Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, State, T, W } from './typer';
 import { foodDays } from './ekonomi';
 import { avbryt, put, releaseOwner } from './lager';
 import { inherit, packUp } from './arv';
@@ -15,17 +16,23 @@ import { RELT } from './relationer';
 import { rykteDod, startSmak } from './rykten';
 import { tecken, GudOmr, gudHandelse } from './religion';
 import { TEK, TEKNIK, knows, kunskapDod } from './teknik';
-import { KLAN, andraInst, klanerOf, utbrytning } from './klaner';
+import { KLAN, andraInst, klanById, klanerOf, utbrytning } from './klaner';
+import { gaMot } from './rovare';
+import { kanterna } from './varg';
+import { eldPlats, getMap } from './karta';
+import { freeNear } from './byggnad';
+import { gastGar, nyttGastId } from './gast';
 import { notis } from './notiser';
 import { vaderNu } from './vader';
 import { nyKvarleva } from './kvarlevor';
 import { gravgava } from './kultlatt';
+import { barSmitta, insjukna } from './sjukdom';
 
 // ---------- balanstal (regel 8) ----------
 // Befolkningen regleras av naturen, inte av ett fast tak: en trång by får färre barn och fler som flyttar, en liten by lockar
 // nybyggare, och en by med knapp mat får färre barn, fler som flyttar och färre nybyggare. Längder är i dygn (år i spelet),
 // åldrar i år i spelet. Åldrarna för vuxen och barn (ALDER) står i folk.ts
-const LIV = balans('liv', {
+export const LIV = balans('liv', {
   // trängsel: 0 upp till trangFran invånare, 1 vid trangFran + trangSpann, högst trangMax
   trangFran: 24, trangSpann: 16, trangMax: 3, // (14 före steg 2.12.6: spelet byggs för ca 30 invånare)
   // hur många barn byn vill ha (birthWish): fler i en liten by, färre i en stor
@@ -60,6 +67,9 @@ const LIV = balans('liv', {
   sorjPartner: -0.3, sorjPartnerDygn: 1.2, // partnern
   sorjNara: -0.25, sorjNaraDygn: 1, // förälder och barn
   saknar: -0.12, saknarDygn: 0.6, // en annan som tyckte om den döda (relationen över REL.saknar)
+  // sorgen i stadier (steg 9.2.33) hos partnern, föräldrar och barn och den bästa vännen: först "Förlorade sin vän" med
+  // tyngden gånger forlust i forlustDygn, sedan "Sörjer" med tyngden i sorgens dygn, och sist "Saknar" med saknar i saknasDygn
+  forlust: 1.5, forlustDygn: 2, saknasDygn: 6,
   saknarFlytt: -0.08, saknarFlyttDygn: 0.5, // den som tyckte om någon som flyttar
   fodMor: 0.2, fodFar: 0.18, fodDygn: 1, // glädjen över ett nytt barn
 });
@@ -82,6 +92,8 @@ const DOD = {
   svamp: { text: 'av svampförgiftning' },
   skorbjugg: { text: 'av skörbjugg' }, // brist på vitaminer (steg 2.6.2)
   sjukdom: { text: 'av sjukdom' },
+  magsjuka: { text: 'av magsjuka' }, matforgiftning: { text: 'av matförgiftning' }, forkylning: { text: 'av förkylning' }, // sjukdomarna (steg 9.5.1, sjukdom.ts): dödsorsaken heter som raden
+  lunginflammation: { text: 'av lunginflammation' }, massling: { text: 'av mässlingen', sorg: true }, koppor: { text: 'av kopporna', sorg: true },
   alderdom: { text: 'av ålderdom' },
   barnsjukdom: { text: 'av en barnsjukdom' },
   olycka: { text: 'i en olycka' },
@@ -119,7 +131,7 @@ export function die(s: State, p: Person, orsak: Dodsorsak) {
   if (p.gjort) p.gjort.t = {}; // de döda gör inget mer det senaste dygnet (steg 3.10.6)
   const a = Math.floor(ageOf(p, s.now));
   log(s, `${p.name} dog ${cause}, ${a} år gammal.`, 'death', [p.id]); notis(s, 'dod', `${p.name} dog ${cause}, ${a} år gammal.`, [p.id], { x: Math.floor(p.x), y: Math.floor(p.y) });
-  count(s, 'doda'); count(s, 'dog ' + cause); kronikaBer(s, a < 1 ? 'k_dogSpad' : 'k_dog', p.id, { ...personFalt(p), orsak: cause, alder: a, nar: orsak === 'olycka' && akt && NAR_AKT[akt] ? `när ${hen(p)} ${NAR_AKT[akt]}` : undefined, sorjer: sorjer(s, p), mor: byId(s, p.mother)?.name ?? 'Modern', partner: (q => q && alive(q) ? q.name : undefined)(byId(s, p.partner)), barn: s.people.filter(q => (q.mother === p.id || q.father === p.id) && alive(q)).length });
+  count(s, 'doda'); count(s, 'dog ' + cause); personNara(s, p, `${p.name} dog ${cause}, ${a} år gammal.`); /* de som stod hen nära (steg 9.2.107) */ kronikaBer(s, a < 1 ? 'k_dogSpad' : 'k_dog', p.id, { ...personFalt(p), orsak: cause, alder: a, nar: orsak === 'olycka' && akt && NAR_AKT[akt] ? `när ${hen(p)} ${NAR_AKT[akt]}` : undefined, sorjer: sorjer(s, p), mor: byId(s, p.mother)?.name ?? 'Modern', partner: (q => q && alive(q) ? q.name : undefined)(byId(s, p.partner)), barn: s.people.filter(q => (q.mother === p.id || q.father === p.id) && alive(q)).length });
   nyKvarleva(s, 'kropp', p, p.name); // kroppen ligger kvar där hen dog (steg 8.5.1)
   gravgava(s, p); // gravgåvan läggs undan innan arvet (steg 8.5.6)
   inherit(s, p); // arvingarna får det hen ägde (arv.ts); efter dödsraden, så att orsaken står före verkan (steg 6.7.5)
@@ -132,9 +144,11 @@ export function die(s: State, p: Person, orsak: Dodsorsak) {
   for (const q of living(s)) {
     // den som var gift sörjer mer, den bästa vännen länge och en nära vän lite mer än en vän (steg 3.1.1)
     const r = s.rels[relKey(p.id, q.id)], varPartner = q.partner === p.id;
-    if (varPartner) { q.partner = undefined; const f = r?.gift !== undefined ? RELT.giftSorj : 1; think(q, `Sörjer ${p.name}`, LIV.sorjPartner * f, s.now, LIV.sorjPartnerDygn * f * DAY); }
-    else if (isParent(p, q) || isParent(q, p)) think(q, `Sörjer ${p.name}`, LIV.sorjNara, s.now, LIV.sorjNaraDygn * DAY);
-    else if (q.bast === p.id) think(q, `Sörjer ${p.name}`, RELT.bastSorj, s.now, RELT.bastSorjDygn * DAY);
+    // sorgen i stadier (steg 9.2.33): först förlusten med stor tyngd, sedan sorgen och sist saknaden, svag och länge (sorgTimme)
+    if (varPartner) { q.partner = undefined; const f = r?.gift !== undefined ? RELT.giftSorj : 1; sorj(s, q, p, 'sin partner', LIV.sorjPartner * f, LIV.sorjPartnerDygn * f); }
+    else if (isParent(q, p)) sorj(s, q, p, 'sitt barn', LIV.sorjNara, LIV.sorjNaraDygn);
+    else if (isParent(p, q)) sorj(s, q, p, p.sex === 'k' ? 'sin mor' : 'sin far', LIV.sorjNara, LIV.sorjNaraDygn);
+    else if (q.bast === p.id) sorj(s, q, p, 'sin vän', RELT.bastSorj, RELT.bastSorjDygn);
     else if (r && r.op > REL.saknar) { const f = r.op > REL.naraVan ? RELT.naraSorj : 1; think(q, `Saknar ${p.name}`, LIV.saknar * f, s.now, LIV.saknarDygn * f * DAY); }
     // familjen och vännerna sörjer en död som kom av svält, kyla, vargar eller rövare (steg 4.5.4.9)
     if (sorg && (varPartner || isParent(p, q) || isParent(q, p) || q.bast === p.id || (r && r.op > REL.saknar) || (q.mother !== undefined && q.mother === p.mother) || (q.father !== undefined && q.father === p.father))) upplev(s, q, 'sorjde', `${p.name}, som dog ${cause}`);
@@ -151,7 +165,7 @@ export function birth(s: State, mother: Person) {
   if (vaderNu(s).aska) { for (const q of [mother, father]) if (q) tecken(s, q, 'barnAska'); count(s, 'barn i åska'); } // steg 8.5.18
   const ft = kronikaBer(s, 'k_fodd', ch.id, { namn: ch.name, barnet: ch.sex === 'k' ? 'dotter' : 'son', mor: mother.name, foraldrar: mother.name + (father ? ' och ' + father.name : ''), syskon: s.people.filter(q => q !== ch && q.mother === mother.id).length });
   log(s, ft, 'birth', [ch.id, mother.id, ...(father ? [father.id] : [])]).m = 'k_fodd'; notis(s, 'fodd', ft, [ch.id, mother.id, ...(father ? [father.id] : [])]);
-  count(s, 'fodda');
+  count(s, 'fodda'); personNara(s, ch, ft, [mother.id, ...(father ? [father.id] : [])]); // syskonen (steg 9.2.107)
   uppvaxtFodd(s, ch); startSmak(s, ch);
   gudHandelse(s, 'atten', `barnet ${ch.name} som föddes`); // steg 4.1.5
   think(mother, `Fick barnet ${ch.name}`, LIV.fodMor, s.now, LIV.fodDygn * DAY);
@@ -192,30 +206,77 @@ export function regulate(s: State, dtSec: number) {
   if (s.klaner?.length && chance(s, KLAN.framling / 86400, dtSec, 'klan')) framling(s);
 }
 // en främling från en grannklan som inte tycker illa om byn (steg 4.4.4.2). Hen kan ofta en teknik som ingen i byn kan, men
-// vars krav byn kan, och tekniken under den. Byn avgör om hen får stanna: ledaren, eller de vuxna om byn saknar ledare. Det
-// väger tekniken, klanens inställning, seden Förnyelse – Tradition, trängseln och maten. Klanen minns hur det gick
+// vars krav byn kan, och tekniken under den. Främlingen kommer gående (steg 9.2.115): hen är en gäst som går in på kartan
+// från närmaste kanten, mot ledaren (eller elden när byn saknar ledare), pratar med hen en stund och stannar som bybo eller
+// går igen (framlingSteg). Byn avgör: ledaren, eller de vuxna om byn saknar ledare. Det väger tekniken, klanens inställning,
+// seden Förnyelse – Tradition, trängseln och maten. Klanen minns hur det gick
 export function framling(s: State, tvinga?: { tek?: string; ja?: boolean }) {
   const kan = klanerOf(s).filter(k => k.inst > KLAN.handelMin);
   if (!kan.length) return undefined;
-  const k = pick(s, kan, 'klan'), folk = living(s), pop = folk.length;
+  const k = pick(s, kan, 'klan'), folk = living(s);
   const kunnat = new Set(folk.flatMap(p => Object.keys(p.tek ?? {}).filter(id => knows(p, id))));
   const nya = TEKNIK.filter(t => !kunnat.has(t.id) && t.krav.every(id => kunnat.has(id)));
   const tek = tvinga ? tvinga.tek : nya.length && rnd(s, 'klan') < KLAN.framlingTek ? pick(s, nya, 'klan').id : undefined;
-  const v = KLAN.taEmot + (tek ? KLAN.taEmotTek : 0) + k.inst / 100 * KLAN.taEmotInst + (s.seder.v.nyfikenhet ?? 0) * KLAN.taEmotSed
-    - Math.min(1, crowd(pop)) * KLAN.taEmotTrang - (1 - matGott(s)) * KLAN.taEmotMat;
-  const ja = tvinga?.ja ?? rnd(s, 'klan') < v;
-  const lid = s.styre?.ledare, l = lid === undefined ? undefined : byId(s, lid), vem = l && alive(l) ? l.name : 'Byn';
-  const sex = rnd(s, 'klan') < 0.5 ? 'm' : 'k', tekNamn = tek ? TEK[tek]?.namn.toLowerCase() : '';
-  if (!ja) {
-    andraInst(k, -KLAN.nejInst); count(s, 'framlingNej');
-    log(s, `En främling från ${k.namn} kom till byn${tek ? ` och kunde ${tekNamn}` : ''}. ${vem} ville inte att ${sex === 'k' ? 'hon' : 'han'} skulle stanna, och ${sex === 'k' ? 'hon' : 'han'} gick vidare.`, 'move');
-    return undefined;
-  }
+  const sex = rnd(s, 'klan') < 0.5 ? 'm' : 'k';
   const age = LIV.nybyggareAlder + rnd(s, 'folk') * LIV.nybyggareAlderSpann, p = newPerson(s, sex, s.now - age * DAY);
   startSkills(s, p, age); startSmak(s, p);
   p.fran = k.id;
   if (tek) { const lar = (id: string) => { if (knows(p, id)) return; (p.tek ??= {})[id] = 1; for (const x of TEK[id]?.krav ?? []) lar(x); }; lar(tek); }
+  // gästen: id som en gäst, och bybons id väntar tills hen får stanna
+  const blir = p.id, ut = kanten(s, p.x, p.y);
+  p.id = nyttGastId(s); p.x = ut.x; p.y = ut.y;
+  p.gast = { sort: 'framling', klan: k.id, hem: k.hem, blir, fas: 'kommer', ...(tek ? { tek } : {}), ...(tvinga?.ja !== undefined ? { ja: tvinga.ja } : {}) };
   s.people.push(p);
+  count(s, 'framlingKommer');
+  log(s, `En främling från ${k.namn} kommer gående mot byn.`, 'move', [p.id]);
+  return p;
+}
+// närmaste kanten som inte är vatten, från (x, y)
+function kanten(s: State, x: number, y: number) {
+  const m = getMap(s.seed);
+  return kanterna(x, y).find(k => m.tiles[Math.floor(k.y) * W + Math.floor(k.x)] !== T.Vatten) ?? kanterna(x, y)[0];
+}
+const ledarenNu = (s: State) => { const lid = s.styre?.ledare, l = lid === undefined ? undefined : byId(s, lid); return l && alive(l) ? l : undefined; };
+// främlingarna går, pratar och går igen (steg.ts, varje slag)
+export function framlingSteg(s: State, dtSec: number) {
+  const t0 = s.now - dtSec * SEC;
+  for (const p of s.people.filter(q => q.gast?.sort === 'framling' && q.died === undefined && q.left === undefined)) {
+    const g = p.gast!;
+    if (g.fas === 'kommer') {
+      const l = ledarenNu(s), mal = l ?? eldPlats(s), kvar = gaMot(s, p, mal.x, mal.y + (l ? 0.8 : 1.2), dtSec, t0);
+      if (kvar < 0) { const f = freeNear(s, mal.x, mal.y + 1.2); p.x = f.x; p.y = f.y; } // ingen väg: hen hittar fram ändå
+      if (kvar <= KLAN.framlingNara) {
+        g.fas = 'pratar'; g.till = s.now + KLAN.framlingPrat * MIN; g.path = undefined; g.pk = undefined;
+        log(s, `${p.name} från ${klanById(s, g.klan)?.namn ?? 'en grannklan'} pratar med ${l ? l.name : 'byn'}.`, 'move', [p.id, ...(l ? [l.id] : [])]);
+        if (l) think(l, 'Pratade med en främling', 0.05, s.now, 6 * HOUR);
+      }
+    } else if (g.fas === 'pratar') {
+      if (s.now >= (g.till ?? 0)) framlingBeslut(s, p);
+    } else if (g.fas === 'gar') {
+      const ut = kanten(s, p.x, p.y), kvar = gaMot(s, p, ut.x, ut.y, dtSec, t0);
+      if (kvar >= 0 && kvar < 0.5 || kvar < 0) gastGar(s, p.id, true);
+    }
+  }
+}
+// samtalet är slut: byn avgör om främlingen får stanna
+export function framlingBeslut(s: State, p: Person) {
+  const g = p.gast!, k = klanById(s, g.klan);
+  if (!k) { g.fas = 'gar'; return undefined; }
+  const pop = living(s).length, tek = g.tek;
+  const v = KLAN.taEmot + (tek ? KLAN.taEmotTek : 0) + k.inst / 100 * KLAN.taEmotInst + (s.seder.v.nyfikenhet ?? 0) * KLAN.taEmotSed
+    - Math.min(1, crowd(pop)) * KLAN.taEmotTrang - (1 - matGott(s)) * KLAN.taEmotMat;
+  const ja = g.ja ?? rnd(s, 'klan') < v;
+  const l = ledarenNu(s), vem = l ? l.name : 'Byn', tekNamn = tek ? TEK[tek]?.namn.toLowerCase() : '';
+  if (!ja) {
+    andraInst(k, -KLAN.nejInst); count(s, 'framlingNej');
+    g.fas = 'gar'; g.path = undefined; g.pk = undefined;
+    log(s, `${p.name} från ${k.namn} kom till byn${tek ? ` och kunde ${tekNamn}` : ''}. ${vem} ville inte att ${honom(p)} skulle stanna, och ${p.sex === 'k' ? 'hon' : 'han'} går vidare.`, 'move', [p.id]);
+    return undefined;
+  }
+  // hen blir bybo: samma person, med bybons id
+  const gid = p.id;
+  p.id = g.blir!; p.gast = undefined; p.task = undefined;
+  for (const q of s.people) if (q.task?.med === gid) q.task.med = p.id;
   upplev(s, p, 'flyttade');
   for (const m in MEDHAVT) put(s, m, MEDHAVT[m], { [p.id]: MEDHAVT[m] });
   andraInst(k, KLAN.stannarInst); count(s, 'framling'); if (tek) count(s, 'framlingTek'); budTillfalle(s, 'framling', p); // främlingen får mat (budet, steg 8.6.6)
@@ -229,6 +290,7 @@ function immigrate(s: State, alone: boolean) {
   const mk = (sex: 'm' | 'k') => {
     const age = LIV.nybyggareAlder + rnd(s, 'folk') * LIV.nybyggareAlderSpann, p = newPerson(s, sex, s.now - age * DAY);
     startSkills(s, p, age); startSmak(s, p);
+    { const k = barSmitta(s); if (k) insjukna(s, p, k, 'utifrån'); } // främlingen kan bära en sjukdom (steg 9.5.5)
     s.people.push(p);
     upplev(s, p, 'flyttade'); // steg 4.1.1.2
     for (const k in MEDHAVT) put(s, k, MEDHAVT[k], { [p.id]: MEDHAVT[k] }); // lite mat från vandringen, så att man hinner samla innan man svälter
@@ -283,4 +345,23 @@ function emigrate(s: State) {
   log(s, `Byn blev trång. ${a.name} och ${b.name} lämnade byn${n ? ` med ${n} barn` : ''} för att grunda en egen boplats.`, 'move', group.map(g => g.id));
   for (const q of living(s)) for (const g of group) { const r = s.rels[relKey(q.id, g.id)]; if (r && r.op > REL.saknar) { think(q, `Saknar ${g.name}`, LIV.saknarFlytt, now, LIV.saknarFlyttDygn * DAY); break; } }
   utbrytning(s, group, pop); // ur en mycket stor by blir de en ny grannklan (steg 4.4.4.1)
+}
+
+// sorgen i stadier (steg 9.2.33): q förlorade p. Först förlusten, och sorgTimme byter till sorgen och saknaden
+function sorj(s: State, q: Person, p: Person, ord: string, v: number, dygn: number) {
+  think(q, `Förlorade ${ord}, ${p.name}`, v * LIV.forlust, s.now, LIV.forlustDygn * DAY);
+  (q.sorg ??= []).push({ namn: p.name, ord, v, dygn, t0: s.now });
+}
+// en gång i timmen (steg.ts): den som sörjer går från förlusten till sorgen och sedan till saknaden
+export function sorgTimme(s: State) {
+  for (const q of living(s)) {
+    if (!q.sorg?.length) continue;
+    for (const g of q.sorg) {
+      const t1 = g.t0 + LIV.forlustDygn * DAY, t2 = t1 + g.dygn * DAY;
+      if (s.now >= t1 && !g.s2) { g.s2 = 1; q.thoughts = q.thoughts.filter(x => x.text !== `Förlorade ${g.ord}, ${g.namn}`); think(q, `Sörjer ${g.namn}`, g.v, s.now, t2 - s.now); }
+      if (s.now >= t2 && !g.s3) { g.s3 = 1; think(q, `Saknar ${g.namn}`, LIV.saknar, s.now, LIV.saknasDygn * DAY); }
+    }
+    q.sorg = q.sorg.filter(g => !g.s3);
+    if (!q.sorg.length) delete q.sorg;
+  }
 }

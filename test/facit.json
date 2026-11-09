@@ -1,53 +1,94 @@
 {
- "1": {
-  "pop": 10,
-  "atergrundad": 0,
-  "invandrade": 1,
-  "utvandrade": 31,
-  "fodda": 57,
-  "doda": 23,
-  "svalt": 0,
-  "kyla": 0,
-  "hunger": 0,
-  "humor": 0.608,
-  "vintermat": 72,
-  "vinterved": 1150,
-  "eld": 95,
-  "kb": 1345,
-  "delKb": 439
- },
- "42": {
-  "pop": 4,
-  "atergrundad": 1,
-  "invandrade": 5,
-  "utvandrade": 17,
-  "fodda": 52,
-  "doda": 49,
-  "svalt": 24,
-  "kyla": 2,
-  "hunger": 74,
-  "humor": 0.621,
-  "vintermat": 182,
-  "vinterved": 229,
-  "eld": 95,
-  "kb": 1284,
-  "delKb": 393
- },
- "777": {
-  "pop": 1,
-  "atergrundad": 12,
-  "invandrade": 17,
-  "utvandrade": 9,
-  "fodda": 41,
-  "doda": 63,
-  "svalt": 34,
-  "kyla": 0,
-  "hunger": 102,
-  "humor": 0.633,
-  "vintermat": 75,
-  "vinterved": 157,
-  "eld": 80,
-  "kb": 1275,
-  "delKb": 378
+ "byar": {
+  "1": {
+   "granser": [
+    0,
+    20,
+    40,
+    90
+   ],
+   "bitMs": [
+    15328,
+    19246,
+    22664
+   ],
+   "n": {
+    "pop": 4,
+    "atergrundad": 3,
+    "invandrade": 13,
+    "utvandrade": 10,
+    "fodda": 18,
+    "doda": 29,
+    "svalt": 7,
+    "kyla": 14,
+    "hunger": 311,
+    "humor": 0.56,
+    "vintermat": 3,
+    "vinterved": 92,
+    "eld": 78,
+    "kb": 2136,
+    "delKb": 288
+   }
+  },
+  "42": {
+   "granser": [
+    0,
+    30,
+    70,
+    90
+   ],
+   "bitMs": [
+    23279,
+    20199,
+    16781
+   ],
+   "n": {
+    "pop": 7,
+    "atergrundad": 6,
+    "invandrade": 13,
+    "utvandrade": 15,
+    "fodda": 21,
+    "doda": 28,
+    "svalt": 6,
+    "kyla": 5,
+    "hunger": 269,
+    "humor": 0.451,
+    "vintermat": 0,
+    "vinterved": 39,
+    "eld": 81,
+    "kb": 2284,
+    "delKb": 295
+   }
+  },
+  "777": {
+   "granser": [
+    0,
+    20,
+    50,
+    90
+   ],
+   "bitMs": [
+    14558,
+    12751,
+    16912
+   ],
+   "n": {
+    "pop": 3,
+    "atergrundad": 8,
+    "invandrade": 20,
+    "utvandrade": 11,
+    "fodda": 16,
+    "doda": 38,
+    "svalt": 15,
+    "kyla": 4,
+    "hunger": 139,
+    "humor": 0.428,
+    "vintermat": 5,
+    "vinterved": 109,
+    "eld": 63,
+    "kb": 2166,
+    "delKb": 294
+   }
+  }
  }
 }

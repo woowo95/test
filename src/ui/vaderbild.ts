@@ -2,7 +2,7 @@ import * as PIXI from 'pixi.js';
 import { lightLevel, vaderNu } from '../sim';
 import { BAYER, DJUPNATT, rasterSteg } from '../palett';
 import { s, ui } from './lage';
-import { app } from './scen';
+import { TS, app, world } from './scen';
 
 // vädret på kartan (steg 2.11.4): molnen gör bilden mörkare, regnet och snön faller, och i åskan blixtrar det ibland.
 // Det ritas ovanpå hela kartan i skärmens punkter (inte världens), så att det ser likadant ut hur långt man än zoomat.
@@ -56,8 +56,38 @@ export function vaderMork(t: number) { const v = vaderNu(s, t); return v.moln * 
 const fast = (i: number, salt: number) => { const x = Math.sin(i * 127.1 + salt * 311.7) * 43758.5453; return x - Math.floor(x); };
 let blixtTill = 0, nastaBlixt = 0;
 
+// blixtens nedslag (steg 9.2.21, platshållare tills Björn valt i bildstilen): en blixt från himlen ner till rutan under
+// NEDSLAG_MS (datorns tid) och ett starkare sken runt nedslaget, när åskan slår ner av sig själv och i testläget
+const NEDSLAG_MS = 450, NEDSLAG_HOJD = 9; // så länge den syns, och så många rutor ovanför rutan den börjar
+const nedslagG = new PIXI.Graphics();
+world.addChild(nedslagG);
+const settNedslag = new Map<string, number>(); // nedslaget och när det syntes första gången (datorns tid)
+function drawNedslag(ms: number) {
+  nedslagG.clear();
+  for (const n of s.nedslag ?? []) {
+    const k = `${n.t}:${n.x}:${n.y}`;
+    if (!settNedslag.has(k)) { if (ui.nu - n.t > 10 * 60_000) continue; settNedslag.set(k, ms); blixtTill = ms + BILD.blixtMs; } // och hela kartan blixtrar
+    const kvar = 1 - (ms - settNedslag.get(k)!) / NEDSLAG_MS;
+    if (kvar <= 0) continue;
+    const x0 = n.x * TS + TS / 2, y1 = n.y * TS + TS / 2, y0 = y1 - NEDSLAG_HOJD * TS;
+    // skenet runt nedslaget: ringar av punkter i senap 3, glesare utåt
+    nedslagG.beginFill(0xd8b25f);
+    for (let r = 1; r <= 3; r++) for (let a = 0; a < 16; a++) if ((a + r) % r === 0) nedslagG.drawRect(Math.round(x0 + Math.cos(a / 16 * Math.PI * 2) * r * 5 * kvar) - 1, Math.round(y1 + Math.sin(a / 16 * Math.PI * 2) * r * 4 * kvar) - 1, 2, 2);
+    nedslagG.endFill();
+    // blixten: en sicksack i ben 3 med kol bredvid, ny form för varje nedslag
+    let x = x0, y = y0;
+    for (let i = 0; y < y1; i++) {
+      const steg = 6 + ((n.t / 60000 + i * 7) % 5), ny = Math.min(y1, y + steg), nx = x0 + Math.round(Math.sin(n.t / 1e5 + i * 1.7) * 6 * (1 - (y - y0) / (y1 - y0)));
+      const l = Math.min(x, nx), b = Math.max(2, Math.abs(nx - x) + 2);
+      nedslagG.beginFill(0x24201d).drawRect(l - 1, y, b + 2, ny - y + 1).endFill();
+      nedslagG.beginFill(0xdad0bb).drawRect(l, y, b, ny - y).endFill();
+      x = nx; y = ny;
+    }
+  }
+}
 export function drawVader(ms: number) {
   vaderG.clear();
+  drawNedslag(ms);
   const v = vaderNu(s, ui.nu), w = app.screen.width, h = app.screen.height;
   // regnet och snön tar sina färger ur samma mörkare steg som kartan (steg 8.1.7), i hela steg
   const steg = Math.round(Math.min(DJUPNATT, DJUPNATT * (1 - lightLevel(ui.nu)))), ton = (hex: string) => parseInt(rasterSteg(hex, steg, 0, 0).slice(1), 16);

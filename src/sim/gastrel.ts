@@ -6,6 +6,7 @@
 // nästa bud blir svårare. Irritationen varar besöket, och en liten del finns kvar när samma handlare kommer igen. Kemin och
 // handlarens egenskaper räknas ur byns frö och gästens nyckel (som livet i gastliv.ts), så att ingen slump dras.
 // Bybons relationsflik visar handlarna under "Utanför byn", och handlarens sida visar byborna (ui/flikar/person.ts)
+import { hp } from './gast';
 import type { Person, Stat, State } from './typer';
 import { balans } from './balans';
 import { count, stat } from './folk';
@@ -37,8 +38,8 @@ export const gastStat = (s: State, nyckel: number, k: Stat) => 4 + Math.floor(ta
 const LIKHET: Stat[] = ['nyfikenhet', 'flit', 'empati', 'mod'];
 
 // personen i grannklanen som är handlaren (där relationerna sparas)
-export const handlarPerson = (s: State, h: Handlare): KlanPerson | undefined => klanById(s, h.klan)?.personer.find(q => q.roll === 'handlare' && q.namn === h.namn);
-export const handlarNyckel = (h: Handlare) => gastNyckel(h.klan, h.namn);
+export const handlarPerson = (s: State, h: Handlare): KlanPerson | undefined => klanById(s, hp(s, h).gast!.klan)?.personer.find(q => q.roll === 'handlare' && q.namn === hp(s, h).name);
+export const handlarNyckel = (s: State, h: Handlare) => gastNyckel(hp(s, h).gast!.klan, hp(s, h).name);
 
 // relationen mellan handlaren och bybon p (skapas första gången, med kemin ur fröet)
 export function gastRel(s: State, h: Handlare, p: Person): GastRel | undefined {
@@ -46,14 +47,14 @@ export function gastRel(s: State, h: Handlare, p: Person): GastRel | undefined {
   if (!kp) return undefined;
   const r = (kp.rel ??= {})[p.id];
   if (r) return r;
-  const nyckel = handlarNyckel(h), g = (tal(s, nyckel, 1000 + p.id) + tal(s, nyckel, 2000 + p.id) + tal(s, nyckel, 3000 + p.id) - 1.5) * 1.2;
+  const nyckel = handlarNyckel(s, h), g = (tal(s, nyckel, 1000 + p.id) + tal(s, nyckel, 2000 + p.id) + tal(s, nyckel, 3000 + p.id) - 1.5) * 1.2;
   return kp.rel[p.id] = { chem: clamp(g, -1, 1), op: 0, irr: 0, n: 0 };
 }
 // hur mycket handlaren gillar bybon, −1 till 1: samtalsdelarna (som vänskapen i ett samtal), relationen och irritationen
 export function gillar(s: State, h: Handlare, p: Person) {
   const r = gastRel(s, h, p);
   if (!r) return 0;
-  const nyckel = handlarNyckel(h), now = s.now;
+  const nyckel = handlarNyckel(s, h), now = s.now;
   let d = 0;
   for (const k of LIKHET) d += Math.abs(gastStat(s, nyckel, k) - p.pot[k]);
   const likhet = 1 - d / 40, charm = (stat(p, 'karisma', now) + stat(p, 'skonhet', now)) / 2;

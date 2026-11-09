@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { BJORK, BRAND, busksort, FYND, fyndAt, DAY, H, HOUR, STADIER, T, VAG, W, tradArt, valjArt, ageIndex, stadium, emberOn, fireHeat, eldXY, eldarOf, groundOf, isCm, kalender, lightLevel, snoPaMarken, vaderNu, LJUSKALLOR } from '../sim';
+import { sakerPaMarken, BJORK, BRAND, busksort, DAY, H, HOUR, STADIER, T, VAG, W, tradArt, valjArt, ageIndex, stadium, emberOn, fireHeat, eldXY, eldarOf, groundOf, isCm, kalender, lightLevel, snoPaMarken, vaderNu, LJUSKALLOR, living } from '../sim';
 import { s, ui } from './lage';
 import { TS, app, figurLayer, husLayer, mork, pileLayer, terrainG, world } from './scen';
 import { ritaSkuggor, sattMoln, skuggLangd } from './skugga';
@@ -39,7 +39,7 @@ export const OMRITA_MS = 1000;
 // trädets stadium och storlek i steg: 0 = inget träd, plantan och ungträdet i fyra steg var, sedan vuxet, gammalt och torraka
 const STAD = Object.fromEntries(STADIER.map((d, k) => [d.id, k]));
 // bärbusken har mogna bär att plocka just nu (steg 6.5.4): då ritas bären på busken
-const mognaBar = (i: number) => fyndAt(s, 'bar', i) >= FYND.bar.topp * 0.15;
+const mognaBar = (i: number) => (sakerPaMarken(s, 'samla', i % W, Math.floor(i / W)).find(q => q.k === 'bar')?.n ?? 0) > 0; // bär som går att plocka (steg 9.2.53)
 function treeLevel(g: ReturnType<typeof groundOf>, i: number) {
   const st = stadium(g, i);
   return st === null ? (busksort(g, i) ? 20 + (mognaBar(i) ? 1 : 0) : 0) : st === 'planta' || st === 'ungtrad' ? 1 + STAD[st] * 4 + Math.floor(g.trees[i] * 4) : 9 + STAD[st];
@@ -85,6 +85,7 @@ function ritaTrad(g: ReturnType<typeof groundOf>, sno: number) {
     const x = i % W, y = (i / W) | 0;
     return skog(x - 1, y) || skog(x + 1, y) || skog(x, y - 1) || skog(x, y + 1);
   };
+  const kol = new Set(s.kolnad ?? []); // de kolnade stammarna (steg 9.2.26)
   stallTrad(figurLayer, W, H, i => {
     const x = i % W, y = (i / W) | 0, st = jord(g.tiles[i]) ? stadium(g, i) : null;
     const b = st ? tradBild(st, g.trees[i], x, y, VAG.ungskog, tradArt(g, i).id === 'bjork')
@@ -92,6 +93,7 @@ function ritaTrad(g: ReturnType<typeof groundOf>, sno: number) {
       // ett ungt träd i skogskanten, med den sort som skulle slå rot där (steg 5.1.6)
       : kant(i) && kantHash(x, y) < 0.3 ? tradBild('ungtrad', VAG.ungskog + (1 - VAG.ungskog) * kantHash(y, x) * 0.7, x, y, VAG.ungskog, valjArt(s.seed, g, i, true) === BJORK) : null;
     if (b?.bjork) b.lov = lovAt(x, y);
+    if (b && st === 'torraka' && kol.has(i)) b.kol = true;
     return b;
   }, sno);
 }
@@ -104,7 +106,7 @@ function kantHash(x: number, y: number) {
 // (steg 5.1.1.4, 5.1.7.2): paletten ett steg mörkare i skymningen och tre mitt i natten, med raster, och ljuset runt varje eld (ui/natt.ts)
 // Molnen och regnet gör också bilden mörkare på samma sätt, en del av ett steg (vaderMork i ui/vaderbild.ts, steg 5.5.1)
 // eldens ljus når så många rutor när den brinner för fullt (steg 6.8.15); glöden och en svag eld lyser mindre, i samma förhållande
-const ELD_LJUS = 14;
+const ELD_LJUS = 14, FOLK_LJUS = 1.5; // ... och ljuset kring en människa så många rutor (steg 9.2.69)
 export function drawNight(t: number) {
   const m = DJUPNATT * (1 - lightLevel(t)) + vaderMork(t), eldar: { x: number; y: number; r: number; k: number }[] = [];
   if (m > 0) for (const e of eldarOf(s)) { // varje lägereld lyser (steg 4.5.6.8)
@@ -115,7 +117,9 @@ export function drawNight(t: number) {
   }
   // facklorna och de andra ljuskällorna (steg 6.3.6–6.3.8, LJUSKALLOR i sim/ljus.ts); elden har sitt sken ovan
   if (m > 0) for (const [n, k] of Object.entries(LJUSKALLOR)) if (n !== 'eld') for (const l of k.kallor(s)) eldar.push({ x: l.x * TS, y: l.y * TS, r: TS * l.r, k: 0.8 });
-  stallNatt(mork, world, Math.min(DJUPNATT, m), eldar);
+  // ljuset kring människorna (steg 9.2.69): bara i bilden; den som bär en fackla har facklans ljus
+  const folk = m > 0 ? living(s).filter(p => !eldar.some(e => e.k > 0 && Math.hypot(e.x - p.x * TS, e.y - p.y * TS) < TS)).map(p => ({ x: p.x * TS, y: p.y * TS - TS * 0.4, r: TS * FOLK_LJUS })) : [];
+  stallNatt(mork, world, Math.min(DJUPNATT, m), eldar, folk);
 }
 // skuggorna på marken och golven (steg 5.1.8, ui/skugga.ts): träden, folket, djuren, stationerna, sakerna och väggarna.
 // Efter att allt annat ställts på plats i bildrutan

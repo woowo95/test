@@ -1,5 +1,5 @@
 import { LAGER, condOf, lagerHinder, living, sakNamn, zonesOf } from '../../sim';
-import { carryTxt, esc, hallCirkel, hjalpKnapp, hjalpText, pLink, pileTxt } from '../hjalp';
+import { carryTxt, esc, hallCirkel, hjalpKnapp, hjalpText, kvOrdning, kvRubrik, pLink, pileTxt } from '../hjalp';
 import { outPilesAt, piles, s, ui, uppgiftVid } from '../lage';
 import type { Flik } from '../panel';
 import { frystAttr, sakAttr } from './sak';
@@ -18,7 +18,7 @@ export const lager: Flik = {
   },
   html() {
     const zs = zonesOf(s), z = zs[Math.min(ui.lagerNr, zs.length - 1)], zi = zs.indexOf(z);
-    const ps = piles().filter(p => p.zone === zi).sort((a, b) => sakNamn(a.k).localeCompare(sakNamn(b.k), 'sv') || b.n - a.n || condOf(b) - condOf(a));
+    const ps = piles().filter(p => p.zone === zi).sort((a, b) => kvOrdning(a, b) || sakNamn(a.k).localeCompare(sakNamn(b.k), 'sv') || b.n - a.n || condOf(b) - condOf(a));
     const barare = living(s).filter(p => (t => t && (t.carry > 0 || t.items))(uppgiftVid(p)));
     // turordningen: byn lägger saker i lagerplatsen med högst prio först (lager.ts)
     const nr = zs.map((q, i) => ({ q, i })).sort((a, b) => (b.q.prio ?? 0) - (a.q.prio ?? 0)).findIndex(x => x.i === zi) + 1;
@@ -27,7 +27,7 @@ export const lager: Flik = {
     return `
     <div class="phead"><div><h2>${esc(z.namn ?? 'Lagret')}</h2></div>${hjalpKnapp('lager', 'Hur fungerar lagret?')}</div>
     ${hjalpText('lager', `<p class="muted small">${what}${vaxer}${zs.length > 1 ? ` Byn lägger saker här som nummer ${nr} av ${zs.length} lagerplatser.` : ''}</p>`)}
-    <h3>Stackar</h3>${ps.length ? `<dl class="kv stk">${ps.map(p => `<dt class="tryck${frystAttr(p.k)}" ${sakAttr(p)}>${pileTxt(p)}</dt><dd>${hallCirkel(condOf(p))}</dd>`).join('')}</dl>` : '<p class="muted">Lagret är tomt.</p>'}
+    ${kvRubrik('Stackar')}${ps.length ? `<dl class="kv stk">${ps.map(p => `<dt class="tryck${frystAttr(p.k)}" ${sakAttr(p)}>${pileTxt(p)}</dt><dd>${hallCirkel(condOf(p))}</dd>`).join('')}</dl>` : '<p class="muted">Lagret är tomt.</p>'}
     <h3>På väg med saker</h3>${barare.length ? `<ul class="rels">${barare.map(p => `<li>${pLink(p)}<span></span><span></span><span class="muted">${esc(carryTxt(p))}</span></li>`).join('')}</ul>` : '<p class="muted">Ingen bär något just nu.</p>'}
     ${ui.testMode ? `<h3>Testläget</h3><p><button type="button" class="ghost" data-test="lagerbort" title="Ta bort" aria-label="Ta bort"${lagerHinder(s) ? ' disabled' : ''}>🗑️</button>${lagerHinder(s) ? ` <span class="muted">${esc(lagerHinder(s)!)}.</span>` : ' <span class="muted">Det som ligger här blir kvar på marken.</span>'}</p>` : ''}`;
   },
@@ -44,7 +44,7 @@ export const hog: Flik = {
     return `
     <div class="phead"><div><h2>${mark ? 'På marken' : 'Bredvid lagret'}</h2></div>${hjalpKnapp('hog', 'Varför ligger det här?')}</div>
     ${hjalpText('hog', `<p class="muted small">${mark ? 'Lades ner av någon som kallades bort till något annat.' : 'Fick inte plats i lagret.'} Slits ${LAGER.ute} gånger fortare än i lagret.</p>`)}
-    <dl class="kv">${ps.map(p => `<dt class="tryck${frystAttr(p.k)}" ${sakAttr(p)}>${pileTxt(p)}</dt><dd>${hallCirkel(condOf(p))}</dd>`).join('')}</dl>
+    <dl class="kv stk">${ps.map(p => `<dt class="tryck${frystAttr(p.k)}" ${sakAttr(p)}>${pileTxt(p)}</dt><dd>${hallCirkel(condOf(p))}</dd>`).join('')}</dl>
     ${who.length ? `<p class="muted">${who.map(p => pLink(p)).join(', ')} är på väg för att bära in det.</p>` : ''}`;
   },
 };

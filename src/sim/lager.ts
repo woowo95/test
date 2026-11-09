@@ -384,6 +384,9 @@ const key = (x: number, y: number) => y * W + x;
 // där och räknas inte till det som ligger i förrådet eller på marken
 const ligger = (t: Ting) => t.x !== undefined && t.hos === undefined && t.lass === undefined && t.vid === undefined && t.bar === undefined && t.krok === undefined;
 const lying = (s: State) => tingOf(s).filter(ligger);
+// står redskapet på en ruta, också ett som hör till en station (lyran vid scenen): då lägger ingen något annat där. Ett hus
+// som blir förrådshus gör rutan till förråd, med det som redan står där (steg 9.1)
+const paRutan = (t: Ting) => t.x !== undefined && t.hos === undefined && t.lass === undefined && t.bar === undefined && t.krok === undefined;
 // det som ligger i förrådet, per ruta: stackarna och sedan redskapen ts (det sista på en ruta gäller, som i things), och hur
 // många redskap som ligger på varje ruta (i ett ställ står flera, steg 2.3.6)
 type Occ = Map<number, Stack> & { redskap: Map<number, number> };
@@ -391,14 +394,14 @@ function occupancy(s: State, ts = tingOf(s)) {
   const m = new Map<number, Stack>() as Occ;
   m.redskap = new Map();
   for (const a of stacksOf(s)) if (isStored(s, a.x, a.y)) m.set(key(a.x, a.y), a);
-  for (const t of ts) if (ligger(t) && isStored(s, t.x!, t.y!)) { const i = key(t.x!, t.y!); m.set(i, asStack(t)); m.redskap.set(i, (m.redskap.get(i) ?? 0) + 1); }
+  for (const t of ts) if (paRutan(t) && isStored(s, t.x!, t.y!)) { const i = key(t.x!, t.y!); m.set(i, asStack(t)); m.redskap.set(i, (m.redskap.get(i) ?? 0) + 1); }
   return m;
 }
 const asStack = (t: Ting): Stack => ({ k: t.k, n: t.c, c: t.c, x: t.x!, y: t.y!, ag: t.agare !== BYN ? { [t.agare]: t.c } : undefined, gor: t.halv?.gor, klar: t.halv && halvKlar(t.halv), id: t.id, q: t.q });
 // allt som ligger på marken och i förrådet: stackarna och redskapen
 const things = (s: State): Stack[] => [...stacksOf(s), ...lying(s).map(asStack)];
 // ligger något på rutan (x, y), en stack eller ett redskap? (tornadon sprider saker bara till tomma rutor)
-export const nagotPa = (s: State, x: number, y: number) => things(s).some(a => a.x === x && a.y === y);
+export const nagotPa = (s: State, x: number, y: number) => things(s).some(a => a.x === x && a.y === y) || tingOf(s).some(t => paRutan(t) && t.x === x && t.y === y); // också det som hör till en station (bensylen vid bänken)
 // redskap som ingen har och som inte har någon ruta (nygjorda, tillbakalagda) läggs i förrådet, ett på varje ruta
 const utanRuta = (t: Ting) => t.hos === undefined && t.lass === undefined && t.x === undefined && t.bar === undefined && t.krok === undefined;
 function placeOn(s: State, ts: Ting[]) {
@@ -804,6 +807,7 @@ export const storeFull = (s: State) => vanliga(s) >= LAGER.forradFran && overflo
 // förrådet och redskapen får en plats av placeTools i slutet av steget
 export function enPerRuta(s: State) {
   const st = stacksOf(s), forst = new Set<number>(), flytt: Stack[] = [];
+  for (const t of tingOf(s)) if (t.vid !== undefined && paRutan(t) && isStored(s, t.x!, t.y!)) forst.add(key(t.x!, t.y!)); // det som hör till en station (lyran och trumman vid scenen) står kvar
   for (const a of st) if (isStored(s, a.x, a.y)) { const i = key(a.x, a.y); if (forst.has(i)) flytt.push(a); else forst.add(i); }
   for (const t of lying(s)) {
     if (!isStored(s, t.x!, t.y!) || forvarAt(s, t.x!, t.y!)?.redskap) continue; // i ett ställ står flera redskap
@@ -856,7 +860,7 @@ export function flyttaLager(s: State, z: Zone) {
   const zs = zonesOf(s), andra = zs.filter(q => q !== z), f = eldPlats(s), g = groundOf(s), kand: { c: Zone; d: number }[] = [], o = omrade(s), r = Math.ceil(LAGER.nyLagerMax + OMRADE.kant) + Math.max(z.w, z.h) + 1;
   for (let y = Math.max(0, o.y0 - r); y < Math.min(H - z.h, o.y1 + r + 1); y++) for (let x = Math.max(0, o.x0 - r); x < Math.min(W - z.w, o.x1 + r + 1); x++) {
     const c: Zone = { ...z, x, y, tom: undefined, rojs: undefined }, df = Math.hypot(x + z.w / 2 - f.x, y + z.h / 2 - f.y);
-    if (df < LAGER.nyEldMin || utanforByn(s, x + (z.w - 1) / 2, y + (z.h - 1) / 2) > LAGER.nyLagerMax || !allUsable(s, c) || strakI(s, x, y, z.w, z.h) || andra.some(q => overlaps(c, q, LAGER.mellan))) continue;
+    if (df < LAGER.nyEldMin || utanforByn(s, x + (z.w - 1) / 2, y + (z.h - 1) / 2) > LAGER.nyLagerMax || !allUsable(s, c) || strakI(s, x, y, z.w, z.h) || overlaps(c, z, 0) || andra.some(q => overlaps(c, q, LAGER.mellan))) continue; // aldrig där den låg: där ska något byggas
     const skog = skogI(s, c);
     if (skog < Infinity) kand.push({ c, d: Math.hypot(x - z.x, y - z.y) + skog * LAGER.skogKost });
   }
@@ -934,6 +938,7 @@ export function bordSlag(t: Task): Record<string, number> {
   const r: Record<string, number> = {};
   if (t.carry > 0) r[carryKind(t.act)] = t.carry * viktOf(carryKind(t.act));
   for (const k in t.items ?? {}) if (t.items![k] > 0) r[k] = (r[k] ?? 0) + t.items![k] * viktOf(k);
+  for (const k in t.hamtat ?? {}) if (t.hamtat![k] > 0) r[k] = (r[k] ?? 0) + t.hamtat![k] * viktOf(k); // materialet till ett hantverk (steg 9.2.43)
   return r;
 }
 // hur tung bördan är, i vikt (steg 6.1.8). Redskapen i bördan väger det de väger

@@ -1,7 +1,7 @@
 import { eldPlats } from './karta';
 import { freeNear } from './byggnad';
 import { Strom, clamp, gauss, pick, rnd } from './slump';
-import { Act, DAY, HOUR, LogEntry, Person, Rel, SKILLS, STATS, Skill, Stat, State } from './typer';
+import { Act, DAY, HOUR, LogEntry, Person, Rel, SKILLS, STATS, Skill, Stat, State, Task } from './typer';
 import { balans } from './balans';
 import { nyAndlighet } from './religion';
 import { hourOf } from './tid';
@@ -185,7 +185,7 @@ export function makeName(s: State, sex: 'm' | 'k', strom: Strom = 'folk', forald
 }
 
 // ---------- personer ----------
-export const alive = (p: Person) => p.died === undefined && p.left === undefined;
+export const alive = (p: Person) => p.died === undefined && p.left === undefined && !p.gast; // bara byborna: en gäst lever i gast.ts (steg 9.2.111)
 // personens statistik över livet (steg 3.9.8): räknas när det händer. Med en episod räknas samma slag bara en gång
 // per dygn (en svältperiod, en strid med flera bett). Drar ingen slump
 export function livet(s: State, p: Person, k: string, episod = false) {
@@ -196,7 +196,7 @@ export function livet(s: State, p: Person, k: string, episod = false) {
 export const ageOf = (p: Person, now: number) => ((p.died ?? p.left ?? now) - p.born) / DAY;
 export function living(s: State) { return s.people.filter(alive); }
 // sjuk just nu (sickUntil är aldrig 0 eller NaN i spelet; då ger uttrycket ändå samma svar som !!sickUntil &&)
-export const isSick = (p: Person, now: number) => p.sickUntil !== undefined && p.sickUntil > now;
+export { isSick } from './sjukdom'; // sjukdomarna (steg 9.5.1, sjukdom.ts); den gamla klockan sickUntil räknas tills den gått ut
 export function byId(s: State, id?: number) { return id === undefined ? undefined : s.people.find(p => p.id === id); }
 // gör någon levande (utom `utom`) handlingen act just nu? (drar ingen slump)
 export function doingAct(s: State, act: Act, utom?: Person) {
@@ -222,7 +222,7 @@ export const franMitt = (p: Person, k: Stat, now: number) => (stat(p, k, now) - 
 // färdigheterna en nykomling har efter sin ålder (en dragning ur 'folk' per färdighet, i SKILLS ordning). Matlagningen
 // (steg 2.8.1) börjar av samlingen, utan en egen dragning (steg 3.10.8: eldkonsten är ingen färdighet längre)
 export function startSkills(s: State, p: Person, age: number) {
-  for (const k of SKILLS) if (k !== 'matlagning' && k !== 'narstrid' && k !== 'traff' && k !== 'skaldskap' && k !== 'handel') p.skill[k] = clamp((age - ALDER.skickFran) * 0.25 * (0.4 + rnd(s, 'folk')) * (p.pot.intelligens / 12), 0, 12);
+  for (const k of SKILLS) if (k !== 'matlagning' && k !== 'narstrid' && k !== 'traff' && k !== 'skaldskap' && k !== 'handel' && k !== 'lakekonst') p.skill[k] = clamp((age - ALDER.skickFran) * 0.25 * (0.4 + rnd(s, 'folk')) * (p.pot.intelligens / 12), 0, 12);
   p.skill.matlagning = p.skill.samla;
   p.skill.skaldskap = p.skill.berattande * SKALD_START; // skaldskapen (steg 4.3.2.5) börjar av berättandet, utan en egen dragning
   p.skill.handel = handelStart(p); // handeln (steg 4.4.1.4) börjar av berättandet och hantverket, utan en egen dragning
@@ -418,3 +418,6 @@ export function think(p: Person, text: string, v: number, now: number, dur: numb
   p.thoughts = p.thoughts.filter(t => t.text !== text);
   p.thoughts.push({ text, v, until: now + dur });
 }
+
+// den som ska sova ligger först när hen är framme vid bädden eller platsen; på vägen dit går hen upprätt (steg 9.2.89)
+export const soverNu = (p: Person, tk: Task) => tk.act === 'sova' && tk.phase !== 'go' && Math.hypot(p.x - tk.tx, p.y - tk.ty) < 0.6;

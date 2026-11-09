@@ -1,11 +1,12 @@
+import { fritidLista } from './fram';
 import { PYNT } from '../../sim/pynt';
 import { kvOf } from '../../sim/kvalitet';
-import { flyttaStation, sakBerattelse, ACTS, DJURARTER, STATION, bordPlatser, pilesOf, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, actIkon, verbOf, stationById, stationDef, stationKlar, tillbehorDef, tingOf, timeLabel, FLACKAR, condOf, smutsVid, blodVid, storlekAv, TORK, torrDel } from '../../sim';
+import { delarAv, flyttaDel, helStation, flyttaStation, sakBerattelse, ACTS, DJURARTER, STATION, bordPlatser, pilesOf, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, actIkon, verbOf, stationById, stationDef, stationKlar, tillbehorDef, tingOf, timeLabel, FLACKAR, condOf, smutsVid, blodVid, storlekAv, TORK, torrDel } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { frystAttr, sakAttr } from './sak';
 import { iBruk } from '../ibruk';
 import { taBortITest } from '../testborta';
-import { condBar, durTxt, esc, fmtN, kvMark, kvText, pLink, pileTxt } from '../hjalp';
+import { condBar, durTxt, esc, fmtN, kvMark, kvOrdning, kvText, pLink, pileTxt } from '../hjalp';
 import { s, ui } from '../lage';
 import type { Flik } from '../panel';
 
@@ -24,21 +25,37 @@ function testRad(id: number) {
   if (!ui.testMode) return '';
   const val = ui.flytta === id;
   return `<h3>Testläget</h3><p><button type="button" class="ghost" data-test="flytta" aria-pressed="${val}" ${tip('Flytta: tryck sedan på rutan på kartan där hörnet uppe till vänster ska stå')}>✥</button> <button type="button" class="ghost" data-test="bort" ${tip('Ta bort')}>🗑️</button>`
-    + `${val ? ' <span class="muted">Tryck på kartan där den ska stå.</span>' : ui.flyttFel ? ' <span class="muted">Den fick inte plats där.</span>' : ''}</p>`;
+    + `${val ? ' <span class="muted">Tryck på kartan där den ska stå.</span>' : ui.flyttFel ? ' <span class="muted">Den fick inte plats där.</span>' : ''}</p>`
+    + delRader(id);
+}
+// en station med delar (steg 9.4.2): varje del flyttas och vrids för sig
+function delRader(id: number) {
+  const st = stationById(s, id);
+  if (!st?.delar?.length) return '';
+  return `<p class="muted small">${helStation(s, st) ? 'Hel: alla delar står i samma rum.' : 'Inte hel: delarna står i olika rum, och ingen kan arbeta vid den.'}</p><ul class="rels">${delarAv(st).map(q => `<li>${esc(q.del?.namn ?? '')}<span></span><span><button type="button" class="ghost" data-del="${q.i}" data-delgor="flytta" aria-pressed="${ui.flytta === id && ui.flyttaDel === q.i}" ${tip('Flytta delen: tryck sedan på kartan')}>✥</button> <button type="button" class="ghost" data-del="${q.i}" data-delgor="vrid" ${tip('Vrid delen ett kvarts varv')}>⟳</button></span></li>`).join('')}</ul>`;
 }
 // den markerade stationen flyttas hit (trycket på kartan i testläget). false = den fick inte plats
 export function flyttaHit(x: number, y: number) {
   const st = stationById(s, ui.flytta);
-  ui.flytta = -1;
-  ui.flyttFel = !!st && !flyttaStation(s, st, x, y);
+  const del = ui.flyttaDel;
+  ui.flytta = -1; ui.flyttaDel = -1;
+  ui.flyttFel = !!st && !(del >= 0 ? flyttaDel(s, st, del, x, y) : flyttaStation(s, st, x, y));
 }
 export const station: Flik = {
   namn: 'Stationen',
   knapp: 'person',
   klick(el) {
+    const d = el.closest<HTMLElement>('[data-delgor]'), sd = d && ui.testMode ? stationById(s, ui.stationId) : undefined;
+    if (d && sd) { // en del (steg 9.4.2): vrid den där den står, eller välj den och tryck sedan på kartan
+      const i = Number(d.dataset.del), q = delarAv(sd)[i];
+      ui.flyttFel = false;
+      if (d.dataset.delgor === 'vrid') ui.flyttFel = !flyttaDel(s, sd, i, q.x, q.y, true);
+      else { const val = ui.flytta === sd.id && ui.flyttaDel === i; ui.flytta = val ? -1 : sd.id; ui.flyttaDel = val ? -1 : i; }
+      return true;
+    }
     const b = el.closest<HTMLElement>('[data-test="flytta"],[data-test="bort"]'), st = b && ui.testMode ? stationById(s, ui.stationId) : undefined;
     if (!b || !st) return false;
-    ui.flyttFel = false;
+    ui.flyttFel = false; ui.flyttaDel = -1;
     if (b.dataset.test === 'bort') { taBortITest(s, st); ui.flytta = -1; } else ui.flytta = ui.flytta === st.id ? -1 : st.id;
     return true;
   },
@@ -72,8 +89,8 @@ export const station: Flik = {
     // innehållet visas som i ett lager (steg 4.5.7.9); det som någon tagit ur kistan står inte där förrän det läggs tillbaka (steg 6.8.11): samma lista med symbol, antal, kvalitet och skick
     const rad = (attr: string, txt: string, c: number, k: string) => `<dt class="tryck${frystAttr(k)}" ${attr}>${txt}</dt><dd>${condBar(c)}<span>${Math.round(c * 100)} %</span></dd>`;
     const inne = (st.ag !== undefined
-      ? tingOf(s).filter(k => k.vid === st.id && k.hos === undefined && k.lass === undefined && k.bar === undefined).map(k => rad(`data-sak="t:${k.id}"`, pileTxt({ k: k.k, n: 1, max: 1, q: k.q }), k.c, k.k))
-      : [...har].sort((a, b) => sakNamn(a.k).localeCompare(sakNamn(b.k), 'sv') || b.n - a.n || condOf(b) - condOf(a)).map(a => rad(sakAttr(a), pileTxt(a), condOf(a), a.k))).join('');
+      ? tingOf(s).filter(k => k.vid === st.id && k.hos === undefined && k.lass === undefined && k.bar === undefined).sort(kvOrdning).map(k => rad(`data-sak="t:${k.id}"`, pileTxt({ k: k.k, n: 1, max: 1, q: k.q }), k.c, k.k))
+      : [...har].sort((a, b) => kvOrdning(a, b) || sakNamn(a.k).localeCompare(sakNamn(b.k), 'sv') || b.n - a.n || condOf(b) - condOf(a)).map(a => rad(sakAttr(a), pileTxt(a), condOf(a), a.k))).join('');
     // smutsen (steg 2.7.1): blodet vid slaktbänken, som bleknar på ett par dygn. Bara utseende
     const { w: bw, h: bh } = storlekAv(st), bv = blodVid(s, st, bw, bh);
     const smuts = (bv > 0 ? `<span ${tip(`Blod runt omkring, ${Math.round(bv * 100)} % färskt. Det bleknar bort på ett par dygn`)}>🩸 ${Math.round(bv * 100)} %</span> ` : '') + Object.entries(smutsVid(s, st)).filter(([, v]) => v > 0).map(([k, v]) => { const fd = (FLACKAR as Record<string, { namn: string; bleknar: number }>)[k]; return fd ? `<span ${tip(`${fd.namn} runt omkring, ${Math.round(v * 100)} %. Det bleknar bort på ${Math.round(fd.bleknar / 24)} dygn`)}>· ${Math.round(v * 100)} %</span>` : ''; }).join(' ');
@@ -92,6 +109,7 @@ export const station: Flik = {
     return `
     <div class="phead"><div><h2>${iconImg(d.ikon, 20)} ${st.ber?.namn ? `★ ${esc(st.ber.namn)}: ` : ''}${esc(d.namn)}</h2><p class="muted">${status}${st.q !== undefined ? ` ${kvMark(st, 12)} ${esc(kvText(st))}.` : ''} ${st.inne ? 'Står inne.' : d.inne ? 'Står ute, men bärs in när ett hus har plats.' : 'Står ute.'}</p>${st.ber ? `<p class="besk">${esc(sakBerattelse(s, st, d.namn))}</p>` : ''}${smuts ? `<p>${smuts}</p>` : ''}${fyllt}${d.pynt && klar ? `<p ${tip(`Pynt: ägaren trivs i rummet med det (humör +${Math.round(PYNT.glad[kvOf(st)] * 100)} %), och de som ser det där tycker bättre om hen. Ju finare det är, desto mer`)}>😊 +${Math.round(PYNT.glad[kvOf(st)] * 100)} % 🏺</p>` : ''}${agare ? `<p>Ägs av ${pLink(agare)}.</p>` : ''}${vem.length ? `<p class="muted">Byggd av ${vem.map(p => pLink(p)).join(', ')}.</p>` : ''}</div></div>
     ${bruk}
+    ${st.k === 'scen' && fritidLista({ scen: st.id }) ? `<h3>Framträdanden här</h3>${fritidLista({ scen: st.id, antal: 10 })}` : ''}
     ${d.gor.length ? `<h3>Här görs</h3><dl class="kv">${d.gor.map(a => gorRad(a, !!d.bara?.includes(a))).join('')}</dl>` : ''}
     ${d.sover ? `<h3>Sovplats</h3><p class="muted">En sovplats. Den som sover här vilar upp sig fortare.</p>` : ''}
     ${d.platser ? `<h3>Platser</h3><p ${tip('Här äter man tillsammans och blir glad av det, och här samtalar man')}>${stubbar || `<span class="muted">${bordPlatser(st).length} stubbar när bordet är klart</span>`}</p>` : ''}

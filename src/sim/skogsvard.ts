@@ -2,7 +2,7 @@ import { HOUR, H, Person, State, Task, W } from './typer';
 import { balans } from './balans';
 import { groundOf, skuggad } from './mark';
 import { FOREST, HIGH, isSoil } from './vag';
-import { SKOG, fallTid, nyStubbe, skaRojas, stamAv, stocks } from './skog';
+import { SKOG, fallTid, iFallRadien, nyStubbe, skaRojas, stamAv, stocks } from './skog';
 import { hash } from './karta';
 import { vaderNu } from './vader';
 import { tornadoNu } from './tornado';
@@ -32,7 +32,8 @@ export const SKOGSVARD = balans('skogsvard', {
 // avståndet utanför byn till det närmaste träd som kan fällas (som treeSpot i skog.ts letar), Infinity om inget finns
 export function narmasteFall(s: State) {
   const g = groundOf(s), f = bynsMitt(s); let bd = Infinity;
-  for (let y = Math.max(0, f.y - SKOG.sokY); y < Math.min(H, f.y + SKOG.sokY + 1); y++) for (let x = Math.max(0, f.x - SKOG.sokX); x < Math.min(W, f.x + SKOG.sokX + 1); x++) {
+  for (let y = Math.max(0, f.y - SKOG.sokR); y < Math.min(H, f.y + SKOG.sokR + 1); y++) for (let x = Math.max(0, f.x - SKOG.sokR); x < Math.min(W, f.x + SKOG.sokR + 1); x++) {
+    if (!iFallRadien(f, x, y)) continue;
     if (g.trees[y * W + x] < SKOG.tradMin) continue;
     const d = utanforByn(s, x, y); if (d < bd) bd = d;
   }
@@ -52,7 +53,8 @@ function upptagna(s: State, utom?: Person) {
 // plantan att gräva upp: den skuggade närmast byn, annars en planta långt från byn (utanför där plantorna sätts)
 export function plantaKalla(s: State, p?: Person) {
   const g = groundOf(s), f = bynsMitt(s), tagen = upptagna(s, p); let best = -1, bd = Infinity;
-  for (let y = Math.max(0, f.y - SKOG.sokY); y < Math.min(H, f.y + SKOG.sokY + 1); y++) for (let x = Math.max(0, f.x - SKOG.sokX); x < Math.min(W, f.x + SKOG.sokX + 1); x++) {
+  for (let y = Math.max(0, f.y - SKOG.sokR); y < Math.min(H, f.y + SKOG.sokR + 1); y++) for (let x = Math.max(0, f.x - SKOG.sokR); x < Math.min(W, f.x + SKOG.sokR + 1); x++) {
+    if (!iFallRadien(f, x, y)) continue;
     const i = y * W + x;
     if (!planta(g.trees[i]) || tagen.has(i)) continue;
     const d = utanforByn(s, x, y), sk = skuggad(g, i);

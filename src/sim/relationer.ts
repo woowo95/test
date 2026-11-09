@@ -1,4 +1,5 @@
 import { honom } from './ord';
+import { personHand, personNara } from './personlogg';
 import { upplev } from './uppvaxt';
 import { ALDER, REL, ageOf, count, getRel, isParent, living, log, relKey, think } from './folk';
 import { DAY, Person, Rel, SKILLS, Skill, State } from './typer';
@@ -62,7 +63,7 @@ export const RELATIONER: Record<string, RelTyp> = {
   fiende: { namn: 'Ovän', ikon: 'r_fiende', har: (_s, p, q, r) => r.op < REL.ovan && p.arke !== q.id, varfor: () => 'Ovänner: de undviker att arbeta och sitta nära varandra och grälar när de möts.' },
   arke: { namn: 'Ärkefiende', ikon: 'r_arke', har: (_s, p, q) => p.arke === q.id, varfor: (_s, p, q) => `Den ${p.name} hatar mest. De grälar nästan varje gång de möts, ${p.name} ger ${q.name} aldrig något och tar hellre av ${honom(q)}.` },
 };
-export const SKILL_ORD: Record<Skill, string> = { samla: 'samlande', jakt: 'jakt', fiske: 'fiske', ved: 'vedhuggning', hantverk: 'hantverk', berattande: 'berättande', matlagning: 'matlagning', narstrid: 'närstrid', traff: 'träffsäkerhet', skaldskap: 'skaldskap', handel: 'handel' };
+export const SKILL_ORD: Record<Skill, string> = { samla: 'samlande', jakt: 'jakt', fiske: 'fiske', ved: 'vedhuggning', hantverk: 'hantverk', berattande: 'berättande', matlagning: 'matlagning', narstrid: 'närstrid', traff: 'träffsäkerhet', skaldskap: 'skaldskap', handel: 'handel', lakekonst: 'läkekonst' };
 const skillNamn = (k?: Skill) => k ? SKILL_ORD[k] : 'något';
 // relationstyperna mellan p och q, i registrets ordning
 export const relTyper = (s: State, p: Person, q: Person) => { const r = s.rels[relKey(p.id, q.id)]; return r ? Object.entries(RELATIONER).filter(([, t]) => t.har(s, p, q, r)).map(([id, t]) => ({ id, ...t })) : []; };
@@ -115,6 +116,7 @@ export function stepRelationer(s: State) {
     if (ny !== undefined && p.bast !== ny && p.id < ny) {
       const r = rel(p, q!)!; count(s, 'bastaVan');
       if (!(r.flags & 8)) { r.flags |= 8; loggBer(s, 'l_bastaVanner', p.id * 997 + ny, { namn: p.name, med: q!.name }, 'rel', [p.id, ny]); }
+      personHand(s, p, 'relation', `Blev bästa vän med ${q!.name}.`); personHand(s, q!, 'relation', `Blev bästa vän med ${p.name}.`); // steg 9.2.107
       upplev(s, p, 'bastaVan', q!.name); upplev(s, q!, 'bastaVan', p.name); // barn minns sin bästa vän (steg 3.1.2)
     }
     p.bast = ny;
@@ -139,6 +141,7 @@ export function stepRelationer(s: State) {
     if (r.gift === undefined && s.now - r.par >= RELT.giftDygn * DAY && r.op > REL.van) {
       r.gift = s.now; count(s, 'gift');
       log(s, `${p.name} och ${q.name} har gift sig.`, 'rel', [p.id, q.id]); notis(s, 'par', `${p.name} och ${q.name} har gift sig.`, [p.id, q.id]);
+      personNara(s, p, `${p.name} och ${q.name} har gift sig.`, [q.id]); personNara(s, q, `${p.name} och ${q.name} har gift sig.`, [p.id]); // steg 9.2.107
       kronikaBer(s, 'k_gift', p.id, { a: p.name, b: q.name }); // till berättelsen om tiden borta (steg 5.4.4)
       nyRitual(s, 'brollop', { om: [p.id, q.id], namn: `Bröllopet mellan ${p.name} och ${q.name}` }); // steg 8.5.13
       think(p, `Gifte sig med ${q.name}`, 0.15, s.now, DAY); think(q, `Gifte sig med ${p.name}`, 0.15, s.now, DAY);

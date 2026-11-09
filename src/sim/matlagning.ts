@@ -8,6 +8,7 @@ import { EKONOMI } from './ekonomi';
 import { SAKER } from './saker';
 import { loggBer } from './berattelser';
 import { balans } from './balans';
+import { SJUK, insjukna } from './sjukdom';
 
 // ---------- matlagning (steg 2.8.1) ----------
 // Byn lagar sin första mat på grillställningen (grill i STATIONER, stationer.ts): två grenar med en klyka var på var sin
@@ -72,8 +73,8 @@ export function ratt(s: State, p: Person, per: Record<string, number>, full: num
   if (ra <= 1e-9) return;
   count(s, 'rattAtit', ra);
   think(p, 'Åt rått', MATLAG.surt, s.now, MATLAG.surtTim * HOUR);
-  if (rnd(s, 'halsa', p) >= ra / full * MATLAG.sjuk) return;
-  p.sickUntil = Math.max(p.sickUntil ?? 0, s.now + (MATLAG.sjukMin + rnd(s, 'halsa', p) * MATLAG.sjukSpann) * HOUR); const sak = SAKER[mest]!, vad = `rå${sak.ett ? 'tt' : ''} ${sak.namn.toLowerCase()}`; p.sickWhy = `Matförgiftad av ${vad}`;
+  if (rnd(s, 'halsa', p) >= ra / full * MATLAG.sjuk * SJUK.ratt) return;
+  const sak = SAKER[mest]!, vad = `rå${sak.ett ? 'tt' : ''} ${sak.namn.toLowerCase()}`; insjukna(s, p, 'matforgiftning', `av ${vad}`); p.sickWhy = `Matförgiftad av ${vad}`; // steg 9.5.1
   think(p, 'Blev matförgiftad av rått kött eller rå fisk', MATLAG.forgiftad, s.now, 12 * HOUR);
   count(s, 'matforgiftad');
   // det som åts står i raden, och ingen rad om hen redan blivit förgiftad samma timme (svampen, steg 6.7.5)

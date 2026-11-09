@@ -628,7 +628,8 @@
     const sitt = ben === 'sitta' ? 2 : 0;
     const h = K.huvud + sitt, b0 = K.bal[0] + sitt, b1 = K.bal[1] + sitt, l0 = K.ben[0], l1 = K.ben[1];
     const [x0, x1] = K.bredd, [aL, aR] = K.armar;
-    const rock = p.klader.rock, farg = z => (rock && (z === 'bal' || z === 'armar')) ? rock : (z === 'fotter' && p.klader.skor ? 'harskinn' : 'hud');
+    // byxorna enfärgade i skinnets eller lädrets färg, och skjortan under rocken, rak nertill (Björns val f7_byxor och f7_skjorta, steg 9.2.58)
+    const rock = p.klader.rock, farg = z => (rock && (z === 'bal' || z === 'armar')) ? rock : (p.klader.skjorta && (z === 'bal' || z === 'armar')) ? 'lin' : (z === 'ben' && p.klader.byxor) ? p.klader.byxor : (z === 'fotter' && p.klader.skor ? 'harskinn' : 'hud');
     const zon = (lista, z) => lista.forEach(([x, y, hand]) => satt(x, y, hand ? 'hud' : farg(z), hand ? 'hand' : z));
     let hand = null;
     // benen och fötterna

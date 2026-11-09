@@ -174,7 +174,7 @@ export function hovArbete(s: State, p: Person, min: number) {
   b.klar = s.now;
   if (k === 'hov') { const f = tr.forrad ??= {}; f.ved = Math.max(0, (f.ved ?? 0) - KYRKA.hovVed); } // hovet tar sitt trä
   const t = k === 'hov' ? `${troNamn(tr)} har byggt ett hov.` : `${troNamn(tr)} har byggt ett tempel av sten där hovet stod.`;
-  log(s, t, 'rel', [p.id]); kronika(s, t); count(s, k === 'hov' ? 'hov' : 'tempel');
+  log(s, t, 'rel', [p.id]); kronika(s, t, 'tro'); count(s, k === 'hov' ? 'hov' : 'tempel');
 }
 // ---------- helgonen (steg 8.6.5) ----------
 function helgonDygn(s: State) {
@@ -185,7 +185,7 @@ function helgonDygn(s: State) {
     (tr.helgon ??= []).push({ id: kand.id, namn: kand.name, t: s.now, krönika: kand.fame.slice(0, 3).join('. ') + '.', myt: `${kand.fame[0]}. Så berättar de, och varje gång blir det större.` });
     count(s, 'helgon');
     const t = `${kand.name} har blivit ett helgon i ${troNamn(tr).toLowerCase()}.`;
-    log(s, t, 'rel', []); kronika(s, t);
+    log(s, t, 'rel', []); kronika(s, t, 'tro');
     const g = s.gravar?.find(q => q.vem === kand.id);
     if (g) helga(s, tr, g.x, g.y, `där ${kand.name} ligger begravd`);
   }
@@ -251,7 +251,7 @@ function budDygn(s: State) {
     }
     if (tr.bud.includes('manniskooffer') && dag - (tr.offrad ?? -Infinity) >= KYRKA.offerDygn) {
       const q = living(s).find(p => p.straffad && p.tro !== tr.id); // den som straffats hårt på tinget
-      if (q) { tr.offrad = dag; count(s, 'manniskooffer'); const t = `${troNamn(tr)} offrade ${q.name}, som dömts för sitt brott.`; log(s, t, 'death', [q.id]); kronika(s, t); doda(s, q); }
+      if (q) { tr.offrad = dag; count(s, 'manniskooffer'); const t = `${troNamn(tr)} offrade ${q.name}, som dömts för sitt brott.`; log(s, t, 'death', [q.id]); kronika(s, t, 'tro'); doda(s, q); }
     }
   }
 }
@@ -307,6 +307,6 @@ FRAGOR.kyrkutgift = {
 FRAGOR.nyttBud = {
   namn: (s, d) => `${troNamn(troOf(s, d.tro as number)!)}: ${BDEF[d.id as BudId].namn}`, krets: 'tro',
   rost: (_s, p, d) => { const b = BDEF[d.id as BudId], st = (p.troStyrka ?? 0) / 100; return { v: st - b.storlek * 0.12, why: st - b.storlek * 0.12 > 0 ? 'Tror att budet är rätt' : 'Tycker att budet är för hårt' }; },
-  gor: (s, d) => { const tr = troOf(s, d.tro as number)!; (tr.bud ??= []).push(d.id as BudId); count(s, 'bud_ny'); const t = `${troNamn(tr)} fick ett nytt bud: ${BDEF[d.id as BudId].namn.toLowerCase()}.`; log(s, t, 'rel', []); kronika(s, t); },
+  gor: (s, d) => { const tr = troOf(s, d.tro as number)!; (tr.bud ??= []).push(d.id as BudId); count(s, 'bud_ny'); const t = `${troNamn(tr)} fick ett nytt bud: ${BDEF[d.id as BudId].namn.toLowerCase()}.`; log(s, t, 'rel', []); kronika(s, t, 'tro'); },
 };
 }

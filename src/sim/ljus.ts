@@ -6,12 +6,14 @@
 // så fort (gången i walk och arbetet i arbetsTakt, steg.ts) och får lite sämre humör (morkT; HUMOR.morkMinus i moodOf, humor.ts). Den som
 // sover eller vilar bryr sig inte. Ljus är neutralt för humöret
 import { balans } from './balans';
+import { BRAND, brandLjus } from './brand';
 import { eldXY, eldarOf, fireHeat } from './eld';
 import { roomAt } from './byggnad';
 import { ACTS } from './handlingar';
 import { lightLevel } from './tid';
 import { HOUR, Person, State, TalgLjus, Task, Uppsatt, W } from './typer';
-import { isKlar, stationById, stationerOf } from './stationer';
+import { isKlar, ledig, stationById, stationerOf } from './stationer';
+import { omrade } from './omrade';
 import { tileOf } from './mark';
 import { isWall } from './byggnad';
 import { Ting, tingOf } from './agande';
@@ -34,6 +36,7 @@ export const UPPSATT = balans('uppsatt', {
   avta: 0.99, // ... och timmarna avtar så här mycket varje timme (hälften på knappt tre dygn)
   nara: 1, // facklan tänds när någon vaken är inom dess ljus och så här många rutor till, eller ska dit
   min: 20, // minuter att sätta upp en
+  byPer: 0.5, // byn vill ha ljus över hela byn (steg 9.2.11): upp till så här många uppsatta facklor per invånare, där byn är mörk
 });
 
 // en ljuskälla just nu: platsen (rutans mitt), hur långt den lyser och rummet den lyser upp (en eld inne)
@@ -56,7 +59,9 @@ export const LJUSKALLOR = {
     return ut;
   } },
   ljus: { namn: 'Talgljusen', kallor: s => (s.ljus ?? []).filter(l => l.tand).flatMap(l => { const st = stationById(s, l.st); return st ? [{ x: st.x + 0.5, y: st.y + 0.5, r: LJUS.r, rum: roomAt(s, st.x, st.y) }] : []; }) },
-  uppsatt: { namn: 'Uppsatta facklor', kallor: s => (s.uppsatta ?? []).filter(u => u.tand).map(u => ({ x: u.x + 0.5, y: u.y + 0.5, r: FACKLA.r })) },
+  // branden lyser (steg 9.2.20): rutorna i brandens kant, som ljus för dem som släcker eller arbetar och på kartan
+  brand: { namn: 'Branden', kallor: s => brandLjus(s).map(i => ({ x: i % W + 0.5, y: Math.floor(i / W) + 0.5, r: BRAND.ljusR })) },
+  uppsatt: { namn: 'Uppsatta facklor', kallor: s => (s.uppsatta ?? []).filter(u => u.tand).map(u => ({ x: u.x + 0.5, y: u.y + 0.5, r: FACKLA.r, rum: roomAt(s, u.x, u.y) })) }, // inne lyser den upp rummet (steg 9.2.11)
 } satisfies Record<string, Ljuskalla>;
 const KALLOR = Object.values(LJUSKALLOR) as Ljuskalla[];
 
@@ -158,18 +163,40 @@ function uppsattaTimme(s: State) {
   }
 }
 // platsen där en fackla behövs mest: där folk varit vakna i mörker flest timmar (rutan och de fyra intill), minst UPPSATT.trosk,
-// och inte inom en uppsatt fackla. undefined = ingen
+// och inte inom en uppsatt fackla, ute eller inne (steg 9.2.11: inne sitter den på väggen). Finns ingen sådan plats vill byn
+// ändå ha ljus över hela byn: den ruta i byns område som ligger längst från elden och de uppsatta facklorna, så länge byn har
+// färre än UPPSATT.byPer facklor per invånare (byMorkt). undefined = ingen
 export function morkStalle(s: State): { x: number; y: number } | undefined {
   const m = s.morkPlats;
-  if (!m) return undefined;
   let bast: { x: number; y: number } | undefined, bv = UPPSATT.trosk - 1e-9;
-  for (const k in m) {
+  if (m) for (const k in m) {
     const i = +k, x = i % W, y = Math.floor(i / W);
     const v = m[i] + (m[i - 1] ?? 0) + (m[i + 1] ?? 0) + (m[i - W] ?? 0) + (m[i + W] ?? 0);
-    if (v <= bv || roomAt(s, x, y) || (s.uppsatta ?? []).some(u => Math.hypot(u.x - x, u.y - y) < FACKLA.r)) continue;
+    if (v <= bv || (roomAt(s, x, y) && !vaggIntill(s, x, y)) || (s.uppsatta ?? []).some(u => Math.hypot(u.x - x, u.y - y) < FACKLA.r)) continue;
     bv = v; bast = { x, y };
   }
-  return bast;
+  return bast ?? byMorkt(s);
+}
+const vaggIntill = (s: State, x: number, y: number) => [[0, -1], [-1, 0], [1, 0], [0, 1]].some(([dx, dy]) => isWall(s, x + dx, y + dy));
+// den mörkaste rutan i byns område (steg 9.2.11): längst från elden och de uppsatta facklorna, och längre än en facklas ljus
+// från dem. Räknas en gång i timmen (ett behov i projekten frågas ofta)
+const morktMinne = new WeakMap<State, { t: number; p: { x: number; y: number } | undefined }>();
+function byMorkt(s: State) {
+  const n = (s.uppsatta ?? []).length, folk = living(s).length;
+  if (n >= Math.ceil(UPPSATT.byPer * folk)) return undefined;
+  const t = Math.floor(s.now / HOUR), c = morktMinne.get(s);
+  if (c && c.t === t) return c.p;
+  const ljus = [...(s.uppsatta ?? []).map(u => ({ x: u.x, y: u.y })), ...eldarOf(s).map(f => eldXY(s, f))];
+  const o = omrade(s);
+  let p: { x: number; y: number } | undefined, bd = FACKLA.r * 1.5;
+  for (let y = o.y0; y <= o.y1; y++) for (let x = o.x0; x <= o.x1; x++) {
+    if (o.inne[y * W + x] !== 1) continue;
+    const d = ljus.reduce((m, l) => Math.min(m, Math.hypot(l.x - x, l.y - y)), Infinity);
+    if (d <= bd || (roomAt(s, x, y) ? !vaggIntill(s, x, y) : !ledig(s, x, y))) continue;
+    bd = d; p = { x, y };
+  }
+  morktMinne.set(s, { t, p });
+  return p;
 }
 // en fackla som ingen bär och som inte är påbörjad
 export const friFackla = (s: State) => tingOf(s).find(x => x.k === 'fackla' && x.tand === undefined && x.hos === undefined && !x.halv);
@@ -180,7 +207,7 @@ export function finishUppsatt(s: State, p: Person, tk: { tx: number; ty: number 
   s.ting = tingOf(s).filter(q => q !== t);
   const v = [[0, -1], [-1, 0], [1, 0], [0, 1]].find(([dx, dy]) => isWall(s, x + dx, y + dy));
   (s.uppsatta ??= []).push({ x, y, c: t.c, ...(v ? { vx: v[0], vy: v[1] } : {}) });
-  count(s, 'facklorUppsatta');
+  count(s, 'facklorUppsatta'); morktMinne.delete(s);
   if (forstaGang(s, 'uppsattForsta')) log(s, `${p.name} satte upp en fackla ${v ? 'på väggen' : 'i marken'}, där byn ofta går i mörkret.`, 'world', [p.id]);
 }
 

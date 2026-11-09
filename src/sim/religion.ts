@@ -7,6 +7,7 @@ import { yearNo } from './tid';
 import { kronika } from './historik';
 import { bytaChans } from './kultlatt';
 import type { IntryckTyp } from './rykten';
+import { isSick } from './sjukdom';
 
 // Religionen (fas 4.1, "Religion" i designdokumentet). Andligheten (steg 4.1.1.1) är en egenskap hos varje person, 0–100:
 // hur viktigt det heliga är för hen, inte vad hen tror på. Den ärvs delvis och flyttas av upplevelserna (uppvaxt.ts, steg
@@ -309,7 +310,7 @@ function namnge(s: State, tr: Tro, folk: Person[]) {
   nyGud(s, tr, d.omr, teckenText(tr.k, tr.om), p); // den första guden kommer ur tecknet
   count(s, 'tro_namn');
   log(s, `${folk.length} tror nu på ${liten(tr.bakom)}. Tron har fått ett namn: ${tr.namn}.`, 'rel', folk.map(q => q.id));
-  kronika(s, `År ${yearNo(s)}: ${tr.namn} fick sitt namn. ${tr.ber}`);
+  kronika(s, `År ${yearNo(s)}: ${tr.namn} fick sitt namn. ${tr.ber}`, 'tro');
 }
 
 // ---------- gudarna (steg 4.1.5) ----------
@@ -350,7 +351,7 @@ function nyGud(s: State, tr: Tro, omr: GudOmr, h: string, p: Person | undefined)
   (tr.gudar ??= []).push(g);
   count(s, 'gud_ny'); count(s, 'gud_' + g.form);
   log(s, `${tro} har fått en ${formNamn(g.form)}: ${g.namn}, som råder över ${d.om}.`, 'rel', troende(s, tr).map(q => q.id));
-  kronika(s, `År ${ar}: ${g.ber}`);
+  kronika(s, `År ${ar}: ${g.ber}`, 'tro');
 }
 function forfader(s: State, tr: Tro, p: Person, omr: GudOmr): Gud {
   const namn = forfaderNamn(p), ar = yearNo(s), dar = yearNo(s, p.died!);
@@ -386,7 +387,7 @@ function gudSteg(s: State, tr: Tro) {
         const g = forfader(s, tr, fp, forfaderOmr(s, tr, fp)!);
         tr.gudar!.push(g); count(s, 'gud_ny'); count(s, 'gud_forfader');
         log(s, `${troNamn(tr)} har fått en förfader: ${g.namn}, som vakar över ${GUD_OMR[g.omr[0]].om}.`, 'rel', troende(s, tr).map(q => q.id));
-        kronika(s, `År ${yearNo(s)}: ${g.ber}`);
+        kronika(s, `År ${yearNo(s)}: ${g.ber}`, 'tro');
       }
     }
   }
@@ -426,7 +427,7 @@ export function stepReligion(s: State) {
       const d = p.partner === undefined ? s.people.find(q => !alive(q) && q.died !== undefined && s.now - q.died < 7 * DAY && (s.rels[relKey(p.id, q.id)]?.op ?? 0) > 50) : undefined;
       if (d) tecken(s, p, 'dodDrom', d.name); else tecken(s, p, 'drom');
     }
-    if (p.svartSjuk && !(p.sickUntil && p.sickUntil > s.now)) {
+    if (p.svartSjuk && !isSick(p, s.now)) {
       delete p.svartSjuk;
       if (formas(s, p)) for (const q of living(s)) if (isParent(q, p)) tecken(s, q, 'barnFrisk', p.name);
     }
@@ -456,6 +457,6 @@ function nivaSteg(s: State, tr: Tro, folk: Person[]) {
   } else if (n + 1 < NIVAER.length && NIVAER[n + 1].krav(s, folk.length, folk)) {
     tr.niva = n + 1; count(s, 'tro_niva' + (n + 1));
     log(s, `${namn} har vuxit och är nu ${NIVAER[n + 1].namn.toLowerCase()}.`, 'rel', folk.map(p => p.id));
-    if (n + 1 >= 2) kronika(s, `År ${yearNo(s)}: ${namn} blev ${NIVAER[n + 1].namn.toLowerCase()}.`);
+    if (n + 1 >= 2) kronika(s, `År ${yearNo(s)}: ${namn} blev ${NIVAER[n + 1].namn.toLowerCase()}.`, 'tro');
   }
 }

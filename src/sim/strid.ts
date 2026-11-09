@@ -75,6 +75,8 @@ export const STRID = balans('strid', {
   krypNara: 1, // den som kryper stannar så här många rutor från vännen hen kryper mot (steg 3.7.19) ...
   krypBlod: 0.5, // ... och lämnar så här mycket släpspår per ruta i byn
   kropp: 0.6, // man kommer inte närmare än så här (rutor) till en fiende som står: man går runt hen (steg 3.7.20)
+  van: 0.5, // ... och inte närmare än så här till en på samma sida, i striden och på flykten (steg 9.2.78)
+  flyBort: 6, // den som flyr mot en plats (Kampe.fly) har lämnat striden så här många rutor från närmaste fiende som står (steg 9.2.76)
   fart: 1.6, // rutor i sekunden för en frisk vuxen som springer i strid (gånger djurets fart)
   traffBas: 0.6, // chansen att träffa någon som är lika skicklig
   traffPer: 0.03, // ... och så här mycket mer per poäng skicklighet över motståndarens
@@ -94,8 +96,10 @@ export const STRID = balans('strid', {
   modStart: 0.4, // stridsmodet när striden börjar: modStart + mod / 20 × modMod
   modMod: 0.6,
   modSkada: 1.1, // stridsmodet sjunker så här mycket gånger graden av en skada ...
+  modFeg: 0.5, // ... gånger 1 + modFeg × (10 − modet) / 10, högst modFeg åt vardera hållet (steg 9.2.116)
   modVan: 0.2, // ... och så här mycket när en vän faller
   lek: 0.2, // i lek slutar striden vid första skada av den här graden
+  brottning: 0.3, // i brottningen (steg 9.2.92) är slagen så här starka mot i ett slagsmål, och ingen dör
   utsatt: 1.5, // chansen att träffa den som ligger eller flyr, gånger detta
   takt: 0.3, // tiden mellan slagen gånger 1 − (uthållighet − 10) / 20 × detta
   // försvaret (steg 3.7.2): bara den som står och har den som slår som mål kan parera eller ducka
@@ -223,9 +227,10 @@ export const KLADER_STRID = Object.keys(SKYDD);
 // ---------- avsikten (registret) ----------
 // vapen = man slåss med vapen (annars med händerna), nere = man slår den som ligger, slut = vad som avslutar striden för
 // den drabbade: 'skada' vid första skadan av graden STRID.lek, 'ge' att man ger upp när modet tar slut, 'fly' att man flyr
-interface AvsiktDef { namn: string; text: string; vapen: boolean; nere: boolean; modSlut: 'ge' | 'fly'; lek?: true }
+interface AvsiktDef { namn: string; text: string; vapen: boolean; nere: boolean; modSlut: 'ge' | 'fly'; lek?: true; sport?: true } // sport = brottningen (steg 9.2.92): svaga slag, ingen dör, och man är kvar i matchen
 export const AVSIKTER = {
   lek: { namn: 'Lek', text: 'Man brottas och slår på skoj och slutar vid första riktiga smärta.', vapen: false, nere: false, modSlut: 'ge', lek: true },
+  brottning: { namn: 'Brottning', text: 'Två brottas för sportens skull utan vapen. Slagen är svaga och den som känner smärta ger sig; en skada är ovanlig.', vapen: false, nere: false, modSlut: 'ge', lek: true, sport: true },
   slagsmal: { namn: 'Slagsmål', text: 'Med händerna tills den ena ger upp eller ligger.', vapen: false, nere: false, modSlut: 'ge' },
   skada: { namn: 'Skada', text: 'Med vapen tills den andra ligger, flyr eller ger upp.', vapen: true, nere: false, modSlut: 'fly' },
   doda: { namn: 'Döda', text: 'Med vapen, och den som ligger slås ihjäl.', vapen: true, nere: true, modSlut: 'fly' },
@@ -233,7 +238,7 @@ export const AVSIKTER = {
 export type Avsikt = keyof typeof AVSIKTER;
 const AVS: Record<Avsikt, AvsiktDef> = AVSIKTER;
 // hur striden börjar, som en mening (steg 6.7.1): "Striden börjar: man slåss för att skada."
-const BORJAR: Record<Avsikt, string> = { lek: 'man brottas på lek', slagsmal: 'man slåss med händerna', skada: 'man slåss för att skada', doda: 'man slåss för att döda' };
+const BORJAR: Record<Avsikt, string> = { lek: 'man brottas på lek', brottning: 'man brottas i en match', slagsmal: 'man slåss med händerna', skada: 'man slåss för att skada', doda: 'man slåss för att döda' };
 
 // ---------- händelserna i loggen (registret) ----------
 // tecken = symbolen först i loggen (platshållare tills bildstilen har dem), ord = hur meningen börjar
@@ -293,6 +298,7 @@ export interface Kampe {
   ligger?: number; bocker?: number; later?: number; // ... sekunder kvar på marken och kvar av att böja sig ner, den hen låter resa sig
   ledare?: 'fram' | 'bak'; skyddar?: number; // steg 3.7.12: byns ledare (går först eller står bakom), och ledaren (kämpens id) som vännen skyddar
   kryper?: number; // steg 3.7.19: hen kan inte gå och kryper undan; rutorna hen krupit
+  fly?: { x: number; y: number }; // steg 9.2.76: dit hen flyr (rutor på platsen), i stället för mot närmaste kanten
 }
 // en rad i loggen: tiden (sekunder), vem (a) och mot vem (b), del, skada och grad, och det kläderna tog
 export interface StridRad { t: number; h: Handelse; a?: number; b?: number; d?: Kroppsdel; k?: SkadaTyp; g?: number; v?: Vapen; kl?: string; kast?: 1 }
@@ -385,6 +391,10 @@ const ivagen = (st: Strid, k: Kampe, mx: number, my: number) => st.kampar.filter
 function fri(st: Strid, k: Kampe, x: number, y: number, fi: Kampe[]) {
   if (iVagg(st, x, y)) return false;
   for (const o of fi) { const d = Math.hypot(o.x - x, o.y - y); if (d < STRID.kropp && d < dist(k, o) - 1e-9) return false; } // bort från en som står för nära går alltid
+  for (const o of st.kampar) { // en på samma sida som står eller flyr: man står inte i varandra (steg 9.2.78)
+    if (o === k || o.sida !== k.sida || !(iStrid(o) || o.lage === 'flykt')) continue;
+    const d = Math.hypot(o.x - x, o.y - y); if (d < STRID.van && d < dist(k, o) - 1e-9) return false;
+  }
   return true;
 }
 // syns punkten bakom väggarna (en rak linje utan vägg)?
@@ -509,6 +519,7 @@ export function traffa(st: Strid, a: Kampe, b: Kampe, skada0: number, sl: Slag, 
   let g = skada0 * (1 + (a.st.styrka - 10) * STRID.styrka) * (1 - STRID.slump / 2 + slump(st) * STRID.slump);
   let kl: string | undefined;
   for (const c of b.klader) { const sk = SKYDD[c]; if (sk?.delar.includes(d)) { g *= 1 - (sk.tar[sl] ?? 0); kl = c; } }
+  if (AVS[st.avsikt].sport) g *= STRID.brottning; // brottningen: svaga slag (steg 9.2.92)
   g = Math.min(1, g);
   a.traffar++;
   const kf = kast ? 1 as const : undefined;
@@ -518,12 +529,12 @@ export function traffa(st: Strid, a: Kampe, b: Kampe, skada0: number, sl: Slag, 
   const fast = kastad?.fastnar && sl === 'stick' && g >= STRID.fastnaGrad && slump(st) < STRID.fastna ? 1 as const : undefined;
   b.skador.push({ d, k, g, ny: SKADOR[k].blod > 0 ? 1 : 0, fast });
   b.blod -= SKADOR[k].blod * g * STRID.blodSlag;
-  b.modNu -= STRID.modSkada * g;
+  b.modNu -= STRID.modSkada * g * clamp(1 + STRID.modFeg * (10 - b.st.mod) / 10, 1 - STRID.modFeg, 1 + STRID.modFeg); // den modiga ger upp långsammare (steg 9.2.116)
   a.gjort += g;
   st.logg.push({ t: st.t, h: 'traff', a: a.id, b: b.id, d, k, g, v: a.vapen, kl, kast: kf });
   if (fast) st.logg.push({ t: st.t, h: 'fastnar', a: b.id, d, v: a.vapen });
   if (iStrid(b) && d !== 'huvud' && d !== 'bal' && !d.startsWith('ben') && !d.startsWith('fot') && g >= STRID.tappaGrad && slump(st) < STRID.tappa) tappa(st, b); // en träff i armen eller handen
-  if (((KROPPSDELAR[d] as { livsviktig?: true }).livsviktig && g >= HALSA.dodGrad) || b.blod < HALSA.blodDod) return falla(st, b, 'dod');
+  if (!AVS[st.avsikt].sport && (((KROPPSDELAR[d] as { livsviktig?: true }).livsviktig && g >= HALSA.dodGrad) || b.blod < HALSA.blodDod)) return falla(st, b, 'dod'); // i brottningen dör ingen
   if (AVS[st.avsikt].lek && g >= STRID.lek) return falla(st, b, 'ger');
   if (b.lage === 'nere') return; // den som redan ligger
   if ((iStrid(b) || b.lage === 'flykt') && !kanGaK(b)) { b.kryper = 0; return falla(st, b, 'nere', 'kryper'); } // kan inte resa sig utan kryper undan (steg 3.7.19)
@@ -648,8 +659,14 @@ export function stridSteg(st: Strid) {
     if (k.blod < HALSA.blodDod) { falla(st, k, 'dod'); continue; }
     if (k.lage === 'nere' && k.kryper !== undefined) { krypa(st, k, dt); continue; }
     if (k.lage === 'flykt') { // springer mot närmaste kanten och är borta när hen når den
-      const ut = [k.x, st.w - k.x, k.y, st.h - k.y], i = ut.indexOf(Math.min(...ut));
       const lang = farten(k) * dt;
+      if (k.fly) { // eller mot sin plats (hus eller eld), och har lämnat striden en bit bort från fienderna (steg 9.2.76)
+        ga(st, k, k.fly.x, k.fly.y, lang);
+        const fi = st.kampar.filter(o => o.sida !== k.sida && iStrid(o)), nara = fi.length ? Math.min(...fi.map(o => dist(k, o))) : Infinity;
+        if (nara >= STRID.flyBort || Math.hypot(k.fly.x - k.x, k.fly.y - k.y) < 0.5 || Math.min(k.x, st.w - k.x, k.y, st.h - k.y) <= 0.31) { k.lage = 'borta'; st.logg.push({ t: st.t, h: 'borta', a: k.id }); }
+        continue;
+      }
+      const ut = [k.x, st.w - k.x, k.y, st.h - k.y], i = ut.indexOf(Math.min(...ut));
       ga(st, k, i === 0 ? 0 : i === 1 ? st.w : k.x, i === 2 ? 0 : i === 3 ? st.h : k.y, lang);
       if (Math.min(k.x, st.w - k.x, k.y, st.h - k.y) <= 0.31) { k.lage = 'borta'; st.logg.push({ t: st.t, h: 'borta', a: k.id }); }
       continue;
@@ -762,7 +779,10 @@ export function stridText(st: Strid, r: StridRad): string {
     case 'flykt': return `${a} vänder och flyr.`;
     case 'borta': return `${a} har flytt från platsen.`;
     case 'avstar': return `${a} vågar inte och drar sig undan utan strid.`;
-    case 'leder': return `${a} är byns ledare och går först. Det ger de andra mod.`;
+    case 'leder': { // byns ledare, eller rövarnas (steg 9.2.79)
+      const k = st.kampar.find(q => q.id === r.a);
+      return k?.pid !== undefined ? `${a} är byns ledare och går först. Det ger de andra mod.` : k?.sida === 1 && !k.djur ? `${a} leder rövarna och går först. Det ger de andra mod.` : `${a} leder och går först. Det ger de andra mod.`;
+    }
     case 'kommer': return `${a} kommer springande och ger sig in i striden.`;
     case 'skyddar': return `${a} kliver emellan och tar slaget som var menat för ${b}, ledaren.`;
     case 'ledareFaller': return `Ledaren ${a} har fallit, och modet sjunker hos de andra.`;
@@ -973,6 +993,7 @@ export function stridIByn(s: State, avsikt: Avsikt, sidor: [Person[], Person[]],
   if (!lek) larma(s, 'slagsmål', kampar.length, [...sidor[0], ...sidor[1]].filter(p => p.task?.act !== 'sova')); // de som slåss ropar (steg 3.7.11)
   if (!lek) stridRad(s, st, namn, orsak, folk.map(f => f.p.id));
   for (const { k, p } of folk) {
+    if (p.died !== undefined) continue; // död sedan förut (en annan strid i samma ögonblick): får ingen uppgift
     const mot = sidor[1 - k.sida];
     let dod = k.lage === 'dod';
     // för färdigheterna i personrutan (steg 3.10.6): slagsmålet, om hen vann, och kasten och träffarna (vådaträffen räknas inte)
@@ -980,6 +1001,7 @@ export function stridIByn(s: State, avsikt: Avsikt, sidor: [Person[], Person[]],
     const kast = st.logg.filter(r => r.a === k.id && r.kast), vada = st.logg.filter(r => r.a === k.id && r.h === 'vada').length;
     if (kast.length) { gjort(s, p, 'kast', kast.length); const tr = kast.filter(r => r.h !== 'miss').length - vada; if (tr > 0) gjort(s, p, 'kastTraff', tr); }
     for (const w of k.skador) {
+      if (AVS[avsikt].sport && w.g < STRID.lek) continue; // brottningen: de svaga slagen gör ont men blir ingen skada (steg 9.2.92)
       if (!dod && skada(s, p, w.d, w.k, w.g, 'drap', `i ett ${lek ? 'lekslagsmål' : 'slagsmål'} med ${lista(mot.map(q => q.name))}`)) dod = true;
       if (w.fast && p.skador?.length) p.skador[p.skador.length - 1].fast = 1; // spjutet sitter kvar till vården (steg 3.7.7)
     }
@@ -1005,7 +1027,8 @@ export function stridIByn(s: State, avsikt: Avsikt, sidor: [Person[], Person[]],
     for (const q of mot) if (p.id < q.id) minnsRel(s, p, q, lek ? 'lek' : 'slag'); // det relationen minns, en gång per par (steg 3.9.6)
     if (!lek) for (const q of sidor[k.sida]) if (p.id < q.id) minnsRel(s, p, q, 'sida');
     if (!lek && vinnare !== -1) think(p, k.sida === vinnare ? `Vann slagsmålet mot ${mot[0].name}` : `Förlorade slagsmålet mot ${mot[0].name}`, k.sida === vinnare ? SLAGSMAL.vann : -SLAGSMAL.forlora, s.now, SLAGSMAL.tankeTim * HOUR);
-    // striden tar tid: hen står kvar och slåss medan de andra behoven väntar
+    // striden tar tid: hen står kvar och slåss medan de andra behoven väntar. Brottaren är kvar i matchen (steg 9.2.92)
+    if (AVS[avsikt].sport) continue;
     avbryt(s, p);
     p.task = { act: 'strid', phase: 'do', tx: p.x, ty: p.y, until: s.now + Math.max(SLAGSMAL.minst, st.slut!.t) * SEC, carry: 0, why: orsak };
   }

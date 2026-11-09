@@ -3,6 +3,7 @@
 // (brottning och dragkamp närstrid, kast och bollspel träffsäkerhet), aldrig egenskaperna. Den är ingen stor del av spelet.
 // En match i taget: den som har fritid börjar en på en plats i byn eller går med i den som väntar på spelare, och den spelas på
 // dagen. Sporterna är rader i registret SPORTER; föremålen de kräver är saker i saker.ts som byn måste ha.
+import { personHand } from './personlogg';
 import { ALDER, ageOf, alive, count, living, log, ovning, stat, think } from './folk';
 import { SAKER, isTool } from './saker';
 import { nTools, wearTool } from './agande';
@@ -18,7 +19,8 @@ import { snoPaMarken } from './vader';
 import { balans } from './balans';
 import { notis } from './notiser';
 import { tal } from './ord';
-import { HOUR, HOUR_S, MIN, Person, Skill, State, Task } from './typer';
+import { stridIByn } from './strid';
+import { HOUR, HOUR_S, MIN, SEC, Person, Skill, State, Task } from './typer';
 
 export interface SportDef {
   id: string; namn: string;
@@ -28,17 +30,23 @@ export interface SportDef {
   min: number; max: number; // så många spelare som behövs och som får vara med
   nar?: keyof typeof NAR; // spelas bara då (steg 4.3.1.3): sno = när det ligger snö på marken
   best: string; // matchen i bestämd form, i raden om vem som vann (steg 5.4.8.1)
+  tyst?: 'alla' | 'kampen'; // vem som inte pratar (steg 9.2.100): alla som spelar, eller bara de två som brottas just nu; de andra hejar och pratar
 }
 // när en sport kan spelas (SportDef.nar)
 const NAR = { sno: (s: State) => snoPaMarken(s) > 0 };
 export const SPORTER: SportDef[] = [
-  { id: 'brottning', namn: 'Brottning', text: 'Två brottas i mitten och försöker trycka undan varandra, och de andra står i en ring runt om och hejar.', foremal: [], skill: 'narstrid', min: 2, max: 6, best: 'brottningen' },
-  { id: 'dragkamp', namn: 'Dragkamp', text: 'Två lag drar i var sin ände av ett rep, tills det ena laget dras över strecket.', foremal: ['rep'], skill: 'narstrid', min: 4, max: 10, best: 'dragkampen' },
+  { id: 'brottning', namn: 'Brottning', text: 'Två brottas i mitten och försöker trycka undan varandra, och de andra står i en ring runt om och hejar.', foremal: [], skill: 'narstrid', min: 2, max: 6, best: 'brottningen', tyst: 'kampen' },
+  { id: 'dragkamp', namn: 'Dragkamp', text: 'Två lag drar i var sin ände av ett rep, tills det ena laget dras över strecket.', foremal: ['rep'], skill: 'narstrid', min: 4, max: 10, best: 'dragkampen', tyst: 'alla' },
   { id: 'kast', namn: 'Kast mot mål', text: 'De kastar stenar och pinnar mot målet i tur och ordning, och den som träffar flest vinner.', foremal: ['mal'], skill: 'traff', min: 2, max: 6, best: 'kastandet mot målet' },
-  { id: 'snoboll', namn: 'Snöbollskrig', text: 'Två lag kastar snöbollar på varandra bakom vallar av snö, och den som träffas är ute.', foremal: [], skill: 'traff', min: 2, max: 10, nar: 'sno', best: 'snöbollskriget' },
-  { id: 'bollspel', namn: 'Bollspel', text: 'Två lag slår bollen med slagträet och springer efter den, som i knattleikr.', foremal: ['boll', 'slagtra'], skill: 'traff', min: 4, max: 10, best: 'bollspelet' },
+  { id: 'snoboll', namn: 'Snöbollskrig', text: 'Två lag kastar snöbollar på varandra bakom vallar av snö, och den som träffas är ute.', foremal: [], skill: 'traff', min: 2, max: 10, nar: 'sno', best: 'snöbollskriget', tyst: 'alla' },
+  { id: 'bollspel', namn: 'Bollspel', text: 'Två lag slår bollen med slagträet och springer efter den, som i knattleikr.', foremal: ['boll', 'slagtra'], skill: 'traff', min: 4, max: 10, best: 'bollspelet', tyst: 'alla' },
 ];
 export const SPORT_AV: Record<string, SportDef> = Object.fromEntries(SPORTER.map(d => [d.id, d]));
+// pratar inte p, som spelar, just nu (steg 9.2.100)? I brottningen bara de två som kämpar
+export function tystISporten(s: State, p: Person) {
+  const m = s.sport, d = m && SPORT_AV[m.k];
+  return !!d && (d.tyst === 'alla' || d.tyst === 'kampen' && s.now < (m!.brott ?? 0) && !!m!.brottare?.includes(p.id));
+}
 
 export const SPORT = balans('sport', {
   vikt: 0.4, // vikten i fritiden (leisure i val.ts) att börja en match, gånger lugnet och (styrka + smidighet) / 20 ...
@@ -61,11 +69,12 @@ export const SPORT = balans('sport', {
   // lagen bakom snövallarna, den som slår i bollspelet, och avståndet mellan de som står på rad
   ring: 1.8, kastAvst: 5, snoAvst: 2.5, slagAvst: 3, rad: 0.8,
   sparas: 20, // så här många matcher sparas i s.matcher (steg 5.4.8.1)
+  brottTakt: 4, // brottningen (steg 9.2.92): så många gånger i timmen varje brottare i en ledig ring börjar en kamp med en annan spelare
   bastMin: 5, // den som har vunnit så här många matcher i en sport, och fler än någon annan, är den bästa i den (eftermälet)
 });
 
 // matchen som pågår eller väntar på spelare: sporten, platsen, när den började (spelarnas task.ref) och slutar
-export interface Match { k: string; x: number; y: number; start: number; slut: number; spelat?: true; avgjord?: true; n?: number } // n: så många som gått med (platsen i laget)
+export interface Match { k: string; x: number; y: number; start: number; slut: number; spelat?: true; avgjord?: true; n?: number; brott?: number; brottare?: number[] } // brott: när kampen i brottningen (steg 9.2.92) är slut // n: så många som gått med (platsen i laget)
 
 // matchens sammanställning (steg 5.4.8.1, Sporten i designdokumentet): sparas när matchen avgörs eller ställs in, inte ur
 // loggen. Raden i Händelser och notisen pekar dit med numret (LogEntry.match), och fliken Matchen (ui/flikar/match.ts) visar
@@ -176,6 +185,14 @@ export function sportSteg(s: State, p: Person, t: Task, dtSec: number) {
   const h = dtSec / HOUR_S;
   if (!m.spelat) for (const k of d.foremal) if (isTool(k) && wearTool(s, p, k, SPORT.slit)) { const tr = SAKER[k]?.trasig; if (tr) { count(s, tr.stat); if (tr.text) log(s, tr.text.replace('{namn}', p.name), 'world', [p.id]); } } // föremålen slits en gång per match
   m.spelat = true;
+  // brottningen (steg 9.2.92): två och två med stridens system, utan vapen och med svaga slag. En kamp i taget i ringen
+  if (m.k === 'brottning' && s.now >= (m.brott ?? 0) && rnd(s, 'sport', p) < SPORT.brottTakt * h) {
+    const mot = har.filter(q => q !== p && q.health > 0);
+    if (mot.length) {
+      const q = mot[Math.floor(rnd(s, 'sport', p) * mot.length)], st = stridIByn(s, 'brottning', [[p], [q]], 'i brottningen');
+      m.brott = s.now + Math.max(1, st.slut!.t) * SEC; m.brottare = [p.id, q.id]; count(s, 'brottningar');
+    }
+  }
   ovning(p, d.skill, SPORT.ovning * h);
   t.prog = (t.prog ?? 0) + h;
   count(s, 'sportTim', h);
@@ -203,7 +220,7 @@ function vinnare(s: State, d: SportDef, m: Match, har: Person[]) {
   if (fore && (fore.sportVinst?.[d.id] ?? 0) >= n) return;
   s.sportBast[d.id] = bast.id;
   const titel = `Den bästa i ${d.namn.toLowerCase()}${d.id === 'kast' ? '' : 'en'}`;
-  if (!bast.fame.includes(titel)) bast.fame.push(titel);
+  if (!bast.fame.includes(titel)) { bast.fame.push(titel); personHand(s, bast, 'titel', `${titel}.`); }
   const text = fore && alive(fore) ? `${bast.name} har vunnit fler matcher i ${d.namn.toLowerCase()} än ${fore.name} och är nu den bästa i byn.` : `${bast.name} har vunnit ${tal(n)} matcher i ${d.namn.toLowerCase()} och är den bästa i byn.`;
-  log(s, text, 'world', [bast.id]); kronika(s, text);
+  log(s, text, 'world', [bast.id]); kronika(s, text, 'fritid');
 }

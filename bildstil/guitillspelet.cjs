@@ -33,7 +33,7 @@ function bild(w, h, rita) {
   return { w, h, rader: g.map(r => r.map(c => c ? tecken[farger.indexOf(c)] : '.').join('')), pal: Object.fromEntries(farger.map((c, i) => [tecken[i], c])) };
 }
 // flikarna: id, huvudfärg, andrafärg, emblem och bandets mönster (för de tre som ritas här)
-const NYA = { tro: ['barr', 'senap', 'ranka', R.EMB.tro || GUI.emblem.tro], person: ['rost', 'ben', 'parlor', R.EMB.hand], grannar: ['oliv', 'rost', 'hyddor', R.EMB.hus] };
+const NYA = { tro: ['barr', 'senap', 'ranka', R.EMB.tro || GUI.emblem.tro], person: ['rost', 'ben', 'parlor', R.EMB.hand], grannar: ['oliv', 'rost', 'hyddor', R.EMB.hus], tal: ['skiffer', 'senap', 'stenar', R.EMB.graf] }; // tal: platshållare för Byns tal (steg 9.3.2) tills Björn valt i bildstilen (f9_tal)
 const FLIKAR = [...R.FLIK.map(f => [f[0], f[2], f[3]]), ...Object.entries(NYA).filter(([id]) => !R.FLIK.some(f => f[0] === id)).map(([id, [hu, an]]) => [id, hu, an])];
 const runsten = {}, band = {};
 for (const [id, hu, an] of FLIKAR) {

@@ -982,6 +982,34 @@ SCENARIER.snogang = {
     ];
   },
 };
+SCENARIER.gangvakt = {
+  text: 'Vakten för långsam gång (steg 9.2.101): den som ritas gående och rör sig under hälften av en frisk vuxens fart larmar i npm test och i scenarierna, om inte minst två saker saktar ner hen samtidigt (snö, börda, skada, ålder, mörker). Den som kravlar ritas liggande och räknas inte',
+  kor: () => {
+    const { GANG, VAKT_DEL, gangLangsam, gangVakt, skada, ALDER } = SIM;
+    const s = createState(3, START), [p, q, k] = living(s).filter(x => ageOf(x, s.now) >= 18 && ageOf(x, s.now) <= ALDER.gangGammal);
+    const langsamt = GANG.fart * VAKT_DEL * 0.9;
+    // alla tre på en ruta där marken inte saktar ner (kort gräs eller en stig)
+    for (let i = 0; i < SIM.W * SIM.W; i++) {
+      p.x = (i % SIM.W) + 0.5; p.y = Math.floor(i / SIM.W) + 0.5;
+      if (SIM.inMap(p.x, p.y) && !SIM.gangDelar(s, p).delar.length) break;
+    }
+    q.x = k.x = p.x; q.y = k.y = p.y;
+    const frisk = gangLangsam(s, p, langsamt, false), friskFort = gangLangsam(s, p, GANG.fart, false);
+    // ett barn: en sak saktar ner (åldern); i mörkret två
+    q.born = s.now - 4 * DAY;
+    const barn = gangLangsam(s, q, langsamt, false), barnMork = gangLangsam(s, q, langsamt, true);
+    skada(s, k, 'benH', 'benbrott', 0.9, 'olycka', '');
+    const kravlar = gangLangsam(s, k, GANG.krypFart * GANG.fart, false);
+    return [
+      [`vakten är inkopplad i scenarierna (${gangVakt.lyss ? 'ja' : 'nej'})`, !!gangVakt.lyss],
+      [`en frisk vuxen som rör sig under halva farten larmar: ${frisk ?? 'inget larm'}`, !!frisk],
+      ['... men inte i vanlig fart', !friskFort],
+      [`ett barn med bara åldern som skäl larmar (${barn ? 'ja' : 'nej'}), i mörkret inte (${barnMork ? 'larm' : 'inget larm'})`, !!barn && !barnMork],
+      [`den som kravlar räknas inte (${kravlar ? 'larm' : 'inget larm'})`, !kravlar],
+    ];
+  },
+};
+
 SCENARIER.gangfart = {
   text: 'Gångfarten i ett register (steg 3.10.10): åldern, skadade ben och fötter, yrseln, att kravla, att bära någon, marken, saker på golvet och smidigheten är rader i GANGFART som multipliceras. Ingen går väldigt långsamt (steg 6.2.7): marken bromsar som mest till 0,75, barn och gamla går 0,75 av en vuxens fart, krypandet 0,3 och marken drar inte ner det, skadade ben aldrig under GANG.rorGolv, och personrutan visar det som drar ner farten just nu',
   kor: () => {
@@ -1878,6 +1906,7 @@ SCENARIER.masterverk = {
 };
 
 SCENARIER.amnen = {
+  lang: true,
   text: 'Steg 3.9.5: ett samtal handlar om det som delades i det (en motgång som kommer, en farlig plats, ett rykte, en teknik, en plats, det man längtar efter), annars om något som passar läget (en död nyss, vädret, maten, arbetet, barnen). Ämnet sparas hos båda, personrutan berättar om det senaste samtalet (mallarna p_* i BERATTELSER), och ämnets symbol står i pratbubblan',
   kor: () => {
     const hel = (x: string) => !/[{}]|undefined|  | \.|^\s*$/.test(x) && /[.!"]$/.test(x);
@@ -1966,31 +1995,39 @@ SCENARIER.utbrytning = {
 };
 
 SCENARIER.framling = {
-  text: 'Invandring (steg 4.4.4.2, framling i liv.ts): en sällsynt främling kommer från en grannklan som inte tycker illa om byn. Hen kan ofta en teknik som ingen i byn kan, men vars krav byn kan. Byn (ledaren, annars de vuxna) avgör om hen får stanna; klanen blir vänligare om hen får det och mindre vänlig om hen visas bort. En fientlig klan skickar ingen.',
+  text: 'Invandring (steg 4.4.4.2 och 9.2.115, framling i liv.ts): en sällsynt främling kommer från en grannklan som inte tycker illa om byn. Hen är en gäst som går in på kartan från kanten, går fram till ledaren och pratar med hen en stund, och stannar sedan som bybo (samma person) eller går igen. Hen kan ofta en teknik som ingen i byn kan, men vars krav byn kan. Byn (ledaren, annars de vuxna) avgör; klanen blir vänligare om hen får stanna och mindre vänlig om hen visas bort. En fientlig klan skickar ingen.',
   kor: () => {
     const s = createState(6, START); rikBy(s); setFood(s, 300);
     const folk = living(s), kunnat = new Set(folk.flatMap(p => Object.keys(p.tek ?? {}).filter(id => SIM.knows(p, id))));
     const ny = SIM.TEKNIK.find(t => !kunnat.has(t.id) && t.krav.length && t.krav.every(id => kunnat.has(id))) ?? SIM.TEKNIK.find(t => !kunnat.has(t.id) && t.krav.every(id => kunnat.has(id)))!;
     const inst = () => SIM.klanerOf(s).map(k => k.inst);
-    const i0 = inst();
-    const p = SIM.framling(s, { tek: ny.id, ja: true });
+    const i0 = inst(), pop0 = living(s).length;
+    const g = SIM.framling(s, { tek: ny.id, ja: true })!;
+    const namn = g.name, start = { x: g.x, y: g.y }, eld = SIM.eldPlats(s);
+    const somGast = g.id < 0 && g.gast?.sort === 'framling' && !living(s).includes(g) && living(s).length === pop0 && Math.hypot(start.x - eld.x, start.y - eld.y) > 25;
+    let pratade = false, fas: string[] = [];
+    kor(s, 30, x => { const q = x.people.find(p => p.name === namn); if (q?.gast?.fas && fas[fas.length - 1] !== q.gast.fas) fas.push(q.gast.fas); if (q?.gast?.fas === 'pratar') pratade = true; });
+    const p = living(s).find(q => q.name === namn);
     const k = p ? SIM.klanById(s, p.fran) : undefined;
-    const stannar = !!p && living(s).includes(p) && !!k && s.stat?.framling === 1;
+    const stannar = !!p && p.id > 0 && !p.gast && !!k && s.stat?.framling === 1 && pratade;
     const kan = !!p && SIM.knows(p, ny.id) && ny.krav.every(id => SIM.knows(p, id));
     const vanligare = !!k && k.inst > i0[SIM.klanerOf(s).indexOf(k)];
-    const pop1 = living(s).length, i1 = inst();
-    SIM.framling(s, { ja: false });
-    const bort = living(s).length === pop1 && s.stat?.framlingNej === 1 && inst().some((v, i) => v < i1[i]);
+    // en som visas bort går igen och är borta från kartan
+    const i1 = inst();
+    const b = SIM.framling(s, { ja: false })!, bnamn = b.name, bid = b.gast!.blir;
+    kor(s, 40);
+    const bort = !s.people.some(q => q.id === bid || q.id === b.id) && (s.stat?.framlingNej ?? 0) >= 1 && inst().some((v, i) => v < i1[i]) && !s.people.some(q => q.name === bnamn && q.gast);
     for (const c of SIM.klanerOf(s)) c.inst = -80;
-    const fientlig = SIM.framling(s) === undefined && living(s).length === pop1 && s.stat?.framlingNej === 1;
+    const fientlig = SIM.framling(s) === undefined && s.stat?.framlingNej === 1;
     for (const c of SIM.klanerOf(s)) c.inst = 20;
     let ja = 0, nej = 0;
-    for (let i = 0; i < 40; i++) { const n0 = s.stat?.framlingNej ?? 0; if (SIM.framling(s)) ja++; else if ((s.stat?.framlingNej ?? 0) > n0) nej++; }
+    for (let i = 0; i < 40; i++) { const q = SIM.framling(s); if (!q) continue; if (SIM.framlingBeslut(s, q)) ja++; else nej++; }
     return [
-      [`främlingen får stanna och kommer från en grannklan (${k?.namn})`, stannar],
+      [`främlingen kommer gående som en gäst från kanten av kartan (${namn}, ${Math.round(Math.hypot(start.x - eld.x, start.y - eld.y))} rutor från elden)`, somGast],
+      [`hen pratar med ledaren och stannar som bybo, samma person (${fas.join(' → ')}, från ${k?.namn})`, stannar],
       [`hen kan det ingen i byn kunde (${ny.namn}) och kraven under det`, kan],
       ['klanen blir vänligare när byn tar emot hen', vanligare],
-      ['visar byn bort hen stannar hen inte, och klanen blir mindre vänlig', bort],
+      ['visar byn bort hen går hen igen, och klanen blir mindre vänlig', bort],
       ['en fientlig klan skickar ingen', fientlig],
       [`byn avgör själv: av 40 främlingar fick ${ja} stanna och ${nej} visades bort`, ja > 0 && nej > 0],
       ['främlingar är sällsynta: de flesta i byn är barn till dem som redan bor där', SIM.KLAN.framling <= 0.1],
@@ -2030,6 +2067,66 @@ SCENARIER.samtalpar = {
       [`och samtalar med den hen står bredvid (${medSamma} av ${samtalMedPar} samtal)`, samtalMedPar > 50 && medSamma >= samtalMedPar * 0.9],
       [`efter samtalet går de ifrån varandra (${isar} gånger)`, isar > 20],
       [`den som arbetar och pratar flyttar sig inte (${flyttad} av ${arbeteFore} slag: ${JSON.stringify(flyttAkt)})`, flyttad <= arbeteFore * 0.02],
+    ];
+  },
+};
+
+SCENARIER.sorg = {
+  text: 'Steg 9.2.33: sorgen i stadier. När någon nära dör kommer först förlusten ("Förlorade sin partner") med stor tyngd i några dygn, sedan "Sörjer" med mindre tyngd och sist "Saknar", svagt och länge',
+  kor: () => {
+    const s = createState(4, START);
+    const a = nyInvanare(s, 'k', 30), b = nyInvanare(s, 'm', 32);
+    a.partner = b.id; b.partner = a.id;
+    SIM.die(s, b, 'olycka');
+    const tanke = () => a.thoughts.filter(t => t.until > s.now && t.text.includes(b.name)).map(t => `${t.text} (${t.v.toFixed(2)})`);
+    const t1 = tanke().join(', ');
+    const v1 = a.thoughts.find(t => t.text.startsWith('Förlorade'))?.v ?? 0;
+    s.now += (SIM.LIV.forlustDygn + 0.1) * DAY; SIM.sorgTimme(s);
+    const t2 = tanke().join(', '), v2 = a.thoughts.find(t => t.text.startsWith('Sörjer'))?.v ?? 0;
+    s.now += 3 * DAY; SIM.sorgTimme(s);
+    const t3 = tanke().join(', '), v3 = a.thoughts.find(t => t.text.startsWith('Saknar'))?.v ?? 0;
+    return [
+      [`först förlusten: ${t1}`, /^Förlorade sin partner/.test(t1) && !/Sörjer/.test(t1)],
+      [`sedan sorgen, med mindre tyngd: ${t2}`, /Sörjer/.test(t2) && !/Förlorade/.test(t2) && Math.abs(v2) < Math.abs(v1)],
+      [`sist saknaden, svagast: ${t3}`, /Saknar/.test(t3) && Math.abs(v3) < Math.abs(v2)],
+    ];
+  },
+};
+
+SCENARIER.personlogg = {
+  text: 'Personens händelser (steg 9.2.107–9.2.108, personlogg.ts): en skada, en ny kunskap och en död hamnar hos rätt person, de som stod den döda nära får en rad, ett dygn av vanligt arbete skriver inget om vardagen, det som händer samma dygn blir en rad, och personligheten färgar texten',
+  kor: () => {
+    const s = createState(3, START);
+    kor(s, 6);
+    const folk = living(s), a = folk[0];
+    for (const p of folk) p.hand = undefined;
+    kor(s, 24); // ett dygn av vardagsarbete
+    const rader = folk.flatMap(p => p.hand ?? []), mest = Math.max(...folk.map(p => p.hand?.length ?? 0));
+    const vardagRad = rader.filter(r => !(r[1] in SIM.PERSONLOGG) || /^(Samlade|Högg|Bar|Hämtade|Fiskade|Åt|Drack|Sov|Pratade|Gick)/.test(r[2])).length;
+    SIM.skada(s, a, 'armV', 'skarsar', 0.6, 'olycka', 'när hen högg ved');
+    const nara = SIM.naraAv(s, a), ovriga = living(s).filter(q => q !== a && !nara.includes(q));
+    const t = SIM.TEKNIK.find(x => !SIM.knows(a, x.id) && x.krav.every(k => SIM.knows(a, k)))!;
+    SIM.learn(s, a, t);
+    const fore = new Map(living(s).map(q => [q, q.hand?.length ?? 0]));
+    SIM.die(s, a, 'olycka');
+    const har = (p: Person, k: string) => !!p.hand?.some(r => r[1] === k);
+    const k107 = [!living(s).some(q => q !== a && har(q, 'skada')), nara.length > 0 && nara.every(q => (q.hand?.length ?? 0) > fore.get(q)! && har(q, 'nara')), ovriga.every(q => (q.hand?.length ?? 0) === fore.get(q))];
+    // 9.2.108: tre lärdomar samma dygn blir en rad, och en orolig och en modig person skriver olika om samma skada
+    const b = living(s)[0], fore108 = SIM.personRader(s, b).length;
+    for (const x of ['Kom på A.', 'Kom på B.', 'Kom på C.']) SIM.personHand(s, b, 'lart', x);
+    const ihop = SIM.personRader(s, b);
+    const o = living(s)[1], m = living(s)[2], till: string[] = [];
+    for (const [q, mod] of [[o, 3], [m, 18]] as const) { q.pot.mod = mod; q.hand = []; SIM.personHand(s, q, 'skada', 'Fick ett sår i armen.'); till.push(SIM.personRader(s, q)[0].text); }
+    return [
+      ['ett dygn ger bara rader av slagen i registret, inga om vardagsarbetet (' + rader.length + ' rader, ' + vardagRad + ' om vardagen)', vardagRad === 0],
+      ['ett dygn ger få rader hos varje person (högst ' + mest + ')', mest <= 12],
+      ['skadan står hos den skadade', har(a, 'skada')],
+      ['den nya kunskapen står hos den som lärde sig', har(a, 'lart')],
+      ['ingen annan fick skadan', k107[0]],
+      ['de som stod den döda nära fick en rad om döden (' + nara.length + ')', k107[1]],
+      ['de andra fick ingen rad om döden', k107[2]],
+      ['tre händelser av samma slag samma dygn blir en rad (' + (ihop[0]?.text ?? '') + ')', ihop.length === fore108 + 1 && ihop[0].alla.length === 3],
+      ['en orolig och en modig skriver olika om samma skada (' + till.join(' | ') + ')', till[0] !== till[1] && till.every(x => x.startsWith('Fick ett sår i armen.'))],
     ];
   },
 };

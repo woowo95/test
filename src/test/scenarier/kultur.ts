@@ -4,7 +4,15 @@ import * as SIM from '../../sim';
 import { START } from '../kor';
 import * as O from '../../sim/ord';
 import { TEKNIK } from '../../sim/teknik';
-import { SCENARIER, klockan, kor, medBank, medHus, nyInvanare, setFood, tandEld } from './hjalp';
+import { SCENARIER, klockan, kor, medBank, medHus, nyInvanare, setFood, tandEld, utanWebblasare } from './hjalp';
+import { setByn, ui } from '../../ui/lage';
+import { station as stationFlik } from '../../ui/flikar/station';
+import { person as personFlik } from '../../ui/flikar/person';
+import { kronika as kronikaFlik, val as kronikaVal } from '../../ui/flikar/kronika';
+import { styre as styreFlik } from '../../ui/flikar/styre';
+import { seder as sederFlik } from '../../ui/flikar/seder';
+import { OPPNAR, bubblaKlick, bubblaText, forklaringAv } from '../../ui/bubbla';
+import { esc, hjalpKlick } from '../../ui/hjalp';
 
 // en by med ett stort överskott av mat och ved, på förmiddagen
 export function rikDag(seed = 3, mer: Record<string, number> = {}): State {
@@ -48,6 +56,7 @@ SCENARIER.sport = {
       [`${foljer} går till ${sport0.toLowerCase()}en; ${(g.stat?.sportTim ?? 0).toFixed(1)} spelartimmar, högst ${sett} på planen samtidigt`, foljer === 3 && (g.stat?.sportTim ?? 0) >= 1 && sett >= 2],
       [`${glad} av tre är glada efter att ha spelat, och ${battre} blev bättre i närstrid`, glad >= 2 && battre >= 2],
       ['när ingen har fritid följer ingen med, och det blir ingen match', ensam],
+      ...brottning(),
     ];
   },
 };
@@ -363,9 +372,11 @@ SCENARIER.pynt = {
   kor: () => {
     const { PROJEKT, PYNT_LIST, isKlar, pyntOf, pyntSort, villPynt, bedTile, stationRum, stepPynt, intryckOm } = SIM;
     const s = createState(6, START); klockan(s); tandEld(s); medHus(s);
-    for (const r of s.people) r.tek = { ...r.tek, kruka: 1, bonad: 1, vaggbrade: 1 };
     setFood(s, 300); SIM.setAmount(s, 'ved', 40); SIM.setAmount(s, 'virke', 6); SIM.setAmount(s, 'skinn', 4); SIM.setAmount(s, 'rep', 4);
-    const p = vuxna(s).find(q => bedTile(s, q) !== undefined)!, k = pyntSort(s, p);
+    // bara p kan göra pynt: rummet har plats för färre pynt än de som sover där, och de andra hann annars ta platserna först
+    const p = vuxna(s).find(q => bedTile(s, q) !== undefined)!;
+    p.tek = { ...p.tek, kruka: 1, bonad: 1, vaggbrade: 1 };
+    const k = pyntSort(s, p);
     const vill = villPynt(s, p, k), bara = PYNT_LIST.filter(j => villPynt(s, p, j)).length, brist = PROJEKT[k]!.brist(s);
     const sorter = new Set(Array.from({ length: 12 }, (_, i) => pyntSort(s, { id: i } as Person))).size; // smaken skiljer sig mellan människor
     // pyntet väger lite mot arbetet om maten; här väger det mer, så att p bygger sitt snart
@@ -518,6 +529,104 @@ SCENARIER.omrostning = {
       [`alla vuxna röstar, och varje röst har ett skäl (${o.roster.length})`, allaVuxna],
       ['samma fråga läggs inte fram två gånger', iKo === 1],
       ['frågan avgörs vid elden och ett ja gör det raden säger', satt],
+    ];
+  },
+};
+SCENARIER.rostlista = {
+  text: 'Steg 9.2.65: omröstningarnas bild i fliken Styre. En utfälld omröstning har en stapel som delas i ja och nej efter vikten och en egen lista med en rad per röst (inte relationslistans rutnät): symbolen för ja eller nej, namnet och en stapel för vikten, ja-rösterna först och de tyngsta överst, och varför personen röstade så vid musen och med ett tryck',
+  kor: () => {
+    utanWebblasare();
+    const s = createState(6, START), v = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen), l = v[0];
+    s.styre = { historia: [{ id: l.id, namn: l.name, titel: 'Ålderman', fran: s.now }], oppna: ['rang'], ledare: l.id, sedan: s.now, titel: 'Ålderman', satt: 1, pabud: { matlager: 0, vedlager: 0, torkat: 0 } as never };
+    SIM.rostaOm(s, { f: 'pabud', d: { k: 'matlager', v: 0.9 }, fram: l.id });
+    const o = s.styre.roster![0];
+    setByn(s); ui.styreDel = 'styre';
+    const tryck = (id: string) => hjalpKlick({ closest: () => ({ dataset: { hjalp: id, hjalpGrupp: id.slice(0, id.indexOf('-') + 1) } }) } as unknown as HTMLElement);
+    tryck(`rost-${o.t}-${o.f}`);
+    const h = styreFlik.html();
+    const lista = h.match(/<ul class="roster">([\s\S]*?)<\/ul>/)?.[1] ?? '';
+    const rader = lista.match(/data-hjalp="rr-[^"]*"/g) ?? [];
+    // ordningen i bilden: ja först, sedan nej, och inom varje de tyngsta överst
+    const ord = rader.map(r => o.roster.find(x => r.endsWith(`-${x.id}"`))!);
+    const sorterad = ord.every((r, i) => i === 0 || (Number(ord[i - 1].ja) > Number(r.ja)) || (ord[i - 1].ja === r.ja && ord[i - 1].w >= r.w));
+    const r0 = ord[0]!;
+    tryck(`rr-${o.t}-${r0.id}`);
+    const h2 = styreFlik.html();
+    return [
+      [`stapeln för ja och nej efter vikten (${Math.round(o.ja * 100)} % ja)`, /class="rostbar"[\s\S]*class="ja"[\s\S]*class="nej"/.test(h)],
+      [`en rad per röst i en egen lista (${rader.length} av ${o.roster.length})`, rader.length === o.roster.length && !/<ul class="rels">[^]*?r_ja/.test(h)],
+      ['varje rad har symbolen för ja eller nej och en stapel för vikten', (lista.match(/class="rostw"/g) ?? []).length === o.roster.length && (lista.match(/<span title="(Ja|Nej)">/g) ?? []).length === o.roster.length],
+      ['ja-rösterna först och de tyngsta överst', sorterad],
+      ['den som lade fram frågan är märkt', lista.includes('Lade fram frågan')],
+      ['varför personen röstade så står vid musen och kommer fram med ett tryck', lista.includes(`title="${esc(r0.why)}"`) && h2.includes(`class="small muted rvarfor">${esc(r0.why)}`)],
+    ];
+  },
+};
+SCENARIER.sedlista = {
+  text: 'Steg 9.2.66: sederna går att trycka på. Ett tryck på en sed i Seder och i Styres vågskålar öppnar en lista under vågen med vad seden gör och en rad per upplevelse som drar den: namnet, åt vilket håll och hur mycket, och hur många och vilka som minns den. Ett tryck till stänger',
+  kor: () => {
+    utanWebblasare();
+    const s = createState(6, START), v = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen), l = v[0];
+    for (const x of v) x.upp = [...x.upp ?? [], { k: 'svalt', a: 20, e: {}, v: 1, t: s.now }];
+    s.styre = { historia: [{ id: l.id, namn: l.name, titel: 'Ålderman', fran: s.now }], oppna: ['rang'], ledare: l.id, sedan: s.now, titel: 'Ålderman', satt: 1, pabud: { matlager: 0, vedlager: 0, torkat: 0 } as never };
+    setByn(s); ui.styreDel = 'styre';
+    const k = SIM.SED_LIST.find(x => SIM.sedOppen(s, x) && !SIM.MAKT_SEDER.includes(x) && Math.abs(SIM.sedDrag(s).find(r => r.k === 'svalt')?.d[x] ?? 0) >= 0.005)!;
+    const tryck = (id: string) => hjalpKlick({ closest: () => ({ dataset: { hjalp: id, hjalpGrupp: 'sed-' } }) } as unknown as HTMLElement);
+    const stangd = sederFlik.html();
+    tryck(`sed-${k}`);
+    const oppen = sederFlik.html(), lista = oppen.match(/<div class="sedlista">([\s\S]*?)<\/div>/)?.[1] ?? '';
+    const namn = SIM.upplevelseKort('svalt'), mot = SIM.sedDrag(s).find(r => r.k === 'svalt')!.d[k] > 0 ? SIM.SEDER[k].pos : SIM.SEDER[k].neg;
+    const alla = v.every(p => lista.includes(`data-id="${p.id}"`));
+    // vågskålen Rang i Styre går också att trycka på
+    tryck('sed-rang');
+    const styreH = styreFlik.html(), iStyre = /data-hjalp="sed-rang"[^>]*>[\s\S]*?<div class="sedlista">/.test(styreH);
+    tryck('sed-rang');
+    const igen = styreFlik.html().includes('class="sedlista"');
+    return [
+      [`sederna går att trycka på och listan är stängd från början (${SIM.SEDER[k].neg} – ${SIM.SEDER[k].pos})`, stangd.includes(`data-hjalp="sed-${k}"`) && !stangd.includes('class="sedlista"')],
+      ['listan säger vad seden gör', lista.includes(esc(SIM.SEDER[k].effect))],
+      [`en rad för upplevelsen: "${namn}: drar mot ${mot.toLowerCase()}, N av 100"`, lista.includes(esc(namn)) && new RegExp(`drar mot ${mot.toLowerCase()}, \\d+ av 100`).test(lista)],
+      [`hur många och vilka som minns den (${v.length})`, lista.includes(`${v.length} minns det`) && alla],
+      ['vågskålen i Styre öppnar samma lista, och ett tryck till stänger', iStyre && !igen],
+    ];
+  },
+};
+SCENARIER.bubbla = {
+  text: 'Steg 9.2.68: förklaringar går att trycka fram. Ett tryck på en symbol med förklaring (title, eller <title> i en ritad symbol) visar texten i en bubbla, nästa tryck stänger den, och det som öppnar något (en knapp, en person, en rad som fälls ut) visar ingen bubbla utan gör det det brukar',
+  kor: () => {
+    // ett litet låtsasträd i stället för webbläsaren: varje element vet sina egenskaper och sin förälder
+    interface F { tag: string; attr: Record<string, string>; cls?: string; upp?: F; svgTitle?: string }
+    const passar = (e: F, sel: string) => sel.split(',').map(x => x.trim()).some(x =>
+      x === e.tag || (x.startsWith('.') && e.cls === x.slice(1)) || (/^\[([\w-]+)(="([^"]*)")?\]$/.test(x) && (() => { const [, n, , v] = x.match(/^\[([\w-]+)(="([^"]*)")?\]$/)!; return n in e.attr && (v === undefined || e.attr[n] === v); })()));
+    const el = (e: F): HTMLElement => ({
+      closest: (sel: string) => { for (let x: F | undefined = e; x; x = x.upp) if (passar(x, sel)) return el(x); return null; },
+      getAttribute: (n: string) => e.attr[n] ?? null,
+      querySelector: () => (e.svgTitle ? { textContent: e.svgTitle } : null),
+      getBoundingClientRect: () => ({ left: 10, top: 10, width: 12, height: 12, right: 22, bottom: 22 }),
+    } as unknown as HTMLElement);
+    const li: F = { tag: 'li', attr: {} }, sym: F = { tag: 'span', attr: { title: 'Sjuk. Vilar mer och orkar mindre' }, upp: li }, bild: F = { tag: 'img', attr: {}, upp: sym };
+    const rad: F = { tag: 'li', attr: { title: 'Tryck för alla röster', 'data-hjalp': 'x' }, cls: 'klick' }, iRad: F = { tag: 'span', attr: { title: 'Ja' }, upp: rad };
+    const knapp: F = { tag: 'button', attr: { title: 'Visa', 'data-id': '3' } };
+    const svg: F = { tag: 'svg', attr: {}, svgTitle: 'Vikt 4 av 5' }, svgDel: F = { tag: 'path', attr: {}, upp: svg };
+    // bubblan i ett låtsasdokument
+    const g = globalThis as { document?: unknown; innerWidth?: number; innerHeight?: number };
+    const [d0, w0, h0] = [g.document, g.innerWidth, g.innerHeight];
+    const div = { hidden: true, textContent: '', style: {} as Record<string, string>, getBoundingClientRect: () => ({ width: 100, height: 30 }) };
+    g.document = { body: { appendChild: (x: unknown) => x }, createElement: () => div }; g.innerWidth = 400; g.innerHeight = 800;
+    const visas = bubblaKlick(el(bild)) && bubblaText() === sym.attr.title;
+    const stangs = bubblaKlick(el(bild)) && bubblaText() === undefined;
+    bubblaKlick(el(bild)); const annan = bubblaKlick(el(svgDel)) && bubblaText() === 'Vikt 4 av 5';
+    bubblaKlick(el(svgDel));
+    const knappIngen = !bubblaKlick(el(knapp)) && bubblaText() === undefined;
+    [g.document, g.innerWidth, g.innerHeight] = [d0, w0, h0];
+    return [
+      ['en symbol med förklaring ger texten, också när man tryckt på bilden i den', forklaringAv(el(bild))?.text === sym.attr.title],
+      ['en ritad symbol ger texten i sin <title>', forklaringAv(el(svgDel))?.text === 'Vikt 4 av 5'],
+      ['det som öppnar något (en rad som fälls ut, en person) ger ingen bubbla', !forklaringAv(el(iRad)) && !forklaringAv(el(knapp)) && OPPNAR.includes('.klick')],
+      ['ett tryck visar förklaringen i bubblan', visas],
+      ['nästa tryck på samma sak stänger den', stangs],
+      ['ett tryck på något annat med förklaring visar dess text', annan],
+      ['ett tryck på en knapp visar ingen bubbla', knappIngen],
     ];
   },
 };
@@ -898,14 +1007,14 @@ SCENARIER.rader = {
     // hämnd
     (k.doda ??= []).push({ namn: 'Bror', av: v[1].id, t: s.now });
     SIM.radDygn(s, 'hamnd', k);
-    const f = s.rovare!, mal = f.mal === v[1].id, anh = f.folk.some(r => r.anhorig) || true;
+    const f = s.rovare!, mal = f.mal === v[1].id, anh = SIM.rovarna(s, f).some(r => r.gast?.anhorig) || true;
     const stor = SIM.storRad({ ...f, folk: [...f.folk, ...f.folk, ...f.folk, ...f.folk, ...f.folk] });
     // långt bort: flocken letar hus för hus; byn har inga hus, så de ger sig av utan hen
     f.x = v[1].x + 20; f.y = v[1].y;
     SIM.radSeger(s, f); const letar = f.gor === 'letar';
     SIM.rovarSteg(s, 60); const miste = (s.stat?.hamnd_miste ?? 0) === 1 && f.gor === 'flyr' && !v[1].died;
     // är anfallarna fler än försvararna går de som blir över förbi slagfältet och letar
-    f.gor = 'kommer'; f.letat = undefined; f.folk.push(...f.folk.map(r => ({ ...r, namn: r.namn + ' d.y.' })));
+    f.gor = 'kommer'; f.letat = undefined; for (const r of SIM.rovarna(s, f)) { const q = { ...r, id: SIM.nyttGastId(s), name: r.name + ' d.y.', gast: { ...r.gast! } }; s.people.push(q); f.folk.push(q.id); }
     SIM.borjaStrid(s, f, [v[2]]); const forbi = s.rovareFler?.[0]?.gor === 'letar';
     s.rovareFler = undefined; f.strid = undefined;
     // nära: hämnden tas
@@ -946,3 +1055,69 @@ SCENARIER.rader = {
     ];
   },
 };
+
+SCENARIER.fritidlista = {
+  text: 'Steg 9.2.67: framträdandena och matcherna går att hitta. Ett tryck på scenen visar de senaste framträdandena där, den som uppträtt har dem i Presentationen, och Krönikans kategori Fritid listar de senaste framträdandena och matcherna; varje rad har knappen till redogörelsen',
+  kor: () => {
+    utanWebblasare();
+    let b: ReturnType<typeof medScen> | undefined, m: SIM.FramMinne | undefined;
+    for (let i = 0; i < 30 && !m; i++) {
+      const x = medScen(3 + i, []), p = x.v[0]!; p.skill[SIM.FRAM_SKILL] = 8;
+      if (!upptrad(x.s, p)) continue;
+      kor(x.s, 1.5);
+      m = x.s.framtradanden?.find(q => q.scen === x.sc.id); b = x;
+    }
+    if (!b || !m) return [['ett framträdande på scenen', false]];
+    setByn(b.s);
+    ui.stationId = b.sc.id;
+    const scen = stationFlik.html().includes(`data-fram="${m.nr}"`);
+    ui.selected = m.p; ui.personDel = 'om';
+    const pres = personFlik.html().includes(`data-fram="${m.nr}"`);
+    Object.assign(kronikaVal, { visning: 'stort', ar: undefined, person: undefined, kat: 'fritid' });
+    const kron = kronikaFlik.html().includes(`data-fram="${m.nr}"`);
+    kronikaVal.kat = undefined;
+    return [
+      [`${m.namn} uppträdde på scenen (${SIM.FRAM_AV[m.k]!.namn})`, true],
+      ['scenens ruta visar framträdandet som just slutat, med knappen till redogörelsen', scen],
+      ['det står i Presentationen hos den som uppträdde', pres],
+      ['Krönikans Fritid listar det', kron],
+    ];
+  },
+};
+// steg 9.2.92: brottningen går två och två med stridens system, utan vapen och med svaga slag. Ingen dör, en skada är ovanlig
+function brottning(): [string, boolean][] {
+  let kampar = 0, doda = 0, skadade = 0, kvar = 0, sedda = 0, vapen = 0, pratIKampen = 0, kampTid = 0, pratRingen = 0;
+  for (const fro of [3, 5, 7, 11]) {
+    const s = rikDag(fro), med = vuxna(s).slice(0, 4), skador0 = med.map(q => q.skador?.length ?? 0);
+    match(s, 'brottning', med);
+    // steg 9.2.100: de två som kämpar pratar inte; de andra i ringen gör det
+    let kamp: number[] | undefined, start = 0;
+    const sett = new Map<number, number>();
+    kor(s, 1, () => {
+      sedda += med.filter(q => q.task?.act === 'sport' && q.task.phase === 'do').length;
+      const m = s.sport;
+      if (m?.brottare && m.brottare !== kamp) { kamp = m.brottare; start = s.now; }
+      const pagar = !!m && !!kamp && s.now < (m.brott ?? 0);
+      if (pagar) kampTid++;
+      for (const q of med) {
+        const t = q.prat?.t; if (t === undefined || sett.get(q.id) === t) continue;
+        sett.set(q.id, t);
+        if (pagar && kamp!.includes(q.id) && t >= start) pratIKampen++; else if (q.task?.act === 'sport') pratRingen++;
+      }
+    });
+    kampar += s.stat?.brottningar ?? 0;
+    doda += med.filter(q => q.health <= 0 || q.died !== undefined).length;
+    skadade += med.filter((q, i) => (q.skador?.length ?? 0) > skador0[i]!).length;
+    kvar += med.filter(q => q.task?.act === 'sport').length;
+    for (const m of s.strider ?? []) if (m.u.avsikt === 'brottning') vapen += m.u.kampar.filter(k => k.vapen !== 'hand').length;
+  }
+  return [
+    [`brottarna kämpar två och två med stridens system (${kampar} kamper)`, kampar >= 4],
+    [`utan vapen (${vapen} med vapen)`, vapen === 0],
+    [`ingen dör i brottningen (${doda})`, doda === 0],
+    [`en skada är ovanlig (${skadade} av 16 brottare skadades)`, skadade <= 4],
+    [`brottarna är kvar i matchen efter en kamp (${kvar} av 16)`, kvar >= 12 && sedda > 0],
+    [`ingen av de två som brottas börjar ett samtal under kampen (${pratIKampen} samtal på ${kampTid} steg med kamp)`, pratIKampen === 0 && kampTid > 0],
+    [`de andra i ringen pratar (${pratRingen} samtal)`, pratRingen > 0],
+  ];
+}

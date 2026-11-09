@@ -1,4 +1,5 @@
 import { horsel } from './halsa';
+import { personHand } from './personlogg';
 import { KLADMATERIAL, kladAv } from './klader';
 import { han, honom } from './ord';
 import { lista, tal } from './ord';
@@ -392,7 +393,7 @@ export function rykteDod(s: State, p: Person) {
   if (r >= RYKTE.dodLog) {
     const top = samlatIntryck(s, p.id)[0];
     if (top) { log(s, `Byn minns ${p.name} som ${INTRYCK[top[0]].namn}.`, 'death', [p.id]); count(s, 'rykte_minns'); }
-    if (r >= RYKTE.legend) p.fame.push(a >= 0 ? 'Blev en legend i byn' : 'Blev ökänd');
+    if (r >= RYKTE.legend) { p.fame.push(a >= 0 ? 'Blev en legend i byn' : 'Blev ökänd'); personHand(s, p, 'titel', a >= 0 ? 'Blev en legend i byn.' : 'Blev ökänd.'); }
   }
 }
 // en gång i timmen: intrycken bleknar, de allvarliga långsammare, och minnet av en död långsammare ju ryktbarare hen var.

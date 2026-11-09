@@ -9,6 +9,8 @@ import { createHash } from 'node:crypto';
 import { createState, step, living, serialize, spar, BEAT, State, foodOf, fuelStock, TalkEvent } from '../sim';
 import { START, STEG_TIM } from './kor';
 import { kanonisk, korJson, pool, sek } from './pool';
+import { matUnderTestet } from './matare';
+matUnderTestet(); // datorns kärnor och minne under testet (steg 9.2.61)
 
 const kort = (s: State) => ({ folk: living(s).length, mat: Math.round(foodOf(s)), bransle: Math.round(fuelStock(s)) });
 type Svar = { seed: number; olik: number; spel: ReturnType<typeof kort>; ikapp: ReturnType<typeof kort> };
