@@ -1238,6 +1238,29 @@ SCENARIER.liggande = {
     ];
   },
 };
+SCENARIER.sanggang = {
+  text: 'Steg 9.2.89: den som går till sängen går upprätt och lägger sig först i bädden (kartan ritar liggande bara när soverNu säger det)',
+  kor: () => {
+    const s = createState(3, START), p = living(s)[0];
+    const tk = { act: 'sova', phase: 'go', tx: p.x + 6, ty: p.y + 2, until: s.now + 8 * HOUR, carry: 0 } as unknown as Task;
+    const pavag = SIM.soverNu(p, tk);
+    tk.phase = 'do';
+    const intefram = SIM.soverNu(p, tk);
+    p.x = tk.tx; p.y = tk.ty;
+    const framme = SIM.soverNu(p, tk);
+    // en natt i byn: ingen som är på väg till sin sovplats räknas som sovande
+    const b = createState(3, START);
+    klockan(b, 21); tandEld(b);
+    let fel = 0, sover = 0;
+    kor(b, 10, x => { for (const q of living(x)) if (q.task?.act === 'sova') { if (q.task.phase === 'go' && SIM.soverNu(q, q.task)) fel++; if (SIM.soverNu(q, q.task)) sover++; } });
+    return [
+      ['på väg till sängen går man upprätt', !pavag],
+      ['långt från sovplatsen ligger man inte', !intefram],
+      ['framme lägger man sig', framme],
+      [`under natten ligger ingen på väg (${fel}) och de som somnat ligger (${sover})`, fel === 0 && sover > 0],
+    ];
+  },
+};
 SCENARIER.lagerivagen = {
   text: 'Steg 8.1.15: en lagerplats påverkar inte var ett hus eller en station ute byggs. Ligger den i vägen flyttas den till en ny plats med samma namn, och sakerna bärs dit. Steg 9.2.15: likadant när ett stråk går igenom den',
   kor: () => {

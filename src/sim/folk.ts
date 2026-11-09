@@ -1,7 +1,7 @@
 import { eldPlats } from './karta';
 import { freeNear } from './byggnad';
 import { Strom, clamp, gauss, pick, rnd } from './slump';
-import { Act, DAY, HOUR, LogEntry, Person, Rel, SKILLS, STATS, Skill, Stat, State } from './typer';
+import { Act, DAY, HOUR, LogEntry, Person, Rel, SKILLS, STATS, Skill, Stat, State, Task } from './typer';
 import { balans } from './balans';
 import { nyAndlighet } from './religion';
 import { hourOf } from './tid';
@@ -418,3 +418,6 @@ export function think(p: Person, text: string, v: number, now: number, dur: numb
   p.thoughts = p.thoughts.filter(t => t.text !== text);
   p.thoughts.push({ text, v, until: now + dur });
 }
+
+// den som ska sova ligger först när hen är framme vid bädden eller platsen; på vägen dit går hen upprätt (steg 9.2.89)
+export const soverNu = (p: Person, tk: Task) => tk.act === 'sova' && tk.phase !== 'go' && Math.hypot(p.x - tk.tx, p.y - tk.ty) < 0.6;
