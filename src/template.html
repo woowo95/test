@@ -63,7 +63,7 @@ header::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; h
 .nyckel { display: inline-flex; align-items: center; gap: 3px; padding: 1px 5px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); line-height: 18px; }
 .nyckel img { image-rendering: pixelated; vertical-align: middle; }
 .notisruta { position: fixed; z-index: 4; top: calc(var(--topp) + 8px); left: 50%; transform: translateX(-50%); width: min(380px, calc(100vw - 32px)); box-sizing: border-box; padding: 8px 10px; background: var(--panel); color: var(--fg); border: 2px solid var(--ram); box-shadow: 0 3px 0 rgba(36,32,29,.35); }
-.notishuvud { display: flex; align-items: center; gap: 6px; padding-bottom: 4px; border-bottom: 2px solid var(--line); } .notishuvud b { flex: 1; } .notisnr { font-size: 12px; color: var(--muted, inherit); }
+.notishuvud { display: flex; align-items: center; gap: 6px; padding-bottom: 4px; border-bottom: 2px solid var(--line); } .notishuvud b { flex: 1; } .notisnr { font-size: 12px; color: var(--muted); }
 .notis-fara { border-color: var(--fara); } .notis-dod { border-color: var(--ram); } .notis-folk { border-color: var(--g-oliv); } .notis-framsteg { border-color: var(--g-senap); } .notis-handel { border-color: var(--handel); }
 .notisrader { margin: 6px 0; padding-left: 18px; max-height: 40vh; overflow-y: auto; } .notisrader li { margin: 2px 0; }
 .notisknappar { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; } .notisknappar button { display: inline-flex; align-items: center; gap: 3px; min-height: 28px; }
@@ -335,6 +335,7 @@ button.tnod.liten.ryk { cursor: pointer; width: 36px; height: 36px; }
 .phead h2 { font-family: var(--display); font-size: 24px; margin: 0; line-height: 1.1; }
 .phead p { margin: 2px 0 0; }
 .phead > .hjalp { margin-left: auto; flex: none; }
+.pfakta { font-size: 13px; color: var(--muted); }
 .status { font-weight: 500; font-size: 15px; margin: 2px 0; }
 .status .akt[title] { cursor: help; text-decoration: underline dotted; text-underline-offset: 3px; }
 h3 { font-family: var(--display); font-size: 16px; text-transform: uppercase; letter-spacing: 0; color: var(--muted); margin: 16px 0 6px; font-weight: 400; }

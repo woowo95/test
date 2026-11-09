@@ -31,7 +31,7 @@ export const person: Flik = {
     const status = alive(p) ? statusRad(p, med) : p.died !== undefined ? `Dog ${p.cause} (${timeLabel(s, p.died)})` : `Flyttade från byn (${timeLabel(s, p.left!)})`;
     return `
       <div class="phead">${portrattImg(skapad(s, p), "big stor")}<div><h2>${esc(p.name)}${binamnHtml(p)}${alive(p) ? prickar(p) : ''}${anseende(p)}</h2>${binamnForkl(p)}
-      <p class="status">${status}</p></div></div>
+      <p class="pfakta">${pFakta(p)}</p><p class="status">${status}</p></div></div>
       ${flikRad(flikar, flik)}
       ${delar.map((d, i) => delHtml(d, i, d.kort?.(p), () => d.html(p))).join('')}`;
   },
@@ -186,6 +186,11 @@ function gastUtr(g: Gast) {
   return `<ul class="fame">${g.bar.map(b => `<li title="${esc(b.title)}">${hasIcon(b.ikon) ? iconImg(b.ikon, 16) + ' ' : ''}${b.text}</li>`).join('') || '<li class="muted">Bär inget</li>'}</ul>`;
 }
 
+// bredvid porträttet (steg 9.2.95): kön, ålder och yrke, och partnern om det finns en ("med …")
+function pFakta(p: Person) {
+  const a = Math.floor(ageOf(p, alive(p) ? s.now : (p.died ?? p.left ?? s.now))), y = yrkeNamn(s, p), q = byId(s, p.partner);
+  return [p.sex === 'k' ? 'Kvinna' : 'Man', `${a} år`, y ? esc(y) : '', q ? `med ${pLink(q)}` : ''].filter(Boolean).join(' · ');
+}
 // en övertygelse: personen drar en sed minst så här mycket åt ena hållet (ett helt steg är 1, seder.ts)
 const OVERTYGAD = 0.35;
 function presHtml(p: Person) {
