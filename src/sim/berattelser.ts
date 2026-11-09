@@ -1,6 +1,7 @@
 import { balans } from './balans';
+import { PERSONLOGG, PLOGG, type PersonloggId, type PersonloggSlag, type PersonRad } from './personlogg';
 import { personHand } from './personlogg';
-import { ALDER, KROPP, REL, ageOf, alive, byId, count, isKin, isParent, living, log, namnSlut, relKey } from './folk';
+import { ALDER, KROPP, REL, ageOf, alive, byId, count, isKin, isParent, living, log, namnSlut, relKey, stat } from './folk';
 import { ACTS, Act, slagIkon } from './handlingar';
 import { TAGS } from './seder';
 import { kronika } from './historik';
@@ -13,7 +14,7 @@ import { upplev, upplevelseText } from './uppvaxt';
 import { isLight, kalender } from './tid';
 import { temperature, vaderNu } from './vader';
 import { hash3 } from './slump';
-import { ganger, gen, goraNamn, och, slaktOrd, talOrd } from './ord';
+import { ganger, gen, goraNamn, han, honom, och, slaktOrd, talOrd } from './ord';
 import { isSick } from './sjukdom';
 
 // Berättelserna (steg 3.9, "Berättelser" i designdokumentet): texterna om människorna, händelserna och sakerna. Varje
@@ -1943,6 +1944,26 @@ const MDEF = {
     { t: '{namn} tog upp en flintsten {plats}.', om: f => !!f.plats },
     { t: 'Där {namn} letade låg en flintsten.', om: f => !f.plats },
   ],
+  // personens händelser (steg 9.2.108, personlogg.ts): det som läggs till efter händelsen, färgat av personligheten och humöret
+  // när det hände. {hen} och {honom} är personen; orolig, modig, glad, nere och talfor är villkoren
+  h_ont: [
+    { t: 'Det skrämde {honom}.', om: f => f.orolig === true },
+    { t: '{Hen} har svårt att släppa det.', om: f => f.orolig === true },
+    { t: '{Hen} tar det med fattning.', om: f => f.modig === true },
+    { t: '{Hen} biter ihop.', om: f => f.modig === true },
+    { t: 'Det tynger {honom}.', om: f => f.nere === true },
+    { t: '{Hen} har inte orkat tänka på annat sedan dess.', om: f => f.nere === true },
+    { t: '{Hen} försöker se framåt.', om: f => f.glad === true },
+    { t: '', om: f => !f.orolig && !f.modig && !f.nere && !f.glad },
+  ],
+  h_gott: [
+    { t: '{Hen} är stolt över det.', om: f => f.modig === true || f.glad === true },
+    { t: '{Hen} gläds åt det.', om: f => f.glad === true },
+    { t: 'Det lyfte {honom} lite.', om: f => f.nere === true },
+    { t: '{Hen} vågar knappt tro att det är sant.', om: f => f.orolig === true },
+    { t: '{Hen} har berättat det för alla.', om: f => f.talfor === true },
+    { t: '', om: f => !f.orolig && !f.modig && !f.nere && !f.glad && !f.talfor },
+  ],
 } satisfies Record<string, Variant[]>;
 export type MallId = keyof typeof MDEF;
 export const BERATTELSER: Record<MallId, Variant[]> = MDEF;
@@ -2624,3 +2645,28 @@ export function relationText(s: State, p: Person, q: Person, r: Rel): string[] {
   return ut;
 }
 const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+
+// raderna som visas (steg 9.2.108), senaste först: samma slag samma dygn (ett år i spelet) blir en rad, och texten får ett
+// tillägg som färgas av personligheten och humöret när det hände. Valet av text följer byns frö och raden, aldrig slumpen
+export interface VisadRad { t: number; k: PersonloggId; text: string; alla: string[] }
+export function personRader(s: State, p: Person): VisadRad[] {
+  const ut: VisadRad[] = [], h = p.hand ?? [];
+  for (let i = h.length - 1; i >= 0;) {
+    const [t, k] = h[i], dygn = Math.floor(t / (24 * HOUR)), grupp: PersonRad[] = [];
+    while (i >= 0 && h[i][1] === k && Math.floor(h[i][0] / (24 * HOUR)) === dygn) grupp.push(h[i--]);
+    grupp.reverse();
+    const alla = grupp.map(r => r[2]), sist = grupp[grupp.length - 1];
+    let text = alla.slice(0, PLOGG.visaHela).join(' ');
+    if (alla.length > PLOGG.visaHela) text += ` Och ${alla.length - PLOGG.visaHela} ${alla.length - PLOGG.visaHela === 1 ? 'sak' : 'saker'} till av samma slag det året.`;
+    const tillagg = kanslaRad(s, p, k, sist);
+    ut.push({ t: sist[0], k, text: tillagg ? `${text} ${tillagg}` : text, alla });
+  }
+  return ut;
+}
+function kanslaRad(s: State, p: Person, k: PersonloggId, r: PersonRad) {
+  const d: PersonloggSlag = PERSONLOGG[k], ton = typeof d.ton === 'function' ? d.ton(r[2]) : d.ton;
+  if (!ton) return '';
+  const hum = (r[3] ?? 5) / 9, mod = stat(p, 'mod', r[0]);
+  const f = { hen: han(p), honom: honom(p), orolig: mod <= PLOGG.orolig, modig: mod >= PLOGG.modig, talfor: stat(p, 'karisma', r[0]) >= PLOGG.talfor, glad: hum > PLOGG.glad, nere: hum < PLOGG.nere };
+  return fyll(valjVariant(s, ton === 'ont' ? 'h_ont' : 'h_gott', p.id * 7919 + Math.round(r[0] / 60), f, 0), f);
+}

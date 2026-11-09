@@ -2086,7 +2086,7 @@ SCENARIER.sorg = {
 };
 
 SCENARIER.personlogg = {
-  text: 'Personens händelser (steg 9.2.107, personlogg.ts): en skada, en ny kunskap och en död hamnar hos rätt person, de som stod den döda nära får en rad, och ett dygn av vanligt arbete skriver inget nytt',
+  text: 'Personens händelser (steg 9.2.107–9.2.108, personlogg.ts): en skada, en ny kunskap och en död hamnar hos rätt person, de som stod den döda nära får en rad, ett dygn av vanligt arbete skriver inget om vardagen, det som händer samma dygn blir en rad, och personligheten färgar texten',
   kor: () => {
     const s = createState(3, START);
     kor(s, 6);
@@ -2102,14 +2102,23 @@ SCENARIER.personlogg = {
     const fore = new Map(living(s).map(q => [q, q.hand?.length ?? 0]));
     SIM.die(s, a, 'olycka');
     const har = (p: Person, k: string) => !!p.hand?.some(r => r[1] === k);
+    const k107 = [!living(s).some(q => q !== a && har(q, 'skada')), nara.length > 0 && nara.every(q => (q.hand?.length ?? 0) > fore.get(q)! && har(q, 'nara')), ovriga.every(q => (q.hand?.length ?? 0) === fore.get(q))];
+    // 9.2.108: tre lärdomar samma dygn blir en rad, och en orolig och en modig person skriver olika om samma skada
+    const b = living(s)[0], fore108 = SIM.personRader(s, b).length;
+    for (const x of ['Kom på A.', 'Kom på B.', 'Kom på C.']) SIM.personHand(s, b, 'lart', x);
+    const ihop = SIM.personRader(s, b);
+    const o = living(s)[1], m = living(s)[2], till: string[] = [];
+    for (const [q, mod] of [[o, 3], [m, 18]] as const) { q.pot.mod = mod; q.hand = []; SIM.personHand(s, q, 'skada', 'Fick ett sår i armen.'); till.push(SIM.personRader(s, q)[0].text); }
     return [
       ['ett dygn ger bara rader av slagen i registret, inga om vardagsarbetet (' + rader.length + ' rader, ' + vardagRad + ' om vardagen)', vardagRad === 0],
       ['ett dygn ger få rader hos varje person (högst ' + mest + ')', mest <= 12],
       ['skadan står hos den skadade', har(a, 'skada')],
       ['den nya kunskapen står hos den som lärde sig', har(a, 'lart')],
-      ['ingen annan fick skadan', !living(s).some(q => har(q, 'skada'))],
-      ['de som stod den döda nära fick en rad om döden (' + nara.length + ')', nara.length > 0 && nara.every(q => (q.hand?.length ?? 0) > fore.get(q)! && har(q, 'nara'))],
-      ['de andra fick ingen rad om döden', ovriga.every(q => (q.hand?.length ?? 0) === fore.get(q))],
+      ['ingen annan fick skadan', k107[0]],
+      ['de som stod den döda nära fick en rad om döden (' + nara.length + ')', k107[1]],
+      ['de andra fick ingen rad om döden', k107[2]],
+      ['tre händelser av samma slag samma dygn blir en rad (' + (ihop[0]?.text ?? '') + ')', ihop.length === fore108 + 1 && ihop[0].alla.length === 3],
+      ['en orolig och en modig skriver olika om samma skada (' + till.join(' | ') + ')', till[0] !== till[1] && till.every(x => x.startsWith('Fick ett sår i armen.'))],
     ];
   },
 };

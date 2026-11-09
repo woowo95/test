@@ -1,4 +1,4 @@
-import { sjukText } from '../../sim';
+import { sjukText, personRader, PERSONLOGG } from '../../sim';
 import { kvOf, paSigVikt, klanById, FORMAGOR, gangDelar, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
 import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, handOrkar, handPlatser, capacity, kvNamn, handerFor, load, utrustning, bordaIHander, type IHanden, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, timeLabel, vidBordet, upplevelseText, uppEffekt, vuxenUpp, Upplevelse, yrkeNamn, andlighet, troOf, tolkning, teckenText, troNamn, pratarMed, gastRelationer, actIkon, utbIkon, AMNEN, type ByteMinne, type GastRel, type Slakting, stacksOf, grundvarde, tingVarde, housesOf, husVarde } from '../../sim';
 import { gorText } from '../jakt';
@@ -56,7 +56,7 @@ export const person: Flik = {
 interface Del { id: string; tecken: string; namn: string; levande?: true; html(p: Person): string; kort?(p: Person): string; gast?(g: Gast): string }
 interface PFlik { id: string; tecken: string; namn: string; delar: string[] }
 const FLIKAR: PFlik[] = [
-  { id: 'om', tecken: '🪪', namn: 'Om', delar: ['pres', 'tid'] },
+  { id: 'om', tecken: '🪪', namn: 'Om', delar: ['pres', 'hand', 'tid'] },
   { id: 'egen', tecken: '{sym_egenskaper}', namn: 'Egenskaper', delar: ['egen'] }, // en egen flik igen (steg 6.9.10)
   { id: 'kropp', tecken: '❤️', namn: 'Kropp', delar: ['behov', 'halsa'] },
   { id: 'saker', tecken: '🎒', namn: 'Saker', delar: ['utr', 'form'] },
@@ -83,6 +83,7 @@ const DELAR: Del[] = [
   { id: 'behov', tecken: '❤️', namn: 'Behov', levande: true, html: behovHtml, kort: p => moodWord(moodOf(p, s.now)), gast: gastBehov },
   { id: 'halsa', tecken: '🩺', namn: 'Hälsa', levande: true, html: halsaHtml, kort: halsaKort, gast: gastHalsa },
   { id: 'egen', tecken: '{sym_egenskaper}', namn: 'Egenskaper', html: egenHtml, kort: egenKort, gast: gastEgen },
+  { id: 'hand', tecken: '📜', namn: 'Händelser', html: handHtml, kort: p => { const n = personRader(s, p).length; return n ? `${n} ${n === 1 ? 'händelse' : 'händelser'}` : 'Inget ännu'; } }, // steg 9.2.108
   { id: 'tid', tecken: '🕓', namn: 'Tiden', levande: true, html: tidHtml, kort: tidKort, gast: gastTid },
   { id: 'utr', tecken: '🎒', namn: 'Utrustning', levande: true, html: p => `${barNu(p) ? `<p class="muted">${carryTxt(p)}</p>` : ''}${gearHtml(p)}`, kort: p => { const u = utrustning(s, p, false), n = PLATS_LIST.filter(k => u[k].ting).length; return n ? `${n} på sig` : 'Inget på sig'; }, gast: gastUtr },
   { id: 'form', tecken: '💰', namn: 'Förmögenhet', html: formogenhetLista, kort: p => String(Math.round(formogenhetDelar(s, p.id).sum)) },
@@ -606,6 +607,13 @@ const HABIT_GROUPS = () => habitGroups ??= (() => {
 // till Annat (steg 3.10.5)
 const SMA = 0.01;
 let tidVald: string | undefined; // namnet på delen som är markerad med ett tryck
+// personens händelser (steg 9.2.108, personlogg.ts): senaste först, med slagets symbol och när det hände; en ihopslagen rad
+// visar alla sina texter när man håller musen över den
+function handHtml(p: Person) {
+  const r = personRader(s, p);
+  if (!r.length) return '<p class="muted">Inget särskilt har hänt ännu.</p>';
+  return `<ul class="fame phand">${r.map(x => `<li${x.alla.length > 1 ? ` title="${esc(x.alla.join(' '))}"` : ''}><span title="${esc(PERSONLOGG[x.k].namn)}">${PERSONLOGG[x.k].ikon}</span> <span class="muted">${esc(clockTxt(x.t))}</span> ${esc(x.text)}</li>`).join('')}</ul>`;
+}
 function tidHtml(p: Person) {
   const tot = habitTotal(p) - (p.habit.sova ?? 0);
   if (!(tot > 0)) return '<p class="muted">Hen har inte hunnit göra något ännu.</p>';

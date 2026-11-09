@@ -1,5 +1,5 @@
 import { amountOf } from './lager';
-import { personHand } from './personlogg';
+import { personHand, satHumor } from './personlogg';
 import { ALDER, ageOf, count, franMitt, getRel, isParent, livet, living, log, relKey, stat, think } from './folk';
 import { Kroppsdel, SkadaTyp, halsa, skada } from './halsa';
 import { die, leave } from './liv';
@@ -325,3 +325,5 @@ export function stepHumor(s: State) {
     utbrottRisk(s, p, ljust);
   }
 }
+
+satHumor(moodOf); // personens händelser minns humöret (steg 9.2.108)

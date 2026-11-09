@@ -3,7 +3,7 @@
 // En kontroll är en rad i registret KONTROLLER: vad den heter och vad den hittar i texten (och fälten den fylldes med).
 // titta(s) skriver de texter som bara visas när man trycker på något, som om någon tittade (beskrivningen av en person,
 // samtalet, relationerna och sakernas berättelser).
-import { State, alive, byId, living } from '../sim';
+import { personRader, State, alive, byId, living } from '../sim';
 import { Fyllning, beskrivning, pratText, relationText, sakBerattelse } from '../sim/berattelser';
 import { SAKER, sakNamn } from '../sim/saker';
 import { STATIONER } from '../sim/stationer';
@@ -79,7 +79,7 @@ export function kollaText(t: string, f: Fyllning, kon: (namn: string) => string 
 // skriver de texter som bara visas när man trycker på något, för alla i byn och alla saker med ett minne
 export function titta(s: State) {
   for (const p of living(s)) {
-    beskrivning(s, p); pratText(s, p);
+    beskrivning(s, p); pratText(s, p); personRader(s, p); // personens händelser (steg 9.2.108)
     for (const k in s.rels) {
       const [a, b] = k.split('-').map(Number);
       if (a !== p.id && b !== p.id) continue;
