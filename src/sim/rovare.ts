@@ -76,6 +76,8 @@ export const ROVARE = balans('rovare', {
   testUt: 40, // ... annars ungefär så här många rutor utanför byns område (steg 9.2.103), som en vanlig flock men kortare: ...
   testSamlas: 1, // ... den samlas så här många minuter (en minut är ungefär sex timmar i spelet) ...
   testVanta: 1, // ... och väntar så här många minuter på väntplatsen innan anfallet (steg 9.2.80)
+  narR: 6, // den som är vaken och kommer så här nära flocken ser den och får larmet, också när någon annan redan sett den (steg 9.2.105)
+  larmTim: 2, // ... om hen inte redan fått larmet de senaste så här många timmarna
   anfallUt: 2, // en flock som setts så här nära byns område (utanforByn) eller inne i det gör att byn går i anfallsläge (steg 9.2.104)
   lurUt: 3, // väntplatsen ligger minst så här många rutor utanför byns område (utanforByn), också för en vanlig flock (steg 9.2.103)
   // vem som försvarar och vem som gömmer sig (steg 9.2.75, rovarSkydd): mod / 20 + iver + fler × (de som står emot + 1) / rövarna,
@@ -317,6 +319,18 @@ function anfall(s: State, f: Rovarflock, folk: Person[]) {
   count(s, 'rovarAnfall');
   const text = `Rövarna är i byn ${fran(s, f)}! Hela byn får larmet, och de som vågar går mot dem.`;
   log(s, text, 'world'); notis(s, 'anfall', text, [], { x: Math.floor(f.x), y: Math.floor(f.y) });
+}
+// alla som ser rövarna reagerar (steg 9.2.105): den som är vaken och kommer nära flocken utan att redan ha larmet ser den,
+// ropar och söker skydd eller ger sig in, så att ingen går rakt igenom flocken
+function narFlocken(s: State, f: Rovarflock, folk: Person[]) {
+  for (const q of folk) {
+    if (!alive(q) || !vaken(q) || q.task?.act === 'strid' || narmast(f, q) >= ROVARE.narR) continue;
+    if (q.larm?.vad === 'rovare' && s.now - q.larm.t < ROVARE.larmTim * HOUR) continue;
+    const hort = larma(s, 'rovare', f.gissning ?? f.folk.length, [q]);
+    count(s, 'rovarNara');
+    log(s, `${q.name} kom nära rövarna ${fran(s, f)} och ropade.`, 'world', [q.id]);
+    soker(s, [q, ...hort]);
+  }
 }
 // flocken som byn går mot (anfallsläget), om någon
 const anfallsFlock = (s: State) => [s.rovare, ...(s.rovareFler ?? [])].find(f => f?.anfall && f.folk.length && f.gor !== 'flyr' && f.gor !== 'slass');
@@ -639,7 +653,7 @@ export function rovarSteg(s: State, dtSec: number) {
   for (const f of [s.rovare, ...(s.rovareFler ?? [])]) {
     if (!f) continue;
     if (f.folk.some(r => r.x === undefined)) stallUpp(s, f, f.x, f.y); // en sparad by från före v450
-    if (f.gor !== 'flyr') { ses(s, f, folk); if (f.sedd !== undefined && !f.anfall && f.gor !== 'slass' && f.gor !== 'letar' && iByn(s, f)) anfall(s, f, folk); }
+    if (f.gor !== 'flyr') { ses(s, f, folk); if (f.sedd !== undefined && !f.anfall && f.gor !== 'slass' && f.gor !== 'letar' && iByn(s, f)) anfall(s, f, folk); if (f.sedd !== undefined && f.gor !== 'slass') narFlocken(s, f, folk); }
     if (f.folk.length) flockSteg(s, f, folk, dtSec);
   }
   if (s.rovare && !s.rovare.folk.length) s.rovare = undefined;

@@ -1949,7 +1949,7 @@ SCENARIER.rovarforsvar = {
 };
 
 SCENARIER.rovartest = {
-  text: 'Steg 9.2.103–9.2.104: rövarna i testläget kommer som en vanlig flock men kortare: de dyker upp ungefär 40 rutor utanför byns område, samlas en minut, går till väntplatsen, väntar en minut och anfaller inom ungefär två minuter. Väntplatsen ligger alltid utanför byns område, också för en vanlig flock. En flock som setts inne i byns område eller nära det gör att hela byn får larmet, och de som vågar går mot flocken, så att striden börjar där den står. Prövas i en stor by (by 42 efter 70 dygn)',
+  text: 'Steg 9.2.103–9.2.105: rövarna i testläget kommer som en vanlig flock men kortare: de dyker upp ungefär 40 rutor utanför byns område, samlas en minut, går till väntplatsen, väntar en minut och anfaller inom ungefär två minuter. Väntplatsen ligger alltid utanför byns område, också för en vanlig flock. En flock som setts inne i byns område eller nära det gör att hela byn får larmet, och de som vågar går mot flocken, så att striden börjar där den står. Den som kommer nära en flock som någon annan sett får också larmet och går inte igenom den. Prövas i en stor by (by 42 efter 70 dygn)',
   kor: () => {
     const { ROVARE, MIN, SEC, HOUR, utanforByn } = SIM;
     const stor = () => { const s = lasBy('test/facit-byar/42-70.json.gz'); for (const c of SIM.klanerOf(s)) c.inst = -60; return s; };
@@ -1985,7 +1985,26 @@ SCENARIER.rovartest = {
     for (let i = 0; i < 10 && a.rovare?.gor !== 'slass'; i++) steg(a, 1);
     const ag = a.rovare?.strid, rov = ag ? ag.u.kampar.filter(k => k.pid === undefined).map(k => ({ x: ag.ox + k.x, y: ag.oy + k.y })) : [];
     const vidFlocken = rov.length > 0 && rov.every(q => Math.hypot(q.x - fplats.x, q.y - fplats.y) < 3);
+    // den som kommer nära flocken (steg 9.2.105): en vuxen går förbi en flock som någon annan redan sett, utanför byns område
+    const b = createState(6, START), bm = SIM.malet(b), bvt = SIM.vattenNu(b);
+    for (const p of living(b)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: b.now + 20 * HOUR, carry: 0 };
+    const gar = living(b).find(p => SIM.ageOf(p, b.now) >= 18 && SIM.ageOf(p, b.now) < SIM.ALDER.gammal)!;
+    const land = (x: number, y: number) => x > 1 && y > 1 && x < SIM.W - 2 && y < SIM.H - 2 && bvt[Math.floor(y) * SIM.W + Math.floor(x)] !== SIM.T.Vatten && !SIM.bitAt(b, Math.floor(x), Math.floor(y)) && !SIM.isWall(b, Math.floor(x), Math.floor(y));
+    let bv = 0, bp: { x: number; y: number } | undefined;
+    for (let i = 0; i < 32 && !bp; i++) { bv = i * Math.PI / 16; for (let r = 6; r < 40 && !bp; r++) { const x = Math.floor(bm.x + Math.cos(bv) * r) + 0.5, y = Math.floor(bm.y + Math.sin(bv) * r) + 0.5; if (utanforByn(b, x, y) >= 8 && land(x, y) && land(x - Math.cos(bv) * 10, y - Math.sin(bv) * 10) && land(x + Math.cos(bv) * 8, y + Math.sin(bv) * 8)) bp = { x, y }; } }
+    SIM.rovarnaKommer(b, 3); const bf = b.rovare!; bf.gor = 'vantar'; bf.till = b.now + 60 * MIN; bf.sedd = b.now - MIN; bf.lurat = true; SIM.stallUpp(b, bf, bp!.x, bp!.y);
+    gar.x = bp!.x - Math.cos(bv) * 10; gar.y = bp!.y - Math.sin(bv) * 10; delete gar.larm;
+    gar.task = { act: 'bara', phase: 'go', tx: bp!.x + Math.cos(bv) * 8, ty: bp!.y + Math.sin(bv) * 8, until: b.now + HOUR, carry: 0, why: 'går förbi' };
+    let narmast = Infinity, fickLarm = -1;
+    for (let i = 0; i < 90 && b.rovare; i++) {
+      SIM.step(b, 1);
+      for (const r of b.rovare?.folk ?? []) narmast = Math.min(narmast, Math.hypot(r.x! - gar.x, r.y! - gar.y));
+      if (fickLarm < 0 && (gar as Person).larm?.vad === 'rovare') fickLarm = Math.min(...(b.rovare?.folk ?? []).map(r => Math.hypot(r.x! - gar.x, r.y! - gar.y)));
+    }
     return [
+      [`den som går förbi flocken får larmet ${fickLarm.toFixed(1)} rutor från den (${b.stat?.rovarNara ?? 0})`, fickLarm > 0 && fickLarm <= ROVARE.narR + 1 && (b.stat?.rovarNara ?? 0) >= 1],
+      [`... och gör något annat: "${gar.task?.why ?? 'inget'}"`, gar.task?.why !== 'går förbi'],
+      [`... och går inte igenom flocken (närmast ${narmast.toFixed(1)} rutor)`, narmast > 2],
       [`anfallsläget: flocken står ${fran.toFixed(1)} rutor från förrådet, inne i byns område`, !!ap && fran >= 6],
       [`... och byn går i anfallsläge när den setts (${a.stat?.rovarAnfall ?? 0})`, !!a.rovare?.anfall && (a.stat?.rovarAnfall ?? 0) === 1],
       [`... alla i byn (${alla.length}) får larmet`, allaLarm],
