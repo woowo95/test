@@ -358,6 +358,9 @@ SCENARIER.arv = {
     die(s, d, 'sjukdom');
     const partner = Math.abs(varde(s, a) - dVarde) < 1e-6 && varde(s, b) === 0 && yxor(s, a) === 1;
     const syns = s.log.some(l => l.text.startsWith(`${a.name} ärvde`) && l.text.includes('flintyxa') && l.text.includes(d.name));
+    // krönikan (steg 9.2.127): det värdefullaste och resten som ett värde; loggen hela listan
+    const kr = (s.hist?.kronika ?? []).filter(r => r[2] === 'arv').map(r => r[1]).find(x => x.startsWith(`${a.name} ärvde`)) ?? '', helaRaden = s.log.find(l => l.text.startsWith(`${a.name} ärvde`))?.text ?? '';
+    const kort = / och saker värda \d+ silver efter /.test(kr) && (helaRaden.match(/,/g) ?? []).length >= 1 && !kr.includes(',');
     const arv1 = s.stat?.arv ?? 0;
     // den som inte äger något lämnar inget arv, också när hen har en partner (samhalle-123)
     ({ s, d, a, b, c, e } = ny());
@@ -437,6 +440,7 @@ SCENARIER.arv = {
     return [
       ['partnern ärver allt', partner],
       ['det syns i loggen vem som ärvde vad', syns],
+      [`krönikan nämner det värdefullaste och resten som ett värde ("${kr}"), loggen hela listan ("${helaRaden}")`, kort],
       [`ett arv räknas när något ärvs (${arv1}), inte när den döda inte ägde något (${arv0})`, arv1 === 1 && cTom && arv0 === 0],
       [`utan partner delar barnen jämnt efter värde (${va.toFixed(0)} och ${vb.toFixed(0)})`, barnen],
       [`huset delas ut först (värt ${husV.toFixed(1)}), även till ett barn som redan har ett hus, och får hens namn; yxan går till det andra barnet`, husForst],
