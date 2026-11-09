@@ -1422,7 +1422,7 @@ SCENARIER.smidighet = {
     const aldras = SIM.stat(p, 'smidighet', t.now) < 15 && SIM.stat(p, 'styrka', t.now) === 15;
     // hantverket: samma färdighet, olika smidighet
     p.skill.hantverk = 8;
-    const kv = (sm: number) => { p.pot.smidighet = sm; let n = 0; for (let i = 0; i < 400; i++) n += SIM.rullaKvalitet(t, p, false); return n; };
+    const kv = (sm: number) => { p.pot.smidighet = sm; let n = 0; for (let i = 0; i < 400; i++) n += SIM.rullaKvalitet(t, p, 0); return n; };
     const fin = kv(20) > kv(1);
     // striden: två lika, den ena smidigare
     const m = (id: number, sida: 0 | 1, smidighet: number) => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 10, smidighet, skicklighet: 10 }, vapen: 'kniv' as SIM.Vapen, klader: [], fart: 1, x: sida ? 12 : 8, y: 7 });
