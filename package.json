@@ -19,6 +19,7 @@
     "samma": "tsx src/test/samma.ts",
     "jamfor": "tsx src/test/jamfor.ts",
     "natur": "tsx src/test/natur.ts",
+    "hus": "tsx src/test/hus.ts",
     "prov": "tsx src/test/prov.ts",
     "talen": "tsx src/test/talen.ts",
     "recept": "tsx src/test/recept.ts",

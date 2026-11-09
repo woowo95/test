@@ -1,0 +1,46 @@
+// npm run hus -- [antal byar = 16] [dygn = 35]
+// Husen i många byar: hur många som planeras av varje sort, hur ofta de byggs ut, byter funktion och rivs, och för
+// förrådshuset varför det byggs eller inte (maten som ruttnar, ett fullt förråd, tomma sovsalar och det som går före).
+import './utc';
+import { korJson, pool, seedAv, sek } from './pool';
+import { median } from './nyckeltal';
+
+const [antal = 16, dagar = 35] = process.argv.slice(2).map(Number);
+const seeds = Array.from({ length: antal }, (_, i) => seedAv(i));
+type Tim = { rutt: number; full: number; behov: number; tomma: number; forst: number; harForrad: number };
+type Ut = { seed: number; pop: number; planerat: Record<string, number>; ut: number; utbyggt: number; rivet: number; rasat: number; brand: number; brandVagg: number; bytt: Record<string, number>; nu: Record<string, number>; husKopt: number;
+  ruttnat: number; rottMax: number; tim: Tim; fore: Record<string, number>; forradDag: number; vakter: number; larm: string[] };
+const t0 = Date.now();
+const rs = await pool(seeds.map(seed => () => korJson<Ut>('hus-en.ts', [String(seed), String(dagar)], `by ${seed}`)));
+const sum = (fn: (r: Ut) => number) => rs.reduce((a, r) => a + fn(r), 0);
+const med = (fn: (r: Ut) => number) => median(rs.map(fn));
+const nycklar = (fn: (r: Ut) => Record<string, number>) => [...new Set(rs.flatMap(r => Object.keys(fn(r))))];
+console.log(`${antal} byar, ${dagar} dygn (${dagar} år i spelet), ${sek(t0)} s datorns tid`);
+console.log('\nHUSEN                      totalt   per by (median)   byar där det hänt');
+const rad = (namn: string, fn: (r: Ut) => number) => console.log(namn.padEnd(26) + String(sum(fn)).padStart(7) + String(med(fn)).padStart(18) + `${rs.filter(r => fn(r) > 0).length}/${antal}`.padStart(20));
+for (const fn of nycklar(r => r.planerat)) rad(`planerat ${fn}`, r => r.planerat[fn] ?? 0);
+rad('planerad utbyggnad', r => r.ut);
+rad('färdig utbyggnad', r => r.utbyggt);
+for (const fn of nycklar(r => r.bytt)) rad(`bytt till ${fn}`, r => r.bytt[fn] ?? 0);
+rad('rivet', r => r.rivet);
+rad('köpt hus', r => r.husKopt);
+rad('eldsvådor', r => r.brand);
+rad('väggar som brann', r => r.brandVagg);
+rad('väggar slitna tills de rasade', r => r.rasat - r.brandVagg);
+for (const fn of nycklar(r => r.nu)) rad(`står nu: ${fn}`, r => r.nu[fn] ?? 0);
+console.log('\nFÖRRÅDSHUSET');
+const f = rs.filter(r => r.forradDag >= 0);
+console.log(`byggt i ${f.length}/${antal} byar${f.length ? `, första klart dygn ${f.map(r => r.forradDag.toFixed(0)).join(', ')}` : ''}`);
+rad('mat som ruttnat', r => r.ruttnat);
+console.log(`ruttet (minnet) som mest: median ${med(r => r.rottMax).toFixed(1)}, gränsen är ${10}`);
+console.log('timmar utan förrådshus då …');
+rad('  maten ruttnat nog', r => r.tim.rutt);
+rad('  förrådet fullt', r => r.tim.full);
+rad('  ... men en tom sovsal', r => r.tim.tomma);
+rad('  behovet fanns', r => r.tim.behov);
+rad('  det var mest akut', r => r.tim.forst);
+for (const fn of nycklar(r => r.fore)) rad(`  ${fn} gick före`, r => r.fore[fn] ?? 0);
+console.log('\nper by: seed, invånare, planerat, utbyggt, bytt, rivet, ruttnat, ruttet max, förrådshus');
+for (const r of rs) console.log(`  by ${String(r.seed).padEnd(6)} ${String(r.pop).padStart(3)} inv  plan ${JSON.stringify(r.planerat)}  ut ${r.utbyggt}/${r.ut}  bytt ${JSON.stringify(r.bytt)}  rivet ${r.rivet}  brand ${r.brand ? r.brandVagg + ' väggar' : '–'}  ruttnat ${r.ruttnat}  max ${r.rottMax.toFixed(1)}  ${r.forradDag >= 0 ? 'dygn ' + r.forradDag.toFixed(0) : '–'}`);
+const v = rs.reduce((a, r) => a + r.vakter, 0);
+console.log(v ? 'VAKTER LARMAR:\n  ' + rs.flatMap(r => r.larm.map(l => `by ${r.seed}: ${l}`)).join('\n  ') : 'Vakter: inga fel.');

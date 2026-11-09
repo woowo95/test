@@ -65,7 +65,7 @@ SCENARIER.forradshus = {
     // var tredje by bygger ett förrådshus så tidigt, så byarna är valda bland dem som gjort det med god marginal; med
     // byar som var nära gränsen (dygn 39 av 40) avgjorde minsta ändring någon annanstans om provet gick igenom
     let byggt = 0, iHuset = 0;
-    for (const seed of [9, 16, 4]) { // valda igen i steg 2.2.2 (by 16 bygger det dygn 13, by 4 dygn 16 och by 9 dygn 21; by 8, 10 och 11 inte längre inom 30 dygn); by 9 först sedan steg 4.1.1.3, då by 16 och 4 inte längre gjorde det inom 30 dygn
+    for (const seed of [16839, 80191, 1001]) { // valda igen i steg 9.9.4 bland byarna i npm run hus som byggt förrådshuset tidigt (dygn 4, 5 och 6); by 9, 16 och 4 gjorde det inte längre inom 30 dygn
       const v = createState(seed, START);
       byggt = 0; iHuset = 0;
       for (let dygn = 0; dygn < 30 && !(byggt && iHuset); dygn++) kor(v, 24, v => {
