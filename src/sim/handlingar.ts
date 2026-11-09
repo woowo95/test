@@ -189,6 +189,7 @@ const DEF = {
   handla: { namn: 'Handlar med handlaren', slag: 'prata', stilla: true }, // byns handel vid handlarens filt (steg 4.4.1.3, handel.ts): task.ref är handlarens id. Inte social: den som handlar pratar bara med handlaren (steg 4.5.7.5)
   koa: { namn: 'Står i kö till handlaren', slag: 'prata', social: true, stilla: true }, // kön till handlaren (steg 4.5.7.5, handel.ts): de som väntar får prata med varandra
   slagtra: { namn: 'Täljer ett slagträ', slag: 'hantverk', hantverk: true, verb: 'täljer', plats: 'station' },
+  naverask: { namn: 'Viker en näverask', slag: 'hantverk', hantverk: true, verb: 'viker', plats: 'station' }, // vid slöjdbänken om byn har en, annars för hand (steg 9.4.13)
   lerkruka: { namn: 'Bygger upp en lerkruka', slag: 'hantverk', hantverk: true, verb: 'formar', plats: 'elden' }, // steg 9.4.11, kruka.ts
   slanda: { namn: 'Gör en slända', slag: 'hantverk', hantverk: true, verb: 'gör', plats: 'station' }, // steg 7.7.8
   fackla: { namn: 'Gör en fackla', slag: 'hantverk', hantverk: true, verb: 'binder', plats: 'station' }, // steg 6.3.6 (ljus.ts)

@@ -170,3 +170,21 @@ SCENARIER.lera = {
     ];
   },
 };
+
+// vätskorna och behållarna (steg 9.4.13–9.4.14)
+function naveraskan(): [string, boolean][] {
+  const { RECEPT: R, TEKNIK, STATIONER, fartVid, kvVid, vidStation } = SIM;
+  const r = R.naverask, tek = TEKNIK.find(t => t.id === 'naverask');
+  const s = createState(1, START), b = SIM.vidStation(medBankFas9(s));
+  return [
+    [`näveraskan är en sak av ${JSON.stringify(r.av)} på ${r.min} minuter, med en egen teknik (${tek?.namn ?? 'ingen'})`, r.av.naver === 1 && r.av.rep === 1 && r.min >= 2 && r.min <= 4 && !!tek],
+    [`den görs fortare och bättre vid slöjdbänken (${fartVid(s, b, 'naverask').toFixed(2)} gånger, kvalitet +${kvVid(s, b, 'naverask')})`, STATIONER.flatarbank.gor.includes('naverask') && fartVid(s, b, 'naverask') > 1 && kvVid(s, b, 'naverask') > 0],
+  ];
+  void vidStation;
+}
+const medBankFas9 = (s: SIM.State) => { const at = SIM.stationSite(s, 'flatarbank') ?? { x: 10, y: 10 }; const t: SIM.Station = { id: (s.nextStation = (s.nextStation ?? 0) + 1), k: 'flatarbank', x: at.x, y: at.y, kvar: 0 }; (s.stationer ??= []).push(t); SIM.touch(s); return t; };
+
+SCENARIER.vatskor = {
+  text: 'Steg 9.4.13: näveraskan är en liten ask av näver och rep med en egen teknik, som görs för hand eller fortare och bättre vid slöjdbänken',
+  kor: () => [...naveraskan()],
+};

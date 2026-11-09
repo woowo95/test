@@ -184,6 +184,7 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   spjut: spjutVill,
   metspo: spjutVill, // ett metspö per spjut
   korg: s => perVuxna(s, VILLTAL.korgPerVuxna, VILLTAL.korgMin, VILLTAL.korgMax),
+  naverask: s => Math.min(2, Math.ceil(living(s).length / 6)), // näveraskarna (steg 9.4.13) tills 9.4.14 räknar dem ur salvan och limmet
   lerkruka: s => living(s).filter(p => villPynt(s, p, 'kruka')).length + (nTools(s, 'vattensack') < 1 ? 1 : 0), // lerkrukorna (steg 9.4.12): de som vill ha en kruka som pynt, och en att bära vatten i när byn saknar en vattensäck
   kniv: s => VILLTAL.knivar + tommaPlatser(s, 'kniv'), // och en till för en tom knivplats vid slaktbänken
   bensyl: s => tommaPlatser(s, 'bensyl'), // en till slöjdbänken (steg 2.3.2)

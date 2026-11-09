@@ -4005,7 +4005,8 @@ for (const k of ['kruka', 'bonad', 'vaggbrade']) { PIX[k + '_karta'] = PIX[k]; P
 // den vilda rovan har samma symbol som rovan (Björn efter v245, steg 4.5.2)
 PIX.vildrova = PIX.rovor; PAL.vildrova = PAL.rovor;
 PIX.i_smakfull = PIX.kruka; PAL.i_smakfull = PAL.kruka;
-PIX.snickarbank = PIX.flatarbank; PAL.snickarbank = PAL.flatarbank; // platshållare för snickarbänkens teknik (steg 9.4.4) tills Björn valt i bildstilen
+PIX.snickarbank = PIX.flatarbank; PAL.snickarbank = PAL.flatarbank;
+PIX.naverask = PIX.korg; PAL.naverask = PAL.korg; // platshållare för näveraskan (steg 9.4.13) tills Björn valt i bildstilen // platshållare för snickarbänkens teknik (steg 9.4.4) tills Björn valt i bildstilen
 for (const k of ['lerkruka_liten', 'lerkruka_mellan', 'lerkruka_stor']) { PIX[k] = PIX.kruka; PAL[k] = PAL.kruka; } // platshållare för lerkrukans tre storlekar (steg 9.4.11) tills Björn valt i bildstilen // intrycket smakfull (steg 4.3.4): lerkrukan Björn valde
 // Björns val efter v245 (steg 4.5.2): rocken (version 2) och skorna (version 1) i 16 × 16 punkter, samma form för kaninskinn och
 // vargskinn i materialets färger, och bybornas filt (version 1; handlaren har kvar den förra)

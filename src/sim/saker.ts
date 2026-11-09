@@ -69,6 +69,9 @@ const DEF = {
   // giftig svamp som av misstag hamnat i förrådet bland den ätliga (fynd.ts). Den ligger i svampstacken och syns inte
   giftsvamp: { namn: 'Giftig svamp', haller: 2, dold: true, i: 'svamp' },
   sten: { namn: 'Sten', skaffa: { tid: 0.8 }, stack: 10, mapp: 'Sten', brinnerInte: true },
+  // näveraskan (steg 9.4.13): en liten ask av näver och rep, behållaren för salvan och benlimmet (vatskor.ts, steg 9.4.14)
+  naverask: { namn: 'Näverask', skaffa: RECEPT.naverask, vikt: 0.2, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'naveraskarTrasiga', text: '{namn}s näverask gick sönder.' },
+    gors: { text: 'Viker en ask av näver och syr ihop den med rep.', stat: 'naveraskarGjorda', forsta: '{namn} vek byns första näverask. I den håller sig salvan och limmet.' } },
   // lerkrukan i tre storlekar (steg 9.4.11, KRUKOR i kruka.ts): ett ting med ägare, skick och kvalitet, som torkar och bränns
   lerkruka_liten: { namn: 'Liten lerkruka', skaffa: RECEPT.lerkruka_liten, vikt: 0.5, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, grupp: 'lerkruka', trasig: { stat: 'krukorTrasiga', text: '{namn}s lerkruka sprack.' },
     gors: { text: 'Bygger upp en liten lerkruka av lera med sand i.', stat: 'krukorGjorda', forsta: '{namn} byggde upp byns första lerkruka av lera. Den ska torka och brännas i elden.' } },

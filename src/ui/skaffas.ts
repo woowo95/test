@@ -27,7 +27,7 @@ const ANVANDS: Record<string, string[]> = {
   skold: ['I striden'], bage: ['I striden och på jakten'], slunga: ['I striden och på jakten'], horn: ['Hörs över hela kartan'], pilar: ['Till bågen'],
   rokelse: ['Bönen och ritualerna'], brannolja: ['Lamporna, senare'],
   mjarde: ['Sätts ut i vattnet'], snara: ['Sätts ut i skogen'], grop: ['Grävs i skogen'], plankor: ['Golv och möbler, senare'], salva: ['Läkekonsten, senare'], tjara: ['Skyddar trä, senare'], benlim: ['Limmar trä, senare'], tval: ['Tvätta sig, senare'], ratlin: ['Rötas på torkställningen'], linfron: ['Sås på fälten'], leksak: ['Barnen leker med den'], huggen_sten: ['Härden'], rolleka: ['Salva'],
-  lerkruka_liten: ['Pynt, och senare kokkärl'], lerkruka_mellan: ['Pynt, och senare vattenkärl'], lerkruka_stor: ['Pynt, och senare förvaring'],
+  naverask: ['Salvan och limmet'], lerkruka_liten: ['Pynt, och senare kokkärl'], lerkruka_mellan: ['Pynt, och senare vattenkärl'], lerkruka_stor: ['Pynt, och senare förvaring'],
   torrgras: ['Tänder elden'], naver: ['Tänder elden'], flinta: ['Tänder elden'], sten: ['Eldringen'], mossa: ['Förband'], silver: ['Handel'],
   vilt: ['Slaktas'], varg: ['Slaktas'], vargdel: ['Slaktas'], radjur: ['Slaktas'], fagel: ['Slaktas'], fjadrar: ['Pilar och prydnader senare'], radjurdel: ['Slaktas'], radjursskinn: ['Handel'], bjorn: ['Slaktas'], bjorndel: ['Slaktas'], abborre: ['Rensas'],
   bensyl: ['Syr kläder vid slöjdbänken'], boll: ['Sport'], slagtra: ['Sport'], mal: ['Sport'],

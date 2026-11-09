@@ -113,7 +113,7 @@ export interface Forvar { rymmer: number; redskap?: true; tak?: true; stangd?: t
 export interface StationDel { namn: string; ikon?: string; w: number; h: number; arbete?: true } // en del i en station med delar (steg 9.4.1)
 export interface StationDef { kv?: number; delar?: StationDel[]; hard?: true; namn: string; ett?: true; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: Utkant; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar; pynt?: true; samtidigt?: number }
 // de enkla redskapen: görs vid slöjdbänken om byn har en, lite fortare där (fart), annars vid elden som förut (Björn, efter v90)
-const ENKLA: Act[] = ['yxa', 'kniv', 'bensyl', 'balte', 'boll', 'benflojt', 'fackla', 'talgljus'];
+const ENKLA: Act[] = ['yxa', 'kniv', 'bensyl', 'balte', 'boll', 'benflojt', 'fackla', 'talgljus', 'naverask'];
 // träsakerna vid snickarbänken (steg 9.4.5): receptets kolumn bank säger var det görs fortare och bättre, bara att det bara görs
 // där och kniv att det täljs med kniven på bänken. Handlingen som gör varje recept
 const TRA_ACT: Partial<Record<keyof typeof RECEPT, Act>> = { leksak: 'gor_leksak', fiskespjut: 'spjut', flintspjut: 'spjut', metspo: 'metspo', slagtra: 'slagtra', mal: 'mal', trumma: 'trumma', slanda: 'slanda', pilar: 'gor_pilar', skold: 'skold', bage: 'bage', lyra: 'lyra' };
