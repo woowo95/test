@@ -1215,12 +1215,13 @@ function lagerIStraket(): [string, boolean][] {
   ];
 }
 SCENARIER.husmarknad = {
-  text: 'Steg 9.2.109: alla bostäder går att köpa, men priset följer hur mycket säljaren behöver huset. Ett hus där folk bor kostar mer än att bygga nytt, ett hus som ägaren inte behöver säljs billigt, och en familj som inte har råd att bygga nytt köper ett sådant',
+  text: 'Steg 9.2.109–9.2.110: alla bostäder går att köpa, men priset följer hur mycket säljaren behöver huset. Ett hus där folk bor kostar mer än att bygga nytt, ett hus som ägaren inte behöver säljs billigt, och en familj som inte har råd att bygga nytt köper ett sådant, med det hela familjen äger',
   kor: () => {
     const s = createState(6, START);
     klockan(s); byggare(s);
     planBuild(s); byggKlart(s); // en sovsal åt alla
     const ppl = living(s).sort((x, y) => x.id - y.id), c = ppl.find(q => q.mother !== undefined)!, a = ppl.find(q => q.id === Math.min(c.mother!, c.father!))!;
+    const b = ppl.find(q => q.id === a.partner)!;
     nyInvanare(s, 'm', 30); const d = living(s)[living(s).length - 1]; // en ensam bybo
     const h = housesOf(s)[0];
     // byns sovsal där alla sover: den går att köpa, men den kostar mer än att bygga ett nytt lika stort hus
@@ -1233,8 +1234,9 @@ SCENARIER.husmarknad = {
     touch(s);
     const pris = SIM.saljPris(s, h), billigt = SIM.saljBehov(s, h) === 0 && pris < SIM.husVarde(s, h) * SIM.lage(s, h);
     const fattig = mostUrgent(s)?.a.ag !== a.id && !SIM.byggbehov(s).some(q => q.a.ag === a.id);
-    put(s, 'silver', Math.ceil(pris) + 10, { [a.id]: Math.ceil(pris) + 10 }); // marginal: familjen byter också till sig annat under tiden
-    const u = SIM.byggbehov(s).find(q => q.a.ag === a.id), kanBygga = SIM.formogenheter(s).egen.get(a.id) ?? 0;
+    put(s, 'silver', Math.ceil(pris) + 10, { [b.id]: Math.ceil(pris) + 10 }); // partnern äger silvret (steg 9.2.110); marginal: familjen byter också till sig annat under tiden
+    const bFore = SIM.ownsAmount(s, b, 'silver');
+    const u = SIM.byggbehov(s).find(q => q.a.ag === a.id), kanBygga = [a, b].reduce((v, q) => v + (SIM.formogenheter(s).egen.get(q.id) ?? 0), 0);
     planBuild(s);
     const affar = s.husAffar?.ag === a.id && s.husAffar.hus === h.id, ingetNytt = !housesOf(s).some(q => q !== h && q.ag === a.id);
     for (let i = 0; i < 48 && h.ag !== a.id; i++) kor(s, 1);
@@ -1243,9 +1245,10 @@ SCENARIER.husmarknad = {
       [`ett hus mitt i byn är värt lite mer (${mitt.toFixed(2)} gånger), ett utanför byn inte (${kant.toFixed(2)})`, mitt > 1 && mitt <= 1 + SIM.PLAN.lageMax && kant === 1],
       [`ett hus som ägaren inte behöver säljs under värdet (${Math.round(pris)} av ${Math.round(SIM.husVarde(s, h) * SIM.lage(s, h))} med läget)`, billigt],
       ['en familj utan något att betala med vill inte ha något hus', fattig],
-      [`med silver nog för det begagnade huset men inte för ett nytt vill familjen köpa (förmögenhet ${Math.round(kanBygga)})`, !!u && u.fn === 'familjehus' && !!u.a.kop],
+      [`med silver nog för det begagnade huset men inte för ett nytt hos partnern vill familjen köpa (parets förmögenhet ${Math.round(kanBygga)})`, !!u && u.fn === 'familjehus' && !!u.a.kop],
       ['familjen bygger inget nytt utan gör upp om huset', affar && ingetNytt],
       [`och huset blir familjens (${h.namn})`, h.ag === a.id && (s.stat?.husKopt ?? 0) >= 1],
+      [`partnern lade till silvret (${bFore} → ${SIM.ownsAmount(s, b, 'silver')})`, SIM.ownsAmount(s, b, 'silver') < bFore],
     ];
   },
 };

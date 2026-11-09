@@ -21,8 +21,8 @@ import { BYGG } from './bygg';
 import { DAY, GRANNAR4, H, HOUR, Person, State, T, W, inMap } from './typer';
 import { underMinnet } from './sjo';
 import { balans } from './balans';
-import { betalVaror, betalaAv, bynPart, genomfor, personPart } from './behov';
-import { kanTaHus } from './byte';
+import { betalVaror, bynPart, genomfor, personPart } from './behov';
+import { flytta, kanTaHus } from './byte';
 import { ELDFLYTT, nyEldplats } from './eldflytt';
 import { canLight } from './eld';
 import { paStrak, strakHindrar, strakI, straken } from './strak';
@@ -385,10 +385,13 @@ export function kanKopa(s: State, ag: number, folk: number): boolean {
   return housesOf(s).some(h => (h.ag === undefined || !fam.has(h.ag)) && kopbart(s, h) && sovPersoner((h.w - 2) * (h.h - 2)) >= folk && kopPris(s, ag, nyttLika(s, h)) >= saljPris(s, h));
 }
 satKanKopa(kanKopa);
+// köparens högsta pris: aldrig mer än det kostar att bygga nytt, och aldrig mer än hela familjen äger tillsammans (steg 9.2.110)
 export function kopPris(s: State, ag: number, nybygge: number) {
   const q = byId(s, ag);
-  return q ? Math.min(nybygge * PLAN.kopMax, varuVarde(ownedAll(s, ag), 0)) : 0;
+  return q ? Math.min(nybygge * PLAN.kopMax, familjen(s, q).reduce((v, m) => varuVarde(ownedAll(s, m.id), v), 0)) : 0;
 }
+// köparen och familjen (de levande): de lägger ihop till huset
+const familjen = (s: State, q: Person) => { const f = familjOf(s, q.id).filter(m => living(s).includes(m)); return f.includes(q) ? f : [q, ...f]; };
 const kopaHus: AtgardDef = {
   namn: 'Köpa ett hus', steg: 2,
   foresla: (s, b) => {
@@ -417,8 +420,21 @@ export function kopHus(s: State, h: Hus, ag: number, bud?: Person) {
   const M = personPart(s, kopare), G0 = saljare ? personPart(s, saljare) : bynPart(s, kopare.x, kopare.y, bud);
   if (!kanTaHus(M)) return false;
   const G = { ...G0, varde: () => 1 }; // betalningen räknas i grundvärdet
-  const { betal, fick } = betalaAv(betalVaror(M, G, ['hus']), G, pris);
+  // hela familjen lägger ihop (steg 9.2.110): det var och en kan avvara, i samma ordning som i ett vanligt byte (betalaAv i behov.ts)
+  const varor = familjen(s, kopare).flatMap(m => betalVaror(personPart(s, m), G, ['hus']).map(w => ({ ...w, m })))
+    .sort((a, b) => b.ut / b.in - a.ut / a.in || +!!a.t - +!!b.t);
+  const val: (typeof varor)[number][] = [];
+  let fick = 0;
+  for (const w of varor) {
+    if (fick >= pris - 1e-9) break;
+    const n = w.t ? 1 : Math.min(w.n, Math.ceil((pris - fick) / w.ut - 1e-6));
+    if (n <= 0) continue;
+    val.push({ ...w, n }); fick += n * w.ut;
+  }
   if (fick < pris - 1e-9) return false;
+  // det familjen lägger till går först till köparen, som sedan betalar
+  for (const w of val) if (w.m !== kopare) flytta(s, { k: w.k, n: w.n, t: w.t }, personPart(s, w.m), M);
+  const betal = val.map(w => ({ k: w.k, n: w.n, t: w.t }));
   genomfor(s, M, G, [{ k: 'hus', n: 1, hus: h.id, varde: pris }], betal, 'hus');
   h.ag = ag; h.fn = 'familjehus'; h.tom = undefined; h.rumFn = undefined; h.namn = husNamn(kopare.name); touch(s); count(s, 'husKopt');
   return true;
