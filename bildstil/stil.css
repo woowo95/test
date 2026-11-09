@@ -284,3 +284,11 @@ details.mer p { color: var(--dim); max-width: 62ch; margin: 4px 0 0; }
 .gr-svar .gr-knapp { justify-self: start; }
 .gr-sparat { color: var(--dim); min-height: 1.5em; }
 .grkort button:disabled, .grkort textarea:disabled { opacity: 0.5; cursor: not-allowed; }
+#bs-bild { width: 100%; max-width: 544px; height: auto; aspect-ratio: 136 / 99; }
+.bs-sparad canvas { aspect-ratio: 136 / 99; }
+.bs-sparade { display: grid; gap: 10px; }
+.bs-sparad { display: flex; gap: 10px; align-items: center; }
+.bs-sparad button { padding: 4px; flex: none; }
+.bs-sparad canvas { width: 136px; height: auto; }
+#bs-val .sk-rad { grid-template-columns: 8.6em minmax(0, 1fr); }
+@media (max-width: 420px) { #bs-val .sk-rad { grid-template-columns: minmax(0, 1fr); } }

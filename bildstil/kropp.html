@@ -15,6 +15,33 @@
     <div class="vallista" id="vallista"></div>
   </section>
 
+  <section id="bestskapare" aria-labelledby="h-bestskapare">
+    <div class="rubrik">
+      <span class="ogon">Bestskaparen · den legendariska besten</span>
+      <h2 id="h-bestskapare">En best av delar i lager</h2>
+      <p>Besten syns bara från sidan, åt höger eller spegelvänd. Välj en del i varje lager och kombinera dem. Håll fingret eller musen över en knapp för att läsa vad delen är. Människan bredvid är en ruta hög.</p>
+    </div>
+    <div class="skapare">
+      <div class="sk-scen">
+        <canvas id="bs-bild" role="img" aria-label="Besten från sidan"></canvas>
+        <p class="not" id="bs-text" aria-live="polite"></p>
+        <div class="sk-knapprad">
+          <button type="button" id="bs-slumpa" class="gr-knapp">Slumpa en best</button>
+          <button type="button" id="bs-spegla" class="gr-knapp" aria-pressed="false">Spegelvänd</button>
+        </div>
+      </div>
+      <div class="sk-val" id="bs-val"></div>
+    </div>
+    <div class="sk-avsnitt">
+      <h3>Spara besten</h3>
+      <p class="not">Sparas i sidans databas (samlingen <code>bestar</code>) med din kommentar, så att Claude kan läsa den. Tryck på en sparad best för att visa den igen.</p>
+      <label for="bs-kommentar">Kommentar</label>
+      <textarea id="bs-kommentar" rows="2" placeholder="Till exempel: hornen är bra men vingarna för små"></textarea>
+      <div class="sk-knapprad"><button type="button" id="bs-spara" class="gr-knapp">Spara besten</button><span class="not" id="bs-status" aria-live="polite"></span></div>
+      <div class="bs-sparade" id="bs-sparade"></div>
+    </div>
+  </section>
+
   <section id="granskning" aria-labelledby="h-granskning">
     <div class="rubrik">
       <span class="ogon">Svara här · porträttens delar</span>
@@ -86,7 +113,7 @@
     <span class="ogon">Under strecket</span>
     <h2>Guiden och allt annat</h2>
     <p class="lede">Guiden för allt som ritas i spelet. Allt på kartan har 16 punkter per ruta. Alla färger kommer ur palett B, Avokado och rost, som har 32 färger. Ytan har korn men inga fläckar (smuts 1), stora ytor har låg kontrast och inget är fulltonssvart.</p>
-    <nav class="hopp" aria-label="Genvägar"><a href="#skapare">Karaktärsskaparen</a><a href="#guide">Guiden</a><a href="#h-regler">Reglerna</a><a href="#h-beslut">Björns beslut</a></nav>
+    <nav class="hopp" aria-label="Genvägar"><a href="#bestskapare">Bestskaparen</a><a href="#skapare">Karaktärsskaparen</a><a href="#guide">Guiden</a><a href="#h-regler">Reglerna</a><a href="#h-beslut">Björns beslut</a></nav>
   </div>
 
   <section id="guide" aria-labelledby="h-guide">
