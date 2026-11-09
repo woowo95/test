@@ -4,6 +4,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { Person, Act, Task, createState, bearbeta, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, makeTool, step, living, pilesOf, amountOf, capacity, handOrkar, ryms, VIKT_STACK, isLight, isStored, spears, HOUR, State, migrate, die, bitsOf, KANIN, DJUR, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, foodOf, STACK_ORDER, needLadder, takeMaterial, BEAT, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELNING, packUp, releaseOwner, willing, tingOf, placeTools, EKONOMI, SAK_LIST, ownedAll, leave, chooseTask, stackOf, birth, SAKER, viktOf, handerFor, bordPlats, utrustning, bordaIHander, PLATS_LIST, cloneState, pickUp, load, byId } from '../../sim';
 import * as SIM from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
+import { lasBy } from '../delby';
 import { setItems, setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank, utanWebblasare, nyInvanare } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
 import { notisHtml, notisKlick, notisKnapp, notisVal } from '../../ui/notiser';
@@ -1751,12 +1752,12 @@ SCENARIER.rovare = {
     const tl = (['liten', 'mellan', 'stor'] as const).map(k => {
       const q = cloneState(bas); const r = SIM.skickaRovare(q, SIM.ROVARFLOCK[k]), r2 = SIM.skickaRovare(q, 2);
       const rad = q.log.find(e => e.text.startsWith('Testläget:'))?.text ?? ''; tlRad = rad; tlSkal = r2.text;
-      // steg 9.2.80: flocken står på väntplatsen, ROVARE.lur rutor från förrådet, på land och utanför husen, och väntar en minut
-      const f = q.rovare, z = SIM.zoneOf(q), m = z ? { x: z.x + z.w / 2, y: z.y + z.h / 2 } : { x: SIM.eldPlats(q).x + 0.5, y: SIM.eldPlats(q).y + 0.5 }, d = f ? Math.hypot(f.x - m.x, f.y - m.y) : 0, vt = SIM.vattenNu(q);
-      const nara = !!f && Math.abs(d - SIM.ROVARE.lur) <= 3 && vt[Math.floor(f.y) * SIM.W + Math.floor(f.x)] !== SIM.T.Vatten && !SIM.bitAt(q, f.x, f.y);
-      const a = cloneState(q); for (let i = 0; i < 12 && (a.rovare?.gor === 'vantar' || a.rovare?.gor === 'kommer'); i++) { a.now += BEAT * SIM.SEC; SIM.rovarSteg(a, BEAT); } // en timme i spelet, slag för slag
-      if (a.rovare?.gor === 'vantar' || a.rovare?.gor === 'kommer') return 0; // den har inte nått byn på en timme
-      return r.ok && nara && q.rovare?.folk.length === SIM.ROVARFLOCK[k] && q.rovare.gor === 'vantar' && /dyker upp \d+ rutor .+ om elden och går till anfall om en minut/.test(rad) && !r2.ok && !!r2.text && !!SIM.rovarHinder(q) ? SIM.ROVARFLOCK[k] : 0;
+      // steg 9.2.103: flocken dyker upp ungefär ROVARE.testUt rutor utanför byns område, på land och utanför husen, och samlas en minut
+      const f = q.rovare, vt = SIM.vattenNu(q);
+      const ute = !!f && Math.abs(SIM.utanforByn(q, f.x, f.y) - SIM.ROVARE.testUt) <= 5 && vt[Math.floor(f.y) * SIM.W + Math.floor(f.x)] !== SIM.T.Vatten && !SIM.bitAt(q, f.x, f.y);
+      const a = cloneState(q); for (let i = 0; i < 12 && ['samlas', 'vantar', 'kommer'].includes(a.rovare?.gor ?? ''); i++) { a.now += BEAT * SIM.SEC; SIM.rovarSteg(a, BEAT); } // en timme i spelet, slag för slag
+      if (['samlas', 'vantar', 'kommer'].includes(a.rovare?.gor ?? '')) return 0; // den har inte nått byn på en timme
+      return r.ok && ute && q.rovare?.folk.length === SIM.ROVARFLOCK[k] && q.rovare.gor === 'samlas' && /dyker upp \d+ rutor .+ om elden, samlas en minut/.test(rad) && !r2.ok && !!r2.text && !!SIM.rovarHinder(q) ? SIM.ROVARFLOCK[k] : 0;
     });
     const th = cloneState(bas); for (const c of SIM.klanerOf(th)) c.inst = -60;
     const th1 = SIM.skickaHandlare(th), th2 = SIM.skickaHandlare(th);
@@ -1802,7 +1803,7 @@ SCENARIER.rovare = {
     // direkt efter ett anfall är chansen liten, och den växer med tiden
     const vila = SIM.efterAnfall(d) < 0.1; // skyddet efter ett anfall avtar med tiden (steg 8.7.14)
     return [
-      [`testläget skickar en liten, mellanstor och stor flock (${tl.join(', ')} rövare) till väntplatsen ${SIM.ROVARE.lur} rutor från förrådet, och den når byn inom en timme (steg 4.5.7.10, 9.2.80), och en handlare, med en rad i Händelser (${tlRad}) och ett skäl när det inte går (${tlSkal})`, tl[0] > 0 && tl[0] < tl[1] && tl[1] < tl[2] && testHandlare],
+      [`testläget skickar en liten, mellanstor och stor flock (${tl.join(', ')} rövare) ungefär ${SIM.ROVARE.testUt} rutor utanför byns område, och den når byn inom en timme (steg 4.5.7.10, 9.2.103), och en handlare, med en rad i Händelser (${tlRad}) och ett skäl när det inte går (${tlSkal})`, tl[0] > 0 && tl[0] < tl[1] && tl[1] < tl[2] && testHandlare],
       ['en ny och fattig by lockar inga rövare', fattig],
       ['en rik by lockar rövare', rik],
       ['försvaret räknas emot rikedomen', forsvar],
@@ -1873,7 +1874,7 @@ SCENARIER.rovargang = {
 };
 
 SCENARIER.rovarforsvar = {
-  text: 'Steg 9.2.74–9.2.80: försvaret mot rövarna. De som försvarar väntar vid förrådet ("Väntar på rövarna med vapen"), också när förrådet ligger tolv rutor från elden, och valet väger modet, rövarna mot dem som står emot, hälsan och barnen, så att de flesta friska och modiga vuxna står emot en liten flock. I striden står var och en där hen var, den som flyr springer mot sitt hus eller elden och är fri medan striden pågår, ingen står i en annan, rövarnas ledare "leder rövarna", och testknappen ställer flocken på väntplatsen och anfaller inom tre minuter',
+  text: 'Steg 9.2.74–9.2.80: försvaret mot rövarna. De som försvarar väntar vid förrådet ("Väntar på rövarna med vapen"), också när förrådet ligger tolv rutor från elden, och valet väger modet, rövarna mot dem som står emot, hälsan och barnen, så att de flesta friska och modiga vuxna står emot en liten flock. I striden står var och en där hen var, den som flyr springer mot sitt hus eller elden och är fri medan striden pågår, ingen står i en annan, rövarnas ledare "leder rövarna" (testknappen prövas i scenariot rovartest)',
   kor: () => {
     const s = createState(6, START);
     for (const c of SIM.klanerOf(s)) c.inst = -60;
@@ -1931,14 +1932,6 @@ SCENARIER.rovarforsvar = {
       if (tg?.fri?.includes(feg.id) && t.rovare?.gor === 'slass') { fri = !feg.task || feg.task.act !== 'strid' || feg.task.until <= t.now; gick = Math.hypot(feg.x - f0.x, feg.y - f0.y) > 1; } // hen står där hen sprang, och striden pågår
     }
     if (tg) { const st = SIM.spelaUpp(tg), r = st.logg.find(q => q.h === 'leder' && st.kampar.find(k => k.id === q.a)?.pid === undefined); ledText = r ? SIM.stridText(st, r) : ''; }
-    // testknappen: väntplatsen, en minut, och anfallet når förrådet inom tre minuter
-    const u = createState(6, START);
-    for (const p of living(u)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: u.now + 20 * HOUR, carry: 0 };
-    const svar = SIM.skickaRovare(u, 3), uf = u.rovare!, u0 = u.now;
-    const uz = SIM.zoneOf(u)!, um = { x: uz.x + uz.w / 2, y: uz.y + uz.h / 2 }, vantAvst = Math.hypot(uf.x - um.x, uf.y - um.y);
-    const vantar = uf.gor === 'vantar' && uf.till - u0 <= SIM.ROVARE.testVanta * SIM.MIN + 1;
-    for (let i = 0; i < 400 && u.now - u0 < 3 * SIM.MIN && !((u.stat?.rovarPlundring ?? 0) || (u.stat?.rovarStrid ?? 0)); i++) steg(u, 1);
-    const nadde = !!((u.stat?.rovarPlundring ?? 0) || (u.stat?.rovarStrid ?? 0)), tid = (u.now - u0) / SIM.SEC;
     return [
       [`handlingen heter "${SIM.ACTS.forsvarRovare.namn}"`, SIM.ACTS.forsvarRovare.namn === 'Väntar på rövarna med vapen'],
       [`elden ligger ${eldAvst.toFixed(1)} rutor från förrådet`, eldAvst > 10],
@@ -1951,8 +1944,40 @@ SCENARIER.rovarforsvar = {
       ['inga två rövare står på samma punkt', !ihop],
       ['den som flytt är fri och går vidare medan striden pågår', fri && gick],
       [`rövarnas ledare "leder rövarna": "${ledText}"`, /leder rövarna/.test(ledText)],
-      [`testknappen: "${svar.text}", flocken väntar ${vantAvst.toFixed(1)} rutor från förrådet i en minut`, svar.ok && vantar && Math.abs(vantAvst - SIM.ROVARE.lur) < 3],
-      [`anfallet når förrådet inom tre minuter (${tid.toFixed(0)} s)`, nadde],
+    ];
+  },
+};
+
+SCENARIER.rovartest = {
+  text: 'Steg 9.2.103: rövarna i testläget kommer som en vanlig flock men kortare: de dyker upp ungefär 40 rutor utanför byns område, samlas en minut, går till väntplatsen, väntar en minut och anfaller inom ungefär två minuter. Väntplatsen ligger alltid utanför byns område, också för en vanlig flock. Prövas i en stor by (by 42 efter 70 dygn)',
+  kor: () => {
+    const { ROVARE, MIN, SEC, utanforByn } = SIM;
+    const stor = () => { const s = lasBy('test/facit-byar/42-70.json.gz'); for (const c of SIM.klanerOf(s)) c.inst = -60; return s; };
+    const steg = (x: State, sek: number) => { x.now += sek * SEC; SIM.rovarSteg(x, sek); };
+    const ut = (x: State, f: { x: number; y: number }) => utanforByn(x, f.x, f.y);
+    // testknappen
+    const u = stor(), svar = SIM.skickaRovare(u, 3), uf = u.rovare!, u0 = u.now, start = ut(u, uf), samlas = uf.gor === 'samlas' ? (uf.till - u0) / MIN : -1;
+    let vant = -1, vantMin = -1, borjade = -1;
+    for (let i = 0; i < 600 && borjade < 0; i++) {
+      steg(u, 1);
+      const f = u.rovare;
+      if (!f) break;
+      if (f.gor === 'vantar' && vant < 0) { vant = ut(u, f); vantMin = (f.till - u.now) / MIN; }
+      if (f.gor === 'slass' || (u.stat?.rovarPlundring ?? 0) > 0 || f.gor === 'flyr') borjade = (u.now - u0) / SEC;
+    }
+    // en vanlig flock i samma by: den väntar också utanför byns område
+    const v = stor();
+    SIM.rovarnaKommer(v, 3); const vf = v.rovare!; vf.till = v.now;
+    let vVant = -1;
+    for (let i = 0; i < 3000 && vVant < 0 && v.rovare; i++) { steg(v, 1); if (v.rovare?.gor === 'vantar') vVant = ut(v, v.rovare); }
+    return [
+      [`byn är stor (${SIM.omrade(u).n} rutor i området)`, SIM.omrade(u).n > 200],
+      [`testknappen: "${svar.text}"`, svar.ok],
+      [`flocken dyker upp ${start.toFixed(1)} rutor utanför byns område (ungefär ${ROVARE.testUt})`, Math.abs(start - ROVARE.testUt) <= 5],
+      [`... och samlas ${samlas.toFixed(1)} minuter`, Math.abs(samlas - ROVARE.testSamlas) < 0.01],
+      [`väntplatsen ligger ${vant.toFixed(1)} rutor utanför byns område, och flocken väntar där ${vantMin.toFixed(1)} minuter`, vant >= ROVARE.lurUt && Math.abs(vantMin - ROVARE.testVanta) < 0.01],
+      [`anfallet kommer efter ${borjade.toFixed(0)} sekunder (ungefär två minuter)`, borjade > 0 && borjade <= 200],
+      [`en vanlig flock väntar ${vVant.toFixed(1)} rutor utanför byns område`, vVant >= ROVARE.lurUt],
     ];
   },
 };
