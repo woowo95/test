@@ -58,7 +58,7 @@ export const HUS = balans('hus', {
 // En ny sorts byggnad blir en rad.
 // v = hur akut (0 = behövs inte, 1 = mycket), plats = rutor under tak som behövs, slag = vad ett förrådshus ska rymma,
 // ag = vem som ska äga huset (ett familjehus)
-export interface Akut { v: number; plats: number; slag?: 'mat' | 'material'; ag?: number; hus?: number } // hus = just det här huset behöver mer plats (familjen har vuxit)
+export interface Akut { v: number; plats: number; slag?: 'mat' | 'material'; ag?: number; hus?: number; kop?: boolean } // hus = just det här huset behöver mer plats (familjen har vuxit); kop = familjen har bara råd att köpa ett hus (steg 9.2.84)
 export interface Byggnad {
   namn: string; ikon: string;
   behov: string; // vilket behov den fyller (förklaringen i gränssnittet)
@@ -88,7 +88,7 @@ export const BYGGNADER = {
     // en familj (ett par med barn) utan eget hus som äger så mycket att den kan betala huset själv
     akut: s => {
       const f = familjUtanHus(s);
-      if (f) return { v: HUS.familjAkut, plats: f.folk.length, ag: f.ag };
+      if (f) return { v: HUS.familjAkut, plats: f.folk.length, ag: f.ag, ...(f.kop ? { kop: true } : {}) };
       // familjen har vuxit ur sitt hus (steg 7.2.6): huset behöver mer plats
       for (const h of housesOf(s)) {
         if (h.fn !== 'familjehus' || h.ag === undefined || !h.klar) continue;
@@ -201,8 +201,12 @@ function husKostnad(n: number) {
   const w = Math.max(HUS.minSida, Math.ceil(Math.sqrt(n))), h = Math.max(HUS.minSida, Math.ceil(n / w)), vagg = 2 * (w + 2) + 2 * h - 1, V = MATERIAL.timmer, G = MATERIAL.tra;
   return vagg * (V.n * grundvarde(V.item!) + V.tim * ARBETE) + w * h * (G.n * grundvarde(G.item!) + G.tim * ARBETE);
 }
-// den första familjen (ett par med barn) som inte har något eget hus och har råd med ett
-function familjUtanHus(s: State) {
+// finns ett hus till salu som familjen har råd med (kanKopa i byggplan.ts, som sätter funktionen när allt är laddat)
+let kanKopaF: (s: State, ag: number, folk: number) => boolean = () => false;
+export const satKanKopa = (f: typeof kanKopaF) => { kanKopaF = f; };
+// den första familjen (ett par med barn) som inte har något eget hus och har råd med ett: att bygga ett nytt, eller att köpa ett
+// som är till salu (kop, steg 9.2.84)
+function familjUtanHus(s: State): { ag: number; folk: Person[]; kop?: boolean } | undefined {
   const hs = housesOf(s);
   for (const o of living(s).sort((a, b) => a.id - b.id)) {
     const pa = byId(s, o.partner);
@@ -210,6 +214,7 @@ function familjUtanHus(s: State) {
     const folk = familjOf(s, o.id);
     if (folk.length < HUS.familjMin || hs.some(h => h.ag === o.id || h.ag === pa.id)) continue;
     if (formogenhet(s, folk) >= husKostnad(folk.length)) return { ag: o.id, folk };
+    if (kanKopaF(s, o.id, folk.length)) return { ag: o.id, folk, kop: true };
   }
   return undefined;
 }

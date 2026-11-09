@@ -11,7 +11,7 @@ import { villHaMer } from './forradsmal';
 import { amountOf, changed, flyttaLager, inZone, lagerFullt, lagerNy, overflow, overlaps, lagerStorre, ownedAll, put, usable, zonesOf } from './lager';
 import { tingOf } from './agande';
 import { findPath } from './vag';
-import { Akut, BYGGNADER, Byggnad, FN, Fn, HUS, antalLika, fnId, fnOf, husNamn, sovHus, sovPersoner, sovRutorFor, sovplatser, torkUte, vedUte } from './byggnader';
+import { Akut, BYGGNADER, Byggnad, FN, Fn, HUS, antalLika, fnId, fnOf, husNamn, RUMSFUNKTIONER, satKanKopa, sovHus, sovPersoner, sovRutorFor, sovplatser, torkUte, vedUte } from './byggnader';
 import { kronika } from './historik';
 import { clamp } from './slump';
 import { ledareOf } from './styre';
@@ -57,7 +57,8 @@ export const PLAN = balans('byggplan', {
   lagerKostnad: 0.5, // att göra en lagerplats större eller ny kostar så här mycket (arbetet med att bära om)
   forStort: 2, // ett hus är för stort när det har så här många gånger fler sovplatser än familjen
   husVanta: 2, husMote: 8, // ett husbyte väntar så här många dygn (år i spelet) på att köparen och säljaren står så här många rutor från varandra
-  salj: 1.2, bynSalj: 0.6, // säljarens lägsta pris: så här många gånger husets värde (byn säljer billigt det den inte behöver)
+  lagePerRuta: 0.015, lageMax: 0.4, // läget (steg 9.2.84): ett hus mitt i byn är värt så här mycket mer per ruta i byns radie, högst så här mycket mer
+  salj: 0.8, bynSalj: 0.6, // säljarens lägsta pris för ett hus hen inte behöver: så här många gånger husets värde (byn säljer billigast; att riva ger hälften)
   kopMax: 0.9, // köparens högsta pris är så här stor del av vad det kostar att bygga nytt
   prisRel: 0.3, // en vän betalar mindre ...
   prisSkill: 0.3, // ... och den som är bättre på handel
@@ -198,7 +199,7 @@ const rikOf = (s: State, ag: number) => { if (!byId(s, ag)) return false; const 
 const nyttHus: AtgardDef = {
   namn: 'Nytt hus', steg: 3,
   foresla: (s, b, okAt) => {
-    if (b.a.hus !== undefined || b.fn === 'forbattra' || b.fn === 'lagerplats' || (BYGGNADER as Record<string, Byggnad>)[b.fn]?.skjul) return [];
+    if (b.a.hus !== undefined || b.a.kop || b.fn === 'forbattra' || b.fn === 'lagerplats' || (BYGGNADER as Record<string, Byggnad>)[b.fn]?.skjul) return []; // kop: familjen har bara råd att köpa
     // storleken efter behovet; så nära kvadratiskt som möjligt
     const sizes: { w: number; h: number }[] = [];
     for (let h = HUS.minSida; h <= HUS.maxSida; h++) for (let w = h; w <= HUS.langSida * h; w++) sizes.push({ w, h });
@@ -353,13 +354,37 @@ const lagerNyA: AtgardDef = {
 // har råd med). Affären blir av när köparens högsta pris är minst säljarens lägsta, och priset hamnar däremellan efter
 // relationen och handelsfärdigheten
 const salesPlats = (s: State, h: Hus) => gridOf(s).rooms.filter(r => r.hus === h.id).reduce((n, r) => n + sovplatser(s, r), 0);
-// säljaren vill bli av med huset: det är tomt eller för stort för familjen; byn säljer sina tomma hus
-export function saljbart(s: State, h: Hus): boolean {
-  if (!h.klar || h.ut) return false;
-  if (h.ag === undefined) return fnId(h) === 'sovsal' && h.tom !== undefined;
-  return familjOf(s, h.ag).length * PLAN.forStort <= salesPlats(s, h) || !familjOf(s, h.ag).length;
+// Alla hus där man bor eller umgås går att köpa (steg 9.2.84), men priset följer hur mycket säljaren behöver huset. Förrådshus,
+// verkstäder (en station står där) och skjul är inga bostäder och säljs inte
+export function kopbart(s: State, h: Hus): boolean {
+  return !!h.klar && !h.ut && !h.skjul && KOPBARA.has(fnId(h)) && !RUMSFUNKTIONER.verkstad.har(s, h);
 }
-export const saljPris = (s: State, h: Hus) => husVarde(s, h) * (h.ag === undefined ? PLAN.bynSalj : PLAN.salj);
+const KOPBARA = new Set<Fn>(['sovsal', 'familjehus', 'samling']);
+// behöver säljaren huset? 0 = nej: familjen är borta eller huset är för stort för den, eller byns sovsal står tom; 1 = ja
+export function saljBehov(s: State, h: Hus): number {
+  if (h.ag === undefined) return fnId(h) === 'sovsal' && h.tom !== undefined ? 0 : 1;
+  const folk = familjOf(s, h.ag).length;
+  return !folk || folk * PLAN.forStort <= salesPlats(s, h) ? 0 : 1;
+}
+// läget: ett hus nära byns mitt är värt mer, och mer ju större byn är. Byns radie räknas ur områdets yta (en cirkel med lika
+// många rutor); huset mitt i byn får PLAN.lagePerRuta mer per ruta i radien, i kanten av området inget
+export function lage(s: State, h: Hus): number {
+  const o = omrade(s), m = bynsMitt(s), r = Math.sqrt(o.n / Math.PI);
+  if (r < 1) return 1;
+  const d = Math.hypot(h.x + h.w / 2 - (m.x + 0.5), h.y + h.h / 2 - (m.y + 0.5)), nara = clamp(1 - d / r, 0, 1);
+  return 1 + Math.min(PLAN.lageMax, PLAN.lagePerRuta * r) * nara;
+}
+// säljarens lägsta pris: värdet (byn säljer billigt), och behöver säljaren huset också vad det kostar att bygga ett nytt lika stort.
+// Därför säljs ett hus där familjen bor nästan aldrig: köparen betalar aldrig mer än det kostar att bygga nytt (PLAN.kopMax)
+export const saljPris = (s: State, h: Hus) => (husVarde(s, h) * (h.ag === undefined ? PLAN.bynSalj : PLAN.salj) + saljBehov(s, h) * husKostnadAv((h.w - 2) * (h.h - 2))) * lage(s, h);
+// vad köparen jämför med: ett nytt lika stort hus, på samma läge (köparen betalar också för läget)
+export const nyttLika = (s: State, h: Hus) => husKostnadAv((h.w - 2) * (h.h - 2)) * lage(s, h);
+// finns det ett hus till salu som familjen (ägaren ag) får plats i och har råd med? (familjer som inte har råd att bygga nytt, byggnader.ts)
+export function kanKopa(s: State, ag: number, folk: number): boolean {
+  const fam = new Set(familjOf(s, ag).map(q => q.id));
+  return housesOf(s).some(h => (h.ag === undefined || !fam.has(h.ag)) && kopbart(s, h) && sovPersoner((h.w - 2) * (h.h - 2)) >= folk && kopPris(s, ag, nyttLika(s, h)) >= saljPris(s, h));
+}
+satKanKopa(kanKopa);
 export function kopPris(s: State, ag: number, nybygge: number) {
   const q = byId(s, ag);
   return q ? Math.min(nybygge * PLAN.kopMax, varuVarde(ownedAll(s, ag), 0)) : 0;
@@ -368,10 +393,10 @@ const kopaHus: AtgardDef = {
   namn: 'Köpa ett hus', steg: 2,
   foresla: (s, b) => {
     if (b.a.ag === undefined || b.a.hus !== undefined || b.fn !== 'familjehus' || s.husAffar) return [];
-    const ut: Forslag[] = [], want = onskadPlats(s, b), ny = husKostnadAv(sovRutorFor(want));
+    const ut: Forslag[] = [], want = onskadPlats(s, b);
     for (const h of housesOf(s)) {
-      if (h.ag === b.a.ag || !saljbart(s, h)) continue;
-      const plats = sovPersoner((h.w - 2) * (h.h - 2)), salj = saljPris(s, h), kop = kopPris(s, b.a.ag, ny);
+      if (h.ag === b.a.ag || !kopbart(s, h)) continue;
+      const plats = sovPersoner((h.w - 2) * (h.h - 2)), salj = saljPris(s, h), kop = kopPris(s, b.a.ag, nyttLika(s, h)); // köparens högsta: ett nytt lika stort hus på samma läge (som i kopHus)
       if (plats < b.a.plats || kop < salj) continue;
       ut.push({ at: 'kopaHus', hus: h, x: h.x, y: h.y, w: h.w, h: h.h, ritning: [], oppnas: [], kostnad: (salj + kop) / 2, varde: Math.min(1, plats / Math.max(1, want)), plats });
     }
@@ -386,7 +411,7 @@ export const husKostnadAv = (n: number) => { const w = Math.max(HUS.minSida, Mat
 export function kopHus(s: State, h: Hus, ag: number, bud?: Person) {
   const kopare = byId(s, ag), saljare = h.ag !== undefined ? byId(s, h.ag) : undefined;
   if (!kopare || h.ag === ag) return false;
-  const salj = saljPris(s, h), hog = kopPris(s, ag, husKostnadAv((h.w - 2) * (h.h - 2)));
+  const salj = saljPris(s, h), hog = kopPris(s, ag, nyttLika(s, h));
   const rel = saljare ? getRel(s, saljare, kopare).op / 100 : 0, skill = clamp(((kopare.skill.handel ?? 0) - ((saljare ?? bud)?.skill.handel ?? 0)) / 100, -1, 1);
   const pris = Math.ceil(salj + (hog - salj) * clamp(0.5 - rel * PLAN.prisRel - skill * PLAN.prisSkill, 0, 1));
   const M = personPart(s, kopare), G0 = saljare ? personPart(s, saljare) : bynPart(s, kopare.x, kopare.y, bud);
@@ -404,7 +429,7 @@ function husAffar(s: State) {
   const a = s.husAffar;
   if (!a) return;
   const h = husById(s, a.hus), k = byId(s, a.ag);
-  if (!h || !k || !living(s).includes(k) || h.ag === a.ag || !saljbart(s, h) || s.now - a.t > PLAN.husVanta * DAY) { delete s.husAffar; return; }
+  if (!h || !k || !living(s).includes(k) || h.ag === a.ag || !kopbart(s, h) || s.now - a.t > PLAN.husVanta * DAY) { delete s.husAffar; return; }
   if (k.task?.act === 'sova') return;
   const naraK = (q: Person) => q !== k && q.task?.act !== 'sova' && Math.hypot(q.x - k.x, q.y - k.y) <= PLAN.husMote;
   const saljare = h.ag !== undefined ? byId(s, h.ag) : undefined;

@@ -1214,6 +1214,42 @@ function lagerIStraket(): [string, boolean][] {
     [`och lagerplatsen flyttas bort från stråket (${x},${y} → ${ny ? `${ny.x},${ny.y}` : 'borta'})`, !ny || !(ny.x === x && ny.y === y)],
   ];
 }
+SCENARIER.husmarknad = {
+  text: 'Steg 9.2.84: alla bostäder går att köpa, men priset följer hur mycket säljaren behöver huset. Ett hus där folk bor kostar mer än att bygga nytt, ett hus som ägaren inte behöver säljs billigt, och en familj som inte har råd att bygga nytt köper ett sådant',
+  kor: () => {
+    const s = createState(6, START);
+    klockan(s); byggare(s);
+    planBuild(s); byggKlart(s); // en sovsal åt alla
+    const ppl = living(s).sort((x, y) => x.id - y.id), c = ppl.find(q => q.mother !== undefined)!, a = ppl.find(q => q.id === Math.min(c.mother!, c.father!))!;
+    nyInvanare(s, 'm', 30); const d = living(s)[living(s).length - 1]; // en ensam bybo
+    const h = housesOf(s)[0];
+    // byns sovsal där alla sover: den går att köpa, men den kostar mer än att bygga ett nytt lika stort hus
+    const dyrt = SIM.saljPris(s, h), iBruk = SIM.kopbart(s, h) && SIM.saljBehov(s, h) === 1 && dyrt > SIM.husKostnadAv((h.w - 2) * (h.h - 2));
+    // läget: mitt i byn är ett hus värt mer, i kanten av området inte
+    const m = SIM.bynsMitt(s), mitt = SIM.lage(s, { ...h, x: m.x - 1, y: m.y - 1, w: 3, h: 3 }), kant = SIM.lage(s, { ...h, x: m.x + 40, y: m.y, w: 3, h: 3 });
+    // en ensam bybo äger huset: det är för stort för hen, så hen säljer billigt. Huset är slitet och värt en fjärdedel
+    h.ag = d.id; h.fn = 'familjehus';
+    for (const q of bitsOf(s)) if (q.hus === h.id) q.c = 0.25;
+    touch(s);
+    const pris = SIM.saljPris(s, h), billigt = SIM.saljBehov(s, h) === 0 && pris < SIM.husVarde(s, h) * SIM.lage(s, h);
+    const fattig = mostUrgent(s)?.a.ag !== a.id && !SIM.byggbehov(s).some(q => q.a.ag === a.id);
+    put(s, 'silver', Math.ceil(pris) + 10, { [a.id]: Math.ceil(pris) + 10 }); // marginal: familjen byter också till sig annat under tiden
+    const u = SIM.byggbehov(s).find(q => q.a.ag === a.id), kanBygga = SIM.formogenheter(s).egen.get(a.id) ?? 0;
+    planBuild(s);
+    const affar = s.husAffar?.ag === a.id && s.husAffar.hus === h.id, ingetNytt = !housesOf(s).some(q => q !== h && q.ag === a.id);
+    for (let i = 0; i < 48 && h.ag !== a.id; i++) kor(s, 1);
+    return [
+      [`ett hus där alla sover går att köpa men kostar mer än ett nytt (${Math.round(dyrt)})`, iBruk],
+      [`ett hus mitt i byn är värt lite mer (${mitt.toFixed(2)} gånger), ett utanför byn inte (${kant.toFixed(2)})`, mitt > 1 && mitt <= 1 + SIM.PLAN.lageMax && kant === 1],
+      [`ett hus som ägaren inte behöver säljs under värdet (${Math.round(pris)} av ${Math.round(SIM.husVarde(s, h) * SIM.lage(s, h))} med läget)`, billigt],
+      ['en familj utan något att betala med vill inte ha något hus', fattig],
+      [`med silver nog för det begagnade huset men inte för ett nytt vill familjen köpa (förmögenhet ${Math.round(kanBygga)})`, !!u && u.fn === 'familjehus' && !!u.a.kop],
+      ['familjen bygger inget nytt utan gör upp om huset', affar && ingetNytt],
+      [`och huset blir familjens (${h.namn})`, h.ag === a.id && (s.stat?.husKopt ?? 0) >= 1],
+    ];
+  },
+};
+
 SCENARIER.husbyte = {
   text: 'Steg 7.2.12: ett hus säljs genom samma bytessystem som allt annat: när köparen och säljaren möts ligger huset som en symbol på filten, och det blir handslag och en rad i loggen. Går det inte att betala blir det inget. En handlare kan aldrig köpa ett hus',
   kor: () => {
