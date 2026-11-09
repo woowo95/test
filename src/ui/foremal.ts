@@ -205,9 +205,9 @@ export function drawStructures(t: number) {
   }
   // dörrarna i öppningarna (DORRAR i byggnad.ts): den stående bilden (_v) när väggen går uppåt (en vägg ovanför öppningen)
   for (const b of bitsOf(s)) if (b.dorr) { const ik = dorrDef(b.dorr)?.ikon, v = bitAt(s, b.x, b.y - 1)?.k === 'vagg' ? '_v' : '', k = hasIcon('kb_' + ik + v) ? 'kb_' + ik + v : ik + '_karta' + v; pileIcons.add(k, b.x * TS, b.y * TS, TS / iconCanvas(k).width); } // bildstilens dörr (skinndörren, steg 5.1.2.3) eller den som redan hade 16 punkter
-  // de uppsatta facklorna (steg 6.3.7, ljus.ts): med foten i rutan, mot väggen när de sitter på en, den tända med lågan
+  // de uppsatta facklorna (steg 6.3.7, ljus.ts; i människornas skala, steg 9.2.98): med foten i rutan, mot väggen när de sitter på en, den tända med lågan
   for (const u of s.uppsatta ?? []) {
-    const vagg = u.vx !== undefined, k = (vagg ? (hasIcon('kb_uppsatt_vagg') ? 'kb_uppsatt_vagg' : 'uppsatt_vagg') : 'kb_uppsatt') + (u.tand ? '_tand' : ''), c = iconCanvas(k); // på väggen sitter den i en hållare (steg 9.2.11)
+    const vagg = u.vx !== undefined, k = (vagg ? (hasIcon('kb_uppsatt_vagg') ? 'kb_uppsatt_vagg' : 'uppsatt_vagg') : 'uppsatt_mark') + (u.tand ? '_tand' : ''), c = iconCanvas(k); // på väggen sitter den i en hållare (steg 9.2.11)
     pileIcons.add(k, u.x * TS + ((TS - c.width) >> 1) + (u.vx ?? 0) * 5, u.y * TS + TS - 2 - c.height + (u.vy ?? 0) * 5, 1);
   }
   // talgljusen på borden och hyllorna (steg 6.3.8, ljus.ts): mitt på möbeln, två utseenden efter möbeln, det tända med lågan

@@ -16,6 +16,9 @@ export const PAL: Record<string, Record<string, string>> = {
   // facklan på väggen (steg 9.2.11, platshållare): en järnhållare i väggen, skaftet snett upp och huvudet av näver och talg
   an_klo: { w: '#dad0bb', r: '#a14808', k: '#24201d' }, an_bett: { w: '#dad0bb', r: '#a14808', k: '#24201d' }, // björnens klor och vargens bett i striden (steg 9.2.31, platshållare)
   kolstubbe: { k: '#24201d', K: '#2f261d', g: '#474138' }, // den svarta stubben efter en brand (steg 9.2.26, platshållare)
+  // den uppsatta facklan på marken i människornas skala (steg 9.2.98, platshållare): två tredjedelar så hög som en vuxen
+  uppsatt_mark: { k: '#24201d', K: '#474138', j: '#5e3c24', J: '#7d5b40', y: '#906f0f', Y: '#b2921b' },
+  uppsatt_mark_tand: { k: '#24201d', K: '#474138', j: '#5e3c24', J: '#7d5b40', y: '#906f0f', Y: '#b2921b', r: '#a14808', o: '#bd753e', g: '#d8b25f', w: '#dad0bb' },
   uppsatt_vagg: { k: '#24201d', K: '#474138', j: '#5e3c24', J: '#7d5b40', y: '#906f0f', Y: '#b2921b' },
   uppsatt_vagg_tand: { k: '#24201d', K: '#474138', j: '#5e3c24', J: '#7d5b40', y: '#906f0f', Y: '#b2921b', r: '#a14808', o: '#bd753e', g: '#d8b25f', w: '#dad0bb' },
   // samtalens ämnen i 8 punkter (steg 9.2.10, platshållare): en symbol per ämne i den lilla pratbubblan
@@ -3734,6 +3737,9 @@ export const PIX: Record<string, string[]> = {
   // den svarta stubben efter en brand (steg 9.2.26, platshållare tills Björn valt i bildstilen)
   kolstubbe: ['..gKK...', '.KkkkK..', '.KkgkK..', '.KkkkKg.', 'KkkkkkK.', '.kkkkk..'],
   // facklan på väggen (steg 9.2.11, platshållare tills Björn valt i bildstilen): släckt och tänd
+  // den uppsatta facklan på marken (steg 9.2.98, platshållare tills Björn sagt ja i bildstilen): 13 punkter hög, en vuxen är ungefär 19
+  uppsatt_mark: ['...yY...', '...YY...', '...Jj...', '...jJ...', '...Jj...', '...jJ...', '...Jj...', '...jJ...', '...Jj...', '..kjJk..', '.kKKKKk.'],
+  uppsatt_mark_tand: ['...w....', '..gwg...', '..ogo...', '.rgogr..', '..ryY...', '...YY...', '...Jj...', '...jJ...', '...Jj...', '...jJ...', '...Jj...', '...jJ...', '...Jj...', '..kjJk..', '.kKKKKk.'],
   uppsatt_vagg: ['........', '........', '........', '........', '...yY...', '...YY...', '...Jj...', '...jJ...', '..KjJK..', '..kKKk..', '...jJ...', '...Jj...'],
   uppsatt_vagg_tand: ['...w....', '..gwg...', '..ogo...', '.rgogr..', '..ryY...', '...YY...', '...Jj...', '...jJ...', '..KjJK..', '..kKKk..', '...jJ...', '...Jj...'],
   // samtalens ämnen i 8 punkter (steg 9.2.10, platshållare tills Björn valt i bildstilen)
