@@ -144,6 +144,11 @@ export const STATIONER = {
     namn: 'Örtkök', ikon: 'ortkok', w: 3, h: 2, tek: ['ortkok'], av: RECEPT.ortkok.av, min: RECEPT.ortkok.min, gor: ['koka_salva', 'koka_tjara', 'koka_lim', 'koka_tval', 'koka_rokelse', 'koka_olja'], bara: ['koka_salva', 'koka_tjara', 'koka_lim', 'koka_tval'],
     bygger: 'Bygger ett örtkök.', forsta: '{namn} byggde byns första örtkök. Där kokas och blandas örter, talg och annat.',
   },
+  // snickarbänken (steg 9.4.4): står inne som slöjdbänken och har en sittplats. Snickaren arbetar där (seder.ts)
+  snickarbank: {
+    namn: 'Snickarbänk', ikon: 'flatarbank', w: 2, h: 1, tek: ['snickarbank'], av: RECEPT.snickarbank.av, min: RECEPT.snickarbank.min, gor: [], inne: true, sitt: true, // bilden är slöjdbänkens tills Björn valt i bildstilen
+    bygger: 'Bygger en snickarbänk av virke och plankor.', forsta: '{namn} byggde byns första snickarbänk. Där görs träsakerna fortare och bättre.',
+  },
   garvning: {
     namn: 'Garvningsställning', ikon: 'garvning', w: 2, h: 2, tek: ['garvning'], av: RECEPT.garvning.av, min: RECEPT.garvning.min, gor: ['garva'], bara: ['garva'],
     bygger: 'Sätter upp en garvningsställning.', forsta: '{namn} satte upp byns första garvningsställning. Där blir skinn till läder.',

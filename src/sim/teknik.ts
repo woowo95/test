@@ -61,6 +61,7 @@ export const TEKNIK: Tek[] = [
     omr: ['fiske', 'jakt', 'hantverk'], krav: ['fiskespjut', 'rep'], niva: 2, tid: 16 },
   { id: 'stenhuggarplats', namn: 'Stenhuggarplats', text: 'En plats där stenen huggs till.', effekt: 'Där görs huggen sten.', omr: ['hantverk'], krav: ['yxa'], niva: 2, tid: 6 },
   { id: 'klyvplats', namn: 'Klyvplats', text: 'En plats där virket klyvs till plankor.', effekt: 'Där görs plankor.', omr: ['hantverk', 'bygga'], krav: ['yxa'], niva: 2, tid: 6 },
+  { id: 'snickarbank', namn: 'Snickarbänk', text: 'En stadig bänk av virke och plankor där trä sågas, borras och täljs.', effekt: 'Där görs träsakerna fortare och bättre, och bågen, lyran, skölden, kryckan och träbenet.', omr: ['hantverk'], krav: ['klyvplats'], niva: 3, tid: 6 }, // steg 9.4.4
   { id: 'harden', namn: 'Härd', text: 'En fyrkant av huggna stenar på golvet, med ett rökhål i taket.', effekt: 'Härden värmer hela huset och drar mindre ved än lägerelden.', omr: ['bygga'], krav: ['stenhuggarplats', 'timmervagg'], niva: 3, tid: 6 },
   { id: 'ortkok', namn: 'Örtkök', text: 'En liten eld där man kokar och blandar örter, talg och annat.', effekt: 'Där görs salva, tjära, benlim och tvål.', omr: ['hantverk'], krav: ['flatarbank'], niva: 3, tid: 6 },
   { id: 'leksak', namn: 'Leksak', text: 'En träfigur, en boll av skinn eller en docka av halm.', effekt: 'Ett barn som har en leksak får färre utbrott.', omr: ['hantverk'], krav: ['kniv'], niva: 2, tid: 6 },

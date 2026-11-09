@@ -67,7 +67,7 @@ export const PROJEKT_TAL = balans('projekt', {
   skinndorr: 0.6, // ... skinndörrarna när alla hus där man bor eller umgås har en öppen dörröppning (steg 2.2.16)
   tradorr: 0.6, // ... trädörrarna när alla sådana hus saknar en (steg 3.7.21)
   tillverka: 0.35, // ... det som görs vid stationerna, när byn vill ha mer av det (tillverka.ts)
-  stenhuggarplats: 0.4, klyvplats: 0.4, ortkok: 0.3, garvning: 0.3, vavstol: 0.3, harden: 0.5, snara: 0.5, grop: 0.4,
+  stenhuggarplats: 0.4, klyvplats: 0.4, ortkok: 0.3, snickarbank: 0.4, garvning: 0.3, vavstol: 0.3, harden: 0.5, snara: 0.5, grop: 0.4,
   mjarde: 0.7, fangstbank: 0.5, // ... mjärdarna och fångstbänken (steg 7.4.1 och 7.4.2)
   rep: 0.5, // ... repet när förrådet är tomt
   virke: 0.8, // ... virket när förrådet saknar det byn vill bygga av (steg 4.5.5.2)

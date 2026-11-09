@@ -1671,3 +1671,25 @@ function lekFart(s: State): [string, boolean][] {
     [`och står still en stund mellan förflyttningarna (${Math.round(still / n * 100)} %)`, still >= 0.3 * n],
   ];
 }
+
+SCENARIER.snickarbank = {
+  text: 'Steg 9.4.4: snickarbänken är en station av 2 virke och 2 plankor och 15 minuters arbete. Tekniken kräver klyvplatsen och kommer i hantverket, och bänken står inne som slöjdbänken med en sittplats',
+  kor: () => {
+    const { stationDef, stationerOf, stationRum, isKlar, RECEPT, TEKNIK } = SIM;
+    const d = stationDef('snickarbank'), r = RECEPT.snickarbank, tek = TEKNIK.find(t => t.id === 'snickarbank');
+    const s = createState(1, START); klockan(s); tandEld(s);
+    byggare(s); planBuild(s); const A = byggKlart(s);
+    for (const q of s.people) q.tek = { ...q.tek, snickarbank: 1, klyvplats: 1, timmervagg: 1, yxa: 1 };
+    setFood(s, 400); setAmount(s, 'ved', 80); setAmount(s, 'virke', 4); setAmount(s, 'plankor', 4);
+    let h = 0;
+    const banken = () => stationerOf(s).find(t => t.k === 'snickarbank' && isKlar(t));
+    while (!banken() && h < 96) { kor(s, 1); h++; }
+    const t = banken(), inne = !!t && !!A && stationRum(s, t)?.hus !== undefined;
+    return [
+      [`receptet är 2 virke och 2 plankor och 15 minuter (${JSON.stringify(r.av)}, ${r.min} min)`, r.av.virke === 2 && r.av.plankor === 2 && r.min === 15],
+      [`tekniken kräver klyvplatsen och kommer i hantverket (${tek?.krav.join(', ')}; ${tek?.omr.join(', ')})`, !!tek && tek.krav.includes('klyvplats') && tek.omr.includes('hantverk')],
+      ['bänken står inne och har en sittplats', !!d?.inne && !!d?.sitt],
+      [`byn bygger en snickarbänk när den kan (${t ? `efter ${h} timmar` : 'aldrig'}) och den står inne`, !!t && inne],
+    ];
+  },
+};

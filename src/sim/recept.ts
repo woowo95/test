@@ -53,6 +53,7 @@ const DEF = {
   stenhuggarplats: { var: 'station', av: { sten: 4, virke: 1 }, min: 20, slag: 'stor', tek: 'stenhuggarplats' },
   klyvplats: { var: 'station', av: { virke: 1, ved: 2 }, min: 15, slag: 'stor', tek: 'klyvplats' },
   ortkok: { var: 'station', av: { virke: 2, sten: 4 }, min: 20, slag: 'stor', tek: 'ortkok' },
+  snickarbank: { var: 'station', av: { virke: 2, plankor: 2 }, min: 15, slag: 'stor', tek: 'snickarbank' }, // steg 9.4.4
   garvning: { var: 'station', av: { grenar: 4, rep: 2 }, min: 15, slag: 'stor', tek: 'garvning' },
   vavstol: { var: 'station', av: { virke: 2, sten: 4, rep: 1 }, min: 20, slag: 'stor', tek: 'vavstol' },
   harden: { var: 'station', av: { huggen_sten: 6 }, min: 20, slag: 'stor', tek: 'harden' },
