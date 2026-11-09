@@ -1842,11 +1842,33 @@ SCENARIER.trangsel = {
     ];
   },
 };
+SCENARIER.fallcirkel = {
+  text: 'Steg 9.2.82: träden fälls inom en cirkel kring lägret (SKOG.sokR), de närmaste först, så att det kala växer ut som en ring. Alla träd i en ruta runt byn står kvar att välja mellan, och inget träd utanför cirkeln väljs',
+  kor: () => {
+    const s = createState(3, START), g = groundOf(s), f = SIM.bynsMitt(s), p = living(s)[0], R = SIM.SKOG.sokR;
+    // hörnen av rutan runt cirkeln får fullvuxna träd: de ligger utanför radien men innanför den gamla rektangeln
+    const horn: number[] = [];
+    for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { const x = f.x + dx * (R - 2), y = f.y + dy * (R - 2); if (x >= 0 && y >= 0 && x < W && y < W) { g.trees[y * W + x] = 1; horn.push(y * W + x); } }
+    const valda = new Set<number>(), taken = new Set<number>();
+    let utanfor = 0, langst = 0;
+    for (let k = 0; k < 400; k++) {
+      const t = SIM.treeSpot(s, taken, p); if (!t) break;
+      const i = Math.floor(t.y) * W + Math.floor(t.x); valda.add(i); taken.add(i);
+      const d = Math.hypot(Math.floor(t.x) - f.x, Math.floor(t.y) - f.y); if (d > langst) langst = d;
+      if (!SIM.iFallRadien(f, Math.floor(t.x), Math.floor(t.y))) utanfor++;
+    }
+    return [
+      [`hörnen utanför cirkeln har träd (${horn.length})`, horn.length > 0],
+      [`${valda.size} träd valdes, inget utanför radien ${R} (${utanfor} utanför, längst ${langst.toFixed(1)} rutor)`, valda.size > 0 && utanfor === 0],
+      [`inget av hörnens träd valdes`, horn.every(i => !valda.has(i))],
+    ];
+  },
+};
 SCENARIER.skogsvard = {
   text: 'Steg 6.5.2: skogsvården. Den som fäller träd långt från byn kommer på Skogsvård. När de närmaste träden att fälla står långt bort gräver byn upp en skuggad planta och sätter den nära byn, bredvid en stubbe, där inget ska byggas',
   kor: () => {
     const s = createState(3, START), g = groundOf(s), f = SIM.bynsMitt(s);
-    const iRutan = (i: number) => Math.abs(i % W - f.x) <= SIM.SKOG.sokX && Math.abs(Math.floor(i / W) - f.y) <= SIM.SKOG.sokY;
+    const iRutan = (i: number) => SIM.iFallRadien(f, i % W, Math.floor(i / W));
     const vuxna = living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.ansvar), p = vuxna[0];
     // tekniken: att fälla ett träd långt bort för tanken framåt, nära byn inte
     const langt = (() => { for (let i = 0; i < W * W; i++) if (g.trees[i] >= 1 && SIM.utanforByn(s, i % W, Math.floor(i / W)) >= SIM.SKOGSVARD.langt + 2) return i; return -1; })();

@@ -25,7 +25,7 @@ export { stubbeOn, stubbRutor };
 // Balanstal (regel 8): vad ett träd ger, hur lång tid det tar att fälla, och vilket träd man väljer. Hur många yxor byn vill
 // ha och hur många som får bygga står i REDSKAP (redskap.ts)
 export const SKOG = balans('skog', {
-  stamVed: 8, // ett vuxet träd ger så här mycket trä ...
+  stamVed: 6, // ett vuxet träd ger så här mycket trä ...
   stamGrenar: 5, // ... och så här många grenar
   virkeVed: 2, // ett virke (steg 4.5.5.2) tar så här mycket av stammens trä
   fallTim: 0.1, // så många timmar tar det att fälla ett träd, delat med SNABBARE: fyra minuter (steg 2.3.8; 48 minuter förut)
@@ -35,12 +35,13 @@ export const SKOG = balans('skog', {
   stubbeSpade: 0.5, // ... och så här stor del av tiden med benspaden
   stubbeStor: 0.75, // en stubbe efter ett träd som gav minst så här stor del av ett fullvuxet träds trä ger 2 trä, annars 1
   tradMin: 0.95, // ett träd att fälla är minst så här stort (0 till 1) ...
-  sokX: 24, // ... och står högst så här många rutor åt sidorna från lägret ...
-  sokY: 18, // ... och så här många uppåt och nedåt
+  sokR: 22, // ... och står högst så här många rutor från lägret, i en cirkel (steg 9.2.82), så att det kala växer ut som en ring
   urval: 5, // man väljer slumpat bland de så här många närmaste träden
   forstaTanke: 0.1, // den som fäller byns första träd mår så här mycket bättre i forstaTankeTim timmar
   forstaTankeTim: 12,
 });
+// rutan ligger inom radien där träd fälls (steg 9.2.82): en cirkel kring lägret
+export const iFallRadien = (f: { x: number; y: number }, x: number, y: number) => (x - f.x) ** 2 + (y - f.y) ** 2 <= SKOG.sokR ** 2;
 export const stocks = (s: State) => (s.stockar ??= []);
 const FALL_TID = SKOG.fallTim * HOUR / SNABBARE; // så lång tid det tar att fälla ett träd
 // hur lång tid det tar att fälla trädet på ruta i: ett litet träd fälls fortare
@@ -100,7 +101,8 @@ export function treeSpot(s: State, taken: Set<number>, p: Person): { x: number; 
   for (const k in s.halvfallt ?? {}) { const i = +k, d = utanforByn(s, i % W, Math.floor(i / W)); if (isForest(s, i) && !taken.has(i) && d < hd) { hd = d; half = i; } }
   if (half >= 0) return { x: (half % W) + 0.5, y: Math.floor(half / W) + 0.5 };
   const c: { i: number; d: number }[] = [], skogsfred = lagGaller(s, 'skogsfred'), lund = !!s.heliga?.length && budTillfalle(s, 'falla', p);
-  for (let y = Math.max(0, f.y - SKOG.sokY); y < Math.min(H, f.y + SKOG.sokY + 1); y++) for (let x = Math.max(0, f.x - SKOG.sokX); x < Math.min(W, f.x + SKOG.sokX + 1); x++) {
+  for (let y = Math.max(0, f.y - SKOG.sokR); y < Math.min(H, f.y + SKOG.sokR + 1); y++) for (let x = Math.max(0, f.x - SKOG.sokR); x < Math.min(W, f.x + SKOG.sokR + 1); x++) {
+    if (!iFallRadien(f, x, y)) continue;
     const i = y * W + x;
     if (g.trees[i] < SKOG.tradMin || taken.has(i)) continue;
     if (skogsfred && utanforByn(s, x, y) <= LAG_SKOG) continue; // lagen om skogen (steg 8.4.1)

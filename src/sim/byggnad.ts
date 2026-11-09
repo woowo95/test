@@ -32,13 +32,13 @@ export interface Hus { id: number; namn: string; x: number; y: number; w: number
 // farg och ikon är bara bilden: färgen på kartan och symbolen i rutan under musen (simuleringen läser dem aldrig)
 export interface Material { namn: string; k: BitK; item?: string; n: number; tim: number; slit: number; isol?: number; storm?: number; brinner?: number; tek?: string; farg: number; ikon?: string; vag?: true; brygga?: true } // vag = väg eller brygga: ingen del av något hus, och när den förstörs blir rutan som förut // brinner = hur lätt väggen eller golvet tar eld (eldsvådorna, brand.ts); ett golv som brunnit blir jordgolv
 export const MATERIAL: Record<string, Material> = {
-  timmer: { namn: 'Timmervägg', k: 'vagg', item: 'ved', n: 5, tim: 20 / 60, slit: 0.0005, isol: 0.7, storm: 0.6, brinner: 1, tek: 'timmervagg', farg: 0x8a5e34, ikon: 'timmervagg' },
-  stolpe: { namn: 'Stolpe', k: 'vagg', item: 'ved', n: 2, tim: 20 / 60, slit: 0.0005, isol: 0, storm: 0.6, brinner: 1, tek: 'timmervagg', farg: 0x8a5e34, ikon: 'timmervagg' }, // bär skjulens tak (steg 7.3.1): tar en ruta och stänger vägen som en vägg. Platshållare: samma bild som väggen
+  timmer: { namn: 'Timmervägg', k: 'vagg', item: 'ved', n: 10, tim: 20 / 60, slit: 0.0005, isol: 0.7, storm: 0.6, brinner: 1, tek: 'timmervagg', farg: 0x8a5e34, ikon: 'timmervagg' },
+  stolpe: { namn: 'Stolpe', k: 'vagg', item: 'ved', n: 4, tim: 20 / 60, slit: 0.0005, isol: 0, storm: 0.6, brinner: 1, tek: 'timmervagg', farg: 0x8a5e34, ikon: 'timmervagg' }, // bär skjulens tak (steg 7.3.1): tar en ruta och stänger vägen som en vägg. Platshållare: samma bild som väggen
   stockvag: { namn: 'Stockväg', k: 'golv', item: 'virke', n: 1, tim: 10 / 60, slit: 1 / (50 * 24), brinner: 1, tek: 'stockvag', vag: true, farg: 0x8a6a3a, ikon: 'stockvag' }, // en väg (steg 7.3.7): utslitet efter ungefär 50 dygn (50 år i spelet)
   brygga: { namn: 'Brygga', k: 'golv', item: 'virke', n: 1, tim: 10 / 60, slit: 1 / (50 * 24), brinner: 1, tek: 'brygga', vag: true, brygga: true, farg: 0x8a6a3a, ikon: 'brygga' }, // över vatten (steg 7.3.9): man kan gå och stå på den
   ris: { namn: 'Risvägg', k: 'vagg', item: 'grenar', n: 5, tim: 20 / 60, slit: 0.002, isol: 0.55, storm: 1.5, brinner: 1.5, farg: 0x6b4a2a, ikon: 'risvagg' }, // äldre sparfiler: risväggar byggs inte längre men kan lagas
   jord: { namn: 'Jordgolv', k: 'golv', n: 0, tim: 5 / 60, slit: 0, farg: 0x7a5a3a },
-  tra: { namn: 'Trägolv', k: 'golv', item: 'ved', n: 1, tim: 10 / 60, slit: 0.0002, brinner: 1, tek: 'timmervagg', farg: 0xa07446, ikon: 'tragolv' },
+  tra: { namn: 'Trägolv', k: 'golv', item: 'ved', n: 2, tim: 10 / 60, slit: 0.0002, brinner: 1, tek: 'timmervagg', farg: 0xa07446, ikon: 'tragolv' },
   ho: { namn: 'Golv av hö', k: 'golv', item: 'torrgras', n: 1, tim: 5 / 60, slit: 0.002, brinner: 2, farg: 0xd2b866, ikon: 'hogolv' }, // äldre sparfiler: hö-golv läggs inte längre, slits till jordgolv
   lera: { namn: 'Lera', k: 'golv', n: 0, tim: 5 / 60, slit: 0, farg: 0x5c4630 }, // ett jordgolv som legat under vatten (steg 3.8.7, flod.ts): ingen sover där, och det blir jordgolv igen när det torkat
   oppning: { namn: 'Öppning', k: 'oppning', n: 0, tim: 0, slit: 0, farg: 0x7a5a3a },
