@@ -61,7 +61,9 @@ export const styre: Flik = {
 
 // påbuden (steg 3.5.2): vad ledaren bestämt mot vad byn själv tycker, och hur mycket byn lyssnar. En del i stenen Styre
 // (steg 9.3.1; förr en del i fliken Byn, och före 3.10.16 en egen flik)
-const varde = (k: Pabud, v: number) => k === 'han' ? (v < -0.33 ? 'förbjudet' : v > 0.33 ? 'tillåtet' : 'ogillas') : k === 'torkat' ? `${Math.round(torkAndel(v) * 100)} %` : k === 'bygg' || k === 'vinter' ? `${Math.round(Math.max(0, v) * 100)} %` : `${num(onskatDygn(k === 'vedlager' ? 'ved' : 'mat', v))} dygn`;
+// arbetsordningens påbud i ord (steg 9.2.123): under noll räknas som noll, och resten delas lika mellan orden efter det första
+const ordAv = (v: number, ord: string[]) => { const x = Math.max(0, v); return x < 0.05 ? ord[0] : ord[Math.min(ord.length - 1, 1 + Math.floor((x - 0.05) / (0.95 / (ord.length - 1))))]; };
+const varde = (k: Pabud, v: number) => k === 'han' ? (v < -0.33 ? 'förbjudet' : v > 0.33 ? 'tillåtet' : 'ogillas') : k === 'torkat' ? `${Math.round(torkAndel(v) * 100)} %` : k === 'bygg' ? ordAv(v, ['aldrig', 'ibland', 'ofta', 'alltid']) : k === 'vinter' ? ordAv(v, ['som vanligt', 'några fler', 'många fler']) : `${num(onskatDygn(k === 'vedlager' ? 'ved' : 'mat', v))} dygn`;
 export function pabudDel() {
   const st = s.styre, l = ledareOf(s);
   if (!l || !st?.pabud) return '<p class="muted">Inga påbud gäller. Utan ledare gör byn som den själv tycker.</p>';
@@ -70,7 +72,8 @@ export function pabudDel() {
   for (const k of PABUD_LIST) { const r = PABUD[k].ruta ?? PABUD[k].namn; rutor.set(r, [...(rutor.get(r) ?? []), k]); }
   const rad = (k: Pabud, ensam: boolean) => {
     const d = PABUD[k], egen = d.sed ? s.seder.v[d.sed] : 0, led = st.pabud![k] ?? egen;
-    const pil = `<span class="muted">${led > egen + 0.02 ? '▲' : led < egen - 0.02 ? '▼' : ''}</span>`;
+    const lag = k === 'bygg' || k === 'vinter' ? (v: number) => Math.max(0, v) : (v: number) => v; // ledarens vilja räknas inte under det lägsta värdet
+    const olika = varde(k, led) !== varde(k, egen), pil = `<span class="muted">${olika && lag(led) > lag(egen) + 0.02 ? '▲' : olika && lag(led) < lag(egen) - 0.02 ? '▼' : ''}</span>`; // pilen bara när det märks i värdet (steg 9.2.123)
     return `${ensam ? '' : `<dt title="${esc(d.text)}">${esc(d.namn)}</dt>`}<dd title="${esc(`${l.name} vill ${varde(k, led)}, byn själv ${varde(k, egen)}`)}"><b>${varde(k, pabud(s, k))}</b>${pil}</dd>${hjalpText('pabud', `<dd class="small muted helrad">${esc(d.text)}. ${esc(l.name)}: ${varde(k, led)}, byn: ${varde(k, egen)}</dd>`)}`;
   };
   return `<div class="tekhead">${hjalpKnapp('pabud', 'Vad är påbud?')}</div>
