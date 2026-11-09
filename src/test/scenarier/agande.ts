@@ -1873,6 +1873,37 @@ SCENARIER.rovargang = {
   },
 };
 
+SCENARIER.barnrop = {
+  text: 'Barnen ropar (steg 9.2.118): ett barn som har hört att rövare är nära och springer för att gömma sig ropar på vägen, så att den vuxna som barnet springer förbi och inte vet något hör larmet',
+  kor: () => {
+    const s = createState(6, START); klockan(s);
+    for (const c of SIM.klanerOf(s)) c.inst = -60;
+    const z = SIM.zoneOf(s)!, m = { x: z.x + z.w / 2, y: z.y + z.h / 2 };
+    const folk = living(s), vuxen = folk.find(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen && SIM.horsel(p) >= SIM.LARM.dov);
+    const barn = folk.find(p => p !== vuxen && SIM.kanGa(p));
+    if (barn) barn.born = s.now - 10 * SIM.DAY; // ett barn på tio år
+    if (!barn || !vuxen) return [['ett barn och en vuxen i byn', false]];
+    // flocken har setts långt bort; alla utom den vuxna, som står en bit från barnets väg, och barnet är bortflyttade ur hörhåll
+    SIM.rovarnaKommer(s, 2); const f = s.rovare!; SIM.stallUpp(s, f, m.x + 40, m.y + 40); f.gor = 'kommer'; f.lurat = true; f.sedd = s.now; f.gissning = 2; // flocken går, så ingen springer som bud (steg 9.2.117)
+    for (const p of folk) { p.larm = { t: s.now, vad: 'rovare', storlek: 2, led: 0 }; p.task = undefined; }
+    vuxen.larm = undefined;
+    // barnet väljer själv att gömma sig och springer mot sitt gömställe; den vuxna står nära gömstället, utom hörhåll från barnets start
+    const hor = SIM.LARM.hor * (SIM.isLight(s.now) ? 1 : SIM.LARM.natt), spot = SIM.husPlats(s, barn) ?? SIM.skyddVidElden(s);
+    const start = SIM.freeNear(s, spot.x - hor - 10, spot.y), vid = SIM.freeNear(s, spot.x - 2, spot.y + 3);
+    Object.assign(barn, { x: start.x, y: start.y }); barn.task = undefined as Person['task'];
+    for (const p of folk) if (p !== barn && p !== vuxen) Object.assign(p, SIM.freeNear(s, start.x, start.y)); // de andra står där barnet började, utom hörhåll från den vuxna
+    Object.assign(vuxen, { x: vid.x, y: vid.y }); vuxen.task = { act: 'samla', phase: 'do', tx: vuxen.x, ty: vuxen.y, until: s.now + 4 * HOUR, carry: 0 };
+    const fore = Math.hypot(barn.x - vuxen.x, barn.y - vuxen.y);
+    let hort = false, gomde = false;
+    for (let i = 0; i < 400 && !hort; i++) { step(s, 2); if (barn.task?.act === 'gomma') gomde = true; hort = (vuxen.larm as { vad?: string } | undefined)?.vad === 'rovare'; }
+    return [
+      [`${vuxen.name} står ${fore.toFixed(0)} rutor från barnet och har inte hört ropet från början`, fore > hor],
+      [`${barn.name} springer för att gömma sig`, gomde],
+      [`${vuxen.name} hör ${barn.name} ropa när barnet springer förbi (${s.stat?.rovarBarnRop ?? 0} rop)`, hort && (s.stat?.rovarBarnRop ?? 0) > 0],
+    ];
+  },
+};
+
 SCENARIER.rovarbud = {
   text: 'Budbäraren (steg 9.2.117): när en rövarflock väntar utanför byn och en vuxen som kan slåss är långt borta och inte hört ropet, springer den närmaste som har larmet och hämtar hen, och ropet sprids från budbäraren på vägen, så att den som är långt bort får larmet före anfallet',
   kor: () => {

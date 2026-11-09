@@ -3,7 +3,7 @@ import { utanforByn } from './omrade';
 import { balans } from './balans';
 import { blodas } from './blod';
 import { ALDER, KROPP, ageOf, alive, byId, count, isSick, living, log, makeName, ovning, stat, think } from './folk';
-import { halsa, kanGa, skada } from './halsa';
+import { halsa, horsel, kanGa, skada } from './halsa';
 import { kronika } from './historik';
 import { eldPlats, getMap, vaderstreck } from './karta';
 import { Klan, andraInst, klanById, klanerOf } from './klaner';
@@ -354,6 +354,16 @@ function budFor(s: State, p: Person) {
   const b = flockar(s).find(f => f.bud?.av === p.id)?.bud;
   const t = b ? byId(s, b.till) : undefined;
   return t && alive(t) && !harLarm(s, t) ? t : undefined;
+}
+// barnen ropar medan de springer för att gömma sig (steg 9.2.118): den som barnet springer förbi och inte vet om rövarna hör ropet
+function barnRop(s: State, folk: Person[]) {
+  const hor = LARM.hor * (isLight(s.now) ? 1 : LARM.natt);
+  for (const b of folk) {
+    if (ageOf(b, s.now) >= ALDER.vuxen || !harLarm(s, b) || b.task?.act !== 'gomma' || b.task.phase !== 'go' || !vaken(b)) continue;
+    if (!folk.some(q => q !== b && alive(q) && !harLarm(s, q) && horsel(q) >= LARM.dov && avst(q, b) <= hor)) continue;
+    const hort = larma(s, 'rovare', b.larm!.storlek, [b]);
+    count(s, 'rovarBarnRop'); soker(s, hort);
+  }
 }
 const tidDit = (d: number) => d / GANG.fart * SEC; // spelets tid för att gå d rutor
 function budSteg(s: State, f: Rovarflock, folk: Person[]) {
@@ -712,6 +722,7 @@ export function rovarSteg(s: State, dtSec: number) {
     if (f.gor !== 'flyr') { ses(s, f, folk); if (f.sedd !== undefined && !f.anfall && f.gor !== 'slass' && f.gor !== 'letar' && iByn(s, f)) anfall(s, f, folk); if (f.sedd !== undefined && f.gor !== 'slass') narFlocken(s, f, folk); }
     if (f.folk.length) flockSteg(s, f, folk, dtSec);
   }
+  if ([s.rovare, ...(s.rovareFler ?? [])].some(f => f && f.sedd !== undefined && f.gor !== 'flyr')) barnRop(s, folk);
   if (s.rovare && !s.rovare.folk.length) s.rovare = undefined;
   if (s.rovareFler) { s.rovareFler = s.rovareFler.filter(q => q.folk.length); if (!s.rovare) s.rovare = s.rovareFler.shift(); if (!s.rovareFler.length) s.rovareFler = undefined; }
   // möts flockar från klaner som inte tycker om varandra slåss de
