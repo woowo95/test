@@ -32,4 +32,40 @@
   });
   if (skjorta) BESLUT.f7_skjorta = B(skjorta, 'Din egen ritning, som ersätter skjortan som redan är inbyggd (bilder/skjorta_lintyg.json).');
   if (horn) BESLUT.f8_horn = B(horn, 'Din egen ritning. Hornet syns inte i porträttet.');
+  // Björns svar 2026-11-09: godkända kort, som byggs in i steg 9.9.1. Ja i ett ja/nej-kort är val 1.
+  const B9 = val => ({ val, steg: '9.9.1' });
+  Object.assign(BESLUT, {
+    f6_band: B9(1),
+    f7_lintyg: B9(1),
+    f8_mantel: B9(1),
+    f8_rustning: B9(1),
+    f9_lagermark: B9(1),
+    f9_amne_arbete: B9(1),
+    f9_amne_dod: B9(1),
+    f9_amne_fara: B9(1),
+    f9_amne_karlek: B9(1),
+    f9_amne_langtan: B9(1),
+    f9_amne_plats: B9(1),
+    f9_amne_rykte: B9(1),
+    f9_amne_trost: B9(1),
+    f9_amne_vader_aska: B9(1),
+    f9_amne_vader_blast: B9(1),
+    f9_amne_vader_dimma: B9(1),
+    f9_amne_vader_klart: B9(1),
+    f9_amne_vader_regn: B9(1),
+    f9_amne_vader_sno: B9(1),
+    f9_amne_vardag: B9(1),
+    f7_garvning: B9(3),
+    f7_halsband: B9(1),
+    f9_kk_liv: B9(3),
+    f9_kk_motgang: B9(1),
+    f9_kk_styre: B9(1),
+    f9_nedslag: B9(2),
+    f9_r_fram: B9(1),
+    f9_r_ja: B9(1),
+    f9_r_nej: B9(1),
+    f9_stackar: B9(1),
+    f9_tal: B9(1),
+    f9_uppsatt_vagg: B9(2),
+  });
 })();

@@ -186,7 +186,7 @@
         // ramen syns som ett band av trä under skinnet, eftersom trumman lutar
         g.fyll(ell(7, 10, 6.4, 4), tre(7, 10, 'J', 'j', 'E', -3, 3));
         g.fyll(ell(7, 7.8, 6, 3.8), (x, y) => (x - 7) + (y - 7.8) < -3.5 ? 'w' : 'W');
-        // en röd målad sol på skinnet: en ring med fyra strålar
+        // en röd målad ring på skinnet
         g.fyll(utan(ell(7, 7.8, 3, 1.9), ell(7, 7.8, 1.9, 0.9)), 'r');
         g.kontur();
         g.fyll(linje([[10.5, 9], [14.5, 2.5]], 0.6), 'J');
@@ -274,68 +274,34 @@
     }) })) });
 
   // ---------- 9.2.39 vedträt och vedhögen ----------
-  // Ett kluvet vedträ ritas som ett tvärsnitt (en polygon, varje kant bark 'k' eller kluven yta 's') som dras ut åt
-  // riktningen d: änden närmast är ändträet med årsringar, längs kroppen syns barken och de kluvna sidorna. Den
-  // kluvna sidan som vetter uppåt till vänster är ljus, den andra mörkare; barken mörk med fåror på längden.
-  const inPoly = (pts, x, y) => poly(pts)(x, y);
-  function vedtra(spec, skala = 1) {
-    const sec = spec.sec.map(([u, v]) => [u * skala, v * skala]), d = [spec.d[0] * skala, spec.d[1] * skala], pith = [spec.pith[0] * skala, spec.pith[1] * skala];
-    const F = { ande: 'Y', ring: 'z', karna: 'J', kant: 'y', ljus: 'w', ljus2: 'W', mitt: 'v', mitt2: 'b', bark: 'E', bark2: 'k', ...spec.f };
-    const xs = sec.flatMap(([u]) => [u, u + d[0]]), ys = sec.flatMap(([, v]) => [v, v + d[1]]);
-    const x0 = Math.min(...xs), y0 = Math.min(...ys), w = Math.ceil(Math.max(...xs) - x0) + 2, h = Math.ceil(Math.max(...ys) - y0) + 2;
-    const cx = sec.reduce((s, p) => s + p[0], 0) / sec.length, cy = sec.reduce((s, p) => s + p[1], 0) / sec.length;
-    const kanter = sec.map((a, i) => { const b = sec[(i + 1) % sec.length]; let nx = b[1] - a[1], ny = -(b[0] - a[0]); const l = Math.hypot(nx, ny) || 1; nx /= l; ny /= l; if (nx * ((a[0] + b[0]) / 2 - cx) + ny * ((a[1] + b[1]) / 2 - cy) < 0) { nx = -nx; ny = -ny; } return { a, b, n: [nx, ny], typ: spec.kant[i] }; });
-    let s0 = 0; kanter.forEach(k => { k.s0 = s0; s0 += Math.hypot(k.b[0] - k.a[0], k.b[1] - k.a[1]); });
-    const narmast = (qx, qy) => { let bast = null; for (const k of kanter) { const dx = k.b[0] - k.a[0], dy = k.b[1] - k.a[1], L2 = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((qx - k.a[0]) * dx + (qy - k.a[1]) * dy) / L2)), dd = Math.hypot(qx - k.a[0] - t * dx, qy - k.a[1] - t * dy); if (!bast || dd < bast.dd) bast = { k, dd, s: k.s0 + t * Math.sqrt(L2) }; } return bast; };
-    const g = Grid(w, h);
-    for (let py = 0; py < h; py++) for (let px = 0; px < w; px++) {
-      const X = px + 0.5 + x0 - 1, Y = py + 0.5 + y0 - 1;
-      let hit = null;
-      for (let t = 0; t <= 1.0001; t += 0.02) { const qx = X - t * d[0], qy = Y - t * d[1]; if (inPoly(sec, qx, qy)) { hit = { t, qx, qy }; break; } }
-      if (!hit) continue;
-      const n = narmast(hit.qx, hit.qy);
-      let c;
-      if (hit.t === 0) { // ändträet
-        const r = Math.hypot(hit.qx - pith[0], hit.qy - pith[1]);
-        if (n.k.typ === 'k' && n.dd < 0.85) c = F.bark;
-        else if (n.k.typ === 's' && n.dd < 0.75) c = F.kant;
-        else if (r < 0.8 * skala) c = F.karna;
-        else c = (r / skala) % 2 < 0.65 ? F.ring : F.ande;
-      } else if (n.k.typ === 'k') {
-        if (spec.bjork) c = hash(Math.floor(n.s / skala * 0.7), Math.floor(hit.t * 7), spec.fro) < 0.3 ? 'o' : (hash(Math.floor(n.s * 2), 3) < 0.3 ? F.bark2 : F.bark);
-        else c = hash(Math.floor(n.s * 1.4), spec.fro || 1) < 0.38 ? F.bark2 : F.bark;
-      } else {
-        const ljus = -0.6 * n.k.n[0] - 0.8 * n.k.n[1] > 0.15, strimma = hash(Math.floor(n.s * 2.2), 7) < 0.22;
-        c = ljus ? (strimma ? F.ljus2 : F.ljus) : (strimma ? F.mitt2 : F.mitt);
-      }
-      g.satt(px, py, c);
-    }
-    return g.kontur().rader().filter(r => /[^.]/.test(r));
-  }
-  const bage = (cx, cy, r, a0, a1, steg = 15) => { const p = []; for (let a = a0; a0 < a1 ? a <= a1 + 0.01 : a >= a1 - 0.01; a += a0 < a1 ? steg : -steg) p.push([cx + r * Math.cos(a * Math.PI / 180), cy + r * Math.sin(a * Math.PI / 180)]); return p; };
-  const kanter = (n, typ) => Array(n).fill(typ);
+  // Tre kluvna vedträn, ritade för hand: ändträet ljust med årsringar (jord 3) runt kärnan, den kluvna sidan ljus
+  // (senap 3, fibrerna senap 2), barken mörk (jord 1, jord 0, kol 1). Varje vedträ finns som symbol i lagret (16 × 16)
+  // och i en mindre storlek för stacken på marken.
   const VED = [
-    { text: 'En fjärdedel av en stock, kluven två gånger: kärnan i spetsen uppåt, de två kluvna sidorna ljusa, rödbrun tallbark undertill och ändträet med årsringar närmast.',
-      sec: [[0, -3.6], ...bage(0, -3.6, 7.4, 48, 132, 12)], kant: ['s', ...kanter(7, 'k'), 's'], pith: [0, -3.6], d: [5.4, -3.2], f: { bark: 'j', bark2: 'E' }, fro: 3 },
-    { text: 'En halv björkstock, kluven på längden: den platta kluvna sidan ljus uppåt, vit björkbark med svarta streck undertill och halva årsringarna i änden.',
-      sec: bage(0, 0, 5, -20, 160, 15), kant: [...kanter(12, 'k'), 's'], pith: [0, 0], d: [5.6, -3], f: { bark: 'w', bark2: 'W', ande: 'y', ljus: 'Y', ljus2: 'y', kant: 'z' }, fro: 5, bjork: true },
-    { text: 'Ett grovt vedträ som ligger ner: den kluvna ovansidan ljus, mörk granbark runt ytterkanten och ett stort ändträ med kärnan uppe i hörnet.',
-      sec: [[-3.4, -2.6], [3.6, -2.6], ...bage(-3.4, -2.6, 7, 0, 90).slice(1)], kant: ['s', ...kanter(6, 'k'), 's'], pith: [-3.4, -2.6], d: [5.2, -2.6], f: { bark: 'E', bark2: 'k', ljus: 'w', ljus2: 'W' }, fro: 9 },
+    { text: 'En fjärdedel av en stock, kluven två gånger: den kluvna ovansidan ljus, mörk tallbark nertill till höger och ändträet med årsringar runt kärnan i spetsen.',
+      sym: ['.......oo.......', '.....ooYYoo.....', '...ooYYyyYYooo..', '..oyYYyYYYYyYYo.', '.oYYyYYYYYYYYyEo', '.oJWYYYYyYYYyEjo', '.owwbwWYYYyYjEo.', 'oWbbwwbWWyYEjjo.', 'oWwwwwbwwjEjEo..', 'oWwwbbwwjjEoo...', 'obbbwwwjjoo.....', 'oWwwwwjEo.......', 'oWwjjjoo........', '.ooooo..........'],
+      liten: ['....ooo....', '..ooYYyoo..', '.oYYYyYYYo.', '.oWyYYYYyjo', '.obwWWYEEo.', 'oWwbwjjjo..', 'oWbwjjoo...', 'oWjjoo.....', '.ooo.......'] },
+    { text: 'Ett kluvet vedträ som står på ända: ändträet med årsringar överst, den kluvna sidan ljus till höger och mörk bark till vänster.',
+      sym: ['.....oooooo.', '...oojjjjjjo', '..ojjbbbbbWo', '.ojbbwwwwWYo', 'ojwbwbbwWYYo', 'ojwbwbwWYYYo', 'ojwbwbWYYYYo', 'ojjbwWYYYYYo', 'ojjjwWYYYYYo', 'ojjjjYYYYYo.', 'ojjjjYYYYo..', 'ojjjjYYYo...', 'ojjjjYYo....', '.ojjjYo.....', '..ojjYo.....', '...ojo......'],
+      liten: ['..ojjjjo', '.ojbwWYo', 'ojbbwYYo', 'ojbbWYYo', 'ojjWYYYo', 'ojjYYYo.', 'ojjYYo..', 'ojjYo...', '.ojo....', '..o.....'] },
+    { text: 'Ett grovt vedträ som ligger ner: den kluvna ovansidan ljus med fibrer på längden, mörk bark längs ena sidan och ett stort ändträ med årsringar runt kärnan i hörnet.',
+      sym: ['......ooooooooo.', '.....oYYyYYyYYko', '....oYYyYYyYYkko', '...oYYyYYyYYkko.', '..oYYyYYyYYkkEo.', '.oYYyYYyYYkkEo..', 'oYYyYYyYYkkEo...', 'oWwbwwbwEkEo....', 'oWbbwbbwEEo.....', 'oWwwwbwEEo......', 'oWwwbwwEo.......', 'oWbbwwEo........', 'oWwwEEo.........', 'oWEEoo..........', '.ooo............'],
+      liten: ['....ooooo.', '...oYyYYYo', '..oYyYYYko', '.oYyYYYEo.', 'oYyYYYEo..', 'obbbEko...', 'obwbEo....', 'obbEo.....', 'oEEo......', '.oo.......'] },
   ];
   // stackarna som Björn valde (f9_stackar version 1): en, några (tre i en triangel) och många (sex i en pyramid)
   const STACK = (n, w, h) => n === 1 ? [[0, 0]] : n === 3 ? [[0, 0], [w * 0.6, 0], [w * 0.3, -h * 0.5]] : [[0, 0], [w * 0.6, 0], [w * 1.2, 0], [w * 0.3, -h * 0.5], [w * 0.9, -h * 0.5], [w * 0.6, -h]];
   byt({ id: 'f9_vedhog', namn: 'Vedhögen i lagret', typ: 'tre',
-    vad: 'Steg 9.2.39: vedsymbolen görs om helt. Tre nya vedträn, kluvna, med en ljus kluven sida, mörk bark och ändträet synligt. Till vänster symbolen i lagret (16 × 16 punkter), till höger samma ved på marken som en, några och många i stacken, ritade som stackarna du valde (version 1: några är tre i en triangel, många sex i en pyramid). Din kommentar förra gången: ”vi gör om hela vedsymbolen tycker jag”',
+    vad: 'Steg 9.2.39: vedsymbolen görs om helt. Tre nya vedträn, kluvna, med en ljus kluven sida, mörk bark och ändträet med årsringar synligt. Till vänster symbolen i lagret (16 × 16 punkter), till höger samma ved på marken som en, några och många i stacken, ritade som stackarna du valde (version 1: några är tre i en triangel, många sex i en pyramid). Din kommentar förra gången: ”vi gör om hela vedsymbolen tycker jag”',
     versioner: VED.map(v => ({ text: v.text, w: 124, h: 26, rita: B => {
       for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) B.satt(x, y, B.P.i('kol', 1));
       for (let y = 3; y < 23; y++) for (let x = 2; x < 22; x++) B.satt(x, y, B.P.i('ben', 2));
-      let sk = 1.4, sym = vedtra(v, sk); while (sym[0].length > 16 || sym.length > 16) sym = vedtra(v, sk -= 0.05); const sw = sym[0].length, sh = sym.length;
-      ritaSprite(B, sym, L, 2 + 2 + Math.floor((16 - sw) / 2), 3 + 2 + Math.floor((16 - sh) / 2));
+      const sw = v.sym[0].length, sh = v.sym.length;
+      ritaSprite(B, v.sym, L, 4 + Math.floor((16 - sw) / 2), 5 + Math.floor((16 - sh) / 2));
       window.F7.gras(B, 25, 0, 99, 26);
-      const liten = vedtra(v, 0.58), w = liten[0].length, h = liten.length;
+      const w = v.liten[0].length, h = v.liten.length;
       [1, 3, 6].forEach((n, j) => STACK(n, w, h).forEach(([dx, dy]) => {
-        const x0 = 29 + j * 31 + Math.round(dx), y0 = 21 - h + Math.round(dy);
-        ritaSprite(B, liten, L, x0, y0);
+        const x0 = 30 + j * 31 + Math.round(dx), y0 = 21 - h + Math.round(dy);
+        ritaSprite(B, v.liten, L, x0, y0);
         if (dy === 0) for (let x = 1; x < w - 1; x++) B.morka(x0 + x, y0 + h);
       }));
     } })) });
