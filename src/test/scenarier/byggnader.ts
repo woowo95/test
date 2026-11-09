@@ -1308,6 +1308,26 @@ function lagerIStraket(): [string, boolean][] {
     [`och lagerplatsen flyttas bort från stråket (${x},${y} → ${ny ? `${ny.x},${ny.y}` : 'borta'})`, !ny || !(ny.x === x && ny.y === y)],
   ];
 }
+SCENARIER.staende = {
+  text: 'Steg 9.2.133: ett nytt hus prövas också stående, djupare än brett, så att en smal men djup lucka i en trång by går att bygga i',
+  kor: () => {
+    const s = createState(6, START); klockan(s); byggare(s);
+    const g = groundOf(s), f = SIM.eldPlats(s);
+    const b = { fn: 'sovsal' as const, a: { v: 1, plats: 2 }, sc: 0 };
+    // bara en smal lucka (fem rutor bred, tolv djup) går att bygga i: den hittas bland platserna runt elden
+    let fs: { w: number; h: number }[] = [], vid = '';
+    for (let r = 4; r < 20 && !fs.length; r += 2) for (const [dx, dy] of [[r, -6], [-r - 5, -6], [-2, r], [-2, -r - 12]]) {
+      const x0 = f.x + dx, y0 = f.y + dy;
+      const okAt = (i: number) => { const x = i % W, y = Math.floor(i / W); return x >= x0 && x < x0 + 5 && y >= y0 && y < y0 + 12 && g.tiles[i] !== T.Vatten && !SIM.bitAt(s, x, y); };
+      fs = SIM.BYGGATGARDER.nyttHus.foresla(s, b, okAt); if (fs.length) { vid = `${x0},${y0}`; break; }
+    }
+    const h = fs[0];
+    return [
+      [`i luckan (${vid || 'ingen'}) föreslås ett stående hus (${h ? `${h.w}×${h.h}` : 'inget'})`, !!h && h.w <= 5 && h.h > h.w],
+    ];
+  },
+};
+
 SCENARIER.husmarknad = {
   text: 'Steg 9.2.109 och 9.2.110: alla bostäder går att köpa, men priset följer hur mycket säljaren behöver huset. Ett hus där folk bor kostar mer än att bygga nytt, ett hus som ägaren inte behöver säljs billigt, och en familj som inte har råd att bygga nytt köper ett sådant, med det hela familjen äger',
   kor: () => {

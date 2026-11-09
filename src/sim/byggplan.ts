@@ -203,7 +203,8 @@ const nyttHus: AtgardDef = {
     if (b.a.hus !== undefined || b.a.kop || b.fn === 'forbattra' || b.fn === 'lagerplats' || (BYGGNADER as Record<string, Byggnad>)[b.fn]?.skjul) return []; // kop: familjen har bara råd att köpa
     // storleken efter behovet; så nära kvadratiskt som möjligt
     const sizes: { w: number; h: number }[] = [];
-    for (let h = HUS.minSida; h <= HUS.maxSida; h++) for (let w = h; w <= HUS.langSida * h; w++) sizes.push({ w, h });
+    // både bredare än djupt och djupare än brett (steg 9.2.133), så att en smal men djup lucka i en trång by går att bygga i
+    for (let h = HUS.minSida; h <= HUS.maxSida; h++) for (let w = h; w <= HUS.langSida * h; w++) { sizes.push({ w, h }); if (w !== h) sizes.push({ w: h, h: w }); }
     const want = onskadPlats(s, b), wantR = rutorFor(b, want);
     sizes.sort((a, c) => (a.w * a.h < wantR ? 1000 - a.w * a.h : 0) - (c.w * c.h < wantR ? 1000 - c.w * c.h : 0) || a.w * a.h - c.w * c.h || (a.w - a.h) - (c.w - c.h));
     for (const { w, h } of sizes) {
