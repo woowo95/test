@@ -52,6 +52,7 @@ function gastAkt(s: State, p: Person): Act {
     if (!f) return 'gaHem';
     return f.gor === 'samlas' || f.gor === 'kommer' ? 'gastKommer' : f.gor === 'vantar' ? 'gastVantar' : f.gor === 'flyr' ? 'gastFly' : 'plundra';
   }
+  if (g.sort === 'framling') return g.fas === 'pratar' ? 'gastVantar' : g.fas === 'gar' ? 'gaHem' : 'gastKommer';
   return 'gastKommer';
 }
 function satt(s: State, p: Person, act: Act) {

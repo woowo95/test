@@ -225,7 +225,7 @@ export function stallUpp(s: State, f: Rovarflock, x: number, y: number) {
   f.x = x; f.y = y;
 }
 // rövaren går mot (mx, my) i sek sekunder från tiden t0. Svarar hur långt det är kvar (rutor), eller −1 när det inte finns någon väg
-function gaMot(s: State, r: Person, mx: number, my: number, sek: number, t0: number) {
+export function gaMot(s: State, r: Person, mx: number, my: number, sek: number, t0: number) {
   const g = groundOf(s), mal = tileOf(mx, my);
   if (gr(r).pk !== mal) {
     gr(r).pk = mal; gr(r).path = findPath(g, r.x, r.y, mx, my) ?? undefined;

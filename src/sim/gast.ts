@@ -21,7 +21,7 @@ export type GastSort = keyof typeof GASTSORTER;
 // mat är portionerna kvar i packningen och sover att gästen sover (steg 9.2.113, gastvardag.ts).
 // vapen, bar, spar, pk och anhorig gäller rövarna (steg 9.2.112, rovare.ts): vapnet hen kom med, bytet hen bär, vägen för bilden
 // (tid och plats efter varandra), rutorna kvar på vägen och rutan hen hittat vägen till och vems anhörig hen är när flocken hämnas
-export interface GastRad { sort: GastSort; klan?: number; hem?: string; vapen?: import('./strid').Vapen; bar?: Record<string, number>; spar?: number[]; path?: number[]; pk?: number; anhorig?: string; mat?: number; sover?: 1 }
+export interface GastRad { sort: GastSort; klan?: number; hem?: string; vapen?: import('./strid').Vapen; bar?: Record<string, number>; spar?: number[]; path?: number[]; pk?: number; anhorig?: string; mat?: number; sover?: 1; blir?: number; fas?: 'kommer' | 'pratar' | 'gar'; till?: number; tek?: string; ja?: boolean } // blir, fas, till, tek, ja: främlingen (steg 9.2.115, framling i liv.ts)
 
 // lever gästen och är kvar på kartan
 export const gastLever = (p: Person) => !!p.gast && p.died === undefined && p.left === undefined;
@@ -68,7 +68,7 @@ export function gastHem(s: State, p: Person) {
   const k = klanById(s, p.gast?.klan);
   if (!k || p.died !== undefined) return;
   let kp = k.personer.find(q => q.namn === p.name && q.sex === p.sex);
-  if (!kp) { if (p.gast!.sort !== 'rovare') return; kp = { namn: p.name, sex: p.sex, roll: 'rovare' }; k.personer.push(kp); } // en rövare som flydde hem
+  if (!kp) { if (p.gast!.sort === 'handlare') return; kp = { namn: p.name, sex: p.sex, roll: p.gast!.sort }; k.personer.push(kp); } // en rövare som flydde hem, en främling som visades bort
   const kropp = JSON.parse(JSON.stringify(p)) as Record<string, unknown>;
   for (const f of BESOKET) delete kropp[f];
   kp.kropp = kropp as KlanPerson['kropp']; kp.borta = s.now; kp.fodd ??= p.born;

@@ -7,7 +7,7 @@ import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, isParent, living, 
 import { pair } from './varld';
 import { avgMood } from './humor';
 import { chance, clamp, pick, rnd } from './slump';
-import { Act, DAY, HOUR_S, Person, SEC, State } from './typer';
+import { Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, State, T, W } from './typer';
 import { foodDays } from './ekonomi';
 import { avbryt, put, releaseOwner } from './lager';
 import { inherit, packUp } from './arv';
@@ -16,7 +16,12 @@ import { RELT } from './relationer';
 import { rykteDod, startSmak } from './rykten';
 import { tecken, GudOmr, gudHandelse } from './religion';
 import { TEK, TEKNIK, knows, kunskapDod } from './teknik';
-import { KLAN, andraInst, klanerOf, utbrytning } from './klaner';
+import { KLAN, andraInst, klanById, klanerOf, utbrytning } from './klaner';
+import { gaMot } from './rovare';
+import { kanterna } from './varg';
+import { eldPlats, getMap } from './karta';
+import { freeNear } from './byggnad';
+import { gastGar, nyttGastId } from './gast';
 import { notis } from './notiser';
 import { vaderNu } from './vader';
 import { nyKvarleva } from './kvarlevor';
@@ -201,30 +206,77 @@ export function regulate(s: State, dtSec: number) {
   if (s.klaner?.length && chance(s, KLAN.framling / 86400, dtSec, 'klan')) framling(s);
 }
 // en främling från en grannklan som inte tycker illa om byn (steg 4.4.4.2). Hen kan ofta en teknik som ingen i byn kan, men
-// vars krav byn kan, och tekniken under den. Byn avgör om hen får stanna: ledaren, eller de vuxna om byn saknar ledare. Det
-// väger tekniken, klanens inställning, seden Förnyelse – Tradition, trängseln och maten. Klanen minns hur det gick
+// vars krav byn kan, och tekniken under den. Främlingen kommer gående (steg 9.2.115): hen är en gäst som går in på kartan
+// från närmaste kanten, mot ledaren (eller elden när byn saknar ledare), pratar med hen en stund och stannar som bybo eller
+// går igen (framlingSteg). Byn avgör: ledaren, eller de vuxna om byn saknar ledare. Det väger tekniken, klanens inställning,
+// seden Förnyelse – Tradition, trängseln och maten. Klanen minns hur det gick
 export function framling(s: State, tvinga?: { tek?: string; ja?: boolean }) {
   const kan = klanerOf(s).filter(k => k.inst > KLAN.handelMin);
   if (!kan.length) return undefined;
-  const k = pick(s, kan, 'klan'), folk = living(s), pop = folk.length;
+  const k = pick(s, kan, 'klan'), folk = living(s);
   const kunnat = new Set(folk.flatMap(p => Object.keys(p.tek ?? {}).filter(id => knows(p, id))));
   const nya = TEKNIK.filter(t => !kunnat.has(t.id) && t.krav.every(id => kunnat.has(id)));
   const tek = tvinga ? tvinga.tek : nya.length && rnd(s, 'klan') < KLAN.framlingTek ? pick(s, nya, 'klan').id : undefined;
-  const v = KLAN.taEmot + (tek ? KLAN.taEmotTek : 0) + k.inst / 100 * KLAN.taEmotInst + (s.seder.v.nyfikenhet ?? 0) * KLAN.taEmotSed
-    - Math.min(1, crowd(pop)) * KLAN.taEmotTrang - (1 - matGott(s)) * KLAN.taEmotMat;
-  const ja = tvinga?.ja ?? rnd(s, 'klan') < v;
-  const lid = s.styre?.ledare, l = lid === undefined ? undefined : byId(s, lid), vem = l && alive(l) ? l.name : 'Byn';
-  const sex = rnd(s, 'klan') < 0.5 ? 'm' : 'k', tekNamn = tek ? TEK[tek]?.namn.toLowerCase() : '';
-  if (!ja) {
-    andraInst(k, -KLAN.nejInst); count(s, 'framlingNej');
-    log(s, `En främling från ${k.namn} kom till byn${tek ? ` och kunde ${tekNamn}` : ''}. ${vem} ville inte att ${sex === 'k' ? 'hon' : 'han'} skulle stanna, och ${sex === 'k' ? 'hon' : 'han'} gick vidare.`, 'move');
-    return undefined;
-  }
+  const sex = rnd(s, 'klan') < 0.5 ? 'm' : 'k';
   const age = LIV.nybyggareAlder + rnd(s, 'folk') * LIV.nybyggareAlderSpann, p = newPerson(s, sex, s.now - age * DAY);
   startSkills(s, p, age); startSmak(s, p);
   p.fran = k.id;
   if (tek) { const lar = (id: string) => { if (knows(p, id)) return; (p.tek ??= {})[id] = 1; for (const x of TEK[id]?.krav ?? []) lar(x); }; lar(tek); }
+  // gästen: id som en gäst, och bybons id väntar tills hen får stanna
+  const blir = p.id, ut = kanten(s, p.x, p.y);
+  p.id = nyttGastId(s); p.x = ut.x; p.y = ut.y;
+  p.gast = { sort: 'framling', klan: k.id, hem: k.hem, blir, fas: 'kommer', ...(tek ? { tek } : {}), ...(tvinga?.ja !== undefined ? { ja: tvinga.ja } : {}) };
   s.people.push(p);
+  count(s, 'framlingKommer');
+  log(s, `En främling från ${k.namn} kommer gående mot byn.`, 'move', [p.id]);
+  return p;
+}
+// närmaste kanten som inte är vatten, från (x, y)
+function kanten(s: State, x: number, y: number) {
+  const m = getMap(s.seed);
+  return kanterna(x, y).find(k => m.tiles[Math.floor(k.y) * W + Math.floor(k.x)] !== T.Vatten) ?? kanterna(x, y)[0];
+}
+const ledarenNu = (s: State) => { const lid = s.styre?.ledare, l = lid === undefined ? undefined : byId(s, lid); return l && alive(l) ? l : undefined; };
+// främlingarna går, pratar och går igen (steg.ts, varje slag)
+export function framlingSteg(s: State, dtSec: number) {
+  const t0 = s.now - dtSec * SEC;
+  for (const p of s.people.filter(q => q.gast?.sort === 'framling' && q.died === undefined && q.left === undefined)) {
+    const g = p.gast!;
+    if (g.fas === 'kommer') {
+      const l = ledarenNu(s), mal = l ?? eldPlats(s), kvar = gaMot(s, p, mal.x, mal.y + (l ? 0.8 : 1.2), dtSec, t0);
+      if (kvar < 0) { const f = freeNear(s, mal.x, mal.y + 1.2); p.x = f.x; p.y = f.y; } // ingen väg: hen hittar fram ändå
+      if (kvar <= KLAN.framlingNara) {
+        g.fas = 'pratar'; g.till = s.now + KLAN.framlingPrat * MIN; g.path = undefined; g.pk = undefined;
+        log(s, `${p.name} från ${klanById(s, g.klan)?.namn ?? 'en grannklan'} pratar med ${l ? l.name : 'byn'}.`, 'move', [p.id, ...(l ? [l.id] : [])]);
+        if (l) think(l, 'Pratade med en främling', 0.05, s.now, 6 * HOUR);
+      }
+    } else if (g.fas === 'pratar') {
+      if (s.now >= (g.till ?? 0)) framlingBeslut(s, p);
+    } else if (g.fas === 'gar') {
+      const ut = kanten(s, p.x, p.y), kvar = gaMot(s, p, ut.x, ut.y, dtSec, t0);
+      if (kvar >= 0 && kvar < 0.5 || kvar < 0) gastGar(s, p.id, true);
+    }
+  }
+}
+// samtalet är slut: byn avgör om främlingen får stanna
+export function framlingBeslut(s: State, p: Person) {
+  const g = p.gast!, k = klanById(s, g.klan);
+  if (!k) { g.fas = 'gar'; return undefined; }
+  const pop = living(s).length, tek = g.tek;
+  const v = KLAN.taEmot + (tek ? KLAN.taEmotTek : 0) + k.inst / 100 * KLAN.taEmotInst + (s.seder.v.nyfikenhet ?? 0) * KLAN.taEmotSed
+    - Math.min(1, crowd(pop)) * KLAN.taEmotTrang - (1 - matGott(s)) * KLAN.taEmotMat;
+  const ja = g.ja ?? rnd(s, 'klan') < v;
+  const l = ledarenNu(s), vem = l ? l.name : 'Byn', tekNamn = tek ? TEK[tek]?.namn.toLowerCase() : '';
+  if (!ja) {
+    andraInst(k, -KLAN.nejInst); count(s, 'framlingNej');
+    g.fas = 'gar'; g.path = undefined; g.pk = undefined;
+    log(s, `${p.name} från ${k.namn} kom till byn${tek ? ` och kunde ${tekNamn}` : ''}. ${vem} ville inte att ${honom(p)} skulle stanna, och ${p.sex === 'k' ? 'hon' : 'han'} går vidare.`, 'move', [p.id]);
+    return undefined;
+  }
+  // hen blir bybo: samma person, med bybons id
+  const gid = p.id;
+  p.id = g.blir!; p.gast = undefined; p.task = undefined;
+  for (const q of s.people) if (q.task?.med === gid) q.task.med = p.id;
   upplev(s, p, 'flyttade');
   for (const m in MEDHAVT) put(s, m, MEDHAVT[m], { [p.id]: MEDHAVT[m] });
   andraInst(k, KLAN.stannarInst); count(s, 'framling'); if (tek) count(s, 'framlingTek'); budTillfalle(s, 'framling', p); // främlingen får mat (budet, steg 8.6.6)

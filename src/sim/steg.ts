@@ -45,7 +45,7 @@ import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, gjort, isSick, liv
 import { SJUK, type SjukId, insjukna, sjukSteg, smittaTimme, smittaUtifranTimme } from './sjukdom';
 import { eldPlats, getMap } from './karta';
 import { ELDFLYTT, flyttaElden, stepEldFlytt } from './eldflytt';
-import { DODSORSAKER, type Dodsorsak, barnMat, birth, birthWish, die, regulate } from './liv';
+import { DODSORSAKER, type Dodsorsak, barnMat, birth, birthWish, die, framlingSteg, regulate } from './liv';
 import { MARK, groundOf, growGround, markslag, packGround, tileOf } from './mark';
 import { bynsMitt } from './omrade';
 import { SAMTAL, TalkEvent, converse, kanPrata, skiljsAt } from './samtal';
@@ -282,6 +282,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   bjornSteg(s); // den som kommer nära björnen (bjorn.ts, steg 6.6.5)
   djurStriderSteg(s); // striderna mot djur på kartan (djurstrid.ts, steg 9.2.29)
   rovarSteg(s, dtSec); // rövarflocken (rovare.ts, steg 4.4.5)
+  framlingSteg(s, dtSec); // främlingen som kommer gående (liv.ts, steg 9.2.115)
   tornadoSteg(s, { rovarTornado, handlarTornado, handlarPlats }); // tornadon drar fram (tornado.ts, steg 3.8.4), och rövarna och handlaren drabbas (steg 6.4.12)
   brandSteg(s, dtSec); // gnistor, blixten och elden som sprider sig (brand.ts, steg 3.8.5)
   brinnerSteg(s, dtSec); // den som brinner (brand.ts, steg 6.4.16)

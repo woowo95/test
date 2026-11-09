@@ -1995,31 +1995,39 @@ SCENARIER.utbrytning = {
 };
 
 SCENARIER.framling = {
-  text: 'Invandring (steg 4.4.4.2, framling i liv.ts): en sällsynt främling kommer från en grannklan som inte tycker illa om byn. Hen kan ofta en teknik som ingen i byn kan, men vars krav byn kan. Byn (ledaren, annars de vuxna) avgör om hen får stanna; klanen blir vänligare om hen får det och mindre vänlig om hen visas bort. En fientlig klan skickar ingen.',
+  text: 'Invandring (steg 4.4.4.2 och 9.2.115, framling i liv.ts): en sällsynt främling kommer från en grannklan som inte tycker illa om byn. Hen är en gäst som går in på kartan från kanten, går fram till ledaren och pratar med hen en stund, och stannar sedan som bybo (samma person) eller går igen. Hen kan ofta en teknik som ingen i byn kan, men vars krav byn kan. Byn (ledaren, annars de vuxna) avgör; klanen blir vänligare om hen får stanna och mindre vänlig om hen visas bort. En fientlig klan skickar ingen.',
   kor: () => {
     const s = createState(6, START); rikBy(s); setFood(s, 300);
     const folk = living(s), kunnat = new Set(folk.flatMap(p => Object.keys(p.tek ?? {}).filter(id => SIM.knows(p, id))));
     const ny = SIM.TEKNIK.find(t => !kunnat.has(t.id) && t.krav.length && t.krav.every(id => kunnat.has(id))) ?? SIM.TEKNIK.find(t => !kunnat.has(t.id) && t.krav.every(id => kunnat.has(id)))!;
     const inst = () => SIM.klanerOf(s).map(k => k.inst);
-    const i0 = inst();
-    const p = SIM.framling(s, { tek: ny.id, ja: true });
+    const i0 = inst(), pop0 = living(s).length;
+    const g = SIM.framling(s, { tek: ny.id, ja: true })!;
+    const namn = g.name, start = { x: g.x, y: g.y }, eld = SIM.eldPlats(s);
+    const somGast = g.id < 0 && g.gast?.sort === 'framling' && !living(s).includes(g) && living(s).length === pop0 && Math.hypot(start.x - eld.x, start.y - eld.y) > 25;
+    let pratade = false, fas: string[] = [];
+    kor(s, 30, x => { const q = x.people.find(p => p.name === namn); if (q?.gast?.fas && fas[fas.length - 1] !== q.gast.fas) fas.push(q.gast.fas); if (q?.gast?.fas === 'pratar') pratade = true; });
+    const p = living(s).find(q => q.name === namn);
     const k = p ? SIM.klanById(s, p.fran) : undefined;
-    const stannar = !!p && living(s).includes(p) && !!k && s.stat?.framling === 1;
+    const stannar = !!p && p.id > 0 && !p.gast && !!k && s.stat?.framling === 1 && pratade;
     const kan = !!p && SIM.knows(p, ny.id) && ny.krav.every(id => SIM.knows(p, id));
     const vanligare = !!k && k.inst > i0[SIM.klanerOf(s).indexOf(k)];
-    const pop1 = living(s).length, i1 = inst();
-    SIM.framling(s, { ja: false });
-    const bort = living(s).length === pop1 && s.stat?.framlingNej === 1 && inst().some((v, i) => v < i1[i]);
+    // en som visas bort går igen och är borta från kartan
+    const i1 = inst();
+    const b = SIM.framling(s, { ja: false })!, bnamn = b.name, bid = b.gast!.blir;
+    kor(s, 40);
+    const bort = !s.people.some(q => q.id === bid || q.id === b.id) && (s.stat?.framlingNej ?? 0) >= 1 && inst().some((v, i) => v < i1[i]) && !s.people.some(q => q.name === bnamn && q.gast);
     for (const c of SIM.klanerOf(s)) c.inst = -80;
-    const fientlig = SIM.framling(s) === undefined && living(s).length === pop1 && s.stat?.framlingNej === 1;
+    const fientlig = SIM.framling(s) === undefined && s.stat?.framlingNej === 1;
     for (const c of SIM.klanerOf(s)) c.inst = 20;
     let ja = 0, nej = 0;
-    for (let i = 0; i < 40; i++) { const n0 = s.stat?.framlingNej ?? 0; if (SIM.framling(s)) ja++; else if ((s.stat?.framlingNej ?? 0) > n0) nej++; }
+    for (let i = 0; i < 40; i++) { const q = SIM.framling(s); if (!q) continue; if (SIM.framlingBeslut(s, q)) ja++; else nej++; }
     return [
-      [`främlingen får stanna och kommer från en grannklan (${k?.namn})`, stannar],
+      [`främlingen kommer gående som en gäst från kanten av kartan (${namn}, ${Math.round(Math.hypot(start.x - eld.x, start.y - eld.y))} rutor från elden)`, somGast],
+      [`hen pratar med ledaren och stannar som bybo, samma person (${fas.join(' → ')}, från ${k?.namn})`, stannar],
       [`hen kan det ingen i byn kunde (${ny.namn}) och kraven under det`, kan],
       ['klanen blir vänligare när byn tar emot hen', vanligare],
-      ['visar byn bort hen stannar hen inte, och klanen blir mindre vänlig', bort],
+      ['visar byn bort hen går hen igen, och klanen blir mindre vänlig', bort],
       ['en fientlig klan skickar ingen', fientlig],
       [`byn avgör själv: av 40 främlingar fick ${ja} stanna och ${nej} visades bort`, ja > 0 && nej > 0],
       ['främlingar är sällsynta: de flesta i byn är barn till dem som redan bor där', SIM.KLAN.framling <= 0.1],

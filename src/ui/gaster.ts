@@ -1,4 +1,4 @@
-import { hp, HANDEL, HANDLAR_UTR, VAPEN, byId, gillar, handlarPerson, foddNar, gastLiv, gastNyckel, handlarFas, handlarPlats, rovarPlats, rovarna, klanById, grundvarde, handlarVarde, kgOf, kortTal, rymmer, sakNamn } from '../sim';
+import { hp, gastLever, TEK, HANDEL, HANDLAR_UTR, VAPEN, byId, gillar, handlarPerson, foddNar, gastLiv, gastNyckel, handlarFas, handlarPlats, rovarPlats, rovarna, klanById, grundvarde, handlarVarde, kgOf, kortTal, rymmer, sakNamn } from '../sim';
 import type { ByteMinne, GastLiv, GastRel, Person, Roll, State } from '../sim';
 import { iconImg } from '../ikoner';
 import { esc } from './hjalp';
@@ -77,6 +77,17 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
     });
     });
   },
+  // främlingen som kommer gående (steg 9.2.115, framling i liv.ts)
+  s => s.people.filter(p => p.gast?.sort === 'framling' && gastLever(p)).map(p => {
+    const g = p.gast!, k = klanById(s, g.klan);
+    return {
+      id: p.id, namn: p.name, sex: p.sex, sort: 'Främling', farg: 0x6a7a4e, x: p.x, y: p.y, p,
+      gor: g.fas === 'pratar' ? 'Pratar med ledaren' : g.fas === 'gar' ? 'Går vidare' : 'På väg mot byn',
+      fran: k ? `${k.namn} vid ${k.hem}` : undefined,
+      rader: g.tek ? [{ namn: 'Kan', varde: esc(TEK[g.tek]?.namn ?? g.tek), title: 'Det främlingen kan som ingen i byn kan' }] : [],
+      liv: livFor(s, g.klan, p.name, p.sex, 'gast', p.born),
+    };
+  }),
 ];
 export const gaster = (t = ui.nu) => GASTER.flatMap(f => f(s, t));
 export const gastById = (id: number | undefined) => id !== undefined && id < 0 ? gaster().find(g => g.id === id) : undefined;

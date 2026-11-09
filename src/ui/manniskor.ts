@@ -316,7 +316,7 @@ function ritaRovarna(skugga: PIXI.Graphics) {
     const ben: Ben = ab ? ab.ben : steg ? steg[0] : 'sta', arm: Arm = ab ? ab.arm : steg ? steg[1] : 'hanga';
     const humor = sk ? 'arg' : s.rovare?.gor === 'flyr' ? 'radd' : 'lugn';
     const sp = figurAv(g.id);
-    sp.texture = figurTex(r ? rovarSkapad(s, r, humor) : handlarSkapad(s, g.namn, g.sex), { rikt, ben, arm, ligga: ligger }, g.id === markeradNu());
+    sp.texture = figurTex(r ? rovarSkapad(s, r, humor) : g.sort === 'Främling' ? skapad(s, g.p) : handlarSkapad(s, g.namn, g.sex), { rikt, ben, arm, ligga: ligger }, g.id === markeradNu());
     const w = sp.texture.width, h = sp.texture.height;
     if (ligger) sp.position.set(x - w / 2, y - h / 2);
     else sp.position.set(x - w / 2 + (ab?.b.ut ?? 0) * (rikt === 'vast' ? -1 : 1), y + 5 * 0.9 - h + 1);

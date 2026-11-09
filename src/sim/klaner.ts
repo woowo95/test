@@ -31,6 +31,8 @@ export const KLAN = balans('klan', {
   utbrytInst: 50, // ... som tycker så här om byn från början
   // främlingar (steg 4.4.4.2, framling i liv.ts): de flesta i byn är barn till dem som redan bor där
   framling: 0.08, // så många främlingar kommer från klanerna per dygn (ett år i spelet)
+  framlingNara: 1.6, // främlingen stannar och pratar så här nära ledaren (rutor, steg 9.2.115)
+  framlingPrat: 40, // och pratar så här många minuter innan byn avgör
   framlingTek: 0.6, // chansen att främlingen kan en teknik som ingen i byn kan (men vars krav byn kan)
   taEmot: 0.45, // chansen att byn låter hen stanna, från början ...
   taEmotTek: 0.35, // ... plus så mycket om hen kan något nytt ...
