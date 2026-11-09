@@ -54,11 +54,11 @@ function rikTopp() {
 // eller drar längs grafen (visa), vars värden står under grafen
 const LANGD = { allt: { namn: 'Allt', t: Infinity }, dygn: { namn: '1 dygn', t: DAY }, sasong: { namn: '1 säsong', t: WEEK }, ar: { namn: '4 säsonger', t: 4 * WEEK } } as const;
 type Langd = keyof typeof LANGD;
-const fonster: Record<string, { langd?: Langd; visa?: number }> = {};
+const fonster: Record<string, { langd?: Langd; visa?: number; start?: number }> = {}; // start: grafens första mätpunkt (steg 9.2.124)
 const B = 300, H = 70; // ritytan i SVG:ns enheter
 
 function spann(id: string) {
-  const f = fonster[id] ??= {}, start = s.founded, nu = s.now, l = LANGD[f.langd ?? 'sasong'].t;
+  const f = fonster[id] ??= {}, start = Math.max(s.founded, Math.min(f.start ?? s.founded, s.now)), nu = s.now, l = LANGD[f.langd ?? 'sasong'].t;
   return { fran: Math.max(start, nu - l), till: Math.max(nu, start + DAY / 24) };
 }
 const tidNamn = (t: number) => { const k = kalender(s, t); return `År ${k.ar}, ${AGES[k.ai].toLowerCase()}`; };
@@ -67,9 +67,12 @@ const talTxt = (g: Graf, v: number) => g.procent ? `${Math.round(v * 100)} %` : 
 const vardeVid = (p: [number, number][], t: number) => { let v: number | undefined; for (const q of p) { if (q[0] > t) break; v = q[1]; } return v; };
 
 export function grafHtml(id: string) {
-  const g = GRAFER[id], { fran, till } = spann(id), f = fonster[id];
-  const serier = (typeof g.serier === 'function' ? g.serier() : g.serier).map(se => {
-    const alla = se.punkter ? se.punkter() : historikSerie(s, se.tal!);
+  const g = GRAFER[id], rader = (typeof g.serier === 'function' ? g.serier() : g.serier).map(se => ({ se, alla: se.punkter ? se.punkter() : historikSerie(s, se.tal!) }));
+  // allt börjar vid grafens första mätpunkt och slutar nu (steg 9.2.124): en serie som började mätas senare än grundandet får inget tomt fält
+  (fonster[id] ??= {}).start = Math.min(...rader.map(r => r.alla[0]?.[0] ?? Infinity));
+  const { fran, till } = spann(id), f = fonster[id];
+  const serier = rader.map(({ se, alla: alla0 }) => {
+    const sista = alla0[alla0.length - 1], alla = sista && sista[0] < till ? [...alla0, [till, sista[1]] as [number, number]] : alla0; // linjen går fram till nu
     // punkterna i fönstret och en på var sida, så att linjen går ut till kanten
     const a = Math.max(0, alla.findIndex(p => p[0] >= fran) - 1), b = alla.findIndex(p => p[0] > till);
     return { ...se, namn: se.namn ?? HISTORIK_TAL.find(t => t.id === se.tal)?.namn ?? se.tal ?? '', p: alla.slice(a, b < 0 ? alla.length : b + 1) };
