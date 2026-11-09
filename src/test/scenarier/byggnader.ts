@@ -927,7 +927,7 @@ SCENARIER.omrade = {
 };
 
 SCENARIER.strak = {
-  text: 'Gångstråken (steg 6.2.5): från rutan utanför varje dörr går den kortaste vägen till elden, lagren, latrinen och vattnet, och där ställs inget nytt: inga stationer, lagerplatser eller fält, och hus bara om stråket kan dras om med högst 3 rutors omväg',
+  text: 'Gångstråken (steg 6.2.5): från rutan utanför varje dörr går den kortaste vägen till elden, lagren, vattnet och torget (inte latrinen, steg 9.2.99), och där ställs inget nytt: inga stationer, lagerplatser eller fält, och hus bara om stråket kan dras om med högst 3 rutors omväg',
   kor: () => {
     const s = createState(9, START);
     byggare(s); setAmount(s, 'yxa', 2);
@@ -974,6 +974,9 @@ SCENARIER.strak = {
       [`inget nytt ställs på ett stråk: ingen station, lagerplats eller fält (${paStrak} på ${timmar} timmar${nyttPa.length ? `: ${[...new Set(nyttPa)].join(', ')}` : ''})`, paStrak === 0],
       [`inget nytt hus står på rutan framför en dörr (${husPa})`, husPa === 0],
       [`rutan framför en dörr står fast`, framfor === true],
+      // steg 9.2.99: inget stråk slutar vid en latrin (rutan intill den)
+      ...(() => { const lat = SIM.stationerOf(s).filter(q => q.k === 'latrin'), vid = (i: number) => lat.some(l => { const m = SIM.storlekAv(l), x = i % W, y = Math.floor(i / W); return x >= l.x - 1 && x <= l.x + m.w && y >= l.y - 1 && y <= l.y + m.h; });
+        const n = st.vagar.filter(q => q.mal !== 'lager' && vid(q.rutor[q.rutor.length - 1])).length; return [[`inget stråk slutar vid en latrin (${lat.length} latriner, ${n} stråk)`, n === 0]] as [string, boolean][]; })(),
       [`ett hus som stänger stråket till elden hindras (${hindrar ? 'ja' : 'nej'}), men inte ett hus långt från stråken`, hindrar !== undefined && !SIM.strakHindrar(s, 2, 2, 3, 3)],
     ];
   },

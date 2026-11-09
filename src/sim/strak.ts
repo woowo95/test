@@ -1,5 +1,6 @@
 // Gångstråken (steg 6.2.5, "Byns område (Gångstråken)" i designdokumentet): ett lager i byns område. Från rutan utanför
-// varje dörr går den kortaste vägen (en ruta bred) till elden, lagerplatserna, latrinen och vattnet. På ett stråk ställs
+// varje dörr går den kortaste vägen (en ruta bred) till elden, lagerplatserna, vattnet och torget
+// (inte till latrinen, steg 9.2.99). På ett stråk ställs
 // ingenting: inga hus, väggar, stationer, möbler, fält, lagerplatser eller stackar (ledig i stationer.ts, lagerplatserna i
 // lager.ts och husen i bygg.ts frågar paStrak). Vägarna går runt det som redan står, så att inget som står blir fel.
 // Stråken viker för husen: ett planerat stråk hindrar inte ett hus om vägen kan dras om runt huset med högst
@@ -11,7 +12,7 @@ import { eldPlats, getMap } from './karta';
 import { flyttaLager, zonesOf } from './lager';
 import { faltAt } from './odling';
 import { omrade } from './omrade';
-import { stationAt, stationerOf, storlekAv } from './stationer';
+import { stationAt } from './stationer';
 import { H, State, T, W, inMap } from './typer';
 import { count } from './folk';
 
@@ -22,7 +23,7 @@ export const STRAK = balans('strak', {
 });
 
 // målen: varje dörr får en väg till det närmaste av varje slag
-const MAL = ['eld', 'lager', 'latrin', 'vatten', 'torg'] as const; // torget när det finns (steg 7.3.13)
+const MAL = ['eld', 'lager', 'vatten', 'torg'] as const; // torget när det finns (steg 7.3.13); inte latrinen (steg 9.2.99)
 type Mal = typeof MAL[number];
 
 interface Vag { dorr: number; mal: Mal; len: number; rutor: number[] }
@@ -55,7 +56,7 @@ function sokData(s: State): Sok {
   const o = omrade(s), R = STRAK.sok, m = getMap(s.seed), g = gridOf(s), f = eldPlats(s);
   const x0 = Math.max(0, o.x0 - R), y0 = Math.max(0, o.y0 - R), x1 = Math.min(W - 1, o.x1 + R), y1 = Math.min(H - 1, o.y1 + R);
   const mal = new Int8Array(W * H).fill(-1), gang = new Uint8Array(W * H);
-  const zs = zonesOf(s), latriner = stationerOf(s).filter(t => t.k === 'latrin');
+  const zs = zonesOf(s);
   for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
     const i = y * W + x, t = m.tiles[i];
     if (t === T.Vatten || t === T.Sten || g.at.has(i) && !MATERIAL[g.at.get(i)!.m].vag) continue; // på en väg går stråket som förut
@@ -68,7 +69,6 @@ function sokData(s: State): Sok {
     if (s.torg && x >= s.torg.x && y >= s.torg.y && x < s.torg.x + s.torg.w && y < s.torg.y + s.torg.h) { mal[i] = MAL.indexOf('torg'); continue; }
     gang[i] = 1;
     if (Math.max(Math.abs(x - f.x), Math.abs(y - f.y)) === 1) mal[i] = MAL.indexOf('eld');
-    else if (latriner.some(l => { const { w, h } = storlekAv(l); return x >= l.x - 1 && x <= l.x + w && y >= l.y - 1 && y <= l.y + h; })) mal[i] = MAL.indexOf('latrin');
     else if ([[0, 1], [0, -1], [1, 0], [-1, 0]].some(([dx, dy]) => inMap(x + dx, y + dy) && m.tiles[(y + dy) * W + x + dx] === T.Vatten)) mal[i] = MAL.indexOf('vatten');
   }
   return { mal, gang, x0, y0, x1, y1 };
