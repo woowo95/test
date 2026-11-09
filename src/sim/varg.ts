@@ -217,7 +217,7 @@ function ses(s: State, f: Vargflock, folk: Person[]) {
   const ser = (q: Person) => vaken(q) && avst(q, f) < (q.task?.act === 'vakt' ? VARG.vaktSer : VARG.folkSer) * natt * dimma;
   const vakt = folk.find(q => q.task?.act === 'vakt' && ser(q)), p = vakt ?? folk.find(ser);
   if (!p) return;
-  f.sedd = s.now; f.sag = p.id;
+  f.sedd = s.now; f.sag = p.id; f.sx = f.x; f.sy = f.y; // där flocken sågs (märket på kartan, steg 9.2.122)
   if (forstaGang(s, 'vargSedd')) log(s, `${p.name} såg ${f.vargar.length > 1 ? `en flock vargar (${f.vargar.length})` : 'en ensam varg'} för första gången.`, 'world', [p.id]);
   notis(s, 'anfall', `${p.name} såg ${f.vargar.length > 1 ? `en flock vargar (${f.vargar.length})` : 'en ensam varg'} nära byn.`, [p.id], { x: Math.floor(f.x), y: Math.floor(f.y) });
   const hort = larma(s, 'varg', f.vargar.length, [p]);

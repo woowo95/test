@@ -101,7 +101,7 @@ const gr = (r: Person) => r.gast!;
 // testläget och samlas och väntar kortare (steg 9.2.103). anfall: flocken har setts i eller nära byn, och byn går mot den (steg 9.2.104)
 // striden vid förrådet som pågår (steg 6.6.10): striden (strid.ts) och när den började (t0), och arenans hörn på kartan (ox, oy)
 export interface RovarStrid extends StridGang { t0: number; ox: number; oy: number; fri?: number[] } // fri: bybor som redan lämnat striden (steg 9.2.77)
-export interface Rovarflock { skal?: import('./rader').RadSkal; rad?: boolean; mal?: number; hugger?: { bit: number; till: number }; tant?: boolean; id: number; klan?: number; folk: number[]; x: number; y: number; mx: number; my: number; gor: 'samlas' | 'kommer' | 'vantar' | 'slass' | 'flyr' | 'letar' | 'rotar'; letar?: number[]; rotar?: { x: number; y: number; min: number }[]; rotat?: boolean; letat?: boolean; till: number; strid?: RovarStrid; sedd?: number; gissning?: number; vackt?: boolean; lurat?: boolean; test?: boolean; anfall?: boolean; bud?: { av: number; till: number; t: number } }
+export interface Rovarflock { sx?: number; sy?: number; skal?: import('./rader').RadSkal; rad?: boolean; mal?: number; hugger?: { bit: number; till: number }; tant?: boolean; id: number; klan?: number; folk: number[]; x: number; y: number; mx: number; my: number; gor: 'samlas' | 'kommer' | 'vantar' | 'slass' | 'flyr' | 'letar' | 'rotar'; letar?: number[]; rotar?: { x: number; y: number; min: number }[]; rotat?: boolean; letat?: boolean; till: number; strid?: RovarStrid; sedd?: number; gissning?: number; vackt?: boolean; lurat?: boolean; test?: boolean; anfall?: boolean; bud?: { av: number; till: number; t: number } }
 
 const avst = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
 const vaken = (p: Person) => p.task?.act !== 'sova';
@@ -298,7 +298,7 @@ function ses(s: State, f: Rovarflock, folk: Person[]) {
   const p = vakt ?? folk.find(ser);
   if (!p) return;
   const n = f.folk.length, fel = ROVARE.gissFel * (vakt ? narmast(s, f, p) / rad(p) : 1) * (rnd(s, 'rovare') * 2 - 1);
-  f.sedd = s.now; f.gissning = Math.max(1, Math.round(n * (1 + fel)));
+  f.sedd = s.now; f.gissning = Math.max(1, Math.round(n * (1 + fel))); f.sx = f.x; f.sy = f.y; // där flocken sågs (steg 9.2.122)
   count(s, 'rovarSedda');
   log(s, `${p.name} såg rövare ${f.gor === 'samlas' ? f.test ? 'samlas utanför byn' : 'samlas vid kartans kant' : 'på väg mot byn'}, ungefär ${f.gissning} (${fran(s, f)}).`, 'world', [p.id]);
   notis(s, 'anfall', `${p.name} såg rövare ${f.gor === 'samlas' ? f.test ? 'samlas utanför byn' : 'samlas vid kartans kant' : 'på väg mot byn'}, ungefär ${f.gissning} (${fran(s, f)}).`, [p.id], { x: Math.floor(f.x), y: Math.floor(f.y) });

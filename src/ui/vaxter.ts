@@ -1,4 +1,4 @@
-import { Djur, FLYGTID, H, sakerPaMarken, HOUR, SEC, W, ageIndex, bjornarOf, brinnande, djurOf, faglarOf, radjurOf, groundOf, living, plockOf, tornadoAndel, tornadoPos, vargarOf } from '../sim';
+import { BJORNJAKT, Djur, FLYGTID, H, sakerPaMarken, HOUR, SEC, VARG, W, ageIndex, bjornarOf, brinnande, djurOf, faglarOf, radjurOf, groundOf, living, plockOf, tornadoAndel, tornadoPos, vargarOf } from '../sim';
 import { farg, fargTal } from '../palett';
 import { s, ui, vidNyBy } from './lage';
 import { Ikoner, TS, app, djurFx, djurMarkLayer, figurLayer, plantG, rokBakLayer, world } from './scen';
@@ -153,6 +153,7 @@ export function drawAnimals() {
   const vald = ui.tab === 'djur' ? ut.find(d => d.id === ui.djurId) : undefined;
   if (vald) { const b = vald.art === 'varg' ? { w: 28, h: 19, fot: 5 } : vald.art === 'bjorn' ? { w: 50, h: 35, fot: 4 } : vald.art === 'bjornunge' ? { w: 25, h: 18, fot: 4 } : vald.art === 'radjur' ? { w: 28, h: 31, fot: 4 } : vald.art === 'fagel' ? { w: 24, h: 17, fot: 4 } : { w: 14, h: 13, fot: 3 }; // runt djurets bild
     djurFx.lineStyle(1, 0xffffff, 0.9).drawRoundedRect(vald.x * TS - b.w / 2, vald.y * TS + b.fot - b.h, b.w, b.h, 3).lineStyle(0); }
+  hotMarken();
   djurIkoner.end(); larmIkoner.end(); brandRokIkoner.end();
   synliga = ut;
 }
@@ -176,6 +177,15 @@ function ritaTornadoSpar() {
     else if (f.k === 'glod') djurFx.beginFill(GLOD).drawRect(x - 1, y - 1, 2, 2).endFill();
     else djurFx.beginFill(FOLKK).drawRect(x - 2, y - 2, 4, 4).endFill().beginFill(SAK).drawRect(x - 1, y - 1, 2, 2).endFill();
   }
+}
+// märket där ett hot senast sågs (steg 9.2.122), så länge larmet gäller: vargflocken (VARG.seddTim), rövarna tills de flyr och björnen
+// (BJORNJAKT.vet). Bara i bilden. Platshållare: varningssymbolen ur bildstilen, tills ett märke valts i bildstilens valdel
+function hotMarken() {
+  const mark = (x: number, y: number) => larmIkoner.add('kb_sym_varning', Math.round(x * TS - 8), Math.round(y * TS - 16), 1);
+  for (const f of s.vargar ?? []) if (f.sx !== undefined && f.sy !== undefined && f.gor !== 'flyr' && f.vargar.length && f.sedd !== undefined && ui.nu - f.sedd < VARG.seddTim * HOUR) mark(f.sx, f.sy);
+  for (const f of [s.rovare, ...(s.rovareFler ?? [])]) if (f?.sx !== undefined && f.sy !== undefined && f.sedd !== undefined && f.gor !== 'flyr') mark(f.sx, f.sy);
+  const b = s.bjornJakt;
+  if (b?.x !== undefined && b.y !== undefined && ui.nu - b.sedd < BJORNJAKT.vet * HOUR) mark(b.x, b.y);
 }
 // utropstecknet över kaninen som ser någon och flyr
 const larm = (x: number, y: number) => larmIkoner.add('kanin_larm', x * TS - 3, y * TS - 15, 1);

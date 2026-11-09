@@ -354,7 +354,7 @@ export interface State {
   djurHalsa?: import('./djur').DjurHalsa[]; djurDoda?: { id: number; t: number }[]; // skadade och dödade djur (steg 3.7.13, djur.ts)
   bjornMott?: { ar: number; ids: number[] }; // de som mött björnen i år (steg 6.6.5, bjorn.ts): var och en en gång per år
   // björnjakten (steg 6.6.6, bjorn.ts): när och av vem björnen senast sågs, jägarna och den som kallade, och året björnen fälldes
-  bjornJakt?: { ar: number; sedd: number; sag: number; timme?: number; jagare?: number[]; kallare?: number; kallTill?: number; jaktTill?: number; samlas?: number };
+  bjornJakt?: { ar: number; sedd: number; sag: number; x?: number; y?: number; timme?: number; jagare?: number[]; kallare?: number; kallTill?: number; jaktTill?: number; samlas?: number };
   bjornFalld?: number;
   flod?: { niva: number; hogst?: number; mindes?: 1 }; // översvämningen (steg 3.8.3, flod.ts): så många rutor upp på land som vattnet står, det högsta det nått och om byn redan minns det (steg 3.8.7)
   husAffar?: { hus: number; ag: number; t: number }; // ett hus som ska byta ägare när köparen och säljaren möts (steg 7.2.12, byggplan.ts)
@@ -397,7 +397,7 @@ export interface Borta { fran: number; fodda: number; doda: number; folk?: numbe
 // en vargflock (steg 3.7.1, varg.ts): vargarnas id (den första leder flocken), var den är och vart den går (mx, my), när den
 // drar vidare, hungern (0–1), vad den gör, personen den anfaller, när den senast sågs och av vem (sag, steg 3.10.20) och jägarna efter den.
 // dorr = öppningen (rutan) där den väntar utanför en stängd dörr, och vantar = sedan när (steg 3.7.21)
-export interface Vargflock { id: number; vargar: number[]; x: number; y: number; mx: number; my: number; gar: number; hunger: number; gor: 'stryker' | 'smyger' | 'anfaller' | 'vantar' | 'flyr'; byte?: number; sedd?: number; sag?: number; jagare?: number[]; kallare?: number; kallTill?: number; jaktTill?: number; samlas?: number; dorr?: { x: number; y: number }; vantar?: number; trottnat?: true }
+export interface Vargflock { sx?: number; sy?: number; id: number; vargar: number[]; x: number; y: number; mx: number; my: number; gar: number; hunger: number; gor: 'stryker' | 'smyger' | 'anfaller' | 'vantar' | 'flyr'; byte?: number; sedd?: number; sag?: number; jagare?: number[]; kallare?: number; kallTill?: number; jaktTill?: number; samlas?: number; dorr?: { x: number; y: number }; vantar?: number; trottnat?: true }
 // ett fällt träd: ved och grenar som finns kvar att hugga ut
 export interface Stock { id: number; x: number; y: number; ved: number; grenar: number; mossa?: number; av?: number } // mossa på stammen (steg 2.5.2), den som fällde (steg 9.2.87)
 
