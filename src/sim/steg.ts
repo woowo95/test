@@ -552,7 +552,9 @@ function pathFor(s: State, g: ReturnType<typeof groundOf>, x0: number, y0: numbe
 const FRAMFOR = new Set<string>(['stubbe', 'grava', 'dorr', 'bygga']);
 function malFor(s: State, p: Person, tk: Task): { x: number; y: number } {
   if (!FRAMFOR.has(tk.act) || tk.phase !== 'go' || tk.site) return { x: tk.tx, y: tk.ty };
-  const X = Math.floor(tk.tx), Y = Math.floor(tk.ty);
+  // bygget: grannrutan till själva byggrutan, inte till platsen intill den (siteOf), så att man står intill väggen (steg 9.2.90)
+  const bb = tk.act === 'bygga' ? bitById(s, tk.ref) : undefined;
+  const X = bb ? bb.x : Math.floor(tk.tx), Y = bb ? bb.y : Math.floor(tk.ty);
   let bast: { x: number; y: number } | undefined, bd = Infinity;
   for (const [dx, dy] of GRANNAR4) {
     const x = X + dx, y = Y + dy;

@@ -358,13 +358,13 @@ export function drawPeople(t: number) {
     if (vidBank) { rikt = 'bak'; x = (bank!.x + storlekAv(bank!).w / 2) * TS; y = (bank!.y + storlekAv(bank!).h) * TS + TS / 2 - r * 0.9; }
     // arbetet i bild (steg 5.1.9.4, ui/arbetsbild.ts): rörelsen från sidan, en bild per slag, förskjutet per person
     const strid = gor === 'strid' && !ligger ? stridNu(p) : undefined;
-    const arb = strid ? STRIDBILD[strid.vapen] ?? STRIDBILD.hand : !ligger && (!sitter || vidBank) && gor && !(tk && load(tk, s) > 0) ? ARBETEN[gor] : undefined;
+    const arb = strid ? STRIDBILD[strid.vapen] ?? STRIDBILD.hand : !ligger && (!sitter || vidBank) && gor && (gor === 'bygga' || !(tk && load(tk, s) > 0)) ? ARBETEN[gor] : undefined; // byggaren har materialet i händerna medan hen bygger (steg 9.2.90)
     const ab = arb ? arbetsBild(arb, slag() + p.id) : undefined;
     if (strid?.mot) rikt = strid.mot.x < q.x ? 'vast' : 'sida'; // vänd mot motståndaren (steg 5.1.9.5)
     else if (ab && !vidBank && rikt !== 'sida' && rikt !== 'vast') rikt = p.id % 2 ? 'vast' : 'sida';
     const steg = !sitter && !ligger && gar(p.id, performance.now()) ? GANG[(slag() + p.id) % 4] : undefined;
     const ben: Ben = sitter ? 'sitta' : ab ? ab.ben : steg ? steg[0] : 'sta';
-    let arm: Arm = tk && load(tk, s) > 0 ? 'bara' : gor && SLA.has(gor) ? 'sla' : gor === 'station' ? 'framfor' : 'hanga';
+    let arm: Arm = tk && load(tk, s) > 0 && gor !== 'bygga' ? 'bara' : gor && SLA.has(gor) ? 'sla' : gor === 'station' ? 'framfor' : 'hanga';
     if (steg && arm === 'hanga') arm = steg[1];
     if (ab) arm = ab.arm;
     // sängen (steg 6.8.5): den som sover i en färdig säng ligger mitt i den med huvudet i bäddens huvudände (vänster i den

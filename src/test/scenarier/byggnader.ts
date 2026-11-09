@@ -1613,3 +1613,22 @@ SCENARIER.tradhus = {
     ];
   },
 };
+SCENARIER.byggstar = {
+  text: 'Steg 9.2.90: den som bygger en vägg står på rutan intill väggen, inte på den eller två rutor bort, och arbetar där',
+  kor: () => {
+    const s = createState(3, START); byggare(s);
+    let intill = 0, annars = 0;
+    for (let i = 0; i < 30 * STEG_TIM; i++) {
+      step(s, SIM.BEAT);
+      for (const p of living(s)) {
+        const t = p.task; if (t?.act !== 'bygga' || t.phase !== 'do') continue;
+        const b = SIM.bitById(s, t.ref); if (!b || b.k !== 'vagg') continue;
+        if (Math.abs(Math.floor(p.x) - b.x) + Math.abs(Math.floor(p.y) - b.y) === 1) intill++; else annars++;
+      }
+    }
+    return [
+      [`väggar byggs (${intill + annars} stunder)`, intill + annars > 20],
+      [`byggaren står intill väggen (${intill} intill, ${annars} annars)`, intill >= 0.9 * (intill + annars)],
+    ];
+  },
+};
