@@ -1,4 +1,4 @@
-import { hp, sjukText, personRader, PERSONLOGG } from '../../sim';
+import { hp, sjukText, personRader, PERSONLOGG, gastLever } from '../../sim';
 import { kvOf, paSigVikt, klanById, FORMAGOR, gangDelar, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
 import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, handOrkar, handPlatser, capacity, kvNamn, handerFor, load, utrustning, bordaIHander, type IHanden, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, timeLabel, vidBordet, upplevelseText, uppEffekt, vuxenUpp, Upplevelse, yrkeNamn, andlighet, troOf, tolkning, teckenText, troNamn, pratarMed, gastRelationer, actIkon, utbIkon, AMNEN, type ByteMinne, type GastRel, type Slakting, stacksOf, grundvarde, tingVarde, housesOf, husVarde } from '../../sim';
 import { gorText } from '../jakt';
@@ -8,7 +8,7 @@ import { skapad } from '../utseende';
 import { hasIcon, iconImg, kvSvg, tecknet } from '../../ikoner';
 import { framstegSvg, ringSvg, tartFarg, tartSvg } from '../framsteg';
 import { gravidDel, gravidKvar } from '../../sim/steg';
-import { LAG, byteKnapp, hallCirkel, kvOrd, clockTxt, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, cssFarg, durTxt, esc, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
+import { LAG, byteKnapp, hallCirkel, kvOrd, clockTxt, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, durTxt, esc, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
 import { s, ui, uppgiftVid } from '../lage';
 import { tekInfo } from './teknik';
 import { fritidLista } from './fram';
@@ -21,19 +21,19 @@ import type { Flik } from '../panel';
 export const person: Flik = {
   namn: 'Person',
   html() {
-    const g = gastById(ui.selected); // handlaren eller en rövare (steg 4.5.4.12): samma sida med de flikar som finns för hen
-    if (g) return gastHtml(g);
-    const p = byId(s, ui.selected);
-    if ((!p || p.gast) && ui.selected !== undefined && ui.selected < 0) return '<p class="muted">Hen har lämnat byn.</p>';
+    const g = gastById(ui.selected); // handlaren eller en rövare (steg 4.5.4.12): en person med alla flikar (steg 9.2.114)
+    const p = g?.p ?? byId(s, ui.selected);
+    if ((!p || (p.gast && !g)) && ui.selected !== undefined && ui.selected < 0) return '<p class="muted">Hen har lämnat byn.</p>';
     if (!p) return `<p class="muted">Klicka på en person på kartan eller i listan för att se allt om hen.</p>`;
-    const { flikar, flik, delar } = valda(d => alive(p) || !d.levande);
+    const lever = g ? gastLever(p) : alive(p);
+    const { flikar, flik, delar } = valda(d => lever || !d.levande);
     const med = alive(p) ? pratarMed(s, p) : undefined;
-    const status = alive(p) ? statusRad(p, med) : p.died !== undefined ? `Dog ${p.cause} (${timeLabel(s, p.died)})` : `Flyttade från byn (${timeLabel(s, p.left!)})`;
+    const status = g ? (lever ? `${statusRad(p, undefined)} <span class="muted">· ${esc(g.gor)}</span>` : `Dog ${p.cause ?? ''}`) : alive(p) ? statusRad(p, med) : p.died !== undefined ? `Dog ${p.cause} (${timeLabel(s, p.died)})` : `Flyttade från byn (${timeLabel(s, p.left!)})`;
     return `
-      <div class="phead">${portrattImg(skapad(s, p), "big stor")}<div><h2>${esc(p.name)}${binamnHtml(p)}${alive(p) ? prickar(p) : ''}${anseende(p)}</h2>${binamnForkl(p)}
-      <p class="pfakta">${pFakta(p)}</p><p class="status">${status}</p></div></div>
+      <div class="phead">${portrattImg(skapad(s, p), "big stor")}<div><h2>${esc(p.name)}${g ? ` <span class="muted small">${esc(g.sort.toLowerCase())}</span>` : binamnHtml(p)}${alive(p) ? prickar(p) : ''}${g ? '' : anseende(p)}</h2>${g ? '' : binamnForkl(p)}
+      <p class="pfakta">${pFakta(p)}${g?.fran ? ` · från ${esc(g.fran)}` : ''}</p><p class="status">${status}</p></div></div>
       ${flikRad(flikar, flik)}
-      ${delar.map((d, i) => delHtml(d, i, d.kort?.(p), () => d.html(p))).join('')}`;
+      ${delar.map((d, i) => delHtml(d, i, d.kort?.(p), () => d.html(p) + (g && d.gast ? d.gast(g) : ''))).join('')}`;
   },
   klick(el) {
     const ti = el.closest<HTMLElement>('.tid [data-t]');
@@ -51,7 +51,7 @@ export const person: Flik = {
 
 // underflikarna i personrutan: symbolen på knappen, namnet (vid musen och som rubrik) och innehållet.
 // levande = visas bara för den som lever (en död eller utflyttad har inga behov och lägger ingen tid på något).
-// gast = samma flik för en gäst (gaster.ts, steg 4.5.4.12); en flik utan den visas inte för en gäst
+// gast = det som är särskilt för en gäst (gaster.ts), efter det som står för alla (steg 9.2.114)
 // kort = sammanfattningen på rubriken (steg 5.3.4.2), som syns också när delen är hopfälld
 interface Del { id: string; tecken: string; namn: string; levande?: true; html(p: Person): string; kort?(p: Person): string; gast?(g: Gast): string }
 interface PFlik { id: string; tecken: string; namn: string; delar: string[] }
@@ -80,16 +80,16 @@ function delHtml(d: Del, i: number, kort: string | undefined, html: () => string
 const flikRad = (delar: PFlik[], del: PFlik) => `<div class="pdelar" role="tablist">${delar.map(d => `<button type="button" role="tab" data-pdel="${d.id}" aria-selected="${d === del}" title="${d.namn}" aria-label="${d.namn}">${d.tecken}</button>`).join('')}</div>`;
 const DELAR: Del[] = [
   { id: 'pres', tecken: '🪪', namn: 'Presentation', html: presHtml, kort: p => `${Math.floor(ageOf(p, s.now))} år · ${esc(yrkeNamn(s, p) ?? '–')}`, gast: gastPres },
-  { id: 'behov', tecken: '❤️', namn: 'Behov', levande: true, html: behovHtml, kort: p => moodWord(moodOf(p, s.now)), gast: gastBehov },
-  { id: 'halsa', tecken: '🩺', namn: 'Hälsa', levande: true, html: halsaHtml, kort: halsaKort, gast: gastHalsa },
-  { id: 'egen', tecken: '{sym_egenskaper}', namn: 'Egenskaper', html: egenHtml, kort: egenKort, gast: gastEgen },
+  { id: 'behov', tecken: '❤️', namn: 'Behov', levande: true, html: behovHtml, kort: p => moodWord(moodOf(p, s.now)) },
+  { id: 'halsa', tecken: '🩺', namn: 'Hälsa', levande: true, html: halsaHtml, kort: halsaKort },
+  { id: 'egen', tecken: '{sym_egenskaper}', namn: 'Egenskaper', html: egenHtml, kort: egenKort },
   { id: 'hand', tecken: '📜', namn: 'Händelser', html: handHtml, kort: p => { const n = personRader(s, p).length; return n ? `${n} ${n === 1 ? 'händelse' : 'händelser'}` : 'Inget ännu'; } }, // steg 9.2.108
   { id: 'tid', tecken: '🕓', namn: 'Tiden', levande: true, html: tidHtml, kort: tidKort, gast: gastTid },
-  { id: 'utr', tecken: '🎒', namn: 'Utrustning', levande: true, html: p => `${barNu(p) ? `<p class="muted">${carryTxt(p)}</p>` : ''}${gearHtml(p)}`, kort: p => { const u = utrustning(s, p, false), n = PLATS_LIST.filter(k => u[k].ting).length; return n ? `${n} på sig` : 'Inget på sig'; }, gast: gastUtr },
+  { id: 'utr', tecken: '🎒', namn: 'Utrustning', levande: true, html: p => `${barNu(p) ? `<p class="muted">${carryTxt(p)}</p>` : ''}${gearHtml(p)}`, kort: p => { const u = utrustning(s, p, false), n = PLATS_LIST.filter(k => u[k].ting).length; return n ? `${n} på sig` : 'Inget på sig'; } },
   { id: 'form', tecken: '💰', namn: 'Förmögenhet', html: formogenhetLista, kort: p => String(Math.round(formogenhetDelar(s, p.id).sum)) },
   { id: 'kun', tecken: '🧠', namn: 'Kunskap', html: knowledgeHtml, kort: p => { const n = Object.values(p.tek ?? {}).filter(v => v >= 1).length; return n === 1 ? '1 teknik' : `${n} tekniker`; }, gast: gastKun },
   { id: 'rel', tecken: '👥', namn: 'Relationer', html: relHtml, kort: p => { const n = s.people.filter(q => q.id !== p.id && alive(q) && s.rels[relKey(p.id, q.id)]).length; return `känner ${n}`; }, gast: gastRel },
-  { id: 'ryk', tecken: '🗣️', namn: 'Rykten', html: ryktenHtml, kort: p => { const a = anseendeSym(s, p.id); return a === '😇' ? 'Gott anseende' : a === '😈' ? 'Dåligt anseende' : a ? 'Blandat anseende' : 'Inget rykte'; }, gast: gastRyk },
+  { id: 'ryk', tecken: '🗣️', namn: 'Rykten', html: ryktenHtml, kort: p => { const a = anseendeSym(s, p.id); return a === '😇' ? 'Gott anseende' : a === '😈' ? 'Dåligt anseende' : a ? 'Blandat anseende' : 'Inget rykte'; } },
 ];
 // sammanfattningarna (steg 5.3.4.2): det som syns på rubriken
 // den som väntar barn (steg 8.1.11): i sammanfattningen överst och i fliken Hälsa, med hur långt det har gått
@@ -119,20 +119,18 @@ function tidKort(p: Person) {
   return g && g.v > 0 ? `mest ${esc(g.g.name.toLowerCase())}` : '';
 }
 
-// en gäst (steg 4.5.4.12): samma huvud och flikrad som en bybo, och i flikarna det man vet om hen
-function gastHtml(g: Gast) {
-  const { flikar, flik, delar } = valda(d => !!d.gast);
-  return `
-      <div class="phead"><span class="dot big" style="background:${cssFarg(g.farg)}"></span><div><h2>${esc(g.namn)}</h2><p class="status">${esc(g.gor)}</p></div></div>
-      ${flikRad(flikar, flik)}
-      ${delar.map((d, i) => delHtml(d, i, undefined, () => d.gast!(g))).join('')}`;
-}
 // gästens familj i hemklanen (steg 4.5.7.6, 4.5.7.7): namnen, och de som dött märkta
 const slakt = (g: Gast, roll: Slakting['roll'][]) => g.liv.familj.filter(f => roll.includes(f.roll)).map(f => `${esc(f.namn)}${f.dog !== undefined ? ' <span class="muted">(död)</span>' : ''}`).join(', ') || '–';
+// livet i hemklanen, år för år (steg 4.5.7.7)
+function gastTid(g: Gast) {
+  return `<h3>I ${esc(g.fran ?? 'hemklanen')}</h3><ul class="fame">${g.liv.liv.slice().reverse().map(l => `<li><span class="muted">${l.ar} år</span> ${esc(l.text)}</li>`).join('')}</ul>`;
+}
+function gastKun(g: Gast) {
+  return g.liv.kan.length ? `<h3>Lärt sig hemma</h3><ul class="fame">${g.liv.kan.map(k => `<li>${esc(cap(k === 'handla' ? 'handla och värdera varor' : k))}</li>`).join('')}</ul>` : '';
+}
+// det som är särskilt för gästens sort (rader i GASTER), familjen i hemklanen och bytena med byn
 function gastPres(g: Gast) {
-  return `<p class="besk">${esc(g.liv.beskrivning)}</p><dl class="kv fam"><dt>${g.sex === 'k' ? 'Kvinna' : 'Man'}</dt><dd>${g.liv.alder} år${g.fran ? ` · från ${esc(g.fran)}` : ''}</dd><dt>Yrke</dt><dd>${esc(g.sort)}</dd>
-      <dt>Föräldrar</dt><dd>${slakt(g, ['mor', 'far'])}</dd><dt>Partner</dt><dd>${slakt(g, ['partner'])}</dd><dt>Barn</dt><dd>${slakt(g, ['barn'])}</dd>${g.rader.map(gastRad).join('')}</dl>
-      <h3>Viktiga händelser</h3>${g.handelser.length ? `<ul class="fame">${g.handelser.map(h => `<li>${esc(h)}</li>`).join('')}</ul>` : '<p class="muted">Inget som minns ännu.</p>'}${bytenHtml(g.byten)}`;
+  return `<h3>${esc(g.sort)}</h3><p class="besk">${esc(g.liv.beskrivning)}</p><dl class="kv fam"><dt>Föräldrar</dt><dd>${slakt(g, ['mor', 'far'])}</dd><dt>Partner</dt><dd>${slakt(g, ['partner'])}</dd><dt>Barn</dt><dd>${slakt(g, ['barn'])}</dd>${g.rader.map(gastRad).join('')}</dl>${bytenHtml(g.byten)}`;
 }
 // bytena hen var med i (steg 4.5.4.17), de senaste först: vem som gav vad, som symboler. Handslaget visar hela bytet
 function bytenHtml(b: ByteMinne[] | undefined) {
@@ -140,37 +138,12 @@ function bytenHtml(b: ByteMinne[] | undefined) {
   const sida = (namn: string, v: ByteMinne['ag']) => `${esc(namn)} ${v.map(w => `<span title="${esc(`${w.n} ${sakNamn(w.k).toLowerCase()}`)}">${iconImg(w.k, 12)}${w.n > 1 ? w.n : ''}</span>`).join(' ') || '–'}`;
   return `<h3>Byten</h3><ul class="fame">${b.slice().reverse().map(m => `<li><span class="muted">${esc(clockTxt(m.t))}</span> ${m.avbruten ? `${esc(m.an)} {sym_nej} ${esc(m.bn)}` : `${sida(m.an, m.ag)} ⇄ ${sida(m.bn, m.bg)}`}${byteKnapp(m.nr)}</li>`).join('')}</ul>`;
 }
-function gastEgen(g: Gast) {
-  const rad = (namn: string, v: number) => `<dt>${namn}</dt><dd>${bar(v / 20)}<span>${visa(v)}</span></dd>`;
-  const st = STATS.filter(k => g.stats[k] !== undefined).map(k => rad(STAT_NAMES[k], g.stats[k]!)).join(''), sk = SKILLS.filter(k => g.skills[k] !== undefined).map(k => rad(SKILL_NAMES[k], g.skills[k]!)).join('');
-  const vet = '<p class="muted">Byn vet inget om det.</p>';
-  return `${st ? `<dl class="kv">${st}</dl>` : vet}<h3>Färdigheter</h3>${sk ? `<dl class="kv">${sk}</dl>` : vet}`;
-}
-// gästens behov (steg 4.5.7.6): humöret efter livet hemma (gastliv.ts); hunger, törst och sömn klarar hen själv på resan
-function gastBehov(g: Gast) {
-  return `<dl class="kv"><dt>Humör</dt><dd>${bar(g.liv.humor)}<span>${moodWord(g.liv.humor)}</span></dd></dl>
-      <p class="muted small">${esc(g.namn)} bär det hen behöver för resan. Mat, vatten och sömn ordnar hen själv, utanför byn.</p>`;
-}
-// hälsan: blodet (rövarna i en strid) och de gamla skadorna ur livet
-function gastHalsa(g: Gast) {
-  const skador = g.liv.liv.filter(l => l.k === 'skadad');
-  return `<dl class="kv"><dt>Hälsa</dt><dd>${bar(g.blod ?? 1)}<span>${(g.blod ?? 1) >= 0.99 ? 'Frisk' : (g.blod ?? 1) > 0.5 ? 'Skadad' : 'Svårt skadad'}</span></dd></dl>
-      <h3>Gamla skador</h3>${skador.length ? `<ul class="fame">${skador.map(l => `<li><span class="muted">${l.ar} år</span> ${esc(l.text)}, läkt</li>`).join('')}</ul>` : '<p class="muted">Inga.</p>'}`;
-}
-// tiden: livet i hemklanen, år för år (steg 4.5.7.7), och det som hänt i byn
-function gastTid(g: Gast) {
-  return `<ul class="fame">${g.liv.liv.slice().reverse().map(l => `<li><span class="muted">${l.ar} år</span> ${esc(l.text)}</li>`).join('')}</ul>
-      ${g.handelser.length ? `<h3>I byn</h3><ul class="fame">${g.handelser.map(h => `<li>${esc(h)}</li>`).join('')}</ul>` : ''}`;
-}
-function gastKun(g: Gast) {
-  return g.liv.kan.length ? `<ul class="fame">${g.liv.kan.map(k => `<li>${esc(cap(k === 'handla' ? 'handla och värdera varor' : k))}</li>`).join('')}</ul>` : '<p class="muted">Byn vet inte vad hen kan.</p>';
-}
 // relationerna: familjen i hemklanen (de levande först)
 function gastRel(g: Gast) {
   const ORD: Record<Slakting['roll'], [string, string]> = { mor: ['Mor', 'Mor'], far: ['Far', 'Far'], syskon: ['Syster', 'Bror'], partner: ['Hustru', 'Man'], barn: ['Dotter', 'Son'] };
   const f = g.liv.familj.slice().sort((a, b) => +(a.dog !== undefined) - +(b.dog !== undefined));
   const byn = (g.rel ?? []).filter(x => alive(x.p)).sort((a, b) => b.r.n - a.r.n || Math.abs(b.r.op) - Math.abs(a.r.op)).slice(0, 10);
-  return `${byn.length ? `<h3>I byn</h3><ul class="rels">${byn.map(x => gastRelRad(pLink(x.p), x.r, x.g)).join('')}</ul>` : ''}<h3>I ${esc(g.fran ?? 'hemklanen')}</h3><ul class="rels">${f.map(q => `<li><span>${esc(q.namn)}</span><span class="muted">${ORD[q.roll][q.sex === 'k' ? 0 : 1]}${q.dog !== undefined ? ', död' : ''}</span></li>`).join('')}</ul>`;
+  return `${byn.length ? `<h3>Affärerna i byn</h3><ul class="rels">${byn.map(x => gastRelRad(pLink(x.p), x.r, x.g)).join('')}</ul>` : ''}<h3>I ${esc(g.fran ?? 'hemklanen')}</h3><ul class="rels">${f.map(q => `<li><span>${esc(q.namn)}</span><span class="muted">${ORD[q.roll][q.sex === 'k' ? 0 : 1]}${q.dog !== undefined ? ', död' : ''}</span></li>`).join('')}</ul>`;
 }
 // en relation mellan en gäst och en bybo (steg 4.5.7.11, gastrel.ts): ordet för vad de tycker, irritationen och lurendrejeriet,
 // och vid musen hur mycket handlaren gillar bybon
@@ -180,13 +153,6 @@ function gastRelRad(namn: string, r: GastRel, g?: number, gast?: boolean, klan?:
   const title = `${opOrd(r.op)}${g === undefined ? '' : `. Handlaren ${g > 0.25 ? 'gillar' : g < -0.25 ? 'ogillar' : 'har inget särskilt emot'} bybon${g > 0.25 ? ' och kräver lite mindre' : g < -0.25 ? ' och kräver mer' : ''}`}`;
   return `<li>${namn}${gast ? ' <span class="muted small">gäst</span>' : ''}<span class="rw ${r.op < REL.osams || r.irr > 0.05 ? 'neg' : r.op > REL.vanOrd ? 'pos' : ''}" title="${esc(title)}">${opOrd(r.op)}</span><span class="muted">${r.n} ${r.n === 1 ? 'affär' : 'affärer'}${mer ? ` · ${esc(mer)}` : ''}</span>${klan ? `<span class="muted small">${esc(klan)}</span>` : ''}</li>`;
 }
-function gastRyk(g: Gast) {
-  return `<p class="muted">Byn har inga rykten om ${esc(g.namn)}. Hen är ${g.sort === 'Rövare' ? 'en främling som kommer för att ta' : 'en gäst som kommer och går'}.</p>`;
-}
-function gastUtr(g: Gast) {
-  return `<ul class="fame">${g.bar.map(b => `<li title="${esc(b.title)}">${hasIcon(b.ikon) ? iconImg(b.ikon, 16) + ' ' : ''}${b.text}</li>`).join('') || '<li class="muted">Bär inget</li>'}</ul>`;
-}
-
 // bredvid porträttet (steg 9.2.95): kön, ålder och yrke, och partnern om det finns en ("med …")
 function pFakta(p: Person) {
   const a = Math.floor(ageOf(p, alive(p) ? s.now : (p.died ?? p.left ?? s.now))), y = yrkeNamn(s, p), q = byId(s, p.partner);

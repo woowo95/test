@@ -22,7 +22,7 @@ import { grundvarde, rikedom } from './varde';
 import { husPlats, iHus, kanterna, setRovarVal, skyddas, smaBarnOf, skyddVidElden, soker } from './varg';
 import { taVapen } from './vakt';
 import { foddNar, gastNyckel } from './gastliv';
-import { gastAv, gastGar, nyGast, nyttGastId } from './gast';
+import { gastAv, gastGar, gastTillbaka, nyGast, nyttGastId } from './gast';
 import { notis } from './notiser';
 import { groundOf, tileOf } from './mark';
 import { findPath, markFart } from './vag';
@@ -153,10 +153,12 @@ export function rovarnaKommer(s: State, tvinga?: number, direkt?: boolean, klan?
   const n = tvinga ?? Math.round(mellan(s, ROVARE.antal));
   const folk: number[] = Array.from({ length: n }, () => {
     const sex = rnd(s, 'rovare') < 0.8 ? 'm' as const : 'k' as const;
-    const namn = makeName(s, sex, 'rovare'), vapen = ROVARVAPEN[Math.floor(rnd(s, 'rovare') * ROVARVAPEN.length)];
+    const hem = k?.personer.find(q => q.roll === 'rovare' && q.kropp); // en som flydde hem förra gången kommer igen (steg 9.2.114); slumpen dras ändå
+    const namn = hem?.namn ?? makeName(s, sex, 'rovare'), vapen = ROVARVAPEN[Math.floor(rnd(s, 'rovare') * ROVARVAPEN.length)];
     const styrka = mellan(s, ROVARE.styrka), uthallighet = mellan(s, ROVARE.uthallighet), mod = mellan(s, ROVARE.mod), smidighet = mellan(s, ROVARE.smidighet), skick = mellan(s, ROVARE.skicklighet);
     const ov = Math.max(0, (skick - 5) * 2); // skickligheten i striden är 5 + färdigheten / 2, som hos en bybo (personKampe)
-    const p = nyGast(s, { id: nyttGastId(s), namn, sex, fodd: foddNar(s.seed, gastNyckel(k?.id, namn), 'rovare', s.now), rad: { sort: 'rovare', klan: k?.id, vapen }, x, y, nyckel: gastNyckel(k?.id, namn), pot: { styrka, uthallighet, mod, smidighet }, skill: { narstrid: ov, traff: ov } }); // drar ingen slump
+    const p = nyGast(s, { id: nyttGastId(s), namn, sex: hem?.sex ?? sex, fodd: foddNar(s.seed, gastNyckel(k?.id, namn), 'rovare', s.now), rad: { sort: 'rovare', klan: k?.id, vapen }, x, y, nyckel: gastNyckel(k?.id, namn), pot: { styrka, uthallighet, mod, smidighet }, skill: { narstrid: ov, traff: ov } }); // drar ingen slump
+    gastTillbaka(s, p);
     s.people.push(p);
     return p.id;
   });
@@ -561,7 +563,7 @@ function flockSteg(s: State, f: Rovarflock, folk: Person[], dtSec: number) {
       for (const k of kanterna(r.x, r.y)) { kvar = gaMot(s, r, k.x, k.y, dtSec, t0); if (kvar >= 0) break; }
       if (f.rad) iFarten(s, r); // saker i farten (steg 8.8.3)
       if (kvar >= 0.5) return true;
-      gastGar(s, id); // borta från kartan
+      gastGar(s, id, true); // borta från kartan, hem till klanen (steg 9.2.114)
       return false;
     });
     const led = gastAv(s, f.folk[0] ?? 0);

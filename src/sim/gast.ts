@@ -8,7 +8,9 @@
 import type { Person, State, Stat, Skill } from './typer';
 import { STATS, SKILLS } from './typer';
 import { hash3 } from './slump';
-import { EGENSKAP } from './folk';
+import { EGENSKAP, count } from './folk';
+import type { KlanPerson } from './klaner';
+const klanById = (s: State, id: number | undefined) => id === undefined ? undefined : s.klaner?.find(k => k.id === id); // som i klaner.ts, utan att importera den (cirkeln gastliv–klaner)
 
 export const GASTSORTER = {
   handlare: { namn: 'Handlare' },
@@ -51,7 +53,39 @@ export function nyGast(s: State, o: { id: number; namn: string; sex: 'm' | 'k'; 
   if (o.rad.klan !== undefined) p.fran = o.rad.klan;
   return p;
 }
-// gästen lämnar kartan: hen tas ur folket (klanen minns hen, klaner.ts)
-export function gastGar(s: State, id: number) {
+// gästen lämnar kartan: hen tas ur folket. hem = hen går hem levande, och klanen sparar hen (gastHem)
+export function gastGar(s: State, id: number, hem?: boolean) {
+  if (hem) { const p = gastAv(s, id); if (p) gastHem(s, p); }
   s.people = s.people.filter(p => !(p.id === id && p.gast));
+}
+
+// Borta och tillbaka (steg 9.2.114, "Ekonomi och handel: Gästerna är personer" i designdokumentet): en gäst som går hem sparas
+// hos sin klan som hela personen (kroppen, minnena, det hen kan och tänker), utom det som hör till besöket (id, platsen,
+// handlingen och gästraden). Hemma åldras hen (födelsen står kvar) och lever förenklat: skadorna läker, sjukdomen går över
+// och behoven är fyllda när hen kommer igen, och tankar som hunnit blekna är borta. Samma person kommer tillbaka (gastTillbaka)
+const BESOKET = ['id', 'x', 'y', 'task', 'gast', 'died', 'cause', 'left'] as const;
+export function gastHem(s: State, p: Person) {
+  const k = klanById(s, p.gast?.klan);
+  if (!k || p.died !== undefined) return;
+  let kp = k.personer.find(q => q.namn === p.name && q.sex === p.sex);
+  if (!kp) { if (p.gast!.sort !== 'rovare') return; kp = { namn: p.name, sex: p.sex, roll: 'rovare' }; k.personer.push(kp); } // en rövare som flydde hem
+  const kropp = JSON.parse(JSON.stringify(p)) as Record<string, unknown>;
+  for (const f of BESOKET) delete kropp[f];
+  kp.kropp = kropp as KlanPerson['kropp']; kp.borta = s.now; kp.fodd ??= p.born;
+  count(s, 'gast hem');
+}
+// gästen kommer igen (handel.ts, rovare.ts): den nya gästen blir den sparade personen, med besökets id, plats och gästrad
+export function gastTillbaka(s: State, p: Person) {
+  const kp = klanById(s, p.gast?.klan)?.personer.find(q => q.namn === p.name && q.sex === p.sex);
+  if (!kp?.kropp) return false;
+  const { id, x, y, gast, fran } = p;
+  Object.assign(p, JSON.parse(JSON.stringify(kp.kropp)), { id, x, y, gast });
+  if (fran !== undefined) p.fran = fran;
+  // livet hemma, förenklat
+  Object.assign(p, { health: 1, blod: 1, hunger: Math.max(p.hunger, 0.8), rest: 0.9, warm: 1, torst: 1, toa: 0.8 });
+  for (const f of ['blot', 'sjuk', 'skador', 'svimmat', 'brinner', 'sickUntil', 'sickWhy', 'poisonUntil', 'sorg'] as const) delete p[f];
+  p.thoughts = p.thoughts.filter(t => t.until > s.now);
+  delete kp.kropp; delete kp.borta;
+  count(s, 'gast igen');
+  return true;
 }

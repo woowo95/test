@@ -56,7 +56,7 @@ export const KLAN_ROLLER: Record<string, { namn: string }> = {
 // var klanerna bor (handel.ts har vad som är sällsynt där, och gästernas liv i gastliv.ts reser dit)
 export const KLAN_HEM = ['kusten i söder', 'fjällen i norr', 'skogarna i öster', 'sjöarna i väster', 'älvdalen', 'byarna vid havet'] as const;
 
-export interface KlanPerson { namn: string; sex: 'm' | 'k'; roll: string; id?: number; fodd?: number; rel?: Record<number, import('./gastrel').GastRel> } // id = personens id i byn, för den som kom därifrån; fodd = när hen föddes (gästens liv, steg 4.5.7.7, gastliv.ts); rel = handlarens relationer till byborna (steg 4.5.7.11, gastrel.ts)
+export interface KlanPerson { namn: string; sex: 'm' | 'k'; roll: string; id?: number; fodd?: number; rel?: Record<number, import('./gastrel').GastRel>; kropp?: Omit<Person, 'id' | 'x' | 'y' | 'task' | 'gast'>; borta?: number } // id = personens id i byn, för den som kom därifrån; fodd = när hen föddes (gästens liv, steg 4.5.7.7, gastliv.ts); rel = handlarens relationer till byborna (steg 4.5.7.11, gastrel.ts); kropp = hela personen medan hen är hemma, borta = sedan när (steg 9.2.114, gast.ts)
 export interface Klan {
   doda?: { namn: string; av: number; t: number }[]; krigisk?: number; radT?: number; // klanens döda, trons Fridsam – Krigisk och senaste räden (system 8.8)
   id: number; namn: string; hem: string;

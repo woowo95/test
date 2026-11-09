@@ -1233,8 +1233,8 @@ SCENARIER.gastsida = {
       [`handlarens sida har namnet, vad hen gör och flikarna ${knappar(pres)}`, !!h && pres.includes(h.namn) && pres.includes(h.gor)],
       ['samma flikknappar som för en bybo, alla sex flikar (steg 4.5.7.6, 5.3.4.1, 6.9.10)', knappar(pres) === knappar(bybo) && knappar(pres).split(',').length === 6],
       ['presentationen har handlarens klan, silver och packning som rader', /från .+ vid /.test(pres) && pres.includes('Silver') && pres.includes('Packning') && pres.includes('Handlare')],
-      ['egenskaperna visar färdigheten Handel', egen.includes('Handel') && egen.includes('Byn vet inget')],
-      ['utrustningen visar ryggsäcken och varorna med priset i silver', utr.includes('Ryggsäck') && /silver styck/.test(utr)],
+      ['egenskaperna visar färdigheten Handel (gästen är en person med alla flikar, steg 9.2.114)', egen.includes('Handel')],
+      ['presentationen visar varorna i packningen med priset i silver, och utrustningen är hens egen', pres.includes('Varor') && /silver styck/.test(pres) && utr.includes('Utrustning')],
       ['en rövare har flocken som rad och sina egenskaper', rp.includes('Rövare') && rp.includes('Flocken') && re.includes('Styrka') && re.includes('Närstrid')],
       ['när handlaren gått står det att hen lämnat byn', borta.includes('lämnat byn')],
       ['fliken Handlaren finns inte längre', !existsSync('src/ui/flikar/handlare.ts')],
@@ -2471,6 +2471,52 @@ SCENARIER.gastvardag = {
       [`och vaknar utvilad (vilan ${p.rest.toFixed(2)})`, vaknar],
       [`en bybo går för att vårda handlarens sår (${v?.why ?? 'ingen'})`, vardas],
       ['gästernas handlingar kräver sorten, och byborna gör dem aldrig', egna],
+    ];
+  },
+};
+
+SCENARIER.handlarenIgen = {
+  text: 'Borta och tillbaka (steg 9.2.114, gast.ts): handlaren som går hem sparas hos sin klan som hela personen, och när samma handlare kommer igen är det samma person med minnena, det hen lärt sig, tankarna och relationerna. Hemma har hen åldrats och levt förenklat: skadorna har läkt och behoven är fyllda. En rövare som flyr hem sparas också',
+  kor: () => {
+    const s = createState(6, START); rikBy(s);
+    SIM.skickaHandlare(s);
+    const h = s.handlare!, p = s.people.find(q => q.id === h.id)!, namn = p.name, klan = p.gast!.klan;
+    // det hen varit med om i byn
+    p.skill.handel += 3; p.kunskap = { ...p.kunskap, minne: { v: 0.7, t: s.now } };
+    p.thoughts.push({ text: 'Minns byn', v: 0.2, until: s.now + 400 * SIM.DAY }, { text: 'Bleknar', v: 0.1, until: s.now + SIM.HOUR });
+    p.health = 0.6; p.hunger = 0.2; p.skador = [{ d: 'armV', k: Object.keys(SIM.SKADOR)[0] as SIM.SkadaTyp, g: 0.3, b: 0 }];
+    const handel = p.skill.handel, fodd = p.born;
+    const gar = (g: State) => { const x = g.handlare!; x.fas = 'gar'; x.framme = g.now; x.fran = { x: 0.5, y: 0.5, t: g.now }; x.mx = 0.5; x.my = 0.5; step(g, 5); };
+    gar(s);
+    const kp = SIM.klanById(s, klan)?.personer.find(q => q.namn === namn);
+    const sparad = !!kp?.kropp && kp.borta !== undefined && !s.people.some(q => q.name === namn && q.gast);
+    // dagar senare kommer handlare tills det är samma igen
+    s.now += 3 * SIM.DAY;
+    let igen: Person | undefined;
+    for (let i = 0; i < 40 && !igen; i++) {
+      s.handlare = undefined; SIM.skickaHandlare(s);
+      const q = s.people.find(x => x.id === s.handlare?.id);
+      if (q?.name === namn && q.gast?.klan === klan) igen = q; else gar(s);
+    }
+    const samma = !!igen && igen.skill.handel === handel && igen.kunskap?.minne?.v === 0.7 && igen.born === fodd && igen.id === s.handlare!.id;
+    const tankar = !!igen && igen.thoughts.some(t => t.text === 'Minns byn') && !igen.thoughts.some(t => t.text === 'Bleknar');
+    const levt = !!igen && igen.health === 1 && !igen.skador?.length && igen.hunger >= 0.8 && SIM.ageOf(igen, s.now) > SIM.ageOf(p, s.now - 3 * SIM.DAY);
+    const slapp = !kp?.kropp;
+    // en rövare som flyr hem sparas hos klanen
+    const r = createState(7, START);
+    const k = SIM.klanerOf(r)[0]; k.inst = -80;
+    SIM.rovarnaKommer(r, 2, true, k.id);
+    const f = r.rovare!, rv = r.people.find(q => q.id === f.folk[0])!;
+    f.gor = 'flyr'; rv.x = 0.6; rv.y = 0.6;
+    step(r, 5);
+    const rovHem = !!k.personer.find(q => q.namn === rv.name && q.roll === 'rovare')?.kropp;
+    return [
+      [`handlaren ${namn} sparas hos klanen när hen går hem`, sparad],
+      [`samma handlare kommer igen som samma person (Handel ${igen?.skill.handel ?? '–'} av ${handel}, minnet kvar)`, samma],
+      ['tankarna som räcker finns kvar, de som bleknat är borta', tankar],
+      [`hemma har hen åldrats och läkt (hälsa ${igen ? Math.round(igen.health * 100) : '–'} %, skador ${igen?.skador?.length ?? 0})`, levt],
+      ['klanen håller inte kvar en kopia medan hen är här', slapp],
+      [`en rövare som flyr hem sparas hos klanen (${rv.name})`, rovHem],
     ];
   },
 };

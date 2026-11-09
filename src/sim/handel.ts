@@ -26,7 +26,7 @@ import { affarMed, gastRel, gillar, glomIrritation, kravMax, kravRel, luradMed, 
 import { handelsArg } from './handelsber';
 import { notis } from './notiser';
 import { barSmitta } from './sjukdom';
-import { gastGar, hp, nyGast } from './gast';
+import { gastGar, gastTillbaka, hp, nyGast } from './gast';
 
 // ---------- handlarna (steg 4.4.1) ----------
 // När byns rikedom (varde.ts) passerat en gräns (HANDEL.rik) kommer en handlare gående från kartans kant, ungefär en gång per
@@ -248,6 +248,7 @@ function kommer(s: State, tvinga?: boolean) {
   const nyckel = gastNyckel(kh.klan.id, kh.person.namn), fodd = kh.person.fodd ??= foddNar(s.seed, nyckel, 'handlare', s.now); // samma person varje gång, drar ingen slump
   // handlaren är en person bland folket (steg 9.2.111, gast.ts), med samma id som i bytena
   s.people.push(nyGast(s, { id: h.id, namn: kh.person.namn, sex, fodd, rad: { sort: 'handlare', klan: kh.klan.id, hem: kh.klan.hem }, x: ut.x, y: ut.y, nyckel, skill: { handel: heltMellan(s, HANDEL.handel) } }));
+  gastTillbaka(s, s.people[s.people.length - 1]); // samma person som förra gången, om hen varit här (steg 9.2.114)
   h.varor = packa(s, rymmer(h), sort);
   const smitta = barSmitta(s); if (smitta) hp(s, h).smitta = smitta; // ibland bär hen en sjukdom utifrån (steg 9.5.5)
   s.handlare = h;
@@ -360,7 +361,7 @@ export function handelSteg(s: State, dtSec: number) {
   else if (h.fas === 'vantar') { if (s.now >= h.kvall!) lagUt(s, h); }
   else if (h.fas === 'handlar') { if (s.now >= h.gar) gar(s, h); else { glomAffar(s, h); visaFiltar(s, h); } }
   else if (gaSteg(s, h)) {
-    gastGar(s, h.id); // hen har lämnat kartan (steg 9.2.111); klanen minns hen (klaner.ts)
+    gastGar(s, h.id, true); // hen har lämnat kartan (steg 9.2.111) och klanen sparar hen till nästa gång (steg 9.2.114)
     s.handlare = undefined;
     s.nastaHandlare = s.now + intervall(s) * DAY * (0.7 + 0.6 * rnd(s, 'handel'));
   }

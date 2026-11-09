@@ -1,13 +1,13 @@
-import { hp, HANDEL, HANDLAR_UTR, VAPEN, byId, gillar, handlarPerson, foddNar, gastLiv, gastNyckel, handlarFas, handlarPlats, rovarPlats, rovarna, stat, klanById, grundvarde, handlarVarde, kgOf, kortTal, rymmer, sakNamn } from '../sim';
-import type { ByteMinne, GastLiv, GastRel, Person, Roll, Skill, Stat, State } from '../sim';
+import { hp, HANDEL, HANDLAR_UTR, VAPEN, byId, gillar, handlarPerson, foddNar, gastLiv, gastNyckel, handlarFas, handlarPlats, rovarPlats, rovarna, klanById, grundvarde, handlarVarde, kgOf, kortTal, rymmer, sakNamn } from '../sim';
+import type { ByteMinne, GastLiv, GastRel, Person, Roll, State } from '../sim';
 import { iconImg } from '../ikoner';
 import { esc } from './hjalp';
 import { s, ui } from './lage';
 import { rovarenNu } from './stridkarta';
 
-// gästerna (steg 4.5.4.12): de som syns på kartan utan att bo i byn, i dag handlaren och rövarna. De väljs som en bybo och
-// får samma sida (personfliken) med de flikar som finns för dem. Det som är särskilt för en sort står som rader i
-// presentationen (rader). Ett register: en ny sort (besökare, främlingar) läggs till som en rad i GASTER
+// gästerna (steg 4.5.4.12): de som syns på kartan utan att bo i byn, i dag handlaren och rövarna. Gästen är en person
+// (p, steg 9.2.111) och får samma sida som en bybo med alla flikar (steg 9.2.114); här står bara det som är särskilt för
+// sorten: raderna i presentationen, bytena, livet i hemklanen och handlarens affärer. En ny sort läggs till som en rad i GASTER
 export interface Gast {
   id: number; // negativt, så att det aldrig är en bybos id
   namn: string; sex: 'm' | 'k';
@@ -17,9 +17,7 @@ export interface Gast {
   gor: string; // vad hen gör just nu (som status hos en bybo)
   fran?: string; // varifrån hen kommer
   rader: { namn: string; varde: string; title: string }[]; // det som är särskilt för sorten
-  stats: Partial<Record<Stat, number>>; skills: Partial<Record<Skill, number>>; // det man vet om hen (0–20)
-  bar: { ikon: string; text: string; title: string }[]; // det hen bär (utrustningen)
-  handelser: string[]; // som en bybos viktiga händelser
+  p: Person; // gästen själv (steg 9.2.114)
   byten?: ByteMinne[]; // bytena hen gjort med byn (steg 4.5.4.17)
   liv: GastLiv; // livet i hemklanen (steg 4.5.7.7, gastliv.ts): familjen, händelserna, humöret och det hen kan
   blod?: number; // blodet kvar (rövarna, 0–1)
@@ -50,11 +48,9 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
         { namn: 'Silver', varde: `${iconImg('silver', 12)} ${Math.round(h.silver)}`, title: 'Silvret handlaren har med sig' },
         { namn: 'Packning', varde: `${kortTal(kgOf(h.varor))} / ${rymmer(h)} kg`, title: `${utr}: så mycket bär hen och så mycket rymmer den` },
         ...ko ? [{ namn: 'Kö', varde: String(ko), title: 'Så många står i kö vid filten' }] : [],
+        ...h.varor.length ? [{ namn: 'Varor', varde: h.varor.map(w => `<span title="${esc(`${sakNamn(w.k)}: ungefär ${handlarPris(w.k, w.q)} silver styck (hen tar ${Math.round(HANDEL.vinst * 100)} % över värdet)`)}">${iconImg(w.k, 12)}${w.n > 1 ? w.n : ''}</span>`).join(' '), title: 'Det handlaren har i packningen' }] : [],
       ],
-      stats: {}, skills: { handel: hp(s, h).skill.handel },
-      bar: [{ ikon: 'ryggsack', text: utr, title: `${utr}, rymmer ${rymmer(h)} kg` },
-        ...h.varor.map(w => ({ ikon: w.k, text: `${w.n > 1 ? `${w.n} ` : ''}${handlarPris(w.k, w.q)}${iconImg('silver', 12)}`, title: `${sakNamn(w.k)}: ungefär ${handlarPris(w.k, w.q)} silver styck (hen tar ${Math.round(HANDEL.vinst * 100)} % över värdet)` }))],
-      handelser: (h.bytt ?? []).filter(b => !b.m).reverse().map(b => `Bytte med ${b.vem}: ${b.fick} mot ${b.gav}`), // från före v271
+      p: hp(s, h),
       byten: (h.bytt ?? []).flatMap(b => b.m ? [b.m] : []),
       liv: livFor(s, hp(s, h).gast!.klan, hp(s, h).name, hp(s, h).sex, 'handlare', hp(s, h).born),
       rel: Object.entries(handlarPerson(s, h)?.rel ?? {}).flatMap(([id, r]) => { const q = byId(s, Number(id)); return q ? [{ p: q, r, g: gillar(s, h, q) }] : []; }),
@@ -72,11 +68,11 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
       ...(sk ? { x: sk.x, y: sk.y } : rovarPlats(q, t)), // var och en går för sig (steg 6.6.9)
       rovare: q, gor: sk ? (sk.k.lage === 'dod' ? 'Död' : sk.ligger ? 'Ligger nere' : sk.k.lage === 'flykt' ? 'Flyr' : 'Slåss vid förrådet') : gor, ligger: sk?.ligger,
       fran: klanById(s, r.klan)?.namn,
-      rader: [{ namn: 'Flocken', varde: `${n} rövare`, title: `En av ${n} i flocken` }],
-      stats: { styrka: stat(q, 'styrka', s.now), uthallighet: stat(q, 'uthallighet', s.now), mod: stat(q, 'mod', s.now), smidighet: stat(q, 'smidighet', s.now) }, skills: { narstrid: q.skill.narstrid ?? 0 }, // rövaren är en person (steg 9.2.112)
-      bar: [...q.gast?.vapen ? [{ ikon: q.gast.vapen, text: VAPEN[q.gast.vapen].namn, title: `Vapnet: ${VAPEN[q.gast.vapen].namn.toLowerCase()}` }] : [],
-        ...Object.entries(q.gast?.bar ?? {}).map(([k, m]) => ({ ikon: k, text: m > 1 ? String(m) : '', title: `${sakNamn(k)}: taget ur byns förråd` }))], // bytet (steg 6.6.11)
-      handelser: q.gast?.anhorig ? [q.gast.anhorig] : [], liv: livFor(s, r.klan, q.name, q.sex, 'rovare', q.born), blod: q.blod, // anhörig till den som hämnas (steg 8.8.4)
+      rader: [{ namn: 'Flocken', varde: `${n} rövare`, title: `En av ${n} i flocken` },
+        ...q.gast?.vapen ? [{ namn: 'Vapen', varde: `${iconImg(q.gast.vapen, 12)} ${esc(VAPEN[q.gast.vapen].namn)}`, title: 'Vapnet' }] : [],
+        ...Object.keys(q.gast?.bar ?? {}).length ? [{ namn: 'Bytet', varde: Object.entries(q.gast!.bar!).map(([k, m]) => `${iconImg(k, 12)}${m > 1 ? m : ''}`).join(' '), title: 'Det hen tagit ur byns förråd' }] : [], // bytet (steg 6.6.11)
+        ...q.gast?.anhorig ? [{ namn: 'Hämnas', varde: esc(q.gast.anhorig), title: 'Anhörig till den som hämnas (steg 8.8.4)' }] : []],
+      p: q, liv: livFor(s, r.klan, q.name, q.sex, 'rovare', q.born), blod: q.blod, // anhörig till den som hämnas (steg 8.8.4)
       };
     });
     });
