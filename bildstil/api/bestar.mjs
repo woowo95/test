@@ -31,7 +31,9 @@ const KALLA = fs.readFileSync(path.join(BILDSTIL, 'bestskapare.js'), 'utf8');
 const PLAN = {
   textur: { namn: 'Textur', versioner: 3, kod: 'TEXTURER', over: { plattor: null }, farger: ['skog', 'aska'] },
   farg: { namn: 'Färger', antal: 12, kod: 'FARGER', over: { vingar: 'lader', pryd: 'tecken', hard: 'knolar', skal: null } },
-  kropp: { namn: 'Kropp', antal: 12, kod: 'KROPPAR', over: {} },
+  kropp: { namn: 'Kropp', antal: 12, kod: 'KROPPAR', over: {},
+    // ett tema läggs till de andra delarna i lagret i stället för att ersätta dem: rita kropp:former
+    teman: { former: { antal: 10, uppdrag: 'Rita 10 nya kroppsformer som inte är fyrbenta djur som de första: som Lindormen, Snäckbesten och Sköldpaddan (de sista handgjorda). Till exempel en spindel med fyra benpar, en tusenfoting med många benpar, en groda som sitter hopkrupen, en tvåbent best som går upprätt på bakbenen, en krabba med skal, en val eller säl som ålar sig fram, en mask eller igel, en jättefladdermus, en kentaur av två djur, en best som är en vandrande stubbe eller en hög med stenar. Varje form ska läsas på en blick i silhuett och vara helt olik de andra. Använd former, benpar, delar och utan fritt: en form som inte kan ha ben, svans eller vingar ska vara utan dem.' } } },
   horn: { namn: 'Horn', antal: 10, kod: 'HORN', over: { plattor: null } },
   svans: { namn: 'Svans', antal: 8, kod: 'SVANSAR', over: {} },
   huvud: { namn: 'Huvud', antal: 8, kod: 'HUVUDEN', over: {} },
@@ -96,7 +98,12 @@ const FORMAT = {
  "h": [x,y] höften där bakbenen börjar, "f": [x,y] bogen där frambenen börjar,
  "svans": [x,y] svansroten, "vinge": [x,y] vingens rot på ryggen,
  "lang": [x0, x1]: hur långt bak och fram skal och plattor räcker på ryggen}
-Regler: marken är y = 74. h och f ligger inne i bålen, minst 12 punkter över marken (y ≤ 62) och 20–45 punkter isär. Huvudet sticker ut ungefär 24 punkter framför halsens slut, så halsen slutar vid x ≤ 92. Svansen går upp till 30 punkter bakåt från roten, så svansroten ligger vid x ≥ 33 och nära bålens bakre kant. Vingarna når 33 punkter upp från roten, så vingens rot ligger vid y ≥ 18, på ryggen. Bålens översta punkt y ≥ 10. Halsen börjar inne i bålen. Variera hållningen: hög och upprätt, låg och lång, puckelrygg, tung framdel, smal och seg, kort och massiv, lång hals, ingen hals …`,
+Kroppsformer som inte är fyrbenta (ormar, sniglar, sköldpaddor, spindlar …) använder också:
+ "former": [former] som läggs till bålen (en orms kropp som en lång kapsel i bågar; "bal" kan då utelämnas),
+ "benpar": [[x, y, "bak" | "fram"], …] lederna där benen sitter, om det inte är två par vid h och f (en spindel har fyra par, en tvåbent best ett par; varje led ritas med ett ben på närmre och ett på bortre sidan),
+ "delar": [{"former": [former], "mat": material (skal, hard, horn, kropp, mossa, kristall …), "z": "bak" (bakom kroppen) | "skal" (över kroppen, under benen och huvudet) | "ovan" (överst), "rygg": true om plattor ska stå på delen, "monster": mönster, "kontur": true/false, "lyser": true/false}] för kroppens egna delar (ett snäckskal, ett krabbskal, en stenhög på ryggen),
+ "utan": [lager] som inte passar kroppen och inte ritas: ben, svans, vingar, horn, skal (om kroppen har ett eget), plattor, hard, pryd. h, f, svans och vinge ska ändå finnas, som fästpunkter för förhårdnader och prydnader.
+Regler: marken är y = 74. h och f ligger inne i bålen, minst 12 punkter över marken (y ≤ 62) och 20–45 punkter isär. Huvudet sticker ut ungefär 24 punkter framför halsens slut, så halsen slutar vid x ≤ 92. Svansen går upp till 30 punkter bakåt från roten, så svansroten ligger vid x ≥ 33 och nära bålens bakre kant. Vingarna når 33 punkter upp från roten, så vingens rot ligger vid y ≥ 18, på ryggen. Bålens översta punkt y ≥ 10, och ingen del av kroppen går under y = 73. Halsen börjar inne i bålen. Benpar som inte är h och f ligger också minst 12 punkter över marken. Variera hållningen: hög och upprätt, låg och lång, puckelrygg, tung framdel, smal och seg, kort och massiv, lång hals, ingen hals …`,
   horn: `Horn sitter på huvudet vid fästpunkten (0,0), uppe på skallen. Huvudet tittar åt höger. Data: {"former": [former], "monster": mönster (valfritt, annars ringar)}. Ett andra horn ritas av koden på bortre sidan, 3 punkter längre fram och en ton mörkare. Storlek: högst 20 punkter brett och 18 högt (y från −18 till +3), roten 2–3,5 punkter tjock så att hornet sitter fast. Variera: grenade horn som en älg eller hjort, raka spjut, spiraler som en vädur, krokar framåt, många små taggar, ett enda horn på nosen …`,
   svans: `Svansen börjar vid svansroten (0,0) i bålens bakre kant och går bakåt (−x). Data: {"former": [former i kroppens material; den första ska vara 5–7 punkter tjock vid roten så att den växer ihop med kroppen], "spets": [x,y] svansens spets, "delar": [{"former": [former], "mat": material (hard, horn, klo, platta, man, fjader, tecken …), "kontur": true/false, "lyser": true/false, "monster": mönster}] för det som sitter på svansen: klubbor, gaddar, fenor, tofsar}. Svansen når högst 32 punkter bakåt och 30 uppåt. Roten ligger 44–60 punkter ner och marken vid y = 74, så svansen får gå högst 12 punkter ner från roten (y ≤ 12). Variera: krullad uppåt, tjock och kort, skorpionsgadd, solfjäder, kluven, tofs …`,
   huvud: `Huvudet sitter vid halsens slut (0,0) och tittar åt höger (+x). Data:
@@ -118,7 +125,7 @@ Den första punkten är [0, 0]: leden vid kroppen (höften eller bogen). dx är 
 };
 const FARGNAMN = { skog: 'den gröna (skog och glöd)', aska: 'den svarta (aska och blod)' };
 
-async function ritfraga(lager, grupp, kommentar, om = null) {
+async function ritfraga(lager, grupp, kommentar, om = null, tema = null) {
   if (om) return omritfraga(lager, om, kommentar);
   const P = PLAN[lager], hg = await handgjorda(lager), bilder = [], text = [];
   if (lager === 'textur') {
@@ -135,17 +142,18 @@ async function ritfraga(lager, grupp, kommentar, om = null) {
     text.push(`Den första bilden är besten som den står nu i bestskaparen, tre gånger större. Sedan kommer de handgjorda delarna i lagret ${P.namn}, en bild var: ${hg.map(h => `"${h.namn}" (${h.text})`).join(', ')}. De är gjorda med kod:`);
     text.push(kodFor(P.kod));
     text.push(FORMAT[lager]);
-    text.push(`Rita ${P.antal} nya delar i lagret ${P.namn}, alla olika varandra och olika de handgjorda, så att spelaren får många att kombinera. De ska passa ihop med de andra lagrens delar (de handgjorda) och se bra ut i bildstilen.`);
+    if (tema) text.push(`${P.teman[tema].uppdrag} De ska se bra ut i bildstilen och fungera med de andra lagrens delar (de handgjorda) som de passar med.`);
+    else text.push(`Rita ${P.antal} nya delar i lagret ${P.namn}, alla olika varandra och olika de handgjorda, så att spelaren får många att kombinera. De ska passa ihop med de andra lagrens delar (de handgjorda) och se bra ut i bildstilen.`);
   }
   if (kommentar) text.push(`Björns kommentar, som ska följas: ${kommentar}`);
-  return { custom_id: lager === 'textur' ? `textur__${grupp}` : lager, lager, grupp, params: { model: MODELL, max_tokens: MAXTOKENS, thinking: { type: 'adaptive' }, output_config: { effort: INSATS, format: { type: 'json_schema', schema: SCHEMA } },
+  return { custom_id: lager === 'textur' ? `textur__${grupp}` : tema ? `${lager}__${tema}` : lager, lager, grupp, tema, params: { model: MODELL, max_tokens: MAXTOKENS, thinking: { type: 'adaptive' }, output_config: { effort: INSATS, format: { type: 'json_schema', schema: SCHEMA } },
     system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
     messages: [{ role: 'user', content: [...bilder.map(bildBlock), { type: 'text', text: text.join('\n\n') }] }] } };
 }
 // en enda del ritas om efter Björns kommentar: API:t ser delen som den är nu (texturerna på båda färgerna) och dess data
 async function omritfraga(lager, om, kommentar) {
   const P = PLAN[lager], bilder = [], text = [];
-  const { id, namn, text: t, grupp, forra, ...data } = om;
+  const { id, namn, text: t, grupp, forra, tema, ...data } = om;
   for (const f of (P.farger || [null])) { const r = await prov(lager, om, { ...P.over, ...(f ? { farg: f } : {}) }); if (r.png) bilder.push(r.png); }
   text.push(`${bilder.length > 1 ? 'Bilderna visar' : 'Bilden visar'} delen "${namn}" (${t}) i lagret ${P.namn}, ritad i besten tre gånger större${P.farger ? ` på ${P.farger.map(f => FARGNAMN[f]).join(' och ')} besten` : ''}. Dess data: ${JSON.stringify(data)}`);
   if (grupp && grupp !== id) {
@@ -154,7 +162,7 @@ async function omritfraga(lager, om, kommentar) {
   } else text.push(`De handgjorda delarna i lagret är gjorda med kod:\n${kodFor(P.kod)}`);
   text.push(FORMAT[lager]);
   text.push(`Björn har sett delen och skriver: ${kommentar}\nRita om delen efter kommentaren. Svara med en enda del (namnet får ändras om delen blir något annat).`);
-  return { custom_id: `${lager}__om__${id}`, lager, grupp: grupp && grupp !== id ? grupp : null, om, kommentar, params: { model: MODELL, max_tokens: MAXTOKENS, thinking: { type: 'adaptive' }, output_config: { effort: INSATS, format: { type: 'json_schema', schema: SCHEMA } },
+  return { custom_id: `${lager}__om__${id}`, lager, grupp: grupp && grupp !== id ? grupp : null, tema, om, kommentar, params: { model: MODELL, max_tokens: MAXTOKENS, thinking: { type: 'adaptive' }, output_config: { effort: INSATS, format: { type: 'json_schema', schema: SCHEMA } },
     system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
     messages: [{ role: 'user', content: [...bilder.map(bildBlock), { type: 'text', text: text.join('\n\n') }] }] } };
 }
@@ -177,6 +185,8 @@ async function granskfraga(fraga, delar) {
 }
 
 // ---------- koden kontrollerar varje del ----------
+// den lägsta punkten i en form (för kroppar som ligger på marken)
+const formBotten = s => !s ? -1e9 : s.typ === 'poly' ? Math.max(...(s.pts || []).map(p => p[1])) : s.typ === 'kapsel' ? Math.max(...(s.pts || []).map((p, i) => p[1] + (s.r?.[i] ?? 0))) : s.typ === 'ell' ? (s.c?.[1] ?? 0) + (s.r?.[1] ?? s.r?.[0] ?? 0) : -1e9;
 const tal = v => typeof v === 'number' && Number.isFinite(v);
 const pkt = p => Array.isArray(p) && p.length === 2 && tal(p[0]) && tal(p[1]);
 function formFel(s, namn) {
@@ -198,18 +208,26 @@ function datafel(lager, d) {
     case 'textur': f.push(...monsterFel(d.monster, 'monster'), ...monsterFel(d.ben, 'ben')); if (!d.monster) f.push('monster saknas'); (d.pa || []).forEach((o, i) => f.push(...monsterFel(o.monster, `pa ${i + 1}`))); break;
     case 'farg': for (const m of MATERIAL) { const v = d.m?.[m]; if (!Array.isArray(v) || !RAMPER.includes(v[0]) || ![0, 1, 2, 3].includes(v[1])) f.push(`materialet ${m} saknas eller har fel ramp/ton`); } break;
     case 'kropp': {
-      if (!Array.isArray(d.bal) || d.bal.length < 6 || !d.bal.every(pkt)) { f.push('bal behöver minst 6 punkter'); break; }
+      if (d.bal !== undefined && (!Array.isArray(d.bal) || d.bal.length < 6 || !d.bal.every(pkt))) { f.push('bal behöver minst 6 punkter'); break; }
+      if (!d.bal && !d.former) { f.push('bal eller former behövs'); break; }
+      if (d.former) f.push(...formerFel(d.former, 'former'));
+      if (d.delar) f.push(...delarFel(d.delar, 'delar'));
+      const utan = new Set(d.utan || []);
+      if (d.utan && (!Array.isArray(d.utan) || d.utan.some(l => !['ben', 'svans', 'vingar', 'horn', 'skal', 'plattor', 'hard', 'pryd'].includes(l)))) f.push('utan får bara innehålla ben, svans, vingar, horn, skal, plattor, hard och pryd');
+      if (d.benpar && (!Array.isArray(d.benpar) || !d.benpar.every(b => Array.isArray(b) && pkt(b.slice(0, 2)) && ['bak', 'fram'].includes(b[2])))) f.push('benpar ska vara [[x, y, "bak" | "fram"], …]');
+      else if (d.benpar && !utan.has('ben') && d.benpar.some(b => b[1] > 62)) f.push('ett benpar ligger för nära marken (y ≤ 62)');
+      const botten = [...(d.bal || []).map(p => p[1]), ...[].concat(d.former || [], ...(d.delar || []).map(p => p.former || [])).map(formBotten)];
+      if (Math.max(...botten) > 73.6) f.push(`kroppen går ner i marken (lägst y ${Math.max(...botten).toFixed(1)}, högst 73)`);
       for (const k of ['h', 'f', 'svans', 'vinge']) if (!pkt(d[k])) f.push(`${k} saknas`);
       if (!Array.isArray(d.nacke) || d.nacke.length !== 2 || !d.nacke.every(pkt) || !Array.isArray(d.nackeR) || d.nackeR.length !== 2) f.push('nacke och nackeR behöver två punkter och två radier');
       if (!Array.isArray(d.lang) || d.lang.length !== 2) f.push('lang behöver [x0, x1]');
       if (f.length) break;
-      if (d.h[1] > 62 || d.f[1] > 62) f.push(`höften och bogen måste ligga minst 12 punkter över marken (y ≤ 62; nu ${d.h[1]} och ${d.f[1]})`);
-      if (d.f[0] - d.h[0] < 18) f.push('bogen måste ligga minst 18 punkter framför höften');
+      if (!utan.has('ben') && !d.benpar && (d.h[1] > 62 || d.f[1] > 62)) f.push(`höften och bogen måste ligga minst 12 punkter över marken (y ≤ 62; nu ${d.h[1]} och ${d.f[1]})`);
+      if (!utan.has('ben') && !d.benpar && d.f[0] - d.h[0] < 18) f.push('bogen måste ligga minst 18 punkter framför höften');
       if (d.nacke[1][0] > 93) f.push(`halsen slutar för långt fram (x ${d.nacke[1][0]}, högst 92)`);
-      if (d.svans[0] < 32) f.push(`svansroten ligger för långt bak (x ${d.svans[0]}, minst 33)`);
-      if (d.vinge[1] < 17) f.push(`vingens rot ligger för högt (y ${d.vinge[1]}, minst 18)`);
-      if (Math.min(...d.bal.map(p => p[1])) < 8) f.push('bålen går för högt upp');
-      if (Math.max(...d.bal.map(p => p[1])) > 70) f.push('bålen går ner i marken (y ≤ 70)');
+      if (!utan.has('svans') && d.svans[0] < 32) f.push(`svansroten ligger för långt bak (x ${d.svans[0]}, minst 33)`);
+      if (!utan.has('vingar') && d.vinge[1] < 17) f.push(`vingens rot ligger för högt (y ${d.vinge[1]}, minst 18)`);
+      if (d.bal && Math.min(...d.bal.map(p => p[1])) < 8) f.push('bålen går för högt upp');
       break;
     }
     case 'horn': f.push(...formerFel(d.former, 'former'), ...monsterFel(d.monster, 'monster')); break;
@@ -232,8 +250,8 @@ async function provaDelar(fraga, svar) {
   for (const [i, s] of (svar.delar || []).entries()) {
     let data = null, fel = [];
     try { data = JSON.parse(s.data); } catch (e) { fel.push('data är inte JSON'); }
-    const id = fraga.om ? fraga.om.id : fraga.lager === 'textur' ? `${fraga.grupp}-${i + 1}` : `${fraga.lager}-${i + 1}`;
-    const d = { ...(data || {}), id, namn: s.namn, text: s.text, ...(fraga.grupp ? { grupp: fraga.grupp } : {}), ...(fraga.om && fraga.kommentar ? { forra: fraga.kommentar } : {}) };
+    const id = fraga.om ? fraga.om.id : fraga.lager === 'textur' ? `${fraga.grupp}-${i + 1}` : fraga.tema ? `${fraga.lager}-${fraga.tema}-${i + 1}` : `${fraga.lager}-${i + 1}`;
+    const d = { ...(data || {}), id, namn: s.namn, text: s.text, ...(fraga.grupp ? { grupp: fraga.grupp } : {}), ...(fraga.tema ? { tema: fraga.tema } : {}), ...(fraga.om && fraga.kommentar ? { forra: fraga.kommentar } : {}) };
     if (data) fel.push(...datafel(fraga.lager, data));
     const bilder = [];
     if (data && !fel.length) for (const f of (P.farger || [null])) {
@@ -278,14 +296,14 @@ async function batch(client, fragor, namn) {
 
 // ---------- att spara ----------
 const lasFil = lager => { const f = path.join(MAPP, lager + '.json'); return fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : { lager, om: '', delar: [] }; };
-function spara(lager, grupp, delar, anteckning, dollar, om = null) {
+function spara(lager, grupp, delar, anteckning, dollar, om = null, tema = null) {
   fs.mkdirSync(MAPP, { recursive: true });
   const o = lasFil(lager);
   // en ny körning ersätter det förra från samma fråga (texturerna: samma grupp)
   if (om) { const i = o.delar.findIndex(d => d.id === om.id); if (i >= 0 && delar[0]) o.delar[i] = delar[0]; }
-  else o.delar = o.delar.filter(d => (lager === 'textur' ? d.grupp !== grupp : false)).concat(delar);
+  else o.delar = o.delar.filter(d => (lager === 'textur' ? d.grupp !== grupp : tema ? d.tema !== tema : !!d.tema)).concat(delar);
   o.om = 'Ritat av Claude API:t med bildstil/api/bestar.mjs: former och mönster som bestskaparen gör om till delar.';
-  o.anteckningar = { ...(o.anteckningar || {}), [om ? om.id : grupp || lager]: anteckning };
+  o.anteckningar = { ...(o.anteckningar || {}), [om ? om.id : grupp || (tema ? `${lager}:${tema}` : lager)]: anteckning };
   o.kostnad = +(((o.kostnad || 0) + dollar).toFixed(3));
   if (lager === 'textur') o.delar.sort((a, b) => a.id.localeCompare(b.id, 'sv', { numeric: true }));
   skrivFil(o);
@@ -302,7 +320,7 @@ const BILD = Math.round((136 * 3) * (99 * 3) / 750);
 function uppskatta(fragor) {
   let s = 0;
   for (const f of fragor) {
-    const n = f.om ? 1 : PLAN[f.lager].versioner || PLAN[f.lager].antal, bilder = f.params.messages[0].content.filter(c => c.type === 'image').length;
+    const n = f.om ? 1 : f.tema ? PLAN[f.lager].teman[f.tema].antal : PLAN[f.lager].versioner || PLAN[f.lager].antal, bilder = f.params.messages[0].content.filter(c => c.type === 'image').length;
     const tin = Math.round((f.params.system[0].text.length + f.params.messages[0].content.filter(c => c.type === 'text').map(c => c.text).join('').length) / 3.5) + bilder * BILD;
     const tut = 6000 + 700 * n, granskIn = tin + 400 * n + n * (PLAN[f.lager].farger?.length || 1) * BILD;
     s += (tin * PRIS.in + tut * PRIS.ut + granskIn * PRIS.in + tut * PRIS.ut) / 1e6;
@@ -333,6 +351,7 @@ async function fragorFor(val) {
     const [lager, grupp] = v.split(':');
     if (!PLAN[lager]) throw new Error('Okänt lager: ' + lager);
     if (lager === 'textur') { const g = grupp ? [grupp] : (await handgjorda('textur')).map(x => x.id); for (const x of g) fr.push(await ritfraga('textur', x, kommentar)); }
+    else if (grupp) { if (!PLAN[lager].teman?.[grupp]) throw new Error(`Okänt tema: ${v}`); fr.push(await ritfraga(lager, null, kommentar, null, grupp)); }
     else fr.push(await ritfraga(lager, null, kommentar));
   }
   return fr;
@@ -350,7 +369,7 @@ try {
     console.log(`${fr.length} frågor, ungefär ${u.lag.toFixed(2)}–${u.hog.toFixed(2)} dollar.`);
     let svar = {}, summa = 0;
     if (kommando !== 'granska') { const r = await batch(client, fr, 'ritningen'); svar = r.ut; summa += r.summa; }
-    else for (const f of fr) { const o = lasFil(f.lager), del = o.delar.filter(d => f.lager !== 'textur' || d.grupp === f.grupp); svar[f.custom_id] = { svar: { delar: del.map(d => { const { id, namn, text, grupp, ...data } = d; return { namn, text, data: JSON.stringify(data) }; }) } }; }
+    else for (const f of fr) { const o = lasFil(f.lager), del = o.delar.filter(d => (f.lager === 'textur' ? d.grupp === f.grupp : (d.tema || null) === (f.tema || null))); svar[f.custom_id] = { svar: { delar: del.map(d => { const { id, namn, text, grupp, ...data } = d; return { namn, text, data: JSON.stringify(data) }; }) } }; }
     // granskningen
     const forsta = {}, granska = [];
     for (const f of fr) {
@@ -375,10 +394,10 @@ try {
         rapport.push(`${f.custom_id} ${i + 1}: ${v ? `"${v.namn}"${v === a ? '' : ' (den första, granskningen hade fel)'}` : `bortvald: ${(a || b).fel.join('; ')}`}`);
         if (v) valda.push(v.d);
       }
-      if (!f.om) valda.forEach((d, i) => { d.id = f.lager === 'textur' ? `${f.grupp}-${i + 1}` : `${f.lager}-${i + 1}`; });
+      if (!f.om) valda.forEach((d, i) => { d.id = f.lager === 'textur' ? `${f.grupp}-${i + 1}` : f.tema ? `${f.lager}-${f.tema}-${i + 1}` : `${f.lager}-${i + 1}`; });
       else valda.splice(1);
       const per = summa / fr.length;
-      spara(f.lager, f.grupp, valda, s?.svar?.anteckning || svar[f.custom_id]?.svar?.anteckning || '', per, f.om);
+      spara(f.lager, f.grupp, valda, s?.svar?.anteckning || svar[f.custom_id]?.svar?.anteckning || '', per, f.om, f.tema);
     }
     console.log(rapport.join('\n'));
     console.log(`Det kostade ungefär ${summa.toFixed(2)} dollar. Bygg sidan igen: node bildstil/bygg.cjs`);

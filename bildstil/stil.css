@@ -299,3 +299,5 @@ details.mer p { color: var(--dim); max-width: 62ch; margin: 4px 0 0; }
 .bs-kortbilder figcaption { color: var(--dim); font-size: 14px; }
 #bs-granska .gr-sorter { margin: 4px 0; }
 @media (min-width: 781px) { #bestskapare .sk-scen { position: sticky; top: 8px; } }
+#bs-val .sk-rad.sk-utan { opacity: 0.4; }
+#bs-val .sk-rad.sk-utan .sk-namn { text-decoration: line-through; }

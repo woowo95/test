@@ -57,7 +57,11 @@
 
   // ---------- kroppen bestämmer var allt annat sitter ----------
   // h, f: höften och bogen där benen börjar; svans: svansroten; nacke: halsens början och slut (huvudet sitter i slutet);
-  // vinge: vingens rot; mitt: mitt på ryggen; lang: hur långt bak och fram skal och plattor räcker
+  // vinge: vingens rot; mitt: mitt på ryggen; lang: hur långt bak och fram skal och plattor räcker.
+  // Kroppsformer som inte är fyrbenta: former (fler former i bålen, t.ex. en orms kropp), benpar (lederna för benen,
+  // [x, y, 'bak' | 'fram'], om de inte är höften och bogen), delar (kroppens egna delar, t.ex. ett snäckskal: former,
+  // material, z 'bak' | 'skal' | 'ovan', rygg om plattorna ska stå på dem) och utan (lagren som inte passar kroppen;
+  // de ritas inte och är gråa i väljaren). Allt i kroppens koordinater, utan OY.
   const KROPPAR = [
     { id: 'rovdjur', namn: 'Rovdjur', text: 'tunga skuldror, smal midja och huvudet lågt framåt',
       bal: [[38, 46], [44, 39], [54, 40], [62, 35], [70, 28], [78, 28], [84, 33], [87, 42], [84, 52], [76, 56], [66, 53], [56, 51], [48, 53], [40, 52], [35, 49]],
@@ -65,6 +69,34 @@
     { id: 'odla', namn: 'Ödla', text: 'lång och låg, med magen nära marken och halsen rak fram',
       bal: [[34, 56], [40, 50], [52, 47], [66, 47], [78, 49], [85, 54], [84, 60], [74, 64], [56, 65], [42, 64], [35, 61]],
       nacke: [[80, 53], [93, 50]], nackeR: [7.5, 5.5], h: [44, 59], f: [76, 59], svans: [36, 56], vinge: [66, 49], lang: [38, 84] },
+    { id: 'orm', namn: 'Lindorm', text: 'en orm utan ben som ligger i bågar längs marken och reser framkroppen', ny: true, utan: ['ben', 'svans'],
+      former: [{ typ: 'kapsel', pts: [[5, 71], [13, 69], [22, 66], [30, 60], [38, 57], [46, 61], [54, 66], [62, 64], [69, 57], [74, 49], [77, 43]], r: [1, 2.4, 3.8, 4.8, 5.4, 6, 6.6, 7, 7, 6.8, 6.5] }],
+      nacke: [[77, 45], [89, 34]], nackeR: [6.5, 5.5], h: [42, 61], f: [64, 63], svans: [9, 70], vinge: [57, 58], lang: [26, 80] },
+    { id: 'snigel', namn: 'Snäckbest', text: 'en jättesnigel på en slemmig fot, med ett snäckskal i spiral på ryggen', ny: true, utan: ['ben', 'svans', 'skal'],
+      former: [{ typ: 'kapsel', pts: [[20, 71], [30, 68.5], [46, 67], [64, 67], [75, 64.5], [82, 58]], r: [2, 4.5, 6, 6, 5.8, 5.4] }],
+      nacke: [[81, 61], [89, 50]], nackeR: [5.5, 5], h: [40, 67], f: [70, 65], svans: [22, 70], vinge: [52, 26], lang: [32, 74],
+      delar: [{ former: [{ typ: 'ell', c: [51, 44], r: [21, 20] }], mat: 'skal', z: 'skal', rygg: true,
+        // spiralen: en mörk fåra och en ljus kant som vrider sig in mot mitten, och mynningen nertill fram
+        monster(x, y) {
+          const dx = x + 0.5 - 51, dy = y + 0.5 - 44 - OY, rr = Math.hypot(dx, dy), a = Math.atan2(dy, dx);
+          if (rr < 2) return -1;
+          const t = rr / 6.6 - a / (2 * Math.PI), f = t - Math.floor(t);
+          if (f < 0.11) return -2;
+          if (f < 0.24) return -1;
+          if (f > 0.86) return 1;
+          return (Math.floor(rr * 1.4 + a * 3) % 5 === 0) ? -1 : 0;
+        } }] },
+    { id: 'skoldpadda', namn: 'Sköldpadda', text: 'en tung jättesköldpadda med ett välvt skal av plattor och korta pelarben', ny: true, utan: ['skal'],
+      bal: [[34, 54], [42, 48], [60, 46], [78, 48], [86, 54], [84, 62], [72, 65], [50, 66], [38, 63]],
+      nacke: [[78, 55], [92, 49]], nackeR: [6.5, 5.5], h: [44, 58], f: [74, 58], svans: [36, 56], vinge: [58, 30], lang: [32, 86],
+      delar: [{ former: [{ typ: 'poly', pts: [[29, 57], [31, 47], [38, 38], [48, 32], [60, 30], [72, 32], [81, 38], [87, 47], [89, 57], [80, 59.5], [60, 60.5], [38, 59.5]] }],
+        mat: 'skal', z: 'skal', rygg: true,
+        // plattorna: celler med mörka fogar, och kanten nertill i en egen rad av små plattor
+        monster(x, y) {
+          if (y - OY >= 55) return (x % 5 === 0) ? -2 : y - OY === 55 ? -1 : 0;
+          const c = celler(x, y * 1.25, 10, 31);
+          return c.d2 - c.d1 < 1.1 ? -2 : c.d1 < 2.5 ? 1 : 0;
+        } }] },
   ];
 
   // ---------- delarna i varje lager ----------
@@ -486,6 +518,8 @@
     return (x, y) => { const rad = Math.floor(y / h), r = R[((y % h) + h) % h], c = r[(((x + rad * sk) % w) + w) % w]; return c in TECKEN && c !== '.' ? TECKEN[c] : tomt; };
   };
   const matAv = (m, annars) => (MATERIAL.includes(m) ? m : annars);
+  // lagren som en kroppsform får vara utan
+  const KAN_SAKNAS = ['ben', 'svans', 'vingar', 'horn', 'skal', 'plattor', 'hard', 'pryd'];
   // fästpunkterna som förhårdnader och prydnader kan sitta vid; led och skena finns en gång per ben
   const ankare = (A, n) => {
     if (n === 'led') return A.leder;
@@ -552,7 +586,10 @@
       return t;
     },
     farg: d => ({ m: Object.fromEntries(MATERIAL.map(k => { const v = d.m?.[k]; return [k, Array.isArray(v) && RAMPER.some(r => r[0] === v[0]) ? [v[0], Math.max(0, Math.min(3, v[1] | 0))] : FARGER[0].m[k]]; })) }),
-    kropp: d => ({ bal: d.bal, nacke: d.nacke, nackeR: d.nackeR, h: d.h, f: d.f, svans: d.svans, vinge: d.vinge, lang: d.lang }),
+    kropp: d => ({ bal: d.bal, former: d.former, nacke: d.nacke, nackeR: d.nackeR, h: d.h, f: d.f, svans: d.svans, vinge: d.vinge, lang: d.lang,
+      benpar: Array.isArray(d.benpar) && d.benpar.length ? d.benpar.filter(b => Array.isArray(b) && b.length >= 2).map(b => [b[0], b[1], b[2] === 'bak' ? 'bak' : 'fram']) : undefined,
+      utan: (d.utan || []).filter(l => KAN_SAKNAS.includes(l)),
+      delar: (d.delar || []).map(p => ({ former: p.former, mat: matAv(p.mat, 'skal'), z: ['bak', 'skal', 'ovan'].includes(p.z) ? p.z : 'skal', rygg: !!p.rygg, kontur: p.kontur !== false, lyser: !!p.lyser, monster: monsterAv(p.monster) || undefined })) }),
     horn: d => ({ horn: ([ax, ay]) => formerAv(d.former, ax, ay), monster: monsterAv(d.monster) || undefined }),
     svans: d => ({ svans: ([bx, by]) => ({ mask: fyll(formerAv(d.former, bx, by)), spets: d.spets ? [bx + d.spets[0], by + d.spets[1]] : undefined,
       delar: (d.delar || []).map((p, i) => ({ mask: fyll(formerAv(p.former, bx, by)), mat: matAv(p.mat, 'hard'), kontur: p.kontur !== false, lyser: !!p.lyser, monster: monsterAv(p.monster), z: Z.klubba + i * 0.01 })) }) }),
@@ -611,7 +648,13 @@
     for (const d of fil.delar || []) { try { REG[lager].push(apiDel(lager, d)); } catch (e) { console.warn('bestskaparen: kunde inte läsa', lager, d.id, e); } }
   }
   // kropparna (de handgjorda och API:ts) är skrivna utan OY och flyttas ner här
-  const nerOY = K => { K.bal = flytta(K.bal, 0, OY); K.nacke = flytta(K.nacke, 0, OY); for (const k of ['h', 'f', 'svans', 'vinge']) K[k] = [K[k][0], K[k][1] + OY]; };
+  // (formerna i former och delar flyttas när de ritas)
+  const nerOY = K => {
+    if (K.bal) K.bal = flytta(K.bal, 0, OY);
+    K.nacke = flytta(K.nacke, 0, OY);
+    for (const k of ['h', 'f', 'svans', 'vinge']) K[k] = [K[k][0], K[k][1] + OY];
+    K.benpar = K.benpar ? K.benpar.map(([x, y, s]) => [x, y + OY, s]) : [[...K.h, 'bak'], [...K.f, 'fram']];
+  };
   KROPPAR.forEach(nerOY);
 
   // ---------- registret: lagren i den ordning de väljs ----------
@@ -630,7 +673,11 @@
     { id: 'pryd', namn: 'Prydnader', delar: PRYDNADER },
     { id: 'farg', namn: 'Färger', delar: FARGER, maste: true },
   ];
-  const dels = (val, id) => { const L = LAGER.find(l => l.id === id); return L.delar.find(d => d.id === val[id]) || null; };
+  const delAv = (val, id) => { const L = LAGER.find(l => l.id === id); return L.delar.find(d => d.id === val[id]) || null; };
+  // lagren som den valda kroppen är utan (de ritas inte, men valet står kvar till nästa kropp)
+  const utanFor = val => new Set(delAv(val, 'kropp')?.utan || []);
+  const passar = (val, id) => !utanFor(val).has(id);
+  const dels = (val, id) => (passar(val, id) ? delAv(val, id) : null);
 
   // ---------- en del i bilden: kontur, skuggning och mönster ----------
   function mala(L, d, fr) {
@@ -677,8 +724,8 @@
     const D = [], TX = dels(val, 'textur'), hud = (...a) => TX.yta(...a);
     const lagg = (d, z, extra = {}) => D.push({ mat: 'kropp', ...d, z: d.z ?? z, ...extra });
     // kroppen: bålen, halsen, skallen och svansen är en form, utan kontur mellan dem
-    const bal = fyll(poly(K.bal)), nacke = fyll(kapsel(K.nacke, K.nackeR));
-    const hu = HU.huvud(K.nacke[1]), sv = SV.svans(K.svans);
+    const bal = fyll(eller(K.bal ? poly(K.bal) : () => false, formerAv(K.former, 0, OY))), nacke = fyll(kapsel(K.nacke, K.nackeR));
+    const hu = HU.huvud(K.nacke[1]), sv = SV ? SV.svans(K.svans) : { mask: null };
     const kropp = ihop(bal, nacke, hu.skalle, sv.mask);
     const kroppF = TX.form ? TX.form(kropp) : kropp;
     lagg({ mask: kroppF, monster: hud }, Z.kropp);
@@ -689,9 +736,14 @@
       lagg({ mask: fyll(eller(ell(cx, cy, 6, 5), poly([[cx - 2, cy - 4], [cx, cy - 9], [cx + 2, cy - 4]]), poly([[cx - 5, cy - 1], [cx - 10, cy - 2], [cx - 5, cy + 2]]), poly([[cx - 2, cy + 4], [cx - 1, cy + 8], [cx + 2, cy + 4]]))), mat: 'hard' }, Z.klubba);
     }
     if (sv.delar) sv.delar.forEach(p => lagg(p, Z.klubba));
-    // benen: de bortre lite förskjutna och mörkare
-    const leder = [], skenor = [], narBen = [];
-    for (const [J, bak, far, dx] of [[K.h, true, true, 5], [K.f, false, true, -5], [K.h, true, false, 0], [K.f, false, false, 0]]) {
+    // kroppens egna delar (skal och annat som hör till kroppsformen)
+    const egna = (K.delar || []).map(p => ({ mask: fyll(formerAv(p.former, 0, OY)), mat: p.mat, kontur: p.kontur, lyser: p.lyser, rygg: p.rygg,
+      monster: p.mat === 'kropp' ? hud : p.monster, z: p.z === 'bak' ? Z.platta - 0.5 : p.z === 'ovan' ? Z.man - 0.5 : Z.skal - 0.1 }));
+    egna.forEach(p => lagg(p, p.z));
+    // benen: de bortre lite förskjutna och mörkare (en kropp kan ha fler benpar, eller inga)
+    const leder = [], skenor = [], narBen = [], benplats = [];
+    if (BE) for (const far of [true, false]) for (const [x, y, s] of K.benpar) { const bak = s === 'bak'; benplats.push([[x, y], bak, far, far ? (bak ? 5 : -5) : 0]); }
+    for (const [J, bak, far, dx] of benplats) {
       const b = BE.ben([J[0] + dx, J[1] - (far ? 1 : 0)], bak, far);
       const zb = far ? Z.farBen : Z.ben;
       const bm = TX.form ? TX.form(b.mask, true) : b.mask;
@@ -701,8 +753,8 @@
       if (!far) { leder.push(...b.leder); skenor.push(b.skena); }
     }
     // skalet och plattorna längs ryggen
-    let rygg = ihop(bal);
-    if (SK) { const s = SK.skal(K, bal); lagg({ mask: s.mask, mat: 'skal', monster: s.monster }, Z.skal); rygg = ihop(bal, s.mask); }
+    let rygg = ihop(bal, ...egna.filter(p => p.rygg).map(p => p.mask));
+    if (SK) { const s = SK.skal(K, bal); lagg({ mask: s.mask, mat: 'skal', monster: s.monster }, Z.skal); rygg = ihop(rygg, s.mask); }
     if (PL) {
       const rx0 = PL.hela ? K.svans[0] - 10 : K.lang[0], rx1 = PL.hela ? K.nacke[1][0] - 2 : K.lang[1] - 4;
       const r = ryggen(ihop(rygg, nacke, PL.hela ? sv.mask : null), rx0, rx1);
@@ -753,7 +805,7 @@
   Object.assign(val, { horn: 'bakat', plattor: 'taggar' });
   let spegel = false;
   const duk = rot.querySelector('#bs-bild'), text = rot.querySelector('#bs-text'), valen = rot.querySelector('#bs-val');
-  const beskriv = v => LAGER.map(l => { const d = l.delar.find(x => x.id === v[l.id]); return `${l.namn}: ${d ? d.namn.toLowerCase() : 'inget'}`; }).join(' · ');
+  const beskriv = v => LAGER.filter(l => passar(v, l.id)).map(l => { const d = l.delar.find(x => x.id === v[l.id]); return `${l.namn}: ${d ? d.namn.toLowerCase() : 'inget'}`; }).join(' · ');
   // delarna Björn sagt nej till syns inte i väljaren och slumpas inte; de godkända får ✓ (granskningen nedan fyller i dem)
   const NEJ = new Set(), JA = new Set(), nyckel = (l, d) => l + '/' + d;
   // versionerna av en handgjord del (samma grupp) står direkt efter den
@@ -763,12 +815,20 @@
     tillCanvas(ritaBest(val, spegel), duk, 0);
     text.textContent = beskriv(val);
     valen.querySelectorAll('button[data-lager]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.del === (val[b.dataset.lager] ?? ''))));
+    // lagren som kroppen är utan blir gråa
+    const K = delAv(val, 'kropp');
+    valen.querySelectorAll('.sk-rad[data-rad]').forEach(r => {
+      const ut = !passar(val, r.dataset.rad);
+      r.classList.toggle('sk-utan', ut);
+      r.querySelector('.sk-namn').title = ut ? `Passar inte med kroppen ${K.namn.toLowerCase()}` : '';
+      r.querySelectorAll('button').forEach(b => { b.disabled = ut; });
+    });
   }
   // väljaren: en knapp per del i registret (de handgjorda, versionerna och API:ts delar), byggs om när svaren ändras
   function byggValjare() {
     valen.textContent = '';
     for (const l of LAGER) {
-      const rad = document.createElement('div'); rad.className = 'sk-rad';
+      const rad = document.createElement('div'); rad.className = 'sk-rad'; rad.dataset.rad = l.id;
       const n = document.createElement('span'); n.className = 'sk-namn'; n.textContent = l.namn;
       const chips = document.createElement('div'); chips.className = 'sk-chips';
       const knapp = (del, namn, titel) => { const b = document.createElement('button'); b.type = 'button'; b.dataset.lager = l.id; b.dataset.del = del; b.textContent = namn; if (titel) b.title = titel; chips.append(b); };
@@ -785,7 +845,17 @@
   });
   rot.querySelector('#bs-spegla').addEventListener('click', e => { spegel = !spegel; e.currentTarget.setAttribute('aria-pressed', String(spegel)); visa(); });
   // alla lager utom ett får en slumpad del (utom = null slumpar alla)
-  const slumpaUtom = (v, utom) => { for (const l of LAGER) { if (l.id === utom) continue; const m = l.delar.filter(d => !NEJ.has(nyckel(l.id, d.id))).map(d => d.id); if (!l.maste) m.push(null); v[l.id] = m[Math.floor(Math.random() * m.length)]; } return v; };
+  // (kroppen väljs bland dem som passar med den del som står kvar)
+  const slumpaUtom = (v, utom) => {
+    for (const l of LAGER) {
+      if (l.id === utom) continue;
+      let m = l.delar.filter(d => !NEJ.has(nyckel(l.id, d.id)));
+      if (l.id === 'kropp' && utom) m = m.filter(d => !(d.utan || []).includes(utom));
+      m = m.map(d => d.id); if (!l.maste) m.push(null);
+      v[l.id] = m[Math.floor(Math.random() * m.length)];
+    }
+    return v;
+  };
   rot.querySelector('#bs-slumpa').addEventListener('click', () => { slumpaUtom(val, null); visa(); });
   visa();
 
@@ -881,6 +951,7 @@
     const nav = `<nav class="gr-nav" aria-label="Bläddra bland korten"><button type="button" class="gr-knapp" data-bssteg="-1">‹ Förra</button><span>${pos} av ${synliga.length}</span><button type="button" class="gr-knapp" data-bssteg="1">Nästa ›</button></nav>`;
     if (nytt || bkVisad !== k.id || !gr.querySelector('.bs-kortbilder')) {
       bkVal = { ...val, [k.lager.id]: k.del.id };
+      if (!passar(bkVal, k.lager.id)) bkVal.kropp = KROPPAR.find(d => !(d.utan || []).includes(k.lager.id)).id;
       const h = handFor(k), s = SVAR[k.id], forra = !bkSvar(k) && s?.kommentar ? s.kommentar : k.del.forra;
       gr.innerHTML = `${nav}<header><span class="typ">${esc(k.lager.namn)} · ${k.del.api ? 'ritad av Claude API:t' : 'handgjord'}${h ? ' · version av ' + esc(h.namn.toLowerCase()) : ''}</span>
         <h3>${esc(k.del.namn)}</h3><p class="not">${esc(k.del.text)}</p>${forra ? `<p class="forra">Din kommentar förra gången: ${esc(forra)}</p>` : ''}</header>
