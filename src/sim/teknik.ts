@@ -144,7 +144,7 @@ export const TEKNIK: Tek[] = [
   { id: 'lyra', namn: 'Lyra', text: 'En ram av trä med strängar av rep som man knäpper på.', effekt: 'Sången och musiken till lyran gör publiken gladare än med andra instrument.',
     omr: ['upptrada', 'hantverk'], krav: ['scen', 'rep', 'snickarbank'], niva: 4, tid: 6 },
   // pyntet (steg 4.3.4, pynt.ts): lerkrukan, bonaden och det snidade väggbrädet i rummet där man sover; varje möbel är sin egen teknik
-  { id: 'kruka', namn: 'Lerkruka', text: 'En kruka av lera från stranden, formad för hand och bränd i elden, bara för att vara vacker.', effekt: 'Den som tycker om krukor ställer en där den sover, trivs där, och de som ser den tycker bättre om ägaren.',
+  { id: 'kruka', namn: 'Lerkruka', text: 'En kruka av lera från stranden med sand i, uppbyggd för hand, torkad och bränd i elden.', effekt: 'Den som tycker om krukor ställer en där den sover, trivs där, och de som ser den tycker bättre om ägaren.',
     omr: ['hantverk', 'bygga'], krav: ['timmervagg'], niva: 3, tid: 4 },
   { id: 'bonad', namn: 'Bonad', text: 'Ett skinn som hängs på väggen, med mönster och fransar av rep.', effekt: 'Den som tycker om bonader hänger en där den sover, trivs där, och de som ser den tycker bättre om ägaren.',
     omr: ['hantverk', 'bygga'], krav: ['timmervagg', 'rep'], niva: 3, tid: 4 },

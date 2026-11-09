@@ -183,6 +183,7 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   spjut: spjutVill,
   metspo: spjutVill, // ett metspö per spjut
   korg: s => perVuxna(s, VILLTAL.korgPerVuxna, VILLTAL.korgMin, VILLTAL.korgMax),
+  lerkruka: s => perVuxna(s, 3, 0, 6), // lerkrukorna (steg 9.4.11) tills 9.4.12 räknar dem ur hur mycket de används
   kniv: s => VILLTAL.knivar + tommaPlatser(s, 'kniv'), // och en till för en tom knivplats vid slaktbänken
   bensyl: s => tommaPlatser(s, 'bensyl'), // en till slöjdbänken (steg 2.3.2)
   rock: s => living(s).length, // en per person (steg 2.3.2), av vilket material som helst (klader.ts)

@@ -242,11 +242,7 @@ export const STATIONER = {
   },
   // pyntet (steg 4.3.4, pynt.ts): var och en bygger ett åt sig själv, i rummet där hen sover, och sorten följer smaken
   // (pyntSort). Ägaren trivs där, och de som ser det tycker bättre om hen, mer ju finare det är
-  kruka: {
-    namn: 'Lerkruka', ikon: 'kruka', w: 1, h: 1, tek: ['kruka'], av: RECEPT.kruka.av, min: RECEPT.kruka.min, gor: [], inne: true, mobel: true, flera: true, pynt: true,
-    bygger: 'Formar en lerkruka av lera från stranden och bränner den i elden.',
-    forsta: '{namn} formade byns första lerkruka och ställde den där {han} sover. Den är bara till för att vara vacker.',
-  },
+
   bonad: {
     namn: 'Bonad', ikon: 'bonad', w: 1, h: 1, tek: ['bonad'], av: RECEPT.bonad.av, min: RECEPT.bonad.min, gor: [], inne: true, mobel: true, flera: true, pynt: true,
     bygger: 'Ritar ett mönster på ett skinn och hänger upp det som en bonad.',

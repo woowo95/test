@@ -36,7 +36,6 @@ export const RT = balans('recept', {
   grillGrenar: 3, grillRep: 1, grillMin: 15, // grillen: så många grenar och rep och så många minuters arbete
   torkGrenar: 5, torkRep: 1, torkMin: 20, // torkställningen: så många grenar och rep och så många minuters arbete
   brasaSten: 6, brasaMin: 15, // en lägereld till: så många stenar (som lägereldens ring) och så många minuters arbete
-  krukaMin: 15, // lerkrukan: lera från stranden (ingen resurs), formad och bränd i elden på så många minuter
   bonadSkinn: 1, bonadRep: 1, bonadMin: 12, // bonaden: ett skinn med mönster, upphängt i ett rep
   bradeVirke: 1, bradeMin: 15, // det snidade väggbrädet: ett virke
   skinndorrSkinn: 2, // en skinndörr görs av så många skinn ...
@@ -136,7 +135,7 @@ const DEF = {
   tork: { var: 'station', av: { grenar: RT.torkGrenar, rep: RT.torkRep }, min: RT.torkMin },
   brasa: { var: 'station', av: { sten: RT.brasaSten }, min: RT.brasaMin },
   scen: { var: 'station', av: { virke: RT.scenVirke }, min: RT.scenMin },
-  kruka: { var: 'station', av: {}, min: RT.krukaMin },
+  lerkruka_liten: { var: 'sak', av: { lera: 1 }, min: 3, slag: 'liten', tek: 'kruka' }, lerkruka_mellan: { var: 'sak', av: { lera: 2 }, min: 4, slag: 'liten', tek: 'kruka' }, lerkruka_stor: { var: 'sak', av: { lera: 4 }, min: 6, slag: 'liten', tek: 'kruka' }, // lerkrukan i tre storlekar (steg 9.4.11, KRUKOR i kruka.ts): byggs upp för hand av lera med sand i
   bonad: { var: 'station', av: { skinn: RT.bonadSkinn, rep: RT.bonadRep }, min: RT.bonadMin },
   vaggbrade: { var: 'station', av: { virke: RT.bradeVirke }, min: RT.bradeMin },
   // tillbehören (stationer.ts) och dörrarna (byggnad.ts)

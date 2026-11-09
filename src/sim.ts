@@ -117,3 +117,4 @@ export * from './sim/djurstrid';
 export * from './sim/sjukdom';
 export * from './sim/personlogg';
 export * from './sim/lera';
+export * from './sim/kruka';

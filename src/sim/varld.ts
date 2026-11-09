@@ -261,6 +261,12 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
   [29, 'v521: örtköket står i tre delar (steg 9.4.3): härden, torkstället och bänken i en rad där örtköket stod', s => {
     for (const t of s.stationer ?? []) if (t.k === 'ortkok' && !t.delar?.length) { const d = delarIRad(t.k, t.x, t.y, t.rot); if (d) t.delar = d; }
   }],
+  [30, 'v521: pyntet lerkruka (steg 4.3.4) är inte längre en möbel: varje lerkruka blir en stor lerkruka (steg 9.4.11) på samma plats, med samma ägare och kvalitet', s => {
+    for (const t of (s.stationer ?? []).filter(q => q.k === 'kruka')) {
+      if (t.kvar <= 0) (s.ting ??= []).push({ id: s.nextTing = (s.nextTing ?? 0) + 1, k: 'lerkruka_stor', c: 1, agare: t.ag ?? 0, x: t.x, y: t.y, ...(t.q !== undefined ? { q: t.q } : {}) }); // ägaren, eller byn (0)
+    }
+    s.stationer = (s.stationer ?? []).filter(q => q.k !== 'kruka');
+  }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

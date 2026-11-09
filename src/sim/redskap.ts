@@ -1,3 +1,4 @@
+import { krukaAv, krukaFormad } from './kruka';
 import type { DjurStrid } from './strid';
 import { KROPP, count, doingAct, forstaGang, gjort, living, log } from './folk';
 import { knows } from './teknik';
@@ -269,6 +270,7 @@ export function makeTask(s: State, p: Person, g: string) {
 // plagg (och en vattensäck) sys med bänkens bensyl, och den slits för varje (REDSKAP.bensylSlits)
 export function toolDone(s: State, p: Person, k: string) {
   const t = addTool(s, k, p); t.av = p.id; t.gjord = s.now; // vem som gjorde det och när (inforutan, steg 2.3.5)
+  if (krukaAv(k)) krukaFormad(t); // lerkrukan ska torka och brännas (steg 9.4.11, kruka.ts)
   nyKvalitet(s, p, t, p.task ? kvVid(s, p, p.task.act) : 0, sakNamn(k).toLowerCase()); // hur bra det blev (kvalitet.ts)
   nyttVid(s, t); gjort(s, p, 'gjort');
   slitVid(s, gruppOf(k) as Act, REDSKAP.bensylSlits); // det som kräver bänkens redskap (plaggen och vattensäcken), efter arbetet och inte saken
