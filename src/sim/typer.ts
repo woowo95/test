@@ -133,6 +133,7 @@ export interface Task {
   path?: number[]; // rutorna kvar att gå längs vägen (steg.ts, walk)
   runda?: number; varv?: number; stopp?: number; vidEld?: boolean; // vaktens runda: stoppet hen är vid, antal stopp sedan elden, när stoppet är slut, om hen står vid elden (vakt.ts)
   kring?: { x: number; y: number }; // promenaden: mitten av området man går runt i (steg 6.2.8, turSteg i steg.ts)
+  rikt?: number; // promenaden: riktningen man går åt (radianer, steg 9.2.84); nästa punkt väljs ungefär åt samma håll
   hopp?: boolean; plock?: number; sett?: number[]; // rundan (steg 4.5.6.1, steg.ts): på väg till nästa ruta, sekunder kvar av stoppet, rutorna man nyss plockat på
   letat?: number; // på rundan (steg 9.2.55): sekunder som gåtts sedan förra plocket; det man hittar under tiden (ägg, mossa, hö) räknas på dem
   pk?: string; // nyckeln som vägen gäller för: målet och byggversionen. Ändras den räknas vägen om

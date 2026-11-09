@@ -574,6 +574,7 @@ function walk(s: State, p: Person, tk: Task, left: number) {
     const bara = tk.phase === 'back' && !LAMNA[tk.act];
     if (!v && (tk.phase === 'go' || bara) && pathFor(s, g, p.x, p.y, f.x + 0.5, f.y + 0.5)) { avbryt(s, p); return { used: Math.min(left, BIT), framme: false }; }
     // nästa ruta på en runda eller promenad som inte går att nå (på andra sidan vattnet): rundan är slut, och man går inte rakt över
+    if (!v && tk.hopp && tk.kring) { tk.hopp = undefined; tk.tx = p.x; tk.ty = p.y; tk.pk = undefined; tk.rikt = (tk.rikt ?? 0) + Math.PI; return { used: Math.min(left, BIT), framme: false }; } // promenaden: man vänder bort från det som stängde vägen (steg 9.2.84)
     if (!v && tk.hopp) { tk.hopp = undefined; tk.tx = p.x; tk.ty = p.y; tk.pk = undefined; tk.until = Math.min(tk.until, s.now); return { used: Math.min(left, BIT), framme: false }; }
     tk.path = v ?? [];
   }
@@ -617,16 +618,35 @@ function turSteg(s: State, p: Person, tk: Task, left: number, n = 0): number {
   tk.tx = q.x + 0.5; tk.ty = q.y + 0.5; tk.hopp = true; tk.pk = undefined;
   return turSteg(s, p, tk, left, n + 1);
 }
-// nästa punkt på promenaden: en ruta på land inom r rutor från kring, inte den man står på, inte i en vägg, ett hus, vattnet
-// eller en station, och dit det finns en väg
+// nästa punkt på promenaden (steg 9.2.84): en lång rak sträcka (TUR.langd av r) ungefär åt samma håll som man redan går
+// (inom TUR.spann åt sidan), så att man inte vänder fram och tillbaka i en liten ruta. Skulle punkten hamna mer än r rutor från
+// kring vänder man in mot mitten. Punkten ligger på land, inte i en vägg, ett hus, vattnet eller en station, och dit finns en
+// väg. Går inget åt det hållet prövas de andra hållen, och sist bort från det man fastnat på (tk.rikt vänds i walk)
+const TUR = balans('promenad', { langd: 0.45, langdSpann: 0.3, spann: 0.5, ovrigt: 0.5, sving: 1.6 }); // sträckan som del av r, hur mycket den får svänga (radianer) först och sedan för varje försök, och svängen vid områdets kant
 function turPunkt(s: State, p: Person, tk: Task, r: number) {
-  const m = getMap(s.seed), g = groundOf(s), c = tk.kring!, hit = tileOf(p.x, p.y);
-  for (let k = 0; k < 8; k++) {
-    const h1 = hash3(p.id, k, Math.floor(s.now / SEC)), h2 = hash3(p.id + 7919, k, Math.floor(s.now / SEC));
-    const v = h1 * Math.PI * 2, d = 2 + h2 * (r - 2), x = Math.floor(c.x + Math.cos(v) * d), y = Math.floor(c.y + Math.sin(v) * d);
-    if (!inMap(x, y) || y * W + x === hit || m.tiles[y * W + x] === T.Vatten || m.tiles[y * W + x] === T.Sten || blocked(s, x + 0.5, y + 0.5) || stationAt(s, x, y)) continue;
-    if (pathFor(s, g, p.x, p.y, x + 0.5, y + 0.5)) return { x, y };
+  const m = getMap(s.seed), g = groundOf(s), c = tk.kring!, hit = tileOf(p.x, p.y), t = Math.floor(s.now / SEC);
+  tk.rikt ??= hash3(p.id, 31, t) * Math.PI * 2;
+  for (let k = 0; k < 10; k++) {
+    const h1 = hash3(p.id, k, t), h2 = hash3(p.id + 7919, k, t);
+    // de första försöken åt samma håll, sedan allt bredare
+    const bredd = k < 5 ? TUR.spann : TUR.spann + (k - 4) * TUR.ovrigt;
+    let v = tk.rikt + (h1 - 0.5) * 2 * bredd;
+    const d = r * (TUR.langd + h2 * TUR.langdSpann);
+    let x = p.x + Math.cos(v) * d, y = p.y + Math.sin(v) * d;
+    if (Math.hypot(x - c.x - 0.5, y - c.y - 0.5) > r) { // utanför området: man svänger av åt den sida som leder in, som längs en kant
+      const inV = Math.atan2(c.y + 0.5 - p.y, c.x + 0.5 - p.x), dv = Math.atan2(Math.sin(inV - tk.rikt), Math.cos(inV - tk.rikt));
+      v = tk.rikt + Math.sign(dv || 1) * TUR.sving + (h1 - 0.5) * TUR.spann;
+      x = p.x + Math.cos(v) * d; y = p.y + Math.sin(v) * d;
+    }
+    const tx = Math.floor(x), ty = Math.floor(y);
+    if (!inMap(tx, ty) || ty * W + tx === hit || m.tiles[ty * W + tx] === T.Vatten || m.tiles[ty * W + tx] === T.Sten || blocked(s, tx + 0.5, ty + 0.5) || stationAt(s, tx, ty)) continue;
+    if (pathFor(s, g, p.x, p.y, tx + 0.5, ty + 0.5)) {
+      const ny = Math.atan2(ty + 0.5 - p.y, tx + 0.5 - p.x), dv = Math.abs(Math.atan2(Math.sin(ny - tk.rikt), Math.cos(ny - tk.rikt)));
+      count(s, 'promStracka'); if (dv > Math.PI * 2 / 3) count(s, 'promVander'); // sträckorna och hur ofta man vänder (scenariot promenad)
+      tk.rikt = ny; return { x: tx, y: ty };
+    }
   }
+  tk.rikt += Math.PI; count(s, 'promVander'); // inget gick: nästa gång bort härifrån
   return undefined;
 }
 // där man ställer sig för att lägga på ved: nedanför elden, eller vid en annan sida om rutan nedanför är vatten eller en

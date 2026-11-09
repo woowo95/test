@@ -227,11 +227,11 @@ SCENARIER.fritid = {
 
 SCENARIER.promenad = {
   lang: true,
-  text: 'Promenaden är en riktig runda (steg 6.2.8): man går i vanlig fart mellan några punkter på land runt platsen man valt, stannar ibland och ser sig omkring, och går aldrig i vattnet, en vägg eller en station. Ingen svängning i bilden',
+  text: 'Promenaden är en riktig runda (steg 6.2.8): man går i vanlig fart mellan några punkter på land runt platsen man valt, stannar ibland och ser sig omkring, och går aldrig i vattnet, en vägg eller en station. Ingen svängning i bilden. Sträckorna är långa och raka och vänder sällan (steg 9.2.84)',
   kor: () => {
-    let prom = 0, punkter = 0, stopp = 0, land = true, langtFran = 0, maxR = 0;
+    let prom = 0, punkter = 0, stopp = 0, land = true, langtFran = 0, maxR = 0, strackor = 0, vander = 0, langd = 0, valda = 0;
     for (const seed of [5, 6]) {
-      const s = createState(seed, START), sett = new Map<object, Set<string>>();
+      const s = createState(seed, START), sett = new Map<object, Set<string>>(), forra = new Map<object, { x: number; y: number; v?: number }>();
       s.kal = nyKalender(s.now, 2); setFood(s, 40); setAmount(s, 'ved', 40);
       kor(s, 2 * 24, s => {
         for (const p of living(s)) {
@@ -240,6 +240,13 @@ SCENARIER.promenad = {
           let m = sett.get(t);
           if (!m) { sett.set(t, m = new Set()); prom++; }
           m.add(`${Math.floor(t.tx)},${Math.floor(t.ty)}`); // punkten man går till eller står vid (ett steg är fem minuter, så alla punkter syns inte)
+          // varje ny punkt är en sträcka: hur lång, och om den vänder mer än 120 grader mot den förra (steg 9.2.84)
+          const f = forra.get(t), nx = Math.floor(t.tx), ny = Math.floor(t.ty);
+          if (!f) forra.set(t, { x: nx, y: ny });
+          else if (f.x !== nx || f.y !== ny) {
+            const v = Math.atan2(ny - f.y, nx - f.x); strackor++; langd += Math.hypot(nx - f.x, ny - f.y);
+            forra.set(t, { x: nx, y: ny, v });
+          }
           if ((t.plock ?? 0) > 0) stopp++;
           if (t.kring) maxR = Math.max(maxR, Math.hypot(Math.floor(t.tx) - t.kring.x, Math.floor(t.ty) - t.kring.y));
           if (getMap(s.seed).tiles[tileOf(p.x, p.y)] === T.Vatten || SIM.isWall(s, p.x, p.y)) land = false;
@@ -247,6 +254,7 @@ SCENARIER.promenad = {
         }
       });
       for (const m of sett.values()) punkter += m.size;
+      vander += s.stat?.promVander ?? 0; valda += s.stat?.promStracka ?? 0; // varje sträcka räknas när den väljs; provet ovan ser bara var femte minut
     }
     const r = ACTS.promenad.tur!.r;
     return [
@@ -256,6 +264,8 @@ SCENARIER.promenad = {
       [`punkterna ligger inom ${r} rutor från platsen man valde (längst ${maxR.toFixed(1)})`, maxR <= r + 2], // en punkt i en vägg eller i vattnet flyttas till rutan bredvid
       ['den som promenerar går aldrig i vattnet eller i en vägg', land],
       ['promenaden svänger inte i bilden (ingen vandra i handlingens rad)', !ACTS.promenad.vandra],
+      [`sträckorna är långa (${(langd / Math.max(1, strackor)).toFixed(1)} rutor i snitt, minst 4)`, langd / Math.max(1, strackor) >= 4],
+      [`riktningen vänder sällan (${vander} av ${valda} sträckor vänder mer än 120 grader, högst en av fem)`, valda > 3 && vander <= valda / 5],
     ];
   },
 };
