@@ -21,6 +21,7 @@ import './scenarier/mastare';
 import './scenarier/kultur';
 import './scenarier/fas9';
 import { LANG_S, SCENARIER } from './scenarier/hjalp';
+import { gangLangsam, gangVakt } from '../sim/gang';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { Utfall, korSkript, pool, prioAv } from './pool';
 
@@ -48,7 +49,13 @@ async function korHar(namn: string) {
     process.stdout.write(u.out + u.err); if (u.code) process.exitCode = u.code;
     return;
   }
-  const cpu0 = process.threadCpuUsage(), k = sc.kor(), ok = k.every(([, b]) => b);
+  // vakten för långsam gång (steg 9.2.101): ett larm blir en kontroll som inte går igenom
+  let langsam: string | undefined, nLangsam = 0;
+  gangVakt.lyss = (s, p, rutor, mork) => { const t = gangLangsam(s, p, rutor, mork); if (t) { nLangsam++; langsam ??= t; } };
+  const cpu0 = process.threadCpuUsage(), k = sc.kor();
+  gangVakt.lyss = undefined;
+  if (langsam) k.push([`vakten: någon går mycket långsamt utan flera skäl (${nLangsam} ggr), första: ${langsam}`, false]);
+  const ok = k.every(([, b]) => b);
   const cpu = process.threadCpuUsage(cpu0), tid = ((cpu.user + cpu.system) / 1e6).toFixed(0);
   console.log(`${ok ? 'OK  ' : 'FEL '} ${namn} (${tid} s): ${sc.text}`);
   if (!sc.lang && Number(tid) >= LANG_S) console.log(`VARNING: ${namn} tar ${tid} s (processorns tid) och bör märkas lang: true (i sin fil i src/test/scenarier/)`);

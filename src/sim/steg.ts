@@ -55,7 +55,7 @@ import { ARSTID, VAR, ageIndex, hourOf, iIstiden, isLight } from './tid';
 import { ACTS, toolRow } from './handlingar';
 import { AGES_BORJAR, Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, Historik, simulera, T, inMap, GRANNAR4 } from './typer';
 import { FOREST, findPath, wear } from './vag';
-import { barKropp, kroppFart, rutFart, smidig, snoFart } from './gang';
+import { barKropp, gangVakt, kroppFart, rutFart, smidig, snoFart } from './gang';
 import { facklorTimme, finishLjus, finishUppsatt, morkFart, morkHumor } from './ljus';
 import { arbetsTimme, chooseTask, dangers, nastaBuske, nastaRedskap, spotFor } from './val';
 import { FAGEL, djurSteg } from './djur';
@@ -591,6 +591,7 @@ function walk(s: State, p: Person, tk: Task, left: number) {
     const sist = !tk.path?.length, i = sist ? 0 : tk.path![0];
     const wx = sist ? tk.mx ?? tk.tx : (i % W) + 0.5 + off, wy = sist ? tk.my ?? tk.ty : Math.floor(i / W) + 0.5 - off;
     const ci = tileOf(p.x, p.y), sp = rutFart(p, g, ci, sm) * morkFart(s, p) * (snoF < 1 && !roofed(s, p.x, p.y) ? snoF : 1); // i totalmörker går man långsammare (ljus.ts), och ute i snön
+    if (gangVakt.lyss) gangVakt.lyss(s, p, fart * sp, morkFart(s, p) < 1); // vakten i testerna (steg 9.2.101)
     const dx = wx - p.x, dy = wy - p.y, d = Math.hypot(dx, dy), can = budget * sp;
     wear(g, ci, MARK.nott * STEG.markNot * Math.min(d, can));
     if (d > can) { p.x += dx / d * can; p.y += dy / d * can; return { used: left, framme: false }; } // tiden räckte inte hela vägen
@@ -640,6 +641,7 @@ function turPunkt(s: State, p: Person, tk: Task, r: number) {
       const inV = Math.atan2(c.y + 0.5 - p.y, c.x + 0.5 - p.x), dv = Math.atan2(Math.sin(inV - tk.rikt), Math.cos(inV - tk.rikt));
       v = tk.rikt + Math.sign(dv || 1) * TUR.sving + (h1 - 0.5) * TUR.spann;
       x = p.x + Math.cos(v) * d; y = p.y + Math.sin(v) * d;
+      if (Math.hypot(x - c.x - 0.5, y - c.y - 0.5) > r) continue; // fortfarande utanför: nästa försök
     }
     const tx = Math.floor(x), ty = Math.floor(y);
     if (!inMap(tx, ty) || ty * W + tx === hit || m.tiles[ty * W + tx] === T.Vatten || m.tiles[ty * W + tx] === T.Sten || blocked(s, tx + 0.5, ty + 0.5) || stationAt(s, tx, ty)) continue;

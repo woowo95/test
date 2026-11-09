@@ -107,6 +107,18 @@ export function gangDelar(s: State, p: Person) {
   return { fart: f, rutor: GANG.fart * f, delar };
 }
 
+// vakten i testerna (steg 9.2.101): den som ritas gående (kan gå, inte kravlar) ska inte röra sig under VAKT_DEL av en frisk
+// vuxens fart om inte minst två saker saktar ner hen samtidigt (raderna i GANGFART som drar ner farten, och mörkret).
+// steg.ts frågar lyss för varje bit av vägen när testerna satt den; i spelet är den tom
+export const VAKT_DEL = 0.5;
+export const gangVakt: { lyss?: (s: State, p: Person, rutor: number, mork: boolean) => void } = {};
+export function gangLangsam(s: State, p: Person, rutor: number, mork: boolean): string | undefined {
+  if (!kanGa(p) || rutor >= GANG.fart * VAKT_DEL) return undefined;
+  const d = gangDelar(s, p).delar.filter(x => x.v < -1e-9), n = d.length + (mork ? 1 : 0);
+  if (n >= 2) return undefined;
+  return `${p.name} (${p.task?.act ?? 'inget'}) går ${rutor.toFixed(2)} rutor i sekunden: ${[...d.map(x => `${x.namn} ${Math.round((1 + x.v) * 100)} %`), ...(mork ? ['mörker'] : [])].join(', ') || 'inget saktar ner'}`;
+}
+
 // lek och sport (steg 9.2.91): man rör sig på platsen i sin vanliga gångfart (rutor i sekunden, kroppFart) till en ny punkt
 // högst r rutor bort och står sedan still där tills nästa förflyttning, hellre än att glida runt mycket långsamt. Bara i bilden:
 // punkterna kommer ur personens id och tiden t (millisekunder), så att bilden blir densamma varje gång

@@ -982,6 +982,34 @@ SCENARIER.snogang = {
     ];
   },
 };
+SCENARIER.gangvakt = {
+  text: 'Vakten för långsam gång (steg 9.2.101): den som ritas gående och rör sig under hälften av en frisk vuxens fart larmar i npm test och i scenarierna, om inte minst två saker saktar ner hen samtidigt (snö, börda, skada, ålder, mörker). Den som kravlar ritas liggande och räknas inte',
+  kor: () => {
+    const { GANG, VAKT_DEL, gangLangsam, gangVakt, skada, ALDER } = SIM;
+    const s = createState(3, START), [p, q, k] = living(s).filter(x => ageOf(x, s.now) >= 18 && ageOf(x, s.now) <= ALDER.gangGammal);
+    const langsamt = GANG.fart * VAKT_DEL * 0.9;
+    // alla tre på en ruta där marken inte saktar ner (kort gräs eller en stig)
+    for (let i = 0; i < SIM.W * SIM.W; i++) {
+      p.x = (i % SIM.W) + 0.5; p.y = Math.floor(i / SIM.W) + 0.5;
+      if (SIM.inMap(p.x, p.y) && !SIM.gangDelar(s, p).delar.length) break;
+    }
+    q.x = k.x = p.x; q.y = k.y = p.y;
+    const frisk = gangLangsam(s, p, langsamt, false), friskFort = gangLangsam(s, p, GANG.fart, false);
+    // ett barn: en sak saktar ner (åldern); i mörkret två
+    q.born = s.now - 4 * DAY;
+    const barn = gangLangsam(s, q, langsamt, false), barnMork = gangLangsam(s, q, langsamt, true);
+    skada(s, k, 'benH', 'benbrott', 0.9, 'olycka', '');
+    const kravlar = gangLangsam(s, k, GANG.krypFart * GANG.fart, false);
+    return [
+      [`vakten är inkopplad i scenarierna (${gangVakt.lyss ? 'ja' : 'nej'})`, !!gangVakt.lyss],
+      [`en frisk vuxen som rör sig under halva farten larmar: ${frisk ?? 'inget larm'}`, !!frisk],
+      ['... men inte i vanlig fart', !friskFort],
+      [`ett barn med bara åldern som skäl larmar (${barn ? 'ja' : 'nej'}), i mörkret inte (${barnMork ? 'larm' : 'inget larm'})`, !!barn && !barnMork],
+      [`den som kravlar räknas inte (${kravlar ? 'larm' : 'inget larm'})`, !kravlar],
+    ];
+  },
+};
+
 SCENARIER.gangfart = {
   text: 'Gångfarten i ett register (steg 3.10.10): åldern, skadade ben och fötter, yrseln, att kravla, att bära någon, marken, saker på golvet och smidigheten är rader i GANGFART som multipliceras. Ingen går väldigt långsamt (steg 6.2.7): marken bromsar som mest till 0,75, barn och gamla går 0,75 av en vuxens fart, krypandet 0,3 och marken drar inte ner det, skadade ben aldrig under GANG.rorGolv, och personrutan visar det som drar ner farten just nu',
   kor: () => {

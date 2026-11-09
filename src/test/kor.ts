@@ -5,6 +5,7 @@ import { forLangtArbete } from '../sim/tider';
 import { husFel, BEAT, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, vattenNu, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP, forvarAt, isTool, faltOf, faltRutor, faltAt, stationById, gridOf, getMap, djurOf, vargarOf, MATERIAL } from '../sim';
 import { NYCKELTAL, Nyckeltal, tal } from './nyckeltal';
 import { lyssnaPaTexter } from '../sim/berattelser';
+import { gangLangsam, gangVakt } from '../sim/gang';
 import { kollaText, konI, titta } from './textkoll';
 
 // testbyarna grundas 08:00 svensk tid. Testerna körs i datorns tidszon (här UTC), så där är klockan 06:00 när byn grundas
@@ -28,6 +29,8 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
   const fel = new Map<string, { n: number; forsta: string }>();
   // texten görs bara första gången ett larm går, så att vakterna inte tar tid när allt är rätt
   const larm = (typ: string, text: () => string) => { const f = fel.get(typ); if (f) f.n++; else fel.set(typ, { n: 1, forsta: `dag ${dag()}: ${text()}` }); };
+  // ingen rör sig mycket långsamt med gånganimationen utan flera skäl (steg 9.2.101)
+  gangVakt.lyss = (s, p, rutor, mork) => { const t = gangLangsam(s, p, rutor, mork); if (t) larm('långsam gång', () => t); };
   const sedda = new WeakSet<object>(); // arbetena som vakten för arbetstiderna redan sett (steg 9.2.63)
   let hunger = 0, humor = 0, humorN = 0, lit = 0, steg = 0, vintermat = Infinity, vinterved = Infinity, forraAlder = ageIndex(s);
   const ok01 = (v: number) => Number.isFinite(v) && v >= -1e-6 && v <= 1 + 1e-6;
