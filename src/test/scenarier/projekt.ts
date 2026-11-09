@@ -3,6 +3,8 @@ import { createState, living, ageOf, ALDER, chooseTask, dangers, GORS, STATION_L
 import * as SIM from '../../sim';
 import { START } from '../kor';
 import { setItems, setFood, SCENARIER, medBank, kor, byggKlart } from './hjalp';
+import { setByn } from '../../ui/lage';
+import { pabudDel } from '../../ui/flikar/styre';
 
 // en by där alla vuxna kan allt, med material till allt och elden tänd mitt på dagen
 function by(seed: number) {
@@ -129,7 +131,13 @@ SCENARIER.arbetspabud = {
     SIM.arbetsTimme(s); const utan = { ...s.arbBehov!.arb }, byggUtan = SIM.pabud(s, 'bygg');
     s.styre.pabud = { bygg: 1, vinter: 1 };
     SIM.arbetsTimme(s); const med = { ...s.arbBehov!.arb }, byggMed = SIM.pabud(s, 'bygg');
+    // i ord i Styre (steg 9.2.123): hur ofta och hur många fler, inte procent; ledaren vill under det lägsta värdet: ingen pil
+    setByn(s); const html = pabudDel();
+    s.styre.pabud = { bygg: -1, vinter: -1 }; const lag = pabudDel();
+    const ord = /<b>(alltid|ofta|ibland)<\/b>/.test(html) && /<b>(många fler|några fler)<\/b>/.test(html);
     return [
+      [`påbuden står i ord i Styre (${html.match(/<b>[^<]*<\/b>/g)?.join(' ').replace(/<\/?b>/g, '') ?? '–'})`, ord],
+      ['ledaren vill under det lägsta värdet: ingen pil', !/[▲▼]/.test(lag.replace(/title="[^"]*"/g, ''))],
       [`Samla för vintern ger fler händer (mat ${utan.mat} → ${med.mat}, ved ${utan.ved} → ${med.ved})`, med.mat > utan.mat && med.ved >= utan.ved],
       [`Bygg före allt gäller bara när ledaren vill (${byggUtan.toFixed(2)} → ${byggMed.toFixed(2)})`, byggUtan <= 0 && byggMed > 0],
       [`påbuden finns i registret och visas i Byn (${SIM.PABUD.bygg.namn}, ${SIM.PABUD.vinter.namn})`, SIM.PABUD_LIST.includes('bygg') && SIM.PABUD_LIST.includes('vinter')],
