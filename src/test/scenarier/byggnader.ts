@@ -1226,13 +1226,14 @@ SCENARIER.liggande = {
     kor(b, 96, x => { if (++timme % STEG_TIM === 0) n.push((x.stockar ?? []).filter(k => k.ved > 0 && !SIM.utanforByn(x, k.x, k.y)).length); });
     n.sort((a, d) => a - d);
     const med = n[n.length >> 1] ?? 0, max = n[n.length - 1] ?? 0, fallda = (b.fallda ?? 0) - fallda0;
-    const avSatt = (b.stockar ?? []).some(k => k.av !== undefined && living(b).some(q => q.id === k.av)) || !(b.stockar ?? []).length;
+    const g = groundOf(s), ti = [...g.trees.keys()].find(i => SIM.isForest(s, i)), fk = ti === undefined ? undefined : SIM.fellTree(s, p, ti % W + 0.5, Math.floor(ti / W) + 0.5);
+    const avSatt = fk?.av === p.id;
     return [
       [`yxbäraren hugger stammen hen själv fällt före en närmare (${ax?.ref})`, ax?.act === 'hugga' && ax.ref === 96],
       [`virket klyvs ur den egna stammen (${virke?.act} ${virke?.ref})`, virke?.act === 'klyva' && virke.ref === 96],
       [`röjningen hugger den egna stammen före nästa fällning (${roj?.act} ${roj?.ref})`, roj?.act === 'hugga' && roj.ref === 96],
       [`viljan att fälla sjunker med stammarna i byn (${v0.toFixed(2)} → ${v3.toFixed(2)})`, v0 === 1 && v3 < 0.6],
-      ['en stam som någon fällt vet vem som fällde den', avSatt],
+      ['en fälld stam vet vem som fällde den', avSatt],
       [`stammar i byn: median ${med}, högst ${max} (${fallda} träd fällda på fyra dygn)`, med <= 3 && max <= 10],
     ];
   },
