@@ -139,6 +139,7 @@ body.hOppen .legend { right: calc(var(--stenar) + 14px + min(360px, 100vw - var(
 .panel.hoger { right: calc(var(--stenar) + 14px); }
 /* rutan för det man trycker på kommer fram där man tryckte (steg 5.3.5.1) */
 .panel.ruta { z-index: 3; bottom: auto; width: 300px; max-height: min(62vh, 520px); box-shadow: 0 6px 18px rgba(36,32,29,.35); }
+.panel[data-flik="lager"] { width: 420px; } /* lagerplatsen är bredare åt höger, så att stackarna inte trängs (steg 9.2.97) */
 .graf { margin: 10px 0 6px; border: 1px solid var(--line); background: var(--bg); padding: 6px 8px 4px; } /* graferna (steg 5.4.1, ui/graf.ts) */
 .grafhuvud { display: flex; align-items: center; gap: 10px; font-size: 12px; }
 .grafval { display: flex; gap: 6px; margin: 4px 0 2px; } .grafval select { font: inherit; font-size: 12px; min-width: 0; } /* rikedomens val (steg 6.9.14) */

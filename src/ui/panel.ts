@@ -91,6 +91,7 @@ function placeraRuta() {
 }
 function skriv(sd: Sida, id: FlikId | undefined, force: boolean) {
   sd.el.hidden = !id;
+  if (sd.el.dataset.flik !== (id ?? '')) sd.el.dataset.flik = id ?? ''; // fliken styr bredden (lagret, steg 9.2.97)
   if (!id) { sd.html = ''; return; }
   if (!force && (ui.busy || performance.now() - ui.lastPointer < 800 || sd.musOver)) return;
   const html = bandHtml(ALLA[id].band?.() ?? id) + ALLA[id].html(); // bandet överst i fliken (steg 5.3.3.1)
