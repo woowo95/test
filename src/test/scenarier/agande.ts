@@ -1874,7 +1874,7 @@ SCENARIER.rovargang = {
 };
 
 SCENARIER.rovarforsvar = {
-  text: 'Steg 9.2.74–9.2.80: försvaret mot rövarna. De som försvarar väntar vid förrådet ("Väntar på rövarna med vapen"), också när förrådet ligger tolv rutor från elden, och valet väger modet, rövarna mot dem som står emot, hälsan och barnen, så att de flesta friska och modiga vuxna står emot en liten flock. I striden står var och en där hen var, den som flyr springer mot sitt hus eller elden och är fri medan striden pågår, ingen står i en annan, rövarnas ledare "leder rövarna" (testknappen prövas i scenariot rovartest)',
+  text: 'Steg 9.2.74–9.2.80 och 9.2.116: försvaret mot rövarna. Ålder, mod och hälsa delar folket i kämpar, hjälpare (en bit bakom) och gömda. De som försvarar väntar vid förrådet ("Väntar på rövarna med vapen"), också när förrådet ligger tolv rutor från elden, och valet väger modet, rövarna mot dem som står emot, hälsan och barnen, så att de flesta friska och modiga vuxna står emot en liten flock. I striden står var och en där hen var, den som flyr springer mot sitt hus eller elden och är fri medan striden pågår, ingen står i en annan, rövarnas ledare "leder rövarna" (testknappen prövas i scenariot rovartest)',
   kor: () => {
     const s = createState(6, START);
     for (const c of SIM.klanerOf(s)) c.inst = -60;
@@ -1890,7 +1890,19 @@ SCENARIER.rovarforsvar = {
     const star = friska.filter(p => p.task?.act === 'forsvarRovare').length;
     const forsv = folk.filter(p => p.task?.act === 'forsvarRovare');
     const vidForradet = forsv.length > 0 && forsv.every(p => Math.hypot(p.task!.tx - m.x, p.task!.ty - m.y) < 4);
-    const barnGommer = folk.filter(p => SIM.ageOf(p, s.now) < SIM.ALDER.vaktFran).every(p => p.task?.act !== 'forsvarRovare');
+    const barnGommer = folk.filter(p => SIM.ageOf(p, s.now) < SIM.ALDER.vaktFran).every(p => p.task?.act === 'gomma' || (p.task?.act === 'sova' && SIM.iHus(s, p)));
+    // steg 9.2.116: en lite skadad med lågt mod stannar borta, en frisk med samma mod hjälper, hjälparna står bakom kämparna
+    const u = createState(6, START), uv = living(u).filter(p => SIM.ageOf(p, u.now) >= SIM.ALDER.vaktFran && SIM.ageOf(p, u.now) < SIM.ALDER.gammal && !SIM.isSick(p, u.now));
+    const [lag, frisk] = uv;
+    u.people = u.people.filter(p => !(p.mother === lag.id || p.father === lag.id || p.mother === frisk.id || p.father === frisk.id) || SIM.ageOf(p, u.now) >= 12); // inga små barn att stanna hos
+    for (const p of living(u)) { p.task = undefined; p.larm = { t: u.now, vad: 'rovare', storlek: 2, led: 0 }; }
+    const modSom = (p: SIM.Person, m: number) => { p.pot.mod *= m / SIM.stat(p, 'mod', u.now); };
+    modSom(lag, 6); modSom(frisk, 6); lag.health = 0.8;
+    const vl = SIM.vargSkydd(u, lag), vf = SIM.vargSkydd(u, frisk);
+    const kampar = folk.filter(p => p.task?.act === 'forsvarRovare'), hjalp = folk.filter(p => p.task?.act === 'hjalpaRovare');
+    const medel = (q: SIM.Person[]) => q.reduce((a, p) => a + Math.hypot(p.task!.tx - m.x, p.task!.ty - m.y), 0) / Math.max(1, q.length);
+    const mh = medel(hjalp), mk = medel(kampar), bakom = hjalp.length === 0 || mh > mk + 1;
+    const vakenBort = folk.every(p => !/vaken vid elden/.test(p.task?.why ?? ''));
     // försvararna står på sina platser, och flocken (två) kommer till förrådet
     for (const p of forsv) { p.x = p.task!.tx; p.y = p.task!.ty; }
     for (const p of folk) if (!forsv.includes(p)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 20 * HOUR, carry: 0 };
@@ -1938,6 +1950,9 @@ SCENARIER.rovarforsvar = {
       [`de som försvarar (${forsv.length}) väntar vid förrådet, inte vid elden`, vidForradet],
       [`de flesta friska och modiga vuxna står emot en liten flock (${star} av ${friska.length})`, friska.length > 0 && star * 2 > friska.length],
       ['barnen gömmer sig', barnGommer],
+      [`de friska vuxna strider (${star} av ${friska.length}), ingen håller sig vaken vid elden`, friska.length > 0 && star === friska.length && vakenBort],
+      [`en lite skadad med lågt mod stannar borta (${vl?.act}, ${vl?.why}) men en frisk med samma mod hjälper (${vf?.act})`, vl?.act === 'gomma' && vf?.act === 'hjalpaRovare'],
+      [`hjälparna (${hjalp.length}) står längre från förrådet (${mh.toFixed(1)} rutor) än kämparna (${mk.toFixed(1)})`, bakom],
       ['byn står emot vid förrådet: striden börjar', emot],
       ['var och en börjar striden där hen stod', paPlats],
       [`ingen flyttas mer än ett steg mellan två bilder (längst ${hopp.toFixed(2)} rutor på en sekund)`, hopp <= SIM.GANG.fart * 2 + 0.5],

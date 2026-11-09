@@ -96,6 +96,7 @@ export const STRID = balans('strid', {
   modStart: 0.4, // stridsmodet när striden börjar: modStart + mod / 20 × modMod
   modMod: 0.6,
   modSkada: 1.1, // stridsmodet sjunker så här mycket gånger graden av en skada ...
+  modFeg: 0.5, // ... gånger 1 + modFeg × (10 − modet) / 10, högst modFeg åt vardera hållet (steg 9.2.116)
   modVan: 0.2, // ... och så här mycket när en vän faller
   lek: 0.2, // i lek slutar striden vid första skada av den här graden
   brottning: 0.3, // i brottningen (steg 9.2.92) är slagen så här starka mot i ett slagsmål, och ingen dör
@@ -528,7 +529,7 @@ export function traffa(st: Strid, a: Kampe, b: Kampe, skada0: number, sl: Slag, 
   const fast = kastad?.fastnar && sl === 'stick' && g >= STRID.fastnaGrad && slump(st) < STRID.fastna ? 1 as const : undefined;
   b.skador.push({ d, k, g, ny: SKADOR[k].blod > 0 ? 1 : 0, fast });
   b.blod -= SKADOR[k].blod * g * STRID.blodSlag;
-  b.modNu -= STRID.modSkada * g;
+  b.modNu -= STRID.modSkada * g * clamp(1 + STRID.modFeg * (10 - b.st.mod) / 10, 1 - STRID.modFeg, 1 + STRID.modFeg); // den modiga ger upp långsammare (steg 9.2.116)
   a.gjort += g;
   st.logg.push({ t: st.t, h: 'traff', a: a.id, b: b.id, d, k, g, v: a.vapen, kl, kast: kf });
   if (fast) st.logg.push({ t: st.t, h: 'fastnar', a: b.id, d, v: a.vapen });

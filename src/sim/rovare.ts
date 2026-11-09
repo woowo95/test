@@ -19,7 +19,7 @@ import { isLight } from './tid';
 import { DAY, HOUR, MIN, Person, SEC, State, T, Task, W, H } from './typer';
 import { vaderNu } from './vader';
 import { grundvarde, rikedom } from './varde';
-import { husPlats, iHus, kanterna, setRovarVal, skyddas, smaBarnOf, skyddVidElden, soker } from './varg';
+import { husPlats, iHus, kanterna, setRovarVal, smaBarnOf, skyddVidElden, soker } from './varg';
 import { taVapen } from './vakt';
 import { foddNar, gastNyckel } from './gastliv';
 import { gastAv, gastGar, gastTillbaka, nyGast, nyttGastId } from './gast';
@@ -41,8 +41,8 @@ import { viktOf } from './saker';
 // försvaret räknat emot: de vuxna som kan slåss och deras vapen) kan en liten flock rövare komma: folk från en grannklan som
 // inte tycker om byn (klaner.ts), annars fredlösa utan klan. Flocken samlas en stund i kartans kant, där den kan upptäckas.
 // Den som är vaken och nära ser den, vakten ser längst och gissar hur många de är (gissningen blir sämre ju längre bort de
-// står), ropar (larma i rykten.ts) och väcker byn; sedan skyddar sig byn som när vargar kommer (vargSkydd i varg.ts): barnen
-// och de svaga gömmer sig och de vuxna som vågar tar vapen och väntar vid elden. En liten flock väntar på mörkret, och ett tyst
+// står), ropar (larma i rykten.ts) och väcker byn; sedan delar sig byn (rovarSkydd, steg 9.2.116): kämparna tar vapen och väntar vid
+// förrådet, hjälparna en bit bakom dem, och barnen, de svaga och de räddaste gömmer sig. En liten flock väntar på mörkret, och ett tyst
 // anfall (natt, få rövare, ingen vaken som ser dem) kommer fram osett. Rövarna går mot förrådet. Ser de att byn väntar med
 // fler än de själva vänder de om. Annars slåss de med dem som står i vägen (striden i strid.ts, 3.7), med avsikten att skada,
 // och plundrar det mest värda i förrådet (inte redskapen) om de vinner eller ingen står emot. Sedan flyr de mot kanten. Går
@@ -65,9 +65,8 @@ export const ROVARE = balans('rovare', {
   ser: 14, // rövarna ser byns försvar inom så här många rutor från förrådet, när de är så nära eller väntar utanför byn ...
   overmakt: 1.5, // ... och vänder om när fler än så här många gånger rövarna väntar med vapen
   nara: 1.5, // rövarna är framme vid förrådet så här nära
-  motR: 10, // de vuxna som är vakna och så här nära möter rövarna ...
+  motR: 10, // de vuxna som är vakna och så här nära möter rövarna, om de är kämpar (rovarRoll, steg 9.2.116) ...
   lyder: 0.5, iver: 0.2, // över den här Envälde-seden lyder man ledaren, och så mycket Fejd och Krig drar till striden (steg 8.7.9)
-  fler: 0.3, vagar: 0.8, // ... om de vågar: mod / 20 + fler × (de som kan slåss / rövarna) är över vagar (som mot vargarna)
   gerUpp: 1.5, // ... och så många gånger mer när byn gett upp
   bar: 20, // så mycket väger det varje rövare som står kvar kan bära (steg 8.7.16)
   styrka: [8, 14], mod: [8, 15], uthallighet: [9, 14], smidighet: [8, 14], skicklighet: [6, 11], // rövarnas kroppar (lägst, högst)
@@ -81,10 +80,10 @@ export const ROVARE = balans('rovare', {
   larmTim: 2, // ... om hen inte redan fått larmet de senaste så här många timmarna
   anfallUt: 2, // en flock som setts så här nära byns område (utanforByn) eller inne i det gör att byn går i anfallsläge (steg 9.2.104)
   lurUt: 3, // väntplatsen ligger minst så här många rutor utanför byns område (utanforByn), också för en vanlig flock (steg 9.2.103)
-  // vem som försvarar och vem som gömmer sig (steg 9.2.75, rovarSkydd): mod / 20 + iver + fler × (de som står emot + 1) / rövarna,
-  // minus barn när hen har små barn (gånger barnAnnan när en annan vuxen redan är hos dem), minus sjuk när hen är sjuk och
-  // halsa × det som fattas i hälsan, ska vara över vagar
-  skyddFler: 0.4, barn: 0.25, barnAnnan: 0.3, sjuk: 0.5, halsa: 0.8,
+  // vem som strider, hjälper eller gömmer sig (steg 9.2.116, rovarVilja): mod / 20 + iver, minus skadad × det som fattas i hälsan,
+  // sjuk när hen är sjuk, gammal för de gamla och barn när hen har små barn (gånger barnAnnan när en annan vuxen redan är hos
+  // dem). Från kampeFran strider hen, från hjalpFran hjälper hen och står bakom en bit bakom kämparna, annars gömmer hen sig
+  kampeFran: 0.33, hjalpFran: 0.2, skadad: 1, sjuk: 0.5, gammal: 0.3, barn: 0.25, barnAnnan: 0.3, bakom: 3,
 });
 
 // rövarnas vapen (ett slumpas för var och en)
@@ -321,7 +320,7 @@ function anfall(s: State, f: Rovarflock, folk: Person[]) {
   for (const q of folk) {
     if (!alive(q)) continue;
     q.larm = { t: s.now, vad: 'rovare', storlek: st, led: 0 };
-    if ((q.task?.act === 'sova' && vuxenKan(s, q)) || q.task?.act === 'forsvarRovare') { avbryt(s, q); q.task = undefined; }
+    if ((q.task?.act === 'sova' && vuxenKan(s, q)) || q.task?.act === 'forsvarRovare' || q.task?.act === 'hjalpaRovare') { avbryt(s, q); q.task = undefined; }
   }
   soker(s, folk);
   count(s, 'rovarAnfall');
@@ -345,46 +344,45 @@ const anfallsFlock = (s: State) => [s.rovare, ...(s.rovareFler ?? [])].find(f =>
 
 // den som väntar med vapen (mot rövarna eller vargarna)
 const forsvarar = (q: Person) => q.task?.act === 'forsvarRovare' || q.task?.act === 'forsvar';
-// vem som försvarar byn och vem som gömmer sig när rövare är nära (steg 9.2.75, anropas från vargSkydd i varg.ts). Barnen och de
-// gamla gömmer sig alltid. För de andra väger valet modet, iver från sederna, rövarna mot dem som redan står emot, hälsan och
-// hur mycket hen behövs hos sina små barn (mindre när en annan vuxen redan är hos dem). Den som försvarar väntar vid förrådet
-function rovarSkydd(s: State, p: Person, storlek: number, dur: number) {
+// vem som strider, hjälper eller gömmer sig när rövare är nära (steg 9.2.116, anropas från vargSkydd i varg.ts): åldern, modet och
+// hälsan vägs ihop till ett värde (rovarVilja), och två gränser delar folket i kämpar, hjälpare och gömda. Barnen och den som inte
+// kan slåss gömmer sig alltid. Kämparna väntar vid förrådet (eller går mot flocken i anfallsläget), hjälparna en bit bakom dem
+export function rovarVilja(s: State, p: Person) {
   const a = ageOf(p, s.now);
-  if (a < ALDER.vaktFran || a >= ALDER.gammal) {
-    if (p.task?.act === 'sova' && iHus(s, p)) return undefined;
-    const hus = husPlats(s, p);
-    return hus ? { act: 'gomma' as const, why: 'Rövare är nära, gömmer sig i huset', spot: hus, dur } : { act: 'gomma' as const, why: 'Rövare är nära, håller sig vid elden nära de vuxna', spot: skyddVidElden(s), dur };
-  }
+  if (a < ALDER.vaktFran || !vuxenKan(s, p)) return -Infinity;
+  const iver = ((s.seder.v.fejd ?? 0) + (s.seder.v.krig ?? 0)) * ROVARE.iver;
+  return stat(p, 'mod', s.now) / 20 + iver - ROVARE.skadad * (1 - halsa(p)) - (isSick(p, s.now) ? ROVARE.sjuk : 0) - (a >= ALDER.gammal ? ROVARE.gammal : 0);
+}
+export const rovarRoll = (v: number): 'kampe' | 'hjalpare' | 'gomd' => v >= ROVARE.kampeFran ? 'kampe' : v >= ROVARE.hjalpFran ? 'hjalpare' : 'gomd';
+function rovarSkydd(s: State, p: Person, _storlek: number, dur: number) {
   const barn = smaBarnOf(s, p)[0], hosBarnen = barn ? husPlats(s, barn) : undefined;
   const annan = !!barn && living(s).some(q => q !== p && q.task?.act === 'gomma' && ageOf(q, s.now) >= ALDER.vaktFran && (!hosBarnen || Math.hypot(q.task.tx - hosBarnen.x, q.task.ty - hosBarnen.y) < 3));
-  const star = living(s).filter(q => q !== p && q.task?.act === 'forsvarRovare').length;
-  const iver = ((s.seder.v.fejd ?? 0) + (s.seder.v.krig ?? 0)) * ROVARE.iver;
-  const v = stat(p, 'mod', s.now) / 20 + iver + ROVARE.skyddFler * (star + 1) / Math.max(1, storlek)
-    - (barn ? ROVARE.barn * (annan ? ROVARE.barnAnnan : 1) : 0) - (isSick(p, s.now) ? ROVARE.sjuk : 0) - ROVARE.halsa * (1 - halsa(p));
-  if (v > ROVARE.vagar) {
-    const af = anfallsFlock(s);
-    if (af) { const vinkel = (p.id * 2.399) % (2 * Math.PI); return { act: 'forsvarRovare' as const, why: `Rövarna är i byn, tar ${taVapen(s, p) ? 'ett vapen' : 'det som finns'} och går mot dem`, spot: freeNear(s, af.x + Math.cos(vinkel) * 1.5, af.y + Math.sin(vinkel) * 1.5), dur }; } // anfallsläget (steg 9.2.104)
-    const m = malet(s), vinkel = (p.id * 2.399) % (2 * Math.PI), r = 1.5 + (p.id % 3) * 0.6; // var och en på sin plats runt förrådet
-    return { act: 'forsvarRovare' as const, why: `Rövare är nära, tar ${taVapen(s, p) ? 'ett vapen' : 'det som finns'} och väntar vid förrådet`, spot: freeNear(s, m.x + Math.cos(vinkel) * r, m.y + Math.sin(vinkel) * r), dur };
+  const roll = rovarRoll(rovarVilja(s, p) - (barn ? ROVARE.barn * (annan ? ROVARE.barnAnnan : 1) : 0));
+  if (roll !== 'gomd') {
+    const af = anfallsFlock(s), m = malet(s), vinkel = (p.id * 2.399) % (2 * Math.PI), vapen = taVapen(s, p) ? 'ett vapen' : 'det som finns';
+    if (af) { // anfallsläget (steg 9.2.104): kämparna går mot flocken, hjälparna stannar en bit bakom, mot förrådet
+      const d = Math.max(0.01, avst(af, m)), ux = (m.x - af.x) / d, uy = (m.y - af.y) / d, r = roll === 'kampe' ? 0 : ROVARE.bakom;
+      const spot = freeNear(s, af.x + ux * r + Math.cos(vinkel) * 1.5, af.y + uy * r + Math.sin(vinkel) * 1.5);
+      return roll === 'kampe' ? { act: 'forsvarRovare' as const, why: `Rövarna är i byn, tar ${vapen} och går mot dem`, spot, dur } : { act: 'hjalpaRovare' as const, why: 'Rövarna är i byn, håller sig bakom kämparna', spot, dur };
+    }
+    const r = 1.5 + (p.id % 3) * 0.6 + (roll === 'kampe' ? 0 : ROVARE.bakom); // var och en på sin plats runt förrådet
+    const spot = freeNear(s, m.x + Math.cos(vinkel) * r, m.y + Math.sin(vinkel) * r);
+    return roll === 'kampe' ? { act: 'forsvarRovare' as const, why: `Rövare är nära, tar ${vapen} och väntar vid förrådet`, spot, dur } : { act: 'hjalpaRovare' as const, why: 'Rövare är nära, håller sig bakom kämparna vid förrådet', spot, dur };
   }
-  if (barn) return { act: 'gomma' as const, why: 'Rövare är nära, stannar hos barnen', spot: hosBarnen ?? skyddVidElden(s), dur };
-  if (skyddas(s, p)) {
-    if (p.task?.act === 'sova' && iHus(s, p)) return undefined;
-    const hus = husPlats(s, p);
-    return { act: 'gomma' as const, why: hus ? 'Rövare är nära, gömmer sig i huset' : 'Rövare är nära, håller sig vid elden nära de vuxna', spot: hus ?? skyddVidElden(s), dur };
-  }
-  return { act: 'samtal' as const, why: 'Rövare är nära, håller sig vaken vid elden', dur };
+  if (barn && ageOf(p, s.now) >= ALDER.vaktFran) return { act: 'gomma' as const, why: 'Rövare är nära, stannar hos barnen', spot: hosBarnen ?? skyddVidElden(s), dur };
+  if (p.task?.act === 'sova' && iHus(s, p)) return undefined;
+  const hus = husPlats(s, p);
+  return { act: 'gomma' as const, why: hus ? 'Rövare är nära, gömmer sig i huset' : 'Rövare är nära, håller sig vid elden nära de vuxna', spot: hus ?? skyddVidElden(s), dur };
 }
 setRovarVal(rovarSkydd);
 
 // de vuxna som möter rövarna vid förrådet: vakna, nära och modiga nog (de som väntar med vapen och vakten står alltid kvar)
 const familjHotad = (s: State, q: Person, f: Rovarflock) => { const p = byId(s, q.partner); return !!p && avst(p, f) < ROVARE.motR; };
 function motstand(s: State, f: Rovarflock, folk: Person[], vid: { x: number; y: number } = malet(s)) {
-  const m = vid, kan = folk.filter(q => alive(q) && vaken(q) && vuxenKan(s, q) && avst(q, m) < ROVARE.motR && q.task?.act !== 'gomma'); // räknat från förrådet, dit rövarna går (steg 9.2.74), eller från flocken när den letar hus för hus
+  const m = vid, kan = folk.filter(q => alive(q) && vaken(q) && vuxenKan(s, q) && avst(q, m) < ROVARE.motR && q.task?.act !== 'gomma' && q.task?.act !== 'hjalpaRovare'); // hjälparna står bakom och går inte in i striden (steg 9.2.116); räknat från förrådet, dit rövarna går (steg 9.2.74), eller från flocken när den letar hus för hus
   // vem som strider (steg 8.7.9): mod, åldern, vem som hotas, seden Förlikning – Fejd och styret. Vid Envälde lyder man ledaren, och lagen om stridsplikt säger vem som måste gå
   const l = ledareOf(s), lyder = (s.seder.v.rang ?? 0) > ROVARE.lyder && !!l && kan.includes(l), plikt = lagGaller(s, 'stridsplikt');
-  const iver = ((s.seder.v.fejd ?? 0) + (s.seder.v.krig ?? 0)) * ROVARE.iver;
-  return kan.filter(q => forsvarar(q) || q.task?.act === 'vakt' || lyder || plikt || (q.partner !== undefined && familjHotad(s, q, f)) || stat(q, 'mod', s.now) / 20 + iver + ROVARE.fler * kan.length / Math.max(1, f.folk.length) > ROVARE.vagar);
+  return kan.filter(q => forsvarar(q) || q.task?.act === 'vakt' || lyder || plikt || (q.partner !== undefined && familjHotad(s, q, f)) || rovarRoll(rovarVilja(s, q)) === 'kampe'); // samma värde som valet (steg 9.2.116)
 }
 
 // striden mellan byns folk och rövarna (steg 6.6.10): den börjar där de står, på en plats runt förrådet, och går i spelets

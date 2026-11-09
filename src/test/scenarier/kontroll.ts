@@ -313,6 +313,7 @@ const SALLSYNT: Record<string, string> = {
   skinndorr: 'skinndörren kommer man bara på när byn har skinn över och ett hus med en öppen dörröppning (steg 2.2.16), sällan på 35 dygn; scenariot dorr prövar den; i fasens Balans (6.10.4) var det sällsynt utan att bryta någon gräns',
   skogsvard: 'skogsvården kommer man bara på när de närmaste träden att fälla står långt bort (steg 6.5.2), sällan på 35 dygn; scenariot skogsvard prövar den; i fasens Balans (6.10.4) var det sällsynt utan att bryta någon gräns',
   plantera: 'plantor flyttas bara av den som kan skogsvården (se skogsvard); scenariot skogsvard prövar det',
+  hjalpaRovare: 'man håller sig bakom kämparna bara när rövare är nära byn (steg 9.2.116); scenariot rovarforsvar prövar det',
   forsvarRovare: 'man väntar på rövarna med vapen bara när rövare är nära byn (steg 9.2.74), och de kommer bara till en rik by; scenariot rovarforsvar prövar det',
 };
 // fas 8 (system 8.2, 8.3, 8.5 och 8.6): det som kräver en ledare, en präst eller en tro på en viss nivå hinner sällan komma på 35 dygn
@@ -333,7 +334,7 @@ SCENARIER.aldrig = {
       const by = Object.fromEntries(Object.keys(reg).map(k => [k, new Set<string>()]));
       let steg = 0;
       const r = korBy(seedAv(i), DYGN, s => {
-        for (const p of living(s)) if (p.task) { by.handlingar!.add(p.task.act); for (const k in p.task.items ?? {}) by.saker!.add(k); }
+        for (const p of [...living(s), ...SIM.gasterNu(s)]) if (p.task) { by.handlingar!.add(p.task.act); for (const k in p.task.items ?? {}) by.saker!.add(k); }
         for (const a of s.stackar ?? []) { by.saker!.add(a.k); if (a.dold && dold[a.k]) by.saker!.add(dold[a.k]!); }
         for (const t of tingOf(s)) by.saker!.add(t.k);
         for (const f of s.flackar ?? []) if (SAKER[f.k]) by.saker!.add(f.k); // toa-högen är en fläck på marken (smuts.ts)

@@ -5,6 +5,7 @@ import { forLangtArbete } from '../sim/tider';
 import { husFel, BEAT, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, vattenNu, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP, forvarAt, isTool, faltOf, faltRutor, faltAt, stationById, gridOf, getMap, djurOf, vargarOf, MATERIAL } from '../sim';
 import { NYCKELTAL, Nyckeltal, tal } from './nyckeltal';
 import { lyssnaPaTexter } from '../sim/berattelser';
+import { gastLever } from '../sim/gast';
 import { gangLangsam, gangVakt } from '../sim/gang';
 import { kollaText, konI, titta } from './textkoll';
 
@@ -113,6 +114,7 @@ function vakta(s: State, larm: Larm, timme: boolean) {
   for (const p of s.people) { finns.set(p.id, p); if (alive(p)) lever.add(p.id); }
   for (const p of s.people) {
     if (!alive(p)) {
+      if (gastLever(p)) continue; // gästerna har egna handlingar (steg 9.2.113)
       if (p.task) larm('död med uppgift', () => `${p.name} (${p.died !== undefined ? 'död' : 'flyttad'}) har uppgiften ${p.task!.act}${isCarrying(p.task!) ? ' och bär något' : ''}`);
       continue;
     }
