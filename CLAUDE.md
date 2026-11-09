@@ -44,6 +44,7 @@ Sök i dokumentet i stället för att läsa allt; det är långt.
 - Hela resurser (Björn, efter v143): inga resurser hanteras i decimaler. Inget recept, bygge, byte, pris eller utfall är mindre än en hel resurs; allt som går åt, ges, byts eller fås är hela saker. Slitage och arbetet mot nästa sak är inga resurser och får ha decimaler.
 - Arbetstider: varje tid för ett arbete, i koden och i designdokumentet, följer "Arbetstider (riktlinje)" i fliken Människan, i riktiga minuter (en minut är ungefär sex timmar i spelet): en liten sak 2–4 minuter, en stor sak högst 5, en station eller möbel 10–20, en tur att samla 3–10. Läs riktlinjen innan du skriver en tid. Det man väntar på (jäsning, torkning, läkning) är inget arbete och följer klockan. Vakten för arbetstiderna (steg 9.2.63) larmar i testerna, och fasens kodgenomgång går igenom tiderna i dokumentet.
 - Elden är ett verktyg, inte ett mål. Att den brinner är inget mått på en lyckad by, och den får inte styra andra system. Faror som kyla går före förbättringar via prioriteringen i valet av aktivitet.
+- Nya arbetsstationer: följ "Regeln för stationerna" i avsnittet Arbetsstationer och möbler (fliken Bygga, odla och äta). En sak görs vid högst en station, vald efter materialet; varje recept är "bara här" eller "fortare och bättre här"; en bättre station ger högre chans till bra kvalitet; recepten som redan finns gås igenom när en station läggs till.
 
 ## Källor
 
