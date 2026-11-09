@@ -1,3 +1,4 @@
+import { leraGravd } from './lera';
 import { GASTVARD, gastVardag } from './gastvardag';
 import { husKlaraTimme } from './bygg';
 import { personHand } from './personlogg';
@@ -246,6 +247,7 @@ KLAR.dorr = finishDorr; // en dörr i en öppning (bygg.ts)
 KLAR.uppsatt = (s, p, t) => finishUppsatt(s, p, t);
 KLAR.flyttStation = s => { stationFlytta(s); }; // en station ute närmare dem som använder den (stationer.ts, steg 9.4.8)
 KLAR.flyttLager = s => { const v = lagerFlyttVal(s); if (v) lagerFlytta(s, v.z, v.ny); }; // en lagerplats närmare byns mitt (lager.ts, steg 9.4.7)
+KLAR.lera = leraGravd; // leran läggs i en hög där den grävdes (lera.ts, steg 9.4.10)
 KLAR.stubbe = stubbeGravd; // stubben är bortgrävd och blir lite trä (skog.ts, steg 6.5.7)
 KLAR.plantera = plantaUppgravd; // plantan är uppgrävd och bärs till platsen (skogsvard.ts, steg 6.5.2)
 KLAR.ljus = (s, p, t) => finishLjus(s, p, t); // ett talgljus på ett bord eller en hylla (ljus.ts, steg 6.3.8) // en uppsatt fackla (ljus.ts, steg 6.3.7)
@@ -296,7 +298,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   const learn = 1 + 0.1 * s.seder.v.nyfikenhet; // en nyfiken by lär sig snabbare
   if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
     atSteg(s); stepSeder(s); updateTags(s); stepRelationer(s); stepUppvaxt(s); stepReligion(s); for (const p of living(s)) morkHumor(s, p); facklorTimme(s); stepHumor(s); stepDelning(s); stepLarlingar(s);
-    stepVader(s); vindfallen(s); regnetTvattar(s); stepMotgang(s); stepTorka(s); stepFlod(s); stepIs(s); growGround(s, 1, ai); growFynd(s, 1, ai, vaxtFaktor(s)); forget(s, 1); stepRykten(s, moodOf); glomRykten(s, 1); stepBerattelser(s); stepStyre(s); rotStumps(s); tidyStore(s);
+    stepVader(s); vindfallen(s); regnetTvattar(s); stepMotgang(s); stepTorka(s); stepFlod(s); stepIs(s); growGround(s, 1, ai); growFynd(s, 1, ai, vaxtFaktor(s), vaderNu(s).nb); forget(s, 1); stepRykten(s, moodOf); glomRykten(s, 1); stepBerattelser(s); stepStyre(s); rotStumps(s); tidyStore(s);
     vaggRensa(s); kvarTimme(s); kultTimme(s); kyrkaTimme(s); wearBuild(s, 1, ai); stepByggnader(s); husKlaraTimme(s); stepMjardar(s); stepNaken(s); stepByggplan(s); stepEldFlytt(s); lagerIStraket(s); stepPaborjat(s); stepStationer(s); stepPynt(s); stadaByten(s); stepBrasor(s); stepKlader(s); stepOdling(s);
     askaSteg(s); // det svarta efter en eldsvåda försvinner (brand.ts)
     sorgTimme(s); // sorgen i stadier (liv.ts, steg 9.2.33)

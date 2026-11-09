@@ -107,6 +107,7 @@ interface FyndDef {
   uttag?: Uttag;
   saker?: number; // så många hela saker har en full ruta (steg 9.2.53, sakerPaRutan i steg.ts): rikedomen delad med topp gånger det, nedåt
   vatten?: number; // lagret finns i vattnet; man står på stranden och når så många rutor ut
+  regn?: true; // platsen fylls bara på när det regnar, mer ju mer det regnar, och vattnet i en översvämning lämnar det där det står (leran, steg 9.4.10)
 }
 const SVAMP_SEASON = [0, 0.15, 0.8, 1.5];
 const SVAMP_UTTAG: Uttag = { full: 2.5, reach: 1, regrow: [1 / 1200, 1 / 450, 1 / 120, 1 / 120] };
@@ -203,6 +204,14 @@ const DEF = {
     monster: { salt: 103, skala: 3, period: 56, troskel: 0.595 }, // en fjärdedel färre rutor (0,55 före steg 3.10.23.7)
     bas: (s, i, m) => land(s, i) && BRYN.has(markslag(groundOf(s), i)) && intillSkog(groundOf(s), i) ? m * orortOf(s)[i] : 0,
     uttag: { full: 1, reach: 1, regrow: [0, 1 / 240, 1 / 96, 1 / 120] },
+  },
+  // leran (steg 9.4.10, Arbetsstationer och möbler: Leran och lerkrukan): rikast i stranden närmast vattnet, mindre i sanden och
+  // jorden längre upp, inte alls i skogen och i berget. Den fylls på när det regnar (regrow gånger nederbörden) och där en
+  // översvämning stått (growFynd). Inget mönster: leran ligger där marken är
+  lera: {
+    namn: 'Lera', grupp: 'sten', ikon: 'lera', farg: 0x9a6a4a, topp: 3,
+    bas: (s, i) => { const t = getMap(s.seed).tiles[i], d = djupOf(s.seed).land[i]; if (t === T.Vatten || t === T.Sten || groundOf(s).trees[i] >= FOREST) return 0; return t === T.Sand ? (d <= 1 ? 3 : 1) : d <= 2 ? 0.6 : 0.1; },
+    uttag: { full: 3, reach: 0, regrow: [1 / 24, 1 / 12, 1 / 12, 1 / 12] }, regn: true,
   },
 } satisfies Record<string, FyndDef>;
 // bärbuskarna (buskar.ts): bär växer på rutan i dag där bärens mönster ligger, och bärbuskarna sås ut där när byn grundas
@@ -521,10 +530,11 @@ export function takeFrom(s: State, k: Lager, x: number, y: number, amount: numbe
 }
 // en timme: platserna växer tillbaka
 // vaxt: hur fort växterna växer åter (vaxtFaktor i vader.ts: fortare i blöt mark); djuren följer inte vädret
-export function growFynd(s: State, hours: number, season: number, vaxt = 1) {
+export function growFynd(s: State, hours: number, season: number, vaxt = 1, regn = 0) {
   const d = takenOf(s);
   for (const k of UTTAG_IDS) {
-    const f = Math.exp(-FYND[k].uttag!.regrow[season] * hours * (FYND[k].grupp === 'vaxter' ? vaxt : 1)), a = d[k]!;
+    const f = Math.exp(-FYND[k].uttag!.regrow[season] * hours * (FYND[k].grupp === 'vaxter' ? vaxt : 1) * (FYND[k].regn ? regn : 1)), a = d[k]!;
+    if (FYND[k].regn) for (const i of aktivOf(s, k).lista) if (iVattnetNu(s, i)) a[i] = 0; // översvämningen lämnar leran där vattnet står
     if (f >= 1) continue;
     const ak = aktivOf(s, k), L = ak.lista, ft = k === 'fiske' ? fiskAter(s.seed) : undefined;
     let w = 0;

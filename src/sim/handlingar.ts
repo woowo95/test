@@ -212,6 +212,7 @@ const DEF = {
   ljus: { namn: 'Ställer fram ett ljus', slag: 'bygga', hantverk: true, stilla: true, framme: true }, // på ett bord eller en hylla inne (ljus.ts, steg 6.3.8)
   // skogsvården (steg 6.5.2, skogsvard.ts): en planta grävs upp och bärs dit byn vill ha skog
   plantera: { namn: 'Flyttar en planta', slag: 'odla', under: { go: 'går till plantan', do: 'gräver upp plantan', back: 'bär plantan' }, redskap: { benspade: { tar: 'Tar benspaden.', haller: 40 } }, slits: { enhet: 'plantor', per: 'gang' }, tungt: true, framme: true },
+  lera: { namn: 'Gräver lera', slag: 'samla', arbete: 'samla', redskap: { benspade: { tar: 'Tar benspaden.', haller: 40 } }, slits: { enhet: 'turer', per: 'gang' }, tungt: true, framme: true }, // vid stranden (lera.ts, steg 9.4.10)
   stubbe: { namn: 'Gräver bort en stubbe', slag: 'odla', redskap: { benspade: { tar: 'Tar benspaden.', haller: 40 } }, slits: { enhet: 'stubbar', per: 'gang' }, tungt: true, framme: true }, // där något ska byggas (skog.ts, steg 6.5.7)
   flyttStation: { namn: 'Flyttar en station', slag: 'bygga', hantverk: true, stilla: true, framme: true, tungt: true }, // närmare dem som använder den (stationer.ts, steg 9.4.8)
   flyttLager: { namn: 'Märker ut en lagerplats', slag: 'bygga', stilla: true, framme: true }, // en lagerplats flyttas närmare byns mitt (lager.ts, steg 9.4.7)

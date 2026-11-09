@@ -117,6 +117,7 @@ export const MATERIALMAL = {
   sten: { min: () => 0 },
   flinta: { min: () => TROSKEL.flintaMinsta },
   virke: { min: () => 0 },
+  lera: { min: () => 0 }, // steg 9.4.10: målet följer hur mycket lera byn gör av med
 } as const satisfies Record<string, Materialmal>;
 export type Materialslag = keyof typeof MATERIALMAL;
 export const MATERIAL_LIST = Object.keys(MATERIALMAL) as Materialslag[];

@@ -69,6 +69,7 @@ const DEF = {
   // giftig svamp som av misstag hamnat i förrådet bland den ätliga (fynd.ts). Den ligger i svampstacken och syns inte
   giftsvamp: { namn: 'Giftig svamp', haller: 2, dold: true, i: 'svamp' },
   sten: { namn: 'Sten', skaffa: { tid: 0.8 }, stack: 10, mapp: 'Sten', brinnerInte: true },
+  lera: { namn: 'Lera', skaffa: { tid: 0.8 }, stack: 10, mapp: 'Sten', brinnerInte: true }, // steg 9.4.10: grävs vid stranden (fynd.ts), till lerkrukorna
   rep: { namn: 'Rep', ett: true, skaffa: RECEPT.rep, stack: 40, mapp: 'Material', slits: 0.0003 },
   talg: { namn: 'Talg', ett: true, skaffa: RECEPT.talg, stack: 30, mapp: 'Material' }, // djurfett från slakten, i hela stycken (steg 6.3.5): blir facklor och ljus
   ben: { namn: 'Ben', ett: true, skaffa: RECEPT.ben, stack: 40, mapp: 'Material', brinnerInte: true },

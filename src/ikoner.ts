@@ -39,6 +39,7 @@ export const PAL: Record<string, Record<string, string>> = {
   kol: { k: '#24201d', K: '#474138' },
   flinta: { g: '#987e62', G: '#bdb39b', d: '#505e3e' },
   sten: { k: '#7d5b40', K: '#8a9c9e', d: '#474138' },
+  lera: { k: '#7d5b40', K: '#987e62', d: '#5e3c24' }, // platshållare för leran (steg 9.4.10) tills Björn valt i bildstilen
   yxa: { h: '#694902', g: '#987e62', G: '#bdb39b' },
   fiskespjut: { h: '#7d5b40', H: '#987e62', w: '#bdb39b' },
   flintspjut: { h: '#7d5b40', g: '#987e62', G: '#bdb39b', r: '#a0947d' },
@@ -823,6 +824,16 @@ export const PIX: Record<string, string[]> = {
     '.gGgggd.',
     'gggggdd.',
     '.ggdddd.',
+    '........',
+  ],
+  lera: [ // en klump lera (steg 9.4.10, platshållare)
+    '........',
+    '........',
+    '...KKk..',
+    '..KkkkK.',
+    '.kkkkkkd',
+    '.dkkkddd',
+    '..dddd..',
     '........',
   ],
   sten: [

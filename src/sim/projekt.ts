@@ -1,3 +1,4 @@
+import { LERA, leraBrist, leraPlats } from './lera';
 import { Act, Person, State } from './typer';
 import { familjOf, stat } from './folk';
 import { clamp } from './slump';
@@ -73,6 +74,7 @@ export const PROJEKT_TAL = balans('projekt', {
   virke: 0.8, // ... virket när förrådet saknar det byn vill bygga av (steg 4.5.5.2)
   stubbe: 1, // ... att gräva bort stubbarna där något ska byggas (steg 6.5.7, skog.ts)
   plantera: 0.6, // ... att flytta plantor när de närmaste träden att fälla står långt bort (steg 6.5.2, skogsvard.ts)
+  lera: 0.5, // ... leran när förrådet saknar den byn gör av med (steg 9.4.10, lera.ts)
   stationFlytt: 0.4, // ... att flytta en station ute närmare dem som använder den (steg 9.4.8, stationer.ts)
   lagerFlytt: 0.4, // ... att flytta en lagerplats närmare byns mitt (steg 9.4.7, lager.ts)
   rojning: 1, // ... att fälla träden på en lagerplats eller ett fält i skogen (steg 3.6.9)
@@ -222,6 +224,14 @@ export const PROJEKT: Record<string, ProjektDef> = {
     kostnad: () => LAGER.flyttMin / 60 * ARBETE,
     kan: (s, p, f) => !f.kyla && ageOf(p, s.now) >= ALDER.vuxen && !!lagerFlyttVal(s) && !doingAct(s, 'flyttLager', p),
     uppgift: s => { const v = lagerFlyttVal(s); return v && { act: 'flyttLager', text: 'Märker ut en ny lagerplats närmare byns mitt.', min: LAGER.flyttMin, spot: { x: v.ny.x + v.ny.w / 2, y: v.ny.y + v.ny.h / 2 } }; },
+  },
+  // leran (steg 9.4.10, lera.ts): en tur vid stranden när förrådet saknar den byn gör av med
+  lera: {
+    namn: 'Lera', vikt: PROJEKT_TAL.lera,
+    brist: s => leraBrist(s),
+    kostnad: () => grundvarde('lera') * LERA.perTur,
+    kan: (s, p, f) => !f.kyla && ageOf(p, s.now) >= ALDER.vuxen && leraBrist(s) > 0 && !doingAct(s, 'lera', p) && !!leraPlats(s),
+    uppgift: (s, p) => { const at = leraPlats(s); return at && { act: 'lera', text: 'Gräver lera vid stranden.', min: LERA.max, tool: freeTools(s, p, 'benspade') > 0 ? 'benspade' : undefined, spot: at }; },
   },
   // en station ute flyttas närmare dem som använder den (steg 9.4.8, stationer.ts)
   stationFlytt: {
