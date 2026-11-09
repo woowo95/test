@@ -1202,6 +1202,41 @@ SCENARIER.stockhus = {
     ];
   },
 };
+SCENARIER.liggande = {
+  text: 'Steg 9.2.87: hela trädet tas om hand innan nästa fälls: den som fällt ett träd hugger helst stammen själv, och viljan att fälla ett nytt träd för ett projekt sjunker med antalet stammar som ligger i byn',
+  kor: () => {
+    const s = createState(6, START);
+    byggare(s); setAmount(s, 'yxa', 2);
+    const c = SIM.bynsMitt(s), p = living(s).find(q => ageOf(q, s.now) >= ALDER.vuxen)!;
+    for (const q of living(s)) q.task = undefined;
+    const nara: SIM.Stock = { id: 97, x: c.x + 1.5, y: c.y + 1.5, ved: 9, grenar: 0 };
+    const egen: SIM.Stock = { id: 96, x: c.x + 6.5, y: c.y + 5.5, ved: 9, grenar: 0, av: p.id };
+    s.stockar = [nara, egen];
+    const ax = SIM.axeTask(s, p), virke = SIM.PROJEKT.virke.uppgift(s, p), roj = SIM.PROJEKT.rojning.uppgift(s, p);
+    s.stockar = [];
+    const v0 = SIM.fallVilja(s);
+    s.stockar = [1, 2, 3].map(i => ({ id: 90 + i, x: c.x + i + 0.5, y: c.y + 0.5, ved: 6, grenar: 0 }));
+    const v3 = SIM.fallVilja(s);
+    s.stockar = [];
+    // en by i fyra dygn (fyra år i spelet): stammarna som ligger i byn räknas varje timme
+    const b = createState(3, START);
+    byggare(b); setAmount(b, 'yxa', 2); put(b, 'bar', 150);
+    const n: number[] = [];
+    let fallda0 = b.fallda ?? 0, timme = 0;
+    kor(b, 96, x => { if (++timme % STEG_TIM === 0) n.push((x.stockar ?? []).filter(k => k.ved > 0 && !SIM.utanforByn(x, k.x, k.y)).length); });
+    n.sort((a, d) => a - d);
+    const med = n[n.length >> 1] ?? 0, max = n[n.length - 1] ?? 0, fallda = (b.fallda ?? 0) - fallda0;
+    const avSatt = (b.stockar ?? []).some(k => k.av !== undefined && living(b).some(q => q.id === k.av)) || !(b.stockar ?? []).length;
+    return [
+      [`yxbäraren hugger stammen hen själv fällt före en närmare (${ax?.ref})`, ax?.act === 'hugga' && ax.ref === 96],
+      [`virket klyvs ur den egna stammen (${virke?.act} ${virke?.ref})`, virke?.act === 'klyva' && virke.ref === 96],
+      [`röjningen hugger den egna stammen före nästa fällning (${roj?.act} ${roj?.ref})`, roj?.act === 'hugga' && roj.ref === 96],
+      [`viljan att fälla sjunker med stammarna i byn (${v0.toFixed(2)} → ${v3.toFixed(2)})`, v0 === 1 && v3 < 0.6],
+      ['en stam som någon fällt vet vem som fällde den', avSatt],
+      [`stammar i byn: median ${med}, högst ${max} (${fallda} träd fällda på fyra dygn)`, med <= 3 && max <= 10],
+    ];
+  },
+};
 SCENARIER.lagerivagen = {
   text: 'Steg 8.1.15: en lagerplats påverkar inte var ett hus eller en station ute byggs. Ligger den i vägen flyttas den till en ny plats med samma namn, och sakerna bärs dit. Steg 9.2.15: likadant när ett stråk går igenom den',
   kor: () => {

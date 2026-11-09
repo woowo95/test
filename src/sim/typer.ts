@@ -397,7 +397,7 @@ export interface Borta { fran: number; fodda: number; doda: number; folk?: numbe
 // dorr = öppningen (rutan) där den väntar utanför en stängd dörr, och vantar = sedan när (steg 3.7.21)
 export interface Vargflock { id: number; vargar: number[]; x: number; y: number; mx: number; my: number; gar: number; hunger: number; gor: 'stryker' | 'smyger' | 'anfaller' | 'vantar' | 'flyr'; byte?: number; sedd?: number; sag?: number; jagare?: number[]; kallare?: number; kallTill?: number; jaktTill?: number; samlas?: number; dorr?: { x: number; y: number }; vantar?: number; trottnat?: true }
 // ett fällt träd: ved och grenar som finns kvar att hugga ut
-export interface Stock { id: number; x: number; y: number; ved: number; grenar: number; mossa?: number } // mossa på stammen (steg 2.5.2)
+export interface Stock { id: number; x: number; y: number; ved: number; grenar: number; mossa?: number; av?: number } // mossa på stammen (steg 2.5.2), den som fällde (steg 9.2.87)
 
 // ---------- seder ----------
 // Byns gemensamma värderingar, -1..1. Registret (SEDER) står i seder.ts.

@@ -27,6 +27,7 @@ export { stubbeOn, stubbRutor };
 export const SKOG = balans('skog', {
   stamVed: 6, // ett vuxet träd ger så här mycket trä ...
   stamGrenar: 5, // ... och så här många grenar
+  liggande: 0.35, // viljan att fälla ett nytt träd för ett projekt delas med 1 + så här mycket per fälld stam som ligger i byn (steg 9.2.87)
   virkeVed: 2, // ett virke (steg 4.5.5.2) tar så här mycket av stammens trä
   fallTim: 0.1, // så många timmar tar det att fälla ett träd, delat med SNABBARE: fyra minuter (steg 2.3.8; 48 minuter förut)
   fallMin: 0.5, // ett litet träd fälls fortare, men aldrig på mindre än så här stor del av tiden
@@ -133,8 +134,12 @@ export function overHus(s: State, k: Stock) {
   return hus.length > 0 && stockRutor(k).some(i => { const x = i % W, y = Math.floor(i / W); return hus.some(h => x >= h.x && x < h.x + h.w && y >= h.y && y < h.y + h.h); });
 }
 export const stockOverHus = (s: State) => stocks(s).find(k => k.ved > 0 && overHus(s, k));
-const nearestStock = (s: State) => {
-  const over = stockOverHus(s);
+// stammen p själv fällt och som inte är huggen än (steg 9.2.87): hela trädet tas om hand innan nästa fälls
+export const egenStock = (s: State, p: Person) => stocks(s).find(k => k.ved > 0 && k.av === p.id);
+// viljan att fälla ett nytt träd för ett projekt sjunker med antalet fällda stammar som ligger i byn (steg 9.2.87)
+export const fallVilja = (s: State) => 1 / (1 + SKOG.liggande * stocks(s).filter(k => k.ved > 0 && !utanforByn(s, k.x, k.y)).length);
+const nearestStock = (s: State, p?: Person) => {
+  const over = stockOverHus(s) ?? (p && egenStock(s, p));
   if (over) return over;
   const b = groundOf(s).built, onSite = (k: Stock) => b?.[tileOf(k.x, k.y)] ? 0 : 1; // stammarna där huset ska stå först
   return stocks(s).filter(k => k.ved > 0).sort((a, c) => onSite(a) - onSite(c) || utanforByn(s, a.x, a.y) - utanforByn(s, c.x, c.y))[0];
@@ -147,7 +152,7 @@ export function fellTree(s: State, p: Person, x: number, y: number) {
   const stam = stamAv(g, i);
   g.trees[i] = 0; g.cover[i] = 1;
   if (s.halvfallt) delete s.halvfallt[i];
-  const k: Stock = { id: (s.nextStock = (s.nextStock ?? 0) + 1), x: Math.floor(x) + 0.5, y: Math.floor(y) + 0.5, ...stam };
+  const k: Stock = { id: (s.nextStock = (s.nextStock ?? 0) + 1), x: Math.floor(x) + 0.5, y: Math.floor(y) + 0.5, ...stam, av: p.id }; // den som fällde hugger helst själv (steg 9.2.87)
   stocks(s).push(k);
   nyStubbe(s, Math.floor(x), Math.floor(y), stam.ved); // stubben blir alltid kvar, också där ett hus ska stå (steg 6.5.7)
   s.fallda = (s.fallda ?? 0) + 1; gjort(s, p, 'trad'); naturTanke(s, 'Ett träd fälldes');
@@ -216,7 +221,7 @@ export const klyvStam = (s: State) => (s.stockar ?? []).filter(k => k.ved >= SKO
 // (withTools i val.ts, steg 6.2.17), eller samlas grenar
 export function axeTask(s: State, p: Person): { act: Act; x: number; y: number; ref?: number; dur?: number; why: string } | undefined {
   if (freeTools(s, p, 'yxa') > 0) { // en yxa som ingen annan fäller eller hugger med
-    const k = nearestStock(s);
+    const k = nearestStock(s, p);
     if (k) return { act: 'hugga', x: k.x + 0.3, y: k.y + 0.2, ref: k.id, why: 'Hugger ved av en fälld stam' };
     const t = treeSpot(s, fellingTiles(s, p), p);
     if (t) return { act: 'falla', x: t.x, y: t.y, dur: fallTid(s, tileOf(t.x, t.y)), why: 'Har en yxa och fäller ett träd' };

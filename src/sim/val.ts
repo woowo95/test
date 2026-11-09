@@ -35,7 +35,7 @@ import { MJARDE, kanVittja } from './fisk';
 import { bitAt, bitsOf, blocked, freeNear, roomAt } from './byggnad';
 import { bedTile, homeless, samlingRum, varmareInne } from './byggnader';
 import { groundOf, isForest, punktIRuta, tileOf } from './mark';
-import { axeTask, fallTid, stockOverHus } from './skog';
+import { axeTask, egenStock, fallTid, stockOverHus } from './skog';
 import { GA_TID, startWork, startsOnArrival } from './paborjat';
 import { duty, dygn, habitShare, habitTotal } from './seder';
 import { clamp, hash3, pick, pickNarmaste, rnd } from './slump';
@@ -994,9 +994,9 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
 // att bygga eller laga en del av ett hus. Saknas material hämtar man det först
 function building(s: State, p: Person, v: Val, job: NonNullable<ReturnType<typeof buildJob>>) {
   const b = job.bit, hus = s.hus?.find(h => h.id === b.hus)?.namn.toLowerCase() ?? 'huset';
-  const over = job.fell ? stockOverHus(s) : undefined; // en stam över ett färdigt hus huggs före nästa fällning (steg 9.2.86)
+  const over = job.fell ? stockOverHus(s) ?? egenStock(s, p) : undefined; // en stam över ett färdigt hus, eller den p själv fällt, huggs före nästa fällning (steg 9.2.86, 9.2.87)
   if (over) {
-    set(v, 'hugga', 'Hugger en fälld stam som ligger över ett hus.');
+    set(v, 'hugga', stockOverHus(s) === over ? 'Hugger en fälld stam som ligger över ett hus.' : 'Hugger stammen hen fällde.');
     v.ref = over.id; v.tool = 'yxa'; v.spot = { x: over.x + 0.3, y: over.y + 0.2 };
     return;
   }
