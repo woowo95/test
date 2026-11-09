@@ -4,29 +4,29 @@
    "granser": [
     0,
     20,
-    50,
+    40,
     90
    ],
    "bitMs": [
-    14982,
-    19064,
-    17838
+    15328,
+    19246,
+    22664
    ],
    "n": {
-    "pop": 7,
-    "atergrundad": 1,
-    "invandrade": 9,
-    "utvandrade": 7,
-    "fodda": 20,
-    "doda": 23,
-    "svalt": 2,
-    "kyla": 12,
-    "hunger": 118,
-    "humor": 0.516,
-    "vintermat": 10,
-    "vinterved": 70,
-    "eld": 66,
-    "kb": 2137,
+    "pop": 4,
+    "atergrundad": 3,
+    "invandrade": 13,
+    "utvandrade": 10,
+    "fodda": 18,
+    "doda": 29,
+    "svalt": 7,
+    "kyla": 14,
+    "hunger": 311,
+    "humor": 0.56,
+    "vintermat": 3,
+    "vinterved": 92,
+    "eld": 78,
+    "kb": 2136,
     "delKb": 288
    }
   },
@@ -34,30 +34,30 @@
    "granser": [
     0,
     30,
-    60,
+    70,
     90
    ],
    "bitMs": [
-    30254,
-    21729,
-    26395
+    23279,
+    20199,
+    16781
    ],
    "n": {
-    "pop": 6,
-    "atergrundad": 0,
-    "invandrade": 4,
-    "utvandrade": 21,
-    "fodda": 16,
-    "doda": 8,
-    "svalt": 0,
-    "kyla": 0,
-    "hunger": 2,
-    "humor": 0.556,
-    "vintermat": 6,
-    "vinterved": 203,
-    "eld": 92,
-    "kb": 2178,
-    "delKb": 289
+    "pop": 7,
+    "atergrundad": 6,
+    "invandrade": 13,
+    "utvandrade": 15,
+    "fodda": 21,
+    "doda": 28,
+    "svalt": 6,
+    "kyla": 5,
+    "hunger": 269,
+    "humor": 0.451,
+    "vintermat": 0,
+    "vinterved": 39,
+    "eld": 81,
+    "kb": 2284,
+    "delKb": 295
    }
   },
   "777": {
@@ -68,26 +68,26 @@
     90
    ],
    "bitMs": [
-    17423,
-    17779,
-    17029
+    14558,
+    12751,
+    16912
    ],
    "n": {
-    "pop": 1,
-    "atergrundad": 10,
+    "pop": 3,
+    "atergrundad": 8,
     "invandrade": 20,
-    "utvandrade": 8,
-    "fodda": 20,
-    "doda": 48,
-    "svalt": 11,
-    "kyla": 12,
-    "hunger": 347,
-    "humor": 0.481,
-    "vintermat": 0,
-    "vinterved": 65,
-    "eld": 54,
-    "kb": 2323,
-    "delKb": 301
+    "utvandrade": 11,
+    "fodda": 16,
+    "doda": 38,
+    "svalt": 15,
+    "kyla": 4,
+    "hunger": 139,
+    "humor": 0.428,
+    "vintermat": 5,
+    "vinterved": 109,
+    "eld": 63,
+    "kb": 2166,
+    "delKb": 294
    }
   }
  }
