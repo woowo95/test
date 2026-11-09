@@ -18,7 +18,7 @@ import { stepTorka } from './torka';
 import { stepFlod } from './flod';
 import { tornadoSteg } from './tornado';
 import { fallTanke, plantaSatt, plantaUppgravd, vindfallen } from './skogsvard';
-import { askaSteg, brandSteg, brinnerSteg, hjalpaKlar, slackaFram, slackaFylld, slackaSigKlar, slackaSteg } from './brand';
+import { askaSteg, brandHetta, brandSteg, brinnerSteg, hjalpaKlar, slackaFram, slackaFylld, slackaSigKlar, slackaSteg } from './brand';
 import { loggBer, stepBerattelser } from './berattelser';
 import { UTBROTT_ACTS, moodOf, stepHumor, utbrottKlar } from './humor';
 import { glomRykten, stepRykten } from './rykten';
@@ -376,7 +376,7 @@ export const takEffekt = (s: State, p: Person, tak: ReturnType<typeof viloTak>) 
 // värmen per timme: elden, kylan (det huset, skinnfällen och kläderna skyddar är borta) och milt väder. inRum = hur många som är i varje rum.
 // Över idealet (steg 2.3.4): solen (inte i skugga: i ett hus eller under ett träd), kläderna när det är milt och elden tätt intill
 export function varmeDelar(s: State, p: Person, coldRate: number, inRum: Map<number, number>, temp = temperature(s)) {
-  const heat = heatAt(s, p.x, p.y), rum = roomAt(s, p.x, p.y), shelter = rum ? shelterOf(s, rum, inRum.get(rum.id) ?? 1) : 0;
+  const rum = roomAt(s, p.x, p.y), brand = rum ? 0 : brandHetta(s, p.x, p.y), heat = Math.max(heatAt(s, p.x, p.y), brand), shelter = rum ? shelterOf(s, rum, inRum.get(rum.id) ?? 1) : 0; // branden värmer som lägerelden tätt intill (steg 9.2.135)
   const fall = tillbehorVarme(s, p, rum); // skinnfällen i bädden (steg 2.2.14)
   const klad = kladVarme(s, p); // kläderna (steg 2.3.2)
   const skugga = !!rum || groundOf(s).trees[tileOf(p.x, p.y)] > KROPP.skugga;
@@ -385,7 +385,7 @@ export function varmeDelar(s: State, p: Person, coldRate: number, inRum: Map<num
   const sol = skugga ? 0 : Math.max(0, temp - KROPP.solFran) / KROPP.solDiv * (1 - vaderNu(s).moln * VADER.molnSol);
   const kladHetta = klad * Math.max(0, temp - KROPP.kladFran) / KROPP.kladDiv, eldHetta = Math.max(0, heat - KROPP.eldTatt) * KROPP.eldHetta;
   return { heat, rum, shelter, fall, klad, eld: heat * KROPP.eldVarme, kyla: cr * (1 - shelter) * (1 - fall) * (1 - klad) * frysFaktor(p), mild: cr === 0 ? KROPP.mildVarme : 0,
-    sol, kladHetta, eldHetta, hetta: sol + kladHetta + eldHetta, skugga, blot: p.blot ?? 0, vaderGrader: vg };
+    sol, kladHetta, eldHetta, brandHetta: brand > heatAt(s, p.x, p.y) ? eldHetta : 0, hetta: sol + kladHetta + eldHetta, skugga, blot: p.blot ?? 0, vaderGrader: vg };
 }
 // värmen efter dt timmar: under idealet som förut (elden, kylan, milt väder, aldrig över idealet). Vid och över idealet värmer
 // bara hettan, kylan kyler, och kroppen svalnar mot idealet (KROPP.svalnar) men aldrig under det
@@ -415,7 +415,7 @@ function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: numb
     if ((p.blot ?? 0) > VADER.blotTanke) think(p, 'Blöt av regnet', -0.05, now, HOUR);
   }
   const v = varmeDelar(s, p, coldRate, inRum, temp), heat = v.heat;
-  p.warm = nyVarme(p.warm, v, dtSec / HOUR_S);
+  p.warm = p.brinner !== undefined ? KROPP.maxVarm : nyVarme(p.warm, v, dtSec / HOUR_S); // den som brinner har kroppens högsta värme tills elden är släckt (steg 9.2.135)
   const tak = viloTak(s, p, v.rum);
   if (tak) { // man vilar bättre under tak, och bäst på ett golv
     const e = takEffekt(s, p, tak);
@@ -544,6 +544,8 @@ const sida = (p: Person, f: number) => (((p.id * 37) % 7) - 3) * f / 3;
 // vägarna mellan två rutor sparas en stund: stigarna ändras långsamt, så de räknas om var fjärde timme och när något byggs
 const vagar = new WeakMap<State, { key: string; m: Map<number, number[] | null> }>();
 function pathFor(s: State, g: ReturnType<typeof groundOf>, x0: number, y0: number, x1: number, y1: number) {
+  // under en brand ändras vägarna med elden (steg 9.2.136): de räknas om varje gång, och den som är instängd går ut genom elden
+  if (g.brand) { stationRutor(s); return findPath(g, x0, y0, x1, y1) ?? findPath(g, x0, y0, x1, y1, true); } // stänger elden in en, går man ut genom den
   const key = `${Math.floor(s.now / (4 * HOUR))},${s.byggV ?? 0}`;
   let c = vagar.get(s);
   if (c?.key !== key) vagar.set(s, c = { key, m: new Map() });
@@ -574,6 +576,7 @@ function malFor(s: State, p: Person, tk: Task): { x: number; y: number } {
 }
 function walk(s: State, p: Person, tk: Task, left: number) {
   const g = groundOf(s);
+  if (g.brand && tk.path?.some(i => g.brand![i] === 1)) tk.pk = undefined; // en ruta på vägen började brinna: vägen söks om (steg 9.2.136)
   const key = `${tk.tx.toFixed(2)},${tk.ty.toFixed(2)},${s.byggV ?? 0}`; // en ny vägg kan stänga vägen
   if (tk.pk !== key) {
     tk.pk = key;

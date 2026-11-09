@@ -257,7 +257,7 @@ function behovHtml(p: Person) {
     ...r.netto < 0 ? [{ namn: v.eld > 0 || v.mild > 0 ? `${kylan} (mer än ${v.eld > 0 ? 'elden' : 'vädret'} värmer)` : kylan, v: r.netto }] : [],
     ...v.sol > 0 ? [{ namn: `Solen, ${Math.round(temp)} grader`, v: v.sol }] : [],
     ...v.kladHetta > 0 ? [{ namn: 'Kläderna värmer', v: v.kladHetta }] : [],
-    ...v.eldHetta > 0 ? [{ namn: 'Sitter tätt vid elden', v: v.eldHetta }] : [],
+    ...v.brandHetta > 0 ? [{ namn: 'Hettan från branden', v: v.brandHetta }] : v.eldHetta > 0 ? [{ namn: 'Sitter tätt vid elden', v: v.eldHetta }] : [], // steg 9.2.135
     ...r.svalnar > 0 ? [{ namn: 'Svalnar', v: -r.svalnar }] : [],
   ];
   const tak = viloTak(s, p, v.rum);

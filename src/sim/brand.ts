@@ -24,6 +24,7 @@ import { larma, larmNu } from './rykten';
 import { SAKER } from './saker';
 import { isLight, kalender } from './tid';
 import { drickPlats } from './torst';
+import { vattenNu } from './sjo';
 import { DAY, H, HEARTHS, HOUR, HOUR_S, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { allaBarn, drabbadHus, upplev } from './uppvaxt';
 import { VAG, isSoil } from './vag';
@@ -84,6 +85,8 @@ export const BRAND = balans('brand', {
   sikt: 20, // man ser elden så här många rutor bort på dagen ...
   siktNatt: 0.5, // ... och så här stor del av det på natten (men glöden syns)
   hot: 10, // elden hotar byn när en ruta brinner så här nära byns område (utanforByn): då släcker de vuxna
+  hetta: 1.2, // branden är het (steg 9.2.135): en ruta som brinner värmer som lägerelden tätt intill (värmen i heatAt, eld.ts; över KROPP.eldTatt blir man för varm) ...
+  hettaR: 2, // ... ut till så här många rutor, avtagande
   fara: 2, // den som är så här nära en brinnande ruta och inte släcker går undan ...
   undan: 6, // ... så här många rutor bort ...
   undanMin: 30, // ... i så här många minuter
@@ -101,6 +104,9 @@ export const BRAND = balans('brand', {
   tarEld: 0.5, // chansen att man börjar brinna när man bränns i en brinnande ruta ...
   tarEldHand: 0.2, // ... när man bränns medan man släcker med händerna ...
   vaggEld: 0.3, // ... och i timmen när man står bredvid en brinnande vägg (elden hoppar över)
+  smitta: 3, // elden smittar (steg 9.2.134): den som går eller står på en ruta som brinner börjar brinna med den här takten i sekunden
+  // (en sekund är några minuter i spelet), så nästan säkert också den som bara går igenom ...
+  bredvidEld: 0.15, // ... och den som står bredvid skog, ungskog, buskar eller gräs som brinner med den här i timmen (lägre än bredvid en vägg)
   brinnSkada: 6, // den som brinner får brännskador med den här takten (i timmen) ...
   brinnGrad: [0.1, 0.4], // ... så här svåra (slumpas mellan)
   plaggBrinner: 1.5, // chansen i timmen att ett plagg man har på sig brinner upp
@@ -177,6 +183,37 @@ function inreOf(b: Brand) {
 export const brandKant = (s: State) => s.brand ? s.brand.r.filter(r => !inreOf(s.brand!)[r[0]]).length : 0;
 // brinner ruta i?
 export const brinner = (s: State, i: number) => !!s.brand && kartaOf(s.brand)[i] === 1;
+// hettan från branden vid (x, y) (steg 9.2.135), i samma enheter som lägerelden (heatAt i eld.ts): som tätt intill elden nära en ruta
+// som brinner, avtagande ut till BRAND.hettaR rutor
+export function brandHetta(s: State, x: number, y: number) {
+  const b = s.brand;
+  if (!b?.r.length) return 0;
+  const k = kartaOf(b), cx = Math.floor(x), cy = Math.floor(y), R = Math.ceil(BRAND.hettaR);
+  let v = 0;
+  for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
+    const xx = cx + dx, yy = cy + dy;
+    if (!inMap(xx, yy) || k[yy * W + xx] !== 1) continue;
+    const d = Math.hypot(xx + 0.5 - x, yy + 0.5 - y);
+    if (d <= BRAND.hettaR + 0.5) v = Math.max(v, BRAND.hetta * (1 - d / (BRAND.hettaR + 1)));
+  }
+  return v;
+}
+// rutorna som brinner och de bredvid, för vägsökningen (steg 9.2.136, groundOf(s).brand): 1 = brinner, 2 = bredvid
+function brandKarta(s: State) {
+  const g = groundOf(s), b = s.brand;
+  if (!b?.r.length) { g.brand = undefined; return; }
+  const m = new Uint8Array(W * H);
+  for (const r of b.r) { const i = r[0], x = i % W, y = (i - x) / W; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (inMap(x + dx, y + dy) && !m[(y + dy) * W + x + dx]) m[(y + dy) * W + x + dx] = 2; }
+  for (const r of b.r) m[r[0]] = 1;
+  g.brand = m;
+}
+// den som blir extremt varm av branden går undan från den (steg 9.2.135), i stället för att söka skugga under träd som kan brinna
+export function brandUndan(s: State, p: Person) {
+  const b = s.brand;
+  if (!b?.r.length || !kanGa(p)) return undefined;
+  const n = narmast(b, p.x, p.y);
+  return n.d > BRAND.hettaR + 0.5 ? undefined : bortFran(s, p, n.i);
+}
 // ljuset från branden (steg 9.2.20): rutorna i brandens kant som inte är släckta, en gång per tid (frågas ofta)
 const ljusMinne = new WeakMap<Brand, { t: number; r: number[] }>();
 export function brandLjus(s: State): readonly number[] {
@@ -315,6 +352,7 @@ export function brandSteg(s: State, dtSec: number) {
   ser(s, b);
   soker(s, b, hot);
   iElden(s, b, dtSec);
+  brandKarta(s);
   if (b.r.length) return;
   // branden är slut
   const delar = [`brände ${mark(b.ut.length)}`, b.trad && `${tal(b.trad, true)} träd`, b.vagg && `rev ${b.vagg === 1 ? 'en vägg' : `${tal(b.vagg)} väggar`}`, b.saker && `${b.saker === 1 ? 'en sak' : `${tal(b.saker)} saker`}`, b.brann && `och det här brann upp: ${brannText(b)}`].filter(Boolean);
@@ -463,13 +501,16 @@ function iElden(s: State, b: Brand, dtSec: number) {
     upplev(s, p, 'drabbad', 'eldsvådan'); // steg 4.1.1.2
     if (ur(s, p.id, 3867) < BRAND.tarEld) antand(s, p, 'i elden');
   }
-  // elden hoppar över från en brinnande vägg till den som står bredvid
+  // elden smittar (steg 9.2.134): den som är på en ruta som brinner börjar nästan säkert brinna, också den som bara går igenom; och
+  // elden hoppar över från en brinnande vägg, och med en lägre chans från marken som brinner, till den som står bredvid
   for (const p of living(s)) {
     if (p.brinner !== undefined || !alive(p)) continue;
     const x = Math.floor(p.x), y = Math.floor(p.y);
-    let vid = false;
-    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (inMap(x + dx, y + dy) && k[(y + dy) * W + x + dx] === 1 && bitAt(s, x + dx, y + dy)?.k === 'vagg') vid = true;
-    if (vid && ur(s, p.id, 3868) < chans(BRAND.vaggEld, dtSec)) antand(s, p, 'från väggen');
+    if (inMap(x, y) && k[y * W + x] === 1) { if (ur(s, p.id, 3869) < 1 - Math.exp(-BRAND.smitta * dtSec)) antand(s, p, 'i elden'); continue; }
+    let vagg = false, mark = false;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (inMap(x + dx, y + dy) && k[(y + dy) * W + x + dx] === 1) { if (bitAt(s, x + dx, y + dy)?.k === 'vagg') vagg = true; else mark = true; }
+    if (vagg && ur(s, p.id, 3868) < chans(BRAND.vaggEld, dtSec)) antand(s, p, 'från väggen');
+    else if (mark && ur(s, p.id, 3870) < chans(BRAND.bredvidEld, dtSec)) antand(s, p, 'bredvid elden');
   }
 }
 
@@ -564,11 +605,20 @@ function brandMal(s: State, b: Brand, p: Person, hot: boolean): BrandMal | undef
     if (m.i >= 0) return { act: 'slacka', why: 'Släcker elden med händerna', spot: bredvid(b, m.i, p), dur: BRAND.handMin * MIN, ref: m.i };
   }
   if (n.d > BRAND.fara) return;
-  // bort från elden
-  const cx = n.i % W + 0.5, cy = Math.floor(n.i / W) + 0.5, dx = p.x - cx, dy = p.y - cy, l = Math.hypot(dx, dy) || 1, u = ur(s, p.id, 3863) * 2 * Math.PI;
+  return bortFran(s, p, n.i);
+}
+// bort från den brinnande rutan i
+function bortFran(s: State, p: Person, i: number): BrandMal {
+  const cx = i % W + 0.5, cy = Math.floor(i / W) + 0.5, dx = p.x - cx, dy = p.y - cy, l = Math.hypot(dx, dy) || 1, u = ur(s, p.id, 3863) * 2 * Math.PI;
   const ux = l > 0.1 ? dx / l : Math.cos(u), uy = l > 0.1 ? dy / l : Math.sin(u);
-  const x = Math.min(W - 1.5, Math.max(1.5, cx + ux * (BRAND.fara + BRAND.undan))), y = Math.min(H - 1.5, Math.max(1.5, cy + uy * (BRAND.fara + BRAND.undan)));
-  return { act: 'flyEld', why: 'Elden är nära, går undan', spot: { x, y }, dur: BRAND.undanMin * MIN };
+  // platsen ligger på land (steg 9.2.136): närmare elden, eller åt sidan, om vattnet tar vid
+  const vt = vattenNu(s), land = (x: number, y: number) => vt[Math.floor(y) * W + Math.floor(x)] !== T.Vatten;
+  for (const v of [0, 0.6, -0.6, 1.2, -1.2]) for (let r = BRAND.fara + BRAND.undan; r >= 1; r--) {
+    const c = Math.cos(v), sn = Math.sin(v), vx = ux * c - uy * sn, vy = ux * sn + uy * c;
+    const x = Math.min(W - 1.5, Math.max(1.5, cx + vx * r)), y = Math.min(H - 1.5, Math.max(1.5, cy + vy * r));
+    if (land(x, y) && !brinner(s, Math.floor(y) * W + Math.floor(x))) return { act: 'flyEld', why: 'Elden är nära, går undan', spot: { x, y }, dur: BRAND.undanMin * MIN };
+  }
+  return { act: 'flyEld', why: 'Elden är nära, går undan', spot: { x: p.x, y: p.y }, dur: BRAND.undanMin * MIN };
 }
 // platsen bredvid den brinnande rutan i, på sidan mot p (inte i elden)
 function bredvid(b: Brand, i: number, p: { x: number; y: number }) {

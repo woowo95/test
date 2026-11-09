@@ -14,12 +14,13 @@ export const VAG = balans('vag', {
   stigTacke: 0.55,
   trampHog: 0.75, // högt gräs trampas ner direkt till så här högt ...
   trampPlanta: 4, // ... och en liten planta (under skog) trampas ihjäl så här många gånger fortare än gräset nöts
+  brandNara: 3, // en ruta bredvid elden kostar så här mycket mer att gå på, så att man håller avstånd när det går (steg 9.2.136)
   sokVikt: 0.52, // sökningen räknar så mycket per ruta som är kvar till målet: mer än den billigaste rutan (stigBas), så att den går fort och hellre tar den raka vägen
 });
 
 // solid = väggar, built = byggda eller planerade rutor, hinder = hyllor, kistor och ställ (går inte att gå igenom, stationer.ts),
 // lost = rutor med lösa saker på golvet (långsamma, lager.ts). Steg 2.3.6
-export interface Ground { tiles: Uint8Array; cover: Float32Array; trees: Float32Array; alder?: Float32Array; art?: Uint8Array; buske?: Uint8Array; solid?: Uint8Array; built?: Uint8Array; hinder?: Uint8Array; lost?: Uint8Array }
+export interface Ground { tiles: Uint8Array; cover: Float32Array; trees: Float32Array; alder?: Float32Array; art?: Uint8Array; buske?: Uint8Array; solid?: Uint8Array; built?: Uint8Array; hinder?: Uint8Array; lost?: Uint8Array; brand?: Uint8Array } // brand: 1 = rutan brinner, 2 = bredvid elden (brand.ts, steg 9.2.136)
 export const HIGH = 0.9, BAR = 0.3; // högt gräs över HIGH, bar jord under BAR
 export const FOREST = 0.5; // träd från detta värde räknas som skog
 export const BUSKE = 250; // g.buske från detta värde: en buske står på rutan (buskar.ts, steg 6.5.3)
@@ -102,11 +103,12 @@ function nySokning() {
 }
 // A* med 8 riktningar. Inte över vatten, väggar eller hyllor (målet får vara en hylla) och inte snett förbi en hörna. Start och mål får vara vatten.
 // Ger rutorna mellan start och mål (utan båda), eller null om det inte finns någon väg.
-export function findPath(g: Ground, x0: number, y0: number, x1: number, y1: number): number[] | null {
+// genomBrand: den som är instängd av elden går den kortaste vägen ut, genom elden (steg 9.2.136); annars går vägen aldrig genom en ruta som brinner
+export function findPath(g: Ground, x0: number, y0: number, x1: number, y1: number, genomBrand = false): number[] | null {
   const sx = clampI(x0, W), sy = clampI(y0, H), gx = clampI(x1, W), gy = clampI(y1, H);
   const start = sy * W + sx, goal = gy * W + gx;
   if (start === goal) return [];
-  const tiles = g.tiles, solid = g.solid, hinder = g.hinder, aW = 2 * W + 1, sv = VAG.sokVikt;
+  const tiles = g.tiles, solid = g.solid, hinder = g.hinder, brand = genomBrand ? undefined : g.brand, aW = 2 * W + 1, sv = VAG.sokVikt;
   nySokning();
   sedd[start] = gen; gs[start] = 0; came[start] = -1; heap.push(start, 0);
   while (heap.size) {
@@ -118,9 +120,9 @@ export function findPath(g: Ground, x0: number, y0: number, x1: number, y1: numb
     for (let dy = y > 0 ? -1 : 0, ye = y < H - 1 ? 1 : 0; dy <= ye; dy++) for (let dx = xa; dx <= xe; dx++) { // grannarna på kartan
       if (!dx && !dy) continue;
       const nx = x + dx, ny = y + dy, ni = ny * W + nx;
-      if (stangd[ni] === gen || ((tiles[ni] === T.Vatten || solid?.[ni] || hinder?.[ni]) && ni !== goal)) continue;
+      if (stangd[ni] === gen || ((tiles[ni] === T.Vatten || solid?.[ni] || hinder?.[ni] || brand?.[ni] === 1) && ni !== goal)) continue;
       if (dx && dy && (stop(g, y * W + nx) || stop(g, ny * W + x))) continue;
-      if (kostad[ni] !== gen) { kostad[ni] = gen; kost[ni] = tiles[ni] === T.Vatten ? 1 : stepCost(g, ni); }
+      if (kostad[ni] !== gen) { kostad[ni] = gen; kost[ni] = (tiles[ni] === T.Vatten ? 1 : stepCost(g, ni)) + (brand?.[ni] === 2 ? VAG.brandNara : 0); }
       const ng = gi + (dx && dy ? SQ2 : 1) * kost[ni];
       if (ng < (sedd[ni] === gen ? gs[ni] : Infinity)) { sedd[ni] = gen; gs[ni] = ng; came[ni] = i; heap.push(ni, ng + avst[(ny - gy + H) * aW + nx - gx + W] * sv); }
     }
