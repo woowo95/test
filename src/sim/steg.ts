@@ -39,7 +39,7 @@ import { arbetsformaga, atSteg, foodDays, workRate } from './ekonomi';
 import { FYND, type FyndId, svampPlock, flintorOchYxor, toppOf, TRY_SEC, flintFactor, growFynd, handFish, lagren, stoneDist, packFynd, pickMushrooms, richness, richnessDelar, sankning, takeFrom } from './fynd';
 import { halMin, halVal, islagt, stepIs } from './is';
 import { blotSteg, coldOf, stepVader, temperature, VADER, vaderGrader, vaderNu, vaxtFaktor } from './vader';
-import { ELD, VED, addFuel, canLight, eldById, eldXY, giveBack, needStones, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight } from './eld';
+import { ELD, VED, type Tand, tandPaRutan, addFuel, canLight, eldById, eldXY, giveBack, needStones, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight } from './eld';
 import { gastLever } from './gast';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, gjort, isSick, living, log, ovning, stat, think } from './folk';
 import { SJUK, type SjukId, insjukna, sjukSteg, smittaTimme, smittaUtifranTimme } from './sjukdom';
@@ -97,7 +97,7 @@ import { bordPlats, fullBorda, kladVarme, ryggKorg, ryms, slitRygg, stepKlader }
 import { stepPynt } from './pynt';
 import { stadaByten } from './byte';
 import { finishStation, finishTillbehor, stationAt, stationRutor, stepStationer, tillbehorVarme, workStation } from './stationer';
-import { TROSKEL, forbrukTimme, overTak } from './forradsmal';
+import { TROSKEL, forbrukTimme, overTak, underBuffert } from './forradsmal';
 import { notis } from './notiser';
 
 // Simuleringen går i slag om fem minuter (BEAT), i spelet och vid ikappräkning likadant. Inom ett slag går tiden åt
@@ -1014,6 +1014,11 @@ function rundaRuta(s: State, p: Person, tk: Task, left: number, a: number, learn
   // den som hämtar tändmaterial plockar det som finns på rutan och i närheten och hittar hö och kvistar på vägen; ser hen inget
   // att plocka letar hen på marken där hen står tills det räcker (hö och kvistar ligger överallt, forageItems i eld.ts)
   if (tk.tandmat && tinderShort(s, tk) && !full && !narmastMedSaker(s, tk, x, y, RUNDA.syn)) {
+    // tändmaterialet är hela saker på rutan (steg 9.3.4): är rutan tom på det som fattas går hen till den närmaste som har det
+    if (!tandHar(s, tk, x, y)) {
+      const n = narmastTand(s, tk, x, y, RUNDA.syn);
+      if (n) { tk.tx = n.x + 0.5; tk.ty = n.y + 0.5; tk.hopp = true; return 1e-3; }
+    }
     const used = Math.max(1e-3, Math.min(left, slut, BIT));
     s.now = now + used * SEC; plockSlag = ''; workStep(s, p, tk, used, a, learn, false, true, 0); plockSlag = undefined;
     return used;
@@ -1045,6 +1050,20 @@ function narmastMedSaker(s: State, tk: Task, x0: number, y0: number, r: number) 
   for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
     const x = x0 + dx, y = y0 + dy, d = Math.hypot(dx, dy);
     if (d > r + 0.01 || d >= bd || !inMap(x, y) || vt[y * W + x] === T.Vatten || sakerPa(s, tk, x, y) <= 0) continue;
+    bast = { x, y }; bd = d;
+  }
+  return bast;
+}
+// tändmaterialet som fattas (hö eller kvistar) finns på rutan (steg 9.3.4, tandPaRutan i eld.ts)
+const tandFattas = (s: State, tk: Task) => (['torrgras', 'grenar'] as Tand[]).filter(k => underBuffert(s, k, tk.items?.[k] ?? 0));
+const tandHar = (s: State, tk: Task, x: number, y: number) => tandFattas(s, tk).some(k => tandPaRutan(s, k, x, y) > 0);
+// den närmaste rutan inom r med det tändmaterial som fattas, och dit man kan gå (inte i vattnet)
+function narmastTand(s: State, tk: Task, x0: number, y0: number, r: number) {
+  const slag = tandFattas(s, tk);
+  let bast: { x: number; y: number } | undefined, bd = Infinity;
+  for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    const x = x0 + dx, y = y0 + dy, d = Math.hypot(dx, dy);
+    if ((!dx && !dy) || d > r + 0.01 || d >= bd || !inMap(x, y) || !slag.some(k => tandPaRutan(s, k, x, y) > 0)) continue;
     bast = { x, y }; bd = d;
   }
   return bast;
