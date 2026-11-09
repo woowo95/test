@@ -50,9 +50,9 @@
   // ---------- färgerna: material → ramp och grundton ----------
   const FARGER = [
     { id: 'skog', namn: 'Skog och glöd', text: 'mörkgrön kropp, horn av ben, rostiga plattor och gula ögon som lyser',
-      m: { kropp: ['barr', 2], horn: ['ben', 2], skal: ['jord', 2], platta: ['rost', 2], hard: ['senap', 1], man: ['senap', 0], tecken: ['senap', 3], hinna: ['rost', 1], fjader: ['jord', 2], oga: ['senap', 3], mun: ['rost', 0], tand: ['ben', 3], klo: ['ben', 1], slem: ['oliv', 3] } },
+      m: { kropp: ['barr', 2], horn: ['ben', 2], skal: ['jord', 2], platta: ['rost', 2], hard: ['senap', 1], man: ['senap', 0], tecken: ['senap', 3], hinna: ['rost', 1], fjader: ['jord', 2], oga: ['senap', 3], mun: ['rost', 0], tand: ['ben', 3], klo: ['ben', 1], slem: ['oliv', 3], mossa: ['oliv', 2], kristall: ['skiffer', 3], glod: ['senap', 3], benrest: ['ben', 2], hal: ['rost', 0], flack: ['jord', 1] } },
     { id: 'aska', namn: 'Aska och blod', text: 'kolsvart kropp, horn av ben, blodröda hinnor och tecken och röda ögon som lyser',
-      m: { kropp: ['kol', 2], horn: ['ben', 2], skal: ['skiffer', 1], platta: ['rost', 1], hard: ['skiffer', 2], man: ['rost', 1], tecken: ['rost', 3], hinna: ['rost', 0], fjader: ['skiffer', 1], oga: ['rost', 3], mun: ['rost', 0], tand: ['ben', 3], klo: ['ben', 2], slem: ['skiffer', 3] } },
+      m: { kropp: ['kol', 2], horn: ['ben', 2], skal: ['skiffer', 1], platta: ['rost', 1], hard: ['skiffer', 2], man: ['rost', 1], tecken: ['rost', 3], hinna: ['rost', 0], fjader: ['skiffer', 1], oga: ['rost', 3], mun: ['rost', 0], tand: ['ben', 3], klo: ['ben', 2], slem: ['skiffer', 3], mossa: ['oliv', 1], kristall: ['rost', 3], glod: ['rost', 3], benrest: ['ben', 2], hal: ['rost', 0], flack: ['oliv', 1] } },
   ];
 
   // ---------- kroppen bestämmer var allt annat sitter ----------
@@ -122,6 +122,27 @@
   // texturen: ytan på kroppen, halsen, käken, svansen och benen. yta(x, y, v, du, dl, dr, h) ger en tonändring
   // (h är formens höjd i den kolumnen); form(mask) får ändra konturen, och droppar() ger slemmets droppar
   const kant = (m, x, y) => x < 0 || y < 0 || x >= W || y >= H || !m[y * W + x];
+  // celler: den närmaste och näst närmaste punkten i ett skakat rutnät med sidan s (för sten, sprickor och vårtor)
+  const celler = (x, y, s, fro) => {
+    const gx = Math.floor(x / s), gy = Math.floor(y / s); let d1 = 1e9, d2 = 1e9, px = 0, py = 0, id = 0;
+    for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) {
+      const cx = (gx + i + 0.15 + hash(gx + i, gy + j, fro) * 0.7) * s, cy = (gy + j + 0.15 + hash(gx + i, gy + j, fro + 1) * 0.7) * s, d = Math.hypot(x - cx, y - cy);
+      if (d < d1) { d2 = d1; d1 = d; px = cx; py = cy; id = (gx + i) * 1000 + gy + j; } else if (d < d2) d2 = d;
+    }
+    return { d1, d2, px, py, id };
+  };
+  // överst i masken ovanför punkten (hur långt ner i formen den ligger)
+  const djup = (m, x, y) => { let k = 0; while (y - k - 1 >= 0 && m[(y - k - 1) * W + x]) k++; return k; };
+  const klipp = (m, f) => { const u = tom(); for (let i = 0; i < m.length; i++) if (m[i] && f(i % W, (i / W) | 0)) u[i] = 1; return u; };
+  const vartor = (x, y) => {
+    // vårtor i olika storlek: ljus knöl med en ljusare prick uppe till vänster och en mörk ring runt, mörkast under
+    const c = celler(x, y, 7, 70);
+    if (hash(c.id, 0, 71) > 0.85) return 0;
+    const r = 1.4 + hash(c.id, 1, 72) * 1.5;
+    if (c.d1 < r) return (x - c.px + y - c.py < -r * 0.6) ? 2 : 1;
+    if (c.d1 < r + 1.1) return y >= c.py ? -2 : -1;
+    return 0;
+  };
   const TEXTURER = [
     { id: 'pals', namn: 'Päls', text: 'tjock päls med tofsar som sticker ut bakåt längs ryggen och hänger under magen',
       yta(x, y, v, du, dl) {
@@ -167,6 +188,125 @@
           const q = hash(x, y, 12);
           if (q < 0.14 && !d[y * W + x - 1]) { const l = 1 + Math.floor(q * 30); for (let k = 1; k <= l && y + k < G - 1; k++) d[(y + k) * W + x] = 1; }
         }
+        return d;
+      } },
+    { id: 'fjadrar', namn: 'Fjädrar', text: 'små fjädrar som ligger bakåt i rader, med fransar under magen',
+      yta(x, y, v, du, dl) {
+        if (du === 0 || dl === 0) return 0;
+        // fjädrarna ligger i rader som är förskjutna en halv fjäder och lutar bakåt (spetsen åt vänster och nedåt):
+        // en rundad mörk kant nedtill och ljust strax ovanför kanten
+        const rad = Math.floor(y / 6), cy = y % 6, cx = (x + (rad % 2) * 3 + (cy >> 2) + 600) % 6;
+        const kant = [-1, 3, 4, 5, 4, 3][cx];
+        if ((cx === 0 && cy <= 2) || cy === kant) return -2;
+        if (cy === kant - 1 && cx >= 1 && cx <= 4) return 1;
+        return 0;
+      },
+      form(m) {
+        const u = m.slice(), satt = (x, y) => { if (x >= 0 && y >= 0 && x < W && y < G - 2) u[y * W + x] = 1; };
+        for (let y = 1; y < H - 1; y++) for (let x = 2; x < W; x++) {
+          if (!m[y * W + x]) continue;
+          if (kant(m, x, y + 1) && x % 3 === 0 && y < G - 6) { satt(x, y + 1); satt(x - 1, y + 1); satt(x - 1, y + 2); }
+          if (kant(m, x, y - 1) && x % 5 === 0) satt(x - 1, y - 1);
+        }
+        return u;
+      } },
+    { id: 'bark', namn: 'Bark och mossa', text: 'skrovlig bark med djupa fåror, mossa på ryggen och lav i fläckar',
+      yta(x, y, v, du) {
+        if (du === 0) return 0;
+        const w = Math.round(Math.sin(x * 0.25 + hash(x >> 3, 0, 40) * 6) * 1.5), k = (((y + w) % 4) + 4) % 4;
+        if (hash(x, y, 22) < 0.008) return 2;
+        if (hash(x >> 2, (y + w) >> 2, 41) < 0.25) return 0;
+        return k === 0 ? -2 : k === 1 && v < 0.6 ? 1 : 0;
+      },
+      extra(kropp) {
+        // mossan växer överst på ryggen, halsen och svansen, och sticker upp i små tuvor
+        const mossa = klipp(kropp, (x, y) => djup(kropp, x, y) <= 2 + Math.floor(hash(x >> 2, 0, 42) * 4) && hash(x >> 3, y >> 3, 43) < 0.7);
+        for (let i = W; i < mossa.length; i++) if (mossa[i] && !kropp[i - W] && hash(i, 0, 44) < 0.4) mossa[i - W] = 1;
+        return [{ mask: mossa, mat: 'mossa', kontur: false, z: Z.kropp + 0.3, monster: (x, y) => (hash(x, y, 21) < 0.3 ? 1 : hash(x, y, 21) > 0.75 ? -1 : 0) }];
+      } },
+    { id: 'sten', namn: 'Sten', text: 'sprucken som ett berg, i kantiga block, med kristaller som växer ur ryggen',
+      yta(x, y) {
+        const c = celler(x, y, 7, 50);
+        if (c.d2 - c.d1 < 0.9) return -2;
+        if (celler(x, y - 2, 7, 50).id !== c.id) return 1;
+        if (hash(x, y, 51) < 0.04) return -1;
+        return 0;
+      },
+      extra(kropp, A) {
+        const r = ryggen(kropp, A.svans[0] - 2, A.nacke[1][0] - 4), d = [];
+        r.forEach(([x, y], i) => {
+          if (i % 9 !== 4 || hash(x, 0, 52) < 0.2) return;
+          for (const [dx, l, lut] of [[0, 7 + hash(x, 1, 53) * 5, -1], [3, 4 + hash(x, 2, 53) * 3, 1]]) {
+            const cx = x + dx, t = [cx + lut * l * 0.25, y - l];
+            d.push({ mask: fyll(poly([[cx - 2, y + 3], [cx - 2, y - 1], t, [cx + 2, y - 1], [cx + 2, y + 3]])), mat: 'kristall', z: Z.platta + 0.5, monster: xx => (xx < t[0] ? 1 : -1) });
+          }
+        });
+        return d;
+      } },
+    { id: 'kitin', namn: 'Kitin', text: 'blankt insektsskal i hårda segment, med en glansrand',
+      yta(x, y, v, du, dl, dr, h, d) {
+        if (d && d.sida) { const k = y % 5, w = dl / Math.max(1, dl + dr); return k === 0 ? -2 : k === 1 ? -1 : w > 0.15 && w < 0.3 ? 2 : 0; }
+        const k = (((x + Math.round(v * 3)) % 7) + 7) % 7;
+        if (k === 0) return -2;
+        if (k === 1) return -1;
+        if (v > 0.12 && v < 0.24) return 2;
+        return 0;
+      } },
+    { id: 'glod', namn: 'Glödande sprickor', text: 'mörk hud som stelnad lava, med sprickor som glöder',
+      yta(x, y, v, du) {
+        if (du === 0) return 0;
+        const c = celler(x, y, 9, 60);
+        return c.d2 - c.d1 < 2.4 ? 0 : -1;
+      },
+      extra(kropp, A, ben) {
+        const alla = ihop(kropp, ...ben);
+        const m = klipp(alla, (x, y) => { const c = celler(x, y, 9, 60); return c.d2 - c.d1 < 0.9 && hash(c.id, 0, 61) < 0.75 && !kant(alla, x, y - 1) && !kant(alla, x, y + 1); });
+        return [{ mask: m, mat: 'glod', kontur: false, lyser: true, z: Z.kropp + 0.4 }];
+      } },
+    { id: 'padda', namn: 'Paddhud', text: 'knottrig hud med vårtor och stora mörka fläckar',
+      yta(x, y, v, du, dl) {
+        return vartor(x, y);
+      },
+      extra(kropp, A, ben) {
+        // stora fläckar i en egen färg, som på en giftpadda
+        const alla = ihop(kropp, ...ben);
+        const m = klipp(alla, (x, y) => { const f = celler(x, y, 11, 74); return f.d1 < 2.8 + hash(f.id, 1, 76) * 1.8 && hash(f.id, 0, 75) < 0.6 && !kant(alla, x, y - 1) && !kant(alla, x - 1, y); });
+        return [{ mask: m, mat: 'flack', kontur: false, z: Z.kropp + 0.3, monster: (x, y, v) => vartor(x, y) + (v > 0.6 ? -1 : 0) }];
+      },
+      form(m) {
+        const u = m.slice();
+        for (let y = 1; y < H; y++) for (let x = 0; x < W; x++) if (m[y * W + x] && kant(m, x, y - 1) && hash(x >> 1, y, 73) < 0.18) u[(y - 1) * W + x] = 1;
+        return u;
+      } },
+    { id: 'rutten', namn: 'Ruttnande', text: 'trasig hud med sjuka fläckar och hål där revbenen och halskotorna syns',
+      yta(x, y, v, du, dl) {
+        if (hash(x >> 2, y >> 2, 80) < 0.28 && bayer(x, y) < 0.6) return -1;
+        if (hash(x, y, 81) < 0.012) return -2;
+        return 0;
+      },
+      form(m, lem) {
+        if (lem) return m;
+        const u = m.slice();
+        for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
+          if (!m[y * W + x]) continue;
+          if (kant(m, x, y - 1) || kant(m, x, y + 1)) {
+            const q = hash(x >> 1, y, 82);
+            if (q < 0.12) { u[y * W + x] = 0; if (q < 0.05) u[(y + (kant(m, x, y - 1) ? 1 : -1)) * W + x] = 0; }
+          }
+        }
+        return u;
+      },
+      extra(kropp, A) {
+        const d = [];
+        const hal = (cx, cy, rx, ry, ben) => {
+          const m = klipp(kropp, (x, y) => ((x + 0.5 - cx) / rx) ** 2 + ((y + 0.5 - cy) / ry) ** 2 <= 1 - (hash(x, y, 83) - 0.5) * 0.5);
+          d.push({ mask: m, mat: 'hal', z: Z.kropp + 0.6 });
+          d.push({ mask: klipp(m, ben), mat: 'benrest', kontur: false, z: Z.kropp + 0.7, monster: (x, y) => (kant(m, x, y - 1) ? 1 : 0) });
+        };
+        const hx = (A.h[0] + A.f[0]) / 2 + 2, hy = ryggen(kropp, hx, hx)[0][1] + 9;
+        hal(hx, hy, 8.5, 5, (x, y) => (x + Math.round((y - hy) * 0.5)) % 4 === 0);
+        const [n0, n1] = A.nacke, nx = (n0[0] + n1[0]) / 2, ny = (n0[1] + n1[1]) / 2;
+        hal(nx, ny, 3.5, 2.6, (x, y) => Math.abs(y - ny) < 1 && x % 3 !== 0);
         return d;
       } },
   ];
@@ -372,7 +512,7 @@
         if (dl === 0 && h >= 4 && v < 0.6) t = Math.max(t, b + 1);
         if (dr === 0 && h >= 4 && t > b - 1 && du > 0) t = b - 1;
       }
-      if (d.monster) t += d.monster(x, y, v, du, dl, dr, h);
+      if (d.monster) t += d.monster(x, y, v, du, dl, dr, h, d);
       L.satt(x, y, P.i(ramp, kl(t)), !!d.lyser);
     }
   }
@@ -387,7 +527,8 @@
     const bal = fyll(poly(K.bal)), nacke = fyll(kapsel(K.nacke, K.nackeR));
     const hu = HU.huvud(K.nacke[1]), sv = SV.svans(K.svans);
     const kropp = ihop(bal, nacke, hu.skalle, sv.mask);
-    lagg({ mask: TX.form ? TX.form(kropp) : kropp, monster: hud }, Z.kropp);
+    const kroppF = TX.form ? TX.form(kropp) : kropp;
+    lagg({ mask: kroppF, monster: hud }, Z.kropp);
     if (TX.droppar) lagg({ mask: TX.droppar(ihop(kropp, ...hu.delar.filter(d => d.mat === 'kropp').map(d => d.mask))), mat: 'slem', kontur: false }, Z.kropp + 0.5);
     hu.delar.forEach(d => lagg(d.mat === 'kropp' ? { ...d, monster: hud } : d, Z.huvud));
     if (sv.klubba) {
@@ -395,11 +536,13 @@
       lagg({ mask: fyll(eller(ell(cx, cy, 6, 5), poly([[cx - 2, cy - 4], [cx, cy - 9], [cx + 2, cy - 4]]), poly([[cx - 5, cy - 1], [cx - 10, cy - 2], [cx - 5, cy + 2]]), poly([[cx - 2, cy + 4], [cx - 1, cy + 8], [cx + 2, cy + 4]]))), mat: 'hard' }, Z.klubba);
     }
     // benen: de bortre lite förskjutna och mörkare
-    const leder = [], skenor = [];
+    const leder = [], skenor = [], narBen = [];
     for (const [J, bak, far, dx] of [[K.h, true, true, 5], [K.f, false, true, -5], [K.h, true, false, 0], [K.f, false, false, 0]]) {
       const b = BE.ben([J[0] + dx, J[1] - (far ? 1 : 0)], bak, far);
       const zb = far ? Z.farBen : Z.ben;
-      lagg({ mask: TX.form ? TX.form(b.mask) : b.mask, far, sida: true, monster: (...a) => { const m = b.monster?.(...a); return m ?? hud(...a); } }, zb);
+      const bm = TX.form ? TX.form(b.mask, true) : b.mask;
+      if (!far) narBen.push(bm);
+      lagg({ mask: bm, far, sida: true, monster: (...a) => { const m = b.monster?.(...a); return m ?? hud(...a); } }, zb);
       b.extra.forEach(e => lagg({ ...e, far, z: zb + (e.z ?? 0.1), monster: e.mat === 'kropp' ? hud : e.monster }, zb));
       if (!far) { leder.push(...b.leder); skenor.push(b.skena); }
     }
@@ -422,6 +565,7 @@
       VI.vinge(K.vinge).forEach((d, i) => lagg(d, Z.vinge + i * 0.01));
     }
     const A = { h: K.h, f: K.f, nacke: K.nacke, vinge: K.vinge, svans: K.svans, svansSpets: sv.spets, klubbaPkt: sv.klubba, oga: hu.oga, panna: hu.panna, nos: hu.nos, leder, skenor };
+    if (TX.extra) TX.extra(kroppF, A, narBen).forEach(d => lagg(d, d.z));
     if (HA) lagg({ mask: HA.hard(A), mat: 'hard' }, Z.hard);
     if (PR) { const p = PR.pryd(A, kropp); lagg(p, p.z); }
     // ögat: litet och djupt under en mörk panna, och det lyser
