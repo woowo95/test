@@ -28,6 +28,10 @@
     }
     return false;
   };
+  const strack = (x, y, [ax, ay], [bx, by]) => {
+    const dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy || 1, u = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / L2));
+    return { d: Math.hypot(x - ax - u * dx, y - ay - u * dy), u, sida: Math.sign(dx * (y - ay) - dy * (x - ax)) };
+  };
   const eller = (...f) => (x, y) => f.some(g => g(x, y));
   const utom = (f, g) => (x, y) => f(x, y) && !g(x, y);
   const ihop = (...m) => { const u = tom(); m.forEach(a => a && a.forEach((v, i) => { if (v) u[i] = 1; })); return u; };
@@ -74,9 +78,27 @@
         const dy = G - J[1], fy = far ? G - 2 : G - 1;
         const pts = bak ? [J, [J[0] + 5, J[1] + dy * 0.38], [J[0] - 3, fy - 8], [J[0] + 1, fy - 1]] : [J, [J[0] - 3, J[1] + dy * 0.45], [J[0] + 1, fy - 5], [J[0] + 3, fy - 1]];
         const r = bak ? [7.5, 5, 3.4, 3] : [7, 5, 4, 3];
-        const tass = ell(pts[3][0] + 1.5, fy - 1.5, 4, 2.2);
-        const klor = [0, 1, 2].map(i => poly([[pts[3][0] + 3 + i * 1.5, fy - 2], [pts[3][0] + 5.5 + i * 1.5, fy + 0.6], [pts[3][0] + 4 + i * 1.5, fy - 0.5]]));
-        return { mask: fyll(eller(kapsel(pts, r), tass)), extra: [{ mask: fyll(eller(...klor)), mat: 'klo' }], leder: [pts[1], pts[2]], skena: [pts[2], pts[3]] };
+        // tårna var för sig (tre, den bakersta först), med krökta klor
+        const [tx, ty] = pts[3], tar = [], klor = [];
+        for (let i = 0; i < 3; i++) {
+          const x = tx - 1 + i * 2.8;
+          tar.push({ mask: fyll(ell(x, fy - 2, 2.2, 2.2)), mat: 'kropp', z: 0.05 + i * 0.01 });
+          klor.push(poly([[x + 1.2, fy - 3], [x + 3.6, fy - 1.6], [x + 3.4, fy + 0.7], [x + 2.5, fy - 0.6], [x + 1.4, fy - 1]]));
+        }
+        const fot = ell(tx, fy - 3, 2.8, 2.2);
+        const [a0, a1, a2, a3] = pts;
+        // muskeln på låret, en ljus knöl på leden och tvärplattor på skenan och vristen
+        const monster = (x, y, v) => {
+          const s3 = strack(x, y, a2, a3);
+          if (s3.d <= r[2] + 0.6) return y % 2 === 0 ? -1 : 1;
+          if (Math.hypot(x - a1[0], y - a1[1]) < 1.8) return 1;
+          const s1 = strack(x, y, a0, a1);
+          if (s1.u > 0.15 && s1.u < 0.95 && s1.sida === (bak ? 1 : -1)) { const k = s1.d - r[0] * 0.38; if (k > 0 && k < 1.1) return -1; if (k > -1.1 && k <= 0) return 1; }
+          const s2 = strack(x, y, a1, a2);
+          if (s2.u > 0.2 && s2.u < 0.85 && s2.sida === (bak ? -1 : 1)) { const k = s2.d - r[1] * 0.3; if (k > 0 && k < 1) return -1; if (k > -1 && k <= 0) return 1; }
+          return null;
+        };
+        return { mask: fyll(eller(kapsel(pts, r), fot)), monster, extra: [...tar, { mask: fyll(eller(...klor)), mat: 'klo', z: 0.1 }], leder: [pts[1], pts[2]], skena: [pts[2], pts[3]] };
       } },
     { id: 'pelare', namn: 'Pelare', text: 'tjocka raka ben som stolpar, med breda fötter och naglar',
       ben(J, bak, far) {
@@ -84,7 +106,46 @@
         const pts = bak ? [J, [J[0] - 1, J[1] + dy * 0.5], [J[0] + 1, fy - 3]] : [J, [J[0] + 1, J[1] + dy * 0.5], [J[0], fy - 3]];
         const fot = poly([[pts[2][0] - 6, fy - 4], [pts[2][0] + 6, fy - 4], [pts[2][0] + 7, fy], [pts[2][0] - 6, fy]]);
         const naglar = [-3, 0, 3].map(i => poly([[pts[2][0] + i + 0.5, fy - 2], [pts[2][0] + i + 3, fy - 2], [pts[2][0] + i + 3, fy], [pts[2][0] + i + 0.5, fy]]));
-        return { mask: fyll(eller(kapsel(pts, [7.5, 6.5, 6]), fot)), extra: [{ mask: fyll(eller(...naglar)), mat: 'klo', kontur: false }], leder: [pts[1], [pts[2][0], pts[2][1] - 2]], skena: [pts[1], pts[2]] };
+        // veck runt underbenet, en muskel på låret och en mörk kant där foten börjar
+        const monster = (x, y, v) => {
+          if (y >= fy - 4 && y <= fy - 3) return -1;
+          if (y > fy - 3) return y === fy ? -1 : null;
+          if (y > pts[0][1] + 4) { const k = (y + Math.round(Math.sin(x * 0.9) * 0.7)) % 3; return k === 0 ? -1 : k === 1 ? 1 : 0; }
+          const s1 = strack(x, y, pts[0], pts[1]);
+          if (s1.u > 0.2 && s1.u < 0.9 && Math.abs(x - pts[0][0] + (bak ? 2.5 : -2.5)) < 0.6) return -1;
+          return null;
+        };
+        return { mask: fyll(eller(kapsel(pts, [7.5, 6.5, 6]), fot)), monster, extra: [{ mask: fyll(eller(...naglar)), mat: 'klo', kontur: false, z: 0.1 }], leder: [pts[1], [pts[2][0], pts[2][1] - 2]], skena: [pts[1], pts[2]] };
+      } },
+  ];
+
+  // huden: ett mönster över kroppen, halsen, käken och benen. h är höjden på formen i den kolumnen
+  const HUDAR = [
+    { id: 'fjall', namn: 'Fjäll', text: 'små fjäll i rader över hela kroppen och breda plattor under magen',
+      hud(x, y, v, du, dl, dr, h) {
+        // buken: ljusa plattor; ryggen: en rad stora fjäll; däremellan fjäll som blir mindre nedåt
+        if (h >= 10 && v > 0.72) return x % 3 === 0 || y % 3 === 0 ? 0 : 2;
+        if (du === 0 || dl === 0) return 0;
+        if (h >= 8 && du <= 3) return x % 4 === 0 ? -1 : du === 1 ? 1 : 0;
+        const [bw, bh] = v < 0.45 ? [6, 4] : [4, 3];
+        const rad = Math.floor(y / bh), cx = (x + (rad % 2) * (bw >> 1)) % bw, cy = y % bh;
+        if (cy === bh - 1 && cx !== 0) return -1;
+        if (cx === 0 && cy > 0) return -1;
+        if (cy === 0 && cx > 1 && cx < bw - 1 && v < 0.5) return 1;
+        if (hash(x, rad, 4) < 0.08) return -1;
+        return 0;
+      } },
+    { id: 'lader', namn: 'Läderhud', text: 'tjock veckig hud med vårtor och fåror under magen',
+      hud(x, y, v, du, dl, dr, h) {
+        if (h >= 10 && v > 0.76) return x % 4 === 0 ? 0 : 2;
+        if (du === 0 || dl === 0) return 0;
+        const w = Math.round(Math.sin(x * 0.45 + y * 0.15) * 1.3);
+        const k = (y + w) % 5, syns = hash(x >> 2, y - k, 5) > 0.25;
+        if (k === 0 && syns) return -1;
+        if (k === 1 && syns && v < 0.7) return 1;
+        if (hash(x, y, 9) < 0.03 && v < 0.75) return 1;
+        if (hash(x, y - 1, 9) < 0.03) return -1;
+        return 0;
       } },
   ];
 
@@ -248,6 +309,7 @@
     { id: 'horn', namn: 'Horn', delar: HORN },
     { id: 'vingar', namn: 'Vingar', delar: VINGAR },
     { id: 'svans', namn: 'Svans', delar: SVANSAR, maste: true },
+    { id: 'hud', namn: 'Hud', delar: HUDAR, maste: true },
     { id: 'skal', namn: 'Skal', delar: SKAL },
     { id: 'plattor', namn: 'Plattor', delar: PLATTOR },
     { id: 'hard', namn: 'Förhårdnader', delar: HARDA },
@@ -275,14 +337,20 @@
       const h = du + dd + 1, v = h > 1 ? du / (h - 1) : 0, q = bayer(x, y);
       let t = b;
       if (h <= 2) t = du === 0 ? b + 1 : b;
-      else {
+      else if (d.sida && dl + dr >= 3) {
+        // benen skuggas som rundade pelare: ljusa till vänster, mörka till höger
+        const w = dl / (dl + dr);
+        if (du === 0 || w < 0.2 || (w < 0.32 && q < (0.32 - w) / 0.12)) t = b + 1;
+        else if (dl + dr >= 7 && w > 0.86) t = b - 2;
+        else if (w > 0.62 || (w > 0.52 && q < (w - 0.52) / 0.1)) t = b - 1;
+      } else {
         if (du === 0 || v < 0.16 || (v < 0.28 && q < (0.28 - v) / 0.12)) t = b + 1;
         else if (h >= 9 && v > 0.84) t = b - 2;
         else if (v > 0.6 || (v > 0.5 && q < (v - 0.5) / 0.1)) t = b - 1;
         if (dl === 0 && h >= 4 && v < 0.6) t = Math.max(t, b + 1);
         if (dr === 0 && h >= 4 && t > b - 1 && du > 0) t = b - 1;
       }
-      if (d.monster) t += d.monster(x, y, v, du, dl, dr);
+      if (d.monster) t += d.monster(x, y, v, du, dl, dr, h);
       L.satt(x, y, P.i(ramp, kl(t)), !!d.lyser);
     }
   }
@@ -291,14 +359,14 @@
   function delarna(val) {
     const K = dels(val, 'kropp'), BE = dels(val, 'ben'), HU = dels(val, 'huvud'), HO = dels(val, 'horn'), VI = dels(val, 'vingar');
     const SV = dels(val, 'svans'), SK = dels(val, 'skal'), PL = dels(val, 'plattor'), HA = dels(val, 'hard'), PR = dels(val, 'pryd');
-    const D = [];
+    const D = [], HD = dels(val, 'hud'), hud = (...a) => HD.hud(...a);
     const lagg = (d, z, extra = {}) => D.push({ mat: 'kropp', ...d, z: d.z ?? z, ...extra });
     // kroppen: bålen, halsen, skallen och svansen är en form, utan kontur mellan dem
     const bal = fyll(poly(K.bal)), nacke = fyll(kapsel(K.nacke, K.nackeR));
     const hu = HU.huvud(K.nacke[1]), sv = SV.svans(K.svans);
     const kropp = ihop(bal, nacke, hu.skalle, sv.mask);
-    lagg({ mask: kropp }, Z.kropp);
-    hu.delar.forEach(d => lagg(d, Z.huvud));
+    lagg({ mask: kropp, monster: hud }, Z.kropp);
+    hu.delar.forEach(d => lagg(d.mat === 'kropp' ? { ...d, monster: hud } : d, Z.huvud));
     if (sv.klubba) {
       const [cx, cy] = sv.klubba;
       lagg({ mask: fyll(eller(ell(cx, cy, 6, 5), poly([[cx - 2, cy - 4], [cx, cy - 9], [cx + 2, cy - 4]]), poly([[cx - 5, cy - 1], [cx - 10, cy - 2], [cx - 5, cy + 2]]), poly([[cx - 2, cy + 4], [cx - 1, cy + 8], [cx + 2, cy + 4]]))), mat: 'hard' }, Z.klubba);
@@ -307,8 +375,9 @@
     const leder = [], skenor = [];
     for (const [J, bak, far, dx] of [[K.h, true, true, 5], [K.f, false, true, -5], [K.h, true, false, 0], [K.f, false, false, 0]]) {
       const b = BE.ben([J[0] + dx, J[1] - (far ? 1 : 0)], bak, far);
-      lagg({ mask: b.mask, far }, far ? Z.farBen : Z.ben);
-      b.extra.forEach(e => lagg({ ...e, far }, far ? Z.farBen + 0.1 : Z.ben + 0.1));
+      const zb = far ? Z.farBen : Z.ben;
+      lagg({ mask: b.mask, far, sida: true, monster: (...a) => { const m = b.monster?.(...a); return m ?? hud(...a); } }, zb);
+      b.extra.forEach(e => lagg({ ...e, far, z: zb + (e.z ?? 0.1), monster: e.mat === 'kropp' ? hud : e.monster }, zb));
       if (!far) { leder.push(...b.leder); skenor.push(b.skena); }
     }
     // skalet och plattorna längs ryggen
