@@ -142,7 +142,7 @@ export const TEKNIK: Tek[] = [
   { id: 'benflojt', namn: 'Benflöjt', text: 'Ett ihåligt ben med hål att blåsa och sätta fingrarna på.', effekt: 'Med benflöjten vid scenen kan man spela.',
     omr: ['upptrada', 'hantverk'], krav: ['kniv'], niva: 2, tid: 4 },
   { id: 'lyra', namn: 'Lyra', text: 'En ram av trä med strängar av rep som man knäpper på.', effekt: 'Sången och musiken till lyran gör publiken gladare än med andra instrument.',
-    omr: ['upptrada', 'hantverk'], krav: ['scen', 'rep', 'snickarbank'], niva: 4, tid: 6 },
+    omr: ['upptrada', 'hantverk'], krav: ['scen', 'rep', 'snickarbank'], niva: 4, tid: 6, forsok: { vid: ['snickarbank'], skill: 'hantverk', vad: 'hur man täljer en lyra' }, episk: '{namn} täljde en lyra och spände strängar av rep.' },
   // pyntet (steg 4.3.4, pynt.ts): lerkrukan, bonaden och det snidade väggbrädet i rummet där man sover; varje möbel är sin egen teknik
   { id: 'kruka', namn: 'Lerkruka', text: 'En kruka av lera från stranden med sand i, uppbyggd för hand, torkad och bränd i elden.', effekt: 'Den som tycker om krukor ställer en där den sover, trivs där, och de som ser den tycker bättre om ägaren.',
     omr: ['hantverk', 'bygga'], krav: ['timmervagg'], niva: 3, tid: 4 },
@@ -174,8 +174,8 @@ export const TEKNIK: Tek[] = [
     omr: [], krav: [], niva: 1, tid: 12, nar: 'i samtal' },
   // vapnen och rustningen (system 8.7): kommer man på vid slöjdbänken
   { id: 'rustning', namn: 'Läderrustning', text: 'Tjockt läder som tar emot det vassa.', effekt: 'Rustningen och hjälmen skyddar i striden.', omr: ['hantverk'], krav: ['skinnklader'], niva: 5, tid: 10, forsok: { vid: ['flatarbank'], skill: 'hantverk', vad: 'hur man gör en rustning av läder' }, episk: '{Namn} sydde läder i lager tills det höll för en kniv.' },
-  { id: 'skold', namn: 'Sköld', text: 'Ved och rep som man håller framför sig.', effekt: 'Skölden tar emot slag och pilar.', omr: ['hantverk'], krav: ['yxa', 'snickarbank'], niva: 4, tid: 10 },
-  { id: 'bage', namn: 'Pilbåge', text: 'En böjd stav och ett spänt rep, och pilar av ved och flinta.', effekt: 'Bågen når långt.', omr: ['hantverk', 'jakt'], krav: ['kniv', 'snickarbank'], niva: 4, tid: 10 },
+  { id: 'skold', namn: 'Sköld', text: 'Ved och rep som man håller framför sig.', effekt: 'Skölden tar emot slag och pilar.', omr: ['hantverk'], krav: ['yxa', 'snickarbank'], niva: 4, tid: 10, forsok: { vid: ['snickarbank'], skill: 'hantverk', vad: 'hur man gör en sköld' }, episk: '{namn} gjorde en sköld som tar emot slag och pilar.' },
+  { id: 'bage', namn: 'Pilbåge', text: 'En böjd stav och ett spänt rep, och pilar av ved och flinta.', effekt: 'Bågen når långt.', omr: ['hantverk', 'jakt'], krav: ['kniv', 'snickarbank'], niva: 4, tid: 10, forsok: { vid: ['snickarbank'], skill: 'hantverk', vad: 'hur man täljer en pilbåge' }, episk: '{namn} täljde en båge som når långt.' },
   { id: 'slunga', namn: 'Slunga', text: 'En läderrem som kastar stenar långt.', effekt: 'Slungan kastar stenar långt.', omr: ['hantverk', 'jakt'], krav: ['skinnklader'], niva: 5, tid: 8, forsok: { vid: ['flatarbank'], skill: 'hantverk', vad: 'hur man gör en slunga' }, episk: '{Namn} snurrade läderremmen, och stenen for över sjön.' },
   { id: 'horn', namn: 'Horn', text: 'Ett urholkat ben som ljuder långt.', effekt: 'Hornet hörs över hela kartan, och trumman längre än ett rop.', omr: ['hantverk'], krav: ['kniv'], niva: 2, tid: 8 },
   // lagarna (steg 8.4.1): samma mönster som Ledarskap. Bara den som kan den kan stifta en lag, så en by kan glömma sina lagar
