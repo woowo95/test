@@ -38,7 +38,7 @@ export const SPORTER: SportDef[] = [
   { id: 'brottning', namn: 'Brottning', text: 'Två brottas i mitten och försöker trycka undan varandra, och de andra står i en ring runt om och hejar.', foremal: [], skill: 'narstrid', min: 2, max: 6, best: 'brottningen', tyst: 'kampen' },
   { id: 'dragkamp', namn: 'Dragkamp', text: 'Två lag drar i var sin ände av ett rep, tills det ena laget dras över strecket.', foremal: ['rep'], skill: 'narstrid', min: 4, max: 10, best: 'dragkampen', tyst: 'alla' },
   { id: 'kast', namn: 'Kast mot mål', text: 'De kastar stenar och pinnar mot målet i tur och ordning, och den som träffar flest vinner.', foremal: ['mal'], skill: 'traff', min: 2, max: 6, best: 'kastandet mot målet' },
-  { id: 'snoboll', namn: 'Snöbollskrig', text: 'Två lag kastar snöbollar på varandra bakom vallar av snö, och den som träffas är ute.', foremal: [], skill: 'traff', min: 2, max: 10, nar: 'sno', best: 'snöbollskriget', tyst: 'alla' },
+  { id: 'snoboll', namn: 'Snöbollskrig', text: 'Två lag kastar snöbollar på varandra, och den som träffas är ute.', foremal: [], skill: 'traff', min: 2, max: 10, nar: 'sno', best: 'snöbollskriget', tyst: 'alla' },
   { id: 'bollspel', namn: 'Bollspel', text: 'Två lag slår bollen med slagträet och springer efter den, som i knattleikr.', foremal: ['boll', 'slagtra'], skill: 'traff', min: 4, max: 10, best: 'bollspelet', tyst: 'alla' },
 ];
 export const SPORT_AV: Record<string, SportDef> = Object.fromEntries(SPORTER.map(d => [d.id, d]));
@@ -66,7 +66,7 @@ export const SPORT = balans('sport', {
   snoVal: 0.5, // när en sport som bara går i snön kan spelas (nar) väljs den så här ofta (steg 4.3.1.3)
   dragMitt: 1, dragAvst: 0.7, // dragkampen: den första i varje lag står så här många rutor från strecket, och var och en efter så här mycket längre ut
   // platserna i de andra sporterna (steg 4.5.6.11), i rutor från mitten: ringen runt brottarna, raden som kastar och målet,
-  // lagen bakom snövallarna, den som slår i bollspelet, och avståndet mellan de som står på rad
+  // lagen i snöbollskriget, den som slår i bollspelet, och avståndet mellan de som står på rad
   ring: 1.8, kastAvst: 5, snoAvst: 2.5, slagAvst: 3, rad: 0.8,
   sparas: 20, // så här många matcher sparas i s.matcher (steg 5.4.8.1)
   brottTakt: 4, // brottningen (steg 9.2.92): så många gånger i timmen varje brottare i en ledig ring börjar en kamp med en annan spelare
@@ -151,7 +151,7 @@ function plats(s: State, p: Person, m: Match) {
   if (m.k === 'dragkamp') { const sida = i % 2 ? 1 : -1, nr = Math.floor(i / 2); return freeNear(s, m.x + sida * (SPORT.dragMitt + nr * SPORT.dragAvst), m.y); }
   if (m.k === 'brottning') return i < 2 ? freeNear(s, m.x + (i ? 0.35 : -0.35), m.y) : freeNear(s, m.x + Math.cos(i * 2.4) * SPORT.ring, m.y + Math.sin(i * 2.4) * SPORT.ring); // två i mitten, de andra i en ring
   if (m.k === 'kast') return freeNear(s, m.x - SPORT.kastAvst / 2, m.y + rad(i)); // på en rad, målet en bit bort (kastMal)
-  if (m.k === 'snoboll') return freeNear(s, m.x + (i % 2 ? 1 : -1) * SPORT.snoAvst, m.y + rad(Math.floor(i / 2))); // två lag, var sin vall
+  if (m.k === 'snoboll') return freeNear(s, m.x + (i % 2 ? 1 : -1) * SPORT.snoAvst, m.y + rad(Math.floor(i / 2))); // två lag, var sin sida
   if (m.k === 'bollspel' && i === 0) return freeNear(s, m.x - SPORT.slagAvst, m.y); // den som slår står i ena änden, de andra ute på planen
   return freeNear(s, m.x + (rnd(s, 'sport', p) - 0.5) * 2, m.y + (rnd(s, 'sport', p) - 0.5) * 2);
 }
