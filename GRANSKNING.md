@@ -45,6 +45,15 @@ Hitta fel, döda eller verkningslösa mekanismer, brott mot reglerna i `ARKITEKT
 - System som saknar scenario, och scenarier som borde vara märkta `lang: true` (13 s eller mer, datorns tid).
 - Vakter som saknas för något omöjligt som kan hända (folk i väggar, i vattnet, saker utan ägare).
 
+### Onödiga hårda regler
+
+Regeln "System, inte regler, men med måtta" i `CLAUDE.md`: det människorna väljer (vad de gör, när, hur mycket, vem som tar vad) ska komma ur systemen som redan avgör det, inte ur en hård regel för just den saken.
+
+- **Leta efter** villkor om människornas val som ett system som redan finns kunde avgöra: "hämtas bara när …", "först X, sedan Y", "högst N", "en i taget", en fast gräns i en `if` som stänger av ett arbete, och specialfall för en enda sak i valet av aktivitet. Orden "bara", "alltid", "aldrig", "först … sedan", "högst" och "en i taget" är en varningsflagga, i koden, i kommentarerna och i designdokumentets text om systemet.
+- **Systemen som kan ta över:** valet av aktivitet (ARBETEN och poängen), förrådsmålen, projekten, värmekartorna (FYND), sakerna (SAKER), ägandet, delningen, värdet, kvaliteten, humöret, rykten, seder och tekniker. För varje fynd: vilket av dem, och hur (en rad i ett register eller en faktor i en poäng).
+- **Inget fynd:** regler om hur världen och sakerna är (vad ett recept kräver, vad en station tar emot, vad som får läggas i komposten), och regler där ett system inte skulle märkas i spelet. Enkelt och lagom djupt går före fullständigt.
+- **Ändra dem inte i granskningen**, inte ens när det är enkelt. De skrivs i rapporten (del 4) och väntar på Björns svar.
+
 ### Allmänt
 
 - Död kod: funktioner, fält och exporter som ingen använder.
@@ -55,16 +64,18 @@ Hitta fel, döda eller verkningslösa mekanismer, brott mot reglerna i `ARKITEKT
 
 - **Ombyggnad som inte ska ändra spelet** (död kod, register, cacher, prestanda, uppdelning): `npm run samma` måste säga att byarna utvecklas exakt som förut. Gör den inte det har ändringen ändrat spelet, och då är det inte en ren ombyggnad.
 - **Verkliga fel som ändrar spelet:** rätta dem ett i taget, kör `npm run snabbkoll -- [berörda scenarier]` och committa varje rättelse för sig. Efter sista rättelsen: det stora testet (`npm run koll`, `npm run jamfor -- 35 64 --mot <commit före granskningen>` och `npm run likhet` om arbete, gång, samtal eller lärande ändrats), sedan `npm run facit`. Säger jamfor "sämre" om byar som dog ut, svalt ihjäl eller frös ihjäl ska det rättas innan granskningen är klar.
+- **Onödiga hårda regler** rättas inte i granskningen: de går till rapportens del 4, och bara det Björn godkänner blir steg.
 - **Större ändringar** (nya system, ändrad balans, designfrågor): bygg dem inte. Skriv in dem som steg i Färdplanen under rätt system, med förklaringen i rätt avsnitt, och fråga Björn om de kräver ett beslut.
 - Lägg till ett scenario eller en vakt för varje verkligt fel som rättas, så att det inte kommer tillbaka.
 - Uppdatera `ARKITEKTUR.md` och "Läget just nu" när något ändrats som de beskriver.
 
 ## Rapporten till Björn
 
-Kort och på svenska, i tre delar:
+Kort och på svenska, i fyra delar:
 
 1. **Rättat:** varje fel i en mening, vad det gjorde i spelet och hur det märktes (t.ex. "folk letade flinta i lägret där ingen flinta finns, så byn fick ingen yxa").
 2. **Inlagt i designdokumentet:** steg och nummer.
 3. **Inte ändrat:** fynd som inte var värda det, och varför.
+4. **Hårda regler att godkänna:** numrerade, så att Björn kan svara t.ex. "ja till 1 och 3". För varje: var regeln står (fil och funktion, och avsnittet i designdokumentet om den står där), regeln i en mening, vilket system som kunde avgöra det i stället och hur, vad som skulle märkas i spelet och om det är litet eller stort att bygga. Det Björn godkänner läggs som steg i Färdplanen efter reglerna för nya steg i `CLAUDE.md`, och avsnittet skrivs om; det han säger nej till lämnas som det är. Hittas inget står det "inga".
 
 Avsluta med resultatet från det stora testet och jamfor.
