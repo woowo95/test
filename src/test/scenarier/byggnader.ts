@@ -936,7 +936,9 @@ SCENARIER.strak = {
     let paStrak = 0, husPa = 0, maxRutor = 0;
     const timmar = 120;
     const nyttPa: string[] = [];
+    let dygnSedan = new Set<number>(); // stråken ett dygn före slutet: träden där har haft ett dygn på sig att fällas
     for (let t = 0; t < timmar * STEG_TIM; t++) {
+      if (t === (timmar - 24) * STEG_TIM) dygnSedan = new Set(SIM.straken(s).vagar.flatMap(q => q.rutor));
       const fore = SIM.straken(s).ruta.slice();
       const st0 = new Set(SIM.stationerOf(s)), f0 = new Set(s.falt ?? []), h0 = new Set(housesOf(s));
       kor(s, 1 / STEG_TIM);
@@ -966,9 +968,9 @@ SCENARIER.strak = {
     const hindrar = mitt !== undefined && SIM.strakHindrar(s, mitt % W - 4, Math.floor(mitt / W) - 4, 9, 9);
     const framfor = v && SIM.strakHindrar(s, v.dorr % W, Math.floor(v.dorr / W), 1, 1);
     // steg 9.2.35: träden i stråken fälls
-    const gS = groundOf(s), tradIStrak = new Set(st.vagar.flatMap(q => q.rutor).filter(i => gS.trees[i] >= SIM.FOREST)).size;
+    const gS = groundOf(s), tradIStrak = new Set(st.vagar.flatMap(q => q.rutor).filter(i => dygnSedan.has(i) && gS.trees[i] >= SIM.FOREST)).size;
     return [
-      [`inga träd står kvar i stråken efter 5 dygn (${tradIStrak})`, tradIStrak === 0],
+      [`inga träd står kvar efter 5 dygn i stråken som fanns ett dygn innan (${tradIStrak})`, tradIStrak === 0],
       [`efter 5 dygn (5 år i spelet) har husen dörrar med stråk (${hus.length} färdiga hus, ${dorrar.size} dörrar, som mest ${maxRutor} rutor stråk)`, hus.length > 0 && dorrar.size > 0],
       [`från varje dörr går ett stråk till elden (${tillEld} av ${dorrar.size}) och till en lagerplats (${tillLager})`, tillEld === dorrar.size && tillLager === dorrar.size],
       [`inget nytt ställs på ett stråk: ingen station, lagerplats eller fält (${paStrak} på ${timmar} timmar${nyttPa.length ? `: ${[...new Set(nyttPa)].join(', ')}` : ''})`, paStrak === 0],
