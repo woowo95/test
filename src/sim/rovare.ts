@@ -344,6 +344,7 @@ const rovarKampe = (r: Rovare, id: number, x: number, y: number, ledare: boolean
   ({ id, namn: r.namn, sida: 1, blod0: r.blod, st: { ...r.st, sikte: r.st.skicklighet }, vapen: r.vapen, klader: [], fart: 1, x, y, ...(ledare ? { ledare: 'fram' as const } : {}) });
 // den som slåss står kvar i striden tills den är slut (eller högst STRID.maxTid sekunder)
 function iStriden(s: State, p: Person, g: RovarStrid) {
+  if (p.died !== undefined) return; // en död ger sig inte in i striden
   avbryt(s, p);
   p.task = { act: 'strid', phase: 'do', tx: p.x, ty: p.y, until: g.t0 + (STRID.maxTid + 300) * SEC, carry: 0, why: 'Slåss med rövare' };
 }

@@ -989,6 +989,7 @@ export function stridIByn(s: State, avsikt: Avsikt, sidor: [Person[], Person[]],
   if (!lek) larma(s, 'slagsmål', kampar.length, [...sidor[0], ...sidor[1]].filter(p => p.task?.act !== 'sova')); // de som slåss ropar (steg 3.7.11)
   if (!lek) stridRad(s, st, namn, orsak, folk.map(f => f.p.id));
   for (const { k, p } of folk) {
+    if (p.died !== undefined) continue; // död sedan förut (en annan strid i samma ögonblick): får ingen uppgift
     const mot = sidor[1 - k.sida];
     let dod = k.lage === 'dod';
     // för färdigheterna i personrutan (steg 3.10.6): slagsmålet, om hen vann, och kasten och träffarna (vådaträffen räknas inte)

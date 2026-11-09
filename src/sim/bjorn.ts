@@ -217,6 +217,7 @@ function bjornSlut(s: State, g: DjurKamp, st: Strid) {
   const svara: string[] = [];
   let bar = false;
   folk.forEach(p => {
+    if (p.died !== undefined) return; // död sedan förut: får ingen uppgift
     const k = kampeAv(p);
     if (!k) return;
     let dod = k.lage === 'dod';

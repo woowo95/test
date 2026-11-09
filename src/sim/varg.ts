@@ -567,6 +567,7 @@ function vargSlut(s: State, g: DjurKamp, st: Strid) {
   // folket: skadorna blir riktiga skador, och vargbett blir ofta infekterade
   const bar = new Set<Person>(), svara: string[] = [];
   folk.forEach(p => {
+    if (p.died !== undefined) return; // död sedan förut: får ingen uppgift
     const k = kampeAv(p);
     if (!k) return;
     let dod = k.lage === 'dod';

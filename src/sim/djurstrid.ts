@@ -30,6 +30,7 @@ export const iArena = (a: { ox: number; oy: number; w: number; h: number }, x: n
 
 // den som slåss står kvar i striden tills den är slut
 export function iDjurStriden(s: State, p: Person, g: DjurKamp) {
+  if (p.died !== undefined) return; // en död ger sig inte in i striden
   avbryt(s, p);
   p.task = { act: 'strid', phase: 'do', tx: p.x, ty: p.y, until: g.t0 + (STRID.maxTid + 300) * SEC, carry: 0, why: g.orsak };
 }
