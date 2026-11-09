@@ -372,6 +372,15 @@ h3 { font-family: var(--display); font-size: 16px; text-transform: uppercase; le
 .filtpar { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .byteknapp { background: none; border: 0; padding: 0 2px; cursor: pointer; vertical-align: middle; }
 .filtsida p { margin: 0 0 4px; }
+/* omröstningarna (steg 9.2.65): en stapel för ja och nej, och en rad per röst */
+.rostbar { display: flex; height: 10px; border-radius: 3px; overflow: hidden; margin: 4px 0 6px; background: var(--barbg); }
+.rostbar .ja { background: #898b4c; } .rostbar .nej { background: #a14808; }
+.roster { list-style: none; margin: 0; padding: 0; }
+.roster li { display: flex; align-items: center; gap: 6px; padding: 1px 0; }
+.roster .rnamn { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.roster .rostw { width: 70px; flex: none; display: flex; }
+.roster .rostw .bar { flex: 1; }
+.roster li.rvarfor { display: block; padding: 2px 0 4px 18px; }
 .rels { display: grid; grid-template-columns: minmax(0, max-content) max-content max-content 1fr; gap: 6px 12px; align-items: center; }
 .rels li { display: contents; }
 .rels .plink { justify-self: start; text-align: left; }
