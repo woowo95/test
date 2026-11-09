@@ -20,6 +20,7 @@ import { religion } from './flikar/religion';
 import { styre } from './flikar/styre';
 import { tal } from './flikar/tal';
 import { $, hjalpKlick } from './hjalp';
+import { OPPNAR, bubblaKlick } from './bubbla';
 import { piles, s, satRitaOm, ui, vidNyBy } from './lage';
 import { renderPorts } from './portratt';
 import { bandHtml, stenHtml } from './runstenar';
@@ -152,6 +153,8 @@ document.addEventListener('pointerdown', e => {
 }, true);
 document.addEventListener('click', e => {
   const el = e.target as HTMLElement;
+  // förklaringen i en bubbla (steg 9.2.68): ett tryck på det som inte öppnar något visar den, och nästa tryck stänger den
+  if (bubblaKlick(el) && !el.closest(OPPNAR)) return;
   if (el.closest('.panel > .bakat')) { tillbaka(); return; }
   const x = el.closest<HTMLElement>('[data-stang]');
   if (x) { stang(x.dataset.stang as 'v' | 'h' | 'r'); return; }

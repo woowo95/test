@@ -11,6 +11,7 @@ import { person as personFlik } from '../../ui/flikar/person';
 import { kronika as kronikaFlik, val as kronikaVal } from '../../ui/flikar/kronika';
 import { styre as styreFlik } from '../../ui/flikar/styre';
 import { seder as sederFlik } from '../../ui/flikar/seder';
+import { OPPNAR, bubblaKlick, bubblaText, forklaringAv } from '../../ui/bubbla';
 import { esc, hjalpKlick } from '../../ui/hjalp';
 
 // en by med ett stort överskott av mat och ved, på förmiddagen
@@ -586,6 +587,45 @@ SCENARIER.sedlista = {
       [`en rad för upplevelsen: "${namn}: drar mot ${mot.toLowerCase()}, N av 100"`, lista.includes(esc(namn)) && new RegExp(`drar mot ${mot.toLowerCase()}, \\d+ av 100`).test(lista)],
       [`hur många och vilka som minns den (${v.length})`, lista.includes(`${v.length} minns det`) && alla],
       ['vågskålen i Styre öppnar samma lista, och ett tryck till stänger', iStyre && !igen],
+    ];
+  },
+};
+SCENARIER.bubbla = {
+  text: 'Steg 9.2.68: förklaringar går att trycka fram. Ett tryck på en symbol med förklaring (title, eller <title> i en ritad symbol) visar texten i en bubbla, nästa tryck stänger den, och det som öppnar något (en knapp, en person, en rad som fälls ut) visar ingen bubbla utan gör det det brukar',
+  kor: () => {
+    // ett litet låtsasträd i stället för webbläsaren: varje element vet sina egenskaper och sin förälder
+    interface F { tag: string; attr: Record<string, string>; cls?: string; upp?: F; svgTitle?: string }
+    const passar = (e: F, sel: string) => sel.split(',').map(x => x.trim()).some(x =>
+      x === e.tag || (x.startsWith('.') && e.cls === x.slice(1)) || (/^\[([\w-]+)(="([^"]*)")?\]$/.test(x) && (() => { const [, n, , v] = x.match(/^\[([\w-]+)(="([^"]*)")?\]$/)!; return n in e.attr && (v === undefined || e.attr[n] === v); })()));
+    const el = (e: F): HTMLElement => ({
+      closest: (sel: string) => { for (let x: F | undefined = e; x; x = x.upp) if (passar(x, sel)) return el(x); return null; },
+      getAttribute: (n: string) => e.attr[n] ?? null,
+      querySelector: () => (e.svgTitle ? { textContent: e.svgTitle } : null),
+      getBoundingClientRect: () => ({ left: 10, top: 10, width: 12, height: 12, right: 22, bottom: 22 }),
+    } as unknown as HTMLElement);
+    const li: F = { tag: 'li', attr: {} }, sym: F = { tag: 'span', attr: { title: 'Sjuk. Vilar mer och orkar mindre' }, upp: li }, bild: F = { tag: 'img', attr: {}, upp: sym };
+    const rad: F = { tag: 'li', attr: { title: 'Tryck för alla röster', 'data-hjalp': 'x' }, cls: 'klick' }, iRad: F = { tag: 'span', attr: { title: 'Ja' }, upp: rad };
+    const knapp: F = { tag: 'button', attr: { title: 'Visa', 'data-id': '3' } };
+    const svg: F = { tag: 'svg', attr: {}, svgTitle: 'Vikt 4 av 5' }, svgDel: F = { tag: 'path', attr: {}, upp: svg };
+    // bubblan i ett låtsasdokument
+    const g = globalThis as { document?: unknown; innerWidth?: number; innerHeight?: number };
+    const [d0, w0, h0] = [g.document, g.innerWidth, g.innerHeight];
+    const div = { hidden: true, textContent: '', style: {} as Record<string, string>, getBoundingClientRect: () => ({ width: 100, height: 30 }) };
+    g.document = { body: { appendChild: (x: unknown) => x }, createElement: () => div }; g.innerWidth = 400; g.innerHeight = 800;
+    const visas = bubblaKlick(el(bild)) && bubblaText() === sym.attr.title;
+    const stangs = bubblaKlick(el(bild)) && bubblaText() === undefined;
+    bubblaKlick(el(bild)); const annan = bubblaKlick(el(svgDel)) && bubblaText() === 'Vikt 4 av 5';
+    bubblaKlick(el(svgDel));
+    const knappIngen = !bubblaKlick(el(knapp)) && bubblaText() === undefined;
+    [g.document, g.innerWidth, g.innerHeight] = [d0, w0, h0];
+    return [
+      ['en symbol med förklaring ger texten, också när man tryckt på bilden i den', forklaringAv(el(bild))?.text === sym.attr.title],
+      ['en ritad symbol ger texten i sin <title>', forklaringAv(el(svgDel))?.text === 'Vikt 4 av 5'],
+      ['det som öppnar något (en rad som fälls ut, en person) ger ingen bubbla', !forklaringAv(el(iRad)) && !forklaringAv(el(knapp)) && OPPNAR.includes('.klick')],
+      ['ett tryck visar förklaringen i bubblan', visas],
+      ['nästa tryck på samma sak stänger den', stangs],
+      ['ett tryck på något annat med förklaring visar dess text', annan],
+      ['ett tryck på en knapp visar ingen bubbla', knappIngen],
     ];
   },
 };
