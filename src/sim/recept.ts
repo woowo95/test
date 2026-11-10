@@ -83,6 +83,7 @@ const DEF = {
   halsband: { var: 'plagg', mangd: 3, av: { rep: 1 }, min: 5 },
   tunika: { var: 'plagg', mangd: 3, av: {}, min: 5 },
   skjorta: { var: 'plagg', mangd: 2, av: {}, min: 5 },
+  kappa: { var: 'plagg', mangd: 3, av: {}, min: 5 }, sjal: { var: 'plagg', mangd: 1, av: {}, min: 3 }, // ullens plagg (steg 9.8.15)
   braxkott: { var: 'sak', av: { braxen: 1 }, ger: 2, min: 3, slag: 'bearbeta' }, /* en braxen ger två kött (rensa i DJUR) */ sikkott: { var: 'sak', av: { sik: 1 }, min: 3, slag: 'bearbeta' }, // steg 9.6.17
   rokfisk: { var: 'sak', av: { fisk: 1 }, min: 2, slag: 'bearbeta' }, rokkott: { var: 'sak', av: { kott: 1 }, min: 2, slag: 'bearbeta' }, // steg 9.6.8
   saltfisk: { var: 'sak', av: { fisk: 4, salt: 1 }, ger: 4, min: 3, slag: 'bearbeta' }, saltkott: { var: 'sak', av: { kott: 4, salt: 1 }, ger: 4, min: 3, slag: 'bearbeta' }, // steg 9.6.19

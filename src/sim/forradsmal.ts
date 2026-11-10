@@ -205,6 +205,7 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   mask: s => (s.tron ?? []).filter(t => t.prast !== undefined && (t.sk?.prast ?? 100) < 34).length,
   mantel: s => s.styre?.sedan !== undefined && s.now - s.styre.sedan >= WEEK && legitimitet(s).v > 0.5 ? 1 : 0,
   tunika: s => amountOf(s, 'lintyg') + amountOf(s, 'ylle') > 0 ? living(s).length : 0, skjorta: s => amountOf(s, 'lintyg') + amountOf(s, 'ylle') > 0 ? living(s).length : 0, // ylle sedan steg 9.8.14
+  kappa: s => amountOf(s, 'ylle') > 0 ? living(s).length : 0, sjal: s => amountOf(s, 'ylle') > 0 ? living(s).length : 0, // ullens plagg (steg 9.8.15)
   balte: s => living(s).length, // ett per person (steg 2.3.3)
   axelrem: spjutVill, // en per spjut (steg 7.1.2)
   ryggsack: s => perVuxna(s, VILLTAL.korgPerVuxna, VILLTAL.korgMin, VILLTAL.korgMax), // lika många som korgarna, till dem som samlar (steg 7.1.3)

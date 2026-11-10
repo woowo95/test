@@ -186,6 +186,7 @@ const DEF = {
   mantel: { namn: 'Syr ledarens mantel', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, // steg 8.3.14
   halsband: { namn: 'Trär ett halsband', slag: 'hantverk', hantverk: true, stilla: true, verb: 'trär', plats: 'station' },
   tunika: { namn: 'Syr en tunika', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' },
+  kappa: { namn: 'Syr en kappa', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, sjal: { namn: 'Syr en sjal', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, // ullens plagg (steg 9.8.15)
   skjorta: { namn: 'Syr en skjorta', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' },
   mjarde: { namn: 'Flätar en mjärde', slag: 'hantverk', hantverk: true, verb: 'flätar', plats: 'station' }, // bara vid fångstbänken (stationer.ts, steg 7.4.2)
   vittja: { namn: 'Vittjar mjärden', slag: 'fiska', verb: 'vittjar', plats: 'skog' },

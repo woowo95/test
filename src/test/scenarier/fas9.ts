@@ -1964,3 +1964,23 @@ SCENARIER.ylle = {
     ];
   },
 };
+
+SCENARIER.ullplagg = {
+  text: 'Steg 9.8.15: kappa, mantel och sjal av ull. Ylletyget blir kappan över kroppen, ledarens mantel och sjalen över axlarna; de görs bara av ylle (manteln också av skinn), kappan är den varmaste klädnaden över kroppen, och byn vill ha dem när det finns ylle',
+  kor: () => {
+    const { KLAD_SLAG, SAKER, REDSKAPMAL, setAmount, PLATSER } = SIM;
+    const s = createState(1, START);
+    const kl = KLAD_SLAG as readonly string[];
+    const finns = ['kappa_ylle', 'sjal_ylle', 'mantel_ylle'].every(k => kl.includes(k));
+    const bara = !kl.includes('kappa_lintyg') && !kl.includes('sjal_lintyg') && !kl.includes('kappa_kaninskinn');
+    const varm = (k: string) => SAKER[k]?.klad?.varme ?? 0;
+    const vill0 = REDSKAPMAL.kappa(s); setAmount(s, 'ylle', 3); const vill = REDSKAPMAL.kappa(s);
+    return [
+      [`kappan, sjalen och manteln finns av ylle (${finns ? 'ja' : 'nej'})`, finns],
+      [`kappan och sjalen görs bara av ylle (${bara ? 'ja' : 'nej'})`, bara],
+      [`kappan av ylle är varmare än rocken av harskinn (${varm('kappa_ylle').toFixed(2)} mot ${varm('rock_kaninskinn').toFixed(2)})`, varm('kappa_ylle') > varm('rock_kaninskinn')],
+      [`sjalen bärs över axlarna (${SAKER.sjal_ylle?.klad?.plats}, ${PLATSER.axlar?.namn})`, SAKER.sjal_ylle?.klad?.plats === 'axlar'],
+      [`byn vill ha kappor när det finns ylle (${vill0} → ${vill})`, vill0 === 0 && vill > 0],
+    ];
+  },
+};
