@@ -169,6 +169,8 @@ const DEF = {
   garva: { namn: 'Garvar ett skinn', slag: 'hantverk', hantverk: true, verb: 'garvar', plats: 'station' }, // vid garvningsställningen (steg 7.7.6)
   spinna: { namn: 'Spinner lintråd', slag: 'hantverk', hantverk: true, verb: 'spinner', plats: 'elden', redskap: { slanda: { tar: 'Tar sländan.', haller: 60 } }, slits: { enhet: 'tråd', per: 'gang' } }, // med sländan, var som helst (steg 7.7.8)
   vava: { namn: 'Väver lintyg', slag: 'hantverk', hantverk: true, verb: 'väver', plats: 'station' }, // vid vävstolen (steg 7.7.9)
+  spinna_ull: { namn: 'Spinner ulltråd', slag: 'hantverk', hantverk: true, verb: 'spinner', plats: 'elden', redskap: { slanda: { tar: 'Tar sländan.', haller: 60 } }, slits: { enhet: 'tråd', per: 'gang' } }, // ullen (steg 9.8.14)
+  vava_ull: { namn: 'Väver ylletyg', slag: 'hantverk', hantverk: true, verb: 'väver', plats: 'station' },
   gor_leksak: { namn: 'Täljer en leksak', slag: 'hantverk', hantverk: true, verb: 'täljer', plats: 'station' }, // steg 7.5.4; vid snickarbänken om byn har en (steg 9.4.5), annars vid elden
   snara: { namn: 'Gör en snara', slag: 'hantverk', hantverk: true, verb: 'gör', plats: 'station' }, // vid fångstbänken (steg 7.5.10)
   grop: { namn: 'Gräver en fångstgrop', slag: 'hantverk', hantverk: true, verb: 'gräver', plats: 'station' }, // steg 7.5.11

@@ -263,6 +263,8 @@ const DEF = {
   rokkott: { namn: 'Rökt kött', ett: true, skaffa: RECEPT.rokkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.9, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 0.6, vitamin: 0.2 }, haller: 20 },
   // rätterna som kokas i lerkrukan (steg 9.6.3, ratter.ts): en rad per huvudingrediens, kategori och nivå
   ...rattSaker(),
+  ulltrad: { namn: 'Ulltråd', skaffa: RECEPT.ulltrad, stack: 25, vikt: 0.1, mapp: 'Material' }, // steg 9.8.14: ullen spinns som linet
+  ylle: { namn: 'Ylletyg', skaffa: RECEPT.ylle, stack: 10, vikt: 0.6, mapp: 'Material' }, // och vävs i vävstolen
 } satisfies Record<string, SakDef>;
 
 type Sak = keyof typeof DEF;

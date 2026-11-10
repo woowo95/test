@@ -4201,12 +4201,12 @@ PIX.hus = ['................', '.......aa.......', '......abca......', '.....abc
 PAL.hus = { a: '#24201d', b: '#7d5b40', c: '#987e62', d: '#5e3c24', e: '#2f261d' };
 PIX.rustning = PIX.ledarskap; PAL.rustning = PAL.ledarskap; PIX.lag = PIX.ledarskap; PAL.lag = PAL.ledarskap; PIX.i_arrig = PIX.i_stark; PAL.i_arrig = PAL.i_stark; // platshållare
 for (const k of ['skold', 'bage', 'slunga', 'horn', 'pilar']) { PIX[k] = PIX.benspade; PAL[k] = PAL.benspade; } // platshållare (system 8.7)
-for (const pl of ['rustning', 'hjalm', 'prastdrakt', 'tecken', 'mask', 'mantel', 'byxor', 'mossa', 'snoskor', 'tunika', 'skjorta', 'halsband']) for (const m of ['kaninskinn', 'vargskinn', 'bjornskinn', 'lader', 'lintyg', 'benband', 'tandband']) { PIX[`${pl}_${m}`] = PIX.rock_kaninskinn; PAL[`${pl}_${m}`] = PAL.rock_kaninskinn; }
-for (const m of ['lader', 'lintyg']) for (const pl of ['rock', 'skor']) if (!PIX[`${pl}_${m}`]) { PIX[`${pl}_${m}`] = PIX.rock_kaninskinn; PAL[`${pl}_${m}`] = PAL.rock_kaninskinn; }
+for (const pl of ['rustning', 'hjalm', 'prastdrakt', 'tecken', 'mask', 'mantel', 'byxor', 'mossa', 'snoskor', 'tunika', 'skjorta', 'halsband']) for (const m of ['kaninskinn', 'vargskinn', 'bjornskinn', 'lader', 'lintyg', 'ylle', 'benband', 'tandband']) { PIX[`${pl}_${m}`] = PIX.rock_kaninskinn; PAL[`${pl}_${m}`] = PAL.rock_kaninskinn; }
+for (const m of ['lader', 'lintyg', 'ylle']) for (const pl of ['rock', 'skor']) if (!PIX[`${pl}_${m}`]) { PIX[`${pl}_${m}`] = PIX.rock_kaninskinn; PAL[`${pl}_${m}`] = PAL.rock_kaninskinn; }
 for (const k of ['grillgadda', 'grillmort']) { PIX[k] = PIX.grillfisk; PAL[k] = PAL.grillfisk; }
 for (const k of ['torrgadda', 'torrmort']) { PIX[k] = PIX.torrfisk; PAL[k] = PAL.torrfisk; }
 for (const st of ['fangstbank', 'stenhuggarplats', 'klyvplats', 'ortkok', 'garvning', 'harden', 'vavstol']) for (const k of [st, st + '_karta', st + '_karta_v']) { PIX[k] = PIX.korg; PAL[k] = PAL.korg; }
-for (const k of ['rokelse', 'brannolja', 'vittja', 'snara', 'grop', 'leksak', 'rolleka', 'salva', 'tjara', 'benlim', 'tval', 'lin', 'ratlin', 'linfron', 'lintyg', 'slanda']) { PIX[k] = PIX.korg; PAL[k] = PAL.korg; }
+for (const k of ['rokelse', 'brannolja', 'vittja', 'snara', 'grop', 'leksak', 'rolleka', 'salva', 'tjara', 'benlim', 'tval', 'lin', 'ratlin', 'linfron', 'lintyg', 'slanda', 'ulltrad', 'ylle']) { PIX[k] = PIX.korg; PAL[k] = PAL.korg; }
 // fas 7:s bilder ur Björns val (steg 7.8.1): symbolen i listorna är bilden mitt i rutan på 16 × 16 punkter, förminskad om den är större
 // och steg 8.10.1: tvålen, linfröna, sländan, röllekan, läderrustningen och ryggsäcken
 for (const k of ['stockvag', 'brygga', 'gadda', 'mort', 'gaddkott', 'mortkott', 'mjarde', 'lader', 'trad', 'vargtand', 'huggen_sten', 'plankor', 'vavstol', 'tunika_lintyg', 'i_bjorndodare', 'tval', 'linfron', 'slanda', 'rolleka', 'rustning_lader', 'ryggsack_kaninskinn', 'tjara', 'benlim', 'balte_rep', 'byxor_lader', 'skjorta_lintyg']) {

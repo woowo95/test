@@ -68,6 +68,7 @@ const DEF = {
   lin: { var: 'sak', av: { ratlin: 1 }, min: 5, slag: 'bearbeta', tek: 'tork' },
   trad: { var: 'sak', av: { lin: 2 }, min: 3, slag: 'liten', tek: 'slanda' },
   lintyg: { var: 'sak', av: { trad: 3 }, min: 5, slag: 'stor', tek: 'vavstol' },
+  ulltrad: { var: 'sak', av: { ull: 2 }, min: 3, slag: 'liten', tek: 'slanda' }, ylle: { var: 'sak', av: { ulltrad: 3 }, min: 5, slag: 'stor', tek: 'vavstol' }, // ullen (steg 9.8.14): som linet
   leksak: { var: 'sak', av: { grenar: 1 }, min: 3, slag: 'liten', tek: 'leksak', bank: 'snickarbank' },
   snara: { var: 'sak', av: { rep: 1, grenar: 2, ben: 1 }, min: 4, slag: 'liten', tek: 'snara' },
   grop: { var: 'sak', av: { grenar: 6 }, min: 5, slag: 'stor', tek: 'grop' },

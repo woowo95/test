@@ -1942,3 +1942,25 @@ SCENARIER.djurfara = {
     ];
   },
 };
+
+SCENARIER.ylle = {
+  text: 'Steg 9.8.14: ull till tyg. Ullen från fåren spinns till ulltråd med sländan och vävs till ylletyg i vävstolen, som linet, och ylletyget är ett nytt tygmaterial för plaggen, varmare än linet',
+  kor: () => {
+    const { KLAR_FOR, TILLVERKA, setAmount, amountOf, KLAD_SLAG, STATIONER, KLADMATERIAL } = SIM;
+    const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    setAmount(s, 'ull', 4);
+    KLAR_FOR[TILLVERKA.spinna_ull.act]!(s, p, p.task!, 0);
+    const trad = amountOf(s, 'ulltrad'), ull = amountOf(s, 'ull');
+    setAmount(s, 'ulltrad', 3);
+    KLAR_FOR[TILLVERKA.vava_ull.act]!(s, p, p.task!, 0);
+    const tyg = amountOf(s, 'ylle');
+    const vav = STATIONER.vavstol.gor.includes('vava_ull') && STATIONER.vavstol.gor.includes('spinna_ull');
+    return [
+      [`2 ull blir ${trad} ulltråd (${4 - ull} ull åtgick)`, trad === 1 && ull === 2],
+      [`3 ulltråd blir ${tyg} ylletyg i vävstolen`, tyg === 1 && amountOf(s, 'ulltrad') === 0],
+      [`vävstolen väver ylle och spinner ull fortare (${vav ? 'ja' : 'nej'})`, vav],
+      [`tunikan och skjortan kan göras av ylle (${KLAD_SLAG.filter(k => k.endsWith('_ylle')).join(', ')})`, (KLAD_SLAG as readonly string[]).includes('tunika_ylle') && (KLAD_SLAG as readonly string[]).includes('skjorta_ylle')],
+      [`ylletyget är varmare än linet (${KLADMATERIAL.ylle.varme} mot ${KLADMATERIAL.lintyg.varme})`, KLADMATERIAL.ylle.varme > KLADMATERIAL.lintyg.varme],
+    ];
+  },
+};

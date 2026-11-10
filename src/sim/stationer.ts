@@ -163,7 +163,7 @@ export const STATIONER = {
     bygger: 'Sätter upp en garvningsställning.', forsta: '{namn} satte upp byns första garvningsställning. Där blir skinn till läder.',
   },
   vavstol: {
-    namn: 'Vävstol', ikon: 'vavstol', w: 2, h: 1, tek: ['vavstol'], av: RECEPT.vavstol.av, min: RECEPT.vavstol.min, gor: ['vava', 'spinna'], bara: ['vava'], vid: { slanda: 1 }, fart: { spinna: 2 }, // sländan läggs i vävstolen, och där spinns tråden fortare (steg 7.7.9)
+    namn: 'Vävstol', ikon: 'vavstol', w: 2, h: 1, tek: ['vavstol'], av: RECEPT.vavstol.av, min: RECEPT.vavstol.min, gor: ['vava', 'spinna', 'vava_ull', 'spinna_ull'], bara: ['vava', 'vava_ull'], vid: { slanda: 1 }, fart: { spinna: 2, spinna_ull: 2 }, // sländan läggs i vävstolen, och där spinns tråden fortare (steg 7.7.9)
     bygger: 'Bygger en vävstol.', forsta: '{namn} byggde byns första vävstol.',
   },
   // härden (steg 7.5.3): en eldstad inne i ett hus; när den är byggd blir den en eld som värmer huset (nyHard i brasor.ts)

@@ -92,6 +92,7 @@ const KLADMATERIAL_DEF = {
   bjornskinn: { sak: 'bjornskinn', namn: 'björnskinn', slag: 'skinn', bit: 2, varme: 2.6, hallbar: 1.3, vikt: 2, skydd: 1.5, finhet: 2 }, // steg 6.6.6: det tjockaste skinnet, den varmaste klädern och skyddar mer än vargskinnet
   lader: { sak: 'lader', namn: 'läder', slag: 'lader', bit: 1, varme: 1.3, hallbar: 1.5, vikt: 1.2, skydd: 1.4, finhet: 1 }, // steg 7.7.6
   lintyg: { sak: 'lintyg', namn: 'lin', slag: 'tyg', bit: 1, varme: 1, hallbar: 1, vikt: 1, skydd: 1, finhet: 2 }, // steg 7.7.9
+  ylle: { sak: 'ylle', namn: 'ylle', slag: 'tyg', bit: 1, varme: 2, hallbar: 1.2, vikt: 1.2, skydd: 1.1, finhet: 2 }, // steg 9.8.14: varmare än linet
   benband: { sak: 'ben', namn: 'ben', slag: 'smycke', bit: 1, varme: 0, hallbar: 1, vikt: 1, skydd: 0, finhet: 0 }, // halsbandet (steg 7.7.5)
   tandband: { sak: 'vargtand', namn: 'vargtänder', slag: 'smycke', bit: 1, varme: 0, hallbar: 1, vikt: 1, skydd: 0, finhet: 2 },
   rep: { sak: 'rep', namn: 'rep', slag: 'flatat', bit: 1, varme: 1, hallbar: 1, vikt: 1, skydd: 1, finhet: 0 },
