@@ -88,6 +88,7 @@ function drawKarra() {
 }
 // grödans symbol när den är mogen, tills rutan skördats. Framstegscirkeln över rutan där någon röjer, gräver eller sår
 function drawFalt() {
+  for (const f of faltOf(s)) if ((s.skramma ?? []).includes(f.id)) { const X = f.x * TS, Y = f.y * TS; structG.lineStyle(1, 0x3f2415).moveTo(X + TS / 2, Y + 2).lineTo(X + TS / 2, Y + TS - 1).moveTo(X + 3, Y + 6).lineTo(X + TS - 3, Y + 6).lineStyle(0).beginFill(0xb2921b).drawRect(X + TS / 2 - 2, Y + 1, 4, 4).endFill(); } // fågelskrämman (steg 9.7.11): en platshållare
   for (const i of s.staket ?? []) { const X = (i % W) * TS, Y = Math.floor(i / W) * TS; structG.lineStyle(1, 0x7d5b40).moveTo(X, Y + TS / 2).lineTo(X + TS, Y + TS / 2).moveTo(X + 2, Y + 3).lineTo(X + 2, Y + TS - 2).moveTo(X + TS - 3, Y + 3).lineTo(X + TS - 3, Y + TS - 2).lineStyle(0); } // staketet (steg 9.7.10): en platshållare tills Björn valt i bildstilen
   for (const f of faltOf(s)) {
     const vaxer = f.steg === 'vaxer', mogen = f.steg === 'mogen', R = rutorAv(f);

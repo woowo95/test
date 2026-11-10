@@ -1408,3 +1408,25 @@ SCENARIER.staket = {
     ];
   },
 };
+
+SCENARIER.skadedjur = {
+  text: 'Steg 9.7.11: skadedjur och fågelskrämman. Fåglar äter frön och harar äter plantor; staketet håller hararna ute och fågelskrämman fåglarna',
+  kor: () => {
+    const { stepOdling, sammanfatta, skrammaKlar, staketRutor, setAmount } = SIM;
+    const prov = (v: number, skydd: boolean) => {
+      const s = createState(1, START); klockan(s, 12);
+      const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+      const f: SIM.Falt = { id: 1, x: Math.floor(p.x) + 4, y: Math.floor(p.y) + 3, w: 8, dir: 1, n: 40, agare: p.id, steg: 'vaxer', klara: 0, kvar: 0, rord: s.now, r: Array.from({ length: 40 }, () => ({ st: 'vaxer' as const, g: 'rovor' as const, v })) };
+      s.falt = [f]; sammanfatta(f);
+      if (skydd) { setAmount(s, 'grenar', 4); setAmount(s, 'torrgras', 4); skrammaKlar(s, p, f.id); s.staket = staketRutor(s, f); }
+      for (let h = 0; h < 72; h++) { s.now += SIM.HOUR; for (const r of f.r!) if (r.st === 'vaxer') r.v = v; stepOdling(s); }
+      return { fagel: s.stat?.fagelAt ?? 0, hare: s.stat?.hareAt ?? 0 };
+    };
+    const fro = prov(0.05, false), planta = prov(0.6, false), skyddFro = prov(0.05, true), skyddPlanta = prov(0.6, true);
+    return [
+      [`fåglarna tar fröna (${fro.fagel} gånger på tre dygn), men inte plantorna (${planta.fagel})`, fro.fagel > 0 && planta.fagel === 0],
+      [`hararna tar plantorna (${planta.hare} gånger)`, planta.hare > 0],
+      [`fågelskrämman håller fåglarna borta (${skyddFro.fagel}) och staketet hararna (${skyddPlanta.hare})`, skyddFro.fagel === 0 && skyddPlanta.hare === 0],
+    ];
+  },
+};

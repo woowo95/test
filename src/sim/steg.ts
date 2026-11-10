@@ -241,7 +241,8 @@ for (const art of DJURARTER) MEDAN[art.act] ??= (s, p, _t, dtSec) => bearbeta(s,
 MEDAN.grilla = (s, p, _t, dtSec) => grilla(s, p, dtSec / HOUR_S); // grillen över elden (matlagning.ts)
 KLAR.koka_mat = (s, p) => kokaKlar(s, p);
 KLAR.sopor = (s, p) => soporKlar(s, p);
-KLAR.staket = (s, p, t) => staketKlar(s, p, t.ref); // staketet (odling.ts, steg 9.7.10) // sophögen (rester.ts, steg 9.7.5)
+KLAR.staket = (s, p, t) => staketKlar(s, p, t.ref);
+KLAR.skramma = (s, p, t) => skrammaKlar(s, p, t.ref); // fågelskrämman (odling.ts, steg 9.7.11) // staketet (odling.ts, steg 9.7.10) // sophögen (rester.ts, steg 9.7.5)
 KLAR.steka = (s, p) => stekaKlar(s, p);
 KLAR.baka = (s, p) => bakaKlar(s, p); // bakugnen (matlagning.ts, steg 9.6.23) // stekhällen (matlagning.ts, steg 9.6.21)
 KLAR.malta = (s, p, t) => maltaKlar(s, p, t.ref); KLAR.brygga = (s, p, t) => bryggKlar(s, p, t.ref); KLAR.tappa = (s, p, t) => bryggKlar(s, p, t.ref); // bryggkaret (brygg.ts, steg 9.6.12) // rätten ställs på elden i lerkrukan (matlagning.ts, steg 9.6.3)
@@ -1269,4 +1270,4 @@ import { bryggKlar, maltaKlar, stepBrygg } from './brygg';
 import { rusSteg } from './rus';
 import { hemma } from './halsa';
 import { soporKlar, stepKompost, stepSophog } from './rester';
-import { staketKlar } from './odling';
+import { skrammaKlar, staketKlar } from './odling';

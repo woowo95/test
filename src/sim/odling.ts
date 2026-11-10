@@ -511,7 +511,7 @@ function forlorad(s: State, f: Falt, varfor: string, rutor?: Set<number>) {
   if (!ks.length) return;
   const d = GRODOR[r[ks[0]].g!], agare = s.people.find(q => q.id === f.agare);
   log(s, `${varfor} tog ${d.namn.toLowerCase()}na på ${agare ? agare.name + 's' : 'ett'} fält.`, 'world', agare ? [agare.id] : undefined);
-  count(s, varfor === 'Frosten' ? 'frostdod' : varfor === 'Torkan' ? 'vissnat' : varfor === 'Översvämningen' ? 'drankt falt' : varfor === 'Elden' ? 'brant falt' : varfor === 'Tornadon' ? 'tornado falt' : 'ruttnat');
+  count(s, varfor === 'Fåglarna' ? 'fagelAt' : varfor === 'Hararna' ? 'hareAt' : varfor === 'Frosten' ? 'frostdod' : varfor === 'Torkan' ? 'vissnat' : varfor === 'Översvämningen' ? 'drankt falt' : varfor === 'Elden' ? 'brant falt' : varfor === 'Tornadon' ? 'tornado falt' : 'ruttnat');
   for (const k of ks) r[k] = { st: 'sa' };
   if (!r.some(x => x.st === 'vaxer' || x.st === 'mogen')) f.vatten = undefined;
   f.rord = s.now; // gräset börjar ta fältet först nu, när det står utan gröda (inte från sådden)
@@ -541,6 +541,7 @@ export function stepOdling(s: State) {
       for (let k = 0; k < f.n; k++) if ((r[k].st === 'vaxer' || r[k].st === 'mogen') && !(GRODOR[r[k].g!] as GrodaDef).flerarig && (istid || temp < GRODOR[r[k].g!].frost)) frost.add(faltRuta(f, k)); // den fleråriga vilar i stället (steg 9.7.9)
       if (frost.size) forlorad(s, f, 'Frosten', frost);
       if (s.flod) { const fl = new Set(faltRutor(f).filter(i => iVattnetNu(s, i))); if (fl.size) forlorad(s, f, 'Översvämningen', fl); } // steg 3.8.3 (flod.ts)
+      skadedjur(s, f); // fåglarna och hararna (steg 9.7.11)
       const rutt = new Set<number>();
       for (let k = 0; k < f.n; k++) if (r[k].st === 'mogen' && skordAndel(s, f, k) <= 0) rutt.add(faltRuta(f, k));
       if (rutt.size) forlorad(s, f, 'Rötan', rutt);
@@ -742,4 +743,39 @@ export function staketKlar(s: State, p: Person, i?: number) {
   takeMaterial(s, p, 'grenar', STAKET.grenar);
   (s.staket ??= []).push(i); count(s, 'staket');
   if (forstaGang(s, 'staket')) log(s, `${p.name} satte upp byns första staket runt fältet.`, 'world', [p.id]);
+}
+
+// ---------- skadedjuren och fågelskrämman (steg 9.7.11) ----------
+// Fåglar äter fröna (en ruta som nyss såtts) och harar plantorna (en ruta som vuxit en bit), med en chans per ruta och timme.
+// Staketet (faltInhagnat) håller hararna ute och fågelskrämman fåglarna; fåglarna vänjer sig inte vid den. Hararna är fler där
+// det finns mycket vilt. Slumpen är slagen ur byns frö, fältet, rutan och timmen, så att spelet och ikappräkningen blir lika
+export const SKADEDJUR = balans('skadedjur', {
+  fagel: 0.004, // chansen i timmen att fåglarna tar fröna på en ruta som vuxit mindre än fro
+  hare: 0.003, // chansen i timmen att hararna tar plantan på en ruta som vuxit mer, gånger viltet på platsen
+  fro: 0.2, // så långt har grödan vuxit när den inte längre är frön för fåglarna
+  min: 10, // minuter för att sätta upp en fågelskrämma, av grenar och hö
+});
+export const harSkramma = (s: State, f: Falt) => (s.skramma ?? []).includes(f.id);
+function skadedjur(s: State, f: Falt) {
+  const r = rutorAv(f), h = Math.floor(s.now / HOUR), fagel = new Set<number>(), hare = new Set<number>(), stangt = faltInhagnat(s, f), skramma = harSkramma(s, f);
+  for (let k = 0; k < f.n; k++) {
+    if (r[k].st !== 'vaxer' || (GRODOR[r[k].g!] as GrodaDef).flerarig) continue;
+    const i = faltRuta(f, k), u = hash(s.seed ^ 0x3a17, i, h), fro = (r[k].v ?? 0) < SKADEDJUR.fro;
+    if (fro && !skramma && u < SKADEDJUR.fagel) fagel.add(i);
+    else if (!fro && !stangt && u < SKADEDJUR.hare * (0.3 + Math.min(1.2, richness(s, 'jakt', i % W, Math.floor(i / W))))) hare.add(i);
+  }
+  if (fagel.size) forlorad(s, f, 'Fåglarna', fagel);
+  if (hare.size) forlorad(s, f, 'Hararna', hare);
+}
+// fågelskrämman: den som kan tekniken sätter upp en vid familjens fält som saknar en
+export function skrammaVal(s: State, p: Person) {
+  if (!knows(p, 'fagelskramma') || getable(s, p, 'grenar') < 2 || getable(s, p, 'torrgras') < 2 || !isLight(s.now)) return undefined;
+  return familjensFalt(s, p).find(f => !harSkramma(s, f) && rutorAv(f).some(r => r.st === 'sa' || r.st === 'vaxer'));
+}
+export function skrammaKlar(s: State, p: Person, id?: number) {
+  const f = faltById(s, id);
+  if (!f || harSkramma(s, f) || getable(s, p, 'grenar') < 2 || getable(s, p, 'torrgras') < 2) return;
+  takeMaterial(s, p, 'grenar', 2); takeMaterial(s, p, 'torrgras', 2);
+  (s.skramma ??= []).push(f.id); count(s, 'skramma');
+  if (forstaGang(s, 'skramma')) log(s, `${p.name} satte upp byns första fågelskrämma vid fältet.`, 'world', [p.id]);
 }
