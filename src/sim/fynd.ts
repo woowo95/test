@@ -214,6 +214,13 @@ const DEF = {
     uttag: { full: 3, reach: 0, regrow: [1 / 24, 1 / 12, 1 / 12, 1 / 12] }, regn: true,
   },
   // vildlöken (steg 9.6.20, odling.ts): växer vid stranden och på ängarna som de andra vilda växterna, och plockas när man samlar
+  // hasseln (steg 9.7.14, odling.ts): växer vilt i skogsbrynet, och nötterna mognar på hösten
+  hassel: {
+    namn: 'Hassel', grupp: 'vaxter', ikon: 'hassel', farg: 0x7d5b40, topp: 1, arstid: [0, 0, 0.3, 1.2], torka: 0.8,
+    monster: { salt: 109, skala: 4, period: 84, troskel: 0.62 },
+    bas: (s, i, m) => land(s, i) && BRYN.has(markslag(groundOf(s), i)) && intillSkog(groundOf(s), i) ? m * orortOf(s)[i] : 0,
+    uttag: { full: 1, reach: 1, regrow: [0, 0, 1 / 300, 1 / 200] },
+  },
   vildlok: {
     namn: 'Vildlök', grupp: 'vaxter', ikon: 'vildlok', farg: 0xb2921b, topp: 1, arstid: [0, 0.6, 1, 0.8], torka: 0.6,
     monster: { salt: 107, skala: 3, period: 56, troskel: 0.6 },

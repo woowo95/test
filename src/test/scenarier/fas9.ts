@@ -1453,3 +1453,26 @@ SCENARIER.vaxtsjuk = {
     ];
   },
 };
+
+SCENARIER.trad = {
+  text: 'Steg 9.7.13–9.7.14: fruktträd och nötträd. Äppelträdet och hasseln är fleråriga och långsamma: de bär först efter många år men sedan varje år; hasseln växer också vilt, och nötterna plockas på hösten och håller länge',
+  kor: () => {
+    const { GRODOR, workOdla, sammanfatta, amountOf, FYND, SAKER, froFynd, richness, VILDA } = SIM;
+    const s = createState(1, START); klockan(s, 10);
+    const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!; p.tek = { ...(p.tek ?? {}), odling: 1 };
+    const f: SIM.Falt = { id: 1, x: Math.floor(p.x) + 3, y: Math.floor(p.y), w: 2, dir: 1, n: 2, agare: p.id, steg: 'mogen', klara: 0, kvar: 0, rord: s.now, r: [{ st: 'mogen', g: 'appeltrad', m: s.now }, { st: 'mogen', g: 'hassel', m: s.now }] };
+    s.falt = [f]; sammanfatta(f);
+    workOdla(s, p, { act: 'odla', tool: 'mogen', ref: f.id, fr: 0, until: s.now + SIM.HOUR, tx: p.x, ty: p.y } as unknown as SIM.Task, SIM.ODLING.skordaMin * 60 * 2);
+    const igen = f.r!.every(r => r.st === 'vaxer' && (r.v ?? 0) > 0.5);
+    let plats: { x: number; y: number } | undefined;
+    s.kal = SIM.nyKalender(s.now, 3);
+    for (let i = 0; i < SIM.W * SIM.H && !plats; i += 2) if (richness(s, 'hassel', i % SIM.W, Math.floor(i / SIM.W)) > 0.2) plats = { x: i % SIM.W, y: Math.floor(i / SIM.W) };
+    const notter = plats ? froFynd(s, p, { act: 'samla', tx: plats.x, ty: plats.y } as unknown as SIM.Task, 3600).notter ?? 0 : 0;
+    return [
+      [`träden bär först efter många år (äppelträdet ${GRODOR.appeltrad.dygn} dygn, hasseln ${GRODOR.hassel.dygn}, rovorna ${GRODOR.rovor.dygn})`, GRODOR.appeltrad.dygn >= 15 && GRODOR.hassel.dygn >= 10],
+      [`efter skörden (${amountOf(s, 'appel')} äpplen, ${amountOf(s, 'notter')} nötter) bär de snart igen (${igen ? 'ja' : 'nej'})`, amountOf(s, 'appel') > 0 && amountOf(s, 'notter') > 0 && igen],
+      [`hasseln växer vilt (${FYND.hassel.namn}${plats ? ` vid ${plats.x},${plats.y}` : ''}) och ger nötter på hösten (${notter.toFixed(2)}), som kan sättas (${VILDA.hassel.groda})`, notter > 0],
+      [`nötterna håller länge (${SAKER.notter!.haller} dygn)`, SAKER.notter!.haller! >= 20],
+    ];
+  },
+};
