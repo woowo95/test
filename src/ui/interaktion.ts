@@ -188,11 +188,12 @@ app.stage.on('pointermove', e => {
   }
   showHover(gx, gy);
   ui.hovered = personAt(gx, gy)?.id;
+  ui.djurHover = ui.hovered === undefined ? djurAt(gx, gy) ?? -1 : -1;
   const c = tileAt(gx, gy);
   view.style.cursor = ui.hovered || djurAt(gx, gy) !== undefined || tornadoAt(gx, gy) || gastAt(gx, gy) !== undefined || !!filtAt(gx, gy) || inMap(c.x, c.y) && (fireAt(gx, gy) !== undefined || storeAt(gx, gy) || outPilesAt(c.x, c.y).length || toaAt(s, c.x, c.y) || faltAt(s, c.x, c.y) || hageAt(s, c.x, c.y) || stubbeAt(c.x, c.y) || husAt(c.x, c.y) !== undefined || stationAt(s, c.x, c.y) || stolAt(c.x, c.y) || tradAt(c.x, c.y) || buskeAt(c.x, c.y) || !!s.uppsatta?.some(q => q.x === c.x && q.y === c.y) || !!s.stockar?.some(q => Math.floor(q.x) === c.x && Math.floor(q.y) === c.y)) ? 'pointer' : 'grab';
 });
 view.addEventListener('wheel', e => { e.preventDefault(); const r = view.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.06 : 1 / 1.06, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
-view.addEventListener('pointerleave', () => { $('hoverBox').hidden = true; ui.hovered = undefined; });
+view.addEventListener('pointerleave', () => { $('hoverBox').hidden = true; ui.hovered = undefined; ui.djurHover = -1; });
 $('zIn').addEventListener('click', () => zoomAt(1.4));
 $('zOut').addEventListener('click', () => zoomAt(1 / 1.4));
 // en notis visar sin plats på kartan (steg 5.4.3.2)
