@@ -2,6 +2,8 @@
 
 Den här filen finns för att den som ändrar koden (oftast Claude) ska hitta rätt fil direkt, utan att läsa allt. Läs den först och öppna sedan bara de filer som berörs.
 
+Kärnan (`CLAUDE.md`): koden sätter grundreglerna för hur världen är, och det byarna gör kommer ur systemen och balanstalen. Frågan för varje villkor: beskriver det hur världen är, eller rättar det ett resultat som blev fel? Det andra är gaffatejp och skrivs inte.
+
 ## Två halvor
 
 - **`src/sim/`: simuleringen.** Byn, människorna, naturen och allt som händer. Ingen grafik och inget i webbläsaren. Den körs likadant i spelet och i testerna. `src/sim.ts` samlar allt så att resten kan skriva `import { … } from './sim'`.
