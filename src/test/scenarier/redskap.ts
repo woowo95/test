@@ -25,8 +25,10 @@ SCENARIER.stenring = {
     f.now = new Date(f.now).setHours(10, 0, 0, 0); Object.assign(f.fire, { lit: true, fuel: 3, ring: true });
     for (const q of f.people) q.tek = { ...q.tek, yxa: 1 };
     f.delning = { andel: 1 }; // byn delar all mat, så att den egna maten (bufferten per jag, steg 6.2.20) inte blandas in
+    // en by med gott om mat har torkat kött: bufferten är drygt sju dygn och lyxtaket sexton (9.9.4), och bär ruttnar långt innan dess
+    const matNu = (s: State, mat: number) => { if (mat < 100) setFood(s, mat); else { setFood(s, 0); setAmount(s, 'torrkott', 300); } };
     const letar = (flinta: number, mat: number) => {
-      setItems(f, { flinta, torrgras: 20, grenar: 20 }); setAmount(f, 'ved', 300); setFood(f, mat); f.arbBehov = undefined; let n = 0, samla = 0; // behoven räknas om (en gång i timmen i spelet, steg 6.2.21)
+      setItems(f, { flinta, torrgras: 20, grenar: 20 }); setAmount(f, 'ved', 300); matNu(f, mat); f.arbBehov = undefined; let n = 0, samla = 0; // behoven räknas om (en gång i timmen i spelet, steg 6.2.21)
       for (let i = 0; i < 300; i++) {
         const p = living(f).filter(q => ageOf(q, f.now) >= ALDER.vuxen)[i % 4];
         Object.assign(p, { toa: 1, torst: 1, warm: 1, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
@@ -48,7 +50,7 @@ SCENARIER.stenring = {
       p.task = undefined;
     }
     for (const q of f.people) if (q.tek) delete q.tek.korg;
-    setItems(f, { flinta: 1, torrgras: 20, grenar: 20 }); setAmount(f, 'ved', 300); setFood(f, 200); f.arbBehov = undefined; // som efter letar(1, 200)
+    setItems(f, { flinta: 1, torrgras: 20, grenar: 20 }); setAmount(f, 'ved', 300); matNu(f, 200); f.arbBehov = undefined; // som efter letar(1, 200)
     // arbetarna (steg 6.1.13): letar redan så många som raden leta har (flaggan sok, vad skälet än säger), letar de andra
     // flinta till en yxa med en tredjedel av chansen
     const [l0, ...andra] = living(f).filter(q => ageOf(q, f.now) >= ALDER.vuxen);

@@ -695,6 +695,7 @@ SCENARIER.tider = {
 };
 
 SCENARIER.hardvinter = {
+  lang: true,
   text: 'Steg 3.8.1: motgångarna (registret MOTGANGAR) räknas ur byns frö och tiden. En hård vinter kommer ungefär var femte istid, aldrig under byns första tio dygn: istiden är 5–8 grader kallare, det snöar mer, elden äter mer ved och vargarna kommer oftare. Den äldsta i byn anar den ett par dygn innan och berättar om det i samtal, och den som vet samlar mer. Den hårda vintern hamnar i byns krönika och barnen minns den',
   kor: () => {
     // 300 byar i 16 istider var (bara fröet behövs): hur ofta vintern blir hård, och aldrig under de första tio dygnen eller i en annan tidsålder
@@ -754,6 +755,7 @@ SCENARIER.hardvinter = {
 };
 
 SCENARIER.kloka = {
+  lang: true,
   text: 'Steg 3.8.6: den klokaste i byn anar en hård vinter eller en torka tidigare än den äldsta, ju klokare desto tidigare (upp till tre dygn före, mot ett till två för den äldsta) och säkrare. Varslet sprids i samtal som förut, och i en by där ingen är klok nog anar bara den äldsta',
   kor: () => {
     // en by vars nästa tidsålder har en hård vinter, som börjar om tre till sex dygn
@@ -1035,6 +1037,7 @@ SCENARIER.oversvamning = {
 };
 
 SCENARIER.flodrest = {
+  lang: true,
   text: 'Steg 3.8.7: medan vattnet stiger bär de vuxna undan maten från lagerplatserna som vattnet kan nå; när vattnet sjunker minns byn hur högt det nådde (en lärdom) och bygger inte där; ett jordgolv under vatten blir lera och torkar till jordgolv igen; en vägg i vattnet slits fortare; ingen sover på en blöt ruta; en brasa i vattnet slocknar',
   kor: () => {
     // en by vars vårtid just börjat och har en översvämning som når minst två rutor upp på land
