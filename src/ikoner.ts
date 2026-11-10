@@ -3820,6 +3820,8 @@ PIX.fagelskramma = PIX.grenar; PAL.fagelskramma = PAL.grenar; // platshållare f
 PIX.appel = PIX.bar; PAL.appel = PAL.bar; PIX.appelplanta = PIX.grenar; PAL.appelplanta = PAL.grenar; PIX.notter = PIX.rotter; PAL.notter = PAL.rotter; PIX.hassel = PIX.vildarter ?? PIX.grenar; PAL.hassel = PAL.vildarter ?? PAL.grenar; // platshållare för äppelträdet och hasseln (steg 9.7.13–9.7.14) tills Björn valt i bildstilen
 PIX.rokeri = PIX.tork; PAL.rokeri = PAL.tork; PIX.rokfisk = PIX.torrfisk; PAL.rokfisk = PAL.torrfisk; PIX.rokkott = PIX.torrkott; PAL.rokkott = PAL.torrkott; // platshållare för rökeriet och det rökta (steg 9.6.8) tills Björn valt i bildstilen
 for (const k of RATT_SAKER) { const h = rattInfo(k)!.huvud, f = ({ kott: 'grillkott', fisk: 'grillfisk', rot: 'rotter', svamp: 'svamp', bar: 'bar', sad: 'artfron' } as Record<string, string>)[h]; PIX[k] = PIX[f]; PAL[k] = PAL[f]; } // platshållare för rätterna (steg 9.6.3) tills Björn valt i bildstilen
+// kunskaperna i pratbubblan (steg 9.9.3): platshållare ur befintliga symboler tills de ritats
+for (const [k, f] of [['motvind', 'vader_blast'], ['renahander', 'a_vatten'], ['fukt', 'vader_regn'], ['smitta', 's_dod']] as const) if (PIX[f]) { PIX[k] = PIX[f]; PAL[k] = PAL[f]; }
 for (const k of ['lerkruka_liten', 'lerkruka_mellan', 'lerkruka_stor']) { PIX[k] = PIX.kruka; PAL[k] = PAL.kruka; } // platshållare för lerkrukans tre storlekar (steg 9.4.11) tills Björn valt i bildstilen // intrycket smakfull (steg 4.3.4): lerkrukan Björn valde
 // Björns val efter v245 (steg 4.5.2): rocken (version 2) och skorna (version 1) i 16 × 16 punkter, samma form för kaninskinn och
 // vargskinn i materialets färger, och bybornas filt (version 1; handlaren har kvar den förra)

@@ -45,3 +45,5 @@ export function leraGravd(s: State, p: Person, t: Task) {
   count(s, 'leraGravd', n);
   if (forstaGang(s, 'leraForsta')) log(s, `${p.name} grävde lera vid stranden.`, 'world', [p.id]);
 }
+import { leraKrok } from './teknik';
+leraKrok.finns = s => leraPlats(s);
