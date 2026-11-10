@@ -1517,3 +1517,36 @@ SCENARIER.ortkruka = {
     ];
   },
 };
+
+SCENARIER.tamdjur = {
+  text: 'Steg 9.8.1: de tama djuren är rader i registret TAMDJUR, individer med art, ålder, hunger och ägare. De blir hungriga, matas med slaktrens eller kött av den som har det (färdigheten Djurskötsel växer), svälter ihjäl utan mat, ärvs som redskapen och räknas i byns rikedom',
+  kor: () => {
+    const { nyttTamdjur, stepTamdjur, mataVal, mataKlar, tamdjurOf, setAmount, rikedomDelar, die, TAM } = SIM;
+    const s = createState(1, START); klockan(s, 10);
+    const vuxna = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen), p = vuxna[0]!;
+    const rik0 = rikedomDelar(s).redskap;
+    const h = nyttTamdjur(s, 'hund', p.x + 1, p.y, p.id);
+    const rik1 = rikedomDelar(s).redskap;
+    for (let i = 0; i < 14; i++) stepTamdjur(s);
+    const hungrig = h.hunger;
+    setAmount(s, 'slaktrens', 5);
+    const val = mataVal(s, p), sk0 = p.skill.skotsel ?? 0;
+    mataKlar(s, p, val?.id);
+    const matad = h.hunger, sk1 = p.skill.skotsel;
+    // ägaren dör: hunden ärvs
+    p.partner = undefined; const barn = SIM.living(s).filter(q => q.mother === p.id || q.father === p.id);
+    die(s, p, 'sjukdom');
+    const arvinge = h.agare !== p.id;
+    // ett får utan mat svälter ihjäl
+    const f = nyttTamdjur(s, 'far', p.x, p.y + 2);
+    for (let i = 0; i < 24 + TAM.svaltTim + 2; i++) stepTamdjur(s);
+    return [
+      [`hunden räknas i byns rikedom (${Math.round(rik0)} → ${Math.round(rik1)})`, rik1 > rik0],
+      [`hungern växer med tiden (${hungrig.toFixed(2)})`, hungrig > TAM.matas],
+      [`den som äger hunden och har slaktrens matar den (${val ? 'vald' : 'inte vald'}, hunger ${hungrig.toFixed(2)} → ${matad.toFixed(2)})`, !!val && matad < hungrig],
+      [`djurskötseln växer (${sk0.toFixed(3)} → ${sk1.toFixed(3)})`, sk1 > sk0],
+      [`hunden ärvs när ägaren dör (${barn.length} barn, ägare nu ${h.agare ?? 'byn'})`, arvinge || !barn.length],
+      [`ett djur utan mat dör av hunger (${tamdjurOf(s).includes(f) ? 'lever' : 'dött'})`, !tamdjurOf(s).includes(f)],
+    ];
+  },
+};

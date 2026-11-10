@@ -291,6 +291,7 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     };
     gå(s);
   }],
+  [34, 'v523: färdigheten Djurskötsel (steg 9.8.1) börjar på noll', s => { for (const p of s.people) p.skill.skotsel ??= 0; }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

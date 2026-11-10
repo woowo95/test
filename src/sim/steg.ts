@@ -241,6 +241,7 @@ for (const art of DJURARTER) MEDAN[art.act] ??= (s, p, _t, dtSec) => bearbeta(s,
 MEDAN.grilla = (s, p, _t, dtSec) => grilla(s, p, dtSec / HOUR_S); // grillen över elden (matlagning.ts)
 KLAR.koka_mat = (s, p) => kokaKlar(s, p);
 KLAR.sopor = (s, p) => soporKlar(s, p);
+KLAR.mata = (s, p, t) => mataKlar(s, p, t.ref); // de tama djuren (tamdjur.ts, steg 9.8.1)
 KLAR.tomma_latrin = (s, p) => latrinTomKlar(s, p);
 KLAR.staket = (s, p, t) => staketKlar(s, p, t.ref);
 KLAR.skramma = (s, p, t) => skrammaKlar(s, p, t.ref); // fågelskrämman (odling.ts, steg 9.7.11) // staketet (odling.ts, steg 9.7.10) // sophögen (rester.ts, steg 9.7.5)
@@ -317,7 +318,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
     atSteg(s); stepSeder(s); updateTags(s); stepRelationer(s); stepUppvaxt(s); stepReligion(s); for (const p of living(s)) morkHumor(s, p); facklorTimme(s); stepHumor(s); stepDelning(s); stepLarlingar(s);
     stepVader(s); vindfallen(s); regnetTvattar(s); stepMotgang(s); stepTorka(s); stepFlod(s); stepIs(s); growGround(s, 1, ai); growFynd(s, 1, ai, vaxtFaktor(s), vaderNu(s).nb); forget(s, 1); stepRykten(s, moodOf); glomRykten(s, 1); stepBerattelser(s); stepStyre(s); rotStumps(s); tidyStore(s);
-    vaggRensa(s); kvarTimme(s); kultTimme(s); kyrkaTimme(s); wearBuild(s, 1, ai); stepByggnader(s); husKlaraTimme(s); stepMjardar(s); stepNaken(s); stepByggplan(s); stepEldFlytt(s); lagerIStraket(s); stepPaborjat(s); stepStationer(s); stepPynt(s); stepKrukor(s); protesTimme(s); halsoNotiser(s); stepKok(s); vatskorTimme(s); stepBrygg(s); stepBak(s); stepSophog(s); stepKompost(s); stepOrtKrukor(s); stadaByten(s); stepBrasor(s); stepKlader(s); stepOdling(s);
+    vaggRensa(s); kvarTimme(s); kultTimme(s); kyrkaTimme(s); wearBuild(s, 1, ai); stepByggnader(s); husKlaraTimme(s); stepMjardar(s); stepNaken(s); stepByggplan(s); stepEldFlytt(s); lagerIStraket(s); stepPaborjat(s); stepStationer(s); stepPynt(s); stepKrukor(s); protesTimme(s); halsoNotiser(s); stepKok(s); vatskorTimme(s); stepBrygg(s); stepBak(s); stepSophog(s); stepKompost(s); stepOrtKrukor(s); stadaByten(s); stepBrasor(s); stepKlader(s); stepOdling(s); stepTamdjur(s);
     askaSteg(s); // det svarta efter en eldsvåda försvinner (brand.ts)
     sorgTimme(s); // sorgen i stadier (liv.ts, steg 9.2.33)
     smittaTimme(s); smittaUtifranTimme(s); // smittan (sjukdom.ts, steg 9.5.3 och 9.5.5)
@@ -1283,3 +1284,4 @@ function rollekaNara(s: State, x: number, y: number) {
   return best;
 }
 import { stepOrtKrukor } from './kruka';
+import { mataKlar, stepTamdjur } from './tamdjur';

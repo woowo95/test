@@ -98,6 +98,7 @@ export function rikedomDelar(s: State): Rikedom {
   let forrad = 0, redskap = 0, hus = 0;
   for (const k of SAK_LIST) if (!SAKER[k]!.redskap) forrad += wornOf(s, k) * grundvarde(k);
   for (const t of tingOf(s)) redskap += tingVarde(t);
+  redskap += djurVarde(s); // djuren räknas som redskapen (steg 9.8.1)
   for (const b of bitsOf(s)) if (b.hus !== undefined) hus += bitVarde(b);
   return { forrad, redskap, hus };
 }
@@ -113,6 +114,7 @@ export function formogenheter(s: State) {
   const lagg = (id: number, v: number) => egen.set(id, (egen.get(id) ?? 0) + v);
   for (const t of tingOf(s)) if (t.agare) lagg(t.agare, tingVarde(t));
   for (const h of housesOf(s)) if (h.ag !== undefined) lagg(h.ag, husVarde(s, h));
+  for (const d of tamdjurOf(s)) if (d.agare !== undefined) lagg(d.agare, tamArt(d.art).varde); // djuren (steg 9.8.1)
   egen.delete(0); // byns del räknas som resten
   let sum = 0; for (const v of egen.values()) sum += v;
   return { egen, byn: Math.max(0, rikedom(s) - sum) };
@@ -121,7 +123,9 @@ export function formogenheter(s: State) {
 export function formogenhetDelar(s: State, id: number) {
   let redskap = 0, klader = 0, hus = 0;
   for (const t of tingOf(s)) if (t.agare === id) { if (SAKER[t.k]?.klad) klader += tingVarde(t); else redskap += tingVarde(t); }
+  redskap += djurVarde(s, id); // djuren (steg 9.8.1)
   const forrad = agarVarde(s, grundvarde).get(id) ?? 0;
   for (const h of housesOf(s)) if (h.ag === id) hus += husVarde(s, h);
   return { redskap, klader, forrad, hus, sum: redskap + klader + forrad + hus };
 }
+import { djurVarde, tamArt, tamdjurOf } from './tamdjur';

@@ -19,6 +19,7 @@ import { grundvarde, husVarde, tingVarde, varuVarde } from './varde';
 import { housesOf } from './byggnad';
 import { husNamn } from './byggnader';
 import { Person, State } from './typer';
+import { tamArt, tamdjurOf } from './tamdjur';
 
 // arvingarna, i tur och ordning: partnern, barnen, föräldrarna, syskonen
 function heirsOf(s: State, p: Person): Person[] {
@@ -55,6 +56,11 @@ export function inherit(s: State, p: Person) {
     const i = val.indexOf(Math.min(...val));
     t.agare = heirs[i].id; val[i] += tingVarde(t);
     fick[i].push(tingNamn(t).toLowerCase()); varde[i].push(tingVarde(t));
+  }
+  // djuren (steg 9.8.1) ärvs som redskapen, ett i taget till den som hittills fått minst
+  for (const d of tamdjurOf(s).filter(d => d.agare === p.id).sort((a, b) => a.id - b.id)) {
+    const i = val.indexOf(Math.min(...val)), v = tamArt(d.art).varde;
+    d.agare = heirs[i].id; val[i] += v; fick[i].push(`${tamArt(d.art).ord[0]} ${tamArt(d.art).ord[1]}`); varde[i].push(v);
   }
   const eget = ownedAll(s, p.id);
   const rest = varuVarde(eget);
