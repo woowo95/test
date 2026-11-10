@@ -1,7 +1,7 @@
 import { fritidLista } from './fram';
 import { PYNT } from '../../sim/pynt';
 import { kvOf } from '../../sim/kvalitet';
-import { delarAv, flyttaDel, helStation, flyttaStation, sakBerattelse, ACTS, DJURARTER, STATION, bordPlatser, pilesOf, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, actIkon, verbOf, stationById, stationDef, stationKlar, tillbehorDef, tingOf, timeLabel, FLACKAR, condOf, smutsVid, blodVid, storlekAv, TORK, torrDel } from '../../sim';
+import { delarAv, flyttaDel, helStation, flyttaStation, sakBerattelse, ACTS, DJURARTER, STATION, bordPlatser, pilesOf, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, actIkon, verbOf, stationById, stationDef, stationKlar, tillbehorDef, tingOf, timeLabel, FLACKAR, condOf, smutsVid, blodVid, storlekAv, TORK, torrDel, ROK } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { frystAttr, sakAttr } from './sak';
 import { iBruk } from '../ibruk';
@@ -96,7 +96,8 @@ export const station: Flik = {
     const smuts = (bv > 0 ? `<span ${tip(`Blod runt omkring, ${Math.round(bv * 100)} % färskt. Det bleknar bort på ett par dygn`)}>🩸 ${Math.round(bv * 100)} %</span> ` : '') + Object.entries(smutsVid(s, st)).filter(([, v]) => v > 0).map(([k, v]) => { const fd = (FLACKAR as Record<string, { namn: string; bleknar: number }>)[k]; return fd ? `<span ${tip(`${fd.namn} runt omkring, ${Math.round(v * 100)} %. Det bleknar bort på ${Math.round(fd.bleknar / 24)} dygn`)}>· ${Math.round(v * 100)} %</span>` : ''; }).join(' ');
     // latrinen (steg 2.7.2): hur full den är. När den är full fylls den igen och byn gräver en ny
     // det som hänger på torkställningen (steg 2.8.2): råvaran, hur många bitar (steg 4.5.3.1) och hur långt torkningen kommit
-    const hanger = (st.tork ?? []).map(q => `<span ${tip(`${fmtN(q.n)} ${sakNamn(q.k).toLowerCase()}, torkat till ${Math.round(torrDel(s, q) * 100)} % av ${TORK.dygn} dygn`)}>${iconImg(q.k)} ×${fmtN(q.n)} · ${Math.round(torrDel(s, q) * 100)} %</span>`).join(' ');
+    const hangSlag = st.k === 'rokeri' ? 'rokeri' : 'tork', hangNamn = (k: string) => k === 'maltkorn' ? 'blött korn' : sakNamn(k).toLowerCase(); // det blötta kornet (malt) är ingen sak i registret
+    const hanger = (st.tork ?? []).map(q => { const dygn = q.k === 'maltkorn' ? TORK.maltDygn : st.k === 'rokeri' ? ROK.dygn : TORK.dygn, del = Math.round(torrDel(s, q, hangSlag) * 100); return `<span ${tip(`${fmtN(q.n)} ${hangNamn(q.k)}, ${st.k === 'rokeri' ? 'rökt' : 'torkat'} till ${del} % av ${dygn} dygn`)}>${iconImg(q.k === 'maltkorn' ? 'korn' : q.k)} ×${fmtN(q.n)} · ${del} %</span>`; }).join(' ');
     // talgljuset på bordet eller hyllan (ljus.ts, steg 6.3.8): om det brinner och hur mycket som är kvar
     const tl = s.ljus?.find(q => q.st === st.id);
     const ljuset = tl ? `<p ${tip(`Ett talgljus, ${tl.tand ? 'tänt' : 'släckt'}, ${Math.round(tl.c * 100)} % kvar`)}>${iconImg('talgljus')} ${tl.tand ? 'Tänt' : 'Släckt'} ${condBar(tl.c)}<span>${Math.round(tl.c * 100)} %</span></p>` : '';
