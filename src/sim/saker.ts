@@ -1,6 +1,7 @@
 import type { TidSlag } from './tider';
 import { RECEPT } from './recept';
 import { kladSaker } from './klader';
+import { rattSaker } from './ratter';
 // ---------- saker ----------
 // Allt byn kan äga står här: mat, bränsle, sten och redskap. Lager, slitage, listorna i panelen och det som bärs hem
 // frågar registret. En ny sak läggs till här (och får en ikon i ikoner.ts).
@@ -222,6 +223,8 @@ const DEF = {
   vargdel: { namn: 'Vargstycke', ett: true, skaffa: { act: 'jakt' }, vikt: 10, stack: 1, mapp: 'Material', haller: 3 },
   radjurdel: { namn: 'Rådjursstycke', ett: true, skaffa: { act: 'jakt' }, vikt: 10, stack: 1, mapp: 'Material', haller: 3 },
   bjorndel: { namn: 'Björnstycke', ett: true, skaffa: { act: 'jakt' }, vikt: 10, stack: 1, mapp: 'Material', haller: 3 }, // steg 6.6.6
+  // rätterna som kokas i lerkrukan (steg 9.6.3, ratter.ts): en rad per huvudingrediens, kategori och nivå
+  ...rattSaker(),
 } satisfies Record<string, SakDef>;
 
 type Sak = keyof typeof DEF;

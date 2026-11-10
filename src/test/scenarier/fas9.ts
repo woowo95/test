@@ -684,3 +684,18 @@ SCENARIER.halsonotiser = {
     ];
   },
 };
+
+SCENARIER.matgrupper = {
+  text: 'Steg 9.6.1: ingrediensgrupperna. Varje råvara hör till en eller flera grupper (stärkelse, protein, grönt, sött, smak och fett): all mat som inte är en lagad rätt har en rad i INGREDIENSER, och fet fisk är både protein och fett',
+  kor: () => {
+    const { FOOD, INGREDIENSER, grupperAv, rattInfo, MATGRUPP_LIST } = SIM;
+    const utan = FOOD.filter(k => !rattInfo(k) && !INGREDIENSER[k]);
+    const fet = grupperAv('mort');
+    return [
+      [`all mat utom rätterna har grupper (saknas: ${utan.join(', ') || 'inga'})`, !utan.length],
+      [`grupperna är sex (${MATGRUPP_LIST.join(', ')})`, MATGRUPP_LIST.length === 6],
+      [`mört är både protein och fett (${fet.join(', ')})`, fet.includes('protein') && fet.includes('fett')],
+      [`röllekan är smak (${grupperAv('rolleka').join(', ')})`, grupperAv('rolleka').includes('smak')],
+    ];
+  },
+};

@@ -1,6 +1,7 @@
 // ikoner för föremål: små pixelbilder (8×8) som används både på kartan och i listorna
 // varje tecken är en pixel, '.' är genomskinlig
 import { KLADER_AV } from './sim/klader';
+import { RATT_SAKER, rattInfo } from './sim/ratter';
 import { KARTBILDER } from './kartbilder';
 import { STUBBILDER } from './stubbilder';
 import { ANIMBILDER } from './animbilder';
@@ -4012,6 +4013,7 @@ PIX.s_spala = PIX.grenar ?? PIX.s_forb; PAL.s_spala = PAL.grenar ?? PAL.s_forb; 
 PIX.remsa = PIX.mossa ?? PIX.skinn; PAL.remsa = PAL.mossa ?? PAL.skinn; PIX.nal = PIX.bensyl; PAL.nal = PAL.bensyl; // platshållare för remsan och nålen (steg 9.5.15) tills Björn valt i bildstilen
 for (const k of ['krycka', 'traben', 'krok', 'protes']) { PIX[k] = PIX.slagtra ?? PIX.benspade; PAL[k] = PAL.slagtra ?? PAL.benspade; } PIX.ogonlapp = PIX.skinn ?? PIX.benspade; PAL.ogonlapp = PAL.skinn ?? PAL.benspade; // platshållare för proteserna (steg 9.5.11) tills Björn valt i bildstilen
 PIX.lakesalva = PIX.salva ?? PIX.kruka; PAL.lakesalva = PAL.salva ?? PAL.kruka; // läkesalvans teknik (steg 9.5.10): salvans bild // platshållare för örtteets teknik (steg 9.5.8) tills Björn valt i bildstilen // platshållare för näveraskan (steg 9.4.13) tills Björn valt i bildstilen // platshållare för snickarbänkens teknik (steg 9.4.4) tills Björn valt i bildstilen
+for (const k of RATT_SAKER) { const h = rattInfo(k)!.huvud, f = ({ kott: 'grillkott', fisk: 'grillfisk', rot: 'rotter', svamp: 'svamp', bar: 'bar' } as Record<string, string>)[h]; PIX[k] = PIX[f]; PAL[k] = PAL[f]; } // platshållare för rätterna (steg 9.6.3) tills Björn valt i bildstilen
 for (const k of ['lerkruka_liten', 'lerkruka_mellan', 'lerkruka_stor']) { PIX[k] = PIX.kruka; PAL[k] = PAL.kruka; } // platshållare för lerkrukans tre storlekar (steg 9.4.11) tills Björn valt i bildstilen // intrycket smakfull (steg 4.3.4): lerkrukan Björn valde
 // Björns val efter v245 (steg 4.5.2): rocken (version 2) och skorna (version 1) i 16 × 16 punkter, samma form för kaninskinn och
 // vargskinn i materialets färger, och bybornas filt (version 1; handlaren har kvar den förra)
