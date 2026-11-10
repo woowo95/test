@@ -44,4 +44,56 @@ Det viktigaste enligt kodchatten:
 
 Övrigt: kartan för riktad byggdes fortfarande om och är inte committad.
 
+### 2. Björns lista (spelet, gränssnittet, testerna)
+
+Björns punkter, grupperade men inte bedömda. **F** = en fråga som Björn vill ha svar på.
+
+**Personbeskrivningarna och porträtten**
+- Fler rader i personbeskrivningarna om hur man bor: bor i utkanten av byn, mitt emot verkstaden, har bott länge i sitt hus och liknande.
+- Beskrivningarna ska vara något kortare och mer slumpade: all sorts information behöver inte alltid vara med. Det viktigaste är alltid med, till exempel att någon sörjer sin närmaste som gått bort.
+- Porträttkorten längst ner som alltid syns blir smalare: namnet under porträttet och yrket bort. Vad personen gör just nu står kvar. Porträtten görs lite större om det behövs för att namnet ska få plats. Fler personer får plats samtidigt.
+- Ta bort kön och ålder bredvid porträttet där uppe igen.
+- **F:** ett eget porträtt för riktigt små barn, upp till ungefär 5 år? Få variationer behövs, men hårfärgen och hudfärgen ska följa med när barnet växer upp. Är 5 år en rimlig gräns, och är det en bra idé?
+
+**Samtalen**
+- Det står att en person samtalar vid elden fast hen är ensam där.
+- Vissa samtalar trots att de är långt ifrån varandra. De ska försöka stå nära varandra när de pratar, och samtalet ska ta slut om någon av dem går för långt bort.
+
+**Bilden och animationerna**
+- **F:** nu när man kan zooma längre in blir vissa saker suddiga. Är det svårt att lösa?
+- Personerna ska ha en tydligare liten lysande cirkel runt sig, så att man ser var de är mitt i natten. Ljuset är bara för bilden och gör inte att de ser bättre. Björn tror att steget gjorts förut, men att det antingen inte blev gjort eller lyser för lite för att synas.
+- Sittanimationen får bara visas på stolar och andra sittplatser.
+- Gåanimationen visas fortfarande ofta när de står still. Testerna fångar inte upp det, för det sker fortfarande utan att något test varnar.
+- Ta bort strecken bakom vågarna (sederna). De gör det bara otydligare.
+
+**Snö, vatten och eld**
+- Nu när det finns lerkrukor att koka i ska man inte längre kunna smälta snö vid elden direkt. Snön läggs först i en kruka, och krukan används för att smälta den. En snöfylld lerkruka blir troligen en ny sak.
+- Snön ska smälta av eldens värme, både lägerelden och skogsbranden. Det kopplas ihop med värmesystemet som redan finns.
+
+**Husen och sängarna**
+- **F:** vad är ett bäggbräde (bäddbräde?)? Björn funderar på att ta bort det, eftersom det inte fungerar så bra visuellt i spelet.
+- **F:** ett tomt hus står som verkstad. Rummen ska få sina taggar efter vad som står i dem, så varför står det verkstad i ett tomt hus?
+- Fler ska få sängar snabbare. Alla kolonister ska ha en säng på ett eller annat sätt efter inte alltför lång tid. Att sova direkt på marken gör bara mycket primitiva byar. Man tränger in sig i första långhuset, och annars byggs sängarna ute tills man får ett eget hus. (Balans.)
+- Nätterna är tråkiga och händelselösa. De kanske kan arbeta mer med hantverk på natten, till exempel vid arbetsbänkarna, så att det händer mer.
+
+**Lärdomarna (10.3)**
+- **F:** gör lärdomarna om var saker växer någon skillnad för var kolonisterna jagar, samlar och fiskar? Blir byarna olika i ett test med och utan lärdomar, och hur stor är skillnaden?
+- Lärdomarna handlar mycket om platser. Man ska kunna trycka så att kameran flyttas till platsen de pratar om, kanske med en nål på kartan där platsen är.
+
+**Händelseloggen och flikarna**
+- Händelseloggen har otroligt många flikar och underflikar och måste förenklas. **F:** vad ska bort?
+- Allt i kolonistens personliga händelselogg flyttas till en ny flik i kolonistens ruta, till exempel byten, framträdanden, matcher och viktiga händelser.
+- Värmekartorna behöver inte flyttas när man fäller ut flikarna till höger. Det gör inget om de täcks.
+
+**Seder, lagar och ledarskap**
+- Vågen i sederna är otydlig. Att någon levde i överflöd kan se ut att dra vågen mycket åt ett håll, fast den ändå lutar åt det andra. Allt som påverkar vågen kan sammanfattas under symbolerna, så att det syns varför den lutar som den gör.
+- Fliken Påbud ska heta Lagar, och alla lagar och påbud ska stå där.
+- **F:** vad är tabun? Björn såg det för första gången nu, under ledarskap.
+- Trycker man på en omröstning ska det tydligt stå vad lagen eller påbudet de röstade om gör.
+- Man ska kunna läsa mer om de olika rollerna i ledarskapet, till exempel förvaltare och ålderkvinna. Styrets beskrivning ska alltid ha några korta ord om varje roll, så att bilden blir komplett.
+
+**Testerna och prestandan**
+- Alla tester på den lokala datorn mäter den aktiva tiden per kärna, så att man ser om testerna behöver anpassas efter kärnorna.
+- **F:** kodgenomgången i slutet av varje fas konstaterar ofta att profilen är platt, så att det inte finns något att optimera. Men det betyder väl inte att varje enskild del inte kan optimeras, även om alla delar tar ungefär lika mycket processorkraft? Björn är orolig att vi går miste om mycket optimering med det resonemanget.
+
 (fylls på)
