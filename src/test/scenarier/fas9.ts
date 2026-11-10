@@ -866,3 +866,19 @@ SCENARIER.saft = {
     ];
   },
 };
+
+SCENARIER.koktvatten = {
+  text: 'Steg 9.6.10: kokat vatten att dricka. Det kokade vattnet dricks av den törstige som är hemma när det finns, och det är rent: den som dricker det behöver inte gå till det smutsiga vattnet och får inte ont i magen',
+  kor: () => {
+    const { addTool, fyllVatska, vatskaAv, drickDryck } = SIM;
+    const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    const kr = addTool(s, 'lerkruka_mellan', p); kr.hos = undefined; fyllVatska(s, 'kokt', 3, kr);
+    p.torst = 0.3; const fore = s.stat?.['magont av vatten'] ?? 0;
+    drickDryck(s, p);
+    const drack = p.torst === 1 && vatskaAv(s, 'kokt') === 2, mag = (s.stat?.['magont av vatten'] ?? 0) === fore;
+    return [
+      [`den törstige dricker det kokade vattnet hemma (${drack ? 'ja' : 'nej'}, ${vatskaAv(s, 'kokt')} kvar)`, drack],
+      [`och får inte ont i magen (${mag ? 'ja' : 'nej'})`, mag && !p.sjuk],
+    ];
+  },
+};

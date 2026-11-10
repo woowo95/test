@@ -86,13 +86,15 @@ export function vatskorTimme(s: State) {
     count(s, v === 'saft' ? 'saftSur' : 'vatskaUthalld', t.inne!.n); t.inne = undefined;
   }
 }
-// drycken (steg 9.6.9): den törstige som är hemma dricker saft när det finns, och den släcker törsten och ger lite glädje
+// drycken (steg 9.6.9–9.6.10): den törstige som är hemma dricker saft när det finns, annars kokat vatten, och den släcker törsten och ger lite glädje
 export const DRYCK = balans('dryck', {
   slacker: 0.5, // så mycket av törsten en del saft släcker
   saftGlad: 0.03, saftTim: 4, // tanken av att dricka saft, och hur länge
 });
 export function drickDryck(s: State, p: Person) {
-  if (!torstig(p, 0) || !hemma(s, p) || !medVatska(s, 'saft')) return;
+  if (!torstig(p, 0) || !hemma(s, p)) return;
+  // det kokade vattnet (steg 9.6.10): rent, så att den som dricker det inte får ont i magen av smutsigt vatten
+  if (!medVatska(s, 'saft')) { if (medVatska(s, 'kokt')) { taVatska(s, 'kokt', 1); p.torst = 1; count(s, 'koktDrucket'); } return; }
   taVatska(s, 'saft', 1);
   p.torst = Math.min(1, p.torst + DRYCK.slacker);
   think(p, 'Drack saft', DRYCK.saftGlad, s.now, DRYCK.saftTim * HOUR);
