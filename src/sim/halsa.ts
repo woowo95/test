@@ -70,6 +70,9 @@ export const HALSA = balans('halsa', {
   // vården (steg 2.5.2)
   infRisk: 0.01, // chansen i timmen att ett öppet sår blir infekterat ...
   fastInf: 4, // ... gånger detta medan ett spjut sitter kvar i såret (steg 3.7.7)
+  // vapnet i såret (steg 9.5.21): medan pilen eller spjutet sitter kvar pluggar det såret (blödningen gånger fastPlugg) och hindrar
+  // delen (fastFel); när det dras ut blöder såret draBlod gånger mer i draTim timmar
+  fastPlugg: 0.5, fastFel: 0.3, draBlod: 2, draTim: 0.25,
   forband: 0.25, // ... gånger detta med ett förband av mossa ...
   remsa: 0.1, // ... och med en remsa av skinn eller lin (steg 9.5.15)
   avsnoraTim: 2, // en avsnörning som sitter längre än så här många timmar skadar delen för alltid (steg 9.5.15)
@@ -175,7 +178,7 @@ const SKADA: Record<SkadaTyp, SkadaDef> = SKADOR;
 // en skada: del, typ, grad (0–1, sjunker när den läker) och blödningen kvar (1 = som nyss, 0 = levrad).
 // f = ett förband av mossa ligger på, inf = infektionen (0–1; vid 1 dör man), ren = rengjord till den tiden (steg 2.5.2)
 export interface Men { d: Kroppsdel; fel: number; ont: number }
-export interface Skada { d: Kroppsdel; k: SkadaTyp; g: number; b: number; g0?: number; f?: 1 | 2; inf?: number; ren?: number; fast?: 1; salva?: number; av?: number; sydd?: 1 } // f: 1 mossa, 2 en remsa (steg 9.5.15); av = avsnört sedan den tiden, sydd = såret är sytt // salva = läkesalvan på såret, med salvans kvalitet (steg 9.5.10) // fast = ett spjut sitter kvar i såret (steg 3.7.7)
+export interface Skada { d: Kroppsdel; k: SkadaTyp; g: number; b: number; g0?: number; f?: 1 | 2; inf?: number; ren?: number; fast?: 1; salva?: number; av?: number; sydd?: 1; drog?: number } // drog = vapnet drogs ut och såret blöder mer till den tiden (steg 9.5.21) // f: 1 mossa, 2 en remsa (steg 9.5.15); av = avsnört sedan den tiden, sydd = såret är sytt // salva = läkesalvan på såret, med salvans kvalitet (steg 9.5.10) // fast = ett spjut sitter kvar i såret (steg 3.7.7)
 const oppet = (w: Skada) => SKADA[w.k].blod > 0; // ett öppet sår (inte ett benbrott)
 
 // ---------- olyckorna (registret) ----------
@@ -196,7 +199,7 @@ export const OLYCKOR: Partial<Record<Act, OlyckaDef>> = {
 export function delFel(p: Person, d: Kroppsdel) {
   if (p.saknas?.includes(d)) return PROTES_FEL[p.protes?.[d] ?? ''] ?? 1; // en förlorad del kommer inte tillbaka (steg 8.2.3), men en protes ger tillbaka en del (steg 9.5.11)
   let f = 0;
-  for (const w of p.skador ?? []) if (w.d === d) f += SKADA[w.k].fel * w.g;
+  for (const w of p.skador ?? []) if (w.d === d) f += SKADA[w.k].fel * w.g + (w.fast ? HALSA.fastFel : 0); // vapnet i såret hindrar delen (steg 9.5.21)
   for (const m of p.men ?? []) if (m.d === d) f += m.fel; // det som läkte fel (steg 8.2.4)
   return Math.min(1, f);
 }
@@ -269,7 +272,7 @@ export function tidKvar(p: Person) { const b = blodning(p); return b > 0 ? Math.
 // blodet personen förlorar i timmen just nu
 export function blodning(p: Person) {
   let v = 0;
-  for (const w of p.skador ?? []) v += HALSA.blodTim * SKADA[w.k].blod * w.g * w.b;
+  for (const w of p.skador ?? []) v += HALSA.blodTim * SKADA[w.k].blod * w.g * w.b * (w.fast ? HALSA.fastPlugg : 1) * (w.drog !== undefined ? HALSA.draBlod : 1); // pluggat av vapnet, mer när det dragits ut (steg 9.5.21)
   return v;
 }
 // hälsan som visas och som valet läser: den gamla hälsan (svält, kyla, törst, sjukdom), blodet och smärtan
@@ -427,6 +430,7 @@ export function halsaSteg(s: State, p: Person, dtSec: number): Dodsorsak | undef
   const kryper = !kanGa(p) && p.task !== undefined && p.task.phase !== 'do'; // den som kravlar lämnar ett släpspår (steg 3.7.19)
   blodDroppar(s, p, blod, dtSec, kryper ? 'kryp' : 'blodning', kryper ? Math.atan2(p.task!.ty - p.y, p.task!.tx - p.x) : undefined);
   for (const w of p.skador) {
+    if (w.drog !== undefined && s.now >= w.drog) w.drog = undefined; // det utdragna såret blöder som vanligt igen (steg 9.5.21)
     if (w.av !== undefined) { w.b = 0; if (w.g < HALSA.storSar) w.av = undefined; else if (s.now - w.av > HALSA.avsnoraTim * HOUR) { (p.men ??= []).push({ d: w.d, fel: HALSA.menFel, ont: 0 }); w.av = undefined; count(s, 'avsnorningSkadade'); log(s, `${gen(p.name)} ${DEL[w.d].i} skadades av att vara avsnört för länge.`, 'world', [p.id]); } } // avsnörningen (steg 9.5.15)
     if (w.b > 0 && w.g < HALSA.storSar) w.b = Math.max(0, w.b - h / (HALSA.levrar * (0.5 + w.g) * (w.g < HALSA.smaSar ? 1 : HALSA.medelLevrar))); // ett stort sår levrar sig inte (steg 9.5.14)
     infSteg(s, p, w, h, dtSec);
@@ -516,7 +520,7 @@ export const salvaVerkan = (w: Skada) => w.salva === undefined ? 0 : Math.min(1.
 // salvan finns i en behållare (vatskor.ts sätter kroken): hur mycket byn har, och en tas (dess kvalitet)
 export const salvaKrok = { har: (_s: State) => 0, ta: (_s: State): number | undefined => undefined };
 export const VARD: Record<string, VardDef> = {
-  dra_ut: { namn: 'Dra ut pilen', text: 'Drar ut det som sitter fast i såret', krav: (_s, _q, w) => stor(w) && !!w.fast, tid: 1, risk: 0, bradska: 4, gor: (s, _g, _q, w) => { w.fast = undefined; count(s, 'spjut utdragna'); } }, // den som vårdar tar ut det som fastnat (steg 3.7.7)
+  dra_ut: { namn: 'Dra ut pilen', text: 'Drar ut det som sitter fast i såret', krav: (_s, _q, w) => stor(w) && !!w.fast, tid: 1, risk: 0, bradska: 4, gor: (s, _g, _q, w) => { w.fast = undefined; w.drog = s.now + HALSA.draTim * HOUR; w.b = Math.max(w.b, 1); count(s, 'spjut utdragna'); } }, // den som vårdar tar ut det som fastnat (steg 3.7.7): det blöder mer en stund (steg 9.5.21)
   trycka: { namn: 'Trycka', text: 'Trycker på såret så att det slutar blöda', krav: (_s, _q, w) => stor(w) && w.b > 0, tid: 1, risk: 0, bradska: 5, gor: (s, _g, _q, w) => { w.b = 0; count(s, 'sar tryckta'); } },
   forband: { namn: 'Förband', text: 'Lägger en remsa eller mossa på såret', krav: (_s, _q, w) => stor(w) && !w.f && w.inf === undefined, tid: 2, risk: 0, bradska: 3, gor: (s, g, q, w) => { if ((g.forbandMed ?? 0) > 0) { g.forbandMed! -= 1; if (!g.forbandMed) delete g.forbandMed; w.f = 2; } else if (getable(s, g, 'remsa') >= 1 && !g.task?.stanna) { takeMaterial(s, g, 'remsa', 1); w.f = 2; } else if (getable(s, g, 'mossa') >= 1 && !g.task?.stanna) { takeMaterial(s, g, 'mossa', 1); w.f = 1; } else if (rivRemsa(s, q, g)) w.f = 2; else return; count(s, 'forband'); } }, // remsan före mossan; i nöd rivs en remsa ur ett plagg (steg 9.5.15)
   byta: { namn: 'Byta förband', text: 'Byter det gamla förbandet', krav: () => false, material: { mossa: 1 }, tid: 2, risk: 0, bradska: 2, senare: '9.5.25', gor: () => {} },

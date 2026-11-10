@@ -191,7 +191,7 @@ export const VAPEN = {
   yxa: { namn: 'Flintyxan', skada: 0.5, takt: 1.5, rack: 1.1, slag: 'hugg', ord: 'hugger', tecken: '🪓', liten: true },
   fiskespjut: { namn: 'Träspjutet', skada: 0.32, takt: 1.3, rack: 1.8, slag: 'stick', ord: 'sticker', tecken: '🔱', kast: { rack: 6, skada: 0.3, skott: 1, fastnar: true, reserv: true } },
   flintspjut: { namn: 'Flintspjutet', skada: 0.45, takt: 1.3, rack: 1.8, slag: 'stick', ord: 'sticker', tecken: '🔱', kast: { rack: 6, skada: 0.42, skott: 1, fastnar: true, reserv: true } },
-  bage: { namn: 'Pilbågen', skada: 0.1, takt: 1.2, rack: 0.9, slag: 'slag', ord: 'slår', tecken: '🔱', kast: { rack: 12, skada: 0.4, skott: 12, ammo: 'pilar', pil: true } }, // steg 8.7.6
+  bage: { namn: 'Pilbågen', skada: 0.1, takt: 1.2, rack: 0.9, slag: 'slag', ord: 'slår', tecken: '🔱', kast: { rack: 12, skada: 0.4, skott: 12, ammo: 'pilar', pil: true, fastnar: true } }, // steg 8.7.6; pilen sitter kvar i såret (steg 9.5.21)
   slunga: { namn: 'Slungan', skada: 0.08, takt: 1.1, rack: 0.9, slag: 'slag', ord: 'slår', tecken: '🪨', kast: { rack: 10, skada: 0.3, skott: 12, ammo: 'sten' }, liten: true },
   benspade: { namn: 'Benspaden', skada: 0.28, takt: 1.4, rack: 1.3, slag: 'slag', ord: 'slår', tecken: '{sym_benspade}' },
   sten: { namn: 'Stenen', skada: 0.25, takt: 1.1, rack: 0.9, slag: 'slag', ord: 'slår', tecken: '🪨', kast: { rack: 8, skada: 0.22, skott: 3 } }, // tre stenar att kasta, sedan slår man med den sista

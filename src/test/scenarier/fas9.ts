@@ -469,3 +469,26 @@ SCENARIER.undsattning = {
     ];
   },
 };
+
+SCENARIER.pilisaret = {
+  text: 'Steg 9.5.21: vapnet i såret. En pil eller ett kastspjut sitter kvar, pluggar såret så att det blöder mindre och hindrar delen, och dras ut som en behandling som får såret att blöda mer en stund',
+  kor: () => {
+    const { blodning, delFel, vardKlar, halsaSteg, HALSA, VAPEN } = SIM;
+    const s = createState(1, START), [g, q] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
+    const pil = !!VAPEN.bage.kast.fastnar;
+    q.skador = [{ d: 'armV', k: 'sticksar', g: 0.5, b: 1 }];
+    const utan = blodning(q), felUtan = delFel(q, 'armV');
+    q.skador[0].fast = 1;
+    const med = blodning(q), felMed = delFel(q, 'armV');
+    g.x = q.x; g.y = q.y;
+    vardKlar(s, g, { act: 'varda', phase: 'do', tx: q.x, ty: q.y, until: s.now, carry: 0, why: '', ref: q.id });
+    const w = q.skador![0], drogs = !w.fast && w.drog !== undefined;
+    w.b = 1; w.f = undefined; const efter = blodning(q);
+    s.now += (HALSA.draTim + 0.1) * SIM.HOUR; halsaSteg(s, q, 1); const sen = blodning(q);
+    return [
+      [`pilen sitter kvar i såret som kastspjutet (${pil ? 'ja' : 'nej'})`, pil],
+      [`vapnet pluggar såret (${med.toFixed(3)} mot ${utan.toFixed(3)} i timmen) och hindrar delen (${felMed.toFixed(2)} mot ${felUtan.toFixed(2)})`, med < utan && felMed > felUtan],
+      [`vårdaren drar ut det (${drogs ? 'ja' : 'nej'}), och såret blöder mer en stund (${efter.toFixed(3)}) och sedan som vanligt (${sen.toFixed(3)})`, drogs && efter > utan * 0.99 && sen < efter],
+    ];
+  },
+};
