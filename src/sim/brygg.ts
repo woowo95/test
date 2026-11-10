@@ -21,6 +21,8 @@ export const BRYGG = balans('brygg', {
   maltKorn: 4, // så mycket korn blöts och torkas till lika mycket malt (steg 9.6.13), på TORK.maltDygn dygn
   maltMin: 2, // och så många minuters arbete
   surForsta: 0.3, // den första satsen öl i ett kar blir sur med den här chansen
+  vinBra: 5, // vinet i krukan är bättre (kvalitet 3) efter så här många dygn ...
+  vinBast: 15, // ... och bäst (kvalitet 4) efter så här många
   olVin: 2, // byn kommer på ölet när den har korn och gjort vin så här många gånger
 });
 // dryckerna som bryggs: det som läggs i karet, hur många dygn satsen jäser och hur mycket den ger. tek = tekniken
@@ -32,7 +34,7 @@ export const BRYGD: Record<'vin' | 'ol', BrygdDef> = {
 export type BrygdId = keyof typeof BRYGD;
 export const BRYGD_LIST = Object.keys(BRYGD) as BrygdId[];
 // vinet blir bättre med tiden i krukan: det går att dricka direkt, är bättre efter 5 dygn och bäst efter 15 (kvaliteten 2–4)
-export const vinKvalitet = (s: State, t: Ting) => t.inne?.t === undefined ? 2 : s.now - t.inne.t >= 15 * DAY ? 4 : s.now - t.inne.t >= 5 * DAY ? 3 : 2;
+export const vinKvalitet = (s: State, t: Ting) => t.inne?.t === undefined ? 2 : s.now - t.inne.t >= BRYGG.vinBast * DAY ? 4 : s.now - t.inne.t >= BRYGG.vinBra * DAY ? 3 : 2;
 
 export const karen = (s: State) => stationerOf(s).filter(t => t.k === 'bryggkar' && isKlar(t));
 // det p kan göra vid karen: hälla upp en klar sats (när en ledig stor kruka finns) eller lägga en ny sats i ett tomt kar

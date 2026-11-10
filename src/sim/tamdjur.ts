@@ -11,7 +11,8 @@ import { getable, takeMaterial } from './behov';
 import { rnd } from './slump';
 import { foodOf, put } from './lager';
 import { stat } from './folk';
-import { DAY, Person, State } from './typer';
+import { DAY, Person, State, inMap } from './typer';
+import { blocked } from './byggnad';
 
 // en art av tamdjur. ord = en/ett, ett djur, flera, det bestämda; foder = det man matar djuret med, det bästa först (hela saker); bete = djuret betar i hagen (steg 9.8.4),
 // och betet det helst äter; liv = hur många dygn (år i spelet) det lever, vuxen = när det är fullvuxet, varde = vad det är värt i
@@ -19,8 +20,8 @@ import { DAY, Person, State } from './typer';
 export interface TamArt { namn: string; ord: [string, string, string, string]; foder: readonly string[]; bete?: 'gras' | 'buskar'; liv: number; vuxen: number; varde: number; mattar: number; ikon: string }
 export const TAMDJUR = {
   hund: { namn: 'Hund', ord: ['en', 'hund', 'hundar', 'hunden'], foder: ['slaktrens', 'kott', 'vargkott', 'gaddkott', 'braxkott'], liv: 12, vuxen: 1, varde: 30, mattar: 0.5, ikon: 'varg' },
-  far: { namn: 'Får', ord: ['ett', 'får', 'får', 'fåret'], foder: [], bete: 'gras', liv: 10, vuxen: 1, varde: 25, mattar: 0.5, ikon: 'radjur' },
-  get: { namn: 'Get', ord: ['en', 'get', 'getter', 'geten'], foder: [], bete: 'buskar', liv: 12, vuxen: 1, varde: 25, mattar: 0.5, ikon: 'radjur' },
+  far: { namn: 'Får', ord: ['ett', 'får', 'får', 'fåret'], foder: ['torrgras', 'lovkarve'], bete: 'gras', liv: 10, vuxen: 1, varde: 25, mattar: 0.5, ikon: 'radjur' },
+  get: { namn: 'Get', ord: ['en', 'get', 'getter', 'geten'], foder: ['lovkarve', 'torrgras'], bete: 'buskar', liv: 12, vuxen: 1, varde: 25, mattar: 0.5, ikon: 'radjur' },
 } as const satisfies Record<string, TamArt>;
 export type TamArtId = keyof typeof TAMDJUR;
 export const TAM_LIST = Object.keys(TAMDJUR) as TamArtId[];
@@ -28,7 +29,7 @@ export const tamArt = (a: TamArtId): TamArt => TAMDJUR[a];
 
 // ett tamdjur. hunger 0–1 (1 = svälter), svalt = timmar det svultit, agare = personen som äger det (ingen = byn), matad = hur
 // mycket var och en matat det (hunden byter till den som matat mest, steg 9.8.3)
-export interface Tamdjur { id: number; art: TamArtId; born: number; hunger: number; svalt?: number; agare?: number; x: number; y: number; matad?: Record<number, number>; lojal?: number; hage?: number; dog?: number }
+export interface Tamdjur { id: number; art: TamArtId; born: number; hunger: number; svalt?: number; agare?: number; x: number; y: number; matad?: Record<number, number>; lojal?: number; hage?: number; dog?: number; ull?: number; mjolk?: number; fahus?: number; kyla?: number; hona?: boolean } // hona: könet, satt när djuret kommer till byn (steg 9.9.3); äldre djur efter id, // fahus = huset djuret står i under istiden, kyla = timmar ute i istiden (steg 9.8.9)
 export const TAM_ID0 = 900_000_000; // tamdjurens id ligger över alla vilda djurs (djur.ts)
 
 export const TAM = balans('tamdjur', {
@@ -42,11 +43,16 @@ export const TAM = balans('tamdjur', {
 
 export const tamdjurOf = (s: State) => (s.tamdjur ??= []).filter(d => d.dog === undefined);
 export const tamAlder = (s: State, d: Tamdjur) => (s.now - d.born) / DAY;
+export const arHona = (d: Tamdjur) => d.hona ?? d.id % 2 === 0; // äldre sparfiler: varannan efter id
 export const tamNamn = (d: Tamdjur) => tamArt(d.art).namn;
 // ett nytt djur av arten, fött nu (eller born), ägt av agare
 export function nyttTamdjur(s: State, art: TamArtId, x: number, y: number, agare?: number, born = s.now): Tamdjur {
-  const l = (s.tamdjur ??= []), id = TAM_ID0 + l.reduce((m, d) => Math.max(m, d.id - TAM_ID0 + 1), 0);
-  const d: Tamdjur = { id, art, born, hunger: 0, x, y, agare };
+  // id:t räknas upp och används aldrig igen (s.nextTam), så att en uppgift som pekar på ett dött djur inte träffar ett nytt. Könet:
+  // varannan hane och hona av varje art, den första en hane, så att två djur av arten alltid är ett par, vilka djur byn än köper emellan
+  const l = (s.tamdjur ??= []), id = TAM_ID0 + Math.max(s.nextTam ?? 0, l.reduce((m, d) => Math.max(m, d.id - TAM_ID0 + 1), 0));
+  s.nextTam = id - TAM_ID0 + 1;
+  const arten = l.filter(q => q.art === art && q.dog === undefined), honor = arten.filter(arHona).length;
+  const d: Tamdjur = { id, art, born, hunger: 0, x, y, agare, hona: honor < arten.length - honor };
   l.push(d); count(s, `tam_${art}`);
   return d;
 }
@@ -55,6 +61,7 @@ export function tamDor(s: State, d: Tamdjur, orsak: string) {
   d.dog = s.now; s.tamdjur = (s.tamdjur ?? []).filter(q => q !== d);
   count(s, `tamDog_${orsak}`);
   const a = tamArt(d.art), q = d.agare !== undefined ? byId(s, d.agare) : undefined;
+  if (orsak === 'rymde') return; // den som rymde har redan sin rad i loggen (hundRymmer)
   log(s, `${q ? `${q.name}s ` : 'Byns '}${a.ord[1]} dog ${orsak === 'svalt' ? 'av hunger' : orsak === 'alder' ? 'av ålder' : orsak}.`, 'world', q ? [q.id] : []);
 }
 // vad djuret äter av det som finns, det bästa först (undefined: inget att ge det)
@@ -180,8 +187,38 @@ export function stepHund(s: State, d: Tamdjur) {
   // följer ägaren så ofta som lojaliteten säger, annars stannar den där den är
   if (rnd(s, 'tamdjur') < l) {
     const v = rnd(s, 'tamdjur') * Math.PI * 2, r = rnd(s, 'tamdjur') * HUND.folj;
-    d.x = p.x + Math.cos(v) * r; d.y = p.y + Math.sin(v) * r;
+    const hx = p.x + Math.cos(v) * r, hy = p.y + Math.sin(v) * r;
+    if (inMap(Math.floor(hx), Math.floor(hy)) && !blocked(s, hx, hy)) { d.x = hx; d.y = hy; } else { d.x = p.x; d.y = p.y; } // inte i vattnet eller en vägg: då står den hos ägaren
     count(s, 'hundFoljer');
   }
 }
 
+
+// ---------- vakthunden (steg 9.8.11, Djuren i detalj: Hunden) ----------
+// En hund som är lojal nog vaktar: den hör och vädrar rovdjur och anfallare längre bort än vakten ser, också i mörker och dimma,
+// och skäller. Skallet väcker ägaren, som ser faran och ropar, och väcker byn som vakten gör (varg.ts och rovare.ts: ses).
+export const VAKTHUND = balans('vakthund', {
+  lojal: 0.6, // hunden vaktar när lojaliteten är minst så här stor
+  hor: 32, // hunden hör och vädrar faran inom så här många rutor, dag som natt
+});
+// en vakthund som hör faran (avst: avståndet från hunden till faran), och ägaren som hör den skälla, eller undefined
+export function hundSkaller(s: State, avst: (d: Tamdjur) => number) {
+  for (const d of tamdjurOf(s)) {
+    if (d.art !== 'hund' || (d.lojal ?? HUND.start) < VAKTHUND.lojal || d.fahus !== undefined || d.agare === undefined || avst(d) >= VAKTHUND.hor) continue;
+    const p = byId(s, d.agare);
+    if (!p || p.died !== undefined) continue;
+    count(s, 'hundSkallde');
+    if (forstaGang(s, 'hundSkallde')) log(s, `${p.name}s hund skällde: den hade hört något ute i mörkret.`, 'world', [p.id]);
+    return { hund: d, p };
+  }
+  return undefined;
+}
+
+// ---------- djuren i fara (steg 9.8.12) ----------
+// betesdjuren som står ute (inte i fähuset): dem kan vargarna ta och rövarna driva bort
+export const tamUte = (s: State) => tamdjurOf(s).filter(d => tamArt(d.art).bete && d.fahus === undefined);
+// rövarna driver bort djuret: det är borta ur byn
+export function tamStulen(s: State, d: Tamdjur) {
+  s.tamdjur = (s.tamdjur ?? []).filter(q => q !== d);
+  count(s, 'boskapStulen');
+}

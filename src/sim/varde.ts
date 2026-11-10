@@ -115,6 +115,7 @@ export function formogenheter(s: State) {
   for (const t of tingOf(s)) if (t.agare) lagg(t.agare, tingVarde(t));
   for (const h of housesOf(s)) if (h.ag !== undefined) lagg(h.ag, husVarde(s, h));
   for (const d of tamdjurOf(s)) if (d.agare !== undefined) lagg(d.agare, tamArt(d.art).varde); // djuren (steg 9.8.1)
+  if (s.hons?.agare !== undefined) lagg(s.hons.agare, honsVarde(s)); // hönsen (steg 9.8.10)
   egen.delete(0); // byns del räknas som resten
   let sum = 0; for (const v of egen.values()) sum += v;
   return { egen, byn: Math.max(0, rikedom(s) - sum) };
@@ -129,3 +130,4 @@ export function formogenhetDelar(s: State, id: number) {
   return { redskap, klader, forrad, hus, sum: redskap + klader + forrad + hus };
 }
 import { djurVarde, tamArt, tamdjurOf } from './tamdjur';
+import { honsVarde } from './hons';

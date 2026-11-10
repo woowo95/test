@@ -210,6 +210,8 @@ let ranStrid: ((s: State, p: Person, offer: Person, orsak: string) => boolean) |
 export const setRanStrid = (f: typeof ranStrid) => { ranStrid = f; };
 // p är så nära döden av bristen att hen stjäl (victimOf)
 const desperat = (s: State, p: Person, b: Behov) => { const emp = stat(p, 'empati', s.now); return emp < DELA.stjalAldrig && b.fara(s, p) > emp / DELA.stjalAldrig; };
+// så hungrig att p stjäl mat (boskapsstölden, steg 9.8.12: den svältande slaktar någon annans djur)
+export const desperatMat = (s: State, p: Person) => desperat(s, p, MAT);
 export const isFamily = (g: Person, m: Person) => isParent(g, m) || g.partner === m.id || isKin(g, m) || arBast(g, m); // den bästa vännen delar man med som med släkt (steg 3.1.1)
 // g är vaken (familjen kan man väcka) och så nära m att m kan be g om något (familjen längre bort)
 const narvarande = (g: Person, m: Person) => { const fam = isFamily(g, m); return (g.task?.act !== 'sova' || fam) && Math.hypot(g.x - m.x, g.y - m.y) <= (fam ? DELA.fragaFamilj : DELA.fragaR); };

@@ -177,9 +177,9 @@
   // torkställningen med örtknippen som hänger i tvärslån (toppen ned), härden bara som den tredje i förra kortet, bänken som förut och ingen kruka
   // ett hängande knippe: stjälkarna knutna överst och bladen som hänger ned; tre sorter (gröna, gulnade, mörka)
   const KNIPPEN = [
-    ['..b..', '.fbf.', '.gfg.', 'fghgf', 'ghggf', 'fgghg', 'ghgfg', '.fgf.', '.gfg.', '..f..'], // torkade, gula
-    ['..b..', '.jbj.', '.jnj.', 'jnjnj', 'njnjn', 'yjtjy', 'tyyty', 'yttyy', '.yty.', '..y..'], // blommor, vita och röda
-    ['..b..', '.CbC.', '.DCD.', 'CDEDC', 'DEDCD', 'CDDED', 'DEDCD', '.DED.', '.CDC.', '..D..'], // blågröna blad
+    ['..b..', '.jbj.', 'j.bj.', '.jb.j', 'j.bj.', '.jb.j', '..bj.', '.jb..', '..b..', '..b..'], // tunna kvistar i dovt grönt
+    ['..b..', '.cb..', '.cbc.', 'c.bc.', '.cb.c', 'c.bc.', '.cbf.', '..bc.', '..b..', '..b..'], // torkade kvistar i dovt brunt
+    ['..b..', '..bC.', '.Cb..', '..bC.', '.Cb.C', '..bC.', '.CbC.', '..b..', '..b..', '..b..'], // mörka, glesa blad
 ].map(MED);
   // hängande knippen längs en slå: snöret och knippet under (x, y) = där snöret sitter
   const hang = (B, x, y, sort, snore) => { for (let k = 0; k < snore; k++) pt(B, x + 3, y + k, 'w'); sp(B, KNIPPEN[sort % 3], x, y + snore - 1, false); };
@@ -230,7 +230,7 @@
     hardDel(B, 78, 52, 2);
     for (let r = 0; r < 4; r++) bankDel(B, 4 + r * 38, 64, r);
   };
-  byt({ id: 'f7_ortkok', namn: 'Örtkökets delar', typ: 'janej', vad: 'Steg 7.6.1: örtköket i tre delar som ställs var för sig. Överst torkställningen åt fyra håll, nu med örtknippen som hänger i tvärslån. I mitten härden, bara en, den som stod tredje från vänster (den vrids inte). Underst bänken åt fyra håll, som förut. Krukan är borta. Din kommentar förra gången: ”översta torställningne ska ha örter som hänger i ställningen istället. elden kan inte roteras. använd den tredje från vänster. bordet är godkänt. ta bort krukan längst ner.”', versioner: [
+  byt({ id: 'f7_ortkok', namn: 'Örtkökets delar', typ: 'janej', vad: 'Steg 7.6.1: örtköket i tre delar som ställs var för sig. Överst torkställningen åt fyra håll, nu med örtknippen som hänger i tvärslån. I mitten härden, bara en, den som stod tredje från vänster (den vrids inte). Underst bänken åt fyra håll, som förut. Krukan är borta. Örterna som hänger är nu tunna, grenigare kvistar i dova toner (grågrönt, brunt och mörkgrönt) i stället för färgglada knippen. Din kommentar förra gången: ”örterna som hänger ska inte vara så färgglada och tunnare och grenigare”', versioner: [
     { text: 'Torkställningen åt fyra håll med hängande örter, härden och bänken åt fyra håll.', w: 156, h: 96, rita: ORTDELAR },
   ] });
 

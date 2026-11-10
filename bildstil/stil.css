@@ -301,3 +301,10 @@ details.mer p { color: var(--dim); max-width: 62ch; margin: 4px 0 0; }
 @media (min-width: 781px) { #bestskapare .sk-scen { position: sticky; top: 8px; } }
 #bs-val .sk-rad.sk-utan { opacity: 0.4; }
 #bs-val .sk-rad.sk-utan .sk-namn { text-decoration: line-through; }
+/* kontrollerna på valkorten (kontroll.js): en symbol, texten när man trycker */
+.valkort .kontroll { justify-self: start; }
+.valkort .kontroll summary { cursor: pointer; font: 400 14px/1 var(--pixel); color: var(--gron); list-style: none; }
+.valkort .kontroll.fel summary { color: var(--rost); }
+.valkort .kontroll ul { margin: 6px 0 0; padding-left: 18px; color: var(--dim); font-size: 14px; }
+.alt .bilder canvas.i-spelet { background: transparent; }
+.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }

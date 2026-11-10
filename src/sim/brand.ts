@@ -5,7 +5,7 @@ import { balans } from './balans';
 import { brasorOf } from './brasor';
 import { hearthOf } from './eld';
 import { rasar } from './bygg';
-import { Bit, MATERIAL, bitAt, dorrDef, touch, vagBort } from './byggnad';
+import { Bit, MATERIAL, bitAt, blocked, dorrDef, touch, vagBort } from './byggnad';
 import { Station, stationAt, stationDef, taBort } from './stationer';
 import { ALDER, ageOf, alive, count, livet, living, log } from './folk';
 import { Kroppsdel, kanGa, skada } from './halsa';
@@ -56,12 +56,12 @@ const DELSTEG = 5;
 
 // Balanstal (regel 8)
 export const BRAND = balans('brand', {
-  gnista: 0.001, // chansen per steg (5 minuter) att en gnista från en brinnande eld når marken, gånger eldstadens spread ...
+  gnista: 0.0002, // (0,001 före steg 9.9.4: det brann i nästan varje by) // chansen per steg (5 minuter) att en gnista från en brinnande eld når marken, gånger eldstadens spread ...
   gnistaR: 2, // ... så här många rutor bort (slumpas)
   blixt: 0.5, // chansen att blixten slår ner nära byn när den slår ner (blixtNu i vader.ts) ...
   blixtR: 30, // ... så här många rutor från byns mitt (bynsMitt i omrade.ts, slumpas)
   ljusR: 4, // en brinnande ruta i brandens kant lyser så här många rutor bort (steg 9.2.20, raden brand i LJUSKALLOR)
-  sprid: 0.7, // chansen per delsteg (5 sekunder) att elden tar sig från en ruta till en grannruta när marken är helt torr, gånger det som kan brinna där (antändning): i torrt högt gräs ungefär var femte sekund
+  sprid: 0.03, // (0,7 före steg 9.9.4: elden nådde sin största radie inom ett slag, innan någon hann släcka) // chansen per delsteg (5 sekunder) att elden tar sig från en ruta till en grannruta när marken är helt torr, gånger det som kan brinna där (antändning): i torrt högt gräs ungefär var femte sekund
   hornet: 0.7, // ... gånger det här till en ruta snett bredvid
   torrTim: 48, // marken är helt torr efter så här många torra timmar (torrTim i vader.ts; två dygn, två år i spelet, steg 9.2.25) ...
   arstid: [0, 0.6, 1, 0.8], // ... och så här torr i tidsåldern (istid, vår, sommar, höst)
@@ -91,10 +91,10 @@ export const BRAND = balans('brand', {
   undan: 6, // ... så här många rutor bort ...
   undanMin: 30, // ... i så här många minuter
   handMin: 20, // ett pass att släcka med händerna (minuter) ...
-  hand: 1.5, // ... släcker så här många rutor i timmen ...
+  hand: 120, // (1,5 före steg 9.9.4) // ... släcker så här många rutor i timmen ...
   handR: 1.6, // ... inom så här många rutor från den som släcker
   fyllMin: 2, // minuter att fylla vattensäcken
-  sackRutor: 4, // en säck vatten släcker så här många rutor (gånger hur lätt rutan släcks, högst helt) ...
+  sackRutor: 8, // (4 före steg 9.9.4) // en säck vatten släcker så här många rutor (gånger hur lätt rutan släcks, högst helt) ...
   sackR: 2.5, // ... inom så här många rutor från där den hälls
   brannHand: 0.15, // chansen i timmen att få en brännskada när man släcker med händerna ...
   brannHandGrad: [0.1, 0.4], // ... så här svår (slumpas mellan)
@@ -601,8 +601,13 @@ function brandMal(s: State, b: Brand, p: Person, hot: boolean): BrandMal | undef
       const spot = drickPlats(s, p);
       if (spot) return { act: 'slacka', why: 'Hämtar vatten i säcken till elden', spot, dur: BRAND.fyllMin * MIN, tool: 'vattensack', ref: mal };
     }
-    const ut = bynsAvstand(s), m = narmast(b, p.x, p.y, i => slacks(s, i, p) || ut.at(i) > BRAND.hot); // bara det som brinner nära byn
-    if (m.i >= 0) return { act: 'slacka', why: 'Släcker elden med händerna', spot: bredvid(b, m.i, p), dur: BRAND.handMin * MIN, ref: m.i };
+    // var och en tar sin egen ruta i eldens kant (steg 9.9.4): rutorna inne i elden sprider den inte längre, och två på samma ruta
+    // släcker inte fortare. Finns ingen ledig kantruta nära byn tas den närmaste som brinner där
+    const ut = bynsAvstand(s), inre = inreOf(b);
+    const m0 = narmast(b, p.x, p.y, i => slacks(s, i, p) || ut.at(i) > BRAND.hot || !!inre[i]);
+    const m = m0.i >= 0 ? m0 : narmast(b, p.x, p.y, i => ut.at(i) > BRAND.hot); // bara det som brinner nära byn
+    const fot = m.i >= 0 ? fotfaste(s, b, m.i, p) : undefined;
+    if (fot) return { act: 'slacka', why: 'Släcker elden med händerna', spot: fot, dur: BRAND.handMin * MIN, ref: m.i };
   }
   if (n.d > BRAND.fara) return;
   return bortFran(s, p, n.i);
@@ -629,6 +634,16 @@ function bredvid(b: Brand, i: number, p: { x: number; y: number }) {
   }
   return { x: cx + dx / l, y: cy + dy / l };
 }
+// där den som släcker ruta i ställer sig (steg 9.9.4): bredvid rutan på sidan mot p, annars på en annan ruta intill, aldrig i
+// en vägg, i vattnet eller i det som brinner. undefined om ingen sådan plats finns
+function fotfaste(s: State, b: Brand, i: number, p: { x: number; y: number }) {
+  const k = kartaOf(b), ok = (x: number, y: number) => inMap(Math.floor(x), Math.floor(y)) && !blocked(s, x, y) && k[Math.floor(y) * W + Math.floor(x)] !== 1;
+  const m = bredvid(b, i, p);
+  if (ok(m.x, m.y)) return m;
+  const cx = i % W + 0.5, cy = Math.floor(i / W) + 0.5, runt: { x: number; y: number }[] = [];
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && ok(cx + dx, cy + dy)) runt.push({ x: cx + dx, y: cy + dy });
+  return runt.sort((u, v) => Math.hypot(u.x - p.x, u.y - p.y) - Math.hypot(v.x - p.x, v.y - p.y) || u.y - v.y || u.x - v.x)[0];
+}
 // det p väljer när hen vet om branden (val.ts, efter vargen och tornadon)
 export function brandVal(s: State, p: Person): BrandMal | undefined {
   const b = s.brand;
@@ -644,22 +659,38 @@ export function slackaSteg(s: State, p: Person, t: Task, dtSec: number) {
   const b = s.brand;
   if (t.tool) return; // vattensäcken fylls
   if (!b) { t.until = s.now; return; }
-  const k = kartaOf(b);
-  let r = b.r.find(q => q[0] === t.ref);
-  if (!r || Math.hypot(r[0] % W + 0.5 - p.x, Math.floor(r[0] / W) + 0.5 - p.y) > BRAND.handR) {
-    const n = narmast(b, p.x, p.y);
-    r = n.d <= BRAND.handR ? b.r.find(q => q[0] === n.i) : undefined;
-  }
-  if (!r) { t.until = s.now; return; }
-  t.ref = r[0];
-  r[3] += BRAND.hand * latt(s, r[0]) * dtSec / HOUR_S;
-  if (k[r[0]] === 1 && ur(s, p.id, 3864) < chans(BRAND.brannHand, dtSec)) {
-    const DELAR: Kroppsdel[] = ['handV', 'handH', 'armV', 'armH'];
-    const d = DELAR[Math.floor(ur(s, p.id, 3865) * DELAR.length)], g = BRAND.brannHandGrad[0] + ur(s, p.id, 3866) * (BRAND.brannHandGrad[1] - BRAND.brannHandGrad[0]);
-    b.skadade++; count(s, 'brand skadad');
-    const dod = skada(s, p, d, 'brannskada', g, 'brand', 'när hen släckte elden');
-    if (dod) die(s, p, dod);
-    else if (ur(s, p.id, 3876) < BRAND.tarEldHand) antand(s, p, 'när hen släckte');
+  const k = kartaOf(b), inre = inreOf(b);
+  // tiden räcker till flera rutor (steg 9.9.4): när en ruta är släckt går resten av tiden till nästa inom räckhåll. Förut gick
+  // resten förlorad, så att ingen släckte mer än en ruta per slag hur fort hen än arbetade
+  let kvar = dtSec;
+  for (let varv = 0; varv < 40 && kvar > 1e-6; varv++) {
+    let r = b.r.find(q => q[0] === t.ref && q[3] < 1);
+    if (!r || Math.hypot(r[0] % W + 0.5 - p.x, Math.floor(r[0] / W) + 0.5 - p.y) > BRAND.handR) {
+      // nästa ruta inom räckhåll, helst en i kanten som ingen annan släcker; annars går hen vidare till den närmaste
+      const ledig = (i: number) => (b.r.find(q => q[0] === i)?.[3] ?? 1) >= 1;
+      const n0 = narmast(b, p.x, p.y, i => ledig(i) || !!inre[i] || slacks(s, i, p)), n = n0.i >= 0 && n0.d <= BRAND.handR ? n0 : narmast(b, p.x, p.y, ledig);
+      r = n.i >= 0 && n.d <= BRAND.handR ? b.r.find(q => q[0] === n.i) : undefined;
+      if (!r) {
+        const ut = bynsAvstand(s), m = narmast(b, p.x, p.y, i => ledig(i) || ut.at(i) > BRAND.hot || !!inre[i] || slacks(s, i, p));
+        if (m.i < 0 || !kanGa(p)) { if (varv === 0) t.until = s.now; return; }
+        const pl = fotfaste(s, b, m.i, p);
+        if (!pl) { if (varv === 0) t.until = s.now; return; }
+        t.ref = m.i; t.tx = pl.x; t.ty = pl.y; t.phase = 'go'; t.pk = undefined; t.path = undefined; // går till nästa ruta som brinner
+        return;
+      }
+    }
+    t.ref = r[0];
+    const takt = BRAND.hand * latt(s, r[0]) / HOUR_S, tid = Math.min(kvar, (1 - r[3]) / Math.max(1e-9, takt));
+    r[3] += takt * tid; kvar -= tid;
+    if (k[r[0]] === 1 && ur(s, p.id, 3864 + varv * 17) < chans(BRAND.brannHand, tid)) {
+      const DELAR: Kroppsdel[] = ['handV', 'handH', 'armV', 'armH'];
+      const d = DELAR[Math.floor(ur(s, p.id, 3865) * DELAR.length)], g = BRAND.brannHandGrad[0] + ur(s, p.id, 3866) * (BRAND.brannHandGrad[1] - BRAND.brannHandGrad[0]);
+      b.skadade++; count(s, 'brand skadad');
+      const dod = skada(s, p, d, 'brannskada', g, 'brand', 'när hen släckte elden');
+      if (dod) { die(s, p, dod); return; }
+      if (ur(s, p.id, 3876) < BRAND.tarEldHand) antand(s, p, 'när hen släckte');
+      return;
+    }
   }
 }
 // säcken är fylld (KLAR i steg.ts): bär den till det som brinner. Utan säck i handen blir det inget

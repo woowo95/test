@@ -22,7 +22,7 @@ import { sportFor } from './sport';
 import { STATIONER, StationDef, StationSlag, bordBrist, forvarBrist, harStation, isKlar, pyntBrist, stationerOf, tommaPlatser, villPynt } from './stationer';
 import { nTools } from './agande';
 import { brasaBrist } from './brasor';
-import { utanBadd } from './byggnader';
+import { BYGGNADER, fnId, utanBadd } from './byggnader';
 import { latrinBrist } from './smuts';
 import { torkBrist } from './matlagning';
 import { HOUR, State, WEEK } from './typer';
@@ -33,7 +33,7 @@ export const FORRAD = balans('forrad', {
   forsiktig: 0.25, // en försiktig by (seden Förutseende eller påbudet) vill ha så mycket större förråd
   behovTomt: 3.2, behovMax: 3.5, // vikten av ett tomt förråd under Försörjning, och den högsta vikten
   // mat: förrådets dygn dämpar vikten ner till Min när förrådet räcker så länge byn vill (bufferten) ...
-  matDygn: 1.1, matMin: 0.4,
+  matDygn: 2.5, matMin: 0.4, // 1,1 före Balansen i fas 9 (steg 9.9.4): med en så liten buffert slog varje störning direkt till svält
   matMatt: 2, matMinMatt: 0.04, // ... och sedan vidare ner till MinMatt vid taket, Matt gånger bufferten: då upphör matarbetet nästan (steg 3.10.9)
   vedDygn: 2, vedMin: 0.15, // ... och för ved
   vedMatt: 12, vedMinMatt: 0.01, // över taket (Matt gånger bufferten) sjunker golvet mot MinMatt, som ligger där vid dubbla tiden (steg 6.1.5)
@@ -204,11 +204,13 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   prastdrakt: s => (s.tron ?? []).filter(t => t.prast !== undefined).length, tecken: s => s.tron?.some(t => t.slut === undefined && (t.niva ?? 0) >= 2) ? Math.ceil(living(s).filter(p => p.tro !== undefined).length / 3) : 0, // system 8.5
   mask: s => (s.tron ?? []).filter(t => t.prast !== undefined && (t.sk?.prast ?? 100) < 34).length,
   mantel: s => s.styre?.sedan !== undefined && s.now - s.styre.sedan >= WEEK && legitimitet(s).v > 0.5 ? 1 : 0,
-  tunika: s => amountOf(s, 'lintyg') > 0 ? living(s).length : 0, skjorta: s => amountOf(s, 'lintyg') > 0 ? living(s).length : 0,
+  tunika: s => amountOf(s, 'lintyg') + amountOf(s, 'ylle') > 0 ? living(s).length : 0, skjorta: s => amountOf(s, 'lintyg') + amountOf(s, 'ylle') > 0 ? living(s).length : 0, // ylle sedan steg 9.8.14
+  kappa: s => amountOf(s, 'ylle') > 0 ? living(s).length : 0, sjal: s => amountOf(s, 'ylle') > 0 ? living(s).length : 0, // ullens plagg (steg 9.8.15)
   balte: s => living(s).length, // ett per person (steg 2.3.3)
   axelrem: spjutVill, // en per spjut (steg 7.1.2)
   ryggsack: s => perVuxna(s, VILLTAL.korgPerVuxna, VILLTAL.korgMin, VILLTAL.korgMax), // lika många som korgarna, till dem som samlar (steg 7.1.3)
   rustning: s => Math.ceil(living(s).length / 4), hjalm: s => Math.ceil(living(s).length / 4), skold: s => Math.ceil(living(s).length / 4), bage: () => 2, slunga: () => 2, horn: () => 1, // vapnen och rustningen (system 8.7)
+  skara: s => (s.angar?.length ?? 0) > 0 ? 1 : 0, // en skära när byn har en slåtteräng (steg 9.8.9)
   benspade: () => VILLTAL.spadar, // till latrinen och rötterna (steg 2.7.2)
   fackla: () => VILLTAL.facklor, // till den som går ut i mörkret (steg 6.3.6, ljus.ts)
   talgljus: s => ljusPlatser(s).length, // ett till varje bord och hylla inne där folk är vakna i mörker (steg 6.3.8, ljus.ts)
@@ -225,7 +227,7 @@ export const villAv = (s: State, g: string) => REDSKAPMAL[g](s);
 // under tak; borden (steg 2.2.15) en plats per invånare; förvaringen, pyntet, brasorna, latrinen och torkställningen efter
 // sina egna mått. Bristen är hur stor del av bufferten som saknas (0 till 1), som projektets brist (projekt.ts)
 // En halvbyggd station (en kista, ett pynt) görs klar även när ingen längre vill ha en ny: bristen är då 1
-const harBrist = (s: State) => { const n = (s.eldar ?? []).filter(f => f.hearth === 'hard').length, hus = (s.hus ?? []).filter(h => h.klar && !h.skjul).length; return n < hus ? 0.5 : 0; };
+const harBrist = (s: State) => { const n = (s.eldar ?? []).filter(f => f.hearth === 'hard').length, hus = (s.hus ?? []).filter(h => h.klar && !(BYGGNADER as Record<string, { omkring?: boolean }>)[fnId(h)]?.omkring).length; /* torkhuset och vedboden har ingen härd */ return n < hus ? 0.5 : 0; };
 export function stationBrist(s: State, k: StationSlag) {
   const d: StationDef = STATIONER[k];
   if (!d.brasa && stationerOf(s).some(t => t.k === k && !isKlar(t))) return 1;

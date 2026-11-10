@@ -50,6 +50,7 @@ const DEF = {
   axel: { namn: 'Axeln', ikon: '🔱' }, // och redskapet som hänger i det medan man bär
   smycke: { namn: 'Smycke', ikon: '➰' }, // steg 7.7.5
   rygg: { namn: 'Ryggen', ikon: '🎒' }, // steg 7.1.3: ryggsäcken, och bördan i den
+  axlar: { namn: 'Axlarna', ikon: '🧥' }, // steg 9.8.15: sjalen
 } satisfies Record<string, PlatsDef>;
 export type Plats = keyof typeof DEF;
 export const PLATSER: Record<Plats, PlatsDef> = DEF;
@@ -210,7 +211,7 @@ export function bordaIHander(s: State, p: Person, t: Task | undefined, u: Return
 
 // ---------- kläderna (steg 2.3.2) ----------
 // plaggen p har på sig
-export const paSig = (s: State, p: Person) => tingOf(s).filter(t => t.bar === p.id);
+export const paSig = (s: State, p: Person) => tingOf(s).filter(t => t.bar === p.id && !!SAKER[t.k]?.klad); // bara plaggen: en protes bärs också (protes.ts) men är inget plagg (krasch i by 64353, steg 9.9.3)
 // p har ett bälte på sig (där reservvapnet hänger i strid, steg 3.7.7)
 export const harBalte = (s: State, p: Person) => tingOf(s).some(t => t.bar === p.id && SAKER[t.k]?.klad?.krok);
 // vad plaggen väger, i vikt

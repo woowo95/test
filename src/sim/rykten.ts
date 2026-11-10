@@ -132,6 +132,7 @@ const HDEF = {
   budbrott: { i: 'valdsam', vikt: 0.2, text: 'bröt mot ett bud som är lag' }, // steg 8.6.12
   stold: { i: 'tjuv', vikt: 0.5, text: 'stal {sak} av {om}' },
   stoldLindrig: { i: 'tjuv', vikt: 0.2, text: 'tog {sak} av {om}' },
+  boskapsstold: { i: 'tjuv', vikt: 0.6, text: 'slaktade {sak} som {om} ägde' }, // steg 9.8.12
   ranVald: { i: 'valdsam', vikt: 0.3, text: 'gick på {om} för att ta {sak}' }, // rånet (steg 3.7.17)
   ran: { i: 'tjuv', vikt: 0.6, text: 'tog {sak} av {om} med våld' },
   ranForsok: { i: 'tjuv', vikt: 0.3, text: 'försökte ta {sak} av {om} med våld' },

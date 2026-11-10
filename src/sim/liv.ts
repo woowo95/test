@@ -184,7 +184,7 @@ export function birth(s: State, mother: Person) {
   if (father && alive(father)) think(father, `Fick barnet ${ch.name}`, LIV.fodFar, s.now, LIV.fodDygn * DAY);
   const kids = s.people.filter(q => q.mother === mother.id).length;
   if (kids === 6) mother.fame.push('Mor till många barn');
-  if (risk.tva && s.people.filter(q => q.mother === mother.id && q.born === s.now).length < 2) { const tv = newPerson(s, rnd(s, 'folk') < 0.5 ? 'm' : 'k', s.now, mother, father); tv.x = mother.x; tv.y = mother.y; s.people.push(tv); count(s, 'fodda'); count(s, 'tvillingar'); uppvaxtFodd(s, tv); startSmak(s, tv); } // tvillingar (steg 9.5.29)
+  if (risk.tva && s.people.filter(q => q.mother === mother.id && q.born === s.now).length < 2) { const tv = newPerson(s, rnd(s, 'folk') < 0.5 ? 'm' : 'k', s.now, mother, father); tv.x = mother.x; tv.y = mother.y; s.people.push(tv); const ft2 = kronikaBer(s, 'k_fodd', tv.id, { namn: tv.name, barnet: tv.sex === 'k' ? 'dotter' : 'son', mor: mother.name, foraldrar: mother.name + (father ? ' och ' + father.name : ''), syskon: s.people.filter(q => q !== tv && q.mother === mother.id).length }); log(s, ft2, 'birth', [tv.id, mother.id, ...(father ? [father.id] : [])]).m = 'k_fodd'; notis(s, 'fodd', ft2, [tv.id, mother.id, ...(father ? [father.id] : [])]); /* tvillingen får sin rad i loggen, notiserna och krönikan (steg 9.9.3) */ count(s, 'fodda'); count(s, 'tvillingar'); uppvaxtFodd(s, tv); startSmak(s, tv); } // tvillingar (steg 9.5.29)
   if (rnd(s, 'halsa', mother) < risk.mor) die(s, mother, 'barnsang');
 }
 

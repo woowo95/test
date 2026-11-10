@@ -71,6 +71,7 @@ export const VARG = balans('varg', {
   vaken: 5, // och vänder om någon är vaken inom så här många rutor
   stjalPer: 1.5, // så många saker mat (kött först) en varg tar, avrundat
   stjalMat: 0.15, // hungern sjunker så här mycket per sak den tar
+  tamMat: 0.5, // hungern sjunker så här mycket när flocken tar ett får eller en get (steg 9.8.12)
   kaninR: 6, kaninChans: 0.4, kaninMat: 0.25, // en hungrig flock nära en kaningrupp tar en kanin i timmen med den här chansen, och hungern sjunker så här mycket
   // att se vargar och väcka byn
   vaktSer: 24, folkSer: 10, nattSer: 0.6, // vakten ser vargar inom så här många rutor, andra inom folkSer, gånger nattSer i mörkret
@@ -217,7 +218,9 @@ function ses(s: State, f: Vargflock, folk: Person[]) {
   if (f.sedd !== undefined && s.now - f.sedd < VARG.larmTim * HOUR) return;
   const natt = isLight(s.now) ? 1 : VARG.nattSer, dimma = 1 - VARG.dimmaSer * vaderNu(s).dimma;
   const ser = (q: Person) => vaken(q) && avst(q, f) < (q.task?.act === 'vakt' ? VARG.vaktSer : VARG.folkSer) * natt * dimma;
-  const vakt = folk.find(q => q.task?.act === 'vakt' && ser(q)), p = vakt ?? folk.find(ser);
+  const hund = folk.some(q => q.task?.act === 'vakt' && ser(q)) ? undefined : hundSkaller(s, d => avst(d, f)); // vakthunden hör flocken före vakten (steg 9.8.11)
+  if (hund && hund.p.task?.act === 'sova') { avbryt(s, hund.p); hund.p.task = undefined; }
+  const vakt = folk.find(q => q.task?.act === 'vakt' && ser(q)) ?? hund?.p, p = vakt ?? folk.find(ser);
   if (!p) return;
   f.sedd = s.now; f.sag = p.id; f.sx = f.x; f.sy = f.y; // där flocken sågs (märket på kartan, steg 9.2.122)
   if (forstaGang(s, 'vargSedd')) log(s, `${p.name} såg ${f.vargar.length > 1 ? `en flock vargar (${f.vargar.length})` : 'en ensam varg'} för första gången.`, 'world', [p.id]);
@@ -227,7 +230,7 @@ function ses(s: State, f: Vargflock, folk: Person[]) {
   if (vakt && utanforByn(s, f.x, f.y) < VARG.vack) {
     let n = 0;
     for (const q of folk) if (q.task?.act === 'sova' && ageOf(q, s.now) >= ALDER.vaktFran && !(skyddas(s, q) && iHus(s, q))) { avbryt(s, q); q.task = undefined; q.larm = { t: s.now, vad: 'varg', storlek: f.vargar.length, led: 0 }; n++; }
-    if (n) { count(s, 'vargVackt', n); log(s, `${vakt.name} höll vakt och väckte byn: vargar nära.`, 'world', [vakt.id]); }
+    if (n) { count(s, 'vargVackt', n); log(s, hund ? `${vakt.name}s hund skällde och väckte byn: vargar nära.` : `${vakt.name} höll vakt och väckte byn: vargar nära.`, 'world', [vakt.id]); }
   }
   soker(s, [p, ...hort]);
 }
@@ -331,7 +334,8 @@ function flockSteg(s: State, f: Vargflock, folk: Person[], dtSec: number) {
     return;
   }
   if (f.gor === 'smyger') {
-    if (folk.some(q => vaken(q) && avst(q, f) < VARG.vaken)) { f.gor = 'stryker'; nyttMal(s, f, eld); return; }
+    if (folk.some(q => vaken(q) && avst(q, f) < VARG.vaken)) { f.gor = 'stryker'; f.tam = undefined; nyttMal(s, f, eld); return; }
+    if (f.tam !== undefined) { tamSmyger(s, f, dtSec); return; }
     const kvar = ga(s, f, VARG.gaFart, dtSec);
     if (kvar < 0) { f.gor = 'stryker'; nyttMal(s, f, eld); } // förrådet är i ett stängt hus
     else if (kvar < 1) { stjal(s, f); f.gor = 'stryker'; nyttMal(s, f, eld); }
@@ -356,6 +360,9 @@ function flockSteg(s: State, f: Vargflock, folk: Person[], dtSec: number) {
       if (o && !f.trottnat && rnd(s, 'varg') < VARG.anfallChans) { borjaVanta(s, f, o, folk); return; }
     }
   }
+  // ett får eller en get som står ute utan någon vaken nära (steg 9.8.12): djuret i fähuset är skyddat
+  const d = f.hunger > VARG.stjalHunger ? tamBytet(s, f, folk) : undefined;
+  if (d && rnd(s, 'varg') < VARG.stjalChans) { f.gor = 'smyger'; f.tam = d.id; f.mx = d.x; f.my = d.y; count(s, 'vargSmygerTam'); return; }
   const z = zoneOf(s);
   if (z && !isLight(s.now) && f.hunger > VARG.stjalHunger && (!s.fire.lit || f.hunger >= VARG.eldHunger) && rnd(s, 'varg') < VARG.stjalChans) {
     f.gor = 'smyger'; f.mx = z.x + z.w / 2; f.my = z.y + z.h / 2; count(s, 'vargSmyger'); return;
@@ -462,6 +469,23 @@ function stjal(s: State, f: Vargflock) {
   f.hunger = Math.max(0, f.hunger - VARG.stjalMat * tog);
   count(s, 'vargStal', tog);
   log(s, `Vargar smög in i byn i mörkret och tog ${tog} ${tog === 1 ? 'sak' : 'saker'} mat ur förrådet.`, 'world');
+}
+
+// ---------- vargarna och betesdjuren (steg 9.8.12) ----------
+// Ett får eller en get som står ute (inte i fähuset) och som ingen vaken människa är nära kan flocken smyga fram till och ta.
+const tamBytet = (s: State, f: Vargflock, folk: Person[]) => tamUte(s).filter(d => avst(d, f) < VARG.ser && !folk.some(q => vaken(q) && avst(q, d) < VARG.vaken)).sort((a, b) => avst(a, f) - avst(b, f))[0];
+function tamSmyger(s: State, f: Vargflock, dtSec: number) {
+  const d = tamUte(s).find(q => q.id === f.tam);
+  if (!d) { f.gor = 'stryker'; f.tam = undefined; nyttMal(s, f); return; } // djuret står inne eller är borta
+  f.mx = d.x; f.my = d.y;
+  const kvar = ga(s, f, VARG.gaFart, dtSec);
+  if (kvar < 0) { f.gor = 'stryker'; f.tam = undefined; nyttMal(s, f); return; }
+  if (kvar >= 1) return;
+  tamDor(s, d, 'av vargarna'); blodas(s, d.x, d.y, 'jakt', 1);
+  f.hunger = Math.max(0, f.hunger - VARG.tamMat);
+  f.gor = 'stryker'; f.tam = undefined; nyttMal(s, f);
+  count(s, 'vargTogTam');
+  notis(s, 'motgang', `Vargar tog ${tamArt(d.art).ord[0]} ${tamArt(d.art).ord[1]} som stod ute.`, d.agare !== undefined ? [d.agare] : [], { x: Math.floor(d.x), y: Math.floor(d.y) });
 }
 
 // platsen på land där jägarna möter flocken, eller ingen när flocken står för långt ut på isen (människor går inte på vattnet)
@@ -642,4 +666,4 @@ export function vargSteg(s: State, dtSec: number) {
   s.vargar = s.vargar.filter(f => f.vargar.length || s.djurStrider?.some(g => g.art === 'varg' && g.flock === f.id));
   if (!s.vargar.length) s.vargar = undefined;
 }
-import { VALP, vargValp } from './tamdjur';
+import { VALP, hundSkaller, tamArt, tamDor, tamUte, vargValp } from './tamdjur';

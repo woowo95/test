@@ -25,8 +25,10 @@ SCENARIER.stenring = {
     f.now = new Date(f.now).setHours(10, 0, 0, 0); Object.assign(f.fire, { lit: true, fuel: 3, ring: true });
     for (const q of f.people) q.tek = { ...q.tek, yxa: 1 };
     f.delning = { andel: 1 }; // byn delar all mat, så att den egna maten (bufferten per jag, steg 6.2.20) inte blandas in
+    // en by med gott om mat har torkat kött: bufferten är drygt sju dygn och lyxtaket sexton (9.9.4), och bär ruttnar långt innan dess
+    const matNu = (s: State, mat: number) => { if (mat < 100) setFood(s, mat); else { setFood(s, 0); setAmount(s, 'torrkott', 300); } };
     const letar = (flinta: number, mat: number) => {
-      setItems(f, { flinta, torrgras: 20, grenar: 20 }); setAmount(f, 'ved', 300); setFood(f, mat); f.arbBehov = undefined; let n = 0, samla = 0; // behoven räknas om (en gång i timmen i spelet, steg 6.2.21)
+      setItems(f, { flinta, torrgras: 20, grenar: 20 }); setAmount(f, 'ved', 300); matNu(f, mat); f.arbBehov = undefined; let n = 0, samla = 0; // behoven räknas om (en gång i timmen i spelet, steg 6.2.21)
       for (let i = 0; i < 300; i++) {
         const p = living(f).filter(q => ageOf(q, f.now) >= ALDER.vuxen)[i % 4];
         Object.assign(p, { toa: 1, torst: 1, warm: 1, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
@@ -48,7 +50,7 @@ SCENARIER.stenring = {
       p.task = undefined;
     }
     for (const q of f.people) if (q.tek) delete q.tek.korg;
-    setItems(f, { flinta: 1, torrgras: 20, grenar: 20 }); setAmount(f, 'ved', 300); setFood(f, 200); f.arbBehov = undefined; // som efter letar(1, 200)
+    setItems(f, { flinta: 1, torrgras: 20, grenar: 20 }); setAmount(f, 'ved', 300); matNu(f, 200); f.arbBehov = undefined; // som efter letar(1, 200)
     // arbetarna (steg 6.1.13): letar redan så många som raden leta har (flaggan sok, vad skälet än säger), letar de andra
     // flinta till en yxa med en tredjedel av chansen
     const [l0, ...andra] = living(f).filter(q => ageOf(q, f.now) >= ALDER.vuxen);
@@ -207,6 +209,7 @@ SCENARIER.redskap = {
 };
 
 SCENARIER.slitage = {
+  lang: true,
   text: 'Varje stack har ett skick: fisk ruttnar fortast, utanför lagret slits allt fortare, redskap slits i lagret och när de används (yxan per träd, steg 2.3.12), skämd mat gör folk sjuka och högar på marken bärs in (på natten bara nära lägret)',
   kor: () => {
     const setup = (b: State) => { setMat(b, { fisk: 20, bar: 20 }); setAmount(b, 'ved', 25); setItems(b, { grenar: 50, yxa: 1 }); };
@@ -220,11 +223,11 @@ SCENARIER.slitage = {
     // ved som slits ut blir grenar
     const v = pilesOf(a).find(q => q.k === 'ved')!; a.stackar!.find(q => q.x === v.x && q.y === v.y)!.c = 0.0001;
     wearStore(a, 3600);
-    // skämd mat: allt i förrådet är nästan förstört. Två dygn: man äter mer sällan sedan hungern växer långsammare (steg 2.12.1)
+    // skämd mat: allt i förrådet är nästan förstört. Fyra dygn (den som inte är hungrig nog låter den skämda maten ligga, steg 9.6.24): man äter mer sällan sedan hungern växer långsammare (steg 2.12.1)
     const m = createState(6, START);
     setFood(m, 200); pilesOf(m); for (const st of m.stackar!) st.c = 0.08;
     let tagg = false; // (någon kan sedan bli magsjuk av annat, så det ses medan det händer)
-    kor(m, 48, s => { for (const st of s.stackar!) if (FOOD.includes(st.k)) st.c = Math.min(st.c, 0.08); tagg ||= living(s).some(p => p.sickWhy === 'Magsjuk av skämd mat'); });
+    kor(m, 96, s => { for (const st of s.stackar!) if (FOOD.includes(st.k)) st.c = Math.min(st.c, 0.08); tagg ||= living(s).some(p => p.sickWhy === 'Magsjuk av skämd mat'); });
     const sjuka = m.stat?.skamdMat ?? 0;
     // högar på marken: en nära elden och en långt bort, mitt i natten
     const n = createState(5, START);
@@ -275,7 +278,7 @@ SCENARIER.slitage = {
       [`grenar utanför lagret slits fortare (slitage på ett dygn: i lagret ${(grenIn * 100).toFixed(1)} %, bredvid ${(grenUt * 100).toFixed(1)} %)`, grenUt > 1.25 * grenIn && grenIn > 0],
       [`en yxa i lagret slits också (${yxa.toFixed(3)} kvar)`, yxa < 1 && yxa > 0.8],
       ['ved som slits ut blir grenar', pilesOf(a).some(q => q.k === 'grenar' && q.x === v.x && q.y === v.y)],
-      [`skämd mat gör folk magsjuka (${sjuka} gånger på två dygn)`, sjuka > 0 && tagg],
+      [`skämd mat gör den som blivit hungrig nog magsjuk (${sjuka} gånger på fyra dygn; den mätte låter den ligga, steg 9.6.24)`, sjuka > 0 && tagg],
       [`den som kallas bort lägger bördan på marken (${lagd} högar)`, lagd === 2],
       ['på natten bärs högen nära lägret in men inte den långt bort', !kvarNara && kvarLangt],
       ['på dagen bärs även det som ligger långt bort in', !ute().length],

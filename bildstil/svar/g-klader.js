@@ -333,7 +333,17 @@
   // från sidan hängde den i handen; nu hänger den på ryggen likadant, och bara de delar som syns runt kroppen ritas:
   // framifrån övre ändan över hans högra axel (till vänster i bilden) och nedre ändan vid andra höften, från sidan bågen
   // längs ryggen. I porträttet syns den övre ändan tydligt över axeln, med strängen, ritad som i den lilla bakvända bilden.
-  const BAGE = { tra: ['d', 'c', 'b'], grepp: 'b', spets: 'b', rep: 'k', bula: 4 };
+  // fem bågar, ritade av Claude, som själv bedömer vilken som är bäst (BAGE_BAST): ljust virke, gult virke med lindat grepp,
+  // mörkt virke med svart spets, ljust virke med lindat grepp och mellanbrunt virke med mörka ändar
+  const BAGEVAR = [
+    { tra: ['d', 'c', 'b'], grepp: 'b', spets: 'b', rep: 'k', bula: 4 },
+    { tra: ['q', 'p', 'n'], grepp: 'a', spets: 'a', rep: 'l', bula: 3.6 },
+    { tra: ['c', 'b', 'a'], grepp: 'p', spets: 'k', rep: 'k', bula: 2.8 },
+    { tra: ['d', 'c', 'b'], grepp: 'p', spets: 'p', rep: 'k', bula: 3.2 },
+    { tra: ['q', 'p', 'n'], grepp: 'a', spets: 'k', rep: 'l', bula: 3.4 },
+  ];
+  const BAGE_BAST = 1; // den gula bågen med lindat grepp: den syns tydligast mot gräset och mot porträttets mörka botten
+  let BAGE = BAGEVAR[BAGE_BAST];
   const BH = 22;
   const bageSak = () => {
     const o = BAGE, pts = kurva([7.5, 0.8], [7.5, BH - 0.8], o.bula, 20), stav = ror(pts, 0.9, 0.9);
@@ -349,7 +359,7 @@
     for (const [x, y, t] of kurvPkt(a, b, bula)) satt(x, y, t < 0.08 || t > 0.92 ? o.spets : Math.abs(t - 0.5) < 0.08 ? o.grepp : t < 0.5 ? o.tra[1] : o.tra[2]);
   };
   {
-    const ny = kortE('Den enkla bågen av ljust virke på ryggen. På kartan hänger den likadant från alla håll: bakifrån snett över ryggen, framifrån övre ändan över axeln, strängen snett över bröstet och nedre ändan vid höften, och från sidan längs ryggen. I porträttet syns bågen bakom huvudet från övre ändan över axeln, och strängen går snett över bröstet.', bageSak(), [
+    const ny = kortE('Den bästa av fem bågar, en gul båge med lindat grepp och mörka ändar, på ryggen. På kartan hänger den likadant från alla håll: bakifrån snett över ryggen, framifrån övre ändan över axeln, strängen snett över bröstet och nedre ändan vid höften, och från sidan längs ryggen. I porträttet syns bågen bakom huvudet från övre ändan över axeln, och strängen går snett över bröstet.', bageSak(), [
       // framifrån: bakifrån speglad, bakom kroppen
       ['fram', 'hanga', f => bageFig(f, [1, 1], [12, 16], -2, f.b, (x, y, c) => (y >= 7 ? f.o : f.b)(x, y, c))],
       // från sidan: bågen ligger platt mot ryggen och syns nästan från kanten, från över axeln ner bakom benen
@@ -365,7 +375,7 @@
       fyll(p.r, 2, 2, 61, 61, (x, y) => rep(x, y) ? BAGE.rep : skugga(x, y) ? 'a' : null);
       fyll(p.b, 2, 2, 61, 61, (x, y) => { const r = stav(x, y); if (!r) return null; if (r.t < 0.03) return BAGE.spets; return ton3(r.ljus, ...BAGE.tra); });
     });
-    byt(JANEJ('f8_bage', 'Bågen', 'Steg 8.7.6: bågen av 2 virke och 1 rep, den enkla bågen av ljust virke. Bakifrån som förut, snett över ryggen. Nytt: framifrån och från sidan hänger bågen nu på ryggen likadant i stället för i handen. Framifrån syns övre ändan över axeln, strängen snett över bröstet och nedre ändan vid höften; från sidan bågen längs ryggen. I porträttet är bågen ritad som i den lilla bakvända bilden och syns mycket mer: den stora böjda staven bakom huvudet från övre ändan över axeln, och strängen snett över bröstet. Din kommentar förra gången: ”bortvända versionen är bra. Versionerna mot kameran och sidan hänger bågen inte rätt. Gör om porträttet också bågen syns inte tillräckligt nu. Ta inspiration från den lilla bakvända ritningen och rita pilbågen likadant”', ny));
+    byt(JANEJ('f8_bage', 'Bågen', 'Steg 8.7.6: bågen av 2 virke och 1 rep, den enkla bågen av ljust virke. Bakifrån som förut, snett över ryggen. Nytt: framifrån och från sidan hänger bågen nu på ryggen likadant i stället för i handen. Framifrån syns övre ändan över axeln, strängen snett över bröstet och nedre ändan vid höften; från sidan bågen längs ryggen. I porträttet är bågen ritad som i den lilla bakvända bilden och syns mycket mer: den stora böjda staven bakom huvudet från övre ändan över axeln, och strängen snett över bröstet. Du bad mig rita fem versioner och själv lägga upp den bästa av dem: det här är den bästa av fem, en gul båge med lindat grepp och mörka ändar (de andra fyra var den ljusa bågen som förut, en mörk båge med svart spets, en ljus båge med lindat grepp och en mellanbrun med mörka ändar). Jag valde den gula för att den syns tydligast mot gräset på kartan och mot porträttets mörka botten. Din kommentar förra gången: ”gör 5 versioner som du själv bedömer och lägg upp den bästa av dem 5”', ny));
   }
 
   // =====================================================================================================================

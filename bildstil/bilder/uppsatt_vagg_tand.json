@@ -1,0 +1,32 @@
+{
+"id": "uppsatt_vagg_tand",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 9.9.1)",
+"w": 6,
+"h": 12,
+"rader": [
+"..w...",
+".gwg..",
+"ogwgo.",
+"rgggr.",
+".yYYy.",
+"..YY..",
+"..jJ..",
+".YjJY.",
+"..jJ..",
+"VVVVVV",
+"VJJJJV",
+"VVVVVV"
+],
+"pal": {
+"J": "#7d5b40",
+"V": "#5e3c24",
+"Y": "#b2921b",
+"g": "#d8b25f",
+"j": "#5e3c24",
+"o": "#bd753e",
+"r": "#a14808",
+"w": "#dad0bb",
+"y": "#906f0f"
+}
+}

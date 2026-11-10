@@ -8,6 +8,7 @@ import { kronika } from './historik';
 import { eldPlats, getMap, vaderstreck } from './karta';
 import { Klan, andraInst, klanById, klanerOf } from './klaner';
 import { addTo, amountOf, avbryt, dropLoad, zoneOf, zonesOf } from './lager';
+import { hundSkaller, tamArt, tamStulen, tamUte } from './tamdjur';
 import { die } from './liv';
 import { DORRAR, bitAt, bitsOf, freeNear, husById, isWall, roomAt } from './byggnad';
 import { LARM, larma } from './rykten';
@@ -72,6 +73,7 @@ export const ROVARE = balans('rovare', {
   lyder: 0.5, iver: 0.2, // över den här Envälde-seden lyder man ledaren, och så mycket Fejd och Krig drar till striden (steg 8.7.9)
   gerUpp: 1.5, // ... och så många gånger mer när byn gett upp
   bar: 20, // så mycket väger det varje rövare som står kvar kan bära (steg 8.7.16)
+  boskapR: 30, // varje rövare driver bort ett betesdjur som står ute inom så här många rutor (steg 9.8.12)
   styrka: [8, 14], mod: [8, 15], uthallighet: [9, 14], smidighet: [8, 14], skicklighet: [6, 11], // rövarnas kroppar (lägst, högst)
   fiende: 15, // när byn dödar rövare blir klanen så här mycket ovänligare för var och en
   flockarMots: 20, djurChans: 0.2, djurR: 6, // två flockar slåss när de är så här nära, och ett rovdjur anfaller så här ofta inom djurR rutor (steg 8.7.18–8.7.19)
@@ -296,7 +298,9 @@ function ses(s: State, f: Rovarflock, folk: Person[]) {
   const natt = isLight(s.now) ? 1 : ROVARE.nattSer, dimma = 1 - ROVARE.dimmaSer * vaderNu(s).dimma;
   const rad = (q: Person) => (q.task?.act === 'vakt' ? ROVARE.vaktSer : ROVARE.folkSer) * natt * dimma;
   const ser = (q: Person) => vaken(q) && narmast(s, f, q) < rad(q);
-  const vakt = folk.find(q => q.task?.act === 'vakt' && ser(q));
+  const hund = folk.some(q => q.task?.act === 'vakt' && ser(q)) ? undefined : hundSkaller(s, d => narmast(s, f, d)); // vakthunden hör flocken före vakten (steg 9.8.11)
+  if (hund && hund.p.task?.act === 'sova') { avbryt(s, hund.p); hund.p.task = undefined; }
+  const vakt = folk.find(q => q.task?.act === 'vakt' && ser(q)) ?? hund?.p;
   const vack = () => { if (vakt && !f.vackt && Math.min(...rovarna(s, f).map(r => utanforByn(s, r.x, r.y))) < ROVARE.vack) { f.vackt = true; vacka(s, f, vakt, folk); } };
   if (f.sedd !== undefined) { vack(); return; }
   const p = vakt ?? folk.find(ser);
@@ -638,7 +642,14 @@ export function plundra(s: State, f: Rovarflock, tyst: boolean) {
       if (SAKER[k]!.redskap && vikt + viktOf(k) <= bar) { const t = tingOf(s).find(q => q.k === k && q.bar === undefined && q.hos === undefined && q.lass === undefined); if (t) { s.ting = s.ting!.filter(q => q !== t); vikt += viktOf(k); tog++; tagna[k] = (tagna[k] ?? 0) + 1; (gr(r).bar ??= {})[k] = (gr(r).bar![k] ?? 0) + 1; } }
     }
   }
-  const tog_ = varor.filter(k => tagna[k]).map(k => antal(tagna[k], k));
+  // boskapen (steg 9.8.12): varje rövare driver bort ett får eller en get som står ute, det närmaste först
+  const drev: string[] = [];
+  for (const _r of rovarna(s, f)) {
+    const d = tamUte(s).filter(q => avst(q, f) < ROVARE.boskapR).sort((a, b) => avst(a, f) - avst(b, f))[0];
+    if (!d) break;
+    tamStulen(s, d); drev.push(tamArt(d.art).ord[1]); tog++;
+  }
+  const tog_ = [...varor.filter(k => tagna[k]).map(k => antal(tagna[k], k)), ...(drev.length ? [`${drev.length === 1 ? 'ett djur' : `${drev.length} djur`} (${och(drev)})`] : [])];
   count(s, 'rovarPlundring'); if (tog) count(s, 'rovat', tog);
   if (tyst) count(s, 'rovarTyst');
   const text = tog ? `Rövare ${fran(s, f)} ${tyst ? 'smög in i byn osedda och ' : ''}tog ${och(tog_)} ur förrådet.` : `Rövare ${fran(s, f)} kom till förrådet men hittade inget att ta.`;

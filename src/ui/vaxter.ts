@@ -1,5 +1,5 @@
 import { richness } from '../sim';
-import { BJORNJAKT, Djur, FLYGTID, H, sakerPaMarken, tandPaRutan, HOUR, SEC, VARG, W, ageIndex, bjornarOf, brinnande, djurOf, faglarOf, radjurOf, groundOf, living, plockOf, tornadoAndel, tornadoPos, vargarOf, tamdjurOf, TAMDJUR } from '../sim';
+import { BJORNJAKT, Djur, FLYGTID, H, sakerPaMarken, tandPaRutan, HOUR, SEC, VARG, W, ageIndex, bjornarOf, brinnande, djurOf, faglarOf, radjurOf, groundOf, living, plockOf, tornadoAndel, tornadoPos, vargarOf, TAMDJUR, TAM_ID0, honsOf } from '../sim';
 import { farg, fargTal } from '../palett';
 import { s, ui, vidNyBy } from './lage';
 import { Ikoner, TS, app, djurFx, djurMarkLayer, figurLayer, plantG, rokBakLayer, world } from './scen';
@@ -9,23 +9,22 @@ import { jagade, samlaJakt } from './jakt';
 import { posOf } from './manniskor';
 import { OMRITA_MS } from './terrang';
 import { type DjurHall, djurBild, fagelBild, iconCanvas, kartbild } from '../ikoner';
+import { KARTBILDER } from '../kartbilder';
 
-// sakerna på rutan (steg 9.2.53, platshållare tills Björn valt i bildstilen), i 16 punkter per ruta och bara i palettens färger.
-// Det som ritas är det som går att plocka (sakerPaMarken): bärtuvan under träden med ett, två eller tre bär, och en bild per sak
-// för svampen, rötterna och grenarna. En ruta utan saker ritas inte
+// sakerna på rutan (steg 9.2.53, Björns val i steg 9.9.1: i rad), i 16 punkter per ruta och bara i palettens färger. Det som ritas är
+// det som går att plocka (sakerPaMarken): spelets egna bilder av bären, svampen, rötterna och grenarna i sin naturliga storlek, en, två
+// eller tre i en sned rad över rutan från uppe till vänster till nere till höger. En ruta utan saker ritas inte
 const BILD_FARG: Record<string, number> = { y: 0xdad0bb, x: 0xbdb39b, v: 0x7e7362, C: 0x21310e, D: 0x324726, E: 0x505e3e, g: 0x4b4f00, G: 0x647025, r: 0xa14808, h: 0xb2921b, H: 0x906f0f, s: 0x742a01, S: 0xa14808, f: 0xbdb39b, j: 0x5e3c24, J: 0x7d5b40, l: 0x647025 };
-// bärtuvan (steg 9.2.42) med så många bär som finns på rutan (1–3)
-const TUVA = [
-  ['..gG..', '.gGgg.', 'gGrGgG', '.ggGg.', '..gg..'],
-  ['..gG..', '.gGrg.', 'gGgGgG', '.rgGg.', '..gg..'],
-  ['..gG..', '.gGrg.', 'gGgGrG', '.rgGg.', '..gg..'],
-];
-const BILDER: Record<string, string[]> = {
-  kantarell: ['.hh.', 'hHHh', '.ff.'],
-  spindling: ['.SS.', 'SssS', '.ff.'],
-  rotter: ['.l.', 'jJj', '.j.'],
-  grenar: ['....j', '...J.', '.jJ..', 'j....'],
-};
+const KBILD_AV: Record<string, string> = { bar: 'bar', kantarell: 'svamp', spindling: 'svamp', rotter: 'rotter', grenar: 'grenar' };
+const RAD_T = [[0.5], [0.15, 0.85], [0, 0.5, 1]];
+function ritaRad(k: string, n: number, x: number, y: number) {
+  const b = KARTBILDER[KBILD_AV[k] ?? k];
+  if (!b) return;
+  const a = [1, 2], c = [15 - b.w, 14 - b.h];
+  RAD_T[n - 1].map(t => [Math.round(a[0] + (c[0] - a[0]) * t), Math.round(a[1] + (c[1] - a[1]) * t)]).sort((p, q) => p[1] - q[1]).forEach(([dx, dy]) => {
+    b.rader.forEach((r, ry) => { for (let rx = 0; rx < r.length; rx++) { const h = b.pal[r[rx]]; if (r[rx] !== '.' && h) plantG.beginFill(parseInt(h.slice(1), 16)).drawRect(x + dx + rx, y + dy + ry, 1, 1).endFill(); } });
+  });
+}
 // höet på rutan (steg 9.3.4, platshållare tills Björn valt i bildstilen): en, två eller tre tuvor efter hur mycket som ligger där
 // (en tuva per fyra hö), så att den tomplockade rutan syns
 const HO = ['h.H.h', '.hHh.', '..H..'];
@@ -65,14 +64,14 @@ export function drawPlants(force = false) {
       const n = Math.min(3, q.n);
       if (n <= 0) continue;
       // bären syns på bärbuskarna (steg 6.5.4, terrang.ts); där ett träd står syns inte busken, och där ritas tuvan under trädet
-      if (q.k === 'bar') { if (g.trees[i] > 0) ritaBild(TUVA[n - 1], Math.round(x + 2 + plats(i, 0) * 8), Math.round(y + 3 + plats(i, 5) * 8)); continue; }
-      for (let k = 0; k < n; k++, j++) ritaBild(BILDER[q.k], Math.round(x + 1 + plats(i, 10 + j) * 11), Math.round(y + 1 + plats(i, 20 + j) * 12));
+      if (q.k === 'bar') { if (g.trees[i] > 0) ritaRad('bar', n, x, y); continue; }
+      ritaRad(q.k, n, x, y); j += n;
     }
     if (ageIndex(s) !== 0 && richness(s, 'rolleka', rx, ry) > 0.25) ritaBild(ROLLEKA_VILD[plats(i, 50) < 0.5 ? 0 : 1], Math.round(x + 1 + plats(i, 51) * 3), Math.round(y + 2 + plats(i, 52) * 5)); // röllekan växer vild (steg 9.7.15)
     const ho = Math.min(3, Math.floor(tandPaRutan(s, 'torrgras', rx, ry) / 4));
     for (let k = 0; k < ho; k++, j++) ritaBild(HO, Math.round(x + 1 + plats(i, 30 + j) * 10), Math.round(y + 2 + plats(i, 40 + j) * 11));
     const gr = Math.min(3, sakerPaMarken(s, 'grenar', rx, ry)[0]?.n ?? 0);
-    for (let k = 0; k < gr; k++, j++) ritaBild(BILDER.grenar, Math.round(x + 1 + plats(i, 10 + j) * 10), Math.round(y + 1 + plats(i, 20 + j) * 11));
+    if (gr > 0) { ritaRad('grenar', gr, x, y); j += gr; }
   }
 }
 
@@ -108,10 +107,17 @@ function ritaDjur(art: Djur['art'], id: number, x: number, y: number, sedd: Set<
 }
 // djuren där de syns just nu (det man trycker på, interaktion.ts, och djurfliken)
 export const djurSynliga = () => synliga;
+// ett tamt djur eller en höna i listan över det som syns (steg 9.8.1, 9.8.10): art = bilden som ritas (för kanten), tam = vad det är
+export interface SynligtDjur { id: number; art: Djur['art']; x: number; y: number; grupp: number; u?: number; tam?: string }
+export const HONS_ID0 = 950_000_000; // hönornas id på kartan (ritas runt flockens plats); varje höna är flocken
+export const arHona = (id: number) => id >= HONS_ID0;
+export const arTamt = (id: number) => id >= TAM_ID0 && id < HONS_ID0;
+// hönorna ritas med samma kant, och en höna är hela flocken
+const honsIdn = (n: number) => Array.from({ length: n }, (_, i) => HONS_ID0 + i);
 export function drawAnimals() {
   samlaJakt();
   djurIkoner.start(); larmIkoner.start(); brandRokIkoner.start(); djurFx.clear();
-  const folk = living(s).map(posOf), jagas = jagade(), sedda = new Set<number>(), ut: Djur[] = [];
+  const folk = living(s).map(posOf), jagas = jagade(), sedda = new Set<number>(), ut: SynligtDjur[] = [];
   const jagadId = new Set(jagas.kaniner.map(k => k.id)), riktade = new Set<number>();
   for (const k of jagas.kaniner) { // den som jagas just nu ritas som jakten går (jakt.ts)
     const e = { x: k.x, y: k.y, t: ui.nu, larm: k.larm ? ui.nu + LARM : visad.get(k.id)?.larm ?? 0 };
@@ -144,7 +150,12 @@ export function drawAnimals() {
   // i en strid på kartan (steg 9.2.29) står vargen och björnen där striden har dem, vid tiden som visas
   for (const d of vargarOf(s)) { const k = djuretNu('varg', d.id, ui.nu), { x, y } = anfall(k, d, 'an_bett'); ritaDjur('varg', d.id, x, y, riktade); ut.push({ ...d, x, y }); }
   for (const d of bjornarOf(s, ui.nu)) { const k = d.art === 'bjorn' ? djuretNu('bjorn', d.id, ui.nu) : undefined, { x, y } = anfall(k, d, 'an_klo'); ritaDjur(d.art, d.id, x, y, riktade); ut.push({ ...d, x, y }); } // björnen (steg 6.6.4) och ungarna (steg 6.6.5), i Björns ritningar // vargarna i verklig storlek (Björns val i bildstilen, steg 5.2.4.6)
-  for (const d of tamdjurOf(s)) { ritaDjur(TAMDJUR[d.art].ikon, d.id, d.x, d.y, riktade); } // de tama djuren (steg 9.8.1): platshållare tills Björn valt i bildstilen
+  for (const d of s.tamdjur ?? []) { // läser listan utan att skriva (tamdjurOf gör s.tamdjur ??= []); de döda står inte kvar i den
+    if (d.dog !== undefined) continue;
+    const ikon = TAMDJUR[d.art].ikon as Djur['art']; ritaDjur(ikon, d.id, d.x, d.y, riktade); ut.push({ id: d.id, art: ikon, x: d.x, y: d.y, grupp: -1, tam: d.art });
+  }
+  const hons = honsOf(s); // hönsflocken (steg 9.8.10): hönorna runt flockens plats, platshållare tills Björn valt i bildstilen
+  if (hons) for (let i = 0; i < hons.n; i++) { const v = i * 2.4, r = 0.4 + (i % 4) * 0.35; const hx = hons.x + Math.cos(v) * r, hy = hons.y + Math.sin(v) * r; ritaDjur('fagel', HONS_ID0 + i, hx, hy, riktade); ut.push({ id: HONS_ID0 + i, art: 'fagel', x: hx, y: hy, grupp: -1, tam: 'hons' }); } // de tama djuren (steg 9.8.1): platshållare tills Björn valt i bildstilen
   for (const id of hallar.keys()) if (!riktade.has(id)) hallar.delete(id);
   // tornadon där den är (steg 3.8.4), foten mitt på banan, och lågorna där det brinner (steg 3.8.5): bildstilens animationer
   // (steg 5.1.9.1), tornadon som virvlar i åtta bilder och branden som slår ut i sex, med röken bakom alla lågorna
@@ -163,9 +174,12 @@ export function drawAnimals() {
     }
   }
   // det markerade djuret (steg 3.10.4): en vit kant runt symbolen, som allt annat som är markerat
-  const vald = ui.tab === 'djur' ? ut.find(d => d.id === ui.djurId) : undefined;
-  if (vald) { const b = vald.art === 'varg' ? { w: 28, h: 19, fot: 5 } : vald.art === 'bjorn' ? { w: 50, h: 35, fot: 4 } : vald.art === 'bjornunge' ? { w: 25, h: 18, fot: 4 } : vald.art === 'radjur' ? { w: 28, h: 31, fot: 4 } : vald.art === 'fagel' ? { w: 24, h: 17, fot: 4 } : { w: 14, h: 13, fot: 3 }; // runt djurets bild
-    djurFx.lineStyle(1, 0xffffff, 0.9).drawRoundedRect(vald.x * TS - b.w / 2, vald.y * TS + b.fot - b.h, b.w, b.h, 3).lineStyle(0); }
+  // (de tama djuren och hönsflocken markeras på samma sätt, och när musen är över dem; en höna är hela flocken)
+  const kant = (d: SynligtDjur) => { const b = d.art === 'varg' ? { w: 28, h: 19, fot: 5 } : d.art === 'bjorn' ? { w: 50, h: 35, fot: 4 } : d.art === 'bjornunge' ? { w: 25, h: 18, fot: 4 } : d.art === 'radjur' ? { w: 28, h: 31, fot: 4 } : d.art === 'fagel' ? { w: 24, h: 17, fot: 4 } : { w: 14, h: 13, fot: 3 }; // runt djurets bild
+    djurFx.lineStyle(1, 0xffffff, 0.9).drawRoundedRect(d.x * TS - b.w / 2, d.y * TS + b.fot - b.h, b.w, b.h, 3).lineStyle(0); };
+  const markerade = new Set<number>();
+  for (const id of [ui.tab === 'djur' ? ui.djurId : -1, ui.djurHover]) { if (arHona(id)) honsIdn(hons?.n ?? 0).forEach(q => markerade.add(q)); else markerade.add(id); }
+  for (const d of ut) if (markerade.has(d.id)) kant(d);
   hotMarken();
   djurIkoner.end(); larmIkoner.end(); brandRokIkoner.end();
   synliga = ut;

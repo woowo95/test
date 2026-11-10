@@ -108,6 +108,8 @@ const DEF = {
   varg: { vikt: 15, namn: 'Fälld varg', skaffa: { act: 'jakt' }, stack: 1, mapp: 'Material', haller: 3 }, // en varg är en full famn
   vargkott: { namn: 'Vargkött', ett: true, skaffa: RECEPT.vargkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2, fett: 1.2, energi: 0.8, mineral: 0.6, vitamin: 0.3 }, ra: true, haller: 2 },
   vargskinn: { namn: 'Vargskinn', ett: true, skaffa: RECEPT.vargskinn, stack: 5, mapp: 'Material', slits: 0.0006 },
+  slaktfar: { vikt: 12, namn: 'Slaktat får', ett: true, varde: 20, stack: 1, mapp: 'Material', haller: 3 }, slaktget: { vikt: 12, namn: 'Slaktad get', varde: 20, stack: 1, mapp: 'Material', haller: 3 }, // steg 9.8.7: ett tamdjur som avlivats, slaktas vid slaktbänken som viltet
+  djurhorn: { namn: 'Djurhorn', ett: true, varde: 2, stack: 20, vikt: 0.2, mapp: 'Material' }, fiskrens: { namn: 'Fiskrens', stack: 25, ruta: 50, mapp: 'Material', haller: 2 }, // steg 9.8.7: hornen från fåren och getterna, och fiskrensen som blir agn
   radjur: { vikt: 15, namn: 'Fällt rådjur', ett: true, skaffa: { act: 'jakt' }, stack: 1, mapp: 'Material', haller: 3 }, // steg 6.6.2: en full famn, som vargen
   fagel: { namn: 'Fälld fågel', skaffa: { act: 'jakt' }, stack: 5, vikt: 8, ruta: 20, mapp: 'Mat', mat: 1, naring: { protein: 2, fett: 0.8, energi: 0.7, mineral: 0.5, vitamin: 0.3 }, ra: true, haller: 2 }, // steg 6.6.3: orre, ripa eller skogsduva, samma sak
   fjadrar: { namn: 'Fjädrar', skaffa: RECEPT.fjadrar, stack: 50, mapp: 'Material' }, // steg 6.6.3: från fåglarna, till pilar och prydnader senare
@@ -181,6 +183,8 @@ const DEF = {
   slunga: { namn: 'Slunga', hanger: 'balte', skaffa: RECEPT.slunga, vikt: 0.2, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, gors: { text: 'Gör en slunga.', stat: 'slungorGjorda', forsta: '{namn} gjorde byns första slunga.' }, trasig: { stat: 'slungorTrasiga', text: '{namn}s slunga gick sönder.' } },
   horn: { namn: 'Horn', hanger: 'balte', skaffa: RECEPT.horn, vikt: 0.5, stack: 1, mapp: 'Redskap', slits: 0.0001, redskap: true, gors: { text: 'Gör ett horn.', stat: 'hornGjorda', forsta: '{namn} gjorde byns första horn.' }, trasig: { stat: 'hornTrasiga', text: '{namn}s horn gick sönder.' } }, // steg 8.7.11
   pilar: { namn: 'Pilar', skaffa: RECEPT.pilar, vikt: 0.1, stack: 20, mapp: 'Redskap' },
+  skara: { namn: 'Skära', hanger: 'balte', skaffa: RECEPT.skara, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'skarorTrasiga', text: '{namn}s skära gick sönder.' },
+    gors: { text: 'Fäster en vass flintegg på ett krokigt skaft med rep.', stat: 'skarorGjorda', forsta: '{namn} gjorde byns första skära. Med den slås ängen till hö åt djuren.' } }, // steg 9.8.9
   benspade: { namn: 'Benspade', hanger: 'balte', skaffa: RECEPT.benspade, vikt: 4, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'benspadarTrasiga', text: '{namn}s benspade gick sönder.' },
     gors: { text: 'Surrar ihop en benspade av ben, rep och en gren.', stat: 'benspadarGjorda', forsta: '{namn} gjorde byns första benspade av tre ben. Med den gräver man fram rötter fortare, och gropar.' } },
   // maten som grillats (steg 2.8.1, RATTER i matlagning.ts): en enkel rätt som håller längre än den råa och äts först
@@ -250,6 +254,8 @@ const DEF = {
   jordgubbar: { namn: 'Jordgubbar', skaffa: { tid: 0.3, tek: 'odling' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 3.5, naring: { vitamin: 1.4, energi: 0.9, mineral: 0.4, fett: 0.1 }, haller: 2 }, // steg 9.7.9: mättar lite men gör folk glada
   jordgubbsplanta: { namn: 'Jordgubbsplanta', ett: true, varde: 1, stack: 25, vikt: 0.1, mapp: 'Material', haller: 20 },
   appel: { namn: 'Äpplen', skaffa: { tid: 0.3, tek: 'odling' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 3.8, naring: { vitamin: 1.6, energi: 0.9, mineral: 0.3 }, haller: 8 }, // steg 9.7.13
+  ull: { namn: 'Ull', ett: true, varde: 3, stack: 20, vikt: 0.2, mapp: 'Material' }, // klipps av fåren (steg 9.8.5, boskap.ts)
+  levfar: { namn: 'Levande får', ett: true, varde: 25, stack: 1, vikt: 0, mapp: 'Material' }, levget: { namn: 'Levande get', varde: 25, stack: 1, vikt: 0, mapp: 'Material' }, levhons: { namn: 'Höna', varde: 4, stack: 20, vikt: 0, mapp: 'Material' }, // köps av handlaren och blir ett djur (steg 9.8.5)
   appelplanta: { namn: 'Äppelplanta', ett: true, varde: 2, stack: 10, vikt: 0.5, mapp: 'Material', haller: 20 },
   notter: { namn: 'Hasselnötter', skaffa: { act: 'samla' }, stack: 50, ruta: 100, mapp: 'Mat', mat: 6.8, naring: { fett: 2, protein: 1.2, energi: 1.2, mineral: 0.8, vitamin: 0.3 }, haller: 20 }, // steg 9.7.14: håller länge
   // det rökta (steg 9.6.8, matlagning.ts): håller som det torkade och smakar lite bättre
@@ -257,6 +263,9 @@ const DEF = {
   rokkott: { namn: 'Rökt kött', ett: true, skaffa: RECEPT.rokkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.9, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 0.6, vitamin: 0.2 }, haller: 20 },
   // rätterna som kokas i lerkrukan (steg 9.6.3, ratter.ts): en rad per huvudingrediens, kategori och nivå
   ...rattSaker(),
+  ulltrad: { namn: 'Ulltråd', skaffa: RECEPT.ulltrad, stack: 25, vikt: 0.1, mapp: 'Material' }, // steg 9.8.14: ullen spinns som linet
+  ylle: { namn: 'Ylletyg', skaffa: RECEPT.ylle, stack: 10, vikt: 0.6, mapp: 'Material' }, // och vävs i vävstolen
+  lovkarve: { namn: 'Lövkärve', skaffa: { tid: 0.25, act: 'hamla' }, stack: 25, vikt: 0.3, mapp: 'Bränsle', slits: 0.006 }, // steg 9.8.16: skotten med lövet från ett hamlat träd, som djuren äter som hö
 } satisfies Record<string, SakDef>;
 
 type Sak = keyof typeof DEF;

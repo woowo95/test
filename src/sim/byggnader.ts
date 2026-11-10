@@ -15,6 +15,7 @@ import { flodBlot } from './sjo';
 import { inneUtanPlats, isKlar, stationDef, stationRum, stationRutor, stationerOf, storlek } from './stationer';
 import { SJUKDOMAR } from './sjukdom';
 import { kn } from './kunskap';
+import { fahusAkut } from './slatter';
 
 // ---------- balanstal (regel 8) ----------
 // Husens storlek, vad de är till för och när de byter funktion eller rivs. Var de står och hur de byggs står i BYGG (bygg.ts)
@@ -43,7 +44,7 @@ export const HUS = balans('hus', {
   varmeY: 2.9, // ... mätt så här många rutor söder om elden
   torkhusFran: 2, // så många torkställningar ute innan byn vill ha ett torkhus (steg 7.3.5)
   vedbodFran: 40, // så mycket ved ute utan tak innan byn vill ha en vedbod (steg 7.3.6)
-  skjulAkut: 0.25, // hur akut ett skjul är (0 till 1), dubbelt så akut inför vintern för vedboden
+  omkringAkut: 0.25, // hur akut torkhuset och vedboden är (0 till 1), vedboden dubbelt så akut inför vintern
   salAkut: 0.3, // hur akut det är med en samlingssal när byn har en scen (0 till 1, steg 7.2.7) ...
   salMin: 8, // ... och så många rutor den har minst
   verkstadHyllor: 2, // en lagerplats med det stationerna använder för så här många stationer i verkstaden (steg 7.2.9)
@@ -66,7 +67,7 @@ export interface Byggnad {
   fara: boolean; // behovet är en fara (kylan): går före all bekvämlighet
   vikt: number; // hur viktigt behovet är bland dem som är lika farliga
   sover?: boolean; // man sover här
-  skjul?: boolean; // ett tak utan väggar, med stolpar (steg 7.3.5)
+  omkring?: boolean; // huset byggs runt det som redan står, torkställningarna eller vedhögarna (steg 9.2.137)
   lager?: boolean; // golvet är en lagerplats under tak: det som ligger där ruttnar och slits mindre (LAGER.inne i lager.ts)
   akut?: (s: State) => Akut; // saknas: byn planerar inga nya hus för det
   namnFor?: (s: State, w: number, h: number, same: number, a: Akut) => string; // det nya husets namn
@@ -107,16 +108,23 @@ export const BYGGNADER = {
     akut: s => stationerOf(s).some(t => t.k === 'scen' && isKlar(t)) && !housesOf(s).some(h => h.fn === 'samling') ? { v: HUS.salAkut, plats: Math.max(HUS.salMin, living(s).length) } : { v: 0, plats: 0 },
     namnFor: (_s, _w, _h, same) => same ? `Samlingshus ${same + 1}` : 'Samlingshuset',
   },
-  // skjulen (steg 7.3.5 och 7.3.6): ett tak utan väggar över det som redan står. Byggs av Byggplanens åtgärd skjul (byggplan.ts)
+  // torkhuset och vedboden (steg 7.3.5, 7.3.6 och 9.2.137): vanliga hus med timmerväggar, en dörr och jordgolv runt det som redan
+  // står ute, torkställningarna eller vedhögarna. Byggs av Byggplanens åtgärd omkring (byggplan.ts)
   torkhus: {
-    namn: 'Torkhus', ikon: 'tork', behov: 'Under tak torkar maten i alla väder', fara: false, vikt: 0.8, skjul: true,
-    akut: s => torkUte(s).length >= HUS.torkhusFran ? { v: HUS.skjulAkut, plats: 0 } : { v: 0, plats: 0 },
+    namn: 'Torkhus', ikon: 'tork', behov: 'Under tak torkar maten i alla väder', fara: false, vikt: 0.8, omkring: true,
+    akut: s => torkUte(s).length >= HUS.torkhusFran ? { v: HUS.omkringAkut, plats: 0 } : { v: 0, plats: 0 },
     namnFor: (_s, _w, _h, same) => same ? `Torkhus ${same + 1}` : 'Torkhuset',
   },
   vedbod: {
-    namn: 'Vedbod', ikon: 'ved', behov: 'Under tak blir veden aldrig blöt och torkar fortare', fara: false, vikt: 0.8, skjul: true,
-    akut: s => { const n = vedUte(s).reduce((a, q) => a + q.n, 0); return n >= HUS.vedbodFran ? { v: HUS.skjulAkut * (kallTid(ageIndex(s)) ? 2 : 1), plats: 0 } : { v: 0, plats: 0 }; },
+    namn: 'Vedbod', ikon: 'ved', behov: 'Under tak blir veden aldrig blöt och torkar fortare', fara: false, vikt: 0.8, omkring: true,
+    akut: s => { const n = vedUte(s).reduce((a, q) => a + q.n, 0); return n >= HUS.vedbodFran ? { v: HUS.omkringAkut * (kallTid(ageIndex(s)) ? 2 : 1), plats: 0 } : { v: 0, plats: 0 }; },
     namnFor: (_s, _w, _h, same) => same ? `Vedbod ${same + 1}` : 'Vedboden',
+  },
+  // fähuset (steg 9.8.9, slatter.ts): djuren står där i istiden och fryser inte. Byggs när byn har betesdjur som inte får plats
+  fahus: {
+    namn: 'Fähus', ikon: 'fahus', behov: 'Djuren står under tak i istiden och fryser inte', fara: false, vikt: 1.2,
+    akut: s => fahusAkut(s),
+    namnFor: (_s, _w, _h, same) => same ? `Fähus ${same + 1}` : 'Fähuset',
   },
   verkstad: {
     namn: 'Verkstad', ikon: 'verkstad', behov: 'Plats inne för en station som inte får plats i något annat hus (slöjdbänken)', fara: false, vikt: 1,

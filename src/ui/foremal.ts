@@ -12,6 +12,7 @@ import { ANIMTAKT } from '../animbilder';
 import { iBruk } from './ibruk';
 import { framstegPunkter } from './framsteg';
 import { farg, fargTal, narmast } from '../palett';
+import * as PIXI from 'pixi.js';
 
 // det som står på marken: lagerplatserna och stackarna, stationerna, husen, stubbar, fällda träd och elden
 const pileIcons = new Ikoner(pileLayer, true); // med skuggor på marken (steg 5.1.8)
@@ -45,6 +46,17 @@ function kartHog(k: string, x0: number, y0: number, n: number) {
   const bx = x0 + ((TS - b.w - (n > 1 ? hw : 0)) >> 1), by = y0 + ((TS - 3 - b.h - (n > 2 ? hh : 0)) >> 1);
   forsk.slice(0, n).sort((a, c) => a[1] - c[1]).forEach(([dx, dy]) => pileIcons.add(kb, bx + dx, by + dy, 1));
 }
+// stackarna (steg 9.2.40, Björns val i steg 9.9.1: en tät hög): en sak ensam, tre om varandra i en triangel och sex i en pyramid, med
+// den bakersta först. Är bilden för bred för att tre eller sex ska rymmas på rutan ritas högen som förut (kartHog)
+function tatHog(k: string, x0: number, y0: number, n: 1 | 3 | 6) {
+  const b = KARTBILDER[k]!, kb = kartbild(k)!, w = b.w, h = b.h;
+  const pos = n === 1 ? [[0, 0]] : n === 3 ? [[0, 0], [w * 0.6, 0], [w * 0.3, -h * 0.5]] : [[0, 0], [w * 0.6, 0], [w * 1.2, 0], [w * 0.3, -h * 0.5], [w * 0.9, -h * 0.5], [w * 0.6, -h]];
+  const p = pos.map(([dx, dy]) => [Math.round(dx), Math.round(dy)]), bred = Math.max(...p.map(q => q[0])) + w, hog = h - Math.min(...p.map(q => q[1]));
+  if (bred > TS || hog > TS - 3) return false;
+  const bx = x0 + ((TS - bred) >> 1), by = y0 + ((TS - 3 - hog) >> 1) - Math.min(...p.map(q => q[1]));
+  p.sort((a, c) => a[1] - c[1]).forEach(([dx, dy]) => pileIcons.add(kb, bx + dx, by + dy, 1));
+  return true;
+}
 function drawPile(pl: Pile, t: number) {
   const x0 = pl.x * TS, y0 = pl.y * TS, f = Math.min(1, pl.n / pl.max), g = structG, c = condOf(pl);
   // liten stapel för skicket längst ner i rutan
@@ -61,7 +73,8 @@ function drawPile(pl: Pile, t: number) {
   const mangd = pl.max === 1 || kartbildEnsam(pl.k) ? '' : f > 2 / 3 ? '_manga' : f > 1 / 3 ? '_nagra' : '';
   if (mangd && KARTBILDER[pl.k + mangd]) { kartHog(pl.k + mangd, x0, y0, 1); if ((pl.q ?? 0) >= MASTERVERK) glans(x0 + 12, y0 + 3, t, pl.id ?? 0, pl.q === PERFEKT); return; }
   if (kartbild(pl.k)) {
-    kartHog(pl.blot && KARTBILDER.ved_blot ? 'ved_blot' : variant(pl.k, pl.x, pl.y), x0, y0, pl.max === 1 || kartbildEnsam(pl.k) ? 1 : n);
+    const hogK = pl.blot && KARTBILDER.ved_blot ? 'ved_blot' : variant(pl.k, pl.x, pl.y), ensamBild = pl.max === 1 || kartbildEnsam(pl.k);
+    if (ensamBild || !tatHog(hogK, x0, y0, f > 2 / 3 ? 6 : f > 1 / 3 ? 3 : 1)) kartHog(hogK, x0, y0, ensamBild ? 1 : n);
     if ((pl.q ?? 0) >= MASTERVERK) glans(x0 + 12, y0 + 3, t, pl.id ?? 0, pl.q === PERFEKT);
     return;
   }
@@ -126,14 +139,15 @@ const YTA: Record<string, Yta & { v?: Yta }> = {
 // efter hur mycket som hänger. Den byter färg från rött till mörkbrunt medan den torkar (torrDel). Bara utseende
 const tonPar = (a: string, i: number, b: string, j: number) => [fargTal(farg(a as 'jord', i as 0)), fargTal(farg(b as 'jord', j as 0))] as const;
 const TORK_KOTT = [tonPar('rost', 3, 'rost', 2), tonPar('rost', 2, 'rost', 1), tonPar('jord', 1, 'jord', 0)];
+const TORK_VAXT = [tonPar('ben', 1, 'jord', 3), tonPar('jord', 3, 'jord', 2), tonPar('jord', 2, 'jord', 1)]; // det rötade linet och det blötta kornet
 const TORK_FISK = [tonPar('ben', 1, 'skiffer', 2), tonPar('jord', 3, 'jord', 2), tonPar('jord', 2, 'jord', 1)];
 function hangande(st: Station, x0: number, y0: number) {
   const platser = 8, per = TORK.rymd / platser;
   let i = 0;
   for (const q of st.tork!) {
-    const f = torrDel(s, q), n = Math.max(1, Math.round(q.n / per)), fisk = q.k !== 'kott' && q.k !== 'vargkott';
+    const f = torrDel(s, q, st.k === 'rokeri' ? 'rokeri' : 'tork'), n = Math.max(1, Math.round(q.n / per)), vaxt = q.k === 'ratlin' || q.k === 'maltkorn', fisk = !vaxt && q.k !== 'kott' && q.k !== 'vargkott';
     // i pixlar och palettens färger (steg 8.1.9): ljusare och rödare färskt, mörkbrunt torrt; ljus sida till vänster
-    const steg = f < 0.34 ? 0 : f < 0.67 ? 1 : 2, [ljus, mork] = (fisk ? TORK_FISK : TORK_KOTT)[steg];
+    const steg = f < 0.34 ? 0 : f < 0.67 ? 1 : 2, [ljus, mork] = (vaxt ? TORK_VAXT : fisk ? TORK_FISK : TORK_KOTT)[steg];
     for (let j = 0; j < n && i < platser; j++, i++) {
       const x = st.rot ? x0 + 8 : Math.round(x0 + 9 + i * 1.8), y = st.rot ? y0 + 4 + i * 3 : y0 + 3; // den stående: längs slån uppifrån och ner
       if (fisk) { // stjärten i slån och kroppen under
@@ -160,8 +174,21 @@ function kant(rutor: number[]) {
   }
   overG.lineStyle(0);
 }
-// tonen under lagerplatserna (steg 6.8.9): en enda färg ur paletten under hela platsen, utan raster (Björns val, steg 8.10.1)
-const LAGERTON = fargTal(farg('oliv', 3));
+// marken under lagerplatserna (steg 6.8.9 och 9.2.38, Björns val i steg 9.9.1): nedtrampad jord utan raster, med bara hörnen
+// markerade i en mörkare ton: en jordton över hela platsen och var nionde punkt en ton ljusare, och i varje hörn fyra punkter
+// längs varje sida. Bilden ritas en gång per storlek på platsen
+const lagerMarkTex = new Map<string, PIXI.Texture>();
+function lagerMark(w: number, h: number) {
+  const nyckel = w + 'x' + h, fanns = lagerMarkTex.get(nyckel);
+  if (fanns) return fanns;
+  const bw = w * TS, bh = h * TS, c = document.createElement('canvas'); c.width = bw; c.height = bh;
+  const g = c.getContext('2d')!, mark = (x: number, y: number, f: string) => { g.fillStyle = f; g.fillRect(x, y, 1, 1); };
+  for (let y = 0; y < bh; y++) for (let x = 0; x < bw; x++) mark(x, y, farg('jord', (x * 7 + y * 5) % 9 ? 3 : 2));
+  for (const [cx, cy, dx, dy] of [[0, 0, 1, 1], [bw - 1, 0, -1, 1], [0, bh - 1, 1, -1], [bw - 1, bh - 1, -1, -1]]) for (let k = 0; k < 4; k++) { mark(cx + dx * k, cy, farg('jord', 1)); mark(cx, cy + dy * k, farg('jord', 1)); }
+  const t = PIXI.Texture.from(c, { scaleMode: PIXI.SCALE_MODES.NEAREST });
+  lagerMarkTex.set(nyckel, t);
+  return t;
+}
 const VAGG_KANT = 4; // så många punkter av en vägg bakom en station inne som bilden får täcka (steg 9.2.41)
 export function drawStructures(t: number) {
   const tab = ui.tab;
@@ -169,8 +196,8 @@ export function drawStructures(t: number) {
   // lagerplatsen: en svag färgton under rutorna (steg 6.8.9), en ram runt dem och en stack per ruta
   zonesOf(s).forEach((z, i) => {
     const on = tab === 'lager' && ui.lagerNr === i;
-    structG.beginFill(LAGERTON).drawRect(z.x * TS, z.y * TS, z.w * TS, z.h * TS).endFill();
-    structG.lineStyle(1, on ? 0xdad0bb : 0x5e3c24).drawRect(z.x * TS + 0.5, z.y * TS + 0.5, z.w * TS - 1, z.h * TS - 1).lineStyle(0);
+    structG.beginTextureFill({ texture: lagerMark(z.w, z.h), matrix: new PIXI.Matrix().translate(z.x * TS, z.y * TS) }).drawRect(z.x * TS, z.y * TS, z.w * TS, z.h * TS).endFill();
+    if (on) structG.lineStyle(1, 0xdad0bb).drawRect(z.x * TS + 0.5, z.y * TS + 0.5, z.w * TS - 1, z.h * TS - 1).lineStyle(0); // bara den valda platsen får en hel ram
   });
   drawBuild();
   pileIcons.start(); rokIkoner.start();
@@ -220,7 +247,7 @@ export function drawStructures(t: number) {
   for (const b of bitsOf(s)) if (b.dorr) { const ik = dorrDef(b.dorr)?.ikon, v = bitAt(s, b.x, b.y - 1)?.k === 'vagg' ? '_v' : '', k = hasIcon('kb_' + ik + v) ? 'kb_' + ik + v : ik + '_karta' + v; pileIcons.add(k, b.x * TS, b.y * TS, TS / iconCanvas(k).width); } // bildstilens dörr (skinndörren, steg 5.1.2.3) eller den som redan hade 16 punkter
   // de uppsatta facklorna (steg 6.3.7, ljus.ts; i människornas skala, steg 9.2.98): med foten i rutan, mot väggen när de sitter på en, den tända med lågan
   for (const u of s.uppsatta ?? []) {
-    const vagg = u.vx !== undefined, k = (vagg ? (hasIcon('kb_uppsatt_vagg') ? 'kb_uppsatt_vagg' : 'uppsatt_vagg') : 'uppsatt_mark') + (u.tand ? '_tand' : ''), c = iconCanvas(k); // på väggen sitter den i en hållare (steg 9.2.11)
+    const vagg = u.vx !== undefined, k = (vagg ? 'kb_uppsatt_vagg' : 'uppsatt_mark') + (u.tand ? '_tand' : ''), c = iconCanvas(k); // på väggen sitter den i en hållare (steg 9.2.11)
     pileIcons.add(k, u.x * TS + ((TS - c.width) >> 1) + (u.vx ?? 0) * 5, u.y * TS + TS - 2 - c.height + (u.vy ?? 0) * 5, 1);
   }
   // talgljusen på borden och hyllorna (steg 6.3.8, ljus.ts): mitt på möbeln, två utseenden efter möbeln, det tända med lågan
@@ -261,7 +288,8 @@ export function drawStructures(t: number) {
     stubbIkoner.add('sb_' + id, Math.round(k.x * TS) - 4 - b.fx, Math.round(k.y * TS) + 4 - b.fy, 1);
   }
   for (const q of s.kvarlevor ?? []) if (q.bars === undefined) stubbIkoner.add(KVARLEVOR[q.k].ikon, q.x * TS, q.y * TS, 1); // det som blivit kvar av en människa (steg 8.2.3)
-  for (const g of s.gravar ?? []) stubbIkoner.add('grav', g.x * TS, g.y * TS, 1); // graven (steg 8.5.1)
+  // graven (steg 8.5.1): en av tre gravstenar (Björns val i steg 9.9.1), vilken räknas ur rutan; stenen står med foten i rutan
+  for (const g of s.gravar ?? []) { const id = 'grav_' + (1 + (g.x * 7 + g.y * 13) % 3), b = KARTBILDER[id]!; stubbIkoner.add('kb_' + id, g.x * TS + ((TS - b.w) >> 1), g.y * TS + TS - 2 - b.h, 1); }
   for (const t of s.tron ?? []) if (t.hov && t.slut === undefined) stubbIkoner.add(t.tempel?.klar ? 'tempel' : t.hov.klar ? 'hov' : 'hov_bygge', t.hov.x * TS, t.hov.y * TS, 1); // hovet, och templet av sten där det stod (steg 8.6.14)
   for (const h of s.heliga ?? []) stubbIkoner.add(HELIGA_PLATSER[h.k].ikon, h.x * TS, h.y * TS, 1); // de heliga platserna (steg 8.5.5)
   stubbIkoner.end();

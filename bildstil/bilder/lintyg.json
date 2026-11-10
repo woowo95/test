@@ -1,0 +1,37 @@
+{
+"id": "lintyg",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 9.9.1)",
+"w": 25,
+"h": 19,
+"rader": [
+"..ooooooooooooooooooooo..",
+".oxyxyxyxyxtsyxyxyxyxyxo.",
+".oyxyxyxyxytsyyxyxyxyxyo.",
+"oyxyxyxyxyxtsyxyxyxyxyxo.",
+"oxyxyxyxyxytsyyxyxyxyxyxo",
+"oyxyxyxyxyxtsyxyxyxyxyxyo",
+"owyyyyyyyyytsyyyyyyyyyywo",
+"owxxxxxxxxxtsxxxxxxxxxxwo",
+"owwwwwwwwwwtswwwwwwwwwwwo",
+"ovvvvvvvvvvtsvvvvvvvvvvvo",
+"owyyyyyyyyytsyyyyyyyyyywo",
+"owxxxxxxxxxtsxxxxxxxxxxwo",
+"owwwwwwwwwwtswwwwwwwwwwwo",
+"ovvvvvvvvvvtsvvvvvvvvvvvo",
+"owyyyyyyyyytsyyyyyyyyyywo",
+"owxxxxxxxxxtsxxxxxxxxxxwo",
+"owwwwwwwwwwtswwwwwwwwwwwo",
+"ovvvvvvvvvvtsvvvvvvvvvvvo",
+".ooooooooooooooooooooooo."
+],
+"pal": {
+"o": "#24201d",
+"s": "#742a01",
+"t": "#a14808",
+"v": "#7e7362",
+"w": "#a0947d",
+"x": "#bdb39b",
+"y": "#dad0bb"
+}
+}

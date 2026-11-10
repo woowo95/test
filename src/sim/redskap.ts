@@ -122,6 +122,9 @@ export const DJUR = {
   varg: { sak: 'varg', kott: 'vargkott', mat: 1, slakt: { vargkott: 12, ben: 3, vargskinn: 1, talg: 3, vargtand: 4 }, del: 'vargdel', skinn: { vargskinn: 1 }, rep: 0.6, timme: 2, maxTim: 2, act: 'slakta', kniv: true, minDel: 1, stat: 'slaktatVarg', forsta: '{namn} slaktade byns första varg. Den gav mycket kött, ben och ett tjockt vargskinn.', strid: { namn: 'Vargen', art: 'Varg', alder: 12, styrka: 10, uthallighet: 14, mod: 10, smidighet: 16, skicklighet: 9, fart: 1.5, vapen: 'vargbett' } }, // snabb och svår att träffa, duckar men parerar inte och biter hårt (steg 3.7.1)
   // rådjuret (steg 6.6.2, djur.ts): skyggt och snabbt, fälls med spjut och styckas av den som inte orkar bära det helt
   radjur: { sak: 'radjur', kott: 'kott', mat: 1, slakt: { kott: 8, ben: 2, radjursskinn: 1, talg: 2 }, del: 'radjurdel', skinn: { radjursskinn: 1 }, rep: 0.4, timme: 2, maxTim: 2, act: 'slakta', kniv: true, minDel: 1, stat: 'slaktatRadjur', forsta: '{namn} slaktade byns första rådjur. Det gav kött, ben, talg och ett mjukt skinn.', strid: { namn: 'Rådjuret', art: 'Rådjur', alder: 10, styrka: 4, uthallighet: 12, mod: 2, smidighet: 16, skicklighet: 4, fart: 1.7, vapen: 'bett' } },
+  // fåret och geten (steg 9.8.7, boskap.ts): ett tamdjur som avlivats slaktas vid slaktbänken som viltet
+  far: { sak: 'slaktfar', kott: 'kott', mat: 1, slakt: { kott: 7, ben: 2, skinn: 2, talg: 2, djurhorn: 2 }, rep: 0.4, timme: 2, maxTim: 2, act: 'slakta', kniv: true, minDel: 1, stat: 'slaktatFar', forsta: '{namn} slaktade byns första får. Det gav kött, ben, talg, skinn och horn.' },
+  get: { sak: 'slaktget', kott: 'kott', mat: 1, slakt: { kott: 6, ben: 2, skinn: 2, talg: 1, djurhorn: 2 }, rep: 0.4, timme: 2, maxTim: 2, act: 'slakta', kniv: true, minDel: 1, stat: 'slaktatGet', forsta: '{namn} slaktade byns första get. Den gav kött, ben, talg, skinn och horn.' },
   // fågeln (steg 6.6.3, djur.ts): en art med tre utseenden, liten och svår att träffa med spjutet; styckas inte och ger lite kött och fjädrar
   fagel: { sak: 'fagel', kott: 'kott', mat: 1, slakt: { kott: 1, fjadrar: 1 }, rep: 0, timme: 12, maxTim: 1, act: 'slakta', kniv: true, minDel: 1, stat: 'slaktatFagel', forsta: '{namn} plockade och slaktade byns första fågel. Den gav lite kött och fjädrar.', strid: { namn: 'Fågeln', art: 'Fågel', alder: 5, styrka: 1, uthallighet: 4, mod: 1, smidighet: 18, skicklighet: 2, fart: 1.6, vapen: 'bett' } },
   // björnen (steg 6.6.6, bjorn.ts): stark och uthållig, jagas bara av en stor grupp med spjut, och styckas alltid där den föll.
@@ -166,7 +169,7 @@ export const kottFaktor = (p: Person) => REDSKAP.kottMin + (REDSKAP.kottMax - RE
 function stycka(s: State, p: Person, art: Djurart, n: number) {
   const vems = use(s, p, art.sak, n * art.mat);
   for (const [k, m0] of Object.entries(art.slakt)) { const m = k === art.kott ? kottAv(p, m0) : m0; put(s, k, n * m, addDel({}, vems, m / art.mat)); }
-  put(s, 'slaktrens', n, addDel({}, vems, 1 / art.mat)); // slaktrensen (steg 9.7.5)
+  put(s, art.act === 'rensa' ? 'fiskrens' : 'slaktrens', n, addDel({}, vems, 1 / art.mat)); // slaktrensen (steg 9.7.5); fiskrensen blir agn (steg 9.8.7)
   return vems;
 }
 

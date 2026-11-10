@@ -54,13 +54,13 @@ export const TEKNIK: Tek[] = [
   { id: 'yxa', namn: 'Flintyxa', text: 'En vass flintsten bunden vid en pinne.', effekt: 'Med yxa kan man fälla träd och hugga trä.',
     omr: ['samla', 'ved', 'hantverk'], krav: [], niva: 1, tid: 5 },
   { id: 'fiskespjut', namn: 'Träspjut', text: 'En pinne som täljts spetsig med en flintsten eller en yxa.', effekt: 'Ger mycket mer fisk än händerna och hjälper på jakten, men slits fort.',
-    omr: ['fiske', 'ved'], krav: [], niva: 1, tid: 7 },
+    omr: ['fiske', 'ved'], krav: [], niva: 1, tid: 3 },
   { id: 'rep', namn: 'Rep', text: 'Växtfibrer som tvinnas till rep på kvällen vid elden. Senor från slaktat vilt blir också rep.', effekt: 'Rep behövs till flintspjut och metspö.',
-    omr: ['hantverk', 'samla'], krav: [], niva: 1, tid: 10 },
+    omr: ['hantverk', 'samla'], krav: [], niva: 1, tid: 4 },
   { id: 'flintspjut', namn: 'Flintspjut', text: 'En flintspets som surras fast med rep vid en pinne.', effekt: 'Håller fyra gånger så länge som ett träspjut.',
     omr: ['fiske', 'jakt', 'hantverk'], krav: ['fiskespjut', 'rep'], niva: 2, tid: 16 },
   { id: 'stenhuggarplats', namn: 'Stenhuggarplats', text: 'En plats där stenen huggs till.', effekt: 'Där görs huggen sten.', omr: ['hantverk'], krav: ['yxa'], niva: 2, tid: 6 },
-  { id: 'klyvplats', namn: 'Klyvplats', text: 'En plats där virket klyvs till plankor.', effekt: 'Där görs plankor.', omr: ['hantverk', 'bygga'], krav: ['yxa'], niva: 2, tid: 6 },
+  { id: 'klyvplats', namn: 'Klyvplats', text: 'En plats där virket klyvs till plankor.', effekt: 'Där görs plankor.', omr: ['hantverk', 'bygga'], krav: ['yxa'], niva: 2, tid: 4 },
   { id: 'lakesalva', namn: 'Läkesalva', text: 'Rölleka och talg som kokas till en salva i örtköket.', effekt: 'Salvan på såret skyddar mot infektion, dämpar en som börjat och hjälper brännskador att läka.', omr: ['hantverk'], krav: ['orte', 'ortkok'], niva: 5, tid: 6, forsok: { vid: ['ortkok'], skill: 'hantverk', vad: 'hur rölleka och talg blir en läkesalva' }, episk: '{namn} kokade en läkesalva som får såren att läka rent.' }, // steg 9.5.10
   { id: 'orte', namn: 'Örtte', text: 'Rölleka som kokas i vatten i en liten lerkruka vid elden.', effekt: 'Teet värmer den som fryser och hjälper den sjuke att stå emot.', omr: ['hantverk'], krav: ['kruka'], niva: 4, tid: 6, forsok: { vid: ['ortkok', 'flatarbank'], skill: 'hantverk', vad: 'hur man kokar ett te av rölleka' }, episk: '{namn} kokade ett te av rölleka som värmer och stärker.' }, // steg 9.5.8
   { id: 'protes', namn: 'Proteser', text: 'Kryckor, träben och krokar som täljs vid snickarbänken.', effekt: 'Den som förlorat ett ben går igen, och den som förlorat en hand får tillbaka en del av greppet.', omr: ['hantverk'], krav: ['snickarbank'], niva: 4, tid: 6, forsok: { vid: ['snickarbank'], skill: 'hantverk', vad: 'hur man täljer ett träben' }, episk: '{namn} täljde ett träben så att den som förlorat sitt ben kunde gå igen.' }, // steg 9.5.11
@@ -90,7 +90,7 @@ export const TEKNIK: Tek[] = [
   { id: 'metspo', namn: 'Metspö', text: 'Ett spö med ett rep och en krok av ben från slaktat vilt. Mask grävs fram och sätts på kroken.', effekt: 'Fisken nappar oftare och sitter kvar bättre än på spjutet.',
     omr: ['fiske'], krav: ['rep', 'fiskespjut'], niva: 2, tid: 4 },
   { id: 'kniv', namn: 'Flintkniv', text: 'En vass flintskärva med ett skaft av trä.', effekt: 'Med kniv slaktas vilt till mer kött, ben, skinn och senor.',
-    omr: ['jakt', 'hantverk'], krav: [], niva: 1, tid: 6.5 },
+    omr: ['jakt', 'hantverk'], krav: [], niva: 1, tid: 3 },
   { id: 'timmervagg', namn: 'Timmerhus', text: 'Stockar som huggs till och läggs på varandra till en vägg, och trä som läggs som golv.', effekt: 'Byn kan bygga hus att sova i, med väggar och golv av trä.',
     omr: ['ved', 'falla', 'hugga', 'hantverk'], krav: ['yxa'], niva: 2, tid: 4 },
   // stationerna och möblerna är tekniker som byn måste komma på innan de kan byggas (steg 2.2.11); tekniken har samma id
@@ -235,7 +235,13 @@ export const TEKTAL = balans('teknik', {
 export const knows = (p: Person, id: string) => (p.tek?.[id] ?? 0) >= 1;
 // finns saken i byn: ett redskap räknas om det finns, hur slitet det än är; annat räknas i mängd
 // virket (steg 4.5.5.2) räknas som till hands när det kan klyvas: en fälld stam och en yxa i byn; annars kluvs det aldrig innan någon kan en teknik som behöver det
-export const harSak = (s: State, k: string) => isTool(k) ? tingOf(s).some(q => q.k === k) : amountOf(s, k) >= TEKTAL.materialMin || (k === 'virke' && finnsKlyvStam(s) && tingOf(s).some(q => q.k === 'yxa'));
+// höet och kvistarna ligger på marken runt byn och plockas först när de behövs (steg 9.3.4), så de är alltid till hands: annars kom
+// ingen på repet, som görs av hö, förrän höet råkade ligga i förrådet (steg 9.9.5)
+const PA_MARKEN = new Set(['torrgras', 'grenar']);
+// leran grävs först när någon kan göra krukor, så den räknas som till hands när det finns lera att gräva nära byn (lera.ts sätter
+// kroken, så att filerna inte laddar varandra i en ring): annars kom ingen på lerkrukan (steg 9.9.4)
+export const leraKrok = { finns: (_s: State): unknown => undefined };
+export const harSak = (s: State, k: string) => isTool(k) ? tingOf(s).some(q => q.k === k) : PA_MARKEN.has(k) || amountOf(s, k) >= TEKTAL.materialMin || (k === 'lera' && !!leraKrok.finns(s)) || (k === 'virke' && finnsKlyvStam(s) && tingOf(s).some(q => q.k === 'yxa'));
 // det som måste finnas i byn för att man ska komma på tekniken: en av sakerna i varje grupp. Det räknas ur receptet
 // (steg 2.12.5): det som har samma id som tekniken (en sak, station, ett tillbehör eller en dörr), annars det första
 // redskapet eller väggmaterialet som tekniken ger. Varje sak i receptet är en grupp, och verktygen (ett av dem räcker) en

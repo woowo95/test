@@ -13,7 +13,7 @@ export function drawTona() {
   for (const p of piles()) if (!p.stored) pt.push({ x: p.x, y: p.y });
   for (const st of stationerOf(s)) pt.push({ x: st.x, y: st.y });
   for (const h of housesOf(s)) for (let y = h.y; y < h.y + h.h; y++) for (let x = h.x; x < h.x + h.w; x++) pt.push({ x, y });
-  if (ui.tab === 'sak' && ui.sak.startsWith('r:')) { // bara medan rutan är öppen (steg 8.1.4)
-    const i = Number(ui.sak.slice(2)); pt.push({ x: i % W, y: Math.floor(i / W) }); nara.push({ x: i % W, y: Math.floor(i / W) }); }
-  tonaTrad(pt, nara, W, H);
+  // det markerade trädet (steg 8.1.4, bara medan rutan är öppen) ritas helt, och bara kronorna framför det tonas (steg 9.2.138)
+  const valt = ui.tab === 'sak' && ui.sak.startsWith('r:') ? Number(ui.sak.slice(2)) : undefined;
+  tonaTrad(pt, nara, W, H, valt);
 }

@@ -457,7 +457,8 @@ SCENARIER.knapphet = {
     return [
       // sedan samlandet går fortare (steg 2.12.4, v132) töms buskarna nära byn snabbt och man plockar mer långt bort än förut
       // sedan samlaren väljer mål där färre redan plockar (steg 9.2.54) sprids uttaget, så nära byn töms ungefär lika mycket som långt bort
-      [`nära byn plockas minst nästan lika mycket som långt bort (${nara.toFixed(3)} mot ${langt.toFixed(3)})`, nara > 0.005 && nara > langt * 0.8],
+      // sedan matens buffert blev större och samlaren går dit hen hört att det finns mer (steg 9.9.4 och 9.9.5) plockas mer långt bort: nära byn minst hälften så mycket
+      [`nära byn plockas minst hälften så mycket som långt bort (${nara.toFixed(3)} mot ${langt.toFixed(3)})`, nara > 0.005 && nara > langt * 0.5],
       // kaninerna håller sig undan folk, så inom 12 rutor jagas nästan inget (ca 0,001). Inom 30 rutor ca 0,02–0,03 (v47), och
       // ca 0,01 sedan fälten blev större (steg 3.10.23, by 23–28), och ca 0,005 sedan de som pratar går till varandra (steg 4.5.6.7):
       // det som prövas är att viltet jagas alls, inte hur mycket. Sedan jakten är en strid (steg 3.7.3) tar en fångad hare inte
@@ -695,6 +696,7 @@ SCENARIER.tider = {
 };
 
 SCENARIER.hardvinter = {
+  lang: true,
   text: 'Steg 3.8.1: motgångarna (registret MOTGANGAR) räknas ur byns frö och tiden. En hård vinter kommer ungefär var femte istid, aldrig under byns första tio dygn: istiden är 5–8 grader kallare, det snöar mer, elden äter mer ved och vargarna kommer oftare. Den äldsta i byn anar den ett par dygn innan och berättar om det i samtal, och den som vet samlar mer. Den hårda vintern hamnar i byns krönika och barnen minns den',
   kor: () => {
     // 300 byar i 16 istider var (bara fröet behövs): hur ofta vintern blir hård, och aldrig under de första tio dygnen eller i en annan tidsålder
@@ -734,7 +736,9 @@ SCENARIER.hardvinter = {
     kor(v, (start - v.now) / HOUR + 30, b => { if (b.now < start && gammal.varsel?.t === start) anadeFore = true; if (b.now < start) visste = Math.max(visste, living(b).filter(p => p.varsel?.t === start).length); });
     SIM.UPPLEVELSER.hardVinter.chans = ch;
     const kron = v.hist?.kronika.some(([, t]) => /hård vinter/.test(t)) ?? false;
-    const minns = barn.upp?.some(u => u.k === 'hardVinter');
+    // barnet kan ha dött före vintern (svampen); då mäts de som levde när den kom, barn först
+    const levde = living(v).filter(q => q.born < start), unga = levde.filter(q => SIM.formas(v!, q)), matta = SIM.alive(barn) ? [barn] : unga.length ? unga : levde;
+    const minns = matta.some(q => q.upp?.some(u => u.k === 'hardVinter'));
     const varselet = living(v).find(q => q.varsel)?.varsel; // den äldsta kan ha dött i den hårda vintern
     const fs = (q: Person) => varselet ? SIM.varselSamla(v!, { ...q, varsel: { ...varselet, t: v!.now + DAY } }) : 0;
     const merForsiktig = (() => { const q = gammal, s0 = v.seder.v.forsiktighet; v.seder.v.forsiktighet = 1; const hog = fs(q); v.seder.v.forsiktighet = -1; const lag = fs(q); v.seder.v.forsiktighet = s0; return hog > lag; })();
@@ -748,12 +752,13 @@ SCENARIER.hardvinter = {
       [`varslet sprids i samtal (${visste} visste innan, ${(v.stat?.varselBerattat ?? 0)} gånger berättat)`, visste >= 2],
       ['en förutseende by vill samla mer när den vet', merForsiktig],
       [`den hårda vintern kom (${(v.stat?.motgang_hardVinter ?? 0)}) och står i byns krönika`, (v.stat?.motgang_hardVinter ?? 0) === 1 && kron],
-      [`barnet minns den (${barn.upp?.map(u => u.k).join(', ') || 'inget'})`, !!minns],
+      [`${SIM.alive(barn) ? 'barnet' : unga.length ? 'barnen som levde då' : 'de som levde då'} minns den (${matta.map(q => q.upp?.map(u => u.k).join(', ') || 'inget').join('; ')})`, minns],
     ];
   },
 };
 
 SCENARIER.kloka = {
+  lang: true,
   text: 'Steg 3.8.6: den klokaste i byn anar en hård vinter eller en torka tidigare än den äldsta, ju klokare desto tidigare (upp till tre dygn före, mot ett till två för den äldsta) och säkrare. Varslet sprids i samtal som förut, och i en by där ingen är klok nog anar bara den äldsta',
   kor: () => {
     // en by vars nästa tidsålder har en hård vinter, som börjar om tre till sex dygn
@@ -1035,6 +1040,7 @@ SCENARIER.oversvamning = {
 };
 
 SCENARIER.flodrest = {
+  lang: true,
   text: 'Steg 3.8.7: medan vattnet stiger bär de vuxna undan maten från lagerplatserna som vattnet kan nå; när vattnet sjunker minns byn hur högt det nådde (en lärdom) och bygger inte där; ett jordgolv under vatten blir lera och torkar till jordgolv igen; en vägg i vattnet slits fortare; ingen sover på en blöt ruta; en brasa i vattnet slocknar',
   kor: () => {
     // en by vars vårtid just börjat och har en översvämning som når minst två rutor upp på land
@@ -1063,11 +1069,11 @@ SCENARIER.flodrest = {
       }
       return b!;
     };
-    // ett hus (4 × 3, timmerväggar, öppning i söder, trägolv) där en golvruta ligger högst två rutor upp på land
+    // ett hus (4 × 3, timmerväggar, öppning i söder, trägolv) där båda golvrutorna ligger högst två rutor upp på land, så att vattnet når alla sovplatser
     let hus: { x: number; y: number } | undefined, hd = Infinity;
     for (let y = 1; y < W - 4; y++) for (let x = 1; x < W - 5; x++) {
       const d = Math.hypot(x - c.x, y - c.y);
-      if (d >= hd || Math.min(land[(y + 1) * W + x + 1], land[(y + 1) * W + x + 2]) > 2) continue;
+      if (d >= hd || Math.max(land[(y + 1) * W + x + 1], land[(y + 1) * W + x + 2]) > 2) continue;
       let ok = true;
       for (let yy = y; yy < y + 3 && ok; yy++) for (let xx = x; xx < x + 4 && ok; xx++) ok = fritt(xx, yy);
       if (ok) { hd = d; hus = { x, y }; }
@@ -1552,14 +1558,14 @@ SCENARIER.brandkant = {
     angSlag(x, mitt, 'hog');
     if (x.vader) { x.vader.torr = 240; x.vader.fukt = 0; }
     SIM.tand(x, mitt, 'blixt', 0);
-    for (let k = 0; k < 6; k++) step(x, 10);
+    for (let k = 0; k < 6; k++) step(x, 300); // en halvtimme: sex steg om fem minuter
     const alla = SIM.brinnande(x).length, kant = SIM.brandKant(x);
-    return [[`en stor brand på ängen efter en minut (${alla} rutor brinner)`, alla >= 100], [`bara kanten räknas (${kant} av ${alla} rutor)`, kant > 0 && kant < alla * 0.7]];
+    return [[`en stor brand på ängen efter en halvtimme (${alla} rutor brinner)`, alla >= 100], [`bara kanten räknas (${kant} av ${alla} rutor)`, kant > 0 && kant < alla * 0.7]];
   },
 };
 
 SCENARIER.brandfart = {
-  text: 'Steg 6.4.1: branden räknas i steg om 5 sekunder och sprids efter markslaget. I torrt högt gräs tar sig elden till en grannruta ungefär var femte sekund, så att en brand på en äng är stor efter en minut; i skog går det långsammare, och i blöt mark tar den sig inte vidare',
+  text: 'Steg 6.4.1: branden räknas i steg om 5 sekunder och sprids efter markslaget. I torrt högt gräs tar sig elden till en grannruta ungefär var tredje minut (167 sekunder), så att en brand på en äng är stor efter tio minuter; i skog går det långsammare, och i blöt mark tar den sig inte vidare',
   kor: () => {
     const a = torrAng();
     if (typeof a === 'string') return [[a, false]];
@@ -1570,13 +1576,13 @@ SCENARIER.brandfart = {
       if (x.vader) { x.vader.torr = torr; x.vader.fukt = 0; }
       SIM.tand(x, mitt, 'blixt', 0);
       const fore = SIM.brinnande(x).length;
-      step(x, 60); // en minut: tolv delsteg
+      step(x, 600); // tio minuter: 120 delsteg
       const inne = (i: number) => Math.hypot(i % W - cx, Math.floor(i / W) - cy) <= 12;
       return { fore, n: SIM.brinnande(x).filter(r => inne(r[0])).length + (x.brand?.ut ?? []).filter(inne).length };
     };
     const hog = prov('hog', 240), skog = prov('skog', 240), blot = prov('hog', 0);
     return [
-      [`i torrt högt gräs brinner ${hog.n} rutor efter en minut (en ruta tändes)`, hog.fore === 1 && hog.n >= 100],
+      [`i torrt högt gräs brinner ${hog.n} rutor efter tio minuter (en ruta tändes)`, hog.fore === 1 && hog.n >= 100],
       [`i torr skog går det långsammare: ${skog.n} rutor`, skog.n >= 2 && skog.n < hog.n / 2],
       [`i blött högt gräs tar den sig inte vidare: ${blot.n} ruta`, blot.n <= 1],
     ];
@@ -1589,7 +1595,7 @@ SCENARIER.slackning = {
     const a = torrAng();
     if (typeof a === 'string') return [[a, false]];
     const { s, mitt } = a;
-    // en ruta tänds; en vuxen står bredvid och häller en säck vatten, eller släcker tio minuter med händerna
+    // en ruta tänds; en vuxen står bredvid och häller en säck vatten, eller släcker fem sekunder med händerna (en person släcker nu flera rutor per steg, 120 rutor i timmen gånger hur lätt rutan släcks)
     const prov = (slag: 'hog' | 'kort' | 'skog') => {
       const ut = (sack: boolean) => {
         const x = cloneState(s); angSlag(x, mitt, slag);
@@ -1597,7 +1603,7 @@ SCENARIER.slackning = {
         const p = living(x).find(q => SIM.ageOf(q, x.now) >= 18)!;
         p.x = mitt % W + 1.5; p.y = Math.floor(mitt / W) + 0.5;
         const t = { act: 'slacka', ref: mitt, until: x.now + HOUR } as unknown as SIM.Task;
-        if (sack) SIM.slackaFram(x, p, t); else SIM.slackaSteg(x, p, t, 600);
+        if (sack) SIM.slackaFram(x, p, t); else SIM.slackaSteg(x, p, t, 5);
         const r = SIM.brinnande(x).find(q => q[0] === mitt);
         return r ? r[3] : 1;
       };
@@ -1607,7 +1613,7 @@ SCENARIER.slackning = {
     const f = (n: number) => n.toFixed(2).replace('.', ',');
     return [
       [`en säck vatten släcker kort gräs (${f(kort.sack)}) och högt gräs (${f(hog.sack)}) helt, men bara en del av en ruta skog (${f(skog.sack)})`, kort.sack >= 1 && hog.sack >= 1 && skog.sack < 0.5],
-      [`med händerna i tio minuter: kort gräs ${f(kort.hand)}, högt gräs ${f(hog.hand)}, skog ${f(skog.hand)} (1 = släckt)`, kort.hand > hog.hand && hog.hand > skog.hand * 4],
+      [`med händerna i fem sekunder: kort gräs ${f(kort.hand)}, högt gräs ${f(hog.hand)}, skog ${f(skog.hand)} (1 = släckt)`, kort.hand > hog.hand && hog.hand > skog.hand * 4],
     ];
   },
 };
@@ -1663,13 +1669,13 @@ SCENARIER.vind = {
     if (x.vader) { x.vader.torr = 240; x.vader.fukt = 0; }
     const v = vaderNu(x), vx = Math.cos(v.rikt), vy = Math.sin(v.rikt), cx = mitt % W, cy = Math.floor(mitt / W);
     SIM.tand(x, mitt, 'blixt', 0);
-    step(x, 30);
+    step(x, 900);
     let med = 0, mot = 0;
     for (const i of [...SIM.brinnande(x).map(r => r[0]), ...(x.brand?.ut ?? [])]) { const d = (i % W - cx) * vx + (Math.floor(i / W) - cy) * vy; if (d >= 2) med++; else if (d <= -2) mot++; }
     const f = (n: number) => n.toFixed(2).replace('.', ',');
     return [
       [`vinden vrider sig långsamt (högst ${f(vrid)} radianer på en timme)`, vrid < Math.PI / 4],
-      [`i hård vind (${f(v.vind)}, från ${SIM.vindFran(v.rikt)}) tar sig elden fler rutor med vinden (${med}) än mot den (${mot}) på en halv minut`, med > 3 * Math.max(1, mot)],
+      [`i hård vind (${f(v.vind)}, från ${SIM.vindFran(v.rikt)}) tar sig elden fler rutor med vinden (${med}) än mot den (${mot}) på en kvart`, med > 3 * Math.max(1, mot)],
     ];
   },
 };
@@ -1717,20 +1723,25 @@ SCENARIER.brand = {
       const vidAndra = andra < 0 ? 0 : (tb.brand?.r ?? []).filter(r => Math.hypot(r[0] % W - andra % W, Math.floor(r[0] / W) - Math.floor(andra / W)) <= 6).length + (tb.aska ?? []).filter(a => Math.hypot(a[0] % W - andra % W, Math.floor(a[0] / W) - Math.floor(andra / W)) <= 6).length;
       const testRad = tb.log.filter(l => l.text.startsWith('Testläget: en brand tändes')).length;
       const skog0 = new Set<number>(); for (let i = 0; i < W * W; i++) if (g.trees[i] >= FOREST) skog0.add(i);
+      const s0 = cloneState(s);
       SIM.tand(s, mitt, 'blixt', 0);
       kor(s, 18, torr);
+      // brandens spår prövas i en kopia där ingen finns som släcker: en ruta som släckts innan den brunnit klart får behålla sitt träd (steg 9.9.4), och med den nya långsamma elden hinner byborna släcka drygt hundra rutor av 18 timmars brand
+      const ko = cloneState(s0); ko.people = [];
+      SIM.tand(ko, mitt, 'blixt', 0);
+      kor(ko, 18, x => { torr(x); x.people = []; });
       const rutor = s.stat?.['brand ruta'] ?? 0, trad = s.stat?.['brand trad'] ?? 0;
-      const brunnen = [...new Set((s.aska ?? []).map(a => a[0]))].filter(i => skog0.has(i));
+      const brunnen = [...new Set((ko.aska ?? []).map(a => a[0]))].filter(i => skog0.has(i));
       // brandens spår (steg 9.2.26): där skogen brann står kolnade stammar som torrakor
-      const kolSet = new Set(s.kolnad ?? []), kolnade = brunnen.filter(i => kolSet.has(i) && SIM.stadium(groundOf(s), i) === 'torraka').length;
-      const askan = brunnen.length ? Math.max(...brunnen.map(i => groundOf(s).cover[i])) : 1;
+      const kolSet = new Set(ko.kolnad ?? []), kolnade = brunnen.filter(i => kolSet.has(i) && SIM.stadium(groundOf(ko), i) === 'torraka').length;
+      const askan = brunnen.length ? Math.max(...brunnen.map(i => groundOf(ko).cover[i])) : 1;
       // samma ruta när marken är blöt: elden tar sig inte vidare
       if (vat.vader) { vat.vader.torr = 0; vat.vader.fukt = 1; } // blött redan när den tänds: elden sprids fort (steg 6.4.1)
       SIM.tand(vat, mitt, 'blixt', 0);
       kor(vat, 18, x => { if (x.vader) x.vader.torr = 0; });
       const vatRutor = vat.stat?.['brand ruta'] ?? 0;
       // den kolnade stammen faller efter torrakans tid och lämnar en glänta (steg 9.2.26)
-      const gr = cloneState(s), gg = groundOf(gr), ki = (gr.kolnad ?? [])[0];
+      const gr = cloneState(ko), gg = groundOf(gr), ki = (gr.kolnad ?? [])[0];
       if (ki !== undefined) { gg.alder![ki] = SIM.FALL(gg.art, ki) - 0.01; SIM.aldras(gg, ki, 1); }
       const fallit = ki !== undefined && gg.trees[ki] === 0;
       // elden nära byn: en risvägg fem rutor från elden tar eld, och en vuxen har en vattensäck

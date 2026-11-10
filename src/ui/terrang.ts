@@ -61,7 +61,7 @@ export function drawTerrain(force = false) {
   const nyckel = `${s.seed}|${mt.ny}|${mt.frac}|${sno}|${is}|${vat}|${ask}`;
   // träden ritas om när löven kan byta, var annan timme (datorns tid) inom ett dygn från ett skifte
   const k = kalender(s), nara = s.now - k.start < DAY || k.slut - s.now < DAY;
-  const tNyckel = `${ai}|${sno}|${nara ? Math.floor(s.now / (2 * HOUR)) : ''}`;
+  const tNyckel = `${ai}|${sno}|${nara ? Math.floor(s.now / (2 * HOUR)) : ''}|${(s.hamlade ?? []).map(h => h.i).join(',')}`; // och när en björk hamlas (steg 9.8.16)
   if (force || (sig !== drawnSig || nyckel !== drawnNyckel || tNyckel !== tradNyckel) && now - lastDraw >= OMRITA_MS) {
     lastDraw = now; drawnSig = sig; drawnNyckel = nyckel; tradNyckel = tNyckel;
     const g = groundOf(s);
@@ -86,6 +86,7 @@ function ritaTrad(g: ReturnType<typeof groundOf>, sno: number) {
     return skog(x - 1, y) || skog(x + 1, y) || skog(x, y - 1) || skog(x, y + 1);
   };
   const kol = new Set(s.kolnad ?? []); // de kolnade stammarna (steg 9.2.26)
+  const ham = new Set((s.hamlade ?? []).map(h => h.i));
   stallTrad(figurLayer, W, H, i => {
     const x = i % W, y = (i / W) | 0, st = jord(g.tiles[i]) ? stadium(g, i) : null;
     const b = st ? tradBild(st, g.trees[i], x, y, VAG.ungskog, tradArt(g, i).id === 'bjork')
@@ -94,6 +95,7 @@ function ritaTrad(g: ReturnType<typeof groundOf>, sno: number) {
       : kant(i) && kantHash(x, y) < 0.3 ? tradBild('ungtrad', VAG.ungskog + (1 - VAG.ungskog) * kantHash(y, x) * 0.7, x, y, VAG.ungskog, valjArt(s.seed, g, i, true) === BJORK) : null;
     if (b?.bjork) b.lov = lovAt(x, y);
     if (b && st === 'torraka' && kol.has(i)) b.kol = true;
+    if (b && ham.has(i)) b.hamlad = true; // den hamlade björken (steg 9.8.16)
     return b;
   }, sno);
 }
