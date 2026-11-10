@@ -1125,7 +1125,9 @@ export function nastaMal(s: State, p: Person, tk: Task, x0: number, y0: number, 
     const x = x0 + dx, y = y0 + dy, d = Math.hypot(dx, dy);
     if (d <= RUNDA.syn || d > R || !inMap(x, y) || vt[y * W + x] === T.Vatten) continue;
     const trangt = andra.filter(q => Math.hypot(q.x - x, q.y - y) < RUNDA.syn).length;
-    const v = (tror(x, y) - radsla(x, y)) / (1 + trangt) - d * RUNDA.ut;
+    // vägen dit räknas i samma enhet som det hen tror finns där: bortom synvidden i saker (iSaker). Förut vägde avståndet femtio
+    // gånger tyngre än det hen hört, så att inget mål längre bort vann och rundan gick åt ett slumpat håll (steg 9.9.5)
+    const v = (tror(x, y) - radsla(x, y)) / (1 + trangt) - d * RUNDA.ut * (tror0 && !sees(s, p, x, y, sikt) ? iSaker : 1);
     if (v > bv + 1e-9) { bv = v; bast = { x, y }; }
   }
   if (bast) { count(s, 'nyttMal'); return bast; }
