@@ -4,7 +4,7 @@ Regler som tvingar fram ett resultat i stället för att systemen ger det. Inget
 
 **Hur genomgången gjordes:** hela `src/sim/` (135 filer, drygt 37 000 rader) är läst rad för rad av nio hjälpmodeller, en filgrupp var, med reglerna ur `GRANSKNING.md`. Jag har sedan kontrollerat att varje citerad rad finns i koden. Undantag: `berattelser.ts` (texter), `varld.ts` (uppgraderingar av sparade byar) och `typer.ts` är skummade efter logik som styr byn; gränssnittet (`src/ui/`) och testerna är inte lästa, eftersom de inte avgör vad människorna gör. Bedömningen "gaffatejp eller grundregel" är hjälparnas och min; raderna under Gränsfall är de vi är osäkra på. Radnumren gäller commit e4216284.
 
-**Nio av fynden lade jag själv in under fas 9**, de flesta i fasens balans, och de är märkta "min". De gjorde att gränserna höll, men flera är just sådant som reglerna förbjuder: resultatet rättades i stället för systemet. Brandens tal (gnistan, spridningen, släckningen) ändrades också mot ett resultat, men de är balanstal och står inte som fynd.
+**Åtta av fynden lade jag själv in under fas 9**, de flesta i fasens balans, och de är märkta "min". De gjorde att gränserna höll, men flera är just sådant som reglerna förbjuder: resultatet rättades i stället för systemet. Brandens tal (gnistan, spridningen, släckningen) ändrades också mot ett resultat, men de är balanstal och står inte som fynd.
 
 ## Fynd 1–23 (den första genomgången, kompletterade)
 
