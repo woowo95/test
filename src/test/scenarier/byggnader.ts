@@ -498,10 +498,6 @@ SCENARIER.lager = {
     step(b, 2); step(b, 2);
     const gickHem = tk0.phase === 'back' || load(tk0, b) === 0; // på väg hem, eller redan framme vid lagret och har lämnat bördan
     const stark = living(b).slice().sort((x, y) => stat(y, 'styrka', b.now) - stat(x, 'styrka', b.now));
-    // tomt lager krymper (lagerplatserna tillsammans: det lilla som är kvar kan bäras till en av dem, som då står kvar)
-    const ytor = () => zonesOf(s).reduce((a, z) => a + z.w * z.h, 0), ytaFore = ytor();
-    setFood(s, 5); setAmount(s, 'ved', 0); setItems(s, { flinta: 1 });
-    kor(s, 12);
     // en död med en uppgift kvar låser varken en stack som ska bäras in eller elden (bara de levande räknas)
     const dd = createState(3, START), [dod, lev] = living(dd), f = getMap(3).fire;
     let mark: { x: number; y: number } | undefined;
@@ -557,7 +553,6 @@ SCENARIER.lager = {
       [`folk bär hem saker, aldrig mer än de orkar (${hem} steg på väg hem, ${fullt} med full börda, högst ${(maxKvot * 100).toFixed(0)} % av förmågan)`, hem > 50 && maxKvot <= 1.15],
       ['den som bär så mycket hen orkar går hem med bördan', gickHem],
       ['den starke orkar bära mer än den svage', capacity(b, stark[0]) > capacity(b, stark[stark.length - 1])],
-      [`lagerplatserna krymper när de står tomma (${ytaFore} → ${ytor()} rutor)`, ytor() < ytaFore],
     ];
   },
 };

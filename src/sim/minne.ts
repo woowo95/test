@@ -161,7 +161,11 @@ export const findL = (p: Person, k: LKind, a: number) => p.lardomar?.find(l => l
 function trim(s: State, p: Person) {
   const L = p.lardomar!;
   if (L.length <= MINNE.max) return;
-  L.sort((x, y) => y.c * (y.k === 'fara' || y.k === 'flod' ? MINNE.faraVikt : 1) - x.c * (x.k === 'fara' || x.k === 'flod' ? MINNE.faraVikt : 1)); // rädslorna och högvattnet (steg 3.8.7) väger mer
+  // rädslorna och högvattnet (steg 3.8.7) väger mer. Av lika säkra lärdomar behålls den nyaste av varje slag först, sedan den näst
+  // nyaste och så vidare: annars trängde allt man ser på en runda (bär, vilt, fisk) genast undan det enda man lärt sig om vattnet (steg 9.9.5)
+  const vikt = (l: Lardom) => l.c * (l.k === 'fara' || l.k === 'flod' ? MINNE.faraVikt : 1), rang = new Map<Lardom, number>(), n: Record<string, number> = {};
+  for (const l of [...L].sort((x, y) => y.t - x.t)) rang.set(l, n[l.k] = (n[l.k] ?? 0) + 1);
+  L.sort((x, y) => vikt(y) - vikt(x) || rang.get(x)! - rang.get(y)! || y.t - x.t);
   count(s, 'glomt', L.length - MINNE.max); // det minst säkra trängs undan
   L.length = MINNE.max;
 }
