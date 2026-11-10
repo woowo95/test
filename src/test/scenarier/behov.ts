@@ -664,7 +664,7 @@ SCENARIER.halsoflik = {
     // förmågorna: värdet är det simuleringen räknar med, och delarna visar var det kommer ifrån
     const rf = FORMAGOR.rorlighet, hf = FORMAGOR.handighet;
     const formagor = rf.varde(p) === rorlighet(p) && hf.varde(p) === handighet(p) && FORMAGOR.smarta.varde(p) === smarta(p)
-      && Math.abs(1 + rf.delar(p).reduce((a, x) => a + x.v, 0) - rorlighet(p)) < 1e-9 && rf.delar(p).length === 1 && hf.delar(p).length === 1
+      && Math.abs(1 + rf.delar(p).reduce((a, x) => a + x.v, 0) - rorlighet(p)) < 1e-9 && rf.delar(p).length === (smarta(p) > 0 ? 2 : 1) && hf.delar(p).length === 1
       && FORMAGOR.blod.delar(p).length === 1 && FORMAGOR.smarta.delar(p).length === 2;
     // vården syns: förband och rengjort, och ett infekterat sår som inte rengörs blir sämre
     const w = p.skador![0]; w.f = 1; w.inf = 0.3;

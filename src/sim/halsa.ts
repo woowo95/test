@@ -70,6 +70,7 @@ export const HALSA = balans('halsa', {
   vardFel: 0.15, // man trycker på och lägger förband på sår av minst den här graden
   vardMin: 5, // minuter att trycka på såren, lägga förband och rengöra
   vardR: 30, // man går för att vårda den som är högst så här många rutor bort
+  ontGang: 0.3, // full smärta gör gången så här mycket långsammare (steg 9.5.12)
   vardHand: 0.5, // den som vårdar någon annan har minst så här bra händer
   hemma: 3, // så nära byns område är man hemma (rutor, 0 innanför): längre bort kravlar den som inte kan gå, eller bärs
   krypFel: 0.6, // den som har ett ben eller en fot som är så här skadad kan inte gå, utan kravlar (med GANG.krypFart, gang.ts)
@@ -115,10 +116,10 @@ export const KROPPSDELAR = {
   armH: { namn: 'Höger arm', i: 'högra armen', handighet: 0.2, ute: true },
   handV: { namn: 'Vänster hand', i: 'vänstra handen', handighet: 0.2, ute: true },
   handH: { namn: 'Höger hand', i: 'högra handen', handighet: 0.2, ute: true },
-  benV: { namn: 'Vänster ben', i: 'vänstra benet', rorlighet: 0.3, ute: true },
-  benH: { namn: 'Höger ben', i: 'högra benet', rorlighet: 0.3, ute: true },
-  fotV: { namn: 'Vänster fot', i: 'vänstra foten', rorlighet: 0.15, ute: true },
-  fotH: { namn: 'Höger fot', i: 'högra foten', rorlighet: 0.15, ute: true },
+  benV: { namn: 'Vänster ben', i: 'vänstra benet', rorlighet: 0.6, ute: true }, // benet och foten drar ner gången tydligt (steg 9.5.12)
+  benH: { namn: 'Höger ben', i: 'högra benet', rorlighet: 0.6, ute: true },
+  fotV: { namn: 'Vänster fot', i: 'vänstra foten', rorlighet: 0.45, ute: true }, // med tårna 0,5
+  fotH: { namn: 'Höger fot', i: 'högra foten', rorlighet: 0.45, ute: true },
   // de finare delarna (steg 8.2.1): en skada på delen under kan hamna här (finDel)
   ogaV: { namn: 'Vänster öga', i: 'vänstra ögat', under: 'huvud', syn: 0.5 },
   ogaH: { namn: 'Höger öga', i: 'högra ögat', under: 'huvud', syn: 0.5 },
@@ -186,7 +187,7 @@ export function delFel(p: Person, d: Kroppsdel) {
 }
 // hur mycket en förlorad del med en protes fattas (steg 9.5.11, PROTESER i protes.ts): träbenet och kryckan ger tillbaka ungefär hälften
 // av gången, kroken en del av greppet, och ögonlappen är bara utseende
-export const PROTES_FEL: Record<string, number> = { traben: 0.5, krycka: 0.5, krok: 0.6, ogonlapp: 1 };
+export const PROTES_FEL: Record<string, number> = { traben: 0.25, krycka: 0.25, krok: 0.6, ogonlapp: 1 };
 const harFel = (p: Person) => !!(p.skador?.length || p.saknas?.length || p.men?.length);
 type Vikt = 'rorlighet' | 'handighet' | 'syn' | 'horsel' | 'tal';
 function forlust(p: Person, vikt: Vikt) {
@@ -204,7 +205,7 @@ export const uppdateraSinnen = (p: Person) => { const v = (syn(p) + horsel(p) + 
 // skadade ben och fötter: gången gånger detta, aldrig under GANG.rorGolv (steg 3.10.10)
 export const rorlighetSkador = (p: Person) => forlust(p, 'rorlighet');
 // gången gånger detta (steg.ts): skadorna och yrseln av brist på mineraler (steg 2.6.2)
-export const rorlighet = (p: Person) => forlust(p, 'rorlighet') * yrselFaktor(p);
+export const rorlighet = (p: Person) => forlust(p, 'rorlighet') * yrselFaktor(p) * (1 - HALSA.ontGang * smarta(p)); // smärtan drar också ner gången (steg 9.5.12)
 // den som har ett ben eller en fot som är för skadad kan inte gå, utan kravlar (steg 2.5.2)
 export const GADELAR: readonly Kroppsdel[] = [...BEN, ...FOTTER]; // delarna man går med
 // ett förlorat ben eller en fot: man går ändå, sämre, så länge det andra benet och den andra foten håller. Den som svimmat går inte
@@ -292,8 +293,9 @@ interface FormagaDef { namn: string; tecken: string; ont?: true; varde(p: Person
 const delarAv = (p: Person, vikt: Vikt) => {
   const r = (Object.keys(DEL) as Kroppsdel[]).filter(d => (DEL[d][vikt] ?? 0) * delFel(p, d) > 0).map(d => ({ namn: DEL[d].namn, v: -(DEL[d][vikt] ?? 0) * delFel(p, d) }));
   if (vikt !== 'rorlighet' && vikt !== 'handighet') return r;
-  const f = forlust(p, vikt), b = vikt === 'rorlighet' ? yrselFaktor(p) : styrkaFaktor(p);
-  return b < 1 ? [...r, { namn: vikt === 'rorlighet' ? 'Yrsel (brist på mineraler)' : 'Brist på protein eller mineraler', v: -f * (1 - b) }] : r;
+  const f = forlust(p, vikt), b = vikt === 'rorlighet' ? yrselFaktor(p) : styrkaFaktor(p), ont = vikt === 'rorlighet' ? HALSA.ontGang * smarta(p) : 0;
+  const ut = b < 1 ? [...r, { namn: vikt === 'rorlighet' ? 'Yrsel (brist på mineraler)' : 'Brist på protein eller mineraler', v: -f * (1 - b) }] : r;
+  return ont > 0 ? [...ut, { namn: 'Smärtan', v: -f * b * ont }] : ut; // smärtan drar ner gången (steg 9.5.12)
 };
 export const FORMAGOR = {
   rorlighet: { namn: 'Rörlighet', tecken: '🦵', varde: rorlighet, delar: p => delarAv(p, 'rorlighet'), gor: 'Gångfarten. Den som har ett ben eller en fot som är mycket skadad kan inte gå, utan kravlar hem eller bärs.' },
