@@ -310,7 +310,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
     atSteg(s); stepSeder(s); updateTags(s); stepRelationer(s); stepUppvaxt(s); stepReligion(s); for (const p of living(s)) morkHumor(s, p); facklorTimme(s); stepHumor(s); stepDelning(s); stepLarlingar(s);
     stepVader(s); vindfallen(s); regnetTvattar(s); stepMotgang(s); stepTorka(s); stepFlod(s); stepIs(s); growGround(s, 1, ai); growFynd(s, 1, ai, vaxtFaktor(s), vaderNu(s).nb); forget(s, 1); stepRykten(s, moodOf); glomRykten(s, 1); stepBerattelser(s); stepStyre(s); rotStumps(s); tidyStore(s);
-    vaggRensa(s); kvarTimme(s); kultTimme(s); kyrkaTimme(s); wearBuild(s, 1, ai); stepByggnader(s); husKlaraTimme(s); stepMjardar(s); stepNaken(s); stepByggplan(s); stepEldFlytt(s); lagerIStraket(s); stepPaborjat(s); stepStationer(s); stepPynt(s); stepKrukor(s); protesTimme(s); halsoNotiser(s); stepKok(s); stadaByten(s); stepBrasor(s); stepKlader(s); stepOdling(s);
+    vaggRensa(s); kvarTimme(s); kultTimme(s); kyrkaTimme(s); wearBuild(s, 1, ai); stepByggnader(s); husKlaraTimme(s); stepMjardar(s); stepNaken(s); stepByggplan(s); stepEldFlytt(s); lagerIStraket(s); stepPaborjat(s); stepStationer(s); stepPynt(s); stepKrukor(s); protesTimme(s); halsoNotiser(s); stepKok(s); vatskorTimme(s); stadaByten(s); stepBrasor(s); stepKlader(s); stepOdling(s);
     askaSteg(s); // det svarta efter en eldsvåda försvinner (brand.ts)
     sorgTimme(s); // sorgen i stadier (liv.ts, steg 9.2.33)
     smittaTimme(s); smittaUtifranTimme(s); // smittan (sjukdom.ts, steg 9.5.3 och 9.5.5)
@@ -468,6 +468,7 @@ function healthStep(s: State, p: Person, a: number, ai: number, dtSec: number) {
   if (p.sickUntil !== undefined && p.sickUntil > now) p.health -= dtSec / (KROPP.sjukTim * HOUR_S); // den gamla klockan (en äldre sparning) tills den gått ut
   // sjukdomen mot motståndet (steg 9.5.2, sjukdom.ts): vinner sjukdomen dör hen av den
   drickTe(s, p); // örtteet (steg 9.5.8, vatskor.ts)
+  drickDryck(s, p); // saften (steg 9.6.9, vatskor.ts)
   const sjukDod = sjukSteg(s, p, dtSec, p.task?.act === 'sova', !!p.task && !!ACTS[p.task.act].arbete && p.task.phase === 'do', teFaktor(s, p, SJUK.lakeort));
   if (sjukDod) { die(s, p, SJUK_DOD[sjukDod]); return true; }
   if (p.sjuk && p.sjuk.grad >= 0.5 && !p.svartSjuk) { loggBer(s, 'l_svartSjuk', p.id, { namn: p.name }, 'world', [p.id]); p.svartSjuk = 1; } // svårt sjuk: ett tecken när hen blir frisk (steg 4.1.2.1)
@@ -1257,3 +1258,4 @@ function compact(s: State) {
   for (const k in s.rels) { const m = /^(-?\d+)-(-?\d+)$/.exec(k), a = Number(m?.[1]), b = Number(m?.[2]); /* gästernas id är negativa */ if (!ids.has(a) && !ids.has(b)) delete s.rels[k]; }
 }
 import { kokaKlar, stepKok } from './matlagning';
+import { drickDryck, vatskorTimme } from './vatskor';

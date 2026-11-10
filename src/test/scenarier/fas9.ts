@@ -844,3 +844,25 @@ SCENARIER.rokeri = {
     ];
   },
 };
+
+SCENARIER.saft = {
+  text: 'Steg 9.6.9: saften, den första drycken. 10 bär krossas i en mellanstor lerkruka till 5 saft (3 minuter); saften står kvar i krukan, den törstige dricker den och blir glad av det, och efter två dygn har den blivit sur och hälls ut, och den tomma krukan blir kvar',
+  kor: () => {
+    const { KLAR_FOR, TILLVERKA, setAmount, amountOf, addTool, vatskaAv, vatskorTimme, drickDryck, VATSKOR } = SIM;
+    const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    setAmount(s, 'bar', 20);
+    const kr = addTool(s, 'lerkruka_mellan', p); kr.hos = undefined;
+    p.tek = { ...(p.tek ?? {}), kruka: 1 };
+    KLAR_FOR[TILLVERKA.krossa_saft.act]!(s, p, p.task!, 0);
+    const gjord = vatskaAv(s, 'saft'), bar = amountOf(s, 'bar');
+    p.torst = 0.3; p.thoughts = []; drickDryck(s, p);
+    const drack = vatskaAv(s, 'saft') === gjord - 1 && p.torst > 0.3 && p.thoughts.some(t => t.text === 'Drack saft');
+    s.now += VATSKOR.saft.haller * SIM.DAY + SIM.HOUR; vatskorTimme(s);
+    const sur = vatskaAv(s, 'saft') === 0 && !kr.inne && SIM.tingOf(s).includes(kr);
+    return [
+      [`10 bär blir 5 saft i krukan (${gjord} saft, ${20 - bar} bär åtgick, ${TILLVERKA.krossa_saft.min} minuter)`, gjord === 5 && bar === 10],
+      [`den törstige dricker saft och blir glad (${drack ? 'ja' : 'nej'})`, drack],
+      [`efter ${VATSKOR.saft.haller} dygn är saften sur och hälld ut, och den tomma krukan finns kvar (${sur ? 'ja' : 'nej'})`, sur],
+    ];
+  },
+};
