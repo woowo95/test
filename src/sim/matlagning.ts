@@ -35,6 +35,7 @@ export const MATLAG = balans('matlagning', {
   sjukMin: 2, sjukSpann: 4, // matförgiftad i så många timmar (min + slump × spann)
   surt: -0.03, surtTim: 4, // tanken av att äta rått kött eller rå fisk, och hur länge den varar (timmar)
   forgiftad: -0.2, // tanken av att bli matförgiftad (ett halvt dygn)
+  kockGlad: 0.03, // en mästerkock (Matlagning brannFull) ger maten så här mycket mer humör (steg 9.6.4)
 });
 
 // Rätterna: råvaran som grillas, rätten den blir och hur mycket (per styck). I den ordning de grillas: det som förstörs
@@ -56,18 +57,34 @@ export const grillTid = (s: State) => { const r = grillVara(s); return Math.min(
 // så stor del av maten p bränner
 export const brannDel = (p: Person) => MATLAG.brann * clamp(1 - (p.skill.matlagning ?? 0) / MATLAG.brannFull, 0, 1);
 
-// grilla i hours timmar. Rätten är deras som ägde råvaran; det som bränns är förstört
+// grilla i hours timmar. Arbetet går mot nästa hela bit (p.delar), och varje hel bit bränns eller inte (steg 9.6.4): chansen
+// sjunker med färdigheten Matlagning. Rätten är deras som ägde råvaran; det som bränns är förstört
 export function grilla(s: State, p: Person, hours: number) {
   const r = grillVara(s);
   if (!r || !s.fire.lit || !kanGoras(s, 'grilla')) { if (p.task) p.task.until = s.now; return; }
-  const n = Math.min(hours * MATLAG.timme, amountOf(s, r.ra));
-  if (n <= 0) return;
-  const vems = use(s, p, r.ra, n), f = (1 - brannDel(p)) * r.per;
-  put(s, r.blir, n * f, addDel({}, vems, f));
-  count(s, 'grillat', n); count(s, 'brant', n * brannDel(p)); gjort(s, p, 'grillat', n);
+  const d = (p.delar ??= {}), t = (d[GRILL] ?? 0) + hours * MATLAG.timme, hela = Math.min(Math.floor(t + 1e-9), Math.floor(amountOf(s, r.ra) + 1e-9));
+  d[GRILL] = Math.min(t - Math.floor(t + 1e-9), 0.999);
+  if (d[GRILL] <= 1e-9) delete d[GRILL];
+  if (!Object.keys(d).length) delete p.delar;
+  if (hela <= 0) return;
+  let brant = 0;
+  for (let i = 0; i < hela; i++) {
+    const vems = use(s, p, r.ra, 1);
+    if (rnd(s, 'mat', p) < brannDel(p)) { brant++; continue; }
+    put(s, r.blir, r.per, addDel({}, vems, r.per)); kockensHand(s, p, r.blir, r.per);
+  }
+  count(s, 'grillat', hela); count(s, 'brant', brant); gjort(s, p, 'grillat', hela);
   ovning(p, 'matlagning', hours * MATLAG.ovning * (0.4 + stat(p, 'intelligens', s.now) / 20));
   if (forstaGang(s, 'grillForsta')) log(s, `${p.name} grillade byns första ${SAKER[r.ra]!.namn.toLowerCase()} på spettet över elden.`, 'world', [p.id]);
 }
+const GRILL = 'grill:'; // arbetet mot nästa grillade bit (p.delar)
+// kockens hand (steg 9.6.4): en skicklig kock ger maten en liten humörhöjning. Varje slag av lagad mat i förrådet minns hur
+// skicklig kocken var (s.kockHand, medelvärdet efter mängden), och den som äter den får tanken (behov.ts)
+export function kockensHand(s: State, p: Person, k: string, n: number) {
+  const h = (s.kockHand ??= {}), har = amountOf(s, k) - n, v = clamp((p.skill.matlagning ?? 0) / MATLAG.brannFull, 0, 1);
+  h[k] = har > 0 ? ((h[k] ?? 0) * har + v * n) / (har + n) : v;
+}
+export const kockGlad = (s: State, per: Record<string, number>) => { let b = 0; for (const k in per) if (per[k] > 0) b = Math.max(b, s.kockHand?.[k] ?? 0); return b * MATLAG.kockGlad; };
 // ---------- rått kött och rå fisk ----------
 // p har ätit per (av varje slag, behov.ts) av en portion full: det råa köttet och den råa fisken (ra i saker.ts) gör en lite
 // sur och kan ge matförgiftning, oftare ju mer av portionen som var rå. En dragning bara när något rått ätits
@@ -233,7 +250,9 @@ export function kokaKlar(s: State, p: Person) {
   if (!r || !t || !s.fire.lit) return;
   const ag: Record<string, number> = {};
   for (const [k, n] of [[r.huvud, RATT.huvud], [r.andra, RATT.andra], ...(r.smak ? [[r.smak, RATT.smak]] : [])] as [string, number][]) addDel(ag, takeMaterial(s, p, k, n), 1);
-  t.kok = { r: r.id, n: RATT.portioner, kvar: KATEGORIER[r.kat].passiv * MIN, ag };
+  let n = 0; for (let i = 0; i < RATT.portioner; i++) if (rnd(s, 'mat', p) >= brannDel(p)) n++; // varje portion bränns eller inte (steg 9.6.4)
+  count(s, 'brant', RATT.portioner - n);
+  t.kok = { r: r.id, n, kvar: KATEGORIER[r.kat].passiv * MIN, ag, h: clamp((p.skill.matlagning ?? 0) / MATLAG.brannFull, 0, 1) };
   count(s, 'kokat'); gjort(s, p, 'kokat', 1);
   ovning(p, 'matlagning', KOK.prepMin / 60 * MATLAG.ovning * (0.4 + stat(p, 'intelligens', s.now) / 20));
   if (forstaGang(s, 'kokForsta')) log(s, `${p.name} lagade byns första ${SAKER[r.id]!.namn.split(' · ')[0].toLowerCase()} i en lerkruka över elden.`, 'world', [p.id]);
@@ -245,7 +264,7 @@ export function stepKok(s: State) {
     if (t.kok!.kvar > 0) continue;
     const tot = Object.values(t.kok!.ag).reduce((a, b) => a + b, 0) || 1, ag: Del = {};
     for (const o in t.kok!.ag) { const q = byId(s, Number(o)); if (q && alive(q)) ag[o] = t.kok!.ag[o] / tot * t.kok!.n; }
-    put(s, t.kok!.r, t.kok!.n, ag);
+    if (t.kok!.n > 0) { const h = (s.kockHand ??= {}), har = amountOf(s, t.kok!.r); h[t.kok!.r] = har > 0 ? ((h[t.kok!.r] ?? 0) * har + (t.kok!.h ?? 0) * t.kok!.n) / (har + t.kok!.n) : t.kok!.h ?? 0; put(s, t.kok!.r, t.kok!.n, ag); }
     count(s, 'ratter', t.kok!.n);
     t.kok = undefined;
   }

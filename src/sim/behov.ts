@@ -109,6 +109,7 @@ function eat(s: State, p: Person, fran?: Person) {
 function maltidTanke(s: State, p: Person, per: Record<string, number>) {
   const n = MALTIDSNIVA[basta(per)];
   if (n.humor > 0) { think(p, n.tanke, n.humor, s.now, RATT.tankeTim * HOUR); count(s, 'maltid_' + basta(per)); }
+  const k = kockGlad(s, per); if (k > 0.005) think(p, 'Maten var vällagad', k, s.now, RATT.tankeTim * HOUR); // kockens hand (steg 9.6.4)
 }
 // p sitter vid bordet och äter (handlingen maltid, framme: val.ts och stationer.ts, steg 2.2.15)
 const vidBordet = (p: Person) => p.task?.act === 'maltid' && p.task.phase === 'do';
@@ -687,3 +688,4 @@ export function genomfor(s: State, M: Part, G: Part, fatt: Vara[], betal: Vara[]
 export const luraI = (s: State, M: Part, G: Part, betal: Vara[], utom: readonly string[], ger: number) => lura(s, M, G, betal, betalVaror(M, G, utom), ger);
 import { foodDays } from './ekonomi';
 import { MALTIDSNIVA, RATT, basta } from './ratter';
+import { kockGlad } from './matlagning';

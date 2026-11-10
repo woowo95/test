@@ -722,7 +722,7 @@ SCENARIER.kokning = {
     const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
     for (const k of SIM.FOOD) setAmount(s, k, 0);
     setAmount(s, 'fisk', 4); setAmount(s, 'rotter', 4); setAmount(s, 'rolleka', 2);
-    p.tek = { ...(p.tek ?? {}), kruka: 1 }; s.fire.lit = true;
+    p.tek = { ...(p.tek ?? {}), kruka: 1 }; s.fire.lit = true; p.skill.matlagning = SIM.MATLAG.brannFull; // en skicklig kock bränner inget (steg 9.6.4)
     const kr = addTool(s, 'lerkruka_mellan', p); kr.hos = undefined;
     const r = kokRecept(s, p), namn = r ? SAKER[r.id]!.namn : '';
     const kan = kanKoka(s, p);
@@ -739,6 +739,29 @@ SCENARIER.kokning = {
       [`kocken kan laga maten (${kan ? 'ja' : 'nej'}), och grytan står på elden i krukan med råvarorna (${pa ? 'ja' : 'nej'})`, kan && pa],
       [`kocken gör annat medan grytan sjuder (${akt})`, annat],
       [`utan eld kokar den inte (${vantar ? 'står kvar' : 'klar'}), och med eld blir den fyra portioner i förrådet (${klar ? 'ja' : 'nej'})`, vantar && klar],
+    ];
+  },
+};
+
+SCENARIER.kocken = {
+  text: 'Steg 9.6.4: kocken. Det som bränns är hela bitar: varje bit bränns eller inte med en chans som sjunker med färdigheten Matlagning, och en skicklig kock ger maten en liten humörhöjning',
+  kor: () => {
+    const { grilla, setAmount, amountOf, MAT, FOOD, MATLAG } = SIM;
+    const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    s.fire.lit = true; s.stationer = [...(s.stationer ?? []), { id: 999, k: 'grill', x: 1, y: 1, kvar: 0 } as SIM.Station];
+    const prov = (skill: number) => {
+      for (const k of FOOD) setAmount(s, k, 0); setAmount(s, 'fisk', 40); s.stat = {};
+      p.skill.matlagning = skill; for (let i = 0; i < 10; i++) grilla(s, p, 0.5);
+      return { grillat: amountOf(s, 'grillfisk'), brant: s.stat.brant as number ?? 0, kvar: amountOf(s, 'fisk') };
+    };
+    const ovan = prov(0), skicklig = prov(MATLAG.brannFull);
+    p.thoughts = []; p.hunger = 0.2; MAT.anvand(s, p);
+    const glad = p.thoughts.find(t => t.text === 'Maten var vällagad')?.v ?? 0;
+    const hela = [ovan.grillat, ovan.brant, skicklig.grillat].every(n => Number.isInteger(n));
+    return [
+      [`den ovane bränner hela bitar (${ovan.grillat} grillade, ${ovan.brant} brända av ${40 - ovan.kvar})`, hela && ovan.brant > 0 && ovan.grillat + ovan.brant === 40 - ovan.kvar],
+      [`den skicklige bränner inget (${skicklig.brant} brända, ${skicklig.grillat} grillade)`, skicklig.brant === 0 && skicklig.grillat > 0],
+      [`maten från en skicklig kock höjer humöret (${glad})`, glad > 0],
     ];
   },
 };

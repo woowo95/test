@@ -348,6 +348,7 @@ export interface State {
   kunskap?: Record<string, number>; // äldre sparfiler: byns gemensamma kunskap, flyttas till varje person
   kal?: { t0: number; a0: number; b0: number }; // kalendern: tidsåldern a0 började t0 och slutar måndagen b0 (dagens nummer), se tid.ts
   ruttet?: number; // mat som ruttnat bort på sistone (glöms med tiden, byggnader.ts)
+  kockHand?: Record<string, number>; // hur skicklig kocken var, per slag av lagad mat i förrådet (0–1, steg 9.6.4, matlagning.ts)
   atTakt?: number; atSist?: number; // det byn äter per person och dygn (glidande snitt) och räknaren atit förra timmen (ekonomi.ts, atSteg)
   stat?: Record<string, number>; // räknare: svamp, fiskeförsök, napp, fångst med mera
   sjoar?: Record<number, import('./sjo').SjoStat>; // fiske och bad per sjö (sjo.ts)
