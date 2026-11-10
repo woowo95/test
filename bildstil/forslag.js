@@ -16,6 +16,7 @@
   // kolonisten på kartan i en riktning med det som bärs
   function figur(B, x0, y0, rikt, o) {
     const F = window.BYBO ? window.BYBO(FRO, rikt, 'sta', o?.arm || 'hanga', null) : null; if (!F) return;
+    F.plats = { ox: x0 + MF, oy: y0 + MF }; // var figuren står, för kontrollen (kontroll.js hitta)
     const har = (x, y) => { const fx = x - MF, fy = y - MF; return fx >= 0 && fy >= 0 && fx < F.w && fy < F.h && F.px[fy * F.w + fx] >= 0; };
     for (let x = 3; x < F.w - 3; x++) B.morka(x0 + MF + x, y0 + MF + F.h); // skuggan under fötterna
     lagg(B, o?.bakom, x0, y0, (x, y) => !har(x, y));
@@ -26,7 +27,8 @@
   const mannen = () => { const PR = window.PORTRATTEN; const m = PR.neutral('man'); m.alder = 'vuxen'; m.klader = { rock: 'harskinn', skor: true, balte: false }; return m; };
   function portratt(B, x0, y0, o) {
     const PR = window.PORTRATTEN; if (!PR) return;
-    const Q = PR.portratt(mannen()), bakgrund = (x, y) => Q.figur ? !Q.figur[y * Q.w + x] : (c => c >= 1 && c < 4)(Q.px[y * Q.w + x]);
+    const Q = PR.portratt(mannen()); Q.plats = { ox: x0, oy: y0 };
+    const bakgrund = (x, y) => Q.figur ? !Q.figur[y * Q.w + x] : (c => c >= 1 && c < 4)(Q.px[y * Q.w + x]);
     const inne = (x, y) => x >= 2 && y >= 2 && x < Q.w - 2 && y < Q.h - 2;
     for (let y = 0; y < Q.h; y++) for (let x = 0; x < Q.w; x++) { const c = Q.px[y * Q.w + x]; if (c >= 0) B.satt(x0 + x, y0 + y, c); }
     lagg(B, o?.bakom, x0, y0, (x, y) => inne(x, y) && bakgrund(x, y));

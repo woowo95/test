@@ -1,0 +1,31 @@
+{
+ "kommando": "rita",
+ "args": [
+  "f8_bage=nya versioner: dethär ser heltokigt ut och det borde du kunna se också. Jag kan inte fatta att detta är bäst av 5 versioner.. Hur ska vi hitta en strategi eller prompt som kan rita en rimlig pilbåge?..",
+  "f9_kappa",
+  "f9_mantel",
+  "f9_sjal",
+  "f9_tunika_ylle",
+  "f9_skjorta_ylle",
+  "f9_forband",
+  "f9_proteser",
+  "f9_spjala"
+ ],
+ "modell": "claude-opus-5-5",
+ "uppskattat": {
+  "lag": 9.93,
+  "hog": 21.28
+ },
+ "dollar": 14.985,
+ "rapport": [
+  "f8_bage: 3 versioner; kontrollerna varnar fortfarande: version 3: olika; version 1: huvudet: 15 punkter är ritade över kolonistens huvud: en rem eller sträng går runt kroppen, aldrig genom huvudet.; version 2: huvudet: 15 punkter är ritade över kolonistens huvud: en rem eller sträng går runt kroppen, aldrig genom huvudet.; version 3: huvudet: 15 punkter är ritade över kolonistens huvud: en rem eller sträng går runt kroppen, aldrig genom huvudet.",
+  "f9_kappa: 3 versioner; kontrollerna varnar fortfarande: version 3: olika; version 1: huvudet: 3 punkter är ritade över kolonistens huvud: en rem eller sträng går runt kroppen, aldrig genom huvudet.; version 1: huvudet: 16 punkter är ritade över kolonistens huvud: en rem eller sträng går runt kroppen, aldrig genom huvudet.; version 2: allaHall: Visas inte på kolonisten framifrån, från sidan, bakifrån.; version 3: huvudet: 3 punkter är ritade över kolonistens huvud: en rem eller sträng går runt kroppen, aldrig genom huvudet.; version 3: allaHall: Visas inte på kolonisten framifrån, bakifrån.",
+  "f9_mantel: 3 versioner; kontrollerna varnar fortfarande: version 3: olika; version 1: allaHall: Visas inte på kolonisten framifrån, från sidan, bakifrån.; version 2: allaHall: Visas inte på kolonisten framifrån, från sidan, bakifrån.; version 3: huvudet: 1 punkter är ritade över kolonistens huvud: en rem eller sträng går runt kroppen, aldrig genom huvudet.; version 3: allaHall: Visas inte på kolonisten bakifrån.",
+  "f9_sjal: 3 versioner; kontrollerna varnar fortfarande: version 1: huvudet: 2 punkter är ritade över kolonistens huvud: en rem eller sträng går runt kroppen, aldrig genom huvudet.; version 1: huvudet: 2 punkter är ritade över kolonistens huvud: en rem eller sträng går runt kroppen, aldrig genom huvudet.; version 1: huvudet: 4 punkter är ritade över kolonistens huvud: en rem eller sträng går runt kroppen, aldrig genom huvudet.; version 2: huvudet: 3 punkter är ritade över kolonistens huvud: en rem eller sträng går runt kroppen, aldrig genom huvudet.; version 2: huvudet: 4 punkter är ritade över kolonistens huvud: en rem eller sträng går runt kroppen, aldrig genom huvudet.; version 3: huvudet: 2 punkter är ritade över kolonistens huvud: en rem eller sträng går runt kroppen, aldrig genom huvudet.; version 3: huvudet: 2 punkter är ritade över kolonistens huvud: en rem eller sträng går runt kroppen, aldrig genom huvudet.; version 3: huvudet: 3 punkter är ritade över kolonistens huvud: en rem eller sträng går runt kroppen, aldrig genom huvudet.",
+  "f9_tunika_ylle: 3 versioner; kontrollerna varnar fortfarande: version 2: olika; version 3: olika; version 3: olika; version 1: allaHall: Visas inte på kolonisten framifrån, från sidan, bakifrån.; version 2: allaHall: Visas inte på kolonisten framifrån, från sidan, bakifrån.; version 3: huvudet: 4 punkter är ritade över kolonistens huvud: en rem eller sträng går runt kroppen, aldrig genom huvudet.; version 3: huvudet: 2 punkter är ritade över kolonistens huvud: en rem eller sträng går runt kroppen, aldrig genom huvudet.; version 3: huvudet: 1 punkter är ritade över kolonistens huvud: en rem eller sträng går runt kroppen, aldrig genom huvudet.",
+  "f9_skjorta_ylle: 3 versioner; kontrollerna varnar fortfarande: version 3: olika; version 1: allaHall: Visas inte på kolonisten framifrån, från sidan.; version 2: allaHall: Visas inte på kolonisten framifrån, från sidan, bakifrån.; version 3: allaHall: Visas inte på kolonisten framifrån, bakifrån.",
+  "f9_forband: 3 versioner; kontrollerna varnar fortfarande: version 2: huvudet: 15 punkter är ritade över kolonistens huvud: en rem eller sträng går runt kroppen, aldrig genom huvudet.",
+  "f9_proteser: 3 versioner; kontrollerna varnar fortfarande: version 2: olika; version 3: olika; version 3: olika",
+  "f9_spjala: 3 versioner; kontrollerna varnar fortfarande: version 3: olika"
+ ]
+}
