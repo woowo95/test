@@ -247,6 +247,8 @@ const DEF = {
   kal: { namn: 'Kål', skaffa: { tid: 0.25, tek: 'odling' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 5.2, naring: { vitamin: 1.8, mineral: 0.8, energi: 0.7, protein: 0.3, fett: 0.1 }, haller: 6 },
   bonor: { namn: 'Bönor', skaffa: { tid: 0.25, tek: 'odling' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.6, naring: { protein: 1.8, energi: 1.3, mineral: 0.7, vitamin: 0.4, fett: 0.2 }, haller: 20 },
   kalfron: { namn: 'Kålfrön', skaffa: { tid: 0.25, tek: 'odling' }, stack: 50, vikt: 0.05, mapp: 'Material', haller: 20 },
+  jordgubbar: { namn: 'Jordgubbar', skaffa: { tid: 0.3, tek: 'odling' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 3.5, naring: { vitamin: 2, energi: 0.6, mineral: 0.3 }, haller: 2 }, // steg 9.7.9: mättar lite men gör folk glada
+  jordgubbsplanta: { namn: 'Jordgubbsplanta', ett: true, varde: 1, stack: 25, vikt: 0.1, mapp: 'Material', haller: 20 },
   // det rökta (steg 9.6.8, matlagning.ts): håller som det torkade och smakar lite bättre
   rokfisk: { namn: 'Rökt fisk', skaffa: RECEPT.rokfisk, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.8, naring: { protein: 2, fett: 0.8, mineral: 0.7, energi: 0.6, vitamin: 0.2 }, haller: 20 },
   rokkott: { namn: 'Rökt kött', ett: true, skaffa: RECEPT.rokkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.9, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 0.6, vitamin: 0.2 }, haller: 20 },

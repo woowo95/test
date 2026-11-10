@@ -1371,3 +1371,22 @@ SCENARIER.grodor = {
     ];
   },
 };
+
+SCENARIER.flerarig = {
+  text: 'Steg 9.7.9: bär och fleråriga grödor. Jordgubbarna skördas flera gånger: efter skörden växer de igen, och under istiden dör de inte utan vilar och kommer tillbaka på vårtiden',
+  kor: () => {
+    const { workOdla, stepOdling, sammanfatta, amountOf, nyKalender } = SIM;
+    const s = createState(1, START); klockan(s, 10);
+    const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!; p.tek = { ...(p.tek ?? {}), odling: 1 };
+    const f: SIM.Falt = { id: 1, x: Math.floor(p.x) + 3, y: Math.floor(p.y), w: 2, dir: 1, n: 2, agare: p.id, steg: 'mogen', klara: 0, kvar: 0, rord: s.now, r: [{ st: 'mogen', g: 'jordgubbar', m: s.now }, { st: 'mogen', g: 'jordgubbar', m: s.now }] };
+    s.falt = [f]; sammanfatta(f);
+    workOdla(s, p, { act: 'odla', tool: 'mogen', ref: f.id, fr: 0, until: s.now + SIM.HOUR, tx: p.x, ty: p.y } as unknown as SIM.Task, SIM.ODLING.skordaMin * 60 * 2);
+    const igen = f.r!.every(r => r.st === 'vaxer' && r.g === 'jordgubbar'), bar = amountOf(s, 'jordgubbar');
+    s.kal = nyKalender(s.now, 0); stepOdling(s);
+    const vilar = f.r!.every(r => r.st === 'vaxer') && !(s.stat?.frostdod);
+    return [
+      [`jordgubbarna skördas (${bar}) och växer igen efteråt (${igen ? 'ja' : 'nej'})`, bar > 0 && igen],
+      [`under istiden dör de inte utan vilar (${vilar ? 'ja' : 'nej'})`, vilar],
+    ];
+  },
+};

@@ -117,6 +117,7 @@ function maltidTanke(s: State, p: Person, per: Record<string, number>) {
     if (m.filter(x => x === mest).length >= VARIATION.trott) { think(p, `${mest} igen`, VARIATION.tanke, s.now, VARIATION.tankeTim * HOUR); count(s, 'trott_pa_mat'); }
   }
   if (Object.keys(per).some(x => rattInfo(x)?.kat === 'stek' && per[x] > 0)) think(p, 'Åt en stek', STEK.glad, s.now, RATT.tankeTim * HOUR); // steken smakar bättre (steg 9.6.21)
+  if ((per.jordgubbar ?? 0) > 0) think(p, 'Åt jordgubbar', ROK.glad * 3, s.now, RATT.tankeTim * HOUR); // jordgubbarna gör folk glada (steg 9.7.9)
   if (Object.keys(per).some(x => x.startsWith('rok') && per[x] > 0)) think(p, 'Åt rökt mat', ROK.glad, s.now, RATT.tankeTim * HOUR); // det rökta smakar lite bättre (steg 9.6.8)
   const k = kockGlad(s, per); if (k > 0.005) think(p, 'Maten var vällagad', k, s.now, RATT.tankeTim * HOUR); // kockens hand (steg 9.6.4)
 }
