@@ -1287,9 +1287,9 @@ SCENARIER.sophog = {
     const { bearbeta, DJUR, setAmount, amountOf, smutsIByn, soporKlar, sophog, stepSophog, utanforByn, resterIByn } = SIM;
     const s = createState(1, START); klockan(s, 10);
     const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
-    setAmount(s, 'abborre', 4);
+    setAmount(s, 'vilt', 4); setAmount(s, 'kniv', 1); (p.tek ??= {}).kniv = 1; // viltet: fisken ger fiskrens sedan steg 9.8.7
     s.stationer = [...(s.stationer ?? []), { id: 991, k: 'slaktbank', x: 3, y: 3, kvar: 0 } as SIM.Station];
-    bearbeta(s, p, DJUR.abborre, 1);
+    bearbeta(s, p, DJUR.kanin, 1);
     const rens = amountOf(s, 'slaktrens');
     setAmount(s, 'vaxtrest', 6);
     const fore = smutsIByn(s).punkter.length;
@@ -1716,6 +1716,45 @@ SCENARIER.hagflytt = {
       [`valla leder ett djur i rep till den nya hagen (${3 - flyttad} av 3 flyttade)`, flyttad === 2],
       [`med en lojal hund flyttas resten på en gång (${kvar} kvar i den gamla)`, kvar === 0],
       [`den gamla hagen står kvar`, hagarOf(s).includes(h1) && tamdjurOf(s).length === 4],
+    ];
+  },
+};
+
+SCENARIER.tamslakt = {
+  text: 'Steg 9.8.7: slakt av tamdjur och slaktrens. Ett gammalt får, en hane när flocken blivit för stor och djur när byn svälter avlivas och slaktas vid slaktbänken som viltet; slakten ger slaktrens som hunden äter, och fiskrensen blir agn',
+  kor: () => {
+    const { nyttTamdjur, avlivaVal, avlivaKlar, slaktOrsak, setAmount, amountOf, DJUR, canProcess, bearbeta, mataVal, tamdjurOf, BOSKAP, hona, DAY } = SIM;
+    const s = createState(3, START); klockan(s, 10);
+    const p = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0];
+    (s.stationer ??= []).push({ id: 9901, k: 'slaktbank', x: Math.floor(p.x) + 2, y: Math.floor(p.y), kvar: 0 }); SIM.touch(s);
+    (p.tek ??= {}).kniv = 1; setAmount(s, 'kniv', 1); setAmount(s, 'kott', 200);
+    const gammal = nyttTamdjur(s, 'far', p.x + 1, p.y, undefined, s.now - 9 * DAY);
+    const ung = nyttTamdjur(s, 'far', p.x + 1, p.y + 1, undefined, s.now - 2 * DAY);
+    const val = avlivaVal(s, p);
+    if (val) avlivaKlar(s, p, val.id);
+    const kropp = amountOf(s, 'slaktfar');
+    const rens0 = amountOf(s, 'slaktrens'), horn0 = amountOf(s, 'djurhorn'), skinn0 = amountOf(s, 'skinn');
+    const kan = canProcess(s, p, DJUR.far);
+    if (kan) bearbeta(s, p, DJUR.far, 2);
+    const rens1 = amountOf(s, 'slaktrens');
+    // hunden äter slaktrensen
+    const hund = nyttTamdjur(s, 'hund', p.x, p.y, p.id); hund.hunger = 0.9;
+    const mat = mataVal(s, p) === hund && SIM.foderFor(s, p, hund) === 'slaktrens';
+    // fisken ger fiskrens, inte slaktrens
+    setAmount(s, 'abborre', 2);
+    bearbeta(s, p, DJUR.abborre, 1);
+    const fiskrens = amountOf(s, 'fiskrens'), rens2 = amountOf(s, 'slaktrens');
+    // för många: en av hanarna slaktas, en blir kvar
+    const flock = [ung]; for (let i = 0; flock.length < BOSKAP.flock; i++) flock.push(nyttTamdjur(s, 'far', p.x, p.y, undefined, s.now - 2 * DAY));
+    const hane = flock.find(d => !hona(d)), honan = flock.find(d => hona(d));
+    return [
+      [`det gamla fåret väljs och avlivas (${val === gammal ? 'det gamla' : val ? 'ett annat' : 'inget'})`, val === gammal && !tamdjurOf(s).includes(gammal)],
+      [`det unga fåret slaktas inte`, tamdjurOf(s).includes(ung) && !slaktOrsak(s, ung) || flock.length >= BOSKAP.flock],
+      [`det avlivade fåret ligger vid slaktbänken (${kropp})`, kropp === 1],
+      [`det slaktas som viltet och ger horn, skinn och slaktrens (horn ${horn0} → ${amountOf(s, 'djurhorn')}, skinn ${skinn0} → ${amountOf(s, 'skinn')}, rens ${rens0} → ${rens1})`, kan && amountOf(s, 'djurhorn') > horn0 && amountOf(s, 'skinn') > skinn0 && rens1 > rens0],
+      [`hunden får slaktrensen`, mat],
+      [`fisken ger fiskrens till agn (${fiskrens}), inte slaktrens (${rens1} → ${rens2})`, fiskrens >= 1 && rens2 === rens1],
+      [`när flocken är för stor slaktas en hane, inte en hona (${slaktOrsak(s, hane!) ?? '–'}, ${slaktOrsak(s, honan!) ?? '–'})`, slaktOrsak(s, hane!) === 'for manga' && !slaktOrsak(s, honan!)],
     ];
   },
 };

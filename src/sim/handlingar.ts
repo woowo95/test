@@ -222,6 +222,7 @@ const DEF = {
   mala_korn: { namn: 'Mal korn till mjöl', slag: 'hantverk', hantverk: true, verb: 'mal', plats: 'station' }, // vid kvarnstenen (steg 9.6.22)
   steka: { namn: 'Steker på stekhällen', slag: 'hantverk', hantverk: true, ovar: 'matlagning', social: true, stilla: true, verb: 'steker', plats: 'station' }, // stekhällen vid grillen (matlagning.ts, steg 9.6.21)
   skramma: { namn: 'Sätter upp en fågelskrämma', slag: 'odla', verb: 'sätter upp en fågelskrämma' }, // odling.ts (steg 9.7.11)
+  avliva: { namn: 'Slaktar ett djur', slag: 'odla', verb: 'avlivar', tungt: true }, // boskap.ts (steg 9.8.7)
   klippa: { namn: 'Klipper fåren', slag: 'odla', verb: 'klipper', yrke: 'Herde' }, // boskap.ts (steg 9.8.5)
   mata: { namn: 'Matar djuren', slag: 'odla', verb: 'matar', yrke: 'Herde' }, // tamdjur.ts (steg 9.8.1)
   hage: { namn: 'Sätter staket runt hagen', slag: 'odla', verb: 'sätter staket runt hagen', tungt: true }, // tamdjur.ts (steg 9.8.4)

@@ -9,7 +9,8 @@ import { balans } from './balans';
 import { ALDER, ageOf, count, forstaGang, gjort, living, log, ovning } from './folk';
 import { getable } from './behov';
 import { rnd } from './slump';
-import { changed, gain, stacksOf, tidy } from './lager';
+import { changed, foodOf, gain, put, stacksOf, tidy } from './lager';
+import { kanGoras } from './stationer';
 import { DAY, Person, State } from './typer';
 import { isLight, kalender, VAR } from './tid';
 import { TamArtId, Tamdjur, nyttTamdjur, tamAlder, tamArt, tamdjurOf } from './tamdjur';
@@ -90,4 +91,44 @@ export function klippKlar(s: State, p: Person, ref?: number) {
   gain(s, p, 'ull', BOSKAP.ull);
   ovning(p, 'skotsel', BOSKAP.ovning); gjort(s, p, 'klippt'); count(s, 'klippt');
   if (forstaGang(s, 'klipptFar')) log(s, `${p.name} klippte byns första får och fick ull.`, 'world', [p.id]);
+}
+
+// ---------- slakten av tamdjuren (steg 9.8.7) ----------
+// Ett får eller en get avlivas och slaktas vid slaktbänken som viltet (raderna far och get i DJUR, redskap.ts): kött, ben, skinn,
+// talg och horn, och slaktrensen blir mat åt hunden. Byn slaktar det gamla djuret, ett av hanarna när flocken blivit för stor
+// (en hane blir kvar), och när byn svälter det som inte behövs för att flocken ska leva vidare (ett par blir kvar)
+export const SLAKTDJUR = balans('slaktdjur', {
+  gammal: 0.75, // ett djur äldre än så här stor del av sin livslängd slaktas
+  svalt: 2, // byn svälter när maten i förrådet är mindre än så här många saker per människa
+  min: 15, // minuter det tar att avliva djuret och bära det till slaktbänken
+});
+export const SLAKTAD: Record<string, string> = { far: 'slaktfar', get: 'slaktget' };
+// varför djuret ska slaktas, eller undefined
+export function slaktOrsak(s: State, d: Tamdjur): string | undefined {
+  const a = tamArt(d.art);
+  if (!SLAKTAD[d.art]) return undefined;
+  if (tamAlder(s, d) > a.liv * SLAKTDJUR.gammal) return 'gammal';
+  const arten = tamdjurOf(s).filter(q => q.art === d.art), hanar = arten.filter(q => !hona(q) && vuxen(s, q));
+  if (!hona(d) && vuxen(s, d) && arten.length >= BOSKAP.flock && hanar.length > 1) return 'for manga';
+  if (foodOf(s) < living(s).length * SLAKTDJUR.svalt && arten.length > 2 && !(hanar.length === 1 && hanar[0] === d)) return 'svalt';
+  return undefined;
+}
+export function avlivaVal(s: State, p: Person) {
+  if (ageOf(p, s.now) < ALDER.vuxen || !kanGoras(s, 'slakta', p) || getable(s, p, 'kniv') < 1 || !isLight(s.now)) return undefined;
+  for (const d of tamdjurOf(s)) {
+    if (d.agare !== undefined && d.agare !== p.id) continue;
+    if (living(s).some(q => q !== p && q.task?.act === 'avliva' && q.task.ref === d.id)) continue;
+    if (slaktOrsak(s, d)) return d;
+  }
+  return undefined;
+}
+export function avlivaKlar(s: State, p: Person, ref?: number) {
+  const d = tamdjurOf(s).find(q => q.id === ref);
+  if (!d) return;
+  const orsak = slaktOrsak(s, d);
+  if (!orsak) return;
+  d.dog = s.now; s.tamdjur = (s.tamdjur ?? []).filter(q => q !== d);
+  put(s, SLAKTAD[d.art], 1, d.agare !== undefined ? { [d.agare]: 1 } : undefined);
+  count(s, 'tamDog_slaktad'); count(s, `slaktad_${orsak}`); gjort(s, p, 'avlivat');
+  if (forstaGang(s, 'slaktatTamdjur')) log(s, `${p.name} avlivade ${tamArt(d.art).ord[3]} och bar det till slaktbänken.`, 'world', [p.id]);
 }
