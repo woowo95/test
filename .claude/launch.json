@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "spelet",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["/private/tmp/claude-501/-Users-bjornhansson-Documents-GitHub-test/f3837e9c-03db-44d4-ae3c-740d9b62eb41/scratchpad/spel.cjs"],
+      "port": 8766
+    }
+  ]
+}
