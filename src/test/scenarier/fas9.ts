@@ -1550,3 +1550,33 @@ SCENARIER.tamdjur = {
     ];
   },
 };
+
+SCENARIER.valp = {
+  text: 'Steg 9.8.2: vargvalpen blir hund. När jägarna fällt flocken står valpen kvar; svälter byn äts den, annars vill den jägare som har mest Empati ta hem den, och det lyckas efter jaktfärdigheten',
+  kor: () => {
+    const { vargValp, tamdjurOf, setAmount, amountOf, FOOD } = SIM;
+    // byn svälter: valpen äts
+    const s = createState(1, START); klockan(s, 10);
+    for (const k of FOOD) setAmount(s, k, 0);
+    const jagare = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen).slice(0, 3);
+    vargValp(s, jagare);
+    const aten = !tamdjurOf(s).length && amountOf(s, 'vargkott') > 0;
+    // byn har mat: den med mest empati tar hem den
+    let hund: SIM.Tamdjur | undefined, vem = '', mest = '', bort = 0;
+    for (let seed = 1; seed <= 12 && !hund; seed++) {
+      const t = createState(seed, START); klockan(t, 10); setAmount(t, 'torrkott', 200);
+      const j = SIM.living(t).filter(r => SIM.ageOf(r, t.now) >= SIM.ALDER.vuxen).slice(0, 3);
+      for (const q of j) q.skill.jakt = 12;
+      vargValp(t, j);
+      hund = tamdjurOf(t)[0];
+      if (!hund) { bort++; continue; }
+      vem = SIM.byId(t, hund.agare!)!.name;
+      mest = [...j].sort((a, b) => SIM.stat(b, 'empati', t.now) - SIM.stat(a, 'empati', t.now))[0].name;
+    }
+    return [
+      [`svälter byn äts valpen (${aten ? 'åts' : 'åts inte'})`, aten],
+      [`annars tar den jägare med mest empati hem den och den blir en hund (${vem || 'ingen'}, mest empati: ${mest}, ${bort} sprang bort)`, !!hund && hund.art === 'hund' && vem === mest],
+      [`hunden är lojal mot den som bar hem den (${hund?.lojal ?? 0})`, (hund?.lojal ?? 0) > 0.5],
+    ];
+  },
+};

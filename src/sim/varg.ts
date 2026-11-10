@@ -194,6 +194,7 @@ function kommer(s: State) {
     gar: s.now + (VARG.stannarTim[0] + rnd(s, 'varg') * (VARG.stannarTim[1] - VARG.stannarTim[0])) * HOUR,
     hunger: Math.min(1, VARG.hunger0[0] + rnd(s, 'varg') * (VARG.hunger0[1] - VARG.hunger0[0]) + MOTGANG.hardHunger * hv), gor: 'stryker',
   };
+  if (n > 1 && rnd(s, 'tamdjur') < VALP.chans) { f.valp = true; count(s, 'vargvalpar'); } // en valp går med flocken (steg 9.8.2), ur djurens egen följd
   nyttMal(s, f);
   (s.vargar ??= []).push(f);
   count(s, 'vargflockar'); count(s, 'vargar', n);
@@ -620,6 +621,7 @@ function vargSlut(s: State, g: DjurKamp, st: Strid) {
   // krönikan (steg 3.7.16): varje vargjakt, och den som skadades svårt när vargarna anföll (döden skriver die)
   if (avsikt === 'doda') kronikaBer(s, 'k_vargjakt', folk[0].id, { folk: och(folk.map(p => p.name)), vargar: n > 1 ? `${talOrd(n)} vargar` : 'en varg', fallde: talOrd(doda.length), svara: svara.length ? ` ${och(svara)} skadades svårt.` : '' });
   else if (svara.length) kronikaBer(s, 'k_vargAnfall', folk[0].id, { svara: och(svara) });
+  if (avsikt === 'doda' && !f.vargar.length && f.valp) { f.valp = undefined; vargValp(s, folk.filter(p => p.died === undefined)); } // valpen står kvar (steg 9.8.2)
   if (vinnare !== 1 || doda.length || (avsikt === 'doda' && f.vargar.length)) f.gor = 'flyr'; // efter vargjakten drar de som är kvar vidare
 }
 SLUT.varg = vargSlut;
@@ -640,3 +642,4 @@ export function vargSteg(s: State, dtSec: number) {
   s.vargar = s.vargar.filter(f => f.vargar.length || s.djurStrider?.some(g => g.art === 'varg' && g.flock === f.id));
   if (!s.vargar.length) s.vargar = undefined;
 }
+import { VALP, vargValp } from './tamdjur';

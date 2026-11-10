@@ -9,6 +9,8 @@ import { balans } from './balans';
 import { ALDER, ageOf, byId, count, forstaGang, gjort, living, log, ovning } from './folk';
 import { getable, takeMaterial } from './behov';
 import { rnd } from './slump';
+import { foodOf, put } from './lager';
+import { stat } from './folk';
 import { DAY, Person, State } from './typer';
 
 // en art av tamdjur. ord = en/ett, ett djur, flera, det bestämda; foder = det man matar djuret med, det bästa först (hela saker); bete = djuret betar i hagen (steg 9.8.4),
@@ -95,3 +97,33 @@ export function mataKlar(s: State, p: Person, ref?: number) {
 }
 // vad byns djur är värda (byns rikedom, varde.ts) och vad en persons djur är värda (förmögenheten)
 export const djurVarde = (s: State, agare?: number) => tamdjurOf(s).reduce((a, d) => a + (agare === undefined || d.agare === agare ? tamArt(d.art).varde : 0), 0);
+
+// ---------- vargvalpen blir hund (steg 9.8.2, Djuren i detalj: Hunden) ----------
+// Det finns ingen lya: i sällsynta fall går en valp med vargflocken (VALP.chans när flocken kommer, varg.ts), och när jägarna
+// fäller flocken står valpen kvar. Svälter byn äts valpen som de andra vargarna, för behovsstegen går alltid före. Annars vill
+// den av jägarna som har mest Empati ta den hem, och det lyckas efter jaktfärdigheten; en valp som inte fångas springer bort
+export const VALP = balans('valp', {
+  chans: 0.15, // chansen att en flock (minst två vargar) har en valp med sig
+  svalt: 2, // byn svälter när maten i förrådet är mindre än så här många saker per människa
+  fanga0: 0.3, fangaJakt: 0.05, // chansen att fånga valpen: fanga0 + fangaJakt × jakten (högst 0,95)
+  kott: 3, // så mycket vargkött valpen ger när den äts
+  lojal: 0.6, // hundens lojalitet mot den som bar hem den
+});
+export function vargValp(s: State, jagare: Person[]) {
+  if (!jagare.length) return;
+  const namn = jagare.map(p => p.name);
+  if (foodOf(s) < living(s).length * VALP.svalt) {
+    put(s, 'vargkott', VALP.kott); count(s, 'valpAten');
+    log(s, `Vargflocken hade en valp. Byn svalt, och ${namn[0]} dödade den för köttet.`, 'world', jagare.map(p => p.id));
+    return;
+  }
+  const p = [...jagare].sort((a, b) => stat(b, 'empati', s.now) - stat(a, 'empati', s.now) || a.id - b.id)[0];
+  if (rnd(s, 'tamdjur') >= Math.min(0.95, VALP.fanga0 + VALP.fangaJakt * p.skill.jakt)) {
+    count(s, 'valpBort');
+    log(s, `Vargflocken hade en valp. ${p.name} försökte fånga den, men den sprang ut i skogen.`, 'world', [p.id]);
+    return;
+  }
+  const h = nyttTamdjur(s, 'hund', p.x, p.y, p.id, s.now - 0.2 * DAY);
+  h.lojal = VALP.lojal; count(s, 'valpFangad');
+  log(s, `Vargflocken hade en valp. ${p.name} fångade den och bar hem den. Den blev byns ${forstaGang(s, 'forstaHund') ? 'första ' : ''}hund.`, 'world', [p.id]);
+}
