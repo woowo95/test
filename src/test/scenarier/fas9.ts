@@ -1213,3 +1213,26 @@ SCENARIER.rutan = {
     ];
   },
 };
+
+SCENARIER.jord = {
+  text: 'Steg 9.7.2: jordens värden. Bördigheten ligger i marken och finns kvar när fältet växer igen; den sjunker med varje skörd och kommer långsamt tillbaka när rutan inte odlas. Fukten finns per ruta och kommer från regn och närheten till vatten',
+  kor: () => {
+    const { workOdla, stepOdling, bordighet, fuktAv, faltRuta, djupOf, sammanfatta, JORD } = SIM;
+    const s = createState(1, START); klockan(s, 10);
+    const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!; p.tek = { ...(p.tek ?? {}), odling: 1 };
+    const d = djupOf(s.seed).land; let nara = -1, langt = -1;
+    for (let i = 0; i < SIM.W * SIM.H; i++) { if (nara < 0 && d[i] === 1) nara = i; if (langt < 0 && d[i] === 30) langt = i; }
+    const falt = (id: number, i: number): SIM.Falt => ({ id, x: i % SIM.W, y: Math.floor(i / SIM.W), w: 1, dir: 1, n: 1, agare: p.id, steg: 'mogen', klara: 0, kvar: 0, rord: s.now, r: [{ st: 'mogen', g: 'rovor', m: s.now }] });
+    const a = falt(1, nara), b = falt(2, langt); s.falt = [a, b]; sammanfatta(a); sammanfatta(b);
+    const i = faltRuta(a, 0), b0 = bordighet(s, i);
+    workOdla(s, p, { act: 'odla', tool: 'mogen', ref: a.id, fr: 0, until: s.now + SIM.HOUR, tx: p.x, ty: p.y } as unknown as SIM.Task, SIM.ODLING.skordaMin * 60);
+    const b1 = bordighet(s, i);
+    for (let h = 0; h < 48; h++) stepOdling(s);
+    const b2 = bordighet(s, i), fn = fuktAv(a, 0), fl = fuktAv(b, 0);
+    return [
+      [`skörden tar av bördigheten (${b0.toFixed(2)} → ${b1.toFixed(2)}), och den ligger kvar i marken`, b1 < b0 && b1 === b0 - JORD.skord],
+      [`när rutan inte odlas kommer den långsamt tillbaka (${b2.toFixed(3)} efter två dygn)`, b2 > b1 && b2 < 1],
+      [`jorden vid vattnet är fuktigare än långt bort (${fn.toFixed(2)} mot ${fl.toFixed(2)})`, fn > fl],
+    ];
+  },
+};

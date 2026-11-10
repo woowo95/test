@@ -1,5 +1,6 @@
 import * as PIXI from 'pixi.js';
-import { gravAt, heligAt, kvarAt, BAR, busksort, FALT_STEG, FOREST, GRODOR, isSoil, stadium, Falt, byId, faltAt, faltIndex, faltKlar, HIGH, MATERIAL, Person, T, W, bitAt, bynsMitt, condOf, dorrDef, emberOn, eldXY, eldarOf, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, stationerOf, framfor, bordPlatser, tingOf, toaAt, tandTest, blixtTest, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, verbOf, zoneAt, zonesOf, Pile, Station, storlekAv, tornadoPos, tornadoAndel } from '../sim';
+import { bordighet, fuktAv, rutorAv } from '../sim';
+import { gravAt, heligAt, kvarAt, BAR, busksort, FALT_STEG, FOREST, GRODOR, isSoil, stadium, Falt, byId, faltAt, faltIndex, HIGH, MATERIAL, Person, T, W, bitAt, bynsMitt, condOf, dorrDef, emberOn, eldXY, eldarOf, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, stationerOf, framfor, bordPlatser, tingOf, toaAt, tandTest, blixtTest, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, verbOf, zoneAt, zonesOf, Pile, Station, storlekAv, tornadoPos, tornadoAndel } from '../sim';
 import { gorText } from './jakt';
 import { iconImg, tecknet } from '../ikoner';
 import { $, esc, fmtN, prickar } from './hjalp';
@@ -227,7 +228,9 @@ function showHover(gx: number, gy: number) {
   const falt = faltAt(s, x, y); // fältet (steg 2.10.3): ägaren, grödan och hur långt det kommit
   if (falt) {
     const ag = byId(s, falt.agare), groda = falt.groda && (falt.steg === 'vaxer' || falt.steg === 'mogen') ? GRODOR[falt.groda] : undefined;
-    rows.push(`${iconImg(groda?.sak ?? 'odling', 12)} <b>Fält</b>${ag ? ` (${esc(ag.name)})` : ''} · ${groda ? groda.namn.toLowerCase() + ', ' : ''}${FALT_STEG[falt.steg].namn.toLowerCase()}${falt.steg === 'mogen' ? '' : `, ${Math.round(faltKlar(falt) * 100)} %`}`);
+    const fk = faltIndex(falt, x, y), ru = fk >= 0 ? rutorAv(falt)[fk] : undefined, rg = ru?.g && (ru.st === 'vaxer' || ru.st === 'mogen') ? GRODOR[ru.g] : groda;
+    const jord = fk >= 0 ? ` · 🟫 ${Math.round(bordighet(s, y * W + x) * 100)} % 💧 ${Math.round(fuktAv(falt, fk) * 100)} %` : ''; // bördigheten och fukten (steg 9.7.2)
+    rows.push(`${iconImg(rg?.sak ?? 'odling', 12)} <b>Fält</b>${ag ? ` (${esc(ag.name)})` : ''} · ${rg ? rg.namn.toLowerCase() + ', ' : ''}${FALT_STEG[ru?.st ?? falt.steg].namn.toLowerCase()}${(ru?.st ?? falt.steg) === 'vaxer' ? `, ${Math.round((ru?.v ?? 0) * 100)} %` : ''}${jord}`);
   }
   const st = stationAt(s, x, y), sd = st && stationDef(st.k);
   if (st && sd) {

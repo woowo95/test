@@ -108,7 +108,7 @@ export type FaltSteg = keyof typeof FALT_STEG;
 // många rutor som såddes, grödan, hur långt den vuxit (0–1), när den mognade och när någon senast arbetade där
 // r = rutorna (steg 9.7.1): varje ruta är en enhet med sitt eget steg, sin gröda, hur långt den vuxit, när den mognade och
 // arbetet som är kvar på den. Fältets steg, gröda, vuxit och mogen är en sammanfattning av rutorna (sammanfatta), för bilden
-export interface Ruta { st: FaltSteg; g?: GrodaSlag; v?: number; m?: number; kvar?: number }
+export interface Ruta { st: FaltSteg; g?: GrodaSlag; v?: number; m?: number; kvar?: number; fu?: number } // fu = fukten (steg 9.7.2)
 export interface Falt { r?: Ruta[]; id: number; x: number; y: number; w: number; dir: number; n: number; agare: number; steg: FaltSteg; klara: number; kvar: number; sadda?: number; groda?: GrodaSlag; vuxit?: number; mogen?: number; rord: number; vatten?: number; fore?: number[]; bered?: number[]; skott?: number[] } // vatten: hur länge grödan klarar sig under torkan (1 = nyss vattnad, torka.ts)
 // fore, bered och skott (steg 3.10.6, rutan i panelen) per ruta k: vad som växte där innan fältet (MARK_FORE), när den bereddes och
 // när någon sist arbetade på den
@@ -461,7 +461,8 @@ function rutaKlar(s: State, p: Person, f: Falt, k: number) {
   } else if (r.st === 'mogen') {
     const d = GRODOR[r.g!], a = skordAndel(s, f, k);
     if (forstaGang(s, 'skord_tecken')) tecken(s, p, 'skord'); else if (a >= 1.5) tecken(s, p, 'dubbelt'); // den första skörden och fältet som gav mycket (steg 8.5.18)
-    if (a > 0) { gain(s, p, d.sak, d.perRuta * a); gain(s, p, d.fro, froTillbaka(s, f, k, d, r.m) * a); count(s, 'skord', d.perRuta * a); }
+    const b = bordSkord(s, faltRuta(f, k)); utarma(s, faltRuta(f, k)); // bördigheten (steg 9.7.2)
+    if (a > 0) { gain(s, p, d.sak, d.perRuta * a * b); gain(s, p, d.fro, froTillbaka(s, f, k, d, r.m) * a); count(s, 'skord', d.perRuta * a * b); }
     if (forstaGang(s, 'skordForst')) { log(s, `${p.name} skördade byns första ${d.namn.toLowerCase()}.`, 'world', [p.id]); p.fame.push(`Skördade byns första ${d.namn.toLowerCase()}`); }
     f.r![k] = { st: 'bereda' }; // jorden grävs upp igen
   }
@@ -515,6 +516,7 @@ export function faltTornado(s: State, rutor: Set<number>) {
 // växer och som ingen sköter blir gräs igen. Inget träd växer på rutorna som röjts
 export function stepOdling(s: State) {
   kornUpptackt(s);
+  jordTimme(s); // bördigheten och fukten (steg 9.7.2)
   if (!s.falt?.length) return;
   const temp = temperature(s), istid = iIstiden(kalender(s).ai), g = groundOf(s);
   for (const f of [...s.falt]) {
@@ -626,3 +628,38 @@ import { TEK, learn } from './teknik';
 import { grundvarde } from './varde';
 import { EKONOMI } from './ekonomi';
 import { FORRADSMAL } from './forradsmal';
+
+// ---------- jordens värden (steg 9.7.2, Odlingen i detalj: Jorden) ----------
+// Bördigheten ligger i marken (s.bord, bara de rutor där den inte är full) och finns kvar när fältet växer igen: den sjunker med
+// varje skörd och kommer långsamt tillbaka där inget växer. Den drar ner skörden (bordSkord). Fukten finns per ruta på fältet:
+// den stiger med regnet och närheten till vatten och sjunker i värmen. Båda syns när man håller musen över rutan
+export const JORD = balans('jord', {
+  skord: 0.08, // så mycket av bördigheten tar en skörd
+  ater: 0.03, // så mycket kommer tillbaka per dygn där inget växer
+  minSkord: 0.6, // på helt utarmad jord ger skörden så här stor del
+  regn: 0.08, // så mycket fuktigare i timmen när det regnar
+  torka: 0.01, // så mycket torrare i timmen vid 15 grader, mer i värme
+  nara: 0.03, // fukten dras så här mycket i timmen mot närheten till vatten
+  naraRutor: 8, // vatten närmare än så här många rutor gör jorden fuktigare
+});
+export const bordighet = (s: State, i: number) => s.bord?.[i] ?? 1;
+export const bordSkord = (s: State, i: number) => JORD.minSkord + (1 - JORD.minSkord) * bordighet(s, i);
+export const fuktAv = (f: Falt, k: number) => rutorAv(f)[k]?.fu ?? 0.5;
+// närheten till vatten (0–1): 1 vid stranden
+const vattenNara = (s: State, i: number) => clamp(1 - djupOf(s.seed).land[i] / JORD.naraRutor, 0, 1);
+function jordTimme(s: State) {
+  const temp = temperature(s), regn = vaderNu(s).nb > 0, odlat = new Set<number>();
+  for (const f of faltOf(s)) {
+    const r = rutorAv(f);
+    for (let k = 0; k < f.n; k++) {
+      const i = faltRuta(f, k), x = r[k], fu = x.fu ?? vattenNara(s, i) * 0.5 + 0.25;
+      x.fu = clamp(fu + (regn ? JORD.regn : 0) - JORD.torka * Math.max(0.2, 1 + (temp - 15) / 10) + JORD.nara * (vattenNara(s, i) - fu), 0, 1);
+      if (x.st === 'vaxer' || x.st === 'mogen') odlat.add(i);
+    }
+  }
+  for (const k in s.bord ?? {}) { const i = Number(k); if (odlat.has(i)) continue; const v = s.bord![i] + JORD.ater / 24; if (v >= 1) delete s.bord![i]; else s.bord![i] = v; }
+}
+// skörden tar av bördigheten på rutan
+function utarma(s: State, i: number) { (s.bord ??= {})[i] = Math.max(0, bordighet(s, i) - JORD.skord); }
+import { djupOf } from './sjo';
+import { vaderNu } from './vader';
