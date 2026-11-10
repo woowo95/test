@@ -87,6 +87,7 @@ export const TRON = balans('tron', {
 export const STR = balans('straff', {
   holmgang: 0.5, // vid så här mycket Fejd avgörs tvister med holmgång (steg 8.4.7)
   tingRost: 0, // vid så här lite Envälde avgör byn skulden i en omröstning
+  vardDygn: 5, // straffet Ingen vård (steg 9.5.30) varar så här många dygn (år i spelet)
   tjanstDygn: 2, // samhällstjänsten varar så här många dygn (år i spelet)
   bot: 5, // så många saker betalas i böter när den dömde inte äger något redskap
   dygn: 2, // ledaren dömer för det som hänt de senaste så här många dygnen
@@ -411,6 +412,7 @@ export const STRAFF_REG = [
   { id: 5, namn: 'Samhällstjänst', da: 'dömde till extra arbete', inf: 'arbeta extra för byn', nu: 'dömer till extra arbete' },
   { id: 6, namn: 'Döden', da: 'dömde till döden', inf: 'dö', nu: 'dömer till döden' },
   { id: 7, namn: 'Förlorad rätt', da: 'tog rösten från', inf: 'förlora rösten', nu: 'tar rösten från' },
+  { id: 8, namn: 'Ingen vård', da: 'tog rätten till vård från', inf: 'inte få vård', nu: 'tar rätten till vård från' }, // steg 9.5.30
 ] as const;
 const STRAFF = STRAFF_REG.map(r => r.nu);
 const BROTT = new Set<HandelseTyp>(['budbrott', 'stold', 'stoldLindrig', 'sla', 'misshandel', 'drap', 'logn', 'overdrev']);
@@ -478,6 +480,7 @@ function doma(s: State, l: Person) {
     if (steg === 4) botes(s, q, drabbad && alive(drabbad) ? drabbad : undefined); // utan någon drabbad går böterna till byn
     if (steg === 5) q.tjanst = now + STR.tjanstDygn * DAY;
     if (steg === 7) q.utanRost = true;
+    if (steg === 8) q.utanVard = now + STR.vardDygn * DAY; // ingen vårdar hen under tiden (vardRatt i halsa.ts)
     if (steg === 6) { r.dog = true; q.brottsling = true; kronika(s, `${q.name} dömdes till döden.`, 'ledare'); die(s, q, 'avrattad'); continue; }
     if (steg === 1) q.skam = now + STR.skamDygn * DAY;
     if (steg === 2) { const dod = skada(s, q, 'bal', 'blamarke', STR.slagG, 'drap', `när ${l.name} straffade hen`); if (dod) { r.dog = true; die(s, q, dod); continue; } }

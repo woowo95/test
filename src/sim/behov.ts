@@ -5,7 +5,7 @@ import { State, Person, HOUR, DAY } from './typer';
 import { FOOD, REDSKAP_SLAG, SAKER, SAK_LIST, isTool, viktOf } from './saker';
 import { ACTS, actsOf, usesTool } from './handlingar';
 import { ALDER, KROPP, REL, ageOf, alive, byId, count, getRel, gjort, isKin, isParent, livet, living, log, ovning, relKey, stat, think } from './folk';
-import { kanGa } from './halsa';
+import { VARDRATT, kanGa, mindreMat } from './halsa';
 import { chance, clamp, pickViktat, rnd } from './slump';
 import { Ting, newTing, tingOf } from './agande';
 import { kvEffekt } from './kvalitet';
@@ -113,7 +113,9 @@ export const MAT: Behov = {
   // importerar varandra i en ring, så EKONOMI kan vara odefinierad när den här filen läses in
   get kvar() { return EKONOMI.matPerDygn; },
   // vid bordet äter man lite tidigare än annars: det är därför man satt sig där
-  behover: (_s, p) => p.hunger < KROPP.hungrig || vidBordet(p) && p.hunger < KROPP.hungrig + KROPP.bordHunger, genast: true,
+  // i en hård by med knapp mat äter den som inte kan arbeta först när hen är hungrigare (steg 9.5.30)
+  behover: (s, p) => p.hunger < KROPP.hungrig && (p.hunger < KROPP.hungrig * VARDRATT.snal || !mindreMat(s, p, () => foodDays(s)))
+    || vidBordet(p) && p.hunger < KROPP.hungrig + KROPP.bordHunger && !mindreMat(s, p, () => foodDays(s)), genast: true,
   fara: (_s, p) => p.hunger <= 0 ? 1 - p.health : 0, // man svälter när hungern är slut, och hälsan sjunker
   anvand: eat,
 };
@@ -678,3 +680,4 @@ export function genomfor(s: State, M: Part, G: Part, fatt: Vara[], betal: Vara[]
 }
 // den som är skickligare lurar ibland den andra i ett byte M och G gått med på (handlaren, steg 4.5.7.4): betal kan ändras
 export const luraI = (s: State, M: Part, G: Part, betal: Vara[], utom: readonly string[], ger: number) => lura(s, M, G, betal, betalVaror(M, G, utom), ger);
+import { foodDays } from './ekonomi';

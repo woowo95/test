@@ -22,7 +22,7 @@ import { ACTS } from './handlingar';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, franMitt, gjort, isParent, livet, living, log, ovning, raddAkt, think } from './folk';
 import { amountOf, avbryt, fetchSpot } from './lager';
 import { fearPlace } from './minne';
-import { SJUK, foljd } from './sjukdom';
+import { SJUK, foljd, ligger } from './sjukdom';
 // febern av en sjukdom: medvetandet utan klockan (sjukdomen vet när tecknen kommit, st)
 const sjukFeber = (p: Person) => p.sjuk?.st !== undefined ? foljd(p, p.sjuk.tecken, 'feber') : 0;
 import { TORST } from './torst';
@@ -612,7 +612,7 @@ export function vardVal(s: State, p: Person, sjalv: boolean): { spot: { x: numbe
   for (const q of [...living(s), ...gasterNu(s).filter(g => g.gast!.sort !== 'rovare')]) { // gästerna vårdas också, utom rövarna (steg 9.2.113)
     if (q === p || !q.skador?.length && !q.svimmat) continue;
     const d = Math.hypot(q.x - p.x, q.y - p.y);
-    if (d >= (s.now - (q.ropT ?? -Infinity) < HALSA.ropTim * HOUR ? HALSA.ropR : HALSA.vardR) || d / vardRatt(s, p, q) * bradska(q) >= bd || !vardBehov(s, q, p) || vardas(s, q, p)) continue; // den som ropat hörs längre (steg 9.5.16)
+    if (d >= (s.now - (q.ropT ?? -Infinity) < HALSA.ropTim * HOUR ? HALSA.ropR : HALSA.vardR) || utanVard(s, q) || d / vardRatt(s, p, q) * bradska(q) >= bd || !vardBehov(s, q, p) || vardas(s, q, p)) continue; // den som ropat hörs längre (steg 9.5.16)
     best = q; bd = d / vardRatt(s, p, q) * bradska(q);
   }
   if (!best) return undefined;
@@ -627,9 +627,23 @@ export function vardVal(s: State, p: Person, sjalv: boolean): { spot: { x: numbe
 // rätten till vård (steg 9.5.9, "Rätt till vård" i designdokumentet): hur mycket före de andra p vårdar q, efter sederna och
 // styret. Vid Sammanhållning vårdas alla lika; vid Självförsörjning vårdar släkten sina egna; vid Envälde går ledaren och hens
 // släkt före; vid Ättens växt barnen. 1 = som alla andra, större = före
-export const VARDRATT = balans('vardratt', { slakt: 2, frammande: 0.5, ledare: 2, barn: 2 });
+export const VARDRATT = balans('vardratt', {
+  slakt: 2, frammande: 0.5, ledare: 2, barn: 2,
+  hard: 0.5, // en hård by (Arbete eller Självförsörjning så här starkt, steg 9.5.30) ...
+  knapp: 3, // ... ger den som inte kan arbeta mindre mat när maten räcker färre dygn än så ...
+  snal: 0.5, // ... hen äter först när mättnaden sjunkit till den här delen av det vanliga
+});
+// den som straffats med Ingen vård (steg 9.5.30) får ingen vård alls så länge straffet varar
+export const utanVard = (s: State, q: Person) => (q.utanVard ?? 0) > s.now;
+// en hård by ger den som inte kan arbeta (vuxen och sängliggande eller kan inte gå) mindre mat när maten är knapp (steg 9.5.30)
+export function mindreMat(s: State, p: Person, dagar: () => number) {
+  const v = s.seder.v;
+  return Math.max(v.arbete ?? 0, -(v.gemenskap ?? 0)) >= VARDRATT.hard && ageOf(p, s.now) >= ALDER.vuxen
+    && (ligger(p, s.now) || !kanGa(p)) && dagar() < VARDRATT.knapp;
+}
 const slakt = (a: Person, b: Person) => a.partner === b.id || isParent(a, b) || isParent(b, a) || (a.mother !== undefined && a.mother === b.mother);
 export function vardRatt(s: State, p: Person, q: Person) {
+  if (utanVard(s, q)) return 0;
   const v = s.seder.v, g = v.gemenskap ?? 0, r = v.rang ?? 0, b = v.barn ?? 0, l = ledareOf(s);
   let x = 1;
   if (g < 0) x *= slakt(p, q) ? 1 + -g * (VARDRATT.slakt - 1) : 1 - -g * (1 - VARDRATT.frammande);

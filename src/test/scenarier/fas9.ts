@@ -622,3 +622,33 @@ SCENARIER.forlossning = {
     ];
   },
 };
+
+SCENARIER.vardlag = {
+  text: 'Steg 9.5.30: lagen om rätten till vård. Straffet Ingen vård (en rad i straffen) gör att ingen vårdar den straffade så länge det varar, och en hård by ger den som inte kan arbeta mindre mat när maten är knapp',
+  kor: () => {
+    const { vardVal, vardRatt, skada, STRAFF_REG, STR, MAT, KROPP, VARDRATT, mindreMat } = SIM;
+    const s = createState(1, START), [g, q] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
+    for (const r of SIM.living(s)) if (r !== g && r !== q) { r.x = 5; r.y = 5; }
+    q.x = g.x + 3; q.y = g.y;
+    skada(s, q, 'bal', 'sticksar', 0.5, 'blod', 'i en strid');
+    const fore = vardVal(s, g, false)?.ref === q.id;
+    q.utanVard = s.now + STR.vardDygn * SIM.DAY;
+    const efter = vardVal(s, g, false)?.ref !== q.id && vardRatt(s, g, q) === 0;
+    s.now = q.utanVard + 1;
+    const igen = vardVal(s, g, false)?.ref === q.id;
+    // den som inte kan arbeta i en hård by med knapp mat
+    const h = SIM.createState(2, START), p = SIM.living(h).find(r => SIM.ageOf(r, h.now) >= SIM.ALDER.vuxen)!;
+    h.seder.v.arbete = 1; p.saknas = ['benV', 'benH']; p.hunger = KROPP.hungrig * (VARDRATT.snal + 1) / 2;
+    const knapp = mindreMat(h, p, () => 1), gott = mindreMat(h, p, () => 10);
+    for (const k of SIM.FOOD) SIM.setAmount(h, k, 0);
+    const vantar = SIM.foodDays(h) < VARDRATT.knapp && !MAT.behover(h, p);
+    h.seder.v.arbete = 0; h.seder.v.gemenskap = 0;
+    const mild = !mindreMat(h, p, () => 1);
+    return [
+      [`straffet Ingen vård finns bland straffen (${STRAFF_REG.map(r => r.namn).join(', ')})`, STRAFF_REG.some(r => r.namn === 'Ingen vård')],
+      [`den skadade vårdas (${fore ? 'ja' : 'nej'}), inte medan straffet varar (${efter ? 'ja' : 'nej'}), och igen efteråt (${igen ? 'ja' : 'nej'})`, fore && efter && igen],
+      [`i en hård by äter den som inte kan gå mindre när maten är knapp (${knapp ? 'ja' : 'nej'}), inte när maten räcker (${gott ? 'nej' : 'ja'})`, knapp && !gott],
+      [`hen väntar med att äta tills hen är hungrigare (${vantar ? 'ja' : 'nej'}), och en mild by gör inte så (${mild ? 'ja' : 'nej'})`, vantar && mild],
+    ];
+  },
+};
