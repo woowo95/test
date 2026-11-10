@@ -66,6 +66,9 @@ export const VARIATION = {
   trott: 6, // ... och tröttnar när lika många av dem var samma
   tanke: -0.02, tankeTim: 6, // tanken "Fisk igen": lite, så att en ny by som lever på fisk inte mår dåligt av det
 };
+// smaken för en rätt gäller huvudingrediensen (steg 9.6.6): fiskgrytan smakar fisk
+const SMAK_SAK: Record<RattHuvud, string> = { kott: 'kott', fisk: 'fisk', rot: 'rotter', svamp: 'svamp', bar: 'bar' };
+export const smakSak = (k: string) => { const r = rattInfo(k); return r ? SMAK_SAK[r.huvud] : k; };
 export const nivaAvGrupper = (g: Set<Matgrupp>): Maltidsniva => g.size >= 3 && g.has('smak') ? 'fin' : g.size >= 2 ? 'lagad' : 'enkel';
 
 // ---------- tillagningen och kategorierna (steg 9.6.3) ----------

@@ -109,6 +109,7 @@ function eat(s: State, p: Person, fran?: Person) {
 function maltidTanke(s: State, p: Person, per: Record<string, number>) {
   const n = MALTIDSNIVA[basta(per)];
   if (n.humor > 0) { think(p, n.tanke, n.humor, s.now, RATT.tankeTim * HOUR); count(s, 'maltid_' + basta(per)); }
+  if (basta(per) === 'fin') { const k = Object.keys(per).find(x => MALTIDSNIVA[maltidsNiva(x)] === MALTIDSNIVA.fin); if (k) smakFinMaltid(p, smakSak(k)); } // en favorit (steg 9.6.6)
   // variationen (steg 9.6.5): den som ätit samma protein för många gånger tröttnar på det
   let mest = '', mn = 0; for (const k in per) { const pr = proteinAv(k, x => SAKER[x]?.namn ?? x); if (pr && per[k] > mn) { mest = pr; mn = per[k]; } }
   if (mest) {
@@ -693,5 +694,6 @@ export function genomfor(s: State, M: Part, G: Part, fatt: Vara[], betal: Vara[]
 // den som är skickligare lurar ibland den andra i ett byte M och G gått med på (handlaren, steg 4.5.7.4): betal kan ändras
 export const luraI = (s: State, M: Part, G: Part, betal: Vara[], utom: readonly string[], ger: number) => lura(s, M, G, betal, betalVaror(M, G, utom), ger);
 import { foodDays } from './ekonomi';
-import { MALTIDSNIVA, RATT, VARIATION, basta, proteinAv } from './ratter';
+import { MALTIDSNIVA, RATT, VARIATION, basta, maltidsNiva, proteinAv, smakSak } from './ratter';
 import { kockGlad } from './matlagning';
+import { smakFinMaltid } from './rykten';

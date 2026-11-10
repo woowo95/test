@@ -96,7 +96,7 @@ export function ratt(s: State, p: Person, per: Record<string, number>, full: num
   think(p, 'Åt rått', MATLAG.surt, s.now, MATLAG.surtTim * HOUR);
   if (rnd(s, 'halsa', p) >= ra / full * MATLAG.sjuk * SJUK.ratt) return;
   const sak = SAKER[mest]!, vad = `rå${sak.ett ? 'tt' : ''} ${sak.namn.toLowerCase()}`; insjukna(s, p, 'matforgiftning', `av ${vad}`); p.sickWhy = `Matförgiftad av ${vad}`; // steg 9.5.1
-  think(p, 'Blev matförgiftad av rått kött eller rå fisk', MATLAG.forgiftad, s.now, 12 * HOUR);
+  think(p, 'Blev matförgiftad av rått kött eller rå fisk', MATLAG.forgiftad, s.now, 12 * HOUR); smakForgiftad(p, mest); // en avsky (steg 9.6.6)
   count(s, 'matforgiftad');
   // det som åts står i raden, och ingen rad om hen redan blivit förgiftad samma timme (svampen, steg 6.7.5)
   if (!s.log.some(e => e.t > s.now - HOUR && e.ids.length === 1 && e.ids[0] === p.id && (e.m === 'l_raMat' || e.text.includes('förgiftad')))) loggBer(s, 'l_raMat', p.id, { namn: p.name, hen: p.sex === 'm' ? 'han' : 'hon', vad }, 'world', [p.id]);
@@ -269,3 +269,4 @@ export function stepKok(s: State) {
     t.kok = undefined;
   }
 }
+import { smakForgiftad } from './rykten';

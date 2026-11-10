@@ -784,3 +784,25 @@ SCENARIER.variation = {
     ];
   },
 };
+
+SCENARIER.favorit = {
+  text: 'Steg 9.6.6: favoriter och avsky. En fin måltid ger tycke för rättens huvudingrediens och en matförgiftning avsmak för det man åt; en stark smak är en favorit eller en avsky, som bleknar med tiden om den inte förnyas och sprids i samtal till den som står en nära',
+  kor: () => {
+    const { ratt, smakAv, favoriter, stepRykten, berattaSmak, MAT, FOOD, setAmount, rattId, RYKTE } = SIM;
+    const s = createState(1, START), [p, q] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
+    p.smak = {}; q.smak = {};
+    for (let i = 0; i < 3000 && smakAv(p, 'm:fisk') > -RYKTE.smakFavorit; i++) { ratt(s, p, { fisk: 1 }, 1); p.sjuk = undefined; p.sickUntil = undefined; }
+    const avsky = smakAv(p, 'm:fisk'), fav = favoriter(p).some(f => f.k === 'fisk' && f.v < 0);
+    berattaSmak(p, q, 60); const spred = smakAv(q, 'm:fisk');
+    for (let h = 0; h < 5 * 24; h++) stepRykten(s, () => 0.5);
+    const bleknat = smakAv(p, 'm:fisk');
+    for (const k of FOOD) setAmount(s, k, 0); setAmount(s, rattId('fisk', 'gryta', 'fin'), 4); q.hunger = 0.2; MAT.anvand(s, q);
+    const gott = smakAv(q, 'm:fisk');
+    return [
+      [`en matförgiftning av rå fisk ger avsky för fisk (${avsky.toFixed(2)}), och den står bland favoriterna och avskyn (${fav ? 'ja' : 'nej'})`, avsky <= -RYKTE.smakFavorit && fav],
+      [`avskyn sprids i samtal till en vän (${spred.toFixed(2)})`, spred < 0],
+      [`avskyn bleknar på fem dygn (${avsky.toFixed(2)} → ${bleknat.toFixed(2)})`, bleknat > avsky && bleknat < 0 && Math.abs(bleknat) < Math.abs(avsky) * 0.7],
+      [`en fin fiskgryta ger vännen tycke för fisken (${spred.toFixed(2)} → ${gott.toFixed(2)})`, gott > spred],
+    ];
+  },
+};

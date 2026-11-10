@@ -213,6 +213,7 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
     predika(s, a, b, r, kind); // och den som tror försöker övertyga (steg 4.1.2.2, religion.ts)
     if (a.tek?.ledarskap) tankePa(s, a, 'lag', SAMTAL.ledTanke * SAMTAL.lagTanke); // och sedan på lag (steg 8.4.1)
     tankePa(s, a, 'ledarskap', SAMTAL.ledTanke); // och kommer på vad som krävs för att leda (steg 3.5.1)
+    berattaSmak(a, b, r.op); // och om sin favoritmat eller det man avskyr (steg 9.6.6)
     berattaBrist(a, b, now); // och vad man längtar efter ("jag längtar efter kött", steg 2.6.2)
     samtalAmne(s, a, b, kind);
     if (kind !== 'flirt' && out + like > SAMTAL.gavaMin) askForGift(s, a, b); // den som saknar något frågar efter det (mat, ved, redskap: behov.ts)
@@ -239,3 +240,4 @@ export function skiljas(s: State, a: Person, b: Person, r: Rel) {
   upplev(s, b, 'lamnad', a.name); // den som blev lämnad (steg 4.1.1.2)
   think(a, `${ord} från ${b.name}`, -SAMTAL.skiltTanke * f, now, SAMTAL.skiltDygn * f * DAY); think(b, `${ord} från ${a.name}`, -SAMTAL.skiltTanke * f, now, SAMTAL.skiltDygn * f * DAY);
 }
+import { berattaSmak } from './rykten';
