@@ -25,7 +25,7 @@ import { chance, clamp, rnd } from './slump';
 import { BLOTVED, torrVed } from './blotved';
 import { ARSTID, ageIndex, iIstiden, isLight } from './tid';
 import { SNABBARE } from './handlingar';
-import { Act, DAY, Fire, FireLog, GREN, HEARTHS, HOUR, HOUR_S, IGNITERS, Person, SEC, State, Task, W, H } from './typer';
+import { Act, DAY, Fire, FireLog, GREN, HEARTHS, HOUR, HOUR_S, IGNITERS, Person, SEC, State, T, Task, W, H } from './typer';
 import { balans } from './balans';
 import { num } from './format';
 import { brasaSten, vedPerEld, BRASA } from './brasor';
@@ -71,6 +71,10 @@ export const ELD = balans('eld', {
   // samla tändmaterial, stenar och flinta (forageItems): per arbetstimme gånger kunnigheten
   hoTakt: 3, // hö (gånger tidsålderns ARSTID.hoPerTid)
   grenarTakt: 3, // grenar (gånger ARSTID.grenarIstid i istiden)
+  // tändmaterialet på rutan (steg 9.3.4, tandPaRutan): hö i gräset och kvistar på all mark, hela saker, efter årstiden
+  hoSaker: 12, // hö på en gräsruta på sommaren (gånger ARSTID.hoPerTid och hur orörd marken är)
+  kvistSaker: 6, // kvistar på en ruta (gånger ARSTID.grenarIstid i istiden och fler vid buskarna)
+  tandAter: 16, // det som plockats av tändmaterialet växer tillbaka med så här många saker per dygn (år i spelet)
   stenTakt: 0.8, // stenar till eldringen ...
   stenNara: 1, stenNaraDel: 3, // ... gånger Nara dit stenarna ligger inom så många rutor ...
   stenMedel: 3, stenMedelDel: 1.5, // ... Del inom så många ...
@@ -399,8 +403,10 @@ export function forageItems(s: State, p: Person, dtSec: number, fart = 1): Recor
   const got: Record<string, number> = {};
   // under bufferten plockas materialet, och den som hämtar det plockar till taket men aldrig över (FORRADSMAL, steg 6.2.14)
   const plocka = (k: Materialslag) => !overTak(s, k, p.task?.items?.[k] ?? 0) && (underBuffert(s, k, p.task?.items?.[k] ?? 0) || p.task?.hamtar === k);
-  if (plocka('torrgras')) got.torrgras = ELD.hoTakt * ARSTID.hoPerTid[ai] * sk * vaxer;
-  if (plocka('grenar')) got.grenar = ELD.grenarTakt * (iIstiden(ai) ? ARSTID.grenarIstid : 1) * sk * vaxer * (p.task ? grenFaktor(groundOf(s), tileOf(p.task.tx, p.task.ty)) : 1); // fler vid buskarna (steg 6.5.3)
+  // tändmaterialet är hela saker på rutan (steg 9.3.4): arbetet mot nästa sak ligger hos personen, och en hel sak tas från rutan
+  // där hen är när arbetet räcker. Finns inget kvar där blir det inget, och arbetet väntar (högst en sak)
+  if (plocka('torrgras')) tandTa(s, p, got, 'torrgras', ELD.hoTakt * ARSTID.hoPerTid[ai] * sk * vaxer);
+  if (plocka('grenar')) tandTa(s, p, got, 'grenar', ELD.grenarTakt * (iIstiden(ai) ? ARSTID.grenarIstid : 1) * sk * vaxer * (p.task ? grenFaktor(groundOf(s), tileOf(p.task.tx, p.task.ty)) : 1)); // fler vid buskarna (steg 6.5.3)
   // stenar till eldringen: många vid stenarna, några i sanden, få annars
   if (needStones(s) || plocka('sten')) {
     const d = p.task ? stoneDist(s.seed)[tileOf(p.task.tx, p.task.ty)] : 9;
@@ -416,6 +422,41 @@ export function forageItems(s: State, p: Person, dtSec: number, fart = 1): Recor
     if (ff <= ELD.flintaSand) tecken(s, p, 'fynd', 'flintan där ingen trodde att den fanns'); // fyndet på den märkliga platsen (steg 8.5.18)
   }
   return Object.keys(got).length ? got : undefined;
+}
+// ---------- tändmaterialet på rutan (steg 9.3.4) ----------
+// Höet ligger i gräset och skogen (inte på stigarna, efter hur orörd marken är) och kvistarna på all mark, flera hela saker per
+// ruta efter årstiden. Det som plockats (s.plockat, som för grenarna och stenarna i steg.ts) växer tillbaka, ELD.tandAter per dygn
+export type Tand = 'torrgras' | 'grenar';
+const tandKey = (k: Tand, i: number) => `${k === 'torrgras' ? 'ho' : 'kvist'}:${i}`;
+export function tandPaRutan(s: State, k: Tand, x: number, y: number): number {
+  if (x < 0 || y < 0 || x >= W || y >= H) return 0;
+  const g = groundOf(s), i = y * W + x, t = g.tiles[i];
+  if (t === T.Vatten || t === T.Sten) return 0;
+  const ai = ageIndex(s);
+  const bas = k === 'torrgras'
+    ? (t === T.Gras || t === T.Skog ? Math.floor(ELD.hoSaker * ARSTID.hoPerTid[ai] * Math.min(1, g.cover[i]) + 1e-9) : 0)
+    : Math.floor(ELD.kvistSaker * (iIstiden(ai) ? ARSTID.grenarIstid : 1) * grenFaktor(g, i) + 1e-9);
+  const r = s.plockat?.[tandKey(k, i)];
+  if (!r) return bas;
+  const kvar = r.n - Math.floor((s.now - r.t) / DAY * ELD.tandAter);
+  if (kvar <= 0) { delete s.plockat![tandKey(k, i)]; return bas; }
+  return Math.max(0, bas - kvar);
+}
+// en sak tändmaterial tas från rutan
+function tandPlocka(s: State, k: Tand, x: number, y: number) {
+  const key = tandKey(k, y * W + x), r = s.plockat?.[key];
+  const kvar = r ? Math.max(0, r.n - Math.floor((s.now - r.t) / DAY * ELD.tandAter)) : 0;
+  (s.plockat ??= {})[key] = { n: kvar + 1, t: s.now };
+}
+// arbetet v mot tändmaterialet av slaget k: hela saker från rutan där p arbetar, så många som arbetet räcker till och rutan har
+function tandTa(s: State, p: Person, got: Record<string, number>, k: Tand, v: number) {
+  const x = Math.floor(p.task?.tx ?? p.x), y = Math.floor(p.task?.ty ?? p.y), d = (p.delar ??= {}), nyck = 'tand:' + k;
+  let t = (d[nyck] ?? 0) + v, n = 0;
+  while (t >= 1 - 1e-9 && tandPaRutan(s, k, x, y) > 0) { tandPlocka(s, k, x, y); t -= 1; n++; }
+  t = Math.min(t, 1 - 1e-6); // på en tom ruta väntar arbetet, högst en sak
+  if (t > 1e-9) d[nyck] = t; else delete d[nyck];
+  if (!Object.keys(d).length) delete p.delar;
+  if (n) got[k] = n;
 }
 // så många dygn bränslet i förrådet räcker
 export function woodDays(s: State) { return fuelStock(s) / (hearthOf(s.fire).burn * 24); }

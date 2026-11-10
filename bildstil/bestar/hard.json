@@ -1,0 +1,10 @@
+{
+  "lager": "hard",
+  "om": "Ritat av Claude API:t med bildstil/api/bestar.mjs: former och mönster som bestskaparen gör om till delar.",
+  "kostnad": 0.156,
+  "anteckningar": {"hard":"Ögonbryn: sluttar nu ner mot nosen för en argare blick. Armbågssporrar: knappt synliga, så knölen och sporren är grövre och pekar bakåt-uppåt i stället för ner mot marken. Halsknölar: de vid nacke1 hamnade på kinden, så alla knölar utgår nu från nacke0 och växer bakåt mot skuldrorna. Benkranium: bågen under ögat täckte överläppen och liknade Benpansar, så den blev en kindbåge bakåt från ögat. Sköldfjäll: plattorna vid bogen och höften doldes av benen, så sköldarna sitter nu på flanken under ryggen. Svansklubba: fick trubbiga taggar uppåt och nedåt för en tydligare silhuett."},
+  "delar": [
+    {"delar":[{"ankare":"led","former":[{"typ":"ell","c":[0.5,0],"r":[2.8,2.8]},{"typ":"poly","pts":[[1.5,-3],[1.5,2.5],[-2.5,2.5],[-9.5,-2.5]]}]}],"id":"hard-2","namn":"Armbågssporrar","text":"Grova sporrar av horn som sticker snett bakåt och uppåt från varje led på frambenen."},
+    {"delar":[{"ankare":"panna","former":[{"typ":"poly","pts":[[-8,1],[-6,-3],[0,-4.5],[7,-3],[10,0],[6,2],[-2,2.5]]}]},{"ankare":"hornet","former":[{"typ":"ell","c":[0,1.5],"r":[3.4,2.8]}]},{"ankare":"oga","former":[{"typ":"kapsel","pts":[[2,3],[-3,3.5],[-10,1.5]],"r":[1.5,2,1.6]}]}],"id":"hard-4","namn":"Benkranium","text":"Ett kranium av blottat ben som täcker pannan och hornens rot och löper som en kindbåge bakåt från ögat."}
+  ]
+}

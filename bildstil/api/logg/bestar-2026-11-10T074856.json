@@ -1,0 +1,24 @@
+{
+ "kommando": "omrita",
+ "val": [
+  "textur:fjall-1=vänd fjällmönstret 90 grader",
+  "textur:fjall-2=vänd mönstret 90 grader",
+  "textur:fjall-3=vänd mönstret 90 grader",
+  "pryd:pryd-6=sitter inte rätt runt halsen",
+  "pryd:pryd-7=följer inte kroppen rätt på alla"
+ ],
+ "kommentar": null,
+ "modell": "claude-opus-5-5",
+ "uppskattat": {
+  "lag": 0.5,
+  "hog": 1
+ },
+ "dollar": 0.24,
+ "rapport": [
+  "textur__om__fjall-1 1: \"Fjäll stående\"",
+  "textur__om__fjall-2 1: \"Fjäll pansar\"",
+  "textur__om__fjall-3 1: \"Fjäll nedåt\"",
+  "pryd__om__pryd-6 1: \"Benkedja\"",
+  "pryd__om__pryd-7 1: \"Glödränder\""
+ ]
+}

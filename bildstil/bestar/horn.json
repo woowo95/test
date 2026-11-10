@@ -1,0 +1,12 @@
+{
+  "lager": "horn",
+  "om": "Ritat av Claude API:t med bildstil/api/bestar.mjs: former och mönster som bestskaparen gör om till delar.",
+  "kostnad": 0.156,
+  "anteckningar": {"horn":"Enhörning kortad (spetsen vid x 14,5) så att den inte går in i människan. Taggrad fick högre, glesare taggar och en smalare kam så att den inte ser ut som en klump. Myskhorn fick mindre buckla och en tydligare krok ned och framåt inom y +3. Skruvhorn fick mindre slingring och starkare diagonala räfflor så att det ser vridet ut i stället för vågigt. Övriga oförändrade."},
+  "delar": [
+    {"former":[{"typ":"kapsel","pts":[[0,0],[-1,-5],[-5,-8.5],[-10,-8],[-13,-4],[-12.5,0.5],[-9,1],[-6.5,-1],[-7.5,-3.5]],"r":[3.2,3,2.8,2.5,2.2,1.9,1.6,1.2,0.8]}],"id":"horn-1","namn":"Vädur","text":"Tjocka vädurshorn som rullar sig bakåt och nedåt i en tung spiral."},
+    {"former":[{"typ":"kapsel","pts":[[0,0],[-1,-8],[-2.5,-17]],"r":[2.8,1.8,0.5]}],"monster":{"rader":["....","-..-","....","..+."],"skift":0},"id":"horn-2","namn":"Spjut","text":"Ett rakt och smalt horn som sticker nästan lodrätt upp som ett spjut."},
+    {"former":[{"typ":"kapsel","pts":[[0,0],[1,-6],[5,-11],[10,-12],[13,-9],[13.5,-5]],"r":[3,2.6,2.1,1.6,1.1,0.5]}],"id":"horn-6","namn":"Krok","text":"Ett krökt horn som reser sig och böjer sig framåt och ned som en köttkrok."},
+    {"former":[{"typ":"kapsel","pts":[[0,0],[-1.5,-4],[-0.5,-7.5],[-2.5,-11],[-1.5,-14],[-3,-17.4]],"r":[3,2.5,2.1,1.6,1.1,0.4]}],"monster":{"rader":["=-.+","+=-.",".+=-","-.+="],"skift":0},"id":"horn-10","namn":"Skruvhorn","text":"Ett vridet horn som skruvar sig uppåt och bakåt med tydliga spiralräfflor."}
+  ]
+}

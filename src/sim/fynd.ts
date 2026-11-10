@@ -19,6 +19,7 @@ import { BARBUSKE, BUSKE, BUSKTAL, barKrok, busksort } from './buskar';
 import { djupOf, iVattnetNu, sjoRakna, sjoarna, strandAv, vattenNu } from './sjo';
 import { smakGift } from './rykten';
 import { tecken } from './religion';
+import { insjukna } from './sjukdom';
 
 // ---------- balanstal (regel 8) ----------
 // Fångst och insamling: var viltet håller sig borta, hur fort platserna tömmas och växer tillbaka, fiske, flinta och svamp.
@@ -104,10 +105,13 @@ interface FyndDef {
   arstid?: number[]; // hur mycket som finns per tidsålder (istid, vår, sommar, höst), annars lika året om
   torka?: number; // så mycket finns under en torka (steg 3.8.2, torka.ts), annars som vanligt
   uttag?: Uttag;
+  saker?: number; // så många hela saker har en full ruta (steg 9.2.53, sakerPaRutan i steg.ts): rikedomen delad med topp gånger det, nedåt
   vatten?: number; // lagret finns i vattnet; man står på stranden och når så många rutor ut
+  regn?: true; // platsen fylls bara på när det regnar, mer ju mer det regnar, och vattnet i en översvämning lämnar det där det står (leran, steg 9.4.10)
 }
 const SVAMP_SEASON = [0, 0.15, 0.8, 1.5];
 const SVAMP_UTTAG: Uttag = { full: 2.5, reach: 1, regrow: [1 / 1200, 1 / 450, 1 / 120, 1 / 120] };
+const SVAMP_SAKER = 0.07; // svampar på en full ruta (steg 9.2.53)
 const land = (s: State, i: number) => isSoil(groundOf(s).tiles[i]);
 // hur väl varje slags mark passar lagret (gånger resten av värdet)
 const BAR_PASSAR: Record<Markslag, number> = { skog: 0.8, ung: 1, buske: 1, hog: 1, kort: 0, bar: 0 };
@@ -136,7 +140,7 @@ const DEF = {
       const g = groundOf(s);
       return busksort(g, i)?.bar ? BAR_PASSAR[markslag(g, i)] * 4 * Math.max(m, BUSKTAL.barGolv) : 0;
     },
-    uttag: { full: FANGST.barFull, reach: 1, regrow: [0, 1 / 120, 1 / 48, 1 / 60] },
+    uttag: { full: FANGST.barFull, reach: 1, regrow: [0, 1 / 120, 1 / 48, 1 / 60] }, saker: 0.07,
   },
   // kaniner trivs bäst i gräs, högt eller lågt, men finns också i skogen. Glest över stora områden som vandrar
   jakt: {
@@ -159,14 +163,14 @@ const DEF = {
     namn: 'Kantarell', grupp: 'vaxter', ikon: 'svamp', farg: 0xffd21f, topp: 0.8, arstid: SVAMP_SEASON, torka: 0.1,
     monster: { salt: 83, skala: 8, period: 28, troskel: 0.66, gles: 0.5 }, // hälften så många rutor som med 0,5 före steg 3.10.23.7
     bas: (s, i, m) => land(s, i) && groundOf(s).trees[i] >= FOREST ? 0.9 * m : 0,
-    uttag: SVAMP_UTTAG,
+    uttag: SVAMP_UTTAG, saker: SVAMP_SAKER,
   },
   // den giftiga orangea spindlingen liknar kantarellen. Den har egna områden som kan gå in i kantarellens
   spindling: {
     namn: 'Orange spindling (giftig)', grupp: 'vaxter', ikon: 'spindling', farg: 0xff2d6f, topp: 0.8, arstid: SVAMP_SEASON, torka: 0.1,
     monster: { salt: 89, skala: 8, period: 28, troskel: 0.685, gles: 0.35 }, // som kantarellen, hälften så många rutor (0,55 före steg 3.10.23.7)
     bas: (s, i, m) => land(s, i) && groundOf(s).trees[i] >= FOREST ? 0.9 * m : 0,
-    uttag: SVAMP_UTTAG,
+    uttag: SVAMP_UTTAG, saker: SVAMP_SAKER,
   },
   // flinta vid stenarna, ibland i sanden vid stranden och sällan annars. Den växer sakta tillbaka och flyttar sig aldrig
   flinta: {
@@ -182,7 +186,7 @@ const DEF = {
       if (!land(s, i)) return 0;
       return ROTTER_PASSAR[markslag(groundOf(s), i)] * m;
     },
-    uttag: { full: 0.35, reach: 1, regrow: [1 / 600, 1 / 180, 1 / 180, 1 / 240] },
+    uttag: { full: 0.35, reach: 1, regrow: [1 / 600, 1 / 180, 1 / 180, 1 / 240] }, saker: 0.07,
   },
   // de vilda grödorna (steg 2.10.2, odling.ts): vild rova (åkerkål) i fläckar på ängarna (högt gräs) och vilda ärter i
   // skogsbrynet (gräs eller ungskog intill skogen). Inget i istiden; de växer under sommaren och mognar på hösten. Den som samlar
@@ -199,6 +203,35 @@ const DEF = {
     namn: 'Vilda ärter', grupp: 'vaxter', ikon: 'vildarter', farg: 0x6fcf4f, topp: 1, arstid: [0, 0.3, 1, 1.1], torka: 0.6,
     monster: { salt: 103, skala: 3, period: 56, troskel: 0.595 }, // en fjärdedel färre rutor (0,55 före steg 3.10.23.7)
     bas: (s, i, m) => land(s, i) && BRYN.has(markslag(groundOf(s), i)) && intillSkog(groundOf(s), i) ? m * orortOf(s)[i] : 0,
+    uttag: { full: 1, reach: 1, regrow: [0, 1 / 240, 1 / 96, 1 / 120] },
+  },
+  // leran (steg 9.4.10, Arbetsstationer och möbler: Leran och lerkrukan): rikast i stranden närmast vattnet, mindre i sanden och
+  // jorden längre upp, inte alls i skogen och i berget. Den fylls på när det regnar (regrow gånger nederbörden) och där en
+  // översvämning stått (growFynd). Inget mönster: leran ligger där marken är
+  lera: {
+    namn: 'Lera', grupp: 'sten', ikon: 'lera', farg: 0x9a6a4a, topp: 3,
+    bas: (s, i) => { const t = getMap(s.seed).tiles[i], d = djupOf(s.seed).land[i]; if (t === T.Vatten || t === T.Sten || groundOf(s).trees[i] >= FOREST) return 0; return t === T.Sand ? (d <= 1 ? 3 : 1) : d <= 2 ? 0.6 : 0.1; },
+    uttag: { full: 3, reach: 0, regrow: [1 / 24, 1 / 12, 1 / 12, 1 / 12] }, regn: true,
+  },
+  // vildlöken (steg 9.6.20, odling.ts): växer vid stranden och på ängarna som de andra vilda växterna, och plockas när man samlar
+  // röllekan (steg 9.7.15): växer vild på ängarna och i skogsbrynet under sommarhalvåret, och plockas när man samlar där
+  rolleka: {
+    namn: 'Rölleka', grupp: 'vaxter', ikon: 'rolleka', farg: 0xdad0bb, topp: 1, arstid: [0, 0.8, 1.2, 0.4], torka: 0.6,
+    monster: { salt: 113, skala: 3, period: 56, troskel: 0.66 },
+    bas: (s, i, m) => land(s, i) && (markslag(groundOf(s), i) === 'hog' || markslag(groundOf(s), i) === 'kort') ? m * orortOf(s)[i] : 0,
+    uttag: { full: 1, reach: 0, regrow: [0, 1 / 200, 1 / 120, 1 / 300] },
+  },
+  // hasseln (steg 9.7.14, odling.ts): växer vilt i skogsbrynet, och nötterna mognar på hösten
+  hassel: {
+    namn: 'Hassel', grupp: 'vaxter', ikon: 'hassel', farg: 0x7d5b40, topp: 1, arstid: [0, 0, 0.3, 1.2], torka: 0.8,
+    monster: { salt: 109, skala: 4, period: 84, troskel: 0.62 },
+    bas: (s, i, m) => land(s, i) && BRYN.has(markslag(groundOf(s), i)) && intillSkog(groundOf(s), i) ? m * orortOf(s)[i] : 0,
+    uttag: { full: 1, reach: 1, regrow: [0, 0, 1 / 300, 1 / 200] },
+  },
+  vildlok: {
+    namn: 'Vildlök', grupp: 'vaxter', ikon: 'vildlok', farg: 0xb2921b, topp: 1, arstid: [0, 0.6, 1, 0.8], torka: 0.6,
+    monster: { salt: 107, skala: 3, period: 56, troskel: 0.6 },
+    bas: (s, i, m) => { if (!land(s, i)) return 0; const t = getMap(s.seed).tiles[i]; return (t === T.Sand && djupOf(s.seed).land[i] <= 2 || markslag(groundOf(s), i) === 'hog') ? m * orortOf(s)[i] : 0; },
     uttag: { full: 1, reach: 1, regrow: [0, 1 / 240, 1 / 96, 1 / 120] },
   },
 } satisfies Record<string, FyndDef>;
@@ -518,10 +551,11 @@ export function takeFrom(s: State, k: Lager, x: number, y: number, amount: numbe
 }
 // en timme: platserna växer tillbaka
 // vaxt: hur fort växterna växer åter (vaxtFaktor i vader.ts: fortare i blöt mark); djuren följer inte vädret
-export function growFynd(s: State, hours: number, season: number, vaxt = 1) {
+export function growFynd(s: State, hours: number, season: number, vaxt = 1, regn = 0) {
   const d = takenOf(s);
   for (const k of UTTAG_IDS) {
-    const f = Math.exp(-FYND[k].uttag!.regrow[season] * hours * (FYND[k].grupp === 'vaxter' ? vaxt : 1)), a = d[k]!;
+    const f = Math.exp(-FYND[k].uttag!.regrow[season] * hours * (FYND[k].grupp === 'vaxter' ? vaxt : 1) * (FYND[k].regn ? regn : 1)), a = d[k]!;
+    if (FYND[k].regn) for (const i of aktivOf(s, k).lista) if (iVattnetNu(s, i)) a[i] = 0; // översvämningen lämnar leran där vattnet står
     if (f >= 1) continue;
     const ak = aktivOf(s, k), L = ak.lista, ft = k === 'fiske' ? fiskAter(s.seed) : undefined;
     let w = 0;
@@ -601,6 +635,15 @@ export function pickMushrooms(s: State, p: Person, x: number, y: number, dtSec: 
   got[GIFT] = (got[GIFT] ?? 0) + 1;
   return 1; // den ser ut som mat och läggs i förrådet
 }
+// en svamp plockad på rundan (steg 9.2.53–9.2.55): kantarellen är mat, och den giftiga spindlingen låter den stå som känner igen
+// den; annars läggs den i bördan som giftsvamp (samma som pickMushrooms). Svarar med det som hamnar i bördan
+export function svampPlock(s: State, p: Person, slag: 'kantarell' | 'spindling'): Record<string, number> {
+  if (slag === 'kantarell') { if (forstaGang(s, 'svamp')) log(s, `${p.name} hittade kantareller i skogen.`, 'world', [p.id]); return { svamp: 1 }; }
+  const sure = clamp(kn(p, 'svamp') + p.skill.samla / FANGST.kandSkill + stat(p, 'intelligens', s.now) / FANGST.kandInt, 0, FANGST.kandMax);
+  if (rnd(s, 'arbete', p) < sure) { count(s, 'giftsvampKand'); useK(p, 'svamp', s.now); return {}; }
+  count(s, GIFT);
+  return { svamp: 1, [GIFT]: 1 };
+}
 // när någon äter: finns giftig svamp i förrådet kan hen få i sig den
 export function eatPoison(s: State, p: Person) {
   if (rnd(s, 'halsa', p) < 0.2) tecken(s, p, 'svampsyn'); // svampen som gav syner (steg 8.5.18)
@@ -609,8 +652,8 @@ export function eatPoison(s: State, p: Person) {
   if (gift < 1e-3 || rnd(s, 'halsa', p) >= Math.min(FANGST.giftMax, gift / Math.max(1, foodOf(s)) * FANGST.giftAndel)) return;
   addTo(s, GIFT, -Math.min(1, gift));
   count(s, 'forgiftad');
-  p.sickUntil = Math.max(p.sickUntil ?? 0, s.now + (FANGST.giftSjukMin + rnd(s, 'halsa', p) * FANGST.giftSjukSpann) * HOUR);
-  p.poisonUntil = p.sickUntil; p.sickWhy = 'Förgiftad av svamp';
+  insjukna(s, p, 'svampforgiftning'); // steg 9.5.1: förgiftningen är en sjukdom som kan döda (motgiftet kommer i 9.5.14)
+  p.poisonUntil = s.now + (FANGST.giftSjukMin + rnd(s, 'halsa', p) * FANGST.giftSjukSpann) * HOUR; p.sickWhy = 'Förgiftad av svamp';
   p.health = clamp(p.health - FANGST.giftHalsa, 0, 1);
   think(p, 'Blev förgiftad av en svamp', FANGST.giftTanke, s.now, FANGST.giftTankeDygn * DAY);
   upplev(s, p, 'svamp'); smakGift(p); // avsmak för svamp (steg 3.3.5)
@@ -631,12 +674,12 @@ export function eatPoison(s: State, p: Person) {
 export const TRY_SEC = FANGST.forsokSek / SNABBARE;
 // Med fiskespjut träffar man fisken oftare och den sitter kvar på spjutet.
 // med metspö nappar fisken oftare och sitter kvar bättre på kroken (masken grävs fram i steg.ts)
-type Fiskedon = 'hand' | 'spjut' | 'metspo';
+type Fiskedon = 'hand' | 'spjut' | 'metspo' | 'nat';
 // napp och hall står i raderna för fiske i handlingar.ts: redskapets egna, annars handens
 export function handFish(s: State, p: Person, x: number, y: number, ageF: number, rd?: RedskapDef) {
   const gear: Fiskedon = rd?.don ?? 'hand', hand = ACTS.fiske.hand!, napp = rd?.napp ?? hand.napp, hall = rd?.hall ?? hand.hall;
   const st = (p.fiske ??= { f: 0, n: 0, k: 0 }), spear = gear === 'spjut';
-  st.f++; count(s, 'fiskeForsok'); gjort(s, p, 'fiskeForsok'); sjoRakna(s, x, y, 'forsok', p); if (spear) count(s, 'spjutForsok'); if (gear === 'metspo') count(s, 'metForsok');
+  st.f++; count(s, 'fiskeForsok'); gjort(s, p, 'fiskeForsok'); sjoRakna(s, x, y, 'forsok', p); if (spear) count(s, 'spjutForsok'); if (gear === 'metspo') count(s, 'metForsok'); if (gear === 'nat') count(s, 'natForsok');
   const season = ACTS.fiske.sasong![ageIndex(s)];
   if (rnd(s, 'arbete', p) >= napp * season * Math.min(FANGST.fiskRikMax, richness(s, 'fiske', x, y)) * ageF) return 0;
   st.n++; count(s, 'fiskeNapp'); sjoRakna(s, x, y, 'napp', p);

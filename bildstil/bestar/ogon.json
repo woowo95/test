@@ -1,0 +1,10 @@
+{
+  "lager": "ogon",
+  "om": "Ritat av Claude API:t med bildstil/api/bestar.mjs: former och mönster som bestskaparen gör om till delar.",
+  "kostnad": 0.156,
+  "anteckningar": {"ogon":"Insektsögon: mindre och facetterna två toner mörkare så rutorna syns. Glödtårar: tydligare och längre droppar. Benmask: mindre, oregelbunden form i blekt tand i stället för hard, som blev ett gult block. Ärrat öga: ärret i benrest och med stygn, syntes inte i kroppens färg. Mossiga byttes mot Blodsprängda (vita ögon med röda ådror), eftersom mossan försvann mot den gröna huden. Tunga lock: bredare öga under locket så att det syns."},
+  "delar": [
+    {"delar":[{"mat":"kol","ton":-9,"pkt":[[-1,-2],[0,-2],[1,-2],[2,-2],[3,-2],[-2,-1],[-1,-1],[3,-1],[4,-1],[-2,0],[4,0],[-1,1],[3,1]]},{"mat":"oga","lyser":true,"pkt":[[0,-1],[1,-1],[2,-1],[-1,0],[0,0],[1,0],[2,0],[3,0],[0,1],[1,1],[2,1]]},{"mat":"kol","ton":-9,"pkt":[[0,0],[1,0],[2,0]]}],"id":"ogon-1","namn":"Getögon","text":"Gula lysande ögon med en tvärgående mörk pupill, som hos en get, under en tung panna."},
+    {"delar":[{"mat":"kol","ton":-9,"former":[{"typ":"ell","c":[0.5,-0.5],"r":[3.2,2.8]}]},{"mat":"oga","lyser":true,"former":[{"typ":"ell","c":[0.5,-0.5],"r":[2.4,2]}]},{"mat":"oga","ton":-2,"lyser":true,"pkt":[[1,-2],[-1,-1],[1,-1],[0,0],[2,0],[1,1],[-1,0],[2,-1]]},{"mat":"oga","ton":1,"lyser":true,"pkt":[[0,-2],[-1,-2]]}],"id":"ogon-2","namn":"Insektsögon","text":"Ett stort välvt facettöga som glimmar i rutor, som hos en jättelik fluga."}
+  ]
+}

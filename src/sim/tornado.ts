@@ -1,4 +1,5 @@
 import { balans } from './balans';
+import { hp } from './gast';
 import { rasar } from './bygg';
 import { MATERIAL, bitAt, blocked, roofed, touch, vagBort } from './byggnad';
 import { alive, count, living, log } from './folk';
@@ -66,6 +67,7 @@ export const TORNADO = balans('tornado', {
   skadas: 0.5, // i utkanten skadas den som flyger med den här chansen ...
   skadaGrad: [0.2, 0.5], // ... så här svårt (slumpas mellan)
   vind: 1, // det blåser så här mycket (0 till 1, vaderNu i vader.ts) medan den drar fram
+  kantzon: 6, // ett ben som skulle sluta så här nära kartans kant (rutor) förlängs ut ur kartan (steg 9.2.23)
 });
 
 // tornadons storlekar (steg 6.4.9 och 6.4.15), en rad var: hur stor del av tornadorna som har storleken, zonerna i
@@ -90,14 +92,15 @@ export function tornadoStorlek(s: State, start: number): TornadoStorlek {
 const tal = (s: State, start: number, salt: number) => motgangTal(s, start, salt);
 // banan för tornadon som börjar vid start: en bruten linje [x, y, x, y, …] från kartans kant, ur tiden (inte byn), så att den
 // går att räkna ut i förväg. Den går in mot kartan, rakt en bit och svänger, tills tiden är slut eller den går ut ur kartan
-export function tornadoBana(s: State, start: number, storlek = tornadoStorlek(s, start)): number[] {
+// mot: i testläget siktar det första benet på den platsen (byns mitt, steg 9.2.23)
+export function tornadoBana(s: State, start: number, storlek = tornadoStorlek(s, start), mot?: { x: number; y: number }): number[] {
   const kant = tal(s, start, 3823) * 2 * (W + H);
   let x: number, y: number, inV: number;
   if (kant < W) { x = kant; y = 0; inV = Math.PI / 2; }
   else if (kant < W + H) { x = W; y = kant - W; inV = Math.PI; }
   else if (kant < 2 * W + H) { x = 2 * W + H - kant; y = H; inV = -Math.PI / 2; }
   else { x = 0; y = 2 * (W + H) - kant; inV = 0; }
-  let v = inV + (2 * tal(s, start, 3824) - 1) * TORNADO.in;
+  let v = mot ? Math.atan2(mot.y - y, mot.x - x) : inV + (2 * tal(s, start, 3824) - 1) * TORNADO.in;
   const min = Math.round((TORNADO.min[0] + tal(s, start, 3822) * (TORNADO.min[1] - TORNADO.min[0])) * TORNADOSTORLEKAR[storlek].tid);
   let kvar = min * 60 / TORNADO.fart;
   const bana = [x, y];
@@ -107,6 +110,13 @@ export function tornadoBana(s: State, start: number, storlek = tornadoStorlek(s,
     // går den ut ur kartan på vägen tar den slut där
     let ut = false;
     for (const [p, q] of [[dx, W - x], [-dx, x], [dy, H - y], [-dy, y]]) if (p > 1e-9 && q / p < l) { l = Math.max(0, q / p); ut = true; }
+    // tornadon slickar aldrig kartans kant (steg 9.2.23): ett ben som skulle sluta i kantzonen förlängs ut ur kartan
+    const ex = x + dx * l, ey = y + dy * l;
+    if (!ut && Math.min(ex, ey, W - ex, H - ey) < TORNADO.kantzon) {
+      l = Infinity;
+      for (const [p, q] of [[dx, W - x], [-dx, x], [dy, H - y], [-dy, y]]) if (p > 1e-9) l = Math.min(l, Math.max(0, q / p));
+      ut = true;
+    }
     x += dx * l; y += dy * l; kvar -= l;
     bana.push(x, y);
     if (ut) break;
@@ -123,8 +133,8 @@ export function tornadoTid(s: State, start: number) {
 // drar en tornado fram vid tiden t? (vädret, vader.ts)
 export const tornadoNu = (s: State, t = s.now) => motgangNu(s, t)?.id === 'tornado' || !!s.tornado?.test && t >= s.tornado.fran && t < s.tornado.till;
 
-function nyBana(s: State, start: number, storlek = tornadoStorlek(s, start)): Tornado {
-  const bana = tornadoBana(s, start, storlek), fran = tornadoTid(s, start).fran, till = fran + Math.round(banLangd(bana) * TORNADO.fart) * SEC;
+function nyBana(s: State, start: number, storlek = tornadoStorlek(s, start), mot?: { x: number; y: number }): Tornado {
+  const bana = tornadoBana(s, start, storlek, mot), fran = tornadoTid(s, start).fran, till = fran + Math.round(banLangd(bana) * TORNADO.fart) * SEC;
   return { start, storlek, fran, till, bana, L: banLangd(bana), u: 0, trad: 0, vagg: 0, lyft: 0, sonder: 0, skadade: 0 };
 }
 export interface Tornado { test?: 1; storlek?: TornadoStorlek; doda?: number; djur?: number; forstort?: number; start: number; fran: number; till: number; bana: number[]; L: number; u: number; trad: number; vagg: number; lyft: number; sonder: number; skadade: number; traff?: number[]; lyftRutor?: number[]; tagna?: number[]; flyg?: Flygt[]; storm?: number[]; stormN?: number }
@@ -171,7 +181,7 @@ export const tornadoHinder = (s: State) => s.tornado ? 'En tornado drar redan fr
 export function skickaTornado(s: State, storlek?: TornadoStorlek): { ok: boolean; text: string } {
   const h = tornadoHinder(s);
   if (h) return { ok: false, text: h };
-  const t = nyBana(s, s.now, storlek), tid = t.till - t.fran;
+  const t = nyBana(s, s.now, storlek, bynsMitt(s)), tid = t.till - t.fran; // det första benet siktar på byns mitt (steg 9.2.23)
   s.tornadoStig = undefined;
   t.fran = s.now; t.till = s.now + tid; t.test = 1;
   s.tornado = t;
@@ -289,12 +299,12 @@ function gasterna(s: State, t: Tornado, zonVid: (x: number, y: number) => number
   }
   const h = s.handlare;
   if (h && !t.traff?.includes(h.id)) {
-    const p = handlarPlats(h, s.now), zon = zonVid(p.x, p.y);
+    const p = handlarPlats(s, h, s.now), zon = zonVid(p.x, p.y);
     if (zon >= 0) {
       (t.traff ??= []).push(h.id);
       const dod = zon === 0 || zon === 1 && ur(s, t, h.id, 3859) < TORNADO.dodNara;
       if (dod) { t.doda = (t.doda ?? 0) + 1; count(s, 'tornado dod'); }
-      h.x = p.x; h.y = p.y;
+      hp(s, h).x = p.x; hp(s, h).y = p.y;
       handlarTornado(s, h, dod, zon === 1 ? TORNADO.sonder : TORNADO.sonderUtkant, ur(s, t, h.id, 3860), dod ? undefined : landar(s, t, p.x, p.y, h.id, zon, L, true));
     }
   }

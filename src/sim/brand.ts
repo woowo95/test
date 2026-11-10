@@ -15,17 +15,19 @@ import { eldPlats, vaderstreck } from './karta';
 import { bynsAvstand, bynsMitt } from './omrade';
 import { avbryt, minska, nagotPa, stacksOf, tidy } from './lager';
 import { die } from './liv';
-import { MARK, groundOf, markslag } from './mark';
-import { valjArt } from './trad';
+import { groundOf, markslag } from './mark';
+import { TORR } from './trad';
+import { nyStubbe } from './skog';
 import { faltAt, faltBrann, faltIndex, grodaPa } from './odling';
 import { wearUsed } from './redskap';
 import { larma, larmNu } from './rykten';
 import { SAKER } from './saker';
 import { isLight, kalender } from './tid';
 import { drickPlats } from './torst';
+import { vattenNu } from './sjo';
 import { DAY, H, HEARTHS, HOUR, HOUR_S, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { allaBarn, drabbadHus, upplev } from './uppvaxt';
-import { FOREST, VAG, isSoil } from './vag';
+import { VAG, isSoil } from './vag';
 import { blixtNu, snoPaMarken, torrTim, vaderNu } from './vader';
 import { hash3 } from './slump';
 import { larmAvbryter } from './handlingar';
@@ -58,11 +60,12 @@ export const BRAND = balans('brand', {
   gnistaR: 2, // ... så här många rutor bort (slumpas)
   blixt: 0.5, // chansen att blixten slår ner nära byn när den slår ner (blixtNu i vader.ts) ...
   blixtR: 30, // ... så här många rutor från byns mitt (bynsMitt i omrade.ts, slumpas)
+  ljusR: 4, // en brinnande ruta i brandens kant lyser så här många rutor bort (steg 9.2.20, raden brand i LJUSKALLOR)
   sprid: 0.7, // chansen per delsteg (5 sekunder) att elden tar sig från en ruta till en grannruta när marken är helt torr, gånger det som kan brinna där (antändning): i torrt högt gräs ungefär var femte sekund
   hornet: 0.7, // ... gånger det här till en ruta snett bredvid
-  torrTim: 120, // marken är helt torr efter så här många torra timmar (torrTim i vader.ts) ...
+  torrTim: 48, // marken är helt torr efter så här många torra timmar (torrTim i vader.ts; två dygn, två år i spelet, steg 9.2.25) ...
   arstid: [0, 0.6, 1, 0.8], // ... och så här torr i tidsåldern (istid, vår, sommar, höst)
-  sno: 0.2, // inget brinner när det ligger mer snö än så här (snoPaMarken i vader.ts)
+  sno: 0.85, // snön på marken gör den blöt (steg 9.2.102): torrheten gånger 1 − sno × snön (snoPaMarken i vader.ts, 0 till 1), så att branden sprids sämre ju mer snö som ligger men aldrig stoppas helt
   vind: 1.5, // blåsten (0 till 1) sprider elden så här mycket mer med vinden, och mindre mot den (steg 6.4.4) ...
   motvind: 0.15, // ... men aldrig mindre än så här mycket (gånger) rakt mot vinden
   gnistVind: 3, // gnistorna flyger så här många rutor till med vinden i full blåst
@@ -70,7 +73,8 @@ export const BRAND = balans('brand', {
   // det som kan brinna: [antändning 0 till 1, timmar det brinner, hur lätt det släcks]. Högt gräs brinner snabbast, kort gräs
   // medel, skogen och det som är av trä lite långsammare (steg 6.4.1). Det sista talet gångrar händerna och vattensäcken: kort
   // gräs väldigt lätt, högt gräs lätt, skog och trä väldigt svårt, så en brand som vuxit in i skogen är svår att släcka (steg 6.4.2)
-  skog: [0.2, 3, 0.3], ung: [0.3, 1, 0.6], buske: [1, 1, 1.2], hog: [1, 0.5, 2], kort: [0.4, 0.3, 4], groda: [0.5, 0.5, 2], vagg: [0.25, 2, 0.3], sak: [0.35, 1, 1],
+  // brandens fart (steg 9.2.25): skogen och det korta gräset tar eld lättare än förut (0,2 och 0,4)
+  skog: [0.35, 3, 0.3], ung: [0.3, 1, 0.6], buske: [1, 1, 1.2], hog: [1, 0.5, 2], kort: [0.6, 0.3, 4], groda: [0.5, 0.5, 2], vagg: [0.25, 2, 0.3], sak: [0.35, 1, 1],
   aska: 0.32, // gräset på en ruta som brunnit (0 till 1; just över bar jord, så att det inte blir en stig)
   trad: 0.5, // träden dör när så här stor del av rutan har brunnit
   vaggSkick: 1.2, // en vägg tappar så här mycket av sitt skick gånger andelen som brunnit
@@ -81,6 +85,8 @@ export const BRAND = balans('brand', {
   sikt: 20, // man ser elden så här många rutor bort på dagen ...
   siktNatt: 0.5, // ... och så här stor del av det på natten (men glöden syns)
   hot: 10, // elden hotar byn när en ruta brinner så här nära byns område (utanforByn): då släcker de vuxna
+  hetta: 1.2, // branden är het (steg 9.2.135): en ruta som brinner värmer som lägerelden tätt intill (värmen i heatAt, eld.ts; över KROPP.eldTatt blir man för varm) ...
+  hettaR: 2, // ... ut till så här många rutor, avtagande
   fara: 2, // den som är så här nära en brinnande ruta och inte släcker går undan ...
   undan: 6, // ... så här många rutor bort ...
   undanMin: 30, // ... i så här många minuter
@@ -98,6 +104,9 @@ export const BRAND = balans('brand', {
   tarEld: 0.5, // chansen att man börjar brinna när man bränns i en brinnande ruta ...
   tarEldHand: 0.2, // ... när man bränns medan man släcker med händerna ...
   vaggEld: 0.3, // ... och i timmen när man står bredvid en brinnande vägg (elden hoppar över)
+  smitta: 3, // elden smittar (steg 9.2.134): den som går eller står på en ruta som brinner börjar brinna med den här takten i sekunden
+  // (en sekund är några minuter i spelet), så nästan säkert också den som bara går igenom ...
+  bredvidEld: 0.15, // ... och den som står bredvid skog, ungskog, buskar eller gräs som brinner med den här i timmen (lägre än bredvid en vägg)
   brinnSkada: 6, // den som brinner får brännskador med den här takten (i timmen) ...
   brinnGrad: [0.1, 0.4], // ... så här svåra (slumpas mellan)
   plaggBrinner: 1.5, // chansen i timmen att ett plagg man har på sig brinner upp
@@ -123,10 +132,11 @@ const chans = (takt: number, dtSec: number) => 1 - Math.exp(-takt * dtSec / HOUR
 
 // branden sprids högst BRAND.maxR rutor från där den började, eller från en ruta som tänts i testläget (kallor, steg 4.5.6.6)
 const nara = (b: Brand, x: number, y: number) => Math.hypot(x - b.x, y - b.y) <= BRAND.maxR || !!b.kallor?.some(i => Math.hypot(x - i % W, y - Math.floor(i / W)) <= BRAND.maxR);
-// hur torr marken är (0 till 1): torra timmar, tidsåldern, och ingenting under snön
+// hur torr marken är (0 till 1): torra timmar, tidsåldern, och snön som blöter marken
 export function torrhet(s: State) {
-  if (snoPaMarken(s) > BRAND.sno) return 0;
-  return Math.min(1, torrTim(s) / BRAND.torrTim) * BRAND.arstid[kalender(s).ai];
+  const sno = 1 - BRAND.sno * Math.max(0, Math.min(1, snoPaMarken(s))); // snön blöter marken (steg 9.2.102)
+  if (s.testTorr) return sno; // testläget: marken är torkad helt (steg 9.2.24), men snön ligger kvar
+  return Math.min(1, torrTim(s) / BRAND.torrTim) * BRAND.arstid[kalender(s).ai] * sno;
 }
 // hur lätt biten v tar eld: en vägg eller ett golv efter materialet, en öppning med en dörr som en vägg (steg 6.4.3)
 const bitBrinner = (v: Bit | undefined) => !v ? undefined : v.k === 'oppning' ? (v.dorr ? 1 : undefined) : v.b >= 1 ? MATERIAL[v.m]?.brinner : undefined;
@@ -173,6 +183,48 @@ function inreOf(b: Brand) {
 export const brandKant = (s: State) => s.brand ? s.brand.r.filter(r => !inreOf(s.brand!)[r[0]]).length : 0;
 // brinner ruta i?
 export const brinner = (s: State, i: number) => !!s.brand && kartaOf(s.brand)[i] === 1;
+// hettan från branden vid (x, y) (steg 9.2.135), i samma enheter som lägerelden (heatAt i eld.ts): som tätt intill elden nära en ruta
+// som brinner, avtagande ut till BRAND.hettaR rutor
+export function brandHetta(s: State, x: number, y: number) {
+  const b = s.brand;
+  if (!b?.r.length) return 0;
+  const k = kartaOf(b), cx = Math.floor(x), cy = Math.floor(y), R = Math.ceil(BRAND.hettaR);
+  let v = 0;
+  for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
+    const xx = cx + dx, yy = cy + dy;
+    if (!inMap(xx, yy) || k[yy * W + xx] !== 1) continue;
+    const d = Math.hypot(xx + 0.5 - x, yy + 0.5 - y);
+    if (d <= BRAND.hettaR + 0.5) v = Math.max(v, BRAND.hetta * (1 - d / (BRAND.hettaR + 1)));
+  }
+  return v;
+}
+// rutorna som brinner och de bredvid, för vägsökningen (steg 9.2.136, groundOf(s).brand): 1 = brinner, 2 = bredvid
+function brandKarta(s: State) {
+  const g = groundOf(s), b = s.brand;
+  if (!b?.r.length) { g.brand = undefined; return; }
+  const m = new Uint8Array(W * H);
+  for (const r of b.r) { const i = r[0], x = i % W, y = (i - x) / W; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (inMap(x + dx, y + dy) && !m[(y + dy) * W + x + dx]) m[(y + dy) * W + x + dx] = 2; }
+  for (const r of b.r) m[r[0]] = 1;
+  g.brand = m;
+}
+// den som blir extremt varm av branden går undan från den (steg 9.2.135), i stället för att söka skugga under träd som kan brinna
+export function brandUndan(s: State, p: Person) {
+  const b = s.brand;
+  if (!b?.r.length || !kanGa(p)) return undefined;
+  const n = narmast(b, p.x, p.y);
+  return n.d > BRAND.hettaR + 0.5 ? undefined : bortFran(s, p, n.i);
+}
+// ljuset från branden (steg 9.2.20): rutorna i brandens kant som inte är släckta, en gång per tid (frågas ofta)
+const ljusMinne = new WeakMap<Brand, { t: number; r: number[] }>();
+export function brandLjus(s: State): readonly number[] {
+  const b = s.brand;
+  if (!b) return [];
+  const m = ljusMinne.get(b);
+  if (m && m.t === s.now) return m.r;
+  const inre = inreOf(b), r = b.r.filter(q => !inre[q[0]] && q[3] < 1).map(q => q[0]);
+  ljusMinne.set(b, { t: s.now, r });
+  return r;
+}
 // rutorna som brinner just nu (gränssnittet ritar lågorna)
 export const brinnande = (s: State): readonly BrandRuta[] => s.brand?.r ?? [];
 
@@ -192,35 +244,51 @@ export function tand(s: State, i: number, kalla: Brand['kalla'], u: number, bran
 }
 
 // testläget (steg 4.5.6.6): rutan (x, y) tar eld, med tand som en blixt, och sedan sprids branden efter de vanliga reglerna.
-// Brinner inget på rutan (vatten, sten, bar jord, snö) tänds inget, och svaret säger varför. Bara i kopian av byn
+// Brinner inget på rutan (vatten, sten, bar jord) tänds inget; i snön tänds det, men branden sprids sämre (steg 9.2.102), och svaret säger varför. Bara i kopian av byn
 export function tandTest(s: State, x: number, y: number): { ok: boolean; text: string } {
   if (!inMap(x, y)) return { ok: false, text: 'Rutan är utanför kartan' };
   const i = y * W + x, k = s.brand && kartaOf(s.brand)[i];
   if (k === 1) return { ok: false, text: 'Det brinner redan där' };
   if (k === 2) return { ok: false, text: 'Rutan har redan brunnit' };
   const g = groundOf(s), vad = g.tiles[i] === T.Vatten ? 'vatten' : !isSoil(g.tiles[i]) ? 'sten' : markslag(g, i) === 'bar' ? 'bar jord' : 'inget som brinner';
-  if (snoPaMarken(s) > BRAND.sno) return { ok: false, text: 'Snön ligger på marken, och inget brinner där' };
-  if (!bransleAv(s)(i)) return { ok: false, text: `Inget brinner där (${vad})` };
+  const fu = bransleAv(s)(i);
+  if (!fu) return { ok: false, text: `Inget brinner där (${vad})` };
   const ny = !s.brand;
   tand(s, i, 'blixt', 0);
   if (!ny) (s.brand!.kallor ??= []).push(i);
   const e = eldPlats(s), d = Math.round(Math.hypot(x - e.x, y - e.y));
-  const text = `Testläget: en brand tändes ${d ? `${d} ${d === 1 ? 'ruta' : 'rutor'} ${vaderstreck(s, x, y)} om elden` : 'vid elden'}.` + (torrhet(s) <= 0 ? ' Marken är för blöt för att den ska sprida sig.' : '');
+  // hur torr marken är och hur fort branden väntas sprida sig till en grannruta av samma slag (steg 9.2.24): en chans per
+  // delsteg (5 sekunder, spelets tid) på sprid × antändningen × torrheten
+  const dry = torrhet(s), p5 = BRAND.sprid * fu[0] * dry, slag = MARKORD[markslag(g, i)] ?? 'där';
+  const fart = p5 > 0 ? (() => { const sek = 5 / Math.min(1, p5); return sek < 90 ? `en ruta på ungefär ${Math.round(sek)} sekunder ${slag}` : `en ruta på ungefär ${Math.round(sek / 60)} minuter ${slag}`; })() : 'den sprider sig inte';
+  const text = `Testläget: en brand tändes ${d ? `${d} ${d === 1 ? 'ruta' : 'rutor'} ${vaderstreck(s, x, y)} om elden` : 'vid elden'} (torrhet ${Math.round(dry * 100)} %, ${fart}).` + (dry <= 0 ? ' Marken är för blöt för att den ska sprida sig.' : snoPaMarken(s) > 0 ? ' Snön på marken gör att den sprids sämre.' : '');
   log(s, text, 'world');
   return { ok: true, text };
 }
 
+const MARKORD: Record<string, string> = { skog: 'i skogen', ung: 'i ungskogen', buske: 'bland buskarna', hog: 'i det höga gräset', kort: 'i det korta gräset' };
+// testläget (steg 9.2.24): marken torkas helt, så att en brand kan provas när som helst (bara i kopian av byn)
+export function torkaTest(s: State): { ok: boolean; text: string } {
+  s.testTorr = 1;
+  return { ok: true, text: 'Testläget: marken är helt torr, också i istiden, tills testläget stängs (snön blöter den ändå lite)' };
+}
+// blixten slog ner på rutan (steg 9.2.21): den syns i gränssnittet en kort stund. Bara nedslagen den senaste timmen sparas
+export function nedslag(s: State, x: number, y: number) {
+  const i = y * W + x, g = groundOf(s);
+  if (isSoil(g.tiles[i]) && !g.built?.[i]) (s.aska ??= []).push([i, Math.round(s.now)]); // rutan svärtas alltid (steg 9.2.26)
+  s.nedslag = [...(s.nedslag ?? []).filter(n => s.now - n.t < HOUR).slice(-7), { x, y, t: s.now }];
+}
 // testläget (steg 6.4.7): en vanlig blixt slår ner på rutan (x, y). Den tänder som blixten i vädret (gnistor nedan): bara
 // när det finns något som brinner och marken är torr nog, med en ny slumpsiffra för varje blixt. Svaret säger om den tände och varför
 export function blixtTest(s: State, x: number, y: number): { ok: boolean; text: string } {
   if (!inMap(x, y)) return { ok: false, text: 'Rutan är utanför kartan' };
+  nedslag(s, x, y);
   const i = y * W + x, k = s.brand && kartaOf(s.brand)[i], dry = torrhet(s), fu = bransleAv(s)(i);
   const g = groundOf(s), vad = g.tiles[i] === T.Vatten ? 'i vattnet' : !isSoil(g.tiles[i]) ? 'i berget' : markslag(g, i) === 'bar' ? 'på bar jord' : 'där inget brinner';
   const var_ = `${Math.round(Math.hypot(x - eldPlats(s).x, y - eldPlats(s).y))} rutor ${vaderstreck(s, x, y)} om elden`;
   let text: string;
   if (k === 1) text = `Blixten slog ner ${var_}, där det redan brinner`;
   else if (k === 2) text = `Blixten slog ner ${var_}, där det redan har brunnit`;
-  else if (snoPaMarken(s) > BRAND.sno) text = `Blixten slog ner ${var_}, men snön ligger på marken och inget tog eld`;
   else if (!fu) text = `Blixten slog ner ${var_} ${vad}, och inget tog eld`;
   else if (dry <= 0) text = `Blixten slog ner ${var_}, men marken är för blöt och inget tog eld`;
   else {
@@ -284,6 +352,7 @@ export function brandSteg(s: State, dtSec: number) {
   ser(s, b);
   soker(s, b, hot);
   iElden(s, b, dtSec);
+  brandKarta(s);
   if (b.r.length) return;
   // branden är slut
   const delar = [`brände ${mark(b.ut.length)}`, b.trad && `${tal(b.trad, true)} träd`, b.vagg && `rev ${b.vagg === 1 ? 'en vägg' : `${tal(b.vagg)} väggar`}`, b.saker && `${b.saker === 1 ? 'en sak' : `${tal(b.saker)} saker`}`, b.brann && `och det här brann upp: ${brannText(b)}`].filter(Boolean);
@@ -311,7 +380,7 @@ function gnistor(s: State, dtSec: number, dry: number) {
   for (const f of brasorOf(s)) if (f.lit) fran(f.at!.x, f.at!.y, hearthOf(f).spread, f.id! + 1); // de andra lägereldarna gnistrar som den första (steg 4.5.6.8)
   if (Math.floor(s.now / HOUR) !== Math.floor((s.now - dtSec * SEC) / HOUR) && blixtNu(s) && ur(s, 0, 3856) < BRAND.blixt) {
     const e = bynsMitt(s), R = BRAND.blixtR, nx = e.x + Math.round((ur(s, 0, 3857) * 2 - 1) * R), ny = e.y + Math.round((ur(s, 0, 3858) * 2 - 1) * R);
-    if (inMap(nx, ny)) { count(s, 'blixt nara'); tand(s, ny * W + nx, 'blixt', ur(s, 0, 3859) / dry); }
+    if (inMap(nx, ny)) { count(s, 'blixt nara'); nedslag(s, nx, ny); tand(s, ny * W + nx, 'blixt', ur(s, 0, 3859) / dry); }
   }
 }
 
@@ -329,10 +398,17 @@ function slocknar(s: State, b: Brand) {
     if (isSoil(g.tiles[i]) && !g.built?.[i]) {
       if (g.cover[i] > BRAND.aska) g.cover[i] -= a * (g.cover[i] - BRAND.aska);
       if (a >= BRAND.trad) tabortBuske(g, i); // busken brinner upp (steg 6.5.3)
+      // brandens spår (steg 9.2.26): ett stort träd blir en kolnad stam som står kvar som torrakan (s.kolnad) tills den faller
+      // eller huggs, ett litet blir en svart stubbe, och en planta brinner upp
       if (g.trees[i] > 0 && a >= BRAND.trad) {
         if (g.trees[i] >= VAG.ungskog) { b.trad++; count(s, 'brand trad'); }
-        g.trees[i] = g.trees[i] >= FOREST ? MARK.nyPlanta : 0;
-        if (g.trees[i] > 0 && g.art) g.art[i] = valjArt(s.seed, g, i, true); // efter branden kommer björken (steg 5.1.6)
+        if (g.trees[i] >= 1 && g.alder) {
+          if ((g.alder[i] ?? 0) < TORR(g.art, i)) g.alder[i] = TORR(g.art, i);
+          if (!(s.kolnad ??= []).includes(i)) s.kolnad.push(i);
+        } else {
+          if (g.trees[i] >= VAG.ungskog) { nyStubbe(s, x, y, 0); s.stubbar![s.stubbar!.length - 1].kol = 1; }
+          g.trees[i] = 0;
+        }
         if (s.halvfallt) delete s.halvfallt[i];
       }
       (s.aska ??= []).push([i, Math.round(s.now)]);
@@ -425,13 +501,16 @@ function iElden(s: State, b: Brand, dtSec: number) {
     upplev(s, p, 'drabbad', 'eldsvådan'); // steg 4.1.1.2
     if (ur(s, p.id, 3867) < BRAND.tarEld) antand(s, p, 'i elden');
   }
-  // elden hoppar över från en brinnande vägg till den som står bredvid
+  // elden smittar (steg 9.2.134): den som är på en ruta som brinner börjar nästan säkert brinna, också den som bara går igenom; och
+  // elden hoppar över från en brinnande vägg, och med en lägre chans från marken som brinner, till den som står bredvid
   for (const p of living(s)) {
     if (p.brinner !== undefined || !alive(p)) continue;
     const x = Math.floor(p.x), y = Math.floor(p.y);
-    let vid = false;
-    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (inMap(x + dx, y + dy) && k[(y + dy) * W + x + dx] === 1 && bitAt(s, x + dx, y + dy)?.k === 'vagg') vid = true;
-    if (vid && ur(s, p.id, 3868) < chans(BRAND.vaggEld, dtSec)) antand(s, p, 'från väggen');
+    if (inMap(x, y) && k[y * W + x] === 1) { if (ur(s, p.id, 3869) < 1 - Math.exp(-BRAND.smitta * dtSec)) antand(s, p, 'i elden'); continue; }
+    let vagg = false, mark = false;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (inMap(x + dx, y + dy) && k[(y + dy) * W + x + dx] === 1) { if (bitAt(s, x + dx, y + dy)?.k === 'vagg') vagg = true; else mark = true; }
+    if (vagg && ur(s, p.id, 3868) < chans(BRAND.vaggEld, dtSec)) antand(s, p, 'från väggen');
+    else if (mark && ur(s, p.id, 3870) < chans(BRAND.bredvidEld, dtSec)) antand(s, p, 'bredvid elden');
   }
 }
 
@@ -526,11 +605,20 @@ function brandMal(s: State, b: Brand, p: Person, hot: boolean): BrandMal | undef
     if (m.i >= 0) return { act: 'slacka', why: 'Släcker elden med händerna', spot: bredvid(b, m.i, p), dur: BRAND.handMin * MIN, ref: m.i };
   }
   if (n.d > BRAND.fara) return;
-  // bort från elden
-  const cx = n.i % W + 0.5, cy = Math.floor(n.i / W) + 0.5, dx = p.x - cx, dy = p.y - cy, l = Math.hypot(dx, dy) || 1, u = ur(s, p.id, 3863) * 2 * Math.PI;
+  return bortFran(s, p, n.i);
+}
+// bort från den brinnande rutan i
+function bortFran(s: State, p: Person, i: number): BrandMal {
+  const cx = i % W + 0.5, cy = Math.floor(i / W) + 0.5, dx = p.x - cx, dy = p.y - cy, l = Math.hypot(dx, dy) || 1, u = ur(s, p.id, 3863) * 2 * Math.PI;
   const ux = l > 0.1 ? dx / l : Math.cos(u), uy = l > 0.1 ? dy / l : Math.sin(u);
-  const x = Math.min(W - 1.5, Math.max(1.5, cx + ux * (BRAND.fara + BRAND.undan))), y = Math.min(H - 1.5, Math.max(1.5, cy + uy * (BRAND.fara + BRAND.undan)));
-  return { act: 'flyEld', why: 'Elden är nära, går undan', spot: { x, y }, dur: BRAND.undanMin * MIN };
+  // platsen ligger på land (steg 9.2.136): närmare elden, eller åt sidan, om vattnet tar vid
+  const vt = vattenNu(s), land = (x: number, y: number) => vt[Math.floor(y) * W + Math.floor(x)] !== T.Vatten;
+  for (const v of [0, 0.6, -0.6, 1.2, -1.2]) for (let r = BRAND.fara + BRAND.undan; r >= 1; r--) {
+    const c = Math.cos(v), sn = Math.sin(v), vx = ux * c - uy * sn, vy = ux * sn + uy * c;
+    const x = Math.min(W - 1.5, Math.max(1.5, cx + vx * r)), y = Math.min(H - 1.5, Math.max(1.5, cy + vy * r));
+    if (land(x, y) && !brinner(s, Math.floor(y) * W + Math.floor(x))) return { act: 'flyEld', why: 'Elden är nära, går undan', spot: { x, y }, dur: BRAND.undanMin * MIN };
+  }
+  return { act: 'flyEld', why: 'Elden är nära, går undan', spot: { x: p.x, y: p.y }, dur: BRAND.undanMin * MIN };
 }
 // platsen bredvid den brinnande rutan i, på sidan mot p (inte i elden)
 function bredvid(b: Brand, i: number, p: { x: number; y: number }) {
@@ -597,8 +685,11 @@ export function slackaFram(s: State, p: Person, _t: Task) {
 
 // det svarta efter elden: rutorna som brann och när (gränssnittet ritar dem mörka). Det gamla tas bort (timblocket i steg.ts)
 export function askaSteg(s: State) {
+  // de kolnade stammarna som fallit eller huggits glöms (steg 9.2.26), och det svarta ligger kvar där en stam står
+  if (s.kolnad?.length) { const g = groundOf(s); s.kolnad = s.kolnad.filter(i => g.trees[i] >= 1 && (g.alder?.[i] ?? 0) >= TORR(g.art, i)); if (!s.kolnad.length) delete s.kolnad; }
   if (s.aska?.length && s.aska[0][1] < s.now - BRAND.svart * DAY) {
-    s.aska = s.aska.filter(a => a[1] >= s.now - BRAND.svart * DAY);
+    const stam = new Set(s.kolnad ?? []);
+    s.aska = s.aska.filter(a => a[1] >= s.now - BRAND.svart * DAY || stam.has(a[0]));
     if (!s.aska.length) delete s.aska;
   }
 }

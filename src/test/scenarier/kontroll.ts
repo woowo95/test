@@ -1,3 +1,5 @@
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 // Scenarier. Kontroller av hela spelet: gränssnittet läser utan att ändra, ikoner, vakter och det som aldrig händer.
 import { Person, createState, step, living, serializeParts, serialize, isLight, ageOf, TEKNIK, knows, housesOf, FYND, FYND_IDS, GRUPPER, DJUR, BEAT, tingOf, FN, fnId, SEC, MATERIAL, ACTS, isSick, SAKER, slagIkon } from '../../sim';
 import * as SIM from '../../sim';
@@ -125,13 +127,14 @@ SCENARIER.palett = {
     let slata = 0, fel = 0; const platser = (N - 8) * (N - 8);
     for (const c of yta) if (c !== 18 && (c >> 2 !== 18 >> 2 || Math.abs(c - 18) !== 1)) fel++;
     for (let y = 2; y + 5 <= N - 2; y++) for (let x = 2; x + 5 <= N - 2; x++) { let lika = true; for (let k = 0; k < 25 && lika; k++) lika = yta[(y + Math.floor(k / 5)) * N + x + k % 5] === 18; if (lika) slata++; }
+    const PALETT_L = (h: string) => { const n = parseInt(h.slice(1), 16); return 0.2126 * (n >> 16) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255); };
     const raster = [0, 0.5, 1, 1.5, 2, 2.5, 3].every(m => [0, 1, 2, 3].every(x => iPaletten(rasterSteg(FARGER[13], m, x, x * 3))));
     return [
       [utanfor.length ? `${utanfor.length} färger utanför paletten: ${utanfor.slice(0, 12).join(', ')}` : `alla ${Object.keys(PAL).length} bilder har bara färger ur paletten`, !utanfor.length],
       ['paletten har 32 färger i åtta ramper', FARGER.length === 32 && PALETT.length === 8],
       ['skymningen och natten har bara färger ur paletten, också i rastret', morkt && raster],
       ['natten är mörkare än dagen', MORKARE[2].every((h, i) => h !== FARGER[i] || i < 2)],
-      [`mitt i natten (steg 5.1.7.2) är nästan allt kolsvart, så att bara elden lyser (${svart} av 32 färger blir den mörkaste)`, MORKARE.length === 4 && svart >= 28],
+      [`mitt i natten (steg 5.1.7.2, något ljusare sedan steg 9.2.12) är det mesta kolsvart och inget ljusare än natten (${svart} av 32 färger blir den mörkaste)`, MORKARE.length === 4 && svart >= 20 && svart < 28 && MORKARE[3].every((h, i) => h === MORKARE[2][i] || PALETT_L(h) <= PALETT_L(MORKARE[2][i]))],
       [`kornet (steg 5.1.7.1): en slät yta på 64 × 64 punkter har nästan inga släta fält på 5 × 5 punkter kvar (${slata} av ${platser}, högst 5 %), och kornet är ett steg i samma ramp (${fel} fel)`, slata <= platser * 0.05 && fel === 0],
     ];
   },
@@ -153,7 +156,7 @@ SCENARIER.vakt = {
     // i natt: den modigaste bär två grenar när en annan väljer och nattens vakt utses
     const q = SIM.cloneState(s); klockan(q, 22); q.lastGuardDay = -1;
     const vuxna = living(q).filter(p => ageOf(p, q.now) >= SIM.ALDER.vaktFran && ageOf(p, q.now) < SIM.ALDER.vaktTill);
-    for (const p of vuxna) { p.pot.mod = 1; Object.assign(p, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, warm: 0.9, health: 1, sickUntil: undefined, skador: [] }); }
+    for (const p of vuxna) { p.pot.mod = 1; Object.assign(p, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, warm: 0.9, health: 1, sickUntil: undefined, sjuk: undefined, skador: [] }); } // friska (sjukdomen i steg 9.5.1 står i p.sjuk)
     const [g, p] = vuxna; g!.pot.mod = 20;
     barGrenar(q, g!); p!.task = undefined;
     const grenar0 = grenarUte(q), akt = (x: Person) => x.task?.act; // (en funktion, så att typkontrollen inte tror att uppgiften är tom)
@@ -172,6 +175,19 @@ SCENARIER.vakt = {
 
 // Det i registren som bara händer i vissa byar: namnet och varför. Allt annat ska hända i minst en av byarna
 const SALLSYNT: Record<string, string> = {
+  naverask: 'sen teknik i fas 9 (steg 9.4.13): byn vill ha näveraskar först när någon kan koka i örtköket; scenariot vatskor prövar den',
+  lerkruka: 'lerkrukan (steg 9.4.11) kräver tekniken Lerkruka (nivå 3) och lera; scenarierna lera och kruka prövar den',
+  lerkruka_liten: 'som lerkruka; scenarierna lera och kruka prövar den', lerkruka_mellan: 'som lerkruka; scenarierna lera och kruka prövar den', lerkruka_stor: 'som lerkruka; scenarierna lera och kruka prövar den',
+  lera: 'leran (steg 9.4.10) grävs bara när byn gör av med den, till lerkrukorna; scenariot lera prövar den',
+  lyra: 'lyran görs bara vid snickarbänken med kniven där (steg 9.4.5, nivå 4), sällan på 35 dygn; scenarierna snickarbank och scen prövar den',
+  flyttStation: 'en station ute flyttas bara när den används mycket och står långt från husen och lagren (steg 9.4.8); scenariot mittenstation prövar det',
+  flyttLager: 'en lagerplats flyttas bara när mycket hämtas där och en plats närmare mitten är ledig (steg 9.4.7); scenariot mittenlager prövar det',
+  tork: 'torkställningen görs bara när byn har kött och fisk över för ett dygn, och de hungrigare byarna kommer på den sent; scenariot tork prövar den',
+  koka_te: 'örtteet (steg 9.5.8) kräver tekniken Örtte på nivå 4 och en lerkruka; scenariot vatskor prövar det',
+  orte: 'som koka_te; scenariot vatskor prövar det',
+  protes: 'proteserna (steg 9.5.11) görs först när någon förlorat en del och byn har snickarbänken; scenariot protes prövar dem', krycka: 'som protes; scenarierna protes och benbrott prövar den', traben: 'som protes; scenariot protes prövar det', krok: 'som protes; scenariot protes prövar den', ogonlapp: 'görs bara åt den som förlorat ett öga (steg 9.5.11); scenariot protes prövar den',
+  nal: 'nålen (steg 9.5.15) görs när ett stort sår ska sys; scenariot pilisaret prövar den', koka_vatten: 'kokat vatten (steg 9.5.25) kräver lerkrukan och ett infekterat sår; scenariot infektion prövar det', skara_lin: 'remsor av lin kräver lintyg (steg 9.5.15); scenariot pilisaret prövar dem', lakesalva: 'läkesalvan (steg 9.5.10) är en teknik på nivå 5; scenariot salva prövar den',
+  snickarbank: 'snickarbänken (steg 9.4.4) kräver klyvplatsen, sällan på 35 dygn; scenariot snickarbank prövar den',
   byxor_vargskinn: 'sen teknik i fas 7, hinner inte alltid komma på 35 dygn; scenariot hantverk7 prövar den',
   byxor_bjornskinn: 'sen teknik i fas 7, hinner inte alltid komma på 35 dygn; scenariot hantverk7 prövar den',
   mossa_bjornskinn: 'sen teknik i fas 7, hinner inte alltid komma på 35 dygn; scenariot hantverk7 prövar den',
@@ -310,10 +326,27 @@ const SALLSYNT: Record<string, string> = {
   skinndorr: 'skinndörren kommer man bara på när byn har skinn över och ett hus med en öppen dörröppning (steg 2.2.16), sällan på 35 dygn; scenariot dorr prövar den; i fasens Balans (6.10.4) var det sällsynt utan att bryta någon gräns',
   skogsvard: 'skogsvården kommer man bara på när de närmaste träden att fälla står långt bort (steg 6.5.2), sällan på 35 dygn; scenariot skogsvard prövar den; i fasens Balans (6.10.4) var det sällsynt utan att bryta någon gräns',
   plantera: 'plantor flyttas bara av den som kan skogsvården (se skogsvard); scenariot skogsvard prövar det',
+  budRovare: 'budbäraren springer bara när en flock väntar utanför byn och någon inte hört ropet (steg 9.2.117); scenariot rovarbud prövar det',
+  hjalpaRovare: 'man håller sig bakom kämparna bara när rövare eller vargar är nära byn (steg 9.2.116 och 9.2.121); scenarierna rovarforsvar och vargskydd prövar det',
+  forsvarRovare: 'man väntar på rövarna med vapen bara när rövare är nära byn (steg 9.2.74), och de kommer bara till en rik by; scenariot rovarforsvar prövar det',
 };
 // fas 8 (system 8.2, 8.3, 8.5 och 8.6): det som kräver en ledare, en präst eller en tro på en viss nivå hinner sällan komma på 35 dygn
 for (const k of ['medvetslos', 'mantel', 'prastdrakt', 'tecken', 'mask', 'koka_rokelse', 'koka_olja', 'hovbygge', 'rokelse', 'brannolja', 'rustning', 'hjalm', 'skold', 'bage', 'slunga', 'horn', 'pilar', 'gor_pilar', 'avrusta', 'rusta']) SALLSYNT[k] ??= 'kräver en ledare eller en tro på en viss nivå; scenarierna mantel, ritualer och kyrkan prövar det';
 for (const k of SIM.KLAD_SLAG) if (/^(mantel|prastdrakt|tecken|mask|rustning|hjalm)_/.test(k)) SALLSYNT[k] ??= 'bara ledaren eller en präst, och de troende när tron har nått långt; scenarierna mantel och kyrkan prövar det';
+// fas 9, system 9.6: matlagningen, dryckerna och det nya kräver lerkrukan, sädesodlingen eller en teknik på nivå 4–5, som byarna sällan
+// hinner komma på 35 dygn; varje sak har sitt scenario
+for (const [ks, why] of [
+  [[...SIM.RATT_SAKER, 'koka_mat', 'steka'], 'rätterna (steg 9.6.3 och 9.6.21) kräver lerkrukan och stekhällen; scenarierna kokning och stek prövar dem'],
+  [['tomma_latrin'], 'latrinen töms (steg 9.7.6) bara när byn har en kompost och latrinen är nästan full; scenariot kompost prövar det'],
+  [['krossa_saft'], 'saften (steg 9.6.9) kräver lerkrukan; scenariot saft prövar den'],
+  [['korn', 'sadesodling', 'malt', 'malta', 'mjol', 'mala_korn', 'kvarnsten', 'brod', 'baka', 'bakugn'], 'kornet (steg 9.6.11) kommer bara med handlarna, och mjölet, maltet och brödet efter det; scenarierna sad, kvarn och brod prövar dem'],
+  [['bryggkar', 'tappa', 'ol'], 'vinet och ölet (steg 9.6.12–9.6.13) är tekniker på nivå 4–5; scenarierna vin och ol prövar dem'],
+  [['supa'], 'supandet (steg 9.6.15) kräver vin eller öl i byn; scenariot bakfylla prövar det'],
+  [['nat', 'braxen', 'sik', 'braxkott', 'sikkott'], 'nätet (steg 9.6.16) är en teknik på nivå 4, och braxen och sik fångas mest i nätet; scenarierna nat och braxen prövar dem'],
+  [['salt', 'saltfisk', 'saltkott', 'salta_fisk', 'salta_kott'], 'saltet (steg 9.6.19) kommer bara med handlarna; scenariot salt prövar det'],
+  [['rokeri', 'roka', 'rokfisk', 'rokkott'], 'rökeriet (steg 9.6.8) är en teknik på nivå 5; scenariot rokeri prövar det'],
+  [['stekhall'], 'stekhällen (steg 9.6.21) är en teknik på nivå 4; scenariot stek prövar den'],
+] as [string[], string][]) for (const k of ks) SALLSYNT[k] ??= why;
 SCENARIER.aldrig = {
   text: 'Allt i registren används: varje handling, sak, husfunktion, djurart och teknik förekommer i minst en av fyra byar under 35 dygn (35 år i spelet, fem veckor i verkligheten)',
   lang: true,
@@ -329,7 +362,7 @@ SCENARIER.aldrig = {
       const by = Object.fromEntries(Object.keys(reg).map(k => [k, new Set<string>()]));
       let steg = 0;
       const r = korBy(seedAv(i), DYGN, s => {
-        for (const p of living(s)) if (p.task) { by.handlingar!.add(p.task.act); for (const k in p.task.items ?? {}) by.saker!.add(k); }
+        for (const p of [...living(s), ...SIM.gasterNu(s)]) if (p.task) { by.handlingar!.add(p.task.act); for (const k in p.task.items ?? {}) by.saker!.add(k); }
         for (const a of s.stackar ?? []) { by.saker!.add(a.k); if (a.dold && dold[a.k]) by.saker!.add(dold[a.k]!); }
         for (const t of tingOf(s)) by.saker!.add(t.k);
         for (const f of s.flackar ?? []) if (SAKER[f.k]) by.saker!.add(f.k); // toa-högen är en fläck på marken (smuts.ts)
@@ -361,12 +394,12 @@ SCENARIER.rovardrakt = {
   text: 'Rövarnas utseende (steg 6.6.12, ui/utseende.ts): rövarna är figurer ur skaparen som byborna, och samma rövare ser alltid likadan ut. De bär rövarens delar (luvan, duken och rocken av mörkt, slitet skinn) och vargskinnsrocken, var och en med sin chans, och vapnet i handen; byborna får aldrig rövarens delar.',
   kor: () => {
     const s = createState(4, START), RS = new Set(['bonad-9', 'bonad-10']);
-    const rov = Array.from({ length: 60 }, (_, i) => ({ namn: 'Rövare' + i, sex: i % 2 ? 'm' : 'k', st: { styrka: 10, uthallighet: 10, mod: 10, smidighet: 10, skicklighet: 10 }, vapen: i % 3 ? 'yxa' : 'flintspjut', blod: 1 }) as SIM.Rovare);
+    const rov = Array.from({ length: 60 }, (_, i) => ({ name: 'Rövare' + i, sex: i % 2 ? 'm' : 'k', gast: { sort: 'rovare', vapen: i % 3 ? 'yxa' : 'flintspjut' }, blod: 1 }) as unknown as SIM.Person);
     const a = rov.map(r => rovarSkapad(s, r, 'arg')), b = rov.map(r => rovarSkapad(s, r, 'arg'));
     const lika = JSON.stringify(a) === JSON.stringify(b);
     const luva = a.filter(q => q.del.huvudbonad === 'bonad-9').length, duk = a.filter(q => q.del.huvudbonad === 'bonad-10').length;
     const skinn = a.filter(q => q.klader.rock === 'rovarskinn').length, varg = a.filter(q => q.klader.rock === 'vargskinn').length;
-    const vapen = a.every((q, i) => q.del.redskap === (rov[i].vapen === 'yxa' ? 'redskap-yxa' : 'redskap-flintspjut'));
+    const vapen = a.every((q, i) => q.del.redskap === (rov[i].gast!.vapen === 'yxa' ? 'redskap-yxa' : 'redskap-flintspjut'));
     const by = living(s).map(p => skapad(s, p)), bybor = by.every(q => !RS.has(q.del.huvudbonad ?? '') && q.klader.rock !== 'rovarskinn');
     const kring = (n: number, p: number) => n > 60 * p * 0.4 && n < 60 * p * 1.8;
     return [
@@ -438,5 +471,31 @@ SCENARIER.portratt = {
       [`beskrivningen säger det vackraste eller fulaste som syns i ansiktet (${sagt} av ${skona})`, sagt === skona],
       [`porträttet (64 × 64) och kartfiguren (14 × 20) ritas för alla ${alla.length} (${ritade}) med bara palettens färger (${utanfor} utanför)`, ritade === alla.length && utanfor === 0],
     ] as Koll[];
+  },
+};
+
+SCENARIER.processgrupp = {
+  text: 'Steg 9.2.60: när testet stoppar en process efter tidsgränsen (korProcess i pool.ts) stoppas hela gruppen av processer den startat, inte bara den',
+  kor: () => {
+    const ut = execFileSync(process.execPath, ['--import', 'tsx', fileURLToPath(new URL('../processgrupp.ts', import.meta.url))], { encoding: 'utf8' });
+    const r = JSON.parse(ut.trim().split('\n').pop()!) as { pid: number; kvar: boolean; stoppad: boolean };
+    return [
+      ['processen som aldrig blev klar stoppades efter tidsgränsen', r.stoppad],
+      [`och den den startade (pid ${r.pid}) lever inte kvar`, r.pid > 0 && !r.kvar],
+    ];
+  },
+};
+
+SCENARIER.arbetstid = {
+  text: 'Steg 9.2.63: varje handling har ett tidsslag (ett arbete i TIDSLAG eller en stund), och vakten i npm test och npm run balans larmar när ett arbete tar längre tid än sitt slag',
+  kor: () => {
+    const nu = 0, MIN = 60_000;
+    const kniv30 = SIM.forLangtArbete({ act: 'kniv', until: nu + 30 * MIN }, nu), kniv3 = SIM.forLangtArbete({ act: 'kniv', until: nu + 3 * MIN }, nu);
+    const vila = SIM.forLangtArbete({ act: 'vila', until: nu + 300 * MIN }, nu);
+    return [
+      [`kniven har slaget ${SIM.tidSlagAv('kniv')}, och vakten larmar när den får 30 minuter (${kniv30 ?? 'inget larm'})`, SIM.tidSlagAv('kniv') !== 'stund' && !!kniv30],
+      ['men inte när den tar 3 minuter', !kniv3],
+      [`att vila är en stund (${SIM.tidSlagAv('vila')}) och får ta hur lång tid som helst`, SIM.tidSlagAv('vila') === 'stund' && !vila],
+    ];
   },
 };

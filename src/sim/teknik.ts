@@ -1,4 +1,5 @@
 import { allaBarn, upplev } from './uppvaxt';
+import { personHand } from './personlogg';
 import { TROSKEL } from './forradsmal';
 import { delade, fyll, kronikaBer, larFalt, loggBer, personFalt } from './berattelser';
 import { kronika } from './historik';
@@ -12,7 +13,7 @@ import { tingOf } from './agande';
 import { Act, HOUR, HOUR_S, MIN, Person, Skill, State, Task, inMap } from './typer';
 import { balans } from './balans';
 import { finnsKlyvStam } from './skog';
-import { ACTS, ACT_LIST } from './handlingar';
+import { ACTS, ACT_LIST, forsokVad } from './handlingar';
 import type { SamtalDef } from './samtal';
 import { lartUt } from './relationer';
 import { gudHandelse } from './religion';
@@ -41,7 +42,7 @@ export interface Tek {
   // försöksplatsen (steg 4.2.1.1): nivå 4–5 kommer man bara på genom att pröva sig fram vid en station som redan finns
   // tidigare i kedjan (stationernas sorter i STATIONER; tom lista = elden). Den som prövar kan kraven och är skicklig i
   // färdigheten skill. Varje försök tar en hel sak av materialet och ger ingenting
-  forsok?: { vid: string[]; skill: Skill };
+  forsok?: { vid: string[]; skill: Skill; vad: string }; // vad: det den som prövar sig fram försöker komma på, efter "Försöker komma på" (steg 9.2.106)
   // det episka ögonblicket (steg 4.2.1.3): raden i krönikan när den första i byn kommer på den, med {namn} och {hen}
   episk?: string;
 }
@@ -51,7 +52,7 @@ export const TEKNIK: Tek[] = [
   { id: 'korg', namn: 'Korg', text: 'En korg flätad av hö.', effekt: 'Man bär hem mer från varje tur och spiller mindre bär.',
     omr: ['samla', 'hantverk'], krav: ['flatarbank'], niva: 3, tid: 9 }, // korgen flätas bara vid slöjdbänken
   { id: 'yxa', namn: 'Flintyxa', text: 'En vass flintsten bunden vid en pinne.', effekt: 'Med yxa kan man fälla träd och hugga trä.',
-    omr: ['samla', 'ved', 'hantverk'], krav: [], niva: 1, tid: 10 },
+    omr: ['samla', 'ved', 'hantverk'], krav: [], niva: 1, tid: 5 },
   { id: 'fiskespjut', namn: 'Träspjut', text: 'En pinne som täljts spetsig med en flintsten eller en yxa.', effekt: 'Ger mycket mer fisk än händerna och hjälper på jakten, men slits fort.',
     omr: ['fiske', 'ved'], krav: [], niva: 1, tid: 7 },
   { id: 'rep', namn: 'Rep', text: 'Växtfibrer som tvinnas till rep på kvällen vid elden. Senor från slaktat vilt blir också rep.', effekt: 'Rep behövs till flintspjut och metspö.',
@@ -60,23 +61,32 @@ export const TEKNIK: Tek[] = [
     omr: ['fiske', 'jakt', 'hantverk'], krav: ['fiskespjut', 'rep'], niva: 2, tid: 16 },
   { id: 'stenhuggarplats', namn: 'Stenhuggarplats', text: 'En plats där stenen huggs till.', effekt: 'Där görs huggen sten.', omr: ['hantverk'], krav: ['yxa'], niva: 2, tid: 6 },
   { id: 'klyvplats', namn: 'Klyvplats', text: 'En plats där virket klyvs till plankor.', effekt: 'Där görs plankor.', omr: ['hantverk', 'bygga'], krav: ['yxa'], niva: 2, tid: 6 },
+  { id: 'lakesalva', namn: 'Läkesalva', text: 'Rölleka och talg som kokas till en salva i örtköket.', effekt: 'Salvan på såret skyddar mot infektion, dämpar en som börjat och hjälper brännskador att läka.', omr: ['hantverk'], krav: ['orte', 'ortkok'], niva: 5, tid: 6, forsok: { vid: ['ortkok'], skill: 'hantverk', vad: 'hur rölleka och talg blir en läkesalva' }, episk: '{namn} kokade en läkesalva som får såren att läka rent.' }, // steg 9.5.10
+  { id: 'orte', namn: 'Örtte', text: 'Rölleka som kokas i vatten i en liten lerkruka vid elden.', effekt: 'Teet värmer den som fryser och hjälper den sjuke att stå emot.', omr: ['hantverk'], krav: ['kruka'], niva: 4, tid: 6, forsok: { vid: ['ortkok', 'flatarbank'], skill: 'hantverk', vad: 'hur man kokar ett te av rölleka' }, episk: '{namn} kokade ett te av rölleka som värmer och stärker.' }, // steg 9.5.8
+  { id: 'protes', namn: 'Proteser', text: 'Kryckor, träben och krokar som täljs vid snickarbänken.', effekt: 'Den som förlorat ett ben går igen, och den som förlorat en hand får tillbaka en del av greppet.', omr: ['hantverk'], krav: ['snickarbank'], niva: 4, tid: 6, forsok: { vid: ['snickarbank'], skill: 'hantverk', vad: 'hur man täljer ett träben' }, episk: '{namn} täljde ett träben så att den som förlorat sitt ben kunde gå igen.' }, // steg 9.5.11
+  { id: 'naverask', namn: 'Näverask', text: 'En liten ask av näver som viks och sys ihop med rep.', effekt: 'I asken håller sig salvan och benlimmet.', omr: ['hantverk'], krav: ['rep'], niva: 2, tid: 6 }, // steg 9.4.13
+  { id: 'snickarbank', namn: 'Snickarbänk', text: 'En stadig bänk av virke och plankor där trä sågas, borras och täljs.', effekt: 'Där görs träsakerna fortare och bättre, och bågen, lyran, skölden, kryckan och träbenet.', omr: ['hantverk'], krav: ['klyvplats'], niva: 3, tid: 6 }, // steg 9.4.4
   { id: 'harden', namn: 'Härd', text: 'En fyrkant av huggna stenar på golvet, med ett rökhål i taket.', effekt: 'Härden värmer hela huset och drar mindre ved än lägerelden.', omr: ['bygga'], krav: ['stenhuggarplats', 'timmervagg'], niva: 3, tid: 6 },
   { id: 'ortkok', namn: 'Örtkök', text: 'En liten eld där man kokar och blandar örter, talg och annat.', effekt: 'Där görs salva, tjära, benlim och tvål.', omr: ['hantverk'], krav: ['flatarbank'], niva: 3, tid: 6 },
   { id: 'leksak', namn: 'Leksak', text: 'En träfigur, en boll av skinn eller en docka av halm.', effekt: 'Ett barn som har en leksak får färre utbrott.', omr: ['hantverk'], krav: ['kniv'], niva: 2, tid: 6 },
-  { id: 'snara', namn: 'Snara', text: 'En böjd gren, ett rep och en spärr av ben.', effekt: 'Snaran fångar kaniner och fåglar medan ingen är där.', omr: ['jakt'], krav: ['fangstbank', 'rep'], niva: 4, tid: 6, forsok: { vid: ['fangstbank'], skill: 'jakt' }, episk: '{namn} band en snara som fångar medan ingen är där.' },
-  { id: 'grop', namn: 'Fångstgrop', text: 'En täckt grop där större vilt faller ner.', effekt: 'Gropen fångar rådjur medan ingen är där.', omr: ['jakt'], krav: ['fangstbank'], niva: 4, tid: 6, forsok: { vid: ['fangstbank'], skill: 'jakt' }, episk: '{namn} grävde en grop som det stora viltet faller ner i.' },
-  { id: 'garvning', namn: 'Garvning', text: 'Skinnet hängs upp, skrapas och mjukas upp med talg.', effekt: 'Vid ställningen blir skinn och talg till läder.', omr: ['jakt', 'hantverk'], krav: ['kniv', 'skinnklader'], niva: 5, tid: 6, forsok: { vid: ['flatarbank'], skill: 'hantverk' }, episk: '{namn} kom på hur skinnet blir till läder.' },
+  { id: 'snara', namn: 'Snara', text: 'En böjd gren, ett rep och en spärr av ben.', effekt: 'Snaran fångar kaniner och fåglar medan ingen är där.', omr: ['jakt'], krav: ['fangstbank', 'rep'], niva: 4, tid: 6, forsok: { vid: ['fangstbank'], skill: 'jakt', vad: 'hur man binder en snara' }, episk: '{namn} band en snara som fångar medan ingen är där.' },
+  { id: 'grop', namn: 'Fångstgrop', text: 'En täckt grop där större vilt faller ner.', effekt: 'Gropen fångar rådjur medan ingen är där.', omr: ['jakt'], krav: ['fangstbank'], niva: 4, tid: 6, forsok: { vid: ['fangstbank'], skill: 'jakt', vad: 'hur man gräver en fångstgrop' }, episk: '{namn} grävde en grop som det stora viltet faller ner i.' },
+  { id: 'garvning', namn: 'Garvning', text: 'Skinnet hängs upp, skrapas och mjukas upp med talg.', effekt: 'Vid ställningen blir skinn och talg till läder.', omr: ['jakt', 'hantverk'], krav: ['kniv', 'skinnklader'], niva: 5, tid: 6, forsok: { vid: ['flatarbank'], skill: 'hantverk', vad: 'hur skinn blir till läder' }, episk: '{namn} kom på hur skinnet blir till läder.' },
+  { id: 'bryggkar', namn: 'Vin', text: 'Krossade bär med vatten som får stå och jäsa i ett kar, tills det blivit vin.', effekt: 'Byn bygger ett bryggkar och gör vin, som står i stora lerkrukor och blir bättre med tiden.', omr: ['koka_mat', 'grilla'], krav: ['kruka'], niva: 4, tid: 8, forsok: { vid: ['grill'], skill: 'matlagning', vad: 'hur bär blir vin' }, episk: 'Bären i krukan hade börjat bubbla. {namn} smakade och förstod att det blivit något nytt.' }, // steg 9.6.12
+  { id: 'ol', namn: 'Öl', text: 'Korn som blöts, gror och torkas till malt, och jäser med vatten och rölleka i bryggkaret.', effekt: 'Byn gör öl, som står i stora lerkrukor.', omr: ['brygga'], krav: ['bryggkar', 'sadesodling'], niva: 5, tid: 1000, nar: 'När byn har korn och har gjort vin', forsok: { vid: ['bryggkar'], skill: 'matlagning', vad: 'hur kornet blir öl' }, episk: 'Kornet hade grott, torkat och jäst. {namn} smakade det första ölet.' }, // steg 9.6.13
+  { id: 'sadesodling', namn: 'Sädesodling', text: 'Korn från handlarna som sås på fältet, och en del av skörden sparas till nästa sådd.', effekt: 'Byn kan odla korn.', omr: ['odla'], krav: ['odling'], niva: 2, tid: 1000, nar: 'När byn får sitt första korn av handlarna' }, // steg 9.6.11
   { id: 'lin', namn: 'Lin', text: 'Linfrön som sås på fälten, och skörden rötas innan den kan spinnas.', effekt: 'Byn kan odla lin.', omr: ['odla'], krav: ['odling'], niva: 2, tid: 6 },
   { id: 'slanda', namn: 'Slända', text: 'En pinne med en tyngd som snurrar linet till tråd.', effekt: 'Med sländan spinner man lintråd var som helst.', omr: ['hantverk'], krav: ['lin'], niva: 3, tid: 6 },
-  { id: 'vavstol', namn: 'Vävstol', text: 'En ram med vävtyngder av sten.', effekt: 'Vid vävstolen vävs tråden till lintyg.', omr: ['hantverk'], krav: ['slanda'], niva: 4, tid: 6, forsok: { vid: ['flatarbank'], skill: 'hantverk' }, episk: '{namn} band ihop en ram med tyngder av sten och vävde det första tyget.' },
+  { id: 'vavstol', namn: 'Vävstol', text: 'En ram med vävtyngder av sten.', effekt: 'Vid vävstolen vävs tråden till lintyg.', omr: ['hantverk'], krav: ['slanda'], niva: 4, tid: 6, forsok: { vid: ['flatarbank'], skill: 'hantverk', vad: 'hur man väver tyg' }, episk: '{namn} band ihop en ram med tyngder av sten och vävde det första tyget.' },
   { id: 'fangstbank', namn: 'Fångstbänk', text: 'En bänk för fällor och burar.', effekt: 'Byn kan bygga en fångstbänk, där mjärdar och fällor görs.',
     omr: ['fiske', 'jakt'], krav: ['flatarbank', 'rep'], niva: 3, tid: 6 },
   { id: 'mjarde', namn: 'Mjärde', text: 'En flätad korg som fisken simmar in i men inte ut ur.', effekt: 'Mjärden sätts ut i vattnet och fångar fisk medan ingen är där.',
-    omr: ['fiske'], krav: ['fangstbank'], niva: 4, tid: 6, forsok: { vid: ['fangstbank'], skill: 'fiske' }, episk: '{namn} flätade en korg som fisken simmar in i men inte ut ur.' },
+    omr: ['fiske'], krav: ['fangstbank'], niva: 4, tid: 6, forsok: { vid: ['fangstbank'], skill: 'fiske', vad: 'hur man flätar en mjärde' }, episk: '{namn} flätade en korg som fisken simmar in i men inte ut ur.' },
   { id: 'stockvag', namn: 'Stockväg', text: 'Stockar som läggs tätt tvärs över färdriktningen, som kavelbroarna över blöt mark.', effekt: 'Byn kan lägga en väg av virke på gångstråken. Den går inte fortare för folk, men vagnar kan gå på den.',
     omr: ['bygga'], krav: ['timmervagg'], niva: 3, tid: 6 },
   { id: 'brygga', namn: 'Brygga', text: 'Stockar på pålar ut i vattnet, där man kan stå och nå längre ut.', effekt: 'Byn kan bygga en brygga. Därifrån når man fisken längre ut, och vattnet är rent.',
-    omr: ['bygga', 'fiske'], krav: ['stockvag'], niva: 4, tid: 6, forsok: { vid: ['flatarbank'], skill: 'hantverk' }, episk: '{namn} gick längre ut än någon annan och satte en stock på pålar: byns första brygga.' },
+    omr: ['bygga', 'fiske'], krav: ['stockvag'], niva: 4, tid: 6, forsok: { vid: ['flatarbank'], skill: 'hantverk', vad: 'hur man bygger en brygga' }, episk: '{namn} gick längre ut än någon annan och satte en stock på pålar: byns första brygga.' },
+  { id: 'nat', namn: 'Nät', text: 'Lintråd knuten i maskor till ett nät, med stenar som sänken, som läggs ut från stranden.', effekt: 'Fisken fastnar i nätet: fiskaren får mer, och braxen och sik nästan bara så.', omr: ['fiske'], krav: ['slanda', 'metspo', 'flatarbank'], niva: 4, tid: 10, forsok: { vid: ['flatarbank'], skill: 'hantverk', vad: 'hur man knyter ett nät' }, episk: 'Maska för maska knöt {namn} lintråden, tills nätet höll fisken.' }, // steg 9.6.16
   { id: 'metspo', namn: 'Metspö', text: 'Ett spö med ett rep och en krok av ben från slaktat vilt. Mask grävs fram och sätts på kroken.', effekt: 'Fisken nappar oftare och sitter kvar bättre än på spjutet.',
     omr: ['fiske'], krav: ['rep', 'fiskespjut'], niva: 2, tid: 4 },
   { id: 'kniv', namn: 'Flintkniv', text: 'En vass flintskärva med ett skaft av trä.', effekt: 'Med kniv slaktas vilt till mer kött, ben, skinn och senor.',
@@ -96,34 +106,34 @@ export const TEKNIK: Tek[] = [
     omr: ['hantverk', 'bygga'], krav: ['timmervagg'], niva: 3, tid: 4 },
   // förvaringen (steg 2.3.6): en teknik för hyllan, kistan och redskapsstället, med samma id som hyllan
   { id: 'hylla', namn: 'Hyllor och kistor', text: 'Hyllor och ställ av trä och rep i förrådshuset, och kistor i sovrummet för egna redskap och kläder.', effekt: 'Flera högar ryms på samma plats, så att lagret tar mindre plats. I kistan slits det som under tak.',
-    omr: ['hantverk'], krav: ['rep', 'bord'], niva: 4, tid: 3.3, forsok: { vid: ['bord', 'bord2', 'bord3', 'flatarbank'], skill: 'hantverk' }, episk: '{Namn} hade byggt och rivit om och om igen vid bordet. Till sist stod den första hyllan, och den höll.' },
+    omr: ['hantverk'], krav: ['rep', 'bord'], niva: 4, tid: 3.3, forsok: { vid: ['bord', 'bord2', 'bord3', 'flatarbank'], skill: 'hantverk', vad: 'hur man bygger hyllor och kistor' }, episk: '{Namn} hade byggt och rivit om och om igen vid bordet. Till sist stod den första hyllan, och den höll.' },
   // tillbehören till möblerna (TILLBEHOR i stationer.ts, steg 2.2.14) har också samma id som raden där
   { id: 'skinnfall', namn: 'Skinnfäll', text: 'Skinn som sys ihop till ett täcke och läggs i halmbädden.', effekt: 'Den som sover under en skinnfäll fryser mindre.',
-    omr: ['hantverk', 'jakt'], krav: ['halmbadd', 'skinnklader'], niva: 5, tid: 16, forsok: { vid: ['halmbadd', 'flatarbank'], skill: 'hantverk' }, episk: 'Natt efter natt sydde {namn} skinn mot skinn, tills den första fällen var varm nog att sova under.' },
+    omr: ['hantverk', 'jakt'], krav: ['halmbadd', 'skinnklader'], niva: 5, tid: 16, forsok: { vid: ['halmbadd', 'flatarbank'], skill: 'hantverk', vad: 'hur man syr en skinnfäll' }, episk: 'Natt efter natt sydde {namn} skinn mot skinn, tills den första fällen var varm nog att sova under.' },
   // dörrarna (DORRAR i byggnad.ts, steg 2.2.16) har också samma id som raden där
   { id: 'skinndorr', namn: 'Skinndörr', text: 'En hud som hängs i dörröppningen.', effekt: 'Huset släpper ut mindre värme genom dörren.',
-    omr: ['bygga', 'hantverk'], krav: ['timmervagg', 'skinnklader'], niva: 5, tid: 6.7, forsok: { vid: ['flatarbank'], skill: 'hantverk' }, episk: '{Namn} hängde hud efter hud i dörröppningen innan {hen} fick den att sluta tätt. Den kvällen stannade värmen kvar i huset.' },
+    omr: ['bygga', 'hantverk'], krav: ['timmervagg', 'skinnklader'], niva: 5, tid: 6.7, forsok: { vid: ['flatarbank'], skill: 'hantverk', vad: 'hur man gör en dörr av skinn' }, episk: '{Namn} hängde hud efter hud i dörröppningen innan {hen} fick den att sluta tätt. Den kvällen stannade värmen kvar i huset.' },
   { id: 'tradorr', namn: 'Trädörr', text: 'Kluvna bräder som surras ihop med rep och hängs i dörröppningen.', effekt: 'Huset håller värmen bättre, och dörren stängs när någon gömmer sig för vargarna.',
     omr: ['bygga', 'hantverk'], krav: ['timmervagg', 'rep'], niva: 3, tid: 4 },
   // kläderna (steg 2.3.2): bensylen slipas av ett ben och läggs vid slöjdbänken, och med den sys kläderna där
   { id: 'bensyl', namn: 'Bensyl', text: 'Ett vasst ben som slipas mot en sten eller en flinta.', effekt: 'Med bensylen vid slöjdbänken kan man sy skinn.',
     omr: ['hantverk'], krav: ['flatarbank', 'kniv'], niva: 3, tid: 4.2 },
   { id: 'skinnklader', namn: 'Skinnkläder', text: 'Skinn som sys ihop med rep av senor till en rock och ett par skor.', effekt: 'Den som har kläderna på sig fryser mindre.',
-    omr: ['hantverk', 'jakt'], krav: ['bensyl'], niva: 4, tid: 14, forsok: { vid: ['flatarbank'], skill: 'hantverk' }, episk: 'Efter många förstörda skinn vid slöjdbänken drog {namn} på sig den första rock som byn hade sett.' },
+    omr: ['hantverk', 'jakt'], krav: ['bensyl'], niva: 4, tid: 14, forsok: { vid: ['flatarbank'], skill: 'hantverk', vad: 'hur man syr kläder av skinn' }, episk: 'Efter många förstörda skinn vid slöjdbänken drog {namn} på sig den första rock som byn hade sett.' },
   // vattensäcken (steg 2.10.1): sys av skinn som kläderna. Man kommer på den när man ger vatten åt den som inte kan gå
   { id: 'fackla', namn: 'Fackla', text: 'En käpp som klyvs i toppen, med torrt gräs och talg i klykan.', effekt: 'Den som går ut i mörkret tänder en fackla vid elden och ser vart den går.',
     omr: ['jakt', 'hantverk'], krav: ['slaktbank'], niva: 3, tid: 4 },
   { id: 'vattensack', namn: 'Vattensäck', text: 'Ett skinn som sys ihop till en säck och knyts med rep.', effekt: 'Man kan bära vatten till den som inte kan gå till vattnet.',
-    omr: ['hantverk', 'dricka', 'varda'], krav: ['skinnklader'], niva: 5, tid: 5.4, forsok: { vid: ['flatarbank'], skill: 'hantverk' }, episk: 'Vattnet rann ut genom varje söm {namn} sydde. Men till sist höll säcken tätt, och {hen} bar vatten utan att spilla en droppe.' },
+    omr: ['hantverk', 'dricka', 'varda'], krav: ['skinnklader'], niva: 5, tid: 5.4, forsok: { vid: ['flatarbank'], skill: 'hantverk', vad: 'hur man syr en säck som håller vatten' }, episk: 'Vattnet rann ut genom varje söm {namn} sydde. Men till sist höll säcken tätt, och {hen} bar vatten utan att spilla en droppe.' },
   // bältet (steg 2.3.3): kommer man på när man bär hem både redskap och börda, ganska tidigt
   { id: 'balte', namn: 'Bälte', text: 'Ett rep som flätas till ett bälte runt midjan.', effekt: 'Redskapet hänger i bältet när man bär hem, så båda händerna är fria och man bär mer.',
     omr: ['ved', 'samla', 'fiske', 'hantverk'], krav: ['rep'], niva: 2, tid: 11 },
   { id: 'axelrem', namn: 'Axelrem', text: 'En rem av skinn och rep som hängs över axeln.', effekt: 'Spjutet, metspöt och vattensäcken hänger på axeln när man bär hem, så båda händerna är fria.', // steg 7.1.2
-    omr: ['jakt', 'fiske', 'hantverk'], krav: ['skinnklader', 'balte'], niva: 5, tid: 5.4, forsok: { vid: ['flatarbank'], skill: 'hantverk' },
+    omr: ['jakt', 'fiske', 'hantverk'], krav: ['skinnklader', 'balte'], niva: 5, tid: 5.4, forsok: { vid: ['flatarbank'], skill: 'hantverk', vad: 'hur man gör en axelrem' },
     episk: 'Remmen gled av axeln varje gång {namn} böjde sig. Men till sist satt den, och {hen} bar hem med båda händerna fria.' },
   // ryggsäcken (steg 7.1.3): kommer man på när man ofta går hem med en full korg
   { id: 'ryggsack', namn: 'Ryggsäck', text: 'En säck av skinn med remmar av rep som bärs på ryggen.', effekt: 'Den som samlar plockar rakt ner i den, har båda händerna fria och bär dubbelt så mycket hem.',
-    omr: ['samla', 'hantverk'], krav: ['korg', 'skinnklader'], niva: 5, tid: 5.4, forsok: { vid: ['flatarbank'], skill: 'hantverk' },
+    omr: ['samla', 'hantverk'], krav: ['korg', 'skinnklader'], niva: 5, tid: 5.4, forsok: { vid: ['flatarbank'], skill: 'hantverk', vad: 'hur man syr en ryggsäck' },
     episk: 'Säcken sprack i sömmarna gång på gång. Men {namn} sydde om den tills den höll, och {hen} bar hem dubbelt så mycket.' },
   // sportens föremål (steg 4.3.1.2, sport.ts): man kommer på dem när man spelar
   { id: 'mal', namn: 'Mål', text: 'En ring av grenar som binds med rep och ställs upp i byn.', effekt: 'Man tävlar i att kasta mot målet.',
@@ -140,9 +150,9 @@ export const TEKNIK: Tek[] = [
   { id: 'benflojt', namn: 'Benflöjt', text: 'Ett ihåligt ben med hål att blåsa och sätta fingrarna på.', effekt: 'Med benflöjten vid scenen kan man spela.',
     omr: ['upptrada', 'hantverk'], krav: ['kniv'], niva: 2, tid: 4 },
   { id: 'lyra', namn: 'Lyra', text: 'En ram av trä med strängar av rep som man knäpper på.', effekt: 'Sången och musiken till lyran gör publiken gladare än med andra instrument.',
-    omr: ['upptrada', 'hantverk'], krav: ['scen', 'rep'], niva: 3, tid: 6 },
+    omr: ['upptrada', 'hantverk'], krav: ['scen', 'rep', 'snickarbank'], niva: 4, tid: 6, forsok: { vid: ['snickarbank'], skill: 'hantverk', vad: 'hur man täljer en lyra' }, episk: '{namn} täljde en lyra och spände strängar av rep.' },
   // pyntet (steg 4.3.4, pynt.ts): lerkrukan, bonaden och det snidade väggbrädet i rummet där man sover; varje möbel är sin egen teknik
-  { id: 'kruka', namn: 'Lerkruka', text: 'En kruka av lera från stranden, formad för hand och bränd i elden, bara för att vara vacker.', effekt: 'Den som tycker om krukor ställer en där den sover, trivs där, och de som ser den tycker bättre om ägaren.',
+  { id: 'kruka', namn: 'Lerkruka', text: 'En kruka av lera från stranden med sand i, uppbyggd för hand, torkad och bränd i elden.', effekt: 'Den som tycker om krukor ställer en där den sover, trivs där, och de som ser den tycker bättre om ägaren.',
     omr: ['hantverk', 'bygga'], krav: ['timmervagg'], niva: 3, tid: 4 },
   { id: 'bonad', namn: 'Bonad', text: 'Ett skinn som hängs på väggen, med mönster och fransar av rep.', effekt: 'Den som tycker om bonader hänger en där den sover, trivs där, och de som ser den tycker bättre om ägaren.',
     omr: ['hantverk', 'bygga'], krav: ['timmervagg', 'rep'], niva: 3, tid: 4 },
@@ -152,14 +162,21 @@ export const TEKNIK: Tek[] = [
   // (LATRIN i STATIONER, samma id) och rötterna fortare
   { id: 'benspade', namn: 'Benspade', text: 'Tre ben bredvid varandra som ett blad, surrade med rep vid en gren som skaft.', effekt: 'Med spaden gräver man fram rötter fortare, och gropar.',
     omr: ['hantverk', 'samla'], krav: ['slaktbank', 'rep'], niva: 3, tid: 5 },
+  { id: 'staket', namn: 'Staket', text: 'Pinnar i marken med slanor emellan, runt fältet.', effekt: 'Djuren går inte över staketet, så hararna kommer inte åt grödan.', omr: ['odla'], krav: ['odling'], niva: 2, tid: 6 }, // steg 9.7.10
+  { id: 'fagelskramma', namn: 'Fågelskrämma', text: 'En figur av grenar och hö som står på fältet.', effekt: 'Fåglarna tar inte fröna på fältet, och de vänjer sig inte vid den.', omr: ['odla'], krav: ['odling'], niva: 2, tid: 6 }, // steg 9.7.11
+  { id: 'kompost', namn: 'Gödsel', text: 'Resterna från slakten och skörden, och latrinens innehåll, får ligga och mogna till jord som gödslar fälten.', effekt: 'Sophögen blir en kompost, latrinen töms där i stället för att en ny grävs, och den färdiga komposten gör fältets rutor bördigare.', omr: ['odla', 'sopor'], krav: ['odling', 'latrin'], niva: 5, tid: 1000, nar: 'När någon märker att det växer bättre där resterna på sophögen har legat', forsok: { vid: ['latrin'], skill: 'hantverk', vad: 'hur resterna blir jord' }, episk: '{namn} såg att det växte bäst där resterna legat, och förstod varför.' }, // steg 9.7.6
   { id: 'latrin', namn: 'Latrin', text: 'En grop i byns utkant, grävd med benspaden.', effekt: 'Man går på toa på ett ställe, närmare än förut, och lämnar ingen smuts efter sig. Gropen fylls och måste ersättas.',
-    omr: ['toa', 'hantverk', 'bygga'], krav: ['benspade'], niva: 4, tid: 9, forsok: { vid: ['flatarbank'], skill: 'hantverk' }, episk: '{Namn} grävde och fyllde igen, grop efter grop, innan {hen} visste var och hur djupt. Byn fick sin första latrin.' },
+    omr: ['toa', 'hantverk', 'bygga'], krav: ['benspade'], niva: 4, tid: 9, forsok: { vid: ['flatarbank'], skill: 'hantverk', vad: 'hur man gräver en latrin' }, episk: '{Namn} grävde och fyllde igen, grop efter grop, innan {hen} visste var och hur djupt. Byn fick sin första latrin.' },
   // grillställningen (steg 2.8.1, matlagning.ts; grill i STATIONER, samma id)
+  { id: 'bakugn', namn: 'Bakugn', text: 'Ett valv av sten tätat med lera, som eldas varmt innan degen skjuts in.', effekt: 'Mjöl och vatten blir deg som jäser och gräddas till bröd, som håller längre än annan lagad mat.', omr: ['mala_korn', 'koka_mat'], krav: ['kvarnsten', 'kruka'], niva: 4, tid: 8, forsok: { vid: ['kvarnsten'], skill: 'matlagning', vad: 'hur mjöl blir bröd' }, episk: 'Degen hade jäst, och ur ugnen tog {namn} det första brödet.' }, // steg 9.6.23
+  { id: 'kvarnsten', namn: 'Kvarnsten', text: 'Två flata stenar där kornet mals till mjöl mellan den undre och den övre.', effekt: 'Kornet blir mjöl, som går att spara och baka bröd av.', omr: ['odla', 'hugga_sten'], krav: ['sadesodling', 'stenhuggarplats'], niva: 3, tid: 8 }, // steg 9.6.22
+  { id: 'stekhall', namn: 'Stekhäll', text: 'En flat sten över elden, där köttet och fisken steks i talg.', effekt: 'Steken smakar bättre än det grillade.', omr: ['grilla'], krav: ['grill'], niva: 4, tid: 6, forsok: { vid: ['grill'], skill: 'matlagning', vad: 'hur man steker på en het sten' }, episk: '{namn} lade köttet i talg på den heta stenen, och det fräste.' }, // steg 9.6.21
   { id: 'grill', namn: 'Grillställning', text: 'Två grenar med en klyka var på var sin sida om elden, och ett spett med vev som vilar i klykorna, surrat med rep.', effekt: 'Kött och fisk grillas över elden. Den grillade maten håller längre, och den som äter den blir inte sjuk av rått kött.',
     omr: ['hantverk', 'slakta', 'rensa', 'fiske'], krav: ['rep', 'slaktbank'], niva: 3, tid: 5.4 },
   // torkställningen (steg 2.8.2, matlagning.ts; tork i STATIONER, samma id)
+  { id: 'rokeri', namn: 'Rökeri', text: 'En låg stenkista med ett tak av grenar tätat med lera. Under ryker en pyrande eld av grön ved.', effekt: 'Kött och fisk röks på ett dygn i stället för fem, också i regn och på vintern, och det rökta håller som det torkade och smakar lite bättre.', omr: ['hantverk', 'slakta', 'rensa'], krav: ['tork', 'kruka'], niva: 5, tid: 10, forsok: { vid: ['tork'], skill: 'matlagning', vad: 'hur man röker kött och fisk' }, episk: 'Röken från den gröna veden låg tät. {namn} tog ut den första rökta fisken, och den höll.' }, // steg 9.6.8
   { id: 'tork', namn: 'Torkställning', text: 'Två A av korsade grenar som bär en lång slå, surrade med rep. På slån hänger köttet i remsor och fisken i stjärten.', effekt: 'Det kött och den fisk som byn inte hinner äta torkar på fem dygn och håller sedan länge i lagret.',
-    omr: ['hantverk', 'slakta', 'rensa', 'fiske'], krav: ['rep', 'grill'], niva: 4, tid: 14, forsok: { vid: ['grill'], skill: 'matlagning' }, episk: 'Gång på gång brann köttet eller ruttnade vid grillen. Men en morgon hängde de första remsorna torra och goda på {namn}s slå.' },
+    omr: ['hantverk', 'slakta', 'rensa', 'fiske'], krav: ['rep', 'grill'], niva: 4, tid: 14, forsok: { vid: ['grill'], skill: 'matlagning', vad: 'hur man torkar kött och fisk' }, episk: 'Gång på gång brann köttet eller ruttnade vid grillen. Men en morgon hängde de första remsorna torra och goda på {namn}s slå.' },
   // odlingen (steg 2.10.2, odling.ts): kommer man bara på när man plockar vilda frön (froFynd), fortare ju fler vilda frön
   // byn plockat; det krävs inte så många (Björn efter v107, steg 2.10.11)
   { id: 'odling', namn: 'Odling', text: 'Frön som sätts i jorden blir nya grödor.', effekt: 'Man kan så frön på ett fält och skörda grödorna.',
@@ -171,16 +188,17 @@ export const TEKNIK: Tek[] = [
   { id: 'ledarskap', namn: 'Ledarskap', text: 'Att förstå vad som krävs för att byn ska lyssna på en: att höra alla, döma rättvist och tänka på hela byn.', effekt: 'Bara den som kan ledarskap kan bli byns ledare.',
     omr: [], krav: [], niva: 1, tid: 12, nar: 'i samtal' },
   // vapnen och rustningen (system 8.7): kommer man på vid slöjdbänken
-  { id: 'rustning', namn: 'Läderrustning', text: 'Tjockt läder som tar emot det vassa.', effekt: 'Rustningen och hjälmen skyddar i striden.', omr: ['hantverk'], krav: ['skinnklader'], niva: 5, tid: 10, forsok: { vid: ['flatarbank'], skill: 'hantverk' }, episk: '{Namn} sydde läder i lager tills det höll för en kniv.' },
-  { id: 'skold', namn: 'Sköld', text: 'Ved och rep som man håller framför sig.', effekt: 'Skölden tar emot slag och pilar.', omr: ['hantverk'], krav: ['yxa'], niva: 2, tid: 10 },
-  { id: 'bage', namn: 'Pilbåge', text: 'En böjd stav och ett spänt rep, och pilar av ved och flinta.', effekt: 'Bågen når långt.', omr: ['hantverk', 'jakt'], krav: ['kniv'], niva: 2, tid: 10 },
-  { id: 'slunga', namn: 'Slunga', text: 'En läderrem som kastar stenar långt.', effekt: 'Slungan kastar stenar långt.', omr: ['hantverk', 'jakt'], krav: ['skinnklader'], niva: 5, tid: 8, forsok: { vid: ['flatarbank'], skill: 'hantverk' }, episk: '{Namn} snurrade läderremmen, och stenen for över sjön.' },
+  { id: 'rustning', namn: 'Läderrustning', text: 'Tjockt läder som tar emot det vassa.', effekt: 'Rustningen och hjälmen skyddar i striden.', omr: ['hantverk'], krav: ['skinnklader'], niva: 5, tid: 10, forsok: { vid: ['flatarbank'], skill: 'hantverk', vad: 'hur man gör en rustning av läder' }, episk: '{Namn} sydde läder i lager tills det höll för en kniv.' },
+  { id: 'skold', namn: 'Sköld', text: 'Ved och rep som man håller framför sig.', effekt: 'Skölden tar emot slag och pilar.', omr: ['hantverk'], krav: ['yxa', 'snickarbank'], niva: 4, tid: 10, forsok: { vid: ['snickarbank'], skill: 'hantverk', vad: 'hur man gör en sköld' }, episk: '{namn} gjorde en sköld som tar emot slag och pilar.' },
+  { id: 'bage', namn: 'Pilbåge', text: 'En böjd stav och ett spänt rep, och pilar av ved och flinta.', effekt: 'Bågen når långt.', omr: ['hantverk', 'jakt'], krav: ['kniv', 'snickarbank'], niva: 4, tid: 10, forsok: { vid: ['snickarbank'], skill: 'hantverk', vad: 'hur man täljer en pilbåge' }, episk: '{namn} täljde en båge som når långt.' },
+  { id: 'slunga', namn: 'Slunga', text: 'En läderrem som kastar stenar långt.', effekt: 'Slungan kastar stenar långt.', omr: ['hantverk', 'jakt'], krav: ['skinnklader'], niva: 5, tid: 8, forsok: { vid: ['flatarbank'], skill: 'hantverk', vad: 'hur man gör en slunga' }, episk: '{Namn} snurrade läderremmen, och stenen for över sjön.' },
   { id: 'horn', namn: 'Horn', text: 'Ett urholkat ben som ljuder långt.', effekt: 'Hornet hörs över hela kartan, och trumman längre än ett rop.', omr: ['hantverk'], krav: ['kniv'], niva: 2, tid: 8 },
   // lagarna (steg 8.4.1): samma mönster som Ledarskap. Bara den som kan den kan stifta en lag, så en by kan glömma sina lagar
   { id: 'lag', namn: 'Lag', text: 'Att bestämma i förväg vad som är fel och vad det kostar, så att det blir likadant varje gång.', effekt: 'Den som kan lag kan lägga fram en lag.', omr: [], krav: ['ledarskap'], niva: 2, tid: 14, nar: 'i samtal' },
 ];
 for (const t of TEKNIK) TEKNAMN[t.namn.toLowerCase()] = t.id; // ordlagret hittar verbet efter namnet (ord.ts)
 export const TEK = Object.fromEntries(TEKNIK.map(t => [t.id, t])) as Record<string, Tek>;
+for (const t of TEKNIK) if (t.forsok) forsokVad[t.id] = t.forsok.vad;
 
 // Balanstal (regel 8): hur fort man kommer på något står i raden för tekniken (`tid`, arbetstimmar), och här vad det ger och hur man lär ut
 // det. Åldrarna för att komma på och lära sig tekniker står i ALDER (folk.ts)
@@ -235,17 +253,18 @@ export const hasMaterial = (s: State, t: Tek) => materialOf(t).every(g => g.some
 export const canThink = (p: Person, t: Tek) => !knows(p, t.id) && t.krav.every(k => knows(p, k));
 
 // den som kommer på eller lär sig något
-function learn(s: State, p: Person, t: Tek, from?: Person) {
+export function learn(s: State, p: Person, t: Tek, from?: Person) {
   p.tek![t.id] = 1;
   if (p.lar?.tek === t.id) p.lar = undefined; // lärlingen har lärt sig klart och kan själv bli mästare
   if (p.halvminne) { p.halvminne = p.halvminne.filter(k => k !== t.id); if (!p.halvminne.length) p.halvminne = undefined; }
-  if (from) { loggBer(s, 'l_lart', p.id * 997 + from.id, { ...larFalt(s, p), av: from.name, lara: goraUtan(t) }, 'skill', [p.id, from.id], { slag: 'lar', k: p.id, n: p.name, d: `${from.name}|${gora(t)}` }); return; }
+  if (from) { personHand(s, p, 'lart', `Lärde sig ${gora(t)} av ${from.name}.`); loggBer(s, 'l_lart', p.id * 997 + from.id, { ...larFalt(s, p), av: from.name, lara: goraUtan(t) }, 'skill', [p.id, from.id], { slag: 'lar', k: p.id, n: p.name, d: `${from.name}|${gora(t)}` }); return; }
   const first = !s.people.some(q => q !== p && knows(q, t.id)) && !(s.stat?.['tek_' + t.id]);
   count(s, 'tek_' + t.id);
   // nivå 4–5: det episka ögonblicket, en egen rad per teknik (steg 4.2.1.3); annars en berättelse ur mallen
   if (first && t.episk) kronika(s, fyll(t.episk, personFalt(p)), 'episk');
   else if (first) kronikaBer(s, 'k_uppfann', p.id, { ...personFalt(p), teknik: t.namn.toLowerCase(), lara: goraUtan(t) });
   log(s, `${p.name} kom på hur man kan ${goraUtan(t)}. ${t.effekt}`, 'skill', [p.id]);
+  personHand(s, p, 'lart', `Kom på hur man kan ${goraUtan(t)}.`); // steg 9.2.107
   if (first) notis(s, 'teknik', `${p.name} kom på hur man kan ${goraUtan(t)}. ${t.effekt}`, [p.id]);
   think(p, `Kom på hur man kan ${goraUtan(t)}`, TEKTAL.kommaPa, s.now, TEKTAL.kommaPaTim * HOUR);
   if (first) { p.fame.push(`Uppfann ${t.namn.toLowerCase()}`); allaBarn(s, 'uppfinning', `lärde sig ${gora(t)}`); upplev(s, p, 'egenTeknik', `hur man kan ${goraUtan(t)}`); gudHandelse(s, 'hantverk', `konsten ${gora(t)}, som ${p.name} kom på`); }

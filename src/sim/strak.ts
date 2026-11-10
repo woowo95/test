@@ -1,5 +1,6 @@
 // Gångstråken (steg 6.2.5, "Byns område (Gångstråken)" i designdokumentet): ett lager i byns område. Från rutan utanför
-// varje dörr går den kortaste vägen (en ruta bred) till elden, lagerplatserna, latrinen och vattnet. På ett stråk ställs
+// varje dörr går den kortaste vägen (en ruta bred) till elden, lagerplatserna, vattnet och torget
+// (inte till latrinen, steg 9.2.99). På ett stråk ställs
 // ingenting: inga hus, väggar, stationer, möbler, fält, lagerplatser eller stackar (ledig i stationer.ts, lagerplatserna i
 // lager.ts och husen i bygg.ts frågar paStrak). Vägarna går runt det som redan står, så att inget som står blir fel.
 // Stråken viker för husen: ett planerat stråk hindrar inte ett hus om vägen kan dras om runt huset med högst
@@ -8,11 +9,12 @@
 import { balans } from './balans';
 import { MATERIAL, bitsOf, gridOf } from './byggnad';
 import { eldPlats, getMap } from './karta';
-import { zonesOf } from './lager';
+import { flyttaLager, zonesOf } from './lager';
 import { faltAt } from './odling';
 import { omrade } from './omrade';
-import { stationAt, stationerOf, storlekAv } from './stationer';
+import { stationAt } from './stationer';
 import { H, State, T, W, inMap } from './typer';
+import { count } from './folk';
 
 export const STRAK = balans('strak', {
   pa: 1, // 1 = stråken hålls fria; 0 = de räknas och ritas men hindrar inget (provet i steg 6.2.6: byarna med och utan)
@@ -21,7 +23,7 @@ export const STRAK = balans('strak', {
 });
 
 // målen: varje dörr får en väg till det närmaste av varje slag
-const MAL = ['eld', 'lager', 'latrin', 'vatten', 'torg'] as const; // torget när det finns (steg 7.3.13)
+const MAL = ['eld', 'lager', 'vatten', 'torg'] as const; // torget när det finns (steg 7.3.13); inte latrinen (steg 9.2.99)
 type Mal = typeof MAL[number];
 
 interface Vag { dorr: number; mal: Mal; len: number; rutor: number[] }
@@ -54,16 +56,19 @@ function sokData(s: State): Sok {
   const o = omrade(s), R = STRAK.sok, m = getMap(s.seed), g = gridOf(s), f = eldPlats(s);
   const x0 = Math.max(0, o.x0 - R), y0 = Math.max(0, o.y0 - R), x1 = Math.min(W - 1, o.x1 + R), y1 = Math.min(H - 1, o.y1 + R);
   const mal = new Int8Array(W * H).fill(-1), gang = new Uint8Array(W * H);
-  const zs = zonesOf(s), latriner = stationerOf(s).filter(t => t.k === 'latrin');
+  const zs = zonesOf(s);
   for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
     const i = y * W + x, t = m.tiles[i];
     if (t === T.Vatten || t === T.Sten || g.at.has(i) && !MATERIAL[g.at.get(i)!.m].vag) continue; // på en väg går stråket som förut
-    if (zs.some(z => x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h)) { mal[i] = MAL.indexOf('lager'); continue; }
+    // vägarna dras utan hänsyn till lagerplatserna (steg 9.2.15): lagret är ett mål, men stråken till de andra målen går
+    // genom det, och en lagerplats som ett stråk går igenom flyttas (lagerIStraket)
+    const lag = zs.some(z => z.hus === undefined && x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h);
+    if (lag) mal[i] = MAL.indexOf('lager');
     if (stationAt(s, x, y) || faltAt(s, x, y) || x === f.x && y === f.y) continue;
+    if (lag) { gang[i] = 1; continue; }
     if (s.torg && x >= s.torg.x && y >= s.torg.y && x < s.torg.x + s.torg.w && y < s.torg.y + s.torg.h) { mal[i] = MAL.indexOf('torg'); continue; }
     gang[i] = 1;
     if (Math.max(Math.abs(x - f.x), Math.abs(y - f.y)) === 1) mal[i] = MAL.indexOf('eld');
-    else if (latriner.some(l => { const { w, h } = storlekAv(l); return x >= l.x - 1 && x <= l.x + w && y >= l.y - 1 && y <= l.y + h; })) mal[i] = MAL.indexOf('latrin');
     else if ([[0, 1], [0, -1], [1, 0], [-1, 0]].some(([dx, dy]) => inMap(x + dx, y + dy) && m.tiles[(y + dy) * W + x + dx] === T.Vatten)) mal[i] = MAL.indexOf('vatten');
   }
   return { mal, gang, x0, y0, x1, y1 };
@@ -82,7 +87,6 @@ function vagarFran(d: Sok, dorr: number, hinder?: { x: number; y: number; w: num
   for (let k = 0; k < ko.length && hittad.size < MAL.length; k++) {
     const i = ko[k], mi = d.mal[i];
     if (mi >= 0 && !hittad.has(MAL[mi])) hittad.set(MAL[mi], i);
-    if (i !== dorr && MAL[mi] === 'lager') continue; // genom lagret går inget stråk
     const x = i % W, y = (i / W) | 0;
     for (const [dx, dy] of [[0, -1], [1, 0], [0, 1], [-1, 0]]) {
       const nx = x + dx, ny = y + dy;
@@ -95,7 +99,7 @@ function vagarFran(d: Sok, dorr: number, hinder?: { x: number; y: number; w: num
   const ut = new Map<Mal, number[]>();
   for (const [m, slut] of hittad) {
     const rutor: number[] = [];
-    for (let i = slut; i >= 0; i = fran[i]) if (d.mal[i] !== MAL.indexOf('lager') || i === dorr) rutor.push(i);
+    for (let i = slut; i >= 0; i = fran[i]) if (m !== 'lager' || d.mal[i] !== MAL.indexOf('lager') || i === dorr) rutor.push(i); // genom ett lager på vägen till något annat räknas rutorna (steg 9.2.15)
     ut.set(m, rutor.reverse());
   }
   return ut;
@@ -142,4 +146,16 @@ export function omvag(s: State, x: number, y: number, w: number, h: number) {
     if (!ny || ny.length > v.len + STRAK.omvag) return false;
   }
   return true;
+}
+
+// en lagerplats (utanför husen) som ett stråk till något annat än lagret går igenom flyttas, som när ett hus byggs på den
+// (steg 9.2.15, flyttaLager i lager.ts): en i timmen, och sakerna bärs till den nya platsen
+export function lagerIStraket(s: State) {
+  if (!STRAK.pa) return;
+  const st = straken(s), MAL_LAGER = MAL.indexOf('lager');
+  for (const z of zonesOf(s)) {
+    if (z.hus !== undefined) continue;
+    const inne = (i: number) => { const x = i % W, y = (i / W) | 0; return x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h; };
+    if (st.vagar.some(v => v.mal !== MAL[MAL_LAGER] && v.rutor.some(inne))) { count(s, 'lagerIStraket'); flyttaLager(s, z); return; }
+  }
 }

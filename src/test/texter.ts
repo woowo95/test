@@ -5,6 +5,7 @@
 // användes alls står överst i sammanfattningen. texter.json har samma sak för kontrollerna (steg 4.5.1.2)
 import './utc';
 import { writeFileSync } from 'node:fs';
+import '../sim'; // simuleringen först, så att filerna laddas i samma ordning som i spelet
 import { BERATTELSER, BESK_DELAR } from '../sim/berattelser';
 import { korJson, pool, seedAv, sek } from './pool';
 import type { Fel, Samlat } from './texter-en';

@@ -11,6 +11,7 @@ export const STROMMAR = {
   strid: 'fröet till en strid (striden har sedan sin egen följd)',
   val: 'vad man väljer att göra och var',
   arbete: 'vad arbetet ger: fynd, fångst, fiske, svamp, rep',
+  mat: 'matlagningen: vilka bitar och portioner som bränns (steg 9.6.4)',
   halsa: 'sjukdom, olyckor, död, graviditet och förlossning',
   folk: 'nya människor: kön, namn, anlag, färdigheter',
   anlag: 'anlagen som kom senare (smidighet och aggression, steg 3.7.6), så att följden folk blev som förut',
@@ -32,6 +33,7 @@ export const STROMMAR = {
   handel: 'handlarna: när de kommer, vem de är, vad de har med sig och var de slår upp filten (steg 4.4.1, handel.ts)',
   klan: 'grannklanerna: deras namn, folk, hur de växer och vilken klan en handlare kommer ifrån (steg 4.4.3, klaner.ts)',
   rovare: 'rövarflocken: när den kommer, vilka rövarna är, vad de bär och vad vakten gissar (steg 4.4.5, rovare.ts)',
+  tamdjur: 'de tama djuren: när de dör av ålder, valpen och hunden, får och getter (fas 9.8, tamdjur.ts)',
   fram: 'framträdandena: vem som uppträder, vilken form och hur länge (steg 4.3.2, framtradande.ts)',
 } as const;
 export type Strom = keyof typeof STROMMAR;

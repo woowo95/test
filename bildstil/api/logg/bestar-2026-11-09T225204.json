@@ -1,0 +1,25 @@
+{
+ "kommando": "rita",
+ "val": [
+  "kropp:former"
+ ],
+ "kommentar": null,
+ "modell": "claude-opus-5-5",
+ "uppskattat": {
+  "lag": 0.2,
+  "hog": 0.4
+ },
+ "dollar": 0.313,
+ "rapport": [
+  "kropp__former 1: \"Spindel\"",
+  "kropp__former 2: \"Tusenfoting\"",
+  "kropp__former 3: \"Groda\"",
+  "kropp__former 4: \"Tvåbent\"",
+  "kropp__former 5: \"Krabba\"",
+  "kropp__former 6: \"Säl\"",
+  "kropp__former 7: \"Igel\"",
+  "kropp__former 8: \"Fladdermus\"",
+  "kropp__former 9: bortvald: besten går utanför bilden (8 punkter vid kanten)",
+  "kropp__former 10: \"Stubbe\""
+ ]
+}

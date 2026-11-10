@@ -140,7 +140,7 @@ function flyttAv(s: State, g: number, t: number) {
 // Gruppen flyr aldrig ut i vattnet: vägen kortas tills den slutar på land med land omkring, annars flyr den inte
 export function gruppFlyr(s: State, g: number, t: number, dx: number, dy: number, sek?: number) {
   const c = (arRadjurGrupp(g) ? radjurGrupper(s, t) : grupperOf(s, t)).find(q => q.id === g), vt = vattenNu(s);
-  const land = (x: number, y: number) => { for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) { const a = Math.floor(x) + i, b = Math.floor(y) + j; if (!inMap(a, b) || vt[b * W + a] === T.Vatten) return false; } return true; };
+  const land = (x: number, y: number) => { for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) { const a = Math.floor(x) + i, b = Math.floor(y) + j; if (!inMap(a, b) || vt[b * W + a] === T.Vatten || harStaket(s, b * W + a)) return false; } return true; }; // inte över staketet (steg 9.7.10)
   const f = c ? [1, 0.75, 0.5, 0.25].find(k => land(clamp(c.x + dx * k, 1, W - 1), clamp(c.y + dy * k, 1, H - 1))) : undefined;
   if (f === undefined) return;
   s.djurFlykt = [...(s.djurFlykt ?? []).filter(q => s.now - q.t < LIVSTID), { g, t, dx: dx * f, dy: dy * f, ...(sek ? { sek } : {}) }];
@@ -248,7 +248,8 @@ export const RADJUR = balans('radjur', {
   kant: 2, // skogskanten: en öppen ruta med skog inom så här många rutor
   hemAvst: 18, // och minst så här långt från byplatsen
   startAvst: 15, // en grupp dyker upp minst så här långt från en annan
-  spridd: 2, // så långt (rutor) från gruppens mitt rådjuren betar
+  spridd: 3, // så långt (rutor) från gruppens mitt rådjuren betar (3 sedan steg 9.2.50) ...
+  avstand: 1.5, // ... och minst så här långt (rutor) från varandra, så att flocken betar över flera rutor (steg 9.2.50)
   betaSek: 40, // så länge ett rådjur betar på en plats innan det går till nästa (ungefär)
   radd: 5.5, // så nära (rutor) en människa kommer innan rådjuret springer undan ...
   fly: 6, // ... så långt (rutor) springer det ...
@@ -323,6 +324,14 @@ export function radjurOf(s: State, t = s.now, folk?: readonly { x: number; y: nu
     }
     let q = { x: clamp(x, 0.2, W - 0.2), y: clamp(y, 0.2, H - 0.2) };
     if (!torr(q)) q = [a, g].map(c => ({ x: clamp(c.x, 0.2, W - 0.2), y: clamp(c.y, 0.2, H - 0.2) })).find(torr) ?? landNara(vt, q);
+    // flocken sprider ut sig (steg 9.2.50): ett rådjur som står för nära ett annat i gruppen går undan till RADJUR.avstand
+    for (const o of out) {
+      if (o.grupp !== g.id) continue;
+      const dx = q.x - o.x, dy = q.y - o.y, d = Math.hypot(dx, dy);
+      if (d >= RADJUR.avstand) continue;
+      const v = d > 0.01 ? Math.atan2(dy, dx) : hash(id, 9, 3) * Math.PI * 2, nq = { x: clamp(o.x + Math.cos(v) * RADJUR.avstand, 0.2, W - 0.2), y: clamp(o.y + Math.sin(v) * RADJUR.avstand, 0.2, H - 0.2) };
+      if (torr(nq)) q = nq;
+    }
     out.push({ id, art: 'radjur', x: q.x, y: q.y, grupp: g.id });
   }
   return out;
@@ -521,6 +530,14 @@ export function bjornarOf(s: State, t = s.now, bara?: (x: number, y: number) => 
   const m = vag[k], f = vag[k - 1];
   let x = m.x, y = m.y, ater: 'bar' | 'fisk' | undefined = m.bar ? 'bar' : 'fisk';
   if (f && t < m.fram) { const a = (t - f.gar) / (m.fram - f.gar); x = f.x + (m.x - f.x) * a; y = f.y + (m.y - f.y) * a; ater = undefined; }
+  // i striden står björnen där striden har den (steg 9.2.29), och efter en strid den vunnit eller gett upp går den bort från
+  // byn (steg 9.2.30): först dit, och där står den tills tiden är ute
+  const sg = s.djurStrider?.find(g => g.art === 'bjorn' && g.djur.includes(id));
+  if (sg && sg.dx !== undefined && sg.dy !== undefined) { x = sg.dx; y = sg.dy; ater = undefined; }
+  else if (s.bjornUndan && t >= s.bjornUndan.fran && t < s.bjornUndan.till) {
+    const u = s.bjornUndan, a = Math.min(1, (t - u.fran) / ((u.till - u.fran) / 3));
+    x = u.x0 + (u.x1 - u.x0) * a; y = u.y0 + (u.y1 - u.y0) * a; ater = undefined;
+  }
   const ut: (Djur & { ater?: 'bar' | 'fisk' })[] = [];
   if (!bara || bara(x, y)) ut.push({ id, art: 'bjorn', x, y, grupp: id, ater });
   // ungarna (steg 6.6.5) går tätt kring björnen, och aldrig ut i vattnet: där står de vid den
@@ -595,3 +612,4 @@ export function dodaDjur(s: State, id: number) {
   if (!s.djurHalsa?.length) s.djurHalsa = undefined;
   s.djurDoda = [...(s.djurDoda ?? []).filter(d => s.now - d.t < INDIVID.glomTim * HOUR), { id, t: s.now }];
 }
+import { harStaket } from './odling';

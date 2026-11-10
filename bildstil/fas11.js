@@ -544,19 +544,6 @@
   // gammaldags stämpel (Björn: "kartan bara är lite böjd i kanterna", "kordinatsträcken är kurvade och samlas i en cirkel",
   // "gör en gammaldags stämpel någon stans på kartan")
   const R6 = K5.iBojd('black', 1.4, { gradnat: 'rund', runband: true, stampel: true });
-  VAL.push({
-    id: 'f11_varldskarta_v1_bojd', namn: 'Världskartan böjd i kanterna, med kompassros och stämpel', typ: 'janej', stor: true, kol: true, karta: K5,
-    vad: 'Steg 11.1.9 (koncept, långt fram). Din kommentar: pröva att kartan bara är lite böjd i kanterna, för att visa att den brukar vara ihoprullad; gör koordinatstrecken kurvade så att de samlas i en cirkel någonstans på kartan; gör en gammaldags stämpel någonstans på kartan. Här ligger kartan nästan plant, och bara sidorna böjer sig lite upp: papperet blir lite bredare där, krönet är ljust och baksidan syns som en smal rand. Strecken är cirklar runt en kompassros ute i havet, och sexton linjer går ut från rosen i en svag båge mot kanten. Rosen har åtta uddar, norr i rött. Stämpeln är röd, lite sned och nött, med två ringar, prickar och runan R i mitten. Samma karta som i kortet ovanför; det kortet står kvar.',
-    versioner: [{ text: 'Bläck på pergament, böjd i kanterna, med kompassros, runt gradnät och stämpel.', w: R6.w, h: R6.h, kol: true, rita: R6.rita }],
-  });
-  // karavanen på väg längs en väg (Björn: "gör en ikon för en karavan som är påväg någonstans"): tre förslag, i ett utsnitt av bläckkartan
-  VAL.push({
-    id: 'f11_karavan', namn: 'Karavanen på världskartan', typ: 'tre', kol: true,
-    vad: 'Steg 11.1.9 (koncept, långt fram). Din kommentar: gör en ikon för en karavan som är på väg någonstans. Karavanen står på den längsta vägen på världskartan, vänd mot byn den är på väg till; i spelet flyttar den sig längs vägen mellan byarna. Här är ett utsnitt av bläckkartan runt karavanen, i kartans egen skala och förstorat; karavanen på de stora kartorna är version 1.',
-    versioner: [
-      'Version 1: en oxkärra med kapell, dragen av en oxe.',
-      'Version 2: två packhästar i rad, med packningen på ryggen.',
-      'Version 3: en vandrare med en packe på ryggen som leder en packhäst.',
-    ].map((text, k) => ({ text, w: 120, h: 72, kol: true, stor: true, liten: true, rita: K5.utsnitt(k, 120, 72) })),
-  });
+  // Korten f11_varldskarta_v1_bojd och f11_karavan är borttagna ur valdelen (Björn 2026-11-09: bara det som finns i spelet
+  // eller kommer snart). Ritningarna ovan finns kvar som förlaga till världskartan (11.1.6) och karavanerna (11.3.4).
 })();

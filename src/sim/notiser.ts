@@ -6,6 +6,7 @@
 // får samma notiser. En ny sorts notis är en rad i NOTISER och ett anrop `notis(s, id, text, ids, plats)` där det händer.
 import { State } from './typer';
 import { kalender } from './tid';
+import { personNotis } from './personlogg';
 
 export type NotisSlag = 'fara' | 'dod' | 'folk' | 'framsteg' | 'handel';
 export const NOTIS_SLAG: Record<NotisSlag, { namn: string; farg: string; bild: string }> = {
@@ -21,7 +22,21 @@ export const NOTISER: Record<string, { slag: NotisSlag; rubrik: string; vikt: nu
   motgang: { slag: 'fara', rubrik: 'En motgång', vikt: 3 },
   anfall: { slag: 'fara', rubrik: 'Fara nära byn', vikt: 3 },
   strid: { slag: 'fara', rubrik: 'Strid', vikt: 2 },
+  blodning: { slag: 'fara', rubrik: 'Förblöder', vikt: 3 }, // tiden kvar är kort (steg 9.5.14)
+  infektion: { slag: 'fara', rubrik: 'Ett infekterat sår', vikt: 2 }, // feber och kallbrand (steg 9.5.24)
+  // hälsans tecken (steg 9.5.31, registret HALSOTECKEN i halsonotiser.ts): en rad per tecken
+  blodsteg: { slag: 'fara', rubrik: 'Svag av blodförlusten', vikt: 2 },
+  blodigen: { slag: 'fara', rubrik: 'Såret blöder igen', vikt: 2 },
+  blodstopp: { slag: 'folk', rubrik: 'Blödningen stoppad', vikt: 1 },
+  svimmat: { slag: 'fara', rubrik: 'Medvetslös', vikt: 3 },
+  infborjar: { slag: 'fara', rubrik: 'En infektion börjar', vikt: 2 },
+  infborta: { slag: 'folk', rubrik: 'Infektionen är borta', vikt: 1 },
+  benbrott: { slag: 'fara', rubrik: 'Ett benbrott', vikt: 2 },
+  bensatt: { slag: 'folk', rubrik: 'Benet är satt', vikt: 1 },
+  snett: { slag: 'fara', rubrik: 'Läker snett', vikt: 1 },
+  avhuggen: { slag: 'fara', rubrik: 'En förlorad kroppsdel', vikt: 2 },
   dod: { slag: 'dod', rubrik: 'Död i byn', vikt: 3 },
+  dodfodd: { slag: 'dod', rubrik: 'Ett barn dog vid födseln', vikt: 2 }, // förlossningen (steg 9.5.29)
   gravid: { slag: 'folk', rubrik: 'Väntar barn', vikt: 1 },
   fodd: { slag: 'folk', rubrik: 'Ett barn föddes', vikt: 2 },
   inflytt: { slag: 'folk', rubrik: 'Ny i byn', vikt: 2 },
@@ -36,6 +51,8 @@ export const NOTISER: Record<string, { slag: NotisSlag; rubrik: string; vikt: nu
   masterverk: { slag: 'framsteg', rubrik: 'Ett mästerverk', vikt: 1 },
   byte: { slag: 'handel', rubrik: 'Byte med handlaren', vikt: 1 },
   gast: { slag: 'handel', rubrik: 'En gäst', vikt: 1 },
+  sjuk: { slag: 'folk', rubrik: 'Sjukdom', vikt: 2 }, // någon insjuknar, blir sämre eller frisk (steg 9.5.4, sjukdom.ts)
+  smitta: { slag: 'fara', rubrik: 'En smitta i byn', vikt: 3 }, // det första fallet av en sjukdom som smittar
 };
 export const NOTIS = {
   max: 300, // högst så många notiser sparas; den äldsta lästa (annars den äldsta) tas bort när det blir fler
@@ -65,6 +82,7 @@ export function notis(s: State, id: string, text: string, ids: number[] = [], pl
   n.rader.push(text); if (n.rader.length > NOTIS.rader) { n.rader.shift(); n.fram?.shift(); n.match?.shift(); }
   for (const i of ids) if (!n.ids.includes(i)) n.ids.push(i);
   if (plats) n.plats = plats;
+  personNotis(s, id, text, ids); // en rad hos dem den gäller (steg 9.2.107)
   return n;
 }
 // de som finns, viktigast och senast först (genomgången, ui/notiser.ts)

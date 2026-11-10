@@ -40,6 +40,10 @@ header, .controls { box-shadow: inset 0 0 0 1px var(--inner); }
 .panel > .horn.nh { right: calc(-1px - var(--horn-x)); bottom: calc(-2px - var(--horn-y)); background-image: var(--horn-nh); }
 [hidden] { display: none !important; }
 html, body { height: 100%; }
+/* pekaren (steg 9.2.68): frågetecknet där det finns en förklaring, och handen där ett tryck öppnar något */
+[title] { cursor: help; }
+:is(button, a, [data-id], [data-hjalp], [data-pdel], [data-sak], [data-fram], [role="button"], .klick) { cursor: pointer; }
+.bubbla { position: fixed; z-index: 20; max-width: min(280px, calc(100vw - 12px)); box-sizing: border-box; padding: 6px 9px; border: 1px solid var(--ram); border-radius: 4px; background: var(--panel); color: var(--fg); font-size: 13px; line-height: 1.35; white-space: pre-line; pointer-events: none; box-shadow: 0 2px 6px rgba(36, 32, 29, 0.35); }
 body { margin: 0; overflow: hidden; background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.4; box-sizing: border-box; --topp: 59px; --stenar: 64px; }
 .app { height: 100%; }
 header { position: fixed; left: 0; right: 0; top: 0; height: var(--topp); box-sizing: border-box; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 2px 18px; padding: 6px max(16px, env(safe-area-inset-right, 0px)) 6px max(16px, env(safe-area-inset-left, 0px)); background: var(--panel); border-bottom: 1px solid var(--line); overflow: hidden; }
@@ -59,8 +63,8 @@ header::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; h
 .nyckel { display: inline-flex; align-items: center; gap: 3px; padding: 1px 5px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); line-height: 18px; }
 .nyckel img { image-rendering: pixelated; vertical-align: middle; }
 .notisruta { position: fixed; z-index: 4; top: calc(var(--topp) + 8px); left: 50%; transform: translateX(-50%); width: min(380px, calc(100vw - 32px)); box-sizing: border-box; padding: 8px 10px; background: var(--panel); color: var(--fg); border: 2px solid var(--ram); box-shadow: 0 3px 0 rgba(36,32,29,.35); }
-.notishuvud { display: flex; align-items: center; gap: 6px; padding-bottom: 4px; border-bottom: 2px solid var(--line); } .notishuvud b { flex: 1; } .notisnr { font-size: 12px; color: var(--muted, inherit); }
-.notis-fara { border-color: #a14808; } .notis-dod { border-color: var(--ram); } .notis-folk { border-color: #647025; } .notis-framsteg { border-color: #b2921b; } .notis-handel { border-color: var(--handel); }
+.notishuvud { display: flex; align-items: center; gap: 6px; padding-bottom: 4px; border-bottom: 2px solid var(--line); } .notishuvud b { flex: 1; } .notisnr { font-size: 12px; color: var(--muted); }
+.notis-fara { border-color: var(--fara); } .notis-dod { border-color: var(--ram); } .notis-folk { border-color: var(--g-oliv); } .notis-framsteg { border-color: var(--g-senap); } .notis-handel { border-color: var(--handel); }
 .notisrader { margin: 6px 0; padding-left: 18px; max-height: 40vh; overflow-y: auto; } .notisrader li { margin: 2px 0; }
 .notisknappar { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; } .notisknappar button { display: inline-flex; align-items: center; gap: 3px; min-height: 28px; }
 .calknapp { font: inherit; color: inherit; background: none; border: 0; padding: 0 4px; }
@@ -82,7 +86,6 @@ header::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; h
 .port .pa { grid-area: a; opacity: 0.9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .port.low .pn::after { content: " !"; color: #bd753e; }
 .tip { position: absolute; z-index: 5; width: 210px; background: rgba(36, 32, 29, 0.92); color: #dad0bb; border-radius: 6px; padding: 8px 10px; font-size: 13px; pointer-events: none; }
-.trycktips { position: fixed; z-index: 20; white-space: pre-line; width: auto; max-width: min(280px, calc(100vw - 16px)); }
 .tip h4 { margin: 0; font-size: 16px; font-family: var(--display); font-weight: 400; }
 .tip p { margin: 2px 0 0; }
 .tip .op { opacity: 0.75; }
@@ -195,7 +198,7 @@ body.vOppen .owned { display: none; }
 ul, ol { list-style: none; margin: 0; padding: 0; }
 .matare { display: flex; flex-direction: column; gap: 3px; } /* humör överst, hälsa under */
 .matare > span { display: flex; align-items: center; justify-content: flex-end; }
-.bar.halsa > i.p { background: #61767a; } /* skiffer 2 */
+.bar.halsa > i.p { background: var(--g-skiffer); } /* skiffer 2 */
 .mark { display: inline-block; vertical-align: middle; line-height: 0; } /* ledaren och skadan vid namnet */
 .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; box-shadow: 0 0 0 1px rgba(36,32,29,0.35); }
 .dot.big { width: 22px; height: 22px; flex: none; margin-top: 6px; }
@@ -209,9 +212,9 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 /* mätarna: tio rutor i en mörk ram (steg 5.3.2.4, som personrutan i bildstilen) */
 .bar { display: inline-flex; box-sizing: border-box; width: 64px; height: 10px; gap: 1px; padding: 2px; background: var(--ram); vertical-align: middle; }
 .bar > i { flex: 1; min-width: 1px; background: var(--tom); } /* ramen kol 0, tomma rutor kol 2, fyllda ton 2 i sin färg */
-.bar > i.p { background: #647025; } /* oliv */
-.bar.low > i.p { background: #a14808; } /* rost */
-.bar.skill > i.p { background: #b2921b; } /* senap */
+.bar > i.p { background: var(--g-oliv); } /* oliv */
+.bar.low > i.p { background: var(--g-rost); } /* rost */
+.bar.skill > i.p { background: var(--g-senap); } /* senap */
 .trend { font-size: 9px; margin-left: 3px; vertical-align: middle; line-height: 1; }
 .trend.up { color: var(--good); }
 .trend.down { color: var(--bad); }
@@ -256,7 +259,7 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 .anseende { font-size: 0.8em; cursor: help; }
 .besk { font-style: italic; margin: 4px 0 8px; line-height: 1.4; }
 .binamn { font-family: var(--body); font-size: 16px; font-weight: normal; } /* pixeltypsnittet har ingen kursiv */
-.binamn.heder { color: #b2921b; }
+.binamn.heder { color: var(--g-senap); }
 .binamn.skam { color: var(--skam); }
 .tnod .brist { cursor: help; position: absolute; left: -6px; top: -6px; width: 16px; height: 16px; border-radius: 50%; background: var(--bad); color: var(--panel); font-size: 11px; line-height: 16px; text-align: center; font-weight: bold; }
 .tekrad { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -268,7 +271,7 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 .tnod.liten.stor { width: 56px; height: 56px; border-radius: 12px; }
 .tnod.hand.tom.stor { font-size: 26px; }
 .hbar { width: 64px; height: 6px; border-radius: 3px; background: var(--barbg); overflow: hidden; }
-.hbar i { display: block; height: 100%; background: #b2921b; } .hbar i.borda { background: #61767a; }
+.hbar i { display: block; height: 100%; background: var(--g-senap); } .hbar i.borda { background: var(--g-skiffer); }
 .utrgubbe { position: relative; width: 70px; height: 100px; flex: none; }
 .utrgubbe svg { width: 100%; height: 100%; display: block; }
 .utrpa { position: absolute; width: 22px; height: 22px; pointer-events: none; }
@@ -296,6 +299,8 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 .sedvag .sedord { font-size: 15px; line-height: 1.15; min-width: 0; hyphens: auto; overflow-wrap: anywhere; }
 .sedvag .sedord:last-child { text-align: right; }
 .sedformat { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 10px; margin-top: 4px; font-size: 12px; } /* det som format seden, under vågen (steg 9.2.5) */
+.sedlista { margin-top: 6px; cursor: auto; } .sedlista ul { list-style: none; margin: 0; padding: 0; } /* det som drar seden, utfällt (steg 9.2.66) */
+.sedlista li { display: flex; gap: 6px; align-items: flex-start; padding: 2px 0; border: 0; font-size: 13px; } .sedlista li > span { min-width: 0; overflow-wrap: anywhere; }
 .sedupp { display: inline-flex; align-items: center; gap: 3px; } .sedupp b { font-weight: 400; letter-spacing: -2px; }
 .vag { display: block; line-height: 0; }
 .vagbild { display: block; image-rendering: pixelated; } .vagbild .vagm { fill: var(--vagm); }
@@ -312,6 +317,8 @@ button.tnod.liten.ryk { cursor: pointer; width: 36px; height: 36px; }
 .sedw { margin: 6px 0 0; font-weight: 700; }
 .logg li { padding: 7px 0; border-top: 1px solid var(--line); }
 .logg li:first-child { border-top: 0; }
+.logg li.viktig { font-weight: 600; } /* krönikans rader bland allt (steg 9.2.125) */
+.kforkl { margin: 2px 0 6px; }
 .when { display: block; font-size: 12px; color: var(--muted); letter-spacing: 0.02em; }
 .logg .k-death { color: var(--bad); }
 .logg .k-death .when { color: var(--muted); }
@@ -327,18 +334,27 @@ button.tnod.liten.ryk { cursor: pointer; width: 36px; height: 36px; }
 .kar { margin: 12px 0 2px; font-size: 13px; color: var(--muted); border-bottom: 1px solid var(--line); }
 .plink { background: none; border: 0; padding: 0; font: inherit; font-weight: 700; color: inherit; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent) 60%, transparent); text-underline-offset: 2px; cursor: pointer; }
 .phead { display: flex; gap: 10px; align-items: flex-start; }
-.phead h2 { font-family: var(--display); font-size: 24px; margin: 0; line-height: 1.1; }
+.phead h2 { font-family: var(--display); font-size: 24px; margin: 0; line-height: 1.1; overflow-wrap: anywhere; }
+.phead > div { min-width: 0; } /* namnet klipps aldrig (steg 9.2.128) */
+.pnamn { white-space: nowrap; }
 .phead p { margin: 2px 0 0; }
 .phead > .hjalp { margin-left: auto; flex: none; }
+.pfakta { font-size: 13px; color: var(--muted); }
 .status { font-weight: 500; font-size: 15px; margin: 2px 0; }
 .status .akt[title] { cursor: help; text-decoration: underline dotted; text-underline-offset: 3px; }
 h3 { font-family: var(--display); font-size: 16px; text-transform: uppercase; letter-spacing: 0; color: var(--muted); margin: 16px 0 6px; font-weight: 400; }
 .kv { display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 4px 10px; margin: 0; align-items: center; }
 .kv dt { color: var(--muted); }
+/* styrets beskrivning (steg 9.2.72): högtidlig, som en lagtext */
+.lagtext { text-align: center; font-style: italic; margin: 4px 12px 10px; letter-spacing: 0.02em; }
+/* långa namn (steg 9.2.71): namnet på en egen rad över hela bredden och stapeln under */
+.kv.lang { grid-template-columns: minmax(0, 1fr); gap: 0 10px; }
+.kv.lang dt { overflow-wrap: anywhere; }
+.kv.lang dd { margin-bottom: 6px; }
 .kv dd { margin: 0; display: flex; align-items: center; gap: 8px; font-variant-numeric: tabular-nums; }
 .kv dd .bar { flex: 1; max-width: 140px; }
 .kv.fam dd { display: block; }
-.kv.stk { grid-template-columns: max-content minmax(0, 1fr); }
+.kv.stk { grid-template-columns: minmax(0, 1fr) max-content; } /* stackarna får panelens hela bredd och hållbarheten står längst till höger (steg 9.2.97) */
 .thoughts { margin-top: 8px; display: grid; gap: 3px; }
 .thoughts li { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
 .thoughts .pos span { color: var(--good); } .thoughts .neg span { color: var(--bad); }
@@ -366,6 +382,15 @@ h3 { font-family: var(--display); font-size: 16px; text-transform: uppercase; le
 .filtpar { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .byteknapp { background: none; border: 0; padding: 0 2px; cursor: pointer; vertical-align: middle; }
 .filtsida p { margin: 0 0 4px; }
+/* omröstningarna (steg 9.2.65): en stapel för ja och nej, och en rad per röst */
+.rostbar { display: flex; height: 10px; border-radius: 3px; overflow: hidden; margin: 4px 0 6px; background: var(--barbg); }
+.rostbar .ja { background: #898b4c; } .rostbar .nej { background: #a14808; }
+.roster { list-style: none; margin: 0; padding: 0; }
+.roster li { display: flex; align-items: center; gap: 6px; padding: 1px 0; }
+.roster .rnamn { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.roster .rostw { width: 70px; flex: none; display: flex; }
+.roster .rostw .bar { flex: 1; }
+.roster li.rvarfor { display: block; padding: 2px 0 4px 18px; }
 .rels { display: grid; grid-template-columns: minmax(0, max-content) max-content max-content 1fr; gap: 6px 12px; align-items: center; }
 .rels li { display: contents; }
 .rels .plink { justify-self: start; text-align: left; }
@@ -416,6 +441,17 @@ button.rw { border: none; background: none; padding: 0; font: inherit; color: in
 #speeds button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
 .primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 700; padding: 7px 14px; font-size: 15px; }
 .spacer { flex: 1; }
+/* kvalitetens namn i sin färg (steg 9.2.18): usel mörk, normal inget, mästerverk ljusast */
+.kvo { font-size: 0.92em; white-space: nowrap; }
+.kvo.kv0 { color: var(--muted); opacity: 0.75; } .kvo.kv1 { color: var(--muted); } .kvo.kv3 { color: var(--g-skiffer); }
+.kvo.kv4 { color: var(--g-senap); font-weight: 700; } .kvo.kv5 { color: var(--accent); font-weight: 700; }
+/* byarna under kugghjulet (steg 9.2.16) */
+#byar { width: 100%; font-size: 14px; }
+.byar { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.byar li { display: flex; gap: 4px; align-items: center; }
+.byar li.vald button:first-child { font-weight: 700; }
+.nyTestby { display: flex; gap: 4px; margin-top: 4px; align-items: center; }
+.nyTestby input { width: 64px; font: inherit; }
 #confirmNew { width: 100%; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 14px; }
 button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 body.testing .mapwrap { box-shadow: inset 0 0 0 3px var(--accent); }
@@ -519,6 +555,7 @@ body.testing .mapwrap { box-shadow: inset 0 0 0 3px var(--accent); }
         <div id="testSkicka" hidden></div>
         <button type="button" class="ghost" id="arenaKnapp" title="Arenan: prova strider utan att byn påverkas">⚔️</button>
         <button type="button" class="ghost" id="temaKnapp" title="Ljust eller mörkt läge">◐ Datorn</button>
+        <div id="byar"></div>
         <span class="spacer"></span>
         <button type="button" class="ghost" id="newVillage">Ny by</button>
         <div id="confirmNew" hidden>

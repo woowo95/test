@@ -11,7 +11,7 @@ export let ritaOm = () => {};
 export const satRitaOm = (f: () => void) => { ritaOm = f; };
 export function setByn(n: State) {
   s = n; ui.nu = n.now; useMap(n); nyBild();
-  ui.hovered = undefined; ui.husId = -1; ui.stationId = -1; ui.flytta = -1; ui.flyttFel = false; ui.hogAt = { x: 0, y: 0 }; ui.filtAt = { x: 0, y: 0 }; ui.byteNr = -1; ui.framNr = -1; ui.matchNr = -1; ui.sak = ''; ui.faltId = -1; ui.faltRuta = -1; ui.djurId = -1; ui.eld = undefined; ui.sjoNr = 0; ui.lagerNr = 0; // de pekade in i den förra byn
+  ui.hovered = undefined; ui.husId = -1; ui.stationId = -1; ui.flytta = -1; ui.flyttaDel = -1; ui.flyttFel = false; ui.hogAt = { x: 0, y: 0 }; ui.filtAt = { x: 0, y: 0 }; ui.byteNr = -1; ui.framNr = -1; ui.matchNr = -1; ui.sak = ''; ui.faltId = -1; ui.faltRuta = -1; ui.djurId = -1; ui.eld = undefined; ui.sjoNr = 0; ui.lagerNr = 0; // de pekade in i den förra byn
   for (const f of vidNyBy) f();
 }
 export const ui = {
@@ -19,7 +19,8 @@ export const ui = {
   hoger: undefined as FlikId | undefined, // kartan börjar fri (steg 5.3.7); Folket har ingen egen flik (steg 6.9.15)
   // ↑ den öppna flikens panel till höger (Byn, Teknik, Krönika …)
   selected: undefined as number | undefined, // personen som visas i panelen
-  bynDel: 'seder', // delen i fliken Byn (DELAR i flikar/byn.ts)
+  styreDel: 'styre', // delen i stenen Styre (DELAR i flikar/styre.ts, steg 9.3.1)
+  omvDel: 'grannar', // delen i stenen Omvärlden (DELAR i flikar/grannar.ts, steg 9.3.3)
   personFall: {} as Record<string, boolean>, // delarna i personens flikar som man fällt ut eller ihop (steg 5.3.4.2)
   personDel: 'om', // fliken i personrutan (FLIKAR i flikar/person.ts), eller en del i den (DELAR)
   hovered: undefined as number | undefined, // personen under musen
@@ -32,10 +33,15 @@ export const ui = {
   molnFel: false, // byn i artefaktens databas gick inte att läsa, och sparas därför inte där (spara.ts)
   lokalFel: false, // senaste sparningen i webbläsaren misslyckades
   testMode: false, // testläget: en kopia av byn som kan spolas fram
+  annanBy: undefined as string | undefined, // en annan by än den egna är vald (steg 9.2.16, ui/byar.ts)
+  forskjut: 0, // ... och så långt efter klockan går den (ms); den egna byn går i klockans tid
+  byFel: '', // det som gick fel när en by lades till eller valdes
+  kvSort: false, // stackarna i förrådet, kistan och en persons saker sorteras efter kvalitet (steg 9.2.18)
   lastPointer: 0, // när spelaren senast tryckte: panelen byts inte ut mitt i ett tryck
   husId: -1, // huset som visas i panelen
   stationId: -1, // stationen som visas i panelen
   flytta: -1, // testläget (steg 3.10.1): stationen som flyttas till rutan man trycker på härnäst ...
+  flyttaDel: -1, // ... eller bara den delen av den (steg 9.4.2)
   flyttFel: false, // ... och om den inte fick plats där
   brandTest: false, // testläget (steg 4.5.6.6): nästa tryck på kartan tänder en brand där
   blixtTest: false, // testläget (steg 6.4.7): varje tryck på kartan låter en blixt slå ner där, tills knappen trycks igen

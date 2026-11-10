@@ -34,11 +34,13 @@ export const MATERIAL: Record<string, [Ton, Ton]> = {
 // en handling i spelet: rörelsen, redskapet, effekten (splitter), materialet och riktningen vid slaget
 export interface Arbete { rorelse: keyof typeof RORELSER; redskap?: string; effekt?: 'splitter' | 'traff'; material?: string; rSla?: [number, number] }
 const HUGGA: Arbete = { rorelse: 'sla', redskap: 'yxa', effekt: 'splitter', material: 'tra' };
+const GRAVA: Arbete = { rorelse: 'sla', redskap: 'spade', effekt: 'splitter', material: 'jord' };
 const FLINTA: Arbete = { rorelse: 'sla', redskap: 'sten', effekt: 'splitter', material: 'sten' };
 export const ARBETEN: Record<string, Arbete> = {
   falla: HUGGA, hugga: HUGGA, klyva: HUGGA,                        // hugga
   krossa: FLINTA, yxa: FLINTA, kniv: FLINTA, spjut: FLINTA,          // slå flinta (och sten)
-  odla: { rorelse: 'sla', redskap: 'spade', effekt: 'splitter', material: 'jord' }, // gräva
+  odla: GRAVA, // gräva
+  grava: GRAVA, stubbe: GRAVA, // graven och stubben grävs som latrinen och fältet (steg 9.2.48)
   bygga: { rorelse: 'sla', redskap: 'klubba', effekt: 'splitter', material: 'tra' },
   dorr: { rorelse: 'sla', redskap: 'klubba', effekt: 'splitter', material: 'tra' },
   slakta: { rorelse: 'stota', redskap: 'kniv', effekt: 'splitter', material: 'blod', rSla: [1, 1] },

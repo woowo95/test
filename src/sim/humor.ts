@@ -1,4 +1,5 @@
 import { amountOf } from './lager';
+import { personHand, satHumor } from './personlogg';
 import { ALDER, ageOf, count, franMitt, getRel, isParent, livet, living, log, relKey, stat, think } from './folk';
 import { Kroppsdel, SkadaTyp, halsa, skada } from './halsa';
 import { die, leave } from './liv';
@@ -92,6 +93,7 @@ interface UtbDef { grad: number; act: Act; min: number; spann: number; text: str
 export const UTBROTT = {
   grata: { grad: 1, act: 'grata', min: 20, spann: 20, text: 'brister i gråt' },
   tjura: { grad: 1, act: 'tjura', min: 60, spann: 60, text: 'går undan och tjurar' },
+  supa: { grad: 2, act: 'supa', min: 60, spann: 60, text: 'super sig full' }, // när byn har vin eller öl (steg 9.6.15, rus.ts)
   elak: { grad: 2, act: 'elak', min: 10, spann: 10, text: 'är elak mot', mal: 'nast', hard: true },
   skitsnack: { grad: 2, act: 'skvallra', min: 10, spann: 10, text: 'snackar skit med', mal: 'skvaller', annars: 'elak' }, // steg 3.3.3 (rykten.ts)
   krossa: { grad: 2, act: 'krossa', min: 10, spann: 10, text: 'slår sönder', ting: true, hard: true },
@@ -197,6 +199,7 @@ export function utbrottBorjar(s: State, p: Person, k: Utbrott, mal?: Person, tin
   if (mal) {
     const van = k === 'slut' && p.partner !== mal.id;
     log(s, `${p.name} mår dåligt och ${van ? 'bryter vänskapen med' : rad.text} ${mal.name}.`, 'rel', [p.id, mal.id]);
+    if (van) { personHand(s, p, 'relation', `Bröt vänskapen med ${mal.name}.`); personHand(s, mal, 'relation', `${p.name} bröt vänskapen.`); } // steg 9.2.107
     if (k === 'elak') {
       think(mal, `${p.name} var elak mot mig`, -HUMOR.elakHumor, s.now, HUMOR.elakTim * HOUR);
       { const r = getRel(s, p, mal); r.op = clamp(r.op - HUMOR.elakOp, -100, 100); }
@@ -219,6 +222,7 @@ export const utbIkon = (t: Task) => t.tool && t.tool in UTBROTT ? 'utb' + UTB[t.
 
 // när utbrottet är över (steg.ts): saken är sönder, och man mår lite bättre
 export function utbrottKlar(s: State, p: Person, t: Task) {
+  if (t.act === 'supa') supa(s, p); // supandet (steg 9.6.15)
   if (t.act === 'krossa' && t.ref !== undefined) {
     const x = tingOf(s).find(q => q.id === t.ref && q.hos === undefined && q.bar === undefined && q.lass === undefined);
     if (x) { s.ting = tingOf(s).filter(q => q !== x); count(s, 'utb_sonder_' + x.k); }
@@ -267,8 +271,8 @@ export function utbrottRisk(s: State, p: Person, ljust: boolean) {
   const allv = djup + HUMOR.allvUtb * utb + HUMOR.allvEmp * (10 - stat(p, 'empati', s.now)) / 10 + HUMOR.allvSlump * gauss(s, 'humor', p) + HUMOR.allvAgg * franMitt(p, 'aggression', s.now);
   let grad = allv >= HUMOR.grad5 ? 5 : allv >= HUMOR.grad4 ? 4 : allv >= HUMOR.grad3 ? 3 : allv >= HUMOR.grad2 ? 2 : 1;
   if (barn) grad = Math.min(grad, 2);
-  const av = (barn ? BARNENS : VUXNAS).filter(k => UTB[k].grad === grad);
-  const ag = Math.max(HUMOR.aggMin, 1 + HUMOR.aggVal * franMitt(p, 'aggression', s.now)); // den aggressiva slår hellre (steg 3.7.6)
+  const av = (barn ? BARNENS : VUXNAS).filter(k => UTB[k].grad === grad && (k !== 'supa' || kanSupa(s))); // man super bara när byn har något att dricka (steg 9.6.15)
+  const ag = Math.max(HUMOR.aggMin, 1 + HUMOR.aggVal * franMitt(p, 'aggression', s.now)) * (1 + RUS.slag * rusAv(p)); // den aggressiva slår hellre (steg 3.7.6), och den berusade (steg 9.6.15)
   const w = av.map(k => UTB[k].hard ? ag : 1);
   let u = rnd(s, 'humor', p) * w.reduce((a, b) => a + b, 0), k = av[av.length - 1];
   for (let i = 0; i < av.length; i++) { u -= w[i]; if (u < 0) { k = av[i]; break; } }
@@ -281,20 +285,21 @@ export function utbrottRisk(s: State, p: Person, ljust: boolean) {
 // snitthumöret i byn; `tom` är värdet när ingen lever
 export function avgMood(s: State, tom: number) { const l = living(s); return l.length ? l.reduce((a, p) => a + moodOf(p, s.now), 0) / l.length : tom; }
 // humöret och, om ut finns med, delarna det består av (personrutan visar dem). Samma räkning i båda fallen
-export function moodOf(p: Person, now: number, ut?: { namn: string; v: number }[]) {
+// ut: raderna, med när de försvinner (till) för tankarna och mörkret (steg 9.2.32)
+export function moodOf(p: Person, now: number, ut?: { namn: string; v: number; till?: number }[]) {
   let m = HUMOR.bas;
-  const del = (namn: string, v: number) => { m += v; ut?.push({ namn, v }); };
+  const del = (namn: string, v: number, till?: number) => { m += v; ut?.push(till === undefined ? { namn, v } : { namn, v, till }); };
   if (p.hunger < HUMOR.hungerLag) del('Hungrig', -HUMOR.hungerMinus); else if (p.hunger > HUMOR.hungerHog) del('Mätt', HUMOR.hungerPlus);
   if (p.rest < HUMOR.viloLag) del('Trött', -HUMOR.viloMinus);
   if (p.social < HUMOR.socialLag) del('Ensam', -HUMOR.socialMinus); else if (p.social > HUMOR.socialHog) del('Umgåtts mycket', HUMOR.socialPlus);
   if (halsa(p) < HUMOR.halsaLag) del('Mår dåligt', -HUMOR.halsaMinus);
-  if (p.morkT !== undefined && now - p.morkT <= HUMOR.morkTim * HOUR) del('Mörkt', -HUMOR.morkMinus);
+  if (p.morkT !== undefined && now - p.morkT <= HUMOR.morkTim * HOUR) del('Mörkt', -HUMOR.morkMinus, p.morkT + HUMOR.morkTim * HOUR);
   if (p.forv) {
     const r = forvRikare(p.forv), v = forvVan(p.forv.f);
     if (Math.abs(r) >= HUMOR.visa) del(r > 0 ? 'Rikare än förut' : 'Fattigare än förut', r);
     if (Math.abs(v) >= HUMOR.visa) del(v < 0 ? 'Van vid mer' : 'Van vid lite', v);
   }
-  for (const t of p.thoughts) if (t.until > now) del(t.text, t.v);
+  for (const t of p.thoughts) if (t.until > now) del(t.text, t.v, t.until);
   return clamp(m, 0, 1);
 }
 
@@ -322,3 +327,6 @@ export function stepHumor(s: State) {
     utbrottRisk(s, p, ljust);
   }
 }
+
+satHumor(moodOf); // personens händelser minns humöret (steg 9.2.108)
+import { RUS, kanSupa, rusAv, supa } from './rus';

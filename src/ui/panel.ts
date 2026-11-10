@@ -15,8 +15,12 @@ import { fram } from './flikar/fram';
 import { match } from './flikar/match';
 import { djur } from './flikar/djur';
 import { grannar } from './flikar/grannar';
-import { byn } from './flikar/byn';
+import { seder } from './flikar/seder';
+import { religion } from './flikar/religion';
+import { styre } from './flikar/styre';
+import { tal } from './flikar/tal';
 import { $, hjalpKlick } from './hjalp';
+import { OPPNAR, bubblaKlick } from './bubbla';
 import { piles, s, satRitaOm, ui, vidNyBy } from './lage';
 import { renderPorts } from './portratt';
 import { bandHtml, stenHtml } from './runstenar';
@@ -31,7 +35,8 @@ export interface Flik {
   syns?(): boolean; // annars är knappen en blek sten som inte går att trycka på (grannarna när byn har grannar)
   band?(): string; // bandet överst är en annan fliks (Byn visar den öppna delens band, steg 5.3.3.2)
 }
-const FLIKAR = { byn, teknik, kronika, grannar, person, eld, lager, hog, hus, station, sjo, falt, sak, djur, filt, fram, match } satisfies Record<string, Flik>;
+// runstenarna uppifrån (steg 9.3.1–9.3.2): Seder, Tro, Styre, Teknik, Krönika, Byns tal och Omvärlden
+const FLIKAR = { seder, religion, styre, teknik, kronika, tal, grannar, person, eld, lager, hog, hus, station, sjo, falt, sak, djur, filt, fram, match } satisfies Record<string, Flik>;
 export type FlikId = keyof typeof FLIKAR;
 const ALLA: Record<FlikId, Flik> = FLIKAR;
 const IDS = Object.keys(FLIKAR) as FlikId[];
@@ -95,7 +100,7 @@ function skriv(sd: Sida, id: FlikId | undefined, force: boolean) {
 satRitaOm(() => renderPanel(true));
 // bakåtknappen (steg 6.9.5): panelerna minns vad man tittat på. Det som bestämmer vad panelerna visar sparas när det ändras,
 // och ← (bredvid krysset) går tillbaka ett steg, så att man kommer tillbaka till personen, fliken eller saken man såg
-const VY = ['tab', 'hoger', 'selected', 'bynDel', 'personDel', 'eld', 'husId', 'stationId', 'sjoNr', 'faltId', 'faltRuta', 'hogAt', 'filtAt', 'framNr', 'matchNr', 'byteNr', 'djurId', 'sak', 'lagerNr'] as const;
+const VY = ['tab', 'hoger', 'selected', 'styreDel', 'omvDel', 'personDel', 'eld', 'husId', 'stationId', 'sjoNr', 'faltId', 'faltRuta', 'hogAt', 'filtAt', 'framNr', 'matchNr', 'byteNr', 'djurId', 'sak', 'lagerNr'] as const;
 const BAKAT_MAX = 30;
 const bakat: string[] = [];
 let vyNu = '';
@@ -116,7 +121,7 @@ export function tillbaka() {
   renderPanel(true); renderPorts();
 }
 export function renderPanel(force = false) {
-  if (ui.hoger && (ALLA[ui.hoger].syns?.() ?? true) === false) ui.hoger = undefined;
+  if (ui.hoger && (!ALLA[ui.hoger] || (ALLA[ui.hoger].syns?.() ?? true) === false)) ui.hoger = undefined; // också en flik som inte finns längre (Byn, steg 9.3.1)
   minnsVy();
   for (const b of document.querySelectorAll<HTMLButtonElement>('.panel > .bakat')) b.hidden = !bakat.length;
   for (const b of nav.querySelectorAll<HTMLButtonElement>('button')) {
@@ -148,12 +153,15 @@ document.addEventListener('pointerdown', e => {
 }, true);
 document.addEventListener('click', e => {
   const el = e.target as HTMLElement;
+  // förklaringen i en bubbla (steg 9.2.68): ett tryck på det som inte öppnar något visar den, och nästa tryck stänger den
+  if (bubblaKlick(el) && !el.closest(OPPNAR)) return;
   if (el.closest('.panel > .bakat')) { tillbaka(); return; }
   const x = el.closest<HTMLElement>('[data-stang]');
   if (x) { stang(x.dataset.stang as 'v' | 'h' | 'r'); return; }
   const b = el.closest<HTMLElement>('[data-id]');
   if (b) { selectPerson(Number(b.dataset.id)); return; }
   if (hjalpKlick(el)) { renderPanel(true); return; }
+  if (el.closest('[data-kvsort]')) { ui.kvSort = !ui.kvSort; renderPanel(true); return; } // stackarna efter kvalitet (steg 9.2.18)
   for (const id of IDS) if (ALLA[id].klick?.(el)) { renderPanel(true); return; }
   const tb = el.closest<HTMLElement>('.tabs button');
   if (tb) { const id = tb.dataset.tab as FlikId; if (ui.hoger === id) stang('h'); else visa(id); }

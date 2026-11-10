@@ -1,0 +1,9 @@
+{
+  "lager": "ben",
+  "om": "Ritat av Claude API:t med bildstil/api/bestar.mjs: former och mönster som bestskaparen gör om till delar.",
+  "kostnad": 0.156,
+  "anteckningar": {"ben":"Hovar: skenan och hoven något tjockare så att de inte försvinner i konturen. Björntassar: oförändrade. Fågelben: kortare tår som inte ser ut som skidor och en större sporre som syns tydligt. Insektsben: tjockare nedersta led (1,6 var för smalt), tydligare ringar i mönstret och större hakar. Simhud: kortare simfot med ett hack i framkanten så att den liknar en solfjäder och inte en platta. Knogar: näven gjord rund och hög i stället för en platt gul list, med tre knogar på framsidan så att den läses som en knuten hand."},
+  "delar": [
+    {"fram":{"pts":[[0,0],[-3,0.42],[2,0.68],[1,0.92]],"r":[6,3.5,2.8,2.5]},"bak":{"pts":[[0,0],[5,0.36],[-3,0.66],[0,0.92]],"r":[7.5,4,2.8,2.5]},"fot":[{"typ":"ell","c":[0,-2.2],"r":[2.8,2.2]}],"tar":[{"former":[{"typ":"kapsel","pts":[[0,-2.2],[3.5,-1.6],[6.5,-1.4]],"r":[1.7,1.4,1.3]},{"typ":"kapsel","pts":[[0,-2],[-3,-1.4]],"r":[1.5,1.3]}],"mat":"kropp","kontur":true},{"former":[{"typ":"poly","pts":[[6.5,-3],[9.5,-2],[9.8,0],[8.2,-1],[6.5,-0.4]]},{"typ":"poly","pts":[[-3,-2.8],[-5.5,-1.6],[-5.6,0],[-4.3,-0.9],[-3,-0.3]]},{"typ":"poly","pts":[[-1,-10.5],[-7,-11.5],[-1,-6.5]]}],"mat":"klo","kontur":true}],"monster":{"rader":["-..-","..+.","...."],"skift":2},"id":"ben-3","namn":"Fågelben","text":"Fjälliga, tunna fågelben med spretande tår, kroklor och en vass sporre bak på skenan."}
+  ]
+}

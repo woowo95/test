@@ -1,4 +1,4 @@
-import { KOM, rumVisas, rumMinus, bitsOf, byId, dorrDef, fnOf, gridOf, husById, insulation, komOf, rumsFunktioner, sakNamn, sovplatser } from '../../sim';
+import { KOM, NYSS_HUS, rumVisas, rumMinus, bitsOf, byId, dorrDef, fnOf, gridOf, husById, insulation, komOf, rumsFunktioner, sakNamn, sovplatser } from '../../sim';
 import { iconImg, tecknet } from '../../ikoner';
 import { cap, esc, fmtN, pLink } from '../hjalp';
 import { s, ui } from '../lage';
@@ -38,6 +38,8 @@ export const hus: Flik = {
       const mi = rumMinus(s, r).map(m => `<span class="muted" title="${esc(m.namn)}" aria-label="${esc(m.namn)}">⚠</span>`).join('');
       return tg || mi ? `<span>${tg}${mi}</span>` : '';
     }).filter(x => x).join(' · ');
+    // det som nyss hänt med huset (steg 9.2.94)
+    const nytt = h.nytt && s.now - h.nytt.t < NYSS_HUS ? `<p class="nytt">${esc(h.nytt.text)}</p>` : '';
     const kom = komOf(h), fn = fnOf(h), agare = h.ag !== undefined ? byId(s, h.ag) : undefined;
     const rader = KOM.map(hur => {
       const xs = kom.filter(q => q.hur === hur);
@@ -49,7 +51,7 @@ export const hus: Flik = {
       return `<p>${esc(`${HUR[hur]}: ${txt}`)}${vem.length ? ` <span class="muted">${vem.map(p => pLink(p)).join(', ')}</span>` : ''}</p>`;
     }).join('');
     return `
-    <div class="phead"><div><h2><span title="${esc(`${fn.namn}: ${fn.behov}`)}" aria-label="${esc(fn.namn)}">${tecknet(fn.ikon, fn.ikon, 20)}</span> ${esc(h.namn)}</h2><p class="muted">${status}</p>${anv ? `<p>${anv}</p>` : ''}${rumRad && klar === bits.length ? `<p>${rumRad}</p>` : ''}${agare ? `<p class="muted">Ägs av ${pLink(agare)} och familjen.</p>` : ''}${dorrar && klar === bits.length ? `<p>${dorrar}</p>` : ''}</div></div>
+    <div class="phead"><div><h2><span title="${esc(`${fn.namn}: ${fn.behov}`)}" aria-label="${esc(fn.namn)}">${tecknet(fn.ikon, fn.ikon, 20)}</span> ${esc(h.namn)}</h2>${nytt}<p class="muted">${status}</p>${anv ? `<p>${anv}</p>` : ''}${rumRad && klar === bits.length ? `<p>${rumRad}</p>` : ''}${agare ? `<p class="muted">Ägs av ${pLink(agare)} och familjen.</p>` : ''}${dorrar && klar === bits.length ? `<p>${dorrar}</p>` : ''}</div></div>
     <h3>Materialet kom från</h3>${rader ? rader : '<p class="muted">Huset byggdes innan byn började minnas var materialet kom ifrån.</p>'}`;
   },
 };

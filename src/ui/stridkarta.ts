@@ -26,7 +26,7 @@ let minne: { nu: number; ut: { g: RovarStrid; st: Strid }[] } | undefined; // sa
 vidNyBy.push(() => { minne = undefined; });
 export function striderVid(nu: number): { g: RovarStrid; st: Strid }[] {
   if (minne?.nu === nu) return minne.ut;
-  const nya = [s.rovare, ...(s.rovareFler ?? [])].flatMap(f => f?.strid ? [f.strid] : []);
+  const nya: RovarStrid[] = [...[s.rovare, ...(s.rovareFler ?? [])].flatMap(f => f?.strid ? [f.strid] : []), ...(s.djurStrider ?? [])]; // och striderna mot djur (steg 9.2.29)
   for (const g of nya) if (!raknat.has(g)) raknat.set(g, { st: rovarStridNu(g, Math.max(0, (nu - g.t0) / SEC)), inN: (g.in ?? []).length });
   const ut: { g: RovarStrid; st: Strid }[] = [];
   for (const g of [...raknat.keys()]) { const v = enStrid(g, nu); if (v) ut.push(v); else if (!nya.includes(g)) raknat.delete(g); }
@@ -40,7 +40,7 @@ export const liggerK = (k: Kampe) => k.lage === 'nere' || k.lage === 'dod' || !!
 export function iStridenNu(pid: number, nu: number) {
   const v = striderVid(nu).find(q => q.st.kampar.some(x => x.pid === pid));
   const k = v?.st.kampar.find(x => x.pid === pid);
-  if (!v || !k || k.lage === 'borta') return undefined;
+  if (!v || !k || k.lage === 'borta' || v.g.fri?.includes(pid)) return undefined; // den som lämnat striden står där hen gick (steg 9.2.77)
   const mal = k.mal !== undefined ? v.st.kampar.find(x => x.id === k.mal) : undefined;
   return { k, ...kampePlats(v.g, k), mot: mal ? kampePlats(v.g, mal) : undefined, ligger: liggerK(k) };
 }
@@ -67,4 +67,22 @@ function ritaEn(gr: PIXI.Graphics, v: { g: RovarStrid; st: Strid }, nu: number, 
     const pa = kampePlats(v.g, a), pb = kampePlats(v.g, b), alfa = 1 - (tid - r.t) / SLAG_SEK;
     gr.lineStyle(r.h === 'traff' ? 2 : 1, r.h === 'traff' ? 0xa14808 : 0xdad0bb, Math.max(0.2, alfa)).moveTo(pa.x * TS, pa.y * TS - 4).lineTo(pb.x * TS, pb.y * TS - 4).lineStyle(0);
   }
+}
+
+// djuret i en strid mot djur som visas (steg 9.2.29): platsen, om det ligger, och den det slår mot. art och id som i djurstrid.ts
+export function djuretNu(art: 'bjorn' | 'varg', id: number, nu: number) {
+  for (const v of striderVid(nu)) {
+    const g = v.g as RovarStrid & { art?: string; djur?: number[] };
+    if (g.art !== art || !g.djur) continue;
+    const j = g.djur.indexOf(id);
+    if (j < 0) continue;
+    const k = v.st.kampar.filter(x => x.djur)[j];
+    if (!k || k.lage === 'borta') return undefined;
+    const mal = k.mal !== undefined ? v.st.kampar.find(x => x.id === k.mal) : undefined;
+    // slår det just nu (steg 9.2.31): ett slag eller bett i loggen den senaste stunden, en bild per slag
+    const tid = (nu - g.t0) / SEC, slag = [...v.st.logg].reverse().find(r => r.t >= tid - SLAG_SEK && r.t <= tid && r.a === k.id && (r.h === 'traff' || r.h === 'miss' || r.h === 'tog'));
+    const offer = slag ? v.st.kampar.find(x => x.id === slag.b) : undefined;
+    return { k, ...kampePlats(g, k), mot: mal ? kampePlats(g, mal) : undefined, ligger: liggerK(k), slar: offer ? kampePlats(g, offer) : undefined };
+  }
+  return undefined;
 }

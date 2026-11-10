@@ -4,7 +4,8 @@ import { halvOf, newTing, tingOf } from './agande';
 import { takeRecipe } from './behov';
 import { BYN } from './egendom';
 import { alive, byId, count, living } from './folk';
-import { put } from './lager';
+import { put, stacksOf } from './lager';
+import { SAKER } from './saker';
 import { isForest, tileOf } from './mark';
 import { GORS, borjaTool, minOf, toolDone } from './redskap';
 import { fallTid } from './skog';
@@ -49,8 +50,12 @@ export function startWork(s: State, p: Person, tk: Task) {
   if (tk.act === 'vatten') { tk.until = s.now + (TORST.fyllMin + halMin(s, p)) * MIN; return; } // vattensäcken fylls (torst.ts), med hålet i isen (is.ts)
   if (tk.act === 'tillbehor') { tk.until = s.now + (tillbehorDef(tk.tool ?? '')?.min ?? 0) * MIN; return; } // ett tillbehör till en möbel (stationer.ts)
   if (tk.act === 'falla') { const i = tileOf(tk.tx, tk.ty); tk.until = s.now + Math.max(0, fallTid(s, i) - (s.halvfallt?.[i] ?? 0)); return; }
+  // framme: arbetet tar sin tid från framkomsten, inte det som blev över av tiden för vägen dit; den som redan stod där står inte
+  // och väntar (steg 9.2.130)
+  if (tk.arbTid !== undefined && ACTS[tk.act]?.framme) { tk.until = s.now + tk.arbTid; tk.arbTid = undefined; return; }
   const ger = GORS[tk.act];
   if (!ger) return;
+  tk.hamtat = undefined; // materialet som bars hit ligger redan i det påbörjade (steg 9.2.43)
   let t = halvOf(s, p, ger);
   if (!t) {
     const k = borjaTool(s, p, tk.act, tk.handel ? tk.tool : undefined); // till handlaren: slaget hen ska ha (steg 6.2.11)
@@ -88,4 +93,36 @@ export function stepPaborjat(s: State) {
   }
   if (tingOf(s).some(t => t.halv && t.c <= 1e-9)) s.ting = tingOf(s).filter(t => !t.halv || t.c > 1e-9);
   for (const k in s.halvfallt ?? {}) if (!isForest(s, +k)) delete s.halvfallt![+k];
+}
+
+// ---------- hämtningen (steg 9.2.43, Hämtningen i designdokumentet) ----------
+// Inget flyttas av sig självt: den som ska göra något och inte har påbörjat det går först till lagret där materialet ligger,
+// tar det (det påbörjade skapas där, med materialet i), bär det i det hen bär (task.hamtat) och börjar först framme vid platsen.
+// Svarar true när hen gick till lagret i stället för att börja
+export function hamtaForst(s: State, p: Person, tk: Task) {
+  const ger = GORS[tk.act];
+  if (!ger || tk.site || halvOf(s, p, ger)) return false;
+  const k = borjaTool(s, p, tk.act, tk.handel ? tk.tool : undefined);
+  if (!k) return false;
+  const av = Object.keys(SAKER[k]?.skaffa?.av ?? {});
+  if (!av.length) return false;
+  // den närmaste stacken av något av materialet; ligger det inte i en stack (hos någon, i en kista) börjar man som förut
+  let bast: { x: number; y: number } | undefined, bd = Infinity;
+  for (const a of stacksOf(s)) if (av.includes(a.k) && a.n >= 1) { const d = Math.hypot(a.x + 0.5 - p.x, a.y + 0.5 - p.y); if (d < bd) { bd = d; bast = { x: a.x + 0.5, y: a.y + 0.5 }; } }
+  if (!bast || bd < 1) return false;
+  tk.site = { x: tk.tx, y: tk.ty }; tk.tx = bast.x; tk.ty = bast.y; tk.phase = 'go'; tk.hamta = 1;
+  count(s, 'hamtar');
+  return true;
+}
+// framme vid lagret: materialet tas (det påbörjade skapas med det i) och bärs till platsen. Fanns det inte längre slutar arbetet
+export function hamtat(s: State, p: Person, tk: Task) {
+  const ger = GORS[tk.act]!, site = tk.site!;
+  tk.site = undefined; tk.hamta = undefined;
+  const k = borjaTool(s, p, tk.act, tk.handel ? tk.tool : undefined);
+  if (!k) { tk.until = s.now; return; }
+  const t = newTing(s, 'paborjat', 1, p.id);
+  t.halv = { gor: k, av: takeRecipe(s, p, k), kvar: minOf(k) * MIN, ag: p.id };
+  if (!halvOf(s, p, ger)) { tk.until = s.now; return; }
+  tk.hamtat = Object.fromEntries(Object.entries(t.halv.av).filter(([, n]) => n > 0));
+  tk.tx = site.x; tk.ty = site.y; tk.phase = 'go';
 }

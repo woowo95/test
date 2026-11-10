@@ -330,7 +330,7 @@ export function share(s: State, a: Person, b: Person, r: Rel, slag: SamtalDef) {
     const e = a.kunskap[k], d = e.v - kn(b, k);
     if (d > MINNE.larMin && rnd(s, 'minne', a) < MINNE.larChans * mentor) {
       lartUt(s, a, b);
-      delade('kunskap', k, KUNSKAPER[k]?.larAv ?? KUNSKAPER[k]?.namn.toLowerCase()); // samtalets ämne (steg 3.9.5)
+      delade('kunskap', KUNSKAPER[k]?.ikon ?? k, KUNSKAPER[k]?.larAv ?? KUNSKAPER[k]?.namn.toLowerCase()); // samtalets ämne (steg 3.9.5)
       const before = kn(b, k), v = learnK(b, k, d * MINNE.larDel * (MINNE.larBas + stat(b, 'intelligens', now) / 20), now);
       e.t = now; // att lära ut håller kunskapen vid liv
       const larAv = KUNSKAPER[k]?.larAv;

@@ -9,7 +9,8 @@ import { kronika } from './historik';
 import { notis } from './notiser';
 import { Klan, klanById, klanerOf } from './klaner';
 import { rikedom } from './varde';
-import { Rovare, Rovarflock, forsvaret, rovarnaKommer } from './rovare';
+import { Rovarflock, forsvaret, rovarnaKommer } from './rovare';
+import { gastAv } from './gast';
 import { andlighet, troende } from './religion';
 import { larma } from './rykten';
 import { die } from './liv';
@@ -84,14 +85,14 @@ function hamndForbered(s: State, f: Rovarflock, k: Klan) {
   f.mal = d.av;
   if (rnd(s, 'rovare') >= RADER.anhorig) return;
   const n = 1 + Math.floor(rnd(s, 'rovare') * 3), rel = ['syskon', 'barn', 'förälder'];
-  f.folk.slice(0, n).forEach((r, i) => { r.st.mod = 20; r.anhorig = `${rel[i % 3]} till ${d.namn}, som ${byId(s, d.av)?.name} dödade`; });
+  f.folk.slice(0, n).forEach((id, i) => { const r = gastAv(s, id); if (!r) return; r.pot.mod = 20; r.gast!.anhorig = `${rel[i % 3]} till ${d.namn}, som ${byId(s, d.av)?.name} dödade`; });
 }
 // klanen minns den döde och vem som dödade (från stridSlut i rovare.ts)
-export function klanMinns(s: State, f: Rovarflock, r: Rovare, av: number | undefined) {
+export function klanMinns(s: State, f: Rovarflock, r: Person, av: number | undefined) {
   const k = klanById(s, f.klan);
   if (!k) return;
   k.styrka = Math.max(0, k.styrka - 1); k.folk = Math.max(1, k.folk - 1);
-  if (av !== undefined) (k.doda ??= []).push({ namn: r.namn, av, t: s.now });
+  if (av !== undefined) (k.doda ??= []).push({ namn: r.name, av, t: s.now });
   if (f.mal !== undefined) { const m = byId(s, f.mal); if (!m || !alive(m)) k.doda = k.doda?.filter(q => q.av !== f.mal); }
 }
 // flocken vann (steg 8.8.2, 8.8.5, 8.8.7): plundringen tar så mycket de bär, hämnden och det heliga kriget högst två saker per anfallare
@@ -110,22 +111,22 @@ export function radSeger(s: State, f: Rovarflock): boolean {
 export function borjaLeta(s: State, f: Rovarflock, m: Person) {
   f.letar = housesOf(s).filter(h => h.klar).sort((a, b) => Math.hypot(a.x - f.x, a.y - f.y) - Math.hypot(b.x - f.x, b.y - f.y)).map(h => h.id);
   f.gor = 'letar'; f.letat = true; count(s, 'hamnd_letar');
-  log(s, `${f.folk[0]?.namn ?? 'Anfallarna'} letar efter ${m.name}, hus för hus.`, 'world', [m.id]);
+  log(s, `${gastAv(s, f.folk[0] ?? 0)?.name ?? 'Anfallarna'} letar efter ${m.name}, hus för hus.`, 'world', [m.id]);
 }
 // hämnden är klar: den de sökte dör om de hittade hen, och de tar med sig högst två saker var, ur hens och familjens först
 export function hamndKlar(s: State, f: Rovarflock, m: Person | undefined, hittad: boolean) {
   const k = klanById(s, f.klan);
-  if (m && alive(m) && hittad) { count(s, 'hamnd_doda'); log(s, `${f.folk[0]?.namn ?? 'Anfallarna'} hittade ${m.name} och hämnades.`, 'world', [m.id]); die(s, m, 'rovare'); }
-  else if (m && alive(m)) { count(s, 'hamnd_miste'); log(s, `${f.folk[0]?.namn ?? 'Anfallarna'} hittade inte ${m.name} och gav sig av.`, 'world', [m.id]); }
+  if (m && alive(m) && hittad) { count(s, 'hamnd_doda'); log(s, `${gastAv(s, f.folk[0] ?? 0)?.name ?? 'Anfallarna'} hittade ${m.name} och hämnades.`, 'world', [m.id]); die(s, m, 'rovare'); }
+  else if (m && alive(m)) { count(s, 'hamnd_miste'); log(s, `${gastAv(s, f.folk[0] ?? 0)?.name ?? 'Anfallarna'} hittade inte ${m.name} och gav sig av.`, 'world', [m.id]); }
   if (k && (!m || !alive(m))) k.doda = k.doda?.filter(q => q.av !== f.mal); // klanen glömmer den döde när hämnden är tagen
   taMedSaker(s, f, m);
 }
 function taMedSaker(s: State, f: Rovarflock, m?: Person) {
   const familj = m ? living(s).filter(p => isKin(p, m) || p.partner === m.id) : [];
-  for (const r of f.folk) {
+  for (const r of f.folk.map(id => gastAv(s, id)).filter(q => !!q) as Person[]) {
     let n = RADER.hamndSaker;
     for (const k of SAK_LIST.filter(q => !SAKER[q]!.redskap).sort((a, b) => grundvarde(b) - grundvarde(a))) {
-      while (n > 0 && amountOf(s, k) >= 1 && (familj.length === 0 || familj.some(p => ownsAmount(s, p, k) >= 1) || n === 1)) { addTo(s, k, -1); (r.bar ??= {})[k] = (r.bar[k] ?? 0) + 1; n--; }
+      while (n > 0 && amountOf(s, k) >= 1 && (familj.length === 0 || familj.some(p => ownsAmount(s, p, k) >= 1) || n === 1)) { addTo(s, k, -1); (r.gast!.bar ??= {})[k] = (r.gast!.bar![k] ?? 0) + 1; n--; }
       if (n <= 0) break;
     }
   }
@@ -152,10 +153,10 @@ export function svarTrohet(s: State, f: Rovarflock, p: Person) {
 // övertygelsen (steg 8.8.8): i ett heligt krig håller andligheten och trons styrka emot, så att den mest övertygade hellre faller än svär
 export const overtygelse = (s: State, f: Rovarflock, p: Person) => f.skal !== 'heligt' ? 0 : RADER.overtygelse * andlighet(s, p) / 100 * (p.troStyrka ?? 0) / 100;
 // saker i farten (steg 8.8.3): den som flyr griper en sak hen passerar om ingen försvarare är nära
-export function iFarten(s: State, r: Rovare) {
-  if (r.x === undefined || r.y === undefined || r.bar || rnd(s, 'rovare') >= RADER.ifarten) return;
-  const a = (s.stackar ?? []).find(q => Math.hypot(q.x - r.x!, q.y - r.y!) <= 1 && q.n >= 1 && !living(s).some(p => ageOf(p, s.now) >= ALDER.vuxen && Math.hypot(p.x - q.x, p.y - q.y) <= 2));
-  if (a) { addTo(s, a.k, -1); r.bar = { [a.k]: 1 }; count(s, 'ifarten'); }
+export function iFarten(s: State, r: Person) {
+  if (r.gast!.bar || rnd(s, 'rovare') >= RADER.ifarten) return;
+  const a = (s.stackar ?? []).find(q => Math.hypot(q.x - r.x, q.y - r.y) <= 1 && q.n >= 1 && !living(s).some(p => ageOf(p, s.now) >= ALDER.vuxen && Math.hypot(p.x - q.x, p.y - q.y) <= 2));
+  if (a) { addTo(s, a.k, -1); r.gast!.bar = { [a.k]: 1 }; count(s, 'ifarten'); }
 }
 // ---------- dörrarna mot anfallare (system 8.9) ----------
 // plundrare går hellre till ett öppet hus eller förrådet (steg 8.9.2): en stängd trädörr huggs bara sönder om inget annat finns att ta, eller av den
@@ -177,7 +178,7 @@ export function huggDorr(s: State, f: Rovarflock, folk: Person[], mal?: Bit) {
   if (!vill) return false;
   const b = mal ?? stangdDorrBit(s);
   if (!b) return false;
-  const yxa = f.folk.some(r => r.vapen === 'yxa'), bom = bommad(s, b) ? RADER.dorrBom : 1;
+  const yxa = f.folk.some(id => gastAv(s, id)?.gast?.vapen === 'yxa'), bom = bommad(s, b) ? RADER.dorrBom : 1;
   f.hugger = { bit: b.id, till: s.now + (yxa ? RADER.dorrYxa : RADER.dorrMin) * bom * MIN };
   count(s, bom > 1 ? 'dorr_bommad' : 'dorr_hugg');
   larma(s, 'rovare', f.folk.length, folk.slice(0, 1));

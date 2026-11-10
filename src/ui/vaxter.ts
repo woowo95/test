@@ -1,15 +1,42 @@
-import { Djur, FLYGTID, FYND, H, HOUR, SEC, W, ageIndex, bjornarOf, brinnande, djurOf, faglarOf, radjurOf, fyndAt, getMap, groundOf, living, plockOf, tornadoAndel, tornadoPos, vargarOf } from '../sim';
+import { richness } from '../sim';
+import { BJORNJAKT, Djur, FLYGTID, H, sakerPaMarken, tandPaRutan, HOUR, SEC, VARG, W, ageIndex, bjornarOf, brinnande, djurOf, faglarOf, radjurOf, groundOf, living, plockOf, tornadoAndel, tornadoPos, vargarOf, tamdjurOf, TAMDJUR } from '../sim';
 import { farg, fargTal } from '../palett';
 import { s, ui, vidNyBy } from './lage';
 import { Ikoner, TS, app, djurFx, djurMarkLayer, figurLayer, plantG, rokBakLayer, world } from './scen';
 import { brandBild, brandRok, tornadoBild, tornadoFot } from './animation';
+import { djuretNu } from './stridkarta';
 import { jagade, samlaJakt } from './jakt';
 import { posOf } from './manniskor';
 import { OMRITA_MS } from './terrang';
 import { type DjurHall, djurBild, fagelBild, iconCanvas, kartbild } from '../ikoner';
 
+// sakerna på rutan (steg 9.2.53, platshållare tills Björn valt i bildstilen), i 16 punkter per ruta och bara i palettens färger.
+// Det som ritas är det som går att plocka (sakerPaMarken): bärtuvan under träden med ett, två eller tre bär, och en bild per sak
+// för svampen, rötterna och grenarna. En ruta utan saker ritas inte
+const BILD_FARG: Record<string, number> = { y: 0xdad0bb, x: 0xbdb39b, v: 0x7e7362, C: 0x21310e, D: 0x324726, E: 0x505e3e, g: 0x4b4f00, G: 0x647025, r: 0xa14808, h: 0xb2921b, H: 0x906f0f, s: 0x742a01, S: 0xa14808, f: 0xbdb39b, j: 0x5e3c24, J: 0x7d5b40, l: 0x647025 };
+// bärtuvan (steg 9.2.42) med så många bär som finns på rutan (1–3)
+const TUVA = [
+  ['..gG..', '.gGgg.', 'gGrGgG', '.ggGg.', '..gg..'],
+  ['..gG..', '.gGrg.', 'gGgGgG', '.rgGg.', '..gg..'],
+  ['..gG..', '.gGrg.', 'gGgGrG', '.rgGg.', '..gg..'],
+];
+const BILDER: Record<string, string[]> = {
+  kantarell: ['.hh.', 'hHHh', '.ff.'],
+  spindling: ['.SS.', 'SssS', '.ff.'],
+  rotter: ['.l.', 'jJj', '.j.'],
+  grenar: ['....j', '...J.', '.jJ..', 'j....'],
+};
+// höet på rutan (steg 9.3.4, platshållare tills Björn valt i bildstilen): en, två eller tre tuvor efter hur mycket som ligger där
+// (en tuva per fyra hö), så att den tomplockade rutan syns
+const HO = ['h.H.h', '.hHh.', '..H..'];
+// den vilda röllekan (steg 9.7.15): Björns val i bildstilen, f7_rolleka version 1 och 2, i två varianter efter rutan
+const ROLLEKA_VILD = [
+  ['.yxy...yy.', 'yxxxv.yxxv', '.vCv...vC.', '..C....C..', '..C...C...', '.D.C.CD.D.', 'DED.CC.DE.', '.DEDCDEDD.'],
+  ['yxy..yy..yx.', 'xxv.yxxv.xxv', '.C...vC..vC.', '.C....C..C..', '..C...C.C...', 'D.DC.DCC.D..', 'EDD.CCC.DED.', '.DEDDCDEDD..'],
+];
+const ritaBild = (rad: string[], x: number, y: number) => rad.forEach((r, dy) => { for (let dx = 0; dx < r.length; dx++) { const c = BILD_FARG[r[dx]]; if (c !== undefined) plantG.beginFill(c).drawRect(x + dx, y + dy, 1, 1).endFill(); } });
 // det som växer just nu, diskret i vanliga vyn: små bärbuskar och svampar där det finns något att hämta.
-// Var det kan växa syns inte, inte heller rötterna under jorden. Ritas om varje timme och när någon tagit något. Kaninerna ritas varje
+// Var det kan växa syns inte. Ritas om varje timme och när någon tagit något. Kaninerna ritas varje
 // bildruta vid tiden som visas (ui.nu), som folket, eftersom de skuttar omkring (djur.ts).
 let ritad = '', ritadNar = -Infinity;
 // en fast plats i rutan för varje sak, så att buskarna inte hoppar runt när kartan ritas om
@@ -25,36 +52,27 @@ function synligaRutor() {
 }
 export function drawPlants(force = false) {
   const v = synligaRutor();
-  const key = `${s.seed},${Math.floor(s.now / HOUR)},${ageIndex(s)},${plockOf(s)},${v.x0},${v.y0},${v.x1},${v.y1}`;
+  const key = `${s.seed},${Math.floor(s.now / HOUR)},${ageIndex(s)},${plockOf(s)},${Object.keys(s.plockat ?? {}).length},${v.x0},${v.y0},${v.x1},${v.y1}`;
   const nu = performance.now();
   if (!force && (key === ritad || nu - ritadNar < OMRITA_MS)) return; // högst en gång i sekunden, som marken
   ritad = key; ritadNar = nu;
   plantG.clear();
-  const sh = getMap(s.seed).shade, g = groundOf(s);
-  const bar = FYND.bar, kant = FYND.kantarell, spin = FYND.spindling;
+  const g = groundOf(s);
   for (let ry = v.y0; ry <= v.y1; ry++) for (let rx = v.x0; rx <= v.x1; rx++) {
     const i = ry * W + rx, x = rx * TS, y = ry * TS;
-    // bären syns på bärbuskarna (steg 6.5.4, terrang.ts). Där ett träd står på rutan syns inte busken, och där ritas en mörkgrön
-    // tuva med några prickar i bärens färg under trädet, två där det finns mycket
-    const b = g.trees[i] > 0 ? fyndAt(s, 'bar', i) / bar.topp : 0;
-    if (b >= 0.25) {
-      const n = b >= 0.6 ? 2 : 1;
-      for (let j = 0; j < n; j++) {
-        const bx = x + 3 + plats(i, j) * 10, by = y + 4 + plats(i, j + 5) * 9, r = 1.8 + Math.min(1, b) * 0.8;
-        plantG.beginFill(0x3f6a34, 0.85).drawCircle(bx, by, r).endFill();
-        plantG.beginFill(bar.farg, 0.85);
-        for (let k = 0; k < 3; k++) plantG.drawCircle(bx + (plats(i, j * 7 + k) - 0.5) * r * 1.4, by + (plats(i, j * 7 + k + 3) - 0.5) * r * 1.4, 0.7);
-        plantG.endFill();
-      }
+    let j = 0; // varje sak får en fast plats i rutan, så att bilden inte hoppar runt när kartan ritas om
+    for (const q of sakerPaMarken(s, 'samla', rx, ry)) {
+      const n = Math.min(3, q.n);
+      if (n <= 0) continue;
+      // bären syns på bärbuskarna (steg 6.5.4, terrang.ts); där ett träd står syns inte busken, och där ritas tuvan under trädet
+      if (q.k === 'bar') { if (g.trees[i] > 0) ritaBild(TUVA[n - 1], Math.round(x + 2 + plats(i, 0) * 8), Math.round(y + 3 + plats(i, 5) * 8)); continue; }
+      for (let k = 0; k < n; k++, j++) ritaBild(BILDER[q.k], Math.round(x + 1 + plats(i, 10 + j) * 11), Math.round(y + 1 + plats(i, 20 + j) * 12));
     }
-    // svamp: en liten fot och hatt i svampens färg, dämpad mot marken. På våren växer det lite, då syns färre och mindre
-    for (const [k, f, j0] of [['kantarell', kant, 10], ['spindling', spin, 20]] as const) {
-      const v = fyndAt(s, k, i) / f.topp;
-      if (v < 0.1) continue;
-      const mx = x + 3 + plats(i, j0) * 10, my = y + 4 + plats(i, j0 + 1) * 9, sz = 0.7 + Math.min(1, v) * 0.5 + sh[i] * 0.2;
-      plantG.beginFill(0xe8dcc0, 0.7).drawRect(mx - 0.4 * sz, my, 0.8 * sz, 1.6 * sz).endFill();
-      plantG.beginFill(f.farg, 0.65).drawEllipse(mx, my, 1.4 * sz, 0.8 * sz).endFill();
-    }
+    if (ageIndex(s) !== 0 && richness(s, 'rolleka', rx, ry) > 0.25) ritaBild(ROLLEKA_VILD[plats(i, 50) < 0.5 ? 0 : 1], Math.round(x + 1 + plats(i, 51) * 3), Math.round(y + 2 + plats(i, 52) * 5)); // röllekan växer vild (steg 9.7.15)
+    const ho = Math.min(3, Math.floor(tandPaRutan(s, 'torrgras', rx, ry) / 4));
+    for (let k = 0; k < ho; k++, j++) ritaBild(HO, Math.round(x + 1 + plats(i, 30 + j) * 10), Math.round(y + 2 + plats(i, 40 + j) * 11));
+    const gr = Math.min(3, sakerPaMarken(s, 'grenar', rx, ry)[0]?.n ?? 0);
+    for (let k = 0; k < gr; k++, j++) ritaBild(BILDER.grenar, Math.round(x + 1 + plats(i, 10 + j) * 10), Math.round(y + 1 + plats(i, 20 + j) * 11));
   }
 }
 
@@ -71,6 +89,15 @@ let synliga: Djur[] = [];
 const FALLD = ['fagel_orre', 'fagel', 'fagel_duva']; // den fällda fågeln i varje utseende (orre, ripa, skogsduva)
 const hallar = new Map<number, { x: number; y: number; h: DjurHall }>();
 vidNyBy.push(() => hallar.clear());
+// anfallet i en strid på kartan (steg 9.2.31, platshållare tills Björn valt i bildstilen): djuret gör ett utfall mot den det slår,
+// och slaget syns där det träffar: björnens klor (an_klo) och vargens bett (an_bett)
+function anfall(k: ReturnType<typeof djuretNu>, d: { x: number; y: number }, ikon: string) {
+  if (!k) return { x: d.x, y: d.y };
+  if (!k.slar) return { x: k.x, y: k.y };
+  const dx = k.slar.x - k.x, dy = k.slar.y - k.y, l = Math.hypot(dx, dy) || 1;
+  djurIkoner.add(ikon, Math.round(k.slar.x * TS - 4), Math.round(k.slar.y * TS - 10), 1);
+  return { x: k.x + dx / l * 0.3, y: k.y + dy / l * 0.3 };
+}
 function ritaDjur(art: Djur['art'], id: number, x: number, y: number, sedd: Set<number>, u = 1) {
   const e = hallar.get(id), dx = e ? x - e.x : 0, dy = e ? y - e.y : 0;
   let h: DjurHall = e?.h ?? 'sida';
@@ -114,8 +141,10 @@ export function drawAnimals() {
     ut.push({ ...d, x, y });
   }
   for (const id of visad.keys()) if (!sedda.has(id)) visad.delete(id);
-  for (const d of vargarOf(s)) { ritaDjur('varg', d.id, d.x, d.y, riktade); ut.push(d); }
-  for (const d of bjornarOf(s, ui.nu)) { ritaDjur(d.art, d.id, d.x, d.y, riktade); ut.push(d); } // björnen (steg 6.6.4) och ungarna (steg 6.6.5), i Björns ritningar // vargarna i verklig storlek (Björns val i bildstilen, steg 5.2.4.6)
+  // i en strid på kartan (steg 9.2.29) står vargen och björnen där striden har dem, vid tiden som visas
+  for (const d of vargarOf(s)) { const k = djuretNu('varg', d.id, ui.nu), { x, y } = anfall(k, d, 'an_bett'); ritaDjur('varg', d.id, x, y, riktade); ut.push({ ...d, x, y }); }
+  for (const d of bjornarOf(s, ui.nu)) { const k = d.art === 'bjorn' ? djuretNu('bjorn', d.id, ui.nu) : undefined, { x, y } = anfall(k, d, 'an_klo'); ritaDjur(d.art, d.id, x, y, riktade); ut.push({ ...d, x, y }); } // björnen (steg 6.6.4) och ungarna (steg 6.6.5), i Björns ritningar // vargarna i verklig storlek (Björns val i bildstilen, steg 5.2.4.6)
+  for (const d of tamdjurOf(s)) { ritaDjur(TAMDJUR[d.art].ikon, d.id, d.x, d.y, riktade); } // de tama djuren (steg 9.8.1): platshållare tills Björn valt i bildstilen
   for (const id of hallar.keys()) if (!riktade.has(id)) hallar.delete(id);
   // tornadon där den är (steg 3.8.4), foten mitt på banan, och lågorna där det brinner (steg 3.8.5): bildstilens animationer
   // (steg 5.1.9.1), tornadon som virvlar i åtta bilder och branden som slår ut i sex, med röken bakom alla lågorna
@@ -137,6 +166,7 @@ export function drawAnimals() {
   const vald = ui.tab === 'djur' ? ut.find(d => d.id === ui.djurId) : undefined;
   if (vald) { const b = vald.art === 'varg' ? { w: 28, h: 19, fot: 5 } : vald.art === 'bjorn' ? { w: 50, h: 35, fot: 4 } : vald.art === 'bjornunge' ? { w: 25, h: 18, fot: 4 } : vald.art === 'radjur' ? { w: 28, h: 31, fot: 4 } : vald.art === 'fagel' ? { w: 24, h: 17, fot: 4 } : { w: 14, h: 13, fot: 3 }; // runt djurets bild
     djurFx.lineStyle(1, 0xffffff, 0.9).drawRoundedRect(vald.x * TS - b.w / 2, vald.y * TS + b.fot - b.h, b.w, b.h, 3).lineStyle(0); }
+  hotMarken();
   djurIkoner.end(); larmIkoner.end(); brandRokIkoner.end();
   synliga = ut;
 }
@@ -160,6 +190,15 @@ function ritaTornadoSpar() {
     else if (f.k === 'glod') djurFx.beginFill(GLOD).drawRect(x - 1, y - 1, 2, 2).endFill();
     else djurFx.beginFill(FOLKK).drawRect(x - 2, y - 2, 4, 4).endFill().beginFill(SAK).drawRect(x - 1, y - 1, 2, 2).endFill();
   }
+}
+// märket där ett hot senast sågs (steg 9.2.122), så länge larmet gäller: vargflocken (VARG.seddTim), rövarna tills de flyr och björnen
+// (BJORNJAKT.vet). Bara i bilden. Platshållare: varningssymbolen ur bildstilen, tills ett märke valts i bildstilens valdel
+function hotMarken() {
+  const mark = (x: number, y: number) => larmIkoner.add('kb_sym_varning', Math.round(x * TS - 8), Math.round(y * TS - 16), 1);
+  for (const f of s.vargar ?? []) if (f.sx !== undefined && f.sy !== undefined && f.gor !== 'flyr' && f.vargar.length && f.sedd !== undefined && ui.nu - f.sedd < VARG.seddTim * HOUR) mark(f.sx, f.sy);
+  for (const f of [s.rovare, ...(s.rovareFler ?? [])]) if (f?.sx !== undefined && f.sy !== undefined && f.sedd !== undefined && f.gor !== 'flyr') mark(f.sx, f.sy);
+  const b = s.bjornJakt;
+  if (b?.x !== undefined && b.y !== undefined && ui.nu - b.sedd < BJORNJAKT.vet * HOUR) mark(b.x, b.y);
 }
 // utropstecknet över kaninen som ser någon och flyr
 const larm = (x: number, y: number) => larmIkoner.add('kanin_larm', x * TS - 3, y * TS - 15, 1);

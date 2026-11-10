@@ -77,7 +77,7 @@ SCENARIER.stenring = {
     Object.assign(th.task!, { tx: tom.x, ty: tom.y, phase: 'do', until: r.now + 3 * HOUR }); th.x = tom.x; th.y = tom.y;
     kor(r, 1 / 60); // ett slag (fem minuter): tändmaterialet hittas lika fort som bären (steg 2.12.4), så det räcker snart
     const nara = () => th.task?.act === 'samla' && th.task.phase === 'do' && Math.hypot(th.task.tx - tom.x, th.task.ty - tom.y) <= 6; // rundan (steg 4.5.6.1): hen går omkring på platsen
-    const fortsatt = nara() && (th.task!.items?.torrgras ?? 0) > 0;
+    const fortsatt = nara() && (th.task!.items?.torrgras ?? 0) + (th.task!.items?.grenar ?? 0) > 0; // hö eller kvistar: tändmaterialet ligger på rutorna (steg 9.3.4)
     setItems(r, { flinta: 1, torrgras: 50, grenar: 50 }); kor(r, 0.25);
     const slutat = !nara();
     // elden tänds bara om det finns bränsle kvar sedan grenarna till tändningen tagits (flintan tar 3 grenar)
@@ -553,15 +553,17 @@ SCENARIER.kista = {
 };
 
 SCENARIER.kvalitet = {
-  text: 'Kvalitet (steg 2.2.2): det som görs blir usel, slarvig, normal, fin, mästerverk eller perfekt (★) efter görarens hantverk, lite slump och slöjdbänken. Bättre saker håller längre, är mer värda och fungerar lite bättre; möblerna har kvalitet men inte stationerna, och saker från äldre sparfiler är normala',
+  text: 'Kvalitet (steg 2.2.2): det som görs blir usel, slarvig, normal, fin, mästerverk eller perfekt (★) efter görarens hantverk, lite slump och stationen (en bättre station ger bättre saker, steg 9.4.9). Bättre saker håller längre, är mer värda och fungerar lite bättre; möblerna har kvalitet men inte stationerna, och saker från äldre sparfiler är normala',
   kor: () => {
     const s = createState(7, START), p = living(s).find(q => ageOf(q, s.now) >= 18)!;
     p.pot.smidighet = 10; // smidigheten (steg 3.7.6) i mitten, så att bara hantverket räknas
     // många försök: medelnivån för en nybörjare, en mästare och en mästare vid slöjdbänken
-    const forsok = (skill: number, bank: boolean) => { p.skill.hantverk = skill; return Array.from({ length: 400 }, () => SIM.rullaKvalitet(s, p, bank)); };
+    const forsok = (skill: number, station: number) => { p.skill.hantverk = skill; return Array.from({ length: 400 }, () => SIM.rullaKvalitet(s, p, station)); };
     const snitt = (a: number[]) => a.reduce((x, y) => x + y, 0) / a.length, andel = (a: number[], q: number) => a.filter(x => x === q).length / a.length;
-    const ny = forsok(0, false), van = forsok(8, false), mast = forsok(20, false), mastBank = forsok(20, true);
+    const kvSlojd = SIM.stationDef('flatarbank')?.kv ?? 0, kvSnick = SIM.stationDef('snickarbank')?.kv ?? 0;
+    const ny = forsok(0, 0), van = forsok(8, 0), mast = forsok(20, 0), mastBank = forsok(20, kvSlojd), mastSnick = forsok(20, kvSnick);
     const ordning = snitt(ny) < snitt(van) && snitt(van) < snitt(mast) && snitt(mast) < snitt(mastBank);
+    const battreStation = kvSnick > kvSlojd && kvSlojd > 0 && snitt(mastBank) < snitt(mastSnick); // steg 9.4.9: en bättre station ger bättre saker
     const nyUsel = andel(ny, 0), stjarna = andel(mast, SIM.PERFEKT), stjarnaBank = andel(mastBank, SIM.PERFEKT);
     // en yxa som blir klar får kvalitet, den som gjorde den en tanke om den, och ett mästerverk står i loggen
     p.skill.hantverk = 20;
@@ -592,6 +594,7 @@ SCENARIER.kvalitet = {
     const gammal: SIM.Ting = { id: 0, k: 'yxa', c: 1, agare: 0 };
     return [
       [`medelnivån stiger med färdigheten och vid slöjdbänken (${[ny, van, mast, mastBank].map(x => snitt(x).toFixed(2)).join(', ')}; 2 = normal)`, ordning],
+      [`samma person gör bättre saker vid en bättre station: för hand, vid slöjdbänken och vid snickarbänken (${[mast, mastBank, mastSnick].map(x => snitt(x).toFixed(2)).join(', ')})`, battreStation],
       [`den som inte kan hantverk gör ofta usla saker (${(nyUsel * 100).toFixed(0)} %)`, nyUsel > 0.3],
       [`det perfekta mästerverket är sällsynt även för en mästare (${(stjarna * 100).toFixed(1)} %, vid slöjdbänken ${(stjarnaBank * 100).toFixed(1)} %)`, stjarna < 0.1 && stjarnaBank > stjarna && stjarnaBank < 0.4],
       ['ett nytt redskap får kvalitet, ett mästerverk står i loggen och den som gjorde det är stolt', harQ && loggat && tanke],
@@ -651,7 +654,7 @@ SCENARIER.forradsmal = {
     const bGren = SIM.materialBuffert(s, 'grenar'), bHo = SIM.materialBuffert(s, 'torrgras'), tak = SIM.materialTak(s, 'grenar');
     // den som samlar: höet och grenarna är under bufferten och plockas
     setItems(s, { grenar: 10 }); s.forbruk = { grenar: 60 }; SIM.arbetsTimme(s);
-    q.task = { act: 'samla', phase: 'do', tx: 0, ty: 0, until: s.now + HOUR, carry: 0, why: '' };
+    q.task = { act: 'samla', phase: 'do', tx: q.x, ty: q.y, until: s.now + HOUR, carry: 0, why: '' }; // där hen står: tändmaterialet ligger på rutan (steg 9.3.4)
     const g1 = SIM.forageItems(s, q, 3600) ?? {};
     // över taket plockar ingen, inte heller den som hämtar grenar
     setItems(s, { grenar: Math.ceil(tak) + 1 }); s.forbruk = { grenar: 60 }; SIM.arbetsTimme(s);

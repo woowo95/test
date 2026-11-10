@@ -96,10 +96,22 @@ function filtHtml() {
   const m = filtMot(s, f);
   if (m) {
     const [a, b] = f.handlare !== undefined || m.handlare === undefined && f.y <= m.y ? [f, m] : [m, f]; // handlarens (eller den övre) först
-    return `<h2>Bytet</h2><div class="filtpar">${sida(a, a.vem ?? a.varor[0]?.fran ?? 0, a.varor, b, true)}${sida(b, b.vem ?? b.varor[0]?.fran ?? 0, b.varor, a, true)}</div>`;
+    return `<h2>Bytet</h2>${affarHtml(f, m)}<div class="filtpar">${sida(a, a.vem ?? a.varor[0]?.fran ?? 0, a.varor, b, true)}${sida(b, b.vem ?? b.varor[0]?.fran ?? 0, b.varor, a, true)}</div>`;
   }
   // en filt ensam; en filt från före v267 har båda parternas saker: en sida per part
   const vems = f.vem !== undefined ? [f.vem] : [...new Set(f.varor.map(v => v.fran))];
   if (vems.length > 1) return `<h2>Bytet</h2><div class="filtpar">${vems.map(id => sida(f, id, f.varor.filter(v => v.fran === id), undefined, true)).join('')}</div>`;
   return `<h2>Filten</h2>${sida(f, vems[0] ?? 0, f.varor)}`;
+}
+
+// bytet som pågår vid handlarens filt (steg 9.2.45): vem som började och vad hen ville ha, buden hittills och hur förhandlingen
+// går, och vad de väntar på just nu. Ett byte mellan bybor är gjort i ett handslag och har ingen förhandling
+const FAS: Record<string, string> = { fraga: 'Frågar vad handlaren har', hamta: 'Hämtar det hen ska bjuda', bud: 'Lägger fram sitt bud', plocka: 'Packar det de bytt', hem: 'Bär hem det köpta' };
+function affarHtml(f: Filt, m: Filt) {
+  const h = s.handlare, a = h?.affar;
+  if (!h || !a || (f.handlare !== h.id && m.handlare !== h.id)) return '';
+  const vill = a.kop.length ? varorSym(a.kop.map(v => ({ k: v.k, n: v.n }))) : a.salj ? iconImg('silver', 14) : '–';
+  const bud = a.forsok ?? [], senast = bud[bud.length - 1];
+  const gar = !bud.length ? 'Inget bud än' : senast.ja ? 'De är överens' : `${bud.length} ${bud.length === 1 ? 'bud' : 'bud'}, ${a.nej} nej: senast ${senast.bjod} av ${senast.krav} silver som handlaren krävde`;
+  return `<dl class="kv"><dt>Började</dt><dd>${vem(a.vem, a.byn)}</dd><dt>Vill ha</dt><dd>${vill}</dd><dt>Buden</dt><dd>${esc(gar)}</dd><dt>Nu</dt><dd>${esc(FAS[a.fas] ?? a.fas)}${a.fas === 'hamta' && a.hamta.length ? `: ${a.hamta.flatMap(x => x.k).map(k => iconImg(k, 14)).join('')}` : ''}</dd></dl>`;
 }

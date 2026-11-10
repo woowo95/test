@@ -23,7 +23,7 @@ export const tandEld = (s: State, fuel = 4, ring = true) => { Object.assign(s.fi
 // får ett hus om det inte finns något där den får stå
 export const medBank = (s: State, k = 'slaktbank') => {
   let at = SIM.stationSite(s, k);
-  if (!at && SIM.stationDef(k)?.inne) { medHus(s); at = SIM.stationSite(s, k); }
+  if (!at && SIM.stationDef(k)?.inne) { medHus(s); at = SIM.stationSite(s, k) ?? fritGolv(s, k); }
   const t: SIM.Station = { id: s.nextStation = (s.nextStation ?? 0) + 1, k, x: at!.x, y: at!.y, kvar: 0 };
   if (at!.rot) t.rot = 1;
   if ('inne' in at!) t.inne = 1;
@@ -35,6 +35,7 @@ export function byggKlart(s: State) {
   const h = housesOf(s).find(q => !q.klar);
   if (!h) return undefined;
   const bs = bitsOf(s).filter(b => b.hus === h.id), p = living(s)[0];
+  for (const i of SIM.kronaOver(s, h)) groundOf(s).trees[i] = 0; // träden vars krona når över huset fälls först (steg 9.2.49)
   for (const b of bs) { b.mat = SIM.MATERIAL[b.m]?.n ?? 0; b.b = b === bs[bs.length - 1] ? 0.999 : 1; }
   SIM.touch(s);
   SIM.workOn(s, p, bs[bs.length - 1], 3600);
@@ -200,4 +201,23 @@ export const rikBy = (s: State) => { s.delning = { andel: 0 }; };
 export function utanWebblasare() {
   const g = globalThis as { document?: unknown };
   g.document ??= { createElement: () => ({ getContext: () => ({ fillRect() {}, createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }), toDataURL: () => 'data:,' }) };
+}
+
+// striderna mot djur spelas upp på kartan (steg 9.2.29): kör dem till slutet, fem sekunder i taget
+export function slutStrider(s: SIM.State) { for (let n = 0; s.djurStrider?.length && n < 200; n++) { s.now += 5_000; SIM.djurStriderSteg(s); } }
+
+// ett golv inne där stationen k får plats (rutorna i ett rum utan station), också när sovrummet inte har rutor över: huset byggs
+// med tre rutor per person (steg 9.2.36), så i scenarierna ställs bänken där ändå
+function fritGolv(s: State, k: string): { x: number; y: number; inne: 1 } | undefined {
+  const { w, h } = SIM.storlek(k, 0), upptagen = SIM.stationRutor(s).at;
+  for (const r of SIM.gridOf(s).rooms) {
+    const rum = new Set(r.tiles);
+    for (const i0 of r.tiles) {
+      const x = i0 % W, y = Math.floor(i0 / W);
+      let fri = true;
+      for (let j = 0; j <= h && fri; j++) for (let i = 0; i < w && fri; i++) fri = rum.has((y + j) * W + x + i) && !upptagen.has((y + j) * W + x + i);
+      if (fri) return { x, y, inne: 1 };
+    }
+  }
+  return undefined;
 }

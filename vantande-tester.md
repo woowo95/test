@@ -6,4 +6,4 @@ Raderna skrivs så här: committen, systemet och testerna, till exempel "abc1234
 
 ## Väntar
 
-65e10c7 9.1 och 9.2.1–9.2.8 (v512): nytt facit. Koll, likhet och riktad --karta gick igenom på Windows-datorn och v512 är publicerad; facit sparas vid nästa stora test. Graferna (9.2.8) är inte provade i webbläsaren.
+(inget)

@@ -145,6 +145,7 @@
     oga: ['...#####...', '.##.....##.', '#...###...#', '#..#####..#', '#..##.##..#', '#...###...#', '.##.....##.', '...#####...'],
     hus: mask(13, 10, s => { for (const x0 of [0, 7]) { for (let y = 0; y < 3; y++) for (let x = 2 - y; x <= 3 + y; x++) s(x0 + x, y); for (let y = 3; y < 8; y++) for (let x = 1; x <= 4; x++) if (!(y > 4 && (x === 2 || x === 3))) s(x0 + x, y); } for (let x = 0; x < 13; x++) s(x, 9); }),
     pilar: mask(13, 9, s => { for (let x = 1; x < 12; x++) { s(x, 2); s(x, 6); } for (let i = 0; i < 3; i++) { s(11 - i, 2 - i); s(11 - i, 2 + i); s(1 + i, 6 - i); s(1 + i, 6 + i); } }),
+    graf: mask(11, 10, s => { [[1, 6], [4, 3], [7, 5], [10, 1]].forEach(([x, y0]) => { for (let y = y0; y < 9; y++) { s(x - 1, y); s(x, y); } }); for (let x = 0; x < 11; x++) s(x, 9); }), // staplar: Byns tal (steg 9.3.2)
     stig: mask(13, 10, s => { for (let y = 0; y < 3; y++) for (let x = 9 - y; x <= 10 + y; x++) s(x, y); for (let y = 3; y < 6; y++) for (let x = 8; x <= 11; x++) if (!(y > 3 && (x === 9 || x === 10))) s(x, y); [[7, 7], [5, 8], [3, 8], [1, 9], [6, 6]].forEach(([x, y]) => { s(x, y); s(x + 1, y); }); }),
   };
   // mönstren på sidorna: ritar en ruta med vänstra kanten i x och mittlinjen i cy

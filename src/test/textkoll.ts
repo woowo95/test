@@ -3,7 +3,7 @@
 // En kontroll är en rad i registret KONTROLLER: vad den heter och vad den hittar i texten (och fälten den fylldes med).
 // titta(s) skriver de texter som bara visas när man trycker på något, som om någon tittade (beskrivningen av en person,
 // samtalet, relationerna och sakernas berättelser).
-import { State, alive, byId, living } from '../sim';
+import { personRader, State, alive, byId, living } from '../sim';
 import { Fyllning, beskrivning, pratText, relationText, sakBerattelse } from '../sim/berattelser';
 import { SAKER, sakNamn } from '../sim/saker';
 import { STATIONER } from '../sim/stationer';
@@ -47,7 +47,7 @@ export const KONTROLLER: Kontroll[] = [
   { id: 'artikel', namn: 'Ett rykte utan en framför (som lögnare, är tjuv)', hitta: t => ARTIKEL.exec(t)?.[0].trim() },
   { id: 'andelse', namn: 'En ändelse hängd på ett namn (Lerkrukaen, väggbrädeen)', hitta: (t, f) => {
     const namn = Object.values(f).filter((v): v is string => typeof v === 'string' && /^\p{Lu}/u.test(v));
-    for (const n of namn) if (/[ae]$/.test(n) && [...t.matchAll(new RegExp(`${n}(en|n|na|et)(?=[^\\p{L}]|$)`, 'gu'))].some(m => !VANLIGA.has(m[0].toLowerCase()) && !namn.includes(m[0]))) return n; // Arka och Arkan är två namn
+    for (const n of namn) if (/[ae]$/.test(n) && [...t.matchAll(new RegExp(`${n}(en|n|na|et)(?=[^\\p{L}]|$)`, 'gu'))].some(m => !VANLIGA.has(m[0].toLowerCase()) && !namn.some(v => new RegExp(`(^|[^\\p{L}])${m[0]}(?=[^\\p{L}]|$)`, 'u').test(v)))) return n; // Arka och Arkan är två namn, också i samma fält (Ragma och Ulvan)
     return /\p{Ll}(aen|een|aet|eet)(?=[^\p{L}]|$)/u.exec(t)?.[0];
   } },
   { id: 'siffra', namn: 'En siffra före ett ord (1 rutor, efter 3 försök); utom ålder, år och årtal', hitta: t => { const m = /(^|[^\p{L}\d.,])(\d+) (\p{L}+)/u.exec(t); return m && !/^(år|års|dygn|timmar|timme|kg)$/u.test(m[3]) && !/(^|[^\p{L}])år $/u.test(t.slice(0, m.index + m[1].length)) ? `${m[2]} ${m[3]}` : undefined; } }, // "år 17 dog" är ett årtal
@@ -79,7 +79,7 @@ export function kollaText(t: string, f: Fyllning, kon: (namn: string) => string 
 // skriver de texter som bara visas när man trycker på något, för alla i byn och alla saker med ett minne
 export function titta(s: State) {
   for (const p of living(s)) {
-    beskrivning(s, p); pratText(s, p);
+    beskrivning(s, p); pratText(s, p); personRader(s, p); // personens händelser (steg 9.2.108)
     for (const k in s.rels) {
       const [a, b] = k.split('-').map(Number);
       if (a !== p.id && b !== p.id) continue;

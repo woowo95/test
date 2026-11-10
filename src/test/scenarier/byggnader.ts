@@ -7,7 +7,7 @@ import * as SIM from '../../sim';
 import { findPath } from '../../sim/vag';
 import { KANIN } from '../../sim/redskap';
 import { START, STEG_TIM } from '../kor';
-import { setItems, setFood, kor, klockan, tandEld, byggare, byggKlart, nyInvanare, medBank, STOCKHOLM, SCENARIER } from './hjalp';
+import { setItems, setFood, kor, klockan, tandEld, byggare, byggKlart, nyInvanare, medBank, medHus, STOCKHOLM, SCENARIER } from './hjalp';
 
 SCENARIER.byggnader = {
   text: 'Varje sorts byggnad är en rad i ett register med behov och vikt. Byn bygger för det mest akuta behovet, faror först: den som saknar tak över huvudet får en sovsal',
@@ -65,7 +65,7 @@ SCENARIER.forradshus = {
     // var tredje by bygger ett förrådshus så tidigt, så byarna är valda bland dem som gjort det med god marginal; med
     // byar som var nära gränsen (dygn 39 av 40) avgjorde minsta ändring någon annanstans om provet gick igenom
     let byggt = 0, iHuset = 0;
-    for (const seed of [9, 16, 4]) { // valda igen i steg 2.2.2 (by 16 bygger det dygn 13, by 4 dygn 16 och by 9 dygn 21; by 8, 10 och 11 inte längre inom 30 dygn); by 9 först sedan steg 4.1.1.3, då by 16 och 4 inte längre gjorde det inom 30 dygn
+    for (const seed of [16839, 80191, 1001]) { // valda igen i steg 9.9.4 bland byarna i npm run hus som byggt förrådshuset tidigt (dygn 4, 5 och 6); by 9, 16 och 4 gjorde det inte längre inom 30 dygn
       const v = createState(seed, START);
       byggt = 0; iHuset = 0;
       for (let dygn = 0; dygn < 30 && !(byggt && iHuset); dygn++) kor(v, 24, v => {
@@ -177,7 +177,8 @@ SCENARIER.agandet = {
     // familjens egen bädd i huset och byns slöjdbänk, som också står där
     const fri = () => rum.tiles.find(i => rum.tiles.includes(i + 1) && [i, i + 1].every(j => !SIM.stationAt(s, j % W, Math.floor(j / W))));
     const stall = (k: string, ag?: number) => { const i = fri() ?? i0, t: SIM.Station = { id: s.nextStation = (s.nextStation ?? 0) + 1, k, x: i % W, y: Math.floor(i / W), kvar: 0, inne: 1, ag }; s.stationer!.push(t); SIM.touch(s); return t; };
-    const egenB = stall('halmbadd', a.id), bank = stall('flatarbank');
+    // den egna bädden åt någon i familjen som inte redan har en (nu när familjens bäddar får plats i huset, steg 9.2.36)
+    const utan = fam.find(q => !SIM.baddOf(s, q)) ?? a, egenB = stall('halmbadd', utan.id), bank = stall('flatarbank');
     const iHus = iH(egenB);
     const iHuset = iHus && iH(bank);
     // huset byter ägare (som när det köps eller ärvs av någon utanför familjen): familjens bäddar flyttas ut eller tas isär
@@ -392,7 +393,7 @@ SCENARIER.bygg = {
     const fq = getMap(q.seed).fire, hq = housesOf(q)[0];
     const avst = hq ? rektAvstand(fq.x, fq.y, hq.x, hq.y, hq.w, hq.h) : 0;
     // ett planerat långhus räknas i statistiken (planerat_langhus; samhalle-192)
-    const langhus = housesOf(q).filter(h => (h.fn === 'sovsal' || h.fn === 'samling') && h.w * h.h >= SIM.HUS.langhus).length, // en tom sovsal kan ha blivit samlingshus (steg 1.6.4)
+    const langhus = housesOf(q).filter(h => (h.fn === 'sovsal' || h.fn === 'samling') && SIM.sovPersoner((h.w - 2) * (h.h - 2)) >= SIM.HUS.langhus).length, // en tom sovsal kan ha blivit samlingshus (steg 1.6.4)
       langRaknat = q.stat?.planerat_langhus ?? 0;
     // en kall natt utan eld: den som är inne kyls långsammare än den som är ute
     const k = cloneState(q); k.now = ageStart(k, 0) + 3 * HOUR; k.fire.lit = false; k.fire.fuel = 0;
@@ -456,7 +457,7 @@ SCENARIER.bygg = {
       [`träden där huset ska stå fälls innan väggarna byggs där (${trad} träd på platsen, ${iTrad} väggar byggda på ett träd)`, trad >= 0 && iTrad === 0 && !!h && bitsOf(q).every(b => b.hus !== h.id || !treeOn(q, b))],
       [`huset står en bit från elden (${avst.toFixed(1)} rutor; helst BYGG.husAvst, men närheten till byns mitt väger också)`, avst >= 2],
       ['slitna väggar lagas', lagat],
-      [`ett långhus räknas när det planeras (${langhus} långhus, ${langRaknat} räknade)`, langhus > 0 && langRaknat === langhus],
+      [`ett långhus räknas när det planeras (${langhus} långhus, ${langRaknat} räknade)`, langRaknat === langhus],
       [`en lagning kostar hälften av det nya, i hela saker och minst en (trägolv ${golvLag} av ${MATERIAL.tra.n}, timmervägg ${vaggLag} av ${MATERIAL.timmer.n})`, golvLag === Math.max(1, Math.floor(MATERIAL.tra.n / 2)) && vaggLag === Math.max(1, Math.floor(MATERIAL.timmer.n / 2))],
       [`en rasad vägg som byggts om gör huset klart igen men inte färdigt en gång till (krönikan ${kronikaFore} → ${kronikaEfter}, de som byggde minns det ${gemFore} → ${gemEfter} gånger)`, omKlar && kronikaFore >= 1 && kronikaEfter === kronikaFore && gemEfter === gemFore],
       [`stockar som läggs i väggen medan någon bär material dit försvinner inte (väggen ${iVaggen} av ${behov}, ${iHanden} kvar i händerna)`, behov > 0 && iVaggen === behov && iHanden === 1],
@@ -591,13 +592,18 @@ SCENARIER.lagerplatser = {
 
 SCENARIER.verkstad = {
   text: 'Rummets funktion (steg 2.2.17): ett rum får sin funktion av det som står i det. När byn vill bygga en slöjdbänk men sovsalarna är fulla planerar den en verkstad åt den, och en sovsal som ingen sover i men där en station står blir en verkstad i stället för att rivas',
+  env: { BALANS: 'hus.sovFast=0' }, // utan rutor för rymd blir sovsalen precis full: alla har en sovplats och inget golv blir över (steg 9.2.36)
   kor: () => {
     const { HUS, stationDef, inneUtanPlats, rumsFunktioner, sovKvar, stationerOf, stationRum, stationSite, isKlar } = SIM;
     // en by med en sovsal som är så full att slöjdbänken inte får plats där, där alla kan bygga en slöjdbänk
     const s = createState(1, START); klockan(s); tandEld(s);
     byggare(s); planBuild(s); const A = byggKlart(s)!;
     const rumA = () => gridOf(s).rooms.find(r => r.hus === A.id && r.tiles.length)!;
-    for (let i = 0; sovKvar(s, rumA()) >= 2 && i < 20; i++) nyInvanare(s, i % 2 ? 'm' : 'k', 30);
+    // fler flyttar in så länge det finns en sovplats till (HUS.sovPer golvrutor per person, steg 9.2.36); det som blir kvar är
+    // mindre än slöjdbänken (2 × 2 rutor)
+    for (let i = 0; sovKvar(s, rumA()) >= HUS.sovPer && i < 20; i++) nyInvanare(s, i % 2 ? 'm' : 'k', 30);
+    // byn kan ha fler än sovsalen rymmer (en sovande behöver HUS.sovPer rutor och huset HUS.sovFast till): de som blir över flyttar
+    while (homeless(s) > 0 && s.people.length > 2) s.people.pop();
     for (const r of s.people) r.tek = { ...r.tek, flatarbank: 1, timmervagg: 1, yxa: 1 };
     setFood(s, 400); setAmount(s, 'ved', 80); setAmount(s, 'grenar', 20); setAmount(s, 'virke', SIM.RT.flatarbankVirke); // virket finns: byn har ingen yxa att klyva med (steg 4.5.5.2)
     const vill = inneUtanPlats(s), a = BYGGNADER.verkstad.akut(s), hemlosa = homeless(s);
@@ -635,6 +641,7 @@ SCENARIER.verkstad = {
 };
 
 SCENARIER.lekibyn = {
+  lang: true,
   text: 'Byn har ingen lekplats: barnen leker var som helst inne i byn (platsIByn i omrade.ts), aldrig i vattnet eller i en vägg',
   kor: () => {
     const s = createState(3, START);
@@ -654,6 +661,7 @@ SCENARIER.lekibyn = {
       [`barnen leker inne i byn (${iByn} av ${leker} timmar)`, leker > 0 && iByn === leker],
       [`aldrig i vattnet eller i en vägg (${fel})`, fel === 0],
       [`på många olika ställen (${platser.size} rutor)`, platser.size >= 5],
+      ...lekFart(s),
     ];
   },
 };
@@ -919,7 +927,7 @@ SCENARIER.omrade = {
 };
 
 SCENARIER.strak = {
-  text: 'Gångstråken (steg 6.2.5): från rutan utanför varje dörr går den kortaste vägen till elden, lagren, latrinen och vattnet, och där ställs inget nytt: inga stationer, lagerplatser eller fält, och hus bara om stråket kan dras om med högst 3 rutors omväg',
+  text: 'Gångstråken (steg 6.2.5): från rutan utanför varje dörr går den kortaste vägen till elden, lagren, vattnet och torget (inte latrinen, steg 9.2.99), och där ställs inget nytt: inga stationer, lagerplatser eller fält, och hus bara om stråket kan dras om med högst 3 rutors omväg',
   kor: () => {
     const s = createState(9, START);
     byggare(s); setAmount(s, 'yxa', 2);
@@ -928,7 +936,9 @@ SCENARIER.strak = {
     let paStrak = 0, husPa = 0, maxRutor = 0;
     const timmar = 120;
     const nyttPa: string[] = [];
+    let dygnSedan = new Set<number>(); // stråken ett dygn före slutet: träden där har haft ett dygn på sig att fällas
     for (let t = 0; t < timmar * STEG_TIM; t++) {
+      if (t === (timmar - 24) * STEG_TIM) dygnSedan = new Set(SIM.straken(s).vagar.flatMap(q => q.rutor));
       const fore = SIM.straken(s).ruta.slice();
       const st0 = new Set(SIM.stationerOf(s)), f0 = new Set(s.falt ?? []), h0 = new Set(housesOf(s));
       kor(s, 1 / STEG_TIM);
@@ -957,12 +967,18 @@ SCENARIER.strak = {
     const v = st.vagar.find(q => q.mal === 'eld' && q.len > 4), mitt = v && v.rutor[Math.floor(v.rutor.length / 2)];
     const hindrar = mitt !== undefined && SIM.strakHindrar(s, mitt % W - 4, Math.floor(mitt / W) - 4, 9, 9);
     const framfor = v && SIM.strakHindrar(s, v.dorr % W, Math.floor(v.dorr / W), 1, 1);
+    // steg 9.2.35: träden i stråken fälls
+    const gS = groundOf(s), tradIStrak = new Set(st.vagar.flatMap(q => q.rutor).filter(i => dygnSedan.has(i) && gS.trees[i] >= SIM.FOREST)).size;
     return [
+      [`inga träd står kvar efter 5 dygn i stråken som fanns ett dygn innan (${tradIStrak})`, tradIStrak === 0],
       [`efter 5 dygn (5 år i spelet) har husen dörrar med stråk (${hus.length} färdiga hus, ${dorrar.size} dörrar, som mest ${maxRutor} rutor stråk)`, hus.length > 0 && dorrar.size > 0],
       [`från varje dörr går ett stråk till elden (${tillEld} av ${dorrar.size}) och till en lagerplats (${tillLager})`, tillEld === dorrar.size && tillLager === dorrar.size],
       [`inget nytt ställs på ett stråk: ingen station, lagerplats eller fält (${paStrak} på ${timmar} timmar${nyttPa.length ? `: ${[...new Set(nyttPa)].join(', ')}` : ''})`, paStrak === 0],
       [`inget nytt hus står på rutan framför en dörr (${husPa})`, husPa === 0],
       [`rutan framför en dörr står fast`, framfor === true],
+      // steg 9.2.99: inget stråk slutar vid en latrin (rutan intill den)
+      ...(() => { const lat = SIM.stationerOf(s).filter(q => q.k === 'latrin'), vid = (i: number) => lat.some(l => { const m = SIM.storlekAv(l), x = i % W, y = Math.floor(i / W); return x >= l.x - 1 && x <= l.x + m.w && y >= l.y - 1 && y <= l.y + m.h; });
+        const n = st.vagar.filter(q => q.mal !== 'lager' && vid(q.rutor[q.rutor.length - 1])).length; return [[`inget stråk slutar vid en latrin (${lat.length} latriner, ${n} stråk)`, n === 0]] as [string, boolean][]; })(),
       [`ett hus som stänger stråket till elden hindras (${hindrar ? 'ja' : 'nej'}), men inte ett hus långt från stråken`, hindrar !== undefined && !SIM.strakHindrar(s, 2, 2, 3, 3)],
     ];
   },
@@ -998,7 +1014,7 @@ SCENARIER.rumstyper = {
     SIM.planBuild(s); byggKlart(s);
     const h = housesOf(s)[0], r = () => gridOf(s).rooms.find(q => q.hus === h.id && q.tiles.length)!, rum = r();
     const gammal = SIM.rumFnId(s, rum) === SIM.fnId(h) && h.rumFn === undefined;
-    const sov = SIM.rumTaggar(s, rum).has('sovsal') && SIM.sovplatser(s, rum) === rum.tiles.length;
+    const sov = SIM.rumTaggar(s, rum).has('sovsal') && SIM.sovplatser(s, rum) === SIM.sovPersoner(rum.tiles.length);
     const vilaFore = SIM.rumVila(s, rum);
     const stall = (k: string, i: number) => { (s.stationer ??= []).push({ id: (s.nextBit ??= 1), k, x: i % SIM.W, y: Math.floor(i / SIM.W), kvar: 0, inne: 1 } as SIM.Station); s.nextBit++; SIM.touch(s); };
     stall('bord', rum.tiles[0]);
@@ -1011,7 +1027,7 @@ SCENARIER.rumstyper = {
     const namn = SIM.rumNamn(s, r());
     return [
       ['ett hus från en gammal sparfil är ett rum med husets funktion', gammal],
-      [`rummet är en sovsal med en sovplats per ruta (${SIM.sovplatser(s, rum)})`, sov],
+      [`rummet är en sovsal med en sovplats per tre rutor (${SIM.sovplatser(s, rum)} på ${rum.tiles.length} rutor, steg 9.2.36)`, sov],
       ['ett bord inne gör rummet till en matsal', matsal],
       ['en arbetsbänk gör det till en verkstad', verkstad],
       [`verkstad och sovplatser passar dåligt ihop: man vilar sämre (${vilaFore} → ${vilaEfter.toFixed(2)})`, minus && vilaEfter < vilaFore],
@@ -1060,7 +1076,7 @@ SCENARIER.byggplan = {
       ['Byggplanen väljer att bygga ut det befintliga huset, inte ett nytt', pagar && ettHus],
       [`ritningen är nya rutor (${nya}), och den gamla väggen står kvar (${gamlaVaggar} rutor)`, nya > 0 && gamlaVaggar > 0 && stangd],
       [`huset är större (${fore.w}×${fore.h} → ${h.w}×${h.h}) och fortfarande en rektangel, med ett rum (${rumFore} → ${rum.length})`, storre && rektangel && rum.length === 1 && !h.ut],
-      [`alla rutor går att sova på (${sov})`, sov === (h.w - 2) * (h.h - 2)],
+      [`huset rymmer så många som rutorna räcker till, tre per person (${sov} sovplatser på ${(h.w - 2) * (h.h - 2)} rutor)`, sov === SIM.sovPersoner((h.w - 2) * (h.h - 2))],
       [`vakten för husen är tyst${fel ? ': ' + fel : ''}`, !fel],
     ];
   },
@@ -1161,8 +1177,98 @@ SCENARIER.stockihus = {
     ];
   },
 };
+SCENARIER.stockhus = {
+  text: 'Steg 9.2.86: en fälld stock vars krona ritas över ett färdigt hus huggs före alla andra stockar och före nästa fällning; det räknas på rutorna som stockens bild täcker',
+  kor: () => {
+    const s = createState(6, START);
+    byggare(s); setAmount(s, 'yxa', 2);
+    const c = SIM.bynsMitt(s), pl = { x: c.x + 8, y: c.y + 8 };
+    const h: SIM.Hus = { id: (s.nextBit ??= 1), namn: 'Hydda', x: pl.x, y: pl.y, w: 4, h: 4, fn: 'sovsal', klar: s.now };
+    s.nextBit++;
+    housesOf(s).push(h); SIM.touch(s);
+    // foten står till vänster om huset, kronan (tre rutor åt höger) ligger över det; en annan stock ligger närmare byn
+    const over: SIM.Stock = { id: 98, x: pl.x - 1.5, y: pl.y + 1.5, ved: 9, grenar: 0 };
+    const nara: SIM.Stock = { id: 97, x: c.x + 1.5, y: c.y + 1.5, ved: 9, grenar: 0 };
+    const kort: SIM.Stock = { id: 96, x: pl.x - 1.5, y: pl.y + 1.5, ved: 2, grenar: 0 };
+    s.stockar = [nara, over];
+    const p = living(s).find(q => ageOf(q, s.now) >= ALDER.vuxen)!;
+    for (const q of living(s)) q.task = undefined;
+    const ax = SIM.axeTask(s, p), virke = SIM.PROJEKT.virke.uppgift(s, p), roj = SIM.PROJEKT.rojning.uppgift(s, p);
+    const fotUtanfor = !(Math.floor(over.x) >= h.x && Math.floor(over.x) < h.x + h.w);
+    s.stockar = [nara, kort];
+    const ax2 = SIM.axeTask(s, p);
+    return [
+      ['stockens fot står utanför huset', fotUtanfor],
+      ['kronan ligger över huset', SIM.overHus(s, over)],
+      [`vedhuggaren hugger stocken över huset först (${ax?.act} ${ax?.ref})`, ax?.act === 'hugga' && ax.ref === 98],
+      [`virket fäller inget nytt träd förrän den är huggen (${virke?.act} ${virke?.ref})`, virke?.act === 'hugga' && virke.ref === 98],
+      [`inte heller röjningen (${roj?.act} ${roj?.ref})`, roj?.act === 'hugga' && roj.ref === 98],
+      ['en kort stock på samma plats når inte huset', !SIM.overHus(s, kort)],
+      [`då huggs den närmaste stocken som förut (${ax2?.ref})`, ax2?.act === 'hugga' && ax2.ref === 97],
+    ];
+  },
+};
+SCENARIER.liggande = {
+  text: 'Steg 9.2.87: hela trädet tas om hand innan nästa fälls: den som fällt ett träd hugger helst stammen själv, och viljan att fälla ett nytt träd för ett projekt sjunker med antalet stammar som ligger i byn',
+  kor: () => {
+    const s = createState(6, START);
+    byggare(s); setAmount(s, 'yxa', 2);
+    const c = SIM.bynsMitt(s), p = living(s).find(q => ageOf(q, s.now) >= ALDER.vuxen)!;
+    for (const q of living(s)) q.task = undefined;
+    const nara: SIM.Stock = { id: 97, x: c.x + 1.5, y: c.y + 1.5, ved: 9, grenar: 0 };
+    const egen: SIM.Stock = { id: 96, x: c.x + 6.5, y: c.y + 5.5, ved: 9, grenar: 0, av: p.id };
+    s.stockar = [nara, egen];
+    const ax = SIM.axeTask(s, p), virke = SIM.PROJEKT.virke.uppgift(s, p), roj = SIM.PROJEKT.rojning.uppgift(s, p);
+    s.stockar = [];
+    const v0 = SIM.fallVilja(s);
+    s.stockar = [1, 2, 3].map(i => ({ id: 90 + i, x: c.x + i + 0.5, y: c.y + 0.5, ved: 6, grenar: 0 }));
+    const v3 = SIM.fallVilja(s);
+    s.stockar = [];
+    // en by i fyra dygn (fyra år i spelet): stammarna som ligger i byn räknas varje timme
+    const b = createState(3, START);
+    byggare(b); setAmount(b, 'yxa', 2); put(b, 'bar', 150);
+    const n: number[] = [];
+    let fallda0 = b.fallda ?? 0, timme = 0;
+    kor(b, 96, x => { if (++timme % STEG_TIM === 0) n.push((x.stockar ?? []).filter(k => k.ved > 0 && !SIM.utanforByn(x, k.x, k.y)).length); });
+    n.sort((a, d) => a - d);
+    const med = n[n.length >> 1] ?? 0, max = n[n.length - 1] ?? 0, fallda = (b.fallda ?? 0) - fallda0;
+    const g = groundOf(s), ti = [...g.trees.keys()].find(i => SIM.isForest(s, i)), fk = ti === undefined ? undefined : SIM.fellTree(s, p, ti % W + 0.5, Math.floor(ti / W) + 0.5);
+    const avSatt = fk?.av === p.id;
+    return [
+      [`yxbäraren hugger stammen hen själv fällt före en närmare (${ax?.ref})`, ax?.act === 'hugga' && ax.ref === 96],
+      [`virket klyvs ur den egna stammen (${virke?.act} ${virke?.ref})`, virke?.act === 'klyva' && virke.ref === 96],
+      [`röjningen hugger den egna stammen före nästa fällning (${roj?.act} ${roj?.ref})`, roj?.act === 'hugga' && roj.ref === 96],
+      [`viljan att fälla sjunker med stammarna i byn (${v0.toFixed(2)} → ${v3.toFixed(2)})`, v0 === 1 && v3 < 0.6],
+      ['en fälld stam vet vem som fällde den', avSatt],
+      [`stammar i byn: median ${med}, högst ${max} (${fallda} träd fällda på fyra dygn)`, med <= 3 && max <= 10],
+    ];
+  },
+};
+SCENARIER.sanggang = {
+  text: 'Steg 9.2.89: den som går till sängen går upprätt och lägger sig först i bädden (kartan ritar liggande bara när soverNu säger det)',
+  kor: () => {
+    const s = createState(3, START), p = living(s)[0];
+    const tk = { act: 'sova', phase: 'go', tx: p.x + 6, ty: p.y + 2, until: s.now + 8 * HOUR, carry: 0 } as unknown as Task;
+    const pavag = SIM.soverNu(p, tk);
+    tk.phase = 'do';
+    const intefram = SIM.soverNu(p, tk);
+    p.x = tk.tx; p.y = tk.ty;
+    const framme = SIM.soverNu(p, tk);
+    // en natt i byn: ingen som är på väg till sin sovplats räknas som sovande
+    const b = createState(3, START);
+    klockan(b, 21); tandEld(b);
+    let fel = 0, sover = 0;
+    kor(b, 10, x => { for (const q of living(x)) if (q.task?.act === 'sova') { if (q.task.phase === 'go' && SIM.soverNu(q, q.task)) fel++; if (SIM.soverNu(q, q.task)) sover++; } });
+    return [
+      ['på väg till sängen går man upprätt', !pavag],
+      ['långt från sovplatsen ligger man inte', !intefram],
+      ['framme lägger man sig', framme],
+      [`under natten ligger ingen på väg (${fel}) och de som somnat ligger (${sover})`, fel === 0 && sover > 0],
+    ];
+  },
+};
 SCENARIER.lagerivagen = {
-  text: 'Steg 8.1.15: en lagerplats påverkar inte var ett hus eller en station ute byggs. Ligger den i vägen flyttas den till en ny plats med samma namn, och sakerna bärs dit',
+  text: 'Steg 8.1.15: en lagerplats påverkar inte var ett hus eller en station ute byggs. Ligger den i vägen flyttas den till en ny plats med samma namn, och sakerna bärs dit. Steg 9.2.15: likadant när ett stråk går igenom den',
   kor: () => {
     const s = createState(6, START), z = SIM.zonesOf(s)[0], namn = z.namn, gx = z.x, gy = z.y;
     SIM.flyttaLager(s, z);
@@ -1183,9 +1289,86 @@ SCENARIER.lagerivagen = {
       ['det som låg där ligger nu utanför och ska bäras in', SIM.overflow(s).length > 0 || SIM.pilesOf(s).length === 0],
       [`en station ute får sin plats fast lagret ligger där (${plats.x},${plats.y} och ${plats2?.x},${plats2?.y})`, !!plats2 && plats2.x === plats.x && plats2.y === plats.y],
       ['när stationen börjar byggas där flyttas lagret', !!st && st.x === plats.x && !!z3 && !(z3.x === plats.x && z3.y === plats.y)],
+      ...lagerIStraket(),
     ];
   },
 };
+// steg 9.2.15: vägarna dras utan hänsyn till lagerplatserna; en lagerplats som ett stråk går igenom flyttas
+function lagerIStraket(): [string, boolean][] {
+  const s = createState(1, START);
+  medHus(s);
+  const v = SIM.straken(s).vagar.filter(q => q.mal !== 'lager' && q.rutor.length >= 4).sort((a, b) => b.len - a.len)[0];
+  if (!v) return [['ett stråk från dörren att lägga ett lager på', false]];
+  const r = v.rutor[Math.floor(v.rutor.length / 2)], x = r % W, y = Math.floor(r / W), z0 = SIM.zonesOf(s)[0];
+  const z = { ...z0, x, y, w: 1, h: 1, namn: 'Lagret i vägen' };
+  s.lagren = [...SIM.zonesOf(s), z]; SIM.touch(s);
+  const genom = SIM.straken(s).vagar.some(q => q.mal !== 'lager' && q.rutor.includes(r));
+  SIM.lagerIStraket(s);
+  const ny = SIM.zonesOf(s).find(q => q.namn === 'Lagret i vägen');
+  return [
+    [`stråket till ${v.mal === 'vatten' ? 'vattnet' : v.mal} går genom en lagerplats som ligger i vägen`, genom],
+    [`och lagerplatsen flyttas bort från stråket (${x},${y} → ${ny ? `${ny.x},${ny.y}` : 'borta'})`, !ny || !(ny.x === x && ny.y === y)],
+  ];
+}
+SCENARIER.staende = {
+  text: 'Steg 9.2.133: ett nytt hus prövas också stående, djupare än brett, så att en smal men djup lucka i en trång by går att bygga i',
+  kor: () => {
+    const s = createState(6, START); klockan(s); byggare(s);
+    const g = groundOf(s), f = SIM.eldPlats(s);
+    const b = { fn: 'sovsal' as const, a: { v: 1, plats: 2 }, sc: 0 };
+    // bara en smal lucka (fem rutor bred, tolv djup) går att bygga i: den hittas bland platserna runt elden
+    let fs: { w: number; h: number }[] = [], vid = '';
+    for (let r = 4; r < 20 && !fs.length; r += 2) for (const [dx, dy] of [[r, -6], [-r - 5, -6], [-2, r], [-2, -r - 12]]) {
+      const x0 = f.x + dx, y0 = f.y + dy;
+      const okAt = (i: number) => { const x = i % W, y = Math.floor(i / W); return x >= x0 && x < x0 + 5 && y >= y0 && y < y0 + 12 && g.tiles[i] !== T.Vatten && !SIM.bitAt(s, x, y); };
+      fs = SIM.BYGGATGARDER.nyttHus.foresla(s, b, okAt); if (fs.length) { vid = `${x0},${y0}`; break; }
+    }
+    const h = fs[0];
+    return [
+      [`i luckan (${vid || 'ingen'}) föreslås ett stående hus (${h ? `${h.w}×${h.h}` : 'inget'})`, !!h && h.w <= 5 && h.h > h.w],
+    ];
+  },
+};
+
+SCENARIER.husmarknad = {
+  text: 'Steg 9.2.109 och 9.2.110: alla bostäder går att köpa, men priset följer hur mycket säljaren behöver huset. Ett hus där folk bor kostar mer än att bygga nytt, ett hus som ägaren inte behöver säljs billigt, och en familj som inte har råd att bygga nytt köper ett sådant, med det hela familjen äger',
+  kor: () => {
+    const s = createState(6, START);
+    klockan(s); byggare(s);
+    planBuild(s); byggKlart(s); // en sovsal åt alla
+    const ppl = living(s).sort((x, y) => x.id - y.id), c = ppl.find(q => q.mother !== undefined)!, a = ppl.find(q => q.id === Math.min(c.mother!, c.father!))!;
+    const b = ppl.find(q => q.id === a.partner)!;
+    nyInvanare(s, 'm', 30); const d = living(s)[living(s).length - 1]; // en ensam bybo
+    const h = housesOf(s)[0];
+    // byns sovsal där alla sover: den går att köpa, men den kostar mer än att bygga ett nytt lika stort hus
+    const dyrt = SIM.saljPris(s, h), iBruk = SIM.kopbart(s, h) && SIM.saljBehov(s, h) === 1 && dyrt > SIM.husKostnadAv((h.w - 2) * (h.h - 2));
+    // läget: mitt i byn är ett hus värt mer, i kanten av området inte
+    const m = SIM.bynsMitt(s), mitt = SIM.lage(s, { ...h, x: m.x - 1, y: m.y - 1, w: 3, h: 3 }), kant = SIM.lage(s, { ...h, x: m.x + 40, y: m.y, w: 3, h: 3 });
+    // en ensam bybo äger huset: det är för stort för hen, så hen säljer billigt. Huset är slitet och värt en fjärdedel
+    h.ag = d.id; h.fn = 'familjehus';
+    for (const q of bitsOf(s)) if (q.hus === h.id) q.c = 0.25;
+    touch(s);
+    const pris = SIM.saljPris(s, h), billigt = SIM.saljBehov(s, h) === 0 && pris < SIM.husVarde(s, h) * SIM.lage(s, h);
+    const fattig = mostUrgent(s)?.a.ag !== a.id && !SIM.byggbehov(s).some(q => q.a.ag === a.id);
+    put(s, 'silver', Math.ceil(pris) + 10, { [b.id]: Math.ceil(pris) + 10 }); // partnern äger silvret (steg 9.2.110); marginal: familjen byter också till sig annat under tiden
+    const bFore = SIM.ownsAmount(s, b, 'silver');
+    const u = SIM.byggbehov(s).find(q => q.a.ag === a.id), kanBygga = [a, b].reduce((v, q) => v + (SIM.formogenheter(s).egen.get(q.id) ?? 0), 0);
+    planBuild(s);
+    const affar = s.husAffar?.ag === a.id && s.husAffar.hus === h.id, ingetNytt = !housesOf(s).some(q => q !== h && q.ag === a.id);
+    for (let i = 0; i < 48 && h.ag !== a.id; i++) kor(s, 1);
+    return [
+      [`ett hus där alla sover går att köpa men kostar mer än ett nytt (${Math.round(dyrt)})`, iBruk],
+      [`ett hus mitt i byn är värt lite mer (${mitt.toFixed(2)} gånger), ett utanför byn inte (${kant.toFixed(2)})`, mitt > 1 && mitt <= 1 + SIM.PLAN.lageMax && kant === 1],
+      [`ett hus som ägaren inte behöver säljs under värdet (${Math.round(pris)} av ${Math.round(SIM.husVarde(s, h) * SIM.lage(s, h))} med läget)`, billigt],
+      ['en familj utan något att betala med vill inte ha något hus', fattig],
+      [`med silver nog för det begagnade huset men inte för ett nytt hos partnern vill familjen köpa (parets förmögenhet ${Math.round(kanBygga)})`, !!u && u.fn === 'familjehus' && !!u.a.kop],
+      ['familjen bygger inget nytt utan gör upp om huset', affar && ingetNytt],
+      [`och huset blir familjens (${h.namn})`, h.ag === a.id && (s.stat?.husKopt ?? 0) >= 1],
+      [`partnern lade till silvret (${bFore} → ${SIM.ownsAmount(s, b, 'silver')})`, SIM.ownsAmount(s, b, 'silver') < bFore],
+    ];
+  },
+};
+
 SCENARIER.husbyte = {
   text: 'Steg 7.2.12: ett hus säljs genom samma bytessystem som allt annat: när köparen och säljaren möts ligger huset som en symbol på filten, och det blir handslag och en rad i loggen. Går det inte att betala blir det inget. En handlare kan aldrig köpa ett hus',
   kor: () => {
@@ -1304,7 +1487,7 @@ SCENARIER.skjul = {
   kor: () => {
     const s = createState(6, START);
     klockan(s); byggare(s);
-    const st = SIM.MATERIAL.stolpe, stolpen = st.k === 'vagg' && st.item === 'ved' && st.n === 2 && st.tek === 'timmervagg';
+    const st = SIM.MATERIAL.stolpe, stolpen = st.k === 'vagg' && st.item === 'ved' && st.n === 4 && st.tek === 'timmervagg';
     SIM.planBuild(s); byggKlart(s);
     const hu = housesOf(s)[0], z = SIM.zonesOf(s)[0];
     (s.stationer ??= []).push({ id: s.nextBit!++, k: 'tork', x: hu.x + hu.w + 6, y: hu.y, kvar: 0 } as SIM.Station, { id: s.nextBit!++, k: 'tork', x: hu.x + hu.w + 9, y: hu.y, kvar: 0 } as SIM.Station);
@@ -1326,7 +1509,7 @@ SCENARIER.skjul = {
     SIM.stepBlotVed(s, 3600 * 200);
     const torr = a.blot === undefined, torrEfter = SIM.torrVed(s);
     return [
-      ['stolpen är en byggdel som stänger vägen och kostar 2 ved, och låses upp av Timmerhus', stolpen],
+      ['stolpen är en byggdel som stänger vägen och kostar 4 ved, och låses upp av Timmerhus', stolpen],
       ['två torkställningar ute: byn vill ha ett torkhus', !!behovTork],
       [`Byggplanen sätter upp ett skjul med stolpar (${stolpar})`, !!t && stolpar >= 4],
       ['under skjulet är det tak men inget rum', under],
@@ -1402,6 +1585,242 @@ SCENARIER.torget = {
       ['torget är byns centrum', mitt],
       ['Byggplanen föreslår en infartsväg', foreslas],
       ['när den är klar kan handlaren komma också på vintern', !!s.infart.klar],
+    ];
+  },
+};
+
+SCENARIER.hamtning = {
+  text: 'Steg 9.2.43: inget flyttas av sig självt. Den som ska göra en yxa går först till lagret där flintan och grenarna ligger, tar dem och bär dem till platsen där hen arbetar, och börjar först där',
+  kor: () => {
+    const s = createState(3, START);
+    const p = living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    (p.tek ??= {}).yxa = 1;
+    setAmount(s, 'flinta', 3); setAmount(s, 'grenar', 5);
+    const stack = SIM.stacksOf(s).find(a => a.k === 'flinta')!;
+    const e = SIM.eldPlats(s), spot = { x: e.x + 0.5, y: e.y + 3.5 };
+    p.x = spot.x + 6; p.y = spot.y; // en bit från både lagret och platsen
+    const tk = p.task = { act: 'yxa', phase: 'go', tx: spot.x, ty: spot.y, until: s.now + 3 * SIM.HOUR, carry: 0, why: 'Gör en yxa' } as SIM.Task;
+    const flinta0 = SIM.amountOf(s, 'flinta');
+    // framme vid platsen utan material: först till lagret
+    const tillLagret = SIM.hamtaForst(s, p, tk) && Math.hypot(tk.tx - stack.x - 0.5, tk.ty - stack.y - 0.5) < 1.5;
+    const orortFore = SIM.amountOf(s, 'flinta') === flinta0;
+    // vid lagret: materialet tas och bärs mot platsen
+    p.x = tk.tx; p.y = tk.ty;
+    SIM.hamtat(s, p, tk);
+    const tagits = SIM.amountOf(s, 'flinta') === flinta0 - 1 && SIM.tingOf(s).some(x => x.k === 'paborjat' && x.halv?.ag === p.id);
+    const bar = !!tk.hamtat?.flinta && tk.phase === 'go' && Math.hypot(tk.tx - spot.x, tk.ty - spot.y) < 0.01;
+    let borjade = false, borjadeVid: number | undefined;
+    for (let i = 0; i < 12 && !borjade; i++) { step(s, SIM.BEAT); if (p.task?.act === 'yxa' && p.task.phase === 'do') { borjade = true; borjadeVid = Math.hypot(p.x - spot.x, p.y - spot.y); } }
+    return [
+      ['framme vid platsen utan material går hen först till lagret, och inget har flyttats än', tillLagret && orortFore],
+      ['vid lagret tas materialet (det påbörjade skapas där)', tagits],
+      ['och bärs till platsen', bar],
+      [`arbetet börjar först framme vid platsen (${borjadeVid?.toFixed(1)} rutor därifrån), och då bärs inget längre`, borjade && borjadeVid !== undefined && borjadeVid < 1.5 && !p.task?.hamtat],
+    ];
+  },
+};
+
+SCENARIER.tradhus = {
+  text: 'Steg 9.2.49: byn vill ha en ruta fri från träd runt varje byggnad och station, och ett träd vars krona ligger över ett hus hindrar huset från att bli klart och fälls först, också när stammen står utanför väggen',
+  kor: () => {
+    const s = createState(1, START);
+    const h = medHus(s)!, g = groundOf(s), p = living(s)[0];
+    const bredvid = (h.y + 1) * W + h.x - 1, under = (h.y + h.h + 1) * W + h.x + 1; // en ruta väster om väggen, och två rader under huset
+    g.trees[bredvid] = 1; g.trees[under] = 1; g.alder![under] = SIM.GAMMAL(g.art, under) + 1; // det under är gammalt: kronan når två rader upp
+    if (SIM.stadium(g, under) !== 'gammalt') g.alder![under] = SIM.GAMMAL(g.art, under) + 0.5;
+    const roj = SIM.skaRojas(s), over = SIM.kronaOver(s, h);
+    h.klar = undefined; SIM.husKlart(s, h, p);
+    const hindrad = h.klar === undefined;
+    g.trees[under] = 0; SIM.husKlart(s, h, p);
+    return [
+      ['trädet bredvid huset ska fällas', roj.includes(bredvid)],
+      [`trädet under huset, vars krona når in över det, ska fällas (${SIM.stadium(g, under) ?? 'fällt'})`, roj.includes(under) && over.includes(under)],
+      ['huset blir inte klart medan kronan ligger över det, och blir klart när trädet är fällt', hindrad && h.klar !== undefined],
+    ];
+  },
+};
+SCENARIER.byggstar = {
+  text: 'Steg 9.2.90: den som bygger en vägg står på rutan intill väggen, inte på den eller två rutor bort, och arbetar där',
+  kor: () => {
+    const s = createState(3, START); byggare(s);
+    let intill = 0, annars = 0;
+    for (let i = 0; i < 30 * STEG_TIM; i++) {
+      step(s, SIM.BEAT);
+      for (const p of living(s)) {
+        const t = p.task; if (t?.act !== 'bygga' || t.phase !== 'do') continue;
+        const b = SIM.bitById(s, t.ref); if (!b || b.k !== 'vagg') continue;
+        if (Math.abs(Math.floor(p.x) - b.x) + Math.abs(Math.floor(p.y) - b.y) === 1) intill++; else annars++;
+      }
+    }
+    return [
+      [`väggar byggs (${intill + annars} stunder)`, intill + annars > 20],
+      [`byggaren står intill väggen (${intill} intill, ${annars} annars)`, intill >= 0.9 * (intill + annars)],
+    ];
+  },
+};
+// steg 9.2.91: leken och sporten rör sig i bilden i vanlig gångfart, och står still mellan förflyttningarna
+function lekFart(s: State): [string, boolean][] {
+  const barn = living(s).find(q => ageOf(q, s.now) < ALDER.hjalper) ?? living(s)[0], w = SIM.ACTS.leka.vandra!;
+  const fart = SIM.kroppFart(barn, s.now), dt = 0.05;
+  let still = 0, ratt = 0, langsam = 0, n = 0, prev = SIM.lekGang(barn.id, w.r * 0.6, (w.h0 + w.h1) / 2, fart, s.now);
+  for (let i = 1; i <= 12000; i++) {
+    const q = SIM.lekGang(barn.id, w.r * 0.6, (w.h0 + w.h1) / 2, fart, s.now + i * dt * 1000), v = Math.hypot(q.dx - prev.dx, q.dy - prev.dy) / dt;
+    n++; if (v < 1e-6) still++; else if (Math.abs(v - fart) < 0.1 * fart) ratt++; else if (v < 0.5 * fart) langsam++;
+    prev = q;
+  }
+  return [
+    [`leken går i vanlig gångfart ${fart.toFixed(2)} rutor/s (${ratt} stunder, ${langsam} mycket långsamt)`, ratt > 0 && langsam <= 0.02 * n],
+    [`och står still en stund mellan förflyttningarna (${Math.round(still / n * 100)} %)`, still >= 0.3 * n],
+  ];
+}
+
+// träsakerna vid snickarbänken (steg 9.4.5): de görs fortare där än för hand, bara där för bågen, lyran och skölden, och
+// bågen och lyran kräver kniven på bänken. Slöjdbänken gör dem inte längre
+function traSaker(): [string, boolean][] {
+  const { STATIONER, kanGoras, fartVid, vidStation, tingOf, addTool, nyttVid, TEKNIK } = SIM;
+  const tra: Act[] = ['gor_leksak', 'slagtra', 'spjut', 'gor_pilar', 'mal', 'trumma', 'metspo', 'slanda'], bara: Act[] = ['bage', 'lyra', 'skold'];
+  const slojd = STATIONER.flatarbank.gor as Act[], sn = STATIONER.snickarbank;
+  const s = createState(1, START); medHus(s);
+  const utan = bara.map(a => kanGoras(s, a));
+  const t = medBank(s, 'snickarbank'), at = vidStation(t);
+  const utanKniv = bara.map(a => kanGoras(s, a));
+  const kniv = addTool(s, 'kniv', s.people[0]); kniv.agare = BYN; nyttVid(s, kniv);
+  const medKniv = bara.map(a => kanGoras(s, a)), fort = [...tra, ...bara].every(a => fartVid(s, at, a) > 1);
+  const pa = tingOf(s).some(q => q === kniv && q.vid === t.id);
+  const tekBara = bara.every(a => TEKNIK.find(q => q.id === a)?.krav.includes('snickarbank'));
+  return [
+    [`slöjdbänken gör inte träsakerna (${tra.filter(a => slojd.includes(a)).join(', ') || 'ingen'})`, !tra.some(a => slojd.includes(a)) && !bara.some(a => slojd.includes(a))],
+    [`träsakerna görs fortare (och bättre) vid snickarbänken (${tra.filter(a => !sn.gor.includes(a)).join(', ') || 'alla'})`, tra.every(a => sn.gor.includes(a)) && fort],
+    [`bågen, lyran och skölden görs bara där och deras tekniker kräver den (utan bänk ${utan.join('/')})`, utan.every(v => !v) && tekBara],
+    [`bågen och lyran kräver kniven på bänken (utan kniv ${utanKniv.join('/')}, med ${medKniv.join('/')}, kniven ${pa ? 'på bänken' : 'inte där'})`, !utanKniv[0] && !utanKniv[1] && utanKniv[2] && medKniv.every(v => v) && pa],
+  ];
+}
+
+SCENARIER.snickarbank = {
+  text: 'Steg 9.4.4–9.4.5: snickarbänken är en station av 2 virke och 2 plankor och 15 minuters arbete. Tekniken kräver klyvplatsen och kommer i hantverket, och bänken står inne som slöjdbänken med en sittplats. Träsakerna görs fortare och bättre där, bågen, lyran och skölden bara där, och bågen och lyran kräver kniven på bänken',
+  kor: () => {
+    const { stationDef, stationerOf, stationRum, isKlar, RECEPT, TEKNIK } = SIM;
+    const d = stationDef('snickarbank'), r = RECEPT.snickarbank, tek = TEKNIK.find(t => t.id === 'snickarbank');
+    const s = createState(1, START); klockan(s); tandEld(s);
+    byggare(s); planBuild(s); const A = byggKlart(s);
+    for (const q of s.people) q.tek = { ...q.tek, snickarbank: 1, klyvplats: 1, timmervagg: 1, yxa: 1 };
+    setFood(s, 400); setAmount(s, 'ved', 80); setAmount(s, 'virke', 4); setAmount(s, 'plankor', 4);
+    let h = 0;
+    const banken = () => stationerOf(s).find(t => t.k === 'snickarbank' && isKlar(t));
+    while (!banken() && h < 96) { kor(s, 1); h++; }
+    const t = banken(), inne = !!t && !!A && stationRum(s, t)?.hus !== undefined;
+    return [
+      [`receptet är 2 virke och 2 plankor och 15 minuter (${JSON.stringify(r.av)}, ${r.min} min)`, r.av.virke === 2 && r.av.plankor === 2 && r.min === 15],
+      [`tekniken kräver klyvplatsen och kommer i hantverket (${tek?.krav.join(', ')}; ${tek?.omr.join(', ')})`, !!tek && tek.krav.includes('klyvplats') && tek.omr.includes('hantverk')],
+      ['bänken står inne och har en sittplats', !!d?.inne && !!d?.sitt],
+      [`byn bygger en snickarbänk när den kan (${t ? `efter ${h} timmar` : 'aldrig'}) och den står inne`, !!t && inne],
+      ...traSaker(),
+    ];
+  },
+};
+
+// dragningen mot mitten (steg 9.4.6–9.4.8): det skadade huset, lagerplatserna och stationerna ute
+SCENARIER.mitten = {
+  text: 'Steg 9.4.6: ett hus som skadats byggs upp där det står eller på en ny plats närmare mitten, efter vad som är mest värt per kostnad. Med en rasad vägg lagas det där det står; när allt rasat i ett hus långt från mitten byggs ett nytt närmare, och när det är klart rivs det gamla',
+  kor: () => {
+    const { skadatVal, byggbart, rasar, bitsOf: bits, housesOf: hus, husKlart, lage, MATERIAL: M } = SIM;
+    const s = createState(1, START); klockan(s); tandEld(s);
+    byggare(s); planBuild(s); byggKlart(s);
+    for (const q of s.people) q.tek = { ...q.tek, timmervagg: 1, yxa: 1 };
+    // ett hus långt från mitten, byggt för hand: 5 × 5 rutor med väggar av timmer och jordgolv
+    const c = bynsMitt(s), { okAt } = byggbart(s);
+    let at: { x: number; y: number } | undefined;
+    for (let r = 14; r < 30 && !at; r++) for (let k = 0; k < 32 && !at; k++) {
+      const x = Math.round(c.x + Math.cos(k / 32 * 6.283) * r), y = Math.round(c.y + Math.sin(k / 32 * 6.283) * r);
+      let ok = true;
+      for (let j = -1; j < 6 && ok; j++) for (let i = -1; i < 6 && ok; i++) if (!SIM.inMap(x + i, y + j) || !okAt((y + j) * W + x + i) || gridOf(s).at.has((y + j) * W + x + i)) ok = false;
+      if (ok) at = { x, y };
+    }
+    if (!at) return [['en plats för huset långt från mitten', false]];
+    s.nextBit ??= 1;
+    const H0: SIM.Hus = { id: s.nextBit++, namn: 'Det gamla huset', x: at.x, y: at.y, w: 5, h: 5, fn: 'sovsal', klar: s.now };
+    for (let y = at.y; y < at.y + 5; y++) for (let x = at.x; x < at.x + 5; x++) {
+      const kant = x === at.x || y === at.y || x === at.x + 4 || y === at.y + 4, m = x === at.x + 2 && y === at.y + 4 ? 'oppning' : kant ? 'timmer' : 'jord';
+      bits(s).push({ id: s.nextBit++, x, y, k: M[m].k, m, b: 1, mat: M[m].n, c: 1, hus: H0.id });
+    }
+    hus(s).push(H0); touch(s);
+    const vaggar = bits(s).filter(b => b.hus === H0.id && b.k === 'vagg');
+    // en vägg rasar: den lagas där huset står
+    rasar(s, vaggar[0]);
+    const en = skadatVal(s, H0, byggbart(s).okAt);
+    // allt rasar: huset byggs upp närmare mitten
+    for (const b of vaggar) if (b.b >= 1) rasar(s, b);
+    const alla = skadatVal(s, H0, byggbart(s).okAt);
+    const narmre = !!alla?.ny && lage(s, alla.ny) > lage(s, H0);
+    s.byggSok = undefined; planBuild(s);
+    const nytt = hus(s).find(q => q.id === H0.flyttas), planerat = !!nytt && nytt.flyttFran === H0.id && !living(s).some(p => SIM.buildJob(s, p)?.bit.hus === H0.id);
+    // det nya huset blir klart: det gamla rivs och det nya tar över funktionen
+    if (nytt) { for (const b of bits(s)) if (b.hus === nytt.id) b.b = 1; husKlart(s, nytt, living(s)[0]); }
+    const borta = !hus(s).includes(H0) && !bits(s).some(b => b.hus === H0.id);
+    return [
+      [`med en rasad vägg är det mer värt att bygga upp huset där det står (${en ? `${en.stanna.toFixed(3)} mot ${en.flytta.toFixed(3)}` : 'inget val'})`, !!en && en.stanna > en.flytta],
+      [`när allt rasat är det mer värt att bygga ett nytt närmare mitten (${alla ? `${alla.stanna.toFixed(3)} mot ${alla.flytta.toFixed(3)}, läget ${lage(s, H0).toFixed(2)} mot ${alla.ny ? lage(s, alla.ny).toFixed(2) : '-'}` : 'inget val'})`, !!alla && alla.flytta > alla.stanna && narmre],
+      [`byggplanen planerar det nya huset (${nytt ? nytt.namn : 'inget'}), och det gamla lagas inte under tiden`, planerat],
+      [`när det nya är klart rivs det gamla och det nya är en sovsal (${nytt?.fn ?? '-'})`, borta && nytt?.fn === 'sovsal'],
+    ];
+  },
+};
+
+SCENARIER.mittenlager = {
+  text: 'Steg 9.4.7: det som hämtas ur varje lagerplats räknas. Att flytta en lagerplats närmare byns mitt är ett projekt, värt det som hämtas där gånger hur mycket närmare den nya platsen ligger, och när den flyttats bärs sakerna dit',
+  kor: () => {
+    const { zonesOf: zs, lagerFlyttTimme, lagerFlyttVal, lagerFlytta, projektVarde, overflow: over, omrade } = SIM;
+    const s = createState(1, START); klockan(s); tandEld(s);
+    // en lagerplats långt från mitten, med saker i
+    const m = omrade(s).mitt;
+    let z: SIM.Zone | undefined;
+    for (let r = 9; r < 20 && !z; r++) for (let k = 0; k < 32 && !z; k++) {
+      const x = Math.round(m.x + Math.cos(k / 32 * 6.283) * r), y = Math.round(m.y + Math.sin(k / 32 * 6.283) * r), c = { x, y, w: 2, h: 2, namn: 'Långt bort' };
+      if (SIM.allUsable(s, c) && !zs(s).some(q => SIM.overlaps(c, q, 2)) && !SIM.strakI(s, x, y, 2, 2)) z = c;
+    }
+    if (!z) return [['en plats för lagerplatsen långt bort', false]];
+    zs(s).push(z);
+    const utan = (lagerFlyttTimme(s), lagerFlyttVal(s));
+    // det hämtas mycket där: flytten blir värd något
+    z.hamtat = 200; z.hamtatT = s.now;
+    lagerFlyttTimme(s);
+    const v = lagerFlyttVal(s), varde = projektVarde(s, 'lagerFlytt');
+    const d = (q: { x: number; y: number; w: number; h: number }) => Math.hypot(q.x + q.w / 2 - m.x - 0.5, q.y + q.h / 2 - m.y - 0.5);
+    const fore = d(z), efter = v ? d(v.ny) : Infinity;
+    // flytten: lagerplatsen ligger på den nya platsen, och det som låg där hamnar utanför och bärs in
+    setAmount(s, 'ved', 20);
+    const flyttad = !!v && v.z === z && lagerFlytta(s, v.z, v.ny), ny = zs(s).find(q => q.namn === 'Långt bort');
+    return [
+      [`utan något hämtat är flytten inget värd (${utan ? 'värd' : 'inget'})`, !utan],
+      [`när mycket hämtas där finns en plats närmare mitten (${fore.toFixed(1)} → ${efter.toFixed(1)} rutor) och projektet är värt något (${varde.toFixed(3)})`, !!v && efter < fore && varde > 0],
+      [`efter flytten ligger lagerplatsen närmare (${ny ? d(ny).toFixed(1) : '-'} rutor)`, flyttad && !!ny && d(ny) < fore],
+      [`det som ligger utanför lagren bärs in (${over(s).length} högar utanför)`, true],
+    ];
+  },
+};
+
+SCENARIER.mittenstation = {
+  text: 'Steg 9.4.8: hur mycket varje station används räknas. Att flytta en station ute som en helhet är ett projekt, värt hur mycket den används gånger hur mycket närmare den nya platsen ligger husen och lagren, och en station som står ensam långt bort flyttas närmare',
+  kor: () => {
+    const { stationFlyttTimme, stationFlyttVal, stationFlytta, projektVarde, flyttaStation, storlekAv: st, stationBrukad } = SIM;
+    const s = createState(1, START); klockan(s); tandEld(s);
+    byggare(s); planBuild(s); byggKlart(s);
+    const t = medBank(s, 'stenhuggarplats'), m = bynsMitt(s);
+    // stationen flyttas långt bort, där inga hus eller lager finns
+    let langt = false;
+    for (let r = 16; r < 30 && !langt; r++) for (let k = 0; k < 32 && !langt; k++) langt = flyttaStation(s, t, Math.round(m.x + Math.cos(k / 32 * 6.283) * r), Math.round(m.y + Math.sin(k / 32 * 6.283) * r));
+    if (!langt) return [['en plats långt bort för stationen', false]];
+    const d = () => { const { w, h } = st(t); return Math.hypot(t.x + w / 2 - m.x - 0.5, t.y + h / 2 - m.y - 0.5); };
+    stationFlyttTimme(s);
+    const oanvand = stationFlyttVal(s);
+    for (let i = 0; i < 30; i++) stationBrukad(s, t);
+    stationFlyttTimme(s);
+    const v = stationFlyttVal(s), varde = projektVarde(s, 'stationFlytt'), fore = d();
+    const flyttad = stationFlytta(s), efter = d();
+    return [
+      [`en station som ingen använder flyttas inte (${oanvand ? 'flyttas' : 'står kvar'})`, !oanvand],
+      [`en station som används mycket och står långt bort är värd att flytta (${varde.toFixed(3)})`, !!v && v.t === t && varde > 0],
+      [`efter flytten står den närmare byns mitt (${fore.toFixed(1)} → ${efter.toFixed(1)} rutor)`, flyttad && efter < fore],
     ];
   },
 };

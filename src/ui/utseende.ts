@@ -3,8 +3,8 @@
 // födseln: ett barn ärver dem från mamman och pappan (barnAv), och de första i byn, nykomlingarna och personerna i byar
 // som sparats före porträtten får dem slumpade ur byns frö och personens nummer. Allt räknas ur numret och föräldrarna,
 // så att samma person alltid ser likadan ut och simuleringen inte märker något. Bara utseende.
-import { ALDER, BERATT, BESK_ANSIKTE, KLADMATERIAL, KROPP, ageOf, blodning, byId, hash, isSick, kladAv, load, moodOf, utbrottNu, utrustning } from '../sim';
-import type { Person, Rovare, State } from '../sim';
+import { infStadium, blodSteg, ALDER, BERATT, BESK_ANSIKTE, KLADMATERIAL, KROPP, ageOf, blodning, byId, hash, isSick, kladAv, load, moodOf, utbrottNu, utrustning } from '../sim';
+import type { Person, State } from '../sim';
 import { KARNA } from '../portrattkarna';
 import { s as visad, uppgiftVid } from './lage';
 
@@ -12,7 +12,7 @@ import { s as visad, uppgiftVid } from './lage';
 export interface Skapad {
   kon: 'kvinna' | 'man'; alder: 'barn' | 'ung' | 'vuxen' | 'gammal'; del: Record<string, string | null>; hud: number; har: number; ogon: number;
   humor: string; skonhet: number; forband: string[]; ogonlapp: boolean; sjuk: boolean; kyla: boolean; blod: boolean;
-  klader: { rock: string | null; skor: boolean; balte: boolean; axelrem?: boolean; ryggsack?: boolean; krokar?: number }; lagen: Record<string, string>; lager: string[] | null; rynkor: number | null;
+  klader: { rock: string | null; skor: boolean; balte: boolean; axelrem?: boolean; ryggsack?: boolean; krokar?: number; byxor?: string; skjorta?: boolean }; lagen: Record<string, string>; lager: string[] | null; rynkor: number | null;
   anlag?: { skagg: string | null; frisyr: string | null };
 }
 // åldern i skaparen: barn tills man är vuxen i byn, ung till 30, vuxen till 55 och sedan gammal (registret aldrar)
@@ -76,7 +76,7 @@ function kropp(s: State, p: Person, del: Record<string, string | null>) {
   const huvud = (p.skador ?? []).filter(w => w.d === 'huvud');
   const forband = huvud.some(w => w.f) ? ['forband-huvud'] : [];
   if (huvud.some(w => !w.f && (w.k === 'blamarke' || w.k === 'krossar'))) del.blamarke = 'blamarke-1';
-  return { humor, forband, ogonlapp: !!p.saknas?.some(d => d === 'ogaV' || d === 'ogaH'), sjuk: isSick(p, s.now), kyla: p.warm < KROPP.kallt, blod: blodning(p) > 0 };
+  return { humor, forband, ogonlapp: !!p.saknas?.some(d => d === 'ogaV' || d === 'ogaH'), sjuk: isSick(p, s.now) || blodSteg(p) >= 1 || (p.skador ?? []).some(w => infStadium(w) >= 2) /* blek av blodförlusten (steg 9.5.17) och av feber i ett sår (steg 9.5.24) */, kyla: p.warm < KROPP.kallt, blod: blodning(p) > 0 };
 }
 export function skapad(s: State, p: Person): Skapad {
   const d = drag(s, p), alder = alderAv(ageOf(p, s.now));
@@ -101,6 +101,8 @@ function utrustad(s: State, p: Person, u: Skapad) {
     if (!a) continue;
     if (a.plagg === 'rock' || a.plagg === 'mantel') u.klader.rock = KLADMATERIAL[a.mat].namn; // manteln syns som en rock tills Björn valt (steg 8.3.14)
     else if (a.plagg === 'skor') u.klader.skor = true;
+    else if (a.plagg === 'byxor') u.klader.byxor = KLADMATERIAL[a.mat].namn; // byxorna och skjortan syns på kartfiguren (steg 9.2.58)
+    else if (a.plagg === 'skjorta') u.klader.skjorta = true;
     else if (a.plagg === 'balte') u.klader.balte = true;
     else if (a.plagg === 'axelrem') u.klader.axelrem = true;
     else if (a.plagg === 'ryggsack') u.klader.ryggsack = true;
@@ -154,8 +156,8 @@ export function handlarSkapad(s: State, namn: string, sex: 'm' | 'k'): Skapad {
 }
 export const ROVARDRAKT = { luva: 0.35, duk: 0.3, rovarskinn: 0.45, vargskinn: 0.2 };
 const RARV = new Map<string, Skapad>();
-export function rovarSkapad(s: State, r: Rovare, humor: string): Skapad {
-  const k = s.seed + ':' + r.namn + ':' + r.sex;
+export function rovarSkapad(s: State, r: Person, humor: string): Skapad {
+  const k = s.seed + ':' + r.name + ':' + r.sex;
   let d = RARV.get(k);
   if (!d) {
     let h = s.seed | 0;
@@ -169,5 +171,5 @@ export function rovarSkapad(s: State, r: Rovare, humor: string): Skapad {
     if (RARV.size > 200) RARV.clear();
     RARV.set(k, d);
   }
-  return { ...d, del: { ...d.del, redskap: REDSKAP.get(r.vapen) ?? null }, humor, blod: r.blod < 0.7 };
+  return { ...d, del: { ...d.del, redskap: REDSKAP.get(r.gast?.vapen ?? '') ?? null }, humor, blod: r.blod < 0.7 };
 }

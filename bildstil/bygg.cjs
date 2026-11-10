@@ -18,6 +18,7 @@ ${fs.readFileSync(d + '/kropp.html', 'utf8').replace('<section aria-labelledby="
 <script>${fs.readFileSync(d + '/fas7.js', 'utf8')}</script>
 ${fs.readdirSync(d + '/fas7').filter(f => f.endsWith('.js')).sort((a, b) => a.localeCompare(b, 'sv', { numeric: true })).map(f => `<script>${fs.readFileSync(d + '/fas7/' + f, 'utf8')}</script>`).join('\n')}
 ${fs.readdirSync(d + '/fas8').filter(f => f.endsWith('.js')).sort((a, b) => a.localeCompare(b, 'sv', { numeric: true })).map(f => `<script>${fs.readFileSync(d + '/fas8/' + f, 'utf8')}</script>`).join('\n')}
+${fs.readdirSync(d + '/fas9').filter(f => f.endsWith('.js')).sort((a, b) => a.localeCompare(b, 'sv', { numeric: true })).map(f => `<script>${fs.readFileSync(d + '/fas9/' + f, 'utf8')}</script>`).join('\n')}
 ${fs.readdirSync(d + '/svar').filter(f => f.endsWith('.js')).sort().map(f => `<script>${fs.readFileSync(d + '/svar/' + f, 'utf8')}</script>`).join('\n')}
 <script>${fs.readFileSync(d + '/fas11.js', 'utf8')}</script>
 <script>const PORTRATT = ${fs.readFileSync(d + '/portratt.json', 'utf8')};</script>
@@ -26,5 +27,7 @@ ${fs.readdirSync(d + '/svar').filter(f => f.endsWith('.js')).sort().map(f => `<s
 <script>const GAMLA = ${fs.existsSync(d + '/gamla.json') ? fs.readFileSync(d + '/gamla.json', 'utf8') : '{}'};</script>
 <script>const BILDFILER = ${JSON.stringify(Object.fromEntries(fs.readdirSync(d + '/bilder').filter(f => f.endsWith('.json')).sort().map(f => { const o = JSON.parse(fs.readFileSync(d + '/bilder/' + f, 'utf8')); return [o.id, o]; })))};</script>
 <script>${fs.readFileSync(d + '/skapare.js', 'utf8')}</script>
+<script>const BESTDATA = ${JSON.stringify(fs.existsSync(d + '/bestar') ? Object.fromEntries(fs.readdirSync(d + '/bestar').filter(f => f.endsWith('.json')).sort().map(f => { const o = JSON.parse(fs.readFileSync(d + '/bestar/' + f, 'utf8')); return [o.lager, o]; })) : {})};</script>
+<script>${fs.readFileSync(d + '/bestskapare.js', 'utf8')}</script>
 <script>${fs.readFileSync(d + '/rita.js', 'utf8')}</script>`;
 fs.writeFileSync(process.env.BILDSTIL_UT || d + '/bildstil.html', html); console.log('ok', html.length);

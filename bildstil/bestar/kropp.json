@@ -1,0 +1,11 @@
+{
+  "lager": "kropp",
+  "om": "Ritat av Claude API:t med bildstil/api/bestar.mjs: former och mönster som bestskaparen gör om till delar.",
+  "kostnad": 0.469,
+  "anteckningar": {"kropp":"Upprätt och Långhals gick ut över överkanten med horn och huvud: halsens slut sänkt till y≈23–24. Upprätt fick dessutom en lägre bakdel och brantare lutning så att den skiljer sig mer från Bjässe. Övriga delar är oförändrade.","kropp:former":"Groda och Kentaur kraschade eftersom benpar saknades; de har nu egna benpar vid h och f. Tusenfotingen är flyttad framåt (svansänden från x 6 till 14) och Sälens stjärtfena inåt, så att ingen av dem går utanför vänsterkanten. Krabban läste som ett fyrbent djur med en gul banan. Skalet är nu större och hänger ut över benen, har tydligare knottror, och klon är av skal i stället för hard. Benen sitter mer utspridda. Fladdermusens vinge såg ut som ett förkläde. Armen viker nu upp till en spets över axeln innan den går ner till knogen, och hinnan följer den. Vingar har lagts till i utan. Stubben har en splittrad topp, djupare fåror i barken och mossan flyttad till sidan, så att den inte läses som en tunna. Spindelns benpar sitter lite mer utspridda. Tvåbent och Igel är oförändrade."},
+  "delar": [
+    {"bal":[[40,54],[44,46],[52,40],[62,34],[70,28],[78,24],[86,26],[90,34],[88,44],[82,52],[72,58],[58,60],[48,60],[41,58]],"nacke":[[82,34],[91,23]],"nackeR":[8,6],"h":[48,52],"f":[80,42],"svans":[42,54],"vinge":[72,30],"lang":[46,84],"id":"kropp-1","namn":"Upprätt","text":"Reser sig högt på bakdelen med bröstet lyft och halsen sträckt uppåt som ett djur som vädrar."},
+    {"bal":[[34,50],[40,46],[50,44],[60,43],[70,42],[80,42],[86,44],[88,48],[84,52],[74,54],[62,54],[50,55],[40,55],[35,53]],"nacke":[[82,46],[92,40]],"nackeR":[6,5],"h":[42,50],"f":[78,48],"svans":[36,50],"vinge":[68,44],"lang":[38,86],"id":"kropp-4","namn":"Seg","text":"Smal och utdragen som en mård, med en tunn hals som lyfter huvudet lätt."},
+    {"bal":[[38,42],[44,36],[54,36],[64,34],[74,30],[82,30],[88,34],[90,42],[86,52],[78,56],[70,50],[60,46],[50,46],[42,46]],"nacke":[[82,36],[92,32]],"nackeR":[7,5],"h":[44,42],"f":[80,44],"svans":[40,42],"vinge":[72,32],"lang":[44,86],"id":"kropp-10","namn":"Varg","text":"Högbent med djupt bröst och en insjunken midja, som ett svältande jaktdjur."}
+  ]
+}

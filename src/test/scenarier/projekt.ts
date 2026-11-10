@@ -3,6 +3,8 @@ import { createState, living, ageOf, ALDER, chooseTask, dangers, GORS, STATION_L
 import * as SIM from '../../sim';
 import { START } from '../kor';
 import { setItems, setFood, SCENARIER, medBank, kor, byggKlart } from './hjalp';
+import { setByn } from '../../ui/lage';
+import { pabudDel } from '../../ui/flikar/styre';
 
 // en by där alla vuxna kan allt, med material till allt och elden tänd mitt på dagen
 function by(seed: number) {
@@ -129,7 +131,13 @@ SCENARIER.arbetspabud = {
     SIM.arbetsTimme(s); const utan = { ...s.arbBehov!.arb }, byggUtan = SIM.pabud(s, 'bygg');
     s.styre.pabud = { bygg: 1, vinter: 1 };
     SIM.arbetsTimme(s); const med = { ...s.arbBehov!.arb }, byggMed = SIM.pabud(s, 'bygg');
+    // i ord i Styre (steg 9.2.123): hur ofta och hur många fler, inte procent; ledaren vill under det lägsta värdet: ingen pil
+    setByn(s); const html = pabudDel();
+    s.styre.pabud = { bygg: -1, vinter: -1 }; const lag = pabudDel();
+    const ord = /<b>(alltid|ofta|ibland)<\/b>/.test(html) && /<b>(många fler|några fler)<\/b>/.test(html);
     return [
+      [`påbuden står i ord i Styre (${html.match(/<b>[^<]*<\/b>/g)?.join(' ').replace(/<\/?b>/g, '') ?? '–'})`, ord],
+      ['ledaren vill under det lägsta värdet: ingen pil', !/[▲▼]/.test(lag.replace(/title="[^"]*"/g, ''))],
       [`Samla för vintern ger fler händer (mat ${utan.mat} → ${med.mat}, ved ${utan.ved} → ${med.ved})`, med.mat > utan.mat && med.ved >= utan.ved],
       [`Bygg före allt gäller bara när ledaren vill (${byggUtan.toFixed(2)} → ${byggMed.toFixed(2)})`, byggUtan <= 0 && byggMed > 0],
       [`påbuden finns i registret och visas i Byn (${SIM.PABUD.bygg.namn}, ${SIM.PABUD.vinter.namn})`, SIM.PABUD_LIST.includes('bygg') && SIM.PABUD_LIST.includes('vinter')],
@@ -164,19 +172,20 @@ SCENARIER.fullaforrad = {
       const vuxen = (q: SIM.Person, v: State) => ageOf(q, v.now) >= ALDER.vuxen;
       // det som fyller förråden mellan bufferten och taket (raden fylla). Den egna maten (bufferten per jag, steg 6.2.20), redskapen och
       // sängarna är andra rader; sängarna och repet drar hö och grenar, och taket för dem följer förbrukningen (steg 6.2.14)
-      const prov = (s: State) => { const r = { matVed: 0, mer: 0, overTak: 0 }; const sett = new WeakSet<object>(); kor(s, 8, v => { for (const q of living(v)) if (vuxen(q, v) && q.task && !sett.has(q.task)) {
+      // förrådet som det var när slaget började: valet görs mitt i slaget, och andras bördor kan läggas in efter det i samma slag
+      const prov = (s: State) => { const r = { matVed: 0, mer: 0, overTak: 0 }; const sett = new WeakSet<object>(), fore = { grenar: SIM.amountOf(s, 'grenar'), torrgras: SIM.amountOf(s, 'torrgras') }; kor(s, 8, v => { for (const q of living(v)) if (vuxen(q, v) && q.task && !sett.has(q.task)) {
         sett.add(q.task); const why = q.task.why ?? '';
         if (/^Mer (mat|ved) /.test(why)) r.matVed++;
         if (why.startsWith('Mer ')) r.mer++;
         const k = /^Mer (grenar|hö) /.exec(why)?.[1];
         const m = k === 'hö' ? 'torrgras' : 'grenar';
-        if (k && SIM.amountOf(v, m) > SIM.materialTak(v, m) + 1e-9) r.overTak++; // över taket (vid taket kan valet ha gjorts innan den sista bördan lades in)
-      } }); return r; };
+        if (k && fore[m] > SIM.materialTak(v, m) + 1e-9) r.overTak++; // över taket redan när slaget började
+      } fore.grenar = SIM.amountOf(v, 'grenar'); fore.torrgras = SIM.amountOf(v, 'torrgras'); }); return r; };
       const pf = prov(full), ph = prov(halv);
       const fri = (v: State) => v.stat?.fullaForrad ?? 0;
       return [
         [`i den fulla byn fyller ingen på maten eller veden (${pf.matVed} uppgifter), i byn vid bufferten fylls förråden (${ph.mer})`, pf.matVed === 0 && ph.mer > 0],
-        [`ingen samlar grenar eller hö till förrådet när det är över taket (${pf.overTak + ph.overTak} gånger; en kan ses efter att någon annan lagt in en börda i samma steg)`, pf.overTak + ph.overTak <= 1],
+        [`ingen samlar grenar eller hö till förrådet när det är över taket (${pf.overTak + ph.overTak} gånger)`, pf.overTak + ph.overTak <= 1],
         // också byn vid bufferten når taken under dagen när den fyllt på, så antalen jämförs inte (steg 6.2.21)
         [`de vuxna i den fulla byn får fritid när inget finns kvar att göra (${fri(full)} gånger; ${fri(halv)} i byn vid bufferten när den fyllt på)`, fri(full) > 0],
       ];

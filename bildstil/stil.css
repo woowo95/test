@@ -284,3 +284,20 @@ details.mer p { color: var(--dim); max-width: 62ch; margin: 4px 0 0; }
 .gr-svar .gr-knapp { justify-self: start; }
 .gr-sparat { color: var(--dim); min-height: 1.5em; }
 .grkort button:disabled, .grkort textarea:disabled { opacity: 0.5; cursor: not-allowed; }
+#bs-bild { width: 100%; max-width: 544px; height: auto; aspect-ratio: 136 / 99; }
+.bs-sparad canvas { aspect-ratio: 136 / 99; }
+.bs-sparade { display: grid; gap: 10px; }
+.bs-sparad { display: flex; gap: 10px; align-items: center; }
+.bs-sparad button { padding: 4px; flex: none; }
+.bs-sparad canvas { width: 136px; height: auto; }
+#bs-val .sk-rad { grid-template-columns: 8.6em minmax(0, 1fr); }
+@media (max-width: 420px) { #bs-val .sk-rad { grid-template-columns: minmax(0, 1fr); } }
+/* bestskaparen: versionerna av den valda delen (✎ handgjord, siffrorna från API:t) */
+.bs-kortbilder { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 544px)); gap: 10px; }
+.bs-kortbilder figure { margin: 0; display: grid; gap: 4px; min-width: 0; }
+.bs-kortbilder canvas { width: 100%; height: auto; aspect-ratio: 136 / 99; image-rendering: pixelated; }
+.bs-kortbilder figcaption { color: var(--dim); font-size: 14px; }
+#bs-granska .gr-sorter { margin: 4px 0; }
+@media (min-width: 781px) { #bestskapare .sk-scen { position: sticky; top: 8px; } }
+#bs-val .sk-rad.sk-utan { opacity: 0.4; }
+#bs-val .sk-rad.sk-utan .sk-namn { text-decoration: line-through; }

@@ -31,6 +31,8 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { korProcess, pool, seedAv, sek, sistaJson } from './pool';
 import { NYCKELTAL, Matt, Nyckeltal, STOR, median, medel, snittTal, vardeAv } from './nyckeltal';
+import { matUnderTestet } from './matare';
+matUnderTestet(); // datorns kärnor och minne under testet (steg 9.2.61)
 
 const ROT = fileURLToPath(new URL('../..', import.meta.url));
 const SATS = 8; // byar per omgång

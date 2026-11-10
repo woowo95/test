@@ -1,5 +1,5 @@
 import { INDIVID, bjornarOf, stridOf, djurOf, dragOf, fagelFlockar, faglarOf, grupperOf, halsaOf, kortTal, radjurGrupper, radjurOf, vargarOf } from '../../sim';
-import { iconImg } from '../../ikoner';
+import { djurBild, hasIcon, iconCanvas, iconImg } from '../../ikoner';
 import { bar, condBar, esc } from '../hjalp';
 import { djurSynliga } from '../vaxter';
 import { s, ui } from '../lage';
@@ -10,6 +10,14 @@ import type { Flik } from '../panel';
 // för den starkaste och snabbaste av arten (artens värde plus spannet mellan individerna, INDIVID.spann)
 const rad = (namn: string, andel: number, varde: string, text: string, cls = '') =>
   `<dt title="${esc(text)}">${esc(namn)}</dt><dd title="${esc(text)}">${cls === 'cond' ? condBar(andel) : bar(andel, cls)}<span>${varde}</span></dd>`;
+// porträttet på kortet (steg 9.2.51): det levande djuret från sidan, helt och i sina egna proportioner (bilden på kartan), aldrig
+// den döda bilden, som bara är kadavret på kartan. Gånger två, högst 64 punkter brett
+function levande(d: { art: string; id: number }) {
+  const art = d.art as 'varg' | 'kanin' | 'radjur' | 'bjorn' | 'bjornunge', k = ['varg', 'kanin', 'radjur', 'bjorn', 'bjornunge'].includes(art) ? djurBild(art, d.id, 'sida') : undefined;
+  if (!k || !hasIcon(k)) return iconImg(d.art, 32);
+  const c = iconCanvas(k), sk = Math.max(1, Math.min(4, Math.floor(64 / Math.max(c.width, c.height))));
+  return `<img class="ikon" src="${c.toDataURL()}" width="${c.width * sk}" height="${c.height * sk}" alt="" style="image-rendering: pixelated">`;
+}
 function djurHtml() {
   const d = djurSynliga().find(x => x.id === ui.djurId) ?? [...djurOf(s, ui.nu), ...radjurOf(s, ui.nu), ...faglarOf(s, ui.nu), ...bjornarOf(s, ui.nu), ...vargarOf(s)].find(x => x.id === ui.djurId);
   if (!d) return '<p class="muted">Djuret syns inte längre här.</p>';
@@ -18,7 +26,7 @@ function djurHtml() {
   const jfr = (v: number, bas: number) => v > bas * 1.08 ? 'mer än de flesta' : v < bas * 0.92 ? 'mindre än de flesta' : 'som de flesta';
   const pr = (v: number) => `${Math.round(v * 100)} %`;
   return `
-    <div class="phead">${iconImg(d.art, 32)}<div><h2>${esc(art.art)}</h2></div></div>
+    <div class="phead">${levande(d)}<div><h2>${esc(art.art)}</h2></div></div>
     <dl class="kv">
       ${rad('Ålder', drag.alder / art.alder, `${drag.alder} år`, `${drag.alder} år gammal. En ${art.art.toLowerCase()} blir högst ${art.alder} år.`)}
       ${rad('Styrka', drag.styrka / (art.styrka * topp), kortTal(drag.styrka), `Styrka ${kortTal(drag.styrka)}, ${jfr(drag.styrka, art.styrka)}`)}

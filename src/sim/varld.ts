@@ -1,4 +1,7 @@
+import { delarIRad } from './stationer';
 import { nyaKlaner } from './klaner';
+import { gastAv, nyGast, nyttGastId } from './gast';
+import { gastNyckel } from './gastliv';
 import { migrateTek } from './teknik';
 import { stepDelning } from './delning';
 import { put, setStock, storeFromSums } from './lager';
@@ -233,6 +236,62 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
   }],
   [24, 'v378: historikens kolumner (eld sedan v357) i registrets ordning redan när byn läses in (steg 5.5.7)', s => historikKolumner(s)],
   [25, 'v510: de nya vågskålarna (steg 8.3.4 och 8.3.5) börjar på noll', s => { s.seder.v.fortjanst ??= 0; s.seder.v.fejd ??= 0; s.seder.v.krig ??= 0; s.seder.v.delning ??= 0; s.seder.v.natur ??= 0; s.seder.v.andlig ??= 0; }],
+  [26, 'v513: färdigheten Läkekonst (steg 9.5.7) börjar på noll', s => { for (const p of s.people) p.skill.lakekonst ??= 0; }],
+  [27, 'v518: handlaren är en person bland folket (steg 9.2.111, gast.ts): namnet, hemmet, klanen, platsen och färdigheten flyttar till personen', s => {
+    const h = s.handlare as (import('./handel').Handlare & { namn?: string; hem?: string; klan?: number; sex?: 'm' | 'k'; x?: number; y?: number; handel?: number; fodd?: number; smitta?: import('./sjukdom').SjukId }) | undefined;
+    if (!h || h.namn === undefined || gastAv(s, h.id)) return;
+    const p = nyGast(s, { id: h.id, namn: h.namn, sex: h.sex ?? 'm', fodd: h.fodd ?? s.now - 35 * DAY, rad: { sort: 'handlare', klan: h.klan, hem: h.hem }, x: h.x ?? h.mx, y: h.y ?? h.my, nyckel: gastNyckel(h.klan, h.namn), skill: { handel: h.handel ?? 0 } });
+    if (h.smitta) p.smitta = h.smitta;
+    s.people.push(p);
+    for (const k of ['namn', 'hem', 'klan', 'sex', 'x', 'y', 'handel', 'fodd', 'smitta'] as const) delete h[k];
+  }],
+  [28, 'v518: rövarna är personer bland folket (steg 9.2.112, rovare.ts): flocken minns bara deras id', s => {
+    type Gammal = { namn: string; sex: 'm' | 'k'; st: { styrka: number; uthallighet: number; mod: number; smidighet: number; skicklighet: number }; vapen: import('./strid').Vapen; blod: number; fodd?: number; x?: number; y?: number; spar?: number[]; bar?: Record<string, number>; anhorig?: string };
+    for (const f of [s.rovare, ...(s.rovareFler ?? [])]) {
+      if (!f || !f.folk.some(r => typeof r !== 'number')) continue;
+      f.folk = (f.folk as unknown as Gammal[]).map(r => {
+        const ov = Math.max(0, (r.st.skicklighet - 5) * 2);
+        const p = nyGast(s, { id: nyttGastId(s), namn: r.namn, sex: r.sex, fodd: r.fodd ?? s.now - 30 * DAY, rad: { sort: 'rovare', klan: f.klan, vapen: r.vapen, ...(r.spar ? { spar: r.spar } : {}), ...(r.bar ? { bar: r.bar } : {}), ...(r.anhorig ? { anhorig: r.anhorig } : {}) }, x: r.x ?? f.x, y: r.y ?? f.y, nyckel: gastNyckel(f.klan, r.namn), pot: { styrka: r.st.styrka, uthallighet: r.st.uthallighet, mod: r.st.mod, smidighet: r.st.smidighet }, skill: { narstrid: ov, traff: ov } });
+        p.blod = r.blod;
+        s.people.push(p);
+        return p.id;
+      });
+    }
+  }],
+  [29, 'v521: örtköket står i tre delar (steg 9.4.3): härden, torkstället och bänken i en rad där örtköket stod', s => {
+    for (const t of s.stationer ?? []) if (t.k === 'ortkok' && !t.delar?.length) { const d = delarIRad(t.k, t.x, t.y, t.rot); if (d) t.delar = d; }
+  }],
+  [30, 'v521: pyntet lerkruka (steg 4.3.4) är inte längre en möbel: varje lerkruka blir en stor lerkruka (steg 9.4.11) på samma plats, med samma ägare och kvalitet', s => {
+    for (const t of (s.stationer ?? []).filter(q => q.k === 'kruka')) {
+      if (t.kvar <= 0) (s.ting ??= []).push({ id: s.nextTing = (s.nextTing ?? 0) + 1, k: 'lerkruka_stor', c: 1, agare: t.ag ?? 0, x: t.x, y: t.y, ...(t.q !== undefined ? { q: t.q } : {}) }); // ägaren, eller byn (0)
+    }
+    s.stationer = (s.stationer ?? []).filter(q => q.k !== 'kruka');
+  }],
+  [31, 'v521: vätskorna i behållare (steg 9.4.14): en fylld vattensäck har vatten i sig, tjäran läggs i stora lerkrukor och salvan och benlimmet i näveraskar som är byns', s => {
+    const ting = (s.ting ??= []);
+    for (const t of ting) if (t.fylld) { t.inne = { v: 'vatten', n: 1 }; delete t.fylld; }
+    const ny = (k: string, x: number, y: number, v: 'tjara' | 'salva' | 'benlim', n: number) => ting.push({ id: s.nextTing = (s.nextTing ?? 0) + 1, k, c: 1, agare: 0, x, y, inne: { v, n } });
+    for (const a of s.stackar ?? []) {
+      if (a.k !== 'tjara' && a.k !== 'salva' && a.k !== 'benlim') continue;
+      let n = Math.floor(a.n + 1e-9);
+      while (n > 0) { const d = a.k === 'tjara' ? Math.min(10, n) : 1; ny(a.k === 'tjara' ? 'lerkruka_stor' : 'naverask', a.x, a.y, a.k, d); n -= d; }
+      a.n = 0;
+    }
+    s.stackar = (s.stackar ?? []).filter(a => a.n > 1e-9 || (a.k !== 'tjara' && a.k !== 'salva' && a.k !== 'benlim'));
+  }],
+  [32, 'v522: färdigheten Odling (steg 9.7.7) börjar på noll', s => { for (const p of s.people) p.skill.odling ??= 0; }],
+  [33, 'v523: rättens hållbarhet är medelvärdet av ingrediensernas (steg 9.6.7): en rätt som höll länge (_l) håller tio dygn', s => {
+    const nytt = (k: string) => /^r_\w+_l$/.test(k) ? k.slice(0, -2) + '_h10' : k;
+    const gå = (o: unknown): unknown => {
+      if (typeof o === 'string') return nytt(o);
+      if (ArrayBuffer.isView(o)) return o;
+      if (Array.isArray(o)) { for (let i = 0; i < o.length; i++) o[i] = gå(o[i]); return o; }
+      if (o && typeof o === 'object') { const r = o as Record<string, unknown>; for (const k of Object.keys(r)) { const v = gå(r[k]), n = nytt(k); if (n !== k) delete r[k]; r[n] = v; } }
+      return o;
+    };
+    gå(s);
+  }],
+  [34, 'v523: färdigheten Djurskötsel (steg 9.8.1) börjar på noll', s => { for (const p of s.people) p.skill.skotsel ??= 0; }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

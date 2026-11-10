@@ -1,0 +1,48 @@
+{
+ "kommando": "rita",
+ "val": [
+  "textur"
+ ],
+ "kommentar": null,
+ "modell": "claude-opus-5-5",
+ "uppskattat": {
+  "lag": 1.34,
+  "hog": 2.69
+ },
+ "dollar": 0.886,
+ "rapport": [
+  "textur__pals 1: \"Päls Strån\"",
+  "textur__pals 2: \"Päls Lockar\"",
+  "textur__pals 3: \"Päls Man\"",
+  "textur__fjall 1: \"Fjäll tegel\"",
+  "textur__fjall 2: \"Fjäll pansar\"",
+  "textur__fjall 3: \"Fjäll bakåt\"",
+  "textur__skinn 1: \"Skinn veck\"",
+  "textur__skinn 2: \"Skinn läder\"",
+  "textur__skinn 3: \"Skinn sträckt\"",
+  "textur__slem 1: \"Slem rinnande\"",
+  "textur__slem 2: \"Slem pärlor\"",
+  "textur__slem 3: \"Slem hinna\"",
+  "textur__fjadrar 1: \"Fjädrar täta\"",
+  "textur__fjadrar 2: \"Fjädrar strimmiga\"",
+  "textur__fjadrar 3: \"Fjädrar breda\"",
+  "textur__bark 1: \"Bark och mossa, fåror\"",
+  "textur__bark 2: \"Bark och mossa, plattor\"",
+  "textur__bark 3: \"Bark och mossa, gammal ek\"",
+  "textur__sten 1: \"Sten murad\"",
+  "textur__sten 2: \"Sten skiktad\"",
+  "textur__sten 3: \"Sten kluven\"",
+  "textur__kitin 1: \"Kitin Sköld\"",
+  "textur__kitin 2: \"Kitin Pansar\"",
+  "textur__kitin 3: \"Kitin Revben\"",
+  "textur__glod 1: \"Glödande sprickor, basalt\"",
+  "textur__glod 2: \"Glödande sprickor, flöden\"",
+  "textur__glod 3: \"Glödande sprickor, aska\"",
+  "textur__padda 1: \"Paddhud vårtrader\"",
+  "textur__padda 2: \"Paddhud knölar\"",
+  "textur__padda 3: \"Paddhud slem\"",
+  "textur__rutten 1: \"Ruttnande sår\"",
+  "textur__rutten 2: \"Ruttnande fjäll\"",
+  "textur__rutten 3: \"Ruttnande mossa\""
+ ]
+}

@@ -1,4 +1,5 @@
-import { HELIGA_PLATSER, KVARLEVOR, clamp, living, handlarPlats, MASTERVERK, PERFEKT, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, W, bordPlatser, sjoarna, stationById, MATERIAL, Pile, STUBBE_LIV, Station, bitAt, bitsOf, dorrDef, condOf, emberOn, eldById, eldXY, eldarOf, fireHeat, forvarAt, Fire, heatRadius, TORK, torrDel, isKlar, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, zonesOf, groundOf, snoPaMarken, ageIndex, tradArt } from '../sim';
+import { rutorAv } from '../sim';
+import { VATSKOR, delarAv, HELIGA_PLATSER, KVARLEVOR, clamp, living, handlarPlats, MASTERVERK, PERFEKT, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, W, bordPlatser, sjoarna, stationById, MATERIAL, Pile, STUBBE_LIV, Station, bitAt, bitsOf, dorrDef, condOf, emberOn, eldById, eldXY, eldarOf, fireHeat, forvarAt, Fire, heatRadius, TORK, torrDel, isKlar, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, zonesOf, groundOf, snoPaMarken, ageIndex, tradArt, stockLangd } from '../sim';
 import { hasIcon, iconCanvas, kartbild, kartbildEnsam } from '../ikoner';
 import { KARTBILDER } from '../kartbilder';
 import { STUBBILDER } from '../stubbilder';
@@ -50,9 +51,15 @@ function drawPile(pl: Pile, t: number) {
   g.beginFill(0x24201d).drawRect(x0 + 2, y0 + 13.5, 12, 2).endFill().beginFill(condCol(c)).drawRect(x0 + 2, y0 + 13.5, 12 * clamp(c, 0, 1), 2).endFill();
   // ikoner: ju fullare stacken är desto fler, redskap som en större bild
   // en ensam symbol ritas i sina egna punkter mitt i rutan (steg 5.5.5): 8 punkter mitt över stapeln, 16 punkter över hela rutan
-  const ensam = (k: string) => { const w = iconCanvas(k).width || 8; if (w > 8) pileIcons.add(k, x0, y0 - 3, 1); else pileIcons.add(k, x0 + 4, y0 + 3, 1); };
+  // en behållare med något i (steg 9.4.14, platshållare tills Björn valt i bildstilen): en yta i vätskans färg
+  const inne = pl.id !== undefined ? tingOf(s).find(q => q.id === pl.id)?.inne : undefined;
+  const yta = () => { if (inne) overG.beginFill(VATSKOR[inne.v].farg).drawRect(x0 + 6, y0 + 4, 4, 2).endFill(); };
+  const ensam = (k: string) => { const w = iconCanvas(k).width || 8; if (w > 8) pileIcons.add(k, x0, y0 - 3, 1); else pileIcons.add(k, x0 + 4, y0 + 3, 1); yta(); };
   if (pl.gor) { ensam(pl.gor); framsteg(x0 + 12.5, y0 + 1.5, pl.klar ?? 0); return; } // påbörjat: framstegscirkeln i hörnet
   const n = clamp(Math.ceil(f * 4), 1, 4);
+  // en, några eller många (steg 9.2.40): har saken en egen bild för några eller många i bildstilen ritas den en gång, annars som förut
+  const mangd = pl.max === 1 || kartbildEnsam(pl.k) ? '' : f > 2 / 3 ? '_manga' : f > 1 / 3 ? '_nagra' : '';
+  if (mangd && KARTBILDER[pl.k + mangd]) { kartHog(pl.k + mangd, x0, y0, 1); if ((pl.q ?? 0) >= MASTERVERK) glans(x0 + 12, y0 + 3, t, pl.id ?? 0, pl.q === PERFEKT); return; }
   if (kartbild(pl.k)) {
     kartHog(pl.blot && KARTBILDER.ved_blot ? 'ved_blot' : variant(pl.k, pl.x, pl.y), x0, y0, pl.max === 1 || kartbildEnsam(pl.k) ? 1 : n);
     if ((pl.q ?? 0) >= MASTERVERK) glans(x0 + 12, y0 + 3, t, pl.id ?? 0, pl.q === PERFEKT);
@@ -76,18 +83,20 @@ function glans(x: number, y: number, t: number, id: number, perfekt: boolean) {
 function drawKarra() {
   const h = s.handlare;
   if (!h || !s.infart?.klar) return;
-  const p = handlarPlats(h, ui.nu), b = KARTBILDER.karra1!;
+  const p = handlarPlats(s, h, ui.nu), b = KARTBILDER.karra1!;
   pileIcons.add('kb_karra' + (1 + Math.abs(h.id) % 3), Math.round(p.x * TS - b.w - 3), Math.round(p.y * TS - b.h + 6), 1);
 }
 // grödans symbol när den är mogen, tills rutan skördats. Framstegscirkeln över rutan där någon röjer, gräver eller sår
 function drawFalt() {
+  for (const f of faltOf(s)) if ((s.skramma ?? []).includes(f.id)) { const X = f.x * TS, Y = f.y * TS; structG.lineStyle(1, 0x3f2415).moveTo(X + TS / 2, Y + 2).lineTo(X + TS / 2, Y + TS - 1).moveTo(X + 3, Y + 6).lineTo(X + TS - 3, Y + 6).lineStyle(0).beginFill(0xb2921b).drawRect(X + TS / 2 - 2, Y + 1, 4, 4).endFill(); } // fågelskrämman (steg 9.7.11): en platshållare
+  for (const i of s.staket ?? []) { const X = (i % W) * TS, Y = Math.floor(i / W) * TS; structG.lineStyle(1, 0x7d5b40).moveTo(X, Y + TS / 2).lineTo(X + TS, Y + TS / 2).moveTo(X + 2, Y + 3).lineTo(X + 2, Y + TS - 2).moveTo(X + TS - 3, Y + 3).lineTo(X + TS - 3, Y + TS - 2).lineStyle(0); } // staketet (steg 9.7.10): en platshållare tills Björn valt i bildstilen
   for (const f of faltOf(s)) {
-    const vaxer = f.steg === 'vaxer', mogen = f.steg === 'mogen', liten = vaxer && (f.vuxit ?? 0) < 0.5;
-    const lin = f.groda === 'lin'; // linet har egna bilder för fältet (steg 7.7.8)
-    const bild = mogen && f.groda ? (lin ? 'lin_mogen' : GRODOR[f.groda].sak) : vaxer ? (lin ? ((f.vuxit ?? 0) < 0.5 ? 'lin_ung' : 'lin_bla') : 'grodd') : undefined;
-    for (let k = 0; k < f.n; k++) {
+    const vaxer = f.steg === 'vaxer', mogen = f.steg === 'mogen', R = rutorAv(f);
+    for (let k = 0; k < f.n; k++) { // varje ruta efter sitt eget steg och sin gröda (steg 9.7.1)
+      const r = R[k], lin = r.g === 'lin', liten = r.st === 'vaxer' && (r.v ?? 0) < 0.5; // linet har egna bilder för fältet (steg 7.7.8)
+      const bild = r.st === 'mogen' && r.g ? (lin ? 'lin_mogen' : GRODOR[r.g].sak) : r.st === 'vaxer' ? (lin ? ((r.v ?? 0) < 0.5 ? 'lin_ung' : 'lin_bla') : 'grodd') : undefined;
       const i = faltRuta(f, k), X = (i % W) * TS, Y = Math.floor(i / W) * TS;
-      const klar = k < f.klara, rojd = f.steg !== 'roja' || klar, grav = f.steg === 'bereda' ? klar : f.steg !== 'roja';
+      const rojd = r.st !== 'roja', grav = r.st !== 'roja' && r.st !== 'bereda';
       if (!rojd) structG.lineStyle(1, 0x5e3c24).drawRect(X + 0.5, Y + 0.5, TS - 1, TS - 1).lineStyle(0);
       else structG.beginFill(grav ? 0x5e3c24 : 0x7d5b40).drawRect(X, Y, TS, TS).endFill();
       if (grav) for (let r = 0; r < 4; r++) structG.lineStyle(1, 0x3f2415).moveTo(X + 1, Y + 2.5 + r * 4).lineTo(X + TS - 1, Y + 2.5 + r * 4).lineStyle(0);
@@ -153,6 +162,7 @@ function kant(rutor: number[]) {
 }
 // tonen under lagerplatserna (steg 6.8.9): en enda färg ur paletten under hela platsen, utan raster (Björns val, steg 8.10.1)
 const LAGERTON = fargTal(farg('oliv', 3));
+const VAGG_KANT = 4; // så många punkter av en vägg bakom en station inne som bilden får täcka (steg 9.2.41)
 export function drawStructures(t: number) {
   const tab = ui.tab;
   structG.clear(); overG.clear();
@@ -174,9 +184,24 @@ export function drawStructures(t: number) {
     // den som står vriden har en egen bild (_v, steg 3.10.7): ingenting ritas genom att bilden vrids
     const d = stationDef(st.k), v = vriden(st);
     if (d?.brasa) { pileIcons.add('kb_lagereld_ring', st.x * TS + TS / 2 - ELD.x, st.y * TS + TS / 2 - ELD.y, 1); framsteg(st.x * TS + TS / 2, st.y * TS - 6, stationKlar(st)); continue; } // ringen till en lägereld till medan den läggs
+    if (st.delar?.length && d?.delar) { // en station i flera delar (steg 9.4.1): varje del där den står, platshållare tills delarna har bilder (9.4.3)
+      for (const q of delarAv(st)) {
+        overG.beginFill(0x3f2415).drawRect(q.x * TS, q.y * TS, q.w * TS, q.h * TS).endFill().beginFill(isKlar(st) ? 0x7d5b40 : 0x5e3c24).drawRect(q.x * TS + 1, q.y * TS + 1, q.w * TS - 2, q.h * TS - 2).endFill();
+        // örtkökets delar (steg 9.4.3, platshållare tills Björn valt i bildstilen): elden under krukan, örterna på stället, morteln
+        const mx = q.x * TS + q.w * TS / 2, my = q.y * TS + q.h * TS / 2, ik = q.del?.ikon;
+        if (isKlar(st) && ik === 'ortkok_hard') overG.beginFill(0xa14808).drawRect(mx - 3, my + 1, 6, 3).endFill().beginFill(0x3f2415).drawRect(mx - 3, my - 4, 6, 5).endFill();
+        if (isKlar(st) && ik === 'ortkok_tork') for (let k = 0; k < 3; k++) overG.beginFill(0x647025).drawRect(mx - 4 + k * 3, my - 3 + (k % 2) * 2, 2, 4).endFill();
+        if (isKlar(st) && ik === 'ortkok_bank') overG.beginFill(0xbdb39b).drawRect(mx - 2, my - 2, 4, 4).endFill().beginFill(0x3f2415).drawRect(mx - 1, my - 1, 2, 1).endFill();
+      }
+      if (!isKlar(st)) framsteg(st.x * TS + storlekAv(st).w * TS / 2, st.y * TS + 3, stationKlar(st));
+      continue;
+    }
     const kb = stationBild(d?.ikon ?? 'slaktbank', v), { w: bw, h: bh } = storlekAv(st), w = bw * TS;
     const ik = kb ? 'kb_' + kb : (d?.ikon ?? 'slaktbank') + '_karta' + v, sk = kb ? 1 : iconCanvas(ik).width > 8 * bw ? 1 : 2, upp = iconCanvas(ik).height * sk - bh * TS; // sk: 16 punkter per ruta (steg 4.3.2.2) eller 8 som förut
-    const x0 = st.x * TS + (kb ? Math.round((w - iconCanvas(ik).width) / 2) : 0), y0 = st.y * TS - upp; // bildens övre vänstra hörn: bildstilens bild mitt över rutorna och med foten på den nedersta
+    const x0 = st.x * TS + (kb ? Math.round((w - iconCanvas(ik).width) / 2) : 0);
+    // bildens övre vänstra hörn: bildstilens bild mitt över rutorna och med foten på den nedersta. Inne går den aldrig genom väggen
+    // (steg 9.2.41): står det en vägg bakom (ovanför) ritas bilden innanför väggens kant, och då längre ner i rummet
+    const vaggOvan = !!st.inne && bitAt(s, st.x, st.y - 1)?.k === 'vagg', y0 = vaggOvan ? Math.max(st.y * TS - upp, st.y * TS - VAGG_KANT) : st.y * TS - upp;
     pileIcons.add(isKlar(st) ? smutsIkon(ik, smutsGrad(s.now, st.klar)) : ik, x0, y0, sk); // en station i bruk blir smutsigare (steg 5.1.7.3)
     if (!isKlar(st)) { framsteg(st.x * TS + w / 2, y0 + 3, stationKlar(st)); continue; }
     if (st.fyllt && st.fyllt > 0.1) { const f = clamp(st.fyllt, 0, 1); overG.beginFill(0x2f261d).drawEllipse(st.x * TS + TS / 2, st.y * TS + TS / 2 + 1, 5 * f, 4 * f).endFill(); } // latrinen mörknar när den fylls (smuts.ts)
@@ -193,9 +218,9 @@ export function drawStructures(t: number) {
   }
   // dörrarna i öppningarna (DORRAR i byggnad.ts): den stående bilden (_v) när väggen går uppåt (en vägg ovanför öppningen)
   for (const b of bitsOf(s)) if (b.dorr) { const ik = dorrDef(b.dorr)?.ikon, v = bitAt(s, b.x, b.y - 1)?.k === 'vagg' ? '_v' : '', k = hasIcon('kb_' + ik + v) ? 'kb_' + ik + v : ik + '_karta' + v; pileIcons.add(k, b.x * TS, b.y * TS, TS / iconCanvas(k).width); } // bildstilens dörr (skinndörren, steg 5.1.2.3) eller den som redan hade 16 punkter
-  // de uppsatta facklorna (steg 6.3.7, ljus.ts): med foten i rutan, mot väggen när de sitter på en, den tända med lågan
+  // de uppsatta facklorna (steg 6.3.7, ljus.ts; i människornas skala, steg 9.2.98): med foten i rutan, mot väggen när de sitter på en, den tända med lågan
   for (const u of s.uppsatta ?? []) {
-    const k = 'kb_uppsatt' + (u.tand ? '_tand' : ''), c = iconCanvas(k);
+    const vagg = u.vx !== undefined, k = (vagg ? (hasIcon('kb_uppsatt_vagg') ? 'kb_uppsatt_vagg' : 'uppsatt_vagg') : 'uppsatt_mark') + (u.tand ? '_tand' : ''), c = iconCanvas(k); // på väggen sitter den i en hållare (steg 9.2.11)
     pileIcons.add(k, u.x * TS + ((TS - c.width) >> 1) + (u.vx ?? 0) * 5, u.y * TS + TS - 2 - c.height + (u.vy ?? 0) * 5, 1);
   }
   // talgljusen på borden och hyllorna (steg 6.3.8, ljus.ts): mitt på möbeln, två utseenden efter möbeln, det tända med lågan
@@ -226,12 +251,13 @@ export function drawStructures(t: number) {
   // i trädens lager, rad för rad (steg 8.1.5), så att de syns i den vanliga vyn
   stubbIkoner.start();
   for (const k of s.stubbar ?? []) {
+    if (k.kol) { stubbIkoner.add('kolstubbe', k.x * TS + 4, k.y * TS + 8, 1); continue; } // den svarta stubben efter en brand (steg 9.2.26)
     const r = Math.min(3, Math.max(0, Math.floor((s.now - k.t) / STUBBE_LIV * 4)));
     const id = `st_${sortAt(k.x, k.y)}_${k.v === 2 ? 2 : 1}_${r}${sno ? '_v' : ''}`, b = STUBBILDER[id];
     stubbIkoner.add('sb_' + id, k.x * TS + 10 - b.fx, k.y * TS + 11 - b.fy, 1);
   }
   for (const k of s.stockar ?? []) {
-    const id = `fa_${sortAt(k.x, k.y)}_${k.ved <= 3 ? 0 : k.ved <= 7 ? 1 : 2}_${tid}`, b = STUBBILDER[id];
+    const id = `fa_${sortAt(k.x, k.y)}_${stockLangd(k.ved)}_${tid}`, b = STUBBILDER[id];
     stubbIkoner.add('sb_' + id, Math.round(k.x * TS) - 4 - b.fx, Math.round(k.y * TS) + 4 - b.fy, 1);
   }
   for (const q of s.kvarlevor ?? []) if (q.bars === undefined) stubbIkoner.add(KVARLEVOR[q.k].ikon, q.x * TS, q.y * TS, 1); // det som blivit kvar av en människa (steg 8.2.3)

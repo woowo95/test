@@ -1,5 +1,7 @@
 import { balans } from './balans';
-import { ALDER, KROPP, REL, ageOf, alive, byId, count, isKin, isParent, living, log, namnSlut, relKey } from './folk';
+import { PERSONLOGG, PLOGG, type PersonloggId, type PersonloggSlag, type PersonRad } from './personlogg';
+import { personHand } from './personlogg';
+import { ALDER, KROPP, REL, ageOf, alive, byId, count, isKin, isParent, living, log, namnSlut, relKey, stat } from './folk';
 import { ACTS, Act, slagIkon } from './handlingar';
 import { TAGS } from './seder';
 import { kronika } from './historik';
@@ -12,7 +14,8 @@ import { upplev, upplevelseText } from './uppvaxt';
 import { isLight, kalender } from './tid';
 import { temperature, vaderNu } from './vader';
 import { hash3 } from './slump';
-import { ganger, gen, goraNamn, och, slaktOrd, talOrd } from './ord';
+import { ganger, gen, goraNamn, han, honom, och, slaktOrd, talOrd } from './ord';
+import { isSick } from './sjukdom';
 
 // Berättelserna (steg 3.9, "Berättelser" i designdokumentet): texterna om människorna, händelserna och sakerna. Varje
 // text är en mall i registret BERATTELSER med många varianter; varianten väljs ur byns frö, personen och tiden (hash),
@@ -1733,7 +1736,7 @@ const MDEF = {
     { t: 'Det blev dragkamp i byn: {n} drog i repet.', om: f => f.sport === 'dragkamp' },
     { t: '{Spelare} kastade mot målet i tur och ordning.', om: f => f.sport === 'kast' },
     { t: 'Det blev kast mot mål i byn, och {n} ställde upp.', om: f => f.sport === 'kast' },
-    { t: '{Spelare} byggde vallar av snö och kastade snöbollar på varandra.', om: f => f.sport === 'snoboll' },
+    { t: '{Spelare} gjorde snöbollar och kastade dem på varandra.', om: f => f.sport === 'snoboll' },
     { t: 'Det blev snöbollskrig i byn, med {n} som kastade.', om: f => f.sport === 'snoboll' },
     { t: '{Spelare} spelade boll i byn.', om: f => f.sport === 'bollspel' },
     { t: 'Det blev bollspel, och {n} sprang efter bollen.', om: f => f.sport === 'bollspel' },
@@ -1941,6 +1944,28 @@ const MDEF = {
     { t: '{namn} tog upp en flintsten {plats}.', om: f => !!f.plats },
     { t: 'Där {namn} letade låg en flintsten.', om: f => !f.plats },
   ],
+  // personens händelser (steg 9.2.108, personlogg.ts): det som läggs till efter händelsen, färgat av personligheten och humöret
+  // när det hände. {hen} och {honom} är personen; orolig, modig, glad, nere och talfor är villkoren
+  h_ont: [
+    { t: 'Det skrämde {honom}.', om: f => f.orolig === true },
+    { t: '{Hen} har svårt att släppa det.', om: f => f.orolig === true },
+    { t: '{Hen} tar det med fattning.', om: f => f.modig === true },
+    { t: '{Hen} biter ihop.', om: f => f.modig === true },
+    { t: 'Det tynger {honom}.', om: f => f.nere === true },
+    { t: '{Hen} har inte orkat tänka på annat sedan dess.', om: f => f.nere === true },
+    { t: '{Hen} försöker se framåt.', om: f => f.glad === true },
+    { t: '', om: f => !f.orolig && !f.modig && !f.nere && !f.glad },
+  ],
+  h_gott: [
+    { t: '{Hen} är stolt över det.', om: f => f.modig === true || f.glad === true },
+    { t: '{Hen} gläds åt det.', om: f => f.glad === true },
+    { t: 'Det lyfte {honom} lite.', om: f => f.nere === true },
+    { t: '{Hen} vågar knappt tro att det är sant.', om: f => f.orolig === true },
+    { t: '{Hen} har berättat det för alla.', om: f => f.talfor === true },
+    { t: 'Det gav {honom} mod.', om: f => f.orolig === true },
+    { t: '{Hen} tänker gärna tillbaka på det.', om: f => f.glad === true || f.nere === true },
+    { t: '', om: f => !f.orolig && !f.modig && !f.nere && !f.glad && !f.talfor },
+  ],
 } satisfies Record<string, Variant[]>;
 export type MallId = keyof typeof MDEF;
 export const BERATTELSER: Record<MallId, Variant[]> = MDEF;
@@ -2033,7 +2058,7 @@ export function gebinamn(s: State, p: Person, k: IntryckTyp, v: number) {
   const text = berattelse(s, heder ? 'hedersnamn' : 'oknamn', p.id, f);
   log(s, `${heder ? '🏅' : '🗯️'} ${text}`, 'rel', [p.id]);
   kronika(s, text, heder ? 'hedersnamn' : 'oknamn');
-  p.fame.push(`Kallades ${heltNamn(p)}${fore ? ` (förut ${fore.namn})` : ''}`);
+  p.fame.push(`Kallades ${heltNamn(p)}${fore ? ` (förut ${fore.namn})` : ''}`); personHand(s, p, 'titel', `Kallas ${heltNamn(p)}.`);
   count(s, 'binamn'); count(s, heder ? 'hedersnamn' : 'oknamn');
 }
 // för personrutan: symbolen (heder eller skam) och förklaringen
@@ -2131,7 +2156,7 @@ function saknad(s: State, p: Person) {
   let bast: [Person, string, boolean] | undefined;
   for (const q of s.people) {
     if (q.died === undefined || q.id === p.id) continue;
-    const r = s.rels[relKey(p.id, q.id)], sorj = p.thoughts.some(t => t.text === `Sörjer ${q.name}` && t.until > s.now);
+    const r = s.rels[relKey(p.id, q.id)], sorj = p.thoughts.some(t => (t.text === `Sörjer ${q.name}` || t.text.startsWith('Förlorade ') && t.text.endsWith(`, ${q.name}`)) && t.until > s.now); // också förlusten, sorgens första stadium (steg 9.2.33)
     const vem = isParent(q, p) ? (q.sex === 'k' ? 'mor' : 'far') : isParent(p, q) ? (q.sex === 'k' ? 'dotter' : 'son')
       : r?.gift !== undefined || r?.par !== undefined ? (q.sex === 'k' ? 'hustru' : 'man') : sorj ? 'vän' : undefined;
     if (vem && (!bast || (sorj && !bast[2]) || (sorj === bast[2] && q.died > bast[0].died!))) bast = [q, vem, sorj];
@@ -2452,7 +2477,7 @@ export function sakMinne(s: State, p: Person, t: { id: number; k: string; q?: nu
   // något om görarens liv just då
   const nytt = s.people.find(c => (c.mother === p.id || c.father === p.id) && s.now - c.born < BERATT.barnDygn * dag);
   const sorg = s.people.find(c => c.died !== undefined && s.now - c.died < BERATT.sorgDygn * dag && (c.partner === p.id || c.mother === p.id || c.father === p.id || p.mother === c.id || p.father === c.id)); // den dödes partner står kvar (die() i liv.ts släpper bara den levandes)
-  const liv: [SakLiv, number?] | undefined = sorg ? ['sorg', sorg.id] : nytt ? ['barn', nytt.id] : p.sickUntil !== undefined && p.sickUntil > s.now ? ['sjuk']
+  const liv: [SakLiv, number?] | undefined = sorg ? ['sorg', sorg.id] : nytt ? ['barn', nytt.id] : isSick(p, s.now) ? ['sjuk']
     : p.pregnantSince !== undefined ? ['gravid'] : s.styre?.ledare === p.id ? ['ledare'] : undefined;
   if (liv) { m.l = liv[0]; if (liv[1] !== undefined) m.lo = liv[1]; }
   const mo = (t.q ?? 0) >= 4 && sakGrupp(t.k) !== 'klad' && hash(s.seed, t.id, 6) < BERATT.konst ? motiv(s, p) : undefined;
@@ -2622,3 +2647,28 @@ export function relationText(s: State, p: Person, q: Person, r: Rel): string[] {
   return ut;
 }
 const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+
+// raderna som visas (steg 9.2.108), senaste först: samma slag samma dygn (ett år i spelet) blir en rad, och texten får ett
+// tillägg som färgas av personligheten och humöret när det hände. Valet av text följer byns frö och raden, aldrig slumpen
+export interface VisadRad { t: number; k: PersonloggId; text: string; alla: string[] }
+export function personRader(s: State, p: Person): VisadRad[] {
+  const ut: VisadRad[] = [], h = p.hand ?? [];
+  for (let i = h.length - 1; i >= 0;) {
+    const [t, k] = h[i], dygn = Math.floor(t / (24 * HOUR)), grupp: PersonRad[] = [];
+    while (i >= 0 && h[i][1] === k && Math.floor(h[i][0] / (24 * HOUR)) === dygn) grupp.push(h[i--]);
+    grupp.reverse();
+    const alla = grupp.map(r => r[2]), sist = grupp[grupp.length - 1];
+    let text = alla.slice(0, PLOGG.visaHela).join(' ');
+    if (alla.length > PLOGG.visaHela) text += ` Och ${alla.length - PLOGG.visaHela} ${alla.length - PLOGG.visaHela === 1 ? 'sak' : 'saker'} till av samma slag det året.`;
+    const tillagg = kanslaRad(s, p, k, sist);
+    ut.push({ t: sist[0], k, text: tillagg ? `${text} ${tillagg}` : text, alla });
+  }
+  return ut;
+}
+function kanslaRad(s: State, p: Person, k: PersonloggId, r: PersonRad) {
+  const d: PersonloggSlag = PERSONLOGG[k], ton = typeof d.ton === 'function' ? d.ton(r[2]) : d.ton;
+  if (!ton) return '';
+  const hum = (r[3] ?? 5) / 9, mod = stat(p, 'mod', r[0]);
+  const f = { hen: han(p), honom: honom(p), orolig: mod <= PLOGG.orolig, modig: mod >= PLOGG.modig, talfor: stat(p, 'karisma', r[0]) >= PLOGG.talfor, glad: hum > PLOGG.glad, nere: hum < PLOGG.nere };
+  return fyll(valjVariant(s, ton === 'ont' ? 'h_ont' : 'h_gott', p.id * 7919 + Math.round(r[0] / 60), f, 0), f);
+}

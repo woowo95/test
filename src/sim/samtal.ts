@@ -1,4 +1,5 @@
 import { fraktionSamtal } from './rost';
+import { personHand } from './personlogg';
 import { barnTill, upplev } from './uppvaxt';
 import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, franMitt, getRel, isKin, living, log, similarity, stat, think } from './folk';
 import { blocked } from './byggnad';
@@ -16,6 +17,7 @@ import { RELT, arArke, arBast, arMentor, arRivaler, minnsRel, skiljGrans } from 
 import { tankePa } from './teknik';
 import { loggBer, samtalAmne, samtalBorjar } from './berattelser';
 import { predika } from './religion';
+import { tystISporten } from './sport';
 
 // ---------- balanstal (regel 8) ----------
 // Samtalen: vem man pratar med, vilket slags samtal det blir, hur det går och vad det ger, och humöret. Relationen (op) går från
@@ -115,7 +117,7 @@ const valVikt = (s: State, a: Person, b: Person) => { const r = getRel(s, a, b);
 // Finns ingen, eller ingen plats bredvid, går man till platsen vid elden som förut
 export function samtalMed(s: State, p: Person) {
   const t = p.task!, now = s.now;
-  const kand = living(s).filter(q => q !== p && q.task?.phase === 'do' && isSocial(q) && q.task.med === undefined && !ACTS[q.task.act].vandra && !ACTS[q.task.act].tur && !ACTS[q.task.act].radie && ageOf(q, now) >= ALDER.smabarn
+  const kand = living(s).filter(q => q !== p && q.task?.phase === 'do' && kanPrata(s, q) && q.task.med === undefined && !ACTS[q.task.act].vandra && !ACTS[q.task.act].tur && !ACTS[q.task.act].radie && ageOf(q, now) >= ALDER.smabarn
     && Math.hypot(q.x - t.tx, q.y - t.ty) < SAMTAL.sokR);
   if (!kand.length) return;
   const q = pickViktat(s, kand, kand.map(b => valVikt(s, p, b)), 'samtal', p);
@@ -149,12 +151,14 @@ export function skiljsAt(s: State, p: Person) {
 }
 // om p håller på med något socialt just nu (vid elden, i samtal); hur nära man ska vara för att prata står i SAMTAL.radie
 export const isSocial = (p: Person) => !!p.task && p.task.phase === 'do' && !!ACTS[p.task.act].social;
+// kan p prata just nu (steg 9.2.100)? En social aktivitet där registret inte säger att man är tyst
+export const kanPrata = (s: State, p: Person) => isSocial(p) && !ACTS[p.task!.act].tyst && !(p.task!.act === 'sport' && tystISporten(s, p));
 // hur länge ett samtal syns efteråt: bubblan i byn och ämnet i personrutan (sekunder i spelet, steg 3.10.3 och 4.5.3.3)
 export const PRATAR_SEK = 20;
 // den som p pratar med just nu: båda gör något socialt, står nära och samtalet är färskt (bara för gränssnittet)
 export function pratarMed(s: State, p: Person) {
   const m = p.prat?.m, q = m !== undefined ? s.people.find(x => x.id === m) : undefined;
-  return q && alive(q) && isSocial(p) && isSocial(q) && Math.hypot(q.x - p.x, q.y - p.y) < SAMTAL.radie && s.now - p.prat!.t < PRATAR_SEK * SEC ? q : undefined;
+  return q && alive(q) && kanPrata(s, p) && kanPrata(s, q) && Math.hypot(q.x - p.x, q.y - p.y) < SAMTAL.radie && s.now - p.prat!.t < PRATAR_SEK * SEC ? q : undefined;
 }
 export interface TalkEvent { a: number; b: number; kind: Samtalsslag; good: boolean; t: number; i?: string } // i: ämnets symbol (steg 3.9.5)
 // ger den andra om samtalet blev ett gräl (steg 3.7.2: gräl kan bli slagsmål, strid.ts)
@@ -172,10 +176,10 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
     ((a.partner === undefined && b.partner === undefined) || a.partner === b.id);
   // med sin ärkefiende grälar man nästan alltid, med en rival lite oftare (steg 3.1.1)
   const gralExtra = arArke(a, b) ? RELT.arkeGral : arRivaler(a, b) ? RELT.rivalGral : 0;
-  const ag = Math.max(SAMTAL.gralAggMin, 1 + SAMTAL.gralAgg * franMitt(a, 'aggression', now)); // den aggressiva grälar oftare (steg 3.7.6)
+  const ag = Math.max(SAMTAL.gralAggMin, 1 + SAMTAL.gralAgg * franMitt(a, 'aggression', now)) * (1 + RUS.gral * rusAv(a)); // den aggressiva grälar oftare (steg 3.7.6), och den berusade (steg 9.6.15)
   if ((mood < SAMTAL.gralHumor && rnd(s, 'samtal', a) < SAMTAL.gralHumorChans * ag) || (r.op < REL.gral && rnd(s, 'samtal', a) < SAMTAL.gralOsamsChans * ag) || (gralExtra && rnd(s, 'samtal', a) < gralExtra * ag)) kind = 'gräl';
   else if (a.task?.act === 'beratta') kind = 'berättelse';
-  else if (canFlirt && rnd(s, 'samtal', a) < SAMTAL.flirtBas + r.rom / SAMTAL.flirtRom + (r.chem > SAMTAL.flirtKemiGr ? SAMTAL.flirtKemi : 0)) kind = 'flirt';
+  else if (canFlirt && rnd(s, 'samtal', a) < SAMTAL.flirtBas + r.rom / SAMTAL.flirtRom + (r.chem > SAMTAL.flirtKemiGr ? SAMTAL.flirtKemi : 0) + RUS.flirt * rusAv(a)) kind = 'flirt';
   else if (moodOf(b, now) < SAMTAL.trostHumor && rnd(s, 'samtal', a) < stat(a, 'empati', now) / SAMTAL.trostEmpati) kind = 'tröst';
   else if (r.op > REL.van && rnd(s, 'samtal', a) < SAMTAL.djuptChans) kind = 'djupt samtal';
   else if (rnd(s, 'samtal', a) < SAMTAL.skamtChans) kind = 'skämt';
@@ -209,6 +213,7 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
     predika(s, a, b, r, kind); // och den som tror försöker övertyga (steg 4.1.2.2, religion.ts)
     if (a.tek?.ledarskap) tankePa(s, a, 'lag', SAMTAL.ledTanke * SAMTAL.lagTanke); // och sedan på lag (steg 8.4.1)
     tankePa(s, a, 'ledarskap', SAMTAL.ledTanke); // och kommer på vad som krävs för att leda (steg 3.5.1)
+    berattaSmak(a, b, r.op); // och om sin favoritmat eller det man avskyr (steg 9.6.6)
     berattaBrist(a, b, now); // och vad man längtar efter ("jag längtar efter kött", steg 2.6.2)
     samtalAmne(s, a, b, kind);
     if (kind !== 'flirt' && out + like > SAMTAL.gavaMin) askForGift(s, a, b); // den som saknar något frågar efter det (mat, ved, redskap: behov.ts)
@@ -229,8 +234,11 @@ export function skiljas(s: State, a: Person, b: Person, r: Rel) {
   const gift = r.gift !== undefined, f = gift ? RELT.skiljTanke : 1, ord = gift ? 'Skilde sig' : 'Separerade', now = s.now;
   a.partner = undefined; b.partner = undefined; r.rom = SAMTAL.skiltRom; r.par = undefined; r.gift = undefined;
   log(s, gift ? `${a.name} och ${b.name} skilde sig.` : `${a.name} och ${b.name} gick skilda vägar.`, 'rel', [a.id, b.id]);
+  personHand(s, a, 'relation', gift ? `Skilde sig från ${b.name}.` : `Gick skilda vägar med ${b.name}.`); personHand(s, b, 'relation', gift ? `Skilde sig från ${a.name}.` : `Gick skilda vägar med ${a.name}.`); // steg 9.2.107
   if (gift) count(s, 'skilsmassa');
   barnTill(s, a, b, 'skilsmassa'); // barnen minns det (steg 3.1.2)
   upplev(s, b, 'lamnad', a.name); // den som blev lämnad (steg 4.1.1.2)
   think(a, `${ord} från ${b.name}`, -SAMTAL.skiltTanke * f, now, SAMTAL.skiltDygn * f * DAY); think(b, `${ord} från ${a.name}`, -SAMTAL.skiltTanke * f, now, SAMTAL.skiltDygn * f * DAY);
 }
+import { berattaSmak } from './rykten';
+import { RUS, rusAv } from './rus';

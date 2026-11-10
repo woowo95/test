@@ -76,7 +76,7 @@ export function layout() {
   if (!Number.isFinite(cam.x) || !Number.isFinite(cam.y)) { cam.x = -1; cam.y = -1; } // börja om vid elden
   if (app.renderer.width !== w * app.renderer.resolution || app.renderer.height !== h * app.renderer.resolution) app.renderer.resize(w, h);
   const fit = Math.min(w / (W * TS), h / (H * TS));
-  cam.zoom = clamp(cam.zoom, 1, 10); // den största förstoringen: tio gånger hela kartan (steg 3.10.6)
+  cam.zoom = clamp(cam.zoom, 1, 20); // den största förstoringen: tjugo gånger hela kartan (steg 3.10.6, 9.2.85)
   const sc = fit * cam.zoom;
   if (cam.x < 0 && s) { const f = eldPlats(s); cam.x = f.x * TS; cam.y = f.y * TS; }
   if (cam.x < 0) { cam.x = W * TS / 2; cam.y = H * TS / 2; }

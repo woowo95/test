@@ -1,19 +1,16 @@
-import { LAG, LAGAR, TABU_AKT, placeName, efterlevs, lagTak, lagarNu, MINISTRAR, TRONFOLJD_TEXT, tronfoljd, DAY, LED, PABUD, PABUD_LIST, Pabud, Rattegang, SEDER, STR, STRAFF_NAMN, VAGSKALAR, byId, legitimitet, ledareOf, onskatDygn, pabud, pabudAndel, rattegang, styrelseform, timeLabel, torkAndel } from '../../sim';
+import { type Omrostning, LAG, LAGAR, TABU_AKT, placeName, efterlevs, lagTak, lagarNu, MINISTRAR, TRONFOLJD_TEXT, tronfoljd, DAY, LED, PABUD, PABUD_LIST, Pabud, Rattegang, SEDER, STR, STRAFF_NAMN, VAGSKALAR, byId, legitimitet, ledareOf, onskatDygn, pabud, pabudAndel, rattegang, styrelseform, timeLabel, torkAndel } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { bar, esc, hjalpKnapp, hjalpText, num, pLink } from '../hjalp';
-import { s } from '../lage';
-import { sedFormat, sedVag } from './seder';
+import { s, ui } from '../lage';
+import { sedFormat, sedKlick, sedLista, sedVag } from './seder';
 import type { Flik } from '../panel';
 
 // styret (steg 3.5.4, styre.ts): ledaren, styrelseformen, legitimiteten, vågskålarna, rättegångarna och de ledare byn haft.
-// En del i fliken Byn (steg 5.3.3.2, byn.ts) som går att öppna först när byn fått sin första ledare; påbuden är en egen del där
+// En egen runsten (steg 9.3.1) som är blek tills byn fått sin första ledare, med delar överst: styret och påbuden (DELAR nedan)
 export const harHaft = () => !!s.styre?.historia.length;
 const dygnTxt = (ms: number) => { const d = ms / DAY; return d < 1 ? 'mindre än ett år' : `${Math.floor(d)} år`; };
 
-export const styre: Flik = {
-  namn: 'Styre',
-  syns: harHaft,
-  html() {
+function styretHtml() {
     const st = s.styre, l = ledareOf(s);
     if (!st) return '<p class="muted">Byn har ingen ledare.</p>';
     const f = styrelseform(s), lg = legitimitet(s);
@@ -21,7 +18,8 @@ export const styre: Flik = {
     const lyss = st.pabud ? pabudAndel(s) : undefined;
     // formens namn överst i mitten, ledaren under, och legitimiteten och hur många som lyssnar på påbuden bredvid varandra (steg 4.5.4.2)
     const ledare = l ? `<div class="formnamn">${iconImg('ledarskap', 24)} <b>${esc(f.namn)}</b> ${hjalpKnapp('styre', 'Vad är styret?')}</div>
-      ${hjalpText('styre', `<p class="muted">${esc(f.text(l, st.titel ?? ''))} Bara den som kan ledarskap kan bli ledare. Ledaren drar byns seder åt sitt håll, bestämmer påbuden och straffar det hen sett eller hört om.</p>`)}
+      <p class="lagtext">${esc(f.text(l, st.titel ?? ''))}</p>
+      ${hjalpText('styre', `<p class="muted">Bara den som kan ledarskap kan bli ledare. Ledaren drar byns seder åt sitt håll, bestämmer påbuden och straffar det hen sett eller hört om.</p>`)}
       <ul class="rels"><li>${pLink(l)}<span></span><span></span><span class="muted">${esc(st.titel ?? '')}, ${dygnTxt(s.now - (st.sedan ?? s.now))}</span></li>${ministrar()}</ul>
       <p class="muted small" title="Så väljs nästa ledare">👑 ${esc(TRONFOLJD_TEXT[tronfoljd(s)])}</p>
       <div class="rutor"><div class="ruta" title="Hur mycket byn godtar ledaren"><div class="rutnamn">⚖️ Legitimitet</div><div class="rutbar">${bar(lg.v, lg.v < 0.3 ? 'low' : '')}<span>${Math.round(lg.v * 100)} %</span></div>
@@ -32,16 +30,40 @@ export const styre: Flik = {
       const oppen = v.sed ? st.oppna.includes(v.id) : false;
       if (!oppen) return `<li class="muted" title="${esc(v.steg ? `Kommer senare (steg ${v.steg})` : 'Inte upplåst än')}">❔ ${esc(v.namn)}</li>`;
       const d = SEDER[v.sed!], x = s.seder.v[v.sed!] ?? 0;
-      return `<li title="${esc(d.effect)}">${sedVag(x, esc(d.neg), esc(d.pos))}${sedFormat(v.sed!)}</li>`;
+      return `<li ${sedKlick(v.sed!)}>${sedVag(x, esc(d.neg), esc(d.pos))}${sedFormat(v.sed!)}${sedLista(v.sed!)}</li>`;
     }).join('');
     const hist = st.historia.slice().reverse().map(h => `<li><span class="when">${timeLabel(s, h.fran)}</span>${pLink(byId(s, h.id)) === '–' ? esc(h.namn) : pLink(byId(s, h.id))}, ${esc([...(h.forr ?? []), h.titel].map(x => x.toLowerCase()).join(', sedan '))}${h.till !== undefined ? ` – ${dygnTxt(h.till - h.fran)}, ${esc(h.slut ?? '')}` : ''}</li>`).join('');
     return `${ledare}<h3>Vågskålar</h3><ul class="seder">${skalar}</ul>${lagarDel()}${tabunDel()}${omrostningar()}${rattegangar()}<h3>Ledarna genom tiden</h3><ol class="logg">${hist}</ol>`;
+}
+
+// stenen Styre (steg 9.3.1): delarna i en rad knappar överst, styret och påbuden. Registret: en ny del är en rad i DELAR
+interface Del { id: string; tecken: string; namn: string; html(): string }
+const DELAR: Del[] = [
+  { id: 'styre', tecken: '👑', namn: 'Styret', html: styretHtml },
+  { id: 'pabud', tecken: '📜', namn: 'Påbud', html: () => pabudDel() },
+];
+const oppen = () => DELAR.find(d => d.id === ui.styreDel) ?? DELAR[0];
+export const styre: Flik = {
+  namn: 'Styre',
+  syns: harHaft,
+  html() {
+    const del = oppen();
+    return `<div class="pdelar" role="tablist">${DELAR.map(d => `<button type="button" role="tab" data-sdel="${d.id}" aria-selected="${d === del}" title="${d.namn}" aria-label="${d.namn}">${d.tecken}</button>`).join('')}</div>
+      <h3>${del.namn}</h3>${del.html()}`;
+  },
+  klick(el) {
+    const b = el.closest<HTMLButtonElement>('[data-sdel]');
+    if (!b) return false;
+    ui.styreDel = b.dataset.sdel!;
+    return true;
   },
 };
 
-// påbuden (steg 3.5.2): vad ledaren bestämt mot vad byn själv tycker, och hur mycket byn lyssnar. En egen del i fliken Byn
-// (steg 5.3.3.2; förr i Styre efter ledaren, och före 3.10.16 en egen flik). När lagarna kommer (9.2.6) blir delen Lagar
-const varde = (k: Pabud, v: number) => k === 'han' ? (v < -0.33 ? 'förbjudet' : v > 0.33 ? 'tillåtet' : 'ogillas') : k === 'torkat' ? `${Math.round(torkAndel(v) * 100)} %` : k === 'bygg' || k === 'vinter' ? `${Math.round(Math.max(0, v) * 100)} %` : `${num(onskatDygn(k === 'vedlager' ? 'ved' : 'mat', v))} dygn`;
+// påbuden (steg 3.5.2): vad ledaren bestämt mot vad byn själv tycker, och hur mycket byn lyssnar. En del i stenen Styre
+// (steg 9.3.1; förr en del i fliken Byn, och före 3.10.16 en egen flik)
+// arbetsordningens påbud i ord (steg 9.2.123): under noll räknas som noll, och resten delas lika mellan orden efter det första
+const ordAv = (v: number, ord: string[]) => { const x = Math.max(0, v); return x < 0.05 ? ord[0] : ord[Math.min(ord.length - 1, 1 + Math.floor((x - 0.05) / (0.95 / (ord.length - 1))))]; };
+const varde = (k: Pabud, v: number) => k === 'han' ? (v < -0.33 ? 'förbjudet' : v > 0.33 ? 'tillåtet' : 'ogillas') : k === 'torkat' ? `${Math.round(torkAndel(v) * 100)} %` : k === 'bygg' ? ordAv(v, ['aldrig', 'ibland', 'ofta', 'alltid']) : k === 'vinter' ? ordAv(v, ['som vanligt', 'några fler', 'många fler']) : `${num(onskatDygn(k === 'vedlager' ? 'ved' : 'mat', v))} dygn`;
 export function pabudDel() {
   const st = s.styre, l = ledareOf(s);
   if (!l || !st?.pabud) return '<p class="muted">Inga påbud gäller. Utan ledare gör byn som den själv tycker.</p>';
@@ -50,7 +72,8 @@ export function pabudDel() {
   for (const k of PABUD_LIST) { const r = PABUD[k].ruta ?? PABUD[k].namn; rutor.set(r, [...(rutor.get(r) ?? []), k]); }
   const rad = (k: Pabud, ensam: boolean) => {
     const d = PABUD[k], egen = d.sed ? s.seder.v[d.sed] : 0, led = st.pabud![k] ?? egen;
-    const pil = `<span class="muted">${led > egen + 0.02 ? '▲' : led < egen - 0.02 ? '▼' : ''}</span>`;
+    const lag = k === 'bygg' || k === 'vinter' ? (v: number) => Math.max(0, v) : (v: number) => v; // ledarens vilja räknas inte under det lägsta värdet
+    const olika = varde(k, led) !== varde(k, egen), pil = `<span class="muted">${olika && lag(led) > lag(egen) + 0.02 ? '▲' : olika && lag(led) < lag(egen) - 0.02 ? '▼' : ''}</span>`; // pilen bara när det märks i värdet (steg 9.2.123)
     return `${ensam ? '' : `<dt title="${esc(d.text)}">${esc(d.namn)}</dt>`}<dd title="${esc(`${l.name} vill ${varde(k, led)}, byn själv ${varde(k, egen)}`)}"><b>${varde(k, pabud(s, k))}</b>${pil}</dd>${hjalpText('pabud', `<dd class="small muted helrad">${esc(d.text)}. ${esc(l.name)}: ${varde(k, led)}, byn: ${varde(k, egen)}</dd>`)}`;
   };
   return `<div class="tekhead">${hjalpKnapp('pabud', 'Vad är påbud?')}</div>
@@ -82,8 +105,22 @@ function omrostningar() {
   if (!lista?.length) return '';
   return `<h3>Omröstningar</h3><ol class="logg">${lista.slice().reverse().map(o => {
     const id = `rost-${o.t}-${o.f}`, val = o.f === 'ledare';
-    return `<li class="klick" data-hjalp="${id}" data-hjalp-grupp="rost-" title="Tryck för alla röster" tabindex="0" role="button"><span class="when">${timeLabel(s, o.t)}</span>${esc(o.namn)}${val ? `: ${esc(o.framNamn)}` : ` ${o.gick ? 'ja' : 'nej'}`} <span class="muted">${val ? '' : `(${Math.round(o.ja * 100)} % mot ${Math.round(o.nej * 100)} %)`}</span></li>${hjalpText(id, `<li class="small"><p class="muted">${val ? '' : `Lades fram av ${esc(o.framNamn)}.`} ${o.varfor ? esc(o.varfor) : ''}</p><ul class="rels">${o.roster.slice().sort((a, b) => b.w - a.w).map(r => `<li title="${esc(r.why)}">${val ? '' : r.ja ? 'ja ' : 'nej '}${esc(r.namn)} <span class="muted">${Math.round(r.w * 100)} % · ${esc(r.why)}</span></li>`).join('')}</ul></li>`)}`;
+    return `<li class="klick" data-hjalp="${id}" data-hjalp-grupp="rost-" title="Tryck för alla röster" tabindex="0" role="button"><span class="when">${timeLabel(s, o.t)}</span>${esc(o.namn)}${val ? `: ${esc(o.framNamn)}` : ` ${o.gick ? 'ja' : 'nej'}`} <span class="muted">${val ? '' : `(${Math.round(o.ja * 100)} % mot ${Math.round(o.nej * 100)} %)`}</span></li>${hjalpText(id, rostMer(o))}`;
   }).join('')}</ol>`;
+}
+// en omröstning utfälld (steg 9.2.65): en stapel som delas i ja och nej efter vikten, och under den en rad per röst med en symbol
+// för ja eller nej, namnet och en liten stapel för vikten, ja-rösterna först och de tyngsta överst. Den som lade fram frågan har en
+// egen symbol och ledaren sin krona; varför personen röstade så syns vid musen eller med ett tryck på raden
+function rostMer(o: Omrostning) {
+  const val = o.f === 'ledare', l = ledareOf(s), tot = o.roster.reduce((a, r) => a + r.w, 0) || 1, ja = o.roster.filter(r => r.ja).reduce((a, r) => a + r.w, 0) / tot;
+  const max = Math.max(0.01, ...o.roster.map(r => r.w));
+  const stapel = val ? '' : `<div class="rostbar" title="${esc(`Ja ${Math.round(ja * 100)} %, nej ${Math.round((1 - ja) * 100)} % av vikten`)}"><span class="ja" style="width:${(ja * 100).toFixed(1)}%"></span><span class="nej" style="width:${((1 - ja) * 100).toFixed(1)}%"></span></div>`;
+  const rader = o.roster.slice().sort((a, b) => (val ? 0 : Number(b.ja) - Number(a.ja)) || b.w - a.w).map(r => {
+    const id = `rr-${o.t}-${r.id}`, sym = val ? '' : `<span title="${r.ja ? 'Ja' : 'Nej'}">${iconImg(r.ja ? 'r_ja' : 'r_nej', 12)}</span>`;
+    const mark = (r.id === o.fram ? ` <span title="Lade fram frågan">${iconImg('r_fram', 12)}</span>` : '') + (l?.id === r.id ? ` <span title="Byns ledare">${iconImg('ledarskap', 12)}</span>` : '');
+    return `<li class="klick" data-hjalp="${id}" data-hjalp-grupp="rr-" title="${esc(r.why)}" tabindex="0" role="button">${sym}<span class="rnamn">${esc(r.namn)}${mark}</span><span class="rostw" title="Väger ${Math.round(r.w * 100)} %">${bar(r.w / max)}</span></li>${hjalpText(id, `<li class="small muted rvarfor">${esc(r.why)}</li>`)}`;
+  }).join('');
+  return `<li class="small"><p class="muted">${val ? `Byn valde ${esc(o.framNamn)}.` : `Lades fram av ${esc(o.framNamn)}.`} ${o.varfor ? esc(o.varfor) : ''}</p>${stapel}<ul class="roster">${rader}</ul></li>`;
 }
 // rättegångarna (steg 3.10.17): en rad per dom, nyast först. Ett tryck visar berättelsen och hur domen gick till
 const plus = (v: number) => `${v < 0 ? '−' : '+'}${num(Math.abs(v))}`;

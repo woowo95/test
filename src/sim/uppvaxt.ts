@@ -7,6 +7,7 @@ import { balans } from './balans';
 import { andeRiktning } from './religion';
 import { foodDays } from './ekonomi';
 import type { Sed } from './seder';
+import { svartSjukNu } from './sjukdom';
 
 // Uppväxten (steg 3.1.2, "Uppväxt" i designdokumentet): det ett barn är med om blir en upplevelse som det minns hela livet,
 // och upplevelserna flyttar egenskaperna. Det man föds med är anlagen (p.anlag, ärvs av barnen); p.pot är anlagen plus det
@@ -232,13 +233,13 @@ export function stepUppvaxt(s: State) {
     if (alive(p)) { // det hen överlevt, i alla åldrar (steg 3.9.8)
       if (p.hunger <= 0 && p.health < UPPV.naraHalsa) livet(s, p, 'svalt', true);
       if (p.warm < KROPP.frysdod && p.health < UPPV.naraHalsa) livet(s, p, 'frys', true);
-      if (isSick(p, s.now) && p.health < UPPV.sjukHalsa) livet(s, p, 'sjuk', true);
+      if (svartSjukNu(p, s.now) || isSick(p, s.now) && p.health < UPPV.sjukHalsa) livet(s, p, 'sjuk', true);
     }
     if (!alive(p) || ageOf(p, s.now) < UPPV.fran) continue;
     if (p.upp?.some(vuxenUpp)) blekna(s, p);
     if (p.hunger <= 0 && p.health < UPPV.naraHalsa) upplev(s, p, 'svalt'); // barn och vuxna (steg 4.1.1.2)
     if (p.warm < KROPP.frysdod && p.health < UPPV.naraHalsa) upplev(s, p, 'frys');
-    if (isSick(p, s.now) && p.health < UPPV.sjukHalsa) upplev(s, p, 'sjuk');
+    if (svartSjukNu(p, s.now) || isSick(p, s.now) && p.health < UPPV.sjukHalsa) upplev(s, p, 'sjuk');
     if (overflod) upplev(s, p, 'overflod');
     if (!formas(s, p)) continue;
     if (p.task?.act === 'leka' && p.task.phase === 'do') upplev(s, p, 'lek');

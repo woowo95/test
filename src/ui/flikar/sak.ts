@@ -1,6 +1,6 @@
-import { GravStil, HELIGA_PLATSER, gravAt, heligAt, troNamn, troOf, kvarById, KVARLEVOR, DAY, amountOf, busksort, fallTid, living, tileOf, isTool, FOREST, stamAv, MARK, STADIER, VAG, groundOf, stadium, tradAlder, tradArt, STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf } from '../../sim';
+import { tornadoAndel, tornadoPos, hageById, hageBete, djurIHagen, hageKant, harStaket, hageDygn, TAMDJUR, tamAlder, vaderstreck, kvOf, NORMAL, SKYDD, KROPPSDELAR, GravStil, HELIGA_PLATSER, gravAt, heligAt, troNamn, troOf, kvarById, KVARLEVOR, DAY, amountOf, busksort, fallTid, living, tileOf, isTool, FOREST, stamAv, MARK, STADIER, VAG, groundOf, stadium, tradAlder, tradArt, STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf } from '../../sim';
 import { iconImg } from '../../ikoner';
-import { condBar, durTxt, esc, kvMark, kvText, pLink } from '../hjalp';
+import { condBar, durTxt, esc, kvOrd, kvText, pLink } from '../hjalp';
 import { piles, s, ui } from '../lage';
 import type { Flik } from '../panel';
 import { tradBild, tradBildUrl } from '../trad';
@@ -83,6 +83,22 @@ function stubbe(i: number) {
     <dl class="kv">
       <dt>Fälldes</dt><dd>för ${durTxt(s.now - u.t)} sedan</dd>
       <dt>Ruttnar bort</dt><dd>om ${durTxt(Math.max(0, STUBBE_LIV - (s.now - u.t)))}</dd>
+    </dl>`;
+}
+// hagen (steg 9.8.4): storleken, betet som är kvar, hur länge det räcker, djuren och staketets skick
+function hage(id: number) {
+  const h = hageById(s, id);
+  if (!h) return '<p class="muted">Hagen finns inte längre.</p>';
+  const b = hageBete(s, h), dj = djurIHagen(s, h), kant = hageKant(s, h), hela = kant.filter(i => harStaket(s, i)).length, dygn = hageDygn(s, h);
+  const djur = dj.map(d => { const q = d.agare !== undefined ? byId(s, d.agare) : undefined; return `${iconImg(TAMDJUR[d.art].ikon, 12)} ${esc(TAMDJUR[d.art].namn)}, ${Math.floor(tamAlder(s, d))} år, hunger ${Math.round(d.hunger * 100)} %${q ? `, ${pLink(q)}` : ', byns'}`; }).join('<br>');
+  return `
+    <div class="phead">${iconImg('hage', 32)}<div><h2>Hage</h2></div></div>
+    <dl class="kv">
+      <dt>Storlek</dt><dd>${h.w} × ${h.h} rutor</dd>
+      <dt title="Gräset (rutor fulla med gräs), buskarna och ungträden som djuren kan äta">Bete</dt><dd>🌾 ${kortTal(b.gras)} · 🌿 ${b.buskar} · 🌱 ${b.unga}</dd>
+      <dt title="Hur länge betet räcker för djuren som går där, utan att det växer igen">Räcker</dt><dd>${dygn === Infinity ? 'inga djur går här' : `${Math.floor(dygn)} dygn`}</dd>
+      <dt>Staket</dt><dd>${hela === kant.length ? 'helt' : `${kant.length - hela} av ${kant.length} rutor saknas`}</dd>
+      <dt>Djuren</dt><dd class="rader">${djur || 'inga'}</dd>
     </dl>`;
 }
 // trädet på kartan (steg 5.1.4.3): bilden, arten, stadiet och åldern (sim/trad.ts)
@@ -180,8 +196,10 @@ export const sak: Flik = {
   namn: 'Saken',
   knapp: 'person',
   html() {
+    if (ui.sak === 'tornado') return tornadoRuta(); // (steg 9.2.22)
     if (ui.sak.startsWith('f:')) return toaHog(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('u:')) return stubbe(Number(ui.sak.slice(2)));
+    if (ui.sak.startsWith('H:')) return hage(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('k:')) return kvarleva(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('g:')) return grav(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('h:')) return heligPlats(Number(ui.sak.slice(2)));
@@ -205,8 +223,11 @@ export const sak: Flik = {
       : sl.per > 0 ? `<dt>Håller</dt><dd>${durTxt(c / sl.per * HOUR)} till i den takten</dd>` : '';
     // vad den är värd (steg 3.10.6, varde.ts): ungefär så många timmars arbete det tar att skaffa eller göra den, efter skick och kvalitet
     const v1 = t ? tingVarde(t) : grundvarde(a.k) * c, varde = `<dt title="Ungefär i arbetstimmar: det det tar att skaffa eller göra den">Värde</dt><dd>${kortTal(v1)}${!t && p && p.n >= 2 ? `, ${kortTal(v1 * Math.round(p.n))} alla` : ''}</dd>`;
-    const klad = SAKER[a.k]?.klad?.varme ? `<dt>Värme</dt><dd>Skyddar ${Math.round(kladSkydd(a.k, t) * 100)} % mot kylan</dd>` : '';
-    const kv = t && !t.halv && t.q !== undefined ? `<dt>Kvalitet</dt><dd>${kvMark(t, 12)} ${esc(kvText(t))}</dd>` : ''; // (steg 2.2.2)
+    // vad plagget skyddar mot, i tal (steg 9.2.14): kylan, och i striden hur stor del av skadan det tar per slag, på delarna det täcker
+    const strid = SKYDD[a.k], PAR: Record<string, string> = { arm: 'armarna', ben: 'benen', fot: 'fötterna', hand: 'händerna' }, SLAGORD: Record<string, string> = { hugg: 'hugg', stick: 'stick', slag: 'slag', bett: 'bett' };
+    const klad = (SAKER[a.k]?.klad?.varme ? `<dt>Kylan</dt><dd>Skyddar ${Math.round(kladSkydd(a.k, t) * 100)} % mot kylan</dd>` : '')
+      + (strid ? `<dt>Slag och stick</dt><dd>Tar ${Object.entries(strid.tar).map(([k, v]) => `${Math.round(v! * 100)} % av ${SLAGORD[k] ?? k}`).join(', ')}, på ${[...new Set(strid.delar.map(d => PAR[d.replace(/[VH]$/, '')] ?? KROPPSDELAR[d].i))].join(' och ')}</dd>` : '');
+    const kv = t && !t.halv && t.q !== undefined ? `<dt>Kvalitet</dt><dd>${kvOrd(t) || 'Normal'}${kvOf(t) === NORMAL ? '' : ` <span class="muted">${esc(kvText(t).replace(/^[^:]*: /, ''))}</span>`}</dd>` : ''; // (steg 2.2.2)
     const ber = t && !t.halv ? sakBerattelse(s, t, sakNamn(k)) : ''; // mästerverken och de usla sakerna (steg 3.9.4)
     return `
     <div class="phead">${iconImg(k, 32)}<div><h2>${t?.ber?.namn ? `★ ${esc(t.ber.namn)}: ` : ''}${esc(sakNamn(k))}${halv}</h2></div></div>
@@ -228,3 +249,17 @@ export const sak: Flik = {
     return true;
   },
 };
+
+// tornadon (steg 9.2.22): storleken, var den kom ifrån, hur långt den har kvar och vad den fällt, lyft och skadat hittills
+function tornadoRuta() {
+  const t = s.tornado;
+  if (!t) return '<div class="phead"><div><h2>Tornadon</h2></div></div><p class="muted">Tornadon har dragit förbi.</p>';
+  const u = tornadoAndel(t, ui.nu), kvar = Math.max(0, Math.round((1 - u) * t.L)), tid = Math.max(0, t.till - ui.nu);
+  const st = { liten: 'En liten tornado', medel: 'En tornado', stor: 'En stor tornado' }[t.storlek ?? 'medel'];
+  const fran = tornadoPos(t, 0), fx = Math.round(fran.x), fy = Math.round(fran.y);
+  const rad = (namn: string, n: number | undefined) => n ? `<dt>${namn}</dt><dd>${n}</dd>` : '';
+  const gjort = rad('Träd fällda', t.trad) + rad('Saker lyfta', t.lyft) + rad('Väggar rivna', t.vagg) + rad('Saker sönder', t.sonder) + rad('Skadade', t.skadade) + rad('Döda', t.doda) + rad('Djur dödade', t.djur) + rad('Förstört', t.forstort);
+  return `<div class="phead"><div><h2>${iconImg('tornado', 20)} Tornadon</h2><p class="muted">${st}${t.test ? ' (testläget)' : ''}</p></div></div>
+    <dl class="kv"><dt>Kom från</dt><dd>Kartans kant ${esc(vaderstreck(s, fx, fy))} om elden</dd><dt>Kvar</dt><dd>${kvar} rutor, ${durTxt(tid)}</dd></dl>
+    <h3>Hittills</h3>${gjort ? `<dl class="kv">${gjort}</dl>` : '<p class="muted">Inget än.</p>'}`;
+}

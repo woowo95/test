@@ -1,0 +1,9 @@
+{
+  "lager": "skal",
+  "om": "Ritat av Claude API:t med bildstil/api/bestar.mjs: former och mönster som bestskaparen gör om till delar.",
+  "kostnad": 0.156,
+  "anteckningar": {"skal":"Skalbaggesköld hade lodräta band och liknade Bälten; nu räfflor längs ryggen. Bensadel såg ut som ett litet rutigt sköldpaddsskal; tog bort tvärlinjen så att bara breda revben med glipor syns, och gjorde den större. Rutpansar var bara brus; nytt tydligt rombgaller och högre över ryggåsen. Knölskal fick större knölar i 2x2. Fjällbrynja lite ljusare fjäll. Skivbrynja oförändrad."},
+  "delar": [
+    {"typ":"band","fran":0.1,"till":1,"over":5,"under":2,"monster":{"rader":["=.....",".=.+.=","..=.=.","...=..","+.=.=.",".=...="],"skift":0},"id":"skal-4","namn":"Rutpansar","text":"En smal, upphöjd brynja av rombformade plattor som löper längs ryggåsen bak mot svansen."}
+  ]
+}

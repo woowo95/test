@@ -11,9 +11,10 @@ import { FOREST, Ground, VAG } from './vag';
 import { H, T, W, inMap } from './typer';
 
 export const TRAD = balans('trad', {
-  vuxenDygn: 120, // ett träd är vuxet så här många dygn (år i spelet) efter att det vuxit klart ...
-  gammalDygn: 60, // ... sedan gammalt så här länge (bara ett träd som står fritt; i en tät dunge torkar det i stället) ...
-  torrDygn: 15, // ... och står sedan som torraka så här länge innan det faller
+  // trädens åldrar per art (steg 9.2.19, raderna i TRADARTER): vuxet så här många dygn (år i spelet) efter att det vuxit
+  // klart, sedan gammalt (bara ett träd som står fritt; i en tät dunge torkar det i stället) och sist torraka innan det faller
+  granVuxen: 120, granGammal: 60, granTorr: 15, // granen blir 200–400 år
+  bjorkVuxen: 50, bjorkGammal: 30, bjorkTorr: 10, // björken 60–100 år, sällan över 150
   jatte: 0.02, // så stor del av de gamla träden är jätteträd (räknat ur rutan, steg 5.1.4.5)
   // trädsorterna (steg 5.1.6): en långsam våg över kartan ger granskog, blandskog och björkdungar
   artVag: 16, // vågens storlek i rutor
@@ -27,8 +28,11 @@ export const TRAD = balans('trad', {
 // registret) och bestäms när plantan slår rot, ur rutan och inte ur spelets slump: en långsam våg över kartan (räknad ur
 // byns frö, som skogsmarken) gör områden med mörk granskog, blandskog och ljusa björkdungar, och björken växer helst i
 // skogskanten, vid vattnet och där skogen kommer tillbaka. Fler sorter (tall, ek, lind, ask) kommer i steg 14.5.1
-export interface TradArt { id: 'gran' | 'bjork'; namn: string }
-export const TRADARTER: TradArt[] = [{ id: 'gran', namn: 'Gran' }, { id: 'bjork', namn: 'Björk' }];
+export interface TradArt { id: 'gran' | 'bjork'; namn: string; vuxen: () => number; gammal: () => number; torr: () => number }
+export const TRADARTER: TradArt[] = [
+  { id: 'gran', namn: 'Gran', vuxen: () => TRAD.granVuxen, gammal: () => TRAD.granGammal, torr: () => TRAD.granTorr },
+  { id: 'bjork', namn: 'Björk', vuxen: () => TRAD.bjorkVuxen, gammal: () => TRAD.bjorkGammal, torr: () => TRAD.bjorkTorr },
+];
 export const GRAN = 0, BJORK = 1;
 export const tradArt = (g: Ground, i: number): TradArt => TRADARTER[g.art?.[i] ?? GRAN] ?? TRADARTER[GRAN];
 // björkens chans på rutan i: vågen, skogskanten (få vuxna träd runt om) eller ny skog, och vattnet nära
@@ -85,7 +89,11 @@ export const STADIER: { id: Stadium; namn: string; stam: number; grenar: number 
   { id: 'torraka', namn: 'Torraka', stam: 1.25, grenar: 0.4 },
 ];
 export const stadiumAv = (id: Stadium) => STADIER.find(q => q.id === id)!;
-const GAMMAL = () => TRAD.vuxenDygn, TORR = () => TRAD.vuxenDygn + TRAD.gammalDygn, FALL = () => TRAD.vuxenDygn + TRAD.gammalDygn + TRAD.torrDygn;
+// åldrarna där trädet på ruta i blir gammalt, torraka och faller, efter dess art (steg 9.2.19)
+const artPa = (art: ArrayLike<number> | undefined, i: number) => TRADARTER[art?.[i] ?? GRAN] ?? TRADARTER[GRAN];
+export const GAMMAL = (art: ArrayLike<number> | undefined, i: number) => artPa(art, i).vuxen();
+export const TORR = (art: ArrayLike<number> | undefined, i: number) => { const a = artPa(art, i); return a.vuxen() + a.gammal(); };
+export const FALL = (art: ArrayLike<number> | undefined, i: number) => { const a = artPa(art, i); return a.vuxen() + a.gammal() + a.torr(); };
 // är det gamla trädet på ruta i ett jätteträd (ett av femtio, räknat ur rutan)
 export const arJatte = (i: number) => hash(9173, i % W, (i / W) | 0) < TRAD.jatte;
 export function stadium(g: Ground, i: number): Stadium | null {
@@ -94,10 +102,10 @@ export function stadium(g: Ground, i: number): Stadium | null {
   if (v < VAG.ungskog) return 'planta';
   if (v < 1) return 'ungtrad';
   const a = g.alder?.[i] ?? 0;
-  return a < GAMMAL() ? 'vuxet' : a < TORR() ? (arJatte(i) ? 'jatte' : 'gammalt') : 'torraka';
+  return a < GAMMAL(g.art, i) ? 'vuxet' : a < TORR(g.art, i) ? (arJatte(i) ? 'jatte' : 'gammalt') : 'torraka';
 }
 // är det vuxna trädet på ruta i gammalt eller ett jätteträd (inte torrakan): det tränger mer (steg 6.5.1, mark.ts)
-export const gammaltTrad = (g: Ground, i: number) => { const a = g.alder?.[i] ?? 0; return g.trees[i] >= 1 && a >= GAMMAL() && a < TORR(); };
+export const gammaltTrad = (g: Ground, i: number) => { const a = g.alder?.[i] ?? 0; return g.trees[i] >= 1 && a >= GAMMAL(g.art, i) && a < TORR(g.art, i); };
 // trädets ålder i dygn (år i spelet): tiden det tog att växa (tradDygn i mark.ts, efter hur stort det är) och åldern som vuxet
 export const tradAlder = (g: Ground, i: number, tradDygn: number) => g.trees[i] < 1 ? g.trees[i] * tradDygn : tradDygn + (g.alder?.[i] ?? 0);
 
@@ -107,24 +115,24 @@ function fritt(trees: Float32Array, i: number) {
   for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && inMap(x + dx, y + dy) && trees[(y + dy) * W + x + dx] >= FOREST) return false;
   return true;
 }
-// åldrarna när urskogen börjar: jämnt utspridda över ett träds liv. Ett träd i en tät dunge blir aldrig gammalt, så dess
-// liv är kortare (vuxet och sedan torraka), och åldern sprids över det
-export function startAlder(seed: number, trees: Float32Array) {
+// åldrarna när urskogen börjar: jämnt utspridda över ett träds liv, efter artens åldrar (steg 9.2.19). Ett träd i en tät
+// dunge blir aldrig gammalt, så dess liv är kortare (vuxet och sedan torraka), och åldern sprids över det
+export function startAlder(seed: number, trees: Float32Array, art: ArrayLike<number>) {
   const a = new Float32Array(W * H);
   for (let i = 0; i < a.length; i++) {
     if (trees[i] < 1) continue;
     const r = hash(seed + 71, i % W, (i / W) | 0);
-    if (fritt(trees, i)) { a[i] = r * FALL(); continue; }
-    const v = r * (GAMMAL() + TRAD.torrDygn);
-    a[i] = v < GAMMAL() ? v : TORR() + v - GAMMAL();
+    if (fritt(trees, i)) { a[i] = r * FALL(art, i); continue; }
+    const v = r * (GAMMAL(art, i) + artPa(art, i).torr());
+    a[i] = v < GAMMAL(art, i) ? v : TORR(art, i) + v - GAMMAL(art, i);
   }
   return a;
 }
 // en timme (eller flera) för träden som vuxit klart: de åldras, och torrakan faller (trädet är borta och rutan blir en glänta)
 export function aldras(g: Ground, i: number, hours: number) {
   const a = g.alder!, fore = a[i], efter = fore + hours / 24;
-  if (fore < GAMMAL() && efter >= GAMMAL() && !fritt(g.trees, i)) { a[i] = TORR(); return; } // i en tät dunge torkar det
-  if (efter >= FALL()) { g.trees[i] = 0; a[i] = 0; return; }
+  if (fore < GAMMAL(g.art, i) && efter >= GAMMAL(g.art, i) && !fritt(g.trees, i)) { a[i] = TORR(g.art, i); return; } // i en tät dunge torkar det
+  if (efter >= FALL(g.art, i)) { g.trees[i] = 0; a[i] = 0; return; }
   a[i] = efter;
 }
 // åldern packad i sparfilen: hela dygn per ruta, som upprepningar (packaUpprepat ovan)

@@ -19,12 +19,15 @@ import { Pabud, legitimitet, pabud } from './styre';
 import { ALDER, ageOf, living } from './folk';
 import { clamp } from './slump';
 import { sportFor } from './sport';
-import { STATIONER, StationDef, StationSlag, bordBrist, forvarBrist, harStation, isKlar, pyntBrist, stationerOf, tommaPlatser } from './stationer';
+import { STATIONER, StationDef, StationSlag, bordBrist, forvarBrist, harStation, isKlar, pyntBrist, stationerOf, tommaPlatser, villPynt } from './stationer';
+import { nTools } from './agande';
 import { brasaBrist } from './brasor';
 import { utanBadd } from './byggnader';
 import { latrinBrist } from './smuts';
 import { torkBrist } from './matlagning';
 import { HOUR, State, WEEK } from './typer';
+import { TILLVERKA } from './tillverka';
+import { protesVill } from './protes';
 
 export const FORRAD = balans('forrad', {
   forsiktig: 0.25, // en försiktig by (seden Förutseende eller påbudet) vill ha så mycket större förråd
@@ -117,6 +120,7 @@ export const MATERIALMAL = {
   sten: { min: () => 0 },
   flinta: { min: () => TROSKEL.flintaMinsta },
   virke: { min: () => 0 },
+  lera: { min: () => 0 }, // steg 9.4.10: målet följer hur mycket lera byn gör av med
 } as const satisfies Record<string, Materialmal>;
 export type Materialslag = keyof typeof MATERIALMAL;
 export const MATERIAL_LIST = Object.keys(MATERIALMAL) as Materialslag[];
@@ -178,10 +182,16 @@ const vuxna = (s: State, fran: number) => living(s).filter(p => ageOf(p, s.now) 
 const perVuxna = (s: State, per: number, min: number, max: number, fran: number = ALDER.vuxen) => clamp(Math.floor(vuxna(s, fran) / per), min, max);
 // ett spjut per tre vuxna, när någon väl har börjat fiska eller jaga
 const spjutVill = (s: State) => (s.stat?.fiskeForsok ?? 0) > 0 || (s.stat?.prod_jakt ?? 0) > 0 ? perVuxna(s, VILLTAL.spjutPerVuxna, VILLTAL.spjutMin, VILLTAL.spjutMax) : 0;
+const ortkokKan = (s: State) => living(s).some(p => (p.tek?.ortkok ?? 0) >= 1); // någon kan koka i örtköket (steg 9.4.14)
 export const REDSKAPMAL: Record<string, (s: State) => number> = {
   spjut: spjutVill,
   metspo: spjutVill, // ett metspö per spjut
+  nat: s => Math.min(2, Math.ceil(spjutVill(s) / 3)), // ett nät på tre fiskare, högst två (steg 9.6.16)
   korg: s => perVuxna(s, VILLTAL.korgPerVuxna, VILLTAL.korgMin, VILLTAL.korgMax),
+  nal: s => living(s).some(p => p.skill.lakekonst >= 2) ? 1 : 0, // en bennål när någon kan sy ett sår (steg 9.5.15)
+  krycka: s => protesVill(s, 'krycka'), traben: s => protesVill(s, 'traben'), krok: s => protesVill(s, 'krok'), ogonlapp: s => protesVill(s, 'ogonlapp'), // proteserna (steg 9.5.11, protes.ts)
+  naverask: s => ortkokKan(s) ? TILLVERKA.koka_salva.vill + TILLVERKA.koka_lim.vill : 0, // näveraskarna (steg 9.4.14): salvan och limmet som byn vill ha förvaras i dem
+  lerkruka: s => living(s).filter(p => villPynt(s, p, 'kruka')).length + (nTools(s, 'vattensack') < 1 ? 1 : 0) + (ortkokKan(s) ? TILLVERKA.koka_tjara.vill : 0), // och tjäran i stora krukor (steg 9.4.14) // lerkrukorna (steg 9.4.12): de som vill ha en kruka som pynt, och en att bära vatten i när byn saknar en vattensäck
   kniv: s => VILLTAL.knivar + tommaPlatser(s, 'kniv'), // och en till för en tom knivplats vid slaktbänken
   bensyl: s => tommaPlatser(s, 'bensyl'), // en till slöjdbänken (steg 2.3.2)
   rock: s => living(s).length, // en per person (steg 2.3.2), av vilket material som helst (klader.ts)

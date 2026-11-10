@@ -227,11 +227,11 @@ SCENARIER.fritid = {
 
 SCENARIER.promenad = {
   lang: true,
-  text: 'Promenaden är en riktig runda (steg 6.2.8): man går i vanlig fart mellan några punkter på land runt platsen man valt, stannar ibland och ser sig omkring, och går aldrig i vattnet, en vägg eller en station. Ingen svängning i bilden',
+  text: 'Promenaden är en riktig runda (steg 6.2.8): man går i vanlig fart mellan några punkter på land runt platsen man valt, stannar ibland och ser sig omkring, och går aldrig i vattnet, en vägg eller en station. Ingen svängning i bilden. Sträckorna är långa och raka och vänder sällan (steg 9.2.84)',
   kor: () => {
-    let prom = 0, punkter = 0, stopp = 0, land = true, langtFran = 0, maxR = 0;
+    let prom = 0, punkter = 0, stopp = 0, land = true, langtFran = 0, maxR = 0, strackor = 0, vander = 0, langd = 0, valda = 0;
     for (const seed of [5, 6]) {
-      const s = createState(seed, START), sett = new Map<object, Set<string>>();
+      const s = createState(seed, START), sett = new Map<object, Set<string>>(), forra = new Map<object, { x: number; y: number; v?: number }>();
       s.kal = nyKalender(s.now, 2); setFood(s, 40); setAmount(s, 'ved', 40);
       kor(s, 2 * 24, s => {
         for (const p of living(s)) {
@@ -240,6 +240,13 @@ SCENARIER.promenad = {
           let m = sett.get(t);
           if (!m) { sett.set(t, m = new Set()); prom++; }
           m.add(`${Math.floor(t.tx)},${Math.floor(t.ty)}`); // punkten man går till eller står vid (ett steg är fem minuter, så alla punkter syns inte)
+          // varje ny punkt är en sträcka: hur lång, och om den vänder mer än 120 grader mot den förra (steg 9.2.84)
+          const f = forra.get(t), nx = Math.floor(t.tx), ny = Math.floor(t.ty);
+          if (!f) forra.set(t, { x: nx, y: ny });
+          else if (f.x !== nx || f.y !== ny) {
+            const v = Math.atan2(ny - f.y, nx - f.x); strackor++; langd += Math.hypot(nx - f.x, ny - f.y);
+            forra.set(t, { x: nx, y: ny, v });
+          }
           if ((t.plock ?? 0) > 0) stopp++;
           if (t.kring) maxR = Math.max(maxR, Math.hypot(Math.floor(t.tx) - t.kring.x, Math.floor(t.ty) - t.kring.y));
           if (getMap(s.seed).tiles[tileOf(p.x, p.y)] === T.Vatten || SIM.isWall(s, p.x, p.y)) land = false;
@@ -247,6 +254,7 @@ SCENARIER.promenad = {
         }
       });
       for (const m of sett.values()) punkter += m.size;
+      vander += s.stat?.promVander ?? 0; valda += s.stat?.promStracka ?? 0; // varje sträcka räknas när den väljs; provet ovan ser bara var femte minut
     }
     const r = ACTS.promenad.tur!.r;
     return [
@@ -256,6 +264,8 @@ SCENARIER.promenad = {
       [`punkterna ligger inom ${r} rutor från platsen man valde (längst ${maxR.toFixed(1)})`, maxR <= r + 2], // en punkt i en vägg eller i vattnet flyttas till rutan bredvid
       ['den som promenerar går aldrig i vattnet eller i en vägg', land],
       ['promenaden svänger inte i bilden (ingen vandra i handlingens rad)', !ACTS.promenad.vandra],
+      [`sträckorna är långa (${(langd / Math.max(1, strackor)).toFixed(1)} rutor i snitt, minst 4)`, langd / Math.max(1, strackor) >= 4],
+      [`riktningen vänder sällan (${vander} av ${valda} sträckor vänder mer än 120 grader, högst en av fem)`, valda > 3 && vander <= valda / 5],
     ];
   },
 };
@@ -488,7 +498,7 @@ SCENARIER.kropp = {
     for (let i = 0; i < 2000 && !(s.stat?.skador); i++) halsaSteg(s, p, MIN60 * 30);
     const olycka = (s.stat?.skador ?? 0) >= 1;
     // ett lätt skärsår blöder en stund och levrar sig; ett mycket svårt kan förblöda
-    fyll(); p.task = undefined; skada(s, p, 'handH', 'skarsar', 0.5, 'olycka', '');
+    fyll(); p.task = undefined; skada(s, p, 'handH', 'skarsar', 0.25, 'olycka', ''); // ett litet sår (under HALSA.smaSar) levrar sig av sig själv (steg 9.5.14)
     const blodNy = blodning(p), dogLatt = timmar(3), blodLatt = p.blod, levrat = blodning(p) === 0;
     const hFore = halsa(p);
     const laktTid = (() => { for (let h = 1; h <= 24; h++) { timmar(1); if (!p.skador) return h; } return 99; })();
@@ -543,7 +553,7 @@ SCENARIER.vattensack = {
     const c = bynsMitt(s);
     const fyll = (x: Person, dx: number) => Object.assign(x, { rest: 1, toa: 1, hunger: 1, social: 1, warm: 1, health: 1, torst: 1, blod: 1, skador: undefined, sickUntil: undefined, task: undefined, x: c.x + 0.5 + dx, y: c.y + 2.5 });
     fyll(p, 0); fyll(q, 1); fyll(r, 2); r.x = c.x + 40;
-    skada(s, p, 'benH', 'benbrott', 0.9, 'olycka', ''); p.skador![0].b = 0;
+    skada(s, p, 'benH', 'benbrott', 0.9, 'olycka', ''); for (const w of p.skador!) { w.b = 0; if (w.k === 'benbrott') { w.satt = 1; w.spala = 1; } } // också såret i ett öppet brott, och benet är redan satt och spjälat (steg 9.5.27–9.5.28)
     const kanInte = !kanGa(p) && hemma(s, p);
     // utan säck: hen får vatten av de andra
     p.torst = 0.3; chooseTask(s, p); const utan = p.task?.act;
@@ -608,8 +618,8 @@ SCENARIER.vard = {
     for (let i = 0; i < 12 * STEG_TIM && !hem; i++) { step(s, BEAT); if (tk()?.act !== 'buren' && hemma(s, p)) hem = true; }
     const bars = (s.stat?.['buren hem'] as number ?? 0) > buren0;
     // man läker fortare när man vilar
-    fyll(p); skada(s, p, 'handV', 'krossar', 0.5, 'olycka', ''); p.skador![0].b = 0; timmar(p, 4); const vaken = p.skador![0].g;
-    fyll(p); skada(s, p, 'handV', 'krossar', 0.5, 'olycka', ''); p.skador![0].b = 0; p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 100 * HOUR, carry: 0, why: '' }; timmar(p, 4); const sover = p.skador![0].g;
+    fyll(p); skada(s, p, 'handV', 'krossar', 0.5, 'olycka', ''); p.skador![0].b = 0; p.skador![0].salva = 5; timmar(p, 4); const vaken = p.skador![0].g;
+    fyll(p); skada(s, p, 'handV', 'krossar', 0.5, 'olycka', ''); p.skador![0].b = 0; p.skador![0].salva = 5; p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 100 * HOUR, carry: 0, why: '' }; timmar(p, 4); const sover = p.skador![0].g;
     // mossa hittas i naturen och på ett fällt träd
     const t = { act: 'samla', phase: 'do', tx: p.x, ty: p.y, until: 0, carry: 0 } as const;
     setAmount(s, 'mossa', 0); const fynd = mossaFynd(s, { ...t }, 3600);
@@ -654,7 +664,7 @@ SCENARIER.halsoflik = {
     // förmågorna: värdet är det simuleringen räknar med, och delarna visar var det kommer ifrån
     const rf = FORMAGOR.rorlighet, hf = FORMAGOR.handighet;
     const formagor = rf.varde(p) === rorlighet(p) && hf.varde(p) === handighet(p) && FORMAGOR.smarta.varde(p) === smarta(p)
-      && Math.abs(1 + rf.delar(p).reduce((a, x) => a + x.v, 0) - rorlighet(p)) < 1e-9 && rf.delar(p).length === 1 && hf.delar(p).length === 1
+      && Math.abs(1 + rf.delar(p).reduce((a, x) => a + x.v, 0) - rorlighet(p)) < 1e-9 && rf.delar(p).length === (smarta(p) > 0 ? 2 : 1) && hf.delar(p).length === 1
       && FORMAGOR.blod.delar(p).length === 1 && FORMAGOR.smarta.delar(p).length === 2;
     // vården syns: förband och rengjort, och ett infekterat sår som inte rengörs blir sämre
     const w = p.skador![0]; w.f = 1; w.inf = 0.3;
@@ -859,8 +869,9 @@ SCENARIER.gorjustnu = {
           const x = sp?.x ?? p.x, y = sp?.y ?? p.y;
           prov++;
           if (sp?.still && tk?.phase === 'go' && tk.path?.length !== 0) stillaGar++;
-          if (!tk || tk.phase !== 'do' || !AKT.has(tk.act)) continue;
-          const d = ACTS[tk.act], r = (d.runda?.r ?? d.vandra?.r ?? 0) + 1.5, avst = Math.hypot(x - tk.tx, y - tk.ty);
+          if (!tk || tk.phase !== 'do' || !AKT.has(tk.act) || tk.hopp) continue; // på rundan på väg till nästa mål (steg 9.2.54): hen letar på vägen dit
+          const d = ACTS[tk.act], r = (d.runda?.r ?? d.vandra?.r ?? 0) + 1.5, bb = tk.act === 'bygga' ? SIM.bitById(s, tk.ref) : undefined; // den som bygger står intill väggen, inte på platsen bredvid den (steg 9.2.90)
+          const avst = bb ? Math.hypot(x - bb.x - 0.5, y - bb.y - 0.5) : Math.hypot(x - tk.tx, y - tk.ty);
           vidPlats++;
           if (avst > r) { langtBort++; if (ex.length < 4) ex.push(`${p.name} ${tk.act} ${avst.toFixed(1)} rutor från platsen`); }
           if (tk.act === 'maltid' && tk.mal) { maltider++; if (!SIM.bordVid(s, { x: Math.floor(x), y: Math.floor(y) })) utanBord++; }

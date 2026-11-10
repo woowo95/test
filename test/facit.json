@@ -1,53 +1,103 @@
 {
- "1": {
-  "pop": 10,
-  "atergrundad": 0,
-  "invandrade": 1,
-  "utvandrade": 31,
-  "fodda": 57,
-  "doda": 23,
-  "svalt": 0,
-  "kyla": 0,
-  "hunger": 0,
-  "humor": 0.608,
-  "vintermat": 72,
-  "vinterved": 1150,
-  "eld": 95,
-  "kb": 1345,
-  "delKb": 439
- },
- "42": {
-  "pop": 4,
-  "atergrundad": 1,
-  "invandrade": 5,
-  "utvandrade": 17,
-  "fodda": 52,
-  "doda": 49,
-  "svalt": 24,
-  "kyla": 2,
-  "hunger": 74,
-  "humor": 0.621,
-  "vintermat": 182,
-  "vinterved": 229,
-  "eld": 95,
-  "kb": 1284,
-  "delKb": 393
- },
- "777": {
-  "pop": 1,
-  "atergrundad": 12,
-  "invandrade": 17,
-  "utvandrade": 9,
-  "fodda": 41,
-  "doda": 63,
-  "svalt": 34,
-  "kyla": 0,
-  "hunger": 102,
-  "humor": 0.633,
-  "vintermat": 75,
-  "vinterved": 157,
-  "eld": 80,
-  "kb": 1275,
-  "delKb": 378
+ "byar": {
+  "1": {
+   "granser": [
+    0,
+    20,
+    40,
+    90
+   ],
+   "bitMs": [
+    38044,
+    34255,
+    53133
+   ],
+   "n": {
+    "pop": 6,
+    "atergrundad": 1,
+    "invandrade": 9,
+    "utvandrade": 15,
+    "fodda": 31,
+    "doda": 26,
+    "svalt": 7,
+    "kyla": 5,
+    "blod": 5,
+    "infektion": 0,
+    "amputerat": 0,
+    "hunger": 84,
+    "humor": 0.532,
+    "vintermat": 0,
+    "vinterved": 52,
+    "eld": 86,
+    "kb": 2402,
+    "delKb": 342
+   }
+  },
+  "42": {
+   "granser": [
+    0,
+    10,
+    40,
+    90
+   ],
+   "bitMs": [
+    19749,
+    29138,
+    28187
+   ],
+   "n": {
+    "pop": 4,
+    "atergrundad": 2,
+    "invandrade": 6,
+    "utvandrade": 8,
+    "fodda": 17,
+    "doda": 23,
+    "svalt": 2,
+    "kyla": 5,
+    "blod": 2,
+    "infektion": 0,
+    "amputerat": 0,
+    "hunger": 117,
+    "humor": 0.542,
+    "vintermat": 0,
+    "vinterved": 88,
+    "eld": 82,
+    "kb": 2288,
+    "delKb": 298
+   }
+  },
+  "777": {
+   "granser": [
+    0,
+    10,
+    30,
+    90
+   ],
+   "bitMs": [
+    29019,
+    30925,
+    34592
+   ],
+   "n": {
+    "pop": 1,
+    "atergrundad": 13,
+    "invandrade": 24,
+    "utvandrade": 2,
+    "fodda": 12,
+    "doda": 49,
+    "svalt": 5,
+    "kyla": 22,
+    "blod": 5,
+    "infektion": 0,
+    "amputerat": 0,
+    "hunger": 183,
+    "humor": 0.433,
+    "vintermat": 10,
+    "vinterved": 59,
+    "eld": 47,
+    "kb": 2241,
+    "delKb": 293
+   }
+  }
  }
 }

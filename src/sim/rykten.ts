@@ -1,4 +1,5 @@
 import { horsel } from './halsa';
+import { personHand } from './personlogg';
 import { KLADMATERIAL, kladAv } from './klader';
 import { han, honom } from './ord';
 import { lista, tal } from './ord';
@@ -74,6 +75,11 @@ export const RYKTE = balans('rykte', {
   smakMat: 0.05, // ett barn som äter med en förälder nära får så här mycket tycke för maten
   smakGift: 0.6, // den som blev förgiftad av svamp får så här mycket avsmak för svampen
   smakDrag: 0.15, // smaken drar så här mycket i valet av arbete (lusten gånger 1 + smakDrag × smaken)
+  smakFin: 0.35, // en fin måltid ger så här mycket tycke för huvudingrediensen (steg 9.6.6) ...
+  smakForgiftad: 0.6, // ... och matförgiftning så här mycket avsmak för det man åt
+  smakFavorit: 0.5, // starkare än så här är smaken en favorit eller en avsky (personrutan)
+  smakBlekna: 0.006, // per timme bleknar smaken för mat så mycket mot noll, om den inte förnyas (ungefär hälften på fem dygn)
+  smakSprid: 0.08, // i ett samtal får den andra så mycket av en favorit eller avsky, om de står varandra nära
   smakTanke: 0.03, // glädjen (eller olusten) av att äta det man tycker om (eller inte) ...
   smakKanns: 0.2, smakTankeTim: 3, // ... när smaken är starkare än så här, i så här många timmar
   // talen som stod lösa (kodgenomgången 3.10.25), med samma värden
@@ -392,7 +398,7 @@ export function rykteDod(s: State, p: Person) {
   if (r >= RYKTE.dodLog) {
     const top = samlatIntryck(s, p.id)[0];
     if (top) { log(s, `Byn minns ${p.name} som ${INTRYCK[top[0]].namn}.`, 'death', [p.id]); count(s, 'rykte_minns'); }
-    if (r >= RYKTE.legend) p.fame.push(a >= 0 ? 'Blev en legend i byn' : 'Blev ökänd');
+    if (r >= RYKTE.legend) { p.fame.push(a >= 0 ? 'Blev en legend i byn' : 'Blev ökänd'); personHand(s, p, 'titel', a >= 0 ? 'Blev en legend i byn.' : 'Blev ökänd.'); }
   }
 }
 // en gång i timmen: intrycken bleknar, de allvarliga långsammare, och minnet av en död långsammare ju ryktbarare hen var.
@@ -447,6 +453,8 @@ function stepSmak(s: State, mood: (p: Person, now: number) => number) {
       if (f) smaka(p, 'a:' + f.task!.act, RYKTE.smakBarn);
       continue;
     }
+    // smaken för mat bleknar om den inte förnyas (steg 9.6.6), som andra minnen
+    for (const k in p.smak ?? {}) if (k.startsWith('m:')) smaka(p, k, -Math.sign(p.smak![k]) * Math.min(Math.abs(p.smak![k]), Math.abs(p.smak![k]) * RYKTE.smakBlekna + 1e-4));
     if (!act || !arArbete(act)) continue;
     const m = mood(p, s.now);
     if (m > RYKTE.smakGlad) smaka(p, 'a:' + act, RYKTE.smakArbete);
@@ -457,11 +465,21 @@ function stepSmak(s: State, mood: (p: Person, now: number) => number) {
 // blir lite gladare (eller inte)
 export function smakMat(s: State, p: Person, per: Record<string, number>) {
   let k: string | undefined, n = 0;
-  for (const x in per) if (per[x] > n) { n = per[x]; k = x; }
+  for (const x in per) if (per[x] > n) { n = per[x]; k = smakSak(x); }
   if (!k) return;
   if (ageOf(p, s.now) < ALDER.vuxen && living(s).some(q => isParent(q, p) && Math.hypot(q.x - p.x, q.y - p.y) < RYKTE.syn)) smaka(p, 'm:' + k, RYKTE.smakMat);
   const v = smakAv(p, 'm:' + k);
   if (Math.abs(v) > RYKTE.smakKanns) think(p, v > 0 ? 'Fick äta något gott' : 'Fick äta något äckligt', v * RYKTE.smakTanke, s.now, RYKTE.smakTankeTim * HOUR);
+}
+// favoriter och avsky (steg 9.6.6): en fin måltid ger tycke för huvudingrediensen, en matförgiftning avsmak för det man åt
+export const smakFinMaltid = (p: Person, k: string) => smaka(p, 'm:' + k, RYKTE.smakFin);
+export const smakForgiftad = (p: Person, k: string) => smaka(p, 'm:' + k, -RYKTE.smakForgiftad);
+export const favoriter = (p: Person) => Object.entries(p.smak ?? {}).filter(([k, v]) => k.startsWith('m:') && Math.abs(v) >= RYKTE.smakFavorit).map(([k, v]) => ({ k: k.slice(2), v }));
+// i ett samtal berättar a om sin favoritmat eller det hen avskyr, och b, som står a nära, börjar tycka likadant (steg 9.6.6)
+export function berattaSmak(a: Person, b: Person, op: number) {
+  if (op < 20) return;
+  const f = favoriter(a).sort((x, y) => Math.abs(y.v) - Math.abs(x.v))[0];
+  if (f) smaka(b, 'm:' + f.k, Math.sign(f.v) * RYKTE.smakSprid);
 }
 // den som blev förgiftad av svamp får avsmak för svamp (fynd.ts)
 export const smakGift = (p: Person) => smaka(p, 'm:svamp', -RYKTE.smakGift);
@@ -566,3 +584,4 @@ export function larma(s: State, vad: string, storlek: number, ropare: Person[], 
 }
 // minns p ett larm nu?
 export const larmNu = (s: State, p: Person) => p.larm && s.now - p.larm.t < LARM.tim * HOUR ? p.larm : undefined;
+import { smakSak } from './ratter';

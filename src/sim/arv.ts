@@ -9,6 +9,7 @@
 // Husen delas ut först, det mest värda först, även till en arvinge som redan har ett hus, och får den nya ägarens namn
 // (steg 2.12.5). Den som inte vill ha sitt kan längre fram byta bort, sälja eller riva det (steg 7.2.5).
 // Den som flyttar tar med sig så mycket av sitt eget som hen orkar bära, det mest värda för vikten först; resten blir byns.
+import { husNytt } from './byggnad';
 import { tingOf } from './agande';
 import { count, isKin, isParent, living, log } from './folk';
 import { kronika } from './historik';
@@ -18,6 +19,7 @@ import { grundvarde, husVarde, tingVarde, varuVarde } from './varde';
 import { housesOf } from './byggnad';
 import { husNamn } from './byggnader';
 import { Person, State } from './typer';
+import { tamArt, tamdjurOf } from './tamdjur';
 
 // arvingarna, i tur och ordning: partnern, barnen, föräldrarna, syskonen
 function heirsOf(s: State, p: Person): Person[] {
@@ -31,22 +33,34 @@ function heirsOf(s: State, p: Person): Person[] {
 
 const lista = (d: string[]) => d.length > 1 ? `${d.slice(0, -1).join(', ')} och ${d[d.length - 1]}` : d[0];
 
+// krönikan och sammanfattningen (steg 9.2.127): det värdefullaste arvingen fick och resten som ett värde, t.ex. "Randhild ärvde
+// byxor av harskinn och saker värda 40 silver efter Kamar"; händelseloggen behåller hela listan
+export function arvKort(arvinge: string, dod: string, fick: string[], varde: number[]) {
+  if (fick.length <= 1) return `${arvinge} ärvde ${lista(fick)} efter ${dod}.`;
+  const b = varde.indexOf(Math.max(...varde)), rest = Math.round(varde.reduce((a, v, i) => a + (i === b ? 0 : v), 0));
+  return rest >= 1 ? `${arvinge} ärvde ${fick[b]} och saker värda ${rest} silver efter ${dod}.` : `${arvinge} ärvde ${fick[b]} och några småsaker efter ${dod}.`;
+}
 // p har dött: arvingarna får det hen ägde. Anropas innan delarna blir byns (releaseOwner)
 export function inherit(s: State, p: Person) {
   const heirs = heirsOf(s, p);
   if (!heirs.length) return;
-  const val = heirs.map(() => 0), fick: string[][] = heirs.map(() => []);
+  const val = heirs.map(() => 0), fick: string[][] = heirs.map(() => []), varde: number[][] = heirs.map(() => []); // varde: vad varje del av arvet är värd
   const hus = housesOf(s).filter(q => q.ag === p.id).sort((a, b) => husVarde(s, b) - husVarde(s, a) || a.id - b.id);
   for (const h of hus) {
     const i = val.indexOf(Math.min(...val));
-    fick[i].push(h.namn); h.ag = heirs[i].id; val[i] += husVarde(s, h);
+    fick[i].push(h.namn); varde[i].push(husVarde(s, h)); h.ag = heirs[i].id; husNytt(s, h, 'ag', `Nyss ärvt av ${heirs[i].name}.`); val[i] += husVarde(s, h);
     if (h.namn === husNamn(p.name)) h.namn = husNamn(heirs[i].name);
   }
   const tools = tingOf(s).filter(t => t.agare === p.id).sort((a, b) => tingVarde(b) - tingVarde(a) || a.id - b.id);
   for (const t of tools) {
     const i = val.indexOf(Math.min(...val));
     t.agare = heirs[i].id; val[i] += tingVarde(t);
-    fick[i].push(tingNamn(t).toLowerCase());
+    fick[i].push(tingNamn(t).toLowerCase()); varde[i].push(tingVarde(t));
+  }
+  // djuren (steg 9.8.1) ärvs som redskapen, ett i taget till den som hittills fått minst. Hunden ärvs inte: den går till den som matat den mest (steg 9.8.3, tamdjur.ts)
+  for (const d of tamdjurOf(s).filter(d => d.agare === p.id && d.art !== 'hund').sort((a, b) => a.id - b.id)) {
+    const i = val.indexOf(Math.min(...val)), v = tamArt(d.art).varde;
+    d.agare = heirs[i].id; val[i] += v; fick[i].push(`${tamArt(d.art).ord[0]} ${tamArt(d.art).ord[1]}`); varde[i].push(v);
   }
   const eget = ownedAll(s, p.id);
   const rest = varuVarde(eget);
@@ -66,12 +80,12 @@ export function inherit(s: State, p: Person) {
       const k = Object.keys(eget).filter(k => (nu[k] ?? 0) - (fore[hi][k] ?? 0) >= 1 && grundvarde(k) < gap - 1e-9).sort((a, b) => grundvarde(b) - grundvarde(a) || (a < b ? -1 : 1))[0];
       if (!k || !ownMove(s, k, 1, heirs[hi].id, heirs[lo].id)) break;
     }
-    heirs.forEach((h, i) => { const nu = ownedAll(s, h.id); for (const k in eget) { const n = Math.round((nu[k] ?? 0) - (fore[i][k] ?? 0)); if (n >= 1) fick[i].push(`${n} ${sakNamn(k).toLowerCase()}`); } }); // det som delades ut (hela saker)
+    heirs.forEach((h, i) => { const nu = ownedAll(s, h.id); for (const k in eget) { const n = Math.round((nu[k] ?? 0) - (fore[i][k] ?? 0)); if (n >= 1) { fick[i].push(`${n} ${sakNamn(k).toLowerCase()}`); varde[i].push(n * grundvarde(k)); } } }); // det som delades ut (hela saker)
   }
   heirs.forEach((h, i) => {
     if (!fick[i].length) return;
     const text = `${h.name} ärvde ${lista(fick[i])} efter ${p.name}.`;
-    log(s, text, 'death', [h.id, p.id]); kronika(s, text);
+    log(s, text, 'death', [h.id, p.id]); kronika(s, arvKort(h.name, p.name, fick[i], varde[i]), 'arv');
   });
   if (tools.length || hus.length || Object.keys(eget).length) count(s, 'arv'); // bara när något gick till en arvinge
 }

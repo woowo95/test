@@ -1,8 +1,12 @@
 // Kör en by utan grafik och samlar nyckeltalen (registret NYCKELTAL i nyckeltal.ts säger vad de heter och betyder).
 // Vakterna larmar om något blir omöjligt (NaN, negativa förråd, folk i vattnet).
+import { trangtVidStation as SIM_TRANGT } from '../sim/stationer';
+import { forLangtArbete } from '../sim/tider';
 import { husFel, BEAT, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, vattenNu, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP, forvarAt, isTool, faltOf, faltRutor, faltAt, stationById, gridOf, getMap, djurOf, vargarOf, MATERIAL } from '../sim';
 import { NYCKELTAL, Nyckeltal, tal } from './nyckeltal';
 import { lyssnaPaTexter } from '../sim/berattelser';
+import { gastLever } from '../sim/gast';
+import { gangLangsam, gangVakt } from '../sim/gang';
 import { kollaText, konI, titta } from './textkoll';
 
 // testbyarna grundas 08:00 svensk tid. Testerna körs i datorns tidszon (här UTC), så där är klockan 06:00 när byn grundas
@@ -12,7 +16,9 @@ export const STEG_TIM = 3600 / BEAT, STEG_DYGN = 86400 / BEAT;
 // ett dokument i artefaktens databas rymmer högst så här många KB (sparfilens delar, DELAR i steg.ts)
 export const DOK_KB = 256;
 
-export interface Resultat { seed: number; n: Nyckeltal; vakter: string[]; s: State }
+// ack: det som räknas under körningen och inte står i byn, så att flera körningar efter varandra kan läggas ihop (delby.ts, steg 9.2.17)
+export interface Ack { hunger: number; humor: number; humorN: number; lit: number; steg: number; vintermat: number; vinterved: number }
+export interface Resultat { seed: number; n: Nyckeltal; vakter: string[]; s: State; ack: Ack }
 
 // fran: kör vidare en by som redan finns (t.ex. en inläst sparfil, scenariot sparning) i stället för en ny by med seed
 export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => void, fran?: State): Resultat {
@@ -24,6 +30,9 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
   const fel = new Map<string, { n: number; forsta: string }>();
   // texten görs bara första gången ett larm går, så att vakterna inte tar tid när allt är rätt
   const larm = (typ: string, text: () => string) => { const f = fel.get(typ); if (f) f.n++; else fel.set(typ, { n: 1, forsta: `dag ${dag()}: ${text()}` }); };
+  // ingen rör sig mycket långsamt med gånganimationen utan flera skäl (steg 9.2.101)
+  gangVakt.lyss = (s, p, rutor, mork) => { const t = gangLangsam(s, p, rutor, mork); if (t) larm('långsam gång', () => t); };
+  const sedda = new WeakSet<object>(); // arbetena som vakten för arbetstiderna redan sett (steg 9.2.63)
   let hunger = 0, humor = 0, humorN = 0, lit = 0, steg = 0, vintermat = Infinity, vinterved = Infinity, forraAlder = ageIndex(s);
   const ok01 = (v: number) => Number.isFinite(v) && v >= -1e-6 && v <= 1 + 1e-6;
   const dag = () => ((s.now - START) / DAY).toFixed(1);
@@ -35,6 +44,9 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
     varjeSteg?.(s);
     steg++; if (s.fire.lit) lit++;
     if (steg % 288 === 0) { const hf = husFel(s); if (hf) larm('hus', () => hf); } // en gång om dagen (steg 7.2.4)
+    if (steg % 12 === 0) { const tv = SIM_TRANGT(s); if (tv) larm('två vid en station', () => tv); } // en gång i timmen (steg 9.2.52)
+    // arbetstiderna (steg 9.2.63): ett arbete som börjar tar inte längre tid än sitt slag
+    for (const p of s.people) { const t = p.task; if (!t || t.phase !== 'do' || sedda.has(t)) continue; sedda.add(t); const f = forLangtArbete(t, s.now); if (f) larm('arbetstid', () => `${p.name}: ${f}`); }
     if (!(foodOf(s) >= 0) || !(amountOf(s, 'ved') >= 0)) larm('förråd', () => `mat ${foodOf(s)}, ved ${amountOf(s, 'ved')}`);
     for (const t of s.ting ?? []) if (!(t.c > 0 && t.c <= 1 + 1e-9) || [t.hos, t.lass, t.x].filter(v => v !== undefined).length > 1) larm('redskap', () => JSON.stringify(t));
     // saker i hela tal (steg 2.10.7): stackarna, det gömda och ägarnas delar, och det påbörjade under 1
@@ -79,6 +91,7 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
     doda: st.doda ?? 0,
     svalt: st['dog av svält'] ?? 0,
     kyla: st['dog av kyla'] ?? 0,
+    blod: st['dog av blodförlust'] ?? 0, infektion: st['dog av kallbrand'] ?? 0, amputerat: s.stat?.amputerat ?? 0, // steg 9.5.23 och 9.5.26
     hunger,
     humor: humorN ? +(humor / humorN).toFixed(3) : 0,
     vintermat: Number.isFinite(vintermat) ? Math.round(vintermat) : -1,
@@ -89,7 +102,7 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
     delKb: Math.round(Math.max(...Object.values(serializeParts(s)).map(d => new TextEncoder().encode(d).length)) / 1024),
   };
   const vakter = [...fel].map(([typ, f]) => `${typ} (${f.n} ggr), första: ${f.forsta}`);
-  return { seed, n, vakter, s };
+  return { seed, n, vakter, s, ack: { hunger, humor, humorN, lit, steg, vintermat, vinterved } };
 }
 
 // fler vakter efter varje steg: det som bara får finnas hos levande och sådant som håller ihop byn. De tunga körs en gång
@@ -102,6 +115,7 @@ function vakta(s: State, larm: Larm, timme: boolean) {
   for (const p of s.people) { finns.set(p.id, p); if (alive(p)) lever.add(p.id); }
   for (const p of s.people) {
     if (!alive(p)) {
+      if (gastLever(p)) continue; // gästerna har egna handlingar (steg 9.2.113)
       if (p.task) larm('död med uppgift', () => `${p.name} (${p.died !== undefined ? 'död' : 'flyttad'}) har uppgiften ${p.task!.act}${isCarrying(p.task!) ? ' och bär något' : ''}`);
       continue;
     }

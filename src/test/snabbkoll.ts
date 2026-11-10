@@ -4,6 +4,8 @@
 // Den mäter inte balansen och jämför inget med facit: det gör det stora testet efter en grupp steg (npm run koll, jamfor, likhet).
 import './utc';
 import { korJson, korSkript, pool, scenarioSammanfattning, seedAv, sek, typkontroll, typRad } from './pool';
+import { matUnderTestet } from './matare';
+matUnderTestet(); // datorns kärnor och minne under testet (steg 9.2.61)
 
 const BYAR = [0, 1, 2, 3].map(seedAv), DAGAR = 12;
 const t0 = Date.now();

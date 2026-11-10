@@ -182,8 +182,10 @@ const torrBjorkPx = (h: number, sno: number) => { const M = torrBjorkM(h); retur
 
 // bjork: björken i stället för granen (steg 5.1.6); lov: björkens löv nu (steg 5.1.13, sommar om inget anges)
 // typ 'buske': en buske (steg 6.5.3, ui/buske.ts), s = vilken av de tre formerna, + 3 med bären på (bärbusken, steg 6.5.4)
-export type TradBild = { typ: 'gran' | 'torr' | 'buske'; h: number; s: number; mork?: boolean; bjork?: boolean; lov?: Lov };
+export type TradBild = { typ: 'gran' | 'torr' | 'buske'; h: number; s: number; mork?: boolean; bjork?: boolean; lov?: Lov; kol?: boolean }; // kol: en kolnad stam efter en brand (steg 9.2.26)
 function tradPx(b: TradBild, sno: number): { w: number; h: number; px: Int8Array; fot?: number } {
+  // den kolnade stammen (steg 9.2.26, platshållare tills Björn valt i bildstilen): torrakan i kolets två mörkaste toner
+  if (b.kol) { const p = tradPx({ ...b, kol: false }, 0); for (let i = 0; i < p.px.length; i++) if (p.px[i] >= 0) p.px[i] = p.px[i] === BEN || p.px[i] === KOL + 3 ? KOL + 1 : KOL; return p; }
   if (b.typ === 'buske') return buskPx(b.s % BUSK_FORMER.length, b.s >= BUSK_FORMER.length); // s >= 3: med bären på (steg 6.5.4)
   if (b.bjork) {
     const p = b.typ === 'torr' ? torrBjorkPx(b.h, sno) : bjorkPx(b.h, b.lov ?? 'sommar', sno, b.s);
@@ -209,7 +211,7 @@ const bilder = new Map<string, { t: PIXI.Texture; fot: number }>();
 function nyckel(b: TradBild, sno: number) {
   const lov = b.bjork && b.typ !== 'torr' ? b.lov ?? 'sommar' : '';
   const sn = (b.typ === 'torr' && !b.bjork) || b.typ === 'buske' || (lov && lov !== 'kal') ? 0 : sno;
-  return `${b.bjork ? 'b' : ''}${b.typ}|${b.h}|${b.s}|${b.mork ? 1 : 0}|${sn}|${lov}`;
+  return `${b.bjork ? 'b' : ''}${b.typ}|${b.h}|${b.s}|${b.mork ? 1 : 0}|${sn}|${lov}${b.kol ? '|kol' : ''}`;
 }
 function tradTex(b: TradBild, sno: number) {
   const k = nyckel(b, sno);
@@ -311,10 +313,12 @@ export function tradSkuggor(lang = 1) {
 
 // Träden skymmer inte (steg 5.1.4.6): en krona som står framför (söder om) något man behöver se, folk, djur, saker på
 // marken, byggen eller det man valt, blir halvgenomskinlig. punkter = det som syns, i rutor (mitten av rutan = x + 0.5).
-// Runt folket och det man valt (nara, steg 6.8.14) blir alla kronor som når inom NARA rutor genomskinliga, och de som når
-// inom NARA_KANT rutor lite genomskinliga, en tonad kant så att det inte blinkar när någon går förbi
+// Runt folket och det man valt (nara, steg 6.8.14) blir alla kronor som når inom NARA rutor helt genomskinliga, så att bara
+// stammen ritas kvar (steg 9.2.88), och de som når inom NARA_KANT rutor rastrade, en tonad kant så att det inte blinkar när
+// någon går förbi
 export const GENOM = 0.45, GENOM_KANT = 0.72, NARA = 2, NARA_KANT = 3;
-const tonade = new Set<PIXI.Sprite>();
+// trädet som tonats: bilden och platsen det hade (stammen har en annan storlek och ritas på samma fot)
+const tonade = new Map<PIXI.Sprite, { t: PIXI.Texture; x: number; y: number }>();
 // den genomsiktliga kronan (steg 5.5.1): samma bild med punkterna borttagna i ett rastermönster (andelen kvar), så att det
 // som står bakom syns mellan punkterna utan att några nya färger blandas fram
 const genomAv = [new Map<PIXI.Texture, PIXI.Texture>(), new Map<PIXI.Texture, PIXI.Texture>()], helAv = new Map<PIXI.Texture, PIXI.Texture>();
@@ -335,16 +339,20 @@ function genomTex(t: PIXI.Texture, niva: 0 | 1) {
   return g;
 }
 export function tonaTrad(punkter: { x: number; y: number }[], nara: { x: number; y: number }[], W: number, H: number) {
-  const nu = new Map<PIXI.Sprite, 0 | 1>();
-  const satt = (sp: PIXI.Sprite, n: 0 | 1) => { const f = nu.get(sp); if (f === undefined || n < f) nu.set(sp, n); };
+  // 2 = bara stammen (närmast folket), 0 = rastrerad, 1 = lite rastrerad; den starkaste gäller
+  const nu = new Map<PIXI.Sprite, 0 | 1 | 2>(), styrka = [1, 0, 2], fran = new Map<PIXI.Sprite, (typeof sprites extends Map<number, infer V> ? V : never)>();
+  const satt = (sp: PIXI.Sprite, n: 0 | 1 | 2) => { const f = nu.get(sp); if (f === undefined || styrka[n] > styrka[f]) nu.set(sp, n); };
+  // trädets hela bild och plats, också när det redan är tonat: avståndet mäts alltid till hela kronan, annars blir det
+  // stam när någon står nära, och stammen är längre bort, så att kronan kommer tillbaka i nästa bildruta och trädet blinkar
+  const hela = (sp: PIXI.Sprite) => { const o = tonade.get(sp); return o && (helAv.has(sp.texture) || stamBilder.has(sp.texture)) ? { x: o.x, y: o.y, w: o.t.width, h: o.t.height } : { x: sp.x, y: sp.y, w: sp.texture.width, h: sp.texture.height }; };
   for (const p of punkter) {
     const px = p.x * 16 + 8, fot = p.y * 16 + 14, tx = Math.floor(p.x + 0.5), ty = Math.floor(p.y + 0.5);
     for (let dy = 0; dy <= 4; dy++) for (let dx = -2; dx <= 2; dx++) {
       const x = tx + dx, y = ty + dy;
       if (x < 0 || y < 0 || x >= W || y >= H) continue;
       const f = sprites.get(y * W + x);
-      if (!f || nu.get(f.sp) === 0 || f.sp.zIndex <= fot) continue;
-      const sp = f.sp, l = sp.x + 1, r = sp.x + sp.texture.width - 1, t = sp.y, b = sp.y + sp.texture.height;
+      if (!f || nu.get(f.sp) === 2 || f.sp.zIndex <= fot) continue;
+      const sp = f.sp, e = hela(sp), l = e.x + 1, r = e.x + e.w - 1, t = e.y, b = e.y + e.h;
       // själva saken och en bit upp (huvudet på den som står där)
       if (px >= l && px <= r && ((fot >= t && fot <= b) || (fot - 8 >= t && fot - 8 <= b))) satt(sp, 0);
     }
@@ -356,13 +364,24 @@ export function tonaTrad(punkter: { x: number; y: number }[], nara: { x: number;
       const x = tx + dx, y = ty + dy;
       if (x < 0 || y < 0 || x >= W || y >= H) continue;
       const f = sprites.get(y * W + x);
-      if (!f || f.b.typ === 'buske' || nu.get(f.sp) === 0) continue;
-      const sp = f.sp, ex = Math.max(sp.x + 2 - px, 0, px - (sp.x + sp.texture.width - 2)), ey = Math.max(sp.y + 2 - py, 0, py - (sp.y + sp.texture.height * 0.75));
+      if (!f || f.b.typ === 'buske' || nu.get(f.sp) === 2) continue;
+      fran.set(f.sp, f);
+      const sp = f.sp, e = hela(sp), ex = Math.max(e.x + 2 - px, 0, px - (e.x + e.w - 2)), ey = Math.max(e.y + 2 - py, 0, py - (e.y + e.h * 0.75));
       const d = Math.hypot(ex, ey) / 16;
-      if (d <= NARA) satt(sp, 0); else if (d <= NARA_KANT) satt(sp, 1);
+      if (d <= NARA) satt(sp, f.b.h >= 8 ? 2 : 0); else if (d <= NARA_KANT) satt(sp, 1);
     }
   }
-  for (const sp of tonade) if (!nu.has(sp) && !sp.destroyed) { const hel = helAv.get(sp.texture); if (hel) sp.texture = hel; }
-  for (const [sp, n] of nu) sp.texture = genomTex(sp.texture, n);
-  tonade.clear(); for (const sp of nu.keys()) tonade.add(sp);
+  // det som inte längre tonas får tillbaka sin bild och plats (om inte trädet ritats om under tiden)
+  for (const [sp, o] of tonade) if (!nu.has(sp) && !sp.destroyed && (helAv.has(sp.texture) || stamBilder.has(sp.texture))) { sp.texture = o.t; sp.position.set(o.x, o.y); }
+  for (const [sp, n] of nu) {
+    const o = tonade.get(sp), hel = o && (helAv.has(sp.texture) || stamBilder.has(sp.texture)) ? o : { t: sp.texture, x: sp.x, y: sp.y };
+    tonade.set(sp, hel);
+    const f = fran.get(sp);
+    if (n === 2 && f) { // bara stammen, på samma fot som trädet
+      const st = stamTex(f.b).t; stamBilder.add(st);
+      sp.texture = st; sp.position.set(f.x - (st.width >> 1), f.y - st.height + 1);
+    } else { sp.texture = genomTex(hel.t, n === 2 ? 0 : n); sp.position.set(hel.x, hel.y); }
+  }
+  for (const sp of [...tonade.keys()]) if (!nu.has(sp)) tonade.delete(sp);
 }
+const stamBilder = new Set<PIXI.Texture>();

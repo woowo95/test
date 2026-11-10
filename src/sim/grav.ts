@@ -71,7 +71,7 @@ export function kroppUpp(s: State, p: Person, t: Task) {
   q.bars = p.id;
   const d = byId(s, q.vem), tr = d?.brottsling ? undefined : troOf(s, d?.tro), at = gravPlats(s, tr), spade = freeTools(s, p, 'benspade') > 0;
   t.act = 'grava'; t.phase = 'go'; t.tx = at.x + 0.5; t.ty = at.y + 0.5; t.why = `Gräver en grav åt ${q.namn}`;
-  t.until = s.now + (spade ? GRAV.spadeTim : GRAV.handTim) * HOUR + GA_TID;
+  t.until = s.now + (spade ? GRAV.spadeTim : GRAV.handTim) * HOUR + GA_TID; t.arbTid = (spade ? GRAV.spadeTim : GRAV.handTim) * HOUR;
   t.tool = spade ? 'benspade' : undefined; if (spade) take(s, p, 'benspade');
 }
 // graven är klar: kroppen är borta, och är den döde troende samlas trosfränderna (steg 8.5.6). Den som dog som brottsling begravs ovärdigt (steg 8.4.8)
