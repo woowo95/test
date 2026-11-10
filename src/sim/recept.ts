@@ -82,7 +82,7 @@ const DEF = {
   halsband: { var: 'plagg', mangd: 3, av: { rep: 1 }, min: 5 },
   tunika: { var: 'plagg', mangd: 3, av: {}, min: 5 },
   skjorta: { var: 'plagg', mangd: 2, av: {}, min: 5 },
-  braxkott: { var: 'sak', av: { braxen: 1 }, min: 3, slag: 'bearbeta' }, sikkott: { var: 'sak', av: { sik: 1 }, min: 3, slag: 'bearbeta' }, // steg 9.6.17
+  braxkott: { var: 'sak', av: { braxen: 0.5 }, min: 2, slag: 'bearbeta' }, /* en braxen ger två kött (rensa i DJUR) */ sikkott: { var: 'sak', av: { sik: 1 }, min: 3, slag: 'bearbeta' }, // steg 9.6.17
   rokfisk: { var: 'sak', av: { fisk: 1 }, min: 2, slag: 'bearbeta' }, rokkott: { var: 'sak', av: { kott: 1 }, min: 2, slag: 'bearbeta' }, // steg 9.6.8
   saltfisk: { var: 'sak', av: { fisk: 4, salt: 1 }, ger: 4, min: 3, slag: 'bearbeta' }, saltkott: { var: 'sak', av: { kott: 4, salt: 1 }, ger: 4, min: 3, slag: 'bearbeta' }, // steg 9.6.19
   malt: { var: 'sak', av: { korn: 4 }, ger: 4, min: 2, slag: 'bearbeta' }, mjol: { var: 'sak', av: { korn: 4 }, ger: 4, min: 4, slag: 'bearbeta' }, brod: { var: 'sak', av: { mjol: 4, ved: 1 }, ger: 4, min: 3, slag: 'bearbeta' }, // steg 9.6.13, 9.6.22 och 9.6.23

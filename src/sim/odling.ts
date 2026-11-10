@@ -465,6 +465,7 @@ function rutaKlar(s: State, p: Person, f: Falt, k: number) {
     if (Math.abs((r.fu ?? d.fukt) - d.fukt) < 0.1 && kn(p, 'fukt') < 1) learnK(p, 'fukt', JORD.larFukt, s.now); // den som ser grödan trivas lär sig fukten (steg 9.7.3)
     if (a > 0) { gain(s, p, d.sak, d.perRuta * a * b); gain(s, p, d.fro, froTillbaka(s, f, k, d, r.m) * a); count(s, 'skord', d.perRuta * a * b); }
     if (forstaGang(s, 'skordForst')) { log(s, `${p.name} skördade byns första ${d.namn.toLowerCase()}.`, 'world', [p.id]); p.fame.push(`Skördade byns första ${d.namn.toLowerCase()}`); }
+    gain(s, p, 'vaxtrest', 1); // växtresterna (steg 9.7.5)
     f.r![k] = { st: 'bereda' }; // jorden grävs upp igen
   }
 }

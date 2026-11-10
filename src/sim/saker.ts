@@ -239,6 +239,9 @@ const DEF = {
   salt: { namn: 'Salt', ett: true, varde: 2, stack: 50, vikt: 0.05, mapp: 'Material' },
   saltfisk: { namn: 'Saltad fisk', skaffa: RECEPT.saltfisk, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.95, naring: { protein: 2, fett: 0.8, mineral: 1.4, energi: 0.6, vitamin: 0.2 }, haller: 20 },
   saltkott: { namn: 'Saltat kött', ett: true, skaffa: RECEPT.saltkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.97, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 1.3, vitamin: 0.2 }, haller: 20 },
+  // resterna (steg 9.7.5, rester.ts): ruttnar bort, och ger smuts så länge de ligger i byn
+  slaktrens: { namn: 'Slaktrens', stack: 25, ruta: 50, mapp: 'Material', haller: 2 },
+  vaxtrest: { namn: 'Växtrester', stack: 25, ruta: 50, mapp: 'Material', haller: 4 },
   // det rökta (steg 9.6.8, matlagning.ts): håller som det torkade och smakar lite bättre
   rokfisk: { namn: 'Rökt fisk', skaffa: RECEPT.rokfisk, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.8, naring: { protein: 2, fett: 0.8, mineral: 0.7, energi: 0.6, vitamin: 0.2 }, haller: 20 },
   rokkott: { namn: 'Rökt kött', ett: true, skaffa: RECEPT.rokkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.9, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 0.6, vitamin: 0.2 }, haller: 20 },

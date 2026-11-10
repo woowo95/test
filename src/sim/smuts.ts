@@ -177,6 +177,7 @@ export function smutsIByn(s: State) {
     const x = f.i % W, y = Math.floor(f.i / W);
     if (f.k === 'toa' && flackNu(f, Math.max(h0, f.t)) > SMUTS.akel && utanforByn(s, x, y) <= SMUTS.byn) punkter.push({ x: x + 0.5, y: y + 0.5 });
   }
+  for (const a of s.stackar ?? []) if ((a.k === 'slaktrens' || a.k === 'vaxtrest') && a.n >= 1 && utanforByn(s, a.x, a.y) <= SMUTS.byn) punkter.push({ x: a.x + 0.5, y: a.y + 0.5 }); // resterna i byn (steg 9.7.5)
   synCache.set(s, c = { hr, b: s.blod, fl: s.flackar, punkter, blod });
   return c;
 }

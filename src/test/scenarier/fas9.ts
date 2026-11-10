@@ -1278,3 +1278,28 @@ SCENARIER.vattning = {
     ];
   },
 };
+
+SCENARIER.sophog = {
+  text: 'Steg 9.7.5: resterna och sophögen. All slakt ger slaktrens och all skörd ger växtrester, som ruttnar bort med tiden; i byn ger de smuts, och de bärs till sophögen i utkanten, där de ruttnar bort',
+  kor: () => {
+    const { bearbeta, DJUR, setAmount, amountOf, smutsIByn, soporKlar, sophog, stepSophog, utanforByn, resterIByn } = SIM;
+    const s = createState(1, START); klockan(s, 10);
+    const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    setAmount(s, 'abborre', 4);
+    s.stationer = [...(s.stationer ?? []), { id: 991, k: 'slaktbank', x: 3, y: 3, kvar: 0 } as SIM.Station];
+    bearbeta(s, p, DJUR.abborre, 1);
+    const rens = amountOf(s, 'slaktrens');
+    setAmount(s, 'vaxtrest', 6);
+    const fore = smutsIByn(s).punkter.length;
+    s.now += SIM.HOUR; const smuts = smutsIByn(s).punkter.length;
+    soporKlar(s, p);
+    const h = sophog(s), kvar = resterIByn(s), pa = h.n;
+    for (let i = 0; i < 24 * 4; i++) stepSophog(s);
+    return [
+      [`rensningen ger slaktrens (${rens})`, rens > 0],
+      [`resterna i byn syns som smuts (${smuts} punkter)`, smuts >= fore && smuts > 0],
+      [`de bärs till sophögen i utkanten (${pa} där, ${kvar} kvar i byn, ${utanforByn(s, h.x, h.y).toFixed(1)} rutor utanför byn)`, pa > 0 && kvar < rens + 6],
+      [`på sophögen ruttnar de bort (${s.sophog!.n.toFixed(2)} kvar efter fyra dygn)`, s.sophog!.n < pa * 0.5],
+    ];
+  },
+};

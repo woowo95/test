@@ -166,6 +166,7 @@ export const kottFaktor = (p: Person) => REDSKAP.kottMin + (REDSKAP.kottMax - RE
 function stycka(s: State, p: Person, art: Djurart, n: number) {
   const vems = use(s, p, art.sak, n * art.mat);
   for (const [k, m0] of Object.entries(art.slakt)) { const m = k === art.kott ? kottAv(p, m0) : m0; put(s, k, n * m, addDel({}, vems, m / art.mat)); }
+  put(s, 'slaktrens', n, addDel({}, vems, 1 / art.mat)); // slaktrensen (steg 9.7.5)
   return vems;
 }
 
