@@ -196,6 +196,7 @@ export interface Person {
   blod: number; // 1 = allt blod, under HALSA.blodDod förblöder man (steg 2.5.1, halsa.ts)
   skador?: import('./halsa').Skada[]; // skadorna som inte läkt än (halsa.ts)
   saknas?: import('./halsa').Kroppsdel[]; // förlorade kroppsdelar (steg 8.2.3)
+  protes?: Partial<Record<import('./halsa').Kroppsdel, string>>; // protesen på en förlorad del: träbenet, kryckan, kroken eller ögonlappen (steg 9.5.11, protes.ts)
   men?: import('./halsa').Men[]; // det som läkt fel (steg 8.2.4)
   arr?: { d: import('./halsa').Kroppsdel; n: number }[]; // ärren (steg 8.2.4)
   sinnen?: number; // karisman gånger detta, när synen, hörseln eller talet är sämre (steg 8.2.2)

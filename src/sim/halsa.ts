@@ -136,7 +136,7 @@ export const KROPPSDELAR = {
 } satisfies Record<string, DelDef>;
 export type Kroppsdel = keyof typeof KROPPSDELAR;
 const DEL: Record<Kroppsdel, DelDef> = KROPPSDELAR;
-const ARMAR: Kroppsdel[] = ['armV', 'armH'], HANDER: Kroppsdel[] = ['handV', 'handH'], BEN: Kroppsdel[] = ['benV', 'benH'], FOTTER: Kroppsdel[] = ['fotV', 'fotH'];
+export const ARMAR: Kroppsdel[] = ['armV', 'armH'], HANDER: Kroppsdel[] = ['handV', 'handH'], BEN: Kroppsdel[] = ['benV', 'benH'], FOTTER: Kroppsdel[] = ['fotV', 'fotH'];
 
 // ---------- skadorna (registret) ----------
 // blod = hur mycket såret blöder vid grad 1, smarta = hur ont det gör, fel = hur mycket sämre delen blir, lakTim = timmar
@@ -178,12 +178,15 @@ export const OLYCKOR: Partial<Record<Act, OlyckaDef>> = {
 // ---------- det kroppen ger ----------
 // hur mycket sämre en del är just nu (0 = hel, 1 = går inte att använda)
 export function delFel(p: Person, d: Kroppsdel) {
-  if (p.saknas?.includes(d)) return 1; // en förlorad del kommer inte tillbaka (steg 8.2.3)
+  if (p.saknas?.includes(d)) return PROTES_FEL[p.protes?.[d] ?? ''] ?? 1; // en förlorad del kommer inte tillbaka (steg 8.2.3), men en protes ger tillbaka en del (steg 9.5.11)
   let f = 0;
   for (const w of p.skador ?? []) if (w.d === d) f += SKADA[w.k].fel * w.g;
   for (const m of p.men ?? []) if (m.d === d) f += m.fel; // det som läkte fel (steg 8.2.4)
   return Math.min(1, f);
 }
+// hur mycket en förlorad del med en protes fattas (steg 9.5.11, PROTESER i protes.ts): träbenet och kryckan ger tillbaka ungefär hälften
+// av gången, kroken en del av greppet, och ögonlappen är bara utseende
+export const PROTES_FEL: Record<string, number> = { traben: 0.5, krycka: 0.5, krok: 0.6, ogonlapp: 1 };
 const harFel = (p: Person) => !!(p.skador?.length || p.saknas?.length || p.men?.length);
 type Vikt = 'rorlighet' | 'handighet' | 'syn' | 'horsel' | 'tal';
 function forlust(p: Person, vikt: Vikt) {
@@ -338,7 +341,7 @@ const STUMP: Partial<Record<Kroppsdel, Kroppsdel>> = { handV: 'armV', handH: 'ar
 const FINA = {} as Partial<Record<Kroppsdel, Kroppsdel[]>>;
 for (const k of Object.keys(DEL) as Kroppsdel[]) { const u = DEL[k].under as Kroppsdel | undefined; if (u) (FINA[u] ??= []).push(k); }
 // det som sitter på en del, i alla led, och försvinner med den (forlora): fingrarna på handen och handen på armen (STUMP)
-const PA_DELEN = {} as Partial<Record<Kroppsdel, Kroppsdel[]>>;
+export const PA_DELEN = {} as Partial<Record<Kroppsdel, Kroppsdel[]>>;
 const forelder = (k: Kroppsdel) => (DEL[k].under as Kroppsdel | undefined) ?? STUMP[k];
 for (const k of Object.keys(DEL) as Kroppsdel[]) for (let u = forelder(k); u; u = forelder(u)) (PA_DELEN[u] ??= []).push(k);
 // en del går förlorad (steg 8.2.3): avbiten, avhuggen, förfrusen eller amputerad. Det som sitter på den försvinner med den, och utom när

@@ -65,7 +65,7 @@ export const PROJEKT_TAL = balans('projekt', {
   skinnfall: 0.5, // ... skinnfällarna när alla halmbäddar saknar en
   bord: 0.5, bord2: 0.5, bord3: 0.5, // ... borden när ingen har en plats vid ett bord (steg 2.2.15)
   hylla: 0.4, kista: 0.3, stall: 0.3, // ... förvaringen när golvet i lagren är fullt av högar och redskap (steg 2.3.6)
-  lerkruka: 0.3, naverask: 0.3, bonad: 0.2, vaggbrade: 0.2, // ... pyntet när alla vuxna som sover inne saknar ett (steg 4.3.4, pynt.ts)
+  lerkruka: 0.3, naverask: 0.3, krycka: 0.6, traben: 0.6, krok: 0.5, ogonlapp: 0.2, bonad: 0.2, vaggbrade: 0.2, // ... pyntet när alla vuxna som sover inne saknar ett (steg 4.3.4, pynt.ts)
   skinndorr: 0.6, // ... skinndörrarna när alla hus där man bor eller umgås har en öppen dörröppning (steg 2.2.16)
   tradorr: 0.6, // ... trädörrarna när alla sådana hus saknar en (steg 3.7.21)
   tillverka: 0.35, // ... det som görs vid stationerna, när byn vill ha mer av det (tillverka.ts)

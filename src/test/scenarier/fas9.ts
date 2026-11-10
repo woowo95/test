@@ -265,3 +265,29 @@ SCENARIER.salva = {
     ];
   },
 };
+
+SCENARIER.protes = {
+  text: 'Steg 9.5.11: proteserna. Kryckan, träbenet och kroken görs bara vid snickarbänken och ögonlappen för hand eller vid slöjdbänken. Den som förlorat ett ben får ett träben och går igen ungefär hälften så bra, den som förlorat en hand får en krok och en del av greppet, och ögonlappen är bara utseende',
+  kor: () => {
+    const { RECEPT: R, addTool, protesTimme, rorlighet, handighet, syn, forlora, protesVill, STATIONER } = SIM;
+    const s = createState(1, START), [p, q] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
+    const bank = ['krycka', 'traben', 'krok'].every(k => (R as Record<string, SIM.ReceptRad>)[k].bank === 'snickarbank' && (R as Record<string, SIM.ReceptRad>)[k].bara) && STATIONER.flatarbank.gor.includes('ogonlapp') && !(R.ogonlapp as SIM.ReceptRad).bara;
+    const hel = rorlighet(p);
+    forlora(s, p, 'benV', 'höggs av'); p.skador = undefined;
+    const utan = rorlighet(p), vill = protesVill(s, 'traben');
+    addTool(s, 'traben', q).agare = 0;
+    protesTimme(s);
+    const med = rorlighet(p);
+    const h0 = handighet(q); forlora(s, q, 'handH', 'höggs av'); q.skador = undefined; const hUtan = handighet(q);
+    addTool(s, 'krok', q).agare = 0; protesTimme(s); const hMed = handighet(q);
+    const s0 = syn(p); forlora(s, p, 'ogaV', 'gick förlorat'); p.skador = undefined; const sUtan = syn(p);
+    addTool(s, 'ogonlapp', p).agare = 0; protesTimme(s);
+    return [
+      [`kryckan, träbenet och kroken görs bara vid snickarbänken, ögonlappen för hand och fortare vid slöjdbänken`, bank],
+      [`byn vill ha ett träben åt den som förlorat ett ben (${vill})`, vill === 1],
+      [`med träbenet går hen igen ungefär hälften så bra (hel ${hel.toFixed(2)}, utan ${utan.toFixed(2)}, med ${med.toFixed(2)})`, med > utan && med < hel && p.protes?.benV === 'traben'],
+      [`kroken ger tillbaka en del av greppet (${h0.toFixed(2)} → ${hUtan.toFixed(2)} → ${hMed.toFixed(2)})`, hMed > hUtan && hMed < h0 && q.protes?.handH === 'krok'],
+      [`ögonlappen är bara utseende (synen ${s0.toFixed(2)} → ${sUtan.toFixed(2)}, med lappen ${syn(p).toFixed(2)})`, p.protes?.ogaV === 'ogonlapp' && syn(p) === sUtan],
+    ];
+  },
+};

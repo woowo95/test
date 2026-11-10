@@ -69,6 +69,11 @@ const DEF = {
   // giftig svamp som av misstag hamnat i förrådet bland den ätliga (fynd.ts). Den ligger i svampstacken och syns inte
   giftsvamp: { namn: 'Giftig svamp', haller: 2, dold: true, i: 'svamp' },
   sten: { namn: 'Sten', skaffa: { tid: 0.8 }, stack: 10, mapp: 'Sten', brinnerInte: true },
+  // proteserna (steg 9.5.11, protes.ts): den som förlorat en del får en när byn har en ledig, och har den på sig
+  krycka: { namn: 'Krycka', skaffa: RECEPT.krycka, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'proteserTrasiga', text: '{namn}s krycka gick sönder.' }, gors: { text: 'Täljer en krycka.', stat: 'kryckorGjorda', forsta: '{namn} täljde byns första krycka. Med den kan den som förlorat ett ben gå igen.' } },
+  traben: { namn: 'Träben', skaffa: RECEPT.traben, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'proteserTrasiga', text: '{namn}s träben gick sönder.' }, gors: { text: 'Täljer ett träben och binder fast remmar av rep.', stat: 'trabenGjorda', forsta: '{namn} täljde byns första träben.' } },
+  krok: { namn: 'Krok', skaffa: RECEPT.krok, vikt: 0.3, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'proteserTrasiga', text: '{namn}s krok gick sönder.' }, gors: { text: 'Gör en krok av trä som sätts på armen.', stat: 'krokarGjorda', forsta: '{namn} gjorde byns första krok åt den som förlorat en hand.' } },
+  ogonlapp: { namn: 'Ögonlapp', skaffa: RECEPT.ogonlapp, vikt: 0.1, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'proteserTrasiga', text: '{namn}s ögonlapp gick sönder.' }, gors: { text: 'Skär en ögonlapp av skinn.', stat: 'ogonlapparGjorda', forsta: '{namn} skar byns första ögonlapp.' } },
   // näveraskan (steg 9.4.13): en liten ask av näver och rep, behållaren för salvan och benlimmet (vatskor.ts, steg 9.4.14)
   naverask: { namn: 'Näverask', skaffa: RECEPT.naverask, vikt: 0.2, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'naveraskarTrasiga', text: '{namn}s näverask gick sönder.' },
     gors: { text: 'Viker en ask av näver och syr ihop den med rep.', stat: 'naveraskarGjorda', forsta: '{namn} vek byns första näverask. I den håller sig salvan och limmet.' } },

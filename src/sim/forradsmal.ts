@@ -27,6 +27,7 @@ import { latrinBrist } from './smuts';
 import { torkBrist } from './matlagning';
 import { HOUR, State, WEEK } from './typer';
 import { TILLVERKA } from './tillverka';
+import { protesVill } from './protes';
 
 export const FORRAD = balans('forrad', {
   forsiktig: 0.25, // en försiktig by (seden Förutseende eller påbudet) vill ha så mycket större förråd
@@ -186,6 +187,7 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   spjut: spjutVill,
   metspo: spjutVill, // ett metspö per spjut
   korg: s => perVuxna(s, VILLTAL.korgPerVuxna, VILLTAL.korgMin, VILLTAL.korgMax),
+  krycka: s => protesVill(s, 'krycka'), traben: s => protesVill(s, 'traben'), krok: s => protesVill(s, 'krok'), ogonlapp: s => protesVill(s, 'ogonlapp'), // proteserna (steg 9.5.11, protes.ts)
   naverask: s => ortkokKan(s) ? TILLVERKA.koka_salva.vill + TILLVERKA.koka_lim.vill : 0, // näveraskarna (steg 9.4.14): salvan och limmet som byn vill ha förvaras i dem
   lerkruka: s => living(s).filter(p => villPynt(s, p, 'kruka')).length + (nTools(s, 'vattensack') < 1 ? 1 : 0) + (ortkokKan(s) ? TILLVERKA.koka_tjara.vill : 0), // och tjäran i stora krukor (steg 9.4.14) // lerkrukorna (steg 9.4.12): de som vill ha en kruka som pynt, och en att bära vatten i när byn saknar en vattensäck
   kniv: s => VILLTAL.knivar + tommaPlatser(s, 'kniv'), // och en till för en tom knivplats vid slaktbänken

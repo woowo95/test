@@ -119,3 +119,4 @@ export * from './sim/personlogg';
 export * from './sim/lera';
 export * from './sim/kruka';
 export * from './sim/vatskor';
+export * from './sim/protes';
