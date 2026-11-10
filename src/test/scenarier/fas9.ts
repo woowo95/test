@@ -1025,3 +1025,18 @@ SCENARIER.nat = {
     ];
   },
 };
+
+SCENARIER.braxen = {
+  text: 'Steg 9.6.17: braxen och sik, nya rader i fiskarnas och djurens register med eget kött och egen näring, som mest fångas i nätet',
+  kor: () => {
+    const { valjFisk, FISKAR, DJUR, SAKER } = SIM;
+    const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    const rakna = (nat: boolean) => { let n = 0; for (let i = 0; i < 2000; i++) { const k = valjFisk(s, p, false, nat); if (k === 'braxen' || k === 'sik') n++; } return n; };
+    const utan = rakna(false), med = rakna(true);
+    return [
+      [`braxen och sik är fiskar med eget kött (${DJUR.braxen.slakt.braxkott} braxenkött, ${DJUR.sik.slakt.sikkott} sikkött)`, !!FISKAR.braxen && !!FISKAR.sik && !!SAKER.braxkott && !!SAKER.sikkott],
+      [`och egen näring (siken är fetare: ${SAKER.sikkott!.naring!.fett} mot braxenkött ${SAKER.braxkott!.naring!.fett})`, SAKER.sikkott!.naring!.fett! > SAKER.braxkott!.naring!.fett!],
+      [`de fångas mest i nätet (${med} av 2000 med nät, ${utan} utan)`, med > utan * 4],
+    ];
+  },
+};

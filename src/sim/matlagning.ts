@@ -45,6 +45,7 @@ export const RATTER: readonly Ratt[] = [
   { ra: 'fisk', blir: 'grillfisk', per: 1 },
   { ra: 'abborre', blir: 'grillfisk', per: 1 }, // den hela abborren grillas som den är när den inte rensats
   { ra: 'gaddkott', blir: 'grillgadda', per: 1 }, { ra: 'gadda', blir: 'grillgadda', per: 1 }, { ra: 'mortkott', blir: 'grillmort', per: 1 }, // grillad fisk behåller artens näring (steg 7.4.3)
+  { ra: 'braxkott', blir: 'grillfisk', per: 1 }, { ra: 'sikkott', blir: 'grillfisk', per: 1 }, // steg 9.6.17
   { ra: 'kott', blir: 'grillkott', per: 1 },
   { ra: 'vargkott', blir: 'grillkott', per: 1 }, // köttet är eget per art men blir samma grillade kött (steg 3.7.14)
 ];
@@ -128,6 +129,7 @@ export const TORKAS: readonly Ratt[] = [
   { ra: 'fisk', blir: 'torrfisk', per: 1 },
   { ra: 'abborre', blir: 'torrfisk', per: 1 }, // den hela abborren hängs i stjärten
   { ra: 'gaddkott', blir: 'torrgadda', per: 1 }, { ra: 'mortkott', blir: 'torrmort', per: 1 },
+  { ra: 'braxkott', blir: 'torrfisk', per: 1 }, { ra: 'sikkott', blir: 'torrfisk', per: 1 }, // steg 9.6.17
   { ra: 'ratlin', blir: 'lin', per: 1 }, // linet rötas som köttet på torkställningen (steg 7.7.7)
   { ra: 'kott', blir: 'torrkott', per: 1 },
   { ra: 'vargkott', blir: 'torrkott', per: 1 },
@@ -139,7 +141,7 @@ export const ROK = balans('rokeri', {
   glad: 0.01, // tanken av att äta rökt mat (smakar lite bättre)
 });
 export const ROKAS: readonly Ratt[] = [
-  { ra: 'fisk', blir: 'rokfisk', per: 1 }, { ra: 'abborre', blir: 'rokfisk', per: 1 }, { ra: 'gaddkott', blir: 'rokfisk', per: 1 }, { ra: 'mortkott', blir: 'rokfisk', per: 1 },
+  { ra: 'fisk', blir: 'rokfisk', per: 1 }, { ra: 'abborre', blir: 'rokfisk', per: 1 }, { ra: 'gaddkott', blir: 'rokfisk', per: 1 }, { ra: 'mortkott', blir: 'rokfisk', per: 1 }, { ra: 'braxkott', blir: 'rokfisk', per: 1 }, { ra: 'sikkott', blir: 'rokfisk', per: 1 },
   { ra: 'kott', blir: 'rokkott', per: 1 }, { ra: 'vargkott', blir: 'rokkott', per: 1 },
 ];
 export type TorkSlag = 'tork' | 'rokeri';

@@ -25,6 +25,7 @@ export const INGREDIENSER: Record<string, { grupper: Matgrupp[]; huvud?: RattHuv
   gadda: { grupper: ['protein'], huvud: 'fisk' }, mortkott: { grupper: ['protein', 'fett'], huvud: 'fisk' }, mort: { grupper: ['protein', 'fett'], huvud: 'fisk' },
   torrfisk: { grupper: ['protein'], huvud: 'fisk' }, rokfisk: { grupper: ['protein'], huvud: 'fisk' }, rokkott: { grupper: ['protein', 'fett'], huvud: 'kott' }, torrgadda: { grupper: ['protein'], huvud: 'fisk' }, torrmort: { grupper: ['protein', 'fett'], huvud: 'fisk' },
   grillfisk: { grupper: ['protein'], huvud: 'fisk' }, grillgadda: { grupper: ['protein'], huvud: 'fisk' }, grillmort: { grupper: ['protein', 'fett'], huvud: 'fisk' },
+  braxen: { grupper: ['protein', 'fett'], huvud: 'fisk' }, braxkott: { grupper: ['protein', 'fett'], huvud: 'fisk' }, sik: { grupper: ['protein', 'fett'], huvud: 'fisk' }, sikkott: { grupper: ['protein', 'fett'], huvud: 'fisk' }, // steg 9.6.17
   agg: { grupper: ['protein', 'fett'] }, arter: { grupper: ['protein', 'starkelse'] },
   korn: { grupper: ['starkelse'], huvud: 'sad' }, // steg 9.6.11
   rotter: { grupper: ['starkelse'], huvud: 'rot' }, rovor: { grupper: ['starkelse'], huvud: 'rot' },

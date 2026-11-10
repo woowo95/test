@@ -227,6 +227,11 @@ const DEF = {
   bjorndel: { namn: 'Björnstycke', ett: true, skaffa: { act: 'jakt' }, vikt: 10, stack: 1, mapp: 'Material', haller: 3 }, // steg 6.6.6
   korn: { namn: 'Korn', ett: true, skaffa: { tid: 0.25, tek: 'sadesodling' }, stack: 50, vikt: 0.05, mapp: 'Material', haller: 20 }, // säden (steg 9.6.11): köps av handlarna, sås och blir gröt
   malt: { namn: 'Malt', skaffa: { act: 'malta' }, stack: 50, vikt: 0.05, mapp: 'Material', haller: 20 }, // kornet som grott och torkat (steg 9.6.13): till ölet
+  // braxen och sik (steg 9.6.17, fisk.ts): fångas mest i nätet och rensas till eget kött
+  braxen: { namn: 'Braxen', skaffa: { act: 'fiske' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 2.3, naring: { protein: 1.9, fett: 0.9, mineral: 0.8, energi: 0.7, vitamin: 0.3 }, ra: true, haller: 1 },
+  sik: { namn: 'Sik', skaffa: { act: 'fiske' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 1.3, naring: { protein: 2, fett: 1.4, mineral: 0.7, energi: 0.8, vitamin: 0.6 }, ra: true, haller: 1 },
+  braxkott: { namn: 'Braxenkött', ett: true, skaffa: { act: 'rensa' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 1, naring: { protein: 1.9, fett: 0.9, mineral: 0.8, energi: 0.7, vitamin: 0.3 }, ra: true, haller: 1 },
+  sikkott: { namn: 'Sikkött', ett: true, skaffa: { act: 'rensa' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 1, naring: { protein: 2, fett: 1.4, mineral: 0.7, energi: 0.8, vitamin: 0.6 }, ra: true, haller: 1 },
   // det rökta (steg 9.6.8, matlagning.ts): håller som det torkade och smakar lite bättre
   rokfisk: { namn: 'Rökt fisk', skaffa: { act: 'roka' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.8, naring: { protein: 2, fett: 0.8, mineral: 0.7, energi: 0.6, vitamin: 0.2 }, haller: 20 },
   rokkott: { namn: 'Rökt kött', ett: true, skaffa: { act: 'roka' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.9, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 0.6, vitamin: 0.2 }, haller: 20 },

@@ -755,7 +755,7 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
       const napp = p.fiske?.n ?? 0;
       const fick = handFish(s, p, tk.tx, tk.ty, ageF * (tk.mortBete ? MJARDE.beteNapp : 1), rd);
       if (fick) { // arten efter årstiden (steg 7.4.3): gäddan sliter dubbelt så mycket på redskapet
-        const k = valjFisk(s, p);
+        const k = valjFisk(s, p, false, rd?.don === 'nat');
         if (k === 'abborre') tk.carry += fick;
         else { bar(k, fick); count(s, 'fisk_' + k); if (rd) wearUsed(s, p, FISKAR[k].slit - 1); }
       }
