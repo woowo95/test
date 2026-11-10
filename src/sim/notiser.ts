@@ -22,6 +22,7 @@ export const NOTISER: Record<string, { slag: NotisSlag; rubrik: string; vikt: nu
   motgang: { slag: 'fara', rubrik: 'En motgång', vikt: 3 },
   anfall: { slag: 'fara', rubrik: 'Fara nära byn', vikt: 3 },
   strid: { slag: 'fara', rubrik: 'Strid', vikt: 2 },
+  blodning: { slag: 'fara', rubrik: 'Förblöder', vikt: 3 }, // tiden kvar är kort (steg 9.5.14)
   dod: { slag: 'dod', rubrik: 'Död i byn', vikt: 3 },
   gravid: { slag: 'folk', rubrik: 'Väntar barn', vikt: 1 },
   fodd: { slag: 'folk', rubrik: 'Ett barn föddes', vikt: 2 },

@@ -291,3 +291,26 @@ SCENARIER.protes = {
     ];
   },
 };
+
+SCENARIER.blodning = {
+  text: 'Steg 9.5.14: blödningens tre storlekar och tiden kvar. Ett litet sår levrar sig själv, ett medelstort långsamt och ett stort inte alls; tiden till förblödning räknas varje slag, och när den är kort blir det en notis',
+  kor: () => {
+    const { halsaSteg, tidKvar, sarStorlek, HALSA } = SIM;
+    const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    const prov = (g: number, tim: number) => { const c = SIM.cloneState(s), q = c.people.find(r => r.id === p.id)!; q.skador = [{ d: 'benV', k: 'skarsar', g, b: 1 }]; q.blod = 1; halsaSteg(c, q, tim * 3600); return { b: q.skador?.[0]?.b ?? 0, q, c }; };
+    const litet = prov(0.2, 2), medel = prov(0.45, 2), stort = prov(0.8, 0.5);
+    const storlekar = [sarStorlek({ d: 'benV', k: 'skarsar', g: 0.2, b: 1 }), sarStorlek({ d: 'benV', k: 'skarsar', g: 0.45, b: 1 }), sarStorlek({ d: 'benV', k: 'skarsar', g: 0.8, b: 1 })].join(', ');
+    // ett stort sår: tiden kvar sjunker, och när den är kort kommer notisen
+    const c = SIM.cloneState(s), q = c.people.find(r => r.id === p.id)!;
+    q.skador = [{ d: 'bal', k: 'sticksar', g: 0.9, b: 1 }]; q.blod = 1;
+    const t0 = tidKvar(q);
+    let notis = false, steg = 0;
+    while (q.blod > HALSA.blodDod + 0.02 && steg++ < 200) { halsaSteg(c, q, 300); if ((c.notiser?.lista ?? []).some(n => n.id === 'blodning')) notis = true; }
+    return [
+      [`såren är små, medelstora och stora (${storlekar})`, storlekar === 'litet, medelstort, stort'],
+      [`efter två timmar har det lilla såret levrat sig (${litet.b.toFixed(2)}), det medelstora blöder mindre (${medel.b.toFixed(2)}) och det stora blöder som förut (${stort.b.toFixed(2)})`, litet.b === 0 && medel.b > 0 && medel.b < 1 && stort.b === 1],
+      [`tiden kvar räknas (${(t0 * 60).toFixed(0)} minuter i början) och sjunker`, t0 < Infinity && t0 > 0],
+      [`när tiden kvar är kort kommer en notis (${notis ? 'ja' : 'nej'})`, notis],
+    ];
+  },
+};

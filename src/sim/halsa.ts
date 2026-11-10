@@ -39,11 +39,15 @@ import { blodDroppar, blodas } from './blod';
 import { lakFaktor, styrkaFaktor, yrselFaktor } from './naring';
 import type { Dodsorsak } from './liv';
 import { ledareOf } from './styre';
+import { notis } from './notiser';
 
 // ---------- balanstal (regel 8) ----------
 export const HALSA = balans('halsa', {
   blodTim: 0.6, // ett öppet sår av grad 1 (och blod 1 i SKADOR) tar så här mycket blod i timmen (1 = allt blod) ...
   levrar: 1.5, // ... och har levrat sig efter levrar × (0,5 + graden) timmar
+  // blödningens tre storlekar (steg 9.5.14): ett litet sår (grad under smaSar) levrar sig fort, ett medelstort (under storSar)
+  // långsamt (medelLevrar gånger längre), och ett stort inte alls; när tiden kvar till förblödning är under kortTim syns den
+  smaSar: 0.3, storSar: 0.6, medelLevrar: 3, kortTim: 1,
   blodDod: 0.4, // under så här mycket blod förblöder man
   blodTillbaka: 48, // timmar för blodet att komma tillbaka helt för den som inte blöder och är mätt och otörstig
   dodGrad: 0.95, // en skada i huvudet eller bålen av minst den här graden dödar direkt (sällsynt)
@@ -243,6 +247,10 @@ export function smarta(p: Person) {
   for (const m of p.men ?? []) v += m.ont; // kronisk smärta (steg 8.2.4)
   return Math.min(1, v);
 }
+// sårets storlek i blödningen (steg 9.5.14): litet, medelstort eller stort
+export const sarStorlek = (w: Skada) => w.g < HALSA.smaSar ? 'litet' : w.g < HALSA.storSar ? 'medelstort' : 'stort';
+// timmar tills hen förblöder med den blödning hen har nu (Infinity när ingen blöder). Räknas varje slag (kortet och notisen)
+export function tidKvar(p: Person) { const b = blodning(p); return b > 0 ? Math.max(0, ((p.blod ?? 1) - HALSA.blodDod) / b) : Infinity; }
 // blodet personen förlorar i timmen just nu
 export function blodning(p: Person) {
   let v = 0;
@@ -403,7 +411,7 @@ export function halsaSteg(s: State, p: Person, dtSec: number): Dodsorsak | undef
   const kryper = !kanGa(p) && p.task !== undefined && p.task.phase !== 'do'; // den som kravlar lämnar ett släpspår (steg 3.7.19)
   blodDroppar(s, p, blod, dtSec, kryper ? 'kryp' : 'blodning', kryper ? Math.atan2(p.task!.ty - p.y, p.task!.tx - p.x) : undefined);
   for (const w of p.skador) {
-    if (w.b > 0) w.b = Math.max(0, w.b - h / (HALSA.levrar * (0.5 + w.g)));
+    if (w.b > 0 && w.g < HALSA.storSar) w.b = Math.max(0, w.b - h / (HALSA.levrar * (0.5 + w.g) * (w.g < HALSA.smaSar ? 1 : HALSA.medelLevrar))); // ett stort sår levrar sig inte (steg 9.5.14)
     infSteg(s, p, w, h, dtSec);
     if (w.inf === undefined) w.g -= h * lak / SKADA[w.k].lakTim * (w.k === 'brannskada' ? 1 + SALVA.bransk * salvaVerkan(w) : 1); // ett infekterat sår läker inte; salvan hjälper brännskadan (steg 9.5.10)
   }
@@ -414,6 +422,10 @@ export function halsaSteg(s: State, p: Person, dtSec: number): Dodsorsak | undef
   if (!p.skador.length) p.skador = undefined;
   else if (blod === 0 && mat) p.blod = Math.min(1, p.blod + h / HALSA.blodTillbaka);
   if (p.blod < HALSA.blodDod) { blodas(s, p.x, p.y, 'forblodning', 1); return 'blod'; }
+  // tiden kvar (steg 9.5.14): när den blir kort blir det en notis, en gång per gång hen börjar blöda illa
+  const kvar = tidKvar(p);
+  if (kvar < HALSA.kortTim && !p.blodNotis) { p.blodNotis = 1; notis(s, 'blodning', `${p.name} förblöder om ${Math.max(1, Math.round(kvar * 60))} minuter om ingen hjälper.`, [p.id], { x: Math.floor(p.x), y: Math.floor(p.y) }); }
+  else if (kvar >= HALSA.kortTim) delete p.blodNotis;
   const ont = smarta(p);
   if (ont > HALSA.ontGrans) think(p, 'Har ont', -HALSA.smartaHumor * ont, s.now, HOUR);
   return undefined;

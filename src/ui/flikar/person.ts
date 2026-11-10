@@ -1,4 +1,4 @@
-import { VARD, vardNasta, hp, sjukText, personRader, PERSONLOGG, gastLever } from '../../sim';
+import { tidKvar, VARD, vardNasta, hp, sjukText, personRader, PERSONLOGG, gastLever } from '../../sim';
 import { kvOf, paSigVikt, klanById, FORMAGOR, gangDelar, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
 import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, handOrkar, handPlatser, capacity, kvNamn, handerFor, load, utrustning, bordaIHander, type IHanden, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, timeLabel, vidBordet, upplevelseText, uppEffekt, vuxenUpp, Upplevelse, yrkeNamn, andlighet, troOf, tolkning, teckenText, troNamn, pratarMed, gastRelationer, actIkon, utbIkon, AMNEN, type ByteMinne, type GastRel, type Slakting, stacksOf, grundvarde, tingVarde, housesOf, husVarde } from '../../sim';
 import { gorText } from '../jakt';
@@ -292,6 +292,8 @@ const SKADEFARG = { latt: 0.34, svar: 0.67 }; // senap under latt, rost en ton m
 function skadeFarg(f: number, ton: number) {
   return f < SKADEFARG.latt ? farg('senap', ton as 0) : farg('rost', Math.max(0, ton - (f < SKADEFARG.svar ? 1 : 2)) as 0);
 }
+// tiden kvar till förblödning i ord (steg 9.5.14): minuter under en timme, annars timmar i spelet
+const tidText = (h: number) => h < 1 ? `${Math.max(1, Math.round(h * 60))} minuter` : `${Math.round(h)} timmar`;
 function halsaHtml(p: Person) {
   const rader = skadeLista(p, s.now), delar = (Object.keys(KROPPSDELAR) as Kroppsdel[]).filter(d => !(KROPPSDELAR[d] as { under?: string }).under);
   const vad = (d: Kroppsdel) => rader.filter(r => r.d === d || (KROPPSDELAR[r.d] as { under?: string }).under === d); // de finare delarna syns på delen de sitter på (steg 8.2.1)
@@ -309,7 +311,7 @@ function halsaHtml(p: Person) {
   const bristTecken = (k: (typeof brister)[number]) => `<span class="tecken" title="${esc(`${NARING[k].brist.namn}, brist på ${NARING[k].namn.toLowerCase()}: ${NARING[k].brist.gor}`)}">${tecknet('b_' + k, NARING[k].brist.tecken)}</span>`;
   const brist = brister.map(k => `<li class="neg">${bristTecken(k)}<span>${esc(NARING[k].brist.namn)}<small class="muted">brist på ${esc(NARING[k].namn.toLowerCase())}, ${Math.round(bristGrad(p, k) * 100)} %</small></span><span class="gar">↘ äter helst ${esc(NARING[k].langtar)}</span></li>`).join('');
   const lista = rader.length || blod < 1 || brister.length ? `<ul class="skador">${rader.map(r => `<li class="${r.battre ? 'pos' : 'neg'}"><span class="tecken">${tecknet(r.ikon, r.tecken)}</span><span>${esc(r.namn)}${r.vard.map(k => iconImg(k, 12)).join('')}<small class="muted">${esc([r.grad, ...r.bloder ? ['blöder'] : [], ...r.gjort].join(', '))}</small></span><span class="gar">${r.battre ? '↗' : '↘'} ${esc(r.gar)}</span></li>`).join('')}
-    ${blod < 1 ? `<li class="${blodning(p) > 0 ? 'neg' : 'pos'}"><span class="tecken">🩸</span><span>Har förlorat ${Math.round((1 - blod) * 100)} % av blodet</span><span class="gar">${blodning(p) > 0 ? '↘ blöder' : '↗ kommer tillbaka'}</span></li>` : ''}${brist}</ul>` : '<p class="muted">Inget är fel.</p>';
+    ${blod < 1 ? `<li class="${blodning(p) > 0 ? 'neg' : 'pos'}"><span class="tecken">🩸</span><span>Har förlorat ${Math.round((1 - blod) * 100)} % av blodet</span><span class="gar">${blodning(p) > 0 ? `↘ förblöder om ${tidText(tidKvar(p))}` : '↗ kommer tillbaka'}</span></li>` : ''}${brist}</ul>` : '<p class="muted">Inget är fel.</p>';
   // vården härnäst (steg 9.5.6, VARD i halsa.ts): de behandlingar som behövs, mest brådskande först
   const nasta = [...new Set(vardNasta(s, p, p).map(x => VARD[x.k].namn))], vardRad = nasta.length ? `<p class="muted">Behöver härnäst: ${esc(nasta.join(', ').toLowerCase())}</p>` : '';
   const formagor = (Object.keys(FORMAGOR) as (keyof typeof FORMAGOR)[]).map(k => {
