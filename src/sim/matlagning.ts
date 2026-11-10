@@ -115,6 +115,7 @@ export function ratt(s: State, p: Person, per: Record<string, number>, full: num
 // det syns som ❄ i lagret och på saken.
 export const TORK = balans('torkning', {
   dygn: 5, // så många dygn tar det att torka kött och fisk på ställningen
+  maltDygn: 3, // och så många dygn gror det blötta kornet och torkar till malt (steg 9.6.13, brygg.ts)
   rymd: 4, // så mycket ryms på en ställning (fyra köttbitar, steg 2.10.22)
   maxStall: 4, // byn bygger högst så här många ställningar
   timme: 12, // så mycket som hängs upp eller tas ner i timmen
@@ -151,8 +152,9 @@ export const torken = (s: State): Station | undefined => torkarna(s)[0];
 const hangOf = (t: Station) => t.tork ?? (t.tork = []);
 const hangtSumma = (t?: Station) => { let n = 0; for (const q of t?.tork ?? []) n += q.n; return n; };
 // hur stor del av torkningen som är gjord (0–1): gränssnittet färgar maten efter det
-export const torrDel = (s: State, q: Hang, k: TorkSlag = 'tork') => clamp((s.now - q.t) / (torkDygn(k) * DAY), 0, 1);
-const klar = (s: State, q: Hang, k: TorkSlag = 'tork') => s.now - q.t >= torkDygn(k) * DAY;
+export const torrDel = (s: State, q: Hang, k: TorkSlag = 'tork') => clamp((s.now - q.t) / ((q.k === 'maltkorn' ? TORK.maltDygn : torkDygn(k)) * DAY), 0, 1);
+const klar = (s: State, q: Hang, k: TorkSlag = 'tork') => s.now - q.t >= (q.k === 'maltkorn' ? BRYGG_MALT() : torkDygn(k)) * DAY; // maltet gror och torkar (steg 9.6.13)
+const BRYGG_MALT = () => TORK.maltDygn;
 // så mycket rått som finns över det byn äter innan det ruttnar
 function ratOver(s: State, k: TorkSlag = 'tork') {
   let n = 0;
@@ -199,7 +201,7 @@ export function torka(s: State, p: Person, hours: number, k: TorkSlag = 'tork') 
     if (!klar(s, q, k)) { i++; continue; }
     const n = Math.min(q.n, kan), f = n / q.n, ag: Del = {};
     for (const o in q.ag) { const m = q.ag[o] * f; q.ag[o] -= m; const ag0 = byId(s, Number(o)); if (ag0 && alive(ag0)) ag[o] = m; }
-    put(s, RAD.find(r => r.ra === q.k)!.blir, n, ag);
+    put(s, q.k === 'maltkorn' ? 'malt' : RAD.find(r => r.ra === q.k)!.blir, n, ag);
     q.n -= n; kan -= n; count(s, k === 'rokeri' ? 'rokt' : 'torkat', n);
     if (q.n <= 1e-6) h.splice(i, 1);
     if (k === 'tork' && forstaGang(s, 'torkForsta')) log(s, `${p.name} tog ner byns första torkade ${SAKER[q.k]?.namn.endsWith('ött') ? 'kött' : 'fisk'} från torkställningen. Den håller länge i lagret.`, 'world', [p.id]);

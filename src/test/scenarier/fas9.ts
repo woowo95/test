@@ -933,3 +933,33 @@ SCENARIER.vin = {
     ];
   },
 };
+
+SCENARIER.ol = {
+  text: 'Steg 9.6.13: ölet. Tekniken Öl kommer när byn har korn och har gjort vin; kornet blöts och hängs på torkställningen, där det gror och torkar till malt, och maltet jäser med vatten och rölleka i bryggkaret (den första satsen dubbelt så länge) till 8 öl i stora lerkrukor',
+  kor: () => {
+    const { olUpptackt, bryggVal, bryggKlar, maltaKlar, stepBrygg, torka, setAmount, amountOf, addTool, fyllVatska, vatskaAv, knows, BRYGG, BRYGD } = SIM;
+    const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    p.tek = { ...(p.tek ?? {}), bryggkar: 1, sadesodling: 1, kruka: 1 };
+    olUpptackt(s); const forut = knows(p, 'ol');
+    s.stat = { ...(s.stat ?? {}), brygt_vin: BRYGG.olVin }; olUpptackt(s); const nu = knows(p, 'ol');
+    const kar = { id: 996, k: 'bryggkar', x: 3, y: 3, kvar: 0, inne: 1 } as SIM.Station, tork = { id: 995, k: 'tork', x: 6, y: 3, kvar: 0 } as SIM.Station;
+    s.stationer = [...(s.stationer ?? []), kar, tork];
+    setAmount(s, 'korn', 20); setAmount(s, 'rolleka', 2); setAmount(s, 'bar', 0);
+    const malta = bryggVal(s, p); maltaKlar(s, p, tork.id);
+    s.now += SIM.TORK.maltDygn * SIM.DAY + SIM.HOUR; torka(s, p, 1);
+    const malt = amountOf(s, 'malt');
+    const sack = addTool(s, 'vattensack', p); sack.hos = undefined; fyllVatska(s, 'vatten', 1, sack);
+    const brygga = bryggVal(s, p); bryggKlar(s, p, kar.id);
+    const dubbelt = kar.sats?.dygn === BRYGD.ol.dygn * 2, sur = !!kar.sats?.sur;
+    for (let i = 0; i < kar.sats!.dygn * 24 + 1; i++) { s.now += SIM.HOUR; stepBrygg(s); }
+    for (let i = 0; i < 2; i++) { const k = addTool(s, 'lerkruka_stor', p); k.hos = undefined; }
+    bryggKlar(s, p, kar.id);
+    const ol = vatskaAv(s, 'ol');
+    return [
+      [`ingen kommer på ölet förrän byn gjort vin (${forut ? 'ja' : 'nej'}), sedan de som kan kornet och bryggkaret (${nu ? 'ja' : 'nej'})`, !forut && nu],
+      [`kornet blöts och hängs på torkställningen (${malta?.act}), och blir ${malt} malt efter ${SIM.TORK.maltDygn} dygn`, malta?.act === 'malta' && malt === BRYGG.maltKorn],
+      [`maltet, vatten och rölleka läggs i karet (${brygga?.v}), och den första satsen tar dubbelt så lång tid (${dubbelt ? 'ja' : 'nej'})`, brygga?.act === 'brygga' && brygga.v === 'ol' && dubbelt],
+      [`satsen blir ${sur ? 'sur och hälls ut' : `${ol} öl i stora lerkrukor`}`, sur ? ol === 0 : ol === BRYGD.ol.ger],
+    ];
+  },
+};
