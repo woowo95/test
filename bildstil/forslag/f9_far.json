@@ -1,0 +1,87 @@
+{
+ "kort": "f9_far",
+ "namn": "Får",
+ "slag": null,
+ "vad": "Steg 9.8.5: fåret är ett betesdjur som ger ull och kött. Bilden visar det från sidan på gräs: en ljus, tjock kropp av ull på smala ben och ett mörkt ansikte.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_far",
+     "rader": [
+      "......oooo..oooo......",
+      "....ooqwwqoowwqqoo....",
+      "...oqwwqwqqwqqqqqqo...",
+      ".EEoqwqqqqqqqpqqqpqo..",
+      "EllEqqqpqqqpqqqqpqqqo.",
+      "Elollpqqpqqqqpqqpqqqo.",
+      "Ellllopqqqpqqpqqqpqpo.",
+      ".Elllmoppqppqpppqppo..",
+      "..EEE.oppppopppoppo...",
+      ".......oooooooooooo...",
+      "........ml.l...ml.l...",
+      "........ml.l...ml.l...",
+      ".....WOOmlOOOOOmlOWO..",
+      "...WWOOWOOOWOOOWOOWW..",
+      "....VWWOWWWOWWOWWV...."
+     ]
+    }
+   ],
+   "anteckning": "Fåret står i profil med nosen åt vänster och vilar på alla fyra benen. Snett uppifrån syns ryggens ovansida som den breda ljusa ullytan. Den har ben3-korn uppe till vänster, där ljuset faller, och går över i ben1 mot höger och nedåt. Buken syns bara som ett smalt band i ben0 och ben1. Huvudet sticker fram framför ullen i kol1 med kontur i jord0. Örat går bakåt in i ullen, och ögat är en enda ljusare punkt. De två närmaste benen är 2 punkter breda, 5 punkter höga och står i gräset. De bortre benen är förskjutna en punkt åt höger, är bara en punkt breda och slutar högre upp, eftersom de står längre bort. Gräsfläcken under fåret är låg och oval i oliv och barr och mörkare än ullen, så att fåret syns först. Ingen skugga är ritad. Granskningen: Rättat: 1) Storleken – fåret var 28 × 20 punkter, med kroppen nästan lika hög som kolonisten (14 × 20). Ett får når ungefär till midjan, så bilden är omritad till 22 × 15 punkter: ullkroppen är cirka 16 × 10, fåret är 13 punkter högt med benen och gräsfläcken är 2–3 punkter. 2) Rad 11 och rad 17 var 29 tecken breda medan övriga rader var 28. Nu har alla rader samma bredd. 3) I gräsraden låg det bakre närmaste benet en punkt fel, så att benet bröts av vid hoven. Nu ligger benen i samma kolumner hela vägen ner. Detta är oförändrat enligt idén: nosen pekar åt vänster, ullen är molnformad i ben1 och ben2 med ben3-korn uppe till vänster och ben0 som kontur, buken är ett smalt band i ben1 och huvudet är i jord0 och kol1 med en ljusare punkt vid ögat. De närmaste benen är i kol2 och kol1. De bortre benen är i kol1, förskjutna och slutar en rad högre (de står längre bort sett snett uppifrån). Gräsfläcken i oliv2 och barr2 är mörkare än ullen, så fåret syns först.",
+   "ide": "Fåret står i profil med nosen åt vänster, en rund, molnformad ullkropp på cirka 20 × 12 punkter i ben1 och ben2 med ben3-korn på ryggen uppe till vänster och ben0 som kontur. Eftersom det ses snett uppifrån syns ryggens ovansida som en bred ljus yta och buken bara som en smal mörkare kant. Huvudet sticker fram ur ullen i jord0 och kol1 med en enda ljusare punkt vid ögat, och fyra smala ben på 4–5 punkter i kol1–kol2: de två närmaste tydliga, de två bortre förskjutna en punkt och mörkare. Under hovarna ligger en liten låg gräsfläck i oliv2 och barr2, mörkare än ullen så att fåret syns först. Fåret är inte symmetriskt från sidan, så bara själva ullformen hålls jämnt rundad."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_far",
+     "rader": [
+      "...........ooooo....",
+      "........oowqwqqoo...",
+      "......oowqwwqwqqpo..",
+      ".....oqwqqwqwqqpppo.",
+      "....oqqwqpqwqqpqpppo",
+      "..Emopqpqqpqpqpppppo",
+      ".Emlopqpppqpppppoppo",
+      "NEllEoppoppoppoppopo",
+      "ONlPONooooooooooooo.",
+      "NOPNON.m.l....m.l...",
+      "MNONO.m.l.....m.l...",
+      "UMNMUl.l......l.l..."
+     ]
+    }
+   ],
+   "anteckning": "Fåret står på fyra ben och betar med huvudet nere, med nosen åt vänster. Ullkroppen är högst över bakbenen till höger och sluttar ner mot nacken till vänster. Eftersom vi ser det snett uppifrån syns hela den ljusa ryggen: ben2 och ben3 i lockiga klumpar där ljuset faller från övre vänster, och längre ner mot buken och till höger mörknar den till ben1 och ben0. Konturen är ben0. Nacken böjer ner till det mörka ansiktet i kol1 och kol2 med jord0-kontur. Nosen försvinner in i en grästuva i oliv1–oliv3 framför bogen, där bara strån och nosspetsen syns. Av benen syns de fyra under buken som tunna mörka streck. Bakbenen står rakt, och de främre lutar lite utåt framåt för att bära det sänkta huvudet. Skuggan på marken lägger programmet till. Granskningen: Rättade storleken: fåret var 26 × 15 punkter, alltså längre än kolonisten är hög (14 × 20) och nästan tre fjärdedelar av hans höjd, vilket gör det till ett djur på närmare två meter. Nu är det 20 × 12 punkter med en ullkropp på cirka 16 × 9, vilket passar ett litet järnåldersfår bredvid en människa. Idén är kvar: den sluttande kullen är högst över bakbenen och sjunker mot nacken. Ullen är i ben1–ben2 med ben3-korn längs den upplysta ryggen och mörkare ben1/ben0 nere till höger, med ben0-kontur. Det mörka ansiktet i jord0, kol1 och kol2 sänks ner i grästuvan av oliv. Benen är tunna, de främre lite utåtsträckta och de bortre benen mörkare. Ljuset från övre vänstra hörnet och silhuetten mot gräset är oförändrade.",
+   "ide": "Fåret betar med huvudet nere i gräset, så att silhuetten blir en sluttande kulle: ullkroppen är högst över bakbenen och sjunker mot nacken, cirka 22 × 11 punkter. Ullen är ben1–ben2 med ben3-korn i lockiga klumpar längs den upplysta ryggen och ben0-kontur, och det mörka ansiktet i kol1 och jord0 försvinner ner bland en tät grästuva i oliv1–oliv3 framför bogen. Benen är tunna mörka streck, de främre lite utåtsträckta för att bära det sänkta huvudet. Vinkeln ovanifrån visar hela ryggens ljusa yta, så bilden läses som en ljus kudde med en mörk nos i gräset."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_far",
+     "rader": [
+      "......ooo.ooo.ooo....",
+      ".....owwwowwqoqqqoo..",
+      "....owwqwqwqqqqqqpo..",
+      "...owwqwqqqwqqqqpqpo.",
+      "..owqwqqqqqqqqqpqppo.",
+      ".lEEElqqqqqqqqqqppqo.",
+      "llFEEllqqqwqqqppqppo.",
+      ".lkEklqqqpqqqqpqpppo.",
+      ".lFEElqqwqqpqqpppppo.",
+      ".lEEElqqqpqqqpqpppo..",
+      "..lEloqpqqqpqpppppoo.",
+      "..oloopqqqpqpppppo...",
+      "...o.oo.ooo.oo.oo....",
+      "...F..F......F..F....",
+      "...F.E.......F..F....",
+      ".WOlOWOXOWOXOlWOlOW..",
+      "..WOWOXOWOWOXOWOWO...",
+      "....WWOWWOWWOWW......"
+     ]
+    }
+   ],
+   "anteckning": "Fåret står i trekvartsvy och går snett mot betraktaren. Huvudet sitter framför ullkroppen nere till vänster och ses nästan rakt framifrån. Därför skymmer det bröstet, och kroppen bakom blir en kort, kantig ullkloss på ungefär 17 × 13 punkter. Ullen har tovor längs konturen i ben0 (o), ljus ben3 (w) uppe till vänster och ben1 (p) i skuggan mot nedre högra kanten. Ansiktet har samma form på båda sidor: två små mörka öron som sticker ut åt sidorna, en ulltofs i pannan, ögon i kol0 och en smal mule i kol1. Bara den lilla ljuspunkten i jord1 (F) uppe till vänster skiljer sidorna åt. Benen är smala stumpar i jord1 och jord0 med klövar i kol1. Det vänstra frambenet är lyft i steget och slutar högre upp, utanför gräset. Det andra frambenet och de två bakbenen står på en liten gräsfläck i barr2 och oliv2. Bakbenen är längre bort, så deras klövar står högre upp än det främre benets. Skuggan på marken ritas inte. Granskningen: Rättat: ansiktet var osymmetriskt och flöt ihop med ullens kontur. Det är nu ett spegelsymmetriskt huvud runt kolumn 3 i kol1 och jord0, med ett öra på varje sida, två ögon i kol0 och en smal mule som slutar i en punkt. Ljuset från vänster ger jord1 bara på vänster sida. Idéns lyfta framben saknades, för alla fyra benen var lika och bara en punkt långa. Nu är benen 2–3 punkter, tre står med klövar i kol1 på gräset och det högra frambenet är lyft och böjt framåt. Gräsfläcken hade mörka fläckar (jord0 och kol1). Den är omgjord i barr2, oliv2 och barr3 utan ensamma mörka prickar. Ullkroppen, tovorna, ben3-ljuset uppe till vänster, ben1-skuggan nere till höger och storleken (21 × 18, rimligt mot kolonisten 14 × 20) är oförändrade.",
+   "ide": "Fåret går snett mot betraktaren i trekvartsvy, med huvudet vänt ut ur bilden nere till vänster, så att kroppen blir kort och kantig, nästan fyrkantig: en kompakt ullkloss på cirka 16 × 14 punkter med tydliga tovor längs konturen i ben0 och ljus ben3 på överkanten uppe till vänster. Det mörka ansiktet i kol1 och jord0 med två små mörka öron syns nästan rakt framifrån och är spegelsymmetriskt, medan ullkroppen bakom det blir skuggad i ben1 mot nedre högra kanten. Ett framben är lyft i steget och de andra tre står på en liten gräsfläck i barr2 och oliv2, så att silhuetten får rörelse."
+  }
+ ]
+}

@@ -1,0 +1,79 @@
+{
+ "kort": "f9_malt",
+ "namn": "Malt",
+ "slag": null,
+ "vad": "Steg 9.6.13: malt är korn som fått gro och torkats, och av det bryggs öl. Här maltet som sak i förrådet.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_malt",
+     "rader": [
+      ".....EKJE.....",
+      "....EqqpoE....",
+      ".....EqoE.....",
+      "....EGGFFE....",
+      ".....EpoE.....",
+      "...EqpqLKoE...",
+      "..EqwqppJpoE..",
+      ".EqqpqppppooE.",
+      ".EqpqppppoooE.",
+      ".EpqpppopooFE.",
+      ".EppqppppooFE.",
+      ".EppppppoooFE.",
+      ".EoppppoooFFE.",
+      "..EooooooFFE..",
+      "...EEEEEEEE..."
+     ]
+    }
+   ],
+   "anteckning": "Säcken står upprätt på marken och ses snett uppifrån. Överst syns den hopsnörda halsen nästan ovanifrån: en liten tyggtofs sticker upp över snöret, och snöret i jord2/jord1 går runt halsen. Under knuten vidgar sig axlarna, och den bukiga kroppen är förkortad nedåt mot en plattare botten. Konturen är jord0. Väven är ljus ben2/ben1 uppe till vänster och mörkare ben0/jord1 nere till höger, med en enda glanspunkt på axeln. Formen är spegelsymmetrisk kring mitten. Ett par maltkorn i senap2/senap1 har spillts på axeln vid knuten och ett par ligger vid foten, så att man ser vad säcken innehåller. Markskuggan ritas inte. Granskningen: Rättat: de lösa kornen nere till höger (J på col 13 och K vid bottenkonturen) är borttagna. De stod som ensamma prickar utanför silhuetten och bröt säckens symmetriska fot. De utspridda kornen på säckens skuldra (K, J och K på varsin plats) såg ut som fläckar i väven. De är ersatta av en sammanhängande klunga om tre korn (L, K och J) intill knuten till höger, där idén säger att de ska ha spillt ut. Tofsens topp visar nu öppningen ovanifrån med malt i (K, J), så att man från spelets vinkel ser vad säcken innehåller. Oförändrat: storleken 14 × 15, som håller sig mindre än kolonisten. Oförändrat är också formen, som är spegelsymmetrisk kring mitten, och jord0-konturen, ljuset från övre vänster (glans en punkt w) och de ljusa ben-tonerna som syns på gräset.",
+   "ide": "En säck av grov ylle- eller linneväv som står upprätt på marken, ungefär 12 × 14 punkter, knuten upptill med ett snöre så att en liten tofs av tyg sticker upp vid mitten. Från spelets vinkel syns säckens öppning som en hopsnörd hals ovanifrån och den bukiga kroppen förkortad nedåt. Väven är i ben- och jordtoner med jord0 som kontur, och vid knuten har ett par malta korn spillt ut i senap2 och senap1 så att man ser vad som är i. Formen är symmetrisk kring mitten, bara ljuset från övre vänster skiljer sidorna."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_malt",
+     "rader": [
+      ".....IIIIII.....",
+      "...IIKLKKJJII...",
+      "..IKLKqKJKJJJI..",
+      ".EHKLKKpKJKJIFE.",
+      ".EHLKJKKJKqJJFE.",
+      ".EGKqJJKJKJpIFE.",
+      ".EHJKpKJKJJIIFE.",
+      ".EHGHGHGHGHGGFE.",
+      ".EGFGFGFGFGFFEE.",
+      "..EFGFGFGFFEFE..",
+      "...EEEEEEEEEE..."
+     ]
+    }
+   ],
+   "anteckning": "Korgen står på marken i förrådet och ses snett ovanifrån: den ovala öppningen tar över halva höjden och den kupiga maltstacken buktar upp över bakkanten, så att kornen syns först. Framkanten är ett smalt flätband på två rader i jord1/jord2 med jord0 som kontur, och botten drar in mot marken. Ljuset kommer uppifrån vänster: senap3 och ljusa flätpunkter till vänster, senap0 och jord1 nere till höger. Formen är spegelsymmetrisk. Några korta groddar i ben2 sticker upp ur högen och visar att kornet har grott och torkats. Granskningen: Rättat: groddarna var ensamma ljusa prickar (även en som stack upp ovanför högen). Nu är de tre korta diagonala streck på två punkter, ben2 över ben1. Kornhögen hade ingen kontur upptill; nu har den senap0 runt kupan, med ljuset uppe till vänster. Sidorna gick rakt ner genom hela höjden så att korgen såg ut som en hink. Nu är korgen lägre, 14 × 11 i stället för 14 × 12. Kanten syns som en ljus läpp i jord3/jord2, under den ligger ett flätband på två rader i jord1/jord2 och sist en kontur i jord0. Den ovala öppningen med högen tar 7 av 11 rader. Silhuetten är spegelsymmetrisk, storleken passar mot kolonisten, och korgen är ljusare än gräset och har kontur.",
+   "ide": "En låg, rund flätad korg av vide, cirka 14 × 10 punkter, sedd snett ovanifrån så att den ovala öppningen tar mer än halva höjden och är fylld med en kupig hög av maltkorn i senap1, senap2 och enstaka senap3. Framkanten är ett smalt band på 2–3 punkter av flätverk i jord1 och jord2 med jord0 som kontur, och korgen är spegelsymmetrisk. Bland kornen sticker några torra groddar ut som korta ljusa streck i ben2, så att det läses som grott och torkat korn och inte vanligt säd."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_malt",
+     "rader": [
+      "..EEEEEEEEEEEEEEEE..",
+      "..EHHHGHHHGHHHGHGE..",
+      ".EEHLKLKKLKJKKJKGEE.",
+      "EHEHKLKJKKJKGKJJGEGE",
+      "EGEGKKJKJKGJKJIJFEFE",
+      ".EEHJKJKGJKJIJJIFEE.",
+      "..EGJJIJGIJIJIGJFE..",
+      "..EGGFGGFGGFGGFGFE..",
+      "..EFFFFEFFFFEFFFFE..",
+      "..EFFFFEFFFFEFFFEE..",
+      "..EEEEEEEEEEEEEEEE.."
+     ]
+    }
+   ],
+   "anteckning": "Maltet står i ett grunt torktråg av bräder direkt på förrådsgolvet, sett snett ovanifrån som kartan. Ovanifrån syns bädden: ett jämnt utbrett lager korn, kornat i senap (ljust uppe till vänster och mörkare nere till höger) med några jordtoner för skal och grodd. Bakkanten är en smal, ljus träkant, och framkanten är ett mörkare band av bräder i jord1 med fogar i jord0. Tråget står på golvet, så det har inga ben. De korta sidorna har varsin liten handtagsklack att lyfta i, symmetriska, där bara ljuset skiljer dem åt. Konturen är jord0 runt allt trä. Silhuetten är bred, platt och rak, så att tråget inte förväxlas med säckar och korgar. Granskningen: Granskad mot reglerna; inget behövde rättas, så versionen är oförändrad. Storlek: 20 × 11 punkter med klackarna, själva tråget 16 × 11. Det är platt och lägre än kolonisten (14 × 20), alltså rimligt för ett förrådsföremål. Vinkel: snett uppifrån. Bakkantens överkant (rad 1) och de inre sidoväggarna syns, med den vänstra ljusare i H/G och den högra mörkare i G/F. Kornbädden ritas ovanifrån och tar ungefär hälften av höjden. Framkanten är ett band på tre rader i jord1 med bräd­fogar i jord0 och en ljusare kant i jord2 överst. Tråget har inga ben, vilket stämmer för ett tråg. Symmetri: stommen, klackarna på kortsidorna och fogarna (kolumn 7 och 12) är spegelsymmetriska. Bara ljuset skiljer sidorna åt, och den mörkaste tonen ligger nere till höger. Konturen är jord0 runt trä och aldrig kol0. Maltet har korn i senap med inslag av jord2, som de torkade groddarna, och inga ensamma mörka prickar. De mättade senaptonerna markerar att det är något man kan ta. Silhuetten är bred, platt och rakkantig och skiljer sig från säckar och korgar. Den har kontur och är ljusare än gräset, så den syns tydligt. Tråget bärs inte, så bärregeln gäller inte.",
+   "ide": "Ett litet fyrkantigt tråg av hopfogade bräder, ungefär 16 × 10 punkter, där maltet ligger utbrett i ett jämnt lager som vid torkningen. Ovanifrån syns den rektangulära bädden av korn i senap- och jordtoner, bara de kortare sidorna har handtag som sticker ut som små klackar, och framkanten är ett mörkare band av trä i jord0 och jord1. Silhuetten är bred och platt och kanterna raka, så att den skiljer sig tydligt från säckar och korgar i förrådet."
+  }
+ ]
+}

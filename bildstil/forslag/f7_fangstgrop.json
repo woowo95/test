@@ -1,0 +1,175 @@
+{
+ "kort": "f7_fangstgrop",
+ "namn": "Fångstgropen",
+ "slag": null,
+ "vad": "Steg 7.5.11: fångstgropen för rådjur och älg, en grop i marken täckt med grenar och mossa, som syns svagt på kartan. Bilden visar den täckt till vänster och till höger när den slagit igen och står öppen; versionerna är hur mycket den syns.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "fangstgrop_tackt",
+     "rader": [
+      "...........FFFGFFGFEE...........",
+      "........FGFPOOXOPOOXOGFE........",
+      ".....FGOPOXOOXPOOOXOOXOXOFE.....",
+      "....FGOXOHGGGOXOOXOOXOOXOOFE....",
+      "..FGHGOXOPOOXOOXOOXOOXOOXOHGFE..",
+      ".FGOXOHGOOXOOXOOXOOXOOXOHGOXOFE.",
+      ".FGXOOXOHGOXOOXOOXOOXOXXOOXOOFE.",
+      "FGOOXOOXOOXOOXOOXOOXHGOOXOOXOOFE",
+      "FGXOOXOOXOOXHGOXOOHGOXOOXOOXOOFE",
+      "FGOXOOXOOXOOXOHGHGOXOOXOOXOOXOFE",
+      "FGOOXOOXOOXOOXHGGGOOXOOXOOXOOXFE",
+      "FFOOXOOXOOXOHGOOXOHGOOXOOXOOXOFE",
+      "FFXOOXOOXOOXOOXOOXOOHGOOXOOXOOFE",
+      ".FFOXOOXHGOXOOXOOXOOXOOXOOXOOFE.",
+      ".FFXOOHGOXOOXOOXOOXOOXOOHGOXOFE.",
+      "..FFHGOOXOOXOOXOOXOOXOOXOOHGFE..",
+      "....FFXOOXOOXOOXOOXOOXOOXOFE....",
+      ".....FFOOXOOXOOXOOXOOXOOXFE.....",
+      "........FFFXOOXOOXOOXFFE........",
+      "...........FEEFEEFEEE..........."
+     ]
+    },
+    {
+     "namn": "fangstgrop_oppen",
+     "rader": [
+      "...........FFFGFFFFEE...........",
+      "........FFGHGGXGHGGFGFEE........",
+      ".....FGHGGHGGFOGHGFGGFGFFEE.....",
+      "....FGHGOGGHGFGGHGGFGGFGFFEE....",
+      "..FGHGGHGHGFGGFGFGGFFGFGOGFFEE..",
+      ".FHGXGFGFGHGFFGFGFFGFFEFFEGFOFE.",
+      ".FGHGEFFEFFHGFEFFEEFEFEEFEEFGFE.",
+      "FGOGEEElElElGEElElllElEllEEEGFFE",
+      "FHGFEllllElllFllllllllllllEEFXFE",
+      "FGGFElllllllllllllllllllllEEFOFE",
+      "FGXFEllllllllllllllllllllEEEFFFE",
+      "FGFFElllllllllllllllllllllHGFOFE",
+      "FGFOFEllllllllllllllllllHGEFFFFE",
+      ".FGFGFEllllllllGlllllllGEEFFOFE.",
+      ".FGFXGFFElllllHGlllllllEFFGFOFE.",
+      "..FGFGHGGFEEEHlllllEEEFFGFFOFE..",
+      "....FGFGFHGFGFGGFGGFGFFGFOFE....",
+      ".....FGFFGFOFGFFGFFGFFFFFEE.....",
+      "........FFGFFEFFGFFFEFEE........",
+      "...........EEFEEEFEEE..........."
+     ]
+    }
+   ],
+   "anteckning": "Gropen ligger i marken och ses snett ovanifrån. Därför är öppningen en tillplattad ellips på 32 × 20 punkter med långsidan tvärs över bilden. Den främre innerväggen döljs av främre randen, och bara den bortre väggen syns, som ett band i jord1 och jord2 som mörknar nedåt. Täckt ligger två korsade grenar och en kort kvist i jord2 och jord3 under mossa i oliv2 och barr3. Mossan skymmer grenarna på några ställen. Den uppkastade jorden i jord1 bildar en svag rand som mörknar mot jord0 nere till höger, så att gropen bara anas mot gräset. Öppen har täcket brustit i mitten. Brutna grenar ligger kvar på randen och hänger in över kanten: en från vänster, en från höger, en ner över bakväggen och en stump vid framkanten. Djupet är jord0 och kol1, mörkast i mitten och under framkanten. Mossflagor ligger kvar på jordranden. Formen är spegelsymmetrisk, och bara ljuset uppe till vänster skiljer sidorna åt. Granskningen: Storleken (32 × 20 mot kolonistens 14 × 20), vinkeln snett ovanifrån, den spegelsymmetriska ellipsen och den svaga täckta versionen stämmer och är kvar. Rättat i båda versionerna: konturen. Den yttersta punkten på upplysta sidan var jord2 och är nu jord1, och på skuggsidan och längst ner är den nu jord0, enligt regeln att konturen är materialets mörkaste ton. Täckt: bara konturen är ändrad; mossan, gallret av grenar och jordkanten är som förut. Öppen: ritad om inuti efter idén. Bortre innerväggen syns nu som ett band av jord2 och jord1 i tre rader, som mörknar mot höger. Gropen under är jord0 och kol1 utan kol0. Tre brutna grenar i jord3 och jord2 hänger tydligt ner över kanten: en från bortre vänstra randen, en från högra och en som sticker upp från främre kanten. Mossflagor i oliv2 och barr3 ligger kvar runt randen.",
+   "ide": "Oval jordgrop, ungefär 32 × 20 punkter, med långsidan tvärs över bilden och sedd snett ovanifrån, så att öppningen blir en tillplattad ellips och bara den bortre innerväggen syns som ett band av jord i jord1 och jord2. Täckt är ellipsen ett tunt galler av korsade grenar i jord2 och jord3 under fläckig mossa i oliv2 och barr3, bara ett steg ljusare än gräset och med en svag kant av uppkastad jord i jord1. Öppen har mitten brustit: några grenar hänger brutna ner över kanten, gropen är mörk i jord0 och kol1, och mossflagor ligger kvar runt randen."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "fangstgrop_tackt",
+     "rader": [
+      ".EEEEEEEEEEEEEEEEEEEEEEEEEE.",
+      "EGHGGHGGGHGGHGGGHGGHGGGHGGFE",
+      "EGGFGGVXWVGGFGVXXWVGGFGGFFFE",
+      "EFFGVXWXWXWVFVXWXWXWXVFVXVFE",
+      "EGFVXWWXWXWWXWXWWXWWXWXWVFFE",
+      "EHFXWXWWXWWWXWXWXWWXWWXWVFFE",
+      "EGFWXWWXWXWWXWWXWXWWXWXWWGFE",
+      "EGFXWHGGFXWXHGGGFWXHGGFWXFFE",
+      "EHFWXFFFFVWXFFFFFVWFFFFVXFFE",
+      "EGFXWWXWXWWXWXWWXWWXWXWWVGFE",
+      "EGFWXWXWWXWWXWXWWXWXWWXWVFGE",
+      "EHGXWXWWXWXWWXWWXWXWWXWXVGFE",
+      "EGFWHGGGFXWHGGFWXWHGGGFXVFFE",
+      "EGFXFFFFFVWFFFFVXWFFFFFVVGFE",
+      "EHFWXWWXWXWWXWWXWXWWXWXWVFFE",
+      "EGFXWXWWXWWXWXWWXWWXWWXVVFFE",
+      "EGGWXWWXWXWWXWWXWXWWXWVWVGFE",
+      "EGFXWHGGFWXWXHGGGFWXHGGFVFFE",
+      "EGFWXFFFFVWXWFFFFFVXFFFFVGFE",
+      "EEEVXWVEEVWXVEEEVXWVEEVXVEEE",
+      "EGHGVWVHGGHVXVGHGGVWVGGHGGFE",
+      "EGGFGGGFGGGFGGFGGGFGGFGGFFFE",
+      "EFFEFFFFEFFFFEFFFFFEFFFFEFFE",
+      "EEFEEEFEEEEFEEEFEEEEFEEEFEEE",
+      ".EEEEEEEEEEEEEEEEEEEEEEEEEE."
+     ]
+    },
+    {
+     "namn": "fangstgrop_oppen",
+     "rader": [
+      ".EEEEEEEEEEEEEEEEEEEEEEEEEE.",
+      "EGHGGHGGGHGGHGGGHGGHGGGHGGFE",
+      "EGGFGGGFGGFGGGFGGFGGGFGGFFFE",
+      "EFFGFFFFFFGFFFFFFGFFFFFGFFFE",
+      "EGFEEEEEEEEEEEEEEEEEEEEEEGFE",
+      "EHFEHGHGGHGGGHGGGFGGFGFFEFFE",
+      "EGFEGGGHGGGFGGGGFGGFGFFFEGFE",
+      "EGGEEEEEEEEEEEEEEEEEEEEEEGGE",
+      "EHFEGHGGGHGGFGGGFGGFFGFFEFFE",
+      "EGFEGGGFGGGGGFGGFFGFFFFFEGFE",
+      "EGFEEEEEEEEEEEEEEEEEEEEEEFGE",
+      "EHGEEmGFXWmlmmlmmlmGFmlGEGFE",
+      "EGFEEmmGFXlmmlmlmmGFWlmGEFFE",
+      "EGFEElmmGFmlmlmmlGFlmlmGEGFE",
+      "EHFEEmlmmGFmlmlmGFlmllmGEGGE",
+      "EGFEElmlmmGFmllGFlmlmllGEFFE",
+      "EGGEEmlmlmmGFlGFXlmllmlFEGFE",
+      "EGFEElmlmlmlGFlmlGGGFFlFEFFE",
+      "EGFEEllmllmllGFllEEEEllFEGFE",
+      "EEEEEEEEEEEEEEEEEEEEEEEEEEEE",
+      "EGHGGHGGGHGGHGGHGGGHGGHGGGFE",
+      "EGGFGGGFGGGFGGFGGGFGGFGGFFFE",
+      "EFFEFFFFEFFFFEFFFFFEFFFFEFFE",
+      "EEFEEEFEEEEFEEEFEEEEFEEEFEEE",
+      ".EEEEEEEEEEEEEEEEEEEEEEEEEE."
+     ]
+    }
+   ],
+   "anteckning": "Gropen är 28 × 25 punkter och ligger i marken, så inget står upp. Stockramen ses snett ovanifrån. Den bortre stocken och den främre stocken går över hela bredden och vilar på sidostockarna, som i ett knuttimrat hörn. Varje stocks ovansida är ljus uppe till vänster (jord3/jord2) och mörknar mot jord1. Konturen är jord0. Den främre stocken har ett mörkare framband på 2 punkter (rad 22–23) under ovansidan. Täckt: slanorna går bakifrån och framåt och syns bara som korta jord2/jord1-stumpar vid ramen och i några glipor. Resten är granris och mossa i barr2 och barr3, med lite barr1 nere till höger. Därför läses den som en svagt kantig, grönare fläck med träkant. Öppen: den bortre innerväggen syns som två staplade stockar i jord2. De är ljusast till vänster och skiljs åt av fogar i jord0. Den vänstra innerväggen ligger i skugga (jord0) och den högra får ljuset (jord2). Botten är mörk jord i kol2 och kol1, men inte svart. Två slanor har rasat snett ner i kors med mossrester på sig, och en tredje ligger tvärs nere vid framkanten med skugga under sig. Den främre innerväggen döljs av den främre stocken, eftersom vi ser gropen framifrån och uppifrån. Granskningen: Rättat i den täckta versionen: den liknade en odlingslåda, med en hel ram av jord0 runt en mosskvadrat och inga slanor. Ramen var dessutom för tydlig för en grop som ska synas svagt. Nu har den tre raka, parallella slanor (jord2/jord3 ovanpå, jord1 som underkant) som ligger tvärs över gropen och syns i luckor mellan granriset. Mossan i barr2/barr3 med barr1 i skuggkanterna väller ut över stockarnas innerkanter. Den inre konturen i jord0 är därför borta, utom där riset hänger ut över den främre stocken. Gropen läses nu som en svagt kantig, grönare fläck. Stockarnas yttre del och framkanten på 2 punkter står kvar, så formen och storleken (28 × 25, samma som den öppna) är oförändrade och versionerna byts utan förskjutning. Den öppna versionen behövde inget rättas och är oförändrad: bortre innerväggen av staplade stockar i jord2, högra innerväggen ljus och vänstra i skugga med ljuset från vänster, slanorna rasade snett ner i det mörka hålet och symmetrisk ram.",
+   "ide": "Fyrkantig grop, ungefär 28 × 24 punkter, kantad av fyra kluvna stockar i jord1 med jord0 som kontur. Stockramen ses ovanifrån som en ram, och framkanten är ett smalt mörkare band på 2 punkter. Täckt ligger raka slanor parallellt över ramen med granris och mossa i barr2 och barr3 ovanpå, så att den läses som en svagt kantig, grönare fläck i gräset. Öppen har slanorna rasat snett ner i hålet, och den bortre innerväggen av staplade stockar syns i jord2 med ljuset från vänster."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f7_fangstgrop_tackt",
+     "rader": [
+      "........QQQ.................",
+      ".......QSRQNNNNNNNNNN.......",
+      ".....NNQRRQPPOPPOPPOPNNN....",
+      "...NNPPOQQPOPPOPOIIPOPOPONN.",
+      ".QQQNPPOPOPPOPOOPOGGGOPOON..",
+      "QSSRQPOPOIIOPOPOOPOPOOPOOQQ.",
+      "QSRRQOPOPOOPOGGOOPOIIOOOQSRQ",
+      "QRRRQPOOIIOPOOPOOPOOPOONQRRQ",
+      ".QQQNOPOOPOOOGGOOPOOIIOONQQ.",
+      "..NNOOPOOOIIOOPOOOOPOOONNN..",
+      "....NNNOOOPOOOIIOQQOOONNN...",
+      ".......NNNNNNNNNQSRQNNN.....",
+      "................QRRQ........",
+      ".................QQ........."
+     ]
+    },
+    {
+     "namn": "f7_fangstgrop_oppen",
+     "rader": [
+      "........QQQ.................",
+      ".......QSRQNNNNNNNNNN.......",
+      ".....NNQRRQPOGGFOPOPPNNN....",
+      "...NNPPOQQPGGFOPOPGGFOPOPNN.",
+      ".QQQNPOOEEEEEEEEEEEEEEOOPN..",
+      "QSSRQPOEGGFGGFGFFGFFFFEOPQQ.",
+      "QSRRQOEFEEqEEEqEEEqEEEEOQSRQ",
+      "QRRRQOEkkkHGkkHGkkHGkkEOQRRQ",
+      ".QQQNOEkkkHFkkHFkkHFkkEONQQ.",
+      "..NNOOOEEEEEEEEEEEEEEEONNN..",
+      "....NNNOGGFOOOGGFQQOOONNN...",
+      ".......NNNNNNNNNQSRQNNN.....",
+      "................QRRQ........",
+      ".................QQ........."
+     ]
+    }
+   ],
+   "anteckning": "Gropen ligger i marken med långsidan mot betraktaren (28 × 13 punkter), så den ses snett uppifrån som resten av kartan. Täckt är den en låg, avlång sträng av mossa och löv i oliv2, oliv3 och senap0 med en mörk kant i oliv1. Den ligger nästan i marktonen, och bara några kantstenar i skiffer med skiffer0-kontur och ett par kvistar avslöjar den. Öppen syns den bortre innerväggen, belyst i jord1 och jord2, eftersom den vetter mot betraktaren. Den främre väggen döljs av framkanten, så schaktet blir allt mörkare nedåt, från jord0 till kol0. Tre vässade pålar i jord3 står upp från botten med ljusa spetsar; den mittersta är högst. De brutna risen och mosstussarna ligger kvar längs kanterna. Stenarna sitter på samma ställen i båda bilderna. Granskningen: Rättat: raderna var olika långa (28 och 29 punkter), och den öppna gropen saknade djup. Nu är båda bilderna exakt 28 × 14 punkter, med samma fotavtryck och stenarna på samma platser, så att bilden inte hoppar när fällan slår igen. Täckt: mossan är ljusare (oliv3) uppe till vänster och mörkare (oliv2 och oliv1) nere till höger, så att strängen ser svagt upphöjd ut. De ensamma mörka prickarna i jord1 och senap0 är ersatta med lövpar i senap0 och korta kvistar i jord2. Öppen: schaktet har en kontur i jord0 och en bakre innervägg i jord2 och jord1 som mörknar nedåt mot kol0 i botten. Tre vässade pålar står jämnt fördelade nere i schaktet, två punkter breda (jord3 med skuggsida i jord2 och jord1) och med en ljus spets i ben2 överst. Den lösa ljusa pricken är borttagen. De brutna risen ligger som korta kvistar i jord2 och jord1 längs både den bakre och den främre kanten. Storleken (28 punkter lång, knappt 1 ruta djup) och vinkeln snett uppifrån med långsidan mot betraktaren följer idén.",
+   "ide": " Smal och djup grop, ungefär 16 × 28 punkter, med långsidan mot betraktaren, så som de grävdes längs ett viltstråk. Kanten är satt med några stenar i skiffer1 och skiffer2 och har skiffer0 som kontur. Täckt är den bara en lång, svagt upphöjd sträng av mossa och torrt löv i oliv2, oliv3 och senap0 som knappt skiljer sig från marken. Öppen syns det svarta schaktet i jord0 och kol0, och nere i det står två eller tre vässade pålar i jord3 med en ljusare spets, och de brutna risen ligger kvar längs kanterna."
+  }
+ ]
+}

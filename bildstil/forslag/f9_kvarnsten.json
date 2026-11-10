@@ -1,0 +1,82 @@
+{
+ "kort": "f9_kvarnsten",
+ "namn": "Kvarnstenen",
+ "slag": null,
+ "vad": "Steg 9.6.22: kvarnstenen är en station en ruta stor av två huggna stenar där korn mals till mjöl. Här stationen på trägolvet.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_kvarnsten",
+     "rader": [
+      "..........GE....",
+      "EEEEQQQQQQGEEEEE",
+      "EHGQTTSTSSGEQFGE",
+      "EGQTSTSQKSRSRQFE",
+      "EFQSTSSJQSRSRQGE",
+      "EGQSRSRRSRRRRQFE",
+      "EwQQQQQQQQQQQQqE",
+      "EqQSSRSRSRRRRQqE",
+      "EGwQQQQQQQQQQqFE",
+      "EFFFEFFFFEFFFFFE",
+      "EEEEEEEEEEEEEEEE",
+      ".FE..........FE.",
+      ".FE..........FE.",
+      ".EE..........EE."
+     ]
+    }
+   ],
+   "anteckning": "Kvarnen står på en låg fyrkantig bänk som ses snett ovanifrån. Skivan är jord1–jord2 med jord0-kontur och tar raderna 1–8. Framkanten är ett band på 2 punkter i jord0–jord1. Bara de två främre benen syns, som stumpar på 3 punkter. Stenarna ligger mitt på skivan som en spegelsymmetrisk ellips, 12 × 8 punkter, i skiffer1–skiffer3 med skiffer0-kontur. Överstenens ovansida är ljusast uppe till vänster. Det mörka hålet i mitten har två senapsgula korn. Under ovansidan syns överstenens kant, sedan en mörk fog och sedan understenens kant, så att man ser att det är två stenar. Handtagspinnen sitter i överstenen vid bakkanten och står upp förkortad till 4 punkter i jord2 med jord1–jord0 på skuggsidan. Den skymmer stenens och skivans bakkant, eftersom den står framför dem. Mjölet som pressas ut mellan stenarna ligger i ben2–ben3 runt understenens kant, ljusast på vänstra sidan mot ljuset. Granskningen: Rättat: 1) Handtagspinnen gick ner genom överstenen till mitten av ytan (rad 0–3), så den såg ut att sticka genom stenen. Nu står den upp vid stenens bakkant, rad 0–2, med foten på stenen. Den blev 3 punkter i stället för 4, eftersom en fjärde punkt hamnar inne på ytan. 2) Stenen var inte spegelsymmetrisk: bakkonturen gick bara över kolumn 5–9 och pinnen åt upp högra halvan. Nu är ellipsen symmetrisk kring mitten: bakkant 4–11, sedan 3–12, full bredd 2–13 och en rundad underkant 3–12. Hålet med senapskorn ligger kvar i mitten (kolumn 7–8). 3) Mjölringen följer nu understenens rundade kant: ljus ben3 till vänster och ben2 till höger, i stället för att ligga inne i stenens kontur. Ljuset (skiffer3 uppe till vänster, skiffer1 nere till höger) är oförändrat. Vinkeln är oförändrad: skivan ses ovanifrån med ett framkantsband på 2 punkter och främre benstumpar på 3 punkter. Storleken (16 × 14) står rätt mot kolonisten, och bänken i jord med jord0-kontur och stenen i skiffer syns tydligt mot gräset.",
+   "ide": "Rund handkvarn på en låg fyrkantig träbänk, 16 × 14 punkter: bänkskivan ses ovanifrån i jord1–jord2 med jord0-kontur och ett framkantsband på 2 punkter i jord0–jord1, och två korta benstumpar på 3 punkter syns bara framtill. Mitt på skivan ligger de två stenarna som en spegelsymmetrisk ellips, 12 × 8 punkter, i skiffer1–skiffer3 med skiffer0-kontur; framkanten visar två tunna lager med en mörk fog emellan så att man ser att det är två stenar. Överstenen har ett mörkt hål i mitten med några senapsgula korn och en handtagspinne i jord2 som står upp vid bakkanten, förkortad till 4 punkter, och en ljus ring av mjöl i ben2–ben3 runt understenens kant."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_kvarnsten",
+     "rader": [
+      "EE..............",
+      "EHE.............",
+      ".EHEEEEEEEEEEEE.",
+      "EHGHEHGHGHGGHGFE",
+      "EHGpGQQQQQQppGFE",
+      "EHGpQTTSTSSQqGFE",
+      "EHGpQTSLKSRQqHFE",
+      "EGHqQSSKJRRQwGFE",
+      "EHGqQSRSRRRQqGFE",
+      "EHGqwQQQQQQwqHFE",
+      "EHHGHGHHGHGHGGFE",
+      "EFGFFFGFFFFGFFFE",
+      "EFFGFFFFFFGFFFFE",
+      "EGFEEEEEEEEEEGFE",
+      "EGFE........EGFE",
+      "EEEE........EEEE"
+     ]
+    }
+   ],
+   "anteckning": "Kvarnstenen står på trägolvet som en låg fyrkantig låda, sedd snett ovanifrån. Lådans fyra plankkanter ligger ovanifrån med ljuset från vänster (jord3 upptill till vänster, jord1 nere till höger) och har jord0-kontur. Framkanten är ett band på 3 punkter och under det syns bara de två främre benstumparna. Inne i lådan ligger mjölet i ben2–ben3, med lite ben1-skugga närmast bakkanten. Överstenen ligger nedsänkt mitt i mjölet som en symmetrisk ellips på 9 × 6 punkter i skiffer med skiffer0-kontur. Den sticker upp lite över bakplankan eftersom den är högre än kanten. Hålet i mitten är det enda mättade på bilden: senapsgula korn. Veven är fäst i överstenens övre vänstra kant och lutar upp mot övre vänstra hörnet, över lådans bakkant, så att silhuetten får en pinne uppåt. Undre stenen ligger dold under överstenen och mjölet, så den syns inte. Granskningen: Rättat: (1) Veven stod rakt upp från lådans vänstra kant och nådde aldrig stenen. Nu är den en diagonal träpinne i jord3 med jord0-kontur, som går från överstenens övre vänstra kant snett upp över bakkanten mot övre vänstra hörnet, som idén beskriver. (2) Överstenen låg förskjuten åt vänster, så mjölet syntes bara till höger, och den täckte bakre plankan. Nu är stenen 8 × 6 punkter och centrerad i lådan, så att formen blir spegelsymmetrisk. Med 9 punkter hade den inte kunnat centreras i den jämna lådan. Mjöl i ben2–ben3 syns runt den på båda sidor, med ben1 som skugga innanför vänster- och bakväggen, eftersom ljuset kommer uppifrån vänster. (3) Bakre plankan är nu hel längs bakkanten och lådans bakre hörn är rundade. Lådan är symmetrisk med plankor på 2 punkter i jord1–jord3 och jord0-kontur. (4) Hålet i stenen har senapsgula korn, och stenens skiffer är ljusast uppe till vänster. (5) Bilden är 16 × 16 i stället för 16 × 15. Raden gör att framkantsbandet (2 punkter) och benstumparna (3 punkter) ryms under ytan. Det är fortfarande en ruta och väl under kolonistens 20 punkter. Vinkeln är densamma: ytan syns ovanifrån, med smalt mörkare framband och bara de främre benen.",
+   "ide": "Kvarnstenen nedsänkt i en fyrkantig trälåda som fångar mjölet, en fyllig kvadratisk silhuett på 16 × 15 punkter: lådans fyra kanter är breda plankor i jord1–jord3 med jord0-kontur, sedda ovanifrån, med ett framkantsband på 3 punkter och två benstumpar på 4 punkter. Inne i lådan ligger botten fylld av ljust mjöl i ben2–ben3, och mitt i den sitter den runda överstenen, symmetrisk, 9 × 6 punkter i skiffer1–skiffer3 med ett hål där senapsgula korn syns. En lång vev av trä står snett upp från överstenens kant mot övre vänstra hörnet och sticker upp över lådans bakkant, så att silhuetten får en tydlig pinne uppåt."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_kvarnsten",
+     "rader": [
+      "...QQQQQQQQQQ...",
+      ".QTSTSSTSSSSRRQ.",
+      "QTSRJKJLKJKJRSRQ",
+      "QTSTJQQQQQQJTSRQ",
+      "QSSTTQTTTSQTTSRQ",
+      "QSSTTQTSSRQTSSRQ",
+      "QSSTqQQQQQQqTRRQ",
+      "QSSqwqwqqwqpqRRQ",
+      ".QRRSqwqqpqRRRQ.",
+      "...QQQqpqpQQQ..."
+     ]
+    }
+   ],
+   "anteckning": "Trågkvarnen ligger direkt på trägolvet utan bänk och ses snett ovanifrån. Understenen är ett ovalt, spegelsymmetriskt tråg med skiffer0-kontur. Kanten är i skiffer2–skiffer1, med ljuset uppe till vänster och skiffer1 nere till höger. Urholkningen syns ovanifrån som den slitna ljusa ytan i skiffer3, och bakväggen skuggas i skiffer1. Framkanten är ett band på två punkter, skiffer1 över skiffer0. Löparen är 6 × 4 punkter, har egen kontur och ligger på tvären mitt i tråget. Den skjuts fram och tillbaka mot betraktaren. Därför ligger de omalda kornen i senap bakom den och sipprar fram vid sidorna, medan mjölet i ben2–ben3 samlas framför den. Mjölet rinner i mitten ut över framkanten mot golvet. Golvet ritas inte, och runt stenen är det genomskinligt. Granskningen: Rättade bara rad 9, som var 15 punkter bred i stället för 16. En genomskinlig punkt är tillagd till höger, så att den nedre konturen ligger på kolumn 3–12 och tråget blir spegelsymmetriskt igen. Resten följer reglerna och behålls oförändrat. Bilden är 16 × 10 punkter, alltså en ruta bred och låg bredvid kolonisten på 14 × 20. Tråget ses snett uppifrån med den urholkade ytan ovanifrån och en mörkare framkant. Konturen är i skiffer0 och ljuset kommer uppifrån till vänster: skiffer3 till vänster och skiffer1 till höger. Löparen på 6 × 4 punkter ligger på tvären mitt i tråget, med senapsgula korn bakom och mjöl i ben2–ben3 framför. Mjölet spills över den nedre kanten. Stenen är ljusare än gräset och syns tydligt.",
+   "ide": "Trågkvarn direkt på trägolvet, en låg och avlång form på 16 × 10 punkter utan bänk: understenen är ett ovalt, spegelsymmetriskt tråg i skiffer1–skiffer2 med skiffer0-kontur, urholkat i mitten så att den ljusare slitna ytan i skiffer3 syns ovanifrån och den mörkare framkanten blir ett band på 2 punkter. Överstenen är en mindre avlång löparsten, 6 × 4 punkter i skiffer2–skiffer3, som ligger på tvären mitt i tråget. I tråget ligger en strimma senapsgula korn bakom löparen och vitt mjöl i ben2–ben3 framför den, som spills ut över tråget nedre kant mot golvet."
+  }
+ ]
+}

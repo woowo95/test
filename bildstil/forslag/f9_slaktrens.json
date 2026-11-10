@@ -1,0 +1,72 @@
+{
+ "kort": "f9_slaktrens",
+ "namn": "Slaktrens",
+ "slag": null,
+ "vad": "Steg 9.7.5: slaktrens (tarmar, inälvor och rester som blir över när ett djur styckats) är en sak som läggs på sophögen eller ger gödsel och kan locka rovdjur. Här en liten hög på marken.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_slaktrens",
+     "rader": [
+      "....rrrrr....",
+      "..rrqqtqqrr..",
+      ".rquqptqrtsr.",
+      "rqpqtqpqrsssr",
+      "rpqtrsrpqrsrr",
+      "rtqprssrtqptr",
+      "rtptpqtptqtsr",
+      ".rtstssstssr.",
+      "..rrssrssrr.."
+     ]
+    }
+   ],
+   "anteckning": "Slaktrensen ligger löst i en låg hög direkt på marken, utan underlag och utan ben. Den är 14 × 10 punkter, alltså mindre än en ruta. Sedd snett uppifrån tar ovansidan med de hoprullade tarmslingorna (ben1 och ben2, rost2 i vecken) större delen av höjden. Framkanten är ett smalt band i rost1 och rost0 där högen buktar ner mot marken. Ovanpå ligger en leverbit i rost1 och rost0 mitt i högen och en njure till höger. Konturen är rost0 runt om, aldrig svart. En enda glanspunkt i rost3 sitter uppe till vänster, där ljuset faller in. Formen är oregelbunden men rund och sluten, så att den läses som en klump och inte som en skål. Skuggan på marken lägger spelet till. Granskningen: Rättat: version 1 läste som en munk eller en skål, eftersom en ljus ring låg runt en mörk mitt (rrr i mitten). Högen är omritad till en sluten, rundad klump på 13 × 9 punkter, nära idéns 12 × 8. Den är lagom stor bredvid kolonisten (14 × 20). Ovansidan fyller rad 0–6 och är tarmslingor i ben1 och ben2 med rost2 i vecken. Framkanten är ett smalt band på 2 rader i rost1 och rost2. Inälvorna ligger ovanpå och utanför mitten: en lever i rost1 med rost0-kant uppe till höger och en liten njure till vänster, så att ingen mörk mitt bildar ett hål. Silhuetten är spegelsymmetrisk och konturen är rost0. Det finns en glanspunkt i rost3 uppe till vänster, och vänstra sidan är ljusare enligt ljuset. Högen är ljusare än gräset och syns på det.",
+   "ide": "En låg, rundad hög om ungefär 12 × 8 punkter som ligger direkt på marken, sedd snett uppifrån så att ovansidan tar större delen av höjden och framkanten är ett smalt mörkare band. Högen är en klump av hoprullade tarmslingor i ben1 och ben2 med rost2 i vecken, och ovanpå ligger ett par mörkare inälvsbitar (lever, njure) i rost0 och rost1; konturen är rost0, inte svart, och en enda glanspunkt i rost3 sitter uppe till vänster. Formen är oregelbunden men tydligt rund, så att den läses som en klump och inte som en skål."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_slaktrens",
+     "rader": [
+      "..oo............",
+      ".oqpoo..........",
+      ".oqwqppooo......",
+      "..oosppqqpoo....",
+      ".oqpqoospqpsrr..",
+      ".oppqqppoopsttr.",
+      "..oosppqqpsrstsr",
+      "...ooooooooorssr",
+      "...........rrr.."
+     ]
+    }
+   ],
+   "anteckning": "Slaktrensen ligger platt på marken, slängd från slaktbänken, så bara ovansidan syns snett uppifrån. Tarmarna ligger som två till tre utdragna slingor som löper diagonalt från övre vänster till nedre höger. De är ljusa rör i ben1 och ben2 med rost1 i skarvarna, och konturen är ben0. En enda glanspunkt i ben3 sitter uppe till vänster, mot ljuset. I den nedre högra änden ligger inälvsklumpen i rost0 och rost1, med rost2 som köttets ljus, eftersom det är det man ska se och kan ta. Nederkanten är ett smalt mörkare band i ben0 och rost0. Inga ben eller skuggor är ritade, och den låga, avlånga silhuetten skiljer den från en hög. Granskningen: Storleken (16 × 9 mot kolonistens 14 × 20), vinkeln ovanifrån med smal mörk nederkant, paletten, konturerna (ben0 runt tarmarna, rost0 runt klumpen) och glansen på en punkt i ben3 följde redan reglerna. Den syns också på gräset. Det som bröt mot idén var att tarmarna i liten storlek flöt ihop till en blek fläck i stället för parallella slingor. Jag rättade det genom att lägga in en diagonal skåra i ben0 med rost1 i skarvarna, från övre vänster till nedre höger, så att två rör skiljs åt. Varje rör har nu sin ljusa överkant i ben2 just ovanför skåran, så att de läses som rundade tarmar. Silhuetten och den rödbruna inälvsklumpen i högra änden är oförändrade.",
+   "ide": "En utdragen, avlång hög om ungefär 14 × 7 punkter där tarmarna ligger utdragna i två eller tre parallella slingor som löper diagonalt från övre vänster till nedre höger, som om de slängts av från slaktbänken. Slingorna är ljusa rör i ben1 och ben2 med rost1 i skarvarna och kontur i ben0 och rost0, och i den ena änden ligger en liten rödbrun inälvsklump i rost0 och rost1. Den platta, utsträckta silhuetten skiljer den från en hög; inga ben syns, bara ovansidan och en smal skuggad nederkant."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_slaktrens",
+     "rader": [
+      "....oo...oo...",
+      "...owqo.owqo..",
+      "...oqoo.oqoo..",
+      "...oqo..oqo.oo",
+      "..roqostoqoowo",
+      ".rtoqosuoqoopo",
+      "rtstosttsotsor",
+      "rstsstsssstssr",
+      "EGHGFrstsssrrE",
+      ".EFGHGFrssrrE.",
+      "..EFGFFErrrr..",
+      "...EEEEE......"
+     ]
+    }
+   ],
+   "anteckning": "The pile lies flat on the ground and is seen at an angle from above, 14 × 12 points. At the bottom lies a flap of hide with short fur in jord1, jord2 and jord3, outlined in jord0. It is lightest at the top left and is the widest part, so the pile rests on it. On the hide lie the red entrails in rost1 and rost2, outlined in rost0, with a single highlight point in rost3. Up out of the meat, in the middle of the pile, stand two ribs in ben2 and ben3 outlined in ben0. They are foreshortened and stand at the back edge, so the pile is highest in the middle and gets an angular silhouette against the grass. To the right lies a vertebra on top of the mass, with its spurs pointing down into the meat. Only the parts that stick up or lie on top are visible; the rest is hidden in the pile. Granskningen: Version 3 läste som en flätad korg eller ett tråg med flaskor, inte som en hög. Den hade en rak, spegelsymmetrisk skålform, en jämn mörk bottenkant i jord0 och två raka, lodräta stavar. Jag har rättat följande:\n- **Silhuetten:** Bottenlinjen är borta. Högen är högst på mitten och smalnar av med ojämna kanter åt båda hållen, så att den ser ut att ligga löst på marken.\n- **Revbenen:** De är böjda bågar som kröker åt höger i toppen och står upp förkortade vid bakkanten, i ben2 och ben3 med kontur i ben0.\n- **Kotan:** Den är en egen liten klump till höger.\n- **Hudfliken:** Pälsfliken i jord1–jord3 med kontur i jord0 ligger nu snett fram till vänster, under och utanför inälvorna, i stället för att vara ett jämnt band runt allt.\n- **Inälvorna:** De röda bitarna i rost1 och rost2 med kontur i rost0 fyller mitten och mörknar mot nedre högra hörnet. Glansen är en enda punkt i rost3.\n- **Korn:** Några ensamma mörka prickar i rost0 inne i ytan är borttagna.\n- **Storleken:** Den blir 14 × 12 punkter, i stort sett enligt idén och liten mot kolonisten.",
+   "ide": "En liten hög om ungefär 13 × 11 punkter byggd av tydliga rester snarare än en klump: ett par revben och en kota i ben2 och ben3 sticker upp ur högen, en flik hud med kort päls i jord1 och jord2 ligger under, och emellan syns röda inälvsbitar i rost1 och rost2 med konturer i rost0 och jord0. Högen är högre på mitten och smalnar av mot kanterna, sedd snett uppifrån, så att revbenen står upp förkortade vid bakkanten och syns som en kantig silhuett mot gräset."
+  }
+ ]
+}

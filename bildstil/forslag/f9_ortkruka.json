@@ -1,0 +1,86 @@
+{
+ "kort": "f9_ortkruka",
+ "namn": "Örtkrukan",
+ "slag": null,
+ "vad": "Steg 9.7.16: örtkrukan är en liten lerkruka där en ört, rölleka, växer inomhus året om och ute när det är varmt. Här krukan med röllekan, som har platta vita blomhuvuden och fjäderlika blad.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_ortkruka",
+     "rader": [
+      "...wwqq...",
+      "...qqpp...",
+      ".ww.ON.wq.",
+      "wqqp.Nwqqp",
+      ".pp.ON.pp.",
+      "..NPONOPN.",
+      ".NPOPOPON.",
+      ".NOPONOON.",
+      "rtFEFFEEtr",
+      "rttttttssr",
+      ".rtsssssr.",
+      "rutttssssr",
+      ".rtstsssr.",
+      "..rrrrrr.."
+     ]
+    }
+   ],
+   "anteckning": "Krukan står på marken eller golvet och ses snett uppifrån. Mynningen syns därför som en smal ellips: en bakkant i rost2, jorden i F och E innanför och en framkant i rost2 som ett smalt band. Buken är spegelsymmetrisk och 10 punkter bred. Konturen är rost0, och glansen i rost3 sitter uppe till vänster. Ur jorden växer en tuva fjäderlika blad i O och P med kontur i N. Tuvan täcker mynningens bakkant mitt på, eftersom bladen står framför den. Tre stjälkar bär blomhuvudena: den mittersta högst och två lägre, en på varje sida och i samma höjd. Hela silhuetten går därför att spegla. Blomhuvudena är platta och ses ovanifrån som små tallrikar i w och q, med skuggkant i p nedtill. Bara ljuset skiljer vänster och höger sida åt. Granskningen: Rättat: 1) Storleken. Versionen var 12 × 20, lika hög som kolonisten, och krukan ensam var 8 punkter hög, vilket motsvarar ungefär 70 cm mot en människa på 20 punkter. Bilden är nu 10 × 14: krukan 6 punkter hög och 10 bred, röllekan 8 punkter. Det är fortfarande lite överdrivet för att den ska läsas, men den når nu kolonisten ungefär till höften i stället för till hjässan. 2) Logiken. Den översta blomman svävade, eftersom stjälken saknades i två rader mellan blomhuvudet och tuvan. Nu går stjälken obruten från jorden till blomman, och båda sidoblommorna har stjälkar ner i tuvan. 3) Krukan. Konturen är rost0, och krukan är spegelsymmetrisk i form (mynning, smal hals, bukig kropp, fot), med en enda glanspunkt i rost3 uppe till vänster. Mynningen syns snett uppifrån med jord i F och E innanför kanten, och framkanten är ett band i rost2 och rost1. 4) Ljuset och kornet. Blomtallrikarna är ljusast (w) uppe till vänster med en skuggkant i p nere till höger. Bladtuvan är fjäderlik i omväxlande P och O med kontur i N. Kvar som i idén: tre platta vita blomhuvuden i olika höjd, ljusa mot gräset.",
+   "ide": "Rund, bukig lerkruka, spegelsymmetrisk, cirka 10 punkter bred och 8 hög, i rost1 och rost2 med kontur i rost0 och en ljusare glans i rost3 uppe till vänster på buken. Mynningen ses snett uppifrån som en smal ellips med en kant i rost2 och mörk jord i F och E innanför. Ur jorden växer en upprätt tuva fjäderlika blad i O och P med kontur i N, och tre stjälkar bär platta blomhuvuden i olika höjd, ritade ovanifrån som små tallrikar i q och w med en skuggkant i p; hela bilden blir ungefär 12 × 20 punkter."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_ortkruka",
+     "rader": [
+      "....qwq....qwq....",
+      "...wqwqo..wqwqo...",
+      "....opo....opo....",
+      ".....N......N.....",
+      "..MPM.N....N.MOM..",
+      ".MPPOMPPMMPPMOPOM.",
+      "MPPOPPOPPOPPOPOPOM",
+      "MOEFPOFPOOPFOPFEOM",
+      ".EHPOHHHHGHGGOOGE.",
+      ".EGHGHGGGGGFGGFGE.",
+      "..EGFGFGFFGFFGFE..",
+      "...EEEEEEEEEEEE..."
+     ]
+    }
+   ],
+   "anteckning": "Krukan står på marken och ses snett ovanifrån. Skålen är låg och bred (16 punkter, 5 höga), så nästan hela jordytan syns, och den täcks av en platt rosett av fjäderlika blad i O och P. Bladen sticker ut över kanten på båda sidor. Framkanten är ett smalt band i jord2 och jord1 med kontur i jord0. Från mitten reser sig två korta stjälkar som lutar utåt, med var sitt platt blomhuvud i w och q som skuggas av ben0 underst. Silhuetten är spegelsymmetrisk punkt för punkt, och bara ljuset från vänster (ljusare toner till vänster, N och M till höger) skiljer sidorna åt. Granskningen: Rättat: röllekans blad låg i O och P utan kontur och flöt ihop med gräset. Nu är bladen mest i P med O, och de har en kontur i oliv0 (M) så att rosetten syns på gräset. Stjälkarna är i N i stället för O och skiljer sig därför från gräset. Krukans övre läpp har fått ljus jord3 (H) till vänster och mörknar åt höger. Jordytan syns i jord1 mellan bladen, och några bladspetsar hänger över framkanten. Framkanten i G/F med kontur i jord0 är kvar. Formen är fortfarande spegelsymmetrisk, och storleken (18 × 12) och vinkeln är oförändrade.",
+   "ide": "Låg och bred skålkruka, nästan som ett fat, cirka 16 punkter bred men bara 5 hög, symmetrisk med rak framkant i jord1 och jord2 och kontur i jord0. Eftersom skålen är låg syns nästan hela jordytan snett ovanifrån, och där ligger en vid, platt rosett av fjäderlika blad i O och P som sticker ut över kanten på båda sidor. Från mitten reser sig bara två korta stjälkar med var sitt brett platt blomhuvud i q och w, så att silhuetten blir låg och bred, ungefär 18 × 12 punkter."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_ortkruka",
+     "rader": [
+      "...oooooo...",
+      "..oqwwqwqo..",
+      ".oqwwqwqqpo.",
+      ".oqwqqwqppo.",
+      "..opqpqppo..",
+      "...NooooN...",
+      "....N.ON....",
+      "..PO.NO.OP..",
+      ".POPONOOPOP.",
+      "..rrOPNOrr..",
+      ".rutEFNFEsr.",
+      ".ruttsstssr.",
+      "..rrrrrrrr..",
+      "..rKJJJIIr..",
+      "..rutsstsr..",
+      "..rtstsssr..",
+      "..rttsstsr..",
+      "...rrrrrr..."
+     ]
+    }
+   ],
+   "anteckning": "Krukan står på golvet eller marken och ses snett uppifrån. Därför syns den utvikta läppen som en ring med jord i öppningen, och läppens framkant är ett ljusare band. Under läppen sitter ett varv bastsnöre. Stjälkarna går upp ur jorden i öppningen och sprider sig som en solfjäder. De fjäderlika bladen hänger ut över kanten nertill. Överst bildar blomhuvudena en enda platt skärm, ritad ovanifrån. Den är vit och gräddig, med kontur i ben0 och undersidan i skugga. Ljuset kommer uppifrån vänster: glansen i rost3 sitter på läppen och krukans vänstra sida, och höger sida är mörkast. Krukan är spegelsymmetrisk. Granskningen: Rättat: 1) Blomskärmen var osymmetrisk (raderna 2–3 gick till kolumn 11, en punkt längre åt höger än krukan). Nu är den centrerad över krukan, med w och q till vänster och p till höger som ljuset kräver. 2) Storleken: med 24 punkter var örtkrukan högre än kolonisten (20), vilket är orimligt för en lerkruka med rölleka. Jag har kortat stjälkarna med tre rader, tagit bort en rad av bastsnöret och två rader av krukkroppen. Bilden är nu 12 × 18 och räcker kolonisten ungefär till bröstet. Silhuetten är fortfarande hög och smal: skärm, solfjäder av stjälkar, fjäderblad, utvikt läpp med jorden sedd ovanifrån, bastsnöre och rost med lodrätt korn. Kontur, palett och läsbarheten på gräset var redan i ordning och är oförändrade.",
+   "ide": "Hög, rak cylinderkruka med en tjock utvikt läpp, cirka 8 punkter bred och 10 hög, i rost1 med lodräta korn i rost2 och kontur i rost0, lindad med ett varv bastsnöre i J och I under läppen. Röllekan växer smal och hög upp ur den, med ett knippe raka stjälkar som sprider sig uppåt som en solfjäder och fjäderblad i O och P nertill. Överst slår blomhuvudena ihop sig till en enda stor platt skärm, ritad ovanifrån som en tät flik i q och w med gräddig skugga i p, så att hela bilden blir en hög och smal silhuett på ungefär 12 × 24 punkter."
+  }
+ ]
+}

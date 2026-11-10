@@ -1,0 +1,90 @@
+{
+ "kort": "f9_foder",
+ "namn": "Symbolen Föder",
+ "slag": null,
+ "vad": "Steg 9.5.29: förlossningen tar tid, och den som föder har en symbol över huvudet (i spelet en platshållare tills du valt). Här symbolen på en mörk ruta.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_foder",
+     "rader": [
+      ".....EEEEEE.....",
+      "....EqqqppoE....",
+      "...EqqwqqppoE...",
+      "..EqqoHHHGopoE..",
+      "..EqoHEHGEGooE..",
+      "..EqoHHHGGGooE..",
+      "..EqqoHGGGopoE..",
+      "..EqqqooooppoE..",
+      "..EuttttttttsE..",
+      "..EtttttttttsE..",
+      "..EsssssssssrE..",
+      "..EqqpqppppooE..",
+      "...EqpqpppooE...",
+      "....EpqppooE....",
+      ".....EEEEEE.....",
+      "................"
+     ]
+    }
+   ],
+   "anteckning": "Byltingen står upprätt och ses framifrån, som en symbol som svävar över den som föder. Den är bara själva barnet, inget som håller den. Formen är en spegelsymmetrisk oval, 12 × 15 punkter med ytterdraget i jord0. Bara ljuset skiljer sidorna åt: vänster är ben2 med en glanspunkt i w uppe till vänster, och höger är ben1 som går mot ben0. Ansiktet sitter överst och ramas in av huvan med kanter i ben0. Det är 6 × 4 punkter i H och G med ögonen symmetriskt i jord0. Rostbandet i t med s och r i underkanten går tvärs över mitten som lindning och är det starka i bilden. Under bandet smalnar byltingen av till en rundad fot. Granskningen: Granskad och oförändrad. Symbolen är 12 × 15 punkter och fyller rutan nästan helt. Den står upprätt framifrån, som en symbol ska. Formen är spegelsymmetrisk rad för rad: konturen i jord0, det runda ansiktet på 4–6 × 4 punkter och ögonen i kolumn 6 och 9; bara ljuset och kornet skiljer sidorna åt. Ljuset kommer från vänster, med ben2 till vänster och ben1 mot ben0 till höger. Glansen är en enda punkt i w, och rostbandet har u-punkten till vänster och s/r till höger. Rostbandet i t med s i underkanten är den enda mättade färgen och syns tydligt som lindning. Den mörka konturen i jord0 går runt hela byltingen och skiljer den från både den mörka rutan och gräset. Bilden följer idén och bryter inte mot någon regel.",
+   "ide": "Ett lindat spädbarn sett framifrån: en upprätt, spegelsymmetrisk ovalformad bylting, cirka 10 punkter bred och 15 hög, i ylle i ben1 och ben2 med kontur i ben0 och ett mörkare ytterdrag i jord0 runt hela. Överst sitter ett runt ansikte på cirka 5 × 4 punkter i H och G med två ögonprickar i jord0. Ett brett rostband i t med s i underkanten går tvärs över mitten som lindning. Ljuset kommer från vänster, så vänster sida får ben2 och w i en enda glanspunkt och höger sida ben1 som går mot ben0."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_foder",
+     "rader": [
+      "......F..F......",
+      "......F..F......",
+      ".....oFooFo.....",
+      "...ooqqFFqpoo...",
+      "..oqqpqEEpqppo..",
+      "..oqqtttsqpppo..",
+      ".oqqptsqtspqppo.",
+      ".oqpqtspqtspppo.",
+      ".oqqptsptsppqpo.",
+      ".opqptssspppppo.",
+      ".oqpptsptsppppo.",
+      ".opqptspqtsppoo.",
+      "..opptsptsppoo..",
+      "..opqtssspppoo..",
+      "...oopppopooo...",
+      ".....oooooo....."
+     ]
+    }
+   ],
+   "anteckning": "Amuletten hänger fritt framifrån i en snodd, så skivan är rund och spegelsymmetrisk och fyller nästan rutan (14 punkter i diameter) med kontur i o. Snodden i F kommer uppifrån i två strängar, går in framför kanten och ner i hålet; under den syns hålets mörka botten i E. Runan Berkanan är inristad mitt på som en enda stor form: staven och de två spetsiga bågarna åt höger är två punkter tjocka i s, med t på vänsterkanten och överkanten där ljuset träffar. Benytan är p och q i korn, ljusast uppe till vänster och mörkare mot o nere till höger. Ingen bakgrund ritas. Granskningen: Granskad mot reglerna. Storleken stämmer: symbolen är 16 × 16 och skivan 14 punkter i diameter. Vinkeln är framifrån, som en symbol ska vara. Skivan är spegelsymmetrisk både på bredden och höjden. Runan ᛒ är centrerad och läsbar som en form, i s med t på vänster kant. Hålet (E) och snodden (F) sitter upptill, och konturen i o syns både mot den mörka rutan och mot gräset. En sak är rättad: på rad 12 stod en ensam mörk prick (o) mitt i ytan, i kolumn 11. Den är nu p, och kolumn 12 är o i stället, så att skuggan mot nedre högra kanten hänger ihop med konturen och inte blir en fläck. Resten är oförändrat.",
+   "ide": "En rund, symmetrisk amulett av ben eller horn, en skiva på 14 punkter i diameter med kontur i o och ytan i p och q i fint korn. Mitt på skivan är runan Berkanan, ᛒ (björkrunan för födsel), inristad som en enda stor form: en rak stav med två spetsiga bågar åt höger, två punkter tjock i rost s med t på vänster kant. Ett litet hål med en snodd i F upptill visar att den bärs i en snodd. Den lyser svagt i q uppe till vänster och mörknar mot o nere till höger."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_foder",
+     "rader": [
+      "................",
+      "................",
+      "......EEEE......",
+      ".....EHHHGE.....",
+      ".....EHHGGE.....",
+      "II...EHGGGE...II",
+      "ILI..EGGGGE..IJI",
+      "IKJIooooooooIKJI",
+      "IKKIqqqpqqppIJJI",
+      "IKJKIqpqqppIJJJI",
+      "IKKJKIIIIIIJJJJI",
+      "IKJKJKJJKJJJJJJI",
+      ".IKJKJJJJJJJJJI.",
+      "..IIIIIIIIIIII..",
+      "................",
+      "................"
+     ]
+    }
+   ],
+   "anteckning": "Symbolen ses framifrån som ett tecken över huvudet. En månskära i senap ligger med båda hornen uppåt som en vagga och är spegelsymmetrisk. Konturen är I, ytan J och K, och hornet uppe till vänster är ljusast med en glanspunkt i L. Den högra sidan och botten är mörkare J. I skålen ligger en filt i ben q och p med kant i o. Filten fyller skålen och täcker barnets kropp och haka, så att bara det runda huvudet syns, i H och G med kontur i E. Huvudet sticker upp mellan hornen, ljust uppe till vänster. Formerna är få och stora utan ansiktsdetaljer, så att det läses som vagga, barn och måne, det vill säga tid, även i liten storlek. Granskningen: Rättade en ensam mörk prick: i rad 12 låg en konturpunkt I (kolumn 12) mitt i skärans yta. Den bröt mot regeln om korn utan fläckar och gjorde undersidan osymmetrisk. Den är nu J, så att ytan går jämnt i J fram till konturen. Resten följer idén och reglerna och är oförändrat. Skäran är 16 punkter bred och 9 hög, öppen uppåt som en vagga, spegelsymmetrisk och har kontur i I. Ljuset faller från vänster med K och en glanspunkt L i vänstra hornet och mörknar mot J åt höger. Barnhuvudet är runt, i H och G med kontur i E, och vilar på en filt i q och p med kanten i o. Senapen syns tydligt både på den mörka rutan och på gräset.",
+   "ide": " En stor månskära i senap sedd framifrån, öppen uppåt som en vagga, cirka 15 punkter bred och 9 hög, med kontur i I och ytan i J och K, ljusast K och en glanspunkt L i vänstra hornet. I skärans famn ligger ett litet runt barnhuvud på 5 × 5 punkter i H och G med kontur i E, och under huvudet en liten filt i ben q och p som fyller skålen. Formen är låg och bred med två uppåtpekande horn, så att den läses som en vagga, och månen visar att det tar sin tid."
+  }
+ ]
+}

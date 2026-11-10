@@ -1,0 +1,79 @@
+{
+ "kort": "f9_appel",
+ "namn": "Äpplen",
+ "slag": null,
+ "vad": "Steg 9.7.13: äpplen är frukten från äppelträdet och går att äta rå eller lagra över vintern. Här äpplena som sak i förrådet.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_appel",
+     "rader": [
+      ".....rrr.....",
+      "....ruFOr....",
+      "....rutsr....",
+      "...rrrtrrr...",
+      "..ruFtruFtr..",
+      ".rrrtrrrtrrr.",
+      "ruFtruFtruFtr",
+      "rutsrutsrutsr",
+      "rttsrttsrttsr",
+      ".rrr.rrr.rrr."
+     ]
+    }
+   ],
+   "anteckning": "Högen ligger på marken i förrådet, sedd snett uppifrån. Den har tre äpplen längst ner, två i glappen ovanpå och ett överst. Varje högre äpple ligger över de lägre, så det ritas framför dem och täcker deras ovansida. Därför syns de små skaften i jord1 bara på de äpplen där toppen är fri: det översta och de två i mitten. Ett blad i oliv2 sitter vid det översta skaftet och ett vid det högra mittäpplet. Varje äpple är ett klot på 5 × 5 punkter i rost2 med kontur i rost0. Det har en glanspunkt i rost3 uppe till vänster och rost1 nere till höger. Formen är spegelsymmetrisk; bara ljuset, glansen och bladen skiljer sidorna åt. Bilden är 13 × 10 punkter och mättat röd mot det dämpade gräset, eftersom äpplena är mat som går att ta. Granskningen: Högen ritades om från grunden. I version 1 flöt äpplena ihop till en enda rost-klump, och det gick inte att läsa ut tre, två och ett. Formen var också osymmetrisk, eftersom bladet satt utanför konturen på rad 3 och skaftet satt snett ovanför toppen på rad 0. Nu består högen av sex tydliga klot på 5 × 5 punkter i en låg pyramid: tre längst ner, två i mitten och ett överst. De främre äpplena täcker de bakre. Varje äpple har kontur i rost0, yta i rost2, en glans i rost3 uppe till vänster och rost1 på den skuggade högra sidan. Skaftet är en punkt i jord1 mitt på ovansidan, så att högen ses snett uppifrån. Det enda bladet i oliv2 ligger vid det översta skaftet, inne i konturen, så att silhuetten förblir spegelsymmetrisk. Storleken är 13 × 10 punkter, rimligt mot kolonisten (14 × 20), och rosten syns tydligt mot det olivgröna gräset.",
+   "ide": "En liten hög med fem eller sex äpplen, ungefär 12 × 10 punkter, som en låg pyramid med tre äpplen längst ner, två ovanpå och ett överst, sedd snett uppifrån så att äpplenas ovansidor och de små skaften syns. Varje äpple är ett runt klot på 4–5 punkter i rost2 och rost3 med ljuset uppe till vänster, en glanspunkt i rost3 och kontur i rost0; skaften är en enda punkt i jord1 och här och där sitter ett litet blad i oliv2. Högen är spegelsymmetrisk till formen, bara ljuset och kornet skiljer sidorna åt."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_appel",
+     "rader": [
+      "....EEEEEEEE....",
+      "...EHGGGGGGFE...",
+      "...EHEEEEEEFE...",
+      "...EGE....EFE...",
+      "..EEGEEEEEEFEE..",
+      ".EHGGHGGHGGGGFE.",
+      "EHrutrrLKrrutrFE",
+      "EGuttsLKKJuttsFE",
+      "EGttssKKJJttssFE",
+      "EHrssrrJIrrssrFE",
+      "EHHGHGGHGGHGGGFE",
+      "EFGFGFGFGFGFGFFE",
+      ".EGFGFGFGFGFGFE.",
+      "..EEEEEEEEEEEE.."
+     ]
+    }
+   ],
+   "anteckning": "Korgen står på marken i förrådet och ses snett ovanifrån. Den breda ovala öppningen tar mer än halva höjden, och äpplena fyller den så att de buktar upp över bakkanten. Framsidan syns bara som ett smalt flätat band i jord1 och jord2 med rutigt korn och kontur i jord0. Handtaget står upp från bakkanten, förkortat till en låg båge i jord2, och dess fötter går ned bakom äpplena till kanten. Ljuset kommer uppifrån vänster: kanten är ljusast (jord3) till vänster och mörkare till höger. Äpplena är röda (rost2 och rost3) och ett är gult (senap2), med springor i rost0. Korgens och handtagets form är spegelsymmetrisk; bara ljuset och kornet skiljer sidorna åt. Granskningen: Rättat: handtaget var osymmetriskt (benen satt på olika avstånd från mitten och var olika breda). Nu står det spegelsymmetriskt, förkortat, från bakkanten. Bakre korgkanten saknades, så öppningen läste inte som en oval; nu finns en ljus bakkant i jord2 och jord3. Framsidan var 5 punkter hög och öppningen bara 5 av 15 rader. Nu är framkanten en kantrad och ett smalt flätband på 2 rader, och öppningen tar större delen av korgkroppen. Äpplena var otydliga fläckar och blev tre runda klot på 4 × 4 punkter (två röda i rost2/rost3 med skugga i rost1, ett gult i senap) med springor i rost0. Ljuset kommer uppifrån vänster, och den högra kanten är mörkare i jord1. Storleken är 16 × 14, i nivå med kolonisten.",
+   "ide": "En rund flätad korg, ungefär 14 × 12 punkter, sedd snett ovanifrån så att öppningen är en bred oval som tar mer än halva höjden, full med röda äpplen som sticker upp över kanten. Korgens framsida är ett smalt band av flätat vide i jord1 och jord2 med ett rutigt korn och kontur i jord0, och ett böjt handtag i jord2 står upp från bakkanten, förkortat. Äpplena i öppningen är små klot på 3–4 punkter i rost2, rost3 och några i senap2 för gula sorter, med mörka springor i rost0 emellan; korgen och handtaget är spegelsymmetriska."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_appel",
+     "rader": [
+      ".EEEEEEEEEEEEE.",
+      "EHFGFFFGFFFGFGE",
+      "EHuEtKuEtJuEtGE",
+      "EHuttJuttKuttGE",
+      "EHttsKttsJttsGE",
+      "EHJKJKKJKJJKJGE",
+      "EHuEtJuEtKuEtGE",
+      "EHuttKuttJuttGE",
+      "EHttsJttsKttsGE",
+      "EHHHGHHHGHHGHGE",
+      "EFGFFEFGFEFGFFE",
+      "EFFGFEGFFEFFGFE",
+      ".EEEEEEEEEEEEE."
+     ]
+    }
+   ],
+   "anteckning": "Lådan står på golvet i förrådet och ses snett ovanifrån. Överst syns bakkantens bräda ovanifrån och under den lådans inre bakvägg som en mörkare list i jord1. Insidan tar tre fjärdedelar av höjden. Där ligger äpplena i två förskjutna rader med en halmrad emellan, så att varje äpple syns för sig. Varje äpple är en 3 × 3-punkts prick i rost3 och rost2 och är ljust uppe till vänster, mörkt i rost1 nere till höger. Skaftet är en punkt i jord0. Halmen i senap1 och senap2 syns i springorna mellan äpplena. Framkanten är ett brädband på 2 punkter i jord1 med fogar i jord0. Under den finns inga ben, eftersom lådan står direkt på golvet. Konturen runt hela lådan är jord0, och sidokanterna är ljusare till vänster, mot ljuset. Rosttonerna är de enda mättade, eftersom äpplena är det man ska se och kan ta. Granskningen: Rättat: 1) Symmetrin. I 16 punkters bredd låg äppelraderna snett: en halmpunkt mot vänster vägg och ingen mot höger. Lådan är nu 15 punkter bred. Insidan blir då 11 punkter, så de tre äpplena per rad (3 punkter med halm i springorna) ligger exakt centrerat. Framkantens brädfogar sitter symmetriskt (4–3–4). 2) Storleken. Lådan var 16 × 14, högre än idéns cirka 16 × 11 och för stor bredvid kolonisten. Den översta ljusa listen är borttagen, så bilden är nu 15 × 13. Bakkanten är nu direkt lådans inre sida i en mörkare ton, som idén säger. Oförändrat, eftersom det redan följde reglerna: vinkeln snett ovanifrån (insidan med äpplena tar ungefär tre fjärdedelar av höjden), framkanten som ett band på 2 punkter i jord1 med fogar i jord0, konturen i jord0, ljuset uppifrån vänster (vänster vägg i jord3, höger i jord2), äpplena i rost2/rost3 med skaft i jord0 på halm i senap1/senap2. Lådan är ljusare än gräset och syns tydligt.",
+   "ide": "En låg fyrkantig lagerlåda av grova bräder, ungefär 16 × 11 punkter, som i förrådet över vintern, sedd snett ovanifrån så att lådans insida med äpplena tar tre fjärdedelar av höjden. Framkanten är ett smalt brädband på 2–3 punkter i jord1 med brädfogar i jord0, kanterna har kontur i jord0, och längs bakkanten syns lådans inre sida som en mörkare list. Äpplena ligger i två–tre prydliga rader ovanifrån som runda prickar på 3 punkter i rost2 och rost3 med en skaftpunkt i jord0, och de ligger på ett tunt lager halm i senap1 och senap2 som syns i springorna."
+  }
+ ]
+}

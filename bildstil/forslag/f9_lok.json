@@ -1,0 +1,89 @@
+{
+ "kort": "f9_lok",
+ "namn": "Löken",
+ "slag": null,
+ "vad": "Steg 9.6.20: vildlöken växer vid stranden och på ängarna, och löken ger smak åt maten och kan sättas som gröda. Här löken som sak i förrådet.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_lok",
+     "rader": [
+      "...M.M.M...",
+      "..MPMPMOM..",
+      "...MPPOM...",
+      "....MOM....",
+      "....rur....",
+      "...rutsr...",
+      "..ruqustr..",
+      ".ruusutstr.",
+      ".ruusttstr.",
+      ".rutsutstr.",
+      ".ruusttssr.",
+      "..rtsttsr..",
+      "...rrrrr...",
+      "....GGG....",
+      "...G.G.G..."
+     ]
+    }
+   ],
+   "anteckning": "Löken står upprätt på sin platta botten, sedd snett uppifrån, som en sak i förrådet. Bulben är en spegelsymmetrisk droppform, 9 punkter bred och 9 hög, med rost0 som kontur. Rost3 ligger på den ljusa vänstra sidan och rost2/rost1 åt höger. Lodräta strimmor i rost1 följer rundningen, och en glanspunkt i ben2 sitter uppe till vänster. Ur den smala halsen sticker tre korta blad upp i oliv3 och oliv2 med oliv0 runt. Under botten hänger en liten tofs torra rötter i jord2. Det är det enda som syns under löken, eftersom den står på botten. Granskningen: Storleken (bulben 9 × 9 och hela löken 11 × 15 med blad och rötter) passar mot kolonisten och följer idén, och vinkeln är snett uppifrån. Formen är spegelsymmetrisk och syns på gräset tack vare konturen i rost0. Jag rättade två saker. De rost1-strimmor som låg utspridda som fläckar går nu i två lodräta strimmor (kolumn 4 och 7), som följer bulbens rundning och möts mot halsen och botten. På rad 10 började vänsterkanten med rost2, och den är nu rost3, så att ljuset konsekvent kommer från vänster och den högra sidan är mörkast. Blad, hals, glanspunkten i ben2 och rötterna är oförändrade.",
+   "ide": "En enda lök som står upprätt, sedd snett uppifrån, omkring 9 × 10 punkter: en spegelsymmetrisk droppform, bred och rund nedtill och spetsig upptill, med en kort tofs av torra rötter i mitten under botten och två eller tre korta gröna blad som sticker upp ur spetsen. Skalet är rost3 och rost2 med lodräta strimmor i rost1 längs bulbens rundning och en glanspunkt i ben2 uppe till vänster. Konturen är rost0, rötterna är jord2 och bladen oliv3 och oliv2 med oliv0 runt."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_lok",
+     "rader": [
+      "...........M..M.",
+      ".........MPM.MPM",
+      "........MPOMMPOM",
+      "......MMPOPMPOM.",
+      ".....MGPOPOMOM..",
+      "...ooMGFOPMOM...",
+      "..owqoGFOMM.....",
+      ".owqpwqoFM......",
+      "Gowqpqpo........",
+      "GGoooo.........."
+     ]
+    }
+   ],
+   "anteckning": "Löken ligger platt på marken som en sak i förrådet, och vi ser den snett ovanifrån. Knippet går från nere till vänster, där de vita bulberna ligger samlade, till uppe till höger, där bladspetsarna slutar. Bulberna har ben3 och ben2 som ljus uppe till vänster, ben1 i skuggan och en kontur i ben0. Korta rotstumpar i jord2 sticker ut längst ner till vänster. De platta bladen löper som raka band i oliv3 och oliv2 med en kontur i oliv0, och mot spetsarna delar de sig i två till tre blad. På mitten går ett varv bastsnöre i jord2 och jord1 tvärs över knippet, vinkelrätt mot bladen, så att det ser ut att ligga runt stjälkarna. Silhuetten är lång och låg som en kvast och syns mot gräset tack vare de ljusa bulberna och konturen. Granskningen: Granskad mot reglerna, ingen ändring behövs. Storleken (16 × 10) är rimlig för ett lökknippe bredvid kolonisten (14 × 20) och följer idén. Vinkeln är snett uppifrån: knippet ligger diagonalt från nere till vänster till uppe till höger, och bulbernas runda toppar och bladens ovansidor syns. Bulberna i ben3, ben2 och ben1 har kontur i ben0, och rotstumparna i jord2 sitter i nedre vänstra änden. Bladen löper som band i oliv3 och oliv2 med kontur i oliv0, och bastsnöret i jord2 och jord1 binder ihop dem på mitten. Ljuset faller uppifrån vänster, med ben3 och oliv3 på vänstersidorna. Knippet syns på gräset tack vare de ljusa bulberna och den mörka bladkonturen. Det finns inga ensamma mörka prickar och ingen ren vit. Ingen symmetri krävs, och saken bärs inte.",
+   "ide": "Ett avlångt knippe av tre eller fyra smala vildlökar som ligger snett på marken från nere till vänster till uppe till höger, omkring 16 × 10 punkter. De små vita bulberna ligger samlade i ena änden i ben3, ben2 och ben1, med en kontur i ben0 och korta rotstumpar i jord2. De långa platta bladen löper som raka band i oliv3 och oliv2 åt andra hållet och är hopbundna på mitten med ett varv bastsnöre i jord2 och jord1. Silhuetten är lång och låg, som en kvast, och ovanifrån syns bladens ovansida och bulbernas runda toppar."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_lok",
+     "rader": [
+      "...EEEEE...",
+      "..EJGJGJE..",
+      "..EGE.EGE..",
+      "..EJE.EJE..",
+      "...EGJGE...",
+      "....EJE....",
+      ".rrrGJGrrr.",
+      "rLuurJrLuur",
+      "ruusrGruusr",
+      "russrJrussr",
+      ".rrrEGErrr.",
+      "....EJE....",
+      ".rrrGJGrrr.",
+      "rLuurGrLuur",
+      "ruusrJruusr",
+      "russrGrussr",
+      ".rrrEJErrr.",
+      "...rrGrr...",
+      "..rLuuusr..",
+      "..ruuussr..",
+      "...rsssr...",
+      "....rrr...."
+     ]
+    }
+   ],
+   "anteckning": "Lökflätan ligger platt på marken och ses snett uppifrån, med öglan uppåt i bilden. Den är 11 × 20 punkter. Överst sitter öglan av flätat torrgräs i senap1 och jord2 med kontur i jord0 och ett litet genomskinligt hål i mitten. Under den löper stjälken rakt ner som ett smalt flätat band. Fyra lökar sitter parvis på var sin sida om stjälken. Varje lök har en torr spets i jord2 som lutar in mot flätan, eftersom det är halsen som är inflätad; därför syns stjälken bara mellan lökarna. Lökarna ses lite uppifrån: den rundade toppen är ljus (senap3, rost3) uppe till vänster, och skuggsidan nere till höger är rost2 och rost1, med kontur i rost0. De högra lökarna är något mörkare eftersom de ligger längre från ljuset. Den första löken har en enda glanspunkt i ben3. Längst ner slutar flätan i en kort, avsmalnande svans. Silhuetten blir hög, smal och knottrig som en klase, och de varma skalen gör att den syns mot det olivgröna gräset. Granskningen: Rättat i version 3: (1) Lökarna var kantiga block och visade inte toppen. Nu har varje lök en torr spets (G, jord2) vid den inre övre kanten, där den sitter fast i flätan, så att löken ses lite uppifrån. (2) Glansen i ben3 (w) var en ton utanför materialet och nästan vit. Den är nu en punkt senap3 (L) uppe till vänster på varje lök, och skalet har bara tonerna L/u/s med kontur i rost0, enligt idén. (3) De lösa jord2-punkterna utanför flätans kontur (raderna '...GEJEG...') bröt konturen och såg ut som fläckar. Flätan mellan paren är nu en sluten stjälk. (4) Idén bad om fyra eller fem lökar; en femte lök hänger nu längst ned i mitten, så att silhuetten blir en knottrig druvklase som smalnar av nedåt. Formen är spegelsymmetrisk och bara ljuset skiljer sidorna åt. Bilden är 11 × 22 punkter, lagom som sak mot kolonisten (14 × 20). Den ligger snett uppifrån och syns på gräset genom rostkonturen och de ljusa skalen.",
+   "ide": "En kort lökfläta som ligger på marken, omkring 10 × 18 punkter: fyra eller fem runda lökar sitter parvis längs en flätad stjälk av torkade blad, och längst upp sitter en ögla, så att silhuetten blir hög, smal och knottrig som en druvklase. Lökarna har skal i senap3 och rost3 med rost1 i skuggsidan nere till höger och kontur i rost0. Flätan mellan dem är torrt gräs i senap1 och jord2 med jord0 som kontur, och varje lök ses lite uppifrån så att dess rundade topp och den torra spetsen syns."
+  }
+ ]
+}

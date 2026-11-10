@@ -1,0 +1,164 @@
+{
+ "kort": "f9_bryggkar",
+ "namn": "Bryggkaret",
+ "slag": null,
+ "vad": "Steg 9.6.12: bryggkaret är en station en ruta stor, ett urholkat timmer med lock där vin och öl jäser. Här stationen på trägolvet, och i en version syns vinet jäsa.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_bryggkar_stangt",
+     "rader": [
+      "..EEEEEEEEEEEE..",
+      ".EHHHGHHHGHHGHE.",
+      "EHHGHHHGHHGHHGGE",
+      "EGFFFGFFFFGFFFFE",
+      "EHGHHGHHGHHGHGGE",
+      "EGHHGHGHHGHGGHGE",
+      "EFFGFFFFGFFFFFFE",
+      "EGGHGGGHGGGGHGFE",
+      "EGFGFFGFFFFGFFFE",
+      ".EFGFFFGFFFGFFE.",
+      "..EEEEEEEEEEEE..",
+      "..EGFE....EGFE..",
+      "..EFFE....EFFE..",
+      "..EEEE....EEEE.."
+     ]
+    },
+    {
+     "namn": "f9_bryggkar_jasning",
+     "rader": [
+      "...EEEEEEEEEE...",
+      "..EHHGHHHGHHGE..",
+      "..EHGHHGHHGHGE..",
+      "..EGGFGGGFGGFE..",
+      "..EFGGFGGGFGFE..",
+      "..EEEEEEEEEEEE..",
+      ".EHGHHGHHGHHGHE.",
+      "EHGEEEEEEEEEEGFE",
+      "EGEuqsrsrsrsqEFE",
+      "EGEsrsrrsrrsuEFE",
+      "EGEqrrsrrrsruEFE",
+      "EFGEEEEEEEEEEGFE",
+      "EGFGGFGGFGGFGFFE",
+      "EGFGFFGFFFFGFFFE",
+      ".EFGFFFGFFFGFFE.",
+      "..EEEEEEEEEEEE..",
+      "..EGFE....EGFE..",
+      "..EFFE....EFFE..",
+      "..EEEE....EEEE.."
+     ]
+    }
+   ],
+   "anteckning": "Bryggkaret ligger som ett urholkat timmer tvärs över rutan. Det vilar på två korta träklossar, och av dem syns bara de främre stumparna (3 punkter) under framkanten. Snett uppifrån tar ovansidan med locket (kluvna plankor i jord2–jord3 med fogar i jord1) större delen av höjden. Framkanten är ett smalt band av bark i jord0–jord1 och konturen är jord0 runt om. Gavlarna är avrundade och lika i båda ändar, och ljuset faller uppifrån vänster. I jäsningsversionen är locket uppfällt. Det står upp vid bakkanten, förkortat till fyra rader, och den mörka undersidan vetter nedåt. I hålet syns kantens ljusa snittyta och ett avlångt fält av vin i rost0–rost1. Några skumbubblor i rost3 och ben2 ligger längs kanten. Vinet är det enda mättade i bilden. Granskningen: Storleken stämmer: karet är en ruta brett (16 punkter) mot kolonistens 14, kroppen är 11 punkter hög och klossarna är stumpar på 3 punkter. Vinkeln är rätt med locket ovanifrån och framkanten som ett smalt barkband. Silhuetten är spegelsymmetrisk, och jordtonerna med jord0-kontur syns mot gräset. I jäsningsversionen står det uppfällda locket förkortat vid bakkanten, och vinet i rost0–rost1 med skum i rost3 och ben2 syns tydligt. Rättat i båda versionerna: barkbandet i framkanten hade ensamma prickar i konturtonen jord0 inne i ytan, vilket gav mörka fläckar. De är nu ersatta med korn i jord1–jord2, ljusare till vänster och mörkare mot höger enligt ljuset. Inget annat är ändrat.",
+   "ide": "Ett liggande urholkat timmer som tar nästan hela rutans bredd (ca 16 × 11 punkter), lagt tvärs över rutan på två korta klossar av trä som syns som stumpar på 3–4 punkter under framkanten. Ovanifrån syns timrets rundade ovansida som en avlång yta täckt av ett lock av kluvna plankor i jord2–jord3 med jord0-kontur, och framkanten är ett smalt band av mörk bark i jord0–jord1; formen är spegelsymmetrisk med avrundade gavlar i båda ändar. I jäsningsversionen är locket uppfällt och står förkortat mot bakkanten, och i hålet syns ett avlångt fält vin i rost0–rost1 med några ljusa skumbubblor i rost3 och ben2 längs kanten."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "bryggkar_stangt",
+     "rader": [
+      "....EEEEEE....",
+      "..EEHHHHGGEE..",
+      ".EHEEEEEEEEFE.",
+      "EHEHHFHHFGGEFE",
+      "EHEHEEEEEEGEFE",
+      "EHEHEHHGGEFEFE",
+      "EGEGEEEEEEFEFE",
+      "EGEGGFGGFFFEFE",
+      "EGGEEEEEEEEFFE",
+      "EGGHGGGGGFGFFE",
+      "EFFEFFFEFFEFEE",
+      "EFFEFFEFFFEFEE",
+      "EFFFEFFEFFFEFE",
+      ".EEEEEEEEEEEE."
+     ]
+    },
+    {
+     "namn": "bryggkar_jasning",
+     "rader": [
+      "...EEEEEEEE...",
+      "..EHHFHHFGGE..",
+      "..EHEEEEEEGE..",
+      "..EEHHHHGGEE..",
+      ".EHEEEEEEEEFE.",
+      "EHEGGFFFFFFEFE",
+      "EHpuupuupuuuFE",
+      "EHuprsrrrruuFE",
+      "EGprsrrsrrruFE",
+      "EGurrsrrrrruFE",
+      "EGGuupuuuuuFFE",
+      "EGGHGGGGGFGFFE",
+      "EFFEFFFEFFEFEE",
+      "EFFEFFEFFFEFEE",
+      "EFFFEFFEFFFEFE",
+      ".EEEEEEEEEEEE."
+     ]
+    }
+   ],
+   "anteckning": "Karet är en kort timmerstock som står upprätt direkt på trägolvet, utan ben. Ovanifrån syns den urholkade änden som en bred oval med en ljus träkant i jord2–jord3 och kontur i jord0. Under den ligger framsidans barkband på 3 punkter i jord0–jord1 med lodräta sprickor. Ljuset faller uppifrån vänster, så höger sida är mörkare. I den stängda versionen ligger det runda plocklocket inne i kanten. Plankfogarna sitter spegelvänt kring mitten, och det tvärgående handtaget har en mörk skuggrad under sig. I jäsningsversionen har locket lyfts och lutats mot bakkanten. Bara dess övre halvmåne syns bakom öppningen, och bakkanten skymmer resten. Öppningen fylls av mörkt vin i rost0 med lite rost1 i kornet. Mot träkanten går en ring av skum i rost3 och ben1, med några bubblor i vinet. Bakväggen innanför kanten ligger i skugga i jord0. Granskningen: Rättat: 1) Jäsningsversionen var 18 punkter hög och hade en annan kropp än den stängda. Nu är den 16 punkter hög och har samma kropp. Locket syns bara som en halvmåne på två rader bakom bakkanten, inte som ett andra kar ovanpå. 2) Öppningen saknade bakkant. Nu har den en mörk inre kant och en skymt av innerväggen i skugga. Skumringen i rost3 och ben1 ligger direkt mot den ljusa träkanten, och de ensamma skumprickarna mitt i vinet är borttagna. Vinet har bara rost0 och rost1. 3) Den stängda versionen läste som en tunna med vågräta band, och ovalen tog bara hälften av höjden. Nu tar den ljusa ändytan med lock rad 0–9, alltså ungefär två tredjedelar. Locket är runt, har plankfogar i två spegelsymmetriska kolumner och ett tydligt tvärgående handtag. 4) Framsidans barkband är nu exakt 3 punkter i jord0–jord1 med kluvna sprickor, under en ljus framkant. Ytan är ljusast uppe till vänster och mörkast nere till höger. Silhuetten är spegelsymmetrisk och 14 punkter bred. Karet står utan ben och ryms i en ruta.",
+   "ide": "En kort stående timmerstock (ca 13 × 14 punkter), urholkad som en kar, som står direkt på trägolvet utan ben: ovanifrån är öppningen en bred oval som tar ungefär två tredjedelar av höjden, och framsidan är ett band av bark i jord0–jord1 på 3 punkter med kluvna sprickor i kornet. Ett runt lock av sammanfogade plankor med ett tvärgående handtag ligger på ovalen, ljusast uppe till vänster i jord3, och formen är spegelsymmetrisk kring mittlinjen. I jäsningsversionen är locket lutat mot bakkanten så att en halvmåne av det syns bakom öppningen, och ovalen fylls av mörkt vin i rost0 med en ring av skum i rost3 och ben1 mot den ljusa träkanten."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "bryggkar_stangt",
+     "rader": [
+      "..EEEEEEEEEEEE..",
+      "..EHHGHGGHGGFE..",
+      "..EEEEEEEEEEEE..",
+      "..GE.J....J.GE..",
+      "..GEIKJ..JLKGE..",
+      "EEEEEEEEEEEEEEEE",
+      "EHHGHHGHGHGGHGFE",
+      "EHEEEEEEEEEEEEFE",
+      "EGEHHGHHGHGHGEFE",
+      "EGEHGHGGHGGHGEFE",
+      "EGEFFFFFFFFFFEFE",
+      "EGEHHGHGHHGGGEFE",
+      "EGEHGHGGHGGGFEFE",
+      "EGEEEEEEEEEEEEFE",
+      "EGGHGGHGGHGGGGFE",
+      "EFFFFGFFFFFFGFFE",
+      "EFFFFFFFFFFFFFFE",
+      "EEEEEEEEEEEEEEEE",
+      "..EE........EE..",
+      "..EE........EE..",
+      "..EE........EE..",
+      "..EE........EE.."
+     ]
+    },
+    {
+     "namn": "bryggkar_jaser",
+     "rader": [
+      "..EEEEEEEEEEEE..",
+      "..EHHGHGGHGGFE..",
+      "..EEEEEEEEEEEE..",
+      "..EGFJFGFFJFFE..",
+      "..EGIKJFGJLKFE..",
+      "EEEEEEEEEEEEEEEE",
+      "EHHGHHGHGHGGHGFE",
+      "EHEsstsssstssEFE",
+      "EGEutttsttstuEFE",
+      "EGEtutstsstutEFE",
+      "EGEEEEEEEEEEEEFE",
+      "EGEHHGHGHHGGGEFE",
+      "EGEHGHGGHGGGFEFE",
+      "EGEEEEEEEEEEEEFE",
+      "EGGHGGHGGHGGGGFE",
+      "EFFFFGFFFFFFGFFE",
+      "EFFFFFFFFFFFFFFE",
+      "EEEEEEEEEEEEEEEE",
+      "..EE........EE..",
+      "..EE........EE..",
+      "..EE........EE..",
+      "..EE........EE.."
+     ]
+    }
+   ],
+   "anteckning": "Tråget står på en låg bock, sett snett ovanifrån. Locket är arbetsytan och tar större delen av höjden. Det är två plankhalvor med en fog i mitten och jord0-kontur. Framkanten är ett avhugget band på 2 punkter i jord1, och under det syns bara bockens två främre ben som stumpar på 4 punkter. De bakre benen döljs av tråget. Vid bakkanten står två korta stolpar förkortade och bär tvärslån. Sleven hänger med skaftet uppåt och skopan nedåt, silen hänger i ett snöre. Tråg, lock och bock är spegelsymmetriska, bara redskapen skiljer sidorna. I jäsningsversionen är högra lockhalvan vikt upp på gångjärn vid bakkanten och lutar mot slån. Den visar sin undersida i mörkare jord och skymmer därför silen och den högra stolpen, som ju hänger bakom den. I öppningen syns först trågets skuggade innervägg och sedan vinet i rost1–rost2. Bubblorna i rost3 samlas mot kanterna. Det mättade rostet är det enda starka i bilden, eftersom det är det man ska se. Granskningen: Version 3 lästes som ett skåp rakt från sidan: 13 rader framsida med dörrar, där vinet syntes genom framsidan, och bilden var 17 × 25 punkter, högre än kolonisten. Jag har ritat om den till 16 × 22 punkter så att tråget ses snett ovanifrån. Locket i två halvor (fram och bak) ligger ovanifrån inne i en kant av jord2–jord3 med jord0-kontur och tar större delen av trågets höjd. Framkanten är ett band på 2 punkter i jord1. Bara de två främre benen syns, som stumpar på 4 punkter i jord0 rakt under bakstolparna. Stolparna och tvärslån står förkortade vid bakkanten, och från slån hänger sleven och halmsilen i senap. Tråg, bock och lock är spegelsymmetriska, och bara redskapen skiljer sidorna åt. I jäsningsversionen är den bakre lockhalvan uppfälld mot slån (undersidan i jord1–jord2 med redskapen framför). Vinet syns ovanifrån i öppningen i rost1–rost2, och bubblorna i rost3 kryper mot kanterna. Vinet syns inte längre genom framsidan.",
+   "ide": "Ett fyrkantigt tillyxat tråg (ca 16 × 13 punkter) med raka sidor och platta gavlar, upplagt på en låg bock av plankor där bara de två främre benen syns som stumpar på 4 punkter i jord0, medan två korta stolpar står förkortade vid bakkanten och håller en tvärslå med en hängande slev och en halmsil i senap1–senap2. Ovanifrån täcks tråget av ett lock i två halvor av plankor i jord2–jord3 med jord0-kontur, och framkanten är ett skarpt avhugget band på 2 punkter i jord1; tråget och bocken är spegelsymmetriska, bara redskapen på slån skiljer sidorna. I jäsningsversionen är ena lockhalvan vikt upp mot slån och den öppna halvan visar vinet i rost1–rost2 med bubblor i rost3 som kryper upp mot kanten."
+  }
+ ]
+}

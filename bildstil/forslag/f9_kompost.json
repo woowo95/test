@@ -1,0 +1,82 @@
+{
+ "kort": "f9_kompost",
+ "namn": "Komposten",
+ "slag": null,
+ "vad": "Steg 9.7.6: komposten är en låg fyrkantig inhägnad av stolpar där växtrester och slaktrens ruttnar till mylla som sedan blir gödsel. Här en ruta på marken.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_kompost",
+     "rader": [
+      "EHE..........EGE",
+      "EHEEEEEEEEEEEEGE",
+      "EGHGHHGHGHGGHGFE",
+      "EHEFGGFJGFFFFEFE",
+      "EGEGGJJGFGFIFEFE",
+      "EHEGFGqpFFJFFEFE",
+      "EGEFJFFppFIJFEFE",
+      "EHEFpFGFFJFFEEFE",
+      "EGEFFIFFJFFEFEFE",
+      "EGEEFFEFFEFEEEGE",
+      "EGEFGFFGFFGFFEFE",
+      "EGEEEEEEEEEEEEFE",
+      "EFE..........EFE",
+      "EEE..........EEE"
+     ]
+    }
+   ],
+   "anteckning": "Komposten står direkt på marken och fyller en ruta (16 × 14). Hörnstolparna är tre punkter breda med en ljus kärna i jord2–jord3 och jord0-kontur. De bakre stolparna sticker bara upp en punkt ovanför den bakre slanan, eftersom resten av dem döljs av högen. Den bakre slanan vänder framsidan mot oss och fångar ljuset (jord2–jord3). Sidoslanorna syns ovanifrån som smala träkanter. Högen ses ovanifrån: mylla i jord0–jord1, ljusast uppe till vänster där kupan tar ljuset, med gulnade växtrester i senap0–senap1 och en blekt benbit i ben1 med en enda glanspunkt i ben2. Framsidans två slanor bildar ett mörkare band på 2 punkter mellan jord0-konturer, så att innehållet syns över kanten. De främre stolparna står kvar nedanför bandet som korta stumpar ner till marken. Ljuset kommer uppifrån vänster, så den vänstra stolpen är ljusare än den högra. Granskningen: Rättat vinkeln: version 1 läste som en låda sedd rakt från sidan, med ett framband på fem rader (raderna 9–13) och stolpar i full höjd. Nu är den fortfarande 16 × 14 punkter. De bakre stolparna sticker upp förkortade, bara 2 punkter, ovanför bakre slanan. Bakre slanan ses ovanifrån som ett ljusare band i jord2–jord3. Högen tar raderna 3–9, alltså ungefär hälften av höjden, och är kupig och ljusast uppe till vänster. Den har mylla i jord0–jord2, gulnade växtrester i senap0–senap1 och benbitar i ben1 med en enda glanspunkt i ben2. Framsidans slanor är nu ett smalt mörkare band på 2 punkter. De främre stolparna är korta stumpar på 4 punkter. Formen är spegelsymmetrisk. Vänstersidan är ljusare (jord3) och högersidan mörkare (jord1), så ljuset kommer uppifrån vänster. Konturen är jord0 runt om, och det ljusare trät gör att den syns på gräset. Storleken mot kolonisten (en ruta) är oförändrad.",
+   "ide": "En fyrkantig låg inhägnad, 16 × 14 punkter, sedd snett ovanifrån: fyra hörnstolpar av grovt trä (jord1–jord3 med jord0-kontur) står upp, de bakre förkortade och de främre som korta stumpar på 4–5 punkter, och mellan dem löper två liggande slanor runt om. Inuti syns högen ovanifrån som en kupig yta av mörk mylla (jord0–jord1) med inblandade gulnade växtrester i senap0–senap1 och några blekta benbitar i ben1. Framsidans slanor bildar ett smalt mörkare band på 2–3 punkter så att innehållet syns över kanten."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_kompost",
+     "rader": [
+      ".EEEEEEEEEEEEEE.",
+      "EHHGHHGHHGHHGHGE",
+      "EGHHGHHGHHGHHGFE",
+      "EHEEEEEEEEEEEEGE",
+      "EHEFFOFEFFEFFEGE",
+      "EGEEONFFEFttFEFE",
+      "EHEFFNEFFEtsFEGE",
+      "EGEFEFFEFFFEFEFE",
+      "EHHGHHGHHGHHGGGE",
+      "EGFGGFGGFGGFGFFE",
+      "EGGFGGFGGFGGFFFE",
+      ".EEEEEEEEEEEEEE."
+     ]
+    }
+   ],
+   "anteckning": "Komposten står direkt på marken som en låg, bred och tät flätad låda, 16 × 12 punkter, sedd snett ovanifrån. Bakväggen syns förkortad som ett smalt flätband överst, sidoväggarna syns som smala kanter och framväggen är ett lågt band på 3 punkter längst ner: en ljus överkant och två rader sicksackflätning i jord2–jord3. Hela konturen är jord0. Inga stolptoppar sticker upp, så silhuetten blir en platt, jämn fyrkant och inte en inhägnad med pinnar. Insidan är fylld nästan till kanten med mörk, färdig mylla i jord0–jord1 i korn. Ovanpå ligger ett par gröna blad i oliv1–oliv2 och ett litet slaktrens i rost1–rost2, som är det enda mättade. Ljuset kommer uppifrån vänster: vänsterväggen och väggarnas överkanter är ljusast, högersidan mörkare. Ingen skugga är ritad. Granskningen: Storleken (16 × 12, en ruta), vinkeln och den symmetriska silhuetten var rätt och är oförändrade. Rättat: 1) Framväggen var ljusare (mest jord3) än bakväggen, tvärt emot regeln om en mörkare framkant. Nu är den en ljus överkant och två rader vägg i jord1–jord2, med det mörkaste nere till höger. 2) Väggarna var slumpvis H/G-brus. Nu är de ett snett sicksackmönster i jord2–jord3 som läses som flätade vidjor, i både bak- och framvägg. 3) Myllan hade klumpar av jord0 (tre i rad) som såg ut som hål och mörka fläckar, och den inre kanten var trasig. Nu skiljer en hel rad jord0 bakväggen från myllan, sidorna har en jord0-kant, och myllan är jämnt korn av jord1 med enstaka jord0. 4) Slaktrenset är ljusare uppe till vänster (rost2 med rost1 nere till höger) och syns som det enda mättade. Bladen i oliv1–oliv2 är kvar.",
+   "ide": "En flätad gärdesgård: en fyrkantig låda, 16 × 12 punkter, vars väggar är vidjor flätade mellan tunna stolpar, ritat som ett sicksackmönster i jord2–jord3 med jord0-kontur, där framväggen är ett lågt band på 3 punkter och bakväggen syns förkortad högre upp. Hålet är fyllt nästan till kanten med jämn, mörk och färdig mylla (jord0–jord1) i korn, med ett par gröna blad i oliv1–oliv2 och ett litet ljust rött slaktrens i rost1–rost2 ovanpå som det enda mättade. Silhuetten är en bred, platt och tät korg utan stolptoppar som sticker upp."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_kompost",
+     "rader": [
+      ".E..E..E..E..E..E..E..E.",
+      "EHEEHEEHEEHEEHEEHEEHEEHE",
+      "EHFEGFEHFEGFEHFEGFEHFEHE",
+      "EGFEHFEGFEHFEGFEHFEGFEGE",
+      "EHFJKLKJJIFHEEEEEEEEEEGE",
+      "EGJKLKJKJJIGFGFFEFGFFEHE",
+      "EHKLKJKJKJIHFFEFGFFEFFGE",
+      "EGJKJKJtsJIGGFFEFFGFEFHE",
+      "EHJJKJssrJIHFEFGFEFFEFGE",
+      "EGIJJJsrIIFGFFEFFEFEFEHE",
+      "EHFIIIIIIFFHEFEEFEEFEEGE",
+      "EGFEGFEGFEGFEGFEGFEGFEGE",
+      "EFFEGFEFFEGFEFFEGFEFFEFE",
+      "EEEEEEEEEEEEEEEEEEEEEEEE"
+     ]
+    }
+   ],
+   "anteckning": "Komposten står på marken som en låg fyrkantig inhägnad och ses snett ovanifrån. Bakkantens störar står upp i en rad med vassa, förkortade toppar i jord2–jord3 och har jord0 som kontur. Sidoväggarna och mittväggen syns ovanifrån som en rad stortoppar. Framkanten är bara ett band av låga stumpar, 3 punkter högt och mörkare, så att man ser ner i båda facken. I vänster fack ligger en hög, färsk kulle av halm och växtrester i senap. Ljuset kommer uppifrån vänster, och senap0 är kulans kontur. Mitt i kullen ligger slaktrenset i rost (rost0–rost2), den enda mättade fläcken, eftersom det är det man ska se. I höger fack ligger en låg, platt och mörk mylla i jord0–jord1 med lite korn, så att ruttnandet läses från vänster till höger. Marken utanför och skuggan ritas inte. Granskningen: Storleken (24 × 14, en och en halv ruta), vinkeln med störar vid bakkanten och låga stumpar fram samt staketets form och ljus är rätt och har inte ändrats. Rättat: vänstra facket var en rund, platt skiva med senap0-kontur och ett centrerat rött kors, så det lästes som ett mynt eller ett märke och inte som en hög. Nu är det en oregelbunden kulle av halm som fyller facket. Den är ljusast (senap3) uppe till vänster och mörknar mot senap0 nere till höger, med jord1 i hörnen. Slaktrenset är en sned, osymmetrisk klump i rost1–rost0 med en punkt rost2 som glans överst. Myllan i högra facket hade en helt jämn mörk nedre rad. Den har nu korn i jord0–jord2 som mörknar mot nedre högra hörnet, och skuggan under bakväggen ligger kvar som ett jord0-band.",
+   "ide": "En tvådelad kompost, 24 × 14 punkter (en och en halv ruta bred), sedd snett ovanifrån: en avlång inhägnad av staketstörar i jord1–jord2 som en mittvägg delar i två fack, vänster fack med en hög, färsk kulle av halm och växtrester i senap1–senap2 och rött slaktrens i rost1, höger fack med en låg, platt yta av mörk, färdig mylla i jord0–jord1. Störarna står upp i en rad längs bakkanten med vassa toppar, medan framkanten bara är ett band av låga stumpar på 3 punkter, så att man ser in i båda facken och ruttnandet läses från vänster till höger."
+  }
+ ]
+}

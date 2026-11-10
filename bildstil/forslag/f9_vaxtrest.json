@@ -1,0 +1,75 @@
+{
+ "kort": "f9_vaxtrest",
+ "namn": "Växtrester",
+ "slag": null,
+ "vad": "Steg 9.7.5: växtresterna är stjälkar, blad och rötter som blir kvar efter skörden och läggs på sophögen eller komposten. Här en liten hög på fältet.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_vaxtrest",
+     "rader": [
+      ".......I...I......",
+      "....IIHKIIKJII....",
+      "...IHKJHKJOJJGI...",
+      "..IKHJKOJHJJNJGI..",
+      ".IHJKJGJKJOJGJJNI.",
+      ".IJKJOJHJJGJNJGJI.",
+      ".EJGJJNJJGJIJGJIE.",
+      "FEIGIJIGIJIIGIIIEF",
+      "HGEIEEIEEIEEIEEGF.",
+      ".E..............E."
+     ]
+    }
+   ],
+   "anteckning": "Högen ligger direkt på fältet och bärs inte. Den ses snett ovanifrån, så den rundade toppen med stråna i senap1 och senap2 tar det mesta av höjden. Ljusast är den uppe till vänster i senap3, mörkare åt nedre högra hörnet, och vissna blad i oliv1 och oliv2 ligger insprängda i kornet. Konturen är senap0 och blir jord0 nertill. Framkanten är ett smalt band av jord0 och senap0 där högen möter marken. Under den sticker tre jordiga rötter fram i jord1 och jord2, med en enda punkt jord3 som glans. Därför läser högen som skörderester och inte som en höstack. Marken och skuggan ritas inte. Granskningen: Rättat: version 1 läste som ett djur eller en höstack. Den släta, gula kupolen och de rötter som hängde rakt ned under kanten såg ut som en igelkott med ben. Tre ändringar: (1) Färgen är dämpad. senap3 (glansen) är borta och senap2 används bara på några få strån uppe till vänster. Ytan är nu ett korn av senap1, jord2 och jord3 med vissna blad i oliv1 och oliv2, eftersom rester är avfall och inte ska ha mättade toner. Högen är ändå ljusare än gräset och har kontur i senap0 och jord0. (2) Siluetten är oregelbunden. Toppen är ojämn och två stråtoppar sticker upp, så att högen läser som hopkastade stjälkar och inte som en jämn kupol. (3) Rötterna ligger ute på marken åt sidorna längst ned (jord1 och jord2, med en enda punkt jord3 till vänster) i stället för att hänga under som ben. Framkanten är fortfarande ett smalt band i senap0 och jord0. Bilden blev 18 × 10 punkter för att rötterna ska få plats, vilket är rimligt mot kolonisten på 14 × 20.",
+   "ide": "En låg, rund kupol av hopkastade stjälkar, ungefär 14 × 9 punkter, som ligger direkt på marken och ses snett ovanifrån så att toppen tar det mesta av höjden och framkanten är ett smalt mörkare band av jord0 och senap0. Ytan är ett korn av korta, snett liggande strån i senap1 och senap2 med enstaka vissna blad i oliv1 och oliv2, ljusast uppe till vänster och mörkast nere till höger, med kontur i senap0 och jord0. Längst fram sticker två eller tre jordiga rötter ut i jord1 och jord2 med en enda ljusare punkt i jord3, så att högen inte läser som ett höstack."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_vaxtrest",
+     "rader": [
+      ".......EEEEEEEEEEEE.......",
+      "....EEELLKLLLKKLKKJEEE....",
+      ".KEEKLLKKKLKKJKKKJKKJJEE..",
+      "JEJKKKKJKKKKJJKKKJJKJJJIE.",
+      ".EJJKKKJJJJKKJJJIJJJJIIIEJ",
+      "..EENNJJJNNNJJINNNJIINEEJ.",
+      "....EEEMNNNMNNNNMNMEEE....",
+      ".......EEEEEEEEEEEE......."
+     ]
+    }
+   ],
+   "anteckning": "Resterna ligger platt på marken som en krattad sträng längs fåran, ungefär 22 × 7 punkter. Sedd snett uppifrån syns den som en smal ellips, tjockast på mitten. Stjälkarna ligger på längden i samma riktning, så kornet går vågrätt. Ljuset kommer uppifrån vänster, därför har ovansidan och vänstra delen de ljusa stråna i senap3 och senap2. Mot underkanten blir det senap1 och senap0, och längst ner ligger de ruttnande bladen i oliv0 och oliv1, mörkast nere till höger. Konturen är jord0, materialets mörkaste ton. I ändarna sticker några lösa strån ut genom konturen, så att formen läses som en strängvall och inte som en hög. Inget står upp och inget hålls; den ligger bara på fältet. Granskningen: Rättat: 1) Konturen var bruten uppe till vänster (ljusa L-punkter på ytterkanten utan jord0 ovanför) och ovalen var osymmetrisk (övre kanten 8–17, nedre 7–18). Nu är ellipsen spegelsymmetrisk med sluten jord0-kontur, 7–18 både uppe och nere. 2) Kornet var slumpvisa prickar, så strängen läste som en glänsande gyllene limpa. Nu ligger tonerna i korta vågräta stråk så att stjälkarna ligger på längden enligt idén. Senap3 hålls uppe till vänster, senap0 och oliv mörknar mot nedre högra hörnet och de ruttnande bladen i oliv0 och oliv1 ligger i nederkanten. 3) De lösa stråna i ändarna är nu korta diagonala strån, uppe till vänster och nere till höger, i stället för ensamma prickar. Storleken (26 × 8, en låg vall knappt två kolonistbredder lång), vinkeln snett uppifrån och synligheten mot gräset tack vare jordkonturen och de ljusa senaptonerna behålls.",
+   "ide": "En avlång, låg sträng av rester som ligger i en rad längs fåran, ungefär 22 × 7 punkter, liksom krattad i en vall på fältet och sedd snett uppifrån som en smal ellips med lite tjockare mitt. Stjälkarna ligger på längden i samma riktning, i senap1 och senap2 med ljusare strån i senap3 överst till vänster, och blandas med mörkare, ruttnande blad i oliv0 och oliv1 i nederkanten. Konturen är jord0 och i ändarna fransar sig strängen ut i enstaka lösa strån, så silhuetten blir en tydlig, flat streckform i stället för en hög."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_vaxtrest",
+     "rader": [
+      "......EE......",
+      ".....ELJE.....",
+      "....ELKJIE....",
+      "....EKLJIE....",
+      "...ELKLJIJE...",
+      "...EKLKJJIE...",
+      "..ELKLKJIJIE..",
+      "..EKLKLJJIJE..",
+      ".ELKLKLJIJIJE.",
+      ".EKLKLKJJIJIE.",
+      "EOKLKLKJJIJINE",
+      "EOONKLKJIJNONE",
+      "EFONOOFFNNONFE",
+      ".EFONFOONFNFE.",
+      "...EEEEEEEE..."
+     ]
+    }
+   ],
+   "anteckning": "Högen står fritt på fältet, inte buren eller hållen. Stjälkarna har lutats mot varandra kring en mitt till en spetsig stack, så de bär varandra. Snett ovanifrån syns därför toppen bara några punkter ovanför foten, och foten läser som en bred, oregelbunden ellips. Stråna går i strålar från spetsen ner mot foten. Den vänstra sidan är ljus i senap2 och senap3 mot ljuset uppe till vänster, och den högra sidan är skuggad i senap0 och senap1. Runt foten ligger ett varv av lösa blad i oliv1 och oliv2, och några rötter med jordklumpar i jord1 sticker fram nedtill. Konturen är jord0 runt hela högen, och formen är spegelsymmetrisk. Högen är högre än bred (14 × 15 punkter) så att den läser som en uppställd rishög och inte som en kupol. Granskningen: Granskat mot reglerna. Storleken (14 × 15) passar som en liten stack bredvid kolonisten (14 × 20), och den är högre än bred som idén säger. Silhuetten är spegelsymmetrisk rad för rad. Ljuset ligger rätt: senap3 och senap2 till vänster, senap1 och senap0 till höger, och mörkast är oliv och jord nere till höger. Konturen i jord0 och de ljusa senaptonerna gör att stacken syns tydligt på gräset. Foten med blad i oliv1 och oliv2 och rötter i jord1 rundas av till en ellips sedd snett ovanifrån. Rättat: i nedersta raden stod två punkter i jord1 ute i själva konturen och bröt den. De är nu jord0, så konturen är materialets mörkaste ton runt hela foten. Rötterna i jord1 ligger kvar innanför konturen. Inget bärs, så regeln om huvud och ansikte gäller inte. I övrigt oförändrad.",
+   "ide": "En liten spetsig stack där stjälkar och blasttoppar har lutats mot varandra kring en mitt, ungefär 12 × 14 punkter, en spegelsymmetrisk kon med bred, oregelbunden fot som ses snett ovanifrån så att foten blir en ellips och toppen bara reser sig något över den. Stråna går i strålar från toppen ner mot foten i senap2 och senap3 på vänster sida och senap0 och senap1 på höger, med kontur i jord0, och vid foten ligger ett varv av lösa gröna blad i oliv1 och oliv2 och några rötter med klumpar av jord i jord1. Formen ska läsa som en uppställd rishög, högre än bred, tydligt annan än en platt kupol."
+  }
+ ]
+}

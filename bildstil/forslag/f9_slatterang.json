@@ -1,0 +1,92 @@
+{
+ "kort": "f9_slatterang",
+ "namn": "Slåtterängen",
+ "slag": null,
+ "vad": "Steg 9.8.9: slåtterängen är en äng med högt, oskuret gräs där byn slår hö med skäran inför vintern. Ingen inhägnad. Här en ruta högt gräs, 16 punkter.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_slatterang_hogt_gras",
+     "rader": [
+      "POPPOPPOOPOOOPOO",
+      "PPOPPOPOPOOPOOPO",
+      "OPOWPOWOPOWOOWON",
+      "WOWWOWWNOWWNWWNW",
+      "OPLOPPOOPKOOPOON",
+      "POPOOPOPOOPOOPON",
+      "OPOWOPOWOPNWOPNW",
+      "NWWVNWVVNWVVNWVV",
+      "WPOWPOWWPOWWLOWV",
+      "POOPOWPOOWPONWPN",
+      "OPNOPNOONWONWONV",
+      "PNWONWVONVWNVVNV",
+      "VOPVWOPVVOPVVKOV",
+      "WPOVOPNVOPNVONMV",
+      "PONWPONVPNMVONMV",
+      "OWOVONVMONMVNMVM"
+     ]
+    }
+   ],
+   "anteckning": "Gräset står upprätt på marken och ses snett uppifrån, så att rutan fylls kant i kant. Längst upp syns bara de ljusa stråtopparna i oliv3 och oliv2, eftersom raderna längre bak döljs bakom dem framför. Nedåt blir stråna längre och tydligare. Fårorna mellan raderna är mörka band i barr2, barr1, oliv1 och oliv0, så att ytan får korn och inte fläckar. Stråna lutar åt höger, som om vinden drar från vänster. Ljusast är det uppe till vänster och mörkast vid basen nere till höger. Fyra axtoppar i senap2 och senap3 visar att gräset är moget för slåtter. Det finns ingen inhägnad. Granskningen: Granskad mot reglerna och ingen rättning behövdes, så versionen är oförändrad. Storlek: rutan är 16 × 16 punkter, i naturlig storlek mot kolonisten och utan skalning. Vinkel: stråna ses snett uppifrån. Överst syns bara topparna i oliv3 och oliv2, och nedåt blir stråna längre med mörka fåror i barr1, barr2 och oliv0. Ljus: ljusast uppe till vänster (oliv3) och mörkast nere till höger (oliv0 och barr1). Gräsytan har tre till fyra toner som byts punkt för punkt, utan släta ytor och utan mörka fläckar. De få axtopparna i senap2 och senap3 är enstaka och visar att gräset är moget, utan att bli glans. Syns på gräset: rutan är ljusare och mer kornig än marken runt omkring och syns tydligt i provbilden. Symmetri och bärande gäller inte för en markruta. Rutan fyller kant i kant enligt idén, och nederkanten mörknar mot rutan nedanför.",
+   "ide": "En hel ruta, 16 × 16 punkter, fylld kant i kant med tätt oskuret gräs sett snett uppifrån: rader av spetsiga strån i oliv2 och oliv3 som lutar åt samma håll, som om vinden drar från vänster, med mörkare barr1 och oliv0 i fårorna mellan raderna så att ytan får korn utan fläckar. Längst upp syns bara stråtopparna, och nedåt i rutan blir stråna längre och tydligare, så att den nedersta raden står upp som en tandad kant mot rutan nedanför. Ljusast är topparna i övre vänstra hörnet, mörkast är basen nere till höger, och några få axtoppar i senap2 och senap3 visar att gräset är moget för slåtter."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_slatterang",
+     "rader": [
+      ".P..P..O........",
+      ".PP.P.OX....P...",
+      "..PPPOOX..P.PO.X",
+      "N.PPOPOXW.PPPOXW",
+      "NNPPOPOXWNNPOPXW",
+      "NNPPOOXWWNNPPOXW",
+      "NNVPPOXWMNNPPOXW",
+      "NNNVVWVMNPNPPOXW",
+      "NNNPNNPNOPNNVWVM",
+      "NNPPNPPNOPXNNNNN",
+      "NNPPOPPOOPXNNPNX",
+      "NNPPOPOPOXXWNPOX",
+      "NNNPPOPOXOXWNPOX",
+      "NNNPPOPOXOXWWPOW",
+      "NNNVPOPOXXWVMVWV",
+      "NNNNVVVWVVMMNNMN"
+     ]
+    }
+   ],
+   "anteckning": "Gräset står upp ur marken och ses snett ovanifrån. Varje tuva är en solfjäder av strån som spretar från en mörk bas i barr1 och oliv0. Strånas ljusa vänstersida är i oliv3 och oliv2, den mörka högersidan i barr3 och barr2. De två bakre tuvorna uppe till vänster och till höger är låga och förkortade, och deras spetsar bryter ovankanten mot genomskinligt. Den mellersta tuvan sitter till vänster. Den främre tuvan är bredast och högst och växer från en mörk bas längs nederkanten upp till mitten av rutan. Mellan tuvorna skymtar marken som smala band i oliv1. Ingen inhägnad och inga slagna strån, bara vild och oslagen äng. Granskningen: Ritade om rutan: tuvorna flöt ihop till en enda klump och läste inte som separata solfjädrar. Nu är det fyra tydliga tuvor. Bakre vänstra tuvan har sin bas på rad 6–7 och spetsar som når överkanten. Bakre högra tuvan är lägre och förkortad, med bas på rad 8. Den främre tuvan i mitten är störst och går från rad 7 ner till nederkanten. En liten tuva står längst fram till höger. Varje tuva har oliv3 till vänster, oliv2 i mitten och barr3/barr2 till höger, med bas i barr1 och oliv0. Mellanrummen är smala och i oliv1. Jag tog bort den ensamma mörka oliv0-pricken under högra tuvans bas. Det genomskinliga ovanför spetsarna behölls så att silhuetten blir taggig och oslagen. Storleken (en ruta, 16 × 16) och vinkeln var redan rätt.",
+   "ide": "Ängen som tre till fyra tydliga tuvor eller klungor av högt gräs, var och en en solfjäder av strån som spretar uppåt och utåt från en mörk bas i barr1 och oliv0, utspridda så att hela rutan täcks men med smala mellanrum i mörkare oliv1 där marken skymtar. Varje tuva är ljusast på vänstra sidan i oliv3 och P-toner och mörkast till höger, och de bakre tuvorna är lägre och förkortade medan den främre står högst och bryter rutans nederkant med några spetsar. Silhuetten blir taggig och knölig i stället för jämn, så att den läser som vild och oslagen äng."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_slatterang",
+     "rader": [
+      "PPPMWMWOXOXOWMPP",
+      "POPPLPPWMWMWPPPO",
+      "XOXPOPOPPtPKOPXO",
+      "OXOXOXOOPOPOOXOX",
+      "WMWOXOXOXOXOXOWM",
+      "PPPWMWMXOXOXMWPP",
+      "OPOLPPPMWMWMPPOP",
+      "OXOOPOPPPPPPPOOX",
+      "XOXOXOXPOPOPXOXO",
+      "MWMXOXOXOXOXOXMW",
+      "PPPMWMWOXOXOWMPP",
+      "POPPPPPWMWMWPPPO",
+      "OPOPOPOPPPPPOPOP",
+      "OXOOPOPOPOPOPOOX",
+      "XOXOXOXPOPOPXOXO",
+      "MWMXOXOXOXOXOXMW",
+      ".W.X..O.X..W.X..",
+      "....W.......M..."
+     ]
+    }
+   ],
+   "anteckning": "Rutan är 16 × 16 punkter ängsmark sedd snett ovanifrån, plus två rader strån som hänger ner över rutan framför (16 × 18, förankrad uppe). Gräset står för högt för att stå rakt och böjer sig åt höger i vinden. Därför går varje band som en båge: krönet ligger högst till vänster och sjunker två rader åt höger. Där strånas ovansidor fångar ljuset uppe till vänster blir krönet ljust i oliv3 med en punkt senap3. Under krönet går strånas sidor över i oliv2 och barr3, och dalen mellan banden ligger i skugga i barr2 och oliv0. Det ger tre breda, böljande band. I det bakre bandet sticker två vippor i senap2 och en ängsblomma i rost2 upp över dalen. Ingen hägnad och ingen skära syns, bara oskuret hö. Nederkanten är ojämn av mörka strånspetsar som lutar över in i nästa ruta. Granskningen: Version 3 läste som ett rutnät av likadana tuvor och inte som vågigt gräs. Samma klump på cirka 5 × 6 punkter upprepades rakt i både rader och kolumner, så det syntes block i stället för breda band som böjer sig. Jag ritade om rutan efter idén. Den har nu tre breda band (5, 5 och 6 rader) som följer en mjuk båge över rutan: de börjar högre till vänster, sänker sig i mitten och lyfter igen mot högerkanten, så att rutan går att lägga sida vid sida utan skarv både vågrätt och lodrätt. Varje band har samma toner uppifrån och ned: en krön i oliv3 med enstaka senap3 där ljuset tar uppe till vänster, en övergång i oliv2 och oliv3, en mellanton i barr3 och oliv2 och en mörk dal i barr2 och oliv0. Tonen byts punkt för punkt, så ingen yta blir slät och inga ensamma mörka fläckar uppstår. Ängsblomman (en punkt rost2) och en vippa i senap2 sitter nu på krönet i det bakre bandet. Den gamla senapsvippan i övre högra hörnet låg på en mörk punkt och läste som brus, så jag tog bort den. De lösa prickarna i överhänget nedtill satt utan förbindelse. De är nu stråspetsar som hänger ner från strån i rutan och böjer av åt höger. Storleken stämmer: en ruta på 16 punkter plus 2 rader överhäng. Rutan är ljusare och har mer kontrast än ängsgräset runt omkring, så den syns på det.",
+   "ide": "Ett vågigt gräshav där höga strån böjer sig i mjuka bågar åt höger i två eller tre breda band över rutan. Varje band har en ljus krön i oliv3 och senap3, där vinden fångar ljuset uppe till vänster, och en mörk dal i barr2 och oliv0, så att rutan läser som böljande gräs sett snett ovanifrån. Insprängt i det bakre bandet står några enstaka högre vippor och blomstänglar, ett par prickar senap2 och en punkt rost2 för en ängsblomma, och nederkanten är ojämn av strån som hänger över in i rutan framför."
+  }
+ ]
+}

@@ -1,0 +1,110 @@
+{
+ "kort": "f9_fagelskramma",
+ "namn": "Fågelskrämman",
+ "slag": null,
+ "vad": "Steg 9.7.11: fågelskrämman är en kors av grenar klädd i halm och trasor som står på fältet och skrämmer bort fåglar från grödan. Här på en åkerruta.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_fagelskramma",
+     "rader": [
+      "......EEEE......",
+      ".....EGGFFE.....",
+      "....EGGGFFFE....",
+      "...EGGFFFFFFE...",
+      "...IKLKKJKJJI...",
+      "...IKEKJJKEJI...",
+      "...IJKEEEEJJI...",
+      "....IIJJJJII....",
+      "....LKrJJrKL....",
+      "..rrrrrrrrrrrr..",
+      "LKrutttstsstsrKJ",
+      "KLrttststssssrJK",
+      ".KrtsststssssrJ.",
+      "..rrrtstsssrrr..",
+      "....rttstssr....",
+      "....rtststsr....",
+      "....rstssssr....",
+      "....rrsrrsrr....",
+      ".....LEGFEK.....",
+      "......EGFE......",
+      "......EGFE......",
+      "......EGFE......",
+      "......EFFE......",
+      "....EHGEEFFE...."
+     ]
+    }
+   ],
+   "anteckning": "Fågelskrämman står på egen hand, nedstucken i åkerjorden. Den lodräta stören bär huvudet. Tvärslån sitter dold inne i rockens utsträckta ärmar, så den syns bara genom armarnas raka form, och ur ärmsluten sticker halmen ut. Under rockens trasiga fåll syns stören igen och går ner i jorden, med några jordkokor vid foten. Huvudet lutar något framåt, så vi ser hättans ovansida i spelets snedvinkel. Ansiktet har två insydda ögon och en sydd mun i jord0. Formen är spegelsymmetrisk; bara ljuset uppe till vänster (ljusare halm och rost på vänster sida) och kornet skiljer sidorna. Konturerna är materialets mörkaste ton: jord0 runt trä och hätta, senap0 runt halmen och rost0 runt rocken. Skuggan är inte ritad. Granskningen: Granskad mot reglerna. Storleken (16 × 24) stämmer med idén och står rimligt mot kolonisten (14 × 20). Vinkeln fungerar: huvudet lutar fram så att hättans ovansida syns. Formen är spegelsymmetrisk; bara ljuset och kornet skiljer sidorna åt. Kontur, ljus och palett följer reglerna: jord0 runt trä och hätta, rost0 runt rocken, senap0 runt halmhuvudet och ingen kol0. Rätat: jordhögen vid störens fot på nedersta raden saknade kontur till vänster, där jord3 låg mot gräset. Den har nu jord0 som kontur och ljusast till vänster, mörkast till höger: EHGEEFFE. Resten är oförändrat.",
+   "ide": "En klassisk hög korsfigur, cirka 16 × 24 punkter, där en lodrät stör av jordbrunt trä (kontur jord0, toner jord1–jord2) står nedstucken i åkerjorden och en tvärslå bär utsträckta armar av en lös trasrock i dämpad rost1–rost2 med halmtofsar i senap2–senap3 som sticker ut vid ärmslut och halskant. Huvudet är en rund halmsäck i senap1–senap2, något framåtlutad så att vi ser lite av ovansidan i spelets snedvinkel, med en nedtryckt jordfärgad hätta, och figuren är spegelsymmetrisk så att bara ljuset från övre vänstra hörnet och kornet skiljer sidorna. Nedtill syns bara störens fot där den går ner i jorden; skuggan lägger programmet till."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_fagelskramma",
+     "rader": [
+      ".E....................E.",
+      ".EGE................EFE.",
+      ".EGFE..............EGFE.",
+      "...EGFE....EE....EGFE...",
+      "...oqEGFE.ELGE.EGFEsr...",
+      "...oqpEGFEEGFEEGFEssr...",
+      "...opo.EGFGGFGFFE.ssr...",
+      "....o...IKLKLKJI..sr....",
+      ".......ILKLKKJKJI..r....",
+      "......IKLKJKKJKJJI......",
+      "......IEFEFEEFEEEI......",
+      "......IKKJKJEJKJJI......",
+      ".....IKJKJJKJJKJJJI.....",
+      ".....I.JIJEGFEJI.JI.....",
+      "........I.EGFE.I........",
+      "..........EGFE..........",
+      "..........EFFE..........",
+      ".........EFGFFE........."
+     ]
+    }
+   ],
+   "anteckning": "Fågelskrämman står nedslagen i åkerjorden på en enda stolpe (jord0-kontur, jord1–2), med en liten jordhög där den går ner i marken. Vid mitten delar sig stammen i två krokiga grenar som pekar snett uppåt och utåt som ett V. Mellan dem sticker en knotig knöl upp med en glanspunkt i senap3, så silhuetten blir ett spretigt Y. Halmkärven är bunden runt gaffeln som en bål med ett grovt rep i jord0, och en repända hänger ner framtill. Strån sticker ut nedtill där kärven spretar. Trasorna hänger från grenarnas undersida och slokar nedåt av tyngden: en i ben1–2 till vänster och en i rost1 till höger. Ljuset faller uppifrån vänster, så de ljusa tonerna ligger på grenarnas och kärvens överkant. Formen är ungefär symmetrisk, inte exakt, eftersom grenarna är krokiga. Snett ovanifrån syns kärvens ovansida ljusast. Skuggan på marken ritas inte. Granskningen: Granskad och oförändrad. Storleken 24 × 18 är låg och bred som idén säger och rimlig bredvid kolonisten (14 × 20), och den håller sig inom rutornas mått. Vinkeln är snett uppifrån: skrämman står upprätt på åkern, och den nedre stammen breder ut sig mot marken. Silhuetten är ett spretigt Y av två snedställda barkgrenar med jord0-kontur och toner i jord1 och jord2. Grenarna möts i en knotig knöl med en enda glanspunkt i senap3. Halmkärven i senap har senap0 som kontur, ljusast uppe till vänster och mörkare nere till höger, och är bunden med ett rep i jord0 och jord1. Trasorna hänger och slokar från grenarna, ben till vänster och rost till höger, och sitter ihop med grenarna utan lösa prickar. Formen är ungefärligt symmetrisk, som idén tillåter. Halmen och trasorna är ljusare än gräset, och grenarna har tydlig kontur, så skrämman syns på åkern. Inget bryter mot reglerna.",
+   "ide": "En låg och bred fågelskrämma, cirka 24 × 18 punkter, byggd som en vinklad rist av krokiga barkgrenar (jord0-kontur, jord1–G-toner) där armarna är två snedställda grenar som pekar uppåt-utåt som ett V, så silhuetten blir ett spretigt Y i stället för ett kors. Längs grenarna hänger fladdrande trasremsor i ben1–ben2 och rost1 som slokar nedåt, och en tät halmkärve i senap2–senap3 är bunden kring mitten som en bål med ett grovt rep i jord0. Toppen är bara en knotig grenknöl med en ensam glanspunkt i senap3, och eftersom grenarna är naturligt krokiga är formen ungefärligt, inte exakt, symmetrisk."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_fagelskramma",
+     "rader": [
+      "........oo........",
+      ".......oqpo.......",
+      "......oqwqpo......",
+      "......oqqppo......",
+      ".....oqIKKIpo.....",
+      ".....oqKLKJpo.....",
+      ".....oqJKJIpo.....",
+      "....oqqpppppoo....",
+      ".MMMoqppppppooMMM.",
+      "GMPOOooooooooNONMF",
+      "LMONOOPOONONNONNMK",
+      ".LKMMOPOONONNMMJK.",
+      ".L..MOOPONONNM..J.",
+      "....MOPOONONNM....",
+      "...MOPOONOONNNM...",
+      "...MPOONOONONNM...",
+      "..MOPOONOONONNNM..",
+      "..MOOPONOONONNNM..",
+      "..MPOONOONONNNNM..",
+      ".MOPOONOONONONNNM.",
+      ".rsssrssrsrsrsrrr.",
+      ".rrsrrrrGErrrsrrr.",
+      "........GE........",
+      ".....J..GE..K.....",
+      "....LJ.EFFE.JK....",
+      ".......EEEE......."
+     ]
+    }
+   ],
+   "anteckning": "Fågelskrämman står på en stör som är nedstucken i åkern. Tvärslån bär kåpan vid axlarna, och manteln hänger tungt rakt ner till knähöjd, så silhuetten blir en smal kon. Ärmarna följer tvärslån ut åt sidorna. Ur ärmhålen sticker bara grenspetsarna och halmtussarna fram, och några strån hänger ner. Huvan sitter på störens topp. Eftersom vi ser figuren snett uppifrån syns huvans och axlarnas ovansida ljusast uppe till vänster, och i ansiktsluckan syns halm. Under den trasiga rostfållen syns bara störens fot, där den går ner i jorden, och några strån som fallit på marken. Formen är spegelsymmetrisk; bara ljuset och veckens korn skiljer sidorna åt. Granskningen: Rättat: fållen ritades med rost2 (t), som är mättad och bryter mot idén om rost0–rost1. De mättade tonerna ska sparas till eld, blod och mat. Fållens översta rad är nu rost1 med korn av rost0, och nedersta raden är mestadels rost0, så att kanten blir mörkare nedåt. Allt annat behölls efter granskning. Storleken 18 × 26 är rimlig mot kolonisten (14 × 20), eftersom figuren står på en hög stör. Huvan, manteln, staken och foten är spegelsymmetriska runt mitten, och bara ljuset och kornet skiljer sidorna åt. Ljuset kommer från vänster: huvan och axlarna är ljusast uppe till vänster, med en enda glanspunkt i ben3. Manteln har oliv2–oliv3 med kontur i oliv0. Den är ljusare än olivgräset och syns därför tydligt. Det är en medveten avvikelse från idéns oliv0–oliv1, som skulle försvinna i gräset. Grenspetsarna och halmtussarna sitter i ärmarna, halmen syns i huvans lucka och bara störens fot syns under fållen. Stråna i jorden hänger ihop parvis och bildar inga ensamma prickar.",
+   "ide": "En gammal kåpklädd figur, cirka 18 × 26 punkter, där en lång, mörk mantel i oliv0–oliv1 med rostfärgad fåll (rost0–rost1) hänger tungt från tvärslån ända ner till knähöjd, så silhuetten blir en smal klocka eller kon i stället för ett öppet kors. Ur kåpans ärmar sticker korta grenspetsar och halmtussar i senap2–senap3, och huvudet är en spetsig huva i ben1–ben2 där en lucka visar halm i stället för ansikte. Från spelets snedvinkel syns huvans och axlarnas ovansida ljusast uppe till vänster, och nedanför fållen syns bara den nedstuckna störens fot i jord1 med ett par lösa strån i jorden."
+  }
+ ]
+}

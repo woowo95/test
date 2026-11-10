@@ -1,0 +1,92 @@
+{
+ "kort": "f9_hassel",
+ "namn": "Hasselbusken",
+ "slag": null,
+ "vad": "Steg 9.7.14: hasseln växer vilt i skogsbrynet som en buske med nötter på hösten. Här busken på en ruta mark.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_hassel",
+     "rader": [
+      "....UUU..UUU....",
+      "..UUOOXUUXXWUU..",
+      ".UOOXOXXXXXXWWU.",
+      "UOXOXPLXOXXWXWWU",
+      "UOXXXKPXXXXWXWWU",
+      "UXOXXXXXXXPLWWWU",
+      "UOXXWXXXXWKPWXWU",
+      "UXPLXXXWXXWXWWWU",
+      "UXKPXWXXWXWWXWWU",
+      "UXXXWXXPLXWWWWWU",
+      ".UXWXWWKPWXPLWU.",
+      ".UWXWWWWWWWKPWU.",
+      "..UWWWXWWWWWWU..",
+      "...UUWWUUWWUU...",
+      "....SR.SR.SR....",
+      "....RQ.RQ.RQ...."
+     ]
+    }
+   ],
+   "anteckning": "Busken står fritt på marken och ses snett uppifrån, så det mesta av bilden är ovansidan: en låg, rund kudde av hasselblad, 16 punkter bred och 14 hög med konturen. Ljuset kommer uppe från vänster, så barr3 ligger uppe till vänster och barr1 nere till höger. Konturen är barr0 hela vägen runt, och kanten är ojämn med en svacka mitt i toppen och flikar nertill, så att busken ser ut att bestå av bladklumpar. Längst ner, där busken går ner i marken, sticker tre korta stamstumpar fram i skiffer2 och skiffer1 med en kontur i skiffer0. Under lövverket syns bara stammarnas nedersta del. Fem nötklasar ligger ovanpå bladen. Var och en är en nöt i senap3 och senap2 med ett hölje i oliv3. De är de enda mättade punkterna i bilden, så det som går att ta syns först. Ingen skugga är ritad. Granskningen: Rättat: 1) Silhuetten var förskjuten åt höger (raderna 1–3 och 11–14 började och slutade på olika avstånd från kanterna). Nu är busken spegelsymmetrisk kring mitten. Den har två rundade bladklumpar upptill och en lätt vågig underkant, så bara ljuset och kornet skiljer sidorna åt. 2) Stamstumparna stod osymmetriskt (kolumn 4–6, 8–9 och 11–13) och hade skiffer0 i övre raden. Nu är det tre korta stumpar på 2 punkter vid kolumn 4–5, 7–8 och 10–11, med skiffer2 till vänster, skiffer1 till höger och skiffer0 bara nederst. 3) Busken var mörkare än gräset och syntes nästan bara genom konturen. Jag har lagt in oliv2 som ljuston uppe till vänster och låtit barr3 och barr2 bära ytan, så att kudden blir ljusare än marken. Barr1 är borttaget så att bladen har tre toner plus barr0 som kontur. 4) Nötklasarna är kvar som fem 2 × 2-klasar med hölje i oliv3 och nöt i senap2 och senap3. De är jämnare spridda över ovansidan och ligger inte i konturen. Storleken (16 × 16 på en ruta, kupol 14 hög) och vinkeln snett uppifrån behölls.",
+   "ide": "En låg, rund kupol av blad som fyller nästan hela rutan, ungefär 16 punkter bred och 13 hög, sedd snett uppifrån så att ovansidan syns som en tät kudde av hasselblad i barr2 och barr3 med ljusast uppe till vänster och barr0 som kontur nere till höger. Formen är nästan spegelsymmetrisk men inte stel, med en lätt ojämn kant av rundade bladklumpar, och längst ner skymtar två–tre korta grå stamstumpar i skiffer1 där busken går ner i marken. På ytan sitter fyra–fem nötklasar, var och en två–tre punkter i senap2 och senap3 med ett hölje i oliv3, så att det som går att ta syns först."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_hassel",
+     "rader": [
+      "....UPXU..UPU...",
+      "...UPXWU.UPXXU..",
+      "...UXWSQ.UXWWXU.",
+      ".UPU..SQ.SQUXWU.",
+      "UPXWU.SQ.SQUPXWU",
+      "UXWXU.SQ.SQUXXWU",
+      "LKUWU.SQ.SQ.UWU.",
+      "KISQ..SQ.SQ.....",
+      "..SQ..SQ.SQ.SQLK",
+      ".UXWSQSQ.SQSQ.KI",
+      "UXWWU.SQSQSQUPXU",
+      ".UWU.SSQSQQ.UWU.",
+      "......SQSQQ.....",
+      "......SQSRQ.....",
+      "......SRSQQ.....",
+      "......SQSRQ.....",
+      "......SRSQQ.....",
+      "......SQSRQ.....",
+      ".....SSRRRQ.....",
+      ".....FQQQQF....."
+     ]
+    }
+   ],
+   "anteckning": "Hasseln står fast i marken som en självständig buske, sedd snett uppifrån som träden på kartan. Alla spön växer ur en gemensam rot vid nederkanten och spretar utåt och uppåt i en solfjäder, 16 × 20 punkter, så att toppen sticker upp över rutan. Spöna är raka och grå: skiffer2 på den ljusa vänstra sidan, skiffer1 längre ner och skiffer0 som kontur till höger. Nertill smälter de ihop till en tät rotklump med kontur runt om och lite jord vid foten. Bladen sitter i glesa tofsar i barr2 och barr3 med barr0 som kontur, mest i den övre halvan. Mellan dem syns stammarna, så att silhuetten blir luftig. Nötklasarna hänger under tofsarna längst ut på de yttersta spöna, ett till vänster och ett till höger, i senap2 med senap0 undertill. Glansen i senap3 sitter på vänster sida, mot ljuset. Ingen markskugga är ritad. Granskningen: Rättat: 1) Busken läste som en hand eller en kaktus, eftersom spöna smalnade av till en tjock stam i skiffer1 (R). Nu går spöna ner som separata smala käppar med skiffer0 mellan sig ända ner till roten, och fyra spön spretar som en solfjäder: två i mitten, ett snett åt vänster och ett snett åt höger. 2) Bladtofsarna i barr0–barr3 var mörkare än gräset och försvann på det. De har nu en barr0-kontur med barr3 som huvudton, barr2 i skuggan nere till höger och en enda glanspunkt i oliv3 uppe till vänster på varje tofs, så att de syns på gräset. 3) Tofsarna är glesare och sitter mest i övre halvan med luft mellan sig, så att man ser stammarna och silhuetten blir öppen. 4) Nötklasarna (senap2 med glans i senap3 och skugga i senap0) hänger nu i spetsen av de yttre spöna, en till vänster och en till höger. Storleken är 16 × 20, så busken sticker upp lite över rutan och är jämnhög med kolonisten. Roten i jord1 är kvar.",
+   "ide": "En hög, solfjäderformad buske med många raka, smala spön som växer upp ur en gemensam rot vid nederkanten och spretar utåt och uppåt, ungefär 14 punkter bred och 18–20 hög så att den sticker upp lite över rutan. Spöna är grå och släta i skiffer1 och skiffer2 med skiffer0 som kontur, och bladen sitter i glesa, skiktade tofsar i barr2 och barr3 mest i övre halvan, så att man ser stammarna mellan dem och silhuetten blir öppen och luftig snarare än en klump. Ett par nötklasar hänger i spetsarna av de yttre spöna, små gula prickar i senap2 med en glans i senap3 på den vänstra sidan."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_hassel",
+     "rader": [
+      "......UUUU......",
+      ".....UPPXOU.....",
+      "..UUUPXPOXOU....",
+      ".UPPXWPXOXOXUUU.",
+      "UPXPOXPOXOXWWPXU",
+      "UXPOXOXOKJWOPXOU",
+      "UPOXOXOWJIWOXOWU",
+      "UWOWWOWWWWVWWWVU",
+      ".UWVWWVWVWVVWVU.",
+      "..UVVUVVUVVUVU..",
+      "...EGFFGE.EFFE..",
+      "..EFLKGFFGFLJE..",
+      "...EJIFGFFGJIE..",
+      "....EFFE..EFE..."
+     ]
+    }
+   ],
+   "anteckning": "Hasselbusken står direkt på marken längs rutans bakkant, som en bit av skogsbrynet. Snett uppifrån syns bladverket som tre sammanväxta kullar: den mittersta högst, den vänstra något större än den högra, så att busken blir vildvuxen men ändå symmetrisk i stort. Ljuset kommer uppifrån vänster, så toppen av varje kulle är ljus oliv (P och X) och bladverket mörknar nedåt till barr2. Längst ner, där bladmassan möter marken, ligger en smal skuggad framkant i barr1 med kontur i barr0. Konturen är barr0, inte svart. Busken är ljusare än gräset så att den syns. Ett litet nötknippe i senap sitter på mittkullen, och framför busken ligger en jordfläck i jord1 och jord2 med kontur i jord0. På den ligger tre nedfallna hasselnötter i senap, med ljus sida åt vänster, som om de redan fallit på hösten. Nötterna är de enda mättade tonerna, eftersom det är dem man ska se och kunna ta. Granskningen: Rättat: busken var 11 rader hög och stod på en sluten, symmetrisk jordoval som såg ut som en kruka. Nu är den 10 rader hög, som idén säger, eftersom en bladrad är struken. Jordfläcken framför är mindre och oregelbunden med glipor, så den läser som marken och inte som en kruka. Två nedfallna nötter (2 × 2 punkter i senap med L som ljus punkt uppe till vänster och I som mörk punkt nere till höger) ligger nu tydligt på marken. Två ensamma barr0-prickar inne i bladverket, i skarvarna mellan kullarna, är bytta mot W så att det inte blir mörka fläckar. Kvar från versionen: barr0-konturen, de tre kullarna i olika storlek med den mittersta högst, nötklasen i bladen, den mörka framkanten och vinkeln snett uppifrån. Storleken på 16 punkter i bredd passar mot kolonisten.",
+   "ide": "En bred, låg och avlång buske som ligger längs rutans bakkant som en del av ett skogsbryn, ungefär 16 punkter bred och 10 hög, med en tydlig mörk framkant av skugga under bladverket i barr0 och W där bladmassan möter marken. Ovanifrån syns bladverket som tre sammanväxta lägre kullar i barr- och olivtoner, den mittersta högst, och framför den ligger en liten jordfläck i jord1 och jord2 med några nedfallna nötter i senap- och jordtoner på marken, som om de redan fallit på hösten. Busken är symmetrisk i stora drag men kullarna får olika storlek så att den ser vildvuxen ut."
+  }
+ ]
+}

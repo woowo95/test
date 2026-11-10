@@ -1,0 +1,92 @@
+{
+ "kort": "f9_hostack",
+ "namn": "Höstacken",
+ "slag": null,
+ "vad": "Steg 9.8.9: höstacken är torkat hö som lagts i en stapel som en vedhög, för att hålla sig torrt och räcka till betesdjuren under vintern. Här en ruta.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_hostack",
+     "rader": [
+      ".......EE.......",
+      ".......FE.......",
+      ".......FE.......",
+      ".....IIFEII.....",
+      "....ILLKJKJI....",
+      "...ILLKLKKJJI...",
+      "..ILKLKKJKKJJI..",
+      "..ILKKLKJKJKJI..",
+      ".ILKKJKKJKJKJJI.",
+      ".ILKJKKJKJKJJJI.",
+      ".IKKJKJKJJKJJJI.",
+      ".IKJKJKJJKJJJII.",
+      ".IKJJKJJKJJJJII.",
+      ".IJKJJKJJJKJJII.",
+      ".IJJKJJJKJJJIII.",
+      ".IJJJIJJJIJJIII.",
+      ".IIJIIJIIJIIIII.",
+      "..IIIIIIIIIIII.."
+     ]
+    }
+   ],
+   "anteckning": "Stacken står på marken kring en nedslagen mittstång, så bara stångens topp syns ovanför kupolen (jord1 med jord0-kontur, 3 punkter). Formen är spegelsymmetrisk, smal topp och bred bas. Snett uppifrån syns toppen som en ljusare kalott med senap3 uppe till vänster, och strån som korta sneda drag i senap1 och senap2. Senap0 är kontur och skugga nere till höger, och nederst ligger ett mörkare band där höet möter marken. Markskuggan ritas inte. Granskningen: Granskad och oförändrad. Storleken stämmer: stacken är 14 punkter bred och 15 hög, och stångtoppen sticker upp 3 punkter, totalt 14 × 18. Den står ungefär lika hög som kolonisten (14 × 20), vilket passar en höstack. Den skjuter 2 punkter upp över rutan, som ett träd. Siluetten är spegelsymmetrisk kring stången (kolumn 7–8), och bara ljuset och kornet skiljer sidorna åt. Ljuset följer regeln: senap3 uppe till vänster på kupolen, senap0 som kontur och ett tjockare skuggband nere till höger och längs nederkanten. Kalotten är ljusare än nederkanten, så den läses snett uppifrån och inte som en platt sidovy. Höet har tre toner (senap1, senap2 och senap3) med senap0-kontur, och stången är jord1 med jord0. Inga andra färger och ingen kol används. Mot det oliva gräset syns den tydligt tack vare den ljusa senapen och den mörka konturen. De mörka punkterna i nederkanten hänger ihop med skuggbandet som korta lodräta strån och är inga ensamma prickar. Den bärs inte, så inga regler om rem eller huvud gäller.",
+   "ide": "En hög, rundad stack kring en mittstång, ungefär 14 punkter bred och 16 hög, med en bred bas som smalnar uppåt till en kupol där stångens topp sticker upp 2–3 punkter i jord1 med jord0-kontur. Höet ritas i senap1 och senap2 med strån som går i korta snedställda drag, ljust senap3 uppe till vänster och senap0 som kontur och skugga nere till höger. Snett uppifrån syns toppen som en ljusare rundad kalott och nederkanten som ett mörkare band mot marken, och formen är spegelsymmetrisk där bara ljuset skiljer sidorna."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_hostack",
+     "rader": [
+      "................",
+      "................",
+      "................",
+      "................",
+      "..IIIIIIIIIIII..",
+      ".ILLKLLLKLLKLKI.",
+      ".ILGFFFFFFFFEKI.",
+      ".IKLLKLLKLLKKJI.",
+      ".IKGFFFFFFFFEKI.",
+      ".IKLKKLKKLKKJKI.",
+      ".IKJJIKJJIKJJII.",
+      ".IIIJIIIIIJIIII.",
+      ".IJKJJIKJJIKJII.",
+      ".IIIIIJIIIIIJII.",
+      ".IKJJIKJJIJJIII.",
+      "..IIIIIIIIIIII.."
+     ]
+    }
+   ],
+   "anteckning": "Höstacken står direkt på marken som en låg, avlång vedhög, sedd snett uppifrån. Ovansidan är ett brett, ljust fält i senap2 och senap3 med strån som går på längden. Två tunna slanor i jord1 med jord0 i ändarna ligger tvärs över hela längden och sticker ut en punkt utanför höet; de håller det på plats mot vinden. Framkanten är ett smalare, mörkare band i tre staplade lager. Varje knippe syns som en rundad ände i senap2 och senap1, och lagren är förskjutna som tegel med senap0 mellan sig. Konturen är senap0 runt höet. Ljuset kommer uppifrån vänster, så det ljusaste ligger i ovansidans vänstra del och det mörkaste nere till höger. Ingen markskugga är ritad. Granskningen: Rättat: förra versionen var 13 punkter hög, och framkanten (6 rader) var bredare än ovansidan, så stacken liknade en flätad korg eller tunna. Framkantens mönster visade inte heller de tre lagren. Nu är stacken 12 punkter hög (rad 4–15) och 14 punkter bred, med rundade hörn och en kontur i senap0. Ovansidan är ett ljust fält på 5 rader i senap3 och senap2, där kornet blir mörkare åt höger. Två tunna slanor i jord1 ligger på längden, med en glanspunkt i jord2 till vänster och en mörk ände i jord0 till höger. De ligger nu innanför stackens kant och sticker inte ut genom konturen. Framkanten är ett smalare band med tre tydliga lager av knippenas ändar (senap2-glans uppe till vänster, kropp i senap1). Lagren skiljs av rader i senap0, och knippena i mittlagret är förskjutna som i en vedhög. Ljuset kommer från vänster, och ingen mättad ton är använd utöver höets senap.",
+   "ide": "En låg, avlång stapel som en vedhög, nästan hela rutans bredd och ungefär 10 punkter hög: höet ligger i tre staplade lager av sammanpressade knippen, och varje knippe syns som en rundad ände i framkanten med mörkare senap0 mellan lagren. Ovansidan ses snett uppifrån som ett brett, ljust fält i senap2 och senap3 med strån som går på längden. Framkanten är ett smalare band i senap1 och senap0 med knippenas ändar, och längs ovansidan ligger två tunna slanor i jord1 som tyngd mot vinden."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_hostack",
+     "rader": [
+      "...EEEEEEEEEE...",
+      "..EXWXXWXWWXWE..",
+      ".EHGHGGHGGFGGFE.",
+      "EHGHGGHGFGGFGFFE",
+      "EGHGGFGGFGGFGFFE",
+      "EGGFGGFGFGFFGFFE",
+      "EFFFFFFFFFFFFFFE",
+      ".IJIIJIJJIJIIJI.",
+      "LKLKKJKKJKJKJJII",
+      ".KLKKLKJKKJKJJI.",
+      "LKKLKJKKJKJKJJII",
+      ".KJKKJKJKJJKJJI.",
+      "..IJIJIJJIJIJI..",
+      "..FE........FE..",
+      "..FE........FE..",
+      "..EE........EE.."
+     ]
+    }
+   ],
+   "anteckning": "Stacken står på marken på ett golv av slanor som bärs av fyra korta stolpar, så att höet hålls torrt underifrån. Ett pulpettak av trä med grästorv överst vilar på stolparna och ses snett ovanifrån som en lutande yta i jord1 och jord2, med en remsa torv i barr vid bakkanten. Framkanten är ett smalt band i jord1 med kontur i jord0. Under taket fyller höet rummet som en tätt packad kub i senap1 och senap2 med kontur i senap0. Det är mörkare direkt under takfoten och ljusast uppe till vänster, där några senap3-strån sticker ut åt vänster. Golvets framkant är ett mörkt band, och bara de två främre stolparna syns som stumpar på 3 punkter under det. De bakre stolparna döljs av höet. Granskningen: Rättat: (1) Raderna 12–13 var en träsockel i jord (GGGHGG plus ett mörkt band) som gjorde att stacken läste som en kista på ben. Sockeln är borttagen, så att höet går ner till de fyra stolparna. Underkanten är nu ojämn i senap0, och de främre stolparna är stumpar på 3 punkter i jord1 och jord0, med ljussidan till vänster. (2) Formen var osymmetrisk: takets framkant slutade med EE, och höet slutade vid x14 på högersidan men började vid x0 på vänstersidan. Taket och höet är nu spegelsymmetriska, med utstickande strån på båda sidor: senap3 till vänster i ljuset och senap0 till höger i skuggan. (3) Raden under takkanten ligger nu i skugga i senap0 och senap1, så att taket lyfter sig från höet. Taket med torvremsan, tonerna och storleken (en ruta, under kolonistens höjd) behölls.",
+   "ide": "En kantig stack under ett litet skyddstak av näver eller grästorv på fyra korta stolpar, där höet fyller rummet under taket som en fyrkantig, tätt packad kub i senap1 och senap2. Taket ses snett ovanifrån som en lutande yta i jord1 och jord2, kanske med en remsa X och W där torven gror, och de två främre stolparna syns som stumpar på 3–4 punkter i jord0 framför höet. Hö sticker ut i spretiga senap3-strån under takkanten på vänster sida där ljuset träffar, och framkantens skugga i senap0 och jord0 håller silhuetten tydlig mot gräset."
+  }
+ ]
+}

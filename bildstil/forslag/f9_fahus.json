@@ -1,0 +1,140 @@
+{
+ "kort": "f9_fahus",
+ "namn": "Fähuset",
+ "slag": null,
+ "vad": "Steg 9.8.9: fähuset är en liten byggnad där djuren står om vintern: fyra rutor, ritad utan tak som husen, med dörren i söder och en krubba inne vid väggen.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_fahus",
+     "rader": [
+      "..EEEEEEEEEEEEEEEEEEEEEEEEEEEE..",
+      "EEEHHHGHHHHGHHHHGHHHGHHHHGHHGEEE",
+      "EHEHGFGHGGGHGGGGHGGGHGGGGGHGFEGE",
+      "EGEHGFFFGFFFFGFFFFFGFFFGFFGGFEFE",
+      "EHEHHFGGHGGGGHGGGHGGGGGHGGHGFEGE",
+      "EGEHGFFFFGFFFFFGFFFFGFFFFFHGFEFE",
+      "EEEHGFFFEHHHHHGHHHHHHGGEFGHGFEEE",
+      "..EHGFFGEHLKLLKKLKKJKKGEGGGGFE..",
+      "..EHHFFGEHKKLKJKKKJKKJGEGGHGFE..",
+      "..EHGFFGEHHHGHHHGHHHGHGEJGHGFE..",
+      "..EGGFFGEFFFGFFFFFGFFFFEGGHGFE..",
+      "..EHGFFJEEEEEEEEEEEEEEEEGGHGFE..",
+      "..EHGFFGGFEGGJGGGGGGGFEGGGHHFE..",
+      "..EHGFFGGEEGGGGGGGGJGEEGGGHGFE..",
+      "..EHGFFGGEEGGJGGGGGGGEEJGGHGFE..",
+      "..EHGFFGGGGJGGGGGGGGGGJGGGGGFE..",
+      "..EGGFFGGGGGGGGGJGGGGGGGGGHGFE..",
+      "..EHGFFGGGGGGGGGGJGGGGGGJGHGFE..",
+      "..EHHFFGGJGGGGGGGGGGGGGGGGHGFE..",
+      "..EHGFFGGGJGGGGGGGGJGGGGGGHHFE..",
+      "..EHGFFGGGGGGJGGGGGGJGGGGGHGFE..",
+      "..EHGFFGFEEEEGGGGGEEEEGJGGGGFE..",
+      "..EGGFFGGEHGEGJGGGEHGEGGGGHGFE..",
+      "..EHGFFGJEHGEGGGJGEHGEGGJGHGFE..",
+      "..EHHFFGGEHGEGGGGGEHGEGGGGHGFE..",
+      "..EHGFFGGEHGEGGJGGEHGEGGGGHHFE..",
+      "EEEEEEEEEEHGEGJGGGEHGEEEEEEEEEEE",
+      "EHEHHHGHHEHGEGGGGGEHGEHHGHHHGEGE",
+      "EGEGGFGGGEHGEGGJGGEHGEGGGFGGFEFE",
+      "EHEHGHHHGEHGEGGGGGEHGEHGHHHGGEGE",
+      "EFEFFGFFFEHGEGGGGGEHGEFFFGFFFEFE",
+      "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE"
+     ]
+    }
+   ],
+   "anteckning": "Fähuset står på marken och ses snett uppifrån som ett hus utan tak, 32 × 32 punkter. Väggarna är knuttimrade stockar som bildar en fyrkantig ram. Bakväggen i norr syns som ett högre band: överst stockarnas ovansida och under den insidan av två liggande stockar, eftersom man ser in mot den söderifrån. Stockändarna sticker ut i hörnen, både vid norr- och söderväggen. Sidoväggarna är smala band på 3 punkter. De ligger ovanpå bakväggens ändar, så hörnen läses som knutar. Sydväggen är ett lågt band där man ser stockarnas utsida, med en dörröppning på 5 punkter i mitten. Där står två karmstolpar upp och skjuter fem punkter över väggkrönet, förkortade. Golvet syns genom öppningen ut till kanten. Krubban står inne mot norra väggen och ses ovanifrån: en kant av plankor, hö i K och L i tråget, ett mörkare framkantsband och två korta benstumpar. Höet är det enda mättade i bilden. Trät har jordrampen med kornet längs stockarna och kontur i jord0. Golvet är trampad jord i G med F-ådror och J-strån. Det är mörkare än väggarna så att ramen syns, och vänsterväggen skuggar golvet närmast sig. Granskningen: Vinkeln, storleken (32 × 32, två gånger två rutor mot kolonistens 14 × 20), symmetrin, ljuset och idén stämmer, och fähuset syns tydligt på gräset. Jag rättade två saker. Krubbans främre ben var bara 2 punkter höga, så jag förlängde dem till 3 punkter (rad 14, kolumn 9–10 och 21–22), som reglerna kräver för korta stumpar. Golvet hade mörka fläckar av två F-punkter bredvid varandra (raderna 14, 16, 18 och 19), vilket bryter mot regeln om korn utan fläckar. Jag ersatte dem med G och flyttade halmstrået som benet täckte till kolumn 13. Resten är oförändrat.",
+   "ide": "Knuttimrat fähus av liggande stockar, 32 × 32 punkter (2 × 2 rutor) med väggarna som en fyrkantig ram ovanifrån: bakväggen i norr syns som ett högre band på 5–6 punkter med stockändar som sticker ut i hörnen, sidoväggarna är smala band på 3 punkter och sydväggen ett lågt band med en dörröppning på 5 punkter mitt i, där en dörrkarm av två stolpar står upp. Stockarna har jord-ramp (H och G med F, kontur E) och kornet går längs stocken, ljusast uppe till vänster. Inne på golvet av trampad jord och halm (G med enstaka J-strån) står en krubba längs norra väggen: ett smalt tråg av plankor sett ovanifrån med lite hö (K och L) i, det enda mättade på bilden."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_fahus",
+     "rader": [
+      "....QQQQQQQQQQQQQQQQQQQQQQQQ....",
+      "..QQXXWXXXWXXWXXXWXXWXXWXWWWQQ..",
+      ".QXWXXWXXXWXWXXWXXXWXXWXWXWWWVQ.",
+      "QXWTTSQTTTSQTSSQTTSQTTSSQTSQSWWQ",
+      "QXWSSRQSSTSQSSRQSSRQSTSRQSSQRWVQ",
+      "QXWTSQQQQQQQQQQQQQQQQQQQQQQSRWWQ",
+      "QXWSSQTSSQTTSQSTSSQTSSQTSSQSSWWQ",
+      "QXXQQQSSRQSSRQRSRRQSSRQSRRQQQWVQ",
+      "QWXTSQTSQTSSSQTSSQTSSQTSSQQSSXWQ",
+      "QXWSRQSRQSRRRQSRRQSRRQSRRQQSRWWQ",
+      "QXWSSQFEEEEEFGFFGFJFGFFGFFQSSWVQ",
+      "QWXQQQEGHHHGEGHGJGGFGHGGFGQQQXWQ",
+      "QXXTTQEHKLKFEGJGHGnnnnGFGFQTSWWQ",
+      "QXWSSQEGPKKFEHGJGGnqpnGGJFQSRWVQ",
+      "QWXSRQEGKPJFEGHGJGnponFGGFQSSWWQ",
+      "QXWQQQEHKKPFEJGHGGnponGJGFQQQXWQ",
+      "QXXTSQEGPKJFEGGJHGnqonGGFGQSSWVQ",
+      "QXWSSQEGFFFFEHGGJGnponJGGFQSRWWQ",
+      "QWXQQQEHGGGFEGJGHGnponGFGFQQQXWQ",
+      "QXWTSQFEEEEEFFGFGJnnnnFGFFQSSWVQ",
+      "QXWTSQQQQQQQQQGHGGQQQQQQQQQSSWWQ",
+      "QXWTTSQTTSSQTQHGGFQTSSQTSSQSSWVQ",
+      "QWXSSRQSSRSQSQGGFGQSSRQSRRQSRWWQ",
+      "QXXWXXXWXXWXXQGHGFQXWXXWXXWXWWWQ",
+      "QXWXXWXWXXXWXQFGGFQWXXWXWXWWWVWQ",
+      "QWWUWWWUWWUWWQGFGFQWUWWUWWUWWUUQ",
+      "QSSRQSSRRQSSRQFGFFQSRRQSRRQSRRRQ",
+      ".QRSRQRRRSQRRQFFGFQRQRRSRQRRRRQ.",
+      "..QQRRQRRRQRRQEFFEQRQRRRQRRQQQ..",
+      "....QQQQQQQQQQEEEEQQQQQQQQQQ...."
+     ]
+    }
+   ],
+   "anteckning": "Fähuset står som en låg, takfri inhägnad, 32 × 30 punkter (2 × 2 rutor), sett snett uppifrån som husen. Väggkrönet runt om ses ovanifrån. Ytterkanten är ett torvlager i X och W, innerkanten kallmurade gråstenar i T och S med fogar och kontur i Q. Hörnen är avrundade. Bakväggen visar sin insida mot söder som två skift staplade stenar, ljusa upptill och mörkare mot golvet. Sidoväggarnas insidor syns inte från den här vinkeln. Sydväggen visar bara sin yttersida, ett smalt mörkare stenband under en överhäng av torv. Mitt i den finns dörröppningen, där jordgolvet går ut till en tröskel i E. Dörrhalvan är hängd i östra karmen och uppslagen inåt, så den står upp på golvet som en smal skiva av gråa plankor (p, q och o med kontur n). Den lysta västsidan är vänd mot ljuset uppe till vänster. Krubban är en urholkad stock som ligger på golvet längs västväggen. Ovanifrån syns kanterna i G och H, hö i K och P och en enda glanspunkt L. Stockens södra ände syns som en kort ändyta. Golvet är jord i F, G och H med halmstrån i J. Granskningen: Granskad mot reglerna, ingenting behövde rättas. Storleken är 32 × 30 punkter, vilket passar fyra rutor och blir lågt och tjockväggigt bredvid kolonisten (14 × 20). Vinkeln är snett uppifrån: krönen syns ovanifrån med torv ytterst och stenar innerst. Bakväggen visar sin insida som staplade stenar och framväggen sin södra yttersida. Krubban, en urholkad stock med hö i K/L/P, ses ovanifrån och har ett smalt mörkare framband på 2 punkter. Silhuetten är spegelsymmetrisk, och bara ljuset (V och mörkare toner åt höger och nedåt) och kornet skiljer sidorna åt. Stenarna är grå med kontur i Q och syns tydligt på gräset. Dörröppningen sitter mitt i södra väggen och är 4 punkter bred. Dörrhalvan står uppslagen inåt mot östra karmen, och krubban står vid västra väggen på ett golv av jord och halm, som idén säger. Ingen ren vit, ingen kol0 och inga fläckar på ytorna.",
+   "ide": "Fähus med låga väggar av kallmurad sten och torv ovanpå, i en lite avrundad rektangel med mjuka hörn, 32 punkter bred och 30 hög så att det känns tjockväggigt och lågt. Väggkrönet ses ovanifrån som ett brett band på 4 punkter av grå stenar (T och S med kontur Q) med ett tunt lager torv i X och W överst, och bakväggen visar sin insida som ett band av staplade stenar. Dörren i söder är en smal öppning med en stående dörrhalva av gråa plankor (o och p) uppslagen inåt, och vid västra väggen står en krubba av en urholkad stock fylld med gulgrönt hö (K och P) på en golvyta av jord och halm."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_fahus",
+     "rader": [
+      ".EE.....EE.....EE.....EE.....EE.",
+      "EHGE...EHGE...EHGE...EHGE...EHGE",
+      "EGFE...EGFE...EGFE...EGFE...EGFE",
+      "EHFE...EHFE...EHFE...EHFE...EHFE",
+      "EGFEEEEEGFEEEEEGFEEEEEGFEEEEEGFE",
+      "EHFEHGHEHFEGHGEHFEHGHEHFEGHGEHFE",
+      "EGFEGFGEGFEFGFEGFEGFGEGFEFGFEGFE",
+      "EHFEGHGEHFEpqpEHFEGHGEHFEGHFEHFE",
+      "EGFEFGFEGFEopoEGFEFGFEGFEpopEGFE",
+      "EHFEGHGEHFEGFGEHFEoGFEHFEopoEHFE",
+      "EFFEEEEEEEEEEEEEEEEEEEEEEEEEEFFE",
+      "EGFEHGHHGHHGHHEHGEHEEEEEEEEEEGFE",
+      "EFGEGHHGHHGHHGEHFEGEHHHHHHGEEFGE",
+      "EGFEHHGHHpHHGHEHGEHEHKJKLKFEEGFE",
+      "EpoEHGHHGHHGHGEHFEHEHLLLLKFEEFGE",
+      "EGFEGHHGHHGHHHEHGEGEGLJIJLFEEGFE",
+      "EFGEHHGHHGHpHGEHFEHEGKLKJKFEEpoE",
+      "EGFEHGHHGHHGHHEHGEHEGGGGGGFEEGFE",
+      "EFGEGHHpHHGHHGEHFEGEFFFFFFFEEFGE",
+      "EGFEHHGHHGHHGHEHGEHEFFFFFFFEEGFE",
+      "EEEEHGHHGHHGHHEHFEHEEEEEEEEEEEEE",
+      "EHGEGHHGHHGHHGEGFEGEFEHGHEFEEHGE",
+      "EGFEHHGHHGHHpHEFFEHEFEGHGEFEEGFE",
+      "EEEEHGHHGHHGHHEEEEHEEEHGHEEEEEEE",
+      "EFGEGHHGHHGHHGHHGHHGHHGHHGHHEFGE",
+      "EGFEHHGHHEEEEEEEEEEEEEEGHHGHEGFE",
+      "EpoEHGHpHEHHHGHHHGHHHGEHHGHHEFGE",
+      "EFGEGHHGHEFFFFFFFFFFFFEHGHHGEGFE",
+      "EGFEHHGHHEEEEEEEEEEEEEEGHHGHEpoE",
+      "EFGEHGHHGEHGEHHGHHGEHGEHHGHHEFGE",
+      "EGFEGHHGHEHFEGHHpHHEHFEHGHHGEGFE",
+      "EHGEEEEEEEHGEHHGHHGEHGEEEEEEEHGE",
+      "EGFEHGFGFEHFEGHHGHHEHFEGFGFGEGFE",
+      "EFFEFGFGFEGFEHHGHHGEGFEFGpoFEFFE",
+      "EFFEFFGFFEFFEGHHGHHEFFEFGFFFEFFE",
+      "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE"
+     ]
+    }
+   ],
+   "anteckning": "Fähuset är 32 × 36 punkter, alltså 2 × 2 rutor golv plus stolptopparna. Det står på marken utan tak, så man ser ner i det snett ovanifrån. Väggarna syns ovanifrån som tunna band. Den norra flätan visar också sin insida mot betraktaren. Den södra visar sin yttersida som ett lågt band med flätan i G och F och flagnad lerklining i p och o. De runda stammarna i hörnen och mellan dem står upp förkortade, 4–5 punkter över bakväggens fläta, med ljusare snittyta överst. Ljuset kommer från vänster, så den vänstra sidan är ljus och den högra mörk. I söder är dörren en bred öppning mellan två högre stolpar, och överliggaren ligger högst och skymmer golvet bakom. Golvet av trampad jord i F och G delas på mitten av en låg bås-bom, ritad ovanifrån, med en stump i södra änden. Mot östra väggen står krubban, en grund plankram sedd uppifrån. I den syns höet i K och L och en liten kärve med band i I. Krubban har ett mörkare framkantsband och bara de två främre benen som korta stumpar. Konturen är jord0 runt allt trä. Granskningen: Rättat: i version 3 var golvet fyllt med samma flätmönster som väggarna, och framväggen var ritad som en hög fasad rakt från sidan. Fähuset såg därför ut som en stängd låda och inte som en takfri byggnad sedd snett uppifrån. Nu är sidoväggarna och framväggen tunna band ovanifrån, 4 punkter breda, med flätmönster i G och F och lerfläckar i p och o. Hörnstolparna och en stolpe mitt på varje sida syns ovanifrån. Bakväggen med sina förkortade stolpar som står upp 4 punkter över flätan är kvar. Golvet är upptrampad jord i H och G med enstaka strå i p, så att det skiljer sig från väggarna och är ljusare än gräset. Bås-bommen är en låg stång i nord–sydlig riktning mitt i rummet som slutar i en kort stump. Krubban står i nordöstra hörnet mot östra väggen. Den är en låda av plankor sedd ovanifrån med hö i K och L och en liten kärve med band (I och J), har en framkant på 2 punkter i F och två korta ben. Dörren i söder är en 6 punkter bred öppning mellan två högre stolpar med en överliggare ovanför, och golvet syns genom öppningen. Storleken är fyra rutor, 32 punkter bred och 36 hög med stolparna, så den passar mot kolonisten. Framväggen är spegelsymmetrisk kring dörren.",
+   "ide": "Lätt fähus av flätverk: stolpar av runda trästammar i hörnen och var åttonde punkt, med vidjor flätade mellan dem och lerklining som flagnat i fläckar, så att väggarna ses ovanifrån som tunna band på 2–3 punkter med ett tydligt flätmönster i G och F och lerfält i p och o. Bakväggens stolpar står upp förkortade, 4–5 punkter högre än flätan, och dörren i söder är en bred öppning mellan två högre stolpar med en överliggare. Golvet inne är delat av en låg bås-bom på mitten, och mot östra väggen står en krubba på fyra korta ben, en grund lådram av plankor där höet (K och L) och en liten kärve syns ovanifrån."
+  }
+ ]
+}

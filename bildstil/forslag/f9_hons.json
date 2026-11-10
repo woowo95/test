@@ -1,0 +1,108 @@
+{
+ "kort": "f9_hons",
+ "namn": "Höns",
+ "slag": null,
+ "vad": "Steg 9.8.10: hönsen är en liten flock på två eller tre fåglar som går fritt vid byn och ger ägg. Bilden visar flocken på gräs.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_hons",
+     "rader": [
+      "................................",
+      "................................",
+      "................................",
+      "..........tt....................",
+      "...oo....owqo...................",
+      "...oqo...oqkK........tt.........",
+      "...oqpooooqo........EHHE....EE..",
+      "...oqwqqpqpo........KkHE...EHE..",
+      "...oqqqpqppoWNWNWNW.WEHEEEEGHE..",
+      "....ooppppoNOONONONWNEHHGHGHGE..",
+      "....W.ooooNOOWOONOONOEHGGHGGFE..",
+      "..WNONJONJWOONOOONOONOEGGGFEE.W.",
+      ".WNOONOWOONOOONONOOWNOOEEEEWNW..",
+      "WNOONOONOWOttOONOONWOONJNOJNWNW.",
+      "NOONOWOONOoqwoONOWooOONONNWONNW.",
+      "WONOONOONOKkqoOONoqoOWNONONNWNWN",
+      ".NOONOWONOOoqoooopqoNONNWONNWNW.",
+      "WNONOONOWNOoqwqqpqpoNONNWNNWNW..",
+      ".WNOONONOOWoqqpqpppoNONNWNNWNW..",
+      "..WNONOWONONoppppooNONWNNWNW.W..",
+      "...W.NONNWONOooooONNWNNWNWW.W...",
+      ".....W.WNNWNOJNWJNWNWNNW.W......",
+      ".......W.WNWNNWNWWNW.W..........",
+      "...........W.WNW.W.............."
+     ]
+    }
+   ],
+   "anteckning": "Tre höns står på marken i en lös triangel på en oval grästuva. De ses snett ovanifrån, så ryggen och den uppresta stjärten syns mer än bröstet. Den övre vänstra ljusa hönan går åt höger, och den rödbruna och den nedre ljusa går åt vänster. Varje höna har en droppformad kropp med stjärten uppstickande bak och ett litet huvud fram med en näbb i senap2 och ett öga på en punkt kol0. Kammen är två punkter rost2 och är det enda mättade. Två korta ben i senap1 står på gräset, så fötterna hamnar på tuvan. Ljuset kommer uppifrån vänster: ben3 och jord3 sitter på huvud och rygg, de mörkare tonerna nertill och bak. Konturen är ben0 respektive jord0. Tuvan är oliv2, oliv1 och barr2 med en kornig, trasig kant och mörknar mot nedre högra hörnet, så att fåglarna ligger ljusare ovanpå. Granskningen: Granskad mot reglerna; inget behövde rättas, så versionen är oförändrad. Storleken stämmer: bilden är 32 × 24 punkter, och varje höna är ungefär 9–10 × 8–9 punkter, alltså tydligt mindre än kolonisten (14 × 20) och rimlig för en höna. Vinkeln är snett uppifrån: ryggen och den upprests stjärten syns mer än bröstet, och bara korta ben i senap1 sticker ut under kropparna. Konturerna följer materialet: ben0 runt de ljusa hönorna och jord0 runt den rödbruna, aldrig svart. Kol0 finns bara i ögonen, som verkligen är svarta. Det enda mättade är kammarna i rost2, två punkter per höna, plus näbben i senap2. Ljuset kommer från övre vänstra hörnet, med ben3 och jord3 högst upp till vänster på kropparna. Hönorna är ljusare än tuvan i oliv2, oliv1 och barr2, och tuvan har kornig kant, så flocken syns tydligt på gräset. Flocken står i en lös triangel, en höna vänd åt höger och två åt vänster, som i idén. Inget bärs, och symmetrikravet gäller inte levande djur i rörelse.",
+   "ide": "Tre höns i en lös triangel på en oval grästuva, cirka 32 × 24 punkter, sedda snett ovanifrån så att ryggen och stjärten syns mer än bröstet: varje höna är en droppformad kropp på ungefär 9 × 8 punkter med upprest stjärt bak, litet huvud fram och två korta ben i senap1. Två hönor är ljusa i ben1–ben3 med kontur i ben0 och en är rödbrun i jord1–jord3 med kontur i jord0. Den lilla kammen är det enda mättade, en eller två punkter i rost2, ögat är en punkt kol0 och gräset under är en tuva i oliv2, oliv1 och barr2 med kornig kant så att fåglarna ligger ljusare ovanpå."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_hons",
+     "rader": [
+      "......tt..................o.",
+      ".....EHGE................owo",
+      ".....EHkGK...............oqo",
+      "EE...EGtE.............oooqpo",
+      "EHEEEHGGE...........ooqwqqpo",
+      "EGHHHGHGFE.........owqqqqppo",
+      ".EGHGGFFFE........tqqpqpppo.",
+      "..EEEEEEE.........tqkoooooo.",
+      ".X..J..J...EEEEEEE..oK.J..J.X",
+      "XOXOJJXJJOEFqFFFqFEOXOJJXJJOX",
+      "OPOXOXPOXOEwqqFwqqEOXPOXOPOXO",
+      "WOXOPOXOWOEqqpFqqpEXWOXOPOXOW",
+      "XWOXWOXWOXGFpFFFpFGOXWOXWOXWX",
+      ".WXWNWXW.WXOGGGGGOXW.WXWNWXW."
+     ]
+    }
+   ],
+   "anteckning": "Två höns på en flack grässtrimma, cirka 33 × 18 punkter. Den vänstra är en brun höna i jordtoner med kontur i jord0. Hon står upprätt och vaksam, vänd åt höger. Huvudet sitter högt med kam och slör i rost2 och näbb i senap, och stjärten pekar bakåt. Kroppen bärs av två senapsfärgade ben ner i gräset, så hela hennes silhuett blir en kulle. Den högra är en ljus höna i bentoner med kontur i ben0. Hon pickar, vänd åt vänster: halsen går snett nedåt och huvudet ligger nere vid gräset med kammen framåt och näbben i gräset. Stjärten står rakt upp som en kil. Mellan dem ligger en liten grop i jord. I den ligger två ägg ovanifrån som 3 × 4-ovaler i ben2–ben3, med en glanspunkt var och lite förskjutna mot varandra. De är det ljusaste mot den mörka gropen, så de syns först. Ljuset kommer uppifrån vänster, så de ljusaste fjädrarna ligger på ryggarnas övre vänstra del. Gräset är i oliv och barr i mellantoner och ligger bakom fötterna. Granskningen: Rättat: 1) Storleken. Hönsen var omkring 15 punkter höga och nådde kolonisten (14 × 20) till bröstet. De är nu omkring 10 × 10 punkter, ungefär halva kolonistens höjd. Det är fortfarande överdrivet för läsbarhetens skull men ligger närmare de godkända sakerna. Hela bilden är nu 29 × 14 punkter med samma upplägg: den vaksamma bruna hönan till vänster, en vit höna som pickar med stjärten rakt upp till höger och gropen med äggen mellan dem. 2) Äggen. De är nu två likadana, spegelsymmetriska ovaler på 3 × 4 punkter i ben2 med ben1 nere till höger. Glanspunkten i ben3 sitter uppe till vänster, som ljuset kräver, och inte mitt i ägget. Äggen ligger fritt på jord1 i gropen så att de syns först. Gropens bakkant är jord0, framkanten ljusare jord2. 3) Konturen. Den vänstra hönans buk saknade kontur i två punkter (jord1). Den är nu sluten i jord0. Kammar och slörar i rost2, näbbar i senap2, ögon i kol0 och ben i senap1 står kvar. Gräset är en flack strimma i oliv och barr med de främre fötterna i gräset.",
+   "ide": "En låg och bred bild, cirka 32 × 18 punkter, med två höns i olika hållning: den vänstra står hög och vaksam med huvudet uppe och stjärten bakåt, den högra pickar med huvudet nere i gräset och stjärten rakt upp, så att silhuetten blir en kulle och en kil bredvid varandra. Mellan dem ligger i en liten grop i gräset två ägg ovanifrån som ovaler på 3 × 4 punkter i ben2–ben3 med en glanspunkt, eftersom äggen är det man tar och därför ska synas först. Fjädrarna är ben- och jordtoner med kontur i materialets mörkaste ton, kammar i rost2 och gräset är en flack strimma i oliv och barr."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_hons",
+     "rader": [
+      "..........WOOWOOOW..........",
+      ".......WOOOWOOOOWOOOW.......",
+      "......WOOWOOOWOOOWOOtt......",
+      "....WOOOWOOOWOOoOWOowwoW....",
+      "...WOOOOWOOOWOowoOOowkoKW...",
+      "..WOOWOOOKOOWOoqwqwwwqtOOW..",
+      "..WOOOWOOOOWOOoqwqwqqpoOWO..",
+      ".WOOOWOttOOOWOOoqpqpppoOWOO.",
+      ".WOOOWEHGEOWOOOWooooooOOWOO.",
+      ".WOOKHkHGEEEEEEEEEOOJOWOOOW.",
+      "OWOOOEtGHGLKLKJKJFEEOOWOOOWO",
+      "WOOKOOWEKHGEEEEEEGEJEOOOWOOW",
+      "OOWOOOELKKHHHHGHGEJKJEOOWOOW",
+      "WOOOWOEKJEHHGHGGGFEJIEOOOWOO",
+      "OOWKOOEJKEHGHGGFGFEKJEWOOWOO",
+      "OWOOOWEKJEGHGGFGFFEJIEOOWOOO",
+      "WOOWOOEJKJEEEEEEEEJIJEOWOKOW",
+      "OOOWOOOEKJKJJKJJIJIooOOOWOOW",
+      "WOOWOOOOEEKJKJJIJIowqoWOOOWO",
+      "OOWOOWttOOEEEEEEEEoqpoOOWOOO",
+      ".WOOOowwoOOWOOWOOOOooOWOOWO.",
+      "..WOKokwoOOowoOWOOKOOWOOWO..",
+      "..OOWtwqwwwqqoOOWOOOWOOWOO..",
+      "...WOowqwqqqpoOOWOOOKOOWO...",
+      "....OoqqpqppoWOOOWOOWOOO....",
+      "......ooooooOWOOWOOOWO......",
+      ".......JOWJOOOWOOWOOO.......",
+      "..........WOOOWOOW.........."
+     ]
+    }
+   ],
+   "anteckning": "Sett mer uppifrån, cirka 28 × 28 punkter på en rund gräsfläck i oliv2 och barr2. I mitten ligger hönan platt och ruvar i ett rede av halm i senap1–senap2 med jord0-kontur. Framkanten på redet är ett mörkare band i senap0. Eftersom hon trycker sig ner i redet syns bara den runda ryggen i jordtoner, huvudet med kam, öga och näbb fram till vänster och stjärtspetsen som sticker ut över redets högra kant. Ett ägg i ben3 tittar fram under henne vid den främre högra kanten. Två mindre ljusa höns i ben går runt redet åt var sitt håll, så att flocken blir en sluten ring: den ena uppe till höger åt höger, den andra nere till vänster åt vänster. Av de gående hönsen syns rygg, stjärt och huvud ovanifrån, och benen bara som korta stumpar under kroppen. Sädeskorn i senap2 ligger strödda i gräset. Ljuset kommer uppifrån vänster, och bara kammarna har den mättade rosten. Granskningen: Rättat: den ruvande hönan var mycket större än de två fria hönsen (kroppen ungefär 13 × 9 mot 9 × 6), vilket bryter logiken eftersom det är samma fågel. Mitten är omritad. Hönan är nu en rund kudde på cirka 10 × 6 punkter, nästan lika stor som de andra, och halmredet runt henne är 2–3 punkter brett. Redet är spegelsymmetriskt kring mittlinjen, har en sluten kontur i jord0 och en synlig halmkant även bakom och framför hönan. Framkanten är ett band på 2 rader, vilket passar vinkeln snett uppifrån. Halmen går från senap3 uppe till vänster till senap0 nere till höger. Huvudet med kam, öga och näbb sitter nu vid kroppens vänstra framkant med en hals ner i kroppen. Stjärtspetsen, som saknades enligt idén, tittar upp vid bakkanten till höger. Ägget i ben3 ligger kvar över redets högra framkant och är symmetriskt, 4 punkter högt. Kammen flyttades ner en rad. De två fria hönsen, gräsringen och sädeskornen är oförändrade.",
+   "ide": "En rund komposition, cirka 28 × 28 punkter, sedd mer uppifrån: i mitten sitter en ruvande höna platt i ett rede av halm i senap1–senap2 med jord0-kontur, så att hon blir en rund kudde där bara rygg, huvud och stjärtspets syns. Runt redet går två mindre höns i en båge åt var sitt håll, så att de tillsammans med redet bildar en ring och silhuetten blir en sluten cirkel. Ur redets kant tittar ett ägg fram i ben3 och några sädeskorn i senap2 ligger strödda i gräset i oliv2 och barr2."
+  }
+ ]
+}

@@ -18,6 +18,8 @@
       kontroller: ['huvudet', 'allaHall'], text: 'Det man bär sitter som det logiskt gör: remmar och strängar går runt kroppen, aldrig genom huvudet eller ansiktet, och det visas på kolonisten i alla fyra riktningar och i porträttet.' },
     { id: 'plagg', namn: 'Plagg', ord: /kappa|mantel|sjal|tunika|skjorta|plagg|tröja|rock\b|kjol|byxor|klänning/i, kontroller: [], halsen: true,
       text: 'Ett plagg får gå upp till halsen: kragen och sjalen täcker halsen och hakan, men aldrig ansiktet.' },
+    { id: 'mark', namn: 'Mark', ord: /^(hage|hagen|äng|ängen|slåtteräng|slåtterängen|åker|åkern|fält|fältet|ruta|rutan)$/i, kontroller: [], utom: ['olika'],
+      text: 'En markruta fyller hela rutan, så versionerna skiljer sig i mönstret och inte i formen.' },
     { id: 'huvud', namn: 'På huvudet', ord: /huva|hatt|mössa|hjälm|luva|bonad|krona|krans|pannband|ögonlapp/i, kontroller: [], utom: ['huvudet'],
       text: 'Det som sitter på huvudet får täcka huvudet.' },
   ];
@@ -223,7 +225,7 @@
         if (n === 0 || saknas.length) ut.push({ kontroll: 'allaHall', version: n + 1, ok: !saknas.length, text: saknas.length ? 'Visas inte på kolonisten ' + saknas.join(', ') + '.' : 'Visas på kolonisten åt alla håll och i porträttet.' });
       }
     });
-    if (ritade.length > 1 && s.typ !== 'janej') { const o = olika(ritade); ut.push(...o.map(x => ({ kontroll: 'olika', ...x }))); if (!o.length) ut.push({ kontroll: 'olika', version: 0, ok: true, text: 'Versionerna skiljer sig i form.' }); }
+    if (ritade.length > 1 && s.typ !== 'janej' && !slag.some(x => (x.utom || []).includes('olika'))) { const o = olika(ritade); ut.push(...o.map(x => ({ kontroll: 'olika', ...x }))); if (!o.length) ut.push({ kontroll: 'olika', version: 0, ok: true, text: 'Versionerna skiljer sig i form.' }); }
     return { slag: slag.map(x => x.id), resultat: ut };
   }
   // en enda bild i API:ts tecken (bilder.mjs och rita.mjs): kontrollerna som gäller den, utan olika

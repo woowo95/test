@@ -1,0 +1,93 @@
+{
+ "kort": "f9_ull",
+ "namn": "Ull",
+ "slag": null,
+ "vad": "Steg 9.8.5: ull, ett nytt material som klipps av fåren. Av ullen spinns tråd (9.8.14). Bilden visar den bredvid repet, som jämförelse.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_ull",
+     "rader": [
+      "oo..................oo..............",
+      "owo..oo.oooooo.oo..opo..............",
+      ".owoowqowqwqqwoqpoopo...............",
+      ".owqwwqwqwqqwqpqqpqpo.....EEEEEE...",
+      "owqwqwwqwqqwqqpqpqpqpo...EHGJHGJGFE.",
+      ".owwqwqwqqwqpqqpqpqpo...EHJGEEEEGJFE",
+      "owqwwqwqqwqqpqqpqppqpo..EGJE....EJFE",
+      "oqwqwqqwqpqqpqpqpppqpo..EHGE....EGFE",
+      ".oqwqqwqqpqqpqpqppppo...EGJFEEEEFJFE",
+      "oqqwqpqqpqqpqpqpqppppo...EFJGFJGFJE.",
+      ".opqqpqqpqpqpqppqpppo.....EFJFFJFE..",
+      ".opooqpopqpqppoqpoopo......EEEEEE...",
+      "oqo..oo.oooooo.oo..opo..............",
+      "oo..................oo.............."
+     ]
+    }
+   ],
+   "anteckning": "Fällen ligger platt på marken med ullsidan upp och ses snett ovanifrån som en låg oval. De fyra hörnflikarna är där fårets ben satt, och formen är spegelsymmetrisk. Kanten har små knottriga lockar i ben0. Ullen ljusnar mot övre vänstra hörnet (ben3) och mörknar mot nedre högra (ben1), med krusigt korn. Repet ligger hoprullat platt bredvid som två varv runt ett litet hål, med kontur i jord0 och en snodd rand i senap1. Det är mörkt och tunt mot den ljusa, fluffiga ullen, så skillnaden syns direkt. Granskningen: Rättat: raderna var olika långa (35 och 36 tecken), så bilden blev sned. Nu är alla rader 36 tecken. Fällens ovansida och undersida hade ben0-konturen blandad med ullen i en rörig rad. Fällen är omritad till 22 × 14 med en ren, spegelsymmetrisk silhuett: fyra diagonala benflikar i hörnen, knottriga lockar på över- och underkanten och kontur i ben0 längs den ojämna sidan. Ullen är ben1–ben3 med krusigt korn, ljusast uppe till vänster och mest ben1 nere till höger. Repet såg ut som en fyrkantig låda med mörk botten. Det är nu en symmetrisk, platt hoprullad ring på 12 × 9 med ett genomskinligt hål där gräset syns. Den har en snodd senap1-rand i jord1–jord3, kontur i jord0 och en mörkare framkant. Storleken mot kolonisten och vinkeln snett uppifrån behölls.",
+   "ide": "En hel nyklippt fäll som ligger utbredd på marken, sedd snett ovanifrån som en låg, oregelbunden oval på cirka 22 × 14 punkter med en spegelsymmetrisk form, där två utdragna flikar fram och bak antyder fårets ben och kanten är knottrig av små lockar. Ullen ritas i ben1–ben3 med korn av små krusiga bågar, ljusast uppe till vänster, och konturen i ben0. Till höger ligger repet som en platt hoprullad ring på cirka 12 × 9 punkter i jord1–jord3 med en snodd rand av senap1 och kontur i jord0, så att den fluffiga, ljusa ullen och det tunna, mörka repet syns tydligt bredvid varandra."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "ull",
+     "rader": [
+      "....oooooooooo....",
+      "..oowqwwqwwqwqoo..",
+      ".oqpppqwqwqwwqqqo.",
+      ".opqwqpwqwwqwqqqo.",
+      "oqpqpqpqwqwqwqqqpo",
+      "oqpqqpqqqwqqwqqpqo",
+      "opqppqqpppqpppqppo",
+      ".opppqppppppqpppo.",
+      "..ooppppppppppoo..",
+      "....oooooooooo...."
+     ]
+    },
+    {
+     "namn": "rep",
+     "rader": [
+      ".EEEEE........",
+      "ELKJKJEE......",
+      ".EEEEKJKEE....",
+      ".....EEEJKJEKE",
+      "........EKJKJE",
+      ".........EEEE."
+     ]
+    }
+   ],
+   "anteckning": "Ullen är en nyklippt fäll, tätt hoprullad och lagd ner på marken som en låg cylinder på 18 × 10 punkter. Den ses snett uppifrån: ovansidan är det breda fältet i ben2–ben3, och framsidan är ett smalare band i ben1 nertill. Konturen är ben0 och knölig för att se ullig ut. Silhuetten är spegelsymmetrisk. Det enda som skiljer sidorna åt är att spiralen i rullens gavel anas till vänster, med ben1-linjer kring en ben0-punkt i mitten, och att ljuset kommer från övre vänstra hörnet. Repet ligger löst på marken bredvid som en utsträckt S-slinga på 14 × 6 punkter. Det är bara en punkt tjockt, med vridningen i växlande senap1/senap2, en glanspunkt i senap3 längst upp till vänster och kontur i jord0. Rullen och strängen ligger sida vid sida, så att man ser att tråden spinns ur ullen. Ingen av dem står eller bärs; båda ligger platt, och därför syns ovansidan mest. Granskningen: Rättat: rad 8 i ullen hade 15 punkter innanför kanten och slutade en punkt för tidigt till höger. Silhuetten var därför inte spegelsymmetrisk; nu har raden ett 14 punkter brett band som de övriga raderna. Spiralgaveln till vänster var bara brus med en ensam mörk prick i ben0 och gjorde att rullen liknade en sten. Den är nu en tydlig liten spiral i ben1 på ben2-grund, utan mörk prick, så att den läses som en hoprullad fäll. Övergången mellan ovansida och framsida på rad 6 är lite renare. Oförändrat: storleken (18 × 10) är rimlig mot kolonisten, vinkeln är snett uppifrån, ljuset kommer uppifrån vänster (ben3/ben2 uppe, ben1 nere) och konturen i ben0 syns på gräset. Repet följer idén och är oförändrat.",
+   "ide": "En tätt hoprullad fäll som ligger ner som en låg, liggande cylinder på cirka 18 × 10 punkter och är spegelsymmetrisk kring mitten. Ovansidan och den spiralrullade gaveln till vänster syns ovanifrån i ben2–ben3, och framsidan är ett smalare band i ben1 med kontur i ben0. Repet ligger bredvid som en lös, utsträckt slinga i S-form på cirka 14 × 6 punkter i jord- och senaptoner, smalt och vridet, så att jämförelsen blir rulle mot sträng."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_ull",
+     "rader": [
+      ".....oo..oo.................",
+      "....owwooqqo................",
+      "...owwwwqqqqo...............",
+      "..owwwqwqqqqpo..............",
+      ".owwqwqqqqqqppo....EEEEEE...",
+      "owwqqqqqqqqqpppo.EHHGGGGFFE.",
+      ".owqqqpqqqqqppo..EHGFEEFGFE.",
+      ".oqqqqqqqqpqppo..EGHGFFGGFE.",
+      "oqqqqqqqqqpqpppo.EFGGGGGFFE.",
+      ".oqqpqqqqqpqppo..EGGGGGGFFE.",
+      ".opqqqqqqpqpppo..EFFFFFFFEE.",
+      "..oppqpqppppoo...EGGGGGFFFE.",
+      "...oooppppooo.....EEEEGEEE..",
+      "..oo..oooo.oo.........EGE...",
+      ".oqpo.....oqqo.......EGE....",
+      "..oo.......oo..............."
+     ]
+    }
+   ],
+   "anteckning": "Ullen ligger som en lös, mjuk kupol direkt på marken. Den bärs inte och har inget stöd, så den sjunker ihop något och blir bredast nertill. Snett ovanifrån syns toppen som den ljusaste delen. Därför sitter ben3 uppe till vänster där ljuset träffar, ben2 över mitten och ben1 i skuggan nere till höger. Konturen är ben0, och ytterkanten är tovig med tussar som sticker ut lika på båda sidor. Två lösa tussar har ramlat ner framför högen. Repet står bredvid som jämförelse, hopvirat till en tät rulle. Ovanifrån syns toppen med spiralvarven och det mörka hålet i mitten. Framsidan är ett smalt band av liggande varv som växlar mellan jord1 och jord2. Konturen är jord0. Den lösa änden kommer ut nertill i framkanten och slingrar sig fram över marken. Rullen är något lägre och mörkare än ullen, så att den ljusa ullen syns först. Granskningen: Granskat mot reglerna. Storleken stämmer: ullhögen är cirka 16 × 13 punkter och repet 10 × 11, alltså mindre än kolonisten (14 × 20). Vinkeln är snett uppifrån, kupolen är spegelsymmetrisk och ljuset faller från övre vänstra hörnet (ben3 till ben2 till ben1). Ullen är mycket ljusare än gräset och syns tydligt. Repet behålls oförändrat, eftersom det följer spelets godkända bild. Två fel är rättade. 1) Kupolens underkant saknade kontur: de fyra ben1-punkterna i nedersta raden låg mot det genomskinliga. Jag lade till en rad ben0-kontur (oooo) under dem, så att högen är sluten runt om. 2) De lösa tussarna framför saknade kontur ovanpå och klistrade ihop med högens kant. De är flyttade en rad ner och ritade som slutna små tussar med ben0 runt om (oo / oqpo / oo), en på var sida framför högen. Bilden blir därför en rad högre (16 rader). Repets lösa ände och resten av bilden är oförändrade.",
+   "ide": "En hög, mjuk hög av lösa ulltussar, som en kupol eller kort kägla på cirka 14 × 13 punkter, där enskilda tussar sticker ut i kanten och ett par lösa tussar ligger på marken framför. Kupolen är grovt spegelsymmetrisk, med ben3 och en enda glanspunkt i ben3 uppe till vänster, ben2 i mitten och ben1 nere till höger, samt kontur i ben0. Bredvid står repet hopvirat i en hög, tät rulle, sedd snett ovanifrån som en liten trumma på cirka 10 × 9 punkter med varvlinjer i jord1–jord2 och en lös ände som hänger ut framåt."
+  }
+ ]
+}

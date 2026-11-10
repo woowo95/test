@@ -1,0 +1,75 @@
+{
+ "kort": "f9_sophog",
+ "namn": "Sophögen",
+ "slag": null,
+ "vad": "Steg 9.7.5: sophögen ligger vid byns kant och samlar slaktrens, växtrester och annat som ruttnar eller bränns. Här en ruta med blandat avfall på marken.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_sophog",
+     "rader": [
+      ".....EEE..EEEq..",
+      "...EEHLHGGGHGpE.",
+      "..EHHKJHGHGOGoGE",
+      ".EHGOHGstsGHJGFE",
+      "EHGPGHsuttsGHGFE",
+      "EGHJGOGsrsGJOGFE",
+      "qpGHGKGGHGOGGFFE",
+      "EoFGFJFGFGFOFFFE",
+      ".EFFGFFNFFFGFFE.",
+      "..EFFFFFFFFFEE..",
+      "...EEEEEEEEE...."
+     ]
+    }
+   ],
+   "anteckning": "Sophögen ligger direkt på marken. Ingen står eller bär den, så den ses som allt annat snett ovanifrån. Toppen (raderna 1–6) är en ljus platå i jord2 och jord3 med gulnade strån i senap och växtrester i oliv. Framsidan (raderna 7–9) är en mörkare sluttning i jord1 med inslag av jord0, och jord0 går runt som kontur. Ljuset kommer från vänster, så vänster sida är ljusast och höger sida mörkast i jord1. Två benbitar i ben2, ben1 och ben0 sticker ut ur högen, en uppe till höger och en nere vid vänsterkanten. Mitt på toppen ligger slaktrenset i rost1 och rost2 med en enda glanspunkt i rost3. Det är det enda mättade i bilden. Högen är 16 × 11 punkter, är ojämn i nederkanten och saknar medvetet symmetri. Granskningen: Version 1 bröt mot idén. Högen var ett nästan rektangulärt, spegelsymmetriskt block med rak överkant och raka sidor och läste som en kaka eller en matta, inte som en kupol. Jag ritade om silhuetten som en låg, ojämn kupol på 16 × 11 punkter med en knölig och osymmetrisk kant: två pucklar uppe, en bredare vänstersida och en smalare botten åt vänster. Toppen är en ljusare platå i jord3 och jord2 med gulnad halm i senap1–3 och växtrester i oliv2 och oliv3. Framsluttningen är ett band på 3 rader i jord1 med jord0 som kontur, så att ytan ses ovanifrån och framkanten mörkare, med ljuset uppe till vänster. Benbitarna sticker nu ut ur högen: en i ben2/ben1 uppe till höger och en i ben2/ben1/ben0 vid vänsterkanten, så att de bryter silhuetten. Slaktrenset mitt på toppen i rost1 och rost2, med en punkt rost3 som våt glans och rost0 i mitten, är det enda mättade. Storleken mot kolonisten och synligheten mot gräset är oförändrat bra.",
+   "ide": "En låg, rund kupolhög som fyller nästan hela rutan, ungefär 15 × 11 punkter, sedd snett ovanifrån så att toppen är en ljusare platå och framsidan en mörkare sluttning i jord1 och jord0 med jord0 som kontur. Ytan är blandad: gulnade halmstrån och växtrester i senap1 och oliv2 och ett par ljusa benbitar i ben2 och ben1 som sticker ut ur högen. Mitt på toppen ligger lite rött slaktrens i rost1 och rost2 som det enda mättade, och högen är ojämn i kanten men har ingen symmetri, eftersom en sophög inte har det."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_sophog",
+     "rader": [
+      "..QQQQ...M..M...",
+      ".QTSTSQ.MJMMJM..",
+      "QTSlSSRQMNIMNIM.",
+      "QSlSlRRQMINNINM.",
+      ".QQQQQQFGMMMMM..",
+      "..EFGoooooGoooE.",
+      ".EFGoqqpqoFoqotE",
+      ".EGFoooooGFooots",
+      "..EFGFGFFGFGFtsE",
+      "...EEFEEFEEEEE.."
+     ]
+    }
+   ],
+   "anteckning": "Sophögen ligger platt på marken och ses snett ovanifrån som en avlång fläck som rinner ut åt höger och nedåt. Uppe till vänster ligger askfläcken i skiffer2, med svartbrända rester i kol1 och en enda ljusare punkt i skiffer3 mot ljuset. Konturen är skiffer1. Uppe till höger ligger en diagonal kärve vissna stjälkar och rovblast i oliv1 och senap0, med oliv2 som ljus kant och oliv0 som kontur. Nedanför ligger kotor och ett revben i ben1 och ben2 med ben0 som kontur. Intill benen sitter ett litet stänk av rost2 och rost1, det enda mättade i bilden, eftersom slaktrenset ska synas. Under klumparna ligger ruttnande jord i jord1 och jord2. Framkanten är ett smalt band på 2 punkter i jord0 och jord1, så högen bara är ett par punkter tjock. Granskningen: Version 2 läste som ett avlångt block, nästan en stock eller en bänk. Benraden var en jämn list och de två jordraderna under bildade en tjock framsida. Det följde inte idén om en platt, utspridd hög. Jag ritade om bilden till 16 × 10 punkter med tre separata klumpar. Uppe till vänster ligger en askfläck i skiffer1 och skiffer2 med svartbrända prickar i kol1. Den har skiffer0 som kontur och skiffer3 som ljuskant uppe till vänster. Uppe till höger ligger en kärve vissna stjälkar i oliv1 och senap0 med oliv0 som kontur och toppar i senap1. Nedtill ligger ett ben och en kota i ben1 och ben2 med ben0 som kontur, och intill dem ett rost2-stänk som mörknar till rost1 nere till höger. Klumparna vilar på en oregelbunden jordfläck i jord1 och jord2 med jord0 som kontur. Fläcken breder ut sig åt höger och nedåt och har bara ett smalt framkantsband. Ljuset kommer uppifrån vänster i varje klump. Bilden är lägre än kolonisten och ligger platt på marken. Jag har inte ritat någon skugga.",
+   "ide": "En utspridd, platt och oregelbunden hög som rinner ut åt höger och nedåt som en avlång fläck, cirka 16 × 9 punkter och bara 2–3 punkter tjock vid framkanten. Den består av separata, läsbara klumpar ovanifrån: en grå askfläck med svartbrända rester i skiffer1, skiffer2 och kol1 där man bränt skräp, en kärve vissna stjälkar och rovblast i oliv1 och senap0, och några kotor och ett revben i ben1 och ben2 med ett rost2-stänk intill. Varje klump har sin egen mörka materialkontur så att de syns som olika avfall även i liten storlek."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_sophog",
+     "rader": [
+      "....GE.GE.GE....",
+      "..EHGFGqwFGGFE..",
+      ".EGFGpwqtsGFGFE.",
+      "EGFGpqtsrqpsFGFE",
+      "EGFJpqsrspqJKFGE",
+      "EFJKLJKpqsKKJKFE",
+      ".EHGKLJKJKJKJJE.",
+      "EHGGFEKJKJKJIJE.",
+      "EGHFGEJKJIJKIE..",
+      ".EGFGEIJIJIJE...",
+      ".EFEFFEFFEFE....",
+      "..EEEEEEEE......"
+     ]
+    }
+   ],
+   "anteckning": "Sophögen ligger på marken och ses snett ovanifrån. Den halvrunda inhägnaden av lerade käppar och flätat ris står upp vid bakkanten, förkortad till 3–4 punkter. Bågen syns överst med tre käpptoppar, och dess ändar böjer sig nedåt på båda sidor, så att den omsluter högen bakifrån. Avfallet är staplat mot flätverket och sticker delvis upp över det. Överst ligger slaktrenset med ben i ben2/ben3 och kött i rost, där ett ben sticker upp ovanför bågen. Under det ligger halm och skal i senap. Längst fram till vänster ligger den vältade, spruckna lerkrukan i jord2/jord3, med en spricka i jord0. Högen är hög bak och låg fram, och silhuetten trappar ner åt både framkanten och höger. Framkanten är ett smalt band i jord0. Ljuset kommer uppifrån vänster: ljusa toner på flätverkets och krukans vänstra sida och mörkare nere till höger. Mättade toner finns bara i köttet. Granskningen: Storleken (16 × 12 mot kolonistens 14 × 20), vinkeln snett uppifrån, bågen av flätverk bak och den trappiga silhuetten följer idén och syns bra på gräset. Fem saker är rättade. 1) Rad 4 saknade kontur längst till vänster (F); den är nu jord0 (E) som resten av konturen. 2) Ljuset: flätverket hade jord3 (H) även på högra sidan, och halmen hade senap3 (L) på högra sidan i rad 5 och 6. Höger sida är nu mörkare (G, K respektive J), så att ljuset kommer från övre vänstra hörnet. 3) Framkanten var två släta rader av jord0. Den övre är nu ett kornigt band i jord1 och jord0, och den nedre raden är kvar som kontur. Då blir ytan inte slät. 4) Den välta krukan har fått en spricka i jord1, så att den läses som sprucken. 5) Glansen på benen är kvar som högst två punkter ben3.",
+   "ide": "En hög som samlats mot en låg, halvrund inhägnad av lerade käppar och flätat ris vid bakkanten, 16 × 12 punkter, där flätverket i jord1 och jord2 står upp förkortat som en båge på 3–4 punkter längst bak. Framför och delvis över den ligger avfallet staplat: en sprucken lerkruka i jord2 och G som har vält, halm och skal i senap1 och K, och ett benknotigt slaktrens i ben2 och rost1 överst. Framkanten av högen är ett smalt mörkt band i jord0 och silhuetten blir trappig och hög bak, låg fram."
+  }
+ ]
+}

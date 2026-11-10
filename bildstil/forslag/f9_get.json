@@ -1,0 +1,96 @@
+{
+ "kort": "f9_get",
+ "namn": "Get",
+ "slag": null,
+ "vad": "Steg 9.8.5: geten är ett betesdjur som ger mjölk och kött och äter det fåret lämnar. Bilden visar den från sidan på gräs: smal, med små horn, skägg och en kort svans rakt upp.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_get",
+     "rader": [
+      "........E.E.............",
+      "......EoEoE.............",
+      "....EEoEoEEE............",
+      "...EwqqqqpEpE.......E...",
+      "..EqqqkqppEE.......EqE..",
+      ".EqqpqppppE........EpE..",
+      ".EpoEpqqpqE........EpE..",
+      "..EFFEppqpqEEEEEEEEEpE..",
+      "..EFEEpqqwqqqqwqqqqqpE..",
+      "...E.EpqppqpppqppppooE..",
+      "......EppqpppqpppppooE..",
+      "......EoppoppppoppoooE..",
+      ".......EppoEEEEEEooppE..",
+      ".......EpEoE....EoEpE...",
+      "....OP.EpEoEXOPOEoEpEO..",
+      "..XOPXOEpEEEOXPOEEEpEOX.",
+      ".XOPOXPXEEOPXOPOXOPEEOX.",
+      "..WXOPOXOPXOPOXPOXOPXW..",
+      "....WXOXPOXOPOXOXPXW....",
+      ".......WXWOXWXWXW......."
+     ]
+    }
+   ],
+   "anteckning": "Geten står i trekvartsprofil åt vänster på alla fyra benen, sedd snett uppifrån: ryggen syns därför som ett smalt ljust band (ben2 med enstaka ben3) överst på den smala kroppen, och sidan mörknar mot nedre högra hörnet. Huvudet är lyft på en kort hals. De två små hornen sitter på hjässan och böjer bakåt mot ryggen, och örat hänger bakåt bredvid dem. Skägget i jord1 hänger spetsigt under hakan, och den korta svansen står rakt upp från bakdelen. De bortre benen sitter en punkt längre in, är en ton mörkare (ben0) och slutar en rad högre, så att de läses som bakom de närmre. Klövarna är jord0. Gräsfläcken är oval i oliv och barr i mellantoner med korn, så att den ljusa geten med jord0-kontur syns på den. Skuggan lägger programmet till. Granskningen: Granskad och oförändrad. Storlek: geten är cirka 22 × 17 punkter med horn och står lägre än kolonisten (14 × 20). Det ligger nära idéns 20 × 16, och den är tydlig som djur i spelets storlek. Vinkel: snett ovanifrån i trekvartsprofil åt vänster. Ryggen syns som ett smalt ljust band av ben2 och ben3 under jord0-konturen, och bukens kant och benen ligger under. Ljuset kommer från övre vänstra hörnet: ljusast på pannan och ryggen, ben0 nere till höger på bakdelen och de bortre benen. Kontur: jord0 runt hela kroppen och hornen, inget svart utom ögat, som får vara kol0. Idén följs: små bakåtböjda horn i ben0, spetsigt skägg i jord1 under hakan, kort svans rakt upp från bakdelen och fyra tunna ben där de bortre är en ton mörkare. Geten är ljusare än gräsfläcken av oliv och barr och syns tydligt på den. Gräsfläcken är i stort sett spegelsymmetrisk. Inget bärs, så rem och huvud är inte aktuellt. Inga regelbrott hittades.",
+   "ide": "Stående get i trekvartsprofil åt vänster, snett ovanifrån så att ryggen syns som ett smalt ljust band, ungefär 20 × 16 punkter på en liten gräsfläck av oliv och barr i mellantoner. Den smala kroppen är i ben1 och ben2 med kontur i jord0, med fyra tunna ben där de bortre är en ton mörkare. Huvudet är lyft, två små bakåtböjda horn i ben0 med jord0-kontur, ett spetsigt skägg i jord1 under hakan och en kort svans som står rakt upp från bakdelen."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_get",
+     "rader": [
+      "..................EE..",
+      ".................EHGE.",
+      "...........EEEEEEHGE..",
+      "......po.EEHHFFFFGGGE.",
+      ".....po.EHHGFFFFGHGGE.",
+      "...EEoEHHGGFFFFGGGGFE.",
+      "..EHHHGHGHGGFFGGHGGGE.",
+      ".EHkGGEHGGHGGGGGGGGFE.",
+      "EHGGGEFGGGGGGGGGGFFFE.",
+      "EGFEFE.EGGFFEEFFGGFFE.",
+      ".PEFE..EGEFE..EFEGFE..",
+      ".POEP..EGEFE..EFEGFE..",
+      "ONPON..EEEEE..EEEEEE.."
+     ]
+    }
+   ],
+   "anteckning": "Geten står i profil med huvudet åt vänster och betar. Höfterna är högst, och ryggen sluttar via nacken ner till mulen, som når grästuvan längst ner till vänster. Den korta svansen står rakt upp från gumpen och är silhuettens högsta punkt. De två korta hornen sitter på hjässan och pekar bakåt och uppåt över nacken, i ben0 och ben1. Skägget hänger från käken ner mot tuvan. Båda benparen syns: det närmaste benet är ljusare och det bortre är mörkare i jord1, med klövar i jord0. Eftersom vi ser geten lite ovanifrån fångar ryggens ovansida ljuset från vänster i jord3. Sadeln i jord1 ligger mitt på ryggen, och undersidan och högersidan mörknar mot jord1. Konturen är jord0, och ögat är den enda punkten i kol0. Granskningen: Granskad mot reglerna. Storleken (22 × 13) stämmer bredvid kolonisten (14 × 20): en låg och lång get med ryggen ungefär i kolonistens midjehöjd. Vinkeln är snett uppifrån med ljus ryggovansida. Konturen är jord0, sadeln jord1, och svansen rakt upp är den högsta punkten, som i idén. Ögat i kol0 är det enda svarta. En sak är rättad: under hakan blandades skägget (jord1) med grästuvans oliv, så att skägget inte gick att läsa. Skägget är nu en tydlig rad, jord0–jord1–jord0, som hänger från hakan ner i tuvan och slutar i en spets av jord0. Tuvan ligger runt spetsen. Resten är oförändrat.",
+   "ide": "Betande get med huvudet nere i gräset, cirka 22 × 13 punkter, så att silhuetten blir låg och lång med en sluttande linje från de höga höfterna ner mot mulen. Pälsen är tvåfärgad i jord2 och jord3 med mörkare sadel över ryggen i jord1 och kontur i jord0, sedd lite ovanifrån så att ryggens ovansida fångar ljuset från vänster. Hornen pekar bakåt som två korta spetsar över nacken, skägget hänger ner mot grästuvan och den uppåtstående svansen blir silhuettens högsta punkt."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_get",
+     "rader": [
+      "...E....E...........",
+      "...EH..GE...........",
+      ".EEEqwqpEEE.........",
+      "EqpqlqqlppoE........",
+      ".EEqqqppoEE.........",
+      "...EqqpoEqqEE....E..",
+      "...EpFFoEqqqpEE.EqE.",
+      "....EopEqqqqqppEEpE.",
+      "....EoE.EqwqqqqqppE.",
+      ".....E..EqqqpqqppoE.",
+      "........EqqppqqppoE.",
+      ".......EqpEEEEqppoE.",
+      "......EqpE...EqppoE.",
+      ".....EqpE....EqpoE..",
+      "...QEqpEQQ...EqEoE..",
+      "..QTFmSRSRQ..EqEoE..",
+      ".QSSRSSRSRRQ.EpEoE..",
+      ".QRSRRRRRRQQ.EpEoE..",
+      "OQRRRRRRRQQX.EmEmE..",
+      "PXQQQQQQQQOXWXOPOXW.",
+      ".WXOPW.OX..W.XOPW..."
+     ]
+    }
+   ],
+   "anteckning": "Geten står i profil vänd åt vänster med framklövarna uppe på en liten skifferhäll. Frambenen går snett ner till vänster från bröstet och klövarna (jord1/kol2) står på stenens ljusa ovansida. Kroppen sluttar bakåt och nedåt mot bakdelen, och de två bakbenen (det närmre ljusare, det bortre i ben0) står i gräset. Huvudet är vridet i trekvart mot betraktaren, så båda de små hornen och de liggande öronen syns spegelvänt kring ansiktets mitt; bara ljuset skiljer sidorna åt. Halsen går in bakom huvudet. Skägget hänger rakt ner från hakan och den korta svansen står rakt upp vid ryggslutet. Pälsen är i ben2/ben1 med jord0-kontur och en enda ben3-glans, stenen i skiffer2/skiffer1 med skiffer0-kontur och lite oliv- och barrgräs runt foten. Granskningen: Version 3 granskad. Storleken (cirka 19 × 21 med stenen) stämmer med idén och står rimligt mot kolonisten. Huvudet i trekvart är spegelsymmetriskt: horn, öron, ögon och nos ligger lika kring mitten. Ljuset kommer uppifrån vänster och glansen är två punkter ben3. Den ljusa kroppen syns bra på gräset. Två rättelser i rad 5: 1) Kroppens ljusa punkt i rad 6, kolumn 12 saknade kontur ovanför och låg öppet mot det genomskinliga, så jag satte jord0 i rad 5, kolumn 12. 2) Högerörats undre kontur (rad 4) låg direkt på ryggens kontur (rad 5) och bildade en dubbel mörk fläck. Halsen under örat är nu ben2 (kolumn 9–10), och örats kontur får fungera som ryggens överkant. Allt annat är oförändrat.",
+   "ide": "Get som står med framklövarna uppe på en liten grå sten i skiffer1 och skiffer2 med kontur i skiffer0, vilket ger en hög, uppåtsträckt silhuett på ungefär 18 × 20 punkter med lite gräs runt stenens fot. Kroppen lutar bakåt och nedåt mot bakbenen på gräset, i ben2 och ben1 med jord0-kontur, och huvudet är vänt mot betraktaren i trekvart så att båda små hornen och de liggande öronen syns symmetriskt. Skägget pekar ner från hakan och den korta svansen står rakt upp vid bakdelen."
+  }
+ ]
+}

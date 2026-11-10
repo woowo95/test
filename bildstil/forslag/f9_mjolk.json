@@ -1,0 +1,79 @@
+{
+ "kort": "f9_mjolk",
+ "namn": "Mjölk",
+ "slag": null,
+ "vad": "Steg 9.8.8: mjölk, en ny mat från getter och får, i en lerkruka. Vit, och syns i krukans mynning.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_mjolk",
+     "rader": [
+      "...EEEEEE...",
+      "..EHwqqpGE..",
+      ".EHqqqqqpFE.",
+      ".EHHpqqpGFE.",
+      "..EHGGGFFE..",
+      "...EHGFFE...",
+      "..EHHGGGFE..",
+      ".EHEEEEEEFE.",
+      "EHHGHGGGGFFE",
+      "EHGHGGGFGFFE",
+      "EHGGHGGFGFFE",
+      ".EHGGGFGFFE.",
+      "..EGGFGFFE..",
+      "...EEEEEE..."
+     ]
+    }
+   ],
+   "anteckning": "Krukan står på marken på sin plana, smala botten och ses snett uppifrån, som allt annat på kartan. Därför syns mynningen som en liggande oval på 8 × 3 punkter, och i den ligger mjölken. Mjölken är i ben3 och ben2, ljusast uppe till vänster där glansen sitter och med en punkt ben1 i skuggkanten nere till höger. Den utvikta läppen är krukans bredaste del uppe och sluter runt mjölken, och under den följer en kort hals. Den ristade ringen runt axeln böjer nedåt i mitten, så att man ser att krukan är rund. Formen är spegelsymmetrisk; bara ljuset skiljer sidorna åt. Leran är jord1–jord3 med jord0 som kontur, ljusast på bukens övre vänstra sida och mörkast nere till höger. Ingen skugga på marken är ritad. Granskningen: Rättat: 1) Läppen var lika bred som buken (12 punkter), så krukan såg ut som en svamp. Nu är läppen 10 punkter, halsen smal och buken störst med 12 punkter, så krukan blir bukig enligt idén. 2) Mjölken fyllde nästan hela läppen. Nu är mynningen en liggande oval på 6 × 3 punkter i ben2 med kant i jord, så att den läses som mjölk i mynningen. 3) Mjölken hade tre punkter i ben3. Nu finns en enda glanspunkt uppe till vänster. 4) Den ristade ringen satt på buken. Den ligger nu runt axeln, under halsen. 5) Mjölkens skuggsida ligger nu nere till höger (ben1). Den tidigare framkanten i jord0 ersattes med en ljusare läppkant så att mynningen syns. Oförändrat: storleken (12 × 14 punkter, rimlig mot kolonisten på 14 × 20), spegelsymmetrin, den plana och smalare botten, jord0 som kontur och att krukan är ljusare än gräset.",
+   "ide": "En rund, bukig lerkruka med kort hals och utvikt läpp, ungefär 12 × 14 punkter, spegelsymmetrisk och sedd snett uppifrån så att mynningen blir en liggande oval på 8 × 3 punkter fylld med mjölk i ben3 och ben2 med en glanspunkt uppe till vänster. Krukan är bränd lera i jord1 till jord3 med jord0 som kontur, ljusast på bukens övre vänstra sida och mörkast nere till höger, och en smal ristad ring i jord0 runt axeln. Botten är plan och smalare än buken så att krukan står stadigt på marken."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_mjolk",
+     "rader": [
+      "..EEEEEEEEEE..",
+      ".EHHHHHHHHHGE.",
+      "EHHFFFFFFFFGGE",
+      "EHFwwwwwqqqFGE",
+      "EHwwwqwqqqqpGE",
+      "EHHqqqqqqppGGE",
+      "EGHHHHGGGGGGFE",
+      ".EGGFGGFGFFFE.",
+      "..EGFGFFFFFE..",
+      "...EEEEEEEE..."
+     ]
+    }
+   ],
+   "anteckning": "Bunken står på marken och ses snett ovanifrån, så mynningen blir en bred oval som tar nästan hela bredden (14 × 9 punkter). Mjölken ligger högt i bunken och syns stor i ben3 och ben2, ljusast uppe till vänster och med lite ben1 nere till höger, så att det vita syns först. Runt mjölken går en tjockare läpp i jord3 som mörknar mot jord2 åt höger. Framför den syns bara ett smalt band av bunkens sida, 3 punkter i jord1 och jord2 med korn. Den smalnar mot botten och har jord0 som kontur runt om. Formen är spegelsymmetrisk; bara ljuset och kornet skiljer sidorna åt. Skuggan på marken ritas inte. Granskningen: Granskat: storleken (14 punkter bred, ungefär som brödet bredvid kolonisten) och den spegelsymmetriska silhuetten var rätt, och ljuset faller från övre vänstra hörnet. Felet var att mjölken låg plant mot läppen utan någon innervägg. I den lilla bilden läste skålen därför som en limpa eller en sten och inte som en skål med vätska. Rättat: jag har lagt in en rad jord1 som innervägg i skugga under den bakre läppen, med en jord1-punkt i varje övre hörn av mjölkovalen. Mjölken sitter nu nedsänkt i mynningen. Ovalen är kvar i full bredd (8, 10 och 8 punkter) och är fortfarande det ljusaste och det man ser först. Bilden blev en rad högre, 14 × 10. Läppen i jord3, sidobandet i jord1 och jord2 och konturen i jord0 är oförändrade.",
+   "ide": "En låg, vid mjölkbunke eller skål av lera, ungefär 14 × 9 punkter, där mynningen tar nästan hela bredden och ovalen med mjölk syns stor ovanifrån, så att det vita är det första man ser. Skålens sida är bara ett smalt band på 3–4 punkter i jord1 och jord2 med jord0 som kontur och en lite tjockare läpp i jord3 runt kanten. Formen är helt spegelsymmetrisk och det enda som skiljer sidorna är ljuset från övre vänstra hörnet och kornet i leran."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_mjolk",
+     "rader": [
+      ".EEEEE.....",
+      "EwwwwqE....",
+      "EwqqqqE....",
+      "EHGGGFEEEE.",
+      ".EHGFEFGFFE",
+      "EHGGGFEEEFE",
+      "EHGHGFE.EFE",
+      "EsGsFrE.EFE",
+      "EGsGrFE.EFE",
+      "EGGFGFEFFFE",
+      "EGFGFFEEEE.",
+      ".EFFFE.....",
+      "..EEE......"
+     ]
+    }
+   ],
+   "anteckning": "Kannan står på marken, sedd snett uppifrån. Därför syns mynningen som en liten oval på 5 × 2 punkter, fylld med mjölk i ben3 och ben2. Bakkanten av mynningen är ett tunt band i jord0 och framkanten en läpp i jord2/jord3, så att mjölken ligger nedsänkt i halsen. Kroppen är 9 punkter bred och spegelsymmetrisk: den smalnar till en hals under läppen, har en rak buk med ett band av rost0 och rost1 och rundas av mot foten. Ljuset kommer uppifrån vänster, med jord3 i vänsterkanten och mörkare jord1 och rost nere till höger. Hänkeln är en båge i jord1 med jord0-kontur på höger sida, fäst vid halsen och nedre buken, och den har ett genomskinligt hål mot kroppen. Mjölken är det enda ljusa i bilden och syns först. Granskningen: Rättat: 1) Storleken. Kannan var 13 × 16 punkter och nästan lika hög som kolonisten (14 × 20), vilket är orimligt för en mjölkkanna. Den är nu 11 × 13 punkter och räknas som ett lätt överdrivet föremål, i nivå med de godkända sakerna. 2) Rostfärgen på buken låg som en oregelbunden fläck och läste som smuts eller blod. Den är nu ett ordnat sicksackband i rost1/rost0 med rost1 åt det ljusa vänstra hållet, så att det läses som dekor på leran och den vita mjölken ändå är det som syns först. 3) Hänkeln har fått ett genomskinligt hål och tydlig jord0-kontur runt om, så den läses som en båge och inte som en platta. Oförändrat: kroppen är spegelsymmetrisk kring mitten och bara hänkeln till höger bryter av. Mynningen är en oval på 5 × 2 med mjölk i ben3 uppe till vänster och ben2 nere till höger, utan ren vit. Leran är jord0–jord3 med ljuset från vänster. Kannan har jord0-kontur och är ljusare än gräset, och den ses snett uppifrån så att mynningen syns.",
+   "ide": "En hög, smal kanna med en enda hänkel, ungefär 9 × 15 punkter, där kroppen är rak och smalnar lite mot halsen och mynningen är en liten oval på 5 × 2 punkter med mjölk i ben3 och ben2. Hänkeln sitter på höger sida som en båge i jord1 med jord0-kontur, så kroppen är spegelsymmetrisk och bara hänkeln bryter av. Leran är mörkare, jord0 till jord2 med några rostfärgade toner i rost0 och rost1 längs buken, så att den vita mjölken i mynningen lyser mot den."
+  }
+ ]
+}

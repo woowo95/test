@@ -1,0 +1,121 @@
+{
+ "kort": "f9_bakugn",
+ "namn": "Bakugnen",
+ "slag": null,
+ "vad": "Steg 9.6.23: bakugnen är en station två rutor stor av sten tätad med lera där bagaren gräddar bröd. Här stationen på trägolvet, framifrån.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_bakugn",
+     "rader": [
+      "..........QQQQQQQQQQQQ..........",
+      ".......QQQTTTSTTHTTSTSQQQ.......",
+      ".....QQTTSTTHHTSTTSTSSHSSQQ.....",
+      "....QTSTTHTTTSHTSTTSHSTSSRSQ....",
+      "...QTTSHHTSTTTHHSTSSTHHSSRSRQ...",
+      "..QTTTSTTHTSSTTSHTTSSTSHSSRSRQ..",
+      ".QTSTTHHSTTSTHSSTTSHHSTSSSRSRRQ.",
+      ".QSTTSHTTSTSSTSHTTSSTSHSSRSRSRQ.",
+      ".QTSTTHSTTSTSRRRRRRSSTSHSSRSRRQ.",
+      ".QSTTSHTTSSRRRkkkkRRRSTSSHSRSRQ.",
+      ".QTSTHHSTSRRkkkkkkkkRRSSHHSRSRQ.",
+      ".QSTTSTTSSRRkkkkkkkkRRSTSSRSRRQ.",
+      ".QTSHSTSTSRRkkksskkkRRSSTHSRSRQ.",
+      ".QSTHHSSTSRRkstuutskRRSSHHSRRSQ.",
+      ".QSSTSSTSSRRkstuLutkRRSTSSRSRRQ.",
+      ".QRSSRSSRSRRsttuuttsRRSRRSRRRRQ.",
+      "..QRSRRSRRRRrssttssrRRRRSRRRRQ..",
+      "...QQQQQQQRSSTSSSSTSSRQQQQQQQ...",
+      "......QTTTSTTSTTSTTSTSSSRQ......",
+      "......QTTSFLKFTSTSFLKFSSRQ......",
+      "......QTSFKKHKFSTFKKHKFSRQ......",
+      "......QSTSFJJFSSTSFJJFSSRQ......",
+      "......QSSTSSSTSSSSTSSSRSRQ......",
+      "......QRRSRRRRSRRRRRSRRRRQ......",
+      "......QSRRRRSRRRRRSRRRRRRQ......",
+      ".......QQQQQQQQQQQQQQQQQQ......."
+     ]
+    }
+   ],
+   "anteckning": "Bakugnen står direkt på trägolvet med munnen mot betraktaren. Från spelets sneda vinkel syns kupolen mest som en bred, rundad rygg av fältstenar. Stenarna har lerfogar i jord2–jord3 och kontur i skiffer0, ljusast uppe till vänster och mörkast nere till höger. Formen är spegelsymmetrisk; bara ljuset och kornet skiljer sidorna åt. Ugnsmunnen sitter mitt i framkanten, där kupolen möter golvet. Den omges av ett smalt band i skiffer1. Därinne är det kolsvart upptill, och elden glöder nertill i rost med en enda senap3-punkt i mitten. Det är det enda starka i bilden. Under munnen går en ljus tröskelkant ut på en flat häll som ses ovanifrån. Hällen har en mörkare framkant på två punkter men inga ben, eftersom den ligger på golvet. På hällen ligger två färdiga bröd ovanifrån i senap2 och jord3, med kontur i jord1. Granskningen: Granskad: storleken (32 × 26, två rutor bred, ungefär två kolonister bred) stämmer. Vinkeln snett uppifrån och tröskelhällen med ytan ovanifrån och ett framband på två punkter följer reglerna. Kupolen, ugnsmunnen, elden och de två bröden ligger spegelsymmetriskt kring mitten. Ljuset faller uppifrån vänster, och konturen i skiffer0 syns tydligt mot gräset. Glöden och brödet är de enda starka tonerna, och kol0 används bara i den sotsvarta ugnsöppningen. Jag rättade en sak: i hällens nedersta framkant (rad 24) satt tre ensamma mörka skiffer0-prickar mitt i bandet, och högra hörnet var dubbelt så tjockt som det vänstra, så att hällen inte var symmetrisk. Prickarna är nu rostfritt korn i skiffer1 och skiffer2, och hörnen har en punkt kontur på var sida. Allt annat är oförändrat.",
+   "ide": "Rund kupolugn, cirka 32 × 26 punkter: en låg, spegelsymmetrisk halvkupa av gråa fältstenar (skiffer1–skiffer3) med fogar och fläckar av lera (jord2–jord3), som från spelets sneda vinkel ses mest ovanifrån som en bred, rundad rygg med ljusast kant uppe till vänster och kontur i skiffer0. Mitt i framkanten sitter en bågformad ugnsmun omsluten av ett smalt mörkare stenband, och inne i den glöder elden i rost2–rost3 med en senap3-punkt i mitten, det enda starka i bilden. Framför munnen ligger en flat tröskelhäll med två färdiga bröd i senap2 och jord3 ovanifrån."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_bakugn",
+     "rader": [
+      ".QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ.",
+      "QTTTSTTTSTTTSTTTSTTTSTTTSTTTSSRQ",
+      "QTqEEEEEEEEpHppHppHpHppHpHpHHpSQ",
+      "QTpEHGGHGGGEEEEEEEEEEEEEEEEpHpSQ",
+      "QTHEGHGGGGFGHGGGHGGHGGGHGFEpHpSQ",
+      "QTpEGGGGGFFEEEEEEEEEEEEEEEEHppSQ",
+      "QSpEGGFGFFFEHppHpHppHpHpHHpHpHSQ",
+      "QSpEEEEEEEEEpHGGpHpHGGGHpHpGGHSQ",
+      "QSpHpIIIIHpGHHIIIIpHGppIIIIHpHSQ",
+      "QSHpILLKKIHGpILLKKIpGHILLKKIHpSQ",
+      "QSpHILKKJIpHpILKKJIHGpILKKJIpHRQ",
+      "QSHpIKKJJIpGHIKKJJIpHpIKKJJIHpRQ",
+      "QSpHHIIIIpHGppIIIIHpGHHIIIIppHRQ",
+      "QSHpGGGHpHpHGGGpHpHGGGHpHpGGpHRQ",
+      "QSpHpHHpHpHHpHpHHpHHpHHpHHpHHHRQ",
+      "QTSTTRSTTSRTSTSRSTSSRSSTSRSSRSRQ",
+      "QSRRSQRSRRQSRQQQQQQRSQRRSRQSRRRQ",
+      "QRSRRRQRSRRRSQtuutQRSRRQRRSRRQRQ",
+      "QRRQRSRRRQRRRQsttsQRQRRRQRRRQRRQ",
+      ".QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ.",
+      "...QSSRQ................QSRRQ...",
+      "...QSRRQ................QRSRQ...",
+      "...QRRRQ................QRRRQ...",
+      "....QQQ..................QQQ...."
+     ]
+    }
+   ],
+   "anteckning": "Ugnen står fritt på marken med hela tyngden på två korta stenstumpar framtill; bakbenen döljs av blocket. Topphällen ses snett ovanifrån och tar rader 0–15 av 24. Den är kantad av en ring av kantiga stenar i skiffer, ljusast uppe till vänster. Mitten är smetad med ljus lera (jord3/ben1) med spruckna fogar i jord2. Framsidan är ett smalt stenband i skiffer1 med skiffer0-fogar. Mitt i bandet sitter en liten fyrkantig lucka där glöden (rost1–rost3) är det enda mättade. På hällen ligger tre runda bröd i senap, placerade spegelsymmetriskt. Längs bakkanten vilar brödspaden platt, med bladet till vänster och skaftet åt höger, så den ses ovanifrån som allt annat på ytan. Formen är symmetrisk; bara ljus och korn skiljer sidorna åt. Granskningen: Granskad, inget behövde rättas. Storleken är 32 × 24 punkter, två rutor bred och i rimlig skala mot kolonisten (14 × 20). Vinkeln stämmer: topphällen med stenkant ses ovanifrån och tar 16 av 24 rader, ungefär två tredjedelar. Framkanten är ett mörkare band på 3 rader (skiffer1 med skiffer0-fogar). Bara de två främre stenstumparna syns som fötter. Symmetrin håller: bröden ligger på kolumn 4–9, 13–18 och 22–27, luckan på 14–17 kring mitten och fötterna på 3–7 och 24–28. Bara kornet och fogarna skiljer sidorna åt. Ljuset faller rätt, med skiffer3 uppe till vänster och skiffer1 nere till höger. Konturen är skiffer0 runt stenen, jord0 runt spaden och senap0 runt bröden, och kol0 används inte. Det finns en enda glanspunkt i ben2. De mättade tonerna är sparade till glöden i luckan och bröden. Den grå stenen med ljus lera skiljer sig tydligt från det olivgröna gräset. Bilden följer idén med lerhäll, tre bröd i rad, en träspade vid bakkanten och en glödande lucka i framsidan. Inget bärs, så regeln om huvud och ansikte gäller inte här.",
+   "ide": "Fyrkantig blockugn, cirka 32 × 24 punkter: en rätvinklig, symmetrisk bänk av staplade kantiga stenar, där den flata topphällen ses ovanifrån och tar ungefär två tredjedelar av höjden, smetad med ljus lera (jord3, ben1) som spricker i fogarna. Framsidan är ett smalt band på 3 punkter i mörkare sten (skiffer1, skiffer0-kontur) med en liten fyrkantig lucka där glöden lyser rost2–rost3, och två korta stenstumpar som främre fötter. På hällen ligger tre runda bröd i rad i senap2–L och en träspade av jord1–jord2 längs bakkanten."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_bakugn",
+     "rader": [
+      "...............qp...............",
+      "..............pq................",
+      "...............qp...............",
+      "..............QQQQ..............",
+      ".............QSkkRQ.............",
+      ".............QTSSRQ.............",
+      ".............QSRSRQ.............",
+      "........EEEEEQRSRRQEEEEE........",
+      ".....EHHGHHHHGHHHGHHGGHGGGE.....",
+      "...EHHHGHHHHGHHHGHHGHHGGHGGGE...",
+      "..EHHGHHHHGHHHHGHHGHHHGGHGGGGE..",
+      ".EHHHGHHGHHHHGHHHGHHGHGGHGGGGGE.",
+      ".EHHGHHHGHHGGGGFGGFGGHGGHGGGFGE.",
+      ".EHGHHGHGGGFGGGFGGFGGFGFGGHGGGE.",
+      ".EHHGGGFGGGFGGFGGGFGGFGFFGFGGGE.",
+      ".EHGFGGFGGFGGGFGGFGGFGFFGFFGFGE.",
+      ".EGGFGGFGGFGGGFGGFGFGFFGFFGFFFE.",
+      ".EGFGGFGGFGGFEEEEEEGFFGFFGFGFFE.",
+      ".EGGFGGFGFGFErsttsrEFFGFFGFFFFE.",
+      ".EGFGGFGGFFErstuutsrEFGFFGFFFFE.",
+      ".EFGGFGGFFQQQQQQQQQQQQFFGFFFFFE.",
+      ".EGFGFGFGFQTTSTSSTSSRQFFGFFFFFE.",
+      ".EFGFGFFGFQTSSTSSSSRRQFFFGFFFFE.",
+      ".EFFGFFFFFQRRRRRRRRRRQFFFFFFFFE.",
+      ".QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ.",
+      "QTTSSQTTSSSQTSSSTSSSQSSSRSQSSRRQ",
+      "QTSSSQTSSSRQSSSRSSSRQSSRRSQSRRRQ",
+      "QSSRRQSSSRRQSSRRSSRRQSRRRRQRRRRQ",
+      ".QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ."
+     ]
+    }
+   ],
+   "anteckning": "Ugnen står fast på golvet med öppningen mot betraktaren och ses snett ovanifrån. Det mesta av bilden är därför valvets rundade lerrygg. Ljuset kommer uppifrån vänster, så leran går från jord3 uppe till vänster mot jord1 nere till höger, med kontur i jord0. Framsidan under valvet är mörkare eftersom den vetter bort från ljuset. Skorstenen sitter mitt på bakkanten och står upp förkortad. Därför syns dess öppning ovanifrån som ett mörkt hål, och rökstrimman i ben1–ben2 stiger ur det. Den bågformade ugnsmunnen ligger mitt på framsidan. Ett stenlock är lutat mot den och står på sockelns kant, så glöden i rost2–rost3 syns bara i bågens övre del ovanför locket. Sockeln bär hela höljet och syns som ett mörkare band av ojämna skifferstenar längs framkanten, ljusare åt vänster. Ugnens kontur är spegelsymmetrisk kring mittlinjen; bara ljuset och kornet skiljer sidorna åt. Granskningen: Rättat: 1) Vinkeln: höljet lästes som en platt framsida med rundade hörn. Nu ritas valvets rygg ovanifrån i ljusare jord3/jord2 (rad 8–15, ljusast uppe till vänster). Den främre gaveln med munnen är en båge i mörkare jord2/jord1, så att ugnen ses snett uppifrån som en tunnelugn. 2) Symmetrin: stenfogarna i sockeln satt osymmetriskt (kolumn 5, 11, 16, 21, 26). Nu sitter de spegelvänt kring mittlinjen (5, 11, 20, 26) med en bred mittsten under stenlocket. Oförändrat: storleken 32 × 29 mot kolonisten, den förkortade skorstenen med rökstrimma vid bakkanten, glöden i rost2–rost3 bakom stenlocket och konturerna i jord0 och skiffer0, som syns tydligt på gräset.",
+   "ide": "Lång, låg tunnelugn med skorsten, cirka 32 × 30 punkter: ett avlångt, valvat lerhölje (jord1–jord3, kontur jord0) över en sockel av stenar som syns som en ojämn rad skiffer2-stenar längs framkanten, sett snett ovanifrån så att valvets rundade rygg fyller största delen av bilden. Vid bakkanten, i mitten, reser sig en kort, förkortad skorsten av stenar med en tunn rökstrimma i ben1–ben2, och i den bågformade öppningen fram glöder elden rost2–rost3 bakom ett lutat stenlock. Formen är spegelsymmetrisk kring mittlinjen; bara ljuset från övre vänstra hörnet och kornet i leran skiljer sidorna åt."
+  }
+ ]
+}

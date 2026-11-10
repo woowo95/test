@@ -1,0 +1,83 @@
+{
+ "kort": "f9_korn",
+ "namn": "Korn",
+ "slag": null,
+ "vad": "Steg 9.6.11: korn är en gröda som odlas på fältet och mals, mältas eller kokas. Här kornet som sak i förrådet.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_korn",
+     "rader": [
+      ".I..IKI..I.",
+      "..ILLKKJI..",
+      "IILLKLKJJII",
+      ".ILKLKKJKJI",
+      ".IKLKKJKJI.",
+      "..IKKJKJI..",
+      "...IKJJI...",
+      "...EGGFE...",
+      "...EGFFE...",
+      "...IKJGI...",
+      "..IJKJJGI..",
+      "..IKJGJGI..",
+      ".IJKJJGJGI.",
+      ".IKJGJJGJI.",
+      "IJKJGJJGJGI",
+      "IFGFGFGFFFI"
+     ]
+    }
+   ],
+   "anteckning": "Kärven står upprätt på stubbänden, lätt lutad mot betraktaren, så att axkronan ses snett uppifrån som en tät solfjäder. Borsten sticker ut åt vänster och höger, och formen är spegelsymmetrisk kring halmbandet. Bandet håller ihop stråna på mitten och ger timglasformen. Nertill syns de avskurna strånas ändar ovanifrån. Ljuset faller från vänster, så senap3 ligger på kronans vänstra sida och jord2 skuggar högersidan. Konturen är senap0 runt stråna och jord0 runt bandet. Kärven är ljusare än gräset och syns tydligt mot det. Granskningen: Rättat: kärven var 12 × 18 punkter och nästan lika hög som kolonisten (14 × 20). Den är nu 11 × 16, nära idéns 10 × 16. Bredden är udda, så kärven har en mittkolumn och blir spegelsymmetrisk kring bandet; bara ljuset och kornet skiljer sidorna åt. Borsten var ensamma, svävande prickar i översta raden och vid sidorna. Nu sitter de fast i kronan som korta snedställda strån åt vänster, höger och uppåt. Kronan har senap3 på vänstra sidan och senap1 åt höger, så att ljuset kommer uppifrån vänster. Bandet av halm i jord2/jord1 med jord0-kontur sitter kvar i midjan och ger timglasformen. Stråna nertill går i senap2/senap1 med jord2 mot höger och har kontur i senap0. Snittändarna i jord nederst är jämna. Kärven är ljusare än gräset och ses snett uppifrån som förut.",
+   "ide": "En kornkärve på marken: en hög och smal bunt av stråna, ungefär 10 × 16 punkter, ombunden på mitten med ett band av halm i jord2/jord1, med axen samlade upptill i en solfjäder av senap2 och senap3 och stråna nertill i senap1 och jord2, kontur i senap0. Kärven ligger lite lutad mot betraktaren så att man ser axens toppar snett uppifrån som en tät krona med borst åt vänster och höger, symmetrisk kring bandet, med ljuset på vänstra sidan av kronan. Den är ljusare än gräset och läses som en tydlig timglasform."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_korn",
+     "rader": [
+      "....oooooooo....",
+      "..ooqqqpqqqpoo..",
+      ".oqLLKLKLKKJJpo.",
+      ".oqKLwLKLKKKJpo.",
+      ".oqqqpqqqpqqppo.",
+      "..oqpqpqpqpppo..",
+      "...oqqpqpqppo...",
+      "..oqqqpqqpqppo..",
+      ".oqqqqpqpqpqppo.",
+      ".oqqpqqpqpqpppo.",
+      ".oqpqpqpqpqpppo.",
+      ".opqpqpqpqpppoo.",
+      "..oppqpppppooo..",
+      "...oooooooooo..."
+     ]
+    }
+   ],
+   "anteckning": "Säcken står upprätt på marken och ses snett ovanifrån. Därför syns öppningen som en oval. Bakom kornen syns den bakre delen av den nedvikta kanten, och framför dem bildar den främre vikta kanten ett ljust band med en mörkare veckad underkant. Under kanten smalnar halsen av lite, och sedan buktar säcken ut till en bred, platt botten som en päronformad kudde. Formen är spegelsymmetrisk. Konturen är ben0, väven växlar punkt för punkt mellan ben1 och ben2, och ljuset faller in uppe till vänster. Kornen ligger löst i senap2 och senap3 med senap1 i skuggan vid högra kanten och har en punkt av glans i ben3. Det är det enda mättade i bilden, eftersom det är kornet man ska se. Marken och skuggan lägger programmet till. Granskningen: Storleken (14 × 14 punkter) passar mot kolonisten. Vinkeln snett uppifrån med kornytan synlig i öppningen stämmer, liksom den spegelsymmetriska siluetten och kontrasten mot gräset. Rättat: säckväven använde ben3 (w) på fyra ställen (rad 1, 4, 7 och 8). Det gav väven fyra toner och för många ljusa punkter, och idén anger ben1 och ben2 med ben0 som kontur. De punkterna är nu ben2. Den enda punkten ben3 som glans ligger kvar bland kärnorna. Den nedvikta kanten (rad 1 och 4) var nästan slät i ben2 och har fått inslag av ben1, så att vävkornet växlar även där. Resten är oförändrat.",
+   "ide": "En säck av grov linneväv full med korn, låg och rund i botten, ungefär 14 × 12 punkter, i ben1 och ben2 med kontur i ben0 och vävkorn som växlar punkt för punkt. Säcken står upprätt och är öppen upptill med kanten nedvikt, så att man snett ovanifrån ser en oval yta av lösa kärnor i senap2 och senap3 med en eller två ljusa punkter av glans. Formen är spegelsymmetrisk som en päronformad kudde; bara ljuset från vänster och skuggan nere till höger skiljer sidorna åt."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_korn",
+     "rader": [
+      "....EEEEEEEE....",
+      "..EEHHGHGGGFEE..",
+      ".EHLKLKKJKJLJFE.",
+      ".EHKLKJKJKLIJFE.",
+      ".EGKILKJKLIJJFE.",
+      ".EGKKILJLIJJIFE.",
+      ".EGJKJILIJJIJFE.",
+      ".EGGFGFGFFFFFFE.",
+      ".EFEFFEFFEFFEFE.",
+      "..EFEFFEFFEFFE..",
+      "....EEEEEEEE...."
+     ]
+    }
+   ],
+   "anteckning": "Korgen står på marken i förrådet och ses snett ovanifrån som en bred oval, 14 × 11 punkter. Den flätade kanten har kontur i jord0 och ljusare jord2/jord3 uppe till vänster och jord1 nere till höger. Insidan fylls av en kulle av kärnor i senap1 och senap2 med korn punkt för punkt. Två hela ax i senap3 ligger på snedden från nedre vänster mot övre höger, med en skuggpunkt i senap0 på nedre högra sidan, så att det läses som korn och inte som sand. Framsidan syns bara som ett smalt mörkare band på 2 punkter i jord1 och jord0 med flätmönster. Korgen har inga ben eftersom den står direkt på marken. Formen är spegelsymmetrisk, och bara ljuset skiljer sidorna åt. Granskningen: Rättat: 1) De två axen som idén kräver saknades och kullen var ett slumpmässigt brus som kunde läsas som sand. Nu ligger två ax i senap3 på snedden över kullen, ett åt vardera hållet, med en rad senap0 under som skugga. 2) Spridda mörka prickar av senap0 mitt i kullen (förbjudna fläckar) är borta. Kullen går nu från senap3 och senap2 uppe till vänster till senap1 och lite senap0 nere till höger, enligt ljuset. 3) Framsidans band hade ett extra E längst till höger, så silhuetten var osymmetrisk. Den är nu spegelsymmetrisk, och bara flätans korn skiljer sidorna åt. Storleken (14 × 11 mot kolonistens 14 × 20), vinkeln snett ovanifrån med framkant på 2–3 punkter, konturen i jord0 och synligheten på gräset var redan riktiga och är oförändrade.",
+   "ide": "En låg, rund flätad korg eller ett tråg av trä, ungefär 14 × 10 punkter, sett ovanifrån som en bred oval där insidan fylls av en kulle av gula kärnor i senap1 till senap3. Kanten är ett smalt band av näver eller trä i jord1 och jord2 med kontur i jord0, och framsidan syns bara som ett band på 2–3 punkter i en mörkare ton. Ovanpå kullen ligger två eller tre hela ax i senap3 lagda på snedden, så att det läses som korn och inte som sand."
+  }
+ ]
+}

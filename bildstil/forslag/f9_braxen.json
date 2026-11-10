@@ -1,0 +1,85 @@
+{
+ "kort": "f9_braxen",
+ "namn": "Braxen",
+ "slag": null,
+ "vad": "Steg 9.6.17: braxen är en bred, platt fisk i silver och brons som fångas i nät. Här braxen som sak i förrådet.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_braxen",
+     "rader": [
+      "......E.........",
+      "......FE........",
+      "....QQFFQQ....EE",
+      "..QqwqTqTTQ..EFE",
+      ".QkqTqTpTpTQEFE.",
+      "QTpGKpKTKpGpEE..",
+      "QpGKGpKGKpooEE..",
+      ".QopTpopTooQEFE.",
+      "..QpopoopoQ..EFE",
+      "....QQQQQQ....EE",
+      ".....EFFE......."
+     ]
+    }
+   ],
+   "anteckning": "Braxen ligger platt på sidan på marken i förrådet, så snett ovanifrån syns hela den breda sidan: en hög diskuskropp med litet huvud åt vänster, ett kolsvart öga och en djupt kluven stjärtfena åt höger. Ryggfenan står som en spetsig tagg uppåt mitt på ryggen och en kort analfena sticker ut under buken, så fenorna bryter symmetrin med flit. Själva kroppen är spegelsymmetrisk bara ovanför och under mittlinjen, inte från huvud till stjärt. Silverkroppen är i ben och skiffer (q, p, T) med bronsskimmer av senap och jord (K, G) längs mittlinjen. Ljuset kommer uppifrån vänster med en glanspunkt w på ryggen, och kroppen mörknar mot buken till o. Kroppen har kontur i skiffer0 och fenorna jord1 med kant i jord0. Ingen skugga är ritad. Granskningen: Granskad, inget behövde rättas. Braxen är 16 × 11 punkter med fenorna, och kroppen är cirka 12 × 8. Det är lite större än idéns 14 × 9, men den rimmar med kolonisten (14 × 20) eftersom en stor braxen är ungefär lika bred som en människas axlar. Den ligger platt på sidan och ses snett ovanifrån, som en sak på marken; för en fisk som ligger är det den rätta vinkeln. Kroppen, stjärtfenan och fenorna är spegelsymmetriska kring mittlinjen, men inte från huvud till stjärt, som idén säger. Kroppen har ljusa ben- och skiffertoner (q, p, T) och skiffer0-kontur, så den syns tydligt mot det olivgröna gräset. Ljuset följer regeln: glansen är en enda punkt ben3 uppe till vänster och de mörkare o-tonerna ligger nere till höger. Bronsskimret (K, G) ligger längs sidan, och den mättade senapen hör hemma där eftersom fisken är mat som går att ta. Ögat är en punkt kol0 vid det lilla huvudet till vänster. Stjärten är djupt kluven och ryggfenan en spetsig tagg, båda i jord1 med jord0-kant. Saken bärs inte, så inget går genom ett huvud.",
+   "ide": "En ensam braxen som ligger platt på marken snett ovanifrån, cirka 14 × 9 punkter: en hög, bred diskusform med litet huvud åt vänster och en djupt kluven stjärtfena åt höger, ryggfenan som en spetsig tagg uppåt mitt på ryggen. Kroppen i ben- och skiffertoner (q, p, T) med bronsskimmer av senap och jord (K, G) längs sidan, glans på en punkt på ryggen uppe till vänster, kontur i skiffer0 och fenor i jord1 med jord0-kant. Ögat är en punkt kol0, och fiskens form är bara symmetrisk ovanför och under mittlinjen, inte från huvud till stjärt."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_braxen",
+     "rader": [
+      "...EEEEEEEE.....",
+      "..EGGGGGFFFE....",
+      "..EFE....EFE....",
+      "..RR.....EFE....",
+      ".RqqR.....EFE...",
+      ".RkqSR.....RR...",
+      "RqwqpSR...RqqR..",
+      "RqqKpSR...RkqSR.",
+      "RpqqpSR..RqwqpSR",
+      "RqpKqSR..RqqKpSR",
+      "RpqpoSR..RpqqpSR",
+      ".RpoSR...RqpKqSR",
+      "..RoR....RpqpoSR",
+      "..RSR.....RpoSR.",
+      ".RoSoR.....RoR..",
+      "RoR.RoR....RSR..",
+      "..........RoSoR.",
+      ".........RoR.RoR"
+     ]
+    }
+   ],
+   "anteckning": "Två braxnar uppträdda på en vidjegren genom gälarna. Vidjan är knuten till en ögla överst i jord1 och jord2 med jord0 som kontur. Från knuten hänger fiskarna med huvudet uppåt och munnen mot öglan. Den vänstra hänger lite högre och lutar utåt åt vänster, den högra åt höger. Därför spretar kropparna och de kluvna stjärtarna nedåt och utåt, och silhuetten blir hög och V-formad. Ryggen i skiffer2 ligger mot ytterkanten och buken i ben1 till ben3 inåt, mot vidjan. Ljuset faller från vänster: den vänstra fisken har glans i skiffer3 och ben3, den högra mörknar mot skiffer2 och skiffer1 nere till höger. Varje fisk har en punkt bronsglans i senap2. Konturen är skiffer1. Ögat är en kolsvart punkt vid gälen, där grenen går in. Allt ses snett ovanifrån, som det ligger i förrådet. Granskningen: Rättat: 1) Den gamla versionen var helt spegelsymmetrisk. Fiskarna möttes i mitten och bildade ett enda V, så att de lästes som ett par vingar eller en mal. Det bröt mot idén om två fiskar som hänger lite förskjutna. Nu skiljs fiskarna åt av en tom glipa på två punkter, och den högra hänger två rader lägre. 2) Båda fiskarna vänder nu åt samma håll med skiffer2-ryggen åt höger. Det är så två fiskar på samma vidja ligger, och den mörka ryggen hamnar på skuggsidan, så att ljuset från övre vänstra hörnet stämmer. Tidigare hade båda en mörk ytterkant. 3) Varje fisk har fått ett tydligt spetsigt huvud uppåt med ett kol0-öga, en avsmalnande stjärtspole i skiffer2 och en kluven stjärtfena, så att silhuetten läses som fisk även i liten storlek. 4) Vidjan syns nu som en böjd gren i jord2 och jord1 med jord0-kontur och en ögla överst. Ett ben går ner i varje fisks mun eller gäle, i stället för det otydliga bruna handtaget. Silver (p, q) med bronsglans (K, två punkter per fisk) och högst två w-glanspunkter behålls. Skiffer1-konturen gör att fiskarna syns på gräset. Storleken är 16 × 18, alltså mindre än kolonisten (14 × 20) men tydlig som förrådssak.",
+   "ide": "Två braxnar uppträdda på en vidjegren genom gälarna, sedda snett ovanifrån där de ligger i förrådet, ungefär 16 × 14 punkter: en böjd vidja i jord1 och jord2 med en knuten ögla överst och de två breda fiskarna hängande lite förskjutna bredvid varandra med huvudena i öglan och stjärtarna nedåt och utåt. Varje fisk har silverkropp (p, q, T) med bronsglans (K) och mörkare skiffer2-rygg. Silhuetten blir hög och V-formad, så att den skiljer sig tydligt från den liggande fisken."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_braxen",
+     "rader": [
+      "...EEEEEEEEEEEE......",
+      ".EHGHGHGHGHGHGHGE....",
+      "EHGEERTSTSTSTSRGFFE..",
+      "EGHFRTQwqLKqLKJRFE...",
+      "EHGFRTSTSTSTSRRFFEE..",
+      "EGHRTQwqLKqLKJRFEE...",
+      "EHGFRRTSTSTSTSRFFFE..",
+      "EGHFRTQqqLKqLKJRFE...",
+      "EHGEFRKJKJKJKJRGFFE..",
+      "EGHFEFFEFFEFFEFFGE...",
+      "EGHGHGHGHGHGHGHGFE...",
+      "EFGFFGFFGFFGFFGFFE...",
+      ".EFFEFFEFFEFFEFFE....",
+      "...EEEEEEEEEEEE......"
+     ]
+    }
+   ],
+   "anteckning": "Korgen står på marken och ses snett ovanifrån. Den ovala öppningen med den flätade kanten i jord1–jord3 tar större delen av höjden. Framkanten är ett smalt band på 2 punkter i jord1 med kontur i jord0. Korgen har inga ben eftersom den står direkt på marken, och dess form är spegelsymmetrisk. Tre braxnar ligger omlott i korgen med huvudet åt vänster och den breda, platta sidan uppåt, så att man ser silver (ben) med en bronston (jord3) längs ryggen. Varje fisk ligger lite förskjuten mot de andra, så att ögat (en punkt kol0) och huvudet syns på alla tre. Den främre fisken vilar mot den främre kanten. Stjärtfenorna i jord1 sticker ut över korgkanten åt höger. Ljuset kommer från vänster: rygg och sida är ljusast uppåt och buken mörknar mot ben0. Granskningen: Rättat: korgen var osymmetrisk och nästan helt i jord0, så den blev mörk och flöt ihop med gräset. Nu är den en spegelsymmetrisk oval på 18 × 14 punkter. Kanten är flätad i jord2–jord3 med kontur i jord0. Öppningen tar knappt tre fjärdedelar av höjden, och framkanten är ett band på 2 punkter i jord1–jord2 över jord0. Fiskarna var ritade i ben och jord och hade ögon i kol0, så de saknade silver och brons. Nu ligger tre braxnar omlott med förskjutna huvuden. Ryggen är i skiffer2–3 och sidan i ben och senap (brons), med kontur i skiffer1 och öga i skiffer0. Glansen är högst två punkter i ben3. Stjärtfenorna i jord1 med kontur i jord0 sticker ut över kanten åt höger. Hela bilden är 21 × 14 punkter och rimlig mot kolonisten.",
+   "ide": "En låg, avlång flätad korg av vidjor sedd snett ovanifrån, cirka 18 × 12 punkter, med en oval öppning som tar tre fjärdedelar av höjden och ett smalt band på 2 punkter i jord0–jord1 som framkant. I korgen ligger tre braxnar sida vid sida, omlott, med de breda silverbronsfärgade sidorna uppåt och stjärtfenorna i jord1 som sticker ut över kanten åt höger. Flätningen ritas som korn i jord1 och jord2 med kontur i jord0, och korgen är spegelsymmetrisk medan fiskarna ligger fritt."
+  }
+ ]
+}

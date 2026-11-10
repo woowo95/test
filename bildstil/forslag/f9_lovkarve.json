@@ -1,0 +1,81 @@
+{
+ "kort": "f9_lovkarve",
+ "namn": "Lövkärve",
+ "slag": null,
+ "vad": "Steg 9.8.16: lövkärven är björkskott med löven kvar, bundna ihop. Fåren och getterna äter den som hö, och den räknas i höet inför vintern.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_lovkarve",
+     "rader": [
+      "..MMM..MMM..........",
+      ".MPPOMMPPOM.........",
+      "MPPOPPOPKOEE........",
+      "MPOPKOPOONGFooooooo.",
+      "MKPOPOOPONFGwqSwwqwo",
+      "MPOPOONOONGFpqpqSppo",
+      "MOPOONOKONFGqqSqqpqo",
+      "MOONOONONNGFppoSppqo",
+      "MNOKNONNNMEEooooooo.",
+      ".MNNMNNMNM..........",
+      "..MM.MMM............"
+     ]
+    }
+   ],
+   "anteckning": "Kärven ligger på marken och ses snett ovanifrån, så knippets ovansida syns. Den yviga lövdelen till vänster är högst och bredast, och silhuetten smalnar som en kil mot de raka stjälkarna till höger. Stjälkarna är fyra ljusa ben-streck med skiffer-prickar som björkbark och slutar i förskjutna, rakt avskurna stumpar. Vidjebandet sitter där knippet är som smalast. Där är det vridet, med jord1 och jord2 omväxlande och jord0 i över- och underkant. Löven ljusnar uppåt till vänster (oliv3) och mörknar nedåt till höger (oliv1) inom oliv0-kontur. Några senap2-blad visar att löven gulnar mot vintern. Ingen skugga är ritad. Granskningen: Storlek (20 × 11), vinkel, ljus och bandet är i ordning. Lövdelen syns på gräset tack vare oliv0-konturen och de ljusa oliv3-tonerna, så den är oförändrad. Rättat: stjälkänden var en spetsig, slät benvit kon och såg ut som en pil eller strut. Idén kräver parallella björkstjälkar som är avskurna rakt. Stjälkdelen (rad 3–8, kolumn 12–19) är omritad till fyra parallella strån i ben3/ben2 och ben1/ben0, med skiffer2-fläckar som björkbark. Den har nu en rak ben0-kontur vid snittet i kolumn 19 och raka över- och underkanter. Stjälkarna blir mörkare nedåt så att ljuset fortfarande kommer uppifrån vänster.",
+   "ide": "En liggande kärve, cirka 18 × 10 punkter, sedd snett ovanifrån: ett knippe björkskott lagt på marken med de tunna stjälkändarna åt höger och den yviga lövdelen åt vänster, så att silhuetten blir en avlång kil som smalnar mot stjälkarna. Mitt på sitter ett band av vridet vidjeband i jord1–jord2 med jord0-kontur, och löven är småprickiga klungor i oliv2–oliv3 med några senap2-blad mot vintern (ljust uppe till vänster, oliv1 nere till höger, oliv0 som kontur). Stjälkarna syns som tre, fyra parallella streck i ben2–ben3 med skiffer2-fläckar som björkbark, avskurna rakt vid stumpen."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_lovkarve",
+     "rader": [
+      "...M.MM.M...",
+      ".MPMPPOPMOM.",
+      "MPPPOPPOPONM",
+      "MPOPKOPOONNM",
+      "MPOPOOPONKNM",
+      ".MOPONOONNM.",
+      "..MONONONM..",
+      "...MNONNM...",
+      "....EHGE....",
+      "....EGFE....",
+      "....owqo....",
+      "...oqwmqo...",
+      "...owqnwo...",
+      "..oqwoqwmo.."
+     ]
+    }
+   ],
+   "anteckning": "Kärven står upprest på sina avskurna stjälkar, som när man ställer den till torkning eller i höet. Den står själv och hålls inte av någon. Sett snett uppifrån syns den breda lövkronan mest, eftersom den är bredast och närmast betraktaren uppifrån. Midjebandet av vidja i jord1–jord2 (jord0-kontur) syns som ett smalt band där stjälkarna är hopdragna. Under det syns björkstjälkarna i ben2–ben3, med korta barkstreck i kol3 och ben0-kontur. De vidgar sig lite mot marken så att kärven står stadigt. Silhuetten är spegelsymmetrisk kring mittaxeln. Bara ljuset (oliv3 uppe till vänster, oliv1 nere till höger) och två gulnade blad i senap2 skiljer sidorna åt. Ingen markskugga är ritad. Granskningen: Rättat: 1) Foten bredde ut sig till en tio punkter bred, platt fot med rak underkant och läste som en stenfot eller kruka. Den är nu smal enligt idén: fyra punkter under bandet som sprider sig till åtta, med ljusa björkstjälkar i ben2–ben3, glipor i ben0 mellan stjälkarna och korta barkstreck i kol. 2) Kronan var rund och mörkast nedtill och såg ut som en trädkrona, alltså ett träd på en sten. Nu vidgar den sig uppåt som en kvast, med en taggig, bladig överkant av skott som sticker upp och ljusast oliv3 uppe till vänster. Mot bandet smalnar den och mörknar till oliv1, med två gulnade blad i senap2. 3) Bandet hade en rak sidovy. Nu är det ett tydligt midjeband av vidja i jord1–jord3, ljust till vänster och med jord0-kontur, smalare än kronan så att kärven ser hopsnörd ut. 4) Storleken var 12 × 16, nästan en människas axelhöjd. Den är sänkt till 12 × 14, ungefär höfthöjd mot kolonistens 20 punkter, vilket stämmer bättre med en kärve. Formen är spegelsymmetrisk kring mittaxeln; bara ljuset, kornet och senapsbladen skiljer sidorna åt.",
+   "ide": "En stående kärve, cirka 12 × 16 punkter, rest på sina avskurna stjälkar som en liten stör: nedtill en smal, spegelsymmetrisk fot av ljusa björkstjälkar i ben2–ben3 med mörka barkstreck, i mitten ett tätt bundet midjeband av vidja i jord1–jord2, och upptill en bred, rundad lövkrona som vidgar sig som en kvast. Lövkronan är tät och kornig i oliv2–oliv3 med oliv0-kontur och ljusaste bladen uppe till vänster; formen är symmetrisk kring mittaxeln, och bara ljuset och enstaka gulnade blad i senap2 skiljer sidorna åt. Sett snett uppifrån syns lövkronan något mer än foten, så att kärven läses som en hög tuva och inte som en sidovy."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_lovkarve",
+     "rader": [
+      ".....M.MM..M..............",
+      "....MPKPMMPM........oqqo..",
+      "...MPKPPKPOPPMEEoqqwqqo...",
+      "..MPKPOPPKPOPPGFqqqqqqo...",
+      "..MOPKPPOPKPOPGFpqqpoo....",
+      "..MNOPKOPPOPONEEoppoo.....",
+      "...MMNMMNMMNMM.MPOPOM.....",
+      "....EEOPOKONOPKPOOPNEE....",
+      "owqqGFPKPOPNOOPOPKONGFqqqo",
+      "oqqpGFOPKOONMNOPOKONGFqqqo",
+      "opqpGFNOJONOMMNOPONNGFqqpo",
+      "oopoFENONONMMMNONONMFEppoo",
+      "....EEMNONMM.MMNONMMEE....",
+      "......M.MM....M.MM.M......"
+     ]
+    }
+   ],
+   "anteckning": "Tre lövkärvar på marken, lagda som vinterhö och sedda snett ovanifrån. De två undre ligger sida vid sida med lövändarna mot mitten. Den vänstra har sina ljusa björkstumpar (ben) ut åt vänster och den högra åt höger. Varje kärve har ett vidjeband (jord1–jord2 med jord0-kant) där stjälkarna är bundna, och därifrån spretar löven ut som en tofs. Den tredje och ljusaste kärven ligger överst och snett över dem. Hela dess längd syns: lövtofsen åt vänster, bandet i mitten och stumparna som stiger upp åt höger, där de snittade ändarna har en ljus ben3-punkt. Löven har oliv0-kontur och oliv1–oliv3 med senap där de börjat torka. Bladmassan är ljusast uppe till vänster och mörkast nertill till höger, och tofsarna sticker ut uppåt och nedåt så att silhuetten blir en låg, bred hög. Granskningen: Granskad mot reglerna. Storleken (26 × 14) är rimlig mot kolonisten (14 × 20): en låg, bred hög. Den ses snett ovanifrån, och den översta kärvens hela längd syns. Silhuetten följer idén: två kärvar i botten med stumpändarna utåt och en tredje snett över dem. Banden har jord0-kontur och löven oliv0-kontur, och högen syns tydligt på gräset. Det jag rättade var glansen. Stumparna hade sex punkter i ben3 (w), och regeln tillåter högst en eller två. Jag behöll en w-punkt på den översta kärvens stump och en på den vänstra bottenstumpen, på ljussidan uppe till vänster. Övriga w blev ben2 (q). Det gäller också w-punkten på den högra bottenstumpen, som ligger på skuggsidan. I övrigt är bilden oförändrad.",
+   "ide": "En liten stack av tre lövkärvar, cirka 24 × 14 punkter, lagda kors och tvärs ovanpå varandra som vinterhö: två kärvar ligger bredvid varandra i botten med stjälkändarna utåt åt var sitt håll, och den tredje ligger snett över dem, så att silhuetten blir en låg, bred hög med lövtofsar som sticker ut åt flera håll. Varje kärve har sitt synliga vidjeband i jord1–jord2 och sina ljusa björkstumpar i ben2–ben3, medan lövmassan går i oliv1–oliv3 med inslag av senap1–senap2 där löven börjat torka, och överst ligger den ljusaste kärven, så att den syns tydligast. Konturen är oliv0 runt löven och jord0 runt banden, och högen ses snett ovanifrån så att den översta kärvens hela längd syns."
+  }
+ ]
+}

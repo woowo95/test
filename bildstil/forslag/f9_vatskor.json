@@ -1,0 +1,248 @@
+{
+ "kort": "f9_vatskor",
+ "namn": "Vätskorna i behållarna",
+ "slag": null,
+ "vad": "Steg 9.4.14: en vätska finns bara i en behållare. Behållaren ritas en gång med en yta där vätskan syns, och vätskans färg fyller ytan; en tom behållare visas mörk. Från vänster: vatten i en lerkruka, tjära, salva och lim i näveraskar, och en tom kruka.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "vatten_i_lerkruka",
+     "rader": [
+      "...EEEEEE...",
+      "..EHSTSSGE..",
+      "..EGSSSRFE..",
+      "...EGGGFE...",
+      "....EGFE....",
+      "..EHHGGFFE..",
+      ".EHHGHGGFFE.",
+      "EHGHGGGFGFFE",
+      "EHHGGHGGFGFE",
+      "EGHGGGGFGFFE",
+      "EGGGGFGFFFFE",
+      ".EGGFGFFFFE.",
+      "..EFGFFFFE..",
+      "...EEEEEE..."
+     ]
+    },
+    {
+     "namn": "tjara_i_naveraske",
+     "rader": [
+      "..oooooooo..",
+      ".oqmlllkkpo.",
+      "oqllklkkkkpo",
+      "oqqlkkkkkppo",
+      "opqqqqqqqppo",
+      "owqnnqqqnnpo",
+      "oqqqqnnqqppo",
+      "opqpppqppppo",
+      "opppppppppoo",
+      ".oooooooooo."
+     ]
+    },
+    {
+     "namn": "salva_i_naveraske",
+     "rader": [
+      "..oooooooo..",
+      ".oqwLLLqLpo.",
+      "oqLLqLLLLqpo",
+      "oqqLLqLLLppo",
+      "opqqqqqqqppo",
+      "owqnnqqqnnpo",
+      "oqqqqnnqqppo",
+      "opqpppqppppo",
+      "opppppppppoo",
+      ".oooooooooo."
+     ]
+    },
+    {
+     "namn": "lim_i_naveraske",
+     "rader": [
+      "..oooooooo..",
+      ".oqKJJJJGpo.",
+      "oqJJGJJJGGpo",
+      "oqqJGJJGGppo",
+      "opqqqqqqqppo",
+      "owqnnqqqnnpo",
+      "oqqqqnnqqppo",
+      "opqpppqppppo",
+      "opppppppppoo",
+      ".oooooooooo."
+     ]
+    },
+    {
+     "namn": "tom_lerkruka",
+     "rader": [
+      "...EEEEEE...",
+      "..EHElEEGE..",
+      "..EGllllFE..",
+      "...EGGGFE...",
+      "....EGFE....",
+      "..EHHGGFFE..",
+      ".EHHGHGGFFE.",
+      "EHGHGGGFGFFE",
+      "EHHGGHGGFGFE",
+      "EGHGGGGFGFFE",
+      "EGGGGFGFFFFE",
+      ".EGGFGFFFFE.",
+      "..EFGFFFFE..",
+      "...EEEEEE..."
+     ]
+    }
+   ],
+   "anteckning": "Alla fem står på marken och ses snett uppifrån, så att öppningen syns som en ellips överst och vätskan fyller den; inget hålls eller bärs. Krukorna är spegelsymmetriska med jord0-kontur. De har en vid läpp ovanpå en smal hals och en magstinn buk, med jord3 uppe till vänster och jord1 nere till höger. Vattnet syns i mynningen i skiffer2 med en glanspunkt i skiffer3 och skiffer1 i skuggan. Den tomma krukans mynning är mörk av jord0 och kol1, eftersom man ser ner i ett tomt hål. Näveraskarna är låga runda cylindrar med ben0-kontur. Ellipsen tar halva höjden. Vid den ljusa främre kanten byter mynningen till en vägg med korta n-ränder för nävern och ett mörkare band på 2 punkter längst ner. Tjäran är kol0–kol1 med en enda matt glimt, salvan blek senap3/ben2 och limmet bärnstensfärgat i senap1/jord2 med en glanspunkt i senap2. Granskningen: Krukorna behölls oförändrade. De är spegelsymmetriska, ca 12 × 14 punkter med jord0-kontur och smal mynning, och vattnet har en glanspunkt i skiffer3. Näveraskarna är ritade om. Vätskeytan var ett rektangulärt block och är nu en ellips (6–8–6 punkter bred) med en kant av näver runt om. Öppningen tar övre halvan av asken. Näverns ränder var ensamma n-prickar och är nu korta streck på 2 punkter. Framkanten hade lösa o-prickar och är nu ett jämnt band på 2 punkter i ben1, som mörknar mot nedre högra hörnet. Salvan har en glanspunkt i ben3 och tjäran en i kol2 uppe till vänster.",
+   "ide": "Runda och buktiga: lerkrukorna är spegelsymmetriska, magstinna krukor på cirka 12 × 14 punkter i jord1–jord3 med jord0-kontur och en smal mynning. Näveraskarna är låga runda cylindrar på cirka 12 × 10 punkter i ben1–ben3 med korta streck i n för näverns ränder och en mörkare framkant på 2 punkter. Snett uppifrån syns öppningen som en ellips som tar halva höjden: vattnet i skiffer2–skiffer3 med en glanspunkt, tjäran i kol0–kol1, salvan blek i senap3/ben2, limmet bärnstensfärgat i senap1–jord2, och den tomma krukans mynning fylls av jord0 och kol1."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "vatten_lerskal",
+     "rader": [
+      "...EEEEEEEE...",
+      ".EHHHHGGGGGGE.",
+      "EHGRSSSSSSRGFE",
+      "EHGSTTSSSSSGFE",
+      "EHGSSSSSSSSGFE",
+      "EGGRSSSSSSRGFE",
+      "EHGGGGGGGGGFFE",
+      ".EGFFFFFFFFFE.",
+      "..EEEEEEEEEE.."
+     ]
+    },
+    {
+     "namn": "tjara_naveraskar",
+     "rader": [
+      "...oooooooo...",
+      ".oqwwqqqqqqpo.",
+      "oqlmmllllllkpo",
+      "oqmnllllkllkpo",
+      "oqllllklllkkpo",
+      "oqpqppoqpqpppo",
+      ".oppppoqppppo.",
+      "..oooooooooo.."
+     ]
+    },
+    {
+     "namn": "salva_naveraskar",
+     "rader": [
+      "...oooooooo...",
+      ".oqwwqqqqqqpo.",
+      "oqJLLKLLKKKJpo",
+      "oqKLwLKLLKKJpo",
+      "oqKKLKKKLKKJpo",
+      "oqpqppoqpqpppo",
+      ".oppppoqppppo.",
+      "..oooooooooo.."
+     ]
+    },
+    {
+     "namn": "lim_naveraskar",
+     "rader": [
+      "...oooooooo...",
+      ".oqwwqqqqqqpo.",
+      "oqIJJJIJJJJIpo",
+      "oqJKJJJJIJJIpo",
+      "oqIJJIJJJJIIpo",
+      "oqpqppoqpqpppo",
+      ".oppppoqppppo.",
+      "..oooooooooo.."
+     ]
+    },
+    {
+     "namn": "tom_lerskal",
+     "rader": [
+      "...EEEEEEEE...",
+      ".EHHHHGGGGGGE.",
+      "EHGFFFFFEEEGFE",
+      "EHGFEEEEEEEGFE",
+      "EHGFEEEEEEEGFE",
+      "EGGEEEEEEEEGFE",
+      "EHGGGGGGGGGFFE",
+      ".EGFFFFFFFFFE.",
+      "..EEEEEEEEEE.."
+     ]
+    }
+   ],
+   "anteckning": "Fem låga kärl som står på marken och ses så snett ovanifrån att den öppna ytan tar nästan hela höjden. Från kärlet syns bara den bakre kanten upptill, sidokanterna och ett smalt mörkare band för framsidan längst ner. Lerskålen har en tjock kant i jord, ljus uppe till vänster och mörkare nere till höger, med kontur i jord0. Svepaskarna av näver har ben-toner med kontur i ben0. Den överlappande fogen syns mitt på framsidan som en mörk linje i ben0 med en ljusare kant från lagret som ligger över. Vätskan fyller ytan innanför kanten, och det är färgen som skiljer kärlen åt. Vattnet är skiffer med en ljus glans och tjäran kol med en enda glanspunkt i kol3. Salvan är ljus senap med en glanspunkt i ben3, och limmet är mörk bärnstensfärgad senap. Den tomma skålen har samma form, men insidan är jord0 med en ljusare inre kant i jord1 upptill till vänster, där ljuset når in över kanten. Formerna är spegelsymmetriska, och bara ljuset skiljer sidorna åt. Granskningen: Rättat: 1) Den nedersta raden i båda lerskålarna var bara 13 punkter bred och osymmetrisk. Den är nu ..EEEEEEEEEE.., spegelsymmetrisk och 14 bred, och konturen sluter under framkanten. 2) Vattnets glans var tre punkter i skiffer3, men högst två är tillåtna. Den ensamma T-punkten på rad 4 är nu S. 3) På näveraskarna var framkantens övre rad ljus (w och q), så framkanten läste som en ljus yta. Den raden är nu ett mörkare band i ben1 med korn av ben2. Tillsammans med raden under blir framkanten ett band på 2 punkter, och sömfogen i ben0 sitter kvar mitt på framsidan. I övrigt följer bilderna idén: låga, breda och symmetriska, sedda snett ovanifrån med vätskeytan överst, med kontur i materialets mörkaste ton, ljusare än gräset och i rätt storlek mot kolonisten.",
+   "ide": "Låga och breda: krukan är en vid, låg lerskål med tjock kant, cirka 14 × 9 punkter, och askarna är ovala svepaskar av näver, cirka 14 × 8 punkter, med en synlig överlappande sömfog i ben0 mitt på framsidan. Allt ses så snett ovanifrån att vätskeytan tar tre fjärdedelar av höjden och framkanten bara är ett band på 2–3 punkter i en mörkare ton. De fem står på rad som platta fat, och färgen på den stora ytan är det som skiljer dem, medan den tomma skålen visar en mörk insida i jord0 med en ljusare inre kant upptill till vänster."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "vatten_lerkruka",
+     "rader": [
+      "..EEEEEE..",
+      ".EHTSSSGE.",
+      ".EGSSSRFE.",
+      "..EGGGFE..",
+      ".EHGGGGFE.",
+      "EHHGGGGFFE",
+      "EHGGGGGFFE",
+      "EGGGGGFFFE",
+      ".EGGGGFFE.",
+      ".EFGGFFFE.",
+      "..EEEEEE.."
+     ]
+    },
+    {
+     "namn": "tjara_naverask",
+     "rader": [
+      ".oooooooo.",
+      "oqwwwwwqpo",
+      "oqnmllllpo",
+      "oqmlllklpo",
+      "oqqqqqqppo",
+      "opqpoopppo",
+      "opoopppppo",
+      ".oooooooo."
+     ]
+    },
+    {
+     "namn": "salva_naverask",
+     "rader": [
+      ".oooooooo.",
+      "oqwwwwwqpo",
+      "oqLKKKKJpo",
+      "oqKKKJKJpo",
+      "oqqqqqqppo",
+      "opqpoopppo",
+      "opoopppppo",
+      ".oooooooo."
+     ]
+    },
+    {
+     "namn": "lim_naverask",
+     "rader": [
+      ".oooooooo.",
+      "oqwwwwwqpo",
+      "oqutttsspo",
+      "oqtsttsrpo",
+      "oqqqqqqppo",
+      "opqpoopppo",
+      "opoopppppo",
+      ".oooooooo."
+     ]
+    },
+    {
+     "namn": "tom_lerkruka",
+     "rader": [
+      "..EEEEEE..",
+      ".EHmmllGE.",
+      ".EGllllFE.",
+      "..EGGGFE..",
+      ".EHGGGGFE.",
+      "EHHGGGGFFE",
+      "EHGGGGGFFE",
+      "EGGGGGFFFE",
+      ".EGGGGFFE.",
+      ".EFGGFFFE.",
+      "..EEEEEE.."
+     ]
+    }
+   ],
+   "anteckning": "Krukan står på marken och ses snett uppifrån: mynningen är en oval, och vattnet fyller den i skiffertoner med en glanspunkt, mörkare vid bakre kanten där krukväggen skuggar. Den låga, buktiga krukan är spegelsymmetrisk; ljuset kommer från vänster, så höger sida är mörkare. Näveraskarna är här fyrkantiga och vikta i stället för runda: man ser den öppna lådan ovanifrån med vätskan som en rektangel inom kanten och framväggen som ett band med näverns korta mörka streck. Tjäran är svart i kol med en dov glans, salvan är senapsgul och limmet rostbrunt. Den tomma krukan har samma form, men mynningen är mörk. Granskningen: Rättat: 1) Krukorna var 12 × 14, alltså 70 % av kolonistens höjd (som en kruka på drygt en meter). De är nu 10 × 11, en vattenkruka i rimlig storlek som ändå syns på gräset. Formen är spegelsymmetrisk med mynning, smal hals och buk. Den ensamma ljusa pricken mitt på buken är borta, och ljuset ligger i vänsterkanten med mörkare jord1 till höger. Vattnet syns i mynningen ovanifrån, ljusast uppe till vänster. Den tomma krukan har samma form med mörk mynning i kol1/kol2. 2) Näveraskarna var 14 × 11, nästan lika breda som en människa, vilket är för stort för salva och lim. De är nu 10 × 8. 3) Askarnas framkant var fyra rader i ljusaste ben3, men framkanten ska vara ett smalt mörkare band. Den är nu två rader i ben1 med korta näverstreck i ben0. Ovansidan med kant och vätskeyta tar nu ungefär tre femtedelar av höjden, sedd ovanifrån. Den ljusa kanten ligger bak och till vänster, den mörka till höger. Vätskorna fyller fortfarande ytan: tjära i kol (kol0 bara i den svarta tjäran), salva i senap och lim i rost.",
+   "ide": ""
+  }
+ ]
+}

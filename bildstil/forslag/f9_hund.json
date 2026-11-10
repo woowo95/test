@@ -1,0 +1,103 @@
+{
+ "kort": "f9_hund",
+ "namn": "Hunden",
+ "slag": null,
+ "vad": "Steg 9.8.3: hunden är en tämjd varg, fullvuxen: större än valpen, lik vargen men med mjukare drag. Bilden visar den från sidan, stående på gräs, i ungefär vargens storlek.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_hund",
+     "rader": [
+      ".....EE...E.....................",
+      "....EHFE.EFE....................",
+      "....EHGFEFFE....................",
+      "...EHHGGGFFFE...................",
+      "..EHHGHGGFGFFE........EEEE......",
+      ".EHGHkGGFGFFFE.......EGHHGE.....",
+      "kqqpHGGGFGFFFE......EHGEEFGE....",
+      "EqqqppGFGFFFFEEEEEEEEGEEEFGE....",
+      ".EEEqqpGFGHHGHHGHHHGHGHHGGFE....",
+      "...EqqqpGGFGFGGFGGFGFGGFGFFFE...",
+      "...EqqqpGFGFFGFFGFGFFGFGFFFFE...",
+      "...EpqqpFGFFGFFFGFFGFFFGFFFFE...",
+      "....EpqpFFGFFFFGFFFFGFFFFFFFE...",
+      ".....EpqGFFFFEEEEEEEFFGFFFFE....",
+      "......EpGFEEFE.....EFEGFFFE.....",
+      "......EpGFEEFE.....EFEEGFFE.....",
+      "......EGFE.EFE.....EFE.EGFE.....",
+      "......EGFE.EFE.....EFE.EGFE.....",
+      "......EGFEPEFEOPOXPEFEOEGFE.....",
+      "...UOEHGFEPEFEPOPOXEFEEHGFEOU...",
+      ".UPOPEEEEEOEEEXOPOXEEEEEEEEXOWU.",
+      ".UOXOPOXWOXOWOXOXWOXWOWXWXWXWWU.",
+      "...UXWOWXWWXWOWXWWXWVWWXWVWWU...",
+      ".......UUUUUUUUUUUUUUUUUU......."
+     ]
+    }
+   ],
+   "anteckning": "Hunden står i profil åt vänster med alla fyra tassarna mitt på en oval grästuva, som vi ser snett uppifrån. Tuvan är ljusast uppe till vänster och har en kant i barr0. Huvudet är lyft med ett kort, ljust nosparti i ben, en svart nostipp och ett öga i kol0. Öronen är korta, upprätta och rundade, och det bortre örat skymtar bakom det främre. Ovanifrån syns ett smalt ljust ryggband i jord3. Svansen ringlar upp över korset och böjer ner mot ryggen, det tydliga tecknet på tämjd. De bortre benen står förskjutna bakom de främre, smalare och en ton mörkare. Pälsen har korn i jord1 till jord3 med kontur i jord0, och bröstet är i ben1–ben2. Ingen skugga är ritad. Granskningen: Granskad och oförändrad. Storlek: hunden är cirka 28 × 21 punkter med tuvan 32 × 24. Den håller sig inom 48 × 48 och ligger i vargens storlek enligt idén. Den står ungefär lika hög som kolonisten men skalas inte om, så att den förblir jämförbar med vargen. Vinkeln är profil åt vänster med ett smalt ljust ryggband (H) som visar ryggen snett uppifrån, och tuvan är oval, vilket stämmer med idén för ett djur. Grästuvan är spegelsymmetrisk i formen och centrerad under hunden; bara kornet skiljer sidorna. Ljuset faller från övre vänstra hörnet: ljust på huvud, öron och rygg och mörkare F mot buk och höger. Konturen är jord0 hela vägen. kol0 används bara för nos och öga, som verkligen är svarta. Bröst och nos är i ben, och de bortre benen ligger en ton mörkare bakom de främre. Svansen är ringlad över ryggen och öronen är korta och rundade, så idén följs. Pälsen i jord är ljusare än det mellantonade gräset och har kontur, så hunden syns på marken. Inga mättade färger, ingen glans och inga ensamma prickar. Den bärs inte, så rem- och huvudregeln gäller inte.",
+   "ide": "Hunden står i profil åt vänster på en låg, oval grästuva i oliv och barr (ca 30 × 6 punkter), själva kroppen ca 26 × 18 punkter med huvudet lyft och svansen ringlad uppåt över ryggen, det tydligaste tecknet på att den är tämjd. Pälsen är jord i tre toner med ljusare ben2 på bröst och nos, kontur i jord0, och korta upprätta öron som är rundare än vargens. Eftersom vi ser den snett uppifrån syns ett smalt ljust band av ryggen, och de bortre benen skymtar en ton mörkare bakom de främre."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_hund",
+     "rader": [
+      "......QQQQQQQQQQQQ..........",
+      "....QQTTSTTTSTTTTSTQQ.......",
+      "...QTTSTSTTSTSTTSTTSTQ......",
+      "..QSTSSTSSSTSSTSSSTSTSQ.....",
+      ".QSSSRSSSRSSSSRSSSRSSTSQ....",
+      "QTSQRSRSSRSSRSRSSRSSRSTSQ...",
+      "QTSQRRSRRSRRSRRSRRSRSSTSQQ..",
+      "QTSQRRSRRRRQQQQRRSRSSTSTSQ..",
+      "QTSQEGE.EFE...EGE.EFESTSSSQ.",
+      "QTSQEGE.EFE...EGE.EFERSQSSSQ",
+      ".QSQEGE.EFE...EGE.EFEQRSRSSQ",
+      "..Q.EGE.EFE...EGE.EFE.QRRSkk",
+      "....EGGEEFFE..EGGEEFFE.QQQQX",
+      "..X.EEEEEEEE.XEEEEEEEE..PX..",
+      ".XOPXOOPXOPOXOPOXOOPXOPOXPX.",
+      "..WXWNXWXWNWXWXNWXWWXNWXWX.."
+     ]
+    }
+   ],
+   "anteckning": "Hunden står på alla fyra från sidan, vänd åt höger, med huvudet sänkt mot gräset som om den nosar. Ryggen bildar en låg båge från svansroten till nacken, och ovansidan ses lite uppifrån, så den är ljusast (skiffer3) uppe till vänster. Mot buken mörknar den till skiffer1. Svansen hänger mjukt ned från länden och slutar en bit ovanför gräset. Örat sitter halvt vikt framåt ovanpå det sänkta huvudet. Benen är i varm jord, med de bortre benen mörkare och smalare än de närmre så att man ser att det är fyra ben. Nosen är den enda svarta punkten och är nästan nere i stråna. Konturen är skiffer0 runt pälsen och jord0 på benens skuggsida. Under hunden ligger bara en smal remsa gräs i oliv och barr. Granskningen: Ritade om hunden eftersom version 2 inte läste som en hund. Silhuetten liknade en myrslok: en hög puckel, inget tydligt huvud och fyra breda bruna klossar som ben. Benen saknade kontur och smälte in i gräset, och ögat (kol0) satt mitt på kroppen. Nu sänks halsen tydligt från skuldran till ett lågt huvud med nos, och den svarta nosen i kol0 nästan rör ett grässtrå. Ett halvt framåtvikt öra ligger på huvudets ovansida och ögat är i skiffer0. Svansen är två punkter bred och hänger mjukt ned med kontur i skiffer0. Benen är smala, tre punkter breda, i jord med jord0-kontur. De närmre benen är ljusare (jord2) och de bortre mörkare (jord1), och tassarna pekar framåt med en mörk underkant. Ryggen är ljusast (skiffer3), sidorna mellanton och buken mörkast, så ljuset faller uppifrån vänster. Måtten är 28 × 16 punkter inklusive grasremsan, i linje med idén och ungefär vargens storlek mot kolonisten.",
+   "ide": "Hunden står lågt och avslappnat med huvudet sänkt mot gräset som om den nosar, så att silhuetten blir en lång, flack båge från svanstipp till nos (ca 28 × 15 punkter) i stället för vargens höga, raka hållning. Svansen hänger mjukt nedåt och öronen är halvt vikta framåt, pälsen är grå i skiffer med varmare jord på benen och kontur i skiffer0. Ryggen ses lite ovanifrån med ljuset uppe till vänster, och tuvan under är en smal remsa gräs där nosen nästan rör stråna."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_hund",
+     "rader": [
+      "..E.....E...............",
+      ".EKE...EJE..............",
+      ".ELKEEEKJE..............",
+      "EKLKKLKKJJE.............",
+      "EKLkKKKkJJE.............",
+      "EKKJLLLJJIEEEEEEEEEEEEE.",
+      "EJKLokkLJIEHGGFGGFGGLKJE",
+      "EIJLLkLLJIEGFFGFFGFFJJIE",
+      ".EIJLLLJIEJKJKKJKJJIEEE.",
+      "..EJKLKJJIJKJJKJJIJIE...",
+      "..EKJJIJJIJJIJJIJIIE....",
+      "..EKJEEEKJEEEGEEEGEE....",
+      "..EKJE.EKJE.EGE.EFE.....",
+      "..ELJE.EKIE.EFE.EFE.....",
+      ".VEJIEPEKIEOEHEPEHEOWV..",
+      "VXEJIEOEJIEPEEEOEEEOXPWV",
+      "WOEHGEPEHGEOPXPOPXOPXPXW",
+      "VWEEEEOEEEEOPXOPOXPOXWVU",
+      ".UWXOXOXWOXOWXOXOWXOXWU.",
+      "..UUVWWVWWVWWVWWVWWVUU..",
+      "....UUUUUUUUUUUUUUUU...."
+     ]
+    }
+   ],
+   "anteckning": "Hunden står bredbent på alla fyra tassarna. Kroppen pekar åt vänster och svansen står vågrätt bakåt åt höger, mitt i en vift. Huvudet är vänt mot betraktaren och har två spetsiga öron, båda ögonen och en kort, bred nos. Det runda ansiktet är spegelsymmetriskt, och bara ljuset skiljer sidorna åt. Spelets vinkel snett uppifrån syns genom att nacke och rygg ligger som en ljus senapskil i överkanten. Den mörkare sadeln av jord ligger på bålens sida. De främre benen är längre och ljusare och står längst ner på tuvan. De bakre benen är kortare och mörkare, eftersom de står längre bort på tuvans bakre del. Konturen är jord0. Kol0 används bara i ögonen och nosen, och glansen är en enda punkt på nosen. Grästuvan är oliv och barr med barr0 som kant. Granskningen: Rättat: huvudet var för stort och runt, och bröstet gick som en man ända ner till benen, så att hunden såg ut som ett lejon. Huvudet är nu mindre (11 punkter brett) och har spetsiga, symmetriska vargöron. Ansiktet vetter fortfarande mot betraktaren med två ögon, en ljus, kort nos, en svart näsa med en glanspunkt och en munlinje. Kroppen är längre och har en mörkare sadel i jord över ryggen och sidor i senap. Svansen står vågrätt bakåt. Framtassarna står längst fram på tuvan och bakbenen är kortare och mörkare, med tassarna högre upp, så att de syns stå längre bak sett snett uppifrån. Konturen är jord0 och kol0 används bara till ögon, näsa och mun. Bilden är nu 24 × 21 punkter.",
+   "ide": "Hunden står bredbent i trekvartsprofil med kroppen åt vänster men huvudet vänt mot betraktaren, så att båda ögonen och en kort, bred nos syns och ansiktet blir runt och vänligt (ca 24 × 20 punkter, högre än det är långt). Svansen står ut vågrätt bakåt mitt i en vift och pälsen är lurvig senap och jord med en mörkare sadel över ryggen, kontur i jord0, glans bara en punkt på nosen. Från spelets vinkel syns rygg och nacke ovanifrån som en ljus kil, alla fyra tassarna står på en rund grästuva och de bakre benen är kortare och mörkare."
+  }
+ ]
+}
