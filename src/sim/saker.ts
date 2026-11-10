@@ -183,6 +183,8 @@ const DEF = {
   slunga: { namn: 'Slunga', hanger: 'balte', skaffa: RECEPT.slunga, vikt: 0.2, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, gors: { text: 'Gör en slunga.', stat: 'slungorGjorda', forsta: '{namn} gjorde byns första slunga.' }, trasig: { stat: 'slungorTrasiga', text: '{namn}s slunga gick sönder.' } },
   horn: { namn: 'Horn', hanger: 'balte', skaffa: RECEPT.horn, vikt: 0.5, stack: 1, mapp: 'Redskap', slits: 0.0001, redskap: true, gors: { text: 'Gör ett horn.', stat: 'hornGjorda', forsta: '{namn} gjorde byns första horn.' }, trasig: { stat: 'hornTrasiga', text: '{namn}s horn gick sönder.' } }, // steg 8.7.11
   pilar: { namn: 'Pilar', skaffa: RECEPT.pilar, vikt: 0.1, stack: 20, mapp: 'Redskap' },
+  skara: { namn: 'Skära', hanger: 'balte', skaffa: RECEPT.skara, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'skarorTrasiga', text: '{namn}s skära gick sönder.' },
+    gors: { text: 'Fäster en vass flintegg på ett krokigt skaft med rep.', stat: 'skarorGjorda', forsta: '{namn} gjorde byns första skära. Med den slås ängen till hö åt djuren.' } }, // steg 9.8.9
   benspade: { namn: 'Benspade', hanger: 'balte', skaffa: RECEPT.benspade, vikt: 4, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'benspadarTrasiga', text: '{namn}s benspade gick sönder.' },
     gors: { text: 'Surrar ihop en benspade av ben, rep och en gren.', stat: 'benspadarGjorda', forsta: '{namn} gjorde byns första benspade av tre ben. Med den gräver man fram rötter fortare, och gropar.' } },
   // maten som grillats (steg 2.8.1, RATTER i matlagning.ts): en enkel rätt som håller längre än den råa och äts först

@@ -357,6 +357,8 @@ export interface State {
   ruttet?: number; // mat som ruttnat bort på sistone (glöms med tiden, byggnader.ts)
   skramma?: number[]; // fälten som har en fågelskrämma (steg 9.7.11, odling.ts)
   tamdjur?: import('./tamdjur').Tamdjur[]; // de tama djuren (fas 9.8, tamdjur.ts)
+  angar?: import('./slatter').Ang[]; // slåtterängarna (steg 9.8.9, slatter.ts)
+  godsel?: number; // gödseln från fähuset som ännu inte blivit en hel rest i komposten (steg 9.8.9)
   hagar?: import('./hage').Hage[]; // hagarna (steg 9.8.4, tamdjur.ts)
   staket?: number[]; // rutorna med staket (steg 9.7.10, odling.ts)
   sophog?: { x: number; y: number; n: number }; // sophögen och resterna på den (steg 9.7.5, rester.ts)

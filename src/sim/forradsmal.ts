@@ -209,6 +209,7 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   axelrem: spjutVill, // en per spjut (steg 7.1.2)
   ryggsack: s => perVuxna(s, VILLTAL.korgPerVuxna, VILLTAL.korgMin, VILLTAL.korgMax), // lika många som korgarna, till dem som samlar (steg 7.1.3)
   rustning: s => Math.ceil(living(s).length / 4), hjalm: s => Math.ceil(living(s).length / 4), skold: s => Math.ceil(living(s).length / 4), bage: () => 2, slunga: () => 2, horn: () => 1, // vapnen och rustningen (system 8.7)
+  skara: s => (s.angar?.length ?? 0) > 0 ? 1 : 0, // en skära när byn har en slåtteräng (steg 9.8.9)
   benspade: () => VILLTAL.spadar, // till latrinen och rötterna (steg 2.7.2)
   fackla: () => VILLTAL.facklor, // till den som går ut i mörkret (steg 6.3.6, ljus.ts)
   talgljus: s => ljusPlatser(s).length, // ett till varje bord och hylla inne där folk är vakna i mörker (steg 6.3.8, ljus.ts)

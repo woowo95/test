@@ -289,14 +289,15 @@ const utanfor = (s: State, g: Grans, x: number, y: number) => !g.nara[y * W + x]
 function rutaFri(s: State, g: Grans, x: number, y: number) {
   if (!inMap(x, y) || x < 1 || y < 1 || x >= W - 1 || y >= H - 1) return false;
   const i = y * W + x, t = getMap(s.seed).tiles[i];
-  return (t === T.Gras || t === T.Skog) && (groundOf(s).trees[i] < FOREST || nTools(s, 'yxa') > 0) && utanfor(s, g, x, y) && ledig(s, x, y) && !faltAt(s, x, y) && !(s.hagar ?? []).some(h => x >= h.x - 1 && x <= h.x + h.w && y >= h.y - 1 && y <= h.y + h.h); // inte i en hage eller på dess staket (steg 9.8.4). I skogen fälls träden först, med en yxa (steg 3.6.9)
+  return (t === T.Gras || t === T.Skog) && (groundOf(s).trees[i] < FOREST || nTools(s, 'yxa') > 0) && utanfor(s, g, x, y) && ledig(s, x, y) && !faltAt(s, x, y) && !(s.hagar ?? []).some(h => x >= h.x - 1 && x <= h.x + h.w && y >= h.y - 1 && y <= h.y + h.h)
+    && !(s.angar ?? []).some(a => x >= a.x && x < a.x + a.w && y >= a.y && y < a.y + a.h); // inte på slåtterängen (steg 9.8.9) // inte i en hage eller på dess staket (steg 9.8.4). I skogen fälls träden först, med en yxa (steg 3.6.9)
 }
 
 // var ett nytt fält med n rutor och bredden w läggs: alla rutor fria och utanför byns gräns, första raden högst faltTill rutor
 // utanför byns område och så nära det som det går (utanforByn), lite ungskog. Samma plats varje gång (ingen slump). Sparas per by och timme (regel 4)
 const siteCache = new WeakMap<State, { key: string; at?: { x: number; y: number } }>();
 export function faltSite(s: State, w: number, n: number) {
-  const key = `${Math.floor(s.now / HOUR)}:${s.byggV ?? 0}:${faltOf(s).length}:${s.stackar?.length ?? 0}:${s.hagar?.length ?? 0}:${w}:${n}`;
+  const key = `${Math.floor(s.now / HOUR)}:${s.byggV ?? 0}:${faltOf(s).length}:${s.stackar?.length ?? 0}:${s.hagar?.length ?? 0}:${s.angar?.length ?? 0}:${w}:${n}`;
   const c = siteCache.get(s);
   if (c && c.key === key) return c.at;
   const at = hittaSite(s, w, n);

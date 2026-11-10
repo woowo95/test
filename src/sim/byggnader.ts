@@ -15,6 +15,7 @@ import { flodBlot } from './sjo';
 import { inneUtanPlats, isKlar, stationDef, stationRum, stationRutor, stationerOf, storlek } from './stationer';
 import { SJUKDOMAR } from './sjukdom';
 import { kn } from './kunskap';
+import { fahusAkut } from './slatter';
 
 // ---------- balanstal (regel 8) ----------
 // Husens storlek, vad de är till för och när de byter funktion eller rivs. Var de står och hur de byggs står i BYGG (bygg.ts)
@@ -117,6 +118,12 @@ export const BYGGNADER = {
     namn: 'Vedbod', ikon: 'ved', behov: 'Under tak blir veden aldrig blöt och torkar fortare', fara: false, vikt: 0.8, skjul: true,
     akut: s => { const n = vedUte(s).reduce((a, q) => a + q.n, 0); return n >= HUS.vedbodFran ? { v: HUS.skjulAkut * (kallTid(ageIndex(s)) ? 2 : 1), plats: 0 } : { v: 0, plats: 0 }; },
     namnFor: (_s, _w, _h, same) => same ? `Vedbod ${same + 1}` : 'Vedboden',
+  },
+  // fähuset (steg 9.8.9, slatter.ts): djuren står där i istiden och fryser inte. Byggs när byn har betesdjur som inte får plats
+  fahus: {
+    namn: 'Fähus', ikon: 'fahus', behov: 'Djuren står under tak i istiden och fryser inte', fara: false, vikt: 1.2,
+    akut: s => fahusAkut(s),
+    namnFor: (_s, _w, _h, same) => same ? `Fähus ${same + 1}` : 'Fähuset',
   },
   verkstad: {
     namn: 'Verkstad', ikon: 'verkstad', behov: 'Plats inne för en station som inte får plats i något annat hus (slöjdbänken)', fara: false, vikt: 1,

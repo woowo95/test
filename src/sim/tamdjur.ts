@@ -19,8 +19,8 @@ import { DAY, Person, State } from './typer';
 export interface TamArt { namn: string; ord: [string, string, string, string]; foder: readonly string[]; bete?: 'gras' | 'buskar'; liv: number; vuxen: number; varde: number; mattar: number; ikon: string }
 export const TAMDJUR = {
   hund: { namn: 'Hund', ord: ['en', 'hund', 'hundar', 'hunden'], foder: ['slaktrens', 'kott', 'vargkott', 'gaddkott', 'braxkott'], liv: 12, vuxen: 1, varde: 30, mattar: 0.5, ikon: 'varg' },
-  far: { namn: 'Får', ord: ['ett', 'får', 'får', 'fåret'], foder: [], bete: 'gras', liv: 10, vuxen: 1, varde: 25, mattar: 0.5, ikon: 'radjur' },
-  get: { namn: 'Get', ord: ['en', 'get', 'getter', 'geten'], foder: [], bete: 'buskar', liv: 12, vuxen: 1, varde: 25, mattar: 0.5, ikon: 'radjur' },
+  far: { namn: 'Får', ord: ['ett', 'får', 'får', 'fåret'], foder: ['torrgras'], bete: 'gras', liv: 10, vuxen: 1, varde: 25, mattar: 0.5, ikon: 'radjur' },
+  get: { namn: 'Get', ord: ['en', 'get', 'getter', 'geten'], foder: ['torrgras'], bete: 'buskar', liv: 12, vuxen: 1, varde: 25, mattar: 0.5, ikon: 'radjur' },
 } as const satisfies Record<string, TamArt>;
 export type TamArtId = keyof typeof TAMDJUR;
 export const TAM_LIST = Object.keys(TAMDJUR) as TamArtId[];
@@ -28,7 +28,7 @@ export const tamArt = (a: TamArtId): TamArt => TAMDJUR[a];
 
 // ett tamdjur. hunger 0–1 (1 = svälter), svalt = timmar det svultit, agare = personen som äger det (ingen = byn), matad = hur
 // mycket var och en matat det (hunden byter till den som matat mest, steg 9.8.3)
-export interface Tamdjur { id: number; art: TamArtId; born: number; hunger: number; svalt?: number; agare?: number; x: number; y: number; matad?: Record<number, number>; lojal?: number; hage?: number; dog?: number; ull?: number; mjolk?: number }
+export interface Tamdjur { id: number; art: TamArtId; born: number; hunger: number; svalt?: number; agare?: number; x: number; y: number; matad?: Record<number, number>; lojal?: number; hage?: number; dog?: number; ull?: number; mjolk?: number; fahus?: number; kyla?: number } // fahus = huset djuret står i under istiden, kyla = timmar ute i istiden (steg 9.8.9)
 export const TAM_ID0 = 900_000_000; // tamdjurens id ligger över alla vilda djurs (djur.ts)
 
 export const TAM = balans('tamdjur', {

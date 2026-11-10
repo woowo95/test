@@ -1,5 +1,6 @@
 import { husNytt } from './byggnad';
 import { faltAt } from './odling';
+import { angAt } from './slatter';
 import { bynsMitt, omrade, tillHoljet } from './omrade';
 import { ALDER, ageOf, byId, count, familjOf, forstaGang, getRel, living, log, stat } from './folk';
 import { Hus, MATERIAL, bitAt, bitsOf, gridOf, housesOf, husById, touch } from './byggnad';
@@ -756,7 +757,7 @@ function valj(s: State, u: ByggBehov, okAt: (i: number) => boolean) {
 }
 function utfor(s: State, f: Forslag, u: ByggBehov, byggare: Person[], ppl: Person[]) {
   const fam = u.a.ag !== undefined ? familjOf(s, u.a.ag) : [], by = byggare.find(p => fam.includes(p)) ?? (fam.find(p => p.id === u.a.ag) ?? byggare[0] ?? ppl[0]);
-  if (f.ritning.some(a => faltAt(s, a.x, a.y))) { count(s, 'planPaFalt'); return; } // aldrig på ett fält
+  if (f.ritning.some(a => faltAt(s, a.x, a.y) || angAt(s, a.x, a.y))) { count(s, 'planPaFalt'); return; } // aldrig på ett fält eller en slåtteräng (steg 9.8.9)
   if (f.at === 'kopaHus') { s.husAffar = { hus: f.hus!.id, ag: u.a.ag!, t: s.now }; return; }
   if (f.at === 'stockvagA' || f.at === 'bryggaA' || f.at === 'infartA') {
     s.nextBit ??= 1;

@@ -11,6 +11,7 @@ import { MATERIAL, bitsOf, gridOf } from './byggnad';
 import { eldPlats, getMap } from './karta';
 import { flyttaLager, zonesOf } from './lager';
 import { faltAt } from './odling';
+import { angAt } from './slatter';
 import { omrade } from './omrade';
 import { stationAt } from './stationer';
 import { H, State, T, W, inMap } from './typer';
@@ -64,7 +65,7 @@ function sokData(s: State): Sok {
     // genom det, och en lagerplats som ett stråk går igenom flyttas (lagerIStraket)
     const lag = zs.some(z => z.hus === undefined && x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h);
     if (lag) mal[i] = MAL.indexOf('lager');
-    if (stationAt(s, x, y) || faltAt(s, x, y) || x === f.x && y === f.y) continue;
+    if (stationAt(s, x, y) || faltAt(s, x, y) || angAt(s, x, y) || x === f.x && y === f.y) continue;
     if (lag) { gang[i] = 1; continue; }
     if (s.torg && x >= s.torg.x && y >= s.torg.y && x < s.torg.x + s.torg.w && y < s.torg.y + s.torg.h) { mal[i] = MAL.indexOf('torg'); continue; }
     gang[i] = 1;

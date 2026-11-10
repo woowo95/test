@@ -1790,3 +1790,55 @@ SCENARIER.mjolk = {
     ];
   },
 };
+
+SCENARIER.slatter = {
+  text: 'Steg 9.8.9: djurens vinter. Byn med hage och betesdjur märker ut en slåtteräng; på sensommaren slås den med skäran till hö. I istiden står djuren i fähuset och ger gödsel till komposten; de som inte får plats fryser ihjäl, och på hösten slaktar byn de djur den inte har hö till',
+  kor: () => {
+    const { nyttTamdjur, stepHagar, stepVinter, hageVal, hageKlar, angarOf, angRutor, slaVal, slaKlar, setAmount, amountOf, addTool, groundOf, tamdjurOf, HIGH, VINTER, fahusAkut, mataVal, foderFor, slaktOrsak, DAY } = SIM;
+    const s = createState(5, START); klockan(s, 10);
+    const p = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0];
+    (p.tek ??= {}).staket = 1; setAmount(s, 'grenar', 800); setAmount(s, 'rep', 2); setAmount(s, 'torrgras', 0);
+    const m = SIM.bynsMitt(s);
+    const djur = [nyttTamdjur(s, 'far', m.x, m.y, undefined, s.now - 3 * DAY), nyttTamdjur(s, 'far', m.x + 1, m.y, undefined, s.now - 3 * DAY), nyttTamdjur(s, 'far', m.x + 1, m.y + 1, undefined, s.now - 3 * DAY), nyttTamdjur(s, 'get', m.x, m.y + 1, undefined, s.now - 3 * DAY)];
+    stepHagar(s); for (let v = hageVal(s, p), n = 0; v && n < 400; v = hageVal(s, p), n++) hageKlar(s, p, v.i);
+    stepVinter(s);
+    const ang = angarOf(s)[0];
+    // på sommaren slås ängen med skäran
+    s.kal = SIM.nyKalender(s.now, SIM.SOMMAR);
+    const g = groundOf(s); for (const i of angRutor(ang)) g.cover[i] = Math.max(g.cover[i], HIGH);
+    const utan = slaVal(s, p) === undefined;
+    addTool(s, 'skara', p);
+    let slagna = 0; for (let i = slaVal(s, p); i !== undefined && slagna < 50; i = slaVal(s, p), slagna++) slaKlar(s, p, i);
+    const ho = amountOf(s, 'torrgras');
+    // på hösten: fähuset behövs, och utan hö nog slaktas djur
+    s.kal = SIM.nyKalender(s.now, SIM.HOST);
+    const akut = fahusAkut(s).v > 0;
+    setAmount(s, 'torrgras', 0);
+    const slakt = djur.filter(d => slaktOrsak(s, d) === 'host').length;
+    setAmount(s, 'torrgras', djur.length * VINTER.hoPerDjur);
+    const ingenSlakt = djur.every(d => slaktOrsak(s, d) !== 'host');
+    // i istiden: ett fähus med plats för två; de andra djuren fryser ihjäl
+    const id = (s.nextBit ??= 1); s.nextBit++;
+    SIM.housesOf(s).push({ id, namn: 'Fähuset', x: m.x + 8, y: m.y + 8, w: 4, h: 3, fn: 'fahus', klar: s.now } as SIM.Hus);
+    s.kal = SIM.nyKalender(s.now, SIM.ISTID);
+    const ko = SIM.komposten(s), rest0 = ko?.kompost?.rest ?? 0;
+    for (let h = 0; h < VINTER.frysTim; h++) { for (const d of tamdjurOf(s)) d.hunger = Math.min(d.hunger, 0.5); stepVinter(s); }
+    const inne = tamdjurOf(s).filter(d => d.fahus === id).length, kvar = tamdjurOf(s).filter(d => d.art !== 'hund').length;
+    const rest1 = ko?.kompost?.rest ?? 0;
+    // djuren i fähuset äter hö
+    const d0 = tamdjurOf(s).find(d => d.fahus === id)!; d0.hunger = 0.9;
+    for (const d of tamdjurOf(s)) if (d !== d0) d.hunger = 0;
+    const matas = mataVal(s, p) === d0 && foderFor(s, p, d0) === 'torrgras';
+    return [
+      [`byn märker ut en slåtteräng när den har hage och djur`, !!ang && ang.w === VINTER.angSida],
+      [`utan skära slås ingen äng`, utan],
+      [`med skäran slås ängen till hö (${slagna} rutor, ${ho} hö)`, slagna >= 1 && ho === slagna * VINTER.ho],
+      [`på hösten behövs ett fähus åt djuren`, akut],
+      [`utan hö slaktar byn djur på hösten (${slakt})`, slakt >= 1],
+      [`med hö nog slaktas inga för vinterns skull`, ingenSlakt],
+      [`i istiden står två djur i fähuset (${inne}) och de andra fryser ihjäl (${kvar} kvar)`, inne === 2 && kvar === 2],
+      [`gödseln hamnar i komposten (${rest0} → ${rest1})`, !ko || rest1 > rest0],
+      [`djuren i fähuset får hö`, matas],
+    ];
+  },
+};

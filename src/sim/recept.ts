@@ -113,6 +113,7 @@ const DEF = {
   trumma: { var: 'sak', av: { skinn: 1, ved: 1 }, min: 4, slag: 'liten', tek: 'trumma', bank: 'snickarbank' },
   benflojt: { var: 'sak', av: { ben: 1 }, min: 4, slag: 'liten', tek: 'benflojt', verktyg: { kniv: 'kniven', flinta: 'en flinta' } },
   lyra: { var: 'sak', av: { ved: 1, rep: 1 }, min: 5, slag: 'stor', tek: 'lyra', verktyg: { kniv: 'kniven', flinta: 'en flinta' }, bank: 'snickarbank', bara: true, kniv: true },
+  skara: { var: 'sak', av: { flinta: 1, grenar: 1, rep: 1 }, min: 5, slag: 'liten', tek: 'kniv' }, // skäran till slåttern (steg 9.8.9)
   benspade: { var: 'sak', av: { ben: 3, rep: 1, grenar: 1 }, min: 5, slag: 'stor', tek: 'benspade' },
   grillfisk: { var: 'sak', av: { fisk: 1 }, min: 7.5, slag: 'bearbeta', tek: 'grill' },
   grillkott: { var: 'sak', av: { kott: 1 }, min: 7.5, slag: 'bearbeta', tek: 'grill' },

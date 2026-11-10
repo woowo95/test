@@ -139,6 +139,7 @@ function betesRuta(s: State, d: Tamdjur, rs: number[]) {
 }
 // en timme för ett betesdjur: rymmer genom ett hål, äter i hagen (eller där det strövar) och flyttar sig
 function stepBete(s: State, d: Tamdjur) {
+  if (d.fahus !== undefined) return; // i fähuset i istiden betar djuret inte utan äter hö (steg 9.8.9, slatter.ts)
   let h = hageById(s, d.hage);
   if (h && !hageHel(s, h) && rnd(s, 'tamdjur') < HAGE.rymma) {
     const hal = hageKant(s, h).find(i => !harStaket(s, i))!, hx = hal % W, hy = Math.floor(hal / W);

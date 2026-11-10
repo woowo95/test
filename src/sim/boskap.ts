@@ -12,7 +12,8 @@ import { rnd } from './slump';
 import { changed, foodOf, gain, put, stacksOf, tidy } from './lager';
 import { kanGoras } from './stationer';
 import { DAY, Person, State } from './typer';
-import { iIstiden, isLight, kalender, VAR } from './tid';
+import { HOST, iIstiden, isLight, kalender, VAR } from './tid';
+import { hoRacker } from './slatter';
 import { fyllVatska, ledigFor } from './vatskor';
 import { TamArtId, Tamdjur, nyttTamdjur, tamAlder, tamArt, tamdjurOf } from './tamdjur';
 
@@ -126,7 +127,8 @@ export function mjolkaKlar(s: State, p: Person, ref?: number) {
 // ---------- slakten av tamdjuren (steg 9.8.7) ----------
 // Ett får eller en get avlivas och slaktas vid slaktbänken som viltet (raderna far och get i DJUR, redskap.ts): kött, ben, skinn,
 // talg och horn, och slaktrensen blir mat åt hunden. Byn slaktar det gamla djuret, ett av hanarna när flocken blivit för stor
-// (en hane blir kvar), och när byn svälter det som inte behövs för att flocken ska leva vidare (ett par blir kvar)
+// (en hane blir kvar), när byn svälter det som inte behövs för att flocken ska leva vidare (ett par blir kvar), och på hösten
+// de djur byn inte har hö till över istiden (steg 9.8.9)
 export const SLAKTDJUR = balans('slaktdjur', {
   gammal: 0.75, // ett djur äldre än så här stor del av sin livslängd slaktas
   svalt: 2, // byn svälter när maten i förrådet är mindre än så här många saker per människa
@@ -141,6 +143,8 @@ export function slaktOrsak(s: State, d: Tamdjur): string | undefined {
   const arten = tamdjurOf(s).filter(q => q.art === d.art), hanar = arten.filter(q => !hona(q) && vuxen(s, q));
   if (!hona(d) && vuxen(s, d) && arten.length >= BOSKAP.flock && hanar.length > 1) return 'for manga';
   if (foodOf(s) < living(s).length * SLAKTDJUR.svalt && arten.length > 2 && !(hanar.length === 1 && hanar[0] === d)) return 'svalt';
+  // höstslakten (steg 9.8.9): på hösten slaktar byn de djur den inte har hö till över istiden, men ett par av arten blir kvar
+  if (kalender(s).ai === HOST && !hoRacker(s) && arten.length > 2 && !(hanar.length === 1 && hanar[0] === d)) return 'host';
   return undefined;
 }
 export function avlivaVal(s: State, p: Person) {

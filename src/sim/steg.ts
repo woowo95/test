@@ -246,6 +246,7 @@ KLAR.hage = (s, p, t) => hageKlar(s, p, t.ref); // hagen (steg 9.8.4)
 KLAR.valla = (s, p, t) => vallaKlar(s, p, t.ref);
 KLAR.klippa = (s, p, t) => klippKlar(s, p, t.ref);
 KLAR.mjolka = (s, p, t) => mjolkaKlar(s, p, t.ref);
+KLAR.slatter = (s, p, t) => slaKlar(s, p, t.ref);
 KLAR.avliva = (s, p, t) => avlivaKlar(s, p, t.ref);
 KLAR.tomma_latrin = (s, p) => latrinTomKlar(s, p);
 KLAR.staket = (s, p, t) => staketKlar(s, p, t.ref);
@@ -323,7 +324,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
     atSteg(s); stepSeder(s); updateTags(s); stepRelationer(s); stepUppvaxt(s); stepReligion(s); for (const p of living(s)) morkHumor(s, p); facklorTimme(s); stepHumor(s); stepDelning(s); stepLarlingar(s);
     stepVader(s); vindfallen(s); regnetTvattar(s); stepMotgang(s); stepTorka(s); stepFlod(s); stepIs(s); growGround(s, 1, ai); growFynd(s, 1, ai, vaxtFaktor(s), vaderNu(s).nb); forget(s, 1); stepRykten(s, moodOf); glomRykten(s, 1); stepBerattelser(s); stepStyre(s); rotStumps(s); tidyStore(s);
-    vaggRensa(s); kvarTimme(s); kultTimme(s); kyrkaTimme(s); wearBuild(s, 1, ai); stepByggnader(s); husKlaraTimme(s); stepMjardar(s); stepNaken(s); stepByggplan(s); stepEldFlytt(s); lagerIStraket(s); stepPaborjat(s); stepStationer(s); stepPynt(s); stepKrukor(s); protesTimme(s); halsoNotiser(s); stepKok(s); vatskorTimme(s); stepBrygg(s); stepBak(s); stepSophog(s); stepKompost(s); stepOrtKrukor(s); stadaByten(s); stepBrasor(s); stepKlader(s); stepOdling(s); stepTamdjur(s); stepHagar(s); stepBoskap(s);
+    vaggRensa(s); kvarTimme(s); kultTimme(s); kyrkaTimme(s); wearBuild(s, 1, ai); stepByggnader(s); husKlaraTimme(s); stepMjardar(s); stepNaken(s); stepByggplan(s); stepEldFlytt(s); lagerIStraket(s); stepPaborjat(s); stepStationer(s); stepPynt(s); stepKrukor(s); protesTimme(s); halsoNotiser(s); stepKok(s); vatskorTimme(s); stepBrygg(s); stepBak(s); stepSophog(s); stepKompost(s); stepOrtKrukor(s); stadaByten(s); stepBrasor(s); stepKlader(s); stepOdling(s); stepTamdjur(s); stepHagar(s); stepBoskap(s); stepVinter(s);
     askaSteg(s); // det svarta efter en eldsvåda försvinner (brand.ts)
     sorgTimme(s); // sorgen i stadier (liv.ts, steg 9.2.33)
     smittaTimme(s); smittaUtifranTimme(s); // smittan (sjukdom.ts, steg 9.5.3 och 9.5.5)
@@ -1292,3 +1293,4 @@ import { stepOrtKrukor } from './kruka';
 import { mataKlar, stepTamdjur } from './tamdjur';
 import { hageKlar, stepHagar, vallaKlar } from './hage';
 import { avlivaKlar, klippKlar, mjolkaKlar, stepBoskap } from './boskap';
+import { slaKlar, stepVinter } from './slatter';

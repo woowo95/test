@@ -208,6 +208,8 @@ const DEF = {
   benflojt: { namn: 'Skär en benflöjt', slag: 'hantverk', hantverk: true, verb: 'skär', plats: 'station' },
   lyra: { namn: 'Gör en lyra', slag: 'hantverk', hantverk: true, verb: 'täljer', plats: 'station' },
   mal: { namn: 'Binder ett mål', slag: 'hantverk', hantverk: true, verb: 'binder', plats: 'station' },
+  skara: { namn: 'Gör en skära', slag: 'hantverk', hantverk: true, plats: 'station' }, // till slåttern (steg 9.8.9)
+  slatter: { namn: 'Slår ängen', slag: 'odla', verb: 'slår', yrke: 'Herde', tungt: true }, // slatter.ts (steg 9.8.9)
   benspade: { namn: 'Gör en benspade', slag: 'hantverk', hantverk: true, plats: 'station' }, // bara vid slöjdbänken (steg 2.7.2)
   vattensack: { namn: 'Syr en vattensäck', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, // bara vid slöjdbänken med bensylen (steg 2.10.1)
   lara: { namn: 'Går i lära', slag: 'hantverk', hantverk: true, stilla: true, verb: 'går i lära', plats: 'elden' }, // lärlingen arbetar bredvid sin mästare (teknik.ts, steg 4.2.3.3); platsen sätts i valet
