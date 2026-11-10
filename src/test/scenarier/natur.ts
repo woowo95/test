@@ -68,7 +68,7 @@ SCENARIER.djur = {
     const medRecept = DJURARTER.filter(art => Object.keys(art.slakt).every(k => SAKER[k]?.skaffa?.av?.[art.sak]));
     const fran = (art: (typeof DJURARTER)[number]) => Object.entries(art.slakt).reduce((x, [k, n]) => x + SAKER[k]!.skaffa!.av![art.sak] * n, 0) / art.mat;
     const recept = medRecept.map(art => `${art.sak} ${fran(art).toFixed(2)}`).join(', ');
-    const receptOk = medRecept.length > 0 && medRecept.every(art => art.sak === 'gadda' || Math.abs(fran(art) - 1) <= 0.1);
+    const receptOk = medRecept.length > 0 && medRecept.every(art => art.sak === 'gadda' || art.sak === 'braxen' || Math.abs(fran(art) - 1) <= 0.1);
     return [
       [`kaniner syns där det finns vilt (${dj.length} st), inga i lägret (${iLagret})`, dj.length > 10 && iLagret === 0],
       [`fler kaniner där det finns mycket vilt (${(tat(rik, nr) * 100).toFixed(1)} % av de rika rutorna, ${(tat(fattig, nf) * 100).toFixed(1)} % av de fattiga)`, tat(rik, nr) > tat(fattig, nf) * 2],

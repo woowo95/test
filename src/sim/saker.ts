@@ -247,7 +247,7 @@ const DEF = {
   kal: { namn: 'Kål', skaffa: { tid: 0.25, tek: 'odling' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 5.2, naring: { vitamin: 1.8, mineral: 0.8, energi: 0.7, protein: 0.3, fett: 0.1 }, haller: 6 },
   bonor: { namn: 'Bönor', skaffa: { tid: 0.25, tek: 'odling' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.6, naring: { protein: 1.8, energi: 1.3, mineral: 0.7, vitamin: 0.4, fett: 0.2 }, haller: 20 },
   kalfron: { namn: 'Kålfrön', skaffa: { tid: 0.25, tek: 'odling' }, stack: 50, vikt: 0.05, mapp: 'Material', haller: 20 },
-  jordgubbar: { namn: 'Jordgubbar', skaffa: { tid: 0.3, tek: 'odling' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 3.5, naring: { vitamin: 2, energi: 0.6, mineral: 0.3 }, haller: 2 }, // steg 9.7.9: mättar lite men gör folk glada
+  jordgubbar: { namn: 'Jordgubbar', skaffa: { tid: 0.3, tek: 'odling' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 3.5, naring: { vitamin: 1.4, energi: 0.9, mineral: 0.4, fett: 0.1 }, haller: 2 }, // steg 9.7.9: mättar lite men gör folk glada
   jordgubbsplanta: { namn: 'Jordgubbsplanta', ett: true, varde: 1, stack: 25, vikt: 0.1, mapp: 'Material', haller: 20 },
   appel: { namn: 'Äpplen', skaffa: { tid: 0.3, tek: 'odling' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 3.8, naring: { vitamin: 1.6, energi: 0.9, mineral: 0.3 }, haller: 8 }, // steg 9.7.13
   appelplanta: { namn: 'Äppelplanta', ett: true, varde: 2, stack: 10, vikt: 0.5, mapp: 'Material', haller: 20 },

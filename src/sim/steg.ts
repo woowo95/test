@@ -1271,11 +1271,14 @@ import { rusSteg } from './rus';
 import { hemma } from './halsa';
 import { soporKlar, stepKompost, stepSophog } from './rester';
 import { skrammaKlar, staketKlar } from './odling';
-// den rikaste röllekan inom ROLLEKA_NARA rutor från den som samlar (steg 9.7.15): den plockas på vägen
-const ROLLEKA_NARA = 2;
+// den rikaste röllekan på rutan eller bredvid den som samlar (steg 9.7.15): den plockas på vägen. Bara på sommarhalvåret,
+// när den växer, så att de andra tidsåldrarna inte frågar kartan i onödan
+const ROLLEKA_GRANNAR = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]] as const;
 function rollekaNara(s: State, x: number, y: number) {
+  const ai = ageIndex(s);
+  if (ai !== 1 && ai !== 2) return undefined;
   let best: { x: number; y: number; v: number } | undefined;
-  for (let dy = -ROLLEKA_NARA; dy <= ROLLEKA_NARA; dy++) for (let dx = -ROLLEKA_NARA; dx <= ROLLEKA_NARA; dx++) { const v = richness(s, 'rolleka', x + dx, y + dy); if (v > (best?.v ?? 0)) best = { x: x + dx, y: y + dy, v }; }
+  for (const [dx, dy] of ROLLEKA_GRANNAR) { const v = richness(s, 'rolleka', x + dx, y + dy); if (v > (best?.v ?? 0)) best = { x: x + dx, y: y + dy, v }; }
   return best;
 }
 import { stepOrtKrukor } from './kruka';
