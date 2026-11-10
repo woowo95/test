@@ -1611,3 +1611,41 @@ SCENARIER.hund = {
     ];
   },
 };
+
+SCENARIER.hage = {
+  text: 'Steg 9.8.4: hagen. Byn med betesdjur märker ut en hage och sätter staket runt den, djuren leds in med rep och betar gräset, buskarna och ungträden; staketet slits, och genom ett hål rymmer djuren',
+  kor: () => {
+    const { nyttTamdjur, stepTamdjur: stegaDjur, stepHagar, hagarOf, hageVal, hageKlar, hageHel, vallaVal, vallaKlar, hageRutor, setAmount, groundOf, HAGE, hageKant, tamdjurOf } = SIM;
+    const s = createState(5, START); klockan(s, 10);
+    const stepTamdjur = (q: typeof s) => { stegaDjur(q); stepHagar(q); };
+    const p = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0];
+    (p.tek ??= {}).staket = 1; setAmount(s, 'grenar', 400); setAmount(s, 'rep', 2);
+    const m = SIM.bynsMitt(s);
+    const f1 = nyttTamdjur(s, 'far', m.x, m.y), f2 = nyttTamdjur(s, 'get', m.x + 1, m.y);
+    stepTamdjur(s);
+    const h = hagarOf(s)[0];
+    let n = 0;
+    for (let v = hageVal(s, p); v && n < 200; v = hageVal(s, p), n++) hageKlar(s, p, v.i);
+    const hel = !!h && hageHel(s, h);
+    for (let d = vallaVal(s, p); d; d = vallaVal(s, p)) vallaKlar(s, p, d.id);
+    const inne = tamdjurOf(s).every(d => d.hage === h?.id);
+    const g = groundOf(s), gras0 = h ? hageRutor(h).reduce((a, i) => a + g.cover[i], 0) : 0;
+    const satt0 = s.staket?.length ?? 0;
+    for (let i = 0; i < 48; i++) { stepTamdjur(s); f1.hunger = Math.max(f1.hunger, 0.3); }
+    const gras1 = h ? hageRutor(h).reduce((a, i) => a + g.cover[i], 0) : 0;
+    // ett hål i staketet: djuren rymmer
+    if (h) { const k = hageKant(s, h)[3]; s.staket = s.staket!.filter(j => j !== k); }
+    for (let i = 0; i < 200 && tamdjurOf(s).some(d => d.hage !== undefined); i++) stepTamdjur(s);
+    const rymt = tamdjurOf(s).filter(d => d.hage === undefined).length;
+    return [
+      [`byn märker ut en hage när den har betesdjur (${h ? `${h.w} × ${h.h}` : 'ingen'})`, !!h && h.w === HAGE.sida],
+      [`staketet sätts runt hela hagen (${n} rutor)`, hel],
+      [`djuren leds in i hagen med rep`, inne],
+      [`djuren betar gräset (${gras0.toFixed(1)} → ${gras1.toFixed(1)})`, gras1 < gras0],
+      [`hagens staket slits eller står kvar (${satt0} rutor)`, satt0 > 0],
+      [`genom ett hål rymmer djuren (${rymt} av ${tamdjurOf(s).length})`, rymt > 0],
+      [`ett rymt djur leds tillbaka när hålet lagats`, (() => { for (let v = hageVal(s, p); v; v = hageVal(s, p)) hageKlar(s, p, v.i); for (let d = vallaVal(s, p); d; d = vallaVal(s, p)) vallaKlar(s, p, d.id); return tamdjurOf(s).every(d => d.hage !== undefined); })()],
+      [`fåret och geten lever (${[f1, f2].filter(d => d.dog === undefined).length})`, f1.dog === undefined && f2.dog === undefined],
+    ];
+  },
+};

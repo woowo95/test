@@ -184,3 +184,4 @@ export function stepHund(s: State, d: Tamdjur) {
     count(s, 'hundFoljer');
   }
 }
+
