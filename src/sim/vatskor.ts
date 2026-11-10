@@ -45,6 +45,8 @@ export const VATSKOR = {
   salva: { namn: 'Salva', farg: 0x647025, i: ['naverask', 'lerkruka_liten'] },
   benlim: { namn: 'Benlim', farg: 0xbdb39b, i: ['naverask', 'lerkruka_liten'] },
   kokt: { namn: 'Kokat vatten', farg: 0x8a9c9e, i: ['lerkruka_liten', 'lerkruka_mellan', 'lerkruka_stor'] }, // kokat i en lerkruka (steg 9.5.25): rent, till såren och att dricka
+  vin: { namn: 'Vin', farg: 0x521100, i: ['lerkruka_stor'], haller: 40 }, // vinet (steg 9.6.12, brygg.ts): i stora krukor, blir bättre med tiden
+  ol: { namn: 'Öl', farg: 0x906f0f, i: ['lerkruka_stor'], haller: 6 }, // ölet (steg 9.6.13, brygg.ts): i stora krukor, håller sex dygn
   saft: { namn: 'Saft', farg: 0x742a01, i: ['lerkruka_mellan'], haller: 2 }, // bär krossade i en mellanstor kruka (steg 9.6.9): den första drycken, håller två dygn
   te: { namn: 'Örtte', farg: 0x906f0f, i: ['lerkruka_liten'] }, // örtteet av rölleka (steg 9.5.8): kokas och står kvar i den lilla krukan
 } satisfies Record<string, VatskaDef>;

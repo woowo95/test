@@ -15,6 +15,7 @@ export * from './sim/varld';
 export * from './sim/kartflytt';
 export * from './sim/matlagning';
 export * from './sim/ratter';
+export * from './sim/brygg';
 export * from './sim/brasor';
 export * from './sim/historik';
 export * from './sim/kartminne';

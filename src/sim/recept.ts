@@ -133,6 +133,7 @@ const DEF = {
   latrin: { var: 'station', av: {}, min: RT.latrinMin },
   grill: { var: 'station', av: { grenar: RT.grillGrenar, rep: RT.grillRep }, min: RT.grillMin },
   tork: { var: 'station', av: { grenar: RT.torkGrenar, rep: RT.torkRep }, min: RT.torkMin },
+  bryggkar: { var: 'station', av: { virke: 1 }, min: 15, tek: 'bryggkar', verktyg: { yxa: 'yxan' } }, // bryggkaret (steg 9.6.12)
   rokeri: { var: 'station', av: { sten: 6, grenar: 4, lera: 2 }, min: 30, tek: 'rokeri' }, // rökeriet (steg 9.6.8): en låg stenugn med ett tak av grenar och lera
   brasa: { var: 'station', av: { sten: RT.brasaSten }, min: RT.brasaMin },
   scen: { var: 'station', av: { virke: RT.scenVirke }, min: RT.scenMin },
