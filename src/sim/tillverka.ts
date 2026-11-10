@@ -10,6 +10,8 @@ export interface TillverkDef { act: Act; ger: string; n: number; av: Record<stri
 export const TILLVERKA: Record<string, TillverkDef> = {
   hugga_sten: { act: 'hugga_sten', ger: 'huggen_sten', n: 1, av: RECEPT.huggen_sten.av!, min: RECEPT.huggen_sten.min, tek: 'stenhuggarplats', vill: 8, text: 'Hugger till en sten.', forsta: '{namn} högg byns första huggna sten.' },
   klyva_plank: { act: 'klyva_plank', ger: 'plankor', n: 2, av: RECEPT.plankor.av!, min: RECEPT.plankor.min, tek: 'klyvplats', vill: 8, text: 'Klyver virke till plankor.', forsta: '{namn} klöv byns första plankor.' },
+  skara_remsor: { act: 'skara_remsor', ger: 'remsa', n: 2, av: RECEPT.remsa.av!, min: RECEPT.remsa.min, tek: 'kniv', vill: 4, text: 'Skär remsor av ett skinn till förband.', forsta: '{namn} skar byns första remsor till förband.' }, // steg 9.5.15
+  skara_lin: { act: 'skara_lin', ger: 'remsa', n: 2, av: RECEPT.remsa_lin.av!, min: RECEPT.remsa_lin.min, tek: 'kniv', vill: 4, text: 'Skär remsor av lintyg till förband.', forsta: '{namn} skar byns första remsor av lin.' }, // går först när byn har lintyg
   koka_te: { act: 'koka_te', ger: 'te', n: 1, av: { rolleka: 1 }, min: 2, tek: 'orte', vill: 2, vatten: true, eld: true, text: 'Kokar ett örtte av rölleka i en liten lerkruka.', forsta: '{namn} kokade byns första örtte av rölleka.' }, // steg 9.5.8
   koka_salva: { act: 'koka_salva', ger: 'salva', n: 1, av: RECEPT.salva.av!, min: RECEPT.salva.min, tek: 'lakesalva', vill: 3, text: 'Kokar en läkesalva av rölleka och talg.', forsta: '{namn} kokade byns första salva.' },
   koka_tjara: { act: 'koka_tjara', ger: 'tjara', n: 1, av: RECEPT.tjara.av!, min: RECEPT.tjara.min, tek: 'ortkok', vill: 2, text: 'Kokar tjära av ved.', forsta: '{namn} kokade byns första tjära.' },

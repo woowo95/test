@@ -138,6 +138,9 @@ const DEF = {
   // proteserna (steg 9.5.11, protes.ts): kryckan och träbenet täljs och kroken görs av virke bara vid snickarbänken, ögonlappen av skinn för hand
   krycka: { var: 'sak', av: { virke: 1 }, min: 4, slag: 'liten', tek: 'protes', bank: 'snickarbank', bara: true, kniv: true }, traben: { var: 'sak', av: { virke: 1, rep: 1 }, min: 4, slag: 'liten', tek: 'protes', bank: 'snickarbank', bara: true, kniv: true },
   krok: { var: 'sak', av: { virke: 1 }, min: 3, slag: 'liten', tek: 'protes', bank: 'snickarbank', bara: true }, ogonlapp: { var: 'sak', av: { skinn: 1 }, min: 3, slag: 'liten' },
+  // förbanden (steg 9.5.15): remsor av skinn eller lin (två av varje), och nålen av ben som såret sys med
+  remsa: { var: 'sak', av: { skinn: 1 }, ger: 2, min: 2, slag: 'liten', tek: 'kniv' }, remsa_lin: { var: 'sak', av: { lintyg: 1 }, ger: 2, min: 2, slag: 'liten', tek: 'kniv' },
+  nal: { var: 'sak', av: { ben: 1 }, min: 3, slag: 'liten', tek: 'bensyl', verktyg: { sten: 'en sten', flinta: 'en flinta' } },
   naverask: { var: 'sak', av: { naver: 1, rep: 1 }, min: 3, slag: 'liten', tek: 'naverask' }, // näveraskan (steg 9.4.13): viks av näver och sys ihop med rep, för hand eller fortare vid slöjdbänken
   lerkruka_liten: { var: 'sak', av: { lera: 1 }, min: 3, slag: 'liten', tek: 'kruka' }, lerkruka_mellan: { var: 'sak', av: { lera: 2 }, min: 4, slag: 'liten', tek: 'kruka' }, lerkruka_stor: { var: 'sak', av: { lera: 4 }, min: 4, slag: 'liten', tek: 'kruka' }, // lerkrukan i tre storlekar (steg 9.4.11, KRUKOR i kruka.ts): byggs upp för hand av lera med sand i
   bonad: { var: 'station', av: { skinn: RT.bonadSkinn, rep: RT.bonadRep }, min: RT.bonadMin },
