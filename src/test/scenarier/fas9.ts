@@ -986,3 +986,24 @@ SCENARIER.rus = {
     ];
   },
 };
+
+SCENARIER.bakfylla = {
+  text: 'Steg 9.6.15: ruset i byn. Alkoholen ger glädje och fler gräl, flirtar och slagsmål, bakfylla dagen efter som drar ner humöret och förmågorna, och supandet är ett utbrott bland de andra',
+  kor: () => {
+    const { rusSteg, rorlighet, addTool, fyllVatska, UTBROTT, supa, rusAv, RUS } = SIM;
+    const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    const kr = addTool(s, 'lerkruka_stor', p); kr.hos = undefined; fyllVatska(s, 'vin', 10, kr);
+    const g0 = rorlighet(p);
+    supa(s, p); const full = rusAv(p);
+    let t = 0; while (p.rus && t++ < 400) rusSteg(s, p, 300, false);
+    const bak = !!p.bak && p.thoughts.some(x => x.text === 'Bakfull' && x.v < 0), gBak = rorlighet(p);
+    while (p.bak && t++ < 800) rusSteg(s, p, 300, false);
+    const over = !p.bak && rorlighet(p) === g0;
+    return [
+      [`supandet är ett utbrott (${UTBROTT.supa.text}), och den som super blir full (${full.toFixed(2)})`, !!UTBROTT.supa && full >= RUS.fylla],
+      [`när ruset gått över är hen bakfull: tanken och sämre förmågor (${g0.toFixed(2)} → ${gBak.toFixed(2)})`, bak && gBak < g0],
+      [`bakfyllan går över (${over ? 'ja' : 'nej'})`, over],
+      [`den berusade grälar och flirtar oftare och slår hellre (gräl ×${(1 + RUS.gral).toFixed(1)}, slag ×${(1 + RUS.slag).toFixed(1)} per hel rus)`, RUS.gral > 0 && RUS.flirt > 0 && RUS.slag > 0],
+    ];
+  },
+};

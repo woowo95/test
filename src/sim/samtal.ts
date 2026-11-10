@@ -176,10 +176,10 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
     ((a.partner === undefined && b.partner === undefined) || a.partner === b.id);
   // med sin ärkefiende grälar man nästan alltid, med en rival lite oftare (steg 3.1.1)
   const gralExtra = arArke(a, b) ? RELT.arkeGral : arRivaler(a, b) ? RELT.rivalGral : 0;
-  const ag = Math.max(SAMTAL.gralAggMin, 1 + SAMTAL.gralAgg * franMitt(a, 'aggression', now)); // den aggressiva grälar oftare (steg 3.7.6)
+  const ag = Math.max(SAMTAL.gralAggMin, 1 + SAMTAL.gralAgg * franMitt(a, 'aggression', now)) * (1 + RUS.gral * rusAv(a)); // den aggressiva grälar oftare (steg 3.7.6), och den berusade (steg 9.6.15)
   if ((mood < SAMTAL.gralHumor && rnd(s, 'samtal', a) < SAMTAL.gralHumorChans * ag) || (r.op < REL.gral && rnd(s, 'samtal', a) < SAMTAL.gralOsamsChans * ag) || (gralExtra && rnd(s, 'samtal', a) < gralExtra * ag)) kind = 'gräl';
   else if (a.task?.act === 'beratta') kind = 'berättelse';
-  else if (canFlirt && rnd(s, 'samtal', a) < SAMTAL.flirtBas + r.rom / SAMTAL.flirtRom + (r.chem > SAMTAL.flirtKemiGr ? SAMTAL.flirtKemi : 0)) kind = 'flirt';
+  else if (canFlirt && rnd(s, 'samtal', a) < SAMTAL.flirtBas + r.rom / SAMTAL.flirtRom + (r.chem > SAMTAL.flirtKemiGr ? SAMTAL.flirtKemi : 0) + RUS.flirt * rusAv(a)) kind = 'flirt';
   else if (moodOf(b, now) < SAMTAL.trostHumor && rnd(s, 'samtal', a) < stat(a, 'empati', now) / SAMTAL.trostEmpati) kind = 'tröst';
   else if (r.op > REL.van && rnd(s, 'samtal', a) < SAMTAL.djuptChans) kind = 'djupt samtal';
   else if (rnd(s, 'samtal', a) < SAMTAL.skamtChans) kind = 'skämt';
@@ -241,3 +241,4 @@ export function skiljas(s: State, a: Person, b: Person, r: Rel) {
   think(a, `${ord} från ${b.name}`, -SAMTAL.skiltTanke * f, now, SAMTAL.skiltDygn * f * DAY); think(b, `${ord} från ${a.name}`, -SAMTAL.skiltTanke * f, now, SAMTAL.skiltDygn * f * DAY);
 }
 import { berattaSmak } from './rykten';
+import { RUS, rusAv } from './rus';

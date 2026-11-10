@@ -235,6 +235,7 @@ const DEF = {
   // utbrotten (steg 3.2.2, humor.ts): den som mår mycket dåligt brister ut. Platsen väljs i val.ts (utbrottVal). Symbolen är gradens
   // (steg 3.10.13), och över huvudet utbrottets egen (task.tool, utbIkon i humor.ts)
   grata: { namn: 'Gråter för sig själv', tecken: '😢', ikon: 'utb1', dygn: true, stilla: true, plats: 'avsides' },
+  supa: { namn: 'Super sig full', tecken: '🫗', ikon: 'utb2', dygn: true, stilla: true, plats: 'elden' }, // utbrottet supa (steg 9.6.15)
   tjura: { namn: 'Tjurar för sig själv', tecken: '😤', ikon: 'utb1', dygn: true, stilla: true, plats: 'avsides' },
   skams: { namn: 'Skäms och håller sig undan', tecken: '😔', dygn: true, stilla: true, plats: 'avsides' }, // straffet skam (steg 3.5.3, styre.ts)
   elak: { namn: 'Är elak mot någon', tecken: '😠', ikon: 'utb2', dygn: true, stilla: true },
