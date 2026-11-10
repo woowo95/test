@@ -551,6 +551,8 @@ export function vardBehov(s: State, q: Person, g: Person) {
   const bara = g !== q && !q.gast && !kanGa(q) && !hemma(s, q) && q.task?.act !== 'buren';
   return blod || forband || rengor || bara || amputera ? { blod, forband, rengor, bara } : undefined;
 }
+// den med kortast tid kvar till förblödning vårdas först (steg 9.5.18): avståndet räknas så här mycket kortare
+const bradska = (q: Person) => Math.max(0.1, Math.min(1, tidKvar(q) / HALSA.kortTim));
 const vardas = (s: State, q: Person, g: Person) => living(s).some(o => o !== g && o.task?.act === 'varda' && o.task.ref === q.id);
 // vården som väljs (val.ts): sjalv = sina egna sår (före det mesta), annars den närmaste andra som behöver vård och som ingen
 // annan redan går till. Den som vårdar någon annan är vuxen, kan gå och har händer som duger
@@ -567,8 +569,8 @@ export function vardVal(s: State, p: Person, sjalv: boolean): { spot: { x: numbe
   for (const q of [...living(s), ...gasterNu(s).filter(g => g.gast!.sort !== 'rovare')]) { // gästerna vårdas också, utom rövarna (steg 9.2.113)
     if (q === p || !q.skador?.length && !q.svimmat) continue;
     const d = Math.hypot(q.x - p.x, q.y - p.y);
-    if (d >= (s.now - (q.ropT ?? -Infinity) < HALSA.ropTim * HOUR ? HALSA.ropR : HALSA.vardR) || d / vardRatt(s, p, q) >= bd || !vardBehov(s, q, p) || vardas(s, q, p)) continue; // den som ropat hörs längre (steg 9.5.16)
-    best = q; bd = d / vardRatt(s, p, q);
+    if (d >= (s.now - (q.ropT ?? -Infinity) < HALSA.ropTim * HOUR ? HALSA.ropR : HALSA.vardR) || d / vardRatt(s, p, q) * bradska(q) >= bd || !vardBehov(s, q, p) || vardas(s, q, p)) continue; // den som ropat hörs längre (steg 9.5.16)
+    best = q; bd = d / vardRatt(s, p, q) * bradska(q);
   }
   if (!best) return undefined;
   const b = vardBehov(s, best, p)!;

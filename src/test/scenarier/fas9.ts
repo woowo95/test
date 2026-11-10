@@ -402,3 +402,30 @@ SCENARIER.blodsteg = {
     ];
   },
 };
+
+SCENARIER.stridvard = {
+  text: 'Steg 9.5.18: blödningen under striden. Den fallne trycker liggande på såret, en empatisk kämpe går till en vän som ligger och blöder när ingen fiende står nära, drar undan hen och trycker, och efter striden vårdas den med kortast tid kvar först',
+  kor: () => {
+    const m = (id: number, sida: 0 | 1, x: number) => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 14, smidighet: 10, skicklighet: 10 }, vapen: 'kniv' as SIM.Vapen, klader: [], fart: 1, x, y: 7 });
+    const st = SIM.nyStrid({ avsikt: 'skada', w: 30, h: 14, kampar: [m(1, 0, 6), m(2, 0, 8), m(3, 1, 26)] }, 3);
+    const [a, b] = st.kampar;
+    a.emp = 16; b.lage = 'nere'; b.skador = [{ d: 'bal', k: 'sticksar', g: 0.8, ny: 1 }]; b.blod = 0.6;
+    let raddad = false;
+    for (let i = 0; i < 60 && !raddad; i++) { SIM.stridSteg(st); raddad = st.logg.some(r => r.h === 'raddar' && r.a === a.id && r.b === b.id); }
+    const tryckt = b.skador.every(w => !w.ny);
+    // den fallne trycker själv: blöder mindre än den som står
+    const st2 = SIM.nyStrid({ avsikt: 'skada', w: 30, h: 14, kampar: [m(1, 0, 6), m(3, 1, 26)] }, 3), st3 = SIM.nyStrid({ avsikt: 'skada', w: 30, h: 14, kampar: [m(1, 0, 6), m(3, 1, 26)] }, 3);
+    for (const [t, nere] of [[st2, true], [st3, false]] as const) { const k = t.kampar[0]; k.skador = [{ d: 'bal', k: 'skarsar', g: 0.5, ny: 1 }]; k.blod = 0.9; if (nere) k.lage = 'nere'; SIM.stridSteg(t); }
+    const liggande = st2.kampar[0].blod > st3.kampar[0].blod;
+    // efter striden: den med kortast tid kvar vårdas först
+    const s = createState(1, START), [g, q1, q2] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
+    q1.x = g.x + 4; q1.y = g.y; q1.skador = [{ d: 'armV', k: 'skarsar', g: 0.3, b: 1 }];
+    q2.x = g.x + 8; q2.y = g.y; q2.skador = [{ d: 'bal', k: 'sticksar', g: 0.9, b: 1 }]; q2.blod = SIM.HALSA.blodDod + 0.05;
+    const forst = SIM.vardVal(s, g, false)?.ref;
+    return [
+      [`den empatiska kämpen drar undan sin blödande vän och trycker på såret (${raddad ? 'ja' : 'nej'})`, raddad && tryckt],
+      [`den fallne trycker liggande och blöder mindre (${st2.kampar[0].blod.toFixed(3)} mot ${st3.kampar[0].blod.toFixed(3)})`, liggande],
+      [`efter striden vårdas den med kortast tid kvar först, fast hen står längre bort (${forst === q2.id ? 'ja' : 'nej'})`, forst === q2.id],
+    ];
+  },
+};

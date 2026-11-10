@@ -63,6 +63,10 @@ import { notis } from './notiser';
 
 // ---------- balanstal (regel 8) ----------
 export const STRID = balans('strid', {
+  // blödningen under striden (steg 9.5.18): den fallne trycker själv så att det blöder tryckSjalv så mycket; en kämpe med minst
+  // raddaEmp i empati går till en vän som ligger och blöder när tiden kvar är kortare än det som är kvar av striden och ingen fiende
+  // är närmare vännen än raddaFri
+  tryckSjalv: 0.5, raddaEmp: 10, raddaFri: 3,
   bjornBett: 3, // björnen biter med käftarna vart så här många slag som träffar, och river med ramarna annars (steg 9.5.13)
   smitta: 0.1, // så mycket de andras mod sjunker när någon ger upp (steg 8.8.8)
   pilSonder: 0.25, // så stor del av pilarna går sönder
@@ -247,6 +251,7 @@ const BORJAR: Record<Avsikt, string> = { lek: 'man brottas på lek', brottning: 
 // tecken = symbolen först i loggen (platshållare tills bildstilen har dem), ord = hur meningen börjar
 export const STRIDHANDELSER = {
   borjar: { tecken: '⚔️', namn: 'Striden börjar' },
+  raddar: { tecken: '🩹', namn: 'Drar undan en vän' }, // steg 9.5.18
   traff: { tecken: '💥', namn: 'Träff' },
   tog: { tecken: '🛡️', namn: 'Kläderna tog slaget' },
   miss: { tecken: '{sym_miss}', namn: 'Miss' },
@@ -286,6 +291,7 @@ export type Handelse = keyof typeof STRIDHANDELSER;
 export interface KampeStats { styrka: number; uthallighet: number; mod: number; smidighet: number; skicklighet: number; torst?: number; sikte?: number }
 export type KampeLage = 'strid' | 'nere' | 'ger' | 'flykt' | 'borta' | 'dod';
 export interface Kampe {
+  emp?: number; raddar?: number; // empatin, och den blödande vän hen är på väg till (steg 9.5.18)
   jagar?: number; // hämnden riktar sig mot just den personen (steg 8.8.5)
   skold?: boolean; // håller en sköld (steg 8.7.3)
   id: number; namn: string; sida: 0 | 1; pid?: number; djur?: string; // pid = personen i byn, djur = arten i DJUR
@@ -454,6 +460,26 @@ function ga(st: Strid, k: Kampe, mx: number, my: number, langd: number) {
   // stängt åt alla håll: hen står kvar
 }
 
+// blödningen under striden (steg 9.5.18): den empatiske går till en vän som ligger och blöder när tiden kvar är kortare än det som
+// är kvar av striden och ingen fiende står nära vännen, drar undan hen och trycker på såret, och går sedan tillbaka in i striden
+const blodSek = (k: Kampe) => k.skador.reduce((a, w) => a + (w.ny ? SKADOR[w.k].blod * w.g * STRID.blodSek * (w.fast ? STRID.fastBlod : 1) : 0), 0);
+function raddaSteg(st: Strid, k: Kampe, dt: number) {
+  if (k.djur || (k.emp ?? 0) < STRID.raddaEmp) return false;
+  let v = k.raddar !== undefined ? st.kampar.find(o => o.id === k.raddar) : undefined;
+  if (v && (v.lage !== 'nere' || !blodSek(v))) { k.raddar = undefined; v = undefined; }
+  if (!v) {
+    const kvar = STRID.maxTid - st.t;
+    v = st.kampar.filter(o => o !== k && o.sida === k.sida && o.lage === 'nere' && blodSek(o) > 0 && (o.blod - HALSA.blodDod) / (blodSek(o) / STRID.tempo * STRID.tryckSjalv) < kvar
+      && !st.kampar.some(f => f.sida !== k.sida && iStrid(f) && dist(f, o) < STRID.raddaFri)).sort((a, b) => dist(k, a) - dist(k, b))[0];
+    if (!v) return false;
+    k.raddar = v.id; k.mal = undefined;
+  }
+  if (dist(k, v) > 1) { ga(st, k, v.x, v.y, farten(k) * dt); return true; }
+  for (const w of v.skador) w.ny = 0; // trycker på såren: de slutar blöda i striden
+  st.logg.push({ t: st.t, h: 'raddar', a: k.id, b: v.id });
+  k.raddar = undefined;
+  return true;
+}
 function falla(st: Strid, k: Kampe, h: 'nere' | 'dod' | 'ger' | 'flykt', rad: Handelse = h) {
   k.lage = h; k.mal = undefined; k.ligger = undefined; k.bocker = undefined;
   if (h === 'ger') for (const v of st.kampar) if (v.sida === k.sida && v !== k && iStrid(v)) v.modNu -= STRID.smitta; // varje bybo som gett upp sänker de andras mod (steg 8.8.8)
@@ -658,7 +684,8 @@ export function stridSteg(st: Strid) {
   for (const k of st.kampar) {
     if (k.lage === 'borta' || k.lage === 'dod') continue;
     // blodet rinner ur öppna sår, också hos den som ligger
-    for (const w of k.skador) if (w.ny) k.blod -= SKADOR[w.k].blod * w.g * STRID.blodSek * dt * (w.fast ? STRID.fastBlod : 1);
+    const tryck = k.lage === 'nere' && k.blod >= HALSA.svim ? STRID.tryckSjalv : 1; // den fallne trycker liggande på såret (steg 9.5.18)
+    for (const w of k.skador) if (w.ny) k.blod -= SKADOR[w.k].blod * w.g * STRID.blodSek * dt * (w.fast ? STRID.fastBlod : 1) * tryck;
     // den som står kvar drar ut ett spjut som fastnat: det blöder mer (steg 3.7.7)
     if (iStrid(k)) for (const w of k.skador) if (w.fast && slump(st) < STRID.draUt * dt) { w.fast = undefined; k.blod -= SKADOR[w.k].blod * w.g * STRID.blodSlag * STRID.draBlod; st.logg.push({ t: st.t, h: 'drar', a: k.id, d: w.d }); }
     if (k.blod < HALSA.blodDod) { falla(st, k, 'dod'); continue; }
@@ -687,6 +714,7 @@ export function stridSteg(st: Strid) {
     if (k.ligger) { k.ligger -= dt; if (k.ligger <= 0) { k.ligger = undefined; st.logg.push({ t: st.t, h: 'upp', a: k.id }); } continue; }
     if (k.bocker) { k.bocker -= dt; if (k.bocker <= 0) { k.bocker = undefined; plocka(st, k); } continue; }
     if (hamtaSteg(st, k, dt)) continue;
+    if (raddaSteg(st, k, dt)) continue; // en blödande vän går före (steg 9.5.18)
     const m = valjMal(st, k);
     k.mal = m?.id;
     if (!m) continue;
@@ -763,6 +791,7 @@ export function stridText(st: Strid, r: StridRad): string {
     case 'borjar': return `Striden börjar: ${BORJAR[st.avsikt]}. ${AVS[st.avsikt].text}`;
     case 'miss': return r.kast ? `${a} kastar ${v?.namn.toLowerCase()} mot ${b} men missar.` : `${a} ${v?.ord ?? 'slår'} efter ${b}${med} men missar.`;
     case 'avstand': return `${a} backar undan från ${b} och håller avståndet.`;
+    case 'raddar': return `${a} drar undan ${b} och trycker på såret.`;
     case 'byter': return r.v === 'hand' ? `${a} har inget mer att kasta och slåss med händerna.` : `${a} tar ${v?.namn.toLowerCase()} ur bältet.`;
     case 'vantar': return `${a} väntar med kastet: ${b} slåss med en vän.`;
     case 'vada': return `${a} kastar ${v?.namn.toLowerCase()} men träffar sin vän ${b}.`;
@@ -861,7 +890,7 @@ export function personKampe(s: State, p: Person, id: number, sida: 0 | 1, x: num
   const res = (MANNISKOVAPEN.filter(v => v !== vapen && VAP[v].liten && bar.includes(v)) as Vapen[]).sort((a, b) => VAP[a].takt - VAP[b].takt)[0]; // den snabbaste (kniven)
   const reserv = res && (p.reservAlltid || (harBalte(s, p) && paSigVikt(s, p) + viktOf(res) <= capacity(s, p) * UTRUSTNING.kropp)) ? res : undefined;
   return {
-    id, namn: p.name, sida, pid: p.id, blod0: p.blod, vapen, reserv, ledare: ledareOf(s) === p ? ledarPlats(s, p) : undefined, skold: bar.includes('skold') && !TVA_HAND.has(vapen) ? true : undefined, klader: [...new Set(paSig(s, p).map(q => q.k))].filter(k => SKYDD[k]), fart: 1, x, y, tung: clamp(paSigVikt(s, p) / UTRUSTNING.kropp / Math.max(1, capacity(s, p)), 0, 1),
+    emp: stat(p, 'empati', s.now), id, namn: p.name, sida, pid: p.id, blod0: p.blod, vapen, reserv, ledare: ledareOf(s) === p ? ledarPlats(s, p) : undefined, skold: bar.includes('skold') && !TVA_HAND.has(vapen) ? true : undefined, klader: [...new Set(paSig(s, p).map(q => q.k))].filter(k => SKYDD[k]), fart: 1, x, y, tung: clamp(paSigVikt(s, p) / UTRUSTNING.kropp / Math.max(1, capacity(s, p)), 0, 1),
     st: { styrka: stat(p, 'styrka', s.now), uthallighet: stat(p, 'uthallighet', s.now), mod: stat(p, 'mod', s.now), smidighet: stat(p, 'smidighet', s.now) - paSig(s, p).reduce((a, q) => a + (PLAGG[kladAv(q.k)?.plagg as keyof typeof PLAGG]?.smid ?? 0), 0), skicklighet: 5 + (p.skill.narstrid ?? 0) / 2 + STRID.tyckeSkick * smakAv(p, 'v:' + vapen), sikte: (5 + (p.skill.traff ?? 0) / 2) * syn(p) * blodFaktor(p), torst: blodtorst(s, p) },
   };
 }
