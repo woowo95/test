@@ -383,3 +383,22 @@ SCENARIER.vardval = {
     ];
   },
 };
+
+SCENARIER.blodsteg = {
+  text: 'Steg 9.5.17: blodförlusten i steg. Över 85 % inget, 70–85 % blek och yr med sämre arbete och träff, 55–70 % kan man inte slåss, 45–55 % kan man bara krypa, och under 45 % svimmar man och kan inte trycka på sitt sår',
+  kor: () => {
+    const { blodSteg, handighet, kanGa, vardVal, halsaSteg, HALSA } = SIM;
+    const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    const steg = [0.9, 0.8, 0.6, 0.5, 0.42].map(b => { p.blod = b; return blodSteg(p); }).join(',');
+    p.blod = 1; const h1 = handighet(p); p.blod = 0.8; const h2 = handighet(p);
+    p.blod = 0.6; const gar = kanGa(p); p.blod = 0.5; const kryper = !kanGa(p);
+    p.skador = [{ d: 'bal', k: 'skarsar', g: 0.3, b: 1 }]; p.blod = HALSA.svim - 0.01; halsaSteg(s, p, 1);
+    const svimmat = !!p.svimmat && !vardVal(s, p, true);
+    return [
+      [`stegen följer blodet (${steg})`, steg === '0,1,2,3,4'],
+      [`den som är blek och yr arbetar sämre (${h1.toFixed(2)} → ${h2.toFixed(2)})`, h2 < h1],
+      [`med 60 % går hen, med 50 % kan hen bara krypa`, gar && kryper],
+      [`under 45 % svimmar hen och kan inte trycka på sitt sår (${svimmat ? 'ja' : 'nej'})`, svimmat],
+    ];
+  },
+};

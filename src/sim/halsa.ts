@@ -51,6 +51,9 @@ export const HALSA = balans('halsa', {
   // långsamt (medelLevrar gånger längre), och ett stort inte alls; när tiden kvar till förblödning är under kortTim syns den
   smaSar: 0.3, storSar: 0.6, medelLevrar: 3, kortTim: 1,
   blodDod: 0.4, // under så här mycket blod förblöder man
+  // blodförlusten i steg (steg 9.5.17): över blek inget; under blek blek och yr (arbetet och träffen gånger blekFaktor); under
+  // slass kan man inte slåss; under kryp kan man bara krypa; under svim svimmar man och kan inte trycka på sitt sår
+  blek: 0.85, slass: 0.7, kryp: 0.55, svim: 0.45, blekFaktor: 0.85,
   blodTillbaka: 48, // timmar för blodet att komma tillbaka helt för den som inte blöder och är mätt och otörstig
   dodGrad: 0.95, // en skada i huvudet eller bålen av minst den här graden dödar direkt (sällsynt)
   radd: 0.5, // en skada av minst den här graden gör de som såg den rädda för platsen
@@ -220,11 +223,11 @@ export const rorlighet = (p: Person) => forlust(p, 'rorlighet') * yrselFaktor(p)
 // den som har ett ben eller en fot som är för skadad kan inte gå, utan kravlar (steg 2.5.2)
 export const GADELAR: readonly Kroppsdel[] = [...BEN, ...FOTTER]; // delarna man går med
 // ett förlorat ben eller en fot: man går ändå, sämre, så länge det andra benet och den andra foten håller. Den som svimmat går inte
-export const kanGa = (p: Person) => !p.svimmat && (!harFel(p) || !GADELAR.some(d => !p.saknas?.includes(d) && delFel(p, d) >= HALSA.krypFel)) && (p.saknas?.filter(d => GADELAR.includes(d)).length ?? 0) < 2;
+export const kanGa = (p: Person) => !p.svimmat && blodSteg(p) < 3 && (!harFel(p) || !GADELAR.some(d => !p.saknas?.includes(d) && delFel(p, d) >= HALSA.krypFel)) && (p.saknas?.filter(d => GADELAR.includes(d)).length ?? 0) < 2;
 export const hemma = (s: State, p: Person) => utanforByn(s, Math.floor(p.x), Math.floor(p.y)) <= HALSA.hemma;
 const infektion = (p: Person) => { let v = 0; for (const w of p.skador ?? []) v = Math.max(v, w.inf ?? 0); return v; };
 // arbetet gånger detta (workRate i ekonomi.ts): skadorna och styrkan, som sjunker av brist på protein och mineraler (steg 2.6.2)
-export const handighet = (p: Person) => forlust(p, 'handighet') * styrkaFaktor(p) * medArbete(p);
+export const handighet = (p: Person) => forlust(p, 'handighet') * styrkaFaktor(p) * medArbete(p) * blodFaktor(p); // den som är blek och yr arbetar sämre (steg 9.5.17)
 // medvetandet (steg 8.2.5), 0–1: smärtan, blodet, febern av en infektion, tröttheten, törsten, svälten och skador i huvudet
 export const medDelar = (p: Person) => {
   const blod = 1 - (p.blod ?? 1), ut: { namn: string; v: number }[] = [];
@@ -254,6 +257,10 @@ export function smarta(p: Person) {
   for (const m of p.men ?? []) v += m.ont; // kronisk smärta (steg 8.2.4)
   return Math.min(1, v);
 }
+// blodförlustens steg (steg 9.5.17): 0 inget, 1 blek och yr, 2 kan inte slåss, 3 kan bara krypa, 4 svimmar
+export const BLODSTEG = ['', 'Blek och yr', 'Orkar inte slåss', 'Kan bara krypa', 'Svimmar'] as const;
+export function blodSteg(p: Person) { const b = p.blod ?? 1; return b >= HALSA.blek ? 0 : b >= HALSA.slass ? 1 : b >= HALSA.kryp ? 2 : b >= HALSA.svim ? 3 : 4; }
+export const blodFaktor = (p: Person) => blodSteg(p) >= 1 ? HALSA.blekFaktor : 1;
 // sårets storlek i blödningen (steg 9.5.14): litet, medelstort eller stort
 export const sarStorlek = (w: Skada) => w.g < HALSA.smaSar ? 'litet' : w.g < HALSA.storSar ? 'medelstort' : 'stort';
 // timmar tills hen förblöder med den blödning hen har nu (Infinity när ingen blöder). Räknas varje slag (kortet och notisen)
@@ -453,10 +460,10 @@ function forfrysning(s: State, p: Person, dtSec: number) {
 // att svimma och vakna (steg 8.2.6). Den som svimmat ligger där hen är (ARBETEN i val.ts) och bärs hem som den som inte kan gå
 function svimmaSteg(s: State, p: Person) {
   if (!p.svimmat) {
-    if (medvetande(p) >= HALSA.svimma) return;
+    if (medvetande(p) >= HALSA.svimma && blodSteg(p) < 4) return; // under HALSA.svim svimmar man av blodförlusten (steg 9.5.17)
     p.svimmat = true; avbryt(s, p); p.task = undefined; count(s, 'svimmat');
     log(s, `${p.name} svimmade.`, 'world', [p.id]);
-  } else if (medvetande(p) >= HALSA.vakna) { p.svimmat = undefined; if (p.task?.act === 'medvetslos') p.task = undefined; }
+  } else if (medvetande(p) >= HALSA.vakna && blodSteg(p) < 4) { p.svimmat = undefined; if (p.task?.act === 'medvetslos') p.task = undefined; }
 }
 
 // ---------- infektionen och läkningen (steg 2.5.2) ----------
@@ -549,6 +556,7 @@ const vardas = (s: State, q: Person, g: Person) => living(s).some(o => o !== g &
 // annan redan går till. Den som vårdar någon annan är vuxen, kan gå och har händer som duger
 export function vardVal(s: State, p: Person, sjalv: boolean): { spot: { x: number; y: number }; ref: number; why: string; stanna?: boolean } | undefined {
   if (sjalv) {
+    if (p.svimmat) return undefined; // den som svimmat kan inte trycka på sitt sår (steg 9.5.17)
     const b = vardBehov(s, p, p);
     if (!b) return undefined;
     return { spot: { x: p.x, y: p.y }, ref: p.id, why: b.blod ? 'Trycker på sitt sår så att det slutar blöda' : b.rengor ? 'Rengör sitt infekterade sår' : 'Lägger mossa på sitt sår' };
