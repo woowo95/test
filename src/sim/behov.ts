@@ -92,7 +92,7 @@ function eat(s: State, p: Person, fran?: Person) {
   // maten fyller näringsvärdena, och mättnaden är en sammanfattning av dem (steg 2.6.1, naring.ts)
   ratt(s, p, per, full); // rått kött och rå fisk (matlagning.ts, steg 2.8.1), av det som åts innan det skalas till mättnad
   for (const k in per) per[k] *= f;
-  ata(p, per); smakMat(s, p, per); eatPoison(s, p); count(s, 'atit', portion); // portioner som ätits (foodDays i ekonomi.ts mäts mot det)
+  ata(p, per); smakMat(s, p, per); maltidTanke(s, p, per); eatPoison(s, p); count(s, 'atit', portion); // portioner som ätits (foodDays i ekonomi.ts mäts mot det)
   if (q < 0.5) think(p, 'Maten var dålig', -0.05, now, 6 * HOUR);
   if (portion > 0 && vidBordet(p)) {
     think(p, 'Åt vid bordet', KROPP.bordGlad * kvEffekt(bordVid(s, p)), now, KROPP.bordGladTim * HOUR); count(s, 'bordMal');
@@ -104,6 +104,11 @@ function eat(s: State, p: Person, fran?: Person) {
     loggBer(s, 'l_magsjuk', p.id, { namn: p.name, hen: p.sex === 'm' ? 'han' : 'hon' }, 'world', [p.id]);
   }
   return portion;
+}
+// måltidens nivå (steg 9.6.2, ratter.ts): en lagad eller fin måltid ger en tanke som höjer humöret
+function maltidTanke(s: State, p: Person, per: Record<string, number>) {
+  const n = MALTIDSNIVA[basta(per)];
+  if (n.humor > 0) { think(p, n.tanke, n.humor, s.now, RATT.tankeTim * HOUR); count(s, 'maltid_' + basta(per)); }
 }
 // p sitter vid bordet och äter (handlingen maltid, framme: val.ts och stationer.ts, steg 2.2.15)
 const vidBordet = (p: Person) => p.task?.act === 'maltid' && p.task.phase === 'do';
@@ -681,3 +686,4 @@ export function genomfor(s: State, M: Part, G: Part, fatt: Vara[], betal: Vara[]
 // den som är skickligare lurar ibland den andra i ett byte M och G gått med på (handlaren, steg 4.5.7.4): betal kan ändras
 export const luraI = (s: State, M: Part, G: Part, betal: Vara[], utom: readonly string[], ger: number) => lura(s, M, G, betal, betalVaror(M, G, utom), ger);
 import { foodDays } from './ekonomi';
+import { MALTIDSNIVA, RATT, basta } from './ratter';

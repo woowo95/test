@@ -699,3 +699,18 @@ SCENARIER.matgrupper = {
     ];
   },
 };
+
+SCENARIER.maltidsniva = {
+  text: 'Steg 9.6.2: måltidernas nivåer. Rått, enkel, lagad och fin efter hur många grupper som ingår: det grillade och torkade är enkelt, en rätt ur krukan med två grupper är lagad och med tre, varav en är smak, fin. En lagad måltid höjer humöret lite och en fin mer',
+  kor: () => {
+    const { maltidsNiva, nivaAvGrupper, MAT, rattId, FOOD, setAmount } = SIM;
+    const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    const ata = (k: string) => { for (const f of FOOD) setAmount(s, f, 0); setAmount(s, k, 4); p.thoughts = []; p.hunger = 0.2; MAT.anvand(s, p); return p.thoughts.find(t => t.text.startsWith('Åt en'))?.v ?? 0; };
+    const lagad = ata(rattId('fisk', 'gryta', 'lagad')), fin = ata(rattId('fisk', 'gryta', 'fin')), grill = ata('grillfisk');
+    return [
+      [`nivåerna: abborre ${maltidsNiva('abborre')}, grillad fisk ${maltidsNiva('grillfisk')}, fiskgryta ${maltidsNiva(rattId('fisk', 'gryta', 'lagad'))}`, maltidsNiva('abborre') === 'ratt' && maltidsNiva('grillfisk') === 'enkel'],
+      [`två grupper är lagad, tre med smak fin (${nivaAvGrupper(new Set(['protein', 'starkelse']))}, ${nivaAvGrupper(new Set(['protein', 'starkelse', 'smak']))}, ${nivaAvGrupper(new Set(['protein', 'starkelse', 'fett']))})`, nivaAvGrupper(new Set(['protein', 'starkelse'])) === 'lagad' && nivaAvGrupper(new Set(['protein', 'starkelse', 'smak'])) === 'fin' && nivaAvGrupper(new Set(['protein', 'starkelse', 'fett'])) === 'lagad'],
+      [`en lagad måltid höjer humöret (${lagad}), en fin mer (${fin}), det grillade inte (${grill})`, lagad > 0 && fin > lagad && grill === 0],
+    ];
+  },
+};
