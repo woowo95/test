@@ -1193,12 +1193,14 @@ SCENARIER.rutan = {
     const [p, q] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
     p.partner = q.id; q.partner = p.id;
     for (const r of [p, q]) r.tek = { ...(r.tek ?? {}), odling: 1 };
-    const f: SIM.Falt = { id: 1, x: p.x + 4, y: p.y, w: 4, dir: 1, n: 8, agare: p.id, steg: 'sa', klara: 0, kvar: 0, rord: s.now };
+    const f: SIM.Falt = { id: 1, x: Math.floor(p.x) + 4, y: Math.floor(p.y), w: 4, dir: 1, n: 8, agare: p.id, steg: 'sa', klara: 0, kvar: 0, rord: s.now };
     f.r = [{ st: 'sa' }, { st: 'sa' }, { st: 'sa' }, { st: 'sa' }, { st: 'vaxer', g: 'rovor', v: 0.99 }, { st: 'bereda' }, { st: 'bereda' }, { st: 'bereda' }];
     s.falt = [f]; sammanfatta(f);
     for (const k of ['rovfron', 'artfron']) setAmount(s, k, 0);
     setAmount(s, 'rovfron', 20); setAmount(s, 'artfron', 2); // ärterna har högst poäng men frön till bara två rutor
-    stepOdling(s); for (let i = 0; i < 30 && f.r![4].st !== 'mogen'; i++) stepOdling(s);
+    s.kal = SIM.nyKalender(s.now, 2); // sommartid, så att det är varmt nog att växa
+    for (let i = 0; i < 72 && f.r![4].st !== 'mogen'; i++) { s.now += SIM.HOUR; stepOdling(s); }
+    klockan(s, 10); for (let k = 0; k < 4; k++) f.r![k] = { st: 'sa' }; sammanfatta(f);
     const mogen = f.r![4].st === 'mogen';
     const u = faltUppgift(s, q);
     const tk = { act: 'odla', tool: 'sa', ref: f.id, fr: 0, until: s.now + SIM.HOUR, tx: p.x, ty: p.y } as unknown as SIM.Task;
