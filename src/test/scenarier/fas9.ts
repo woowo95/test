@@ -1040,3 +1040,26 @@ SCENARIER.braxen = {
     ];
   },
 };
+
+SCENARIER.snoata = {
+  text: 'Steg 9.6.18: snö att äta. När snön ligger äter den törstige snö när inget bättre finns nära: snön släcker törsten sämre än vatten och kyler kroppen. Då kan också den som är ensam i en by som grundats mitt i istiden, utan redskap och ved, dricka',
+  kor: () => {
+    const { drickVal, drick, TORST } = SIM;
+    const s = createState(1, START), [p, ...andra] = SIM.living(s);
+    for (const q of andra) SIM.die(s, q, 'kyla');
+    s.ting = []; s.fire.lit = false;
+    s.is = { ...(s.is ?? {}), cm: 60 } as typeof s.is; s.vader = { ...(s.vader ?? {}), sno: 0.8 } as typeof s.vader;
+    p.torst = 0.3;
+    const d = drickVal(s, p);
+    const varm0 = p.warm, t0 = p.torst;
+    drick(s, p, { act: 'ata_sno', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' });
+    const slackt = p.torst > t0 && p.torst < 1, kallare = p.warm < varm0;
+    s.vader = { ...(s.vader ?? {}), sno: 0 } as typeof s.vader;
+    const utanSno = drickVal(s, p);
+    return [
+      [`ensam på tjock is utan eld och redskap äter hen snö (${d?.act ?? 'inget'})`, d?.act === 'ata_sno'],
+      [`snön släcker törsten sämre än vatten (${t0} → ${p.torst.toFixed(2)}, vatten ger 1) och kyler kroppen (${varm0.toFixed(2)} → ${p.warm.toFixed(2)})`, slackt && kallare && TORST.snoSlacker < 1],
+      [`utan snö finns inget att dricka (${utanSno?.act ?? 'inget'})`, !utanSno],
+    ];
+  },
+};
