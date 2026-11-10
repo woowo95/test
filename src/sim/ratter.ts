@@ -31,7 +31,8 @@ export const INGREDIENSER: Record<string, { grupper: Matgrupp[]; huvud?: RattHuv
   rotter: { grupper: ['starkelse'], huvud: 'rot' }, rovor: { grupper: ['starkelse'], huvud: 'rot' },
   svamp: { grupper: ['gront'], huvud: 'svamp' },
   bar: { grupper: ['sott'], huvud: 'bar' },
-  rolleka: { grupper: ['smak'] },
+  rolleka: { grupper: ['smak'] }, salt: { grupper: ['smak'] }, // saltet (steg 9.6.19)
+  saltfisk: { grupper: ['protein'], huvud: 'fisk' }, saltkott: { grupper: ['protein', 'fett'], huvud: 'kott' },
   talg: { grupper: ['fett'] },
 };
 export const grupperAv = (k: string): Matgrupp[] => INGREDIENSER[k]?.grupper ?? [];
@@ -49,7 +50,7 @@ export type Maltidsniva = keyof typeof MALTIDSNIVA;
 export const MALTIDSNIVA_LIST = Object.keys(MALTIDSNIVA) as Maltidsniva[];
 // nivån för en lagad rätt med de här grupperna: två grupper är lagad, tre med smak bland dem är fin
 // nivån på en sak man äter: rätten i krukan har sin, det grillade och torkade är enkelt, annars är det rått
-export const maltidsNiva = (k: string): Maltidsniva => rattInfo(k)?.niva ?? (/^(grill|torr|rok)/.test(k) ? 'enkel' : 'ratt');
+export const maltidsNiva = (k: string): Maltidsniva => rattInfo(k)?.niva ?? (/^(grill|torr|rok|salt)/.test(k) ? 'enkel' : 'ratt');
 const NIVA_ORDNING: Maltidsniva[] = ['ratt', 'enkel', 'lagad', 'fin'];
 // den högsta nivån i det som ätits (per = av varje slag, behov.ts)
 export function basta(per: Record<string, number>): Maltidsniva {

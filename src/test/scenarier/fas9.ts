@@ -1063,3 +1063,23 @@ SCENARIER.snoata = {
     ];
   },
 };
+
+SCENARIER.salt = {
+  text: 'Steg 9.6.19: saltet. En handelsvara som handlarna från byarna vid havet säljer; saltat kött och saltad fisk håller längre, och saltet hör till gruppen Smak och fyller mineralerna',
+  kor: () => {
+    const { KLAR_FOR, TILLVERKA, setAmount, amountOf, HANDLARVAROR, SAKER, grupperAv, kokRecept, FOOD } = SIM;
+    const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    for (const k of FOOD) setAmount(s, k, 0);
+    setAmount(s, 'fisk', 4); setAmount(s, 'salt', 2);
+    KLAR_FOR[TILLVERKA.salta_fisk.act]!(s, p, p.task!, 0);
+    const saltad = amountOf(s, 'saltfisk'), salt = amountOf(s, 'salt');
+    setAmount(s, 'fisk', 4); setAmount(s, 'rotter', 4); p.tek = { ...(p.tek ?? {}), kruka: 1 };
+    const r = kokRecept(s, p);
+    return [
+      [`handlarna har saltet med sig (${HANDLARVAROR.some(v => v.k === 'salt') ? 'ja' : 'nej'})`, HANDLARVAROR.some(v => v.k === 'salt')],
+      [`4 fisk och 1 salt blir ${saltad} saltad fisk (${2 - salt} salt åtgick), som håller ${SAKER.saltfisk!.haller} dygn mot fiskens ${SAKER.fisk!.haller}`, saltad === 4 && salt === 1 && SAKER.saltfisk!.haller! > SAKER.fisk!.haller!],
+      [`saltet är Smak (${grupperAv('salt').join(', ')}), och den saltade fisken har mer mineraler (${SAKER.saltfisk!.naring!.mineral} mot ${SAKER.fisk!.naring!.mineral})`, grupperAv('salt').includes('smak') && SAKER.saltfisk!.naring!.mineral! > SAKER.fisk!.naring!.mineral!],
+      [`saltet gör grytan fin (${r ? SAKER[r.id]!.namn : 'ingen'})`, r?.niva === 'fin' && r.smak === 'salt'],
+    ];
+  },
+};

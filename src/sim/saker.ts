@@ -232,6 +232,10 @@ const DEF = {
   sik: { namn: 'Sik', skaffa: { act: 'fiske' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 1.3, naring: { protein: 2, fett: 1.4, mineral: 0.7, energi: 0.8, vitamin: 0.6 }, ra: true, haller: 1 },
   braxkott: { namn: 'Braxenkött', ett: true, skaffa: { act: 'rensa' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 1, naring: { protein: 1.9, fett: 0.9, mineral: 0.8, energi: 0.7, vitamin: 0.3 }, ra: true, haller: 1 },
   sikkott: { namn: 'Sikkött', ett: true, skaffa: { act: 'rensa' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 1, naring: { protein: 2, fett: 1.4, mineral: 0.7, energi: 0.8, vitamin: 0.6 }, ra: true, haller: 1 },
+  // saltet (steg 9.6.19): en handelsvara från byarna vid havet; saltat kött och saltad fisk håller längre, och saltet fyller mineralerna
+  salt: { namn: 'Salt', ett: true, varde: 2, stack: 50, vikt: 0.05, mapp: 'Material' },
+  saltfisk: { namn: 'Saltad fisk', skaffa: { act: 'salta_fisk' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.95, naring: { protein: 2, fett: 0.8, mineral: 1.4, energi: 0.6, vitamin: 0.2 }, haller: 20 },
+  saltkott: { namn: 'Saltat kött', ett: true, skaffa: { act: 'salta_kott' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.97, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 1.3, vitamin: 0.2 }, haller: 20 },
   // det rökta (steg 9.6.8, matlagning.ts): håller som det torkade och smakar lite bättre
   rokfisk: { namn: 'Rökt fisk', skaffa: { act: 'roka' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.8, naring: { protein: 2, fett: 0.8, mineral: 0.7, energi: 0.6, vitamin: 0.2 }, haller: 20 },
   rokkott: { namn: 'Rökt kött', ett: true, skaffa: { act: 'roka' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.9, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 0.6, vitamin: 0.2 }, haller: 20 },
