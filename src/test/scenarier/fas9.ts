@@ -1871,3 +1871,26 @@ SCENARIER.hons = {
     ];
   },
 };
+
+SCENARIER.vakthund = {
+  text: 'Steg 9.8.11: vakthunden. En lojal hund hör vargarna längre bort än vakten ser dem, skäller och väcker sin ägare, som larmar byn; en hund som inte är lojal bryr sig inte',
+  kor: () => {
+    const prova = (lojal: number) => {
+      const s = createState(2, START); klockan(s, 2);
+      const folk = SIM.living(s), p = folk.filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0];
+      for (const q of folk) q.task = { act: 'sova', phase: 'do', tx: q.x, ty: q.y, until: s.now + 8 * SIM.HOUR, carry: 0 };
+      const h = SIM.nyttTamdjur(s, 'hund', p.x + 1, p.y, p.id); h.lojal = lojal;
+      const f: SIM.Vargflock = { id: s.vargNr = 1, vargar: [10_000_008, 10_000_009], x: h.x + 28, y: h.y, mx: h.x + 28, my: h.y, gar: s.now + 48 * SIM.HOUR, hunger: 0.5, gor: 'stryker' };
+      (s.vargar ??= []).push(f);
+      SIM.vargSteg(s, 1);
+      return { s, p, f };
+    };
+    const ja = prova(0.9), nej = prova(0.3);
+    return [
+      ['den lojala hunden hör flocken 28 rutor bort, och byn ser den', ja.f.sedd !== undefined && ja.f.sag === ja.p.id],
+      [`ägaren vaknar (${ja.p.task?.act ?? 'vaken'}) och har hört larmet`, ja.p.task?.act !== 'sova' && !!ja.p.larm],
+      ['skallet räknas', (ja.s.stat?.hundSkallde ?? 0) >= 1],
+      ['en hund som inte är lojal skäller inte, och ingen ser flocken', nej.f.sedd === undefined && nej.p.task?.act === 'sova'],
+    ];
+  },
+};

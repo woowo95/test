@@ -8,6 +8,7 @@ import { kronika } from './historik';
 import { eldPlats, getMap, vaderstreck } from './karta';
 import { Klan, andraInst, klanById, klanerOf } from './klaner';
 import { addTo, amountOf, avbryt, dropLoad, zoneOf, zonesOf } from './lager';
+import { hundSkaller } from './tamdjur';
 import { die } from './liv';
 import { DORRAR, bitAt, bitsOf, freeNear, husById, isWall, roomAt } from './byggnad';
 import { LARM, larma } from './rykten';
@@ -296,7 +297,9 @@ function ses(s: State, f: Rovarflock, folk: Person[]) {
   const natt = isLight(s.now) ? 1 : ROVARE.nattSer, dimma = 1 - ROVARE.dimmaSer * vaderNu(s).dimma;
   const rad = (q: Person) => (q.task?.act === 'vakt' ? ROVARE.vaktSer : ROVARE.folkSer) * natt * dimma;
   const ser = (q: Person) => vaken(q) && narmast(s, f, q) < rad(q);
-  const vakt = folk.find(q => q.task?.act === 'vakt' && ser(q));
+  const hund = folk.some(q => q.task?.act === 'vakt' && ser(q)) ? undefined : hundSkaller(s, d => narmast(s, f, d)); // vakthunden hör flocken före vakten (steg 9.8.11)
+  if (hund && hund.p.task?.act === 'sova') { avbryt(s, hund.p); hund.p.task = undefined; }
+  const vakt = folk.find(q => q.task?.act === 'vakt' && ser(q)) ?? hund?.p;
   const vack = () => { if (vakt && !f.vackt && Math.min(...rovarna(s, f).map(r => utanforByn(s, r.x, r.y))) < ROVARE.vack) { f.vackt = true; vacka(s, f, vakt, folk); } };
   if (f.sedd !== undefined) { vack(); return; }
   const p = vakt ?? folk.find(ser);

@@ -217,7 +217,9 @@ function ses(s: State, f: Vargflock, folk: Person[]) {
   if (f.sedd !== undefined && s.now - f.sedd < VARG.larmTim * HOUR) return;
   const natt = isLight(s.now) ? 1 : VARG.nattSer, dimma = 1 - VARG.dimmaSer * vaderNu(s).dimma;
   const ser = (q: Person) => vaken(q) && avst(q, f) < (q.task?.act === 'vakt' ? VARG.vaktSer : VARG.folkSer) * natt * dimma;
-  const vakt = folk.find(q => q.task?.act === 'vakt' && ser(q)), p = vakt ?? folk.find(ser);
+  const hund = folk.some(q => q.task?.act === 'vakt' && ser(q)) ? undefined : hundSkaller(s, d => avst(d, f)); // vakthunden hör flocken före vakten (steg 9.8.11)
+  if (hund && hund.p.task?.act === 'sova') { avbryt(s, hund.p); hund.p.task = undefined; }
+  const vakt = folk.find(q => q.task?.act === 'vakt' && ser(q)) ?? hund?.p, p = vakt ?? folk.find(ser);
   if (!p) return;
   f.sedd = s.now; f.sag = p.id; f.sx = f.x; f.sy = f.y; // där flocken sågs (märket på kartan, steg 9.2.122)
   if (forstaGang(s, 'vargSedd')) log(s, `${p.name} såg ${f.vargar.length > 1 ? `en flock vargar (${f.vargar.length})` : 'en ensam varg'} för första gången.`, 'world', [p.id]);
@@ -227,7 +229,7 @@ function ses(s: State, f: Vargflock, folk: Person[]) {
   if (vakt && utanforByn(s, f.x, f.y) < VARG.vack) {
     let n = 0;
     for (const q of folk) if (q.task?.act === 'sova' && ageOf(q, s.now) >= ALDER.vaktFran && !(skyddas(s, q) && iHus(s, q))) { avbryt(s, q); q.task = undefined; q.larm = { t: s.now, vad: 'varg', storlek: f.vargar.length, led: 0 }; n++; }
-    if (n) { count(s, 'vargVackt', n); log(s, `${vakt.name} höll vakt och väckte byn: vargar nära.`, 'world', [vakt.id]); }
+    if (n) { count(s, 'vargVackt', n); log(s, hund ? `${vakt.name}s hund skällde och väckte byn: vargar nära.` : `${vakt.name} höll vakt och väckte byn: vargar nära.`, 'world', [vakt.id]); }
   }
   soker(s, [p, ...hort]);
 }
@@ -642,4 +644,4 @@ export function vargSteg(s: State, dtSec: number) {
   s.vargar = s.vargar.filter(f => f.vargar.length || s.djurStrider?.some(g => g.art === 'varg' && g.flock === f.id));
   if (!s.vargar.length) s.vargar = undefined;
 }
-import { VALP, vargValp } from './tamdjur';
+import { VALP, hundSkaller, vargValp } from './tamdjur';

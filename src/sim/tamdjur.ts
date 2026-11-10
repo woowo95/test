@@ -185,3 +185,23 @@ export function stepHund(s: State, d: Tamdjur) {
   }
 }
 
+
+// ---------- vakthunden (steg 9.8.11, Djuren i detalj: Hunden) ----------
+// En hund som är lojal nog vaktar: den hör och vädrar rovdjur och anfallare längre bort än vakten ser, också i mörker och dimma,
+// och skäller. Skallet väcker ägaren, som ser faran och ropar, och väcker byn som vakten gör (varg.ts och rovare.ts: ses).
+export const VAKTHUND = balans('vakthund', {
+  lojal: 0.6, // hunden vaktar när lojaliteten är minst så här stor
+  hor: 32, // hunden hör och vädrar faran inom så här många rutor, dag som natt
+});
+// en vakthund som hör faran (avst: avståndet från hunden till faran), och ägaren som hör den skälla, eller undefined
+export function hundSkaller(s: State, avst: (d: Tamdjur) => number) {
+  for (const d of tamdjurOf(s)) {
+    if (d.art !== 'hund' || (d.lojal ?? HUND.start) < VAKTHUND.lojal || d.fahus !== undefined || d.agare === undefined || avst(d) >= VAKTHUND.hor) continue;
+    const p = byId(s, d.agare);
+    if (!p || p.died !== undefined) continue;
+    count(s, 'hundSkallde');
+    if (forstaGang(s, 'hundSkallde')) log(s, `${p.name}s hund skällde: den hade hört något ute i mörkret.`, 'world', [p.id]);
+    return { hund: d, p };
+  }
+  return undefined;
+}
