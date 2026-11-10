@@ -554,8 +554,31 @@ SCENARIER.infbalans = {
   },
 };
 
+// att sätta benet och spjälan (steg 9.5.28)
+function sattaBenet(): [string, boolean][] {
+  const { vardKlar, kanGa, handighet, protesTimme, addTool, setAmount, HALSA } = SIM;
+  const s = createState(1, START), [g, q] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
+  const vard = () => { g.x = q.x; g.y = q.y; vardKlar(s, g, { act: 'varda', phase: 'do', tx: q.x, ty: q.y, until: s.now, carry: 0, why: '', ref: q.id }); };
+  setAmount(s, 'grenar', 10); setAmount(s, 'remsa', 4);
+  g.skill.lakekonst = HALSA.sattaLak;
+  q.skador = [{ d: 'benV', k: 'benbrott', g: 0.6, b: 0, t0: s.now }]; vard();
+  const satt = !!q.skador[0].satt && !!q.skador[0].spala;
+  const utanKrycka = kanGa(q);
+  addTool(s, 'krycka', g).agare = 0; protesTimme(s);
+  const medKrycka = kanGa(q);
+  let fel = 0;
+  for (let i = 0; i < 40; i++) { g.skill.lakekonst = 0; q.skador = [{ d: 'benH', k: 'benbrott', g: 0.4, b: 0, t0: s.now }]; vard(); if (q.skador[0].snett) fel++; }
+  const h0 = handighet(q); q.skador = [{ d: 'armV', k: 'benbrott', g: 0.2, b: 0, t0: s.now, satt: 1 }]; const h1 = handighet(q); q.skador[0].spala = 1; const h2 = handighet(q);
+  return [
+    [`benet sätts och spjälas inom tiden av den som kan Läkekonst (${satt ? 'ja' : 'nej'})`, satt],
+    [`utan Läkekonst går det ibland fel och benet läker snett (${fel} av 40)`, fel > 4 && fel < 36],
+    [`med ett brutet ben kan hen inte gå (${utanKrycka ? 'går' : 'kan inte'}), men med kryckan (${medKrycka ? 'går' : 'kan inte'})`, !utanKrycka && medKrycka],
+    [`den spjälade armen halverar händigheten (${h0.toFixed(2)}, ${h1.toFixed(2)} → ${h2.toFixed(2)})`, Math.abs(h2 - h1 * HALSA.spalaHand) < 1e-9],
+  ];
+}
+
 SCENARIER.benbrott = {
-  text: 'Steg 9.5.27: benbrottets två slag och läkningen. Ett brott är slutet eller öppet (ett stort sår dessutom), revben och skalle vilas bara, ett brott som inte sätts i tid läker snett på dubbla tiden och kan ge ett bestående men, och barn läker fortare och gamla långsammare',
+  text: 'Steg 9.5.27: benbrottets två slag och läkningen. Ett brott är slutet eller öppet (ett stort sår dessutom), revben och skalle vilas bara, ett brott som inte sätts i tid läker snett på dubbla tiden och kan ge ett bestående men, och barn läker fortare och gamla långsammare. Att sätta benet och spjälan (steg 9.5.28): benet sätts inom tiden, det går fel utan Läkekonst, kryckan låter hen gå och den spjälade armen halverar händigheten',
   kor: () => {
     const { skada, halsaSteg, HALSA, BARA_VILA } = SIM;
     const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen && SIM.ageOf(r, s.now) < SIM.ALDER.gammal)!;
@@ -569,6 +592,7 @@ SCENARIER.benbrott = {
       [`ett snett brott läker hälften så fort (${snett.toFixed(3)} mot ${vuxen.toFixed(3)} på ett dygn)`, Math.abs(snett - vuxen / 2) < 0.01],
       [`barn läker fortare och gamla långsammare (${barn.toFixed(3)}, ${vuxen.toFixed(3)}, ${gammal.toFixed(3)})`, barn > vuxen && vuxen > gammal],
       [`ett brott som inte sätts inom ${HALSA.sattTim} timmar läker snett`, HALSA.sattTim > 0],
+      ...sattaBenet(),
     ];
   },
 };
