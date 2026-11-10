@@ -356,7 +356,9 @@ function genomTex(t: PIXI.Texture, niva: 0 | 1) {
   }
   return g;
 }
-export function tonaTrad(punkter: { x: number; y: number }[], nara: { x: number; y: number }[], W: number, H: number) {
+// valt = rutan med det markerade trädet: det ritas helt, också när någon står nära, och de kronor som står framför det och
+// skymmer det blir bara stammen (steg 9.2.138)
+export function tonaTrad(punkter: { x: number; y: number }[], nara: { x: number; y: number }[], W: number, H: number, valt?: number) {
   // 2 = bara stammen (närmast folket), 0 = rastrerad, 1 = lite rastrerad; den starkaste gäller
   const nu = new Map<PIXI.Sprite, 0 | 1 | 2>(), styrka = [1, 0, 2], fran = new Map<PIXI.Sprite, (typeof sprites extends Map<number, infer V> ? V : never)>();
   const satt = (sp: PIXI.Sprite, n: 0 | 1 | 2) => { const f = nu.get(sp); if (f === undefined || styrka[n] > styrka[f]) nu.set(sp, n); };
@@ -387,6 +389,19 @@ export function tonaTrad(punkter: { x: number; y: number }[], nara: { x: number;
       const sp = f.sp, e = hela(sp), ex = Math.max(e.x + 2 - px, 0, px - (e.x + e.w - 2)), ey = Math.max(e.y + 2 - py, 0, py - (e.y + e.h * 0.75));
       const d = Math.hypot(ex, ey) / 16;
       if (d <= NARA) satt(sp, f.b.h >= 8 ? 2 : 0); else if (d <= NARA_KANT) satt(sp, 1);
+    }
+  }
+  const v = valt === undefined ? undefined : sprites.get(valt);
+  if (v) {
+    nu.delete(v.sp);
+    const e = hela(v.sp), vx = valt! % W, vy = Math.floor(valt! / W);
+    for (let dy = 0; dy <= 6; dy++) for (let dx = -3; dx <= 3; dx++) {
+      const x = vx + dx, y = vy + dy;
+      if ((!dx && !dy) || x < 0 || y < 0 || x >= W || y >= H) continue;
+      const f = sprites.get(y * W + x);
+      if (!f || f.b.typ === 'buske' || f.sp.zIndex <= v.sp.zIndex) continue;
+      const g = hela(f.sp);
+      if (g.x < e.x + e.w && g.x + g.w > e.x && g.y < e.y + e.h && g.y + g.h > e.y) { fran.set(f.sp, f); nu.set(f.sp, f.b.h >= 8 ? 2 : 0); }
     }
   }
   // det som inte längre tonas får tillbaka sin bild och plats (om inte trädet ritats om under tiden)
