@@ -39,6 +39,9 @@ export const HAGE = balans('hage', {
   vallaMin: 15, // minuter för att leda ett djur med rep in i hagen
   ovning: 0.03, // djurskötseln växer så mycket när man vallar
   fri: 12, // ett djur utan hage strövar högst så här långt (rutor) från byns mitt
+  flyttDygn: 1, // en hage vars bete räcker kortare än så här många dygn för djuren i den är nedbetad: djuren flyttas (steg 9.8.6)
+  max: 4, // byn har högst så här många hagar
+  hundLojal: 0.6, // en hund som är minst så här lojal hjälper ägaren att valla hela flocken på en gång
 });
 export const hagarOf = (s: State) => s.hagar ?? [];
 export const hageById = (s: State, id?: number) => id === undefined ? undefined : hagarOf(s).find(h => h.id === id);
@@ -63,22 +66,39 @@ export function hageBete(s: State, h: Hage) {
   return { gras, buskar, unga };
 }
 // hur många dygn betet räcker för djuren som går där (utan återväxt)
-export function hageDygn(s: State, h: Hage) {
-  const n = djurIHagen(s, h).length;
+export function hageDygn(s: State, h: Hage, extra = 0) {
+  const n = djurIHagen(s, h).length + extra;
   if (!n) return Infinity;
-  const b = hageBete(s, h), mat = b.gras / HAGE.bett * HAGE.grasMat + b.buskar * HAGE.buskMat + b.unga * HAGE.tradMat;
-  return mat / (n * TAM.hungerTim * 24);
+  return hageMat(s, h) / (n * TAM.hungerTim * 24);
+}
+// hur mycket hunger betet i hagen stillar
+export function hageMat(s: State, h: Hage) { const b = hageBete(s, h); return b.gras / HAGE.bett * HAGE.grasMat + b.buskar * HAGE.buskMat + b.unga * HAGE.tradMat; }
+// en hage med djur vars bete snart är slut (steg 9.8.6)
+export const nedbetad = (s: State, h: Hage) => djurIHagen(s, h).length > 0 && hageDygn(s, h) < HAGE.flyttDygn;
+// den hela hagen (inte fran) där n djur till har bete längst, om betet där räcker minst dubbelt så länge som flyttDygn
+export function malHage(s: State, n: number, fran?: Hage) {
+  let b: Hage | undefined, bd = HAGE.flyttDygn * 2;
+  for (const h of hagarOf(s)) {
+    if (h === fran || !hageHel(s, h)) continue;
+    const d = hageDygn(s, h, n);
+    if (d > bd) { b = h; bd = d; }
+  }
+  return b;
 }
 
 // byn lägger ut en hage när den har betesdjur och ingen hage, om någon kan sätta staket. Samma plats som ett fält skulle få
+// En hage som är nedbetad står kvar och växer igen; finns ingen annan hage med bete läggs en ny ut (steg 9.8.6)
 function planeraHage(s: State) {
-  if (hagarOf(s).length || !betesdjurOf(s).length || !living(s).some(p => knows(p, 'staket'))) return;
+  if (!betesdjurOf(s).length || !living(s).some(p => knows(p, 'staket'))) return;
+  const hs = hagarOf(s);
+  if (hs.length >= HAGE.max || hs.some(h => !hageHel(s, h))) return;
+  if (hs.length && !hs.some(h => nedbetad(s, h) && !malHage(s, djurIHagen(s, h).length, h))) return;
   const n = HAGE.sida, at = faltSite(s, n, n * n);
   if (!at) return;
   const y = faltRiktning(s, at.y) > 0 ? at.y : at.y - (n - 1);
   (s.hagar ??= []).push({ id: (s.hagar?.length ?? 0) + 1, x: at.x, y, w: n, h: n });
   s.byggV = (s.byggV ?? 0) + 1; count(s, 'hagar');
-  log(s, 'Byn märkte ut en plats för en hage åt djuren.', 'world', []);
+  log(s, hs.length ? 'Djuren hade betat ner hagen, och byn märkte ut en ny hage åt dem.' : 'Byn märkte ut en plats för en hage åt djuren.', 'world', []);
 }
 // nästa staketruta p sätter runt en hage (också där staketet gått sönder)
 export function hageVal(s: State, p: Person) {
@@ -151,14 +171,23 @@ function stepBete(s: State, d: Tamdjur) {
   d.x = b.i % W + 0.5; d.y = Math.floor(b.i / W) + 0.5;
 }
 
-// ---------- valla: leda ett djur med rep in i hagen ----------
-// Den vuxne som har ett rep leder ett betesdjur som går utanför hagen (nyköpt eller rymt) in i en hel hage
+// ---------- valla: leda djuren med rep till en hage ----------
+// Den vuxne som har ett rep leder ett betesdjur som går utanför hagen (nyköpt eller rymt) in i en hel hage, eller från en
+// nedbetad hage till en hage med bete (steg 9.8.6). Har hen en hund som är lojal nog vallar hen hela flocken på en gång
+export const vallaHund = (s: State, p: Person) => tamdjurOf(s).find(d => d.art === 'hund' && d.agare === p.id && (d.lojal ?? 0) >= HAGE.hundLojal);
+// djuren som vallas tillsammans med d: med en hund alla i samma hage (eller alla lösa), annars bara d
+function flocken(s: State, p: Person, d: Tamdjur) {
+  if (!vallaHund(s, p)) return [d];
+  return betesdjurOf(s).filter(q => q.hage === d.hage && (d.hage !== undefined || Math.hypot(q.x - d.x, q.y - d.y) <= TAM.mataR));
+}
 export function vallaVal(s: State, p: Person) {
   if (ageOf(p, s.now) < ALDER.vuxen || getable(s, p, 'rep') < 1 || !isLight(s.now)) return undefined;
   if (!hagarOf(s).some(h => hageHel(s, h))) return undefined;
   let b: Tamdjur | undefined, bd = TAM.mataR * 2;
   for (const d of betesdjurOf(s)) {
-    if (d.hage !== undefined || living(s).some(q => q !== p && q.task?.act === 'valla' && q.task.ref === d.id)) continue;
+    if (living(s).some(q => q !== p && q.task?.act === 'valla' && q.task.ref === d.id)) continue;
+    const h = hageById(s, d.hage);
+    if (h && !(nedbetad(s, h) && malHage(s, flocken(s, p, d).length, h))) continue;
     const dd = Math.hypot(d.x - p.x, d.y - p.y);
     if (dd < bd) { b = d; bd = dd; }
   }
@@ -166,11 +195,17 @@ export function vallaVal(s: State, p: Person) {
 }
 export function vallaKlar(s: State, p: Person, ref?: number) {
   const d = tamdjurOf(s).find(q => q.id === ref);
-  if (!d || d.hage !== undefined) return;
-  const h = hagarOf(s).filter(q => hageHel(s, q)).sort((a, b) => Math.hypot(a.x - d.x, a.y - d.y) - Math.hypot(b.x - d.x, b.y - d.y))[0];
+  if (!d) return;
+  const fran = hageById(s, d.hage);
+  if (fran && !nedbetad(s, fran)) return;
+  const fl = flocken(s, p, d);
+  const h = fran ? malHage(s, fl.length, fran) : (malHage(s, fl.length) ?? hagarOf(s).filter(q => hageHel(s, q)).sort((a, b) => Math.hypot(a.x - d.x, a.y - d.y) - Math.hypot(b.x - d.x, b.y - d.y))[0]);
   if (!h) return;
-  const rs = hageRutor(h), i = rs[Math.floor(rnd(s, 'tamdjur') * rs.length)];
-  d.hage = h.id; d.x = i % W + 0.5; d.y = Math.floor(i / W) + 0.5;
-  ovning(p, 'skotsel', HAGE.ovning); gjort(s, p, 'vallat'); count(s, 'vallat');
-  if (forstaGang(s, 'vallatDjur')) log(s, `${p.name} ledde ${tamArt(d.art).ord[3]} in i hagen med ett rep.`, 'world', [p.id]);
+  const rs = hageRutor(h);
+  for (const q of fl) { const i = rs[Math.floor(rnd(s, 'tamdjur') * rs.length)]; q.hage = h.id; q.x = i % W + 0.5; q.y = Math.floor(i / W) + 0.5; }
+  ovning(p, 'skotsel', HAGE.ovning); gjort(s, p, 'vallat'); count(s, 'vallat', fl.length);
+  if (fran) count(s, 'hageFlytt');
+  if (fl.length > 1) count(s, 'vallatMedHund');
+  if (fran && forstaGang(s, 'hageFlytt')) log(s, `${p.name} flyttade ${fl.length > 1 ? 'djuren med hundens hjälp' : tamArt(d.art).ord[3]} till en ny hage, och den gamla fick växa igen.`, 'world', [p.id]);
+  else if (forstaGang(s, 'vallatDjur')) log(s, `${p.name} ledde ${tamArt(d.art).ord[3]} in i hagen med ett rep.`, 'world', [p.id]);
 }

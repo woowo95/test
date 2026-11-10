@@ -1681,3 +1681,41 @@ SCENARIER.boskap = {
     ];
   },
 };
+
+SCENARIER.hagflytt = {
+  text: 'Steg 9.8.6: flytta djuren. När hagen betats ner lägger byn ut en ny hage, och handlingen valla leder ett djur i ett rep dit, eller hela flocken med en hund som är lojal nog; den gamla hagen står kvar och växer igen',
+  kor: () => {
+    const { nyttTamdjur, stepHagar, hagarOf, hageVal, hageKlar, vallaVal, vallaKlar, hageRutor, setAmount, groundOf, tamdjurOf, nedbetad, djurIHagen } = SIM;
+    const s = createState(5, START); klockan(s, 10);
+    const p = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0];
+    (p.tek ??= {}).staket = 1; setAmount(s, 'grenar', 800); setAmount(s, 'rep', 2);
+    const m = SIM.bynsMitt(s);
+    nyttTamdjur(s, 'far', m.x, m.y); nyttTamdjur(s, 'far', m.x + 1, m.y); nyttTamdjur(s, 'get', m.x, m.y + 1);
+    const bygg = () => { for (let v = hageVal(s, p), n = 0; v && n < 400; v = hageVal(s, p), n++) hageKlar(s, p, v.i); };
+    stepHagar(s); bygg();
+    for (let d = vallaVal(s, p); d; d = vallaVal(s, p)) vallaKlar(s, p, d.id);
+    const h1 = hagarOf(s)[0];
+    // betet tar slut i hagen
+    const g = groundOf(s);
+    for (const i of hageRutor(h1)) { g.cover[i] = 0; g.trees[i] = 0; if (g.buske) g.buske[i] = 0; }
+    const ned = nedbetad(s, h1);
+    stepHagar(s);
+    const ny = hagarOf(s).length;
+    bygg();
+    const d1 = vallaVal(s, p);
+    if (d1) vallaKlar(s, p, d1.id);
+    const flyttad = djurIHagen(s, h1).length;
+    // med en lojal hund flyttas resten på en gång
+    const hund = nyttTamdjur(s, 'hund', p.x, p.y, p.id); hund.lojal = 0.9;
+    const d2 = vallaVal(s, p);
+    if (d2) vallaKlar(s, p, d2.id);
+    const kvar = djurIHagen(s, h1).length;
+    return [
+      [`hagen är nedbetad när betet tar slut`, ned],
+      [`byn lägger ut en ny hage (${ny} hagar)`, ny === 2],
+      [`valla leder ett djur i rep till den nya hagen (${3 - flyttad} av 3 flyttade)`, flyttad === 2],
+      [`med en lojal hund flyttas resten på en gång (${kvar} kvar i den gamla)`, kvar === 0],
+      [`den gamla hagen står kvar`, hagarOf(s).includes(h1) && tamdjurOf(s).length === 4],
+    ];
+  },
+};
