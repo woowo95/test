@@ -114,6 +114,7 @@ export const HANDLARVAROR: { k: string; n: [number, number]; vikt: number; sort:
   { k: 'ben', n: [2, 4], vikt: 1, sort: V },
   { k: 'rovfron', n: [2, 5], vikt: 1, sort: V },
   { k: 'linfron', n: [2, 4], vikt: 1, sort: V }, // steg 7.7.7
+  { k: 'korn', n: [3, 6], vikt: 1, sort: V }, // säden (steg 9.6.11): byn får sitt första korn av handlarna
   { k: 'artfron', n: [2, 5], vikt: 1, sort: V },
   { k: 'kniv', n: [1, 1], vikt: 2, sort: V },
   { k: 'yxa', n: [1, 1], vikt: 1, sort: V },

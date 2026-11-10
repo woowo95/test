@@ -236,7 +236,7 @@ export interface KokRecept { id: string; huvud: string; andra: string; smak?: st
 // det som kan kokas nu, av det p kan ta (eller byn har): den första huvudingrediensen i ordningen, en råvara ur en annan grupp
 // (helst stärkelse), och smaken om den finns
 export function kokRecept(s: State, p?: Person): KokRecept | undefined {
-  const har = (k: string, n: number) => (p ? getable(s, p, k) : amountOf(s, k)) >= n;
+  const har = (k: string, n: number) => (p ? getable(s, p, k) : amountOf(s, k)) - (RATT.spara[k] ?? 0) >= n;
   for (const hh of RATT_HUVUD_LIST) {
     const huvud = Object.keys(INGREDIENSER).find(k => INGREDIENSER[k].huvud === hh && iKrukan(k) && har(k, RATT.huvud));
     if (!huvud) continue;

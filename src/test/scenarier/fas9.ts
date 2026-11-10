@@ -882,3 +882,24 @@ SCENARIER.koktvatten = {
     ];
   },
 };
+
+SCENARIER.sad = {
+  text: 'Steg 9.6.11: säden från handlarna. Korn går bara att få av handlarna, och när byn fått det första kornet kommer de som kan odla på sädesodlingen; kornet sås och är sitt eget utsäde. Vilken gröda som sås avgörs av en poäng över alla rader i GRODOR, så att också linet sås',
+  kor: () => {
+    const { kornUpptackt, grodorNu, setAmount, knows, HANDLARVAROR, GRODOR, ALDER } = SIM;
+    const s = createState(1, START), folk = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= ALDER.vuxen);
+    for (const p of folk) p.tek = { ...(p.tek ?? {}), odling: 1 };
+    kornUpptackt(s); const forut = folk.some(p => knows(p, 'sadesodling'));
+    setAmount(s, 'korn', 6); kornUpptackt(s); const nu = folk.every(p => knows(p, 'sadesodling'));
+    let tid = 0; while (grodorNu(s).length < 2 && tid++ < 40) s.now += SIM.DAY / 2;
+    setAmount(s, 'rovor', 60); setAmount(s, 'arter', 60); setAmount(s, 'korn', 6);
+    const med = grodorNu(s);
+    folk[0].tek!.lin = 1; setAmount(s, 'ratlin', 0); const lin = grodorNu(s);
+    return [
+      [`kornet finns hos handlarna (${HANDLARVAROR.some(v => v.k === 'korn') ? 'ja' : 'nej'}) och är sitt eget utsäde (${GRODOR.korn.fro})`, HANDLARVAROR.some(v => v.k === 'korn') && GRODOR.korn.fro === 'korn'],
+      [`ingen kommer på sädesodlingen utan korn (${forut ? 'ja' : 'nej'}), men alla som kan odla när kornet kommit (${nu ? 'ja' : 'nej'})`, !forut && nu],
+      [`med gott om rovor och ärter sås kornet först (${med.join(', ')})`, med[0] === 'korn'],
+      [`när byn kan odla lin och saknar det kommer linet med (${lin.join(', ')})`, lin.includes('lin') && lin.indexOf('lin') < lin.indexOf('rovor')],
+    ];
+  },
+};

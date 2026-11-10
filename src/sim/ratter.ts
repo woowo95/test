@@ -26,6 +26,7 @@ export const INGREDIENSER: Record<string, { grupper: Matgrupp[]; huvud?: RattHuv
   torrfisk: { grupper: ['protein'], huvud: 'fisk' }, rokfisk: { grupper: ['protein'], huvud: 'fisk' }, rokkott: { grupper: ['protein', 'fett'], huvud: 'kott' }, torrgadda: { grupper: ['protein'], huvud: 'fisk' }, torrmort: { grupper: ['protein', 'fett'], huvud: 'fisk' },
   grillfisk: { grupper: ['protein'], huvud: 'fisk' }, grillgadda: { grupper: ['protein'], huvud: 'fisk' }, grillmort: { grupper: ['protein', 'fett'], huvud: 'fisk' },
   agg: { grupper: ['protein', 'fett'] }, arter: { grupper: ['protein', 'starkelse'] },
+  korn: { grupper: ['starkelse'], huvud: 'sad' }, // steg 9.6.11
   rotter: { grupper: ['starkelse'], huvud: 'rot' }, rovor: { grupper: ['starkelse'], huvud: 'rot' },
   svamp: { grupper: ['gront'], huvud: 'svamp' },
   bar: { grupper: ['sott'], huvud: 'bar' },
@@ -67,7 +68,7 @@ export const VARIATION = {
   tanke: -0.02, tankeTim: 6, // tanken "Fisk igen": lite, så att en ny by som lever på fisk inte mår dåligt av det
 };
 // smaken för en rätt gäller huvudingrediensen (steg 9.6.6): fiskgrytan smakar fisk
-const SMAK_SAK: Record<RattHuvud, string> = { kott: 'kott', fisk: 'fisk', rot: 'rotter', svamp: 'svamp', bar: 'bar' };
+const SMAK_SAK: Record<RattHuvud, string> = { kott: 'kott', fisk: 'fisk', sad: 'korn', rot: 'rotter', svamp: 'svamp', bar: 'bar' };
 export const smakSak = (k: string) => { const r = rattInfo(k); return r ? SMAK_SAK[r.huvud] : k; };
 export const nivaAvGrupper = (g: Set<Matgrupp>): Maltidsniva => g.size >= 3 && g.has('smak') ? 'fin' : g.size >= 2 ? 'lagad' : 'enkel';
 
@@ -91,6 +92,7 @@ export type Kategori = keyof typeof KATEGORIER;
 export const RATT_HUVUD = {
   kott: { namn: 'Kött', kat: ['gryta', 'soppa'] },
   fisk: { namn: 'Fisk', kat: ['gryta', 'soppa'] },
+  sad: { namn: 'Korn', kat: ['grot'] }, // steg 9.6.11
   rot: { namn: 'Rot', kat: ['grot'] },
   svamp: { namn: 'Svamp', kat: ['soppa'] },
   bar: { namn: 'Bär', kat: ['grot'] },
@@ -111,6 +113,7 @@ export const RATT = {
   tankeTim: 6, // tanken efter en lagad eller fin måltid varar så många timmar (steg 9.6.2)
   portioner: 4, // en sats i krukan ger så många portioner
   huvud: 2, andra: 2, smak: 1, // av huvudingrediensen, den andra gruppen och smaken
+  spara: { korn: 12 } as Record<string, number>, // så mycket sparas till utsäde och går inte i krukan (steg 9.6.11)
   haller: 3, // en rätt håller så många dygn (år i spelet) ...
   hallerLang: 10, // ... och så många när huvudingrediensen är torkad (steg 9.6.7: medelvärdet av ingrediensernas hållbarhet)
 };
@@ -118,6 +121,7 @@ export const RATT = {
 const NARING: Record<RattHuvud, SakDef['naring']> = {
   kott: { protein: 1.6, fett: 0.8, energi: 1.1, mineral: 0.6, vitamin: 0.6 },
   fisk: { protein: 1.6, fett: 0.6, energi: 1, mineral: 0.7, vitamin: 0.6 },
+  sad: { energi: 1.6, mineral: 0.7, vitamin: 0.6, protein: 0.6, fett: 0.3 },
   rot: { energi: 1.4, mineral: 0.6, vitamin: 0.9, protein: 0.4, fett: 0.2 },
   svamp: { protein: 0.6, mineral: 0.8, vitamin: 1, energi: 0.9, fett: 0.2 },
   bar: { energi: 1.1, vitamin: 1.6, mineral: 0.4, protein: 0.2, fett: 0.1 },

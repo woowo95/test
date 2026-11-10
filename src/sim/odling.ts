@@ -45,6 +45,7 @@ import { tecken } from './religion';
 // Arbetet är projektet 'falt' (projekt.ts), handlingen 'odla' med steget som task.tool.
 // Under torkan vissnar grödan om ägaren inte vattnar den med vattensäcken (steg 3.8.2, torst.ts). Bördighet och fukt kommer i steg 8.3.1, kompost och fler grödor i 8.3.2.
 export const ODLING = balans('odling', {
+  villPer: 6, // byn vill ha så mycket av en gröda per invånare; mindre gör grödan mer värd att så (grodorNu)
   froTakt: 6, // frön per arbetstimme på en mycket rik plats (gånger kunnigheten och SNABBARE; 3 före balansen av fas 2, steg 2.12.2)
   froUttag: 0.1, // varje frö tar så här mycket ur platsen
   froLeta: 0.3, // den som samlar går till de vilda grödorna för att plocka frön med VAL.fronChans, om någon ruta har så här mycket (steg 2.10.11)
@@ -79,12 +80,13 @@ export const ODLING = balans('odling', {
 // grödorna (steg 2.10.3): sak = det som skördas (saker.ts), fro = fröna den sås med, dygn = hur länge den växer innan den är
 // mogen, perRuta = skörden per ruta, fron = frön tillbaka per ruta i snitt (rovorna äts hela, så de ger få; varje ruta ger hela
 // frön, froTillbaka), frost = den dör när det blir kallare än så här
-export interface GrodaDef { namn: string; sak: string; fro: string; dygn: number; perRuta: number; fron: number; frost: number }
+export interface GrodaDef { namn: string; sak: string; fro: string; dygn: number; perRuta: number; fron: number; frost: number; tek?: string } // tek = tekniken som krävs utöver odlingen
 export const GRODOR = {
   rovor: { namn: 'Rovor', sak: 'rovor', fro: 'rovfron', dygn: 3, perRuta: 3, fron: 1.5, frost: -6 }, // snabba och härdiga; 1 eller 2 frön per ruta (steg 3.10.23.3); dygn 2 och perRuta 5 före steg 3.10.23.5; frost -3 före steg 2.12.2
   // ärterna har kornets tal och plats (steg 3.10.23.8; korn kommer tillbaka som säd från handlarna i steg 11.4.2)
-  lin: { namn: 'Lin', sak: 'ratlin', fro: 'linfron', dygn: 3, perRuta: 2, fron: 1.5, frost: -3 }, // steg 7.7.7: linfrön köps av handlaren
-  arter: { namn: 'Ärter', sak: 'arter', fro: 'artfron', dygn: 4, perRuta: 3, fron: 2, frost: -4 }, // håller länge; dygn 3, perRuta 4 och fron 6 före steg 3.10.23; frost -1 före steg 2.12.2
+  lin: { namn: 'Lin', sak: 'ratlin', fro: 'linfron', dygn: 3, perRuta: 2, fron: 1.5, frost: -3, tek: 'lin' }, // steg 7.7.7: linfrön köps av handlaren
+  arter: { namn: 'Ärter', sak: 'arter', fro: 'artfron', dygn: 4, perRuta: 3, fron: 2, frost: -4 },
+  korn: { namn: 'Korn', sak: 'korn', fro: 'korn', dygn: 4, perRuta: 3, fron: 1, frost: -4, tek: 'sadesodling' }, // säden från handlarna (steg 9.6.11): kornet är sitt eget utsäde // håller länge; dygn 3, perRuta 4 och fron 6 före steg 3.10.23; frost -1 före steg 2.12.2
 } satisfies Record<string, GrodaDef>;
 export type GrodaSlag = keyof typeof GRODOR;
 
@@ -166,11 +168,20 @@ function dygnTillIstid(s: State) {
   return (k.slut - s.now) / DAY + ((ISTID - k.ai - 1 + 8) % 4) * 7;
 }
 // grödorna som kan sås nu, den bästa först: ärter om de hinner mogna före istiden med marginal, och rovor om de hinner
+// Vilken gröda som sås avgörs av en poäng över alla rader i GRODOR (steg 9.6.11): skörden per ruta gånger grundvärdet och hur
+// mycket byn saknar av den, för de grödor som hinner mogna före istiden (ärterna med större marginal) och som någon kan odla
 export function grodorNu(s: State): GrodaSlag[] {
-  const d = dygnTillIstid(s), r: GrodaSlag[] = [];
-  if (d >= GRODOR.arter.dygn + ODLING.artMarg) r.push('arter');
-  if (d >= GRODOR.rovor.dygn + ODLING.rovMarg) r.push('rovor');
-  return r;
+  const d = dygnTillIstid(s), folk = Math.max(1, living(s).length);
+  const kan = (Object.keys(GRODOR) as GrodaSlag[]).filter(g => d >= GRODOR[g].dygn + (g === 'arter' ? ODLING.artMarg : ODLING.rovMarg) && (!(GRODOR[g] as GrodaDef).tek || living(s).some(p => knows(p, (GRODOR[g] as GrodaDef).tek!))));
+  const poang = (g: GrodaSlag) => GRODOR[g].perRuta * grundvarde(GRODOR[g].sak) * clamp(1 - amountOf(s, GRODOR[g].sak) / (folk * ODLING.villPer), 0.1, 1);
+  return kan.map(g => ({ g, p: poang(g) })).sort((a, b) => b.p - a.p || a.g.localeCompare(b.g)).map(x => x.g);
+}
+// kornet (steg 9.6.11): när byn fått sitt första korn av handlarna kommer de som kan odla på sädesodlingen
+export function kornUpptackt(s: State) {
+  if (amountOf(s, 'korn') <= 0 || living(s).some(p => knows(p, 'sadesodling'))) return;
+  const t = TEK.sadesodling, nya = living(s).filter(p => knows(p, 'odling'));
+  for (const p of nya) learn(s, p, t);
+  if (nya.length && forstaGang(s, 'sadesodling')) log(s, `Byn har fått korn av handlarna, och ${nya[0].name} förstår att det kan sås på fältet.`, 'world', [nya[0].id]);
 }
 export const grodaNu = (s: State): GrodaSlag | undefined => grodorNu(s)[0];
 const kanOdla = (s: State, p: Person) => ageOf(p, s.now) >= ALDER.vuxen && knows(p, 'odling');
@@ -427,6 +438,7 @@ export function faltTornado(s: State, rutor: Set<number>) {
 // varje timme (steg.ts): grödorna växer när det är varmt nog och dör i frost eller ruttnar, och ett fält som ingen sköter
 // blir gräs igen. Inget träd växer på rutorna som röjts
 export function stepOdling(s: State) {
+  kornUpptackt(s);
   if (!s.falt?.length) return;
   const temp = temperature(s), istid = iIstiden(kalender(s).ai), g = groundOf(s);
   for (const f of [...s.falt]) {
@@ -527,3 +539,5 @@ export function froFynd(s: State, p: Person, tk: Task, dtSec: number) {
   if (ta && forstaGang(s, 'froForst')) log(s, `${p.name} tog med sig frön från de vilda grödorna. De går inte att äta.`, 'world', [p.id]);
   return ut;
 }
+import { TEK, learn } from './teknik';
+import { grundvarde } from './varde';
