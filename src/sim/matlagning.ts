@@ -292,3 +292,37 @@ export function stepKok(s: State) {
   }
 }
 import { smakForgiftad } from './rykten';
+
+// ---------- stekhällen (steg 9.6.21) ----------
+// En flat sten över elden vid grillen (tillbehöret stekhall). Kött eller fisk steks med talg (och smak, om det finns) till en
+// stek: protein och fett är två grupper, så steken är lagad, med smak fin. Den smakar bättre (STEK.glad när man äter den)
+export const STEK = balans('stek', {
+  min: 3, // så många minuters arbete
+  huvud: 2, talg: 1, // av köttet eller fisken och talgen; det blir lika många portioner som köttet
+  glad: 0.02, // tanken av att äta en stek, utöver måltidens nivå
+});
+const stekhallen = (s: State) => stationerOf(s).find(t => t.k === 'grill' && isKlar(t) && t.med?.includes('stekhall'));
+export function stekRecept(s: State, p?: Person) {
+  const har = (k: string, n: number) => (p ? getable(s, p, k) : amountOf(s, k)) - (RATT.spara[k] ?? 0) >= n;
+  if (!har('talg', STEK.talg)) return undefined;
+  for (const hh of ['kott', 'fisk'] as RattHuvud[]) {
+    const huvud = Object.keys(INGREDIENSER).find(k => INGREDIENSER[k].huvud === hh && iKrukan(k) && SAKER[k]?.ra && har(k, STEK.huvud));
+    if (!huvud) continue;
+    const smak = RATT_SMAK.find(k => har(k, RATT.smak));
+    const niva = nivaAvGrupper(new Set([...grupperAv(huvud), 'fett', ...(smak ? grupperAv(smak) : [])]));
+    return { id: rattId(hh, 'stek', niva), huvud, smak, hh };
+  }
+  return undefined;
+}
+export const kanSteka = (s: State, p: Person) => knows(p, 'stekhall') && s.fire.lit && !!stekhallen(s) && rattAntal(s) < KOK.vill * living(s).length && !doingAct(s, 'steka', p) && !!stekRecept(s, p);
+export function stekaKlar(s: State, p: Person) {
+  const r = stekRecept(s, p);
+  if (!r || !s.fire.lit || !stekhallen(s)) return;
+  const ag: Record<string, number> = {};
+  for (const [k, n] of [[r.huvud, STEK.huvud], ['talg', STEK.talg], ...(r.smak ? [[r.smak, RATT.smak]] : [])] as [string, number][]) addDel(ag, takeMaterial(s, p, k, n), 1);
+  let n = 0; for (let i = 0; i < STEK.huvud; i++) if (rnd(s, 'mat', p) >= brannDel(p)) n++;
+  count(s, 'brant', STEK.huvud - n); count(s, 'stekt', n);
+  if (n > 0) { const tot = Object.values(ag).reduce((a, b) => a + b, 0) || 1, del: Del = {}; for (const o in ag) del[o] = ag[o] / tot * n; put(s, r.id, n, del); kockensHand(s, p, r.id, n); }
+  ovning(p, 'matlagning', STEK.min / 60 * MATLAG.ovning * (0.4 + stat(p, 'intelligens', s.now) / 20));
+  if (forstaGang(s, 'stekForsta')) log(s, `${p.name} stekte byns första ${SAKER[r.id]!.namn.split(' · ')[0].toLowerCase()} på stekhällen.`, 'world', [p.id]);
+}

@@ -149,6 +149,7 @@ const DEF = {
   bonad: { var: 'station', av: { skinn: RT.bonadSkinn, rep: RT.bonadRep }, min: RT.bonadMin },
   vaggbrade: { var: 'station', av: { virke: RT.bradeVirke }, min: RT.bradeMin },
   // tillbehören (stationer.ts) och dörrarna (byggnad.ts)
+  stekhall: { var: 'tillbehor', av: { sten: 2 }, min: 10, tek: 'stekhall' }, // stekhällen (steg 9.6.21): en flat sten över elden vid grillen
   skinnfall: { var: 'tillbehor', av: { skinn: RT.fallSkinn }, min: RT.fallMin },
   skinndorr: { var: 'dorr', av: { skinn: RT.skinndorrSkinn }, min: RT.skinndorrMin },
   tradorr: { var: 'dorr', av: { virke: RT.tradorrVirke, rep: RT.tradorrRep }, min: RT.tradorrMin },

@@ -79,6 +79,7 @@ export const nivaAvGrupper = (g: Set<Matgrupp>): Maltidsniva => g.size >= 3 && g
 // (matlagning.ts), kokningen en mellanstor lerkruka i elden
 export const TILLAGNING = {
   grilla: { namn: 'Grilla', behover: 'Grillställningen och elden', tek: 'grill', kategorier: ['grillat'], gor: 'En råvara i taget över elden. Rätten blir enkel' },
+  steka: { namn: 'Steka', behover: 'Stekhällen över elden, och talg', tek: 'stekhall', kategorier: ['stek'], gor: 'Kött eller fisk med talg på den heta stenen. Steken smakar bättre' }, // steg 9.6.21
   koka: { namn: 'Koka', behover: 'En mellanstor lerkruka i elden', tek: 'kruka', kategorier: ['gryta', 'soppa', 'grot'], gor: 'Två eller tre grupper i krukan, som står på elden utan kocken. Kokningen dödar smitta' },
 } satisfies Record<string, { namn: string; behover: string; tek: string; kategorier: string[]; gor: string }>;
 // kategorierna: namnet efter huvudingrediensen, symbolen och hur länge rätten står på elden (minuter, passiv tid)
@@ -87,6 +88,7 @@ export const KATEGORIER = {
   gryta: { namn: 'gryta', tecken: '🏺', passiv: 10 },
   soppa: { namn: 'soppa', tecken: '🍽', passiv: 15 },
   grot: { namn: 'gröt', tecken: '🍽', passiv: 5 },
+  stek: { namn: 'stek', tecken: '🔥', passiv: 0 }, // på stekhällen (steg 9.6.21)
 } satisfies Record<string, { namn: string; tecken: string; passiv: number }>;
 export type Kategori = keyof typeof KATEGORIER;
 // huvudingredienserna, i den ordning de väljs, och kategorierna de kan bli i krukan (den första när rätten har stärkelse,
@@ -130,6 +132,7 @@ const NARING: Record<RattHuvud, SakDef['naring']> = {
 };
 export function rattSaker(): Record<string, SakDef> {
   const ut: Record<string, SakDef> = {};
+  for (const h of ['kott', 'fisk'] as RattHuvud[]) for (const n of ['lagad', 'fin'] as Maltidsniva[]) ut[rattId(h, 'stek', n)] = { namn: rattNamn(h, 'stek', n), varde: 1.5, stack: 25, ruta: 75, mapp: 'Mat', mat: 0.45, naring: NARING[h], haller: RATT.haller }; // steken (steg 9.6.21)
   for (const h of RATT_HUVUD_LIST) for (const k of RATT_HUVUD[h].kat) for (const n of ['lagad', 'fin'] as Maltidsniva[]) for (const lang of [false, true])
     ut[rattId(h, k, n, lang)] = { namn: rattNamn(h, k, n), varde: 1.5, stack: 25, ruta: 75, mapp: 'Mat', mat: lang ? 3.5 : 0.4, naring: NARING[h], haller: lang ? RATT.hallerLang : RATT.haller };
   return ut;

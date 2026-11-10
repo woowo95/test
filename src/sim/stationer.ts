@@ -216,7 +216,7 @@ export const STATIONER = {
   },
   // grillställningen (steg 2.8.1, matlagning.ts): två klykor och ett spett med vev, tre rutor bred med elden i mitten
   grill: {
-    namn: 'Grillställning', ikon: 'grill', w: 3, h: 1, tek: ['grill'], av: RECEPT.grill.av, min: RECEPT.grill.min, gor: ['grilla'], bara: ['grilla'], eld: true,
+    namn: 'Grillställning', ikon: 'grill', w: 3, h: 1, tek: ['grill'], av: RECEPT.grill.av, min: RECEPT.grill.min, gor: ['grilla', 'steka'], bara: ['grilla', 'steka'], eld: true,
     bygger: 'Sätter upp en grillställning av grenar och rep över elden.',
     forsta: '{namn} satte upp byns första grillställning över elden. Där grillas köttet och fisken, och den grillade maten håller längre.',
   },
@@ -962,6 +962,11 @@ export function bordBrist(s: State, k: string) {
 const forstaText = (t: string, p: Person) => t.replace('{namn}', p.name).replace(/{hans}/g, hans(p)).replace(/{han}/g, han(p));
 export interface TillbehorDef { namn: string; ikon: string; till: string; tek: string[]; av: Record<string, number>; min: number; varme?: number; gor: string; forsta: string }
 export const TILLBEHOR = {
+  stekhall: { // steg 9.6.21 (matlagning.ts): kött och fisk steks med talg på hällen
+    namn: 'Stekhäll', ikon: 'stekhall', till: 'grill', tek: ['stekhall'], av: RECEPT.stekhall.av, min: RECEPT.stekhall.min,
+    gor: 'Lägger en flat sten över elden vid grillen.',
+    forsta: '{namn} lade byns första stekhäll över elden. Där steks köttet och fisken i talg.',
+  },
   skinnfall: {
     namn: 'Skinnfäll', ikon: 'skinnfall', till: 'halmbadd', tek: ['skinnfall'], av: RECEPT.skinnfall.av, min: RECEPT.skinnfall.min, varme: STATION.fallVarme,
     gor: 'Lägger en skinnfäll i halmbädden.',

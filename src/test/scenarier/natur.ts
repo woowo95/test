@@ -1179,7 +1179,7 @@ SCENARIER.grill = {
     const ovan = amountOf(s, 'grillfisk'), anv = f0 - amountOf(s, 'fisk');
     grilla(s, q, 1);
     const skicklig = amountOf(s, 'grillfisk') - ovan;
-    const brant = Math.abs(anv - MATLAG.timme) < 1e-6 && Math.abs(ovan - anv * (1 - MATLAG.brann)) < 1 && ovan < anv && Math.abs(skicklig - MATLAG.timme) < 1; // i hela saker (steg 2.10.7)
+    const brant = Math.abs(anv - MATLAG.timme) < 1e-6 && Math.abs(ovan - anv * (1 - MATLAG.brann)) <= 2 && ovan < anv && Math.abs(skicklig - MATLAG.timme) < 1; // i hela saker (steg 2.10.7); varje bit bränns eller inte med chansen (steg 9.6.4), så ungefär
     const ovar = p.skill.matlagning > m0 && brannDel(q) === 0;
     s.fire.lit = false; const fore = amountOf(s, 'fisk'); grilla(s, p, 1); const ingenEld = amountOf(s, 'fisk') === fore; s.fire.lit = true;
     const forst = FOOD.indexOf('grillfisk') < FOOD.indexOf('fisk') && FOOD.indexOf('grillkott') < FOOD.indexOf('kott') && SAKER.grillkott!.haller! > SAKER.kott!.haller! && SAKER.grillfisk!.haller! > SAKER.fisk!.haller!;
