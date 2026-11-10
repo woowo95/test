@@ -210,7 +210,7 @@ SCENARIER.funktion = {
     const gaster = Array.from({ length: 8 }, (_, i) => ({ ...structuredClone(living(s)[0]), id: 1000 + i, name: `Gäst${i}`, partner: undefined, task: undefined }));
     const kom = () => { for (const g of gaster) g.left = undefined; }, gar = () => { for (const g of gaster) g.left = s.now; };
     s.people.push(...gaster);
-    SIM.BYGGATGARDER.byggaUt.foresla = () => []; // här prövas ett nytt hus, inte en utbyggnad
+    const byggaUtForesla = SIM.BYGGATGARDER.byggaUt.foresla; SIM.BYGGATGARDER.byggaUt.foresla = () => []; // här prövas ett nytt hus, inte en utbyggnad (sätts tillbaka före svaret)
     const nyttHus = () => { s.byggSok = undefined; planBuild(s); return byggKlart(s)!; };
     const B = nyttHus();
     gar(); s.ruttet = undefined;
@@ -241,6 +241,7 @@ SCENARIER.funktion = {
     // ett familjehus som ingen äger blir en sovsal
     A.fn = 'familjehus'; A.ag = undefined; stepByggnader(s);
     const fam = fnId(A) === 'sovsal';
+    SIM.BYGGATGARDER.byggaUt.foresla = byggaUtForesla;
     return [
       ['en sovsal som just blivit tom får vara kvar ett tag', vantar],
       [`efter ett dygn (ett år i spelet) blir den ett samlingshus (${bNamn})`, samling],
@@ -467,6 +468,7 @@ SCENARIER.bygg = {
 };
 
 SCENARIER.lager = {
+  lang: true,
   text: 'Saker ligger i stackar på en lagerplats som byn gör större och mindre, och var och en bär efter sin styrka',
   kor: () => {
     const s = createState(3, START);
@@ -922,6 +924,7 @@ SCENARIER.omrade = {
 };
 
 SCENARIER.strak = {
+  lang: true,
   text: 'Gångstråken (steg 6.2.5): från rutan utanför varje dörr går den kortaste vägen till elden, lagren, vattnet och torget (inte latrinen, steg 9.2.99), och där ställs inget nytt: inga stationer, lagerplatser eller fält, och hus bara om stråket kan dras om med högst 3 rutors omväg',
   kor: () => {
     const s = createState(9, START);

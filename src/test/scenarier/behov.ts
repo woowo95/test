@@ -330,6 +330,7 @@ SCENARIER.varm = {
 };
 
 SCENARIER.skugga = {
+  lang: true,
   text: 'Steg 2.3.13 och 2.10.20: den som är extremt varm i solen söker sig till skuggan under ett träd eller i ett hus och svalkar sig där, så som den som fryser söker sig till elden. Den som bara är för varm arbetar som vanligt. Står hen redan i skugga stannar hen där. I skuggan värmer solen inte, så kroppen svalnar. Den som vilar eller gör handarbete när hen är för varm gör det i skuggan nära elden',
   kor: () => {
     const s = createState(5, START);
@@ -382,6 +383,7 @@ SCENARIER.skugga = {
 };
 
 SCENARIER.torst = {
+  lang: true,
   text: 'Steg 2.4.1–2.4.2: törsten är ett eget behov. Den växer fortare för den som är för varm eller arbetar tungt, och långsammare i sömnen. Den törstige går och dricker vid vattnet (bär inte hem det) och undviker vatten hen tror är smutsigt; när isen ligger smälter man snö vid elden, och utan eld hugger man upp ett hål i isen. Smutsigt vatten kan ge ont i magen, man lär sig var vattnet är rent och berättar det för andra. Utan vatten tär törsten på hälsan',
   kor: () => {
     const s = createState(5, START);

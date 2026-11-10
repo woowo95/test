@@ -105,8 +105,10 @@ SCENARIER.seder = {
     j.habit = { jakt: 20, samla: 2 }; h.habit = { hugga: 12, falla: 8, samla: 2 };
     SIM.updateTags(t);
     // sederna formas av upplevelserna (steg 4.5.4.9): alla vuxna minns att de var nära att svälta, och när de dör är det borta
-    const svalt = SIM.cloneState(s), svaltFore = SIM.sederTarget(svalt).forsiktighet;
-    for (const x of vuxna(svalt)) x.upp = [...x.upp ?? [], { k: 'svalt', a: 20, e: {}, v: 1, t: svalt.now }];
+    // det byn redan upplevt de tre dygnen (egna tekniker) tas bort först, så att bara svälten mäts
+    const svalt = SIM.cloneState(s); for (const x of living(svalt)) x.upp = [];
+    const svaltFore = SIM.sederTarget(svalt).forsiktighet;
+    for (const x of vuxna(svalt)) x.upp = [{ k: 'svalt', a: 20, e: {}, v: 1, t: svalt.now }];
     const svaltEfter = SIM.sederTarget(svalt), drag = SIM.sedDrag(svalt)[0];
     for (const x of vuxna(svalt)) x.died = svalt.now;
     const ingaKvar = !SIM.sedDrag(svalt).some(r => r.k === 'svalt');

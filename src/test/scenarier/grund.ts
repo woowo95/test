@@ -457,7 +457,8 @@ SCENARIER.knapphet = {
     return [
       // sedan samlandet går fortare (steg 2.12.4, v132) töms buskarna nära byn snabbt och man plockar mer långt bort än förut
       // sedan samlaren väljer mål där färre redan plockar (steg 9.2.54) sprids uttaget, så nära byn töms ungefär lika mycket som långt bort
-      [`nära byn plockas minst nästan lika mycket som långt bort (${nara.toFixed(3)} mot ${langt.toFixed(3)})`, nara > 0.005 && nara > langt * 0.8],
+      // sedan matens buffert blev större och samlaren går dit hen hört att det finns mer (steg 9.9.4 och 9.9.5) plockas mer långt bort: nära byn minst hälften så mycket
+      [`nära byn plockas minst hälften så mycket som långt bort (${nara.toFixed(3)} mot ${langt.toFixed(3)})`, nara > 0.005 && nara > langt * 0.5],
       // kaninerna håller sig undan folk, så inom 12 rutor jagas nästan inget (ca 0,001). Inom 30 rutor ca 0,02–0,03 (v47), och
       // ca 0,01 sedan fälten blev större (steg 3.10.23, by 23–28), och ca 0,005 sedan de som pratar går till varandra (steg 4.5.6.7):
       // det som prövas är att viltet jagas alls, inte hur mycket. Sedan jakten är en strid (steg 3.7.3) tar en fångad hare inte
@@ -735,7 +736,9 @@ SCENARIER.hardvinter = {
     kor(v, (start - v.now) / HOUR + 30, b => { if (b.now < start && gammal.varsel?.t === start) anadeFore = true; if (b.now < start) visste = Math.max(visste, living(b).filter(p => p.varsel?.t === start).length); });
     SIM.UPPLEVELSER.hardVinter.chans = ch;
     const kron = v.hist?.kronika.some(([, t]) => /hård vinter/.test(t)) ?? false;
-    const minns = barn.upp?.some(u => u.k === 'hardVinter');
+    // barnet kan ha dött före vintern (svampen); då mäts de som levde när den kom, barn först
+    const levde = living(v).filter(q => q.born < start), unga = levde.filter(q => SIM.formas(v!, q)), matta = SIM.alive(barn) ? [barn] : unga.length ? unga : levde;
+    const minns = matta.some(q => q.upp?.some(u => u.k === 'hardVinter'));
     const varselet = living(v).find(q => q.varsel)?.varsel; // den äldsta kan ha dött i den hårda vintern
     const fs = (q: Person) => varselet ? SIM.varselSamla(v!, { ...q, varsel: { ...varselet, t: v!.now + DAY } }) : 0;
     const merForsiktig = (() => { const q = gammal, s0 = v.seder.v.forsiktighet; v.seder.v.forsiktighet = 1; const hog = fs(q); v.seder.v.forsiktighet = -1; const lag = fs(q); v.seder.v.forsiktighet = s0; return hog > lag; })();
@@ -749,7 +752,7 @@ SCENARIER.hardvinter = {
       [`varslet sprids i samtal (${visste} visste innan, ${(v.stat?.varselBerattat ?? 0)} gånger berättat)`, visste >= 2],
       ['en förutseende by vill samla mer när den vet', merForsiktig],
       [`den hårda vintern kom (${(v.stat?.motgang_hardVinter ?? 0)}) och står i byns krönika`, (v.stat?.motgang_hardVinter ?? 0) === 1 && kron],
-      [`barnet minns den (${barn.upp?.map(u => u.k).join(', ') || 'inget'})`, !!minns],
+      [`${SIM.alive(barn) ? 'barnet' : unga.length ? 'barnen som levde då' : 'de som levde då'} minns den (${matta.map(q => q.upp?.map(u => u.k).join(', ') || 'inget').join('; ')})`, minns],
     ];
   },
 };
@@ -1066,11 +1069,11 @@ SCENARIER.flodrest = {
       }
       return b!;
     };
-    // ett hus (4 × 3, timmerväggar, öppning i söder, trägolv) där en golvruta ligger högst två rutor upp på land
+    // ett hus (4 × 3, timmerväggar, öppning i söder, trägolv) där båda golvrutorna ligger högst två rutor upp på land, så att vattnet når alla sovplatser
     let hus: { x: number; y: number } | undefined, hd = Infinity;
     for (let y = 1; y < W - 4; y++) for (let x = 1; x < W - 5; x++) {
       const d = Math.hypot(x - c.x, y - c.y);
-      if (d >= hd || Math.min(land[(y + 1) * W + x + 1], land[(y + 1) * W + x + 2]) > 2) continue;
+      if (d >= hd || Math.max(land[(y + 1) * W + x + 1], land[(y + 1) * W + x + 2]) > 2) continue;
       let ok = true;
       for (let yy = y; yy < y + 3 && ok; yy++) for (let xx = x; xx < x + 4 && ok; xx++) ok = fritt(xx, yy);
       if (ok) { hd = d; hus = { x, y }; }

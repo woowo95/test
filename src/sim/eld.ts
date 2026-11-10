@@ -9,7 +9,7 @@ import { Del, addDel } from './egendom';
 import { coldOf, hardVinter, temperature, vaderNu, VADER } from './vader';
 import { MOTGANG } from './motgang';
 import { isWall, roomAt } from './byggnad';
-import { ALDER, KROPP, ageOf, count, forstaGang, gjort, isSick, living, log, stat, think } from './folk';
+import { ALDER, KROPP, ageOf, alive, count, forstaGang, gjort, isSick, living, log, stat, think } from './folk';
 import { nTools } from './agande';
 import { SAKER } from './saker';
 import { halsa } from './halsa';
@@ -364,7 +364,8 @@ export function stepFire(s: State, dtSec: number, ppl: Person[]) {
   for (const e of alla) brinner(s, e, dtSec);
   // vilja: varje vaken invånare vill ha olika mycket ved på de eldar hen använder (steg 6.3.1)
   const vc = ppl.reduce((a, p) => a + clamp(ELD.byFryser - p.warm, 0, ELD.byFryser) / ELD.byFryser, 0) / (ppl.length || 1);
-  const vakna = ppl.filter(p => awake(s, p, ALDER.hjalper)), hem = vakna.map(p => hemEld(s, p));
+  /* listan gjordes när steget började: den som dött sedan dess (i en strid i samma steg) sköter ingen eld */
+  const vakna = ppl.filter(p => alive(p) && awake(s, p, ALDER.hjalper)), hem = vakna.map(p => hemEld(s, p));
   const per = new Map<Fire, Kand[]>();
   for (const f of alla) {
     const cands: Kand[] = [];
@@ -431,7 +432,7 @@ const tandKey = (k: Tand, i: number) => `${k === 'torrgras' ? 'ho' : 'kvist'}:${
 export function tandPaRutan(s: State, k: Tand, x: number, y: number): number {
   if (x < 0 || y < 0 || x >= W || y >= H) return 0;
   const g = groundOf(s), i = y * W + x, t = g.tiles[i];
-  if (t === T.Vatten || t === T.Sten) return 0;
+  if (t === T.Vatten || t === T.Sten || isWall(s, x + 0.5, y + 0.5)) return 0; /* inget hö och inga kvistar under en vägg */
   const ai = ageIndex(s);
   const bas = k === 'torrgras'
     ? (t === T.Gras || t === T.Skog ? Math.floor(ELD.hoSaker * ARSTID.hoPerTid[ai] * Math.min(1, g.cover[i]) + 1e-9) : 0)
