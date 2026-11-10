@@ -820,3 +820,27 @@ SCENARIER.ratthaller = {
     ];
   },
 };
+
+SCENARIER.rokeri = {
+  text: 'Steg 9.6.8: rökeriet. En station där kött och fisk röks på ett dygn i stället för torkningens fem, också i regn och på vintern, och rökt mat håller som torkad men smakar lite bättre',
+  kor: () => {
+    const { torka, kanTorka, setAmount, amountOf, SAKER, ROK, TORK, MAT, FOOD, STATIONER } = SIM;
+    const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    for (const k of FOOD) setAmount(s, k, 0);
+    setAmount(s, 'fisk', 30);
+    s.stationer = [...(s.stationer ?? []), { id: 998, k: 'rokeri', x: 2, y: 2, kvar: 0 } as SIM.Station];
+    p.tek = { ...(p.tek ?? {}), rokeri: 1 };
+    const kan = kanTorka(s, p, 'rokeri');
+    torka(s, p, 1, 'rokeri'); const uppe = 30 - amountOf(s, 'fisk');
+    s.now += ROK.dygn * SIM.DAY + SIM.HOUR; torka(s, p, 1, 'rokeri');
+    const rokt = amountOf(s, 'rokfisk');
+    for (const k of FOOD) setAmount(s, k, 0); setAmount(s, 'rokfisk', 4); p.thoughts = []; p.hunger = 0.2; MAT.anvand(s, p);
+    const gott = p.thoughts.some(t => t.text === 'Åt rökt mat');
+    return [
+      [`byn kan röka (${kan ? 'ja' : 'nej'}), och fisken hängs upp i rökeriet (${uppe})`, kan && uppe > 0],
+      [`efter ett dygn (${ROK.dygn} mot torkningens ${TORK.dygn}) är den rökt (${rokt} rökt fisk)`, rokt === uppe && ROK.dygn < TORK.dygn],
+      [`rökt fisk håller som torkad (${SAKER.rokfisk!.haller} och ${SAKER.torrfisk!.haller} dygn) och smakar lite bättre (${gott ? 'ja' : 'nej'})`, SAKER.rokfisk!.haller === SAKER.torrfisk!.haller && gott],
+      [`rökeriet är en station (${STATIONER.rokeri.namn})`, !!STATIONER.rokeri],
+    ];
+  },
+};

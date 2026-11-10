@@ -116,6 +116,7 @@ function maltidTanke(s: State, p: Person, per: Record<string, number>) {
     const m = (p.protMinne ??= []); m.push(mest); if (m.length > VARIATION.minns) m.shift();
     if (m.filter(x => x === mest).length >= VARIATION.trott) { think(p, `${mest} igen`, VARIATION.tanke, s.now, VARIATION.tankeTim * HOUR); count(s, 'trott_pa_mat'); }
   }
+  if (Object.keys(per).some(x => x.startsWith('rok') && per[x] > 0)) think(p, 'Åt rökt mat', ROK.glad, s.now, RATT.tankeTim * HOUR); // det rökta smakar lite bättre (steg 9.6.8)
   const k = kockGlad(s, per); if (k > 0.005) think(p, 'Maten var vällagad', k, s.now, RATT.tankeTim * HOUR); // kockens hand (steg 9.6.4)
 }
 // p sitter vid bordet och äter (handlingen maltid, framme: val.ts och stationer.ts, steg 2.2.15)
@@ -695,5 +696,5 @@ export function genomfor(s: State, M: Part, G: Part, fatt: Vara[], betal: Vara[]
 export const luraI = (s: State, M: Part, G: Part, betal: Vara[], utom: readonly string[], ger: number) => lura(s, M, G, betal, betalVaror(M, G, utom), ger);
 import { foodDays } from './ekonomi';
 import { MALTIDSNIVA, RATT, VARIATION, basta, maltidsNiva, proteinAv, smakSak } from './ratter';
-import { kockGlad } from './matlagning';
+import { ROK, kockGlad } from './matlagning';
 import { smakFinMaltid } from './rykten';

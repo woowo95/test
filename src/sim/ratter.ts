@@ -23,7 +23,7 @@ export const INGREDIENSER: Record<string, { grupper: Matgrupp[]; huvud?: RattHuv
   torrkott: { grupper: ['protein', 'fett'], huvud: 'kott' }, grillkott: { grupper: ['protein', 'fett'], huvud: 'kott' },
   fisk: { grupper: ['protein'], huvud: 'fisk' }, abborre: { grupper: ['protein'], huvud: 'fisk' }, gaddkott: { grupper: ['protein'], huvud: 'fisk' },
   gadda: { grupper: ['protein'], huvud: 'fisk' }, mortkott: { grupper: ['protein', 'fett'], huvud: 'fisk' }, mort: { grupper: ['protein', 'fett'], huvud: 'fisk' },
-  torrfisk: { grupper: ['protein'], huvud: 'fisk' }, torrgadda: { grupper: ['protein'], huvud: 'fisk' }, torrmort: { grupper: ['protein', 'fett'], huvud: 'fisk' },
+  torrfisk: { grupper: ['protein'], huvud: 'fisk' }, rokfisk: { grupper: ['protein'], huvud: 'fisk' }, rokkott: { grupper: ['protein', 'fett'], huvud: 'kott' }, torrgadda: { grupper: ['protein'], huvud: 'fisk' }, torrmort: { grupper: ['protein', 'fett'], huvud: 'fisk' },
   grillfisk: { grupper: ['protein'], huvud: 'fisk' }, grillgadda: { grupper: ['protein'], huvud: 'fisk' }, grillmort: { grupper: ['protein', 'fett'], huvud: 'fisk' },
   agg: { grupper: ['protein', 'fett'] }, arter: { grupper: ['protein', 'starkelse'] },
   rotter: { grupper: ['starkelse'], huvud: 'rot' }, rovor: { grupper: ['starkelse'], huvud: 'rot' },
@@ -47,7 +47,7 @@ export type Maltidsniva = keyof typeof MALTIDSNIVA;
 export const MALTIDSNIVA_LIST = Object.keys(MALTIDSNIVA) as Maltidsniva[];
 // nivån för en lagad rätt med de här grupperna: två grupper är lagad, tre med smak bland dem är fin
 // nivån på en sak man äter: rätten i krukan har sin, det grillade och torkade är enkelt, annars är det rått
-export const maltidsNiva = (k: string): Maltidsniva => rattInfo(k)?.niva ?? (/^(grill|torr)/.test(k) ? 'enkel' : 'ratt');
+export const maltidsNiva = (k: string): Maltidsniva => rattInfo(k)?.niva ?? (/^(grill|torr|rok)/.test(k) ? 'enkel' : 'ratt');
 const NIVA_ORDNING: Maltidsniva[] = ['ratt', 'enkel', 'lagad', 'fin'];
 // den högsta nivån i det som ätits (per = av varje slag, behov.ts)
 export function basta(per: Record<string, number>): Maltidsniva {

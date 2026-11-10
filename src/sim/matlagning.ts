@@ -131,30 +131,43 @@ export const TORKAS: readonly Ratt[] = [
   { ra: 'kott', blir: 'torrkott', per: 1 },
   { ra: 'vargkott', blir: 'torrkott', per: 1 },
 ];
+// rökeriet (steg 9.6.8): en station som torkställningen, där köttet och fisken röks på ROK.dygn dygn, också i regn och på
+// vintern (handlingen roka har inget krav på vädret), och blir rökt mat som håller som den torkade och smakar lite bättre
+export const ROK = balans('rokeri', {
+  dygn: 1, // så många dygn tar det att röka kött och fisk
+  glad: 0.01, // tanken av att äta rökt mat (smakar lite bättre)
+});
+export const ROKAS: readonly Ratt[] = [
+  { ra: 'fisk', blir: 'rokfisk', per: 1 }, { ra: 'abborre', blir: 'rokfisk', per: 1 }, { ra: 'gaddkott', blir: 'rokfisk', per: 1 }, { ra: 'mortkott', blir: 'rokfisk', per: 1 },
+  { ra: 'kott', blir: 'rokkott', per: 1 }, { ra: 'vargkott', blir: 'rokkott', per: 1 },
+];
+export type TorkSlag = 'tork' | 'rokeri';
+const TORK_RAD = { tork: () => TORKAS, rokeri: () => ROKAS };
+const torkDygn = (k: TorkSlag) => k === 'rokeri' ? ROK.dygn : TORK.dygn;
 export type Hang = NonNullable<Station['tork']>[number];
-// byns färdiga torkställningar, och den första av dem
-export const torkarna = (s: State) => stationerOf(s).filter(t => isKlar(t) && t.k === 'tork');
+// byns färdiga torkställningar (eller rökerier), och den första av dem
+export const torkarna = (s: State, k: TorkSlag = 'tork') => stationerOf(s).filter(t => isKlar(t) && t.k === k);
 export const torken = (s: State): Station | undefined => torkarna(s)[0];
 const hangOf = (t: Station) => t.tork ?? (t.tork = []);
 const hangtSumma = (t?: Station) => { let n = 0; for (const q of t?.tork ?? []) n += q.n; return n; };
 // hur stor del av torkningen som är gjord (0–1): gränssnittet färgar maten efter det
-export const torrDel = (s: State, q: Hang) => clamp((s.now - q.t) / (TORK.dygn * DAY), 0, 1);
-const klar = (s: State, q: Hang) => s.now - q.t >= TORK.dygn * DAY;
+export const torrDel = (s: State, q: Hang, k: TorkSlag = 'tork') => clamp((s.now - q.t) / (torkDygn(k) * DAY), 0, 1);
+const klar = (s: State, q: Hang, k: TorkSlag = 'tork') => s.now - q.t >= torkDygn(k) * DAY;
 // så mycket rått som finns över det byn äter innan det ruttnar
-function ratOver(s: State) {
+function ratOver(s: State, k: TorkSlag = 'tork') {
   let n = 0;
-  for (const r of TORKAS) n += amountOf(s, r.ra);
+  for (const r of TORK_RAD[k]()) n += amountOf(s, r.ra);
   return Math.max(0, n - TORK.spara * living(s).length * EKONOMI.matPerDygn);
 }
 // arbetet som väntar vid ställningarna: det som är klart att ta ner, och det råa som ska upp och får plats. fri = platsen
 // som finns när det klara tagits ner, over = det råa som finns över
-function torkArbete(s: State) {
-  const ts = torkarna(s);
+function torkArbete(s: State, k: TorkSlag = 'tork') {
+  const ts = torkarna(s, k);
   if (!ts.length) return { ner: 0, upp: 0, fri: 0, over: 0 };
   let ner = 0, fri = 0;
-  for (const t of ts) { fri += TORK.rymd - hangtSumma(t); for (const q of t.tork ?? []) if (klar(s, q)) ner += q.n; }
+  for (const t of ts) { fri += TORK.rymd - hangtSumma(t); for (const q of t.tork ?? []) if (klar(s, q, k)) ner += q.n; }
   fri += ner;
-  const over = ratOver(s), upp = over >= TORK.min ? Math.min(over, fri) : 0;
+  const over = ratOver(s, k), upp = over >= TORK.min ? Math.min(over, fri) : 0;
   return { ner, upp: Math.max(0, upp), fri, over };
 }
 // en torkställning till (projekt.ts): 1 när byn saknar en, annars hur mycket av det råa som finns över som inte får plats på
@@ -167,33 +180,34 @@ export function torkBrist(s: State) {
   return a.over >= TORK.min ? clamp((a.over - a.fri) / TORK.rymd, 0, 1) : 0;
 }
 // p kan torka: byn har ställningen, något är klart att ta ner eller det finns rått över och plats, och ingen annan gör det
-export function kanTorka(s: State, p: Person) {
-  if (!kanGoras(s, 'torka', p) || doingAct(s, 'torka', p)) return false;
-  const a = torkArbete(s);
+export function kanTorka(s: State, p: Person, k: TorkSlag = 'tork') {
+  const act = k === 'rokeri' ? 'roka' : 'torka';
+  if (!kanGoras(s, act, p) || doingAct(s, act, p)) return false;
+  const a = torkArbete(s, k);
   return a.ner > 1e-6 || a.upp >= TORK.min;
 }
 // hur länge ett pass vid ställningen varar
-export const torkTid = (s: State) => { const a = torkArbete(s); return Math.min(TORK.maxTim * HOUR, (a.ner + a.upp) / TORK.timme * HOUR + 5 * MIN); };
+export const torkTid = (s: State, k: TorkSlag = 'tork') => { const a = torkArbete(s, k); return Math.min(TORK.maxTim * HOUR, (a.ner + a.upp) / TORK.timme * HOUR + 5 * MIN); };
 
 // torka i hours timmar: först ner det som är klart, sedan upp med det råa som finns över, ställning för ställning
-export function torka(s: State, p: Person, hours: number) {
-  const ts = torkarna(s);
+export function torka(s: State, p: Person, hours: number, k: TorkSlag = 'tork') {
+  const ts = torkarna(s, k), RAD = TORK_RAD[k]();
   if (!ts.length) { if (p.task) p.task.until = s.now; return; }
-  let kan = hours * TORK.timme, over = ratOver(s);
+  let kan = hours * TORK.timme, over = ratOver(s, k);
   for (const h of ts.map(hangOf)) for (let i = 0; i < h.length && kan > 1e-9;) {
     const q = h[i];
-    if (!klar(s, q)) { i++; continue; }
+    if (!klar(s, q, k)) { i++; continue; }
     const n = Math.min(q.n, kan), f = n / q.n, ag: Del = {};
     for (const o in q.ag) { const m = q.ag[o] * f; q.ag[o] -= m; const ag0 = byId(s, Number(o)); if (ag0 && alive(ag0)) ag[o] = m; }
-    put(s, TORKAS.find(r => r.ra === q.k)!.blir, n, ag);
-    q.n -= n; kan -= n; count(s, 'torkat', n);
+    put(s, RAD.find(r => r.ra === q.k)!.blir, n, ag);
+    q.n -= n; kan -= n; count(s, k === 'rokeri' ? 'rokt' : 'torkat', n);
     if (q.n <= 1e-6) h.splice(i, 1);
-    if (forstaGang(s, 'torkForsta')) log(s, `${p.name} tog ner byns första torkade ${SAKER[q.k]?.namn.endsWith('ött') ? 'kött' : 'fisk'} från torkställningen. Den håller länge i lagret.`, 'world', [p.id]);
+    if (k === 'tork' && forstaGang(s, 'torkForsta')) log(s, `${p.name} tog ner byns första torkade ${SAKER[q.k]?.namn.endsWith('ött') ? 'kött' : 'fisk'} från torkställningen. Den håller länge i lagret.`, 'world', [p.id]);
   }
   for (const t of ts) {
     const h = hangOf(t);
     let plats = TORK.rymd - hangtSumma(t);
-    for (const r of TORKAS) {
+    for (const r of RAD) {
       if (kan <= 1e-9 || plats <= 1e-9 || over < 1e-6) break;
       const n = Math.min(kan, plats, over, amountOf(s, r.ra));
       if (n <= 1e-6) continue;

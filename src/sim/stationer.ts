@@ -221,6 +221,11 @@ export const STATIONER = {
     forsta: '{namn} satte upp byns första grillställning över elden. Där grillas köttet och fisken, och den grillade maten håller längre.',
   },
   // torkställningen (steg 2.8.2, matlagning.ts): en fiskhäck med A-ramar, två rutor bred, som sticker upp över raden ovanför
+  rokeri: { // steg 9.6.8 (matlagning.ts): som torkställningen, men på ett dygn och i alla väder
+    namn: 'Rökeri', ikon: 'rokeri', w: 2, h: 2, tek: ['rokeri'], av: RECEPT.rokeri.av, min: RECEPT.rokeri.min, gor: ['roka'], bara: ['roka'],
+    bygger: 'Bygger ett rökeri av sten, grenar och lera.',
+    forsta: '{namn} byggde byns första rökeri. Där röks köttet och fisken på ett dygn, också när det regnar.',
+  },
   tork: {
     namn: 'Torkställning', ikon: 'tork', w: 2, h: 1, tek: ['tork'], av: RECEPT.tork.av, min: RECEPT.tork.min, gor: ['torka'], bara: ['torka'], flera: true,
     bygger: 'Sätter upp en torkställning av grenar och rep.',
