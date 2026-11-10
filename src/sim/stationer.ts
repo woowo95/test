@@ -221,6 +221,11 @@ export const STATIONER = {
     forsta: '{namn} satte upp byns första grillställning över elden. Där grillas köttet och fisken, och den grillade maten håller längre.',
   },
   // torkställningen (steg 2.8.2, matlagning.ts): en fiskhäck med A-ramar, två rutor bred, som sticker upp över raden ovanför
+  kvarnsten: { // steg 9.6.22: kornet mals till mjöl (tillverka.ts)
+    namn: 'Kvarnsten', ikon: 'kvarnsten', w: 1, h: 1, tek: ['kvarnsten'], av: RECEPT.kvarnsten.av, min: RECEPT.kvarnsten.min, gor: ['mala_korn'], bara: ['mala_korn'],
+    bygger: 'Lägger två huggna stenar till en kvarnsten.',
+    forsta: '{namn} lade byns första kvarnsten. Där mals kornet till mjöl som går att spara.',
+  },
   bryggkar: { // steg 9.6.12 (brygg.ts): ett urholkat stockkar med lock, där vinet och ölet jäser
     namn: 'Bryggkar', ikon: 'bryggkar', w: 1, h: 1, tek: ['bryggkar'], av: RECEPT.bryggkar.av, min: RECEPT.bryggkar.min, gor: ['brygga', 'tappa'], bara: ['brygga', 'tappa'],
     bygger: 'Hugger ur ett bryggkar av virke med yxan.',

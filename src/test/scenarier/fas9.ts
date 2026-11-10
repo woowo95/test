@@ -1124,3 +1124,23 @@ SCENARIER.stek = {
     ];
   },
 };
+
+SCENARIER.kvarn = {
+  text: 'Steg 9.6.22: kvarnstenen. En station av två huggna stenar där kornet mals till mjöl, som går att spara',
+  kor: () => {
+    const { KLAR_FOR, TILLVERKA, setAmount, amountOf, SAKER, STATIONER, PROJEKT } = SIM;
+    const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    s.stationer = [...(s.stationer ?? []), { id: 993, k: 'kvarnsten', x: 2, y: 5, kvar: 0 } as SIM.Station];
+    p.tek = { ...(p.tek ?? {}), kvarnsten: 1, sadesodling: 1 };
+    setAmount(s, 'korn', 12);
+    const sparar = !PROJEKT.mala_korn.kan(s, p, {} as never);
+    setAmount(s, 'korn', 20);
+    const kan = PROJEKT.mala_korn.kan(s, p, {} as never);
+    KLAR_FOR[TILLVERKA.mala_korn.act]!(s, p, p.task!, 0);
+    return [
+      [`kvarnstenen är en station (${STATIONER.kvarnsten.namn}) där kornet mals`, STATIONER.kvarnsten.gor.includes('mala_korn')],
+      [`utsädet mals inte (${sparar ? 'sparas' : 'mals'}), men det som är över (${kan ? 'ja' : 'nej'})`, sparar && kan],
+      [`4 korn blir ${amountOf(s, 'mjol')} mjöl, som håller ${SAKER.mjol!.haller} dygn`, amountOf(s, 'mjol') === 4 && amountOf(s, 'korn') === 16 && SAKER.mjol!.haller! >= 20],
+    ];
+  },
+};
