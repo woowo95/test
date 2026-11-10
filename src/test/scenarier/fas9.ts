@@ -553,3 +553,22 @@ SCENARIER.infbalans = {
     ];
   },
 };
+
+SCENARIER.benbrott = {
+  text: 'Steg 9.5.27: benbrottets två slag och läkningen. Ett brott är slutet eller öppet (ett stort sår dessutom), revben och skalle vilas bara, ett brott som inte sätts i tid läker snett på dubbla tiden och kan ge ett bestående men, och barn läker fortare och gamla långsammare',
+  kor: () => {
+    const { skada, halsaSteg, HALSA, BARA_VILA } = SIM;
+    const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen && SIM.ageOf(r, s.now) < SIM.ALDER.gammal)!;
+    let oppna = 0;
+    for (let i = 0; i < 200; i++) { p.skador = undefined; skada(s, p, 'benV', 'benbrott', 0.6, 'olycka', ''); if (p.skador!.some(w => w.oppet) && p.skador!.some(w => w.k === 'skarsar')) oppna++; }
+    const lak = (alder: number, snett: boolean) => { const c = SIM.cloneState(s), q = c.people.find(r => r.id === p.id)!; q.born = c.now - alder * SIM.DAY; q.skador = [{ d: 'benV', k: 'benbrott', g: 0.6, b: 0, t0: c.now, ...(snett ? { snett: 1 } : { satt: 1 }) }]; halsaSteg(c, q, 24 * 3600); return 0.6 - (q.skador?.[0]?.g ?? 0); };
+    const vuxen = lak(30, false), snett = lak(30, true), barn = lak(8, false), gammal = lak(70, false);
+    return [
+      [`ett benbrott är ibland öppet med ett stort sår (${oppna} av 200)`, oppna > 20 && oppna < 100],
+      [`revbenen och skallen vilas bara (${[...BARA_VILA].join(', ')})`, BARA_VILA.has('bal') && BARA_VILA.has('huvud')],
+      [`ett snett brott läker hälften så fort (${snett.toFixed(3)} mot ${vuxen.toFixed(3)} på ett dygn)`, Math.abs(snett - vuxen / 2) < 0.01],
+      [`barn läker fortare och gamla långsammare (${barn.toFixed(3)}, ${vuxen.toFixed(3)}, ${gammal.toFixed(3)})`, barn > vuxen && vuxen > gammal],
+      [`ett brott som inte sätts inom ${HALSA.sattTim} timmar läker snett`, HALSA.sattTim > 0],
+    ];
+  },
+};

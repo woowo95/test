@@ -122,6 +122,9 @@ export const HALSA = balans('halsa', {
   arrFulare: 0.7, // ... de flesta blir fulare av det ...
   arrSkonhet: 1.2, // ... så här mycket skönhet upp eller ner, av 20
   arrBinamn: 0.25, // ... och ett ärr i ansiktet ger så här ofta ett binamn
+  // benbrottet (steg 9.5.27): ett brott är öppet med chansen oppetBrott (ett stort sår dessutom); ett brott som inte satts inom
+  // sattTim timmar läker snett: dubbelt så länge och med menen snettMen; barn läker barnLak gånger fortare och gamla gammalLak
+  oppetBrott: 0.25, sattTim: 6, snettMen: 0.6, barnLak: 1.5, gammalLak: 0.6,
   menGrad: 0.6, // en skada av minst den här graden kan läka fel ...
   menChans: 0.3, // ... med den här chansen
   menFel: 0.25, // ... och delen blir så här mycket sämre för alltid
@@ -188,7 +191,7 @@ const SKADA: Record<SkadaTyp, SkadaDef> = SKADOR;
 // en skada: del, typ, grad (0–1, sjunker när den läker) och blödningen kvar (1 = som nyss, 0 = levrad).
 // f = ett förband av mossa ligger på, inf = infektionen (0–1; vid 1 dör man), ren = rengjord till den tiden (steg 2.5.2)
 export interface Men { d: Kroppsdel; fel: number; ont: number }
-export interface Skada { fT?: number; rh?: 1; vardare?: number; d: Kroppsdel; k: SkadaTyp; g: number; b: number; g0?: number; f?: 1 | 2; inf?: number; ren?: number; fast?: 1; salva?: number; av?: number; sydd?: 1; drog?: number; infNotis?: number } // drog = vapnet drogs ut och såret blöder mer till den tiden (steg 9.5.21) // f: 1 mossa, 2 en remsa (steg 9.5.15); av = avsnört sedan den tiden, sydd = såret är sytt // salva = läkesalvan på såret, med salvans kvalitet (steg 9.5.10) // fast = ett spjut sitter kvar i såret (steg 3.7.7)
+export interface Skada { fT?: number; rh?: 1; vardare?: number; d: Kroppsdel; k: SkadaTyp; g: number; b: number; g0?: number; f?: 1 | 2; inf?: number; ren?: number; fast?: 1; salva?: number; av?: number; sydd?: 1; drog?: number; infNotis?: number; oppet?: 1; satt?: 1; snett?: 1; t0?: number } // benbrottet: öppet, satt (9.5.28) eller snett läkt (steg 9.5.27) // drog = vapnet drogs ut och såret blöder mer till den tiden (steg 9.5.21) // f: 1 mossa, 2 en remsa (steg 9.5.15); av = avsnört sedan den tiden, sydd = såret är sytt // salva = läkesalvan på såret, med salvans kvalitet (steg 9.5.10) // fast = ett spjut sitter kvar i såret (steg 3.7.7)
 const oppet = (w: Skada) => SKADA[w.k].blod > 0; // ett öppet sår (inte ett benbrott)
 
 // ---------- olyckorna (registret) ----------
@@ -351,7 +354,9 @@ const narOm = (nar: string, p: Person) => nar.replace(/(slog|straffade) hen\b/, 
 export function skada(s: State, p: Person, d: Kroppsdel, k: SkadaTyp, g: number, dod: Dodsorsak, nar: string): Dodsorsak | undefined {
   d = finDel(s, p, d);
   if (p.saknas?.includes(d)) d = (DEL[d].under as Kroppsdel | undefined) ?? 'bal'; // delen finns inte längre
-  (p.skador ??= []).push({ d, k, g, b: SKADA[k].blod > 0 ? 1 : 0, g0: g });
+  (p.skador ??= []).push({ d, k, g, b: SKADA[k].blod > 0 ? 1 : 0, g0: g, ...(k === 'benbrott' ? { t0: s.now } : {}) });
+  // ett öppet benbrott är ett stort sår dessutom (steg 9.5.27)
+  if (k === 'benbrott' && !HALSA_PROV.grov && rnd(s, 'halsa', p) < HALSA.oppetBrott) { p.skador[p.skador.length - 1].oppet = 1; p.skador.push({ d, k: 'skarsar', g: Math.max(HALSA.storSar, g), b: 1, g0: g }); }
   uppdateraSinnen(p);
   if (SKADA[k].blod > 0 && g >= HALSA.vardFel) { p.ropT = s.now; nyttILarmet(s); } // den skadade ropar på hjälp (steg 9.5.16), och rollerna vid larmet väljs om (steg 9.5.19)
   if ((k === 'skarsar' || k === 'bett') && DEL[d].ute && g >= HALSA.forloraGrad && !HALSA_PROV.grov && rnd(s, 'halsa', p) < HALSA.forloraChans) forlora(s, p, d, k === 'bett' ? 'bets av' : 'höggs av');
@@ -403,7 +408,7 @@ export function forlora(s: State, p: Person, d: Kroppsdel, hur: string) {
 // en skada som läkt (steg 8.2.4): den kan läka fel och ge ett bestående men, och lämna ett ärr som ändrar utseendet
 function laktSkada(s: State, p: Person, w: Skada) {
   const g0 = w.g0 ?? 0;
-  if (g0 >= HALSA.menGrad && rnd(s, 'halsa', p) < HALSA.menChans) {
+  if (g0 >= HALSA.menGrad && rnd(s, 'halsa', p) < (w.snett ? HALSA.snettMen : HALSA.menChans)) { // ett snett läkt brott ger oftare ett bestående men (steg 9.5.27)
     const ont = !GADELAR.includes(w.d) && !DEL[w.d].syn;
     (p.men ??= []).push({ d: w.d, fel: ont ? 0 : HALSA.menFel, ont: ont ? HALSA.menOnt : 0 });
     uppdateraSinnen(p); count(s, 'men');
@@ -444,7 +449,8 @@ export function halsaSteg(s: State, p: Person, dtSec: number): Dodsorsak | undef
     if (w.av !== undefined) { w.b = 0; if (w.g < HALSA.storSar) w.av = undefined; else if (s.now - w.av > HALSA.avsnoraTim * HOUR) { (p.men ??= []).push({ d: w.d, fel: HALSA.menFel, ont: 0 }); w.av = undefined; count(s, 'avsnorningSkadade'); log(s, `${gen(p.name)} ${DEL[w.d].i} skadades av att vara avsnört för länge.`, 'world', [p.id]); } } // avsnörningen (steg 9.5.15)
     if (w.b > 0 && w.g < HALSA.storSar) w.b = Math.max(0, w.b - h / (HALSA.levrar * (0.5 + w.g) * (w.g < HALSA.smaSar ? 1 : HALSA.medelLevrar))); // ett stort sår levrar sig inte (steg 9.5.14)
     infSteg(s, p, w, h, dtSec);
-    if (w.inf === undefined) w.g -= h * lak / SKADA[w.k].lakTim * (w.k === 'brannskada' ? 1 + SALVA.bransk * salvaVerkan(w) : 1); // ett infekterat sår läker inte; salvan hjälper brännskadan (steg 9.5.10)
+    if (w.k === 'benbrott' && !w.satt && !w.snett && !BARA_VILA.has(w.d) && w.t0 !== undefined && s.now - w.t0 > HALSA.sattTim * HOUR) w.snett = 1; // inte satt i tid: läker snett (steg 9.5.27)
+    if (w.inf === undefined) w.g -= h * lak / SKADA[w.k].lakTim * (w.k === 'brannskada' ? 1 + SALVA.bransk * salvaVerkan(w) : 1) * (w.k === 'benbrott' ? alderLak(s, p) * (w.snett ? 0.5 : 1) : 1); // ett infekterat sår läker inte; salvan hjälper brännskadan (steg 9.5.10)
   }
   if (p.skador.some(w => (w.inf ?? 0) >= 1)) return 'kallbrand';
   for (const w of p.skador) if (w.g <= 0) laktSkada(s, p, w);
@@ -510,6 +516,9 @@ function infSteg(s: State, p: Person, w: Skada, h: number, dtSec: number) {
   if (fore < HALSA.kallbrand && w.inf >= HALSA.kallbrand) { count(s, 'kallbrand'); log(s, `${p.name} fick kallbrand i ${DEL[w.d].i}.`, 'world', [p.id]); }
 }
 
+// benbrottet (steg 9.5.27): revbenen (bålen) och skallen (huvudet) sätts inte utan vilas bara; barn läker fortare och gamla långsammare
+export const BARA_VILA = new Set<Kroppsdel>(['bal', 'huvud']);
+const alderLak = (s: State, p: Person) => { const a = ageOf(p, s.now); return a < ALDER.vuxen ? HALSA.barnLak : a >= ALDER.gammal ? HALSA.gammalLak : 1; };
 // infektionens tre stadier (steg 9.5.24): rodnad, feber och kallbrand, med en notis när det blir värre (en gång per stadium och sår)
 export const INFSTADIER = ['', 'Rodnad', 'Feber', 'Kallbrand'] as const;
 export const infStadium = (w: Skada) => w.inf === undefined ? 0 : w.inf < HALSA.feber ? 1 : w.inf < HALSA.kallbrand ? 2 : 3;
