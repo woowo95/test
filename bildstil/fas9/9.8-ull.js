@@ -1,4 +1,4 @@
-// fas 9, system 9.8: kläderna av ylle (steg 9.8.13–9.8.15 i Färdplanen: kappan, sjalen, manteln, tunikan och skjortan av ylle), tre versioner var. Ritade på bybon som i 7.7b-lin.js; bredvid står samma plagg av lin (eller tunikan av lin, där lin saknar plagget) som jämförelse. En av versionerna är linets plagg i yllets färger.
+// fas 9, system 9.8: kläderna av ylle (steg 9.8.14–9.8.15 i Färdplanen: kappan, sjalen, manteln, tunikan och skjortan av ylle), tre versioner var. Ritade på bybon som i 7.7b-lin.js; bredvid står samma plagg av lin (eller tunikan av lin, där lin saknar plagget) som jämförelse. En av versionerna är linets plagg i yllets färger.
 (() => {
   const { KORT, MED_KONTUR, lagg, bredd, hash } = window.F7;
   const L0 = window.F98.L;
