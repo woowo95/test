@@ -233,6 +233,7 @@ const DEF = {
   braxkott: { namn: 'Braxenkött', ett: true, skaffa: { act: 'rensa' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 1, naring: { protein: 1.9, fett: 0.9, mineral: 0.8, energi: 0.7, vitamin: 0.3 }, ra: true, haller: 1 },
   sikkott: { namn: 'Sikkött', ett: true, skaffa: { act: 'rensa' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 1, naring: { protein: 2, fett: 1.4, mineral: 0.7, energi: 0.8, vitamin: 0.6 }, ra: true, haller: 1 },
   lok: { namn: 'Lök', skaffa: { act: 'samla' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 5.5, naring: { vitamin: 1.3, mineral: 0.6, energi: 0.6, protein: 0.2, fett: 0.1 }, haller: 10 }, // vildlöken (steg 9.6.20): smak i maten, och lökarna sätts på fältet
+  brod: { namn: 'Bröd', ett: true, skaffa: { act: 'baka' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 5.8, naring: { energi: 1.7, protein: 0.6, mineral: 0.6, vitamin: 0.4, fett: 0.2 }, haller: 6 }, // brödet (steg 9.6.23): håller längre än annan lagad mat
   mjol: { namn: 'Mjöl', ett: true, skaffa: { act: 'mala_korn' }, stack: 50, vikt: 0.05, mapp: 'Material', haller: 20 }, // mjölet (steg 9.6.22): malet korn som går att spara
   // saltet (steg 9.6.19): en handelsvara från byarna vid havet; saltat kött och saltad fisk håller längre, och saltet fyller mineralerna
   salt: { namn: 'Salt', ett: true, varde: 2, stack: 50, vikt: 0.05, mapp: 'Material' },

@@ -29,6 +29,7 @@ export const INGREDIENSER: Record<string, { grupper: Matgrupp[]; huvud?: RattHuv
   agg: { grupper: ['protein', 'fett'] }, arter: { grupper: ['protein', 'starkelse'] },
   korn: { grupper: ['starkelse'], huvud: 'sad' }, // steg 9.6.11
   mjol: { grupper: ['starkelse'] }, // steg 9.6.22: till brödet
+  brod: { grupper: ['starkelse'] }, // steg 9.6.23
   rotter: { grupper: ['starkelse'], huvud: 'rot' }, rovor: { grupper: ['starkelse'], huvud: 'rot' },
   svamp: { grupper: ['gront'], huvud: 'svamp' },
   bar: { grupper: ['sott'], huvud: 'bar' },
@@ -51,7 +52,7 @@ export type Maltidsniva = keyof typeof MALTIDSNIVA;
 export const MALTIDSNIVA_LIST = Object.keys(MALTIDSNIVA) as Maltidsniva[];
 // nivån för en lagad rätt med de här grupperna: två grupper är lagad, tre med smak bland dem är fin
 // nivån på en sak man äter: rätten i krukan har sin, det grillade och torkade är enkelt, annars är det rått
-export const maltidsNiva = (k: string): Maltidsniva => rattInfo(k)?.niva ?? (/^(grill|torr|rok|salt)/.test(k) ? 'enkel' : 'ratt');
+export const maltidsNiva = (k: string): Maltidsniva => rattInfo(k)?.niva ?? (/^(grill|torr|rok|salt|brod)/.test(k) ? 'enkel' : 'ratt');
 const NIVA_ORDNING: Maltidsniva[] = ['ratt', 'enkel', 'lagad', 'fin'];
 // den högsta nivån i det som ätits (per = av varje slag, behov.ts)
 export function basta(per: Record<string, number>): Maltidsniva {
@@ -80,6 +81,7 @@ export const nivaAvGrupper = (g: Set<Matgrupp>): Maltidsniva => g.size >= 3 && g
 // (matlagning.ts), kokningen en mellanstor lerkruka i elden
 export const TILLAGNING = {
   grilla: { namn: 'Grilla', behover: 'Grillställningen och elden', tek: 'grill', kategorier: ['grillat'], gor: 'En råvara i taget över elden. Rätten blir enkel' },
+  baka: { namn: 'Baka', behover: 'Bakugnen, mjöl och vatten', tek: 'bakugn', kategorier: ['brod'], gor: 'Degen jäser och gräddas i ugnen utan bagaren. Brödet håller sex dygn' }, // steg 9.6.23
   steka: { namn: 'Steka', behover: 'Stekhällen över elden, och talg', tek: 'stekhall', kategorier: ['stek'], gor: 'Kött eller fisk med talg på den heta stenen. Steken smakar bättre' }, // steg 9.6.21
   koka: { namn: 'Koka', behover: 'En mellanstor lerkruka i elden', tek: 'kruka', kategorier: ['gryta', 'soppa', 'grot'], gor: 'Två eller tre grupper i krukan, som står på elden utan kocken. Kokningen dödar smitta' },
 } satisfies Record<string, { namn: string; behover: string; tek: string; kategorier: string[]; gor: string }>;
@@ -90,6 +92,7 @@ export const KATEGORIER = {
   soppa: { namn: 'soppa', tecken: '🍽', passiv: 15 },
   grot: { namn: 'gröt', tecken: '🍽', passiv: 5 },
   stek: { namn: 'stek', tecken: '🔥', passiv: 0 }, // på stekhällen (steg 9.6.21)
+  brod: { namn: 'bröd', tecken: '🍽', passiv: 25 }, // degen jäser 20 minuter och gräddas 5 i bakugnen (steg 9.6.23)
 } satisfies Record<string, { namn: string; tecken: string; passiv: number }>;
 export type Kategori = keyof typeof KATEGORIER;
 // huvudingredienserna, i den ordning de väljs, och kategorierna de kan bli i krukan (den första när rätten har stärkelse,

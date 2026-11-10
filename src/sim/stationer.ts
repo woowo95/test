@@ -221,6 +221,11 @@ export const STATIONER = {
     forsta: '{namn} satte upp byns första grillställning över elden. Där grillas köttet och fisken, och den grillade maten håller längre.',
   },
   // torkställningen (steg 2.8.2, matlagning.ts): en fiskhäck med A-ramar, två rutor bred, som sticker upp över raden ovanför
+  bakugn: { // steg 9.6.23 (matlagning.ts): degen jäser och gräddas till bröd, med en egen eld av ved
+    namn: 'Bakugn', ikon: 'bakugn', w: 2, h: 2, tek: ['bakugn'], av: RECEPT.bakugn.av, min: RECEPT.bakugn.min, gor: ['baka'], bara: ['baka'],
+    bygger: 'Bygger en bakugn av sten och lera.',
+    forsta: '{namn} byggde byns första bakugn. Där blir mjölet bröd, som håller länge.',
+  },
   kvarnsten: { // steg 9.6.22: kornet mals till mjöl (tillverka.ts)
     namn: 'Kvarnsten', ikon: 'kvarnsten', w: 1, h: 1, tek: ['kvarnsten'], av: RECEPT.kvarnsten.av, min: RECEPT.kvarnsten.min, gor: ['mala_korn'], bara: ['mala_korn'],
     bygger: 'Lägger två huggna stenar till en kvarnsten.',
@@ -279,7 +284,7 @@ export const stationDef = (k: string): StationDef | undefined => (STATIONER as R
 // med = tillbehören som ligger i den (TILLBEHOR, t.ex. skinnfällen i bädden), fyllt = hur full latrinen är (0–1, smuts.ts)
 // tork = det som hänger på torkställningen (matlagning.ts): råvaran, hur mycket, när det hängdes upp och vems det är
 // ag = ägaren till en kista i sovrummet (steg 2.10.18)
-export interface Station { sats?: { v: 'vin' | 'ol'; n: number; jas: number; dygn: number; klar?: 1; sur?: 1 }; brygt?: number; brukat?: number; brukatT?: number; delar?: { x: number; y: number; rot?: 1 }[]; id: number; k: string; x: number; y: number; kvar: number; vem?: number[]; klar?: number; rot?: 1; inne?: 1; med?: string[]; fyllt?: number; q?: number; ber?: import('./berattelser').SakMinne; tork?: { k: string; n: number; t: number; ag?: Record<string, number> }[]; ag?: number }
+export interface Station { deg?: { n: number; kvar: number; ag: Record<string, number> }; sats?: { v: 'vin' | 'ol'; n: number; jas: number; dygn: number; klar?: 1; sur?: 1 }; brygt?: number; brukat?: number; brukatT?: number; delar?: { x: number; y: number; rot?: 1 }[]; id: number; k: string; x: number; y: number; kvar: number; vem?: number[]; klar?: number; rot?: 1; inne?: 1; med?: string[]; fyllt?: number; q?: number; ber?: import('./berattelser').SakMinne; tork?: { k: string; n: number; t: number; ag?: Record<string, number> }[]; ag?: number }
 const NONE: Station[] = [];
 export const stationerOf = (s: State) => s.stationer ?? NONE;
 export const stationById = (s: State, id?: number) => id === undefined ? undefined : stationerOf(s).find(t => t.id === id);

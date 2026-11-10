@@ -1144,3 +1144,25 @@ SCENARIER.kvarn = {
     ];
   },
 };
+
+SCENARIER.brod = {
+  text: 'Steg 9.6.23: bakugnen och brödet. Deg av mjöl och vatten jäser och gräddas i bakugnen utan bagaren och blir bröd, som håller längre än annan lagad mat',
+  kor: () => {
+    const { bakaKlar, kanBaka, stepBak, setAmount, amountOf, addTool, fyllVatska, SAKER, RATT } = SIM;
+    const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    const ugn = { id: 992, k: 'bakugn', x: 2, y: 8, kvar: 0 } as SIM.Station; s.stationer = [...(s.stationer ?? []), ugn];
+    p.tek = { ...(p.tek ?? {}), bakugn: 1 }; p.skill.matlagning = SIM.MATLAG.brannFull;
+    setAmount(s, 'mjol', 6); setAmount(s, 'ved', 3); setAmount(s, 'brod', 0);
+    const sack = addTool(s, 'vattensack', p); sack.hos = undefined; fyllVatska(s, 'vatten', 1, sack);
+    const kan = kanBaka(s, p);
+    bakaKlar(s, p);
+    const iUgnen = !!ugn.deg && amountOf(s, 'mjol') === 2;
+    stepBak(s);
+    const brod = amountOf(s, 'brod');
+    return [
+      [`bagaren kan baka (${kan ? 'ja' : 'nej'}), och degen jäser i ugnen (${iUgnen ? 'ja' : 'nej'})`, kan && iUgnen],
+      [`efter jäsningen och gräddningen ligger ${brod} bröd i förrådet`, brod === 4 && !ugn.deg],
+      [`brödet håller ${SAKER.brod!.haller} dygn, längre än annan lagad mat (${RATT.haller})`, SAKER.brod!.haller! > RATT.haller],
+    ];
+  },
+};

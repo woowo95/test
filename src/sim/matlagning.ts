@@ -326,3 +326,39 @@ export function stekaKlar(s: State, p: Person) {
   ovning(p, 'matlagning', STEK.min / 60 * MATLAG.ovning * (0.4 + stat(p, 'intelligens', s.now) / 20));
   if (forstaGang(s, 'stekForsta')) log(s, `${p.name} stekte byns första ${SAKER[r.id]!.namn.split(' · ')[0].toLowerCase()} på stekhällen.`, 'world', [p.id]);
 }
+
+// ---------- bakugnen och brödet (steg 9.6.23) ----------
+// Bagaren gör en deg av mjöl och vatten och eldar ugnen med en ved (BAK.min minuters arbete); degen jäser och gräddas sedan
+// i ugnen (KATEGORIER.brod: 25 minuter) utan bagaren, och brödet läggs i förrådet. Brödet håller sex dygn
+export const BAK = balans('bak', {
+  min: 3, // så många minuters arbete
+  mjol: 4, ved: 1, // så mycket mjöl och ved per sats; vattnet tas ur en fylld behållare
+  brod: 4, // så många bröd blir det
+  vill: 1, // byn bakar när den har färre bröd än så här många per invånare
+});
+export const bakugnen = (s: State) => stationerOf(s).find(t => t.k === 'bakugn' && isKlar(t) && !t.deg);
+export const kanBaka = (s: State, p: Person) => knows(p, 'bakugn') && !!bakugnen(s) && amountOf(s, 'brod') < BAK.vill * living(s).length && !doingAct(s, 'baka', p) && getable(s, p, 'mjol') >= BAK.mjol && getable(s, p, 'ved') >= BAK.ved && !!fylldSack(s);
+export function bakaKlar(s: State, p: Person) {
+  const t = bakugnen(s), sack = fylldSack(s);
+  if (!t || !sack || getable(s, p, 'mjol') < BAK.mjol || getable(s, p, 'ved') < BAK.ved) return;
+  const ag: Record<string, number> = {};
+  addDel(ag, takeMaterial(s, p, 'mjol', BAK.mjol), 1); takeMaterial(s, p, 'ved', BAK.ved); sack.inne = undefined;
+  let n = 0; for (let i = 0; i < BAK.brod; i++) if (rnd(s, 'mat', p) >= brannDel(p)) n++;
+  count(s, 'brant', BAK.brod - n);
+  t.deg = { n, kvar: KATEGORIER.brod.passiv * MIN, ag };
+  ovning(p, 'matlagning', BAK.min / 60 * MATLAG.ovning * (0.4 + stat(p, 'intelligens', s.now) / 20));
+  if (forstaGang(s, 'bakForsta')) log(s, `${p.name} satte in byns första deg i bakugnen.`, 'world', [p.id]);
+}
+// en gång i timmen (steg.ts): degen i ugnen jäser och gräddas, och brödet läggs i förrådet
+export function stepBak(s: State) {
+  for (const t of stationerOf(s)) {
+    if (!t.deg) continue;
+    t.deg.kvar -= HOUR;
+    if (t.deg.kvar > 0) continue;
+    const tot = Object.values(t.deg.ag).reduce((a, b) => a + b, 0) || 1, del: Del = {};
+    for (const o in t.deg.ag) { const q = byId(s, Number(o)); if (q && alive(q)) del[o] = t.deg.ag[o] / tot * t.deg.n; }
+    if (t.deg.n > 0) { put(s, 'brod', t.deg.n, del); count(s, 'bakat', t.deg.n); }
+    t.deg = undefined;
+  }
+}
+import { fylldSack } from './agande';

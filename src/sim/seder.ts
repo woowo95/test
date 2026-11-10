@@ -195,7 +195,7 @@ const YRKEN: Record<string, number> = {
 // de snävare yrkenas handlingar (steg 7.5.5–7.5.8). En rad med ett yrke vars handling inte finns ännu räknas inte
 const YRKE_AV: Partial<Record<string, string[]>> = {
   Slaktare: ['slakta', 'rensa'], Korgmakare: ['korg', 'nat'], Snickare: ['station', 'tillbehor', 'klyva_plank', 'gor_leksak', 'slagtra', 'mal', 'trumma', 'metspo', 'slanda', 'gor_pilar', 'skold', 'bage', 'lyra', 'krycka', 'traben', 'krok'], /* och träsakerna vid snickarbänken (steg 9.4.5) */ Spjutmakare: ['spjut'], Skinnsömmare: ['rock', 'skor', 'byxor', 'mossa', 'snoskor'], Garvare: ['garva'],
-  Stenhuggare: ['hugga_sten'], Odlare: ['odla'], Kock: ['grilla', 'steka', 'koka_mat', 'torka', 'roka', 'brygga', 'tappa', 'malta'], Vattenbärare: ['vatten'], Läkekunnig: ['varda'], Lärare: ['lara'], Vargjägare: ['vargjakt'], Kämpe: ['strid', 'forsvar', 'forsvarRovare'], Handlare: ['handla'],
+  Stenhuggare: ['hugga_sten'], Odlare: ['odla'], Kock: ['grilla', 'steka', 'koka_mat', 'baka', 'torka', 'roka', 'brygga', 'tappa', 'malta'], Vattenbärare: ['vatten'], Läkekunnig: ['varda'], Lärare: ['lara'], Vargjägare: ['vargjakt'], Kämpe: ['strid', 'forsvar', 'forsvarRovare'], Handlare: ['handla'],
 };
 export const TAGS = Object.entries(YRKEN).map(([tag, min]) => ({ tag, min, acts: ACT_LIST.filter(a => ACTS[a].yrke === tag || YRKE_AV[tag]?.includes(a)) }));
 // taggen går till den som gör något klart mer än andra i byn; den som redan har en tagg behåller den lättare
