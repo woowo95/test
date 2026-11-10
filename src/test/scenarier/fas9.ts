@@ -1649,3 +1649,35 @@ SCENARIER.hage = {
     ];
   },
 };
+
+SCENARIER.boskap = {
+  text: 'Steg 9.8.5: får och getter köps av handlaren som levande djur och blir djur som ägs av köparen; på våren får en vuxen hona unga om det finns en hane av arten; fårens ull växer ut och klipps med kniven',
+  kor: () => {
+    const { stepBoskap, tamdjurOf, put, setAmount, amountOf, klippVal, klippKlar, kalender, VAR, HANDLARVAROR, BOSKAP, hona } = SIM;
+    const s = createState(2, START); klockan(s, 10);
+    const p = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0];
+    const iHandeln = HANDLARVAROR.some(w => w.k === 'levfar') && HANDLARVAROR.some(w => w.k === 'levget');
+    put(s, 'levfar', 2, { [p.id]: 2 });
+    stepBoskap(s);
+    const far = tamdjurOf(s).filter(d => d.art === 'far');
+    const agda = far.every(d => d.agare === p.id), kvar = amountOf(s, 'levfar');
+    // ullen klipps med kniven
+    setAmount(s, 'kniv', 1);
+    const ull0 = amountOf(s, 'ull'), d = klippVal(s, p);
+    if (d) klippKlar(s, p, d.id);
+    const ull1 = amountOf(s, 'ull');
+    // våren: honan får unga
+    const var0 = kalender(s).ai === VAR;
+    let h = 0;
+    for (; h < 160 && kalender(s).ai === VAR && tamdjurOf(s).length <= 2; h++) { s.now += 3600; for (const q of tamdjurOf(s)) q.hunger = 0; stepBoskap(s); }
+    const unga = tamdjurOf(s).length - 2;
+    return [
+      [`handlaren har får och getter med sig`, iHandeln],
+      [`det köpta blir ${far.length} får som ägs av köparen, och varan är borta (${kvar})`, far.length === 2 && agda && kvar < 1],
+      [`ett par: en hona och en hane`, far.some(hona) && far.some(q => !hona(q))],
+      [`fåret klipps med kniven och ger ull (${ull0} → ${ull1})`, !!d && ull1 - ull0 === BOSKAP.ull],
+      [`ullen växer ut igen (${(far.find(q => q.id === d?.id)?.ull ?? 0).toFixed(2)})`, (far.find(q => q.id === d?.id)?.ull ?? 0) > 0],
+      [`på våren får honan ${unga} lamm (${h} timmar)`, var0 && unga >= 1],
+    ];
+  },
+};
