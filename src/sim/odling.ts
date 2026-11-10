@@ -115,7 +115,7 @@ export type FaltSteg = keyof typeof FALT_STEG;
 // många rutor som såddes, grödan, hur långt den vuxit (0–1), när den mognade och när någon senast arbetade där
 // r = rutorna (steg 9.7.1): varje ruta är en enhet med sitt eget steg, sin gröda, hur långt den vuxit, när den mognade och
 // arbetet som är kvar på den. Fältets steg, gröda, vuxit och mogen är en sammanfattning av rutorna (sammanfatta), för bilden
-export interface Ruta { st: FaltSteg; g?: GrodaSlag; v?: number; m?: number; kvar?: number; fu?: number } // fu = fukten (steg 9.7.2)
+export interface Ruta { st: FaltSteg; g?: GrodaSlag; v?: number; m?: number; kvar?: number; fu?: number; sj?: number } // sj = sjuk sedan den tiden (steg 9.7.12) // fu = fukten (steg 9.7.2)
 export interface Falt { r?: Ruta[]; id: number; x: number; y: number; w: number; dir: number; n: number; agare: number; steg: FaltSteg; klara: number; kvar: number; sadda?: number; groda?: GrodaSlag; vuxit?: number; mogen?: number; rord: number; vatten?: number; fore?: number[]; bered?: number[]; skott?: number[] } // vatten: hur länge grödan klarar sig under torkan (1 = nyss vattnad, torka.ts)
 // fore, bered och skott (steg 3.10.6, rutan i panelen) per ruta k: vad som växte där innan fältet (MARK_FORE), när den bereddes och
 // när någon sist arbetade på den
@@ -511,7 +511,7 @@ function forlorad(s: State, f: Falt, varfor: string, rutor?: Set<number>) {
   if (!ks.length) return;
   const d = GRODOR[r[ks[0]].g!], agare = s.people.find(q => q.id === f.agare);
   log(s, `${varfor} tog ${d.namn.toLowerCase()}na på ${agare ? agare.name + 's' : 'ett'} fält.`, 'world', agare ? [agare.id] : undefined);
-  count(s, varfor === 'Fåglarna' ? 'fagelAt' : varfor === 'Hararna' ? 'hareAt' : varfor === 'Frosten' ? 'frostdod' : varfor === 'Torkan' ? 'vissnat' : varfor === 'Översvämningen' ? 'drankt falt' : varfor === 'Elden' ? 'brant falt' : varfor === 'Tornadon' ? 'tornado falt' : 'ruttnat');
+  count(s, varfor === 'Sjukdomen' ? 'vaxtsjukDod' : varfor === 'Fåglarna' ? 'fagelAt' : varfor === 'Hararna' ? 'hareAt' : varfor === 'Frosten' ? 'frostdod' : varfor === 'Torkan' ? 'vissnat' : varfor === 'Översvämningen' ? 'drankt falt' : varfor === 'Elden' ? 'brant falt' : varfor === 'Tornadon' ? 'tornado falt' : 'ruttnat');
   for (const k of ks) r[k] = { st: 'sa' };
   if (!r.some(x => x.st === 'vaxer' || x.st === 'mogen')) f.vatten = undefined;
   f.rord = s.now; // gräset börjar ta fältet först nu, när det står utan gröda (inte från sådden)
@@ -542,6 +542,7 @@ export function stepOdling(s: State) {
       if (frost.size) forlorad(s, f, 'Frosten', frost);
       if (s.flod) { const fl = new Set(faltRutor(f).filter(i => iVattnetNu(s, i))); if (fl.size) forlorad(s, f, 'Översvämningen', fl); } // steg 3.8.3 (flod.ts)
       skadedjur(s, f); // fåglarna och hararna (steg 9.7.11)
+      vaxtsjukdom(s, f); // växtsjukdomen (steg 9.7.12)
       const rutt = new Set<number>();
       for (let k = 0; k < f.n; k++) if (r[k].st === 'mogen' && skordAndel(s, f, k) <= 0) rutt.add(faltRuta(f, k));
       if (rutt.size) forlorad(s, f, 'Rötan', rutt);
@@ -550,7 +551,7 @@ export function stepOdling(s: State) {
         if (s.sjoTorr?.pa) { f.vatten = (f.vatten ?? 1) - 1 / TORKA.falt; if (f.vatten <= 0) forlorad(s, f, 'Torkan'); }
         else f.vatten = undefined;
       }
-      if (temp > ODLING.vaxGrad && !istid) for (const x of r) if (x.st === 'vaxer') { x.v = Math.min(1, (x.v ?? 0) + vaxtFaktor(s) * fuktFaktor(x.fu, GRODOR[x.g!].fukt) * kravFaktor(s, f, r.indexOf(x), x.g!, temp) / (GRODOR[x.g!].dygn * 24)); if (x.v >= 1) { x.st = 'mogen'; x.m = s.now; x.v = undefined; } } // fortare i blöt mark (steg 2.11.1)
+      if (temp > ODLING.vaxGrad && !istid) for (const x of r) if (x.st === 'vaxer' && x.sj === undefined) { /* en sjuk planta växer inte (steg 9.7.12) */ x.v = Math.min(1, (x.v ?? 0) + vaxtFaktor(s) * fuktFaktor(x.fu, GRODOR[x.g!].fukt) * kravFaktor(s, f, r.indexOf(x), x.g!, temp) / (GRODOR[x.g!].dygn * 24)); if (x.v >= 1) { x.st = 'mogen'; x.m = s.now; x.v = undefined; } } // fortare i blöt mark (steg 2.11.1)
       sammanfatta(f);
       continue;
     }
@@ -778,4 +779,29 @@ export function skrammaKlar(s: State, p: Person, id?: number) {
   takeMaterial(s, p, 'grenar', 2); takeMaterial(s, p, 'torrgras', 2);
   (s.skramma ??= []).push(f.id); count(s, 'skramma');
   if (forstaGang(s, 'skramma')) log(s, `${p.name} satte upp byns första fågelskrämma vid fältet.`, 'world', [p.id]);
+}
+
+// ---------- växtsjukdomen (steg 9.7.12, Det som hotar fältet) ----------
+// En chans per ruta och timme, slagen ur byns frö, rutan och timmen, som stiger med fukten, med sjuka grannrutor och med många
+// rutor av samma gröda på fältet, så att blandade grödor minskar risken. En sjuk planta växer inte och dör efter VAXTSJUK.dygn
+export const VAXTSJUK = balans('vaxtsjuk', {
+  risk: 0.00015, // chansen i timmen för en ruta med medelfukt, utan sjuka grannar och med blandade grödor ...
+  fukt: 2, // ... gånger 1 + fukt × (fukten − 0,5) ...
+  granne: 1.5, // ... gånger 1 + granne för varje sjuk grannruta ...
+  samma: 1.5, // ... gånger 1 + samma × andelen av fältets grödor som är samma gröda
+  dygn: 1.5, // så många dygn tills en sjuk planta dör
+});
+function vaxtsjukdom(s: State, f: Falt) {
+  const r = rutorAv(f), h = Math.floor(s.now / HOUR), vx = r.filter(x => x.st === 'vaxer' || x.st === 'mogen'), dod = new Set<number>();
+  if (!vx.length) return;
+  for (let k = 0; k < f.n; k++) {
+    const x = r[k];
+    if (x.st !== 'vaxer' && x.st !== 'mogen') continue;
+    if (x.sj !== undefined) { if (s.now - x.sj >= VAXTSJUK.dygn * DAY) dod.add(faltRuta(f, k)); continue; }
+    const grannar = [k - 1, k + 1, k - f.w, k + f.w].filter(j => j >= 0 && j < f.n && r[j].sj !== undefined).length;
+    const samma = vx.filter(y => y.g === x.g).length / vx.length;
+    const risk = VAXTSJUK.risk * Math.max(0, 1 + VAXTSJUK.fukt * ((x.fu ?? 0.5) - 0.5)) * (1 + VAXTSJUK.granne * grannar) * (1 + VAXTSJUK.samma * samma);
+    if (hash(s.seed ^ 0x5b1c, faltRuta(f, k), h) < risk) { x.sj = s.now; count(s, 'vaxtsjuk'); if (forstaGang(s, 'vaxtsjuk')) log(s, `En sjukdom har kommit på grödan på ett fält. De sjuka plantorna vissnar.`, 'world'); }
+  }
+  if (dod.size) forlorad(s, f, 'Sjukdomen', dod);
 }

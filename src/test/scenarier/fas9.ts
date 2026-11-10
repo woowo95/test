@@ -1432,3 +1432,24 @@ SCENARIER.skadedjur = {
     ];
   },
 };
+
+SCENARIER.vaxtsjuk = {
+  text: 'Steg 9.7.12: växtsjukdom. En chans per ruta, dragen med spelets slump, som stiger med fukten, med sjuka grannrutor och med många rutor av samma gröda; en sjuk planta växer inte och dör',
+  kor: () => {
+    const { stepOdling, sammanfatta, VAXTSJUK } = SIM;
+    const prov = (fu: number, blandat: boolean, timmar = 24 * 6) => {
+      const s = createState(1, START); klockan(s, 12); s.kal = SIM.nyKalender(s.now, 2);
+      const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+      const f: SIM.Falt = { id: 1, x: Math.floor(p.x) + 4, y: Math.floor(p.y) + 3, w: 8, dir: 1, n: 64, agare: p.id, steg: 'vaxer', klara: 0, kvar: 0, rord: s.now, r: Array.from({ length: 64 }, (_, k) => ({ st: 'vaxer' as const, g: (blandat && k % 2 ? 'arter' : 'rovor') as SIM.GrodaSlag, v: 0.3, fu })) };
+      s.falt = [f]; sammanfatta(f); s.staket = SIM.staketRutor(s, f); s.skramma = [f.id];
+      for (let h = 0; h < timmar; h++) { s.now += SIM.HOUR; for (const r of f.r!) { if (r.st === 'vaxer') { r.fu = fu; r.v = Math.min(r.v ?? 0, 0.5); } } stepOdling(s); }
+      return { sjuk: s.stat?.vaxtsjuk ?? 0, dod: s.stat?.vaxtsjukDod ?? 0 };
+    };
+    const torrt = prov(0.3, false), blott = prov(0.9, false), blandat = prov(0.9, true);
+    return [
+      [`sjukdomen kommer, och de sjuka plantorna dör (${blott.sjuk} sjuka, ${blott.dod} döda på sex dygn i blöt jord)`, blott.sjuk > 0 && blott.dod > 0],
+      [`fukten höjer risken (${torrt.sjuk} sjuka i torr jord mot ${blott.sjuk} i blöt)`, blott.sjuk > torrt.sjuk],
+      [`blandade grödor minskar risken (${blandat.sjuk} mot ${blott.sjuk}; samma gröda gör risken ${1 + VAXTSJUK.samma} gånger så stor)`, blandat.sjuk < blott.sjuk],
+    ];
+  },
+};
