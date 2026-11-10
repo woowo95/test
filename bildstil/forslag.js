@@ -87,7 +87,7 @@
   };
   for (const d of Object.values(FORSLAG)) {
     const i = VAL.findIndex(s => s.id === d.kort);
-    const vad = `Ritad av API:t: tre nya idéer, var och en ritad för sig utan att se de andra. ${d.om || ''}${d.kommentar ? ' Din kommentar förra gången: ”' + d.kommentar + '”' : ''}`;
+    const vad = `Ritad av API:t: tre nya idéer, var och en ritad för sig utan att se de andra. ${d.om || (d.vad || '').replace(/(Din kommentar förra gången|Du bad mig|Jag valde|Ritad av API:t).*$/s, '').trim()}${d.kommentar ? ' Din kommentar förra gången: ”' + d.kommentar + '”' : ''}`;
     const s = { ...window.FORSLAGEN.kort(d), vad, ...(i >= 0 && VAL[i].slag ? { slag: VAL[i].slag } : {}) };
     if (i >= 0) VAL[i] = s; else VAL.push(s);
   }
