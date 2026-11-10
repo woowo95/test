@@ -60,6 +60,7 @@ export * from './sim/tamdjur';
 export * from './sim/hage';
 export * from './sim/boskap';
 export * from './sim/slatter';
+export * from './sim/hons';
 export * from './sim/halsa';
 export * from './sim/halsonotiser';
 export * from './sim/naring';

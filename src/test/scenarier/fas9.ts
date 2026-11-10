@@ -1842,3 +1842,32 @@ SCENARIER.slatter = {
     ];
   },
 };
+
+SCENARIER.hons = {
+  text: 'Steg 9.8.10: hönsen. Hönor som köpts av handlaren blir en flock utan individer som ägs av köparen, går lös i byn och värper ett ägg om dygnet var utom i istiden; flocken räknas i ägarens förmögenhet',
+  kor: () => {
+    const { stepHons, honsOf, setAmount, amountOf, put, bynsMitt, HONS, formogenheter } = SIM;
+    const s = createState(4, START); klockan(s, 10);
+    const p = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0];
+    s.kal = SIM.nyKalender(s.now, SIM.SOMMAR);
+    setAmount(s, 'agg', 0);
+    put(s, 'levhons', 4, { [p.id]: 4 });
+    stepHons(s);
+    const h = honsOf(s);
+    const m = bynsMitt(s);
+    let langst = 0;
+    for (let t = 0; t < 48; t++) { stepHons(s); if (h) langst = Math.max(langst, Math.hypot(h.x - m.x, h.y - m.y)); }
+    const agg = amountOf(s, 'agg');
+    const varde = formogenheter(s).egen.get(p.id) ?? 0;
+    s.kal = SIM.nyKalender(s.now, SIM.ISTID);
+    for (let t = 0; t < 48; t++) stepHons(s);
+    const istid = amountOf(s, 'agg') - agg;
+    return [
+      [`fyra köpta hönor blir en flock (${h?.n ?? 0}) som köparen äger`, h?.n === 4 && h.agare === p.id && amountOf(s, 'levhons') === 0],
+      [`flocken går lös i byn (högst ${langst.toFixed(1)} rutor från mitten)`, langst > 0 && langst <= HONS.r + 0.01],
+      [`på två dygn värper de ett ägg om dygnet var (${agg})`, agg === 8],
+      [`flocken räknas i ägarens förmögenhet (${Math.round(varde)})`, varde >= 4 * HONS.varde],
+      [`i istiden värper de inte (${istid})`, istid === 0],
+    ];
+  },
+};

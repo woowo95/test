@@ -255,7 +255,7 @@ const DEF = {
   jordgubbsplanta: { namn: 'Jordgubbsplanta', ett: true, varde: 1, stack: 25, vikt: 0.1, mapp: 'Material', haller: 20 },
   appel: { namn: 'Äpplen', skaffa: { tid: 0.3, tek: 'odling' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 3.8, naring: { vitamin: 1.6, energi: 0.9, mineral: 0.3 }, haller: 8 }, // steg 9.7.13
   ull: { namn: 'Ull', ett: true, varde: 3, stack: 20, vikt: 0.2, mapp: 'Material' }, // klipps av fåren (steg 9.8.5, boskap.ts)
-  levfar: { namn: 'Levande får', ett: true, varde: 25, stack: 1, vikt: 0, mapp: 'Material' }, levget: { namn: 'Levande get', varde: 25, stack: 1, vikt: 0, mapp: 'Material' }, // köps av handlaren och blir ett djur (steg 9.8.5)
+  levfar: { namn: 'Levande får', ett: true, varde: 25, stack: 1, vikt: 0, mapp: 'Material' }, levget: { namn: 'Levande get', varde: 25, stack: 1, vikt: 0, mapp: 'Material' }, levhons: { namn: 'Höna', varde: 4, stack: 20, vikt: 0, mapp: 'Material' }, // köps av handlaren och blir ett djur (steg 9.8.5)
   appelplanta: { namn: 'Äppelplanta', ett: true, varde: 2, stack: 10, vikt: 0.5, mapp: 'Material', haller: 20 },
   notter: { namn: 'Hasselnötter', skaffa: { act: 'samla' }, stack: 50, ruta: 100, mapp: 'Mat', mat: 6.8, naring: { fett: 2, protein: 1.2, energi: 1.2, mineral: 0.8, vitamin: 0.3 }, haller: 20 }, // steg 9.7.14: håller länge
   // det rökta (steg 9.6.8, matlagning.ts): håller som det torkade och smakar lite bättre
