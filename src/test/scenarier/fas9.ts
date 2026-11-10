@@ -1643,10 +1643,16 @@ SCENARIER.hage = {
       [`staketet sätts runt hela hagen (${n} rutor)`, hel],
       [`djuren leds in i hagen med rep`, inne],
       [`djuren betar gräset (${gras0.toFixed(1)} → ${gras1.toFixed(1)})`, gras1 < gras0],
-      [`hagens staket slits eller står kvar (${satt0} rutor)`, satt0 > 0],
+      [`hagens staket byggdes (${satt0} rutor)`, satt0 > 0],
       [`genom ett hål rymmer djuren (${rymt} av ${tamdjurOf(s).length})`, rymt > 0],
       [`ett rymt djur leds tillbaka när hålet lagats`, (() => { for (let v = hageVal(s, p); v; v = hageVal(s, p)) hageKlar(s, p, v.i); for (let d = vallaVal(s, p); d; d = vallaVal(s, p)) vallaKlar(s, p, d.id); return tamdjurOf(s).every(d => d.hage !== undefined); })()],
       [`fåret och geten lever (${[f1, f2].filter(d => d.dog === undefined).length})`, f1.dog === undefined && f2.dog === undefined],
+      (() => { /* staketet slits: en ruta går sönder av sig själv (chans per timme, HAGE.slit), så vi väntar tills det hänt */
+        const sonder0 = Number(s.stat?.staketSonder ?? 0), rutor0 = s.staket?.length ?? 0; let t = 0;
+        for (; t < 6000 && Number(s.stat?.staketSonder ?? 0) === sonder0; t++) { for (const d of tamdjurOf(s)) d.hunger = 0; stepTamdjur(s); }
+        const sonder1 = Number(s.stat?.staketSonder ?? 0), rutor1 = s.staket?.length ?? 0;
+        return [`staketet slits: en ruta går sönder (${sonder0} → ${sonder1} efter ${t} timmar, ${rutor0} → ${rutor1} rutor)`, sonder1 > sonder0 && rutor1 < rutor0] as [string, boolean];
+      })(),
     ];
   },
 };
@@ -1670,7 +1676,7 @@ SCENARIER.boskap = {
     // våren: honan får unga
     const var0 = kalender(s).ai === VAR;
     let h = 0;
-    for (; h < 160 && kalender(s).ai === VAR && tamdjurOf(s).length <= 2; h++) { s.now += 3600; for (const q of tamdjurOf(s)) q.hunger = 0; stepBoskap(s); }
+    for (; h < 160 && kalender(s).ai === VAR && tamdjurOf(s).length <= 2; h++) { s.now += SIM.HOUR; for (const q of tamdjurOf(s)) q.hunger = 0; stepBoskap(s); }
     const unga = tamdjurOf(s).length - 2;
     return [
       [`handlaren har får och getter med sig`, iHandeln],
