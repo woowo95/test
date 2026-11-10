@@ -35,6 +35,7 @@ import { bjornarOf, vargarOf } from './djur';
 import { tingOf } from './agande';
 import { bedFor } from './bygg';
 import { viktOf } from './saker';
+import { LARMHOT, rollVid, viljaKrok } from './roller';
 
 // ---------- rövarflocken (steg 4.4.5) ----------
 // En grundversion av anfallen (stora räder, krig, tribut och murar ligger i 11.2). När byn är rik (Byns rikedom, varde.ts, med
@@ -409,11 +410,14 @@ export function rovarVilja(s: State, p: Person) {
   return stat(p, 'mod', s.now) / 20 + iver - ROVARE.skadad * (1 - halsa(p)) - (isSick(p, s.now) ? ROVARE.sjuk : 0) - (a >= ALDER.gammal ? ROVARE.gammal : 0);
 }
 export const rovarRoll = (v: number): 'kampe' | 'hjalpare' | 'gomd' => v >= ROVARE.kampeFran ? 'kampe' : v >= ROVARE.hjalpFran ? 'hjalpare' : 'gomd';
+// rövarnas rad bland hoten (steg 9.5.19, roller.ts): viljan som den är, och rövarnas två gränser
+viljaKrok.vilja = rovarVilja;
+LARMHOT.rovare = { namn: 'Rövarna', plus: () => 0, kampe: () => ROVARE.kampeFran, hjalp: () => ROVARE.hjalpFran };
 function rovarSkydd(s: State, p: Person, _storlek: number, dur: number) {
   const bud = budFor(s, p);
   if (bud) return { act: 'budRovare' as const, why: `Rövare är nära, springer och hämtar ${bud.name}`, spot: { x: bud.x, y: bud.y }, dur };
   // ingen förälder stannar hos barnen: barnen gömmer sig själva (fasens balans, 9.9)
-  const roll = rovarRoll(rovarVilja(s, p));
+  const roll = rollVid(s, p, 'rovare'); // rollen vid larmet (steg 9.5.19)
   if (roll !== 'gomd') {
     const af = anfallsFlock(s), m = malet(s), vinkel = (p.id * 2.399) % (2 * Math.PI), vapen = taVapen(s, p) ? 'ett vapen' : 'det som finns';
     if (af) { // anfallsläget (steg 9.2.104): kämparna går mot flocken, hjälparna stannar en bit bakom, mot förrådet
@@ -438,7 +442,7 @@ function motstand(s: State, f: Rovarflock, folk: Person[], vid: { x: number; y: 
   const m = vid, kan = folk.filter(q => alive(q) && vaken(q) && vuxenKan(s, q) && avst(q, m) < ROVARE.motR && q.task?.act !== 'gomma' && q.task?.act !== 'hjalpaRovare'); // hjälparna står bakom och går inte in i striden (steg 9.2.116); räknat från förrådet, dit rövarna går (steg 9.2.74), eller från flocken när den letar hus för hus
   // vem som strider (steg 8.7.9): mod, åldern, vem som hotas, seden Förlikning – Fejd och styret. Vid Envälde lyder man ledaren, och lagen om stridsplikt säger vem som måste gå
   const l = ledareOf(s), lyder = (s.seder.v.rang ?? 0) > ROVARE.lyder && !!l && kan.includes(l), plikt = lagGaller(s, 'stridsplikt');
-  return kan.filter(q => forsvarar(q) || q.task?.act === 'vakt' || lyder || plikt || (q.partner !== undefined && familjHotad(s, q, f)) || rovarRoll(rovarVilja(s, q)) === 'kampe'); // samma värde som valet (steg 9.2.116)
+  return kan.filter(q => forsvarar(q) || q.task?.act === 'vakt' || lyder || plikt || (q.partner !== undefined && familjHotad(s, q, f)) || rollVid(s, q, 'rovare') === 'kampe'); // samma värde som valet (steg 9.2.116)
 }
 
 // striden mellan byns folk och rövarna (steg 6.6.10): den börjar där de står, på en plats runt förrådet, och går i spelets
@@ -493,7 +497,7 @@ export function borjaStrid(s: State, f: Rovarflock, folk: Person[]) {
   for (const p of living(s)) {
     if (folk.includes(p) || p.gast || !vaken(p) || !vuxenKan(s, p) || p.task?.act === 'strid') continue;
     if (!hort.includes(p) && !forsvarar(p)) continue;
-    if (!forsvarar(p) && rovarRoll(rovarVilja(s, p)) !== 'kampe') continue;
+    if (!forsvarar(p) && rollVid(s, p, 'rovare') !== 'kampe') continue;
     const d = Math.hypot(p.x - c.x, p.y - c.y), sek = Math.max(0, d - 2) / GANG.fart;
     if (sek > ROVARE.kommerSek) continue;
     const r = Math.min(d, 2), x = c.x + (p.x - c.x) / (d || 1) * r, y = c.y + (p.y - c.y) / (d || 1) * r; // där hen kommer in i striden

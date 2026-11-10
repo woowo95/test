@@ -177,6 +177,7 @@ export interface Jaktforsok {
 
 export interface Person {
   te?: { till: number; q: number };
+  larmRoll?: { hot: string; roll: import('./roller').LarmRoll; v: number; t: number }; // rollen vid larmet och när den valdes (steg 9.5.19, roller.ts)
   forbandMed?: number; ropT?: number; // remsorna i bältet och när hen senast ropade på hjälp (steg 9.5.16, halsa.ts)
   blodNotis?: 1; // notisen om att hen snart förblöder är skickad (steg 9.5.14, halsa.ts) // örtteet hjälper motståndet till dess, med teets kvalitet (steg 9.5.8, vatskor.ts)
   sorg?: { namn: string; ord: string; v: number; dygn: number; t0: number; s2?: 1; s3?: 1 }[]; // sorgen i stadier efter en död (steg 9.2.33, liv.ts)
@@ -370,6 +371,7 @@ export interface State {
   djurStrider?: import('./djurstrid').DjurKamp[]; // striderna mot djur som pågår på kartan (steg 9.2.29, djurstrid.ts)
   bjornUndan?: { fran: number; till: number; x0: number; y0: number; x1: number; y1: number }; // björnen går bort efter en strid (steg 9.2.30)
   stationFlytt?: { id: number; x: number; y: number; rot?: 1; vinst: number }; // den station ute som är mest värd att flytta närmare dem som använder den (steg 9.4.8, stationer.ts)
+  larmV?: number; // ökar när något händer i ett larm (någon skadas eller dör), så att rollerna väljs om (steg 9.5.19, roller.ts)
   lagerFlytt?: { i: number; ny: { x: number; y: number }; vinst: number; saker: number }; // den lagerplats som är mest värd att flytta närmare mitten, räknad varje timme (steg 9.4.7, lager.ts)
   plockat?: Record<string, { n: number; t: number }>; // det som plockats av grenar och stenar på en ruta och när (steg 9.2.53, steg.ts); det växer tillbaka
   testTorr?: 1; // testläget: marken är torkad helt (steg 9.2.24, brand.ts); bara i kopian av byn

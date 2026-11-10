@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 // Scenarier. Ägande och ekonomi: ägande, gåvor, byte, egendom, delning, arv och värde.
 import { isDeepStrictEqual } from 'node:util';
 import { Person, Act, Task, createState, bearbeta, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, makeTool, step, living, pilesOf, amountOf, capacity, handOrkar, ryms, VIKT_STACK, isLight, isStored, spears, HOUR, State, migrate, die, bitsOf, KANIN, DJUR, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, foodOf, STACK_ORDER, needLadder, takeMaterial, BEAT, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELNING, packUp, releaseOwner, willing, tingOf, placeTools, EKONOMI, SAK_LIST, ownedAll, leave, chooseTask, stackOf, birth, SAKER, viktOf, handerFor, bordPlats, utrustning, bordaIHander, PLATS_LIST, cloneState, pickUp, load, byId } from '../../sim';
@@ -2120,9 +2120,9 @@ SCENARIER.rovartest = {
   text: 'Steg 9.2.103–9.2.105: rövarna i testläget kommer som en vanlig flock men kortare: de dyker upp ungefär 40 rutor utanför byns område, samlas en minut, går till väntplatsen, väntar en minut och anfaller inom ungefär två minuter. Väntplatsen ligger alltid utanför byns område, också för en vanlig flock. En flock som setts inne i byns område eller nära det gör att hela byn får larmet, och de som vågar går mot flocken, så att striden börjar där den står. Den som kommer nära en flock som någon annan sett får också larmet och går inte igenom den. Prövas i en stor by (by 42 efter 70 dygn)',
   kor: () => {
     const { ROVARE, MIN, SEC, HOUR, utanforByn } = SIM;
-    // en stor by: den äldsta sparade testbyn 42 (facit sparar byarna vid andra gränser när testerna ändras)
-    const fil = readdirSync('test/facit-byar').filter(f => f.startsWith('42-')).sort((a, b) => parseInt(b.slice(3)) - parseInt(a.slice(3)))[0];
-    const stor = () => { const s = lasBy('test/facit-byar/' + fil); for (const c of SIM.klanerOf(s)) c.inst = -60; return s; };
+    // en stor by
+    // by 42 efter 50 dygn, sparad för det här scenariot (facit byter sina byar när testerna ändras)
+    const stor = () => { const s = lasBy('test/rovarby.json.gz'); for (const c of SIM.klanerOf(s)) c.inst = -60; return s; };
     const steg = (x: State, sek: number) => { x.now += sek * SEC; SIM.rovarSteg(x, sek); };
     const ut = (x: State, f: { x: number; y: number }) => utanforByn(x, f.x, f.y);
     // testknappen

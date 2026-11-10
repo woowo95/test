@@ -42,6 +42,7 @@ import { ledareOf } from './styre';
 import { notis } from './notiser';
 import { tingOf } from './agande';
 import { SAKER } from './saker';
+import { nyttILarmet } from './roller';
 
 // ---------- balanstal (regel 8) ----------
 export const HALSA = balans('halsa', {
@@ -339,7 +340,7 @@ export function skada(s: State, p: Person, d: Kroppsdel, k: SkadaTyp, g: number,
   if (p.saknas?.includes(d)) d = (DEL[d].under as Kroppsdel | undefined) ?? 'bal'; // delen finns inte längre
   (p.skador ??= []).push({ d, k, g, b: SKADA[k].blod > 0 ? 1 : 0, g0: g });
   uppdateraSinnen(p);
-  if (SKADA[k].blod > 0 && g >= HALSA.vardFel) p.ropT = s.now; // den skadade ropar på hjälp (steg 9.5.16)
+  if (SKADA[k].blod > 0 && g >= HALSA.vardFel) { p.ropT = s.now; nyttILarmet(s); } // den skadade ropar på hjälp (steg 9.5.16), och rollerna vid larmet väljs om (steg 9.5.19)
   if ((k === 'skarsar' || k === 'bett') && DEL[d].ute && g >= HALSA.forloraGrad && !HALSA_PROV.grov && rnd(s, 'halsa', p) < HALSA.forloraChans) forlora(s, p, d, k === 'bett' ? 'bets av' : 'höggs av');
   if (SKADA[k].blod > 0) blodas(s, p.x, p.y, 'skada', g * SKADA[k].blod);
   count(s, 'skador'); count(s, 'skada ' + SKADA[k].namn.toLowerCase());

@@ -429,3 +429,25 @@ SCENARIER.stridvard = {
     ];
   },
 };
+
+SCENARIER.roller = {
+  text: 'Steg 9.5.19: tre roller vid larm. Kämpar, hjälpare och gömda väljs ur ett värde av ålder, mod och hälsa när larmet går, och väljs om när något händer (någon skadas eller dör). Vargarnas och rövarnas regler är rader i samma register, och rollen syns i kortet',
+  kor: () => {
+    const { rollVid, LARMHOT, larmRollNu, skada } = SIM;
+    const s = createState(1, START), vuxna = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
+    const [modig, rädd] = vuxna; modig.pot.mod = 20; rädd.pot.mod = 1;
+    const r1 = rollVid(s, modig, 'rovare'), r2 = rollVid(s, rädd, 'rovare');
+    const samma = rollVid(s, modig, 'rovare') === r1 && modig.larmRoll?.t === s.now;
+    // något händer: den modiga skadas svårt och väljer om
+    modig.health = 0.1; skada(s, modig, 'bal', 'sticksar', 0.5, 'blod', 'i en strid');
+    const om = rollVid(s, modig, 'rovare');
+    const barn = SIM.living(s).find(r => SIM.ageOf(r, s.now) < SIM.ALDER.vaktFran);
+    return [
+      [`hoten är rader i samma register (${Object.keys(LARMHOT).join(', ')})`, !!LARMHOT.rovare && !!LARMHOT.varg],
+      [`den modiga strider och den rädda gömmer sig (${r1}, ${r2})`, r1 === 'kampe' && r2 !== 'kampe'],
+      [`rollen står kvar tills något händer, och syns i kortet (${larmRollNu(s, rädd)?.roll ?? 'ingen'})`, samma && !!larmRollNu(s, rädd)],
+      [`när den modiga skadas svårt väljs rollen om (${r1} → ${om})`, om !== 'kampe'],
+      [`barnen gömmer sig (${barn ? rollVid(s, barn, 'varg') : 'inget barn'})`, !barn || rollVid(s, barn, 'varg') === 'gomd'],
+    ];
+  },
+};

@@ -29,6 +29,7 @@ import { vaderNu } from './vader';
 import { nyKvarleva } from './kvarlevor';
 import { gravgava } from './kultlatt';
 import { barSmitta, insjukna } from './sjukdom';
+import { nyttILarmet } from './roller';
 
 // ---------- balanstal (regel 8) ----------
 // Befolkningen regleras av naturen, inte av ett fast tak: en trång by får färre barn och fler som flyttar, en liten by lockar
@@ -126,6 +127,7 @@ function sorjer(s: State, p: Person) {
   return lev(p.partner) ?? lev(p.bast) ?? lev(p.mother) ?? lev(p.father);
 }
 export function die(s: State, p: Person, orsak: Dodsorsak) {
+  nyttILarmet(s); // en död: rollerna vid larmet väljs om (steg 9.5.19)
   const { text: cause, sorg } = DODSORSAKER[orsak], akt = p.task?.act;
   avbryt(s, p); // bördan läggs ner medan hen ännu lever, så att den ärvs
   p.died = s.now; p.cause = cause;

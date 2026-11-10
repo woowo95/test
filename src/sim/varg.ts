@@ -32,6 +32,7 @@ import { vaderNu } from './vader';
 import { notis } from './notiser';
 import { lamnaFallt, styckaFallt } from './styckning';
 import { tecken } from './religion';
+import { LARMHOT, rollVid } from './roller';
 
 // ---------- vargen och vakten (steg 3.7.1) ----------
 // Under istiden kommer vargar in på kartan från kanten, oftast i flock och ibland en ensam. En flock stryker omkring en tid
@@ -231,6 +232,8 @@ function ses(s: State, f: Vargflock, folk: Person[]) {
 // har p hört att vargar är nära (ropet eller vakten) inom VARG.vakenTim?
 // (eller rövare, steg 4.4.5: byn skyddar sig likadant)
 // Larmet om vargarna håller så länge flocken är nära byn och har setts nyligen (steg 9.2.121), inte bara en timme efter ropet
+// vargarnas rad bland hoten (steg 9.5.19, roller.ts): viljan plus fler × (de vuxna som kan slåss / vargarna i larmet)
+LARMHOT.varg = { namn: 'Vargarna', plus: (s, p) => VARG.fler * living(s).filter(q => !skyddas(s, q) && kanGa(q)).length / Math.max(1, larmNu(s, p)?.storlek ?? 1), kampe: () => VARG.vagar + 1e-12, hjalp: () => VARG.hjalpFran };
 const vargLarm = (s: State, p: Person) => { const l = larmNu(s, p); return l && (l.vad === 'varg' || l.vad === 'rovare') && (s.now - l.t < VARG.vakenTim * HOUR || l.vad === 'varg' && vargarNara(s)) ? l : undefined; };
 export const vargarNara = (s: State) => flockarna(s).some(f => f.gor !== 'flyr' && f.vargar.length > 0 && f.sedd !== undefined && s.now - f.sedd < VARG.seddTim * HOUR && utanforByn(s, f.x, f.y) < VARG.naraByn);
 
@@ -271,9 +274,9 @@ export function vargSkydd(s: State, p: Person): { act: Act; why: string; spot?: 
     return hus ? { act: 'gomma', why: `${fi2} är nära, gömmer sig i huset`, spot: hus, dur } : { act: 'gomma', why: `${fi2} är nära, håller sig vid elden nära de vuxna`, spot: skyddVidElden(s), dur };
   }
   // rollerna (steg 9.2.121): kämpe, hjälpare eller gömd, med samma värde som mot rövarna; ingen står och pratar vid elden
-  const vuxna = living(s).filter(q => !skyddas(s, q) && kanGa(q)).length, v = hotVilja(s, p);
-  if (v + VARG.fler * vuxna / Math.max(1, l.storlek) > VARG.vagar) return { act: 'forsvar', why: `${fi2} är nära, tar ${taVapen(s, p) ? 'ett vapen' : 'det som finns'} och väntar vid elden`, dur };
-  if (v >= VARG.hjalpFran) {
+  const roll = rollVid(s, p, 'varg');
+  if (roll === 'kampe') return { act: 'forsvar', why: `${fi2} är nära, tar ${taVapen(s, p) ? 'ett vapen' : 'det som finns'} och väntar vid elden`, dur };
+  if (roll === 'hjalpare') {
     const e = eldPlats(s), vinkel = (p.id * 2.399) % (2 * Math.PI);
     return { act: 'hjalpaRovare', why: `${fi2} är nära, håller sig bakom kämparna vid elden`, spot: freeNear(s, e.x + 0.5 + Math.cos(vinkel) * VARG.bakom, e.y + 0.5 + Math.sin(vinkel) * VARG.bakom), dur };
   }
