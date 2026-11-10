@@ -136,6 +136,7 @@ const DEF = {
   kista: { var: 'station', av: { virke: RT.kistaVirke }, min: RT.kistaMin },
   stall: { var: 'station', av: { virke: RT.stallVirke, rep: RT.stallRep }, min: RT.stallMin },
   latrin: { var: 'station', av: {}, min: RT.latrinMin },
+  kompost: { var: 'station', av: { ved: 2 }, min: 10, tek: 'kompost' }, // komposten (steg 9.7.6): en enkel inhägnad av lite trä
   grill: { var: 'station', av: { grenar: RT.grillGrenar, rep: RT.grillRep }, min: RT.grillMin },
   tork: { var: 'station', av: { grenar: RT.torkGrenar, rep: RT.torkRep }, min: RT.torkMin },
   bakugn: { var: 'station', av: { sten: 8, lera: 4 }, min: 20, tek: 'bakugn' }, // bakugnen (steg 9.6.23): ett valv av sten tätat med lera

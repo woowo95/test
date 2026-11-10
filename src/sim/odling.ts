@@ -451,6 +451,7 @@ function rutaKlar(s: State, p: Person, f: Falt, k: number) {
     if (forstaGang(s, 'faltForst')) { log(s, `${p.name} röjde byns första fält. Där ska frön sås.`, 'world', [p.id]); p.fame.push('Röjde byns första fält'); }
   } else if (r.st === 'bereda') {
     if (freeTools(s, p, 'benspade') && wearTool(s, p, 'benspade', ODLING.spadeSlit)) { const tr = SAKER.benspade?.trasig; if (tr) count(s, tr.stat); }
+    const i = faltRuta(f, k); if (bordighet(s, i) < 1 - REST.godsla / 2 && getable(s, p, 'kompost') >= 1) { takeMaterial(s, p, 'kompost', 1); (s.bord ??= {})[i] = Math.min(1, bordighet(s, i) + REST.godsla); if (s.bord[i] >= 1) delete s.bord[i]; count(s, 'godslat'); } // den färdiga komposten (steg 9.7.6)
     r.st = 'sa';
   } else if (r.st === 'sa') {
     const g = grodaRuta(s, p);
@@ -692,3 +693,4 @@ export function vattnaRutor(s: State, f: Falt, p: Person, n: number) {
   if (ks.length) count(s, 'vattnadeRutor', ks.length);
   return ks.length;
 }
+import { REST } from './rester';

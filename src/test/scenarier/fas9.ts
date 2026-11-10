@@ -1303,3 +1303,31 @@ SCENARIER.sophog = {
     ];
   },
 };
+
+SCENARIER.kompost = {
+  text: 'Steg 9.7.6: komposten och gödseln. Med tekniken Gödsel blir sophögen en kompost, där resterna och latrinens innehåll med tiden mognar till färdig kompost (många rester till lite kompost); latrinen töms i komposten i stället för att en ny grävs, och bara färdig kompost läggs på fältet och höjer bördigheten',
+  kor: () => {
+    const { stepKompost, knows, amountOf, setAmount, workOdla, sammanfatta, bordighet, faltRuta, REST } = SIM;
+    const s = createState(1, START); klockan(s, 10);
+    const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!; p.tek = { ...(p.tek ?? {}), odling: 1, latrin: 1 };
+    s.sophog = { x: 5, y: 5, n: REST.upptack + 5 };
+    for (let h = 0; h < 2000 && !knows(p, 'kompost'); h++) { s.now += SIM.HOUR; stepKompost(s); }
+    const kom = knows(p, 'kompost');
+    const ko = { id: 990, k: 'kompost', x: 5, y: 5, kvar: 0 } as SIM.Station, lat = { id: 989, k: 'latrin', x: 8, y: 5, kvar: 0, fyllt: 1 } as SIM.Station;
+    s.stationer = [...(s.stationer ?? []), ko, lat];
+    stepKompost(s);
+    const tomd = lat.fyllt === 0 && (ko.kompost?.rest ?? 0) > 0;
+    setAmount(s, 'kompost', 0);
+    for (let h = 0; h < 24 * 10 && amountOf(s, 'kompost') < 1; h++) { s.now += SIM.HOUR; stepKompost(s); }
+    const klar = amountOf(s, 'kompost');
+    const f: SIM.Falt = { id: 1, x: Math.floor(p.x) + 3, y: Math.floor(p.y), w: 1, dir: 1, n: 1, agare: p.id, steg: 'bereda', klara: 0, kvar: 0, rord: s.now, r: [{ st: 'bereda' }] };
+    s.falt = [f]; sammanfatta(f); const i = faltRuta(f, 0); s.bord = { [i]: 0.4 };
+    workOdla(s, p, { act: 'odla', tool: 'bereda', ref: f.id, fr: 0, until: s.now + SIM.HOUR, tx: p.x, ty: p.y } as unknown as SIM.Task, SIM.ODLING.beredaMin * 60);
+    return [
+      [`den som odlar märker att det växer bättre vid sophögen och kommer på gödseln (${kom ? 'ja' : 'nej'})`, kom],
+      [`sophögen blir komposten, och den fulla latrinen töms där (${tomd ? 'ja' : 'nej'}, ${ko.kompost?.rest} rester)`, tomd],
+      [`resterna mognar till färdig kompost, ${REST.kompostRest} rester till en (${klar})`, klar >= 1],
+      [`den färdiga komposten höjer bördigheten när rutan grävs (0.40 → ${bordighet(s, i).toFixed(2)})`, bordighet(s, i) > 0.4],
+    ];
+  },
+};

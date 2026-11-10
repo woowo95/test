@@ -162,6 +162,7 @@ export const TEKNIK: Tek[] = [
   // (LATRIN i STATIONER, samma id) och rötterna fortare
   { id: 'benspade', namn: 'Benspade', text: 'Tre ben bredvid varandra som ett blad, surrade med rep vid en gren som skaft.', effekt: 'Med spaden gräver man fram rötter fortare, och gropar.',
     omr: ['hantverk', 'samla'], krav: ['slaktbank', 'rep'], niva: 3, tid: 5 },
+  { id: 'kompost', namn: 'Gödsel', text: 'Resterna från slakten och skörden, och latrinens innehåll, får ligga och mogna till jord som gödslar fälten.', effekt: 'Sophögen blir en kompost, latrinen töms där i stället för att en ny grävs, och den färdiga komposten gör fältets rutor bördigare.', omr: ['odla', 'sopor'], krav: ['odling', 'latrin'], niva: 5, tid: 1000, nar: 'När någon märker att det växer bättre där resterna på sophögen har legat', forsok: { vid: ['latrin'], skill: 'hantverk', vad: 'hur resterna blir jord' }, episk: '{namn} såg att det växte bäst där resterna legat, och förstod varför.' }, // steg 9.7.6
   { id: 'latrin', namn: 'Latrin', text: 'En grop i byns utkant, grävd med benspaden.', effekt: 'Man går på toa på ett ställe, närmare än förut, och lämnar ingen smuts efter sig. Gropen fylls och måste ersättas.',
     omr: ['toa', 'hantverk', 'bygga'], krav: ['benspade'], niva: 4, tid: 9, forsok: { vid: ['flatarbank'], skill: 'hantverk', vad: 'hur man gräver en latrin' }, episk: '{Namn} grävde och fyllde igen, grop efter grop, innan {hen} visste var och hur djupt. Byn fick sin första latrin.' },
   // grillställningen (steg 2.8.1, matlagning.ts; grill i STATIONER, samma id)

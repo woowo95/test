@@ -242,6 +242,7 @@ const DEF = {
   // resterna (steg 9.7.5, rester.ts): ruttnar bort, och ger smuts så länge de ligger i byn
   slaktrens: { namn: 'Slaktrens', stack: 25, ruta: 50, mapp: 'Material', haller: 2 },
   vaxtrest: { namn: 'Växtrester', stack: 25, ruta: 50, mapp: 'Material', haller: 4 },
+  kompost: { namn: 'Kompost', skaffa: { av: { slaktrens: 10 }, min: 2 }, stack: 25, ruta: 50, mapp: 'Material' }, // färdig kompost (steg 9.7.6): gödslar fältet
   // det rökta (steg 9.6.8, matlagning.ts): håller som det torkade och smakar lite bättre
   rokfisk: { namn: 'Rökt fisk', skaffa: RECEPT.rokfisk, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.8, naring: { protein: 2, fett: 0.8, mineral: 0.7, energi: 0.6, vitamin: 0.2 }, haller: 20 },
   rokkott: { namn: 'Rökt kött', ett: true, skaffa: RECEPT.rokkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.9, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 0.6, vitamin: 0.2 }, haller: 20 },

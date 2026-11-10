@@ -209,6 +209,11 @@ export const STATIONER = {
     forsta: '{namn} byggde byns första ställ för redskap och vapen. Där står flera redskap på samma plats.',
   },
   // latrinen (steg 2.7.2, smuts.ts): en grop som grävs med benspaden i byns utkant. Där går man på toa, och när den är full fylls den igen
+  kompost: { // steg 9.7.6 (rester.ts): sophögen blir en kompost, där resterna och latrinens innehåll mognar till färdig kompost
+    namn: 'Kompost', ikon: 'kompost', w: 1, h: 1, tek: ['kompost'], av: RECEPT.kompost.av, min: RECEPT.kompost.min, gor: [], utkant: { tradFri: true, till: STATION.latrinTill, avst: STATION.latrinAvst, vatten: true, falt: true },
+    bygger: 'Slår upp en kompost av lite trä vid sophögen.',
+    forsta: '{namn} gjorde byns första kompost. Där blir resterna jord som gör fälten bördigare.',
+  },
   latrin: {
     namn: 'Latrin', ikon: 'latrin', w: 1, h: 1, tek: ['latrin'], av: RECEPT.latrin.av, min: RECEPT.latrin.min, gor: ['toa'], verktyg: 'benspade', utkant: { tradFri: true, till: STATION.latrinTill, avst: STATION.latrinAvst, vatten: true, falt: true }, flera: true,
     bygger: 'Gräver en latrin med benspaden.',
@@ -284,7 +289,7 @@ export const stationDef = (k: string): StationDef | undefined => (STATIONER as R
 // med = tillbehören som ligger i den (TILLBEHOR, t.ex. skinnfällen i bädden), fyllt = hur full latrinen är (0–1, smuts.ts)
 // tork = det som hänger på torkställningen (matlagning.ts): råvaran, hur mycket, när det hängdes upp och vems det är
 // ag = ägaren till en kista i sovrummet (steg 2.10.18)
-export interface Station { deg?: { n: number; kvar: number; ag: Record<string, number> }; sats?: { v: 'vin' | 'ol'; n: number; jas: number; dygn: number; klar?: 1; sur?: 1 }; brygt?: number; brukat?: number; brukatT?: number; delar?: { x: number; y: number; rot?: 1 }[]; id: number; k: string; x: number; y: number; kvar: number; vem?: number[]; klar?: number; rot?: 1; inne?: 1; med?: string[]; fyllt?: number; q?: number; ber?: import('./berattelser').SakMinne; tork?: { k: string; n: number; t: number; ag?: Record<string, number> }[]; ag?: number }
+export interface Station { kompost?: { rest: number; mogna: number }; deg?: { n: number; kvar: number; ag: Record<string, number> }; sats?: { v: 'vin' | 'ol'; n: number; jas: number; dygn: number; klar?: 1; sur?: 1 }; brygt?: number; brukat?: number; brukatT?: number; delar?: { x: number; y: number; rot?: 1 }[]; id: number; k: string; x: number; y: number; kvar: number; vem?: number[]; klar?: number; rot?: 1; inne?: 1; med?: string[]; fyllt?: number; q?: number; ber?: import('./berattelser').SakMinne; tork?: { k: string; n: number; t: number; ag?: Record<string, number> }[]; ag?: number }
 const NONE: Station[] = [];
 export const stationerOf = (s: State) => s.stationer ?? NONE;
 export const stationById = (s: State, id?: number) => id === undefined ? undefined : stationerOf(s).find(t => t.id === id);
