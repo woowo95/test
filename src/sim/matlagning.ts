@@ -207,7 +207,7 @@ export function torka(s: State, p: Person, hours: number, k: TorkSlag = 'tork') 
     put(s, q.k === 'maltkorn' ? 'malt' : RAD.find(r => r.ra === q.k)!.blir, n, ag);
     q.n -= n; kan -= n; count(s, k === 'rokeri' ? 'rokt' : 'torkat', n);
     if (q.n <= 1e-6) h.splice(i, 1);
-    if (k === 'tork' && forstaGang(s, 'torkForsta')) log(s, `${p.name} tog ner byns första torkade ${SAKER[q.k]?.namn.endsWith('ött') ? 'kött' : 'fisk'} från torkställningen. Den håller länge i lagret.`, 'world', [p.id]);
+    if (k === 'tork' && forstaGang(s, 'torkForsta')) log(s, q.k === 'maltkorn' ? `${p.name} tog ner byns första torkade malt från torkställningen.` : q.k === 'ratlin' ? `${p.name} tog ner byns första rötade lin från torkställningen.` : `${p.name} tog ner byns första torkade ${SAKER[q.k]?.namn.endsWith('ött') ? 'kött' : 'fisk'} från torkställningen. Den håller länge i lagret.`, 'world', [p.id]);
   }
   for (const t of ts) {
     const h = hangOf(t);

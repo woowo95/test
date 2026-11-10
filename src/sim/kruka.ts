@@ -57,7 +57,7 @@ export const krukaKlar = (t: Ting) => t.ler === undefined;
 export function krukorHem(s: State) {
   for (const p of living(s)) {
     if (ageOf(p, s.now) < ALDER.vuxen || pyntOf(s, p)) continue;
-    const rum = sovrum(s, p), k = rum && tingOf(s).find(t => t.k.startsWith('lerkruka_') && t.agare === p.id && t.ler === undefined && t.hos === undefined && t.lass === undefined && t.bar === undefined && t.krok === undefined);
+    const rum = sovrum(s, p), k = rum && tingOf(s).find(t => t.k.startsWith('lerkruka_') && t.agare === p.id && t.ler === undefined && t.kok === undefined /* en rätt som lagas på elden flyttas inte */ && t.hos === undefined && t.lass === undefined && t.bar === undefined && t.krok === undefined);
     if (!rum || !k) continue;
     const i = rum.tiles.find(j => { const x = j % W, y = Math.floor(j / W); return !stationAt(s, x, y) && !sittAt(s, x, y) && !tingOf(s).some(t => t.x === x && t.y === y) && !(s.stackar ?? []).some(a => a.x === x && a.y === y); });
     if (i === undefined) continue;

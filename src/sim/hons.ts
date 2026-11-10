@@ -53,7 +53,9 @@ function kopta(s: State) {
     if (h.n === 0) { h.agare = agare; h.x = a.x + 0.5; h.y = a.y + 0.5; }
     const k = Math.min(Math.floor(a.n + 1e-9), HONS.max - h.n);
     h.n += Math.max(0, k); n += Math.max(0, k);
-    a.n = 0; a.ag = undefined;
+    const f = Math.max(0, a.n - Math.max(0, k)) / a.n; /* de som inte ryms i flocken ligger kvar i stacken, med sin del av ägarna */
+    a.n *= f;
+    if (a.n < 1e-9) { a.n = 0; a.ag = undefined; } else if (a.ag) for (const o in a.ag) a.ag[o] *= f;
     if (k > 0) { count(s, 'honsKopt', k); if (forstaGang(s, 'forsta_hons')) log(s, 'Byn fick sina första höns av handlaren. De går lösa i byn och värper.', 'world', agare !== undefined ? [agare] : []); }
   }
   if (n) { tidy(s); changed(s); }
