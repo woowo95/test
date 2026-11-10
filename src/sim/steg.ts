@@ -817,7 +817,7 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
     if (plockSlag === undefined) bar('svamp', pickMushrooms(s, p, tk.tx, tk.ty, dt, got)); // på rundan plockas svampen som en sak (svampPlock)
     for (const k in got) bar(k, got[k]); // tändmaterialet först, så att mossan inte tar händerna från den som hämtar det
     bar('mossa', mossaFynd(s, tk, dt)); // mossa till förband (steg 2.5.2)
-    if (ageIndex(s) === 1 || ageIndex(s) === 2) if (rnd(s, 'arbete', p) < dt / HOUR_S * ROLLEKA) bar('rolleka', 1); // den första örten, under sommarhalvåret (steg 7.6.3)
+    { const r = rollekaNara(s, tk.tx, tk.ty); if (r) { const g = r.v * dt / HOUR_S * ROLLEKA; takeFrom(s, 'rolleka', r.x, r.y, g); bar('rolleka', g); } } // den första örten (steg 7.6.3) växer vild på kartan (steg 9.7.15)
     const vild = froFynd(s, p, tk, dt); // frön och lite mat från de vilda grödorna (steg 2.10.2, 3.10.23.8)
     for (const k in vild) bar(k, vild[k]);
     if (ageIndex(s) === VAR) bar('agg', FAGEL.agg * dt / HOUR_S); // fåglarnas ägg, som man ibland hittar på våren (steg 6.6.3)
@@ -870,7 +870,7 @@ function stepNaken(s: State) {
   for (const p of folk) if (kladVarme(s, p) === 0 && ageOf(p, s.now) >= ALDER.bygger) think(p, 'Är naken när andra har kläder', NAKEN * kladda / folk.length, s.now, 2 * HOUR);
 }
 const NAKEN = -0.06;
-const ROLLEKA = 0.05; // chansen per timmes samlande att hitta rölleka
+const ROLLEKA = 0.6; // så mycket rölleka per timmes samlande på en rik röllekaruta (steg 9.7.15)
 export const RUNDA = balans('runda', {
   sett: 12, // så många rutor minns man att man nyss plockat på ...
   settSok: 3, // ... och bland stenarna, där det är få rutor och flintan och stenarna inte tar slut på en gång
@@ -1271,3 +1271,10 @@ import { rusSteg } from './rus';
 import { hemma } from './halsa';
 import { soporKlar, stepKompost, stepSophog } from './rester';
 import { skrammaKlar, staketKlar } from './odling';
+// den rikaste röllekan inom ROLLEKA_NARA rutor från den som samlar (steg 9.7.15): den plockas på vägen
+const ROLLEKA_NARA = 2;
+function rollekaNara(s: State, x: number, y: number) {
+  let best: { x: number; y: number; v: number } | undefined;
+  for (let dy = -ROLLEKA_NARA; dy <= ROLLEKA_NARA; dy++) for (let dx = -ROLLEKA_NARA; dx <= ROLLEKA_NARA; dx++) { const v = richness(s, 'rolleka', x + dx, y + dy); if (v > (best?.v ?? 0)) best = { x: x + dx, y: y + dy, v }; }
+  return best;
+}
