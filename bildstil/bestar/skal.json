@@ -4,11 +4,6 @@
   "kostnad": 0.156,
   "anteckningar": {"skal":"Skalbaggesköld hade lodräta band och liknade Bälten; nu räfflor längs ryggen. Bensadel såg ut som ett litet rutigt sköldpaddsskal; tog bort tvärlinjen så att bara breda revben med glipor syns, och gjorde den större. Rutpansar var bara brus; nytt tydligt rombgaller och högre över ryggåsen. Knölskal fick större knölar i 2x2. Fjällbrynja lite ljusare fjäll. Skivbrynja oförändrad."},
   "delar": [
-    {"typ":"band","fran":0.02,"till":0.95,"over":2,"under":7,"monster":{"rader":["+..-",".+.-","-==-"],"skift":2},"id":"skal-1","namn":"Fjällbrynja","text":"Tätt lagda, överlappande fjäll i ett tjockt band längs hela ryggen, som på en gammal ödla."},
-    {"typ":"kupol","fran":0.08,"till":0.92,"hojd":10,"under":3,"monster":{"rader":["+",".",".","-","="],"skift":0},"id":"skal-2","namn":"Skalbaggesköld","text":"En hög, hård sköld med långa räfflor längs ryggen, som täckvingarna på en skalbagge."},
-    {"typ":"kupol","fran":0.22,"till":0.78,"hojd":7,"under":5,"monster":{"rader":["+*.-=="],"skift":0},"id":"skal-3","namn":"Bensadel","text":"En sadel av grova revben som sitter fastvuxen mitt på ryggen, med mörka glipor mellan benen."},
-    {"typ":"band","fran":0.1,"till":1,"over":5,"under":2,"monster":{"rader":["=.....",".=.+.=","..=.=.","...=..","+.=.=.",".=...="],"skift":0},"id":"skal-4","namn":"Rutpansar","text":"En smal, upphöjd brynja av rombformade plattor som löper längs ryggåsen bak mot svansen."},
-    {"typ":"kupol","fran":0,"till":0.85,"hojd":6,"under":5,"monster":{"rader":["+*.....",".-=....","....+*.","....-=.","......."],"skift":3},"id":"skal-5","namn":"Knölskal","text":"Ett lågt, brett och uråldrigt skal fullt av knotiga knölar och gropar efter hundratals år."},
-    {"typ":"band","fran":0,"till":0.7,"over":3,"under":6,"monster":{"rader":["+.....-","+.....-","+....--","======="],"skift":3},"id":"skal-6","namn":"Skivbrynja","text":"Breda plattor som ligger som takspån över bogen och främre ryggen, varje rad förskjuten mot nästa."}
+    {"typ":"band","fran":0.1,"till":1,"over":5,"under":2,"monster":{"rader":["=.....",".=.+.=","..=.=.","...=..","+.=.=.",".=...="],"skift":0},"id":"skal-4","namn":"Rutpansar","text":"En smal, upphöjd brynja av rombformade plattor som löper längs ryggåsen bak mot svansen."}
   ]
 }

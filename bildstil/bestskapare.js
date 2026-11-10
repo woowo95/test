@@ -86,17 +86,6 @@
           if (f > 0.86) return 1;
           return (Math.floor(rr * 1.4 + a * 3) % 5 === 0) ? -1 : 0;
         } }] },
-    { id: 'skoldpadda', namn: 'Sköldpadda', text: 'en tung jättesköldpadda med ett välvt skal av plattor och korta pelarben', ny: true, utan: ['skal'],
-      bal: [[34, 54], [42, 48], [60, 46], [78, 48], [86, 54], [84, 62], [72, 65], [50, 66], [38, 63]],
-      nacke: [[78, 55], [92, 49]], nackeR: [6.5, 5.5], h: [44, 58], f: [74, 58], svans: [36, 56], vinge: [58, 30], lang: [32, 86],
-      delar: [{ former: [{ typ: 'poly', pts: [[29, 57], [31, 47], [38, 38], [48, 32], [60, 30], [72, 32], [81, 38], [87, 47], [89, 57], [80, 59.5], [60, 60.5], [38, 59.5]] }],
-        mat: 'skal', z: 'skal', rygg: true,
-        // plattorna: celler med mörka fogar, och kanten nertill i en egen rad av små plattor
-        monster(x, y) {
-          if (y - OY >= 55) return (x % 5 === 0) ? -2 : y - OY === 55 ? -1 : 0;
-          const c = celler(x, y * 1.25, 10, 31);
-          return c.d2 - c.d1 < 1.1 ? -2 : c.d1 < 2.5 ? 1 : 0;
-        } }] },
   ];
 
   // ---------- delarna i varje lager ----------
@@ -548,8 +537,6 @@
   const OGON = [
     { id: 'djupt', namn: 'Djupa', text: 'små ögon djupt under en mörk panna, och de lyser',
       delar: [{ ...MORK, pkt: [[-1, -1], [0, -1], [1, -1], [2, -1], [-1, 0]] }, { mat: 'oga', lyser: true, pkt: [[0, 0], [1, 0]] }] },
-    { id: 'stort', namn: 'Stora', text: 'ett stort runt öga med en mörk pupill, som stirrar', ny: true,
-      delar: [{ ...MORK, pkt: [[-1, -2], [0, -2], [1, -2], [2, -2], [-2, -1], [-1, -1], [3, -1]] }, { mat: 'oga', lyser: true, pkt: [[0, -1], [1, -1], [-1, 0], [0, 0], [1, 0], [2, 0], [0, 1], [1, 1]] }, { ...MORK, pkt: [[1, 0]] }] },
     { id: 'spalt', namn: 'Spalter', text: 'en smal lysande spalt i en mörk håla, som hos en orm', ny: true,
       delar: [{ ...MORK, pkt: [[-1, -1], [0, -1], [1, -1], [2, -1], [3, -1], [-1, 0], [3, 0], [0, 1], [1, 1], [2, 1]] }, { mat: 'oga', lyser: true, pkt: [[0, 0], [1, 0], [2, 0]] }] },
     { id: 'manga', namn: 'Många', text: 'en klunga små lysande ögon, som hos en spindel', ny: true,
@@ -663,14 +650,14 @@
     { id: 'ben', namn: 'Ben', delar: BEN, maste: true },
     { id: 'huvud', namn: 'Huvud', delar: HUVUDEN, maste: true },
     { id: 'ogon', namn: 'Ögon', delar: OGON, maste: true },
-    { id: 'horn', namn: 'Horn', delar: HORN },
-    { id: 'vingar', namn: 'Vingar', delar: VINGAR },
+    { id: 'horn', namn: 'Horn', delar: HORN, ofta: 0.4 },
+    { id: 'vingar', namn: 'Vingar', delar: VINGAR, ofta: 0.08 },
     { id: 'svans', namn: 'Svans', delar: SVANSAR, maste: true },
     { id: 'textur', namn: 'Textur', delar: TEXTURER, maste: true },
-    { id: 'skal', namn: 'Skal', delar: SKAL },
-    { id: 'plattor', namn: 'Plattor', delar: PLATTOR },
-    { id: 'hard', namn: 'Förhårdnader', delar: HARDA },
-    { id: 'pryd', namn: 'Prydnader', delar: PRYDNADER },
+    { id: 'skal', namn: 'Skal', delar: SKAL, ofta: 0.15 },
+    { id: 'plattor', namn: 'Plattor', delar: PLATTOR, ofta: 0.25 },
+    { id: 'hard', namn: 'Förhårdnader', delar: HARDA, ofta: 0.2 },
+    { id: 'pryd', namn: 'Prydnader', delar: PRYDNADER, ofta: 0.2 },
     { id: 'farg', namn: 'Färger', delar: FARGER, maste: true },
   ];
   const delAv = (val, id) => { const L = LAGER.find(l => l.id === id); return L.delar.find(d => d.id === val[id]) || null; };
@@ -802,7 +789,7 @@
   const rot = document.getElementById('bestskapare');
   if (!rot) return;
   const val = Object.fromEntries(LAGER.map(l => [l.id, l.maste ? l.delar[0].id : null]));
-  Object.assign(val, { horn: 'bakat', plattor: 'taggar' });
+  val.horn = 'bakat';
   let spegel = false;
   const duk = rot.querySelector('#bs-bild'), text = rot.querySelector('#bs-text'), valen = rot.querySelector('#bs-val');
   const beskriv = v => LAGER.filter(l => passar(v, l.id)).map(l => { const d = l.delar.find(x => x.id === v[l.id]); return `${l.namn}: ${d ? d.namn.toLowerCase() : 'inget'}`; }).join(' · ');
@@ -845,14 +832,19 @@
   });
   rot.querySelector('#bs-spegla').addEventListener('click', e => { spegel = !spegel; e.currentTarget.setAttribute('aria-pressed', String(spegel)); visa(); });
   // alla lager utom ett får en slumpad del (utom = null slumpar alla)
-  // (kroppen väljs bland dem som passar med den del som står kvar)
+  // (kroppen väljs bland dem som passar med den del som står kvar). Lagren som inte måste finnas kommer med så ofta
+  // som deras tal ofta säger (vingar sällan), i slumpad ordning, och högst DETALJER av dem samtidigt, så att besten
+  // inte får alla lager på en gång.
+  const DETALJER = 2;
   const slumpaUtom = (v, utom) => {
-    for (const l of LAGER) {
-      if (l.id === utom) continue;
-      let m = l.delar.filter(d => !NEJ.has(nyckel(l.id, d.id)));
-      if (l.id === 'kropp' && utom) m = m.filter(d => !(d.utan || []).includes(utom));
-      m = m.map(d => d.id); if (!l.maste) m.push(null);
-      v[l.id] = m[Math.floor(Math.random() * m.length)];
+    const ta = l => { let m = l.delar.filter(d => !NEJ.has(nyckel(l.id, d.id))); if (l.id === 'kropp' && utom) m = m.filter(d => !(d.utan || []).includes(utom)); return m.length ? m[Math.floor(Math.random() * m.length)].id : null; };
+    for (const l of LAGER) if (l.maste && l.id !== utom) v[l.id] = ta(l);
+    const fria = LAGER.filter(l => !l.maste && l.id !== utom).sort(() => Math.random() - 0.5);
+    let n = utom && !LAGER.find(l => l.id === utom).maste ? 1 : 0;
+    for (const l of fria) {
+      const med = n < DETALJER && passar(v, l.id) && Math.random() < l.ofta;
+      v[l.id] = med ? ta(l) : null;
+      if (v[l.id]) n++;
     }
     return v;
   };
@@ -901,7 +893,7 @@
   // ---------- granskningen: ett kort per ny del (API:ts och de nya handgjorda) ----------
   // Björns svar sparas i samlingen val som 'best-<lager>-<del>' med delens avtryck: ritas delen om står kortet obesvarat
   // igen, med hans förra kommentar överst. 🎲 byter alla andra delar, så att delen syns på olika bestar.
-  const BKORT = LAGER.flatMap(l => l.delar.filter(d => d.api || d.ny).map(d => ({ id: `best-${l.id}-${d.id}`, lager: l, del: d, avtryck: d.avtryck || 'hand' })));
+  const BKORT = LAGER.flatMap(l => l.delar.map(d => ({ id: `best-${l.id}-${d.id}`, lager: l, del: d, avtryck: d.avtryck || 'hand' })));
   const SVAR = {}, gr = rot.querySelector('#bs-kort'), sett = [];
   let bkFilter = 'obesvarade', bkId = BKORT[0]?.id, bkVal = null, bkVantar = null, bkVisad = null;
   const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
