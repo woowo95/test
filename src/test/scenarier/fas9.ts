@@ -1483,6 +1483,7 @@ SCENARIER.trad = {
 };
 
 SCENARIER.rollekavild = {
+  lang: true,
   text: 'Steg 9.7.15: röllekan växer vild på kartan, som ett lager i FYND, i stället för att hittas av en slump när man samlar; den syns i två varianter',
   kor: () => {
     const { FYND, richness, step } = SIM;

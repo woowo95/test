@@ -922,7 +922,7 @@ function plockatPa(s: State, key: string) {
 }
 // sakerna på rutan per lager (för bär och rötter två), eller en siffra för grenarna och stenarna
 export function sakerPaRutan(s: State, tk: Task, x: number, y: number): { k: string; n: number }[] {
-  if (!inMap(x, y)) return [];
+  if (!inMap(x, y) || gridOf(s).solid[y * W + x] === 1) return []; /* under en vägg ligger inget att plocka (samlaren ställde sig i väggen, by 1) */
   const res = ACTS[tk.act].resurs, i = y * W + x;
   // stenarna ligger flera på rutan vid stenarna; flintan är sällsynt, en på var hundrade ruta där (RUNDA.flintTat), och bara så
   // länge byn behöver flinta (som förut i forageItems, eld.ts)

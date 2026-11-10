@@ -104,6 +104,7 @@ SCENARIER.sjukfoljd = {
 };
 
 SCENARIER.epidemi = {
+  lang: true,
   text: 'Steg 9.5.5: mässlingen och kopporna kommer bara utifrån, med handlare och främlingar (några procent per besök, mässlingen vanligast). Kopporna följs genom samma by med och utan kunskapen Smittan: den som kan den håller sig undan och lägger de sjuka för sig, så färre blir sjuka. Kunskapen lärs när flera i samma hus blir sjuka, och krönikan skriver om epidemin',
   kor: () => {
     const { insjukna, barSmitta } = SIM;

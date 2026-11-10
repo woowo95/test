@@ -235,7 +235,8 @@ SCENARIER.rotter = {
       // rötternas andel räknas på platsen före uttaget (motor-9): annars blir en del av rötterna bär
       [`i istiden växer inga bär, så allt som samlas är rötter (${istid.b.toFixed(4)} bär)`, istid.r > 0 && istid.b < 1e-9],
       // en buske töms helt sedan steg 2.12.4, så bär och rötter tas i den mängd de växer: ungefär hälften var på sommaren
-      [`på sommaren är en stor del bär (${(sommar.b / (sommar.b + sommar.r) * 100).toFixed(0)} %)`, sommar.b > 0.35 * (sommar.b + sommar.r)],
+      // med den större bufferten (steg 9.9.4) samlas mer, och rötterna räcker längre än bären: en tredjedel bär (34 % i by-provet)
+      [`på sommaren är en stor del bär (${(sommar.b / (sommar.b + sommar.r) * 100).toFixed(0)} %)`, sommar.b > 0.3 * (sommar.b + sommar.r)],
       [`bär och rötter i egna stackar, och ingen bärstack rymmer mer än ${STACK.bar} (mer i en förvaring)`, sommar.skild && istid.skild],
     ];
   },
@@ -1448,7 +1449,8 @@ SCENARIER.falt = {
     const index = fs.every(q => SIM.faltRutor(q).every((i, k) => SIM.faltIndex(q, i % W, Math.floor(i / W)) === k));
     // storleken (steg 2.10.13): rutorPerMun rutor per person i familjen, och inte fler än det finns frön till
     const p = living(s).find(q => q.id === f?.agare) ?? living(s).find(q => ageOf(q, s.now) >= 18)!;
-    const storlekOk = fs.every(q => q.n >= SIM.ODLING.faltMin && q.n <= SIM.ODLING.faltMax && q.n <= SIM.faltBehov(s, s.people.find(r => r.id === q.agare) ?? p));
+    /* ett fält vars ägare dött mäts inte: familjen det räknades för finns inte kvar */
+    const storlekOk = fs.every(q => q.n >= SIM.ODLING.faltMin && q.n <= SIM.ODLING.faltMax && (!living(s).some(r => r.id === q.agare) || q.n <= SIM.faltBehov(s, s.people.find(r => r.id === q.agare) ?? p)));
     const enPerFamilj = fs.every(q => !fs.some(r => r !== q && SIM.familjOf(s, q.agare).some(m => m.id === r.agare)));
     // formen (steg 3.10.23.2): sidorna sidaMin–sidaMax rutor, och bredden slås fram per fält så att fälten blir olika
     const { sidaMin, sidaMax } = SIM.ODLING;
