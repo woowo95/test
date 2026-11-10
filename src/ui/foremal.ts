@@ -1,3 +1,4 @@
+import { rutorAv } from '../sim';
 import { VATSKOR, delarAv, HELIGA_PLATSER, KVARLEVOR, clamp, living, handlarPlats, MASTERVERK, PERFEKT, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, W, bordPlatser, sjoarna, stationById, MATERIAL, Pile, STUBBE_LIV, Station, bitAt, bitsOf, dorrDef, condOf, emberOn, eldById, eldXY, eldarOf, fireHeat, forvarAt, Fire, heatRadius, TORK, torrDel, isKlar, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, zonesOf, groundOf, snoPaMarken, ageIndex, tradArt, stockLangd } from '../sim';
 import { hasIcon, iconCanvas, kartbild, kartbildEnsam } from '../ikoner';
 import { KARTBILDER } from '../kartbilder';
@@ -87,13 +88,14 @@ function drawKarra() {
 }
 // grödans symbol när den är mogen, tills rutan skördats. Framstegscirkeln över rutan där någon röjer, gräver eller sår
 function drawFalt() {
+  for (const i of s.staket ?? []) { const X = (i % W) * TS, Y = Math.floor(i / W) * TS; structG.lineStyle(1, 0x7d5b40).moveTo(X, Y + TS / 2).lineTo(X + TS, Y + TS / 2).moveTo(X + 2, Y + 3).lineTo(X + 2, Y + TS - 2).moveTo(X + TS - 3, Y + 3).lineTo(X + TS - 3, Y + TS - 2).lineStyle(0); } // staketet (steg 9.7.10): en platshållare tills Björn valt i bildstilen
   for (const f of faltOf(s)) {
-    const vaxer = f.steg === 'vaxer', mogen = f.steg === 'mogen', liten = vaxer && (f.vuxit ?? 0) < 0.5;
-    const lin = f.groda === 'lin'; // linet har egna bilder för fältet (steg 7.7.8)
-    const bild = mogen && f.groda ? (lin ? 'lin_mogen' : GRODOR[f.groda].sak) : vaxer ? (lin ? ((f.vuxit ?? 0) < 0.5 ? 'lin_ung' : 'lin_bla') : 'grodd') : undefined;
-    for (let k = 0; k < f.n; k++) {
+    const vaxer = f.steg === 'vaxer', mogen = f.steg === 'mogen', R = rutorAv(f);
+    for (let k = 0; k < f.n; k++) { // varje ruta efter sitt eget steg och sin gröda (steg 9.7.1)
+      const r = R[k], lin = r.g === 'lin', liten = r.st === 'vaxer' && (r.v ?? 0) < 0.5; // linet har egna bilder för fältet (steg 7.7.8)
+      const bild = r.st === 'mogen' && r.g ? (lin ? 'lin_mogen' : GRODOR[r.g].sak) : r.st === 'vaxer' ? (lin ? ((r.v ?? 0) < 0.5 ? 'lin_ung' : 'lin_bla') : 'grodd') : undefined;
       const i = faltRuta(f, k), X = (i % W) * TS, Y = Math.floor(i / W) * TS;
-      const klar = k < f.klara, rojd = f.steg !== 'roja' || klar, grav = f.steg === 'bereda' ? klar : f.steg !== 'roja';
+      const rojd = r.st !== 'roja', grav = r.st !== 'roja' && r.st !== 'bereda';
       if (!rojd) structG.lineStyle(1, 0x5e3c24).drawRect(X + 0.5, Y + 0.5, TS - 1, TS - 1).lineStyle(0);
       else structG.beginFill(grav ? 0x5e3c24 : 0x7d5b40).drawRect(X, Y, TS, TS).endFill();
       if (grav) for (let r = 0; r < 4; r++) structG.lineStyle(1, 0x3f2415).moveTo(X + 1, Y + 2.5 + r * 4).lineTo(X + TS - 1, Y + 2.5 + r * 4).lineStyle(0);

@@ -713,3 +713,33 @@ export function kravFaktor(s: State, f: Falt, k: number, g: GrodaSlag, temp: num
   if (d.varm && (temp < d.varm[0] || temp > d.varm[1])) return 0.5;
   return 1;
 }
+
+// ---------- staketet (steg 9.7.10, Odlingen i detalj: Det som hotar fältet) ----------
+// En byggdel som djuren inte går över: en rad av pinnar och slanor av grenar på rutorna runt fältet. Folk kliver över den.
+// Den som kan tekniken Staket och har grenar sätter en ruta i taget (STAKET.min minuter) runt familjens fält, tills fältet är inhägnat
+export const STAKET = balans('staket', { min: 3, grenar: 2 });
+const staketSet = new WeakMap<State, { n: number; set: Set<number> }>();
+export const harStaket = (s: State, i: number) => { const l = s.staket ?? []; let c = staketSet.get(s); if (!c || c.n !== l.length) staketSet.set(s, c = { n: l.length, set: new Set(l) }); return c.set.has(i); };
+// rutorna runt fältet (utanför det, på land) som ska ha staket
+export function staketRutor(s: State, f: Falt) {
+  const egna = new Set(faltRutor(f)), t = getMap(s.seed).tiles, ut: number[] = [];
+  for (const i of egna) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+    const x = i % W + dx, y = Math.floor(i / W) + dy, j = y * W + x;
+    if (!inMap(x, y) || egna.has(j) || t[j] === T.Vatten || ut.includes(j)) continue;
+    ut.push(j);
+  }
+  return ut.sort((a, b) => a - b);
+}
+export const faltInhagnat = (s: State, f: Falt) => staketRutor(s, f).every(i => harStaket(s, i));
+// nästa staketruta p sätter: runt familjens fält, när hen kan tekniken och har grenar
+export function staketVal(s: State, p: Person) {
+  if (!knows(p, 'staket') || getable(s, p, 'grenar') < STAKET.grenar || !isLight(s.now)) return undefined;
+  for (const f of familjensFalt(s, p)) { const i = staketRutor(s, f).find(j => !harStaket(s, j)); if (i !== undefined) return { f, i }; }
+  return undefined;
+}
+export function staketKlar(s: State, p: Person, i?: number) {
+  if (i === undefined || harStaket(s, i) || getable(s, p, 'grenar') < STAKET.grenar) return;
+  takeMaterial(s, p, 'grenar', STAKET.grenar);
+  (s.staket ??= []).push(i); count(s, 'staket');
+  if (forstaGang(s, 'staket')) log(s, `${p.name} satte upp byns första staket runt fältet.`, 'world', [p.id]);
+}

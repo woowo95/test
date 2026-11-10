@@ -1390,3 +1390,21 @@ SCENARIER.flerarig = {
     ];
   },
 };
+
+SCENARIER.staket = {
+  text: 'Steg 9.7.10: staketet, en byggdel som djuren inte går över, runt fältet. Den som kan tekniken och har grenar sätter en ruta i taget runt familjens fält tills det är inhägnat',
+  kor: () => {
+    const { staketVal, staketKlar, staketRutor, faltInhagnat, sammanfatta, setAmount, harStaket } = SIM;
+    const s = createState(1, START); klockan(s, 10);
+    const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!; p.tek = { ...(p.tek ?? {}), odling: 1, staket: 1 };
+    const f: SIM.Falt = { id: 1, x: Math.floor(p.x) + 4, y: Math.floor(p.y) + 2, w: 3, dir: 1, n: 6, agare: p.id, steg: 'vaxer', klara: 0, kvar: 0, rord: s.now, r: Array.from({ length: 6 }, () => ({ st: 'vaxer' as const, g: 'rovor' as const, v: 0.2 })) };
+    s.falt = [f]; sammanfatta(f); setAmount(s, 'grenar', 100);
+    const rutor = staketRutor(s, f).length, fore = faltInhagnat(s, f);
+    let n = 0; for (let st = staketVal(s, p); st && n < 100; st = staketVal(s, p), n++) staketKlar(s, p, st.i);
+    return [
+      [`runt fältet ska ${rutor} rutor ha staket, och inget finns från början (${fore ? 'inhägnat' : 'öppet'})`, rutor > 0 && !fore],
+      [`staketet sätts en ruta i taget av grenar (${n} rutor, ${100 - SIM.amountOf(s, 'grenar')} grenar) tills fältet är inhägnat (${faltInhagnat(s, f) ? 'ja' : 'nej'})`, faltInhagnat(s, f) && n === rutor],
+      [`djuren går inte över staketet (${harStaket(s, staketRutor(s, f)[0]) ? 'staket' : 'inget'} på rutan)`, harStaket(s, staketRutor(s, f)[0])],
+    ];
+  },
+};

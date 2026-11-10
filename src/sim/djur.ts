@@ -140,7 +140,7 @@ function flyttAv(s: State, g: number, t: number) {
 // Gruppen flyr aldrig ut i vattnet: vägen kortas tills den slutar på land med land omkring, annars flyr den inte
 export function gruppFlyr(s: State, g: number, t: number, dx: number, dy: number, sek?: number) {
   const c = (arRadjurGrupp(g) ? radjurGrupper(s, t) : grupperOf(s, t)).find(q => q.id === g), vt = vattenNu(s);
-  const land = (x: number, y: number) => { for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) { const a = Math.floor(x) + i, b = Math.floor(y) + j; if (!inMap(a, b) || vt[b * W + a] === T.Vatten) return false; } return true; };
+  const land = (x: number, y: number) => { for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) { const a = Math.floor(x) + i, b = Math.floor(y) + j; if (!inMap(a, b) || vt[b * W + a] === T.Vatten || harStaket(s, b * W + a)) return false; } return true; }; // inte över staketet (steg 9.7.10)
   const f = c ? [1, 0.75, 0.5, 0.25].find(k => land(clamp(c.x + dx * k, 1, W - 1), clamp(c.y + dy * k, 1, H - 1))) : undefined;
   if (f === undefined) return;
   s.djurFlykt = [...(s.djurFlykt ?? []).filter(q => s.now - q.t < LIVSTID), { g, t, dx: dx * f, dy: dy * f, ...(sek ? { sek } : {}) }];
@@ -612,3 +612,4 @@ export function dodaDjur(s: State, id: number) {
   if (!s.djurHalsa?.length) s.djurHalsa = undefined;
   s.djurDoda = [...(s.djurDoda ?? []).filter(d => s.now - d.t < INDIVID.glomTim * HOUR), { id, t: s.now }];
 }
+import { harStaket } from './odling';
