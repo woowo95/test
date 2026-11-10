@@ -298,8 +298,8 @@ function hittaSite(s: State, w: number, n: number) {
   const R = ODLING.faltTill + w + rader + 1;
   let best: { x: number; y: number } | undefined, bs = Infinity;
   for (let y = Math.max(0, o.y0 - R); y <= Math.min(H - 1, o.y1 + R); y++) for (let x = Math.max(0, o.x0 - R); x <= Math.min(W - 1, o.x1 + R); x++) {
-    const mx = x + b / 2, my = y + 0.5, u = utanforByn(s, mx, my);
-    if (u > ODLING.faltTill || u >= bs) continue; // längre bort än den bästa hittills: blir aldrig bättre
+    const mx = x + b / 2, my = y + 0.5, u0 = utanforByn(s, mx, my), u = u0 + JORD.vattenKost * Math.min(djupOf(s.seed).land[y * W + x], JORD.vattenMax); // ett fält nära vatten är värt mer (steg 9.7.4)
+    if (u0 > ODLING.faltTill || u >= bs) continue; // längre bort än den bästa hittills: blir aldrig bättre
     const ny = { x, y, w, dir: faltRiktning(s, y), n } as Falt;
     let ok = true, unga = 0;
     for (let k = 0; k < n && ok; k++) { const r = rutaXY(ny, k); if (!rutaFri(s, gr, r.x, r.y)) ok = false; else { const tr = g.trees[r.y * W + r.x]; unga += tr >= FOREST ? ODLING.skogKost : tr; if (u + unga >= bs) ok = false; } }
@@ -644,6 +644,9 @@ export const JORD = balans('jord', {
   naraRutor: 8, // vatten närmare än så här många rutor gör jorden fuktigare ...
   torrMark: 0.35, // ... och längre bort dras fukten mot så här mycket
   fuktKans: 0.8, fuktMin: 0.4, // grödan växer 1 − fuktKans × skillnaden mot sin bästa fukt gånger så fort, minst fuktMin (steg 9.7.3)
+  vattenKost: 0.25, vattenMax: 16, // ett fält räknas så här många rutor längre bort per ruta från vattnet (högst vattenMax), när platsen väljs (steg 9.7.4)
+  vattnaMarg: 0.15, // man vattnar rutor som är så här mycket torrare än det man vattnar till
+  karlRutor: 5, // en mellanstor lerkruka räcker till så här många rutor (säcken: TORKA.sackRutor)
   gissa: 0.8, // den som inte har lärdomen vattnar till så här blött
   larFukt: 0.1, // så mycket av lärdomen om fukten får den som skördar en ruta som växte i rätt fukt
 });
@@ -674,3 +677,17 @@ export const fuktFaktor = (fu: number | undefined, ideal: number) => Math.max(JO
 // den fukt p vattnar till (steg 9.7.4): den som har lärdomen vattnar till grödans bästa fukt, de andra gissar på blött
 export const vattnaTill = (p: Person, g: GrodaSlag) => kn(p, 'fukt') >= 0.5 ? GRODOR[g].fukt : JORD.gissa;
 import { kn, learnK } from './kunskap';
+
+// vattningen (steg 9.7.4): rutorna på fältet som växer och är torrare än p vattnar till, de torraste först
+export function torraRutor(f: Falt, p: Person) {
+  const r = rutorAv(f), ut: number[] = [];
+  for (let k = 0; k < f.n; k++) if (r[k].st === 'vaxer' && (r[k].fu ?? 0.5) < vattnaTill(p, r[k].g!) - JORD.vattnaMarg) ut.push(k);
+  return ut.sort((a, b) => (r[a].fu ?? 0.5) - (r[b].fu ?? 0.5) || a - b);
+}
+// p vattnar n rutor med vattnet hen bar dit
+export function vattnaRutor(s: State, f: Falt, p: Person, n: number) {
+  const r = rutorAv(f), ks = torraRutor(f, p).slice(0, n);
+  for (const k of ks) r[k].fu = Math.max(r[k].fu ?? 0, vattnaTill(p, r[k].g!));
+  if (ks.length) count(s, 'vattnadeRutor', ks.length);
+  return ks.length;
+}

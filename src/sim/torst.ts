@@ -7,7 +7,7 @@
 // de andra (fatt), och när törsten blir farlig också om säcken inte kommer
 import { strandNu } from './sjo';
 import { ACTS } from './handlingar';
-import { ALDER, ageOf, alive, byId, count, forstaGang, isSick, living, log, think } from './folk';
+import { ALDER, ageOf, alive, byId, count, familjOf, forstaGang, isSick, living, log, think } from './folk';
 import { areaOf, findL, observe } from './minne';
 import { magont, vattenSmuts } from './smuts';
 import { getMap, perKarta } from './karta';
@@ -26,7 +26,7 @@ import { getable } from './behov';
 import { kanGoras } from './stationer';
 import { knows } from './teknik';
 import { wearUsed } from './redskap';
-import { Falt, faltById, faltOf, faltRutor } from './odling';
+import { Falt, JORD, faltById, faltOf, faltRutor, torraRutor, vattnaRutor } from './odling';
 import { TORKA } from './torka';
 import { SJUK, foljd, insjukna } from './sjukdom';
 
@@ -191,7 +191,9 @@ function smutsigt(s: State, p: Person, i: number) {
 const hamtas = (s: State, q: Person) => living(s).some(o => o.task?.act === 'vatten' && !o.task.falt && o.task.ref === q.id);
 // under torkan (steg 3.8.2) vattnar ägaren sitt fält med säcken när grödan snart vissnar, om ingen annan redan gör det
 const vattnas = (s: State, f: Falt) => living(s).some(o => o.task?.act === 'vatten' && o.task.falt && o.task.ref === f.id);
-const torrtFalt = (s: State, p: Person) => s.sjoTorr?.pa ? faltOf(s).find(f => f.agare === p.id && f.vuxit !== undefined && (f.vatten ?? 1) < TORKA.vattna && !vattnas(s, f)) : undefined;
+// ett fält som behöver vatten: under torkan när grödan snart vissnar (steg 3.8.2), och annars när rutor på familjens fält är torrare än
+// det p vattnar till (steg 9.7.4)
+const torrtFalt = (s: State, p: Person) => faltOf(s).find(f => (f.agare === p.id || familjOf(s, p.id).some(q => q.id === f.agare)) && f.vuxit !== undefined && !vattnas(s, f) && (s.sjoTorr?.pa && (f.vatten ?? 1) < TORKA.vattna || torraRutor(f, p).length >= JORD.karlRutor));
 // örtköket behöver vatten (steg 7.6.6): ingen säck står fylld, ingen fyller en, och byn vill ha något som kokas med vatten och som
 // någon kan göra. ref = FYLL i uppgiften: säcken fylls och blir stående fylld
 const FYLL = 0;
@@ -237,13 +239,14 @@ export function vattenFylld(s: State, p: Person, t: Task) {
 // framme hos den törstige (arrive i steg.ts): hen dricker, och säcken slits
 export function vattenFram(s: State, p: Person, t: Task) {
   if (t.falt) { // vattnet på fältet: en säck räcker till TORKA.sackRutor rutor
-    const f = faltById(s, t.ref);
+    const f = faltById(s, t.ref), n = t.tool === 'lerkruka_mellan' ? JORD.karlRutor : TORKA.sackRutor;
     if (f && f.vatten !== undefined) {
-      f.vatten = Math.min(1, f.vatten + TORKA.sackRutor / f.n);
+      f.vatten = Math.min(1, f.vatten + n / f.n);
       count(s, 'vattnat');
       if (forstaGang(s, 'vattnat falt')) log(s, `${p.name} bar vatten i säcken till sitt fält för att grödan inte skulle vissna i torkan.`, 'world', [p.id]);
-      wearUsed(s, p, 1);
     }
+    if (f && vattnaRutor(s, f, p, n) > 0 && forstaGang(s, 'vattnadeRutor')) log(s, `${p.name} vattnade rutorna på fältet, så att grödan fick rätt fukt.`, 'world', [p.id]); // per ruta (steg 9.7.4)
+    if (f) wearUsed(s, p, 1);
     p.task = undefined; return;
   }
   const q = byId(s, t.ref);

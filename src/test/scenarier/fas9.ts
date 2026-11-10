@@ -1257,3 +1257,24 @@ SCENARIER.fukt = {
     ];
   },
 };
+
+SCENARIER.vattning = {
+  text: 'Steg 9.7.4: vattning per ruta. Den som sköter ett fält där rutor är torrare än grödan vill ha bär vatten i vattensäcken eller en mellanstor lerkruka och vattnar de torraste rutorna; ett fält nära vatten är värt mer när platsen väljs',
+  kor: () => {
+    const { vattenVal, vattenFram, addTool, sammanfatta, vattnaTill, JORD } = SIM;
+    const s = createState(1, START); klockan(s, 10);
+    const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!; p.tek = { ...(p.tek ?? {}), odling: 1 };
+    const f: SIM.Falt = { id: 1, x: Math.floor(p.x) + 3, y: Math.floor(p.y), w: 4, dir: 1, n: 8, agare: p.id, steg: 'vaxer', klara: 0, kvar: 0, rord: s.now, r: Array.from({ length: 8 }, (_, k) => ({ st: 'vaxer' as const, g: 'rovor' as const, v: 0.2, fu: k < 6 ? 0.1 : 0.9 })) };
+    s.falt = [f]; sammanfatta(f);
+    const kr = addTool(s, 'lerkruka_mellan', p); kr.hos = undefined;
+    const v = vattenVal(s, p);
+    const tk = { act: 'vatten', phase: 'back', falt: true, ref: f.id, tool: 'lerkruka_mellan', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' } as unknown as SIM.Task;
+    p.task = tk; vattenFram(s, p, tk);
+    const vattnade = f.r!.filter(r => r.fu === vattnaTill(p, 'rovor')).length;
+    return [
+      [`den som sköter fältet hämtar vatten i krukan till de torra rutorna (${v?.why ?? 'inget'})`, !!v?.falt && v.karl === 'lerkruka_mellan'],
+      [`en kruka räcker till ${JORD.karlRutor} rutor, de torraste först (${vattnade} vattnade, ${f.r!.map(r => r.fu?.toFixed(1)).join(' ')})`, vattnade === JORD.karlRutor && f.r![7].fu === 0.9],
+      [`ett fält nära vatten är värt mer när platsen väljs (${JORD.vattenKost} rutor längre bort per ruta från vattnet)`, JORD.vattenKost > 0],
+    ];
+  },
+};
