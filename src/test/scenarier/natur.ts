@@ -125,6 +125,7 @@ SCENARIER.abborre = {
 };
 
 SCENARIER.sjo = { // by 4: by 3 fiskade knappt efter steg 2.3.11
+  lang: true,
   text: 'Varje sammanhängande vatten är en sjö. Fiskeförsök, napp, fångade fiskar och bad räknas per sjö när de händer (sjöfliken)',
   kor: () => {
     const s = createState(4, START), sj = SIM.sjoarna(s.seed), tiles = getMap(s.seed).tiles;
