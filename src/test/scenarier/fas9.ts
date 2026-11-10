@@ -353,3 +353,33 @@ SCENARIER.blodning = {
     ];
   },
 };
+
+SCENARIER.vardval = {
+  text: 'Steg 9.5.16: själv eller andra. Den skadade trycker själv och ropar, och den som ropat hörs längre bort; vårdaren tar förband på vägen om tiden räcker och går annars direkt och trycker; den som ska på jakt eller i strid tar en remsa i bältet',
+  kor: () => {
+    const { vardVal, skada, HALSA, setAmount } = SIM;
+    const s = createState(1, START), [g, q] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
+    for (const r of SIM.living(s)) if (r !== g && r !== q) { r.x = 5; r.y = 5; }
+    setAmount(s, 'remsa', 3);
+    // den skadade ropar, och hörs längre bort än vanligt
+    q.x = g.x + HALSA.vardR + 5; q.y = g.y;
+    skada(s, q, 'bal', 'sticksar', 0.5, 'blod', 'i en strid');
+    const ropat = q.ropT === s.now, hord = vardVal(s, g, false)?.ref === q.id;
+    const sjalv = vardVal(s, q, true)?.why ?? '';
+    // hämta eller stanna: med kort tid kvar går vårdaren direkt
+    const lag = SIM.fetchSpot(s, 'remsa')!; g.x = lag.x + 12; g.y = lag.y; q.x = g.x + 8; q.y = g.y; q.skador = [{ d: 'bal', k: 'sticksar', g: 0.9, b: 1 }]; q.blod = HALSA.blodDod + 0.001;
+    const kort = vardVal(s, g, false);
+    q.blod = 1; q.skador = [{ d: 'bal', k: 'skarsar', g: 0.3, b: 1 }];
+    const lang = vardVal(s, g, false);
+    // remsan i bältet
+    const t = SIM.cloneState(s), tp = t.people.find(r => r.id === g.id)!;
+    SIM.balteForband(t, tp, 'jakt');
+    return [
+      [`den skadade ropar (${ropat ? 'ja' : 'nej'}) och hörs längre bort än vanligt (${hord ? 'en kom' : 'ingen kom'})`, ropat && hord],
+      [`den skadade trycker själv på såret (${sjalv})`, sjalv.includes('Trycker')],
+      [`med kort tid kvar går vårdaren direkt och trycker (${kort?.why})`, !!kort?.stanna],
+      [`med tid nog tar vårdaren förband på vägen (${lang?.why})`, !!lang && !lang.stanna],
+      [`den som går på jakt tar en remsa i bältet (${tp.forbandMed ?? 0})`, (tp.forbandMed ?? 0) === 1],
+    ];
+  },
+};

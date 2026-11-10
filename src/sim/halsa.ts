@@ -20,7 +20,7 @@ import { gebinamn } from './berattelser';
 // delSkada och förmågorna (FORMAGOR)
 import { ACTS } from './handlingar';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, franMitt, gjort, isParent, livet, living, log, ovning, raddAkt, think } from './folk';
-import { amountOf, avbryt } from './lager';
+import { amountOf, avbryt, fetchSpot } from './lager';
 import { fearPlace } from './minne';
 import { SJUK, foljd } from './sjukdom';
 // febern av en sjukdom: medvetandet utan klockan (sjukdomen vet när tecknen kommit, st)
@@ -78,7 +78,9 @@ export const HALSA = balans('halsa', {
   infSmarta: 0.5, // infektionen gör så här ont (gånger infektionen)
   vardFel: 0.15, // man trycker på och lägger förband på sår av minst den här graden
   vardMin: 5, // minuter att trycka på såren, lägga förband och rengöra
-  vardR: 30, // man går för att vårda den som är högst så här många rutor bort
+  vardR: 30, // man går för att vårda den som är högst så här många rutor bort ...
+  ropR: 45, ropTim: 1, // ... och den som ropat på hjälp den senaste timmen hörs så här långt (steg 9.5.16)
+  hamtaMarg: 1.5, // vårdaren hämtar förband på vägen bara om tiden kvar räcker till vägen gånger detta (steg 9.5.16)
   ontGang: 0.3, // full smärta gör gången så här mycket långsammare (steg 9.5.12)
   vardHand: 0.5, // den som vårdar någon annan har minst så här bra händer
   hemma: 3, // så nära byns område är man hemma (rutor, 0 innanför): längre bort kravlar den som inte kan gå, eller bärs
@@ -330,6 +332,7 @@ export function skada(s: State, p: Person, d: Kroppsdel, k: SkadaTyp, g: number,
   if (p.saknas?.includes(d)) d = (DEL[d].under as Kroppsdel | undefined) ?? 'bal'; // delen finns inte längre
   (p.skador ??= []).push({ d, k, g, b: SKADA[k].blod > 0 ? 1 : 0, g0: g });
   uppdateraSinnen(p);
+  if (SKADA[k].blod > 0 && g >= HALSA.vardFel) p.ropT = s.now; // den skadade ropar på hjälp (steg 9.5.16)
   if ((k === 'skarsar' || k === 'bett') && DEL[d].ute && g >= HALSA.forloraGrad && !HALSA_PROV.grov && rnd(s, 'halsa', p) < HALSA.forloraChans) forlora(s, p, d, k === 'bett' ? 'bets av' : 'höggs av');
   if (SKADA[k].blod > 0) blodas(s, p.x, p.y, 'skada', g * SKADA[k].blod);
   count(s, 'skador'); count(s, 'skada ' + SKADA[k].namn.toLowerCase());
@@ -507,7 +510,7 @@ export const salvaKrok = { har: (_s: State) => 0, ta: (_s: State): number | unde
 export const VARD: Record<string, VardDef> = {
   dra_ut: { namn: 'Dra ut pilen', text: 'Drar ut det som sitter fast i såret', krav: (_s, _q, w) => stor(w) && !!w.fast, tid: 1, risk: 0, bradska: 4, gor: (s, _g, _q, w) => { w.fast = undefined; count(s, 'spjut utdragna'); } }, // den som vårdar tar ut det som fastnat (steg 3.7.7)
   trycka: { namn: 'Trycka', text: 'Trycker på såret så att det slutar blöda', krav: (_s, _q, w) => stor(w) && w.b > 0, tid: 1, risk: 0, bradska: 5, gor: (s, _g, _q, w) => { w.b = 0; count(s, 'sar tryckta'); } },
-  forband: { namn: 'Förband', text: 'Lägger en remsa eller mossa på såret', krav: (_s, _q, w) => stor(w) && !w.f && w.inf === undefined, tid: 2, risk: 0, bradska: 3, gor: (s, g, q, w) => { if (getable(s, g, 'remsa') >= 1) { takeMaterial(s, g, 'remsa', 1); w.f = 2; } else if (getable(s, g, 'mossa') >= 1) { takeMaterial(s, g, 'mossa', 1); w.f = 1; } else if (rivRemsa(s, q, g)) w.f = 2; else return; count(s, 'forband'); } }, // remsan före mossan; i nöd rivs en remsa ur ett plagg (steg 9.5.15)
+  forband: { namn: 'Förband', text: 'Lägger en remsa eller mossa på såret', krav: (_s, _q, w) => stor(w) && !w.f && w.inf === undefined, tid: 2, risk: 0, bradska: 3, gor: (s, g, q, w) => { if ((g.forbandMed ?? 0) > 0) { g.forbandMed! -= 1; if (!g.forbandMed) delete g.forbandMed; w.f = 2; } else if (getable(s, g, 'remsa') >= 1 && !g.task?.stanna) { takeMaterial(s, g, 'remsa', 1); w.f = 2; } else if (getable(s, g, 'mossa') >= 1 && !g.task?.stanna) { takeMaterial(s, g, 'mossa', 1); w.f = 1; } else if (rivRemsa(s, q, g)) w.f = 2; else return; count(s, 'forband'); } }, // remsan före mossan; i nöd rivs en remsa ur ett plagg (steg 9.5.15)
   byta: { namn: 'Byta förband', text: 'Byter det gamla förbandet', krav: () => false, material: { mossa: 1 }, tid: 2, risk: 0, bradska: 2, senare: '9.5.25', gor: () => {} },
   avsnora: { namn: 'Avsnöra', text: 'Snör av armen eller benet ovanför såret', krav: (_s, _q, w) => oppet(w) && w.g >= HALSA.storSar && !!DEL[w.d].ute && w.b > 0 && w.av === undefined && !w.sydd, material: { rep: 1 }, tid: 1, risk: 0.1, bradska: 6, gor: (s, g, _q, w) => { takeMaterial(s, g, 'rep', 1); w.av = s.now; w.b = 0; count(s, 'avsnort'); } }, // ett stort sår i en arm eller ett ben (steg 9.5.15)
   skolja: { namn: 'Skölja', text: 'Sköljer det infekterade såret rent', krav: (s, _q, w) => w.inf !== undefined && w.inf < HALSA.kallbrand && !((w.ren ?? 0) > s.now), tid: 3, risk: 0, bradska: 2, gor: (s, g, _q, w) => { w.ren = s.now + HALSA.renTim * (1 + g.skill.lakekonst * HALSA.lakeRen) * HOUR; count(s, 'sar rengjorda'); } }, // läkekonsten håller såret rent längre (steg 9.5.7)
@@ -518,7 +521,7 @@ export const VARD: Record<string, VardDef> = {
 export const VARD_LIST = Object.keys(VARD);
 // kan g göra behandlingen v: materialet och redskapet finns, och färdigheten räcker
 const plaggAtt = (s: State, q: Person, g: Person) => tingOf(s).some(k => (k.bar === q.id || k.bar === g.id) && !!SAKER[k.k]?.klad && k.c > 0.3);
-const vardKan = (s: State, g: Person, v: VardDef, q?: Person) => (v !== VARD.salva || salvaKrok.har(s) > 0) && (v !== VARD.forband || getable(s, g, 'remsa') >= 1 || getable(s, g, 'mossa') >= 1 || !!q && plaggAtt(s, q, g)) && Object.entries(v.material ?? {}).every(([m, n]) => getable(s, g, m) >= n) && (!v.redskap || getable(s, g, v.redskap) >= 1) && (v.fardighet === undefined || g.skill.lakekonst >= v.fardighet);
+const vardKan = (s: State, g: Person, v: VardDef, q?: Person) => (v !== VARD.salva || salvaKrok.har(s) > 0) && (v !== VARD.forband || (g.forbandMed ?? 0) > 0 || (getable(s, g, 'remsa') >= 1 || getable(s, g, 'mossa') >= 1) && !g.task?.stanna || !!q && plaggAtt(s, q, g)) && Object.entries(v.material ?? {}).every(([m, n]) => getable(s, g, m) >= n) && (!v.redskap || getable(s, g, v.redskap) >= 1) && (v.fardighet === undefined || g.skill.lakekonst >= v.fardighet);
 // i nöd (steg 9.5.15): finns ingen remsa eller mossa rivs en remsa ur ett plagg den skadade eller den som vårdar har på sig, och plagget slits
 function rivRemsa(s: State, q: Person, g: Person) {
   const t = tingOf(s).find(k => (k.bar === q.id || k.bar === g.id) && !!SAKER[k.k]?.klad && k.c > 0.3);
@@ -544,7 +547,7 @@ export function vardBehov(s: State, q: Person, g: Person) {
 const vardas = (s: State, q: Person, g: Person) => living(s).some(o => o !== g && o.task?.act === 'varda' && o.task.ref === q.id);
 // vården som väljs (val.ts): sjalv = sina egna sår (före det mesta), annars den närmaste andra som behöver vård och som ingen
 // annan redan går till. Den som vårdar någon annan är vuxen, kan gå och har händer som duger
-export function vardVal(s: State, p: Person, sjalv: boolean): { spot: { x: number; y: number }; ref: number; why: string } | undefined {
+export function vardVal(s: State, p: Person, sjalv: boolean): { spot: { x: number; y: number }; ref: number; why: string; stanna?: boolean } | undefined {
   if (sjalv) {
     const b = vardBehov(s, p, p);
     if (!b) return undefined;
@@ -556,12 +559,17 @@ export function vardVal(s: State, p: Person, sjalv: boolean): { spot: { x: numbe
   for (const q of [...living(s), ...gasterNu(s).filter(g => g.gast!.sort !== 'rovare')]) { // gästerna vårdas också, utom rövarna (steg 9.2.113)
     if (q === p || !q.skador?.length && !q.svimmat) continue;
     const d = Math.hypot(q.x - p.x, q.y - p.y);
-    if (d >= HALSA.vardR || d / vardRatt(s, p, q) >= bd || !vardBehov(s, q, p) || vardas(s, q, p)) continue;
+    if (d >= (s.now - (q.ropT ?? -Infinity) < HALSA.ropTim * HOUR ? HALSA.ropR : HALSA.vardR) || d / vardRatt(s, p, q) >= bd || !vardBehov(s, q, p) || vardas(s, q, p)) continue; // den som ropat hörs längre (steg 9.5.16)
     best = q; bd = d / vardRatt(s, p, q);
   }
   if (!best) return undefined;
   const b = vardBehov(s, best, p)!;
-  return { spot: { x: best.x, y: best.y }, ref: best.id, why: b.bara && !b.blod && !b.rengor ? `Går för att bära hem ${best.name}` : `Tar hand om ${best.name}s sår` };
+  // hämta eller stanna (steg 9.5.16): har vårdaren inget förband i bältet och hinner hen inte gå om lagret innan den skadade
+  // förblöder, går hen direkt och trycker (stanna); annars tar hen förband på vägen (sakerna tas ur förrådet)
+  const lager = fetchSpot(s, 'remsa') ?? fetchSpot(s, 'mossa'), fart = GANG.fart;
+  const omvag = lager ? (Math.hypot(lager.x - p.x, lager.y - p.y) + Math.hypot(best.x - lager.x, best.y - lager.y) - Math.hypot(best.x - p.x, best.y - p.y)) / fart / 3600 : 0;
+  const stanna = b.blod && !(p.forbandMed ?? 0) && tidKvar(best) < omvag * HALSA.hamtaMarg;
+  return { spot: { x: best.x, y: best.y }, ref: best.id, stanna, why: b.bara && !b.blod && !b.rengor ? `Går för att bära hem ${best.name}` : stanna ? `Springer till ${best.name} och trycker på såret` : `Tar hand om ${best.name}s sår` };
 }
 // rätten till vård (steg 9.5.9, "Rätt till vård" i designdokumentet): hur mycket före de andra p vårdar q, efter sederna och
 // styret. Vid Sammanhållning vårdas alla lika; vid Självförsörjning vårdar släkten sina egna; vid Envälde går ledaren och hens
