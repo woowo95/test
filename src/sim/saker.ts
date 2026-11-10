@@ -242,7 +242,7 @@ const DEF = {
   // resterna (steg 9.7.5, rester.ts): ruttnar bort, och ger smuts så länge de ligger i byn
   slaktrens: { namn: 'Slaktrens', stack: 25, ruta: 50, mapp: 'Material', haller: 2 },
   vaxtrest: { namn: 'Växtrester', stack: 25, ruta: 50, mapp: 'Material', haller: 4 },
-  kompost: { namn: 'Kompost', skaffa: { av: { slaktrens: 10 }, min: 2 }, stack: 25, ruta: 50, mapp: 'Material' }, // färdig kompost (steg 9.7.6): gödslar fältet
+  kompost: { namn: 'Kompost', skaffa: { av: { slaktrens: 10 }, min: 2, slag: 'bearbeta' }, stack: 25, ruta: 50, mapp: 'Material' }, // färdig kompost (steg 9.7.6): gödslar fältet
   // kålen och bönorna (steg 9.7.8, odling.ts): nya grödor, med fröna från handlarna
   kal: { namn: 'Kål', skaffa: { tid: 0.25, tek: 'odling' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 5.2, naring: { vitamin: 1.8, mineral: 0.8, energi: 0.7, protein: 0.3, fett: 0.1 }, haller: 6 },
   bonor: { namn: 'Bönor', skaffa: { tid: 0.25, tek: 'odling' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.6, naring: { protein: 1.8, energi: 1.3, mineral: 0.7, vitamin: 0.4, fett: 0.2 }, haller: 20 },
