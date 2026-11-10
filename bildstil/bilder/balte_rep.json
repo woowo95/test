@@ -1,19 +1,16 @@
 {
 "id": "balte_rep",
 "ritad": 1,
-"av": "Claude, ur Björns val i bildstilen (steg 8.10.1)",
-"w": 18,
-"h": 9,
+"av": "Claude, ur Björns val i bildstilen (steg 9.9.1)",
+"w": 12,
+"h": 6,
 "rader": [
-"....aaaaaaaaaa....",
-"..aabcbcbcbcbcaa..",
-".acbcbaaaaaacbcba.",
-"acbaaaaa...aaaacba",
-"abcaaddda.adddabca",
-"acbcbdaaaaadacbcba",
-".acbcdcbcbcdcbcba.",
-"..aabdbcbcbdbcaa..",
-"....aaaaaaaaaa...."
+"..aaaaaaaa..",
+".abcbcbcbca.",
+"abaaaddaaaba",
+"acaadaadaaca",
+".acbcbcbcba.",
+"..aaaaaaaa.."
 ],
 "pal": {
 "a": "#24201d",

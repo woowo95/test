@@ -1,0 +1,20 @@
+{
+"id": "hjalm_lader",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 9.9.1)",
+"w": 10,
+"h": 6,
+"rader": [
+"..oooooo..",
+".obbbbbbo.",
+"obcccccbbo",
+"obcccccbbo",
+"oooooooooo",
+"o........o"
+],
+"pal": {
+"b": "#5e3c24",
+"c": "#7d5b40",
+"o": "#24201d"
+}
+}

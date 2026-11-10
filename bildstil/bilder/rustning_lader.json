@@ -1,27 +1,28 @@
 {
 "id": "rustning_lader",
 "ritad": 1,
-"av": "Claude, ur Björns val i bildstilen (steg 8.10.1)",
-"w": 14,
+"av": "Claude, ur Björns val i bildstilen (steg 9.9.1)",
+"w": 19,
 "h": 12,
 "rader": [
-".aaa......aaa.",
-"agbbaaaaaabgba",
-"agbbghhhhbbgba",
-"ggbbghhhhbbgbb",
-"agbbghbbhbbgba",
-".aagghbbhbbaaa",
-"..agghbbhbba..",
-"..agghbbhbba..",
-"..agghbbhbba..",
-"..agghbbhbba..",
-"..agghhhhbba..",
-"...aaaaaaaa..."
+".....ooo...ooo.....",
+"....obcbo.obdao....",
+"...ocaaaoooaaaao...",
+"..obbbcbdbdbdabbo..",
+"..occdcdbdbdbaaao..",
+".obbbbcbdbdbdabbbo.",
+".occcdcdbdbdbaaaao.",
+"obbbbbcbdbdbdabbbbo",
+"occcodcdbdbdbaoaaao",
+"oaaaobcbdbdbdaoaaao",
+"oaaoodcdbdbdbaooaao",
+".oo..ooooooooo..oo."
 ],
 "pal": {
-"a": "#24201d",
+"a": "#3f2415",
 "b": "#5e3c24",
-"g": "#987e62",
-"h": "#7d5b40"
+"c": "#7d5b40",
+"d": "#987e62",
+"o": "#24201d"
 }
 }

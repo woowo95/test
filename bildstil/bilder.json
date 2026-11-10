@@ -90,7 +90,7 @@
     {"id": "rock_kaninskinn", "sort": "sak-klader", "namn": "Rock av harskinn", "w": 11, "h": 8, "vad": "en hopvikt rock av ljust gråbrunt harskinn", "ritad": 1, "godkand": true},
     {"id": "skor_vargskinn", "sort": "sak-klader", "namn": "Skor av vargskinn", "w": 10, "h": 5, "vad": "ett par skor av grått vargskinn med snören", "ritad": 5, "variantAv": "skor_kaninskinn", "byt": {"E": "Q", "F": "R", "G": "S", "H": "T"}, "godkand": true},
     {"id": "skor_kaninskinn", "sort": "sak-klader", "namn": "Skor av harskinn", "w": 10, "h": 5, "vad": "ett par skor av ljust harskinn med snören", "ritad": 3, "godkand": true},
-    {"id": "balte_rep", "sort": "sak-klader", "namn": "Bälte av rep", "w": 18, "h": 9, "vad": "det tvinnade repet med två krokar av grenar, version 1 som Björn valde (steg 8.10.1)", "ritad": 5, "godkand": true},
+    {"id": "balte_rep", "sort": "sak-klader", "namn": "Bälte", "w": 12, "h": 6, "vad": "bältet, mindre i lagret, Björns val (steg 9.9.1)", "ritad": 1, "godkand": true},
     {"id": "sym_svard", "sort": "sym-panel", "namn": "Korsade svärd", "w": 16, "h": 16, "vad": "två korsade svärd: att slåss, striden börjar och arenan", "tecken": ["⚔️"], "ritad": 1, "godkand": true},
     {"id": "sym_gott_rykte", "sort": "sym-panel", "namn": "Gott anseende", "w": 16, "h": 16, "vad": "ett snällt ansikte med gloria: gott anseende i byn", "tecken": ["😇"], "ritad": 1, "godkand": true},
     {"id": "sym_folk", "sort": "sym-panel", "namn": "Folk", "w": 16, "h": 16, "vad": "två människor: alla, relationer och så många är de", "tecken": ["👥"], "ritad": 1, "godkand": true},
@@ -325,11 +325,22 @@
     {"id": "linfron", "sort": "sak-material", "namn": "Linfrön", "w": 7, "h": 3, "vad": "ett litet strö av fröna, version 1 som Björn valde (steg 8.10.1)", "ritad": 1, "godkand": true},
     {"id": "slanda", "sort": "sak-redskap", "namn": "Slända", "w": 7, "h": 15, "vad": "Björns egen ritning (steg 8.10.1)", "ritad": 1, "godkand": true},
     {"id": "rolleka", "sort": "sak-material", "namn": "Rölleka", "w": 14, "h": 8, "vad": "knippet som ligger, ur version 2 som Björn valde (steg 8.10.1)", "ritad": 1, "godkand": true},
-    {"id": "rustning_lader", "sort": "sak-klader", "namn": "Läderrustning", "w": 14, "h": 12, "vad": "Björns egen ritning, utan något på armarna (steg 8.10.1)", "ritad": 1, "godkand": true},
+    {"id": "rustning_lader", "sort": "sak-klader", "namn": "Läderrustning", "w": 19, "h": 12, "vad": "rustningen med långa ärmar, Björns val (steg 9.9.1)", "ritad": 1, "godkand": true},
     {"id": "ryggsack_kaninskinn", "sort": "sak-klader", "namn": "Ryggsäck", "w": 16, "h": 14, "vad": "säcken av ljust skinn, version 1 som Björn valde (steg 8.10.1)", "ritad": 1, "godkand": true},
     {"id": "tjara", "sort": "sak-material", "namn": "Tjära", "w": 14, "h": 18, "vad": "kaggen av stavar med vidjeband, version 2 som Björn valde (steg 8.10.1)", "ritad": 1, "godkand": true},
     {"id": "benlim", "sort": "sak-material", "namn": "Benlim", "w": 18, "h": 14, "vad": "den breda, låga skålen med en droppe över kanten, version 2 som Björn valde (steg 8.10.1)", "ritad": 1, "godkand": true},
     {"id": "byxor_lader", "sort": "sak-klader", "namn": "Byxor av läder", "w": 11, "h": 12, "vad": "enfärgade byxor av brunt läder, version 3 som Björn valde (steg 8.10.1)", "ritad": 1, "godkand": true},
-    {"id": "skjorta_lintyg", "sort": "sak-klader", "namn": "Skjorta av lin", "w": 12, "h": 9, "vad": "den nya skjortan, rak nertill, som Björn valde (steg 8.10.1)", "ritad": 1, "godkand": true}
+    {"id": "skjorta_lintyg", "sort": "sak-klader", "namn": "Skjorta av lin", "w": 12, "h": 9, "vad": "den nya skjortan, rak nertill, som Björn valde (steg 8.10.1)", "ritad": 1, "godkand": true},
+    {"id": "lintyg", "sort": "sak-material", "namn": "Lintyg", "w": 25, "h": 19, "vad": "tre vikta tyger staplade med ett rött band om högen, Björns val (steg 9.9.1)", "ritad": 1, "godkand": true},
+    {"id": "mossa_kaninskinn", "sort": "sak-klader", "namn": "Mössa", "w": 16, "h": 12, "vad": "kullen av läder med en kant av vargpäls, Björns val (steg 9.9.1)", "ritad": 1, "godkand": true},
+    {"id": "hjalm_lader", "sort": "sak-klader", "namn": "Läderhjälm", "w": 10, "h": 6, "vad": "kalotten med kanten, Björns val (steg 9.9.1)", "ritad": 1, "godkand": true},
+    {"id": "skold", "sort": "sak-redskap", "namn": "Sköld", "w": 16, "h": 7, "vad": "en bräda ljust trä med åsen och bucklan, Björns val (steg 9.9.1)", "ritad": 1, "godkand": true},
+    {"id": "mantel_kaninskinn", "sort": "sak-klader", "namn": "Mantel av skinn", "w": 14, "h": 12, "vad": "manteln i brunt skinn, utan spänne, Björns val (steg 9.9.1)", "ritad": 1, "godkand": true},
+    {"id": "mantel_ylle", "sort": "sak-klader", "namn": "Mantel av ylle", "w": 14, "h": 12, "vad": "manteln i ofärgat ylle, utan spänne, Björns val (steg 9.9.1)", "ritad": 1, "godkand": true},
+    {"id": "halsband_tandband", "sort": "sak-klader", "namn": "Halsband", "w": 13, "h": 13, "vad": "tre vargtänder på ett snöre som ligger tätt runt halsen, Björns val (steg 9.9.1)", "ritad": 1, "godkand": true},
+    {"id": "uppsatt_vagg", "sort": "kar-station", "namn": "Uppsatt fackla på väggen", "w": 6, "h": 9, "vad": "träklossen i väggen med facklan bunden vid, Björns val (steg 9.9.1)", "ritad": 1, "godkand": true},
+    {"id": "uppsatt_vagg_tand", "sort": "kar-station", "namn": "Uppsatt tänd fackla på väggen", "w": 6, "h": 12, "vad": "samma, tänd", "ritad": 1, "godkand": true},
+    {"id": "garvning", "sort": "kar-station", "namn": "Garvningsställning", "w": 34, "h": 32, "vad": "A-ramen med ett skinn spänt i, Björns val (steg 9.9.1)", "ritad": 1, "godkand": true},
+    {"id": "klyvplats", "sort": "kar-station", "namn": "Klyvplats", "w": 50, "h": 31, "vad": "den låga klyvbänken med en kluven halva fasthållen, en kort stock med kilar och en stapel plankor, Björns val (steg 9.9.1)", "ritad": 1, "godkand": true}
   ]
 }
