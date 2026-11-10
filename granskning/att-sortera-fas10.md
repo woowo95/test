@@ -30,4 +30,18 @@ Kärnan i CLAUDE.md och ARKITEKTUR.md (commit c5a4f31) finns bara på `claude/sw
 
 ## Mer från Björn
 
+### 1. Gaffatejplistan är nu hela `src/sim/` (main 78906e42)
+
+Kodchatten har läst hela `src/sim/` rad för rad (nio hjälpare, 135 filer, drygt 37 000 rader). Listan i `granskning/gaffatejp-9.9.2.md` har nu 99 punkter: fynd 1–23 med tillägg, nya fynd 24–71 efter system och gränsfallen 72–99. Bedömningen är inte prövad av någon annan. Bara skummade: berattelser.ts, varld.ts, typer.ts. Gränssnittet och testerna är inte lästa. Rekommendationen ovan gäller bara 1–23 och behöver göras om för hela listan.
+
+Det viktigaste enligt kodchatten:
+
+- **Åtta fynd lade kodchatten själv in under fas 9**, mest i balansen (märkta "min"). De fick gränserna att hålla men rättar resultatet: +0,6 stridsmod och en gratis sten mot rövarna; en fredlig by försvarar sig lika bra som en krigisk; ingen förälder stannar hos barnen när rövarna kommer; hö, grenar, lera och virke räknas som "till hands" för teknikerna; svampens tabu har en särlösning; minnet behåller en lärdom av varje slag; vedboden byggs inte om den tar sista lagerplatsen; tamdjurens kön är varannan hane och hona.
+- **"En i taget" (fynd 10) är större:** bara en person i hela byn kan bygga en station eller möbel åt gången, och samma för att grilla, torka, koka, baka och tända eld. En flaskhals för hela uppbyggnaden.
+- **Mycket i fas 9 sker utan att någon väljer det eller lägger tid:** dricka vin, mjölk och te, sätta och plocka örter i krukor, lägga ut äng och hagar, vatten till den som inte kan gå.
+- **Fasta tak i stället för förrådsmål:** flinta, mossa, frön, utsäde, rätter och bröd, drycker, mjärdar, torkställningar, flockens storlek.
+- **Elden styr andra system på fler ställen:** var hus får stå, om man går in i ett varmt rum, och om kylan alls räknas som en fara.
+
+Övrigt: kartan för riktad byggdes fortfarande om och är inte committad.
+
 (fylls på)
