@@ -9,23 +9,22 @@ import { jagade, samlaJakt } from './jakt';
 import { posOf } from './manniskor';
 import { OMRITA_MS } from './terrang';
 import { type DjurHall, djurBild, fagelBild, iconCanvas, kartbild } from '../ikoner';
+import { KARTBILDER } from '../kartbilder';
 
-// sakerna på rutan (steg 9.2.53, platshållare tills Björn valt i bildstilen), i 16 punkter per ruta och bara i palettens färger.
-// Det som ritas är det som går att plocka (sakerPaMarken): bärtuvan under träden med ett, två eller tre bär, och en bild per sak
-// för svampen, rötterna och grenarna. En ruta utan saker ritas inte
+// sakerna på rutan (steg 9.2.53, Björns val i steg 9.9.1: i rad), i 16 punkter per ruta och bara i palettens färger. Det som ritas är
+// det som går att plocka (sakerPaMarken): spelets egna bilder av bären, svampen, rötterna och grenarna i sin naturliga storlek, en, två
+// eller tre i en sned rad över rutan från uppe till vänster till nere till höger. En ruta utan saker ritas inte
 const BILD_FARG: Record<string, number> = { y: 0xdad0bb, x: 0xbdb39b, v: 0x7e7362, C: 0x21310e, D: 0x324726, E: 0x505e3e, g: 0x4b4f00, G: 0x647025, r: 0xa14808, h: 0xb2921b, H: 0x906f0f, s: 0x742a01, S: 0xa14808, f: 0xbdb39b, j: 0x5e3c24, J: 0x7d5b40, l: 0x647025 };
-// bärtuvan (steg 9.2.42) med så många bär som finns på rutan (1–3)
-const TUVA = [
-  ['..gG..', '.gGgg.', 'gGrGgG', '.ggGg.', '..gg..'],
-  ['..gG..', '.gGrg.', 'gGgGgG', '.rgGg.', '..gg..'],
-  ['..gG..', '.gGrg.', 'gGgGrG', '.rgGg.', '..gg..'],
-];
-const BILDER: Record<string, string[]> = {
-  kantarell: ['.hh.', 'hHHh', '.ff.'],
-  spindling: ['.SS.', 'SssS', '.ff.'],
-  rotter: ['.l.', 'jJj', '.j.'],
-  grenar: ['....j', '...J.', '.jJ..', 'j....'],
-};
+const KBILD_AV: Record<string, string> = { bar: 'bar', kantarell: 'svamp', spindling: 'svamp', rotter: 'rotter', grenar: 'grenar' };
+const RAD_T = [[0.5], [0.15, 0.85], [0, 0.5, 1]];
+function ritaRad(k: string, n: number, x: number, y: number) {
+  const b = KARTBILDER[KBILD_AV[k] ?? k];
+  if (!b) return;
+  const a = [1, 2], c = [15 - b.w, 14 - b.h];
+  RAD_T[n - 1].map(t => [Math.round(a[0] + (c[0] - a[0]) * t), Math.round(a[1] + (c[1] - a[1]) * t)]).sort((p, q) => p[1] - q[1]).forEach(([dx, dy]) => {
+    b.rader.forEach((r, ry) => { for (let rx = 0; rx < r.length; rx++) { const h = b.pal[r[rx]]; if (r[rx] !== '.' && h) plantG.beginFill(parseInt(h.slice(1), 16)).drawRect(x + dx + rx, y + dy + ry, 1, 1).endFill(); } });
+  });
+}
 // höet på rutan (steg 9.3.4, platshållare tills Björn valt i bildstilen): en, två eller tre tuvor efter hur mycket som ligger där
 // (en tuva per fyra hö), så att den tomplockade rutan syns
 const HO = ['h.H.h', '.hHh.', '..H..'];
@@ -65,14 +64,14 @@ export function drawPlants(force = false) {
       const n = Math.min(3, q.n);
       if (n <= 0) continue;
       // bären syns på bärbuskarna (steg 6.5.4, terrang.ts); där ett träd står syns inte busken, och där ritas tuvan under trädet
-      if (q.k === 'bar') { if (g.trees[i] > 0) ritaBild(TUVA[n - 1], Math.round(x + 2 + plats(i, 0) * 8), Math.round(y + 3 + plats(i, 5) * 8)); continue; }
-      for (let k = 0; k < n; k++, j++) ritaBild(BILDER[q.k], Math.round(x + 1 + plats(i, 10 + j) * 11), Math.round(y + 1 + plats(i, 20 + j) * 12));
+      if (q.k === 'bar') { if (g.trees[i] > 0) ritaRad('bar', n, x, y); continue; }
+      ritaRad(q.k, n, x, y); j += n;
     }
     if (ageIndex(s) !== 0 && richness(s, 'rolleka', rx, ry) > 0.25) ritaBild(ROLLEKA_VILD[plats(i, 50) < 0.5 ? 0 : 1], Math.round(x + 1 + plats(i, 51) * 3), Math.round(y + 2 + plats(i, 52) * 5)); // röllekan växer vild (steg 9.7.15)
     const ho = Math.min(3, Math.floor(tandPaRutan(s, 'torrgras', rx, ry) / 4));
     for (let k = 0; k < ho; k++, j++) ritaBild(HO, Math.round(x + 1 + plats(i, 30 + j) * 10), Math.round(y + 2 + plats(i, 40 + j) * 11));
     const gr = Math.min(3, sakerPaMarken(s, 'grenar', rx, ry)[0]?.n ?? 0);
-    for (let k = 0; k < gr; k++, j++) ritaBild(BILDER.grenar, Math.round(x + 1 + plats(i, 10 + j) * 10), Math.round(y + 1 + plats(i, 20 + j) * 11));
+    if (gr > 0) { ritaRad('grenar', gr, x, y); j += gr; }
   }
 }
 

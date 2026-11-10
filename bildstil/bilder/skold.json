@@ -1,0 +1,23 @@
+{
+"id": "skold",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 9.9.1)",
+"w": 16,
+"h": 7,
+"rader": [
+".oooooooooooooo.",
+"occcccccccccccco",
+"occcccddddccccco",
+"odddddddddaddddo",
+"occcccddaabbccco",
+"occccccbbbbcccco",
+".oooooooooooooo."
+],
+"pal": {
+"a": "#3f2415",
+"b": "#5e3c24",
+"c": "#7d5b40",
+"d": "#987e62",
+"o": "#24201d"
+}
+}

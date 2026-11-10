@@ -1,0 +1,25 @@
+{
+"id": "uppsatt_vagg",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 9.9.1)",
+"w": 6,
+"h": 9,
+"rader": [
+"..YY..",
+".yYYy.",
+"..YY..",
+"..jJ..",
+".YjJY.",
+"..jJ..",
+"VVVVVV",
+"VJJJJV",
+"VVVVVV"
+],
+"pal": {
+"J": "#7d5b40",
+"V": "#5e3c24",
+"Y": "#b2921b",
+"j": "#5e3c24",
+"y": "#906f0f"
+}
+}

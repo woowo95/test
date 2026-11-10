@@ -1,0 +1,29 @@
+{
+"id": "halsband_tandband",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 9.9.1)",
+"w": 13,
+"h": 13,
+"rader": [
+"oko.......oko",
+"ojo.......ojo",
+"oko.......oko",
+".oko.....oko.",
+".ojko...okjo.",
+".oqqkoooqqo..",
+".olkoqqklko..",
+"..ojolkoojo..",
+"..ojolkoojo..",
+"...o.ojo.o...",
+".....ojo.....",
+"......ojo....",
+".......o....."
+],
+"pal": {
+"j": "#a0947d",
+"k": "#bdb39b",
+"l": "#dad0bb",
+"o": "#24201d",
+"q": "#d8b25f"
+}
+}
