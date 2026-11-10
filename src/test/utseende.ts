@@ -3,7 +3,9 @@
 // (samhallssimulatorn.html, kör npm run build först) med klockan ställd på byns tid i svensk tid. Varje bild sparas, och
 // kartan kontrolleras: varje punkt som ritas ska ha en färg ur paletten (palett.ts; namnskyltarna är text och räknas inte), och
 // varje bild i världen ska ritas i hel skala med skarpa punkter. Felkoden är 1 om något larmar.
-//   npm run utseende -- [mapp] [by]   (mappen utseende/ och by 3 om inget anges; ca 16 min datortid). LAGE=ljust eller
+//   npm run utseende -- [mapp] [by]   (mappen utseende/ och by 3 om inget anges). Mobilen tas bara på dagen (den ritar nio
+//   gånger fler punkter och är det som tar tid; färgerna och skalan är desamma som på datorn), och spelet går SPELA_MS innan
+//   bilden tas: 13 bilder. ALLA=1 tar mobilen i alla fall (24 bilder, över en timme i en stor by). LAGE=ljust eller
 //   LAGE=morkt tar bara det ena läget, FALL=dag,natt bara de fallen
 import { createRequire } from 'node:module';
 import { mkdirSync } from 'node:fs';
@@ -24,6 +26,7 @@ const FALL = [
   { namn: 'istid', ai: 0, h: 12 },
   { namn: 'istid-natt', ai: 0, h: 22 },
 ];
+const SPELA_MS = 3000; // så länge spelet går innan bilden tas, så att allt hinner ritas
 const SKARMAR = [
   { namn: 'dator', opt: { viewport: { width: 1300, height: 850 } } },
   { namn: 'mobil', opt: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true } },
@@ -95,7 +98,7 @@ async function main() {
   for (const f of FALL.filter(f => !process.env.FALL || process.env.FALL.split(',').includes(f.namn))) {
     if (!tills(s, f.ai, f.h)) { larm.push(`${f.namn}: byn kom aldrig dit`); continue; }
     const fil = serialize(s), t = s.now;
-    for (const sk of SKARMAR) for (const lg of LAGEN.filter(l => !process.env.LAGE || process.env.LAGE === l.namn)) {
+    for (const sk of SKARMAR.filter(k => k.namn === 'dator' || f.namn === 'dag' || process.env.ALLA)) for (const lg of LAGEN.filter(l => !process.env.LAGE || process.env.LAGE === l.namn)) {
       const ctx = await b.newContext({ ...sk.opt, timezoneId: 'Europe/Stockholm', colorScheme: lg.schema });
       await ctx.addInitScript(`try { if (!sessionStorage.getItem('klar')) { localStorage.setItem('samhalle-save-v1', ${JSON.stringify(fil)}); sessionStorage.setItem('klar', '1'); } } catch (e) {}`);
       const pg = await ctx.newPage();
@@ -104,7 +107,7 @@ async function main() {
       pg.on('pageerror', (e: Error) => fel.push(e.message));
       if (process.env.LAGER) await ctx.addInitScript('window.__lager = true');
       await pg.goto(SIDA);
-      await pg.clock.runFor(8000);
+      await pg.clock.runFor(SPELA_MS);
       await pg.waitForTimeout(1500);
       await pg.screenshot({ path: `${MAPP}/${f.namn}-${sk.namn}${lg.fil}.png`, timeout: 120000 }); // mobilens bild är stor
       const r = await pg.evaluate(`(${MATA})(${JSON.stringify(palett)})`) as { skalor: Record<string, number>; utanfor: number; ritade: number; topp: string[]; var: string[]; lager: string[]; klocka: string; nu: string; by: string };
