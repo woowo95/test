@@ -5,7 +5,7 @@ import { balans } from './balans';
 import { brasorOf } from './brasor';
 import { hearthOf } from './eld';
 import { rasar } from './bygg';
-import { Bit, MATERIAL, bitAt, dorrDef, touch, vagBort } from './byggnad';
+import { Bit, MATERIAL, bitAt, blocked, dorrDef, touch, vagBort } from './byggnad';
 import { Station, stationAt, stationDef, taBort } from './stationer';
 import { ALDER, ageOf, alive, count, livet, living, log } from './folk';
 import { Kroppsdel, kanGa, skada } from './halsa';
@@ -606,7 +606,8 @@ function brandMal(s: State, b: Brand, p: Person, hot: boolean): BrandMal | undef
     const ut = bynsAvstand(s), inre = inreOf(b);
     const m0 = narmast(b, p.x, p.y, i => slacks(s, i, p) || ut.at(i) > BRAND.hot || !!inre[i]);
     const m = m0.i >= 0 ? m0 : narmast(b, p.x, p.y, i => ut.at(i) > BRAND.hot); // bara det som brinner nära byn
-    if (m.i >= 0) return { act: 'slacka', why: 'Släcker elden med händerna', spot: bredvid(b, m.i, p), dur: BRAND.handMin * MIN, ref: m.i };
+    const fot = m.i >= 0 ? fotfaste(s, b, m.i, p) : undefined;
+    if (fot) return { act: 'slacka', why: 'Släcker elden med händerna', spot: fot, dur: BRAND.handMin * MIN, ref: m.i };
   }
   if (n.d > BRAND.fara) return;
   return bortFran(s, p, n.i);
@@ -632,6 +633,16 @@ function bredvid(b: Brand, i: number, p: { x: number; y: number }) {
     if (inMap(Math.floor(x), Math.floor(y)) && k[Math.floor(y) * W + Math.floor(x)] !== 1) return { x, y };
   }
   return { x: cx + dx / l, y: cy + dy / l };
+}
+// där den som släcker ruta i ställer sig (steg 9.9.4): bredvid rutan på sidan mot p, annars på en annan ruta intill, aldrig i
+// en vägg, i vattnet eller i det som brinner. undefined om ingen sådan plats finns
+function fotfaste(s: State, b: Brand, i: number, p: { x: number; y: number }) {
+  const k = kartaOf(b), ok = (x: number, y: number) => inMap(Math.floor(x), Math.floor(y)) && !blocked(s, x, y) && k[Math.floor(y) * W + Math.floor(x)] !== 1;
+  const m = bredvid(b, i, p);
+  if (ok(m.x, m.y)) return m;
+  const cx = i % W + 0.5, cy = Math.floor(i / W) + 0.5, runt: { x: number; y: number }[] = [];
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && ok(cx + dx, cy + dy)) runt.push({ x: cx + dx, y: cy + dy });
+  return runt.sort((u, v) => Math.hypot(u.x - p.x, u.y - p.y) - Math.hypot(v.x - p.x, v.y - p.y) || u.y - v.y || u.x - v.x)[0];
 }
 // det p väljer när hen vet om branden (val.ts, efter vargen och tornadon)
 export function brandVal(s: State, p: Person): BrandMal | undefined {
@@ -662,7 +673,9 @@ export function slackaSteg(s: State, p: Person, t: Task, dtSec: number) {
       if (!r) {
         const ut = bynsAvstand(s), m = narmast(b, p.x, p.y, i => ledig(i) || ut.at(i) > BRAND.hot || !!inre[i] || slacks(s, i, p));
         if (m.i < 0 || !kanGa(p)) { if (varv === 0) t.until = s.now; return; }
-        const pl = bredvid(b, m.i, p); t.ref = m.i; t.tx = pl.x; t.ty = pl.y; t.phase = 'go'; t.pk = undefined; t.path = undefined; // går till nästa ruta som brinner
+        const pl = fotfaste(s, b, m.i, p);
+        if (!pl) { if (varv === 0) t.until = s.now; return; }
+        t.ref = m.i; t.tx = pl.x; t.ty = pl.y; t.phase = 'go'; t.pk = undefined; t.path = undefined; // går till nästa ruta som brinner
         return;
       }
     }
