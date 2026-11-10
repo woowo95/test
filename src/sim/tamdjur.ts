@@ -67,7 +67,8 @@ export function stepTamdjur(s: State) {
     d.svalt = d.hunger >= 1 ? (d.svalt ?? 0) + 1 : 0;
     if (d.svalt >= TAM.svaltTim) { tamDor(s, d, 'svalt'); continue; }
     const a = tamArt(d.art), alder = tamAlder(s, d);
-    if (alder > a.liv * 0.8 && rnd(s, 'tamdjur') < 1 / (a.liv * 0.4 * 24)) tamDor(s, d, 'alder');
+    if (alder > a.liv * 0.8 && rnd(s, 'tamdjur') < 1 / (a.liv * 0.4 * 24)) { tamDor(s, d, 'alder'); continue; }
+    if (d.art === 'hund') stepHund(s, d);
   }
 }
 
@@ -92,6 +93,7 @@ export function mataKlar(s: State, p: Person, ref?: number) {
   takeMaterial(s, p, k, 1);
   d.hunger = Math.max(0, d.hunger - tamArt(d.art).mattar * 2);
   (d.matad ??= {})[p.id] = (d.matad[p.id] ?? 0) + 1;
+  if (d.art === 'hund' && d.agare === p.id) d.lojal = Math.min(1, (d.lojal ?? HUND.start) + HUND.mata);
   ovning(p, 'skotsel', TAM.ovning); gjort(s, p, 'matat');
   if (forstaGang(s, 'matatDjur')) log(s, `${p.name} matade byns ${tamArt(d.art).ord[1]} för första gången.`, 'world', [p.id]);
 }
@@ -126,4 +128,59 @@ export function vargValp(s: State, jagare: Person[]) {
   const h = nyttTamdjur(s, 'hund', p.x, p.y, p.id, s.now - 0.2 * DAY);
   h.lojal = VALP.lojal; count(s, 'valpFangad');
   log(s, `Vargflocken hade en valp. ${p.name} fångade den och bar hem den. Den blev byns ${forstaGang(s, 'forstaHund') ? 'första ' : ''}hund.`, 'world', [p.id]);
+}
+
+// ---------- hundens lojalitet och följe (steg 9.8.3, Djuren i detalj: Hunden) ----------
+// Hunden är lojal mot en enda person. Lojaliteten (0–1) växer när ägaren matar den och är nära, och sjunker när den är hungrig
+// eller lämnas; ingen egen träning. Ju lojalare, desto oftare följer den ägaren. Under gränsen byter den till den som matat den
+// mer än ägaren, eller rymmer till skogen och blir varg igen. Dör ägaren går den till den som matat den mest, annars rymmer den
+export const HUND = balans('hund', {
+  start: 0.5, // lojaliteten hos en hund som saknar ett tal
+  mata: 0.08, // lojaliteten växer så här mycket när ägaren matar den
+  nara: 0.004, // och så här mycket i timmen när ägaren är nära
+  naraR: 6, // nära: inom så här många rutor
+  lamnad: 0.002, // den sjunker så här mycket i timmen när ägaren är långt borta
+  hungrig: 0.01, // och så här mycket i timmen när den är hungrig (hunger minst 0,7)
+  grans: 0.15, // under den här lojaliteten byter den ägare eller rymmer
+  byte: 0.4, // lojaliteten mot den nya ägaren
+  folj: 2, // en hund som följer håller sig inom så här många rutor från ägaren
+});
+const hundRymmer = (s: State, d: Tamdjur, varfor: string) => {
+  count(s, 'hundRymde');
+  log(s, `${varfor} Hunden sprang ut i skogen och blev varg igen.`, 'world', d.agare !== undefined ? [d.agare] : []);
+  tamDor(s, d, 'rymde');
+};
+// den som matat hunden mest och lever (inte ägaren)
+const mestMatat = (s: State, d: Tamdjur, utom?: number) => Object.entries(d.matad ?? {}).map(([id, n]) => [Number(id), n] as const)
+  .filter(([id, n]) => id !== utom && n > 0 && byId(s, id)?.died === undefined).sort((a, b) => b[1] - a[1] || a[0] - b[0])[0];
+export function stepHund(s: State, d: Tamdjur) {
+  const p = d.agare !== undefined ? byId(s, d.agare) : undefined;
+  if (!p || p.died !== undefined) {
+    const ny = mestMatat(s, d, d.agare);
+    if (!ny) { hundRymmer(s, d, p ? `${p.name} var död, och ingen annan hade matat hunden.` : 'Ingen tog hand om hunden.'); return; }
+    const q = byId(s, ny[0])!;
+    d.agare = q.id; d.lojal = HUND.byte; count(s, 'hundArv');
+    log(s, `${p ? `${p.name}s` : 'Byns'} hund gick till ${q.name}, som hade matat den mest.`, 'world', [q.id]);
+    return;
+  }
+  let l = d.lojal ?? HUND.start;
+  const dist = Math.hypot(d.x - p.x, d.y - p.y);
+  l += dist <= HUND.naraR ? HUND.nara : -HUND.lamnad;
+  if (d.hunger >= 0.7) l -= HUND.hungrig;
+  d.lojal = l = Math.max(0, Math.min(1, l));
+  if (l < HUND.grans) {
+    const ny = mestMatat(s, d, p.id), egen = d.matad?.[p.id] ?? 0;
+    if (ny && ny[1] > egen) {
+      const q = byId(s, ny[0])!;
+      d.agare = q.id; d.lojal = HUND.byte; count(s, 'hundBytte');
+      log(s, `${p.name}s hund slutade lyda hen och följer nu ${q.name}, som matat den mer.`, 'world', [p.id, q.id]);
+    } else hundRymmer(s, d, `${p.name} tog inte hand om sin hund.`);
+    return;
+  }
+  // följer ägaren så ofta som lojaliteten säger, annars stannar den där den är
+  if (rnd(s, 'tamdjur') < l) {
+    const v = rnd(s, 'tamdjur') * Math.PI * 2, r = rnd(s, 'tamdjur') * HUND.folj;
+    d.x = p.x + Math.cos(v) * r; d.y = p.y + Math.sin(v) * r;
+    count(s, 'hundFoljer');
+  }
 }

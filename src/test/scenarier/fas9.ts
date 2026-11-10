@@ -1580,3 +1580,33 @@ SCENARIER.valp = {
     ];
   },
 };
+
+SCENARIER.hund = {
+  text: 'Steg 9.8.3: hundens lojalitet. Den följer ägaren, lojaliteten växer när ägaren matar den och sjunker när den svälter; under gränsen byter den till den som matat den mer, och när ägaren dör går den till den som matat den mest',
+  kor: () => {
+    const { nyttTamdjur, tamdjurOf, stepTamdjur, mataKlar, setAmount, HUND } = SIM;
+    const s = createState(3, START); klockan(s, 10); setAmount(s, 'kott', 50);
+    const [a, b] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
+    const h = nyttTamdjur(s, 'hund', a.x + 20, a.y, a.id); h.lojal = 0.5; h.hunger = 0.6;
+    mataKlar(s, a, h.id);
+    const efterMat = h.lojal!;
+    let folj = 0;
+    for (let i = 0; i < 24; i++) { h.hunger = 0; stepTamdjur(s); if (Math.hypot(h.x - a.x, h.y - a.y) <= HUND.folj + 0.01) folj++; }
+    // b matar hunden, sedan svälter den tills den byter
+    for (let i = 0; i < 3; i++) { h.hunger = 0.6; mataKlar(s, b, h.id); }
+    let bytte = false;
+    for (let i = 0; i < 200 && !bytte; i++) { h.hunger = 1; h.svalt = 0; stepTamdjur(s); bytte = h.agare === b.id; }
+    // b dör: hunden går till a, som också matat den
+    b.died = s.now; stepTamdjur(s);
+    const arv = tamdjurOf(s)[0]?.agare === a.id;
+    // a dör och ingen annan matat: den rymmer
+    a.died = s.now; stepTamdjur(s);
+    return [
+      [`lojaliteten växer när ägaren matar den (0,5 → ${efterMat.toFixed(2)})`, efterMat > 0.5],
+      [`en lojal hund följer ägaren (${folj} av 24 timmar nära)`, folj >= 8],
+      [`en hungrig hund byter till den som matat den mer`, bytte],
+      [`när ägaren dör går den till den som matat den mest`, arv],
+      [`utan någon som matat den rymmer den (${tamdjurOf(s).length} hundar kvar)`, !tamdjurOf(s).length && (s.stat?.hundRymde ?? 0) > 0],
+    ];
+  },
+};
