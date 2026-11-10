@@ -63,6 +63,7 @@ import { notis } from './notiser';
 
 // ---------- balanstal (regel 8) ----------
 export const STRID = balans('strid', {
+  bjornBett: 3, // björnen biter med käftarna vart så här många slag som träffar, och river med ramarna annars (steg 9.5.13)
   smitta: 0.1, // så mycket de andras mod sjunker när någon ger upp (steg 8.8.8)
   pilSonder: 0.25, // så stor del av pilarna går sönder
   ringad: 0.1, // så mycket lättare det är att träffa den som redan slåss med en annan, per extra motståndare (steg 8.7.7)
@@ -191,7 +192,7 @@ export const VAPEN = {
   sten: { namn: 'Stenen', skada: 0.25, takt: 1.1, rack: 0.9, slag: 'slag', ord: 'slår', tecken: '🪨', kast: { rack: 8, skada: 0.22, skott: 3 } }, // tre stenar att kasta, sedan slår man med den sista
   bett: { namn: 'Tänderna', skada: 0.1, takt: 0.8, rack: 0.7, slag: 'bett', ord: 'biter', tecken: '🦷' },
   vargbett: { namn: 'Vargens käftar', skada: 0.28, takt: 1.4, rack: 0.9, slag: 'bett', ord: 'biter', tecken: '🐺' }, // vargen biter hårt (steg 3.7.1)
-  bjornram: { namn: 'Björnens ramar', skada: 0.4, takt: 1.6, rack: 1.1, slag: 'hugg', ord: 'river', tecken: '🐾' }, // björnen river med klorna och slår hårt (steg 6.6.5)
+  bjornram: { namn: 'Björnens ramar', skada: 0.4, takt: 1.6, rack: 1.1, slag: 'riv', ord: 'river', tecken: '🐾' }, // björnen river med klorna och slår hårt (steg 6.6.5), och biter ibland med käftarna (STRID.bjornBett, steg 9.5.13)
 } satisfies Record<string, VapenDef>;
 export type Vapen = keyof typeof VAPEN;
 const VAP: Record<string, VapenDef> = VAPEN;
@@ -201,12 +202,13 @@ export const MANNISKOVAPEN = VAPEN_LIST.filter(v => v === 'hand' || SAKER[v]);
 
 // ---------- slagen: vad ett vapen gör med kroppen ----------
 // skada = skadan i SKADOR efter graden (den första vars gräns graden når, från slutet)
-type Slag = 'hugg' | 'stick' | 'slag' | 'bett';
+type Slag = 'hugg' | 'stick' | 'slag' | 'bett' | 'riv';
 const SLAGEN: Record<Slag, { namn: string; skada: [number, SkadaTyp][] }> = {
   hugg: { namn: 'Hugg', skada: [[0, 'skarsar']] },
   stick: { namn: 'Stick', skada: [[0, 'skarsar'], [0.35, 'sticksar']] }, // ett djupt stick blöder mer (steg 3.7.2)
   slag: { namn: 'Slag', skada: [[0, 'blamarke'], [0.3, 'krossar'], [0.65, 'benbrott']] },
   bett: { namn: 'Bett', skada: [[0, 'bett']] },
+  riv: { namn: 'Riv', skada: [[0, 'klos']] }, // klorna river (björnen, steg 9.5.13; hunden och katten senare)
 };
 // ett hårt slag mot huvudet blir hjärnskakning (steg 3.7.2)
 const skadaAv = (sl: Slag, g: number, d: Kroppsdel): SkadaTyp => {
@@ -482,7 +484,7 @@ function slaEtt(st: Strid, a: Kampe, b: Kampe) {
     }
     if (duckar(st, b)) { st.logg.push({ t: st.t, h: 'duck', a: b.id, b: a.id }); return; }
   }
-  traffa(st, a, b, v.skada, v.slag);
+  traffa(st, a, b, v.skada, a.vapen === 'bjornram' && (a.traffar % STRID.bjornBett) === STRID.bjornBett - 1 ? 'bett' : v.slag); // björnen biter vart tredje slag med käftarna, annars river den (steg 9.5.13)
 }
 // vännen som står i närstrid med målet m (för skytten a), om någon
 const vanVid = (st: Strid, a: Kampe, m: Kampe) => st.kampar.find(f => f.sida === a.sida && f !== a && iStrid(f) && dist(f, m) <= STRID.vadaNara && (f.mal === m.id || m.mal === f.id));
