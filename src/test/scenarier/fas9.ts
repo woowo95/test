@@ -1894,3 +1894,51 @@ SCENARIER.vakthund = {
     ];
   },
 };
+
+SCENARIER.djurfara = {
+  text: 'Steg 9.8.12: djuren i fara. En hungrig vargflock smyger fram till ett får som står ute och tar det, men inte ett som står i fähuset; rövarna driver bort boskap i räden; den som svälter slaktar någon annans djur, och boskapsstölden är ett brott som byn kan stifta en lag mot',
+  kor: () => {
+    const { nyttTamdjur, tamdjurOf, vargSteg, HOUR, SEC } = SIM;
+    const varg = (inne: boolean) => {
+      const s = createState(3, START); klockan(s, 2); s.kal = SIM.nyKalender(s.now, SIM.ISTID);
+      const folk = SIM.living(s);
+      for (const q of folk) q.task = { act: 'sova', phase: 'do', tx: q.x, ty: q.y, until: s.now + 20 * HOUR, carry: 0 };
+      const c = SIM.bynsMitt(s);
+      const d = nyttTamdjur(s, 'far', c.x + 12, c.y);
+      if (inne) d.fahus = 1;
+      const f: SIM.Vargflock = { id: s.vargNr = 1, vargar: [10_000_008, 10_000_009], x: d.x + 10, y: d.y, mx: d.x + 10, my: d.y, gar: s.now + 48 * HOUR, hunger: 0.9, gor: 'stryker', sedd: s.now };
+      (s.vargar ??= []).push(f);
+      for (let i = 0; i < 1500 && tamdjurOf(s).includes(d); i++) { s.now += 10 * SEC; if (inne) d.fahus = 1; vargSteg(s, 10); }
+      return { s, d };
+    };
+    const ute = varg(false), inne = varg(true);
+    // rövarna
+    const r = createState(5, START); klockan(r, 12);
+    const rc = SIM.bynsMitt(r);
+    for (let i = 0; i < 3; i++) nyttTamdjur(r, 'far', rc.x + 3 + i, rc.y + 2);
+    SIM.rovarnaKommer(r, 2, true);
+    const rf = r.rovare!; rf.x = rc.x + 2; rf.y = rc.y + 2;
+    SIM.plundra(r, rf, true);
+    const drivna = 3 - tamdjurOf(r).length;
+    // boskapsstölden
+    const b = createState(4, START); klockan(b, 10);
+    const [agare, tjuv] = SIM.living(b).filter(q => SIM.ageOf(q, b.now) >= SIM.ALDER.vuxen);
+    (b.stationer ??= []).push({ id: 9901, k: 'slaktbank', x: Math.floor(tjuv.x) + 2, y: Math.floor(tjuv.y), kvar: 0 }); SIM.touch(b);
+    (tjuv.tek ??= {}).kniv = 1; SIM.setAmount(b, 'kniv', 1);
+    const fa = nyttTamdjur(b, 'far', tjuv.x + 1, tjuv.y, agare.id);
+    const mett = SIM.avlivaVal(b, tjuv);
+    tjuv.hunger = 0; tjuv.health = 0.3; tjuv.pot.empati = 4;
+    const val = SIM.avlivaVal(b, tjuv);
+    SIM.avlivaKlar(b, tjuv, fa.id);
+    const kott = SIM.ownedStock(b, tjuv).slaktfar ?? 0;
+    const lag = SIM.LAGAR.boskapsforbud;
+    return [
+      [`vargarna tar fåret som står ute (${ute.s.stat?.vargTogTam ?? 0})`, !tamdjurOf(ute.s).includes(ute.d) && (ute.s.stat?.vargTogTam ?? 0) === 1],
+      ['fåret i fähuset tar de inte', tamdjurOf(inne.s).includes(inne.d)],
+      [`två rövare driver bort två får (${drivna})`, drivna === 2 && (r.stat?.boskapStulen ?? 0) === 2],
+      [`den som är mätt slaktar inte någon annans får (${mett ? 'jo' : 'nej'})`, !mett],
+      [`den som svälter slaktar grannens får och får köttet (${kott})`, val === fa && kott === 1 && !tamdjurOf(b).includes(fa)],
+      [`boskapsstölden blir ett rykte (${b.stat?.rykte_boskapsstold ?? 0}) och väcker lagen (${lag.prio(b).toFixed(2)})`, (b.stat?.rykte_boskapsstold ?? 0) === 1 && lag.prio(b) > 0 && lag.brott!.includes('boskapsstold')],
+    ];
+  },
+};

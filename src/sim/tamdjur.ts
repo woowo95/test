@@ -205,3 +205,12 @@ export function hundSkaller(s: State, avst: (d: Tamdjur) => number) {
   }
   return undefined;
 }
+
+// ---------- djuren i fara (steg 9.8.12) ----------
+// betesdjuren som står ute (inte i fähuset): dem kan vargarna ta och rövarna driva bort
+export const tamUte = (s: State) => tamdjurOf(s).filter(d => tamArt(d.art).bete && d.fahus === undefined);
+// rövarna driver bort djuret: det är borta ur byn
+export function tamStulen(s: State, d: Tamdjur) {
+  s.tamdjur = (s.tamdjur ?? []).filter(q => q !== d);
+  count(s, 'boskapStulen');
+}

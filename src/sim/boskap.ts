@@ -6,8 +6,8 @@
 // Getterna mjölkas (steg 9.8.8), och slakten med kött, skinn, horn och talg (steg 9.8.7) byggs i sina steg. Allt stegas en gång i timmen
 // (stepBoskap, steg.ts), likadant i båda lägena, med byns följd 'tamdjur'.
 import { balans } from './balans';
-import { ALDER, ageOf, count, forstaGang, gjort, living, log, ovning } from './folk';
-import { getable } from './behov';
+import { ALDER, ageOf, byId, count, forstaGang, gjort, living, log, ovning } from './folk';
+import { desperatMat, getable } from './behov';
 import { rnd } from './slump';
 import { changed, foodOf, gain, put, stacksOf, tidy } from './lager';
 import { kanGoras } from './stationer';
@@ -136,9 +136,11 @@ export const SLAKTDJUR = balans('slaktdjur', {
 });
 export const SLAKTAD: Record<string, string> = { far: 'slaktfar', get: 'slaktget' };
 // varför djuret ska slaktas, eller undefined
-export function slaktOrsak(s: State, d: Tamdjur): string | undefined {
+// p = den som slaktar: någon annans djur slaktar bara den som är så hungrig att hen stjäl (boskapsstöld, steg 9.8.12)
+export function slaktOrsak(s: State, d: Tamdjur, p?: Person): string | undefined {
   const a = tamArt(d.art);
   if (!SLAKTAD[d.art]) return undefined;
+  if (p && d.agare !== undefined && d.agare !== p.id) return desperatMat(s, p) ? 'stold' : undefined;
   if (tamAlder(s, d) > a.liv * SLAKTDJUR.gammal) return 'gammal';
   const arten = tamdjurOf(s).filter(q => q.art === d.art), hanar = arten.filter(q => !hona(q) && vuxen(s, q));
   if (!hona(d) && vuxen(s, d) && arten.length >= BOSKAP.flock && hanar.length > 1) return 'for manga';
@@ -150,19 +152,26 @@ export function slaktOrsak(s: State, d: Tamdjur): string | undefined {
 export function avlivaVal(s: State, p: Person) {
   if (ageOf(p, s.now) < ALDER.vuxen || !kanGoras(s, 'slakta', p) || getable(s, p, 'kniv') < 1 || !isLight(s.now)) return undefined;
   for (const d of tamdjurOf(s)) {
-    if (d.agare !== undefined && d.agare !== p.id) continue;
     if (living(s).some(q => q !== p && q.task?.act === 'avliva' && q.task.ref === d.id)) continue;
-    if (slaktOrsak(s, d)) return d;
+    if (slaktOrsak(s, d, p)) return d;
   }
   return undefined;
 }
 export function avlivaKlar(s: State, p: Person, ref?: number) {
   const d = tamdjurOf(s).find(q => q.id === ref);
   if (!d) return;
-  const orsak = slaktOrsak(s, d);
+  const orsak = slaktOrsak(s, d, p);
   if (!orsak) return;
   d.dog = s.now; s.tamdjur = (s.tamdjur ?? []).filter(q => q !== d);
-  put(s, SLAKTAD[d.art], 1, d.agare !== undefined ? { [d.agare]: 1 } : undefined);
+  const agare = d.agare !== undefined ? byId(s, d.agare) : undefined;
+  put(s, SLAKTAD[d.art], 1, orsak === 'stold' ? { [p.id]: 1 } : d.agare !== undefined ? { [d.agare]: 1 } : undefined);
+  // boskapsstölden: ägaren saknar djuret och vet vem som tog det (rykten.ts), och lagen mot boskapsstöld kan döma (lagar.ts)
+  if (orsak === 'stold' && agare) {
+    count(s, 'boskapsstold');
+    handelse(s, p, 'boskapsstold', agare, tamArt(d.art).ord[1], agare);
+    log(s, `${p.name} slaktade ${agare.name}s ${tamArt(d.art).ord[1]} i hungern.`, 'rel', [p.id, agare.id]);
+  }
   count(s, 'tamDog_slaktad'); count(s, `slaktad_${orsak}`); gjort(s, p, 'avlivat');
   if (forstaGang(s, 'slaktatTamdjur')) log(s, `${p.name} avlivade ${tamArt(d.art).ord[3]} och bar det till slaktbänken.`, 'world', [p.id]);
 }
+import { handelse } from './rykten';
