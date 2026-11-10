@@ -191,7 +191,7 @@ function smutsigt(s: State, p: Person, i: number) {
 const hamtas = (s: State, q: Person) => living(s).some(o => o.task?.act === 'vatten' && !o.task.falt && o.task.ref === q.id);
 // under torkan (steg 3.8.2) vattnar ägaren sitt fält med säcken när grödan snart vissnar, om ingen annan redan gör det
 const vattnas = (s: State, f: Falt) => living(s).some(o => o.task?.act === 'vatten' && o.task.falt && o.task.ref === f.id);
-const torrtFalt = (s: State, p: Person) => s.sjoTorr?.pa ? faltOf(s).find(f => f.agare === p.id && f.steg === 'vaxer' && (f.vatten ?? 1) < TORKA.vattna && !vattnas(s, f)) : undefined;
+const torrtFalt = (s: State, p: Person) => s.sjoTorr?.pa ? faltOf(s).find(f => f.agare === p.id && f.vuxit !== undefined && (f.vatten ?? 1) < TORKA.vattna && !vattnas(s, f)) : undefined;
 // örtköket behöver vatten (steg 7.6.6): ingen säck står fylld, ingen fyller en, och byn vill ha något som kokas med vatten och som
 // någon kan göra. ref = FYLL i uppgiften: säcken fylls och blir stående fylld
 const FYLL = 0;

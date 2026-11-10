@@ -2,7 +2,7 @@
 import { createState } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, kor } from './hjalp';
+import { SCENARIER, kor, klockan } from './hjalp';
 
 SCENARIER.andrade = {
   text: 'Steg 9.1.1: platserna växer bara tillbaka där något tagits. Varje ruta där ett lager har tagits ur står i lagrets lista, så att ingen ruta glöms när resten av kartan inte räknas',
@@ -1181,6 +1181,35 @@ SCENARIER.svalt = {
       [`den som nyss blivit hungrig tar de färska rötterna (${tog.rotter}) och låter den skämda fisken ligga (${tog.fisk})`, tog.rotter > 0 && tog.fisk === 0],
       [`finns bara skämd mat äter hen inte än (${lat}, kravet på skicket ${skickKrav({ ...p, hunger: KROPP.hungrig - 0.01 } as SIM.Person).toFixed(2)})`, lat === 0],
       [`den mycket hungrige äter den skämda fisken när inget bättre finns (${at})`, at > 0],
+    ];
+  },
+};
+
+SCENARIER.rutan = {
+  text: 'Steg 9.7.1: rutan som enhet. Varje ruta på fältet har sin egen gröda, sitt eget steg och sin egen växt, och arbetet går till den ruta som ger mest poäng; fältets storlek räknas ur familjens matbehov via förrådsmålen, och ägandet avgör vem som arbetar, så hela familjen sköter familjens fält',
+  kor: () => {
+    const { faltUppgift, faltBehov, workOdla, stepOdling, setAmount, sammanfatta, familjOf } = SIM;
+    const s = createState(1, START); klockan(s, 10);
+    const [p, q] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
+    p.partner = q.id; q.partner = p.id;
+    for (const r of [p, q]) r.tek = { ...(r.tek ?? {}), odling: 1 };
+    const f: SIM.Falt = { id: 1, x: p.x + 4, y: p.y, w: 4, dir: 1, n: 8, agare: p.id, steg: 'sa', klara: 0, kvar: 0, rord: s.now };
+    f.r = [{ st: 'sa' }, { st: 'sa' }, { st: 'sa' }, { st: 'sa' }, { st: 'vaxer', g: 'rovor', v: 0.99 }, { st: 'bereda' }, { st: 'bereda' }, { st: 'bereda' }];
+    s.falt = [f]; sammanfatta(f);
+    for (const k of ['rovfron', 'artfron']) setAmount(s, k, 0);
+    setAmount(s, 'rovfron', 20); setAmount(s, 'artfron', 2); // ärterna har högst poäng men frön till bara två rutor
+    stepOdling(s); for (let i = 0; i < 30 && f.r![4].st !== 'mogen'; i++) stepOdling(s);
+    const mogen = f.r![4].st === 'mogen';
+    const u = faltUppgift(s, q);
+    const tk = { act: 'odla', tool: 'sa', ref: f.id, fr: 0, until: s.now + SIM.HOUR, tx: p.x, ty: p.y } as unknown as SIM.Task;
+    workOdla(s, p, tk, SIM.ODLING.saMin * 60 * 4);
+    const grodor = new Set(f.r!.filter(r => r.st === 'vaxer').map(r => r.g));
+    const fam = familjOf(s, p.id).length, behov = faltBehov(s, p);
+    return [
+      [`en ruta mognar för sig medan de andra väntar (${mogen ? 'ja' : 'nej'}; ${f.r!.map(r => r.st).join(', ')})`, mogen && f.r![0].st !== 'mogen'],
+      [`arbetet går till den mogna rutan först, och partnern sköter ägarens fält (${u?.tool}, ruta ${u?.ruta})`, u?.tool === 'mogen' && u.ruta === 4],
+      [`rutorna får var sin gröda när fröna räcker olika långt (${[...grodor].join(', ')})`, grodor.size >= 2],
+      [`fältets storlek räknas ur familjens matbehov via förrådsmålen (${behov} rutor för ${fam})`, behov >= SIM.ODLING.faltMin && behov <= SIM.ODLING.faltMax],
     ];
   },
 };

@@ -1464,24 +1464,24 @@ SCENARIER.falt = {
     let skord = false, delvis = false, tva = 0, arter = 0, fronSkord = 0;
     if (f) {
       setAmount(s, 'rovfron', 200);
-      Object.assign(f, { steg: 'mogen', groda: 'arter', mogen: s.now, klara: 0, kvar: SIM.ODLING.skordaMin * 60000, sadda: f.n });
+      f.r = Array.from({ length: f.n }, () => ({ st: 'mogen' as const, g: 'arter' as const, m: s.now })); SIM.sammanfatta(f); // varje ruta är mogen (steg 9.7.1)
       const tk = { act: 'odla', tool: 'mogen', ref: f.id, until: s.now + HOUR } as unknown as SIM.Task;
       const k0 = amountOf(s, 'arter'), r0 = amountOf(s, 'artfron'), n0 = f.n;
       SIM.workOdla(s, p, tk, SIM.ODLING.skordaMin * 60 * 2);
-      tva = f.klara;
+      tva = f.r!.filter(r => r.st !== 'mogen').length;
       SIM.finishOdla(s, p, tk);
       delvis = f.steg === 'mogen' && tva === 2;
       SIM.workOdla(s, p, tk, SIM.ODLING.skordaMin * 60 * f.n);
       SIM.finishOdla(s, p, tk);
       arter = amountOf(s, 'arter') - k0; fronSkord = amountOf(s, 'artfron') - r0;
-      const vaxte = f.n > n0 ? f.steg === 'roja' && f.klara === n0 : f.steg === 'bereda';
+      const vaxte = f.n > n0 ? f.steg === 'roja' && f.r!.filter(r => r.st !== 'roja').length === n0 : f.steg === 'bereda';
       skord = vaxte && arter > 0 && fronSkord > 0 && tk.until === s.now;
     }
     // rötan: den mogna grödan som ingen skördar
     let rutten = false, kvarEfter = false;
     if (f) {
       // ingen har skött fältet på fyra dygn medan grödan växte, men det blir inte gräs direkt efter förlusten: ägaren hinner så om (kodgenomgången 3.10.25)
-      Object.assign(f, { steg: 'mogen', groda: 'rovor', mogen: s.now - (SIM.ODLING.overDygn + SIM.ODLING.ruttDygn + 0.1) * DAY, rord: s.now - (SIM.ODLING.grasDygn + 1) * DAY });
+      f.r = Array.from({ length: f.n }, () => ({ st: 'mogen' as const, g: 'rovor' as const, m: s.now - (SIM.ODLING.overDygn + SIM.ODLING.ruttDygn + 0.1) * DAY })); f.rord = s.now - (SIM.ODLING.grasDygn + 1) * DAY; SIM.sammanfatta(f);
       SIM.stepOdling(s);
       rutten = f.steg === 'sa' && (s.stat?.ruttnat ?? 0) === 1;
       SIM.stepOdling(s);
@@ -1490,7 +1490,7 @@ SCENARIER.falt = {
     // frosten: i istiden dör grödan, och ingen sår något nytt
     let frost = false, ingenSadd = false;
     if (f) {
-      Object.assign(f, { steg: 'vaxer', groda: 'rovor', vuxit: 0.5, rord: s.now });
+      f.r = Array.from({ length: f.n }, () => ({ st: 'vaxer' as const, g: 'rovor' as const, v: 0.5 })); f.rord = s.now; SIM.sammanfatta(f);
       s.kal = nyKalender(s.now, 0);
       SIM.stepOdling(s);
       frost = f.steg === 'sa' && (s.stat?.frostdod ?? 0) >= 1;

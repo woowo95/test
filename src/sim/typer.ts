@@ -115,6 +115,7 @@ export const GREN = 0.4; // en gren ger lika mycket bränsle som 0,4 ved: grenar
 export interface Thought { text: string; v: number; until: number }
 // Det en person håller på med (p.task, sparas med personen). Fälten utan frågetecken finns alltid
 export interface Task {
+  fr?: number; // odla: rutan på fältet man arbetar på (steg 9.7.1, odling.ts)
   arbTid?: number; // ett arbete som räknas från framkomsten (framme i ACTS): så lång tid tar det när man är framme (steg 9.2.130)
   mortBete?: 0 | 1; // fiske: en mört används som bete (steg 7.4.4)
   blotVed?: number; // så stor del av veden som bärs som är blöt (steg 7.3.4)
