@@ -23,7 +23,7 @@ export const PAL: Record<string, Record<string, string>> = {
   uppsatt_vagg: { k: '#24201d', K: '#474138', j: '#5e3c24', J: '#7d5b40', y: '#906f0f', Y: '#b2921b' },
   uppsatt_vagg_tand: { k: '#24201d', K: '#474138', j: '#5e3c24', J: '#7d5b40', y: '#906f0f', Y: '#b2921b', r: '#a14808', o: '#bd753e', g: '#d8b25f', w: '#dad0bb' },
   // samtalens ämnen i 8 punkter (steg 9.2.10, platshållare): en symbol per ämne i den lilla pratbubblan
-  ...Object.fromEntries(['amne_gral', 'amne_varsel', 'amne_fara', 'amne_rykte', 'amne_teknik', 'amne_kunskap', 'amne_plats', 'amne_langtan', 'amne_karlek', 'amne_trost', 'amne_dod', 'amne_vader_regn', 'amne_vader_sno', 'amne_vader_blast', 'amne_vader_aska', 'amne_vader_dimma', 'amne_vader_klart', 'amne_mat', 'amne_arbete', 'amne_barn', 'amne_vardag'].map(k => [k, AMNE_PAL])),
+  ...Object.fromEntries(['amne_gral', 'amne_mat'].map(k => [k, AMNE_PAL])),
   // trons och gudarnas symboler: amuletter i guld på en mörk bricka (Björn valde stil 3 efter v245, steg 4.5.2)
   ...Object.fromEntries(['tro_blixt', 'tro_brand', 'tro_vinter', 'tro_regn', 'tro_flod', 'tro_hare', 'tro_barn', 'tro_drom', 'gud_aska', 'gud_sjon', 'gud_skord', 'gud_doden', 'gud_jakt', 'gud_elden', 'gud_vintern', 'gud_solen', 'gud_atten', 'gud_kriget', 'gud_hantverk'].map(k => [k, { d: '#5e3c24', e: '#b2921b', f: '#d8b25f', o: '#24201d' }])),
   bar: { r: '#61767a', R: '#8a9c9e', d: '#233035', g: '#647025' },
@@ -253,17 +253,7 @@ export const PAL: Record<string, Record<string, string>> = {
   b_protein: { D: '#742a01', a: '#a14808' },
   n_fett: { A: '#dad0bb', a: '#bdb39b', D: '#906f0f' },
   // krönikans kategorier och omröstningens ja, nej och den som lade fram frågan (steg 9.2.73 och 9.2.65, platshållare i 16 punkter tills Björn valt i bildstilen)
-  kk_liv: { o: '#24201d', r: '#a14808', R: '#bd753e' },
-  kk_styre: { o: '#24201d', y: '#b2921b', R: '#a14808' },
-  kk_strid: { o: '#24201d', w: '#dad0bb', j: '#7d5b40' },
   kk_tro: { o: '#24201d', y: '#b2921b', Y: '#d8b25f' },
-  kk_bygge: { o: '#24201d', j: '#7d5b40', b: '#987e62', k: '#2f261d' },
-  kk_motgang: { o: '#24201d', y: '#d8b25f' },
-  kk_grannar: { o: '#24201d', j: '#7d5b40', b: '#987e62', k: '#2f261d', s: '#a0947d' },
-  kk_fritid: { o: '#24201d', w: '#dad0bb', r: '#a14808', j: '#7d5b40' },
-  r_ja: { o: '#24201d', g: '#898b4c' },
-  r_nej: { o: '#24201d', r: '#a14808' },
-  r_fram: { o: '#24201d', w: '#bdb39b', j: '#7d5b40' },
   b_fett: { D: '#906f0f', a: '#bdb39b' },
   n_vitamin: { g: '#898b4c', G: '#b2921b', a: '#61767a', A: '#8a9c9e', D: '#233035' },
   b_vitamin: { D: '#233035', a: '#61767a' },
@@ -3756,81 +3746,8 @@ export const PIX: Record<string, string[]> = {
   uppsatt_vagg_tand: ['...w....', '..gwg...', '..ogo...', '.rgogr..', '..ryY...', '...YY...', '...Jj...', '...jJ...', '..KjJK..', '..kKKk..', '...jJ...', '...Jj...'],
   // samtalens ämnen i 8 punkter (steg 9.2.10, platshållare tills Björn valt i bildstilen)
   amne_gral: ['........', '.r...r..', 'rrr.rrr.', '.r...r..', '........', '.r...r..', '........', '........'],
-  amne_varsel: ['...k....', '..kyk...', '.kyyyk..', '.kykyk..', 'kyyyyyk.', 'kykkkyk.', 'kkkkkkk.', '........'],
-  amne_fara: ['...r....', '..rkr...', '..rkr...', '.rrkrr..', '.rrrrr..', 'rrrkrrr.', 'rrrrrrr.', '........'],
-  amne_rykte: ['..kkk...', '.k...k..', '.k.k.k..', '...k.k..', '..k..k..', '..k.k...', '...k....', '........'],
-  amne_teknik: ['...y....', '.y.y.y..', '..yyy...', 'yyyYyyy.', '..yyy...', '.y.y.y..', '...y....', '........'],
-  amne_kunskap: ['.jjjjj..', '.jYYYj..', '.jYkYj..', '.jYYYj..', '.jYkYj..', '.jYYYj..', '.jjjjj..', '........'],
-  amne_plats: ['..rrr...', '.rrrrr..', '.rrYrr..', '.rrrrr..', '..rrr...', '..rrr...', '...r....', '........'],
-  amne_langtan: ['..s.s...', '...s.s..', '........', 'jjjjjjj.', '.jYYYj..', '.jjjjj..', '..jjj...', '........'],
-  amne_karlek: ['........', '.rr.rr..', 'rRrrrrr.', 'rrrrrrr.', '.rrrrr..', '..rrr...', '...r....', '........'],
-  amne_trost: ['........', '...b....', '...b....', '..bbb...', '.bbbbb..', '.bbsbb..', '..bbb...', '........'],
-  amne_dod: ['...k....', '...k....', '.kkkkk..', '...k....', '...k....', '...k....', '.jjjjj..', '........'],
-  amne_vader_regn: ['.sssss..', 'sssssss.', '.sssss..', '........', '.b..b...', '..b..b..', '.b..b...', '........'],
-  amne_vader_sno: ['...b....', '.b.b.b..', '..bbb...', 'bbbbbbb.', '..bbb...', '.b.b.b..', '...b....', '........'],
-  amne_vader_blast: ['.sssss..', '......s.', 'sssss...', '........', '.ssssss.', '.......s', '..sss...', '........'],
-  amne_vader_aska: ['.sssss..', 'sssssss.', '.sssss..', '...y....', '..yy....', '...yy...', '....y...', '........'],
-  amne_vader_dimma: ['........', '.ssssss.', '........', 'ssssss..', '........', '.ssssss.', '........', '........'],
-  amne_vader_klart: ['...y....', '.y...y..', '...y....', 'y.yyy.y.', '...y....', '.y...y..', '...y....', '........'],
   amne_mat: ['........', '.....kk.', '....kYk.', '..jjk...', '.jjjj...', '.jjjj...', '..jj....', '........'],
-  amne_arbete: ['.kkkk...', '.kkkk...', '...j....', '...j....', '...j....', '...j....', '...j....', '........'],
-  amne_barn: ['...j....', '..jjj...', '...j....', '..kkk...', '.k.k.k..', '..k.k...', '..k.k...', '........'],
-  amne_vardag: ['........', '........', '........', '.k.k.k..', '........', '........', '........', '........'],
   // krönikans kategorier (steg 9.2.73) och omröstningens ja, nej och den som lade fram frågan (steg 9.2.65): platshållare tills Björn valt i bildstilen
-  kk_liv: [
-    '................',
-    '................',
-    '..ooo....ooo....',
-    '.orrro..orrro...',
-    'orrrrroorrrrro..',
-    'orrRrrrrrrrrro..',
-    'orrrrrrrrrrrro..',
-    '.orrrrrrrrrro...',
-    '..orrrrrrrro....',
-    '...orrrrrro.....',
-    '....orrrro......',
-    '.....orro.......',
-    '......oo........',
-    '................',
-    '................',
-    '................',
-  ],
-  kk_styre: [
-    '................',
-    '................',
-    '................',
-    '.o....oo....o...',
-    'oyo..oyyo..oyo..',
-    'oyyo.oyyo.oyyo..',
-    'oyyyooyyooyyyo..',
-    'oyyyyyyyyyyyyo..',
-    'oyyyyyyyyyyyyo..',
-    'oyRyyyRyyyRyyo..',
-    'oyyyyyyyyyyyyo..',
-    'oooooooooooooo..',
-    '................',
-    '................',
-    '................',
-    '................',
-  ],
-  kk_strid: [
-    '................',
-    '.oo.........oo..',
-    'owwo.......owwo.',
-    '.owwo.....owwo..',
-    '..ojjo...ojjo...',
-    '...ojjo.ojjo....',
-    '....ojjojjo.....',
-    '.....ojjjo......',
-    '.....ojjjo......',
-    '....ojjojjo.....',
-    '...ojjo.ojjo....',
-    '..ojjo...ojjo...',
-    '.ojjo.....ojjo..',
-    '.ojo.......ojo..',
-    '..o.........o...',
-    '................',
-  ],
   kk_tro: [
     '................',
     '.......y........',
@@ -3846,132 +3763,6 @@ export const PIX: Record<string, string[]> = {
     '...y.......y....',
     '..y....y....y...',
     '.......y........',
-    '................',
-    '................',
-  ],
-  kk_bygge: [
-    '................',
-    '.......oo.......',
-    '......ojjo......',
-    '.....ojjjjo.....',
-    '....ojjjjjjo....',
-    '...ojjjjjjjjo...',
-    '..ojjjjjjjjjjo..',
-    '.oooooooooooooo.',
-    '..obbbbbbbbbbo..',
-    '..obbbbbbbbbbo..',
-    '..obbboooobbbo..',
-    '..obbbokkobbbo..',
-    '..obbbokkobbbo..',
-    '..obbbokkobbbo..',
-    '..oooooooooooo..',
-    '................',
-  ],
-  kk_motgang: [
-    '................',
-    '.......ooooo....',
-    '......oyyyyo....',
-    '.....oyyyyo.....',
-    '....oyyyyo......',
-    '...oyyyyyoooo...',
-    '..oyyyyyyyyyo...',
-    '..ooooyyyyyo....',
-    '.....oyyyyo.....',
-    '....oyyyyo......',
-    '...oyyyo........',
-    '..oyyo..........',
-    '..oyo...........',
-    '..oo............',
-    '................',
-    '................',
-  ],
-  kk_grannar: [
-    '................',
-    '................',
-    '...o.......o....',
-    '..ojo.....ojo...',
-    '.ojjjo...ojjjo..',
-    'ojjjjjo.ojjjjjo.',
-    'ojbbbjo.ojbbbjo.',
-    '.obkbo...obkbo..',
-    '.obkbo...obkbo..',
-    '.ooooo...ooooo..',
-    '................',
-    '..ss.sss.ss.ss..',
-    '................',
-    '................',
-    '................',
-    '................',
-  ],
-  kk_fritid: [
-    '................',
-    '.............oo.',
-    '............ojjo',
-    '...........ojjo.',
-    '..........ojjo..',
-    '.........ojjo...',
-    '........ojjo....',
-    '...ooo.ojjo.....',
-    '..owwwoojo......',
-    '.owwrwwo........',
-    '.owrrrwo........',
-    '.owwrwwo........',
-    '..owwwo.........',
-    '...ooo..........',
-    '................',
-    '................',
-  ],
-  r_ja: [
-    '................',
-    '................',
-    '..............oo',
-    '.............ogo',
-    '............oggo',
-    '...........oggo.',
-    '.oo.......oggo..',
-    'ogo......oggo...',
-    'oggo....oggo....',
-    '.oggo..oggo.....',
-    '..oggooggo......',
-    '...oggggo.......',
-    '....oggo........',
-    '.....oo.........',
-    '................',
-    '................',
-  ],
-  r_nej: [
-    '................',
-    '................',
-    '..oo.......oo...',
-    '.orro.....orro..',
-    '..orro...orro...',
-    '...orro.orro....',
-    '....orroorro....',
-    '.....orrrro.....',
-    '.....orrrro.....',
-    '....orroorro....',
-    '...orro.orro....',
-    '..orro...orro...',
-    '.orro.....orro..',
-    '..oo.......oo...',
-    '................',
-    '................',
-  ],
-  r_fram: [
-    '................',
-    '....o.o.o.......',
-    '...owowowo......',
-    '...owowowo.o....',
-    '...owowowoowo...',
-    '...owwwwwoowo...',
-    '...owwwwwwwwo...',
-    '...owwwwwwwo....',
-    '...owwwwwwwo....',
-    '....owwwwwo.....',
-    '....owwwwwo.....',
-    '....ojjjjjo.....',
-    '....ojjjjjo.....',
-    '....ooooooo.....',
     '................',
     '................',
   ],
@@ -4217,6 +4008,37 @@ for (const k of ['stockvag', 'brygga', 'gadda', 'mort', 'gaddkott', 'mortkott', 
 for (const [m, c, d, f] of [['vargskinn', '#8a9c9e', '#61767a', '#3e5156'], ['bjornskinn', '#987e62', '#7d5b40', '#5e3c24']]) { PIX['ryggsack_' + m] = PIX.ryggsack_kaninskinn; PAL['ryggsack_' + m] = { ...PAL.ryggsack_kaninskinn, c, d, f }; } // Björns ryggsäck i vargens och björnens skinn
 PIX.ryggsack = PIX.ryggsack_kaninskinn; PAL.ryggsack = PAL.ryggsack_kaninskinn;
 for (const [m, b, c, d] of [['kaninskinn', '#a0947d', '#7e7362', '#bdb39b'], ['vargskinn', '#61767a', '#3e5156', '#8a9c9e'], ['bjornskinn', '#5e3c24', '#3f2415', '#7d5b40']]) { PIX['byxor_' + m] = PIX.byxor_lader; PAL['byxor_' + m] = { ...PAL.byxor_lader, b, c, d }; } // Björns enfärgade byxor (steg 8.10.1) i skinnens färger
+// Björns val i bildstilen (steg 9.9.1): samtalens ämnen i 8 punkter (de som han sagt ja till; gräl och maten har kvar sina bilder), krönikans
+// kategorier och omröstningens ja, nej och den som lade fram frågan i 16 punkter, med egna paletter
+PIX.amne_arbete = ['XkkkkXXX', 'XkkkkXXX', 'XXXtXXXX', 'XXXtXXXX', 'XXXtXXXX', 'XXXtXXXX', 'XXXtXXXX', 'XXXXXXXX']; PAL.amne_arbete = {X: '#dad0bb',k: '#24201d',t: '#7d5b40'};
+PIX.amne_barn = ['XHHXXXXX', 'XHHXXXXX', 'ssssXXXX', 'ssssXHHX', 'ssssXHHX', 'XssXGGGG', 'XssXXGGX', 'XsXsXGXG']; PAL.amne_barn = {X: '#dad0bb',H: '#bd753e',s: '#5e3c24',G: '#a14808'};
+PIX.amne_dod = ['XXXkXXXX', 'XXXkXXXX', 'XkkkkkXX', 'XXXkXXXX', 'XXXkXXXX', 'XXXkXXXX', 'XtttttXX', 'XXXXXXXX']; PAL.amne_dod = {X: '#dad0bb',k: '#24201d',t: '#7d5b40'};
+PIX.amne_fara = ['XXXGXXXX', 'XXGkGXXX', 'XXGkGXXX', 'XGGkGGXX', 'XGGGGGXX', 'GGGkGGGX', 'GGGGGGGX', 'XXXXXXXX']; PAL.amne_fara = {X: '#dad0bb',G: '#a14808',k: '#24201d'};
+PIX.amne_karlek = ['XXXXXXXX', 'XGGXGGXX', 'GHGGGGGX', 'GGGGGGGX', 'XGGGGGXX', 'XXGGGXXX', 'XXXGXXXX', 'XXXXXXXX']; PAL.amne_karlek = {X: '#dad0bb',G: '#a14808',H: '#bd753e'};
+PIX.amne_kunskap = ['XXXXXqXX', 'XXXXqwqX', 'XXXXXqXX', 'HXHXHXXX', 'HXHXHXHX', 'HHHHHHHX', 'XHHHHHXX', 'XXGGGXXX']; PAL.amne_kunskap = {X: '#dad0bb',q: '#b2921b',w: '#d8b25f',H: '#bd753e',G: '#a14808'};
+PIX.amne_langtan = ['XXSXSXXX', 'XXXSXSXX', 'XXXXXXXX', 'tttttttX', 'XtqqqtXX', 'XtttttXX', 'XXtttXXX', 'XXXXXXXX']; PAL.amne_langtan = {X: '#dad0bb',S: '#61767a',t: '#7d5b40',q: '#b2921b'};
+PIX.amne_plats = ['XXGGGXXX', 'XGGGGGXX', 'XGGqGGXX', 'XGGGGGXX', 'XXGGGXXX', 'XXGGGXXX', 'XXXGXXXX', 'XXXXXXXX']; PAL.amne_plats = {X: '#dad0bb',G: '#a14808',q: '#b2921b'};
+PIX.amne_rykte = ['XXkkkXXX', 'XkXXXkXX', 'XkXkXkXX', 'XXXkXkXX', 'XXkXXkXX', 'XXkXkXXX', 'XXXkXXXX', 'XXXXXXXX']; PAL.amne_rykte = {X: '#dad0bb',k: '#24201d'};
+PIX.amne_teknik = ['qXqXXSSX', 'XwXXSTSR', 'qXqXSTRR', 'XXXXtRRX', 'XXXtXXXX', 'XXtXXXXX', 'XtXXXXXX', 'tXXXXXXX']; PAL.amne_teknik = {q: '#b2921b',X: '#dad0bb',S: '#61767a',w: '#d8b25f',T: '#8a9c9e',R: '#3e5156',t: '#7d5b40'};
+PIX.amne_trost = ['XXXXXXXX', 'XXXRXXXX', 'XXXRXXXX', 'XXRRRXXX', 'XRRRRRXX', 'XRRSRRXX', 'XXRRRXXX', 'XXXXXXXX']; PAL.amne_trost = {X: '#dad0bb',R: '#3e5156',S: '#61767a'};
+PIX.amne_vader_aska = ['XSSSSSXX', 'SSSSSSSX', 'XSSSSSXX', 'XXXpXXXX', 'XXppXXXX', 'XXXppXXX', 'XXXXpXXX', 'XXXXXXXX']; PAL.amne_vader_aska = {X: '#dad0bb',S: '#61767a',p: '#906f0f'};
+PIX.amne_vader_blast = ['XSSSSSXX', 'XXXXXXSX', 'SSSSSXXX', 'XXXXXXXX', 'XSSSSSSX', 'XXXXXXXS', 'XXSSSXXX', 'XXXXXXXX']; PAL.amne_vader_blast = {X: '#dad0bb',S: '#61767a'};
+PIX.amne_vader_dimma = ['XXXXXXXX', 'XSSSSSSX', 'XXXXXXXX', 'SSSSSSXX', 'XXXXXXXX', 'XSSSSSSX', 'XXXXXXXX', 'XXXXXXXX']; PAL.amne_vader_dimma = {X: '#dad0bb',S: '#61767a'};
+PIX.amne_vader_klart = ['XXXpXXXX', 'XpXXXpXX', 'XXXpXXXX', 'pXpppXpX', 'XXXpXXXX', 'XpXXXpXX', 'XXXpXXXX', 'XXXXXXXX']; PAL.amne_vader_klart = {X: '#dad0bb',p: '#906f0f'};
+PIX.amne_vader_regn = ['XSSSSSXX', 'SSSSSSSX', 'XSSSSSXX', 'XXXXXXXX', 'XRXXRXXX', 'XXRXXRXX', 'XRXXRXXX', 'XXXXXXXX']; PAL.amne_vader_regn = {X: '#dad0bb',S: '#61767a',R: '#3e5156'};
+PIX.amne_vader_sno = ['XXXRXXXX', 'XRXRXRXX', 'XXRRRXXX', 'RRRRRRRX', 'XXRRRXXX', 'XRXRXRXX', 'XXXRXXXX', 'XXXXXXXX']; PAL.amne_vader_sno = {X: '#dad0bb',R: '#3e5156'};
+PIX.amne_vardag = ['XXXXXXXX', 'XXXXXXXX', 'XXXXXXXX', 'XkXkXkXX', 'XXXXXXXX', 'XXXXXXXX', 'XXXXXXXX', 'XXXXXXXX']; PAL.amne_vardag = {X: '#dad0bb',k: '#24201d'};
+PIX.amne_varsel = ['XXXXXXXX', 'XkkkXXXX', 'kkwkXXXX', 'XXkkkkXX', 'XXkkkkkk', 'XXkkkkkX', 'XXXkkkXk', 'XXXkXkXX']; PAL.amne_varsel = {X: '#dad0bb',k: '#24201d',w: '#d8b25f'};
+PIX.kk_liv = ['................', '....kkk.........', '...kXXXk........', '...kXXXk....kk..', '....kkk....kXXk.', '...kGGGk...kXXk.', '..kGHGGGk...kk..', '..kGHGGGk..kGGk.', '..kGGGGGk.kGHGk.', '..kGGGGGk.kGGGk.', '...kGGGk...kGk..', '...ks.sk...ks.k.', '...ks.sk...ks.k.', '...kk.kk...kk.k.', '................', '................']; PAL.kk_liv = {k: '#24201d',X: '#dad0bb',G: '#a14808',H: '#bd753e',s: '#5e3c24'};
+PIX.kk_motgang = ['................', '.......kkkkk....', '......kwqqqk....', '......kqqqk.....', '.....kqqqk......', '.....kqqqkkkk...', '....kqqqqqqqk...', '....kkkkkqqk....', '........kqqk....', '.......kqqk.....', '.......kqk......', '......kqk.......', '......kk........', '.....k..........', '................', '................']; PAL.kk_motgang = {k: '#24201d',w: '#d8b25f',q: '#b2921b'};
+PIX.kk_styre = ['................', '................', '................', '..k....k....k...', '.kwk..kwk..kqk..', '.kqqk.kqqk.kqqk.', '.kqqqkkqqqkkqqk.', '.kqqqqqqqqqqqqk.', '.kqqqqGHGqqqqpk.', '.kqqqqGGGqqqqpk.', '.kwwwwwwwwwwwpk.', '.kppppppppppppk.', '..kkkkkkkkkkkk..', '................', '................', '................']; PAL.kk_styre = {k: '#24201d',w: '#d8b25f',q: '#b2921b',G: '#a14808',H: '#bd753e',p: '#906f0f'};
+PIX.kk_bygge = ['......k..k......', '.......kk.......', '......ktsk......', '.....ktutsk.....', '....ktuttssk....', '...ktuttssssk...', '..ktuttssssssk..', '.ktuttssssssssk.', 'kkkkkkkkkkkkkkkk', '.kuuuuuuuuuuuuk.', '.kssssskkkksssk.', '.kuuuuukllkuuuk.', '.kssssskllksssk.', '.kuuuuukllkuuuk.', '.kssssskllksssk.', '.kkkkkkkkkkkkkk.']; PAL.kk_bygge = {k: '#24201d',t: '#7d5b40',s: '#5e3c24',u: '#987e62',l: '#2f261d'};
+PIX.kk_fritid = ['..kuk......ktk..', '..kuk......ktk..', '.kuukkkkkkkkttk.', '.kttttttttttttk.', '.kukkkwkwkwkktk.', '.kuuk.w.w.wkttk.', '.kutk.w.w.wkttk.', '.kttk.w.w.wktsk.', '..ktk.w.w.wksk..', '..kttkw.w.wssk..', '...ktkwkwkwsk...', '...kttutttssk...', '....kuptptpk....', '....ktttttsk....', '.....ktttsk.....', '......kkkk......']; PAL.kk_fritid = {k: '#24201d',u: '#987e62',t: '#7d5b40',w: '#d8b25f',s: '#5e3c24',p: '#906f0f'};
+PIX.kk_grannar = ['................', '................', '...kk.......kk..', '..kttk.....kttk.', '.ktsstk...ktsstk', 'kkkkkkkk.kkkkkkk', '.kussuk...kussuk', '.kmkkuk...kukkmk', '.kmkkuk...kukkmk', 'kkkkkkkKLKkkkkkk', 'kKuuLKLKKKKKuuKk', 'kKuuuututuuttuKk', 'kKKKKuutuutKKKKk', 'kKKKKKKLKLKKLKKk', 'kkkkkkkkkkkkkkkk', '................']; PAL.kk_grannar = {k: '#24201d',t: '#7d5b40',s: '#5e3c24',u: '#987e62',m: '#372f25',K: '#647025',L: '#898b4c'};
+PIX.kk_strid = ['..kk............', '.kSSk.....kkk...', '.kSSSk...kTTSk..', '.kSSk....kTSSSk.', '.kSktk....kSSRk.', '..k.ktk..ktSRRRk', '....Gttkkttkkkk.', '....Gkttttk.....', '...FF.kttk..G...', '.....kttttk.....', '....kttkkttk....', '...kttk..kttk...', '..kttk.G..kttk..', '.kttk..F...ktk..', '.ktk........ktk.', '..k..........k..']; PAL.kk_strid = {k: '#24201d',S: '#61767a',T: '#8a9c9e',t: '#7d5b40',R: '#3e5156',G: '#a14808',F: '#742a01'};
+PIX.r_ja = ['................', '................', '..............kk', '.............kKk', '............kKKk', '...........kKKk.', '.kk.......kKKk..', 'kLk......kKKk...', 'kLKk....kKKk....', '.kKKk..kKKk.....', '..kKKkkKKk......', '...kKKKKk.......', '....kKKk........', '.....kk.........', '................', '................']; PAL.r_ja = {k: '#24201d',K: '#647025',L: '#898b4c'};
+PIX.r_nej = ['................', '................', '..kk.......kk...', '.kHGk.....kGGk..', '..kGGk...kGGk...', '...kGGk.kGGk....', '....kGGkkGGk....', '.....kGGGGk.....', '.....kGGGGk.....', '....kGGkkGGk....', '...kGGk.kGGk....', '..kGGk...kGGk...', '.kGGk.....kGGk..', '..kk.......kk...', '................', '................']; PAL.r_nej = {k: '#24201d',H: '#bd753e',G: '#a14808'};
+PIX.r_fram = ['................', '....k.k.k.......', '...kXkXkXk......', '...kXkXkXk.k....', '...kXkXkXkkXk...', '...kXXXXXkkXk...', '...kXXXXXXXXk...', '...kXXXXXXXk....', '...kXXXXXXXk....', '....kXXXXXk.....', '....kXXXXXk.....', '....ksssssk.....', '....ksssssk.....', '....kkkkkkk.....', '................', '................']; PAL.r_fram = {k: '#24201d',X: '#dad0bb',s: '#5e3c24'};
 // symbolen för en lägereld (stationen som lägger ringen till en lägereld till, steg 4.5.6.8): den nylagda med stenringen under
 // (bildstilens tecken har samma färg i alla bilder, så att två bilder kan läggas på varandra tecken för tecken)
 { const ring = KARTBILDER.lagereld_ring, ny = KARTBILDER.lagereld_ny;
