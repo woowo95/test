@@ -498,7 +498,7 @@ SCENARIER.kropp = {
     for (let i = 0; i < 2000 && !(s.stat?.skador); i++) halsaSteg(s, p, MIN60 * 30);
     const olycka = (s.stat?.skador ?? 0) >= 1;
     // ett lätt skärsår blöder en stund och levrar sig; ett mycket svårt kan förblöda
-    fyll(); p.task = undefined; skada(s, p, 'handH', 'skarsar', 0.5, 'olycka', '');
+    fyll(); p.task = undefined; skada(s, p, 'handH', 'skarsar', 0.25, 'olycka', ''); // ett litet sår (under HALSA.smaSar) levrar sig av sig själv (steg 9.5.14)
     const blodNy = blodning(p), dogLatt = timmar(3), blodLatt = p.blod, levrat = blodning(p) === 0;
     const hFore = halsa(p);
     const laktTid = (() => { for (let h = 1; h <= 24; h++) { timmar(1); if (!p.skador) return h; } return 99; })();
@@ -553,7 +553,7 @@ SCENARIER.vattensack = {
     const c = bynsMitt(s);
     const fyll = (x: Person, dx: number) => Object.assign(x, { rest: 1, toa: 1, hunger: 1, social: 1, warm: 1, health: 1, torst: 1, blod: 1, skador: undefined, sickUntil: undefined, task: undefined, x: c.x + 0.5 + dx, y: c.y + 2.5 });
     fyll(p, 0); fyll(q, 1); fyll(r, 2); r.x = c.x + 40;
-    skada(s, p, 'benH', 'benbrott', 0.9, 'olycka', ''); p.skador![0].b = 0;
+    skada(s, p, 'benH', 'benbrott', 0.9, 'olycka', ''); for (const w of p.skador!) { w.b = 0; if (w.k === 'benbrott') { w.satt = 1; w.spala = 1; } } // också såret i ett öppet brott, och benet är redan satt och spjälat (steg 9.5.27–9.5.28)
     const kanInte = !kanGa(p) && hemma(s, p);
     // utan säck: hen får vatten av de andra
     p.torst = 0.3; chooseTask(s, p); const utan = p.task?.act;

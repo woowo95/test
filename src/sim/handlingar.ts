@@ -132,7 +132,7 @@ const DEF = {
   ritual: { namn: 'Är med på en ritual', tecken: '✨', ikon: 'a_be', stilla: true, social: true, tyst: true, dygn: true },
   begrava: { namn: 'Går för att ta hand om en död', tecken: '✨', ikon: 'a_be', framme: true, stilla: true },
   grava: { namn: 'Gräver en grav', slag: 'bygga', tungt: true, framme: true, stilla: true, redskap: { benspade: { tar: 'Tar benspaden.', haller: 40 } }, slits: { enhet: 'gravar', per: 'gang' } },
-  foder: { namn: 'Föder barn', tecken: '🤱', stilla: true, nodFri: true, fortsatter: ['brand', 'tornado', 'varg'] as const }, // steg 9.5.29
+  foder: { namn: 'Föder barn', tecken: '🧒', stilla: true, nodFri: true, fortsatter: ['brand', 'tornado', 'varg'] as const }, // steg 9.5.29
   forlossa: { namn: 'Hjälper till vid en förlossning', tecken: '🩹', stilla: true }, // steg 9.5.29
   medvetslos: { namn: 'Ligger medvetslös', tecken: '✨', stilla: true, fortsatter: ['brand', 'tornado', 'varg'] as const, nodFri: true },
   buren: { namn: 'Bärs hem', tecken: '🫂', stilla: true, fortsatter: ['brand', 'tornado', 'varg'] as const, nodFri: true },

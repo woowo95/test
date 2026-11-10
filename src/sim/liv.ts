@@ -165,7 +165,7 @@ export function birth(s: State, mother: Person) {
   mother.pregnantSince = undefined; mother.lastBirth = s.now; mother.foder = undefined;
   if (mother.task?.act === 'foder') mother.task.until = s.now;
   if (rnd(s, 'halsa', mother) < risk.barn) { // barnet dör (dödfött, eller dog i förlossningen)
-    count(s, 'dodfodda'); log(s, `${mother.name}s barn dog när det föddes. ${risk.f.text}`, 'death', [mother.id]); notis(s, 'dod', `${mother.name}s barn dog när det föddes. ${risk.f.text}`, [mother.id]);
+    count(s, 'dodfodda'); log(s, `${mother.name}s barn dog när det föddes. ${risk.f.text}`, 'death', [mother.id]); notis(s, 'dodfodd', `${mother.name}s barn dog när det föddes. ${risk.f.text}`, [mother.id]);
     think(mother, 'Förlorade sitt barn i förlossningen', -0.4, s.now, 3 * DAY);
     if (rnd(s, 'halsa', mother) < risk.mor) die(s, mother, 'barnsang');
     return;
