@@ -4019,8 +4019,6 @@ PIX.bryggkar = PIX.lerkruka_stor ?? PIX.kruka; PAL.bryggkar = PAL.lerkruka_stor 
 PIX.malt = PIX.artfron; PAL.malt = PAL.artfron; PIX.ol = PIX.lerkruka_stor ?? PIX.kruka; PAL.ol = PAL.lerkruka_stor ?? PAL.kruka; // platshållare för maltet och ölets teknik (steg 9.6.13) tills Björn valt i bildstilen
 PIX.nat = PIX.korg ?? PIX.rep; PAL.nat = PAL.korg ?? PAL.rep; // platshållare för nätet (steg 9.6.16) tills Björn valt i bildstilen
 for (const k of ['braxen', 'sik']) { PIX[k] = PIX.gadda ?? PIX.abborre; PAL[k] = PAL.gadda ?? PAL.abborre; } for (const k of ['braxkott', 'sikkott']) { PIX[k] = PIX.gaddkott ?? PIX.fisk; PAL[k] = PAL.gaddkott ?? PAL.fisk; } // platshållare för braxen och sik (steg 9.6.17) tills Björn valt i bildstilen
-PIX.slaktfar = PIX.radjur; PAL.slaktfar = PAL.radjur; PIX.slaktget = PIX.radjur; PAL.slaktget = PAL.radjur; PIX.djurhorn = PIX.horn ?? PIX.ben; PAL.djurhorn = PAL.horn ?? PAL.ben; PIX.fiskrens = PIX.ben; PAL.fiskrens = PAL.ben; // platshållare (steg 9.8.7)
-PIX.ull = PIX.skinn; PAL.ull = PAL.skinn; PIX.levfar = PIX.radjur; PAL.levfar = PAL.radjur; PIX.levget = PIX.radjur; PAL.levget = PAL.radjur; // platshållare (steg 9.8.5)
 PIX.salt = PIX.sten ?? PIX.flinta; PAL.salt = PAL.sten ?? PAL.flinta; PIX.saltfisk = PIX.torrfisk; PAL.saltfisk = PAL.torrfisk; PIX.saltkott = PIX.torrkott; PAL.saltkott = PAL.torrkott; // platshållare för saltet (steg 9.6.19) tills Björn valt i bildstilen
 PIX.lok = PIX.rotter; PAL.lok = PAL.rotter; PIX.vildlok = PIX.vildrova ?? PIX.rotter; PAL.vildlok = PAL.vildrova ?? PAL.rotter; // platshållare för löken (steg 9.6.20) tills Björn valt i bildstilen
 PIX.stekhall = PIX.sten ?? PIX.flinta; PAL.stekhall = PAL.sten ?? PAL.flinta; // platshållare för stekhällen (steg 9.6.21) tills Björn valt i bildstilen
@@ -4235,6 +4233,9 @@ for (const k of ['naver', 'talg', 'fackla', 'talgljus', 'vargdel', 'radjurdel', 
   PIX[k] = Array.from({ length: w }, (_, y) => Array.from({ length: w }, (_, x) => { const yy = Math.floor((y - y0) / f), xx = Math.floor((x - x0) / f); return yy >= 0 && xx >= 0 ? b.rader[yy]?.[xx] ?? '.' : '.'; }).join(''));
   PAL[k] = b.pal;
 }
+PIX.slaktfar = PIX.radjur; PAL.slaktfar = PAL.radjur; PIX.slaktget = PIX.radjur; PAL.slaktget = PAL.radjur; PIX.djurhorn = PIX.horn ?? PIX.ben; PAL.djurhorn = PAL.horn ?? PAL.ben; PIX.fiskrens = PIX.ben; PAL.fiskrens = PAL.ben; // platshållare (steg 9.8.7)
+PIX.ull = PIX.skinn; PAL.ull = PAL.skinn; PIX.levfar = PIX.radjur; PAL.levfar = PAL.radjur; PIX.levget = PIX.radjur; PAL.levget = PAL.radjur; // platshållare (steg 9.8.5)
+PIX.far = PIX.radjur; PAL.far = PAL.radjur; PIX.get = PIX.radjur; PAL.get = PAL.radjur; // platshållare för djuren som slaktas (steg 9.8.7)
 // djuren på kartan (steg 5.1.11, ritade i bildstilen i 5.2.4.6): varje art har en eller flera ritningar (vargen en, haren två)
 // och fyra pälsar, och varje ritning tre håll; västerut är sidan speglad. Bilden heter djur_<art>_<ritning>_<päls>_<håll>,
 // där hållet är sida, vast, fram eller bak. Vilken ritning och päls ett djur har räknas ur dess id (djurBild)

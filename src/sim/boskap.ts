@@ -3,7 +3,7 @@
 // ligger i byn blir den ett djur (tamdjur.ts) som ägs av den som köpte det och betar i hagen (hage.ts). På våren får en vuxen
 // tacka eller get ett lamm eller en killing om det finns en vuxen hane av samma art i byn och hon inte är hungrig, tills byn har
 // BOSKAP.flock av arten. Fåren ger ull: den växer ut på ett par dygn (år i spelet) och klipps med kniven (handlingen klippa).
-// Mjölken (steg 9.8.8) och slakten med kött, skinn, horn och talg (steg 9.8.7) byggs i sina steg. Allt stegas en gång i timmen
+// Getterna mjölkas (steg 9.8.8), och slakten med kött, skinn, horn och talg (steg 9.8.7) byggs i sina steg. Allt stegas en gång i timmen
 // (stepBoskap, steg.ts), likadant i båda lägena, med byns följd 'tamdjur'.
 import { balans } from './balans';
 import { ALDER, ageOf, count, forstaGang, gjort, living, log, ovning } from './folk';
@@ -12,7 +12,8 @@ import { rnd } from './slump';
 import { changed, foodOf, gain, put, stacksOf, tidy } from './lager';
 import { kanGoras } from './stationer';
 import { DAY, Person, State } from './typer';
-import { isLight, kalender, VAR } from './tid';
+import { iIstiden, isLight, kalender, VAR } from './tid';
+import { fyllVatska, ledigFor } from './vatskor';
 import { TamArtId, Tamdjur, nyttTamdjur, tamAlder, tamArt, tamdjurOf } from './tamdjur';
 
 export const BOSKAP = balans('boskap', {
@@ -23,6 +24,9 @@ export const BOSKAP = balans('boskap', {
   ull: 2, // så många ull ett får ger när det klipps
   klippMin: 20, // minuter det tar att klippa ett får
   ovning: 0.03, // djurskötseln växer så här mycket när man klipper
+  mjolkTim: 1 / 12, // en vuxen get har mjölk att ge två gånger om dygnet (utom i istiden)
+  mjolk: 2, // så många delar mjölk en get ger när hon mjölkas
+  mjolkMin: 15, // minuter det tar att mjölka en get
 });
 // de levande djuren som handlaren säljer, och vilken art de blir
 export const LEVANDE: Record<string, TamArtId> = { levfar: 'far', levget: 'get' };
@@ -33,7 +37,11 @@ const vuxen = (s: State, d: Tamdjur) => tamAlder(s, d) >= tamArt(d.art).vuxen;
 export function stepBoskap(s: State) {
   kopta(s);
   if (kalender(s).ai === VAR) foda(s);
-  for (const d of tamdjurOf(s)) if (d.art === 'far') d.ull = Math.min(1, (d.ull ?? 0) + BOSKAP.ullTim);
+  const istid = iIstiden(kalender(s).ai);
+  for (const d of tamdjurOf(s)) {
+    if (d.art === 'far') d.ull = Math.min(1, (d.ull ?? 0) + BOSKAP.ullTim);
+    if (d.art === 'get' && hona(d) && vuxen(s, d) && !istid && d.hunger < BOSKAP.hungrig) d.mjolk = Math.min(1, (d.mjolk ?? 0) + BOSKAP.mjolkTim);
+  }
 }
 
 // det köpta levande djuret blir ett djur där det ligger, och ägs av den som ägde varan (annars byn)
@@ -91,6 +99,28 @@ export function klippKlar(s: State, p: Person, ref?: number) {
   gain(s, p, 'ull', BOSKAP.ull);
   ovning(p, 'skotsel', BOSKAP.ovning); gjort(s, p, 'klippt'); count(s, 'klippt');
   if (forstaGang(s, 'klipptFar')) log(s, `${p.name} klippte byns första får och fick ull.`, 'world', [p.id]);
+}
+
+// ---------- att mjölka getterna (steg 9.8.8) ----------
+// En vuxen getahona som inte är hungrig får mjölk utom i istiden. En vuxen mjölkar henne i dagsljus när byn har en ledig kruka,
+// och mjölken blir en dryck i krukan (VATSKOR, vatskor.ts) som håller ett dygn. Kon kommer i fas 10, och då mjölkas också hon
+export function mjolkaVal(s: State, p: Person) {
+  if (ageOf(p, s.now) < ALDER.vuxen || !isLight(s.now) || !ledigFor(s, 'mjolk')) return undefined;
+  let b: Tamdjur | undefined, bd = 40;
+  for (const d of tamdjurOf(s)) {
+    if (d.art !== 'get' || (d.mjolk ?? 0) < 1 || (d.agare !== undefined && d.agare !== p.id)) continue;
+    if (living(s).some(q => q !== p && q.task?.act === 'mjolka' && q.task.ref === d.id)) continue;
+    const dd = Math.hypot(d.x - p.x, d.y - p.y);
+    if (dd < bd) { b = d; bd = dd; }
+  }
+  return b;
+}
+export function mjolkaKlar(s: State, p: Person, ref?: number) {
+  const d = tamdjurOf(s).find(q => q.id === ref);
+  if (!d || (d.mjolk ?? 0) < 1 || !fyllVatska(s, 'mjolk', BOSKAP.mjolk)) return;
+  d.mjolk = 0;
+  ovning(p, 'skotsel', BOSKAP.ovning); gjort(s, p, 'mjolkat'); count(s, 'mjolkat');
+  if (forstaGang(s, 'mjolkatGet')) log(s, `${p.name} mjölkade byns första get.`, 'world', [p.id]);
 }
 
 // ---------- slakten av tamdjuren (steg 9.8.7) ----------

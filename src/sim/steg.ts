@@ -245,6 +245,7 @@ KLAR.mata = (s, p, t) => mataKlar(s, p, t.ref); // de tama djuren (tamdjur.ts, s
 KLAR.hage = (s, p, t) => hageKlar(s, p, t.ref); // hagen (steg 9.8.4)
 KLAR.valla = (s, p, t) => vallaKlar(s, p, t.ref);
 KLAR.klippa = (s, p, t) => klippKlar(s, p, t.ref);
+KLAR.mjolka = (s, p, t) => mjolkaKlar(s, p, t.ref);
 KLAR.avliva = (s, p, t) => avlivaKlar(s, p, t.ref);
 KLAR.tomma_latrin = (s, p) => latrinTomKlar(s, p);
 KLAR.staket = (s, p, t) => staketKlar(s, p, t.ref);
@@ -1290,4 +1291,4 @@ function rollekaNara(s: State, x: number, y: number) {
 import { stepOrtKrukor } from './kruka';
 import { mataKlar, stepTamdjur } from './tamdjur';
 import { hageKlar, stepHagar, vallaKlar } from './hage';
-import { avlivaKlar, klippKlar, stepBoskap } from './boskap';
+import { avlivaKlar, klippKlar, mjolkaKlar, stepBoskap } from './boskap';

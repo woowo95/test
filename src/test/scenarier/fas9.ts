@@ -1758,3 +1758,35 @@ SCENARIER.tamslakt = {
     ];
   },
 };
+
+SCENARIER.mjolk = {
+  text: 'Steg 9.8.8: mjölken. En vuxen get som inte är hungrig får mjölk utom i istiden; hon mjölkas i en lerkruka, och mjölken dricks av den törstige som är hemma: den släcker törsten och fyller protein',
+  kor: () => {
+    const { nyttTamdjur, stepBoskap, mjolkaVal, mjolkaKlar, addTool, vatskaAv, drickDryck, naringNu, tamdjurOf, DAY, hona } = SIM;
+    const s = createState(4, START); klockan(s, 10);
+    const p = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0];
+    let g = nyttTamdjur(s, 'get', p.x + 1, p.y, undefined, s.now - 3 * DAY);
+    if (!hona(g)) { s.tamdjur = tamdjurOf(s).filter(d => d !== g); g = nyttTamdjur(s, 'get', p.x + 1, p.y, undefined, s.now - 3 * DAY); }
+    const ingenKruka = !mjolkaVal(s, p);
+    const kr = addTool(s, 'lerkruka_mellan', p); kr.hos = undefined;
+    for (let h = 0; h < 24; h++) { g.hunger = 0; stepBoskap(s); }
+    const val = mjolkaVal(s, p);
+    if (val) mjolkaKlar(s, p, val.id);
+    const mjolk = vatskaAv(s, 'mjolk');
+    const n0 = naringNu(p).protein;
+    p.torst = 0.3; (p.naring ??= { ...naringNu(p) }).protein = 0.2; p.hunger = SIM.mattnad(p.naring);
+    drickDryck(s, p);
+    const drack = vatskaAv(s, 'mjolk') === mjolk - 1 && p.torst > 0.3, prot = naringNu(p).protein;
+    // i istiden får geten ingen mjölk
+    g.mjolk = 0; s.kal = SIM.nyKalender(s.now, SIM.ISTID);
+    for (let h = 0; h < 24; h++) { g.hunger = 0; stepBoskap(s); }
+    const istid = g.mjolk ?? 0;
+    return [
+      [`utan ledig kruka mjölkas ingen`, ingenKruka],
+      [`geten får mjölk och mjölkas i krukan (${mjolk} delar)`, val === g && mjolk >= 1],
+      [`den törstige dricker mjölken (törst ${p.torst.toFixed(2)})`, drack],
+      [`mjölken fyller protein (${n0.toFixed(2)} → 0,20 → ${prot.toFixed(2)})`, prot > 0.2],
+      [`i istiden får geten ingen mjölk (${istid})`, istid === 0],
+    ];
+  },
+};
