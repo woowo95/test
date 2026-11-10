@@ -90,7 +90,7 @@ import { avrustaKlar, gravKlar, kroppUpp, rustaKlar } from './grav';
 import { bonKlar, kultTimme } from './kult';
 import { hovArbete, kyrkProjekt, kyrkaRegister, kyrkaTimme, satBudHandelse, satOffrad, satOppnaAndlig } from './kyrka';
 import { laggTillProjekt } from './projekt';
-import { lagRegister } from './lagar';
+import { lagRegister, svampTabu } from './lagar';
 import { oppnaSed } from './rost';
 import { handelse } from './rykten';
 import { tal, horsel, barMed, burenSteg, halsa, halsaSteg, lakerFullt, lamnaAv, mossaFynd, mossaPaStam, vardKlar, vardMal } from './halsa';
@@ -823,7 +823,7 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
     const pa = plockSlag !== undefined ? dtSec + (tk.letat ?? 0) : dtSec;
     if (plockSlag !== undefined) tk.letat = undefined;
     const fart = ACTS[tk.act].fart ?? 1, got = (plockSlag !== undefined ? utanStenar(forageItems(s, p, pa, fart)) : forageItems(s, p, pa, fart)) ?? {}, dt = pa * fart; // det som växer på platsen hittar man lika mycket fortare (steg 2.12.4); stenarna och flintan plockas på rundan
-    if (plockSlag === undefined) bar('svamp', pickMushrooms(s, p, tk.tx, tk.ty, dt, got)); // på rundan plockas svampen som en sak (svampPlock)
+    if (plockSlag === undefined && !svampTabu(s)) bar('svamp', pickMushrooms(s, p, tk.tx, tk.ty, dt, got)); // på rundan plockas svampen som en sak (svampPlock)
     for (const k in got) bar(k, got[k]); // tändmaterialet först, så att mossan inte tar händerna från den som hämtar det
     bar('mossa', mossaFynd(s, tk, dt)); // mossa till förband (steg 2.5.2)
     { const r = rollekaNara(s, tk.tx, tk.ty); if (r) { const g = r.v * dt / HOUR_S * ROLLEKA; takeFrom(s, 'rolleka', r.x, r.y, g); bar('rolleka', g); } } // den första örten (steg 7.6.3) växer vild på kartan (steg 9.7.15)
@@ -934,7 +934,7 @@ export function sakerPaRutan(s: State, tk: Task, x: number, y: number): { k: str
   // bär och rötter, och svampen som växer där (kantarellen och den giftiga spindlingen)
   // antalet är rikedomen räknad i saker, och resten avgör om det ligger en sak till (räknat ur rutan och dygnet, ingen slump),
   // så att det i snitt finns lika mycket som rikedomen säger
-  if (res) { const dag = Math.floor(s.now / DAY); return [...lagren(res), ...(res === 'samla' ? ['kantarell', 'spindling'] as FyndId[] : [])].map((j, n) => { const v = richness(s, j, x + 0.5, y + 0.5) / FYND[j].topp * (FYND[j].saker ?? 1), hel = Math.floor(v); return { k: j, n: hel + (hash3(s.seed + n, i, dag) < v - hel ? 1 : 0) }; }); }
+  if (res) { const dag = Math.floor(s.now / DAY), svamp = res === 'samla' && !(tk !== SAMLAR.samla && svampTabu(s)); /* där svampen är tabu låter samlaren den stå (steg 9.9.4); bilden visar den ändå */ return [...lagren(res), ...(svamp ? ['kantarell', 'spindling'] as FyndId[] : [])].map((j, n) => { const v = richness(s, j, x + 0.5, y + 0.5) / FYND[j].topp * (FYND[j].saker ?? 1), hel = Math.floor(v); return { k: j, n: hel + (hash3(s.seed + n, i, dag) < v - hel ? 1 : 0) }; }); }
   const tr = groundOf(s).trees[i];
   const h = hash3(s.seed, i, 977), bas = tr >= FOREST && h < RUNDA.grenTat ? 1 + Math.floor(h / RUNDA.grenTat * RUNDA.grenSaker) : 0;
   return [{ k: 'grenar', n: Math.max(0, Math.min(RUNDA.grenSaker, bas) - plockatPa(s, plockKey(tk, i))) }];

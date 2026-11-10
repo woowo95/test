@@ -199,7 +199,9 @@ export const TABU_AKT: Record<string, TabuAktDef> = {
   vargjakt: { namn: 'jaga varg', acts: ['vargjakt'] },
   bada: { namn: 'bada i sjön', acts: ['bada'] },
   sport: { namn: 'spela', acts: ['sport'] },
-  svamp: { namn: 'plocka svamp', acts: ['samla'], orsak: ['svamp'] }, // den som dog av svampen samlade inte, men byn minns svampen
+  // den som dog av svampen samlade inte, men byn minns svampen. Tabut stänger inte samlandet (acts är tom): då samlade ingen
+  // bär och rötter heller, och byn svalt (steg 9.9.4). I stället låter samlarna svampen stå (svampTabu, sakerPaRutan i steg.ts)
+  svamp: { namn: 'plocka svamp', acts: [], orsak: ['svamp'] },
 };
 export interface TabuAkt { k: string; t: number; om: string }
 const aktRad = (act: Act | undefined, orsak?: Dodsorsak) => Object.keys(TABU_AKT).find(k => { const r = TABU_AKT[k]; return r.orsak ? !!orsak && r.orsak.includes(orsak) : !!act && r.acts.includes(act); });
@@ -216,6 +218,8 @@ export function raddForAkt(s: State, offer: Person, act: Act | undefined, om: st
     (s.aktOm ??= {})[k] = om;
   }
 }
+// svampen är tabu i byn: ingen plockar den
+export const svampTabu = (s: State) => !!s.tabuAkt?.some(t => t.k === 'svamp');
 // den som är rädd för handlingen låter bli den om den är tabu, eller om rädslan är stor och modet litet (steg 8.4.10)
 export function tabuAkt(s: State, p: Person, act: Act): string | undefined {
   if (!s.tabuAkt?.length && !p.raddAkt) return undefined;
