@@ -1535,9 +1535,10 @@ SCENARIER.tamdjur = {
     const matad = h.hunger, sk1 = p.skill.skotsel;
     // ägaren dör: fåret ärvs (hunden går till den som matat den mest, steg 9.8.3)
     const fa = nyttTamdjur(s, 'far', p.x, p.y + 1, p.id); fa.hunger = 0;
-    p.partner = undefined; const barn = SIM.living(s).filter(q => q.mother === p.id || q.father === p.id);
+    p.partner = undefined; const barn0 = vuxna[1]!; barn0.mother = p.id; /* en arvinge som säkert finns: ett vuxet barn */
+    const barn = SIM.living(s).filter(q => q.mother === p.id || q.father === p.id);
     die(s, p, 'sjukdom');
-    const arvinge = fa.agare !== p.id;
+    const arvinge = fa.agare === barn0.id;
     // ett får utan mat svälter ihjäl
     const f = nyttTamdjur(s, 'far', p.x, p.y + 2);
     for (let i = 0; i < 24 + TAM.svaltTim + 2; i++) stepTamdjur(s);
@@ -1546,7 +1547,7 @@ SCENARIER.tamdjur = {
       [`hungern växer med tiden (${hungrig.toFixed(2)})`, hungrig > TAM.matas],
       [`den som äger hunden och har slaktrens matar den (${val ? 'vald' : 'inte vald'}, hunger ${hungrig.toFixed(2)} → ${matad.toFixed(2)})`, !!val && matad < hungrig],
       [`djurskötseln växer (${sk0.toFixed(3)} → ${sk1.toFixed(3)})`, sk1 > sk0],
-      [`fåret ärvs när ägaren dör (${barn.length} barn, ägare nu ${fa.agare ?? 'byn'})`, arvinge || !barn.length],
+      [`fåret ärvs av barnet när ägaren dör (${barn.length} barn, ägare nu ${fa.agare ?? 'byn'})`, arvinge],
       [`ett djur utan mat dör av hunger (${tamdjurOf(s).includes(f) ? 'lever' : 'dött'})`, !tamdjurOf(s).includes(f)],
     ];
   },
