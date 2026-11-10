@@ -230,6 +230,7 @@ const DEF = {
   avliva: { namn: 'Slaktar ett djur', slag: 'odla', verb: 'avlivar', tungt: true }, // boskap.ts (steg 9.8.7)
   mjolka: { namn: 'Mjölkar getterna', slag: 'odla', verb: 'mjölkar', yrke: 'Herde' }, // boskap.ts (steg 9.8.8)
   klippa: { namn: 'Klipper fåren', slag: 'odla', verb: 'klipper', yrke: 'Herde' }, // boskap.ts (steg 9.8.5)
+  hamla: { namn: 'Hamlar en björk', slag: 'odla', verb: 'hamlar', yrke: 'Herde' }, // lövtäkten (steg 9.8.16, slatter.ts)
   mata: { namn: 'Matar djuren', slag: 'odla', verb: 'matar', yrke: 'Herde' }, // tamdjur.ts (steg 9.8.1)
   hage: { namn: 'Sätter staket runt hagen', slag: 'odla', verb: 'sätter staket runt hagen', tungt: true }, // tamdjur.ts (steg 9.8.4)
   valla: { namn: 'Vallar djuren', slag: 'odla', verb: 'vallar', yrke: 'Herde' }, // tamdjur.ts (steg 9.8.4)

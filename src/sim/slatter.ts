@@ -10,7 +10,10 @@ import { balans } from './balans';
 import { ALDER, ageOf, count, forstaGang, gjort, living, log, ovning } from './folk';
 import { getable } from './behov';
 import { amountOf, gain } from './lager';
-import { Person, State, T, W } from './typer';
+import { DAY, Person, State, T, W } from './typer';
+import { stadium, tradArt } from './trad';
+import { utanforByn } from './omrade';
+import { heligRuta } from './kultlatt';
 import { HOST, SOMMAR, iIstiden, isLight, kalender } from './tid';
 import { groundOf } from './mark';
 import { BAR, HIGH } from './vag';
@@ -32,6 +35,12 @@ export const VINTER = balans('vinter', {
   akut: 0.6, // hur akut fähuset är när djuren inte får plats, inför och under istiden
   godsel: 1 / 24, // gödseln ett djur i fähuset ger i timmen (en rest om dygnet) till komposten
   hoPerDjur: 7, // så mycket hö byn vill ha per betesdjur inför istiden (en tidsålder); har den mindre slaktas djur på hösten
+  // lövtäkten (steg 9.8.16)
+  hamlaR: 8, // björken som hamlas står högst så här många rutor utanför byns område
+  lovDygn: 3, // det hamlade trädet har nya skott med löv att skära efter så här många dygn (år i spelet)
+  lov: 4, // så många lövkärvar en skörd ger
+  hamlaMin: 4, // minuter för att hamla eller skära skotten
+  hamlaGrenar: 2, // grenarna man kapar när trädet hamlas första gången
 });
 
 // ---------- slåtterängen ----------
@@ -96,7 +105,7 @@ function stallIn(s: State, d: Tamdjur, inne: Map<number, number>) {
 
 // en timme: byn märker ut ängen; i istiden står djuren i fähuset (och ger gödsel), och de som inte får plats fryser
 export function stepVinter(s: State) {
-  planeraAng(s);
+  planeraAng(s); glomHamlade(s);
   const istid = iIstiden(kalender(s).ai), inne = new Map<number, number>();
   let godsel = 0;
   for (const d of betesdjurOf(s)) {
@@ -115,7 +124,59 @@ export function stepVinter(s: State) {
     if (ko && n >= 1) { ko.kompost = { rest: (ko.kompost?.rest ?? 0) + n, mogna: ko.kompost?.mogna ?? 0 }; s.godsel -= n; count(s, 'godselKompost', n); }
   }
 }
-// hö som räcker åt djuren över istiden? Annars slaktar byn på hösten (slaktOrsak i boskap.ts)
-export const hoRacker = (s: State) => amountOf(s, 'torrgras') >= betesdjurOf(s).length * VINTER.hoPerDjur;
+// hö som räcker åt djuren över istiden? Lövkärvarna räknas som hö (steg 9.8.16). Annars slaktar byn på hösten (slaktOrsak i boskap.ts)
+export const hoAv = (s: State) => amountOf(s, 'torrgras') + amountOf(s, 'lovkarve');
+export const hoRacker = (s: State) => hoAv(s) >= betesdjurOf(s).length * VINTER.hoPerDjur;
+
+// ---------- lövtäkten: de hamlade träden (steg 9.8.16) ----------
+// I handlingen hamla kapas grenarna på en björk nära byn en bit upp på stammen, och trädet skjuter nya skott. Vart tredje
+// dygn (VINTER.lovDygn) skärs skotten med lövet till lövkärvar, som djuren äter som hö. Byn hamlar en ny björk när höet inte
+// räcker åt betesdjuren och inget hamlat träd har skott att skära. Det hamlade trädet fälls inte för ved (skog.ts) och har
+// ett eget utseende (ui/terrang.ts). Står trädet inte längre (en brand, en storm) glöms det.
+export interface Hamlat { i: number; t: number } // rutan och när skotten skars senast
+export const hamladeOf = (s: State) => s.hamlade ?? [];
+export const hamlatPa = (s: State, i: number) => hamladeOf(s).some(h => h.i === i);
+const lovtid = (s: State) => !iIstiden(kalender(s).ai); // i istiden har björken inga löv
+const moget = (s: State, h: Hamlat) => s.now - h.t >= VINTER.lovDygn * DAY;
+const upptagen = (s: State, p: Person, i: number) => living(s).some(q => q !== p && q.task?.act === 'hamla' && q.task.ref === i);
+// trädet p ska hamla eller skära skotten på: ett hamlat träd med skott först, annars en ny björk när höet inte räcker
+export function hamlaVal(s: State, p: Person): number | undefined {
+  if (ageOf(p, s.now) < ALDER.vuxen || !isLight(s.now) || !lovtid(s) || !betesdjurOf(s).length) return undefined;
+  for (const h of hamladeOf(s)) if (moget(s, h) && !upptagen(s, p, h.i)) return h.i;
+  if (hoRacker(s) || hamladeOf(s).some(h => !moget(s, h) && s.now - h.t < DAY)) return undefined; // ett nyss hamlat träd räcker en stund
+  const g = groundOf(s), t = getMap(s.seed).tiles; let bast: number | undefined, bd = Infinity;
+  for (let i = 0; i < g.trees.length; i++) {
+    if (g.trees[i] < 1 || tradArt(g, i).id !== 'bjork' || hamlatPa(s, i) || upptagen(s, p, i) || t[i] === T.Vatten) continue;
+    const st = stadium(g, i), x = i % W, y = Math.floor(i / W);
+    if (st !== 'vuxet' && st !== 'gammalt') continue;
+    const d = utanforByn(s, x, y);
+    if (d > VINTER.hamlaR || heligRuta(s, x, y) || s.halvfallt?.[i] !== undefined) continue;
+    if (d < bd) { bd = d; bast = i; }
+  }
+  return bast;
+}
+// den som hamlar är klar (KLAR i steg.ts): första gången kapas grenarna, sedan skärs skotten till lövkärvar
+export function hamlaKlar(s: State, p: Person, i?: number) {
+  const g = groundOf(s);
+  if (i === undefined || g.trees[i] < 1) return;
+  const h = hamladeOf(s).find(q => q.i === i);
+  if (!h) {
+    (s.hamlade ??= []).push({ i, t: s.now }); s.byggV = (s.byggV ?? 0) + 1;
+    gain(s, p, 'grenar', VINTER.hamlaGrenar); count(s, 'hamlat');
+    if (forstaGang(s, 'hamlat')) log(s, `${p.name} hamlade byns första björk. Om några år har den nya skott med löv åt djuren.`, 'world', [p.id]);
+  } else {
+    if (!moget(s, h)) return;
+    h.t = s.now;
+    gain(s, p, 'lovkarve', VINTER.lov); count(s, 'lovkarvar', VINTER.lov);
+    if (forstaGang(s, 'lovtakt')) log(s, `${p.name} skar de första lövkärvarna av den hamlade björken.`, 'world', [p.id]);
+  }
+  ovning(p, 'skotsel', VINTER.ovning); gjort(s, p, 'hamlat');
+}
+// varje timme (stepVinter): ett hamlat träd som inte står kvar glöms
+function glomHamlade(s: State) {
+  if (!s.hamlade?.length) return;
+  const g = groundOf(s), kvar = s.hamlade.filter(h => g.trees[h.i] >= 1);
+  if (kvar.length !== s.hamlade.length) { s.hamlade = kvar; s.byggV = (s.byggV ?? 0) + 1; }
+}
 // djuren som står i fähuset (gränssnittet)
 export const iFahuset = (s: State, h: Hus) => tamdjurOf(s).filter(d => d.fahus === h.id);

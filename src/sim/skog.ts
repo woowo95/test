@@ -106,7 +106,7 @@ export function treeSpot(s: State, taken: Set<number>, p: Person): { x: number; 
   for (let y = Math.max(0, f.y - SKOG.sokR); y < Math.min(H, f.y + SKOG.sokR + 1); y++) for (let x = Math.max(0, f.x - SKOG.sokR); x < Math.min(W, f.x + SKOG.sokR + 1); x++) {
     if (!iFallRadien(f, x, y)) continue;
     const i = y * W + x;
-    if (g.trees[i] < SKOG.tradMin || taken.has(i)) continue;
+    if (g.trees[i] < SKOG.tradMin || taken.has(i) || s.hamlade?.some(h => h.i === i)) continue; // det hamlade trädet fälls inte (steg 9.8.16)
     if (skogsfred && utanforByn(s, x, y) <= LAG_SKOG) continue; // lagen om skogen (steg 8.4.1)
     if (s.heliga?.length && (heligRuta(s, x, y) || lund && s.heliga.some(h => h.tro === p.tro && !h.skandad && Math.hypot(h.x - x, h.y - y) <= LUND_R))) continue; // den heliga platsen fälls inte (steg 8.5.5), och inte lunden runt den om budet säger så (steg 8.6.6)
     c.push({ i, d: utanforByn(s, x, y) });

@@ -1984,3 +1984,38 @@ SCENARIER.ullplagg = {
     ];
   },
 };
+
+SCENARIER.hamla = {
+  text: 'Steg 9.8.16: hamlade träd. När höet inte räcker åt betesdjuren hamlar byn en björk nära byn: grenarna kapas och trädet skjuter nya skott, som vart tredje dygn skärs till lövkärvar som djuren äter som hö. Det hamlade trädet fälls inte för ved',
+  kor: () => {
+    const { nyttTamdjur, hamlaVal, hamlaKlar, hamladeOf, amountOf, setAmount, groundOf, VINTER, hoAv, foderFor, W } = SIM;
+    const s = createState(5, START); klockan(s, 10);
+    s.kal = SIM.nyKalender(s.now, SIM.SOMMAR);
+    const p = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0]!;
+    const m = SIM.bynsMitt(s);
+    nyttTamdjur(s, 'get', m.x, m.y, undefined, s.now - 3 * SIM.DAY); nyttTamdjur(s, 'far', m.x + 1, m.y, undefined, s.now - 3 * SIM.DAY);
+    setAmount(s, 'torrgras', 0);
+    // en vuxen björk nära byn
+    const g = groundOf(s), bj = SIM.TRADARTER.findIndex(a => a.id === 'bjork');
+    const ti = Math.round(m.y) * W + Math.round(m.x) + 6; g.trees[ti] = 1; (g.art ??= new Uint8Array(g.trees.length))[ti] = bj; if (g.alder) g.alder[ti] = 0;
+    const i = hamlaVal(s, p);
+    const valt = i !== undefined && SIM.tradArt(g, i).id === 'bjork';
+    hamlaKlar(s, p, i);
+    const hamlat = hamladeOf(s).length === 1 && amountOf(s, 'lovkarve') === 0;
+    const genast = hamlaVal(s, p) === undefined; // skotten är inte klara än
+    s.now += VINTER.lovDygn * SIM.DAY + SIM.HOUR; klockan(s, 10); s.kal = SIM.nyKalender(s.now, SIM.SOMMAR);
+    const igen = hamlaVal(s, p);
+    hamlaKlar(s, p, igen);
+    const lov = amountOf(s, 'lovkarve');
+    const geten = SIM.tamdjurOf(s).find(d => d.art === 'get')!;
+    const foder = foderFor(s, p, geten);
+    return [
+      [`höet räcker inte, och byn väljer en björk nära byn (${valt ? 'ja' : 'nej'})`, valt],
+      [`björken hamlas och skjuter nya skott (${hamladeOf(s).length} hamlat träd)`, hamlat],
+      [`skotten skärs först när de vuxit (${genast ? 'väntar' : 'genast'})`, genast],
+      [`efter ${VINTER.lovDygn} dygn skärs skotten till ${lov} lövkärvar, som räknas som hö (${hoAv(s)})`, igen === i && lov === VINTER.lov && hoAv(s) === lov],
+      [`geten äter lövkärvarna (${foder})`, foder === 'lovkarve'],
+      [`det hamlade trädet står kvar`, g.trees[ti] >= 1],
+    ];
+  },
+};

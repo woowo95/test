@@ -106,6 +106,23 @@ export type Lov = 'var' | 'sommar' | 'host' | 'rod' | 'kal';
 const LOV: Record<Exclude<Lov, 'kal'>, [string, number[]]> = {
   var: ['oliv', [0, 1, 3, 3]], sommar: ['oliv', [0, 1, 2, 3]], host: ['senap', [0, 1, 2, 3]], rod: ['rost', [0, 1, 2, 3]],
 };
+// den hamlade björken (steg 9.8.16, platshållare tills Björn valt i bildstilen): en kort tjock vit stam, avkapad en bit upp, med
+// en tät krona av smala raka skott; skotten har löv utom när björken är kal
+function hamladM(lov: Lov, s: number): Pkt {
+  const M: Pkt = new Map(), top = -12;
+  for (let y = 0; y >= top; y--) for (let x = -1; x <= 1; x++) satt(M, x, y, hs(Math.floor(y / 2), x, 431 + s) < 0.16 ? I('kol', 1) : x === 1 ? I('ben', 1) : I('ben', 3));
+  for (let x = -2; x <= 2; x++) satt(M, x, top - 1, I('ben', 2)); // knuten där grenarna kapats
+  const kal = lov === 'kal', [ramp, ton] = LOV[kal ? 'sommar' : lov];
+  for (let k = 0; k < 9; k++) {
+    const x0 = -3 + k * 0.75, lut = (hs(k, s, 432) - 0.5) * 0.4, len = 6 + Math.floor(hs(k, s, 433) * 5);
+    for (let t = 1; t <= len; t++) {
+      const x = x0 + lut * t, y = top - 1 - t;
+      satt(M, x, y, I('jord', 1));
+      if (!kal && t > 1 && hs(k, t, 434 + s) < 0.7) satt(M, x + (t % 2 ? 1 : -1), y, I(ramp, ton[(k + t) % 4]));
+    }
+  }
+  return M;
+}
 function bjorkM(h: number, lov: Lov, s: number): Pkt {
   const vinter = lov === 'kal', [ramp, ton] = LOV[vinter ? 'sommar' : lov];
   const M: Pkt = new Map(), cx = 0, by = 0, L = (t: number) => I(ramp, ton[t]);
@@ -182,11 +199,12 @@ const torrBjorkPx = (h: number, sno: number) => { const M = torrBjorkM(h); retur
 
 // bjork: björken i stället för granen (steg 5.1.6); lov: björkens löv nu (steg 5.1.13, sommar om inget anges)
 // typ 'buske': en buske (steg 6.5.3, ui/buske.ts), s = vilken av de tre formerna, + 3 med bären på (bärbusken, steg 6.5.4)
-export type TradBild = { typ: 'gran' | 'torr' | 'buske'; h: number; s: number; mork?: boolean; bjork?: boolean; lov?: Lov; kol?: boolean }; // kol: en kolnad stam efter en brand (steg 9.2.26)
+export type TradBild = { typ: 'gran' | 'torr' | 'buske'; h: number; s: number; mork?: boolean; bjork?: boolean; lov?: Lov; kol?: boolean; hamlad?: boolean }; // hamlad: den hamlade björken (steg 9.8.16) // kol: en kolnad stam efter en brand (steg 9.2.26)
 function tradPx(b: TradBild, sno: number): { w: number; h: number; px: Int8Array; fot?: number } {
   // den kolnade stammen (steg 9.2.26, platshållare tills Björn valt i bildstilen): torrakan i kolets två mörkaste toner
   if (b.kol) { const p = tradPx({ ...b, kol: false }, 0); for (let i = 0; i < p.px.length; i++) if (p.px[i] >= 0) p.px[i] = p.px[i] === BEN || p.px[i] === KOL + 3 ? KOL + 1 : KOL; return p; }
   if (b.typ === 'buske') return buskPx(b.s % BUSK_FORMER.length, b.s >= BUSK_FORMER.length); // s >= 3: med bären på (steg 6.5.4)
+  if (b.hamlad) return iBild(hamladM(b.lov ?? 'sommar', b.s));
   if (b.bjork) {
     const p = b.typ === 'torr' ? torrBjorkPx(b.h, sno) : bjorkPx(b.h, b.lov ?? 'sommar', sno, b.s);
     if (b.mork) for (let i = 0; i < p.px.length; i++) if (p.px[i] > 16 && p.px[i] < 20) p.px[i]--; // den gamla björken är mörkare
@@ -211,7 +229,7 @@ const bilder = new Map<string, { t: PIXI.Texture; fot: number }>();
 function nyckel(b: TradBild, sno: number) {
   const lov = b.bjork && b.typ !== 'torr' ? b.lov ?? 'sommar' : '';
   const sn = (b.typ === 'torr' && !b.bjork) || b.typ === 'buske' || (lov && lov !== 'kal') ? 0 : sno;
-  return `${b.bjork ? 'b' : ''}${b.typ}|${b.h}|${b.s}|${b.mork ? 1 : 0}|${sn}|${lov}${b.kol ? '|kol' : ''}`;
+  return `${b.bjork ? 'b' : ''}${b.typ}|${b.h}|${b.s}|${b.mork ? 1 : 0}|${sn}|${lov}${b.kol ? '|kol' : ''}${b.hamlad ? '|hamlad' : ''}`;
 }
 function tradTex(b: TradBild, sno: number) {
   const k = nyckel(b, sno);

@@ -359,6 +359,7 @@ export interface State {
   tamdjur?: import('./tamdjur').Tamdjur[]; // de tama djuren (fas 9.8, tamdjur.ts)
   hons?: import('./hons').Hons; // hönsflocken (steg 9.8.10, hons.ts)
   angar?: import('./slatter').Ang[]; // slåtterängarna (steg 9.8.9, slatter.ts)
+  hamlade?: import('./slatter').Hamlat[]; // de hamlade björkarna (steg 9.8.16, slatter.ts)
   godsel?: number; // gödseln från fähuset som ännu inte blivit en hel rest i komposten (steg 9.8.9)
   hagar?: import('./hage').Hage[]; // hagarna (steg 9.8.4, tamdjur.ts)
   staket?: number[]; // rutorna med staket (steg 9.7.10, odling.ts)
