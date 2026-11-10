@@ -1236,3 +1236,24 @@ SCENARIER.jord = {
     ];
   },
 };
+
+SCENARIER.fukt = {
+  text: 'Steg 9.7.3: bästa fukten. Varje gröda växer bäst vid en viss fukt; den som ser grödan trivas lär sig fukten, den som har lärdomen vattnar till rätt nivå och de andra gissar, och lärdomen sprids i samtal som de andra lärdomarna',
+  kor: () => {
+    const { fuktFaktor, vattnaTill, GRODOR, workOdla, sammanfatta, kn, KUNSKAPER, JORD } = SIM;
+    const s = createState(1, START); klockan(s, 10);
+    const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!; p.tek = { ...(p.tek ?? {}), odling: 1 };
+    const ideal = GRODOR.rovor.fukt, ratt = fuktFaktor(ideal, ideal), torrt = fuktFaktor(0.05, ideal), blott = fuktFaktor(1, ideal);
+    const gissar = vattnaTill(p, 'rovor');
+    const f: SIM.Falt = { id: 1, x: p.x + 3, y: p.y, w: 4, dir: 1, n: 8, agare: p.id, steg: 'mogen', klara: 0, kvar: 0, rord: s.now, r: Array.from({ length: 8 }, () => ({ st: 'mogen' as const, g: 'rovor' as const, m: s.now, fu: ideal })) };
+    s.falt = [f]; sammanfatta(f);
+    workOdla(s, p, { act: 'odla', tool: 'mogen', ref: f.id, fr: 0, until: s.now + SIM.HOUR, tx: p.x, ty: p.y } as unknown as SIM.Task, SIM.ODLING.skordaMin * 60 * 8);
+    const lart = kn(p, 'fukt'), vet = vattnaTill(p, 'rovor');
+    return [
+      [`rovorna växer bäst i sin fukt (${ideal}): i rätt fukt ${ratt}, i torr jord ${torrt.toFixed(2)}, i blöt ${blott.toFixed(2)}`, ratt === 1 && torrt < 1 && blott < 1],
+      [`den som skördar grödor som trivts lär sig fukten (${lart.toFixed(2)})`, lart >= 0.5],
+      [`utan lärdomen gissar man (${gissar}), med den vattnar man till rätt fukt (${vet})`, gissar === JORD.gissa && vet === ideal],
+      [`lärdomen är en kunskap som sprids i samtal (${KUNSKAPER.fukt?.namn})`, !!KUNSKAPER.fukt?.larAv],
+    ];
+  },
+};

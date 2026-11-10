@@ -83,14 +83,14 @@ export const ODLING = balans('odling', {
 // grödorna (steg 2.10.3): sak = det som skördas (saker.ts), fro = fröna den sås med, dygn = hur länge den växer innan den är
 // mogen, perRuta = skörden per ruta, fron = frön tillbaka per ruta i snitt (rovorna äts hela, så de ger få; varje ruta ger hela
 // frön, froTillbaka), frost = den dör när det blir kallare än så här
-export interface GrodaDef { namn: string; sak: string; fro: string; dygn: number; perRuta: number; fron: number; frost: number; tek?: string } // tek = tekniken som krävs utöver odlingen
+export interface GrodaDef { namn: string; sak: string; fro: string; dygn: number; perRuta: number; fron: number; frost: number; tek?: string; fukt: number } // fukt = den fukt grödan växer bäst i (steg 9.7.3) // tek = tekniken som krävs utöver odlingen
 export const GRODOR = {
-  rovor: { namn: 'Rovor', sak: 'rovor', fro: 'rovfron', dygn: 3, perRuta: 3, fron: 1.5, frost: -6 }, // snabba och härdiga; 1 eller 2 frön per ruta (steg 3.10.23.3); dygn 2 och perRuta 5 före steg 3.10.23.5; frost -3 före steg 2.12.2
+  rovor: { namn: 'Rovor', sak: 'rovor', fro: 'rovfron', dygn: 3, perRuta: 3, fron: 1.5, frost: -6, fukt: 0.45 }, // snabba och härdiga; 1 eller 2 frön per ruta (steg 3.10.23.3); dygn 2 och perRuta 5 före steg 3.10.23.5; frost -3 före steg 2.12.2
   // ärterna har kornets tal och plats (steg 3.10.23.8; korn kommer tillbaka som säd från handlarna i steg 11.4.2)
-  lin: { namn: 'Lin', sak: 'ratlin', fro: 'linfron', dygn: 3, perRuta: 2, fron: 1.5, frost: -3, tek: 'lin' }, // steg 7.7.7: linfrön köps av handlaren
-  arter: { namn: 'Ärter', sak: 'arter', fro: 'artfron', dygn: 4, perRuta: 3, fron: 2, frost: -4 },
-  lok: { namn: 'Lök', sak: 'lok', fro: 'lok', dygn: 3, perRuta: 3, fron: 1, frost: -4 }, // löken (steg 9.6.20): lökarna är sitt eget utsäde
-  korn: { namn: 'Korn', sak: 'korn', fro: 'korn', dygn: 4, perRuta: 3, fron: 1, frost: -4, tek: 'sadesodling' }, // säden från handlarna (steg 9.6.11): kornet är sitt eget utsäde // håller länge; dygn 3, perRuta 4 och fron 6 före steg 3.10.23; frost -1 före steg 2.12.2
+  lin: { namn: 'Lin', sak: 'ratlin', fro: 'linfron', dygn: 3, perRuta: 2, fron: 1.5, frost: -3, fukt: 0.6, tek: 'lin' }, // steg 7.7.7: linfrön köps av handlaren
+  arter: { namn: 'Ärter', sak: 'arter', fro: 'artfron', dygn: 4, perRuta: 3, fron: 2, frost: -4, fukt: 0.5 },
+  lok: { namn: 'Lök', sak: 'lok', fro: 'lok', dygn: 3, perRuta: 3, fron: 1, frost: -4, fukt: 0.55 }, // löken (steg 9.6.20): lökarna är sitt eget utsäde
+  korn: { namn: 'Korn', sak: 'korn', fro: 'korn', dygn: 4, perRuta: 3, fron: 1, frost: -4, fukt: 0.45, tek: 'sadesodling' }, // säden från handlarna (steg 9.6.11): kornet är sitt eget utsäde // håller länge; dygn 3, perRuta 4 och fron 6 före steg 3.10.23; frost -1 före steg 2.12.2
 } satisfies Record<string, GrodaDef>;
 export type GrodaSlag = keyof typeof GRODOR;
 
@@ -462,6 +462,7 @@ function rutaKlar(s: State, p: Person, f: Falt, k: number) {
     const d = GRODOR[r.g!], a = skordAndel(s, f, k);
     if (forstaGang(s, 'skord_tecken')) tecken(s, p, 'skord'); else if (a >= 1.5) tecken(s, p, 'dubbelt'); // den första skörden och fältet som gav mycket (steg 8.5.18)
     const b = bordSkord(s, faltRuta(f, k)); utarma(s, faltRuta(f, k)); // bördigheten (steg 9.7.2)
+    if (Math.abs((r.fu ?? d.fukt) - d.fukt) < 0.1 && kn(p, 'fukt') < 1) learnK(p, 'fukt', JORD.larFukt, s.now); // den som ser grödan trivas lär sig fukten (steg 9.7.3)
     if (a > 0) { gain(s, p, d.sak, d.perRuta * a * b); gain(s, p, d.fro, froTillbaka(s, f, k, d, r.m) * a); count(s, 'skord', d.perRuta * a * b); }
     if (forstaGang(s, 'skordForst')) { log(s, `${p.name} skördade byns första ${d.namn.toLowerCase()}.`, 'world', [p.id]); p.fame.push(`Skördade byns första ${d.namn.toLowerCase()}`); }
     f.r![k] = { st: 'bereda' }; // jorden grävs upp igen
@@ -536,7 +537,7 @@ export function stepOdling(s: State) {
         if (s.sjoTorr?.pa) { f.vatten = (f.vatten ?? 1) - 1 / TORKA.falt; if (f.vatten <= 0) forlorad(s, f, 'Torkan'); }
         else f.vatten = undefined;
       }
-      if (temp > ODLING.vaxGrad) for (const x of r) if (x.st === 'vaxer') { x.v = Math.min(1, (x.v ?? 0) + vaxtFaktor(s) / (GRODOR[x.g!].dygn * 24)); if (x.v >= 1) { x.st = 'mogen'; x.m = s.now; x.v = undefined; } } // fortare i blöt mark (steg 2.11.1)
+      if (temp > ODLING.vaxGrad) for (const x of r) if (x.st === 'vaxer') { x.v = Math.min(1, (x.v ?? 0) + vaxtFaktor(s) * fuktFaktor(x.fu, GRODOR[x.g!].fukt) / (GRODOR[x.g!].dygn * 24)); if (x.v >= 1) { x.st = 'mogen'; x.m = s.now; x.v = undefined; } } // fortare i blöt mark (steg 2.11.1)
       sammanfatta(f);
       continue;
     }
@@ -640,13 +641,17 @@ export const JORD = balans('jord', {
   regn: 0.08, // så mycket fuktigare i timmen när det regnar
   torka: 0.01, // så mycket torrare i timmen vid 15 grader, mer i värme
   nara: 0.03, // fukten dras så här mycket i timmen mot närheten till vatten
-  naraRutor: 8, // vatten närmare än så här många rutor gör jorden fuktigare
+  naraRutor: 8, // vatten närmare än så här många rutor gör jorden fuktigare ...
+  torrMark: 0.35, // ... och längre bort dras fukten mot så här mycket
+  fuktKans: 0.8, fuktMin: 0.4, // grödan växer 1 − fuktKans × skillnaden mot sin bästa fukt gånger så fort, minst fuktMin (steg 9.7.3)
+  gissa: 0.8, // den som inte har lärdomen vattnar till så här blött
+  larFukt: 0.1, // så mycket av lärdomen om fukten får den som skördar en ruta som växte i rätt fukt
 });
 export const bordighet = (s: State, i: number) => s.bord?.[i] ?? 1;
 export const bordSkord = (s: State, i: number) => JORD.minSkord + (1 - JORD.minSkord) * bordighet(s, i);
 export const fuktAv = (f: Falt, k: number) => rutorAv(f)[k]?.fu ?? 0.5;
 // närheten till vatten (0–1): 1 vid stranden
-const vattenNara = (s: State, i: number) => clamp(1 - djupOf(s.seed).land[i] / JORD.naraRutor, 0, 1);
+const vattenNara = (s: State, i: number) => JORD.torrMark + (1 - JORD.torrMark) * clamp(1 - djupOf(s.seed).land[i] / JORD.naraRutor, 0, 1); // fukten jorden dras mot
 function jordTimme(s: State) {
   const temp = temperature(s), regn = vaderNu(s).nb > 0, odlat = new Set<number>();
   for (const f of faltOf(s)) {
@@ -663,3 +668,9 @@ function jordTimme(s: State) {
 function utarma(s: State, i: number) { (s.bord ??= {})[i] = Math.max(0, bordighet(s, i) - JORD.skord); }
 import { djupOf } from './sjo';
 import { vaderNu } from './vader';
+
+// bästa fukten (steg 9.7.3): grödan växer långsammare ju längre fukten är från den den vill ha
+export const fuktFaktor = (fu: number | undefined, ideal: number) => Math.max(JORD.fuktMin, 1 - JORD.fuktKans * Math.abs((fu ?? ideal) - ideal));
+// den fukt p vattnar till (steg 9.7.4): den som har lärdomen vattnar till grödans bästa fukt, de andra gissar på blött
+export const vattnaTill = (p: Person, g: GrodaSlag) => kn(p, 'fukt') >= 0.5 ? GRODOR[g].fukt : JORD.gissa;
+import { kn, learnK } from './kunskap';
