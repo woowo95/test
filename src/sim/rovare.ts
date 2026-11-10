@@ -36,6 +36,7 @@ import { tingOf } from './agande';
 import { bedFor } from './bygg';
 import { viktOf } from './saker';
 import { LARMHOT, rollVid, viljaKrok } from './roller';
+import { KROPPSDELAR as KDELAR, forlora } from './halsa';
 
 // ---------- rövarflocken (steg 4.4.5) ----------
 // En grundversion av anfallen (stora räder, krig, tribut och murar ligger i 11.2). När byn är rik (Byns rikedom, varde.ts, med
@@ -583,6 +584,7 @@ function stridSlut(s: State, f: Rovarflock, st: Strid) {
       if (!dod && skada(s, p, w.d, w.k, w.g, 'rovare', 'i en strid med rövare')) dod = true;
       const sk = p.skador?.[p.skador.length - 1];
       if (!dod && sk && w.fast) sk.fast = 1;
+      if (!dod && w.av && !(KDELAR[w.d] as { livsviktig?: true }).livsviktig) forlora(s, p, w.d, 'höggs av'); // olyckshugget (steg 9.5.22)
     }
     slitKastat(s, p, st, k);
     if (dod) { count(s, 'dodRovare'); die(s, p, 'rovare'); continue; }

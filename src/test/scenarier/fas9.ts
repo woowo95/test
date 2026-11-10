@@ -492,3 +492,29 @@ SCENARIER.pilisaret = {
     ];
   },
 };
+
+SCENARIER.olyckshugg = {
+  text: 'Steg 9.5.22: olyckshugget. Vid varje hård träff finns en risk av vapnets skärpa, slagets kraft och skyddet på delen: en arm, ett ben, en hand eller en fot huggs av, och huvudet eller bålen dödar direkt',
+  kor: () => {
+    const { VAPEN, nyStrid, traffa, STRID } = SIM;
+    const skarpa = VAPEN.yxa.skarpa > VAPEN.kniv.skarpa && VAPEN.kniv.skarpa > VAPEN.hand.skarpa && VAPEN.hand.skarpa === 0;
+    const m = (id: number, sida: 0 | 1, vapen: SIM.Vapen) => ({ id, namn: `K${id}`, sida, st: { styrka: 14, uthallighet: 10, mod: 10, smidighet: 10, skicklighet: 10 }, vapen, klader: [], fart: 1, x: 8 + sida * 2, y: 7 });
+    let avArm = 0, dodBal = 0, hand = 0;
+    for (let f = 0; f < 400; f++) {
+      const st = nyStrid({ avsikt: 'doda', w: 20, h: 14, kampar: [m(1, 0, 'yxa'), m(2, 1, 'hand')] }, f), [a, b] = st.kampar;
+      SIM.TRAFFDEL_PROV.del = f % 2 ? 'armV' : 'bal';
+      traffa(st, a, b, 1, 'hugg');
+      if (b.skador.some(w => w.av && w.d === 'armV')) avArm++;
+      if (b.lage === 'dod' && st.logg.some(r => r.h === 'hugg')) dodBal++;
+      const st2 = nyStrid({ avsikt: 'doda', w: 20, h: 14, kampar: [m(1, 0, 'hand'), m(2, 1, 'hand')] }, f);
+      traffa(st2, st2.kampar[0], st2.kampar[1], 1, 'slag'); if (st2.kampar[1].skador.some(w => w.av)) hand++;
+    }
+    SIM.TRAFFDEL_PROV.del = undefined;
+    return [
+      [`vapnen har en skärpa (yxa ${VAPEN.yxa.skarpa}, kniv ${VAPEN.kniv.skarpa}, händerna ${VAPEN.hand.skarpa})`, skarpa],
+      [`en hård träff med yxan hugger ibland av armen (${avArm} av 200) och dödar ibland i bålen (${dodBal} av 200)`, avArm > 0 && dodBal > 0 && avArm < 200],
+      [`händerna hugger aldrig av något (${hand} av 400)`, hand === 0],
+      [`bara hårda träffar kan hugga (från graden ${STRID.huggMin})`, STRID.huggMin > 0],
+    ];
+  },
+};
