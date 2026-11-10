@@ -265,7 +265,7 @@ const DEF = {
   ...rattSaker(),
   ulltrad: { namn: 'Ulltråd', skaffa: RECEPT.ulltrad, stack: 25, vikt: 0.1, mapp: 'Material' }, // steg 9.8.14: ullen spinns som linet
   ylle: { namn: 'Ylletyg', skaffa: RECEPT.ylle, stack: 10, vikt: 0.6, mapp: 'Material' }, // och vävs i vävstolen
-  lovkarve: { namn: 'Lövkärve', skaffa: { act: 'hamla' }, stack: 25, vikt: 0.3, mapp: 'Bränsle', slits: 0.006 }, // steg 9.8.16: skotten med lövet från ett hamlat träd, som djuren äter som hö
+  lovkarve: { namn: 'Lövkärve', skaffa: { tid: 0.25, act: 'hamla' }, stack: 25, vikt: 0.3, mapp: 'Bränsle', slits: 0.006 }, // steg 9.8.16: skotten med lövet från ett hamlat träd, som djuren äter som hö
 } satisfies Record<string, SakDef>;
 
 type Sak = keyof typeof DEF;
