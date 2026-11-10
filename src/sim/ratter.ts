@@ -30,6 +30,7 @@ export const INGREDIENSER: Record<string, { grupper: Matgrupp[]; huvud?: RattHuv
   korn: { grupper: ['starkelse'], huvud: 'sad' }, // steg 9.6.11
   mjol: { grupper: ['starkelse'] }, // steg 9.6.22: till brödet
   brod: { grupper: ['starkelse'] }, // steg 9.6.23
+  kal: { grupper: ['gront'] }, bonor: { grupper: ['protein', 'starkelse'] }, // steg 9.7.8
   rotter: { grupper: ['starkelse'], huvud: 'rot' }, rovor: { grupper: ['starkelse'], huvud: 'rot' },
   svamp: { grupper: ['gront'], huvud: 'svamp' },
   bar: { grupper: ['sott'], huvud: 'bar' },

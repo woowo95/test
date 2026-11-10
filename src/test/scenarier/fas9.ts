@@ -892,13 +892,13 @@ SCENARIER.sad = {
     kornUpptackt(s); const forut = folk.some(p => knows(p, 'sadesodling'));
     setAmount(s, 'korn', 6); kornUpptackt(s); const nu = folk.every(p => knows(p, 'sadesodling'));
     let tid = 0; while (grodorNu(s).length < 2 && tid++ < 40) s.now += SIM.DAY / 2;
-    setAmount(s, 'rovor', 60); setAmount(s, 'arter', 60); setAmount(s, 'korn', 6);
+    for (const k of ['rovor', 'arter', 'lok', 'kal', 'bonor']) setAmount(s, k, 60); setAmount(s, 'korn', 6); // de andra grödorna har byn gott om
     const med = grodorNu(s);
     folk[0].tek!.lin = 1; setAmount(s, 'ratlin', 0); const lin = grodorNu(s);
     return [
       [`kornet finns hos handlarna (${HANDLARVAROR.some(v => v.k === 'korn') ? 'ja' : 'nej'}) och är sitt eget utsäde (${GRODOR.korn.fro})`, HANDLARVAROR.some(v => v.k === 'korn') && GRODOR.korn.fro === 'korn'],
       [`ingen kommer på sädesodlingen utan korn (${forut ? 'ja' : 'nej'}), men alla som kan odla när kornet kommit (${nu ? 'ja' : 'nej'})`, !forut && nu],
-      [`med gott om rovor och ärter sås kornet först (${med.join(', ')})`, med[0] === 'korn'],
+      [`med gott om de andra grödorna sås kornet först (${med.join(', ')})`, med[0] === 'korn'],
       [`när byn kan odla lin och saknar det kommer linet med (${lin.join(', ')})`, lin.includes('lin') && lin.indexOf('lin') < lin.indexOf('rovor')],
     ];
   },
@@ -1349,6 +1349,25 @@ SCENARIER.odlare = {
       [`Odling är en färdighet (${SKILLS.includes('odling') ? 'ja' : 'nej'}), och den växer av arbetet (0 → ${ovan.skill.toFixed(3)})`, SKILLS.includes('odling') && ovan.skill > 0],
       [`den skicklige skördar fler rutor på samma tid (${ovan.rutor} mot ${van.rutor})`, van.rutor > ovan.rutor],
       [`och får mer per ruta (${(ovan.rovor / Math.max(1, ovan.rutor)).toFixed(2)} mot ${(van.rovor / Math.max(1, van.rutor)).toFixed(2)})`, van.rovor / Math.max(1, van.rutor) > ovan.rovor / Math.max(1, ovan.rutor)],
+    ];
+  },
+};
+
+SCENARIER.grodor = {
+  text: 'Steg 9.7.8: fler grödor. Kål och bönor är nya rader i GRODOR med olika krav på temperatur, fukt och bördighet: kålen kräver gödsel men tål kyla, bönorna vill ha värme',
+  kor: () => {
+    const { GRODOR, kravFaktor, HANDLARVAROR } = SIM;
+    const s = createState(1, START);
+    const f = { id: 1, x: 10, y: 10, w: 1, dir: 1, n: 1, agare: 0, steg: 'vaxer', klara: 0, kvar: 0, rord: 0, r: [{ st: 'vaxer', g: 'kal', v: 0 }] } as SIM.Falt;
+    const i = SIM.faltRuta(f, 0);
+    s.bord = { [i]: 0.3 }; const mager = kravFaktor(s, f, 0, 'kal', 10);
+    s.bord = {}; const bordig = kravFaktor(s, f, 0, 'kal', 10);
+    const kallBona = kravFaktor(s, f, 0, 'bonor', 6), varmBona = kravFaktor(s, f, 0, 'bonor', 20);
+    return [
+      [`kål och bönor är grödor (${GRODOR.kal.namn}, ${GRODOR.bonor.namn}), och fröna finns hos handlarna`, !!GRODOR.kal && !!GRODOR.bonor && HANDLARVAROR.some(v => v.k === 'kalfron') && HANDLARVAROR.some(v => v.k === 'bonor')],
+      [`kålen växer inte på mager jord (${mager}) men på bördig (${bordig}), och tål kyla (frost ${GRODOR.kal.frost} grader)`, mager === 0 && bordig === 1 && GRODOR.kal.frost < GRODOR.rovor.frost],
+      [`bönorna växer långsamt i kyla (${kallBona}) och bra i värme (${varmBona})`, kallBona < varmBona],
+      [`de vill ha olika fukt (kål ${GRODOR.kal.fukt}, bönor ${GRODOR.bonor.fukt})`, GRODOR.kal.fukt !== GRODOR.bonor.fukt],
     ];
   },
 };

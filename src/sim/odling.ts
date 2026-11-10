@@ -86,13 +86,15 @@ export const ODLING = balans('odling', {
 // grödorna (steg 2.10.3): sak = det som skördas (saker.ts), fro = fröna den sås med, dygn = hur länge den växer innan den är
 // mogen, perRuta = skörden per ruta, fron = frön tillbaka per ruta i snitt (rovorna äts hela, så de ger få; varje ruta ger hela
 // frön, froTillbaka), frost = den dör när det blir kallare än så här
-export interface GrodaDef { namn: string; sak: string; fro: string; dygn: number; perRuta: number; fron: number; frost: number; tek?: string; fukt: number } // fukt = den fukt grödan växer bäst i (steg 9.7.3) // tek = tekniken som krävs utöver odlingen
+export interface GrodaDef { namn: string; sak: string; fro: string; dygn: number; perRuta: number; fron: number; frost: number; tek?: string; fukt: number; bord?: number; varm?: [number, number] } // fukt = den fukt grödan växer bäst i (steg 9.7.3); bord = bördigheten den behöver för att växa alls, varm = temperaturerna den växer bäst i (steg 9.7.8) // tek = tekniken som krävs utöver odlingen
 export const GRODOR = {
   rovor: { namn: 'Rovor', sak: 'rovor', fro: 'rovfron', dygn: 3, perRuta: 3, fron: 1.5, frost: -6, fukt: 0.45 }, // snabba och härdiga; 1 eller 2 frön per ruta (steg 3.10.23.3); dygn 2 och perRuta 5 före steg 3.10.23.5; frost -3 före steg 2.12.2
   // ärterna har kornets tal och plats (steg 3.10.23.8; korn kommer tillbaka som säd från handlarna i steg 11.4.2)
   lin: { namn: 'Lin', sak: 'ratlin', fro: 'linfron', dygn: 3, perRuta: 2, fron: 1.5, frost: -3, fukt: 0.6, tek: 'lin' }, // steg 7.7.7: linfrön köps av handlaren
   arter: { namn: 'Ärter', sak: 'arter', fro: 'artfron', dygn: 4, perRuta: 3, fron: 2, frost: -4, fukt: 0.5 },
   lok: { namn: 'Lök', sak: 'lok', fro: 'lok', dygn: 3, perRuta: 3, fron: 1, frost: -4, fukt: 0.55 }, // löken (steg 9.6.20): lökarna är sitt eget utsäde
+  kal: { namn: 'Kål', sak: 'kal', fro: 'kalfron', dygn: 4, perRuta: 3, fron: 1, frost: -10, fukt: 0.6, bord: 0.7, varm: [2, 18] }, // steg 9.7.8: kräver gödsel men tål kyla
+  bonor: { namn: 'Bönor', sak: 'bonor', fro: 'bonor', dygn: 4, perRuta: 3, fron: 1, frost: -2, fukt: 0.5, varm: [12, 28] }, // protein; vill ha värme
   korn: { namn: 'Korn', sak: 'korn', fro: 'korn', dygn: 4, perRuta: 3, fron: 1, frost: -4, fukt: 0.45, tek: 'sadesodling' }, // säden från handlarna (steg 9.6.11): kornet är sitt eget utsäde // håller länge; dygn 3, perRuta 4 och fron 6 före steg 3.10.23; frost -1 före steg 2.12.2
 } satisfies Record<string, GrodaDef>;
 export type GrodaSlag = keyof typeof GRODOR;
@@ -326,7 +328,7 @@ function familjensFalt(s: State, p: Person) {
   return fri ? [fri] : [];
 }
 // grödan som sås på en ruta: den med högst poäng (grodorNu, steg 9.6.11) som p har frön till
-const grodaRuta = (s: State, p: Person) => grodorNu(s).find(g => froRutor(s, p, g) >= 1);
+const grodaRuta = (s: State, p: Person, i?: number) => grodorNu(s).find(g => froRutor(s, p, g) >= 1 && (i === undefined || (GRODOR[g] as GrodaDef).bord === undefined || bordighet(s, i) >= (GRODOR[g] as GrodaDef).bord!)); // en krävande gröda bara på bördig jord (steg 9.7.8)
 // poängen för arbetet på ruta k: den mogna först (den övermogna mer bråttom), sedan röjning, sådd och grävning
 function rutPoang(s: State, p: Person, f: Falt, k: number) {
   const r = rutorAv(f)[k];
@@ -459,7 +461,7 @@ function rutaKlar(s: State, p: Person, f: Falt, k: number) {
     const i = faltRuta(f, k); if (bordighet(s, i) < 1 - REST.godsla / 2 && getable(s, p, 'kompost') >= 1) { takeMaterial(s, p, 'kompost', 1); (s.bord ??= {})[i] = Math.min(1, bordighet(s, i) + REST.godsla); if (s.bord[i] >= 1) delete s.bord[i]; count(s, 'godslat'); } // den färdiga komposten (steg 9.7.6)
     r.st = 'sa';
   } else if (r.st === 'sa') {
-    const g = grodaRuta(s, p);
+    const g = grodaRuta(s, p, faltRuta(f, k));
     if (!g) return;
     takeMaterial(s, p, GRODOR[g].fro, ODLING.froPerRuta); count(s, 'fronSadda', ODLING.froPerRuta); // fröna som såtts (scenariot falt)
     Object.assign(r, { st: 'vaxer', g, v: 0 }); count(s, 'sadd');
@@ -545,7 +547,7 @@ export function stepOdling(s: State) {
         if (s.sjoTorr?.pa) { f.vatten = (f.vatten ?? 1) - 1 / TORKA.falt; if (f.vatten <= 0) forlorad(s, f, 'Torkan'); }
         else f.vatten = undefined;
       }
-      if (temp > ODLING.vaxGrad) for (const x of r) if (x.st === 'vaxer') { x.v = Math.min(1, (x.v ?? 0) + vaxtFaktor(s) * fuktFaktor(x.fu, GRODOR[x.g!].fukt) / (GRODOR[x.g!].dygn * 24)); if (x.v >= 1) { x.st = 'mogen'; x.m = s.now; x.v = undefined; } } // fortare i blöt mark (steg 2.11.1)
+      if (temp > ODLING.vaxGrad) for (const x of r) if (x.st === 'vaxer') { x.v = Math.min(1, (x.v ?? 0) + vaxtFaktor(s) * fuktFaktor(x.fu, GRODOR[x.g!].fukt) * kravFaktor(s, f, r.indexOf(x), x.g!, temp) / (GRODOR[x.g!].dygn * 24)); if (x.v >= 1) { x.st = 'mogen'; x.m = s.now; x.v = undefined; } } // fortare i blöt mark (steg 2.11.1)
       sammanfatta(f);
       continue;
     }
@@ -700,3 +702,12 @@ export function vattnaRutor(s: State, f: Falt, p: Person, n: number) {
   return ks.length;
 }
 import { REST } from './rester';
+
+// grödans krav (steg 9.7.8): en krävande gröda växer inte alls där bördigheten är för låg, och utanför sina temperaturer
+// växer den hälften så fort
+export function kravFaktor(s: State, f: Falt, k: number, g: GrodaSlag, temp: number) {
+  const d = GRODOR[g] as GrodaDef;
+  if (d.bord !== undefined && bordighet(s, faltRuta(f, k)) < d.bord) return 0;
+  if (d.varm && (temp < d.varm[0] || temp > d.varm[1])) return 0.5;
+  return 1;
+}
