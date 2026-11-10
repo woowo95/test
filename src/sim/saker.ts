@@ -226,22 +226,22 @@ const DEF = {
   radjurdel: { namn: 'Rådjursstycke', ett: true, skaffa: { act: 'jakt' }, vikt: 10, stack: 1, mapp: 'Material', haller: 3 },
   bjorndel: { namn: 'Björnstycke', ett: true, skaffa: { act: 'jakt' }, vikt: 10, stack: 1, mapp: 'Material', haller: 3 }, // steg 6.6.6
   korn: { namn: 'Korn', ett: true, skaffa: { tid: 0.25, tek: 'sadesodling' }, stack: 50, vikt: 0.05, mapp: 'Material', haller: 20 }, // säden (steg 9.6.11): köps av handlarna, sås och blir gröt
-  malt: { namn: 'Malt', skaffa: { act: 'malta' }, stack: 50, vikt: 0.05, mapp: 'Material', haller: 20 }, // kornet som grott och torkat (steg 9.6.13): till ölet
+  malt: { namn: 'Malt', skaffa: RECEPT.malt, stack: 50, vikt: 0.05, mapp: 'Material', haller: 20 }, // kornet som grott och torkat (steg 9.6.13): till ölet
   // braxen och sik (steg 9.6.17, fisk.ts): fångas mest i nätet och rensas till eget kött
   braxen: { namn: 'Braxen', skaffa: { act: 'fiske' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 2.3, naring: { protein: 1.9, fett: 0.9, mineral: 0.8, energi: 0.7, vitamin: 0.3 }, ra: true, haller: 1 },
   sik: { namn: 'Sik', skaffa: { act: 'fiske' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 1.3, naring: { protein: 2, fett: 1.4, mineral: 0.7, energi: 0.8, vitamin: 0.6 }, ra: true, haller: 1 },
-  braxkott: { namn: 'Braxenkött', ett: true, skaffa: { act: 'rensa' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 1, naring: { protein: 1.9, fett: 0.9, mineral: 0.8, energi: 0.7, vitamin: 0.3 }, ra: true, haller: 1 },
-  sikkott: { namn: 'Sikkött', ett: true, skaffa: { act: 'rensa' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 1, naring: { protein: 2, fett: 1.4, mineral: 0.7, energi: 0.8, vitamin: 0.6 }, ra: true, haller: 1 },
+  braxkott: { namn: 'Braxenkött', ett: true, skaffa: RECEPT.braxkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 1, naring: { protein: 1.9, fett: 0.9, mineral: 0.8, energi: 0.7, vitamin: 0.3 }, ra: true, haller: 1 },
+  sikkott: { namn: 'Sikkött', ett: true, skaffa: RECEPT.sikkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 1, naring: { protein: 2, fett: 1.4, mineral: 0.7, energi: 0.8, vitamin: 0.6 }, ra: true, haller: 1 },
   lok: { namn: 'Lök', skaffa: { act: 'samla' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 5.5, naring: { vitamin: 1.3, mineral: 0.6, energi: 0.6, protein: 0.2, fett: 0.1 }, haller: 10 }, // vildlöken (steg 9.6.20): smak i maten, och lökarna sätts på fältet
-  brod: { namn: 'Bröd', ett: true, skaffa: { act: 'baka' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 5.8, naring: { energi: 1.7, protein: 0.6, mineral: 0.6, vitamin: 0.4, fett: 0.2 }, haller: 6 }, // brödet (steg 9.6.23): håller längre än annan lagad mat
-  mjol: { namn: 'Mjöl', ett: true, skaffa: { act: 'mala_korn' }, stack: 50, vikt: 0.05, mapp: 'Material', haller: 20 }, // mjölet (steg 9.6.22): malet korn som går att spara
+  brod: { namn: 'Bröd', ett: true, skaffa: RECEPT.brod, stack: 25, ruta: 75, mapp: 'Mat', mat: 5.8, naring: { energi: 1.7, protein: 0.6, mineral: 0.6, vitamin: 0.4, fett: 0.2 }, haller: 6 }, // brödet (steg 9.6.23): håller längre än annan lagad mat
+  mjol: { namn: 'Mjöl', ett: true, skaffa: RECEPT.mjol, stack: 50, vikt: 0.05, mapp: 'Material', haller: 20 }, // mjölet (steg 9.6.22): malet korn som går att spara
   // saltet (steg 9.6.19): en handelsvara från byarna vid havet; saltat kött och saltad fisk håller längre, och saltet fyller mineralerna
   salt: { namn: 'Salt', ett: true, varde: 2, stack: 50, vikt: 0.05, mapp: 'Material' },
-  saltfisk: { namn: 'Saltad fisk', skaffa: { act: 'salta_fisk' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.95, naring: { protein: 2, fett: 0.8, mineral: 1.4, energi: 0.6, vitamin: 0.2 }, haller: 20 },
-  saltkott: { namn: 'Saltat kött', ett: true, skaffa: { act: 'salta_kott' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.97, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 1.3, vitamin: 0.2 }, haller: 20 },
+  saltfisk: { namn: 'Saltad fisk', skaffa: RECEPT.saltfisk, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.95, naring: { protein: 2, fett: 0.8, mineral: 1.4, energi: 0.6, vitamin: 0.2 }, haller: 20 },
+  saltkott: { namn: 'Saltat kött', ett: true, skaffa: RECEPT.saltkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.97, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 1.3, vitamin: 0.2 }, haller: 20 },
   // det rökta (steg 9.6.8, matlagning.ts): håller som det torkade och smakar lite bättre
-  rokfisk: { namn: 'Rökt fisk', skaffa: { act: 'roka' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.8, naring: { protein: 2, fett: 0.8, mineral: 0.7, energi: 0.6, vitamin: 0.2 }, haller: 20 },
-  rokkott: { namn: 'Rökt kött', ett: true, skaffa: { act: 'roka' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.9, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 0.6, vitamin: 0.2 }, haller: 20 },
+  rokfisk: { namn: 'Rökt fisk', skaffa: RECEPT.rokfisk, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.8, naring: { protein: 2, fett: 0.8, mineral: 0.7, energi: 0.6, vitamin: 0.2 }, haller: 20 },
+  rokkott: { namn: 'Rökt kött', ett: true, skaffa: RECEPT.rokkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.9, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 0.6, vitamin: 0.2 }, haller: 20 },
   // rätterna som kokas i lerkrukan (steg 9.6.3, ratter.ts): en rad per huvudingrediens, kategori och nivå
   ...rattSaker(),
 } satisfies Record<string, SakDef>;

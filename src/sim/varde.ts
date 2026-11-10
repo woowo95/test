@@ -79,7 +79,7 @@ export function grundvarde(k: string): number {
   v = rakna(k);
   const n = nivaOf(k), mapp = SAKER[k]?.mapp;
   if (n > 0 && mapp) { // golvet: mer än de enkla råvarorna av samma slag
-    const ra = SAK_LIST.filter(j => SAKER[j]!.mapp === mapp && nivaOf(j) === 0 && !SAKER[j]!.skaffa?.av).map(rakna);
+    const ra = SAK_LIST.filter(j => SAKER[j]!.mapp === mapp && nivaOf(j) === 0 && !SAKER[j]!.skaffa?.av && SAKER[j]!.varde === undefined).map(rakna); // det köpta med fast värde (saltet) höjer inte golvet
     if (ra.length) v = Math.max(v, Math.max(...ra) * (1 + VARDE.nivaPaslag * n));
   }
   varden.set(k, v);

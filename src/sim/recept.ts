@@ -82,6 +82,10 @@ const DEF = {
   halsband: { var: 'plagg', mangd: 3, av: { rep: 1 }, min: 5 },
   tunika: { var: 'plagg', mangd: 3, av: {}, min: 5 },
   skjorta: { var: 'plagg', mangd: 2, av: {}, min: 5 },
+  braxkott: { var: 'sak', av: { braxen: 1 }, min: 3, slag: 'bearbeta' }, sikkott: { var: 'sak', av: { sik: 1 }, min: 3, slag: 'bearbeta' }, // steg 9.6.17
+  rokfisk: { var: 'sak', av: { fisk: 1 }, min: 2, slag: 'bearbeta' }, rokkott: { var: 'sak', av: { kott: 1 }, min: 2, slag: 'bearbeta' }, // steg 9.6.8
+  saltfisk: { var: 'sak', av: { fisk: 4, salt: 1 }, ger: 4, min: 3, slag: 'bearbeta' }, saltkott: { var: 'sak', av: { kott: 4, salt: 1 }, ger: 4, min: 3, slag: 'bearbeta' }, // steg 9.6.19
+  malt: { var: 'sak', av: { korn: 4 }, ger: 4, min: 2, slag: 'bearbeta' }, mjol: { var: 'sak', av: { korn: 4 }, ger: 4, min: 4, slag: 'bearbeta' }, brod: { var: 'sak', av: { mjol: 4, ved: 1 }, ger: 4, min: 3, slag: 'bearbeta' }, // steg 9.6.13, 9.6.22 och 9.6.23
   gaddkott: { var: 'sak', av: { gadda: 1 }, min: 3, slag: 'bearbeta' }, // gäddan ger 2 kött (steg 7.4.3)
   mortkott: { var: 'sak', av: { mort: 2 }, min: 2, slag: 'bearbeta' }, // 2 mörtar rensas till 1 kött
   fangstbank: { var: 'station', av: { virke: 2, grenar: 2 }, min: 20, slag: 'stor', tek: 'fangstbank' }, // steg 7.4.1
@@ -93,7 +97,7 @@ const DEF = {
   talg: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' },
   ben: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' },
   flintspjut: { var: 'sak', av: { flinta: 1, rep: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'flintspjut', bank: 'snickarbank' },
-  nat: { var: 'sak', av: { trad: 8, rep: 1, sten: 2 }, min: 30, slag: 'stor', tek: 'nat' }, // nätet (steg 9.6.16): mycket tråd, knutet vid slöjdbänken, med stenar som sänken
+  nat: { var: 'sak', av: { trad: 8, rep: 1, sten: 2 }, min: 5, slag: 'stor', tek: 'nat' }, // nätet (steg 9.6.16): mycket tråd, knutet vid slöjdbänken, med stenar som sänken
   metspo: { var: 'sak', av: { rep: 1, ben: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'metspo', bank: 'snickarbank' },
   kniv: { var: 'sak', av: { flinta: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'kniv' },
   skinn: { var: 'sak', min: 5, slag: 'bearbeta', tek: 'kniv' },
@@ -134,10 +138,10 @@ const DEF = {
   latrin: { var: 'station', av: {}, min: RT.latrinMin },
   grill: { var: 'station', av: { grenar: RT.grillGrenar, rep: RT.grillRep }, min: RT.grillMin },
   tork: { var: 'station', av: { grenar: RT.torkGrenar, rep: RT.torkRep }, min: RT.torkMin },
-  bakugn: { var: 'station', av: { sten: 8, lera: 4 }, min: 40, tek: 'bakugn' }, // bakugnen (steg 9.6.23): ett valv av sten tätat med lera
+  bakugn: { var: 'station', av: { sten: 8, lera: 4 }, min: 20, tek: 'bakugn' }, // bakugnen (steg 9.6.23): ett valv av sten tätat med lera
   kvarnsten: { var: 'station', av: { huggen_sten: 2 }, min: 20, tek: 'kvarnsten' }, // kvarnstenen (steg 9.6.22): två huggna stenar som kornet mals mellan
   bryggkar: { var: 'station', av: { virke: 1 }, min: 15, tek: 'bryggkar', verktyg: { yxa: 'yxan' } }, // bryggkaret (steg 9.6.12)
-  rokeri: { var: 'station', av: { sten: 6, grenar: 4, lera: 2 }, min: 30, tek: 'rokeri' }, // rökeriet (steg 9.6.8): en låg stenugn med ett tak av grenar och lera
+  rokeri: { var: 'station', av: { sten: 6, grenar: 4, lera: 2 }, min: 20, tek: 'rokeri' }, // rökeriet (steg 9.6.8): en låg stenugn med ett tak av grenar och lera
   brasa: { var: 'station', av: { sten: RT.brasaSten }, min: RT.brasaMin },
   scen: { var: 'station', av: { virke: RT.scenVirke }, min: RT.scenMin },
   // proteserna (steg 9.5.11, protes.ts): kryckan och träbenet täljs och kroken görs av virke bara vid snickarbänken, ögonlappen av skinn för hand

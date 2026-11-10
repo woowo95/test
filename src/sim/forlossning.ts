@@ -50,7 +50,8 @@ export function borjaForlossning(s: State, m: Person) {
   m.foder = { f, till, hjalp: g?.id };
   avbryt(s, m);
   m.task = { act: 'foder', phase: 'go', tx: bad.x, ty: bad.y, until: till, carry: 0, why: 'Föder barn' };
-  if (g) { avbryt(s, g); g.task = { act: 'forlossa', phase: 'go', tx: bad.x + 0.6, ty: bad.y, until: till, carry: 0, why: `Hjälper ${m.name} att föda`, ref: m.id }; }
+  if (g) { avbryt(s, g); g.task = { act: 'forlossa', phase: 'go', tx: bad.x, ty: bad.y, // vid bädden (inte bredvid, där det kan vara vatten)
+     until: till, carry: 0, why: `Hjälper ${m.name} att föda`, ref: m.id }; }
   count(s, 'forlossning_' + f);
 }
 // riskerna med hjälpen: modern dör, barnet dör (för födseln i liv.ts)
