@@ -233,10 +233,14 @@ export function kokRecept(s: State, p?: Person): KokRecept | undefined {
     const grupper = new Set([...g0, ...grupperAv(andra), ...(smak ? grupperAv(smak) : [])]), niva = nivaAvGrupper(grupper);
     if (niva !== 'lagad' && niva !== 'fin') continue;
     const kats = RATT_HUVUD[hh].kat as Kategori[], kat = grupperAv(andra).includes('starkelse') ? kats[0] : kats[kats.length - 1];
-    return { id: rattId(hh, kat, niva), huvud, andra, smak, kat, niva, hh };
+    // rättens hållbarhet är medelvärdet av ingrediensernas (steg 9.6.7): med torkad råvara håller den länge
+    const lang = hallerMedel([[huvud, RATT.huvud], [andra, RATT.andra]]) >= RATT.hallerLang;
+    return { id: rattId(hh, kat, niva, lang), huvud, andra, smak, kat, niva, hh };
   }
   return undefined;
 }
+// medelvärdet av ingrediensernas hållbarhet, efter mängden (dygn)
+export const hallerMedel = (ing: [string, number][]) => { let h = 0, n = 0; for (const [k, m] of ing) { h += (SAKER[k]?.haller ?? RATT.haller) * m; n += m; } return n ? h / n : 0; };
 // en mellanstor lerkruka som är färdig, tom, inte bärs och inte står på elden
 export const ledigKruka = (s: State) => tingOf(s).find(t => t.k === 'lerkruka_mellan' && t.ler === undefined && !t.inne && !t.kok && t.hos === undefined && t.c > 0);
 // krukorna som står på elden

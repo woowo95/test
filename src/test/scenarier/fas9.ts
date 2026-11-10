@@ -806,3 +806,17 @@ SCENARIER.favorit = {
     ];
   },
 };
+
+SCENARIER.ratthaller = {
+  text: 'Steg 9.6.7: maten håller. En rätts hållbarhet är medelvärdet av ingrediensernas, så torkad råvara gör att rätten håller längre',
+  kor: () => {
+    const { kokRecept, setAmount, SAKER, hallerMedel, FOOD } = SIM;
+    const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    const prov = (k: string) => { for (const f of FOOD) setAmount(s, f, 0); setAmount(s, k, 4); setAmount(s, 'rotter', 4); const r = kokRecept(s, p); return r ? { namn: SAKER[r.id]!.namn, haller: SAKER[r.id]!.haller!, medel: hallerMedel([[r.huvud, 2], [r.andra, 2]]) } : undefined; };
+    const farsk = prov('fisk'), torr = prov('torrfisk');
+    return [
+      [`av färsk fisk och rötter (medel ${farsk?.medel.toFixed(1)} dygn) håller ${farsk?.namn} ${farsk?.haller} dygn`, !!farsk && farsk.haller < 5],
+      [`av torkad fisk och rötter (medel ${torr?.medel.toFixed(1)} dygn) håller ${torr?.namn} ${torr?.haller} dygn`, !!torr && !!farsk && torr.haller > farsk.haller],
+    ];
+  },
+};
