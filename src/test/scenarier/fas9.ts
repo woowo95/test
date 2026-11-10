@@ -1535,9 +1535,10 @@ SCENARIER.tamdjur = {
     const matad = h.hunger, sk1 = p.skill.skotsel;
     // ägaren dör: fåret ärvs (hunden går till den som matat den mest, steg 9.8.3)
     const fa = nyttTamdjur(s, 'far', p.x, p.y + 1, p.id); fa.hunger = 0;
-    p.partner = undefined; const barn = SIM.living(s).filter(q => q.mother === p.id || q.father === p.id);
+    p.partner = undefined; const barn0 = vuxna[1]!; barn0.mother = p.id; /* en arvinge som säkert finns: ett vuxet barn */
+    const barn = SIM.living(s).filter(q => q.mother === p.id || q.father === p.id);
     die(s, p, 'sjukdom');
-    const arvinge = fa.agare !== p.id;
+    const arvinge = fa.agare === barn0.id;
     // ett får utan mat svälter ihjäl
     const f = nyttTamdjur(s, 'far', p.x, p.y + 2);
     for (let i = 0; i < 24 + TAM.svaltTim + 2; i++) stepTamdjur(s);
@@ -1546,7 +1547,7 @@ SCENARIER.tamdjur = {
       [`hungern växer med tiden (${hungrig.toFixed(2)})`, hungrig > TAM.matas],
       [`den som äger hunden och har slaktrens matar den (${val ? 'vald' : 'inte vald'}, hunger ${hungrig.toFixed(2)} → ${matad.toFixed(2)})`, !!val && matad < hungrig],
       [`djurskötseln växer (${sk0.toFixed(3)} → ${sk1.toFixed(3)})`, sk1 > sk0],
-      [`fåret ärvs när ägaren dör (${barn.length} barn, ägare nu ${fa.agare ?? 'byn'})`, arvinge || !barn.length],
+      [`fåret ärvs av barnet när ägaren dör (${barn.length} barn, ägare nu ${fa.agare ?? 'byn'})`, arvinge],
       [`ett djur utan mat dör av hunger (${tamdjurOf(s).includes(f) ? 'lever' : 'dött'})`, !tamdjurOf(s).includes(f)],
     ];
   },
@@ -1642,10 +1643,16 @@ SCENARIER.hage = {
       [`staketet sätts runt hela hagen (${n} rutor)`, hel],
       [`djuren leds in i hagen med rep`, inne],
       [`djuren betar gräset (${gras0.toFixed(1)} → ${gras1.toFixed(1)})`, gras1 < gras0],
-      [`hagens staket slits eller står kvar (${satt0} rutor)`, satt0 > 0],
+      [`hagens staket byggdes (${satt0} rutor)`, satt0 > 0],
       [`genom ett hål rymmer djuren (${rymt} av ${tamdjurOf(s).length})`, rymt > 0],
       [`ett rymt djur leds tillbaka när hålet lagats`, (() => { for (let v = hageVal(s, p); v; v = hageVal(s, p)) hageKlar(s, p, v.i); for (let d = vallaVal(s, p); d; d = vallaVal(s, p)) vallaKlar(s, p, d.id); return tamdjurOf(s).every(d => d.hage !== undefined); })()],
       [`fåret och geten lever (${[f1, f2].filter(d => d.dog === undefined).length})`, f1.dog === undefined && f2.dog === undefined],
+      (() => { /* staketet slits: en ruta går sönder av sig själv (chans per timme, HAGE.slit), så vi väntar tills det hänt */
+        const sonder0 = Number(s.stat?.staketSonder ?? 0), rutor0 = s.staket?.length ?? 0; let t = 0;
+        for (; t < 6000 && Number(s.stat?.staketSonder ?? 0) === sonder0; t++) { for (const d of tamdjurOf(s)) d.hunger = 0; stepTamdjur(s); }
+        const sonder1 = Number(s.stat?.staketSonder ?? 0), rutor1 = s.staket?.length ?? 0;
+        return [`staketet slits: en ruta går sönder (${sonder0} → ${sonder1} efter ${t} timmar, ${rutor0} → ${rutor1} rutor)`, sonder1 > sonder0 && rutor1 < rutor0] as [string, boolean];
+      })(),
     ];
   },
 };
@@ -1669,7 +1676,7 @@ SCENARIER.boskap = {
     // våren: honan får unga
     const var0 = kalender(s).ai === VAR;
     let h = 0;
-    for (; h < 160 && kalender(s).ai === VAR && tamdjurOf(s).length <= 2; h++) { s.now += 3600; for (const q of tamdjurOf(s)) q.hunger = 0; stepBoskap(s); }
+    for (; h < 160 && kalender(s).ai === VAR && tamdjurOf(s).length <= 2; h++) { s.now += SIM.HOUR; for (const q of tamdjurOf(s)) q.hunger = 0; stepBoskap(s); }
     const unga = tamdjurOf(s).length - 2;
     return [
       [`handlaren har får och getter med sig`, iHandeln],
@@ -1732,6 +1739,7 @@ SCENARIER.tamslakt = {
     const ung = nyttTamdjur(s, 'far', p.x + 1, p.y + 1, undefined, s.now - 2 * DAY);
     const val = avlivaVal(s, p);
     if (val) avlivaKlar(s, p, val.id);
+    const ungOrsak = slaktOrsak(s, ung), ungKvar = tamdjurOf(s).includes(ung); /* innan flocken fylls på */
     const kropp = amountOf(s, 'slaktfar');
     const rens0 = amountOf(s, 'slaktrens'), horn0 = amountOf(s, 'djurhorn'), skinn0 = amountOf(s, 'skinn');
     const kan = canProcess(s, p, DJUR.far);
@@ -1749,7 +1757,7 @@ SCENARIER.tamslakt = {
     const hane = flock.find(d => !hona(d)), honan = flock.find(d => hona(d));
     return [
       [`det gamla fåret väljs och avlivas (${val === gammal ? 'det gamla' : val ? 'ett annat' : 'inget'})`, val === gammal && !tamdjurOf(s).includes(gammal)],
-      [`det unga fåret slaktas inte`, tamdjurOf(s).includes(ung) && !slaktOrsak(s, ung) || flock.length >= BOSKAP.flock],
+      [`det unga fåret slaktas inte (${ungOrsak ?? '–'})`, ungKvar && !ungOrsak],
       [`det avlivade fåret ligger vid slaktbänken (${kropp})`, kropp === 1],
       [`det slaktas som viltet och ger horn, skinn och slaktrens (horn ${horn0} → ${amountOf(s, 'djurhorn')}, skinn ${skinn0} → ${amountOf(s, 'skinn')}, rens ${rens0} → ${rens1})`, kan && amountOf(s, 'djurhorn') > horn0 && amountOf(s, 'skinn') > skinn0 && rens1 > rens0],
       [`hunden får slaktrensen`, mat],
@@ -1821,6 +1829,7 @@ SCENARIER.slatter = {
     const id = (s.nextBit ??= 1); s.nextBit++;
     SIM.housesOf(s).push({ id, namn: 'Fähuset', x: m.x + 8, y: m.y + 8, w: 4, h: 3, fn: 'fahus', klar: s.now } as SIM.Hus);
     s.kal = SIM.nyKalender(s.now, SIM.ISTID);
+    s.stationer = [...(s.stationer ?? []), { id: 990, k: 'kompost', x: m.x + 14, y: m.y + 14, kvar: 0 } as SIM.Station]; SIM.touch(s); /* en färdig kompost, som i scenariot kompost */
     const ko = SIM.komposten(s), rest0 = ko?.kompost?.rest ?? 0;
     for (let h = 0; h < VINTER.frysTim; h++) { for (const d of tamdjurOf(s)) d.hunger = Math.min(d.hunger, 0.5); stepVinter(s); }
     const inne = tamdjurOf(s).filter(d => d.fahus === id).length, kvar = tamdjurOf(s).filter(d => d.art !== 'hund').length;
@@ -1837,7 +1846,7 @@ SCENARIER.slatter = {
       [`utan hö slaktar byn djur på hösten (${slakt})`, slakt >= 1],
       [`med hö nog slaktas inga för vinterns skull`, ingenSlakt],
       [`i istiden står två djur i fähuset (${inne}) och de andra fryser ihjäl (${kvar} kvar)`, inne === 2 && kvar === 2],
-      [`gödseln hamnar i komposten (${rest0} → ${rest1})`, !ko || rest1 > rest0],
+      [`gödseln hamnar i komposten (${rest0} → ${rest1})`, !!ko && rest1 > rest0],
       [`djuren i fähuset får hö`, matas],
     ];
   },

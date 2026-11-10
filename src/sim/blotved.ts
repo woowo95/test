@@ -42,7 +42,7 @@ export function stepBlotVed(s: State, dtSec: number) {
     a.tork = (a.tork ?? 0) + h * fart / BLOTVED.torkTim;
     if (a.tork >= 1) { a.blot = undefined; a.tork = undefined; }
   }
-  if (nb) for (const t of stationerOf(s)) if (t.tork?.length && !roofed(s, t.x, t.y)) for (const q of t.tork) q.t += dtSec * 1000;
+  if (nb) for (const t of stationerOf(s)) if (t.tork?.length && t.k !== 'rokeri' /* rökeriet arbetar i regn */ && !roofed(s, t.x, t.y)) for (const q of t.tork) q.t += dtSec * 1000;
 }
 // så mycket torr ved byn har
 export function torrVed(s: State) {

@@ -139,14 +139,15 @@ const YTA: Record<string, Yta & { v?: Yta }> = {
 // efter hur mycket som hänger. Den byter färg från rött till mörkbrunt medan den torkar (torrDel). Bara utseende
 const tonPar = (a: string, i: number, b: string, j: number) => [fargTal(farg(a as 'jord', i as 0)), fargTal(farg(b as 'jord', j as 0))] as const;
 const TORK_KOTT = [tonPar('rost', 3, 'rost', 2), tonPar('rost', 2, 'rost', 1), tonPar('jord', 1, 'jord', 0)];
+const TORK_VAXT = [tonPar('ben', 1, 'jord', 3), tonPar('jord', 3, 'jord', 2), tonPar('jord', 2, 'jord', 1)]; // det rötade linet och det blötta kornet
 const TORK_FISK = [tonPar('ben', 1, 'skiffer', 2), tonPar('jord', 3, 'jord', 2), tonPar('jord', 2, 'jord', 1)];
 function hangande(st: Station, x0: number, y0: number) {
   const platser = 8, per = TORK.rymd / platser;
   let i = 0;
   for (const q of st.tork!) {
-    const f = torrDel(s, q), n = Math.max(1, Math.round(q.n / per)), fisk = q.k !== 'kott' && q.k !== 'vargkott';
+    const f = torrDel(s, q, st.k === 'rokeri' ? 'rokeri' : 'tork'), n = Math.max(1, Math.round(q.n / per)), vaxt = q.k === 'ratlin' || q.k === 'maltkorn', fisk = !vaxt && q.k !== 'kott' && q.k !== 'vargkott';
     // i pixlar och palettens färger (steg 8.1.9): ljusare och rödare färskt, mörkbrunt torrt; ljus sida till vänster
-    const steg = f < 0.34 ? 0 : f < 0.67 ? 1 : 2, [ljus, mork] = (fisk ? TORK_FISK : TORK_KOTT)[steg];
+    const steg = f < 0.34 ? 0 : f < 0.67 ? 1 : 2, [ljus, mork] = (vaxt ? TORK_VAXT : fisk ? TORK_FISK : TORK_KOTT)[steg];
     for (let j = 0; j < n && i < platser; j++, i++) {
       const x = st.rot ? x0 + 8 : Math.round(x0 + 9 + i * 1.8), y = st.rot ? y0 + 4 + i * 3 : y0 + 3; // den stående: längs slån uppifrån och ner
       if (fisk) { // stjärten i slån och kroppen under

@@ -19,6 +19,7 @@ export const REST = balans('rester', {
   bar: 10, // så många bär den som går till sophögen
   tur: 2, // minuter för en tur till sophögen
   rutt: 3, // dygn tills resterna på sophögen ruttnat bort
+  ruttMin: 0.01, // och så många rester ruttnar bort i timmen, så att den sista resten också försvinner
   // komposten (steg 9.7.6)
   upptack: 20, // när så här mycket ligger på sophögen kan den som odlar märka att det växer bättre där ...
   upptackTim: 0.02, // ... med den här chansen i timmen
@@ -26,6 +27,8 @@ export const REST = balans('rester', {
   kompostDygn: 3, // ... på så många dygn i värme (långsamt i kyla)
   latrin: 5, // en tömd latrin ger komposten så här många rester
   tomMin: 15, // minuter att tömma latrinen i komposten (handlingen tomma_latrin)
+  varm: 5, // över så många grader mognar komposten i full takt ...
+  kylaTakt: 0.3, // ... annars i så här stor del av takten
   godsla: 0.3, // en färdig kompost höjer bördigheten på en ruta så här mycket
 });
 export const resterIByn = (s: State) => RESTER.reduce((n, k) => n + amountOf(s, k), 0);
@@ -51,7 +54,7 @@ export function soporKlar(s: State, p: Person) {
 // en gång i timmen (steg.ts): resterna på sophögen ruttnar bort
 export function stepSophog(s: State) {
   if (!s.sophog?.n) return;
-  s.sophog.n = Math.max(0, s.sophog.n - s.sophog.n * HOUR / (REST.rutt * DAY) - 0.01);
+  s.sophog.n = Math.max(0, s.sophog.n - s.sophog.n * HOUR / (REST.rutt * DAY) - REST.ruttMin);
 }
 
 // ---------- komposten (steg 9.7.6) ----------
@@ -85,7 +88,7 @@ export function stepKompost(s: State) {
   if (h?.n) { ko.kompost = { rest: (ko.kompost?.rest ?? 0) + Math.floor(h.n), mogna: ko.kompost?.mogna ?? 0 }; h.n = 0; } // sophögen blir komposten
   const c = ko.kompost;
   if (!c || c.rest < REST.kompostRest) return;
-  c.mogna += (temperature(s) > 5 ? 1 : 0.3) / (REST.kompostDygn * 24);
+  c.mogna += (temperature(s) > REST.varm ? 1 : REST.kylaTakt) / (REST.kompostDygn * 24);
   if (c.mogna < 1) return;
   c.mogna = 0; c.rest -= REST.kompostRest;
   put(s, 'kompost', 1); count(s, 'kompostKlar');
