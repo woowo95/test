@@ -1,11 +1,11 @@
-// fas 9, system 9.8: platserna (steg 9.8.5–9.8.8 och 9.8.16), tre versioner var: hagen, slåtterängen, höstacken, fähuset och det hamlade trädet. Allt på 16 punkter per ruta.
+// fas 9, system 9.8: platserna (steg 9.8.4, 9.8.9 och 9.8.16), tre versioner var: hagen, slåtterängen, höstacken, fähuset och det hamlade trädet. Allt på 16 punkter per ruta.
 (() => {
   const { former, rakt, ell, och, lagg, hash } = window.F7;
   const { L, gras } = window.F98;
   const I = (B, t) => B.P.i(t.slice(0, -1), +t.slice(-1));
   const PA = (text, rader, bg, legend = {}, m = 0) => { const w = rader[0].length + 2 * m, h = rader.length + 2 * m; return { text, w, h, rita: B => { bg(B); lagg(B, rader, { ...L, ...legend }, m, m, false); } }; };
 
-  // ---------- 9.8.5 hagen: en gräsruta med staketet längs en kant ----------
+  // ---------- 9.8.4 hagen: en gräsruta med staketet längs en kant ----------
   // staketet är gärdsle som i 9.7: stolpar och rundade grenar
   const stol = (x0, y0, x1, y1) => [rakt(x0, y0, x1, y1), (x, y) => x < x0 + 1.2 ? 'd' : x > x1 - 1.2 ? 'b' : 'c'];
   const slå = (x0, y0, x1, y1) => [rakt(x0, y0, x1, y1), (x, y) => y < y0 + 1 ? 'd' : y > y1 - 1 ? 'b' : 'c'];
@@ -16,7 +16,7 @@
     (() => { const r = former(16, 16, [stol(0, 0, 2.5, 16), stol(4.5, 0, 7, 16), slå(0, 2.5, 7, 4.5), slå(0, 10, 7, 12), [rakt(0, 6, 7, 7), 'b']]); return PA('Gärdet längs västra kanten: två stolpar tätt vid varandra med tvärgrenar bundna runt dem.', r, B => { gras(B); tuvor(B, [[10, 3], [12, 10], [9, 13]]); }); })(),
   ];
 
-  // ---------- 9.8.6 slåtterängen: högt, oskuret gräs utan staket ----------
+  // ---------- 9.8.9 slåtterängen: högt, oskuret gräs utan staket ----------
   const ang = (B, v) => {
     const P = B.P;
     for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) B.satt(x, y, I(B, hash(x, y, 3) < 0.22 ? 'oliv1' : 'oliv2'));
@@ -38,7 +38,7 @@
   };
   const ANG = (text, v) => ({ text, w: 16, h: 16, rita: B => ang(B, v) });
 
-  // ---------- 9.8.7 höstacken: hö stackat som ved ----------
+  // ---------- 9.8.9 höstacken: hö stackat som ved ----------
   const HL = { ...L };
   const hostack = [
     // 1: tre lager liggande kärvar, bundna på mitten, på två stockar
@@ -52,7 +52,7 @@
       return PA('Ett kantigt staplat hö med ett tak av granris överst och två rep runt om.', rader, gras); })(),
   ];
 
-  // ---------- 9.8.8 fähuset: 2 × 2 rutor, utan tak (som husen), med dörren i söder ----------
+  // ---------- 9.8.9 fähuset: 2 × 2 rutor, utan tak (som husen), med dörren i söder ----------
   const FW = 32;
   const fahus = (B, v) => {
     gras(B);
