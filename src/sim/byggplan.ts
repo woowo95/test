@@ -49,8 +49,7 @@ export const PLAN = balans('byggplan', {
   forbVag: 0.35, forbBrygga: 0.4, // hur mycket vägen och bryggan är värda
   bryggaRutor: 4, bryggaFolk: 10, // en brygga (så här många rutor) för varje så här många invånare
   bryggaMax: 4, // en brygga är högst så här lång
-  skjulMax: 8, // ett skjul täcker högst så här många rutor åt varje håll
-  skjulSida: 4, // en sida längre än så här får en stolpe till på mitten
+  omkringMax: 8, // torkhuset och vedboden byggs runt det som står inom så här många rutor åt varje håll (steg 9.2.137)
   utEld: 4, // ett hus byggs inte ut närmare elden än så här många rutor
   forbVed: 30, // en förbättring föreslås först när byn har så mycket trä
   forbGolv: 0.3, forbRum: 0.5, forbRik: 0.4, // hur mycket förbättringen är värd (0 till 1)
@@ -89,7 +88,7 @@ const tileOk = (s: State, x: number, y: number, utomElden: boolean) => {
   if (!iLager && ((s.stackar ?? []).some(a => a.x === x && a.y === y) || tingOf(s).some(k => k.x === x && k.y === y && k.hos === undefined && k.lass === undefined)) || (s.stockar ?? []).some(k => Math.floor(k.x) === x && Math.floor(k.y) === y) || (s.stubbar ?? []).some(k => k.x === x && k.y === y)) return false;
   return true;
 };
-// ligger ett annat hus (hela rektangeln, skjul och planerade hus också) närmare än m rutor från rektangeln?
+// ligger ett annat hus (hela rektangeln, också planerade hus) närmare än m rutor från rektangeln?
 const husNara = (s: State, x: number, y: number, w: number, h: number, m: number, utom?: Hus) =>
   housesOf(s).some(q => q !== utom && x < q.x + q.w + m && q.x < x + w + m && y < q.y + q.h + m && q.y < y + h + m);
 // en plats för ett hus med yttermåtten w×h inom byområdet, PLATS.husMellan rutor från andra hus och PLATS.uteFri från stationer
@@ -102,7 +101,7 @@ function siteFor(s: State, w: number, h: number, okAt: (i: number) => boolean) {
     const cx = x + w / 2, cy = y + h / 2;
     const ut = tillHoljet(s, cx, cy); // byns område (steg 6.2.4): inget räknas från elden eller byns mitt
     if (ut > R) continue;
-    if (husNara(s, x, y, w, h, PLATS.husMellan)) continue; // också ett skjul, som bara har stolpar i hörnen, och ett planerat hus
+    if (husNara(s, x, y, w, h, PLATS.husMellan)) continue; // också ett planerat hus
     let ok = true;
     for (let yy = y - M; yy < y + h + M && ok; yy++) for (let xx = x - M; xx < x + w + M && ok; xx++) {
       const inside = xx >= x && xx < x + w && yy >= y && yy < y + h;
@@ -202,7 +201,7 @@ const rikOf = (s: State, ag: number) => { if (!byId(s, ag)) return false; const 
 const nyttHus: AtgardDef = {
   namn: 'Nytt hus', steg: 3,
   foresla: (s, b, okAt) => {
-    if (b.a.hus !== undefined || b.a.kop || b.fn === 'forbattra' || b.fn === 'lagerplats' || (BYGGNADER as Record<string, Byggnad>)[b.fn]?.skjul) return []; // kop: familjen har bara råd att köpa
+    if (b.a.hus !== undefined || b.a.kop || b.fn === 'forbattra' || b.fn === 'lagerplats' || (BYGGNADER as Record<string, Byggnad>)[b.fn]?.omkring) return []; // kop: familjen har bara råd att köpa
     // storleken efter behovet; så nära kvadratiskt som möjligt
     const sizes: { w: number; h: number }[] = [];
     // både bredare än djupt och djupare än brett (steg 9.2.133), så att en smal men djup lucka i en trång by går att bygga i
@@ -247,7 +246,7 @@ function dorrPlats(s: State, x0: number, y0: number, W2: number, H2: number, f: 
 const byggaUt: AtgardDef = {
   namn: 'Bygga ut', steg: 1,
   foresla: (s, b, okAt) => {
-    const hs = housesOf(s).filter(h => h.klar && !h.ut && !h.skjul && (b.a.hus !== undefined ? h.id === b.a.hus : b.a.ag !== undefined ? h.ag === b.a.ag : h.ag === undefined && fnId(h) === b.fn && !fnOf(h).lager));
+    const hs = housesOf(s).filter(h => h.klar && !h.ut && !fnOf(h).omkring && (b.a.hus !== undefined ? h.id === b.a.hus : b.a.ag !== undefined ? h.ag === b.a.ag : h.ag === undefined && fnId(h) === b.fn && !fnOf(h).lager));
     const ut: Forslag[] = [], want = onskadPlats(s, b);
     for (const h of hs) for (const side of ['v', 'o', 'n', 's'] as const) {
       const lodrat = side === 'n' || side === 's', iw = h.w - 2, ih = h.h - 2;
@@ -274,7 +273,7 @@ function utbyggnad(s: State, h: Hus, side: 'v' | 'o' | 'n' | 's', k: number, okA
     if (!inne) { if (inMap(xx, yy) && g.at.has(yy * W + xx) && g.at.get(yy * W + xx)!.hus !== h.id) return undefined; continue; }
     if (nyRuta(xx, yy) && !okAt(yy * W + xx)) return undefined;
   }
-  if (husNara(s, x, y, w, hh, M, h)) return undefined; // ett skjul har bara stolpar i hörnen, så rutnätet ser inte hela huset
+  if (husNara(s, x, y, w, hh, M, h)) return undefined; // också ett planerat hus, som rutnätet inte ser än
   const kant = (xx: number, yy: number) => xx === x || yy === y || xx === x + w - 1 || yy === y + hh - 1;
   // den gamla väggen mot den nya delen, och dörren om den ligger där
   const gammal = (xx: number, yy: number) => side === 'v' ? xx === h.x && yy > h.y && yy < h.y + h.h - 1 : side === 'o' ? xx === h.x + h.w - 1 && yy > h.y && yy < h.y + h.h - 1 : side === 'n' ? yy === h.y && xx > h.x && xx < h.x + h.w - 1 : yy === h.y + h.h - 1 && xx > h.x && xx < h.x + h.w - 1;
@@ -359,9 +358,9 @@ const lagerNyA: AtgardDef = {
 // relationen och handelsfärdigheten
 const salesPlats = (s: State, h: Hus) => gridOf(s).rooms.filter(r => r.hus === h.id).reduce((n, r) => n + sovplatser(s, r), 0);
 // Alla hus där man bor eller umgås går att köpa (steg 9.2.109), men priset följer hur mycket säljaren behöver huset. Förrådshus,
-// verkstäder (en station står där) och skjul är inga bostäder och säljs inte
+// verkstäder (en station står där), torkhus och vedbodar är inga bostäder och säljs inte
 export function kopbart(s: State, h: Hus): boolean {
-  return !!h.klar && !h.ut && !h.skjul && KOPBARA.has(fnId(h)) && !RUMSFUNKTIONER.verkstad.har(s, h);
+  return !!h.klar && !h.ut && KOPBARA.has(fnId(h)) && !RUMSFUNKTIONER.verkstad.har(s, h);
 }
 const KOPBARA = new Set<Fn>(['sovsal', 'familjehus', 'samling']);
 // behöver säljaren huset? 0 = nej: familjen är borta eller huset är för stort för den, eller byns sovsal står tom; 1 = ja
@@ -466,7 +465,7 @@ function husAffar(s: State) {
 // rivs huset kommer HUS.rivTillbaka av träet tillbaka. Ju mer som rasat, desto mer väger läget (PLAN.rasLage)
 export interface SkadatVal { hus: Hus; rasat: number; stanna: number; flytta: number; ny?: Forslag }
 export function skadatVal(s: State, h: Hus, okAt: (i: number) => boolean): SkadatVal | undefined {
-  if (h.klar || h.varKlar === undefined || h.ut || h.skjul || h.flyttas !== undefined || h.flyttFran !== undefined) return undefined;
+  if (h.klar || h.varKlar === undefined || h.ut || h.flyttas !== undefined || h.flyttFran !== undefined) return undefined;
   const bits = bitsOf(s).filter(b => b.hus === h.id), ras = bits.filter(b => b.b < 1 && b.k === 'vagg');
   if (!ras.length) return undefined;
   const r = ras.length / Math.max(1, bits.filter(b => b.k === 'vagg').length), vikt = 1 + PLAN.rasLage * r, varde = (L: number) => 1 + (L - 1) * vikt;
@@ -576,26 +575,33 @@ function torgFritt(s: State, x: number, y: number, w: number, h: number) {
   const e = eldPlats(s);
   return rektAvstand(e.x, e.y, x, y, w, h) > 1;
 }
-// ---------- skjulen (steg 7.3.5 och 7.3.6) ----------
-// Ett skjul är ett tak utan väggar över det som redan står: torkställningarna eller vedhögarna. Det är en rektangel med en stolpe i
-// varje hörn och en till mitt på en sida längre än PLAN.skjulSida. Stolparna står utanför det som ska under tak
-const skjulA: AtgardDef = {
-  namn: 'Skjul', steg: 1,
-  foresla: (s, b, okAt) => {
+// ---------- torkhuset och vedboden (steg 7.3.5, 7.3.6 och 9.2.137) ----------
+// Ett vanligt hus med timmerväggar, en dörr och jordgolv runt det som redan står ute: torkställningarna eller lagerplatsen med
+// veden. Väggarna står en ruta utanför det som ska under tak, och dörren vetter mot elden (dorrPlats). Lagerplatsen inne i huset
+// blir husets (bygg nedan), så att veden ligger kvar
+const omkringA: AtgardDef = {
+  namn: 'Hus runt', steg: 1,
+  foresla: (s, b) => {
     const r: Byggnad | undefined = (BYGGNADER as Record<string, Byggnad>)[b.fn];
-    if (!r?.skjul) return [];
-    const under = b.fn === 'torkhus' ? torkUte(s).map(t => ({ x: t.x, y: t.y, w: storlekAv(t).w, h: storlekAv(t).h })) : vedUte(s).map(a => ({ x: a.x, y: a.y, w: 1, h: 1 }));
+    if (!r?.omkring) return [];
+    const under = b.fn === 'torkhus' ? torkUte(s).map(t => ({ x: t.x, y: t.y, w: storlekAv(t).w, h: storlekAv(t).h }))
+      : zonesOf(s).filter(z => z.hus === undefined && vedUte(s).some(a => a.x >= z.x && a.x < z.x + z.w && a.y >= z.y && a.y < z.y + z.h)).map(z => ({ x: z.x, y: z.y, w: z.w, h: z.h }));
     if (!under.length) return [];
-    // så många som får plats inom PLAN.skjulMax, räknat från det första
-    const x0 = under[0].x, y0 = under[0].y, med = under.filter(q => q.x + q.w - x0 <= PLAN.skjulMax && q.y + q.h - y0 <= PLAN.skjulMax && q.x >= x0 - PLAN.skjulMax && q.y >= y0 - PLAN.skjulMax);
+    // så många som får plats inom PLAN.omkringMax, räknat från det första
+    const x0 = under[0].x, y0 = under[0].y, med = under.filter(q => q.x + q.w - x0 <= PLAN.omkringMax && q.y + q.h - y0 <= PLAN.omkringMax && q.x >= x0 - PLAN.omkringMax && q.y >= y0 - PLAN.omkringMax);
     const x = Math.min(...med.map(q => q.x)) - 1, y = Math.min(...med.map(q => q.y)) - 1, w = Math.max(...med.map(q => q.x + q.w)) + 1 - x, h = Math.max(...med.map(q => q.y + q.h)) + 1 - y;
+    const kant = (xx: number, yy: number) => xx === x || yy === y || xx === x + w - 1 || yy === y + h - 1;
+    for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) {
+      if (!inMap(xx, yy)) return [];
+      const i = yy * W + xx, t = getMap(s.seed).tiles[i];
+      if (t === T.Vatten || t === T.Sten || gridOf(s).at.has(i)) return [];
+      if (kant(xx, yy) && (paStrak(s, xx, yy) || stationRutor(s).at.has(i) || zonesOf(s).some(z => xx >= z.x && xx < z.x + z.w && yy >= z.y && yy < z.y + z.h) || (s.stackar ?? []).some(q => q.x === xx && q.y === yy))) return [];
+    }
+    const dorr = dorrPlats(s, x, y, w, h, eldPlats(s));
+    if (!dorr) return [];
     const ritning: Andring[] = [];
-    const stolpe = (xx: number, yy: number) => { if (!ritning.some(a => a.x === xx && a.y === yy)) ritning.push({ x: xx, y: yy, m: 'stolpe' }); };
-    stolpe(x, y); stolpe(x + w - 1, y); stolpe(x, y + h - 1); stolpe(x + w - 1, y + h - 1);
-    if (w - 2 > PLAN.skjulSida) { stolpe(x + (w >> 1), y); stolpe(x + (w >> 1), y + h - 1); }
-    if (h - 2 > PLAN.skjulSida) { stolpe(x, y + (h >> 1)); stolpe(x + w - 1, y + (h >> 1)); }
-    if (ritning.some(a => !inMap(a.x, a.y) || paStrak(s, a.x, a.y) || gridOf(s).at.has(a.y * W + a.x) || stationRutor(s).at.has(a.y * W + a.x) || zonesOf(s).some(z => a.x >= z.x && a.x < z.x + z.w && a.y >= z.y && a.y < z.y + z.h) || (s.stackar ?? []).some(q => q.x === a.x && q.y === a.y) || !okAt(a.y * W + a.x) && !zonesOf(s).some(z => a.x >= z.x - 1 && a.x <= z.x + z.w && a.y >= z.y - 1 && a.y <= z.y + z.h))) return [];
-    return [{ at: 'skjulA', x, y, w, h, ritning, oppnas: [], kostnad: ritningKostnad(ritning), varde: Math.min(1, med.length / Math.max(1, under.length)), plats: 0 }];
+    for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) ritning.push({ x: xx, y: yy, m: xx === dorr.x && yy === dorr.y ? 'oppning' : kant(xx, yy) ? 'timmer' : 'jord' });
+    return [{ at: 'omkringA', x, y, w, h, ritning, oppnas: [], kostnad: ritningKostnad(ritning), varde: Math.min(1, med.length / Math.max(1, under.length)), plats: 0 }];
   },
 };
 // ---------- vägarna och bryggorna (steg 7.3.7 och 7.3.9) ----------
@@ -652,7 +658,7 @@ const bryggaA: AtgardDef = {
     return bast ? [{ at: 'bryggaA', x: 0, y: 0, w: 0, h: 0, ritning: bast, oppnas: [], kostnad: ritningKostnad(bast), varde: PLAN.forbBrygga, plats: 0 }] : [];
   },
 };
-export const BYGGATGARDER = { stockvagA, infartA, bryggaA, skjulA, nyttHus, byggaUt, battreGolv, egetRum, rikUt, lagerStorreA, lagerNyA, kopaHus } satisfies Record<string, AtgardDef>;
+export const BYGGATGARDER = { stockvagA, infartA, bryggaA, omkringA, nyttHus, byggaUt, battreGolv, egetRum, rikUt, lagerStorreA, lagerNyA, kopaHus } satisfies Record<string, AtgardDef>;
 export type Atgard = keyof typeof BYGGATGARDER;
 const ATGARDER = BYGGATGARDER as Record<string, AtgardDef>;
 
@@ -662,7 +668,7 @@ const ATGARDER = BYGGATGARDER as Record<string, AtgardDef>;
 export function ritningOk(s: State, f: Forslag, okAt: (i: number) => boolean): boolean {
   if (f.at === 'lagerStorreA' || f.at === 'lagerNyA') return true;
   if (f.at === 'stockvagA' || f.at === 'bryggaA' || f.at === 'infartA') return f.ritning.length > 0;
-  if (f.at === 'skjulA') return f.ritning.length >= 4 && f.ritning.every(q => MATERIAL[q.m]);
+  if (f.at === 'omkringA') return f.ritning.some(q => q.m === 'oppning') && f.ritning.every(q => MATERIAL[q.m]); // väggarna står runt det som redan står
   const iw = f.w - 2, ih = f.h - 2;
   if (f.w && (Math.min(iw, ih) < HUS.minSida || Math.min(iw, ih) > HUS.maxSida || Math.max(iw, ih) > HUS.langSida * Math.min(iw, ih) || iw * ih > BYGG.maxInne)) return false;
   if (f.at === 'egetRum' || f.at === 'battreGolv' || f.at === 'kopaHus') return f.at === 'kopaHus' || f.ritning.every(a => MATERIAL[a.m]);
@@ -784,10 +790,11 @@ function lagerUrVagen(s: State, f: Forslag, hus: Hus) {
 // ett nytt hus: ritningen blir bitar
 function bygg(s: State, f: Forslag, u: ByggBehov, by: Person) {
   const row: Byggnad = BYGGNADER[u.fn as Fn], iw = f.w - 2, ih = f.h - 2, same = antalLika(s, u.fn as Fn, iw, ih);
-  const hus: Hus = { id: (s.nextBit ??= 1), namn: row.namnFor!(s, iw, ih, same, u.a), x: f.x, y: f.y, w: f.w, h: f.h, fn: u.fn, slag: u.a.slag, ag: u.a.ag, ...(row.skjul ? { skjul: 1 as const } : {}) };
+  const hus: Hus = { id: (s.nextBit ??= 1), namn: row.namnFor!(s, iw, ih, same, u.a), x: f.x, y: f.y, w: f.w, h: f.h, fn: u.fn, slag: u.a.slag, ag: u.a.ag, };
   s.nextBit++;
   for (const a of f.ritning) bitsOf(s).push({ id: s.nextBit++, x: a.x, y: a.y, k: MATERIAL[a.m].k, m: a.m, b: a.m === 'oppning' ? 1 : 0, mat: 0, c: 1, hus: hus.id });
   housesOf(s).push(hus); touch(s);
+  if (row.omkring) for (const z of zonesOf(s)) if (z.hus === undefined && z.x > f.x && z.y > f.y && z.x + z.w < f.x + f.w && z.y + z.h < f.y + f.h) z.hus = hus.id; // vedboden byggs runt lagerplatsen (steg 9.2.137)
   lagerUrVagen(s, f, hus);
   if (f.ny) s.fire.flytt = { x: f.ny.x, y: f.ny.y, varfor: 'plats' };
   log(s, planText(by, u.fn as Fn, hus, (BYGGNADER as Record<string, Byggnad>)[u.fn]?.sover ? sovPersoner(iw * ih) : iw * ih, same) + (f.ny ? ' Elden måste flyttas först.' : ''), 'world', [by.id]); count(s, 'planerat_' + u.fn);

@@ -292,6 +292,15 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     gå(s);
   }],
   [34, 'v523: färdigheten Djurskötsel (steg 9.8.1) börjar på noll', s => { for (const p of s.people) p.skill.skotsel ??= 0; }],
+  [35, 'v524: stolpen och skjulen tas bort (steg 9.2.137): skjulen och stolparna rivs, veden i stolparna kommer tillbaka, och Byggplanen planerar torkhuset och vedboden på nytt som vanliga hus', s => {
+    const skjul = new Set((s.hus ?? []).filter(h => (h as { skjul?: 1 }).skjul).map(h => h.id));
+    let ved = 0;
+    for (const b of s.byggen ?? []) if (b.m === 'stolpe' || (b.hus !== undefined && skjul.has(b.hus))) ved += b.mat ?? 0;
+    s.byggen = (s.byggen ?? []).filter(b => b.m !== 'stolpe' && !(b.hus !== undefined && skjul.has(b.hus)));
+    s.hus = (s.hus ?? []).filter(h => !skjul.has(h.id));
+    s.byggV = (s.byggV ?? 0) + 1; s.byggBehov = undefined;
+    if (ved >= 1) put(s, 'ved', Math.floor(ved));
+  }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

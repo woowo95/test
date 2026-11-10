@@ -956,8 +956,7 @@ SCENARIER.strak = {
         }
       }
       for (const f of s.falt ?? []) if (!f0.has(f) && SIM.faltRutor(f).some(i => fore[i])) { paStrak++; nyttPa.push('fält'); }
-      // ett skjul är öppet: bara stolparna står på marken
-      for (const h of housesOf(s)) if (!h0.has(h)) { if (h.skjul) { for (const b of SIM.bitsOf(s)) if (b.hus === h.id && fore[b.y * W + b.x] === 2) husPa++; } else for (let j = h.y; j < h.y + h.h; j++) for (let i = h.x; i < h.x + h.w; i++) if (fore[j * W + i] === 2) husPa++; }
+      for (const h of housesOf(s)) if (!h0.has(h)) for (let j = h.y; j < h.y + h.h; j++) for (let i = h.x; i < h.x + h.w; i++) if (fore[j * W + i] === 2) husPa++;
       if (t % STEG_TIM === 0) maxRutor = Math.max(maxRutor, SIM.straken(s).ruta.reduce((a, v) => a + (v ? 1 : 0), 0));
     }
     const st = SIM.straken(s), hus = housesOf(s).filter(h => h.klar);
@@ -1483,20 +1482,21 @@ SCENARIER.byggplan2 = {
 };
 
 SCENARIER.skjul = {
-  text: 'Steg 7.3.1–7.3.6: stolpen, jordgolvet som en stig, blöt ved och skjulen. Två torkställningar ute ger ett torkhus, mycket ved ute en vedbod: ett tak med stolpar, och under det blir veden aldrig blöt',
+  text: 'Steg 7.3.2–7.3.6 och 9.2.137: jordgolvet som en stig, blöt ved, torkhuset och vedboden. Två torkställningar ute ger ett torkhus, mycket ved ute en vedbod: ett vanligt hus med timmerväggar, en dörr och jordgolv runt det som redan står, och där inne blir veden aldrig blöt. Stolpen och skjulen finns inte längre',
   kor: () => {
     const s = createState(6, START);
     klockan(s); byggare(s);
-    const st = SIM.MATERIAL.stolpe, stolpen = st.k === 'vagg' && st.item === 'ved' && st.n === 4 && st.tek === 'timmervagg';
+    const ingenStolpe = !SIM.MATERIAL.stolpe;
     SIM.planBuild(s); byggKlart(s);
     const hu = housesOf(s)[0], z = SIM.zonesOf(s)[0];
     (s.stationer ??= []).push({ id: s.nextBit!++, k: 'tork', x: hu.x + hu.w + 6, y: hu.y, kvar: 0 } as SIM.Station, { id: s.nextBit!++, k: 'tork', x: hu.x + hu.w + 9, y: hu.y, kvar: 0 } as SIM.Station);
     SIM.touch(s);
     const behovTork = SIM.byggbehov(s).find(b => b.fn === 'torkhus');
     s.byggBehov = undefined; SIM.planBuild(s);
-    const t = housesOf(s).find(h => h.fn === 'torkhus'), stolpar = t ? bitsOf(s).filter(b => b.hus === t.id && b.m === 'stolpe').length : 0;
+    const t = housesOf(s).find(h => h.fn === 'torkhus'), tb = t ? bitsOf(s).filter(b => b.hus === t.id) : [];
+    const vaggar = tb.filter(b => b.m === 'timmer').length, dorr = tb.some(b => b.m === 'oppning'), jord = tb.filter(b => b.m === 'jord').length;
     if (t) { for (const b of bitsOf(s)) if (b.hus === t.id) { b.mat = 2; b.b = 1; } t.klar = s.now; SIM.touch(s); }
-    const under = t ? SIM.roofed(s, t.x + 1, t.y + 1) && !SIM.roomAt(s, t.x + 1, t.y + 1) : false;
+    const tork = (s.stationer ?? []).filter(q => q.k === 'tork'), inne = tork.length > 0 && tork.every(q => SIM.roofed(s, q.x, q.y) && !!SIM.roomAt(s, q.x, q.y));
     // blöt ved
     SIM.setAmount(s, 'ved', 0);
     put(s, 'ved', 8);
@@ -1509,10 +1509,10 @@ SCENARIER.skjul = {
     SIM.stepBlotVed(s, 3600 * 200);
     const torr = a.blot === undefined, torrEfter = SIM.torrVed(s);
     return [
-      ['stolpen är en byggdel som stänger vägen och kostar 4 ved, och låses upp av Timmerhus', stolpen],
+      ['stolpen finns inte längre', ingenStolpe],
       ['två torkställningar ute: byn vill ha ett torkhus', !!behovTork],
-      [`Byggplanen sätter upp ett skjul med stolpar (${stolpar})`, !!t && stolpar >= 4],
-      ['under skjulet är det tak men inget rum', under],
+      [`Byggplanen bygger ett torkhus med timmerväggar (${vaggar}), en dörr (${dorr ? 'ja' : 'nej'}) och jordgolv (${jord} rutor) runt torkställningarna`, !!t && vaggar >= 8 && dorr && jord >= 2],
+      ['torkställningarna står inne i huset, under tak (rummet)', inne],
       [`ved ute i regnet blir blöt (${nb})`, !nb || blot],
       [`torr ved räknas för sig (${torrFore} → ${torrEfter})`, torrEfter >= torrFore],
       ['när det slutat regna torkar den', torr],

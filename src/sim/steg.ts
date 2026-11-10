@@ -440,7 +440,7 @@ function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: numb
   bristSteg(p, now);
   p.rest = clamp(p.rest + dtSec / HOUR_S * vilaTim(p, vs), 0, 1);
   { // regnet blöter den som är ute; man torkar inne och vid elden (steg 2.11.1)
-    const ute = !roofed(s, p.x, p.y); // också under ett skjul håller man sig torr (Skjul i designdokumentet)
+    const ute = !roofed(s, p.x, p.y); // inne i ett hus håller man sig torr
     blotSteg(s, p, ute, ute && groundOf(s).trees[tileOf(p.x, p.y)] > KROPP.skugga, heatAt(s, p.x, p.y) > KROPP.eldNara, dtSec / HOUR_S);
     if ((p.blot ?? 0) > VADER.blotTanke) think(p, 'Blöt av regnet', -0.05, now, HOUR);
   }

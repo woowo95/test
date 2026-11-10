@@ -233,7 +233,7 @@ const SALLSYNT: Record<string, string> = {
   vavstol: 'sen teknik i fas 7, hinner inte alltid komma på 35 dygn; scenariot hantverk7 prövar den',
   slanda: 'sen teknik i fas 7, hinner inte alltid komma på 35 dygn; scenariot hantverk7 prövar den',
   torkhus: 'sen teknik i fas 7, hinner inte alltid komma på 35 dygn; scenariot hantverk7 prövar den',
-  vedbod: 'kräver skjul och mycket ved ute, hinner inte alltid komma på 35 dygn; scenariot skjul prövar den',
+  vedbod: 'kräver mycket ved ute, hinner inte alltid komma på 35 dygn; scenariot skjul prövar den',
   mjarde: 'sen teknik i fas 7, hinner inte alltid komma på 35 dygn; scenariot hantverk7 prövar den',
   torrgadda: 'sen teknik i fas 7, hinner inte alltid komma på 35 dygn; scenariot hantverk7 prövar den',
   torrmort: 'sen teknik i fas 7, hinner inte alltid komma på 35 dygn; scenariot hantverk7 prövar den',

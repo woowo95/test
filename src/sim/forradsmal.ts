@@ -22,7 +22,7 @@ import { sportFor } from './sport';
 import { STATIONER, StationDef, StationSlag, bordBrist, forvarBrist, harStation, isKlar, pyntBrist, stationerOf, tommaPlatser, villPynt } from './stationer';
 import { nTools } from './agande';
 import { brasaBrist } from './brasor';
-import { utanBadd } from './byggnader';
+import { BYGGNADER, fnId, utanBadd } from './byggnader';
 import { latrinBrist } from './smuts';
 import { torkBrist } from './matlagning';
 import { HOUR, State, WEEK } from './typer';
@@ -227,7 +227,7 @@ export const villAv = (s: State, g: string) => REDSKAPMAL[g](s);
 // under tak; borden (steg 2.2.15) en plats per invånare; förvaringen, pyntet, brasorna, latrinen och torkställningen efter
 // sina egna mått. Bristen är hur stor del av bufferten som saknas (0 till 1), som projektets brist (projekt.ts)
 // En halvbyggd station (en kista, ett pynt) görs klar även när ingen längre vill ha en ny: bristen är då 1
-const harBrist = (s: State) => { const n = (s.eldar ?? []).filter(f => f.hearth === 'hard').length, hus = (s.hus ?? []).filter(h => h.klar && !h.skjul).length; return n < hus ? 0.5 : 0; };
+const harBrist = (s: State) => { const n = (s.eldar ?? []).filter(f => f.hearth === 'hard').length, hus = (s.hus ?? []).filter(h => h.klar && !(BYGGNADER as Record<string, { omkring?: boolean }>)[fnId(h)]?.omkring).length; /* torkhuset och vedboden har ingen härd */ return n < hus ? 0.5 : 0; };
 export function stationBrist(s: State, k: StationSlag) {
   const d: StationDef = STATIONER[k];
   if (!d.brasa && stationerOf(s).some(t => t.k === k && !isKlar(t))) return 1;
