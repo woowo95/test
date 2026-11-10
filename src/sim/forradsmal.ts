@@ -33,7 +33,7 @@ export const FORRAD = balans('forrad', {
   forsiktig: 0.25, // en försiktig by (seden Förutseende eller påbudet) vill ha så mycket större förråd
   behovTomt: 3.2, behovMax: 3.5, // vikten av ett tomt förråd under Försörjning, och den högsta vikten
   // mat: förrådets dygn dämpar vikten ner till Min när förrådet räcker så länge byn vill (bufferten) ...
-  matDygn: 1.1, matMin: 0.4,
+  matDygn: 2.5, matMin: 0.4, // 1,1 före Balansen i fas 9 (steg 9.9.4): med en så liten buffert slog varje störning direkt till svält
   matMatt: 2, matMinMatt: 0.04, // ... och sedan vidare ner till MinMatt vid taket, Matt gånger bufferten: då upphör matarbetet nästan (steg 3.10.9)
   vedDygn: 2, vedMin: 0.15, // ... och för ved
   vedMatt: 12, vedMinMatt: 0.01, // över taket (Matt gånger bufferten) sjunker golvet mot MinMatt, som ligger där vid dubbla tiden (steg 6.1.5)
