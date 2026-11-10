@@ -341,6 +341,9 @@
     {"id": "uppsatt_vagg", "sort": "kar-station", "namn": "Uppsatt fackla på väggen", "w": 6, "h": 9, "vad": "träklossen i väggen med facklan bunden vid, Björns val (steg 9.9.1)", "ritad": 1, "godkand": true},
     {"id": "uppsatt_vagg_tand", "sort": "kar-station", "namn": "Uppsatt tänd fackla på väggen", "w": 6, "h": 12, "vad": "samma, tänd", "ritad": 1, "godkand": true},
     {"id": "garvning", "sort": "kar-station", "namn": "Garvningsställning", "w": 34, "h": 32, "vad": "A-ramen med ett skinn spänt i, Björns val (steg 9.9.1)", "ritad": 1, "godkand": true},
-    {"id": "klyvplats", "sort": "kar-station", "namn": "Klyvplats", "w": 50, "h": 31, "vad": "den låga klyvbänken med en kluven halva fasthållen, en kort stock med kilar och en stapel plankor, Björns val (steg 9.9.1)", "ritad": 1, "godkand": true}
+    {"id": "klyvplats", "sort": "kar-station", "namn": "Klyvplats", "w": 50, "h": 31, "vad": "den låga klyvbänken med en kluven halva fasthållen, en kort stock med kilar och en stapel plankor, Björns val (steg 9.9.1)", "ritad": 1, "godkand": true},
+    {"id": "grav_1", "sort": "kar-mobel", "namn": "Gravsten 1", "w": 21, "h": 19, "vad": "en hög rundad sten med gula lavfläckar, en av tre som graven får efter rutan, Björns val (steg 9.9.1)", "ritad": 1, "godkand": true},
+    {"id": "grav_2", "sort": "kar-mobel", "namn": "Gravsten 2", "w": 24, "h": 20, "vad": "en kantig häll på högkant med en ristad slinga, en av tre som graven får efter rutan, Björns val (steg 9.9.1)", "ritad": 1, "godkand": true},
+    {"id": "grav_3", "sort": "kar-mobel", "namn": "Gravsten 3", "w": 26, "h": 14, "vad": "en låg bred sten med en ring med ett kors i, en av tre som graven får efter rutan, Björns val (steg 9.9.1)", "ritad": 1, "godkand": true}
   ]
 }

@@ -56,12 +56,23 @@ export function vaderMork(t: number) { const v = vaderNu(s, t); return v.moln * 
 const fast = (i: number, salt: number) => { const x = Math.sin(i * 127.1 + salt * 311.7) * 43758.5453; return x - Math.floor(x); };
 let blixtTill = 0, nastaBlixt = 0;
 
-// blixtens nedslag (steg 9.2.21, platshållare tills Björn valt i bildstilen): en blixt från himlen ner till rutan under
-// NEDSLAG_MS (datorns tid) och ett starkare sken runt nedslaget, när åskan slår ner av sig själv och i testläget
+// blixtens nedslag (steg 9.2.21, Björns val i steg 9.9.1: version 2): en bred blixt i ben 3 med skiffer 3 som kant, med en tunn gren
+// åt sidan halvvägs, från himlen ner till rutan under NEDSLAG_MS (datorns tid) och ett stort sken i senap runt nedslaget, när åskan slår
+// ner av sig själv och i testläget. Formen är ritad i punkter (BLIXT_PUNKTER, bildstilens 48 × 72) och sträckt till höjden
 const NEDSLAG_MS = 450, NEDSLAG_HOJD = 9; // så länge den syns, och så många rutor ovanför rutan den börjar
+const BLIXT_PUNKTER = [[18, 0], [24, 14], [16, 26], [26, 40], [22, 58]], BLIXT_GREN = [[21, 26], [12, 34], [9, 42]];
+const SKEN_R = 11, BLIXT_H = 58;
 const nedslagG = new PIXI.Graphics();
 world.addChild(nedslagG);
 const settNedslag = new Map<string, number>(); // nedslaget och när det syntes första gången (datorns tid)
+// en linje av punkter mellan två punkter, bred punkter bred med kanten i skiffer 3 på båda sidor
+function blixtLinje(ax: number, ay: number, bx: number, by: number, bred: number) {
+  const n = Math.max(Math.abs(bx - ax), Math.abs(by - ay));
+  for (let k = 0; k <= n; k++) {
+    const x = Math.round(ax + (bx - ax) * k / (n || 1)), y = Math.round(ay + (by - ay) * k / (n || 1));
+    for (let d = -1; d <= bred; d++) nedslagG.beginFill(d < 0 || d === bred ? 0x8a9c9e : 0xdad0bb).drawRect(x + d, y, 1, 1).endFill();
+  }
+}
 function drawNedslag(ms: number) {
   nedslagG.clear();
   for (const n of s.nedslag ?? []) {
@@ -69,20 +80,17 @@ function drawNedslag(ms: number) {
     if (!settNedslag.has(k)) { if (ui.nu - n.t > 10 * 60_000) continue; settNedslag.set(k, ms); blixtTill = ms + BILD.blixtMs; } // och hela kartan blixtrar
     const kvar = 1 - (ms - settNedslag.get(k)!) / NEDSLAG_MS;
     if (kvar <= 0) continue;
-    const x0 = n.x * TS + TS / 2, y1 = n.y * TS + TS / 2, y0 = y1 - NEDSLAG_HOJD * TS;
-    // skenet runt nedslaget: ringar av punkter i senap 3, glesare utåt
-    nedslagG.beginFill(0xd8b25f);
-    for (let r = 1; r <= 3; r++) for (let a = 0; a < 16; a++) if ((a + r) % r === 0) nedslagG.drawRect(Math.round(x0 + Math.cos(a / 16 * Math.PI * 2) * r * 5 * kvar) - 1, Math.round(y1 + Math.sin(a / 16 * Math.PI * 2) * r * 4 * kvar) - 1, 2, 2);
-    nedslagG.endFill();
-    // blixten: en sicksack i ben 3 med kol bredvid, ny form för varje nedslag
-    let x = x0, y = y0;
-    for (let i = 0; y < y1; i++) {
-      const steg = 6 + ((n.t / 60000 + i * 7) % 5), ny = Math.min(y1, y + steg), nx = x0 + Math.round(Math.sin(n.t / 1e5 + i * 1.7) * 6 * (1 - (y - y0) / (y1 - y0)));
-      const l = Math.min(x, nx), b = Math.max(2, Math.abs(nx - x) + 2);
-      nedslagG.beginFill(0x24201d).drawRect(l - 1, y, b + 2, ny - y + 1).endFill();
-      nedslagG.beginFill(0xdad0bb).drawRect(l, y, b, ny - y).endFill();
-      x = nx; y = ny;
+    const x1 = n.x * TS + TS / 2, y1 = n.y * TS + TS / 2, sy = NEDSLAG_HOJD * TS / BLIXT_H, sx = 1.3;
+    // skenet runt nedslaget: senap 2 i ett glest mönster och senap 3 i mitten, krymper när blixten dör ut
+    const r = SKEN_R * (0.5 + 0.5 * kvar) * 1.4;
+    for (let y = Math.floor(y1 - r); y <= y1 + r; y++) for (let x = Math.floor(x1 - r); x <= x1 + r; x++) {
+      const d = Math.hypot((x - x1) * 0.8, y - y1) / r;
+      if (d < 1 && ((x + y * 3) % 4 === 0 || d < 0.35)) nedslagG.beginFill(d < 0.35 ? 0xd8b25f : 0xb2921b).drawRect(x, y, 1, 1).endFill();
     }
+    // blixten: punkterna räknade från nedslagspunkten (sista punkten), stora steg i höjd och lite mindre i bredd
+    const till = (p: number[]) => [Math.round(x1 + (p[0] - 22) * sx), Math.round(y1 + (p[1] - BLIXT_H) * sy)];
+    for (let i = 0; i + 1 < BLIXT_PUNKTER.length; i++) { const a = till(BLIXT_PUNKTER[i]), b = till(BLIXT_PUNKTER[i + 1]); blixtLinje(a[0], a[1], b[0], b[1], 2); }
+    for (let i = 0; i + 1 < BLIXT_GREN.length; i++) { const a = till(BLIXT_GREN[i]), b = till(BLIXT_GREN[i + 1]); blixtLinje(a[0], a[1], b[0], b[1], 1); }
   }
 }
 export function drawVader(ms: number) {

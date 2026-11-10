@@ -14,7 +14,7 @@
   // barnkläderna väntar (Björn: ”vi väntar med barnkläder”); kortet tas bort tills vidare
   { const i = VAL.findIndex(s => s.id === 'f7_barnklader'); if (i >= 0) VAL.splice(i, 1); }
   // inbyggda i steg 9.9.1 (Björns val): korten tas bort här, sist av alla svar-filer
-  { const INBYGGT_991 = ['f9_amne_arbete', 'f9_amne_barn', 'f9_amne_dod', 'f9_amne_fara', 'f9_amne_karlek', 'f9_amne_kunskap', 'f9_amne_langtan', 'f9_amne_plats', 'f9_amne_rykte', 'f9_amne_teknik', 'f9_amne_trost', 'f9_amne_vader_aska', 'f9_amne_vader_blast', 'f9_amne_vader_dimma', 'f9_amne_vader_klart', 'f9_amne_vader_regn', 'f9_amne_vader_sno', 'f9_amne_vardag', 'f9_amne_varsel', 'f9_amne_gral', 'f9_kk_liv', 'f9_kk_motgang', 'f9_kk_styre', 'f9_kk_bygge', 'f9_kk_fritid', 'f9_kk_grannar', 'f9_r_ja', 'f9_r_nej', 'f9_r_fram', 'f7_lintyg', 'f7_mossa', 'f8_hjalm', 'f8_skold', 'f8_mantel', 'f8_rustning', 'f7_halsband', 'f7_garvning', 'f9_uppsatt_vagg', 'f9_balte_mindre'];
+  { const INBYGGT_991 = ['f9_amne_arbete', 'f9_amne_barn', 'f9_amne_dod', 'f9_amne_fara', 'f9_amne_karlek', 'f9_amne_kunskap', 'f9_amne_langtan', 'f9_amne_plats', 'f9_amne_rykte', 'f9_amne_teknik', 'f9_amne_trost', 'f9_amne_vader_aska', 'f9_amne_vader_blast', 'f9_amne_vader_dimma', 'f9_amne_vader_klart', 'f9_amne_vader_regn', 'f9_amne_vader_sno', 'f9_amne_vardag', 'f9_amne_varsel', 'f9_amne_gral', 'f9_kk_liv', 'f9_kk_motgang', 'f9_kk_styre', 'f9_kk_bygge', 'f9_kk_fritid', 'f9_kk_grannar', 'f9_r_ja', 'f9_r_nej', 'f9_r_fram', 'f7_lintyg', 'f7_mossa', 'f8_hjalm', 'f8_skold', 'f8_mantel', 'f8_rustning', 'f7_halsband', 'f7_garvning', 'f9_uppsatt_vagg', 'f9_balte_mindre', 'f6_band', 'f9_lagermark', 'f9_nedslag', 'f9_stackar', 'f9_rutsaker', 'f9_tal', 'f9_snostank', 'f8_rokelse', 'f8_grav'];
     for (let i = VAL.length - 1; i >= 0; i--) if (INBYGGT_991.includes(VAL[i].id)) VAL.splice(i, 1); }
   const B = (val, text) => ({ val, steg: '8.10.1', text: text ? text + ' Byggs in i steg 8.10.1.' : undefined });
   Object.assign(BESLUT, {
@@ -38,10 +38,5 @@
   // Björns svar 2026-11-09: godkända kort, som byggs in i steg 9.9.1. Ja i ett ja/nej-kort är val 1.
   const B9 = val => ({ val, steg: '9.9.1' });
   Object.assign(BESLUT, {
-    f6_band: B9(1),
-    f9_lagermark: B9(1),
-    f9_nedslag: B9(2),
-    f9_stackar: B9(1),
-    f9_tal: B9(1),
   });
 })();

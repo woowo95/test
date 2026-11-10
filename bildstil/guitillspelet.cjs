@@ -46,6 +46,27 @@ for (const [id, hu, an] of FLIKAR) {
     band[id] = bild(140, 26, B => R.nyttBand({ ...B, satt: (x, y, c) => { if (n++ >= 152 * 36) B.satt(x - 6, y - 5, c); } }, 0, 0, NYA[id][0], NYA[id][1], NYA[id][2], NYA[id][3]));
   }
 }
+// banden täcker hela panelens bredd, 180 punkter (360 i dubbel storlek), steg 9.9.1 (Björns val f6_band). Sedernas och Krönikans band är
+// ritade så (gui.json); de andra breddas genom att ett stycke av stavens mönster upprepas på båda sidor om medaljongen
+const BANDBREDD = 180;
+// stavens mönster upprepas med en period (kolumner): den period där en kolumn mest liknar den en period bort. Stycket som läggs in är
+// ett helt antal perioder (så nära 20 kolumner som går), så att mönstret fortsätter utan skarv
+const period = b => {
+  let bast = 8, minst = 1e9;
+  for (let p = 8; p <= 45; p++) { let fel = 0; for (let i = 14; i < 14 + 50; i++) for (const r of b.rader) if (r[i] !== r[i + p]) fel++; if (fel < minst) { minst = fel; bast = p; } }
+  return bast;
+};
+const bredda = b => {
+  if (b.w >= BANDBREDD) return b;
+  const p = period(b), h = Math.max(1, Math.round((BANDBREDD - b.w) / 2 / p)) * p, w = b.w, S = 14, kol = [];
+  for (let i = 0; i < S + h; i++) kol.push(i);
+  for (let i = S; i < S + h; i++) kol.push(i);
+  for (let i = S + h; i < w - S - h; i++) kol.push(i);
+  for (let i = w - S - h; i < w - S; i++) kol.push(i);
+  for (let i = w - S - h; i < w; i++) kol.push(i);
+  return { ...b, w: kol.length, rader: b.rader.map(r => kol.map(i => r[i]).join('')) };
+};
+for (const id of Object.keys(band)) band[id] = bredda(band[id]);
 const farg = Object.fromEntries(FLIKAR.map(([id, hu, an]) => [id, { hu: RAMPER[hu], an: RAMPER[an] }]));
 
 // vågbandet längst ner i raden överst (steg 5.3.1.2): Björns ja till g_vag, en ruta som upprepas över hela bredden, och grunden bakom
