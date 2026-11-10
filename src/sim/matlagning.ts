@@ -9,7 +9,7 @@ import { SAKER } from './saker';
 import { loggBer } from './berattelser';
 import { balans } from './balans';
 import { SJUK, insjukna } from './sjukdom';
-import { INGREDIENSER, KATEGORIER, Kategori, Maltidsniva, RATT, RATT_HUVUD, RATT_HUVUD_LIST, RATT_SAKER, RattHuvud, grupperAv, nivaAvGrupper, rattId } from './ratter';
+import { INGREDIENSER, KATEGORIER, Kategori, Maltidsniva, RATT, RATT_HUVUD, RATT_HUVUD_LIST, RATT_SAKER, RattHuvud, grupperAv, hallerSteg, nivaAvGrupper, rattId } from './ratter';
 import { tingOf } from './agande';
 import { getable, takeMaterial } from './behov';
 import { knows } from './teknik';
@@ -252,13 +252,14 @@ export function kokRecept(s: State, p?: Person): KokRecept | undefined {
     if (niva !== 'lagad' && niva !== 'fin') continue;
     const kats = RATT_HUVUD[hh].kat as Kategori[], kat = grupperAv(andra).includes('starkelse') ? kats[0] : kats[kats.length - 1];
     // rättens hållbarhet är medelvärdet av ingrediensernas (steg 9.6.7): med torkad råvara håller den länge
-    const lang = hallerMedel([[huvud, RATT.huvud], [andra, RATT.andra]]) >= RATT.hallerLang;
-    return { id: rattId(hh, kat, niva, lang), huvud, andra, smak, kat, niva, hh };
+    const haller = hallerMedel([[huvud, RATT.huvud], [andra, RATT.andra], ...(smak ? [[smak, RATT.smak] as [string, number]] : [])]);
+    return { id: rattId(hh, kat, niva, haller), huvud, andra, smak, kat, niva, hh };
   }
   return undefined;
 }
-// medelvärdet av ingrediensernas hållbarhet, efter mängden (dygn)
-export const hallerMedel = (ing: [string, number][]) => { let h = 0, n = 0; for (const [k, m] of ing) { h += (SAKER[k]?.haller ?? RATT.haller) * m; n += m; } return n ? h / n : 0; };
+// medelvärdet av ingrediensernas hållbarhet, efter mängden, avrundat till ett steg i HALLER_STEG (dygn). Det som inte ruttnar
+// (salt, talg, örter) räknas inte; ruttnar inget, håller rätten RATT.haller
+export const hallerMedel = (ing: [string, number][]) => { let h = 0, n = 0; for (const [k, m] of ing) { const d = SAKER[k]?.haller; if (d === undefined) continue; h += d * m; n += m; } return hallerSteg(n ? h / n : RATT.haller); };
 // en mellanstor lerkruka som är färdig, tom, inte bärs och inte står på elden
 export const ledigKruka = (s: State) => tingOf(s).find(t => t.k === 'lerkruka_mellan' && t.ler === undefined && !t.inne && !t.kok && !t.vaxt && t.hos === undefined && t.c > 0);
 // krukorna som står på elden
@@ -310,7 +311,7 @@ export function stekRecept(s: State, p?: Person) {
     if (!huvud) continue;
     const smak = RATT_SMAK.find(k => har(k, RATT.smak));
     const niva = nivaAvGrupper(new Set([...grupperAv(huvud), 'fett', ...(smak ? grupperAv(smak) : [])]));
-    return { id: rattId(hh, 'stek', niva), huvud, smak, hh };
+    return { id: rattId(hh, 'stek', niva, hallerMedel([[huvud, STEK.huvud], ['talg', STEK.talg], ...(smak ? [[smak, RATT.smak] as [string, number]] : [])])), huvud, smak, hh };
   }
   return undefined;
 }

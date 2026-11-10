@@ -280,6 +280,17 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     s.stackar = (s.stackar ?? []).filter(a => a.n > 1e-9 || (a.k !== 'tjara' && a.k !== 'salva' && a.k !== 'benlim'));
   }],
   [32, 'v522: färdigheten Odling (steg 9.7.7) börjar på noll', s => { for (const p of s.people) p.skill.odling ??= 0; }],
+  [33, 'v523: rättens hållbarhet är medelvärdet av ingrediensernas (steg 9.6.7): en rätt som höll länge (_l) håller tio dygn', s => {
+    const nytt = (k: string) => /^r_\w+_l$/.test(k) ? k.slice(0, -2) + '_h10' : k;
+    const gå = (o: unknown): unknown => {
+      if (typeof o === 'string') return nytt(o);
+      if (ArrayBuffer.isView(o)) return o;
+      if (Array.isArray(o)) { for (let i = 0; i < o.length; i++) o[i] = gå(o[i]); return o; }
+      if (o && typeof o === 'object') { const r = o as Record<string, unknown>; for (const k of Object.keys(r)) { const v = gå(r[k]), n = nytt(k); if (n !== k) delete r[k]; r[n] = v; } }
+      return o;
+    };
+    gå(s);
+  }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

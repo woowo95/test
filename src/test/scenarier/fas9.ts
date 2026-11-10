@@ -815,8 +815,8 @@ SCENARIER.ratthaller = {
     const prov = (k: string) => { for (const f of FOOD) setAmount(s, f, 0); setAmount(s, k, 4); setAmount(s, 'rotter', 4); const r = kokRecept(s, p); return r ? { namn: SAKER[r.id]!.namn, haller: SAKER[r.id]!.haller!, medel: hallerMedel([[r.huvud, 2], [r.andra, 2]]) } : undefined; };
     const farsk = prov('fisk'), torr = prov('torrfisk');
     return [
-      [`av färsk fisk och rötter (medel ${farsk?.medel.toFixed(1)} dygn) håller ${farsk?.namn} ${farsk?.haller} dygn`, !!farsk && farsk.haller < 5],
-      [`av torkad fisk och rötter (medel ${torr?.medel.toFixed(1)} dygn) håller ${torr?.namn} ${torr?.haller} dygn`, !!torr && !!farsk && torr.haller > farsk.haller],
+      [`av färsk fisk och rötter (medel ${farsk?.medel} dygn) håller ${farsk?.namn} ${farsk?.haller} dygn`, !!farsk && farsk.haller === farsk.medel && farsk.haller < 5],
+      [`av torkad fisk och rötter (medel ${torr?.medel} dygn) håller ${torr?.namn} ${torr?.haller} dygn`, !!torr && !!farsk && torr.haller === torr.medel && torr.haller > farsk.haller],
     ];
   },
 };
@@ -1113,7 +1113,7 @@ SCENARIER.stek = {
     s.stationer = [...(s.stationer ?? []), { id: 994, k: 'grill', x: 1, y: 1, kvar: 0, med: ['stekhall'] } as SIM.Station];
     const med = kanSteka(s, p);
     stekaKlar(s, p);
-    const stek = amountOf(s, rattId('kott', 'stek', 'lagad'));
+    const stek = SIM.RATT_SAKER.filter(k => SIM.rattInfo(k)?.kat === 'stek' && SIM.rattInfo(k)?.huvud === 'kott').reduce((n, k) => n + amountOf(s, k), 0);
     for (const k of FOOD) setAmount(s, k, 0); setAmount(s, rattId('kott', 'stek', 'lagad'), 2); p.thoughts = []; p.hunger = 0.2; MAT.anvand(s, p);
     const gott = p.thoughts.some(t => t.text === 'Åt en stek');
     return [
@@ -1315,10 +1315,15 @@ SCENARIER.kompost = {
     s.sophog = { x: 5, y: 5, n: REST.upptack + 5 };
     for (let h = 0; h < 2000 && !knows(p, 'kompost'); h++) { s.now += SIM.HOUR; stepKompost(s); }
     const kom = knows(p, 'kompost');
-    const ko = { id: 990, k: 'kompost', x: 5, y: 5, kvar: 0 } as SIM.Station, lat = { id: 989, k: 'latrin', x: 8, y: 5, kvar: 0, fyllt: 1 } as SIM.Station;
+    const ko = { id: 990, k: 'kompost', x: 5, y: 5, kvar: 0 } as SIM.Station, lat = { id: 989, k: 'latrin', x: 8, y: 5, kvar: 0, fyllt: 1 - 0.5 / SIM.STATION.latrinRymmer } as SIM.Station;
     s.stationer = [...(s.stationer ?? []), ko, lat];
     stepKompost(s);
-    const tomd = lat.fyllt === 0 && (ko.kompost?.rest ?? 0) > 0;
+    const sjalv = lat.fyllt !== 0; // töms inte av sig själv
+    p.x = lat.x + 0.5; p.y = lat.y + 0.5; SIM.toaBesok(s, p, lat.id);
+    const star = (s.stationer ?? []).includes(lat) && (lat.fyllt ?? 0) >= 1 - 1e-9; // full, men fylls inte igen
+    const att = SIM.latrinAttTomma(s) === lat;
+    p.task = { act: 'tomma_latrin', ref: lat.id } as unknown as SIM.Task; SIM.latrinTomKlar(s, p);
+    const tomd = sjalv && star && att && lat.fyllt === 0 && (ko.kompost?.rest ?? 0) > 0;
     setAmount(s, 'kompost', 0);
     for (let h = 0; h < 24 * 10 && amountOf(s, 'kompost') < 1; h++) { s.now += SIM.HOUR; stepKompost(s); }
     const klar = amountOf(s, 'kompost');
@@ -1327,7 +1332,7 @@ SCENARIER.kompost = {
     workOdla(s, p, { act: 'odla', tool: 'bereda', ref: f.id, fr: 0, until: s.now + SIM.HOUR, tx: p.x, ty: p.y } as unknown as SIM.Task, SIM.ODLING.beredaMin * 60);
     return [
       [`den som odlar märker att det växer bättre vid sophögen och kommer på gödseln (${kom ? 'ja' : 'nej'})`, kom],
-      [`sophögen blir komposten, och den fulla latrinen töms där (${tomd ? 'ja' : 'nej'}, ${ko.kompost?.rest} rester)`, tomd],
+      [`sophögen blir komposten; den fulla latrinen fylls inte igen utan väntar, och handlingen Tömmer latrinen tömmer den där (${tomd ? 'ja' : 'nej'}, ${ko.kompost?.rest} rester)`, tomd],
       [`resterna mognar till färdig kompost, ${REST.kompostRest} rester till en (${klar})`, klar >= 1],
       [`den färdiga komposten höjer bördigheten när rutan grävs (0.40 → ${bordighet(s, i).toFixed(2)})`, bordighet(s, i) > 0.4],
     ];

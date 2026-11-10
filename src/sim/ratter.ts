@@ -111,12 +111,15 @@ export const RATT_HUVUD = {
 export type RattHuvud = keyof typeof RATT_HUVUD;
 export const RATT_HUVUD_LIST = Object.keys(RATT_HUVUD) as RattHuvud[];
 
-// rätten i krukan: huvudingrediensen, kategorin, nivån och om den håller länge (lang, steg 9.6.7: av torkade råvaror)
-export const rattId = (h: RattHuvud, k: Kategori, n: Maltidsniva, lang = false) => `r_${h}_${k}_${n}${lang ? '_l' : ''}`;
-export interface RattInfo { huvud: RattHuvud; kat: Kategori; niva: Maltidsniva; lang: boolean }
+// rättens hållbarhet (steg 9.6.7): medelvärdet av ingrediensernas, avrundat till närmaste steg här (dygn, år i spelet)
+export const HALLER_STEG = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20] as const;
+export const hallerSteg = (d: number) => HALLER_STEG.reduce((b, h) => Math.abs(h - d) < Math.abs(b - d) ? h : b, HALLER_STEG[0] as number);
+// rätten: huvudingrediensen, kategorin, nivån och hur många dygn den håller (inget tillägg för RATT.haller)
+export const rattId = (h: RattHuvud, k: Kategori, n: Maltidsniva, haller: number = RATT.haller) => `r_${h}_${k}_${n}${haller !== RATT.haller ? '_h' + haller : ''}`;
+export interface RattInfo { huvud: RattHuvud; kat: Kategori; niva: Maltidsniva; haller: number }
 export function rattInfo(id: string): RattInfo | undefined {
-  const m = /^r_(\w+?)_(\w+?)_(lagad|fin)(_l)?$/.exec(id);
-  return m ? { huvud: m[1] as RattHuvud, kat: m[2] as Kategori, niva: m[3] as Maltidsniva, lang: !!m[4] } : undefined;
+  const m = /^r_(\w+?)_(\w+?)_(lagad|fin)(?:_h(\d+))?$/.exec(id);
+  return m ? { huvud: m[1] as RattHuvud, kat: m[2] as Kategori, niva: m[3] as Maltidsniva, haller: m[4] ? +m[4] : RATT.haller } : undefined;
 }
 // rättens namn: huvudingrediensen och kategorin, med nivån efter (Fiskgryta · Fin)
 export const rattNamn = (h: RattHuvud, k: Kategori, n: Maltidsniva) => `${RATT_HUVUD[h].namn}${KATEGORIER[k].namn} · ${MALTIDSNIVA[n].namn}`;
@@ -125,9 +128,10 @@ export const RATT = {
   portioner: 4, // en sats i krukan ger så många portioner
   huvud: 2, andra: 2, smak: 1, // av huvudingrediensen, den andra gruppen och smaken
   spara: { korn: 12 } as Record<string, number>, // så mycket sparas till utsäde och går inte i krukan (steg 9.6.11)
-  haller: 3, // en rätt håller så många dygn (år i spelet) ...
-  hallerLang: 10, // ... och så många när huvudingrediensen är torkad (steg 9.6.7: medelvärdet av ingrediensernas hållbarhet)
+  haller: 3, // en rätt av ingredienser som inte ruttnar håller så många dygn (år i spelet); annars medelvärdet av ingrediensernas (HALLER_STEG)
 };
+// i vilken ordning rätten äts (mat i saker.ts): den som håller kortast först, och en färsk rätt före den råa maten
+const rattMat = (haller: number) => Math.round(Math.max(0.3, 0.45 * haller - 0.95) * 100) / 100;
 // rätterna som saker (saker.ts): en rad per huvudingrediens, kategori och nivå, och en som håller längre
 const NARING: Record<RattHuvud, SakDef['naring']> = {
   kott: { protein: 1.6, fett: 0.8, energi: 1.1, mineral: 0.6, vitamin: 0.6 },
@@ -139,9 +143,11 @@ const NARING: Record<RattHuvud, SakDef['naring']> = {
 };
 export function rattSaker(): Record<string, SakDef> {
   const ut: Record<string, SakDef> = {};
-  for (const h of ['kott', 'fisk'] as RattHuvud[]) for (const n of ['lagad', 'fin'] as Maltidsniva[]) ut[rattId(h, 'stek', n)] = { namn: rattNamn(h, 'stek', n), varde: 1.5, stack: 25, ruta: 75, mapp: 'Mat', mat: 0.45, naring: NARING[h], haller: RATT.haller }; // steken (steg 9.6.21)
-  for (const h of RATT_HUVUD_LIST) for (const k of RATT_HUVUD[h].kat) for (const n of ['lagad', 'fin'] as Maltidsniva[]) for (const lang of [false, true])
-    ut[rattId(h, k, n, lang)] = { namn: rattNamn(h, k, n), varde: 1.5, stack: 25, ruta: 75, mapp: 'Mat', mat: lang ? 3.5 : 0.4, naring: NARING[h], haller: lang ? RATT.hallerLang : RATT.haller };
+  const rad = (h: RattHuvud, k: Kategori, n: Maltidsniva, haller: number) => { ut[rattId(h, k, n, haller)] = { namn: rattNamn(h, k, n), varde: 1.5, stack: 25, ruta: 75, mapp: 'Mat', mat: rattMat(haller), naring: NARING[h], haller }; };
+  for (const haller of HALLER_STEG) for (const n of ['lagad', 'fin'] as Maltidsniva[]) {
+    for (const h of ['kott', 'fisk'] as RattHuvud[]) rad(h, 'stek', n, haller); // steken (steg 9.6.21)
+    for (const h of RATT_HUVUD_LIST) for (const k of RATT_HUVUD[h].kat) rad(h, k, n, haller);
+  }
   return ut;
 }
 export const RATT_SAKER = Object.keys(rattSaker());

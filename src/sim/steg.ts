@@ -241,6 +241,7 @@ for (const art of DJURARTER) MEDAN[art.act] ??= (s, p, _t, dtSec) => bearbeta(s,
 MEDAN.grilla = (s, p, _t, dtSec) => grilla(s, p, dtSec / HOUR_S); // grillen över elden (matlagning.ts)
 KLAR.koka_mat = (s, p) => kokaKlar(s, p);
 KLAR.sopor = (s, p) => soporKlar(s, p);
+KLAR.tomma_latrin = (s, p) => latrinTomKlar(s, p);
 KLAR.staket = (s, p, t) => staketKlar(s, p, t.ref);
 KLAR.skramma = (s, p, t) => skrammaKlar(s, p, t.ref); // fågelskrämman (odling.ts, steg 9.7.11) // staketet (odling.ts, steg 9.7.10) // sophögen (rester.ts, steg 9.7.5)
 KLAR.steka = (s, p) => stekaKlar(s, p);
@@ -1269,7 +1270,7 @@ import { drickDryck, vatskorTimme } from './vatskor';
 import { bryggKlar, maltaKlar, stepBrygg } from './brygg';
 import { rusSteg } from './rus';
 import { hemma } from './halsa';
-import { soporKlar, stepKompost, stepSophog } from './rester';
+import { latrinTomKlar, soporKlar, stepKompost, stepSophog } from './rester';
 import { skrammaKlar, staketKlar } from './odling';
 // den rikaste röllekan på rutan eller bredvid den som samlar (steg 9.7.15): den plockas på vägen. Bara på sommarhalvåret,
 // när den växer, så att de andra tidsåldrarna inte frågar kartan i onödan
