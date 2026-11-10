@@ -1739,6 +1739,7 @@ SCENARIER.tamslakt = {
     const ung = nyttTamdjur(s, 'far', p.x + 1, p.y + 1, undefined, s.now - 2 * DAY);
     const val = avlivaVal(s, p);
     if (val) avlivaKlar(s, p, val.id);
+    const ungOrsak = slaktOrsak(s, ung), ungKvar = tamdjurOf(s).includes(ung); /* innan flocken fylls på */
     const kropp = amountOf(s, 'slaktfar');
     const rens0 = amountOf(s, 'slaktrens'), horn0 = amountOf(s, 'djurhorn'), skinn0 = amountOf(s, 'skinn');
     const kan = canProcess(s, p, DJUR.far);
@@ -1756,7 +1757,7 @@ SCENARIER.tamslakt = {
     const hane = flock.find(d => !hona(d)), honan = flock.find(d => hona(d));
     return [
       [`det gamla fåret väljs och avlivas (${val === gammal ? 'det gamla' : val ? 'ett annat' : 'inget'})`, val === gammal && !tamdjurOf(s).includes(gammal)],
-      [`det unga fåret slaktas inte`, tamdjurOf(s).includes(ung) && !slaktOrsak(s, ung) || flock.length >= BOSKAP.flock],
+      [`det unga fåret slaktas inte (${ungOrsak ?? '–'})`, ungKvar && !ungOrsak],
       [`det avlivade fåret ligger vid slaktbänken (${kropp})`, kropp === 1],
       [`det slaktas som viltet och ger horn, skinn och slaktrens (horn ${horn0} → ${amountOf(s, 'djurhorn')}, skinn ${skinn0} → ${amountOf(s, 'skinn')}, rens ${rens0} → ${rens1})`, kan && amountOf(s, 'djurhorn') > horn0 && amountOf(s, 'skinn') > skinn0 && rens1 > rens0],
       [`hunden får slaktrensen`, mat],
@@ -1828,6 +1829,7 @@ SCENARIER.slatter = {
     const id = (s.nextBit ??= 1); s.nextBit++;
     SIM.housesOf(s).push({ id, namn: 'Fähuset', x: m.x + 8, y: m.y + 8, w: 4, h: 3, fn: 'fahus', klar: s.now } as SIM.Hus);
     s.kal = SIM.nyKalender(s.now, SIM.ISTID);
+    s.stationer = [...(s.stationer ?? []), { id: 990, k: 'kompost', x: m.x + 14, y: m.y + 14, kvar: 0 } as SIM.Station]; SIM.touch(s); /* en färdig kompost, som i scenariot kompost */
     const ko = SIM.komposten(s), rest0 = ko?.kompost?.rest ?? 0;
     for (let h = 0; h < VINTER.frysTim; h++) { for (const d of tamdjurOf(s)) d.hunger = Math.min(d.hunger, 0.5); stepVinter(s); }
     const inne = tamdjurOf(s).filter(d => d.fahus === id).length, kvar = tamdjurOf(s).filter(d => d.art !== 'hund').length;
@@ -1844,7 +1846,7 @@ SCENARIER.slatter = {
       [`utan hö slaktar byn djur på hösten (${slakt})`, slakt >= 1],
       [`med hö nog slaktas inga för vinterns skull`, ingenSlakt],
       [`i istiden står två djur i fähuset (${inne}) och de andra fryser ihjäl (${kvar} kvar)`, inne === 2 && kvar === 2],
-      [`gödseln hamnar i komposten (${rest0} → ${rest1})`, !ko || rest1 > rest0],
+      [`gödseln hamnar i komposten (${rest0} → ${rest1})`, !!ko && rest1 > rest0],
       [`djuren i fähuset får hö`, matas],
     ];
   },
