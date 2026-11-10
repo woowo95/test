@@ -126,7 +126,7 @@ export const STATIONER = {
     forsta: '{namn} byggde byns första slaktbänk av virke. Där slaktas viltet och rensas fisken, och en kniv ligger kvar vid bänken.',
   },
   flatarbank: { // slöjdbänken: id:t är kvar från när den hette flätarbänken, så att sparade byar fungerar
-    kv: STATION.kvLite, namn: 'Slöjdbänk', ikon: 'flatarbank', w: 2, h: 1, tek: ['flatarbank'], av: RECEPT.flatarbank.av, min: RECEPT.flatarbank.min, gor: ['tvinna', 'korg', 'rock', 'skor', 'byxor', 'mossa', 'snoskor', 'rustning', 'hjalm', 'slunga', 'horn', 'prastdrakt', 'tecken', 'mask', 'mantel', 'halsband', 'tunika', 'skjorta', 'axelrem', 'ryggsack', 'benspade', 'vattensack', 'nat', ...ENKLA], fart: { tvinna: STATION.repFart, ...Object.fromEntries(ENKLA.map(a => [a, STATION.redskapFart])) }, bara: ['korg', 'rock', 'skor', 'byxor', 'mossa', 'snoskor', 'halsband', 'tunika', 'skjorta', 'axelrem', 'ryggsack', 'benspade', 'vattensack', 'nat'], vid: { bensyl: 1 }, kraver: { rock: 'bensyl', skor: 'bensyl', ryggsack: 'bensyl', vattensack: 'bensyl' }, inne: true, sitt: true,
+    kv: STATION.kvLite, namn: 'Slöjdbänk', ikon: 'flatarbank', w: 2, h: 1, tek: ['flatarbank'], av: RECEPT.flatarbank.av, min: RECEPT.flatarbank.min, gor: ['tvinna', 'korg', 'rock', 'skor', 'byxor', 'mossa', 'snoskor', 'rustning', 'hjalm', 'slunga', 'horn', 'prastdrakt', 'tecken', 'mask', 'mantel', 'halsband', 'tunika', 'skjorta', 'kappa', 'sjal', 'axelrem', 'ryggsack', 'benspade', 'vattensack', 'nat', ...ENKLA], fart: { tvinna: STATION.repFart, ...Object.fromEntries(ENKLA.map(a => [a, STATION.redskapFart])) }, bara: ['korg', 'rock', 'skor', 'byxor', 'mossa', 'snoskor', 'halsband', 'tunika', 'skjorta', 'kappa', 'sjal', 'axelrem', 'ryggsack', 'benspade', 'vattensack', 'nat'], vid: { bensyl: 1 }, kraver: { rock: 'bensyl', skor: 'bensyl', ryggsack: 'bensyl', vattensack: 'bensyl' }, inne: true, sitt: true,
     bygger: 'Bygger en slöjdbänk av virke och grenar.',
     forsta: '{namn} byggde byns första slöjdbänk. Där tvinnas rep fortare än för hand och flätas korgar.', // och sys kläder med bensylen (steg 2.3.2)
   },
@@ -163,7 +163,7 @@ export const STATIONER = {
     bygger: 'Sätter upp en garvningsställning.', forsta: '{namn} satte upp byns första garvningsställning. Där blir skinn till läder.',
   },
   vavstol: {
-    namn: 'Vävstol', ikon: 'vavstol', w: 2, h: 1, tek: ['vavstol'], av: RECEPT.vavstol.av, min: RECEPT.vavstol.min, gor: ['vava', 'spinna'], bara: ['vava'], vid: { slanda: 1 }, fart: { spinna: 2 }, // sländan läggs i vävstolen, och där spinns tråden fortare (steg 7.7.9)
+    namn: 'Vävstol', ikon: 'vavstol', w: 2, h: 1, tek: ['vavstol'], av: RECEPT.vavstol.av, min: RECEPT.vavstol.min, gor: ['vava', 'spinna', 'vava_ull', 'spinna_ull'], bara: ['vava', 'vava_ull'], vid: { slanda: 1 }, fart: { spinna: 2, spinna_ull: 2 }, // sländan läggs i vävstolen, och där spinns tråden fortare (steg 7.7.9)
     bygger: 'Bygger en vävstol.', forsta: '{namn} byggde byns första vävstol.',
   },
   // härden (steg 7.5.3): en eldstad inne i ett hus; när den är byggd blir den en eld som värmer huset (nyHard i brasor.ts)

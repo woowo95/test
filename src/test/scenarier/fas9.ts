@@ -1287,9 +1287,9 @@ SCENARIER.sophog = {
     const { bearbeta, DJUR, setAmount, amountOf, smutsIByn, soporKlar, sophog, stepSophog, utanforByn, resterIByn } = SIM;
     const s = createState(1, START); klockan(s, 10);
     const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
-    setAmount(s, 'abborre', 4);
+    setAmount(s, 'vilt', 4); setAmount(s, 'kniv', 1); (p.tek ??= {}).kniv = 1; // viltet: fisken ger fiskrens sedan steg 9.8.7
     s.stationer = [...(s.stationer ?? []), { id: 991, k: 'slaktbank', x: 3, y: 3, kvar: 0 } as SIM.Station];
-    bearbeta(s, p, DJUR.abborre, 1);
+    bearbeta(s, p, DJUR.kanin, 1);
     const rens = amountOf(s, 'slaktrens');
     setAmount(s, 'vaxtrest', 6);
     const fore = smutsIByn(s).punkter.length;
@@ -1514,6 +1514,517 @@ SCENARIER.ortkruka = {
       [`röllekan odlas i kruka (${GRODOR.rolleka.plats}) och sås aldrig på fältet (${grodorNu(s).includes('rolleka') ? 'på fältet' : 'inte på fältet'})`, GRODOR.rolleka.plats === 'kruka' && !grodorNu(s).includes('rolleka')],
       [`den som kan odla sätter röllekan i sin lediga kruka (${satt ? 'ja' : 'nej'})`, satt],
       [`den växer och plockas, och växer igen (${amountOf(s, 'rolleka')} rölleka, ${(kr.vaxt?.v ?? 0).toFixed(2)} vuxen)`, amountOf(s, 'rolleka') >= 1 && !!kr.vaxt],
+    ];
+  },
+};
+
+SCENARIER.tamdjur = {
+  text: 'Steg 9.8.1: de tama djuren är rader i registret TAMDJUR, individer med art, ålder, hunger och ägare. De blir hungriga, matas med slaktrens eller kött av den som har det (färdigheten Djurskötsel växer), svälter ihjäl utan mat, ärvs som redskapen och räknas i byns rikedom',
+  kor: () => {
+    const { nyttTamdjur, stepTamdjur, mataVal, mataKlar, tamdjurOf, setAmount, rikedomDelar, die, TAM } = SIM;
+    const s = createState(1, START); klockan(s, 10);
+    const vuxna = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen), p = vuxna[0]!;
+    const rik0 = rikedomDelar(s).redskap;
+    const h = nyttTamdjur(s, 'hund', p.x + 1, p.y, p.id);
+    const rik1 = rikedomDelar(s).redskap;
+    for (let i = 0; i < 14; i++) stepTamdjur(s);
+    const hungrig = h.hunger;
+    setAmount(s, 'slaktrens', 5);
+    const val = mataVal(s, p), sk0 = p.skill.skotsel ?? 0;
+    mataKlar(s, p, val?.id);
+    const matad = h.hunger, sk1 = p.skill.skotsel;
+    // ägaren dör: fåret ärvs (hunden går till den som matat den mest, steg 9.8.3)
+    const fa = nyttTamdjur(s, 'far', p.x, p.y + 1, p.id); fa.hunger = 0;
+    p.partner = undefined; const barn0 = vuxna[1]!; barn0.mother = p.id; /* en arvinge som säkert finns: ett vuxet barn */
+    const barn = SIM.living(s).filter(q => q.mother === p.id || q.father === p.id);
+    die(s, p, 'sjukdom');
+    const arvinge = fa.agare === barn0.id;
+    // ett får utan mat svälter ihjäl
+    const f = nyttTamdjur(s, 'far', p.x, p.y + 2);
+    for (let i = 0; i < 24 + TAM.svaltTim + 2; i++) stepTamdjur(s);
+    return [
+      [`hunden räknas i byns rikedom (${Math.round(rik0)} → ${Math.round(rik1)})`, rik1 > rik0],
+      [`hungern växer med tiden (${hungrig.toFixed(2)})`, hungrig > TAM.matas],
+      [`den som äger hunden och har slaktrens matar den (${val ? 'vald' : 'inte vald'}, hunger ${hungrig.toFixed(2)} → ${matad.toFixed(2)})`, !!val && matad < hungrig],
+      [`djurskötseln växer (${sk0.toFixed(3)} → ${sk1.toFixed(3)})`, sk1 > sk0],
+      [`fåret ärvs av barnet när ägaren dör (${barn.length} barn, ägare nu ${fa.agare ?? 'byn'})`, arvinge],
+      [`ett djur utan mat dör av hunger (${tamdjurOf(s).includes(f) ? 'lever' : 'dött'})`, !tamdjurOf(s).includes(f)],
+    ];
+  },
+};
+
+SCENARIER.valp = {
+  text: 'Steg 9.8.2: vargvalpen blir hund. När jägarna fällt flocken står valpen kvar; svälter byn äts den, annars vill den jägare som har mest Empati ta hem den, och det lyckas efter jaktfärdigheten',
+  kor: () => {
+    const { vargValp, tamdjurOf, setAmount, amountOf, FOOD } = SIM;
+    // byn svälter: valpen äts
+    const s = createState(1, START); klockan(s, 10);
+    for (const k of FOOD) setAmount(s, k, 0);
+    const jagare = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen).slice(0, 3);
+    vargValp(s, jagare);
+    const aten = !tamdjurOf(s).length && amountOf(s, 'vargkott') > 0;
+    // byn har mat: den med mest empati tar hem den
+    let hund: SIM.Tamdjur | undefined, vem = '', mest = '', bort = 0;
+    for (let seed = 1; seed <= 12 && !hund; seed++) {
+      const t = createState(seed, START); klockan(t, 10); setAmount(t, 'torrkott', 200);
+      const j = SIM.living(t).filter(r => SIM.ageOf(r, t.now) >= SIM.ALDER.vuxen).slice(0, 3);
+      for (const q of j) q.skill.jakt = 12;
+      vargValp(t, j);
+      hund = tamdjurOf(t)[0];
+      if (!hund) { bort++; continue; }
+      vem = SIM.byId(t, hund.agare!)!.name;
+      mest = [...j].sort((a, b) => SIM.stat(b, 'empati', t.now) - SIM.stat(a, 'empati', t.now))[0].name;
+    }
+    return [
+      [`svälter byn äts valpen (${aten ? 'åts' : 'åts inte'})`, aten],
+      [`annars tar den jägare med mest empati hem den och den blir en hund (${vem || 'ingen'}, mest empati: ${mest}, ${bort} sprang bort)`, !!hund && hund.art === 'hund' && vem === mest],
+      [`hunden är lojal mot den som bar hem den (${hund?.lojal ?? 0})`, (hund?.lojal ?? 0) > 0.5],
+    ];
+  },
+};
+
+SCENARIER.hund = {
+  text: 'Steg 9.8.3: hundens lojalitet. Den följer ägaren, lojaliteten växer när ägaren matar den och sjunker när den svälter; under gränsen byter den till den som matat den mer, och när ägaren dör går den till den som matat den mest',
+  kor: () => {
+    const { nyttTamdjur, tamdjurOf, stepTamdjur, mataKlar, setAmount, HUND } = SIM;
+    const s = createState(3, START); klockan(s, 10); setAmount(s, 'kott', 50);
+    const [a, b] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
+    const h = nyttTamdjur(s, 'hund', a.x + 20, a.y, a.id); h.lojal = 0.5; h.hunger = 0.6;
+    mataKlar(s, a, h.id);
+    const efterMat = h.lojal!;
+    let folj = 0;
+    for (let i = 0; i < 24; i++) { h.hunger = 0; stepTamdjur(s); if (Math.hypot(h.x - a.x, h.y - a.y) <= HUND.folj + 0.01) folj++; }
+    // b matar hunden, sedan svälter den tills den byter
+    for (let i = 0; i < 3; i++) { h.hunger = 0.6; mataKlar(s, b, h.id); }
+    let bytte = false;
+    for (let i = 0; i < 200 && !bytte; i++) { h.hunger = 1; h.svalt = 0; stepTamdjur(s); bytte = h.agare === b.id; }
+    // b dör: hunden går till a, som också matat den
+    b.died = s.now; stepTamdjur(s);
+    const arv = tamdjurOf(s)[0]?.agare === a.id;
+    // a dör och ingen annan matat: den rymmer
+    a.died = s.now; stepTamdjur(s);
+    return [
+      [`lojaliteten växer när ägaren matar den (0,5 → ${efterMat.toFixed(2)})`, efterMat > 0.5],
+      [`en lojal hund följer ägaren (${folj} av 24 timmar nära)`, folj >= 8],
+      [`en hungrig hund byter till den som matat den mer`, bytte],
+      [`när ägaren dör går den till den som matat den mest`, arv],
+      [`utan någon som matat den rymmer den (${tamdjurOf(s).length} hundar kvar)`, !tamdjurOf(s).length && (s.stat?.hundRymde ?? 0) > 0],
+    ];
+  },
+};
+
+SCENARIER.hage = {
+  text: 'Steg 9.8.4: hagen. Byn med betesdjur märker ut en hage och sätter staket runt den, djuren leds in med rep och betar gräset, buskarna och ungträden; staketet slits, och genom ett hål rymmer djuren',
+  kor: () => {
+    const { nyttTamdjur, stepTamdjur: stegaDjur, stepHagar, hagarOf, hageVal, hageKlar, hageHel, vallaVal, vallaKlar, hageRutor, setAmount, groundOf, HAGE, hageKant, tamdjurOf } = SIM;
+    const s = createState(5, START); klockan(s, 10);
+    const stepTamdjur = (q: typeof s) => { stegaDjur(q); stepHagar(q); };
+    const p = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0];
+    (p.tek ??= {}).staket = 1; setAmount(s, 'grenar', 400); setAmount(s, 'rep', 2);
+    const m = SIM.bynsMitt(s);
+    const f1 = nyttTamdjur(s, 'far', m.x, m.y), f2 = nyttTamdjur(s, 'get', m.x + 1, m.y);
+    stepTamdjur(s);
+    const h = hagarOf(s)[0];
+    let n = 0;
+    for (let v = hageVal(s, p); v && n < 200; v = hageVal(s, p), n++) hageKlar(s, p, v.i);
+    const hel = !!h && hageHel(s, h);
+    for (let d = vallaVal(s, p); d; d = vallaVal(s, p)) vallaKlar(s, p, d.id);
+    const inne = tamdjurOf(s).every(d => d.hage === h?.id);
+    const g = groundOf(s), gras0 = h ? hageRutor(h).reduce((a, i) => a + g.cover[i], 0) : 0;
+    const satt0 = s.staket?.length ?? 0;
+    for (let i = 0; i < 48; i++) { stepTamdjur(s); f1.hunger = Math.max(f1.hunger, 0.3); }
+    const gras1 = h ? hageRutor(h).reduce((a, i) => a + g.cover[i], 0) : 0;
+    // ett hål i staketet: djuren rymmer
+    if (h) { const k = hageKant(s, h)[3]; s.staket = s.staket!.filter(j => j !== k); }
+    for (let i = 0; i < 200 && tamdjurOf(s).some(d => d.hage !== undefined); i++) stepTamdjur(s);
+    const rymt = tamdjurOf(s).filter(d => d.hage === undefined).length;
+    return [
+      [`byn märker ut en hage när den har betesdjur (${h ? `${h.w} × ${h.h}` : 'ingen'})`, !!h && h.w === HAGE.sida],
+      [`staketet sätts runt hela hagen (${n} rutor)`, hel],
+      [`djuren leds in i hagen med rep`, inne],
+      [`djuren betar gräset (${gras0.toFixed(1)} → ${gras1.toFixed(1)})`, gras1 < gras0],
+      [`hagens staket byggdes (${satt0} rutor)`, satt0 > 0],
+      [`genom ett hål rymmer djuren (${rymt} av ${tamdjurOf(s).length})`, rymt > 0],
+      [`ett rymt djur leds tillbaka när hålet lagats`, (() => { for (let v = hageVal(s, p); v; v = hageVal(s, p)) hageKlar(s, p, v.i); for (let d = vallaVal(s, p); d; d = vallaVal(s, p)) vallaKlar(s, p, d.id); return tamdjurOf(s).every(d => d.hage !== undefined); })()],
+      [`fåret och geten lever (${[f1, f2].filter(d => d.dog === undefined).length})`, f1.dog === undefined && f2.dog === undefined],
+      (() => { /* staketet slits: en ruta går sönder av sig själv (chans per timme, HAGE.slit), så vi väntar tills det hänt */
+        const sonder0 = Number(s.stat?.staketSonder ?? 0), rutor0 = s.staket?.length ?? 0; let t = 0;
+        for (; t < 6000 && Number(s.stat?.staketSonder ?? 0) === sonder0; t++) { for (const d of tamdjurOf(s)) d.hunger = 0; stepTamdjur(s); }
+        const sonder1 = Number(s.stat?.staketSonder ?? 0), rutor1 = s.staket?.length ?? 0;
+        return [`staketet slits: en ruta går sönder (${sonder0} → ${sonder1} efter ${t} timmar, ${rutor0} → ${rutor1} rutor)`, sonder1 > sonder0 && rutor1 < rutor0] as [string, boolean];
+      })(),
+    ];
+  },
+};
+
+SCENARIER.boskap = {
+  text: 'Steg 9.8.5: får och getter köps av handlaren som levande djur och blir djur som ägs av köparen; på våren får en vuxen hona unga om det finns en hane av arten; fårens ull växer ut och klipps med kniven',
+  kor: () => {
+    const { stepBoskap, tamdjurOf, put, setAmount, amountOf, klippVal, klippKlar, kalender, VAR, HANDLARVAROR, BOSKAP, hona } = SIM;
+    const s = createState(2, START); klockan(s, 10);
+    const p = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0];
+    const iHandeln = HANDLARVAROR.some(w => w.k === 'levfar') && HANDLARVAROR.some(w => w.k === 'levget');
+    put(s, 'levfar', 2, { [p.id]: 2 });
+    stepBoskap(s);
+    const far = tamdjurOf(s).filter(d => d.art === 'far');
+    const agda = far.every(d => d.agare === p.id), kvar = amountOf(s, 'levfar');
+    // ullen klipps med kniven
+    setAmount(s, 'kniv', 1);
+    const ull0 = amountOf(s, 'ull'), d = klippVal(s, p);
+    if (d) klippKlar(s, p, d.id);
+    const ull1 = amountOf(s, 'ull');
+    // våren: honan får unga
+    const var0 = kalender(s).ai === VAR;
+    let h = 0;
+    for (; h < 160 && kalender(s).ai === VAR && tamdjurOf(s).length <= 2; h++) { s.now += SIM.HOUR; for (const q of tamdjurOf(s)) q.hunger = 0; stepBoskap(s); }
+    const unga = tamdjurOf(s).length - 2;
+    return [
+      [`handlaren har får och getter med sig`, iHandeln],
+      [`det köpta blir ${far.length} får som ägs av köparen, och varan är borta (${kvar})`, far.length === 2 && agda && kvar < 1],
+      [`ett par: en hona och en hane`, far.some(hona) && far.some(q => !hona(q))],
+      [`fåret klipps med kniven och ger ull (${ull0} → ${ull1})`, !!d && ull1 - ull0 === BOSKAP.ull],
+      [`ullen växer ut igen (${(far.find(q => q.id === d?.id)?.ull ?? 0).toFixed(2)})`, (far.find(q => q.id === d?.id)?.ull ?? 0) > 0],
+      [`på våren får honan ${unga} lamm (${h} timmar)`, var0 && unga >= 1],
+    ];
+  },
+};
+
+SCENARIER.hagflytt = {
+  text: 'Steg 9.8.6: flytta djuren. När hagen betats ner lägger byn ut en ny hage, och handlingen valla leder ett djur i ett rep dit, eller hela flocken med en hund som är lojal nog; den gamla hagen står kvar och växer igen',
+  kor: () => {
+    const { nyttTamdjur, stepHagar, hagarOf, hageVal, hageKlar, vallaVal, vallaKlar, hageRutor, setAmount, groundOf, tamdjurOf, nedbetad, djurIHagen } = SIM;
+    const s = createState(5, START); klockan(s, 10);
+    const p = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0];
+    (p.tek ??= {}).staket = 1; setAmount(s, 'grenar', 800); setAmount(s, 'rep', 2);
+    const m = SIM.bynsMitt(s);
+    nyttTamdjur(s, 'far', m.x, m.y); nyttTamdjur(s, 'far', m.x + 1, m.y); nyttTamdjur(s, 'get', m.x, m.y + 1);
+    const bygg = () => { for (let v = hageVal(s, p), n = 0; v && n < 400; v = hageVal(s, p), n++) hageKlar(s, p, v.i); };
+    stepHagar(s); bygg();
+    for (let d = vallaVal(s, p); d; d = vallaVal(s, p)) vallaKlar(s, p, d.id);
+    const h1 = hagarOf(s)[0];
+    // betet tar slut i hagen
+    const g = groundOf(s);
+    for (const i of hageRutor(h1)) { g.cover[i] = 0; g.trees[i] = 0; if (g.buske) g.buske[i] = 0; }
+    const ned = nedbetad(s, h1);
+    stepHagar(s);
+    const ny = hagarOf(s).length;
+    bygg();
+    const d1 = vallaVal(s, p);
+    if (d1) vallaKlar(s, p, d1.id);
+    const flyttad = djurIHagen(s, h1).length;
+    // med en lojal hund flyttas resten på en gång
+    const hund = nyttTamdjur(s, 'hund', p.x, p.y, p.id); hund.lojal = 0.9;
+    const d2 = vallaVal(s, p);
+    if (d2) vallaKlar(s, p, d2.id);
+    const kvar = djurIHagen(s, h1).length;
+    return [
+      [`hagen är nedbetad när betet tar slut`, ned],
+      [`byn lägger ut en ny hage (${ny} hagar)`, ny === 2],
+      [`valla leder ett djur i rep till den nya hagen (${3 - flyttad} av 3 flyttade)`, flyttad === 2],
+      [`med en lojal hund flyttas resten på en gång (${kvar} kvar i den gamla)`, kvar === 0],
+      [`den gamla hagen står kvar`, hagarOf(s).includes(h1) && tamdjurOf(s).length === 4],
+    ];
+  },
+};
+
+SCENARIER.tamslakt = {
+  text: 'Steg 9.8.7: slakt av tamdjur och slaktrens. Ett gammalt får, en hane när flocken blivit för stor och djur när byn svälter avlivas och slaktas vid slaktbänken som viltet; slakten ger slaktrens som hunden äter, och fiskrensen blir agn',
+  kor: () => {
+    const { nyttTamdjur, avlivaVal, avlivaKlar, slaktOrsak, setAmount, amountOf, DJUR, canProcess, bearbeta, mataVal, tamdjurOf, BOSKAP, hona, DAY } = SIM;
+    const s = createState(3, START); klockan(s, 10);
+    const p = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0];
+    (s.stationer ??= []).push({ id: 9901, k: 'slaktbank', x: Math.floor(p.x) + 2, y: Math.floor(p.y), kvar: 0 }); SIM.touch(s);
+    (p.tek ??= {}).kniv = 1; setAmount(s, 'kniv', 1); setAmount(s, 'kott', 200);
+    const gammal = nyttTamdjur(s, 'far', p.x + 1, p.y, undefined, s.now - 9 * DAY);
+    const ung = nyttTamdjur(s, 'far', p.x + 1, p.y + 1, undefined, s.now - 2 * DAY);
+    const val = avlivaVal(s, p);
+    if (val) avlivaKlar(s, p, val.id);
+    const ungOrsak = slaktOrsak(s, ung), ungKvar = tamdjurOf(s).includes(ung); /* innan flocken fylls på */
+    const kropp = amountOf(s, 'slaktfar');
+    const rens0 = amountOf(s, 'slaktrens'), horn0 = amountOf(s, 'djurhorn'), skinn0 = amountOf(s, 'skinn');
+    const kan = canProcess(s, p, DJUR.far);
+    if (kan) bearbeta(s, p, DJUR.far, 2);
+    const rens1 = amountOf(s, 'slaktrens');
+    // hunden äter slaktrensen
+    const hund = nyttTamdjur(s, 'hund', p.x, p.y, p.id); hund.hunger = 0.9;
+    const mat = mataVal(s, p) === hund && SIM.foderFor(s, p, hund) === 'slaktrens';
+    // fisken ger fiskrens, inte slaktrens
+    setAmount(s, 'abborre', 2);
+    bearbeta(s, p, DJUR.abborre, 1);
+    const fiskrens = amountOf(s, 'fiskrens'), rens2 = amountOf(s, 'slaktrens');
+    // för många: en av hanarna slaktas, en blir kvar
+    const flock = [ung]; for (let i = 0; flock.length < BOSKAP.flock; i++) flock.push(nyttTamdjur(s, 'far', p.x, p.y, undefined, s.now - 2 * DAY));
+    const hane = flock.find(d => !hona(d)), honan = flock.find(d => hona(d));
+    return [
+      [`det gamla fåret väljs och avlivas (${val === gammal ? 'det gamla' : val ? 'ett annat' : 'inget'})`, val === gammal && !tamdjurOf(s).includes(gammal)],
+      [`det unga fåret slaktas inte (${ungOrsak ?? '–'})`, ungKvar && !ungOrsak],
+      [`det avlivade fåret ligger vid slaktbänken (${kropp})`, kropp === 1],
+      [`det slaktas som viltet och ger horn, skinn och slaktrens (horn ${horn0} → ${amountOf(s, 'djurhorn')}, skinn ${skinn0} → ${amountOf(s, 'skinn')}, rens ${rens0} → ${rens1})`, kan && amountOf(s, 'djurhorn') > horn0 && amountOf(s, 'skinn') > skinn0 && rens1 > rens0],
+      [`hunden får slaktrensen`, mat],
+      [`fisken ger fiskrens till agn (${fiskrens}), inte slaktrens (${rens1} → ${rens2})`, fiskrens >= 1 && rens2 === rens1],
+      [`när flocken är för stor slaktas en hane, inte en hona (${slaktOrsak(s, hane!) ?? '–'}, ${slaktOrsak(s, honan!) ?? '–'})`, slaktOrsak(s, hane!) === 'for manga' && !slaktOrsak(s, honan!)],
+    ];
+  },
+};
+
+SCENARIER.mjolk = {
+  text: 'Steg 9.8.8: mjölken. En vuxen get som inte är hungrig får mjölk utom i istiden; hon mjölkas i en lerkruka, och mjölken dricks av den törstige som är hemma: den släcker törsten och fyller protein',
+  kor: () => {
+    const { nyttTamdjur, stepBoskap, mjolkaVal, mjolkaKlar, addTool, vatskaAv, drickDryck, naringNu, DAY } = SIM;
+    const s = createState(4, START); klockan(s, 10);
+    const p = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0];
+    const g = nyttTamdjur(s, 'get', p.x + 1, p.y, undefined, s.now - 3 * DAY);
+    g.hona = true; // en hona (den första geten i byn är annars en hane)
+    const ingenKruka = !mjolkaVal(s, p);
+    const kr = addTool(s, 'lerkruka_mellan', p); kr.hos = undefined;
+    for (let h = 0; h < 24; h++) { g.hunger = 0; stepBoskap(s); }
+    const val = mjolkaVal(s, p);
+    if (val) mjolkaKlar(s, p, val.id);
+    const mjolk = vatskaAv(s, 'mjolk');
+    const n0 = naringNu(p).protein;
+    p.torst = 0.3; (p.naring ??= { ...naringNu(p) }).protein = 0.2; p.hunger = SIM.mattnad(p.naring);
+    drickDryck(s, p);
+    const drack = vatskaAv(s, 'mjolk') === mjolk - 1 && p.torst > 0.3, prot = naringNu(p).protein;
+    // i istiden får geten ingen mjölk
+    g.mjolk = 0; s.kal = SIM.nyKalender(s.now, SIM.ISTID);
+    for (let h = 0; h < 24; h++) { g.hunger = 0; stepBoskap(s); }
+    const istid = g.mjolk ?? 0;
+    return [
+      [`utan ledig kruka mjölkas ingen`, ingenKruka],
+      [`geten får mjölk och mjölkas i krukan (${mjolk} delar)`, val === g && mjolk >= 1],
+      [`den törstige dricker mjölken (törst ${p.torst.toFixed(2)})`, drack],
+      [`mjölken fyller protein (${n0.toFixed(2)} → 0,20 → ${prot.toFixed(2)})`, prot > 0.2],
+      [`i istiden får geten ingen mjölk (${istid})`, istid === 0],
+    ];
+  },
+};
+
+SCENARIER.slatter = {
+  text: 'Steg 9.8.9: djurens vinter. Byn med hage och betesdjur märker ut en slåtteräng; på sensommaren slås den med skäran till hö. I istiden står djuren i fähuset och ger gödsel till komposten; de som inte får plats fryser ihjäl, och på hösten slaktar byn de djur den inte har hö till',
+  kor: () => {
+    const { nyttTamdjur, stepHagar, stepVinter, hageVal, hageKlar, angarOf, angRutor, slaVal, slaKlar, setAmount, amountOf, addTool, groundOf, tamdjurOf, HIGH, VINTER, fahusAkut, mataVal, foderFor, slaktOrsak, DAY } = SIM;
+    const s = createState(5, START); klockan(s, 10);
+    const p = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0];
+    (p.tek ??= {}).staket = 1; setAmount(s, 'grenar', 800); setAmount(s, 'rep', 2); setAmount(s, 'torrgras', 0);
+    const m = SIM.bynsMitt(s);
+    const djur = [nyttTamdjur(s, 'far', m.x, m.y, undefined, s.now - 3 * DAY), nyttTamdjur(s, 'far', m.x + 1, m.y, undefined, s.now - 3 * DAY), nyttTamdjur(s, 'far', m.x + 1, m.y + 1, undefined, s.now - 3 * DAY), nyttTamdjur(s, 'get', m.x, m.y + 1, undefined, s.now - 3 * DAY)];
+    stepHagar(s); for (let v = hageVal(s, p), n = 0; v && n < 400; v = hageVal(s, p), n++) hageKlar(s, p, v.i);
+    stepVinter(s);
+    const ang = angarOf(s)[0];
+    // på sommaren slås ängen med skäran
+    s.kal = SIM.nyKalender(s.now, SIM.SOMMAR);
+    const g = groundOf(s); for (const i of angRutor(ang)) g.cover[i] = Math.max(g.cover[i], HIGH);
+    const utan = slaVal(s, p) === undefined;
+    addTool(s, 'skara', p);
+    let slagna = 0; for (let i = slaVal(s, p); i !== undefined && slagna < 50; i = slaVal(s, p), slagna++) slaKlar(s, p, i);
+    const ho = amountOf(s, 'torrgras');
+    // på hösten: fähuset behövs, och utan hö nog slaktas djur
+    s.kal = SIM.nyKalender(s.now, SIM.HOST);
+    const akut = fahusAkut(s).v > 0;
+    setAmount(s, 'torrgras', 0);
+    const slakt = djur.filter(d => slaktOrsak(s, d) === 'host').length;
+    setAmount(s, 'torrgras', djur.length * VINTER.hoPerDjur);
+    const ingenSlakt = djur.every(d => slaktOrsak(s, d) !== 'host');
+    // i istiden: ett fähus med plats för två; de andra djuren fryser ihjäl
+    const id = (s.nextBit ??= 1); s.nextBit++;
+    SIM.housesOf(s).push({ id, namn: 'Fähuset', x: m.x + 8, y: m.y + 8, w: 4, h: 3, fn: 'fahus', klar: s.now } as SIM.Hus);
+    s.kal = SIM.nyKalender(s.now, SIM.ISTID);
+    s.stationer = [...(s.stationer ?? []), { id: 990, k: 'kompost', x: m.x + 14, y: m.y + 14, kvar: 0 } as SIM.Station]; SIM.touch(s); /* en färdig kompost, som i scenariot kompost */
+    const ko = SIM.komposten(s), rest0 = ko?.kompost?.rest ?? 0;
+    for (let h = 0; h < VINTER.frysTim; h++) { for (const d of tamdjurOf(s)) d.hunger = Math.min(d.hunger, 0.5); stepVinter(s); }
+    const inne = tamdjurOf(s).filter(d => d.fahus === id).length, kvar = tamdjurOf(s).filter(d => d.art !== 'hund').length;
+    const rest1 = ko?.kompost?.rest ?? 0;
+    // djuren i fähuset äter hö
+    const d0 = tamdjurOf(s).find(d => d.fahus === id)!; d0.hunger = 0.9;
+    for (const d of tamdjurOf(s)) if (d !== d0) d.hunger = 0;
+    const matas = mataVal(s, p) === d0 && foderFor(s, p, d0) === 'torrgras';
+    return [
+      [`byn märker ut en slåtteräng när den har hage och djur`, !!ang && ang.w === VINTER.angSida],
+      [`utan skära slås ingen äng`, utan],
+      [`med skäran slås ängen till hö (${slagna} rutor, ${ho} hö)`, slagna >= 1 && ho === slagna * VINTER.ho],
+      [`på hösten behövs ett fähus åt djuren`, akut],
+      [`utan hö slaktar byn djur på hösten (${slakt})`, slakt >= 1],
+      [`med hö nog slaktas inga för vinterns skull`, ingenSlakt],
+      [`i istiden står två djur i fähuset (${inne}) och de andra fryser ihjäl (${kvar} kvar)`, inne === 2 && kvar === 2],
+      [`gödseln hamnar i komposten (${rest0} → ${rest1})`, !!ko && rest1 > rest0],
+      [`djuren i fähuset får hö`, matas],
+    ];
+  },
+};
+
+SCENARIER.hons = {
+  text: 'Steg 9.8.10: hönsen. Hönor som köpts av handlaren blir en flock utan individer som ägs av köparen, går lös i byn och värper ett ägg om dygnet var utom i istiden; flocken räknas i ägarens förmögenhet',
+  kor: () => {
+    const { stepHons, honsOf, setAmount, amountOf, put, bynsMitt, HONS, formogenheter } = SIM;
+    const s = createState(4, START); klockan(s, 10);
+    const p = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0];
+    s.kal = SIM.nyKalender(s.now, SIM.SOMMAR);
+    setAmount(s, 'agg', 0);
+    put(s, 'levhons', 4, { [p.id]: 4 });
+    stepHons(s);
+    const h = honsOf(s);
+    const m = bynsMitt(s);
+    let langst = 0;
+    for (let t = 0; t < 48; t++) { stepHons(s); if (h) langst = Math.max(langst, Math.hypot(h.x - m.x, h.y - m.y)); }
+    const agg = amountOf(s, 'agg');
+    const varde = formogenheter(s).egen.get(p.id) ?? 0;
+    s.kal = SIM.nyKalender(s.now, SIM.ISTID);
+    for (let t = 0; t < 48; t++) stepHons(s);
+    const istid = amountOf(s, 'agg') - agg;
+    return [
+      [`fyra köpta hönor blir en flock (${h?.n ?? 0}) som köparen äger`, h?.n === 4 && h.agare === p.id && amountOf(s, 'levhons') === 0],
+      [`flocken går lös i byn (högst ${langst.toFixed(1)} rutor från mitten)`, langst > 0 && langst <= HONS.r + 0.01],
+      [`på två dygn värper de ett ägg om dygnet var (${agg})`, agg === 8],
+      [`flocken räknas i ägarens förmögenhet (${Math.round(varde)})`, varde >= 4 * HONS.varde],
+      [`i istiden värper de inte (${istid})`, istid === 0],
+    ];
+  },
+};
+
+SCENARIER.vakthund = {
+  text: 'Steg 9.8.11: vakthunden. En lojal hund hör vargarna längre bort än vakten ser dem, skäller och väcker sin ägare, som larmar byn; en hund som inte är lojal bryr sig inte',
+  kor: () => {
+    const prova = (lojal: number) => {
+      const s = createState(2, START); klockan(s, 2);
+      const folk = SIM.living(s), p = folk.filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0];
+      for (const q of folk) q.task = { act: 'sova', phase: 'do', tx: q.x, ty: q.y, until: s.now + 8 * SIM.HOUR, carry: 0 };
+      const h = SIM.nyttTamdjur(s, 'hund', p.x + 1, p.y, p.id); h.lojal = lojal;
+      const f: SIM.Vargflock = { id: s.vargNr = 1, vargar: [10_000_008, 10_000_009], x: h.x + 28, y: h.y, mx: h.x + 28, my: h.y, gar: s.now + 48 * SIM.HOUR, hunger: 0.5, gor: 'stryker' };
+      (s.vargar ??= []).push(f);
+      SIM.vargSteg(s, 1);
+      return { s, p, f };
+    };
+    const ja = prova(0.9), nej = prova(0.3);
+    return [
+      ['den lojala hunden hör flocken 28 rutor bort, och byn ser den', ja.f.sedd !== undefined && ja.f.sag === ja.p.id],
+      [`ägaren vaknar (${ja.p.task?.act ?? 'vaken'}) och har hört larmet`, ja.p.task?.act !== 'sova' && !!ja.p.larm],
+      ['skallet räknas', (ja.s.stat?.hundSkallde ?? 0) >= 1],
+      ['en hund som inte är lojal skäller inte, och ingen ser flocken', nej.f.sedd === undefined && nej.p.task?.act === 'sova'],
+    ];
+  },
+};
+
+SCENARIER.djurfara = {
+  text: 'Steg 9.8.12: djuren i fara. En hungrig vargflock smyger fram till ett får som står ute och tar det, men inte ett som står i fähuset; rövarna driver bort boskap i räden; den som svälter slaktar någon annans djur, och boskapsstölden är ett brott som byn kan stifta en lag mot',
+  kor: () => {
+    const { nyttTamdjur, tamdjurOf, vargSteg, HOUR, SEC } = SIM;
+    const varg = (inne: boolean) => {
+      const s = createState(3, START); klockan(s, 2); s.kal = SIM.nyKalender(s.now, SIM.ISTID);
+      const folk = SIM.living(s);
+      for (const q of folk) q.task = { act: 'sova', phase: 'do', tx: q.x, ty: q.y, until: s.now + 20 * HOUR, carry: 0 };
+      const c = SIM.bynsMitt(s);
+      const d = nyttTamdjur(s, 'far', c.x + 12, c.y);
+      if (inne) d.fahus = 1;
+      const f: SIM.Vargflock = { id: s.vargNr = 1, vargar: [10_000_008, 10_000_009], x: d.x + 10, y: d.y, mx: d.x + 10, my: d.y, gar: s.now + 48 * HOUR, hunger: 0.9, gor: 'stryker', sedd: s.now };
+      (s.vargar ??= []).push(f);
+      for (let i = 0; i < 1500 && tamdjurOf(s).includes(d); i++) { s.now += 10 * SEC; if (inne) d.fahus = 1; vargSteg(s, 10); }
+      return { s, d };
+    };
+    const ute = varg(false), inne = varg(true);
+    // rövarna
+    const r = createState(5, START); klockan(r, 12);
+    const rc = SIM.bynsMitt(r);
+    for (let i = 0; i < 3; i++) nyttTamdjur(r, 'far', rc.x + 3 + i, rc.y + 2);
+    SIM.rovarnaKommer(r, 2, true);
+    const rf = r.rovare!; rf.x = rc.x + 2; rf.y = rc.y + 2;
+    SIM.plundra(r, rf, true);
+    const drivna = 3 - tamdjurOf(r).length;
+    // boskapsstölden
+    const b = createState(4, START); klockan(b, 10);
+    const [agare, tjuv] = SIM.living(b).filter(q => SIM.ageOf(q, b.now) >= SIM.ALDER.vuxen);
+    (b.stationer ??= []).push({ id: 9901, k: 'slaktbank', x: Math.floor(tjuv.x) + 2, y: Math.floor(tjuv.y), kvar: 0 }); SIM.touch(b);
+    (tjuv.tek ??= {}).kniv = 1; SIM.setAmount(b, 'kniv', 1);
+    const fa = nyttTamdjur(b, 'far', tjuv.x + 1, tjuv.y, agare.id);
+    const mett = SIM.avlivaVal(b, tjuv);
+    tjuv.hunger = 0; tjuv.health = 0.3; tjuv.pot.empati = 4;
+    const val = SIM.avlivaVal(b, tjuv);
+    SIM.avlivaKlar(b, tjuv, fa.id);
+    const kott = SIM.ownedStock(b, tjuv).slaktfar ?? 0;
+    const lag = SIM.LAGAR.boskapsforbud;
+    return [
+      [`vargarna tar fåret som står ute (${ute.s.stat?.vargTogTam ?? 0})`, !tamdjurOf(ute.s).includes(ute.d) && (ute.s.stat?.vargTogTam ?? 0) === 1],
+      ['fåret i fähuset tar de inte', tamdjurOf(inne.s).includes(inne.d)],
+      [`två rövare driver bort två får (${drivna})`, drivna === 2 && (r.stat?.boskapStulen ?? 0) === 2],
+      [`den som är mätt slaktar inte någon annans får (${mett ? 'jo' : 'nej'})`, !mett],
+      [`den som svälter slaktar grannens får och får köttet (${kott})`, val === fa && kott === 1 && !tamdjurOf(b).includes(fa)],
+      [`boskapsstölden blir ett rykte (${b.stat?.rykte_boskapsstold ?? 0}) och väcker lagen (${lag.prio(b).toFixed(2)})`, (b.stat?.rykte_boskapsstold ?? 0) === 1 && lag.prio(b) > 0 && lag.brott!.includes('boskapsstold')],
+    ];
+  },
+};
+
+SCENARIER.ylle = {
+  text: 'Steg 9.8.14: ull till tyg. Ullen från fåren spinns till ulltråd med sländan och vävs till ylletyg i vävstolen, som linet, och ylletyget är ett nytt tygmaterial för plaggen, varmare än linet',
+  kor: () => {
+    const { KLAR_FOR, TILLVERKA, setAmount, amountOf, KLAD_SLAG, STATIONER, KLADMATERIAL } = SIM;
+    const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    setAmount(s, 'ull', 4);
+    KLAR_FOR[TILLVERKA.spinna_ull.act]!(s, p, p.task!, 0);
+    const trad = amountOf(s, 'ulltrad'), ull = amountOf(s, 'ull');
+    setAmount(s, 'ulltrad', 3);
+    KLAR_FOR[TILLVERKA.vava_ull.act]!(s, p, p.task!, 0);
+    const tyg = amountOf(s, 'ylle');
+    const vav = STATIONER.vavstol.gor.includes('vava_ull') && STATIONER.vavstol.gor.includes('spinna_ull');
+    return [
+      [`2 ull blir ${trad} ulltråd (${4 - ull} ull åtgick)`, trad === 1 && ull === 2],
+      [`3 ulltråd blir ${tyg} ylletyg i vävstolen`, tyg === 1 && amountOf(s, 'ulltrad') === 0],
+      [`vävstolen väver ylle och spinner ull fortare (${vav ? 'ja' : 'nej'})`, vav],
+      [`tunikan och skjortan kan göras av ylle (${KLAD_SLAG.filter(k => k.endsWith('_ylle')).join(', ')})`, (KLAD_SLAG as readonly string[]).includes('tunika_ylle') && (KLAD_SLAG as readonly string[]).includes('skjorta_ylle')],
+      [`ylletyget är varmare än linet (${KLADMATERIAL.ylle.varme} mot ${KLADMATERIAL.lintyg.varme})`, KLADMATERIAL.ylle.varme > KLADMATERIAL.lintyg.varme],
+    ];
+  },
+};
+
+SCENARIER.ullplagg = {
+  text: 'Steg 9.8.15: kappa, mantel och sjal av ull. Ylletyget blir kappan över kroppen, ledarens mantel och sjalen över axlarna; de görs bara av ylle (manteln också av skinn), kappan är den varmaste klädnaden över kroppen, och byn vill ha dem när det finns ylle',
+  kor: () => {
+    const { KLAD_SLAG, SAKER, REDSKAPMAL, setAmount, PLATSER } = SIM;
+    const s = createState(1, START);
+    const kl = KLAD_SLAG as readonly string[];
+    const finns = ['kappa_ylle', 'sjal_ylle', 'mantel_ylle'].every(k => kl.includes(k));
+    const bara = !kl.includes('kappa_lintyg') && !kl.includes('sjal_lintyg') && !kl.includes('kappa_kaninskinn');
+    const varm = (k: string) => SAKER[k]?.klad?.varme ?? 0;
+    const vill0 = REDSKAPMAL.kappa(s); setAmount(s, 'ylle', 3); const vill = REDSKAPMAL.kappa(s);
+    return [
+      [`kappan, sjalen och manteln finns av ylle (${finns ? 'ja' : 'nej'})`, finns],
+      [`kappan och sjalen görs bara av ylle (${bara ? 'ja' : 'nej'})`, bara],
+      [`kappan av ylle är varmare än rocken av harskinn (${varm('kappa_ylle').toFixed(2)} mot ${varm('rock_kaninskinn').toFixed(2)})`, varm('kappa_ylle') > varm('rock_kaninskinn')],
+      [`sjalen bärs över axlarna (${SAKER.sjal_ylle?.klad?.plats}, ${PLATSER.axlar?.namn})`, SAKER.sjal_ylle?.klad?.plats === 'axlar'],
+      [`byn vill ha kappor när det finns ylle (${vill0} → ${vill})`, vill0 === 0 && vill > 0],
+    ];
+  },
+};
+
+SCENARIER.hamla = {
+  text: 'Steg 9.8.16: hamlade träd. När höet inte räcker åt betesdjuren hamlar byn en björk nära byn: grenarna kapas och trädet skjuter nya skott, som vart tredje dygn skärs till lövkärvar som djuren äter som hö. Det hamlade trädet fälls inte för ved',
+  kor: () => {
+    const { nyttTamdjur, hamlaVal, hamlaKlar, hamladeOf, amountOf, setAmount, groundOf, VINTER, hoAv, foderFor, W } = SIM;
+    const s = createState(5, START); klockan(s, 10);
+    s.kal = SIM.nyKalender(s.now, SIM.SOMMAR);
+    const p = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0]!;
+    const m = SIM.bynsMitt(s);
+    nyttTamdjur(s, 'get', m.x, m.y, undefined, s.now - 3 * SIM.DAY); nyttTamdjur(s, 'far', m.x + 1, m.y, undefined, s.now - 3 * SIM.DAY);
+    setAmount(s, 'torrgras', 0);
+    // en vuxen björk nära byn
+    const g = groundOf(s), bj = SIM.TRADARTER.findIndex(a => a.id === 'bjork');
+    const ti = Math.round(m.y) * W + Math.round(m.x) + 6; g.trees[ti] = 1; (g.art ??= new Uint8Array(g.trees.length))[ti] = bj; if (g.alder) g.alder[ti] = 0;
+    const i = hamlaVal(s, p);
+    const valt = i !== undefined && SIM.tradArt(g, i).id === 'bjork';
+    hamlaKlar(s, p, i);
+    const hamlat = hamladeOf(s).length === 1 && amountOf(s, 'lovkarve') === 0;
+    const genast = hamlaVal(s, p) === undefined; // skotten är inte klara än
+    s.now += VINTER.lovDygn * SIM.DAY + SIM.HOUR; klockan(s, 10); s.kal = SIM.nyKalender(s.now, SIM.SOMMAR);
+    const igen = hamlaVal(s, p);
+    hamlaKlar(s, p, igen);
+    const lov = amountOf(s, 'lovkarve');
+    const geten = SIM.tamdjurOf(s).find(d => d.art === 'get')!;
+    const foder = foderFor(s, p, geten);
+    return [
+      [`höet räcker inte, och byn väljer en björk nära byn (${valt ? 'ja' : 'nej'})`, valt],
+      [`björken hamlas och skjuter nya skott (${hamladeOf(s).length} hamlat träd)`, hamlat],
+      [`skotten skärs först när de vuxit (${genast ? 'väntar' : 'genast'})`, genast],
+      [`efter ${VINTER.lovDygn} dygn skärs skotten till ${lov} lövkärvar, som räknas som hö (${hoAv(s)})`, igen === i && lov === VINTER.lov && hoAv(s) === lov],
+      [`geten äter lövkärvarna (${foder})`, foder === 'lovkarve'],
+      [`det hamlade trädet står kvar`, g.trees[ti] >= 1],
     ];
   },
 };

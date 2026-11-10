@@ -38,7 +38,7 @@ SCENARIER.faror = {
       if (ai !== undefined) s.now = ageStart(s, ai) + 30 * HOUR;
       klockan(s, 11); byggare(s); tandEld(s);
       for (const p of living(s)) Object.assign((p.tek ??= {}), { korg: 1, fiskespjut: 1, metspo: 1, kniv: 1 });
-      setStock(s, { ved: 200, grenar: 20, torrgras: 40, flinta: 3, ben: 2, rep: 2 }); setAmount(s, 'yxa', 1); setFood(s, 200);
+      setStock(s, { ved: 200, grenar: 20, torrgras: 40, flinta: 3, ben: 2, rep: 2 }); setAmount(s, 'yxa', 1); setFood(s, 0); setAmount(s, 'torrkott', 300); // torkat kött: bufferten är drygt sju dygn och taket sexton (9.9.4), och bär ruttnar långt innan dess
       s.delning = { andel: 1 }; // byn delar all mat, så att familjerna inte fyller sin egen del av bufferten (steg 6.2.20)
       planBuild(s);
       return s;
@@ -1834,7 +1834,7 @@ SCENARIER.gjort = {
     return [
       [`räknaren: det senaste dygnet ${tre}, ett dygn senare ${tva}, efter tre dygn ${noll}, sedan ${ett}; totalt ${tot}`, tre === 3 && tva === 2 && noll === 0 && ett === 1 && tot === 4],
       [`folket räknar det de gör (${[...nycklar].join(', ')})`, nycklar.size >= 4 && ['fiskeForsok', 'trad', 'samlat'].some(k => nycklar.has(k))],
-      ['alla nycklarna finns i SKILL_STAT', [...nycklar].every(k => kanda.has(k))],
+      [`alla nycklarna finns i SKILL_STAT (utan: ${[...nycklar].filter(k => !kanda.has(k)).join(', ') || 'inga'})`, [...nycklar].every(k => kanda.has(k))],
       ['en del är aldrig fler än det den är en del av (fisk av försöken)', delar],
       [`fältens rutor minns vad som växte där innan (${fs.length} fält)`, fore],
       ['och när de sköttes och bereddes', skott && bered],
@@ -1932,7 +1932,7 @@ SCENARIER.amnen = {
       [`samtalen i byn handlar om olika saker (${[...sett.keys()].join(', ')})`, sett.size >= 4],
       [`maten är ett ämne i en by som har mat, strax innan man äter (kodgenomgången 3.10.25)`, sett.has('mat')],
       [`varje text är hel (t.ex. ${texter[0] ?? '–'})`, texter.length > 0 && texter.every(hel)],
-      [`varje symbol i pratbubblan finns (${[...ikoner].join(', ')})`, [...ikoner].every(hasIcon) && Object.values(SIM.AMNEN).every(d => !d.ikon || hasIcon(d.ikon))],
+      [`varje symbol i pratbubblan finns (${[...ikoner].join(', ')})`, [...ikoner].every(hasIcon) && Object.values(SIM.AMNEN).every(d => !d.ikon || hasIcon(d.ikon)) && Object.keys(SIM.KUNSKAPER).every(hasIcon)], // också kunskaperna som inget samtal råkade handla om
     ];
   },
 };

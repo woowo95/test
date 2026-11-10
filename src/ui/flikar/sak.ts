@@ -1,4 +1,4 @@
-import { tornadoAndel, tornadoPos, vaderstreck, kvOf, NORMAL, SKYDD, KROPPSDELAR, GravStil, HELIGA_PLATSER, gravAt, heligAt, troNamn, troOf, kvarById, KVARLEVOR, DAY, amountOf, busksort, fallTid, living, tileOf, isTool, FOREST, stamAv, MARK, STADIER, VAG, groundOf, stadium, tradAlder, tradArt, STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf } from '../../sim';
+import { tornadoAndel, tornadoPos, hageById, hageBete, djurIHagen, hageKant, harStaket, hageDygn, TAMDJUR, tamAlder, vaderstreck, kvOf, NORMAL, SKYDD, KROPPSDELAR, GravStil, HELIGA_PLATSER, gravAt, heligAt, troNamn, troOf, kvarById, KVARLEVOR, DAY, amountOf, busksort, fallTid, living, tileOf, isTool, FOREST, stamAv, MARK, STADIER, VAG, groundOf, stadium, tradAlder, tradArt, STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { condBar, durTxt, esc, kvOrd, kvText, pLink } from '../hjalp';
 import { piles, s, ui } from '../lage';
@@ -12,7 +12,7 @@ import { skaffasRader } from '../skaffas';
 // takten, vem som gjorde den och när, och kvaliteten (steg 2.2.2).
 // Det som går att trycka på har data-sak: "t:<tingets id>" för ett redskap eller plagg, "s:<x>,<y>,<slag>" för en stack.
 // En toa-hög på kartan (steg 2.10.5) öppnas som "f:<rutan>" och har en egen inforuta (toaHog)
-// Ett slag i förrådet (listan till vänster, steg 5.3.5.2) öppnas som "k:<slaget>" (slagIForradet)
+// Kvarlevorna efter en människa (steg 8.2.3) öppnas som "q:<id>" (kvarleva). Ett slag i förrådet (listan till vänster, steg 5.3.5.2) öppnas som "k:<slaget>" (slagIForradet)
 // En stubbe (steg 3.10.6) öppnas som "u:<rutan>" (stubbe), ett träd (steg 5.1.4.3) som "r:<rutan>" (trad) och en buske (steg 6.5.3) som "b:<rutan>"
 export const sakKey = (a: { id?: number; x?: number; y?: number; k: string }) => a.id !== undefined ? `t:${a.id}` : `s:${a.x},${a.y},${a.k}`;
 export const sakAttr = (a: { id?: number; x?: number; y?: number; k: string }) => `data-sak="${sakKey(a)}"`;
@@ -83,6 +83,22 @@ function stubbe(i: number) {
     <dl class="kv">
       <dt>Fälldes</dt><dd>för ${durTxt(s.now - u.t)} sedan</dd>
       <dt>Ruttnar bort</dt><dd>om ${durTxt(Math.max(0, STUBBE_LIV - (s.now - u.t)))}</dd>
+    </dl>`;
+}
+// hagen (steg 9.8.4): storleken, betet som är kvar, hur länge det räcker, djuren och staketets skick
+function hage(id: number) {
+  const h = hageById(s, id);
+  if (!h) return '<p class="muted">Hagen finns inte längre.</p>';
+  const b = hageBete(s, h), dj = djurIHagen(s, h), kant = hageKant(s, h), hela = kant.filter(i => harStaket(s, i)).length, dygn = hageDygn(s, h);
+  const djur = dj.map(d => { const q = d.agare !== undefined ? byId(s, d.agare) : undefined; return `${iconImg(TAMDJUR[d.art].ikon, 12)} ${esc(TAMDJUR[d.art].namn)}, ${Math.floor(tamAlder(s, d))} år, hunger ${Math.round(d.hunger * 100)} %${q ? `, ${pLink(q)}` : ', byns'}`; }).join('<br>');
+  return `
+    <div class="phead">${iconImg('hage', 32)}<div><h2>Hage</h2></div></div>
+    <dl class="kv">
+      <dt>Storlek</dt><dd>${h.w} × ${h.h} rutor</dd>
+      <dt title="Gräset (rutor fulla med gräs), buskarna och ungträden som djuren kan äta">Bete</dt><dd>🍃 ${kortTal(b.gras)} · 🌳 ${b.buskar} · 🌲 ${b.unga}</dd>
+      <dt title="Hur länge betet räcker för djuren som går där, utan att det växer igen">Räcker</dt><dd>${dygn === Infinity ? 'inga djur går här' : `${Math.floor(dygn)} dygn`}</dd>
+      <dt>Staket</dt><dd>${hela === kant.length ? 'helt' : `${kant.length - hela} av ${kant.length} rutor saknas`}</dd>
+      <dt>Djuren</dt><dd class="rader">${djur || 'inga'}</dd>
     </dl>`;
 }
 // trädet på kartan (steg 5.1.4.3): bilden, arten, stadiet och åldern (sim/trad.ts)
@@ -183,7 +199,8 @@ export const sak: Flik = {
     if (ui.sak === 'tornado') return tornadoRuta(); // (steg 9.2.22)
     if (ui.sak.startsWith('f:')) return toaHog(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('u:')) return stubbe(Number(ui.sak.slice(2)));
-    if (ui.sak.startsWith('k:')) return kvarleva(Number(ui.sak.slice(2)));
+    if (ui.sak.startsWith('H:')) return hage(Number(ui.sak.slice(2)));
+    if (ui.sak.startsWith('q:')) return kvarleva(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('g:')) return grav(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('h:')) return heligPlats(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('r:')) return trad(Number(ui.sak.slice(2)));

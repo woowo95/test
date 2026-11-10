@@ -68,6 +68,7 @@ function rikPaMat(s: State, p: Person) {
 }
 export const LAGAR: Record<string, LagDef> = {
   stoldforbud: { namn: 'Förbud mot stöld', sym: '🖐️', text: 'Den som stjäl straffas', straff: 4, brott: ['stold', 'stoldLindrig'], om: 'stölderna', prio: s => clamp(antal(s, 'rykte_stold') / 4, 0, 1), rost: (_s, p) => ({ v: 0.3 + dev(p.pot.empati) * 0.5, why: 'Vill inte bli bestulen' }) },
+  boskapsforbud: { namn: 'Förbud mot boskapsstöld', sym: '🐾', text: 'Den som tar någon annans djur straffas', straff: 4, brott: ['boskapsstold'], om: 'boskapsstölderna', kan: s => (s.tamdjur ?? []).some(d => d.art !== 'hund'), prio: s => clamp((antal(s, 'rykte_boskapsstold') + antal(s, 'boskapStulen')) / 3, 0, 1), rost: (s, p) => ({ v: (s.tamdjur ?? []).some(d => d.agare === p.id) ? 0.8 : 0.2 + dev(p.pot.empati) * 0.4, why: (s.tamdjur ?? []).some(d => d.agare === p.id) ? 'Äger djur själv' : 'Vill inte bli bestulen' }) }, // steg 9.8.12
   slagsmalforbud: { namn: 'Förbud mot slagsmål', sym: '🥊', text: 'Den som slår någon straffas', straff: 1, brott: ['sla', 'misshandel'], om: 'slagsmålen', prio: s => clamp(antal(s, 'rykte_sla') / 8, 0, 1), rost: (_s, p) => ({ v: dev(p.pot.empati) - dev(p.pot.aggression), why: dev(p.pot.aggression) > 0 ? 'Vill kunna göra upp själv' : 'Vill ha lugn i byn' }) },
   drapforbud: { namn: 'Förbud mot dråp', sym: '⚔️', text: 'Den som dödar någon straffas hårt', straff: 3, brott: ['drap'], om: 'ett dråp', prio: s => clamp(antal(s, 'rykte_drap') / 1, 0, 1), rost: (_s, p) => ({ v: 0.4 + dev(p.pot.empati) * 0.5 - dev(p.pot.aggression) * 0.3, why: 'Vill inte bli dräpt' }) },
   arbetsplikt: { namn: 'Arbetsplikt', sym: '📜', text: 'Den som kan arbeta ska arbeta', straff: 0, om: 'en vinter med svält', prio: s => clamp(antal(s, 'dog av svält') / 2, 0, 1), rost: (_s, p) => ({ v: dev(p.pot.flit), why: dev(p.pot.flit) > 0 ? 'Arbetar ändå' : 'Vill bestämma sin tid själv' }) },
@@ -198,7 +199,9 @@ export const TABU_AKT: Record<string, TabuAktDef> = {
   vargjakt: { namn: 'jaga varg', acts: ['vargjakt'] },
   bada: { namn: 'bada i sjön', acts: ['bada'] },
   sport: { namn: 'spela', acts: ['sport'] },
-  svamp: { namn: 'plocka svamp', acts: ['samla'], orsak: ['svamp'] }, // den som dog av svampen samlade inte, men byn minns svampen
+  // den som dog av svampen samlade inte, men byn minns svampen. Tabut stänger inte samlandet (acts är tom): då samlade ingen
+  // bär och rötter heller, och byn svalt (steg 9.9.4). I stället låter samlarna svampen stå (svampTabu, sakerPaRutan i steg.ts)
+  svamp: { namn: 'plocka svamp', acts: [], orsak: ['svamp'] },
 };
 export interface TabuAkt { k: string; t: number; om: string }
 const aktRad = (act: Act | undefined, orsak?: Dodsorsak) => Object.keys(TABU_AKT).find(k => { const r = TABU_AKT[k]; return r.orsak ? !!orsak && r.orsak.includes(orsak) : !!act && r.acts.includes(act); });
@@ -215,6 +218,8 @@ export function raddForAkt(s: State, offer: Person, act: Act | undefined, om: st
     (s.aktOm ??= {})[k] = om;
   }
 }
+// svampen är tabu i byn: ingen plockar den
+export const svampTabu = (s: State) => !!s.tabuAkt?.some(t => t.k === 'svamp');
 // den som är rädd för handlingen låter bli den om den är tabu, eller om rädslan är stor och modet litet (steg 8.4.10)
 export function tabuAkt(s: State, p: Person, act: Act): string | undefined {
   if (!s.tabuAkt?.length && !p.raddAkt) return undefined;

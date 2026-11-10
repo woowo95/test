@@ -361,7 +361,7 @@ export const FAGEL = balans('fagel', {
   upptack: 1.2, // fågeln ser jägaren så här mycket längre bort än en kanin med samma skygghet (jakt.ts)
   dod: 0.05, // en fågel dör av träffar av den här graden sammanlagt
   kant: 2, // orren: en öppen ruta med skog inom så här många rutor
-  agg: 0.01, // ägg per timme samlande på våren, räknat i samlandets fart (ACTS.samla.fart): ett ägg ibland, några om dygnet i byn (steg 6.6.3, steg.ts)
+  agg: 0.15, // (0,01 före steg 9.9.5, när samlandets timmar var fler) ägg per timme samlande på våren, räknat i samlandets fart (ACTS.samla.fart): ett ägg ibland, några om dygnet i byn (steg 6.6.3, steg.ts)
 });
 export const FAGEL_UTSEENDE = ['orre', 'ripa', 'duva'] as const; // orren i skogskanten, ripan på öppen mark, skogsduvan i skogen
 const FAG_LIV = FAGEL.livTim * HOUR, FAG_G = 30_000_000; // flockarnas id börjar här, fåglarnas vid FAG_G * 8

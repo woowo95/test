@@ -1,0 +1,27 @@
+{
+"id": "mantel_ylle",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 9.9.1)",
+"w": 14,
+"h": 12,
+"rader": [
+"...oooooooo...",
+"..occccccbbo..",
+".occcccccbbbo.",
+".occccccccbbo.",
+".occccccccbbo.",
+"occccccccbbbbo",
+"occccccccbbbbo",
+"occcccccbbbbbo",
+"occcccccbbbbao",
+"oaaccccbbbbaao",
+".oooaaaaaaooo.",
+"....oooooo...."
+],
+"pal": {
+"a": "#a0947d",
+"b": "#bdb39b",
+"c": "#dad0bb",
+"o": "#24201d"
+}
+}

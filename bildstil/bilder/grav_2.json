@@ -1,0 +1,38 @@
+{
+"id": "grav_2",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 9.9.1)",
+"w": 24,
+"h": 20,
+"rader": [
+".........kkkk...........",
+".......kkTTTSk..........",
+"......kTTTTTSSkk........",
+".....kTTQQQQSSSRk.......",
+"....kTSQSSSSQQSRk.......",
+"...kTTQSQSSSSQSRk.......",
+"...kTTQSSQQQSSQRk.......",
+"...kTTSSQSSQSSQRk.......",
+"...kTQQSQSSSSSQRk.......",
+"...kTQSQQSSSQSQRk.......",
+"...kTQSSQSSSSQQRk.......",
+"...kTQSSQSSSSSQRk.......",
+"...kTQSSQSSSSSQRk.......",
+"...kTQQSQSSSSSQRk.......",
+"...kTQSQQSSSQSQRk.......",
+"...kTQSSQSSSSQQRk.......",
+"...kTTRRRRRRRRRRk.......",
+"L...kkkkkkkkkkkk....L...",
+"K..L................K...",
+"K.LK..L.........L..LK..L"
+],
+"pal": {
+"K": "#647025",
+"L": "#898b4c",
+"Q": "#233035",
+"R": "#3e5156",
+"S": "#61767a",
+"T": "#8a9c9e",
+"k": "#24201d"
+}
+}

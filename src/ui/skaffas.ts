@@ -22,6 +22,8 @@ const HITTAS: Record<string, string> = {
   jordgubbar: 'Odlas på fältet, och skördas flera gånger', jordgubbsplanta: 'Köps av handlaren', // steg 9.7.9
   kal: 'Odlas på fältet', bonor: 'Köps av handlaren och odlas på fältet', kalfron: 'Köps av handlaren, och kommer tillbaka vid skörden', // steg 9.7.8
   slaktrens: 'Blir kvar när vilt slaktas och fisk rensas', vaxtrest: 'Blir kvar när grödan skördas', // steg 9.7.5
+  slaktfar: 'Ett får som avlivats', slaktget: 'En get som avlivats', djurhorn: 'Slaktas ur ett får eller en get', fiskrens: 'Blir kvar när fisk rensas', // djuren (system 9.8)
+  ull: 'Klipps av fåren', levfar: 'Köps av handlaren', levget: 'Köps av handlaren', levhons: 'Köps av handlaren', lovkarve: 'Skärs av en hamlad björk vart tredje dygn',
   korn: 'Köps av handlaren, och odlas sedan på fältet', salt: 'Köps av handlaren från byarna vid havet', // steg 9.6.11 och 9.6.19
   ...Object.fromEntries(RATT_SAKER.map(k => [k, rattInfo(k)?.kat === 'stek' ? 'Steks på stekhällen vid grillen' : 'Kokas i en lerkruka över elden'])), // rätterna (steg 9.6.3 och 9.6.21)
   kott: 'Slaktas ur fällt vilt', ben: 'Slaktas ur fällt vilt', skinn: 'Slaktas ur fällt vilt', talg: 'Slaktas ur fällt vilt och vargar',
@@ -37,6 +39,8 @@ const ANVANDS: Record<string, string[]> = {
   naverask: ['Salvan och limmet'], remsa: ['Förband'], nal: ['Sy ihop ett stort sår'], krycka: ['Den som förlorat ett ben'], traben: ['Den som förlorat ett ben'], krok: ['Den som förlorat en hand'], ogonlapp: ['Den som förlorat ett öga'], lerkruka_liten: ['Pynt, och senare kokkärl'], lerkruka_mellan: ['Pynt, och senare vattenkärl'], lerkruka_stor: ['Pynt, och senare förvaring'],
   torrgras: ['Tänder elden'], naver: ['Tänder elden'], flinta: ['Tänder elden'], sten: ['Eldringen'], mossa: ['Förband'], silver: ['Handel'],
   vilt: ['Slaktas'], varg: ['Slaktas'], vargdel: ['Slaktas'], radjur: ['Slaktas'], fagel: ['Slaktas'], fjadrar: ['Pilar och prydnader senare'], radjurdel: ['Slaktas'], radjursskinn: ['Handel'], bjorn: ['Slaktas'], bjorndel: ['Slaktas'], abborre: ['Rensas'],
+  slaktfar: ['Slaktas'], slaktget: ['Slaktas'], djurhorn: ['Handel'], fiskrens: ['Agn och mat åt hunden'], skara: ['Slår ängen till hö'], // djuren (system 9.8)
+  levfar: ['Blir byns får'], levget: ['Blir byns get'], levhons: ['Blir byns höns'],
   bensyl: ['Syr kläder vid slöjdbänken'], boll: ['Sport'], slagtra: ['Sport'], mal: ['Sport'],
   slanda: ['Spinner lin till tråd'], fackla: ['Lyser i mörkret, i handen eller uppsatt'], talgljus: ['Lyser inomhus'],
   trumma: ['Spelas på scenen'], benflojt: ['Spelas på scenen'], lyra: ['Spelas på scenen'], rovfron: ['Sås på fältet'], artfron: ['Sås på fältet'], malt: ['Ölet i bryggkaret'], kalfron: ['Sås på fältet'], kompost: ['Gödslar fältet'], jordgubbsplanta: ['Planteras på fältet'], appelplanta: ['Planteras på fältet'], slaktrens: ['Bärs till sophögen'], vaxtrest: ['Bärs till sophögen'], // steg 9.6.13

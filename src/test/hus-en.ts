@@ -35,7 +35,7 @@ const r = korBy(seed, dagar, s => {
   for (const b of byggbehov(s)) {
     if (b.fn !== 'familjehus' || b.a.ag === undefined || b.a.hus !== undefined) continue;
     kop.vill++;
-    const andra = housesOf(s).filter(h => h.ag !== b.a.ag && h.klar && !h.skjul);
+    const andra = housesOf(s).filter(h => h.ag !== b.a.ag && h.klar && !(BYGGNADER as Record<string, Byggnad>)[h.fn ?? 'sovsal']?.omkring);
     if (andra.length) kop.finnsHus++;
     const sb = andra.filter(h => kopbart(s, h));
     if (sb.length) kop.saljbart++;

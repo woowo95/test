@@ -2,6 +2,7 @@
 // rätterna som blir av dem. Bara register och tal här, utan andra filer i spelet, så att saker.ts kan lägga rätterna bland
 // sakerna; matlagningen (koka i lerkrukan, grilla) står i matlagning.ts och det man äter i behov.ts.
 import type { SakDef } from './saker';
+import { balans } from './balans';
 
 // ---------- ingrediensgrupperna (steg 9.6.1) ----------
 // varje råvara hör till en eller flera grupper. Gruppen avgör måltidens nivå (MALTIDSNIVA), och rättens huvudingrediens
@@ -45,11 +46,15 @@ export const grupperAv = (k: string): Matgrupp[] => INGREDIENSER[k]?.grupper ?? 
 // ---------- måltidernas nivåer (steg 9.6.2) ----------
 // nivån avgörs av hur många grupper som ingår och hur maten lagats; humor = tanken när man ätit den (festmåltiden, fyra grupper
 // eller fler, kommer i 10.5.25). Det råa köttets och den råa fiskens minus står i matlagning.ts (ratt)
+const MALTID = balans('maltidsniva', {
+  lagad: 0.03, // humöret efter en lagad måltid
+  fin: 0.06, // och efter en fin måltid
+});
 export const MALTIDSNIVA = {
   ratt: { namn: 'Rått', humor: 0, tanke: '' },
   enkel: { namn: 'Enkel', humor: 0, tanke: '' },
-  lagad: { namn: 'Lagad', humor: 0.03, tanke: 'Åt en lagad måltid' },
-  fin: { namn: 'Fin', humor: 0.06, tanke: 'Åt en fin måltid' },
+  lagad: { namn: 'Lagad', humor: MALTID.lagad, tanke: 'Åt en lagad måltid' },
+  fin: { namn: 'Fin', humor: MALTID.fin, tanke: 'Åt en fin måltid' },
 } satisfies Record<string, { namn: string; humor: number; tanke: string }>;
 export type Maltidsniva = keyof typeof MALTIDSNIVA;
 export const MALTIDSNIVA_LIST = Object.keys(MALTIDSNIVA) as Maltidsniva[];
@@ -69,11 +74,11 @@ export function proteinAv(k: string, namn: (k: string) => string): string | unde
   const i = INGREDIENSER[k]; if (!i?.grupper.includes('protein')) return undefined;
   return i.huvud === 'kott' || i.huvud === 'fisk' ? RATT_HUVUD[i.huvud].namn : namn(k);
 }
-export const VARIATION = {
+export const VARIATION = balans('variation', {
   minns: 8, // man minns proteinet i så många måltider ...
   trott: 6, // ... och tröttnar när lika många av dem var samma
   tanke: -0.02, tankeTim: 6, // tanken "Fisk igen": lite, så att en ny by som lever på fisk inte mår dåligt av det
-};
+});
 // smaken för en rätt gäller huvudingrediensen (steg 9.6.6): fiskgrytan smakar fisk
 const SMAK_SAK: Record<RattHuvud, string> = { kott: 'kott', fisk: 'fisk', sad: 'korn', rot: 'rotter', svamp: 'svamp', bar: 'bar' };
 export const smakSak = (k: string) => { const r = rattInfo(k); return r ? SMAK_SAK[r.huvud] : k; };
@@ -124,14 +129,16 @@ export function rattInfo(id: string): RattInfo | undefined {
 // rättens namn: huvudingrediensen och kategorin, med nivån efter (Fiskgryta · Fin)
 export const rattNamn = (h: RattHuvud, k: Kategori, n: Maltidsniva) => `${RATT_HUVUD[h].namn}${KATEGORIER[k].namn} · ${MALTIDSNIVA[n].namn}`;
 export const RATT = {
-  tankeTim: 6, // tanken efter en lagad eller fin måltid varar så många timmar (steg 9.6.2)
-  portioner: 4, // en sats i krukan ger så många portioner
-  huvud: 2, andra: 2, smak: 1, // av huvudingrediensen, den andra gruppen och smaken
-  spara: { korn: 12 } as Record<string, number>, // så mycket sparas till utsäde och går inte i krukan (steg 9.6.11)
-  haller: 3, // en rätt av ingredienser som inte ruttnar håller så många dygn (år i spelet); annars medelvärdet av ingrediensernas (HALLER_STEG)
+  ...balans('ratt', {
+    tankeTim: 6, // tanken efter en lagad eller fin måltid varar så många timmar (steg 9.6.2)
+    portioner: 4, // en sats i krukan ger så många portioner
+    huvud: 2, andra: 2, smak: 1, // av huvudingrediensen, den andra gruppen och smaken
+    haller: 3, // en rätt av ingredienser som inte ruttnar håller så många dygn (år i spelet); annars medelvärdet av ingrediensernas (HALLER_STEG)
+  }),
+  spara: { korn: 12 } as Record<string, number>, // så mycket sparas till utsäde och går inte i krukan (steg 9.6.11); en lista per sak går inte i balans()
 };
 // i vilken ordning rätten äts (mat i saker.ts): den som håller kortast först, och en färsk rätt före den råa maten
-const rattMat = (haller: number) => Math.round(Math.max(0.3, 0.45 * haller - 0.95) * 100) / 100;
+const rattMat = (haller: number) => Math.round(Math.min(6, Math.max(0.3, 0.45 * haller - 0.95)) * 100) / 100; // högst 6: det torkade äts sist
 // rätterna som saker (saker.ts): en rad per huvudingrediens, kategori och nivå, och en som håller längre
 const NARING: Record<RattHuvud, SakDef['naring']> = {
   kott: { protein: 1.6, fett: 0.8, energi: 1.1, mineral: 0.6, vitamin: 0.6 },

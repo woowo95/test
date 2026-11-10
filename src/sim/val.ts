@@ -15,7 +15,7 @@ import { canLight, eldFor, eldXY, nagonEld, nagonGlod, eldarOf, emberOn, fuelSto
 import { ALDER, KROPP, REL, ageOf, count, doingAct, familjOf, isSick, living, relKey, stat } from './folk';
 import { RELT, bredvidVikt } from './relationer';
 import { onskan } from './naring';
-import { halsa, hemma, kanGa, vardVal, vilaHellre } from './halsa';
+import { halsa, hemma, kanGa, vardBehov, vardVal, vilaHellre } from './halsa';
 import { bynsMatAndel, egnaMatDygn, familjMatDygn, getable, harMat, takeMaterial } from './behov';
 import { FANGST, Kind, Lager, flintSpot, richness } from './fynd';
 import { coldOf, nederbord, snoPaMarken, temperature, vaderNu } from './vader';
@@ -495,7 +495,14 @@ export const ARBETEN: readonly Arbete[] = [
   // den som brinner släcker sig själv först, och de som står nära hjälper hen före allt annat (steg 6.4.16)
   { id: 'brinner', niva: 1, prova: ({ s, p, v }) => { const m = slackaSigVal(s, p); if (!m) return false; set(v, m.act, m.why); v.spot = m.spot; v.dur = m.dur; v.ref = m.ref; return true; } },
   { id: 'hjalpBrinnande', niva: 1, prova: ({ s, p, v }) => { const m = hjalpaVal(s, p); if (!m) return false; set(v, m.act, m.why); v.spot = m.spot; v.dur = m.dur; v.ref = m.ref; return true; } },
-  { id: 'skydd', niva: 1, prova: ({ s, p, v }) => { const sk = vargSkydd(s, p) ?? tornadoSkydd(s, p); if (!sk) return false; set(v, sk.act, sk.why); v.spot = sk.spot; v.dur = sk.dur; return true; } },
+  // den som blöder trycker på sitt sår också när faran pågår, och hjälparna bakom kämparna vårdar den som blöder (steg 9.9.4):
+  // förut stod alla kvar i försvaret medan de sårade förblödde på en halvtimme
+  { id: 'skydd', niva: 1, prova: ({ s, p, v }) => {
+    const sk = vargSkydd(s, p) ?? tornadoSkydd(s, p); if (!sk) return false;
+    if (!p.svimmat && vardBehov(s, p, p)?.blod && varda(s, p, v, true)) return true;
+    if (sk.act === 'hjalpaRovare') { const d = vardVal(s, p, false), q = d && living(s).find(x => x.id === d.ref); if (q && vardBehov(s, q, p)?.blod && varda(s, p, v, false)) return true; }
+    set(v, sk.act, sk.why); v.spot = sk.spot; v.dur = sk.dur; return true;
+  } },
   { id: 'brand', niva: 1, prova: ({ s, p, v }) => { const br = brandVal(s, p); if (!br) return false; set(v, br.act, br.why); v.spot = br.spot; v.dur = br.dur; v.tool = br.tool; v.ref = br.ref; return true; } },
   // de vuxna som orkar bär undan maten från lagerplatserna vattnet kan nå, också på natten (flod.ts)
   { id: 'flod', niva: 1, prova: ({ s, p, v, a }) => {
@@ -610,6 +617,14 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'roka', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => a >= ALDER.grillar && kanTorka(s, p, 'rokeri') && radda(s, p, lagrat(s, k => ROKAS.some(r => r.ra === k))) && (set(v, 'roka', 'Det finns kött och fisk att röka'), v.dur = torkTid(s, 'rokeri'), true) }, // rökeriet, också i regn (steg 9.6.8)
   { id: 'skramma', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => { if (a < ALDER.vuxen) return false; const f = skrammaVal(s, p); if (!f || living(s).some(q => q !== p && q.task?.act === 'skramma')) return false; projektVal(v, { act: 'skramma', text: 'Sätter upp en fågelskrämma av grenar och hö på fältet.', min: SKADEDJUR.min, spot: { x: f.x + 0.5, y: f.y + 0.5 }, ref: f.id }, 'Fåglarna tar fröna på fältet'); return true; } }, // steg 9.7.11
   { id: 'staket', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => { if (a < ALDER.vuxen) return false; const st = staketVal(s, p); if (!st || living(s).some(q => q !== p && q.task?.act === 'staket' && q.task.ref === st.i)) return false; projektVal(v, { act: 'staket', text: 'Sätter staket runt fältet, så att hararna inte kommer åt grödan.', min: STAKET.min, spot: { x: st.i % W + 0.5, y: Math.floor(st.i / W) + 0.5 }, ref: st.i }, 'Fältet saknar staket'); return true; } }, // steg 9.7.10
+  { id: 'hage', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => { if (a < ALDER.vuxen) return false; const h = hageVal(s, p); if (!h) return false; projektVal(v, { act: 'hage', text: 'Sätter staket runt hagen, så att djuren inte rymmer.', min: STAKET.min, spot: { x: h.i % W + 0.5, y: Math.floor(h.i / W) + 0.5 }, ref: h.i }, 'Hagen saknar staket'); return true; } }, // steg 9.8.4
+  { id: 'valla', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v }) => { const d = vallaVal(s, p); if (!d) return false; projektVal(v, { act: 'valla', text: d.hage !== undefined ? 'Flyttar djuren till en hage med mer bete.' : `Leder ${tamArt(d.art).ord[3]} in i hagen med ett rep.`, min: HAGE.vallaMin, spot: { x: d.x, y: d.y }, ref: d.id }, d.hage !== undefined ? 'Djuren har betat ner hagen' : 'Ett djur går utanför hagen'); return true; } }, // steg 9.8.4, 9.8.6
+  { id: 'avliva', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v }) => { const d = avlivaVal(s, p); if (!d) return false; projektVal(v, { act: 'avliva', text: `Avlivar ${tamArt(d.art).ord[3]} och bär det till slaktbänken.`, min: SLAKTDJUR.min, tool: 'kniv', spot: { x: d.x, y: d.y }, ref: d.id }, { gammal: 'Djuret är gammalt', svalt: 'Byn behöver mat', host: 'Höet räcker inte över istiden', stold: 'Hungern driver till stöld' }[slaktOrsak(s, d, p)!] ?? 'Flocken är för stor'); return true; } }, // steg 9.8.7
+  { id: 'klippa', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v }) => { const d = klippVal(s, p); if (!d) return false; projektVal(v, { act: 'klippa', text: 'Klipper ullen av fåret med kniven.', min: BOSKAP.klippMin, tool: 'kniv', spot: { x: d.x, y: d.y }, ref: d.id }, 'Fårets ull har vuxit ut'); return true; } }, // steg 9.8.5
+  { id: 'mjolka', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v }) => { const d = mjolkaVal(s, p); if (!d) return false; projektVal(v, { act: 'mjolka', text: 'Mjölkar geten i en lerkruka.', min: BOSKAP.mjolkMin, spot: { x: d.x, y: d.y }, ref: d.id }, 'Geten har mjölk'); return true; } }, // steg 9.8.8
+  { id: 'slatter', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v }) => { const i = slaVal(s, p); if (i === undefined) return false; projektVal(v, { act: 'slatter', text: 'Slår det höga gräset på ängen med skäran.', min: VINTER.slaMin, tool: 'skara', spot: { x: i % W + 0.5, y: Math.floor(i / W) + 0.5 }, ref: i }, 'Gräset på slåtterängen står högt'); return true; } }, // steg 9.8.9
+  { id: 'hamla', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v }) => { const i = hamlaVal(s, p); if (i === undefined) return false; const ny = !hamlatPa(s, i); projektVal(v, { act: 'hamla', text: ny ? 'Kapar grenarna på en björk, så att den skjuter nya skott med löv åt djuren.' : 'Skär skotten med lövet på den hamlade björken till lövkärvar.', min: VINTER.hamlaMin, spot: { x: i % W + 0.5, y: Math.floor(i / W) + 1.2 }, ref: i }, ny ? 'Höet räcker inte åt djuren' : 'Den hamlade björken har nya skott'); return true; } }, // lövtäkten (steg 9.8.16)
+  { id: 'mata', niva: 5, kort: true, prova: ({ s, p, v }) => { const d = mataVal(s, p); if (!d) return false; projektVal(v, { act: 'mata', text: `Ger ${tamArt(d.art).ord[3]} mat.`, min: TAM.mataMin, spot: { x: d.x, y: d.y }, ref: d.id }, 'Djuren är hungriga'); return true; } }, // steg 9.8.1
   { id: 'sopor', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => { if (a < ALDER.vuxen) return false; const n = resterIByn(s); if (n < REST.min || living(s).some(q => q !== p && q.task?.act === 'sopor') || rnd(s, 'val', p) >= Math.min(1, n / REST.full)) return false; const ko = komposten(s), h = ko ? { x: ko.x, y: ko.y } : sophog(s); projektVal(v, { act: 'sopor', text: ko ? 'Bär resterna från slakten och skörden till komposten.' : 'Bär resterna från slakten och skörden till sophögen.', min: REST.tur, spot: { x: h.x + 0.5, y: h.y + 0.5 } }, 'Resterna ligger och skräpar i byn'); return true; } }, // steg 9.7.5: poängen kommer ur smutsen
   { id: 'tomma_latrin', niva: 5, nar: 'dag', prova: ({ s, p, v, a }) => { if (a < ALDER.vuxen) return false; const l = latrinAttTomma(s); if (!l || living(s).some(q => q !== p && q.task?.act === 'tomma_latrin')) return false; projektVal(v, { act: 'tomma_latrin', text: 'Tömmer latrinen i komposten, så att ingen ny grop behöver grävas.', min: REST.tomMin, ref: l.id, spot: { x: l.x + 0.5, y: l.y + 0.5 } }, 'Latrinen är nästan full'); return true; } }, // steg 9.7.6: när byn har en kompost
   { id: 'baka', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => { if (!(a >= ALDER.grillar && kanBaka(s, p))) return false; const t = SIM_bakugn(s)!; projektVal(v, { act: 'baka', text: 'Gör en deg av mjöl och vatten och sätter in den i bakugnen.', min: BAK.min, spot: vidStation(t), ref: t.id }, 'Byn behöver bröd'); return true; } }, // steg 9.6.23
@@ -1226,3 +1241,7 @@ import { INGREDIENSER } from './ratter';
 import { BRYGG, bryggVal } from './brygg';
 import { REST, komposten, latrinAttTomma, resterIByn, sophog } from './rester';
 import { SKADEDJUR, STAKET, skrammaVal, staketVal } from './odling';
+import { TAM, mataVal, tamArt } from './tamdjur';
+import { HAGE, hageVal, vallaVal } from './hage';
+import { VINTER, hamlaVal, hamlatPa, slaVal } from './slatter';
+import { BOSKAP, SLAKTDJUR, avlivaVal, klippVal, mjolkaVal, slaktOrsak } from './boskap';

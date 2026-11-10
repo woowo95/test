@@ -160,8 +160,10 @@ export function bjornjaktSteg(s: State, p: Person, tk: Task) {
     if (sp && Math.hypot(sp.x - tk.tx, sp.y - tk.ty) > 1) { tk.tx = sp.x; tk.ty = sp.y; tk.phase = 'go'; }
     return;
   }
-  const jag = j.jagare.map(id => byId(s, id)).filter((q): q is Person => !!q && q.health > 0 && q.task?.act === 'bjornjakt');
-  const med = jag.filter(q => Math.hypot(q.x - p.x, q.y - p.y) <= BJORNJAKT.samlas);
+  // de som kallats räknas tills kallelsen löpt ut, också de som inte hunnit ge sig av än (steg 9.9.3): förut räknades bara de som
+  // redan var på väg, så att den som kallade aldrig väntade och mötte björnen ensam
+  const jag = j.jagare.map(id => byId(s, id)).filter((q): q is Person => !!q && q.health > 0 && (q.task?.act === 'bjornjakt' || s.now < (j.kallTill ?? 0)));
+  const med = jag.filter(q => q.task?.act === 'bjornjakt' && Math.hypot(q.x - p.x, q.y - p.y) <= BJORNJAKT.samlas); // de som är framme
   if (med.length < jag.length && s.now - (j.samlas ??= s.now) < BJORNJAKT.samlasTim * HOUR) return; // väntar in de andra
   jaktSlut(s);
   if (rnd(s, 'bjorn') < BJORNJAKT.gar) {

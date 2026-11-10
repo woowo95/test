@@ -1,0 +1,32 @@
+{
+"id": "mossa_kaninskinn",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 9.9.1)",
+"w": 16,
+"h": 12,
+"rader": [
+".......oo.......",
+"......obao......",
+"....odccbbbo....",
+"...oddcbcbbbo...",
+"..oddccccbbbao..",
+"..odcccbccbbao..",
+".oddccccbbbbaao.",
+"ohhghhghhgghgfgo",
+"ohghhgghgggfgffo",
+"ogghgggfgffefefo",
+".offgffffefeeeo.",
+"..oooooooooooo.."
+],
+"pal": {
+"a": "#3f2415",
+"b": "#5e3c24",
+"c": "#7d5b40",
+"d": "#987e62",
+"e": "#233035",
+"f": "#3e5156",
+"g": "#61767a",
+"h": "#8a9c9e",
+"o": "#24201d"
+}
+}

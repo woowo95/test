@@ -68,6 +68,7 @@ const DEF = {
   lin: { var: 'sak', av: { ratlin: 1 }, min: 5, slag: 'bearbeta', tek: 'tork' },
   trad: { var: 'sak', av: { lin: 2 }, min: 3, slag: 'liten', tek: 'slanda' },
   lintyg: { var: 'sak', av: { trad: 3 }, min: 5, slag: 'stor', tek: 'vavstol' },
+  ulltrad: { var: 'sak', av: { ull: 2 }, min: 3, slag: 'liten', tek: 'slanda' }, ylle: { var: 'sak', av: { ulltrad: 3 }, min: 5, slag: 'stor', tek: 'vavstol' }, // ullen (steg 9.8.14): som linet
   leksak: { var: 'sak', av: { grenar: 1 }, min: 3, slag: 'liten', tek: 'leksak', bank: 'snickarbank' },
   snara: { var: 'sak', av: { rep: 1, grenar: 2, ben: 1 }, min: 4, slag: 'liten', tek: 'snara' },
   grop: { var: 'sak', av: { grenar: 6 }, min: 5, slag: 'stor', tek: 'grop' },
@@ -82,6 +83,7 @@ const DEF = {
   halsband: { var: 'plagg', mangd: 3, av: { rep: 1 }, min: 5 },
   tunika: { var: 'plagg', mangd: 3, av: {}, min: 5 },
   skjorta: { var: 'plagg', mangd: 2, av: {}, min: 5 },
+  kappa: { var: 'plagg', mangd: 3, av: {}, min: 5 }, sjal: { var: 'plagg', mangd: 1, av: {}, min: 3 }, // ullens plagg (steg 9.8.15)
   braxkott: { var: 'sak', av: { braxen: 1 }, ger: 2, min: 3, slag: 'bearbeta' }, /* en braxen ger två kött (rensa i DJUR) */ sikkott: { var: 'sak', av: { sik: 1 }, min: 3, slag: 'bearbeta' }, // steg 9.6.17
   rokfisk: { var: 'sak', av: { fisk: 1 }, min: 2, slag: 'bearbeta' }, rokkott: { var: 'sak', av: { kott: 1 }, min: 2, slag: 'bearbeta' }, // steg 9.6.8
   saltfisk: { var: 'sak', av: { fisk: 4, salt: 1 }, ger: 4, min: 3, slag: 'bearbeta' }, saltkott: { var: 'sak', av: { kott: 4, salt: 1 }, ger: 4, min: 3, slag: 'bearbeta' }, // steg 9.6.19
@@ -113,6 +115,7 @@ const DEF = {
   trumma: { var: 'sak', av: { skinn: 1, ved: 1 }, min: 4, slag: 'liten', tek: 'trumma', bank: 'snickarbank' },
   benflojt: { var: 'sak', av: { ben: 1 }, min: 4, slag: 'liten', tek: 'benflojt', verktyg: { kniv: 'kniven', flinta: 'en flinta' } },
   lyra: { var: 'sak', av: { ved: 1, rep: 1 }, min: 5, slag: 'stor', tek: 'lyra', verktyg: { kniv: 'kniven', flinta: 'en flinta' }, bank: 'snickarbank', bara: true, kniv: true },
+  skara: { var: 'sak', av: { flinta: 1, grenar: 1, rep: 1 }, min: 4, slag: 'liten', tek: 'kniv' }, // skäran till slåttern (steg 9.8.9)
   benspade: { var: 'sak', av: { ben: 3, rep: 1, grenar: 1 }, min: 5, slag: 'stor', tek: 'benspade' },
   grillfisk: { var: 'sak', av: { fisk: 1 }, min: 7.5, slag: 'bearbeta', tek: 'grill' },
   grillkott: { var: 'sak', av: { kott: 1 }, min: 7.5, slag: 'bearbeta', tek: 'grill' },

@@ -289,14 +289,15 @@ const utanfor = (s: State, g: Grans, x: number, y: number) => !g.nara[y * W + x]
 function rutaFri(s: State, g: Grans, x: number, y: number) {
   if (!inMap(x, y) || x < 1 || y < 1 || x >= W - 1 || y >= H - 1) return false;
   const i = y * W + x, t = getMap(s.seed).tiles[i];
-  return (t === T.Gras || t === T.Skog) && (groundOf(s).trees[i] < FOREST || nTools(s, 'yxa') > 0) && utanfor(s, g, x, y) && ledig(s, x, y) && !faltAt(s, x, y); // i skogen fälls träden först, med en yxa (steg 3.6.9)
+  return (t === T.Gras || t === T.Skog) && (groundOf(s).trees[i] < FOREST || nTools(s, 'yxa') > 0) && utanfor(s, g, x, y) && ledig(s, x, y) && !faltAt(s, x, y) && !(s.hagar ?? []).some(h => x >= h.x - 1 && x <= h.x + h.w && y >= h.y - 1 && y <= h.y + h.h)
+    && !(s.angar ?? []).some(a => x >= a.x && x < a.x + a.w && y >= a.y && y < a.y + a.h); // inte på slåtterängen (steg 9.8.9) // inte i en hage eller på dess staket (steg 9.8.4). I skogen fälls träden först, med en yxa (steg 3.6.9)
 }
 
 // var ett nytt fält med n rutor och bredden w läggs: alla rutor fria och utanför byns gräns, första raden högst faltTill rutor
 // utanför byns område och så nära det som det går (utanforByn), lite ungskog. Samma plats varje gång (ingen slump). Sparas per by och timme (regel 4)
 const siteCache = new WeakMap<State, { key: string; at?: { x: number; y: number } }>();
 export function faltSite(s: State, w: number, n: number) {
-  const key = `${Math.floor(s.now / HOUR)}:${s.byggV ?? 0}:${faltOf(s).length}:${s.stackar?.length ?? 0}:${w}:${n}`;
+  const key = `${Math.floor(s.now / HOUR)}:${s.byggV ?? 0}:${faltOf(s).length}:${s.stackar?.length ?? 0}:${s.hagar?.length ?? 0}:${s.angar?.length ?? 0}:${w}:${n}`;
   const c = siteCache.get(s);
   if (c && c.key === key) return c.at;
   const at = hittaSite(s, w, n);
@@ -340,7 +341,7 @@ function rutPoang(s: State, p: Person, f: Falt, k: number) {
   if (r.st === 'mogen') return ODLING.pMogen * (2 - skordAndel(s, f, k));
   if (r.st === 'roja') return iVagen(s, faltRuta(f, k)) ? 0 : ODLING.pRoja;
   if (r.st === 'bereda') return ODLING.pBereda;
-  if (r.st === 'sa') return grodaRuta(s, p) ? ODLING.pSa : 0;
+  if (r.st === 'sa') return grodaRuta(s, p, faltRuta(f, k)) ? ODLING.pSa : 0; // en gröda som trivs på just den rutan (steg 9.9.3)
   return 0;
 }
 // den ruta på fälten fs som ger mest poäng, minus vägen dit (ingen slump: samma i spelet och ikappräkningen)
@@ -402,7 +403,7 @@ function nastaI(s: State, p: Person, f: Falt, st: FaltSteg, k: number) {
   for (let d = 0; d < f.n; d++) for (const j of [k + d, k - d]) {
     if (j < 0 || j >= f.n || r[j].st !== st) continue;
     if (st === 'roja' && iVagen(s, faltRuta(f, j))) continue;
-    if (st === 'sa' && !grodaRuta(s, p)) return -1;
+    if (st === 'sa' && !grodaRuta(s, p, faltRuta(f, j))) continue; // ingen gröda trivs på den här rutan: nästa
     return j;
   }
   return -1;

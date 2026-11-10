@@ -48,6 +48,7 @@ export const VATSKOR = {
   vin: { namn: 'Vin', farg: 0x521100, i: ['lerkruka_stor'], haller: 40 }, // vinet (steg 9.6.12, brygg.ts): i stora krukor, blir bättre med tiden
   ol: { namn: 'Öl', farg: 0x906f0f, i: ['lerkruka_stor'], haller: 6 }, // ölet (steg 9.6.13, brygg.ts): i stora krukor, håller sex dygn
   saft: { namn: 'Saft', farg: 0x742a01, i: ['lerkruka_mellan'], haller: 2 }, // bär krossade i en mellanstor kruka (steg 9.6.9): den första drycken, håller två dygn
+  mjolk: { namn: 'Mjölk', farg: 0xbdb39b, i: ['lerkruka_liten', 'lerkruka_mellan'], haller: 1 }, // getmjölken (steg 9.8.8, boskap.ts): håller ett dygn
   te: { namn: 'Örtte', farg: 0x906f0f, i: ['lerkruka_liten'] }, // örtteet av rölleka (steg 9.5.8): kokas och står kvar i den lilla krukan
 } satisfies Record<string, VatskaDef>;
 export type VatskaId = keyof typeof VATSKOR;
@@ -88,13 +89,26 @@ export function vatskorTimme(s: State) {
     count(s, v === 'saft' ? 'saftSur' : 'vatskaUthalld', t.inne!.n); t.inne = undefined;
   }
 }
-// drycken (steg 9.6.9–9.6.10): den törstige som är hemma dricker saft när det finns, annars kokat vatten, och den släcker törsten och ger lite glädje
+// drycken (steg 9.6.9–9.6.10): den törstige som är hemma dricker mjölk eller saft när det finns, annars kokat vatten, och den släcker törsten och ger lite glädje
 export const DRYCK = balans('dryck', {
   slacker: 0.5, // så mycket av törsten en del saft släcker
   saftGlad: 0.03, saftTim: 4, // tanken av att dricka saft, och hur länge
+  mjolkProtein: 0.15, mjolkFett: 0.1, // mjölken (steg 9.8.8) fyller protein och fett så här mycket per del
 });
+// mjölken (steg 9.8.8): en dryck och ett protein (Ingrediensgrupper). Den släcker törsten som saften och fyller protein och fett.
+// Ost och smör av mjölken kommer senare
+function drickMjolk(s: State, p: Person) {
+  taVatska(s, 'mjolk', 1);
+  p.torst = Math.min(1, p.torst + DRYCK.slacker);
+  const n = naringOf(p);
+  n.protein = Math.min(1, n.protein + DRYCK.mjolkProtein); n.fett = Math.min(1, n.fett + DRYCK.mjolkFett);
+  p.hunger = mattnad(n);
+  count(s, 'mjolkDrucken');
+  if (forstaGang(s, 'mjolkForsta')) log(s, `${p.name} drack byns första getmjölk.`, 'world', [p.id]);
+}
 export function drickDryck(s: State, p: Person) {
   if (!torstig(p, 0) || !hemma(s, p)) return;
+  if (medVatska(s, 'mjolk')) return drickMjolk(s, p);
   // det kokade vattnet (steg 9.6.10): rent, så att den som dricker det inte får ont i magen av smutsigt vatten
   if (!medVatska(s, 'saft')) { if (medVatska(s, 'kokt')) { taVatska(s, 'kokt', 1); p.torst = 1; count(s, 'koktDrucket'); } return; }
   taVatska(s, 'saft', 1);
@@ -104,6 +118,7 @@ export function drickDryck(s: State, p: Person) {
   if (forstaGang(s, 'saftForsta')) log(s, `${p.name} drack byns första saft av krossade bär.`, 'world', [p.id]);
 }
 import { torstig } from './torst';
+import { mattnad, naringOf } from './naring';
 // vinet och ölet för berusningen (rus.ts, steg 9.6.14)
 alkoholKrok.finns = (s, v) => !!medVatska(s, v);
 alkoholKrok.ta = (s, v) => taVatska(s, v, 1) > 0;
