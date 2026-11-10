@@ -177,6 +177,7 @@ export function smutsIByn(s: State) {
     const x = f.i % W, y = Math.floor(f.i / W);
     if (f.k === 'toa' && flackNu(f, Math.max(h0, f.t)) > SMUTS.akel && utanforByn(s, x, y) <= SMUTS.byn) punkter.push({ x: x + 0.5, y: y + 0.5 });
   }
+  for (const a of s.stackar ?? []) if ((a.k === 'slaktrens' || a.k === 'vaxtrest') && a.n >= 1 && utanforByn(s, a.x, a.y) <= SMUTS.byn) punkter.push({ x: a.x + 0.5, y: a.y + 0.5 }); // resterna i byn (steg 9.7.5)
   synCache.set(s, c = { hr, b: s.blod, fl: s.flackar, punkter, blod });
   return c;
 }
@@ -201,7 +202,9 @@ export function latrinFor(s: State, p: Person) {
 // hur full latrinen är (0–1)
 export const latrinFyllt = (t: Station) => clamp(t.fyllt ?? 0, 0, 1);
 // byn vill ha en ny latrin: den saknar en som inte är nästan full (projekt.ts)
-export const latrinBrist = (s: State) => latriner(s).some(t => !isKlar(t) || latrinFyllt(t) < STATION.latrinNy) ? 0 : 1;
+// med en kompost (steg 9.7.6) töms den nästan fulla latrinen i stället, så byn vill ha en ny först när den är full
+export const latrinBrist = (s: State) => { const ko = harKompost(s); return latriner(s).some(t => !isKlar(t) || latrinFyllt(t) < (ko ? 1 - 1e-9 : STATION.latrinNy)) ? 0 : 1; };
+const harKompost = (s: State) => stationerOf(s).some(t => t.k === 'kompost' && isKlar(t));
 // p har gått på toa (framme, eller kissade på sig): i latrinen fylls gropen, annars blir det en fläck där p står
 export function toaBesok(s: State, p: Person, ref?: number) {
   const t = stationById(s, ref);
@@ -209,7 +212,7 @@ export function toaBesok(s: State, p: Person, ref?: number) {
     t.fyllt = latrinFyllt(t) + 1 / STATION.latrinRymmer;
     count(s, 'latrinbesok');
     think(p, 'Fick vara ifred', SMUTS.ifred, s.now, SMUTS.ifredTim * HOUR);
-    if (t.fyllt >= 1 - 1e-9) fyllIgen(s, t);
+    if (t.fyllt >= 1 - 1e-9 && !harKompost(s)) fyllIgen(s, t); // med en kompost står den full tills någon tömmer den (steg 9.7.6)
     return;
   }
   smutsaRuta(s, 'toa', tileOf(p.x, p.y), 1, p.id);

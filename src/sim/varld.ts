@@ -1,3 +1,4 @@
+import { delarIRad } from './stationer';
 import { nyaKlaner } from './klaner';
 import { gastAv, nyGast, nyttGastId } from './gast';
 import { gastNyckel } from './gastliv';
@@ -256,6 +257,39 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
         return p.id;
       });
     }
+  }],
+  [29, 'v521: örtköket står i tre delar (steg 9.4.3): härden, torkstället och bänken i en rad där örtköket stod', s => {
+    for (const t of s.stationer ?? []) if (t.k === 'ortkok' && !t.delar?.length) { const d = delarIRad(t.k, t.x, t.y, t.rot); if (d) t.delar = d; }
+  }],
+  [30, 'v521: pyntet lerkruka (steg 4.3.4) är inte längre en möbel: varje lerkruka blir en stor lerkruka (steg 9.4.11) på samma plats, med samma ägare och kvalitet', s => {
+    for (const t of (s.stationer ?? []).filter(q => q.k === 'kruka')) {
+      if (t.kvar <= 0) (s.ting ??= []).push({ id: s.nextTing = (s.nextTing ?? 0) + 1, k: 'lerkruka_stor', c: 1, agare: t.ag ?? 0, x: t.x, y: t.y, ...(t.q !== undefined ? { q: t.q } : {}) }); // ägaren, eller byn (0)
+    }
+    s.stationer = (s.stationer ?? []).filter(q => q.k !== 'kruka');
+  }],
+  [31, 'v521: vätskorna i behållare (steg 9.4.14): en fylld vattensäck har vatten i sig, tjäran läggs i stora lerkrukor och salvan och benlimmet i näveraskar som är byns', s => {
+    const ting = (s.ting ??= []);
+    for (const t of ting) if (t.fylld) { t.inne = { v: 'vatten', n: 1 }; delete t.fylld; }
+    const ny = (k: string, x: number, y: number, v: 'tjara' | 'salva' | 'benlim', n: number) => ting.push({ id: s.nextTing = (s.nextTing ?? 0) + 1, k, c: 1, agare: 0, x, y, inne: { v, n } });
+    for (const a of s.stackar ?? []) {
+      if (a.k !== 'tjara' && a.k !== 'salva' && a.k !== 'benlim') continue;
+      let n = Math.floor(a.n + 1e-9);
+      while (n > 0) { const d = a.k === 'tjara' ? Math.min(10, n) : 1; ny(a.k === 'tjara' ? 'lerkruka_stor' : 'naverask', a.x, a.y, a.k, d); n -= d; }
+      a.n = 0;
+    }
+    s.stackar = (s.stackar ?? []).filter(a => a.n > 1e-9 || (a.k !== 'tjara' && a.k !== 'salva' && a.k !== 'benlim'));
+  }],
+  [32, 'v522: färdigheten Odling (steg 9.7.7) börjar på noll', s => { for (const p of s.people) p.skill.odling ??= 0; }],
+  [33, 'v523: rättens hållbarhet är medelvärdet av ingrediensernas (steg 9.6.7): en rätt som höll länge (_l) håller tio dygn', s => {
+    const nytt = (k: string) => /^r_\w+_l$/.test(k) ? k.slice(0, -2) + '_h10' : k;
+    const gå = (o: unknown): unknown => {
+      if (typeof o === 'string') return nytt(o);
+      if (ArrayBuffer.isView(o)) return o;
+      if (Array.isArray(o)) { for (let i = 0; i < o.length; i++) o[i] = gå(o[i]); return o; }
+      if (o && typeof o === 'object') { const r = o as Record<string, unknown>; for (const k of Object.keys(r)) { const v = gå(r[k]), n = nytt(k); if (n !== k) delete r[k]; r[n] = v; } }
+      return o;
+    };
+    gå(s);
   }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];

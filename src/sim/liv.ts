@@ -29,6 +29,8 @@ import { vaderNu } from './vader';
 import { nyKvarleva } from './kvarlevor';
 import { gravgava } from './kultlatt';
 import { barSmitta, insjukna } from './sjukdom';
+import { nyttILarmet } from './roller';
+import { forlossRisk } from './forlossning';
 
 // ---------- balanstal (regel 8) ----------
 // Befolkningen regleras av naturen, inte av ett fast tak: en trång by får färre barn och fler som flyttar, en liten by lockar
@@ -63,7 +65,6 @@ export const LIV = balans('liv', {
   parFran: 18, parTill: 38, // ett par där hen som valts är över Fran och under Till flyttar tillsammans (med sina barn under ALDER.vuxen)
   ensamFran: 16, ensamTill: 40, // annars ger sig en ensam vuxen i den åldern av
   // död och födsel
-  barnsang: 0.025, // chansen att modern dör i barnsäng
   barnDod: 5, // ett barn som dör under så här många år sörjs av hela byn (sedan Barn)
   // tankarna efter en död eller flytt: styrkan (humör) och hur länge de varar (dygn)
   sorjPartner: -0.3, sorjPartnerDygn: 1.2, // partnern
@@ -126,6 +127,7 @@ function sorjer(s: State, p: Person) {
   return lev(p.partner) ?? lev(p.bast) ?? lev(p.mother) ?? lev(p.father);
 }
 export function die(s: State, p: Person, orsak: Dodsorsak) {
+  nyttILarmet(s); // en död: rollerna vid larmet väljs om (steg 9.5.19)
   const { text: cause, sorg } = DODSORSAKER[orsak], akt = p.task?.act;
   avbryt(s, p); // bördan läggs ner medan hen ännu lever, så att den ärvs
   p.died = s.now; p.cause = cause;
@@ -159,14 +161,22 @@ export function die(s: State, p: Person, orsak: Dodsorsak) {
 
 export function birth(s: State, mother: Person) {
   const father = byId(s, mother.pregnantBy ?? mother.partner); // den hon blev gravid med; partnern bara i sparfiler där det saknas
-  mother.pregnantSince = undefined; mother.lastBirth = s.now;
+  const risk = forlossRisk(s, mother); // förloppet och riskerna med hjälparens vård (steg 9.5.29, forlossning.ts)
+  mother.pregnantSince = undefined; mother.lastBirth = s.now; mother.foder = undefined;
+  if (mother.task?.act === 'foder') mother.task.until = s.now;
+  if (rnd(s, 'halsa', mother) < risk.barn) { // barnet dör (dödfött, eller dog i förlossningen)
+    count(s, 'dodfodda'); log(s, `${mother.name}s barn dog när det föddes. ${risk.f.text}`, 'death', [mother.id]); notis(s, 'dodfodd', `${mother.name}s barn dog när det föddes. ${risk.f.text}`, [mother.id]);
+    think(mother, 'Förlorade sitt barn i förlossningen', -0.4, s.now, 3 * DAY);
+    if (rnd(s, 'halsa', mother) < risk.mor) die(s, mother, 'barnsang');
+    return;
+  }
   const ch = newPerson(s, rnd(s, 'folk') < 0.5 ? 'm' : 'k', s.now, mother, father);
   ch.x = mother.x; ch.y = mother.y;
   s.people.push(ch);
   // loggen, notisen och krönikan får samma text ur mallen k_fodd (steg 6.7.7)
   if (vaderNu(s).aska) { for (const q of [mother, father]) if (q) tecken(s, q, 'barnAska'); count(s, 'barn i åska'); } // steg 8.5.18
   const ft = kronikaBer(s, 'k_fodd', ch.id, { namn: ch.name, barnet: ch.sex === 'k' ? 'dotter' : 'son', mor: mother.name, foraldrar: mother.name + (father ? ' och ' + father.name : ''), syskon: s.people.filter(q => q !== ch && q.mother === mother.id).length });
-  log(s, ft, 'birth', [ch.id, mother.id, ...(father ? [father.id] : [])]).m = 'k_fodd'; notis(s, 'fodd', ft, [ch.id, mother.id, ...(father ? [father.id] : [])]);
+  log(s, ft + (risk.f.namn !== 'Vanlig' ? ' ' + risk.f.text : ''), 'birth', [ch.id, mother.id, ...(father ? [father.id] : [])]).m = 'k_fodd'; notis(s, 'fodd', ft + (risk.f.namn !== 'Vanlig' ? ' ' + risk.f.text : ''), [ch.id, mother.id, ...(father ? [father.id] : [])]); // texten om förloppet (steg 9.5.29)
   count(s, 'fodda'); personNara(s, ch, ft, [mother.id, ...(father ? [father.id] : [])]); // syskonen (steg 9.2.107)
   uppvaxtFodd(s, ch); startSmak(s, ch);
   gudHandelse(s, 'atten', `barnet ${ch.name} som föddes`); // steg 4.1.5
@@ -174,7 +184,8 @@ export function birth(s: State, mother: Person) {
   if (father && alive(father)) think(father, `Fick barnet ${ch.name}`, LIV.fodFar, s.now, LIV.fodDygn * DAY);
   const kids = s.people.filter(q => q.mother === mother.id).length;
   if (kids === 6) mother.fame.push('Mor till många barn');
-  if (rnd(s, 'halsa', mother) < LIV.barnsang) die(s, mother, 'barnsang');
+  if (risk.tva && s.people.filter(q => q.mother === mother.id && q.born === s.now).length < 2) { const tv = newPerson(s, rnd(s, 'folk') < 0.5 ? 'm' : 'k', s.now, mother, father); tv.x = mother.x; tv.y = mother.y; s.people.push(tv); count(s, 'fodda'); count(s, 'tvillingar'); uppvaxtFodd(s, tv); startSmak(s, tv); } // tvillingar (steg 9.5.29)
+  if (rnd(s, 'halsa', mother) < risk.mor) die(s, mother, 'barnsang');
 }
 
 // ---------- befolkningen regleras ----------

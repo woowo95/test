@@ -13,11 +13,13 @@ import { strandNu } from './sjo';
 // ---------- fiskarterna (steg 7.4.3) ----------
 // Varje art är en rad: hur gärna den nappar under varje årstid (Istid, Vårtid, Sommartid, Hösttid) och hur mycket den sliter på
 // redskapet per fisk. Abborren nappar bäst på sommaren och genom isen, gäddan på våren och hösten. Mörten fångas i mjärden.
-export interface FiskDef { namn: string; sak: string; sasong: [number, number, number, number]; slit: number; mjarde?: true }
+export interface FiskDef { namn: string; sak: string; sasong: [number, number, number, number]; slit: number; mjarde?: true; nat?: number } // nat = så här många gånger oftare i nätet än annars (steg 9.6.17)
 export const FISKAR: Record<string, FiskDef> = {
   abborre: { namn: 'Abborre', sak: 'abborre', sasong: [1, 0.6, 1, 0.6], slit: 1 },
   gadda: { namn: 'Gädda', sak: 'gadda', sasong: [0.1, 0.6, 0.15, 0.6], slit: 2 },
   mort: { namn: 'Mört', sak: 'mort', sasong: [0.2, 1, 1, 0.8], slit: 1, mjarde: true },
+  braxen: { namn: 'Braxen', sak: 'braxen', sasong: [0.05, 0.08, 0.1, 0.06], slit: 1, nat: 12 }, // steg 9.6.17: nästan bara i nätet
+  sik: { namn: 'Sik', sak: 'sik', sasong: [0.08, 0.05, 0.04, 0.1], slit: 1, nat: 12 },
 };
 const FISK_LIST = Object.keys(FISKAR);
 export const MJARDE = balans('mjarde', {
@@ -34,12 +36,13 @@ export const MJARDE = balans('mjarde', {
   beteNapp: 1.33, // den som har en mört med sig får så här många gånger fler napp (steg 7.4.4), och en mört går åt per fisketur
 });
 // vilken fisk det blev: med metspö, spjut eller händerna efter årstiden; mörten bara i mjärden
-export function valjFisk(s: State, p: Person, iMjarde = false) {
+export function valjFisk(s: State, p: Person, iMjarde = false, nat = false) {
   const ai = ageIndex(s), kand = FISK_LIST.filter(k => iMjarde ? FISKAR[k].mjarde : !FISKAR[k].mjarde);
+  const v = (k: string) => FISKAR[k].sasong[ai] * (nat ? FISKAR[k].nat ?? 1 : 1); // braxen och sik nästan bara i nätet (steg 9.6.17)
   let sum = 0;
-  for (const k of kand) sum += FISKAR[k].sasong[ai];
+  for (const k of kand) sum += v(k);
   let r = rnd(s, 'arbete', p) * sum;
-  for (const k of kand) { r -= FISKAR[k].sasong[ai]; if (r <= 0) return k; }
+  for (const k of kand) { r -= v(k); if (r <= 0) return k; }
   return kand[0];
 }
 // ---------- fällorna (steg 7.4.2, 7.5.10 och 7.5.11) ----------

@@ -498,7 +498,7 @@ SCENARIER.kropp = {
     for (let i = 0; i < 2000 && !(s.stat?.skador); i++) halsaSteg(s, p, MIN60 * 30);
     const olycka = (s.stat?.skador ?? 0) >= 1;
     // ett lätt skärsår blöder en stund och levrar sig; ett mycket svårt kan förblöda
-    fyll(); p.task = undefined; skada(s, p, 'handH', 'skarsar', 0.5, 'olycka', '');
+    fyll(); p.task = undefined; skada(s, p, 'handH', 'skarsar', 0.25, 'olycka', ''); // ett litet sår (under HALSA.smaSar) levrar sig av sig själv (steg 9.5.14)
     const blodNy = blodning(p), dogLatt = timmar(3), blodLatt = p.blod, levrat = blodning(p) === 0;
     const hFore = halsa(p);
     const laktTid = (() => { for (let h = 1; h <= 24; h++) { timmar(1); if (!p.skador) return h; } return 99; })();
@@ -553,7 +553,7 @@ SCENARIER.vattensack = {
     const c = bynsMitt(s);
     const fyll = (x: Person, dx: number) => Object.assign(x, { rest: 1, toa: 1, hunger: 1, social: 1, warm: 1, health: 1, torst: 1, blod: 1, skador: undefined, sickUntil: undefined, task: undefined, x: c.x + 0.5 + dx, y: c.y + 2.5 });
     fyll(p, 0); fyll(q, 1); fyll(r, 2); r.x = c.x + 40;
-    skada(s, p, 'benH', 'benbrott', 0.9, 'olycka', ''); p.skador![0].b = 0;
+    skada(s, p, 'benH', 'benbrott', 0.9, 'olycka', ''); for (const w of p.skador!) { w.b = 0; if (w.k === 'benbrott') { w.satt = 1; w.spala = 1; } } // också såret i ett öppet brott, och benet är redan satt och spjälat (steg 9.5.27–9.5.28)
     const kanInte = !kanGa(p) && hemma(s, p);
     // utan säck: hen får vatten av de andra
     p.torst = 0.3; chooseTask(s, p); const utan = p.task?.act;
@@ -618,8 +618,8 @@ SCENARIER.vard = {
     for (let i = 0; i < 12 * STEG_TIM && !hem; i++) { step(s, BEAT); if (tk()?.act !== 'buren' && hemma(s, p)) hem = true; }
     const bars = (s.stat?.['buren hem'] as number ?? 0) > buren0;
     // man läker fortare när man vilar
-    fyll(p); skada(s, p, 'handV', 'krossar', 0.5, 'olycka', ''); p.skador![0].b = 0; timmar(p, 4); const vaken = p.skador![0].g;
-    fyll(p); skada(s, p, 'handV', 'krossar', 0.5, 'olycka', ''); p.skador![0].b = 0; p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 100 * HOUR, carry: 0, why: '' }; timmar(p, 4); const sover = p.skador![0].g;
+    fyll(p); skada(s, p, 'handV', 'krossar', 0.5, 'olycka', ''); p.skador![0].b = 0; p.skador![0].salva = 5; timmar(p, 4); const vaken = p.skador![0].g;
+    fyll(p); skada(s, p, 'handV', 'krossar', 0.5, 'olycka', ''); p.skador![0].b = 0; p.skador![0].salva = 5; p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 100 * HOUR, carry: 0, why: '' }; timmar(p, 4); const sover = p.skador![0].g;
     // mossa hittas i naturen och på ett fällt träd
     const t = { act: 'samla', phase: 'do', tx: p.x, ty: p.y, until: 0, carry: 0 } as const;
     setAmount(s, 'mossa', 0); const fynd = mossaFynd(s, { ...t }, 3600);
@@ -664,7 +664,7 @@ SCENARIER.halsoflik = {
     // förmågorna: värdet är det simuleringen räknar med, och delarna visar var det kommer ifrån
     const rf = FORMAGOR.rorlighet, hf = FORMAGOR.handighet;
     const formagor = rf.varde(p) === rorlighet(p) && hf.varde(p) === handighet(p) && FORMAGOR.smarta.varde(p) === smarta(p)
-      && Math.abs(1 + rf.delar(p).reduce((a, x) => a + x.v, 0) - rorlighet(p)) < 1e-9 && rf.delar(p).length === 1 && hf.delar(p).length === 1
+      && Math.abs(1 + rf.delar(p).reduce((a, x) => a + x.v, 0) - rorlighet(p)) < 1e-9 && rf.delar(p).length === (smarta(p) > 0 ? 2 : 1) && hf.delar(p).length === 1
       && FORMAGOR.blod.delar(p).length === 1 && FORMAGOR.smarta.delar(p).length === 2;
     // vården syns: förband och rengjort, och ett infekterat sår som inte rengörs blir sämre
     const w = p.skador![0]; w.f = 1; w.inf = 0.3;

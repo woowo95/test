@@ -22,7 +22,21 @@ export const NOTISER: Record<string, { slag: NotisSlag; rubrik: string; vikt: nu
   motgang: { slag: 'fara', rubrik: 'En motgång', vikt: 3 },
   anfall: { slag: 'fara', rubrik: 'Fara nära byn', vikt: 3 },
   strid: { slag: 'fara', rubrik: 'Strid', vikt: 2 },
+  blodning: { slag: 'fara', rubrik: 'Förblöder', vikt: 3 }, // tiden kvar är kort (steg 9.5.14)
+  infektion: { slag: 'fara', rubrik: 'Ett infekterat sår', vikt: 2 }, // feber och kallbrand (steg 9.5.24)
+  // hälsans tecken (steg 9.5.31, registret HALSOTECKEN i halsonotiser.ts): en rad per tecken
+  blodsteg: { slag: 'fara', rubrik: 'Svag av blodförlusten', vikt: 2 },
+  blodigen: { slag: 'fara', rubrik: 'Såret blöder igen', vikt: 2 },
+  blodstopp: { slag: 'folk', rubrik: 'Blödningen stoppad', vikt: 1 },
+  svimmat: { slag: 'fara', rubrik: 'Medvetslös', vikt: 3 },
+  infborjar: { slag: 'fara', rubrik: 'En infektion börjar', vikt: 2 },
+  infborta: { slag: 'folk', rubrik: 'Infektionen är borta', vikt: 1 },
+  benbrott: { slag: 'fara', rubrik: 'Ett benbrott', vikt: 2 },
+  bensatt: { slag: 'folk', rubrik: 'Benet är satt', vikt: 1 },
+  snett: { slag: 'fara', rubrik: 'Läker snett', vikt: 1 },
+  avhuggen: { slag: 'fara', rubrik: 'En förlorad kroppsdel', vikt: 2 },
   dod: { slag: 'dod', rubrik: 'Död i byn', vikt: 3 },
+  dodfodd: { slag: 'dod', rubrik: 'Ett barn dog vid födseln', vikt: 2 }, // förlossningen (steg 9.5.29)
   gravid: { slag: 'folk', rubrik: 'Väntar barn', vikt: 1 },
   fodd: { slag: 'folk', rubrik: 'Ett barn föddes', vikt: 2 },
   inflytt: { slag: 'folk', rubrik: 'Ny i byn', vikt: 2 },

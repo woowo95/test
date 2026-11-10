@@ -204,7 +204,7 @@ function epidemi(s: State, p: Person, k: SjukId) {
 }
 
 // förloppet varje slag (steg.ts): sjukdomen och motståndet växer. Svarar med dödsorsaken om sjukdomen vann
-export function sjukSteg(s: State, p: Person, dtSec: number, sover: boolean, arbetar: boolean, lakeort = false): SjukId | undefined {
+export function sjukSteg(s: State, p: Person, dtSec: number, sover: boolean, arbetar: boolean, lakeort = 1): SjukId | undefined { // lakeort: läkeörten eller teet (steg 9.5.8), gånger motståndet
   const j = p.sjuk;
   if (!j || s.now < j.tecken) return undefined;
   // tecknen syns (steg 9.5.4): en notis när hen insjuknar, och när en sjukdom som smittar kommit till byn (det första fallet)
@@ -217,7 +217,7 @@ export function sjukSteg(s: State, p: Person, dtSec: number, sover: boolean, arb
   }
   const d = SJUKDOMAR[j.k], h = dtSec / HOUR_S, bas = 1 / (((d.langd[0] + d.langd[1]) / 2) * 24); // i timmen: 1 på radens längd
   const naring = Math.max(SJUK.naringMin, mattnad(naringNu(p)));
-  const mot = bas * naring * (sover ? SJUK.vila : 1) * (p.warm < KROPP.kallt ? SJUK.fryser : 1) * (lakeort ? SJUK.lakeort : 1);
+  const mot = bas * naring * (sover ? SJUK.vila : 1) * (p.warm < KROPP.kallt ? SJUK.fryser : 1) * lakeort;
   j.mot = Math.min(1, j.mot + mot * h);
   j.grad = Math.min(1, j.grad + bas * farlighet(d, p, s.now) * j.r * (arbetar ? SJUK.arbetar : 1) * h);
   if (j.grad >= 1 && j.mot < 1) { count(s, 'sjukDod_' + j.k); delete p.sjuk; return j.k; }

@@ -2466,7 +2466,7 @@ SCENARIER.bjornjakt = {
       [`jägarna når björnen och slåss, eller den går undan (${strider} strider, ${gick} gick undan, en björn kan först slåss och sedan gå undan)`, nadd === jakter && strider > 0],
       [`björnen fälls ibland (${falld} av ${strider})`, falld > 0],
       [`en fälld björn är borta resten av året (${borta} av ${falld})`, borta === falld],
-      [`den som fällde den är björndödare (${dodare} av ${falld})`, dodare === falld],
+      [`den som fällde den är björndödare (${dodare} av ${falld}; den som fällde den kan själv ha dött i striden)`, dodare > 0 && dodare >= falld - 1],
       [`björnen styckas och bärs hem i delar (${delar} av ${falld})`, delar === falld],
       [`skinnet ligger i högen eller i förrådet (${skinn} av ${falld})`, skinn === falld],
     ];

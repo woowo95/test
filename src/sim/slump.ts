@@ -11,6 +11,7 @@ export const STROMMAR = {
   strid: 'fröet till en strid (striden har sedan sin egen följd)',
   val: 'vad man väljer att göra och var',
   arbete: 'vad arbetet ger: fynd, fångst, fiske, svamp, rep',
+  mat: 'matlagningen: vilka bitar och portioner som bränns (steg 9.6.4)',
   halsa: 'sjukdom, olyckor, död, graviditet och förlossning',
   folk: 'nya människor: kön, namn, anlag, färdigheter',
   anlag: 'anlagen som kom senare (smidighet och aggression, steg 3.7.6), så att följden folk blev som förut',

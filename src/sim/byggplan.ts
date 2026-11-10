@@ -6,10 +6,10 @@ import { Hus, MATERIAL, bitAt, bitsOf, gridOf, housesOf, husById, touch } from '
 import { eldPlats, getMap } from './karta';
 import { groundOf } from './mark';
 import { PLATS, rektAvstand } from './plats';
-import { stangerIn, stationRutor, storlekAv, uteStation } from './stationer';
+import { stationFlyttTimme, stangerIn, stationRutor, storlekAv, uteStation } from './stationer';
 import { knows } from './teknik';
 import { villHaMer } from './forradsmal';
-import { amountOf, changed, flyttaLager, inZone, lagerFullt, lagerNy, overflow, overlaps, lagerStorre, ownedAll, put, usable, zonesOf } from './lager';
+import { amountOf, changed, flyttaLager, lagerFlyttTimme, inZone, lagerFullt, lagerNy, overflow, overlaps, lagerStorre, ownedAll, put, usable, zonesOf } from './lager';
 import { tingOf } from './agande';
 import { findPath } from './vag';
 import { Akut, BYGGNADER, Byggnad, FN, Fn, HUS, antalLika, fnId, fnOf, husNamn, RUMSFUNKTIONER, satKanKopa, sovHus, sovPersoner, sovRutorFor, sovplatser, torkUte, vedUte } from './byggnader';
@@ -58,6 +58,7 @@ export const PLAN = balans('byggplan', {
   lagerKostnad: 0.5, // att göra en lagerplats större eller ny kostar så här mycket (arbetet med att bära om)
   forStort: 2, // ett hus är för stort när det har så här många gånger fler sovplatser än familjen
   husVanta: 2, husMote: 8, // ett husbyte väntar så här många dygn (år i spelet) på att köparen och säljaren står så här många rutor från varandra
+  rasLage: 2, // ett skadat hus (steg 9.4.6): läget väger så här mycket mer när allt rasat (andelen som rasat gånger det)
   lagePerRuta: 0.015, lageMax: 0.4, // läget (steg 9.2.109): ett hus mitt i byn är värt så här mycket mer per ruta i byns radie, högst så här mycket mer
   salj: 0.8, bynSalj: 0.6, // säljarens lägsta pris för ett hus hen inte behöver: så här många gånger husets värde (byn säljer billigast; att riva ger hälften)
   kopMax: 0.9, // köparens högsta pris är så här stor del av vad det kostar att bygga nytt
@@ -370,7 +371,7 @@ export function saljBehov(s: State, h: Hus): number {
 }
 // läget: ett hus nära byns mitt är värt mer, och mer ju större byn är. Byns radie räknas ur områdets yta (en cirkel med lika
 // många rutor); huset mitt i byn får PLAN.lagePerRuta mer per ruta i radien, i kanten av området inget
-export function lage(s: State, h: Hus): number {
+export function lage(s: State, h: { x: number; y: number; w: number; h: number }): number {
   const o = omrade(s), m = bynsMitt(s), r = Math.sqrt(o.n / Math.PI);
   if (r < 1) return 1;
   const d = Math.hypot(h.x + h.w / 2 - (m.x + 0.5), h.y + h.h / 2 - (m.y + 0.5)), nara = clamp(1 - d / r, 0, 1);
@@ -456,6 +457,48 @@ function husAffar(s: State) {
   if (h.ag === undefined && !bud) return;
   delete s.husAffar;
   kopHus(s, h, a.ag, bud);
+}
+// ---------- dragningen mot mitten: det skadade huset (steg 9.4.6, Byggplanen: Dragningen mot mitten) ----------
+// Ett hus där väggar rasat i en brand eller en storm byggs upp där det står (det som rasat byggs igen, buildJob i bygg.ts) eller
+// på en ny plats, efter vilket som är mest värt per kostnad, som andra förslag i byggplanen: värdet är läget gånger det huset ger
+// (samma funktion och storlek, så samma), och kostnaden materialet och arbetet. Det som står kvar gör det billigare att stanna, och
+// rivs huset kommer HUS.rivTillbaka av träet tillbaka. Ju mer som rasat, desto mer väger läget (PLAN.rasLage)
+export interface SkadatVal { hus: Hus; rasat: number; stanna: number; flytta: number; ny?: Forslag }
+export function skadatVal(s: State, h: Hus, okAt: (i: number) => boolean): SkadatVal | undefined {
+  if (h.klar || h.varKlar === undefined || h.ut || h.skjul || h.flyttas !== undefined || h.flyttFran !== undefined) return undefined;
+  const bits = bitsOf(s).filter(b => b.hus === h.id), ras = bits.filter(b => b.b < 1 && b.k === 'vagg');
+  if (!ras.length) return undefined;
+  const r = ras.length / Math.max(1, bits.filter(b => b.k === 'vagg').length), vikt = 1 + PLAN.rasLage * r, varde = (L: number) => 1 + (L - 1) * vikt;
+  const stannaK = ritningKostnad(ras.map(b => ({ x: b.x, y: b.y, m: b.m })));
+  const ut: SkadatVal = { hus: h, rasat: r, stanna: varde(lage(s, h)) / Math.max(PROJEKT_TAL.minKostnad, stannaK), flytta: 0 };
+  const at = siteFor(s, h.w, h.h, okAt), e = eldPlats(s);
+  if (!at || rektAvstand(e.x, e.y, at.x - 1, at.y - 1, h.w + 2, h.h + 2) === 0) return ut; // aldrig där elden står
+  const dorr = dorrPlats(s, at.x, at.y, h.w, h.h, e);
+  if (!dorr) return ut;
+  const golv = bits.find(b => b.k === 'golv')?.m ?? s.byplan?.golv ?? 'tra', ritning: Andring[] = [];
+  for (let y = at.y; y < at.y + h.h; y++) for (let x = at.x; x < at.x + h.w; x++) {
+    const edge = x === at.x || y === at.y || x === at.x + h.w - 1 || y === at.y + h.h - 1;
+    ritning.push({ x, y, m: x === dorr.x && y === dorr.y ? 'oppning' : edge ? 'timmer' : golv });
+  }
+  const tillbaka = Math.floor(bits.reduce((a, b) => a + (MATERIAL[b.m].item === 'ved' ? b.mat : 0), 0) * HUS.rivTillbaka + 1e-9) * grundvarde('ved');
+  const flyttaK = Math.max(0, ritningKostnad(ritning) - tillbaka), ny: Forslag = { at: 'nyttHus', x: at.x, y: at.y, w: h.w, h: h.h, ritning, oppnas: [], kostnad: flyttaK, varde: 1, plats: 0 };
+  return { ...ut, ny, flytta: varde(lage(s, ny)) / Math.max(PROJEKT_TAL.minKostnad, flyttaK) };
+}
+function planSkadat(s: State, okAt: (i: number) => boolean, byggare: Person[]) {
+  for (const h of housesOf(s)) {
+    const v = skadatVal(s, h, okAt);
+    if (!v?.ny || v.flytta <= v.stanna) continue;
+    const by = byggare.find(p => h.ag !== undefined && familjOf(s, h.ag).includes(p)) ?? byggare[0];
+    const u: ByggBehov = { fn: fnId(h), a: { v: 1, plats: 0, ag: h.ag, slag: h.slag }, sc: 0 };
+    const fore = new Set(housesOf(s));
+    bygg(s, v.ny, u, by);
+    const nytt = housesOf(s).find(q => !fore.has(q));
+    if (!nytt) continue;
+    nytt.flyttFran = h.id; h.flyttas = nytt.id;
+    count(s, 'skadatFlyttas');
+    log(s, `${by.name} vill bygga upp ${h.namn.toLowerCase()} närmare byns mitt i stället för där det rasade.`, 'world', [by.id]);
+    return; // ett i taget
+  }
 }
 // en familj river sitt eget hus när ingen vill köpa det och det står tomt (steg 7.2.15): hälften av materialet går till ägaren
 export function rivOmTomt(s: State) {
@@ -648,6 +691,8 @@ export function stepByggplan(s: State) {
   torgNu(s);
   husAffar(s);
   rivOmTomt(s);
+  lagerFlyttTimme(s); // en lagerplats närmare mitten (steg 9.4.7)
+  stationFlyttTimme(s); // en station ute närmare dem som använder den (steg 9.4.8)
   if (Math.floor(s.now / HOUR) % PLAN.varTim === 0) planBuild(s);
 }
 // lagret (steg 7.2.18): det som inte fått plats ligger bredvid. Byggplanen väger en större lagerplats mot en ny. Marken märks bara
@@ -663,6 +708,10 @@ const upptagen = (s: State, ag: number) => housesOf(s).some(h => agareAv(h) === 
 // den som planerar (by, namnet i loggen): ett familjehus av den skickligaste byggaren i familjen, annars av familjens ägare (finns
 // hen inte kvar: byns skickligaste byggare); andra hus av byns skickligaste byggare. Det måste finnas en byggare i byn, men
 // planeraren behöver inte själv kunna bygga väggar. Vem som sedan bygger väljs i val.ts (buildJob)
+export function byggbart(s: State) {
+  const utomElden = canLight(s), okMinne = new Int8Array(W * H).fill(-1);
+  return { okMinne, okAt: (i: number) => (okMinne[i] < 0 ? okMinne[i] = tileOk(s, i % W, Math.floor(i / W), utomElden) ? 1 : 0 : okMinne[i]) === 1 };
+}
 export function planBuild(s: State) {
   const ppl = living(s);
   if (!ppl.length) return;
@@ -670,9 +719,9 @@ export function planBuild(s: State) {
   if (!byggare.length || s.now < (s.byggSok ?? 0)) return;
   const behov = byggbehov(s).filter(b => moget(s, b));
   // går det att bygga på rutan? Räknas först när sökningen frågar, och sparas under planeringen (steg 6.2.21). Elden flyttas bara om den kan tändas igen
-  const utomElden = canLight(s), okMinne = new Int8Array(W * H).fill(-1);
-  const okAt = (i: number) => (okMinne[i] < 0 ? okMinne[i] = tileOk(s, i % W, Math.floor(i / W), utomElden) ? 1 : 0 : okMinne[i]) === 1;
+  const { okAt, okMinne } = byggbart(s);
   // det mest akuta behovet för byn och för varje familj (steg 7.2.17), det första som går att göra något åt; är inget akut för byn, en förbättring
+  planSkadat(s, okAt, byggare); // ett skadat hus som är värt mer på en ny plats (steg 9.4.6)
   const klara = new Set<number>();
   let provat = false, funnit = false; // det som väntar på ett bygge eller ett köp prövas inte
   for (const u of behov) {

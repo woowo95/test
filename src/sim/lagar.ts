@@ -52,7 +52,7 @@ export const LAG = balans('lag', {
 });
 export const LAG_SKOG = 8; // förbudet att fälla nära byn: inom så många rutor från byns område
 
-const STEGEN = [0, 1, 4, 5, 2, 7, 3, 6]; // ordningen från mildast till hårdast
+const STEGEN = [0, 1, 4, 5, 2, 7, 8, 3, 6]; // ordningen från mildast till hårdast
 
 // lagarna: en rad per lag. prio = hur väl det som hänt väcker den (0–1). rost = åsikten och intresset, −1 till 1. brott = händelserna som bryter
 // mot den. kan = systemet den kräver finns

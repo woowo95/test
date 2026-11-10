@@ -24,6 +24,7 @@ import { lamnaFallt, styckaFallt } from './styckning';
 import { upplev } from './uppvaxt';
 import { H, HOUR, MIN, Person, SEC, State, Task, W } from './typer';
 import { bynsMitt } from './omrade';
+import { KROPPSDELAR as KDELAR, forlora } from './halsa';
 
 export const BJORNMOTE = balans('bjornmote', {
   nara: 2.5, // så nära (rutor) man ska komma björnen för att överraska den ...
@@ -225,6 +226,7 @@ function bjornSlut(s: State, g: DjurKamp, st: Strid) {
       if (!dod && skada(s, p, w.d, w.k, w.g, 'bjorn', jakt ? 'på björnjakt' : 'när en björn anföll')) dod = true;
       const sk = p.skador?.[p.skador.length - 1];
       if (!dod && sk && w.fast) sk.fast = 1;
+      if (!dod && w.av && !(KDELAR[w.d] as { livsviktig?: true }).livsviktig) forlora(s, p, w.d, 'höggs av'); // olyckshugget (steg 9.5.22)
     }
     slitKastat(s, p, st, k);
     if (dod) { count(s, 'dodBjorn'); die(s, p, 'bjorn'); return; }

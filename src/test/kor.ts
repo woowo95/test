@@ -91,6 +91,7 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
     doda: st.doda ?? 0,
     svalt: st['dog av svält'] ?? 0,
     kyla: st['dog av kyla'] ?? 0,
+    blod: st['dog av blodförlust'] ?? 0, infektion: st['dog av kallbrand'] ?? 0, amputerat: s.stat?.amputerat ?? 0, // steg 9.5.23 och 9.5.26
     hunger,
     humor: humorN ? +(humor / humorN).toFixed(3) : 0,
     vintermat: Number.isFinite(vintermat) ? Math.round(vintermat) : -1,

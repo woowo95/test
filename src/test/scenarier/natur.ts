@@ -68,7 +68,7 @@ SCENARIER.djur = {
     const medRecept = DJURARTER.filter(art => Object.keys(art.slakt).every(k => SAKER[k]?.skaffa?.av?.[art.sak]));
     const fran = (art: (typeof DJURARTER)[number]) => Object.entries(art.slakt).reduce((x, [k, n]) => x + SAKER[k]!.skaffa!.av![art.sak] * n, 0) / art.mat;
     const recept = medRecept.map(art => `${art.sak} ${fran(art).toFixed(2)}`).join(', ');
-    const receptOk = medRecept.length > 0 && medRecept.every(art => art.sak === 'gadda' || Math.abs(fran(art) - 1) <= 0.1);
+    const receptOk = medRecept.length > 0 && medRecept.every(art => art.sak === 'gadda' || art.sak === 'braxen' || Math.abs(fran(art) - 1) <= 0.1);
     return [
       [`kaniner syns där det finns vilt (${dj.length} st), inga i lägret (${iLagret})`, dj.length > 10 && iLagret === 0],
       [`fler kaniner där det finns mycket vilt (${(tat(rik, nr) * 100).toFixed(1)} % av de rika rutorna, ${(tat(fattig, nf) * 100).toFixed(1)} % av de fattiga)`, tat(rik, nr) > tat(fattig, nf) * 2],
@@ -1179,7 +1179,7 @@ SCENARIER.grill = {
     const ovan = amountOf(s, 'grillfisk'), anv = f0 - amountOf(s, 'fisk');
     grilla(s, q, 1);
     const skicklig = amountOf(s, 'grillfisk') - ovan;
-    const brant = Math.abs(anv - MATLAG.timme) < 1e-6 && Math.abs(ovan - anv * (1 - MATLAG.brann)) < 1 && ovan < anv && Math.abs(skicklig - MATLAG.timme) < 1; // i hela saker (steg 2.10.7)
+    const brant = Math.abs(anv - MATLAG.timme) < 1e-6 && Math.abs(ovan - anv * (1 - MATLAG.brann)) <= 2 && ovan < anv && Math.abs(skicklig - MATLAG.timme) < 1; // i hela saker (steg 2.10.7); varje bit bränns eller inte med chansen (steg 9.6.4), så ungefär
     const ovar = p.skill.matlagning > m0 && brannDel(q) === 0;
     s.fire.lit = false; const fore = amountOf(s, 'fisk'); grilla(s, p, 1); const ingenEld = amountOf(s, 'fisk') === fore; s.fire.lit = true;
     const forst = FOOD.indexOf('grillfisk') < FOOD.indexOf('fisk') && FOOD.indexOf('grillkott') < FOOD.indexOf('kott') && SAKER.grillkott!.haller! > SAKER.kott!.haller! && SAKER.grillfisk!.haller! > SAKER.fisk!.haller!;
@@ -1364,7 +1364,7 @@ SCENARIER.odling = {
     const tk = plats(rovI), summa = (ut: Record<string, number>, ks: string[]) => ks.reduce((a, k) => a + (ut[k] ?? 0), 0);
     const fore = fyndAt(s, 'vildrova', rovI), ut: Record<string, number> = {};
     for (let i = 0; i < 60; i++) for (const [k, n] of Object.entries(SIM.froFynd(s, p, tk, 60))) ut[k] = (ut[k] ?? 0) + n;
-    const efter = fyndAt(s, 'vildrova', rovI), vild = s.stat?.vildgrodor ?? 0, fron = summa(ut, ['rovfron', 'artfron']), rot = ut.rotter ?? 0;
+    const efter = fyndAt(s, 'vildrova', rovI), vild = s.stat?.vildgrodor ?? 0, fron = summa(ut, ['rovfron', 'artfron']) + (ut.lok ?? 0) / (1 + SIM.ODLING.vildMat), rot = ut.rotter ?? 0;
     const art = artI >= 0 ? SIM.froFynd(s, p, plats(artI), 3600) : {};
     // byn vill ha frön till ett minsta fält för varje familj som kan odla och saknar fält (steg 3.10.23.3; innan någon kan odla
     // alla familjer). När byn har nog tar man inga fler, men plockandet räknas och man tänker på odling
@@ -1464,24 +1464,24 @@ SCENARIER.falt = {
     let skord = false, delvis = false, tva = 0, arter = 0, fronSkord = 0;
     if (f) {
       setAmount(s, 'rovfron', 200);
-      Object.assign(f, { steg: 'mogen', groda: 'arter', mogen: s.now, klara: 0, kvar: SIM.ODLING.skordaMin * 60000, sadda: f.n });
+      f.r = Array.from({ length: f.n }, () => ({ st: 'mogen' as const, g: 'arter' as const, m: s.now })); SIM.sammanfatta(f); // varje ruta är mogen (steg 9.7.1)
       const tk = { act: 'odla', tool: 'mogen', ref: f.id, until: s.now + HOUR } as unknown as SIM.Task;
       const k0 = amountOf(s, 'arter'), r0 = amountOf(s, 'artfron'), n0 = f.n;
       SIM.workOdla(s, p, tk, SIM.ODLING.skordaMin * 60 * 2);
-      tva = f.klara;
+      tva = f.r!.filter(r => r.st !== 'mogen').length;
       SIM.finishOdla(s, p, tk);
       delvis = f.steg === 'mogen' && tva === 2;
       SIM.workOdla(s, p, tk, SIM.ODLING.skordaMin * 60 * f.n);
       SIM.finishOdla(s, p, tk);
       arter = amountOf(s, 'arter') - k0; fronSkord = amountOf(s, 'artfron') - r0;
-      const vaxte = f.n > n0 ? f.steg === 'roja' && f.klara === n0 : f.steg === 'bereda';
+      const vaxte = f.n > n0 ? f.steg === 'roja' && f.r!.filter(r => r.st !== 'roja').length === n0 : f.steg === 'bereda';
       skord = vaxte && arter > 0 && fronSkord > 0 && tk.until === s.now;
     }
     // rötan: den mogna grödan som ingen skördar
     let rutten = false, kvarEfter = false;
     if (f) {
       // ingen har skött fältet på fyra dygn medan grödan växte, men det blir inte gräs direkt efter förlusten: ägaren hinner så om (kodgenomgången 3.10.25)
-      Object.assign(f, { steg: 'mogen', groda: 'rovor', mogen: s.now - (SIM.ODLING.overDygn + SIM.ODLING.ruttDygn + 0.1) * DAY, rord: s.now - (SIM.ODLING.grasDygn + 1) * DAY });
+      f.r = Array.from({ length: f.n }, () => ({ st: 'mogen' as const, g: 'rovor' as const, m: s.now - (SIM.ODLING.overDygn + SIM.ODLING.ruttDygn + 0.1) * DAY })); f.rord = s.now - (SIM.ODLING.grasDygn + 1) * DAY; SIM.sammanfatta(f);
       SIM.stepOdling(s);
       rutten = f.steg === 'sa' && (s.stat?.ruttnat ?? 0) === 1;
       SIM.stepOdling(s);
@@ -1490,7 +1490,7 @@ SCENARIER.falt = {
     // frosten: i istiden dör grödan, och ingen sår något nytt
     let frost = false, ingenSadd = false;
     if (f) {
-      Object.assign(f, { steg: 'vaxer', groda: 'rovor', vuxit: 0.5, rord: s.now });
+      f.r = Array.from({ length: f.n }, () => ({ st: 'vaxer' as const, g: 'rovor' as const, v: 0.5 })); f.rord = s.now; SIM.sammanfatta(f);
       s.kal = nyKalender(s.now, 0);
       SIM.stepOdling(s);
       frost = f.steg === 'sa' && (s.stat?.frostdod ?? 0) >= 1;
@@ -2488,8 +2488,9 @@ SCENARIER.ortvatten = {
     SIM.put(s, 'ben', 4, { [p.id]: 4 }); SIM.put(s, 'ved', 4, { [p.id]: 4 });
     const utan = PROJEKT.koka_lim.kan(s, p, { kyla: false, gras: 0 });
     const sack = newTing(s, 'vattensack', 1, p.id);
+    newTing(s, 'naverask', 1, p.id); // limmet förvaras i en näverask (steg 9.4.14)
     const val = vattenVal(s, p);
-    sack.fylld = 1;
+    sack.inne = { v: 'vatten', n: 1 }; // vattnet i säcken (steg 9.4.14)
     const med = PROJEKT.koka_lim.kan(s, p, { kyla: false, gras: 0 }), ingaFler = !vattenVal(s, p);
     const ben0 = SIM.amountOf(s, 'ben');
     KLAR_FOR.koka_lim!(s, p, { act: 'koka_lim' } as SIM.Task, 0);
@@ -2498,7 +2499,7 @@ SCENARIER.ortvatten = {
       ['utan fylld säck kokas inget', !utan],
       [`när örtköket behöver vatten går någon och fyller säcken (${val?.why})`, !!val && val.ref === 0],
       ['med en fylld säck går det att koka, och ingen fyller en till', med && ingaFler],
-      [`limmet blev gjort av benen (${ben0} → ${SIM.amountOf(s, 'ben')})`, SIM.amountOf(s, 'benlim') === 1],
+      [`limmet blev gjort av benen (${ben0} → ${SIM.amountOf(s, 'ben')}) och ligger i näveraskan`, SIM.vatskaAv(s, 'benlim') === 1],
       ['säcken är tom men finns kvar', !fylldSack(s) && SIM.tingOf(s).includes(sack)],
     ];
   },
@@ -2531,7 +2532,7 @@ SCENARIER.hantverk7 = {
   text: 'Steg 7.5–7.7: stationerna på nivå 2 och örtköket gör saker ur registret TILLVERKA, snaran och gropen fångar, härden blir en eld inne, de nya plaggen finns, linet rötas på torkställningen, och yrkena har fått sina titlar',
   kor: () => {
     const s = SIM.createState(6, START), p = SIM.living(s)[0];
-    const rader = SIM.TILLVERKA_LIST.every(k => { const d = SIM.TILLVERKA[k]; return !!SIM.SAKER[d.ger] && !!SIM.ACTS[d.act] && d.n >= 1; });
+    const rader = SIM.TILLVERKA_LIST.every(k => { const d = SIM.TILLVERKA[k]; return (!!SIM.SAKER[d.ger] || d.ger in SIM.VATSKOR) && !!SIM.ACTS[d.act] && d.n >= 1; });
     const ortkok = SIM.STATIONER.ortkok.gor.length >= 4 && SIM.RECEPT.salva.av!.rolleka === 2 && SIM.RECEPT.lader.av!.talg === 1;
     const sn = SIM.sattUt(s, p, 'snara')!, ute = !!sn && !SIM.iByn(s, sn.x, sn.y);
     sn.fisk = { vilt: 1 }; sn.n = 1; SIM.vittja(s, p, sn);
@@ -2543,7 +2544,7 @@ SCENARIER.hantverk7 = {
     const q = SIM.living(s)[1]; p.tag = q.tag = 'Slaktare'; p.skill.jakt = 90;
     const mast = SIM.yrkeNamn(s, p) === 'Mästerslaktare' && SIM.yrkeNamn(s, q) === 'Slaktare';
     return [
-      ['varje rad i TILLVERKA har en sak och en handling', rader],
+      ['varje rad i TILLVERKA har en sak (eller en vätska, steg 9.5.8) och en handling', rader],
       ['örtköket gör minst fyra saker, och recepten stämmer', ortkok],
       ['snaran sätts utanför byn och vittjas', ute && fick],
       ['de nya plaggen finns, på rätt plats', plagg && byxor && sko],

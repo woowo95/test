@@ -1,6 +1,7 @@
 import type { TidSlag } from './tider';
 import { RECEPT } from './recept';
 import { kladSaker } from './klader';
+import { rattSaker } from './ratter';
 // ---------- saker ----------
 // Allt byn kan äga står här: mat, bränsle, sten och redskap. Lager, slitage, listorna i panelen och det som bärs hem
 // frågar registret. En ny sak läggs till här (och får en ikon i ikoner.ts).
@@ -69,11 +70,32 @@ const DEF = {
   // giftig svamp som av misstag hamnat i förrådet bland den ätliga (fynd.ts). Den ligger i svampstacken och syns inte
   giftsvamp: { namn: 'Giftig svamp', haller: 2, dold: true, i: 'svamp' },
   sten: { namn: 'Sten', skaffa: { tid: 0.8 }, stack: 10, mapp: 'Sten', brinnerInte: true },
+  // proteserna (steg 9.5.11, protes.ts): den som förlorat en del får en när byn har en ledig, och har den på sig
+  krycka: { namn: 'Krycka', skaffa: RECEPT.krycka, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'proteserTrasiga', text: '{namn}s krycka gick sönder.' }, gors: { text: 'Täljer en krycka.', stat: 'kryckorGjorda', forsta: '{namn} täljde byns första krycka. Med den kan den som förlorat ett ben gå igen.' } },
+  traben: { namn: 'Träben', skaffa: RECEPT.traben, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'proteserTrasiga', text: '{namn}s träben gick sönder.' }, gors: { text: 'Täljer ett träben och binder fast remmar av rep.', stat: 'trabenGjorda', forsta: '{namn} täljde byns första träben.' } },
+  krok: { namn: 'Krok', skaffa: RECEPT.krok, vikt: 0.3, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'proteserTrasiga', text: '{namn}s krok gick sönder.' }, gors: { text: 'Gör en krok av trä som sätts på armen.', stat: 'krokarGjorda', forsta: '{namn} gjorde byns första krok åt den som förlorat en hand.' } },
+  ogonlapp: { namn: 'Ögonlapp', skaffa: RECEPT.ogonlapp, vikt: 0.1, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'proteserTrasiga', text: '{namn}s ögonlapp gick sönder.' }, gors: { text: 'Skär en ögonlapp av skinn.', stat: 'ogonlapparGjorda', forsta: '{namn} skar byns första ögonlapp.' } },
+  // förbanden (steg 9.5.15): remsorna som läggs på såret och nålen av ben som såret sys med
+  remsa: { namn: 'Remsa', skaffa: RECEPT.remsa, stack: 20, vikt: 0.05, mapp: 'Material' },
+  nal: { namn: 'Bennål', skaffa: RECEPT.nal, vikt: 0.05, stack: 1, mapp: 'Redskap', slits: 0.0005, redskap: true, trasig: { stat: 'nalarTrasiga', text: '{namn}s bennål gick av.' }, gors: { text: 'Slipar en nål av ben mot {verktyg}.', stat: 'nalarGjorda', forsta: '{namn} slipade byns första bennål. Med den kan ett stort sår sys ihop.' } },
+  // näveraskan (steg 9.4.13): en liten ask av näver och rep, behållaren för salvan och benlimmet (vatskor.ts, steg 9.4.14)
+  naverask: { namn: 'Näverask', skaffa: RECEPT.naverask, vikt: 0.2, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'naveraskarTrasiga', text: '{namn}s näverask gick sönder.' },
+    gors: { text: 'Viker en ask av näver och syr ihop den med rep.', stat: 'naveraskarGjorda', forsta: '{namn} vek byns första näverask. I den håller sig salvan och limmet.' } },
+  // lerkrukan i tre storlekar (steg 9.4.11, KRUKOR i kruka.ts): ett ting med ägare, skick och kvalitet, som torkar och bränns
+  lerkruka_liten: { namn: 'Liten lerkruka', skaffa: RECEPT.lerkruka_liten, vikt: 0.5, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, grupp: 'lerkruka', trasig: { stat: 'krukorTrasiga', text: '{namn}s lerkruka sprack.' },
+    gors: { text: 'Bygger upp en liten lerkruka av lera med sand i.', stat: 'krukorGjorda', forsta: '{namn} byggde upp byns första lerkruka av lera. Den ska torka och brännas i elden.' } },
+  lerkruka_mellan: { namn: 'Mellanstor lerkruka', skaffa: RECEPT.lerkruka_mellan, vikt: 1, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, grupp: 'lerkruka', trasig: { stat: 'krukorTrasiga', text: '{namn}s lerkruka sprack.' },
+    gors: { text: 'Bygger upp en mellanstor lerkruka av lera med sand i.', stat: 'krukorGjorda', forsta: '{namn} byggde upp byns första lerkruka av lera. Den ska torka och brännas i elden.' } },
+  lerkruka_stor: { namn: 'Stor lerkruka', skaffa: RECEPT.lerkruka_stor, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, grupp: 'lerkruka', trasig: { stat: 'krukorTrasiga', text: '{namn}s lerkruka sprack.' },
+    gors: { text: 'Bygger upp en stor lerkruka av lera med sand i.', stat: 'krukorGjorda', forsta: '{namn} byggde upp byns första lerkruka av lera. Den ska torka och brännas i elden.' } },
+  lera: { namn: 'Lera', skaffa: { tid: 0.8 }, stack: 10, mapp: 'Sten', brinnerInte: true }, // steg 9.4.10: grävs vid stranden (fynd.ts), till lerkrukorna
   rep: { namn: 'Rep', ett: true, skaffa: RECEPT.rep, stack: 40, mapp: 'Material', slits: 0.0003 },
   talg: { namn: 'Talg', ett: true, skaffa: RECEPT.talg, stack: 30, mapp: 'Material' }, // djurfett från slakten, i hela stycken (steg 6.3.5): blir facklor och ljus
   ben: { namn: 'Ben', ett: true, skaffa: RECEPT.ben, stack: 40, mapp: 'Material', brinnerInte: true },
   flintspjut: { namn: 'Flintspjut', hanger: 'axel', ett: true, skaffa: RECEPT.flintspjut, vikt: 5, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, grupp: 'spjut', trasig: { stat: 'spjutTrasiga', text: '{namn}s flintspjut gick sönder.' },
     gors: { text: 'Gör ett flintspjut med flinta och rep.', stat: 'flintspjutGjorda', forsta: '{namn} gjorde byns första flintspjut: en flintspets surrad med rep vid en pinne. Det håller mycket längre än ett träspjut.' } },
+  nat: { namn: 'Nät', ett: true, skaffa: RECEPT.nat, vikt: 3, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'natTrasiga', text: '{namn}s nät gick sönder.' },
+    gors: { text: 'Knyter ett nät av lintråd vid slöjdbänken.', stat: 'natGjorda', forsta: '{namn} knöt byns första fiskenät av lintråd.' } }, // steg 9.6.16
   metspo: { namn: 'Metspö', hanger: 'axel', ett: true, skaffa: RECEPT.metspo, vikt: 4, stack: 1, mapp: 'Redskap', slits: 0.0005, redskap: true, trasig: { stat: 'metspoTrasiga' },
     gors: { text: 'Gör ett metspö med en krok av ben.', stat: 'metspoGjorda', forsta: '{namn} gjorde byns första metspö, med en krok av ben.' } },
   // ett fällt djur, helt som det är (vilket djur det än är). En kanin fyller famnen, så stacken är en kanin
@@ -203,6 +225,38 @@ const DEF = {
   vargdel: { namn: 'Vargstycke', ett: true, skaffa: { act: 'jakt' }, vikt: 10, stack: 1, mapp: 'Material', haller: 3 },
   radjurdel: { namn: 'Rådjursstycke', ett: true, skaffa: { act: 'jakt' }, vikt: 10, stack: 1, mapp: 'Material', haller: 3 },
   bjorndel: { namn: 'Björnstycke', ett: true, skaffa: { act: 'jakt' }, vikt: 10, stack: 1, mapp: 'Material', haller: 3 }, // steg 6.6.6
+  korn: { namn: 'Korn', ett: true, skaffa: { tid: 0.25, tek: 'sadesodling' }, stack: 50, vikt: 0.05, mapp: 'Material', haller: 20 }, // säden (steg 9.6.11): köps av handlarna, sås och blir gröt
+  malt: { namn: 'Malt', skaffa: RECEPT.malt, stack: 50, vikt: 0.05, mapp: 'Material', haller: 20 }, // kornet som grott och torkat (steg 9.6.13): till ölet
+  // braxen och sik (steg 9.6.17, fisk.ts): fångas mest i nätet och rensas till eget kött
+  braxen: { namn: 'Braxen', skaffa: { act: 'fiske' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 2.3, naring: { protein: 1.9, fett: 0.9, mineral: 0.8, energi: 0.7, vitamin: 0.3 }, ra: true, haller: 1 },
+  sik: { namn: 'Sik', skaffa: { act: 'fiske' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 1.3, naring: { protein: 2, fett: 1.4, mineral: 0.7, energi: 0.8, vitamin: 0.6 }, ra: true, haller: 1 },
+  braxkott: { namn: 'Braxenkött', ett: true, skaffa: RECEPT.braxkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 1, naring: { protein: 1.9, fett: 0.9, mineral: 0.8, energi: 0.7, vitamin: 0.3 }, ra: true, haller: 1 },
+  sikkott: { namn: 'Sikkött', ett: true, skaffa: RECEPT.sikkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 1, naring: { protein: 2, fett: 1.4, mineral: 0.7, energi: 0.8, vitamin: 0.6 }, ra: true, haller: 1 },
+  lok: { namn: 'Lök', skaffa: { act: 'samla' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 5.5, naring: { vitamin: 1.3, mineral: 0.6, energi: 0.6, protein: 0.2, fett: 0.1 }, haller: 10 }, // vildlöken (steg 9.6.20): smak i maten, och lökarna sätts på fältet
+  brod: { namn: 'Bröd', ett: true, skaffa: RECEPT.brod, stack: 25, ruta: 75, mapp: 'Mat', mat: 5.8, naring: { energi: 1.7, protein: 0.6, mineral: 0.6, vitamin: 0.4, fett: 0.2 }, haller: 6 }, // brödet (steg 9.6.23): håller längre än annan lagad mat
+  mjol: { namn: 'Mjöl', ett: true, skaffa: RECEPT.mjol, stack: 50, vikt: 0.05, mapp: 'Material', haller: 20 }, // mjölet (steg 9.6.22): malet korn som går att spara
+  // saltet (steg 9.6.19): en handelsvara från byarna vid havet; saltat kött och saltad fisk håller längre, och saltet fyller mineralerna
+  salt: { namn: 'Salt', ett: true, varde: 2, stack: 50, vikt: 0.05, mapp: 'Material' },
+  saltfisk: { namn: 'Saltad fisk', skaffa: RECEPT.saltfisk, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.95, naring: { protein: 2, fett: 0.8, mineral: 1.4, energi: 0.6, vitamin: 0.2 }, haller: 20 },
+  saltkott: { namn: 'Saltat kött', ett: true, skaffa: RECEPT.saltkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.97, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 1.3, vitamin: 0.2 }, haller: 20 },
+  // resterna (steg 9.7.5, rester.ts): ruttnar bort, och ger smuts så länge de ligger i byn
+  slaktrens: { namn: 'Slaktrens', stack: 25, ruta: 50, mapp: 'Material', haller: 2 },
+  vaxtrest: { namn: 'Växtrester', stack: 25, ruta: 50, mapp: 'Material', haller: 4 },
+  kompost: { namn: 'Kompost', skaffa: { av: { slaktrens: 10 }, min: 2, slag: 'bearbeta' }, stack: 25, ruta: 50, mapp: 'Material' }, // färdig kompost (steg 9.7.6): gödslar fältet
+  // kålen och bönorna (steg 9.7.8, odling.ts): nya grödor, med fröna från handlarna
+  kal: { namn: 'Kål', skaffa: { tid: 0.25, tek: 'odling' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 5.2, naring: { vitamin: 1.8, mineral: 0.8, energi: 0.7, protein: 0.3, fett: 0.1 }, haller: 6 },
+  bonor: { namn: 'Bönor', skaffa: { tid: 0.25, tek: 'odling' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.6, naring: { protein: 1.8, energi: 1.3, mineral: 0.7, vitamin: 0.4, fett: 0.2 }, haller: 20 },
+  kalfron: { namn: 'Kålfrön', skaffa: { tid: 0.25, tek: 'odling' }, stack: 50, vikt: 0.05, mapp: 'Material', haller: 20 },
+  jordgubbar: { namn: 'Jordgubbar', skaffa: { tid: 0.3, tek: 'odling' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 3.5, naring: { vitamin: 1.4, energi: 0.9, mineral: 0.4, fett: 0.1 }, haller: 2 }, // steg 9.7.9: mättar lite men gör folk glada
+  jordgubbsplanta: { namn: 'Jordgubbsplanta', ett: true, varde: 1, stack: 25, vikt: 0.1, mapp: 'Material', haller: 20 },
+  appel: { namn: 'Äpplen', skaffa: { tid: 0.3, tek: 'odling' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 3.8, naring: { vitamin: 1.6, energi: 0.9, mineral: 0.3 }, haller: 8 }, // steg 9.7.13
+  appelplanta: { namn: 'Äppelplanta', ett: true, varde: 2, stack: 10, vikt: 0.5, mapp: 'Material', haller: 20 },
+  notter: { namn: 'Hasselnötter', skaffa: { act: 'samla' }, stack: 50, ruta: 100, mapp: 'Mat', mat: 6.8, naring: { fett: 2, protein: 1.2, energi: 1.2, mineral: 0.8, vitamin: 0.3 }, haller: 20 }, // steg 9.7.14: håller länge
+  // det rökta (steg 9.6.8, matlagning.ts): håller som det torkade och smakar lite bättre
+  rokfisk: { namn: 'Rökt fisk', skaffa: RECEPT.rokfisk, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.8, naring: { protein: 2, fett: 0.8, mineral: 0.7, energi: 0.6, vitamin: 0.2 }, haller: 20 },
+  rokkott: { namn: 'Rökt kött', ett: true, skaffa: RECEPT.rokkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.9, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 0.6, vitamin: 0.2 }, haller: 20 },
+  // rätterna som kokas i lerkrukan (steg 9.6.3, ratter.ts): en rad per huvudingrediens, kategori och nivå
+  ...rattSaker(),
 } satisfies Record<string, SakDef>;
 
 type Sak = keyof typeof DEF;

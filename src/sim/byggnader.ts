@@ -265,6 +265,11 @@ function boende(s: State): Boende {
     for (const i of tiles) { const o = agd.get(i); if (o !== undefined && ids.has(o) && !plats.has(o)) plats.set(o, i); }
     for (const q of folk) if (!plats.has(q.id)) rest.push(q);
     rest.forEach((q, n) => { if (fria.length) plats.set(q.id, fria[n % fria.length]); });
+    // ägs alla bäddar av andra sover den som blev utan (ett barn som nyss fötts) hos sin mor eller far, eller delar en plats
+    for (const q of folk) if (!plats.has(q.id) && tiles.length) {
+      const f = [q.mother, q.father].map(id => id === undefined ? undefined : plats.get(id)).find(i => i !== undefined && tiles.includes(i));
+      plats.set(q.id, f ?? tiles[q.id % tiles.length]);
+    }
   };
   for (const e of new Set(egna.values())) fordela(e.tiles, e.folk);
   fordela(gemensamt, ovriga);

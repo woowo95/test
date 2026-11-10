@@ -1,6 +1,7 @@
 // ikoner för föremål: små pixelbilder (8×8) som används både på kartan och i listorna
 // varje tecken är en pixel, '.' är genomskinlig
 import { KLADER_AV } from './sim/klader';
+import { RATT_SAKER, rattInfo } from './sim/ratter';
 import { KARTBILDER } from './kartbilder';
 import { STUBBILDER } from './stubbilder';
 import { ANIMBILDER } from './animbilder';
@@ -39,6 +40,7 @@ export const PAL: Record<string, Record<string, string>> = {
   kol: { k: '#24201d', K: '#474138' },
   flinta: { g: '#987e62', G: '#bdb39b', d: '#505e3e' },
   sten: { k: '#7d5b40', K: '#8a9c9e', d: '#474138' },
+  lera: { k: '#7d5b40', K: '#987e62', d: '#5e3c24' }, // platshållare för leran (steg 9.4.10) tills Björn valt i bildstilen
   yxa: { h: '#694902', g: '#987e62', G: '#bdb39b' },
   fiskespjut: { h: '#7d5b40', H: '#987e62', w: '#bdb39b' },
   flintspjut: { h: '#7d5b40', g: '#987e62', G: '#bdb39b', r: '#a0947d' },
@@ -823,6 +825,16 @@ export const PIX: Record<string, string[]> = {
     '.gGgggd.',
     'gggggdd.',
     '.ggdddd.',
+    '........',
+  ],
+  lera: [ // en klump lera (steg 9.4.10, platshållare)
+    '........',
+    '........',
+    '...KKk..',
+    '..KkkkK.',
+    '.kkkkkkd',
+    '.dkkkddd',
+    '..dddd..',
     '........',
   ],
   sten: [
@@ -3993,7 +4005,34 @@ for (const k of ['kruka', 'bonad', 'vaggbrade']) { PIX[k + '_karta'] = PIX[k]; P
 
 // den vilda rovan har samma symbol som rovan (Björn efter v245, steg 4.5.2)
 PIX.vildrova = PIX.rovor; PAL.vildrova = PAL.rovor;
-PIX.i_smakfull = PIX.kruka; PAL.i_smakfull = PAL.kruka; // intrycket smakfull (steg 4.3.4): lerkrukan Björn valde
+PIX.i_smakfull = PIX.kruka; PAL.i_smakfull = PAL.kruka;
+PIX.snickarbank = PIX.flatarbank; PAL.snickarbank = PAL.flatarbank;
+PIX.naverask = PIX.korg; PAL.naverask = PAL.korg;
+PIX.orte = PIX.kruka; PAL.orte = PAL.kruka;
+PIX.s_spala = PIX.grenar ?? PIX.s_forb; PAL.s_spala = PAL.grenar ?? PAL.s_forb; // platshållare för spjälan (steg 9.5.28) tills Björn valt i bildstilen
+PIX.remsa = PIX.mossa ?? PIX.skinn; PAL.remsa = PAL.mossa ?? PAL.skinn; PIX.nal = PIX.bensyl; PAL.nal = PAL.bensyl; // platshållare för remsan och nålen (steg 9.5.15) tills Björn valt i bildstilen
+for (const k of ['krycka', 'traben', 'krok', 'protes']) { PIX[k] = PIX.slagtra ?? PIX.benspade; PAL[k] = PAL.slagtra ?? PAL.benspade; } PIX.ogonlapp = PIX.skinn ?? PIX.benspade; PAL.ogonlapp = PAL.skinn ?? PAL.benspade; // platshållare för proteserna (steg 9.5.11) tills Björn valt i bildstilen
+PIX.lakesalva = PIX.salva ?? PIX.kruka; PAL.lakesalva = PAL.salva ?? PAL.kruka; // läkesalvans teknik (steg 9.5.10): salvans bild // platshållare för örtteets teknik (steg 9.5.8) tills Björn valt i bildstilen // platshållare för näveraskan (steg 9.4.13) tills Björn valt i bildstilen // platshållare för snickarbänkens teknik (steg 9.4.4) tills Björn valt i bildstilen
+PIX.korn = PIX.artfron; PAL.korn = PAL.artfron; PIX.sadesodling = PIX.artfron; PAL.sadesodling = PAL.artfron; // platshållare för kornet (steg 9.6.11) tills Björn valt i bildstilen
+PIX.bryggkar = PIX.lerkruka_stor ?? PIX.kruka; PAL.bryggkar = PAL.lerkruka_stor ?? PAL.kruka;  // platshållare för bryggkaret och vinets teknik (steg 9.6.12) tills Björn valt i bildstilen
+PIX.malt = PIX.artfron; PAL.malt = PAL.artfron; PIX.ol = PIX.lerkruka_stor ?? PIX.kruka; PAL.ol = PAL.lerkruka_stor ?? PAL.kruka; // platshållare för maltet och ölets teknik (steg 9.6.13) tills Björn valt i bildstilen
+PIX.nat = PIX.korg ?? PIX.rep; PAL.nat = PAL.korg ?? PAL.rep; // platshållare för nätet (steg 9.6.16) tills Björn valt i bildstilen
+for (const k of ['braxen', 'sik']) { PIX[k] = PIX.gadda ?? PIX.abborre; PAL[k] = PAL.gadda ?? PAL.abborre; } for (const k of ['braxkott', 'sikkott']) { PIX[k] = PIX.gaddkott ?? PIX.fisk; PAL[k] = PAL.gaddkott ?? PAL.fisk; } // platshållare för braxen och sik (steg 9.6.17) tills Björn valt i bildstilen
+PIX.salt = PIX.sten ?? PIX.flinta; PAL.salt = PAL.sten ?? PAL.flinta; PIX.saltfisk = PIX.torrfisk; PAL.saltfisk = PAL.torrfisk; PIX.saltkott = PIX.torrkott; PAL.saltkott = PAL.torrkott; // platshållare för saltet (steg 9.6.19) tills Björn valt i bildstilen
+PIX.lok = PIX.rotter; PAL.lok = PAL.rotter; PIX.vildlok = PIX.vildrova ?? PIX.rotter; PAL.vildlok = PAL.vildrova ?? PAL.rotter; // platshållare för löken (steg 9.6.20) tills Björn valt i bildstilen
+PIX.stekhall = PIX.sten ?? PIX.flinta; PAL.stekhall = PAL.sten ?? PAL.flinta; // platshållare för stekhällen (steg 9.6.21) tills Björn valt i bildstilen
+PIX.kvarnsten = PIX.huggen_sten ?? PIX.sten; PAL.kvarnsten = PAL.huggen_sten ?? PAL.sten; PIX.mjol = PIX.artfron; PAL.mjol = PAL.artfron; // platshållare för kvarnstenen och mjölet (steg 9.6.22) tills Björn valt i bildstilen
+PIX.bakugn = PIX.ortkok ?? PIX.sten; PAL.bakugn = PAL.ortkok ?? PAL.sten; PIX.brod = PIX.rotter; PAL.brod = PAL.rotter; // platshållare för bakugnen och brödet (steg 9.6.23) tills Björn valt i bildstilen
+PIX.slaktrens = PIX.ben; PAL.slaktrens = PAL.ben; PIX.vaxtrest = PIX.torrgras; PAL.vaxtrest = PAL.torrgras; // platshållare för resterna (steg 9.7.5) tills Björn valt i bildstilen
+PIX.kompost = PIX.latrin ?? PIX.ved; PAL.kompost = PAL.latrin ?? PAL.ved; // platshållare för komposten (steg 9.7.6) tills Björn valt i bildstilen
+PIX.kal = PIX.svamp; PAL.kal = PAL.svamp; PIX.bonor = PIX.arter; PAL.bonor = PAL.arter; PIX.kalfron = PIX.artfron; PAL.kalfron = PAL.artfron; // platshållare för kålen och bönorna (steg 9.7.8) tills Björn valt i bildstilen
+PIX.jordgubbar = PIX.bar; PAL.jordgubbar = PAL.bar; PIX.jordgubbsplanta = PIX.bar; PAL.jordgubbsplanta = PAL.bar; // platshållare för jordgubbarna (steg 9.7.9) tills Björn valt i bildstilen
+PIX.staket = PIX.grenar; PAL.staket = PAL.grenar; // platshållare för staketets teknik (steg 9.7.10) tills Björn valt i bildstilen
+PIX.fagelskramma = PIX.grenar; PAL.fagelskramma = PAL.grenar; // platshållare för fågelskrämmans teknik (steg 9.7.11) tills Björn valt i bildstilen
+PIX.appel = PIX.bar; PAL.appel = PAL.bar; PIX.appelplanta = PIX.grenar; PAL.appelplanta = PAL.grenar; PIX.notter = PIX.rotter; PAL.notter = PAL.rotter; PIX.hassel = PIX.vildarter ?? PIX.grenar; PAL.hassel = PAL.vildarter ?? PAL.grenar; // platshållare för äppelträdet och hasseln (steg 9.7.13–9.7.14) tills Björn valt i bildstilen
+PIX.rokeri = PIX.tork; PAL.rokeri = PAL.tork; PIX.rokfisk = PIX.torrfisk; PAL.rokfisk = PAL.torrfisk; PIX.rokkott = PIX.torrkott; PAL.rokkott = PAL.torrkott; // platshållare för rökeriet och det rökta (steg 9.6.8) tills Björn valt i bildstilen
+for (const k of RATT_SAKER) { const h = rattInfo(k)!.huvud, f = ({ kott: 'grillkott', fisk: 'grillfisk', rot: 'rotter', svamp: 'svamp', bar: 'bar', sad: 'artfron' } as Record<string, string>)[h]; PIX[k] = PIX[f]; PAL[k] = PAL[f]; } // platshållare för rätterna (steg 9.6.3) tills Björn valt i bildstilen
+for (const k of ['lerkruka_liten', 'lerkruka_mellan', 'lerkruka_stor']) { PIX[k] = PIX.kruka; PAL[k] = PAL.kruka; } // platshållare för lerkrukans tre storlekar (steg 9.4.11) tills Björn valt i bildstilen // intrycket smakfull (steg 4.3.4): lerkrukan Björn valde
 // Björns val efter v245 (steg 4.5.2): rocken (version 2) och skorna (version 1) i 16 × 16 punkter, samma form för kaninskinn och
 // vargskinn i materialets färger, och bybornas filt (version 1; handlaren har kvar den förra)
 const ROCK16 = [

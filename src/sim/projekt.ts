@@ -1,7 +1,8 @@
+import { LERA, leraBrist, leraPlats } from './lera';
 import { Act, Person, State } from './typer';
 import { familjOf, stat } from './folk';
 import { clamp } from './slump';
-import { amountOf } from './lager';
+import { LAGER, amountOf, lagerFlyttVal } from './lager';
 import { TROSKEL, materialBuffert, stationBrist, villAv } from './forradsmal';
 import { SAKER } from './saker';
 import { PLAGG, PLAGG_LIST } from './klader';
@@ -22,13 +23,14 @@ import { FALLOR, fallorAv, mjardarVill } from './fisk';
 import { TILLVERKA, TILLVERKA_LIST } from './tillverka';
 import { RECEPT } from './recept';
 import { knows } from './teknik';
-import { kanGoras, stationDef, stationFor, verktygVid } from './stationer';
+import { STATION, kanGoras, stationDef, stationFlyttVal, stationFor, verktygVid, vidStation } from './stationer';
 import { SED } from './seder';
 import { bedTile } from './byggnader';
 import { stationRutor } from './stationer';
 import { LJUS, UPPSATT, friFackla, friLjus, ljusPlatser, morkStalle } from './ljus';
-import { doingAct } from './folk';
+import { ALDER, ageOf, doingAct } from './folk';
 import { SKOGSVARD, kanPlantera, planteraUppgift, skogsvardBrist } from './skogsvard';
+import { VATSKOR, ar_vatska, ledigFor, vatskaAv } from './vatskor';
 
 // ---------- byns projekt: vad den bygger och gör (steg 2.2.7) ----------
 // Allt byn kan bygga eller göra av handarbete är en rad i registret PROJEKT: redskapen (en rad per grupp i GORS,
@@ -63,16 +65,19 @@ export const PROJEKT_TAL = balans('projekt', {
   skinnfall: 0.5, // ... skinnfällarna när alla halmbäddar saknar en
   bord: 0.5, bord2: 0.5, bord3: 0.5, // ... borden när ingen har en plats vid ett bord (steg 2.2.15)
   hylla: 0.4, kista: 0.3, stall: 0.3, // ... förvaringen när golvet i lagren är fullt av högar och redskap (steg 2.3.6)
-  kruka: 0.2, bonad: 0.2, vaggbrade: 0.2, // ... pyntet när alla vuxna som sover inne saknar ett (steg 4.3.4, pynt.ts)
+  lerkruka: 0.3, naverask: 0.3, nal: 0.4, krycka: 0.6, traben: 0.6, krok: 0.5, ogonlapp: 0.2, bonad: 0.2, vaggbrade: 0.2, // ... pyntet när alla vuxna som sover inne saknar ett (steg 4.3.4, pynt.ts)
   skinndorr: 0.6, // ... skinndörrarna när alla hus där man bor eller umgås har en öppen dörröppning (steg 2.2.16)
   tradorr: 0.6, // ... trädörrarna när alla sådana hus saknar en (steg 3.7.21)
   tillverka: 0.35, // ... det som görs vid stationerna, när byn vill ha mer av det (tillverka.ts)
-  stenhuggarplats: 0.4, klyvplats: 0.4, ortkok: 0.3, garvning: 0.3, vavstol: 0.3, harden: 0.5, snara: 0.5, grop: 0.4,
+  stenhuggarplats: 0.4, klyvplats: 0.4, ortkok: 0.3, snickarbank: 0.4, garvning: 0.3, vavstol: 0.3, harden: 0.5, snara: 0.5, grop: 0.4,
   mjarde: 0.7, fangstbank: 0.5, // ... mjärdarna och fångstbänken (steg 7.4.1 och 7.4.2)
   rep: 0.5, // ... repet när förrådet är tomt
   virke: 0.8, // ... virket när förrådet saknar det byn vill bygga av (steg 4.5.5.2)
   stubbe: 1, // ... att gräva bort stubbarna där något ska byggas (steg 6.5.7, skog.ts)
   plantera: 0.6, // ... att flytta plantor när de närmaste träden att fälla står långt bort (steg 6.5.2, skogsvard.ts)
+  lera: 0.5, // ... leran när förrådet saknar den byn gör av med (steg 9.4.10, lera.ts)
+  stationFlytt: 0.4, // ... att flytta en station ute närmare dem som använder den (steg 9.4.8, stationer.ts)
+  lagerFlytt: 0.4, // ... att flytta en lagerplats närmare byns mitt (steg 9.4.7, lager.ts)
   rojning: 1, // ... att fälla träden på en lagerplats eller ett fält i skogen (steg 3.6.9)
   ljus: 0.4, // ... att ställa fram ett talgljus på ett bord eller en hylla inne (steg 6.3.8, ljus.ts)
   uppsatt: 0.4, // ... att sätta upp en fackla där folk ofta är vakna i mörker (steg 6.3.7, ljus.ts)
@@ -159,13 +164,16 @@ const dorr = (k: DorrSlag): ProjektDef => {
 };
 // det som görs av material vid en station (TILLVERKA, tillverka.ts): bristen är hur mycket av det byn vill ha som saknas
 const tillverk = (k: string): ProjektDef => {
-  const d = TILLVERKA[k], har = (s: State, p: Person) => knows(p, d.tek) && kanGoras(s, d.act, p) && (!d.vatten || !!fylldSack(s)) && (!d.verktyg || freeTools(s, p, d.verktyg) > 0 || verktygVid(s, d.act, d.verktyg));
+  const d = TILLVERKA[k];
+  // tjäran, salvan och limmet räknas i sina behållare och behöver en ledig som passar (steg 9.4.14, vatskor.ts)
+  const antal = (s: State) => ar_vatska(d.ger) ? vatskaAv(s, d.ger) : amountOf(s, d.ger), kar = (s: State) => !ar_vatska(d.ger) || !!ledigFor(s, d.ger);
+  const har = (s: State, p: Person) => knows(p, d.tek) && kanGoras(s, d.act, p) && (!d.eld || !!stationFor(s, d.act) || s.fire.lit) && (!d.vatten || !!fylldSack(s)) && (!d.verktyg || freeTools(s, p, d.verktyg) > 0 || verktygVid(s, d.act, d.verktyg));
   return {
-    namn: SAKER[d.ger]!.namn, vikt: PROJEKT_TAL.tillverka,
-    brist: s => clamp(1 - amountOf(s, d.ger) / d.vill, 0, 1),
+    namn: SAKER[d.ger]?.namn ?? (ar_vatska(d.ger) ? VATSKOR[d.ger].namn : d.ger), vikt: PROJEKT_TAL.tillverka, // teet är bara en vätska (steg 9.5.8)
+    brist: s => clamp(1 - antal(s) / d.vill, 0, 1),
     kostnad: () => varuVarde(d.av, d.min / 60 * ARBETE),
-    kan: (s, p) => har(s, p) && amountOf(s, d.ger) < d.vill && Object.entries(d.av).every(([q, n]) => getable(s, p, q) >= n),
-    recept: (s, p) => har(s, p) && amountOf(s, d.ger) < d.vill ? { av: d.av } : undefined,
+    kan: (s, p) => har(s, p) && kar(s) && antal(s) < d.vill && Object.entries(d.av).every(([q, n]) => getable(s, p, q) - (RATT.spara[q] ?? 0) >= n), // utsädet sparas (steg 9.6.22)
+    recept: (s, p) => har(s, p) && antal(s) < d.vill ? { av: d.av } : undefined,
     // i en station som går fortare (sländan i vävstolen, steg 7.7.9), med redskapet som ligger där
     uppgift: s => { const t = stationFor(s, d.act); return { act: d.act, text: d.text, min: d.min / (t && stationDef(t.k)?.fart?.[d.act] || 1), tool: d.verktyg && !verktygVid(s, d.act, d.verktyg) ? d.verktyg : undefined }; },
   };
@@ -211,6 +219,31 @@ export const PROJEKT: Record<string, ProjektDef> = {
       const t = treeSpot(s, fellingTiles(s, p), p);
       return t && { act: 'falla', text: 'Fäller ett träd till virke.', min: fallTid(s, tileOf(t.x, t.y)) / 60000, tool: 'yxa', spot: t };
     },
+  },
+  // en lagerplats flyttas närmare byns mitt (steg 9.4.7, lager.ts): bristen är det som hämtas där gånger hur mycket närmare den
+  // nya platsen ligger, mindre ju fler saker som ska bäras om
+  lagerFlytt: {
+    namn: 'Flytta en lagerplats', vikt: PROJEKT_TAL.lagerFlytt,
+    brist: s => { const v = lagerFlyttVal(s); return v ? Math.min(1, v.vinst / LAGER.flyttFull) * LAGER.flyttMin / (LAGER.flyttMin + v.saker * LAGER.flyttPer) : 0; },
+    kostnad: () => LAGER.flyttMin / 60 * ARBETE,
+    kan: (s, p, f) => !f.kyla && ageOf(p, s.now) >= ALDER.vuxen && !!lagerFlyttVal(s) && !doingAct(s, 'flyttLager', p),
+    uppgift: s => { const v = lagerFlyttVal(s); return v && { act: 'flyttLager', text: 'Märker ut en ny lagerplats närmare byns mitt.', min: LAGER.flyttMin, spot: { x: v.ny.x + v.ny.w / 2, y: v.ny.y + v.ny.h / 2 } }; },
+  },
+  // leran (steg 9.4.10, lera.ts): en tur vid stranden när förrådet saknar den byn gör av med
+  lera: {
+    namn: 'Lera', vikt: PROJEKT_TAL.lera,
+    brist: s => leraBrist(s),
+    kostnad: () => grundvarde('lera') * LERA.perTur,
+    kan: (s, p, f) => !f.kyla && ageOf(p, s.now) >= ALDER.vuxen && leraBrist(s) > 0 && !doingAct(s, 'lera', p) && !!leraPlats(s),
+    uppgift: (s, p) => { const at = leraPlats(s); return at && { act: 'lera', text: 'Gräver lera vid stranden.', min: LERA.max, tool: freeTools(s, p, 'benspade') > 0 ? 'benspade' : undefined, spot: at }; },
+  },
+  // en station ute flyttas närmare dem som använder den (steg 9.4.8, stationer.ts)
+  stationFlytt: {
+    namn: 'Flytta en station', vikt: PROJEKT_TAL.stationFlytt,
+    brist: s => { const v = stationFlyttVal(s); return v ? Math.min(1, v.vinst / STATION.flyttFull) : 0; },
+    kostnad: () => STATION.flyttMin / 60 * ARBETE,
+    kan: (s, p, f) => !f.kyla && ageOf(p, s.now) >= ALDER.vuxen && !!stationFlyttVal(s) && !doingAct(s, 'flyttStation', p),
+    uppgift: s => { const v = stationFlyttVal(s); return v && { act: 'flyttStation', text: `Flyttar ${stationDef(v.t.k)?.namn.toLowerCase() ?? 'en station'} närmare husen och lagren.`, min: STATION.flyttMin, spot: vidStation(v.t) }; },
   },
   // träden på en lagerplats eller ett fält i skogen fälls först (steg 3.6.9, skog.ts), med en yxa; de blir trä
   rojning: {
@@ -328,3 +361,4 @@ export function bastaProjekt(s: State, p: Person, f: ProjektFara, egen = false) 
   }
   return best;
 }
+import { RATT } from './ratter';

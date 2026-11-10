@@ -66,7 +66,7 @@ export function kronaOver(s: State, h: { x: number; y: number; w: number; h: num
 export function skaRojas(s: State) {
   const g = groundOf(s), ut: number[] = [];
   for (const z of s.lagren ?? []) if (z.rojs && z.hus === undefined) for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (g.trees[y * W + x] >= FOREST) ut.push(y * W + x);
-  for (const f of faltOf(s)) if (f.steg === 'roja') for (let k = f.klara; k < f.n; k++) { const i = faltRuta(f, k); if (g.trees[i] >= FOREST) ut.push(i); }
+  for (const f of faltOf(s)) for (let k = 0; k < f.n; k++) if (rutorAv(f)[k].st === 'roja') { const i = faltRuta(f, k); if (g.trees[i] >= FOREST) ut.push(i); } // rutorna som ska röjas (steg 9.7.1)
   // en station på en plats med träd: de fälls som en del av bygget (steg 8.1.14)
   for (const t of s.stationer ?? []) if (!t.inne) { const { w, h } = storlekAv(t); for (let y = t.y; y < t.y + h; y++) for (let x = t.x; x < t.x + w; x++) if (g.trees[y * W + x] >= FOREST) ut.push(y * W + x); }
   // träden runt husen (steg 9.2.49): en ruta fri från träd runt varje byggnad och station ute, och de träd vars krona når in över
@@ -79,9 +79,10 @@ export function skaRojas(s: State) {
   return ut;
 }
 // det närmaste trädet att fälla i ett lager eller på ett fält i skogen, som ingen annan fäller (projektet rojning i projekt.ts)
+// Träden i gångstråken fälls först (steg 9.2.35): de står där folk går varje dag
 export function rojSpot(s: State, p: Person) {
-  const taken = fellingTiles(s, p); let best = -1, bd = Infinity;
-  for (const i of skaRojas(s)) { const d = utanforByn(s, i % W, Math.floor(i / W)); if (!taken.has(i) && d < bd) { bd = d; best = i; } }
+  const taken = fellingTiles(s, p), strak = STRAK.pa ? straken(s).ruta : undefined; let best = -1, bd = Infinity;
+  for (const i of skaRojas(s)) { const d = utanforByn(s, i % W, Math.floor(i / W)) - (strak?.[i] ? 1000 : 0); if (!taken.has(i) && d < bd) { bd = d; best = i; } }
   return best < 0 ? undefined : { x: (best % W) + 0.5, y: Math.floor(best / W) + 0.5, i: best };
 }
 // rutorna där någon annan än utom håller på att fälla ett träd
@@ -172,7 +173,7 @@ export function nyStubbe(s: State, x: number, y: number, ved: number) {
 export function skaGravas(s: State) {
   if (!s.stubbar?.length) return [];
   const g = groundOf(s), falt = new Set<number>();
-  for (const f of faltOf(s)) if (f.steg === 'roja') for (let k = f.klara; k < f.n; k++) falt.add(faltRuta(f, k));
+  for (const f of faltOf(s)) for (let k = 0; k < f.n; k++) if (rutorAv(f)[k].st === 'roja') falt.add(faltRuta(f, k));
   const lager = (x: number, y: number) => (s.lagren ?? []).some(z => x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h);
   return s.stubbar.filter(k => { const i = k.y * W + k.x; return !!g.built?.[i] || falt.has(i) || lager(k.x, k.y); });
 }
@@ -228,3 +229,4 @@ export function axeTask(s: State, p: Person): { act: Act; x: number; y: number; 
   }
   return undefined;
 }
+import { rutorAv } from './odling';

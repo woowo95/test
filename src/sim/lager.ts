@@ -7,10 +7,10 @@ import { kvHaller } from './kvalitet';
 import { forvarAt, sittAt, stationAt, stationDef, stationRutor, tillbakaVid } from './stationer';
 import { faltAt } from './odling';
 import { ruttSmuts } from './smuts';
-import { ALDER, alive, byId, count, isSick, living, stat, ageOf, log } from './folk';
+import { ALDER, KROPP, alive, byId, count, isSick, living, stat, ageOf, log } from './folk';
 import { matOrdning } from './naring';
 import { eldPlats, getMap } from './karta';
-import { Act, H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
+import { Act, DAY, H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
 import { bitAt, lagretsMitt, roofed } from './byggnad';
 import { ACTS, toolRow, usesTool } from './handlingar';
 import { temperature, vaderSlit } from './vader';
@@ -36,6 +36,12 @@ export const LAGER = balans('lager', {
   fullt: 3, // förrådet är fullt när lagerplatserna inte kan bli fler och så här många saker ligger bredvid dem
   vaxSteg: 4, // högst så här många förstoringar av lagerplatserna per timme
   mellan: 1, // lagerplatser ligger minst så här långt ifrån varandra
+  mittVikt: 0.5, // en ny lagerplats räknas så här många rutor längre bort per ruta från byns mitt (steg 9.4.7, som husen)
+  // att flytta en lagerplats närmare mitten (steg 9.4.7, lagerFlyttVal): värdet är det som hämtas där per dygn gånger hur många
+  // rutor närmare den nya platsen ligger, delat med flyttFull (då är bristen 1); kostnaden är flyttMin minuter och flyttPer
+  // minuter per sak som bärs om
+  flyttFull: 300, flyttMin: 10, flyttPer: 0.5, flyttMinste: 3, // den nya platsen ligger minst så här många rutor närmare
+  hamtatDygn: 3, // det som hämtats glöms på ungefär så här många dygn
   skogKost: 2, // en ny lagerplats i skogen räknas så här många rutor längre bort per vuxet träd som ska fällas (steg 3.6.9)
   bredvid: 2, // det som ligger så här nära en lagerplats räknas till förrådet, och läggs ut i ringen runt den
   nyBredd: 3, nyHojd: 2, // en ny lagerplats
@@ -76,7 +82,7 @@ export const LAGER = balans('lager', {
 // Lagerplatserna (zoner) görs större, mindre och nya av invånarna själva. Två eller fler sorteras: maten för sig och
 // material för sig, och den viktigaste ligger närmast elden. Vilka saker som finns, och hur stora stackarna är, står i saker.ts.
 // hus = lagerplatsen är golvet i ett förrådshus (byggnader.ts): den växer och krymper inte och räknas inte bland de vanliga
-export interface Zone { x: number; y: number; w: number; h: number; namn?: string; slag?: 'mat' | 'material'; prio?: number; hus?: number; tom?: number; rojs?: boolean } // tom: sedan när lagerplatsen stått halvtom (tidyStore); rojs: lagd i skogen, träden fälls (steg 3.6.9)
+export interface Zone { hamtat?: number; hamtatT?: number; x: number; y: number; w: number; h: number; namn?: string; slag?: 'mat' | 'material'; prio?: number; hus?: number; tom?: number; rojs?: boolean } // tom: sedan när lagerplatsen stått halvtom (tidyStore); rojs: lagd i skogen, träden fälls (steg 3.6.9); hamtat: så mycket som hämtats där per dygn, som glöms långsamt (hamtatT: när det räknades, steg 9.4.7)
 // dold: det som ligger gömt i stacken (giftig svamp bland svampen, saker.ts: i)
 interface Stack { k: string; n: number; c: number; x: number; y: number; blot?: 1; vat?: number; tork?: number; ag?: Del; dold?: number; gor?: string; klar?: number; id?: number; q?: number } // gor = vad ett påbörjat redskap ska bli (paborjat.ts), klar = hur mycket av det som är gjort, id = tinget när stacken är ett redskap, q = dess kvalitet
 // en stack som den visas: out = utanför lagerplatserna, stored = hör till byns förråd (i lagret eller precis bredvid)
@@ -363,7 +369,7 @@ function skogI(s: State, z: Zone) {
   for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (inMap(x, y) && g.trees[y * W + x] >= FOREST) n++;
   return n && !nTools(s, 'yxa') ? Infinity : n;
 }
-const allUsable = (s: State, z: Zone) => { for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (!usable(s, x, y) || underMinnet(s, key(x, y))) return false; return true; }; // inte där byn minns att vattnet nått (steg 3.8.7, flod.ts)
+export const allUsable = (s: State, z: Zone) => { for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (!usable(s, x, y) || underMinnet(s, key(x, y))) return false; return true; }; // inte där byn minns att vattnet nått (steg 3.8.7, flod.ts)
 export const overlaps = (a: Pick<Zone, 'x' | 'y' | 'w' | 'h'>, b: Pick<Zone, 'x' | 'y' | 'w' | 'h'>, gap: number) => a.x < b.x + b.w + gap && b.x < a.x + a.w + gap && a.y < b.y + b.h + gap && b.y < a.y + a.h + gap;
 // rutorna runt en lagerplats, närmast först (från fran till och med till rutor ut). En i taget, så att den som letar efter
 // den första lediga inte går igenom hela kartan
@@ -579,6 +585,7 @@ function takeOwn(s: State, k: string, n: number, p?: Person, common = false, fra
         const has = dold ? a.dold! : o === BYN ? a.n - sumOf(a.ag) : a.ag?.[o] ?? 0, v = Math.min(w, has);
         if (v <= 0) continue;
         if (dold) a.dold! -= v; else { a.n -= v; if (o !== BYN) { a.ag![o] -= v; cleanDel(s, a); } }
+        hamtatI(s, a.x, a.y, v); // hur mycket som hämtas på lagerplatsen (steg 9.4.7)
         w -= v; tog += v; cw += v * a.c;
       }
       tagna += tog;
@@ -635,10 +642,18 @@ function setTools(s: State, k: string, n: number) {
 export function setStock(s: State, m: Record<string, number>) { for (const k in m) setAmount(s, k, m[k]); }
 // p tar n mat ur förrådet: sitt eget och byns, eller (fran, stöld) den personens. Maten som förstörs fortast äts
 // först, och av den det sämsta. Ger hur mycket som åts, skicket och hur mycket av varje slag (näringen, naring.ts)
+// skämd mat i valet av mat (steg 9.6.24): värdet sjunker med skicket och risken för magsjuka, och hungern gör all mat mer
+// värd. Den som nyss blivit hungrig tar bara mat med minst SKAMD.matt i skick, och kravet sjunker mot noll ju hungrigare hen är,
+// så att den hungrige äter skämd mat när inget bättre finns. Skicket för ett slag är snittet av stackarna i förrådet
+export const SKAMD = balans('skamd', { matt: 0.3 }); // under en fjärdedel i skick kan maten ge magsjuka (eat i behov.ts)
+export function skickAv(s: State, k: string) { let n = 0, c = 0; for (const a of stored(s, k)) { n += a.n; c += a.n * a.c; } return n > 0 ? c / n : 1; }
+export const skickKrav = (p: Person) => SKAMD.matt * clamp(p.hunger / KROPP.hungrig, 0, 1);
 export function takeFood(s: State, n: number, p?: Person, fran?: Person) {
   let got = 0, cw = 0; const per: Record<string, number> = {};
+  const krav = p ? skickKrav(p) : 0;
   for (const k of p ? matOrdning(p) : FOOD) { // den som har brist på något tar helst mat som har det (steg 2.6.2)
     if (n - got <= 1e-12) break;
+    if (krav > 0 && skickAv(s, k) < krav) continue; // för skämd för den som inte är hungrig nog (steg 9.6.24)
     const v = Math.min(n - got, amountOf(s, k), takeLimit(s, k, p, fran));
     if (v <= 1e-12) continue;
     const r = takeOwn(s, k, v, p, false, fran?.id);
@@ -854,6 +869,64 @@ export function lagerStorre(s: State) {
   enPerRuta(s); changed(s);
   return true;
 }
+// ---------- dragningen mot mitten: lagerplatserna (steg 9.4.7, Byggplanen: Dragningen mot mitten) ----------
+// Det som hämtas ur en lagerplats räknas per dygn och glöms långsamt. Att flytta lagerplatsen närmare byns mitt är ett projekt
+// (projekt.ts): värdet är det som hämtas där gånger hur mycket närmare den nya platsen ligger, och kostnaden arbetet med att bära om
+function hamtatI(s: State, x: number, y: number, n: number) {
+  const z = zonesOf(s)[zoneAt(s, x, y)];
+  if (!z || n <= 0) return;
+  z.hamtat = hamtatNu(s, z) + n; z.hamtatT = s.now;
+}
+export const hamtatNu = (s: State, z: Zone) => (z.hamtat ?? 0) * Math.exp(-(s.now - (z.hamtatT ?? s.now)) / (LAGER.hamtatDygn * DAY));
+const mittAvst = (s: State, z: { x: number; y: number; w: number; h: number }) => { const m = omrade(s).mitt; return Math.hypot(z.x + z.w / 2 - m.x - 0.5, z.y + z.h / 2 - m.y - 0.5); };
+// en plats för lagerplatsen z närmare mitten, med samma regler som när den flyttas för ett hus (flyttaLager)
+function narmareLager(s: State, z: Zone): Zone | undefined {
+  const zs = zonesOf(s), andra = zs.filter(q => q !== z), f = eldPlats(s), g = groundOf(s), o = omrade(s), r = Math.ceil(LAGER.nyLagerMax + OMRADE.kant) + Math.max(z.w, z.h) + 1, d0 = mittAvst(s, z);
+  const kand: { c: Zone; d: number }[] = [];
+  for (let y = Math.max(0, o.y0 - r); y < Math.min(H - z.h, o.y1 + r + 1); y++) for (let x = Math.max(0, o.x0 - r); x < Math.min(W - z.w, o.x1 + r + 1); x++) {
+    const c: Zone = { ...z, x, y, tom: undefined, rojs: undefined }, d = mittAvst(s, c), df = Math.hypot(x + z.w / 2 - f.x, y + z.h / 2 - f.y);
+    if (d > d0 - LAGER.flyttMinste || df < LAGER.nyEldMin || !allUsable(s, c) || strakI(s, x, y, z.w, z.h) || overlaps(c, z, 0) || andra.some(q => overlaps(c, q, LAGER.mellan)) || skogI(s, c) > 0) continue;
+    kand.push({ c, d });
+  }
+  kand.sort((a, b) => a.d - b.d);
+  return kand.find(k => findPath(g, f.x + 0.5, f.y + 0.5, k.c.x + 0.5, k.c.y + 0.5))?.c;
+}
+// den lagerplats som är mest värd att flytta närmare mitten: vinsten (det som hämtas per dygn gånger rutorna närmare), platsen
+// och hur många saker som ska bäras om. undefined när ingen blir närmare
+// (räknas en gång i timmen, lagerFlyttTimme, och sparas i byn så att spelet och ikappräkningen ser samma)
+export function lagerFlyttTimme(s: State) {
+  const v = lagerFlyttBast(s);
+  s.lagerFlytt = v ? { i: zonesOf(s).indexOf(v.z), ny: { x: v.ny.x, y: v.ny.y }, vinst: v.vinst, saker: v.saker } : undefined;
+}
+export function lagerFlyttVal(s: State): { z: Zone; ny: Zone; vinst: number; saker: number } | undefined {
+  const v = s.lagerFlytt, z = v && zonesOf(s)[v.i];
+  return v && z ? { z, ny: { ...z, x: v.ny.x, y: v.ny.y, tom: undefined, rojs: undefined }, vinst: v.vinst, saker: v.saker } : undefined;
+}
+function lagerFlyttBast(s: State): { z: Zone; ny: Zone; vinst: number; saker: number } | undefined {
+  let bast: { z: Zone; ny: Zone; vinst: number; saker: number } | undefined;
+  const all = things(s);
+  for (const z of zonesOf(s)) {
+    if (z.hus !== undefined || z.rojs) continue;
+    const h = hamtatNu(s, z);
+    if (h < 1 || (bast && h * mittAvst(s, z) <= bast.vinst)) continue;
+    const ny = narmareLager(s, z);
+    if (!ny) continue;
+    const vinst = h * (mittAvst(s, z) - mittAvst(s, ny));
+    if (!bast || vinst > bast.vinst) bast = { z, ny, vinst, saker: all.filter(a => inZone(z, a.x, a.y)).reduce((n, a) => n + Math.ceil(a.n), 0) };
+  }
+  return bast;
+}
+// flytten är utmärkt: lagerplatsen ligger på den nya platsen, och det som låg på den gamla bärs in som annat utanför lagret
+export function lagerFlytta(s: State, z: Zone, ny: Zone) {
+  const zs = zonesOf(s), i = zs.indexOf(z);
+  if (i < 0) return false;
+  zs[i] = { ...ny, hamtat: z.hamtat, hamtatT: z.hamtatT };
+  s.lagerFlytt = undefined;
+  count(s, 'lagerFlyttatIn');
+  log(s, `${z.namn ?? 'Lagret'} flyttas närmare byns mitt, och sakerna bärs dit.`, 'world');
+  enPerRuta(s); changed(s);
+  return true;
+}
 // lagerplatsen z ligger i vägen för ett hus (steg 8.1.15): den flyttas till närmaste plats där den får ligga, med samma namn och
 // samma slag, och den gamla finns inte längre. Det som ligger kvar där hamnar utanför och bärs in som annat utanför lagret
 export function flyttaLager(s: State, z: Zone) {
@@ -898,7 +971,7 @@ function newZone(s: State) {
     const c: Zone = { x, y, w: LAGER.nyBredd, h: LAGER.nyHojd }, df = Math.hypot(x + c.w / 2 - f.x, y + c.h / 2 - f.y);
     if (df < LAGER.nyEldMin || utanforByn(s, x + (c.w - 1) / 2, y + (c.h - 1) / 2) > LAGER.nyLagerMax || !allUsable(s, c) || strakI(s, c.x, c.y, c.w, c.h) || zs.some(o => overlaps(c, o, LAGER.mellan))) continue; // inte på ett gångstråk (steg 6.2.5)
     const skog = skogI(s, c); // i skogen fälls träden först (steg 3.6.9)
-    if (skog < Infinity) kand.push({ c, d: Math.hypot(x - z0.x, y - z0.y) + skog * LAGER.skogKost });
+    if (skog < Infinity) kand.push({ c, d: Math.hypot(x - z0.x, y - z0.y) + skog * LAGER.skogKost + LAGER.mittVikt * mittAvst(s, c) }); // avståndet till mitten väger in (steg 9.4.7)
   }
   kand.sort((a, b) => a.d - b.d);
   const best = kand.find(k => findPath(g, f.x + 0.5, f.y + 0.5, k.c.x + 0.5, k.c.y + 0.5))?.c;
@@ -1105,3 +1178,4 @@ export function pickUp(s: State, p: Person, t: Task, ryms: (b: Record<string, nu
   for (const g of lying(s)) if (g.x === x && g.y === y) { g.x = g.y = undefined; g.lass = p.id; (t.ting ??= []).push(g.id); }
   tidy(s);
 }
+import { clamp } from './slump';

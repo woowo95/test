@@ -41,6 +41,10 @@ const DEF = [
   { k: 'doda', namn: 'döda', kort: 'döda', enhet: '', dec: 0, bra: -1, lika: 1, samst: true },
   { k: 'svalt', namn: 'svalt ihjäl', kort: 'svält', enhet: '', dec: 0, bra: -1, lika: 0.5, samst: true },
   { k: 'kyla', namn: 'frös ihjäl', kort: 'kyla', enhet: '', dec: 0, bra: -1, lika: 0.5, samst: true },
+  // döda av blodförlust och av infektion (kallbrand), mätta per by (steg 9.5.23 och 9.5.26)
+  { k: 'blod', namn: 'förblödde', kort: 'blod', enhet: '', dec: 0, bra: -1, lika: 0.5, samst: true },
+  { k: 'infektion', namn: 'dog av infektion', kort: 'infektion', enhet: '', dec: 0, bra: -1, lika: 0.5, samst: true },
+  { k: 'amputerat', namn: 'amputerade', kort: 'amputerat', enhet: '', dec: 0, bra: 0 },
   // timmar då någon i byn var mycket hungrig
   { k: 'hunger', namn: 'hungertimmar', kort: 'hunger', enhet: ' h', dec: 0, bra: -1, lika: 3 },
   // snitthumör, mätt varje timme

@@ -48,3 +48,37 @@ SCENARIER.stationsdelar = {
     } finally { delete REG.provdelar; }
   },
 };
+
+SCENARIER.ortkokdelar = {
+  text: 'Steg 9.4.3: örtköket står i tre delar, härden med krukan, torkstället med örterna och bänken med morteln, och går att arbeta vid först när alla delar står i samma rum',
+  kor: () => {
+    const s = createState(1, START);
+    medHus(s);
+    const fri = (x: number, y: number, w: number, h: number) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if (!inMap(x + i, y + j) || !SIM.usable(s, x + i, y + j, true) || SIM.stationAt(s, x + i, y + j) || SIM.roomAt(s, x + i, y + j)) return false; return true; };
+    const c = SIM.bynsMitt(s);
+    let at: { x: number; y: number } | undefined;
+    for (let r = 4; r < 30 && !at; r++) for (let k = 0; k < 24 && !at; k++) { const x = Math.round(c.x + Math.cos(k / 24 * 6.283) * r), y = Math.round(c.y + Math.sin(k / 24 * 6.283) * r); if (fri(x, y, 3, 3)) at = { x, y }; }
+    if (!at) return [['en fri plats för örtköket', false]];
+    const t: Station = { id: (s.nextStation = (s.nextStation ?? 0) + 1), k: 'ortkok', x: at.x, y: at.y, kvar: 0, delar: SIM.delarIRad('ortkok', at.x, at.y) };
+    (s.stationer ??= []).push(t); s.byggV = (s.byggV ?? 0) + 1;
+    const namn = SIM.delarAv(t).map(q => q.del?.namn).join(', '), arbete = SIM.arbetsDel(t).del?.namn;
+    const ute = SIM.helStation(s, t) && SIM.stationFor(s, 'koka_salva') === t;
+    // härden in i huset: delarna står i olika rum, och ingen kokar där
+    const golv = gridOf(s).rooms.flatMap(r => r.tiles).find(i => [0, 1].every(j => { const x = i % W, y = Math.floor(i / W) + j; return !SIM.stationAt(s, x, y) && !SIM.sittAt(s, x, y) && SIM.roomAt(s, x, y); }));
+    const inne = golv !== undefined && SIM.flyttaDel(s, t, 0, golv % W, Math.floor(golv / W));
+    const delad = inne && !SIM.helStation(s, t) && SIM.stationFor(s, 'koka_salva') === undefined;
+    // och ut igen bredvid de andra: hel igen
+    const ater = SIM.flyttaDel(s, t, 0, at.x, at.y) && SIM.helStation(s, t) && SIM.stationFor(s, 'koka_salva') === t;
+    // en sparad by med ett örtkök i ett stycke får delarna i en rad där det stod
+    const g: Station = { id: t.id + 1, k: 'ortkok', x: 0, y: 0, kvar: 0 };
+    const sp = { ...s, v: 28, stationer: [g] } as typeof s;
+    SIM.migrate(sp);
+    return [
+      [`örtköket har tre delar (${namn}) och man arbetar vid bänken (${arbete})`, namn === 'Härden, Torkstället, Bänken' && arbete === 'Bänken'],
+      ['med alla delar ute går det att koka salva där', ute],
+      [`med härden inne i huset och resten ute går det inte (${golv === undefined ? 'inget golv' : inne ? 'härden står inne' : 'fick inte plats inne'})`, delad],
+      ['med härden tillbaka bredvid de andra går det igen', ater],
+      [`ett sparat örtkök i ett stycke får delarna i en rad (${g.delar?.length ?? 0} delar)`, g.delar?.length === 3],
+    ];
+  },
+};

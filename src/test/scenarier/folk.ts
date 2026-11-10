@@ -168,8 +168,8 @@ SCENARIER.samtal = {
 
 SCENARIER.liv = {
   text: 'Födsel och åldrande: ett par får ett barn med rätt mor och far, barnets far är den hon blev gravid med, en mor som dör i barnsäng gör inget mer, och styrkan växer upp i åren och avtar på äldre dagar (att trängsel leder till flytt prövas i utflyttning)',
-  // varje mor dör i barnsäng (annars 2,5 %), och paret blir gravida inom någon timme i stället för inom ett par dygn
-  env: { BALANS: 'liv.barnsang=1,steg.chans=30' },
+  // varje mor dör i barnsäng (annars några procent, FORLOPP i forlossning.ts), och paret blir gravida inom någon timme i stället för inom ett par dygn
+  env: { BALANS: 'forlossning.morRisk=10000,steg.chans=30' },
   kor: () => {
     const s = createState(9, START);
     for (const p of living(s)) p.partner = undefined; // inga andra par
@@ -1422,7 +1422,7 @@ SCENARIER.smidighet = {
     const aldras = SIM.stat(p, 'smidighet', t.now) < 15 && SIM.stat(p, 'styrka', t.now) === 15;
     // hantverket: samma färdighet, olika smidighet
     p.skill.hantverk = 8;
-    const kv = (sm: number) => { p.pot.smidighet = sm; let n = 0; for (let i = 0; i < 400; i++) n += SIM.rullaKvalitet(t, p, false); return n; };
+    const kv = (sm: number) => { p.pot.smidighet = sm; let n = 0; for (let i = 0; i < 400; i++) n += SIM.rullaKvalitet(t, p, 0); return n; };
     const fin = kv(20) > kv(1);
     // striden: två lika, den ena smidigare
     const m = (id: number, sida: 0 | 1, smidighet: number) => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 10, smidighet, skicklighet: 10 }, vapen: 'kniv' as SIM.Vapen, klader: [], fart: 1, x: sida ? 12 : 8, y: 7 });

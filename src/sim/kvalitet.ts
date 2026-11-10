@@ -27,7 +27,6 @@ const arEtt = (k: string) => !!(SAKER[k]?.ett ?? (STATIONER as Record<string, { 
 export const KV = balans('kvalitet', {
   kunnig: 12, // färdigheten i hantverk delas med detta: 0 = ingen färdighet, 1 = kunnig
   brus: 0.3, // slumpen: högst så här mycket upp eller ner (oftast mycket mindre)
-  bank: 0.1, // vid slöjdbänken blir det så här mycket bättre
   smid: 0.1, // den smidiga gör finare arbete: så här mycket gånger (smidigheten − 10) / 10 (steg 3.7.6)
   grans: [0, 0.25, 0.85, 1.3, 1.9], // gränserna mellan nivåerna: under den första usel, sedan slarvig, normal, fin, mästerverk och ★
   haller: [0.3, 0.85, 1, 1.15, 1.3, 2], // hur länge saken håller (slitaget delas med detta), per nivå
@@ -54,16 +53,17 @@ export const kvVarde = (t?: { q?: number }) => KV.varde[kvOf(t)];
 export const kvEffekt = (t?: { q?: number }) => KV.effekt[kvOf(t)];
 export const kvNamn = (t?: { q?: number }) => KVALITET[kvOf(t)].namn;
 
-// hur bra det blir som p gör nu: färdigheten, slumpen (kvalitetens egen följd) och slöjdbänken
-export function rullaKvalitet(s: State, p: Person, bank: boolean) {
-  const v = p.skill.hantverk / KV.kunnig + gauss(s, 'kvalitet', p) * KV.brus + (bank ? KV.bank : 0) + KV.smid * franMitt(p, 'smidighet', s.now);
+// hur bra det blir som p gör nu: färdigheten, slumpen (kvalitetens egen följd) och stationen (dess tal kv i STATIONER, steg
+// 9.4.9: för hand och vid elden 0, en bättre station mer)
+export function rullaKvalitet(s: State, p: Person, station: number) {
+  const v = p.skill.hantverk / KV.kunnig + gauss(s, 'kvalitet', p) * KV.brus + station + KV.smid * franMitt(p, 'smidighet', s.now);
   let q = 0;
   while (q < KV.grans.length && v >= KV.grans[q]) q++;
   return q;
 }
 // saken t blev klar och fick sin kvalitet: görarens humör, byns statistik, loggen för mästerverken och berättelsen
-export function nyKvalitet(s: State, p: Person, t: { id: number; k: string; q?: number; ber?: SakMinne }, bank: boolean, namn: string) {
-  const q = t.q = rullaKvalitet(s, p, bank), k = KVALITET[q];
+export function nyKvalitet(s: State, p: Person, t: { id: number; k: string; q?: number; ber?: SakMinne }, station: number, namn: string) {
+  const q = t.q = rullaKvalitet(s, p, station), k = KVALITET[q];
   if (q >= MASTERVERK || q === 0) sakMinne(s, p, t); // det berättelsen om saken behöver (steg 3.9.4)
   count(s, 'kv_' + q);
   if (KV.glad[q]) think(p, k.tanke, KV.glad[q], s.now, KV.gladTim * HOUR);

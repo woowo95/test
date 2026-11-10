@@ -227,7 +227,7 @@ SCENARIER.scen = {
       [`med bara benflöjten ${flojt} gånger musik och ${sangFlojt} sång (till flöjten kan man inte sjunga)`, flojt >= 2 && sangFlojt === 0],
       [`med lyran är kvaliteten ${q} mot ${kval.toFixed(2)} utan, för ${n} som lyssnar: ${text}`, n >= 2 && q > kval * 1.2 && text.includes('lyran')],
       [`lyran slits (${slits.toFixed(2)} kvar)`, slits < 1 && slits > 0],
-      [`nivåerna: ${tek.join(', ')}`, tek.join() === 'scen 2,trumma 2,benflojt 2,lyra 3'],
+      [`nivåerna: ${tek.join(', ')}`, tek.join() === 'scen 2,trumma 2,benflojt 2,lyra 4'],
     ];
   },
 };
@@ -374,21 +374,22 @@ SCENARIER.pynt = {
     const s = createState(6, START); klockan(s); tandEld(s); medHus(s);
     setFood(s, 300); SIM.setAmount(s, 'ved', 40); SIM.setAmount(s, 'virke', 6); SIM.setAmount(s, 'skinn', 4); SIM.setAmount(s, 'rep', 4);
     // bara p kan göra pynt: rummet har plats för färre pynt än de som sover där, och de andra hann annars ta platserna först
-    const p = vuxna(s).find(q => bedTile(s, q) !== undefined)!;
+    const p = vuxna(s).find(q => bedTile(s, q) !== undefined && pyntSort(s, q) !== 'kruka')!; // lerkrukan är ett ting sedan steg 9.4.11 (scenariot kruka)
     p.tek = { ...p.tek, kruka: 1, bonad: 1, vaggbrade: 1 };
     const k = pyntSort(s, p);
     const vill = villPynt(s, p, k), bara = PYNT_LIST.filter(j => villPynt(s, p, j)).length, brist = PROJEKT[k]!.brist(s);
     const sorter = new Set(Array.from({ length: 12 }, (_, i) => pyntSort(s, { id: i } as Person))).size; // smaken skiljer sig mellan människor
     // pyntet väger lite mot arbetet om maten; här väger det mer, så att p bygger sitt snart
     let h = 0; const vikt = PYNT_LIST.map(j => PROJEKT[j]!.vikt); for (const j of PYNT_LIST) PROJEKT[j]!.vikt = 20;
-    try { while (!(pyntOf(s, p) && isKlar(pyntOf(s, p)!)) && h < 240) { kor(s, 1); h++; for (const m of ['virke', 'skinn', 'rep']) if (SIM.amountOf(s, m) < 4) SIM.setAmount(s, m, 6); } } finally { PYNT_LIST.forEach((j, i) => { PROJEKT[j]!.vikt = vikt[i]; }); }
-    const t = pyntOf(s, p), b = bedTile(s, p), rum = t && stationRum(s, t);
+    const pyntSt = (x: State) => pyntOf(x, x.people.find(r => r.id === p.id)!) as SIM.Station | undefined;
+    try { while (!(pyntSt(s) && isKlar(pyntSt(s)!)) && h < 240) { kor(s, 1); h++; for (const m of ['virke', 'skinn', 'rep']) if (SIM.amountOf(s, m) < 4) SIM.setAmount(s, m, 6); } } finally { PYNT_LIST.forEach((j, i) => { PROJEKT[j]!.vikt = vikt[i]; }); }
+    const t = pyntSt(s), b = bedTile(s, p), rum = t && stationRum(s, t);
     const byggd = !!t && isKlar(t) && t.k === k && t.ag === p.id && !!t.inne && b !== undefined && !!rum?.tiles.includes(b) && t.q !== undefined;
     const mer = PYNT_LIST.some(j => villPynt(s, p, j));
     // i rummet: ägaren trivs, och den som är vaken där får ett bättre intryck av ägaren. Ett uselt pynt ger inget
     const v = SIM.living(s).find(q => q !== p)!, ruta = rum?.tiles[0] ?? 0;
     const prova = (q: number) => {
-      const k2 = SIM.cloneState(s), p2 = k2.people.find(r => r.id === p.id)!, v2 = k2.people.find(r => r.id === v.id)!, t2 = pyntOf(k2, p2)!;
+      const k2 = SIM.cloneState(s), p2 = k2.people.find(r => r.id === p.id)!, v2 = k2.people.find(r => r.id === v.id)!, t2 = pyntSt(k2)!;
       t2.q = q; p2.thoughts = []; v2.intryck = [];
       for (const r of [p2, v2]) { r.x = ruta % SIM.W + 0.5; r.y = Math.floor(ruta / SIM.W) + 0.5; r.task = undefined; } // SIM.W: W sätts när kartan skapas
       stepPynt(k2);
@@ -397,7 +398,7 @@ SCENARIER.pynt = {
     };
     const fin = prova(4), normal = prova(2), usel = prova(0);
     return [
-      [`p vill ha ett pynt av sin sort (${k}) och bara den (${bara}), byn vill bygga det (brist ${brist.toFixed(2)}), och smaken skiljer sig (${sorter} sorter hos tolv)`, vill && bara === 1 && brist > 0 && sorter === PYNT_LIST.length],
+      [`p vill ha ett pynt av sin sort (${k}) och bara den (${bara}), byn vill bygga det (brist ${brist.toFixed(2)}), och smaken skiljer sig (${sorter} sorter hos tolv)`, vill && bara === 1 && brist > 0 && sorter === SIM.PYNT_SMAK.length],
       [`p bygger sitt pynt på ${h} timmar (ungefär ${h / 2} månader i spelet), inne i rummet där p sover, med en kvalitet`, byggd],
       ['högst ett pynt var', !!t && !mer],
       [`ägaren trivs i rummet: humör +${(fin.glad * 100).toFixed(0)} % med ett mästerverk, +${(normal.glad * 100).toFixed(0)} % med ett normalt`, fin.glad > normal.glad && normal.glad > 0],
@@ -1129,3 +1130,33 @@ function brottning(): [string, boolean][] {
     [`de andra i ringen pratar (${pratRingen} samtal)`, pratRingen > 0],
   ];
 }
+
+SCENARIER.kruka = {
+  text: 'Steg 9.4.12: lerkrukan är pynt och i bruk genom systemen som finns. En kruka som torkar går inte att använda; den mellanstora bär vatten som säcken; ägarens lediga kruka ställs i rummet där hen sover och är pynt där, och byn vill ha krukor till pyntet och att bära vatten i',
+  kor: () => {
+    const { addTool, freeTools, vattenKarl, krukorHem, krukaHemma, stepPynt, sovrum, bedTile, krukaVill, pyntSort, PYNT_TANKE } = SIM;
+    const s = createState(6, START); klockan(s); tandEld(s); medHus(s);
+    const p = vuxna(s).find(q => bedTile(s, q) !== undefined)!;
+    for (const t of SIM.tingOf(s).filter(t => t.k === 'vattensack')) s.ting = SIM.tingOf(s).filter(q => q !== t);
+    // en mellanstor kruka som torkar: inte färdig
+    const k = addTool(s, 'lerkruka_mellan', p); k.ler = 0.5;
+    const torkar = freeTools(s, p, 'lerkruka_mellan') === 0 && vattenKarl(s, p) === undefined;
+    k.ler = undefined;
+    const vatten = vattenKarl(s, p) === 'lerkruka_mellan';
+    // pyntet: krukan ställs i rummet där ägaren sover och är pynt där
+    krukorHem(s);
+    const hemma = krukaHemma(s, p) === k, rum = sovrum(s, p);
+    const ruta = rum!.tiles[0];
+    p.x = ruta % SIM.W + 0.5; p.y = Math.floor(ruta / SIM.W) + 0.5; p.task = undefined; p.thoughts = [];
+    stepPynt(s);
+    const trivs = p.thoughts.some(t => t.text === PYNT_TANKE);
+    // byn vill ha krukor: till dem som vill ha en kruka som pynt, och en att bära vatten i utan säck
+    const vill = krukaVill(s), pyntare = SIM.living(s).filter(q => SIM.villPynt(s, q, 'kruka')).length;
+    return [
+      [`en kruka som torkar går inte att använda (${torkar ? 'nej' : 'ja'})`, torkar],
+      [`utan vattensäck bär man vatten i den mellanstora krukan (${vattenKarl(s, p) ?? 'inget'})`, vatten],
+      [`ägarens kruka ställs i rummet där hen sover (${hemma ? 'där' : 'inte där'}) och är pynt: hen trivs (${trivs ? 'ja' : 'nej'})`, hemma && trivs],
+      [`byn vill ha ${vill} krukor (${pyntare} som pynt och en att bära vatten i), och lerkrukan är en av smakerna (${pyntSort(s, p)})`, vill === pyntare + 1 && SIM.PYNT_SMAK.includes('kruka')],
+    ];
+  },
+};
