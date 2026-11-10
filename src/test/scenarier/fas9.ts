@@ -892,7 +892,7 @@ SCENARIER.sad = {
     kornUpptackt(s); const forut = folk.some(p => knows(p, 'sadesodling'));
     setAmount(s, 'korn', 6); kornUpptackt(s); const nu = folk.every(p => knows(p, 'sadesodling'));
     let tid = 0; while (grodorNu(s).length < 2 && tid++ < 40) s.now += SIM.DAY / 2;
-    for (const k of ['rovor', 'arter', 'lok', 'kal', 'bonor']) setAmount(s, k, 60); setAmount(s, 'korn', 6); // de andra grödorna har byn gott om
+    for (const k of ['rovor', 'arter', 'lok', 'kal', 'bonor', 'appel', 'jordgubbar', 'notter']) setAmount(s, k, 60); setAmount(s, 'korn', 6); // de andra grödorna har byn gott om
     const med = grodorNu(s);
     folk[0].tek!.lin = 1; setAmount(s, 'ratlin', 0); const lin = grodorNu(s);
     return [

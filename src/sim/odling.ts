@@ -215,7 +215,7 @@ function dygnTillIstid(s: State) {
 // mycket byn saknar av den, för de grödor som hinner mogna före istiden (ärterna med större marginal) och som någon kan odla
 export function grodorNu(s: State): GrodaSlag[] {
   const d = dygnTillIstid(s), folk = Math.max(1, living(s).length);
-  const kan = (Object.keys(GRODOR) as GrodaSlag[]).filter(g => ((GRODOR[g] as GrodaDef).flerarig || d >= GRODOR[g].dygn + (g === 'arter' ? ODLING.artMarg : ODLING.rovMarg)) && /* en flerårig gröda vilar över istiden (steg 9.7.9) */ (!(GRODOR[g] as GrodaDef).tek || living(s).some(p => knows(p, (GRODOR[g] as GrodaDef).tek!))));
+  const kan = (Object.keys(GRODOR) as GrodaSlag[]).filter(g => ((GRODOR[g] as GrodaDef).flerarig && d > 0 || d >= GRODOR[g].dygn + (g === 'arter' ? ODLING.artMarg : ODLING.rovMarg)) && /* en flerårig gröda vilar över istiden (steg 9.7.9) */ (!(GRODOR[g] as GrodaDef).tek || living(s).some(p => knows(p, (GRODOR[g] as GrodaDef).tek!))));
   const poang = (g: GrodaSlag) => GRODOR[g].perRuta * grundvarde(GRODOR[g].sak) * clamp(1 - amountOf(s, GRODOR[g].sak) / (folk * ODLING.villPer), 0.1, 1);
   return kan.map(g => ({ g, p: poang(g) })).sort((a, b) => b.p - a.p || a.g.localeCompare(b.g)).map(x => x.g);
 }
