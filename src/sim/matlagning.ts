@@ -9,6 +9,10 @@ import { SAKER } from './saker';
 import { loggBer } from './berattelser';
 import { balans } from './balans';
 import { SJUK, insjukna } from './sjukdom';
+import { INGREDIENSER, KATEGORIER, Kategori, Maltidsniva, RATT, RATT_HUVUD, RATT_HUVUD_LIST, RATT_SAKER, RattHuvud, grupperAv, nivaAvGrupper, rattId } from './ratter';
+import { tingOf } from './agande';
+import { getable, takeMaterial } from './behov';
+import { knows } from './teknik';
 
 // ---------- matlagning (steg 2.8.1) ----------
 // Byn lagar sin första mat på grillställningen (grill i STATIONER, stationer.ts): två grenar med en klyka var på var sin
@@ -183,4 +187,66 @@ export function torka(s: State, p: Person, hours: number) {
     }
   }
   if (kan >= hours * TORK.timme - 1e-9 && p.task) p.task.until = s.now; // inget att göra
+}
+
+// ---------- kokningen i lerkrukan (steg 9.6.3, ratter.ts) ----------
+// Den som lagar mat förbereder en rätt vid elden (KOK.prepMin minuters arbete): huvudingrediensen, en råvara ur en annan grupp
+// och, om det finns, rölleka som smak. Rätten läggs i en mellanstor lerkruka som ställs i elden och står där den passiva tiden
+// (KATEGORIER: gröten 5 minuter, grytan 10 och soppan 15) utan kocken, så länge elden brinner. Sedan läggs portionerna i
+// förrådet, och den tomma krukan är ledig igen. Rätten är deras som ägde råvarorna
+export const KOK = balans('kokning', {
+  prepMin: 3, // så många minuters arbete tar det att förbereda en rätt (2–4 minuter i designen)
+  vill: 1, // byn lagar mat när den har färre rätter än så här många per invånare
+});
+const RATT_SMAK = ['rolleka']; // smaken i krukan (löken och saltet kommer i 9.6.19–9.6.20)
+// råvarorna som går i krukan: de med grupper, utom det redan grillade och det som först ska slaktas
+const iKrukan = (k: string) => !!INGREDIENSER[k] && !k.startsWith('grill') && k !== 'vilt' && k !== 'fagel' && !RATT_SMAK.includes(k);
+export interface KokRecept { id: string; huvud: string; andra: string; smak?: string; kat: Kategori; niva: Maltidsniva; hh: RattHuvud }
+// det som kan kokas nu, av det p kan ta (eller byn har): den första huvudingrediensen i ordningen, en råvara ur en annan grupp
+// (helst stärkelse), och smaken om den finns
+export function kokRecept(s: State, p?: Person): KokRecept | undefined {
+  const har = (k: string, n: number) => (p ? getable(s, p, k) : amountOf(s, k)) >= n;
+  for (const hh of RATT_HUVUD_LIST) {
+    const huvud = Object.keys(INGREDIENSER).find(k => INGREDIENSER[k].huvud === hh && iKrukan(k) && har(k, RATT.huvud));
+    if (!huvud) continue;
+    const g0 = grupperAv(huvud), andra = Object.keys(INGREDIENSER).filter(k => k !== huvud && iKrukan(k) && grupperAv(k).some(g => !g0.includes(g)) && har(k, RATT.andra))
+      .sort((a, b) => (grupperAv(b).includes('starkelse') ? 1 : 0) - (grupperAv(a).includes('starkelse') ? 1 : 0))[0];
+    if (!andra) continue;
+    const smak = RATT_SMAK.find(k => har(k, RATT.smak));
+    const grupper = new Set([...g0, ...grupperAv(andra), ...(smak ? grupperAv(smak) : [])]), niva = nivaAvGrupper(grupper);
+    if (niva !== 'lagad' && niva !== 'fin') continue;
+    const kats = RATT_HUVUD[hh].kat as Kategori[], kat = grupperAv(andra).includes('starkelse') ? kats[0] : kats[kats.length - 1];
+    return { id: rattId(hh, kat, niva), huvud, andra, smak, kat, niva, hh };
+  }
+  return undefined;
+}
+// en mellanstor lerkruka som är färdig, tom, inte bärs och inte står på elden
+export const ledigKruka = (s: State) => tingOf(s).find(t => t.k === 'lerkruka_mellan' && t.ler === undefined && !t.inne && !t.kok && t.hos === undefined && t.c > 0);
+// krukorna som står på elden
+export const kokarNu = (s: State) => tingOf(s).filter(t => t.kok);
+const rattAntal = (s: State) => RATT_SAKER.reduce((n, k) => n + amountOf(s, k), 0) + kokarNu(s).reduce((n, t) => n + t.kok!.n, 0);
+// p kan laga mat: kan krukan, elden brinner, en ledig kruka, något att koka, byn har för få rätter och ingen annan lagar mat
+export const kanKoka = (s: State, p: Person) => knows(p, 'kruka') && s.fire.lit && !!ledigKruka(s) && rattAntal(s) < KOK.vill * living(s).length && !doingAct(s, 'koka_mat', p) && !!kokRecept(s, p);
+// förberedelsen är klar (KLAR i steg.ts): råvarorna tas, och rätten ställs på elden i krukan
+export function kokaKlar(s: State, p: Person) {
+  const r = kokRecept(s, p), t = ledigKruka(s);
+  if (!r || !t || !s.fire.lit) return;
+  const ag: Record<string, number> = {};
+  for (const [k, n] of [[r.huvud, RATT.huvud], [r.andra, RATT.andra], ...(r.smak ? [[r.smak, RATT.smak]] : [])] as [string, number][]) addDel(ag, takeMaterial(s, p, k, n), 1);
+  t.kok = { r: r.id, n: RATT.portioner, kvar: KATEGORIER[r.kat].passiv * MIN, ag };
+  count(s, 'kokat'); gjort(s, p, 'kokat', 1);
+  ovning(p, 'matlagning', KOK.prepMin / 60 * MATLAG.ovning * (0.4 + stat(p, 'intelligens', s.now) / 20));
+  if (forstaGang(s, 'kokForsta')) log(s, `${p.name} lagade byns första ${SAKER[r.id]!.namn.split(' · ')[0].toLowerCase()} i en lerkruka över elden.`, 'world', [p.id]);
+}
+// en gång i timmen (steg.ts): krukorna på elden kokar medan elden brinner, och den färdiga rätten läggs i förrådet
+export function stepKok(s: State) {
+  for (const t of kokarNu(s)) {
+    if (s.fire.lit) t.kok!.kvar -= HOUR;
+    if (t.kok!.kvar > 0) continue;
+    const tot = Object.values(t.kok!.ag).reduce((a, b) => a + b, 0) || 1, ag: Del = {};
+    for (const o in t.kok!.ag) { const q = byId(s, Number(o)); if (q && alive(q)) ag[o] = t.kok!.ag[o] / tot * t.kok!.n; }
+    put(s, t.kok!.r, t.kok!.n, ag);
+    count(s, 'ratter', t.kok!.n);
+    t.kok = undefined;
+  }
 }
