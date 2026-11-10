@@ -342,6 +342,9 @@ export function tonaTrad(punkter: { x: number; y: number }[], nara: { x: number;
   // 2 = bara stammen (närmast folket), 0 = rastrerad, 1 = lite rastrerad; den starkaste gäller
   const nu = new Map<PIXI.Sprite, 0 | 1 | 2>(), styrka = [1, 0, 2], fran = new Map<PIXI.Sprite, (typeof sprites extends Map<number, infer V> ? V : never)>();
   const satt = (sp: PIXI.Sprite, n: 0 | 1 | 2) => { const f = nu.get(sp); if (f === undefined || styrka[n] > styrka[f]) nu.set(sp, n); };
+  // trädets hela bild och plats, också när det redan är tonat: avståndet mäts alltid till hela kronan, annars blir det
+  // stam när någon står nära, och stammen är längre bort, så att kronan kommer tillbaka i nästa bildruta och trädet blinkar
+  const hela = (sp: PIXI.Sprite) => { const o = tonade.get(sp); return o && (helAv.has(sp.texture) || stamBilder.has(sp.texture)) ? { x: o.x, y: o.y, w: o.t.width, h: o.t.height } : { x: sp.x, y: sp.y, w: sp.texture.width, h: sp.texture.height }; };
   for (const p of punkter) {
     const px = p.x * 16 + 8, fot = p.y * 16 + 14, tx = Math.floor(p.x + 0.5), ty = Math.floor(p.y + 0.5);
     for (let dy = 0; dy <= 4; dy++) for (let dx = -2; dx <= 2; dx++) {
@@ -349,7 +352,7 @@ export function tonaTrad(punkter: { x: number; y: number }[], nara: { x: number;
       if (x < 0 || y < 0 || x >= W || y >= H) continue;
       const f = sprites.get(y * W + x);
       if (!f || nu.get(f.sp) === 2 || f.sp.zIndex <= fot) continue;
-      const sp = f.sp, l = sp.x + 1, r = sp.x + sp.texture.width - 1, t = sp.y, b = sp.y + sp.texture.height;
+      const sp = f.sp, e = hela(sp), l = e.x + 1, r = e.x + e.w - 1, t = e.y, b = e.y + e.h;
       // själva saken och en bit upp (huvudet på den som står där)
       if (px >= l && px <= r && ((fot >= t && fot <= b) || (fot - 8 >= t && fot - 8 <= b))) satt(sp, 0);
     }
@@ -363,7 +366,7 @@ export function tonaTrad(punkter: { x: number; y: number }[], nara: { x: number;
       const f = sprites.get(y * W + x);
       if (!f || f.b.typ === 'buske' || nu.get(f.sp) === 2) continue;
       fran.set(f.sp, f);
-      const sp = f.sp, ex = Math.max(sp.x + 2 - px, 0, px - (sp.x + sp.texture.width - 2)), ey = Math.max(sp.y + 2 - py, 0, py - (sp.y + sp.texture.height * 0.75));
+      const sp = f.sp, e = hela(sp), ex = Math.max(e.x + 2 - px, 0, px - (e.x + e.w - 2)), ey = Math.max(e.y + 2 - py, 0, py - (e.y + e.h * 0.75));
       const d = Math.hypot(ex, ey) / 16;
       if (d <= NARA) satt(sp, f.b.h >= 8 ? 2 : 0); else if (d <= NARA_KANT) satt(sp, 1);
     }
