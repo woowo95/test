@@ -338,6 +338,7 @@ for (const k of SIM.KLAD_SLAG) if (/^(mantel|prastdrakt|tecken|mask|rustning|hja
 for (const [ks, why] of [
   [[...SIM.RATT_SAKER, 'koka_mat', 'steka'], 'rätterna (steg 9.6.3 och 9.6.21) kräver lerkrukan och stekhällen; scenarierna kokning och stek prövar dem'],
   [['ulltrad', 'ylle', 'spinna_ull', 'vava_ull', 'tunika_ylle', 'skjorta_ylle', 'kappa', 'sjal', 'kappa_ylle', 'sjal_ylle', 'mantel_ylle'], 'ullen (steg 9.8.14) kräver får, vävstolen och sländan; scenariot ylle prövar den'],
+  [['mata', 'hage', 'valla', 'klippa', 'mjolka', 'avliva', 'slatter', 'skara', 'ull', 'slaktfar', 'slaktget', 'djurhorn', 'levget', 'levhons', 'far', 'get', 'fahus'], 'de tama djuren (system 9.8) kommer först när byn köpt får, getter eller höns av handlaren, och djuren är dyra; scenarierna boskap, hage, hagflytt, mjolk, tamslakt, slatter och hons prövar dem'],
   [['hamla', 'lovkarve'], 'lövtäkten (steg 9.8.16) kräver betesdjur och för lite hö; scenariot hamla prövar den'],
   [['tomma_latrin'], 'latrinen töms (steg 9.7.6) bara när byn har en kompost och latrinen är nästan full; scenariot kompost prövar det'],
   [['krossa_saft'], 'saften (steg 9.6.9) kräver lerkrukan; scenariot saft prövar den'],
