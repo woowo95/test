@@ -1083,3 +1083,20 @@ SCENARIER.salt = {
     ];
   },
 };
+
+SCENARIER.lok = {
+  text: 'Steg 9.6.20: löken. Vildlök växer vid stranden och på ängarna som de andra vilda växterna, plockas när man samlar och hör till gruppen Smak, och lökar som sparas kan sättas på fältet som en ny gröda',
+  kor: () => {
+    const { FYND, richness, froFynd, GRODOR, VILDA, grupperAv } = SIM;
+    const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    let tid = 0; let plats: { x: number; y: number } | undefined;
+    while (!plats && tid++ < 30) { for (let i = 0; i < SIM.W * SIM.H && !plats; i += 3) if (richness(s, 'vildlok', i % SIM.W, Math.floor(i / SIM.W)) > 0.2) plats = { x: i % SIM.W, y: Math.floor(i / SIM.W) }; if (!plats) s.now += SIM.DAY; }
+    const tk = { act: 'samla', phase: 'do', tx: plats?.x ?? 0, ty: plats?.y ?? 0, until: s.now, carry: 0, why: '' } as SIM.Task;
+    const fick = plats ? froFynd(s, p, tk, 3600) : {};
+    return [
+      [`vildlöken är ett lager på kartan (${FYND.vildlok.namn}) och växer någonstans (${plats ? `${plats.x},${plats.y}` : 'ingenstans'})`, !!plats],
+      [`den som samlar där får lök (${(fick.lok ?? 0).toFixed(2)})`, (fick.lok ?? 0) > 0],
+      [`löken är Smak (${grupperAv('lok').join(', ')}), och lökarna sätts på fältet (${GRODOR.lok.namn}, utsäde ${GRODOR.lok.fro}, ${VILDA.vildlok.groda})`, grupperAv('lok').includes('smak') && GRODOR.lok.fro === 'lok'],
+    ];
+  },
+};

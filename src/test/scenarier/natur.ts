@@ -1364,7 +1364,7 @@ SCENARIER.odling = {
     const tk = plats(rovI), summa = (ut: Record<string, number>, ks: string[]) => ks.reduce((a, k) => a + (ut[k] ?? 0), 0);
     const fore = fyndAt(s, 'vildrova', rovI), ut: Record<string, number> = {};
     for (let i = 0; i < 60; i++) for (const [k, n] of Object.entries(SIM.froFynd(s, p, tk, 60))) ut[k] = (ut[k] ?? 0) + n;
-    const efter = fyndAt(s, 'vildrova', rovI), vild = s.stat?.vildgrodor ?? 0, fron = summa(ut, ['rovfron', 'artfron']), rot = ut.rotter ?? 0;
+    const efter = fyndAt(s, 'vildrova', rovI), vild = s.stat?.vildgrodor ?? 0, fron = summa(ut, ['rovfron', 'artfron']) + (ut.lok ?? 0) / (1 + SIM.ODLING.vildMat), rot = ut.rotter ?? 0;
     const art = artI >= 0 ? SIM.froFynd(s, p, plats(artI), 3600) : {};
     // byn vill ha frön till ett minsta fält för varje familj som kan odla och saknar fält (steg 3.10.23.3; innan någon kan odla
     // alla familjer). När byn har nog tar man inga fler, men plockandet räknas och man tänker på odling

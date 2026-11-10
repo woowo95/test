@@ -233,7 +233,7 @@ export const KOK = balans('kokning', {
   prepMin: 3, // så många minuters arbete tar det att förbereda en rätt (2–4 minuter i designen)
   vill: 1, // byn lagar mat när den har färre rätter än så här många per invånare
 });
-const RATT_SMAK = ['salt', 'rolleka']; // smaken i krukan (löken kommer i 9.6.20)
+const RATT_SMAK = ['lok', 'salt', 'rolleka']; // smaken i krukan (steg 9.6.3, 9.6.19 och 9.6.20)
 // råvarorna som går i krukan: de med grupper, utom det redan grillade och det som först ska slaktas
 const iKrukan = (k: string) => !!INGREDIENSER[k] && !k.startsWith('grill') && k !== 'vilt' && k !== 'fagel' && !RATT_SMAK.includes(k);
 export interface KokRecept { id: string; huvud: string; andra: string; smak?: string; kat: Kategori; niva: Maltidsniva; hh: RattHuvud }

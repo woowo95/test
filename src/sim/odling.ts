@@ -86,6 +86,7 @@ export const GRODOR = {
   // ärterna har kornets tal och plats (steg 3.10.23.8; korn kommer tillbaka som säd från handlarna i steg 11.4.2)
   lin: { namn: 'Lin', sak: 'ratlin', fro: 'linfron', dygn: 3, perRuta: 2, fron: 1.5, frost: -3, tek: 'lin' }, // steg 7.7.7: linfrön köps av handlaren
   arter: { namn: 'Ärter', sak: 'arter', fro: 'artfron', dygn: 4, perRuta: 3, fron: 2, frost: -4 },
+  lok: { namn: 'Lök', sak: 'lok', fro: 'lok', dygn: 3, perRuta: 3, fron: 1, frost: -4 }, // löken (steg 9.6.20): lökarna är sitt eget utsäde
   korn: { namn: 'Korn', sak: 'korn', fro: 'korn', dygn: 4, perRuta: 3, fron: 1, frost: -4, tek: 'sadesodling' }, // säden från handlarna (steg 9.6.11): kornet är sitt eget utsäde // håller länge; dygn 3, perRuta 4 och fron 6 före steg 3.10.23; frost -1 före steg 2.12.2
 } satisfies Record<string, GrodaDef>;
 export type GrodaSlag = keyof typeof GRODOR;
@@ -468,6 +469,7 @@ export function stepOdling(s: State) {
 export const VILDA = {
   vildrova: { groda: 'rovor', mat: 'rotter' }, // små rötter
   arter: { groda: 'arter', mat: 'arter' }, // ärtor
+  vildlok: { groda: 'lok', mat: 'lok' }, // löken (steg 9.6.20): lökarna som sparas sätts på fältet
 } satisfies Record<string, { groda: GrodaSlag; mat: string }>;
 const VILDA_IDS = Object.keys(VILDA) as (keyof typeof VILDA)[];
 // fröna grödorna sås med

@@ -213,6 +213,13 @@ const DEF = {
     bas: (s, i) => { const t = getMap(s.seed).tiles[i], d = djupOf(s.seed).land[i]; if (t === T.Vatten || t === T.Sten || groundOf(s).trees[i] >= FOREST) return 0; return t === T.Sand ? (d <= 1 ? 3 : 1) : d <= 2 ? 0.6 : 0.1; },
     uttag: { full: 3, reach: 0, regrow: [1 / 24, 1 / 12, 1 / 12, 1 / 12] }, regn: true,
   },
+  // vildlöken (steg 9.6.20, odling.ts): växer vid stranden och på ängarna som de andra vilda växterna, och plockas när man samlar
+  vildlok: {
+    namn: 'Vildlök', grupp: 'vaxter', ikon: 'vildlok', farg: 0xb2921b, topp: 1, arstid: [0, 0.6, 1, 0.8], torka: 0.6,
+    monster: { salt: 107, skala: 3, period: 56, troskel: 0.6 },
+    bas: (s, i, m) => { if (!land(s, i)) return 0; const t = getMap(s.seed).tiles[i]; return (t === T.Sand && djupOf(s.seed).land[i] <= 2 || markslag(groundOf(s), i) === 'hog') ? m * orortOf(s)[i] : 0; },
+    uttag: { full: 1, reach: 1, regrow: [0, 1 / 240, 1 / 96, 1 / 120] },
+  },
 } satisfies Record<string, FyndDef>;
 // bärbuskarna (buskar.ts): bär växer på rutan i dag där bärens mönster ligger, och bärbuskarna sås ut där när byn grundas
 // (inte på bar jord, i lägret eller där något är byggt)
