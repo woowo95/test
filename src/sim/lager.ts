@@ -7,7 +7,7 @@ import { kvHaller } from './kvalitet';
 import { forvarAt, sittAt, stationAt, stationDef, stationRutor, tillbakaVid } from './stationer';
 import { faltAt } from './odling';
 import { ruttSmuts } from './smuts';
-import { ALDER, alive, byId, count, isSick, living, stat, ageOf, log } from './folk';
+import { ALDER, KROPP, alive, byId, count, isSick, living, stat, ageOf, log } from './folk';
 import { matOrdning } from './naring';
 import { eldPlats, getMap } from './karta';
 import { Act, DAY, H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
@@ -642,10 +642,18 @@ function setTools(s: State, k: string, n: number) {
 export function setStock(s: State, m: Record<string, number>) { for (const k in m) setAmount(s, k, m[k]); }
 // p tar n mat ur förrådet: sitt eget och byns, eller (fran, stöld) den personens. Maten som förstörs fortast äts
 // först, och av den det sämsta. Ger hur mycket som åts, skicket och hur mycket av varje slag (näringen, naring.ts)
+// skämd mat i valet av mat (steg 9.6.24): värdet sjunker med skicket och risken för magsjuka, och hungern gör all mat mer
+// värd. Den som nyss blivit hungrig tar bara mat med minst SKAMD.matt i skick, och kravet sjunker mot noll ju hungrigare hen är,
+// så att den hungrige äter skämd mat när inget bättre finns. Skicket för ett slag är snittet av stackarna i förrådet
+export const SKAMD = balans('skamd', { matt: 0.3 }); // under en fjärdedel i skick kan maten ge magsjuka (eat i behov.ts)
+export function skickAv(s: State, k: string) { let n = 0, c = 0; for (const a of stored(s, k)) { n += a.n; c += a.n * a.c; } return n > 0 ? c / n : 1; }
+export const skickKrav = (p: Person) => SKAMD.matt * clamp(p.hunger / KROPP.hungrig, 0, 1);
 export function takeFood(s: State, n: number, p?: Person, fran?: Person) {
   let got = 0, cw = 0; const per: Record<string, number> = {};
+  const krav = p ? skickKrav(p) : 0;
   for (const k of p ? matOrdning(p) : FOOD) { // den som har brist på något tar helst mat som har det (steg 2.6.2)
     if (n - got <= 1e-12) break;
+    if (krav > 0 && skickAv(s, k) < krav) continue; // för skämd för den som inte är hungrig nog (steg 9.6.24)
     const v = Math.min(n - got, amountOf(s, k), takeLimit(s, k, p, fran));
     if (v <= 1e-12) continue;
     const r = takeOwn(s, k, v, p, false, fran?.id);
@@ -1170,3 +1178,4 @@ export function pickUp(s: State, p: Person, t: Task, ryms: (b: Record<string, nu
   for (const g of lying(s)) if (g.x === x && g.y === y) { g.x = g.y = undefined; g.lass = p.id; (t.ting ??= []).push(g.id); }
   tidy(s);
 }
+import { clamp } from './slump';

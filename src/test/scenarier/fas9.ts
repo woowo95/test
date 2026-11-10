@@ -1166,3 +1166,21 @@ SCENARIER.brod = {
     ];
   },
 };
+
+SCENARIER.svalt = {
+  text: 'Steg 9.6.24: skämd mat i valet av mat. Maten man äter väljs efter skicket och hungern: den som nyss blivit hungrig tar färsk mat och låter den skämda ligga, och den som är mycket hungrig äter skämd mat när inget bättre finns, med samma risk för magsjuka som förut',
+  kor: () => {
+    const { MAT, FOOD, setAmount, amountOf, stacksOf, KROPP, skickKrav } = SIM;
+    const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    const lagg = (farsk: boolean) => { for (const k of FOOD) setAmount(s, k, 0); setAmount(s, 'fisk', 6); for (const a of stacksOf(s)) if (a.k === 'fisk') a.c = 0.2; if (farsk) setAmount(s, 'rotter', 6); };
+    lagg(true); p.hunger = KROPP.hungrig - 0.01; MAT.anvand(s, p);
+    const tog = { fisk: 6 - amountOf(s, 'fisk'), rotter: 6 - amountOf(s, 'rotter') };
+    lagg(false); p.hunger = KROPP.hungrig - 0.01; const lat = MAT.anvand(s, p);
+    p.hunger = 0.02; const at = MAT.anvand(s, p);
+    return [
+      [`den som nyss blivit hungrig tar de färska rötterna (${tog.rotter}) och låter den skämda fisken ligga (${tog.fisk})`, tog.rotter > 0 && tog.fisk === 0],
+      [`finns bara skämd mat äter hen inte än (${lat}, kravet på skicket ${skickKrav({ ...p, hunger: KROPP.hungrig - 0.01 } as SIM.Person).toFixed(2)})`, lat === 0],
+      [`den mycket hungrige äter den skämda fisken när inget bättre finns (${at})`, at > 0],
+    ];
+  },
+};
