@@ -67,6 +67,7 @@ export const STRID = balans('strid', {
   // raddaEmp i empati går till en vän som ligger och blöder när tiden kvar är kortare än det som är kvar av striden och ingen fiende
   // är närmare vännen än raddaFri
   tryckSjalv: 0.5, raddaEmp: 10, raddaFri: 3,
+  hjalpAvst: 4, draUndan: 1.5, // hjälparna (steg 9.5.20) håller sig så här långt från fienderna, och drar den fallne så här långt bort
   bjornBett: 3, // björnen biter med käftarna vart så här många slag som träffar, och river med ramarna annars (steg 9.5.13)
   smitta: 0.1, // så mycket de andras mod sjunker när någon ger upp (steg 8.8.8)
   pilSonder: 0.25, // så stor del av pilarna går sönder
@@ -292,6 +293,7 @@ export interface KampeStats { styrka: number; uthallighet: number; mod: number; 
 export type KampeLage = 'strid' | 'nere' | 'ger' | 'flykt' | 'borta' | 'dod';
 export interface Kampe {
   emp?: number; raddar?: number; // empatin, och den blödande vän hen är på väg till (steg 9.5.18)
+  hjalp?: true; // en hjälpare: slåss inte, väntar på avstånd och drar undan den som fallit (steg 9.5.20)
   jagar?: number; // hämnden riktar sig mot just den personen (steg 8.8.5)
   skold?: boolean; // håller en sköld (steg 8.7.3)
   id: number; namn: string; sida: 0 | 1; pid?: number; djur?: string; // pid = personen i byn, djur = arten i DJUR
@@ -464,18 +466,21 @@ function ga(st: Strid, k: Kampe, mx: number, my: number, langd: number) {
 // är kvar av striden och ingen fiende står nära vännen, drar undan hen och trycker på såret, och går sedan tillbaka in i striden
 const blodSek = (k: Kampe) => k.skador.reduce((a, w) => a + (w.ny ? SKADOR[w.k].blod * w.g * STRID.blodSek * (w.fast ? STRID.fastBlod : 1) : 0), 0);
 function raddaSteg(st: Strid, k: Kampe, dt: number) {
-  if (k.djur || (k.emp ?? 0) < STRID.raddaEmp) return false;
+  if (k.djur || !k.hjalp && (k.emp ?? 0) < STRID.raddaEmp) return false; // hjälparna går alltid till den som fallit (steg 9.5.20)
   let v = k.raddar !== undefined ? st.kampar.find(o => o.id === k.raddar) : undefined;
   if (v && (v.lage !== 'nere' || !blodSek(v))) { k.raddar = undefined; v = undefined; }
   if (!v) {
     const kvar = STRID.maxTid - st.t;
-    v = st.kampar.filter(o => o !== k && o.sida === k.sida && o.lage === 'nere' && blodSek(o) > 0 && (o.blod - HALSA.blodDod) / (blodSek(o) / STRID.tempo * STRID.tryckSjalv) < kvar
+    v = st.kampar.filter(o => o !== k && o.sida === k.sida && o.lage === 'nere' && blodSek(o) > 0 && (k.hjalp || (o.blod - HALSA.blodDod) / (blodSek(o) / STRID.tempo * STRID.tryckSjalv) < kvar) // hjälparen går till alla som fallit (steg 9.5.20)
       && !st.kampar.some(f => f.sida !== k.sida && iStrid(f) && dist(f, o) < STRID.raddaFri)).sort((a, b) => dist(k, a) - dist(k, b))[0];
     if (!v) return false;
     k.raddar = v.id; k.mal = undefined;
   }
   if (dist(k, v) > 1) { ga(st, k, v.x, v.y, farten(k) * dt); return true; }
-  for (const w of v.skador) w.ny = 0; // trycker på såren: de slutar blöda i striden
+  // drar undan hen från fienderna och trycker på såren: de slutar blöda i striden
+  const f = st.kampar.filter(o => o.sida !== k.sida && iStrid(o)).sort((a, b) => dist(a, v) - dist(b, v))[0];
+  if (f) { const d = Math.max(0.01, dist(f, v)); v.x = clamp(v.x + (v.x - f.x) / d * STRID.draUndan, 0.3, st.w - 0.3); v.y = clamp(v.y + (v.y - f.y) / d * STRID.draUndan, 0.3, st.h - 0.3); k.x = v.x; k.y = v.y; }
+  for (const w of v.skador) w.ny = 0;
   st.logg.push({ t: st.t, h: 'raddar', a: k.id, b: v.id });
   k.raddar = undefined;
   return true;
@@ -715,6 +720,11 @@ export function stridSteg(st: Strid) {
     if (k.bocker) { k.bocker -= dt; if (k.bocker <= 0) { k.bocker = undefined; plocka(st, k); } continue; }
     if (hamtaSteg(st, k, dt)) continue;
     if (raddaSteg(st, k, dt)) continue; // en blödande vän går före (steg 9.5.18)
+    if (k.hjalp) { // hjälparen slåss inte: hen väntar på avstånd från fienderna (steg 9.5.20)
+      const f = st.kampar.filter(o => o.sida !== k.sida && iStrid(o)).sort((a, b) => dist(a, k) - dist(b, k))[0];
+      if (f && dist(f, k) < STRID.hjalpAvst) { const d = Math.max(0.01, dist(f, k)); ga(st, k, clamp(k.x + (k.x - f.x) / d * 2, 0.3, st.w - 0.3), clamp(k.y + (k.y - f.y) / d * 2, 0.3, st.h - 0.3), farten(k) * dt); }
+      continue;
+    }
     const m = valjMal(st, k);
     k.mal = m?.id;
     if (!m) continue;
@@ -742,7 +752,7 @@ export function stridSteg(st: Strid) {
   }
   // striden pågår så länge båda sidor har någon som står, tills de som flyr har kommit undan och, om avsikten är att
   // döda, tills de som ligger är döda
-  const kvar = [0, 1].map(sd => st.kampar.some(k => k.sida === sd && iStrid(k)));
+  const kvar = [0, 1].map(sd => st.kampar.some(k => k.sida === sd && iStrid(k) && !k.hjalp)); // hjälparna slåss inte (steg 9.5.20)
   const ofardig = st.kampar.some(k => k.lage === 'flykt' || (avs.nere && k.lage === 'nere' && kvar[1 - k.sida]));
   if (kvar[0] && kvar[1]) st.avgjord = undefined; else st.avgjord ??= st.t; // när ena sidan inte längre har någon som slåss
   if ((!kvar[0] || !kvar[1]) && (!ofardig || st.t - (st.avgjord ?? st.t) >= STRID.efterTid) || st.t >= STRID.maxTid) {

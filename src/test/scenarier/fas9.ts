@@ -451,3 +451,21 @@ SCENARIER.roller = {
     ];
   },
 };
+
+SCENARIER.undsattning = {
+  text: 'Steg 9.5.20: undsättningen. De vuxna som inte slåss följer med som hjälpare, håller sig på avstånd från fienderna, drar undan den som fallit när ingen fiende står nära och trycker på såret; hjälparna slåss inte, och striden avgörs av kämparna',
+  kor: () => {
+    const m = (id: number, sida: 0 | 1, x: number, hjalp = false) => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 14, smidighet: 10, skicklighet: 10 }, vapen: 'kniv' as SIM.Vapen, klader: [], fart: 1, x, y: 7, ...(hjalp ? { hjalp: true as const } : {}) });
+    const st = SIM.nyStrid({ avsikt: 'skada', w: 32, h: 14, kampar: [m(1, 0, 24), m(2, 0, 18), m(3, 0, 6, true), m(4, 1, 26)] }, 5);
+    const [, fallen, h, fiende] = st.kampar;
+    fallen.lage = 'nere'; fallen.skador = [{ d: 'bal', k: 'sticksar', g: 0.8, ny: 1 }]; fallen.blod = 0.7;
+    let narmast = Infinity, raddad = false;
+    for (let i = 0; i < 400 && !st.slut; i++) { SIM.stridSteg(st); if (fiende.lage === 'strid') narmast = Math.min(narmast, Math.hypot(h.x - fiende.x, h.y - fiende.y)); if (st.logg.some(r => r.h === 'raddar' && r.a === h.id)) raddad = true; }
+    const slogs = st.logg.some(r => (r.h === 'traff' || r.h === 'miss') && r.a === h.id);
+    return [
+      [`hjälparen drar undan den fallne och trycker på såret (${raddad ? 'ja' : 'nej'})`, raddad],
+      [`hjälparen slåss inte (${slogs ? 'slogs' : 'slogs inte'})`, !slogs],
+      [`striden avgörs av kämparna, inte hjälparen (${st.slut ? 'avgjord' : 'pågår'})`, !!st.slut],
+    ];
+  },
+};

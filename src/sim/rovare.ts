@@ -483,6 +483,9 @@ export function borjaStrid(s: State, f: Rovarflock, folk: Person[]) {
   for (const p of folk) taVapen(s, p); // var och en tar det bästa lediga vapnet, sitt eget eller byns (vakt.ts)
   const kampar: Uppstallning['kampar'] = folk.map((p, i) => { const k = hemma(personKampe(s, p, i + 1, 0, p.x - ox, p.y - oy)); k.st.mod += 20 * overtygelse(s, f, p); k.fly = flyMal(s, p, ox, oy); return k; }); // övertygelsen (steg 8.8.8)
   rovarna(s, f).forEach((r, j) => { const x = r.x - ox, y = r.y - oy, l = Math.hypot(x + ox - fm.x, y + oy - fm.y) || 1; kampar.push({ ...rovarKampe(s, r, folk.length + j + 1, x, y, j === 0 && n > 1), fly: { x: x + (x + ox - fm.x) / l * 20, y: y + (y + oy - fm.y) / l * 20 }, ...(f.mal !== undefined ? { jagar: f.mal } : {}) }); }); // hämnden riktar sig mot målet (steg 8.8.5); rövarna flyr bort från förrådet
+  // hjälparna (steg 9.5.20): de som håller sig bakom kämparna nära striden är med, slåss inte men drar undan den som faller
+  const hjalpare = living(s).filter(q => q.task?.act === 'hjalpaRovare' && !folk.includes(q) && avst(q, c) < ROVARE.motR + 6);
+  hjalpare.forEach((q, j) => kampar.push({ ...personKampe(s, q, kampar.length + j + 1, 0, iArenan(q.x - ox, w), iArenan(q.y - oy, h)), hjalp: true, fly: flyMal(s, q, ox, oy) }));
   foljet(s, kampar);
   const blod: Record<number, number> = {};
   rovarna(s, f).forEach((r, j) => { if (r.blod < 1) blod[folk.length + j + 1] = r.blod; });
