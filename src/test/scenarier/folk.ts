@@ -1834,7 +1834,7 @@ SCENARIER.gjort = {
     return [
       [`räknaren: det senaste dygnet ${tre}, ett dygn senare ${tva}, efter tre dygn ${noll}, sedan ${ett}; totalt ${tot}`, tre === 3 && tva === 2 && noll === 0 && ett === 1 && tot === 4],
       [`folket räknar det de gör (${[...nycklar].join(', ')})`, nycklar.size >= 4 && ['fiskeForsok', 'trad', 'samlat'].some(k => nycklar.has(k))],
-      ['alla nycklarna finns i SKILL_STAT', [...nycklar].every(k => kanda.has(k))],
+      [`alla nycklarna finns i SKILL_STAT (utan: ${[...nycklar].filter(k => !kanda.has(k)).join(', ') || 'inga'})`, [...nycklar].every(k => kanda.has(k))],
       ['en del är aldrig fler än det den är en del av (fisk av försöken)', delar],
       [`fältens rutor minns vad som växte där innan (${fs.length} fält)`, fore],
       ['och när de sköttes och bereddes', skott && bered],

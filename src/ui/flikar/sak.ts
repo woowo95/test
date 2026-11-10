@@ -95,7 +95,7 @@ function hage(id: number) {
     <div class="phead">${iconImg('hage', 32)}<div><h2>Hage</h2></div></div>
     <dl class="kv">
       <dt>Storlek</dt><dd>${h.w} × ${h.h} rutor</dd>
-      <dt title="Gräset (rutor fulla med gräs), buskarna och ungträden som djuren kan äta">Bete</dt><dd>🌾 ${kortTal(b.gras)} · 🌿 ${b.buskar} · 🌱 ${b.unga}</dd>
+      <dt title="Gräset (rutor fulla med gräs), buskarna och ungträden som djuren kan äta">Bete</dt><dd>🍃 ${kortTal(b.gras)} · 🌳 ${b.buskar} · 🌲 ${b.unga}</dd>
       <dt title="Hur länge betet räcker för djuren som går där, utan att det växer igen">Räcker</dt><dd>${dygn === Infinity ? 'inga djur går här' : `${Math.floor(dygn)} dygn`}</dd>
       <dt>Staket</dt><dd>${hela === kant.length ? 'helt' : `${kant.length - hela} av ${kant.length} rutor saknas`}</dd>
       <dt>Djuren</dt><dd class="rader">${djur || 'inga'}</dd>

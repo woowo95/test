@@ -95,7 +95,7 @@ export const SKILL_GOR: Record<Skill, string[]> = {
 // dygnet och totalt. av = nyckeln det är en del av, så att andelen visas (hur stor del av försöken som gav fisk)
 export const SKILL_STAT: Record<Skill, { k: string; namn: string; av?: string }[]> = {
   samla: [{ k: 'samlat', namn: 'Bär och rötter samlade' }],
-  jakt: [{ k: 'jaktForsok', namn: 'Försök' }, { k: 'kanin', namn: 'Harar fångade', av: 'jaktForsok' }],
+  jakt: [{ k: 'jaktForsok', namn: 'Försök' }, { k: 'kanin', namn: 'Harar fångade', av: 'jaktForsok' }, { k: 'fagel', namn: 'Fåglar fällda' }],
   fiske: [{ k: 'fiskeForsok', namn: 'Försök' }, { k: 'fisk', namn: 'Gav fisk', av: 'fiskeForsok' }],
   ved: [{ k: 'trad', namn: 'Träd fällda' }],
   hantverk: [{ k: 'gjort', namn: 'Saker gjorda' }, { k: 'mobel', namn: 'Möbler och stationer byggda' }, { k: 'tandForsok', namn: 'Försök att tända elden' }, { k: 'tande', namn: 'Tände elden', av: 'tandForsok' }], // tändningen räknas ur hantverket (steg 3.10.8)
@@ -106,7 +106,7 @@ export const SKILL_STAT: Record<Skill, { k: string; namn: string; av?: string }[
   skaldskap: [{ k: 'upptradt', namn: 'Framträdanden' }],
   lakekonst: [{ k: 'vardat', namn: 'Vårdtillfällen' }],
   odling: [{ k: 'odlat', namn: 'Rutor skötta' }],
-  skotsel: [{ k: 'matat', namn: 'Matade djur' }],
+  skotsel: [{ k: 'matat', namn: 'Matade djur' }, { k: 'vallat', namn: 'Vallade djur' }, { k: 'klippt', namn: 'Klippta får' }, { k: 'mjolkat', namn: 'Mjölkade getter' }, { k: 'avlivat', namn: 'Avlivade djur' }, { k: 'slagit', namn: 'Slagna ängsrutor' }, { k: 'hamlat', namn: 'Hamlade björkar' }],
   handel: [{ k: 'bytt', namn: 'Byten' }, { k: 'lurade', namn: 'Lurade någon', av: 'bytt' }, { k: 'lurad', namn: 'Märkte att någon lurade', av: 'bytt' }],
 };
 

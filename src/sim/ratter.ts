@@ -131,7 +131,7 @@ export const RATT = {
   haller: 3, // en rätt av ingredienser som inte ruttnar håller så många dygn (år i spelet); annars medelvärdet av ingrediensernas (HALLER_STEG)
 };
 // i vilken ordning rätten äts (mat i saker.ts): den som håller kortast först, och en färsk rätt före den råa maten
-const rattMat = (haller: number) => Math.round(Math.max(0.3, 0.45 * haller - 0.95) * 100) / 100;
+const rattMat = (haller: number) => Math.round(Math.min(6, Math.max(0.3, 0.45 * haller - 0.95)) * 100) / 100; // högst 6: det torkade äts sist
 // rätterna som saker (saker.ts): en rad per huvudingrediens, kategori och nivå, och en som håller längre
 const NARING: Record<RattHuvud, SakDef['naring']> = {
   kott: { protein: 1.6, fett: 0.8, energi: 1.1, mineral: 0.6, vitamin: 0.6 },
