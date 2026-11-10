@@ -1,7 +1,7 @@
 import { stubbeOn } from './stubbar';
 import { tabortBuske } from './buskar';
 import { OMRADE_DELAR, bynsMitt, iByn, omrade, utanforByn } from './omrade';
-import { ALDER, ageOf, alive, count, familjOf, forstaGang, living, log } from './folk';
+import { ALDER, ageOf, alive, count, familjOf, forstaGang, gjort, living, log, ovning, stat } from './folk';
 import { FYND, richness, takeFrom } from './fynd';
 import { kunnighet } from './ekonomi';
 import { SNABBARE } from './handlingar';
@@ -54,6 +54,9 @@ export const ODLING = balans('odling', {
   rutorPerMun: 5, // (äldre) rutor per person; sedan steg 9.7.1 räknas fältets storlek ur förrådsmålen (faltBehov)
   faltForrad: 3.5, // fältet ska ge så här många gånger familjens förrådsmål för mat per skörd (steg 9.7.1) ...
   rutaMat: 3, // ... med så här mycket mat per ruta
+  skillFart: 20, // färdigheten Odling gör arbetet 1 + odling / skillFart gånger så snabbt (steg 9.7.7) ...
+  skillSkord: 40, // ... och skörden 1 + odling / skillSkord gånger så stor ...
+  skillOvning: 0.15, // ... och växer så här mycket per arbetad timme på fältet
   pMogen: 5, pRoja: 2, pBereda: 2, pSa: 3, pAvst: 0.05, // poängen för arbetet på en ruta (steg 9.7.1), minus så mycket per ruta bort
   faltMin: 16, faltMax: 64, // ... men minst och högst så här många (2 och 200 före steg 3.10.23); ett nytt fält läggs först när ägaren har frön till faltMin rutor
   sidaMin: 3, sidaMax: 12, // fältets bredd och antalet rader när det har alla rutor det ska ha (steg 3.10.23.2; högst 10 brett före)
@@ -378,7 +381,7 @@ export function faltBrist(s: State) {
 }
 
 // fart på fältet: att gräva upp jorden går fortare med benspaden
-const fart = (s: State, p: Person, st: FaltSteg) => st === 'bereda' && freeTools(s, p, 'benspade') ? ODLING.beredaSpade : 1;
+const fart = (s: State, p: Person, st: FaltSteg) => (st === 'bereda' && freeTools(s, p, 'benspade') ? ODLING.beredaSpade : 1) * (1 + (p.skill.odling ?? 0) / ODLING.skillFart); // färdigheten Odling (steg 9.7.7)
 // arbetet som är kvar på rutorna i steget st (ms), utan farten: på sådden bara så många rutor som det finns frön till
 function kvarTid(s: State, p: Person, f: Falt, st: FaltSteg) {
   let ms = 0, n = 0;
@@ -439,11 +442,13 @@ export function workOdla(s: State, p: Person, tk: Task, dtSec: number) {
     k = nastaI(s, p, f, st, k);
   }
   f.rord = s.now;
+  ovning(p, 'odling', dtSec / HOUR_S * ODLING.skillOvning * (0.4 + stat(p, 'intelligens', s.now) / 20)); // färdigheten Odling växer (steg 9.7.7)
   if (k < 0) tk.until = s.now; else tk.fr = k;
   sammanfatta(f);
 }
 // ruta k är klar i sitt steg och går till nästa (steg 9.7.1)
 function rutaKlar(s: State, p: Person, f: Falt, k: number) {
+  gjort(s, p, 'odlat', 1);
   const r = rutorAv(f)[k], nu = Math.round(s.now); (f.skott ??= [])[k] = nu; if (r.st === 'bereda') (f.bered ??= [])[k] = nu;
   if (r.st === 'roja') {
     const i = faltRuta(f, k), g = groundOf(s); g.trees[i] = 0; g.cover[i] = 0; tabortBuske(g, i); // gräs, buskar och ungskog är borta
@@ -464,7 +469,8 @@ function rutaKlar(s: State, p: Person, f: Falt, k: number) {
     if (forstaGang(s, 'skord_tecken')) tecken(s, p, 'skord'); else if (a >= 1.5) tecken(s, p, 'dubbelt'); // den första skörden och fältet som gav mycket (steg 8.5.18)
     const b = bordSkord(s, faltRuta(f, k)); utarma(s, faltRuta(f, k)); // bördigheten (steg 9.7.2)
     if (Math.abs((r.fu ?? d.fukt) - d.fukt) < 0.1 && kn(p, 'fukt') < 1) learnK(p, 'fukt', JORD.larFukt, s.now); // den som ser grödan trivas lär sig fukten (steg 9.7.3)
-    if (a > 0) { gain(s, p, d.sak, d.perRuta * a * b); gain(s, p, d.fro, froTillbaka(s, f, k, d, r.m) * a); count(s, 'skord', d.perRuta * a * b); }
+    const sk = 1 + (p.skill.odling ?? 0) / ODLING.skillSkord; // en skicklig odlare får mer (steg 9.7.7)
+    if (a > 0) { gain(s, p, d.sak, d.perRuta * a * b * sk); gain(s, p, d.fro, froTillbaka(s, f, k, d, r.m) * a); count(s, 'skord', d.perRuta * a * b * sk); }
     if (forstaGang(s, 'skordForst')) { log(s, `${p.name} skördade byns första ${d.namn.toLowerCase()}.`, 'world', [p.id]); p.fame.push(`Skördade byns första ${d.namn.toLowerCase()}`); }
     gain(s, p, 'vaxtrest', 1); // växtresterna (steg 9.7.5)
     f.r![k] = { st: 'bereda' }; // jorden grävs upp igen

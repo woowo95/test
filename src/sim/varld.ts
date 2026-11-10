@@ -279,6 +279,7 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     }
     s.stackar = (s.stackar ?? []).filter(a => a.n > 1e-9 || (a.k !== 'tjara' && a.k !== 'salva' && a.k !== 'benlim'));
   }],
+  [32, 'v522: färdigheten Odling (steg 9.7.7) börjar på noll', s => { for (const p of s.people) p.skill.odling ??= 0; }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

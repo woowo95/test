@@ -1331,3 +1331,24 @@ SCENARIER.kompost = {
     ];
   },
 };
+
+SCENARIER.odlare = {
+  text: 'Steg 9.7.7: färdigheten Odling, en ny rad i SKILLS som växer av arbetet på fältet, gör arbetet snabbare och skörden större',
+  kor: () => {
+    const { workOdla, sammanfatta, amountOf, setAmount, SKILLS, ODLING } = SIM;
+    const prov = (skill: number) => {
+      const s = createState(1, START); klockan(s, 10);
+      const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!; p.tek = { ...(p.tek ?? {}), odling: 1 }; p.skill.odling = skill;
+      const f: SIM.Falt = { id: 1, x: Math.floor(p.x) + 3, y: Math.floor(p.y), w: 4, dir: 1, n: 8, agare: p.id, steg: 'mogen', klara: 0, kvar: 0, rord: s.now, r: Array.from({ length: 8 }, () => ({ st: 'mogen' as const, g: 'rovor' as const, m: s.now })) };
+      s.falt = [f]; sammanfatta(f); setAmount(s, 'rovor', 0);
+      workOdla(s, p, { act: 'odla', tool: 'mogen', ref: f.id, fr: 0, until: s.now + SIM.HOUR, tx: p.x, ty: p.y } as unknown as SIM.Task, ODLING.skordaMin * 60 * 4);
+      return { rutor: f.r!.filter(r => r.st !== 'mogen').length, rovor: amountOf(s, 'rovor'), skill: p.skill.odling };
+    };
+    const ovan = prov(0), van = prov(20);
+    return [
+      [`Odling är en färdighet (${SKILLS.includes('odling') ? 'ja' : 'nej'}), och den växer av arbetet (0 → ${ovan.skill.toFixed(3)})`, SKILLS.includes('odling') && ovan.skill > 0],
+      [`den skicklige skördar fler rutor på samma tid (${ovan.rutor} mot ${van.rutor})`, van.rutor > ovan.rutor],
+      [`och får mer per ruta (${(ovan.rovor / Math.max(1, ovan.rutor)).toFixed(2)} mot ${(van.rovor / Math.max(1, van.rutor)).toFixed(2)})`, van.rovor / Math.max(1, van.rutor) > ovan.rovor / Math.max(1, ovan.rutor)],
+    ];
+  },
+};
