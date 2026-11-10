@@ -55,6 +55,17 @@ export function basta(per: Record<string, number>): Maltidsniva {
   for (const k in per) if (per[k] > 0 && NIVA_ORDNING.indexOf(maltidsNiva(k)) > NIVA_ORDNING.indexOf(b)) b = maltidsNiva(k);
   return b;
 }
+// variationen (steg 9.6.5): proteinet i det man åt, som ett namn (Fisk, Kött, Ägg, Ärter), eller undefined
+export function proteinAv(k: string, namn: (k: string) => string): string | undefined {
+  const r = rattInfo(k); if (r) return r.huvud === 'kott' || r.huvud === 'fisk' ? RATT_HUVUD[r.huvud].namn : undefined;
+  const i = INGREDIENSER[k]; if (!i?.grupper.includes('protein')) return undefined;
+  return i.huvud === 'kott' || i.huvud === 'fisk' ? RATT_HUVUD[i.huvud].namn : namn(k);
+}
+export const VARIATION = {
+  minns: 8, // man minns proteinet i så många måltider ...
+  trott: 6, // ... och tröttnar när lika många av dem var samma
+  tanke: -0.02, tankeTim: 6, // tanken "Fisk igen": lite, så att en ny by som lever på fisk inte mår dåligt av det
+};
 export const nivaAvGrupper = (g: Set<Matgrupp>): Maltidsniva => g.size >= 3 && g.has('smak') ? 'fin' : g.size >= 2 ? 'lagad' : 'enkel';
 
 // ---------- tillagningen och kategorierna (steg 9.6.3) ----------

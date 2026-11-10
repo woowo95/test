@@ -109,6 +109,12 @@ function eat(s: State, p: Person, fran?: Person) {
 function maltidTanke(s: State, p: Person, per: Record<string, number>) {
   const n = MALTIDSNIVA[basta(per)];
   if (n.humor > 0) { think(p, n.tanke, n.humor, s.now, RATT.tankeTim * HOUR); count(s, 'maltid_' + basta(per)); }
+  // variationen (steg 9.6.5): den som ätit samma protein för många gånger tröttnar på det
+  let mest = '', mn = 0; for (const k in per) { const pr = proteinAv(k, x => SAKER[x]?.namn ?? x); if (pr && per[k] > mn) { mest = pr; mn = per[k]; } }
+  if (mest) {
+    const m = (p.protMinne ??= []); m.push(mest); if (m.length > VARIATION.minns) m.shift();
+    if (m.filter(x => x === mest).length >= VARIATION.trott) { think(p, `${mest} igen`, VARIATION.tanke, s.now, VARIATION.tankeTim * HOUR); count(s, 'trott_pa_mat'); }
+  }
   const k = kockGlad(s, per); if (k > 0.005) think(p, 'Maten var vällagad', k, s.now, RATT.tankeTim * HOUR); // kockens hand (steg 9.6.4)
 }
 // p sitter vid bordet och äter (handlingen maltid, framme: val.ts och stationer.ts, steg 2.2.15)
@@ -687,5 +693,5 @@ export function genomfor(s: State, M: Part, G: Part, fatt: Vara[], betal: Vara[]
 // den som är skickligare lurar ibland den andra i ett byte M och G gått med på (handlaren, steg 4.5.7.4): betal kan ändras
 export const luraI = (s: State, M: Part, G: Part, betal: Vara[], utom: readonly string[], ger: number) => lura(s, M, G, betal, betalVaror(M, G, utom), ger);
 import { foodDays } from './ekonomi';
-import { MALTIDSNIVA, RATT, basta } from './ratter';
+import { MALTIDSNIVA, RATT, VARIATION, basta, proteinAv } from './ratter';
 import { kockGlad } from './matlagning';

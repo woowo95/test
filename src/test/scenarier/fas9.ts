@@ -765,3 +765,22 @@ SCENARIER.kocken = {
     ];
   },
 };
+
+SCENARIER.variation = {
+  text: 'Steg 9.6.5: variation. Var och en minns proteinet i de senaste måltiderna, och den som ätit samma protein för många gånger tröttnar och får tanken "Fisk igen", som drar ner humöret lite; den som äter omväxlande gör det inte',
+  kor: () => {
+    const { MAT, FOOD, setAmount, VARIATION } = SIM;
+    const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    const ata = (k: string) => { for (const f of FOOD) setAmount(s, f, 0); setAmount(s, k, 4); p.hunger = 0.2; MAT.anvand(s, p); };
+    p.protMinne = []; p.thoughts = [];
+    for (let i = 0; i < VARIATION.trott; i++) ata('grillfisk');
+    const igen = p.thoughts.find(t => t.text === 'Fisk igen')?.v ?? 0;
+    p.protMinne = []; p.thoughts = [];
+    for (let i = 0; i < VARIATION.trott; i++) ata(i % 2 ? 'grillfisk' : 'grillkott');
+    const blandat = !p.thoughts.some(t => t.text.endsWith(' igen'));
+    return [
+      [`den som ätit fisk ${VARIATION.trott} gånger får tanken Fisk igen (${igen})`, igen < 0 && igen > -0.05],
+      [`den som äter fisk och kött omväxlande tröttnar inte (${blandat ? 'ja' : 'nej'})`, blandat],
+    ];
+  },
+};
