@@ -28,6 +28,7 @@ export const MATLAG = balans('matlagning', {
   timme: 8, // så många av råvaran som grillas i timmen
   maxTim: 1, // ett pass vid grillen är högst så här många timmar
   min: 1, // byn grillar när det finns så mycket rått att grilla
+  passExtra: 5, // ett pass vid grillen varar så många minuter längre än maten tar
   brann: 0.3, // en helt ovan kock bränner så stor del av maten ...
   brannFull: 10, // ... och den med färdigheten Matlagning så här hög bränner inget
   ovning: 0.15, // färdigheten växer så här mycket per timme vid grillen (gånger 0,4 + intelligens / 20)
@@ -54,7 +55,7 @@ export const grillVara = (s: State) => RATTER.find(r => amountOf(s, r.ra) >= MAT
 // p kan grilla: byn har grillen, elden brinner, det finns något att grilla och ingen annan grillar
 export const kanGrilla = (s: State, p: Person) => kanGoras(s, 'grilla', p) && s.fire.lit && !!grillVara(s) && !doingAct(s, 'grilla', p);
 // hur länge ett pass vid grillen varar
-export const grillTid = (s: State) => { const r = grillVara(s); return Math.min(MATLAG.maxTim * HOUR, (r ? amountOf(s, r.ra) / MATLAG.timme : 0) * HOUR + 5 * MIN); };
+export const grillTid = (s: State) => { const r = grillVara(s); return Math.min(MATLAG.maxTim * HOUR, (r ? amountOf(s, r.ra) / MATLAG.timme : 0) * HOUR + MATLAG.passExtra * MIN); };
 // så stor del av maten p bränner
 export const brannDel = (p: Person) => MATLAG.brann * clamp(1 - (p.skill.matlagning ?? 0) / MATLAG.brannFull, 0, 1);
 
