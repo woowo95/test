@@ -178,6 +178,7 @@ export interface Jaktforsok {
 export interface Person {
   te?: { till: number; q: number };
   larmRoll?: { hot: string; roll: import('./roller').LarmRoll; v: number; t: number }; // rollen vid larmet och när den valdes (steg 9.5.19, roller.ts)
+  foder?: { f: string; till: number; hjalp?: number }; // förlossningen pågår: förloppet, när barnet föds och hjälparen (steg 9.5.29, forlossning.ts)
   krycka?: 1; // hen har en krycka till sitt brutna ben (steg 9.5.28, protes.ts)
   forbandMed?: number; ropT?: number; // remsorna i bältet och när hen senast ropade på hjälp (steg 9.5.16, halsa.ts)
   blodNotis?: 1; // notisen om att hen snart förblöder är skickad (steg 9.5.14, halsa.ts) // örtteet hjälper motståndet till dess, med teets kvalitet (steg 9.5.8, vatskor.ts)

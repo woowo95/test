@@ -596,3 +596,29 @@ SCENARIER.benbrott = {
     ];
   },
 };
+
+SCENARIER.forlossning = {
+  text: 'Steg 9.5.29: förlossningen. Födseln tar tid: modern lägger sig, förloppet dras ur registret FORLOPP, den som bäst kan hjälpa kommer, och hjälparens vård (Läkekonst, egna barn, rena händer, värme, kokt vatten och remsor) sänker riskerna; texten om förloppet står i notisen',
+  kor: () => {
+    const { borjaForlossning, birth, forlossRisk, vardKvalitet, FORLOPP, FORLOPP_LIST } = SIM;
+    const s = createState(1, START), m = SIM.living(s).find(r => r.sex === 'k' && SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    const g = SIM.living(s).find(r => r !== m && SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    m.pregnantSince = s.now - 400 * SIM.DAY; m.pregnantBy = m.partner;
+    g.x = m.x + 2; g.y = m.y;
+    borjaForlossning(s, m);
+    const foder = m.task?.act === 'foder' && !!m.foder, hjalper = SIM.living(s).some(r => r.task?.act === 'forlossa' && r.task.ref === m.id);
+    const summa = FORLOPP_LIST.reduce((a, k) => a + FORLOPP[k].p, 0);
+    // vården sänker riskerna
+    const utan = (() => { const c = SIM.cloneState(s), mm = c.people.find(r => r.id === m.id)!; mm.foder = { f: 'fel', till: c.now }; return forlossRisk(c, mm).mor; })();
+    const med = (() => { const c = SIM.cloneState(s), mm = c.people.find(r => r.id === m.id)!, gg = c.people.find(r => r.id === g.id)!; gg.skill.lakekonst = 8; mm.foder = { f: 'fel', till: c.now, hjalp: gg.id }; return forlossRisk(c, mm).mor; })();
+    const fore = s.people.length;
+    s.now = m.foder!.till; birth(s, m);
+    const fodd = s.people.length > fore || (s.stat?.dodfodda ?? 0) > 0;
+    return [
+      [`förloppen är rader med sannolikheter som blir 1 (${FORLOPP_LIST.join(', ')})`, Math.abs(summa - 1) < 1e-9],
+      [`modern lägger sig och föder (${foder ? 'ja' : 'nej'}), och en hjälpare kommer (${hjalper ? 'ja' : 'nej'})`, foder && hjalper],
+      [`en skicklig hjälpare sänker risken för modern när barnet ligger fel (${(utan * 100).toFixed(1)} % → ${(med * 100).toFixed(1)} %, vården ${vardKvalitet(s, g, m).toFixed(2)})`, med < utan],
+      [`när tiden gått föds barnet (${fodd ? 'ja' : 'nej'})`, fodd && !m.foder],
+    ];
+  },
+};

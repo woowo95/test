@@ -104,6 +104,7 @@ import { stepKrukor } from './kruka';
 import { ar_vatska, drickTe, fyllVatska, ledigFor, teFaktor } from './vatskor';
 import { rullaKvalitet } from './kvalitet';
 import { protesTimme } from './protes';
+import { borjaForlossning } from './forlossning';
 
 // Simuleringen går i slag om fem minuter (BEAT), i spelet och vid ikappräkning likadant. Inom ett slag går tiden åt
 // till det som händer i tur och ordning (taskStep). Arbetet görs i bitar om högst BIT sekunder, och man bär aldrig mer
@@ -490,7 +491,8 @@ export const gravidDel = (p: Person, now: number) => p.pregnantSince === undefin
 // graviditet: en kvinna med partner kan bli gravid; viljan styrs av hur många byn är, maten och sederna
 function pregnancy(s: State, p: Person, a: number, pop: number, dtSec: number) {
   const now = s.now;
-  if (p.pregnantSince !== undefined) { if (now - p.pregnantSince > STEG.dragtid * DAY) birth(s, p); }
+  if (p.foder) { if (now >= p.foder.till) birth(s, p); } // förlossningen tar tid (steg 9.5.29)
+  else if (p.pregnantSince !== undefined) { if (now - p.pregnantSince > STEG.dragtid * DAY) borjaForlossning(s, p); }
   else if (p.sex === 'k' && p.partner !== undefined && a >= ALDER.gravFran && a <= ALDER.gravTill && (!p.lastBirth || now - p.lastBirth > STEG.mellanFodslar * DAY)) {
     const f = birthWish(pop) * clamp(foodDays(s) / STEG.matDygn, STEG.matMin, 1) * barnMat(s, pop) * (1 + STEG.sedBarn * s.seder.v.barn);
     if (chance(s, STEG.chans * f / 86400, dtSec, 'halsa', p)) { p.pregnantSince = now; p.pregnantBy = p.partner; notis(s, 'gravid', `${p.name} väntar barn.`, [p.id]); }

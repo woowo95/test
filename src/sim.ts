@@ -121,3 +121,4 @@ export * from './sim/kruka';
 export * from './sim/vatskor';
 export * from './sim/protes';
 export * from './sim/roller';
+export * from './sim/forlossning';
