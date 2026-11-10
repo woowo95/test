@@ -9,6 +9,7 @@ import { Person } from './typer';
 export const KUNSKAPER: Record<string, { namn: string; larAv?: string; ikon?: string } | undefined> = {
   svamp: { namn: 'Skilja kantarellen från den giftiga orangea spindlingen', larAv: 'skilja kantarellen från den giftiga spindlingen' },
   motvind: { namn: 'Smyga på djuren i motvind', larAv: 'smyga på djuren i motvind' },
+  renahander: { namn: 'Rena händer: tvätta händerna och redskapen innan man vårdar ett sår', larAv: 'tvätta händerna och redskapen innan man vårdar ett sår', ikon: 'kb_sym_smitta' }, // steg 9.5.25, halsa.ts
   smitta: { namn: 'Smittan: de sjuka hålls för sig', larAv: 'hålla de sjuka för sig, eftersom sjukdomar smittar', ikon: 'kb_sym_smitta' }, // steg 9.5.5, sjukdom.ts
 };
 export const kn = (p: Person, k: string) => p.kunskap?.[k]?.v ?? 0;

@@ -150,7 +150,7 @@ export const STATIONER = {
   // med örterna och bänken med morteln, där man arbetar. Det går att arbeta vid först när alla delar står i samma rum
   ortkok: {
     delar: [{ namn: 'Härden', ikon: 'ortkok_hard', w: 1, h: 2 }, { namn: 'Torkstället', ikon: 'ortkok_tork', w: 1, h: 2 }, { namn: 'Bänken', ikon: 'ortkok_bank', w: 1, h: 2, arbete: true }],
-    kv: STATION.kvLite, namn: 'Örtkök', ikon: 'ortkok', w: 3, h: 2, tek: ['ortkok'], av: RECEPT.ortkok.av, min: RECEPT.ortkok.min, gor: ['koka_te', 'koka_salva', 'koka_tjara', 'koka_lim', 'koka_tval', 'koka_rokelse', 'koka_olja'], fart: { koka_te: STATION.redskapFart }, bara: ['koka_salva', 'koka_tjara', 'koka_lim', 'koka_tval'],
+    kv: STATION.kvLite, namn: 'Örtkök', ikon: 'ortkok', w: 3, h: 2, tek: ['ortkok'], av: RECEPT.ortkok.av, min: RECEPT.ortkok.min, gor: ['koka_vatten', 'koka_te', 'koka_salva', 'koka_tjara', 'koka_lim', 'koka_tval', 'koka_rokelse', 'koka_olja'], fart: { koka_te: STATION.redskapFart, koka_vatten: STATION.redskapFart }, bara: ['koka_salva', 'koka_tjara', 'koka_lim', 'koka_tval'],
     bygger: 'Bygger ett örtkök.', forsta: '{namn} byggde byns första örtkök. Där kokas och blandas örter, talg och annat.',
   },
   // snickarbänken (steg 9.4.4): står inne som slöjdbänken och har en sittplats. Snickaren arbetar där (seder.ts)
