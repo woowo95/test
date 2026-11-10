@@ -206,6 +206,9 @@ export function workOn(s: State, p: Person, b: Bit, dtSec: number, har = 0) {
 const stockInne = (s: State, h: Hus) => nTools(s, 'yxa') > 0 && (s.stockar ?? []).some(k => bitAt(s, Math.floor(k.x), Math.floor(k.y))?.hus === h.id);
 // en gång i timmen: det som ändå hamnat på en färdig vägg läggs bredvid (en lagerplats kan ha flyttat, steg 8.1.15)
 export function vaggRensa(s: State) {
+  // en lagerplats i ett hus som rivits finns inte längre: det som låg där bärs in som annat utanför lagret (annars kunde ett nytt hus
+  // byggas över den, och sakerna låg kvar i väggen)
+  if (zonesOf(s).some(z => z.hus !== undefined && !husById(s, z.hus))) { s.lagren = zonesOf(s).filter(z => z.hus === undefined || husById(s, z.hus)); changed(s); }
   for (const a of s.stackar ?? []) { if (isWall(s, a.x + 0.5, a.y + 0.5)) { const f = freeNear(s, a.x, a.y, true); a.x = Math.floor(f.x); a.y = Math.floor(f.y); changed(s); } }
   for (const t of tingOf(s)) { if (t.x === undefined || t.y === undefined || t.hos !== undefined || t.lass !== undefined) continue; if (isWall(s, t.x + 0.5, t.y + 0.5)) { const f = freeNear(s, t.x, t.y, true); t.x = Math.floor(f.x); t.y = Math.floor(f.y); t.vid = undefined; } }
   enPerRuta(s);
