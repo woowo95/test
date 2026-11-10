@@ -538,3 +538,18 @@ SCENARIER.infektion = {
     ];
   },
 };
+
+SCENARIER.infbalans = {
+  text: 'Steg 9.5.26: infektionens balans. Ett ovårdat bett eller sticksår infekteras i ungefär hälften av fallen, ett skärsår med en remsa nästan aldrig, och den som sköljer och vilar klarar sig nästan alltid (räknat ur risken per timme och sårets läketid)',
+  kor: () => {
+    const { HALSA, SKADOR } = SIM;
+    const p = (k: 'bett' | 'sticksar' | 'skarsar', g: number, f = 1) => 1 - Math.exp(-HALSA.infRisk * (SKADOR[k].inf ?? 1) * f * g * SKADOR[k].lakTim);
+    const bett = p('bett', 0.5), stick = p('sticksar', 0.5), remsa = p('skarsar', 0.5, HALSA.remsa), skoljt = p('bett', 0.5, HALSA.infRen * HALSA.remsa);
+    const pr = (x: number) => `${Math.round(x * 100)} %`;
+    return [
+      [`ett ovårdat bett infekteras i ${pr(bett)} och ett sticksår i ${pr(stick)} av fallen (ungefär hälften)`, bett > 0.3 && bett < 0.7 && stick > 0.3 && stick < 0.7],
+      [`ett skärsår med en remsa infekteras nästan aldrig (${pr(remsa)})`, remsa < 0.05],
+      [`ett sköljt bett med remsa infekteras sällan (${pr(skoljt)})`, skoljt < 0.05],
+    ];
+  },
+};

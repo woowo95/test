@@ -618,8 +618,8 @@ SCENARIER.vard = {
     for (let i = 0; i < 12 * STEG_TIM && !hem; i++) { step(s, BEAT); if (tk()?.act !== 'buren' && hemma(s, p)) hem = true; }
     const bars = (s.stat?.['buren hem'] as number ?? 0) > buren0;
     // man läker fortare när man vilar
-    fyll(p); skada(s, p, 'handV', 'krossar', 0.5, 'olycka', ''); p.skador![0].b = 0; timmar(p, 4); const vaken = p.skador![0].g;
-    fyll(p); skada(s, p, 'handV', 'krossar', 0.5, 'olycka', ''); p.skador![0].b = 0; p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 100 * HOUR, carry: 0, why: '' }; timmar(p, 4); const sover = p.skador![0].g;
+    fyll(p); skada(s, p, 'handV', 'krossar', 0.5, 'olycka', ''); p.skador![0].b = 0; p.skador![0].salva = 5; timmar(p, 4); const vaken = p.skador![0].g;
+    fyll(p); skada(s, p, 'handV', 'krossar', 0.5, 'olycka', ''); p.skador![0].b = 0; p.skador![0].salva = 5; p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 100 * HOUR, carry: 0, why: '' }; timmar(p, 4); const sover = p.skador![0].g;
     // mossa hittas i naturen och på ett fällt träd
     const t = { act: 'samla', phase: 'do', tx: p.x, ty: p.y, until: 0, carry: 0 } as const;
     setAmount(s, 'mossa', 0); const fynd = mossaFynd(s, { ...t }, 3600);
