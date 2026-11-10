@@ -12,6 +12,7 @@ import { knows } from './teknik';
 import { isLight } from './tid';
 import { STAKET, faltRiktning, faltSite, harStaket } from './odling';
 import { getMap } from './karta';
+import { blocked } from './byggnad';
 import { bynsMitt } from './omrade';
 import { TAM, Tamdjur, tamArt, tamdjurOf } from './tamdjur';
 
@@ -58,7 +59,7 @@ export function hageKant(s: State, h: Hage) {
 }
 export const hageHel = (s: State, h: Hage) => hageKant(s, h).every(i => harStaket(s, i));
 export const betesdjurOf = (s: State) => tamdjurOf(s).filter(d => tamArt(d.art).bete);
-export const djurIHagen = (s: State, h: Hage) => tamdjurOf(s).filter(d => d.hage === h.id);
+export const djurIHagen = (s: State, h: Hage) => tamdjurOf(s).filter(d => d.hage === h.id && d.fahus === undefined); // de som står i fähuset betar inte (steg 9.9.3)
 // betet som är kvar i hagen: gräs (summan av täcket över bar jord), buskar och ungträd
 export function hageBete(s: State, h: Hage) {
   const g = groundOf(s); let gras = 0, buskar = 0, unga = 0;
@@ -162,7 +163,7 @@ function stepBete(s: State, d: Tamdjur) {
     if (!h) { // inget att äta här: djuret strövar vidare, mot byn om det kommit för långt bort
       const m = bynsMitt(s), langt = Math.hypot(d.x - m.x, d.y - m.y) > HAGE.fri;
       const v = rnd(s, 'tamdjur') * Math.PI * 2, nx = langt ? d.x + Math.sign(m.x - d.x) : d.x + Math.round(Math.cos(v)), ny = langt ? d.y + Math.sign(m.y - d.y) : d.y + Math.round(Math.sin(v));
-      if (inMap(Math.floor(nx), Math.floor(ny)) && getMap(s.seed).tiles[Math.floor(ny) * W + Math.floor(nx)] !== T.Vatten) { d.x = nx; d.y = ny; }
+      if (inMap(Math.floor(nx), Math.floor(ny)) && !blocked(s, nx, ny)) { d.x = nx; d.y = ny; } // inte ut i vattnet eller in i en vägg
     }
     return;
   }
@@ -186,7 +187,7 @@ export function vallaVal(s: State, p: Person) {
   if (!hagarOf(s).some(h => hageHel(s, h))) return undefined;
   let b: Tamdjur | undefined, bd = TAM.mataR * 2;
   for (const d of betesdjurOf(s)) {
-    if (living(s).some(q => q !== p && q.task?.act === 'valla' && q.task.ref === d.id)) continue;
+    if (d.fahus !== undefined || living(s).some(q => q !== p && q.task?.act === 'valla' && q.task.ref === d.id)) continue; // djuren i fähuset står kvar
     const h = hageById(s, d.hage);
     if (h && !(nedbetad(s, h) && malHage(s, flocken(s, p, d).length, h))) continue;
     const dd = Math.hypot(d.x - p.x, d.y - p.y);
@@ -203,7 +204,8 @@ export function vallaKlar(s: State, p: Person, ref?: number) {
   const h = fran ? malHage(s, fl.length, fran) : (malHage(s, fl.length) ?? hagarOf(s).filter(q => hageHel(s, q)).sort((a, b) => Math.hypot(a.x - d.x, a.y - d.y) - Math.hypot(b.x - d.x, b.y - d.y))[0]);
   if (!h) return;
   const rs = hageRutor(h);
-  for (const q of fl) { const i = rs[Math.floor(rnd(s, 'tamdjur') * rs.length)]; q.hage = h.id; q.x = i % W + 0.5; q.y = Math.floor(i / W) + 0.5; }
+  const fria = rs.filter(i => !blocked(s, i % W + 0.5, Math.floor(i / W) + 0.5)), plats = fria.length ? fria : rs; // inte i ett träd eller en vägg
+  for (const q of fl) { const i = plats[Math.floor(rnd(s, 'tamdjur') * plats.length)]; q.hage = h.id; q.x = i % W + 0.5; q.y = Math.floor(i / W) + 0.5; }
   ovning(p, 'skotsel', HAGE.ovning); gjort(s, p, 'vallat'); count(s, 'vallat', fl.length);
   if (fran) count(s, 'hageFlytt');
   if (fl.length > 1) count(s, 'vallatMedHund');

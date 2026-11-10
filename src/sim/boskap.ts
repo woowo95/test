@@ -15,7 +15,7 @@ import { DAY, Person, State } from './typer';
 import { HOST, iIstiden, isLight, kalender, VAR } from './tid';
 import { hoRacker } from './slatter';
 import { fyllVatska, ledigFor } from './vatskor';
-import { TamArtId, Tamdjur, nyttTamdjur, tamAlder, tamArt, tamdjurOf } from './tamdjur';
+import { TamArtId, Tamdjur, arHona, nyttTamdjur, tamAlder, tamArt, tamdjurOf } from './tamdjur';
 
 export const BOSKAP = balans('boskap', {
   fodd: 1 / 60, // chansen i timmen på våren att en vuxen hona som inte är hungrig får ett ungt (ungefär ett vart tredje dygn)
@@ -31,8 +31,8 @@ export const BOSKAP = balans('boskap', {
 });
 // de levande djuren som handlaren säljer, och vilken art de blir
 export const LEVANDE: Record<string, TamArtId> = { levfar: 'far', levget: 'get' };
-// hona eller hane: varannan, efter id, så att byn med två djur har ett par
-export const hona = (d: Tamdjur) => d.id % 2 === 0;
+// hona eller hane: sätts när djuret kommer till byn (nyttTamdjur i tamdjur.ts), så att två djur av arten är ett par
+export const hona = arHona;
 const vuxen = (s: State, d: Tamdjur) => tamAlder(s, d) >= tamArt(d.art).vuxen;
 
 export function stepBoskap(s: State) {
@@ -83,7 +83,7 @@ function foda(s: State) {
 // ---------- att klippa fåren ----------
 // En vuxen med kniv klipper ett får vars ull vuxit ut, i dagsljus och utom i istiden; ullen blir hens (eller byns)
 export function klippVal(s: State, p: Person) {
-  if (ageOf(p, s.now) < ALDER.vuxen || getable(s, p, 'kniv') < 1 || !isLight(s.now)) return undefined;
+  if (ageOf(p, s.now) < ALDER.vuxen || getable(s, p, 'kniv') < 1 || !isLight(s.now) || iIstiden(kalender(s).ai)) return undefined; // i istiden behöver fåret ullen
   let b: Tamdjur | undefined, bd = 40;
   for (const d of tamdjurOf(s)) {
     if (d.art !== 'far' || (d.ull ?? 0) < 1 || !vuxen(s, d) || (d.agare !== undefined && d.agare !== p.id)) continue;

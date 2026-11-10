@@ -341,7 +341,7 @@ function rutPoang(s: State, p: Person, f: Falt, k: number) {
   if (r.st === 'mogen') return ODLING.pMogen * (2 - skordAndel(s, f, k));
   if (r.st === 'roja') return iVagen(s, faltRuta(f, k)) ? 0 : ODLING.pRoja;
   if (r.st === 'bereda') return ODLING.pBereda;
-  if (r.st === 'sa') return grodaRuta(s, p) ? ODLING.pSa : 0;
+  if (r.st === 'sa') return grodaRuta(s, p, faltRuta(f, k)) ? ODLING.pSa : 0; // en gröda som trivs på just den rutan (steg 9.9.3)
   return 0;
 }
 // den ruta på fälten fs som ger mest poäng, minus vägen dit (ingen slump: samma i spelet och ikappräkningen)
@@ -403,7 +403,7 @@ function nastaI(s: State, p: Person, f: Falt, st: FaltSteg, k: number) {
   for (let d = 0; d < f.n; d++) for (const j of [k + d, k - d]) {
     if (j < 0 || j >= f.n || r[j].st !== st) continue;
     if (st === 'roja' && iVagen(s, faltRuta(f, j))) continue;
-    if (st === 'sa' && !grodaRuta(s, p)) return -1;
+    if (st === 'sa' && !grodaRuta(s, p, faltRuta(f, j))) continue; // ingen gröda trivs på den här rutan: nästa
     return j;
   }
   return -1;

@@ -10,7 +10,7 @@ import { balans } from './balans';
 import { ALDER, ageOf, count, forstaGang, gjort, living, log, ovning } from './folk';
 import { getable } from './behov';
 import { amountOf, gain } from './lager';
-import { DAY, Person, State, T, W } from './typer';
+import { DAY, HOUR, Person, State, T, W } from './typer';
 import { stadium, tradArt } from './trad';
 import { utanforByn } from './omrade';
 import { heligRuta } from './kultlatt';
@@ -144,15 +144,25 @@ export function hamlaVal(s: State, p: Person): number | undefined {
   if (ageOf(p, s.now) < ALDER.vuxen || !isLight(s.now) || !lovtid(s) || !betesdjurOf(s).length) return undefined;
   for (const h of hamladeOf(s)) if (moget(s, h) && !upptagen(s, p, h.i)) return h.i;
   if (hoRacker(s) || hamladeOf(s).some(h => !moget(s, h) && s.now - h.t < DAY)) return undefined; // ett nyss hamlat träd räcker en stund
+  const i = nyBjork(s);
+  return i !== undefined && !upptagen(s, p, i) ? i : undefined;
+}
+// björken som hamlas härnäst: den närmaste vuxna björken nära byn. Samma för alla under timmen (regel 4), så att inte varje vuxen
+// söker igenom hela kartan i sitt val
+const bjorkCache = new WeakMap<State, { key: string; i?: number }>();
+function nyBjork(s: State): number | undefined {
+  const key = `${Math.floor(s.now / HOUR)}|${hamladeOf(s).length}`, c = bjorkCache.get(s);
+  if (c && c.key === key) return c.i;
   const g = groundOf(s), t = getMap(s.seed).tiles; let bast: number | undefined, bd = Infinity;
   for (let i = 0; i < g.trees.length; i++) {
-    if (g.trees[i] < 1 || tradArt(g, i).id !== 'bjork' || hamlatPa(s, i) || upptagen(s, p, i) || t[i] === T.Vatten) continue;
+    if (g.trees[i] < 1 || tradArt(g, i).id !== 'bjork' || hamlatPa(s, i) || t[i] === T.Vatten) continue;
     const st = stadium(g, i), x = i % W, y = Math.floor(i / W);
     if (st !== 'vuxet' && st !== 'gammalt') continue;
     const d = utanforByn(s, x, y);
     if (d > VINTER.hamlaR || heligRuta(s, x, y) || s.halvfallt?.[i] !== undefined) continue;
     if (d < bd) { bd = d; bast = i; }
   }
+  bjorkCache.set(s, { key, i: bast });
   return bast;
 }
 // den som hamlar är klar (KLAR i steg.ts): första gången kapas grenarna, sedan skärs skotten till lövkärvar

@@ -1762,11 +1762,11 @@ SCENARIER.tamslakt = {
 SCENARIER.mjolk = {
   text: 'Steg 9.8.8: mjölken. En vuxen get som inte är hungrig får mjölk utom i istiden; hon mjölkas i en lerkruka, och mjölken dricks av den törstige som är hemma: den släcker törsten och fyller protein',
   kor: () => {
-    const { nyttTamdjur, stepBoskap, mjolkaVal, mjolkaKlar, addTool, vatskaAv, drickDryck, naringNu, tamdjurOf, DAY, hona } = SIM;
+    const { nyttTamdjur, stepBoskap, mjolkaVal, mjolkaKlar, addTool, vatskaAv, drickDryck, naringNu, DAY } = SIM;
     const s = createState(4, START); klockan(s, 10);
     const p = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0];
-    let g = nyttTamdjur(s, 'get', p.x + 1, p.y, undefined, s.now - 3 * DAY);
-    if (!hona(g)) { s.tamdjur = tamdjurOf(s).filter(d => d !== g); g = nyttTamdjur(s, 'get', p.x + 1, p.y, undefined, s.now - 3 * DAY); }
+    const g = nyttTamdjur(s, 'get', p.x + 1, p.y, undefined, s.now - 3 * DAY);
+    g.hona = true; // en hona (den första geten i byn är annars en hane)
     const ingenKruka = !mjolkaVal(s, p);
     const kr = addTool(s, 'lerkruka_mellan', p); kr.hos = undefined;
     for (let h = 0; h < 24; h++) { g.hunger = 0; stepBoskap(s); }

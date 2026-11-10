@@ -9,7 +9,8 @@ import { balans } from './balans';
 import { count, forstaGang, log } from './folk';
 import { changed, put, stacksOf, tidy } from './lager';
 import { rnd } from './slump';
-import { State } from './typer';
+import { State, inMap } from './typer';
+import { blocked } from './byggnad';
 import { iIstiden, kalender } from './tid';
 import { bynsMitt } from './omrade';
 
@@ -32,7 +33,7 @@ export function stepHons(s: State) {
   let x = h.x + Math.cos(v) * HONS.steg, y = h.y + Math.sin(v) * HONS.steg;
   const dx = x - m.x, dy = y - m.y, d = Math.hypot(dx, dy);
   if (d > HONS.r) { x = m.x + dx / d * HONS.r; y = m.y + dy / d * HONS.r; }
-  h.x = x; h.y = y;
+  if (inMap(Math.floor(x), Math.floor(y)) && !blocked(s, x, y)) { h.x = x; h.y = y; } // inte ut i vattnet eller in i en vägg (steg 9.9.3)
   if (iIstiden(kalender(s).ai)) return;
   h.agg += h.n * HONS.agg;
   const n = Math.floor(h.agg + 1e-9);

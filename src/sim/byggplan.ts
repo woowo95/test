@@ -587,6 +587,8 @@ const omkringA: AtgardDef = {
     const under = b.fn === 'torkhus' ? torkUte(s).map(t => ({ x: t.x, y: t.y, w: storlekAv(t).w, h: storlekAv(t).h }))
       : zonesOf(s).filter(z => z.hus === undefined && vedUte(s).some(a => a.x >= z.x && a.x < z.x + z.w && a.y >= z.y && a.y < z.y + z.h)).map(z => ({ x: z.x, y: z.y, w: z.w, h: z.h }));
     if (!under.length) return [];
+    // vedboden tar lagerplatsen den byggs runt: byn måste ha en vanlig lagerplats kvar till allt annat (steg 9.9.3)
+    if (b.fn === 'vedbod' && zonesOf(s).filter(z => z.hus === undefined).length <= under.length) return [];
     // så många som får plats inom PLAN.omkringMax, räknat från det första
     const x0 = under[0].x, y0 = under[0].y, med = under.filter(q => q.x + q.w - x0 <= PLAN.omkringMax && q.y + q.h - y0 <= PLAN.omkringMax && q.x >= x0 - PLAN.omkringMax && q.y >= y0 - PLAN.omkringMax);
     const x = Math.min(...med.map(q => q.x)) - 1, y = Math.min(...med.map(q => q.y)) - 1, w = Math.max(...med.map(q => q.x + q.w)) + 1 - x, h = Math.max(...med.map(q => q.y + q.h)) + 1 - y;
