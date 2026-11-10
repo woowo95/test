@@ -52,7 +52,7 @@ export const HALSA = balans('halsa', {
   levrar: 1.5, // ... och har levrat sig efter levrar × (0,5 + graden) timmar
   // blödningens tre storlekar (steg 9.5.14): ett litet sår (grad under smaSar) levrar sig fort, ett medelstort (under storSar)
   // långsamt (medelLevrar gånger längre), och ett stort inte alls; när tiden kvar till förblödning är under kortTim syns den
-  smaSar: 0.3, storSar: 0.6, medelLevrar: 3, kortTim: 1,
+  smaSar: 0.3, storSar: 0.6, medelLevrar: 3, kortTim: 1, blodsTim: 24, // blodsTim: den som förblöder inom så många timmar blöder så att det syns i notiserna (steg 9.5.31)
   blodDod: 0.4, // under så här mycket blod förblöder man
   // blodförlusten i steg (steg 9.5.17): över blek inget; under blek blek och yr (arbetet och träffen gånger blekFaktor); under
   // slass kan man inte slåss; under kryp kan man bara krypa; under svim svimmar man och kan inte trycka på sitt sår

@@ -53,6 +53,7 @@ export * from './sim/sjo';
 export * from './sim/torst';
 export * from './sim/odling';
 export * from './sim/halsa';
+export * from './sim/halsonotiser';
 export * from './sim/naring';
 export * from './sim/vag';
 export * from './sim/gang';

@@ -652,3 +652,35 @@ SCENARIER.vardlag = {
     ];
   },
 };
+
+SCENARIER.halsonotiser = {
+  text: 'Steg 9.5.31: notiserna om hälsan. Registret HALSOTECKEN jämför kroppen varje timme: en notis när blodet sjunker ett steg, ett sår blöder igen, någon svimmar, en infektion börjar, ett ben bryts eller läker snett och en del förloras, med vem, vad och vad som behövs; och när faran är över (blödningen stoppad, infektionen borta, benet satt)',
+  kor: () => {
+    const { halsoNotiser, skada, HALSA, NOTISER, HALSOTECKEN, HALSOTECKEN_LIST } = SIM;
+    const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    const har = (id: string) => (s.notiser?.lista ?? []).find(n => n.id === id)?.rader.join(' ') ?? '';
+    halsoNotiser(s);
+    skada(s, p, 'bal', 'sticksar', 0.6, 'blod', 'i en strid');
+    p.blod = (HALSA.slass + HALSA.kryp) / 2; halsoNotiser(s);
+    const steg = har('blodsteg');
+    const w = p.skador!.find(x => x.k === 'sticksar')!;
+    w.b = 0; halsoNotiser(s); const stopp = har('blodstopp');
+    w.b = 1; halsoNotiser(s); const igen = har('blodigen');
+    p.svimmat = true; halsoNotiser(s); const svim = har('svimmat');
+    w.inf = 0.1; halsoNotiser(s); const inf = har('infborjar');
+    w.inf = undefined; halsoNotiser(s); const borta = har('infborta');
+    skada(s, p, 'benV', 'benbrott', 0.6, 'blod', 'när hen föll'); halsoNotiser(s); const brott = har('benbrott');
+    p.skador!.find(x => x.k === 'benbrott')!.satt = 1; halsoNotiser(s); const satt = har('bensatt');
+    (p.saknas ??= []).push('handV'); halsoNotiser(s); const av = har('avhuggen');
+    const rader = HALSOTECKEN_LIST.every(k => NOTISER[HALSOTECKEN[k].notis]);
+    return [
+      [`varje tecken har en rad i NOTISER (${HALSOTECKEN_LIST.join(', ')})`, rader],
+      [`blodet sjunker ett steg, med vad som behövs ("${steg}")`, steg.includes(p.name) && steg.includes('Behöver')],
+      [`blödningen stoppas ("${stopp}") och börjar igen ("${igen}")`, !!stopp && !!igen],
+      [`hen svimmar ("${svim}")`, !!svim],
+      [`en infektion börjar ("${inf}") och går över ("${borta}")`, !!inf && !!borta],
+      [`ett ben bryts ("${brott}") och sätts ("${satt}")`, !!brott && !!satt],
+      [`en del förloras ("${av}")`, !!av],
+    ];
+  },
+};
