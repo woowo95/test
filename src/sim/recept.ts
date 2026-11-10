@@ -93,6 +93,7 @@ const DEF = {
   talg: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' },
   ben: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' },
   flintspjut: { var: 'sak', av: { flinta: 1, rep: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'flintspjut', bank: 'snickarbank' },
+  nat: { var: 'sak', av: { trad: 8, rep: 1, sten: 2 }, min: 30, slag: 'stor', tek: 'nat' }, // nätet (steg 9.6.16): mycket tråd, knutet vid slöjdbänken, med stenar som sänken
   metspo: { var: 'sak', av: { rep: 1, ben: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'metspo', bank: 'snickarbank' },
   kniv: { var: 'sak', av: { flinta: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'kniv' },
   skinn: { var: 'sak', min: 5, slag: 'bearbeta', tek: 'kniv' },

@@ -186,6 +186,7 @@ const ortkokKan = (s: State) => living(s).some(p => (p.tek?.ortkok ?? 0) >= 1); 
 export const REDSKAPMAL: Record<string, (s: State) => number> = {
   spjut: spjutVill,
   metspo: spjutVill, // ett metspö per spjut
+  nat: s => Math.min(2, Math.ceil(spjutVill(s) / 3)), // ett nät på tre fiskare, högst två (steg 9.6.16)
   korg: s => perVuxna(s, VILLTAL.korgPerVuxna, VILLTAL.korgMin, VILLTAL.korgMax),
   nal: s => living(s).some(p => p.skill.lakekonst >= 2) ? 1 : 0, // en bennål när någon kan sy ett sår (steg 9.5.15)
   krycka: s => protesVill(s, 'krycka'), traben: s => protesVill(s, 'traben'), krok: s => protesVill(s, 'krok'), ogonlapp: s => protesVill(s, 'ogonlapp'), // proteserna (steg 9.5.11, protes.ts)

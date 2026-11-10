@@ -1007,3 +1007,21 @@ SCENARIER.bakfylla = {
     ];
   },
 };
+
+SCENARIER.nat = {
+  text: 'Steg 9.6.16: nätet. Ett redskap för fiske som knyts vid slöjdbänken av mycket tråd och kräver tekniken Nät (efter sländan och metspöet); med nätet får fiskaren mer än med metspöet',
+  kor: () => {
+    const { RECEPT, ACTS, handFish, STATIONER, TEK } = SIM;
+    const fanga = (rd?: SIM.RedskapDef) => {
+      const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+      let bx = 0, by = 0, br = 0; for (let i = 0; i < SIM.W * SIM.H; i++) { const r = SIM.richness(s, 'fiske', i % SIM.W, Math.floor(i / SIM.W)); if (r > br) { br = r; bx = i % SIM.W; by = Math.floor(i / SIM.W); } }
+      let n = 0; for (let k = 0; k < 40; k++) n += handFish(s, p, bx, by, 1, rd); return n; // få försök: fångsten tömmer platsen
+    };
+    const met = fanga(ACTS.fiske.redskap!.metspo), nat = fanga(ACTS.fiske.redskap!.nat);
+    return [
+      [`nätet görs av ${Object.entries(RECEPT.nat.av!).map(([k, n]) => `${n} ${k}`).join(', ')} på ${RECEPT.nat.min} minuter, bara vid slöjdbänken (${STATIONER.flatarbank.bara!.includes('nat') ? 'ja' : 'nej'})`, RECEPT.nat.av!.trad >= 6 && STATIONER.flatarbank.bara!.includes('nat')],
+      [`tekniken kräver tråd och knutar (${TEK.nat.krav.join(', ')})`, TEK.nat.krav.includes('slanda')],
+      [`med nätet får fiskaren mer än med metspöet (${nat} mot ${met} på 40 försök; napp gånger håll ${(ACTS.fiske.redskap!.nat.napp! * ACTS.fiske.redskap!.nat.hall!).toFixed(2)} mot ${(ACTS.fiske.redskap!.metspo.napp! * ACTS.fiske.redskap!.metspo.hall!).toFixed(2)})`, nat > met],
+    ];
+  },
+};

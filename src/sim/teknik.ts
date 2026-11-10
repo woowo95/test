@@ -86,6 +86,7 @@ export const TEKNIK: Tek[] = [
     omr: ['bygga'], krav: ['timmervagg'], niva: 3, tid: 6 },
   { id: 'brygga', namn: 'Brygga', text: 'Stockar på pålar ut i vattnet, där man kan stå och nå längre ut.', effekt: 'Byn kan bygga en brygga. Därifrån når man fisken längre ut, och vattnet är rent.',
     omr: ['bygga', 'fiske'], krav: ['stockvag'], niva: 4, tid: 6, forsok: { vid: ['flatarbank'], skill: 'hantverk', vad: 'hur man bygger en brygga' }, episk: '{namn} gick längre ut än någon annan och satte en stock på pålar: byns första brygga.' },
+  { id: 'nat', namn: 'Nät', text: 'Lintråd knuten i maskor till ett nät, med stenar som sänken, som läggs ut från stranden.', effekt: 'Fisken fastnar i nätet: fiskaren får mer, och braxen och sik nästan bara så.', omr: ['fiske'], krav: ['slanda', 'metspo', 'flatarbank'], niva: 4, tid: 10, forsok: { vid: ['flatarbank'], skill: 'hantverk', vad: 'hur man knyter ett nät' } }, // steg 9.6.16
   { id: 'metspo', namn: 'Metspö', text: 'Ett spö med ett rep och en krok av ben från slaktat vilt. Mask grävs fram och sätts på kroken.', effekt: 'Fisken nappar oftare och sitter kvar bättre än på spjutet.',
     omr: ['fiske'], krav: ['rep', 'fiskespjut'], niva: 2, tid: 4 },
   { id: 'kniv', namn: 'Flintkniv', text: 'En vass flintskärva med ett skaft av trä.', effekt: 'Med kniv slaktas vilt till mer kött, ben, skinn och senor.',

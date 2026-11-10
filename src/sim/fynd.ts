@@ -653,12 +653,12 @@ export function eatPoison(s: State, p: Person) {
 export const TRY_SEC = FANGST.forsokSek / SNABBARE;
 // Med fiskespjut träffar man fisken oftare och den sitter kvar på spjutet.
 // med metspö nappar fisken oftare och sitter kvar bättre på kroken (masken grävs fram i steg.ts)
-type Fiskedon = 'hand' | 'spjut' | 'metspo';
+type Fiskedon = 'hand' | 'spjut' | 'metspo' | 'nat';
 // napp och hall står i raderna för fiske i handlingar.ts: redskapets egna, annars handens
 export function handFish(s: State, p: Person, x: number, y: number, ageF: number, rd?: RedskapDef) {
   const gear: Fiskedon = rd?.don ?? 'hand', hand = ACTS.fiske.hand!, napp = rd?.napp ?? hand.napp, hall = rd?.hall ?? hand.hall;
   const st = (p.fiske ??= { f: 0, n: 0, k: 0 }), spear = gear === 'spjut';
-  st.f++; count(s, 'fiskeForsok'); gjort(s, p, 'fiskeForsok'); sjoRakna(s, x, y, 'forsok', p); if (spear) count(s, 'spjutForsok'); if (gear === 'metspo') count(s, 'metForsok');
+  st.f++; count(s, 'fiskeForsok'); gjort(s, p, 'fiskeForsok'); sjoRakna(s, x, y, 'forsok', p); if (spear) count(s, 'spjutForsok'); if (gear === 'metspo') count(s, 'metForsok'); if (gear === 'nat') count(s, 'natForsok');
   const season = ACTS.fiske.sasong![ageIndex(s)];
   if (rnd(s, 'arbete', p) >= napp * season * Math.min(FANGST.fiskRikMax, richness(s, 'fiske', x, y)) * ageF) return 0;
   st.n++; count(s, 'fiskeNapp'); sjoRakna(s, x, y, 'napp', p);

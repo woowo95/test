@@ -94,6 +94,8 @@ const DEF = {
   ben: { namn: 'Ben', ett: true, skaffa: RECEPT.ben, stack: 40, mapp: 'Material', brinnerInte: true },
   flintspjut: { namn: 'Flintspjut', hanger: 'axel', ett: true, skaffa: RECEPT.flintspjut, vikt: 5, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, grupp: 'spjut', trasig: { stat: 'spjutTrasiga', text: '{namn}s flintspjut gick sönder.' },
     gors: { text: 'Gör ett flintspjut med flinta och rep.', stat: 'flintspjutGjorda', forsta: '{namn} gjorde byns första flintspjut: en flintspets surrad med rep vid en pinne. Det håller mycket längre än ett träspjut.' } },
+  nat: { namn: 'Nät', ett: true, skaffa: RECEPT.nat, vikt: 3, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'natTrasiga', text: '{namn}s nät gick sönder.' },
+    gors: { text: 'Knyter ett nät av lintråd vid slöjdbänken.', stat: 'natGjorda', forsta: '{namn} knöt byns första fiskenät av lintråd.' } }, // steg 9.6.16
   metspo: { namn: 'Metspö', hanger: 'axel', ett: true, skaffa: RECEPT.metspo, vikt: 4, stack: 1, mapp: 'Redskap', slits: 0.0005, redskap: true, trasig: { stat: 'metspoTrasiga' },
     gors: { text: 'Gör ett metspö med en krok av ben.', stat: 'metspoGjorda', forsta: '{namn} gjorde byns första metspö, med en krok av ben.' } },
   // ett fällt djur, helt som det är (vilket djur det än är). En kanin fyller famnen, så stacken är en kanin
