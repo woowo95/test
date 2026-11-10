@@ -112,7 +112,7 @@ app.stage.on('pointertap', e => {
   else if (fireAt(gx, gy) !== undefined) { const id = fireAt(gx, gy)!; ui.eld = id ? id - 1 : undefined; visa('eld'); }
   else if (gravAt(s, c.x, c.y)) { ui.sak = `g:${c.y * W + c.x}`; visa('sak'); } // graven (steg 8.5.1)
   else if (heligAt(s, c.x, c.y)) { ui.sak = `h:${c.y * W + c.x}`; visa('sak'); } // den heliga platsen (steg 8.5.5)
-  else if (kvarAt(s, c.x, c.y)) { ui.sak = `k:${kvarAt(s, c.x, c.y)!.id}`; visa('sak'); } // det som blivit kvar av en människa (steg 8.2.3)
+  else if (kvarAt(s, c.x, c.y)) { ui.sak = `q:${kvarAt(s, c.x, c.y)!.id}`; visa('sak'); } // det som blivit kvar av en människa (steg 8.2.3)
   else if (s.stockar?.some(q => Math.floor(q.x) === c.x && Math.floor(q.y) === c.y)) { ui.sak = `v:${s.stockar.find(q => Math.floor(q.x) === c.x && Math.floor(q.y) === c.y)!.id}`; visa('sak'); } // stocken, också på ett fält, en lagerplats eller vid en station (steg 8.1.6)
   else if (stubbeAt(c.x, c.y)) { ui.sak = `u:${c.y * W + c.x}`; visa('sak'); } // stubben (steg 3.10.6)
   else if (!stationAt(s, c.x, c.y) && stolAt(c.x, c.y)) { ui.stationId = stolAt(c.x, c.y)!.id; visa('station'); } // stolen vid bänken eller bordet (steg 6.8.10), också på en lagerplats (steg 9.2.13)

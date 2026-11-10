@@ -12,7 +12,7 @@ import { skaffasRader } from '../skaffas';
 // takten, vem som gjorde den och när, och kvaliteten (steg 2.2.2).
 // Det som går att trycka på har data-sak: "t:<tingets id>" för ett redskap eller plagg, "s:<x>,<y>,<slag>" för en stack.
 // En toa-hög på kartan (steg 2.10.5) öppnas som "f:<rutan>" och har en egen inforuta (toaHog)
-// Ett slag i förrådet (listan till vänster, steg 5.3.5.2) öppnas som "k:<slaget>" (slagIForradet)
+// Kvarlevorna efter en människa (steg 8.2.3) öppnas som "q:<id>" (kvarleva). Ett slag i förrådet (listan till vänster, steg 5.3.5.2) öppnas som "k:<slaget>" (slagIForradet)
 // En stubbe (steg 3.10.6) öppnas som "u:<rutan>" (stubbe), ett träd (steg 5.1.4.3) som "r:<rutan>" (trad) och en buske (steg 6.5.3) som "b:<rutan>"
 export const sakKey = (a: { id?: number; x?: number; y?: number; k: string }) => a.id !== undefined ? `t:${a.id}` : `s:${a.x},${a.y},${a.k}`;
 export const sakAttr = (a: { id?: number; x?: number; y?: number; k: string }) => `data-sak="${sakKey(a)}"`;
@@ -200,7 +200,7 @@ export const sak: Flik = {
     if (ui.sak.startsWith('f:')) return toaHog(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('u:')) return stubbe(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('H:')) return hage(Number(ui.sak.slice(2)));
-    if (ui.sak.startsWith('k:')) return kvarleva(Number(ui.sak.slice(2)));
+    if (ui.sak.startsWith('q:')) return kvarleva(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('g:')) return grav(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('h:')) return heligPlats(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('r:')) return trad(Number(ui.sak.slice(2)));
