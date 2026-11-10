@@ -1493,3 +1493,22 @@ SCENARIER.rollekavild = {
     ];
   },
 };
+
+SCENARIER.ortkruka = {
+  text: 'Steg 9.7.16: örter i krukor. Örterna odlas inte på fälten utan i lerkrukor vid husen (kolumnen plats i GRODOR), och krukorna är också pynt',
+  kor: () => {
+    const { stepOrtKrukor, addTool, setAmount, amountOf, GRODOR, grodorNu } = SIM;
+    const s = createState(1, START); s.kal = SIM.nyKalender(s.now, 2);
+    const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!; p.tek = { ...(p.tek ?? {}), odling: 1 };
+    const kr = addTool(s, 'lerkruka_liten', p); kr.hos = undefined; kr.x = Math.floor(p.x); kr.y = Math.floor(p.y);
+    setAmount(s, 'rolleka', 1);
+    stepOrtKrukor(s);
+    const satt = kr.vaxt?.g === 'rolleka' && amountOf(s, 'rolleka') === 0;
+    for (let h = 0; h < 24 * 4 && amountOf(s, 'rolleka') < 1; h++) { s.now += SIM.HOUR; stepOrtKrukor(s); }
+    return [
+      [`röllekan odlas i kruka (${GRODOR.rolleka.plats}) och sås aldrig på fältet (${grodorNu(s).includes('rolleka') ? 'på fältet' : 'inte på fältet'})`, GRODOR.rolleka.plats === 'kruka' && !grodorNu(s).includes('rolleka')],
+      [`den som kan odla sätter röllekan i sin lediga kruka (${satt ? 'ja' : 'nej'})`, satt],
+      [`den växer och plockas, och växer igen (${amountOf(s, 'rolleka')} rölleka, ${(kr.vaxt?.v ?? 0).toFixed(2)} vuxen)`, amountOf(s, 'rolleka') >= 1 && !!kr.vaxt],
+    ];
+  },
+};

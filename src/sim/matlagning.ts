@@ -260,7 +260,7 @@ export function kokRecept(s: State, p?: Person): KokRecept | undefined {
 // medelvärdet av ingrediensernas hållbarhet, efter mängden (dygn)
 export const hallerMedel = (ing: [string, number][]) => { let h = 0, n = 0; for (const [k, m] of ing) { h += (SAKER[k]?.haller ?? RATT.haller) * m; n += m; } return n ? h / n : 0; };
 // en mellanstor lerkruka som är färdig, tom, inte bärs och inte står på elden
-export const ledigKruka = (s: State) => tingOf(s).find(t => t.k === 'lerkruka_mellan' && t.ler === undefined && !t.inne && !t.kok && t.hos === undefined && t.c > 0);
+export const ledigKruka = (s: State) => tingOf(s).find(t => t.k === 'lerkruka_mellan' && t.ler === undefined && !t.inne && !t.kok && !t.vaxt && t.hos === undefined && t.c > 0);
 // krukorna som står på elden
 export const kokarNu = (s: State) => tingOf(s).filter(t => t.kok);
 const rattAntal = (s: State) => RATT_SAKER.reduce((n, k) => n + amountOf(s, k), 0) + kokarNu(s).reduce((n, t) => n + t.kok!.n, 0);

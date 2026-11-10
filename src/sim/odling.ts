@@ -87,7 +87,7 @@ export const ODLING = balans('odling', {
 // grödorna (steg 2.10.3): sak = det som skördas (saker.ts), fro = fröna den sås med, dygn = hur länge den växer innan den är
 // mogen, perRuta = skörden per ruta, fron = frön tillbaka per ruta i snitt (rovorna äts hela, så de ger få; varje ruta ger hela
 // frön, froTillbaka), frost = den dör när det blir kallare än så här
-export interface GrodaDef { namn: string; sak: string; fro: string; dygn: number; perRuta: number; fron: number; frost: number; tek?: string; fukt: number; bord?: number; varm?: [number, number]; flerarig?: true; ater?: number } // ater = hur långt den fleråriga börjar växa igen efter skörden (annars ODLING.flerAter) // flerarig = skördas flera gånger och vilar under istiden (steg 9.7.9) // fukt = den fukt grödan växer bäst i (steg 9.7.3); bord = bördigheten den behöver för att växa alls, varm = temperaturerna den växer bäst i (steg 9.7.8) // tek = tekniken som krävs utöver odlingen
+export interface GrodaDef { namn: string; sak: string; fro: string; dygn: number; perRuta: number; fron: number; frost: number; tek?: string; fukt: number; bord?: number; varm?: [number, number]; flerarig?: true; ater?: number; plats?: 'falt' | 'kruka' | 'lada' } // plats = var grödan odlas (steg 9.7.16): på fältet (utan värde), i en lerkruka eller i en blomlåda vid huset // ater = hur långt den fleråriga börjar växa igen efter skörden (annars ODLING.flerAter) // flerarig = skördas flera gånger och vilar under istiden (steg 9.7.9) // fukt = den fukt grödan växer bäst i (steg 9.7.3); bord = bördigheten den behöver för att växa alls, varm = temperaturerna den växer bäst i (steg 9.7.8) // tek = tekniken som krävs utöver odlingen
 export const GRODOR = {
   rovor: { namn: 'Rovor', sak: 'rovor', fro: 'rovfron', dygn: 3, perRuta: 3, fron: 1.5, frost: -6, fukt: 0.45 }, // snabba och härdiga; 1 eller 2 frön per ruta (steg 3.10.23.3); dygn 2 och perRuta 5 före steg 3.10.23.5; frost -3 före steg 2.12.2
   // ärterna har kornets tal och plats (steg 3.10.23.8; korn kommer tillbaka som säd från handlarna i steg 11.4.2)
@@ -99,6 +99,7 @@ export const GRODOR = {
   jordgubbar: { namn: 'Jordgubbar', sak: 'jordgubbar', fro: 'jordgubbsplanta', dygn: 3, perRuta: 2, fron: 0, frost: -30, fukt: 0.55, flerarig: true }, // steg 9.7.9: planteras en gång och ger igen
   appeltrad: { namn: 'Äppelträd', sak: 'appel', fro: 'appelplanta', dygn: 20, perRuta: 4, fron: 0, frost: -40, fukt: 0.5, flerarig: true, ater: 0.85 }, // steg 9.7.13: bär först efter många år, sedan varje år i generationer
   hassel: { namn: 'Hassel', sak: 'notter', fro: 'notter', dygn: 15, perRuta: 3, fron: 0, frost: -40, fukt: 0.45, flerarig: true, ater: 0.85 }, // steg 9.7.14: nötterna plockas en gång om året
+  rolleka: { namn: 'Rölleka', sak: 'rolleka', fro: 'rolleka', dygn: 3, perRuta: 2, fron: 0, frost: -30, fukt: 0.5, flerarig: true, plats: 'kruka' }, // steg 9.7.16: örterna i krukor vid husen, inte på fälten
   korn: { namn: 'Korn', sak: 'korn', fro: 'korn', dygn: 4, perRuta: 3, fron: 1, frost: -4, fukt: 0.45, tek: 'sadesodling' }, // säden från handlarna (steg 9.6.11): kornet är sitt eget utsäde // håller länge; dygn 3, perRuta 4 och fron 6 före steg 3.10.23; frost -1 före steg 2.12.2
 } satisfies Record<string, GrodaDef>;
 export type GrodaSlag = keyof typeof GRODOR;
@@ -215,7 +216,7 @@ function dygnTillIstid(s: State) {
 // mycket byn saknar av den, för de grödor som hinner mogna före istiden (ärterna med större marginal) och som någon kan odla
 export function grodorNu(s: State): GrodaSlag[] {
   const d = dygnTillIstid(s), folk = Math.max(1, living(s).length);
-  const kan = (Object.keys(GRODOR) as GrodaSlag[]).filter(g => ((GRODOR[g] as GrodaDef).flerarig && d > 0 || d >= GRODOR[g].dygn + (g === 'arter' ? ODLING.artMarg : ODLING.rovMarg)) && /* en flerårig gröda vilar över istiden (steg 9.7.9) */ (!(GRODOR[g] as GrodaDef).tek || living(s).some(p => knows(p, (GRODOR[g] as GrodaDef).tek!))));
+  const kan = (Object.keys(GRODOR) as GrodaSlag[]).filter(g => ((GRODOR[g] as GrodaDef).plats ?? 'falt') === 'falt' && ((GRODOR[g] as GrodaDef).flerarig && d > 0 || d >= GRODOR[g].dygn + (g === 'arter' ? ODLING.artMarg : ODLING.rovMarg)) && /* en flerårig gröda vilar över istiden (steg 9.7.9) */ (!(GRODOR[g] as GrodaDef).tek || living(s).some(p => knows(p, (GRODOR[g] as GrodaDef).tek!))));
   const poang = (g: GrodaSlag) => GRODOR[g].perRuta * grundvarde(GRODOR[g].sak) * clamp(1 - amountOf(s, GRODOR[g].sak) / (folk * ODLING.villPer), 0.1, 1);
   return kan.map(g => ({ g, p: poang(g) })).sort((a, b) => b.p - a.p || a.g.localeCompare(b.g)).map(x => x.g);
 }
