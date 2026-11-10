@@ -511,6 +511,7 @@
   const MORK = P.cols.map(c => P.av(blanda(c.hex, SVART, 0.4)));
   const GLOD = P.cols.map(c => P.av(blanda(c.hex, '#f0a050', 0.3)));
   const ZONFARG = { oron: 'rost2', 'oga-v': 'skiffer3', 'oga-h': 'skiffer3', mun: 'rost3', skalle: 'senap2', lugg: 'oliv2', sidor: 'barr3' };
+  const ANSIKTE_LAGER = new Set(['huvud', 'oron', 'ogon', 'ogonfransar', 'ogonbryn', 'nasa', 'mun', 'lappar']);
   function portratt(p, opt = {}) {
     const m = MALL[mallAv(p)], G = geo(m, p), del = effektiva(p), W = 64;
     const kt = new Array(W * W).fill(null), ag = new Array(W * W).fill(null);
@@ -555,6 +556,8 @@
     for (let k = 0; k < W; k++) for (const [x, y] of [[k, 0], [k, 1], [k, W - 2], [k, W - 1], [0, k], [1, k], [W - 2, k], [W - 1, k]]) ut.satt(x, y, P.i('jord', 0));
     for (const [a, b] of [[0, 0], [W - 2, 0], [0, W - 2], [W - 2, W - 2]]) for (let k = 0; k < 4; k++) ut.satt(a + (k & 1), b + (k >> 1), P.i('rost', 1));
     tempRam(ut, temperatur(p), i => !fig(i));
+    // ansiktets punkter (skallen, ögonen, näsan, munnen, öronen), för kontrollen att inget det man bär går över ansiktet
+    ut.ansikte = Uint8Array.from(ag, L => ANSIKTE_LAGER.has(L) ? 1 : 0);
     return ut;
   }
 
@@ -723,6 +726,8 @@
       satt(xx, y, 'hud', 'huvud');
     }
     if (rikt === 'sida') satt(11, h + 3, 'hud', 'huvud');
+    // huvudets punkter, för kontrollen att inget det man bär går genom huvudet (bildstil/kontroll.js)
+    const huvudZ = zn.map(z => z === 'huvud');
     // tonerna: ljus till vänster i varje zon, skugga till höger
     for (let i = 0; i < kt.length; i++) {
       if (!kt[i] || /\d$/.test(kt[i])) continue;
@@ -731,7 +736,7 @@
     }
     const slutna = opt.slutna || ['sover', 'dod'].includes(p.humor);
     if (rikt !== 'bak') for (const [ox, oy] of SORT.oga.kartbild[rikt]) satt((rikt === 'sida' ? 5 : 4) + ox, h + oy, slutna ? 'hud1' : 'oga0');
-    if (opt.bara) return kartUt(p, kt, W, H, spegel, opt);
+    if (opt.bara) return kartUt(p, kt, W, H, spegel, opt, huvudZ);
     // skägget
     const sk = del.skagg ? DEL[del.skagg].karta : null;
     if (sk && rikt === 'fram') {
@@ -814,7 +819,7 @@
       }
     }
     // efter: den som ritar något annat än en bybo (rövaren, 6.2.5.x) får ändra figuren sist, med samma satt och måtten
-    const ut = kartUt(p, kt, W, H, spegel, opt);
+    const ut = kartUt(p, kt, W, H, spegel, opt, huvudZ);
     ut.hand = hand && (spegel ? [W - 1 - hand[0], hand[1]] : hand); // handen, till det som hålls (animationerna i anim.js)
     // kroppsdelen under varje punkt (huvud, bal, armar, hand, ben, fotter, balte; null för hår, ögon och redskap), till
     // spelets panel som färgar de skadade delarna (steg 5.3.4.3). Bara stående och inte liggande
@@ -830,13 +835,13 @@
     return v.length - 1;
   }
   // speglingen, den liggande figuren och täcket, konturen och färgerna
-  function kartUt(p, kt, W, H, spegel, opt) {
-    let ut = { w: W, h: H, kt };
-    if (spegel) ut.kt = kt.map((_, i) => kt[((i / W) | 0) * W + (W - 1 - (i % W))]);
+  function kartUt(p, kt, W, H, spegel, opt, huvudZ = []) {
+    let ut = { w: W, h: H, kt, hz: huvudZ };
+    if (spegel) { ut.kt = kt.map((_, i) => kt[((i / W) | 0) * W + (W - 1 - (i % W))]); ut.hz = kt.map((_, i) => huvudZ[((i / W) | 0) * W + (W - 1 - (i % W))]); }
     if (opt.ligga) {
-      const n = new Array(W * H).fill(null);
-      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) n[x * H + (H - 1 - y)] = ut.kt[y * W + x];
-      ut = { w: H, h: W, kt: n };
+      const n = new Array(W * H).fill(null), nh = new Array(W * H).fill(false);
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { n[x * H + (H - 1 - y)] = ut.kt[y * W + x]; nh[x * H + (H - 1 - y)] = ut.hz[y * W + x]; }
+      ut = { w: H, h: W, kt: n, hz: nh };
       if (opt.tacke) for (let y = 1; y <= 12; y++) for (let x = 0; x <= 13; x++) ut.kt[y * H + x] = 'ben' + (y === 1 || x === 13 ? 3 : y === 12 ? 1 : 2);
     }
     const kont = ut.kt.slice();
@@ -846,6 +851,7 @@
     }
     const F = fargerFor(p, opt.gratt), B = Bild(ut.w, ut.h, P);
     for (let i = 0; i < kont.length; i++) if (kont[i]) B.px[i] = F(kont[i]);
+    B.huvud = Uint8Array.from(ut.hz, v => v ? 1 : 0);
     return B;
   }
   // figuren på gräset, med två punkters marginal

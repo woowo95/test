@@ -1071,6 +1071,8 @@ function byggVal(P) {
     const ta = kort.querySelector('textarea'); ta.dataset.sak = s.id;
     ta.addEventListener('change', () => spara(s.id, { kommentar: ta.value.trim() }));
     lista.append(kort);
+    // kontrollerna och sammanhanget (kontroll.js), samma för allt som ritas, oavsett varifrån
+    if (window.KONTROLL) setTimeout(() => window.KONTROLL.visa(s, kort, P), 0);
   }
   visaSvar();
   if (SISTA_RITNINGAR) window.VAL_RITNINGAR(SISTA_RITNINGAR);
