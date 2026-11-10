@@ -432,7 +432,7 @@ const tandKey = (k: Tand, i: number) => `${k === 'torrgras' ? 'ho' : 'kvist'}:${
 export function tandPaRutan(s: State, k: Tand, x: number, y: number): number {
   if (x < 0 || y < 0 || x >= W || y >= H) return 0;
   const g = groundOf(s), i = y * W + x, t = g.tiles[i];
-  if (t === T.Vatten || t === T.Sten) return 0;
+  if (t === T.Vatten || t === T.Sten || isWall(s, x + 0.5, y + 0.5)) return 0; /* inget hö och inga kvistar under en vägg */
   const ai = ageIndex(s);
   const bas = k === 'torrgras'
     ? (t === T.Gras || t === T.Skog ? Math.floor(ELD.hoSaker * ARSTID.hoPerTid[ai] * Math.min(1, g.cover[i]) + 1e-9) : 0)

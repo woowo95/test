@@ -924,6 +924,7 @@ SCENARIER.omrade = {
 };
 
 SCENARIER.strak = {
+  lang: true,
   text: 'Gångstråken (steg 6.2.5): från rutan utanför varje dörr går den kortaste vägen till elden, lagren, vattnet och torget (inte latrinen, steg 9.2.99), och där ställs inget nytt: inga stationer, lagerplatser eller fält, och hus bara om stråket kan dras om med högst 3 rutors omväg',
   kor: () => {
     const s = createState(9, START);
