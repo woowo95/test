@@ -2,15 +2,16 @@
 //
 //   node bildstil/api/bilder.mjs torrt [sort|id …]   bygger frågorna utan att skicka dem och uppskattar kostnaden
 //   node bildstil/api/bilder.mjs rita [sort|id …]    ritar det som inte är ritat: tre idéer i ord, varje version ritad för
-//                                                    sig efter sin idé, kontrollerna (bildstil/kontroll.js) och API:t väljer den bästa
-//   node bildstil/api/bilder.mjs tre [id …]          samma ritning, men alla tre versionerna (efter en granskning i sitt sammanhang)
-//                                                    sparas i bilder/<id>.json och blir ett kort i bildstilens valdel, där Björn väljer
+//                                                    sig efter sin idé, kontrollerna (bildstil/kontroll.js) och en granskning i
+//                                                    sitt sammanhang; alla tre sparas i bilder/<id>.json och blir ett kort i
+//                                                    bildstilens valdel, där Björn väljer (API:t väljer aldrig åt honom)
+//   node bildstil/api/bilder.mjs tre [id …]          samma sak som rita
 //   node bildstil/api/bilder.mjs valj <id> <nr>      bygger in version nr som Björn valt på kortet bild_<id>
 //   rita kan blanda: node bildstil/api/bilder.mjs rita sak-mat ved="lite ljusare bark"  — en bild med = ritas om med
 //   kommentaren (tom: Björn sa nej utan att skriva varför)
 //
 // Förebilden av API:t (beslut, Björn efter v286): den första raden i varje sort i registret (bildstil/bilder.json) är
-// förebilden. Den ritas först, med bästa av tre, och som underlag får API:t bildstilens guide, paletten och de godkända
+// förebilden. Den ritas först, i tre versioner som Björn väljer bland, och som underlag får API:t bildstilens guide, paletten och de godkända
 // bilderna (scenen i dagsljus). Resten av sorten ritas först när Björn godkänt förebilden (godkand på raden, som
 // programmeringschatten sätter efter Björns svar), och då efter den. Säger Björn nej två gånger till samma förebild ritar
 // programmeringschatten den. Det som ritas sparas i bildstil/bilder/<id>.json (med den förra ritningen i forra, så att
@@ -325,7 +326,7 @@ try {
     for (const b of bilder) console.log(`${b.id}: ${kommentarer[b.id] ? 'kommentar: ' + kommentarer[b.id] : 'ny bild'}`);
     for (const v of vantar) console.log(v);
     if (!bilder.length) { console.log('Inget att rita.'); process.exit(0); }
-    const fore = uppskattning(bilder.length, kommando === 'tre' || args.includes('--tre'));
+    const fore = uppskattning(bilder.length, true);
     console.log(`Att rita: ${bilder.map(b => b.id + (forebildAv(b.sort).id === b.id ? ' (förebild)' : '')).join(', ')}`);
     console.log(`Uppskattat före: ${fore.text}`);
     if (kommando === 'torrt') {
@@ -337,7 +338,7 @@ try {
       fs.writeFileSync(path.join(UT, 'bildfraga.json'), JSON.stringify({ ...f, params: { ...f.params, messages: f.params.messages.map(m => ({ ...m, content: m.content.map(c => c.type === 'image' ? { type: 'image', bild: `${c.source.data.length} tecken base64` } : c) })) } }, null, 1));
       console.log(`En fråga (utan bilderna) står i ${path.relative(process.cwd(), path.join(UT, 'bildfraga.json'))}.`);
     } else {
-      const client = klient(), tre = kommando === 'tre';
+      const client = klient(), tre = true; // tre versioner till valdelen; API:t väljer inte den bästa (Björn efter bildstil v236)
       const lage = {}, opts = b => kommentarer[b.id] ? { kommentar: kommentarer[b.id], forra: lasBild(b.id), lage: lage[b.id] } : { lage: 'nya' };
       for (const b of bilder) lage[b.id] = lageAv(kommentarer[b.id], lasBild(b.id));
       let summa = 0;
