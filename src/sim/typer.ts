@@ -181,6 +181,7 @@ export interface Person {
   foder?: { f: string; till: number; hjalp?: number }; // förlossningen pågår: förloppet, när barnet föds och hjälparen (steg 9.5.29, forlossning.ts)
   krycka?: 1; // hen har en krycka till sitt brutna ben (steg 9.5.28, protes.ts)
   forbandMed?: number; ropT?: number; // remsorna i bältet och när hen senast ropade på hjälp (steg 9.5.16, halsa.ts)
+  rus?: number; supit?: number; // berusningen nu och det man supit på sistone (steg 9.6.14, rus.ts)
   protMinne?: string[]; // proteinet i de senaste måltiderna (steg 9.6.5, behov.ts)
   hn?: Record<string, number>; hnBlodat?: 1; // hälsans tecken förra timmen och att hen blött (steg 9.5.31, halsonotiser.ts)
   blodNotis?: 1; // notisen om att hen snart förblöder är skickad (steg 9.5.14, halsa.ts) // örtteet hjälper motståndet till dess, med teets kvalitet (steg 9.5.8, vatskor.ts)

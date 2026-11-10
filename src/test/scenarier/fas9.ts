@@ -963,3 +963,26 @@ SCENARIER.ol = {
     ];
   },
 };
+
+SCENARIER.rus = {
+  text: 'Steg 9.6.14: berusningen. Ett tillstånd i hälsosystemet som sänker förmågorna mer ju mer man druckit (gången, handlaget, smidigheten och träffsäkerheten) och går över med tiden; den som dricker mycket under lång tid får sämre hälsa',
+  kor: () => {
+    const { drickAlkohol, rusSteg, rorlighet, handighet, personKampe, addTool, fyllVatska, RUS } = SIM;
+    const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    const kr = addTool(s, 'lerkruka_stor', p); kr.hos = undefined; fyllVatska(s, 'vin', 10, kr);
+    const g0 = rorlighet(p), h0 = handighet(p), k0 = personKampe(s, p, 1, 0, 0, 0).st;
+    drickAlkohol(s, p, 'vin'); const g1 = rorlighet(p);
+    drickAlkohol(s, p, 'vin'); drickAlkohol(s, p, 'vin');
+    const g3 = rorlighet(p), h3 = handighet(p), k3 = personKampe(s, p, 1, 0, 0, 0).st;
+    for (let i = 0; i < 12 * 12; i++) rusSteg(s, p, 300, false);
+    const over = !p.rus && rorlighet(p) === g0;
+    p.supit = RUS.skadligt + 2; p.health = 1; for (let i = 0; i < 12; i++) rusSteg(s, p, 300, false);
+    return [
+      [`den berusade går långsammare, mer ju mer hen druckit (${g0.toFixed(2)} → ${g1.toFixed(2)} → ${g3.toFixed(2)})`, g1 < g0 && g3 < g1],
+      [`och arbetar sämre (${h0.toFixed(2)} → ${h3.toFixed(2)})`, h3 < h0],
+      [`och träffar sämre och är mindre smidig i striden (skicklighet ${k0.skicklighet.toFixed(1)} → ${k3.skicklighet.toFixed(1)}, smidighet ${k0.smidighet.toFixed(1)} → ${k3.smidighet.toFixed(1)})`, k3.skicklighet < k0.skicklighet && k3.smidighet < k0.smidighet],
+      [`ruset går över på ett halvt dygn (${over ? 'ja' : 'nej'})`, over],
+      [`den som supit mycket länge får sämre hälsa (${p.health.toFixed(3)})`, p.health < 1],
+    ];
+  },
+};

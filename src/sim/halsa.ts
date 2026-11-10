@@ -239,7 +239,7 @@ export const uppdateraSinnen = (p: Person) => { const v = (syn(p) + horsel(p) + 
 // skadade ben och fötter: gången gånger detta, aldrig under GANG.rorGolv (steg 3.10.10)
 export const rorlighetSkador = (p: Person) => forlust(p, 'rorlighet');
 // gången gånger detta (steg.ts): skadorna och yrseln av brist på mineraler (steg 2.6.2)
-export const rorlighet = (p: Person) => forlust(p, 'rorlighet') * yrselFaktor(p) * (1 - HALSA.ontGang * smarta(p)); // smärtan drar också ner gången (steg 9.5.12)
+export const rorlighet = (p: Person) => forlust(p, 'rorlighet') * yrselFaktor(p) * (1 - HALSA.ontGang * smarta(p)) * rusFaktor(p); // och ruset (steg 9.6.14) // smärtan drar också ner gången (steg 9.5.12)
 // den som har ett ben eller en fot som är för skadad kan inte gå, utan kravlar (steg 2.5.2)
 export const GADELAR: readonly Kroppsdel[] = [...BEN, ...FOTTER]; // delarna man går med
 // ett förlorat ben eller en fot: man går ändå, sämre, så länge det andra benet och den andra foten håller. Den som svimmat går inte
@@ -247,7 +247,7 @@ export const kanGa = (p: Person) => !p.svimmat && blodSteg(p) < 3 && (!harFel(p)
 export const hemma = (s: State, p: Person) => utanforByn(s, Math.floor(p.x), Math.floor(p.y)) <= HALSA.hemma;
 const infektion = (p: Person) => { let v = 0; for (const w of p.skador ?? []) v = Math.max(v, w.inf ?? 0); return v; };
 // arbetet gånger detta (workRate i ekonomi.ts): skadorna och styrkan, som sjunker av brist på protein och mineraler (steg 2.6.2)
-export const handighet = (p: Person) => forlust(p, 'handighet') * styrkaFaktor(p) * medArbete(p) * blodFaktor(p) * ((p.skador ?? []).some(w => w.spala && (ARMAR.includes(w.d) || HANDER.includes(w.d))) ? HALSA.spalaHand : 1); // den spjälade armen halverar händigheten (steg 9.5.28) // den som är blek och yr arbetar sämre (steg 9.5.17)
+export const handighet = (p: Person) => forlust(p, 'handighet') * styrkaFaktor(p) * medArbete(p) * blodFaktor(p) * rusFaktor(p) * ((p.skador ?? []).some(w => w.spala && (ARMAR.includes(w.d) || HANDER.includes(w.d))) ? HALSA.spalaHand : 1); // den spjälade armen halverar händigheten (steg 9.5.28) // den som är blek och yr arbetar sämre (steg 9.5.17)
 // medvetandet (steg 8.2.5), 0–1: smärtan, blodet, febern av en infektion, tröttheten, törsten, svälten och skador i huvudet
 export const medDelar = (p: Person) => {
   const blod = 1 - (p.blod ?? 1), ut: { namn: string; v: number }[] = [];
@@ -712,3 +712,4 @@ export function mossaFynd(s: State, tk: Task, dtSec: number) {
 export function mossaPaStam(s: State, p: Person, k: Stock) {
   if (rnd(s, 'arbete', p) < HALSA.mossaTrad) k.mossa = HALSA.mossaStam;
 }
+import { rusFaktor } from './rus';

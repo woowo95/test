@@ -912,7 +912,7 @@ export function personKampe(s: State, p: Person, id: number, sida: 0 | 1, x: num
   const reserv = res && (p.reservAlltid || (harBalte(s, p) && paSigVikt(s, p) + viktOf(res) <= capacity(s, p) * UTRUSTNING.kropp)) ? res : undefined;
   return {
     emp: stat(p, 'empati', s.now), id, namn: p.name, sida, pid: p.id, blod0: p.blod, vapen, reserv, ledare: ledareOf(s) === p ? ledarPlats(s, p) : undefined, skold: bar.includes('skold') && !TVA_HAND.has(vapen) ? true : undefined, klader: [...new Set(paSig(s, p).map(q => q.k))].filter(k => SKYDD[k]), fart: 1, x, y, tung: clamp(paSigVikt(s, p) / UTRUSTNING.kropp / Math.max(1, capacity(s, p)), 0, 1),
-    st: { styrka: stat(p, 'styrka', s.now), uthallighet: stat(p, 'uthallighet', s.now), mod: stat(p, 'mod', s.now), smidighet: stat(p, 'smidighet', s.now) - paSig(s, p).reduce((a, q) => a + (PLAGG[kladAv(q.k)?.plagg as keyof typeof PLAGG]?.smid ?? 0), 0), skicklighet: 5 + (p.skill.narstrid ?? 0) / 2 + STRID.tyckeSkick * smakAv(p, 'v:' + vapen), sikte: (5 + (p.skill.traff ?? 0) / 2) * syn(p) * blodFaktor(p), torst: blodtorst(s, p) },
+    st: { styrka: stat(p, 'styrka', s.now), uthallighet: stat(p, 'uthallighet', s.now), mod: stat(p, 'mod', s.now), smidighet: stat(p, 'smidighet', s.now) - paSig(s, p).reduce((a, q) => a + (PLAGG[kladAv(q.k)?.plagg as keyof typeof PLAGG]?.smid ?? 0), 0) - rusSmid(p), skicklighet: 5 + (p.skill.narstrid ?? 0) / 2 + STRID.tyckeSkick * smakAv(p, 'v:' + vapen) - rusTraff(p), sikte: (5 + (p.skill.traff ?? 0) / 2) * syn(p) * blodFaktor(p) - rusTraff(p), /* ruset (steg 9.6.14) */ torst: blodtorst(s, p) },
   };
 }
 // ledaren i strid (steg 3.7.12): en modig och aggressiv ledare går först, en försiktig står bakom och leder. Seden
@@ -1114,3 +1114,4 @@ export function lekSteg(s: State, p: Person, dtSec: number) {
   if (!andra.length) return;
   stridIByn(s, 'lek', [[p], [andra[Math.floor(rnd(s, 'strid', p) * andra.length)]]], 'på lek');
 }
+import { rusSmid, rusTraff } from './rus';

@@ -470,6 +470,7 @@ function healthStep(s: State, p: Person, a: number, ai: number, dtSec: number) {
   // sjukdomen mot motståndet (steg 9.5.2, sjukdom.ts): vinner sjukdomen dör hen av den
   drickTe(s, p); // örtteet (steg 9.5.8, vatskor.ts)
   drickDryck(s, p); // saften (steg 9.6.9, vatskor.ts)
+  rusSteg(s, p, dtSec, hemma(s, p)); // berusningen (steg 9.6.14, rus.ts)
   const sjukDod = sjukSteg(s, p, dtSec, p.task?.act === 'sova', !!p.task && !!ACTS[p.task.act].arbete && p.task.phase === 'do', teFaktor(s, p, SJUK.lakeort));
   if (sjukDod) { die(s, p, SJUK_DOD[sjukDod]); return true; }
   if (p.sjuk && p.sjuk.grad >= 0.5 && !p.svartSjuk) { loggBer(s, 'l_svartSjuk', p.id, { namn: p.name }, 'world', [p.id]); p.svartSjuk = 1; } // svårt sjuk: ett tecken när hen blir frisk (steg 4.1.2.1)
@@ -1261,3 +1262,5 @@ function compact(s: State) {
 import { kokaKlar, stepKok } from './matlagning';
 import { drickDryck, vatskorTimme } from './vatskor';
 import { bryggKlar, maltaKlar, stepBrygg } from './brygg';
+import { rusSteg } from './rus';
+import { hemma } from './halsa';

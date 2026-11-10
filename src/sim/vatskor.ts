@@ -104,3 +104,7 @@ export function drickDryck(s: State, p: Person) {
   if (forstaGang(s, 'saftForsta')) log(s, `${p.name} drack byns första saft av krossade bär.`, 'world', [p.id]);
 }
 import { torstig } from './torst';
+// vinet och ölet för berusningen (rus.ts, steg 9.6.14)
+alkoholKrok.finns = (s, v) => !!medVatska(s, v);
+alkoholKrok.ta = (s, v) => taVatska(s, v, 1) > 0;
+import { alkoholKrok } from './rus';
