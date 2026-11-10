@@ -7,3 +7,4 @@ Raderna skrivs så här: committen, systemet och testerna, till exempel "abc1234
 ## Väntar
 
 (inget)
+c7ff1c5 9.8.1–9.8.12 (byggt i molnet, avbrutet; 9.8.13–9.8.16 obyggda, inte avbockade i Färdplanen): snabbkoll, koll, likhet, riktad --karta, utseende, facit
