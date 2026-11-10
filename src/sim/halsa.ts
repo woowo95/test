@@ -43,6 +43,7 @@ import { notis } from './notiser';
 import { tingOf } from './agande';
 import { SAKER } from './saker';
 import { nyttILarmet } from './roller';
+import { toaNara } from './smuts';
 
 // ---------- balanstal (regel 8) ----------
 export const HALSA = balans('halsa', {
@@ -77,7 +78,10 @@ export const HALSA = balans('halsa', {
   remsa: 0.1, // ... och med en remsa av skinn eller lin (steg 9.5.15)
   avsnoraTim: 2, // en avsnörning som sitter längre än så här många timmar skadar delen för alltid (steg 9.5.15)
   syLak: 4, // sömnaden kräver så här mycket i Läkekonst
-  infTim: 36, // timmar för en infektion som inte rengörs att växa från ingenting till döden
+  infTim: 72, // timmar för en infektion som inte rengörs att växa från ingenting till döden: ungefär tre dygn (steg 9.5.24)
+  // infektionens risk och stadier (steg 9.5.24): smutsen på marken gör risken infSmuts gånger större där toa-smutsen ligger, ett
+  // rengjort sår har risken infRen; stadierna är rodnad (under feber), feber och kallbrand (från kallbrand)
+  infSmuts: 2, infRen: 0.3, feber: 0.25,
   infLak: 8, // timmar för en rengjord infektion att gå tillbaka helt ...
   renTim: 6, // ... och så länge ett rengjort sår håller sig rent
   lakeRen: 0.05, lakeOvning: 0.3, // läkekonsten (steg 9.5.7): rent så här mycket längre per poäng, och så mycket övning per vårdtillfälle
@@ -160,25 +164,25 @@ export const ARMAR: Kroppsdel[] = ['armV', 'armH'], HANDER: Kroppsdel[] = ['hand
 // ---------- skadorna (registret) ----------
 // blod = hur mycket såret blöder vid grad 1, smarta = hur ont det gör, fel = hur mycket sämre delen blir, lakTim = timmar
 // för en skada av grad 1 att läka för den som är mätt och otörstig, tecken = symbolen i fliken Hälsa (platshållare)
-interface SkadaDef { namn: string; ett: string; tecken: string; blod: number; smarta: number; fel: number; lakTim: number }
+interface SkadaDef { namn: string; ett: string; tecken: string; blod: number; smarta: number; fel: number; lakTim: number; inf?: number } // inf = hur lätt såret infekteras (steg 9.5.24)
 export const SKADOR = {
-  skarsar: { namn: 'Skärsår', ett: 'ett skärsår', tecken: '{sym_skarsar}', blod: 1, smarta: 0.5, fel: 0.4, lakTim: 24 },
-  bett: { namn: 'Bett', ett: 'ett bett', tecken: '🦷', blod: 0.8, smarta: 0.6, fel: 0.5, lakTim: 36 },
-  klos: { namn: 'Klösmärken', ett: 'klösmärken', tecken: '🐾', blod: 0.6, smarta: 0.4, fel: 0.3, lakTim: 24 },
+  skarsar: { namn: 'Skärsår', ett: 'ett skärsår', tecken: '{sym_skarsar}', blod: 1, smarta: 0.5, fel: 0.4, lakTim: 24, inf: 1 },
+  bett: { namn: 'Bett', ett: 'ett bett', tecken: '🦷', blod: 0.8, smarta: 0.6, fel: 0.5, lakTim: 36, inf: 2.5 },
+  klos: { namn: 'Klösmärken', ett: 'klösmärken', tecken: '🐾', blod: 0.6, smarta: 0.4, fel: 0.3, lakTim: 24, inf: 1.8 },
   benbrott: { namn: 'Benbrott', ett: 'ett benbrott', tecken: '🦴', blod: 0, smarta: 1, fel: 1, lakTim: 120 },
-  krossar: { namn: 'Krossår', ett: 'ett krossår', tecken: '{sym_krossar}', blod: 0.4, smarta: 0.7, fel: 0.7, lakTim: 48 },
+  krossar: { namn: 'Krossår', ett: 'ett krossår', tecken: '{sym_krossar}', blod: 0.4, smarta: 0.7, fel: 0.7, lakTim: 48, inf: 1 },
   blamarke: { namn: 'Blåmärke', ett: 'ett blåmärke', tecken: '🟣', blod: 0, smarta: 0.4, fel: 0.2, lakTim: 24 }, // efter ett slag (steg 3.2.3)
-  sticksar: { namn: 'Sticksår', ett: 'ett sticksår', tecken: '🗡️', blod: 1.5, smarta: 0.7, fel: 0.5, lakTim: 48 }, // ett djupt stick (steg 3.7.2, strid.ts)
+  sticksar: { namn: 'Sticksår', ett: 'ett sticksår', tecken: '🗡️', blod: 1.5, smarta: 0.7, fel: 0.5, lakTim: 48, inf: 1.5 }, // ett djupt stick (steg 3.7.2, strid.ts)
   hjarnskakning: { namn: 'Hjärnskakning', ett: 'en hjärnskakning', tecken: '💫', blod: 0, smarta: 0.6, fel: 0.3, lakTim: 48 }, // ett hårt slag mot huvudet
   forfrysning: { namn: 'Förfrysning', ett: 'en förfrysning', tecken: '🥶', blod: 0, smarta: 0.5, fel: 0.6, lakTim: 72 }, // av kylan (steg 8.2.3)
-  brannskada: { namn: 'Brännskada', ett: 'en brännskada', tecken: '🔥', blod: 0, smarta: 0.8, fel: 0.4, lakTim: 72 }, // av elden i en eldsvåda (steg 3.8.5, brand.ts)
+  brannskada: { namn: 'Brännskada', ett: 'en brännskada', tecken: '🔥', blod: 0, smarta: 0.8, fel: 0.4, lakTim: 72, inf: 1.5 }, // av elden i en eldsvåda (steg 3.8.5, brand.ts)
 } satisfies Record<string, SkadaDef>;
 export type SkadaTyp = keyof typeof SKADOR;
 const SKADA: Record<SkadaTyp, SkadaDef> = SKADOR;
 // en skada: del, typ, grad (0–1, sjunker när den läker) och blödningen kvar (1 = som nyss, 0 = levrad).
 // f = ett förband av mossa ligger på, inf = infektionen (0–1; vid 1 dör man), ren = rengjord till den tiden (steg 2.5.2)
 export interface Men { d: Kroppsdel; fel: number; ont: number }
-export interface Skada { d: Kroppsdel; k: SkadaTyp; g: number; b: number; g0?: number; f?: 1 | 2; inf?: number; ren?: number; fast?: 1; salva?: number; av?: number; sydd?: 1; drog?: number } // drog = vapnet drogs ut och såret blöder mer till den tiden (steg 9.5.21) // f: 1 mossa, 2 en remsa (steg 9.5.15); av = avsnört sedan den tiden, sydd = såret är sytt // salva = läkesalvan på såret, med salvans kvalitet (steg 9.5.10) // fast = ett spjut sitter kvar i såret (steg 3.7.7)
+export interface Skada { d: Kroppsdel; k: SkadaTyp; g: number; b: number; g0?: number; f?: 1 | 2; inf?: number; ren?: number; fast?: 1; salva?: number; av?: number; sydd?: 1; drog?: number; infNotis?: number } // drog = vapnet drogs ut och såret blöder mer till den tiden (steg 9.5.21) // f: 1 mossa, 2 en remsa (steg 9.5.15); av = avsnört sedan den tiden, sydd = såret är sytt // salva = läkesalvan på såret, med salvans kvalitet (steg 9.5.10) // fast = ett spjut sitter kvar i såret (steg 3.7.7)
 const oppet = (w: Skada) => SKADA[w.k].blod > 0; // ett öppet sår (inte ett benbrott)
 
 // ---------- olyckorna (registret) ----------
@@ -293,7 +297,7 @@ export function skadeLista(p: Person, now: number): SkadeRad[] {
   const fast = (d: Kroppsdel, namn: string, tecken: string, gar: string): SkadeRad => ({ d, tecken, ikon: 's_' + tecken, namn, grad: 'bestående', bloder: false, gjort: [], vard: [], gar, battre: false });
   return [...(p.saknas ?? []).map(d => fast(d, `Saknar ${DEL[d].i}`, '🦴', 'kommer inte tillbaka')), ...(p.men ?? []).map(m => fast(m.d, `${MEN_NAMN(m)} (${DEL[m.d].i})`, '🩹', 'läkte fel, blir inte bättre')), ...(p.skador ?? []).map(w => {
     const sk = SKADA[w.k], ren = (w.ren ?? 0) > now, kall = (w.inf ?? 0) >= HALSA.kallbrand;
-    const gar = w.inf === undefined ? `läker, ungefär ${Math.ceil(w.g * sk.lakTim / lak)} timmar kvar` : kall ? 'kallbrand, blir sämre' : ren ? 'infekterat men rengjort, blir bättre' : 'infekterat, blir sämre';
+    const gar = w.inf === undefined ? `läker, ungefär ${Math.ceil(w.g * sk.lakTim / lak)} timmar kvar` : kall ? 'kallbrand, blir sämre' : ren ? `${INFSTADIER[infStadium(w)].toLowerCase()}, rengjort, blir bättre` : `${INFSTADIER[infStadium(w)].toLowerCase()}, blir sämre`; // infektionens stadium (steg 9.5.24)
     return {
       d: w.d, tecken: w.inf === undefined ? sk.tecken : kall ? '☠️' : '🦠', ikon: 's_' + (w.inf === undefined ? w.k : kall ? 'kall' : 'inf'), namn: `${sk.namn} i ${DEL[w.d].i}`,
       grad: w.g >= HALSA.radd ? 'mycket svårt' : w.g >= HALSA.avbryt ? 'svårt' : 'lätt', bloder: w.b > 0 && oppet(w),
@@ -481,7 +485,7 @@ function vilaLak(s: State, p: Person) {
 // ett öppet sår kan bli infekterat; infektionen växer tills den rengörs, och från kallbranden hjälper inte det
 function infSteg(s: State, p: Person, w: Skada, h: number, dtSec: number) {
   if (w.inf === undefined) {
-    if (!oppet(w) || !chance(s, HALSA.infRisk * (w.f === 2 ? HALSA.remsa : w.f ? HALSA.forband : 1) * (w.fast ? HALSA.fastInf : 1) * (1 - SALVA.skydd * salvaVerkan(w)) / HOUR_S, dtSec, 'halsa', p)) return; // läkesalvan sänker risken (steg 9.5.10)
+    if (!oppet(w) || !chance(s, HALSA.infRisk * (SKADA[w.k].inf ?? 1) * (1 + HALSA.infSmuts * toaNara(s, tileOf(p.x, p.y))) * ((w.ren ?? 0) > s.now ? HALSA.infRen : 1) * (w.f === 2 ? HALSA.remsa : w.f ? HALSA.forband : 1) * (w.fast ? HALSA.fastInf : 1) * (1 - SALVA.skydd * salvaVerkan(w)) / HOUR_S, dtSec, 'halsa', p)) return; // sårslaget, smutsen, rengöringen och förbandet (steg 9.5.24); läkesalvan sänker risken (steg 9.5.10)
     w.inf = 0; count(s, 'infektioner');
     if (w.g >= HALSA.logg) log(s, `${p.name}s sår i ${DEL[w.d].i} blev infekterat.`, 'world', [p.id]);
     return;
@@ -492,11 +496,19 @@ function infSteg(s: State, p: Person, w: Skada, h: number, dtSec: number) {
     return;
   }
   const fore = w.inf;
+  infStadieNotis(s, p, w);
   if (w.salva !== undefined && w.inf < HALSA.kallbrand) { w.inf = Math.max(0, w.inf - h / HALSA.infLak * SALVA.dampa * salvaVerkan(w)); if (w.inf <= 0) { w.inf = undefined; count(s, 'infektioner botade'); } return; } // salvan dämpar en infektion som börjat (steg 9.5.10)
   w.inf += h / HALSA.infTim;
   if (fore < HALSA.kallbrand && w.inf >= HALSA.kallbrand) { count(s, 'kallbrand'); log(s, `${p.name} fick kallbrand i ${DEL[w.d].i}.`, 'world', [p.id]); }
 }
 
+// infektionens tre stadier (steg 9.5.24): rodnad, feber och kallbrand, med en notis när det blir värre (en gång per stadium och sår)
+export const INFSTADIER = ['', 'Rodnad', 'Feber', 'Kallbrand'] as const;
+export const infStadium = (w: Skada) => w.inf === undefined ? 0 : w.inf < HALSA.feber ? 1 : w.inf < HALSA.kallbrand ? 2 : 3;
+function infStadieNotis(s: State, p: Person, w: Skada) {
+  const st = infStadium(w);
+  if (st >= 2 && (w.infNotis ?? 0) < st) { w.infNotis = st; notis(s, 'infektion', `${gen(p.name)} sår i ${DEL[w.d].i} har ${st === 2 ? 'gett feber' : 'fått kallbrand'}${st === 2 ? ': det behöver sköljas och vila i värme' : ': delen behöver tas av'}.`, [p.id], { x: Math.floor(p.x), y: Math.floor(p.y) }); }
+}
 // ---------- vården (steg 2.5.2) ----------
 // Vårdregistret VARD (steg 9.5.6, Hälsosystemet i detalj: Vårdregistret): varje behandling är en rad med kravet (vilka sår den
 // gäller), materialet, redskapet, färdigheten i Läkekonst som krävs, tiden i minuter, risken att det går fel och brådskan (högre

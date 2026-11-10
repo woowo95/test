@@ -518,3 +518,23 @@ SCENARIER.olyckshugg = {
     ];
   },
 };
+
+SCENARIER.infektion = {
+  text: 'Steg 9.5.24: infektionens risk och stadier. Risken beror på sårslaget, smutsen, förbandet och rengöringen, och en infektion går genom rodnad och feber till kallbrand på ungefär tre dygn, med tecknen i kortet, bilden och notiserna',
+  kor: () => {
+    const { SKADOR, HALSA, infStadium, halsaSteg, skadeLista } = SIM;
+    const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    const risk = (SKADOR.bett.inf ?? 1) > (SKADOR.skarsar.inf ?? 1);
+    // stadierna: ett infekterat sår utan vård
+    p.skador = [{ d: 'armV', k: 'skarsar', g: 0.3, b: 0, inf: 0.01 }];
+    const steg: number[] = [], ord: string[] = [];
+    let tim = 0;
+    while ((p.skador?.[0]?.inf ?? 1) < HALSA.kallbrand && tim < 200) { s.now += SIM.HOUR; halsaSteg(s, p, 3600); tim++; const st = p.skador?.[0] ? infStadium(p.skador[0]) : 0; if (!steg.includes(st)) { steg.push(st); ord.push(skadeLista(p, s.now)[0]?.gar ?? ''); } }
+    const notis = (s.notiser?.lista ?? []).some(n => n.id === 'infektion');
+    return [
+      [`ett bett infekteras lättare än ett skärsår (${SKADOR.bett.inf} mot ${SKADOR.skarsar.inf})`, risk],
+      [`infektionen går genom rodnad och feber till kallbrand (${steg.join(' → ')}) på ${tim} timmar`, steg.join() === '1,2,3' && tim > 24 && tim < 72],
+      [`kortet säger stadiet (${ord.join('; ')}) och en notis kommer (${notis ? 'ja' : 'nej'})`, ord.some(o => o.includes('feber')) && notis],
+    ];
+  },
+};
