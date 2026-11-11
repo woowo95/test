@@ -1,4 +1,5 @@
 // Scenarier. Folket: befolkning, faror, seder, samtal, liv och utflyttning.
+import * as BILD from '../../ui/stridbild';
 import { Person, createState, tidyTools, addTool, getRel, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, ageStart, amountOf, isLight, ageOf, DAY, HOUR, State, findL, areaOf, stat, hoped, gain, ownedSum, setAmount, setStock, BEAT, tingOf, planBuild, regulate, ACTS } from '../../sim';
 import * as SIM from '../../sim';
 import { byId, isSocial, TalkEvent } from '../../sim';
@@ -1580,6 +1581,47 @@ SCENARIER.stridkarta = {
       [`med en vägg emellan går de runt den och slåss (${vSlag} slag, ${vVagg} gånger i väggen)`, vSlag > 0 && vVagg === 0],
       [`spelet och ikappräkningen går igenom samma steg (${stegSpel} steg i spelet mot tre femminuterssteg) och blir exakt lika`, lika && stegSpel > 10],
       [`den empatiska och modiga går emellan (${emellan} av 12) och får dem ibland att sluta (${skilda}), den rädda går undan (${undan}), och barn går undan men aldrig emellan (${barnUndan}, ${barnEmellan})`, emellan >= 8 && skilda >= 1 && undan >= 8 && barnEmellan === 0],
+    ];
+  },
+};
+
+SCENARIER.slagbild = {
+  text: 'Steg 10.1.5: bilden spelar stridens händelser. Varje slag i en strid på kartan tas emot av bilden en gång, i samma ögonblick som det sker, och syns då: den som slår gör rörelsen, i vapnets takt, och strecket går till den som träffas. Antalet ritade slag är antalet händelser, och inget ritas när ingen strid pågår',
+  kor: () => {
+    const s = createState(21, START); klockan(s, 12);
+    const [a, b, ...ovriga] = living(s).filter(x => ageOf(x, s.now) >= SIM.ALDER.vuxen);
+    for (const q of ovriga) { q.x = a.x + 40; q.task = undefined; }
+    b.x = a.x + 1.2; b.y = a.y;
+    for (const q of [a, b]) { q.pot.mod = 18; q.pot.aggression = 16; q.pot.empati = 4; q.task = undefined; }
+    BILD.nollstallSlag(); SIM.stridBild.pa = true;
+    for (let i = 0; i < 12; i++) step(s, 300); // en timme utan strid: inget kommer till bilden
+    const utan = BILD.raknare.ritade + SIM.stridBild.slag.length;
+    const g = SIM.kartStridBorja(s, 'slagsmal', [[a], [b]], 'för att pröva');
+    let synliga = 0, osynliga = 0, felTid = 0, sek = 0, rorelse = 0, vila = 0;
+    while (s.kartStrider?.length && sek < 900) {
+      step(s, SIM.nastaSteg(s)); sek++;
+      const nya = [...SIM.stridBild.slag];
+      BILD.taEmotSlag(s.now - 1000); // tiden som visas ligger högst ett steg efter spelets
+      for (const h of nya) {
+        const sl = h.fran !== undefined ? BILD.slagAv(h.fran, h.t + 1) : undefined, streck = BILD.streckNu(h.t + 1).some(x => x.h === h);
+        if (sl?.h === h && streck) synliga++; else osynliga++;
+        if (h.t > s.now + 1 || h.t < s.now - 1001) felTid++; // slaget skedde under det här steget
+        if (sl && BILD.slagAv(h.fran!, h.t + BILD.rorelseTid(h) + 5)?.h === h) rorelse++; // rörelsen är slut efter sin tid
+        if (h.fran !== undefined && !BILD.slagAv(h.fran, h.t - 5 - 2000)) vila++;
+      }
+    }
+    SIM.stridBild.pa = false;
+    const handelser = SIM.slagen(g.st).length, langd = SIM.slagen(g.st).every(h => h.l > 0);
+    const kk = (() => { const t = createState(21, START), [c, d] = living(t).filter(x => ageOf(x, t.now) >= SIM.ALDER.vuxen); d.x = c.x + 1; d.y = c.y; SIM.kartStridBorja(t, 'slagsmal', [[c], [d]], 'x'); step(t, 1); const k = BILD.kartKampe(t, c); return !!k && k.k.pid === c.id && !!k.mot; })();
+    const efter = BILD.raknare.ritade;
+    for (let i = 0; i < 3; i++) step(s, 300);
+    return [
+      [`utan strid kommer inget till bilden (${utan} slag på en timme)`, utan === 0],
+      [`varje händelse blir ett ritat slag (${handelser} händelser i striden, ${BILD.raknare.ritade} ritade)`, handelser > 5 && BILD.raknare.ritade === handelser],
+      [`slaget syns när det sker: den som slår gör rörelsen och strecket går till den som träffas (${synliga} av ${synliga + osynliga}, ${felTid} med fel tid)`, synliga === handelser && osynliga === 0 && felTid === 0],
+      [`rörelsen följer vapnets takt och tar slut (${rorelse} som pågick för länge), och varje händelse har en längd`, rorelse === 0 && langd && vila > 0],
+      ['bilden hittar kämpen som är personen, med sitt mål', kk],
+      [`efter striden kommer inga fler slag (${BILD.raknare.ritade - efter})`, BILD.raknare.ritade === efter && SIM.stridBild.slag.length === 0],
     ];
   },
 };

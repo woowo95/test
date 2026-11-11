@@ -25,7 +25,7 @@ import { UTBROTT_ACTS, moodOf, stepHumor, utbrottKlar } from './humor';
 import { glomRykten, stepRykten } from './rykten';
 import { stepStyre } from './styre';
 import { STRID, lekSteg } from './strid';
-import { faraNara, gralBlirSlagsmal, kartStridSteg, serStriden, stegTaget } from './kartstrid';
+import { bildKrok, faraNara, gralBlirSlagsmal, kartStridSteg, serStriden, stegTaget } from './kartstrid';
 import { sportKlar, sportSteg } from './sport';
 import { lyssnaSteg, upptradaKlar, upptradaSteg } from './framtradande';
 import { fylldSack, redskapIHanden, tidyTools } from './agande';
@@ -173,6 +173,7 @@ export function sparUppgift(p: Person, t: number, nu: number): Task | undefined 
   return u[i][1];
 }
 function spara(s: State, p: Person, t = s.now) { if (spar.pa) { spar.v.get(p)?.push(t, p.x, p.y); sparaUppgift(p, t); } }
+bildKrok.spara = (s, p) => spara(s, p); // den som flyttas av striden på kartan (kartstrid.ts)
 
 type Krok = (s: State, p: Person, t: Task, dtSec: number) => void;
 // det som händer medan man gör något (efter att ha kommit fram). Arbete för byn sköts av workStep

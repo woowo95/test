@@ -1,6 +1,8 @@
 import type * as PIXI from 'pixi.js';
 import { type Kampe, type RovarStrid, type Strid, SEC, rovarStridNu, stegIGang } from '../sim';
 import { s, vidNyBy } from './lage';
+import { nollstallSlag, streckNu, taEmotSlag } from './stridbild';
+vidNyBy.push(nollstallSlag);
 
 // striden med rövarna vid förrådet på kartan (steg 6.6.10): striden räknas fram till tiden som visas (rovarStridNu i
 // rovare.ts, samma räkning som i spelet), och de som är med står där striden har dem. Den som slår mot någon syns med ett
@@ -55,6 +57,12 @@ export function rovarenNu(namn: string, nu: number) {
 // strecken (TS punkter per ruta) mellan den som slår och den som träffas (rött), missar (grått)
 export function ritaSlagen(gr: PIXI.Graphics, nu: number, TS: number) {
   for (const v of striderVid(nu)) ritaEn(gr, v, nu, TS);
+  // striderna på kartan (steg 10.1.5): varje slag som skett, en gång, där de stod (ui/stridbild.ts)
+  taEmotSlag(nu);
+  for (const { h, kvar } of streckNu(nu)) {
+    const traff = h.utfall === 'traff' || h.utfall === 'vada';
+    gr.lineStyle(traff ? 2 : 1, traff ? 0xa14808 : 0xdad0bb, Math.max(0.2, kvar)).moveTo(h.fx * TS, h.fy * TS - 4).lineTo(h.mx * TS, h.my * TS - 4).lineStyle(0);
+  }
 }
 function ritaEn(gr: PIXI.Graphics, v: { g: RovarStrid; st: Strid }, nu: number, TS: number) {
   const tid = (nu - v.g.t0) / SEC;

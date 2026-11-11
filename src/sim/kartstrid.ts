@@ -24,7 +24,7 @@ import { die } from './liv';
 import { lista, och } from './ord';
 import { handelse, larma } from './rykten';
 import { clamp, rnd } from './slump';
-import { AVSIKTER, Avsikt, Kampe, SLAGSMAL, STRID, Strid, StridVarld, efterStrid, foljet, iVarlden, nyStrid, personKampe, skilj, slitKastat, starKvar, stridRad, stridSteg, vadretIStriden } from './strid';
+import { AVSIKTER, Avsikt, Kampe, SLAGSMAL, STRID, Strid, StridVarld, efterStrid, foljet, iVarlden, nyStrid, personKampe, skilj, slagen, slitKastat, starKvar, stridRad, stridSteg, vadretIStriden } from './strid';
 import { ledareOf } from './styre';
 import { Act, H, HOUR, Person, SEC, State, W } from './typer';
 import { upplev } from './uppvaxt';
@@ -55,6 +55,25 @@ export const kartStrider = (s: State): KartStrid[] => s.kartStrider ?? [];
 export function kartStridAv(s: State, p: Person) { return kartStrider(s).find(g => !g.fri?.includes(p.id) && g.st.kampar.some(k => k.pid === p.id)); }
 const personAv = (s: State, k: Kampe) => k.pid === undefined ? undefined : byId(s, k.pid);
 const lekAv = (a: Avsikt) => !!(AVSIKTER[a] as { lek?: true }).lek;
+
+// ---------- slagen till bilden (steg 10.1.5, "Ett slag är en händelse") ----------
+// När spelet visas (stridBild.pa, som spar i steg.ts) läggs varje anfall här i samma ögonblick som det sker: när (spelets tid),
+// hur länge (vapnets takt), vem som anföll och vem det gällde (personernas id), var de stod, vapnet och hur det gick. Bilden
+// (ui/stridbild.ts) tar emot dem och spelar just de slagen. Det här läses aldrig av simuleringen
+export interface SlagBild { strid: number; t: number; l: number; fran?: number; mot?: number; fx: number; fy: number; mx: number; my: number; v?: string; kast?: 1; utfall: string }
+export const stridBild = { pa: false, slag: [] as SlagBild[] };
+// vägen den som slåss rör sig sparas för bilden som annan gång (spar i steg.ts sätter kroken, så att filerna inte importerar varandra i cirkel)
+export const bildKrok: { spara?: (s: State, p: Person) => void } = {};
+function tillBilden(g: KartStrid, n0: number) {
+  const st = g.st;
+  for (const h of slagen(st)) {
+    if (h.rad < n0) continue;
+    const a = st.kampar.find(k => k.id === h.fran), b = st.kampar.find(k => k.id === h.mot);
+    if (!a || !b) continue;
+    if (stridBild.slag.length > 400) stridBild.slag.shift(); // ingen tar emot dem (ikappräkningen): de äldsta faller bort
+    stridBild.slag.push({ strid: g.id, t: g.t0 + h.t * SEC, l: h.l * SEC, fran: a.pid, mot: b.pid, fx: a.x, fy: a.y, mx: b.x, my: b.y, v: h.v ?? a.vapen, kast: h.kast, utfall: h.utfall });
+  }
+}
 
 // ---------- korta steg när faran är nära ----------
 // faran är nära så länge en strid pågår på kartan (fler faror kommer med rövarna och djuren)
@@ -130,11 +149,14 @@ export function kartStridSteg(s: State, dtSec: number) {
         k.blod = p.blod ?? 1;
       }
       skiljSteg(s, g);
+      const n0 = st.logg.length;
       iVarlden(v, () => stridSteg(st));
+      if (stridBild.pa) tillBilden(g, n0);
       // ... och efter det
       for (const k of st.kampar) {
         const p = personAv(s, k); if (!p || p.died !== undefined || g.fri?.includes(p.id)) continue;
-        p.x = k.x; p.y = k.y; p.blod = clamp(k.blod, 0, 1);
+        if (p.x !== k.x || p.y !== k.y) { p.x = k.x; p.y = k.y; bildKrok.spara?.(s, p); }
+        p.blod = clamp(k.blod, 0, 1);
         if (k.lage === 'ger' || k.lage === 'borta') { // har lämnat striden: väljer på nytt
           (g.fri ??= []).push(p.id);
           if (p.task?.act === 'strid') p.task.until = s.now;
@@ -242,4 +264,14 @@ export function gralBlirSlagsmal(s: State, a: Person, b: Person) {
   if (rnd(s, 'strid', a) >= SLAGSMAL.gral * (1 + SLAGSMAL.gralTorst * blodtorst(s, a))) return;
   kartStridBorja(s, 'slagsmal', [[a], [b]], 'efter ett gräl');
   handelse(s, a, 'sla', b); // den som började slagsmålet slog först
+}
+
+// testläget: de två vakna vuxna som står närmast varandra börjar slåss, där de står (samma strid som efter ett gräl)
+export function testSlagsmal(s: State): { ok: boolean; text: string } {
+  const folk = living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen && p.task?.act !== 'sova' && p.task?.act !== 'strid' && !p.svimmat);
+  let par: [Person, Person] | undefined, bd = Infinity;
+  for (const a of folk) for (const b of folk) if (a.id < b.id) { const d = Math.hypot(a.x - b.x, a.y - b.y); if (d < bd) { bd = d; par = [a, b]; } }
+  if (!par) return { ok: false, text: 'Det finns inte två vakna vuxna som kan slåss' };
+  kartStridBorja(s, 'slagsmal', [[par[0]], [par[1]]], 'i testläget');
+  return { ok: true, text: `${par[0].name} och ${par[1].name} börjar slåss` };
 }
