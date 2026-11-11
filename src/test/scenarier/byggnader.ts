@@ -649,7 +649,7 @@ SCENARIER.lekibyn = {
       kor(s, 1);
       for (const q of living(s)) if (q.task?.act === 'leka' && q.task.phase === 'do') {
         leker++;
-        if (SIM.utanforByn(s, q.task.tx, q.task.ty) <= 0) iByn++;
+        if (SIM.utanforByn(s, q.task.tx, q.task.ty) <= 2) iByn++; // brottningen på lek sker på kartan (steg 10.1.7) och kan bära barnen ett par rutor utanför
         if (SIM.blocked(s, q.task.tx, q.task.ty)) fel++;
         platser.add(`${Math.floor(q.task.tx)},${Math.floor(q.task.ty)}`);
       }

@@ -1103,6 +1103,7 @@ function brottning(): [string, boolean][] {
     let kamp: number[] | undefined, start = 0;
     const sett = new Map<number, number>();
     kor(s, 1, () => {
+      for (const g of s.kartStrider ?? []) if (g.st.avsikt === 'brottning') vapen += g.st.kampar.filter(k => k.vapen !== 'hand').length; // kampen sker på kartan (steg 10.1.7)
       sedda += med.filter(q => q.task?.act === 'sport' && q.task.phase === 'do').length;
       const m = s.sport;
       if (m?.brottare && m.brottare !== kamp) { kamp = m.brottare; start = s.now; }
@@ -1118,7 +1119,6 @@ function brottning(): [string, boolean][] {
     doda += med.filter(q => q.health <= 0 || q.died !== undefined).length;
     skadade += med.filter((q, i) => (q.skador?.length ?? 0) > skador0[i]!).length;
     kvar += med.filter(q => q.task?.act === 'sport').length;
-    for (const m of s.strider ?? []) if (m.u.avsikt === 'brottning') vapen += m.u.kampar.filter(k => k.vapen !== 'hand').length;
   }
   return [
     [`brottarna kämpar två och två med stridens system (${kampar} kamper)`, kampar >= 4],

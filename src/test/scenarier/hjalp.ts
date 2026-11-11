@@ -221,3 +221,11 @@ function fritGolv(s: State, k: string): { x: number; y: number; inne: 1 } | unde
   }
   return undefined;
 }
+
+// en strid mellan bybor, tills den är slut (steg 10.1.7): striden börjar på kartan där de står (kartstrid.ts), och byn går i
+// korta steg tills den är över. Svarar striden, som den gamla stridIByn gjorde
+export function stridIByn(s: SIM.State, avsikt: SIM.Avsikt, sidor: [SIM.Person[], SIM.Person[]], orsak: string, efter?: SIM.Efter): SIM.Strid {
+  const g = SIM.kartStridBorja(s, avsikt, sidor, orsak, efter);
+  for (let i = 0; i < 1500 && !g.st.slut; i++) SIM.step(s, SIM.nastaSteg(s));
+  return g.st;
+}

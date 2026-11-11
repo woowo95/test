@@ -17,7 +17,9 @@ import { ALDER, ageOf, alive, byId, count, gjort, living, log, relKey, stat } fr
 import { KROPPSDELAR, forlora, skada } from './halsa';
 import { blodas } from './blod';
 import { blodtorst } from './humor';
-import { isFamily } from './behov';
+import { isFamily, ranEfter, setRanStrid } from './behov';
+import { EFTER, Efter } from './efterstrid';
+import { ovning } from './folk';
 import { eldPlats } from './karta';
 import { avbryt } from './lager';
 import { die } from './liv';
@@ -49,12 +51,16 @@ export const KARTSTRID = balans('kartstrid', {
 export interface KartStrid {
   id: number; st: Strid; orsak: string; t0: number; rest: number; // rest = sekunder som inte räckt till ett helt stridssteg än
   val?: Record<number, 'skilja' | 'undan' | 'kvar'>; fri?: number[]; skild?: number; // skild = den som gick emellan
+  efter?: Efter; // det som ska ske när striden är slut (registret EFTER i efterstrid.ts, steg 10.1.7)
 }
+// pågår en strid av det slaget (ett rån, en holmgång, striden om ledarskapet …)?
+export const stridPagar = (s: State, typ: string, om?: (e: Efter) => boolean) => kartStrider(s).some(g => g.efter?.typ === typ && (!om || om(g.efter)));
 export const kartStrider = (s: State): KartStrid[] => s.kartStrider ?? [];
 // striden personen är med i (som kämpe som inte lämnat den)
 export function kartStridAv(s: State, p: Person) { return kartStrider(s).find(g => !g.fri?.includes(p.id) && g.st.kampar.some(k => k.pid === p.id)); }
 const personAv = (s: State, k: Kampe) => k.pid === undefined ? undefined : byId(s, k.pid);
 const lekAv = (a: Avsikt) => !!(AVSIKTER[a] as { lek?: true }).lek;
+const sportAv = (a: Avsikt) => !!(AVSIKTER[a] as { sport?: true }).sport;
 
 // ---------- slagen till bilden (steg 10.1.5, "Ett slag är en händelse") ----------
 // När spelet visas (stridBild.pa, som spar i steg.ts) läggs varje anfall här i samma ögonblick som det sker: när (spelets tid),
@@ -92,24 +98,24 @@ export function stegTaget(s: State, d: number) {
 function flyMal(s: State, p: Person) { const h = husPlats(s, p) ?? (() => { const e = eldPlats(s); return freeNear(s, e.x + 0.5, e.y + 1.5); })(); return { x: h.x, y: h.y }; }
 const stridsUppgift = (s: State, p: Person, why: string) => { p.task = { act: 'strid', phase: 'do', tx: p.x, ty: p.y, until: s.now + (STRID.maxTid + 60) * SEC, carry: 0, why }; };
 // en strid börjar mellan två sidor av folk, där de står. Den stegas sedan med byn (kartStridSteg)
-export function kartStridBorja(s: State, avsikt: Avsikt, sidor: [Person[], Person[]], orsak: string): KartStrid {
-  const lek = lekAv(avsikt);
+export function kartStridBorja(s: State, avsikt: Avsikt, sidor: [Person[], Person[]], orsak: string, efter?: Efter): KartStrid {
+  const lek = lekAv(avsikt), sport = sportAv(avsikt);
   const kampar = sidor.flatMap((sida, sd) => sida.map(p => ({ ...personKampe(s, p, 0, sd as 0 | 1, p.x, p.y), fly: flyMal(s, p) })));
   kampar.forEach((k, i) => { k.id = i + 1; });
   foljet(s, kampar);
   const st = nyStrid({ avsikt, w: W, h: H, ...vadretIStriden(s), kampar }, Math.floor(rnd(s, 'strid') * 2147483647));
   st.karta = true;
-  const g: KartStrid = { id: s.kartStridNr = (s.kartStridNr ?? 0) + 1, st, orsak, t0: s.now, rest: 0 };
+  const g: KartStrid = { id: s.kartStridNr = (s.kartStridNr ?? 0) + 1, st, orsak, t0: s.now, rest: 0, ...(efter ? { efter } : {}) };
   (s.kartStrider ??= []).push(g);
   count(s, 'strid_' + avsikt); count(s, 'kartStrid');
-  for (const p of [...sidor[0], ...sidor[1]]) { avbryt(s, p); stridsUppgift(s, p, orsak); }
+  if (!sport) for (const p of [...sidor[0], ...sidor[1]]) { avbryt(s, p); stridsUppgift(s, p, orsak); } // brottaren är kvar i matchen (steg 9.2.92)
   if (!lek) larma(s, 'slagsmål', kampar.length, [...sidor[0], ...sidor[1]].filter(p => p.task?.act !== 'sova')); // de som slåss ropar (steg 3.7.11)
   return g;
 }
 
 // ---------- världen striden frågar ----------
 function varldAv(s: State, g: KartStrid): StridVarld {
-  const lek = lekAv(g.st.avsikt), sport = !!(AVSIKTER[g.st.avsikt] as { sport?: true }).sport;
+  const lek = lekAv(g.st.avsikt), sport = sportAv(g.st.avsikt);
   return {
     vagg: (x, y) => x < 0 || y < 0 || x >= W || y >= H || blocked(s, x, y),
     // såret sitter på personen när slaget träffar
@@ -143,7 +149,7 @@ export function provVarld(s: State | undefined, vaggar: ReadonlySet<number>): St
 export function kartStridSteg(s: State, dtSec: number) {
   if (!s.kartStrider?.length) return;
   for (const g of [...s.kartStrider]) {
-    const st = g.st, v = varldAv(s, g);
+    const st = g.st, v = varldAv(s, g), sport = sportAv(st.avsikt);
     g.rest += dtSec;
     while (g.rest >= STRID.tick - 1e-9 && !st.slut) {
       g.rest -= STRID.tick;
@@ -163,6 +169,7 @@ export function kartStridSteg(s: State, dtSec: number) {
         const p = personAv(s, k); if (!p || p.died !== undefined || g.fri?.includes(p.id)) continue;
         if (p.x !== k.x || p.y !== k.y) { p.x = k.x; p.y = k.y; bildKrok.spara?.(s, p); }
         p.blod = clamp(k.blod, 0, 1);
+        if (sport) continue; // brottaren har matchen som uppgift
         if (k.lage === 'ger' || k.lage === 'borta') { // har lämnat striden: väljer på nytt
           (g.fri ??= []).push(p.id);
           if (p.task?.act === 'strid') p.task.until = s.now;
@@ -212,6 +219,7 @@ function kartStridSlut(s: State, g: KartStrid) {
     efterStrid(s, st, k, p, mot, sidor[k.sida], o => personAv(s, o), lek, vinnare);
     if (p.task?.act === 'strid') p.task.until = s.now; // striden är slut: hen väljer på nytt
   }
+  if (g.efter) EFTER[g.efter.typ]?.(s, g.efter, vinnare); // det den som började striden väntade på (steg 10.1.7)
   // vinnaren blir ett rykte i byn (steg 3.3.1): de som såg det minns det
   if (!lek && vinnare !== -1) for (const p of sidor[vinnare]) if (p.health > 0 && alive(p) && sidor[1 - vinnare][0]) handelse(s, p, 'vannSlagsmal', sidor[1 - vinnare][0]);
   // rapporten sparas (steg 8.8.10); själva striden går inte att räkna om, för den skedde i världen
@@ -280,4 +288,18 @@ export function testSlagsmal(s: State): { ok: boolean; text: string } {
   if (!par) return { ok: false, text: 'Det finns inte två vakna vuxna som kan slåss' };
   kartStridBorja(s, 'slagsmal', [[par[0]], [par[1]]], 'i testläget');
   return { ok: true, text: `${par[0].name} och ${par[1].name} börjar slåss` };
+}
+
+// ---------- striderna mellan bybor (steg 10.1.7) ----------
+// rånet (steg 3.7.17, behov.ts): slagsmålet sker på kartan, och rånaren tar saken om hen vinner (ranEfter)
+setRanStrid((s, p, offer, orsak, behov) => { kartStridBorja(s, 'slagsmal', [[p], [offer]], orsak, { typ: 'ran', p: p.id, offer: offer.id, behov }); });
+EFTER.ran = (s, e, vinnare) => ranEfter(s, e.p as number, e.offer as number, e.behov as string, vinnare === 0);
+// medan ett barn leker: kastlek ger träffsäkerhet, och ibland brottas hen med ett annat barn som leker nära
+export function lekSteg(s: State, p: Person, dtSec: number) {
+  const h = dtSec / 3600;
+  ovning(p, 'traff', SLAGSMAL.kast * h);
+  if (rnd(s, 'strid', p) >= SLAGSMAL.lek * h || kartStridAv(s, p)) return;
+  const andra = s.people.filter(q => q !== p && q.health > 0 && alive(q) && q.task?.act === 'leka' && q.task.phase === 'do' && Math.hypot(q.x - p.x, q.y - p.y) <= SLAGSMAL.lekNara && !kartStridAv(s, q));
+  if (!andra.length) return;
+  kartStridBorja(s, 'lek', [[p], [andra[Math.floor(rnd(s, 'strid', p) * andra.length)]]], 'på lek');
 }

@@ -4,7 +4,8 @@ import { efterlevs, lagForBrott, tasUppKvall, tabuDygn } from './lagar';
 import type { Lag } from './lagar';
 import { ROST, FRAGOR, rostaOm, missnojeLatt, missnojeNoll, missnojeStrafft, missnojeTimme, oppnaSed, rostKvall, seOverMinistrar, vikter } from './rost';
 import type { Fraga, Fraktion, Omrostning, Rost } from './rost';
-import { stridIByn } from './strid';
+import { kartStridBorja, stridPagar } from './kartstrid';
+import { EFTER } from './efterstrid';
 import { kyrkaKvall, overstePrast } from './kyrka';
 import { ARSTIDER, Fyllning, fyll, kronikaBer, och, personFalt, valjVariant } from './berattelser';
 import { skada } from './halsa';
@@ -188,6 +189,7 @@ export interface Styre {
   pabud?: Partial<Record<Pabud, number>>; pabudAi?: number; // ledarens åsikt om påbuden, och årstiden de sattes
   oratt?: number; orattT?: number; // orättvisan och när den senast ökade
   domt?: string[]; // fallen som redan dömts
+  utanHolm?: string[]; // brotten där den anklagade förlorat holmgången: de döms utan ny holmgång (steg 10.1.7)
   ratt?: Rattegang[]; // rättegångarna, de senaste STR.sparas (steg 3.10.17)
   roster?: Omrostning[]; fragor?: Fraga[]; // omröstningarna och frågorna som väntar (steg 8.3.1, rost.ts)
   ministrar?: Record<string, number>; // ministrarna per post (steg 8.3.8)
@@ -314,10 +316,10 @@ function valj(s: State) {
     else if (satet === 'strid') {
       const kand = vuxna.filter(c => kanLeda(s, c)).sort((a, b) => stat(b, 'mod', s.now) + b.skill.narstrid - stat(a, 'mod', s.now) - a.skill.narstrid);
       if (kand.length >= 2) {
-        const strid = stridIByn(s, 'skada', [[kand[0]], [kand[1]]], 'striden om ledarskapet');
-        count(s, 'tronstrid');
-        best = strid.slut!.vinnare === 0 ? kand[0] : kand[1];
-        if (!alive(best)) best = undefined;
+        // striden sker på kartan och tar tid (steg 10.1.7): den som vinner blir ledare när den är slut (EFTER.tronstrid), och
+        // byn väljer ingen under tiden
+        if (!stridPagar(s, 'tronstrid')) { kartStridBorja(s, 'skada', [[kand[0]], [kand[1]]], 'striden om ledarskapet', { typ: 'tronstrid', a: kand[0].id, b: kand[1].id }); count(s, 'tronstrid'); }
+        return;
       } else best = kand[0];
     }
     const valet = rostval(s, vuxna);
@@ -454,11 +456,14 @@ function doma(s: State, l: Person) {
     if (lag && rnd(s, 'val') >= efterlevs(s)) { count(s, 'lag_ej_efterlevd'); continue; }
     // tinget (steg 8.4.7): vid Allmoge avgör byn skulden i en omröstning. Vid Fejd kan den anklagade kräva holmgång med den drabbade: den som vinner har rätt
     const drabbad = b.mot !== undefined ? byId(s, b.mot) : undefined;
-    if (lag && (s.seder.v.fejd ?? 0) >= STR.holmgang && drabbad && alive(drabbad) && drabbad !== q && ageOf(drabbad, now) >= ALDER.vuxen) {
-      const hg = stridIByn(s, 'skada', [[q], [drabbad]], 'en holmgång');
+    const utanHolm = st.utanHolm?.includes(`${id}:${b.h}:${Math.round(b.t)}`); // förlorade holmgången om det här
+    if (lag && !utanHolm && (s.seder.v.fejd ?? 0) >= STR.holmgang && drabbad && alive(drabbad) && drabbad !== q && ageOf(drabbad, now) >= ALDER.vuxen && q.task?.act !== 'strid' && drabbad.task?.act !== 'strid') {
+      // holmgången sker på kartan och tar tid (steg 10.1.7): vinner den anklagade är saken avgjord; förlorar hen döms hen på
+      // nästa ting utan ny holmgång (EFTER.holmgang)
+      kartStridBorja(s, 'skada', [[q], [drabbad]], 'en holmgång', { typ: 'holmgang', q: q.id, brott: b.h, t: Math.round(b.t) });
       count(s, 'holmgang');
-      log(s, `${q.name} och ${drabbad.name} gjorde upp i en holmgång.`, 'rel', [q.id, drabbad.id]);
-      if (hg.slut!.vinnare === 0 || !alive(q)) continue;
+      log(s, `${q.name} och ${drabbad.name} gör upp i en holmgång.`, 'rel', [q.id, drabbad.id]);
+      continue;
     } else if (lag && rang <= STR.tingRost && !Object.values(st.ministrar ?? {}).length && FRAGOR.skuld) {
       if (!rostaOm(s, { f: 'skuld', d: { om: id, namn: q.name }, fram: l.id })) { count(s, 'friad'); log(s, `Byn friade ${q.name} på tinget.`, 'rel', [q.id]); continue; }
     }
@@ -577,3 +582,19 @@ export function stepStyre(s: State) {
 // skammen: den straffade håller sig undan bordet och elden (val.ts)
 export const skams = (p: Person, now: number) => p.skam !== undefined && p.skam > now;
 export const styrelseform = (s: State) => FORMER.find(f => f.passar(s))!;
+
+// ---------- striderna som avgör (steg 10.1.7): de sker på kartan, och det här händer när de är slut ----------
+// striden om ledarskapet: vinnaren blir ledare vid nästa val (som den fraktionen valt, frakVald)
+EFTER.tronstrid = (s, e, vinnare) => {
+  const v = byId(s, (vinnare === 1 ? e.b : e.a) as number), stn = styreOf(s);
+  if (v && alive(v) && vinnare !== -1) { stn.frakVald = v.id; stn.satt = 1; }
+};
+// holmgången: vann den anklagade är saken avgjord. Förlorade hen tas brottet upp igen på nästa ting, utan ny holmgång
+EFTER.holmgang = (s, e, vinnare) => {
+  const q = byId(s, e.q as number), stn = styreOf(s);
+  if (vinnare === 0 || !q || !alive(q)) return;
+  const nyckel = `${e.q}:${e.brott}:${e.t}`;
+  if (stn.domt) stn.domt = stn.domt.filter(k => !k.startsWith(`${e.q}:`));
+  (stn.utanHolm ??= []).push(nyckel);
+  if (stn.utanHolm.length > 40) stn.utanHolm.shift();
+};

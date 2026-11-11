@@ -1,5 +1,5 @@
 // Striden (fas 3, system 3.7). Grunden byggdes med testarenan (steg 3.7.5): en strid är två sidor av kämpar (Kampe) på en
-import { lista, och, skada as skadaOrd, stor, tal } from './ord';
+import { och, skada as skadaOrd, stor, tal } from './ord';
 import { kronikaBer, loggBer, personFalt } from './berattelser';
 // liten plats, med en avsikt (AVSIKTER) som avgör när den slutar. Den räknas i fasta tidssteg om STRID.tick sekunder
 // (stridSteg), så att den blir likadan i levande läge och i snabbläget. Var och en väljer mål, går fram och slår när målet
@@ -33,24 +33,19 @@ import { kronikaBer, loggBer, personFalt } from './berattelser';
 // (3.7.1) och räderna (11.2.5).
 import { balans } from './balans';
 import { GANG } from './gang';
-import { forlora, blodFaktor, GADELAR, HALSA, KROPPSDELAR, Kroppsdel, SKADOR, SkadaTyp, skada, syn } from './halsa';
-import { blodas } from './blod';
+import { blodFaktor, GADELAR, HALSA, KROPPSDELAR, Kroppsdel, SKADOR, SkadaTyp, syn } from './halsa';
 import { STRIDSDJUR, djurStrid, kampeSort } from './kampar';
 export { STRIDSDJUR };
 export type { DjurStrid } from './kampar';
 import { KLAD_SLAG, SAKER, sakNamn } from './saker';
 import { kladSkyddStrid, kladTung } from './klader';
 import { clamp, rnd } from './slump';
-import { byId, count, getRel, gjort, log, ovning, relKey, stat, think } from './folk';
-import { upplev } from './uppvaxt';
+import { byId, count, getRel, log, ovning, relKey, stat, think } from './folk';
 import { minnsRel } from './relationer';
 import { ledareOf } from './styre';
 import { blodtorst } from './humor';
-import { die } from './liv';
-import { setRanStrid } from './behov';
-import { handelse, larma, smaka, smakAv } from './rykten';
-import { avbryt } from './lager';
-import { GRANNAR4, HOUR, SEC, T } from './typer';
+import { handelse, smaka, smakAv } from './rykten';
+import { GRANNAR4, HOUR, T } from './typer';
 import { UTRUSTNING, harBalte, paSig, paSigVikt } from './utrustning';
 import { PLAGG, kladAv } from './klader';
 import { amountOf, use } from './lager';
@@ -1106,63 +1101,4 @@ export function efterStrid(s: State, st: Strid, k: Kampe, p: Person, mot: Person
   if (!lek && vinnare !== -1) think(p, k.sida === vinnare ? `Vann slagsmålet mot ${mot[0].name}` : `Förlorade slagsmålet mot ${mot[0].name}`, k.sida === vinnare ? SLAGSMAL.vann : -SLAGSMAL.forlora, s.now, SLAGSMAL.tankeTim * HOUR);
 }
 
-// en strid mellan två sidor av folk i byn. Returnerar striden (för scenarierna)
-export function stridIByn(s: State, avsikt: Avsikt, sidor: [Person[], Person[]], orsak: string): Strid {
-  const lek0 = !!(AVSIKTER[avsikt] as { lek?: true }).lek;
-  const vap = AVSIKTER[avsikt].vapen, W = vap ? 14 : 8, H = 6, isar = vap ? 3 : 1; // med vapen börjar striden på avstånd (steg 3.7.7)
-  const kampar = sidor.flatMap((sida, sd) => sida.map((p, i) => personKampe(s, p, 0, sd as 0 | 1, sd === 0 ? W / 2 - isar : W / 2 + isar, H / 2 + (i - (sida.length - 1) / 2))));
-  kampar.forEach((k, i) => { k.id = i + 1; });
-  for (const k of kampar) if (k.ledare && !lek0) k.x += (k.ledare === 'fram' ? 1 : -1.5) * (k.sida === 0 ? 1 : -1); // ledaren först eller bakom (steg 3.7.12)
-  foljet(s, kampar);
-  const u: Uppstallning = { avsikt, w: W, h: H, ...vadretIStriden(s), kampar };
-  const fro = Math.floor(rnd(s, 'strid') * 2147483647);
-  const st = stridTillSlut(nyStrid(u, fro));
-  const lek = !!(AVSIKTER[avsikt] as { lek?: true }).lek, vinnare = st.slut!.vinnare;
-  sparaStrid(s, { t: s.now, orsak, u, fro, vinnare }); count(s, 'strid_' + avsikt);
-  const folk = st.kampar.map(k => ({ k, p: sidor[k.sida][st.kampar.filter(o => o.sida === k.sida).indexOf(k)] }));
-  const namn = (sd: 0 | 1) => lista(sidor[sd].map(p => p.name));
-  if (!lek) larma(s, 'slagsmål', kampar.length, [...sidor[0], ...sidor[1]].filter(p => p.task?.act !== 'sova')); // de som slåss ropar (steg 3.7.11)
-  if (!lek) stridRad(s, st, namn, orsak, folk.map(f => f.p.id));
-  for (const { k, p } of folk) {
-    if (p.died !== undefined) continue; // död sedan förut (en annan strid i samma ögonblick): får ingen uppgift
-    const mot = sidor[1 - k.sida];
-    let dod = k.lage === 'dod';
-    // för färdigheterna i personrutan (steg 3.10.6): slagsmålet, om hen vann, och kasten och träffarna (vådaträffen räknas inte)
-    gjort(s, p, 'slagsmal'); if (vinnare === k.sida) gjort(s, p, 'vann');
-    const kast = st.logg.filter(r => r.a === k.id && r.kast), vada = st.logg.filter(r => r.a === k.id && r.h === 'vada').length;
-    if (kast.length) { gjort(s, p, 'kast', kast.length); const tr = kast.filter(r => r.h !== 'miss').length - vada; if (tr > 0) gjort(s, p, 'kastTraff', tr); }
-    for (const w of k.skador) {
-      if (AVS[avsikt].sport && w.g < STRID.lek) continue; // brottningen: de svaga slagen gör ont men blir ingen skada (steg 9.2.92)
-      if (!dod && skada(s, p, w.d, w.k, w.g, 'drap', `i ett ${lek ? 'lekslagsmål' : 'slagsmål'} med ${lista(mot.map(q => q.name))}`)) dod = true;
-      if (w.fast && p.skador?.length) p.skador[p.skador.length - 1].fast = 1; // spjutet sitter kvar till vården (steg 3.7.7)
-      if (!dod && w.av && !(KROPPSDELAR[w.d] as { livsviktig?: true }).livsviktig) forlora(s, p, w.d, 'höggs av'); // olyckshugget (steg 9.5.22)
-    }
-    slitKastat(s, p, st, k);
-    if (k.kryper) blodas(s, p.x, p.y, 'kryp', k.kryper * STRID.krypBlod); // släpspåret efter den som kröp undan (steg 3.7.19)
-    if (dod) { count(s, 'drap'); die(s, p, 'drap'); for (const q of mot) upplev(s, q, 'dodade', p.name); continue; } // den som dödade minns det (steg 4.1.1.2)
-    p.blod = Math.min(p.blod ?? 1, Math.max(HALSA.blodDod, k.blod));
-    efterStrid(s, st, k, p, mot, sidor[k.sida], o => sidor[o.sida][st.kampar.filter(x => x.sida === o.sida).indexOf(o)], lek, vinnare);
-    // striden tar tid: hen står kvar och slåss medan de andra behoven väntar. Brottaren är kvar i matchen (steg 9.2.92)
-    if (AVS[avsikt].sport) continue;
-    avbryt(s, p);
-    p.task = { act: 'strid', phase: 'do', tx: p.x, ty: p.y, until: s.now + Math.max(SLAGSMAL.minst, st.slut!.t) * SEC, carry: 0, why: orsak };
-  }
-  // vinnaren blir ett rykte i byn (steg 3.3.1): de som såg det minns det
-  if (!lek && vinnare !== -1) for (const p of sidor[vinnare]) if (p.health > 0) handelse(s, p, 'vannSlagsmal', sidor[1 - vinnare][0]);
-  return st;
-}
-
-// ett gräl (samtal.ts) kan bli ett slagsmål: oftare hos den blodtörstiga
-setRanStrid((s, p, offer, orsak) => stridIByn(s, 'slagsmal', [[p], [offer]], orsak).slut!.vinnare === 0); // rånet (steg 3.7.17, behov.ts)
-
-
-// medan ett barn leker: kastlek ger träffsäkerhet, och ibland brottas hen med ett annat barn som leker nära
-export function lekSteg(s: State, p: Person, dtSec: number) {
-  const h = dtSec / 3600;
-  ovning(p, 'traff', SLAGSMAL.kast * h);
-  if (rnd(s, 'strid', p) >= SLAGSMAL.lek * h) return;
-  const andra = s.people.filter(q => q !== p && q.health > 0 && q.task?.act === 'leka' && q.task.phase === 'do' && Math.hypot(q.x - p.x, q.y - p.y) <= SLAGSMAL.lekNara);
-  if (!andra.length) return;
-  stridIByn(s, 'lek', [[p], [andra[Math.floor(rnd(s, 'strid', p) * andra.length)]]], 'på lek');
-}
 import { rusSmid, rusTraff } from './rus';

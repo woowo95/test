@@ -4,7 +4,7 @@ import * as SIM from '../../sim';
 const { RT, STATION } = SIM;
 import { FOREST, isSoil } from '../../sim/vag';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
-import { setMat, slutStrider, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank, medHus, nyInvanare } from './hjalp';
+import { stridIByn, setMat, slutStrider, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank, medHus, nyInvanare } from './hjalp';
 
 SCENARIER.djur = {
   text: 'Kaniner syns där det finns vilt, skuttar omkring och hoppar undan folk. Jakt fångar hela kaniner som bärs hem hela och äts som de är; med flintkniv slaktas de till mer kött, ben, skinn och senor',
@@ -2098,7 +2098,7 @@ SCENARIER.stridkronika = {
     const fore = krn(s).length;
     let svara = 0, vanliga = 0, lekar = 0;
     for (let i = 0; i < 40; i++) {
-      const n0 = krn(s).length, st = SIM.stridIByn(s, i % 2 ? 'skada' : 'slagsmal', [[p], [q]], 'för att pröva');
+      const n0 = krn(s).length, st = stridIByn(s, i % 2 ? 'skada' : 'slagsmal', [[p], [q]], 'för att pröva');
       const svart = st.kampar.some(k => SIM.svartSkadad(k) || k.lage === 'dod');
       if (svart) svara++; else if (krn(s).length > n0) vanliga++;
       for (const x of [p, q]) { x.skador = []; x.health = 1; x.blod = 1; x.task = undefined; x.died = undefined; }
@@ -2108,7 +2108,7 @@ SCENARIER.stridkronika = {
     const barn = living(s).filter(x => ageOf(x, s.now) >= SIM.ALDER.smabarn && ageOf(x, s.now) < SIM.ALDER.vuxen);
     while (barn.length < 2) barn.push(nyInvanare(s, 'm', 6));
     for (let i = 0; i < 20; i++) {
-      const n0 = krn(s).length, st = SIM.stridIByn(s, 'lek', [[barn[0]], [barn[1]]], 'på lek');
+      const n0 = krn(s).length, st = stridIByn(s, 'lek', [[barn[0]], [barn[1]]], 'på lek');
       if (krn(s).length > n0 && !st.kampar.some(k => SIM.svartSkadad(k))) lekar++;
       for (const x of barn) { x.skador = []; x.health = 1; x.blod = 1; x.task = undefined; }
     }
@@ -2163,6 +2163,7 @@ SCENARIER.ran = {
       if (!d) continue;
       for (let h = 0; h < 6 && !s.stat?.ran; h++) SIM.needLadder(s, a, 3600);
       if (!s.stat?.ran) continue;
+      for (let k = 0; k < 900 && s.kartStrider?.length; k++) step(s, SIM.nastaSteg(s)); // slagsmålet sker på kartan och tar tid (steg 10.1.7)
       ran++; stolAgg += s.stat?.stold_mat ?? 0;
       if (s.stat?.ranVann) { vann++; if (ownsAmount(s, b, 'bar') < 6) fick++; }
       if (SIM.intryckOm(d, a.id, 'valdsam')) vald++;
@@ -2184,7 +2185,8 @@ SCENARIER.ran = {
     return [
       [`den aggressiva svältande rånar någon nära (${ran} av 12 byar), i stället för att stjäla (${stolAgg} stölder)`, ran >= 8 && stolAgg === 0],
       [`vinnaren tar saken (vann ${vann}, fick maten ${fick})`, vann > 0 && fick === vann],
-      [`de som såg det tycker att hen är våldsam (${vald} av ${ran}) och en tjuv (${tjuv} av ${ran})`, vald === ran && tjuv === ran],
+      // våldet ses när slagsmålet börjar; den som gått undan innan det är slut ser inte hur det gick (steg 10.1.7)
+      [`de som såg det tycker att hen är våldsam (${vald} av ${ran}), och de som såg hur det slutade att hen är en tjuv (${tjuv} av ${ran})`, vald === ran && tjuv >= ran / 2],
       [`den som inte är aggressiv rånar inte (${fredlig}) men stjäl (${stal})`, fredlig === 0 && stal > 0],
       [`utbrottet går ut över den man är arg på (${arg}), annars den närmaste (${nast}, ${inteArg})`, arg && nast && inteArg],
     ];
