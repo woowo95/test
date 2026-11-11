@@ -141,7 +141,7 @@ SCENARIER.palett = {
 };
 
 SCENARIER.vakt = {
-  text: 'Nattvakten: varje natt håller en vuxen mellan 16 och 60 år vakt, den modigaste med lite slump, och den som utses lägger ner det hen bär',
+  text: 'Nattvakten: varje natt håller en vuxen mellan 16 och 60 år vakt, den modigaste med lite slump, och den som utses lägger ner det hen bär. Antalet vakter följer hotet (steg 10.1.20): fler när vargar setts och strax efter ett rövaranfall',
   kor: () => {
     const s = createState(2, START), natter = new Map<number, Set<number>>(), aldrar: number[] = [], sjuka = new Map<number, string>();
     kor(s, 3 * 24, q => {
@@ -164,7 +164,11 @@ SCENARIER.vakt = {
     const utsedd = g!.guardDay === q.lastGuardDay && q.lastGuardDay !== -1, bordan = g!.task;
     const nere = Math.abs(grenarUte(q) - grenar0 - 2) < 1e-6; // de två grenarna hen bar ligger kvar
     g!.task = undefined; SIM.chooseTask(q, g!);
+    // antalet vakter följer hotet (steg 10.1.20): en by som sett vargar, eller nyss haft rövare, utser fler än en lugn natt
+    const antal = (hot: (h: SIM.State) => void) => { const h = SIM.cloneState(s); klockan(h, 22); h.lastGuardDay = -1; h.vargar = undefined; h.rovarVila = undefined; for (const x of living(h)) { x.guardDay = undefined; x.varsel = undefined; } hot(h); const y = living(h).find(x => ageOf(x, h.now) >= 18)!; y.task = undefined; SIM.chooseTask(h, y); return { n: living(h).filter(x => x.guardDay === h.lastGuardDay).length, hot: SIM.vaktHot(h) }; };
+    const lugn = antal(() => undefined), medVarg = antal(h => { h.vargar = [{ id: 1, vargar: [1, 2, 3], x: 5, y: 5, mx: 5, my: 5, gar: h.now, hunger: 0.5, gor: 'stryker', sedd: h.now } as SIM.Vargflock]; }), efterRan = antal(h => { h.rovarVila = h.now; });
     return [
+      [`en lugn natt vaktar ${lugn.n} (hotet ${lugn.hot.toFixed(1)}), när vargar setts ${medVarg.n} (${medVarg.hot.toFixed(1)}) och strax efter ett rövaranfall ${efterRan.n} (${efterRan.hot.toFixed(1)})`, lugn.n === 1 && medVarg.n > lugn.n && efterRan.n > lugn.n],
       [`${natter.size} nätter under tre dygn (tre år i spelet) hade en vakt, och aldrig mer än en (${[...natter.values()].map(n => n.size).join(', ')}${sjuka.size ? `; ${[...sjuka.keys()].filter(d => !natter.has(d)).length} natt med en sjuk vakt` : ''})`, natter.size + [...sjuka.keys()].filter(d => !natter.has(d)).length >= 3 && [...natter.values()].every(n => n.size === 1)],
       [`vakterna var mellan ${Math.min(...aldrar).toFixed(0)} och ${Math.max(...aldrar).toFixed(0)} år`, aldrar.length > 0 && aldrar.every(a => a >= SIM.ALDER.vaktFran && a < SIM.ALDER.vaktTill)],
       [`i natt (${isLight(q.now) ? 'ljust' : 'mörkt'}) utsågs den modigaste, ${g!.name}, när ${p!.name} valde (${akt(p!)}), och hen slutade med det hen gjorde och lade ner grenarna`, !isLight(q.now) && utsedd && bordan === undefined && nere && akt(p!) !== 'vakt'],

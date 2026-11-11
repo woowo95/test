@@ -165,6 +165,8 @@ const PDEF = {
   // arbetsordningen (steg 6.1.19, val.ts): ett påbud kan flytta en rad en nivå upp eller ge den fler händer
   bygg: { ruta: 'Arbetet', namn: 'Bygg före allt', text: 'Hur ofta bygget går före försörjningen med mat och ved', asikt: s => clamp(PAB.byggUtan * homeless(s) / Math.max(1, living(s).length) - 1, -1, 1) },
   vinter: { ruta: 'Arbetet', namn: 'Samla för vintern', text: 'Hur många fler som arbetar med maten och veden', asikt: (s, l) => lagerAsikt(s, l) },
+  // nattvakten (steg 10.1.20, vaktHot i val.ts): en försiktig ledare vill ha fler som vaktar
+  vakt: { ruta: 'Arbetet', namn: 'Nattvakten', text: 'Hur många som håller vakt om natten', sed: 'forsiktighet', asikt: (s, l) => clamp(drar(s, l).forsiktighet, -1, 1) },
   // hånet (steg 4.3.2.3, framtradande.ts): en ledare med låg empati förbjuder att man hånar hen när man uppträder
   han: { namn: 'Hån', text: 'Om den som uppträder får håna ledaren', asikt: (s, l) => clamp((stat(l, 'empati', s.now) - PAB.hanEmp) / PAB.hanDiv, -1, 1) },
 } satisfies Record<string, PabudDef>;
