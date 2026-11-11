@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 // Scenarier. Kontroller av hela spelet: gränssnittet läser utan att ändra, ikoner, vakter och det som aldrig händer.
 import { Person, createState, step, living, serializeParts, serialize, isLight, ageOf, TEKNIK, knows, housesOf, FYND, FYND_IDS, GRUPPER, DJUR, tingOf, FN, fnId, SEC, MATERIAL, ACTS, isSick, SAKER, slagIkon } from '../../sim';
@@ -557,5 +558,20 @@ SCENARIER.arbetstid = {
       ['men inte när den tar 3 minuter', !kniv3],
       [`att vila är en stund (${SIM.tidSlagAv('vila')}) och får ta hur lång tid som helst`, SIM.tidSlagAv('vila') === 'stund' && !vila],
     ];
+  },
+};
+
+SCENARIER.ritplats = {
+  text: 'Allt som ritas följer bilden (steg 10.2.19): ritkoden i ui/ läser aldrig en persons plats i simuleringen (p.x och p.y i slutet av slaget) utan platsen i bilden (posOf, sparPlats, rovarPlats). Vakten letar efter rader som läser p.x eller q.x bredvid living( eller .people, och efter { x: p.x, y: p.y }',
+  kor: () => {
+    const dir = fileURLToPath(new URL('../../ui/', import.meta.url)), fel: string[] = [];
+    for (const f of readdirSync(dir).filter(n => n.endsWith('.ts'))) {
+      readFileSync(dir + f, 'utf8').split('\n').forEach((rad, i) => {
+        if (/posOf|sparPlats|rovarPlats|\(en hög, ingen person\)|\(platsen i bilden/.test(rad)) return; // (raderna som läser platsen i bilden är märkta)
+        const folk = /living\(|\.people\b/.test(rad) && /\b[pq]\.[xy]\b/.test(rad), par = /x: [pq]\.x, y: [pq]\.y/.test(rad);
+        if (folk || par) fel.push(`${f}:${i + 1}`);
+      });
+    }
+    return [[`ingen ritkod läser en persons plats i simuleringen (${fel.join(', ') || 'inga'})`, fel.length === 0]];
   },
 };

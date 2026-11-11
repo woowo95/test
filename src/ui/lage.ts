@@ -84,7 +84,7 @@ export function sakVar(): { x: number; y: number } | { station: number } | { per
   if (person !== undefined) return { person };
   if (t.vid !== undefined) return { station: t.vid };
   const p = piles().find(q => q.id === t.id);
-  return p && { x: p.x, y: p.y };
+  return p && { x: p.x, y: p.y }; // (en hög, ingen person)
 }
 
 // vad p gör vid tiden som visas (steg 4.5.6.5): byn är räknad ett slag före klockan som visas, och uppgiften sparas med tiden

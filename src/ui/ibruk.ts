@@ -1,5 +1,5 @@
-import { Act, DJUR, DJURARTER, GORS, HOUR, STATION, Station, clamp, grillVara, halvKlar, living, materialSak, stationDef, tingOf, vidStation } from '../sim';
-import { s } from './lage';
+import { Act, DJUR, DJURARTER, GORS, HOUR, STATION, Station, clamp, grillVara, halvKlar, living, materialSak, sparPlats, stationDef, tingOf, vidStation } from '../sim';
+import { s, ui } from './lage';
 
 // det som görs vid en station syns på den (steg 2.2.12): sakens egen symbol medan någon arbetar där. Viltet och fisken ur
 // djurregistret (DJUR), redskapen ur GORS, repet när någon tvinnar och materialet när någon syr ett plagg (steg 2.3.2,
@@ -11,7 +11,7 @@ const PA_BANKEN: Partial<Record<Act, string>> = { ...Object.fromEntries(Object.v
 // den längsta tiden (maxTim). Annars saken ur PA_BANKEN och ingen stapel. Bara utseende
 export function iBruk(st: Station) {
   const d = stationDef(st.k), at = vidStation(st);
-  const p = d && living(s).find(q => q.task && d.gor.includes(q.task.act) && Math.hypot(q.x - at.x, q.y - at.y) < STATION.vidBank);
+  const p = d && living(s).find(q => { const v = sparPlats(q, ui.nu) ?? q; return q.task && d.gor.includes(q.task.act) && Math.hypot(v.x - at.x, v.y - at.y) < STATION.vidBank; }); // där hen syns i bilden (steg 10.2.19)
   const tk = p?.task;
   if (!p || !tk) return undefined;
   const h = tk.ref !== undefined ? tingOf(s).find(t => t.id === tk.ref && t.halv)?.halv : undefined;

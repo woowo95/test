@@ -1,6 +1,7 @@
 import * as PIXI from 'pixi.js';
-import { sakerPaMarken, BJORK, BRAND, busksort, DAY, H, HOUR, STADIER, T, VAG, W, tradArt, valjArt, ageIndex, stadium, emberOn, fireHeat, eldXY, eldarOf, groundOf, isCm, kalender, lightLevel, snoPaMarken, vaderNu, LJUSKALLOR, living } from '../sim';
+import { sakerPaMarken, BJORK, BRAND, busksort, DAY, H, HOUR, STADIER, T, VAG, W, tradArt, valjArt, ageIndex, stadium, emberOn, fireHeat, eldXY, eldarOf, groundOf, isCm, kalender, lightLevel, snoPaMarken, vaderNu, LJUSKALLOR, type Ljuspunkt, living, byId, rovarPlats } from '../sim';
 import { s, ui } from './lage';
+import { posOf } from './manniskor';
 import { TS, app, figurLayer, husLayer, mork, pileLayer, terrainG, world } from './scen';
 import { ritaSkuggor, sattMoln, skuggLangd } from './skugga';
 import { stallNatt } from './natt';
@@ -118,9 +119,11 @@ export function drawNight(t: number) {
     eldar.push({ x: f.x * TS + TS / 2, y: f.y * TS + TS / 2, r: TS * ELD_LJUS * k, k: -(I > 0 ? 1 : 0.5) }); // negativ: eldens form (natt.ts)
   }
   // facklorna och de andra ljuskällorna (steg 6.3.6–6.3.8, LJUSKALLOR i sim/ljus.ts); elden har sitt sken ovan
-  if (m > 0) for (const [n, k] of Object.entries(LJUSKALLOR)) if (n !== 'eld') for (const l of k.kallor(s)) eldar.push({ x: l.x * TS, y: l.y * TS, r: TS * l.r, k: 0.8 });
+  // (en fackla som någon bär lyser där bäraren syns i bilden, steg 10.2.19)
+  if (m > 0) for (const [n, k] of Object.entries(LJUSKALLOR)) if (n !== 'eld') for (const l of k.kallor(s) as Ljuspunkt[]) { const q = l.bar !== undefined ? synsVid(l.bar) ?? l : l; eldar.push({ x: q.x * TS, y: q.y * TS, r: TS * l.r, k: 0.8 }); }
   // ljuset kring människorna (steg 9.2.69): bara i bilden; den som bär en fackla har facklans ljus
-  const folk = m > 0 ? living(s).filter(p => !eldar.some(e => e.k > 0 && Math.hypot(e.x - p.x * TS, e.y - p.y * TS) < TS)).map(p => ({ x: p.x * TS, y: p.y * TS - TS * 0.4, r: TS * FOLK_LJUS })) : [];
+  // (där var och en syns i bilden, inte där hen står i slutet av slaget, steg 10.2.19)
+  const folk = m > 0 ? living(s).map(posOf).filter(p => !eldar.some(e => e.k > 0 && Math.hypot(e.x - p.x * TS, e.y - p.y * TS) < TS)).map(p => ({ x: p.x * TS, y: p.y * TS - TS * 0.4, r: TS * FOLK_LJUS })) : [];
   stallNatt(mork, world, Math.min(DJUPNATT, m), eldar, folk);
 }
 // skuggorna på marken och golven (steg 5.1.8, ui/skugga.ts): träden, folket, djuren, stationerna, sakerna och väggarna.
@@ -130,4 +133,10 @@ export function drawSkuggor() {
   const v = vaderNu(s, ui.nu);
   sattMoln(v.moln, v.vind, lightLevel(ui.nu), performance.now()); // molnskuggorna (steg 5.1.10)
   ritaSkuggor(app.renderer as PIXI.Renderer, world, [pileLayer, figurLayer], [markytaLayer, husLayer], W * TS, H * TS);
+}
+// där personen med id syns i bilden: en bybo där bilden visar hen (posOf), en rövare eller annan gäst efter sin sparade väg
+function synsVid(id: number) {
+  const p = byId(s, id);
+  if (!p) return undefined;
+  return p.gast ? rovarPlats(p, ui.nu) : posOf(p);
 }

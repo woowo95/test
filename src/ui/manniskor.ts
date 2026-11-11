@@ -129,7 +129,7 @@ function ritaSport(t: number) {
   if (!m || s.now >= m.slut) return;
   if (m.k === 'dragkamp') { ritaDragkamp(m, t); return; }
   const k = t / SEC, med: { x: number; y: number }[] = [];
-  for (const p of living(s)) { const tk = uppgiftVid(p); if (tk && iMatchen(tk)) { const q = synlig.get(p.id); if (q) med.push({ x: q.x * TS, y: q.y * TS }); } }
+  for (const p of living(s)) { const tk = uppgiftVid(p); if (tk && iMatchen(tk)) { const q = synlig.get(p.id); if (q) med.push({ x: q.x * TS, y: q.y * TS }); } } // (platsen i bilden: synlig)
   const mx = m.x * TS, my = m.y * TS;
   if (m.k === 'kast') {
     const mal = kastMal(m), ax = mal.x * TS, ay = mal.y * TS;
@@ -166,7 +166,7 @@ function ritaDragkamp(m: Match, t: number) {
   const mx = Math.round(m.x * TS), my = Math.round(m.y * TS);
   pt(mx, my - 9, SP.jord[0], 1, 19); pt(mx + 1, my - 9, SP.jord[1], 1, 19); // strecket ristat i marken
   const xs: number[] = [];
-  for (const p of living(s)) { const tk = uppgiftVid(p); if (tk && iMatchen(tk)) { const q = synlig.get(p.id); if (q) xs.push(q.x * TS); } }
+  for (const p of living(s)) { const tk = uppgiftVid(p); if (tk && iMatchen(tk)) { const q = synlig.get(p.id); if (q) xs.push(q.x * TS); } } // (platsen i bilden: synlig)
   if (!m.spelat || xs.length < 2) { // repet ligger hoprullat på marken medan de samlas
     for (let i = 0; i < 22; i++) pt(mx - 22 + i, my + 2 + (Math.floor(i / 3) % 2), SP.jord[i % 2 ? 1 : 2]);
     return;
@@ -196,7 +196,7 @@ function glid(id: number, q: { x: number; y: number }, nu: number) {
     else if (d >= HOPP_MAX) ox = oy = 0;
     if (Math.abs(ox) + Math.abs(oy) < 0.01) ox = oy = 0;
   }
-  glidning.set(id, { x: q.x, y: q.y, ox, oy, t: nu });
+  glidning.set(id, { x: q.x, y: q.y, ox, oy, t: nu }); // (platsen i bilden)
   return ox || oy ? { x: q.x + ox, y: q.y + oy } : q;
 }
 function sprid(ppl: Person[]) {

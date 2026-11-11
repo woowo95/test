@@ -42,7 +42,7 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
     if (!h) return [];
     const p = handlarPlats(s, h, t), utr = HANDLAR_UTR[h.utr]?.namn ?? h.utr, ko = h.ko?.length ?? 0;
     return [{
-      id: h.id, namn: hp(s, h).name, sex: hp(s, h).sex, sort: 'Handlare', farg: 0x4e6a8a, x: p.x, y: p.y, gor: handlarFas(h),
+      id: h.id, namn: hp(s, h).name, sex: hp(s, h).sex, sort: 'Handlare', farg: 0x4e6a8a, x: p.x, y: p.y, gor: handlarFas(h), // (platsen i bilden: handlarPlats)
       fran: `${klanById(s, hp(s, h).gast!.klan)?.namn ?? 'en grannklan'} vid ${hp(s, h).gast!.hem!}`,
       rader: [
         { namn: 'Silver', varde: `${iconImg('silver', 12)} ${Math.round(h.silver)}`, title: 'Silvret handlaren har med sig' },
@@ -82,7 +82,7 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
   s => s.people.filter(p => p.gast?.sort === 'framling' && gastLever(p)).map(p => {
     const g = p.gast!, k = klanById(s, g.klan);
     return {
-      id: p.id, namn: p.name, sex: p.sex, sort: 'Främling', farg: 0x6a7a4e, x: p.x, y: p.y, p,
+      id: p.id, namn: p.name, sex: p.sex, sort: 'Främling', farg: 0x6a7a4e, ...rovarPlats(p, ui.nu), p, // där hen syns i bilden (steg 10.2.19)
       gor: g.fas === 'pratar' ? 'Pratar med ledaren' : g.fas === 'gar' ? 'Går vidare' : 'På väg mot byn',
       fran: k ? `${k.namn} vid ${k.hem}` : undefined,
       rader: g.tek ? [{ namn: 'Kan', varde: esc(TEK[g.tek]?.namn ?? g.tek), title: 'Det främlingen kan som ingen i byn kan' }] : [],
