@@ -913,7 +913,14 @@ SCENARIER.vin = {
     const kar = { id: 997, k: 'bryggkar', x: 3, y: 3, kvar: 0 } as SIM.Station; s.stationer = [...(s.stationer ?? []), kar];
     setAmount(s, 'bar', 12);
     const sack = addTool(s, 'vattensack', p); sack.hos = undefined; fyllVatska(s, 'vatten', 1, sack);
-    const val = bryggVal(s, p);
+    // en svältande by brygger inte (steg 10.2.1): bären är mat, och med maten under bufferten läggs ingen sats och raden väljs inte
+    const sv = SIM.cloneState(s), ps = SIM.living(sv).find(r => r.id === p.id)!;
+    for (const k of SIM.SAK_LIST) if (SIM.isFood(k) && k !== 'bar') setAmount(sv, k, 0);
+    const svalt = SIM.foodDays(sv) < SIM.buffert(sv, 'mat'), svBrygg = bryggVal(sv, ps);
+    let svVal = 0; const akt = (q: SIM.Person) => q.task?.act; for (let i = 0; i < 40; i++) { ps.task = undefined; SIM.chooseTask(sv, ps); if (akt(ps) === 'brygga') svVal++; }
+    setAmount(s, 'torrkott', 400); // byn har mat över bufferten
+    const vald = bryggVal(s, p), mat = SIM.foodDays(s).toFixed(1);
+    const val = vald;
     bryggKlar(s, p, kar.id);
     const isats = kar.sats?.v === 'vin' && SIM.amountOf(s, 'bar') === 2;
     const tid = (h: number) => { for (let i = 0; i < h; i++) { s.now += SIM.HOUR; stepBrygg(s); } };
@@ -927,6 +934,7 @@ SCENARIER.vin = {
     return [
       [`tekniken ${TEK.bryggkar.namn} kommer genom matlagningen (${TEK.bryggkar.omr.join(', ')}), och bryggkaret är en station (${STATIONER.bryggkar.namn})`, TEK.bryggkar.omr.includes('koka_mat') && !!STATIONER.bryggkar],
       [`bären och vattnet läggs i karet (${val?.act}, ${isats ? 'satsen ligger i karet' : 'ingen sats'})`, val?.act === 'brygga' && isats],
+      [`en svältande by brygger inte: med maten under bufferten (${svalt ? 'svälter' : 'svälter inte'}) blir det ingen sats (${svBrygg?.act ?? 'ingen'}) och raden väljs ${svVal} av 40 gånger; med mat för ${mat} dygn bryggs det`, svalt && !svBrygg && svVal === 0],
       [`satsen jäser på ${BRYGD.vin.dygn} dygn inne (${jast ? 'klar' : 'inte klar'})`, jast],
       [`vinet hälls upp i en stor lerkruka (${tappa ? 'ja' : 'nej'}, ${vin} vin) och karet är tomt (${tomt ? 'ja' : 'nej'})`, tappa && vin === BRYGD.vin.ger && tomt],
       [`vinet blir bättre med tiden (${q0} → ${q1}) och håller ${VATSKOR.vin.haller} dygn`, q1 > q0 && VATSKOR.vin.haller === 40],

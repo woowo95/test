@@ -6,6 +6,8 @@
 // mjölkar, klipper och vallar, så att någon blir byns herde. Allt stegas en gång i timmen (stepTamdjur, steg.ts), likadant i
 // båda lägena, med byns följd 'tamdjur'.
 import { balans } from './balans';
+import { farorNu } from './kult';
+import { isFood } from './saker';
 import { ALDER, ageOf, byId, count, forstaGang, gjort, living, log, ovning } from './folk';
 import { getable, takeMaterial } from './behov';
 import { rnd } from './slump';
@@ -65,7 +67,8 @@ export function tamDor(s: State, d: Tamdjur, orsak: string) {
   log(s, `${q ? `${q.name}s ` : 'Byns '}${a.ord[1]} dog ${orsak === 'svalt' ? 'av hunger' : orsak === 'alder' ? 'av ålder' : orsak}.`, 'world', q ? [q.id] : []);
 }
 // vad djuret äter av det som finns, det bästa först (undefined: inget att ge det)
-export const foderFor = (s: State, p: Person, d: Tamdjur) => tamArt(d.art).foder.find(k => getable(s, p, k) >= 1);
+// det djuret äter som också är mat åt människorna (hundens kött) ges inte när byn svälter, efter samma mått som valet av aktivitet (steg 10.2.1)
+export const foderFor = (s: State, p: Person, d: Tamdjur) => { const svalt = farorNu(s).svalt; return tamArt(d.art).foder.find(k => getable(s, p, k) >= 1 && !(svalt && isFood(k))); };
 
 // en timme för djuren: hungern växer, det svultna och det gamla dör
 export function stepTamdjur(s: State) {

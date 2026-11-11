@@ -4,6 +4,9 @@
 // satsen är klar silas den och hälls upp i stora lerkrukor, och karet är tomt igen. Vinet och ölet är rader i VATSKOR
 // (vatskor.ts) och står i krukorna, där vinet blir bättre med tiden (vinKvalitet). Registret BRYGD har en rad per dryck.
 import { balans } from './balans';
+import { isFood } from './saker';
+import { foodDays } from './ekonomi';
+import { buffert } from './forradsmal';
 import { count, forstaGang, living, log } from './folk';
 import { Station, isKlar, stationerOf } from './stationer';
 import { DAY, HOUR, Person, State } from './typer';
@@ -48,7 +51,9 @@ export function bryggVal(s: State, p: Person): { act: 'brygga' | 'tappa' | 'malt
     for (const v of BRYGD_LIST) {
       const d = BRYGD[v];
       if (!knows(p, d.tek) || vatskaAv(s, v) >= BRYGG.vill || (d.vatten && !fylldSack(s))) continue;
-      if (Object.entries(d.av).every(([k, n]) => getable(s, p, k) >= n)) return { act: 'brygga', kar, v };
+      // det som också är mat (bären) har sitt värde som mat i förrådsmålen (steg 10.2.1): det bryggs bara av när maten räcker
+      // över bufferten, så att vinet ärver bristen på mat
+      if (Object.entries(d.av).every(([k, n]) => getable(s, p, k) >= n && !(isFood(k) && foodDays(s) < buffert(s, 'mat')))) return { act: 'brygga', kar, v };
     }
   }
   // maltet (steg 9.6.13): kornet blöts och hängs på en torkställning med plats, när ölet saknar malt
