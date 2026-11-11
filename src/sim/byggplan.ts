@@ -692,7 +692,7 @@ export function husFel(s: State): string | undefined {
 }
 
 // ---------- planen ----------
-// en gång i timmen, men planen görs bara på PLAN.varTim:e klockslaget (steg 7.2.3): några gånger per dygn i spelet, inte per person
+// en gång i timmen; själva planen (planBuild) är en egen rad i TAKTER (steg.ts) och görs var PLAN.varTim:e timme (steg 7.2.3 och 10.2.21)
 export function stepByggplan(s: State) {
   stepBehov(s);
   planLager(s);
@@ -702,7 +702,6 @@ export function stepByggplan(s: State) {
   rivOmTomt(s);
   lagerFlyttTimme(s); // en lagerplats närmare mitten (steg 9.4.7)
   stationFlyttTimme(s); // en station ute närmare dem som använder den (steg 9.4.8)
-  if (Math.floor(s.now / HOUR) % PLAN.varTim === 0) planBuild(s);
 }
 // lagret (steg 7.2.18): det som inte fått plats ligger bredvid. Byggplanen väger en större lagerplats mot en ny. Marken märks bara
 // ut, så det behövs ingen byggare, och det väntar inte på annat bygge

@@ -6,7 +6,7 @@ import { hamtaForst, hamtat } from './paborjat';
 import { sorgTimme } from './liv';
 import { lagerIStraket } from './strak';
 import { rumVila } from './rum';
-import { stepByggplan } from './byggplan';
+import { PLAN, planBuild, stepByggplan } from './byggplan';
 import { FALLOR, FISKAR, MJARDE, mjardarOf, sattUt, stepMjardar, valjFisk, vittja } from './fisk';
 import { TILLVERKA, TILLVERKA_LIST } from './tillverka';
 import { RECEPT } from './recept';
@@ -331,21 +331,78 @@ export const TAKTER: Takt[] = [
   { namn: 'branden', sek: 0, fn: (s, dt) => { brandSteg(s, dt); brinnerSteg(s, dt); } }, // gnistor, blixten, elden som sprider sig och den som brinner (brand.ts)
   { namn: 'förrådets slitage', sek: 60, fn: (s, dt) => { wearStore(s, dt); stepBlotVed(s, dt); } }, // slitage, fortare utanför lagret, och veden som blir blöt och torkar (steg 7.3.4)
   { namn: 'elden', sek: 10, fn: (s, dt, c) => stepFire(s, dt, c.ppl) },
-  // varje timme (det som räknas per timme och inte får tiden): byn vid timmens början, världen och husen en stund in i timmen
-  { namn: 'timmen: byn', sek: 3600, fas: 0, fn: s => {
-    atSteg(s); stepSeder(s); updateTags(s); stepRelationer(s); stepUppvaxt(s); stepReligion(s); for (const p of living(s)) morkHumor(s, p); facklorTimme(s); stepHumor(s); stepDelning(s); stepLarlingar(s);
-    forbrukTimme(s); // materialens förbrukning glöms långsamt (forradsmal.ts, steg 6.2.14)
-    arbetsTimme(s); // byns behov för arbetsordningen (val.ts, steg 6.1.12)
-    historikSteg(s); // nyckeltalen till byns historik (läses inte av simuleringen)
-  } },
-  { namn: 'timmen: världen', sek: 3600, fas: 1 / 3, fn: (s, _dt, c) => { stepVader(s); vindfallen(s); regnetTvattar(s); stepMotgang(s); stepTorka(s); stepFlod(s); stepIs(s); growGround(s, 1, c.ai); growFynd(s, 1, c.ai, vaxtFaktor(s), vaderNu(s).nb); forget(s, 1); stepRykten(s, moodOf); glomRykten(s, 1); stepBerattelser(s); stepStyre(s); rotStumps(s); tidyStore(s); } },
-  { namn: 'timmen: husen och sakerna', sek: 3600, fas: 2 / 3, fn: (s, _dt, c) => {
-    vaggRensa(s); kvarTimme(s); kultTimme(s); kyrkaTimme(s); wearBuild(s, 1, c.ai); stepByggnader(s); husKlaraTimme(s); stepMjardar(s); stepNaken(s); stepByggplan(s); stepEldFlytt(s); lagerIStraket(s); stepPaborjat(s); stepStationer(s); stepPynt(s); stepKrukor(s); protesTimme(s); halsoNotiser(s); stepKok(s); vatskorTimme(s); stepBrygg(s); stepBak(s); stepSophog(s); stepKompost(s); stepOrtKrukor(s); stadaByten(s); stepBrasor(s); stepKlader(s); stepOdling(s); stepTamdjur(s); stepHagar(s); stepBoskap(s); stepVinter(s); stepHons(s);
-    askaSteg(s); // det svarta efter en eldsvåda försvinner (brand.ts)
-    sorgTimme(s); // sorgen i stadier (liv.ts, steg 9.2.33)
-    smittaTimme(s); smittaUtifranTimme(s); // smittan (sjukdom.ts, steg 9.5.3 och 9.5.5)
-    compact(s); // här och inte i sparningen, så att alla lägen städar vid samma tid
-  } },
+  // det som räknas i timmar (steg 10.2.21 B): var sitt system med sin egen takt, utspritt över timmen. Det som ändras långsamt
+  // (fynden som växer igen, glömskan, ryktena, husens slitage) räknas glesare och får tiden sedan sist
+  { namn: 'atSteg', sek: 3600, fn: s => { atSteg(s); } },
+  { namn: 'stepSeder', sek: 3600, fn: s => { stepSeder(s); } },
+  { namn: 'updateTags', sek: 3600, fn: s => { updateTags(s); } },
+  { namn: 'stepRelationer', sek: 3600, fn: s => { stepRelationer(s); } },
+  { namn: 'stepUppvaxt', sek: 3600, fn: s => { stepUppvaxt(s); } },
+  { namn: 'stepReligion', sek: 3600, fn: s => { stepReligion(s); } },
+  { namn: 'morkHumor', sek: 3600, fn: s => { for (const p of living(s)) morkHumor(s, p); } },
+  { namn: 'facklorTimme', sek: 3600, fn: s => { facklorTimme(s); } },
+  { namn: 'stepHumor', sek: 3600, fn: s => { stepHumor(s); } },
+  { namn: 'stepDelning', sek: 3600, fn: s => { stepDelning(s); } },
+  { namn: 'stepLarlingar', sek: 3600, fn: s => { stepLarlingar(s); } },
+  { namn: 'forbrukTimme', sek: 3600, fn: s => { forbrukTimme(s); } },
+  { namn: 'arbetsTimme', sek: 3600, fn: s => { arbetsTimme(s); } },
+  { namn: 'historikSteg', sek: 3600, fn: s => { historikSteg(s); } },
+  { namn: 'stepVader', sek: 3600, fn: s => { stepVader(s); } },
+  { namn: 'vindfallen', sek: 3600, fn: s => { vindfallen(s); } },
+  { namn: 'regnetTvattar', sek: 3600, fn: s => { regnetTvattar(s); } },
+  { namn: 'stepMotgang', sek: 3600, fn: s => { stepMotgang(s); } },
+  { namn: 'stepTorka', sek: 3600, fn: s => { stepTorka(s); } },
+  { namn: 'stepFlod', sek: 3600, fn: s => { stepFlod(s); } },
+  { namn: 'stepIs', sek: 3600, fn: s => { stepIs(s); } },
+  { namn: 'growGround', sek: 3600, fn: (s, _dt, c) => { growGround(s, 1, c.ai); } },
+  { namn: 'growFynd', sek: 14400, fn: (s, dt, c) => { growFynd(s, dt / HOUR_S, c.ai, vaxtFaktor(s), vaderNu(s).nb); } },
+  { namn: 'forget', sek: 14400, fn: (s, dt) => { forget(s, dt / HOUR_S); } },
+  { namn: 'stepRykten', sek: 3600, fn: s => { stepRykten(s, moodOf); } },
+  { namn: 'glomRykten', sek: 14400, fn: (s, dt) => { glomRykten(s, dt / HOUR_S); } },
+  { namn: 'stepBerattelser', sek: 3600, fn: s => { stepBerattelser(s); } },
+  { namn: 'stepStyre', sek: 3600, fn: s => { stepStyre(s); } },
+  { namn: 'rotStumps', sek: 3600, fn: s => { rotStumps(s); } },
+  { namn: 'tidyStore', sek: 3600, fn: s => { tidyStore(s); } },
+  { namn: 'vaggRensa', sek: 3600, fn: s => { vaggRensa(s); } },
+  { namn: 'kvarTimme', sek: 3600, fn: s => { kvarTimme(s); } },
+  { namn: 'kultTimme', sek: 3600, fn: s => { kultTimme(s); } },
+  { namn: 'kyrkaTimme', sek: 3600, fn: s => { kyrkaTimme(s); } },
+  { namn: 'wearBuild', sek: 21600, fn: (s, dt, c) => { wearBuild(s, dt / HOUR_S, c.ai); } },
+  { namn: 'stepByggnader', sek: 3600, fn: s => { stepByggnader(s); } },
+  { namn: 'husKlaraTimme', sek: 3600, fn: s => { husKlaraTimme(s); } },
+  { namn: 'stepMjardar', sek: 3600, fn: s => { stepMjardar(s); } },
+  { namn: 'stepNaken', sek: 3600, fn: s => { stepNaken(s); } },
+  { namn: 'stepByggplan', sek: 3600, fn: s => { stepByggplan(s); } },
+  { namn: 'planBuild', sek: PLAN.varTim * 3600, fn: s => { planBuild(s); } }, // byggplanen (steg 7.2.3)
+  { namn: 'stepEldFlytt', sek: 3600, fn: s => { stepEldFlytt(s); } },
+  { namn: 'lagerIStraket', sek: 3600, fn: s => { lagerIStraket(s); } },
+  { namn: 'stepPaborjat', sek: 3600, fn: s => { stepPaborjat(s); } },
+  { namn: 'stepStationer', sek: 3600, fn: s => { stepStationer(s); } },
+  { namn: 'stepPynt', sek: 3600, fn: s => { stepPynt(s); } },
+  { namn: 'stepKrukor', sek: 3600, fn: s => { stepKrukor(s); } },
+  { namn: 'protesTimme', sek: 3600, fn: s => { protesTimme(s); } },
+  { namn: 'halsoNotiser', sek: 3600, fn: s => { halsoNotiser(s); } },
+  { namn: 'stepKok', sek: 3600, fn: s => { stepKok(s); } },
+  { namn: 'vatskorTimme', sek: 3600, fn: s => { vatskorTimme(s); } },
+  { namn: 'stepBrygg', sek: 3600, fn: s => { stepBrygg(s); } },
+  { namn: 'stepBak', sek: 3600, fn: s => { stepBak(s); } },
+  { namn: 'stepSophog', sek: 3600, fn: s => { stepSophog(s); } },
+  { namn: 'stepKompost', sek: 3600, fn: s => { stepKompost(s); } },
+  { namn: 'stepOrtKrukor', sek: 3600, fn: s => { stepOrtKrukor(s); } },
+  { namn: 'stadaByten', sek: 3600, fn: s => { stadaByten(s); } },
+  { namn: 'stepBrasor', sek: 3600, fn: s => { stepBrasor(s); } },
+  { namn: 'stepKlader', sek: 3600, fn: s => { stepKlader(s); } },
+  { namn: 'stepOdling', sek: 3600, fn: s => { stepOdling(s); } },
+  { namn: 'stepTamdjur', sek: 3600, fn: s => { stepTamdjur(s); } },
+  { namn: 'stepHagar', sek: 3600, fn: s => { stepHagar(s); } },
+  { namn: 'stepBoskap', sek: 3600, fn: s => { stepBoskap(s); } },
+  { namn: 'stepVinter', sek: 3600, fn: s => { stepVinter(s); } },
+  { namn: 'stepHons', sek: 3600, fn: s => { stepHons(s); } },
+  { namn: 'askaSteg', sek: 3600, fn: s => { askaSteg(s); } },
+  { namn: 'sorgTimme', sek: 3600, fn: s => { sorgTimme(s); } },
+  { namn: 'smittaTimme', sek: 3600, fn: s => { smittaTimme(s); } },
+  { namn: 'smittaUtifranTimme', sek: 3600, fn: s => { smittaUtifranTimme(s); } },
+  { namn: 'compact', sek: 3600, fn: s => { compact(s); } },
   // kroppen: behoven, att äta, hälsan och graviditeten, för var och en
   { namn: 'behoven', sek: 30, fn: (s, dt, c) => {
     const fh = hearthOf(s.fire), temp = temperature(s), coldRate = coldOf(temp), inRum = rumAntal(s, c);
