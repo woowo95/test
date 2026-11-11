@@ -2530,3 +2530,24 @@ SCENARIER.rovarmotet = {
     ];
   },
 };
+
+SCENARIER.rovarmote = {
+  text: 'Försvararna går dit rövarna är (steg 10.2.27): de som ska slåss går mot de rövare de ser, eller dit larmet säger att de är på väg, i stället för att vänta vid huvudförrådet, och striden börjar där de möts',
+  kor: () => {
+    const s = createState(4, START);
+    for (let i = 0; i < 12; i++) step(s, 300);
+    SIM.skickaRovare(s, 3);
+    const f = s.rovare!, hem = SIM.malet(s);
+    let gick = 0, strid: { x: number; y: number } | undefined;
+    for (let i = 0; i < 600 && f.folk.length && !strid; i++) {
+      step(s, 2);
+      for (const q of living(s)) if (q.task?.act === 'forsvarRovare' && /på väg|går mot dem/.test(q.task.why ?? '')) gick++;
+      const g = SIM.flockStrid(s, f); if (g) { const k = g.st.kampar[0]; strid = { x: k.x, y: k.y }; }
+    }
+    const fran = strid ? Math.hypot(strid.x - hem.x, strid.y - hem.y) : -1;
+    return [
+      [`försvararna gick mot rövarna (${gick} gånger)`, gick > 0],
+      [`striden började där de möttes, ${fran.toFixed(0)} rutor från huvudförrådet`, !!strid],
+    ];
+  },
+};

@@ -2323,7 +2323,7 @@ SCENARIER.rovarsyn = {
 };
 
 SCENARIER.rovarmote = {
-  text: 'Anfallet och mötet (steg 10.1.14, rovare.ts, kartstrid.ts): striden börjar där sidorna möts, när en rövare och en som står emot kommer närmare varandra än ROVARE.moter rutor; den som står emot och ser rövare inom ROVARE.ser går mot dem. Den som kommer till ger sig in i samma strid. Om en rövare flyr avgörs av poängen för att fly (ROVARHANDLINGAR.fly): blodet hen förlorat, övermakten hen ser och hur stor del av gänget som är borta, mot poängen för att slåss, och inte av någon fast gräns. Den som flyr lämnar striden och går mot kanten.',
+  text: 'Anfallet och mötet (steg 10.1.14, rovare.ts, kartstrid.ts): striden börjar där sidorna möts, när en rövare och en som står emot kommer närmare varandra än ROVARE.moter rutor; den som står emot går mot de rövare hen vet om (steg 10.2.27). Den som kommer till ger sig in i samma strid. Om en rövare flyr avgörs av poängen för att fly (ROVARHANDLINGAR.fly): blodet hen förlorat, övermakten hen ser och hur stor del av gänget som är borta, mot poängen för att slåss, och inte av någon fast gräns. Den som flyr lämnar striden och går mot kanten.',
   kor: () => {
     const { ROVARE, HOUR } = SIM;
     const ny = () => { const s = createState(6, START); klockan(s); for (const c of SIM.klanerOf(s)) c.inst = -60; for (const p of living(s)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 20 * HOUR, carry: 0 }; return s; };

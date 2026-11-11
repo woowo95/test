@@ -65,7 +65,6 @@ export const ROVARE = balans('rovare', {
   lurMin: [15, 30], // ... minst, högst
   vaktSer: 26, folkSer: 12, nattSer: 0.5, dimmaSer: 0.5, // vakten ser rövare inom så här många rutor, andra inom folkSer, gånger nattSer i mörkret
   gissFel: 0.5, // vaktens gissning av antalet: fel med upp till så här stor del, gånger avståndet / vaktSer (andra gissar som på längsta avståndet)
-  ser: 14, // rövarna ser byns försvar inom så här många rutor från förrådet, när de är så nära eller väntar utanför byn ...
   bredvid: 2, // var och en går mot en egen punkt upp till så här många rutor från gängets mål (steg 10.2.25) ...
   filBredd: 1.1, // ... och går en egen fil så här många rutor från de andras
   fartSpann: 0.08, // ... och så här mycket fortare eller långsammare än en bybo
@@ -611,11 +610,11 @@ function letaSteg(s: State, f: Rovarflock, folk: Person[]) {
   if (inne) { hamndKlar(s, f, m, true); tandaHus(s, f); f.klar = true; f.letar = undefined; f.gor = 'flyr'; return; }
   f.letar!.shift();
 }
-// hotet rövaren ser: de som står emot inom ROVARE.ser, mot rövarna i flocken som är med (var och en räknad med sitt vapen)
+// hotet rövaren ser: de som står emot inom synhåll (KLOCKA.faraSyn), mot rövarna i flocken som är med (var och en räknad med sitt vapen)
 function hotMot(s: State, f: Rovarflock, r: Person, folk: Person[]) {
   const kraft = (p: Person) => 1 + ROVARE.hotVapen * VAPEN[personKampe(s, p, 0, 0, 0, 0).vapen].skada;
-  const de = folk.filter(q => alive(q) && kanStaEmot(s, q) && avst(q, r) < ROVARE.ser).reduce((a, q) => a + kraft(q), 0);
-  const vi = rovarna(s, f).filter(q => !gr(q).flytt && avst(q, r) < ROVARE.ser).reduce((a, q) => a + kraft(q), 0);
+  const de = folk.filter(q => alive(q) && kanStaEmot(s, q) && avst(q, r) < KLOCKA.faraSyn).reduce((a, q) => a + kraft(q), 0);
+  const vi = rovarna(s, f).filter(q => !gr(q).flytt && avst(q, r) < KLOCKA.faraSyn).reduce((a, q) => a + kraft(q), 0);
   return de / Math.max(0.5, vi);
 }
 // flocken väljer och gör: var och en för sig
@@ -637,14 +636,17 @@ function flockVal(s: State, f: Rovarflock, folk: Person[], dtSec: number, ev?: T
     if (!alive(q) || !vaken(q) || q.task?.act === 'strid' || !(forsvarar(q) || q.task?.act === 'vakt') || !vuxenKan(s, q)) continue;
     if (strid.st.kampar.some(k => k.lage === 'strid' && Math.hypot(k.x - q.x, k.y - q.y) < ROVARE.moter)) { taVapen(s, q); kartStridMed(s, strid, q, 0); }
   }
-  // den som står emot går mot rövarna hen ser (inom ROVARE.ser), och när de är nära varandra börjar striden, från vilket håll som helst
+  // den som står emot går mot de rövare hen vet om (steg 10.2.27): de hen ser (inom synhåll) går hen mot, och vet hen om dem genom
+  // larmet går hen dit de är på väg, också till en lagerplats i byns utkant. När de är nära varandra börjar striden, var de än är
   for (const q of folk) {
     if (!alive(q) || !vaken(q) || q.task?.act !== 'forsvarRovare' || !kanStaEmot(s, q)) continue;
     const r = [...fo].sort((a, b) => avst(a, q) - avst(b, q))[0];
-    if (!r || avst(r, q) > ROVARE.ser) continue;
+    if (!r) continue;
+    const ser = avst(r, q) <= KLOCKA.faraSyn, vet = ser || (q.larm?.vad === 'rovare' && s.now - q.larm.t < ROVARE.larmTim * HOUR);
+    if (!vet) continue;
     if (avst(r, q) < ROVARE.moter && !flockStrid(s, f)) { slaSteg({ s, f, r, folk, dt: dtSec, mal: r, fiende: q, hot: 1, last: 0, kvar: f.folk.length }); continue; }
-    const tk = q.task!;
-    if (Math.hypot(tk.tx - r.x, tk.ty - r.y) > 1.5) { tk.tx = r.x; tk.ty = r.y; tk.phase = 'go'; tk.path = undefined; tk.pk = undefined; tk.why = 'Rövarna är här, går mot dem'; }
+    const tk = q.task!, m = ser ? r : (f.anfaller ? malFor(s, f, r) : r);
+    if (Math.hypot(tk.tx - m.x, tk.ty - m.y) > 1.5) { tk.tx = m.x; tk.ty = m.y; tk.phase = 'go'; tk.path = undefined; tk.pk = undefined; tk.why = ser ? 'Rövarna är här, går mot dem' : 'Går dit rövarna är på väg'; }
   }
   const lagen: Record<string, number> = {};
   for (const r of fo) {
