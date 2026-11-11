@@ -24,7 +24,7 @@ import { coldOf, nederbord, snoPaMarken, temperature, vaderNu } from './vader';
 // barnen leker i snön när den ligger, som de vuxna har snöbollskrig (steg 4.3.1.3, sport.ts)
 const lekText = (s: State) => snoPaMarken(s) > 0 ? 'Är barn och leker i snön' : 'Är barn och leker';
 import { varselSamla } from './motgang';
-import { FORRAD, FORRADSMAL, TROSKEL, villAv, buffert, lyxtak, materialTimme, onskatDygn, underBuffert, materialTak } from './forradsmal';
+import { FORRAD, FORRADSMAL, TROSKEL, villAv, buffert, lyxtak, materialTimme, onskatDygn, underBuffert, materialTak, sparas } from './forradsmal';
 import { DJUR, DJURARTER, Djurart, GORS, canProcess, djurKvar, freeOfKinds, handelTask, harAv, toolGroups, underhallGrupp } from './redskap';
 import { PROJEKT, PROJEKT_LIST, PROJEKT_TAL, Uppgift, bastaProjekt, egenintresse, hamtas, projektNu } from './projekt';
 import { faltNu, vildFronPlats } from './odling';
@@ -986,7 +986,7 @@ export function handlarVaraVal(s: State, p: Person): ((v: Val) => void) | undefi
     const mal = handlarMal(s, k);
     if (!mal) continue;
     if (k === 'rep') {
-      if (!knows(p, 'rep') || amountOf(s, 'rep') >= TROSKEL.repVill + mal || getable(s, p, 'torrgras') < SAKER.rep!.skaffa!.av!.torrgras! + TROSKEL.torrgras || !enTill(s, 'tvinna', p)) continue;
+      if (!knows(p, 'rep') || amountOf(s, 'rep') >= TROSKEL.repVill + mal || getable(s, p, 'torrgras') < SAKER.rep!.skaffa!.av!.torrgras! + sparas(s, 'torrgras') || !enTill(s, 'tvinna', p)) continue;
       return v => { set(v, 'tvinna', 'Byn har det den behöver. Tvinnar rep att byta med handlaren.'); v.handel = true; };
     }
     const g = gruppOf(k);
@@ -1132,11 +1132,13 @@ function withTools(s: State, p: Person, v: Val, best: Act, what: string, fara: F
 // att göra redskapet först i stället för att arbeta utan det: när kylan är en fara med chansen PROJEKT_TAL.kyla, projektets dämpning (steg 10.2.6)
 const nuForst = (s: State, p: Person, fara: Faror) => !fara.kyla || rnd(s, 'val', p) < PROJEKT_TAL.kyla;
 // hur mycket mer arbetet ger med det redskap som finns ledigt eller kan göras (det bästa först). Ett redskap räknas som
-// möjligt att göra bara när withTools skulle göra det: inte när kylan är en fara, och med höet som sparas till värmen
+// möjligt att göra som withTools skulle göra det: när kylan är en fara med chansen PROJEKT_TAL.kyla, och med höet som sparas till värmen
 export function toolGain(s: State, p: Person, act: Act, fara: Faror) {
   for (const [g, ks] of Object.entries(toolGroups(act))) {
     if (g === 'korg' && ryggsack(s, p)) return ACTS[act].redskap![ks[0]].ger ?? 1; // ryggsäcken ger det korgen ger (steg 7.1.3)
-    if (freeOfKinds(s, p, ks) || GORS[g] && PROJEKT[g].kan(s, p, fara)) return ACTS[act].redskap![ks[0]].ger ?? 1;
+    const ger = ACTS[act].redskap![ks[0]].ger ?? 1;
+    if (freeOfKinds(s, p, ks)) return ger;
+    if (GORS[g] && PROJEKT[g].kan(s, p, fara)) return fara.kyla ? 1 + (ger - 1) * PROJEKT_TAL.kyla : ger; // i kylan görs det mer sällan först (nuForst, steg 10.2.6)
   }
   return 1;
 }

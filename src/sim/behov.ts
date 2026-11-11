@@ -341,7 +341,7 @@ export const getable = (s: State, p: Person, k: string) => aldrigStjal(s, p) ? m
 // receptet till ett projekt när p kunde göra det om materialet eller redskapet fanns (steg 6.2.19): materialet, redskapet
 // som behövs och hur mycket av varje som sparas (annars sparas() i forradsmal.ts)
 export interface Recept { av: Record<string, number>; verktyg?: string; spar?: (m: string) => number }
-export const saknatAv = (s: State, p: Person, av: Record<string, number>, extra = (_m: string) => sparas(_m)) => Object.entries(av).find(([m, n]) => getable(s, p, m) < n + extra(m) - 1e-9)?.[0];
+export const saknatAv = (s: State, p: Person, av: Record<string, number>, extra = (_m: string) => sparas(s, _m)) => Object.entries(av).find(([m, n]) => getable(s, p, m) < n + extra(m) - 1e-9)?.[0];
 // materialet till ett redskap efter receptet (saker.ts: skaffa.av), till ens eget arbete: hur mycket av varje som togs
 export function takeRecipe(s: State, p: Person, k: string) {
   const av: Record<string, number> = {};

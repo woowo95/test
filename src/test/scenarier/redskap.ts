@@ -196,7 +196,7 @@ SCENARIER.redskap = {
     const kp = living(k).find(q => ageOf(q, k.now) >= 18)!, kf = dangers(k);
     const korgVarm = toolGain(k, kp, 'samla', { kyla: false, svalt: false, gras: 0 }), korgKall = toolGain(k, kp, 'samla', kf);
     return [
-      [`en korg som kan göras räknas inte när kylan är en fara (${korgKall} i kylan, ${korgVarm} annars)`, kf.kyla && korgVarm > 1 && korgKall === 1],
+      [`en korg som kan göras räknas mindre när kylan är en fara, som chansen att den görs först (${korgKall.toFixed(2)} i kylan, ${korgVarm.toFixed(2)} annars; steg 10.2.6)`, kf.kyla && korgVarm > 1 && korgKall > 1 && korgKall < korgVarm],
       [`rep tvinnas av hö (2 rep av 4 hö på åtta minuter)`, rep],
       ['ett flintspjut görs av gren, flinta och rep, och en flinta sparas till elden', flint],
       ['flintspjutet håller fyra gånger så länge som ett träspjut', haller],

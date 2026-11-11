@@ -10,7 +10,7 @@
 // bufferten är materialet ett behov under Försörjning, och över taket plockar ingen av det (eld.ts, val.ts, projekt.ts).
 // Målen räknas en gång i timmen med arbetarna (arbetsTimme i val.ts) och sparas i s.arbBehov, så att alla lägen räknar likadant.
 import { balans } from './balans';
-import { woodDays } from './eld';
+import { ELD, eldarOf, hearthOf, woodDays } from './eld';
 import { foodDaysAll } from './ekonomi';
 import { isFood } from './saker';
 import { ljusPlatser } from './ljus';
@@ -25,7 +25,7 @@ import { brasaBrist } from './brasor';
 import { BYGGNADER, fnId, utanBadd } from './byggnader';
 import { latrinBrist } from './smuts';
 import { torkBrist } from './matlagning';
-import { HOUR, State, WEEK } from './typer';
+import { GREN, HOUR, State, WEEK } from './typer';
 import { TILLVERKA } from './tillverka';
 import { protesVill } from './protes';
 
@@ -45,10 +45,8 @@ export const FORRAD = balans('forrad', {
 // Trösklarna (steg 6.2.16): alla minsta tal för vad byn sparar eller vill ha, och gränserna för när byn prövar sig fram och
 // bygger. Mängder i förrådets enheter
 export const TROSKEL = balans('troskel', {
-  // sparas till elden när något byggs eller tvinnas (bygg.ts, redskap.ts, sparas)
-  ved: 6, // trä
-  grenar: 15, // grenar
-  torrgras: 6, // hö
+  // eldens del av materialets buffert (steg 10.2.7, eldReserv): så här många timmar av det eldarna bränner, och tändningen
+  eldTim: 6, // ... så att ett recept eller bygge inte tar det elden behöver den närmaste tiden
   torrgrasKyla: 12, // hö som sparas till elden inför och under istiden och när det är kallt: en korg flätas först av det som är över (val.ts, redskap.ts)
   // tändmaterial (eld.ts)
   tandBrist: 12, // byn behöver samla tändmaterial när hö eller grenar är färre än så och elden är släckt
@@ -77,8 +75,19 @@ export const VILLTAL = balans('vill', {
   vattensackar: 1, // så många vattensäckar byn vill ha (steg 2.10.1)
   facklor: 3, // så många facklor byn vill ha när den kan göra dem (steg 6.3.6)
 });
-// det som lämnas kvar i förrådet till elden av slaget k när något byggs (bygg.ts, stationer.ts)
-export const sparas = (k: string) => k === 'ved' ? TROSKEL.ved : k === 'grenar' ? TROSKEL.grenar : k === 'torrgras' ? TROSKEL.torrgras : 0;
+// eldens del av materialets buffert (steg 10.2.7): det som lämnas kvar i förrådet till elden när något byggs, görs eller tvinnas
+// (bygg.ts, stationer.ts, redskap.ts), räknat ur vad eldarna förbrukar: veden de bränner under TROSKEL.eldTim timmar, och det en
+// tändning tar (grenarna som läggs i, höet eller nävern som tar eld och flintan) för varje eld som brinner eller ska tändas
+export function eldReserv(s: State, k: string) {
+  const eldar = eldarOf(s).filter(f => f.lit || (f.want ?? 0) > 0);
+  if (!eldar.length) return 0;
+  if (k === 'ved') return Math.ceil(eldar.reduce((a, f) => a + hearthOf(f).burn, 0) * TROSKEL.eldTim);
+  if (k === 'grenar') return Math.ceil(ELD.tandBransle / GREN) * eldar.length;
+  if (k === 'torrgras') return TROSKEL.tandBrist;
+  if (k === 'flinta') return TROSKEL.flintaSparas;
+  return 0;
+}
+export const sparas = (s: State, k: string) => eldReserv(s, k);
 
 export interface Forradsmal {
   dygn: number; // förrådets dygn räknas mot så här många (gånger försiktigheten) ...
