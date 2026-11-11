@@ -85,6 +85,33 @@
    ],
    "anteckning": "Symbolen ses framifrån som ett tecken över huvudet. En månskära i senap ligger med båda hornen uppåt som en vagga och är spegelsymmetrisk. Konturen är I, ytan J och K, och hornet uppe till vänster är ljusast med en glanspunkt i L. Den högra sidan och botten är mörkare J. I skålen ligger en filt i ben q och p med kant i o. Filten fyller skålen och täcker barnets kropp och haka, så att bara det runda huvudet syns, i H och G med kontur i E. Huvudet sticker upp mellan hornen, ljust uppe till vänster. Formerna är få och stora utan ansiktsdetaljer, så att det läses som vagga, barn och måne, det vill säga tid, även i liten storlek. Granskningen: Rättade en ensam mörk prick: i rad 12 låg en konturpunkt I (kolumn 12) mitt i skärans yta. Den bröt mot regeln om korn utan fläckar och gjorde undersidan osymmetrisk. Den är nu J, så att ytan går jämnt i J fram till konturen. Resten följer idén och reglerna och är oförändrat. Skäran är 16 punkter bred och 9 hög, öppen uppåt som en vagga, spegelsymmetrisk och har kontur i I. Ljuset faller från vänster med K och en glanspunkt L i vänstra hornet och mörknar mot J åt höger. Barnhuvudet är runt, i H och G med kontur i E, och vilar på en filt i q och p med kanten i o. Senapen syns tydligt både på den mörka rutan och på gräset.",
    "ide": " En stor månskära i senap sedd framifrån, öppen uppåt som en vagga, cirka 15 punkter bred och 9 hög, med kontur i I och ytan i J och K, ljusast K och en glanspunkt L i vänstra hornet. I skärans famn ligger ett litet runt barnhuvud på 5 × 5 punkter i H och G med kontur i E, och under huvudet en liten filt i ben q och p som fyller skålen. Formen är låg och bred med två uppåtpekande horn, så att den läses som en vagga, och månen visar att det tar sin tid."
+  },
+  {
+   "ide": "Symbolen för barn som redan finns i spelet (sym_barn), som du frågade om.",
+   "anteckning": "Den befintliga symbolen, oförändrad.",
+   "bilder": [
+    {
+     "namn": "barn",
+     "rader": [
+      "....EEEEEE....",
+      "...EHGGGGFE...",
+      "..EHGGGGGFFE..",
+      "..EGwqqqqpFE..",
+      "..EwqqqqqqpE..",
+      "..EqEqqqqEpE..",
+      "..EquqqqquoE..",
+      "..EqqqEEppoE..",
+      "...EqpppppoE..",
+      "....EEoooEE...",
+      ".rruttttsssrr.",
+      "ruttttttsssssr",
+      "rqrtttsssssrpr",
+      ".rrrrrrrrrrrr.",
+      "...EGFE.EGFE..",
+      "..EEEE...EEEE."
+     ]
+    }
+   ]
   }
  ]
 }
