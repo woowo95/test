@@ -2606,3 +2606,34 @@ SCENARIER.rovardjur = {
     ];
   },
 };
+
+SCENARIER.anfallet = {
+  lang: true,
+  text: 'Hela anfallet från testknappen till slutet (steg 10.2.31): gänget syns komma, rör sig och pratar på rastplatsen, någon ser dem och varnar, försvararna gör sig redo och möter dem, striden eller plundringen syns, och gänget går hem eller dör',
+  kor: () => {
+    const s = createState(4, START);
+    for (let i = 0; i < 24; i++) step(s, 300);
+    const ok = SIM.skickaRovare(s, 4).ok, f = s.rovare!;
+    const st = (k: string) => (s.stat?.[k] as number | undefined) ?? 0, fore = { ...s.stat };
+    const ny = (k: string) => st(k) - ((fore[k] as number | undefined) ?? 0);
+    let rorde = 0, redo = 0, prov = 0;
+    let forra = SIM.rovarna(s, f).map(r => ({ x: r.x!, y: r.y! }));
+    for (let i = 0; i < 3600 && s.rovare === f; i++) {
+      step(s, SIM.nastaSteg(s));
+      if (i % 15 === 0) {
+        const nu = SIM.rovarna(s, f).map(r => ({ x: r.x!, y: r.y! }));
+        prov++; if (nu.some((p, j) => forra[j] && Math.hypot(p.x - forra[j].x, p.y - forra[j].y) > 0.5)) rorde++;
+        forra = nu;
+        if (living(s).some(p => p.task?.act === 'forsvarRovare' || p.task?.act === 'strid')) redo++;
+      }
+    }
+    return [
+      [`gänget kom (${ok}) och syntes röra sig (${rorde} av ${prov} prov)`, ok && rorde > prov * 0.3],
+      [`de pratade på rastplatsen (${ny('rovarPrat')} samtal)`, ny('rovarPrat') > 0],
+      [`någon såg dem och varnade (${ny('rovarVarnar')} varningar)`, ny('rovarVarnar') > 0],
+      [`försvararna gjorde sig redo och mötte dem (${redo} prov)`, redo > 0],
+      [`striden eller plundringen syntes (${ny('rovarStrid')} strider, ${ny('rovat')} saker tagna)`, ny('rovarStrid') + ny('rovat') > 0],
+      [`gänget gick hem eller dog (${s.rovare === f ? 'kvar' : 'borta'})`, s.rovare !== f],
+    ];
+  },
+};
