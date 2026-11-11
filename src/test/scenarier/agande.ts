@@ -1759,9 +1759,9 @@ SCENARIER.rovare = {
       const q = cloneState(bas); for (const p of living(q)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: q.now + 8 * HOUR, carry: 0 };
       const r = SIM.skickaRovare(q, SIM.ROVARFLOCK[k]), r2 = SIM.skickaRovare(q, 2);
       const rad = q.log.find(e => e.text.startsWith('Testläget:'))?.text ?? ''; tlRad = rad; tlSkal = r2.text;
-      const f = q.rovare!, kant = f.x < 1 || f.y < 1 || f.x > SIM.W - 1 || f.y > SIM.H - 1;
-      const ok = r.ok && f.test === true && kant && f.folk.length === SIM.ROVARFLOCK[k] && f.gor === 'kommer' && /kommer in från kartans kant \d+ rutor .+ om elden, rastar en minut utanför byn/.test(rad) && !r2.ok && !!r2.text && !!SIM.rovarHinder(q);
-      // den når byn inom en timme: väntan är en minut på rastplatsen, sedan går de till förrådet
+      const f = q.rovare!, kant = f.x < 3 || f.y < 3 || f.x > SIM.W - 3 || f.y > SIM.H - 3; // (flockens plats är gängets mitt, steg 10.2.25)
+      const ok = r.ok && f.test === true && kant && f.folk.length === SIM.ROVARFLOCK[k] && f.gor === 'kommer' && /kommer in från kartans kant \d+ rutor .+ om elden, rastar (en minut|\d+ minuter) utanför byn/.test(rad) && !r2.ok && !!r2.text && !!SIM.rovarHinder(q);
+      // den når byn inom en timme: väntan är några minuter på rastplatsen (ROVARE.testVanta), sedan går de till förrådet
       const sek = korTills(q, () => !!f.anfaller, 3600);
       return ok && f.anfaller && sek < 1200 ? SIM.ROVARFLOCK[k] : 0;
     });

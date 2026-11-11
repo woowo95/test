@@ -306,7 +306,7 @@ SCENARIER.varm = {
     // samma person i en kopia av byn med samma arbete ett slag, men bara för varm: bara den extrema värmen skiljer dem åt
     const lik = cloneState(s), pl = lik.people.find(q => q.id === p.id)!;
     for (const q of [p, pl]) { q.rest = 1; q.task = { act: 'ved', phase: 'do', tx: q.x, ty: q.y, until: s.now + HOUR, carry: 0, why: '' }; }
-    p.warm = 1.9; pl.warm = (KROPP.forVarm + KROPP.extremVarm) / 2; step(s, BEAT); step(lik, BEAT);
+    p.warm = 1.9; pl.warm = (KROPP.forVarm + KROPP.extremVarm) / 2; step(s, 30); step(lik, 30); // en uppdatering av behoven (TAKTER, steg 10.2.14): värmen sjunker sedan
     const trott = 1 - p.rest > (1 - pl.rest) * 1.5, tanke = p.thoughts.some(t => t.text === 'För varm');
     // badet kyler den som är för varm
     let badVarm = 0, maxVarm = 0;
@@ -347,7 +347,7 @@ SCENARIER.skugga = {
     satt(fri(false)); fyll(); p.warm = 1.9; chooseTask(s, p);
     const t = p.task!, valde = t.act === 'svalka', iSkuggan = iSkugga(s, t.tx, t.ty), avst = Math.hypot(t.tx - p.x, t.ty - p.y);
     // framme i skuggan värmer solen inte, och kroppen svalnar
-    const w0 = p.warm; kor(s, 1);
+    const w0 = p.warm; for (let i = 0; i < 40 && !(p.task?.act === 'svalka' && p.task.phase === 'do'); i++) step(s, 15); step(s, 60); // framme, och en minut där
     const framme = p.task?.act === 'svalka' && iSkugga(s, p.x, p.y), sol = varmeDelar(s, p, 0, new Map(), temperature(s)).sol, svalnar = p.warm < w0;
     // står redan i skugga: stannar där
     satt(fri(true)); fyll(); p.warm = 1.9; chooseTask(s, p);
