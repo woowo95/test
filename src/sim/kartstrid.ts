@@ -18,7 +18,7 @@ import { KROPPSDELAR, forlora, skada } from './halsa';
 import { blodas } from './blod';
 import { blodtorst } from './humor';
 import { isFamily, ranEfter, setRanStrid } from './behov';
-import { EFTER, Efter, FAROR, gastKrok } from './efterstrid';
+import { EFTER, Efter, FAROR, STRIDSLAG, gastKrok } from './efterstrid';
 import { ovning } from './folk';
 import { eldPlats } from './karta';
 import { avbryt } from './lager';
@@ -26,7 +26,7 @@ import { die } from './liv';
 import { lista, och } from './ord';
 import { handelse, larma } from './rykten';
 import { clamp, rnd } from './slump';
-import { AVSIKTER, Avsikt, Kampe, SLAGSMAL, STRID, laggTill, Strid, StridVarld, efterStrid, foljet, iVarlden, nyStrid, personKampe, skilj, slagen, slitKastat, starKvar, stridRad, stridSteg, vadretIStriden } from './strid';
+import { AVSIKTER, Avsikt, Kampe, SLAGSMAL, STRID, laggTill, Strid, StridVarld, Uppstallning, efterStrid, foljet, iVarlden, nyStrid, personKampe, skilj, slagen, slitKastat, starKvar, stridRad, stridSteg, vadretIStriden } from './strid';
 import { ledareOf } from './styre';
 import { Act, H, HOUR, Person, SEC, State, W } from './typer';
 import { upplev } from './uppvaxt';
@@ -52,7 +52,10 @@ export interface KartStrid {
   id: number; st: Strid; orsak: string; t0: number; rest: number; // rest = sekunder som inte räckt till ett helt stridssteg än
   val?: Record<number, 'skilja' | 'undan' | 'kvar'>; fri?: number[]; skild?: number; // skild = den som gick emellan
   efter?: Efter; // det som ska ske när striden är slut (registret EFTER i efterstrid.ts, steg 10.1.7)
+  djur?: { k: number; art: string; id: number }[]; // djuren i striden (steg 10.1.17): kämpens id, arten och djurets id
 }
+// ett djur som ska vara med i en strid: kämpen (ur KAMPAR, på kartans rutor) och blodet det har kvar
+export interface DjurMed { art: string; id: number; k: Uppstallning['kampar'][number]; blod?: number }
 // pågår en strid av det slaget (ett rån, en holmgång, striden om ledarskapet …)?
 export const stridPagar = (s: State, typ: string, om?: (e: Efter) => boolean) => kartStrider(s).some(g => g.efter?.typ === typ && (!om || om(g.efter)));
 export const kartStrider = (s: State): KartStrid[] => s.kartStrider ?? [];
@@ -99,18 +102,20 @@ export function stegTaget(s: State, d: number) {
 function flyMal(s: State, p: Person) { if (p.gast) return kanterna(p.x, p.y)[0]; /* en gäst flyr mot närmaste kanten av kartan */ const h = husPlats(s, p) ?? (() => { const e = eldPlats(s); return freeNear(s, e.x + 0.5, e.y + 1.5); })(); return { x: h.x, y: h.y }; }
 const stridsUppgift = (s: State, p: Person, why: string) => { p.task = { act: 'strid', phase: 'do', tx: p.x, ty: p.y, until: s.now + (STRID.maxTid + 60) * SEC, carry: 0, why }; };
 // en strid börjar mellan två sidor av folk, där de står. Den stegas sedan med byn (kartStridSteg)
-export function kartStridBorja(s: State, avsikt: Avsikt, sidor: [Person[], Person[]], orsak: string, efter?: Efter): KartStrid {
+export function kartStridBorja(s: State, avsikt: Avsikt, sidor: [Person[], Person[]], orsak: string, efter?: Efter, djur: DjurMed[] = []): KartStrid {
   const lek = lekAv(avsikt), sport = sportAv(avsikt);
-  const kampar = sidor.flatMap((sida, sd) => sida.map(p => ({ ...personKampe(s, p, 0, sd as 0 | 1, p.x, p.y), fly: flyMal(s, p) })));
+  const kampar: Uppstallning['kampar'] = sidor.flatMap((sida, sd) => sida.map(p => ({ ...personKampe(s, p, 0, sd as 0 | 1, p.x, p.y), fly: flyMal(s, p) })));
+  for (const d of djur) kampar.push({ ...d.k, fly: d.k.fly ?? kanterna(d.k.x, d.k.y)[0] }); // djuren (steg 10.1.17): de flyr mot kartans kant
   kampar.forEach((k, i) => { k.id = i + 1; });
   foljet(s, kampar);
   const st = nyStrid({ avsikt, w: W, h: H, ...vadretIStriden(s), kampar }, Math.floor(rnd(s, 'strid') * 2147483647));
   st.karta = true;
   const g: KartStrid = { id: s.kartStridNr = (s.kartStridNr ?? 0) + 1, st, orsak, t0: s.now, rest: 0, ...(efter ? { efter } : {}) };
+  if (djur.length) { const n0 = kampar.length - djur.length; g.djur = djur.map((d, j) => ({ k: n0 + j + 1, art: d.art, id: d.id })); djur.forEach((d, j) => { if (d.blod !== undefined) st.kampar[n0 + j].blod = d.blod; }); }
   (s.kartStrider ??= []).push(g);
   count(s, 'strid_' + avsikt); count(s, 'kartStrid');
   if (!sport) for (const p of [...sidor[0], ...sidor[1]]) { avbryt(s, p); stridsUppgift(s, p, orsak); } // brottaren är kvar i matchen (steg 9.2.92)
-  if (!lek) larma(s, 'slagsmål', kampar.length, [...sidor[0], ...sidor[1]].filter(p => p.task?.act !== 'sova')); // de som slåss ropar (steg 3.7.11)
+  if (!lek && !djur.length) larma(s, 'slagsmål', kampar.length, [...sidor[0], ...sidor[1]].filter(p => p.task?.act !== 'sova')); // de som slåss ropar (steg 3.7.11)
   return g;
 }
 
@@ -134,7 +139,9 @@ function varldAv(s: State, g: KartStrid): StridVarld {
       const p = personAv(s, k);
       if (!p || p.died !== undefined) return false;
       if (sport && w.g < STRID.lek) return false; // brottningen: de svaga slagen gör ont men blir ingen skada (steg 9.2.92)
-      const dog = !!skada(s, p, w.d, w.k, w.g, g.efter?.typ === 'rovare' ? 'rovare' : 'drap', g.efter?.typ === 'rovare' && !p.gast ? 'i en strid med rövare' : `i ${lek ? 'ett lekslagsmål' : 'en strid'} med ${av.namn}`);
+      const slag = g.efter && !p.gast ? STRIDSLAG[g.efter.typ] : undefined; // striden med rövare eller djur: såret och döden heter efter den
+      const dog = !!skada(s, p, w.d, w.k, w.g, (slag?.orsak ?? 'drap') as Parameters<typeof skada>[5], slag?.text ?? `i ${lek ? 'ett lekslagsmål' : 'en strid'} med ${av.namn}`);
+      if (!dog) slag?.sar?.(s, p, w);
       if (w.fast && p.skador?.length) p.skador[p.skador.length - 1].fast = 1; // spjutet sitter kvar till vården (steg 3.7.7)
       if (!dog && w.av && !(KROPPSDELAR[w.d] as { livsviktig?: true }).livsviktig) forlora(s, p, w.d, 'höggs av'); // olyckshugget (steg 9.5.22)
       count(s, 'kartSar');
@@ -146,7 +153,8 @@ function varldAv(s: State, g: KartStrid): StridVarld {
       if (h !== 'dod' || !p || p.died !== undefined) return;
       const hit = [...g.st.logg].reverse().find(q => (q.h === 'traff' || q.h === 'hugg') && q.b === k.id), av = hit ? personAv(s, g.st.kampar.find(o => o.id === hit.a)!) : undefined;
       if (p.gast) { gastKrok.dod?.(s, p, av); if (p.died === undefined) { p.died = s.now; p.cause = 'i en strid'; } return; } // en gäst (rövaren): kroken i rovare.ts
-      if (g.efter?.typ === 'rovare') { count(s, 'dodRovare'); die(s, p, 'rovare'); return; }
+      const slag = g.efter ? STRIDSLAG[g.efter.typ] : undefined;
+      if (slag) { slag.dod?.(s, p); if (p.died === undefined) die(s, p, slag.orsak as Parameters<typeof die>[2]); return; }
       count(s, 'drap'); die(s, p, 'drap');
       for (const o of g.st.kampar) { const q = o.sida !== k.sida ? personAv(s, o) : undefined; if (q && alive(q)) upplev(s, q, 'dodade', p.name); } // den som dödade minns det (steg 4.1.1.2)
     },
@@ -186,7 +194,7 @@ export function kartStridSteg(s: State, dtSec: number) {
         if (sport) continue; // brottaren har matchen som uppgift
         if (k.lage === 'ger' || k.lage === 'borta') { // har lämnat striden: väljer på nytt
           (g.fri ??= []).push(p.id);
-          if (g.efter?.egen && !p.gast) p.gavSig = s.now; // flydde eller gav upp för rövarna: gömmer sig sedan (rovarSkydd i rovare.ts)
+          if (g.efter?.typ === 'rovare' && !p.gast) p.gavSig = s.now; // flydde eller gav upp för rövarna: gömmer sig sedan (rovarSkydd i rovare.ts)
           if (p.task?.act === 'strid') p.task.until = s.now;
         } else if (k.lage === 'strid' || k.lage === 'flykt') { // den som står eller flyr är kvar i striden, också när en skada avbrutit det hen gjorde
           if (p.task?.act !== 'strid') { avbryt(s, p); stridsUppgift(s, p, g.orsak); } else { p.task.tx = p.x; p.task.ty = p.y; }
@@ -325,3 +333,10 @@ export function lekSteg(s: State, p: Person, dtSec: number) {
   if (!andra.length) return;
   kartStridBorja(s, 'lek', [[p], [andra[Math.floor(rnd(s, 'strid', p) * andra.length)]]], 'på lek');
 }
+
+// djuret i en strid på kartan (steg 10.1.17): striden och kämpen, eller inget
+export function djurIKartStrid(s: State, art: string, id?: number) {
+  for (const g of kartStrider(s)) { const d = g.djur?.find(q => q.art === art && (id === undefined || q.id === id)); if (d) return { g, k: g.st.kampar.find(k => k.id === d.k)! }; }
+  return undefined;
+}
+STRIDSLAG.rovare = { orsak: 'rovare', text: 'i en strid med rövare', dod: s => count(s, 'dodRovare') };

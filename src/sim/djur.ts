@@ -534,8 +534,8 @@ export function bjornarOf(s: State, t = s.now, bara?: (x: number, y: number) => 
   if (f && t < m.fram) { const a = (t - f.gar) / (m.fram - f.gar); x = f.x + (m.x - f.x) * a; y = f.y + (m.y - f.y) * a; ater = undefined; }
   // i striden står björnen där striden har den (steg 9.2.29), och efter en strid den vunnit eller gett upp går den bort från
   // byn (steg 9.2.30): först dit, och där står den tills tiden är ute
-  const sg = s.djurStrider?.find(g => g.art === 'bjorn' && g.djur.includes(id));
-  if (sg && sg.dx !== undefined && sg.dy !== undefined) { x = sg.dx; y = sg.dy; ater = undefined; }
+  const sg = s.kartStrider?.find(g => g.djur?.some(d => d.art === 'bjorn' && d.id === id)), sk = sg && sg.st.kampar.find(k => k.id === sg.djur!.find(d => d.art === 'bjorn' && d.id === id)!.k);
+  if (sk) { x = sk.x; y = sk.y; ater = undefined; } // (steg 10.1.18: striden på kartan)
   else if (s.bjornUndan && t >= s.bjornUndan.fran && t < s.bjornUndan.till) {
     const u = s.bjornUndan, a = Math.min(1, (t - u.fran) / ((u.till - u.fran) / 3));
     x = u.x0 + (u.x1 - u.x0) * a; y = u.y0 + (u.y1 - u.y0) * a; ater = undefined;

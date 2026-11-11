@@ -28,7 +28,7 @@ let minne: { nu: number; ut: { g: RovarStrid; st: Strid }[] } | undefined; // sa
 vidNyBy.push(() => { minne = undefined; });
 export function striderVid(nu: number): { g: RovarStrid; st: Strid }[] {
   if (minne?.nu === nu) return minne.ut;
-  const nya: RovarStrid[] = [...[s.rovare, ...(s.rovareFler ?? [])].flatMap(f => f?.strid ? [f.strid] : []), ...(s.djurStrider ?? [])]; // och striderna mot djur (steg 9.2.29)
+  const nya: RovarStrid[] = [...[s.rovare, ...(s.rovareFler ?? [])].flatMap(f => f?.strid ? [f.strid] : [])]; // och striderna mot djur (steg 9.2.29)
   for (const g of nya) if (!raknat.has(g)) raknat.set(g, { st: rovarStridNu(g, Math.max(0, (nu - g.t0) / SEC)), inN: (g.in ?? []).length });
   const ut: { g: RovarStrid; st: Strid }[] = [];
   for (const g of [...raknat.keys()]) { const v = enStrid(g, nu); if (v) ut.push(v); else if (!nya.includes(g)) raknat.delete(g); }
@@ -79,6 +79,17 @@ function ritaEn(gr: PIXI.Graphics, v: { g: RovarStrid; st: Strid }, nu: number, 
 
 // djuret i en strid mot djur som visas (steg 9.2.29): platsen, om det ligger, och den det slår mot. art och id som i djurstrid.ts
 export function djuretNu(art: 'bjorn' | 'varg', id: number, nu: number) {
+  // striden på kartan (steg 10.1.17–10.1.18): djuret står där kämpen står
+  for (const g of s.kartStrider ?? []) {
+    const d = g.djur?.find(q => q.art === art && q.id === id);
+    if (!d) continue;
+    const k = g.st.kampar.find(x => x.id === d.k);
+    if (!k || k.lage === 'borta') return undefined;
+    const mal = k.mal !== undefined ? g.st.kampar.find(x => x.id === k.mal) : undefined;
+    const tid = g.st.t, slag = [...g.st.logg].reverse().find(r => r.t >= tid - SLAG_SEK && r.t <= tid && r.a === k.id && (r.h === 'traff' || r.h === 'miss' || r.h === 'tog'));
+    const offer = slag ? g.st.kampar.find(x => x.id === slag.b) : undefined;
+    return { k, x: k.x, y: k.y, mot: mal ? { x: mal.x, y: mal.y } : undefined, ligger: liggerK(k), slar: offer ? { x: offer.x, y: offer.y } : undefined };
+  }
   for (const v of striderVid(nu)) {
     const g = v.g as RovarStrid & { art?: string; djur?: number[] };
     if (g.art !== art || !g.djur) continue;

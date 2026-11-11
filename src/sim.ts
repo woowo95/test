@@ -124,7 +124,6 @@ export * from './sim/strid';
 export * from './sim/jakt';
 export * from './sim/gastliv';
 export * from './sim/gastrel';
-export * from './sim/djurstrid';
 export * from './sim/efterstrid';
 export * from './sim/kartstrid';
 export * from './sim/sjukdom';

@@ -204,7 +204,7 @@ export function utanWebblasare() {
 }
 
 // striderna mot djur spelas upp på kartan (steg 9.2.29): kör dem till slutet, fem sekunder i taget
-export function slutStrider(s: SIM.State) { for (let n = 0; s.djurStrider?.length && n < 200; n++) { s.now += 5_000; SIM.djurStriderSteg(s); } }
+export function slutStrider(s: SIM.State) { for (let n = 0; s.kartStrider?.some(g => g.djur) && n < 3000; n++) { s.now += 1000; SIM.kartStridSteg(s, 1); } } // striderna mot djur körs till slutet (bara striden, inte byn)
 
 // ett golv inne där stationen k får plats (rutorna i ett rum utan station), också när sovrummet inte har rutor över: huset byggs
 // med tre rutor per person (steg 9.2.36), så i scenarierna ställs bänken där ändå

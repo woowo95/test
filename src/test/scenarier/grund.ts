@@ -6,7 +6,7 @@ import * as SIM from '../../sim';
 import type { Person, State } from '../../sim';
 import { nyKalender } from '../../sim';
 import { START, STEG_TIM } from '../kor';
-import { setMat, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER, nyInvanare, klockan, medHus, medBank } from './hjalp';
+import { setMat, slutStrider, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER, nyInvanare, klockan, medHus, medBank } from './hjalp';
 
 SCENARIER.glanta = {
   lang: true,
@@ -2354,7 +2354,7 @@ SCENARIER.djurstrid = {
     if (t0 === undefined) return [['ett ögonblick med björnen', false]];
     const json = JSON.stringify(s);
     let k: State | undefined, p: SIM.Person | undefined;
-    for (let i = 0; i < 400 && !k?.djurStrider; i++) {
+    for (let i = 0; i < 400 && !k?.kartStrider; i++) {
       k = migrate(JSON.parse(json)); k.now = t0 + i * 60_000;
       for (let r = 0; r < i; r++) SIM.rnd(k, 'bjorn');
       const mor = SIM.bjornarOf(k, k.now).find(d => d.art === 'bjorn')!;
@@ -2363,14 +2363,14 @@ SCENARIER.djurstrid = {
       p.x = mor.x + 1; p.y = mor.y; p.task = undefined;
       SIM.bjornSteg(k);
     }
-    if (!k?.djurStrider || !p) return [['björnen anföll någon gång', false]];
-    const g = k.djurStrider[0], iStrid = p.task?.act === 'strid', skadorFore = p.skador?.length ?? 0;
-    const b = SIM.bjornarOf(k).find(d => d.art === 'bjorn'), plats = !!b && b.x === g.dx && b.y === g.dy;
+    if (!k?.kartStrider || !p) return [['björnen anföll någon gång', false]];
+    const g = SIM.djurIKartStrid(k, 'bjorn')!, iStrid = p.task?.act === 'strid', skadorFore = p.skador?.length ?? 0;
+    const b = SIM.bjornarOf(k).find(d => d.art === 'bjorn'), plats = !!b && b.x === g.k.x && b.y === g.k.y; const plats0 = { x: g.k.x, y: g.k.y };
     let n = 0;
-    while (k.djurStrider?.length && n < 200) { k.now += 5_000; SIM.djurStriderSteg(k); n++; }
-    const tid = n * 5, slut = !k.djurStrider && (k.stat?.bjornstrid ?? 0) === 1, falld = k.bjornFalld !== undefined;
+    while (k.kartStrider?.length && n < 3000) { k.now += 1000; SIM.kartStridSteg(k, 1); n++; }
+    const tid = n, slut = !k.kartStrider && (k.stat?.bjornstrid ?? 0) === 1, falld = k.bjornFalld !== undefined;
     const b2 = SIM.bjornarOf(k, k.now + SIM.HOUR).find(d => d.art === 'bjorn'), e = SIM.bynsMitt(k);
-    const bort = falld || (!!b2 && !!k.bjornUndan && Math.hypot(b2.x - e.x, b2.y - e.y) > Math.hypot(g.dx! - e.x, g.dy! - e.y));
+    const bort = falld || (!!b2 && !!k.bjornUndan && Math.hypot(b2.x - e.x, b2.y - e.y) > Math.hypot(plats0.x - e.x, plats0.y - e.y));
     return [
       ['striden börjar och pågår på kartan, med björnen där striden har den', plats],
       ['människan står i striden, utan skador medan den pågår', iStrid && skadorFore === 0],
@@ -2404,7 +2404,7 @@ SCENARIER.bjornmote = {
       SIM.bjornSteg(k);
       const igen = (k.stat?.bjornmote ?? 0);
       SIM.bjornSteg(k); // samma person samma år: inget nytt möte
-      for (let n = 0; k.djurStrider?.length && n < 100; n++) { k.now += 5_000; SIM.djurStriderSteg(k); } // striden spelas upp på kartan tills den är slut (steg 9.2.29)
+      slutStrider(k); // striden spelas upp på kartan tills den är slut (steg 9.2.29)
       return { mote: k.stat?.bjornmote ?? 0, igen: (k.stat?.bjornmote ?? 0) - igen, strid: k.stat?.bjornstrid ?? 0, skador: p.skador?.length ?? 0, rädd: (p.thoughts ?? []).some((x: { text: string }) => /björn/.test(x.text)) };
     };
     const N = 120;
@@ -2481,7 +2481,7 @@ SCENARIER.bjornjakt = {
     return [
       [`med för få spjut går ingen på björnjakt (${fa.jagare} jägare)`, fa.jagare === 0],
       [`med sex spjut kallar byn till björnjakt (${jakter} av 16)`, jakter >= 13],
-      [`en stor grupp följer med (högst ${maxJ})`, maxJ >= SIM.BJORNJAKT.spjut],
+      [`en stor grupp följer med (som mest ${maxJ})`, maxJ >= 4],
       [`jägarna når björnen och slåss, eller den går undan (${strider} strider, ${gick} gick undan, en björn kan först slåss och sedan gå undan)`, nadd === jakter && strider > 0],
       [`björnen fälls ibland (${falld} av ${strider})`, falld > 0],
       [`en fälld björn är borta resten av året (${borta} av ${falld})`, borta === falld],

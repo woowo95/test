@@ -4,7 +4,6 @@ import { husKlaraTimme } from './bygg';
 import { personHand } from './personlogg';
 import { hamtaForst, hamtat } from './paborjat';
 import { sorgTimme } from './liv';
-import { djurStriderSteg } from './djurstrid';
 import { lagerIStraket } from './strak';
 import { rumVila } from './rum';
 import { stepByggplan } from './byggplan';
@@ -322,7 +321,6 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   handelSteg(s, dtSec); // handlaren kommer, handlar och går (handel.ts, steg 4.4.1)
   vargSteg(s, dtSec); // vargarna under istiden (varg.ts, steg 3.7.1)
   bjornSteg(s); // den som kommer nära björnen (bjorn.ts, steg 6.6.5)
-  djurStriderSteg(s); // striderna mot djur på kartan (djurstrid.ts, steg 9.2.29)
   rovarSteg(s, dtSec); // rövarflocken (rovare.ts, steg 4.4.5)
   framlingSteg(s, dtSec); // främlingen som kommer gående (liv.ts, steg 9.2.115)
   tornadoSteg(s, { rovarTornado, handlarTornado, handlarPlats }); // tornadon drar fram (tornado.ts, steg 3.8.4), och rövarna och handlaren drabbas (steg 6.4.12)

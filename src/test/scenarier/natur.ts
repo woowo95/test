@@ -2076,7 +2076,7 @@ SCENARIER.tradorr = {
         if (nu && (roomAt(q, f.x, f.y) === roomAt(q, inneX, inneY) || bitAt(q, f.x, f.y))) inne++;
         if (f.gor === 'vantar') { vantade++; if (p.task?.act === 'gomma') gomde++; if (ensam && ute) { /* (står kvar ensam ute tills flocken anfaller) */ const dx = f.x - p.x, dy = f.y - p.y, d = Math.hypot(dx, dy) || 1; ute.x = Math.min(W - 1, Math.max(1, f.x + dx / d * 9)); ute.y = Math.min(H - 1, Math.max(1, f.y + dy / d * 9)); /* bort från huset, så att den som gömmer sig inte räknas som sällskap */ ute.task = { act: 'vila', phase: 'do', tx: ute.x, ty: ute.y, until: q.now + 5 * HOUR, carry: 0, why: 'ensam ute' }; } }
       });
-      const strider = (q.strider ?? []).map(x => x.orsak);
+      slutStrider(q); const strider = [...(q.strider ?? []), ...(q.stridRapporter ?? [])].map(x => x.orsak); // striderna på kartan (steg 10.1.17) står i rapporterna
       return { inne, vantade, gomde, seen, strider, st: q.stat ?? {}, stangd, byte: q.vargar?.[0]?.byte, ute: ute.id };
     };
     const tra = prov('tradorr', 0), modig = prov('tradorr', 20), annan = prov('tradorr', 0, true), skinn = prov('skinndorr', 0);

@@ -29,7 +29,7 @@ export const behoverStorreKarta = (s: State) => (s.W ?? 64) < KARTA.bredd || (s.
 // Allt i byn flyttas utom kartans hörn, historiken (bilderna av kartan visas där den gamla kartan låg, ui/kartminne.ts),
 // striderna (i arenans egna rutor) och sammanfattningen för spelaren
 const PAR = [['x', 'y'], ['tx', 'ty'], ['mx', 'my'], ['fx', 'fy']] as const;
-const ROR_INTE = new Set(['kart', 'hist', 'strider', 'borta', 'djurStrider']); // djurStrider: arenans egna rutor, flyttas nedan
+const ROR_INTE = new Set(['kart', 'hist', 'strider', 'borta']);
 function flyttaAllt(o: unknown, ox: number, oy: number, sett: Set<object>) {
   if (!o || typeof o !== 'object' || sett.has(o)) return;
   sett.add(o);
@@ -107,7 +107,6 @@ export function storreKarta(s: State) {
   if (s.morkPlats) s.morkPlats = Object.fromEntries(Object.entries(s.morkPlats).map(([i, v]) => [ny(Number(i)), v]));
   if (s.aska) s.aska = s.aska.map(([i, t]) => [ny(i), t]);
   if (s.kolnad) s.kolnad = s.kolnad.map(ny); // de kolnade stammarna (steg 9.2.26)
-  for (const g of s.djurStrider ?? []) { g.ox += ox; g.oy += oy; if (g.dx !== undefined) g.dx += ox; if (g.dy !== undefined) g.dy += oy; } // arenan för striderna mot djur (steg 9.2.29)
   if (s.bjornUndan) { const u = s.bjornUndan; u.x0 += ox; u.y0 += oy; u.x1 += ox; u.y1 += oy; } // (steg 9.2.30)
   if (s.tornadoStig) s.tornadoStig = s.tornadoStig.map(ny);
   // det som bara gäller en stund räknas om på den nya kartan: en brand eller tornado mitt i (de slutar), djurens flykt och

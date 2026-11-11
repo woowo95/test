@@ -12,3 +12,6 @@ export const EFTER: Record<string, (s: State, efter: Efter, vinnare: 0 | 1 | -1,
 export const gastKrok: { dod?: (s: State, p: import('./typer').Person, av?: import('./typer').Person) => void; spara?: (s: State, p: import('./typer').Person) => void } = {};
 // fler faror som gör att byn går i korta steg (rövare nära byborna, rovare.ts); kartstrid.ts frågar dem i faraNara
 export const FAROR: ((s: State) => boolean)[] = [];
+// striderna mot djur och rövare (steg 10.1.17): vad såren och döden heter i en strid av det slaget (dödsorsaken och texten på
+// såret), och det som sker med den sårade just då (vargbettet som blir infekterat). kartstrid.ts frågar raden för stridens slag
+export const STRIDSLAG: Record<string, { orsak: string; text: string; sar?: (s: State, p: import('./typer').Person, w: { k: string; g: number }) => void; dod?: (s: State, p: import('./typer').Person) => void }> = {};
