@@ -2793,7 +2793,7 @@ SCENARIER.rovarperson = {
     const fallna = doda >= 1 && kvar + doda === 4 && f.folk.length === kvar && s.people.filter(p => p.gast?.sort === 'rovare').length === kvar;
     // flykten: de som når kanten är borta ur folket
     for (const r of SIM.rovarna(s, f)) r.gast!.flytt = true;
-    for (let i = 0; i < 400 && s.rovare === f && f.folk.length; i++) SIM.step(s, SIM.nastaSteg(s));
+    for (let i = 0; i < 4000 && s.rovare === f && f.folk.length; i++) SIM.step(s, SIM.nastaSteg(s)); // (korta slag: upp till en halvtimme)
     const borta = !s.people.some(p => p.gast?.sort === 'rovare');
     return [
       [`flockens rövare är personer bland folket med gästrad och vapen (${rov.map(r => `${r.name}: ${SIM.gastVapen(s, r) ?? 'inget'}`).join(', ')})`, personer],
@@ -2814,11 +2814,11 @@ SCENARIER.gastvardag = {
     // hungrig: äter en portion ur packningen, och byns förråd rörs inte
     const mat0 = SIM.foodOf(s);
     p.hunger = 0.2; p.naring = undefined;
-    step(s, 5);
+    step(s, 30); // gästernas vardag räknas var 30:e sekund (TAKTER, steg 10.2.14)
     const at = p.hunger > 0.3 && (p.gast!.mat ?? 0) === SIM.GASTVARD.matsack - 1 && SIM.foodOf(s) === mat0;
     // trött medan hen väntar på kvällen: somnar, och vaknar när vilan är full
     h.fas = 'vantar'; h.kvall = s.now + 30 * HOUR; p.rest = 0.2;
-    step(s, 5);
+    step(s, 30);
     const somnar = p.gast!.sover === 1 && p.task?.act === 'sova';
     for (let i = 0; i < 9 * 60 && p.gast!.sover; i++) step(s, 60);
     const vaknar = !p.gast!.sover && p.rest >= SIM.GASTVARD.vaken - 0.01 && p.task?.act === 'gastVantar';

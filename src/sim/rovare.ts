@@ -221,8 +221,9 @@ export function gaMot(s: State, r: Person, mx: number, my: number, sek: number, 
   for (;;) {
     const sist = !gr(r).path?.length, i = sist ? 0 : gr(r).path![0];
     let wx = sist ? mx : (i % W) + 0.5, wy = sist ? my : Math.floor(i / W) + 0.5;
-    if (!sist) { // bredvid de andra i gänget (steg 10.2.25): var och en går en egen linje vid sidan av vägen, om marken där går att gå på
-      const ux = wx - r.x!, uy = wy - r.y!, ul = Math.hypot(ux, uy) || 1, o = sidaOm(r), sx = wx - uy / ul * o, sy = wy + ux / ul * o;
+    const nx = gr(r).path?.[1];
+    if (!sist && nx !== undefined) { // bredvid de andra i gänget (steg 10.2.25): var och en går en egen linje vid sidan av vägen, om marken där går att gå på
+      const ux = (nx % W) + 0.5 - wx, uy = Math.floor(nx / W) + 0.5 - wy, ul = Math.hypot(ux, uy) || 1, o = sidaOm(r), sx = wx - uy / ul * o, sy = wy + ux / ul * o; // vägens riktning, inte rövarens
       if (inMap(sx, sy) && !iVatten(s, sx, sy) && !bitAt(s, sx, sy)) { wx = sx; wy = sy; }
     }
     const fart = GANG.fart * fartF * Math.max(0.5, markFart(g, tileOf(r.x!, r.y!)));
