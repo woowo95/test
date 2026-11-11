@@ -4,7 +4,7 @@ import { hash3 } from './slump';
 import { Act, DAY, GRANNAR4, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { eldPlats, getMap } from './karta';
 import { knows } from './teknik';
-import { ALDER, ageOf, alive, byId, count, doingAct, familjOf, forstaGang, gjort, living, log } from './folk';
+import { ALDER, ageOf, alive, byId, count, andraGor, enTill, familjOf, forstaGang, gjort, living, log } from './folk';
 import { enOrd, han, hans, sinOrd, stor } from './ord';
 import { getable, Recept, takeMaterial } from './behov';
 import { sparas } from './forradsmal';
@@ -834,19 +834,22 @@ export const stationRum = (s: State, t: Station): Rum | undefined => t.inne ? ro
 // (en kista: p:s egen, steg 2.10.18)
 // (ingen bygger vidare i någon annans hus, steg 3.10.2)
 const halvbyggd = (s: State, k: string, p?: Person) => stationerOf(s).find(t => t.k === k && !isKlar(t) && (t.ag === undefined || t.ag === p?.id) && (!p || farBygga(s, husAv(s, t), p)));
+// en annan än p har tagit uppgiften att bygga en ny station av sorten k och har inte börjat på den än (steg 10.2.5)
+const nyPaVag = (s: State, k: string, p?: Person) => living(s).some(q => q !== p && q.task?.act === 'station' && q.task.tool === k);
 // p kan bygga (eller bygga vidare på) en station av sorten k som byn saknar (det byn kan ha flera av: om projektet säger att byn
 // saknar fler, projekt.ts)
 export function kanBygga(s: State, p: Person, k: StationSlag) {
   const d: StationDef = STATIONER[k];
-  if (doingAct(s, 'station', p) || (d.brasa ? ageOf(p, s.now) < ALDER.ansvar : !d.tek.some(k => knows(p, k))) || !d.flera && harStation(s, k) || d.verktyg && !freeTools(s, p, d.verktyg)) return false;
+  if (!enTill(s, 'station', p) || (d.brasa ? ageOf(p, s.now) < ALDER.ansvar : !d.tek.some(k => knows(p, k))) || !d.flera && harStation(s, k) || d.verktyg && !freeTools(s, p, d.verktyg)) return false;
   if (halvbyggd(s, k, p)) return true;
+  if (nyPaVag(s, k, p)) return false; // en annan är redan på väg att bygga en ny av sorten: det byn saknar är under arbete
   return (!d.forvar?.privat || villKista(s, p)) && (!d.pynt || villPynt(s, p, k)) && Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n + sparas(m)) && !!stationSite(s, k, p);
 }
 // materialet p saknar till en station av sorten k som byn saknar och p kan bygga, annars undefined (projekt.ts, steg 6.1.17).
 // Brasans stenar letas för sig (brasor.ts)
 export function receptStation(s: State, p: Person, k: StationSlag): Recept | undefined {
   const d: StationDef = STATIONER[k];
-  if (d.brasa || doingAct(s, 'station', p) || !d.tek.some(k => knows(p, k)) || !d.flera && harStation(s, k) || halvbyggd(s, k, p)) return undefined;
+  if (d.brasa || !enTill(s, 'station', p) || !d.tek.some(k => knows(p, k)) || !d.flera && harStation(s, k) || halvbyggd(s, k, p) || nyPaVag(s, k, p)) return undefined;
   if (d.forvar?.privat && !villKista(s, p) || d.pynt && !villPynt(s, p, k)) return undefined;
   return { av: d.av, verktyg: d.verktyg }; // ett redskap som fattas blir ett projekt på samma nivå (steg 6.2.19)
 }
@@ -888,7 +891,7 @@ export function workStation(s: State, _p: Person, tk: Task, dtSec: number) {
 // klar: första gången står det i loggen
 export function finishStation(s: State, p: Person, tk: Task) {
   const t = stationById(s, tk.ref);
-  if (!t || t.kvar > MIN) return;
+  if (!t || t.kvar > MIN || t.klar !== undefined) return; // flera kan bygga på samma (steg 10.2.5): den som blir klar sist gör inget mer
   t.kvar = 0; t.klar = s.now; gjort(s, p, 'mobel');
   const d = stationDef(t.k)!;
   if (d.hard) { // härden är lagd: den blir en eld inne i huset (steg 7.5.3)
@@ -999,13 +1002,13 @@ export const utanTillbehor = (s: State, k: TillbehorSlag) => tillbehorStationer(
 // materialet p saknar till ett tillbehör av sorten k som någon station saknar (steg 6.1.17)
 export function receptTillbehor(s: State, p: Person, k: TillbehorSlag): Recept | undefined {
   const d: TillbehorDef = TILLBEHOR[k];
-  if (!d.tek.some(t => knows(p, t)) || utanTillbehor(s, k).length <= (doingAct(s, 'tillbehor', p) ? 1 : 0)) return undefined;
+  if (!d.tek.some(t => knows(p, t)) || utanTillbehor(s, k).length <= andraGor(s, 'tillbehor', p)) return undefined;
   return { av: d.av };
 }
 export function kanGoraTillbehor(s: State, p: Person, k: TillbehorSlag) {
   const d: TillbehorDef = TILLBEHOR[k];
   if (!d.tek.some(t => knows(p, t))) return false;
-  const gor = doingAct(s, 'tillbehor', p) ? 1 : 0, utan = utanTillbehor(s, k).length;
+  const gor = andraGor(s, 'tillbehor', p), utan = utanTillbehor(s, k).length;
   return utan > gor && Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n + sparas(m));
 }
 // platsen dit den som gör tillbehöret går: framför den första stationen som saknar det
@@ -1148,7 +1151,7 @@ function iVagen(s: State) {
     if (!d || !isKlar(t) || d.forvar || d.eld || d.brasa) return false;
     const { w, h } = storlekAv(t), rutor = rutorAv(t.x, t.y, w, h);
     if (!rutor.some(q => fram.has(q.y * W + q.x)) && !(d.sover && t.inne && iIngang(s, t.x, t.y, w, h)) && !(arbetar(d) && !framLand(s, t.x, t.y, w, h))) return false;
-    return !d.gor.some(a => doingAct(s, a)) && !living(s).some(p => rutor.some(q => q.x === Math.floor(p.x) && q.y === Math.floor(p.y)));
+    return !living(s).some(q => arbetarVid(t, q)) && !living(s).some(p => rutor.some(q => q.x === Math.floor(p.x) && q.y === Math.floor(p.y)));
   });
   if (!t) return;
   const d = stationDef(t.k)!, { w, h } = storlekAv(t);
@@ -1313,7 +1316,7 @@ function rivScen(s: State, t: Station, text: string) {
 function barIn(s: State) {
   for (const t of s.stationer ?? []) {
     const d = stationDef(t.k);
-    if (!d?.inne || t.inne || !isKlar(t) || d.gor.some(a => doingAct(s, a))) continue;
+    if (!d?.inne || t.inne || !isKlar(t) || living(s).some(q => arbetarVid(t, q))) continue;
     const at = siteInne(s, t.k);
     if (!at) continue;
     flytta(s, t, { ...at, inne: 1 });

@@ -1,7 +1,7 @@
 import { husNytt } from './byggnad';
 import { gen, hans } from './ord';
 import { upplev } from './uppvaxt';
-import { ALDER, ageOf, count, doingAct, forstaGang, livet, living, log } from './folk';
+import { ALDER, ageOf, count, andraGor, forstaGang, livet, living, log } from './folk';
 import { kronikaBer, personFalt } from './berattelser';
 import { bitAt, vagBort, Bit, DORRAR, DorrDef, DorrSlag, Hus, MATERIAL, bitById, dorrDef, dorrRang, bitsOf, blocked, freeNear, gridOf, isWall, housesOf, husById, touch } from './byggnad';
 import { vaderSlit } from './vader';
@@ -348,13 +348,13 @@ export const utanDorr = (s: State, k: DorrSlag) => dorrOppningar(s).filter(b => 
 // receptet till en dörr av sorten k som någon öppning saknar, när p kunde hänga den om materialet fanns (steg 6.2.19)
 export function receptDorr(s: State, p: Person, k: DorrSlag): Recept | undefined {
   const d: DorrDef = DORRAR[k];
-  if (!d.tek.some(t => knows(p, t)) || utanDorr(s, k).length <= (doingAct(s, 'dorr', p) ? 1 : 0)) return undefined;
+  if (!d.tek.some(t => knows(p, t)) || utanDorr(s, k).length <= andraGor(s, 'dorr', p)) return undefined;
   return { av: d.av };
 }
 export function kanHangaDorr(s: State, p: Person, k: DorrSlag) {
   const d: DorrDef = DORRAR[k];
   if (!d.tek.some(t => knows(p, t))) return false;
-  const gor = doingAct(s, 'dorr', p) ? 1 : 0, utan = utanDorr(s, k).length;
+  const gor = andraGor(s, 'dorr', p), utan = utanDorr(s, k).length;
   return utan > gor && Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n + sparas(m));
 }
 // platsen dit den som hänger dörren går: i den första öppningen som saknar den

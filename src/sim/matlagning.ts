@@ -1,9 +1,9 @@
 import { DAY, HOUR, MIN, Person, State } from './typer';
-import { alive, byId, count, doingAct, forstaGang, gjort, living, log, ovning, stat, think } from './folk';
+import { alive, byId, count, enTill, forstaGang, gjort, living, log, ovning, stat, think } from './folk';
 import { clamp, rnd } from './slump';
 import { Del, addDel } from './egendom';
 import { amountOf, put, use } from './lager';
-import { Station, isKlar, kanGoras, stationerOf } from './stationer';
+import { Station, isKlar, kanGoras, stationFor, stationerOf } from './stationer';
 import { EKONOMI } from './ekonomi';
 import { SAKER } from './saker';
 import { loggBer } from './berattelser';
@@ -53,7 +53,7 @@ export const RATTER: readonly Ratt[] = [
 // det som grillas nu: den första råvaran det finns tillräckligt av (gränssnittet visar den på spettet)
 export const grillVara = (s: State) => RATTER.find(r => amountOf(s, r.ra) >= MATLAG.min);
 // p kan grilla: byn har grillen, elden brinner, det finns något att grilla och ingen annan grillar
-export const kanGrilla = (s: State, p: Person) => kanGoras(s, 'grilla', p) && s.fire.lit && !!grillVara(s) && !doingAct(s, 'grilla', p);
+export const kanGrilla = (s: State, p: Person) => kanGoras(s, 'grilla', p) && s.fire.lit && !!grillVara(s) && !!stationFor(s, 'grilla', p); // en grill rymmer sin arbetare (steg 10.2.5)
 // hur länge ett pass vid grillen varar
 export const grillTid = (s: State) => { const r = grillVara(s); return Math.min(MATLAG.maxTim * HOUR, (r ? amountOf(s, r.ra) / MATLAG.timme : 0) * HOUR + MATLAG.passExtra * MIN); };
 // så stor del av maten p bränner
@@ -187,7 +187,7 @@ export function torkBrist(s: State) {
 // p kan torka: byn har ställningen, något är klart att ta ner eller det finns rått över och plats, och ingen annan gör det
 export function kanTorka(s: State, p: Person, k: TorkSlag = 'tork') {
   const act = k === 'rokeri' ? 'roka' : 'torka';
-  if (!kanGoras(s, act, p) || doingAct(s, act, p)) return false;
+  if (!kanGoras(s, act, p) || !stationFor(s, act, p)) return false; // en ställning rymmer sin arbetare (steg 10.2.5)
   const a = torkArbete(s, k);
   return a.ner > 1e-6 || a.upp >= TORK.min;
 }
@@ -267,7 +267,7 @@ export const ledigKruka = (s: State) => tingOf(s).find(t => t.k === 'lerkruka_me
 export const kokarNu = (s: State) => tingOf(s).filter(t => t.kok);
 const rattAntal = (s: State) => RATT_SAKER.reduce((n, k) => n + amountOf(s, k), 0) + kokarNu(s).reduce((n, t) => n + t.kok!.n, 0);
 // p kan laga mat: kan krukan, elden brinner, en ledig kruka, något att koka, byn har för få rätter och ingen annan lagar mat
-export const kanKoka = (s: State, p: Person) => knows(p, 'kruka') && s.fire.lit && !!ledigKruka(s) && rattAntal(s) < KOK.vill * living(s).length && !doingAct(s, 'koka_mat', p) && !!kokRecept(s, p);
+export const kanKoka = (s: State, p: Person) => knows(p, 'kruka') && s.fire.lit && !!ledigKruka(s) && rattAntal(s) < KOK.vill * living(s).length && enTill(s, 'koka_mat', p) && !!kokRecept(s, p);
 // förberedelsen är klar (KLAR i steg.ts): råvarorna tas, och rätten ställs på elden i krukan
 export function kokaKlar(s: State, p: Person) {
   const r = kokRecept(s, p), t = ledigKruka(s);
@@ -316,7 +316,7 @@ export function stekRecept(s: State, p?: Person) {
   }
   return undefined;
 }
-export const kanSteka = (s: State, p: Person) => knows(p, 'stekhall') && s.fire.lit && !!stekhallen(s) && rattAntal(s) < KOK.vill * living(s).length && !doingAct(s, 'steka', p) && !!stekRecept(s, p);
+export const kanSteka = (s: State, p: Person) => knows(p, 'stekhall') && s.fire.lit && !!stekhallen(s) && rattAntal(s) < KOK.vill * living(s).length && !!stationFor(s, 'steka', p) && !!stekRecept(s, p);
 export function stekaKlar(s: State, p: Person) {
   const r = stekRecept(s, p);
   if (!r || !s.fire.lit || !stekhallen(s)) return;
@@ -339,7 +339,7 @@ export const BAK = balans('bak', {
   vill: 1, // byn bakar när den har färre bröd än så här många per invånare
 });
 export const bakugnen = (s: State) => stationerOf(s).find(t => t.k === 'bakugn' && isKlar(t) && !t.deg);
-export const kanBaka = (s: State, p: Person) => knows(p, 'bakugn') && !!bakugnen(s) && amountOf(s, 'brod') < BAK.vill * living(s).length && !doingAct(s, 'baka', p) && getable(s, p, 'mjol') >= BAK.mjol && getable(s, p, 'ved') >= BAK.ved && !!fylldSack(s);
+export const kanBaka = (s: State, p: Person) => knows(p, 'bakugn') && !!bakugnen(s) && amountOf(s, 'brod') < BAK.vill * living(s).length && !!stationFor(s, 'baka', p) && getable(s, p, 'mjol') >= BAK.mjol && getable(s, p, 'ved') >= BAK.ved && !!fylldSack(s);
 export function bakaKlar(s: State, p: Person) {
   const t = bakugnen(s), sack = fylldSack(s);
   if (!t || !sack || getable(s, p, 'mjol') < BAK.mjol || getable(s, p, 'ved') < BAK.ved) return;

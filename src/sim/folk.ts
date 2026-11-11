@@ -1,4 +1,5 @@
 import { eldPlats } from './karta';
+import { hash3 } from './slump';
 import { freeNear } from './byggnad';
 import { Strom, clamp, gauss, pick, rnd } from './slump';
 import { Act, DAY, HOUR, LogEntry, Person, Rel, SKILLS, STATS, Skill, Stat, State, Task } from './typer';
@@ -199,6 +200,21 @@ export function living(s: State) { return s.people.filter(alive); }
 export { isSick } from './sjukdom'; // sjukdomarna (steg 9.5.1, sjukdom.ts); den gamla klockan sickUntil räknas tills den gått ut
 export function byId(s: State, id?: number) { return id === undefined ? undefined : s.people.find(p => p.id === id); }
 // gör någon levande (utom `utom`) handlingen act just nu? (drar ingen slump)
+// arbetsordningens mjuka tak för det som annars bara en i hela byn fick göra (steg 10.2.5): en till tar handlingen med chansen
+// ARBETARE.fler upphöjt till så många andra som redan gör den. Talet räknas ur personen, minuten och handlingen (hash3, inte
+// slumpens ström), så att samma fråga ger samma svar i ett och samma val och också från gränssnittet. Det som är en regel för
+// världen gäller ändå: en station rymmer sina arbetare (upptagen i stationer.ts), en sak eller ruta har en som arbetar med den
+export const ARBETARE = balans('arbetare', {
+  fler: 1 / 3, // chansen att en till tar en sak som en annan redan gör, per person som gör den (arbetsordningens VAL.fullRad)
+});
+const actKod = (a: string) => { let h = 7; for (let i = 0; i < a.length; i++) h = Math.imul(h, 31) + a.charCodeAt(i) | 0; return h; };
+export function enTill(s: State, act: Act, p?: Person) {
+  let n = 0;
+  for (const q of s.people) if (q !== p && alive(q) && q.task?.act === act) n++;
+  return !n || hash3(p?.id ?? 0, Math.floor(s.now / 60000), actKod(act)) < ARBETARE.fler ** n;
+}
+// så många andra som gör handlingen just nu
+export function andraGor(s: State, act: Act, utom?: Person) { let n = 0; for (const q of s.people) if (q !== utom && alive(q) && q.task?.act === act) n++; return n; }
 export function doingAct(s: State, act: Act, utom?: Person) {
   for (const q of s.people) if (q !== utom && alive(q) && q.task?.act === act) return true;
   return false;

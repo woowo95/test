@@ -1,4 +1,4 @@
-import { KROPP, count, doingAct, forstaGang, gjort, living, log } from './folk';
+import { KROPP, count, enTill, forstaGang, gjort, living, log } from './folk';
 import { knows } from './teknik';
 import { clamp, rnd } from './slump';
 import { Act, HOUR, State, Person } from './typer';
@@ -17,7 +17,7 @@ import { anseendeSym } from './rykten';
 import { DORRAR, DORR_LIST } from './byggnad';
 import { utanDorr } from './bygg';
 import { balans } from './balans';
-import { fartVid, kvVid, kanGoras, nyttVid, slitVid } from './stationer';
+import { fartVid, kvVid, kanGoras, nyttVid, slitVid, stationFor } from './stationer';
 import { smutsa } from './smuts';
 import { krukaAv, krukaFormad } from './kruka';
 
@@ -143,7 +143,7 @@ export const djurKvar = (s: State, art: Djurart) => amountOf(s, art.sak) / art.m
 // p kan slakta eller rensa arten: byn har stationen om det bara görs där (viltet och fisken vid slaktbänken), det finns
 // tillräckligt, en kniv som ingen annan slaktar med (om det behövs; hen kan kniven eller äger en köpt, steg 4.5.4.16), och ingen
 // annan gör det redan
-export const canProcess = (s: State, p: Person, art: Djurart) => kanGoras(s, art.act, p) && (!art.kniv || (knows(p, 'kniv') || tingOf(s).some(t => t.agare === p.id && t.k === 'kniv')) && freeTools(s, p, 'kniv') >= 1) && djurKvar(s, art) >= 1 / art.minDel && !doingAct(s, art.act, p);
+export const canProcess = (s: State, p: Person, art: Djurart) => kanGoras(s, art.act, p) && (!art.kniv || (knows(p, 'kniv') || tingOf(s).some(t => t.agare === p.id && t.k === 'kniv')) && freeTools(s, p, 'kniv') >= 1) && djurKvar(s, art) >= 1 / art.minDel && (ACTS[art.act]?.plats === 'station' ? !!stationFor(s, art.act, p) : enTill(s, art.act, p)); // en bänk rymmer sin arbetare (steg 10.2.5)
 // slakta eller rensa i hours timmar. Köttet, benet, skinnet och senorna är deras som ägde djuren, inte den som gör det
 export function bearbeta(s: State, p: Person, art: Djurart, hours: number) {
   const n = Math.min(hours * art.timme, djurKvar(s, art));
@@ -231,7 +231,7 @@ export const borjaTool = (s: State, p: Person, g: string, handel?: string) => { 
 // påbörjat ett av slaget), där det görs, och ingen annan gör ett i gruppen. undefined annars
 export function handelTask(s: State, p: Person, k: string) {
   const g = gruppOf(k), ks = GORS[g];
-  if (!ks?.includes(k) || !kanGoras(s, g as Act, p) || doingAct(s, g as Act, p)) return undefined;
+  if (!ks?.includes(k) || !kanGoras(s, g as Act, p) || !enTill(s, g as Act, p)) return undefined;
   const halv = halvOf(s, p, ks)?.halv!.gor;
   if (halv ? halv !== k : !canMake(s, p, k)) return undefined;
   return { act: g as Act, text: SAKER[k]!.gors!.text.replace('{verktyg}', ordFor(s, k)), min: minOf(k), tool: k };
@@ -242,7 +242,7 @@ export function handelTask(s: State, p: Person, k: string) {
 export const wantsTool = (s: State, p: Person, g: string, spar = 0) => {
   const ks = GORS[g];
   return kanGoras(s, g as Act, p) && (!!halvOf(s, p, ks) || ks.some(k => canMake(s, p, k) && (!av(k).torrgras || amountOf(s, 'torrgras') >= spar)))
-    && harAv(s, g) < villAv(s, g) && !doingAct(s, g as Act, p);
+    && harAv(s, g) < villAv(s, g) && enTill(s, g as Act, p);
 };
 // underhållet (steg 6.2.12, nivån Förbättra i val.ts): en grupp där byn har så många den vill, men några av dem är slitna
 // (REDSKAP.slitet) så att de hela är färre än byn vill ha. Inget lagas: ett nytt görs medan det gamla håller, och det gamla
@@ -252,7 +252,7 @@ export function underhallGrupp(s: State, p: Person) {
     const ks = GORS[g], vill = villAv(s, g);
     if (!vill || harAv(s, g) < vill) continue; // färre än byn vill: det vanliga arbetet gör dem
     const hela = tingOf(s).reduce((n, t) => n + (ks.includes(t.k) && t.c >= REDSKAP.slitet ? 1 : 0), 0);
-    if (hela >= vill || !kanGoras(s, g as Act, p) || doingAct(s, g as Act, p)) continue;
+    if (hela >= vill || !kanGoras(s, g as Act, p) || !enTill(s, g as Act, p)) continue;
     if (halvOf(s, p, ks) || ks.some(k => canMake(s, p, k))) return g;
   }
   return undefined;
@@ -261,7 +261,7 @@ export function underhallGrupp(s: State, p: Person) {
 // slaget hen kan göra, men inte materialet (projekt.ts, steg 6.1.17). undefined när p kan göra det, eller inte kan alls
 export function receptTill(s: State, p: Person, g: string): Recept | undefined {
   const ks = GORS[g];
-  if (!kanGoras(s, g as Act, p) || harAv(s, g) >= villAv(s, g) || doingAct(s, g as Act, p) || halvOf(s, p, ks)) return undefined;
+  if (!kanGoras(s, g as Act, p) || harAv(s, g) >= villAv(s, g) || !enTill(s, g as Act, p) || halvOf(s, p, ks)) return undefined;
   const k = ks.find(k => { const tek = SAKER[k]!.skaffa!.tek; return (!tek || knows(p, tek)) && (!SAKER[k]!.skaffa!.verktyg || !!verktygFor(s, k)); });
   return k ? { av: av(k), spar: m => m === 'flinta' ? TROSKEL.flintaSparas : 0 } : undefined;
 }

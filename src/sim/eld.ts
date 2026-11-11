@@ -389,11 +389,11 @@ export function stepFire(s: State, dtSec: number, ppl: Person[]) {
     const b = fyllare(s, f, per.get(f)!);
     if (b) fetchFuel(s, b.p, b.w.why, undefined, f);
   }
-  // tändning: när en eld är släckt och någon som använder den vill ha eld försöker en person i taget i byn
-  if (!ppl.some(p => p.task?.act === 'tanda')) for (const f of skots) {
-    if (f.lit || emberOn(s, f) || !canLight(s, undefined, f) || (f.want ?? 0) < hearthOf(f).maxFuel * ELD.tandVill || eldIVatten(s, f)) continue;
+  // tändning: när en eld är släckt och någon som använder den vill ha eld försöker en person i taget vid varje eld (steg 10.2.5)
+  for (const f of skots) {
+    if (ppl.some(p => p.task?.act === 'tanda' && (p.task.ref ?? s.fire.id) === f.id) || f.lit || emberOn(s, f) || !canLight(s, undefined, f) || (f.want ?? 0) < hearthOf(f).maxFuel * ELD.tandVill || eldIVatten(s, f)) continue;
     const c = tandare(s, f, per.get(f)!);
-    if (c) { const at = tandPlats(s, f); assign(s, c.p, 'tanda', at.x, at.y, ELD.tandTim * HOUR, `Vill ha eld. ${c.w.why}`); if (f.id !== undefined) c.p.task!.ref = f.id; break; }
+    if (c && c.p.task?.act !== 'tanda') { const at = tandPlats(s, f); assign(s, c.p, 'tanda', at.x, at.y, ELD.tandTim * HOUR, `Vill ha eld. ${c.w.why}`); if (f.id !== undefined) c.p.task!.ref = f.id; }
   }
 }
 // samling hittar tändmaterial, sten och flinta när förrådet behöver det

@@ -28,7 +28,7 @@ import { SED } from './seder';
 import { bedTile } from './byggnader';
 import { stationRutor } from './stationer';
 import { LJUS, UPPSATT, friFackla, friLjus, ljusPlatser, morkStalle } from './ljus';
-import { ALDER, ageOf, doingAct } from './folk';
+import { ALDER, ageOf, enTill } from './folk';
 import { SKOGSVARD, kanPlantera, planteraUppgift, skogsvardBrist } from './skogsvard';
 import { VATSKOR, ar_vatska, ledigFor, vatskaAv } from './vatskor';
 
@@ -226,7 +226,7 @@ export const PROJEKT: Record<string, ProjektDef> = {
     namn: 'Flytta en lagerplats', vikt: PROJEKT_TAL.lagerFlytt,
     brist: s => { const v = lagerFlyttVal(s); return v ? Math.min(1, v.vinst / LAGER.flyttFull) * LAGER.flyttMin / (LAGER.flyttMin + v.saker * LAGER.flyttPer) : 0; },
     kostnad: () => LAGER.flyttMin / 60 * ARBETE,
-    kan: (s, p, f) => !f.kyla && ageOf(p, s.now) >= ALDER.vuxen && !!lagerFlyttVal(s) && !doingAct(s, 'flyttLager', p),
+    kan: (s, p, f) => !f.kyla && ageOf(p, s.now) >= ALDER.vuxen && !!lagerFlyttVal(s) && enTill(s, 'flyttLager', p),
     uppgift: s => { const v = lagerFlyttVal(s); return v && { act: 'flyttLager', text: 'Märker ut en ny lagerplats närmare byns mitt.', min: LAGER.flyttMin, spot: { x: v.ny.x + v.ny.w / 2, y: v.ny.y + v.ny.h / 2 } }; },
   },
   // leran (steg 9.4.10, lera.ts): en tur vid stranden när förrådet saknar den byn gör av med
@@ -234,7 +234,7 @@ export const PROJEKT: Record<string, ProjektDef> = {
     namn: 'Lera', vikt: PROJEKT_TAL.lera,
     brist: s => leraBrist(s),
     kostnad: () => grundvarde('lera') * LERA.perTur,
-    kan: (s, p, f) => !f.kyla && ageOf(p, s.now) >= ALDER.vuxen && leraBrist(s) > 0 && !doingAct(s, 'lera', p) && !!leraPlats(s),
+    kan: (s, p, f) => !f.kyla && ageOf(p, s.now) >= ALDER.vuxen && leraBrist(s) > 0 && enTill(s, 'lera', p) && !!leraPlats(s),
     uppgift: (s, p) => { const at = leraPlats(s); return at && { act: 'lera', text: 'Gräver lera vid stranden.', min: LERA.max, tool: freeTools(s, p, 'benspade') > 0 ? 'benspade' : undefined, spot: at }; },
   },
   // en station ute flyttas närmare dem som använder den (steg 9.4.8, stationer.ts)
@@ -242,7 +242,7 @@ export const PROJEKT: Record<string, ProjektDef> = {
     namn: 'Flytta en station', vikt: PROJEKT_TAL.stationFlytt,
     brist: s => { const v = stationFlyttVal(s); return v ? Math.min(1, v.vinst / STATION.flyttFull) : 0; },
     kostnad: () => STATION.flyttMin / 60 * ARBETE,
-    kan: (s, p, f) => !f.kyla && ageOf(p, s.now) >= ALDER.vuxen && !!stationFlyttVal(s) && !doingAct(s, 'flyttStation', p),
+    kan: (s, p, f) => !f.kyla && ageOf(p, s.now) >= ALDER.vuxen && !!stationFlyttVal(s) && enTill(s, 'flyttStation', p),
     uppgift: s => { const v = stationFlyttVal(s); return v && { act: 'flyttStation', text: `Flyttar ${stationDef(v.t.k)?.namn.toLowerCase() ?? 'en station'} närmare husen och lagren.`, min: STATION.flyttMin, spot: vidStation(v.t) }; },
   },
   // träden på en lagerplats eller ett fält i skogen fälls först (steg 3.6.9, skog.ts), med en yxa; de blir trä
@@ -274,7 +274,7 @@ export const PROJEKT: Record<string, ProjektDef> = {
     namn: 'Uppsatt fackla', vikt: PROJEKT_TAL.uppsatt,
     brist: s => morkStalle(s) ? 1 : 0,
     kostnad: () => grundvarde('fackla') + UPPSATT.min / 60 * ARBETE,
-    kan: (s, p, f) => !f.kyla && !!friFackla(s) && !!morkStalle(s) && !doingAct(s, 'uppsatt', p),
+    kan: (s, p, f) => !f.kyla && !!friFackla(s) && !!morkStalle(s) && enTill(s, 'uppsatt', p),
     uppgift: s => { const m = morkStalle(s); return m && { act: 'uppsatt', text: 'Sätter upp en fackla där byn ofta går i mörkret.', min: UPPSATT.min, spot: { x: m.x + 0.5, y: m.y + 0.5 } }; },
   },
   // ett talgljus på ett bord eller en hylla inne (steg 6.3.8, ljus.ts)
@@ -282,7 +282,7 @@ export const PROJEKT: Record<string, ProjektDef> = {
     namn: 'Talgljus på bordet', vikt: PROJEKT_TAL.ljus,
     brist: s => ljusPlatser(s).length ? 1 : 0,
     kostnad: () => grundvarde('talgljus') + LJUS.min / 60 * ARBETE,
-    kan: (s, p, f) => !f.kyla && !!friLjus(s) && ljusPlatser(s).length > 0 && !doingAct(s, 'ljus', p),
+    kan: (s, p, f) => !f.kyla && !!friLjus(s) && ljusPlatser(s).length > 0 && enTill(s, 'ljus', p),
     uppgift: s => { const st = ljusPlatser(s)[0]; return st && { act: 'ljus', text: 'Ställer fram ett talgljus inne.', min: LJUS.min, spot: { x: st.x + 0.5, y: st.y + 0.5 }, ref: st.id }; },
   },
   // fälten (steg 2.10.3, odling.ts): nästa steg på det egna fältet, eller att röja ett nytt
