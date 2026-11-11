@@ -266,7 +266,7 @@ function platsFor(s: State, act: Act, p: Person): { x: number; y: number } {
     // när det är kallt samtalar och berättar man i samlingshuset, om det är varmare där än vid elden (byggnader.ts)
     const sal = d.social ? samlingRum(s) : undefined, c = sal ? coldOf(temperature(s)) : 0;
     // ... när det regnar (steg 2.11.1), och året runt är samlingssalen byns mötesplats (steg 7.2.7)
-    if (sal && (c > 0 && varmareInne(s, sal, c, d.varmer) || nederbord(s) || c === 0 && rnd(s, 'val', p) < VAL.salMote)) return isarIRum(s, p, sal.tiles);
+    if (sal && (c > 0 && varmareInne(s, sal, c, d.varmer, p) || nederbord(s) || c === 0 && rnd(s, 'val', p) < VAL.salMote)) return isarIRum(s, p, sal.tiles);
     // annars sätter man sig ofta vid ett bord för att samtala och berätta, när det inte är kallt
     if (d.slag === 'prata' && bordenOf(s).length && coldOf(temperature(s)) === 0 && rnd(s, 'val', p) < VAL.bordSamtal) { const at = ledigPlats(s, p); if (at) return at; }
     // bredvid den bästa vännen om hen sitter vid samma eld, och inte nära en ovän (steg 3.1.1)
@@ -423,7 +423,8 @@ function strandSpot(s: State, p: Person) {
 export function dangers(s: State) {
   const ppl = living(s), freezing = ppl.filter(q => q.warm < KROPP.kallt).length / (ppl.length || 1), ai = ageIndex(s);
   const cold = coldOf(temperature(s)) > 0 || freezing > VAL.fryserAndel;
-  return { kyla: cold && !nagonGlod(s), svalt: foodDays(s) < VAL.svaltDygn, gras: kallTid(ai) || cold ? TROSKEL.torrgrasKyla : 0 };
+  // kylan är en fara efter hur många som fryser, också när elden glöder, och när det är kallt utan någon eld som glöder (steg 10.2.9)
+  return { kyla: freezing > VAL.fryserAndel || cold && !nagonGlod(s), svalt: foodDays(s) < VAL.svaltDygn, gras: kallTid(ai) || cold ? TROSKEL.torrgrasKyla : 0 };
 }
 satFaror(dangers);
 type Faror = ReturnType<typeof dangers>;

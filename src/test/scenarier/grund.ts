@@ -187,7 +187,7 @@ SCENARIER.naver = {
     SIM.newTing(s, 'kniv', 1, p.id);
     setAmount(s, 'torrgras', 0); setAmount(s, 'naver', 0); setAmount(s, 'ved', 10); setAmount(s, 'grenar', 20); setAmount(s, 'flinta', 2); setAmount(s, 'sten', 10);
     Object.assign(s.fire, { lit: false, emberUntil: undefined, fuel: 0 });
-    const kan = SIM.canLight(s), behoverInte = !SIM.needTinder(s);
+    const kan = SIM.canLight(s), behoverInte = !SIM.underBuffert(s, 'torrgras'); // höet: tändmaterialet samlas efter förrådsmålet (steg 10.2.9)
     const ved0 = amountOf(s, 'ved');
     SIM.tryLight(s, p);
     const naverKvar = amountOf(s, 'naver'), vedKvar = amountOf(s, 'ved'), hoKvar = amountOf(s, 'torrgras');

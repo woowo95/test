@@ -3,7 +3,7 @@ import { tal } from './ord';
 import { allaBarn } from './uppvaxt';
 import { kronikaBer, loggBer, personFalt } from './berattelser';
 import { addTo, amountOf, avbryt, fetchSpot, takeLimit, use } from './lager';
-import { Materialslag, TROSKEL, forbrukat, overTak, underBuffert } from './forradsmal';
+import { Materialslag, forbrukat, overTak, underBuffert } from './forradsmal';
 import { Behov, getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
 import { coldOf, hardVinter, temperature, vaderNu, VADER } from './vader';
@@ -199,9 +199,10 @@ export function canLight(s: State, p?: Person, f = s.fire) {
 }
 // en näver (steg 6.3.3) täljs ur en ved med kniv eller yxa: med ett blad och ved behövs inget hö till tändningen
 export const kanTalja = (s: State) => nTools(s, 'kniv') + nTools(s, 'yxa') > 0;
-const harTandning = (s: State) => amountOf(s, 'torrgras') + amountOf(s, 'naver') >= TROSKEL.tandBrist || kanTalja(s) && amountOf(s, 'ved') >= 1;
+// tändmaterialet samlas efter förrådsmålet (steg 10.2.9): flintan, stenarna till ringen, och höet och grenarna under sin buffert
+// (MATERIALMAL, där elden som brinner vill ha mindre än den släckta), också när en eld glöder
 export function needTinder(s: State) {
-  return !nagonGlod(s) && (amountOf(s, 'flinta') < 1 || needStones(s) || !harTandning(s) || amountOf(s, 'grenar') < TROSKEL.tandBrist);
+  return amountOf(s, 'flinta') < 1 || needStones(s) || tinderShort(s);
 }
 function durText(sec: number) { const h = sec / HOUR_S; return h >= 24 ? `${num(h / 24)} dygn` : h >= 1 ? `${Math.round(h)} timmar` : `${Math.round(sec / 60)} minuter`; }
 function lightFire(s: State, p: Person, f: Fire) {

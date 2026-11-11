@@ -2,7 +2,7 @@ import { husNytt } from './byggnad';
 import { KROPP, alive, byId, count, familjOf, living, log } from './folk';
 import { Hus, MATERIAL, Rum, bitById, bitsOf, gridOf, housesOf, husById, roofed, shelterOf, touch } from './byggnad';
 import { ageIndex, kallTid } from './tid';
-import { canLight, heatAt } from './eld';
+import { heatAt } from './eld';
 import { eldPlats } from './karta';
 import { changed, enPerRuta, ownedAll, put, stacksOf, storeFull, zoneAt, zonesOf } from './lager';
 import { kronika } from './historik';
@@ -41,6 +41,7 @@ export const HUS = balans('hus', {
   tomTim: 4, // ... men behöver byn ett förrådshus blir den det redan efter så här många timmar, före ett nytt hus (steg 2.12.5)
   rivTillbaka: 0.5, // så mycket av materialet kommer tillbaka när ett hus rivs
   varmeMarg: 0.02, // ett samlingshus räknas som varmare än elden även om det är så här mycket kallare ...
+  vagVarme: 0.01, // den som ska värma sig räknar så här mycket värme för varje ruta vägen till ett rum eller till elden är (steg 10.2.9)
   varmeY: 2.9, // ... mätt så här många rutor söder om elden
   torkhusFran: 2, // så många torkställningar ute innan byn vill ha ett torkhus (steg 7.3.5)
   vedbodFran: 40, // så mycket ved ute utan tak innan byn vill ha en vedbod (steg 7.3.6)
@@ -431,10 +432,15 @@ function funktionsbyte(s: State) {
   }
 }
 // är det varmare inne i rummet än vid elden? c = kylan (coldOf): hur kallt det är ute
-export function varmareInne(s: State, rum: Rum, c: number, varmer = false) {
-  if (varmer && !s.fire.lit && canLight(s)) return false; // elden går att tända: då går man inte in och fryser, utan någon tänder den
+// Den som ska värma sig (varmer) väger värmen inne mot värmen vid elden, med vägen dit (HUS.vagVarme per ruta, steg 10.2.9): en
+// släckt eld värmer inte, vad som än finns att tända den med
+export function varmareInne(s: State, rum: Rum, c: number, varmer = false, p?: { x: number; y: number }) {
   const f = eldPlats(s), inne = -c * (1 - shelterOf(s, rum, Math.min(living(s).length, rum.tiles.length))), ute = heatAt(s, f.x + 0.5, f.y + HUS.varmeY) * KROPP.eldVarme - c;
-  return varmer ? inne >= ute : inne >= Math.min(0, ute) - HUS.varmeMarg; // den som ska värma sig går bara in om det är minst lika varmt som vid elden
+  if (varmer) {
+    const t = rum.tiles[0], dIn = p && t !== undefined ? Math.hypot(p.x - (t % W + 0.5), p.y - (Math.floor(t / W) + 0.5)) : 0, dUt = p ? Math.hypot(p.x - f.x - 0.5, p.y - f.y - 0.5) : 0;
+    return inne - HUS.vagVarme * dIn >= ute - HUS.vagVarme * dUt;
+  }
+  return inne >= Math.min(0, ute) - HUS.varmeMarg;
 }
 // samlingshusets rum, där man umgås när det är kallt (val.ts)
 export const samlingRum = (s: State): Rum | undefined => {

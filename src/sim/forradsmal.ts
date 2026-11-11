@@ -123,9 +123,10 @@ interface Materialmal {
   min: (s: State) => number; // byn vill alltid ha minst så här mycket (tändmaterialet till elden, flintan)
 }
 const tand = (s: State) => s.fire.lit ? TROSKEL.tandVill : TROSKEL.tandVillSlocknad; // tändmaterialet invånarna vill ha
+const harNaver = (s: State) => amountOf(s, 'naver') >= TROSKEL.tandBrist || nTools(s, 'kniv') + nTools(s, 'yxa') > 0 && amountOf(s, 'ved') >= 1;
 export const MATERIALMAL = {
   grenar: { min: tand },
-  torrgras: { min: tand },
+  torrgras: { min: s => harNaver(s) ? 0 : tand(s) }, // med näver, eller ett blad och ved att tälja den ur, behövs inget hö till tändningen (steg 6.3.3)
   sten: { min: () => 0 },
   flinta: { min: () => TROSKEL.flintaMinsta },
   virke: { min: () => 0 },
