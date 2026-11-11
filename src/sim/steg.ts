@@ -48,7 +48,7 @@ import { ELDFLYTT, flyttaElden, stepEldFlytt } from './eldflytt';
 import { DODSORSAKER, type Dodsorsak, barnMat, birth, birthWish, die, framlingSteg, regulate } from './liv';
 import { MARK, groundOf, growGround, markslag, packGround, tileOf } from './mark';
 import { bynsMitt } from './omrade';
-import { SAMTAL, TalkEvent, converse, kanPrata, skiljsAt } from './samtal';
+import { SAMTAL, TalkEvent, converse, horHar, kanPrata, skiljsAt } from './samtal';
 import { HABIT_FADE, addHabit, stepSeder, updateTags } from './seder';
 import { RELT, stepRelationer } from './relationer';
 import { MINNE, areaOf, fearPlace, forget, lookAround, observe, radslaVid, sees, sightOf, trorOm } from './minne';
@@ -372,18 +372,25 @@ export const TAKTER: Takt[] = [
       s.now = c.now;
     }
   } },
-  // samtal: ca ett per 4 minuter per person i social aktivitet, med dem som är nära när slaget slutar
+  // samtal (steg 10.2.16): ca ett per 4 minuter per person i social aktivitet, med dem som står nära i slaget, utan vägg emellan.
+  // Ingen samtalar ensam: den som gått för att samtala slutar när den hen pratar med gått för långt bort, eller när ingen har
+  // funnits att prata med på SAMTAL.ensamSek sekunder
   { namn: 'samtalen', sek: 0, fn: (s, dt, c) => {
-    if (c.social.length < 2) return;
     const social = c.social.filter(p => kanPrata(s, p)); // en brottning kan ha börjat under steget (steg 9.2.100)
     for (const p of social) {
       if (!alive(p)) continue;
+      const nara = social.filter(q => q !== p && alive(q) && horHar(s, p, q));
+      const t = p.task!, med = t.med !== undefined ? nara.find(q => q.id === t.med) : undefined, others = med ? [med] : nara; // den man står bredvid (steg 4.5.6.7)
+      if (t.act === 'samtal') {
+        if (t.med !== undefined && !med) { t.until = Math.min(t.until, c.now); count(s, 'samtal for langt'); continue; } // den andra gick
+        t.ensam = others.length ? 0 : (t.ensam ?? 0) + dt;
+        if (t.ensam > SAMTAL.ensamSek) { t.until = Math.min(t.until, c.now); count(s, 'samtal ensam'); continue; }
+      }
+      if (!others.length) continue;
       const expect = dt / STEG.samtalSek * (STEG.samtalBas + stat(p, 'empati', c.now) / STEG.samtalEmpati) * (p.sinnen === undefined ? 1 : tal(p) * STEG.samtalTal + horsel(p) * STEG.samtalHorsel + 1 - STEG.samtalTal - STEG.samtalHorsel); // talet och hörseln (steg 8.2.2)
       let n = Math.floor(expect); if (rnd(s, 'samtal', p) < expect - n) n++;
-      const nara = social.filter(q => q !== p && alive(q) && Math.hypot(q.x - p.x, q.y - p.y) < SAMTAL.radie);
-      const med = p.task?.med !== undefined ? nara.find(q => q.id === p.task!.med) : undefined, others = med ? [med] : nara; // den man står bredvid (steg 4.5.6.7)
       for (let i = 0; i < n; i++) { const g = converse(s, p, others, c.events); if (g) gralBlirSlagsmal(s, p, g); } // ett gräl kan bli ett slagsmål (strid.ts)
-      if (n && others.length) { count(s, 'samtal', n); if (p.task && !ACTS[p.task.act].social) p.pratArbete = (p.pratArbete ?? 0) + n; } // samtalen under arbetet (steg 8.1.12)
+      if (n) { count(s, 'samtal', n); if (!ACTS[t.act].social) p.pratArbete = (p.pratArbete ?? 0) + n; } // samtalen under arbetet (steg 8.1.12)
     }
   } },
   { namn: 'striden', sek: 0, fn: (s, dt) => { kartStridSteg(s, dt); serStriden(s); } }, // striderna på kartan stegas med byn, och de som ser dem väljer på nytt (kartstrid.ts, steg 10.1.4)
@@ -420,8 +427,8 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
     s.now = now;
     kost(t.namn, k);
   });
-  // samtalen visas utspridda över slaget
-  if (events) for (let i = e0; i < events.length; i++) events[i].t = t0 + (i - e0 + 0.5) / (events.length - e0) * dtSec * SEC;
+  // samtalen visas i slutet av slaget, där de som pratar står (steg 10.2.16)
+  if (events) for (let i = e0; i < events.length; i++) events[i].t = now;
 }
 
 

@@ -135,6 +135,7 @@ export interface Task {
   why?: string; // varför personen valde uppgiften
   dark?: boolean; // påbörjad under mörk tid
   med?: number; // den man samtalar med och står bredvid (steg 4.5.6.7, samtalMed i samtal.ts)
+  ensam?: number; // sekunder som den som gått för att samtala inte haft någon att prata med (steg 10.2.16)
   skiljs?: 1; // samtalet är slut och man går ifrån varandra en bit (steg 4.5.6.7)
   path?: number[]; // rutorna kvar att gå längs vägen (steg.ts, walk)
   runda?: number; varv?: number; stopp?: number; vidEld?: boolean; // vaktens runda: stoppet hen är vid, antal stopp sedan elden, när stoppet är slut, om hen står vid elden (vakt.ts)

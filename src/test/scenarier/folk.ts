@@ -2248,10 +2248,10 @@ SCENARIER.framling = {
 
 SCENARIER.samtalpar = {
   lang: true,
-  text: 'De som pratar står bredvid varandra (steg 4.5.6.7, samtalMed i samtal.ts): den som väljer att samtala går fram till någon som gör något socialt och ställer sig ungefär en ruta från hen, samtalar med hen under samtalet, och när det är slut går de ifrån varandra ett par rutor innan de gör något annat. Den som arbetar och pratar (tvinnar, vaktar) flyttar sig inte.',
+  text: 'De som pratar står bredvid varandra (steg 4.5.6.7 och 10.2.16, samtalMed i samtal.ts): ingen samtalar ensam, samtalet sker där de står nära utan vägg emellan och tar slut när någon går för långt bort, och den som gör något tyst pratar inte: den som väljer att samtala går fram till någon som gör något socialt och ställer sig ungefär en ruta från hen, samtalar med hen under samtalet, och när det är slut går de ifrån varandra ett par rutor innan de gör något annat. Den som arbetar och pratar (tvinnar, vaktar) flyttar sig inte.',
   kor: () => {
     let par = 0, nara = 0, medSamma = 0, samtalMedPar = 0, flyttad = 0, arbeteFore = 0;
-    let bredvid = 0, isar = 0;
+    let bredvid = 0, isar = 0, forLangt = 0, ensam = 0, evN = 0, langtIsar = 0, vagg = 0, tyst = 0;
     const flyttAkt: Record<string, number> = {};
     for (const seed of [3, 8]) {
       const s = createState(seed, START);
@@ -2268,15 +2268,25 @@ SCENARIER.samtalpar = {
           par++;
           if (Math.hypot(p.x - q.x, p.y - q.y) < 1.6) nara++;;
         }
-        for (const e of ev) { const a = byId(s, e.a); if (a?.task?.med !== undefined) { samtalMedPar++; if (a.task.med === e.b) medSamma++; } }
+        for (const e of ev) {
+          const a = byId(s, e.a), b = byId(s, e.b); if (a?.task?.med !== undefined) { samtalMedPar++; if (a.task.med === e.b) medSamma++; }
+          if (!a || !b || e.t !== s.now) continue; // (bara det sista slaget: där står de nu)
+          evN++;
+          if (Math.hypot(a.x - b.x, a.y - b.y) >= SIM.SAMTAL.radie) langtIsar++;
+          if (SIM.vaggMellan(s, a, b)) vagg++;
+          if ([a, b].some(q => q.task && SIM.ACTS[q.task.act].tyst)) tyst++;
+        }
       }
-      bredvid += s.stat?.['samtal bredvid'] ?? 0; isar += s.stat?.['samtal isar'] ?? 0;
+      bredvid += s.stat?.['samtal bredvid'] ?? 0; isar += s.stat?.['samtal isar'] ?? 0; forLangt += s.stat?.['samtal for langt'] ?? 0; ensam += s.stat?.['samtal ensam'] ?? 0;
     }
     return [
       [`den som samtalar går fram till någon (${bredvid} gånger i två byar under fyra dygn, fyra år i spelet)`, bredvid > 50],
       [`och står ungefär en ruta från hen (${nara} av ${par} prov närmare än 1,6 rutor)`, par > 100 && nara >= par * 0.9],
       [`och samtalar med den hen står bredvid (${medSamma} av ${samtalMedPar} samtal)`, samtalMedPar > 50 && medSamma >= samtalMedPar * 0.9],
       [`efter samtalet går de ifrån varandra (${isar} gånger)`, isar > 20],
+      [`samtalen sker där de står nära (${langtIsar} av ${evN} samtal längre isär än ${SIM.SAMTAL.radie} rutor) och aldrig genom en hel vägg (${vagg})`, evN > 10 && langtIsar === 0 && vagg === 0],
+      [`den som gör något tyst (arbete vid en station, ritualen, striden) pratar inte (${tyst} samtal)`, tyst === 0],
+      [`samtalet tar slut när den andra går för långt bort (${forLangt} gånger) eller när ingen funnits att prata med (${ensam} gånger)`, forLangt + ensam > 0],
       [`den som arbetar och pratar flyttar sig inte (${flyttad} av ${arbeteFore} slag: ${JSON.stringify(flyttAkt)})`, flyttad <= arbeteFore * 0.02],
     ];
   },

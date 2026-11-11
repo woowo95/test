@@ -2,7 +2,7 @@ import { fraktionSamtal } from './rost';
 import { personHand } from './personlogg';
 import { barnTill, upplev } from './uppvaxt';
 import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, franMitt, getRel, isKin, living, log, similarity, stat, think } from './folk';
-import { blocked } from './byggnad';
+import { blocked, isWall } from './byggnad';
 import { sittAt, stationAt } from './stationer';
 import { berattaBrist } from './naring';
 import { moodOf } from './humor';
@@ -24,7 +24,8 @@ import { tystISporten } from './sport';
 // -100 till 100 och humöret från 0 till 1 (gränserna för relationen, REL, står i folk.ts, åldern för flirt i ALDER)
 export const SAMTAL = balans('samtal', {
   lagTanke: 0.5, // lag kommer man på hälften så fort som ledarskap, när man redan kan det
-  radie: 4, // så nära (rutor) måste två vara för att prata
+  radie: 4, // så nära (rutor) måste två vara för att prata, utan en hel vägg mellan sig (steg 10.2.16)
+  ensamSek: 60, // den som har gått för att samtala och inte har någon att prata med så här länge (sekunder) slutar (steg 10.2.16)
   // den som väljer att samtala går fram till någon (steg 4.5.6.7): bland dem som gör något socialt inom sokR rutor från platsen
   // man skulle gått till, och ställer sig isar rutor från hen; när samtalet är slut går man isarGa rutor åt andra hållet och
   // står där isarTid sekunder innan man gör något annat
@@ -155,10 +156,18 @@ export const isSocial = (p: Person) => !!p.task && p.task.phase === 'do' && !!AC
 export const kanPrata = (s: State, p: Person) => isSocial(p) && !ACTS[p.task!.act].tyst && !(p.task!.act === 'sport' && tystISporten(s, p));
 // hur länge ett samtal syns efteråt: bubblan i byn och ämnet i personrutan (sekunder i spelet, steg 3.10.3 och 4.5.3.3)
 export const PRATAR_SEK = 20;
+// står en hel vägg mellan a och b (steg 10.2.16)? En dörr eller en öppning gör det inte (isWall: bara väggens rutor)
+export function vaggMellan(s: State, a: { x: number; y: number }, b: { x: number; y: number }) {
+  const d = Math.hypot(b.x - a.x, b.y - a.y), n = Math.ceil(d / 0.25);
+  for (let i = 1; i < n; i++) { const f = i / n; if (isWall(s, a.x + (b.x - a.x) * f, a.y + (b.y - a.y) * f)) return true; }
+  return false;
+}
+// två som kan höra varandra: nära (SAMTAL.radie) och utan vägg emellan
+export const horHar = (s: State, a: Person, b: Person) => Math.hypot(b.x - a.x, b.y - a.y) < SAMTAL.radie && !vaggMellan(s, a, b);
 // den som p pratar med just nu: båda gör något socialt, står nära och samtalet är färskt (bara för gränssnittet)
 export function pratarMed(s: State, p: Person) {
   const m = p.prat?.m, q = m !== undefined ? s.people.find(x => x.id === m) : undefined;
-  return q && alive(q) && kanPrata(s, p) && kanPrata(s, q) && Math.hypot(q.x - p.x, q.y - p.y) < SAMTAL.radie && s.now - p.prat!.t < PRATAR_SEK * SEC ? q : undefined;
+  return q && alive(q) && kanPrata(s, p) && kanPrata(s, q) && horHar(s, p, q) && s.now - p.prat!.t < PRATAR_SEK * SEC ? q : undefined;
 }
 export interface TalkEvent { a: number; b: number; kind: Samtalsslag; good: boolean; t: number; i?: string } // i: ämnets symbol (steg 3.9.5)
 // ger den andra om samtalet blev ett gräl (steg 3.7.2: gräl kan bli slagsmål, strid.ts)
