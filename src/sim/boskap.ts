@@ -9,18 +9,21 @@ import { balans } from './balans';
 import { ALDER, ageOf, byId, count, forstaGang, gjort, living, log, ovning } from './folk';
 import { desperatMat, getable } from './behov';
 import { rnd } from './slump';
-import { changed, foodOf, gain, put, stacksOf, tidy } from './lager';
+import { changed, gain, put, stacksOf, tidy } from './lager';
 import { kanGoras } from './stationer';
 import { DAY, Person, State } from './typer';
 import { HOST, iIstiden, isLight, kalender, VAR } from './tid';
-import { hoRacker } from './slatter';
+import { VINTER, hoAv, hoRacker } from './slatter';
+import { HAGE, betesdjurOf, djurIHagen, hageDygn, hagarOf } from './hage';
+import { farorNu } from './kult';
 import { fyllVatska, ledigFor } from './vatskor';
 import { TamArtId, Tamdjur, arHona, nyttTamdjur, tamAlder, tamArt, tamdjurOf } from './tamdjur';
 
 export const BOSKAP = balans('boskap', {
   fodd: 1 / 60, // chansen i timmen på våren att en vuxen hona som inte är hungrig får ett ungt (ungefär ett vart tredje dygn)
   hungrig: 0.5, // en hona med minst så här mycket hunger får inga unga
-  flock: 12, // byn låter inte en art bli fler än så här många
+  beteDygn: 2, // ett ungt föds bara när betet i någon hage räcker så här många dygn också för det (steg 10.2.33)
+  sistVarde: 5, // det sista djuret av sitt kön i arten är så här mycket mer värt att behålla
   ullTim: 1 / 48, // ullen växer ut på två dygn (två år i spelet)
   ull: 2, // så många ull ett får ger när det klipps
   klippMin: 20, // minuter det tar att klippa ett får
@@ -72,7 +75,7 @@ function foda(s: State) {
     const a = tamArt(d.art);
     if (!a.bete || !hona(d) || !vuxen(s, d) || d.hunger >= BOSKAP.hungrig) continue;
     if (!alla.some(q => q.art === d.art && !hona(q) && vuxen(s, q))) continue;
-    if (tamdjurOf(s).filter(q => q.art === d.art).length >= BOSKAP.flock) continue;
+    if (!rymsEnTill(s)) continue; // flocken växer bara så länge betet och höet räcker (steg 10.2.33)
     if (rnd(s, 'tamdjur') >= BOSKAP.fodd) continue;
     const u = nyttTamdjur(s, d.art, d.x, d.y, d.agare);
     u.hage = d.hage; count(s, `fodd_${d.art}`);
@@ -130,23 +133,35 @@ export function mjolkaKlar(s: State, p: Person, ref?: number) {
 // (en hane blir kvar), när byn svälter det som inte behövs för att flocken ska leva vidare (ett par blir kvar), och på hösten
 // de djur byn inte har hö till över istiden (steg 9.8.9)
 export const SLAKTDJUR = balans('slaktdjur', {
-  gammal: 0.75, // ett djur äldre än så här stor del av sin livslängd slaktas
-  svalt: 2, // byn svälter när maten i förrådet är mindre än så här många saker per människa
+  kvarLiv: 0.2, // ett djur slaktas när mindre än så här stor del av livet är kvar (steg 10.2.33; förr vid 75 %)
   min: 15, // minuter det tar att avliva djuret och bära det till slaktbänken
 });
 export const SLAKTAD: Record<string, string> = { far: 'slaktfar', get: 'slaktget' };
-// varför djuret ska slaktas, eller undefined
+// betet och höet räcker för ett djur till: någon hage har bete för det i BOSKAP.beteDygn dygn, och höet räcker över istiden (steg 10.2.33)
+export const rymsEnTill = (s: State) => hagarOf(s).some(h => hageDygn(s, h, 1) >= BOSKAP.beteDygn) && hoAv(s) >= (betesdjurOf(s).length + 1) * VINTER.hoPerDjur;
+// värdet av att behålla djuret: honan och den vuxna mer, det sista av sitt kön mycket mer (så att ett par blir kvar så länge
+// något annat finns att slakta), mindre ju närmare slutet av livet det är
+export function behallVarde(s: State, d: Tamdjur) {
+  const a = tamArt(d.art), arten = tamdjurOf(s).filter(q => q.art === d.art), sitt = arten.filter(q => hona(q) === hona(d) && vuxen(s, q));
+  return (hona(d) ? 2 : 1) * (vuxen(s, d) ? 1 : 0.7) * (sitt.length === 1 && sitt[0] === d ? BOSKAP.sistVarde : 1) * Math.max(0.05, 1 - tamAlder(s, d) / a.liv);
+}
+// varför djuret ska slaktas, eller undefined (steg 10.2.33): när byn svälter (samma mått som valet av aktivitet), när betet inte
+// räcker eller på hösten när höet inte räcker över istiden slaktas det som är minst värt att behålla, ett i taget; och det
+// gamla, när mindre än SLAKTDJUR.kvarLiv av livet är kvar
 // p = den som slaktar: någon annans djur slaktar bara den som är så hungrig att hen stjäl (boskapsstöld, steg 9.8.12)
 export function slaktOrsak(s: State, d: Tamdjur, p?: Person): string | undefined {
   const a = tamArt(d.art);
   if (!SLAKTAD[d.art]) return undefined;
   if (p && d.agare !== undefined && d.agare !== p.id) return desperatMat(s, p) ? 'stold' : undefined;
-  if (tamAlder(s, d) > a.liv * SLAKTDJUR.gammal) return 'gammal';
-  const arten = tamdjurOf(s).filter(q => q.art === d.art), hanar = arten.filter(q => !hona(q) && vuxen(s, q));
-  if (!hona(d) && vuxen(s, d) && arten.length >= BOSKAP.flock && hanar.length > 1) return 'for manga';
-  if (foodOf(s) < living(s).length * SLAKTDJUR.svalt && arten.length > 2 && !(hanar.length === 1 && hanar[0] === d)) return 'svalt';
-  // höstslakten (steg 9.8.9): på hösten slaktar byn de djur den inte har hö till över istiden, men ett par av arten blir kvar
-  if (kalender(s).ai === HOST && !hoRacker(s) && arten.length > 2 && !(hanar.length === 1 && hanar[0] === d)) return 'host';
+  if (tamAlder(s, d) > a.liv * (1 - SLAKTDJUR.kvarLiv)) return 'gammal';
+  const arten = tamdjurOf(s).filter(q => q.art === d.art && SLAKTAD[q.art]);
+  if (arten.length < 2) return undefined;
+  const minst = arten.reduce((m, q) => behallVarde(s, q) < behallVarde(s, m) ? q : m);
+  if (minst !== d) return undefined;
+  if (farorNu(s).svalt) return 'svalt';
+  const bete = hagarOf(s).filter(h => djurIHagen(s, h).length);
+  if (bete.length && bete.every(h => hageDygn(s, h) < HAGE.flyttDygn) && !hagarOf(s).some(h => hageDygn(s, h, 1) >= BOSKAP.beteDygn)) return 'bete';
+  if (kalender(s).ai === HOST && !hoRacker(s)) return 'host'; // höstslakten (steg 9.8.9)
   return undefined;
 }
 export function avlivaVal(s: State, p: Person) {

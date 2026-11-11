@@ -1683,8 +1683,11 @@ SCENARIER.boskap = {
     const ull0 = amountOf(s, 'ull'), d = klippVal(s, p);
     if (d) klippKlar(s, p, d.id);
     const ull1 = amountOf(s, 'ull');
-    // våren: honan får unga
+    // våren: honan får unga, när betet i en hage och höet räcker för ett till (steg 10.2.33)
     const var0 = kalender(s).ai === VAR;
+    const hg = { id: 1, x: Math.floor(p.x) - 4, y: Math.floor(p.y) - 4, w: 8, h: 8 }; s.hagar = [hg]; for (const q of tamdjurOf(s)) q.hage = hg.id;
+    for (const i of SIM.hageRutor(hg)) SIM.groundOf(s).cover[i] = 1;
+    setAmount(s, 'torrgras', 200);
     let h = 0;
     for (; h < 160 && kalender(s).ai === VAR && tamdjurOf(s).length <= 2; h++) { s.now += SIM.HOUR; for (const q of tamdjurOf(s)) q.hunger = 0; stepBoskap(s); }
     const unga = tamdjurOf(s).length - 2;
@@ -1740,7 +1743,7 @@ SCENARIER.hagflytt = {
 SCENARIER.tamslakt = {
   text: 'Steg 9.8.7: slakt av tamdjur och slaktrens. Ett gammalt får, en hane när flocken blivit för stor och djur när byn svälter avlivas och slaktas vid slaktbänken som viltet; slakten ger slaktrens som hunden äter, och fiskrensen blir agn',
   kor: () => {
-    const { nyttTamdjur, avlivaVal, avlivaKlar, slaktOrsak, setAmount, amountOf, DJUR, canProcess, bearbeta, mataVal, tamdjurOf, BOSKAP, hona, DAY } = SIM;
+    const { nyttTamdjur, avlivaVal, avlivaKlar, slaktOrsak, setAmount, amountOf, DJUR, canProcess, bearbeta, mataVal, tamdjurOf, hona, DAY } = SIM;
     const s = createState(3, START); klockan(s, 10);
     const p = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0];
     (s.stationer ??= []).push({ id: 9901, k: 'slaktbank', x: Math.floor(p.x) + 2, y: Math.floor(p.y), kvar: 0 }); SIM.touch(s);
@@ -1762,8 +1765,8 @@ SCENARIER.tamslakt = {
     setAmount(s, 'abborre', 2);
     bearbeta(s, p, DJUR.abborre, 1);
     const fiskrens = amountOf(s, 'fiskrens'), rens2 = amountOf(s, 'slaktrens');
-    // för många: en av hanarna slaktas, en blir kvar
-    const flock = [ung]; for (let i = 0; flock.length < BOSKAP.flock; i++) flock.push(nyttTamdjur(s, 'far', p.x, p.y, undefined, s.now - 2 * DAY));
+    // flera djur: det som är minst värt att behålla slaktas först, en hane före en hona (steg 10.2.33)
+    const flock = [ung]; for (let i = 0; flock.length < 8; i++) flock.push(nyttTamdjur(s, 'far', p.x, p.y, undefined, s.now - 2 * DAY));
     const hane = flock.find(d => !hona(d)), honan = flock.find(d => hona(d));
     return [
       [`det gamla fåret väljs och avlivas (${val === gammal ? 'det gamla' : val ? 'ett annat' : 'inget'})`, val === gammal && !tamdjurOf(s).includes(gammal)],
@@ -1772,7 +1775,7 @@ SCENARIER.tamslakt = {
       [`det slaktas som viltet och ger horn, skinn och slaktrens (horn ${horn0} → ${amountOf(s, 'djurhorn')}, skinn ${skinn0} → ${amountOf(s, 'skinn')}, rens ${rens0} → ${rens1})`, kan && amountOf(s, 'djurhorn') > horn0 && amountOf(s, 'skinn') > skinn0 && rens1 > rens0],
       [`hunden får slaktrensen`, mat],
       [`fisken ger fiskrens till agn (${fiskrens}), inte slaktrens (${rens1} → ${rens2})`, fiskrens >= 1 && rens2 === rens1],
-      [`när flocken är för stor slaktas en hane, inte en hona (${slaktOrsak(s, hane!) ?? '–'}, ${slaktOrsak(s, honan!) ?? '–'})`, slaktOrsak(s, hane!) === 'for manga' && !slaktOrsak(s, honan!)],
+      [`en hane är mindre värd att behålla än en hona (${SIM.behallVarde(s, hane!).toFixed(2)} mot ${SIM.behallVarde(s, honan!).toFixed(2)}), så att hanen slaktas först när betet, höet eller maten inte räcker`, SIM.behallVarde(s, hane!) < SIM.behallVarde(s, honan!)],
     ];
   },
 };

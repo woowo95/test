@@ -11,7 +11,7 @@ import { isFood } from './saker';
 import { ALDER, ageOf, byId, count, forstaGang, gjort, living, log, ovning } from './folk';
 import { getable, takeMaterial } from './behov';
 import { rnd } from './slump';
-import { foodOf, put } from './lager';
+import { put } from './lager';
 import { stat } from './folk';
 import { DAY, Person, State, inMap } from './typer';
 import { blocked } from './byggnad';
@@ -116,7 +116,6 @@ export const djurVarde = (s: State, agare?: number) => tamdjurOf(s).reduce((a, d
 // den av jägarna som har mest Empati ta den hem, och det lyckas efter jaktfärdigheten; en valp som inte fångas springer bort
 export const VALP = balans('valp', {
   chans: 0.15, // chansen att en flock (minst två vargar) har en valp med sig
-  svalt: 2, // byn svälter när maten i förrådet är mindre än så här många saker per människa
   fanga0: 0.3, fangaJakt: 0.05, // chansen att fånga valpen: fanga0 + fangaJakt × jakten (högst 0,95)
   kott: 3, // så mycket vargkött valpen ger när den äts
   lojal: 0.6, // hundens lojalitet mot den som bar hem den
@@ -124,7 +123,7 @@ export const VALP = balans('valp', {
 export function vargValp(s: State, jagare: Person[]) {
   if (!jagare.length) return;
   const namn = jagare.map(p => p.name);
-  if (foodOf(s) < living(s).length * VALP.svalt) {
+  if (farorNu(s).svalt) { // samma mått på svält som valet av aktivitet (steg 10.2.33)
     put(s, 'vargkott', VALP.kott); count(s, 'valpAten');
     log(s, `Vargflocken hade en valp. Byn svalt, och ${namn[0]} dödade den för köttet.`, 'world', jagare.map(p => p.id));
     return;
