@@ -107,11 +107,13 @@ function kantHash(x: number, y: number) {
 }
 // mörkret och eldens sken
 // (steg 5.1.1.4, 5.1.7.2): paletten ett steg mörkare i skymningen och tre mitt i natten, med raster, och ljuset runt varje eld (ui/natt.ts)
-// Molnen och regnet gör också bilden mörkare på samma sätt, en del av ett steg (vaderMork i ui/vaderbild.ts, steg 5.5.1)
+// Molnen och regnet gör skymningen och natten mörkare på samma sätt, en del av ett steg (vaderMork i ui/vaderbild.ts, steg 5.5.1); på dagen inte (steg 10.2.20)
 // eldens ljus når så många rutor när den brinner för fullt (steg 6.8.15); glöden och en svag eld lyser mindre, i samma förhållande
 const ELD_LJUS = 14, FOLK_LJUS = 1.5; // ... och ljuset kring en människa så många rutor (steg 9.2.69)
 export function drawNight(t: number) {
-  const m = DJUPNATT * (1 - lightLevel(t)) + vaderMork(t), eldar: { x: number; y: number; r: number; k: number }[] = [];
+  // på dagen är kartan ljus överallt (steg 10.2.20): vädret gör bara skymningen och natten mörkare. Förut gjorde en mulen himmel
+  // (0,5 steg, avrundat till ett helt) hela kartan till skymning mitt på dagen
+  const klocka = DJUPNATT * (1 - lightLevel(t)), m = klocka > 0 ? klocka + vaderMork(t) : 0, eldar: { x: number; y: number; r: number; k: number }[] = [];
   if (m > 0) for (const e of eldarOf(s)) { // varje lägereld lyser (steg 4.5.6.8)
     const I = fireHeat(s, e);
     if (!(I > 0 || emberOn(s, e))) continue;
