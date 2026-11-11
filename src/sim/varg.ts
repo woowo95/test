@@ -1,7 +1,8 @@
 import { lista, stor, tal } from './ord';
 import { utanforByn } from './omrade';
 import { balans } from './balans';
-import { KLOCKA, SLAGHINDER } from './klocka';
+import { KLOCKA, SLAGHINDER, kanNa } from './klocka';
+import { GANG } from './gang';
 import { kronikaBer, och, personFalt, sakVarg, talOrd } from './berattelser';
 import { redskapIHanden } from './agande';
 import { blodas } from './blod';
@@ -22,7 +23,7 @@ import { vattenNu } from './sjo';
 import { clamp, rnd, chansPer } from './slump';
 import { SLAGSMAL, VAPEN, Avsikt, djurKampe, personKampe, slitKastat, svartSkadad } from './strid';
 import { DjurMed, KartStrid, kartStridBorja, kartStrider } from './kartstrid';
-import { EFTER, Efter, STRIDSLAG } from './efterstrid';
+import { EFTER, Efter, FAROR, STRIDSLAG } from './efterstrid';
 import { ledareOf } from './styre';
 import { ageIndex, iIstiden, isLight } from './tid';
 import { hardVinter } from './vader';
@@ -659,3 +660,5 @@ export function vargSteg(s: State, dtSec: number) {
 import { VALP, hundSkaller, tamArt, tamDor, tamUte, vargValp } from './tamdjur';
 // slaget hålls kort medan vargarna är på kartan (klocka.ts, steg 10.2.14)
 SLAGHINDER.push(s => s.vargar?.length ? KLOCKA.slag : undefined);
+// vargar och bybor som kan nå varandra under ett slag, plus synhållet, eller en flock som anfaller: byn går i korta steg (steg 10.2.18)
+FAROR.push(s => (s.vargar ?? []).some(f => f.vargar.length > 0 && (f.gor === 'anfaller' || living(s).some(q => kanNa(avst(q, f), VARG.flyFart, GANG.fart)))));

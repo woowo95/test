@@ -1,4 +1,4 @@
-import { nastaSteg, stridBild, testSlagsmal, torkaTest, storStridNu, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, spar, step, visning, yearNo, State, motgangNu, motgangNasta, motgangDef, varslade, ROVARFLOCK, skickaRovare, skickaHandlare, rovarHinder, handlarHinder, skickaTornado, tornadoHinder, lightLevel, rovarna } from './sim';
+import { nyttSlag, nastaSteg, stridBild, testSlagsmal, torkaTest, storStridNu, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, spar, step, visning, yearNo, State, motgangNu, motgangNasta, motgangDef, varslade, ROVARFLOCK, skickaRovare, skickaHandlare, rovarHinder, handlarHinder, skickaTornado, tornadoHinder, lightLevel, rovarna } from './sim';
 import { brandKnapp, testSvara } from './ui/interaktion';
 import { testBortaIByn } from './ui/testborta';
 import { $ } from './ui/hjalp';
@@ -129,11 +129,11 @@ $('arenaKnapp').addEventListener('click', oppnaArena);
     if (b.dataset.brand) { ui.brandTest = !ui.brandTest; ui.blixtTest = false; brandKnapp(); testSvara(ui.brandTest ? 'Tryck på kartan där branden ska börja' : ''); return; }
     // blixtknappen (steg 6.4.7): som brandknappen, men den är kvar aktiv så att flera blixtar kan slå ner i rad
     if (b.dataset.blixt) { ui.blixtTest = !ui.blixtTest; ui.brandTest = false; brandKnapp(); testSvara(ui.blixtTest ? 'Tryck på kartan där blixten ska slå ner' : ''); return; }
-    if (b.dataset.torka) { testSvara(torkaTest(s).text); return; } // (steg 9.2.24)
-    // striden på kartan (steg 10.1.5). Spelet räknar upp till fem minuter före bilden, så striden syns när bilden kommit dit
-    if (b.dataset.slagsmal) { const r = testSlagsmal(s), sek = Math.round((s.now - ui.nu) / SEC); testSvara(r.ok && sek > 2 ? `${r.text} om ${sek} sekunder` : r.text); renderPanel(true); return; }
+    if (b.dataset.torka) { testSvara(torkaTest(s).text); nyttSlag(s); return; } // (steg 9.2.24)
+    // striden på kartan (steg 10.1.5). Spelet räknar ett slag före bilden, så striden syns när bilden kommit dit
+    if (b.dataset.slagsmal) { const r = testSlagsmal(s); nyttSlag(s); const sek = Math.round((s.now - ui.nu) / SEC); testSvara(r.ok && sek > 2 ? `${r.text} om ${sek} sekunder` : r.text); renderPanel(true); return; }
     const r = b.dataset.flock ? skickaRovare(s, ROVARFLOCK[b.dataset.flock as keyof typeof ROVARFLOCK]) : b.dataset.tornado ? skickaTornado(s) : skickaHandlare(s);
-    testSvara(r.text);
+    testSvara(r.text); nyttSlag(s); // knappen verkar i nästa slag (steg 10.2.18)
     // kameran visar var flocken dök upp (steg 4.5.7.10) och följer den första rövaren in (steg 6.6.12)
     if (r.ok && b.dataset.flock && s.rovare) { stopFollow(); cam.x = s.rovare.x * TS; cam.y = s.rovare.y * TS; layout(); startFollow(rovarGastId(s.rovare.id, 0), rovarna(s, s.rovare)[0]?.name); }
     b.classList.remove('tryckt'); void b.offsetWidth; b.classList.add('tryckt');

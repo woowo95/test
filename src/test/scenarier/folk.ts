@@ -2393,3 +2393,35 @@ SCENARIER.slaglangd = {
     return [[`händelser som skiljer sig mer än tre gånger (minst 50 gånger): ${d.map(x => `${x.namn} ${Math.round(x.a)}/${Math.round(x.b)}`).join(', ') || 'inga'}`, d.length === 0]];
   },
 };
+
+SCENARIER.faran = {
+  text: 'Faran räknas från att ett hot kan nå någon (steg 10.2.18): rövarna, vargarna, björnen och branden har var sin rad i FAROR, och faran gäller när ett hot och en bybo kan nå varandra under ett slag, plus synhållet (kanNa i klocka.ts). Ett rövargäng som går mot byn kommer aldrig inom synhåll innan de korta stegen börjat, och vargar och en björn långt bort ger ingen fara men nära gör de det',
+  kor: () => {
+    // rövarna går in från kanten mot byn, slag för slag
+    const s = createState(4, START);
+    SIM.skickaRovare(s, SIM.ROVARFLOCK.liten);
+    let inom = false, utanKorta = 0, slag = 0;
+    const narmast = () => { let d = Infinity; for (const f of [s.rovare, ...(s.rovareFler ?? [])]) if (f) for (const r of SIM.rovarna(s, f)) for (const q of living(s)) d = Math.min(d, Math.hypot(q.x - r.x, q.y - r.y)); return d; };
+    for (; slag < 6000 && !inom && s.rovare; slag++) {
+      if (narmast() < SIM.KLOCKA.faraSyn) { inom = true; if (SIM.nastaSteg(s) !== SIM.STRID.kortSteg) utanKorta++; }
+      step(s, SIM.nastaSteg(s));
+    }
+    // vargarna och björnen: långt bort ingen fara, inom synhåll fara
+    const fara = (stall: (x: State, q: Person, d: number) => void, d: number) => {
+      const x = createState(4, START), q = living(x).find(p => SIM.ageOf(p, x.now) >= 16)!;
+      for (const p of living(x)) if (p !== q) p.died = x.now; // en bybo, så att avståndet är till hen
+      for (const p of living(x)) { p.task = { act: 'samla', phase: 'do', tx: p.x, ty: p.y, until: x.now + HOUR, carry: 0, why: 'prov' }; }
+      stall(x, q, d);
+      return SIM.faraNara(x);
+    };
+    const varg = (x: State, q: Person, d: number) => { x.vargar = [{ id: x.vargNr = 1, vargar: [10_000_008, 10_000_009], x: q.x + d, y: q.y, mx: q.x + d, my: q.y, gar: x.now + 48 * HOUR, hunger: 0.3, gor: 'stryker' } as SIM.Vargflock]; };
+    const bjorn = (x: State, q: Person, d: number) => { x.bjornUndan = { fran: x.now, till: x.now + 3 * HOUR, x0: q.x + d, y0: q.y, x1: q.x + d, y1: q.y }; };
+    const vL = fara(varg, 40), vN = fara(varg, SIM.KLOCKA.faraSyn - 2), bL = fara(bjorn, 40), bN = fara(bjorn, SIM.KLOCKA.faraSyn - 2);
+    return [
+      [`rövarna kom inom synhåll (${SIM.KLOCKA.faraSyn} rutor) efter ${slag} slag`, inom],
+      [`och de korta stegen hade börjat innan dess (${utanKorta} gånger inom synhåll utan dem)`, inom && utanKorta === 0],
+      [`vargarna 40 rutor bort är ingen fara (${vL}), inom synhåll är de det (${vN})`, !vL && vN],
+      [`björnen 40 rutor bort är ingen fara (${bL}), inom synhåll är den det (${bN})`, !bL && bN],
+    ];
+  },
+};

@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 import { bordighet, fuktAv, rutorAv } from '../sim';
-import { gravAt, heligAt, kvarAt, BAR, busksort, FALT_STEG, FOREST, GRODOR, isSoil, stadium, Falt, byId, faltAt, faltIndex, HIGH, MATERIAL, Person, T, W, bitAt, bynsMitt, condOf, dorrDef, emberOn, eldXY, eldarOf, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, stationerOf, framfor, bordPlatser, tingOf, toaAt, tandTest, blixtTest, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, verbOf, zoneAt, zonesOf, Pile, Station, storlekAv, tornadoPos, tornadoAndel, hageAt } from '../sim';
+import { gravAt, heligAt, kvarAt, BAR, busksort, FALT_STEG, FOREST, GRODOR, isSoil, stadium, Falt, byId, faltAt, faltIndex, HIGH, MATERIAL, Person, T, W, bitAt, bynsMitt, condOf, dorrDef, emberOn, eldXY, eldarOf, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, stationerOf, framfor, bordPlatser, tingOf, toaAt, tandTest, blixtTest, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, verbOf, zoneAt, zonesOf, Pile, Station, storlekAv, tornadoPos, tornadoAndel, hageAt , nyttSlag } from '../sim';
 import { gorText } from './jakt';
 import { iconImg, tecknet } from '../ikoner';
 import { $, esc, fmtN, prickar } from './hjalp';
@@ -97,11 +97,11 @@ app.stage.on('pointertap', e => {
   if (ui.testMode && ui.flytta >= 0) { flyttaHit(c.x, c.y); renderPanel(true); return; } // stationen som flyttas i testläget (steg 3.10.1)
   if (ui.testMode && ui.brandTest) { // branden börjar där man trycker (steg 4.5.6.6); trycket väljer ingen person eller sak
     const r = tandTest(s, c.x, c.y);
-    testSvara(r.text);
+    testSvara(r.text); nyttSlag(s); // (steg 10.2.18)
     if (r.ok) { ui.brandTest = false; brandKnapp(); renderPanel(true); } // brinner inget där är knappen kvar aktiv
     return;
   }
-  if (ui.testMode && ui.blixtTest) { testSvara(blixtTest(s, c.x, c.y).text); renderPanel(true); return; } // blixten slår ner där (steg 6.4.7), flera i rad
+  if (ui.testMode && ui.blixtTest) { testSvara(blixtTest(s, c.x, c.y).text); nyttSlag(s); renderPanel(true); return; } // blixten slår ner där (steg 6.4.7), flera i rad
   const g = p ? undefined : gastAt(gx, gy), dj = p || g !== undefined ? undefined : djurAt(gx, gy);
   if (p) selectPerson(p.id);
   else if (g !== undefined) selectPerson(g); // handlaren och rövarna får samma sida som en bybo (steg 4.5.4.12)

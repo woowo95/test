@@ -5,7 +5,7 @@
 // Björnjakten (steg 6.6.6): när någon sett björnen kan byn gå på björnjakt, men bara en stor grupp med spjut vågar och
 // klarar det. En fälld björn styckas där den föll och bärs hem, och den som fällde den blir björndödare
 import { balans } from './balans';
-import { SLAGHINDER, nasTid } from './klocka';
+import { SLAGHINDER, kanNa, nasTid } from './klocka';
 import { GANG } from './gang';
 import { kronikaBer, och, personFalt, talOrd } from './berattelser';
 import { blodas } from './blod';
@@ -20,7 +20,7 @@ import { handelse, larmNu } from './rykten';
 import { clamp, rnd } from './slump';
 import { SLAGSMAL, VAPEN, Avsikt, personKampe, slitKastat, svartSkadad } from './strid';
 import { DjurMed, KartStrid, djurIKartStrid, kartStridBorja, kartStridMed } from './kartstrid';
-import { EFTER, Efter, STRIDSLAG } from './efterstrid';
+import { EFTER, Efter, FAROR, STRIDSLAG } from './efterstrid';
 import { ledareOf } from './styre';
 import { lamnaFallt, styckaFallt } from './styckning';
 import { upplev } from './uppvaxt';
@@ -260,3 +260,5 @@ SLAGHINDER.push(s => {
   for (const p of living(s)) if (vaken(p)) L = Math.min(L, nasTid(Math.hypot(p.x - b.x, p.y - b.y) - BJORNMOTE.naraUngar, GANG.fart * 2));
   return L;
 });
+// björnen och en vaken bybo som kan nå varandra under ett slag, plus synhållet: byn går i korta steg (steg 10.2.18)
+FAROR.push(s => { const b = bjornarOf(s).find(d => d.art === 'bjorn'); return !!b && living(s).some(q => vaken(q) && kanNa(Math.hypot(q.x - b.x, q.y - b.y), GANG.fart, GANG.fart)); });

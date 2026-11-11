@@ -1,7 +1,7 @@
 import { antal, lista, och, stor, tal } from './ord';
 import { utanforByn } from './omrade';
 import { balans } from './balans';
-import { KLOCKA, SLAGHINDER } from './klocka';
+import { KLOCKA, SLAGHINDER, kanNa } from './klocka';
 import { blodas } from './blod';
 import { isParent, ALDER, KROPP, ageOf, alive, byId, count, isSick, living, log, makeName, ovning, stat, think } from './folk';
 import { halsa, horsel, kanGa } from './halsa';
@@ -81,7 +81,6 @@ export const ROVARE = balans('rovare', {
   flyBlod: 2.5, flyHot: 0.8, flyDoda: 1.2, // viljan att fly: blodet hen förlorat, övermakten hen ser (mindre för den modiga) och delen av flocken som är borta
   taSek: 12, // så många sekunder tar det att ta en sak ur förrådet (steg 10.1.15): tiden följer hur mycket det finns att ta
   gavSigTim: 2, // den som flytt eller gett upp i striden står inte emot igen på så här många timmar
-  narFara: 16, // byn går i korta steg när en rövare och en bybo är så här nära varandra
   motR: 10, // de vuxna som är vakna och så här nära möter rövarna, om de är kämpar (rovarRoll, steg 9.2.116) ...
   lyder: 0.5, lyderPlus: 0.15, iver: 0.2, // över den här Envälde-seden lyder man ledaren (så mycket mer vilja), och så mycket drar Fejd och Krig till striden eller från den (steg 8.7.9, 10.1.13)
   pliktPlus: 0.3, familjPlus: 0.05, smabarnMinus: 0.15, // lagen om stridsplikt, den som har partner eller barn i byn att försvara, och föräldern till ett litet barn (steg 10.1.13)
@@ -669,9 +668,9 @@ gastKrok.dod = (s, r, av) => {
   gastGar(s, r.id);
 };
 gastKrok.spara = (s, r) => spara(s, r, s.now);
-// rövare och bybor som kan se varandra: då går byn i korta steg (FAROR i efterstrid.ts)
+// rövare och bybor som kan nå varandra under ett slag, plus synhållet: då går byn i korta steg (FAROR i efterstrid.ts, kanNa i klocka.ts)
 // (också medan byn vet om ett gäng som väntar: larmet går led för led och budbäraren springer, och det ska inte ta fem minuter per led)
-FAROR.push(s => flockar(s).some(f => f.folk.length > 0 && (!!f.anfaller || (f.sedd !== undefined && !f.klar) || rovarna(s, f).some(r => living(s).some(q => avst(q, r) < ROVARE.narFara)))));
+FAROR.push(s => flockar(s).some(f => f.folk.length > 0 && (!!f.anfaller || (f.sedd !== undefined && !f.klar) || rovarna(s, f).some(r => living(s).some(q => kanNa(avst(q, r), GANG.fart, GANG.fart))))));
 // den fallne ligger kvar med det hen hade, tills någon avrustar hen (steg 8.7.5)
 function fallenFiende(s: State, r: Person, x: number, y: number) {
   const g = gr(r), saker: Record<string, number> = { ...g.bar };

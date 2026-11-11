@@ -2,7 +2,9 @@ import { han, mark, tal } from './ord';
 import { tabortBuske } from './buskar';
 import { freeTools, tingOf } from './agande';
 import { balans } from './balans';
-import { KLOCKA, SLAGHINDER } from './klocka';
+import { KLOCKA, SLAGHINDER, kanNa } from './klocka';
+import { FAROR } from './efterstrid';
+import { GANG } from './gang';
 import { brasorOf } from './brasor';
 import { hearthOf } from './eld';
 import { rasar } from './bygg';
@@ -742,3 +744,5 @@ export function askaSteg(s: State) {
 }
 // slaget hålls kort medan det brinner (klocka.ts, steg 10.2.14)
 SLAGHINDER.push(s => s.brand ? KLOCKA.slag : undefined);
+// branden och en bybo som kan nå varandra under ett slag, plus synhållet: byn går i korta steg (steg 10.2.18)
+FAROR.push(s => { const b = s.brand; return !!b?.r.length && living(s).some(q => kanNa(narmast(b, q.x, q.y).d, 0, GANG.fart)); });
