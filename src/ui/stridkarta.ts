@@ -1,62 +1,14 @@
 import type * as PIXI from 'pixi.js';
-import { type Kampe, type RovarStrid, type Strid, SEC, rovarStridNu, stegIGang } from '../sim';
+import { type Kampe } from '../sim';
 import { s, vidNyBy } from './lage';
 import { nollstallSlag, streckNu, taEmotSlag } from './stridbild';
 vidNyBy.push(nollstallSlag);
 
-// striden med rövarna vid förrådet på kartan (steg 6.6.10): striden räknas fram till tiden som visas (rovarStridNu i
-// rovare.ts, samma räkning som i spelet), och de som är med står där striden har dem. Den som slår mot någon syns med ett
-// streck mellan dem en kort stund, och den som fallit ligger. Striden som just tog slut visas tills dess slut, också när
-// spelet redan räknat den färdig (tiden som visas ligger efter spelets tid)
-// alla strider som pågår, en per rövarflock (steg 8.7.18), och de som just tagit slut tills tiden som visas hunnit dit.
-// Varje strid räknas för sig och sparas mellan bilderna
-const raknat = new Map<RovarStrid, { st: Strid; inN: number }>();
-vidNyBy.push(() => { raknat.clear(); });
-const SLAG_SEK = 0.6; // så länge (spelets sekunder) strecket mellan den som slår och den som träffas syns
-
-function enStrid(g: RovarStrid, nu: number): { g: RovarStrid; st: Strid } | undefined {
-  if (nu < g.t0) return undefined;
-  const tid = (nu - g.t0) / SEC, inn = g.in ?? [], c = raknat.get(g);
-  let st = c?.st;
-  // räknas om från början när tiden gått bakåt eller någon kommit till före tiden som redan räknats
-  if (!st || st.t > tid + 1e-9 || inn.slice(c!.inN).some(x => x.t < st!.t)) st = rovarStridNu(g, tid);
-  else while (!st.slut && st.t < tid) stegIGang(st, g);
-  raknat.set(g, { st, inN: inn.length });
-  return st.slut && tid > st.slut.t ? undefined : { g, st };
-}
-let minne: { nu: number; ut: { g: RovarStrid; st: Strid }[] } | undefined; // samma tid i samma bild: räknas en gång
-vidNyBy.push(() => { minne = undefined; });
-export function striderVid(nu: number): { g: RovarStrid; st: Strid }[] {
-  if (minne?.nu === nu) return minne.ut;
-  const nya: RovarStrid[] = [...[s.rovare, ...(s.rovareFler ?? [])].flatMap(f => f?.strid ? [f.strid] : [])]; // och striderna mot djur (steg 9.2.29)
-  for (const g of nya) if (!raknat.has(g)) raknat.set(g, { st: rovarStridNu(g, Math.max(0, (nu - g.t0) / SEC)), inN: (g.in ?? []).length });
-  const ut: { g: RovarStrid; st: Strid }[] = [];
-  for (const g of [...raknat.keys()]) { const v = enStrid(g, nu); if (v) ut.push(v); else if (!nya.includes(g)) raknat.delete(g); }
-  minne = { nu, ut };
-  return ut;
-}
-// var en kämpe står på kartan (rutor)
-export const kampePlats = (g: RovarStrid, k: Kampe) => ({ x: g.ox + k.x, y: g.oy + k.y });
+// Striderna på kartan i bilden (steg 10.1.5): slagen som sker ritas som streck mellan den som slår och den som träffas
+const SLAG_SEK = 0.6; // så länge (spelets sekunder) ett djurs slag syns som ett slag i bilden
 export const liggerK = (k: Kampe) => k.lage === 'nere' || k.lage === 'dod' || !!k.ligger;
-// bybon i striden som visas: kämpen och platsen, och den hen slår mot
-export function iStridenNu(pid: number, nu: number) {
-  const v = striderVid(nu).find(q => q.st.kampar.some(x => x.pid === pid));
-  const k = v?.st.kampar.find(x => x.pid === pid);
-  if (!v || !k || k.lage === 'borta' || v.g.fri?.includes(pid)) return undefined; // den som lämnat striden står där hen gick (steg 9.2.77)
-  const mal = k.mal !== undefined ? v.st.kampar.find(x => x.id === k.mal) : undefined;
-  return { k, ...kampePlats(v.g, k), mot: mal ? kampePlats(v.g, mal) : undefined, ligger: liggerK(k) };
-}
-// rövaren i striden som visas (efter namnet: de döda tas bort ur flocken när striden är slut)
-export function rovarenNu(namn: string, nu: number) {
-  const v = striderVid(nu).find(q => q.st.kampar.some(x => x.sida === 1 && x.pid === undefined && x.namn === namn));
-  const k = v?.st.kampar.find(x => x.sida === 1 && x.pid === undefined && x.namn === namn);
-  if (!v || !k || k.lage === 'borta') return undefined;
-  const mal = k.mal !== undefined ? v.st.kampar.find(x => x.id === k.mal) : undefined;
-  return { k, ...kampePlats(v.g, k), mot: mal ? kampePlats(v.g, mal) : undefined, ligger: liggerK(k) };
-}
 // strecken (TS punkter per ruta) mellan den som slår och den som träffas (rött), missar (grått)
 export function ritaSlagen(gr: PIXI.Graphics, nu: number, TS: number) {
-  for (const v of striderVid(nu)) ritaEn(gr, v, nu, TS);
   // striderna på kartan (steg 10.1.5): varje slag som skett, en gång, där de stod (ui/stridbild.ts)
   taEmotSlag(nu);
   for (const { h, kvar } of streckNu(nu)) {
@@ -64,21 +16,9 @@ export function ritaSlagen(gr: PIXI.Graphics, nu: number, TS: number) {
     gr.lineStyle(traff ? 2 : 1, traff ? 0xa14808 : 0xdad0bb, Math.max(0.2, kvar)).moveTo(h.fx * TS, h.fy * TS - 4).lineTo(h.mx * TS, h.my * TS - 4).lineStyle(0);
   }
 }
-function ritaEn(gr: PIXI.Graphics, v: { g: RovarStrid; st: Strid }, nu: number, TS: number) {
-  const tid = (nu - v.g.t0) / SEC;
-  for (let i = v.st.logg.length - 1; i >= 0; i--) {
-    const r = v.st.logg[i];
-    if (r.t < tid - SLAG_SEK) break;
-    if (r.a === undefined || r.b === undefined || !(r.h === 'traff' || r.h === 'miss' || r.h === 'tog' || r.h === 'knuff' || r.h === 'omkull')) continue;
-    const a = v.st.kampar.find(k => k.id === r.a), b = v.st.kampar.find(k => k.id === r.b);
-    if (!a || !b) continue;
-    const pa = kampePlats(v.g, a), pb = kampePlats(v.g, b), alfa = 1 - (tid - r.t) / SLAG_SEK;
-    gr.lineStyle(r.h === 'traff' ? 2 : 1, r.h === 'traff' ? 0xa14808 : 0xdad0bb, Math.max(0.2, alfa)).moveTo(pa.x * TS, pa.y * TS - 4).lineTo(pb.x * TS, pb.y * TS - 4).lineStyle(0);
-  }
-}
 
-// djuret i en strid mot djur som visas (steg 9.2.29): platsen, om det ligger, och den det slår mot. art och id som i djurstrid.ts
-export function djuretNu(art: 'bjorn' | 'varg', id: number, nu: number) {
+// djuret i en strid på kartan (steg 10.1.17–10.1.18): platsen, om det ligger, och den det slår mot
+export function djuretNu(art: 'bjorn' | 'varg', id: number, _nu?: number) {
   // striden på kartan (steg 10.1.17–10.1.18): djuret står där kämpen står
   for (const g of s.kartStrider ?? []) {
     const d = g.djur?.find(q => q.art === art && q.id === id);
@@ -89,19 +29,6 @@ export function djuretNu(art: 'bjorn' | 'varg', id: number, nu: number) {
     const tid = g.st.t, slag = [...g.st.logg].reverse().find(r => r.t >= tid - SLAG_SEK && r.t <= tid && r.a === k.id && (r.h === 'traff' || r.h === 'miss' || r.h === 'tog'));
     const offer = slag ? g.st.kampar.find(x => x.id === slag.b) : undefined;
     return { k, x: k.x, y: k.y, mot: mal ? { x: mal.x, y: mal.y } : undefined, ligger: liggerK(k), slar: offer ? { x: offer.x, y: offer.y } : undefined };
-  }
-  for (const v of striderVid(nu)) {
-    const g = v.g as RovarStrid & { art?: string; djur?: number[] };
-    if (g.art !== art || !g.djur) continue;
-    const j = g.djur.indexOf(id);
-    if (j < 0) continue;
-    const k = v.st.kampar.filter(x => x.djur)[j];
-    if (!k || k.lage === 'borta') return undefined;
-    const mal = k.mal !== undefined ? v.st.kampar.find(x => x.id === k.mal) : undefined;
-    // slår det just nu (steg 9.2.31): ett slag eller bett i loggen den senaste stunden, en bild per slag
-    const tid = (nu - g.t0) / SEC, slag = [...v.st.logg].reverse().find(r => r.t >= tid - SLAG_SEK && r.t <= tid && r.a === k.id && (r.h === 'traff' || r.h === 'miss' || r.h === 'tog'));
-    const offer = slag ? v.st.kampar.find(x => x.id === slag.b) : undefined;
-    return { k, ...kampePlats(g, k), mot: mal ? kampePlats(g, mal) : undefined, ligger: liggerK(k), slar: offer ? kampePlats(g, offer) : undefined };
   }
   return undefined;
 }

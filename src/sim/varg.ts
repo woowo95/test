@@ -118,8 +118,6 @@ export const VARG = balans('varg', {
   kallarBas: 0.7, kallarMod: 0.6, // ... och kvoten gånger kallarBas + kallarMod × kallarens mod / 20
   stridModBas: 0.6, stridModDrag: 0.8, // vargens mod i striden gånger stridModBas + stridModDrag × vargens drag (0–1) ...
   stridHungerBas: 0.7, stridHunger: 0.6, // ... och gånger stridHungerBas + stridHunger × flockens hunger
-  arena: 14, // striden på kartan (steg 9.2.29): arenan är så här många rutor i sidan, med flocken i mitten ...
-  avstand: 5, // ... och på vargjakten börjar jägarna så här många rutor från flocken
 });
 
 const flockarna = (s: State) => s.vargar ?? [];

@@ -824,16 +824,6 @@ export function stridSteg(st: Strid) {
 // hela striden till slutet
 export function stridTillSlut(st: Strid, v?: StridVarld) { if (v) iVarlden(v, () => { while (!st.slut) stridSteg(st); }); else while (!st.slut) stridSteg(st); return st; }
 
-// en strid som pågår på kartan (steg 6.6.10, rövarna vid förrådet): uppställningen och fröet, blodet som någon redan
-// förlorat när striden började (blod, efter kämpens id) och de som kommit till efter hand (in, med striden tid t). Striden
-// räknas om från början varje gång (spelaUpp), så att den blir likadan i båda lägena, i arenan och när den ritas
-export interface StridGang { u: Uppstallning; fro: number; blod?: Record<number, number>; in?: { t: number; k: Uppstallning['kampar'][number] }[] }
-// ett tidssteg i en strid som pågår: först kommer de som anslöt till striden vid den här tiden
-export function stegIGang(st: Strid, g: StridGang) {
-  const inn = g.in ?? [];
-  for (let j = st.kampar.length - g.u.kampar.length; j < inn.length && inn[j].t <= st.t; j++) laggTill(st, inn[j].k);
-  stridSteg(st);
-}
 // en kämpe kommer till en strid som pågår
 export function laggTill(st: Strid, k: Uppstallning['kampar'][number]) {
   const n = kampeAv(k), kv = VAP[n.vapen].kast;
@@ -841,13 +831,6 @@ export function laggTill(st: Strid, k: Uppstallning['kampar'][number]) {
   if (kv) n.skott = kv.skott;
   n.vant = slump(st) * VAP[n.vapen].takt;
   st.kampar.push(n); st.logg.push({ t: st.t, h: 'kommer', a: n.id });
-}
-// striden från början till tiden tid (sekunder på klockan), eller till slutet
-export function spelaUpp(g: StridGang, tid = Infinity) {
-  const st = nyStrid(g.u, g.fro);
-  if (g.blod) for (const k of st.kampar) if (g.blod[k.id] !== undefined) k.blod = g.blod[k.id];
-  while (!st.slut && st.t < tid) stegIGang(st, g);
-  return st;
 }
 
 // ---------- texten ----------
@@ -1045,12 +1028,9 @@ export const SLAGSMAL = balans('slagsmal', {
   lekOp: 2, // ... och stiger så här mycket efter en lek
   vann: 0.15, forlora: 0.2, tankeTim: 8, // tanken efter att ha vunnit eller förlorat, och hur många timmar den varar
   minst: 20, // den som slåss står kvar minst så här många sekunder (striden tar tid också när den är kort)
-  sparas: 10, // så många strider sparas i byn
 });
 // svårt skadad efter striden (krönikan, steg 3.7.16): föll av smärtan, eller en skada som är svår i personrutan (HALSA.avbryt)
 export function svartSkadad(k: Kampe) { return k.lage === 'nere' || k.skador.some(w => w.g >= HALSA.avbryt); }
-// en strid som sparats i byn: när, varför, uppställningen och fröet (samma strid kan räknas om i arenan) och vem som vann
-export interface StridMinne extends StridGang { t: number; orsak: string; vinnare: 0 | 1 | -1 }
 
 // blåsten, dimman och halkan (lera och snö, steg 3.7.8) i en strid i byn just nu
 export function vadretIStriden(s: State): Pick<Uppstallning, 'vind' | 'dimma' | 'halt'> {
@@ -1058,14 +1038,6 @@ export function vadretIStriden(s: State): Pick<Uppstallning, 'vind' | 'dimma' | 
   return { vind: vaderNu(s).vind, dimma: vaderNu(s).dimma, halt };
 }
 
-// striden sparas så att arenan kan visa den igen; de äldsta faller bort efter SLAGSMAL.sparas
-export function sparaStrid(s: State, m: StridMinne) {
-  (s.strider ??= []).push(m);
-  // de senaste striderna sparas med hela loggen, äldre bara som rapport (steg 8.8.10)
-  while (s.strider.length > SLAGSMAL.sparas) { const a = s.strider.shift()!; (s.stridRapporter ??= []).push({ t: a.t, orsak: a.orsak, vinnare: a.vinnare, n: a.u.kampar.length }); }
-  if ((s.stridRapporter?.length ?? 0) > SLAGSMAL.rapporter) s.stridRapporter!.splice(0, s.stridRapporter!.length - SLAGSMAL.rapporter);
-  count(s, 'strider');
-}
 
 // raden i loggen efter en strid i byn: den säger hur striden slutade (steg 6.7.5), så att loggen inte säger emot arenan.
 // Den som gav sig av utan att någon slag tagit vågade inte slåss; annars gav upp, flydde eller vann

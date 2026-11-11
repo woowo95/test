@@ -24,7 +24,6 @@ import { rovarSkapad, handlarSkapad, skapad } from './utseende';
 import { gaster } from './gaster';
 import { fotSkugga, skuggFolk, skuggLangd } from './skugga';
 import { jaktPlats } from './jakt';
-import { iStridenNu, rovarenNu } from './stridkarta';
 import { kartKampe, slagAv } from './stridbild';
 import { slag } from './animation';
 import { hasIcon, iconCanvas, kartbild, ljusSymbol } from '../ikoner';
@@ -51,8 +50,6 @@ export function addTalks(events: TalkEvent[], now: number, nu: number) {
 function platsAv(p: Person) {
   const j = jaktPlats(p); // jägaren som smyger, siktar och hämtar (jakt.ts)
   if (j) return { x: j.x, y: j.y, still: false };
-  const sk = iStridenNu(p.id, ui.nu); // i striden med rövarna (steg 6.6.10): där striden har hen
-  if (sk) return { x: sk.x, y: sk.y, still: false };
   const t = ui.nu, sp = sparPlats(p, t);
   let x = sp?.x ?? p.x, y = sp?.y ?? p.y;
   const still = sp?.still ?? true;
@@ -293,15 +290,6 @@ function stridNu(p: Person): { vapen: string; mot?: { x: number; y: number }; ru
   // striden på kartan (steg 10.1.5): vapnet och målet är kämpens, och armen gör slagets rörelse just när ett slag sker (ruta 0 annars)
   const kk = kartKampe(s, p);
   if (kk) { const sl = slagAv(p.id, ui.nu); return { vapen: kk.k.vapen as string, mot: sl?.mot ?? kk.mot, ruta: sl ? Math.min(3, Math.floor(sl.andel * 4)) : 0 }; }
-  const sk = iStridenNu(p.id, ui.nu); // striden med rövarna som pågår (steg 6.6.10): målet hen går mot och slår
-  if (sk) return { vapen: sk.k.vapen as string, mot: sk.mot };
-  for (let i = (s.strider?.length ?? 0) - 1; i >= 0; i--) {
-    const m = s.strider![i], k = m.u.kampar.find(x => x.pid === p.id);
-    if (!k) continue;
-    const mot = m.u.kampar.filter(x => x.sida !== k.sida && x.pid !== undefined).map(x => byId(s, x.pid!)).filter((x): x is Person => !!x).map(x => posOf(x))
-      .sort((a, b) => Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y))[0];
-    return { vapen: k.vapen as string, mot };
-  }
   return undefined;
 }
 const SLA = new Set(['falla', 'bygga', 'krossa', 'slakta', 'yxa', 'dorr']);
@@ -337,7 +325,7 @@ function ritaRovarna(skugga: PIXI.Graphics) {
   for (const g of gaster()) {
     // i striden på kartan (steg 10.1.14): kämpen är personen, och armen gör slagets rörelse just när ett slag sker (ui/stridbild.ts)
     const gp = s.people.find(q => q.id === g.id && q.gast), kk = gp && kartKampe(s, gp), sl = kk ? slagAv(g.id, ui.nu) : undefined;
-    const r = g.rovare, sk = kk ? { k: kk.k, mot: sl?.mot ?? kk.mot } : r && rovarenNu(r.name, ui.nu), ligger = !!g.ligger || !!kk?.ligger, x = g.x * TS, y = g.y * TS;
+    const r = g.rovare, sk = kk ? { k: kk.k, mot: sl?.mot ?? kk.mot } : undefined, ligger = !!g.ligger || !!kk?.ligger, x = g.x * TS, y = g.y * TS;
     let rikt = riktning(g.id, g.x, g.y);
     const strid = sk && !ligger ? STRIDBILD[sk.k.vapen as string] ?? STRIDBILD.hand : undefined, ab = strid ? arbetsBild(strid, kk ? (sl ? Math.min(3, Math.floor(sl.andel * 4)) : 0) : slag() - g.id) : undefined;
     if (sk?.mot) rikt = sk.mot.x < g.x ? 'vast' : 'sida';
@@ -376,7 +364,7 @@ export function drawPeople(t: number) {
     const tk = uppgiftVid(p), sleeping = !!tk && soverNu(p, tk); // den som går till sängen går upprätt och lägger sig först i bädden (steg 9.2.89)
     // figuren ur porträttgeneratorn (steg 5.2.3.2, ui/folkbild.ts) med fötterna under punkten; den som sover eller inte kan
     // gå ligger ner (steg 3.7.19), under täcket när hen sover, och de minsta barnen har en egen, lägre mall i hel skala (steg 5.5.5)
-    const sp = figurAv(p.id), ligger = sleeping || !kanGa(p) || !!iStridenNu(p.id, ui.nu)?.ligger || !!kartKampe(s, p)?.ligger, liten = a < ALDER.smabarn;
+    const sp = figurAv(p.id), ligger = sleeping || !kanGa(p) || !!kartKampe(s, p)?.ligger, liten = a < ALDER.smabarn;
     const gor = tk?.phase === 'do' ? tk.act : undefined;
     // vid en bänk med stol (steg 6.8.6): den som arbetar på rutan framför sitter på stolen, vänd mot bänken, med arbetets
     // rörelse i armarna

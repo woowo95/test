@@ -223,7 +223,16 @@ function skiljSteg(s: State, g: KartStrid) {
 }
 
 // ---------- striden är slut ----------
+// stridens rapport sparas: när, vad den gällde, vem som vann och hur många som var med. De äldsta faller bort (SLAGSMAL.rapporter)
+function rapport(s: State, g: KartStrid, vinnare: 0 | 1 | -1) {
+  const l = s.stridRapporter ??= [];
+  l.push({ t: s.now, orsak: g.orsak, vinnare, n: g.st.kampar.length });
+  if (l.length > SLAGSMAL.rapporter) l.splice(0, l.length - SLAGSMAL.rapporter);
+}
+// för mätningen av striderna (npm run strid): varje strid som är slut, innan följderna (läses aldrig av spelet)
+export const stridProv: { slut?: (s: State, g: KartStrid) => void } = {};
 function kartStridSlut(s: State, g: KartStrid) {
+  stridProv.slut?.(s, g);
   const st = g.st, lek = lekAv(st.avsikt), vinnare = st.slut!.vinnare;
   const sidor = ([0, 1] as const).map(sd => st.kampar.filter(k => k.sida === sd).map(k => personAv(s, k)).filter((p): p is Person => !!p)) as [Person[], Person[]];
   const namn = (sd: 0 | 1) => lista(sidor[sd].map(p => p.name));
@@ -231,7 +240,7 @@ function kartStridSlut(s: State, g: KartStrid) {
   const skiljare = g.skild !== undefined ? byId(s, g.skild) : undefined;
   if (g.efter?.egen) { // den som började striden tar själv hand om följderna (rövarna)
     for (const k of st.kampar) { const p = personAv(s, k); if (p && p.died === undefined && p.task?.act === 'strid') p.task.until = s.now; }
-    (s.stridRapporter ??= []).push({ t: s.now, orsak: g.orsak, vinnare, n: st.kampar.length }); count(s, 'strider'); count(s, 'kartStridSlut');
+    rapport(s, g, vinnare); count(s, 'strider'); count(s, 'kartStridSlut');
     s.kartStrider = s.kartStrider!.filter(x => x !== g);
     EFTER[g.efter.typ]?.(s, g.efter, vinnare, g);
     return;
@@ -253,7 +262,7 @@ function kartStridSlut(s: State, g: KartStrid) {
   // vinnaren blir ett rykte i byn (steg 3.3.1): de som såg det minns det
   if (!lek && vinnare !== -1) for (const p of sidor[vinnare]) if (p.health > 0 && alive(p) && sidor[1 - vinnare][0]) handelse(s, p, 'vannSlagsmal', sidor[1 - vinnare][0]);
   // rapporten sparas (steg 8.8.10); själva striden går inte att räkna om, för den skedde i världen
-  (s.stridRapporter ??= []).push({ t: s.now, orsak: g.orsak, vinnare, n: st.kampar.length });
+  rapport(s, g, vinnare);
   count(s, 'strider'); count(s, 'kartStridSlut');
   s.kartStrider = s.kartStrider!.filter(x => x !== g);
 }

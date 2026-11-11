@@ -815,7 +815,7 @@ SCENARIER.plagg = {
     const sommar = by(2), host = by(3), istid = by(0), strid = by(2), behovs = by(2);
     const kallt = val(host) === 'rock_vargskinn' && val(istid) === 'rock_vargskinn';
     const varmt = val(sommar) === 'rock_kaninskinn';
-    (strid.strider ??= []).push({ t: strid.now - HOUR, orsak: 'test', u: { avsikt: 'skada', w: 10, h: 10, kampar: [] }, fro: 1, vinnare: 0 } as SIM.StridMinne);
+    (strid.stridRapporter ??= []).push({ t: strid.now - HOUR, orsak: 'test', vinnare: 0, n: 2 });
     const hot = val(strid) === 'rock_vargskinn';
     setAmount(behovs, 'skinn', 3); setAmount(behovs, 'vargskinn', 60); // tre kaninskinn: en rock, men skorna och rockarna som alla saknar behöver dem, och vargskinnet räcker till allt
     const sparas = val(behovs) === 'rock_vargskinn';

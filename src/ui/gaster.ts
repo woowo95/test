@@ -1,9 +1,9 @@
+import { kartKampe } from './stridbild';
 import { hp, gastLever, gastTingOf, TEK, HANDEL, HANDLAR_UTR, byId, gillar, handlarPerson, foddNar, gastLiv, gastNyckel, handlarFas, handlarPlats, rovarPlats, rovarna, klanById, grundvarde, handlarVarde, kgOf, kortTal, rymmer, sakNamn } from '../sim';
 import type { ByteMinne, GastLiv, GastRel, Person, Roll, State } from '../sim';
 import { iconImg } from '../ikoner';
 import { esc } from './hjalp';
 import { s, ui } from './lage';
-import { rovarenNu } from './stridkarta';
 
 // gästerna (steg 4.5.4.12): de som syns på kartan utan att bo i byn, i dag handlaren och rövarna. Gästen är en person
 // (p, steg 9.2.111) och får samma sida som en bybo med alla flikar (steg 9.2.114); här står bara det som är särskilt för
@@ -62,10 +62,10 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
     if (!r) return [];
     const gor = r.gor === 'samlas' ? 'Samlas i skogen' : r.gor === 'kommer' ? 'På väg mot byn' : r.gor === 'vantar' ? 'Väntar utanför byn' : r.gor === 'slass' ? 'Slåss vid förrådet' : r.gor === 'rotar' ? 'Letar i förråden' : r.gor === 'letar' ? 'Letar hus för hus' : 'Flyr', n = r.folk.length;
     return rovarna(s, r).map((q, i) => {
-      const sk = rovarenNu(q.name, t); // i striden (steg 6.6.10): där striden har hen, och liggande när hen fallit
+      const sk = kartKampe(s, q); // i striden på kartan (steg 10.1.14): kämpens läge
       return {
       id: rovarGastId(r.id, i), namn: q.name, sex: q.sex, sort: r.rad ? 'Anfallare' : 'Rövare', farg: 0x5a5040,
-      ...(sk ? { x: sk.x, y: sk.y } : rovarPlats(q, t)), // var och en går för sig (steg 6.6.9)
+      ...rovarPlats(q, t), // var och en går för sig (steg 6.6.9)
       rovare: q, gor: sk ? (sk.k.lage === 'dod' ? 'Död' : sk.ligger ? 'Ligger nere' : sk.k.lage === 'flykt' ? 'Flyr' : 'Slåss vid förrådet') : gor, ligger: sk?.ligger,
       fran: klanById(s, r.klan)?.namn,
       rader: [{ namn: 'Flocken', varde: `${n} rövare`, title: `En av ${n} i flocken` },

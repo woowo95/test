@@ -214,7 +214,7 @@ function materialVal(s: State, p: Person, g: string, ks: string[]) {
   if (ks.length <= 1) return ks[0];
   const ai = ageIndex(s), folk = living(s), nara = (t?: number) => t !== undefined && s.now - t < KLADER.hotTim * HOUR;
   const kyla = kallTid(ai) || folk.some(q => q.warm < KROPP.fryser);
-  const hot = (s.vargar ?? []).some(f => nara(f.sedd)) || (s.strider ?? []).some(m => nara(m.t));
+  const hot = (s.vargar ?? []).some(f => nara(f.sedd)) || (s.stridRapporter ?? []).some(m => nara(m.t));
   const lage = ks.map(k => {
     const r = kladAv(k)!, M = KLADMATERIAL[r.mat], till = materialTill(r.plagg, r.mat);
     let behovs = 0;

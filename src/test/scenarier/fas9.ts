@@ -1928,7 +1928,7 @@ SCENARIER.djurfara = {
     for (let i = 0; i < 3; i++) nyttTamdjur(r, 'far', rc.x + 3 + i, rc.y + 2);
     SIM.rovarnaKommer(r, 2, true);
     const rf = r.rovare!; rf.x = rc.x + 2; rf.y = rc.y + 2;
-    SIM.plundra(r, rf, true);
+    SIM.stallUpp(r, rf, rc.x + 2, rc.y + 2); SIM.taKlart(r, rf); // plundringen är klar: boskapen drivs bort
     const drivna = 3 - tamdjurOf(r).length;
     // boskapsstölden
     const b = createState(4, START); klockan(b, 10);

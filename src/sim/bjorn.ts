@@ -33,7 +33,6 @@ export const BJORNMOTE = balans('bjornmote', {
   rädd: 0.25, // så mycket sämre humör den får som ser björnen på nära håll
   räddTim: 6, // i så många timmar
   med: 2.5, // de som är så här nära (rutor) den som anfalls slåss med
-  arena: 12, // striden på kartan (steg 9.2.29): arenan är så här många rutor i sidan, med björnen i mitten
   undanTim: 4, // efter en strid som björnen vunnit eller gett upp går den bort från byn och kommer inte tillbaka på så här många timmar (steg 9.2.30) ...
   undanR: 30, // ... så här många rutor bort från platsen
   gaMed: 0.6, // den som jagar nära en björnstrid går med om modet (0 till 1) är minst så här stort, annars håller hen sig undan (steg 9.2.29)
@@ -56,7 +55,6 @@ export const BJORNJAKT = balans('bjornjakt', {
   samlasTim: 0.5, // ... när de andra kommit fram, eller när den första väntat så här många timmar
   gar: 0.2, // björnen märker jägarna och går undan innan de hinner fram med den här chansen
   ungarMod: 1.4, // björnen med ungar slåss modigare
-  avstand: 5, // på björnjakten börjar jägarna så här många rutor från björnen i striden (steg 9.2.29)
 });
 
 const vaken = (p: Person) => p.task?.act !== 'sova';

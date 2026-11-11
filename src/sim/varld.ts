@@ -149,7 +149,6 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
       for (const st of p.stulet ?? []) st.k = sak(st.k);
       for (const e of p.intryck ?? []) for (const b of e.bev ?? []) if (b.sak) b.sak = sak(b.sak);
     }
-    for (const m of s.strider ?? []) for (const k of m.u.kampar) k.klader = k.klader.map(sak);
     // räknarna: det som gjorts av varje slag, och de som har ett slag (stold_, utb_sonder_) eller en handling (prod_) sist.
     // tek_balte och tekTim_balte är tekniken, som heter som förut
     const efter: [string, Record<string, string>][] = [['stold_', SAK], ['utb_sonder_', SAK], ['prod_', ACT]];
@@ -301,6 +300,12 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     s.hus = (s.hus ?? []).filter(h => !skjul.has(h.id));
     s.byggV = (s.byggV ?? 0) + 1; s.byggBehov = undefined;
     if (ved >= 1) put(s, 'ved', Math.floor(ved));
+  }],
+  [36, 'v525: striderna sker på kartan (system 10.1). Strider som pågick på det gamla sättet (uppspelade vid sidan av kartan) avbryts, de sparade striderna för arenan tas bort, och ett rövargäng på kartan fortsätter efter det nya förloppet', s => {
+    const o = s as unknown as Record<string, unknown>;
+    delete o.strider; delete o.djurStrider;
+    for (const f of [s.rovare, ...(s.rovareFler ?? [])]) if (f) delete (f as unknown as Record<string, unknown>).strid;
+    for (const p of s.people) { delete p.framme; if (p.task?.act === 'strid' && !s.kartStrider?.length) p.task.until = Math.min(p.task.until, s.now); }
   }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
