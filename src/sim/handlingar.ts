@@ -122,7 +122,8 @@ const DEF = {
   varma: { namn: 'Värmer sig vid elden', tecken: '♨️', vila: true, social: true, skamfri: true, varmer: true, plats: 'elden' },
   svalka: { namn: 'Svalkar sig i skuggan', tecken: '🌳', vila: true, social: true, skamfri: true, dygn: true, stilla: true, plats: 'skugga' }, // steg 2.3.13
   toa: { namn: 'Går avsides på toa', tecken: '{sym_toa}', ikon: 'a_toa', verb: 'är på toa', plats: 'avsides', nodFri: true },
-  dricka: { namn: 'Dricker vid vattnet', tecken: '🥤' }, // steg 2.4.1: platsen väljs i torst.ts
+  dricka: { namn: 'Dricker vid vattnet', tecken: '🥤' },
+  dryck: { namn: 'Dricker', tecken: '🥤', stilla: true }, // mjölk, saft, kokt vatten, te, vin eller öl hemma (steg 10.2.34) // steg 2.4.1: platsen väljs i torst.ts
   ata_sno: { namn: 'Äter snö', tecken: '🧊', stilla: true }, // den törstige när inget bättre finns nära (steg 9.6.18, torst.ts)
   smalta: { namn: 'Smälter snö vid elden och dricker', tecken: '🫗', plats: 'elden' }, // i istiden, när sjön är frusen
   // vården (steg 2.5.2, halsa.ts): platsen är den skadade, och den som inte kan gå bärs hem eller får vatten där hen ligger

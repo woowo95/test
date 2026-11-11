@@ -4,7 +4,7 @@
 // mycket under lång tid (p.supit, ett minne som bleknar) får sämre hälsa. Man dricker på kvällen vid elden när byn har vin eller öl.
 import { balans } from './balans';
 import { ALDER, ageOf, count, forstaGang, log, think } from './folk';
-import { chance, clamp } from './slump';
+import { clamp } from './slump';
 import { HOUR, HOUR_S, Person, State } from './typer';
 import { isLight } from './tid';
 type VatskaId = import('./vatskor').VatskaId;
@@ -16,7 +16,7 @@ export const RUS = balans('rus', {
   fart: 0.35, // gången och händigheten sjunker så här mycket per hel rus (1 = mycket full) ...
   smid: 6, traff: 4, // ... smidigheten och träffsäkerheten i striden så här många poäng per hel rus
   golv: 0.4, // aldrig under så här stor del av förmågan
-  kvall: 0.15, // per timme: chansen att den vuxne som är hemma på kvällen tar en dryck när byn har ...
+  kvall: 0.3, // chansen att den vuxne som är hemma på kvällen väljer att ta en dryck när hen väljer fritid och byn har ...
   mest: 0.8, // ... och inte redan är så här full
   supit: 0.02, // så mycket av det man supit glöms i timmen ...
   skadligt: 3, // ... och över så här mycket blir hälsan sämre ...
@@ -47,8 +47,8 @@ export function drickAlkohol(s: State, p: Person, v: VatskaId) {
   if (forstaGang(s, 'alkohol')) log(s, `${p.name} drack byns första ${v === 'vin' ? 'vin' : 'öl'} vid elden.`, 'world', [p.id]);
   return true;
 }
-// varje steg (steg.ts): ruset går över, det man supit glöms, och på kvällen tar den vuxne som är hemma en dryck ibland
-export function rusSteg(s: State, p: Person, dtSec: number, hemma: boolean) {
+// i hälsans takt (steg.ts): ruset går över och det man supit glöms
+export function rusSteg(s: State, p: Person, dtSec: number) {
   const h = dtSec / HOUR_S;
   if (p.bak) { p.bak = Math.max(0, p.bak - h); if (p.bak <= 1e-6) p.bak = undefined; }
   if (p.rus) {
@@ -60,9 +60,12 @@ export function rusSteg(s: State, p: Person, dtSec: number, hemma: boolean) {
     if (p.supit > RUS.skadligt) p.health = Math.max(0, p.health - RUS.halsa * h);
     p.supit = Math.max(0, p.supit - RUS.supit * h); if (p.supit <= 1e-6) p.supit = undefined;
   }
-  if (!hemma || isLight(s.now) || ageOf(p, s.now) < ALDER.vuxen || rusAv(p) >= RUS.mest || p.task?.act === 'sova') return;
-  const v = (Object.keys(ALKOHOL) as VatskaId[]).find(k => alkoholKrok.finns(s, k));
-  if (v && chance(s, RUS.kvall, dtSec, 'humor', p)) drickAlkohol(s, p, v);
+}
+// vill p ta en dryck med alkohol i kväll (steg 10.2.34: ett val, raden kvallsdryck i val.ts): en vuxen som är hemma när det är
+// mörkt och inte druckit för mycket, när byn har vin eller öl. Svarar med drycken
+export function kvallsDryck(s: State, p: Person, hemma: boolean): VatskaId | undefined {
+  if (!hemma || isLight(s.now) || ageOf(p, s.now) < ALDER.vuxen || rusAv(p) >= RUS.mest) return undefined;
+  return (Object.keys(ALKOHOL) as VatskaId[]).find(k => alkoholKrok.finns(s, k));
 }
 // supandet (utbrottet supa i humor.ts): den som mår dåligt super sig full när byn har något att dricka
 export const kanSupa = (s: State) => (Object.keys(ALKOHOL) as VatskaId[]).some(k => alkoholKrok.finns(s, k));

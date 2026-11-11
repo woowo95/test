@@ -60,6 +60,8 @@ export const DRICKA: DrickaDef[] = [
   // den som inte kan gå och är hemma får vatten av de andra där hen ligger (steg 2.5.2, halsa.ts)
   // Har byn en vattensäck väntar hen på den som hämtar vatten i den, tills törsten blir farlig (steg 2.10.1)
   { act: 'fatt', why: 'Kan inte gå och får vatten av de andra', min: () => TORST.drickMin, nar: (s, p) => !kanGa(p) && hemma(s, p) && (nTools(s, 'vattensack') < 1 || tortarFarligt(p)) },
+  // en dryck hemma (steg 10.2.34): mjölk, saft eller kokt vatten ur byns krukor, en vald handling som tar en stund
+  { act: 'dryck', why: 'Är törstig och dricker hemma', min: () => TORST.drickMin, nar: (s, p) => kanGa(p) && hemma(s, p) && !!dryckKrok.finns(s) },
   // isen ligger på sjön: den som kan smälter snö vid en brinnande eld, annars hugger man upp ett hål i isen
   { act: 'smalta', why: 'Är törstig och smälter snö vid elden', min: () => TORST.snoMin, nar: s => islagt(s) && s.fire.lit },
   { act: 'dricka', why: 'Är törstig och går och dricker vid vattnet', min: () => TORST.drickMin, nar: () => true },
@@ -67,6 +69,8 @@ export const DRICKA: DrickaDef[] = [
   { act: 'ata_sno', why: 'Är törstig och äter snö', min: () => TORST.snoAtMin, nar: () => false },
 ];
 export const DRICKA_ACTS = new Set<Act>(DRICKA.map(d => d.act));
+// drycken hemma (vatskor.ts, satt där): finns någon, och att dricka den
+export const dryckKrok: { finns: (s: State) => boolean; drick: (s: State, p: Person, k?: string) => void } = { finns: () => false, drick: () => undefined };
 // så många minuter man dricker när man kommit fram (paborjat.ts: tiden räknas från framkomsten), med hålet i isen
 export const drickMin = (s: State, p: Person, act: Act) => (DRICKA.find(d => d.act === act)?.min() ?? 0) + (act === 'dricka' ? halMin(s, p) : 0);
 
@@ -154,7 +158,7 @@ export function drickVal(s: State, p: Person) {
   const d = DRICKA.find(x => x.nar(s, p))!;
   if (d.act !== 'fatt' && !kanGa(p) && hemma(s, p)) return undefined; // väntar på vattensäcken
   if (d.act === 'smalta') return { act: d.act as Act, why: d.why, min: d.min(), spot: undefined as { x: number; y: number } | undefined };
-  if (d.act === 'fatt') return { act: d.act, why: d.why, min: d.min(), spot: { x: p.x, y: p.y } };
+  if (d.act === 'fatt' || d.act === 'dryck') return { act: d.act, why: d.why, min: d.min(), spot: { x: p.x, y: p.y } };
   const h = halVal(s, p), sno = snoPaMarken(s) > 0;
   const snon = () => ({ act: 'ata_sno' as Act, why: 'Är törstig och äter snö', min: TORST.snoAtMin, spot: { x: p.x, y: p.y } }); // steg 9.6.18
   if (islagt(s) && !h) return sno ? snon() : undefined; // isen är för tjock för det man har: snön, om den ligger
@@ -165,6 +169,7 @@ export function drickVal(s: State, p: Person) {
 }
 // framme: man dricker. Vid vattnet lär man sig hur smutsigt det är där, och smutsigt vatten kan ge ont i magen
 export function drick(s: State, p: Person, t: Task) {
+  if (t.act === 'dryck') { dryckKrok.drick(s, p, t.tool); return; }
   if (t.act === 'ata_sno') { p.torst = Math.min(1, p.torst + TORST.snoSlacker); p.warm = Math.max(0, p.warm - TORST.snoKyla); count(s, 'at sno'); if (forstaGang(s, 'atSno')) log(s, `${p.name} åt snö för att släcka törsten.`, 'world', [p.id]); return; } // snön (steg 9.6.18) släcker sämre och kyler
   p.torst = 1;
   if (t.act === 'smalta') { count(s, 'smalt sno'); return; }

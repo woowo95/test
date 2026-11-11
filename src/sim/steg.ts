@@ -100,7 +100,7 @@ import { stationFlyttTimme, stationFor, kvVid, stationFlytta, finishStation, fin
 import { forbrukTimme, underBuffert, villHaAv } from './forradsmal';
 import { notis } from './notiser';
 import { stepKrukor } from './kruka';
-import { ar_vatska, drickTe, fyllVatska, ledigFor, teFaktor } from './vatskor';
+import { ar_vatska, fyllVatska, ledigFor, teFaktor } from './vatskor';
 import { rullaKvalitet } from './kvalitet';
 import { protesTimme } from './protes';
 import { halsoNotiser } from './halsonotiser';
@@ -614,9 +614,7 @@ function healthStep(s: State, p: Person, a: number, ai: number, dtSec: number) {
   else if (hl === 'laker') p.health = clamp(p.health + dtSec / (KROPP.lakerTim * HOUR_S), 0, 1);
   if (p.sickUntil !== undefined && p.sickUntil > now) p.health -= dtSec / (KROPP.sjukTim * HOUR_S); // den gamla klockan (en äldre sparning) tills den gått ut
   // sjukdomen mot motståndet (steg 9.5.2, sjukdom.ts): vinner sjukdomen dör hen av den
-  drickTe(s, p); // örtteet (steg 9.5.8, vatskor.ts)
-  drickDryck(s, p); // saften (steg 9.6.9, vatskor.ts)
-  rusSteg(s, p, dtSec, hemma(s, p)); // berusningen (steg 9.6.14, rus.ts)
+  rusSteg(s, p, dtSec); // berusningen går över (steg 9.6.14, rus.ts); drycken är en vald handling (steg 10.2.34)
   const sjukDod = sjukSteg(s, p, dtSec, p.task?.act === 'sova', !!p.task && !!ACTS[p.task.act].arbete && p.task.phase === 'do', teFaktor(s, p, SJUK.lakeort));
   if (sjukDod) { die(s, p, SJUK_DOD[sjukDod]); return true; }
   if (p.sjuk && p.sjuk.grad >= 0.5 && !p.svartSjuk) { loggBer(s, 'l_svartSjuk', p.id, { namn: p.name }, 'world', [p.id]); p.svartSjuk = 1; } // svårt sjuk: ett tecken när hen blir frisk (steg 4.1.2.1)
@@ -1453,10 +1451,9 @@ function compact(s: State) {
   for (const k in s.rels) { const m = /^(-?\d+)-(-?\d+)$/.exec(k), a = Number(m?.[1]), b = Number(m?.[2]); /* gästernas id är negativa */ if (!ids.has(a) && !ids.has(b)) delete s.rels[k]; }
 }
 import { bakaKlar, kokaKlar, stekaKlar, stepBak, stepKok } from './matlagning';
-import { drickDryck, vatskorTimme } from './vatskor';
+import { vatskorTimme } from './vatskor';
 import { bryggKlar, maltaKlar, stepBrygg } from './brygg';
 import { rusSteg } from './rus';
-import { hemma } from './halsa';
 import { latrinTomKlar, soporKlar, stepKompost, stepSophog } from './rester';
 import { skrammaKlar, staketKlar } from './odling';
 // den rikaste röllekan på rutan eller bredvid den som samlar (steg 9.7.15): den plockas på vägen. Bara på sommarhalvåret,

@@ -1,6 +1,7 @@
 import { han } from './ord';
 import { mossaKrok } from './halsa';
-import { vatskaKrok } from './vatskor';
+import { vatskaKrok, villTe } from './vatskor';
+import { RUS, kvallsDryck } from './rus';
 import { forbrukat } from './forradsmal';
 import { grundvarde } from './varde';
 import { narStridVal } from './kartstrid';
@@ -636,6 +637,8 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'fryser', niva: 4, prova: c => fryser(c) && nagonEld(c.s) && set(c.v, 'varma', 'Fryser') },
   { id: 'fryserInne', niva: 4, prova: c => fryser(c) && bedTile(c.s, c.p) !== undefined && set(c.v, 'vila', 'Fryser och går in i huset') },
   { id: 'torstig', niva: 4, prova: ({ s, p, v, lazy }) => torstig(p, lazy) && dricka(s, p, v) },
+  // örtteet (steg 9.5.8 och 10.2.34): den som är sjuk, fryser eller har ett infekterat sår och är hemma väljer att dricka te
+  { id: 'te', niva: 4, prova: ({ s, p, v }) => { if (!villTe(s, p)) return false; v.spot = { x: p.x, y: p.y }; v.dur = 0; v.tool = 'te'; return set(v, 'dryck', 'Dricker örtte av rölleka'); } },
   // den som inte kan gå kravlar hem, och den som har mycket ont eller ett infekterat sår vilar (steg 2.5.2)
   // ... men bara korta sträckor: längre bort än GANG.kravlaMax rutor väntar hen där hen är på att bäras (steg 6.2.7)
   { id: 'kravla', niva: 4, prova: ({ s, p, v }) => {
@@ -805,6 +808,8 @@ export const ARBETEN: readonly Arbete[] = [
   // 9 Fritid: vila, hantverk, umgänge, promenad, bad eller att sitta vid stranden
   { id: 'fritid', niva: 9, nar: 'dag', kort: true, prova: c => { leisure(c.s, c.p, c.v, dag(c).u, c.lazy); return true; } },
   // på natten håller man sig vid elden och berättar, gör handarbete, umgås eller sover
+  // en dryck med alkohol på kvällen (steg 9.6.14 och 10.2.34): ett val på fritiden, med chansen RUS.kvall när byn har vin eller öl
+  { id: 'kvallsdryck', niva: 9, nar: 'natt', prova: ({ s, p, v }) => { const d = kvallsDryck(s, p, hemma(s, p)); if (!d || rnd(s, 'val', p) >= RUS.kvall) return false; v.spot = { x: p.x, y: p.y }; v.dur = 0; v.tool = d; return set(v, 'dryck', d === 'vin' ? 'Dricker vin vid elden' : 'Dricker öl vid elden'); } },
   { id: 'kvall', niva: 9, nar: 'natt', prova: ({ s, p, v, a }) => { night(s, p, v, a); return true; } },
 ];
 

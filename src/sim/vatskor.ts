@@ -19,8 +19,9 @@ export const TE = balans('te', {
   tim: 6, // så länge teet hjälper den sjuke
   verkan: [0.3, 0.4, 0.5, 0.6, 0.7, 0.9], // hur mycket av läkeörtens verkan teet har, per kvalitet (usel till ★)
 });
+// vill p ha örtte: sjuk, fryser eller har ett infekterat sår (steg 9.5.25), är hemma och har inte druckit nyss (steg 10.2.34: ett val, valet i val.ts)
+export const villTe = (s: State, p: Person) => (p.te?.till ?? 0) <= s.now && (isSick(p, s.now) || p.warm < KROPP.fryser || (p.skador ?? []).some(w => w.inf !== undefined)) && hemma(s, p) && !!medVatska(s, 'te');
 export function drickTe(s: State, p: Person) {
-  if ((p.te?.till ?? 0) > s.now || !(isSick(p, s.now) || p.warm < KROPP.fryser || (p.skador ?? []).some(w => w.inf !== undefined)) || !hemma(s, p)) return; // också den med ett infekterat sår (steg 9.5.25)
   const k = medVatska(s, 'te');
   if (!k) return;
   const q = k.inne!.q ?? 2;
@@ -97,6 +98,7 @@ export const DRYCK = balans('dryck', {
   slacker: 0.5, // så mycket av törsten en del saft släcker
   saftGlad: 0.03, saftTim: 4, // tanken av att dricka saft, och hur länge
   mjolkProtein: 0.15, mjolkFett: 0.1, // mjölken (steg 9.8.8) fyller protein och fett så här mycket per del
+  mjolkVarde: 1.2, saftVarde: 1.1, koktVarde: 1, smak: 0.5, // hur gärna man dricker mjölk, saft och kokt vatten, och hur mycket smaken (−1 till 1) drar (steg 10.2.34)
 });
 // mjölken (steg 9.8.8): en dryck och ett protein (Ingrediensgrupper). Den släcker törsten som saften och fyller protein och fett.
 // Ost och smör av mjölken kommer senare
@@ -109,20 +111,37 @@ function drickMjolk(s: State, p: Person) {
   count(s, 'mjolkDrucken');
   if (forstaGang(s, 'mjolkForsta')) log(s, `${p.name} drack byns första getmjölk.`, 'world', [p.id]);
 }
-export function drickDryck(s: State, p: Person) {
-  if (!torstig(p, 0) || !hemma(s, p)) return;
-  if (medVatska(s, 'mjolk')) return drickMjolk(s, p);
-  // det kokade vattnet (steg 9.6.10): rent, så att den som dricker det inte får ont i magen av smutsigt vatten
-  if (!medVatska(s, 'saft')) { if (medVatska(s, 'kokt')) { taVatska(s, 'kokt', 1); p.torst = 1; count(s, 'koktDrucket'); } return; }
+// drycken hemma (steg 10.2.34): den som valt att dricka (handlingen dryck, torst.ts och val.ts) dricker det hen helst vill ha av
+// det byn har: örtteet när hen är sjuk eller fryser, vinet eller ölet på kvällen, annars mjölk, saft eller kokt vatten, efter
+// smaken (smakOf) och vad drycken ger. k = drycken hen valt, annars den hen helst vill ha
+export function drickHemma(s: State, p: Person, k?: string) {
+  const v = k ?? dryckFor(s, p);
+  if (!v) return;
+  if (v === 'te') return drickTe(s, p);
+  if (v === 'vin' || v === 'ol') { drickAlkohol(s, p, v); return; }
+  if (v === 'mjolk') return drickMjolk(s, p);
+  if (v === 'kokt') { taVatska(s, 'kokt', 1); p.torst = 1; count(s, 'koktDrucket'); return; }
   taVatska(s, 'saft', 1);
   p.torst = Math.min(1, p.torst + DRYCK.slacker);
   think(p, 'Drack saft', DRYCK.saftGlad, s.now, DRYCK.saftTim * HOUR);
   count(s, 'saftDrucken');
   if (forstaGang(s, 'saftForsta')) log(s, `${p.name} drack byns första saft av krossade bär.`, 'world', [p.id]);
 }
-import { torstig } from './torst';
+// den dryck p helst vill ha mot törsten av det byn har: mjölken mättar, saften är god, det kokta vattnet är rent; smaken avgör
+export function dryckFor(s: State, p: Person): string | undefined {
+  let bast: string | undefined, bv = -Infinity;
+  for (const [k, bas] of [['mjolk', DRYCK.mjolkVarde], ['saft', DRYCK.saftVarde], ['kokt', DRYCK.koktVarde]] as const) {
+    if (!medVatska(s, k)) continue;
+    const v = bas + DRYCK.smak * (p.smak?.[k] ?? 0);
+    if (v > bv) { bv = v; bast = k; }
+  }
+  return bast;
+}
+torstDryck.finns = s => !!(medVatska(s, 'mjolk') || medVatska(s, 'saft') || medVatska(s, 'kokt'));
+torstDryck.drick = (s, p, k) => drickHemma(s, p, k);
+import { dryckKrok as torstDryck } from './torst';
 import { mattnad, naringOf } from './naring';
 // vinet och ölet för berusningen (rus.ts, steg 9.6.14)
 alkoholKrok.finns = (s, v) => !!medVatska(s, v);
 alkoholKrok.ta = (s, v) => taVatska(s, v, 1) > 0;
-import { alkoholKrok } from './rus';
+import { alkoholKrok, drickAlkohol } from './rus';

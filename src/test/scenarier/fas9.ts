@@ -848,7 +848,7 @@ SCENARIER.rokeri = {
 SCENARIER.saft = {
   text: 'Steg 9.6.9: saften, den första drycken. 10 bär krossas i en mellanstor lerkruka till 5 saft (3 minuter); saften står kvar i krukan, den törstige dricker den och blir glad av det, och efter två dygn har den blivit sur och hälls ut, och den tomma krukan blir kvar',
   kor: () => {
-    const { KLAR_FOR, TILLVERKA, setAmount, amountOf, addTool, vatskaAv, vatskorTimme, drickDryck, VATSKOR } = SIM;
+    const { KLAR_FOR, TILLVERKA, setAmount, amountOf, addTool, vatskaAv, vatskorTimme, drickHemma: drickDryck, VATSKOR } = SIM;
     const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
     setAmount(s, 'bar', 20);
     const kr = addTool(s, 'lerkruka_mellan', p); kr.hos = undefined;
@@ -870,7 +870,7 @@ SCENARIER.saft = {
 SCENARIER.koktvatten = {
   text: 'Steg 9.6.10: kokat vatten att dricka. Det kokade vattnet dricks av den törstige som är hemma när det finns, och det är rent: den som dricker det behöver inte gå till det smutsiga vattnet och får inte ont i magen',
   kor: () => {
-    const { addTool, fyllVatska, vatskaAv, drickDryck } = SIM;
+    const { addTool, fyllVatska, vatskaAv, drickHemma: drickDryck } = SIM;
     const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
     const kr = addTool(s, 'lerkruka_mellan', p); kr.hos = undefined; fyllVatska(s, 'kokt', 3, kr);
     p.torst = 0.3; const fore = s.stat?.['magont av vatten'] ?? 0;
@@ -982,9 +982,9 @@ SCENARIER.rus = {
     drickAlkohol(s, p, 'vin'); const g1 = rorlighet(p);
     drickAlkohol(s, p, 'vin'); drickAlkohol(s, p, 'vin');
     const g3 = rorlighet(p), h3 = handighet(p), k3 = personKampe(s, p, 1, 0, 0, 0).st;
-    for (let i = 0; i < 24 * 12 && (p.rus || p.bak); i++) rusSteg(s, p, 300, false); // ruset och bakfyllan efter (steg 9.6.15)
+    for (let i = 0; i < 24 * 12 && (p.rus || p.bak); i++) rusSteg(s, p, 300); // ruset och bakfyllan efter (steg 9.6.15)
     const over = !p.rus && rorlighet(p) === g0;
-    p.supit = RUS.skadligt + 2; p.health = 1; for (let i = 0; i < 12; i++) rusSteg(s, p, 300, false);
+    p.supit = RUS.skadligt + 2; p.health = 1; for (let i = 0; i < 12; i++) rusSteg(s, p, 300);
     return [
       [`den berusade går långsammare, mer ju mer hen druckit (${g0.toFixed(2)} → ${g1.toFixed(2)} → ${g3.toFixed(2)})`, g1 < g0 && g3 < g1],
       [`och arbetar sämre (${h0.toFixed(2)} → ${h3.toFixed(2)})`, h3 < h0],
@@ -1003,9 +1003,9 @@ SCENARIER.bakfylla = {
     const kr = addTool(s, 'lerkruka_stor', p); kr.hos = undefined; fyllVatska(s, 'vin', 10, kr);
     const g0 = rorlighet(p);
     supa(s, p); const full = rusAv(p);
-    let t = 0; while (p.rus && t++ < 400) rusSteg(s, p, 300, false);
+    let t = 0; while (p.rus && t++ < 400) rusSteg(s, p, 300);
     const bak = !!p.bak && p.thoughts.some(x => x.text === 'Bakfull' && x.v < 0), gBak = rorlighet(p);
-    while (p.bak && t++ < 800) rusSteg(s, p, 300, false);
+    while (p.bak && t++ < 800) rusSteg(s, p, 300);
     const over = !p.bak && rorlighet(p) === g0;
     return [
       [`supandet är ett utbrott (${UTBROTT.supa.text}), och den som super blir full (${full.toFixed(2)})`, !!UTBROTT.supa && full >= RUS.fylla],
@@ -1783,7 +1783,7 @@ SCENARIER.tamslakt = {
 SCENARIER.mjolk = {
   text: 'Steg 9.8.8: mjölken. En vuxen get som inte är hungrig får mjölk utom i istiden; hon mjölkas i en lerkruka, och mjölken dricks av den törstige som är hemma: den släcker törsten och fyller protein',
   kor: () => {
-    const { nyttTamdjur, stepBoskap, mjolkaVal, mjolkaKlar, addTool, vatskaAv, drickDryck, naringNu, DAY } = SIM;
+    const { nyttTamdjur, stepBoskap, mjolkaVal, mjolkaKlar, addTool, vatskaAv, drickHemma: drickDryck, naringNu, DAY } = SIM;
     const s = createState(4, START); klockan(s, 10);
     const p = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0];
     const g = nyttTamdjur(s, 'get', p.x + 1, p.y, undefined, s.now - 3 * DAY);
