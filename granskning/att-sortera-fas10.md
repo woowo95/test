@@ -96,4 +96,70 @@ Björns punkter, grupperade men inte bedömda. **F** = en fråga som Björn vill
 - Alla tester på den lokala datorn mäter den aktiva tiden per kärna, så att man ser om testerna behöver anpassas efter kärnorna.
 - **F:** kodgenomgången i slutet av varje fas konstaterar ofta att profilen är platt, så att det inte finns något att optimera. Men det betyder väl inte att varje enskild del inte kan optimeras, även om alla delar tar ungefär lika mycket processorkraft? Björn är orolig att vi går miste om mycket optimering med det resonemanget.
 
+### 3. Striden: Björns beskrivning och kodchattens svar
+
+**Björns fråga till kodchatten (sammanfattad nära hans ord)**
+
+Striderna fungerar så dåligt att Björn funderar på att slänga hela stridskoden och börja om; kodchatten får avgöra om det är bättre att utgå från koden som finns. Så här ska det fungera:
+
+- **Steg 1:**
+  - Rövarna dyker upp på kartan och ser ut som helt vanliga kolonister, med ifylld "fejkad" information så att de ser ut som riktiga personer. Informationen ska ändå följa logiken.
+  - Samma gäller handlare, gäster och fler sorters personer i framtiden. Det ska vara ett robust system för olika saker, egentligen samma system som för kolonisterna, fast informationen inte har vuxit fram under spelet.
+  - Olika sorters personer kan vägas mot olika saker: rövare har oftare ärr, rövarkläder och vapen. Senare kan personer från samma by likna varandra.
+  - Vapen och kläder syns både i förrådet och på personen, som för kolonisterna.
+  - Rövarna står inte stilla som robotar. De går runt lite och pratar med varandra. Kanske slår de upp ett litet läger i kartans utkant; det måste i så fall gå fort, och idag tar det lång tid att få upp en eld.
+  - En vakt kan få syn på dem, kanske genom att se elden, och varnar byn. Varningen behöver inte vara så avancerad som idag; det är realistiskt att hela byn får veta. Men den som är långt borta, till exempel på jakt, borde inte få veta.
+  - Kolonisterna gör sig redo: hämtar vapen och skydd, och de som vill gömma sig gör det.
+- **Steg 2:**
+  - Efter ett tag (balanstal och lite slump) anfaller rövarna. De går mot byn och möter byborna, som då står redo.
+  - Ingen går "på räls". Möter de en kolonist på vägen eller blir angripna av en björn ska de reagera rimligt och inte bara gå förbi.
+  - Varje person slåss realistiskt: står mitt emot den hen slåss mot (i närstrid) tills någon flyr, blir för skadad eller dör.
+  - Varje attack i animationen är en attack i koden som kan göra skada, och animationen går olika fort efter vapnets takt.
+  - Den som kan slåss vidare när motståndaren försvinner går till nästa mål, så ibland blir det flera mot en.
+  - Det här steget är längst ifrån vad det borde vara just nu.
+- **Steg 3:** en sida vinner, och följderna står tydligt beskrivna.
+- **Testknappen:** ett anfall som startas i testläget ska vara representativt för ett organiskt anfall, eventuellt med kortare väntan.
+- **Robust simulering:** ett system som går att bygga ut med till exempel en stor drake med magiska attacker, hundra gnomer, olika strategier och miljöer.
+- **Jakten:** hänger delvis ihop med striden och ska fungera efter omskrivningen.
+- **Arbetssätt:** läs koden och diskutera med Björn innan något programmeras. Det är viktigt att det blir rätt.
+
+**Kodchattens svar (sammanfattat)**
+
+Bedömning: släng inte allt, men släng sättet striden körs på. Reglerna för själva slagen är bra; felet är att striden inte utspelar sig i samma värld som resten av spelet. Kodchatten har läst stridskoden, rövarna, gästerna och hur striden ritas, men inte stridsavsnitten i designdokumentet.
+
+Tre grundfel:
+1. **Striden är en egen liten värld bredvid spelet.** Varje deltagare kopieras till en "kämpe" (`Kampe` i `strid.ts`) med egna koordinater och egen slump, striden räknas där och resultatet förs tillbaka. Bybon på kartan står under tiden med uppgiften "strid". Ingen kan reagera på något utanför striden, och ingen utanför kan gå in i den naturligt.
+2. **Spelet tänker i slag om fem minuter.** Byborna väljer en gång per slag, men en strid är över på någon minut. Koden räknar i förväg ut vilka som "hinner fram inom 60 sekunder" och lägger dem på en lista. Rövarna styrs av en egen tillståndsmaskin (samlas, lurar, anfaller, slåss, rotar, flyr), inte av samma val som byborna. Det är rälsen.
+3. **Bilden är en uppspelning, inte striden.** Kartan räknar om striden från början till "tiden som visas" och ritar ett streck mellan den som slår och den som träffas. Slagen i koden och animationen är inte samma sak.
+
+Dessutom är rövarna personer bara till hälften: vapnet är ett eget fält i stället för en sak de bär, och de går in i striden utan kläder (`klader: []`). Slagsmål i byn räknas färdigt direkt, och varg och björn använder samma sidovärld.
+
+Behålls:
+- reglerna för ett slag i `strid.ts`: träff och miss, parera och ducka, kroppsdelar och skador, vapnens takt och räckvidd, kast, knuff och fall, tappat vapen, ork, blod, stridsmod och hot;
+- gästerna som personer (`gast.ts`): rövare, handlare och främlingar är redan människor av samma slag som byborna;
+- hälsan, vården och hjälparna efter striden.
+
+Ersätts:
+- sidovärlden med kopierade kämpar;
+- uppspelningen från början;
+- rövarnas tillståndsmaskin;
+- listan över dem som hinner fram;
+- lagningarna ovanpå: hemmaplansbonusen, gratisstenen och "vänder om vid 1,5 gånger så många".
+
+I stället:
+- **En värld.** Den som slåss är personen själv, på kartans rutor, med vapen och kläder ur det hen bär. Ett djur eller en drake är en kämpe av samma slag med andra tal och attacker (en rad i ett register).
+- **Korta slag vid fara.** Spelet kan redan stegas i en eller tio sekunder. När ett hot är nära går hela byn i korta slag, så att alla väljer om hela tiden; när faran är över går spelet tillbaka till fem minuter. Kostnaden i ikappräkningen är inte mätt och ska mätas innan steglängden bestäms.
+- **Samma val för alla.** Rövarna får mål ("ta byte", "hämnas") och väljer handling ur samma slags register som byborna: gå dit, slå den som står i vägen, fly, plundra.
+- **Ett slag i koden är ett slag i bilden.** Varje attack blir en händelse med tid, vem, mot vem och längd (vapnets takt), och animationen spelar just den.
+- **Testknappen** startar samma förlopp som ett organiskt anfall, med kortare väntan.
+
+Björns tre steg i den modellen: flocken skapas som gäster med utrustning ur ett viktat register per sort, rastar i kanten, går runt och pratar, och vakten eller någon nära får syn på dem. Efter en väntan (balanstal och slump) går de mot byn, och mötet sker där de möts. Följderna blir riktiga direkt, eftersom skadorna redan sitter på personerna.
+
+Kodchattens frågor till Björn (obesvarade):
+1. **Larmet:** alla i byn och inom hörhåll vet; den som är långt borta (jägaren) får veta först när hen kommer inom hörhåll eller ser något. Räcker det?
+2. **Lägret:** ska rövarna ha en rastplats med eld? Enklast är att gäster får tända en färdig lägereld direkt, som en regel för hur världen är. Eller ser vakten själva flocken?
+3. **Ordningen:** först strid på kartan med korta slag (ett slagsmål och en arena som prov), sedan rövarna, sedan varg, björn och jakt? Eller rövaranfallet först?
+
+Stridskoden på main: `strid.ts`, `rovare.ts`, `djurstrid.ts`, `varg.ts`, `bjorn.ts`, `jakt.ts`, `gast.ts`, `gastliv.ts`, `gastrel.ts`, `gastvardag.ts`.
+
 (fylls på)
