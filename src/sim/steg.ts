@@ -73,7 +73,7 @@ import { bristSteg, frysFaktor, naringSjunker, skorbjugg, trottFaktor } from './
 import { stepByggnader } from './byggnader';
 import { sumOf } from './egendom';
 import { vaggRensa, husKlart, avail, takeForHouse, buildJob, finishDorr, needOf, noteKom, siteOf, toWalls, wearBuild, workOn } from './bygg';
-import { bitAt, husById, MATERIAL, bitById, blocked, freeNear, gridOf, roomAt, roofed, shelterOf } from './byggnad';
+import { Bit, bitAt, bitsOf, husById, MATERIAL, bitById, blocked, freeNear, gridOf, roomAt, roofed, shelterOf } from './byggnad';
 import { histParts, historikSteg, joinHist } from './historik';
 import { migrate } from './varld';
 import { stepDelning } from './delning';
@@ -795,8 +795,10 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
     // vid lagret: ta materialet och gå till bygget
     const b = bitById(s, tk.ref), k = b && MATERIAL[b.m].item, har = (k && tk.items?.[k]) || 0, n = b ? needOf(b) - har : 0;
     if (!b || !k || avail(s, k, p, b.hus) < n) avbryt(s, p); // det man redan bar läggs i lagret där man står
-    else { // det som togs, inte mer, till det man redan har i händerna
-      tk.kom ??= {}; const ag = takeForHouse(s, p, b.hus, k, n, tk.kom), mitt = (tk.ag ??= {})[k] ??= {};
+    else { // det som togs, inte mer, till det man redan har i händerna. Byggaren tar också till nästa bitar av samma material i
+      // samma hus, så mycket hen orkar bära (steg 10.2.21 C), så att hen inte går till lagret för varje bit
+      const mer = Math.max(0, Math.min(byggMer(s, b, k), Math.floor(capacity(s, p) / viktOf(k)) - har - n, Math.floor(avail(s, k, p, b.hus) - n)));
+      tk.kom ??= {}; const ag = takeForHouse(s, p, b.hus, k, n + mer, tk.kom), mitt = (tk.ag ??= {})[k] ??= {};
       for (const id in ag) mitt[id] = (mitt[id] ?? 0) + ag[id];
       tk.items = { ...tk.items, [k]: har + sumOf(ag) }; tk.tx = tk.site.x; tk.ty = tk.site.y; tk.site = undefined;
     }
@@ -1321,7 +1323,15 @@ function buildStep(s: State, p: Person, tk: Task, dtSec: number) {
   const site = siteOf(s, j.bit);
   tk.ref = j.bit.id; tk.tool = j.repair ? (j.bit.k === 'golv' ? 'lagaGolv' : 'laga') : j.bit.k === 'golv' ? 'golv' : 'vagg';
   tk.phase = 'go';
-  if (j.need > 0) { const f = fetchSpot(s, j.item!); tk.tx = f.x; tk.ty = f.y; tk.site = site; } else { tk.tx = site.x; tk.ty = site.y; }
+  const iHand = (j.item && tk.items?.[j.item]) || 0; // det byggaren redan bär räcker till biten (steg 10.2.21 C)
+  if (j.need > iHand + 1e-9) { const f = fetchSpot(s, j.item!); tk.tx = f.x; tk.ty = f.y; tk.site = site; } else { tk.tx = site.x; tk.ty = site.y; }
+}
+// materialet som de andra bitarna av samma material i samma hus behöver, som ingen annan bygger: det byggaren kan ta med sig
+function byggMer(s: State, b: Bit, k: string) {
+  const andra = new Set(living(s).filter(q => q.task?.act === 'bygga').map(q => q.task!.ref));
+  let n = 0;
+  for (const c of bitsOf(s)) if (c !== b && c.hus === b.hus && c.b < 1 && !c.forb && MATERIAL[c.m].item === k && !andra.has(c.id)) n += needOf(c);
+  return n;
 }
 
 // talen i sparfilen avrundas till tre decimaler. En stacks ägardelar avrundas nedåt om de annars blir mer än stacken
