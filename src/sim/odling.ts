@@ -13,6 +13,7 @@ import { groundOf } from './mark';
 import { FOREST, VAG } from './vag';
 import { knows, tankePa } from './teknik';
 import { getable, takeMaterial } from './behov';
+import { utsadeKrok } from './ratter';
 import { freeTools, nTools, wearTool } from './agande';
 import { SAKER } from './saker';
 import { PLATS } from './plats';
@@ -594,11 +595,19 @@ export function fronFamiljer(s: State) {
   famCache.set(s, { key, n });
   return n;
 }
-// har byn nog frön, med dem som bärs (bar): frön till ett minsta fält för varje sådan familj
+// utsädet (steg 10.2.32): fröna av sorten k till fälten byn har och planerar. Varje fält sås om med sin gröda, och varje familj
+// som saknar fält får ett minsta fält, delat på frösorterna. Det sparas (går inte i krukan, brygden eller kvarnen) och plockas
+// tills byn har det
+export function utsade(s: State, k: string) {
+  let rutor = 0;
+  for (const f of faltOf(s)) if (f.groda && GRODOR[f.groda].fro === k) rutor += f.n;
+  return Math.ceil((rutor + fronFamiljer(s) * ODLING.faltMin / FROSORTER.length) * ODLING.froPerRuta);
+}
+// har byn nog frön till utsädet, med dem som bärs (bar)
 function fronNog(s: State, bar?: Partial<Record<string, number>>) {
-  let falt = 0;
-  for (const k of FROSORTER) falt += Math.floor((amountOf(s, k) + (bar?.[k] ?? 0)) / (ODLING.froPerRuta * ODLING.faltMin));
-  return falt >= fronFamiljer(s);
+  let har = 0, vill = 0;
+  for (const k of FROSORTER) { har += amountOf(s, k) + (bar?.[k] ?? 0); vill += utsade(s, k); }
+  return har >= vill;
 }
 
 // var man plockar vilda frön med flit (val.ts, steg 2.10.11): den rikaste rutan med vilda grödor inom en halv dags gång,
@@ -810,3 +819,4 @@ function vaxtsjukdom(s: State, f: Falt) {
   }
   if (dod.size) forlorad(s, f, 'Sjukdomen', dod);
 }
+utsadeKrok.av = utsade;

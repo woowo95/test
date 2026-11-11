@@ -57,7 +57,7 @@ export function bryggVal(s: State, p: Person): { act: 'brygga' | 'tappa' | 'malt
   }
   // maltet (steg 9.6.13): kornet blöts och hängs på en torkställning med plats, när ölet saknar malt
   const tork = torkarna(s).find(t => TORK.rymd - (t.tork ?? []).reduce((n, q) => n + q.n, 0) >= BRYGG.maltKorn), kar0 = karen(s)[0];
-  if (kar0 && tork && knows(p, BRYGD.ol.tek) && vatskaAv(s, 'ol') < villHaAv(s, 'ol') && getable(s, p, 'malt') < BRYGD.ol.av.malt && !maltHanger(s) && getable(s, p, 'korn') - (RATT.spara.korn ?? 0) >= BRYGG.maltKorn) return { act: 'malta', kar: tork, v: 'ol' };
+  if (kar0 && tork && knows(p, BRYGD.ol.tek) && vatskaAv(s, 'ol') < villHaAv(s, 'ol') && getable(s, p, 'malt') < BRYGD.ol.av.malt && !maltHanger(s) && getable(s, p, 'korn') - utsadeKrok.av(s, 'korn') >= BRYGG.maltKorn) return { act: 'malta', kar: tork, v: 'ol' };
   return undefined;
 }
 const maltHanger = (s: State) => torkarna(s).some(t => (t.tork ?? []).some(q => q.k === MALTKORN));
@@ -115,6 +115,6 @@ export function stepBrygg(s: State) {
 export const harBrygd = (s: State) => living(s).some(p => BRYGD_LIST.some(v => knows(p, BRYGD[v].tek)));
 export type { VatskaId };
 import { TORK, torkarna } from './matlagning';
-import { RATT } from './ratter';
+import { utsadeKrok } from './ratter';
 import { TEK, learn } from './teknik';
 import { rnd } from './slump';

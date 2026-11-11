@@ -10,7 +10,7 @@ import { SAKER } from './saker';
 import { loggBer } from './berattelser';
 import { balans } from './balans';
 import { SJUK, insjukna } from './sjukdom';
-import { INGREDIENSER, KATEGORIER, Kategori, Maltidsniva, RATT, RATT_HUVUD, RATT_HUVUD_LIST, RATT_SAKER, RattHuvud, grupperAv, hallerSteg, nivaAvGrupper, rattId } from './ratter';
+import { INGREDIENSER, KATEGORIER, Kategori, Maltidsniva, RATT, RATT_HUVUD, RATT_HUVUD_LIST, RATT_SAKER, RattHuvud, grupperAv, hallerSteg, nivaAvGrupper, rattId, utsadeKrok } from './ratter';
 import { tingOf } from './agande';
 import { getable, takeMaterial } from './behov';
 import { knows } from './teknik';
@@ -252,7 +252,7 @@ export interface KokRecept { id: string; huvud: string; andra: string; smak?: st
 // det som kan kokas nu, av det p kan ta (eller byn har): den första huvudingrediensen i ordningen, en råvara ur en annan grupp
 // (helst stärkelse), och smaken om den finns
 export function kokRecept(s: State, p?: Person): KokRecept | undefined {
-  const har = (k: string, n: number) => (p ? getable(s, p, k) : amountOf(s, k)) - (RATT.spara[k] ?? 0) >= n;
+  const har = (k: string, n: number) => (p ? getable(s, p, k) : amountOf(s, k)) - utsadeKrok.av(s, k) >= n;
   for (const hh of RATT_HUVUD_LIST) {
     const huvud = Object.keys(INGREDIENSER).find(k => INGREDIENSER[k].huvud === hh && iKrukan(k) && har(k, RATT.huvud));
     if (!huvud) continue;
@@ -318,7 +318,7 @@ export const STEK = balans('stek', {
 });
 const stekhallen = (s: State) => stationerOf(s).find(t => t.k === 'grill' && isKlar(t) && t.med?.includes('stekhall'));
 export function stekRecept(s: State, p?: Person) {
-  const har = (k: string, n: number) => (p ? getable(s, p, k) : amountOf(s, k)) - (RATT.spara[k] ?? 0) >= n;
+  const har = (k: string, n: number) => (p ? getable(s, p, k) : amountOf(s, k)) - utsadeKrok.av(s, k) >= n;
   if (!har('talg', STEK.talg)) return undefined;
   for (const hh of ['kott', 'fisk'] as RattHuvud[]) {
     const huvud = Object.keys(INGREDIENSER).find(k => INGREDIENSER[k].huvud === hh && iKrukan(k) && SAKER[k]?.ra && har(k, STEK.huvud));

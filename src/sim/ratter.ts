@@ -135,7 +135,6 @@ export const RATT = {
     huvud: 2, andra: 2, smak: 1, // av huvudingrediensen, den andra gruppen och smaken
     haller: 3, // en rätt av ingredienser som inte ruttnar håller så många dygn (år i spelet); annars medelvärdet av ingrediensernas (HALLER_STEG)
   }),
-  spara: { korn: 12 } as Record<string, number>, // så mycket sparas till utsäde och går inte i krukan (steg 9.6.11); en lista per sak går inte i balans()
 };
 // i vilken ordning rätten äts (mat i saker.ts): den som håller kortast först, och en färsk rätt före den råa maten
 const rattMat = (haller: number) => Math.round(Math.min(6, Math.max(0.3, 0.45 * haller - 0.95)) * 100) / 100; // högst 6: det torkade äts sist
@@ -158,3 +157,5 @@ export function rattSaker(): Record<string, SakDef> {
   return ut;
 }
 export const RATT_SAKER = Object.keys(rattSaker());
+// utsädet som sparas av fröet k (steg 10.2.32): det fälten byn har och planerar behöver (utsade i odling.ts, satt där)
+export const utsadeKrok = { av: (_s: import('./typer').State, _k: string) => 0 };

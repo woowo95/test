@@ -1,3 +1,4 @@
+import { utsadeKrok } from './ratter';
 import { hans, honom } from './ord';
 import { upplev } from './uppvaxt';
 import { loggBer } from './berattelser';
@@ -18,7 +19,7 @@ import { ratt } from './matlagning';
 import { habitShare, habitTotal } from './seder';
 import { grundvarde } from './varde';
 import { EKONOMI } from './ekonomi';
-import { sparas } from './forradsmal';
+import { arMaterial, sparas, villHaAv } from './forradsmal';
 import { balans } from './balans';
 import { RELT, arBast, arRivaler, minnsGava } from './relationer';
 import { handelse, smakMat } from './rykten';
@@ -513,11 +514,12 @@ export function personPart(s: State, p: Person, silver = true): Part {
 // byn (det gemensamma förrådet) som part i ett byte med handlaren (steg 4.4.1.3). Byn värderar efter knappheten i hela byn:
 // mat och ved som inte räcker till alla (b.kvar var) saknas, det som räcker gånger BYTE_BYN.gott är över; ett redskap som byn
 // inte har något av och ett material som är slut saknas. Byn byter bara bort sin egen del (inte det byborna äger): maten och
-// veden över det som räcker gånger gott, materialet över BYTE_BYN.material, och silvret. Redskapen byts inte bort: de används.
+// veden över det som räcker gånger gott, materialet över bufferten i förrådsmålen (behalla, steg 10.2.32), och silvret. Redskapen byts inte bort: de används.
 // x, y = där den som handlar för byn står
+// det byn behåller av materialet k när den byter: bufferten i förrådsmålen (villHaAv), och utsädet (steg 10.2.32)
+const behalla = (s: State, k: string) => Math.max(arMaterial(k) ? villHaAv(s, k) : 0, utsadeKrok.av(s, k));
 export const BYTE_BYN = balans('bytebyn', {
   gott: 3, // så många gånger det alla behöver behålla (b.kvar) har byn gott om, och kan byta bort det som är över
-  material: 10, // så många av varje material behåller byn
 });
 const bynsDel = (s: State, k: string) => { let n = amountOf(s, k); for (const p of living(s)) n -= ownsAmount(s, p, k); return Math.max(0, helt(n)); };
 function bynNod(s: State, b: Behov) { let n = 0; for (const j of b.slag) n += amountOf(s, j) * perOf(b, j); return { har: n, behover: living(s).length * b.kvar }; }
@@ -525,7 +527,7 @@ export function bynBehov(s: State, k: string) {
   if (k === 'silver') return 1;
   if (isTool(k)) return amountOf(s, k) < 1 ? DELA.saknar : DELA.over;
   const b = behovMed(k);
-  if (!b) { const n = amountOf(s, k); return n < 1 ? DELA.saknar : n < BYTE_BYN.material ? 1 : DELA.over; }
+  if (!b) { const n = amountOf(s, k); return n < 1 ? DELA.saknar : n < behalla(s, k) ? 1 : DELA.over; }
   const { har, behover } = bynNod(s, b);
   return har < behover ? DELA.saknar : har < behover * BYTE_BYN.gott ? 1 : DELA.over;
 }
@@ -537,7 +539,7 @@ function bynOver(s: State, utom: readonly string[]): Vara[] {
     if (n < 1) continue;
     const b = behovMed(k);
     if (b) { const { har, behover } = bynNod(s, b); n = Math.min(n, helt((har - behover * BYTE_BYN.gott) / perOf(b, k))); }
-    else if (k !== 'silver') n = Math.min(n, helt(amountOf(s, k) - BYTE_BYN.material));
+    else if (k !== 'silver') n = Math.min(n, helt(amountOf(s, k) - behalla(s, k)));
     if (n >= 1) ut.push({ k, n });
   }
   return ut;

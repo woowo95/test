@@ -175,7 +175,7 @@ const tillverk = (k: string): ProjektDef => {
     namn: SAKER[d.ger]?.namn ?? (ar_vatska(d.ger) ? VATSKOR[d.ger].namn : d.ger), vikt: PROJEKT_TAL.tillverka, // teet är bara en vätska (steg 9.5.8)
     brist: s => clamp(1 - antal(s) / vill(s), 0, 1),
     kostnad: () => varuVarde(d.av, d.min / 60 * ARBETE),
-    kan: (s, p) => har(s, p) && kar(s) && antal(s) < vill(s) && Object.entries(d.av).every(([q, n]) => getable(s, p, q) - (RATT.spara[q] ?? 0) >= n), // utsädet sparas (steg 9.6.22)
+    kan: (s, p) => har(s, p) && kar(s) && antal(s) < vill(s) && Object.entries(d.av).every(([q, n]) => getable(s, p, q) - utsadeKrok.av(s, q) >= n), // utsädet sparas (steg 9.6.22)
     recept: (s, p) => har(s, p) && antal(s) < vill(s) ? { av: d.av } : undefined,
     // i en station som går fortare (sländan i vävstolen, steg 7.7.9), med redskapet som ligger där
     uppgift: s => { const t = stationFor(s, d.act); return { act: d.act, text: d.text, min: d.min / (t && stationDef(t.k)?.fart?.[d.act] || 1), tool: d.verktyg && !verktygVid(s, d.act, d.verktyg) ? d.verktyg : undefined }; },
@@ -365,4 +365,4 @@ export function bastaProjekt(s: State, p: Person, f: ProjektFara, egen = false) 
   }
   return best;
 }
-import { RATT } from './ratter';
+import { utsadeKrok } from './ratter';

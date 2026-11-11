@@ -1380,7 +1380,7 @@ SCENARIER.odling = {
     const art = artI >= 0 ? SIM.froFynd(s, p, plats(artI), 3600) : {};
     // byn vill ha frön till ett minsta fält för varje familj som kan odla och saknar fält (steg 3.10.23.3; innan någon kan odla
     // alla familjer). När byn har nog tar man inga fler, men plockandet räknas och man tänker på odling
-    const fam = SIM.fronFamiljer(s), vill = SIM.ODLING.froPerRuta * SIM.ODLING.faltMin * fam;
+    const fam = SIM.fronFamiljer(s), vill = [...new Set(Object.values(SIM.GRODOR).map(g => g.fro))].reduce((a, k) => a + SIM.utsade(s, k), 0); // utsädet (steg 10.2.32)
     setAmount(s, 'rovfron', vill - 1);
     const fattas = summa(SIM.froFynd(s, p, tk, 600), ['rovfron', 'artfron']) > 0;
     setAmount(s, 'rovfron', vill);
