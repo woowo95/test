@@ -971,6 +971,7 @@ export const RUNDA = balans('runda', {
   vargRadsla: 0.6,
   // samlandet, en gång för alla (steg 9.2.53–9.2.57): saker på rutan, ett plock i taget, och nästa mål när platsen är tom
   plock: 2, // sekunder (spelets tid) att plocka upp en sak: fast och kort, inte ett balanstal; balansen sitter i mängden
+  stracka: 8, // så många rutor väljer samlaren på en gång (steg 10.2.21)
   syn: 4, // så många rutor bort ser samlaren rutor med saker och går dit (synvidden)
   malR: 12, // nästa mål söks så här långt bort (bortom det hen ser), bland det hen vet eller tror om marken
   grenSaker: 2, // grenar på en skogsruta där det ligger grenar (högst), sten och flinta på en ruta vid stenarna (de som inte står i FYND)
@@ -1142,13 +1143,41 @@ function rundaRuta(s: State, p: Person, tk: Task, left: number, a: number, learn
   tk.sett = [...(tk.sett ?? []), i].slice(-RUNDA.sett);
   const dr = drag(s, p, tk, rutVarde(s, tk));
   if (dr.ut < -RUNDA.hem || tk.until <= s.now + 2 * MIN) { tk.until = s.now; return 1e-3; }
-  let n = narmastMedSaker(s, tk, x, y, RUNDA.syn);
+  let n = nastaPaStrackan(s, tk, x, y);
   if (!n) { platsTom(s, p, tk, x, y); n = nastaMal(s, p, tk, x, y, dr.bort.radsla); }
   if (n) { tk.tx = n.x + 0.5; tk.ty = n.y + 0.5; tk.hopp = true; } else tk.until = s.now;
   return 1e-3;
 }
 const utanStenar = (g?: Record<string, number>) => { if (g) { delete g.sten; delete g.flinta; } return g; }; // på rundan plockas de som saker
 let plockSlag: string | undefined; // på rundan: slaget som plockades nu (bär eller rötter, sten eller flinta, grenar), '' medan plocket pågår; för UTFALL
+// sträckan (steg 10.2.21): samlaren väljer de rutor med saker hen ser på en gång, närmast först och sedan närmast den förra,
+// högst RUNDA.stracka, och går dem i tur och ordning. En ruta som blivit tom på vägen hoppas över; när sträckan är slut väljs en
+// ny. Förut letades hela synvidden igenom efter varje ruta
+function nastaPaStrackan(s: State, tk: Task, x: number, y: number) {
+  for (let v = 0; v < 2; v++) {
+    while (tk.stracka?.length) { const j = tk.stracka.shift()!, jx = j % W, jy = Math.floor(j / W); if (sakerPa(s, tk, jx, jy) > 0) return { x: jx, y: jy }; }
+    if (v) break;
+    tk.stracka = strackaFran(s, tk, x, y, RUNDA.syn);
+  }
+  tk.stracka = undefined;
+  return undefined;
+}
+function strackaFran(s: State, tk: Task, x0: number, y0: number, r: number) {
+  const vt = vattenNu(s), kand: number[] = [];
+  for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    const x = x0 + dx, y = y0 + dy;
+    if (Math.hypot(dx, dy) > r + 0.01 || !inMap(x, y) || vt[y * W + x] === T.Vatten || sakerPa(s, tk, x, y) <= 0) continue;
+    kand.push(y * W + x);
+  }
+  const ut: number[] = [];
+  let cx = x0, cy = y0;
+  while (kand.length && ut.length < RUNDA.stracka) {
+    let bi = 0, bd = Infinity;
+    kand.forEach((j, k) => { const d = Math.hypot(j % W - cx, Math.floor(j / W) - cy); if (d < bd) { bd = d; bi = k; } });
+    const j = kand.splice(bi, 1)[0]; ut.push(j); cx = j % W; cy = Math.floor(j / W);
+  }
+  return ut;
+}
 // den närmaste rutan inom r med saker, och dit man kan gå (inte i vattnet). Samma ruta varje gång (ingen slump)
 function narmastMedSaker(s: State, tk: Task, x0: number, y0: number, r: number) {
   let bast: { x: number; y: number } | undefined, bd = Infinity;
