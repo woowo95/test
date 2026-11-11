@@ -359,15 +359,25 @@ export const TAKTER: Takt[] = [
       if (p.thoughts.some(x => x.until <= c.now)) p.thoughts = p.thoughts.filter(x => x.until > c.now);
     }
   } },
-  // det var och en gör: alla en bit i taget, sida vid sida
+  // det var och en gör: alla en bit i taget, sida vid sida. Den som står still vid ett arbete räknas inte förrän arbetet är
+  // klart, KLOCKA.arbetsBit sekunder gått eller något nytt händer (vantar, steg 10.2.21); då räknas hela tiden på en gång
   { namn: 'aktiviteterna', sek: 0, fn: (s, dt, c) => {
     const learn = 1 + 0.1 * s.seder.v.nyfikenhet; // en nyfiken by lär sig snabbare
+    const kort = dt < KLOCKA.slag - 1e-9; // korta steg: faran är nära, och alla räknas varje steg
     for (const p of c.ppl) {
       if (!alive(p)) continue;
       delete p.framme; // (en äldre sparning, där de som inte var inblandade räknades en minut i förväg)
-      if (spar.pa) { spar.v.set(p, [c.t0, p.x, p.y]); spar.u.set(p, [[c.t0, kopia(p.task)]]); }
+      const tk = p.task;
+      if (!kort && tk && vantar(p, tk, c.now, dt)) {
+        tk.vant = (tk.vant ?? 0) + dt;
+        if (spar.pa) { spar.v.set(p, [c.t0, p.x, p.y]); spar.u.set(p, [[c.t0, kopia(tk)]]); }
+        if (kanPrata(s, p)) c.social.push(p);
+        continue;
+      }
+      const tid = dt + (tk?.vant ?? 0); if (tk) delete tk.vant;
+      if (spar.pa) { const b = c.now - tid * SEC; spar.v.set(p, [b, p.x, p.y]); spar.u.set(p, [[b, kopia(p.task)]]); }
       const k = kostStart(), akt = p.task?.act ?? 'välja';
-      taskStep(s, p, ageOf(p, c.now), c.now, dt, learn, c.social);
+      taskStep(s, p, ageOf(p, c.now), c.now, tid, learn, c.social);
       kost('aktivitet: ' + akt, k);
       s.now = c.now;
     }
@@ -402,6 +412,15 @@ export const TAKTER: Takt[] = [
   { namn: 'flytt och nybyggare', sek: 60, fn: (s, dt) => { if (living(s).length === 0) log(s, 'Byn är tom. Ingen finns kvar vid elden.', 'world'); regulate(s, dt); } },
   { namn: 'redskapen', sek: 60, fn: s => { tidyTools(s); placeTools(s); } }, // redskapen som släpptes läggs i förrådet
 ];
+// de som behöver räknas varje slag fast de står på sin plats: striden, elden och den som brinner, vården och samtalet
+const VARJE_SLAG = new Set<Act>(['strid', 'slacka', 'slackaSig', 'hjalpaBrinnande', 'flyEld', 'varna', 'skilja', 'forsvar', 'forsvarRovare', 'varda', 'samtal', 'tanda']);
+// p står still vid sitt arbete och kan vänta med att räknas (steg 10.2.21): inget är klart i slaget, inget avbryter (nöden,
+// dag som blir natt), och hen har inte väntat KLOCKA.arbetsBit sekunder
+function vantar(p: Person, tk: Task, now: number, dt: number) {
+  const d = ACTS[tk.act];
+  return tk.phase === 'do' && !d.tur && !d.runda && !VARJE_SLAG.has(tk.act) && tk.med === undefined && tk.until > now + 1e-6
+    && (tk.vant ?? 0) + dt < KLOCKA.arbetsBit && p.toa >= KROPP.toaAvbryt && !(d.dygn && tk.dark !== !isLight(now));
+}
 // tiden (sekunder) sedan raden t räknades, om den ska räknas i slaget som slutar vid now, annars undefined. Sist räknad står i
 // s.takter; en by som saknar den (en ny eller äldre sparning) räknar raden som om den räknats när slaget började
 function taktDt(s: State, t: Takt, i: number, now: number, dtSec: number) {
