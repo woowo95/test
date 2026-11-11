@@ -2092,10 +2092,10 @@ SCENARIER.rovarforsvar = {
     const tf = rovarGang(t, 5, { x: tm.x + 8, y: tm.y }, { anfaller: true }); tf.sedd = t.now;
     korTills(t, () => !!SIM.flockStrid(t, tf), 600);
     const tg = SIM.flockStrid(t, tf);
-    if (tg) for (const k of tg.st.kampar) { if (k.pid === feg.id) k.st.mod = 0; if (k.pid === modig.id) k.st.mod = 20; }
+    if (tg) for (const k of tg.st.kampar) { if (k.pid === feg.id) { k.st.mod = 0; k.modNu = -1; } if (k.pid === modig.id) { k.st.mod = 20; k.modNu = 3; } } /* modet just nu räknades när striden började */
     let fri = false, gick = false, ledText = '';
     const f0 = { x: feg.x, y: feg.y };
-    korTills(t, () => !tg || fri || !!tg.st.slut, 600, () => {
+    korTills(t, () => !tg || (fri && gick) || !!tg.st.slut, 600, () => {
       if (tg?.fri?.includes(feg.id) && !tg.st.slut) { fri = !feg.task || feg.task.act !== 'strid' || feg.task.until <= t.now; gick = Math.hypot(feg.x - f0.x, feg.y - f0.y) > 1; } // hen står där hen sprang, och striden pågår
     });
     if (tg) { const st = tg.st, r = st.logg.find(q => q.h === 'leder' && st.kampar.find(k => k.id === q.a)?.sida === 1); ledText = r ? SIM.stridText(st, r) : ''; }

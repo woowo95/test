@@ -64,6 +64,7 @@ export const ROVARE = balans('rovare', {
   vaktSer: 26, folkSer: 12, nattSer: 0.5, dimmaSer: 0.5, // vakten ser rövare inom så här många rutor, andra inom folkSer, gånger nattSer i mörkret
   gissFel: 0.5, // vaktens gissning av antalet: fel med upp till så här stor del, gånger avståndet / vaktSer (andra gissar som på längsta avståndet)
   ser: 14, // rövarna ser byns försvar inom så här många rutor från förrådet, när de är så nära eller väntar utanför byn ...
+  klunga: 0.5, // så tätt står de runt det de går mot (gånger platserna i KLUNGA)
   nara: 1.5, // rövarna är framme vid förrådet så här nära
   // rövarnas val (steg 10.1.9–10.1.15, ROVARHANDLINGAR)
   rastR: 3, // rastplatsen: så här nära mitten håller de sig, och så långt går den som går omkring
@@ -162,13 +163,13 @@ export function rovarnaKommer(s: State, tvinga?: number, direkt?: boolean, klan?
   // den grannklan som tycker sämst om byn, om någon inte tycker om den
   const k: Klan | undefined = klan !== undefined ? klanById(s, klan) : klanerOf(s).filter(q => q.inst < 0).sort((a, b) => a.inst - b.inst)[0];
   const n = tvinga ?? Math.round(mellan(s, ROVARE.antal));
-  const folk: number[] = Array.from({ length: n }, () => {
+  const folk: number[] = Array.from({ length: n }, (_, nr) => { // den första leder gänget (steg 9.2.79)
     const sex = rnd(s, 'rovare') < 0.8 ? 'm' as const : 'k' as const;
     const hem = k?.personer.find(q => q.roll === 'rovare' && q.kropp); // en som flydde hem förra gången kommer igen (steg 9.2.114); slumpen dras ändå
     const namn = hem?.namn ?? makeName(s, sex, 'rovare'); // vapnet och kläderna kommer ur registret GASTUTRUSTNING (gast.ts, steg 10.1.8)
     const styrka = mellan(s, ROVARE.styrka), uthallighet = mellan(s, ROVARE.uthallighet), mod = mellan(s, ROVARE.mod), smidighet = mellan(s, ROVARE.smidighet), skick = mellan(s, ROVARE.skicklighet);
     const ov = Math.max(0, (skick - 5) * 2); // skickligheten i striden är 5 + färdigheten / 2, som hos en bybo (personKampe)
-    const p = nyGast(s, { id: nyttGastId(s), namn, sex: hem?.sex ?? sex, fodd: foddNar(s.seed, gastNyckel(k?.id, namn), 'rovare', s.now), rad: { sort: 'rovare', klan: k?.id }, x, y, nyckel: gastNyckel(k?.id, namn), pot: { styrka, uthallighet, mod, smidighet }, skill: { narstrid: ov, traff: ov } }); // drar ingen slump
+    const p = nyGast(s, { id: nyttGastId(s), namn, sex: hem?.sex ?? sex, fodd: foddNar(s.seed, gastNyckel(k?.id, namn), 'rovare', s.now), rad: { sort: 'rovare', klan: k?.id, ...(nr === 0 ? { ledare: 1 as const } : {}) }, x, y, nyckel: gastNyckel(k?.id, namn), pot: { styrka, uthallighet, mod, smidighet }, skill: { narstrid: ov, traff: ov } }); // drar ingen slump
     gastTillbaka(s, p);
     s.people.push(p);
     return p.id;
@@ -476,7 +477,12 @@ export const ROVARHANDLINGAR: Record<RovarGor, { namn: string; poang: (c: RCtx) 
 };
 const RGOR = Object.keys(ROVARHANDLINGAR) as RovarGor[];
 // går mot punkten, i en bybos fart med samma vägsökning. Svarar hur långt det är kvar, −1 när det inte finns någon väg
-function ga(c: RCtx, m: { x: number; y: number }) { return gaMot(c.s, c.r, m.x, m.y, c.dt, c.s.now - c.dt * SEC); }
+// var och en går mot sin egen plats i klungan runt målet, så att de inte står på samma punkt
+function ga(c: RCtx, m: { x: number; y: number }) {
+  const [dx, dy] = KLUNGA[Math.abs(c.r.id) % KLUNGA.length], k = { x: clamp(m.x + dx * ROVARE.klunga, 0.3, W - 0.3), y: clamp(m.y + dy * ROVARE.klunga, 0.3, H - 0.3) };
+  const fri = (dx || dy) && !iVatten(c.s, k.x, k.y) && !bitAt(c.s, k.x, k.y) ? gaMot(c.s, c.r, k.x, k.y, c.dt, c.s.now - c.dt * SEC) : -1;
+  return fri >= 0 ? fri : gaMot(c.s, c.r, m.x, m.y, c.dt, c.s.now - c.dt * SEC); // ingen väg till den egna platsen: rakt mot målet
+}
 // mot närmaste kanten; den som kommer dit är borta från kartan, hem till klanen (steg 9.2.114)
 function hemat(c: RCtx) {
   const { s, f, r } = c;
@@ -662,7 +668,8 @@ gastKrok.dod = (s, r, av) => {
 };
 gastKrok.spara = (s, r) => spara(s, r, s.now);
 // rövare och bybor som kan se varandra: då går byn i korta steg (FAROR i efterstrid.ts)
-FAROR.push(s => flockar(s).some(f => f.folk.length > 0 && (!!f.anfaller || rovarna(s, f).some(r => living(s).some(q => avst(q, r) < ROVARE.narFara)))));
+// (också medan byn vet om ett gäng som väntar: larmet går led för led och budbäraren springer, och det ska inte ta fem minuter per led)
+FAROR.push(s => flockar(s).some(f => f.folk.length > 0 && (!!f.anfaller || (f.sedd !== undefined && !f.klar) || rovarna(s, f).some(r => living(s).some(q => avst(q, r) < ROVARE.narFara)))));
 // den fallne ligger kvar med det hen hade, tills någon avrustar hen (steg 8.7.5)
 function fallenFiende(s: State, r: Person, x: number, y: number) {
   const g = gr(r), saker: Record<string, number> = { ...g.bar };
