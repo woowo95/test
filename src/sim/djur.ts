@@ -8,9 +8,8 @@ import { motgangNu } from './motgang';
 import { H, HOUR, SEC, State, T, W, egen, inMap, mapKey, tvaDelar, visning } from './typer';
 import { vattenNu } from './sjo';
 import { balans } from './balans';
-import { DJUR } from './redskap';
 import { busksort } from './buskar';
-import type { DjurStrid } from './strid';
+import { DjurStrid, djurStrid } from './kampar';
 import { ISTID, ageIndex, dygnStart, yearNo } from './tid';
 
 // ---------- djur: kaniner i grupper ----------
@@ -454,11 +453,10 @@ export const BJORN = balans('bjorn', {
   ungeAvst: 1.4, // ungarna går så här nära (rutor) kring björnen
 });
 // björnens värden i striden (steg 6.6.5 och 6.6.6): hög styrka och uthållighet, långsam att vända men biter och slår hårt
-export const bjornVarden = (): DjurStrid => DJUR.bjorn.strid;
+export const bjornVarden = (): DjurStrid => djurStrid('bjorn');
 // artens värden i striden: djurregistret (DJUR i redskap.ts), björnen ur bjornVarden
 // björnungen (steg 6.6.5): liten och svag, men björnen försvarar den
-export const BJORNUNGE_STRID: DjurStrid = { namn: 'Björnungen', art: 'Björnunge', alder: 2, styrka: 5, uthallighet: 6, mod: 4, smidighet: 10, skicklighet: 4, fart: 1.2, vapen: 'vargbett' };
-export const stridOf = (art: Djur['art']): DjurStrid => art === 'bjornunge' ? BJORNUNGE_STRID : DJUR[art].strid;
+export const stridOf = (art: Djur['art']): DjurStrid => djurStrid(art);
 // stranden där björnen fiskar, en bit från byplatsen, så som kartan var när byn grundades
 const bjornStrand = perKarta((seed): number[] => {
   const m = getMap(seed), strand = shoreOf(seed), ut: number[] = [];
@@ -571,7 +569,7 @@ export function vargarOf(s: State): Djur[] {
 
 // ---------- djuren som individer (steg 3.7.13) ----------
 // Varje djur är en individ med ålder, styrka, snabbhet och skygghet (kaninen) eller mod (vargen, steg 3.7.1). Egenskaperna
-// räknas ur djurets id kring artens värden i djurregistret (DJUR[art].strid i redskap.ts), så att inget behöver sparas.
+// räknas ur djurets id kring artens värden i registret över kämpar (KAMPAR i kampar.ts), så att inget behöver sparas.
 // Hälsan är förenklad: blod och sår som i striden, inga kroppsdelar, sjukdomar eller behov. Bara skadade och dödade djur
 // sparas i byn (s.djurHalsa och s.djurDoda); blodet och såren läker med tiden, räknat ur klockan, och ett djur som läkt
 // eller dött för länge sedan glöms. Allt är därför detsamma i båda lägena

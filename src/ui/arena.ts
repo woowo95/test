@@ -3,7 +3,7 @@
 // sim/strid.ts och ritas på byns egen karta nära elden, med kämparna som folket i spelet (Björn efter v146); rutan med
 // uppställningen och loggen ligger vid sidan av kartan. Loggen visar symbolerna först med hela meningen när man trycker på raden eller håller musen över den.
 import {
-  AVSIKTER, Avsikt, KLADER_STRID, MANNISKOVAPEN, STRID, STRIDHANDELSER, STRIDSDJUR, LAGE_ORD, VAPEN, Vapen, DJUR,
+  AVSIKTER, Avsikt, KLADER_STRID, MANNISKOVAPEN, STRID, STRIDHANDELSER, STRIDSDJUR, LAGE_ORD, VAPEN, Vapen, kampeSort,
   Strid, Uppstallning, Hinder, korManga, djurKampe, foljet, personKampe, stridRapport, spelaUpp, stegIGang, type StridGang, stridText, sakNamn, living, byId, timeLabel,
   getMap, eldPlats, T, W as MW, H as MH, ageOf, ALDER,
 } from '../sim';
@@ -61,7 +61,7 @@ function radHtml(sd: number, i: number, r: Rad) {
   const k = r.kalla.typ === 'by' ? `by:${r.kalla.pid}` : r.kalla.typ === 'djur' ? `djur:${r.kalla.art}` : 'egen';
   const val = [`<option value="egen"${k === 'egen' ? ' selected' : ''}>✏️ Påhittad</option>`,
     ...folk.map(p => `<option value="by:${p.id}"${k === `by:${p.id}` ? ' selected' : ''}>🧑 ${esc(p.name)}</option>`),
-    ...STRIDSDJUR().map(a => `<option value="djur:${a}"${k === `djur:${a}` ? ' selected' : ''}>🐾 ${esc((DJUR as Record<string, { strid?: { namn: string } }>)[a].strid!.namn)}</option>`)].join('');
+    ...STRIDSDJUR().map(a => `<option value="djur:${a}"${k === `djur:${a}` ? ' selected' : ''}>🐾 ${esc(kampeSort(a).namn)}</option>`)].join('');
   const manniska = r.kalla.typ !== 'djur';
   const vap = manniska ? `<select data-f="vapen" title="Vapen">${MANNISKOVAPEN.map(v => `<option value="${v}"${r.vapen === v ? ' selected' : ''}>${VAPEN[v].tecken} ${esc(VAPEN[v].namn)}</option>`).join('')}</select>` : '';
   const res = manniska ? `<select data-f="reserv" title="Reservvapen i bältet"><option value="">➰ –</option>${MANNISKOVAPEN.filter(v => (VAPEN[v] as { liten?: true }).liten).map(v => `<option value="${v}"${r.reserv === v ? ' selected' : ''}>➰ ${VAPEN[v].tecken}</option>`).join('')}</select>` : '';
