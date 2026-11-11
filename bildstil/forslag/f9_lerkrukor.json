@@ -40,27 +40,6 @@
      "namn": "lerkruka_stor",
      "rader": [
       "...rrrrrrrr...",
-      "...rutrrtsr...",
-      "....rutssr....",
-      ".rrrrutssrrrr.",
-      ".r.ruttsssr.r.",
-      ".rruuttttssrr.",
-      ".ruttttttsssr.",
-      ".rLKKKKKKKJJr.",
-      ".rtuttttssssr.",
-      ".rKKKKKKKJJJr.",
-      ".rtttttsssssr.",
-      "..rtttsssssr..",
-      "..rttssssssr..",
-      "...rtsssssr...",
-      "....rssssr....",
-      "....rrrrrr...."
-     ]
-    },
-    {
-     "namn": "person_skala",
-     "rader": [
-      "...rrrrrrrr...",
       "...ruutttsr...",
       "....rutssr....",
       ".rrrrutssrrrr.",
@@ -188,31 +167,6 @@
       "...rtttsssr...",
       "....rtsssr....",
       "...rrrrrrrr..."
-     ]
-    },
-    {
-     "namn": "person_skala",
-     "rader": [
-      ".....EEEE.....",
-      "....EGGGFE....",
-      "..EEGGGFFFEE..",
-      "....EHHGGE....",
-      "....EHkGkE....",
-      "....EHHGGE....",
-      ".....EGGE.....",
-      "...QQTSSSQQ...",
-      "..QTTSSSSSRQ..",
-      "..QTSSSSSSRQ..",
-      "..QTSSSSSRRQ..",
-      "..HQKKKKJJQH..",
-      "..GQSSSSRRQG..",
-      "...QSSSSRRQ...",
-      "...QSSSRRRQ...",
-      "...QQQQQQQQ...",
-      "....EF..EF....",
-      "....EF..EF....",
-      "....EF..EF....",
-      "...EEE..EEE..."
      ]
     }
    ],

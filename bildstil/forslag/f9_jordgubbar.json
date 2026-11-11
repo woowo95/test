@@ -54,28 +54,30 @@
     {
      "namn": "f9_jordgubbar",
      "rader": [
-      ".......rrP......",
-      ".....rrutrPr....",
-      "....ruttsrutr...",
-      "....rtsPrttsr...",
-      "....EHHGGGGFE...",
-      "....EGGFFFFFE...",
-      "......EGFFE.....",
-      ".....EHGGFFE....",
-      "....EHHGGGFFE...",
-      "...EHqHGGGFFFE..",
-      "...EHHGHGGFFFE..",
-      "...EJKKKJJJJIE..",
-      "...EHGHGGFGFFE..",
-      "...EGHGGFGFFFE..",
-      "....EGGFGFFFE...",
-      ".....EFFFFFE....",
-      "......EEEEE....."
+      "....PU..UP....",
+      "...rtrUPrtr...",
+      "..rtKsrrtKsr..",
+      "..rsrUrtsrUr..",
+      "...ruutttsr...",
+      "....rutssr....",
+      ".rrrrutssrrrr.",
+      "rur.rutssr.rsr",
+      "rtruttttsssrsr",
+      "rruuttttttssrr",
+      "ruttttttttsssr",
+      "rLKKKKKKKKKJIr",
+      "rutJttJttJtssr",
+      "rLKKKKKKKKJJIr",
+      ".rtttttttsssr.",
+      "..rtttttsssr..",
+      "...rtttsssr...",
+      "....rtsssr....",
+      "...rrrrrrrr..."
      ]
     }
    ],
    "anteckning": "Lerkrukan står upprätt på golvet i förrådet och ses snett uppifrån, som i spelet. Den är 11 punkter bred och 13 hög: en bukig och spegelsymmetrisk kropp, en smal hals och en mynning med kant. Senapsbandet följer spelets kruka. Kroppen hålls i dämpade jordtoner med jord0 som kontur. Ljuset faller på vänstra buken, med en punkt glans i ben2, och den högra sidan är mörkare. Bären ligger i krukan, så bara den lilla kullen ovanför mynningen syns. Det är tre eller fyra rundade bär i rost2 och rost3 med rost0 som kontur och några foderblad i oliv3. Det röda är det enda mättade, eftersom maten är det man ska se. Det är en enda sak och ingen ny behållare. En avvikelse: spelets kruka är rostorange, men här är kroppen jordbrun enligt idén, så att de rostfärgade bären syns mot den. Granskningen: Granskat mot reglerna; ingen rättning behövdes, så versionen lämnas oförändrad. Storlek: krukan är 11 punkter bred och 13 hög (rad 4–16), med bären 17 rader. Den är mindre än kolonisten (14 × 20) och har samma storlek som den godkända krukan. Vinkel: krukan står snett uppifrån med den ovala mynningen överst och bärkullen ovanpå. Det är ingen station, så regeln om ytan ovanifrån gäller inte. Symmetri: silhuetten är spegelsymmetrisk kring kolumn 8 i mynning (kol 4–12), hals (6–10), buk (3–13) och botten (6–10). Bärkullen följer samma bredd, och bara ljus och korn skiljer sidorna åt. Kontur och toner: jord0 runt krukan och rost0 runt bären, ingen kol0, och kroppen har tre jordtoner med korn. Det gula bandet finns redan på spelets lerkruka och är kvar. Glansen är en enda punkt i ben2 (inte vit) på vänstra buken. Ljuset faller uppe till vänster på både bär och buk. Läsbarhet: de mättade rosttonerna finns bara i bären, alltså maten, och bären syns först. Krukan är ljusare än gräset och har kontur, så den syns mot marken. Idén följs: det är spelets befintliga lerkruka och ingen ny behållare, och den visar en enda sak. Bären syns bara ovanför mynningen, med foderblad i oliv3. Saken bärs inte, så regeln om huvud och ansikte är inte aktuell.",
-   "ide": "Den runda lerkrukan som redan finns i spelet, stående och sedd snett uppifrån, ungefär 11 punkter bred och 13 hög: en hög, bukig och spegelsymmetrisk silhuett med smal hals och en oval öppning högst upp. I öppningen sticker en liten kulle av bär upp över kanten, tre eller fyra rundade bär i rost2 och rost3 med rost0-kontur och ett par foderblad i oliv3, medan krukans kropp hålls i dämpade jordtoner med jord0 som kontur och ljuset på vänstra buken. Bären är bara det som logiskt syns ovanför mynningen, så krukans höjd och de röda topparna ger en tydlig, hög silhuett mot den låga asken."
+   "ide": "Lerkrukan som redan finns i spelet (samma bild som i bilden med behållarna), full med jordgubbar som sticker upp ur mynningen."
   }
  ]
 }
