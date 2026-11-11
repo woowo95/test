@@ -484,7 +484,8 @@ function vantar(p: Person, tk: Task, now: number, dt: number) {
 function taktDt(s: State, t: Takt, i: number, now: number, dtSec: number) {
   if (t.sek <= 0) return dtSec;
   const tk = s.takter ??= {}, P = t.sek * SEC, off = (t.fas ?? (i * 0.618) % 1) * P;
-  const sist = tk[t.namn] ?? now - dtSec * SEC;
+  let sist = tk[t.namn] ?? now - dtSec * SEC;
+  if (sist > now || now - sist > P + dtSec * SEC) sist = now - dtSec * SEC; // klockan har flyttats (ett prov eller en äldre sparning): räkna som ny
   if (Math.floor((now - off) / P) === Math.floor((sist - off) / P)) { tk[t.namn] = sist; return undefined; }
   tk[t.namn] = now;
   return (now - sist) / SEC;

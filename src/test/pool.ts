@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 export interface Utfall { code: number; out: string; err: string }
 // en process som inte är klar efter så här lång tid (datorns tid) stoppas och räknas som kraschad
-const TIDSGRANS_MIN = 35; // sedan Förbättra aldrig är tom (steg 6.1.18) arbetar byarna mer, och testerna tar längre tid
+const TIDSGRANS_MIN = 150; // sedan Förbättra aldrig är tom (steg 6.1.18) arbetar byarna mer, och med de korta slagen (steg 10.2.14) tar testerna längre tid
 
 // Kärnorna till de långa jobben (steg 9.2.64): ett jobb som tog kortare tid än LANGT_JOBB_S förra gången körs med lägre
 // prioritet (LAG_PRIO, som nice), så att de långa jobben, som avgör när testet blir klart, får hela kärnor och de korta fyller
