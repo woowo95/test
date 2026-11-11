@@ -3,7 +3,7 @@ import { Act, Person, State } from './typer';
 import { familjOf, stat } from './folk';
 import { clamp } from './slump';
 import { LAGER, amountOf, lagerFlyttVal } from './lager';
-import { TROSKEL, materialBuffert, stationBrist, villAv } from './forradsmal';
+import { arMaterial, materialBuffert, stationBrist, villAv, villHaAv } from './forradsmal';
 import { SAKER } from './saker';
 import { PLAGG, PLAGG_LIST } from './klader';
 import { ARBETE, grundvarde, varuVarde } from './varde';
@@ -168,13 +168,15 @@ const tillverk = (k: string): ProjektDef => {
   const d = TILLVERKA[k];
   // tjäran, salvan och limmet räknas i sina behållare och behöver en ledig som passar (steg 9.4.14, vatskor.ts)
   const antal = (s: State) => ar_vatska(d.ger) ? vatskaAv(s, d.ger) : amountOf(s, d.ger), kar = (s: State) => !ar_vatska(d.ger) || !!ledigFor(s, d.ger);
+  // så många byn vill ha: det som följer förbrukningen (salvan, tjäran, limmet, tvålen; MATERIALMAL, steg 10.2.12) efter den, det andra efter raden
+  const vill = (s: State) => arMaterial(d.ger) ? villHaAv(s, d.ger) : d.vill;
   const har = (s: State, p: Person) => knows(p, d.tek) && kanGoras(s, d.act, p) && (!d.eld || !!stationFor(s, d.act) || s.fire.lit) && (!d.vatten || !!fylldSack(s)) && (!d.verktyg || freeTools(s, p, d.verktyg) > 0 || verktygVid(s, d.act, d.verktyg));
   return {
     namn: SAKER[d.ger]?.namn ?? (ar_vatska(d.ger) ? VATSKOR[d.ger].namn : d.ger), vikt: PROJEKT_TAL.tillverka, // teet är bara en vätska (steg 9.5.8)
-    brist: s => clamp(1 - antal(s) / d.vill, 0, 1),
+    brist: s => clamp(1 - antal(s) / vill(s), 0, 1),
     kostnad: () => varuVarde(d.av, d.min / 60 * ARBETE),
-    kan: (s, p) => har(s, p) && kar(s) && antal(s) < d.vill && Object.entries(d.av).every(([q, n]) => getable(s, p, q) - (RATT.spara[q] ?? 0) >= n), // utsädet sparas (steg 9.6.22)
-    recept: (s, p) => har(s, p) && antal(s) < d.vill ? { av: d.av } : undefined,
+    kan: (s, p) => har(s, p) && kar(s) && antal(s) < vill(s) && Object.entries(d.av).every(([q, n]) => getable(s, p, q) - (RATT.spara[q] ?? 0) >= n), // utsädet sparas (steg 9.6.22)
+    recept: (s, p) => har(s, p) && antal(s) < vill(s) ? { av: d.av } : undefined,
     // i en station som går fortare (sländan i vävstolen, steg 7.7.9), med redskapet som ligger där
     uppgift: s => { const t = stationFor(s, d.act); return { act: d.act, text: d.text, min: d.min / (t && stationDef(t.k)?.fart?.[d.act] || 1), tool: d.verktyg && !verktygVid(s, d.act, d.verktyg) ? d.verktyg : undefined }; },
   };
@@ -200,7 +202,7 @@ export const PROJEKT: Record<string, ProjektDef> = {
   })()])),
   rep: {
     namn: SAKER.rep!.namn, vikt: PROJEKT_TAL.rep,
-    brist: s => clamp(1 - amountOf(s, 'rep') / TROSKEL.repVill, 0, 1),
+    brist: s => clamp(1 - amountOf(s, 'rep') / villHaAv(s, 'rep'), 0, 1),
     kostnad: () => grundvarde('rep'),
     kan: (s, p) => wantsRope(s, p),
     uppgift: () => ({ act: 'tvinna', text: 'Tvinnar rep av hö.' }),

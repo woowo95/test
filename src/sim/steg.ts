@@ -37,7 +37,7 @@ import { DJURARTER, REDSKAP, bearbeta, djurKvar, twineRope, wearUsed } from './r
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
 import { arbetaBredvid, forsokKlar, forsokSteg, stepLarlingar, thinkWhileWorking } from './teknik';
 import { arbetsformaga, atSteg, foodDays, workRate } from './ekonomi';
-import { FYND, type FyndId, svampPlock, flintorOchYxor, toppOf, TRY_SEC, flintFactor, growFynd, handFish, lagren, stoneDist, packFynd, pickMushrooms, richness, richnessDelar, sankning, takeFrom } from './fynd';
+import { FYND, type FyndId, svampPlock, toppOf, TRY_SEC, flintFactor, growFynd, handFish, lagren, stoneDist, packFynd, pickMushrooms, richness, richnessDelar, sankning, takeFrom } from './fynd';
 import { halMin, halVal, islagt, stepIs } from './is';
 import { blotSteg, coldOf, stepVader, temperature, VADER, vaderGrader, vaderNu, vaxtFaktor } from './vader';
 import { ELD, VED, type Tand, tandPaRutan, addFuel, canLight, eldById, eldXY, giveBack, needStones, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight } from './eld';
@@ -98,7 +98,7 @@ import { bordPlats, fullBorda, kladVarme, ryggKorg, ryms, slitRygg, stepKlader }
 import { stepPynt } from './pynt';
 import { stadaByten } from './byte';
 import { stationFor, kvVid, stationFlytta, finishStation, finishTillbehor, stationAt, stationRutor, stepStationer, tillbehorVarme, workStation } from './stationer';
-import { TROSKEL, forbrukTimme, overTak, underBuffert } from './forradsmal';
+import { forbrukTimme, underBuffert, villHaAv } from './forradsmal';
 import { notis } from './notiser';
 import { stepKrukor } from './kruka';
 import { ar_vatska, drickTe, fyllVatska, ledigFor, teFaktor } from './vatskor';
@@ -180,7 +180,7 @@ const MEDAN: Partial<Record<Act, Krok>> = {
   toa: (s, p, t) => { p.toa = 1; if (t.prog === undefined) { t.prog = 0; toaBesok(s, p, t.ref); } }, // i latrinen, annars blir det en fläck (smuts.ts)
   kol: (s, p, t) => { const e = eldById(s, t.ref); if (e) takeCoal(s, p, 'hämtade', e); },
   bygga: (s, p, t, dtSec) => buildStep(s, p, t, dtSec),
-  tvinna: (s, p, t, dtSec) => twineRope(s, p, dtSec / HOUR_S, t.handel ? TROSKEL.repVill + handlarMal(s, 'rep') : undefined), // rep till handlaren (steg 6.2.11)
+  tvinna: (s, p, t, dtSec) => twineRope(s, p, dtSec / HOUR_S, t.handel ? villHaAv(s, 'rep') + handlarMal(s, 'rep') : undefined), // rep till handlaren (steg 6.2.11)
   hantverk: (s, p, t, dtSec) => { if (t.tool === 'rep') twineRope(s, p, dtSec / HOUR_S); }, // äldre sparfiler: rep tvinnades i handarbetet
   tanda: (s, p, t, dtSec) => {
     const f = eldById(s, t.ref); // lägerelden eller en lägereld till (task.ref, brasor.ts)
@@ -961,7 +961,7 @@ export function sakerPaRutan(s: State, tk: Task, x: number, y: number): { k: str
   const h = hash3(s.seed, i, 977), bas = tr >= FOREST && h < RUNDA.grenTat ? 1 + Math.floor(h / RUNDA.grenTat * RUNDA.grenSaker) : 0;
   return [{ k: 'grenar', n: Math.max(0, Math.min(RUNDA.grenSaker, bas) - plockatPa(s, plockKey(tk, i))) }];
 }
-const flintaBehovs = (s: State, tk: Task) => flintorOchYxor(s) < ELD.flintaMax && !overTak(s, 'flinta', tk.items?.flinta ?? 0);
+const flintaBehovs = (s: State, tk: Task) => underBuffert(s, 'flinta', tk.items?.flinta ?? 0); // efter förbrukningen (steg 10.2.12)
 // sakerna på marken utan en samlare (för bilden, ui/vaxter.ts och terrang.ts): det som samlas (bär, rötter och svamp) eller grenarna
 const SAMLAR: Record<'samla' | 'grenar', Task> = { samla: { act: 'samla', phase: 'do', tx: 0, ty: 0, until: 0, carry: 0, why: '' }, grenar: { act: 'ved', phase: 'do', tx: 0, ty: 0, until: 0, carry: 0, why: '' } };
 export const sakerPaMarken = (s: State, slag: 'samla' | 'grenar', x: number, y: number) => sakerPaRutan(s, SAMLAR[slag], x, y);

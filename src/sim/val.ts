@@ -1,4 +1,7 @@
 import { han } from './ord';
+import { mossaKrok } from './halsa';
+import { vatskaKrok } from './vatskor';
+import { forbrukat } from './forradsmal';
 import { grundvarde } from './varde';
 import { narStridVal } from './kartstrid';
 import { facklaVal } from './ljus';
@@ -24,7 +27,7 @@ import { coldOf, nederbord, snoPaMarken, temperature, vaderNu } from './vader';
 // barnen leker i snön när den ligger, som de vuxna har snöbollskrig (steg 4.3.1.3, sport.ts)
 const lekText = (s: State) => snoPaMarken(s) > 0 ? 'Är barn och leker i snön' : 'Är barn och leker';
 import { varselSamla } from './motgang';
-import { FORRAD, FORRADSMAL, TROSKEL, villAv, buffert, lyxtak, materialTimme, onskatDygn, underBuffert, materialTak, sparas } from './forradsmal';
+import { FORRAD, FORRADSMAL, TROSKEL, villAv, buffert, lyxtak, materialTimme, onskatDygn, underBuffert, materialTak, sparas, villHaAv } from './forradsmal';
 import { DJUR, DJURARTER, Djurart, GORS, canProcess, djurKvar, freeOfKinds, handelTask, harAv, toolGroups, underhallGrupp } from './redskap';
 import { PROJEKT, PROJEKT_LIST, PROJEKT_TAL, Uppgift, bastaProjekt, egenintresse, hamtas, projektNu } from './projekt';
 import { faltNu, vildFronPlats } from './odling';
@@ -427,6 +430,8 @@ export function dangers(s: State) {
   return { kyla: freezing > VAL.fryserAndel || cold && !nagonGlod(s), svalt: foodDays(s) < VAL.svaltDygn, gras: kallTid(ai) || cold ? TROSKEL.torrgrasKyla : 0 };
 }
 satFaror(dangers);
+// förrådsmålen för mossan och dryckerna (steg 10.2.12): krokarna sätts här, där alla filer redan är lästa
+mossaKrok.vill = s => villHaAv(s, 'mossa'); vatskaKrok.tagen = (s, v, n) => forbrukat(s, v, n);
 type Faror = ReturnType<typeof dangers>;
 // elden är släckt och kan inte tändas för att det saknas tändmaterial, och för få hämtar det
 const tinderNeeded = (s: State) => !nagonGlod(s) && !canLight(s) && needTinder(s);
@@ -987,7 +992,7 @@ export function handlarVaraVal(s: State, p: Person): ((v: Val) => void) | undefi
     const mal = handlarMal(s, k);
     if (!mal) continue;
     if (k === 'rep') {
-      if (!knows(p, 'rep') || amountOf(s, 'rep') >= TROSKEL.repVill + mal || getable(s, p, 'torrgras') < SAKER.rep!.skaffa!.av!.torrgras! + sparas(s, 'torrgras') || !enTill(s, 'tvinna', p)) continue;
+      if (!knows(p, 'rep') || amountOf(s, 'rep') >= villHaAv(s, 'rep') + mal || getable(s, p, 'torrgras') < SAKER.rep!.skaffa!.av!.torrgras! + sparas(s, 'torrgras') || !enTill(s, 'tvinna', p)) continue;
       return v => { set(v, 'tvinna', 'Byn har det den behöver. Tvinnar rep att byta med handlaren.'); v.handel = true; };
     }
     const g = gruppOf(k);

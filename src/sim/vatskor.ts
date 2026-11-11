@@ -69,7 +69,10 @@ export function fyllVatska(s: State, v: VatskaId, n: number, t = ledigFor(s, v))
   return t;
 }
 // n av vätskan v tas ur behållarna; en tömd behållare blir kvar där den stod. Ger hur mycket som togs
+// det som tas ur krukorna räknas som förbrukat (val.ts sätter kroken, eftersom förrådsmålen läses efter den här filen)
+export const vatskaKrok = { tagen: (_s: State, _v: string, _n: number) => undefined as void };
 export function taVatska(s: State, v: VatskaId, n: number) {
+  vatskaKrok.tagen(s, v, n); // dryckerna följer förbrukningen (steg 10.2.12, forradsmal.ts)
   let kvar = n;
   for (const t of tingOf(s)) {
     if (kvar <= 0) break;

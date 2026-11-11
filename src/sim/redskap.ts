@@ -8,7 +8,7 @@ import { nyKvalitet } from './kvalitet';
 import { amountOf, gain, put, use } from './lager';
 import { getable, Recept, takeMaterial, takeRecipe } from './behov';
 import { addDel } from './egendom';
-import { TROSKEL, sparas, villAv } from './forradsmal';
+import { sparas, villAv, villHaAv } from './forradsmal';
 import { addTool, freeTools, halvOf, nTools, ownsFree, tingOf, wearTool } from './agande';
 import { KLADER, KLADMATERIAL, PLAGG, PLAGG_LIST, kladAv, materialTill, valMaterial } from './klader';
 import { ageIndex, kallTid } from './tid';
@@ -70,8 +70,8 @@ export function wearUsed(s: State, p: Person, n: number) {
 // elden, eller tas från senor när vilt slaktas. Det är samma rep
 // oavsett material. Rep behövs till flintspjut och metspö.
 const REP_TIMME = 60 / SAKER.rep!.skaffa!.min!; // rep per timme
-export const wantsRope = (s: State, p: Person) => knows(p, 'rep') && amountOf(s, 'rep') < TROSKEL.repVill && getable(s, p, 'torrgras') >= REP.torrgras + sparas(s, 'torrgras'); // eldens del sparas (steg 10.2.7)en
-export function twineRope(s: State, p: Person, hours: number, vill: number = TROSKEL.repVill) { // vill: så många rep byn vill ha (fler att byta med handlaren, steg 6.2.11)
+export const wantsRope = (s: State, p: Person) => knows(p, 'rep') && amountOf(s, 'rep') < villHaAv(s, 'rep') && getable(s, p, 'torrgras') >= REP.torrgras + sparas(s, 'torrgras'); // eldens del sparas (steg 10.2.7)en
+export function twineRope(s: State, p: Person, hours: number, vill: number = villHaAv(s, 'rep')) { // vill: så många rep byn vill ha (fler att byta med handlaren, steg 6.2.11)
   const f = fartVid(s, p, 'tvinna'), bank = f > 1; // vid slöjdbänken
   const n = Math.min(hours * REP_TIMME * f, (getable(s, p, 'torrgras') - sparas(s, 'torrgras')) / REP.torrgras, vill - amountOf(s, 'rep'));
   if (n <= 0) return;
@@ -150,7 +150,7 @@ export function bearbeta(s: State, p: Person, art: Djurart, hours: number) {
   if (n <= 0 || art.kniv && knives(s) < 1 || !kanGoras(s, art.act)) { if (p.task) p.task.until = s.now; return; }
   const vems = stycka(s, p, art, n);
   // senorna blir med liten chans ett helt rep, som tillhör den som ägde mest av djuren
-  if (art.rep > 0 && knows(p, 'rep') && amountOf(s, 'rep') < TROSKEL.repVill && rnd(s, 'arbete', p) < n * art.rep) {
+  if (art.rep > 0 && knows(p, 'rep') && amountOf(s, 'rep') < villHaAv(s, 'rep') && rnd(s, 'arbete', p) < n * art.rep) {
     const agare = Object.keys(vems).sort((a, b) => vems[b] - vems[a])[0];
     put(s, 'rep', 1, agare !== undefined ? { [agare]: 1 } : undefined);
     count(s, 'repAvSenor');

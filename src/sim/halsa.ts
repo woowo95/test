@@ -108,7 +108,6 @@ export const HALSA = balans('halsa', {
   vilaOnt: 0.5, // den som har så här ont, eller ett infekterat sår, vilar hellre än arbetar
   mossaTakt: 1, // så mycket mossa man hittar i timmen när man letar i skogen ...
   mossaUte: 0.3, // ... och så stor del av det utanför skogen
-  mossaVill: 8, // man tar med sig mossa hem tills byn har så här mycket
   mossaTrad: 0.3, // chansen att ett fällt träd har mossa på sig ...
   mossaStam: 2, // ... och så mycket
   finChans: 0.25, // chansen att en skada på en del hamnar på en av de finare delarna under den (steg 8.2.1)
@@ -703,9 +702,11 @@ export function burenSteg(s: State, p: Person, t: Task) {
 export const vilaHellre = (p: Person) => !!p.skador?.length && (smarta(p) >= HALSA.vilaOnt || infektion(p) > 0) || !!p.sjuk && p.sjuk.grad >= SJUK.vilaFran && p.sjuk.st !== undefined; // också den sjuke med tydliga tecken (steg 9.5.4)
 
 // ---------- mossan (steg 2.5.2) ----------
+// så mycket mossa byn vill ha: förrådsmålet (val.ts sätter kroken, eftersom förrådsmålen läses efter den här filen)
+export const mossaKrok = { vill: (_s: State) => 1 };
 // den som letar i naturen (UTFALL samla i steg.ts) hittar mossa, mer i skogen, tills byn har så mycket den vill ha
 export function mossaFynd(s: State, tk: Task, dtSec: number) {
-  if (amountOf(s, 'mossa') + (tk.items?.mossa ?? 0) >= HALSA.mossaVill) return 0;
+  if (amountOf(s, 'mossa') + (tk.items?.mossa ?? 0) >= mossaKrok.vill(s)) return 0; // så mycket som används till förband (steg 10.2.12)
   return HALSA.mossaTakt * dtSec / HOUR_S * (isForest(s, tileOf(tk.tx, tk.ty)) ? 1 : HALSA.mossaUte);
 }
 // ett fällt träd har ibland mossa på sig, som den som hugger trä av stammen tar med sig (skog.ts)

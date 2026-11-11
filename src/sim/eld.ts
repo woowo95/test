@@ -13,7 +13,7 @@ import { ALDER, KROPP, ageOf, alive, count, forstaGang, gjort, isSick, living, l
 import { nTools } from './agande';
 import { SAKER } from './saker';
 import { halsa } from './halsa';
-import { flintFactor, flintorOchYxor, stoneDist, takeFrom } from './fynd';
+import { flintFactor, stoneDist, takeFrom } from './fynd';
 import { observe } from './minne';
 import { eldPlats } from './karta';
 import { groundOf, tileOf } from './mark';
@@ -79,7 +79,6 @@ export const ELD = balans('eld', {
   stenNara: 1, stenNaraDel: 3, // ... gånger Nara dit stenarna ligger inom så många rutor ...
   stenMedel: 3, stenMedelDel: 1.5, // ... Del inom så många ...
   stenAnnars: 0.4, // ... och annars
-  flintaMax: 4, // byn letar inte flinta när den har så här många flintor och yxor
   flintaTakt: 0.04, // flinta: chans per arbetstimme gånger hur lätt den är att hitta på platsen (flintFactor)
   flintaOkand: 0.4, // hur lätt den är att hitta när platsen inte är känd
   flintaStenar: 2, flintaSand: 1, // över Stenar är det vid stenarna (och platsen läggs på minnet), över Sand i sanden vid stranden
@@ -418,7 +417,7 @@ export function forageItems(s: State, p: Person, dtSec: number, fart = 1): Recor
   }
   // flinta är ovanlig och hittas oftast vid stenarna. Den slås mot en sten för att tända eld, och med en pinne blir den en yxa
   const ff = p.task ? flintFactor(s, p.task.tx, p.task.ty) : ELD.flintaOkand;
-  if (flintorOchYxor(s) < ELD.flintaMax && !overTak(s, 'flinta', p.task?.items?.flinta ?? 0) && chance(s, ELD.flintaTakt * ff * sk * SNABBARE / HOUR_S, dtSec, 'arbete', p)) {
+  if (underBuffert(s, 'flinta', p.task?.items?.flinta ?? 0) && chance(s, ELD.flintaTakt * ff * sk * SNABBARE / HOUR_S, dtSec, 'arbete', p)) {
     got.flinta = 1; count(s, ff > ELD.flintaStenar ? 'flintaSten' : 'flintaAnnan');
     if (p.task) takeFrom(s, 'flinta', p.task.tx, p.task.ty, 1);
     if (ff > ELD.flintaStenar && p.task) observe(s, p, 'flinta', p.task.tx, p.task.ty);
