@@ -28,6 +28,7 @@ import { taVapen } from './vakt';
 import { foddNar, gastNyckel } from './gastliv';
 import { gastAv, gastGar, gastTillbaka, nyGast, nyttGastId } from './gast';
 import { notis } from './notiser';
+import type { TalkEvent } from './samtal';
 import { groundOf, tileOf } from './mark';
 import { findPath, markFart } from './vag';
 import { GANG } from './gang';
@@ -69,6 +70,8 @@ export const ROVARE = balans('rovare', {
   nara: 1.5, // rövarna är framme vid förrådet så här nära
   // rövarnas val (steg 10.1.9–10.1.15, ROVARHANDLINGAR)
   rastR: 3, // rastplatsen: så här nära mitten håller de sig, och så långt går den som går omkring
+  rastaPoang: 0.35, gaPoang: 0.35, prataPoang: 0.3, // poängen för att vila, gå omkring och prata på rastplatsen (steg 10.2.24: vilan vann nästan alltid med 0,5)
+  pratSek: 40, // den som pratar samtalar ungefär en gång på så här många sekunder
   rastSek: [20, 90], // en vila, en promenad eller ett samtal på rastplatsen varar så här många sekunder
   valKvar: 0.2, valBrus: 0.3, // det hen redan gör har så här mycket försteg i valet, och vilan, promenaden och samtalet slumpas med så här mycket
   horhall: 30, // den som varnar hörs så här många rutor (gånger LARM.natt på natten): hörhållet är stort (steg 10.1.12) ...
@@ -430,7 +433,7 @@ setHotVilja(rovarVilja);
 //   - Plundringen: den som står vid en lagerplats där ingen står emot tar det mest värda, en sak i taget (ROVARE.taSek sekunder
 //     per sak), och bär hem det när hen bär så mycket hen orkar eller inget mer finns.
 export type RovarGor = 'tillRast' | 'rasta' | 'gaOmkring' | 'prata' | 'motMalet' | 'sla' | 'ta' | 'baraHem' | 'fly';
-interface RCtx { s: State; f: Rovarflock; r: Person; folk: Person[]; dt: number; mal: { x: number; y: number }; fiende?: Person; ivagen?: Person; // fiende = den närmaste som står emot, ivagen = en vuxen som inte står emot men står i vägen
+interface RCtx { ev?: TalkEvent[]; s: State; f: Rovarflock; r: Person; folk: Person[]; dt: number; mal: { x: number; y: number }; fiende?: Person; ivagen?: Person; // fiende = den närmaste som står emot, ivagen = en vuxen som inte står emot men står i vägen
   hot: number; last: number; kvar: number }
 // den som står emot: väntar med vapen, håller vakt eller slåss
 const starEmot = (q: Person) => forsvarar(q) || q.task?.act === 'vakt' || q.task?.act === 'strid';
@@ -457,9 +460,16 @@ export const ROVARHANDLINGAR: Record<RovarGor, { namn: string; poang: (c: RCtx) 
   // till rastplatsen utanför byn, innan flocken anfaller
   tillRast: { namn: 'Går mot rastplatsen', poang: c => !c.f.anfaller && c.f.rast && avst(c.r, c.f.rast) > ROVARE.rastR ? 1 : -1, gor: c => { ga(c, c.f.rast!); } },
   // på rastplatsen: vilar, går omkring lite och pratar med de andra
-  rasta: { namn: 'Rastar', poang: c => c.f.anfaller ? -1 : 0.5, gor: () => undefined },
-  gaOmkring: { namn: 'Går omkring', poang: c => c.f.anfaller || !c.f.rast ? -1 : 0.3, gor: c => { const g = gr(c.r); g.vx ??= c.f.rast!.x + (rnd(c.s, 'rovare') - 0.5) * 2 * ROVARE.rastR; g.vy ??= c.f.rast!.y + (rnd(c.s, 'rovare') - 0.5) * 2 * ROVARE.rastR; if (ga(c, { x: g.vx, y: g.vy }) < 0.6) g.gorTill = 0; } },
-  prata: { namn: 'Pratar', poang: c => c.f.anfaller || c.kvar < 2 ? -1 : 0.4, gor: c => { const o = rovarna(c.s, c.f).filter(q => q !== c.r).sort((a, b) => avst(a, c.r) - avst(b, c.r))[0]; if (o && avst(o, c.r) > 1.4) ga(c, { x: o.x + 0.8, y: o.y }); } },
+  // var och en vilar på sin egen plats runt rastplatsen, så att gänget sprider ut sig (steg 10.2.24)
+  rasta: { namn: 'Rastar', poang: c => c.f.anfaller ? -1 : ROVARE.rastaPoang, gor: c => { const g = gr(c.r); if (!c.f.rast) return; g.vx ??= c.f.rast.x + (rnd(c.s, 'rovare') - 0.5) * 2 * ROVARE.rastR; g.vy ??= c.f.rast.y + (rnd(c.s, 'rovare') - 0.5) * 2 * ROVARE.rastR; if (avst(c.r, { x: g.vx, y: g.vy }) > 0.6) ga(c, { x: g.vx, y: g.vy }); } },
+  gaOmkring: { namn: 'Går omkring', poang: c => c.f.anfaller || !c.f.rast ? -1 : ROVARE.gaPoang, gor: c => { const g = gr(c.r); g.vx ??= c.f.rast!.x + (rnd(c.s, 'rovare') - 0.5) * 2 * ROVARE.rastR; g.vy ??= c.f.rast!.y + (rnd(c.s, 'rovare') - 0.5) * 2 * ROVARE.rastR; if (ga(c, { x: g.vx, y: g.vy }) < 0.6) g.gorTill = 0; } },
+  // pratar med den närmaste i gänget: går fram och samtalar i samma samtalssystem som byn, med pratbubbla (steg 10.2.24)
+  prata: { namn: 'Pratar', poang: c => c.f.anfaller || c.kvar < 2 ? -1 : ROVARE.prataPoang, gor: c => {
+    const o = rovarna(c.s, c.f).filter(q => q !== c.r).sort((a, b) => avst(a, c.r) - avst(b, c.r))[0];
+    if (!o) return;
+    if (avst(o, c.r) > 1.4) { ga(c, { x: o.x + 0.8, y: o.y }); return; }
+    if (rnd(c.s, 'rovare') < c.dt / ROVARE.pratSek) rovarPrat.prata?.(c.s, c.r, o, c.ev); // ungefär ett samtal på pratSek sekunder
+  } },
   // mot målet när flocken anfaller
   motMalet: { namn: 'Går mot byn', poang: c => c.f.anfaller && !gr(c.r).nojd && !c.f.klar && avst(c.r, c.mal) > ROVARE.nara ? 1 : -1, gor: c => { if (ga(c, c.mal) < 0) gr(c.r).flytt = true; } }, // ingen väg dit: hen ger upp
   // slår den som står i vägen: den som står emot inom ROVARE.moter. Modet drar till striden och övermakten från den
@@ -576,7 +586,9 @@ function hotMot(s: State, f: Rovarflock, r: Person, folk: Person[]) {
   return de / Math.max(0.5, vi);
 }
 // flocken väljer och gör: var och en för sig
-function flockVal(s: State, f: Rovarflock, folk: Person[], dtSec: number) {
+// samtalet mellan två rövare (samtal.ts, satt i steg.ts så att filerna inte importerar varandra)
+export const rovarPrat: { prata?: (s: State, a: Person, b: Person, ev?: TalkEvent[]) => void } = {};
+function flockVal(s: State, f: Rovarflock, folk: Person[], dtSec: number, ev?: TalkEvent[]) {
   f.antal ??= f.folk.length;
   // rastplatsen (steg 10.1.9): utanför byns område på vägen mot förrådet; väntan börjar när den första är framme
   if (!f.rast) { const m = malet(s); f.rast = lurPlats(s, f, m) ?? { x: f.x, y: f.y }; f.vantat = false; }
@@ -609,7 +621,7 @@ function flockVal(s: State, f: Rovarflock, folk: Person[], dtSec: number) {
     const narmast1 = (l: Person[]) => l.sort((a, b) => avst(a, r) - avst(b, r))[0];
     const fiende = narmast1(folk.filter(q => alive(q) && vaken(q) && kanStaEmot(s, q) && avst(q, r) < ROVARE.moter));
     const ivagen = fiende ? undefined : narmast1(folk.filter(q => alive(q) && vaken(q) && !starEmot(q) && !gavSigNyss(s, q) && kanGa(q) && ageOf(q, s.now) >= ALDER.vuxen && avst(q, r) < ROVARE.trangt));
-    const c: RCtx = { s, f, r, folk, dt: dtSec, mal: malFor(s, f, r), fiende, ivagen, hot: hotMot(s, f, r, folk), last: lastAv(r), kvar: f.folk.length };
+    const c: RCtx = { ev, s, f, r, folk, dt: dtSec, mal: malFor(s, f, r), fiende, ivagen, hot: hotMot(s, f, r, folk), last: lastAv(r), kvar: f.folk.length };
     // valet: högst poäng, och det hen redan gör har ett litet försteg; en vila eller en promenad på rastplatsen varar en stund
     let bast: RovarGor = 'rasta', bp = -Infinity;
     const lugn = g.gor === 'rasta' || g.gor === 'gaOmkring' || g.gor === 'prata';
@@ -708,7 +720,7 @@ export function rovarTornado(s: State, f: Rovarflock, zon: number, dod: number, 
 }
 
 // varje slag (steg.ts): en flock kommer, ses, går in mot byn och flyr
-export function rovarSteg(s: State, dtSec: number) {
+export function rovarSteg(s: State, dtSec: number, ev?: TalkEvent[]) {
   const nyTimme = Math.floor(s.now / HOUR) !== Math.floor((s.now - dtSec * SEC) / HOUR);
   if (nyTimme && Math.floor(s.now / HOUR) % 24 === 12) radDygn(s); // räderna (steg 8.8.1)
   if (nyTimme) rovarnaKommer(s);
@@ -719,7 +731,7 @@ export function rovarSteg(s: State, dtSec: number) {
   for (const f of [s.rovare, ...(s.rovareFler ?? [])]) {
     if (!f) continue;
     if (f.folk.length) { facklaSteg(s, f); seSteg(s, f, folk); f.anfall = iByn(s, f); } // facklan på natten, och var och en som har gänget inom synhåll ser det
-    if (f.folk.length) flockVal(s, f, folk, dtSec);
+    if (f.folk.length) flockVal(s, f, folk, dtSec, ev);
   }
   varnaSteg(s, folk); // de som varnar hörs, och larmet sprids led för led (steg 10.1.12)
   if ([s.rovare, ...(s.rovareFler ?? [])].some(f => f && f.sedd !== undefined && f.gor !== 'flyr')) barnRop(s, folk);

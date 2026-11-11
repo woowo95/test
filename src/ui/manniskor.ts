@@ -342,6 +342,9 @@ function ritaRovarna(skugga: PIXI.Graphics) {
     sp.zIndex = y + 5 * 0.9;
     if (!ligger) fotSkugga(skugga, x - 4, Math.round(sp.zIndex) - 1, 4, 2, skuggLangd());
     sp.visible = true; sedd.add(g.id);
+    // rövaren som pratar med en annan i gänget (steg 10.2.24): bubblan som byns
+    const bb = r && !sk ? bubbles.find(q => q.id === r.id && q.until >= performance.now()) : undefined;
+    if (bb) pratRuta(x, sp.position.y - SYMBOL_LUFT, Math.sin(performance.now() / 500 + r!.id) * 0.6, bb.kind, 'neutral', bb.i);
   }
 }
 export function drawPeople(t: number) {

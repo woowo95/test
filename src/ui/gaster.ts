@@ -1,5 +1,5 @@
 import { kartKampe } from './stridbild';
-import { hp, gastLever, gastTingOf, TEK, HANDEL, HANDLAR_UTR, byId, gillar, handlarPerson, foddNar, gastLiv, gastNyckel, handlarFas, handlarPlats, rovarPlats, rovarna, klanById, grundvarde, handlarVarde, kgOf, kortTal, rymmer, sakNamn } from '../sim';
+import { ROVARHANDLINGAR, type RovarGor, hp, gastLever, gastTingOf, TEK, HANDEL, HANDLAR_UTR, byId, gillar, handlarPerson, foddNar, gastLiv, gastNyckel, handlarFas, handlarPlats, rovarPlats, rovarna, klanById, grundvarde, handlarVarde, kgOf, kortTal, rymmer, sakNamn } from '../sim';
 import type { ByteMinne, GastLiv, GastRel, Person, Roll, State } from '../sim';
 import { iconImg } from '../ikoner';
 import { esc } from './hjalp';
@@ -66,7 +66,7 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
       return {
       id: rovarGastId(r.id, i), namn: q.name, sex: q.sex, sort: r.rad ? 'Anfallare' : 'Rövare', farg: 0x5a5040,
       ...rovarPlats(q, t), // var och en går för sig (steg 6.6.9)
-      rovare: q, gor: sk ? (sk.k.lage === 'dod' ? 'Död' : sk.ligger ? 'Ligger nere' : sk.k.lage === 'flykt' ? 'Flyr' : 'Slåss vid förrådet') : gor, ligger: sk?.ligger,
+      rovare: q, gor: sk ? (sk.k.lage === 'dod' ? 'Död' : sk.ligger ? 'Ligger nere' : sk.k.lage === 'flykt' ? 'Flyr' : 'Slåss vid förrådet') : (q.gast?.gor && ROVARHANDLINGAR[q.gast.gor as RovarGor]?.namn) || gor, // var och ens handling (steg 10.2.24) ligger: sk?.ligger,
       fran: klanById(s, r.klan)?.namn,
       rader: [{ namn: 'Flocken', varde: `${n} rövare`, title: `En av ${n} i flocken` },
         // det hen bär (steg 10.1.8): vapnet i handen och resten, som saker

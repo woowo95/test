@@ -64,7 +64,7 @@ import { arbetsTimme, chooseTask, nastaBuske, nastaRedskap, spotFor } from './va
 import { FAGEL, djurSteg } from './djur';
 import { vargSteg, vargjaktSteg } from './varg';
 import { bjornSteg, bjornjaktSteg } from './bjorn';
-import { rovarSteg, rovarTornado } from './rovare';
+import { rovarPrat, rovarSteg, rovarTornado } from './rovare';
 import { handelSteg, handlaKlar, handlarMal, handlarPlats, handlarTornado, pratMedHandlare } from './handel';
 import { klanSteg } from './klaner';
 import { vaktSteg } from './vakt';
@@ -305,6 +305,8 @@ export function step(s: State, dtSec: number, events?: TalkEvent[]) { // också 
     }
   });
 }
+// två rövare som pratar på rastplatsen samtalar som byborna (steg 10.2.24)
+rovarPrat.prata = (s, a, b, ev) => { converse(s, a, [b], ev); count(s, 'rovarPrat'); };
 // det ett slag delar mellan systemen i TAKTER
 type Slag = { dt: number; t0: number; now: number; ai: number; ppl: Person[]; events?: TalkEvent[]; social: Person[]; inRum?: Map<number, number> };
 // hur många som är i varje rum (värmen räknas på det), en gång per slag när någon frågar
@@ -325,7 +327,7 @@ export const TAKTER: Takt[] = [
   { namn: 'handlaren', sek: 0, fn: (s, dt) => handelSteg(s, dt) }, // kommer, handlar och går (handel.ts, steg 4.4.1)
   { namn: 'vargarna', sek: 0, fn: (s, dt) => vargSteg(s, dt) }, // under istiden (varg.ts, steg 3.7.1)
   { namn: 'björnen', sek: 0, fn: s => bjornSteg(s) }, // den som kommer nära björnen (bjorn.ts, steg 6.6.5)
-  { namn: 'rövarna', sek: 0, fn: (s, dt) => rovarSteg(s, dt) }, // rövarflocken (rovare.ts, steg 4.4.5)
+  { namn: 'rövarna', sek: 0, fn: (s, dt, c) => rovarSteg(s, dt, c.events) }, // rövarflocken (rovare.ts, steg 4.4.5)
   { namn: 'främlingen', sek: 0, fn: (s, dt) => framlingSteg(s, dt) }, // som kommer gående (liv.ts, steg 9.2.115)
   { namn: 'tornadon', sek: 0, fn: s => tornadoSteg(s, { rovarTornado, handlarTornado, handlarPlats }) }, // drar fram (tornado.ts, steg 3.8.4), och rövarna och handlaren drabbas (steg 6.4.12)
   { namn: 'branden', sek: 0, fn: (s, dt) => { brandSteg(s, dt); brinnerSteg(s, dt); } }, // gnistor, blixten, elden som sprider sig och den som brinner (brand.ts)

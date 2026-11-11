@@ -2450,3 +2450,32 @@ SCENARIER.rovarinne = {
     ];
   },
 };
+
+SCENARIER.rovarrast = {
+  text: 'Livet på rastplatsen (steg 10.2.24): rövarna sprider ut sig, vilar, går omkring och pratar med varandra i samma samtalssystem som byn, med pratbubbla, och var och en har sin egen handling (panelen visar den)',
+  kor: () => {
+    const s = createState(4, START);
+    for (let i = 0; i < 12; i++) step(s, 300);
+    SIM.rovarnaKommer(s, 3);
+    const f = s.rovare!, ids = new Set(f.folk), handlingar = new Set<string>(), olika = { ja: 0, prov: 0 };
+    let prat = 0, rastTid = 0, isar = 0;
+    for (let i = 0; i < 120 && !f.anfaller; i++) {
+      const ev: TalkEvent[] = [];
+      step(s, 30, ev);
+      prat += ev.filter(e => ids.has(e.a) && ids.has(e.b)).length;
+      if (!f.vantat) continue;
+      rastTid += 30;
+      const fo = SIM.rovarna(s, f), gor = fo.map(r => r.gast!.gor ?? '');
+      gor.forEach(g => handlingar.add(g));
+      olika.prov++; if (new Set(gor).size > 1) olika.ja++;
+      const par = fo.flatMap((a, j) => fo.slice(j + 1).map(b => Math.hypot(a.x! - b.x!, a.y! - b.y!))), d = par.reduce((x, y) => x + y, 0) / Math.max(1, par.length);
+      if (d > 1.5) isar++; // i snitt mer än en och en halv ruta isär (de som pratar står nära)
+    }
+    return [
+      [`gänget rastade ${Math.round(rastTid / 60)} minuter`, rastTid >= 600],
+      [`och gjorde ${[...handlingar].join(', ')}`, handlingar.has('rasta') && handlingar.has('gaOmkring') && handlingar.has('prata')],
+      [`de pratade med varandra med pratbubbla (${prat} samtal)`, prat > 0],
+      [`var och en gör sitt (olika handlingar i ${olika.ja} av ${olika.prov} prov) och de står utspridda (${isar} prov)`, olika.ja > olika.prov * 0.2 && isar > olika.prov * 0.3],
+    ];
+  },
+};
