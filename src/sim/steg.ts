@@ -105,6 +105,7 @@ import { ar_vatska, drickTe, fyllVatska, ledigFor, teFaktor } from './vatskor';
 import { rullaKvalitet } from './kvalitet';
 import { protesTimme } from './protes';
 import { halsoNotiser } from './halsonotiser';
+import { kost, kostStart } from './kostnad';
 import { borjaForlossning } from './forlossning';
 
 // Simuleringen går i slag om fem minuter (BEAT), i spelet och vid ikappräkning likadant. Inom ett slag går tiden åt
@@ -304,6 +305,7 @@ export function step(s: State, dtSec: number, events?: TalkEvent[]) { // också 
   });
 }
 function slag(s: State, dtSec: number, events?: TalkEvent[]) {
+  let k = kostStart();
   useMap(s);
   const t0 = s.now;
   s.now += dtSec * SEC;
@@ -316,6 +318,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   const ppl = living(s);
   gridOf(s); // väggarna och rummen, så att vägsökningen vet var väggarna står
   stationRutor(s); sakerPaGolvet(s); // ... och var hyllorna står och sakerna ligger på golvet (steg 2.3.6)
+  k = kost('kartan', k);
   djurSteg(s, dtSec); // kaningrupperna väljer plats när deras tid börjar
   klanSteg(s, dtSec); // grannklanerna växer och glömmer (klaner.ts, steg 4.4.3)
   handelSteg(s, dtSec); // handlaren kommer, handlar och går (handel.ts, steg 4.4.1)
@@ -326,10 +329,12 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   tornadoSteg(s, { rovarTornado, handlarTornado, handlarPlats }); // tornadon drar fram (tornado.ts, steg 3.8.4), och rövarna och handlaren drabbas (steg 6.4.12)
   brandSteg(s, dtSec); // gnistor, blixten och elden som sprider sig (brand.ts, steg 3.8.5)
   brinnerSteg(s, dtSec); // den som brinner (brand.ts, steg 6.4.16)
+  k = kost('världen', k);
   // förråd: ruttning och ved
   wearStore(s, dtSec); // slitage per slag, fortare utanför lagret
   stepBlotVed(s, dtSec); // veden blir blöt och torkar (steg 7.3.4)
   stepFire(s, dtSec, ppl);
+  k = kost('förrådet och elden', k);
   const fh = hearthOf(s.fire), temp = temperature(s), coldRate = coldOf(temp);
   const learn = 1 + 0.1 * s.seder.v.nyfikenhet; // en nyfiken by lär sig snabbare
   if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
@@ -344,6 +349,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
     historikSteg(s); // nyckeltalen till byns historik (läses inte av simuleringen)
     compact(s); // här och inte i sparningen, så att alla lägen städar vid samma tid
   }
+  k = kost('timmen', k);
 
   let social: Person[] = [];
   const egenTid = new Map<Person, number>(); // så lång tid var och en stegades (samtalen räknas på den)
@@ -352,9 +358,14 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   for (const p of ppl) {
     if (!alive(p)) continue; // dödad tidigare i samma slag (av vargar eller i ett slagsmål)
     const a = ageOf(p, now);
+    k = kost('rummen och åldern', k);
     needsStep(s, p, a, dtSec, coldRate, fh, inRum, temp);
+    k = kost('behoven', k);
     if (p.task?.act !== 'strid') needLadder(s, p, dtSec); // äta: sitt eget, byns, och i yttersta nöd andras (behov.ts). Inte mitt i en strid (strid.ts)
-    if (healthStep(s, p, a, ai, dtSec)) continue; // dog
+    k = kost('äta', k);
+    const dog = healthStep(s, p, a, ai, dtSec);
+    k = kost('hälsan', k);
+    if (dog) continue; // dog
     pregnancy(s, p, a, ppl.length, dtSec);
     if (!alive(p)) continue; // dog i barnsäng
     // Under de korta stegen (en strid pågår, steg 10.1.4) stegas hela byn varje gång, så att ingen är före eller efter de andra:
@@ -364,10 +375,13 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
     const egenDt = dtSec, slut = now;
     if (spar.pa) { spar.v.set(p, [now - egenDt * SEC, p.x, p.y]); spar.u.set(p, [[now - egenDt * SEC, kopia(p.task)]]); }
     egenTid.set(p, egenDt);
+    const akt = p.task?.act ?? 'välja';
     taskStep(s, p, a, slut, egenDt, learn, social);
+    k = kost('aktivitet: ' + akt, k);
     s.now = now;
     if (p.thoughts.some(x => x.until <= now)) p.thoughts = p.thoughts.filter(x => x.until > now);
   }
+  k = kost('rummen och åldern', k);
   // samtal: ca ett per 4 minuter per person i social aktivitet
   const e0 = events?.length ?? 0;
   if (social.length > 1) {
@@ -383,10 +397,12 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
       if (n && others.length) { count(s, 'samtal', n); if (p.task && !ACTS[p.task.act].social) p.pratArbete = (p.pratArbete ?? 0) + n; } // samtalen under arbetet (steg 8.1.12)
     }
   }
+  k = kost('samtalen', k);
   kartStridSteg(s, dtSec); serStriden(s); // striderna på kartan stegas med byn, och de som ser dem väljer på nytt (kartstrid.ts, steg 10.1.4)
   // gästernas vardag (steg 9.2.113, gastvardag.ts): värmen räknas som en bybos, men reskläderna tar det mesta av kylan
   gastVardag(s, dtSec, g => { const v = varmeDelar(s, g, coldRate, inRum, temp); v.kyla *= 1 - GASTVARD.klad; return nyVarme(g.warm, v, dtSec / HOUR_S); });
   pratMedHandlare(s, dtSec, events); // småprat med handlaren (steg 4.5.4.15, handel.ts)
+  k = kost('striden och gästerna', k);
   // samtalen visas utspridda över slaget
   if (events) for (let i = e0; i < events.length; i++) events[i].t = t0 + (i - e0 + 0.5) / (events.length - e0) * dtSec * SEC;
   // relationer bleknar långsamt utan umgänge
@@ -398,6 +414,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   regulate(s, dtSec);
   tidyTools(s);
   placeTools(s); // redskapen som släpptes läggs i förrådet
+  kost('städningen', k);
 }
 
 
