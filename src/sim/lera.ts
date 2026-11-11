@@ -9,7 +9,7 @@ import { bynsMitt, omrade } from './omrade';
 import { balans } from './balans';
 import { count, forstaGang, log } from './folk';
 import { clamp } from './slump';
-import { H, Person, State, Task, W, inMap } from './typer';
+import { H, HOUR, Person, State, Task, W, egen, inMap, tvaDelar } from './typer';
 import { wearUsed } from './redskap';
 
 export const LERA = balans('lera', {
@@ -46,4 +46,6 @@ export function leraGravd(s: State, p: Person, t: Task) {
   if (forstaGang(s, 'leraForsta')) log(s, `${p.name} grävde lera vid stranden.`, 'world', [p.id]);
 }
 import { leraKrok } from './teknik';
-leraKrok.finns = s => leraPlats(s);
+// (teknikernas krav frågar ofta; platsen räknas om en gång i timmen, steg 10.2.21)
+const leraNu = tvaDelar<{ h: number; v: ReturnType<typeof leraPlats> }>(); // (två delar: gränssnittet fyller inte simuleringens, regel 4)
+leraKrok.finns = s => { const h = Math.floor(s.now / HOUR), m = egen(leraNu), c = m.get(s); if (c && c.h === h) return c.v; const v = leraPlats(s); m.set(s, { h, v }); return v; };

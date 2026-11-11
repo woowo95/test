@@ -30,7 +30,7 @@ import { fylldSack, redskapIHanden, tidyTools } from './agande';
 import { kvEffekt } from './kvalitet';
 import { SKOG, chopStock, fellTree, rotStumps, stocks, stubbeGravd } from './skog';
 import { needLadder, noticeTheft, stole, takeMaterial, getable } from './behov';
-import { capacity, mayTake, lagerFlyttVal, lagerFlytta, avbryt, bordSlag, carryKind, dropSpot, fetchSpot, helaIBordan, homeKind, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore, ownsAmount, use, put } from './lager';
+import { lagerFlyttTimme, capacity, mayTake, lagerFlyttVal, lagerFlytta, avbryt, bordSlag, carryKind, dropSpot, fetchSpot, helaIBordan, homeKind, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore, ownsAmount, use, put } from './lager';
 import { SAKER, viktOf } from './saker';
 import { DJURARTER, REDSKAP, bearbeta, djurKvar, twineRope, wearUsed } from './redskap';
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
@@ -96,7 +96,7 @@ import { tal, horsel, barMed, burenSteg, halsa, halsaSteg, lakerFullt, lamnaAv, 
 import { bordPlats, fullBorda, kladVarme, ryggKorg, ryms, slitRygg, stepKlader } from './utrustning';
 import { stepPynt } from './pynt';
 import { stadaByten } from './byte';
-import { stationFor, kvVid, stationFlytta, finishStation, finishTillbehor, stationAt, stationRutor, stepStationer, tillbehorVarme, workStation } from './stationer';
+import { stationFlyttTimme, stationFor, kvVid, stationFlytta, finishStation, finishTillbehor, stationAt, stationRutor, stepStationer, tillbehorVarme, workStation } from './stationer';
 import { forbrukTimme, underBuffert, villHaAv } from './forradsmal';
 import { notis } from './notiser';
 import { stepKrukor } from './kruka';
@@ -374,6 +374,8 @@ export const TAKTER: Takt[] = [
   { namn: 'stepNaken', sek: 3600, fn: s => { stepNaken(s); } },
   { namn: 'stepByggplan', sek: 3600, fn: s => { stepByggplan(s); } },
   { namn: 'planBuild', sek: PLAN.varTim * 3600, fn: s => { planBuild(s); } }, // byggplanen (steg 7.2.3)
+  { namn: 'lagerFlytt', sek: 4 * 3600, fn: s => { lagerFlyttTimme(s); } }, // en lagerplats närmare mitten (steg 9.4.7)
+  { namn: 'stationFlytt', sek: 4 * 3600, fn: s => { stationFlyttTimme(s); } }, // en station ute närmare dem som använder den (steg 9.4.8)
   { namn: 'stepEldFlytt', sek: 3600, fn: s => { stepEldFlytt(s); } },
   { namn: 'lagerIStraket', sek: 3600, fn: s => { lagerIStraket(s); } },
   { namn: 'stepPaborjat', sek: 3600, fn: s => { stepPaborjat(s); } },
