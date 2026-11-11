@@ -487,9 +487,13 @@ function vantar(p: Person, tk: Task, now: number, dt: number) {
 // s.takter; en by som saknar den (en ny eller äldre sparning) räknar raden som om den räknats när slaget började
 function taktDt(s: State, t: Takt, i: number, now: number, dtSec: number) {
   if (t.sek <= 0) return dtSec;
-  const tk = s.takter ??= {}, P = t.sek * SEC, off = (t.fas ?? (i * 0.618) % 1) * P;
-  let sist = tk[t.namn] ?? now - dtSec * SEC;
-  if (sist > now || now - sist > P + dtSec * SEC) sist = now - dtSec * SEC; // klockan har flyttats (ett prov eller en äldre sparning): räkna som ny
+  // (det som räknas i hela timmar går vid timmens början, som klockan i spelet: motgångarna, vädret och dygnets händelser följer
+  // timmen; det som räknas oftare sprids över perioden)
+  const tk = s.takter ??= {}, P = t.sek * SEC, off = (t.fas ?? (t.sek % 3600 === 0 ? 0 : (i * 0.618) % 1)) * P;
+  const sist = tk[t.namn];
+  // första gången (en ny by eller en äldre sparning), eller när klockan har flyttats (ett prov): systemet räknas direkt, så att
+  // det som räknas sällan (timmens behov, byggplanen) finns från början
+  if (sist === undefined || sist > now || now - sist > P + dtSec * SEC) { tk[t.namn] = now; return dtSec; }
   if (Math.floor((now - off) / P) === Math.floor((sist - off) / P)) { tk[t.namn] = sist; return undefined; }
   tk[t.namn] = now;
   return (now - sist) / SEC;
