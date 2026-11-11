@@ -2502,3 +2502,31 @@ SCENARIER.rovarbredvid = {
     ];
   },
 };
+
+SCENARIER.rovarmotet = {
+  text: 'Mötet på vägen (steg 10.2.26): en kolonist på promenad längs vägen när gänget går mot byn. Rövarna väljer med poäng att slå, hota, ta det hen bär eller gå förbi, och kolonisten ser dem, varnar och går undan eller slåss; ingen går rakt igenom en fiende',
+  kor: () => {
+    const s = createState(4, START);
+    for (let i = 0; i < 12; i++) step(s, 300);
+    SIM.skickaRovare(s, 4);
+    const f = s.rovare!, fo = SIM.rovarna(s, f);
+    const e = SIM.eldPlats(s), mx = (fo[0].x! + e.x) / 2, my = (fo[0].y! + e.y) / 2;
+    const k = living(s).find(q => SIM.ageOf(q, s.now) >= 18)!, plats = SIM.freeNear(s, Math.round(mx), Math.round(my));
+    k.x = plats.x + 0.5; k.y = plats.y + 0.5; Object.assign(k, { hunger: 0.9, torst: 0.9, toa: 0.9, rest: 0.9 });
+    k.task = { act: 'promenad', phase: 'do', tx: k.x, ty: k.y, until: s.now + HOUR, carry: 0, why: 'prov' };
+    const val = new Set<string>(), kolonist = new Set<string>();
+    let igenom = 0;
+    for (let i = 0; i < 300 && f.folk.length; i++) {
+      step(s, 2);
+      for (const r of SIM.rovarna(s, f)) { val.add(r.gast!.gor ?? ''); if (SIM.alive(k) && k.task?.act !== 'strid' && r.gast!.gor !== 'sla' && Math.hypot(r.x! - k.x, r.y! - k.y) < 0.3) igenom++; }
+      if (k.task) kolonist.add(k.task.act);
+    }
+    const reag = ['hota', 'taBorda', 'sla'].filter(x => val.has(x)), svar = [...kolonist].filter(a => a !== 'promenad');
+    return [
+      [`rövarna valde ${[...val].join(', ')}`, val.has('motMalet')],
+      [`och mötte kolonisten på vägen (${reag.join(', ') || 'ingen'}) eller gick förbi`, true],
+      [`kolonisten såg dem och gjorde ${svar.join(', ') || 'inget'}`, svar.length > 0],
+      [`ingen gick rakt igenom en fiende (${igenom} gånger närmare än 0,3 rutor utanför striden)`, igenom === 0],
+    ];
+  },
+};
