@@ -1,10 +1,11 @@
 import { DAY, HOUR, MIN, Person, State } from './typer';
-import { alive, byId, count, enTill, forstaGang, gjort, living, log, ovning, stat, think } from './folk';
+import { alive, byId, count, enTill, forstaGang, gjort, log, ovning, stat, think } from './folk';
 import { clamp, rnd } from './slump';
 import { Del, addDel } from './egendom';
 import { amountOf, put, use } from './lager';
 import { Station, isKlar, kanGoras, stationFor, stationerOf } from './stationer';
-import { EKONOMI } from './ekonomi';
+import { matPerDygn } from './ekonomi';
+import { ageIndex, kallTid } from './tid';
 import { SAKER } from './saker';
 import { loggBer } from './berattelser';
 import { balans } from './balans';
@@ -119,10 +120,11 @@ export const TORK = balans('torkning', {
   dygn: 5, // så många dygn tar det att torka kött och fisk på ställningen
   maltDygn: 3, // och så många dygn gror det blötta kornet och torkar till malt (steg 9.6.13, brygg.ts)
   rymd: 4, // så mycket ryms på en ställning (fyra köttbitar, steg 2.10.22)
-  maxStall: 4, // byn bygger högst så här många ställningar
   timme: 12, // så mycket som hängs upp eller tas ner i timmen
   maxTim: 1, // ett pass vid ställningen är högst så här många timmar
-  spara: 1, // så många dygns mat för alla i byn behålls rått (det äts innan det ruttnar); resten hängs upp
+  // det råa som behålls (steg 10.2.11): det byn äter (matPerDygn i ekonomi.ts) så länge det råa håller; resten hängs upp. Inför och
+  // under istiden vill byn ha torkad mat för vinterDygn dygn, och då hängs allt råa över TORK.min upp tills den har det
+  vinterDygn: 4,
   min: 1, // byn hänger upp när det finns så här mycket över
 });
 // det som torkas och vad det blir. I den ordning det hängs upp: det som ruttnar fortast först. En ny rad här och en sak i saker.ts
@@ -158,11 +160,21 @@ const hangtSumma = (t?: Station) => { let n = 0; for (const q of t?.tork ?? []) 
 export const torrDel = (s: State, q: Hang, k: TorkSlag = 'tork') => clamp((s.now - q.t) / ((q.k === 'maltkorn' ? TORK.maltDygn : torkDygn(k)) * DAY), 0, 1);
 const klar = (s: State, q: Hang, k: TorkSlag = 'tork') => s.now - q.t >= (q.k === 'maltkorn' ? BRYGG_MALT() : torkDygn(k)) * DAY; // maltet gror och torkar (steg 9.6.13)
 const BRYGG_MALT = () => TORK.maltDygn;
-// så mycket rått som finns över det byn äter innan det ruttnar
+// så mycket rått (i saker) som finns över det byn äter innan det ruttnar (steg 10.2.11): det äts under så många dygn som det som
+// ruttnar först håller. Inför och under istiden behålls inget rått förrän byn har sin torkade mat för vintern (torkVinter)
 function ratOver(s: State, k: TorkSlag = 'tork') {
-  let n = 0;
-  for (const r of TORK_RAD[k]()) n += amountOf(s, r.ra);
-  return Math.max(0, n - TORK.spara * living(s).length * EKONOMI.matPerDygn);
+  let n = 0, mat = 0, haller = Infinity;
+  for (const r of TORK_RAD[k]()) { const a = amountOf(s, r.ra); if (a < 1) continue; n += a; mat += a * (SAKER[r.ra]?.mat ?? 1); haller = Math.min(haller, SAKER[r.ra]?.haller ?? 1); }
+  if (!n) return 0;
+  const spara = torkVinter(s) ? 0 : matPerDygn(s) * (haller === Infinity ? 1 : haller);
+  return Math.max(0, Math.floor((mat - spara) / (mat / n)));
+}
+// byn vill ha mer torkad mat inför vintern: inför och under istiden, och den torkade och rökta maten räcker kortare än TORK.vinterDygn
+function torkVinter(s: State) {
+  if (!kallTid(ageIndex(s))) return false;
+  let torr = 0;
+  for (const r of [...TORKAS, ...ROKAS]) if (SAKER[r.blir]?.mat) torr += amountOf(s, r.blir) * SAKER[r.blir]!.mat!;
+  return torr < matPerDygn(s) * TORK.vinterDygn;
 }
 // arbetet som väntar vid ställningarna: det som är klart att ta ner, och det råa som ska upp och får plats. fri = platsen
 // som finns när det klara tagits ner, over = det råa som finns över
@@ -180,8 +192,7 @@ function torkArbete(s: State, k: TorkSlag = 'tork') {
 export function torkBrist(s: State) {
   const n = torkarna(s).length;
   if (!n) return 1;
-  if (n >= TORK.maxStall) return 0;
-  const a = torkArbete(s);
+  const a = torkArbete(s); // så många ställningar som det råa som finns över behöver (steg 10.2.11)
   return a.over >= TORK.min ? clamp((a.over - a.fri) / TORK.rymd, 0, 1) : 0;
 }
 // p kan torka: byn har ställningen, något är klart att ta ner eller det finns rått över och plats, och ingen annan gör det
@@ -232,7 +243,7 @@ export function torka(s: State, p: Person, hours: number, k: TorkSlag = 'tork') 
 // förrådet, och den tomma krukan är ledig igen. Rätten är deras som ägde råvarorna
 export const KOK = balans('kokning', {
   prepMin: 3, // så många minuters arbete tar det att förbereda en rätt (2–4 minuter i designen)
-  vill: 1, // byn lagar mat när den har färre rätter än så här många per invånare
+  dygn: 1, // byn lagar mat när rätterna räcker kortare än så här många dygn av det byn äter (matPerDygn, steg 10.2.11)
 });
 const RATT_SMAK = ['lok', 'salt', 'rolleka']; // smaken i krukan (steg 9.6.3, 9.6.19 och 9.6.20)
 // råvarorna som går i krukan: de med grupper, utom det redan grillade och det som först ska slaktas
@@ -265,9 +276,11 @@ export const hallerMedel = (ing: [string, number][]) => { let h = 0, n = 0; for 
 export const ledigKruka = (s: State) => tingOf(s).find(t => t.k === 'lerkruka_mellan' && t.ler === undefined && !t.inne && !t.kok && !t.vaxt && t.hos === undefined && t.c > 0);
 // krukorna som står på elden
 export const kokarNu = (s: State) => tingOf(s).filter(t => t.kok);
-const rattAntal = (s: State) => RATT_SAKER.reduce((n, k) => n + amountOf(s, k), 0) + kokarNu(s).reduce((n, t) => n + t.kok!.n, 0);
+// rätterna i förrådet och i krukorna, i mat (steg 10.2.11): mot det byn äter
+const rattMat = (s: State) => RATT_SAKER.reduce((n, k) => n + amountOf(s, k) * (SAKER[k]?.mat ?? 1), 0) + kokarNu(s).reduce((n, t) => n + t.kok!.n, 0);
+const ratterBehovs = (s: State) => rattMat(s) < matPerDygn(s) * KOK.dygn;
 // p kan laga mat: kan krukan, elden brinner, en ledig kruka, något att koka, byn har för få rätter och ingen annan lagar mat
-export const kanKoka = (s: State, p: Person) => knows(p, 'kruka') && s.fire.lit && !!ledigKruka(s) && rattAntal(s) < KOK.vill * living(s).length && enTill(s, 'koka_mat', p) && !!kokRecept(s, p);
+export const kanKoka = (s: State, p: Person) => knows(p, 'kruka') && s.fire.lit && !!ledigKruka(s) && ratterBehovs(s) && enTill(s, 'koka_mat', p) && !!kokRecept(s, p);
 // förberedelsen är klar (KLAR i steg.ts): råvarorna tas, och rätten ställs på elden i krukan
 export function kokaKlar(s: State, p: Person) {
   const r = kokRecept(s, p), t = ledigKruka(s);
@@ -316,7 +329,7 @@ export function stekRecept(s: State, p?: Person) {
   }
   return undefined;
 }
-export const kanSteka = (s: State, p: Person) => knows(p, 'stekhall') && s.fire.lit && !!stekhallen(s) && rattAntal(s) < KOK.vill * living(s).length && !!stationFor(s, 'steka', p) && !!stekRecept(s, p);
+export const kanSteka = (s: State, p: Person) => knows(p, 'stekhall') && s.fire.lit && !!stekhallen(s) && ratterBehovs(s) && !!stationFor(s, 'steka', p) && !!stekRecept(s, p);
 export function stekaKlar(s: State, p: Person) {
   const r = stekRecept(s, p);
   if (!r || !s.fire.lit || !stekhallen(s)) return;
@@ -336,10 +349,10 @@ export const BAK = balans('bak', {
   min: 3, // så många minuters arbete
   mjol: 4, ved: 1, // så mycket mjöl och ved per sats; vattnet tas ur en fylld behållare
   brod: 4, // så många bröd blir det
-  vill: 1, // byn bakar när den har färre bröd än så här många per invånare
+  dygn: 1, // byn bakar när bröden räcker kortare än så här många dygn av det byn äter (steg 10.2.11)
 });
 export const bakugnen = (s: State) => stationerOf(s).find(t => t.k === 'bakugn' && isKlar(t) && !t.deg);
-export const kanBaka = (s: State, p: Person) => knows(p, 'bakugn') && !!bakugnen(s) && amountOf(s, 'brod') < BAK.vill * living(s).length && !!stationFor(s, 'baka', p) && getable(s, p, 'mjol') >= BAK.mjol && getable(s, p, 'ved') >= BAK.ved && !!fylldSack(s);
+export const kanBaka = (s: State, p: Person) => knows(p, 'bakugn') && !!bakugnen(s) && amountOf(s, 'brod') * (SAKER.brod?.mat ?? 1) < matPerDygn(s) * BAK.dygn && !!stationFor(s, 'baka', p) && getable(s, p, 'mjol') >= BAK.mjol && getable(s, p, 'ved') >= BAK.ved && !!fylldSack(s);
 export function bakaKlar(s: State, p: Person) {
   const t = bakugnen(s), sack = fylldSack(s);
   if (!t || !sack || getable(s, p, 'mjol') < BAK.mjol || getable(s, p, 'ved') < BAK.ved) return;

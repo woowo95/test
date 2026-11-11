@@ -60,7 +60,7 @@ export function atSteg(s: State) {
 // hur många dygn maten i förrådet räcker (steg 2.12.4): räknat av det byn faktiskt äter per person (atSteg), och aldrig av mindre
 // än kroppen behöver, så att en by som inte har något att äta inte tror att maten räcker längre. Bara den mat räknas som hinner
 // ätas innan den ruttnar (steg 3.10.9, matSomHaller i lager.ts): ett fullt förråd av fisk som ruttnar i morgon räcker inte länge
-function matPerDygn(s: State) {
+export function matPerDygn(s: State) {
   const ppl = living(s), kropp = ppl.length ? ppl.reduce((t, p) => t + kroppensMat(p, s.now), 0) : 24 / KROPP.hungerTim / KROPP.mattar; // en tom by räknas som en vuxen
   return Math.max(kropp, ppl.length * (s.atTakt ?? 0));
 }

@@ -1,5 +1,5 @@
 // Scenarier. Djur och natur: djur, abborre, sjön, kaniner, rötter, värmekartor och naturen.
-import { FANGST, createState, bearbeta, canProcess, makeTool, step, living, cloneState, ageStart, nyKalender, pilesOf, amountOf, STACK, isLight, T, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, findL, areaOf, describe, utanforByn, bynsMitt, FYND, FYND_IDS, GRUPPER, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, observe, hoped, Lager, skyggOf, grupperOf, KANINER, share, djurOf, KANIN, SLAKT, DJUR, DJURARTER, gain, ownsAmount, setAmount, BEAT, matGott, barnMat, hungerFlytt, regulate, EKONOMI, kroppensMat, foodDays, SAMTALSSLAG, SAKER, materialOf, balansTal, fullBorda } from '../../sim';
+import { FANGST, createState, bearbeta, canProcess, makeTool, step, living, cloneState, ageStart, nyKalender, pilesOf, amountOf, STACK, isLight, T, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, findL, areaOf, describe, utanforByn, bynsMitt, FYND, FYND_IDS, GRUPPER, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, observe, hoped, Lager, skyggOf, grupperOf, KANINER, share, djurOf, KANIN, SLAKT, DJUR, DJURARTER, gain, ownsAmount, setAmount, BEAT, matGott, barnMat, hungerFlytt, regulate, kroppensMat, foodDays, SAMTALSSLAG, SAKER, materialOf, balansTal, fullBorda } from '../../sim';
 import * as SIM from '../../sim';
 const { RT, STATION } = SIM;
 import { FOREST, isSoil } from '../../sim/vag';
@@ -1222,7 +1222,8 @@ SCENARIER.tork = {
   kor: () => {
     const { TORK, kanTorka, torka, torken, torkarna, torkBrist, ruttTemp, LAGER, FOOD } = SIM;
     const s = createState(1, START); klockan(s); tandEld(s);
-    const folk = living(s), p = folk.find(r => ageOf(r, s.now) >= 18)!, spara = TORK.spara * folk.length * EKONOMI.matPerDygn;
+    const folk = living(s), p = folk.find(r => ageOf(r, s.now) >= 18)!;
+    const spara = () => SIM.matPerDygn(s) * (SAKER.fisk!.haller ?? 1); // det byn äter så länge fisken håller (steg 10.2.11)
     setMat(s, { fisk: 40 });
     const utan = !kanTorka(s, p);
     const t = medBank(s, 'tork'), ute = !t.inne;
@@ -1245,7 +1246,7 @@ SCENARIER.tork = {
     torka(s, p, 1);
     const torrt = amountOf(s, 'torrfisk'), ner = Math.abs(torrt - hangt) < 1e-6 && !(t.tork ?? []).length;
     // byn behåller det rått som den äter innan det ruttnar
-    setMat(s, { fisk: spara * 0.9 });
+    setMat(s, { fisk: Math.floor(spara() * 0.9) });
     const sparar = !kanTorka(s, p);
     // det torkade håller så länge något får hålla i lagret och äts sist
     const haller = SAKER.torrfisk!.haller === LAGER.maxDygn && SAKER.torrkott!.haller === LAGER.maxDygn && FOOD.slice(-2).sort().join() === 'torrfisk,torrkott';
@@ -1268,7 +1269,7 @@ SCENARIER.tork = {
       [`med två ställningar hängs det upp på båda (${pa2.toFixed(1)} på den andra)`, tva],
       [`det som hänger ruttnar inte och tas inte ner förrän efter ${TORK.dygn} dygn`, intefardigt],
       [`efter ${TORK.dygn} dygn tas det ner som torkad fisk (${torrt.toFixed(1)})`, klart && ner],
-      [`byn behåller ${spara.toFixed(1)} rått, det den äter innan det ruttnar`, sparar],
+      [`byn behåller ${spara().toFixed(1)} rått, det den äter innan det ruttnar`, sparar],
       ['det torkade håller så länge något får hålla i lagret och äts sist', haller],
       ['i frost ruttnar maten nästan inte', frost],
       ['torkställningen är en teknik efter repet', tekOk],
