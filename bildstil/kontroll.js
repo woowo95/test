@@ -16,6 +16,10 @@
       kontroller: ['perspektiv'], text: 'Stationer, bänkar, bord, bäddar och härdar ses snett ovanifrån: en yta ovanifrån och en mörkare framkant, aldrig rakt från sidan. Formen är annars fri.' },
     { id: 'bars', namn: 'Bärs', ord: /rem\b|remmen|båge|bågen|koger|säck|sele|väska|pung|kappa|mantel|sjal|tunika|skjorta|bälte|plagg|protes|förband|spjäla|remsa/i,
       kontroller: ['huvudet', 'allaHall'], text: 'Det man bär sitter som det logiskt gör: remmar och strängar går runt kroppen, aldrig genom huvudet eller ansiktet, och det visas på kolonisten i alla fyra riktningar och i porträttet.' },
+    { id: 'plagg', namn: 'Plagg', ord: /kappa|mantel|sjal|tunika|skjorta|plagg|tröja|rock\b|kjol|byxor|klänning/i, kontroller: [], halsen: true,
+      text: 'Ett plagg får gå upp till halsen: kragen och sjalen täcker halsen och hakan, men aldrig ansiktet.' },
+    { id: 'mark', namn: 'Mark', ord: /^(hage|hagen|äng|ängen|slåtteräng|slåtterängen|åker|åkern|fält|fältet|ruta|rutan)$/i, kontroller: [], utom: ['olika'],
+      text: 'En markruta fyller hela rutan, så versionerna skiljer sig i mönstret och inte i formen.' },
     { id: 'huvud', namn: 'På huvudet', ord: /huva|hatt|mössa|hjälm|luva|bonad|krona|krans|pannband|ögonlapp/i, kontroller: [], utom: ['huvudet'],
       text: 'Det som sitter på huvudet får täcka huvudet.' },
   ];
@@ -129,6 +133,7 @@
   // ---------- kolonisterna och porträtten i en ritning ----------
   // var en figur (ur BYBO, SMABARN eller porträttet) ligger i ritningen: den plats där flest av dess punkter är oförändrade
   function hitta(B, F) {
+    if (F.plats) return F.plats; // den som ritat figuren har sagt var (forslag.js): kläder kan täcka den så att den inte känns igen
     const pts = []; for (let i = 0; i < F.px.length; i++) if (F.px[i] >= 0) pts.push(i);
     if (!pts.length || F.w > B.w || F.h > B.h) return null;
     const prov = pts.filter((_, k) => k % Math.max(1, (pts.length / 24) | 0) === 0);
@@ -140,6 +145,20 @@
       if (n > bn) { bn = n; bast = { ox, oy }; }
     }
     return bast && bn >= pts.length * 0.55 ? bast : null;
+  }
+  // ritningen utan kolonisternas och porträttens oförändrade punkter: kvar blir det som ritats på dem och sakerna bredvid
+  function utanFigurer(R) {
+    const B = Bild(R.B.w, R.B.h, R.B.P); B.px.set(R.B.px);
+    for (const [F, pl] of R.hittade) for (let i = 0; i < F.px.length; i++) {
+      const j = (pl.oy + ((i / F.w) | 0)) * B.w + pl.ox + (i % F.w);
+      if (F.px[i] >= 0 && B.px[j] === F.px[i]) B.px[j] = -1;
+    }
+    return B;
+  }
+  // huvudet utan de nedersta raderna (halsen och hakan), för plagg som går upp till halsen
+  function utanHalsen(mask, w, n) {
+    let sist = -1; for (let i = 0; i < mask.length; i++) if (mask[i]) sist = (i / w) | 0;
+    return mask.map((m, i) => m && ((i / w) | 0) <= sist - n ? 1 : 0);
   }
   // det som ritats över huvudet (kartfiguren) eller ansiktet (porträttet)
   function overHuvudet(B, F, plats, mask) {
@@ -189,11 +208,13 @@
       R.hittade = [];
       for (const { F } of R.figurer) { const pl = hitta(R.B, F); if (pl) R.hittade.push([F, pl, 'karta']); }
       for (const Q of R.portratt) { const pl = hitta(R.B, Q); if (pl) R.hittade.push([Q, pl, 'portratt']); }
+      if (R.hittade.length) ritade[ritade.length - 1] = utanFigurer(R); // versionerna jämförs på det som bärs, inte på kolonisten
       const { scen, lista } = saker(R);
       if (k.has('symmetri')) for (const S of lista) { const r = symmetri(S); if (r) ut.push({ kontroll: 'symmetri', version: n + 1, ...r }); }
       if (k.has('perspektiv')) { const stor = lista.slice().sort((a, b) => b.w * b.h - a.w * a.h)[0]; const r = stor && !scen && perspektiv(stor); if (r) ut.push({ kontroll: 'perspektiv', version: n + 1, ...r }); }
       if (k.has('huvudet')) for (const [F, pl, sort] of R.hittade) {
-        const mask = sort === 'karta' ? F.huvud : F.ansikte; if (!mask) continue;
+        let mask = sort === 'karta' ? F.huvud : F.ansikte; if (!mask) continue;
+        if (slag.some(x => x.halsen)) mask = utanHalsen(mask, F.w, sort === 'karta' ? 2 : 6);
         const over = overHuvudet(R.B, F, pl, mask);
         ut.push({ kontroll: 'huvudet', version: n + 1, ok: over === 0, text: over === 0 ? (sort === 'karta' ? 'Inget går över kolonistens huvud.' : 'Inget går över ansiktet i porträttet.') : `${over} punkter är ritade över ${sort === 'karta' ? 'kolonistens huvud' : 'ansiktet i porträttet'}: en rem eller sträng går runt kroppen, aldrig genom huvudet.` });
       }
@@ -204,7 +225,7 @@
         if (n === 0 || saknas.length) ut.push({ kontroll: 'allaHall', version: n + 1, ok: !saknas.length, text: saknas.length ? 'Visas inte på kolonisten ' + saknas.join(', ') + '.' : 'Visas på kolonisten åt alla håll och i porträttet.' });
       }
     });
-    if (ritade.length > 1 && s.typ !== 'janej') { const o = olika(ritade); ut.push(...o.map(x => ({ kontroll: 'olika', ...x }))); if (!o.length) ut.push({ kontroll: 'olika', version: 0, ok: true, text: 'Versionerna skiljer sig i form.' }); }
+    if (ritade.length > 1 && s.typ !== 'janej' && !slag.some(x => (x.utom || []).includes('olika'))) { const o = olika(ritade); ut.push(...o.map(x => ({ kontroll: 'olika', ...x }))); if (!o.length) ut.push({ kontroll: 'olika', version: 0, ok: true, text: 'Versionerna skiljer sig i form.' }); }
     return { slag: slag.map(x => x.id), resultat: ut };
   }
   // en enda bild i API:ts tecken (bilder.mjs och rita.mjs): kontrollerna som gäller den, utan olika

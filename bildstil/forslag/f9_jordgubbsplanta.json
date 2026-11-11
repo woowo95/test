@@ -1,0 +1,79 @@
+{
+ "kort": "f9_jordgubbsplanta",
+ "namn": "Jordgubbsplantan",
+ "slag": null,
+ "vad": "Steg 9.7.9: jordgubbsplantan är låg med tandade blad och röda bär, och sprider utlöpare. Här plantan på en ruta av fältet.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_jordgubbsplanta",
+     "rader": [
+      "................",
+      "................",
+      ".....UUU.UUU....",
+      "....UPPXUPPXU...",
+      "...UPPXPWPXXOU..",
+      "..UPPXPXWXPXOXU.",
+      "..UPXPXWOWXOXWU.",
+      ".UPXOXWXPXOWXWU.",
+      "..UXOWXOXWOWWVU.",
+      "HGGUOXWOWOWVWU..",
+      "...PPUVWVWUUUPP.",
+      "..rutr.UPPU.rutr",
+      "..rtsr.rutr.rtsr",
+      "...rr..rtsr..rr.",
+      "........rr......",
+      "................"
+     ]
+    }
+   ],
+   "anteckning": "Plantan står direkt på marken som en låg rosett och ses snett ovanifrån. Därför syns bladens ovansidor: treflikiga, tandade blad med mittnerver i barr0 och kontur i barr0. Bladen är ljusast (oliv3, barr3) uppe till vänster och går mot barr2 och barr1 nere till höger. Bärstjälkarna böjer sig ut över rosettens framkant, så tre röda bär hänger synliga framför bladen. Varje bär har foderblad i oliv3, glans i rost3 och rost0 i underkanten. En kort utlöpare i oliv2 kryper ut till vänster längs marken. Formen är rund men inte spegelsymmetrisk, och skuggan lägger programmet till. Granskningen: Rättat: 1) Bladen var nästan helt barr0–barr2 och blev mörkare än gräset, så tuvan syntes inte. Nu är insidan oliv3, barr3 och oliv2 med barr2 som ådror och skugga, barr1 bara nere till höger och barr0 bara som kontur. Ljusast är uppe till vänster. 2) Tuvan fyllde hela rutans bredd och var 13 punkter hög. Nu är rosetten cirka 13 × 9 med tandade, treflikiga spetsar och skåror i överkanten, och med bären 13 punkter hög. 3) Bären saknade foderblad. Varje bär har nu två oliv3-punkter överst, rost3-glans uppe till vänster och rost0 som kontur nedtill. Bären hänger isär och förskjutna i höjd, så de läses som tre bär och inte som ett rött band. 4) Den lösa oliv2-pricken vid vänsterkanten är utbytt mot en kort brun utlöpare (jord3, jord2) som går ut från rosetten. 5) Bladens underkant fick kontur där insidan låg bar mot gräset.",
+   "ide": "En rund, låg tuva mitt på rutan, ungefär 12 × 9 punkter, sedd snett ovanifrån: fem eller sex treflikiga blad i en rosett där varje blad har tandad kant i barr3 och oliv3 med barr0 som kontur, ljusast uppe till vänster och mörkast i bladen längst ner till höger. Tre till fyra röda bär (rost2 med en punkt rost3 som glans och rost0 i underkanten, en liten oliv3-prick som foderblad överst) hänger fram ur rosettens nederkant, så att de syns först mot det mörkare gräset. Formen är nästan rund men inte spegelsymmetrisk, eftersom en planta växer fritt."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_jordgubbsplanta",
+     "rader": [
+      ".UU.UU.....U.U..",
+      "UPPUPOU.GGUPUOU.",
+      "UPOPOXUGEEUPOXU.",
+      "UPOOOXUE...UXU..",
+      ".UOXXUG....W....",
+      ".W..N.EG..utsU.U",
+      "uts.W..EG..rUPOU",
+      ".r.uts..EGGGGOXU",
+      "....r....EEEEUU."
+     ]
+    }
+   ],
+   "anteckning": "Plantan ligger platt på marken och ses snett uppifrån. Därför syns bladen ovanifrån som tandade rosetter, med en kontur i barr0, oliv3 ljust uppe till vänster och barr3 i skuggan nere till höger. Moderrosetten sitter till vänster. Från den kryper två utlöpare ut längs marken: en punkt jord2 med jord0 under, så att de ser ut att ligga ovanpå jorden och inte sväva. Den övre utlöparen går i en båge uppåt och åt höger till en dotterplanta. Den nedre går snett ned och sedan rakt åt höger till den andra dotterplantan, som slår rot i rutans högra kant. Bären hänger på korta stjälkar ned från bladen, eftersom de är tunga och lutar mot marken. Två bär sitter vid moderplantan och ett ensamt under den första dotterplantan. De har ett grönt foderblad överst, rost3 som ljus uppe till vänster, rost2 och rost1 i kroppen och rost0 i spetsen. Bären är de enda mättade punkterna, så det man kan plocka syns först mot gräset. Granskningen: Granskad och oförändrad. Plantan är 16 × 9 punkter och fyller rutan på bredden. Den blir låg och avlång mot kolonistens 14 × 20 och läser som något som kryper över marken, inte som en buske. Vinkeln är rätt: plantan ses ovanifrån som en platt rosett med tandade bladkanter. Utlöparna är en punkt breda i jord2 med jord0 under och har dotterplantor i ändarna. Den övre utlöparen går uppåt i stället för nedåt som idén säger. Det är en liten avvikelse som ger en bättre spridd silhuett, så den får vara kvar. Moderplantan har en klase om två bär med korta stjälkar, och dotterplantan har ett ensamt bär. Bären har ljuset uppe till vänster (rost3 till rost1) och en rost0-spets nere. Bladen har en mörk barr0-kontur och ljusast oliv3 uppe till vänster, så de syns mot gräset. Bären bär den mättade färgen, som de ska. Plantan bärs inte och behöver ingen symmetri, så inget bryter mot reglerna.",
+   "ide": "En utbredd, platt planta som fyller rutan på bredden, ungefär 16 × 8 punkter: en liten moderrosett av tandade blad till vänster, och från den går två tunna utlöpare (en punkt breda, i jord2 med jord0 under) i bågar åt höger och nedåt, var och en med en mindre dotterplanta på två eller tre blad i änden. Bären sitter i en klase om två eller tre vid moderplantan och ett ensamt bär vid den första dotterplantan, röda i rost2 och rost3 med mörk rost0-kant. Siluetten blir avlång och läser som något som kryper ut över marken, inte som en buske."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_jordgubbsplanta",
+     "rader": [
+      "......UUUU......",
+      ".UU..UPPPOU..UU.",
+      "UPPU.UPPOOU.UPPU",
+      "UPPOUUPOONUUPOOU",
+      "UPOONUOPONUPOONU",
+      ".UONNUOONUUONNU.",
+      ".EUUUFUNNUFUUUE.",
+      "EutFGFFUUFFGFutE",
+      "EtrFutGFFGutFtrE",
+      "EFGFtrFGFFtrGFFE",
+      ".EEEEEEEEEEEEEE.",
+      "..EEEEEEEEEEEE.."
+     ]
+    }
+   ],
+   "anteckning": "Plantan står i en liten odlingsbädd sedd snett ovanifrån. Jordfläcken är avlång och rundad, i jord1 med korn av jord2. Konturen är jord0, och framkanten är ett smalt band på två punkter i jord0. Ur mitten växer en rosett av tre tandade treblad: ett bakre och två åt sidorna. De är lyfta och förkortade, så att man ser bladytan ovanifrån med det ljusa oliv3 uppåt vänster och oliv2 och oliv1 nedåt höger. Bladen har barr0-kontur med hack i kanten för tänderna. En kort stjälk i oliv1 går ner mot jorden. Bären hänger ut från bladen och ligger på den bara jorden framför i en halvcirkel. De är fyra stycken på 2 × 2 punkter i rost2, med en punkt glans i rost3 uppe till vänster och skugga i rost0 nere till höger. Bärens röda är bildens enda mättade ton, så det man kan ta syns först mot den bruna jorden. Skuggan på marken lägger programmet till. Granskningen: Rättat: bädden såg ut som en låda med raka väggar (jord0 längs sidorna ända upp bland bladen). Nu är den en låg, rundad jordfläck med rundade hörn, en tvåradig framkant i jord0 och korn av jord2 på ytan. Bladen var en otydlig klump och är omritade som tre tydliga treblad (vänster, mitten högre bak, höger) med tandad barr0-kontur, oliv3 uppe till vänster och oliv1 nere till höger. Plantan är fortfarande 16 × 12, låg mot kolonisten och syns på gräset tack vare konturen. De fyra bären (rost3-glans, rost2, rost0-skugga) ligger kvar i en halvcirkel på den bara jorden framför bladen.",
+   "ide": "En planta i en liten odlingsrad, ungefär 14 × 10 punkter: en låg bädd av mörkt uppluckrad jord (jord0 och jord1 med korn av jord2) sedd ovanifrån som en avlång, rundad fläck med en smal mörkare framkant. Mitt i den står en tät rosett av tre eller fyra stora tandade treblad i oliv2 och oliv3 med barr0-kontur, några av bladen lyfta och förkortade så att de syns snett från ovan. Bären ligger ute på den bara jorden framför bladen, fyra stycken i en halvcirkel, klarröda (rost2, glans rost3, skugga rost0), så att jordens bruna ton får det röda att lysa."
+  }
+ ]
+}

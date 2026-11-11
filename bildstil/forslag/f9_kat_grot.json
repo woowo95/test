@@ -1,0 +1,90 @@
+{
+ "kort": "f9_kat_grot",
+ "namn": "Symbolen Gröt",
+ "slag": null,
+ "vad": "Steg 9.6.3: maten som kokas till gröt av säd hör till gruppen Gröt och får en egen symbol i listan över rätter. Här symbolen på en mörk ruta.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_kat_grot",
+     "rader": [
+      ".....p....p.....",
+      "....p....p......",
+      "....p....p......",
+      ".....p....p.....",
+      ".....oooooo.....",
+      "...oqwLLKKqqo...",
+      "..oqwqLKKJqqpo..",
+      ".EoqqwqqKqqppoE.",
+      "EHHqqqqqpqqppGFE",
+      "EHHHGHGGGGGGGFFE",
+      "EGHGGGFGGGFGFFFE",
+      ".EGGGFGGFGFFFFE.",
+      "..EGFGFFGFFFFE..",
+      "...EEEFFFFEEE...",
+      "....EGGFFFFE....",
+      "....EEEEEEEE...."
+     ]
+    }
+   ],
+   "anteckning": "Skålen står på sin fot på bordet och ses lätt snett framifrån. Därför syns grötens kupiga yta ovanför den främre kanten, medan den bakre kanten döljs av kupan. Vid sidorna syns bara kantens ändar. Skålens form är spegelsymmetrisk och bara ljuset skiljer sidorna åt: jord3 på kanten uppe till vänster och jord1 nere till höger. Konturen är jord0 runt träet och ben0 runt gröten. Smörklicken sitter mitt på kupan och rinner en punkt nedåt. Ångan stiger i två korta, böjda slingor i ben1 upp till överkanten och har ingen kontur, eftersom den inte är något fast. Granskningen: Rättat: ångslingorna satt en punkt för långt åt höger (mitt 8,5 i stället för rutans mitt 7,5). De är flyttade en punkt åt vänster så att symbolen är centrerad och symmetrisk. Allt annat följer reglerna och idén och är oförändrat. Skålen har jord0-kontur, jord1–jord2 och en ljusare kant uppe till vänster. Grötkupan är i ben2–ben3 med ljuset uppe till vänster och smörklicken i senap. Formen är spegelsymmetrisk, kol0 används inte och symbolen fyller rutan.",
+   "ide": "En låg, bred träskål sedd lätt snett framifrån, spegelsymmetrisk, som fyller rutans nedre två tredjedelar: skålen i jord1–jord2 med jord0-kontur och en ljusare kant uppe till vänster, och ovanpå en kupig yta av gröt i ben2–ben3 med en klick smält smör i senap2–senap3 mitt på. Ovanför grötkupan stiger två korta, böjda ångslingor i ben1 som når upp mot rutans överkant och gör silhuetten hög nog att läsas som varm mat."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_kat_grot",
+     "rader": [
+      "..............EE",
+      "............EHGE",
+      "...........EHGE.",
+      "..........EHGE..",
+      "...kkkkkkEHGE...",
+      ".kknnnnnEHGEnkk.",
+      ".knLLqqEHGEqpnk.",
+      "kknqLqqpFppppnkk",
+      "kknnnnnnnnnnnmkk",
+      ".kmnmmmmmmmmllk.",
+      ".knommmmmmmmllk.",
+      ".knmmmmmmmmmllk.",
+      "..kmmmmmmmmllk..",
+      "...kkkkkkkkkk...",
+      "...mk..mk..mk...",
+      "...kk..kk..kk..."
+     ]
+    }
+   ],
+   "anteckning": "Grytan står på sina tre korta ben och ses framifrån, lätt uppifrån, så att öppningen blir en smal ellips. Det bakre brättet syns i kol3 och grötens yta i ben2–senap3 är ljusast uppe till vänster. Det främre brättet är en kol3-rad över buken. Kroppen, öronen och benen är spegelsymmetriska; bara glansen på vänster bukkant och skuggan till höger skiljer sidorna åt. Staven i jord2–jord3 med jord0-kontur ligger mot bakkanten. Den går över det bakre brättet upp mot övre högra hörnet. Den nedre änden försvinner ner i gröten och syns där bara som en liten grop. Därför ritas ingen slevskopa. Granskningen: Rättat: grytans öron syntes inte, eftersom buken i rad 9–10 var lika bred som brättet (hela rutans bredd) och öronen gick ihop med kroppen. Buken i rad 9–10 är nu en punkt smalare på varje sida (kolumn 1–14). Brättets kol0-punkter i kolumn 0 och 15 på rad 7–8 sticker därför ut som två små, symmetriska öron, som idén säger. Skuggningen på höger sida (kol1) och glansen på vänster bukkant (en punkt ben0) är kvar. Resten följer reglerna och är oförändrat. Grytan är symmetrisk med tre ben placerade symmetriskt. Gröten syns som en ljus ellips i ben2–senap3 under brättet. Staven i jord2–jord3 med jord0-kontur ger den tydliga diagonalen mot övre högra hörnet. Symbolen är ritad framifrån och nästan fyller rutan.",
+   "ide": "En rund järngryta med två små öron på sidorna och tre korta ben, symmetrisk och nästan rutans fulla bredd: grytan i kol2–kol3 med kol0-kontur, lätt glans på vänster bukkant, och grötens yta syns som en smal ljus ellips i ben2–senap3 strax under brättet. En trästav eller slev i jord2 sticker snett upp ur gröten mot övre högra hörnet, så att silhuetten blir en rund kropp med en tydlig diagonal."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_kat_grot",
+     "rader": [
+      ".....LK.KJ......",
+      "...ooKJoJIoo....",
+      "..owwqwqqqqpo...",
+      "..owqwqqqpqpo...",
+      "..oqqqpqqpqpo...",
+      "...oqpooopoo....",
+      "...rqouttpsr....",
+      "...routttosrrrr.",
+      "...ruttttssrttsr",
+      "...ruttttssrrrsr",
+      "...rutttsssr.rsr",
+      "...ruttttssr.rsr",
+      "...rutttsssrrrsr",
+      "...ruttttssrsssr",
+      "...rtttssssrrrr.",
+      "....rrrrrrr....."
+     ]
+    }
+   ],
+   "anteckning": "Kruset står upprätt och ses från sidan, nästan fyllande rutan: en hög, smal lerkrus i rost1–rost2 med rost0-kontur, ljuset på vänster sida (rost3 i vänsterkanten) och mörkare åt höger. Det raka örat sitter på höger sida med ett litet hål mot kroppen. Gröten väller upp över mynningen som en rundad hätta i ben2–ben3 med ben0-kontur, något bredare än kruset, och rinner ner över kanten på två ställen, ett längre till vänster och ett kortare till höger. På grötens topp ligger två sädeskorn i senap1–senap2, så att det syns att rätten är kokt av säd. Ingen bakgrund; programmet lägger den mörka rutan. Granskningen: Storlek, vinkel och symmetri stämmer: symbolen är 16 × 16 och sedd från sidan. Krus och hätta är centrerade kring samma mitt, och kruset syns tydligt på mörk ruta och på gräset. Två saker rättades. 1) Krusets kropp hade utspridda ensamma rost3-prickar, som gav ett bubbligt mönster och fick den att likna en ölsejdel. Nu har den en jämn ljusgång: rost3 längs vänsterkanten, rost2 i mitten och rost1 mot höger, med kornet växlat rad för rad. 2) Örat var en oklar fläck med lösa rost2-punkter och ett hål på en enda punkt. Nu är det en ren ögla: överbalk i rost2, sida och underbalk i rost1, rost0-kontur runt om och ett tydligt hål i två rader. Dessutom har den andra droppen av gröt över kanten fått ben1 med ben0-kontur under, i stället för en ensam ben0-prick. Hättan i ben2–ben3 och sädeskornen i senap ligger kvar som förut.",
+   "ide": "En hög, smal lerkrus eller kopp med rakt öra på ena sidan, sedd från sidan, där gröten väller upp över kanten som en tjock rundad hätta: kruset i rost1–rost2 med rost0-kontur och ljuset på vänster sida, och grötens hätta i ben2–ben3 som rinner ner en bit över kanten på ett eller två ställen. Längst upp ligger några ax eller korn av säd i senap1–senap2 på grötens topp, så att det syns att rätten är kokt av säd."
+  }
+ ]
+}

@@ -1,0 +1,86 @@
+{
+ "kort": "f9_notter",
+ "namn": "Nötter",
+ "slag": null,
+ "vad": "Steg 9.7.14: nötterna är hasselns frukt, de plockas på hösten och håller länge. Här nötterna som sak i förrådet.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_notter",
+     "rader": [
+      ".......EEE...........",
+      "......EHppE..........",
+      "......EGGFE......MM..",
+      "...EEEEEEEEEEE..MPOM.",
+      "..EHppEHppEHppENNMM..",
+      "..EGGFEHGFEGGFE.NMPOM",
+      "..EGFFEGFFEGFFE...MM.",
+      ".EEEEEEEEEEEEEEE.....",
+      "EHppEHppEHppEHppE....",
+      "EHGFEGGFEHGFEGGFE....",
+      "EGFFEGFFEGFFEGFFE....",
+      ".EEEEEEEEEEEEEEE....."
+     ]
+    }
+   ],
+   "anteckning": "Nötterna ligger direkt på marken i förrådet och ses snett ovanifrån. Högen är byggd i tre lager: fyra nötter längst fram, tre i mitten och två överst. De bakre ligger högre upp i bilden, och de främre skymmer deras nedre del, så att bara topp och mitt syns där bak. Varje nöt har ett ljust fäste i ben1 överst, där den satt i hyllet, och en punkt i jord3 uppe till vänster eftersom ljuset kommer därifrån. Resten är jord2 och jord1 och mörknar nedåt höger. Hela högen har kontur i jord0. Silhuetten är bred och låg, 14 × 9 punkter. Till höger sticker en hasselkvist med två blad i oliv ut under högen och visar att det är hassel. Bladen är dämpade så att de bruna nötterna syns först. Granskningen: Rättat: version 1 läste som en randig sten eller ett bröd och inte som nötter. Raderna i jord1 och jord2 löpte tvärs över hela högen, och inga enskilda runda nötter syntes. Högen är omritad som runda nötter på 3 × 3 punkter, var och en med egen kontur i jord0, en ljus punkt i jord3 uppe till vänster, skalet i ben1 längst upp och jord2/jord1 nedåt höger. De ligger i en kulle: fyra främre, tre bakre förskjutna mellan dem och en överst, alltså åtta nötter. De bakre ligger högre upp i bilden och skyms av de främre. Ytterhörnen är genomskinliga så att varje nöt blir rund, och högens form är spegelsymmetrisk. Stjälken i oliv1 går nu ut från högens högra sida med två skilda blad i oliv2/oliv3 och kontur i oliv0. I version 1 hängde bladen löst bredvid. Storleken är 17 × 12 punkter för högen och 21 punkter bred med bladen, låg och bred mot kolonisten på 14 × 20. Det är något större än idéns 12 × 9, eftersom åtta nötter med egen kontur annars inte får plats.",
+   "ide": "En liten hög hasselnötter direkt på marken, ungefär 12 × 9 punkter, sedd snett ovanifrån: åtta till tio runda nötter på 3 × 3 punkter staplade i en låg kulle med två lager, där de bakre ligger högre upp i bilden och de främre skymmer dem. Varje nöt är brun i jord1 och jord2 med en ljus punkt i jord3 uppe till vänster, ett ljusare skal i ben1 längst upp där nöten satt fast och kontur i jord0. Silhuetten är bred och låg, och en stjälk med två blad i oliv sticker ut på ena sidan som hasselns kännetecken."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_notter",
+     "rader": [
+      "...EEEEEEEE...",
+      ".EEHHHHHHHGGE.",
+      "EHFHGFHGFHGFGE",
+      "EHFGIFGIFGIFGE",
+      "EHHGFHGFHGFHGE",
+      "EHGIFGIFGIFGGE",
+      "EHHHHHHGGGGGGE",
+      "EGFFGFFGFFEFFE",
+      "EFGFFGFFGFFEFE",
+      ".EFFGFFGFFEFE.",
+      ".EFEFFEFFEFFE.",
+      "..EEEEEEEEEE.."
+     ]
+    }
+   ],
+   "anteckning": "Korgen står på marken i förrådet med platt botten och har inga ben. Den ses snett ovanifrån, så öppningen tar den övre halvan och visar nötterna ovanifrån: tätt packade i jord2 och senap0 med små toppar i jord3. En ljus ring i jord3 runt öppningen skiljer korgkanten från nötterna. Kanten är ljus till vänster och går över i jord2 till höger, efter ljuset. Framsidan är ett smalt flätat band i jord1 och jord0 med inslag i jord2. Det blir mörkare nedåt höger och smalnar av mot den platta botten. Konturen är jord0 runt hela korgen, och silhuetten är spegelsymmetrisk. Korgen fyller 16 × 12 punkter och är därmed något bredare än idéns ungefär 14 × 12. Granskningen: Rättat: korgen var 16 punkter bred, lika bred som kolonisten och större än idéns 14 × 12, så den är nu smalnad till 14 × 12 med samma spegelsymmetriska silhuett. Nötterna var ett brus av enstaka H-, G- och I-punkter som flöt ihop med kanten. Nu är de små runda nötter om 2 × 2 punkter: jord3-topp uppe till vänster, jord2 och senap0 nere till höger, med jord1 mellan sig i stället för mörka fläckar. Kanten runt öppningen är nu en sluten ring, ljus jord3 uppe till vänster och jord2 nere till höger, så att korgen skiljs från nötterna och ljuset kommer från övre vänstra hörnet. Framsidans flätband är kvar på 4 rader i jord1 och jord0 med ett jämnare flätmönster, ljusare till vänster och mörkare nedåt höger. Konturen i jord0 och den platta botten utan ben är kvar. Vinkeln snett ovanifrån stämmer: öppningen tar drygt halva höjden.",
+   "ide": "En flätad korg av vide, ungefär 14 × 12 punkter, sedd snett ovanifrån, med en spegelsymmetrisk rund form: öppningen är en ellips som tar övre halvan av bilden och är fylld med tätt packade nötter i jord2 och senap0 med små ljusa toppar i jord3. Korgens framsida är ett smalt band på 3–4 punkter i jord1 och jord0 med ett rutmönster av flätning, mörkare nedåt höger. Kanten runt öppningen har en ljusare ring i H som skiljer korgen från nötterna, och korgen står stadigt med platt botten och syns inga ben."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_notter",
+     "rader": [
+      "......EEEE..........",
+      ".....EqppoE.........",
+      "......EFEE..........",
+      ".....EqppoE.........",
+      "....EqqppooE........",
+      "...EqqpqppooE.......",
+      "..EqpqppppoooE......",
+      "..EqqppppopooE......",
+      "..EqpppoppoooE......",
+      "..EpqppppopooE......",
+      "..EppppoppoooE......",
+      "..EpoppoppoooE......",
+      "...EoopoopooE.EE....",
+      "...EEEEEEEEEEEHGE...",
+      ".............EGFEEE.",
+      "..............EEEHGE",
+      ".............EE.EGFE",
+      "............EHGE.EE.",
+      "............EGFE....",
+      ".............EE....."
+     ]
+    }
+   ],
+   "anteckning": "Säcken står upprätt på marken med en platt botten, så att den ses snett ovanifrån som de andra sakerna i förrådet. Den är 12 × 14 punkter, päronformad och spegelsymmetrisk: bred och rund nertill och insnörd vid halsen. Snöret är ett smalt band i jord0 med en punkt jord1 som glans. Ovanför knuten sticker tygtofsen upp, lite bredare än halsen, som när en säck snörs ihop. Väven har korn av ben1 och ben0 och ljus av ben2 uppe till vänster, och den mörknar mot ben0 nere till höger. Konturen är jord0. Två hasselnötter i jord2 har rullat ut framför foten. De har en ljusare punkt i jord3 uppe till vänster, jord1 nere till höger och kontur i jord0. Den vänstra ligger mot säckens botten och den högra en bit längre ut, så att man direkt ser vad som finns i säcken. Ingen skugga är ritad, den lägger programmet till. Granskningen: Rättat: hasselnötterna låg rakt under säckens platta fot, en på var sida, och såg därför ut som två korta ben, så att säcken liknade en kruka på fötter. Nu har tre nötter rullat ut snett framför säcken åt höger, i en liten osymmetrisk klunga på marken. Den närmaste nöten ligger an mot fotens kontur. Bilden är därför bredare och högre, 20 × 20 punkter, och ryms fortfarande inom 48 × 48. Säcken är oförändrad: den är 12 × 14 punkter och spegelsymmetrisk, ljus uppe till vänster i ben2 och ben1 och mörkare nere till höger i ben0. Den har kontur i jord0, ett snöre vid halsen och en tofs överst. Den står upprätt och syns väl mot gräset.",
+   "ide": "En knuten säck av grov linneväv, ungefär 12 × 14 punkter, hög och päronformad: bred och rund nertill, insnörd vid halsen med ett snöre i jord0 och en liten tofs av tyg som sticker upp högst upp. Säcken är i ben0 och ben1 med korn av ben2 uppe till vänster och kontur i jord0, och vid foten har två eller tre hasselnötter i jord2 rullat ut på marken framför den, så att man ser vad som är inuti. Den är spegelsymmetrisk i formen men lutar inte, och den står upprätt med en platt fot mot marken."
+  }
+ ]
+}

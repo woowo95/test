@@ -1,0 +1,71 @@
+{
+ "kort": "f9_brod",
+ "namn": "Bröd",
+ "slag": null,
+ "vad": "Steg 9.6.23: bröd är en lagad mat som bagaren gräddar i bakugnen och som håller längre än annan lagad mat. Här brödet som sak i förrådet.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_brod",
+     "rader": [
+      "...EEEEEE...",
+      ".EEKLKKKJEE.",
+      "EKKGEEEEGJJE",
+      "EKJEFFFFEJGE",
+      "EKKE....EGJE",
+      "EJKGEEEEGJGE",
+      "EKJKJKJJJGGE",
+      "EFGFFFFFFFFE",
+      ".EFFFFFFFFE.",
+      "..EEEEEEEE.."
+     ]
+    }
+   ],
+   "anteckning": "Brödet är en platt ringkaka som ligger på marken i förrådet. Den ses snett ovanifrån som en spegelsymmetrisk oval på 14 × 10 punkter. Översidan tar de övre åtta raderna. Hålet sitter något ovanför mitten, och genom det syns marken (genomskinligt). Längs hålets bakre kant syns ett smalt band av insidan i jord1, eftersom man ser in i hålet framifrån och ovanifrån. Framkanten är ett band på 2 punkter i jord1 med ett ljusare korn till vänster, och konturen i jord0 går runt både yttre kanten och hålet. Ljuset kommer från övre vänstra hörnet: senap2 och två ljusa punkter i senap3 uppe till vänster, senap1 och jord2 mot nedre högra kanten. Brända fläckar i jord2 ligger i en ring kring hålet. Brödet är mat, så senapen är den mättade tonen som syns mot gräset. Granskningen: Rättat: brödet var 14 × 10 punkter, lika brett som kolonisten och för stort för en brödkaka. Det är nu 12 × 10 och närmare idéns 12 × 8. Höjden behövs för att hålet ska få kontur, en synlig bakre innervägg och en öppning, och för att framkanten ska få sitt band på 2 punkter i jord1. Hålet ligger kvar något ovanför mitten. Silhuetten och hålet är spegelsymmetriska; bara ljuset skiljer sidorna åt, med senap2 och senap3 uppe till vänster och senap1 och jord2 nere till höger. De brända fläckarna i jord2 ligger i en ring kring hålet. Glansen är nu en enda punkt i senap3 på övre vänstra kanten i stället för två, som idén säger. Kontur i jord0 runt både yttre kanten och hålet. Vinkeln snett ovanifrån och kontrasten mot gräset var redan bra och är oförändrade.",
+   "ide": "Ett runt, platt järnåldersbröd (en tunn kaka med hål i mitten, som en ring) som ligger på marken, ritat snett ovanifrån så att det blir en spegelsymmetrisk oval på ungefär 12 × 8 punkter med hålet något ovanför mitten. Skorpan är senap och jord: senap2–senap3 på översidan uppe till vänster, senap1 och jord2 mot nedre högra kanten, ett smalt band på 2 punkter i jord1 som framkant och kontur i jord0 runt både yttre kanten och hålet. Kornet är några punkter i jord2 som brända fläckar i en ring kring hålet, och en enda glanspunkt i senap3 på den övre vänstra kanten."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_brod",
+     "rader": [
+      "...EEEEE...",
+      ".EELLLKKEE.",
+      "ELLFKLKFKJE",
+      "ELLKFKFKJJE",
+      "ELKLKFKJJGE",
+      "EKKKFKFJJGE",
+      "EGFGFGFFFFE",
+      ".EGFGFFFFE.",
+      "..EEEEEEE.."
+     ]
+    }
+   ],
+   "anteckning": "Limpan står själv på marken, kupad och rund, och ses snett ovanifrån som allt annat på kartan. Översidan tar större delen av höjden och visar skorpan uppifrån. Två snitt i jord1 korsar varandra i ett X mitt på toppen, och skorpan spricker upp i senap2 längs snitten. Nedtill syns bara sidan som ett smalt mörkare band i jord1, utan ben eller underlag eftersom brödet ligger direkt på marken. Konturen är jord0 och formen är spegelsymmetrisk. Ljuset kommer uppifrån vänster: senap3 där, senap1 och jord2 nere till höger. Senaptonerna är varma och mättade, eftersom brödet är mat och går att ta, och därför syns det mot det dämpade gräset. Granskningen: Granskad: storleken (11 × 9 mot kolonistens 14 × 20) passar en limpa. Vinkeln stämmer: ovansidan tar fem av sju inre rader och framkanten är ett band på två rader. Silhuetten är spegelsymmetrisk, och ljuset faller från övre vänstra hörnet (senap3 till senap1/jord2). Konturen i jord0 och de ljusa senaptonerna gör att limpan syns på gräset. Snitten i jord1 korsar varandra som ett X med senap2 runt sig, som i idén. Enda rättelsen: framkanten var slät jord1 till höger, så jag lade in korn med jord2 som avtar åt höger (rad 6 och 7), utan att lägga in mörka fläckar.",
+   "ide": "En hög, rund limpa som står kupad på marken, ritad snett ovanifrån som en spegelsymmetrisk kupol på ungefär 11 × 9 punkter där översidan tar tre fjärdedelar av höjden och sidan nedtill är ett mörkare band. Över toppen går två eller tre snitt i jord1 som korsar varandra, så att skorpan spricker upp i ljusare senap2-ytor mellan dem. Tonerna är senap3 uppe till vänster, senap1 och jord2 nere till höger, framkanten jord1 och konturen jord0."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_brod",
+     "rader": [
+      "...EEEEEE.....",
+      ".EELLKLKKEE...",
+      "ELLKFKLKKJJE..",
+      "EKLKKKKFKJJE..",
+      ".EEKJKJKJEEJE.",
+      ".EJEEEEEEKJJE.",
+      "..EEJKJJJJEEGE",
+      "..EHEEEEEEGGFE",
+      "...EEHGHGGFEE.",
+      ".....EEEEEE..."
+     ]
+    }
+   ],
+   "anteckning": "Tunnbröden ligger platt i förrådet i en stapel och ses snett ovanifrån. Därför syns det översta brödet helt som en oval i senap2–senap3, ljusast uppe till vänster, med tre prickar i jord1 efter brödpinnen. Varje undre bröd är förskjutet två punkter nedåt och en till två åt höger. Det syns bara som en smal skiva nedtill och åt höger, med egen kontur i jord0: det mellersta i senap1–senap2 och det understa i jord2–jord3. Stapeln läses då som lager som blir mörkare nedåt mot höger. Bilden är 15 × 10 punkter, låg och bred, och ingen skugga är ritad. Granskningen: Rättat: Det översta brödet var en sned, lutande oval. Nu är det en spegelsymmetrisk ellips på 12 × 6 punkter. De två undre bröden låg som en trappa långt ner åt höger och läste som tre bröd i rad, inte som en stapel. Nu ligger de bara 1 punkt åt höger och 2 punkter ner per lager, så att de sticker ut som smala skivor på 2 punkter nedtill och åt höger. Varje bröd har egen kontur i jord0. Tonerna går som i idén: översta senap2–senap3 med glans uppe till vänster och prickar i jord1 efter brödpinnen, mitten senap1–senap2, understa jord2–jord3 med jord1 i skuggan nere till höger. Storleken är nu 14 × 10 punkter, rimligt mot kolonisten (14 × 20), och stapeln syns tydligt på gräset.",
+   "ide": "En liten stapel med tre platta, runda tunnbröd som ligger lite förskjutna ovanpå varandra, ritad snett ovanifrån som en låg och bred form på ungefär 14 × 8 punkter. Det översta brödet syns helt som en oval med prickar i jord1 efter brödpinnen, och de två undre syns bara som smala skivor på 2 punkter som sticker ut nedtill och åt höger, var och en med egen kontur i jord0. Det översta är ljusast i senap2–senap3 och de undre blir mörkare i senap1 och jord2, så att stapeln läses som lager."
+  }
+ ]
+}

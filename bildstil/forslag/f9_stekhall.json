@@ -1,0 +1,114 @@
+{
+ "kort": "f9_stekhall",
+ "namn": "Stekhällen",
+ "slag": null,
+ "vad": "Steg 9.6.21: stekhällen är en flat sten över elden där kött och fisk steks. Här tillbehöret på trägolvet, med en bit kött som fräser.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_stekhall",
+     "rader": [
+      "...................p..........",
+      "..................q...........",
+      "..............p...q...........",
+      "....nnn.......q..q...p.nnn....",
+      "...npqponQQQQqQQQqQQqnopoon...",
+      "..nponQQQSSSSqSSqSRSqQQQnoon..",
+      "..noQQSTSSRSqSSSqSSqSRSRQQon..",
+      "...QSSSSRSSSqSSqSSRSSSRSRRQ...",
+      "...QSSRSSSSRrrrrrrRSSRSSRRQ...",
+      "...QSSSSRSSruuuttsrSRSSRSRQ...",
+      ".nnQRSSSSSRruttstsrRSSRSRRQnn.",
+      "npqQSSRSSSSrtstsssrSSRSRRRQopn",
+      "npoQSRSSSRSSrrrrrrSRSSRSRRQoon",
+      "nooQSSSRSSSSRSSSSRSSRSSRRRQoon",
+      "nooQRSSRSSSSRSSSRSSSRSRSRRQoon",
+      "noonQRRSRSSSRSSSRSSRSRRRRQnoon",
+      ".nnntQRRRRRRRRRRRRRRRRQQQtnnn.",
+      "...stuQRRRRRRRRRRRRRRQQQuts...",
+      "...npqpQQQQQQQQQQQQQQQQopon...",
+      "...nppqppoonstLutsnpopoooon...",
+      "...noppopoontuLLutnopooooon...",
+      "....noopoonrstuttsrnooooon....",
+      ".....nnnnn..rsrrsr..nnnnn....."
+     ]
+    }
+   ],
+   "anteckning": "Stekhällen står på golvet och ses snett ovanifrån: den flata skifferhällen (24 punkter bred) ses som en tillplattad oval med glans i skiffer3 uppe till vänster och mörkare korn mot nedre högra kanten. Under ovalen går en tydlig framkant på 2 punkter i skiffer1/skiffer0 som följer hällens rundning. Det rättar förra försökets fel: ytan syns ovanifrån och tjockleken som ett smalt band framtill. Hällen vilar på en spegelsymmetrisk krans av sex gråstenar. De två bakre sticker bara upp bakom bakkanten och sidostenarna syns vid sidorna. De två främre ligger under framkanten, och i glappet mellan dem lyser glöd och små lågor i rost och senap3 från elden under hällen. Glöd syns också i de små glappen vid sidorna. Köttbiten ligger platt mitt på hällen och ses ovanifrån, med en fettrand i rost3 längs övre vänstra kanten. Tre ånglinjer i ben2 stiger snett uppåt höger och tonar ut i ben1. Granskningen: Granskad mot reglerna, inget behövde rättas; versionen lämnas oförändrad. Storleken är 30 × 23 punkter, vilket är rimligt mot kolonisten (14 × 20) och under taket 48 × 48. Själva hällen är 24 punkter bred, som i idén. Vinkeln stämmer: ytan ses ovanifrån och tar större delen av höjden, framkanten är ett smalt band på 2 rader i skiffer1 och bakre stenar sticker upp vid bakkanten. Formen är spegelsymmetrisk, både i hällens kontur, de sex gråstenarna, sidolågorna och glöden i mitten fram; bara ljuset skiljer sidorna åt, med ljusare stenar och yta till vänster och mörkare skiffer1/skiffer0 nere till höger. Konturerna följer materialet: skiffer0 runt hällen, rost0 runt köttet och kol3 runt gråstenarna. Kol0 används inte. Glansen är en enda punkt skiffer3 uppe till vänster. De mättade tonerna (rost, senap3) finns bara i köttet och elden. Köttbiten ligger centrerad ovanifrån med fettrand i rost3, och tre ånglinjer i ben2 stiger snett upp från den. Konturen och de ljusa stenarna gör att saken syns tydligt på gräset. Hällen är en rundad rektangel snarare än en oval, men hörnstenarna rundar silhuetten så att den läser som en rund häll i spelets storlek. Inget bärs, så regeln om huvud och ansikte gäller inte.",
+   "ide": "Rund häll på stenring: en nästan rund, flat skifferhäll (ca 24 × 16 punkter, ovanifrån som en tillplattad oval) vilar på en spegelsymmetrisk krans av fem–sex knytnävsstora gråstenar, och mellan stenarna i framkanten lyser glöd och små lågor i rost2–rost3 och senap3. Hällens yta är skiffer1–skiffer2 med kontur i skiffer0 och en smal mörkare framkant på 2 punkter, glansen uppe till vänster en punkt skiffer3. Mitt på ligger en köttbit ovanifrån i rost1–rost2 med en ljus fettrand i u och två–tre små ånglinjer i ben2 som stiger snett upp från den."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_stekhall",
+     "rader": [
+      "...QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ...",
+      "..QTTSTTSTSSTSTSSTSSSTSSSSTSSSSSSQ..",
+      "..QTSTTSSTSTSSTSSSTSSSSTSSSSSSSRSQ..",
+      "..QTSTSrrrrrrSTSSTSSSSTSSSSSSSSSSQ..",
+      "..QTTSrttuttsrSSTSSSSoooooooSooSSQ..",
+      "..QTSSrtuttsstrTSSSSoqqqqppoopoSSQ..",
+      "..QSTSrttLtsssrSSSSoqkqqppppooSSRQ..",
+      "..QTSSrtttssssrSTSSSoppppppoopoSSQ..",
+      "..QSSTrsstsssrSSSSSSSoooooooSooRSQ..",
+      "..QTSSSrrrrrrSSSSSRSSSSSSSSRSSSSRQ..",
+      "..QSTSSSTSSSSSSSSRSSSSSSRSSSRSSRSQ..",
+      "..QSSTSSSSSSSRSSSSSRSSSSSRSSSSRRSQ..",
+      "..QTSSSSSRSSSSSSRSSSSRSSRSSRSSRSRQ..",
+      "..QSSSRSSSSSRSSSSRSSRSSRSSRSRRSRRQ..",
+      "..QSRRSRRRRRRSRRRRRRRRRRSRRRRRRRRQ..",
+      "..QRRSRRRRRRRRRSRRRRRRRRRRRRRRRRRQ..",
+      "...QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ...",
+      "....QTSSSRRQmmmtmmmmsmmmQSSRSRRQ....",
+      "....QSTSRSRQmmtKsmmtKtmmQSRSRRRQ....",
+      "....QSSRSRRQmstLKtstLKsmQSRRSRRQ....",
+      "....QSRSRRRQsKLLKtKLLKtsQRSRRRRQ....",
+      "....QQQQQQQQrstKsrtsKtsrQQQQQQQQ...."
+     ]
+    }
+   ],
+   "anteckning": "Hällen ligger som en bänkskiva och ses snett ovanifrån. Den platta skifferytan tar 14 av 22 rader och är ljusast uppe till vänster (skiffer3) och mörkare nere till höger (skiffer1). Framkanten är ett smalt band i skiffer1–skiffer0. Hällen vilar på två uppställda block, och bara deras framsidor syns som stumpar på 5 punkter. Blockens ovansidor döljs av hällen. Elden brinner i springan mellan blocken, under hällen, där det är mörkt (kol2). Den är bildens mest mättade del: glöd och lågor i rost och senap som slickar upp mot stenens undersida. På ytan ligger köttet och fisken sida vid sida, ovanifrån. Köttet är rost1–rost2 med rost0-kontur och en punkt senap3 där fettet fräser. Fisken är ben1–ben2 med ben0-kontur och ett mörkt öga, med huvudet mot köttet och stjärten åt höger. Granskningen: Granskad mot reglerna. Storleken (36 × 22 punkter, hällen ca 2 rutor bred) passar mot kolonisten (14 × 20). Vinkeln stämmer: ytan ses ovanifrån och tar ungefär tre fjärdedelar av höjden, framkanten är ett mörkt band och bärstenarna syns som stumpar på 5 punkter. Skiffret syns bra mot det olivgröna gräset, och elden är det mest mättade i bilden. Tre rättelser: (1) Fiskens undersida (rad 7) var en punkt längre än översidan (rad 5), så kroppen var inte spegelsymmetrisk kring mittlinjen. Raden är rättad till 'oppppppoopo' så att den speglar 'oqqqqppoopo'. (2) Hällens nedre högra hörn (rad 15) hade en extra konturpunkt Q som det vänstra hörnet saknade. Den är nu R, så plattan är symmetrisk. (3) Det vänstra bärblocket (rad 20) hade en extra Q inne i blocket som det högra saknade. Den är nu R, så blocken speglar varandra. Allt annat är oförändrat: köttet med en punkt senap3 i fettet, fisken i ben och glöden i springan.",
+   "ide": "Fyrkantig häll på två bärstenar: en långsmal, kantig stenplatta (ca 32 × 14 punkter) ligger som en bänkskiva över två uppställda stenblock till vänster och höger, och bara blockens framsidor syns som korta stumpar på 4–5 punkter under hällens mörka framkant i skiffer0–skiffer1. I springan mellan blocken, under hällen, syns elden som en låg rad glöd och lågor i rost och senap, det mest mättade i bilden. På den platta ytan ligger en köttbit och en liten fisk sida vid sida ovanifrån, fisken i ben1–ben2 och köttet i rost1–rost2, med en enstaka punkt senap3 i det fräsande fettet."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_stekhall",
+     "rader": [
+      "....nl....................nl....",
+      "....nnmnnmnnnmnnmnnnmnnmnnnl....",
+      "....nlllllllllllllllllllllnl....",
+      "....nl....m.........m.....nl....",
+      "....nl....n.........n.....nl....",
+      "....nl...n.l........m.....nl....",
+      "....nl...n.l.......nml....nl....",
+      "....nl.QQnQlQQQQQQQnQlQQQ.nl....",
+      "....QTTSTnTlSTTSTSTnSlSTSSRQ....",
+      "...QTTSTnTSTlSTSSqSSTSSRSSRSQ...",
+      "..QTSTTSTSTSSTSwqSTSSSRSRSSRQ...",
+      "..QTTSTSTSSTSSrrrrrSSTSSRSRSRQ..",
+      "..QTSTTSSTqqTrsttssrSSTSRSSRRQ..",
+      ".QTTSTSTSSTSrstuttssrSSRSRSSRQ..",
+      "..QTSTSSTSTSrstttttsrqwSRSRRSQ..",
+      "..QSTSTSSTSSrsstttssrSSRSRSRRRQ.",
+      "..QTSSTSTSTSSrsstssrSSRSRSRRRQ..",
+      "..QSTSSTSSTSSSrrrrrSSRSRSRRSRQ..",
+      "...QSTSSTSSRSSRSSRSSSRSRRSRRRQ..",
+      "...QSSRSSRSRSRSSRSRSRRSRRSRRQ...",
+      "...QRSRRRRSRRRRRSRRRRRRRRRQQQ...",
+      "....QQQQQQQQQQQQQQQQQQQQQQQQ....",
+      ".....EstuutKutsstuKLutstusE.....",
+      ".....EHGGHGoGGFGGHGpoGFGFFE.....",
+      ".....EGHGFGpoGFGGFGoGFGFFFE.....",
+      ".....EGGFGFGGFoFGFGFFGFFEFE.....",
+      "......EEEEEEEEEEEEEEEEEEEE......"
+     ]
+    }
+   ],
+   "anteckning": "Hällen ligger platt på ett lågt fundament av lera och sten (jord1–jord2, kontur jord0) och ses snett ovanifrån. Skivan är en oregelbunden skifferhäll på ungefär 28 × 13 punkter, ljusast uppe till vänster. Framkanten är ett smalt band på 2 punkter i skiffer1–skiffer0. Elden syns bara som en glödrand i rost och senap i springan mellan hällen och fundamentet, så hällen är det som syns först. Vid bakkanten står två järnstolpar med en tvärslå, förkortade i kol1–kol3. I slån hänger en tång och en köttgaffel, och deras spetsar hänger ner över hällens bakre del. Köttbiten ligger mitt på ytan, ritad ovanifrån: en mörk stekrand i rost0, rost1 innanför och en ljusare mitt i rost2 med en enda glanspunkt i rost3. Fem stänk i ben2–ben3 runt köttet visar att det fräser. Trägolvet ritas inte, eftersom det är underlaget. Granskningen: Storleken (32 × 27 punkter, hällen ca 28 × 14 punkter mot kolonistens 14 × 20), vinkeln med ytan ovanifrån och det mörkare framkantsbandet, ljuset uppifrån vänster, konturen i skiffer0 och jord0 och glöden som bara syns längs fundamentets överkant stämmer och fick stå kvar. Hällens oregelbundna kontur får vara osymmetrisk, eftersom den ska vara bruten. Det enda jag rättade är stänken: de ljusa punkterna i ben2–ben3 låg utspridda som ensamma prickar och fungerade som för många glanspunkter på stenen. Jag tog bort de två lösa punkterna (nere till vänster och nere till höger om köttet) och samlade resten i tre små puffar om två till tre punkter tätt intill köttbiten: en ovanför, en till vänster och en till höger. Nu läses de som fräsande stänk från köttet och inte som fläckar på stenen. Ställningen, fundamentet och köttbiten är oförändrade.",
+   "ide": "Häll på trägolv med hög bakkant: en oregelbunden, något sned stenhäll (ca 28 × 18 punkter) med naturligt bruten kontur ligger på ett lågt fundament av lera och sten i jord1–jord2, och längs bakkanten står två förkortade järnstänger eller en liten järnkrok upp där ett tänger och en köttgaffel hänger, i kol1–kol2. Elden syns bara som en glödande rand längs hällens främre underkant, så hällen själv dominerar silhuetten. Mitt på ytan ligger en tjock köttbit ovanifrån med stekrand i rost0 och ljusare mitt i rost2, och tre–fyra stänk och små puffar i ben2–ben3 runt den visar att den fräser."
+  }
+ ]
+}

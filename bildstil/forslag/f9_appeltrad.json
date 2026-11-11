@@ -1,0 +1,114 @@
+{
+ "kort": "f9_appeltrad",
+ "namn": "Äppelträdet",
+ "slag": null,
+ "vad": "Steg 9.7.13: äppelträdet är en fleråring gröda på fältet som bär efter tjugo dygn och sedan igen efter varje skörd. Här trädet med röda äpplen på en fältruta.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_appeltrad",
+     "rader": [
+      ".....WWWWWW.....",
+      "...WWPPPPOOWW...",
+      "..WPPPPPOPOOOW..",
+      ".WPPutPOPOutOOW.",
+      ".WPPssOOOOssOXW.",
+      "WPPPOPOOOOOOOXXW",
+      "WPPOPOOttOOOXOXW",
+      "WPOPOOOssOOXOXXW",
+      "WPOutOOOOOXOXXXW",
+      "WOPssOOOOOOttXXW",
+      ".WOOOOOOOOXssXW.",
+      ".WOOOOttOXOXXXW.",
+      "..WOOOssXOXXXW..",
+      "...WWXOXXXXWW...",
+      ".....WWWWWW.....",
+      "......EGFE......",
+      "......EGFE......",
+      "......EGFE......",
+      "..EEEEEGFEEEEE..",
+      "..EHGFEGFEFGFE..",
+      "..EGHFEEEEFGFE..",
+      "..EGFHGFGFGGFE..",
+      "..EFGFGFGFFGFE..",
+      "..EEEEEEEEEEEE.."
+     ]
+    }
+   ],
+   "anteckning": "Ett ungt äppelträd som står rotat i en fältruta. Det ses snett uppifrån, så den runda kronan i oliv täcker det mesta. Ljuset kommer uppe från vänster, med oliv3 där och barr3 i skuggan nere till höger. Konturen är barr2. Kronan har en spegelsymmetrisk form. Under kronan syns bara en kort stump av stammen i jord1–jord2 med jord0-kontur, ljusare på vänster sida. Stammens fot står mitt i rutans nedre halva, i en fyrkantig fläck uppgrävd jord. Fläcken ses ovanifrån och är därför bredare än hög, med jord0-kant. Sex äpplen sitter som 2×2-prickar i rost2 och rost1 utspridda över kronan. Bara de tre övre äpplena har en glanspunkt i rost3. De mättade rosttonerna är sparade till äpplena, eftersom det är dem man ska skörda. Granskningen: Rättat: stammen gick rakt igenom hela jordfläcken ända ner till framkanten och delade den i två halvor, så att trädet såg ut att stå framför fläcken i stället för i den. Nu slutar stammen med en mörk fot (jord0) på rad 20, mitt i fläcken, och jorden fortsätter hel framför foten (raderna 21–22) fram till jord0-kanten. Kronan behålls: den är spegelsymmetrisk, har barr2-kontur, ljust uppe till vänster och barr3-skugga nere till höger. De sex äpplena i rost1–rost2 har en glanspunkt i rost3 på de övre. Storleken 16 × 24 passar ett ungt träd bredvid kolonisten (14 × 20).",
+   "ide": "Ett ungt runt äppelträd, 16 punkter brett och 24 högt, med stammens fot mitt på rutans nedre halva och en fyrkantig fläck uppgrävd jord (jord1–jord2 med jord0-kant) runt roten. Stammen är kort och rak i jord1–jord2 med jord0-kontur. Ovanpå sitter en spegelsymmetrisk, nästan klotrund krona i oliv2–oliv3 med barr2-kontur och barr3 i skuggan nere till höger. Kronan ses snett uppifrån, så toppen är störst och ljusast uppe till vänster och stammen syns bara som en stump under den. Fem eller sex äpplen sitter som 2×2-prickar i rost1–rost2 över kronan, med en enda glanspunkt i rost3 på de övre."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_appeltrad",
+     "rader": [
+      "......WWWW.....WWWWW........",
+      "....WWPPPXWW..WWPPPPXWW.....",
+      "..WWPPPPOPXXWWWPPPOPPOXWW...",
+      ".WPPPOPPOOXXOPPPPOPPOOXXWW..",
+      "WPPOPPOOOXOXOPPOPOOOXOOXXWW.",
+      "WPOPOOOXOXXOXPOPOOOXOXOXXXW.",
+      "WOPOOXOXXOXWGWPOOXOXXOXXXXW.",
+      "WOOXOXXOXXWGEWGEWOXOXXXOXXXW",
+      ".WXOXXOXXWGFEFEWOXOXXOXXXXW.",
+      ".WXOXXOXXWGFGFEWXOXXOXXOXXW.",
+      "..WtsWtsWEGFFEWWtsWtsWtsWW..",
+      "...sr.sr.EGFFE..sr.sr.sr....",
+      "..........EGHFE.............",
+      "..........EGGFE.............",
+      "...........EHGFE............",
+      "...........EGFGE............",
+      "............EGGFE...........",
+      "...........EGHGFFE..........",
+      ".......FGEGHGFFFEGF.........",
+      ".....FGtsFEGFEEFGFGusGF.....",
+      "......FsrGFEFGFFEFGsrF......",
+      ".........FEFFEFFEF.........."
+     ]
+    }
+   ],
+   "anteckning": "Trädet står fast på fältrutan och ses snett ovanifrån. Den platta, ovala paraplykronan i oliv2–oliv3 och barr3 med barr2-kontur är sammanväxt av tre tuvor och täcker det mesta av stammen ovanifrån. Bara i springan mellan vänster och höger tuva syns de två grova grenarna, som möts i stammen. Under kronans främre kant syns den knotiga stammen i jord1–jord2 med jord0-kontur. Den lutar åt vänster: toppen sitter längre till vänster än roten och foten breder ut sig i rötter. Äpplena hänger i rost1–rost2 med rost0 undertill längs kronans främre underkant, delvis framför den mörka barr2-kanten. På så sätt syns de mot skuggan och är det starkaste i bilden. Två nedfallna äpplen ligger ovanifrån sett på den jordfläck som roten står i, och det ena har en enda glanspunkt. Ljuset kommer uppifrån vänster. Kronan är 28 punkter bred och hänger ut över rutans kanter. Granskningen: Granskad mot reglerna; inget behövde rättas, versionen är oförändrad. Storleken är 28 × 22 punkter, under taket på 48 × 48. Trädet är lågt och brett och hänger ut över rutans kanter, vilket passar ett gammalt träd bredvid kolonisten (14 × 20). Vinkeln är snett uppifrån: kronan är platt och oval ovanifrån och byggd av sammanväxta tuvor i oliv3, oliv2 och barr3 med barr2-kontur. Ljuset är ljusast uppe till vänster och mörkast nere till höger. Stammen i jord1–jord2 med jord0-kontur lutar åt vänster och delar sig i två grenar som syns mellan tuvorna. Äpplena är 2 × 2-klumpar i rost2, rost1 och rost0 med ljuspunkten uppe till vänster. De hänger längs kronans främre underkant mot den mörka konturen, så maten är det mättade man ser först. Två nedfallna äpplen ligger på jordfläcken vid roten, det högra med en enda glanspunkt i rost3. Kronan är ljusare än gräset och har barr2-kontur, så den syns på marken. Ytorna har korn utan ensamma mörka fläckar. Ingen markskugga är ritad. Symmetrikravet gäller inte ett träd, och ingenting bärs.",
+   "ide": "Ett gammalt, lågt och brett träd med paraplykrona, 28 punkter brett och 22 högt, som hänger ut över rutans kanter. Stammen är knotig och lutar åt vänster i jord1–jord2 med jord0-kontur, och delar sig i två grova grenar som syns mellan lövklumparna. Kronan är platt och oval ovanifrån och byggd av tre eller fyra sammanväxta lövtuvor i oliv2–oliv3 och barr3, med barr2-kontur. Äpplena i rost1–rost2 hänger tätt längs kronans främre underkant, där de syns mot skuggan. Två nedfallna äpplen ligger på jordfläcken vid roten."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_appeltrad",
+     "rader": [
+      ".....WWWW.....",
+      "....WPPOPW....",
+      "....WPOPOW....",
+      "....WOPOWW....",
+      ".WW.WOOWW.....",
+      "WPPW.WWWE..WW.",
+      "WPOW..FutsWPPW",
+      "WOOW..FtsrWPOW",
+      ".EWW..F.r.WOOW",
+      "utsF..F...FWE.",
+      "tsrF..FooF.uts",
+      ".r..F.FpFE.tsr",
+      "....F.FFuts.r.",
+      ".....GFptsr...",
+      ".....FEpor....",
+      ".....GGGG.....",
+      ".....FEpo.....",
+      ".....GEpo.....",
+      ".....FEpo.....",
+      ".....GGGG.....",
+      ".....FEpo.....",
+      "...EFGEpoFE...",
+      "..EFGFFEEFFE..",
+      ".EFFGFFEFFFEE.",
+      "..EFFEFFEFEE..",
+      "...EEEEEEEE..."
+     ]
+    }
+   ],
+   "anteckning": "Ett nyplanterat ympträd, 14 × 26 punkter, som står mitt på fältrutan. Den grå käppen är nedslagen i jorden direkt bakom stammen, något åt höger. Därför skymmer stammen och grenarna käppens vänstra del, och bara högerkanten (ben1 med ben0-kontur) och toppen syns ovanför klykan. Två vidjebindningar i jord2 går runt både stam och käpp och syns som ljusa band tvärs över dem. Stammen är jord1 med jord0 på skuggsidan till höger. Den delar sig i en Y-klyka med tre smala grenar: snett vänster, rakt upp och snett höger. Varje gren slutar i en liten tuva i oliv2–oliv3 med barr2-kontur, och den ljusa oliven ligger uppe till vänster. Mellan tuvorna syns grenarna fritt, så silhuetten blir gles och vasformad. De fyra äpplena hänger under tuvorna och grenarna på var sin kort jord0-stjälk. De är rost2 och rost1 med rost0 i underkanten och en glanspunkt i rost3 uppe till vänster, så att de är det mättade man ser först. Roten står i en låg, rund kupa av vänd jord i jord0–jord1. Kupan är ljusare uppe till vänster och mörkare nere till höger och sedd snett ovanifrån. Granskningen: Granskad, inga rättelser behövs, och versionen lämnas oförändrad. Storleken är 14 × 26 punkter. Det är lite högre än kolonisten (14 × 20), vilket passar ett ungt ympträd, och ryms inom 48 × 48. Vinkeln är snett uppifrån: jordkupan är rund och sedd ovanifrån. Kupan är spegelsymmetrisk kring mitten, och bara kornet skiljer sidorna åt. Ljuset kommer uppifrån vänster: oliv3 sitter uppe till vänster i tuvorna, rost3-glansen uppe till vänster i varje äpple, jord2 på stammens vänstra sida och ben1 på käppens vänstra sida. Konturerna är materialens mörka toner: barr2 runt bladen, jord0 runt trä och jord och o runt käppen. Inget kol0 används. Idén följs. Stammen är Y-formad med tre uppåtriktade grenar och en bladtuva på varje, så silhuetten blir gles och vasformad. Fyra rost-äpplen med en punkt glans hänger ensamma, vart och ett med en skaftpunkt i jord0 under en gren eller tuva. Käppen står tätt intill stammen och skyms vid grenklykan. Två vidjebindningar i jord2 går runt både stam och käpp. Den mörka kupan ligger mitt på rutan. Bladen i oliv2–oliv3 och de rostiga äpplena läses mot gräset tack vare konturen, och det mättade rost är sparat till frukten, det som går att ta. Inget bärs, så regeln om rem och ansikte gäller inte.",
+   "ide": "Ett nyplanterat, smalt ympträd, 14 punkter brett och 26 högt, bundet till en grå käpp (ben0–ben1 med o-kontur) som står bakom stammen med en vidjebindning i jord2. Trädet har en Y-formad stam som delar sig i tre uppåtriktade grenar, och varje gren bär en liten tuva blad i oliv2–oliv3 med barr2-kontur. Mellan tuvorna syns grenarna, så silhuetten blir gles och vasformad i stället för rund. Fyra stora äpplen i rost1–rost2 med glans i rost3 hänger ensamma på grenarna så att de läses tydligt. Roten står i en liten rund kupa av mörk vänd jord, jord0–jord1, mitt på fältrutan."
+  }
+ ]
+}

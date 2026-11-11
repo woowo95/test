@@ -1,0 +1,118 @@
+{
+ "kort": "f9_rokeri",
+ "namn": "Rökeriet",
+ "slag": null,
+ "vad": "Steg 9.6.8: rökeriet är en station två rutor stor där fisk och kött hängs över glöd och rök och håller längre. Här stationen på trägolvet, framifrån.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_rokeri",
+     "rader": [
+      "..EHE......................EHE..",
+      ".EEEEEEEEEEEEEEEEEEEEEEEEEEEEEE.",
+      ".EHGHHGHGHHGHHGHGHHGHGHHGHGHGGE.",
+      ".EGFGFFGFFGFFFGFFGFFFGFFGFFFFFE.",
+      ".EEEEEEEEEEEEEEEEEEEEEEEEEEEEEE.",
+      "..EGE..EE..E...EE...E..EE..EGE..",
+      "..EGE.oEEo.ts.oEEo.ts.oEEo.EGE..",
+      "..EGE.oqpo.ts.owpo.tr.oqpo.EGE..",
+      ".QEFEQoqpoQtsQoqpoQtsQoqpoQEFEQ.",
+      ".QTTSQoqpoStsToqpoStrToqpoQTSSQ.",
+      ".QTSSQoqpoSsrSoqpoStsSoqpoQSSRQ.",
+      ".QSSRQoqpoQtsQoqpoQsrQoqpoQSRRQ.",
+      ".QTSSQoqpontrnoqpomtsnoqpoQTSRQ.",
+      ".QSSRQoppomsrmopponsrnoppoQSSRQ.",
+      ".QQQQQmoomtutnmoomtutnmoomQQQQQ.",
+      ".QTTSQmtuLutttuLLutttuLutmQTSRQ.",
+      ".QTSSQmstutLutuLutLutuLtsmQSSRQ.",
+      ".QSSRQmlstsutstutstuststlmQSRRQ.",
+      ".QSSRQQQQQQQQQQQQQQQQQQQQQQQSRRQ.",
+      ".QTTTSQTTSSQTTSSQTTSSQTTSSQTSSQ.",
+      ".QTSSRQSSSRQSSSRQSSSRQSSSRQSRRQ.",
+      ".QRRRRQRRRRQRRRRQRRRRQRRRRQRRRQ.",
+      ".QRRRRQRRRRQRRRRQRRRRQRRRRQRRRQ.",
+      "..QQQQQQQQQQQQQQQQQQQQQQQQQQQQ.."
+     ]
+    }
+   ],
+   "anteckning": "Ställningen står på marken över en avlång glödgrop och ses snett ovanifrån. Härden av kantställda skifferstenar fyller två tredjedelar av höjden (rad 7–23): bakre stenraden och sidostenarna ses ovanifrån, och glöden ligger som korn i rost2, rost3 och senap3 i mitten, med aska i kol vid kanterna. Framkanten är stenarnas framsida som ett band på 2 punkter i skiffer1 med skiffer0-fogar och kontur. De två stolparna står i stenarna vid bakkanten och är förkortade. Tvärslån vilar på stolparna och sticker ut en punkt på var sida. Tre spättade fiskar är knutna i stjärten med ett snöre och två köttstrimlor hänger rakt ner mot glöden; de skymmer den bakre stenraden och glödgropens bakre del, som de hänger framför. Ramen är spegelsymmetrisk, och bara ljuset från vänster och det som hänger skiljer sidorna åt. Granskningen: Rättat: härden var ritad som en stenmur från sidan, med en framsida på 7 rader och en grund grop. Nu ses den ovanifrån. Den tar raderna 8–23, alltså 16 av 24 (två tredjedelar av höjden), med en ring av kantställda stenar i skiffer3/skiffer2 och kontur i skiffer0. Ringen har fogar och en inre kontur mot gropen. Framkanten är ett smalt band på 2 rader i skiffer1 med fogar, och under det ligger konturen. Glöden ligger som korn i rost2, rost3 och senap3 i mitten av gropen, med mörk aska (kol1–kol3) mot kanterna. Stolparna står vid bakkanten och slutar bakom de bakre stenarna. Fiskarna och köttstrimlorna hänger rakt ner över bakre stenraden mot glöden, och fiskarna slutar i spetsar. Oförändrat: storleken 32 × 24 (låg och bred bredvid kolonisten 14 × 20), tvärslån och de symmetriska stolparna. Ställningen och härden är spegelsymmetriska, och bara det som hänger och kornet skiljer sidorna åt. Stenen är ljusare än gräset och har kontur, så att stationen syns.",
+   "ide": "Låg och bred ställning över en glödgrop, 32 × 24 punkter: en avlång härd av kantställda stenar i skiffer (kontur skiffer0) ses ovanifrån och tar två tredjedelar av höjden, med glöd i rost2, rost3 och senap3 som korn i mitten. Framkanten är ett band på 2 punkter i skiffer1. Vid bakkanten står två förkortade stolpar i jord1 och jord2 (kontur jord0) med en tvärslå där tre spättade fiskar i ben1 och ben2 och två köttstrimlor i rost1 och rost2 hänger rakt ner mot glöden. Ställningen är spegelsymmetrisk, och bara det som hänger skiljer sidorna åt."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_rokeri",
+     "rader": [
+      ".............TT....pT...........",
+      "..............Tp..Tp............",
+      "...............pTT..............",
+      "............E..Tp..E............",
+      ".............G.pT.F.............",
+      "..............EllE..............",
+      ".............EHGGFE.............",
+      ".............EGHGFE.............",
+      "............EHGHGGFE............",
+      "............EGHGGFFE............",
+      "...........EGFGFFFFFE...........",
+      "...........EHGEllEGFE...........",
+      "..........EHGElmmlEGFE..........",
+      "..........EGHEHGGFEFFE..........",
+      ".........EHGElqmmplEGFE.........",
+      ".........EGHEmpllpmEFGE.........",
+      "........EHGElmollomlEGFE........",
+      "........EGHEHGGGGFGFEFFE........",
+      ".......EHGElmqmqqmpmlEGFE.......",
+      ".EEEEEEHGHEmlplpplplmEGFFEEEEEE.",
+      ".EHGHGEGHElmlomssmolmlEGFEGHGGE.",
+      ".EGHGEHGHEmlstuLLutslmEGFFEGGFE.",
+      ".EFFEFGFFElsttuLLuttslEFFGFEFFE.",
+      ".EHGHHGHGHTSRTSRTSRTSRGHGGHGGFE.",
+      ".EGHGGHGGGSRQSRQSRQSRQGGHGGFGFE.",
+      ".EFGFFFGFFRQQRQQRQQRQQFFGFFFFFE.",
+      ".EHHGHGHHGHGHGHGGHGHGGHGGGGFGGE.",
+      ".EFGFFFFGFFFFFFFFFFFFFFFFFFFFFE.",
+      ".EEEEEEEEEEEEEEEEEEEEEEEEEEEEEE.",
+      "..EGE......................EGE..",
+      "..EFE......................EFE..",
+      "..EEE......................EEE.."
+     ]
+    }
+   ],
+   "anteckning": "Rökkåtan står på ett trägolv som ses snett ovanifrån. Golvet är plankor i jord2/jord3 med fogar i jord1. Framkanten är ett mörkare band (en rad jord1 och en rad jord0), och under den syns bara de två främre benstumparna, så att golvet läses som en yta och inte som en vy rakt framifrån. Kåtan står vid golvets bakkant och är spegelsymmetrisk: lutade stänger som korsar varandra ovanför rökhålet och syns som spetsar ovanför taket, med ett hölje av skinn och näver. Höljet är ljusare till vänster (jord3/jord2) och mörkare till höger (jord1), med kontur i jord0 och en fog på tvären. Taket smalnar mot rökhålet, och två grå slingor i skiffer3/ben1 stiger ur det och delar sig. Framsidan är en öppen mörk triangel i kol1/kol2. Inne i den hänger fisk på två slår: överst två fiskar, nedanför fyra, ljusa i ben2/ben1 med stjärt i ben0. Under fisken ligger glödhögen på golvet i rost1/rost2/rost3 med senap3 i mitten; det är den enda mättade tonen. Framför öppningen ligger fyra kantstenar på golvet i skiffer, belysta uppe till vänster.",
+   "ide": "Hög rökkåta, 32 × 32 punkter: en spetsig, spegelsymmetrisk ram av lutade stänger, täckt av näver och skinn i jord1 och jord2 med kontur jord0, ses snett uppifrån så att taket syns som en trekant som smalnar mot ett rökhål. Ett par grå rökslingor i skiffer3 och ben1 stiger ur rökhålet. Framsidan står öppen som en mörk triangel i kol1 och kol2, och där syns en liten glödhög i rost2 och senap3 nere på golvet. Ovanför glöden hänger två rader fisk i ben1 och ben2 på en slå. På trägolvet framför öppningen ligger ett 2–3 punkter brett band av kantstenar."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_rokeri",
+     "rader": [
+      "...........TS........TS.........",
+      "..........T.........T...........",
+      ".........S.........S............",
+      ".QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ.",
+      "QTTSTSSTSSSTSSRSSTSSSRSSSRSSRSRQ",
+      "QTSQQQQQQQQQQQQQQQQQQQQQQQQQQSRQ",
+      "QTSHGGHGGGHGGHGGGHGGHGGGHGGGFSRQ",
+      "QSTlEloqqqololllrrrrllElllEllRSQ",
+      "QTSHGoqkqqpooHGruttsrGGGHGGGFSRQ",
+      "QSTlEloppoololllrttssrlElllEllRSQ",
+      "QTSHGGHGGGHGGHGGrrrrHGGGHGGGFSRQ",
+      "QSTlEllrrrllEllllElloloqqqollRSQ",
+      "QTSHGGrutsrGGHGGGHGGooqqqkqoFSRQ",
+      "QSTlEllrrrllEllllEllolooppollRSQ",
+      "QSTQQQQQQQQQQQQQQQQQQQQQQQQQQRSQ",
+      "QSSTSSRSSSRSSTSSSRSSSRSSRSSRSRRQ",
+      "QSSRRQRSRRRQRQkkkkQRQRRRRQRRRRRQ",
+      "QSRRRRQRRRRRRksuuskRRRRRQRRRRRRQ",
+      "QRRQRRRRRQRRRkuLLukRRRQRRRRRQRQQ",
+      ".QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ."
+     ]
+    }
+   ],
+   "anteckning": "Rökkistan står låg på trägolvet och ses snett ovanifrån. Ovansidan är en stenkant runt ett galler av liggande slanor och tar tre fjärdedelar av höjden. I springorna mellan slanorna syns det mörka rökrummet. Fisk och köttbitar ligger platt på slanorna och ses rakt uppifrån. Framsidan är ett smalt stenband på 3 punkter. Mitt i bandet sitter eldmunnen, där glöden lyser starkast längst ner. Stenlådan är spegelsymmetrisk; bara kornet och ljuset från vänster skiljer sidorna åt. Röken stiger i två glesa strimmor snett uppåt till höger från gallret. Inga ben syns, eftersom kistan står direkt på golvet. Granskningen: Granskad och oförändrad. Storleken 32 × 20 passar för en station på två rutor och är lägre än kolonisten men bredare. Vinkeln är snett uppifrån: gallret ses ovanifrån över cirka tre fjärdedelar av höjden, rad 15 är framväggens överkant sedd uppifrån och själva framkanten är ett band på 3 punkter (rad 16–18) med eldmunnen mitt fram. Lådan, konturen och eldmunnen (kolumn 13–18 kring mitten 15/16) är spegelsymmetriska, och bara ljus och korn skiljer sidorna åt. Ljuset kommer uppe från vänster: väggen är skiffer3 till vänster och skiffer1 till höger, och fisk och kött har glansen uppe till vänster. Konturen är skiffer0 runt stenen och rost0 runt köttet. Kol0 används bara i fiskögonen och i den sotsvarta eldmunnen, där det verkligen är svart. De mättade tonerna finns bara i maten och glöden. Den grå stenlådan med mörk kontur syns tydligt mot det olivgröna gräset, och de glesa rökpunkterna stiger snett uppåt.",
+   "ide": "Låg rökkista av sten och plank, 32 × 20 punkter: en fyrkantig, spegelsymmetrisk stenlåda i skiffer1 och skiffer2 med kontur skiffer0, där ovansidan ses uppifrån och tar tre fjärdedelar av höjden. Ovansidan är ett galler av slanor i jord2 och jord3, och på gallret ligger fisk och köttbitar i ben2 och rost2 platt sedda ovanifrån. Framkanten är ett band på 3 punkter i skiffer0 och skiffer1 med en liten eldmun mitt fram, där glöden lyser i rost3 och senap3. Från gallret stiger två eller tre glesa rökpunkter i skiffer3 snett uppåt."
+  }
+ ]
+}

@@ -1,0 +1,86 @@
+{
+ "kort": "f9_orte",
+ "namn": "Örtteet",
+ "slag": null,
+ "vad": "Steg 9.5.8: örtteet kokas av rölleka och vatten i en liten lerkruka vid elden, eller fortare och bättre i örtköket, och står kvar i krukan. Det värmer den som fryser och hjälper den sjuke att stå emot. Här den lilla krukan med teet i.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_orte",
+     "rader": [
+      "....EEEEEE....",
+      "...EHLKJJGE...",
+      "...EGKJJIFE...",
+      "....EHGGFE....",
+      "..EEHHGGFFEE..",
+      ".EEHuGGGGGFEE.",
+      "EGEHGHGGGGFEFE",
+      ".EEGHGGGFGFEE.",
+      "..EGGGFGFFFE..",
+      "...EEEEEEEE..."
+     ]
+    }
+   ],
+   "anteckning": "Krukan står på marken vid elden och ses snett ovanifrån. Den utvikta mynningen syns därför som en oval överst, och i den ligger teets yta i senap och oliv med en ljus glanspunkt uppe till vänster. Mynningens bakkant syns som en tunn kontur, framkanten som ett ljust band och under den den korta halsen. Den runda buken är spegelsymmetrisk, och de två små öronen sitter på var sin sida i höjd med skuldran, där man lyfter krukan. Leran är tecknad i jordtoner med jord0 som kontur, ljusast på vänstra skuldran och mörkast nere till höger. Skuggan ritas inte. Bilden är 16 × 12 punkter inklusive öronen, och själva krukan är cirka 12 × 10. Granskningen: Rättat: krukan var 16 × 12 punkter, nästan lika bred som kolonisten och för stor för en liten lerkruka. Den är nu 14 × 10 punkter, närmare idéns 12 × 10. Bukens bredd räknas nu utan öronen, så krukan är tydligt bredare i buken än vid mynningen och läses som bukig. Mynningen var nästan fyrkantig och har fått rundade hörn, så att den läses som en oval snett ovanifrån. De ensamma oliv-prickarna i teet är borttagna. Teet har nu senap: en glanspunkt (senap3) uppe till vänster, senap2 och senap1 i mitten och senap0 nere till höger. Idén nämnde rost, så vänstra skuldran har fått en enda glanspunkt i rost3. Resten av leran är jord2 och jord1 med jord0 som kontur, ljusast till vänster och mörkast nere till höger. Formen är spegelsymmetrisk, med små öron på båda sidor och en kort hals under mynningen.",
+   "ide": "Låg, bred och bukig lerkruka, cirka 12 × 10 punkter, spegelsymmetrisk med rund buk, kort hals och en utvikt mynning som ses snett ovanifrån som en oval. Ovalen tar ungefär en tredjedel av höjden och visar teet som en yta i senap och oliv med en glanspunkt uppe till vänster. Krukan är i jord- och rosttoner med jord0 som kontur, ljusast på vänstra skuldran och mörkast nere till höger, och har två små öron på sidorna."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_orte_kruka",
+     "rader": [
+      ".....qwqL..",
+      "....LqLqLK.",
+      ".....KJWK..",
+      "......WX...",
+      ".....W.....",
+      "...ooWoo...",
+      "..oqGWFpo..",
+      "..opqppoo..",
+      "...oqppo...",
+      "...oqppo...",
+      "..oqqpppo..",
+      ".oqqppppoo.",
+      ".oFGFFFFEo.",
+      ".oqpqpppoo.",
+      ".opppppooo.",
+      "..oppppoo..",
+      "....opo....",
+      "...ooooo..."
+     ]
+    }
+   ],
+   "anteckning": "Krukan står på marken vid elden och ses snett uppifrån, så mynningen syns som en liten oval: bakkanten upptill, teet i jord2 och jord3 inuti och den främre kanten i ljust ben under. Formen är spegelsymmetrisk: smal utsvängd fot, svällande mage med en mörk rand i jord1, insvängd hals och en ovalt utvikt mynning. Ljuset kommer uppifrån vänster med ben2 till vänster och ben0 till höger, och konturen är i ben0. Röllekan står nedstoppad i teet. Stjälken går in bakom den främre kanten och syns över den bakre. Den lutar åt höger och bär en platt blomskärm i ben2 och senap3 med en enda ljus punkt. Den är det enda som bryter symmetrin. Granskningen: Granskad mot reglerna. Storleken stämmer: krukan är 9 punkter bred och 13 hög, med kvisten 18 rader, och är tydligt mindre än kolonisten (14 × 20). Formen är spegelsymmetrisk kring mittkolumnen från mynning till fot. Ljuset faller från vänster med mörkare ben0 till höger, och randen i jord1 har ljus G till vänster och mörk E till höger. Konturen i ben0 och den ljusa leran syns mot gräset. Kvisten bryter symmetrin, som idén säger. Rättat: i mynningen (rad 6) var teet ljust H och G och läste som lera. Nu är teet mörkare G och F, så att den ovala mynningen ses ovanifrån med te i och mynningens ljusa kant (q) sitter till vänster. Stjälken står kvar ur teet. Övrigt är oförändrat.",
+   "ide": "Hög och smal kruka med rak hals, cirka 9 × 13 punkter, formad som en symmetrisk tulpan med smal fot, svällande mage och lätt insvängd hals mot en liten oval mynning. Upptill sticker en kvist rölleka upp ur teet: en grön stjälk i barr och en platt vit-gul blomskärm i ben2 och senap3. Kvisten är det enda som bryter symmetrin. Leran är grå-beige i ben0 och ben1 med konturen i ben0 och en mörk rand i jord1 runt magen."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_orte_kruka",
+     "rader": [
+      "...T......",
+      "....T..T..",
+      "...S..T...",
+      "......S...",
+      "..EEEEEE..",
+      ".EHuGtGsE.",
+      "EHKLJKOJsE",
+      "EGJONJJIsE",
+      "EHtGtGtsFE",
+      "EGtGsGsFsE",
+      ".EGsFsFFE.",
+      ".ElFmFlmE.",
+      "..EmlmlE..",
+      "..GFEEFE..",
+      "..FE..FE..",
+      "..EE..EE.."
+     ]
+    }
+   ],
+   "anteckning": "Krukan står fritt på marken vid elden på sina tre korta ben och ses snett uppifrån, som allt annat på kartan. Mynningen syns därför som en bred oval. Den bakre randen syns uppe och den främre randen som ett ljust band nertill. Inuti ligger senapsbrunt te med flagor av rölleka i oliv. Under randen syns bara den runda, låga buken. Den blir sotsvart i kol nertill, där elden slickat den. Av de tre benen syns de två främre som spegelvända stumpar på 3 punkter, och det bakre skymtar som en mörk punkt i mitten. Formen är spegelsymmetrisk. Bara ljuset från övre vänster och kornet skiljer sidorna åt. Ånglockarna i skiffer stiger från teytan och visar att teet är varmt. Konturen är jord0. Granskningen: Rättat: 1) Storleken. Krukan var 12 punkter bred och nästan lika bred som kolonisten (14). Den läste som en stor gryta och inte som en liten lerkruka för te. Nu är den 10 × 12 punkter med ben och 16 med ånga, och kroppen är 10 × 9. 2) Läsbarheten. Kroppen var nästan helt i rost, och det senapsbruna teet försvann i den varma leran. Leran är nu mest jord (H/G/F) med rost som korn, så att teet i mynningen är det som lyser. Teet har en enda glanspunkt i senap3 uppe till vänster och bladflagor i oliv. 3) Mynningen är en tydlig oval sedd snett uppifrån: bakkanten i jord, teet i två rader och en ljusare framläpp. Ljuset kommer från vänster och kanterna är mörkare till höger. 4) Benen är tre punkter höga, och de främre stumparna är spegelvända i formen. Det bakre benet skymtar i mitten under botten. Konturen är jord0 runt hela krukan. Den sotiga botten är i kol1/kol2, och kol0 används inte. Ångan är två korta lockar som går från skiffer2 nertill till skiffer3 upptill.",
+   "ide": "Liten trefotad kokkruka, cirka 12 × 11 punkter, rund och låg som en skål, med tre korta stumpar som ben. De två främre benen syns som spegelvända stumpar på 3 punkter och det bakre skymtar i mitten. Mynningen ses snett uppifrån som en bred oval fylld med varmt senapsbrunt te och några gröna bladflagor i oliv. Ett par små ånglockar i skiffer3 stiger från ytan för att visa att teet är varmt. Leran är rost och jord med sotsvärtad botten i kol1, eftersom krukan står vid elden."
+  }
+ ]
+}

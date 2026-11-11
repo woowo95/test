@@ -1,0 +1,74 @@
+{
+ "kort": "f9_skara",
+ "namn": "Skäran",
+ "slag": null,
+ "vad": "Steg 9.8.9: skäran, ett nytt redskap att slå gräs och korn med: ett träskaft med en krökt egg av flinta. Den används på slåtterängen.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_skara",
+     "rader": [
+      "........QQQQ...",
+      ".......QTSSSQQ.",
+      "......QTSQQQSRQ",
+      "......QSRQ..QSQ",
+      ".....QSRQ....Q.",
+      "....EsrE.......",
+      "...EHGE........",
+      "..EHGE.........",
+      ".EGFE..........",
+      "EGFE...........",
+      "EE............."
+     ]
+    }
+   ],
+   "anteckning": "Skäran ligger platt på marken, sedd snett uppifrån, så hela redskapet syns. Skaftet går diagonalt från nedre vänstra hörnet upp mot mitten. Det är jord1–jord3 med jord0-kontur: ljust uppe till vänster och mörkare nere till höger. Där bladet sitter fast är skaftet lindat med en smal rem i rost1 och rost0. Därifrån böjer flintbladet upp och åt höger som en krok och slutar i en spets som pekar nedåt. Bladet är skiffer1–skiffer2 med skiffer0-kontur. Eggen ligger på krokens insida och har en enda glanspunkt i skiffer3, så man ser att skäran drar mot sig. Silhuetten är öppen och asymmetrisk. Skuggan ritas inte. Granskningen: Storleken (15 × 11) fungerar mot kolonisten (14 × 20), och vinkeln snett uppifrån med skäran liggande platt på marken följer idén. Skäran är inte symmetrisk och behöver inte vara det. Silhuetten med skaft, rem och krok är tydlig, och eggen ligger på krokens insida. Jag rättade två saker. Flintbladet var mest skiffer2 och skiffer1, nästan lika mörkt som gräset, och på flera ställen bara en punkt brett. Bladet är nu två punkter brett i bågen, med skiffer3 på den övre vänstra sidan mot ljuset, skiffer2 i mitten och skiffer1 nedåt höger. Det syns bättre på oliven och har korn i tre toner. Glanspunkten blev två skiffer3-punkter mot ljuset i stället för en mitt i bågen. Bladets ytterkontur högst upp till höger är sluten med skiffer0 (två punkter längst ut på andra raden), så att bågen inte ser avbruten ut. Skaftet i jord0–jord3 och den rostfärgade remmen där bladet sitter fast är oförändrade.",
+   "ide": "Skäran ligger platt på marken sedd snett uppifrån, ungefär 10 × 8 punkter: ett rakt, kort träskaft går diagonalt från nedre vänstra hörnet upp mot mitten och övergår i ett enda krökt flintblad som böjer sig som en krok eller ett frågetecken uppåt och åt höger. Skaftet är jord1–jord3 med jord0-kontur och en smal rem i rost1 lindad där bladet sitter fast, och bladet är knackad flinta i skiffer1–skiffer3 med skiffer0-kontur och en enda glanspunkt i skiffer3 på den inre, vassa kanten. Silhuetten är öppen och asymmetrisk, med eggen på krokens insida så att man ser att den drar mot sig."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_skara",
+     "rader": [
+      "...EEEEEE...",
+      ".EEHHGHGGEE.",
+      "EHHGHGGGGFFE",
+      "EHGRRRRRRRFE",
+      "EHRTSTSTSRFE",
+      "EHRT....TRE.",
+      "EGRS.....E..",
+      "EGGE........",
+      ".EE........."
+     ]
+    }
+   ],
+   "anteckning": "Skäran ligger på marken med bågen uppåt och öppningen nedåt, sedd snett uppifrån som kartan. Den är ett enda böjt trästycke med jord0-kontur. Träet är jord3–jord2 i ljuset uppe till vänster och jord1 nedåt höger. Den vänstra skänkeln är tjockare och är handtaget, och den högra smalnar av mot spetsen. Längs bågens insida går en fog av skiffer1. I fogen sitter små flintbitar i skiffer3 och skiffer2 som tänder och pekar in mot öppningen, så att tandraden syns först. Ändarna böjer inåt nedtill, så att bågen blir nästan sluten och inte läses som en krok. Bara redskapet ritas, utan skugga, som lös sak att ta. Granskningen: Rättat: 1) Storleken: 14 × 9 var för stort för en skära mot kolonisten (14 × 20) och större än idéns cirka 12 × 7. Bilden är nu 12 × 9. 2) Formen: den gamla bilden var nästan spegelsymmetrisk och fyrkantig och läste som en sadel eller väska, inte som ett redskap. Nu är den en båge med bågen uppåt. Vänster ände är tjockare och längre nedåt och blir handtaget. Höger ände smalnar av till en kort spets, som i idén. 3) Tandraden: genomskinliga hål mellan flintbitarna (T.S.T.S) gav ensamma prickar och en trasig rad. Nu är det en sluten rad flintbitar i skiffer2–skiffer3 mot en skiffer1-fog längs bågens insida, så att raden syns först. 4) Ljuset: trät går från jord3–jord2 uppe till vänster till jord1 nere till höger, med jord0-kontur runt om. Handtagets nederdel går mot jord2, och konturen är sluten även under handtaget och spetsen. Vinkeln (redskapet liggande, snett ovanifrån) och paletten var redan rätt.",
+   "ide": "Skäran är byggd som en bred halvmåne av ett enda böjt trästycke, ungefär 12 × 7 punkter, liggande med bågen uppåt och öppningen nedåt som en bumerang, där ena änden är tjockare och fungerar som handtag. Längs bågens insida sitter en rad små flintbitar som tänder, var och en 1–2 punkter i skiffer2–skiffer3 mot en mörkare skiffer1-fog, medan träet är jord2–jord3 i ljuset uppe till vänster och jord1 nedåt höger med jord0-kontur. Formen är en tydlig, nästan sluten båge snarare än en krok, och tändernas rad är det man ser först."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_skara",
+     "rader": [
+      ".EE............",
+      "EHGE...........",
+      ".EHGE..........",
+      "..EHGE...QQQ...",
+      "...EHGE.QTTSQ..",
+      "....EGFQSQQSRQ.",
+      ".....EE....QSQ.",
+      ".IIII.F.IIIQRQ.",
+      "ILKLKIFIKLKLI..",
+      "IKLKJKFKJKJKI..",
+      "IJKJIIFIIJIJI..",
+      "I.III.E.III.I.."
+     ]
+    }
+   ],
+   "anteckning": "Skäran är instucken med flintspetsen i marken strax bakom kärvens högra ände. Skaftet (jord2–jord3 med kontur i jord0) pekar snett uppåt vänster. Vid skaftets nedre ände sitter en lindning i jord1, och där börjar den krökta flintan (skiffer1–skiffer3 med kontur i skiffer0). Den bågar åt höger och går rakt ner. Bladets nedre del döljs bakom kärven, så flintan syns bara där den sticker upp vid bakkanten. Kärven ligger ner, ses snett ovanifrån och är spegelsymmetrisk kring snöret i jord1. Ljusast är den uppe till vänster (senap3), och framkanten är ett mörkare band i senap1 med kontur i senap0. Strånas ändar spretar åt båda sidor. Senapstonerna är de enda mättade färgerna eftersom kärven är maten. Det ger en hög, smal silhuett över ett lågt, brett bylte på ungefär 15 × 12 punkter. Granskningen: Granskat mot reglerna. Storleken (15 × 12) passar mot kolonisten och rutan. Vinkeln snett uppifrån fungerar: skaftet och flintan har kontur och syns på gräset, och ljuset faller från övre vänstra hörnet. Kärven var dock en slät, rak rektangel. Idén kräver ett knippat bylte med strån som spretar åt båda håll, så jag rättade det: kärven nyps nu in vid snöret (senap0-kontur intill bandet i rad 8 och 10, glipor bredvid knuten överst och underst). Halmändarna nedtill är spretiga och spegelsymmetriska kring snöret. Skäran och flintbladet är oförändrade, och kärven bär fortfarande ensam de mättade senapstonerna.",
+   "ide": " Skäran står uppstucken med flintbladet nedåt i marken bredvid en liten liggande kärve av nyslaget korn, sedd snett uppifrån, totalt ungefär 14 × 12 punkter. Kärven är ett kort, knippat bylte i senap1–senap3 med en snörad mitt i jord1 och strån som spretar åt båda håll, och den bär de enda mättade tonerna eftersom det är maten. Skäran lutar upp vid kärvens bakkant med skaftet i jord2–jord3 pekande snett uppåt vänster och den krökta flintan i skiffer1–skiffer3 synlig bara där den går ner mot marken, så att silhuetten blir hög och smal ovanför ett lågt, brett bylte."
+  }
+ ]
+}

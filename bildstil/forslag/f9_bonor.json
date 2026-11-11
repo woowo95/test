@@ -1,0 +1,97 @@
+{
+ "kort": "f9_bonor",
+ "namn": "Bönor",
+ "slag": null,
+ "vad": "Ritad av API:t: tre nya idéer, var och en ritad för sig utan att se de andra. Steg 9.7.8: bönor är en gröda som odlas på fältet och ger mat som håller länge torkad. Här bönorna som sak i förrådet.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_bonor",
+     "rader": [
+      "......ILKI......",
+      "...EELKKEJIEE...",
+      "..EHHKEJIKJGFE..",
+      ".EHLKJILKEJKJFE.",
+      ".EHKELKKEJIEJFE.",
+      ".EGJIKEJIKJJIFE.",
+      ".EGKKJIKKEJKJFE.",
+      ".EGHIKJJEJJIFFE.",
+      ".EGHHGHGGGFGFFE.",
+      "..EGGFGFFFFFFE..",
+      "...EFGFFFFFFE...",
+      "....EEEEEEEE...."
+     ]
+    }
+   ],
+   "anteckning": "Skålen står direkt på marken utan ben och ses snett ovanifrån som kartan. Den ovala öppningen tar ungefär två tredjedelar av höjden, och den smala, mörkare jord1-buken syns under den främre läppen. Läppen är ljus jord3 uppe till vänster och mörknar till jord1 nere till höger. Konturen är jord0 runt träet. Formen är spegelsymmetrisk; bara ljuset skiljer sidorna åt. Skålen är fylld med åkerbönor sedda ovanifrån, var och en 3 × 2 punkter i senap med ett jord0-ärr i den inbuktade undersidan, så att de läses som njurformade bönor och inte som korn eller insekter. Högen buktar upp över bakkanten, där den skymmer den bakre läppen. Mot framkanten syns i stället skålens främre läpp framför bönorna. Senapen är den mättade tonen eftersom det är maten man ska se; träet hålls dämpat. Granskningen: Rättat: version 1 läste som en hög, randig korg eller ananas. Bönorna fyllde hela silhuetten ner till rad 7, skålen hade raka sidor och ingen oval öppning syntes, och bönorna låg tätt i diagonala ränder så att de läste som korn. Ritad om som en låg, spegelsymmetrisk träskål på 14 × 12 punkter i 16 × 12 med en oval öppning på rad 1–8, ungefär två tredjedelar av höjden. Kring öppningen går en jord0-kontur, en ljus jord3-läpp till vänster och fram och en mörkare jord1-läpp till höger. Under den sitter en smal buk i jord2–jord1 på två rader och en botten i jord0, utan ben. Bönorna är 2 × 3 punkter med en ljus senap3/senap2-topp, ett jord0-ärr på ena sidan och en senap1/senap0-botten. De ligger i förskjutna kolumner så att de skiljs åt och inte bildar ränder, och de till höger är mörkare så att ljuset kommer uppifrån vänster. Högen buktar upp två rader över bakre kanten i mitten. Skålen har jordtoner och mörk kontur, så den syns på gräset, och den är mindre än kolonisten.",
+   "ide": "En låg, spegelsymmetrisk träskål (ca 14 × 10 punkter) sedd snett ovanifrån: en bred oval öppning som tar två tredjedelar av höjden, kantad av jord0-kontur och en ljus jord3-läpp uppe till vänster, med en smal mörkare jord1-buk under. I skålen ligger en hög av njurformade åkerbönor ovanifrån, var och en 2 × 3 punkter i senap1–senap3 med ett mörkt jord0-ärr på ena sidan, så att de läses som bönor och inte som korn. Skålen står på marken utan ben, och bönhögen buktar upp lite över kanten mot bakre delen."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_bonor",
+     "rader": [
+      ".......EE.......",
+      ".VV.VVEqoE......",
+      "VPOXWVEpoE.VV.VV",
+      "VXOWWVEpoEVPOXWV",
+      ".VWWVXEpoEVXOWWV",
+      "..VV..EpoWXVWWV.",
+      "......EpWE..VV..",
+      "......EXoE......",
+      "...XXXWpoE......",
+      "..POM.EpoE......",
+      "..PPM.EpoE......",
+      "..POM.EpoE.VV.VV",
+      "..PPM.EpoEVPOXWV",
+      "..POM.EpoWWXOWWV",
+      "...PM.EpWEXVWWV.",
+      "....M.EXoEX.VV..",
+      "...XXXWpoEXPOM..",
+      "..POM.EpoE.PPM..",
+      "..PPM.EpoE.POM..",
+      "..POM.EpoE.PPM..",
+      "..PPM.EpoE.POM..",
+      "..POM.EpoWX.PM..",
+      "...PM.EpWE...M..",
+      "....M.EXoE......",
+      ".....XWpoE......",
+      ".....WEpoE......",
+      "...EHGEpoEGFE...",
+      ".EHGHGFEEFGFGFE.",
+      "EGHGHGFGFGFGFFFE",
+      "EGHGGFGFGFFFFFFE",
+      ".EGFGFGFFFFFFFE.",
+      "..EEEEEEEEEEEE.."
+     ]
+    }
+   ],
+   "anteckning": "Stören står rakt upp, nedstucken i en liten jordhög sedd ovanifrån; själva stören är grått, barkat trä (ben1 i ljuset till vänster, ben0 till höger, jord0 som kontur) med en enda ljus glanspunkt i toppen. Rankan slingrar sig runt stören i en spiral: bara de framsidiga varven syns som korta diagonaler över trät (alla lutar åt samma håll, nere vänster till uppe höger), de bakre varven döljs av stören. Där rankan kommer fram vid kanterna sitter två par breda hjärtformade blad (barr och oliv med barr0-kontur) och korta stjälkar som de tre baljorna hänger från. Baljorna hänger med tyngden rakt ner och böjer svagt utåt i spetsen; de är oliv2 med oliv3-knölar i växelmönster för bönornas bucklor och oliv0 som mörk kant till höger, så att de läses som baljor och inte som insekter. Silhuetten är smal och lodrät med baljorna som hängande streck åt sidorna. Granskningen: Baljorna hängde snett som diagonala streck. Nu hänger de rakt ner med en svag böj in mot spetsen, så som en tung balja hänger från rankan, och de är 7 punkter långa. Varje balja har oliv3 på ljussidan och oliv0 som kontur på skuggsidan. Mittkolumnen växlar mellan oliv2 och oliv3, så att bönornas bucklor syns som ljusare knölar. Den högra baljan har flyttats en punkt ut från stören och hänger från rankans stjälk. Jordhögen var förskjuten åt höger och är nu spegelsymmetrisk kring stören. Stören går ner i ett mörkt hål i jorden i stället för en ensam mörk prick. Stören, de hjärtformade bladen, rankan och storleken mot kolonisten var redan rätt och är oförändrade.",
+   "ide": "En hög stör (ca 8 × 30 punkter) av grått, barkat trä som står rakt upp, förkortad så att toppen lutar svagt bakåt och den nedre änden går ner i en liten jordhög sedd ovanifrån. Runt stören slingrar sig en bönranka i barr- och olivtoner med några få breda hjärtformade blad, och från rankan hänger tre eller fyra långa, smala, svagt böjda gröna baljor (2 × 6–7 punkter i oliv2–oliv3) där bönornas bucklor syns som små ljusare knölar längs baljan. Silhuetten är smal och lodrät, med baljorna som tydliga hängande streck åt sidorna."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_bonor",
+     "rader": [
+      "...........MMMM....",
+      "........MMMLPPOM...",
+      ".....MMPPPOOOMM....",
+      "...MMPPOOMMMMMMMM..",
+      ".MMOpPPPPPOPPOOOOM.",
+      "MOPOpOMMMMMMMMMMMM.",
+      "MPOOpMPPNwqNwqNwqNM",
+      "MOONpMPNNqpNqpNqpNM",
+      ".MMOpMOMMMMMMMMMMM.",
+      "...MMPPPOPOOOOM....",
+      ".....MMMMMMMMMM...."
+     ]
+    }
+   ],
+   "anteckning": "Knippet ligger platt på marken och ses snett ovanifrån, så baljorna syns i hela sin längd och inget står upp. Fyra baljor ligger i en solfjäder från en gemensam stjälkände till vänster, där korta gröna stjälkstumpar sticker ut. Där är de knutna med ett snöre i ben1 med ben0-kontur och en kort lös snörände. Den övre baljan pekar brant uppåt och ligger delvis under nästa. Den öppnade baljan ligger överst i mitten: ovanför syns skalets kant i ljus oliv, och i det mörkare inre ligger tre runda bönor i ben2 med en enda glanspunkt. Den nedre baljan sticker fram under den öppna. Konturen är oliv0 och den ljusa kanten oliv3 sitter uppe till vänster. Mot höger mörknar baljorna mot oliv1, och kornet växlar punkt för punkt. Formen är låg, bred och avlång, utan ben eller vingar, så den inte kan läsas som en insekt. Granskningen: Version 3 bröt mot idén och läsbarheten. Den var 21 × 16 punkter, alltså dubbelt så hög som de tänkta 16 × 8, och såg ut som staplade band i stället för ett knippe baljor. Baljorna hade dessutom samma mörka oliv som gräset och försvann i det. Snöret låg som lösa prickar bredvid knippet i stället för runt stjälkänden, och bönorna var platta streck. Jag har ritat om knippet till 19 × 11 punkter, liggande platt och sett ovanifrån. Fyra baljor ligger i solfjäder från en gemensam stjälkände till vänster: en uppåtböjd, en nästan vågrät, den öppnade i mitten och en nedåtböjd. Snöret i ben1 är lindat runt stjälkänden. Baljorna har kontur i oliv0, kropp i oliv3 och oliv2 med ljusast upp till vänster, och en enda glanspunkt i senap3 så att de lyser fram mot gräset. Den öppnade baljan har ett mörkt inre i oliv1 med tre runda bönor på 2 × 2 punkter, ljusa uppe i ben3 och ben2 och skuggade nere i ben1.",
+   "ide": "Ett litet knippe nyplockade baljor (ca 16 × 8 punkter) som ligger platt på marken sett ovanifrån, fyra eller fem långa böjda baljor lagda i solfjäder från en gemensam stjälkände där de är knutna med ett snöre i ben1. En av baljorna är öppnad på mitten så att man ser tre runda ljusa bönor i rad i det mörkare inre, de andra är hela med bucklig kontur i oliv0 och ljus kant i oliv3 uppe till vänster. Formen är låg och bred, liggande och avlång, inga ben eller vingar, bara de raka, något krökta baljorna."
+  }
+ ]
+}

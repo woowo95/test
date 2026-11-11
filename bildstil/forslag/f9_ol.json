@@ -1,0 +1,93 @@
+{
+ "kort": "f9_ol",
+ "namn": "Öl",
+ "slag": null,
+ "vad": "Steg 9.6.13: öl är en dryck som bryggs av malt i bryggkaret och förvaras i en stor lerkruka. Här ölet som sak i förrådet.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_ol",
+     "rader": [
+      "....EEEEEE....",
+      "...EHqqqqFE...",
+      "..EHqKKJJqFE..",
+      "..EHGqJJqGFE..",
+      "...EGGGFFFE...",
+      "....EHGGFE....",
+      "....EHGGFE....",
+      "...EHHGGFFE...",
+      "..EHHHGGGFFE..",
+      ".EHHEEGGEEFFE.",
+      ".EEHHGEEGFFEE.",
+      "EHHHHGHGGGFFFE",
+      "EHHpHHGGGFGFFE",
+      "EHHHGHGGGFFFFE",
+      "EGHGHGGGFGFFFE",
+      ".EGGGGGFGFFFE.",
+      "..EGGFGFFFFE..",
+      "..EGFGFFFFFE..",
+      "...EFGFFFFE...",
+      "....EEEEEE...."
+     ]
+    }
+   ],
+   "anteckning": "Krukan står på marken i förrådet och ses snett uppifrån. Mynningen syns därför som en liten ellips överst, med den utvikta läppen runt om. I den ligger ölet i senap med en skumkant i ben2. Under läppen följer en smal hals, och därunder vidgar sig den äggformade buken. Ett vågband i jord0 är ristat runt skuldran. Ljuset kommer uppifrån vänster: jord3 och en enda glanspunkt i ben1 på vänstra buken, jord1 nere till höger. Konturen är jord0 runt om, och formen är spegelsymmetrisk. Ingen skugga på marken är ritad. Granskningen: Granskad mot reglerna. Storleken är 14 × 20, lika stor som kolonisten och rimlig för en stor förrådskruka. Vinkeln stämmer: mynningen syns som en liten ellips ovanifrån, med öl i senap1–senap2 och skumkant i ben2. Silhuetten är spegelsymmetrisk rad för rad, och ljuset faller rätt: jord3 och en glanspunkt i ben1 sitter på vänstra buken, jord1 nere till höger. Konturen är jord0, kol används inte, och krukan syns tydligt mot gräset. Vågbandet går runt skuldran som idén säger. En sak rättades: på rad 17 satt en ensam mörk jord0-punkt innanför högerkonturen. Den bröt mot regeln om mörka fläckar och gjorde konturen ojämn mot vänster sida, så den är nu jord1. Allt annat är oförändrat.",
+   "ide": "Hög äggformad lerkruka, cirka 14 × 20 punkter, med smal hals och en utvikt läpp högst upp. Kroppen är bränd lera i jord1–jord3 med kontur i jord0; den ljusaste tonen sitter på vänstra buken och den mörkaste nere till höger, och ett ristat vågband i jord0 går runt skuldran. Eftersom vi ser krukan snett uppifrån syns mynningen som en liten ellips, där ölet i senap1–senap2 fyller den med en skumkant i ben2. Formen är spegelsymmetrisk och bara ljuset skiljer sidorna åt."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_ol",
+     "rader": [
+      "......rrrrrrrrrr......",
+      "...rrtuuuttttttssrr...",
+      ".rutssrrrrrrrrrrrrtsr.",
+      "rutqpqqpqJKKJKJJJJItsr",
+      "rutqpqpqpKKLKJKJJJIssr",
+      "rtspqJKKJKKJJKJJJJIssr",
+      ".rtsJKJJKJJJJJIJIIssr.",
+      ".rttuuuttttttttsssssr.",
+      ".ruttttsttstssssssssr.",
+      "..rttsttstsssssssssr..",
+      "..rsstsssssssssssrrr..",
+      "...rssssssssssssrrr...",
+      ".....rrrrrrrrrrrr....."
+     ]
+    }
+   ],
+   "anteckning": "Krukan står på förrådets golv och ses snett ovanifrån, så den öppna mynningen syns som en bred ellips i övre halvan. Bakom ölytan syns en smal remsa av den skuggade innerväggen. Ölytan är i senap1–senap2 med en glanspunkt i senap3, och längst in till vänster ligger ett fläckigt skumlager i ben1–ben2. Kanten är ljusast uppe till vänster (rost3) och mörknar åt höger. Under den främre kanten syns bara ett lågt väggband i rost1–rost2 som smalnar av mot en mörkare fot i rost0. Konturen är rost0 runt om, och silhuetten är spegelsymmetrisk. Granskningen: Storleken (22 × 13) passar mot kolonisten, och vinkeln snett uppifrån med mynningen som en bred ellips stämmer. Silhuetten är spegelsymmetrisk och krukan syns tydligt mot gräset. Rättat: 1) Väggbandet under framkanten var 6 punkter högt mot idéns 4–5. Jag tog bort en av de två nästan lika väggraderna, så att bandet nu är 5 punkter och krukan blir lägre och mer karlik. 2) Näst nedersta raden hade ensamma rost0-prickar mitt i rost1, vilket ger mörka fläckar. De är bytta mot rost1, så att mörkningen bara ligger samlad nere till höger, bort från ljuset.",
+   "ide": "Låg, bred och öppen lerkruka, cirka 22 × 14 punkter, som mest är en stor mynning. Ovansidan är en bred ellips som tar halva höjden, och där ligger ölytan i senap1–senap2 med ett fläckigt skumlager i ben1–ben2 längst in mot vänster. Krukans vägg syns bara som ett band på 4–5 punkter under ellipsen, i rost1–rost2 med kontur i rost0 och en mörkare kant nertill. Silhuetten är låg och symmetrisk, som ett kar som står på golvet i förrådet."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_ol",
+     "rader": [
+      "......EEEEEE......",
+      "....EHHHEEGGGE....",
+      "...EHHHEHGEGGGE...",
+      "..EHHGHGEEGGGGFE..",
+      ".oqEFGFFGFFFFFEpo.",
+      ".oqqEEEEEEEEEEppo.",
+      "..oqwqpqqpqpqppo..",
+      "...opqpqpqpqppo...",
+      "....EEEEEEEEEE....",
+      "...EGGKGFGFFFFE...",
+      "EEEHGGKGFGFFFFFEEE",
+      "EGEGGGJGFGFFFFFEFE",
+      "EEEGGFGFGFFFFFFEEE",
+      ".EGGFGFGFGFFFFFFE.",
+      ".EGFGGFGFFGFFFFFE.",
+      "..EGFGFFGFFFFFFE..",
+      "...EFFGFFFFFFFE...",
+      "....EEEEEEEEEE...."
+     ]
+    }
+   ],
+   "anteckning": "Krukan står på marken och ses snett ovanifrån. Överst syns lockets ovansida som en ellips i H och G med kontur i jord0, och knoppen sitter mitt på. Under locket syns lockets framkant som ett smalt band i jord1. Tygstycket är lagt över mynningen innan locket trycktes ner, och det syns där det sticker ut runt lockets kant och hänger ner i veck. Snöret i jord0 knyter ihop tyget runt halsen. Under kanten har en kort droppe öl i senap2 runnit ner och slutar i en mörkare spets i senap1, och den visar vad krukan innehåller. Den runda kroppen i jord1 och jord2 har ljuset uppe till vänster och blir mörkare nedåt till höger. De två öronen sitter lika högt på var sin sida, och formen är spegelsymmetrisk; bara ljuset, kornet och droppen skiljer sidorna åt. Granskningen: Version 3 håller i stort sett. Storleken (18 × 18) passar mot kolonisten (14 × 20) som en stor förrådskruka. Formen är spegelsymmetrisk med öronen lika högt på båda sidor, ljuset faller från vänster och jord0-konturen syns mot gräset. Ölet i senap2 under kanten följer idén. Jag rättade bara knoppen mitt på locket. Där låg en mörk jord1-punkt inne i jord0-ringen, så att knoppen lästes som en mörk fläck eller ett kors. Nu har insidan H och G, med ljuset uppe till vänster, så att den ser upphöjd ut som en liten knopp. Allt annat är oförändrat.",
+   "ide": "Rund och knubbig förrådskruka, cirka 18 × 18 punkter, med två små öron som handtag lika högt på var sin sida och ett tillslutet lock. Locket är en trälapp i ellipsform i G och H med jord0-kontur, och mitt på sitter en liten knopp. Över locket ligger ett tygstycke i ben1–ben2, som är ombundet med ett snöre i jord0 runt halsen. Under kanten har lite öl runnit ner som en kort droppe i senap2, och den visar vad som finns i krukan. Kroppen är i jord1–jord2 med ett korn som byts punkt för punkt, och formen är symmetrisk kring mittlinjen."
+  }
+ ]
+}

@@ -1,0 +1,77 @@
+{
+ "kort": "f9_sik",
+ "namn": "Sik",
+ "slag": null,
+ "vad": "Steg 9.6.17: sik är en smal silverfisk som fångas i nät. Här siken som sak i förrådet.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_sik",
+     "rader": [
+      "....QQ..........",
+      "..QQRRQQ........",
+      ".QTwqTTqQQ......",
+      "QTkTqTTTqTQQR...",
+      "QSSTSTTSTTTTQQ..",
+      ".QQQSSTSSTSTSQQ.",
+      "....QRQQQQSSRRRQ",
+      "..........QRRQQ.",
+      "..........QRQ...",
+      "...........Q...."
+     ]
+    }
+   ],
+   "anteckning": "Siken ligger på sidan på marken, som en fångad fisk i förrådet, diagonalt med huvudet uppe till vänster och stjärten nere till höger. Snett uppifrån syns flanken: ryggen vänder mot ljuset uppe till vänster och är ljus i skiffer3 och ben2 med en enda glanspunkt i ben3 nära huvudet. Buken vänder nedåt bort från ljuset och är mörkare i skiffer2. Konturen är skiffer0 och ögat kol0 vid den trubbiga nosen. Ryggfenan, fettfenan, en bukfena och den kluvna stjärtfenan är skiffer1. Fisken har inga stöd och ligger platt, så bara ena sidan syns. Skuggan lägger programmet till. Granskningen: Granskad och oförändrad. Storleken är 16 × 10 punkter, i nivå med de godkända sakerna och läsbar bredvid kolonisten. Siken är tydlig utan att ta över. Vinkeln är snett uppifrån: ryggen syns som en ljus yta och buken som ett mörkare band under. Huvudet ligger uppe till vänster och stjärten nere till höger, med den kluvna stjärtfenan i skiffer1 åt höger och nedåt. Ljuset kommer uppifrån vänster: ljusast på ryggen nära huvudet, mörkast vid buken och stjärten. Konturen är skiffer0 och inte svart. kol0 finns bara i ögat. Glansen är en enda punkt i ben3 nära huvudet, och ben2-punkterna fungerar som silverkorn snarare än glans. Ryggfenan och den lilla fettfenan nära stjärten stämmer med idén. Den kalla silvergrå fisken med mörk kontur skiljer sig tydligt från det olivgröna gräset. Inget bär något och inget går genom ett huvud. Inget bryter mot reglerna.",
+   "ide": "En ensam sik som ligger diagonalt på marken, sedd snett uppifrån, ungefär 14 × 5 punkter, med huvudet uppe till vänster och stjärtfenan nere till höger. Kroppen är smal och spolformad med en ljus silverrygg i skiffer3 och ben3, en mörkare buk i skiffer2 och kontur i skiffer0. En liten trubbig nos med ett mörkt öga i kol0, en kluven stjärtfena i skiffer1, en liten fettfena på ryggen och en enda glanspunkt i ben3 på ryggen nära huvudet. Fisken är bara symmetrisk på längden, och ljuset faller uppifrån vänster."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_sik",
+     "rader": [
+      ".EEEEEEEEEE.",
+      "EHHGHGGHGGFE",
+      ".EEEEEEEEEE.",
+      ".QQ..FF..QQ.",
+      "QTSQ.QQ.QTSQ",
+      "QTSQQqTQQTSQ",
+      "QSSQQTTQQSSQ",
+      "QSRQQTSQQSRQ",
+      ".QQ.QTSQ.QQ.",
+      "QRRQQSSQQRRQ",
+      "Q..Q.QQ.Q..Q",
+      "....QSSQ....",
+      "....Q..Q...."
+     ]
+    }
+   ],
+   "anteckning": "Tre sikar hänger från en vågrät vidjekvist som är dragen genom gälarna, så att huvudena sitter uppe vid kvisten och stjärtfenorna pekar nedåt. Kvisten är brun med kontur i jord0 och ses ovanifrån som en stock på marken. Den mellersta fisken hänger rakt ner och ligger framför kvisten och de andra två. Den är ljusast, i skiffer3 med kant i skiffer1, har ett öga och en enda glanspunkt i ben2. De två bakre fiskarna hänger snett åt var sitt håll i en solfjäder. Den högra är förskjuten en punkt nedåt. De är mörkare, i skiffer2 med kant i skiffer0, och skyms delvis av den främre fisken. Ljuset kommer uppifrån vänster, så vänster sida av varje fisk är ljusare och nedre högra kanten mörkast. Bilden är 12 × 14 punkter. Granskningen: Version 2 var ett mörkt virrvarr i skiffer0 och skiffer1. Man kunde inte se tre fiskar, den främsta fisken var inte ljusast och på gräset syntes mest en mörk fläck. Dessutom fanns rader med ensamma prickar och skiffertoner (R) i kvistens kontur. Jag ritade om bilden till 12 × 13 punkter. Vidjekvisten ligger vågrätt överst i jord2–3 med kontur i jord0. Under den hänger tre smala, symmetriska silverspolar sida vid sida med kontur i skiffer0, en ljus rygg i skiffer3 till vänster (mot ljuset), en kropp i skiffer2 och en klyvd stjärtfena nedåt. Den mellersta fisken är den främsta: den hänger en punkt lägre i en kort vidja (jord1), är ljusast med skiffer3 och har en enda glanspunkt i ben2. Sidofiskarna är mörkare mot stjärten. Storleken är rimlig mot kolonisten (14 × 20) och bilden följer idén.",
+   "ide": "Tre sikar uppträdda på en vidjekvist eller ett snöre genom gälarna, som förrådssak sedd snett uppifrån och ungefär 12 × 14 punkter. Kvisten ligger vågrätt överst och är brun med kontur i jord0. Fiskarna hänger nedåt sida vid sida och är lite förskjutna så att de bildar en solfjäder av tre smala silverspolar med stjärtfenorna nedåt. Varje fisk har ljus rygg i skiffer3 och mörkare kant i skiffer1, och den främsta fisken är ljusast så att den syns först."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_sik",
+     "rader": [
+      "..R.R.....R.R...",
+      "..RTR.....RSR...",
+      "...RTEEEEEESR...",
+      "..EHSTGHGGTSFE..",
+      ".EHGFTTSFFTSGFE.",
+      "EHGFFRSTTSRFFGFE",
+      "EGFSTwTTTTTSRRFE",
+      "EGFRSSSSSSRFRFFE",
+      "EHGHGGHGGHGGHGFE",
+      "EGFFGFFGFFFGFFFE",
+      ".EFFGFFFGFFFFFE.",
+      "..EEEEEEEEEEEE.."
+     ]
+    }
+   ],
+   "anteckning": "Siken ligger som förrådssak på marken i ett grunt, ovalt flätat tråg som ses snett ovanifrån, 16 × 12 punkter. Korgen är spegelsymmetrisk med kontur i jord0, kanten i jord1–3 och en smal framkant på 2 punkter i mörkare ton. Två sikar ligger korsvis och deras stjärtfenor sticker upp över bakkanten. Överst ligger en sik tvärs över med stjärten över högra kanten och den enda glanspunkten i ben3 nära huvudet. Under den skymtar en fjärde fisk mot korgbotten. Fiskarna är silverstreck i skiffer2–3 med skiffer1 som undersida och kontur, så de syns ljust mot den bruna korgen. Granskningen: Version 3 granskad. Storleken (16 × 12, lite större än idéns 14 × 10) passar för en fiskkorg bredvid kolonisten. Konturen är spegelsymmetrisk, vinkeln är snett uppifrån med fiskarna ovanifrån, och korgen syns på gräset. Fiskarna och stjärtfenorna över bakkanten följer idén, och glansen är en enda punkt i ben3. Tre rättelser: 1) Den främre kanten var ett rutigt G/F-mönster, nästan lika ljust som resten av korgen, och läste inte som ett mörkare band. Nu har korgen en ljus läpp i H/G (rad 8, ljusare åt vänster mot ljuset) och därunder ett tydligt framkantsband på 2 punkter, mest i jord1 med lite jord2 som korn (rad 9–10). Konturen i jord0 är kvar. 2) Den nedersta fisken (rad 8) låg ovanpå framkanten och bröt kanten. Den togs bort så att fiskarna ligger i korgen bakom läppen. 3) Det rutiga mönstret, som gav fläckar, ersattes av korn som byts punkt för punkt. Allt annat är oförändrat.",
+   "ide": "En hög av fyra eller fem sikar som ligger korsvis i en grund flätad näverkorg eller ett tråg, ungefär 14 × 10 punkter. Korgen är oval och spegelsymmetrisk: kanten är ett mörkare band i jord1 och G med kontur i jord0, och den främre kanten är ett smalt band på 2 punkter. Fiskarna ligger ovanifrån i olika riktningar som blanka silverstreck i skiffer2–3 och ben3, med några stjärtfenor som sticker upp över kanten och glans i en enda punkt på den översta fisken."
+  }
+ ]
+}

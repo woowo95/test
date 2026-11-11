@@ -1,0 +1,161 @@
+{
+ "kort": "f9_hassel",
+ "namn": "Hasselbusken",
+ "slag": null,
+ "vad": "Ritad av API:t: tre nya idéer, var och en ritad för sig utan att se de andra. Steg 9.7.14: hasseln växer vilt i skogsbrynet som en buske med nötter på hösten. Här busken på en ruta mark.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_hassel",
+     "rader": [
+      ".........MMMMM...MMMMM..........",
+      ".......MPPPOPOOMMPPOPOOM........",
+      ".....MPPPPOPOONOPPOPOOONOM......",
+      "....MPPPOPPOONNOPLLOLLOONOM.....",
+      "...MPPPPOPONOPPOOKJLKJNOONWU....",
+      "..MPPOPONNOPPPOOOJIKJIWOPOWWU...",
+      ".MPOONNOPPPOONWOPPOINNWOPOOWWU..",
+      ".MONPPPOOONNOPPPOONWOPPOONOOWWU.",
+      "MPPPOOONWOPPOOONOOWWOOONWOPOWWU.",
+      "MPOPOONNOPPPONNOPPOWWOPOOWOOWWU.",
+      "MOONNOPPOOONWOPPOONWOOOWWOOWOWWU",
+      "MPPOOOLLOLLONPOONNOOPOOWOOWWOWWU",
+      "MOPOONKJLKJOOOPPOWWOONWOPOWOWWU.",
+      "MOONOOJIKJIOPOONWOPOOWOONWWOWWU.",
+      ".MOOONOOIWOOONOPOOWNLLOLLWWOWWU.",
+      ".MNOPOOWOPOOWWOOWOOWKJLKJWWWWU..",
+      "..MOONOOOWOOPOWOOOWWJIKJIWWWWU..",
+      "..MWOOWWOOWOOOWWOWOOWWIOWWWWU...",
+      "...UWWOWNWUWWNWOWWUNWWOWWWWU....",
+      "....UUWWWU.UWWWWWU.UUWWWWUU.....",
+      "......HE.HE.HE..HE..HE.HE.HE....",
+      ".......GE.HE.GE.HE.GE.HE.GE.....",
+      "........HEGE.HE.GE.HEGE.HE......",
+      ".........GEHE.GEHEGE.HEGE.......",
+      "..........HEGEHEGEHEGEHE........",
+      "..........EHHGHGHGGGGFE.........",
+      "..........EGHGGFGGGFFFE.........",
+      "...........EEEEEEEEEEE.........."
+     ]
+    }
+   ],
+   "anteckning": "Busken står fritt på marken och ses snett ovanifrån, så lövkronan tar de övre tre fjärdedelarna (rad 0–20). Den är ett grönt moln av små lövklumpar: P och O uppe till vänster där ljuset faller, W i skuggan nere till höger, kontur i M på ljussidan och U på skuggsidan, så att den är ljusare än gräset. Kronan står framför skotten och skymmer dem. Därför syns de sju raka, smala skotten (G/H med E på skuggsidan) bara i de nedersta raderna, där de spretar i solfjäder ut under lövkanten och möts i en kort rotknöl. Det blir aldrig en kaktusform. Tre nötklasar sitter på ovansidan och framsidan: två nötter uppe, tre i en triangel till vänster och tre i rad till höger. Nötterna är i K/J med I som mörk kant och har ett ljust hylle i L ovanför, som enda starka färg. Lövkanten är ojämn och inte spegelsymmetrisk. Granskningen: Storleken (32 × 28 mot kolonistens 14 × 20), vinkeln snett uppifrån och den oregelbundna, ljusa kronan med kontur i M/U fungerar och är oförändrade. Jag rättade två saker. Nötklasarna var raka block med ett platt L-streck överst och lästes som lådor. Nu har varje klase två runda nötter på 2 × 2 (K uppe till vänster, I nere till höger) med var sitt hylle i L och en tredje nöt mellan dem, fortfarande tre klasar och den enda starka färgen. Skotten var spridda HE-par blandade med U-skugga och såg rörigt ut. Nu är det sju sammanhängande, raka och smala skott i G/H med E på skuggsidan till höger. De spretar i en symmetrisk solfjäder från en något bredare rotknöl, ljus uppe till vänster och F/E nere till höger, och syns bara de nedersta åtta raderna.",
+   "ide": "Rund, tät kupol på cirka 32 × 28 punkter, sedd snett ovanifrån så att lövkronan tar de övre tre fjärdedelarna och liknar ett grönt moln av många små lövklumpar: P och O som ljus uppe till vänster, W i skuggan nere till höger och kontur i M/U, så att busken är ljusare än gräset. Längst ner kommer sex till åtta raka, smala skott i G och H med kontur i E fram ur en kort rotknöl och spretar ut i en solfjäder in under kronan; de syns bara de nedersta 6–8 punkterna, så att det aldrig ser ut som en kaktus. På framsidan och ovansidan av kronan sitter tre klasar med två till fyra nötter i K/J med ett ljusare hylle i L, som enda starka färg. Formen är ungefär lika bred åt båda hållen men lövkanten är oregelbunden, för en buske är inte spegelsymmetrisk."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_hassel",
+     "rader": [
+      "......MMMM...MMMM...MMM.....",
+      ".....MPPOPM.MPPOPM.MPOOM....",
+      "...MMPPPOPOMPPOPOOMOPOOWM...",
+      "..MPPPOPPOPOPPOPOPOOOOWOOWM.",
+      ".MMPPOPPPOPOPOPPOPOOOWOOWWM.",
+      "MPPOPPOPOPPOPOOPOOOWOOWOWWWM",
+      "MPOPPOPOOPOPOOPOOOWOOWOWWOWM",
+      "MPPOPOOPOOOPOOOWOOOWOWOWWWWM",
+      "MOPOOPOOWOOOPOOOWOOWOWWOWWWM",
+      "MPOOPOWOOOPOOWOOOWOOWWOWOWWM",
+      "MOOPOWOOWOOOWOOWOOWOWWOWWWWM",
+      "MPOOWOOWWOOWWOOWWOWWOWWWOWWM",
+      "MOWWOWWMWWMOWOWWWMWWMOWWOWWM",
+      "MOWWOWM.HE.MOWWWM.oE.MOWWWWM",
+      "MOWWWWM.oE.MOWWWM.HE.MOWWWWM",
+      "MWWWWWM.HE.MMMMMM.oE.MWWWWWM",
+      "PPOPMMM.oE.HE..oE.HE.MMMPOPP",
+      "LKKJ.HE.HE.oE..HE.oE.HE.LKKJ",
+      "KJJI.oE.oE.HE..oE.HE.oE.KJJI",
+      ".JI..HE..HEoE..HEoE..oE..JI.",
+      "......oE.oEHE..oEHE.oE......",
+      "......HE.HEoE..HEoE.HE......",
+      "......oE.oEHE..oEHE.oE......",
+      ".......HEoEHE..oEHEoE.......",
+      ".......oEHEoE..HEoEHE.......",
+      ".......HE.oEHEoEHE.oE.......",
+      "........oEHEoEHEoEHE........",
+      "........HEoEHEoEHEoE........",
+      "........oEHEoEHEoEHE........",
+      ".........HEoEHEoEHE.........",
+      ".........oEHEoEHEoE.........",
+      "..........HEoEHEoE..........",
+      "..........oEHEoEHE..........",
+      "..........HEoEHEoE..........",
+      "...........oEHEoE...........",
+      "...........HEoEHE...........",
+      "...........EHoHoE...........",
+      "..........EHoHHooE..........",
+      ".........EGHoHoHoGE.........",
+      "........EFGFGFGFFFEE........"
+     ]
+    }
+   ],
+   "anteckning": "Busken står fritt på marken, sedd snett uppifrån: en smal rotfot (jord) längst ner, och ur den växer sex raka skott i H och o, som går isär uppåt som en bukett. Varje skott har konturen E på skuggsidan till höger. I nedre halvan syns skotten tydligt med luft emellan. Uppåt går de in i täta lövtofsar i P, O och W med kontur i M. Tofsarna växer ihop till en bred, luddig krona som är ljusast uppe till vänster och mörkast nere till höger. De yttersta tofsarna hänger lite lägre och böjer sig utåt. Under dem hänger en nötklase på varje sida: nötter i K och J med en enda glanspunkt i L och ett grönt hylle i P, så att man ser var man plockar. Ingen skugga på marken är ritad, den lägger programmet till. Granskningen: Rättat i version 2: Kronan var ett rakt, fyrkantigt block med platt topp. Dess sidor fortsatte som raka pelare (MOWWM) ner i skottens del, och undersidan var en tung, rak M-list. Det läste som en pelare eller svamp, inte som en luddig krona. Kronan är omritad: toppen består av tre separata tofsar med egen kontur som går ihop nedåt till en bred krona. Nedtill delar den sig i rundade lober, där ytterloberna hänger ut och ner vid kanterna. Mellan loberna syns skotten gå upp in i tofsarna. Ljuset ligger uppe till vänster (P) och skuggan nere till höger och på undersidan (W). Skotten var ojämna och slumpvis utspridda. Nu är de sex jämna, spegelsymmetriska skott i H/o med kontur i E. De vidgar sig som en bukett från en smal rotfot i jordtoner och syns tydligt i nedre halvan. Nötklasarna låg tryckta mot kanten och skotten. Nu hänger de fritt under ytterloberna, med grönt hylle i P/O överst, nötter i K/J och mörkkant i I. Varje klase har bara en glanspunkt i L. Storleken är kvar på 28 × 40, ungefär dubbla kolonistens höjd.",
+   "ide": "Hög, vasformad buske på cirka 28 × 40 punkter, där många raka, grå-bruna skott i H och o med kontur i E växer ur en smal rotfot och vidgar sig uppåt som en bukett, tydligt synliga mellan löven i nedre halvan. Löven sitter i täta tofsar längs den övre halvan och toppen av varje skott, i O och P mot skugga i W, med kontur i M, och tofsarna går ihop till en bred, luddig krona som böjer sig lätt utåt vid kanterna, inte en rak pelare. Nötklasarna hänger under tofsarna i ytterkanterna, två eller tre punkter stora i J/K med L som glans och ett grönt hylle i P, så att man ser var man kan plocka."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_hassel",
+     "rader": [
+      "......o.....o....o......",
+      "......o.....o....o......",
+      "....UUoUU..UoUU.UoU.....",
+      "...UPPoOU.UPoPOUPoOU....",
+      "..UPPPOONOPPPOONPPOONU..",
+      "..UPPOPOONPPOPONOPOONNU.",
+      ".UPPOPOutONPOPOONOPONNU.",
+      ".UPOPOuttsNOPOOutONONNU.",
+      "UPOPOOtssONOPOOtsNONNNU.",
+      "UPOPOONOOOPOPONONONNNNU.",
+      "UOPOONOOPOOPONONOONNNNU.",
+      "UPOONOOPOOOPONOOutONNNU.",
+      "UOONOPOOONOONOOuttsNNNU.",
+      ".UONOOOutONONONNtssNNU..",
+      ".UNONOttsONONNNNNNNNU...",
+      "..UNNONNNONNNNNNNNNU....",
+      "....UNoUNoUNNoUNoU......",
+      "......oE.oE..oE.oE......",
+      ".......oEoE..oEoE.......",
+      "........oEoEoEoE........",
+      ".........oGoGoE.........",
+      "........EGHGGFFE........",
+      ".........EEFFEE........."
+     ]
+    },
+    {
+     "namn": "f9_hassel_plockad",
+     "rader": [
+      "......o.....o....o......",
+      "......o.....o....o......",
+      "....UUoUU..UoUU.UoU.....",
+      "...UPPoOU.UPoPOUPoOU....",
+      "..UPPPOONOPPPOONPPOONU..",
+      "..UPPOPOONPPOPONOPOONNU.",
+      ".UPPOPOPOONPOPOONOPONNU.",
+      ".UPOPOPOONNOPOOPOONONNU.",
+      "UPOPOOONNONOPOOONNONNNU.",
+      "UPOPOONOOOPOPONONONNNNU.",
+      "UOPOONOOPOOPONONOONNNNU.",
+      "UPOONOOPOOOPONOOPOONNNU.",
+      "UOONOPOOONOONOOPOONNNNU.",
+      ".UONOOOPOONONONNONNNNU..",
+      ".UNONOOONONONNNNNNNNU...",
+      "..UNNONNNONNNNNNNNNU....",
+      "....UNoUNoUNNoUNoU......",
+      "......oE.oE..oE.oE......",
+      ".......oEoE..oEoE.......",
+      "........oEoEoEoE........",
+      ".........oGoGoE.........",
+      "........EGHGGFFE........",
+      ".........EEFFEE........."
+     ]
+    }
+   ],
+   "anteckning": "Hasselbusken står fritt på marken och ses snett uppifrån. Fyra raka, grå-bruna skott (ben0 med jord0 på skuggsidan) går upp ur en rotknöl av jord och samlas mot roten längst ner. Där syns de under lövverket, och tre skottspetsar sticker upp ovanför kronan. Lövverket är en rund, knölig klump i oliv: ljusast uppe till vänster, mörkast nere till höger, med kontur i barr0 så att busken skiljer sig från gräset. Nötterna är det man kan ta och har därför de mättade rosttonerna, i små klasar om tre eller fyra med en glanspunkt var. Den andra bilden är samma buske när nötterna är plockade. Granskningen: Granskad mot bildstilen och logiken. Ingenting behövde rättas, så versionen lämnas oförändrad. Storlek: 24 × 23 punkter, ungefär en och en halv ruta. Busken blir då något större än kolonisten (14 × 20), vilket stämmer för en hassel och håller sig under 48 × 48. Vinkel: kronan ses snett uppifrån som spelets träd och buskar, med stammarna synliga under kronan. Det är ingen station, så regeln om arbetsytan gäller inte. Ljus: ljust oliv (P) uppe till vänster och oliv1 (N) nere till höger. Nötklasarna följer samma ljus, med rost3 som glans uppe till vänster och rost1 nere till höger. Kontur och synlighet: konturen i barr0 är mörkare än gräset, och kronans ljusa vänstersida lyfter busken från marken. Ingen skugga är målad. Symmetri: en buske är organisk och behöver ingen spegelsymmetri. Rotfoten är centrerad under kronan. Mättnad: de mättade rosttonerna finns bara i nötterna, alltså maten som går att plocka. Den plockade versionen har samma krona utan nötter, och hålen är fyllda med oliv i samma korn. Ingenting bärs, så regeln om huvud och ansikte gäller inte. Alla rader är 24 tecken och bara palettens tecken används.",
+   "ide": ""
+  }
+ ]
+}

@@ -1,0 +1,72 @@
+{
+ "kort": "f9_naverask",
+ "namn": "Näveraskan",
+ "slag": null,
+ "vad": "Steg 9.4.13: en liten ask av näver och rep, som görs för hand eller fortare och bättre vid slöjdbänken. Salvan och benlimmet förvaras i den (9.4.14), och innehållet syns i den öppna ytan (här grön salva).",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_naverask",
+     "rader": [
+      "..oooooooo..",
+      ".owwPOOOqqo.",
+      "owwOOOOONqqo",
+      "owqOOONONqpo",
+      "owqqOONNqppo",
+      "oqpnnppnnpoo",
+      "FJGJGJGJGJGE",
+      "opnnppppnnoo",
+      ".EEEEEEEEEE."
+     ]
+    }
+   ],
+   "anteckning": "Asken står på marken med öppningen uppåt och ses snett ovanifrån. Därför tar den ovala öppningen den övre halvan av bilden, och bara den främre delen av den runda näversidan syns som ett lågt band. Locket är av eller saknas, så den gröna salvan syns i öppningen. Den har en enda glanspunkt uppe till vänster och skugga nere till höger, under kanten. Kanten är nävrets ljusa insida i ben3 och ben2. Repet går runt asken mitt på bandet och syns därför bara framtill, som ett tvinnat band av senap och jord. Formen är spegelsymmetrisk, och ljuset från vänster gör högra sidan mörkare. Nederkanten mot marken har jord0 som kontur. Granskningen: Rättat: öppningen med salvan var bara två rader hög och osymmetrisk, eftersom rad 3 gick en punkt längre åt höger. Nu är den en spegelsymmetrisk oval över rad 1–4 (kolumn 4–7, 3–8, 3–8, 4–7). Den tar ungefär halva höjden, som idén säger. Kanten är två punkter bred med ben3 och ben2 till vänster och ben2 och ben1 till höger, så ljuset faller från vänster. Salvan har en enda glanspunkt i oliv3 uppe till vänster och är annars oliv2. Oliv1 används bara som skugga nere till höger, för kornets skull. Frambandet av näver med porer i kol3, repet i senap1 och jord2 och konturen i ben0 och jord0 är oförändrade. Storleken, 12 × 9 mot kolonistens 14 × 20, och vinkeln snett uppifrån stämmer. Asken är ljus och har kontur, så den syns tydligt på gräset.",
+   "ide": "Rund och låg ask, cirka 10 × 8 punkter, spegelsymmetrisk: överst en oval öppning som tar ungefär halva höjden med grön salva i oliv3 och oliv2 (en enda glanspunkt i oliv3 uppe till vänster), omgiven av en kant ett par punkter bred i ben3 och ben2. Under den ett framband på 3 punkter av näver i ben1 och ben0 med korta mörka vågräta streck i kol3 som nävrens porer, och ett rep i senap1 och jord2 lindat runt mitten som ett tvinnat band. Konturen är ben0 runt nävret och jord0 i nederkanten, och ljuset faller från vänster så att högra sidan av bandet är mörkare."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_naverask",
+     "rader": [
+      "...o........o...",
+      "..opoooooooopo..",
+      "..opwwwqwqqqpo..",
+      "..owPPOPOPOOqo..",
+      "..owPOPOOPOOqo..",
+      "..oqOPOOOOONqo..",
+      "..oqOOPOOONNqo..",
+      "..opqqqqqqqqpo..",
+      ".JGssssssssssGJ.",
+      ".GJppopppoppoJG.",
+      "..EEEEEEEEEEEE.."
+     ]
+    }
+   ],
+   "anteckning": "Asken står på marken och ses snett ovanifrån. Ovanifrån syns den öppna ytan: en tunn kant av näver i ben3 och ben2 runt den gröna salvan i oliv3 och oliv2, med lite oliv1 nere till höger där det är skuggigt. De två bakre hörnvecken står upp som små trekanter i ben1 över bakkanten. Framsidan är ett smalt band med den rostbruna innernävern som en rand överst och yttersidan i ben1 och ben0 under. De främre vecken är bundna med korta rephärvor i senap1 och jord2, som sticker ut en punkt åt var sida. Formen är kantig och spegelsymmetrisk, och bara ljuset från övre vänstra hörnet skiljer sidorna åt. Konturen är ben0, med jord0 längst ner. Granskningen: Granskad mot reglerna. Storleken (12 punkter bred, 11 hög, mindre än kolonisten), vinkeln (ytan ovanifrån med salvan, framkanten som smalt band, inga ben), konturen i ben0 och jord0, rephärvorna i framhörnen och hörnvecken följer idén. Två rättningar: 1) Bottenkonturen (rad 10) var osymmetrisk, med ben0 i vänster hörn och genomskinligt till höger. Den är nu jord0 över hela bredden (kol 2–13), spegelsymmetrisk under framkanten. 2) I salvan (rad 6) bildade oliv1 ensamma mörka prickar (O N O N). De är samlade till en sammanhängande skuggning nere till höger (OONN), så att kornet inte blir fläckigt. Resten är oförändrat.",
+   "ide": "Fyrkantig vikt ask, cirka 12 × 8 punkter, där ett enda nävertak har vikts upp i hörnen: ovanifrån ses en rektangel något bredare än hög med grön salva i oliv2 och oliv3 innanför en tunn kant i ben2 och ben3, och de fyra hörnvecken syns som små trekanter i ben1 som sticker upp lite över kanten. Framsidan är ett smalt band på 2–3 punkter i ben1 och ben0, och i varje framhörn är vecket bundet med en kort rephärva i senap1 och jord2 som sticker ut en punkt åt sidan. Silhuetten blir kantig och symmetrisk, med kontur i ben0 och jord0 och rostbrun innernäver i rost1 som en tunn rand längst upp på framkanten."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_naverask",
+     "rader": [
+      "..EEEEEE..",
+      ".EwqqpqpE.",
+      "EqFFGFFFoE",
+      "EqPOPOONoE",
+      "EqwqqpqpoE",
+      "EHGHGHGFFE",
+      "EqwqpqppoE",
+      "EqpqppqooE",
+      ".EpqppooE.",
+      "..EEEEEE.."
+     ]
+    }
+   ],
+   "anteckning": "Asken står på marken och ses snett uppifrån som kartan: den ovala öppningen överst tar ungefär halva höjden, och framväggen syns som ett band under. Formen är spegelsymmetrisk; bara ljuset från övre vänstra hörnet och kornet skiljer sidorna åt. Kanten är ljus näver. Innanför syns den bruna insidan av nävern vid bakkanten, och sedan ytan av den gröna salvan i oliv med en enda ljus glanspunkt uppe till vänster. Strax under kanten går ett tvinnat rep runt asken och håller ihop nävern. Framväggen är vit-grå björknäver med korta streck i stället för fläckar. Konturen är jord0, materialets mörkaste ton, så att asken syns mot gräset. Storleken är 14 × 13 punkter, en liten sak mindre än en ruta. Granskningen: Asken var 14 × 13 punkter, lika bred som kolonisten (14). Det är för stort för en liten ask av näver för salva. Jag ritade om den till 10 × 10. Formen är spegelsymmetrisk och asken ses snett uppifrån: den öppna ytan är en ellips med bakre innerkant i mörkare jord, grön salva med en enda glanspunkt uppe till vänster och framkanten som ljus näver. Under den går repbandet i jord och sedan buken i ben med ljuset uppifrån vänster. Jag tog bort den ensamma mörka pricken i buken och lät tonerna mörkna mot höger. Konturen är fortfarande jord0, och den ljusa nävern syns tydligt mot gräset.",
+   "ide": ""
+  }
+ ]
+}

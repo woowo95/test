@@ -558,6 +558,7 @@
     tempRam(ut, temperatur(p), i => !fig(i));
     // ansiktets punkter (skallen, ögonen, näsan, munnen, öronen), för kontrollen att inget det man bär går över ansiktet
     ut.ansikte = Uint8Array.from(ag, L => ANSIKTE_LAGER.has(L) ? 1 : 0);
+    ut.figur = Uint8Array.from(ag, L => L ? 1 : 0); // personen (allt utom bakgrunden), för det som bärs bakom (forslag.js)
     return ut;
   }
 

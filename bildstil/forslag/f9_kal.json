@@ -1,0 +1,73 @@
+{
+ "kort": "f9_kal",
+ "namn": "Kålen",
+ "slag": null,
+ "vad": "Steg 9.7.8: kål är en gröda som odlas på fältet och ger mat som håller över vintern. Här ett kålhuvud som sak i förrådet.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_kal_kalhuvud",
+     "rader": [
+      "...MMMM...",
+      ".MMTTPPMM.",
+      ".MTPPPPOM.",
+      "MTPOOOOPOM",
+      "MTOPqPPOOM",
+      "MPOPPPOONM",
+      "MPPOOOONNM",
+      ".MPPOONNM.",
+      "..MMMMMM..",
+      "....po...."
+     ]
+    }
+   ],
+   "anteckning": "Kålhuvudet ligger som en sak i förrådet, löst från roten, med stjälkstumpen nedåt. Snett uppifrån syns toppen som en spegelsymmetrisk boll (10 × 9 punkter) med kontur i oliv0. Två bågformade bladkanter i oliv1 virvlar in mot en ljus kärna av oliv3 mitt uppe. Ljuset faller uppe till vänster i oliv3 och oliv2, och nedre högra sidan går över i oliv1. Bara stjälkstumpen skymtar under bollen, 2 punkter i ben1 och ben0, eftersom resten av stjälken är avskuren. Granskningen: Rättat: 1) Kålen smälte in i gräset och liknade spelets träd, med en mörk boll i oliv1/oliv2 och en stam på två rader. Bladen är nu ljusare: oliv3 som huvudton och skiffer3 som blågrön kålton med ljuset uppe till vänster. Oliv2 bildar bladkanterna och oliv1 skuggan nere till höger, så att huvudet syns tydligt mot gräset. 2) Virvelmönstret och den ljusa punkten i mitten saknades och ytan hade mörka fläckar. Nu sluter sig en båge av bladkanter i oliv2 runt ett inre huvud med en enda glanspunkt i ben2, och fläckarna är borta. 3) Stjälkstumpen är kortad till en rad (ben1/ben0, två punkter bred). Snett uppifrån skyms stjälken nästan helt av bollen, och den ser inte längre ut som en trädstam. 4) Nederkanten är sluten med en bredare konturrad. Silhuetten är fortfarande spegelsymmetrisk och 10 × 10 punkter, en rimlig storlek mot kolonisten (14 × 20).",
+   "ide": "Ett runt, tätt kålhuvud på cirka 10 × 9 punkter, sett snett uppifrån så att toppen syns som en spegelsymmetrisk boll med ett virvelmönster av två eller tre bågformade bladkanter som möts i en ljus punkt mitt uppe. Bladen är oliv2 och oliv3 med ljuset uppe till vänster, nedre högra sidan går över i oliv1, och konturen är oliv0 runt om. Nertill skymtar en kort stjälkstump på 2 punkter i ben1 och ben0 under bollen."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_kal",
+     "rader": [
+      ".....QQ..QQ.....",
+      "..QQ.QTQQSQ.QQ..",
+      ".QTTSMMMMMMSSRQ.",
+      "QTSTMPqqPPOMSRRQ",
+      "QTTSMPqwPPOMSSRQ",
+      "QSTSMPPqPOOMRSRQ",
+      "QTSSMPPPOONMSRRQ",
+      ".QSTSMOOONMSRRQ.",
+      "QSTSRSMMMMRRSRRQ",
+      ".QSSRSRSRRRSRRQ.",
+      "..QQ.QQQQQQ.QQ.."
+     ]
+    }
+   ],
+   "anteckning": "Kålhuvudet ligger på marken eller i förrådet och ses snett ovanifrån. Ytterbladen ligger utbredda som en låg och flikig rosett, och de främre bladen syns mer än de bakre. Det slutna huvudet sitter mitt i rosetten, lite bakåt, och är ljusare (oliv2 och oliv3) så att det syns först. Ljuset kommer uppifrån till vänster, där bladnerverna i oliv3 och glansen på huvudet sitter. Höger sida och nederkanten är mörkare med oliv1 och barr0. Konturen är oliv0 och barr0, och silhuetten är spegelsymmetrisk. Granskningen: Rättat: Version 2 smälte in i gräset. Ytterbladen i barr3 och oliv1 och konturen i oliv0 och barr0 låg i samma toner som marken, så kålen läste som en mörk fläck. Formen var inte heller spegelsymmetrisk: den högra sidan var tjockare och kornet låg i ojämna klumpar. Ny version på 16 × 11 punkter, lika liten mot kolonisten och snett ovanifrån. Ytterbladen är nu blågröna som kålblad, i skiffer3, skiffer2 och skiffer1 med konturen i skiffer0. Avvikelse från idén: bladen är skiffer i stället för barr3 och oliv1, så att de skiljer sig från gräset och syns ljusare än det. Ljusa nerver i skiffer3 går mot mitten. Bakre bladspetsar sticker upp bakom huvudet, och de främre bladen är mörkare, så att ljuset faller från övre vänstra hörnet. Det slutna huvudet i mitten har konturen i oliv0 och toner i ben2, oliv3 och oliv2, med en mörkare nederkant i oliv1. Huvudet är ljusast och syns först, med en enda glanspunkt i ben3 uppe till vänster. Silhuetten är spegelsymmetrisk med vågiga, flikiga kanter: indragna rader och tänder överst och nederst.",
+   "ide": "Ett lågt och brett kålhuvud på cirka 14 × 9 punkter där fyra till sex lösa ytterblad ligger utbredda som en rosett med vågiga, flikiga kanter runt ett mindre, slutet huvud i mitten. Ytterbladen är mörkare i barr3 och oliv1 med ljusa nerver i oliv3, medan det inre huvudet är ljusare i oliv2 och oliv3 så att det syns först. Silhuetten är en symmetrisk, taggig stjärna sedd snett ovanifrån, och konturen är oliv0 och barr0."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_kal",
+     "rader": [
+      "....MMMMMM.....",
+      "..MMqPPPPPMM...",
+      ".MqPPqPPPqPOM..",
+      "MqPPqPPPqPPOOM.",
+      "MPPqPPqPPOOMoo.",
+      "MPPqPPOPOOOoqpo",
+      "MOPPqOPOONNoppo",
+      ".MOOOONONNNMoo.",
+      "..MMNONNNNMM...",
+      "....MMMMMM....."
+     ]
+    }
+   ],
+   "anteckning": "Kålhuvudet ligger på sidan på förrådsgolvet som ett liggande ovalt klot, cirka 13 × 10 punkter. Det ses snett uppifrån, så ovansidan syns mest och undersidan bara som ett smalt mörkare band. Den avskurna stjälken pekar ut mot betraktaren nere till höger. Därför syns snittytan som en rund fläck: ben2 och ben1 i mitten och ben0 runt kanten. Bladen sveper i bågar (oliv1) från stjälken bort mot den vänstra änden. Ljuset kommer uppifrån till vänster, så den sidan är ljusast i oliv3 och oliv2. Undersidan och höger sida är oliv1, och konturen runt om är oliv0. Skuggan på marken ritas inte. Granskningen: Rättat: kålhuvudet var nästan bara oliv2 och oliv1, alltså samma toner som gräset, och smälte därför in i marken. Nu är ovansidan oliv3 med ljusa bladnerver i ben2, oliv2 och oliv1 ligger bara i undersidan, och konturen är fortfarande oliv0. Huvudet blir då ljusare än gräset och syns på det, och nerverna bildar bågar från stjälken upp mot vänster som i idén. Snittytan på stjälken är nu en jämn rund fläck (2-4-4-2 punkter) i ben2 och ben1 med ben0 runt kanten. Det tidigare taggiga hörnet i konturen nere till höger är borta. Storleken är oförändrad, cirka 15 × 10, och passar mot kolonisten. Vinkeln snett uppifrån och ljuset från övre vänstra hörnet är kvar.",
+   "ide": "Ett kålhuvud som ligger på sidan i förrådet, cirka 12 × 8 punkter, som ett liggande ovalt klot där den avskurna stjälken pekar snett ut mot betraktaren nere till höger. Snittytan på stjälken är en liten rund fläck på 2–3 punkter i ben2 och ben1 med mörkare ben0 runt kanten, och bladen sveper som långa bågar från stjälken bort mot den andra änden. Bladen är oliv2 och oliv3 upptill till vänster, oliv1 i undersidan, med kontur i oliv0."
+  }
+ ]
+}

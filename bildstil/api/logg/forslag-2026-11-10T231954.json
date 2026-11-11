@@ -1,0 +1,17 @@
+{
+ "kommando": "rita",
+ "args": [
+  "f9_hassel=nya versioner: en hasselbuske är en grön, lövrik buske med många raka grå-bruna skott från roten och nötter i klasar; aldrig blå och aldrig som en kaktus",
+  "f9_bonor=nya versioner: bönorna ska kännas igen som bönor (baljor, bönor i en skål eller på en stör), inget som liknar ett bi eller en insekt"
+ ],
+ "modell": "claude-opus-5-5",
+ "uppskattat": {
+  "lag": 0.88,
+  "hog": 1.89
+ },
+ "dollar": 1.422,
+ "rapport": [
+  "f9_hassel: 3 versioner",
+  "f9_bonor: 3 versioner"
+ ]
+}

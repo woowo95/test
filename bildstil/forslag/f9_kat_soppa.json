@@ -1,0 +1,90 @@
+{
+ "kort": "f9_kat_soppa",
+ "namn": "Symbolen Soppa",
+ "slag": null,
+ "vad": "Steg 9.6.3: maten som kokas till soppa hör till gruppen Soppa och får en egen symbol i listan över rätter. Här symbolen på en mörk ruta.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_kat_soppa",
+     "rader": [
+      "......p...p.....",
+      ".....qp..qp.....",
+      "......qp..qp....",
+      "................",
+      "....EEEEEEEE....",
+      "..EEHGGGGGGFEE..",
+      ".EHGKLLKKtKKGFE.",
+      "EHKLKqpKKtKuKtFE",
+      "EHKKtKKKtKusKKFE",
+      "EqHHHGHHGHGGGGFE",
+      "EHGGHGGGGGGGFGFE",
+      ".EGGGGGGGFGGFFE.",
+      "..EEGGGFGFFFEE..",
+      "....EEEEEEEE....",
+      ".....EGGFFE.....",
+      ".....EEEEEE....."
+     ]
+    }
+   ],
+   "anteckning": "Skålen står på sin fot och ses framifrån och lite ovanifrån, som allt annat i spelet. Därför syns skålkanten som en oval. Bakkantens insida är ljust trä (rad 6). Under den ligger soppans yta i senap och rost, med bitar av rova (q, p) och kött (u, s). Framkantens ovansida är ett ljust träband med en enda glanspunkt uppe till vänster, och därunder kommer den rundade buken. Ljuset kommer från vänster, så buken mörknar mot jord1 nere till höger. Konturen i jord0 går runt hela skålen och den korta foten mitt under. Silhuetten är spegelsymmetrisk, och bara kornet och ljuset skiljer sidorna åt. Två ångslingor i ben1 och ben2 stiger ur soppan upp mot övre kanten. De har ingen kontur, så att de läses som ånga och inte som något fast. Soppan är det enda mättade i bilden, eftersom det är maten man ska se. Granskningen: Version 1 följer i stort reglerna och idén. Skålen är spegelsymmetrisk, kanten syns som en oval, soppan har mättad senap och rost med en ljus bit rova och kött, och träet har kontur i jord0. Två saker rättades. 1) Idén kräver en kort fot mitt under, men den saknades och buken slutade i en rund botten. Jag tog bort den tomma raden och den enkla q-raden i ångan, så att ångslingorna blev tre rader höga och fortfarande S-formade. Skålen flyttades sedan upp en rad, och buken avslutas nu med en egen konturrad i jord0. Under den står en kort fot (EGGFFE, ljus till vänster och mörk till höger) med egen kontur. Den är centrerad och symmetrisk. 2) Ångan ligger nu en tom rad ovanför skålkanten och flyter inte ihop med konturen. Inget bärs, så det finns ingen risk att något går genom huvudet.",
+   "ide": "En låg, bred träskål framifrån och lite ovanifrån, spegelsymmetrisk, som fyller rutans nedre två tredjedelar med en rundad buk och en kort fot mitt under. Skålens kant är en oval där soppans yta syns i mättad senap och rost (K, L, t) med en eller två ljusa bitar rova och kött. Träet i jord1–jord3 med kontur jord0, och ovanför stiger två korta ångslingor i ben1–ben2 som når upp mot övre kanten."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_kat_soppa",
+     "rader": [
+      "................",
+      ".....QQQQQQ.....",
+      "...QQTSSSSRQQ...",
+      "..QTQQQQQQQQRQ..",
+      ".QSQ........QRQ.",
+      ".QSQ........QRQ.",
+      ".QSQQQQQQQQQQRQ.",
+      ".QTKLKtKttttsRQ.",
+      ".QTSSSSSRSRRRRQ.",
+      "QTTSSSSSRSRRRRRQ",
+      "QTSTSSSSRSRRRRRQ",
+      "QSTSSSSRSRRRRRRQ",
+      ".QSSSRSSRRRRRRQ.",
+      "..QSRSRRRRRRRQ..",
+      "...QQQQQQQQQQ...",
+      "...QR..RQ..RQ..."
+     ]
+    }
+   ],
+   "anteckning": "Grytan står på sina tre korta ben och ses nästan från sidan, bara lite uppifrån. Därför syns mynningen som ett smalt band, och soppan i rost2 och senap2 med en enda glanspunkt i senap3 är det första man ser. Järnbågen sitter fast i öronen vid kanten och går i en halvcirkel över grytan upp till rad 1. Den har kontur i skiffer0 och en kärna som är ljus till vänster och mörk till höger. Kroppen är spegelsymmetrisk: rak kant, bukig kropp och smalare botten. Kornet går i skiffer1–3, ljusast uppe till vänster och mörkast nere till höger. Av de tre benen syns de två yttre och det mittersta framför bakbenet. Granskningen: Rättat: rad 9 var indragen en punkt på båda sidor, vilket gav ett hack i silhuetten mitt på kroppen i stället för en buk. Nu går rad 9–11 ut till rutans kanter (punkt 0–15), så att kroppen buktar ut under den raka mynningen och symbolen fyller rutan bättre. Formen är fortfarande spegelsymmetrisk och ljuset faller uppe till vänster. Det som stämde och fick stå kvar: bågen nästan till överkanten, soppbandet i rost2 och senap2 som drar blicken, konturen i skiffer0 runt hela, de tre benen och den mörka konturen som gör symbolen läsbar på gräset.",
+   "ide": "En hög, rund järngryta från sidan, spegelsymmetrisk, med rak mynning, bukig kropp och tre korta ben nertill, där en båge av järn går i en halvcirkel över hela grytan och nästan når rutans överkant. Grytan ritas i skiffer1–skiffer3 med kontur skiffer0 och ljuset uppe till vänster. Mynningen syns som ett smalt band ovanifrån där soppan lyser i rost2 och senap2, så att det är maten som drar blicken."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_kat_soppa",
+     "rader": [
+      "............EEE.",
+      "...........EHGE.",
+      "..........EHGE..",
+      ".........EHFE...",
+      "........EHGE....",
+      "....EEEEHGE.....",
+      "...EHHGHGE......",
+      "..EHLKtKJGE.....",
+      "..EGKJJtIFE.....",
+      "..EGGHGGFFE.....",
+      "...EFGFFFE......",
+      "....EEIEE.......",
+      ".....IKI........",
+      "....ILKJI.......",
+      "....IKJJI.......",
+      ".....III........"
+     ]
+    }
+   ],
+   "anteckning": "Släven ligger snett över rutan med skaftets ände uppe till höger och slevskålen nere till vänster, där den bär soppan. Skaftet är två punkter brett i jord3 och jord2 med lite jord1, och det har kontur i jord0 längs diagonalen. Ljuset kommer uppifrån vänster, så den ljusa tonen ligger på skaftets övre vänstra kant. Skålen ses lite ovanifrån och är rund kring mitten i kolumn 6. Bakkanten ligger som en ljus träkant, och innanför syns soppans yta i senap med en glans i senap3 och två bitar i rost2. Under ytan kommer den främre kanten och skålens mörkare undersida i jord1. Skaftet går in i skålens övre högra kant, så som det sitter fast på en riktig slev. En stor droppe i senap med kontur i senap0 hänger under skålens botten. Det finns ingen bakgrund, och konturen går runt hela formen så att den syns mot den mörka rutan. Granskningen: Rättat i version 3: droppen satt lös under skålen och ovanför den låg en ensam prick (I på rad 12). Nu hänger droppen ihop med skålen: dess spets sitter i skålens nedre kontur (rad 11), och därunder följer en tydlig droppe med senap0 som kontur och glansen uppe till vänster. Skålens högra kant på rad 6 stack ut en punkt för långt. Den är flyttad in så att skålen blir spegelsymmetrisk kring mitten, och skaftet fäster nu uppe till höger. Resten följer idén och reglerna och är oförändrat: det långa diagonala skaftet i jord1–jord3 med kontur jord0, soppan i senap och rost sedd lite ovanifrån och ljuset från övre vänstra hörnet.",
+   "ide": "En stor träslev som ligger snett över rutan från övre högra till nedre vänstra hörnet, med långt rakt skaft och en djup, rund slevskål nertill. Slevskålen ses lite ovanifrån så att den är fylld med soppa i senap och rost, och en enda stor droppe hänger under skålens kant. Skaftet och skålen i jord1–jord3 med kontur jord0; formen är inte symmetrisk eftersom en slev inte är det, men skålen själv är rund."
+  }
+ ]
+}

@@ -1,0 +1,90 @@
+{
+ "kort": "f9_hage",
+ "namn": "Hagen",
+ "slag": null,
+ "vad": "Steg 9.8.4: hagen är en inhägnad betesmark nära byn där fåren och getterna går. Här en gräsruta med staketet (gärdsle som i 9.7) längs en kant; rutorna läggs i rad så att staketet sluter kring hagen.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_hage",
+     "rader": [
+      "HFPOPOPOHFOPOPOP",
+      "HFGFEHGFHFGFEHGF",
+      "JIHGFEHGJIHGFEHG",
+      "HFEHGFEHHFEHGFEH",
+      "JIFEHGFEJIFEHGFE",
+      "GFGFEGGFGFGFEGGF",
+      "FEEEEEEEFEEEEEEE",
+      "POPOOPOXOPOOXOPO",
+      "OPOXPOOOPOXOOPOX",
+      "POOPOOXOOPOOOXOP",
+      "OPOPOXOOPOOXOOOO",
+      "OOPXOOOPOOXPOOXO",
+      "PXOOOPOOXOOPOOOX",
+      "OOOXOOPOOOPXOXOO",
+      "OXOOPOPOOXOOOOXO",
+      "OOPOOOXOPOOXOOOO"
+     ]
+    }
+   ],
+   "anteckning": "Gärdslet står på hagens bortre kant, längs överkanten, och syns snett uppifrån som ett lågt band på 7 punkter (rad 0–6). De kluvna slanorna står snett och lutar alla åt höger. De har ljus jord3/jord2-sida mot ljuset uppe till vänster, jord1 i mitten och jord0 som kontur och skuggspringa. Mönstret upprepas var fjärde punkt, så slanorna löper ut i båda sidokanterna på samma höjd. Rutor i rad ger därför ett obrutet staket. Störparen står vid x 0 och x 8: en ljus och en mörk stör, med toppen synlig i rad 0. Vidjorna i senap0 binder dem på två höjder (rad 2 och 4). Den nedersta raden är jord0, där slanorna går ner i marken. Under staketet är betesgräs i oliv2/oliv3 med barr2/barr3 som korn och några korta tuvor, ljusast uppe till vänster. Ingen skugga är ritad, och inga mättade toner används, eftersom hagen är bakgrund. Granskningen: Rättat: 1) Störarna syntes inte. Nu står ett par raka störar vid x 0–1 och x 8–9 från rad 0 till rad 6. Topparna sticker upp över slanorna in i gräset (H/F), så att vinkeln snett uppifrån och höjden läses. 2) Slanorna lutar nu alla åt samma håll i ett jämnt mönster med period 4 i jord1–jord3, med jord0 som kontur och mellanrum. Mönstret går upp i 16, så slanorna når båda sidokanterna på samma höjd och rutor i rad ger ett obrutet staket. Bandet är 7 punkter och avslutas med en jord0-kant mot marken. Den nedre delen är något mörkare för ljuset uppifrån till vänster. 3) Vidjorna ligger nu som två band i senap1/senap0 (rad 2 och 4) runt varje störpar, inte som lösa block i slanorna. 4) Gräset hade mörka barr2-prickar i ett stelt diagonalt rutmönster och bröt därmed mot regeln om korn utan fläckar. Nu är det oliv2 med oliv3-korn och barr3 som mörkare korn, utan regelbundet mönster. Där finns tre korta tuvor (två ljusa punkter över en mörk), och de ljusaste kornen ligger mot övre vänstra hörnet. Storleken (16 × 16, en ruta) och idén är oförändrade.",
+   "ide": "Gärdslet går längs bakkanten (överkanten) som ett band på 6–7 punkter: snedställda kluvna slanor i jord1–jord3 med jord0-kontur lutar alla åt samma håll, och par av raka störar står upp varannan åttonde punkt (x 0 och x 8), förkortade och hopbundna med vidjor i dämpad senap0. Slanorna löper ut i båda sidokanterna på samma höjd, så att rutor i rad ger ett obrutet staket. Resten av rutan är betesgräs i oliv2/oliv3 och barr2/barr3, med korn och några korta tuvor, ljusast uppe till vänster."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_hage",
+     "rader": [
+      "EHEHEEGFFOXOOPXO",
+      "EGEGEEFGFXOOXOOX",
+      "EGHEGEFFGOOXONOO",
+      "HEGHEEGFFXOOOXOP",
+      "GHEGHEFGGOXOXOOX",
+      "EGHEGEFFGOOPOOXO",
+      "HEGHEEGFFXONOXOO",
+      "GHEGHEFGFOOXOOOX",
+      "EHEHEEFFGOXOOXOO",
+      "EGEGEEGFFOOXPOOX",
+      "EGHEGEFGFXOOOXOO",
+      "HEGHEEFFGOXONOOX",
+      "GHEGHEGFFOOXOOPO",
+      "EGHEGEFGGXOOXOOX",
+      "HEGHEEFFGOPOOXOO",
+      "GHEGHEGFFOOXOONO"
+     ]
+    }
+   ],
+   "anteckning": "Gärdslet ses ovanifrån och löper mot betraktaren längs vänsterkanten som ett smalt band på 5 punkter. Slanorna ligger snett lutade på varandra, som i en riktig gärdesgård, och syns därför som korta diagonala streck. Varje streck har jord3 och jord2 på den belysta övre vänstra sidan och kontur i jord0 nere till höger. Streck kommer var fjärde rad, så mönstret går jämnt ut i över- och underkanten och rutor ovanför varandra sluter staketet utan skarv. Störparen står på båda sidor om slanorna och håller dem. Uppifrån syns bara deras toppar, som små knoppar i jord3 med jord0 runt, två par per ruta (rad 2 och rad 10, en stör ytterst på var sida). Innanför staketet går en smal nött stig i jord1–jord2, där fåren och getterna trampat längs gärdslet. Resten av rutan är gräs i mellantoner av oliv och barr med korn punkt för punkt och inga mörka fläckar, så att staketet syns tydligt mot det. Granskningen: Version 2 bröt mot idén och mot reglerna om korn och läsbarhet. Vänsterkanten var ett brus av jord- och barrtoner (H, G, E, X, W, F). Där fanns inga slanor och inga störknoppar, och gärdslet läste inte som ett staket. Gräset hade dessutom ljusa P-prickar utspridda som fläckar. Det här har jag rättat. (1) Gärdslet är nu ett band på 5 punkter längs vänsterkanten. Slanorna är sneda parallella streck: jord3 överst, jord2 i mitten och jord0 som skugga under, så att ljuset faller uppifrån och vänster. Var åttonde rad står ett störpar som två ljusa knoppar i jord3 med jord0 runt. Mönstret upprepas med 8 raders period, så rutor ovanför varandra sluter staketet. (2) En kontur i jord0 går längs staketets högra sida mot djurstigen, så att staketet syns tydligt mot marken. (3) Djurstigen är 3 punkter bred i jord1–jord2 med korn och utan schackmönster. (4) Gräset är lugnt i oliv2 och barr3, med enstaka oliv1 och mycket sparsam oliv3. Där finns inga ensamma mörka eller ljusa fläckar, och gräset ligger i mellantoner så att staketet är ljusast. Storleken är en ruta på 16 × 16 punkter. Vinkeln är ovanifrån och snett, och staketet löper mot betraktaren.",
+   "ide": "Gärdslet går längs vänsterkanten och löper mot betraktaren, så att det ovanifrån syns som ett smalt band på 4–5 punkter: slanorna blir korta sneda streck staplade nedför kanten, och störparens toppar syns som små ljusa knoppar i jord3 med jord0 runt. Längs staketets insida går en nött djurstig i jord1–jord2 där fåren och getterna trampat, och resten är gräs i oliv- och barrtoner. Slanorna fortsätter i över- och underkanten, så att rutor ovanför varandra sluter staketet."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_hage",
+     "rader": [
+      "OPOOWOPOOOWOPOOW",
+      "OOWOPONNOOPOOWOP",
+      "POOONNNOWOOPOOOO",
+      "OWOPONOOOPORROWO",
+      "OOPOOOWOPORTSROP",
+      "WOOOPOOOOORSSROO",
+      "OOWOPOOPOOORROPO",
+      "POOEEOOOPOOEEOWO",
+      "OPOGFOWOOPOGFOPO",
+      "EEEGFEEEEEEGFEEE",
+      "HHHGFHGHHHHGFHGH",
+      "FGFGFFGFFGFGFFGF",
+      "EEEGFEEEEEEGFEEE",
+      "HGHGFHHGHGHGFHHG",
+      "FFFGFGFFFFFGFGFF",
+      "EEEGFEEEEEEGFEEE"
+     ]
+    }
+   ],
+   "anteckning": "Rutan är betet sett snett uppifrån med ett lågt gärdsle längs nederkanten, alltså närmast oss. Slanorna lutar nedåt åt höger. Den ljusa ovansidan är jord3, den mörkare undersidan jord1 och konturen jord0, och två parallella slanor ligger över varandra. Varje slana slutar vid ett störpar. Den främre stören är två punkter bred och ljusare, står framför slanorna och täcker skarven, och sticker upp två punkter över dem. Den bakre stören är smal och mörkare, står bakom och syns bara som en kort stump ovanför slanorna. Mönstret upprepas var åttonde punkt. Därför möter den bakre stören i högerkanten den främre stören i nästa rutas vänsterkant på samma höjd, och staketet går ihop när rutorna läggs i rad. Bakom ligger öppet bete i oliv2, oliv3 och barr2, med en betad fläck i oliv1 och en liten grå sten med skiffer0 som kontur och ljus uppe till vänster. Granskningen: Gärdslet var 10 av 16 rader högt och flätat tätt, så det läste som en massiv vävd vägg och inte som det låga staketet i idén. Jag har ritat om det som ett lågt gärdsle: två störpar per ruta (G ljus på vänster sida, F mörk på höger) som sticker upp 2 punkter över slanorna med en jord0-topp. Två slanor går mellan stören, var och en med en ljus ovansida i jord3 och en mörkare undersida i jord1, och jord0 är kontur mellan dem. Staketet tar nu rad 7–15. Mönstret upprepas var åttonde punkt, så vänster och höger kant möts på samma höjd när rutorna läggs i rad. Stenen hade en kontur i skiffer0 och läste som en mörk fläck. Den har nu kontur i skiffer1, en kropp i skiffer2 och en glanspunkt i skiffer3, så den syns som en liten grå sten i betet. Betet med de betade fläckarna i oliv1 är kvar.",
+   "ide": " Ett lågt gärdsle längs framkanten (nederkanten): eftersom vi ser det framifrån och ovanifrån syns slanornas ljusa ovansidor i jord3 och deras mörkare undersidor i jord1, och störparen sticker upp 2–3 punkter över slanorna som korta, förkortade stumpar. Bakom staketet ligger det öppna betet i oliv2–oliv3 och barr2 med några betade, kortare fläckar i oliv1 och en enstaka grå sten i skiffer1–skiffer2. Slanornas mönster upprepas var åttonde punkt och möter kanten på samma höjd i båda sidorna, så att staketet går ihop när rutorna läggs i rad."
+  }
+ ]
+}

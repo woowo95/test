@@ -1,0 +1,99 @@
+{
+ "kort": "f9_ylle",
+ "namn": "Ylle",
+ "slag": null,
+ "vad": "Steg 9.8.14: ylle, ett nytt tygmaterial som vävs av ulltråd på vävstolen. Tjockare och grövre än lintyget, men varmare. Bilden visar ylletyget bredvid lintyget, som jämförelse.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_ylle",
+     "rader": [
+      "..................EEEEEEEEEEEE..",
+      ".................EHHGGHHGGHHGGEH",
+      ".pppppppppppp....EHHGGHHGGHHGGEG",
+      "pwwwqwwwwqwwqp...EGGHHGGHHGGHGE.",
+      "pqqwqqqqqwqqqp...EGGHHGGHHGGFGE.",
+      "pwwqwwwqwwwqwp...EHHGGHHGGFGGFE.",
+      "pqwqqqqwqqqqqp...EHGGGHGGGGFGFE.",
+      "pwwqwwwqwwqqqp...EGGFGGFGGFGFFE.",
+      "pqqqqwqqqqqqqp...EGHGGGHGGGGGFE.",
+      "pqwqqqqqqwqqpp...EFFFFFFFFFFFFE.",
+      "pqqpqqqpqqqppo...EGGFGGGFGGFGFE.",
+      "ppppqppppppqpo...EFFFFFFFFFFFEE.",
+      "pooopooooopooo..GEFGFFGFFFGFFEE.",
+      ".oooooooooooo.....EEEEEEEEEEEE.."
+     ]
+    }
+   ],
+   "anteckning": "Båda tygstyckena ligger vikta på marken och ses snett ovanifrån. Den vikta ovansidan tar större delen av höjden, och framkanten är ett smalt band där lagren syns. Linnet till vänster är tunt och vikt i tre lager. Ovansidan har täta rader i ben2–ben3, och framkanten är bara 3 punkter där varje rad är ett lager, med ben1 som kontur. Yllet till höger har samma bredd men grov rutig väv i 2×2-block av jord2–jord3. Framkanten är 5 punkter med två tjocka lager i jord1–jord2, och konturen är jord0. Båda stycken är lika breda och har bottenkanten på samma rad, så skillnaden i tjocklek och korn syns direkt. Lösa ulltrådar sticker ut i yllets övre högra hörn, en uppåt och en åt sidan. Ljuset kommer uppifrån vänster: de ljusaste tonerna ligger överst till vänster och de mörkare mot högra kanten och framkanten. Ingen skugga är ritad. Granskningen: Rättat: framkanterna följde inte idén. Linnet hade bara en rad framkant och yllet ingen synlig tjocklek, så ingen skillnad syntes. Nu har linnet en framkant på 3 punkter (tre tunna lager i ben2, ben1 och ben0) och yllet en framkant på 5 punkter med tre tjocka lager, där jord1-rader skiljer lagren åt. Båda ytorna är 7 punkter djupa ovanifrån, och styckena står på samma marklinje, så yllet reser sig högre. Linnets nederkant och skuggsida har fått ben0, materialets mörkaste ton. De ensamma ben1-prickarna ur linnets yta är borttagna. De lösa ulltrådarna satt fritt i luften ovanför hörnet och sitter nu fast i yllets kontur: en tråd i övre högra hörnet och en i nedre vänstra. Storleken är oförändrad: två stycken på 14 punkters bredd, väl mindre än kolonisten. Bilden är 32 × 14 punkter.",
+   "ide": "Två vikta tygstycken som ligger bredvid varandra på marken, sedda snett ovanifrån: till vänster ett tunt, slätt linnetyg i ben2–ben3 med fina täta rader, vikt i tre lager och bara 3 punkter högt i framkanten, till höger ett tjockt yllestycke i jord2–jord3 med grov rutig väv och en framkant på 5–6 punkter som visar de tjocka lagren. Båda är rektanglar av samma bredd, ungefär 14 × 10 punkter vardera, så att skillnaden i tjocklek och korn syns direkt. Linnet har ben1 som kontur och yllet jord0, och ett par lösa ulltrådar sticker ut i yllets hörn."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_ylle",
+     "rader": [
+      ".............IIIIIIIII...",
+      "............IKKLKKKKJJI..",
+      "...........IKKKKKKKKKJJI.",
+      "...........IJJKJJJJKJJJI.",
+      "...........IKKKKKKKKKJJI.",
+      "..oooooo...IKKKKKKKKJJJI.",
+      ".oqwqqqpo..IJJJKJJJJJJJI.",
+      ".oqqqqqpo..IKKKKKKKKKJJI.",
+      ".oppqpppo..IKLKKKKKKKKJI.",
+      ".oqqqqqpo..IKKIIIIIIIJJI.",
+      ".opqppppo..IKIKKKKKKJIJI.",
+      ".oqqqqqpo..IKIKIIIIJJIJI.",
+      ".oqpppppo..IKIKIJJJIJIJI.",
+      ".oqpqqppo..IKIKIJIJIJIJI.",
+      ".oqpqpqpo..IKIKJJJJJIIJI.",
+      ".oqppqppo..IKIJIIIIIIJJI.",
+      ".oqqppppo...IKJJJJJJJJI..",
+      "..oqppo........IIJJJJJII...",
+      "...oooo........IIIII....."
+     ]
+    }
+   ],
+   "anteckning": "Två tygrullar ligger ner på marken sida vid sida med axeln mot betraktaren. Snett uppifrån syns ovansidan som en kort yta bakåt med vävens räfflor: täta och fina på linnet, breda och ojämna på yllet. Framänden syns som en något hoptryckt rund skiva med spiralen. Linnerullen till vänster är smal, 8 punkter bred, i ben2 med en tunn spiral i ben1 och kontur i ben0. Ylle-rullen till höger är grov, 13 punkter bred, i senap1–senap2 med en tjock spiral och kontur i senap0. Spiralens yttre ände går ut i tygkanten. Formerna är spegelsymmetriska; bara ljuset från vänster och kornet skiljer sidorna åt. Glansen är en punkt på varje rulle. Granskningen: Rättat: ylle-rullens ände var en rörig spiral med lösa prickar. Den är omritad som en sluten, spegelsymmetrisk rund ände, 13 punkter bred och 11 hög, med en tydlig spiral i senap0 på senap2 och senap1. Den är ljusare uppe till vänster och mörkare nere till höger, och underkanten är rundad. Räfflorna på yllets ovansida hade mörka senap0-prickar vid högerkanten. De är nu jämna senap1-band, så att konturen är den enda senap0-kanten. Glansen är begränsad till två senap3-punkter: en på bakkanten och en på ändens överkant. Linnerullens ände har nu en tunn spiral i ben1 i stället för den mörka ben0-ringen, som såg ut som en fläck. Storleken mot kolonisten är oförändrad: linnet är 8 punkter brett och yllet 13, båda lägre än en människa. Vinkeln är kvar snett uppifrån, och båda rullarna syns tydligt med kontur på gräset.",
+   "ide": "Två tygrullar som ligger ner på marken sida vid sida och pekar mot betraktaren, så att den runda änden syns snett uppifrån som en spiral: linnerullen smal, ungefär 8 punkter i diameter, ljus ben2 med en tunn spiral i ben1, ylle-rullen grov och fet, ungefär 13 punkter i diameter, i varm senap1–senap2 med en tjock spiral i senap0. Rullarnas ovansidor visar vävens räfflor, fina och täta på linnet och breda och ojämna på yllet. Varje rulle är spegelsymmetrisk kring sin mittlinje, och bara ljuset från vänster skiljer sidorna åt."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_ylle",
+     "rader": [
+      ".EE..........................EE.",
+      "EHGE............rrrrrrrrrrr.EGFE",
+      "EHFEEoooooooooEErtttuttstsrEEGFE",
+      "EGFEHowwwqwwqoHGrttsttttssrGEFFE",
+      "EHFEEoqqpqqqpoEErstststtssrEEGFE",
+      "EGFE.owwqpwqpo..rsssssssssr.EFFE",
+      "EHFE.owqqpwqpo..rttsrttsrsr.EGFE",
+      "EGFE.owwqpqqpo..rttsrttsrsr.EFFE",
+      "EHFE.owwqpwqpo..rtssrstsrsr.EGFE",
+      "EGFE.owqqpwqpo..rtssrstsrsr.EFFE",
+      "EHFE.owwqpqqpo..rttsrttsrsr.EGFE",
+      "EGFE.owwqpwqpo..rttsrttsrsr.EFFE",
+      "EHFE.owqqpwqpo..rtssrstsrsr.EGFE",
+      "EGFE.owwqpqqpo..rtssrstsrsr.EFFE",
+      "EHFE.owwqpwqpo..rttsrttsrsr.EGFE",
+      "EGFE.owqqpwqpo..rttsrttsrsr.EFFE",
+      "EHFE.owwqpqqpo..rtssrstsrsr.EGFE",
+      "EGFE.owwqpwqpo..rtssrstsrsr.EFFE",
+      "EHFE.ooooooooo..rttsrttsrsr.EGFE",
+      "EGFE............rttsrttsrsr.EFFE",
+      "EHFE............rstsrstsrsr.EGFE",
+      "EGFE............s.t.s.t.s.s.EFFE",
+      "EHFE........................EGFE",
+      "EEEE........................EEEE"
+     ]
+    }
+   ],
+   "anteckning": "Torkstället står på marken med två stolpar i jord1 och jord0-kontur. Stolparna är de enda höga delarna och syns som korta stumpar uppe vid sidorna och ned till marken. Stången ligger tvärs vid bakkanten och syns bara i glipan mellan tygerna och vid stolparna; där tygerna ligger över stången döljer de den. Sett snett ovanifrån syns först ovansidan av varje tyg där det viker sig över stången. Den raden är ljusast, och raden under, där tyget böjer sig ned, är lite mörkare. Därefter faller tygerna rakt ned. Linnet i ben2–ben3 med ben0-kontur är tunt och ljust och har bara två mjuka veck. Yllet i rost1–rost2 med rost0-kontur är tjockare och ligger en punkt högre över stången. Det har grova veck och en rutig väv där två rader rost2 och två rader rost1 växlar, och en fransig kant. Det slutar 3 punkter lägre än linnet (rad 21 mot rad 18), så att tyngden syns i silhuetten. Ljuset kommer uppifrån vänster, så varje tyg är ljusast på vänster sida och har mörkare kant till höger. Bilden är 32 × 24 punkter. Granskningen: Rättat: stången som tygerna hänger över syntes nästan inte, eftersom bara enstaka punkter fanns mellan tygerna, och tygerna såg ut att sväva. Linnet är nu en punkt smalare (9 punkter, kolumn 5–13). Stången i jord0/jord2/jord3 syns därför tydligt i ett glapp på två punkter mellan tygerna och vid båda stolparna. Linnet börjar nu uppe vid stången, med ett ljust vikt överslag (ben3) och en mjuk skuggrad under. Linnets veck ligger mindre regelbundet för att ge korn i stället för ränder. Yllet, stolparna och storleken (32 × 24) är oförändrade. Yllets fransar slutar 3 punkter under linnets nederkant, som i idén.",
+   "ide": "En låg trästång eller ett torkställ vid bakkanten, förkortat och sett snett ovanifrån, med två tyger hängande över sig i höga raka fall: till vänster ett tunt linnetyg i ben2–ben3 som faller slätt med få mjuka veck och syns ljust nästan rakt igenom, till höger ett tjockt yllestycke i rost1–rost2 med fransig nederkant, grova veck och tydlig väv i rutor. Ställningen har två korta stolpar i jord1 med jord0-kontur som bara sticker upp vid sidorna, och hela bilden är ungefär 32 × 24 punkter. Yllet hänger tyngre och lägre, med nederkanten 3 punkter längre ned än linnets, så att vikten syns i silhuetten."
+  }
+ ]
+}

@@ -1,0 +1,80 @@
+{
+ "kort": "f9_nat",
+ "namn": "Nätet",
+ "slag": null,
+ "vad": "Steg 9.6.16: nätet är en sak av tråd med stenar som sänken, och fiskaren lägger ut det i vattnet för att få fler fiskar än med spjutet. Här nätet hopvikt som en hög.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_nat",
+     "rader": [
+      "....oooooooo....",
+      "...owqwqwqqpo...",
+      "..owoqoqoqoppo..",
+      "..owqwqwqqpqpo..",
+      ".owEEEEEEEEEEpo.",
+      ".owoqoqoqoqopoo.",
+      "SRqwqqpqpqppooSR",
+      "RQEEEEEEEEEEEERQ",
+      ".opqopopopopooo.",
+      "..EESREEEESREE..",
+      "....RQ....RQ...."
+     ]
+    }
+   ],
+   "anteckning": "Nätet ligger hopvikt på marken och ses snett ovanifrån som en låg, oval hög på ungefär 16 × 12 punkter. Det är tre vikta lager, och det minsta ligger överst. Varje lager är ett rutmönster av bentråd: ben3 och ben2 på det översta lagret och ben1 och ben0 längre ner och åt höger, så att ljuset kommer uppifrån till vänster. Konturen är ben0, och varje lager har en smal framkant av jord0 där det viker sig över lagret under. Sänkstenarna sitter fast i nätets ytterkant, så de syns bara där tråden hänger över högen. Det är fem stycken på 2 × 2 punkter i skiffer2 och skiffer1 med skiffer0 nere till höger: en bak till höger, en på var sida och två längst fram. Ingen skugga på marken, den lägger programmet till. Granskningen: Rättat: högen var 18 × 13 punkter, bredare än kolonisten, och är nu 16 × 11, närmare idéns 14 × 10. Formen är nu spegelsymmetrisk: tre lager som blir bredare nedåt, och sänkstenarna sitter parvis, två på sidorna och två framtill. Förut satt de på olika höjd på var sida. Det släta rutmönstret wqwq, som läste som en randig kaka eller hatt, är bytt mot ett nät med maskhål i ben0 mellan trådarna i ben2 och ben3. Ljuset faller från övre vänstra hörnet, med ben3 till vänster och ben1 och ben0 nere till höger. Konturen runt tråden är ben0, nätets mörkaste ton, och skuggkanterna längst fram på varje lager är jord0 som i idén. Ensamma mörka prickar och den trasiga konturen i rad 7–8 är borttagna.",
+   "ide": "En låg, oval hög av hopvikt nät, ungefär 14 × 10 punkter, som ligger på marken och ses snett ovanifrån. Nätet ritas som ett rutmönster av ljus bentråd (ben2 och ben3 på ovansidan, ben1 och ben0 nedtill till höger) i två eller tre vikta lager, där varje lager har en mörkare skuggkant av jord0 längst fram. Fyra eller fem små grå sänkstenar (skiffer1 och skiffer2 med kontur i skiffer0, 2 × 2 punkter) sticker ut runt kanten där tråden hänger över."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_nat_hog",
+     "rader": [
+      "......EE......",
+      ".....EGFE.....",
+      "....EwFFpE....",
+      "...EwqpqpoE...",
+      "...EpFooFoE...",
+      "..EwqqpqppoE..",
+      "..EqpFqpFpoE..",
+      "..EpoFoooFoE..",
+      ".EwqpqqpqppoE.",
+      ".EqpFqpFqpooE.",
+      "QTSEoooFooESRQ",
+      ".QTSQTSQSRQRQ.",
+      "..QRRQRRQRRQ..",
+      "...QQQQQQQQ..."
+     ]
+    }
+   ],
+   "anteckning": "Nätet ligger hopvikt på marken som en spiralhög och ses snett uppifrån som resten av kartan. Toppknuten är det högsta och syns överst. Under den vidgar sig tre ringar av tråd nedåt, ljusa i ben3 och ben2 uppe till vänster och mörka i ben0 nere till höger, med maskhål i jord1 som korn och jord0 som kontur. Sänkstenarna sitter i nätets nederkant och hamnar därför runt foten. De främsta stenarna skymmer nätets nedersta kant, och de bakre syns bara vid sidorna. Stenarna är skiffer med skiffer0 som kontur och ger högen en tung, spegelsymmetrisk bas. Bilden är 16 × 15 punkter, mindre än en ruta. Granskningen: Rättat: 1) Storleken. Högen var 16 × 15 punkter, nästan lika bred som kolonisten och tre fjärdedelar av hans höjd. Ett hopvikt nät är en knähög hög, så den är nu 14 × 14 punkter med själva nätet 12 punkter brett, som i idén. 2) Formen följer idén. Den spetsiga triangeln med jämnt prickmönster är ersatt av en rundad kon med en toppknut i jord (jord2/jord1) och tre tydliga ringar av tråd, 6, 8 och 10–12 punkter breda, som vidgar sig nedåt. Mellan ringarna går en skuggfåra i ben0. Ringarna har ben3/ben2 uppe till vänster och ben0 nere till höger, så ljuset kommer uppifrån vänster. Maskhålen i jord1 ligger som korn i ringarna och fårorna, inte som lösa fläckar. 3) Kransen av sänkstenar ligger nu runt foten och täcker den nedersta ringens kanter, så att stenarna blir en tung bas och högen ses snett uppifrån. Stenarna har skiffer3/skiffer2 till vänster och skiffer1/skiffer0 till höger. Konturen är jord0 runt tråden och skiffer0 runt stenarna, och ingen kol används. Siluetten är spegelsymmetrisk, och bara ljus och korn skiljer sidorna åt. Den ljusa benfärgen med stenbasen syns tydligt mot det olivgröna gräset.",
+   "ide": "En hög, rundad kon av nät som lagts i en spiral, ungefär 12 × 12 punkter, så att man från spelets vinkel ser en toppknut i mitten och tre ringar av tråd som vidgar sig nedåt. Ringarna ritas med ben3 och ben2 i övre vänstra delen och ben0 längst ned till höger, med jord0 som kontur och små mörka maskhål som korn. Runt foten ligger en krans av sänkstenar i skiffer, så att formen blir spegelsymmetrisk med stenarna som en tung bas."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_nat_hopvikt",
+     "rader": [
+      "...........QQ.QQ..",
+      ".oooooooFGQTSQTSQ.",
+      ".opwqqpqGFQSRQSRQ.",
+      ".owpqpqpFGqQQQQQo.",
+      ".oqqpqqqGFqQTSQqo.",
+      ".oppppppFGpQSRQpo.",
+      ".opqqqpqGFpqQQpqo.",
+      ".oqpqpqpFGqpqpqpo.",
+      ".pooooooGFooooooo.",
+      ".qpqpqoEFEEEEEEEE.",
+      ".p.p.o............",
+      "..p.o.o...........",
+      "...o.o............"
+     ]
+    }
+   ],
+   "anteckning": "Nätet ligger hopvikt som en platt bunt på marken och ses snett ovanifrån. Ovansidan är ljus ben med två raka veck i ben1 och diagonala trådlinjer. Framkanten är ett smalt band på två punkter, ben0 överst och jord0 underst. En flätad rem i jord1 och jord2 snörs runt mitten och syns både över ovansidan och ned över framkanten. Ovanpå bunten, till höger om remmen, ligger sänkstenarna i en liten hög om fyra stenar i skiffer med skiffer0 som kontur. Från det vänstra främre hörnet hänger en flik ned över framkanten. Där syns maskorna som hål: överst syns bandet genom dem, längre ned marken. Ljuset kommer uppifrån vänster, så de ljusaste trådarna ligger i det övre vänstra hörnet och högerkanten är mörkare. Granskningen: Version 3 läste som en uppslagen bok: bunten var 16 × 10 punkter, nästan kvadratisk, med vågräta ränder som såg ut som sidor och en lodrät rem som såg ut som en bokrygg. Idén säger en platt bunt på ungefär 16 × 8. Rättat: bunten är nu 16 × 9 punkter med 7 rader ovansida och ett framband på 2 punkter, den översta i ben0 och den nedersta i jord0, vilket ger en lägre och platt form snett ovanifrån. Ovansidan har fått ett diagonalt rutnät av trådar i ben1 på ben2, med ben3 bara uppe till vänster, och ett enda rakt veck tvärs över. Så syns det att det är ett nät och inte papper. Remmen runt mitten är flätad, med jord1 och jord2 omväxlande punkt för punkt, och går över bakkanten och nedför frambandet. Sänkstenarna är nu tre: två bak och en framför dem i en liten hög i skiffer, kontur i skiffer0 och glans på en punkt i skiffer3 uppe till vänster. Fliken hänger från vänstra framhörnet med diagonala trådar och genomskinliga maskhål, så att maskorna syns mot gräset och flikens trådar mörknar nedåt. Storleken, 18 × 13 med fliken, passar mot kolonisten. Bunten är ljus ben med kontur och syns på gräset, och ljuset kommer från övre vänstra hörnet.",
+   "ide": "En platt, fyrkantig bunt där nätet vikts som ett tygstycke, ungefär 16 × 8 punkter, med raka veck över ovansidan och en kort flik som hänger ned från ena hörnet så att maskorna syns tydligt. Ovansidan är ljus ben med diagonala trådlinjer, framkanten ett smalt band på två punkter i ben0 och jord0. Sänkstenarna ligger samlade i en liten hög på 3–4 stenar ovanpå bunten, och en stump av en mörkare flätad rem i jord1 och jord2 snörs runt mitten."
+  }
+ ]
+}

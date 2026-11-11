@@ -1,0 +1,90 @@
+{
+ "kort": "f9_valp",
+ "namn": "Valpen",
+ "slag": null,
+ "vad": "Steg 9.8.2: valpen är en vargvalp som byn tagit hand om och som växer upp till hunden. Liten och rund, med stora tassar. Bilden visar den från sidan på gräs.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_valp",
+     "rader": [
+      "...Q...Q..........",
+      "..QTQ.QSQ.........",
+      "..QTTQTSSQ.....Q..",
+      ".QTTTTTSSSQ...QSQ.",
+      ".QTTkTSSSSQQQQSRQ.",
+      "kqqTTSSSTTTTSSSRQ.",
+      "QqqqSSSSTSSSSSSRQ.",
+      ".QqqRSSSSSSSSSRRQ.",
+      "..QQRSSSSSSSSSRRQ.",
+      "...QSSqqpqqpqSRRQ.",
+      "...QSRQQQQQQQSRQ..",
+      "...QSRQRRQRRQSRQ..",
+      "..QTSSQRRQRRQTSSQ.",
+      "..OQQQXQQOQQXQQQO.",
+      ".OXOPXOXOPOXOPXOX.",
+      "..XWXOXWXOXWXOXW.."
+     ]
+    }
+   ],
+   "anteckning": "Valpen står i profil med nosen åt vänster, och alla fyra tassarna vilar på en låg grästuva. Vi ser den lite snett uppifrån, så ett smalt ljust band av ryggen syns, och huvudet och ryggen är ljusast uppe till vänster. Huvudet är stort och runt med två korta uppresta öron, och den runda kroppen har en kort svans som sticker upp baktill. De två närmaste benen är tjocka och ljusgrå och slutar i överstora tassar som sticker fram mot nosen. De bortre benen skymtar mörkare mellan dem och slutar lite högre upp, eftersom de står längre bort. Buken, bröstet och nosen är ljusa i ben, konturen är skiffer0 och bara ögat och nostippen är kol0. Granskningen: Version 1 ritade en långsträckt vuxen varg (cirka 18 × 11 punkter kropp) och inte en liten, rund valp. Tassarna var inte större än benen, och grästuvan var full av skiffer0-prickar. Jag har ritat om bilden enligt idén. Kroppen är nästan en boll på cirka 10 × 6 punkter, och huvudet är stort och runt med två korta uppresta öron. Nosen pekar åt vänster, är i ben2 och slutar i en nostipp i kol0. Ögat är i kol0. Benen är korta och tjocka och slutar i överstora tassar på 3 punkter med ljus överkant. De bortre benen skymtar mörkare i skiffer1 bakom de främre. En liten svans står upp bak. Pälsen går från skiffer3 uppe till vänster till skiffer1 nere till höger, med ett ljust band längs ryggen, buken i ben2/ben1 och konturen i skiffer0. Tuvan är låg, 16 × 3 punkter, i oliv2/oliv3, barr3 och barr2 utan mörka fläckar. Valpen är 18 × 16 punkter och därmed tydligt mindre än kolonisten.",
+   "ide": "Stående valp i profil med nosen åt vänster, kroppen nästan som en boll på cirka 12 × 9 punkter, ett stort runt huvud med två korta uppresta öron och fyra korta, tjocka ben som slutar i överstora tassar på 3 punkter var. Pälsen är grå i skiffer1–skiffer3 med ljusast på ryggen och huvudet uppe till vänster, ljus buk och nos i ben2, kontur i skiffer0, och bara ögat och nostippen i kol0. Den står på en låg grästuva på cirka 18 × 3 punkter i oliv2 och barr3, ritad snett uppifrån så att ett smalt band av ryggen syns och de bortre benen skymtar mörkare bakom de främre."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_valp",
+     "rader": [
+      ".....Q..........",
+      "....QTQ.QQ......",
+      "...QTTSQSRQ.....",
+      "..QTTkSSSRRQ....",
+      ".QqwTTSSSRRQ....",
+      "kqqqTTSSRRQ.....",
+      ".QQqqTSSRRQ.....",
+      "..QwqTSSSRRQ....",
+      "..QqqTTSSRSRQ...",
+      "..QqTQTSSRSRRQ..",
+      "..QTSQTTSSRSRQ..",
+      "..QTSQTSSSRSRRQ.",
+      ".QqTTSQSSSRRRRQ.",
+      "QqTTTSRQQQQQRSSQ",
+      "OQQQQQQOPOPQQQQX",
+      ".OPOPOPOWOOPOOX.",
+      "..WXOWXOWOXWOX..",
+      "....WVWWVWWV...."
+     ]
+    }
+   ],
+   "anteckning": "Valpen sitter i profil med nosen åt vänster mot ljuset. Den bär sin vikt på de hopvikta bakbenen och på baken, som bildar en bred och rund haunch mot marken. Frambenen står raka under bröstet och slutar i stora tassar längst fram. Därför syns bara det närmaste frambenet helt, med en skiffer0-linje som skiljer det från låret. Huvudet sitter högst upp, lite lyft: örat närmast ljuset står rest, och det bakre är vikt och hänger ner bakåt. Nosen och bröstfläcken är i ben2 med en punkt ben3 som glans. Nostippen och ögat är kol0, eftersom de verkligen är svarta. Pälsen är ljusast (skiffer3) längs bröstet och kinden och mörkast (skiffer1) mot ryggen och bakdelen nere till höger. Konturen är skiffer0. Den korta svansen ligger utlagd längs gräset bakom baken. Under valpen ligger en liten oval grästuva i oliv och barr, sedd snett ovanifrån som en yta. Granskningen: Rättat: rad 10 hade 17 tecken i stället för 18; bilden har nu jämn bredd. Valpen var för stor, med en kropp på cirka 15 × 16 punkter. Den var nästan lika hög som kolonisten och följde inte idén om cirka 11 × 14. Den är nu omritad till 16 × 18 punkter med en kropp på cirka 12 × 15, så att den läses som liten och rund bredvid en människa. Framtassarna är förstorade till breda tassar på 5 punkter längst ner, så att idén om stora tassar syns. Svansspetsen var ljusast (skiffer3) nere till höger, vilket bröt mot ljuset. Svansen ligger nu i mellantoner (skiffer1–skiffer2) längs gräset. Det resta örat och det vikta örat, ögat, nosen i kol0, bröstfläcken i ben2 och konturen i skiffer0 är behållna. Grästuvan är kvar som en liten oval i oliv- och barrtoner, sedd snett ovanifrån. Profilen mot vänster med ljuset från vänster är oförändrad.",
+   "ide": "Sittande valp i profil med en hög, droppformad silhuett på cirka 11 × 14 punkter: baken och de hopvikta bakbenen breda och runda mot marken, raka framben med stora tassar framför bröstet, och huvudet högst upp lyft och lite på sned med ett öra rest och ett vikt. Den grå ullpälsen i skiffer1–skiffer3 är tjockast och ljusast kring bröstet och ena kinden, med nos och bröstfläck i ben2 och kontur i skiffer0, och en kort svans ligger utlagd längs gräset bakom. Under den finns en liten oval grästuva i oliv- och barrtoner, sedd snett ovanifrån så att den syns som en yta och inte som ett streck."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_valp",
+     "rader": [
+      ".................QQ..",
+      "................QTRQ.",
+      "................QSQ..",
+      "...........QQQQQTSQ..",
+      "..........QTTTTTSSRQ.",
+      ".....Q...QTTSTSSSSRQ.",
+      "....QTQ.QTSSSSSSRSRQ.",
+      "...QTTSTSSSSSSqRRRRQ.",
+      "..QTSkSSSSSqqqQRSRQ..",
+      ".kSSSSSqqqqQQQ.QRSQ..",
+      "QTTSSSRSRQXOXOXQTSRQ.",
+      "WOXOPXOXOOXOXOPXOXOXW",
+      ".WOXOOXOXOXOOXOXOXWW.",
+      "...WWWWOWWWWWWWOWWW.."
+     ]
+    }
+   ],
+   "anteckning": "Valpen står i lekbugning från sidan med huvudet åt vänster. Frambenen ligger utsträckta och platta mot gräset, och de stora tassarna sticker fram förbi nosen. Hakan och bröstet vilar nere på frambenen, medan baken står högt på de raka bakbenen. Svansen reser sig ur ryggslutet som en kort krok. Ryggen sluttar som en kil från hög bak till låg nos. Av öronen syns bara det närmaste som en spets över huvudet, och av benen syns de närmaste. Pälsen är skiffer3 på den uppåtvända ryggen, skiffer2 på sidan och skiffer1 på låret och åt höger. Buken och bröstet är ben2, konturen är skiffer0, och bara ögat och nosspetsen är kol0. Tassarna saknar nedre kontur och har grässtrån framför sig, så att de sjunker in en punkt i tuvan. Tuvan är bred och låg, sedd snett uppifrån som kartan, i oliv2 och barr3 med barr2 som kant. Granskningen: Version 3 håller i stort: storleken (21 × 14 med tuvan) passar en liten valp bredvid kolonisten på 14 × 20. Lekbugningen med hög bak, låg haka och krokig svans läses tydligt. Ljuset faller uppifrån vänster, och den grå pälsen med skifferkontur syns mot gräset. Två rättningar: 1) I rad 10 blandades gräs (X/O) in i frambenen, så de stora framtassarna försvann. Nu är frambenen ett sammanhängande, platt ben i skiffer, med en ljus tass (T) längst fram under nosen och kontur bakom. Tuvan i rad 11 täcker undersidan, så tassarna sjunker in en punkt. Den bakre tassen är också tydligare (QTSRQ). 2) Den ljusa buken i rad 9 saknade kontur där den lyfter mot baken. Ena q-punkten är nu skiffer0, så buken får en sluten underkant. Kol0 används bara till nos och öga, som verkligen är svarta.",
+   "ide": "Lekande valp i lekbugning från sidan, låg och lång på cirka 16 × 9 punkter: frambenen utsträckta och platta mot gräset med de stora tassarna längst fram, bröstet och hakan nere, medan baken står högt med en upplyft, viftande svans som en liten krok. Silhuetten bildar en tydlig sned kil från hög bak till låg nos, med grå päls i skiffer1–skiffer3 som är ljusast på den uppåtvända ryggen, ljus buk i ben2 och kontur i skiffer0. Gräset är en bred, låg tuva i oliv2 och barr3 som tassarna sjunker in en punkt i, sedd snett uppifrån som kartan."
+  }
+ ]
+}

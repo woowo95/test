@@ -1,0 +1,82 @@
+{
+ "kort": "f9_salt",
+ "namn": "Salt",
+ "slag": null,
+ "vad": "Steg 9.6.19: salt kokas fram ur havsvatten och ger smak åt maten. Här saltet som sak i förrådet.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_salt",
+     "rader": [
+      "..EEEEEEEE..",
+      ".EHGHGGGGFE.",
+      "EHFpqqqqpFFE",
+      "EGpqwqqqqpFE",
+      "EHGpqpqppFFE",
+      "EHHGHGGGGFFE",
+      "EGGFGGFGFFFE",
+      ".EGGFGFGFFE.",
+      ".EGFGFGFFFE.",
+      "..EFGFFFFE..",
+      "...EEEEEE..."
+     ]
+    }
+   ],
+   "anteckning": "Krukan står på förrådsgolvet och ses snett uppifrån, som i spelet. Därför syns mynningen som en ellips överst. Den är fylld med grovt salt i ben1–ben3 och bildar en liten kulle i mitten, med en enda glanspunkt i ben3 uppe till vänster. Mynningens bakre kant är ett smalt varv i jord3/jord2. Den främre kanten är ett ljusare band, och under det syns bara krukans framsida, som buktar och smalnar mot botten. Kroppen är i jord2/jord1 med korn och kontur i jord0. Ljuset kommer uppifrån vänster, så höger sida har en smal skuggzon i jord1. Konturen är spegelsymmetrisk; bara ljuset och kornet skiljer sidorna åt. Saltet är det ljusaste i bilden och syns därför först mot det mörka lergodset och gräset. Granskningen: Storleken (12 × 11) och symmetrin stämmer, och krukan syns på gräset tack vare konturen i jord0. Två saker är rättade. Mynningen saknade läpp: saltet fyllde ända ut till konturen, så krukan såg ut som en sten med vit topp. Nu går en kant i jord3/jord2 runt mynningen, bakkanten upplyst och framkanten som ett band i rad 5. Saltet ligger som en symmetrisk ellips innanför kanten, med en smal skugga i jord1 på insidan av bakkanten. Saltet hade två glanspunkter på olika ställen och ingen tydlig kulle. Nu har det en enda glanspunkt i ben3 uppe till vänster på kullen, ljust i mitten och ben1 mot kanterna nere till höger, så att det läser som grovt kristallsalt. Kroppen är oförändrad: jord1/jord2 med ljusare kant till vänster och skugga nere till höger.",
+   "ide": "En låg, rund lerkruka med vid mynning, ungefär 12 × 11 punkter, spegelsymmetrisk och sedd snett uppifrån så att mynningen syns som en ellips fylld med vitgrått salt i ben2 och ben3, med en enstaka glanspunkt uppe till vänster. Krukans kropp är i jord1 och jord2 med kontur i jord0, och en smal mörkare skuggzon nere till höger. Saltet bildar en liten kulle i mitten av mynningen, med kornig ton i ben1 till ben2 så att det läser som grovt kristallsalt."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_salt",
+     "rader": [
+      "EEEEEEEEEEEEE",
+      "EFHHGHGHGGGFE",
+      "EHFFGFFFFGFGE",
+      "EHpqppqpqppGE",
+      "EHqwqwwqqwqGE",
+      "EHwqwqqwqqqGE",
+      "EHqwqqwqwqpGE",
+      "EFHGHGHGHGGFE",
+      "EFFGFFFGFFFFE",
+      "EFFFFGFFFFFFE",
+      "EEEEEEEEEEEEE"
+     ]
+    }
+   ],
+   "anteckning": "Asken står på marken i förrådet och ses snett ovanifrån utan lock, så man ser rakt ner i saltet. Bakväggens innersida syns som ett mörkt band i jord1 bakom saltet, och närmast den ligger skuggpunkter i ben1. Sidoväggarnas överkanter är smala lister, ljusare till vänster (jord3) och mörkare till höger (jord2) eftersom ljuset kommer uppifrån vänster. Framkanten är en list med en framsida på två punkter i jord1 med korn av jord2, och hela asken har kontur i jord0. Asken har inga ben eftersom den står direkt på marken. Plankfogarna i hörnen syns som en mörkare punkt i jord1 i kantlisterna, så formen blir fyrkantig och kantig. Saltet ligger nästan i kant med väggarna och har punktvis korn i ben2 och ben3, så att det syns ljust mot gräset. Granskningen: Granskad mot reglerna. Storleken (13 × 11) stämmer med idén och passar mot kolonisten som en låda i förrådet. Vinkeln stämmer: innerytan med saltet tar ungefär två tredjedelar av höjden, och framkanten är ett smalt band på 2 punkter i jord1 med kontur i jord0. Asken saknar ben, vilket är rätt för en låda. Formen är spegelsymmetrisk, och ljuset faller från vänster: vänster kantlist är i jord3 och höger i jord2. Saltet i ben2/ben3 är klart ljusare än gräset och syns tydligt, med skuggpunkter i ben1 vid bakkantens insida. Jag rättade bara en sak: den inre bakväggen (rad 3) var en slät rad i jord1 utan korn. Den har nu två punkter i jord2 så att ytan inte är slät. Inga mörka fläckar har lagts till. Resten är oförändrat.",
+   "ide": "En liten fyrkantig träask utan lock, cirka 13 × 10 punkter, sedd snett ovanifrån: botten och innerytan tar tre fjärdedelar av höjden och framkanten är ett smalt band på 2–3 punkter i jord1 med kontur i jord0. Asken är fylld nästan till kanten med grovt salt i ben2 och ben3 med punkt-för-punkt-korn och ett par skuggpunkter i ben1 mot bakkantens insida. Hörnen visar plankfogar som en enda mörkare punkt, så formen blir kantig och tydligt skild från en kruka."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_salt",
+     "rader": [
+      "....QTQTQ.....",
+      "....QTSSQ.....",
+      ".....QSQ......",
+      "....rutsr.....",
+      "....rsssr.....",
+      "...QTTSSRQ....",
+      "..QTTSTSSRQ...",
+      ".QTTSTSSSRRQ..",
+      ".QTSTSTSSSRQ..",
+      ".QTTSSTSSRRQ..",
+      ".QTSTSSTSSRQ..",
+      ".QTTSTSSTSRQ..",
+      ".QTSSTSSSRRQ..",
+      ".QSTSSTSSRRQ..",
+      ".QSSSSSSRRRQ..",
+      "..QQQQQQQQQ...",
+      ".....pqwqqp...",
+      "......oppqo..."
+     ]
+    }
+   ],
+   "anteckning": "Säcken står upprätt på marken med tyngden i den breda botten, sedd snett uppifrån så att bottenkanten blir en mjuk båge. Halsen är hopsnörd av ett rep i rost som knyts runt tyget, och reptampen hänger ner på höger sida. Ovanför knuten sticker tygets tofs upp. Ljuset kommer uppifrån vänster: skiffer3 på vänster sida, skiffer1 på höger och konturen i skiffer0. Vecken är korta diagonala skiffer3-streck. Framför foten ligger en liten hög spillt salt i ben, så att det syns vad säcken innehåller. Granskningen: Rättat: den lösa rostpunkten utanför konturen till höger om axeln (rad 5) är borttagen. Repet om halsen (rad 4) stack ut en punkt till höger och är nu lika brett som raden ovanför (kolumn 4–8), så att halsen blir spegelsymmetrisk. Den ensamma ben2-punkten som bröt bottenkonturen (rad 15) har blivit skiffer0, så att konturen är hel. Den ensamma saltpricken till höger om högen (rad 16) är borttagen. Storleken (11 × 16 mot kolonistens 14 × 20), vinkeln snett uppifrån, ljuset från vänster, de diagonala vecken och den ljusa salthögen framför säcken följer idén och är oförändrade.",
+   "ide": "En hög, smal knuten säck av grå linneväv, ungefär 11 × 15 punkter, som står upprätt med bred botten och en hopsnörd hals där ett rep i rost1 och rost2 knyter ihop tyget till en liten tofs överst. Säcken är i skiffer2 och skiffer3 med kontur i skiffer0, med veck som korta diagonala ljusare streck uppifrån vänster. Vid foten har lite salt spillts ut som en liten hög av ben2- och ben3-korn framför säcken, så att det syns vad den innehåller."
+  }
+ ]
+}

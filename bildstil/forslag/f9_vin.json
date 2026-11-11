@@ -1,0 +1,92 @@
+{
+ "kort": "f9_vin",
+ "namn": "Vin",
+ "slag": null,
+ "vad": "Steg 9.6.12: vin är en dryck som jäser till i bryggkaret och förvaras i en stor lerkruka. Här vinet som sak i förrådet.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_vin",
+     "rader": [
+      "...EEEEEE...",
+      "..EHFGGFGE..",
+      "..EHHGsGFE..",
+      "...EHGsFE...",
+      ".EGEHGrFEFE.",
+      ".EHHHGGGGFE.",
+      "EHqHGHGGGFFE",
+      "EHHGHGGHGFFE",
+      "EHHHGGGGFGFE",
+      ".EHGHGGGFFE.",
+      ".EGHGGGFGFE.",
+      "..EGGGFGFE..",
+      "IJKEGGFFEJJI",
+      "IKJJEGFEJJJI",
+      "IJKJJIJJIJJI",
+      ".IIJIJIJIJI."
+     ]
+    }
+   ],
+   "anteckning": "Krukan står upprätt med den spetsiga foten nedstucken i en ring av flätat vide, eftersom en amfora inte kan stå själv. Ringen syns snett ovanifrån: bakre kanten bakom foten och den främre kanten framför den, så att foten försvinner ner i ringen. Ovanifrån syns mynningen som en liten oval med ett ljust läderlock, knutet med en snodd i rost runt halsen. De två öronen sitter mellan hals och axel och är spegelsymmetriska. Ljuset kommer uppifrån vänster med jord3 och en glanspunkt på vänstra axeln; höger sida går ner i jord1, och konturen är jord0. En mörkröd droppe rinner från mynningen nedför halsen och visar att det är vin. Det är det enda mättade i bilden. Granskningen: Rättat: 1) Storleken: krukan var 14 × 23 och alltså högre än kolonisten (14 × 20), som en kruka på nästan två meter. Den är nu omritad till 12 × 16 med ringen, så att krukan når ungefär till bröstet på en människa. 2) Mynningen hade ben-toner (p, q, w) som läste som en vit kant. Den är nu en oval lerkant i jord3/jord2 med en propp i jord1/jord2 nedsänkt i mynningen, sedd snett ovanifrån. 3) Det röda gick som en rak rand mitt ner genom hela halsen och såg ut som en spricka. Nu är det en kort droppe på 3 punkter från kanten nedför halsen (rost1) som slutar i en pärla av rost0. 4) Ringen av vide var för stark i senap3 och tog blicken från vinet. Den är nu flätad i senap0–senap2, med bakkanten bakom foten och framkanten framför, så att den läses som en oval ring ovanifrån. Formen är fortfarande spegelsymmetrisk med öron vid axlarna, jord0-kontur, en glanspunkt uppe till vänster och mörkare toner nere till höger.",
+   "ide": "Hög, smal amfora-lik lerkruka med smal hals, två små öron vid axlarna och spetsig fot som står nedstucken i en liten ring av flätat vide eller en grop med jord, ungefär 12 × 22 punkter, spegelsymmetrisk. Krukan är i jord2–jord3 med jord0-kontur och ljus axel uppe till vänster. Snett ovanifrån syns mynningen som en liten oval med en propp av trä eller ett knutet läderlock, och en mörkrött rinnande droppe i rost0–rost1 nedför halsen visar att det är vin."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_vin",
+     "rader": [
+      "....EEEEEEEEEE....",
+      "...EHHGHGGGGGFE...",
+      "..EHGHEEEEEEGGFE..",
+      "..EGEsstsrsrrEFE..",
+      "..EGGEsrsrrrEGFE..",
+      "..EHGGEEEEEEGGFE..",
+      "..EGFGFFGFFGFFFE..",
+      ".EHHGGHGGGGGGFGFE.",
+      "EHHGHGGGGGGGGFGFFE",
+      "EHGHGGGGGGGFGGFFFE",
+      "EGEEGGEEGGEEFFEEFE",
+      "EEGGEEGGEEGFEEFFEE",
+      "EGGFGGGFGGFFGFFFFE",
+      ".EGFGGFGFFFFFFFFE.",
+      "..EFGFFFFFFFFFFE..",
+      "...EEEEEEEEEEEE..."
+     ]
+    }
+   ],
+   "anteckning": "Krukan står direkt på marken med platt botten och har ingen fot. Den är bred och bukig, 18 × 16 punkter, och spegelsymmetrisk kring mitten. Vi ser den snett uppifrån, så mynningen syns som en oval innanför den tjocka vulsten. Överst i ovalen syns krukans bakre innervägg i jord0. Vinytan ligger lågt i rost0 och rost1, med en enda glanspunkt i rost2 uppe till vänster. Under vulsten blir randen mörkare (jord1) där den skuggar skuldran. Leran är jord1–jord3, ljusast uppe till vänster och mörkast nere till höger, med jord0 som kontur. Runt buken går ett ristat vågband i jord0 över två rader. Det är symmetriskt, så bara ljuset skiljer sidorna åt. Granskningen: Granskad: storleken 18 × 16 mot kolonisten, vinkeln snett uppifrån, den platta botten, konturen i jord0 och kontrasten mot gräset stämmer med idén. Det symmetriska vågbandet i jord0 runt buken och den enda glanspunkten i rost2 är kvar. Tre saker är rättade. 1) Vinytan var en rak rektangel. Nu är den en oval, eftersom vi ser ner i mynningen: vinet ligger i kolumn 5–12 på rad 3 och i kolumn 6–11 på rad 4. Den inre kanten i jord0 rundar hörnen, och vulsten (rad 2–5) blir lika tjock runt om och symmetrisk. 2) Vinet är något mörkare åt höger (rost0) och har kvar glanspunkten uppe till vänster. 3) Halsbandet under vulsten (rad 6) var en slät yta i jord1. Nu har det korn i jord1 och jord2, utan mörka fläckar.",
+   "ide": "Låg, bred och bukig förrådskruka, nästan klotrund, cirka 18 × 16 punkter, som står direkt på marken med platt botten och är symmetrisk kring mitten. Den har vid öppen mynning och en tjock vulst runt kanten, och eftersom vi ser ner i den syns vinytan som en mörk oval i rost0 och s-ton med en enda glanspunkt i rost2. Leran är jord1–jord2 med ett ristat vågband runt buken i jord0, ljusare uppe till vänster och mörkast nere till höger."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_vin",
+     "rader": [
+      "....oqqqo.............",
+      "...oqwqqpo............",
+      "...oppppoo............",
+      "....rutsr.............",
+      "...rutttsr...oqqqo....",
+      "EErutttttsrEoqwqppoEEE",
+      "EHrututtssrGoppppooGFE",
+      "EGrtuttstsrEFrutsrFEFE",
+      "EGrtttttssrrutttttsrFE",
+      "EGrsttttssrrtutttssrFE",
+      "EGErsttssrErsttttssrFE",
+      "EGEFrsssrFEErsttssrEFE",
+      "EHHGHGGHGGHGGGHGGGFGFE",
+      "EFFEFFFFFoqqoFFFEFFFFE",
+      "EFEFFEFFoqrspoFEFFEFFE",
+      "EEEEEEEEopsrooEEEEEEEE",
+      ".........oppo.........",
+      "..........oo.........."
+     ]
+    }
+   ],
+   "anteckning": "Ett lågt stockfack står på marken och syns snett ovanifrån: sidobrädornas ovansida och framkantens överyta (jord2–jord3) ligger framför krukornas fötter, så att bara krukornas kroppar sticker upp ur facket. Under överytan ligger framkanten som ett smalt mörkt band (jord0–jord1). Facket står direkt på marken och har därför inga ben. Den höga krukan står till vänster och den lägre till höger, tätt ihop. Båda är lera i rost med rost0 som kontur. Var för sig är de spegelsymmetriska: hals, skuldra och buk är lika på båda sidor, och bara ljuset från övre vänstra hörnet skiljer sidorna åt. Halsen är tillsluten med ett näverlock (ben2–ben3, en enda glanspunkt). Under locket går ett snöre som ett ben1-band. Framför facket står en öppen hornbägare, ovanifrån som en ring i ben med mörkröd vätska i rost0–rost1. Den täcker framkanten och visar att det är vin som förvaras här. Granskningen: Rättat: facket saknade bakkant och botten, så det lästes nästan som en platt sidovy där krukorna stod framför ingenting. Jag lade till en bakkant i rad 5–6 (jord0-kontur och en ljus kant i jord2–jord3) som syns mellan och bredvid krukorna. Under den ligger en skuggad insida och botten i jord0–jord1 i rad 7. Nu ses lådan snett ovanifrån och krukorna står i den. Framkanten är kvar som ett band på 3 punkter med ljus överkant. Krukorna och bägaren var redan spegelsymmetriska och är oförändrade. Bägaren står framför facket på marken som en ring av horn med vin i rost0–rost1. Storleken, 22 × 18, passar mot kolonisten och syns på gräset tack vare konturen.",
+   "ide": "Två mindre lerkrukor av olika höjd som står tätt ihop i en enkel bärkorg eller ett lågt stockfack, sedda snett ovanifrån som ett förråd, totalt ungefär 22 × 18 punkter. Varje kruka är för sig symmetrisk, med hals tillsluten av ett lock av näver bundet med snöre (ben1–ben2), och framkanten på facket är ett smalt band på 2–3 punkter i jord0–jord1. Vin syns genom en liten öppen bägare av trä eller horn framför krukorna, ovanifrån som en ring med mörkröd vätska i rost0–rost1."
+  }
+ ]
+}

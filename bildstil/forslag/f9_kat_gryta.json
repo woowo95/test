@@ -1,0 +1,90 @@
+{
+ "kort": "f9_kat_gryta",
+ "namn": "Symbolen Gryta",
+ "slag": null,
+ "vad": "Steg 9.6.3: maten som lagas i en gryta över elden hör till gruppen Gryta och får en egen symbol i listan över rätter. Här symbolen på en mörk ruta.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_kat_gryta",
+     "rader": [
+      ".....nnnnnn.....",
+      "...nn...q..nn...",
+      "..n..q.q..q..n..",
+      ".n....q.q..q..n.",
+      ".n...p..p.p...n.",
+      ".n.QQQQQQQQQQ.m.",
+      ".nQTTSSSSSSSRQm.",
+      ".QTsttstKtstsRQ.",
+      ".QTSsttsstssRRQ.",
+      ".QTTTSTSSSSSSRQ.",
+      "QTTTTSTSSSSSSRRQ",
+      "QTTTSTSSSSSSRSRQ",
+      "QTTSTSSSSSSSSRRQ",
+      ".QTSSTSSSSSRSRQ.",
+      "..QSSSSSSSRRRQ..",
+      "...QQQQQQQQQQ..."
+     ]
+    }
+   ],
+   "anteckning": "Täljstensgrytan står på marken och ses framifrån och lite uppifrån. Därför syns mynningen som en smal oval överst. Grytans bakre kant är ljus och syns bakom gryträtten, som är rostbrun med en senapsgul bit mat. Framkanten är en ljus läpp, och under den buktar buken ut till rutans hela bredd. Buken är ljusast uppe till vänster och mörkast nere till höger, med kontur i skiffer0. Järnbågen sitter fast i öronen strax ovanför mynningen, en på varje sida, och går i en halvcirkel över grytan. Den ljusa sidan är kol3 och skuggsidan kol2. Tre korta ånglockar stiger nästan rakt upp inom bågen och når aldrig utanför den. Formen är spegelsymmetrisk; bara ljuset och kornet skiljer sidorna åt. Granskningen: Granskning av version 1. Storleken, vinkeln (framifrån och lite uppifrån med mynningen som en oval), grytans spegelsymmetriska form och att symbolen fyller rutan stämmer. Tre rättelser: (1) Gryträtten i ovalen var osymmetrisk på rad 8: maten slutade en punkt för tidigt till höger (kolumn 4–10). Den går nu kolumn 4–11, speglad mot rad 7 (kolumn 3–12), så ovalen blir jämn. (2) Bågen var kol2 på hela högra sidan. Det syns nästan inte mot den mörka rutan. Bågen är nu kol3 runt om, och kol2 finns bara längst ner till höger där den fäster (rad 5–6), som skuggsida. Ljuset uppifrån vänster finns kvar. (3) Buken var nästan slät skiffer2 i mitten. Några punkter skiffer3 och skiffer1 (rad 10 och 13) ger korn, utan mörka fläckar. Ånglockarna (ben2/ben1), maten (rost1–rost2 med en prick senap2) och konturen i skiffer0 är oförändrade.",
+   "ide": "En rund, bukig gryta av täljsten sedd framifrån och lite uppifrån, spegelsymmetrisk och nästan rutans hela bredd, med en båge av järn (kol2–kol3) som går i en halvcirkel över mynningen. Själva grytan är skiffer1–skiffer3 med kontur i skiffer0, ljusast uppe till vänster på buken, och i den smala ovalen överst syns en rostbrun gryträtt (rost1–rost2 med en prick senap2 som en bit mat). Två eller tre korta ljusa ånglockar (ben2) stiger rakt upp mellan bågens sidor."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_kat_gryta",
+     "rader": [
+      "...EEEEEEEEEE...",
+      "..EHGstKLtsGFE..",
+      ".EHGstKKtttsGFE.",
+      ".EHHGHGGGGGFGFE.",
+      ".EEHGHGGGGGFGEE.",
+      "EHEHHGHGGGGFGEFE",
+      ".EHGHGGGGGGFGFE.",
+      ".EGHGGGGGGFGFFE.",
+      "..EGFGFFGFFFFE..",
+      "...EEEEEEEEEE...",
+      ".......rr.......",
+      "..r...rttr...r..",
+      ".rtr.rtKKtr.rtr.",
+      "rtKtrtKLLKtrtKtr",
+      "rKLKtKLLLLKtKLKr",
+      ".rrrrrrrrrrrrrr."
+     ]
+    }
+   ],
+   "anteckning": "Krukan står direkt i elden och ses framifrån med en lätt blick ovanifrån, så att mynningen blir en platt oval där maten syns i rost och senap. Höjdpunkten i senap3 sitter uppe till vänster. Leran har jord3 som ljus sida till vänster och jord1 som skugga till höger, och konturen är jord0 runt hela krukan. Formen är spegelsymmetrisk: bred och låg, med två små öron vid skuldran och bukens bredaste del strax under dem. Under den raka botten slår tre lågor upp med kontur i rost0, fyllning i rost2 och senap2 och en kärna i senap3. Lågorna står symmetriskt och den mellersta är högst, så att den nästan når botten. Krukan tar övre halvan av rutan och elden den undre. Granskningen: Granskad mot reglerna: 16 × 16 punkter som nästan fyller rutan, ingen bakgrund. Krukans silhuett med öronen och de tre lågorna är spegelsymmetriska, och bara ljuset skiljer sidorna (jord3 till vänster, jord1 till höger). Ljuset faller uppifrån vänster, och elden är det enda mättade. Två rättelser: 1) Mynningen var ett rakt band, åtta punkter brett på båda raderna, och läste inte som en oval. Översta matraden är nu sex punkter (cols 5–10) och den under åtta, så att maten blir en platt oval i mynningen. 2) Den nedersta raden hade senap2 och rost2 ända ut i kanten, så symbolen saknade mörk kontur nertill. Raden är nu en sluten kontur i rost0, och den ljusa kärnan ligger kvar i raden ovanför. Resten är oförändrat.",
+   "ide": "En låg och bred lerkruka som står direkt i elden: krukan tar den övre halvan av rutan, spegelsymmetrisk med två små öron på sidorna och en bred mynning där maten syns som en platt oval i rost2 och senap2. Leran är jord2–jord3 med kontur i jord0, och under botten slår tre spetsiga lågor upp i rost2, senap2 och en ljus kärna i senap3, så att symbolen blir bred och låg med eldens tänder nedtill. Lågorna är symmetriskt placerade, den mellersta högst."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_kat_gryta",
+     "rader": [
+      "......EEEE......",
+      ".....EHEEFE.....",
+      ".....EGEEFE.....",
+      "....EHEnmEFE....",
+      "....EGEmnEGE....",
+      "...EHEqnmpEFE...",
+      "...EGkkkkkkFE...",
+      "...EHktutskFE...",
+      "..EGknnnnmmkFE..",
+      "..EknnmnmmmlkE..",
+      "..EknmnmmmmlkE..",
+      ".EGEkmmmmllkEFE.",
+      ".EHE.kkkkkk.EGE.",
+      ".EGE..rLtr..EFE.",
+      "EHE..rtLLtr..EFE",
+      "EEE..rsttsr..EEE"
+     ]
+    }
+   ],
+   "anteckning": "Trefoten står på marken och ses framifrån. Två stavar lutar ihop till en spets överst i mitten och spretar ut till rutans nedre hörn. Den tredje staven står bakom grytan och syns inte. Den vänstra staven är ljusare (jord2–jord3) och den högra mörkare (jord1–jord2), alla med kontur i jord0. Kedjan hänger rakt ner från spetsen, där stavarna möts, till grytans handtag. Grytan hänger framför stavarnas inre kanter och skymmer dem, så där syns bara konturen. Mynningen syns lite ovanifrån med en rand av rostbrun mat och en glanspunkt i rost3. Ångan stiger på båda sidor om kedjan. Buken är rund i kol2–kol3 med glans uppe till vänster och kontur i kol0. Lågan står under grytbotten mellan stavarnas fötter och är symmetrisk utom ljuset. Granskningen: Granskad mot reglerna och oförändrad. Alla 16 rader är 16 punkter breda. Symbolen fyller rutan, har mörk kontur runt hela och består av få, stora former: en trefot i jord0–jord2, en kedja i n/m, en gryta i kol0–kol3, matranden i rost och lågan i rost/senap. Formen är spegelsymmetrisk kring mitten: stavarna, grytans kontur och bredd (kol 5–10, 4–11, 3–12 och tillbaka) samt lågans rader. Bara ljuset skiljer sidorna åt: H/G på vänster stavar, F/G på höger, ljusare n till vänster i grytan och L förskjutet åt vänster i lågans översta rad. Kedjan hänger rakt från spetsen ner i mynningen med ånga i ben2/ben1 på båda sidor. Matranden syns i mynningen och lågan glöder under grytan mellan stavarnas fötter, som idén beskriver. Bakre stavar går logiskt bakom grytan (rad 9–10). kol0 används bara som järngrytans kontur, där materialet verkligen är svart. Den mättade tonen är sparad till elden och maten. Symbolen ritas framifrån, så stationsregeln om ytan ovanifrån gäller inte här. Den läser tydligt både på den mörka rutan och på gräset.",
+   "ide": "En hög, triangulär silhuett: tre stavar av trä (jord1–jord2, kontur jord0) lutar ihop till en spets överst i mitten och spretar ut till rutans nedre hörn, som en trefot. Från spetsen hänger en kort kedja rakt ner till en liten rund järngryta (kol2–kol3 med en glanspunkt i n) som hänger mitt i triangeln, med en tunn rand av rostbrun mat och en ånglock i ben2 vid mynningen. Under grytan glöder en liten låga i rost2 och senap3 mellan stavarnas fötter; hela formen är spegelsymmetrisk utom ljuset."
+  }
+ ]
+}
