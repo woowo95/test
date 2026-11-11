@@ -229,3 +229,21 @@ export function stridIByn(s: SIM.State, avsikt: SIM.Avsikt, sidor: [SIM.Person[]
   for (let i = 0; i < 1500 && !g.st.slut; i++) SIM.step(s, SIM.nastaSteg(s));
   return g.st;
 }
+
+// ett rövargäng för scenarierna (system 10.1): n rövare som kommit in från kanten. vid = de ställs upp där och har det som
+// rastplats; anfaller = väntan är över och de går till anfall nu
+export function rovarGang(s: SIM.State, n: number, vid?: { x: number; y: number }, opt: { anfaller?: boolean; klan?: number } = {}): SIM.Rovarflock {
+  const forra = new Set([s.rovare, ...(s.rovareFler ?? [])]);
+  SIM.rovarnaKommer(s, n, true, opt.klan);
+  const f = [s.rovare, ...(s.rovareFler ?? [])].find(q => q && !forra.has(q))!;
+  if (vid) { SIM.stallUpp(s, f, vid.x, vid.y); f.rast = { x: vid.x, y: vid.y }; }
+  if (opt.anfaller) { f.vantat = true; f.anfaller = true; }
+  return f;
+}
+// byn går i de steg spelet tar (korta medan faran är nära, annars fem minuter) tills klart() är sant eller maxSek sekunder gått.
+// Svarar hur många sekunder det tog
+export function korTills(s: SIM.State, klart: () => boolean, maxSek = 3600, varje?: () => void): number {
+  const t0 = s.now;
+  while (!klart() && s.now - t0 < maxSek * 1000) { SIM.step(s, Math.min(SIM.nastaSteg(s), maxSek - (s.now - t0) / 1000 + 1)); varje?.(); }
+  return (s.now - t0) / 1000;
+}
