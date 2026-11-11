@@ -11,7 +11,8 @@ import { SED_LIST, drar, influence } from './seder';
 import type { Sed } from './seder';
 import { PABUD, Pabud, ledareOf, ledarVikt, legitimitet, slutarStyre, styreAv, utvisa } from './styre';
 import { notis } from './notiser';
-import { stridIByn } from './strid';
+import { kartStridBorja, stridPagar } from './kartstrid';
+import { EFTER } from './efterstrid';
 import { rikedom } from './varde';
 import { rivScenen } from './stationer';
 import { overstePrast } from './kyrka';
@@ -270,6 +271,7 @@ function avslojad(s: State, l: Person, f: Fraktion, ang: Person) {
 }
 // avsättning, kupp och uppror (steg 8.3.12)
 function stortas(s: State, l: Person, f: Fraktion) {
+  if (stridPagar(s, 'ledarstrid')) return; // striden om det pågår redan (steg 10.1.7)
   const st = styreAv(s), led = byId(s, f.led), fejd = s.seder.v.fejd ?? 0;
   const vuxna = living(s).filter(p => vuxenRost(s, p));
   if (!led) return;
@@ -289,8 +291,13 @@ function stortas(s: State, l: Person, f: Fraktion) {
   count(s, stor ? 'uppror' : 'ledarstrid');
   const text = stor ? `Upproret bröt ut: ${led.name} och de missnöjda gick mot ${l.name}.` : `${led.name} utmanade ${l.name} om ledarskapet.`;
   log(s, text, 'world', [l.id, led.id]); notis(s, 'strid', text, [l.id, led.id]);
-  const strid = stridIByn(s, 'skada', [a, b], stor ? 'uppror' : 'en ledarstrid');
-  if (strid.slut!.vinnare === 0) {
+  // striden sker på kartan och tar tid (steg 10.1.7): utgången avgörs när den är slut (EFTER.ledarstrid)
+  kartStridBorja(s, 'skada', [a, b], stor ? 'uppror' : 'en ledarstrid', { typ: 'ledarstrid', led: led.id, l: l.id });
+}
+EFTER.ledarstrid = (s, e, vinnare) => {
+  const st = styreAv(s), led = byId(s, e.led as number), l = byId(s, e.l as number);
+  if (!led || !l) return;
+  if (vinnare === 0) {
     st.frakVald = alive(led) ? led.id : undefined; st.satt = 0.5;
     if (alive(l)) { if (rnd(s, 'strid') < 0.4) utvisa(s, l, led, 'efter att ha störtats'); else slutarStyre(s, 'störtades'); }
     if (s.styre?.ledare !== undefined) slutarStyre(s, 'störtades');
@@ -299,4 +306,4 @@ function stortas(s: State, l: Person, f: Fraktion) {
     if (alive(led)) utvisa(s, led, l, 'för att ha försökt ta makten');
     st.frak = undefined; st.lugn = s.now + MISS.lugnDygn * DAY;
   }
-}
+};

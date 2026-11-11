@@ -3,7 +3,7 @@ import { tal } from './ord';
 import { allaBarn } from './uppvaxt';
 import { kronikaBer, loggBer, personFalt } from './berattelser';
 import { addTo, amountOf, avbryt, fetchSpot, takeLimit, use } from './lager';
-import { Materialslag, TROSKEL, forbrukat, overTak, underBuffert } from './forradsmal';
+import { Materialslag, forbrukat, overTak, underBuffert } from './forradsmal';
 import { Behov, getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
 import { coldOf, hardVinter, temperature, vaderNu, VADER } from './vader';
@@ -13,7 +13,7 @@ import { ALDER, KROPP, ageOf, alive, count, forstaGang, gjort, isSick, living, l
 import { nTools } from './agande';
 import { SAKER } from './saker';
 import { halsa } from './halsa';
-import { flintFactor, flintorOchYxor, stoneDist, takeFrom } from './fynd';
+import { flintFactor, stoneDist, takeFrom } from './fynd';
 import { observe } from './minne';
 import { eldPlats } from './karta';
 import { groundOf, tileOf } from './mark';
@@ -79,7 +79,6 @@ export const ELD = balans('eld', {
   stenNara: 1, stenNaraDel: 3, // ... gånger Nara dit stenarna ligger inom så många rutor ...
   stenMedel: 3, stenMedelDel: 1.5, // ... Del inom så många ...
   stenAnnars: 0.4, // ... och annars
-  flintaMax: 4, // byn letar inte flinta när den har så här många flintor och yxor
   flintaTakt: 0.04, // flinta: chans per arbetstimme gånger hur lätt den är att hitta på platsen (flintFactor)
   flintaOkand: 0.4, // hur lätt den är att hitta när platsen inte är känd
   flintaStenar: 2, flintaSand: 1, // över Stenar är det vid stenarna (och platsen läggs på minnet), över Sand i sanden vid stranden
@@ -199,9 +198,10 @@ export function canLight(s: State, p?: Person, f = s.fire) {
 }
 // en näver (steg 6.3.3) täljs ur en ved med kniv eller yxa: med ett blad och ved behövs inget hö till tändningen
 export const kanTalja = (s: State) => nTools(s, 'kniv') + nTools(s, 'yxa') > 0;
-const harTandning = (s: State) => amountOf(s, 'torrgras') + amountOf(s, 'naver') >= TROSKEL.tandBrist || kanTalja(s) && amountOf(s, 'ved') >= 1;
+// tändmaterialet samlas efter förrådsmålet (steg 10.2.9): flintan, stenarna till ringen, och höet och grenarna under sin buffert
+// (MATERIALMAL, där elden som brinner vill ha mindre än den släckta), också när en eld glöder
 export function needTinder(s: State) {
-  return !nagonGlod(s) && (amountOf(s, 'flinta') < 1 || needStones(s) || !harTandning(s) || amountOf(s, 'grenar') < TROSKEL.tandBrist);
+  return amountOf(s, 'flinta') < 1 || needStones(s) || tinderShort(s);
 }
 function durText(sec: number) { const h = sec / HOUR_S; return h >= 24 ? `${num(h / 24)} dygn` : h >= 1 ? `${Math.round(h)} timmar` : `${Math.round(sec / 60)} minuter`; }
 function lightFire(s: State, p: Person, f: Fire) {
@@ -380,20 +380,22 @@ export function stepFire(s: State, dtSec: number, ppl: Person[]) {
     f.want = top?.w.v ?? 0; f.wantBy = top?.p.id; f.wantWhy = top?.w.why;
     per.set(f, cands);
   }
-  // den eld som flest använder först; när bränslet tryter (BRASA.slackDygn) och det finns flera eldar sköts bara den
+  // den eld som flest värmer sig vid först; när bränslet tryter sköts så många eldar som veden räcker till i BRASA.slackDygn
+  // dygn var (steg 10.2.10), de mest använda först
   const ordning = alla.length > 1 ? [...alla].sort((a, b) => per.get(b)!.length - per.get(a)!.length || (a.id ?? -1) - (b.id ?? -1)) : alla;
-  const skots = alla.length > 1 && vedPerEld(s, 0) < BRASA.slackDygn ? ordning.slice(0, 1) : ordning;
+  const racker = Math.max(1, Math.floor(vedPerEld(s, 0) * alla.length / BRASA.slackDygn));
+  const skots = alla.length > racker ? ordning.slice(0, racker) : ordning;
   // påfyllning: en i taget vid varje eld
   if (fuelStock(s) >= ELD.hamtaMin) for (const f of skots) {
     if (!(f.lit || emberOn(s, f)) || eldIVatten(s, f) || ppl.some(p => p.task?.act === 'elda' && p.task.ref === f.id)) continue;
     const b = fyllare(s, f, per.get(f)!);
     if (b) fetchFuel(s, b.p, b.w.why, undefined, f);
   }
-  // tändning: när en eld är släckt och någon som använder den vill ha eld försöker en person i taget i byn
-  if (!ppl.some(p => p.task?.act === 'tanda')) for (const f of skots) {
-    if (f.lit || emberOn(s, f) || !canLight(s, undefined, f) || (f.want ?? 0) < hearthOf(f).maxFuel * ELD.tandVill || eldIVatten(s, f)) continue;
+  // tändning: när en eld är släckt och någon som använder den vill ha eld försöker en person i taget vid varje eld (steg 10.2.5)
+  for (const f of skots) {
+    if (ppl.some(p => p.task?.act === 'tanda' && (p.task.ref ?? s.fire.id) === f.id) || f.lit || emberOn(s, f) || !canLight(s, undefined, f) || (f.want ?? 0) < hearthOf(f).maxFuel * ELD.tandVill || eldIVatten(s, f)) continue;
     const c = tandare(s, f, per.get(f)!);
-    if (c) { const at = tandPlats(s, f); assign(s, c.p, 'tanda', at.x, at.y, ELD.tandTim * HOUR, `Vill ha eld. ${c.w.why}`); if (f.id !== undefined) c.p.task!.ref = f.id; break; }
+    if (c && c.p.task?.act !== 'tanda') { const at = tandPlats(s, f); assign(s, c.p, 'tanda', at.x, at.y, ELD.tandTim * HOUR, `Vill ha eld. ${c.w.why}`); if (f.id !== undefined) c.p.task!.ref = f.id; }
   }
 }
 // samling hittar tändmaterial, sten och flinta när förrådet behöver det
@@ -415,7 +417,7 @@ export function forageItems(s: State, p: Person, dtSec: number, fart = 1): Recor
   }
   // flinta är ovanlig och hittas oftast vid stenarna. Den slås mot en sten för att tända eld, och med en pinne blir den en yxa
   const ff = p.task ? flintFactor(s, p.task.tx, p.task.ty) : ELD.flintaOkand;
-  if (flintorOchYxor(s) < ELD.flintaMax && !overTak(s, 'flinta', p.task?.items?.flinta ?? 0) && chance(s, ELD.flintaTakt * ff * sk * SNABBARE / HOUR_S, dtSec, 'arbete', p)) {
+  if (underBuffert(s, 'flinta', p.task?.items?.flinta ?? 0) && chance(s, ELD.flintaTakt * ff * sk * SNABBARE / HOUR_S, dtSec, 'arbete', p)) {
     got.flinta = 1; count(s, ff > ELD.flintaStenar ? 'flintaSten' : 'flintaAnnan');
     if (p.task) takeFrom(s, 'flinta', p.task.tx, p.task.ty, 1);
     if (ff > ELD.flintaStenar && p.task) observe(s, p, 'flinta', p.task.tx, p.task.ty);

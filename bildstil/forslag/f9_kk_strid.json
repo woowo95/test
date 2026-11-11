@@ -1,0 +1,91 @@
+{
+ "kort": "f9_kk_strid",
+ "namn": "Krönikans kategori Strid",
+ "slag": null,
+ "vad": "Steg 9.2.73: krönikans kategorier får var sin symbol i en rad överst i Krönikan. Du valde version 2, en stenyxa och ett spjut i kors med blod som droppar, och den är nu byggd i spelet. Här fler versioner av version 2.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "kommentar": "Nya versioner: gör så att det är tydligare vapen på bilderna, med tydliga former (spjut, yxa, kniv, sköld). Det är bara blobbar just nu.",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_kk_strid",
+     "rader": [
+      ".............QTQ",
+      "...........QTTSQ",
+      ".QQQ......QTSSQ.",
+      "QTTSQQ....QSRQ..",
+      "QTSSSRQ....QQ...",
+      "QTSRSRQ...GE....",
+      "QtRRRQF..FE.....",
+      ".rQQQ.EGGE......",
+      ".......EF.......",
+      ".t....GEEG......",
+      ".r...FE..EF.....",
+      "....GE....EG....",
+      "...FE......EF...",
+      "..GE........EE..",
+      ".FE.............",
+      "EE.............."
+     ]
+    }
+   ],
+   "anteckning": "Ikonen är 16 × 16 punkter. Vapnen ligger i kors på marken och ses ovanifrån, så båda syns hela. Spjutet går från nedre vänstra till övre högra hörnet: ett skaft på en punkt i jord (G/F) med kontur i E på den nedre högra sidan och ett bladformat stenblad i skiffer (T/S, mörkast R, kontur Q) som pekar mot hörnet. Yxan går från nedre högra till övre vänstra hörnet. Den har ett kort skaft och ett kilformat stenhuvud som sticker ut åt vänster, med rak, ljus egg i T på vänstra kanten och mörkare R mot skaftet nere till höger. Yxan ligger överst där vapnen korsar varandra, så spjutet bryts av yxskaftets kontur. Blodet sitter längst ner på eggen (t), rinner av i en droppe (r), och under den faller en lös droppe (t med r under). Marken syns mellan skaften, så korset förblir glest och de två formerna går att läsa. Granskningen: Granskad mot reglerna. Storleken (16 × 16, en ruta) passar som symbol bredvid kolonisten. Vapnen ligger i kors på marken sedda ovanifrån, så ingen vinkel eller bärlogik bryter mot reglerna. Symmetri krävs inte eftersom yxan och spjutet är olika saker. Ljuset stämmer: T uppe till vänster och R/S nere till höger i båda stenarna, G/F på skaftens vänstra sida och E till höger. Konturerna är Q runt sten, E runt trä och r runt blod, och glesheten mellan skaften gör att gräset syns. Den enda rättelsen gäller spjutets ände nere till vänster, som slutade i en ensam E-prick i hörnet. Den är nu en ändkant på två punkter (EE), på samma sätt som yxskaftets ände, så att den inte läses som en lös prick. I övrigt är bilden oförändrad.",
+   "ide": "Ett brett X på 16 × 16 punkter, som om vapnen ligger i kors på marken sedda ovanifrån: spjutet går från nedre vänstra till övre högra hörnet med ett tydligt bladformat stenblad på 3 × 5 punkter i skiffer (T/S, kontur Q) och en skaftlinje på en punkt i jord (G/F, kontur E). Yxan går från nedre högra till övre vänstra hörnet med ett kort skaft och ett stort kilformat stenhuvud på 5 × 4 punkter med rak, ljus egg (T överst till vänster, R nedåt till höger) som sticker ut åt vänster, så att yxan och spjutet syns på sin form och inte som klumpar. Från yxeggen faller två droppar blod i rost (t/s, kontur r), en på eggen och en lös under, och korset hålls glest så att marken syns mellan skaften."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_kk_strid",
+     "rader": [
+      "QQ........QQQQ.G",
+      "QTQQ......QTSEGE",
+      ".QStQ.EEEEQSRGE.",
+      ".QRssEFFFFEEGE..",
+      "..QEtFHHHGFFE...",
+      "...EtGHHGHGFE...",
+      "..EFtsHQQHGHFE..",
+      "..EFsrQTSQGHFE..",
+      "..EFHGQSRQGGFE..",
+      "..EFHGHQQGGGFE..",
+      "...EFGHGHGGFE...",
+      "...EFFGHGGFFE...",
+      "...GEEFFFFEEG...",
+      "..GE..EEEE..EG..",
+      ".GE..........EG.",
+      "FE............EF"
+     ]
+    }
+   ],
+   "anteckning": "Skölden ligger platt framåt och täcker korset, så yxan och spjutet ligger bakom den, i var sin diagonal. Bara ändarna sticker ut. Spjutet går från övre vänstra hörnet till nedre högra: stenspetsen i skiffer pekar upp till vänster, och skaftänden sticker ut nere till höger. Yxan går från övre högra hörnet till nedre vänstra: stenhuvudet sitter tvärs över skaftets topp, med eggen åt vänster och en surrning i jord0, och skaftänden sticker ut nere till vänster. Skaften har kontur i jord0 på den mörka sidan. Skölden är 12 × 12 punkter och spegelsymmetrisk, med kontur i jord0 och en kantring i jord1. Plankorna är i jord3 och jord2 med fogar i jord2, och den mörka bucklan i skiffer har en enda glanspunkt. Ljuset kommer uppifrån vänster, så plankorna mörknar nedåt höger. Blodet i rost rinner från spjutspetsen, över sköldens överkant och ner i en smal strimma som slutar i en droppe på 2 × 2 punkter. Det är den enda mättade tonen i bilden. Granskningen: Granskad, inget behövde rättas. Storlek: 16 × 16 som en ruta, rimlig mot kolonisten (14 × 20) som symbol för en sköld med vapen. Vinkel: skölden ligger platt och ses rakt framifrån, vilket passar en symbol och följer idén. Symmetri: sköldens kontur (EEEE överst och nederst, bredast i raderna 6–9) och bucklan i mitten (QQ/QTSQ/QSRQ/QQ) är spegelsymmetriska, och skaftändarna nere till vänster och höger speglar varandra. Bara ljuset (H uppe till vänster, G nere till höger) och kornet skiljer sidorna åt. Syns på gräset: skölden i H/G med kontur i E är ljusare än oliven, och stenen har kontur i Q. Idén följs: spjutets stenspets uppe till vänster och yxans stenhuvud uppe till höger, där yxskaftet fortsätter snett ut. Blodet (t/s/r) rinner från spjutspetsen ner över sköldens vänstra överkant och slutar i en liten droppe (t s / s r). Den mättade rosttonen finns bara i blodet. Glansen är enstaka punkter i T och aldrig vit. Kol0 används inte och konturerna följer materialen. Ingenting bärs av en människa, så regeln om huvud och ansikte gäller inte.",
+   "ide": "En rund sköld på 12 × 12 punkter i mitten, spegelsymmetrisk, av plankor i jord (H/G, kontur E) med en mörk sköldbuckla i skiffer i centrum och en kantring i F. Bakom skölden ligger yxan och spjutet i kors, så att bara ändarna syns: spjutets stenspets och yxans stenhuvud sticker upp vid de övre hörnen och skaftändarna sticker ut vid de nedre hörnen, hela bilden 16 × 16 punkter. Blodet rinner i rost från spjutspetsen ner över sköldens överkant i en smal strimma som slutar i en droppe, så att den mättade tonen bara sitter där striden syns."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_kk_strid_v2_hogt_v",
+     "rader": [
+      "........Q.",
+      "...GE..QTQ",
+      "QQQHE.QTSQ",
+      "QTTFE.QTSQ",
+      "QTSFE.QSRQ",
+      "QSRQGEQSsQ",
+      "QQQ.HE.QQs",
+      "s...GE.HE.",
+      ".....GEGEt",
+      "t....HGE.s",
+      "s....HGE..",
+      "....GEHE..",
+      "...GE..GE.",
+      "...F...F..",
+      ".QTTTEGF..",
+      "..QSSEFE.."
+     ]
+    }
+   ],
+   "anteckning": "Symbolen visar vapnen liggande i kors, sedda snett uppifrån på samma sätt som kartan. Den är 10 × 16 punkter. Skaften korsas lågt, mellan rad 9 och 10, nära skaftändarna. Därför går de isär uppåt som ett V och huvudena hamnar högst upp, där de syns först. Till vänster sitter yxans stenhuvud, en bred kil som är surrad på skaftets topp. Surrningen är i jord1 och eggen är längst ut till vänster. Till höger sitter spjutspetsen, sex punkter lång och smal, rakt i förlängningen av skaftet. Stenen är skiffer med kontur Q och ljuset uppe till vänster (T till S, R nere till höger). Skaften är jord2 och jord3 med kontur E på högra sidan och mörka ändar (F). Under korset ligger stenkniven vågrätt, 7 × 2 punkter: ljust blad i T och S till vänster, grepp i F och G till höger. Blodet är den enda mättade färgen. Det sitter på yxeggen och nedtill på spjutspetsen och droppar i två lodräta rader av rost-droppar (s, t) längs bildens ytterkanter, så att silhuetten blir hög och smal. Granskningen: Rättat: 1) Yxhuvudets egg saknade kontur. Vänsterkanten var ljus T rakt mot gräset, så den har nu konturen Q i kolumn 0, och kilen har fått en sluten underkant (QQQ på rad 6). Ljuset faller uppe till vänster (T) och mörknar mot S och R nere till höger. 2) Blodet låg som lösa prickar som inte satt ihop med vapnen, och vid yxan fanns en ensam mörk Q-prick. Varje rad börjar nu med en droppe som hänger direkt under eggen eller spjutbladets nedre hörn, och under den faller en tvåpunktsdroppe med t överst och s under. Båda raderna är lodräta som i idén. 3) I övrigt oförändrat: storleken 10 × 16 är rimlig som symbol, en dryg halv kolonist hög. Korset ligger lågt så att huvudena står isär högt upp, spjutspetsen är smal och lång till höger och kniven ligger vågrätt (7 × 2) med ljust blad och mörkt grepp. Skiftet har kontur E och stenen kontur Q, och alla delar är ljusare än gräset. Ingen bärs, så kroppsregeln gäller inte.",
+   "ide": "Ett smalt och högt V på 10 × 16 punkter: yxan och spjutet korsas lågt, nära skaftändarna, så att huvudena står isär högt upp och blir bildens tydligaste former, spjutspetsen lång och smal till höger och yxhuvudet brett och kilformat till vänster, båda i skiffer med kontur Q och skaft i jord med kontur E. Under korset ligger en kort stenkniv vågrätt på 7 × 2 punkter, med ljust blad i T och ett mörkt grepp i F, som en tredje läsbar vapenform. Blodet droppar från spjutspetsen och yxeggen i två lodräta rader av rost-droppar, så att silhuetten blir hög och lätt att skilja från de runda symbolerna i raden."
+  }
+ ]
+}

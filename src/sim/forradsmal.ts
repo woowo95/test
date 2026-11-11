@@ -10,7 +10,7 @@
 // bufferten är materialet ett behov under Försörjning, och över taket plockar ingen av det (eld.ts, val.ts, projekt.ts).
 // Målen räknas en gång i timmen med arbetarna (arbetsTimme i val.ts) och sparas i s.arbBehov, så att alla lägen räknar likadant.
 import { balans } from './balans';
-import { woodDays } from './eld';
+import { ELD, eldarOf, hearthOf, woodDays } from './eld';
 import { foodDaysAll } from './ekonomi';
 import { isFood } from './saker';
 import { ljusPlatser } from './ljus';
@@ -25,7 +25,7 @@ import { brasaBrist } from './brasor';
 import { BYGGNADER, fnId, utanBadd } from './byggnader';
 import { latrinBrist } from './smuts';
 import { torkBrist } from './matlagning';
-import { HOUR, State, WEEK } from './typer';
+import { GREN, HOUR, State, WEEK } from './typer';
 import { TILLVERKA } from './tillverka';
 import { protesVill } from './protes';
 
@@ -45,19 +45,16 @@ export const FORRAD = balans('forrad', {
 // Trösklarna (steg 6.2.16): alla minsta tal för vad byn sparar eller vill ha, och gränserna för när byn prövar sig fram och
 // bygger. Mängder i förrådets enheter
 export const TROSKEL = balans('troskel', {
-  // sparas till elden när något byggs eller tvinnas (bygg.ts, redskap.ts, sparas)
-  ved: 6, // trä
-  grenar: 15, // grenar
-  torrgras: 6, // hö
+  // eldens del av materialets buffert (steg 10.2.7, eldReserv): så här många timmar av det eldarna bränner, och tändningen
+  eldTim: 6, // ... så att ett recept eller bygge inte tar det elden behöver den närmaste tiden
   torrgrasKyla: 12, // hö som sparas till elden inför och under istiden och när det är kallt: en korg flätas först av det som är över (val.ts, redskap.ts)
   // tändmaterial (eld.ts)
   tandBrist: 12, // byn behöver samla tändmaterial när hö eller grenar är färre än så och elden är släckt
   tandVill: 12, // så mycket hö och grenar samlas det till när elden brinner
   tandVillSlocknad: 36, // ... och när elden är släckt
   // flintan (fynd.ts, redskap.ts)
-  flintaMinsta: 1, flintaBehov: 2, // byn vill ha minst en flinta, och så här många flintor och yxor tillsammans
+  flintaMinsta: 1, // byn vill ha minst en flinta; mer efter förbrukningen (MATERIALMAL, steg 10.2.12)
   flintaSparas: 1, // flintor som sparas att tända eld med: ett redskap av flinta görs bara av det som är över (receptet plus detta)
-  repVill: 4, // så många rep byn vill ha (tvinnat eller från senor, redskap.ts)
   kolEld: 0.6, // kol hämtas ur den släckta elden när elden vill ha mindre än så här (val.ts)
   // gränserna för försök och bygge
   forsokMat: 1.1, // byn prövar sig fram bara när maten räcker minst så här många dygn ...
@@ -75,10 +72,22 @@ export const VILLTAL = balans('vill', {
   spadar: 1, // så många benspadar byn vill ha (steg 2.7.2)
   slandor: 2,
   vattensackar: 1, // så många vattensäckar byn vill ha (steg 2.10.1)
+  repMin: 4, // byn vill ha minst så här många rep; fler efter förbrukningen (MATERIALMAL, steg 10.2.12)
   facklor: 3, // så många facklor byn vill ha när den kan göra dem (steg 6.3.6)
 });
-// det som lämnas kvar i förrådet till elden av slaget k när något byggs (bygg.ts, stationer.ts)
-export const sparas = (k: string) => k === 'ved' ? TROSKEL.ved : k === 'grenar' ? TROSKEL.grenar : k === 'torrgras' ? TROSKEL.torrgras : 0;
+// eldens del av materialets buffert (steg 10.2.7): det som lämnas kvar i förrådet till elden när något byggs, görs eller tvinnas
+// (bygg.ts, stationer.ts, redskap.ts), räknat ur vad eldarna förbrukar: veden de bränner under TROSKEL.eldTim timmar, och det en
+// tändning tar (grenarna som läggs i, höet eller nävern som tar eld och flintan) för varje eld som brinner eller ska tändas
+export function eldReserv(s: State, k: string) {
+  const eldar = eldarOf(s).filter(f => f.lit || (f.want ?? 0) > 0);
+  if (!eldar.length) return 0;
+  if (k === 'ved') return Math.ceil(eldar.reduce((a, f) => a + hearthOf(f).burn, 0) * TROSKEL.eldTim);
+  if (k === 'grenar') return Math.ceil(ELD.tandBransle / GREN) * eldar.length;
+  if (k === 'torrgras') return TROSKEL.tandBrist;
+  if (k === 'flinta') return TROSKEL.flintaSparas;
+  return 0;
+}
+export const sparas = (s: State, k: string) => eldReserv(s, k);
 
 export interface Forradsmal {
   dygn: number; // förrådets dygn räknas mot så här många (gånger försiktigheten) ...
@@ -114,13 +123,17 @@ interface Materialmal {
   min: (s: State) => number; // byn vill alltid ha minst så här mycket (tändmaterialet till elden, flintan)
 }
 const tand = (s: State) => s.fire.lit ? TROSKEL.tandVill : TROSKEL.tandVillSlocknad; // tändmaterialet invånarna vill ha
+const harNaver = (s: State) => amountOf(s, 'naver') >= TROSKEL.tandBrist || nTools(s, 'kniv') + nTools(s, 'yxa') > 0 && amountOf(s, 'ved') >= 1;
 export const MATERIALMAL = {
   grenar: { min: tand },
-  torrgras: { min: tand },
+  torrgras: { min: s => harNaver(s) ? 0 : tand(s) }, // med näver, eller ett blad och ved att tälja den ur, behövs inget hö till tändningen (steg 6.3.3)
   sten: { min: () => 0 },
   flinta: { min: () => TROSKEL.flintaMinsta },
   virke: { min: () => 0 },
   lera: { min: () => 0 }, // steg 9.4.10: målet följer hur mycket lera byn gör av med
+  // steg 10.2.12: det som görs och tas av förrådet följer också förbrukningen; minst en (en att börja med, innan något använts)
+  rep: { min: () => VILLTAL.repMin }, /* repet går åt till redskapen innan någon förbrukning hunnit räknas: några att börja med */ mossa: { min: () => 1 }, salva: { min: () => 1 }, tjara: { min: () => 1 }, benlim: { min: () => 1 }, tval: { min: () => 1 },
+  vin: { min: () => 1 }, ol: { min: () => 1 }, // dryckerna (brygg.ts): det som dricks räknas i taVatska
 } as const satisfies Record<string, Materialmal>;
 export type Materialslag = keyof typeof MATERIALMAL;
 export const MATERIAL_LIST = Object.keys(MATERIALMAL) as Materialslag[];
@@ -171,6 +184,8 @@ export function villHaMer(s: State, k: string) {
   return true;
 }
 // är materialet under bufferten (ett behov), eller vid eller över taket (ingen plockar det)? Det man bär räknas med
+// så många av slaget k byn vill ha i förrådet (steg 10.2.12): bufferten ur förbrukningen, i hela saker
+export const villHaAv = (s: State, k: Materialslag) => Math.ceil(materialBuffert(s, k) - 1e-9);
 export const underBuffert = (s: State, k: Materialslag, extra = 0) => amountOf(s, k) + extra < materialBuffert(s, k);
 export const overTak = (s: State, k: Materialslag, extra = 0) => amountOf(s, k) + extra >= materialTak(s, k);
 

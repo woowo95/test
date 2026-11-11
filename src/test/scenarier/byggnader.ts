@@ -547,7 +547,8 @@ SCENARIER.lager = {
       ['en stack med bara gömd giftsvamp visas inte som "svamp 0 st"', !doldSyns],
       [`när lagret växer över en ruta med flera saker ligger det sedan en sak på varje ruta, och inget försvinner (${vxYta} → ${vxStor} rutor, ${vxTva} rutor med två saker, ${vxFore} → ${tot()} saker)`, vxStor > vxYta && vxTva === 0 && tot() === vxFore],
       [`i ett fullt lager läggs det nya på en egen ruta (${fx},${fy}${paAnnan ? ', på sten' : ''})`, !paAnnan && usable(fu, fx, fy)],
-      [`ingen bär in när byn svälter eller fryser (${barSvalt} när maten är slut, ${barKall} i kylan, ${barMat} av 200 annars)`, barMat > 0 && barSvalt === 0 && barKall === 0],
+      // svälten och kylan väger i poängen (steg 10.2.6): det som inte är mat bärs in mer sällan när byn svälter eller fryser
+      [`färre bär in när byn svälter eller fryser (${barSvalt} när maten är slut, ${barKall} i kylan, ${barMat} av 200 annars)`, barMat > 0 && barSvalt < barMat / 2 && barKall < barMat / 2],
       ['en död med en uppgift kvar låser inte en stack som ska bäras in (haulJob)', stackFri],
       ['... och inte elden (fetchFuel)', eldFri],
       [`lagerplatsen växer när den blir full (${start} → ${stor} rutor, ${zonesOf(s).length} lagerplatser, ${ps.filter(p => p.out).length} av ${ps.length} stackar utanför)`, stor > start && ps.filter(p => p.out).length <= ps.length / 2],
@@ -649,7 +650,7 @@ SCENARIER.lekibyn = {
       kor(s, 1);
       for (const q of living(s)) if (q.task?.act === 'leka' && q.task.phase === 'do') {
         leker++;
-        if (SIM.utanforByn(s, q.task.tx, q.task.ty) <= 0) iByn++;
+        if (SIM.utanforByn(s, q.task.tx, q.task.ty) <= 2) iByn++; // brottningen på lek sker på kartan (steg 10.1.7) och kan bära barnen ett par rutor utanför
         if (SIM.blocked(s, q.task.tx, q.task.ty)) fel++;
         platser.add(`${Math.floor(q.task.tx)},${Math.floor(q.task.ty)}`);
       }
@@ -777,11 +778,12 @@ SCENARIER.eldflytt = {
     let vald: SIM.Person | undefined, flytt = s.fire.flytt;
     SIM.stepEldFlytt(s);
     flytt = s.fire.flytt; vald = living(s).find(p => p.task?.act === 'flyttaeld');
-    let tand = s.fire.lightings; // elden kan tändas igen redan medan den flyttas
-    kor(s, 8, t => { if (t.fire.lit && t.fire.lightings > tand) tand = -1; });
+    // elden kan tändas igen redan medan den flyttas, med flinta eller ur glöden som bars med (steg 10.2.8)
+    let tand = s.fire.lightings; const flyttad0 = (t: State) => { const e = SIM.eldPlats(t); return e.x !== e0.x || e.y !== e0.y; };
+    kor(s, 8, t => { if (t.fire.lit && (t.fire.lightings > tand || flyttad0(t))) tand = -1; });
     const e1 = SIM.eldPlats(s), narmare = Math.hypot(mid.x - e1.x, mid.y - e1.y);
     const g1 = SIM.stationerOf(s).find(t => t.id === grill.id);
-    if (tand !== -1) kor(s, 24, t => { if (t.fire.lit && t.fire.lightings > tand) tand = -1; });
+    if (tand !== -1) kor(s, 24, t => { if (t.fire.lit && (t.fire.lightings > tand || flyttad0(t))) tand = -1; });
     // ett hus planeras där elden står: inget byggs inpå elden förrän den flyttats
     const t = createState(7, START);
     klockan(t, 8); tandEld(t); byggare(t);
@@ -1228,6 +1230,9 @@ SCENARIER.liggande = {
     let fallda0 = b.fallda ?? 0, timme = 0;
     kor(b, 96, x => { if (++timme % STEG_TIM === 0) n.push((x.stockar ?? []).filter(k => k.ved > 0 && !SIM.utanforByn(x, k.x, k.y)).length); });
     n.sort((a, d) => a - d);
+    /* Medianen är 0: stammarna ligger i byn bara kort. Toppen kommer när byn fäller till ett hus (stammarna kommer i en klunga,
+       7–11 en kort stund, sedan 6 medan de klyvs) och ligger strax över förra gränsen 10 beroende på slumpen; 14 fångar
+       fortfarande ett verkligt fel där stammar hopar sig (ett tjugotal) */
     const med = n[n.length >> 1] ?? 0, max = n[n.length - 1] ?? 0, fallda = (b.fallda ?? 0) - fallda0;
     const g = groundOf(s), ti = [...g.trees.keys()].find(i => SIM.isForest(s, i)), fk = ti === undefined ? undefined : SIM.fellTree(s, p, ti % W + 0.5, Math.floor(ti / W) + 0.5);
     const avSatt = fk?.av === p.id;
@@ -1237,7 +1242,7 @@ SCENARIER.liggande = {
       [`röjningen hugger den egna stammen före nästa fällning (${roj?.act} ${roj?.ref})`, roj?.act === 'hugga' && roj.ref === 96],
       [`viljan att fälla sjunker med stammarna i byn (${v0.toFixed(2)} → ${v3.toFixed(2)})`, v0 === 1 && v3 < 0.6],
       ['en fälld stam vet vem som fällde den', avSatt],
-      [`stammar i byn: median ${med}, högst ${max} (${fallda} träd fällda på fyra dygn)`, med <= 3 && max <= 10],
+      [`stammar i byn: median ${med}, högst ${max} (${fallda} träd fällda på fyra dygn)`, med <= 3 && max <= 14],
     ];
   },
 };

@@ -30,8 +30,7 @@ export const MJARDE = balans('mjarde', {
   vittjaMin: 2, // så många fiskar i mjärden innan någon går dit
   fangst: 0.04, // chansen per timme att en fisk simmar in i en mjärde, gånger hur rikt vattnet är
   max: 6, // så många fiskar ryms i en mjärde
-  folkPerFiskare: 8, // en fiskare på så många invånare ...
-  perFiskare: 2, // så många mjärdar byn vill ha för varje den som fiskar
+  andel: 0.1, // byn vill ha så många mjärdar att de ger så här stor del av maten den äter (steg 10.2.12)
   rikMax: 1.5, // rikare vatten än så här räknas inte
   beteNapp: 1.33, // den som har en mört med sig får så här många gånger fler napp (steg 7.4.4), och en mört går åt per fisketur
 });
@@ -103,4 +102,8 @@ export function vittja(s: State, p: Person, m: Mjarde) {
   count(s, 'mjardeVittjad');
 }
 // så många fällor av varje sort byn vill ha: några för varje som fångar
-export const mjardarVill = (s: State) => living(s).length ? MJARDE.perFiskare * Math.ceil(living(s).length / MJARDE.folkPerFiskare) : 0;
+// så många fällor av varje sort byn vill ha (steg 10.2.12): så att de ger andelen MJARDE.andel av den mat byn äter (matPerDygn),
+// med det en fälla fångar per dygn i ett medelrikt vatten (fangst × 24, en fisk är ungefär en mat)
+export const mjardarVill = (s: State) => living(s).length ? Math.ceil(matKrok.perDygn(s) * MJARDE.andel / (MJARDE.fangst * 24)) : 0;
+// det byn äter per dygn (matPerDygn i ekonomi.ts sätter kroken: filen läses före ekonomi.ts)
+export const matKrok = { perDygn: (s: State) => living(s).length * 1.6 };

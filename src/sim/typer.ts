@@ -145,6 +145,7 @@ export interface Task {
   letat?: number; // på rundan (steg 9.2.55): sekunder som gåtts sedan förra plocket; det man hittar under tiden (ägg, mossa, hö) räknas på dem
   pk?: string; // nyckeln som vägen gäller för: målet och byggversionen. Ändras den räknas vägen om
   ref?: number; // det arbetet gäller: stammen som huggs, biten som byggs eller huset som ett träd fälls för
+  koll?: number; // sekunder arbetade sedan platsen senast bedömdes (fisket: är stranden utfiskad?), så att bedömningen inte följer stegens längd
   prog?: number; // fiske: sekunder arbete mot nästa försök
   styckTill?: number; // styckningen av ett fällt djur pågår till dess (styckning.ts, steg 6.6.2)
   jf?: Jaktforsok; // jakten: försöket som pågår (jakt.ts, Björn efter v159)
@@ -193,6 +194,8 @@ export interface Person {
   sorg?: { namn: string; ord: string; v: number; dygn: number; t0: number; s2?: 1; s3?: 1 }[]; // sorgen i stadier efter en död (steg 9.2.33, liv.ts)
   pratArbete?: number; // samtalen hen haft medan hen arbetat (steg 8.1.12)
   id: number; name: string; sex: 'm' | 'k';
+  gavSig?: number; // när hen flydde eller gav upp i en strid med rövare (steg 10.1.14): hen ställer sig inte i vägen igen på en stund (rovarSkydd)
+  framme?: number; // räknad fram till den här tiden: under de korta stegen tar den som inte är inblandad i faran sitt arbete en minutbit i förväg (steg 10.1.4, slag i steg.ts)
   gast?: import('./gast').GastRad; smitta?: import('./sjukdom').SjukId; // en gäst: handlaren, en rövare eller en främling (steg 9.2.111, gast.ts); id är då negativt; smitta: sjukdomen en gäst bär utan att någon ser det (steg 9.5.5)
   born: number; died?: number; cause?: string; left?: number;
   fran?: number; // grannklanen hen kom ifrån (en främling, steg 4.4.4.2)
@@ -336,6 +339,7 @@ export interface State {
   mat?: Record<string, number>; // äldre sparfiler (före v40): maten per slag
   marken?: { x: number; y: number; k: string; n: number }[]; // gamla sparfiler: saker på marken (nu i stackar)
   lagren?: import('./lager').Zone[]; // lagerplatserna
+  gastTing?: import('./agande').Ting[]; gastTingNr?: number; // det gästerna bär (steg 10.1.8, gast.ts): samma slags ting som byns, men i en egen lista, så att byns räkningar inte ser dem
   ting?: import('./agande').Ting[]; nextTing?: number; // varje redskap för sig, det enda som sparas om redskapen: skick, ägare (0 = byn), vem som har det i handen eller bördan, rutan det ligger på stationen det hör till, vem som gjorde det och när, kvaliteten (agande.ts, kvalitet.ts)
   tingVag?: { id: number; k: string; c: number; agare: number; hos?: number }[]; // äldre sparfiler (före v40): redskap som bars mellan lagerplatser
   agare?: Record<string, number[]>; // sparfiler från v30: redskapens ägare (blir s.ting)
@@ -389,7 +393,8 @@ export interface State {
   flodHot?: number; flodBlot?: number; flodMinne?: number; // medan vattnet stiger: så många rutor upp på land som byn bär undan maten från; så många som är blöta (vattnet står där nu eller stod där nyss, ingen sover där); och så högt som byn minns att vattnet nått (inget byggs där). Räknas varje timme (steg 3.8.7, flod.ts, flodHotad i sjo.ts)
   tornadoStig?: number[]; // rutorna där tornadon slet upp gräset till en jordstig, bara för bilden (steg 6.4.13): de syns tills gräset vuxit tillbaka
   tornado?: import('./tornado').Tornado; // tornadon som drar fram (steg 3.8.4, tornado.ts): banan, hur långt den kommit och vad den gjort
-  djurStrider?: import('./djurstrid').DjurKamp[]; // striderna mot djur som pågår på kartan (steg 9.2.29, djurstrid.ts)
+  kartStrider?: import('./kartstrid').KartStrid[]; kartStridNr?: number; // striderna som pågår på kartan (steg 10.1.4, kartstrid.ts)
+  stegRest?: number; // sekunder kvar av femminuterssteget som korta steg avbröt (nastaSteg i kartstrid.ts)
   bjornUndan?: { fran: number; till: number; x0: number; y0: number; x1: number; y1: number }; // björnen går bort efter en strid (steg 9.2.30)
   stationFlytt?: { id: number; x: number; y: number; rot?: 1; vinst: number }; // den station ute som är mest värd att flytta närmare dem som använder den (steg 9.4.8, stationer.ts)
   larmV?: number; // ökar när något händer i ett larm (någon skadas eller dör), så att rollerna väljs om (steg 9.5.19, roller.ts)
@@ -407,7 +412,6 @@ export interface State {
   kaninStart?: Record<string, { x0: number; y0: number; x1: number; y1: number; n0: number } | null>; // där kaningrupperna dök upp och vart de glider, per grupp och tid (steg 6.6.8, djur.ts)
   bjornVag?: { t0: number; v: { x: number; y: number; fram: number; gar: number; bar: boolean }[] | null }; // björnens väg i dag, räknad när dygnet började och sparad i byn, så att den är densamma efter inläsning (steg 6.6.4, djur.ts)
   faglarBorta?: { x: number; y: number; t: number }[]; // platser där fåglarna flugit bort från kartan, och när (steg 6.6.3, djur.ts)
-  strider?: import('./strid').StridMinne[]; // de senaste striderna i byn, så att arenan kan visa dem igen (steg 3.7.2, strid.ts)
   sportBast?: Record<string, number>; // den bästa i varje sport (personens id, steg 4.3.1.2)
   fram?: import('./framtradande').Fram; framKvall?: number; framNr?: number; // framträdandet som pågår och kvällen då det senaste hölls (steg 4.3.2.1)
   framtradanden?: import('./framtradande').FramMinne[]; // de senaste framträdandena

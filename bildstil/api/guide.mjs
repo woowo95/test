@@ -19,4 +19,10 @@ Bildstilens guide (regler för allt som ritas):
 - Symmetriskt det som är symmetriskt: en kruka, en skål, en sköld eller en tunna har en spegelsymmetrisk form; bara ljuset och kornet skiljer sidorna åt.
 - Som i spelet: allt ses snett uppifrån, som kartan, aldrig som en platt sidovy. Något som redan finns i spelet (ett träd, ett djur, ett hus) ritas från spelets bild av det.
 
+- Vet vad bilden är till: bestäm innan du ritar i vilket sammanhang saken syns, t.ex. den växande plantan på åkern eller skörden som sak i förrådet. Kortets text säger vilket; rita bara det.
+- En sak i förrådet ritas som en enda sak (ett äpple, en limpa, en balja), aldrig som en hög eller flera; bilderna för en hel stack ritas senare, när Björn godkänt saken.
+- Bara behållarna som finns: ligger något i en behållare är det lerkrukan eller näverasken som redan finns i spelet. Hitta aldrig på nya behållare (korgar, skålar, säckar, lådor).
+- Plantor på åkern och träd bland träden: en planta ritas som den står på en ruta av åkern, och ett träd eller en buske i samma stil och storlek som spelets granar och björkar (ett vuxet träd är omkring 31 punkter högt och ett gammalt 46).
+- Det som sitter ihop ritas som bitar som passar ihop: ett staket ritas som en bit längs (vågrät, 16 punkter bred) och en bit tvärs (lodrät, 16 punkter hög), som sätts ihop till en hage.
+
 Svara bara med JSON enligt schemat.`;

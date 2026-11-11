@@ -1,3 +1,4 @@
+import { stridBild } from './kartstrid';
 import { utanforByn } from './omrade';
 import { balans } from './balans';
 import { blodas } from './blod';
@@ -223,6 +224,11 @@ export function jaktForsok(s: State, p: Person, tk: Task, t = s.now): number {
   tk.jf = { t, id: m.id, x: m.x, y: m.y, sx: p.x, sy: p.y, v, stopp, kast: kastD, sett, ut: dog ? 'fangad' : traff && g > 0 ? 'skadad' : kastD > 0 || !sett ? 'miss' : 'flydde', ...(hand ? { hand: true as const } : {}), extra, g, blod: b.blod };
   // flocken flyr bort från jägaren när haren flyr (eller fångas), och då får jägaren smyga sig nära igen (steg 4.5.4.1)
   const o = jaktForlopp(tk.jf);
+  // kastet eller sticket är en händelse som slagen i striderna (steg 10.1.19): bilden får den i det ögonblick den sker (bara för att visa)
+  if (stridBild.pa && (kastD > 0 || !sett)) {
+    const m1 = o.kanin(o.tI);
+    stridBild.slag.push({ strid: 0, t: t + (kastD > 0 ? o.tK : o.tI - 0.5) * SEC, l: (kastD > 0 ? o.tI - o.tK : 0.5) * SEC, fran: p.id, fx: o.P.x, fy: o.P.y, mx: m1.x, my: m1.y, v, ...(kastD > 0 ? { kast: 1 as const } : {}), utfall: traff ? 'traff' : 'miss' });
+  }
   // fåglarna flyger bort från kartan, alla inom FAGEL.bort rutor (steg 6.6.3)
   if (fag) faglarFlygerBort(s, m.x, m.y, t + o.tFlock * SEC); else gruppFlyr(s, m.grupp, t + o.tFlock * SEC, o.ut.x * o.fly, o.ut.y * o.fly);
   return 0;

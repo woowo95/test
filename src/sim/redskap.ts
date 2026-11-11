@@ -1,5 +1,4 @@
-import type { DjurStrid } from './strid';
-import { KROPP, count, doingAct, forstaGang, gjort, living, log } from './folk';
+import { KROPP, count, enTill, forstaGang, gjort, living, log } from './folk';
 import { knows } from './teknik';
 import { clamp, rnd } from './slump';
 import { Act, HOUR, State, Person } from './typer';
@@ -9,7 +8,7 @@ import { nyKvalitet } from './kvalitet';
 import { amountOf, gain, put, use } from './lager';
 import { getable, Recept, takeMaterial, takeRecipe } from './behov';
 import { addDel } from './egendom';
-import { TROSKEL, villAv } from './forradsmal';
+import { sparas, villAv, villHaAv } from './forradsmal';
 import { addTool, freeTools, halvOf, nTools, ownsFree, tingOf, wearTool } from './agande';
 import { KLADER, KLADMATERIAL, PLAGG, PLAGG_LIST, kladAv, materialTill, valMaterial } from './klader';
 import { ageIndex, kallTid } from './tid';
@@ -18,7 +17,7 @@ import { anseendeSym } from './rykten';
 import { DORRAR, DORR_LIST } from './byggnad';
 import { utanDorr } from './bygg';
 import { balans } from './balans';
-import { fartVid, kvVid, kanGoras, nyttVid, slitVid } from './stationer';
+import { fartVid, kvVid, kanGoras, nyttVid, slitVid, stationFor } from './stationer';
 import { smutsa } from './smuts';
 import { krukaAv, krukaFormad } from './kruka';
 
@@ -71,10 +70,10 @@ export function wearUsed(s: State, p: Person, n: number) {
 // elden, eller tas från senor när vilt slaktas. Det är samma rep
 // oavsett material. Rep behövs till flintspjut och metspö.
 const REP_TIMME = 60 / SAKER.rep!.skaffa!.min!; // rep per timme
-export const wantsRope = (s: State, p: Person) => knows(p, 'rep') && amountOf(s, 'rep') < TROSKEL.repVill && getable(s, p, 'torrgras') >= REP.torrgras + TROSKEL.torrgras; // lite hö sparas till elden
-export function twineRope(s: State, p: Person, hours: number, vill: number = TROSKEL.repVill) { // vill: så många rep byn vill ha (fler att byta med handlaren, steg 6.2.11)
+export const wantsRope = (s: State, p: Person) => knows(p, 'rep') && amountOf(s, 'rep') < villHaAv(s, 'rep') && getable(s, p, 'torrgras') >= REP.torrgras + sparas(s, 'torrgras'); // eldens del sparas (steg 10.2.7)en
+export function twineRope(s: State, p: Person, hours: number, vill: number = villHaAv(s, 'rep')) { // vill: så många rep byn vill ha (fler att byta med handlaren, steg 6.2.11)
   const f = fartVid(s, p, 'tvinna'), bank = f > 1; // vid slöjdbänken
-  const n = Math.min(hours * REP_TIMME * f, (getable(s, p, 'torrgras') - TROSKEL.torrgras) / REP.torrgras, vill - amountOf(s, 'rep'));
+  const n = Math.min(hours * REP_TIMME * f, (getable(s, p, 'torrgras') - sparas(s, 'torrgras')) / REP.torrgras, vill - amountOf(s, 'rep'));
   if (n <= 0) return;
   takeMaterial(s, p, 'torrgras', n * REP.torrgras);
   gain(s, p, 'rep', n);
@@ -110,26 +109,26 @@ export function twineRope(s: State, p: Person, hours: number, vill: number = TRO
 // vargen slaktas): arbetet tar den första arten i registret som finns i förrådet. Allt är hela saker (steg 3.6.13). Kött, ben och skinn har inget recept i saker.ts och är värda
 // golvet för sin nivå (varde.ts); där receptet finns (skaffa.av, som fisken av en abborre) kontrollerar scenariot "djur" att
 // det stämmer med raden här.
-export interface Djurart { sak: string; kott?: string; mat: number; slakt: Record<string, number>; rep: number; timme: number; maxTim: number; act: Act; kniv?: true; minDel: number; stat: string; forsta: string; del?: string; skinn?: Record<string, number>; strid?: DjurStrid } // del = styckdelen när djuret är för tungt att bära och skinn = det som dras av när det styckas (styckning.ts, steg 6.6.1); strid = hur djuret slåss (strid.ts, steg 3.7.5)
+export interface Djurart { sak: string; kott?: string; mat: number; slakt: Record<string, number>; rep: number; timme: number; maxTim: number; act: Act; kniv?: true; minDel: number; stat: string; forsta: string; del?: string; skinn?: Record<string, number> } // del = styckdelen när djuret är för tungt att bära och skinn = det som dras av när det styckas (styckning.ts, steg 6.6.1); strid = hur djuret slåss (strid.ts, steg 3.7.5)
 export const DJUR = {
   kanin: { sak: 'vilt', kott: 'kott', mat: 2, // en kanin är två fällt vilt (4 kg styck sedan steg 4.5.5.1)
-    slakt: { kott: 3, ben: 1, skinn: 1, talg: 1 }, rep: 0.15, timme: 15, maxTim: 2, act: 'slakta', kniv: true, minDel: REDSKAP.slaktMinDel, stat: 'slaktat', forsta: '{namn} slaktade byns första vilt med en flintkniv. Det gav mer kött, ett ben och ett skinn.', strid: { namn: 'Haren', art: 'Hare', alder: 6, styrka: 2, uthallighet: 6, mod: 2, smidighet: 16, skicklighet: 4, fart: 1.4, vapen: 'bett' } },
+    slakt: { kott: 3, ben: 1, skinn: 1, talg: 1 }, rep: 0.15, timme: 15, maxTim: 2, act: 'slakta', kniv: true, minDel: REDSKAP.slaktMinDel, stat: 'slaktat', forsta: '{namn} slaktade byns första vilt med en flintkniv. Det gav mer kött, ett ben och ett skinn.' },
   abborre: { sak: 'abborre', mat: 1, slakt: { fisk: 1 }, rep: 0, timme: 30, maxTim: 1, act: 'rensa', minDel: 1, stat: 'rensat', forsta: '{namn} rensade byns första abborre. Den blev fiskkött.' },
   gadda: { sak: 'gadda', mat: 1, slakt: { gaddkott: 2 }, rep: 0, timme: 20, maxTim: 1, act: 'rensa', minDel: 1, stat: 'rensatGadda', forsta: '{namn} rensade byns första gädda. Den gav två bitar kött.' },
   braxen: { sak: 'braxen', mat: 1, slakt: { braxkott: 2 }, rep: 0, timme: 20, maxTim: 1, act: 'rensa', minDel: 1, stat: 'rensatBraxen', forsta: '{namn} rensade byns första braxen.' }, // steg 9.6.17
   sik: { sak: 'sik', mat: 1, slakt: { sikkott: 1 }, rep: 0, timme: 30, maxTim: 1, act: 'rensa', minDel: 1, stat: 'rensatSik', forsta: '{namn} rensade byns första sik.' },
   mort: { sak: 'mort', mat: 2, slakt: { mortkott: 1 }, rep: 0, timme: 40, maxTim: 1, act: 'rensa', minDel: 2, stat: 'rensatMort', forsta: '{namn} rensade byns första mörtar.' },
-  varg: { sak: 'varg', kott: 'vargkott', mat: 1, slakt: { vargkott: 12, ben: 3, vargskinn: 1, talg: 3, vargtand: 4 }, del: 'vargdel', skinn: { vargskinn: 1 }, rep: 0.6, timme: 2, maxTim: 2, act: 'slakta', kniv: true, minDel: 1, stat: 'slaktatVarg', forsta: '{namn} slaktade byns första varg. Den gav mycket kött, ben och ett tjockt vargskinn.', strid: { namn: 'Vargen', art: 'Varg', alder: 12, styrka: 10, uthallighet: 14, mod: 10, smidighet: 16, skicklighet: 9, fart: 1.5, vapen: 'vargbett' } }, // snabb och svår att träffa, duckar men parerar inte och biter hårt (steg 3.7.1)
+  varg: { sak: 'varg', kott: 'vargkott', mat: 1, slakt: { vargkott: 12, ben: 3, vargskinn: 1, talg: 3, vargtand: 4 }, del: 'vargdel', skinn: { vargskinn: 1 }, rep: 0.6, timme: 2, maxTim: 2, act: 'slakta', kniv: true, minDel: 1, stat: 'slaktatVarg', forsta: '{namn} slaktade byns första varg. Den gav mycket kött, ben och ett tjockt vargskinn.' }, // snabb och svår att träffa, duckar men parerar inte och biter hårt (steg 3.7.1)
   // rådjuret (steg 6.6.2, djur.ts): skyggt och snabbt, fälls med spjut och styckas av den som inte orkar bära det helt
-  radjur: { sak: 'radjur', kott: 'kott', mat: 1, slakt: { kott: 8, ben: 2, radjursskinn: 1, talg: 2 }, del: 'radjurdel', skinn: { radjursskinn: 1 }, rep: 0.4, timme: 2, maxTim: 2, act: 'slakta', kniv: true, minDel: 1, stat: 'slaktatRadjur', forsta: '{namn} slaktade byns första rådjur. Det gav kött, ben, talg och ett mjukt skinn.', strid: { namn: 'Rådjuret', art: 'Rådjur', alder: 10, styrka: 4, uthallighet: 12, mod: 2, smidighet: 16, skicklighet: 4, fart: 1.7, vapen: 'bett' } },
+  radjur: { sak: 'radjur', kott: 'kott', mat: 1, slakt: { kott: 8, ben: 2, radjursskinn: 1, talg: 2 }, del: 'radjurdel', skinn: { radjursskinn: 1 }, rep: 0.4, timme: 2, maxTim: 2, act: 'slakta', kniv: true, minDel: 1, stat: 'slaktatRadjur', forsta: '{namn} slaktade byns första rådjur. Det gav kött, ben, talg och ett mjukt skinn.' },
   // fåret och geten (steg 9.8.7, boskap.ts): ett tamdjur som avlivats slaktas vid slaktbänken som viltet
   far: { sak: 'slaktfar', kott: 'kott', mat: 1, slakt: { kott: 7, ben: 2, skinn: 2, talg: 2, djurhorn: 2 }, rep: 0.4, timme: 2, maxTim: 2, act: 'slakta', kniv: true, minDel: 1, stat: 'slaktatFar', forsta: '{namn} slaktade byns första får. Det gav kött, ben, talg, skinn och horn.' },
   get: { sak: 'slaktget', kott: 'kott', mat: 1, slakt: { kott: 6, ben: 2, skinn: 2, talg: 1, djurhorn: 2 }, rep: 0.4, timme: 2, maxTim: 2, act: 'slakta', kniv: true, minDel: 1, stat: 'slaktatGet', forsta: '{namn} slaktade byns första get. Den gav kött, ben, talg, skinn och horn.' },
   // fågeln (steg 6.6.3, djur.ts): en art med tre utseenden, liten och svår att träffa med spjutet; styckas inte och ger lite kött och fjädrar
-  fagel: { sak: 'fagel', kott: 'kott', mat: 1, slakt: { kott: 1, fjadrar: 1 }, rep: 0, timme: 12, maxTim: 1, act: 'slakta', kniv: true, minDel: 1, stat: 'slaktatFagel', forsta: '{namn} plockade och slaktade byns första fågel. Den gav lite kött och fjädrar.', strid: { namn: 'Fågeln', art: 'Fågel', alder: 5, styrka: 1, uthallighet: 4, mod: 1, smidighet: 18, skicklighet: 2, fart: 1.6, vapen: 'bett' } },
+  fagel: { sak: 'fagel', kott: 'kott', mat: 1, slakt: { kott: 1, fjadrar: 1 }, rep: 0, timme: 12, maxTim: 1, act: 'slakta', kniv: true, minDel: 1, stat: 'slaktatFagel', forsta: '{namn} plockade och slaktade byns första fågel. Den gav lite kött och fjädrar.' },
   // björnen (steg 6.6.6, bjorn.ts): stark och uthållig, jagas bara av en stor grupp med spjut, och styckas alltid där den föll.
   // Den ger mycket kött, sex talg och ett björnskinn
-  bjorn: { sak: 'bjorn', kott: 'kott', mat: 1, slakt: { kott: 30, ben: 6, bjornskinn: 1, talg: 6 }, del: 'bjorndel', skinn: { bjornskinn: 1 }, rep: 1, timme: 1, maxTim: 3, act: 'slakta', kniv: true, minDel: 1, stat: 'slaktatBjorn', forsta: '{namn} slaktade byns första björn. Den gav mer kött än något annat djur, mycket talg och ett tjockt björnskinn.', strid: { namn: 'Björnen', art: 'Björn', alder: 25, styrka: 24, uthallighet: 22, mod: 14, smidighet: 8, skicklighet: 8, fart: 1.1, vapen: 'bjornram' } }, // tung och långsam men slår hårt (steg 6.6.5)
+  bjorn: { sak: 'bjorn', kott: 'kott', mat: 1, slakt: { kott: 30, ben: 6, bjornskinn: 1, talg: 6 }, del: 'bjorndel', skinn: { bjornskinn: 1 }, rep: 1, timme: 1, maxTim: 3, act: 'slakta', kniv: true, minDel: 1, stat: 'slaktatBjorn', forsta: '{namn} slaktade byns första björn. Den gav mer kött än något annat djur, mycket talg och ett tjockt björnskinn.' }, // tung och långsam men slår hårt (steg 6.6.5)
   bjorndel: { sak: 'bjorndel', kott: 'kott', mat: 1, slakt: { kott: 5, ben: 1, talg: 1 }, rep: 0.2, timme: 4, maxTim: 2, act: 'slakta', kniv: true, minDel: 1, stat: 'slaktatBjorndel', forsta: '{namn} slaktade byns första björnstycke. Det gav mycket kött, ben och talg.' },
   radjurdel: { sak: 'radjurdel', kott: 'kott', mat: 1, slakt: { kott: 4, ben: 1, talg: 1 }, rep: 0.2, timme: 4, maxTim: 2, act: 'slakta', kniv: true, minDel: 1, stat: 'slaktatRadjurdel', forsta: '{namn} slaktade byns första rådjursstycke. Det gav kött och ben.' },
   // en styckad varg (steg 6.6.1, styckning.ts): två delar som slaktas var för sig; skinnet drogs av när den styckades
@@ -144,14 +143,14 @@ export const djurKvar = (s: State, art: Djurart) => amountOf(s, art.sak) / art.m
 // p kan slakta eller rensa arten: byn har stationen om det bara görs där (viltet och fisken vid slaktbänken), det finns
 // tillräckligt, en kniv som ingen annan slaktar med (om det behövs; hen kan kniven eller äger en köpt, steg 4.5.4.16), och ingen
 // annan gör det redan
-export const canProcess = (s: State, p: Person, art: Djurart) => kanGoras(s, art.act, p) && (!art.kniv || (knows(p, 'kniv') || tingOf(s).some(t => t.agare === p.id && t.k === 'kniv')) && freeTools(s, p, 'kniv') >= 1) && djurKvar(s, art) >= 1 / art.minDel && !doingAct(s, art.act, p);
+export const canProcess = (s: State, p: Person, art: Djurart) => kanGoras(s, art.act, p) && (!art.kniv || (knows(p, 'kniv') || tingOf(s).some(t => t.agare === p.id && t.k === 'kniv')) && freeTools(s, p, 'kniv') >= 1) && djurKvar(s, art) >= 1 / art.minDel && (ACTS[art.act]?.plats === 'station' ? !!stationFor(s, art.act, p) : enTill(s, art.act, p)); // en bänk rymmer sin arbetare (steg 10.2.5)
 // slakta eller rensa i hours timmar. Köttet, benet, skinnet och senorna är deras som ägde djuren, inte den som gör det
 export function bearbeta(s: State, p: Person, art: Djurart, hours: number) {
   const n = Math.min(hours * art.timme, djurKvar(s, art));
   if (n <= 0 || art.kniv && knives(s) < 1 || !kanGoras(s, art.act)) { if (p.task) p.task.until = s.now; return; }
   const vems = stycka(s, p, art, n);
   // senorna blir med liten chans ett helt rep, som tillhör den som ägde mest av djuren
-  if (art.rep > 0 && knows(p, 'rep') && amountOf(s, 'rep') < TROSKEL.repVill && rnd(s, 'arbete', p) < n * art.rep) {
+  if (art.rep > 0 && knows(p, 'rep') && amountOf(s, 'rep') < villHaAv(s, 'rep') && rnd(s, 'arbete', p) < n * art.rep) {
     const agare = Object.keys(vems).sort((a, b) => vems[b] - vems[a])[0];
     put(s, 'rep', 1, agare !== undefined ? { [agare]: 1 } : undefined);
     count(s, 'repAvSenor');
@@ -194,7 +193,7 @@ const ordFor = (s: State, k: string) => { const m = verktygFor(s, k); return m ?
 // p kan få tag i det som behövs till k: verktyget och materialet, och en flinta över att tända eld med.
 // Materialet tas i behovsstegen (behov.ts): sitt eget, byns, en gåva, och annars av andras (en lindrig stöld)
 const hasRecipe = (s: State, p: Person, k: string) => (!SAKER[k]!.skaffa!.verktyg || !!verktygFor(s, k))
-  && Object.entries(av(k)).every(([m, n]) => getable(s, p, m) >= n + (m === 'flinta' ? TROSKEL.flintaSparas : 0) - 1e-9); // 1e-9: avrundningen i förrådet
+  && Object.entries(av(k)).every(([m, n]) => getable(s, p, m) >= n + sparas(s, m) - 1e-9); // 1e-9: avrundningen i förrådet
 // p kan tekniken och kan få tag i det som behövs
 export const canMake = (s: State, p: Person, k: string) => { const tek = SAKER[k]!.skaffa!.tek; return (!tek || knows(p, tek)) && hasRecipe(s, p, k); };
 // det slag i gruppen g som p gör: det hen redan har påbörjat, annars det bästa hen kan göra (ett plagg: det material hen
@@ -215,7 +214,7 @@ function materialVal(s: State, p: Person, g: string, ks: string[]) {
   if (ks.length <= 1) return ks[0];
   const ai = ageIndex(s), folk = living(s), nara = (t?: number) => t !== undefined && s.now - t < KLADER.hotTim * HOUR;
   const kyla = kallTid(ai) || folk.some(q => q.warm < KROPP.fryser);
-  const hot = (s.vargar ?? []).some(f => nara(f.sedd)) || (s.strider ?? []).some(m => nara(m.t));
+  const hot = (s.vargar ?? []).some(f => nara(f.sedd)) || (s.stridRapporter ?? []).some(m => nara(m.t));
   const lage = ks.map(k => {
     const r = kladAv(k)!, M = KLADMATERIAL[r.mat], till = materialTill(r.plagg, r.mat);
     let behovs = 0;
@@ -232,7 +231,7 @@ export const borjaTool = (s: State, p: Person, g: string, handel?: string) => { 
 // påbörjat ett av slaget), där det görs, och ingen annan gör ett i gruppen. undefined annars
 export function handelTask(s: State, p: Person, k: string) {
   const g = gruppOf(k), ks = GORS[g];
-  if (!ks?.includes(k) || !kanGoras(s, g as Act, p) || doingAct(s, g as Act, p)) return undefined;
+  if (!ks?.includes(k) || !kanGoras(s, g as Act, p) || !enTill(s, g as Act, p)) return undefined;
   const halv = halvOf(s, p, ks)?.halv!.gor;
   if (halv ? halv !== k : !canMake(s, p, k)) return undefined;
   return { act: g as Act, text: SAKER[k]!.gors!.text.replace('{verktyg}', ordFor(s, k)), min: minOf(k), tool: k };
@@ -243,7 +242,7 @@ export function handelTask(s: State, p: Person, k: string) {
 export const wantsTool = (s: State, p: Person, g: string, spar = 0) => {
   const ks = GORS[g];
   return kanGoras(s, g as Act, p) && (!!halvOf(s, p, ks) || ks.some(k => canMake(s, p, k) && (!av(k).torrgras || amountOf(s, 'torrgras') >= spar)))
-    && harAv(s, g) < villAv(s, g) && !doingAct(s, g as Act, p);
+    && harAv(s, g) < villAv(s, g) && enTill(s, g as Act, p);
 };
 // underhållet (steg 6.2.12, nivån Förbättra i val.ts): en grupp där byn har så många den vill, men några av dem är slitna
 // (REDSKAP.slitet) så att de hela är färre än byn vill ha. Inget lagas: ett nytt görs medan det gamla håller, och det gamla
@@ -253,7 +252,7 @@ export function underhallGrupp(s: State, p: Person) {
     const ks = GORS[g], vill = villAv(s, g);
     if (!vill || harAv(s, g) < vill) continue; // färre än byn vill: det vanliga arbetet gör dem
     const hela = tingOf(s).reduce((n, t) => n + (ks.includes(t.k) && t.c >= REDSKAP.slitet ? 1 : 0), 0);
-    if (hela >= vill || !kanGoras(s, g as Act, p) || doingAct(s, g as Act, p)) continue;
+    if (hela >= vill || !kanGoras(s, g as Act, p) || !enTill(s, g as Act, p)) continue;
     if (halvOf(s, p, ks) || ks.some(k => canMake(s, p, k))) return g;
   }
   return undefined;
@@ -262,9 +261,9 @@ export function underhallGrupp(s: State, p: Person) {
 // slaget hen kan göra, men inte materialet (projekt.ts, steg 6.1.17). undefined när p kan göra det, eller inte kan alls
 export function receptTill(s: State, p: Person, g: string): Recept | undefined {
   const ks = GORS[g];
-  if (!kanGoras(s, g as Act, p) || harAv(s, g) >= villAv(s, g) || doingAct(s, g as Act, p) || halvOf(s, p, ks)) return undefined;
+  if (!kanGoras(s, g as Act, p) || harAv(s, g) >= villAv(s, g) || !enTill(s, g as Act, p) || halvOf(s, p, ks)) return undefined;
   const k = ks.find(k => { const tek = SAKER[k]!.skaffa!.tek; return (!tek || knows(p, tek)) && (!SAKER[k]!.skaffa!.verktyg || !!verktygFor(s, k)); });
-  return k ? { av: av(k), spar: m => m === 'flinta' ? TROSKEL.flintaSparas : 0 } : undefined;
+  return k ? { av: av(k), spar: m => sparas(s, m) } : undefined;
 }
 // arbetet att göra ett redskap i gruppen g. tool = slaget som görs när gruppen har flera (namnet på arbetet, handlingar.ts)
 export function makeTask(s: State, p: Person, g: string) {

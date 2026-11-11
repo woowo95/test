@@ -145,7 +145,7 @@ SCENARIER.arbetspabud = {
   },
 };
 SCENARIER.fullaforrad = {
-  text: 'Förråden till taket (steg 6.2.15): sist på Förbättra fylls förråden mellan bufferten och taket i FORRADSMAL. I en by som kan alla tekniker och inte saknar något projekt (projektens brist sätts till noll under provet, och vedens buffert halveras och taket sänks till bufferten, så att det ryms i lagret, alla har en sovplats under tak och byn delar all mat) fyller ingen på maten eller veden under en arbetsdag (8 timmar) när förråden nått taken, ingen samlar grenar eller hö över taket, och de vuxna får fritid. I samma by vars förråd bara når bufferten fylls de',
+  text: 'Förråden till taket (steg 6.2.15, mjukt tak i steg 10.2.4): på Förbättra fylls förråden mellan bufferten och taket i FORRADSMAL, och över taket allt mer sällan; en by med fulla förråd arbetar vidare mot nästa teknik. I en by som kan alla tekniker och inte saknar något projekt (projektens brist sätts till noll under provet, och vedens buffert halveras och taket sänks till bufferten, så att det ryms i lagret, alla har en sovplats under tak och byn delar all mat) fyller ingen på maten eller veden under en arbetsdag (8 timmar) när förråden nått taken, ingen samlar grenar eller hö över taket, och de vuxna får fritid. I samma by vars förråd bara når bufferten fylls de',
   lang: true,
   kor: () => {
     const brist = PROJEKT_LIST.map(k => PROJEKT[k].brist), ved = SIM.FORRADSMAL.ved as { matt: number; dygn: number }, vedMatt = ved.matt, vedDygn = ved.dygn;
@@ -173,18 +173,24 @@ SCENARIER.fullaforrad = {
       // det som fyller förråden mellan bufferten och taket (raden fylla). Den egna maten (bufferten per jag, steg 6.2.20), redskapen och
       // sängarna är andra rader; sängarna och repet drar hö och grenar, och taket för dem följer förbrukningen (steg 6.2.14)
       // förrådet som det var när slaget började: valet görs mitt i slaget, och andras bördor kan läggas in efter det i samma slag
-      const prov = (s: State) => { const r = { matVed: 0, mer: 0, overTak: 0 }; const sett = new WeakSet<object>(), fore = { grenar: SIM.amountOf(s, 'grenar'), torrgras: SIM.amountOf(s, 'torrgras') }; kor(s, 8, v => { for (const q of living(v)) if (vuxen(q, v) && q.task && !sett.has(q.task)) {
-        sett.add(q.task); const why = q.task.why ?? '';
+      const prov = (s: State) => { const r = { matVed: 0, mer: 0, overTak: 0, alla: 0 }; const sett = new WeakSet<object>(), fore = { grenar: SIM.amountOf(s, 'grenar'), torrgras: SIM.amountOf(s, 'torrgras') }; kor(s, 8, v => { for (const q of living(v)) if (vuxen(q, v) && q.task && !sett.has(q.task)) {
+        sett.add(q.task); r.alla++; const why = q.task.why ?? '';
         if (/^Mer (mat|ved) /.test(why)) r.matVed++;
         if (why.startsWith('Mer ')) r.mer++;
         const k = /^Mer (grenar|hö) /.exec(why)?.[1];
         const m = k === 'hö' ? 'torrgras' : 'grenar';
         if (k && fore[m] > SIM.materialTak(v, m) + 1e-9) r.overTak++; // över taket redan när slaget började
       } fore.grenar = SIM.amountOf(v, 'grenar'); fore.torrgras = SIM.amountOf(v, 'torrgras'); }); return r; };
+      // en by med fulla förråd arbetar vidare mot nästa teknik (steg 10.2.4): en teknik som kommer i arbetet glöms, och de vuxna arbetar där den kan komma
+      const tek = fyll(true), en = living(tek).find(q => vuxen(q, tek))!;
+      const oppen = SIM.TEKNIK.find(x => { const sp = { ...en.tek }; for (const q of tek.people) if (q.tek) delete q.tek[x.id]; const ok = !!SIM.tekArbete(tek, en, a => SIM.WORK.includes(a)); if (!ok) for (const q of tek.people) q.tek = { ...(q.tek ?? {}), [x.id]: sp[x.id] ?? 1 }; return ok; });
+      let tekUpp = 0; { const sett = new WeakSet<object>(); kor(tek, 8, v => { for (const q of living(v)) if (vuxen(q, v) && q.task && !sett.has(q.task)) { sett.add(q.task); if (/Kanske kommer/.test(q.task.why ?? '') || q.task.act === 'forsok') tekUpp++; } }); }
       const pf = prov(full), ph = prov(halv);
       const fri = (v: State) => v.stat?.fullaForrad ?? 0;
       return [
-        [`i den fulla byn fyller ingen på maten eller veden (${pf.matVed} uppgifter), i byn vid bufferten fylls förråden (${ph.mer})`, pf.matVed === 0 && ph.mer > 0],
+        // det mjuka taket (steg 10.2.4): över taket fyller man sällan på, men det tar inte slut tvärt
+        [`i den fulla byn fyller man sällan på maten eller veden (${pf.matVed} uppgifter av ${pf.alla}), i byn vid bufferten fylls förråden (${ph.mer})`, pf.matVed <= pf.alla * 0.15 && ph.mer > 0],
+        [`en by med fulla förråd arbetar vidare mot nästa teknik (${oppen?.namn ?? 'ingen öppen teknik'}: ${tekUpp} uppgifter i arbetet där den kan komma)`, !!oppen && tekUpp > 0],
         [`ingen samlar grenar eller hö till förrådet när det är över taket (${pf.overTak + ph.overTak} gånger)`, pf.overTak + ph.overTak <= 1],
         // också byn vid bufferten når taken under dagen när den fyllt på, så antalen jämförs inte (steg 6.2.21)
         [`de vuxna i den fulla byn får fritid när inget finns kvar att göra (${fri(full)} gånger; ${fri(halv)} i byn vid bufferten när den fyllt på)`, fri(full) > 0],

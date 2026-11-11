@@ -178,7 +178,7 @@ export function huggDorr(s: State, f: Rovarflock, folk: Person[], mal?: Bit) {
   if (!vill) return false;
   const b = mal ?? stangdDorrBit(s);
   if (!b) return false;
-  const yxa = f.folk.some(id => gastAv(s, id)?.gast?.vapen === 'yxa'), bom = bommad(s, b) ? RADER.dorrBom : 1;
+  const yxa = f.folk.some(id => (s.gastTing ?? []).some(t => t.agare === id && t.k === 'yxa')) /* en yxa bland det de bär (steg 10.1.8) */, bom = bommad(s, b) ? RADER.dorrBom : 1;
   f.hugger = { bit: b.id, till: s.now + (yxa ? RADER.dorrYxa : RADER.dorrMin) * bom * MIN };
   count(s, bom > 1 ? 'dorr_bommad' : 'dorr_hugg');
   larma(s, 'rovare', f.folk.length, folk.slice(0, 1));

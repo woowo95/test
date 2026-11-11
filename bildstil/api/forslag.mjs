@@ -70,8 +70,11 @@ const symbol = k => /^symbol/i.test(k.namn);
 const omKortet = k => [
   `Kortet "${k.namn}" (${k.id}) i bildstilens valdel. Vad det ska visa: ${k.vad.replace(/(Din kommentar förra gången|Du bad mig|Jag valde|Ritad av API:t).*$/s, '').trim()}`,
   symbol(k) ? 'Det är en symbol: 16 × 16 punkter, ritad framifrån eller från sidan så att den nästan fyller rutan, med mörk kontur runt hela och få, stora former, utan bakgrund.'
-    : 'Sakerna ritas i sin naturliga storlek mot kartan: en ruta är 16 × 16 punkter och en stående människa 14 × 20. Ingen bild är större än 48 × 48 punkter.',
+    : 'Sakerna ritas i sin naturliga storlek mot kartan: en ruta är 16 × 16 punkter och en stående människa 14 × 20. Ingen bild är större än 64 × 64 punkter (fyra rutor).',
   k.bars ? 'Saken bärs av en människa. Den ritas både som sak (på marken) och på kolonisten framifrån, från sidan och bakifrån och i porträttet.' : '',
+  (k.slagNamn || []).includes('planta') ? 'Det är plantan som växer på åkern: rita en planta som den står på en ruta av åkern (16 × 16 punkter, fårad jord). Sammanhanget visar den på varje ruta av en åker.' : '',
+  (k.slagNamn || []).includes('trad') ? 'Det är ett träd eller en buske som står på marken: rita det i samma stil och storlek som spelets granar och björkar (ett vuxet träd är omkring 31 punkter högt och ett gammalt 46). Sammanhanget visar det bredvid spelets träd.' : '',
+  (k.slagNamn || []).includes('hopsatt') ? 'Det sätts ihop av många bitar: rita två bilder, "längs" (biten längs en vågrät kant, 16 punkter bred) och "tvärs" (biten längs en lodrät kant, 16 punkter hög, sedd snett uppifrån). Bitarna ska passa ihop i ändarna; sammanhanget sätter ihop dem till en hage, 4 bitar längs och 2 på varje sida.' : '',
 ].filter(Boolean).join('\n\n');
 const omBars = u => `Det som bärs ritas på kolonisten som två lager för varje riktning: framfor (ritas över figuren) och bakom (ritas bara där figuren inte är). Varje lager är rader på en duk på 26 × 32 punkter där figuren (14 × 20) står med övre vänstra hörnet i (6, 6), alltså kolumnerna 6–19 och raderna 6–25; arm säger hur armarna står (hanga, framfor: framsträckt, lyfta: ena armen upp, bara: bär i famnen). Kolonisten utan något, framifrån: ${JSON.stringify(u.fram)}; från sidan (vänd åt höger): ${JSON.stringify(u.sida)}; bakifrån: ${JSON.stringify(u.bak)}. Huvudet är raderna 6–11; inget får ritas över det. I porträttet (64 × 64, huvudet och axlarna, framifrån) är lagren rader på 64 × 64 punkter: bakom syns bara på bakgrunden (bakom huvudet och axlarna), framfor över allt. Ritas något framfor i porträttet får det aldrig gå över ansiktet. Porträttet utan något: ${JSON.stringify(u.portratt)}. Lämna ett lager tomt ([]) när inget syns där. I porträttet syns bara den del som logiskt syns.`;
 
@@ -84,6 +87,7 @@ async function rita(k, nr, { ide, kommentar, lage, fel }) {
   const bilder = [await pa(() => window.BILDERNA.scen())], text = [];
   text.push('Den första bilden är byns scen i dagsljus med de godkända bilderna i stilen, tre gånger större. Det du ritar ska höra ihop med den: kontur, ljus, korn.');
   if (k.bars) { bilder.push(k.underlagPng); text.push('Den andra bilden är kolonisten framifrån, från sidan och bakifrån och i porträttet, utan något, fyra gånger större.'); }
+  if (!symbol(k) && !k.bars) { bilder.push(await pa(() => window.FORSLAGEN.behallarePng(4))); text.push(`Bild ${bilder.length} visar behållarna som finns i spelet, fyra gånger större: den stora lerkrukan och näverasken. Ligger saken i en behållare är det en av dem, ritad som de är; hitta aldrig på en ny behållare.`); }
   if (lage === 'andra') { bilder.push(k.kortPng); text.push('Den sista bilden är kortet som det ser ut nu, tre gånger större.'); }
   text.push(omKortet(k));
   if (k.bars) text.push(omBars(k.underlag));
@@ -94,8 +98,8 @@ async function rita(k, nr, { ide, kommentar, lage, fel }) {
   return fraga(`${k.id}__v${nr}`, [...bilder.map(bildBlock), { type: 'text', text: text.join('\n\n') }], schema(k.bars));
 }
 async function granska(k, nr, v) {
-  const png = await pa(x => window.FORSLAGEN.png(x, 4), v);
-  const text = [omKortet(k), k.bars ? omBars(k.underlag) : '', `Bilden visar version ${nr} som den ritats: överst kortet på gräset${k.bars ? ' med kolonisten och porträttet' : ''}, under det den största saken i spelets storlek på gräset bredvid en kolonist (14 × 20) och godkända saker, fyra gånger större.`,
+  const png = await pa(x => window.FORSLAGEN.png(x.v, 4, x.slag), { v, slag: k.slagNamn || [] });
+  const text = [omKortet(k), k.bars ? omBars(k.underlag) : '', `Bilden visar version ${nr} som den ritats: överst kortet på gräset${k.bars ? ' med kolonisten och porträttet' : ''}, under det den största saken i spelets storlek i sitt sammanhang (på gräset bredvid en kolonist (14 × 20) och godkända saker, på en åker om det är en planta, bredvid spelets träd om det är ett träd), fyra gånger större.`,
     `Idén: ${v.ide}`, `Versionen: ${JSON.stringify({ bilder: v.bilder, ...(k.bars ? { fram: v.fram, sida: v.sida, bak: v.bak, portratt: v.portratt } : {}) })}`,
     'Granska den mot bildstilens regler och logiken: storleken mot kolonisten, vinkeln (snett uppifrån, stationer med ytan ovanifrån), symmetrin, att den syns på gräset, att den följer idén och, för det som bärs, att den sitter där en människa skulle ha den och aldrig går genom huvudet eller ansiktet. Rätta det som bryter mot reglerna och svara med hela versionen (oförändrad om inget behöver rättas), och skriv vad du rättade i anteckningen.'].filter(Boolean).join('\n\n');
   return fraga(`${k.id}__g${nr}`, [bildBlock(png), { type: 'text', text }], schema(k.bars));
@@ -106,7 +110,7 @@ const putsa = (rader, w, h) => (Array.isArray(rader) ? rader : []).slice(0, h).m
 function tecken(k, svar) {
   const fel = [];
   if (!svar || !Array.isArray(svar.bilder) || !svar.bilder.length) return { fel: ['inga bilder'] };
-  const max = symbol(k) ? 16 : 48;
+  const max = symbol(k) ? 16 : 64;
   for (const b of svar.bilder) {
     const r = (b.rader || []).map(x => String(x));
     if (r.some(x => [...x].some(ch => ch !== '.' && !TECKEN.includes(ch)))) fel.push(`${b.namn}: tecken som inte finns i paletten`);

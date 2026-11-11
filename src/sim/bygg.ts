@@ -1,7 +1,7 @@
 import { husNytt } from './byggnad';
 import { gen, hans } from './ord';
 import { upplev } from './uppvaxt';
-import { ALDER, ageOf, count, doingAct, forstaGang, livet, living, log } from './folk';
+import { ALDER, ageOf, count, andraGor, forstaGang, livet, living, log } from './folk';
 import { kronikaBer, personFalt } from './berattelser';
 import { bitAt, vagBort, Bit, DORRAR, DorrDef, DorrSlag, Hus, MATERIAL, bitById, dorrDef, dorrRang, bitsOf, blocked, freeNear, gridOf, isWall, housesOf, husById, touch } from './byggnad';
 import { vaderSlit } from './vader';
@@ -62,7 +62,7 @@ export function bedFor(s: State, p: Person) {
 interface Job { bit: Bit; repair: boolean; item?: string; need: number; missing: boolean; fell?: boolean; hugg?: number } // hugg = stocken som ligger inne i huset (steg 8.1.13)
 // det som finns att bygga med (av p: det p kan få, behov.ts, och till ett familjehus också familjens), utom det som sparas.
 // Den som får ta av andra (getable = allt i byn) har redan familjens med: aldrig mer än allt
-export const avail = (s: State, k: string, p?: Person, hus?: number) => (p ? Math.min(amountOf(s, k), getable(s, p, k) + famOwn(s, p, k, hus)) : amountOf(s, k)) - sparas(k);
+export const avail = (s: State, k: string, p?: Person, hus?: number) => (p ? Math.min(amountOf(s, k), getable(s, p, k) + famOwn(s, p, k, hus)) : amountOf(s, k)) - sparas(s, k);
 const famHus = (s: State, hus?: number) => { const h = husById(s, hus); return h?.ag !== undefined ? h : undefined; };
 const famOwn = (s: State, p: Person, k: string, hus?: number) => { const h = famHus(s, hus); return h ? familjOf(s, h.ag).filter(q => q !== p).reduce((a, q) => a + ownsAmount(s, q, k), 0) : 0; };
 // p tar n av slaget k till ett hus. Till byns hus tas byns först; till ett familjehus familjens eget först (ägaren, partnern,
@@ -348,14 +348,14 @@ export const utanDorr = (s: State, k: DorrSlag) => dorrOppningar(s).filter(b => 
 // receptet till en dörr av sorten k som någon öppning saknar, när p kunde hänga den om materialet fanns (steg 6.2.19)
 export function receptDorr(s: State, p: Person, k: DorrSlag): Recept | undefined {
   const d: DorrDef = DORRAR[k];
-  if (!d.tek.some(t => knows(p, t)) || utanDorr(s, k).length <= (doingAct(s, 'dorr', p) ? 1 : 0)) return undefined;
+  if (!d.tek.some(t => knows(p, t)) || utanDorr(s, k).length <= andraGor(s, 'dorr', p)) return undefined;
   return { av: d.av };
 }
 export function kanHangaDorr(s: State, p: Person, k: DorrSlag) {
   const d: DorrDef = DORRAR[k];
   if (!d.tek.some(t => knows(p, t))) return false;
-  const gor = doingAct(s, 'dorr', p) ? 1 : 0, utan = utanDorr(s, k).length;
-  return utan > gor && Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n + sparas(m));
+  const gor = andraGor(s, 'dorr', p), utan = utanDorr(s, k).length;
+  return utan > gor && Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n + sparas(s, m));
 }
 // platsen dit den som hänger dörren går: i den första öppningen som saknar den
 export function dorrSpot(s: State, k: DorrSlag) {

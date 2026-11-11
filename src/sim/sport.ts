@@ -19,7 +19,11 @@ import { snoPaMarken } from './vader';
 import { balans } from './balans';
 import { notis } from './notiser';
 import { tal } from './ord';
-import { stridIByn } from './strid';
+import { STRID } from './strid';
+import { kartStridBorja } from './kartstrid';
+import { EFTER } from './efterstrid';
+// kampen i brottningen är slut: ringen är ledig igen (steg 10.1.7)
+EFTER.brottning = s => { if (s.sport) s.sport.brott = s.now; };
 import { HOUR, HOUR_S, MIN, SEC, Person, Skill, State, Task } from './typer';
 
 export interface SportDef {
@@ -189,8 +193,10 @@ export function sportSteg(s: State, p: Person, t: Task, dtSec: number) {
   if (m.k === 'brottning' && s.now >= (m.brott ?? 0) && rnd(s, 'sport', p) < SPORT.brottTakt * h) {
     const mot = har.filter(q => q !== p && q.health > 0);
     if (mot.length) {
-      const q = mot[Math.floor(rnd(s, 'sport', p) * mot.length)], st = stridIByn(s, 'brottning', [[p], [q]], 'i brottningen');
-      m.brott = s.now + Math.max(1, st.slut!.t) * SEC; m.brottare = [p.id, q.id]; count(s, 'brottningar');
+      // kampen sker på kartan och tar tid (steg 10.1.7): ringen är upptagen tills den är slut (EFTER.brottning)
+      const q = mot[Math.floor(rnd(s, 'sport', p) * mot.length)];
+      kartStridBorja(s, 'brottning', [[p], [q]], 'i brottningen', { typ: 'brottning' });
+      m.brott = s.now + (STRID.maxTid + 60) * SEC; m.brottare = [p.id, q.id]; count(s, 'brottningar');
     }
   }
   ovning(p, d.skill, SPORT.ovning * h);

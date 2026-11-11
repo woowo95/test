@@ -4,6 +4,9 @@
 // satsen är klar silas den och hälls upp i stora lerkrukor, och karet är tomt igen. Vinet och ölet är rader i VATSKOR
 // (vatskor.ts) och står i krukorna, där vinet blir bättre med tiden (vinKvalitet). Registret BRYGD har en rad per dryck.
 import { balans } from './balans';
+import { isFood } from './saker';
+import { foodDays } from './ekonomi';
+import { buffert, villHaAv } from './forradsmal';
 import { count, forstaGang, living, log } from './folk';
 import { Station, isKlar, stationerOf } from './stationer';
 import { DAY, HOUR, Person, State } from './typer';
@@ -17,7 +20,6 @@ export const BRYGG = balans('brygg', {
   prepMin: 3, // så många minuter tar det att lägga en sats i karet
   tappMin: 2, // och att sila och hälla upp den i krukorna
   kall: 5, // under så många grader stannar jäsningen, utom inne i ett hus
-  vill: 10, // byn vill ha så mycket av varje dryck i krukorna
   maltKorn: 4, // så mycket korn blöts och torkas till lika mycket malt (steg 9.6.13), på TORK.maltDygn dygn
   maltMin: 2, // och så många minuters arbete
   surForsta: 0.3, // den första satsen öl i ett kar blir sur med den här chansen
@@ -47,13 +49,15 @@ export function bryggVal(s: State, p: Person): { act: 'brygga' | 'tappa' | 'malt
     if (kar.sats) continue;
     for (const v of BRYGD_LIST) {
       const d = BRYGD[v];
-      if (!knows(p, d.tek) || vatskaAv(s, v) >= BRYGG.vill || (d.vatten && !fylldSack(s))) continue;
-      if (Object.entries(d.av).every(([k, n]) => getable(s, p, k) >= n)) return { act: 'brygga', kar, v };
+      if (!knows(p, d.tek) || vatskaAv(s, v) >= villHaAv(s, v) || (d.vatten && !fylldSack(s))) continue; // så mycket som dricks (steg 10.2.12)
+      // det som också är mat (bären) har sitt värde som mat i förrådsmålen (steg 10.2.1): det bryggs bara av när maten räcker
+      // över bufferten, så att vinet ärver bristen på mat
+      if (Object.entries(d.av).every(([k, n]) => getable(s, p, k) >= n && !(isFood(k) && foodDays(s) < buffert(s, 'mat')))) return { act: 'brygga', kar, v };
     }
   }
   // maltet (steg 9.6.13): kornet blöts och hängs på en torkställning med plats, när ölet saknar malt
   const tork = torkarna(s).find(t => TORK.rymd - (t.tork ?? []).reduce((n, q) => n + q.n, 0) >= BRYGG.maltKorn), kar0 = karen(s)[0];
-  if (kar0 && tork && knows(p, BRYGD.ol.tek) && vatskaAv(s, 'ol') < BRYGG.vill && getable(s, p, 'malt') < BRYGD.ol.av.malt && !maltHanger(s) && getable(s, p, 'korn') - (RATT.spara.korn ?? 0) >= BRYGG.maltKorn) return { act: 'malta', kar: tork, v: 'ol' };
+  if (kar0 && tork && knows(p, BRYGD.ol.tek) && vatskaAv(s, 'ol') < villHaAv(s, 'ol') && getable(s, p, 'malt') < BRYGD.ol.av.malt && !maltHanger(s) && getable(s, p, 'korn') - (RATT.spara.korn ?? 0) >= BRYGG.maltKorn) return { act: 'malta', kar: tork, v: 'ol' };
   return undefined;
 }
 const maltHanger = (s: State) => torkarna(s).some(t => (t.tork ?? []).some(q => q.k === MALTKORN));

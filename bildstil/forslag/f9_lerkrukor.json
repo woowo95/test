@@ -1,0 +1,177 @@
+{
+ "kort": "f9_lerkrukor",
+ "namn": "Lerkrukans tre storlekar",
+ "slag": null,
+ "vad": "Steg 9.4.11: lerkrukan är ett ting i tre storlekar, av 1, 2 och 4 lera, som byggs upp för hand, torkar och bränns i elden. Den lilla är kokkärlet för teet, den mellanstora bär vatten och saft och den stora rymmer vin, öl och tjära. Här liten, mellanstor och stor bredvid varandra.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "kommentar": "Den största lerkrukan är exakt samma bild som vi har i dag (den stora lerkrukan i bilden med behållarna), oförändrad. Gör den lilla och den mellanstora mindre än den, i samma stil. Gör dem symmetriska. En person står bredvid för skala.",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "lerkruka_liten",
+     "rader": [
+      "..rrrr..",
+      ".rurrtr.",
+      "ruttttsr",
+      "rKKKKJJr",
+      "ruttsssr",
+      ".rtsssr.",
+      "..rrrr.."
+     ]
+    },
+    {
+     "namn": "lerkruka_mellan",
+     "rader": [
+      "..rrrrrr..",
+      "..rurrsr..",
+      "rrrrusrrrr",
+      "r.ruttsr.r",
+      "rrutttssrr",
+      "ruttttsssr",
+      "rLKKKKKJJr",
+      "rtuttssssr",
+      ".rttssssr.",
+      "..rtsssr..",
+      "...rrrr..."
+     ]
+    },
+    {
+     "namn": "lerkruka_stor",
+     "rader": [
+      "...rrrrrrrr...",
+      "...ruutttsr...",
+      "....rutssr....",
+      ".rrrrutssrrrr.",
+      "rur.rutssr.rsr",
+      "rtruttttsssrsr",
+      "rruuttttttssrr",
+      "ruttttttttsssr",
+      "rLKKKKKKKKKJIr",
+      "rutJttJttJtssr",
+      "rLKKKKKKKKJJIr",
+      ".rtttttttsssr.",
+      "..rtttttsssr..",
+      "...rtttsssr...",
+      "....rtsssr....",
+      "...rrrrrrrr..."
+     ]
+    }
+   ],
+   "anteckning": "Krukorna står upprätt på marken och ses snett ovanifrån, som i spelet. Mynningen syns därför som en ring med mörk öppning upptill, och buken som rundning med ljuset uppe till vänster. Den stora lerkrukan, 14 × 16 punkter, är tänkt som samma bild som i dag: hals, krage, två öron och två senapsband. Bilden är dock ritad om efter förlagan, så den behöver jämföras punkt för punkt med spelets bild innan den ersätter den. Den mellanstora (10 × 11) bär vatten och saft. Den har små öron att lyfta i och ett band. Den lilla (8 × 7) är kokkärlet för teet: låg, bred och utan hals och öron, så att den kan stå i härden. Alla tre har samma kontur i rost0, samma rostbuk och samma senapsband, och varje form är spegelsymmetrisk; bara ljuset skiljer sidorna åt. Personen (14 × 20) står bredvid för skala. Den stora krukan når till midjan, den mellanstora till knäet och den lilla är som en fot. Granskningen: Granskat mot reglerna. Storlekarna stämmer: 8×7, 10×11 och 14×16 punkter ger ungefär ytorna 1:2:4, som 1, 2 och 4 lera. Den stora når kolonisten till bröstet, vilket passar ett förrådskärl. Formerna är spegelsymmetriska, och bara ljuset och kornet skiljer sidorna åt (ljust till vänster, mörkt till höger). Konturen är rost0. Krukorna ses snett uppifrån med mynningen som en mörk öppning innanför kanten. Rosten och senapsbandet lyser tydligt mot det olivgröna gräset. Rättat: på den mellanstora och den stora krukan svävade öronen fritt, eftersom deras övre ände inte nådde halsen. På den mellanstora går örat nu in i halsen på rad 3, på den stora på rad 4. Hålet i öglan är kvar, så att gräset syns igenom. Kolonisten är oförändrad som skalreferens.",
+   "ide": ""
+  },
+  {
+   "bilder": [
+    {
+     "namn": "lerkruka_liten",
+     "rader": [
+      ".rrrrrr.",
+      "ruEEEEsr",
+      "rtuttssr",
+      "rttttssr",
+      "rKKKJJIr",
+      ".rtsssr.",
+      "..rrrr.."
+     ]
+    },
+    {
+     "namn": "lerkruka_mellan",
+     "rader": [
+      "...rrrrrr...",
+      "..ruEEEEsr..",
+      "...rutssr...",
+      ".rr.rtsr.rr.",
+      "r.rtuttssr.r",
+      ".rtutttsssr.",
+      "rtutttttsssr",
+      "rKLKKKJJJJIr",
+      ".rtttttsssr.",
+      "..rtttsssr..",
+      "...rssssr...",
+      "...rrrrrr..."
+     ]
+    },
+    {
+     "namn": "lerkruka_stor",
+     "rader": [
+      "...rrrrrrrr...",
+      "...ruutttsr...",
+      "....rutssr....",
+      ".rrrrutssrrrr.",
+      "rur.rutssr.rsr",
+      "rtruttttsssrsr",
+      "rruuttttttssrr",
+      "ruttttttttsssr",
+      "rLKKKKKKKKKJIr",
+      "rutJttJttJtssr",
+      "rLKKKKKKKKJJIr",
+      ".rtttttttsssr.",
+      "..rtttttsssr..",
+      "...rtttsssr...",
+      "....rtsssr....",
+      "...rrrrrrrr..."
+     ]
+    }
+   ],
+   "anteckning": "Krukorna står på marken med mynningen uppåt och ses snett ovanifrån, så mynningens rand syns som en ljus kant överst. Den stora lerkrukan är behållarbilden som redan finns i spelet och ska användas oförändrad: om raderna här skiljer sig från den godkända bilden är det den godkända som gäller. Den mellanstora (12 × 12) och den lilla (8 × 7) är ritade i samma stil: rost0-kontur, rost2 och rost1 i korn, en rost3-glans uppe till vänster och ett senapsband. De är spegelsymmetriska, och bara ljuset skiljer sidorna åt. Den mellanstora vattenkrukan har två små öron så att den går att bära. Den lilla kokkrukan för teet är låg och rund och saknar öron, eftersom den står i glöden. Bredvid dem står spelets vanliga person (14 × 20) för skala; den bilden är oförändrad och finns inte med här. Granskningen: Storlekarna mot kolonisten (14 × 20) stämmer: den lilla är 8 × 7, den mellanstora 12 × 12 och den stora 16 × 16, ungefär till midjan. Silhuetterna och hänklarna är spegelsymmetriska, konturen är rost0 och de rostiga och senapsgula tonerna syns tydligt mot gräset. Det som behövde rättas var vinkeln. Mynningen var ritad som en platt, rak överkant, alltså en sidovy, så man såg aldrig ner i krukan. Jag har ritat om toppen på alla tre så att man ser snett ner i mynningen. Krukans öppning är en mörk insida i jord0, med ljus kant till vänster (u) och mörk till höger (s). Den lilla har nu en vid mynning som ett kokkärl. På den mellanstora och den stora har jag gjort läppen utsvängd och halsen en punkt kortare, så att höjden är densamma och hänklarna fortfarande fäster vid halsen. Kroppen, banden och glansen är oförändrade.",
+   "ide": ""
+  },
+  {
+   "bilder": [
+    {
+     "namn": "lerkruka_liten",
+     "rader": [
+      ".rrrrr.",
+      "rtlllsr",
+      ".rtssr.",
+      "ruttssr",
+      "rKKKJJr",
+      "rttsssr",
+      ".rtssr.",
+      "..rrr.."
+     ]
+    },
+    {
+     "namn": "lerkruka_mellan",
+     "rader": [
+      "...rrrr...",
+      "..rtllsr..",
+      "...rtsr...",
+      "..rutssr..",
+      ".ruttttsr.",
+      "rutttttssr",
+      "rKKKKKKJJr",
+      "rttttttssr",
+      ".rttttssr.",
+      "..rtsssr..",
+      "...rrrr..."
+     ]
+    },
+    {
+     "namn": "lerkruka_stor",
+     "rader": [
+      "...rrrrrrrr...",
+      "...ruutttsr...",
+      "....rutssr....",
+      ".rrrrutssrrrr.",
+      "rur.rutssr.rsr",
+      "rtruttttsssrsr",
+      "rruuttttttssrr",
+      "ruttttttttsssr",
+      "rLKKKKKKKKKJIr",
+      "rutJttJttJtssr",
+      "rLKKKKKKKKJJIr",
+      ".rtttttttsssr.",
+      "..rtttttsssr..",
+      "...rtttsssr...",
+      "....rtsssr....",
+      "...rrrrrrrr..."
+     ]
+    }
+   ],
+   "anteckning": "Krukorna står på marken med öppningen uppåt och ses snett uppifrån: mynningen syns som en smal mörk oval överst, och kroppen syns framifrån med ljuset från vänster. Den stora (14 × 15) ska vara exakt dagens bild av den stora lerkrukan, oförändrad. Raderna här är bara min avskrift av den, så i spelet används den befintliga bilden. Den mellanstora (10 × 11, vattnet och saften) och den lilla (7 × 8, tekokaren) är ritade i samma stil: rostkropp med rost0 som kontur, ett senapsband och en mörk mynning. De är mindre och spegelsymmetriska; bara ljuset och kornet skiljer sidorna åt. Handtagen har bara den stora, som bärs med två händer. Den mellanstora bärs i famnen och den lilla står i elden. En person på 14 × 20 står bredvid för skala: den stora når honom till bröstet, den mellanstora till knät och den lilla till vristen. Granskningen: Granskat lerkrukans tre storlekar. Storlekarna passar mot kolonisten (14 × 20): den lilla är 7 × 8, den mellanstora 10 × 11 och den stora 14 × 15, och ytan växer ungefär 1 : 2 : 4 som leran. Alla tre ses snett uppifrån med mynningen som en mörk öppning. Konturen är rost0, krukorna är ljusare än gräset och syns tydligt, och ljuset faller uppifrån vänster. En sak rättades: på den stora krukan var handtagets nedre fäste asymmetriskt i rad 7. Vänster sida hade konturen rr, men höger sida hade bara s r. Raden är nu .rruttttttsrr., så att formen speglas och bara tonen skiljer sidorna åt. Allt annat är oförändrat.",
+   "ide": ""
+  }
+ ]
+}

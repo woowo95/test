@@ -67,6 +67,7 @@ export const LAGER = balans('lager', {
   barGammal: 0.75, barSjuk: 0.6, // ... en gammal (över ALDER.gammal) och en sjuk så här stor del
   // vad som bärs in först (haulJob): poängen är avståndet från lägret, plus detta för det som inte ligger på marken; lägst poäng först
   barBredvid: 50, // saker bredvid lagret när det nu finns plats i det
+  svaltOmvag: 30, // vid svält väger det som inte är mat som om det låg så här många rutor längre bort (steg 10.2.6)
   barFullt: 8, // när förrådet är fullt bärs bara det som ligger längre bort från lägret än så här många rutor (det man bär in hamnar ändå utanför)
   barSortera: 100, // saker i fel lagerplats (maten bland materialet)
   barNarmare: 150, // saker som kan flyttas till en lagerplats närmare elden
@@ -1098,12 +1099,13 @@ export function haulJob(s: State, near?: number, baraMat = false) {
   const taken = paVagAttBara(s);
   // finns det slaget på rutan ännu? Frågas bara för de rader som klarat de andra villkoren (stackarna, sedan redskapen)
   const finns = (x: number, y: number, k: string) => stacksOf(s).some(q => q.x === x && q.y === y && q.k === k) || tingOf(s).some(t => ligger(t) && t.x === x && t.y === y && t.k === k);
-  let best: { x: number; y: number; why: string } | undefined, bs = Infinity;
+  let best: { x: number; y: number; why: string; k: string } | undefined, bs = Infinity;
   for (const a of barLista(s)) {
-    if (a.sc >= bs || taken.has(key(a.x, a.y)) || baraMat && !isFood(a.k) || near !== undefined && a.d > near) continue;
+    const sc = a.sc + (baraMat && !isFood(a.k) ? LAGER.svaltOmvag : 0); // vid svält bärs maten först (steg 10.2.6)
+    if (sc >= bs || taken.has(key(a.x, a.y)) || near !== undefined && a.d > near) continue;
     if (s.flod && (iVattnetNu(s, key(a.x, a.y)) || !nasIFloden(s, key(a.x, a.y)))) continue; // inte det som ligger i översvämningen eller bakom den (flod.ts)
     if (!finns(a.x, a.y, a.k)) continue; // det har burits sedan listan räknades
-    bs = a.sc; best = { x: a.x + 0.5, y: a.y + 0.5, why: a.why };
+    bs = sc; best = { x: a.x + 0.5, y: a.y + 0.5, why: a.why, k: a.k };
   }
   return best;
 }

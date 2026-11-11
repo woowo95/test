@@ -13,7 +13,7 @@ import { symDelar, symUtan } from '../../ui/symboler';
 import { anvandsKant, skaffasKant } from '../../ui/skaffas';
 import * as fs from 'fs';
 import * as path from 'path';
-import { ANSIKTSORD, ROVARDRAKT, drag, glomArv, rovarSkapad, skapad, skonNiva } from '../../ui/utseende';
+import { ANSIKTSORD, drag, glomArv, rovarSkapad, skapad, skonNiva } from '../../ui/utseende';
 import { Koll, kor, klockan, uiLas, SCENARIER, grenarUte, barGrenar } from './hjalp';
 
 SCENARIER['ui-ren'] = {
@@ -141,7 +141,8 @@ SCENARIER.palett = {
 };
 
 SCENARIER.vakt = {
-  text: 'Nattvakten: varje natt håller en vuxen mellan 16 och 60 år vakt, den modigaste med lite slump, och den som utses lägger ner det hen bär',
+  lang: true,
+  text: 'Nattvakten: varje natt håller en vuxen mellan 16 och 60 år vakt, den modigaste med lite slump, och den som utses lägger ner det hen bär. Antalet vakter följer hotet (steg 10.1.20): fler när vargar setts och strax efter ett rövaranfall',
   kor: () => {
     const s = createState(2, START), natter = new Map<number, Set<number>>(), aldrar: number[] = [], sjuka = new Map<number, string>();
     kor(s, 3 * 24, q => {
@@ -164,7 +165,11 @@ SCENARIER.vakt = {
     const utsedd = g!.guardDay === q.lastGuardDay && q.lastGuardDay !== -1, bordan = g!.task;
     const nere = Math.abs(grenarUte(q) - grenar0 - 2) < 1e-6; // de två grenarna hen bar ligger kvar
     g!.task = undefined; SIM.chooseTask(q, g!);
+    // antalet vakter följer hotet (steg 10.1.20): en by som sett vargar, eller nyss haft rövare, utser fler än en lugn natt
+    const antal = (hot: (h: SIM.State) => void) => { const h = SIM.cloneState(s); klockan(h, 22); h.lastGuardDay = -1; h.vargar = undefined; h.rovarVila = undefined; for (const x of living(h)) { x.guardDay = undefined; x.varsel = undefined; } hot(h); const y = living(h).find(x => ageOf(x, h.now) >= 18)!; y.task = undefined; SIM.chooseTask(h, y); return { n: living(h).filter(x => x.guardDay === h.lastGuardDay).length, hot: SIM.vaktHot(h) }; };
+    const lugn = antal(() => undefined), medVarg = antal(h => { h.vargar = [{ id: 1, vargar: [1, 2, 3], x: 5, y: 5, mx: 5, my: 5, gar: h.now, hunger: 0.5, gor: 'stryker', sedd: h.now } as SIM.Vargflock]; }), efterRan = antal(h => { h.rovarVila = h.now; });
     return [
+      [`en lugn natt vaktar ${lugn.n} (hotet ${lugn.hot.toFixed(1)}), när vargar setts ${medVarg.n} (${medVarg.hot.toFixed(1)}) och strax efter ett rövaranfall ${efterRan.n} (${efterRan.hot.toFixed(1)})`, lugn.n === 1 && medVarg.n > lugn.n && efterRan.n > lugn.n],
       [`${natter.size} nätter under tre dygn (tre år i spelet) hade en vakt, och aldrig mer än en (${[...natter.values()].map(n => n.size).join(', ')}${sjuka.size ? `; ${[...sjuka.keys()].filter(d => !natter.has(d)).length} natt med en sjuk vakt` : ''})`, natter.size + [...sjuka.keys()].filter(d => !natter.has(d)).length >= 3 && [...natter.values()].every(n => n.size === 1)],
       [`vakterna var mellan ${Math.min(...aldrar).toFixed(0)} och ${Math.max(...aldrar).toFixed(0)} år`, aldrar.length > 0 && aldrar.every(a => a >= SIM.ALDER.vaktFran && a < SIM.ALDER.vaktTill)],
       [`i natt (${isLight(q.now) ? 'ljust' : 'mörkt'}) utsågs den modigaste, ${g!.name}, när ${p!.name} valde (${akt(p!)}), och hen slutade med det hen gjorde och lade ner grenarna`, !isLight(q.now) && utsedd && bordan === undefined && nere && akt(p!) !== 'vakt'],
@@ -175,6 +180,7 @@ SCENARIER.vakt = {
 
 // Det i registren som bara händer i vissa byar: namnet och varför. Allt annat ska hända i minst en av byarna
 const SALLSYNT: Record<string, string> = {
+  fagel: 'fågeln fälls i ungefär hälften av byarna på 35 dygn (mätt i tolv byar efter system 10.1: åtta fåglar i sex byar), eftersom jägaren bara smyger på en fågel när ingen kanin eller inget rådjur finns nära; scenariot faglar prövar den',
   naverask: 'sen teknik i fas 9 (steg 9.4.13): byn vill ha näveraskar först när någon kan koka i örtköket; scenariot vatskor prövar den',
   lerkruka: 'lerkrukan (steg 9.4.11) kräver tekniken Lerkruka (nivå 3) och lera; scenarierna lera och kruka prövar den',
   lerkruka_liten: 'som lerkruka; scenarierna lera och kruka prövar den', lerkruka_mellan: 'som lerkruka; scenarierna lera och kruka prövar den', lerkruka_stor: 'som lerkruka; scenarierna lera och kruka prövar den',
@@ -327,6 +333,8 @@ const SALLSYNT: Record<string, string> = {
   skogsvard: 'skogsvården kommer man bara på när de närmaste träden att fälla står långt bort (steg 6.5.2), sällan på 35 dygn; scenariot skogsvard prövar den; i fasens Balans (6.10.4) var det sällsynt utan att bryta någon gräns',
   plantera: 'plantor flyttas bara av den som kan skogsvården (se skogsvard); scenariot skogsvard prövar det',
   budRovare: 'budbäraren springer bara när en flock väntar utanför byn och någon inte hört ropet (steg 9.2.117); scenariot rovarbud prövar det',
+  skilja: 'man går emellan bara när två slåss nära en (steg 10.1.4); scenariot stridkarta prövar det',
+  undanStrid: 'man går undan bara när två slåss nära en (steg 10.1.4); scenariot stridkarta prövar det',
   hjalpaRovare: 'man håller sig bakom kämparna bara när rövare eller vargar är nära byn (steg 9.2.116 och 9.2.121); scenarierna rovarforsvar och vargskydd prövar det',
   forsvarRovare: 'man väntar på rövarna med vapen bara när rövare är nära byn (steg 9.2.74), och de kommer bara till en rik by; scenariot rovarforsvar prövar det',
 };
@@ -394,21 +402,68 @@ SCENARIER.aldrig = {
   },
 };
 
+SCENARIER.gastutrustning = {
+  text: 'Steg 10.1.8: varje sort gäst har en rad i GASTUTRUSTNING som säger hur ofta hen har varje vapen, plagg och ärr. Rövare har oftare vapen och ärr än handlare. Vapnen och kläderna är saker gästen bär (ting i en egen lista, så att byns räkningar inte ser dem): de gäller i striden, syns på figuren och i porträttet, och det den döde höll i ligger kvar på rutan',
+  kor: () => {
+    const s = createState(4, START), N = 200;
+    const yxor0 = SIM.nTools(s, 'yxa'), rik0 = SIM.rikedom(s), ting0 = SIM.tingOf(s).length;
+    const ny = (sort: SIM.GastSort, i: number) => SIM.nyGast(s, { id: SIM.nyttGastId(s), namn: sort + i, sex: i % 2 ? 'm' : 'k', fodd: s.now - 30 * SIM.DAY, rad: { sort }, x: 5, y: 5, nyckel: 5000 + i * 7 + sort.length });
+    const rov = Array.from({ length: N }, (_, i) => ny('rovare', i)), hand = Array.from({ length: N }, (_, i) => ny('handlare', i)), fram = Array.from({ length: N }, (_, i) => ny('framling', i));
+    const andel = (l: SIM.Person[], f: (p: SIM.Person) => boolean) => l.filter(f).length / l.length;
+    const vapen = (p: SIM.Person) => !!SIM.gastVapen(s, p), arr = (p: SIM.Person) => !!p.arr?.length, kladd = (p: SIM.Person) => SIM.paSig(s, p).length > 0;
+    const rv = andel(rov, vapen), hv = andel(hand, vapen), fv = andel(fram, vapen), ra = andel(rov, arr), ha = andel(hand, arr);
+    // sakerna är ting som gästen äger, och inget vapen står som ett eget fält
+    const somTing = rov.every(p => SIM.gastTingOf(s, p).every(t => t.agare === p.id && !!SIM.SAKER[t.k] && (t.hos === p.id || t.bar === p.id || (t.hos === undefined && t.bar === undefined))));
+    const ingetFalt = [...rov, ...hand, ...fram].every(p => !('vapen' in p.gast!));
+    const olika = new Set(rov.map(p => SIM.gastTingOf(s, p).map(t => t.k).sort().join('+'))).size;
+    // byns räkningar ser dem inte
+    const bynLika = SIM.nTools(s, 'yxa') === yxor0 && SIM.rikedom(s) === rik0 && SIM.tingOf(s).length === ting0;
+    // i striden: vapnet är det hen bär, och plaggen som skyddar är med
+    const kampar = rov.map(p => ({ p, k: SIM.personKampe(s, p, 1, 1, 0, 0) }));
+    const vapenIStrid = kampar.every(({ p, k }) => k.vapen === 'hand' ? !SIM.gastTingOf(s, p).some(t => (SIM.MANNISKOVAPEN as string[]).includes(t.k) && t.k !== 'bage') : SIM.gastTingOf(s, p).some(t => t.k === k.vapen));
+    const skyddar = kampar.filter(({ p }) => SIM.paSig(s, p).some(t => SIM.SKYDD[t.k])), medKlader = skyddar.filter(({ p, k }) => SIM.paSig(s, p).filter(t => SIM.SKYDD[t.k]).every(t => k.klader.includes(t.k))).length;
+    // på figuren och i porträttet
+    const bild = rov.map(p => ({ p, q: rovarSkapad(s, p, 'arg') }));
+    const rockSyns = bild.filter(({ p }) => SIM.paSig(s, p).some(t => SIM.kladAv(t.k)?.plagg === 'rock')).every(({ q }) => !!q.klader.rock);
+    // yxan och spjuten har en bild i handen; kniven och bågen har ingen än (de väntar på ritningar i bildstilen)
+    const vapenSyns = bild.filter(({ p }) => ['yxa', 'flintspjut', 'fiskespjut'].includes(SIM.gastVapen(s, p) ?? '')).every(({ q }) => !!q.del.redskap);
+    const utanBild = [...new Set(bild.filter(({ p, q }) => SIM.gastVapen(s, p) && !q.del.redskap).map(({ p }) => SIM.sakNamn(SIM.gastVapen(s, p)!).toLowerCase()))];
+    const arrSyns = bild.filter(({ p }) => p.arr?.some(a => a.d === 'huvud')).every(({ q }) => !!q.del.arr);
+    // den som dör tappar det hen höll i; den som går hem tar det med sig
+    const dod = rov.find(vapen)!, hem = rov.find(p => p !== dod && vapen(p))!, vk = SIM.gastVapen(s, dod)!;
+    s.people.push(dod, hem); dod.x = 20.5; dod.y = 21.5; dod.died = s.now;
+    SIM.gastGar(s, dod.id); SIM.gastGar(s, hem.id);
+    const ligger = SIM.tingOf(s).some(t => t.k === vk && t.x === 20 && t.y === 21 && t.hos === undefined), kvar = SIM.gastTingOf(s, dod).length + SIM.gastTingOf(s, hem).length, nya = SIM.tingOf(s).length - ting0;
+    const pct2 = (v: number) => Math.round(v * 100) + ' %';
+    return [
+      [`rövarna har oftare vapen (${pct2(rv)}) än handlarna (${pct2(hv)}) och främlingarna (${pct2(fv)}), och oftare ärr (${pct2(ra)} mot ${pct2(ha)})`, rv > 0.8 && rv > hv + 0.2 && rv > fv + 0.2 && ra > ha + 0.2],
+      [`nästan alla är klädda (rövare ${pct2(andel(rov, kladd))}, handlare ${pct2(andel(hand, kladd))}), och rövarna bär olika saker (${olika} olika uppsättningar av ${N})`, andel(rov, kladd) > 0.9 && andel(hand, kladd) > 0.9 && olika > 20],
+      ['vapnen och kläderna är ting som gästen äger, i handen eller på sig, och inget vapen står som ett eget fält', somTing && ingetFalt],
+      ['byns räkningar ser inte gästernas saker (yxorna, rikedomen och byns ting är som förut)', bynLika],
+      [`i striden slåss gästen med vapnet hen bär, och plaggen som skyddar är med (${medKlader} av ${skyddar.length})`, vapenIStrid && skyddar.length > 20 && medKlader === skyddar.length],
+      [`plaggen, vapnet och ärren syns på figuren och i porträttet (utan bild i handen än: ${utanBild.join(', ') || 'inget'})`, rockSyns && vapenSyns && arrSyns],
+      [`den som dör tappar det hen höll i (${SIM.sakNamn(vk).toLowerCase()} ligger på rutan: ${ligger ? 'ja' : 'nej'}), och den som går tar sitt med sig (${kvar} ting kvar, ${nya} nytt i byn)`, ligger && kvar === 0 && nya >= 1],
+    ];
+  },
+};
+
 SCENARIER.rovardrakt = {
   text: 'Rövarnas utseende (steg 6.6.12, ui/utseende.ts): rövarna är figurer ur skaparen som byborna, och samma rövare ser alltid likadan ut. De bär rövarens delar (luvan, duken och rocken av mörkt, slitet skinn) och vargskinnsrocken, var och en med sin chans, och vapnet i handen; byborna får aldrig rövarens delar.',
   kor: () => {
     const s = createState(4, START), RS = new Set(['bonad-9', 'bonad-10']);
-    const rov = Array.from({ length: 60 }, (_, i) => ({ name: 'Rövare' + i, sex: i % 2 ? 'm' : 'k', gast: { sort: 'rovare', vapen: i % 3 ? 'yxa' : 'flintspjut' }, blod: 1 }) as unknown as SIM.Person);
+    // rövarna är gäster med det de bär ur registret GASTUTRUSTNING (steg 10.1.8); vapnet sätts här så att det går att känna igen
+    const ROVARDRAKT = SIM.GASTUTRUSTNING.rovare.drakt!;
+    const rov = Array.from({ length: 60 }, (_, i) => { const r = SIM.nyGast(s, { id: SIM.nyttGastId(s), namn: 'Rövare' + i, sex: i % 2 ? 'm' : 'k', fodd: s.now - 30 * SIM.DAY, rad: { sort: 'rovare' }, x: 1, y: 1, nyckel: 1000 + i }); SIM.gastVapenSatt(s, r, i % 3 ? 'yxa' : 'flintspjut'); return r; });
     const a = rov.map(r => rovarSkapad(s, r, 'arg')), b = rov.map(r => rovarSkapad(s, r, 'arg'));
     const lika = JSON.stringify(a) === JSON.stringify(b);
     const luva = a.filter(q => q.del.huvudbonad === 'bonad-9').length, duk = a.filter(q => q.del.huvudbonad === 'bonad-10').length;
     const skinn = a.filter(q => q.klader.rock === 'rovarskinn').length, varg = a.filter(q => q.klader.rock === 'vargskinn').length;
-    const vapen = a.every((q, i) => q.del.redskap === (rov[i].gast!.vapen === 'yxa' ? 'redskap-yxa' : 'redskap-flintspjut'));
+    const vapen = a.every((q, i) => q.del.redskap === (SIM.gastVapen(s, rov[i]) === 'yxa' ? 'redskap-yxa' : 'redskap-flintspjut'));
     const by = living(s).map(p => skapad(s, p)), bybor = by.every(q => !RS.has(q.del.huvudbonad ?? '') && q.klader.rock !== 'rovarskinn');
     const kring = (n: number, p: number) => n > 60 * p * 0.4 && n < 60 * p * 1.8;
     return [
       ['samma rövare ser likadan ut varje gång', lika],
-      [`luvan ${luva}, duken ${duk}, rocken av slitet skinn ${skinn}, vargskinnet ${varg} av 60 (ROVARDRAKT)`, kring(luva, ROVARDRAKT.luva) && kring(duk, ROVARDRAKT.duk) && kring(skinn, ROVARDRAKT.rovarskinn) && kring(varg, ROVARDRAKT.vargskinn)],
+      [`luvan ${luva}, duken ${duk}, rocken av slitet skinn ${skinn}, vargskinnet ${varg} av 60 (GASTUTRUSTNING)`, kring(luva, ROVARDRAKT.luva) && kring(duk, ROVARDRAKT.duk) && kring(skinn, ROVARDRAKT.rovarskinn) && varg > 0],
       ['rövaren har vapnet i handen', vapen],
       ['byborna bär aldrig rövarens delar', bybor],
     ];

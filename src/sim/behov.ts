@@ -194,19 +194,23 @@ function ran(s: State, p: Person, b: Behov, dtSec: number) {
     && Math.hypot(q.x - p.x, q.y - p.y) <= DELA.ranNara && ownFor(s, q, b) >= b.minst).sort((a, c) => op(a) - op(c) || a.id - c.id)[0];
   if (!offer) return false;
   count(s, 'ran');
-  const vann = ranStrid!(s, p, offer, `${p.name} ville ta ${b.namn} av ${offer.name}`);
-  if (!alive(p)) return true;
-  handelse(s, p, 'ranVald', offer, b.namn);
+  handelse(s, p, 'ranVald', offer, b.namn); // de som står nära ser våldet när det börjar
+  ranStrid!(s, p, offer, `${p.name} ville ta ${b.namn} av ${offer.name}`, b.id); // slagsmålet sker på kartan och tar tid (steg 10.1.7): resten i ranEfter
+  return true;
+}
+// när slagsmålet i rånet är slut: de som såg det minns det, och rånaren tar saken om hen vann
+export function ranEfter(s: State, pid: number, offerId: number, behov: string, vann: boolean) {
+  const p = byId(s, pid), offer = byId(s, offerId), b = BEHOV().find(x => x.id === behov);
+  if (!p || !offer || !b || !alive(p)) return;
   handelse(s, p, vann ? 'ran' : 'ranForsok', offer, b.namn);
-  if (!vann || !alive(offer)) return true;
+  if (!vann || !alive(offer) || ownFor(s, offer, b) < b.minst) return; // det fanns kvar att ta
   count(s, 'ranVann'); livet(s, p, 'ran');
   b.anvand(s, p, offer);
   log(s, `${p.name} tog ${b.namn} av ${offer.name} med våld.`, 'rel', [p.id, offer.id]);
   upplev(s, offer, 'ranad', p.name); // steg 4.1.1.2: ett rån formar mer än en stöld
-  return true;
 }
-// slagsmålet i rånet: strid.ts lägger in det (behov.ts laddas före striden), ger true om rånaren vann
-let ranStrid: ((s: State, p: Person, offer: Person, orsak: string) => boolean) | undefined;
+// slagsmålet i rånet: kartstrid.ts lägger in det (behov.ts laddas före striden) och börjar striden på kartan
+let ranStrid: ((s: State, p: Person, offer: Person, orsak: string, behov: string) => void) | undefined;
 export const setRanStrid = (f: typeof ranStrid) => { ranStrid = f; };
 // p är så nära döden av bristen att hen stjäl (victimOf)
 const desperat = (s: State, p: Person, b: Behov) => { const emp = stat(p, 'empati', s.now); return emp < DELA.stjalAldrig && b.fara(s, p) > emp / DELA.stjalAldrig; };
@@ -337,7 +341,7 @@ export const getable = (s: State, p: Person, k: string) => aldrigStjal(s, p) ? m
 // receptet till ett projekt när p kunde göra det om materialet eller redskapet fanns (steg 6.2.19): materialet, redskapet
 // som behövs och hur mycket av varje som sparas (annars sparas() i forradsmal.ts)
 export interface Recept { av: Record<string, number>; verktyg?: string; spar?: (m: string) => number }
-export const saknatAv = (s: State, p: Person, av: Record<string, number>, extra = (_m: string) => sparas(_m)) => Object.entries(av).find(([m, n]) => getable(s, p, m) < n + extra(m) - 1e-9)?.[0];
+export const saknatAv = (s: State, p: Person, av: Record<string, number>, extra = (_m: string) => sparas(s, _m)) => Object.entries(av).find(([m, n]) => getable(s, p, m) < n + extra(m) - 1e-9)?.[0];
 // materialet till ett redskap efter receptet (saker.ts: skaffa.av), till ens eget arbete: hur mycket av varje som togs
 export function takeRecipe(s: State, p: Person, k: string) {
   const av: Record<string, number> = {};

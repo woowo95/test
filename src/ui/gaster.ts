@@ -1,9 +1,9 @@
-import { hp, gastLever, TEK, HANDEL, HANDLAR_UTR, VAPEN, byId, gillar, handlarPerson, foddNar, gastLiv, gastNyckel, handlarFas, handlarPlats, rovarPlats, rovarna, klanById, grundvarde, handlarVarde, kgOf, kortTal, rymmer, sakNamn } from '../sim';
+import { kartKampe } from './stridbild';
+import { hp, gastLever, gastTingOf, TEK, HANDEL, HANDLAR_UTR, byId, gillar, handlarPerson, foddNar, gastLiv, gastNyckel, handlarFas, handlarPlats, rovarPlats, rovarna, klanById, grundvarde, handlarVarde, kgOf, kortTal, rymmer, sakNamn } from '../sim';
 import type { ByteMinne, GastLiv, GastRel, Person, Roll, State } from '../sim';
 import { iconImg } from '../ikoner';
 import { esc } from './hjalp';
 import { s, ui } from './lage';
-import { rovarenNu } from './stridkarta';
 
 // gästerna (steg 4.5.4.12): de som syns på kartan utan att bo i byn, i dag handlaren och rövarna. Gästen är en person
 // (p, steg 9.2.111) och får samma sida som en bybo med alla flikar (steg 9.2.114); här står bara det som är särskilt för
@@ -62,14 +62,15 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
     if (!r) return [];
     const gor = r.gor === 'samlas' ? 'Samlas i skogen' : r.gor === 'kommer' ? 'På väg mot byn' : r.gor === 'vantar' ? 'Väntar utanför byn' : r.gor === 'slass' ? 'Slåss vid förrådet' : r.gor === 'rotar' ? 'Letar i förråden' : r.gor === 'letar' ? 'Letar hus för hus' : 'Flyr', n = r.folk.length;
     return rovarna(s, r).map((q, i) => {
-      const sk = rovarenNu(q.name, t); // i striden (steg 6.6.10): där striden har hen, och liggande när hen fallit
+      const sk = kartKampe(s, q); // i striden på kartan (steg 10.1.14): kämpens läge
       return {
       id: rovarGastId(r.id, i), namn: q.name, sex: q.sex, sort: r.rad ? 'Anfallare' : 'Rövare', farg: 0x5a5040,
-      ...(sk ? { x: sk.x, y: sk.y } : rovarPlats(q, t)), // var och en går för sig (steg 6.6.9)
+      ...rovarPlats(q, t), // var och en går för sig (steg 6.6.9)
       rovare: q, gor: sk ? (sk.k.lage === 'dod' ? 'Död' : sk.ligger ? 'Ligger nere' : sk.k.lage === 'flykt' ? 'Flyr' : 'Slåss vid förrådet') : gor, ligger: sk?.ligger,
       fran: klanById(s, r.klan)?.namn,
       rader: [{ namn: 'Flocken', varde: `${n} rövare`, title: `En av ${n} i flocken` },
-        ...q.gast?.vapen ? [{ namn: 'Vapen', varde: `${iconImg(q.gast.vapen, 12)} ${esc(VAPEN[q.gast.vapen].namn)}`, title: 'Vapnet' }] : [],
+        // det hen bär (steg 10.1.8): vapnet i handen och resten, som saker
+        ...gastTingOf(s, q).length ? [{ namn: 'Bär', varde: gastTingOf(s, q).map(t => `<span title="${esc(sakNamn(t.k))}${t.hos === q.id ? ' (i handen)' : t.bar === q.id ? ' (på sig)' : ''}">${iconImg(t.k, 12)}</span>`).join(' '), title: 'Vapnen och kläderna hen bär' }] : [],
         ...Object.keys(q.gast?.bar ?? {}).length ? [{ namn: 'Bytet', varde: Object.entries(q.gast!.bar!).map(([k, m]) => `${iconImg(k, 12)}${m > 1 ? m : ''}`).join(' '), title: 'Det hen tagit ur byns förråd' }] : [], // bytet (steg 6.6.11)
         ...q.gast?.anhorig ? [{ namn: 'Hämnas', varde: esc(q.gast.anhorig), title: 'Anhörig till den som hämnas (steg 8.8.4)' }] : []],
       p: q, liv: livFor(s, r.klan, q.name, q.sex, 'rovare', q.born), blod: q.blod, // anhörig till den som hämnas (steg 8.8.4)

@@ -8,29 +8,29 @@
     90
    ],
    "bitMs": [
-    258777,
-    178949,
-    422849
+    344381,
+    337681,
+    1128028
    ],
    "n": {
-    "pop": 9,
-    "atergrundad": 1,
-    "invandrade": 13,
-    "utvandrade": 2,
-    "fodda": 17,
-    "doda": 29,
-    "svalt": 12,
+    "pop": 15,
+    "atergrundad": 0,
+    "invandrade": 2,
+    "utvandrade": 13,
+    "fodda": 49,
+    "doda": 32,
+    "svalt": 0,
     "kyla": 0,
-    "blod": 4,
+    "blod": 3,
     "infektion": 0,
     "amputerat": 0,
-    "hunger": 71,
-    "humor": 0.528,
-    "vintermat": 19,
-    "vinterved": 69,
-    "eld": 82,
-    "kb": 2469,
-    "delKb": 342
+    "hunger": 9,
+    "humor": 0.6,
+    "vintermat": 83,
+    "vinterved": 118,
+    "eld": 90,
+    "kb": 2820,
+    "delKb": 556
    }
   },
   "42": {
@@ -41,29 +41,29 @@
     90
    ],
    "bitMs": [
-    174258,
-    279313,
-    539846
+    182604,
+    419659,
+    855144
    ],
    "n": {
-    "pop": 9,
-    "atergrundad": 7,
-    "invandrade": 11,
-    "utvandrade": 12,
-    "fodda": 32,
-    "doda": 33,
-    "svalt": 9,
-    "kyla": 9,
-    "blod": 7,
+    "pop": 11,
+    "atergrundad": 0,
+    "invandrade": 7,
+    "utvandrade": 13,
+    "fodda": 28,
+    "doda": 22,
+    "svalt": 2,
+    "kyla": 4,
+    "blod": 1,
     "infektion": 0,
     "amputerat": 0,
-    "hunger": 59,
-    "humor": 0.601,
+    "hunger": 86,
+    "humor": 0.612,
     "vintermat": 0,
-    "vinterved": 57,
-    "eld": 69,
-    "kb": 2636,
-    "delKb": 396
+    "vinterved": 125,
+    "eld": 82,
+    "kb": 2595,
+    "delKb": 360
    }
   },
   "777": {
@@ -74,29 +74,29 @@
     90
    ],
    "bitMs": [
-    298662,
-    444956,
-    500018
+    503958,
+    474859,
+    1214872
    ],
    "n": {
-    "pop": 8,
+    "pop": 20,
     "atergrundad": 0,
-    "invandrade": 3,
-    "utvandrade": 12,
-    "fodda": 24,
-    "doda": 20,
-    "svalt": 4,
-    "kyla": 0,
-    "blod": 4,
+    "invandrade": 1,
+    "utvandrade": 16,
+    "fodda": 67,
+    "doda": 43,
+    "svalt": 0,
+    "kyla": 13,
+    "blod": 2,
     "infektion": 0,
     "amputerat": 0,
-    "hunger": 85,
-    "humor": 0.614,
-    "vintermat": 161,
-    "vinterved": 29,
-    "eld": 83,
-    "kb": 2423,
-    "delKb": 344
+    "hunger": 1,
+    "humor": 0.621,
+    "vintermat": 27,
+    "vinterved": 59,
+    "eld": 81,
+    "kb": 2885,
+    "delKb": 701
    }
   }
  }

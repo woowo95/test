@@ -1,10 +1,10 @@
 // Scenarier. Djur och natur: djur, abborre, sjön, kaniner, rötter, värmekartor och naturen.
-import { FANGST, createState, bearbeta, canProcess, makeTool, step, living, cloneState, ageStart, nyKalender, pilesOf, amountOf, STACK, isLight, T, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, findL, areaOf, describe, utanforByn, bynsMitt, FYND, FYND_IDS, GRUPPER, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, observe, hoped, Lager, skyggOf, grupperOf, KANINER, share, djurOf, KANIN, SLAKT, DJUR, DJURARTER, gain, ownsAmount, setAmount, BEAT, matGott, barnMat, hungerFlytt, regulate, EKONOMI, kroppensMat, foodDays, SAMTALSSLAG, SAKER, materialOf, balansTal, fullBorda } from '../../sim';
+import { FANGST, createState, bearbeta, canProcess, makeTool, step, living, cloneState, ageStart, nyKalender, pilesOf, amountOf, STACK, isLight, T, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, findL, areaOf, describe, utanforByn, bynsMitt, FYND, FYND_IDS, GRUPPER, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, observe, hoped, Lager, skyggOf, grupperOf, KANINER, share, djurOf, KANIN, SLAKT, DJUR, DJURARTER, gain, ownsAmount, setAmount, BEAT, matGott, barnMat, hungerFlytt, regulate, kroppensMat, foodDays, SAMTALSSLAG, SAKER, materialOf, balansTal, fullBorda } from '../../sim';
 import * as SIM from '../../sim';
 const { RT, STATION } = SIM;
 import { FOREST, isSoil } from '../../sim/vag';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
-import { setMat, slutStrider, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank, medHus, nyInvanare } from './hjalp';
+import { stridIByn, setMat, slutStrider, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank, medHus, nyInvanare } from './hjalp';
 
 SCENARIER.djur = {
   text: 'Kaniner syns där det finns vilt, skuttar omkring och hoppar undan folk. Jakt fångar hela kaniner som bärs hem hela och äts som de är; med flintkniv slaktas de till mer kött, ben, skinn och senor',
@@ -1222,7 +1222,8 @@ SCENARIER.tork = {
   kor: () => {
     const { TORK, kanTorka, torka, torken, torkarna, torkBrist, ruttTemp, LAGER, FOOD } = SIM;
     const s = createState(1, START); klockan(s); tandEld(s);
-    const folk = living(s), p = folk.find(r => ageOf(r, s.now) >= 18)!, spara = TORK.spara * folk.length * EKONOMI.matPerDygn;
+    const folk = living(s), p = folk.find(r => ageOf(r, s.now) >= 18)!;
+    const spara = () => SIM.matPerDygn(s) * (SAKER.fisk!.haller ?? 1); // det byn äter så länge fisken håller (steg 10.2.11)
     setMat(s, { fisk: 40 });
     const utan = !kanTorka(s, p);
     const t = medBank(s, 'tork'), ute = !t.inne;
@@ -1245,7 +1246,7 @@ SCENARIER.tork = {
     torka(s, p, 1);
     const torrt = amountOf(s, 'torrfisk'), ner = Math.abs(torrt - hangt) < 1e-6 && !(t.tork ?? []).length;
     // byn behåller det rått som den äter innan det ruttnar
-    setMat(s, { fisk: spara * 0.9 });
+    setMat(s, { fisk: Math.floor(spara() * 0.9) });
     const sparar = !kanTorka(s, p);
     // det torkade håller så länge något får hålla i lagret och äts sist
     const haller = SAKER.torrfisk!.haller === LAGER.maxDygn && SAKER.torrkott!.haller === LAGER.maxDygn && FOOD.slice(-2).sort().join() === 'torrfisk,torrkott';
@@ -1268,7 +1269,7 @@ SCENARIER.tork = {
       [`med två ställningar hängs det upp på båda (${pa2.toFixed(1)} på den andra)`, tva],
       [`det som hänger ruttnar inte och tas inte ner förrän efter ${TORK.dygn} dygn`, intefardigt],
       [`efter ${TORK.dygn} dygn tas det ner som torkad fisk (${torrt.toFixed(1)})`, klart && ner],
-      [`byn behåller ${spara.toFixed(1)} rått, det den äter innan det ruttnar`, sparar],
+      [`byn behåller ${spara().toFixed(1)} rått, det den äter innan det ruttnar`, sparar],
       ['det torkade håller så länge något får hålla i lagret och äts sist', haller],
       ['i frost ruttnar maten nästan inte', frost],
       ['torkställningen är en teknik efter repet', tekOk],
@@ -1302,7 +1303,15 @@ SCENARIER.brasa = {
     const lika = !!e && !!e.ring && e.lightings >= 1 && Array.isArray(e.log); // en lägereld som den första
     // värmen: vid den är det varmare än den första elden ensam ger
     let varm = false;
-    if (e?.lit) { const med = heatAt(b, e.at!.x + 0.5, e.at!.y + 1.5); e.lit = false; const utan = heatAt(b, e.at!.x + 0.5, e.at!.y + 1.5); e.lit = true; varm = fireHeat(b, e) > 0 && med > utan; }
+    if (e?.lit) {
+      /* Byn hinner ofta lägga fler lägereldar än den som provas (en tredje ligger tätt intill), så "utan" är den första elden ensam:
+         alla andra eldar släcks en stund, och inte bara den som provas */
+      const med = heatAt(b, e.at!.x + 0.5, e.at!.y + 1.5), andra = SIM.eldarOf(b).filter(f => f !== b.fire), tand = andra.map(f => f.lit);
+      for (const f of andra) f.lit = false;
+      const utan = heatAt(b, e.at!.x + 0.5, e.at!.y + 1.5);
+      andra.forEach((f, k) => { f.lit = tand[k]; });
+      varm = fireHeat(b, e) > 0 && med > utan;
+    }
     // isär: en släckt lägereld som ingen sover nära tas isär, och stenarna blir en hög
     let isar = false, hog = false, ateranv = false;
     if (e) {
@@ -1633,7 +1642,7 @@ SCENARIER.individer = {
   kor: () => {
     const s = createState(6, START);
     klockan(s);
-    const dj = djurOf(s), art = SIM.DJUR.kanin.strid;
+    const dj = djurOf(s), art = SIM.djurStrid('kanin');
     const drag = dj.map(d => SIM.dragOf(d.art, d.id));
     const samma = dj.every((d, i) => JSON.stringify(SIM.dragOf(d.art, d.id)) === JSON.stringify(drag[i]));
     const iSpann = drag.every(g => g.alder >= 1 && g.alder <= art.alder && g.styrka > 0 && g.snabbhet > 0 && g.skygghet! >= 0 && g.skygghet! <= 1);
@@ -2068,7 +2077,7 @@ SCENARIER.tradorr = {
         if (nu && (roomAt(q, f.x, f.y) === roomAt(q, inneX, inneY) || bitAt(q, f.x, f.y))) inne++;
         if (f.gor === 'vantar') { vantade++; if (p.task?.act === 'gomma') gomde++; if (ensam && ute) { /* (står kvar ensam ute tills flocken anfaller) */ const dx = f.x - p.x, dy = f.y - p.y, d = Math.hypot(dx, dy) || 1; ute.x = Math.min(W - 1, Math.max(1, f.x + dx / d * 9)); ute.y = Math.min(H - 1, Math.max(1, f.y + dy / d * 9)); /* bort från huset, så att den som gömmer sig inte räknas som sällskap */ ute.task = { act: 'vila', phase: 'do', tx: ute.x, ty: ute.y, until: q.now + 5 * HOUR, carry: 0, why: 'ensam ute' }; } }
       });
-      const strider = (q.strider ?? []).map(x => x.orsak);
+      slutStrider(q); const strider = (q.stridRapporter ?? []).map(x => x.orsak); // striderna på kartan (steg 10.1.17) står i rapporterna
       return { inne, vantade, gomde, seen, strider, st: q.stat ?? {}, stangd, byte: q.vargar?.[0]?.byte, ute: ute.id };
     };
     const tra = prov('tradorr', 0), modig = prov('tradorr', 20), annan = prov('tradorr', 0, true), skinn = prov('skinndorr', 0);
@@ -2098,7 +2107,7 @@ SCENARIER.stridkronika = {
     const fore = krn(s).length;
     let svara = 0, vanliga = 0, lekar = 0;
     for (let i = 0; i < 40; i++) {
-      const n0 = krn(s).length, st = SIM.stridIByn(s, i % 2 ? 'skada' : 'slagsmal', [[p], [q]], 'för att pröva');
+      const n0 = krn(s).length, st = stridIByn(s, i % 2 ? 'skada' : 'slagsmal', [[p], [q]], 'för att pröva');
       const svart = st.kampar.some(k => SIM.svartSkadad(k) || k.lage === 'dod');
       if (svart) svara++; else if (krn(s).length > n0) vanliga++;
       for (const x of [p, q]) { x.skador = []; x.health = 1; x.blod = 1; x.task = undefined; x.died = undefined; }
@@ -2108,7 +2117,7 @@ SCENARIER.stridkronika = {
     const barn = living(s).filter(x => ageOf(x, s.now) >= SIM.ALDER.smabarn && ageOf(x, s.now) < SIM.ALDER.vuxen);
     while (barn.length < 2) barn.push(nyInvanare(s, 'm', 6));
     for (let i = 0; i < 20; i++) {
-      const n0 = krn(s).length, st = SIM.stridIByn(s, 'lek', [[barn[0]], [barn[1]]], 'på lek');
+      const n0 = krn(s).length, st = stridIByn(s, 'lek', [[barn[0]], [barn[1]]], 'på lek');
       if (krn(s).length > n0 && !st.kampar.some(k => SIM.svartSkadad(k))) lekar++;
       for (const x of barn) { x.skador = []; x.health = 1; x.blod = 1; x.task = undefined; }
     }
@@ -2163,6 +2172,7 @@ SCENARIER.ran = {
       if (!d) continue;
       for (let h = 0; h < 6 && !s.stat?.ran; h++) SIM.needLadder(s, a, 3600);
       if (!s.stat?.ran) continue;
+      for (let k = 0; k < 900 && s.kartStrider?.length; k++) step(s, SIM.nastaSteg(s)); // slagsmålet sker på kartan och tar tid (steg 10.1.7)
       ran++; stolAgg += s.stat?.stold_mat ?? 0;
       if (s.stat?.ranVann) { vann++; if (ownsAmount(s, b, 'bar') < 6) fick++; }
       if (SIM.intryckOm(d, a.id, 'valdsam')) vald++;
@@ -2184,7 +2194,8 @@ SCENARIER.ran = {
     return [
       [`den aggressiva svältande rånar någon nära (${ran} av 12 byar), i stället för att stjäla (${stolAgg} stölder)`, ran >= 8 && stolAgg === 0],
       [`vinnaren tar saken (vann ${vann}, fick maten ${fick})`, vann > 0 && fick === vann],
-      [`de som såg det tycker att hen är våldsam (${vald} av ${ran}) och en tjuv (${tjuv} av ${ran})`, vald === ran && tjuv === ran],
+      // våldet ses när slagsmålet börjar; den som gått undan innan det är slut ser inte hur det gick (steg 10.1.7)
+      [`de som såg det tycker att hen är våldsam (${vald} av ${ran}), och de som såg hur det slutade att hen är en tjuv (${tjuv} av ${ran})`, vald === ran && tjuv >= ran / 2],
       [`den som inte är aggressiv rånar inte (${fredlig}) men stjäl (${stal})`, fredlig === 0 && stal > 0],
       [`utbrottet går ut över den man är arg på (${arg}), annars den närmaste (${nast}, ${inteArg})`, arg && nast && inteArg],
     ];

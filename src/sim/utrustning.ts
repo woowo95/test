@@ -17,7 +17,7 @@
 // En ny plats blir en rad i PLATSER.
 import { Person, State, Task } from './typer';
 import { KLAD_SLAG, SAKER, viktOf } from './saker';
-import { heldBy, iKroken, Ting, tingOf } from './agande';
+import { heldBy, iKroken, Ting, allaTing, tingOf } from './agande';
 import { kvEffekt, kvHaller } from './kvalitet';
 import { ACTS } from './handlingar';
 import { BYN, lends } from './egendom';
@@ -75,7 +75,7 @@ export function hangerVid(s: State, p: Person, h = iHanden(s, p)): 'balte' | 'ax
   const v = h && SAKER[h.ting.k]?.hanger;
   if (!v) return;
   const f = v === 'balte' ? 'krok' : 'axel';
-  return tingOf(s).some(t => t.bar === p.id && SAKER[t.k]?.klad?.[f]) ? v : undefined;
+  return allaTing(s).some(t => t.bar === p.id && SAKER[t.k]?.klad?.[f]) ? v : undefined;
 }
 // redskapet i handen hänger på kroppen när p bär (i bältet eller på axeln), så det tar inga händer
 export const iBaltet = (s: State, p: Person, h = iHanden(s, p)) => !!hangerVid(s, p, h);
@@ -85,7 +85,7 @@ export const iBaltet = (s: State, p: Person, h = iHanden(s, p)) => !!hangerVid(s
 // som rymmer lika mycket för alla och av vilka slag som helst
 export interface HandPlats { hand: 'hoger' | 'vanster' | 'rygg'; kap: number; korg?: true }
 // ryggsäcken p har på sig (steg 7.1.3)
-export const ryggsack = (s: State, p: Person) => tingOf(s).find(t => t.bar === p.id && SAKER[t.k]?.klad?.rygg);
+export const ryggsack = (s: State, p: Person) => allaTing(s).find(t => t.bar === p.id && SAKER[t.k]?.klad?.rygg);
 export function handPlatser(s: State, p: Person): HandPlats[] {
   const pl = iHanderna(s, p), r = ryggsack(s, p);
   return r ? [...pl, { hand: 'rygg', kap: SAKER[r.k]!.klad!.rygg! }] : pl;
@@ -211,17 +211,17 @@ export function bordaIHander(s: State, p: Person, t: Task | undefined, u: Return
 
 // ---------- kläderna (steg 2.3.2) ----------
 // plaggen p har på sig
-export const paSig = (s: State, p: Person) => tingOf(s).filter(t => t.bar === p.id && !!SAKER[t.k]?.klad); // bara plaggen: en protes bärs också (protes.ts) men är inget plagg (krasch i by 64353, steg 9.9.3)
+export const paSig = (s: State, p: Person) => allaTing(s).filter(t => t.bar === p.id && !!SAKER[t.k]?.klad); // bara plaggen: en protes bärs också (protes.ts) men är inget plagg (krasch i by 64353, steg 9.9.3)
 // p har ett bälte på sig (där reservvapnet hänger i strid, steg 3.7.7)
-export const harBalte = (s: State, p: Person) => tingOf(s).some(t => t.bar === p.id && SAKER[t.k]?.klad?.krok);
+export const harBalte = (s: State, p: Person) => allaTing(s).some(t => t.bar === p.id && SAKER[t.k]?.klad?.krok);
 // vad plaggen väger, i vikt
-export const paSigVikt = (s: State, p: Person) => { let v = 0; for (const t of tingOf(s)) if (t.bar === p.id) v += viktOf(t.k); return v; };
+export const paSigVikt = (s: State, p: Person) => { let v = 0; for (const t of allaTing(s)) if (t.bar === p.id) v += viktOf(t.k); return v; };
 // hur stor del av kylan plagget t (av slaget k) tar bort: ett finare plagg värmer lite mer (kvalitet.ts)
 export const kladSkydd = (k: string, t?: { q?: number }) => Math.min(UTRUSTNING.maxVarme, (SAKER[k]?.klad?.varme ?? 0) * kvEffekt(t));
 // hur mycket kläderna skyddar mot kylan (0 = inget, 1 = helt): varje plagg tar bort sin del av det som är kvar
 export function kladVarme(s: State, p: Person) {
   let kvar = 1;
-  for (const t of tingOf(s)) if (t.bar === p.id) kvar *= 1 - kladSkydd(t.k, t);
+  for (const t of allaTing(s)) if (t.bar === p.id) kvar *= 1 - kladSkydd(t.k, t);
   return 1 - kvar;
 }
 // i vilken ordning p tar ett plagg: sitt eget, byns, ett lånat. Inom det: bäst skick, och sedan det första bland tingen

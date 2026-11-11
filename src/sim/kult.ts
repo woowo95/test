@@ -25,6 +25,8 @@ import { isSick } from './sjukdom';
 // farorna över byn (dangers i val.ts, som sätter den här när den laddas: val.ts läser det mesta i spelet)
 let dangers: (s: State) => { kyla: boolean; svalt: boolean } = () => ({ kyla: false, svalt: false });
 export const satFaror = (f: typeof dangers) => { dangers = f; };
+// farorna nu, för de filer som inte kan läsa val.ts (djurhållningen frågar samma svältmått som valet av aktivitet, steg 10.2.1)
+export const farorNu = (s: State) => dangers(s);
 export const KULT = balans('kult', {
   ofta: 1.5, // bönens vikt på fritiden: andligheten delad med 100 gånger så här
   starkare: 1.5, // rökelse, trons tecken och prästens dräkt gör en bön så här mycket starkare

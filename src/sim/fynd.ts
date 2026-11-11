@@ -8,7 +8,7 @@ import { chance, clamp, clampI, pickNarmaste, rnd } from './slump';
 import { kn, learnK, useK } from './kunskap';
 import { ageIndex } from './tid';
 import { kunnighet } from './ekonomi';
-import { TROSKEL } from './forradsmal';
+import { underBuffert } from './forradsmal';
 import { LAGER, addTo, amountOf, foodOf } from './lager';
 import { nTools } from './agande';
 import { DAY, H, HOUR, HOUR_S, OX, OY, Person, State, T, W, egen, inMap, mapKey, tvaDelar, visning } from './typer';
@@ -595,7 +595,7 @@ export const flintFactor = (s: State, x: number, y: number) => richness(s, 'flin
 // flintorna och yxorna i byn. Yxorna räknas i styck, som i skog.ts (axes): en sliten yxa är fortfarande en yxa
 export const flintorOchYxor = (s: State) => amountOf(s, 'flinta') + nTools(s, 'yxa');
 // byn behöver flinta att tända eld med och till en yxa
-export const wantsFlint = (s: State) => amountOf(s, 'flinta') < TROSKEL.flintaMinsta || flintorOchYxor(s) < TROSKEL.flintaBehov;
+export const wantsFlint = (s: State) => underBuffert(s, 'flinta'); // efter förbrukningen, minst TROSKEL.flintaMinsta (steg 10.2.12)
 // en plats att samla på nära stenarna, där flinta är vanlig. I lägret och där flintan redan plockats finns ingen.
 // q väljer med sin egen slumpföljd
 export function flintSpot(s: State, q: Person, area?: (x: number, y: number) => boolean): { x: number; y: number } | undefined {

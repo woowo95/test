@@ -16,6 +16,12 @@
       kontroller: ['perspektiv'], text: 'Stationer, bänkar, bord, bäddar och härdar ses snett ovanifrån: en yta ovanifrån och en mörkare framkant, aldrig rakt från sidan. Formen är annars fri.' },
     { id: 'bars', namn: 'Bärs', ord: /rem\b|remmen|båge|bågen|koger|säck|sele|väska|pung|kappa|mantel|sjal|tunika|skjorta|bälte|plagg|protes|förband|spjäla|remsa/i,
       kontroller: ['huvudet', 'allaHall'], text: 'Det man bär sitter som det logiskt gör: remmar och strängar går runt kroppen, aldrig genom huvudet eller ansiktet, och det visas på kolonisten i alla fyra riktningar och i porträttet.' },
+    { id: 'planta', namn: 'Planta', ord: /^\S*(planta|plantan|plantor|plantorna)$/i, kontroller: [], sammanhang: 'aker',
+      text: 'En planta som växer visas på en åker: en planta på varje ruta av fältet, bredvid en kolonist.' },
+    { id: 'trad', namn: 'Träd', ord: /^\S*(träd|trädet|busk|busken|buske)$/i, kontroller: [], sammanhang: 'trad',
+      text: 'Ett träd eller en buske visas bredvid spelets egna träd (granen och björken), så att storleken och stilen går att jämföra.' },
+    { id: 'hopsatt', namn: 'Sitter ihop', ord: /^(staket|staketet|gärdsgård|gärdsgården|stängsel|stängslet|hägnad|hägnaden)$/i, kontroller: [], sammanhang: 'hage',
+      text: 'Det som sätts ihop av många bitar (ett staket) visas med flera bitar hopsatta, som en hage runt en bit mark.' },
     { id: 'plagg', namn: 'Plagg', ord: /kappa|mantel|sjal|tunika|skjorta|plagg|tröja|rock\b|kjol|byxor|klänning/i, kontroller: [], halsen: true,
       text: 'Ett plagg får gå upp till halsen: kragen och sjalen täcker halsen och hakan, men aldrig ansiktet.' },
     { id: 'mark', namn: 'Mark', ord: /^(hage|hagen|äng|ängen|slåtteräng|slåtterängen|åker|åkern|fält|fältet|ruta|rutan)$/i, kontroller: [], utom: ['olika'],
@@ -123,7 +129,10 @@
   }
   function olika(bilder) {
     const ut = [];
+    // en bild som fyller hela sin ruta (en planta på sin jordruta, en textur) har ingen form att jämföra: bara konturen räknas
+    const fylld = B => { const a = beskar(B); if (!a) return false; let n = 0; for (const v of a.px) if (v >= 0) n++; return n >= 0.9 * a.w * a.h; };
     for (let j = 1; j < bilder.length; j++) for (let i = 0; i < j; i++) {
+      if (fylld(bilder[i]) && fylld(bilder[j])) continue;
       const l = likhet(bilder[i], bilder[j]);
       if (l >= GRANS.olika) ut.push({ ok: false, version: j + 1, text: `Version ${j + 1} har nästan samma form som version ${i + 1} (${Math.round(l * 100)} % lika): versionerna ska vara olika idéer i form eller byggsätt, inte andra färger.` });
     }
@@ -241,27 +250,44 @@
   // ---------- sammanhanget: varje version i spelets storlek på gräset, bredvid en kolonist och godkända saker ----------
   const GODKANDA = () => typeof BILDER === 'undefined' ? [] : ['yxa', 'ved', 'kniv'].filter(id => BILDER.bilder.find(b => b.id === id)?.godkand && BILDFILER[id]);
   function klistra(M, S, x0, y0) { for (let y = 0; y < S.h; y++) for (let x = 0; x < S.w; x++) { const v = S.px[y * S.w + x]; if (v >= 0) M.satt(x0 + x, y0 + y, v); } }
-  function iSpelet(S, P = P0()) {
-    const F = window.BYBO ? window.BYBO(1, 'fram', 'sta', 'hanga', null) : null, g = GODKANDA().map(id => bildAvRader(BILDFILER[id].rader));
-    const W = 6 + (F ? F.w + 6 : 0) + S.w + 6 + g.reduce((s, G) => s + G.w + 4, 0) + 4, H = Math.max(S.h, F ? F.h : 0, 16) + 10, M = markBild(W, H, P, 410, 430);
+  // sammanhang (registret SLAG): 'aker' ritar saken på varje ruta av en åker, 'trad' ställer spelets gran (vuxen, 31 punkter) och björk (gammal, 46) bredvid
+  function iSpelet(S, P = P0(), slag = []) {
+    const hur = SLAG.filter(x => slag.includes(x.id)).map(x => x.sammanhang).find(Boolean) || null;
+    const F = window.BYBO ? window.BYBO(1, 'fram', 'sta', 'hanga', null) : null, g = hur ? [] : GODKANDA().map(id => bildAvRader(BILDFILER[id].rader));
+    const R = 16 * Math.max(1, Math.ceil(S.w / 16)), RH = 16 * Math.max(1, Math.ceil(S.h / 16)); // en ruta av åkern
+    const TRAD = hur === 'trad' && window.MARK && MARK.granVariant && MARK.bjorkVariant ? [[MARK.granVariant, 31, 26], [MARK.bjorkVariant, 46, 34]] : [];
+    const yta = hur === 'aker' ? 3 * R : S.w;
+    const W = 6 + (F ? F.w + 6 : 0) + yta + 6 + g.reduce((s, G) => s + G.w + 4, 0) + TRAD.reduce((s, t) => s + t[2] + 6, 0) + 4;
+    const H = Math.max(hur === 'aker' ? 2 * RH + 4 : S.h, F ? F.h : 0, TRAD.length ? 58 : 0, 16) + 10, M = markBild(W, H, P, 410, 430);
     let x = 6; const fot = H - 4;
     if (F) { klistra(M, F, x, fot - F.h); for (let d = 3; d < F.w - 3; d++) M.morka(x + d, fot); x += F.w + 6; }
-    for (let yy = 0; yy < S.h; yy++) for (let xx = 0; xx < S.w; xx++) if (S.px[yy * S.w + xx] >= 0 && !(yy + 1 < S.h && xx + 1 < S.w && S.px[(yy + 1) * S.w + xx + 1] >= 0)) M.morka(x + xx + 1, fot - S.h + yy + 1);
-    klistra(M, S, x, fot - S.h); x += S.w + 6;
+    const stall = (x0, y0) => { // saken med sin skugga, fötterna på y0
+      for (let yy = 0; yy < S.h; yy++) for (let xx = 0; xx < S.w; xx++) if (S.px[yy * S.w + xx] >= 0 && !(yy + 1 < S.h && xx + 1 < S.w && S.px[(yy + 1) * S.w + xx + 1] >= 0)) M.morka(x0 + xx + 1, y0 - S.h + yy + 1);
+      klistra(M, S, x0, y0 - S.h);
+    };
+    if (hur === 'aker') { // åkern: 3 × 2 rutor plöjd jord med fåror, en planta på varje ruta
+      const y0 = fot - 2 * RH;
+      for (let y = 0; y < 2 * RH; y++) for (let xx = 0; xx < 3 * R; xx++) M.satt(x + xx, y0 + y, P.i('jord', y % 4 === 3 ? 0 : (y % 4 === 0 ? 2 : 1)));
+      for (let r = 0; r < 2; r++) for (let k = 0; k < 3; k++) stall(x + k * R + Math.floor((R - S.w) / 2), y0 + (r + 1) * RH - 1);
+      x += 3 * R + 6;
+    } else { stall(x, fot); x += S.w + 6; }
     for (const G of g) { klistra(M, G, x, fot - G.h); x += G.w + 4; }
+    TRAD.forEach(([f, h, b], i) => { f(M, x + Math.floor(b / 2), fot, h, 0, 11); x += b + 6; });
     return M;
+  }
+  // den största saken i en version (utan kolonisten och porträttet), eller null när versionen är en hel scen
+  function storsta(v, P = P0()) {
+    if (!v.rita) return null;
+    const R = spela(v, P); R.hittade = [];
+    for (const { F } of R.figurer) { const pl = hitta(R.B, F); if (pl) R.hittade.push([F, pl]); }
+    for (const Q of R.portratt) { const pl = hitta(R.B, Q); if (pl) R.hittade.push([Q, pl]); }
+    const { scen, lista } = saker(R); if (scen || !lista.length) return null;
+    return lista.slice().sort((a, b) => b.px.reduce((n, x) => n + (x >= 0), 0) - a.px.reduce((n, x) => n + (x >= 0), 0))[0];
   }
   // sammanhanget för ett kort: en bild per version av den största saken, eller null när versionen är en hel scen
   function sammanhang(s, P = P0()) {
-    return s.versioner.map(v => {
-      if (!v.rita) return null;
-      const R = spela(v, P); R.hittade = [];
-      for (const { F } of R.figurer) { const pl = hitta(R.B, F); if (pl) R.hittade.push([F, pl]); }
-      for (const Q of R.portratt) { const pl = hitta(R.B, Q); if (pl) R.hittade.push([Q, pl]); }
-      const { scen, lista } = saker(R); if (scen || !lista.length) return null;
-      const S = lista.slice().sort((a, b) => b.px.reduce((n, x) => n + (x >= 0), 0) - a.px.reduce((n, x) => n + (x >= 0), 0))[0];
-      return S.w > 96 || S.h > 64 ? null : iSpelet(S, P);
-    });
+    const slag = slagAv(s.namn, s.slag).map(x => x.id);
+    return s.versioner.map(v => { const S = storsta(v, P); return !S || S.w > 96 || S.h > 64 ? null : iSpelet(S, P, slag); });
   }
 
   // ---------- på valkortet: symbolerna och sammanhanget ----------
@@ -311,8 +337,8 @@
   }
 
   // en API-ritning (rader) i sitt sammanhang som PNG: på gräset bredvid en kolonist och godkända saker (bilder.mjs granskning)
-  function iSpeletPng(rader, skala = 4) {
-    const M = iSpelet(bildAvRader(rader)), c = document.createElement('canvas'); tillCanvas(M, c, 0);
+  function iSpeletPng(rader, skala = 4, slag = []) {
+    const M = iSpelet(bildAvRader(rader), P0(), slag), c = document.createElement('canvas'); tillCanvas(M, c, 0);
     const t = document.createElement('canvas'); t.width = M.w * skala; t.height = M.h * skala;
     const g = t.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(c, 0, 0, t.width, t.height); return t.toDataURL('image/png').split(',')[1];
   }
@@ -326,5 +352,5 @@
       versioner: d.versioner.map(v => ({ text: v.ide || '', w: Math.max(...v.rader.map(r => r.length)) + 4, h: v.rader.length + 4, rita: B => klistra(B, bildAvRader(v.rader), 2, 2) })) });
   }
 
-  window.KONTROLL = { SLAG, KONTROLLNAMN, GRANS, slagAv, symmetri, perspektiv, likhet, olika, bildAvRader, kort, rader, olikaRader, sammanhang, iSpelet, iSpeletPng, visa, allt, kortPng };
+  window.KONTROLL = { SLAG, KONTROLLNAMN, GRANS, slagAv, symmetri, perspektiv, likhet, olika, bildAvRader, kort, rader, olikaRader, sammanhang, storsta, iSpelet, iSpeletPng, visa, allt, kortPng };
 })();

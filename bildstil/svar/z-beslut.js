@@ -39,4 +39,25 @@
   const B9 = val => ({ val, steg: '9.9.1' });
   Object.assign(BESLUT, {
   });
+  // Björns svar 2026-11-10/11: godkända kort, som byggs in i steg 10.11.1 (fas 10:s inbyggnad av bildstilens val)
+  const B10 = (val, text) => ({ val, steg: '10.11.1', text: text ? text + ' Byggs in i steg 10.11.1.' : undefined });
+  const S10 = (val, text) => ({ ...B10(val, text), stack: true }); // en sak i förrådet: stackarna blir ett eget förslag (stackar.js)
+  Object.assign(BESLUT, {
+    f5_grodd: B10(1),
+    f8_bage: B10(1),
+    f8_pil: B10(3, 'Bara pilarna: bågen i bilden hör inte hit, den har en egen bild (Bågen).'),
+    f9_hotmarke: B10(1),
+    f9_naverask: S10(3),
+    f9_spjala: S10(2),
+    f9_nat: S10(3),
+    f9_braxen: S10(1),
+    f9_sik: S10(1),
+    f9_kat_soppa: B10(3),
+    f9_korn: S10(1),
+    f9_lok: S10(1),
+    f9_fagelskramma: B10(1),
+    f9_forband: B10(1, 'Remsan syns inte i porträttet. Bennålen finns redan i spelet och ritas inte om.'),
+    f9_foder: B10(4, 'Den som föder får symbolen för barn som redan finns i spelet; ingen ny symbol.'),
+    f9_proteser: B10(3, 'Ögonlappen tas från version 1 och resten från version 3. Ögonlappen syns i porträttet med utseendet som redan finns där (ogonlapp i karaktärsskaparen).'),
+  });
 })();

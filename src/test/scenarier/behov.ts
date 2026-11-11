@@ -777,7 +777,11 @@ SCENARIER.brist = {
     const glomt = (() => { satt(q); bristSteg(q, s.now + (NARINGBAL.minns + 1) * HOUR); return (q as Person).langtan === undefined; })();
     // i byn: efter tre dygn (tre år i spelet) längtar någon efter något, och inget omöjligt har hänt
     const by = createState(3, START); kor(by, 72);
-    const iByn = living(by).some(x => x.langtan || x.thoughts.some(t => t.text.startsWith('Längtar efter')));
+    /* Hur snabbt någon hamnar under gränsen beror på vad byn hinner skaffa (mineralerna sjunker men är ofta strax över gränsen efter tre dygn),
+       så byn körs ett dygn i taget, högst sju dygn till, tills någon längtar. Det prövar att längtan kommer ur bristen, inte exakt när. */
+    const langtar0 = () => living(by).some(x => x.langtan || x.thoughts.some(t => t.text.startsWith('Längtar efter')));
+    for (let d = 0; d < 7 && !langtar0(); d++) kor(by, 24);
+    const iByn = langtar0();
     return [
       ['inget under gränsen ger ingen brist', ingen],
       ['halva gränsen ger halv brist', halv],

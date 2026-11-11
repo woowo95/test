@@ -16,7 +16,7 @@ import { isKlar, ledig, stationById, stationerOf } from './stationer';
 import { omrade } from './omrade';
 import { tileOf } from './mark';
 import { isWall } from './byggnad';
-import { Ting, tingOf } from './agande';
+import { allaTing, Ting, tingOf } from './agande';
 import { byId, alive, count, forstaGang, living, log } from './folk';
 
 export const MORKER = balans('morker', {
@@ -55,7 +55,7 @@ export const LJUSKALLOR = {
   } },
   fackla: { namn: 'Facklan', kallor: s => {
     const ut: Ljuspunkt[] = [];
-    for (const t of tingOf(s)) { if (t.tand === undefined) continue; const p = byId(s, t.tand); if (p) ut.push({ x: p.x, y: p.y, r: FACKLA.r, bar: p.id }); }
+    for (const t of allaTing(s)) { if (t.tand === undefined) continue; const p = byId(s, t.tand); /* också rövarnas facklor (steg 10.1.10) */ if (p) ut.push({ x: p.x, y: p.y, r: FACKLA.r, bar: p.id }); }
     return ut;
   } },
   ljus: { namn: 'Talgljusen', kallor: s => (s.ljus ?? []).filter(l => l.tand).flatMap(l => { const st = stationById(s, l.st); return st ? [{ x: st.x + 0.5, y: st.y + 0.5, r: LJUS.r, rum: roomAt(s, st.x, st.y) }] : []; }) },

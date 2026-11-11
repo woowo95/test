@@ -1,0 +1,130 @@
+{
+ "kort": "f9_snickarbank",
+ "namn": "Snickarbänken",
+ "slag": null,
+ "vad": "Steg 9.4.4: en stadig bänk av 2 virke och 2 plankor där träsakerna görs fortare och bättre, och där bågen, lyran, skölden, kryckan och träbenet görs. Den står inne som slöjdbänken, två rutor bred, med en stubbe att sitta på framför. Snickaren arbetar där. I spelet har den slöjdbänkens bild tills du valt.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "kommentar": "Nya versioner: de förra var felriktade, ritade rakt från sidan med långa ben. Läs instruktionen och regeln Stationerna ovanifrån: skivan ses ovanifrån och tar hälften till tre fjärdedelar av höjden, framkanten är ett smalt band och bara korta benstumpar syns. Två rutor bred, med stubben att sitta på framför.",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_snickarbank",
+     "rader": [
+      ".EEEEEEEEEEEEEEEEEEEEEEEEEEEEEE.",
+      "EHHHHHHHHHHGHHHHHHHHHHGHHHHGHGGE",
+      "EHHHGGGHHHLKKKKKKKKKKKHHGGGHGGGE",
+      "EHHGHHHKKKJJJJJJJJJJJJKKJHGHGGGE",
+      "EHHHKKKJJJHHHGGGGHHHGHJJJKJJGHGE",
+      "EHGHJJJHHHHHHHGGGHHHHHHGGJJIGGGE",
+      "EGHHHHHGGGGHHHHHHHHHGGGGHHHGGGGE",
+      "EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE",
+      "EHHHGHHHHHHHHHGHHHHHQQQQQQQQQGGE",
+      "EHHHGGGHHHHHHGHHHHHFQTSSSSSSQFGE",
+      "EGHHHHGGGHHHHHGHHHHFQSRRRRRRQEGE",
+      "EHHHGGGGHHHHHHHGHHHEQQQQQQQQQEGE",
+      "EGHHHHHHHGGGEEEEEEEEHHHHGGGHHGGE",
+      "EGGHHHHGGGGEFHHGGHHFEGGGHHGGGGGE",
+      "EFFFGGFFFFFEFHGHHGGFEFFFFGGFFFFE",
+      "EFFFFFFFFFFEFHHGGGGFEFFFFFFFFFFE",
+      ".EEEEEEEEEEEFFEEEEFFEEEEEEEEEEE.",
+      "...FE.FE...EGGFGFFFFE...FE.FE...",
+      "...FE.FE...EGGFGGFFFE...FE.FE...",
+      "..FE...FE..EGFGFFGFFE..FE...FE..",
+      "..FE...FE..EGFFGFFFFE..FE...FE..",
+      "............EEEEEEEE............"
+     ]
+    }
+   ],
+   "anteckning": "Bänken står på golvet och ses snett ovanifrån som de andra stationerna. Skivan av två plankor syns ovanifrån, 32 punkter bred och 14 djup (ungefär två tredjedelar av höjden), med skarven tvärs över mitten och träkorn på längden. Framkanten är ett band på 2 punkter i jord1, och av de två virkesbockarna syns bara de kluvna, utåtsträckta benstumparna på 4 punkter i varje ände. På bakre plankan ligger den halvfärdiga bågstaven platt i senap2 med en punkt glans. På främre plankan ligger bandkniven med bladet tvärs och de två handtagen pekande mot snickaren. Stubben står framför mitten där snickaren sitter: toppen som en ellips med årsringar och barken som ett lågt band. Den skymmer mitten av framkanten eftersom den står närmast betraktaren. Ljuset kommer uppifrån vänster och konturen är jord0 runt träet och skiffer0 runt bladet. Granskningen: Rättat: 1) Stubben var ett kantigt block och såg inte ut som en stubbe. Den är nu en rund ellips ovanifrån (rad 12–16) med årsringar i jord3/jord2 och barkkant i jord1. Under den syns en kort barksida i jord2/jord1 med kontur i jord0. Den står framför mitten och täcker framkanten, som idén säger. 2) Bandkniven såg ut som ett nedsänkt fack, och mörka lodräta jord0-streck gick genom främre plankan. Strecken är borttagna. Kniven är nu ett blad i skiffer (en glanspunkt i skiffer3, egg i skiffer1, kontur i skiffer0) med ett handtag i jord1/jord0 i varje ände. Den ligger på högra delen av främre plankan, fri från stubben. 3) Bågen är omritad som en jämn, spegelsymmetrisk bågstav i senap2/senap3 med skuggsida i senap1 och utan sträng, eftersom den är halvfärdig. Den ljusa sidan är uppe till vänster. De mörka jord1-fläckarna under bågen är borttagna. 4) Plankornas korn går nu på längden i jord3/jord2, utan mörka fläckar, och högra änden är mörkare. Skarven och framkantens band i jord1 (två rader plus kontur), de kluvna benstumparna på 4 punkter och bredden 32 punkter (två rutor) är kvar.",
+   "ide": "Låg och bred plankbänk: två breda plankor ligger sida vid sida som en skiva ovanifrån, 32 punkter bred och omkring 14 punkter djup, i jord2–jord3 med en tydlig skarv och träkorn på längden och kontur i jord0. Under skivan syns framkanten som ett band på 2–3 punkter i jord1 och de två virkesbockarna bara som korta, kluvna stumpar på 4 punkter i varje ände. På skivan ligger ovanifrån en halvfärdig båge i ljust senap2 och en bandkniv i skiffer, och framför mitten står stubben som en rund ellips med årsringar i jord3 och en barkring i jord1–jord0, så att den täcker en bit av framkanten."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_snickarbank",
+     "rader": [
+      "..EEEEEEEEEEEEEEEEEEEEEEEEEEEE..",
+      "..EHHGHHHGHHHHGHHHGHHHHGHHHGHE..",
+      "..EGFGGFGGHEFGTSHFGFGHHHHGGFGE..",
+      "..EFTTSTSSHGFGSQHFGGFHGHGEGGFE..",
+      "..EGSRSRSRGEGFGGHFGGFFEHEFGGGE..",
+      "..EFQGQGQGFGGGFGHFGGGFGHFGGFFE..",
+      ".EEEEEEEEEEEEEEEEEEEEEEEEEEEEEE.",
+      "EHHHGHHHHHGHHHHHHGHHHHHGHHHHHGGE",
+      "EHpHHHGGHHHHHGHHHHGGHHHHHGHHHGGE",
+      "EGGHHHEEEEEEHHHHGHHHHHHGHHHHGHGE",
+      "EHHHHEqqpqqpEGHHHHEEEEEEEEEEEGGE",
+      "EHHGEwqqpqqpqEHHGHEqqqpqqqqpEHGE",
+      "EGHFEqqqpqqppEFHHHEqpqqqpqppEGGE",
+      "EHHEEqqqpqqppEEHGHEEEEEEEEEEEHGE",
+      "EHGHEqqqpqpppEHGHHHHGHHHHHGHHGGE",
+      "EHHHEpqqpqpppEHHHHGqqHGHHHHHHGGE",
+      "EGHHHEqqpqppEGHHHHHHpGHHHHGHGHGE",
+      "EHHGHHEEEEEEHHHHGHHHHHHGqpHGHGGE",
+      "EHHHHHGHHHHHHGHHHHGHHHHqpHGHGGGE",
+      "EGHGHHHHGHHHHHHGHHHGHHHHGHGGGGGE",
+      "EGGGGGHGGGGGHGGGGGGHGGGGGGGGGFGE",
+      "EGFFFGFFFFGFFFFFGFFFFGFFFFFGFFFE",
+      "EFFFGFFFFFFFFFFFFFGFFFFFFFFFFFFE",
+      ".EEEEEEEEEEEEEEEEEEEEEEEEEEEEEE.",
+      "..EGFE.EEEEEEE............EGFE..",
+      "..EGFEEHHHGHHGE...........EGFE..",
+      "..EGFEEHGGGGHGE...........EGFE..",
+      "..EFFEEHGHHGGFE...........EFFE..",
+      "..EEEEEGFGGFGFE...........EEEE..",
+      "......EEEEEEEEE.................",
+      "......EGFGFFGFE.................",
+      "......EGFFGFFFE.................",
+      ".......EEEEEEE.................."
+     ]
+    }
+   ],
+   "anteckning": "Bänken ses snett ovanifrån, 32 × 33 punkter (två rutor bred). Skivan är en kluven stock med flata sidan upp, 14 rader djup i jord2 och jord3 med längsgående ådring. Den är ljusast uppe till vänster och mörknar mot framkanten, och konturen är jord0. Vid bakkanten står ryggplankan på högkant, förkortad till 7 rader. På den hänger en såg till vänster, en yxa i mitten och en träklubba till höger, var och en på en pinne. Sågbladet och yxhuvudet är i skiffer, skaften och klubban i ljust trä. Framkanten är stockens rundade undersida, ett band på 3 punkter i jord1. Under bandets ändar syns bara två tjocka benstumpar på 5 punkter. På skivans vänstra halva ligger ett runt sköldbräde av ljust nytt trä (ben) med plankfogar, inspänt mellan två kilar. Till höger ligger en tunn planka och några spån. Stubben står framför till vänster, mitt för skölden, där snickaren sitter vänd mot skivan. Stubbens snittyta med årsringar ses ovanifrån och barksidan är kort. Snickaren ritas inte; han kommer från spelet. Bilden blir hög bak och tung åt vänster. Skuggan på marken är inte ritad. Granskningen: Storleken (32 punkter bred, låg bänk mot kolonistens 20 punkter), vinkeln, ljuset och konturerna var redan rätt. Sköldbrädet är spegelsymmetriskt med två symmetriska tvingar. Det här har jag rättat: 1) Ryggbrädan är omritad. De oroliga lodräta jord0-strecken är borta, och sågen, yxan och klubban går nu att läsa var för sig. Sågen har ett skifferblad med tänder och ett handtag som hänger på en pinne. Yxan har ett huvud i skiffer och ett ljust skaft. Klubban har ett ljust trähuvud som får kontur av en skugga under. 2) Stubben ritades som ett platt block. Nu syns den snett ovanifrån, med en ljus snittyta med årsring överst, en kant i jord0 och en kort barksida under, så att den läses som något att sitta på. Botten på stubbens topp flyttades ner en rad, så att den inte smälter ihop med benets fotlinje. Skivan, framkanten och benen är oförändrade.",
+   "ide": "Bänk med ryggbräda: skivan är en grov, kluven stock med flata sidan upp, 32 punkter bred och ungefär 12 punkter djup, och vid bakkanten står en planka på högkant, förkortad till 6–7 punkter, med en såg, en yxa och en klubba hängande på pinnar i skiffer och jord. Framkanten är stockens rundade undersida som ett band på 3 punkter i jord1 och två tjocka korta virkesben på 5 punkter syns bara under framkantens ändar. Stubben står framför till vänster, där snickaren sitter vid ett inspänt sköldbräde på skivans vänstra halva, så att bilden blir hög bak och tung åt vänster."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_snickarbank",
+     "rader": [
+      "..............IIII..............",
+      "...........IIILLLKIII...........",
+      "...EEEE..IILLKIIIIKKJII..EEEE...",
+      "...EHGEIILKIIIEHGEIIIKJIIEHGE...",
+      "...EHGELLII...EHGE...IIKJEHGE...",
+      "...EHGEII.....EHGE.....IIEHGE...",
+      "...EHGEEEEEEEEEEEEEEEEEEEEHGE...",
+      "...EHGEHHHGHHHGHHGHHGHGGGEHGE...",
+      "...EHGEEEEEEEEEEEEEEEEEEEEHGE...",
+      "...EHGE..................EHGE...",
+      ".EEEHGEEEEEEEEEEEEEEEEEEEEHGEEE.",
+      "EHHEFFEHHHHGGHHHHGHHHGGHHEFFEGGE",
+      "EHHHGHHIIIIIIIIIGHHHHGGHGHHGGHGE",
+      "EHGHHHILLLLLLKKJIHHHGHHHHGHGGGGE",
+      "EHHHHGILIpIpIpIKIHGGHHGHHHGGHGGE",
+      "EFFFFFILIpFpFpIKIFFFFFFFFFFFFFFE",
+      "EHHHGHILIpGpHpIKIGHHHGGHHGGHGGGE",
+      "EHHHHHILIpHpHpIKIGGHHHHGHGHGGGGE",
+      "EGHHHHILIIIIIIIKIHHGHHGGHHGGGHGE",
+      "EFFFFFILLLLKKKKJIFFFFFFFFFFFFFFE",
+      "EHHHGHIKLKKKKKJJIGHHHGHHGGHHGGGE",
+      "EHHHHHGIIIIIIIIIHHHHGHHHGHGGGHGE",
+      "EHHHHGHHHHHHHGHHHHHHHHGHHHGHGGGE",
+      "EGGFGFFFFGFFFFFFFGFFEEEEEEFFFFFE",
+      "EFFFFFFFFFFFFFFFFFFEFHHHHFEFFFFE",
+      ".EEEEEEEEEEEEEEEEEEFHGGGGHFEEEE.",
+      ".EGE..............EFHGHHGHFEEFE.",
+      ".EGE..............EFHHGGGGFEEFE.",
+      ".EEE..............EGFFFFFFEEEEE.",
+      "..................EGFGFFFFEE....",
+      "...................EGFFFFEE.....",
+      "....................EEEEEE......"
+     ]
+    }
+   ],
+   "anteckning": "Snickarbänken står inne, två rutor bred (32 punkter), och ses snett ovanifrån som de andra stationerna. Plankskivan ses ovanifrån och tar 13 av 32 punkters höjd. Den består av tre plankor med fogar i jord1, ljusast åt vänster. Framkanten är ett smalt band på 2 punkter i jord1, och bara de två främre benstumparna syns, 3 punkter höga under hörnen. Vid bakkanten står böjramen: två virkesstolpar och en tvärslå, förkortade till 9 punkter. Över tvärslån är en bågstav i ljust trä spänd mellan stolparna och pressad över ett mittblock som böjform, så att silhuetten får en båge upptill. På skivan ligger en lyrstomme ovanifrån, med ok, armar och ljudlåda, och genom hålet syns skivan. Stubben står framför till höger, där snickaren sitter, och skymmer en del av bandet. Den har en ljus snittyta med årsring och barkkant uppifrån och barksidan under. All kontur är i jord0 runt trät och senap0 runt det ljusa träet. Granskningen: Rättat: saken på skivan var en fyrkantig gul platta som inte gick att läsa som en lyra. Den är nu en spegelsymmetrisk lyrstomme ovanifrån, 11 × 10 punkter på skivans vänstra halva, med ok, två armar, tre strängar i ben1 över skivan och en rundad klangkropp i senap med kontur i senap0, ljusast uppe till vänster. Stubbens ovansida har fått en tydlig årsring (jord2 runt en ljus kärna) innanför barkkanten, mörkare nere till höger. Oförändrat, eftersom det redan följer reglerna: skivan 32 × 13, ramen med två stolpar och tvärslå förkortad till 9 punkter med den spända bågen i böjformen, framkanten på 2 punkter i jord1, benstumparna på 3 punkter, konturen i jord0 och storleken (32 × 31) mot kolonisten.",
+   "ide": "Bänk med böjram: en fyrkantig plankskiva på 32 × 13 punkter ses ovanifrån, och vid bakkanten reser sig en ram av två virkesstolpar med en tvärslå, förkortad till 8–9 punkter, där en bågstav är spänd i en böjform så att silhuetten får en båge upptill. Framkanten är ett smalt band på 2 punkter i jord1 och bara två korta benstumpar på 3 punkter syns under hörnen, alltihop med kontur i jord0 och skivan i jord2–jord3 med korn punkt för punkt. Stubben står framför till höger som en rund ellips med årsringar och barkkant, och på skivan ligger en lyrstomme ovanifrån i ljust trä."
+  }
+ ]
+}

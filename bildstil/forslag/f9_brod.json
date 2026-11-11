@@ -4,6 +4,7 @@
  "slag": null,
  "vad": "Steg 9.6.23: bröd är en lagad mat som bagaren gräddar i bakugnen och som håller längre än annan lagad mat. Här brödet som sak i förrådet.",
  "av": "API:t (claude-opus-5-5), tre idéer",
+ "kommentar": "Nya versioner: de förra var för gula. Gör bara vanliga brödlimpor: en enda limpa som sak i förrådet.",
  "versioner": [
   {
    "bilder": [
@@ -11,61 +12,63 @@
      "namn": "f9_brod",
      "rader": [
       "...EEEEEE...",
-      ".EEKLKKKJEE.",
-      "EKKGEEEEGJJE",
-      "EKJEFFFFEJGE",
-      "EKKE....EGJE",
-      "EJKGEEEEGJGE",
-      "EKJKJKJJJGGE",
-      "EFGFFFFFFFFE",
+      ".EHHHqpGHGE.",
+      "EHqHHqpHGGGE",
+      "EHHqqqpppGGE",
+      "EHGHGqpGGGFE",
+      "EGHGGqpGHGFE",
+      "EGFFFFFFFFFE",
       ".EFFFFFFFFE.",
       "..EEEEEEEE.."
      ]
     }
    ],
-   "anteckning": "Brödet är en platt ringkaka som ligger på marken i förrådet. Den ses snett ovanifrån som en spegelsymmetrisk oval på 14 × 10 punkter. Översidan tar de övre åtta raderna. Hålet sitter något ovanför mitten, och genom det syns marken (genomskinligt). Längs hålets bakre kant syns ett smalt band av insidan i jord1, eftersom man ser in i hålet framifrån och ovanifrån. Framkanten är ett band på 2 punkter i jord1 med ett ljusare korn till vänster, och konturen i jord0 går runt både yttre kanten och hålet. Ljuset kommer från övre vänstra hörnet: senap2 och två ljusa punkter i senap3 uppe till vänster, senap1 och jord2 mot nedre högra kanten. Brända fläckar i jord2 ligger i en ring kring hålet. Brödet är mat, så senapen är den mättade tonen som syns mot gräset. Granskningen: Rättat: brödet var 14 × 10 punkter, lika brett som kolonisten och för stort för en brödkaka. Det är nu 12 × 10 och närmare idéns 12 × 8. Höjden behövs för att hålet ska få kontur, en synlig bakre innervägg och en öppning, och för att framkanten ska få sitt band på 2 punkter i jord1. Hålet ligger kvar något ovanför mitten. Silhuetten och hålet är spegelsymmetriska; bara ljuset skiljer sidorna åt, med senap2 och senap3 uppe till vänster och senap1 och jord2 nere till höger. De brända fläckarna i jord2 ligger i en ring kring hålet. Glansen är nu en enda punkt i senap3 på övre vänstra kanten i stället för två, som idén säger. Kontur i jord0 runt både yttre kanten och hålet. Vinkeln snett ovanifrån och kontrasten mot gräset var redan bra och är oförändrade.",
-   "ide": "Ett runt, platt järnåldersbröd (en tunn kaka med hål i mitten, som en ring) som ligger på marken, ritat snett ovanifrån så att det blir en spegelsymmetrisk oval på ungefär 12 × 8 punkter med hålet något ovanför mitten. Skorpan är senap och jord: senap2–senap3 på översidan uppe till vänster, senap1 och jord2 mot nedre högra kanten, ett smalt band på 2 punkter i jord1 som framkant och kontur i jord0 runt både yttre kanten och hålet. Kornet är några punkter i jord2 som brända fläckar i en ring kring hålet, och en enda glanspunkt i senap3 på den övre vänstra kanten."
+   "anteckning": "Limpan ligger på hyllan i förrådet, och vi ser den snett uppifrån. Den välvda ovansidan tar därför sju av de nio raderna. Längst ner finns ett smalt band i jord1 som visar den mörkare sidan mot underlaget. Det är en enda limpa och ingen behållare, eftersom bröd ligger fritt. Skorpan är i jord2 och jord3 med korn punkt för punkt och kontur i jord0. Ljuset kommer uppifrån vänster, så vänstra sidan är ljusast, och kupan har en glanspunkt i ben2 uppe till vänster. Skårkorset i mitten visar inkråm i ben1 och ben2, ljusare på vänstra sidan av sprickan. Det finns inget gult. Konturen är spegelsymmetrisk, och bara ljuset och kornet skiljer sidorna åt. Bilden är 12 × 9 punkter. Granskningen: Storleken (12 × 9 mot kolonistens 14 × 20), vinkeln snett uppifrån med kupan som större delen och ett band på 2 punkter i jord1 nedtill, konturen i jord0 och den symmetriska silhuetten var redan rätt och är oförändrade. Jag rättade tre saker. 1) Skårornas lodräta arm var bruten: på översta skorpraden låg ljuspunkten (q) i kolumn 4 i stället för i kolumnerna 5–6. Därför satt korset snett och var inte spegelsymmetriskt. Nu går armen rakt i kolumnerna 5–6 med två punkter över och två under den vågräta skåran. Den ljusa ben2 ligger på vänster sida av sprickan och ben1 på höger. 2) Glansen var otydlig, eftersom q-punkten låg ihop med korset. Nu finns en enda glanspunkt i ben2 uppe till vänster på kupan (rad 2, kolumn 2), som idén säger. 3) Ljuset: högerkanten av ovansidan har fått några punkter i jord1 (F) på de nedre skorpraderna, så att den mörkaste delen ligger nere till höger. Bandet börjar med en punkt i jord2 till vänster i stället för inne i bandet, så att det ljusnar mot vänster utan en ensam fläck. Brödet är ljusare än det olivgröna gräset och har kontur, så det syns tydligt på kartan.",
+   "ide": "Rund kupig limpa, ungefär 12 punkter bred och 9 hög, sedd snett uppifrån så att den välvda ovansidan tar större delen av bilden och ett smalt band på 2 punkter i jord1 (F) längst ner visar den mörkare sidan mot marken. Skorpan är brun i jord2 och jord3 (G, H) med korn punkt för punkt, ljusast uppe till vänster och kontur i jord0 (E), och ett skåror-kors i mitten där sprickorna visar ljus inkråm i ben1 och ben2 (p, q) i stället för gult. Formen är spegelsymmetrisk, och bara ljuset och kornet skiljer vänster från höger, med högst en glanspunkt i ben2 på kupans övre vänstra del."
   },
   {
    "bilder": [
     {
      "namn": "f9_brod",
      "rader": [
-      "...EEEEE...",
-      ".EELLLKKEE.",
-      "ELLFKLKFKJE",
-      "ELLKFKFKJJE",
-      "ELKLKFKJJGE",
-      "EKKKFKFJJGE",
-      "EGFGFGFFFFE",
-      ".EGFGFFFFE.",
-      "..EEEEEEE.."
+      "..........EEE...",
+      "........EEHHGE..",
+      "......EEHHpHHGE.",
+      "....EEHpHGHpGGFE",
+      "..EEHHHHpHGGFFFE",
+      ".EGHpHGHGGFFFFE.",
+      "EFGGHpGGFFFFEE..",
+      "EFFGGGFFEEEE....",
+      ".EFGFFFFEE......",
+      "..EFFFEE........",
+      "...EEE.........."
      ]
     }
    ],
-   "anteckning": "Limpan står själv på marken, kupad och rund, och ses snett ovanifrån som allt annat på kartan. Översidan tar större delen av höjden och visar skorpan uppifrån. Två snitt i jord1 korsar varandra i ett X mitt på toppen, och skorpan spricker upp i senap2 längs snitten. Nedtill syns bara sidan som ett smalt mörkare band i jord1, utan ben eller underlag eftersom brödet ligger direkt på marken. Konturen är jord0 och formen är spegelsymmetrisk. Ljuset kommer uppifrån vänster: senap3 där, senap1 och jord2 nere till höger. Senaptonerna är varma och mättade, eftersom brödet är mat och går att ta, och därför syns det mot det dämpade gräset. Granskningen: Granskad: storleken (11 × 9 mot kolonistens 14 × 20) passar en limpa. Vinkeln stämmer: ovansidan tar fem av sju inre rader och framkanten är ett band på två rader. Silhuetten är spegelsymmetrisk, och ljuset faller från övre vänstra hörnet (senap3 till senap1/jord2). Konturen i jord0 och de ljusa senaptonerna gör att limpan syns på gräset. Snitten i jord1 korsar varandra som ett X med senap2 runt sig, som i idén. Enda rättelsen: framkanten var slät jord1 till höger, så jag lade in korn med jord2 som avtar åt höger (rad 6 och 7), utan att lägga in mörka fläckar.",
-   "ide": "En hög, rund limpa som står kupad på marken, ritad snett ovanifrån som en spegelsymmetrisk kupol på ungefär 11 × 9 punkter där översidan tar tre fjärdedelar av höjden och sidan nedtill är ett mörkare band. Över toppen går två eller tre snitt i jord1 som korsar varandra, så att skorpan spricker upp i ljusare senap2-ytor mellan dem. Tonerna är senap3 uppe till vänster, senap1 och jord2 nere till höger, framkanten jord1 och konturen jord0."
+   "anteckning": "Brödet ligger som en enda limpa på hyllan i förrådet. Den ligger på snedden från nedre vänster till övre höger, så att man ser den långa ryggen snett ovanifrån. Ingen behållare används. Ryggen har jord3 uppe till vänster och jord2 mot ändarna och nedåt. Tre korta skåror tvärs över ryggen visar inkråm i ben1. Längs nederkanten syns framsidan som ett band i jord1, och runt hela limpan går en kontur i jord0. Formen är en jämn ellips med lika rundade ändar och är 16 × 11 punkter stor. Det finns inga senapstoner, så limpan blir inte gul. Granskningen: Granskad mot reglerna. Storleken (16 × 11 punkter, limpan omkring 15 punkter lång på snedden) passar som en enda limpa bredvid kolonisten (14 × 20). Vinkeln är snett uppifrån: ryggen syns ovanifrån och framsidan är ett smalt band i F. Konturen i E är punktsymmetrisk kring mitten, så ändarna är lika rundade och ingen är spetsig. Ljuset kommer uppifrån vänster med H och G på ryggen och F mot den högra änden och nederkanten. De tre skårorna i p är korta och snedställda tvärs ryggen, som idén säger. Limpan är ljusare än gräset och syns med sin kontur. Enda rättningen: framsidans band på rad 8 var sex släta F i rad. Där bytte jag en punkt mot G på den belysta vänstra sidan (kolumn 3), så att bandet får korn utan att det blir en mörk fläck. Allt annat är oförändrat.",
+   "ide": "Avlång låg limpa, ungefär 14 punkter lång och 7 hög, som ligger på snedden från nedre vänster till övre höger så att man ser den långa ryggen ovanifrån och den mörka framsidan som ett band i jord1 (F). Längs ryggen går tre korta snedställda skåror med ljus inkråm i ben1 (p), och skorpan i jord2 och jord3 (G, H) mörknar mot de rundade ändarna och nederkanten, inringad av jord0 (E). Silhuetten är en jämn, lång ellips med lika rundade ändar på båda sidor och ingen spetsig ände, så att den läses som en vanlig limpa och inte som en korv eller en stock."
   },
   {
    "bilder": [
     {
      "namn": "f9_brod",
      "rader": [
-      "...EEEEEE.....",
-      ".EELLKLKKEE...",
-      "ELLKFKLKKJJE..",
-      "EKLKKKKFKJJE..",
-      ".EEKJKJKJEEJE.",
-      ".EJEEEEEEKJJE.",
-      "..EEJKJJJJEEGE",
-      "..EHEEEEEEGGFE",
-      "...EEHGHGGFEE.",
-      ".....EEEEEE..."
+      "..EEEEEEE..",
+      ".EqqHHHGGE.",
+      "EqHqHHGHHGE",
+      "EHHHHGHHGGE",
+      "EHGHHHGGHGE",
+      "EGHHGHGGGFE",
+      "EGGHGGGGGFE",
+      "EGFFFFFFFFE",
+      "EpppoppooFE",
+      "EFFFFFFFFFE",
+      ".EEEEEEEEE."
      ]
     }
    ],
-   "anteckning": "Tunnbröden ligger platt i förrådet i en stapel och ses snett ovanifrån. Därför syns det översta brödet helt som en oval i senap2–senap3, ljusast uppe till vänster, med tre prickar i jord1 efter brödpinnen. Varje undre bröd är förskjutet två punkter nedåt och en till två åt höger. Det syns bara som en smal skiva nedtill och åt höger, med egen kontur i jord0: det mellersta i senap1–senap2 och det understa i jord2–jord3. Stapeln läses då som lager som blir mörkare nedåt mot höger. Bilden är 15 × 10 punkter, låg och bred, och ingen skugga är ritad. Granskningen: Rättat: Det översta brödet var en sned, lutande oval. Nu är det en spegelsymmetrisk ellips på 12 × 6 punkter. De två undre bröden låg som en trappa långt ner åt höger och läste som tre bröd i rad, inte som en stapel. Nu ligger de bara 1 punkt åt höger och 2 punkter ner per lager, så att de sticker ut som smala skivor på 2 punkter nedtill och åt höger. Varje bröd har egen kontur i jord0. Tonerna går som i idén: översta senap2–senap3 med glans uppe till vänster och prickar i jord1 efter brödpinnen, mitten senap1–senap2, understa jord2–jord3 med jord1 i skuggan nere till höger. Storleken är nu 14 × 10 punkter, rimligt mot kolonisten (14 × 20), och stapeln syns tydligt på gräset.",
-   "ide": "En liten stapel med tre platta, runda tunnbröd som ligger lite förskjutna ovanpå varandra, ritad snett ovanifrån som en låg och bred form på ungefär 14 × 8 punkter. Det översta brödet syns helt som en oval med prickar i jord1 efter brödpinnen, och de två undre syns bara som smala skivor på 2 punkter som sticker ut nedtill och åt höger, var och en med egen kontur i jord0. Det översta är ljusast i senap2–senap3 och de undre blir mörkare i senap1 och jord2, så att stapeln läses som lager."
+   "anteckning": "Limpan ligger som en enda sak i förrådet, utan behållare, och ses snett ovanifrån som kartan. Det mesta av bilden är ovansidan: en låg, rundad platta i jord2 och jord3. Den är ljusast uppe till vänster och mörknar mot höger och framkanten, med lite mjöldamm i ben2 uppe till vänster. Sidorna är raka eftersom limpan bakats tätt intill andra i ugnen. Den främre sidan syns som ett band på tre punkter: överst skorpa i jord1, i mitten en blek rand i ben1 och ben0 där den skilts från grannlimpan, och sedan skorpa igen. Konturen är jord0 med lika rundade hörn på båda sidor. Bara bruna och benvita toner och ingen senap, så att limpan inte blir gul. Granskningen: Granskad mot reglerna. Storleken (11 × 11) passar bredvid kolonisten (14 × 20) och de godkända sakerna. Vinkeln är snett uppifrån: ovansidan tar sex av de nio inre raderna och framsidan är ett band på 3 punkter (F, p/o, F). Konturen i jord0 har rundade hörn som är lika på båda sidor, och mjöldammet i q ligger uppe till vänster. Limpan syns bra mot gräset. Jag rättade bara kornet på ovansidan. I raderna 2–5 bildade kolumn 7 en lodrät ljus rand i H bredvid en jämn rand i G i kolumn 8–9, och det såg ut som skåror. Nu byts tonen punkt för punkt, och ytan mörknar mot nedre högra hörnet med F där. Rad 1, 3, 6 och framsidan är oförändrade.",
+   "ide": "Kantig, nästan fyrkantig limpa, ungefär 11 × 10 punkter, som har bakats tätt intill andra i ugnen. Därför är ovansidan en låg, rundad platta i jord2 och jord3 (G, H) och sidorna raka, och den främre sidan syns som ett band på 3 punkter där en blekare rand i ben0 och ben1 (o, p) visar var den skilts från grannlimpan. Ovanpå ligger ett tunt mjöldamm i ben2 (q) uppe till vänster i stället för skåror, och konturen är jord0 (E) med rundade hörn som är lika på båda sidor."
   }
  ]
 }

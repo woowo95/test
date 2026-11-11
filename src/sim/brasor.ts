@@ -36,8 +36,7 @@ export const BRASA = balans('brasa', {
   gruppFull: 4, // ... och vill ha den fullt ut när så många har det
   kyla: 0, // bara när kylan ute (coldOf i vader.ts) är över detta ...
   vedDygn: 4, // ... och bränslet i förrådet räcker så här många dygn (år i spelet) för varje eld, den nya brasan medräknad
-  max: 2, // byn har högst så här många brasor
-  slackDygn: 2, // ingen tänder eller fyller på en brasa när bränslet räcker kortare än så här många dygn för varje eld
+  slackDygn: 2, // när bränslet tryter sköts så många eldar som veden räcker till i så här många dygn var, de mest använda först (eld.ts)
   tomDygn: 3, // en släckt brasa som ingen sover nära tas isär efter så här många dygn
   letaMin: 120, // fattas stenarna går en i taget till stenarna och letar så här många minuter (projekt.ts)
 });
@@ -98,7 +97,7 @@ export function stepBrasor(s: State) {
     if (g.length > grupp.length) grupp = g;
   }
   const tomma = br.filter(f => !f.lit && !f.folk!.length && f.hearth !== 'hard'); // härden står kvar i huset (steg 7.5.3)
-  const vill = grupp.length >= BRASA.grupp && s.fire.lit && coldOf(temperature(s)) > BRASA.kyla && br.length - tomma.length < BRASA.max && vedPerEld(s, 1 - tomma.length) >= BRASA.vedDygn;
+  const vill = grupp.length >= BRASA.grupp && s.fire.lit && coldOf(temperature(s)) > BRASA.kyla && vedPerEld(s, 1 - tomma.length) >= BRASA.vedDygn; // så många brasor som veden räcker till (steg 10.2.10)
   s.brasa = vill ? { vill: Math.min(1, grupp.length / BRASA.gruppFull), x: grupp.reduce((n, b) => n + b.x, 0) / grupp.length, y: grupp.reduce((n, b) => n + b.y, 0) / grupp.length } : undefined;
   // en lägereld som ingen sover nära tas isär: genast om byn vill ha en annanstans, annars när den stått släckt i tomDygn
   for (const f of tomma) if (vill || s.now - (f.ut ?? f.klar ?? s.now) >= BRASA.tomDygn * DAY) taIsar(s, f);

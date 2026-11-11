@@ -1,10 +1,11 @@
 // Scenarier. Folket: befolkning, faror, seder, samtal, liv och utflyttning.
+import * as BILD from '../../ui/stridbild';
 import { Person, createState, tidyTools, addTool, getRel, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, ageStart, amountOf, isLight, ageOf, DAY, HOUR, State, findL, areaOf, stat, hoped, gain, ownedSum, setAmount, setStock, BEAT, tingOf, planBuild, regulate, ACTS } from '../../sim';
 import * as SIM from '../../sim';
 import { byId, isSocial, TalkEvent } from '../../sim';
 import { START, STEG_DYGN } from '../kor';
 import { hasIcon } from '../../ikoner';
-import { setFood, kor, klockan, tandEld, byggare, SCENARIER, pct, grenarUte, barGrenar, nyInvanare, valjer, MATARBETE, TRAARBETE, REDSKAPSARBETE, FORBATTRING, MATMEDREDSKAP, rikBy } from './hjalp';
+import { stridIByn, rovarGang, korTills, setFood, kor, klockan, tandEld, byggare, SCENARIER, pct, grenarUte, barGrenar, nyInvanare, valjer, MATARBETE, TRAARBETE, REDSKAPSARBETE, FORBATTRING, MATMEDREDSKAP, rikBy } from './hjalp';
 
 SCENARIER.befolkning = {
   lang: true,
@@ -30,7 +31,7 @@ SCENARIER.befolkning = {
 };
 
 SCENARIER.faror = {
-  text: 'Faror går före förbättringar: när maten tryter väljer de vuxna mat i stället för bygge, hantverk och fritid, och när kylan är en fara (istiden, elden släckt) går tiden till trä i stället för till nya redskap och bygge. När byn svälter letas ingen flinta, och bara maten bärs in (steg 2.12.3)',
+  text: 'Faror går före förbättringar: när maten tryter väljer de vuxna mat i stället för bygge, hantverk och fritid, och när kylan är en fara (istiden, elden släckt) går tiden mest till trä, och nya redskap och bygge väger mindre (steg 10.2.6). När byn svälter letas ingen flinta, och maten bärs in först (steg 2.12.3)',
   kor: () => {
     // en by som kan bygga och göra korgar, spjut, metspön och knivar, med en planerad stuga. ai = tidsåldern (0 = istiden)
     const by = (ai?: number) => {
@@ -73,11 +74,12 @@ SCENARIER.faror = {
       [`svältande by (mat för ${SIM.dygn(svFd)}): bygge, hantverk och fritid ${pct(svalt.andel(FORBATTRING))}, klart lägre än i den rika byn (${svalt.topp})`, svFd < 1 && svalt.andel(FORBATTRING) < rik.andel(FORBATTRING) / 3],
       [`svältande by: matarbete och redskap till maten ${pct(svalt.andel(MATMEDREDSKAP))} av valen (i den rika byn ${pct(rik.andel(MATMEDREDSKAP))})`, svalt.andel(MATMEDREDSKAP) > 0.5 && svalt.andel(MATMEDREDSKAP) > 2 * rik.andel(MATMEDREDSKAP)],
       [`istiden med elden släckt (${kyla.ljust ? 'ljust' : 'mörkt'}, ${kyla.kallt ? 'kallt' : 'inte kallt'}): trä ${pct(kyla.andel(TRAARBETE))}, bygge ${pct(kyla.andel(['bygga']))} (${kyla.topp})`, kyla.ljust && kyla.kallt && kyla.andel(TRAARBETE) > 0.4 && kyla.andel(TRAARBETE) > kyla.andel(['bygga'])],
-      [`istiden med elden släckt: inga korgar, spjut, metspön, yxor eller knivar görs, inte heller när maten tryter (${tillv(kyla)}; hungrig ${tillv(kylaSvalt)}, där ${pct(kylaSvalt.andel(MATARBETE))} matarbete)`, tillvAndel(kyla) === 0 && tillvAndel(kylaSvalt) === 0 && kylaSvalt.andel(MATARBETE) > 0],
-      [`kontroll: samma hungriga by med elden tänd gör redskap (${tillv(varmt)}), så provet ser dem när de väljs`, tillvAndel(varmt) > 0],
-      [`när kylan är en fara byggs inget (${kyla.n.bygga ?? 0} av ${kyla.tot} val)`, !kyla.n.bygga],
+      // kylan väger i poängen (steg 10.2.6): redskapen görs mer sällan i kylan än med elden tänd, och värmen och maten går före
+      [`istiden med elden släckt: korgar, spjut, metspön, yxor och knivar görs mer sällan än med elden tänd (${tillv(kyla)}; hungrig ${tillv(kylaSvalt)} ${pct(tillvAndel(kylaSvalt))}, där ${pct(kylaSvalt.andel(MATARBETE))} matarbete; med elden tänd ${tillv(varmt)} ${pct(tillvAndel(varmt))})`, tillvAndel(kyla) < kyla.andel(TRAARBETE) && tillvAndel(kylaSvalt) < tillvAndel(varmt) && kylaSvalt.andel(MATARBETE) > tillvAndel(kylaSvalt)],
+      [`när kylan är en fara byggs sällan (${kyla.n.bygga ?? 0} av ${kyla.tot} val)`, (kyla.n.bygga ?? 0) <= kyla.tot * 0.1],
       [`den svältande byn letar inte flinta vid stenarna, inte heller när den saknar flinta till elden (${svalt.sok + svaltFlinta.sok} av ${svalt.tot + svaltFlinta.tot} val)`, svalt.sok + svaltFlinta.sok === 0],
-      ['när byn svälter bärs maten på marken in, men inte grenarna', !barGren && !!barGrenRik && !!barBar && barBar.x < c.x],
+      // vid svält bärs maten först (steg 10.2.6): det andra väger som om det låg längre bort
+      [`när byn svälter bärs maten på marken in före grenarna (${barBar && barBar.x < c.x ? 'maten' : 'grenarna'} först)`, !!barGren && !!barGrenRik && !!barBar && barBar.x < c.x],
     ];
   },
 };
@@ -914,7 +916,27 @@ SCENARIER.blockera = {
       }
       if (slaE) igenom++;
     }
+    // samma dörr som riktiga rutor på kartan (steg 10.1.6, testarenans plats): väggen är rutorna x = 27 utom rutan y = 19, och
+    // striden frågar världen om dem (provVarld). Samma sak ska gälla: ingen förbi den som står i öppningen, ingen i en vägg
+    const X0 = 20, Y0 = 15, rutor = new Set<number>(); // inne på den minsta kartan (64 × 40 när ingen by är laddad) for (let y = 0; y < 9; y++) if (y !== 4) rutor.add((Y0 + y) * SIM.W + X0 + 7);
+    const varld = SIM.provVarld(undefined, rutor), iRuta = (x: number, y: number) => rutor.has(Math.floor(y) * SIM.W + Math.floor(x));
+    let kForbi = 0, kVagg = 0, kIgenom = 0, kN = 0;
+    for (let fro = 1; fro <= 40; fro++) {
+      const st = SIM.nyStrid({ karta: true, avsikt: 'skada', w: SIM.W, h: SIM.H, kampar: [m(1, 0, 'kniv', X0 + 2, Y0 + 3), m(2, 0, 'kniv', X0 + 2, Y0 + 4.5), m(3, 0, 'kniv', X0 + 2, Y0 + 6), m(4, 1, 'yxa', X0 + 7.5, Y0 + 4.5, 0), m(5, 1, 'hand', X0 + 12, Y0 + 4.5, 0)].map(k => ({ ...k, fly: { x: k.sida ? X0 + 30 : X0 - 15, y: k.y } })) }, fro);
+      const D = st.kampar[3]; let slaE = false; kN++;
+      SIM.iVarlden(varld, () => {
+        while (!st.slut) {
+          SIM.stridSteg(st);
+          for (const k of st.kampar.filter(k => k.sida === 0 && k.lage === 'strid')) { if (D.lage === 'strid' && k.x > X0 + 8.25) kForbi++; if (iRuta(k.x, k.y)) kVagg++; }
+          if (st.logg.some(r => r.b === 5 && (r.h === 'traff' || r.h === 'miss'))) slaE = true;
+        }
+      });
+      if (slaE) kIgenom++;
+    }
+    const manga = SIM.korManga({ karta: true, avsikt: 'skada', w: SIM.W, h: SIM.H, kampar: [m(1, 0, 'yxa', X0 + 3, Y0 + 4.5), m(2, 1, 'kniv', X0 + 11, Y0 + 4.5)].map(k => ({ ...k, fly: { x: k.sida ? X0 + 30 : X0 - 15, y: k.y } })) }, 1, 50, varld);
     return [
+      [`dörren som riktiga rutor på kartan: ingen kommer förbi den som står i öppningen (${kForbi}) eller står i en vägg (${kVagg}), och när hen fallit går de igenom (${kIgenom} av ${kN})`, kForbi === 0 && kVagg === 0 && kIgenom >= kN * 0.6],
+      [`hundra strider i rad går genom samma värld (${manga.n} strider genom dörren, ${manga.vann[0]} mot ${manga.vann[1]}, ${manga.oavgjort} oavgjorda)`, manga.n === 50 && manga.vann[0] + manga.vann[1] > 0],
       [`öppen plan, 60 strider tre mot tre (${steg} steg): ingen kliver närmare än ${KR} rutor till en fiende som står (${nara} gånger)`, steg > 1000 && nara === 0],
       [`den som flyr förbi en fiende som står går runt hen (som närmast ${runt.toFixed(2)} rutor) och kommer undan (${borta ? 'ja' : 'nej'})`, runt >= KR - 1e-6 && runt < 1.2 && borta],
       [`dörröppningen: ingen kommer förbi den som står i den (${forbi} gånger) eller går genom väggen (${iVaggen}, ${utan} vid sidan av öppningen)`, forbi === 0 && iVaggen === 0 && utan === 0],
@@ -1080,6 +1102,43 @@ SCENARIER.langsam = {
   },
 };
 
+SCENARIER.slaghandelse = {
+  text: 'Steg 10.1.3: varje slag, kast och knuff är en händelse med tid, vem, mot vem och längd (vapnets takt). Antalet händelser är antalet anfall kämparna gjort, också med kast, knuffar, sköldar och djur, och rapporten räknar slagen ur händelserna',
+  kor: () => {
+    const m = (id: number, sida: 0 | 1, vapen: SIM.Vapen, x: number, y: number, extra: object = {}) => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 14, smidighet: 10, skicklighet: 10, sikte: 10 }, vapen, klader: [] as string[], fart: 1, x, y, ...extra });
+    const upp: SIM.Uppstallning[] = [
+      { avsikt: 'skada', w: 20, h: 14, kampar: [m(1, 0, 'yxa', 8, 7), m(2, 1, 'kniv', 12, 7)] },
+      { avsikt: 'slagsmal', w: 20, h: 14, kampar: [m(1, 0, 'hand', 8, 7), m(2, 1, 'hand', 12, 7)] },
+      { avsikt: 'doda', w: 24, h: 14, kampar: [m(1, 0, 'fiskespjut', 4, 7, { reserv: 'kniv' }), m(2, 0, 'sten', 4, 9), m(3, 1, 'yxa', 18, 7, { skold: true }), m(4, 1, 'flintspjut', 18, 9)] },
+      { avsikt: 'doda', w: 20, h: 14, kampar: [m(1, 0, 'fiskespjut', 6, 7), m(2, 0, 'kniv', 6, 9), SIM.djurKampe('varg', 3, 1, 14, 7), SIM.djurKampe('varg', 4, 1, 14, 9)] },
+      { avsikt: 'doda', w: 20, h: 14, kampar: [m(1, 0, 'yxa', 6, 7), m(2, 0, 'fiskespjut', 6, 9), SIM.djurKampe('bjorn', 3, 1, 14, 8)] },
+    ];
+    let strider = 0, anfall = 0, raknade = 0, fel = 0, utanLangd = 0, kast = 0, knuffar = 0, forTatt = 0, rapportFel = 0, par = 0;
+    for (const u of upp) for (let fro = 1; fro <= 40; fro++) {
+      const st = SIM.stridTillSlut(SIM.nyStrid(u, fro)), hs = SIM.slagen(st), rap = SIM.stridRapport(st);
+      strider++; anfall += hs.length; raknade += st.kampar.reduce((a, k) => a + k.slag, 0);
+      for (const k of st.kampar) {
+        const mina = hs.filter(h => h.fran === k.id);
+        if (mina.length !== k.slag) fel++;
+        if (rap.sidor[k.sida].folk.find(f => f.id === k.id)?.slag !== mina.length) rapportFel++;
+        // nästa anfall av samma kämpe kommer inte före det förra är klart (ett stridssteg när: tiden räknas i steg)
+        for (let i = 1; i < mina.length; i++) if (mina[i].t < mina[i - 1].t + mina[i - 1].l - SIM.STRID.tick - 1e-6) forTatt++;
+      }
+      for (const h of hs) {
+        if (!(h.l > 0) || h.fran === undefined || h.mot === undefined || h.fran === h.mot) utanLangd++;
+        if (h.kast) kast++; if (h.utfall === 'knuff' || h.utfall === 'omkull') knuffar++; if (h.utfall === 'parera' || h.utfall === 'duck') par++;
+      }
+    }
+    return [
+      [`varje anfall är en händelse (${anfall} händelser, ${raknade} anfall räknade av kämparna i ${strider} strider; ${fel} kämpar med olika antal)`, anfall > 500 && anfall === raknade && fel === 0],
+      [`varje händelse har tid, längd, vem och mot vem (${utanLangd} utan)`, utanLangd === 0],
+      [`kast, knuffar och försvar är händelser som slagen (${kast} kast, ${knuffar} knuffar och fall, ${par} parerade och duckade)`, kast > 0 && knuffar > 0 && par > 0],
+      [`samma kämpe anfaller inte igen förrän det förra anfallet är klart (${forTatt} för tidigt)`, forTatt === 0],
+      [`rapporten räknar slagen ur händelserna (${rapportFel} fel)`, rapportFel === 0],
+    ];
+  },
+};
+
 SCENARIER.strid = {
   text: 'Striden i testarenan (steg 3.7.5): samma uppställning och frö ger samma strid, avsikten avgör hur den slutar (lek vid första smärtan, slagsmål med händerna, döda slår den som ligger), vapen och kläder spelar roll, kaninen flyr, och en person ur byn tar med sitt vapen',
   kor: () => {
@@ -1150,8 +1209,9 @@ SCENARIER.avstand = {
     const sikte = SIM.personKampe(t, p, 1, 0, 0, 0).st.sikte === 5 + (p.skill.traff ?? 0) / 2;
     let fastIByn = false;
     for (let i = 0; i < 60 && !fastIByn; i++) {
-      q.skador = []; q.health = 1; q.blod = 1;
-      const st = SIM.stridIByn(t, 'skada', [[p], [q]], 'för att pröva');
+      if (!SIM.alive(p) || !SIM.alive(q)) break;
+      q.skador = []; q.health = 1; q.blod = 1; q.x = p.x + 6; q.y = p.y; // på avstånd, så att spjutet kastas (striden börjar där de står, steg 10.1.7)
+      const st = stridIByn(t, 'skada', [[p], [q]], 'för att pröva');
       if (st.logg.some(r => r.h === 'fastnar' && r.a === st.kampar[1].id) && q.health > 0) fastIByn = !!q.skador?.some(w => w.fast) || st.logg.some(r => r.h === 'drar');
       p.skador = []; p.health = 1; p.blod = 1; p.task = undefined; q.task = undefined;
     }
@@ -1210,8 +1270,7 @@ SCENARIER.knuff = {
     // i byn: lera efter regnet gör marken hal, och bördan räknas
     const t = createState(11, START), [p, q] = living(t).filter(x => ageOf(x, t.now) >= SIM.ALDER.vuxen);
     (t.vader ??= { fukt: 0, sno: 0 }).fukt = 1;
-    SIM.stridIByn(t, 'slagsmal', [[p], [q]], 'för att pröva');
-    const halIByn = (t.strider?.[t.strider.length - 1].u.halt ?? 0) > 0;
+    const halIByn = stridIByn(t, 'slagsmal', [[p], [q]], 'för att pröva').halt > 0;
     const borda = typeof SIM.personKampe(t, p, 1, 0, 0, 0).tung === 'number';
     const texter = [...hand, ...halka, ...lek, ...tapp, ...tappHand].every(st => st.logg.every(r => SIM.stridText(st, r).length > 5 && !SIM.stridText(st, r).includes('undefined')));
     return [
@@ -1261,7 +1320,7 @@ SCENARIER.hot = {
     let feg = false;
     for (let i = 0; i < 20 && !feg; i++) {
       p.skador = []; p.health = 1; p.blod = 1; q.skador = []; q.health = 1; q.blod = 1;
-      SIM.stridIByn(t, 'skada', [[p], [q]], 'för att pröva');
+      stridIByn(t, 'skada', [[p], [q]], 'för att pröva');
       feg = living(t).some(x => x !== p && x.intryck?.some(e => e.om === p.id && e.k === 'feg'));
       p.task = undefined; q.task = undefined;
     }
@@ -1292,7 +1351,7 @@ SCENARIER.vapentycke = {
     let vann = false, ogillar = false;
     for (let i = 0; i < 30 && !(vann && ogillar); i++) {
       for (const x of [p, q]) { x.skador = []; x.health = 1; x.blod = 1; x.task = undefined; }
-      SIM.stridIByn(t, 'skada', [[p], [q]], 'för att pröva');
+      stridIByn(t, 'skada', [[p], [q]], 'för att pröva');
       vann ||= SIM.smakAv(p, 'v:yxa') > 0;
       ogillar ||= SIM.smakAv(q, 'v:hand') < 0;
       if (p.health <= 0 || q.health <= 0) break;
@@ -1330,7 +1389,7 @@ SCENARIER.larm = {
     // ett slagsmål i byn: de som slåss ropar
     folk.forEach((q, j) => { q.x = 10 + j * 3; q.larm = undefined; q.task = undefined; });
     const fore = t.stat?.larm ?? 0;
-    SIM.stridIByn(t, 'slagsmal', [[folk[0]], [folk[1]]], 'för att pröva');
+    stridIByn(t, 'slagsmal', [[folk[0]], [folk[1]]], 'för att pröva');
     const slagsmal = (t.stat?.larm ?? 0) > fore && folk.slice(2).some(q => q.larm?.vad === 'slagsmål');
     // falskt larm ur ett utbrott
     let falskt = false;
@@ -1354,7 +1413,23 @@ SCENARIER.larm = {
       return n('traff') + n('tog') ? (n('traff') + n('tog')) / (n('traff') + n('tog') + n('miss')) : 0;
     };
     const klar = kast(0), dimmig = kast(1);
+    // larmet som handling (steg 10.1.12): den som ser rövarna varnar, alla inom hörhåll hör och varnar själva vidare, led för led.
+    // Jägaren långt borta, utom syn- och hörhåll, får det inte
+    const b = createState(4, START); klockan(b, 12); const eld = SIM.eldPlats(b), bf = living(b).filter(q => SIM.ageOf(q, b.now) >= 16).slice(0, 4), sida = eld.x < 60 ? 1 : -1, y0 = eld.y;
+    const steg = SIM.ROVARE.horhall - 6;
+    // den första står längst ut, där gänget kommer, den tredje vid elden; jägaren åt ett annat håll, utom hörhåll från elden
+    bf.forEach((q, i) => { q.x = eld.x + sida * (2 - i) * steg; q.y = y0; q.task = undefined; q.larm = undefined; });
+    for (const q of living(b)) if (!bf.includes(q)) { q.x = eld.x; q.y = y0 + 2; q.task = undefined; }
+    const jagare = bf[3]; jagare.x = eld.x; jagare.y = y0 + (y0 < 60 ? 1 : -1) * (SIM.ROVARE.horhall + 8);
+    const gang = rovarGang(b, 3, { x: bf[0].x + sida * (SIM.ROVARE.folkSer - 4), y: y0 });
+    let varnar = false, jagareFick = false;
+    korTills(b, () => bf.slice(0, 3).every(q => q.larm?.varnat), 300, () => { if (bf.some(q => q.task?.act === 'varna')) varnar = true; if (jagare.larm) jagareFick = true; });
+    const led = bf.slice(0, 3).map(q => q.larm?.led ?? -1), vst = b.stat ?? {};
+    const sag = led[0] === 0 && gang.sedd !== undefined, ledvis = led[1] >= 1 && led[2] > led[1];
     return [
+      [`den som ser rövarna får larmet själv (led ${led[0]}) och väljer att varna (handlingen ${SIM.ACTS.varna?.namn ?? 'saknas'}: ${varnar})`, sag && varnar && !!SIM.ACTS.varna],
+      [`larmet går led för led: den första hörs av nästa, som varnar vidare till den tredje (led ${led.join(', ')}; ${vst.rovarVarnar ?? 0} varnade, ${vst.larm_hort ?? 0} hörde)`, ledvis && (vst.rovarVarnar ?? 0) >= 3],
+      [`jägaren långt borta, utom syn- och hörhåll, vet ingenting (${jagareFick ? 'fick larmet' : 'inget larm'})`, !jagareFick],
       [`ropet sprids led för led genom byn (${dag.length} av ${folk.length - 1} hörde, ${leden} led)`, dag.length === folk.length - 1 && leden >= 2],
       ['på 20 rutor hörs ropet inte på dagen, men på natten', !dagLangt && nattLangt],
       ['storleken förvrängs ibland längs vägen', forvrangt],
@@ -1465,36 +1540,168 @@ SCENARIER.smidighet = {
   },
 };
 
+SCENARIER.stridkarta = {
+  text: 'Steg 10.1.4: ett slagsmål sker på kartans rutor. De som slåss är personerna själva, där de står; såret sitter på personen i samma ögonblick som slaget träffar, ingen flyttas till en annan plats och ingen står i en vägg. Byn går i korta steg medan det pågår och i samma följd av steg i spelet och i ikappräkningen. Den som står nära går emellan eller går undan, efter empati och mod',
+  kor: () => {
+    const ny = (seed: number) => {
+      const s = createState(seed, START); klockan(s, 12);
+      const [a, b, ...ovriga] = living(s).filter(x => ageOf(x, s.now) >= SIM.ALDER.vuxen);
+      b.x = a.x + 1.2; b.y = a.y;
+      for (const q of [a, b]) { q.pot.mod = 16; q.pot.aggression = 16; q.pot.empati = 4; q.task = undefined; }
+      return { s, a, b, ovriga };
+    };
+    // 1) striden på kartan, sekund för sekund
+    const { s, a, b, ovriga } = ny(21);
+    for (const q of ovriga) { q.x = a.x + 40; q.y = a.y; q.task = undefined; } // de andra långt bort: ingen går emellan
+    const start = [a, b].map(q => ({ x: q.x, y: q.y })), sar0 = [a, b].map(q => q.skador?.length ?? 0);
+    const rel0 = s.rels[SIM.relKey(a.id, b.id)]?.op ?? 0;
+    const g = SIM.kartStridBorja(s, 'slagsmal', [[a], [b]], 'för att pröva');
+    const borjar = s.kartStrider?.length === 1 && [a, b].every(q => q.task?.act === 'strid') && [a, b].every((q, i) => q.x === start[i].x && q.y === start[i].y);
+    const kort = SIM.nastaSteg(s) === SIM.STRID.kortSteg;
+    let sarUnder = 0, efterslap = 0, hopp = 0, iVagg = 0, sek = 0, forra = [a, b].map(q => ({ x: q.x, y: q.y }));
+    while (s.kartStrider?.length && sek < 900) {
+      step(s, 1); sek++;
+      [a, b].forEach((q, i) => {
+        const k = g.st.kampar[i], nya = (q.skador?.length ?? 0) - sar0[i];
+        if (nya < k.skador.length) efterslap++; // ett sår i striden som inte sitter på personen
+        if (!g.st.slut && nya > 0) sarUnder = Math.max(sarUnder, nya);
+        const d = Math.hypot(q.x - forra[i].x, q.y - forra[i].y); if (d > 4) hopp++;
+        if (SIM.isWall(s, q.x, q.y)) iVagg++;
+        if (q.x !== k.x || q.y !== k.y) efterslap++; // kämpen står där personen står
+        forra[i] = { x: q.x, y: q.y };
+      });
+    }
+    const slut = !s.kartStrider?.length && !!g.st.slut, traffar = g.st.logg.filter(r => r.h === 'traff').length;
+    const fria = [a, b].filter(SIM.alive).every(q => q.task?.act !== 'strid' || q.task.until <= s.now);
+    const rel = s.rels[SIM.relKey(a.id, b.id)]?.op ?? 0, rapport = s.stridRapporter?.length === 1 && s.stridRapporter[0].orsak === 'för att pröva';
+    const langt = SIM.nastaSteg(s) !== SIM.STRID.kortSteg;
+    // 2) en vägg mellan dem: de går runt den, aldrig igenom
+    const v = ny(21);
+    for (const q of v.ovriga) { q.x = v.a.x + 40; q.task = undefined; }
+    v.b.x = v.a.x + 4; v.b.y = v.a.y;
+    const vx = Math.floor(v.a.x) + 2, vy = Math.floor(v.a.y);
+    for (let dy = -1; dy <= 1; dy++) SIM.bitsOf(v.s).push({ id: v.s.nextBit!++, x: vx, y: vy + dy, k: 'vagg', m: 'timmer', b: 1, mat: 10, c: 1 });
+    SIM.touch(v.s);
+    const vg = SIM.kartStridBorja(v.s, 'slagsmal', [[v.a], [v.b]], 'bakom en vägg');
+    let vVagg = 0, vSek = 0;
+    while (v.s.kartStrider?.length && vSek < 900) { step(v.s, 1); vSek++; for (const q of [v.a, v.b]) if (SIM.isWall(v.s, q.x, q.y)) vVagg++; }
+    const vSlag = SIM.slagen(vg.st).length;
+    // 3) samma följd av steg i spelet (ett steg i taget, så långt som nastaSteg säger) och i ikappräkningen (fem minuter åt gången)
+    const e = ny(22), f = ny(22);
+    SIM.kartStridBorja(e.s, 'slagsmal', [[e.a], [e.b]], 'lika'); SIM.kartStridBorja(f.s, 'slagsmal', [[f.a], [f.b]], 'lika');
+    let stegSpel = 0;
+    for (const till = e.s.now + 900 * 1000; e.s.now < till - 1;) { step(e.s, Math.min(SIM.nastaSteg(e.s), (till - e.s.now) / 1000)); stegSpel++; }
+    for (let i = 0; i < 3; i++) step(f.s, 300);
+    const lika = SIM.serialize(e.s) === SIM.serialize(f.s);
+    // 4) de som står nära: den empatiska och modiga går emellan, den rädda går undan, och barnet går undan
+    let emellan = 0, undan = 0, skilda = 0, barnUndan = 0, barnEmellan = 0;
+    for (let seed = 30; seed < 42; seed++) {
+      const n = ny(seed), [fred, radd] = n.ovriga, barn = living(n.s).find(x => ageOf(x, n.s.now) < SIM.ALDER.vuxen && ageOf(x, n.s.now) >= SIM.ALDER.smabarn);
+      if (!fred || !radd) continue;
+      for (const q of n.ovriga) { q.x = n.a.x + 40; q.task = undefined; }
+      fred.pot.empati = 19; fred.pot.mod = 18; fred.pot.karisma = 18; fred.pot.styrka = 16; fred.x = n.a.x + 4; fred.y = n.a.y + 3;
+      radd.pot.empati = 6; radd.pot.mod = 2; radd.x = n.a.x - 3; radd.y = n.a.y - 3;
+      if (barn) { barn.x = n.a.x; barn.y = n.a.y + 4; barn.task = undefined; }
+      const ng = SIM.kartStridBorja(n.s, 'slagsmal', [[n.a], [n.b]], 'med folk omkring');
+      const d0 = Math.hypot(radd.x - n.a.x, radd.y - n.a.y);
+      for (let i = 0; i < 600 && n.s.kartStrider?.length; i++) step(n.s, 1);
+      if (ng.val?.[fred.id] === 'skilja') emellan++;
+      if (ng.val?.[radd.id] === 'undan' && Math.hypot(radd.x - n.a.x, radd.y - n.a.y) > d0) undan++;
+      if (ng.skild === fred.id) skilda++;
+      if (barn && ng.val?.[barn.id] === 'undan') barnUndan++; if (barn && ng.val?.[barn.id] === 'skilja') barnEmellan++;
+    }
+    return [
+      [`striden börjar där de står, och byn går i korta steg (${SIM.STRID.kortSteg} s) medan den pågår`, borjar && kort],
+      [`såren sitter på personen direkt när slaget träffar (${traffar} träffar, ${sarUnder} sår på en person medan striden pågick, ${efterslap} gånger låg personen efter)`, traffar > 0 && sarUnder > 0 && efterslap === 0],
+      [`ingen flyttas till en annan plats (${hopp} hopp på mer än fyra rutor på en sekund) och ingen står i en vägg (${iVagg})`, hopp === 0 && iVagg === 0],
+      [`striden tar slut (efter ${sek} s), de som var med väljer på nytt, rapporten sparas och de tycker sämre om varandra (${rel0.toFixed(0)} → ${rel.toFixed(0)})`, slut && sek > 5 && fria && rapport && rel < rel0 && langt],
+      [`med en vägg emellan går de runt den och slåss (${vSlag} slag, ${vVagg} gånger i väggen)`, vSlag > 0 && vVagg === 0],
+      [`spelet och ikappräkningen går igenom samma steg (${stegSpel} steg i spelet mot tre femminuterssteg) och blir exakt lika`, lika && stegSpel > 10],
+      [`den empatiska och modiga går emellan (${emellan} av 12) och får dem ibland att sluta (${skilda}), den rädda går undan (${undan}), och barn går undan men aldrig emellan (${barnUndan}, ${barnEmellan})`, emellan >= 8 && skilda >= 1 && undan >= 8 && barnEmellan === 0],
+    ];
+  },
+};
+
+SCENARIER.slagbild = {
+  text: 'Steg 10.1.5: bilden spelar stridens händelser. Varje slag i en strid på kartan tas emot av bilden en gång, i samma ögonblick som det sker, och syns då: den som slår gör rörelsen, i vapnets takt, och strecket går till den som träffas. Antalet ritade slag är antalet händelser, och inget ritas när ingen strid pågår',
+  kor: () => {
+    const s = createState(21, START); klockan(s, 12);
+    const [a, b, ...ovriga] = living(s).filter(x => ageOf(x, s.now) >= SIM.ALDER.vuxen);
+    for (const q of ovriga) { q.x = a.x + 40; q.task = undefined; }
+    b.x = a.x + 1.2; b.y = a.y;
+    for (const q of [a, b]) { q.pot.mod = 18; q.pot.aggression = 16; q.pot.empati = 4; q.task = undefined; }
+    BILD.nollstallSlag(); SIM.stridBild.pa = true;
+    for (let i = 0; i < 12; i++) step(s, 300); // en timme utan strid: inget kommer till bilden
+    const utan = BILD.raknare.ritade + SIM.stridBild.slag.length;
+    const g = SIM.kartStridBorja(s, 'slagsmal', [[a], [b]], 'för att pröva');
+    let synliga = 0, osynliga = 0, felTid = 0, sek = 0, rorelse = 0, vila = 0;
+    while (s.kartStrider?.length && sek < 900) {
+      step(s, SIM.nastaSteg(s)); sek++;
+      const nya = [...SIM.stridBild.slag];
+      BILD.taEmotSlag(s.now - 1000); // tiden som visas ligger högst ett steg efter spelets
+      for (const h of nya) {
+        const sl = h.fran !== undefined ? BILD.slagAv(h.fran, h.t + 1) : undefined, streck = BILD.streckNu(h.t + 1).some(x => x.h === h);
+        if (sl?.h === h && streck) synliga++; else osynliga++;
+        if (h.t > s.now + 1 || h.t < s.now - 1001) felTid++; // slaget skedde under det här steget
+        if (sl && BILD.slagAv(h.fran!, h.t + BILD.rorelseTid(h) + 5)?.h === h) rorelse++; // rörelsen är slut efter sin tid
+        if (h.fran !== undefined && !BILD.slagAv(h.fran, h.t - 5 - 2000)) vila++;
+      }
+    }
+    SIM.stridBild.pa = false;
+    const handelser = SIM.slagen(g.st).length, langd = SIM.slagen(g.st).every(h => h.l > 0);
+    const kk = (() => { const t = createState(21, START), [c, d] = living(t).filter(x => ageOf(x, t.now) >= SIM.ALDER.vuxen); d.x = c.x + 1; d.y = c.y; SIM.kartStridBorja(t, 'slagsmal', [[c], [d]], 'x'); step(t, 1); const k = BILD.kartKampe(t, c); return !!k && k.k.pid === c.id && !!k.mot; })();
+    const efter = BILD.raknare.ritade;
+    for (let i = 0; i < 3; i++) step(s, 300);
+    return [
+      [`utan strid kommer inget till bilden (${utan} slag på en timme)`, utan === 0],
+      [`varje händelse blir ett ritat slag (${handelser} händelser i striden, ${BILD.raknare.ritade} ritade)`, handelser > 5 && BILD.raknare.ritade === handelser],
+      [`slaget syns när det sker: den som slår gör rörelsen och strecket går till den som träffas (${synliga} av ${synliga + osynliga}, ${felTid} med fel tid)`, synliga === handelser && osynliga === 0 && felTid === 0],
+      [`rörelsen följer vapnets takt och tar slut (${rorelse} som pågick för länge), och varje händelse har en längd`, rorelse === 0 && langd && vila > 0],
+      ['bilden hittar kämpen som är personen, med sitt mål', kk],
+      [`efter striden kommer inga fler slag (${BILD.raknare.ritade - efter})`, BILD.raknare.ritade === efter && SIM.stridBild.slag.length === 0],
+    ];
+  },
+};
+
 SCENARIER.slagsmal = {
   text: 'Slagsmål och lek i byn (steg 3.7.2): ett gräl kan bli ett slagsmål, striden räknas färdigt och sparas, skadorna blir riktiga skador, de som slåss står kvar och behoven väntar, vinnaren blir ett rykte, barn brottas på lek, närstriden och träffsäkerheten växer, och duck, parering och de nya skadorna finns i striden',
   kor: () => {
     const t = createState(21, START), ps = living(t).filter(x => ageOf(x, t.now) >= SIM.ALDER.vuxen), [a, b] = ps;
     const n0 = a.skill.narstrid;
-    const st = SIM.stridIByn(t, 'slagsmal', [[a], [b]], 'för att pröva');
-    const sparad = t.strider?.length === 1 && t.strider[0].orsak === 'för att pröva';
-    const igen = SIM.stridTillSlut(SIM.nyStrid(t.strider![0].u, t.strider![0].fro));
+    // striden sker på kartan och tar tid (steg 10.1.4 och 10.1.7): de står kvar i den medan den pågår, och den kissnödiga väntar
+    for (const x of [a, b]) { x.pot.mod = 16; x.pot.aggression = 16; }
+    b.x = a.x + 1.2; b.y = a.y;
+    const kg = SIM.kartStridBorja(t, 'slagsmal', [[a], [b]], 'för att pröva'), st = kg.st;
+    a.toa = 0.01;
+    for (let i = 0; i < 4; i++) step(t, 1);
+    const star = [a, b].every(x => x.task?.act === 'strid' && x.task.until > t.now), vantar = a.task?.act === 'strid' && !st.slut;
+    for (let i = 0; i < 1500 && !st.slut; i++) step(t, SIM.nastaSteg(t));
+    const sparad = t.stridRapporter?.length === 1 && t.stridRapporter[0].orsak === 'för att pröva';
+    // samma by och samma slump ger samma strid igen
+    const t2 = createState(21, START), [a2, b2] = living(t2).filter(x => ageOf(x, t2.now) >= SIM.ALDER.vuxen);
+    for (const x of [a2, b2]) { x.pot.mod = 16; x.pot.aggression = 16; }
+    b2.x = a2.x + 1.2; b2.y = a2.y; a2.toa = 0.01;
+    const igen = SIM.kartStridBorja(t2, 'slagsmal', [[a2], [b2]], 'för att pröva').st;
+    for (let i = 0; i < 4; i++) step(t2, 1);
+    for (let i = 0; i < 1500 && !igen.slut; i++) step(t2, SIM.nastaSteg(t2));
     const sammaIgen = JSON.stringify(igen.logg) === JSON.stringify(st.logg);
     const skadad = (a.skador?.length ?? 0) + (b.skador?.length ?? 0) > 0 || st.kampar.every(k => !k.skador.length);
-    const star = [a, b].filter(x => x.health > 0).every(x => x.task?.act === 'strid' && x.task.until > t.now);
     const ovat = a.skill.narstrid > n0;
     const v = st.slut!.vinnare, vinnare = v === -1 ? undefined : [a, b][v];
     const rykte = !vinnare || [a, b].some(x => x.intryck?.some(e => e.om === vinnare.id && e.k === 'stark'));
-    // behoven väntar: en kissnödig som slåss går inte på toa
-    const q = [a, b].find(x => x.health > 0)!;
-    q.toa = 0.01; q.task!.until = t.now + 2 * HOUR;
-    step(t, 600);
-    const vantar = q.task?.act === 'strid';
     // gräl blir slagsmål: många gräl mellan två blodtörstiga
     const g = createState(22, START), [c, d] = living(g).filter(x => ageOf(x, g.now) >= SIM.ALDER.vuxen);
     c.pot.aggression = 20; c.pot.empati = 1; SIM.think(c, 'Rasande', -0.7, g.now, DAY);
-    for (let i = 0; i < 200 && !g.strider?.length; i++) { c.task = undefined; d.task = undefined; SIM.gralBlirSlagsmal(g, c, d); }
+    for (let i = 0; i < 200 && !g.kartStrider?.length; i++) { c.task = undefined; d.task = undefined; SIM.gralBlirSlagsmal(g, c, d); } // slagsmålet efter ett gräl sker på kartan (steg 10.1.4)
     const gral = (g.stat?.strid_slagsmal ?? 0) >= 1;
     // barn som leker brottas
     const l = createState(23, START), barn = living(l).find(x => ageOf(x, l.now) < SIM.ALDER.vuxen)!, kamrat = living(l).find(x => x !== barn)!;
     kamrat.task = { act: 'leka', phase: 'do', tx: barn.x, ty: barn.y, until: l.now + DAY, carry: 0 }; kamrat.x = barn.x; kamrat.y = barn.y;
     const t0 = barn.skill.traff;
-    for (let i = 0; i < 400 && !l.strider?.length; i++) SIM.lekSteg(l, barn, 600);
-    const lek = l.strider?.[0]?.u.avsikt === 'lek', kast = barn.skill.traff > t0, ingenDod = living(l).length === l.people.length;
+    for (let i = 0; i < 400 && !l.kartStrider?.length; i++) SIM.lekSteg(l, barn, 600);
+    const lekStrid = l.kartStrider?.[0];
+    for (let i = 0; i < 900 && l.kartStrider?.length; i++) step(l, SIM.nastaSteg(l));
+    const lek = lekStrid?.st.avsikt === 'lek' && !!lekStrid.st.slut, kast = barn.skill.traff > t0, ingenDod = living(l).length === l.people.length;
     // de nya händelserna och skadorna i striden
     const m = (id: number, sida: 0 | 1, vapen: SIM.Vapen) => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 10, smidighet: 14, skicklighet: 12 }, vapen, klader: [], fart: 1, x: sida ? 12 : 8, y: 7 });
     const sl = new Set<string>(), sk = new Set<string>();
@@ -1504,7 +1711,7 @@ SCENARIER.slagsmal = {
     u.v = 12; SIM.migrate(u);
     const upp = u.people.every(x => x.skill.narstrid >= 0 && x.skill.traff >= 0);
     return [
-      ['striden sparas i byn och blir likadan när den räknas om', sparad && sammaIgen],
+      ['stridens rapport sparas i byn, och samma by och samma slump ger samma strid', sparad && sammaIgen],
       ['skadorna från striden blir skador på personerna', skadad],
       ['de som slåss står kvar i striden', star],
       ['närstriden växer av ett slagsmål', ovat],
@@ -2121,7 +2328,7 @@ SCENARIER.personlogg = {
     for (const [q, mod] of [[o, 3], [m, 18]] as const) { q.pot.mod = mod; q.hand = []; SIM.personHand(s, q, 'skada', 'Fick ett sår i armen.'); till.push(SIM.personRader(s, q)[0].text); }
     return [
       ['ett dygn ger bara rader av slagen i registret, inga om vardagsarbetet (' + rader.length + ' rader, ' + vardagRad + ' om vardagen)', vardagRad === 0],
-      ['ett dygn ger få rader hos varje person (högst ' + mest + ')', mest <= 12],
+      ['ett dygn ger få rader hos varje person (högst ' + mest + ')', mest <= 16], // de första dygnen kommer byn på många tekniker om dagen
       ['skadan står hos den skadade', har(a, 'skada')],
       ['den nya kunskapen står hos den som lärde sig', har(a, 'lart')],
       ['ingen annan fick skadan', k107[0]],

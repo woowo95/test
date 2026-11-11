@@ -3,7 +3,8 @@ import { ALDER, KROPP, ageOf, count, isSick, living, log, think } from './folk';
 import { halsa } from './halsa';
 import { eldPlats } from './karta';
 import { avbryt } from './lager';
-import { canLight } from './eld';
+import { ELD } from './eld';
+import { grundvarde } from './varde';
 import { ledig, stationDef, stationerOf } from './stationer';
 import { bitsOf, gridOf, housesOf, roomAt } from './byggnad';
 import { isLight } from './tid';
@@ -24,6 +25,7 @@ export const ELDFLYTT = balans('eldflytt', {
   tim: 2, // så här många timmar tar det att släcka elden och bära stenarna, när man kommit fram ...
   gang: 4, // ... och så här många timmar får det ta att gå dit
   husStraff: 6, // ett hus som skulle stå där elden står väljs bara om ingen annan plats är så här mycket bättre (bygg.ts)
+  kostnad: 1, // att flytta elden kostar så här många gånger ringens stenar (värdet, steg 10.2.8), när ett skadat hus byggs upp där elden står
   tanke: 0.04, // den som flyttat elden blir så här mycket gladare ...
   tankeTim: 6, // ... i så här många timmar
 });
@@ -75,8 +77,8 @@ export function stepEldFlytt(s: State) {
     }
   }
   if (!f.flytt || ppl.some(p => p.task?.act === 'flyttaeld')) return;
-  // elden flyttas på dagen och när den kan tändas igen på den nya platsen (flinta och tändmaterial i förrådet)
-  if (!isLight(s.now) || !canLight(s)) return;
+  // elden flyttas på dagen; glöden bärs med till den nya platsen (flyttaElden), så att den kan blåsas liv i där (steg 10.2.8)
+  if (!isLight(s.now)) return;
   const e = eldPlats(s);
   let best: Person | undefined, bs = Infinity;
   for (const p of ppl) {
@@ -96,7 +98,9 @@ export function flyttaElden(s: State, p: Person) {
   if (!mal) return;
   if (!eldKanSta(s, mal.x, mal.y)) { delete f.flytt; return; } // platsen hann tas: byn väljer en ny nästa timme (stepEldFlytt)
   const gammal = eldPlats(s);
-  Object.assign(f, { lit: false, fuel: 0, emberUntil: undefined, ash: 0, ashUntil: undefined, tryProg: 0 });
+  // glöden bärs med i en lerkruka eller på en sten: brann elden eller glödde den, glöder den på den nya platsen (steg 10.2.8)
+  const glod = f.lit || (f.emberUntil !== undefined && f.emberUntil > s.now);
+  Object.assign(f, { lit: false, fuel: 0, emberUntil: glod ? s.now + ELD.glodTim * HOUR : undefined, ash: 0, ashUntil: undefined, tryProg: 0 });
   f.at = { x: mal.x, y: mal.y };
   delete f.flytt;
   for (const t of stationerOf(s)) if (stationDef(t.k)?.eld && t.y === gammal.y && t.x === gammal.x - 1) { t.x = mal.x - 1; t.y = mal.y; } // grillen står med elden i mitten (siteEld i stationer.ts)
@@ -106,3 +110,6 @@ export function flyttaElden(s: State, p: Person) {
   if (s.stat!.eldflytt === 1) kronika(s, `${p.name} flyttade byns eld ${mal.varfor === 'plats' ? 'för att ge plats åt ett hus' : 'till byns mitt'}.`, 'bygge');
   think(p, 'Flyttade elden', ELDFLYTT.tanke, s.now, ELDFLYTT.tankeTim * HOUR);
 }
+
+// vad det kostar att flytta elden (steg 10.2.8): ringens stenar gånger ELDFLYTT.kostnad, i samma värde som ett bygges material
+export const eldFlyttKostnad = () => ELD.ring * grundvarde('sten') * ELDFLYTT.kostnad;
