@@ -314,7 +314,6 @@ export interface Kampe {
   ledare?: 'fram' | 'bak'; skyddar?: number; // steg 3.7.12: byns ledare (går först eller står bakom), och ledaren (kämpens id) som vännen skyddar
   kryper?: number; // steg 3.7.19: hen kan inte gå och kryper undan; rutorna hen krupit
   fly?: { x: number; y: number }; // steg 9.2.76: dit hen flyr (rutor på platsen), i stället för mot närmaste kanten
-  hemma?: number; // den som försvarar sin by (ROVARE.hemma i rovare.ts): så här mycket mer stridsmod med hotet, så att hen inte flyr så lätt
 }
 // en rad i loggen: tiden (sekunder), vem (a) och mot vem (b), del, skada och grad, och det kläderna tog
 // Varje rad är en händelse (steg 10.1.3, "Ett slag är en händelse"): tiden, vad som hände, vem och mot vem. Ett anfall (ett slag,
@@ -690,7 +689,7 @@ function hotet(st: Strid): { andel: [number, number]; framst: [number, number]; 
   const sum = kr[0] + kr[1] || 1;
   return { andel: [kr[0] / sum, kr[1] / sum], framst: fr, led };
 }
-const modMed = (k: Kampe, h: ReturnType<typeof hotet>) => k.modNu + (k.hemma ?? 0) + STRID.hot * (h.andel[k.sida] - 0.5) * 2 + STRID.framst * (h.framst[k.sida] - 0.5) + h.led[k.sida];
+const modMed = (k: Kampe, h: ReturnType<typeof hotet>) => k.modNu + STRID.hot * (h.andel[k.sida] - 0.5) * 2 + STRID.framst * (h.framst[k.sida] - 0.5) + h.led[k.sida];
 
 const farten = (k: Kampe) => STRID.fart * k.fart * smidFart(k) * rorlighet(k);
 // den som kan kasta (steg 3.7.7): håller avståndet och kastar. Den som nåtts av en fiende backar om hen är snabbare, byter

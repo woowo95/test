@@ -550,7 +550,7 @@ export const LARM = balans('larm', {
   oro: 0.05, // den som hör ett larm oroar sig så här mycket ...
   oroTim: 2, // ... så här många timmar
 });
-export interface Larm { t: number; vad: string; storlek: number; led: number; falskt?: true }
+export interface Larm { t: number; vad: string; storlek: number; led: number; falskt?: true; varnat?: 1 } // varnat: hen har själv varnat vidare (steg 10.1.12, rovare.ts)
 
 // ett larm om vad (storleken: hur många eller hur farligt). ropare ropar först (de vet redan). Returnerar de
 // som hörde det

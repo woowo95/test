@@ -9,6 +9,7 @@ import type { Person, State, Stat, Skill } from './typer';
 import { STATS, SKILLS } from './typer';
 import { hash3 } from './slump';
 import { EGENSKAP, count } from './folk';
+import { SAKER } from './saker';
 import type { KlanPerson } from './klaner';
 const klanById = (s: State, id: number | undefined) => id === undefined ? undefined : s.klaner?.find(k => k.id === id); // som i klaner.ts, utan att importera den (cirkeln gastliv–klaner)
 
@@ -22,7 +23,7 @@ export type GastSort = keyof typeof GASTSORTER;
 // drakt är det som bara syns (rövarnas luva, duk och mörka skinnrock, steg 10.1.8); vapnet och kläderna är ting hen bär (s.gastTing).
 // bar, spar, pk och anhorig gäller rövarna (steg 9.2.112, rovare.ts): bytet hen bär, vägen för bilden
 // (tid och plats efter varandra), rutorna kvar på vägen och rutan hen hittat vägen till och vems anhörig hen är när flocken hämnas
-export interface GastRad { sort: GastSort; klan?: number; hem?: string; drakt?: { bonad?: 'luva' | 'duk'; rovarskinn?: true }; bar?: Record<string, number>; spar?: number[]; path?: number[]; pk?: number; anhorig?: string; mat?: number; sover?: 1; blir?: number; fas?: 'kommer' | 'pratar' | 'gar'; till?: number; tek?: string; ja?: boolean } // blir, fas, till, tek, ja: främlingen (steg 9.2.115, framling i liv.ts)
+export interface GastRad { sort: GastSort; klan?: number; hem?: string; drakt?: { bonad?: 'luva' | 'duk'; rovarskinn?: true }; gor?: string; gorTill?: number; vx?: number; vy?: number; taTid?: number; nojd?: boolean; flytt?: boolean; varStrid?: boolean; /* rövarens val (steg 10.1.9, rovare.ts): det hen gör, till när, dit hen går på rastplatsen, tiden vid förrådet, om hen flyr och om hen varit i striden */ bar?: Record<string, number>; spar?: number[]; path?: number[]; pk?: number; anhorig?: string; mat?: number; sover?: 1; blir?: number; fas?: 'kommer' | 'pratar' | 'gar'; till?: number; tek?: string; ja?: boolean } // blir, fas, till, tek, ja: främlingen (steg 9.2.115, framling i liv.ts)
 
 // ---------- gästernas utrustning (steg 10.1.8, "Striden på kartan: Gästernas utrustning" i designdokumentet) ----------
 // Varje sort gäst har en rad som säger hur ofta hen har varje vapen, plagg och ärr (vikter: det som står med högre tal är
@@ -36,7 +37,7 @@ export const GASTUTRUSTNING: Record<GastSort, GastUtrustning> = {
   rovare: {
     vapen: [['yxa', 3], ['flintspjut', 3], ['fiskespjut', 2], ['kniv', 3], ['bage', 0.4], [null, 1]], reserv: [['kniv', 1], [null, 2]],
     plagg: { rock: [['rock_vargskinn', 2], ['rock_kaninskinn', 3], ['rock_bjornskinn', 0.5], [null, 2.5]], byxor: [['byxor_kaninskinn', 2], ['byxor_lader', 1], [null, 2]], skor: [['skor_kaninskinn', 3], ['skor_vargskinn', 1], [null, 2]],
-      mossa: [['mossa_kaninskinn', 1], [null, 4]], balte: [['balte_rep', 1], [null, 1]], skydd: [['rustning_lader', 0.4], ['hjalm_lader', 0.4], [null, 6]] },
+      mossa: [['mossa_kaninskinn', 1], [null, 4]], balte: [['balte_rep', 1], [null, 1]], skydd: [['rustning_lader', 0.4], ['hjalm_lader', 0.4], [null, 6]], fackla: [['fackla', 3], [null, 2]] }, // facklan bärs löst och tänds på natten (steg 10.1.10)
     arr: 0.45, drakt: { luva: 0.35, duk: 0.3, rovarskinn: 0.45 },
   },
   handlare: {
@@ -60,7 +61,7 @@ function utrusta(s: State, p: Person, r: () => number) {
   const ny = (k: string, falt: 'hos' | 'bar' | undefined) => { lista.push({ id: -(s.gastTingNr = (s.gastTingNr ?? 0) + 1), k, c: 0.5 + r() * 0.5, agare: p.id, ...(falt ? { [falt]: p.id } : {}) }); };
   const vapen = valj(u.vapen, r()); if (vapen) ny(vapen, 'hos');
   const reserv = valj(u.reserv, r()); if (reserv && reserv !== vapen) ny(reserv, undefined);
-  for (const v of Object.values(u.plagg)) { const k = valj(v, r()); if (k) ny(k, 'bar'); }
+  for (const v of Object.values(u.plagg)) { const k = valj(v, r()); if (k) ny(k, SAKER[k]?.klad ? 'bar' : undefined); } // plaggen på sig, det andra (facklan) löst
   for (let i = 0; i < 2; i++) if (r() < u.arr) (p.arr ??= []).push({ d: ARRDELAR[Math.floor(r() * ARRDELAR.length)], n: Math.floor(r() * 10) + 1 });
   if (u.drakt) { const b = r(); p.gast!.drakt = { ...(b < u.drakt.luva ? { bonad: 'luva' as const } : b < u.drakt.luva + u.drakt.duk ? { bonad: 'duk' as const } : {}), ...(r() < u.drakt.rovarskinn ? { rovarskinn: true as const } : {}) }; }
 }
