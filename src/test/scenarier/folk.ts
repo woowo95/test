@@ -2479,3 +2479,26 @@ SCENARIER.rovarrast = {
     ];
   },
 };
+
+SCENARIER.rovarbredvid = {
+  text: 'Rövarna går som människor, utan ledare (steg 10.2.25): gänget på väg mot byn går bredvid varandra, var och en sin väg och lite olika fort, inte i samma rutor på en rad; ingen i gänget leder, och flockens plats är mitten av gänget',
+  kor: () => {
+    const s = createState(4, START);
+    for (let i = 0; i < 12; i++) step(s, 300);
+    SIM.skickaRovare(s, 4);
+    const f = s.rovare!;
+    let prov = 0, sammaRuta = 0, mitt = 0;
+    for (let i = 0; i < 20 && f.gor === 'kommer'; i++) {
+      step(s, 4);
+      const fo = SIM.rovarna(s, f), rutor = fo.map(r => Math.floor(r.x!) + ',' + Math.floor(r.y!));
+      prov++; if (new Set(rutor).size < rutor.length) sammaRuta++;
+      const mx = fo.reduce((a, r) => a + r.x!, 0) / fo.length, my = fo.reduce((a, r) => a + r.y!, 0) / fo.length;
+      if (Math.hypot(mx - f.x, my - f.y) < 0.01) mitt++;
+    }
+    const ledare = SIM.rovarna(s, f).filter(r => r.gast?.ledare).length;
+    return [
+      [`gänget går bredvid varandra: två i samma ruta i ${sammaRuta} av ${prov} prov`, prov > 5 && sammaRuta <= prov * 0.3],
+      [`ingen leder gänget (${ledare}), och flockens plats är mitten av gänget (${mitt} av ${prov})`, ledare === 0 && mitt >= prov - 1],
+    ];
+  },
+};

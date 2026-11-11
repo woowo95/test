@@ -2036,7 +2036,7 @@ SCENARIER.rovarkommer = {
 };
 
 SCENARIER.rovarforsvar = {
-  text: 'Steg 9.2.74–9.2.80 och 9.2.116: försvaret mot rövarna. Ålder, mod och hälsa delar folket i kämpar, hjälpare (en bit bakom) och gömda. De som försvarar väntar vid förrådet ("Väntar på rövarna med vapen"), också när förrådet ligger tolv rutor från elden, och valet väger modet, rövarna mot dem som står emot, hälsan och barnen, så att de flesta friska och modiga vuxna står emot en liten flock. I striden står var och en där hen var, den som flyr springer mot sitt hus eller elden och är fri medan striden pågår, ingen står i en annan, rövarnas ledare "leder rövarna" (testknappen prövas i scenariot rovartest)',
+  text: 'Steg 9.2.74–9.2.80 och 9.2.116: försvaret mot rövarna. Ålder, mod och hälsa delar folket i kämpar, hjälpare (en bit bakom) och gömda. De som försvarar väntar vid förrådet ("Väntar på rövarna med vapen"), också när förrådet ligger tolv rutor från elden, och valet väger modet, rövarna mot dem som står emot, hälsan och barnen, så att de flesta friska och modiga vuxna står emot en liten flock. I striden står var och en där hen var, den som flyr springer mot sitt hus eller elden och är fri medan striden pågår, ingen står i en annan, och rövarna har ingen ledare (steg 10.2.25; testknappen prövas i scenariot rovartest)',
   kor: () => {
     const s = createState(6, START);
     for (const c of SIM.klanerOf(s)) c.inst = -60;
@@ -2114,7 +2114,7 @@ SCENARIER.rovarforsvar = {
       [`ingen flyttas mer än ett steg mellan två bilder (längst ${hopp.toFixed(2)} rutor på en sekund)`, hopp <= SIM.GANG.fart * 2 + 0.5],
       ['inga två rövare står på samma punkt', !ihop],
       ['den som flytt är fri och går vidare medan striden pågår', fri && gick],
-      [`rövarnas ledare "leder rövarna": "${ledText}"`, /leder rövarna/.test(ledText)],
+      [`rövarna har ingen ledare som "leder rövarna" (steg 10.2.25): "${ledText}"`, !/leder rövarna/.test(ledText)],
     ];
   },
 };
