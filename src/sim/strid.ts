@@ -52,7 +52,7 @@ import { amountOf, use } from './lager';
 import { capacity } from './lager';
 import { snoPaMarken, vaderNu } from './vader';
 import { viktOf } from './saker';
-import { ownedBy, tingOf, toolsOf, wearTool } from './agande';
+import { allaTing, ownedBy, toolsOf, wearTool } from './agande';
 import { getMap } from './karta';
 import { groundOf, markslag, tileOf } from './mark';
 import type { Person, State } from './typer';
@@ -953,9 +953,9 @@ export function personKampe(s: State, p: Person, id: number, sida: 0 | 1, x: num
   // det hen bär, äger och har i handen (man tar med sina saker), men inte det hen äger som någon annan har på sig, i handen
   // eller i bördan (samma regel som taVapen i vakt.ts)
   const egen = (t: { hos?: number; lass?: number; bar?: number }) => (t.hos === undefined || t.hos === p.id) && (t.lass === undefined || t.lass === p.id) && (t.bar === undefined || t.bar === p.id);
-  const bar = [...new Set([...paSig(s, p), ...ownedBy(s, p).filter(egen), ...tingOf(s).filter(t => t.hos === p.id)].map(t => t.k))];
+  const bar = [...new Set([...paSig(s, p), ...ownedBy(s, p).filter(egen), ...allaTing(s).filter(t => t.hos === p.id)].map(t => t.k))]; // också det en gäst bär (steg 10.1.8)
   const val = (v: Vapen) => VAP[v].skada * (1 + STRID.tyckeVal * smakAv(p, 'v:' + v)); // tycket drar i valet (steg 3.7.10)
-  const ammoOk = (v: Vapen) => { const am = VAP[v].kast?.ammo; return !am || amountOf(s, am) >= 1; }; // bågen utan pilar och slungan utan stenar tas inte (steg 8.7.6)
+  const ammoOk = (v: Vapen) => { const am = VAP[v].kast?.ammo; return !am || !!p.gast || amountOf(s, am) >= 1; }; // en gäst har sina egna pilar // bågen utan pilar och slungan utan stenar tas inte (steg 8.7.6)
   const vapen = MANNISKOVAPEN.filter(v => bar.includes(v) && ammoOk(v)).sort((a, b) => val(b) - val(a))[0] ?? 'hand';
   const res = (MANNISKOVAPEN.filter(v => v !== vapen && VAP[v].liten && bar.includes(v)) as Vapen[]).sort((a, b) => VAP[a].takt - VAP[b].takt)[0]; // den snabbaste (kniven)
   const reserv = res && (p.reservAlltid || (harBalte(s, p) && paSigVikt(s, p) + viktOf(res) <= capacity(s, p) * UTRUSTNING.kropp)) ? res : undefined;

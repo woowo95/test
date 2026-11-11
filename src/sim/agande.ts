@@ -23,6 +23,8 @@ interface Halv { gor: string; av: Record<string, number>; kvar: number; ag: numb
 // som har plagget på sig (utrustning.ts, steg 2.3.2)
 export interface Ting { vaxt?: { g: string; v: number }; kok?: { r: string; n: number; kvar: number; ag: Record<string, number>; h?: number }; pa?: number; inne?: { v: import('./vatskor').VatskaId; n: number; q?: number; t?: number }; ler?: number; id: number; k: string; c: number; agare: number; hos?: number; lass?: number; x?: number; y?: number; halv?: Halv; vid?: number; bar?: number; av?: number; gjord?: number; kopt?: number; q?: number; ber?: import('./berattelser').SakMinne; tand?: number; tandT?: number; krok?: number; fylld?: 1 } // kok = rätten som står på elden i krukan, hur många portioner, den passiva tiden kvar och vems den blir (steg 9.6.3, matlagning.ts) // pa = protesen sitter på personen med det id:t (steg 9.5.11, protes.ts); inne = vätskan i behållaren och hur mycket (steg 9.4.14, vatskor.ts; fylld är det gamla: en fylld vattensäck) // ler = lerkrukan torkar (0–1) och bränns sedan; utan ler är den färdig (steg 9.4.11, kruka.ts); av, gjord: vem som gjorde det och när (steg 2.3.5), kopt: när det köptes av en handlare (steg 5.3.5.3), q = kvaliteten (kvalitet.ts), ber = berättelsen om ett mästerverk eller en usel sak (steg 3.9.4), tand = den som bär facklan tänd och tandT = när den senast räknades (ljus.ts, steg 6.3.6), krok = den i vars bälte redskapet hänger medan hen arbetar med ett annat (steg 7.1.1)
 export const tingOf = (s: State) => (s.ting ??= []);
+// byns ting och det gästerna bär (steg 10.1.8): för frågor om vad en viss person har på sig, i handen eller äger
+export const allaTing = (s: State) => s.gastTing?.length ? tingOf(s).concat(s.gastTing) : tingOf(s);
 // hur stor del av arbetet med ett påbörjat redskap som är gjort (0 till 1), för framstegscirkeln på kartan och i panelerna
 export const halvKlar = (h: Halv) => Math.min(1, Math.max(0, 1 - h.kvar / ((SAKER[h.gor]?.skaffa?.min ?? 1) * MIN)));
 export const toolsOf = (s: State, k: string) => tingOf(s).filter(t => t.k === k);
@@ -31,7 +33,7 @@ export const fylldSack = (s: State) => tingOf(s).find(t => t.inne?.v === 'vatten
 export const nTools = (s: State, k: string) => tingOf(s).reduce((n, t) => n + (t.k === k ? 1 : 0), 0);
 // det redskap av slagen ks som p har påbörjat (paborjat.ts)
 export const halvOf = (s: State, p: Person, ks: readonly string[]) => tingOf(s).find(t => t.halv?.ag === p.id && ks.includes(t.halv.gor));
-export const heldBy = (s: State, p: Person) => tingOf(s).find(t => t.hos === p.id);
+export const heldBy = (s: State, p: Person) => allaTing(s).find(t => t.hos === p.id);
 // redskapen som hänger i p:s bälte medan hen arbetar med ett annat (steg 7.1.1)
 export const iKroken = (s: State, p: Person) => tingOf(s).filter(t => t.krok === p.id);
 // har p tinget med sig: i handen eller i bältet
@@ -134,4 +136,4 @@ export function toolsFromItems(s: State) {
   for (const p of s.people) { const k = usesTool(p.task); if (k && alive(p)) take(s, p, k); }
 }
 // vad p äger
-export const ownedBy = (s: State, p: Person) => tingOf(s).filter(t => t.agare === p.id);
+export const ownedBy = (s: State, p: Person) => allaTing(s).filter(t => t.agare === p.id);

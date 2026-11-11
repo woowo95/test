@@ -1,6 +1,6 @@
 import { delarIRad } from './stationer';
 import { nyaKlaner } from './klaner';
-import { gastAv, nyGast, nyttGastId } from './gast';
+import { gastVapenSatt, gastAv, nyGast, nyttGastId } from './gast';
 import { gastNyckel } from './gastliv';
 import { migrateTek } from './teknik';
 import { stepDelning } from './delning';
@@ -251,7 +251,8 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
       if (!f || !f.folk.some(r => typeof r !== 'number')) continue;
       f.folk = (f.folk as unknown as Gammal[]).map(r => {
         const ov = Math.max(0, (r.st.skicklighet - 5) * 2);
-        const p = nyGast(s, { id: nyttGastId(s), namn: r.namn, sex: r.sex, fodd: r.fodd ?? s.now - 30 * DAY, rad: { sort: 'rovare', klan: f.klan, vapen: r.vapen, ...(r.spar ? { spar: r.spar } : {}), ...(r.bar ? { bar: r.bar } : {}), ...(r.anhorig ? { anhorig: r.anhorig } : {}) }, x: r.x ?? f.x, y: r.y ?? f.y, nyckel: gastNyckel(f.klan, r.namn), pot: { styrka: r.st.styrka, uthallighet: r.st.uthallighet, mod: r.st.mod, smidighet: r.st.smidighet }, skill: { narstrid: ov, traff: ov } });
+        const p = nyGast(s, { id: nyttGastId(s), namn: r.namn, sex: r.sex, fodd: r.fodd ?? s.now - 30 * DAY, rad: { sort: 'rovare', klan: f.klan, ...(r.spar ? { spar: r.spar } : {}), ...(r.bar ? { bar: r.bar } : {}), ...(r.anhorig ? { anhorig: r.anhorig } : {}) }, x: r.x ?? f.x, y: r.y ?? f.y, nyckel: gastNyckel(f.klan, r.namn), pot: { styrka: r.st.styrka, uthallighet: r.st.uthallighet, mod: r.st.mod, smidighet: r.st.smidighet }, skill: { narstrid: ov, traff: ov } });
+        gastVapenSatt(s, p, r.vapen); // vapnet hen hade är en sak hen bär (steg 10.1.8)
         p.blod = r.blod;
         s.people.push(p);
         return p.id;

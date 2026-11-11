@@ -3,7 +3,7 @@
 // födseln: ett barn ärver dem från mamman och pappan (barnAv), och de första i byn, nykomlingarna och personerna i byar
 // som sparats före porträtten får dem slumpade ur byns frö och personens nummer. Allt räknas ur numret och föräldrarna,
 // så att samma person alltid ser likadan ut och simuleringen inte märker något. Bara utseende.
-import { infStadium, blodSteg, ALDER, BERATT, BESK_ANSIKTE, KLADMATERIAL, KROPP, ageOf, blodning, byId, hash, isSick, kladAv, load, moodOf, utbrottNu, utrustning } from '../sim';
+import { gastTingOf, gastVapen, infStadium, blodSteg, ALDER, BERATT, BESK_ANSIKTE, KLADMATERIAL, KROPP, ageOf, blodning, byId, hash, isSick, kladAv, load, moodOf, utbrottNu, utrustning } from '../sim';
 import type { Person, State } from '../sim';
 import { KARNA } from '../portrattkarna';
 import { s as visad, uppgiftVid } from './lage';
@@ -141,7 +141,24 @@ BESK_ANSIKTE.del = ansiktsDel;
 // finns som del, humöret arg i striden och rädd på flykten
 // handlaren (steg 8.1.8): en person som kolonisterna, slumpad en gång ur namnet och byns frö
 const HARV = new Map<string, Skapad>();
-export function handlarSkapad(s: State, namn: string, sex: 'm' | 'k'): Skapad {
+// det gästen bär, på figuren och i porträttet (steg 10.1.8): plaggen och vapnet är saker (s.gastTing), ärren är personens, och
+// luvan, duken och den mörka skinnrocken är rövarnas dräkt (GASTUTRUSTNING i sim/gast.ts)
+function buren(s: State, r: Person, d: Skapad): Skapad {
+  const klader = { ...d.klader } as NonNullable<Skapad['klader']>, dr = r.gast?.drakt;
+  for (const t of gastTingOf(s, r)) {
+    if (t.bar !== r.id) continue;
+    const a = kladAv(t.k); if (!a) continue;
+    if (a.plagg === 'rock' || a.plagg === 'mantel' || a.plagg === 'kappa') klader.rock = KLADMATERIAL[a.mat].namn;
+    else if (a.plagg === 'skor') klader.skor = true;
+    else if (a.plagg === 'byxor') klader.byxor = KLADMATERIAL[a.mat].namn;
+    else if (a.plagg === 'skjorta') klader.skjorta = true;
+    else if (a.plagg === 'balte') klader.balte = true;
+  }
+  if (dr?.rovarskinn) klader.rock = 'rovarskinn';
+  const arr = r.arr?.find(a => a.d === 'huvud');
+  return { ...d, klader, del: { ...d.del, huvudbonad: dr?.bonad === 'luva' ? 'bonad-9' : dr?.bonad === 'duk' ? 'bonad-10' : d.del.huvudbonad ?? null, arr: arr ? `arr-${arr.n}` : null, redskap: REDSKAP.get(gastVapen(s, r) ?? '') ?? null } };
+}
+export function handlarSkapad(s: State, namn: string, sex: 'm' | 'k', p?: Person): Skapad { // p = handlaren som person: då syns det hen bär
   const k = s.seed + ':' + namn + ':' + sex;
   let d = HARV.get(k);
   if (!d) {
@@ -152,9 +169,8 @@ export function handlarSkapad(s: State, namn: string, sex: 'm' | 'k'): Skapad {
     if (HARV.size > 200) HARV.clear();
     HARV.set(k, d);
   }
-  return d;
+  return p ? buren(s, p, d) : d;
 }
-export const ROVARDRAKT = { luva: 0.35, duk: 0.3, rovarskinn: 0.45, vargskinn: 0.2 };
 const RARV = new Map<string, Skapad>();
 export function rovarSkapad(s: State, r: Person, humor: string): Skapad {
   const k = s.seed + ':' + r.name + ':' + r.sex;
@@ -164,12 +180,11 @@ export function rovarSkapad(s: State, r: Person, humor: string): Skapad {
     for (let i = 0; i < k.length; i++) h = Math.imul(h ^ k.charCodeAt(i), 0x01000193);
     const rn = KARNA.slumpFran(h), kon = r.sex === 'k' ? 'kvinna' : 'man';
     d = KARNA.slumpPerson(rn, { kon, alder: 'vuxen' }) as Skapad;
-    const b = rn(), m = rn();
-    d.del.huvudbonad = b < ROVARDRAKT.luva ? 'bonad-9' : b < ROVARDRAKT.luva + ROVARDRAKT.duk ? 'bonad-10' : null;
+    d.del.huvudbonad = null;
     d.del.smycke = null; d.forband = []; d.sjuk = false; d.kyla = false; d.blod = false;
-    d.klader = { rock: m < ROVARDRAKT.rovarskinn ? 'rovarskinn' : m < ROVARDRAKT.rovarskinn + ROVARDRAKT.vargskinn ? 'vargskinn' : null, skor: rn() < 0.6, balte: rn() < 0.5 };
+    d.klader = { rock: null, skor: false, balte: false };
     if (RARV.size > 200) RARV.clear();
     RARV.set(k, d);
   }
-  return { ...d, del: { ...d.del, redskap: REDSKAP.get(r.gast?.vapen ?? '') ?? null }, humor, blod: r.blod < 0.7 };
+  return { ...buren(s, r, d), humor, blod: r.blod < 0.7 };
 }

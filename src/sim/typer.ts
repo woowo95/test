@@ -336,6 +336,7 @@ export interface State {
   mat?: Record<string, number>; // äldre sparfiler (före v40): maten per slag
   marken?: { x: number; y: number; k: string; n: number }[]; // gamla sparfiler: saker på marken (nu i stackar)
   lagren?: import('./lager').Zone[]; // lagerplatserna
+  gastTing?: import('./agande').Ting[]; gastTingNr?: number; // det gästerna bär (steg 10.1.8, gast.ts): samma slags ting som byns, men i en egen lista, så att byns räkningar inte ser dem
   ting?: import('./agande').Ting[]; nextTing?: number; // varje redskap för sig, det enda som sparas om redskapen: skick, ägare (0 = byn), vem som har det i handen eller bördan, rutan det ligger på stationen det hör till, vem som gjorde det och när, kvaliteten (agande.ts, kvalitet.ts)
   tingVag?: { id: number; k: string; c: number; agare: number; hos?: number }[]; // äldre sparfiler (före v40): redskap som bars mellan lagerplatser
   agare?: Record<string, number[]>; // sparfiler från v30: redskapens ägare (blir s.ting)

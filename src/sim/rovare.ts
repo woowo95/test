@@ -15,7 +15,7 @@ import { LARM, larma } from './rykten';
 import { SAKER, SAK_LIST } from './saker';
 import { vattenNu } from './sjo';
 import { clamp, rnd } from './slump';
-import { SLAGSMAL, STRID, VAPEN, Strid, StridGang, Uppstallning, Vapen, foljet, personKampe, slitKastat, sparaStrid, spelaUpp, svartSkadad, vadretIStriden } from './strid';
+import { SLAGSMAL, STRID, VAPEN, Strid, StridGang, Uppstallning, foljet, personKampe, slitKastat, sparaStrid, spelaUpp, svartSkadad, vadretIStriden } from './strid';
 import { isLight } from './tid';
 import { DAY, HOUR, MIN, Person, SEC, State, T, Task, W, H } from './typer';
 import { vaderNu } from './vader';
@@ -95,7 +95,6 @@ export const ROVARE = balans('rovare', {
 });
 
 // rövarnas vapen (ett slumpas för var och en)
-const ROVARVAPEN: Vapen[] = ['kniv', 'yxa', 'fiskespjut', 'flintspjut', 'sten'];
 // fodd: gästens liv (steg 4.5.7.7, gastliv.ts). x, y: var rövaren står (steg 6.6.9; saknas i sparade byar från före v450 och
 // sätts då vid flocken), path och pk: vägen och målrutan den gäller, spar: vägen för bilden, tid och plats efter varandra
 // rövarna är personer (steg 9.2.112, "Rövarna är människor" i designdokumentet): flocken minns bara deras id (folk), och var och
@@ -161,10 +160,10 @@ export function rovarnaKommer(s: State, tvinga?: number, direkt?: boolean, klan?
   const folk: number[] = Array.from({ length: n }, () => {
     const sex = rnd(s, 'rovare') < 0.8 ? 'm' as const : 'k' as const;
     const hem = k?.personer.find(q => q.roll === 'rovare' && q.kropp); // en som flydde hem förra gången kommer igen (steg 9.2.114); slumpen dras ändå
-    const namn = hem?.namn ?? makeName(s, sex, 'rovare'), vapen = ROVARVAPEN[Math.floor(rnd(s, 'rovare') * ROVARVAPEN.length)];
+    const namn = hem?.namn ?? makeName(s, sex, 'rovare'); // vapnet och kläderna kommer ur registret GASTUTRUSTNING (gast.ts, steg 10.1.8)
     const styrka = mellan(s, ROVARE.styrka), uthallighet = mellan(s, ROVARE.uthallighet), mod = mellan(s, ROVARE.mod), smidighet = mellan(s, ROVARE.smidighet), skick = mellan(s, ROVARE.skicklighet);
     const ov = Math.max(0, (skick - 5) * 2); // skickligheten i striden är 5 + färdigheten / 2, som hos en bybo (personKampe)
-    const p = nyGast(s, { id: nyttGastId(s), namn, sex: hem?.sex ?? sex, fodd: foddNar(s.seed, gastNyckel(k?.id, namn), 'rovare', s.now), rad: { sort: 'rovare', klan: k?.id, vapen }, x, y, nyckel: gastNyckel(k?.id, namn), pot: { styrka, uthallighet, mod, smidighet }, skill: { narstrid: ov, traff: ov } }); // drar ingen slump
+    const p = nyGast(s, { id: nyttGastId(s), namn, sex: hem?.sex ?? sex, fodd: foddNar(s.seed, gastNyckel(k?.id, namn), 'rovare', s.now), rad: { sort: 'rovare', klan: k?.id }, x, y, nyckel: gastNyckel(k?.id, namn), pot: { styrka, uthallighet, mod, smidighet }, skill: { narstrid: ov, traff: ov } }); // drar ingen slump
     gastTillbaka(s, p);
     s.people.push(p);
     return p.id;
@@ -462,8 +461,10 @@ function flyMal(s: State, p: Person, ox: number, oy: number) {
 }
 // rövaren i striden räknas som en bybo (personKampe, steg 9.2.112): egenskaperna med åldern, skickligheten och siktet ur
 // färdigheterna, blodet och såren hen har; vapnet är det hen kom med
+// rövaren i striden (steg 10.1.8): som en bybo, med vapnet och kläderna hen bär (personKampe). Tills rövarnas strid flyttas till
+// kartan (10.1.14) är hen ingen person i den gamla striden (pid saknas), som förut
 const rovarKampe = (s: State, r: Person, id: number, x: number, y: number, ledare: boolean): Uppstallning['kampar'][number] =>
-  ({ id, namn: r.name, sida: 1, blod0: r.blod, st: { styrka: stat(r, 'styrka', s.now), uthallighet: stat(r, 'uthallighet', s.now), mod: stat(r, 'mod', s.now), smidighet: stat(r, 'smidighet', s.now), skicklighet: 5 + (r.skill.narstrid ?? 0) / 2, sikte: 5 + (r.skill.traff ?? 0) / 2 }, vapen: gr(r).vapen ?? 'hand', klader: [], fart: 1, x, y, ...(ledare ? { ledare: 'fram' as const } : {}) });
+  ({ ...personKampe(s, r, id, 1, x, y), pid: undefined, emp: undefined, ledare: ledare ? 'fram' as const : undefined, tung: undefined });
 // den som slåss står kvar i striden tills den är slut (eller högst STRID.maxTid sekunder)
 function iStriden(s: State, p: Person, g: RovarStrid) {
   if (p.died !== undefined) return; // en död ger sig inte in i striden
@@ -564,7 +565,6 @@ export function slappFria(s: State, g: StridGang & { ox: number; oy: number; fri
 // den fallne ligger kvar med det hen hade, tills någon avrustar hen (steg 8.7.5)
 function fallenFiende(s: State, r: Person, x: number, y: number) {
   const g = gr(r), saker: Record<string, number> = { ...g.bar };
-  if (g.vapen && SAKER[g.vapen]) saker[g.vapen] = (saker[g.vapen] ?? 0) + 1;
   g.bar = undefined;
   kvarlevor(s).push({ id: (s.nextKvar = (s.nextKvar ?? 0) + 1), k: 'fiende', x: Math.floor(x), y: Math.floor(y), t: s.now, vem: -1, namn: r.name, text: r.name, saker });
 }
