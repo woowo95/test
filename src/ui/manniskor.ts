@@ -321,7 +321,10 @@ function riktning(id: number, x: number, y: number, rx = x, ry = y): Rikt {
 // den de slår och ligger när de fallit. Arga i striden och rädda på flykten
 // markeringen runt den valda försvinner när man markerar något annat (steg 6.8.12): då är en ruta för det andra öppen
 const markeradNu = () => ui.tab === undefined || ui.tab === 'person' ? ui.selected : undefined;
+// bytet rövaren bär syns på figuren (steg 10.2.28): det hen har mest av, vid handen
+const bytesIkoner = new Ikoner(figurLayer, true);
 function ritaRovarna(skugga: PIXI.Graphics) {
+  bytesIkoner.start();
   for (const g of gaster()) {
     // i striden på kartan (steg 10.1.14): kämpen är personen, och armen gör slagets rörelse just när ett slag sker (ui/stridbild.ts)
     const gp = s.people.find(q => q.id === g.id && q.gast), kk = gp && kartKampe(s, gp), sl = kk ? slagAv(g.id, ui.nu) : undefined;
@@ -345,7 +348,10 @@ function ritaRovarna(skugga: PIXI.Graphics) {
     // rövaren som pratar med en annan i gänget (steg 10.2.24): bubblan som byns
     const bb = r && !sk ? bubbles.find(q => q.id === r.id && q.until >= performance.now()) : undefined;
     if (bb) pratRuta(x, sp.position.y - SYMBOL_LUFT, Math.sin(performance.now() / 500 + r!.id) * 0.6, bb.kind, 'neutral', bb.i);
+    const byte = r && !ligger ? Object.entries(r.gast?.bar ?? {}).sort((a, b) => b[1] - a[1])[0]?.[0] : undefined;
+    if (byte) bytesIkoner.add(byte, Math.round(sp.position.x + w - 4), Math.round(sp.position.y + h / 2 - 2), 1);
   }
+  bytesIkoner.end();
 }
 export function drawPeople(t: number) {
   peopleG.clear(); bubbleG.clear();

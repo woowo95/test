@@ -2551,3 +2551,32 @@ SCENARIER.rovarmote = {
     ];
   },
 };
+
+SCENARIER.plundring = {
+  text: 'Plundringen syns (steg 10.2.28): gänget tar saker ur en lagerplats tills var och en bär så mycket hen orkar (vikten i SAKER), och går sedan hem med bördan, som syns på figuren och i panelen',
+  kor: () => {
+    const s = createState(4, START);
+    for (let i = 0; i < 12; i++) step(s, 300);
+    SIM.setAmount(s, 'ved', 60); SIM.setAmount(s, 'flinta', 10);
+    SIM.skickaRovare(s, 3);
+    const f = s.rovare!, ids = [...f.folk];
+    // byborna sover tungt (ingen står emot): provet gäller plundringen
+    const sover = () => { for (const p of living(s)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + HOUR, carry: 0, why: 'prov' }; };
+    let bar = 0, hem = 0, maxLast = 0;
+    for (let i = 0; i < 900; i++) {
+      sover(); step(s, 2);
+      for (const id of ids) {
+        const r = s.people.find(q => q.id === id); if (!r?.gast) continue;
+        const last = Object.entries(r.gast.bar ?? {}).reduce((a, [k, n]) => a + SIM.viktOf(k) * n, 0);
+        maxLast = Math.max(maxLast, last);
+        if (last > 0) bar++;
+        if (last > 0 && r.gast.gor === 'baraHem') hem++;
+      }
+      if (!s.rovare) break;
+    }
+    return [
+      [`rövarna tog saker och bar dem (största bördan ${maxLast.toFixed(0)} av ${SIM.ROVARE.bar} i vikt)`, maxLast > SIM.ROVARE.bar * 0.5],
+      [`och gick hem med bördan (${hem} prov)`, hem > 0],
+    ];
+  },
+};

@@ -498,7 +498,8 @@ const RGOR = Object.keys(ROVARHANDLINGAR) as RovarGor[];
 function ga(c: RCtx, m: { x: number; y: number }) {
   // var och en går sin egen väg bredvid de andra (steg 10.2.25): mot en egen punkt kring målet, lite olika fort, och inte i
   // rutan där en annan i gänget redan står
-  const [dx, dy] = egenPunkt(c.r), k = { x: clamp(m.x + dx, 0.3, W - 0.3), y: clamp(m.y + dy, 0.3, H - 0.3) };
+  const [dx0, dy0] = egenPunkt(c.r), n = clamp((avst(c.r, m) - 3) / 5, 0, 1), dx = dx0 * n, dy = dy0 * n; // nära målet går alla dit
+  const k = { x: clamp(m.x + dx, 0.3, W - 0.3), y: clamp(m.y + dy, 0.3, H - 0.3) };
   const upptagen = rovarna(c.s, c.f).some(o => o !== c.r && tileOf(o.x!, o.y!) === tileOf(k.x, k.y));
   const fri = !upptagen && !iVatten(c.s, k.x, k.y) && !bitAt(c.s, k.x, k.y) ? gaMot(c.s, c.r, k.x, k.y, c.dt, c.s.now - c.dt * SEC, egenFart(c.r)) : -1;
   return fri >= 0 ? fri : gaMot(c.s, c.r, m.x, m.y, c.dt, c.s.now - c.dt * SEC, egenFart(c.r)); // ingen väg till den egna punkten: rakt mot målet
