@@ -25,8 +25,7 @@ import { underMinnet } from './sjo';
 import { balans } from './balans';
 import { betalVaror, bynPart, genomfor, personPart } from './behov';
 import { flytta, kanTaHus } from './byte';
-import { ELDFLYTT, nyEldplats } from './eldflytt';
-import { canLight } from './eld';
+import { ELDFLYTT, eldFlyttKostnad, nyEldplats } from './eldflytt';
 import { paStrak, strakHindrar, strakI, straken } from './strak';
 import { strandNu } from './sjo';
 
@@ -472,7 +471,8 @@ export function skadatVal(s: State, h: Hus, okAt: (i: number) => boolean): Skada
   const stannaK = ritningKostnad(ras.map(b => ({ x: b.x, y: b.y, m: b.m })));
   const ut: SkadatVal = { hus: h, rasat: r, stanna: varde(lage(s, h)) / Math.max(PROJEKT_TAL.minKostnad, stannaK), flytta: 0 };
   const at = siteFor(s, h.w, h.h, okAt), e = eldPlats(s);
-  if (!at || rektAvstand(e.x, e.y, at.x - 1, at.y - 1, h.w + 2, h.h + 2) === 0) return ut; // aldrig där elden står
+  if (!at) return ut;
+  const paElden = rektAvstand(e.x, e.y, at.x - 1, at.y - 1, h.w + 2, h.h + 2) === 0; // där elden står kostar det att flytta elden (steg 10.2.8)
   const dorr = dorrPlats(s, at.x, at.y, h.w, h.h, e);
   if (!dorr) return ut;
   const golv = bits.find(b => b.k === 'golv')?.m ?? s.byplan?.golv ?? 'tra', ritning: Andring[] = [];
@@ -481,7 +481,7 @@ export function skadatVal(s: State, h: Hus, okAt: (i: number) => boolean): Skada
     ritning.push({ x, y, m: x === dorr.x && y === dorr.y ? 'oppning' : edge ? 'timmer' : golv });
   }
   const tillbaka = Math.floor(bits.reduce((a, b) => a + (MATERIAL[b.m].item === 'ved' ? b.mat : 0), 0) * HUS.rivTillbaka + 1e-9) * grundvarde('ved');
-  const flyttaK = Math.max(0, ritningKostnad(ritning) - tillbaka), ny: Forslag = { at: 'nyttHus', x: at.x, y: at.y, w: h.w, h: h.h, ritning, oppnas: [], kostnad: flyttaK, varde: 1, plats: 0 };
+  const flyttaK = Math.max(0, ritningKostnad(ritning) - tillbaka) + (paElden ? eldFlyttKostnad() : 0), ny: Forslag = { at: 'nyttHus', x: at.x, y: at.y, w: h.w, h: h.h, ritning, oppnas: [], kostnad: flyttaK, varde: 1, plats: 0 };
   return { ...ut, ny, flytta: varde(lage(s, ny)) / Math.max(PROJEKT_TAL.minKostnad, flyttaK) };
 }
 function planSkadat(s: State, okAt: (i: number) => boolean, byggare: Person[]) {
@@ -718,7 +718,7 @@ const upptagen = (s: State, ag: number) => housesOf(s).some(h => agareAv(h) === 
 // hen inte kvar: byns skickligaste byggare); andra hus av byns skickligaste byggare. Det måste finnas en byggare i byn, men
 // planeraren behöver inte själv kunna bygga väggar. Vem som sedan bygger väljs i val.ts (buildJob)
 export function byggbart(s: State) {
-  const utomElden = canLight(s), okMinne = new Int8Array(W * H).fill(-1);
+  const utomElden = true, okMinne = new Int8Array(W * H).fill(-1); // huset får stå där elden står (steg 10.2.8): eldens plats är en kostnad i poängen (ELDFLYTT.husStraff), elden flyttas först
   return { okMinne, okAt: (i: number) => (okMinne[i] < 0 ? okMinne[i] = tileOk(s, i % W, Math.floor(i / W), utomElden) ? 1 : 0 : okMinne[i]) === 1 };
 }
 export function planBuild(s: State) {

@@ -778,11 +778,12 @@ SCENARIER.eldflytt = {
     let vald: SIM.Person | undefined, flytt = s.fire.flytt;
     SIM.stepEldFlytt(s);
     flytt = s.fire.flytt; vald = living(s).find(p => p.task?.act === 'flyttaeld');
-    let tand = s.fire.lightings; // elden kan tändas igen redan medan den flyttas
-    kor(s, 8, t => { if (t.fire.lit && t.fire.lightings > tand) tand = -1; });
+    // elden kan tändas igen redan medan den flyttas, med flinta eller ur glöden som bars med (steg 10.2.8)
+    let tand = s.fire.lightings; const flyttad0 = (t: State) => { const e = SIM.eldPlats(t); return e.x !== e0.x || e.y !== e0.y; };
+    kor(s, 8, t => { if (t.fire.lit && (t.fire.lightings > tand || flyttad0(t))) tand = -1; });
     const e1 = SIM.eldPlats(s), narmare = Math.hypot(mid.x - e1.x, mid.y - e1.y);
     const g1 = SIM.stationerOf(s).find(t => t.id === grill.id);
-    if (tand !== -1) kor(s, 24, t => { if (t.fire.lit && t.fire.lightings > tand) tand = -1; });
+    if (tand !== -1) kor(s, 24, t => { if (t.fire.lit && (t.fire.lightings > tand || flyttad0(t))) tand = -1; });
     // ett hus planeras där elden står: inget byggs inpå elden förrän den flyttats
     const t = createState(7, START);
     klockan(t, 8); tandEld(t); byggare(t);
