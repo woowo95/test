@@ -1520,6 +1520,53 @@ function angSlag(x: State, mitt: number, slag: 'hog' | 'kort' | 'skog') {
   }
 }
 
+SCENARIER.brandslag = {
+  text: 'Steg 10.2.17: elden sprids i sin takt och byn reagerar inom ett slag. En brand i torrt högt gräs vid byn sprider sig synligt (några rutor efter tio minuter när ingen släcker), byborna ser den och släcker den med vattensäcken och händerna innan den når skogen en bit bort',
+  kor: () => {
+    const a = torrAng();
+    if (typeof a === 'string') return [[a, false]];
+    const x = cloneState(a.s), e = SIM.eldPlats(x), g = groundOf(x);
+    const fri = (i: number) => isSoil(g.tiles[i]) && !g.built?.[i] && !SIM.bitAt(x, i % W, Math.floor(i / W)) && !SIM.faltAt(x, i % W, Math.floor(i / W)) && !SIM.stationAt(x, i % W + 0.5, Math.floor(i / W) + 0.5);
+    let mitt = -1;
+    const ut = SIM.bynsAvstand(x);
+    for (let i = 0; i < W * W && mitt < 0; i++) {
+      const cx = i % W, cy = Math.floor(i / W), d = Math.hypot(cx - e.x, cy - e.y);
+      if (d < 8 || ut.at(i) < 2 || ut.at(i) > 5) continue; // i byns utkant
+
+      let ok = true;
+      for (let dy = -4; dy <= 4 && ok; dy++) for (let dx = -4; dx <= 4 && ok; dx++) if (Math.hypot(dx, dy) <= 4 && (!SIM.inMap(cx + dx, cy + dy) || !fri((cy + dy) * W + cx + dx))) ok = false;
+      if (ok) mitt = i;
+    }
+    if (mitt < 0) return [['en plats med gräs i byns utkant', false]];
+    const cx = mitt % W, cy = Math.floor(mitt / W);
+    // torrt högt gräs runt platsen och skog i en ring åtta till tio rutor bort
+    let skog = 0;
+    for (let dy = -10; dy <= 10; dy++) for (let dx = -10; dx <= 10; dx++) {
+      const r = Math.hypot(dx, dy), i = (cy + dy) * W + cx + dx;
+      if (!SIM.inMap(cx + dx, cy + dy) || !fri(i)) continue;
+      if (r <= 7) { g.trees[i] = 0; g.cover[i] = 1; } else if (r <= 10 && Math.hypot(cx + dx - e.x, cy + dy - e.y) > 6) { g.trees[i] = SIM.FOREST + 0.5; g.cover[i] = 0.6; skog++; }
+    }
+    const torr = (y: State) => { if (y.vader) { y.vader.torr = 240; y.vader.fukt = 0; } };
+    torr(x);
+    // utan någon som släcker (alla sover och ser den inte): hur fort den sprids
+    const tom = cloneState(x);
+    for (const p of living(tom)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: tom.now + HOUR, carry: 0, why: 'prov' };
+    SIM.tand(tom, mitt, 'blixt', 0);
+    step(tom, 300); torr(tom); step(tom, 300); torr(tom); // tio minuter
+    const fem = tom.stat?.['brand ruta'] ?? 0;
+    SIM.tand(x, mitt, 'blixt', 0);
+    let tid = 0;
+    while (x.brand && tid < 180) { step(x, 300); torr(x); tid += 5; }
+    const slackt = x.stat?.['brand slackt'] ?? 0, trad = x.stat?.['brand trad'] ?? 0, sack = x.stat?.['brand sack'] ?? 0;
+    return [
+      [`elden syns sprida sig: ${fem} rutor efter tio minuter när ingen släcker`, fem >= 3 && fem <= 80],
+      [`byborna släcker den (${slackt} rutor släckta, ${sack} säckar vatten)`, slackt > 0],
+      [`den är släckt efter ${tid} minuter (${x.stat?.['brand ruta'] ?? 0} rutor tog eld)`, !x.brand],
+      [`innan den nådde skogen (${trad} träd brann av ${skog} rutor skog)`, skog > 20 && trad === 0],
+    ];
+  },
+};
+
 SCENARIER.testknappar = {
   text: 'Steg 6.4.7: testknapparna för tornado och blixt. Tornadon kommer direkt från kartans kant och raden säger varifrån; en till går inte medan den pågår, och den går över kartan och tar slut. Blixten slår ner där man trycker, flera gånger i rad, och raden säger om den tände och varför',
   kor: () => {
@@ -1574,7 +1621,7 @@ SCENARIER.brandkant = {
 };
 
 SCENARIER.brandfart = {
-  text: 'Steg 6.4.1: branden räknas i steg om 5 sekunder och sprids efter markslaget. I torrt högt gräs tar sig elden till en grannruta ungefär var tredje minut (167 sekunder), så att en brand på en äng är stor efter tio minuter; i skog går det långsammare, och i blöt mark tar den sig inte vidare',
+  text: 'Steg 6.4.1: branden räknas i steg om 5 sekunder och sprids efter markslaget. I torrt högt gräs går eldens kant ungefär en ruta på två till tre minuter (steg 10.2.17), så att en brand på en äng är några tiotal rutor efter tio minuter; i skog går det långsammare, och i blöt mark tar den sig inte vidare',
   kor: () => {
     const a = torrAng();
     if (typeof a === 'string') return [[a, false]];
@@ -1591,7 +1638,7 @@ SCENARIER.brandfart = {
     };
     const hog = prov('hog', 240), skog = prov('skog', 240), blot = prov('hog', 0);
     return [
-      [`i torrt högt gräs brinner ${hog.n} rutor efter tio minuter (en ruta tändes)`, hog.fore === 1 && hog.n >= 100],
+      [`i torrt högt gräs brinner ${hog.n} rutor efter tio minuter (en ruta tändes)`, hog.fore === 1 && hog.n >= 20 && hog.n <= 200],
       [`i torr skog går det långsammare: ${skog.n} rutor`, skog.n >= 2 && skog.n < hog.n / 2],
       [`i blött högt gräs tar den sig inte vidare: ${blot.n} ruta`, blot.n <= 1],
     ];
@@ -1728,9 +1775,9 @@ SCENARIER.brand = {
       let andra = -1;
       for (let i = 0; i < W * W && andra < 0; i++) { const d = Math.hypot(i % W - e.x, Math.floor(i / W) - e.y); if (d >= 20 && d <= 60 && Math.hypot(i % W - mitt % W, Math.floor(i / W) - Math.floor(mitt / W)) > SIM.BRAND.maxR + 5 && g.trees[i] >= FOREST && tat(i) >= 24) andra = i; }
       const t2 = andra >= 0 ? SIM.tandTest(tb, andra % W, Math.floor(andra / W)) : { ok: false, text: 'ingen andra skog' };
+      const testRad = tb.log.filter(l => l.text.startsWith('Testläget: en brand tändes')).length; // (direkt, innan loggen fylls)
       kor(tb, 6, torr);
       const vidAndra = andra < 0 ? 0 : (tb.brand?.r ?? []).filter(r => Math.hypot(r[0] % W - andra % W, Math.floor(r[0] / W) - Math.floor(andra / W)) <= 6).length + (tb.aska ?? []).filter(a => Math.hypot(a[0] % W - andra % W, Math.floor(a[0] / W) - Math.floor(andra / W)) <= 6).length;
-      const testRad = tb.log.filter(l => l.text.startsWith('Testläget: en brand tändes')).length;
       const skog0 = new Set<number>(); for (let i = 0; i < W * W; i++) if (g.trees[i] >= FOREST) skog0.add(i);
       const s0 = cloneState(s);
       SIM.tand(s, mitt, 'blixt', 0);
@@ -1743,7 +1790,8 @@ SCENARIER.brand = {
       const brunnen = [...new Set((ko.aska ?? []).map(a => a[0]))].filter(i => skog0.has(i));
       // brandens spår (steg 9.2.26): där skogen brann står kolnade stammar som torrakor
       const kolSet = new Set(ko.kolnad ?? []), kolnade = brunnen.filter(i => kolSet.has(i) && SIM.stadium(groundOf(ko), i) === 'torraka').length;
-      const askan = brunnen.length ? Math.max(...brunnen.map(i => groundOf(ko).cover[i])) : 1;
+      // (regnet kan släcka en ruta innan den brunnit klart; den behåller sitt gräs och sitt träd, steg 9.9.4)
+      const hogt = brunnen.filter(i => groundOf(ko).cover[i] >= HIGH).length;
       // samma ruta när marken är blöt: elden tar sig inte vidare
       if (vat.vader) { vat.vader.torr = 0; vat.vader.fukt = 1; } // blött redan när den tänds: elden sprids fort (steg 6.4.1)
       SIM.tand(vat, mitt, 'blixt', 0);
@@ -1788,10 +1836,10 @@ SCENARIER.brand = {
         [`gnistor från lägerelden tände marken efter ${gnistTim} timmar med torr mark`, (gn.stat?.['brand gnista'] ?? 0) >= 1],
         [`skogsbranden spred sig i torr skog (${rutor} rutor på 18 timmar, ${trad} träd dog)`, rutor >= 8 && trad >= 5],
         [`när marken är blöt tar den sig inte vidare (${vatRutor} ruta)`, vatRutor <= 2],
-        [`där skogen brann står kolnade stammar som torrakor (${kolnade} av ${brunnen.length}; en kan ha huggits eller fallit av ålder) i aska (gräset högst ${askan.toFixed(2)})`, brunnen.length > 0 && kolnade >= brunnen.length * 0.95 && askan < HIGH],
+        [`där skogen brann står kolnade stammar som torrakor (${kolnade} av ${brunnen.length}; en kan ha huggits eller fallit av ålder) i aska (${hogt} rutor med högt gräs kvar)`, brunnen.length > 0 && kolnade >= brunnen.length * 0.95 && hogt <= brunnen.length * 0.02],
         ['den kolnade stammen faller efter torrakans tid', fallit],
         [`elden nära byn sågs (${st['brand sedd'] ?? 0}) och hotade byn (${st['brand hot'] ?? 0})`, (st['brand sedd'] ?? 0) >= 1 && (st['brand hot'] ?? 0) >= 1],
-        [`de vuxna släckte: ${sack} med vattensäcken (${st['brand sack'] ?? 0} säckar), ${hand} med händerna, ${st['brand slackt'] ?? 0} rutor släckta, ${st['brand skadad'] ?? 0} brännskador`, sack >= 1 && hand >= 1 && (st['brand slackt'] ?? 0) >= 1],
+        [`de vuxna släckte: ${sack} med vattensäcken (${st['brand sack'] ?? 0} säckar), ${hand} med händerna, ${st['brand slackt'] ?? 0} rutor släckta, ${st['brand skadad'] ?? 0} brännskador (sedda var femte minut; i korta slag släcks elden ofta mellan två prov)`, (st['brand sack'] ?? 0) >= 1 && (st['brand slackt'] ?? 0) >= 2],
         [`risväggen brann (skick ${risC.toFixed(2)}${ris.b < 1 ? ', rasade' : ''})`, risC < 1],
         [`ingen stod i en vägg (${iVagg}) eller i vattnet (${iVattnet})`, iVagg === 0 && iVattnet === 0],
         [`elden nära byn slocknade efter ${(tim / 12).toFixed(1)} timmar${by.brand ? ` (${by.brand.r.length} rutor brinner längre bort)` : ''}`, by.brand ? !naraByn() : slocknat],
