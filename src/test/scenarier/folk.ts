@@ -1502,6 +1502,88 @@ SCENARIER.smidighet = {
   },
 };
 
+SCENARIER.stridkarta = {
+  text: 'Steg 10.1.4: ett slagsmål sker på kartans rutor. De som slåss är personerna själva, där de står; såret sitter på personen i samma ögonblick som slaget träffar, ingen flyttas till en annan plats och ingen står i en vägg. Byn går i korta steg medan det pågår och i samma följd av steg i spelet och i ikappräkningen. Den som står nära går emellan eller går undan, efter empati och mod',
+  kor: () => {
+    const ny = (seed: number) => {
+      const s = createState(seed, START); klockan(s, 12);
+      const [a, b, ...ovriga] = living(s).filter(x => ageOf(x, s.now) >= SIM.ALDER.vuxen);
+      b.x = a.x + 1.2; b.y = a.y;
+      for (const q of [a, b]) { q.pot.mod = 16; q.pot.aggression = 16; q.pot.empati = 4; q.task = undefined; }
+      return { s, a, b, ovriga };
+    };
+    // 1) striden på kartan, sekund för sekund
+    const { s, a, b, ovriga } = ny(21);
+    for (const q of ovriga) { q.x = a.x + 40; q.y = a.y; q.task = undefined; } // de andra långt bort: ingen går emellan
+    const start = [a, b].map(q => ({ x: q.x, y: q.y })), sar0 = [a, b].map(q => q.skador?.length ?? 0);
+    const rel0 = s.rels[SIM.relKey(a.id, b.id)]?.op ?? 0;
+    const g = SIM.kartStridBorja(s, 'slagsmal', [[a], [b]], 'för att pröva');
+    const borjar = s.kartStrider?.length === 1 && [a, b].every(q => q.task?.act === 'strid') && [a, b].every((q, i) => q.x === start[i].x && q.y === start[i].y);
+    const kort = SIM.nastaSteg(s) === SIM.STRID.kortSteg;
+    let sarUnder = 0, efterslap = 0, hopp = 0, iVagg = 0, sek = 0, forra = [a, b].map(q => ({ x: q.x, y: q.y }));
+    while (s.kartStrider?.length && sek < 900) {
+      step(s, 1); sek++;
+      [a, b].forEach((q, i) => {
+        const k = g.st.kampar[i], nya = (q.skador?.length ?? 0) - sar0[i];
+        if (nya < k.skador.length) efterslap++; // ett sår i striden som inte sitter på personen
+        if (!g.st.slut && nya > 0) sarUnder = Math.max(sarUnder, nya);
+        const d = Math.hypot(q.x - forra[i].x, q.y - forra[i].y); if (d > 4) hopp++;
+        if (SIM.isWall(s, q.x, q.y)) iVagg++;
+        if (q.x !== k.x || q.y !== k.y) efterslap++; // kämpen står där personen står
+        forra[i] = { x: q.x, y: q.y };
+      });
+    }
+    const slut = !s.kartStrider?.length && !!g.st.slut, traffar = g.st.logg.filter(r => r.h === 'traff').length;
+    const fria = [a, b].filter(SIM.alive).every(q => q.task?.act !== 'strid' || q.task.until <= s.now);
+    const rel = s.rels[SIM.relKey(a.id, b.id)]?.op ?? 0, rapport = s.stridRapporter?.length === 1 && s.stridRapporter[0].orsak === 'för att pröva';
+    const langt = SIM.nastaSteg(s) !== SIM.STRID.kortSteg;
+    // 2) en vägg mellan dem: de går runt den, aldrig igenom
+    const v = ny(21);
+    for (const q of v.ovriga) { q.x = v.a.x + 40; q.task = undefined; }
+    v.b.x = v.a.x + 4; v.b.y = v.a.y;
+    const vx = Math.floor(v.a.x) + 2, vy = Math.floor(v.a.y);
+    for (let dy = -1; dy <= 1; dy++) SIM.bitsOf(v.s).push({ id: v.s.nextBit!++, x: vx, y: vy + dy, k: 'vagg', m: 'timmer', b: 1, mat: 10, c: 1 });
+    SIM.touch(v.s);
+    const vg = SIM.kartStridBorja(v.s, 'slagsmal', [[v.a], [v.b]], 'bakom en vägg');
+    let vVagg = 0, vSek = 0;
+    while (v.s.kartStrider?.length && vSek < 900) { step(v.s, 1); vSek++; for (const q of [v.a, v.b]) if (SIM.isWall(v.s, q.x, q.y)) vVagg++; }
+    const vSlag = SIM.slagen(vg.st).length;
+    // 3) samma följd av steg i spelet (ett steg i taget, så långt som nastaSteg säger) och i ikappräkningen (fem minuter åt gången)
+    const e = ny(22), f = ny(22);
+    SIM.kartStridBorja(e.s, 'slagsmal', [[e.a], [e.b]], 'lika'); SIM.kartStridBorja(f.s, 'slagsmal', [[f.a], [f.b]], 'lika');
+    let stegSpel = 0;
+    for (const till = e.s.now + 900 * 1000; e.s.now < till - 1;) { step(e.s, Math.min(SIM.nastaSteg(e.s), (till - e.s.now) / 1000)); stegSpel++; }
+    for (let i = 0; i < 3; i++) step(f.s, 300);
+    const lika = SIM.serialize(e.s) === SIM.serialize(f.s);
+    // 4) de som står nära: den empatiska och modiga går emellan, den rädda går undan, och barnet går undan
+    let emellan = 0, undan = 0, skilda = 0, barnUndan = 0, barnEmellan = 0;
+    for (let seed = 30; seed < 42; seed++) {
+      const n = ny(seed), [fred, radd] = n.ovriga, barn = living(n.s).find(x => ageOf(x, n.s.now) < SIM.ALDER.vuxen && ageOf(x, n.s.now) >= SIM.ALDER.smabarn);
+      if (!fred || !radd) continue;
+      for (const q of n.ovriga) { q.x = n.a.x + 40; q.task = undefined; }
+      fred.pot.empati = 19; fred.pot.mod = 18; fred.pot.karisma = 18; fred.pot.styrka = 16; fred.x = n.a.x + 4; fred.y = n.a.y + 3;
+      radd.pot.empati = 6; radd.pot.mod = 2; radd.x = n.a.x - 3; radd.y = n.a.y - 3;
+      if (barn) { barn.x = n.a.x; barn.y = n.a.y + 4; barn.task = undefined; }
+      const ng = SIM.kartStridBorja(n.s, 'slagsmal', [[n.a], [n.b]], 'med folk omkring');
+      const d0 = Math.hypot(radd.x - n.a.x, radd.y - n.a.y);
+      for (let i = 0; i < 600 && n.s.kartStrider?.length; i++) step(n.s, 1);
+      if (ng.val?.[fred.id] === 'skilja') emellan++;
+      if (ng.val?.[radd.id] === 'undan' && Math.hypot(radd.x - n.a.x, radd.y - n.a.y) > d0) undan++;
+      if (ng.skild === fred.id) skilda++;
+      if (barn && ng.val?.[barn.id] === 'undan') barnUndan++; if (barn && ng.val?.[barn.id] === 'skilja') barnEmellan++;
+    }
+    return [
+      [`striden börjar där de står, och byn går i korta steg (${SIM.STRID.kortSteg} s) medan den pågår`, borjar && kort],
+      [`såren sitter på personen direkt när slaget träffar (${traffar} träffar, ${sarUnder} sår på en person medan striden pågick, ${efterslap} gånger låg personen efter)`, traffar > 0 && sarUnder > 0 && efterslap === 0],
+      [`ingen flyttas till en annan plats (${hopp} hopp på mer än fyra rutor på en sekund) och ingen står i en vägg (${iVagg})`, hopp === 0 && iVagg === 0],
+      [`striden tar slut (efter ${sek} s), de som var med väljer på nytt, rapporten sparas och de tycker sämre om varandra (${rel0.toFixed(0)} → ${rel.toFixed(0)})`, slut && sek > 5 && fria && rapport && rel < rel0 && langt],
+      [`med en vägg emellan går de runt den och slåss (${vSlag} slag, ${vVagg} gånger i väggen)`, vSlag > 0 && vVagg === 0],
+      [`spelet och ikappräkningen går igenom samma steg (${stegSpel} steg i spelet mot tre femminuterssteg) och blir exakt lika`, lika && stegSpel > 10],
+      [`den empatiska och modiga går emellan (${emellan} av 12) och får dem ibland att sluta (${skilda}), den rädda går undan (${undan}), och barn går undan men aldrig emellan (${barnUndan}, ${barnEmellan})`, emellan >= 8 && skilda >= 1 && undan >= 8 && barnEmellan === 0],
+    ];
+  },
+};
+
 SCENARIER.slagsmal = {
   text: 'Slagsmål och lek i byn (steg 3.7.2): ett gräl kan bli ett slagsmål, striden räknas färdigt och sparas, skadorna blir riktiga skador, de som slåss står kvar och behoven väntar, vinnaren blir ett rykte, barn brottas på lek, närstriden och träffsäkerheten växer, och duck, parering och de nya skadorna finns i striden',
   kor: () => {
@@ -1524,7 +1606,7 @@ SCENARIER.slagsmal = {
     // gräl blir slagsmål: många gräl mellan två blodtörstiga
     const g = createState(22, START), [c, d] = living(g).filter(x => ageOf(x, g.now) >= SIM.ALDER.vuxen);
     c.pot.aggression = 20; c.pot.empati = 1; SIM.think(c, 'Rasande', -0.7, g.now, DAY);
-    for (let i = 0; i < 200 && !g.strider?.length; i++) { c.task = undefined; d.task = undefined; SIM.gralBlirSlagsmal(g, c, d); }
+    for (let i = 0; i < 200 && !g.kartStrider?.length; i++) { c.task = undefined; d.task = undefined; SIM.gralBlirSlagsmal(g, c, d); } // slagsmålet efter ett gräl sker på kartan (steg 10.1.4)
     const gral = (g.stat?.strid_slagsmal ?? 0) >= 1;
     // barn som leker brottas
     const l = createState(23, START), barn = living(l).find(x => ageOf(x, l.now) < SIM.ALDER.vuxen)!, kamrat = living(l).find(x => x !== barn)!;

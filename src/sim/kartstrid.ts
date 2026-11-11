@@ -1,0 +1,245 @@
+// Striden på kartan (system 10.1, "Striden på kartan" i designdokumentet). En strid sker på kartans rutor, i samma värld som
+// allt annat: den som slåss är personen själv, på sin ruta, med sin egen hälsa. Reglerna för själva slaget är stridens
+// (strid.ts: träff och miss, parering, skador, ork, stridsmod och hot); här finns det som kopplar dem till världen.
+//   - Varje strid som pågår ligger i s.kartStrider och stegas framåt med byn (kartStridSteg), ett stridssteg i taget. Den räknas
+//     aldrig om från början och aldrig färdigt i förväg.
+//   - Platsen är kartan: kämpens x och y är personens, före och efter varje stridssteg, och väggar och vatten är världens.
+//   - Såret sätts på personen när slaget träffar, blodet är personens blod, och den som dör är död i samma ögonblick
+//     (världen som striden frågar, StridVarld i strid.ts). Inget förs tillbaka efteråt.
+//   - Medan en strid pågår går hela byn i korta steg (STRID.kortSteg, nastaSteg), så att alla väljer om hela tiden.
+//   - Den som står nära ser striden och väljer i valet av aktivitet (raden slagsmal i ARBETEN, val.ts): gå emellan, gå undan
+//     eller fortsätta med sitt. Valet är en poäng ur empatin, modet, banden till dem som slåss och blodtörsten (narStridVal).
+// Steg 10.1.4 flyttar slagsmålet efter ett gräl hit; leken, brottningen, rånen och ledarstriden kommer i 10.1.7 och rövarna
+// och djuren i stegen efter.
+import { balans } from './balans';
+import { blocked, freeNear } from './byggnad';
+import { ALDER, ageOf, alive, byId, count, gjort, living, log, relKey, stat } from './folk';
+import { KROPPSDELAR, forlora, skada } from './halsa';
+import { blodas } from './blod';
+import { blodtorst } from './humor';
+import { isFamily } from './behov';
+import { eldPlats } from './karta';
+import { avbryt } from './lager';
+import { die } from './liv';
+import { lista, och } from './ord';
+import { handelse, larma } from './rykten';
+import { clamp, rnd } from './slump';
+import { AVSIKTER, Avsikt, Kampe, SLAGSMAL, STRID, Strid, StridVarld, efterStrid, foljet, iVarlden, nyStrid, personKampe, skilj, slitKastat, starKvar, stridRad, stridSteg, vadretIStriden } from './strid';
+import { ledareOf } from './styre';
+import { Act, H, HOUR, Person, SEC, State, W } from './typer';
+import { upplev } from './uppvaxt';
+import { husPlats } from './varg';
+const BEAT_SEK = 300; // byns vanliga steg (BEAT i steg.ts)
+
+export const KARTSTRID = balans('kartstrid', {
+  ser: 12, // den som är vaken och står så här nära en strid ser den (rutor)
+  // valet för den som ser ett slagsmål (narStridVal): poängen för att gå emellan ...
+  skiljaBas: -0.5, skiljaEmpati: 0.6, skiljaMod: 0.5, skiljaBand: 0.8, skiljaLedare: 0.7, // ... grunden, och per tio steg empati och mod över 10, bandet till den hen står närmast (0–1) och om hen är byns ledare
+  // ... och för att gå undan
+  undanBas: -0.4, undanMod: 0.8, undanBarn: 1.2, undanTorst: 0.6, // grunden, per tio steg mod under 10, ett barn, och gånger de slåendes blodtörst
+  brus: 0.3, // slumpen i valet (0–brus på varje poäng)
+  undanR: 10, // den som går undan går så här långt från striden
+  skiljNara: 1.6, // den som går emellan måste komma så här nära
+  skiljChans: 0.12, // chansen per sekund att de slutar när någon står emellan, gånger 1 + (karisma + styrka − 20) / 20 ...
+  skiljLedare: 2, // ... gånger detta för byns ledare ...
+  skiljTorst: 3, // ... delat med 1 + detta gånger den blodtörstigastes blodtörst
+});
+
+// en strid som pågår på kartan. val = vad de som sett striden valt (personens id: skilja, undan eller kvar), fri = de som lämnat den
+export interface KartStrid {
+  id: number; st: Strid; orsak: string; t0: number; rest: number; // rest = sekunder som inte räckt till ett helt stridssteg än
+  val?: Record<number, 'skilja' | 'undan' | 'kvar'>; fri?: number[]; skild?: number; // skild = den som gick emellan
+}
+export const kartStrider = (s: State): KartStrid[] => s.kartStrider ?? [];
+// striden personen är med i (som kämpe som inte lämnat den)
+export function kartStridAv(s: State, p: Person) { return kartStrider(s).find(g => !g.fri?.includes(p.id) && g.st.kampar.some(k => k.pid === p.id)); }
+const personAv = (s: State, k: Kampe) => k.pid === undefined ? undefined : byId(s, k.pid);
+const lekAv = (a: Avsikt) => !!(AVSIKTER[a] as { lek?: true }).lek;
+
+// ---------- korta steg när faran är nära ----------
+// faran är nära så länge en strid pågår på kartan (fler faror kommer med rövarna och djuren)
+export const faraNara = (s: State) => kartStrider(s).length > 0;
+// längden på byns nästa steg (sekunder): korta steg medan faran är nära, annars det som är kvar av femminuterssteget som de
+// korta stegen avbröt (s.stegRest), annars ett helt. Spelet och ikappräkningen frågar samma sak, så att stegen blir desamma
+export function nastaSteg(s: State) { return faraNara(s) ? STRID.kortSteg : s.stegRest ?? BEAT_SEK; }
+// ett steg om d sekunder är taget: hur mycket som är kvar av femminuterssteget
+export function stegTaget(s: State, d: number) {
+  const kvar = (s.stegRest ?? BEAT_SEK) - d;
+  if (kvar > 1e-6 && kvar < BEAT_SEK) s.stegRest = Math.round(kvar * 1000) / 1000; else delete s.stegRest;
+}
+
+// ---------- striden börjar ----------
+// dit den som flyr springer: sitt hus, annars elden
+function flyMal(s: State, p: Person) { const h = husPlats(s, p) ?? (() => { const e = eldPlats(s); return freeNear(s, e.x + 0.5, e.y + 1.5); })(); return { x: h.x, y: h.y }; }
+const stridsUppgift = (s: State, p: Person, why: string) => { p.task = { act: 'strid', phase: 'do', tx: p.x, ty: p.y, until: s.now + (STRID.maxTid + 60) * SEC, carry: 0, why }; };
+// en strid börjar mellan två sidor av folk, där de står. Den stegas sedan med byn (kartStridSteg)
+export function kartStridBorja(s: State, avsikt: Avsikt, sidor: [Person[], Person[]], orsak: string): KartStrid {
+  const lek = lekAv(avsikt);
+  const kampar = sidor.flatMap((sida, sd) => sida.map(p => ({ ...personKampe(s, p, 0, sd as 0 | 1, p.x, p.y), fly: flyMal(s, p) })));
+  kampar.forEach((k, i) => { k.id = i + 1; });
+  foljet(s, kampar);
+  const st = nyStrid({ avsikt, w: W, h: H, ...vadretIStriden(s), kampar }, Math.floor(rnd(s, 'strid') * 2147483647));
+  st.karta = true;
+  const g: KartStrid = { id: s.kartStridNr = (s.kartStridNr ?? 0) + 1, st, orsak, t0: s.now, rest: 0 };
+  (s.kartStrider ??= []).push(g);
+  count(s, 'strid_' + avsikt); count(s, 'kartStrid');
+  for (const p of [...sidor[0], ...sidor[1]]) { avbryt(s, p); stridsUppgift(s, p, orsak); }
+  if (!lek) larma(s, 'slagsmål', kampar.length, [...sidor[0], ...sidor[1]].filter(p => p.task?.act !== 'sova')); // de som slåss ropar (steg 3.7.11)
+  return g;
+}
+
+// ---------- världen striden frågar ----------
+function varldAv(s: State, g: KartStrid): StridVarld {
+  const lek = lekAv(g.st.avsikt), sport = !!(AVSIKTER[g.st.avsikt] as { sport?: true }).sport;
+  return {
+    vagg: (x, y) => x < 0 || y < 0 || x >= W || y >= H || blocked(s, x, y),
+    // såret sitter på personen när slaget träffar
+    skada: (k, w, av) => {
+      const p = personAv(s, k);
+      if (!p || p.died !== undefined) return false;
+      if (sport && w.g < STRID.lek) return false; // brottningen: de svaga slagen gör ont men blir ingen skada (steg 9.2.92)
+      const dog = !!skada(s, p, w.d, w.k, w.g, 'drap', `i ${lek ? 'ett lekslagsmål' : 'en strid'} med ${av.namn}`);
+      if (w.fast && p.skador?.length) p.skador[p.skador.length - 1].fast = 1; // spjutet sitter kvar till vården (steg 3.7.7)
+      if (!dog && w.av && !(KROPPSDELAR[w.d] as { livsviktig?: true }).livsviktig) forlora(s, p, w.d, 'höggs av'); // olyckshugget (steg 9.5.22)
+      count(s, 'kartSar');
+      return dog;
+    },
+    // den som dör i striden är död direkt
+    fall: (k, h) => {
+      const p = personAv(s, k);
+      if (h !== 'dod' || !p || p.died !== undefined) return;
+      count(s, 'drap'); die(s, p, 'drap');
+      for (const o of g.st.kampar) { const q = o.sida !== k.sida ? personAv(s, o) : undefined; if (q && alive(q)) upplev(s, q, 'dodade', p.name); } // den som dödade minns det (steg 4.1.1.2)
+    },
+  };
+}
+
+// ---------- striden stegas med byn ----------
+export function kartStridSteg(s: State, dtSec: number) {
+  if (!s.kartStrider?.length) return;
+  for (const g of [...s.kartStrider]) {
+    const st = g.st, v = varldAv(s, g);
+    g.rest += dtSec;
+    while (g.rest >= STRID.tick - 1e-9 && !st.slut) {
+      g.rest -= STRID.tick;
+      // kämpen är personen: platsen och blodet är personens före stridssteget ...
+      for (const k of st.kampar) {
+        const p = personAv(s, k); if (!p) continue;
+        if (p.died !== undefined) { if (k.lage !== 'dod') { k.lage = 'dod'; k.mal = undefined; } continue; } // dog av något annat
+        if (!g.fri?.includes(p.id)) { k.x = p.x; k.y = p.y; }
+        k.blod = p.blod ?? 1;
+      }
+      skiljSteg(s, g);
+      iVarlden(v, () => stridSteg(st));
+      // ... och efter det
+      for (const k of st.kampar) {
+        const p = personAv(s, k); if (!p || p.died !== undefined || g.fri?.includes(p.id)) continue;
+        p.x = k.x; p.y = k.y; p.blod = clamp(k.blod, 0, 1);
+        if (k.lage === 'ger' || k.lage === 'borta') { // har lämnat striden: väljer på nytt
+          (g.fri ??= []).push(p.id);
+          if (p.task?.act === 'strid') p.task.until = s.now;
+        } else if (k.lage === 'strid' || k.lage === 'flykt') { // den som står eller flyr är kvar i striden, också när en skada avbrutit det hen gjorde
+          if (p.task?.act !== 'strid') { avbryt(s, p); stridsUppgift(s, p, g.orsak); } else { p.task.tx = p.x; p.task.ty = p.y; }
+        } else if (p.task?.act === 'strid') { p.task.tx = p.x; p.task.ty = p.y; } // den som ligger: kroppen och hälsan avgör vad hen gör sedan
+      }
+    }
+    if (st.slut) kartStridSlut(s, g);
+  }
+  if (!s.kartStrider.length) delete s.kartStrider;
+}
+
+// den som gått emellan och står hos dem som slåss får dem ibland att sluta
+function skiljSteg(s: State, g: KartStrid) {
+  const star = g.st.kampar.filter(starKvar);
+  if (star.length < 2 || lekAv(g.st.avsikt)) return;
+  const mx = star.reduce((a, k) => a + k.x, 0) / star.length, my = star.reduce((a, k) => a + k.y, 0) / star.length;
+  const torst = Math.max(0, ...star.map(k => k.st.torst ?? 0));
+  for (const p of living(s)) {
+    if (p.task?.act !== 'skilja' || p.task.ref !== g.id || Math.hypot(p.x - mx, p.y - my) > KARTSTRID.skiljNara) continue;
+    const kraft = Math.max(0.2, 1 + (stat(p, 'karisma', s.now) + stat(p, 'styrka', s.now) - 20) / 20) * (ledareOf(s) === p ? KARTSTRID.skiljLedare : 1);
+    if (rnd(s, 'strid', p) >= KARTSTRID.skiljChans * STRID.tick * kraft / (1 + KARTSTRID.skiljTorst * torst)) continue;
+    skilj(g.st); g.skild = p.id; count(s, 'skilda');
+    p.task.until = s.now;
+    return;
+  }
+}
+
+// ---------- striden är slut ----------
+function kartStridSlut(s: State, g: KartStrid) {
+  const st = g.st, lek = lekAv(st.avsikt), vinnare = st.slut!.vinnare;
+  const sidor = ([0, 1] as const).map(sd => st.kampar.filter(k => k.sida === sd).map(k => personAv(s, k)).filter((p): p is Person => !!p)) as [Person[], Person[]];
+  const namn = (sd: 0 | 1) => lista(sidor[sd].map(p => p.name));
+  const ids = [...sidor[0], ...sidor[1]].map(p => p.id);
+  const skiljare = g.skild !== undefined ? byId(s, g.skild) : undefined;
+  if (skiljare) log(s, `${namn(0)} och ${namn(1)} slogs (${g.orsak}). ${skiljare.name} gick emellan, och de slutade.`, 'rel', [...ids, skiljare.id]);
+  else if (!lek) stridRad(s, st, namn, g.orsak, ids);
+  for (const k of st.kampar) {
+    const p = personAv(s, k); if (!p || p.died !== undefined) continue;
+    const mot = sidor[1 - k.sida];
+    gjort(s, p, 'slagsmal'); if (vinnare === k.sida) gjort(s, p, 'vann');
+    const kast = st.logg.filter(r => r.a === k.id && r.kast), vada = st.logg.filter(r => r.a === k.id && r.h === 'vada').length;
+    if (kast.length) { gjort(s, p, 'kast', kast.length); const tr = kast.filter(r => r.h !== 'miss').length - vada; if (tr > 0) gjort(s, p, 'kastTraff', tr); }
+    slitKastat(s, p, st, k);
+    if (k.kryper) blodas(s, p.x, p.y, 'kryp', k.kryper * STRID.krypBlod); // släpspåret efter den som kröp undan (steg 3.7.19)
+    efterStrid(s, st, k, p, mot, sidor[k.sida], o => personAv(s, o), lek, vinnare);
+    if (p.task?.act === 'strid') p.task.until = s.now; // striden är slut: hen väljer på nytt
+  }
+  // vinnaren blir ett rykte i byn (steg 3.3.1): de som såg det minns det
+  if (!lek && vinnare !== -1) for (const p of sidor[vinnare]) if (p.health > 0 && alive(p) && sidor[1 - vinnare][0]) handelse(s, p, 'vannSlagsmal', sidor[1 - vinnare][0]);
+  // rapporten sparas (steg 8.8.10); själva striden går inte att räkna om, för den skedde i världen
+  (s.stridRapporter ??= []).push({ t: s.now, orsak: g.orsak, vinnare, n: st.kampar.length });
+  count(s, 'strider'); count(s, 'kartStridSlut');
+  s.kartStrider = s.kartStrider!.filter(x => x !== g);
+}
+
+// ---------- den som ser en strid ----------
+// vad p väljer när hen ser ett slagsmål (raden slagsmal i ARBETEN, val.ts): gå emellan, gå undan eller ingenting. Poängen
+// räknas en gång per strid och person, ur empatin, modet, banden till dem som slåss och deras blodtörst
+export function narStridVal(s: State, p: Person): { act: Act; why: string; spot: { x: number; y: number }; dur: number; ref: number } | undefined {
+  for (const g of kartStrider(s)) {
+    const st = g.st;
+    if (lekAv(st.avsikt) || st.kampar.some(k => k.pid === p.id)) continue;
+    const star = st.kampar.filter(starKvar);
+    if (star.length < 2) continue;
+    const mx = star.reduce((a, k) => a + k.x, 0) / star.length, my = star.reduce((a, k) => a + k.y, 0) / star.length;
+    const d = Math.hypot(p.x - mx, p.y - my);
+    let v = g.val?.[p.id];
+    if (!v) {
+      if (d > KARTSTRID.ser) continue;
+      const a = ageOf(p, s.now), folk = st.kampar.map(k => personAv(s, k)).filter((q): q is Person => !!q && alive(q));
+      const band = Math.max(0, ...folk.map(q => isFamily(p, q) ? 1 : clamp((s.rels[relKey(p.id, q.id)]?.op ?? 0) / 100, 0, 1)));
+      const torst = Math.max(0, ...folk.map(q => blodtorst(s, q)));
+      const brus = () => rnd(s, 'strid', p) * KARTSTRID.brus;
+      const skilja = a < ALDER.vuxen ? -Infinity : KARTSTRID.skiljaBas + KARTSTRID.skiljaEmpati * (stat(p, 'empati', s.now) - 10) / 10 + KARTSTRID.skiljaMod * (stat(p, 'mod', s.now) - 10) / 10
+        + KARTSTRID.skiljaBand * band + (ledareOf(s) === p ? KARTSTRID.skiljaLedare : 0) + brus();
+      const undan = KARTSTRID.undanBas + KARTSTRID.undanMod * (10 - stat(p, 'mod', s.now)) / 10 + (a < ALDER.vuxen ? KARTSTRID.undanBarn : 0) + KARTSTRID.undanTorst * torst + brus();
+      v = skilja > 0 && skilja >= undan ? 'skilja' : undan > 0 ? 'undan' : 'kvar';
+      (g.val ??= {})[p.id] = v; count(s, 'serStrid_' + v);
+    }
+    if (v === 'skilja') return { act: 'skilja', why: `Går emellan ${och(star.map(k => k.namn))}`, spot: { x: mx, y: my }, dur: HOUR / 12, ref: g.id };
+    if (v === 'undan' && d < KARTSTRID.undanR) {
+      const l = d || 1, f = freeNear(s, clamp(mx + (p.x - mx) / l * (KARTSTRID.undanR + 1), 1, W - 2), clamp(my + (p.y - my) / l * (KARTSTRID.undanR + 1), 1, H - 2));
+      return { act: 'undanStrid', why: `Går undan från slagsmålet mellan ${och(star.map(k => k.namn))}`, spot: { x: f.x, y: f.y }, dur: HOUR / 30, ref: g.id };
+    }
+  }
+  return undefined;
+}
+// de som ser en strid och vill något annat än det de gör avbryter det, så att de väljer på nytt (en gång per strid och person)
+export function serStriden(s: State) {
+  for (const g of kartStrider(s)) {
+    if (lekAv(g.st.avsikt)) continue;
+    for (const p of living(s)) {
+      if (g.val?.[p.id] || !p.task || p.task.act === 'sova' || p.task.act === 'strid' || p.task.act === 'medvetslos' || p.svimmat) continue;
+      const d = narStridVal(s, p);
+      if (d && p.task.act !== d.act) { avbryt(s, p); p.task = undefined; }
+    }
+  }
+}
+
+// ett gräl (samtal.ts) kan bli ett slagsmål, oftare hos den blodtörstiga. Det börjar där de står och stegas sedan med byn
+export function gralBlirSlagsmal(s: State, a: Person, b: Person) {
+  if (ageOf(a, s.now) < ALDER.smabarn || ageOf(b, s.now) < ALDER.smabarn || a.task?.act === 'strid' || b.task?.act === 'strid' || !alive(a) || !alive(b)) return;
+  if (rnd(s, 'strid', a) >= SLAGSMAL.gral * (1 + SLAGSMAL.gralTorst * blodtorst(s, a))) return;
+  kartStridBorja(s, 'slagsmal', [[a], [b]], 'efter ett gräl');
+  handelse(s, a, 'sla', b); // den som började slagsmålet slog först
+}

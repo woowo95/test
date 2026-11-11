@@ -1,4 +1,4 @@
-import { torkaTest, storStridNu, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, spar, step, visning, yearNo, State, motgangNu, motgangNasta, motgangDef, varslade, ROVARFLOCK, skickaRovare, skickaHandlare, rovarHinder, handlarHinder, skickaTornado, tornadoHinder, lightLevel, rovarna } from './sim';
+import { nastaSteg, torkaTest, storStridNu, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, spar, step, visning, yearNo, State, motgangNu, motgangNasta, motgangDef, varslade, ROVARFLOCK, skickaRovare, skickaHandlare, rovarHinder, handlarHinder, skickaTornado, tornadoHinder, lightLevel, rovarna } from './sim';
 import { brandKnapp, testSvara } from './ui/interaktion';
 import { testBortaIByn } from './ui/testborta';
 import { $ } from './ui/hjalp';
@@ -227,7 +227,8 @@ function tick() {
   }
   // spar.pa är på också här: varje slag börjar om vägen (steg.ts), så bara det sista slaget sparas och ritas
   const t0 = performance.now();
-  for (let n = 0; s.now < vt && n < MAX_SLAG && (!n || performance.now() - t0 < RAKNA_MS); n++) step(s, BEAT, events);
+  // så långt som nästa steg är (nastaSteg, kartstrid.ts): korta steg medan en strid pågår, annars fem minuter (steg 10.1.4)
+  for (let n = 0; s.now < vt && n < MAX_SLAG && (!n || performance.now() - t0 < RAKNA_MS); n++) step(s, nastaSteg(s), events);
   ui.nu = Math.min(vt, s.now);
   nyBild();
   const now = performance.now();

@@ -24,7 +24,8 @@ import { loggBer, stepBerattelser } from './berattelser';
 import { UTBROTT_ACTS, moodOf, stepHumor, utbrottKlar } from './humor';
 import { glomRykten, stepRykten } from './rykten';
 import { stepStyre } from './styre';
-import { gralBlirSlagsmal, lekSteg } from './strid';
+import { STRID, lekSteg } from './strid';
+import { faraNara, gralBlirSlagsmal, kartStridSteg, serStriden, stegTaget } from './kartstrid';
 import { sportKlar, sportSteg } from './sport';
 import { lyssnaSteg, upptradaKlar, upptradaSteg } from './framtradande';
 import { fylldSack, redskapIHanden, tidyTools } from './agande';
@@ -291,7 +292,17 @@ const LAMNA: Partial<Record<Act, (s: State, p: Person, tk: Task) => void>> = {
 
 // ---------- huvudsteg ----------
 // ett slag om dtSec sekunder (BEAT i spelet och ikappräkningen; testerna kan ta andra). events = samtalen, för att visa dem
-export function step(s: State, dtSec: number, events?: TalkEvent[]) { simulera(() => slag(s, dtSec, events)); } // också när gränssnittet räknar (typer.ts)
+// Medan faran är nära (en strid pågår på kartan, kartstrid.ts) går hela byn i korta steg (STRID.kortSteg, steg 10.1.4), så att alla
+// väljer om hela tiden; annars tas hela tiden i ett slag. Spelet och ikappräkningen går igenom samma följd av slag
+export function step(s: State, dtSec: number, events?: TalkEvent[]) { // också när gränssnittet räknar (typer.ts)
+  simulera(() => {
+    let kvar = dtSec;
+    while (kvar > 1e-9) {
+      const d = faraNara(s) ? Math.min(kvar, STRID.kortSteg) : kvar;
+      slag(s, d, events); stegTaget(s, d); kvar -= d;
+    }
+  });
+}
 function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   useMap(s);
   const t0 = s.now;
@@ -365,6 +376,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
       if (n && others.length) { count(s, 'samtal', n); if (p.task && !ACTS[p.task.act].social) p.pratArbete = (p.pratArbete ?? 0) + n; } // samtalen under arbetet (steg 8.1.12)
     }
   }
+  kartStridSteg(s, dtSec); serStriden(s); // striderna på kartan stegas med byn, och de som ser dem väljer på nytt (kartstrid.ts, steg 10.1.4)
   // gästernas vardag (steg 9.2.113, gastvardag.ts): värmen räknas som en bybos, men reskläderna tar det mesta av kylan
   gastVardag(s, dtSec, g => { const v = varmeDelar(s, g, coldRate, inRum, temp); v.kyla *= 1 - GASTVARD.klad; return nyVarme(g.warm, v, dtSec / HOUR_S); });
   pratMedHandlare(s, dtSec, events); // småprat med handlaren (steg 4.5.4.15, handel.ts)

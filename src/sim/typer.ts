@@ -389,6 +389,8 @@ export interface State {
   flodHot?: number; flodBlot?: number; flodMinne?: number; // medan vattnet stiger: så många rutor upp på land som byn bär undan maten från; så många som är blöta (vattnet står där nu eller stod där nyss, ingen sover där); och så högt som byn minns att vattnet nått (inget byggs där). Räknas varje timme (steg 3.8.7, flod.ts, flodHotad i sjo.ts)
   tornadoStig?: number[]; // rutorna där tornadon slet upp gräset till en jordstig, bara för bilden (steg 6.4.13): de syns tills gräset vuxit tillbaka
   tornado?: import('./tornado').Tornado; // tornadon som drar fram (steg 3.8.4, tornado.ts): banan, hur långt den kommit och vad den gjort
+  kartStrider?: import('./kartstrid').KartStrid[]; kartStridNr?: number; // striderna som pågår på kartan (steg 10.1.4, kartstrid.ts)
+  stegRest?: number; // sekunder kvar av femminuterssteget som korta steg avbröt (nastaSteg i kartstrid.ts)
   djurStrider?: import('./djurstrid').DjurKamp[]; // striderna mot djur som pågår på kartan (steg 9.2.29, djurstrid.ts)
   bjornUndan?: { fran: number; till: number; x0: number; y0: number; x1: number; y1: number }; // björnen går bort efter en strid (steg 9.2.30)
   stationFlytt?: { id: number; x: number; y: number; rot?: 1; vinst: number }; // den station ute som är mest värd att flytta närmare dem som använder den (steg 9.4.8, stationer.ts)
