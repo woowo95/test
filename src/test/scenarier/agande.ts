@@ -1900,10 +1900,16 @@ SCENARIER.barnrop = {
     const start = SIM.freeNear(s, spot.x - hor - 10, spot.y), vid = SIM.freeNear(s, spot.x - 2, spot.y + 3);
     Object.assign(barn, { x: start.x, y: start.y }); barn.task = undefined as Person['task'];
     for (const p of folk) if (p !== barn && p !== vuxen) Object.assign(p, SIM.freeNear(s, start.x, start.y)); // de andra står där barnet började, utom hörhåll från den vuxna
-    Object.assign(vuxen, { x: vid.x, y: vid.y }); vuxen.task = { act: 'samla', phase: 'do', tx: vuxen.x, ty: vuxen.y, until: s.now + 4 * HOUR, carry: 0 };
+    SIM.chooseTask(s, barn); // barnet väljer gömstället; den vuxna står nära det, vid barnets väg dit
+    const mal = barn.task?.act === 'gomma' ? { x: barn.task.tx, y: barn.task.ty } : spot, vid2 = SIM.freeNear(s, Math.round(mal.x + (start.x - mal.x) * 0.3), Math.round(mal.y + (start.y - mal.y) * 0.3) + 2);
+    Object.assign(vuxen, { x: vid2.x, y: vid2.y }); vuxen.task = { act: 'hantverk', phase: 'do', tx: vuxen.x, ty: vuxen.y, until: s.now + 4 * HOUR, carry: 0 }; void vid; // står kvar på sin plats
     const fore = Math.hypot(barn.x - vuxen.x, barn.y - vuxen.y);
     let hort = false, gomde = false;
-    for (let i = 0; i < 400 && !hort; i++) { step(s, 2); if (barn.task?.act === 'gomma') gomde = true; hort = (vuxen.larm as { vad?: string } | undefined)?.vad === 'rovare'; }
+    for (let i = 0; i < 400 && !hort; i++) {
+      step(s, 2); if (barn.task?.act === 'gomma') gomde = true; hort = (vuxen.larm as { vad?: string } | undefined)?.vad === 'rovare';
+      // barnet springer förbi: den vuxna står en bit vid sidan av där barnet springer (barnets gömställe kan vara ett annat än det provet räknade med)
+      if (!hort && barn.task?.act === 'gomma' && barn.task.phase === 'go' && Math.hypot(barn.x - vuxen.x, barn.y - vuxen.y) > hor) { const v = SIM.freeNear(s, Math.round(barn.task.tx + (barn.x - barn.task.tx) * 0.5), Math.round(barn.task.ty + (barn.y - barn.task.ty) * 0.5) + 2); Object.assign(vuxen, { x: v.x + 0.5, y: v.y + 0.5 }); vuxen.task = { act: 'hantverk', phase: 'do', tx: vuxen.x, ty: vuxen.y, until: s.now + 4 * HOUR, carry: 0 }; }
+    }
     return [
       [`${vuxen.name} står ${fore.toFixed(0)} rutor från barnet och har inte hört ropet från början`, fore > hor],
       [`${barn.name} springer för att gömma sig`, gomde],
