@@ -320,7 +320,11 @@ export interface Kampe {
   hemma?: number; // den som försvarar sin by (ROVARE.hemma i rovare.ts): så här mycket mer stridsmod med hotet, så att hen inte flyr så lätt
 }
 // en rad i loggen: tiden (sekunder), vem (a) och mot vem (b), del, skada och grad, och det kläderna tog
-export interface StridRad { t: number; h: Handelse; a?: number; b?: number; d?: Kroppsdel; k?: SkadaTyp; g?: number; v?: Vapen; kl?: string; kast?: 1 }
+// Varje rad är en händelse (steg 10.1.3, "Ett slag är en händelse"): tiden, vad som hände, vem och mot vem. Ett anfall (ett slag,
+// ett kast eller en knuff) är raden med sl: hur det gick (träff, kläderna tog det, miss, parerat, duckat, vådaträff, knuff, omkull),
+// och l är hur länge det tar på klockan (vapnets takt: tiden till samma kämpes nästa anfall). Bilden, loggen, krönikan och
+// rapporten läser de här raderna (slagen nedan), så att ett slag i koden är ett slag i bilden
+export interface StridRad { t: number; h: Handelse; a?: number; b?: number; d?: Kroppsdel; k?: SkadaTyp; g?: number; v?: Vapen; kl?: string; kast?: 1; sl?: 1; l?: number }
 export interface Strid {
   avsikt: Avsikt; t: number; w: number; h: number; r: number; vind: number; dimma: number; // vind = blåsten 0–1 och dimma = dimman 0–1 (vädret)
   halt: number; marken: { v: Vapen; x: number; y: number; av: number }[]; // halkan 0–1 och vapnen som tappats (steg 3.7.8)
@@ -504,6 +508,24 @@ function falla(st: Strid, k: Kampe, h: 'nere' | 'dod' | 'ger' | 'flykt', rad: Ha
 }
 
 const orkAv = (a: Kampe) => { a.slag++; a.ork = Math.max(0, a.ork - STRID.orkSlag * (1 - (a.st.uthallighet - 10) / 40)); };
+// ---------- slaget som händelse (steg 10.1.3) ----------
+// hur ett anfall kan gå: raden som säger det är anfallets händelse. I parera och duck står försvararen först (a) och den som slog sedan (b)
+const UTFALL = new Set<Handelse>(['traff', 'tog', 'miss', 'parera', 'duck', 'vada', 'knuff', 'omkull']);
+// anfallet som just gjordes (raderna från n0) märks som en händelse med längden vant (stridens sekunder, gånger tempot = klockans)
+function markSlag(st: Strid, n0: number, vant: number) {
+  for (let i = n0; i < st.logg.length; i++) if (UTFALL.has(st.logg[i].h)) { st.logg[i].sl = 1; st.logg[i].l = Math.round(vant * STRID.tempo * 1000) / 1000; return; }
+}
+// ett anfall som händelse: när, hur länge, vem som anföll (fran) och vem det gällde (mot), vapnet, om det kastades och hur det gick
+export interface SlagHandelse { t: number; l: number; fran: number; mot: number; v?: Vapen; kast?: 1; utfall: Handelse; rad: number }
+export function slagen(st: Strid): SlagHandelse[] {
+  const ut: SlagHandelse[] = [];
+  st.logg.forEach((r, rad) => {
+    if (!r.sl) return;
+    const forsvar = r.h === 'parera' || r.h === 'duck';
+    ut.push({ t: r.t, l: r.l ?? 0, fran: (forsvar ? r.b : r.a)!, mot: (forsvar ? r.a : r.b)!, v: forsvar ? undefined : r.v, kast: r.kast, utfall: r.h, rad });
+  });
+  return ut;
+}
 export const chansMot = (a: Kampe, b: Kampe, skick: number) => clamp((STRID.traffBas + (skick - b.st.skicklighet) * STRID.traffPer - (b.st.smidighet - 10) * STRID.smidUndan) * (1 - STRID.trott * (1 - a.ork)), STRID.traffMin, STRID.traffMax) * (b.lage === 'nere' || b.lage === 'flykt' || b.ligger || b.bocker ? STRID.utsatt : 1); // den som ligger, böjer sig ner eller vänt ryggen är lätt att träffa
 const duckar = (st: Strid, b: Kampe) => !b.ligger && !b.bocker && slump(st) < STRID.duck * Math.max(0, 1 + STRID.duckSmid * (b.st.smidighet - 10)) * rorlighet(b) * b.ork * (b.klader.some(kladTung) ? 1 - STRID.duckTung : 1);
 function slaEtt(st: Strid, a: Kampe, b: Kampe) {
@@ -691,8 +713,10 @@ function kastaMot(st: Strid, k: Kampe, m: Kampe, snabbt?: true): boolean {
     if (!mal) { if (!k.vantar) { k.vantar = true; st.logg.push({ t: st.t, h: 'vantar', a: k.id, b: m.id }); } k.vant = 0.4; return false; }
   }
   k.vantar = undefined; k.mal = mal.id;
+  const n0 = st.logg.length;
   kasta(st, k, mal);
   if (k.vant <= 0) k.vant = VAP[k.vapen].takt * (1 - ((k.st.uthallighet - 10) / 20) * STRID.takt) * (0.85 + slump(st) * 0.3) + (VAP[k.vapen].kast ? 0.4 : 0); // att ta fram nästa sten
+  markSlag(st, n0, k.vant);
   return true;
 }
 
@@ -761,9 +785,11 @@ export function stridSteg(st: Strid) {
       continue;
     }
     if (dist(k, m) <= v.rack && k.vant <= 0) { // den som just kom fram slår samma ögonblick
+      const n0 = st.logg.length;
       if (!m.ligger && slump(st) < (k.vapen === 'hand' ? STRID.knuffHand : STRID.knuff)) knuffa(st, k, m); // eller knuffar
       else slaEtt(st, k, m);
       k.vant = v.takt * (1 - ((k.st.uthallighet - 10) / 20) * STRID.takt) * (0.85 + slump(st) * 0.3);
+      markSlag(st, n0, k.vant);
     }
   }
   // striden pågår så länge båda sidor har någon som står, tills de som flyr har kommit undan och, om avsikten är att
@@ -863,10 +889,11 @@ export interface StridRapport {
   mest?: { id: number; namn: string; varfor: string };
 }
 export function stridRapport(st: Strid): StridRapport {
+  const antal = new Map<number, number>(); for (const h of slagen(st)) antal.set(h.fran, (antal.get(h.fran) ?? 0) + 1); // slagen räknas ur händelserna (steg 10.1.3)
   const sidor = ([0, 1] as const).map(sd => ({
     sida: sd, namn: sidaNamn(st, sd),
     folk: st.kampar.filter(k => k.sida === sd).map(k => ({
-      id: k.id, namn: k.namn, lage: k.lage, slag: k.slag, traffar: k.traffar,
+      id: k.id, namn: k.namn, lage: k.lage, slag: antal.get(k.id) ?? 0, traffar: k.traffar,
       skador: k.skador.map(w => `${stor(skadaOrd(SKADOR[w.k].ett, w.g))} i ${delNamn(w.d)}`),
     })),
   }));

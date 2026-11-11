@@ -1080,6 +1080,43 @@ SCENARIER.langsam = {
   },
 };
 
+SCENARIER.slaghandelse = {
+  text: 'Steg 10.1.3: varje slag, kast och knuff är en händelse med tid, vem, mot vem och längd (vapnets takt). Antalet händelser är antalet anfall kämparna gjort, också med kast, knuffar, sköldar och djur, och rapporten räknar slagen ur händelserna',
+  kor: () => {
+    const m = (id: number, sida: 0 | 1, vapen: SIM.Vapen, x: number, y: number, extra: object = {}) => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 14, smidighet: 10, skicklighet: 10, sikte: 10 }, vapen, klader: [] as string[], fart: 1, x, y, ...extra });
+    const upp: SIM.Uppstallning[] = [
+      { avsikt: 'skada', w: 20, h: 14, kampar: [m(1, 0, 'yxa', 8, 7), m(2, 1, 'kniv', 12, 7)] },
+      { avsikt: 'slagsmal', w: 20, h: 14, kampar: [m(1, 0, 'hand', 8, 7), m(2, 1, 'hand', 12, 7)] },
+      { avsikt: 'doda', w: 24, h: 14, kampar: [m(1, 0, 'fiskespjut', 4, 7, { reserv: 'kniv' }), m(2, 0, 'sten', 4, 9), m(3, 1, 'yxa', 18, 7, { skold: true }), m(4, 1, 'flintspjut', 18, 9)] },
+      { avsikt: 'doda', w: 20, h: 14, kampar: [m(1, 0, 'fiskespjut', 6, 7), m(2, 0, 'kniv', 6, 9), SIM.djurKampe('varg', 3, 1, 14, 7), SIM.djurKampe('varg', 4, 1, 14, 9)] },
+      { avsikt: 'doda', w: 20, h: 14, kampar: [m(1, 0, 'yxa', 6, 7), m(2, 0, 'fiskespjut', 6, 9), SIM.djurKampe('bjorn', 3, 1, 14, 8)] },
+    ];
+    let strider = 0, anfall = 0, raknade = 0, fel = 0, utanLangd = 0, kast = 0, knuffar = 0, forTatt = 0, rapportFel = 0, par = 0;
+    for (const u of upp) for (let fro = 1; fro <= 40; fro++) {
+      const st = SIM.stridTillSlut(SIM.nyStrid(u, fro)), hs = SIM.slagen(st), rap = SIM.stridRapport(st);
+      strider++; anfall += hs.length; raknade += st.kampar.reduce((a, k) => a + k.slag, 0);
+      for (const k of st.kampar) {
+        const mina = hs.filter(h => h.fran === k.id);
+        if (mina.length !== k.slag) fel++;
+        if (rap.sidor[k.sida].folk.find(f => f.id === k.id)?.slag !== mina.length) rapportFel++;
+        // nästa anfall av samma kämpe kommer inte före det förra är klart (ett stridssteg när: tiden räknas i steg)
+        for (let i = 1; i < mina.length; i++) if (mina[i].t < mina[i - 1].t + mina[i - 1].l - SIM.STRID.tick - 1e-6) forTatt++;
+      }
+      for (const h of hs) {
+        if (!(h.l > 0) || h.fran === undefined || h.mot === undefined || h.fran === h.mot) utanLangd++;
+        if (h.kast) kast++; if (h.utfall === 'knuff' || h.utfall === 'omkull') knuffar++; if (h.utfall === 'parera' || h.utfall === 'duck') par++;
+      }
+    }
+    return [
+      [`varje anfall är en händelse (${anfall} händelser, ${raknade} anfall räknade av kämparna i ${strider} strider; ${fel} kämpar med olika antal)`, anfall > 500 && anfall === raknade && fel === 0],
+      [`varje händelse har tid, längd, vem och mot vem (${utanLangd} utan)`, utanLangd === 0],
+      [`kast, knuffar och försvar är händelser som slagen (${kast} kast, ${knuffar} knuffar och fall, ${par} parerade och duckade)`, kast > 0 && knuffar > 0 && par > 0],
+      [`samma kämpe anfaller inte igen förrän det förra anfallet är klart (${forTatt} för tidigt)`, forTatt === 0],
+      [`rapporten räknar slagen ur händelserna (${rapportFel} fel)`, rapportFel === 0],
+    ];
+  },
+};
+
 SCENARIER.strid = {
   text: 'Striden i testarenan (steg 3.7.5): samma uppställning och frö ger samma strid, avsikten avgör hur den slutar (lek vid första smärtan, slagsmål med händerna, döda slår den som ligger), vapen och kläder spelar roll, kaninen flyr, och en person ur byn tar med sitt vapen',
   kor: () => {
