@@ -141,6 +141,7 @@ SCENARIER.palett = {
 };
 
 SCENARIER.vakt = {
+  lang: true,
   text: 'Nattvakten: varje natt håller en vuxen mellan 16 och 60 år vakt, den modigaste med lite slump, och den som utses lägger ner det hen bär. Antalet vakter följer hotet (steg 10.1.20): fler när vargar setts och strax efter ett rövaranfall',
   kor: () => {
     const s = createState(2, START), natter = new Map<number, Set<number>>(), aldrar: number[] = [], sjuka = new Map<number, string>();

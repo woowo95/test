@@ -484,8 +484,11 @@ function ga(c: RCtx, m: { x: number; y: number }) {
 // mot närmaste kanten; den som kommer dit är borta från kartan, hem till klanen (steg 9.2.114)
 function hemat(c: RCtx) {
   const { s, f, r } = c;
-  let kvar = -1;
-  for (const k of kanterna(r.x, r.y)) { kvar = ga(c, k); if (kvar >= 0) break; }
+  // vägen ut väljs en gång (den närmaste kanten som går att nå) och hålls sedan: annars byter hen kant fram och tillbaka vid en sjö,
+  // där det finns väg till den närmaste kanten från en ruta men inte från nästa
+  const g = gr(r);
+  let kvar = g.ut ? ga(c, g.ut) : -1;
+  if (kvar < 0) { g.ut = undefined; for (const k of kanterna(r.x, r.y)) { kvar = ga(c, k); if (kvar >= 0) { g.ut = k; break; } } }
   if (f.rad) iFarten(s, r); // saker i farten (steg 8.8.3)
   if (kvar >= 0.5) return;
   f.folk = f.folk.filter(id => id !== r.id);
