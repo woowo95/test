@@ -130,7 +130,7 @@ export interface Brand { brann_p?: number[]; t: number; x: number; y: number; ka
 // ett tal mellan 0 och 1 ur byns frö, tiden (i steg), en ruta eller person och ett salt (hash3 i slump.ts, drar inget ur
 // slumpföljderna)
 const hash = hash3;
-const ur = (s: State, a: number, salt: number) => hash(s.seed + salt * 7919, Math.round(s.now / SEC), a);
+const ur = (s: State, a: number, salt: number) => hash(s.seed + salt * 7919, Math.round(s.now / 100), a); // (tiondels sekunder: ett eget tal i varje kort steg, steg 10.2.17)
 const chans = (takt: number, dtSec: number) => 1 - Math.exp(-takt * dtSec / HOUR_S); // takt i timmen under dtSec sekunder
 
 // branden sprids högst BRAND.maxR rutor från där den började, eller från en ruta som tänts i testläget (kallor, steg 4.5.6.6)
@@ -321,7 +321,7 @@ export function brandSteg(s: State, dtSec: number) {
   const fv: number[] = [];
   for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) fv.push(dx || dy ? medVind(dx, dy) * (dx && dy ? BRAND.hornet : 1) : 0);
   if (sprid > 0) for (let d = 0; d < n; d++) {
-    const slag = Math.round(s.now / SEC) - Math.round((n - 1 - d) * dt), kvar = (n - 1 - d) * dt; // delstegets tid, och tiden kvar av slaget
+    const slag = Math.round(s.now / 100) - Math.round((n - 1 - d) * dt * 10), kvar = (n - 1 - d) * dt; // delstegets tid i tiondels sekunder (ett eget slumptal i varje kort steg, steg 10.2.17), och tiden kvar av slaget
     const nya: number[] = [];
     for (const [i] of b.r) {
       if (inre[i]) continue;

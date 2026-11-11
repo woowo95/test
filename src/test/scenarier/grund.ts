@@ -1552,11 +1552,11 @@ SCENARIER.brandslag = {
     const tom = cloneState(x);
     for (const p of living(tom)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: tom.now + HOUR, carry: 0, why: 'prov' };
     SIM.tand(tom, mitt, 'blixt', 0);
-    step(tom, 300); torr(tom); step(tom, 300); torr(tom); // tio minuter
+    for (let i = 0; i < 20; i++) { step(tom, 30); torr(tom); } // tio minuter, torrt hela tiden
     const fem = tom.stat?.['brand ruta'] ?? 0;
     SIM.tand(x, mitt, 'blixt', 0);
     let tid = 0;
-    while (x.brand && tid < 180) { step(x, 300); torr(x); tid += 5; }
+    while (x.brand && tid < 180) { for (let i = 0; i < 10; i++) { step(x, 30); torr(x); } tid += 5; }
     const slackt = x.stat?.['brand slackt'] ?? 0, trad = x.stat?.['brand trad'] ?? 0, sack = x.stat?.['brand sack'] ?? 0;
     return [
       [`elden syns sprida sig: ${fem} rutor efter tio minuter när ingen släcker`, fem >= 3 && fem <= 80],
@@ -1684,13 +1684,14 @@ SCENARIER.brinnerupp = {
     // ett trägolv och en öppning med en skinndörr, en hylla med en kniv i, en yxa på marken och högar med skinn och flinta
     const golv = { id: 9101, x: cx + 3, y: cy, k: 'golv', m: 'tra', b: 1, mat: 0, c: 1 } as SIM.Bit, dorr = { id: 9102, x: cx - 3, y: cy, k: 'oppning', m: 'oppning', b: 1, mat: 0, c: 1, dorr: 'skinndorr' } as SIM.Bit;
     (x.byggen ??= []).push(golv, dorr);
-    const hylla: SIM.Station = { id: x.nextStation = (x.nextStation ?? 0) + 1, k: 'hylla', x: cx, y: cy + 3, kvar: 0 };
+    const hylla: SIM.Station = { id: x.nextStation = (x.nextStation ?? 0) + 1, k: 'hylla', x: cx, y: cy + 3, kvar: 0, ag: living(x)[0].id }; // någons egen hylla: byns hylla utanför en lagerplats tas annars isär innan elden når den
     (x.stationer ??= []).push(hylla);
     const kniv = SIM.newTing(x, 'kniv', 1, 0); kniv.vid = hylla.id; kniv.x = hylla.x; kniv.y = hylla.y;
     const yxa = SIM.newTing(x, 'yxa', 1, 0); yxa.x = cx; yxa.y = cy - 3;
     (x.stackar ??= []).push({ k: 'skinn', n: 5, c: 1, x: cx + 2, y: cy + 2 }, { k: 'flinta', n: 4, c: 1, x: cx - 2, y: cy + 2 });
     SIM.touch(x);
     if (x.vader) { x.vader.torr = 240; x.vader.fukt = 0; }
+    for (const q of living(x)) q.task = { act: 'sova', phase: 'do', tx: q.x, ty: q.y, until: x.now + 5 * HOUR, carry: 0, why: 'prov' }; // ingen släcker (byn reagerar inom ett slag, steg 10.2.17)
     SIM.tand(x, mitt, 'blixt', 0);
     const flintor = () => (x.stackar ?? []).filter(q => q.k === 'flinta').reduce((n, q) => n + q.n, 0) + (living(x).reduce((n, p) => n + (p.task?.items?.flinta ?? 0), 0));
     const b = x.brand!, flinta0 = flintor();
@@ -1910,24 +1911,24 @@ SCENARIER.brinner = {
     // 3: den som brinner utan att släckas får brännskador, och plaggen kan brinna upp
     const z = cloneState(s), r = vuxna(z)[0];
     r.brinner = z.now;
-    for (let i = 0; i < 12; i++) { z.now += 60 * SIM.SEC; SIM.brinnerSteg(z, 60); }
+    for (let i = 0; i < 60; i++) { z.now += 60 * SIM.SEC; SIM.brinnerSteg(z, 60); } // en timme: sex skador väntas, så att slumpen inte avgör
     const st = z.stat ?? {}, sx = x.stat ?? {};
     // 4: snön stoppar inte en brand helt (steg 9.2.102): samma äng med och utan snö, tänd med knappen Brand i testläget
     const ang = (sno: number) => {
       const w = cloneState(s); angSlag(w, a.mitt, 'hog');
       if (w.vader) { w.vader.torr = 240; w.vader.fukt = 0; w.vader.sno = sno; }
       const svar = SIM.tandTest(w, a.mitt % W, Math.floor(a.mitt / W));
-      step(w, 5 * 60);
+      step(w, 20 * 60); // (eldens kant går en ruta på två till tre minuter, steg 10.2.17)
       return { ok: svar.ok, n: w.brand?.n ?? 0, dry: SIM.torrhet(w) };
     };
     const bar = ang(0), snoig = ang(1);
     return [
-      [`i snön tänds en brand med knappen Brand (${snoig.ok ? 'ja' : 'nej'}) och sprids (${snoig.n} rutor efter fem minuter, torrhet ${Math.round(snoig.dry * 100)} %)`, snoig.ok && snoig.n > 1],
+      [`i snön tänds en brand med knappen Brand (${snoig.ok ? 'ja' : 'nej'}) och sprids (${snoig.n} rutor efter tjugo minuter, torrhet ${Math.round(snoig.dry * 100)} %)`, snoig.ok && snoig.n > 1],
       [`... men långsammare än på bar mark (${bar.n} rutor, torrhet ${Math.round(bar.dry * 100)} %)`, snoig.n < bar.n],
       [`${p.name} börjar brinna (${brann ? 'ja' : 'nej'}) och väljer först att släcka sig själv (${ACTS_NAMN(valde)})`, brann && valde === 'slackaSig'],
       [`elden på ${p.name} är släckt efter ${(sek / 60).toFixed(1)} minuter (${Object.keys(sx).filter(k => k.startsWith('brinner slackt ')).join(', ')})`, slackt && sek <= 10 * 60],
       [`den som står bredvid springer dit och släcker (${ACTS_NAMN(qt?.act ?? '')})`, hjalper],
-      [`den som brinner i tolv minuter får brännskador (${st['brinner skadad'] ?? 0})`, (st['brinner skadad'] ?? 0) > 0],
+      [`den som brinner i en timme får brännskador (${st['brinner skadad'] ?? 0})`, (st['brinner skadad'] ?? 0) > 0],
     ];
   },
 };
