@@ -1647,8 +1647,8 @@ SCENARIER.byggstar = {
   kor: () => {
     const s = createState(3, START); byggare(s);
     let intill = 0, annars = 0;
-    for (let i = 0; i < 30 * STEG_TIM; i++) {
-      step(s, 300);
+    for (let i = 0; i < 30 * 120; i++) { // var 30:e sekund: med korta slag är en väggbit klar på några minuter
+      step(s, 30);
       for (const p of living(s)) {
         const t = p.task; if (t?.act !== 'bygga' || t.phase !== 'do') continue;
         const b = SIM.bitById(s, t.ref); if (!b || b.k !== 'vagg') continue;

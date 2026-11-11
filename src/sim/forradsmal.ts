@@ -20,7 +20,7 @@ import { ALDER, ageOf, living } from './folk';
 import { clamp } from './slump';
 import { sportFor } from './sport';
 import { STATIONER, StationDef, StationSlag, bordBrist, forvarBrist, harStation, isKlar, pyntBrist, stationerOf, tommaPlatser, villPynt } from './stationer';
-import { nTools } from './agande';
+import { nTools, tingOf } from './agande';
 import { brasaBrist } from './brasor';
 import { BYGGNADER, fnId, utanBadd } from './byggnader';
 import { latrinBrist } from './smuts';
@@ -130,7 +130,7 @@ export const MATERIALMAL = {
   sten: { min: () => 0 },
   flinta: { min: () => TROSKEL.flintaMinsta },
   virke: { min: () => 0 },
-  lera: { min: () => 0 }, // steg 9.4.10: målet följer hur mycket lera byn gör av med
+  lera: { min: s => Math.max(0, REDSKAPMAL.lerkruka(s) - krukorIByn(s)) * 2 }, // steg 9.4.10: målet följer hur mycket lera byn gör av med, och leran till de krukor byn vill ha och saknar (två per kruka): annars grävdes ingen lera förrän en kruka gjorts, och ingen kruka gjordes utan lera
   // steg 10.2.12: det som görs och tas av förrådet följer också förbrukningen; minst en (en att börja med, innan något använts)
   rep: { min: () => VILLTAL.repMin }, /* repet går åt till redskapen innan någon förbrukning hunnit räknas: några att börja med */ mossa: { min: () => 1 }, salva: { min: () => 1 }, tjara: { min: () => 1 }, benlim: { min: () => 1 }, tval: { min: () => 1 },
   vin: { min: () => 1 }, ol: { min: () => 1 }, // dryckerna (brygg.ts): det som dricks räknas i taVatska
@@ -197,6 +197,7 @@ const vuxna = (s: State, fran: number) => living(s).filter(p => ageOf(p, s.now) 
 const perVuxna = (s: State, per: number, min: number, max: number, fran: number = ALDER.vuxen) => clamp(Math.floor(vuxna(s, fran) / per), min, max);
 // ett spjut per tre vuxna, när någon väl har börjat fiska eller jaga
 const spjutVill = (s: State) => (s.stat?.fiskeForsok ?? 0) > 0 || (s.stat?.prod_jakt ?? 0) > 0 ? perVuxna(s, VILLTAL.spjutPerVuxna, VILLTAL.spjutMin, VILLTAL.spjutMax) : 0;
+const krukorIByn = (s: State) => tingOf(s).filter(t => t.k.startsWith('lerkruka_')).length;
 const ortkokKan = (s: State) => living(s).some(p => (p.tek?.ortkok ?? 0) >= 1); // någon kan koka i örtköket (steg 9.4.14)
 export const REDSKAPMAL: Record<string, (s: State) => number> = {
   spjut: spjutVill,
