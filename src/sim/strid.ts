@@ -501,7 +501,11 @@ function raddaSteg(st: Strid, k: Kampe, dt: number) {
   if (dist(k, v) > 1) { ga(st, k, v.x, v.y, farten(k) * dt); return true; }
   // drar undan hen från fienderna och trycker på såren: de slutar blöda i striden
   const f = st.kampar.filter(o => o.sida !== k.sida && iStrid(o)).sort((a, b) => dist(a, v) - dist(b, v))[0];
-  if (f) { const d = Math.max(0.01, dist(f, v)); v.x = clamp(v.x + (v.x - f.x) / d * STRID.draUndan, 0.3, st.w - 0.3); v.y = clamp(v.y + (v.y - f.y) / d * STRID.draUndan, 0.3, st.h - 0.3); k.x = v.x; k.y = v.y; }
+  if (f) { // drar undan hen, men aldrig in i en vägg eller ut i vattnet (på kartan, steg 10.1.4)
+    const d = Math.max(0.01, dist(f, v)), nx = clamp(v.x + (v.x - f.x) / d * STRID.draUndan, 0.3, st.w - 0.3), ny = clamp(v.y + (v.y - f.y) / d * STRID.draUndan, 0.3, st.h - 0.3);
+    if (!iVagg(st, nx, ny)) { v.x = nx; v.y = ny; }
+    if (!iVagg(st, v.x, v.y)) { k.x = v.x; k.y = v.y; }
+  }
   for (const w of v.skador) w.ny = 0;
   st.logg.push({ t: st.t, h: 'raddar', a: k.id, b: v.id });
   k.raddar = undefined;

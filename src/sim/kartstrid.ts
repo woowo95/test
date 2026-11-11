@@ -83,7 +83,12 @@ function tillBilden(g: KartStrid, n0: number) {
 
 // ---------- korta steg när faran är nära ----------
 // faran är nära så länge en strid pågår på kartan (fler faror kommer med rövarna och djuren)
-export const faraNara = (s: State) => kartStrider(s).length > 0;
+export const KARTSTRID_PROV = { alltid: false }; // proven: byn går i korta steg också utan strid (npm run kortsteg mäter att arbetet går som vanligt)
+export const faraNara = (s: State) => KARTSTRID_PROV.alltid || kartStrider(s).length > 0;
+// de som är inblandade i faran och därför väljer om och rör sig i varje kort steg: de som slåss och de som går emellan eller undan.
+// Alla andra gör sitt arbete som vanligt, en minutbit i taget (slag i steg.ts), så att jakten, fisket och samlandet går som annars
+const I_FARAN = new Set<Act>(['strid', 'skilja', 'undanStrid']);
+export const iFaran = (p: Person) => !p.task || I_FARAN.has(p.task.act);
 // längden på byns nästa steg (sekunder): korta steg medan faran är nära, annars det som är kvar av femminuterssteget som de
 // korta stegen avbröt (s.stegRest), annars ett helt. Spelet och ikappräkningen frågar samma sak, så att stegen blir desamma
 export function nastaSteg(s: State) { return faraNara(s) ? STRID.kortSteg : s.stegRest ?? BEAT_SEK; }

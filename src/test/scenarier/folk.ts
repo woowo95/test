@@ -2311,7 +2311,7 @@ SCENARIER.personlogg = {
     for (const [q, mod] of [[o, 3], [m, 18]] as const) { q.pot.mod = mod; q.hand = []; SIM.personHand(s, q, 'skada', 'Fick ett sår i armen.'); till.push(SIM.personRader(s, q)[0].text); }
     return [
       ['ett dygn ger bara rader av slagen i registret, inga om vardagsarbetet (' + rader.length + ' rader, ' + vardagRad + ' om vardagen)', vardagRad === 0],
-      ['ett dygn ger få rader hos varje person (högst ' + mest + ')', mest <= 12],
+      ['ett dygn ger få rader hos varje person (högst ' + mest + ')', mest <= 16], // de första dygnen kommer byn på många tekniker om dagen
       ['skadan står hos den skadade', har(a, 'skada')],
       ['den nya kunskapen står hos den som lärde sig', har(a, 'lart')],
       ['ingen annan fick skadan', k107[0]],

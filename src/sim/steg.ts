@@ -25,7 +25,7 @@ import { UTBROTT_ACTS, moodOf, stepHumor, utbrottKlar } from './humor';
 import { glomRykten, stepRykten } from './rykten';
 import { stepStyre } from './styre';
 import { STRID } from './strid';
-import { bildKrok, faraNara, gralBlirSlagsmal, lekSteg, kartStridSteg, serStriden, stegTaget } from './kartstrid';
+import { bildKrok, faraNara, iFaran, gralBlirSlagsmal, lekSteg, kartStridSteg, serStriden, stegTaget } from './kartstrid';
 import { sportKlar, sportSteg } from './sport';
 import { lyssnaSteg, upptradaKlar, upptradaSteg } from './framtradande';
 import { fylldSack, redskapIHanden, tidyTools } from './agande';
@@ -347,19 +347,36 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
     compact(s); // här och inte i sparningen, så att alla lägen städar vid samma tid
   }
 
+  const kortLage = dtSec < BIT && faraNara(s); // de korta stegen medan en strid pågår (steg 10.1.4)
   let social: Person[] = [];
+  const egenTid = new Map<Person, number>(); // så lång tid var och en stegades (samtalen räknas på den)
   const inRum = new Map<number, number>(); // hur många som är i varje rum
   for (const p of ppl) { const r = roomAt(s, p.x, p.y); if (r) inRum.set(r.id, (inRum.get(r.id) ?? 0) + 1); }
   for (const p of ppl) {
     if (!alive(p)) continue; // dödad tidigare i samma slag (av vargar eller i ett slagsmål)
     const a = ageOf(p, now);
     needsStep(s, p, a, dtSec, coldRate, fh, inRum, temp);
-    if (p.task?.act !== 'strid') needLadder(s, p, dtSec); // äta: sitt eget, byns, och i yttersta nöd andras (behov.ts). Inte mitt i en strid (strid.ts)
+    if (!kortLage && p.task?.act !== 'strid') needLadder(s, p, dtSec); // äta: sitt eget, byns, och i yttersta nöd andras (behov.ts). Inte mitt i en strid (strid.ts)
     if (healthStep(s, p, a, ai, dtSec)) continue; // dog
     pregnancy(s, p, a, ppl.length, dtSec);
     if (!alive(p)) continue; // dog i barnsäng
-    if (spar.pa) { spar.v.set(p, [t0, p.x, p.y]); spar.u.set(p, [[t0, kopia(p.task)]]); }
-    taskStep(s, p, a, now, dtSec, learn, social);
+    // Under de korta stegen (en strid pågår, steg 10.1.4) stegas bara de inblandade varje gång. De andra tar sitt arbete en
+    // minutbit i förväg, som i ett vanligt steg (där arbetet också går i bitar om högst BIT sekunder): annars börjar jägaren,
+    // fiskaren och samlaren om varje sekund och får inget gjort. framme = tiden de är räknade fram till
+    if (kortLage && !iFaran(p) && (p.framme ?? t0) >= now) continue; // redan räknad förbi det här steget
+    let egenDt = dtSec, slut = now;
+    if (kortLage && !iFaran(p)) { const fran = p.framme ?? t0; slut = fran + BIT * SEC; egenDt = BIT; p.framme = slut; if (spar.pa) { spar.v.set(p, [fran, p.x, p.y]); spar.u.set(p, [[fran, kopia(p.task)]]); } }
+    else {
+      if (p.framme !== undefined) { // var räknad i förväg: bara tiden som inte redan är gjord
+        if (!iFaran(p)) { if (p.framme >= now) continue; egenDt = (now - p.framme) / SEC; }
+        delete p.framme;
+      }
+      if (spar.pa) { spar.v.set(p, [now - egenDt * SEC, p.x, p.y]); spar.u.set(p, [[now - egenDt * SEC, kopia(p.task)]]); }
+    }
+    egenTid.set(p, egenDt);
+    if (kortLage && p.task?.act !== 'strid') needLadder(s, p, egenDt); // under de korta stegen: med den egna tiden, som arbetet
+    taskStep(s, p, a, slut, egenDt, learn, social);
+    s.now = now;
     if (p.thoughts.some(x => x.until <= now)) p.thoughts = p.thoughts.filter(x => x.until > now);
   }
   // samtal: ca ett per 4 minuter per person i social aktivitet
@@ -368,7 +385,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
     social = social.filter(p => kanPrata(s, p)); // en brottning kan ha börjat under steget (steg 9.2.100)
     for (const p of social) {
       if (!alive(p)) continue;
-      const expect = dtSec / STEG.samtalSek * (STEG.samtalBas + stat(p, 'empati', now) / STEG.samtalEmpati) * (p.sinnen === undefined ? 1 : tal(p) * STEG.samtalTal + horsel(p) * STEG.samtalHorsel + 1 - STEG.samtalTal - STEG.samtalHorsel); // talet och hörseln (steg 8.2.2)
+      const expect = (egenTid.get(p) ?? dtSec) / STEG.samtalSek * (STEG.samtalBas + stat(p, 'empati', now) / STEG.samtalEmpati) * (p.sinnen === undefined ? 1 : tal(p) * STEG.samtalTal + horsel(p) * STEG.samtalHorsel + 1 - STEG.samtalTal - STEG.samtalHorsel); // talet och hörseln (steg 8.2.2)
       let n = Math.floor(expect); if (rnd(s, 'samtal', p) < expect - n) n++;
       // bara med dem som är nära när slaget slutar
       const nara = social.filter(q => q !== p && alive(q) && Math.hypot(q.x - p.x, q.y - p.y) < SAMTAL.radie);
