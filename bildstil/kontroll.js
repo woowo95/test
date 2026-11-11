@@ -129,7 +129,10 @@
   }
   function olika(bilder) {
     const ut = [];
+    // en bild som fyller hela sin ruta (en planta på sin jordruta, en textur) har ingen form att jämföra: bara konturen räknas
+    const fylld = B => { const a = beskar(B); if (!a) return false; let n = 0; for (const v of a.px) if (v >= 0) n++; return n >= 0.9 * a.w * a.h; };
     for (let j = 1; j < bilder.length; j++) for (let i = 0; i < j; i++) {
+      if (fylld(bilder[i]) && fylld(bilder[j])) continue;
       const l = likhet(bilder[i], bilder[j]);
       if (l >= GRANS.olika) ut.push({ ok: false, version: j + 1, text: `Version ${j + 1} har nästan samma form som version ${i + 1} (${Math.round(l * 100)} % lika): versionerna ska vara olika idéer i form eller byggsätt, inte andra färger.` });
     }

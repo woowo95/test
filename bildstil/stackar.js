@@ -13,7 +13,7 @@
     let S = null; try { S = v && KONTROLL.storsta(v, PAL); } catch (e) { S = null; }
     if (!S) continue;
     const { w, h } = S, bredd = [w, Math.ceil(w * 1.6), Math.ceil(w * 2.2)], W = 6 + bredd.reduce((a, x) => a + x + 8, 0), H = 2 * h + 10;
-    VAL.push({ id: id + '_stack', namn: s.namn + ' i förrådet', typ: 'janej',
+    VAL.push({ id: id + '_stack', namn: s.namn + ' i förrådet', typ: 'janej', slag: [], // stacken bärs inte: inga av sakens egna kontroller
       vad: `${s.namn}, som du valde (version ${b.val}), som den ligger i förrådet: en, några (tre i en triangel) och många (sex i en pyramid), som stackarna du valde. Byggs in i steg ${b.steg} tillsammans med saken.`,
       versioner: [{ text: 'En, några och många i stacken.', w: W, h: H, rita: B => {
         const M = markBild(W, H, B.P); for (let i = 0; i < M.px.length; i++) B.px[i] = M.px[i];
