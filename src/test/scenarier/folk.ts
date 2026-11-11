@@ -5,7 +5,7 @@ import * as SIM from '../../sim';
 import { byId, isSocial, TalkEvent } from '../../sim';
 import { START, STEG_DYGN } from '../kor';
 import { hasIcon } from '../../ikoner';
-import { stridIByn, setFood, kor, klockan, tandEld, byggare, SCENARIER, pct, grenarUte, barGrenar, nyInvanare, valjer, MATARBETE, TRAARBETE, REDSKAPSARBETE, FORBATTRING, MATMEDREDSKAP, rikBy } from './hjalp';
+import { stridIByn, rovarGang, korTills, setFood, kor, klockan, tandEld, byggare, SCENARIER, pct, grenarUte, barGrenar, nyInvanare, valjer, MATARBETE, TRAARBETE, REDSKAPSARBETE, FORBATTRING, MATMEDREDSKAP, rikBy } from './hjalp';
 
 SCENARIER.befolkning = {
   lang: true,
@@ -1412,7 +1412,23 @@ SCENARIER.larm = {
       return n('traff') + n('tog') ? (n('traff') + n('tog')) / (n('traff') + n('tog') + n('miss')) : 0;
     };
     const klar = kast(0), dimmig = kast(1);
+    // larmet som handling (steg 10.1.12): den som ser rövarna varnar, alla inom hörhåll hör och varnar själva vidare, led för led.
+    // Jägaren långt borta, utom syn- och hörhåll, får det inte
+    const b = createState(4, START); klockan(b, 12); const eld = SIM.eldPlats(b), bf = living(b).filter(q => SIM.ageOf(q, b.now) >= 16).slice(0, 4), sida = eld.x < 60 ? 1 : -1, y0 = eld.y;
+    const steg = SIM.ROVARE.horhall - 6;
+    // den första står längst ut, där gänget kommer, den tredje vid elden; jägaren åt ett annat håll, utom hörhåll från elden
+    bf.forEach((q, i) => { q.x = eld.x + sida * (2 - i) * steg; q.y = y0; q.task = undefined; q.larm = undefined; });
+    for (const q of living(b)) if (!bf.includes(q)) { q.x = eld.x; q.y = y0 + 2; q.task = undefined; }
+    const jagare = bf[3]; jagare.x = eld.x; jagare.y = y0 + (y0 < 60 ? 1 : -1) * (SIM.ROVARE.horhall + 8);
+    const gang = rovarGang(b, 3, { x: bf[0].x + sida * (SIM.ROVARE.folkSer - 4), y: y0 });
+    let varnar = false, jagareFick = false;
+    korTills(b, () => bf.slice(0, 3).every(q => q.larm?.varnat), 300, () => { if (bf.some(q => q.task?.act === 'varna')) varnar = true; if (jagare.larm) jagareFick = true; });
+    const led = bf.slice(0, 3).map(q => q.larm?.led ?? -1), vst = b.stat ?? {};
+    const sag = led[0] === 0 && gang.sedd !== undefined, ledvis = led[1] >= 1 && led[2] > led[1];
     return [
+      [`den som ser rövarna får larmet själv (led ${led[0]}) och väljer att varna (handlingen ${SIM.ACTS.varna?.namn ?? 'saknas'}: ${varnar})`, sag && varnar && !!SIM.ACTS.varna],
+      [`larmet går led för led: den första hörs av nästa, som varnar vidare till den tredje (led ${led.join(', ')}; ${vst.rovarVarnar ?? 0} varnade, ${vst.larm_hort ?? 0} hörde)`, ledvis && (vst.rovarVarnar ?? 0) >= 3],
+      [`jägaren långt borta, utom syn- och hörhåll, vet ingenting (${jagareFick ? 'fick larmet' : 'inget larm'})`, !jagareFick],
       [`ropet sprids led för led genom byn (${dag.length} av ${folk.length - 1} hörde, ${leden} led)`, dag.length === folk.length - 1 && leden >= 2],
       ['på 20 rutor hörs ropet inte på dagen, men på natten', !dagLangt && nattLangt],
       ['storleken förvrängs ibland längs vägen', forvrangt],

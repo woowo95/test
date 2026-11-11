@@ -25,7 +25,7 @@ import { UTBROTT_ACTS, moodOf, stepHumor, utbrottKlar } from './humor';
 import { glomRykten, stepRykten } from './rykten';
 import { stepStyre } from './styre';
 import { STRID } from './strid';
-import { bildKrok, faraNara, iFaran, gralBlirSlagsmal, lekSteg, kartStridSteg, serStriden, stegTaget } from './kartstrid';
+import { bildKrok, faraNara, gralBlirSlagsmal, lekSteg, kartStridSteg, serStriden, stegTaget } from './kartstrid';
 import { sportKlar, sportSteg } from './sport';
 import { lyssnaSteg, upptradaKlar, upptradaSteg } from './framtradande';
 import { fylldSack, redskapIHanden, tidyTools } from './agande';
@@ -317,7 +317,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   const ppl = living(s);
   gridOf(s); // väggarna och rummen, så att vägsökningen vet var väggarna står
   stationRutor(s); sakerPaGolvet(s); // ... och var hyllorna står och sakerna ligger på golvet (steg 2.3.6)
-  djurSteg(s); // kaningrupperna väljer plats när deras tid börjar
+  djurSteg(s, dtSec); // kaningrupperna väljer plats när deras tid börjar
   klanSteg(s, dtSec); // grannklanerna växer och glömmer (klaner.ts, steg 4.4.3)
   handelSteg(s, dtSec); // handlaren kommer, handlar och går (handel.ts, steg 4.4.1)
   vargSteg(s, dtSec); // vargarna under istiden (varg.ts, steg 3.7.1)
@@ -347,7 +347,6 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
     compact(s); // här och inte i sparningen, så att alla lägen städar vid samma tid
   }
 
-  const kortLage = dtSec < BIT && faraNara(s); // de korta stegen medan en strid pågår (steg 10.1.4)
   let social: Person[] = [];
   const egenTid = new Map<Person, number>(); // så lång tid var och en stegades (samtalen räknas på den)
   const inRum = new Map<number, number>(); // hur många som är i varje rum
@@ -356,25 +355,17 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
     if (!alive(p)) continue; // dödad tidigare i samma slag (av vargar eller i ett slagsmål)
     const a = ageOf(p, now);
     needsStep(s, p, a, dtSec, coldRate, fh, inRum, temp);
-    if (!kortLage && p.task?.act !== 'strid') needLadder(s, p, dtSec); // äta: sitt eget, byns, och i yttersta nöd andras (behov.ts). Inte mitt i en strid (strid.ts)
+    if (p.task?.act !== 'strid') needLadder(s, p, dtSec); // äta: sitt eget, byns, och i yttersta nöd andras (behov.ts). Inte mitt i en strid (strid.ts)
     if (healthStep(s, p, a, ai, dtSec)) continue; // dog
     pregnancy(s, p, a, ppl.length, dtSec);
     if (!alive(p)) continue; // dog i barnsäng
-    // Under de korta stegen (en strid pågår, steg 10.1.4) stegas bara de inblandade varje gång. De andra tar sitt arbete en
-    // minutbit i förväg, som i ett vanligt steg (där arbetet också går i bitar om högst BIT sekunder): annars börjar jägaren,
-    // fiskaren och samlaren om varje sekund och får inget gjort. framme = tiden de är räknade fram till
-    if (kortLage && !iFaran(p) && (p.framme ?? t0) >= now) continue; // redan räknad förbi det här steget
-    let egenDt = dtSec, slut = now;
-    if (kortLage && !iFaran(p)) { const fran = p.framme ?? t0; slut = fran + BIT * SEC; egenDt = BIT; p.framme = slut; if (spar.pa) { spar.v.set(p, [fran, p.x, p.y]); spar.u.set(p, [[fran, kopia(p.task)]]); } }
-    else {
-      if (p.framme !== undefined) { // var räknad i förväg: bara tiden som inte redan är gjord
-        if (!iFaran(p)) { if (p.framme >= now) continue; egenDt = (now - p.framme) / SEC; }
-        delete p.framme;
-      }
-      if (spar.pa) { spar.v.set(p, [now - egenDt * SEC, p.x, p.y]); spar.u.set(p, [[now - egenDt * SEC, kopia(p.task)]]); }
-    }
+    // Under de korta stegen (en strid pågår, steg 10.1.4) stegas hela byn varje gång, så att ingen är före eller efter de andra:
+    // den som hör larmet står där hen är, inte där hen skulle ha varit om en minut. Arbetet tål korta steg (fisket bedömer platsen
+    // efter en hel bit, kaninerna ser efter folk på klockan)
+    delete p.framme; // (en äldre sparning, där de som inte var inblandade räknades en minut i förväg)
+    const egenDt = dtSec, slut = now;
+    if (spar.pa) { spar.v.set(p, [now - egenDt * SEC, p.x, p.y]); spar.u.set(p, [[now - egenDt * SEC, kopia(p.task)]]); }
     egenTid.set(p, egenDt);
-    if (kortLage && p.task?.act !== 'strid') needLadder(s, p, egenDt); // under de korta stegen: med den egna tiden, som arbetet
     taskStep(s, p, a, slut, egenDt, learn, social);
     s.now = now;
     if (p.thoughts.some(x => x.until <= now)) p.thoughts = p.thoughts.filter(x => x.until > now);
@@ -807,7 +798,9 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
       if (rd) wearUsed(s, p, 1);
     }
     // stranden är utfiskad (steg 2.12.4): fiskaren ser det, minns det och går till en annan plats vid vattnet. Finns ingen bättre slutar hen
-    if (!tk.carry && richness(s, 'fiske', tk.tx, tk.ty) < PLATS.tomtGrans) {
+    // (hen ser det först när hen fiskat en stund där, en bit om BIT sekunder, hur korta byns steg än är)
+    tk.koll = (tk.koll ?? 0) + dtSec;
+    if (tk.koll >= BIT - 1e-6 && (tk.koll = 0, true) && !tk.carry && richness(s, 'fiske', tk.tx, tk.ty) < PLATS.tomtGrans) {
       lookAround(s, p, tk.tx, tk.ty);
       const sp0 = spotFor(s, 'fiske', p), sp = freeNear(s, sp0.x, sp0.y); // aldrig i en husvägg
       if (Math.hypot(sp.x - tk.tx, sp.y - tk.ty) > 1.5) { tk.tx = sp.x; tk.ty = sp.y; tk.phase = 'go'; tk.hal = undefined; count(s, 'fiskeByter'); }

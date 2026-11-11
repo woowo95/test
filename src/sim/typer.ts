@@ -145,6 +145,7 @@ export interface Task {
   letat?: number; // på rundan (steg 9.2.55): sekunder som gåtts sedan förra plocket; det man hittar under tiden (ägg, mossa, hö) räknas på dem
   pk?: string; // nyckeln som vägen gäller för: målet och byggversionen. Ändras den räknas vägen om
   ref?: number; // det arbetet gäller: stammen som huggs, biten som byggs eller huset som ett träd fälls för
+  koll?: number; // sekunder arbetade sedan platsen senast bedömdes (fisket: är stranden utfiskad?), så att bedömningen inte följer stegens längd
   prog?: number; // fiske: sekunder arbete mot nästa försök
   styckTill?: number; // styckningen av ett fällt djur pågår till dess (styckning.ts, steg 6.6.2)
   jf?: Jaktforsok; // jakten: försöket som pågår (jakt.ts, Björn efter v159)

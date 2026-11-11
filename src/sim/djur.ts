@@ -48,6 +48,7 @@ export const KANINER = balans('djur', {
   folkR: 4, // en grupp flyttar bort när någon kommer så här nära gruppens mitt (steg 6.6.8) ...
   folkFly: 5, // ... så här långt (rutor) ...
   folkSek: 2, // ... på så här många sekunder
+  serSek: 300, // kaninerna ser efter folk så här ofta på klockan (inte i varje steg, så att det blir lika hur korta byns steg än är)
 });
 const LIVSTID = KANINER.livTim * HOUR; // så länge en grupp håller till i samma trakt
 const SKUTT = KANINER.skuttSek * SEC; // så ofta en kanin skuttar, ungefär
@@ -114,8 +115,11 @@ function mitt(s: State, k: number, t = s.now) {
 }
 // varje steg: en grupp som får en ny tid väljer sin plats direkt, så att platsen blir densamma i båda lägena
 // Den som kommer nära en grupp får hela gruppen att flytta bort en bit, inte bara en jägare (steg 6.6.8)
-export function djurSteg(s: State) {
+// Kaninerna ser efter folk var femte minut på klockan (KANINER.serSek), inte i varje steg: annars skräms de mycket oftare när byn
+// går i korta steg (en strid pågår, steg 10.1.4) än annars, och jakten ger olika mycket
+export function djurSteg(s: State, dtSec?: number) {
   for (let k = 0; k < KANINER.grupper; k++) mitt(s, k);
+  if (dtSec !== undefined && Math.floor(s.now / (KANINER.serSek * SEC)) === Math.floor((s.now - dtSec * SEC) / (KANINER.serSek * SEC))) return;
   const ppl = living(s);
   for (const g of grupperOf(s)) {
     if (g.n <= 0 || (s.djurFlykt ?? []).some(f => f.g === g.id && s.now - f.t < KANINER.folkSek * SEC)) continue;

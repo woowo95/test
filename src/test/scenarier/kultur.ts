@@ -4,7 +4,7 @@ import * as SIM from '../../sim';
 import { START } from '../kor';
 import * as O from '../../sim/ord';
 import { TEKNIK } from '../../sim/teknik';
-import { SCENARIER, klockan, kor, medBank, medHus, nyInvanare, setFood, tandEld, utanWebblasare } from './hjalp';
+import { SCENARIER, klockan, kor, korTills, medBank, medHus, nyInvanare, setFood, tandEld, utanWebblasare } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
 import { station as stationFlik } from '../../ui/flikar/station';
 import { person as personFlik } from '../../ui/flikar/person';
@@ -1021,11 +1021,8 @@ SCENARIER.rader = {
     // långt bort: flocken letar hus för hus; byn har inga hus, så de ger sig av utan hen
     f.x = v[1].x + 20; f.y = v[1].y;
     SIM.radSeger(s, f); const letar = f.gor === 'letar';
-    SIM.rovarSteg(s, 60); const miste = (s.stat?.hamnd_miste ?? 0) === 1 && f.gor === 'flyr' && !v[1].died;
-    // är anfallarna fler än försvararna går de som blir över förbi slagfältet och letar
-    f.gor = 'kommer'; f.letat = undefined; for (const r of SIM.rovarna(s, f)) { const q = { ...r, id: SIM.nyttGastId(s), name: r.name + ' d.y.', gast: { ...r.gast! } }; s.people.push(q); f.folk.push(q.id); }
-    SIM.borjaStrid(s, f, [v[2]]); const forbi = s.rovareFler?.[0]?.gor === 'letar';
-    s.rovareFler = undefined; f.strid = undefined;
+    f.vantat = true; f.anfaller = true; SIM.stallUpp(s, f, v[1].x - 20, v[1].y); for (const p of v) p.gavSig = s.now; /* ingen ställer sig i vägen */ korTills(s, () => ((s.stat?.hamnd_miste ?? 0) >= 1 && f.gor === 'flyr') || !s.rovare, 3600); /* de går till förrådet, finner inga hus att leta i och ger sig av */
+    const miste = (s.stat?.hamnd_miste ?? 0) === 1 && f.gor === 'flyr' && !v[1].died;
     // nära: hämnden tas
     f.x = v[1].x; f.y = v[1].y; f.letat = undefined;
     const hamnd = SIM.radSeger(s, f), dod = !!v[1].died, glomt = !k.doda?.length;
@@ -1056,7 +1053,6 @@ SCENARIER.rader = {
       [`hämnden riktar sig mot den som dödade (${mal})`, mal && anh],
       [`en räd med minst fyra är en stor strid (${stor})`, stor],
       [`är hen inte där letar de hus för hus (${letar}), och hittar de inte hen ger de sig av (${miste})`, letar && miste],
-      [`är anfallarna fler går de som blir över förbi slagfältet och letar (${forbi})`, forbi],
       [`hämnden tas (${dod}), och klanen glömmer skälet (${glomt})`, hamnd && dod && glomt],
       ['det heliga kriget river hovet och skändar platsen', hov && skandad],
       [`den som ger upp svär trohet (${q.drag?.v})`, !!q.drag],
