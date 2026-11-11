@@ -490,7 +490,7 @@ function hemat(c: RCtx) {
   const g = gr(r);
   let kvar = g.ut ? ga(c, g.ut) : -1;
   if (kvar < 0) { g.ut = undefined; for (const k of kanterna(r.x, r.y)) { kvar = ga(c, k); if (kvar >= 0) { g.ut = k; break; } } }
-  if (f.rad) iFarten(s, r); // saker i farten (steg 8.8.3)
+  if (f.rad) iFarten(s, r, c.dt); // saker i farten (steg 8.8.3)
   if (kvar >= 0.5) return;
   f.folk = f.folk.filter(id => id !== r.id);
   gastGar(s, r.id, true);

@@ -4,6 +4,7 @@ import { Person, createState, tidyTools, addTool, getRel, step, living, temperat
 import * as SIM from '../../sim';
 import { byId, isSocial, TalkEvent } from '../../sim';
 import { START, STEG_DYGN } from '../kor';
+import * as SLAGLANGD from '../slaglangd';
 import { hasIcon } from '../../ikoner';
 import { stridIByn, rovarGang, korTills, setFood, kor, klockan, tandEld, byggare, SCENARIER, pct, grenarUte, barGrenar, nyInvanare, valjer, MATARBETE, TRAARBETE, REDSKAPSARBETE, FORBATTRING, MATMEDREDSKAP, rikBy } from './hjalp';
 const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
@@ -2371,5 +2372,14 @@ SCENARIER.klockan = {
       [`ungefär mitt på vägen (${fran.toFixed(1)} rutor från mitten)`, fran < 4],
       [`när alla sover blir slaget längre (${natt} s)`, natt > SIM.KLOCKA.slag],
     ];
+  },
+};
+
+SCENARIER.slaglangd = {
+  lang: true,
+  text: 'Allt räknas per tid (steg 10.2.15): de sparade testbyarna körs tre timmar i spelet med slag om 2 och 1 sekund, och ingen händelse (byns statistik) blir mer än tre gånger så vanlig med den ena längden, så att slagets längd kan ändras utan att byn blir en annan',
+  kor: () => {
+    const a = SLAGLANGD.korMedNu(3, 2), b = SLAGLANGD.korMedNu(3, 1), d = SLAGLANGD.skillnader(a, b, 50, 3);
+    return [[`händelser som skiljer sig mer än tre gånger (minst 50 gånger): ${d.map(x => `${x.namn} ${Math.round(x.a)}/${Math.round(x.b)}`).join(', ') || 'inga'}`, d.length === 0]];
   },
 };

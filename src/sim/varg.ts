@@ -19,7 +19,7 @@ import { addTo, amountOf, avbryt, foodOf, zoneOf } from './lager';
 import { handelse, larma, larmNu, ryktbarhet } from './rykten';
 import { SAKER } from './saker';
 import { vattenNu } from './sjo';
-import { clamp, rnd } from './slump';
+import { clamp, rnd, chansPer } from './slump';
 import { SLAGSMAL, VAPEN, Avsikt, djurKampe, personKampe, slitKastat, svartSkadad } from './strid';
 import { DjurMed, KartStrid, kartStridBorja, kartStrider } from './kartstrid';
 import { EFTER, Efter, STRIDSLAG } from './efterstrid';
@@ -64,10 +64,10 @@ export const VARG = balans('varg', {
   undvik: 10, // flocken går undan från en grupp (minst två) som kommer så här nära
   ser: 14, // flocken ser en ensam människa inom så här många rutor
   anfall: 0.7, // en flock (minst två) anfaller när hunger × (0,5 + modet) är över detta ...
-  anfallChans: 0.3, // ... med den här chansen i varje slag (fem minuter)
+  anfallChans: 0.3, // ... med den här chansen på fem minuter (chansPer, steg 10.2.15)
   flockMod: 0.15, // modet gånger 1 + flockMod × (vargarna − 1): större flock, modigare
   stjalHunger: 0.4, // på natten smyger en så här hungrig flock fram till förrådet ...
-  stjalChans: 0.05, // ... med den här chansen i varje slag
+  stjalChans: 0.05, // ... med den här chansen på fem minuter
   vaken: 5, // och vänder om någon är vaken inom så här många rutor
   stjalPer: 1.5, // så många saker mat (kött först) en varg tar, avrundat
   stjalMat: 0.15, // hungern sjunker så här mycket per sak den tar
@@ -351,17 +351,17 @@ function flockSteg(s: State, f: Vargflock, folk: Person[], dtSec: number) {
   if (f.gor === 'vantar') { vanta(s, f, folk, dtSec); return; }
   if (n >= 2 && f.hunger * (0.5 + mod) > VARG.anfall) {
     const p = bytet(s, f, folk);
-    if (p && rnd(s, 'varg') < VARG.anfallChans) { f.gor = 'anfaller'; f.byte = p.id; count(s, 'vargAnfall'); return; }
+    if (p && chansPer(s, VARG.anfallChans, 300, dtSec, 'varg')) { f.gor = 'anfaller'; f.byte = p.id; count(s, 'vargAnfall'); return; }
     if (!p) { // ingen är ensam: flocken kan vänta utanför ett stängt hus där någon gömmer sig
       const o = stangdDorr(s, f, folk);
-      if (o && !f.trottnat && rnd(s, 'varg') < VARG.anfallChans) { borjaVanta(s, f, o, folk); return; }
+      if (o && !f.trottnat && chansPer(s, VARG.anfallChans, 300, dtSec, 'varg')) { borjaVanta(s, f, o, folk); return; }
     }
   }
   // ett får eller en get som står ute utan någon vaken nära (steg 9.8.12): djuret i fähuset är skyddat
   const d = f.hunger > VARG.stjalHunger ? tamBytet(s, f, folk) : undefined;
-  if (d && rnd(s, 'varg') < VARG.stjalChans) { f.gor = 'smyger'; f.tam = d.id; f.mx = d.x; f.my = d.y; count(s, 'vargSmygerTam'); return; }
+  if (d && chansPer(s, VARG.stjalChans, 300, dtSec, 'varg')) { f.gor = 'smyger'; f.tam = d.id; f.mx = d.x; f.my = d.y; count(s, 'vargSmygerTam'); return; }
   const z = zoneOf(s);
-  if (z && !isLight(s.now) && f.hunger > VARG.stjalHunger && (!s.fire.lit || f.hunger >= VARG.eldHunger) && rnd(s, 'varg') < VARG.stjalChans) {
+  if (z && !isLight(s.now) && f.hunger > VARG.stjalHunger && (!s.fire.lit || f.hunger >= VARG.eldHunger) && chansPer(s, VARG.stjalChans, 300, dtSec, 'varg')) {
     f.gor = 'smyger'; f.mx = z.x + z.w / 2; f.my = z.y + z.h / 2; count(s, 'vargSmyger'); return;
   }
   if (ga(s, f, VARG.gaFart, dtSec) < 1) nyttMal(s, f);
@@ -445,7 +445,7 @@ function vanta(s: State, f: Vargflock, folk: Person[], dtSec: number) {
     return;
   }
   const p = bytet(s, f, folk); // ser den någon ensam i byn jagar den hellre den
-  if (p && rnd(s, 'varg') < VARG.anfallChans) { slutaVanta(f); f.gor = 'anfaller'; f.byte = p.id; count(s, 'vargAnfall'); return; }
+  if (p && chansPer(s, VARG.anfallChans, 300, dtSec, 'varg')) { slutaVanta(f); f.gor = 'anfaller'; f.byte = p.id; count(s, 'vargAnfall'); return; }
   f.mx = ut.x; f.my = ut.y;
   if (ga(s, f, VARG.flyFart, dtSec) > 1) return;
   const modigaUt = modiga(s, folk.filter(q => roomAt(s, q.x, q.y) === r), f); // de som vågar går ut och slåss

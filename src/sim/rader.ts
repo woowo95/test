@@ -3,7 +3,7 @@
 // Talen står i balansregistret RADER. Dörrarna mot anfallare (system 8.9) står här också.
 import { DAY, MIN, Person, State, W } from './typer';
 import { balans } from './balans';
-import { clamp, rnd } from './slump';
+import { chance, clamp, rnd } from './slump';
 import { ALDER, ageOf, alive, byId, count, isKin, living, log } from './folk';
 import { kronika } from './historik';
 import { notis } from './notiser';
@@ -30,7 +30,7 @@ export const RADER = balans('rader', {
   skyddDygn: 3, // chansen efter en räd stiger igen med den här tidskonstanten (ingen fast vila)
   per: 150, // en anfallare för varje så här mycket i rikedom
   viktPlundra: 1, viktHamnd: 0.2, viktHeligt: 0.1, // skälet lottas med vikter
-  ifarten: 0.5, // chansen att den som flyr griper en sak i farten
+  ifarten: 0.7, // chansen per sekund att den som flyr griper en sak hen passerar (steg 10.2.15: per tid, inte per steg)
   anhorig: 0.7, // chansen att en till tre av anfallarna i en hämndräd är anhöriga till den döde
   hamndSaker: 2, // bytet i hämnd och heligt krig, saker per anfallare
   hittaNara: 3, // hämnden: så nära (rutor) måste anfallarna komma för att hitta den de söker (steg 8.8.5)
@@ -153,8 +153,8 @@ export function svarTrohet(s: State, f: Rovarflock, p: Person) {
 // övertygelsen (steg 8.8.8): i ett heligt krig håller andligheten och trons styrka emot, så att den mest övertygade hellre faller än svär
 export const overtygelse = (s: State, f: Rovarflock, p: Person) => f.skal !== 'heligt' ? 0 : RADER.overtygelse * andlighet(s, p) / 100 * (p.troStyrka ?? 0) / 100;
 // saker i farten (steg 8.8.3): den som flyr griper en sak hen passerar om ingen försvarare är nära
-export function iFarten(s: State, r: Person) {
-  if (r.gast!.bar || rnd(s, 'rovare') >= RADER.ifarten) return;
+export function iFarten(s: State, r: Person, dtSec: number) {
+  if (r.gast!.bar || !chance(s, RADER.ifarten, dtSec, 'rovare')) return;
   const a = (s.stackar ?? []).find(q => Math.hypot(q.x - r.x, q.y - r.y) <= 1 && q.n >= 1 && !living(s).some(p => ageOf(p, s.now) >= ALDER.vuxen && Math.hypot(p.x - q.x, p.y - q.y) <= 2));
   if (a) { addTo(s, a.k, -1); r.gast!.bar = { [a.k]: 1 }; count(s, 'ifarten'); }
 }

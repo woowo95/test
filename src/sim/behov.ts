@@ -308,7 +308,7 @@ export function stole(s: State, tjuv: Person, offer: Person, key: string, n: num
   if (n <= 1e-9) return;
   const st = (offer.stulet ??= []), f = st.find(x => x.av === tjuv.id && x.k === key);
   if (f) { f.n += n; if (!lindrig) delete f.l; } else st.push(lindrig ? { av: tjuv.id, k: key, n, l: true } : { av: tjuv.id, k: key, n });
-  count(s, 'stold_' + (lindrig ? 'material' : key));
+  count(s, 'stold_' + (lindrig ? 'material' : key), n); // hur mycket som stals, inte hur många gånger: lika mycket hur ofta det tas (steg 10.2.15)
 }
 const namnOf = (key: string) => BEHOV().find(b => b.id === key)?.namn ?? (SAKER[key]?.namn ?? key).toLowerCase();
 // p har tagit av sitt eget för behovet eller slaget key och märker om någon stulit av det
@@ -362,12 +362,15 @@ export function takeMaterial(s: State, p: Person, k: string, n: number, common =
   if ((ag[p.id] ?? 0) > 1e-9) noticeTheft(s, p, k);
   let rest = n - egen;
   // be den i närheten som har och helst ger (familjen kan man väcka)
+  // (det man ber om räknas som minst en hel sak: ett arbete tar materialet lite i taget, och viljan att ge ska inte bero på
+  // hur stor bit som tas i ett slag, steg 10.2.15)
+  const bed = Math.max(1, rest);
   if (rest > 1e-9) {
     const ask = living(s).filter(g => g !== p && ownsAmount(s, g, k) > 1e-9 && narvarande(g, p))
-      .sort((a, b) => willing(s, b, p, ownsAmount(s, b, k) / rest) - willing(s, a, p, ownsAmount(s, a, k) / rest) || a.id - b.id);
+      .sort((a, b) => willing(s, b, p, ownsAmount(s, b, k) / bed) - willing(s, a, p, ownsAmount(s, a, k) / bed) || a.id - b.id);
     for (const g of ask) {
       if (rest <= 1e-9) break;
-      if (rnd(s, 'dela', g) >= willing(s, g, p, ownsAmount(s, g, k) / rest)) continue;
+      if (rnd(s, 'dela', g) >= willing(s, g, p, ownsAmount(s, g, k) / bed)) continue;
       const v = ownMove(s, k, Math.min(rest, ownsAmount(s, g, k)), g.id, p.id);
       const d = use(s, p, k, v, common); addDel(ag, d); rest -= v;
       if (kom) { const key = `gava:${g.id}:${k}`; kom[key] = (kom[key] ?? 0) + v; }

@@ -67,6 +67,8 @@ export function pickViktat<X>(s: State, items: X[], vikter: number[], k: Strom, 
   return items[sista ? items.length - 1 : 0];
 }
 export function chance(s: State, ratePerSec: number, dtSec: number, k: Strom, p?: Person) { return rnd(s, k, p) < 1 - Math.exp(-ratePerSec * dtSec); }
+// chansen c per period om perSek sekunder, räknad för dtSec sekunder (steg 10.2.15: per tid, aldrig per slag)
+export function chansPer(s: State, c: number, perSek: number, dtSec: number, k: Strom, p?: Person) { return rnd(s, k, p) < 1 - Math.pow(1 - Math.min(1, c), dtSec / perSek); }
 
 // ett tal mellan 0 och 1 ur tre heltal, utan att dra ur någon slumpföljd: vädret, motgångarna, eldsvådan och berättelserna
 // (kodgenomgången 3.10.25: fyra kopior blev en). Blandningen får inte ändras, för då får alla byar ett annat väder; k0 och

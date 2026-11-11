@@ -12,6 +12,7 @@
     "check": "tsc -p .",
     "kortsteg": "tsx src/test/kortsteg.ts",
     "kostnad": "tsx src/test/kostnad.ts",
+    "slaglangd": "tsx src/test/slaglangd.ts",
     "takt": "tsx src/test/takt.ts",
     "teknik": "tsx src/test/teknik.ts",
     "likhet": "bash src/test/likhet.sh",
