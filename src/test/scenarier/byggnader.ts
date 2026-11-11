@@ -547,7 +547,8 @@ SCENARIER.lager = {
       ['en stack med bara gömd giftsvamp visas inte som "svamp 0 st"', !doldSyns],
       [`när lagret växer över en ruta med flera saker ligger det sedan en sak på varje ruta, och inget försvinner (${vxYta} → ${vxStor} rutor, ${vxTva} rutor med två saker, ${vxFore} → ${tot()} saker)`, vxStor > vxYta && vxTva === 0 && tot() === vxFore],
       [`i ett fullt lager läggs det nya på en egen ruta (${fx},${fy}${paAnnan ? ', på sten' : ''})`, !paAnnan && usable(fu, fx, fy)],
-      [`ingen bär in när byn svälter eller fryser (${barSvalt} när maten är slut, ${barKall} i kylan, ${barMat} av 200 annars)`, barMat > 0 && barSvalt === 0 && barKall === 0],
+      // svälten och kylan väger i poängen (steg 10.2.6): det som inte är mat bärs in mer sällan när byn svälter eller fryser
+      [`färre bär in när byn svälter eller fryser (${barSvalt} när maten är slut, ${barKall} i kylan, ${barMat} av 200 annars)`, barMat > 0 && barSvalt < barMat / 2 && barKall < barMat / 2],
       ['en död med en uppgift kvar låser inte en stack som ska bäras in (haulJob)', stackFri],
       ['... och inte elden (fetchFuel)', eldFri],
       [`lagerplatsen växer när den blir full (${start} → ${stor} rutor, ${zonesOf(s).length} lagerplatser, ${ps.filter(p => p.out).length} av ${ps.length} stackar utanför)`, stor > start && ps.filter(p => p.out).length <= ps.length / 2],

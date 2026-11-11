@@ -162,7 +162,7 @@ function kyrkBygge(k: KyrkBygge): ProjektDef {
     namn: k === 'hov' ? 'Hovet' : 'Templet', vikt: k === 'hov' ? KYRKA.hovVikt : KYRKA.tempelVikt,
     brist: s => { const n = living(s).length, tr = (s.tron ?? []).filter(t => t.slut === undefined && nastaBygge(t) === k); return n && tr.length ? Math.min(1, tr.reduce((a, t) => a + troende(s, t).length, 0) / n) : 0; },
     kostnad: () => byggesMin(k) / 60,
-    kan: (s, p, f) => !f.kyla && kanBygga(s, p, k),
+    kan: (s, p) => kanBygga(s, p, k),
     uppgift: (s, p) => { const tr = troOf(s, p.tro)!, b = byggeAv(tr, k)!; return { act: 'hovbygge', text: `Bygger ${troNamn(tr).toLowerCase()}s ${k === 'hov' ? 'hov' : 'tempel'}`, min: 60, spot: { x: b.x + 0.5, y: b.y + 0.5 } }; },
   };
 }

@@ -31,7 +31,7 @@ SCENARIER.befolkning = {
 };
 
 SCENARIER.faror = {
-  text: 'Faror går före förbättringar: när maten tryter väljer de vuxna mat i stället för bygge, hantverk och fritid, och när kylan är en fara (istiden, elden släckt) går tiden till trä i stället för till nya redskap och bygge. När byn svälter letas ingen flinta, och bara maten bärs in (steg 2.12.3)',
+  text: 'Faror går före förbättringar: när maten tryter väljer de vuxna mat i stället för bygge, hantverk och fritid, och när kylan är en fara (istiden, elden släckt) går tiden mest till trä, och nya redskap och bygge väger mindre (steg 10.2.6). När byn svälter letas ingen flinta, och maten bärs in först (steg 2.12.3)',
   kor: () => {
     // en by som kan bygga och göra korgar, spjut, metspön och knivar, med en planerad stuga. ai = tidsåldern (0 = istiden)
     const by = (ai?: number) => {
@@ -74,11 +74,12 @@ SCENARIER.faror = {
       [`svältande by (mat för ${SIM.dygn(svFd)}): bygge, hantverk och fritid ${pct(svalt.andel(FORBATTRING))}, klart lägre än i den rika byn (${svalt.topp})`, svFd < 1 && svalt.andel(FORBATTRING) < rik.andel(FORBATTRING) / 3],
       [`svältande by: matarbete och redskap till maten ${pct(svalt.andel(MATMEDREDSKAP))} av valen (i den rika byn ${pct(rik.andel(MATMEDREDSKAP))})`, svalt.andel(MATMEDREDSKAP) > 0.5 && svalt.andel(MATMEDREDSKAP) > 2 * rik.andel(MATMEDREDSKAP)],
       [`istiden med elden släckt (${kyla.ljust ? 'ljust' : 'mörkt'}, ${kyla.kallt ? 'kallt' : 'inte kallt'}): trä ${pct(kyla.andel(TRAARBETE))}, bygge ${pct(kyla.andel(['bygga']))} (${kyla.topp})`, kyla.ljust && kyla.kallt && kyla.andel(TRAARBETE) > 0.4 && kyla.andel(TRAARBETE) > kyla.andel(['bygga'])],
-      [`istiden med elden släckt: inga korgar, spjut, metspön, yxor eller knivar görs, inte heller när maten tryter (${tillv(kyla)}; hungrig ${tillv(kylaSvalt)}, där ${pct(kylaSvalt.andel(MATARBETE))} matarbete)`, tillvAndel(kyla) === 0 && tillvAndel(kylaSvalt) === 0 && kylaSvalt.andel(MATARBETE) > 0],
-      [`kontroll: samma hungriga by med elden tänd gör redskap (${tillv(varmt)}), så provet ser dem när de väljs`, tillvAndel(varmt) > 0],
-      [`när kylan är en fara byggs inget (${kyla.n.bygga ?? 0} av ${kyla.tot} val)`, !kyla.n.bygga],
+      // kylan väger i poängen (steg 10.2.6): redskapen görs mer sällan i kylan än med elden tänd, och värmen och maten går före
+      [`istiden med elden släckt: korgar, spjut, metspön, yxor och knivar görs mer sällan än med elden tänd (${tillv(kyla)}; hungrig ${tillv(kylaSvalt)} ${pct(tillvAndel(kylaSvalt))}, där ${pct(kylaSvalt.andel(MATARBETE))} matarbete; med elden tänd ${tillv(varmt)} ${pct(tillvAndel(varmt))})`, tillvAndel(kyla) < kyla.andel(TRAARBETE) && tillvAndel(kylaSvalt) < tillvAndel(varmt) && kylaSvalt.andel(MATARBETE) > tillvAndel(kylaSvalt)],
+      [`när kylan är en fara byggs sällan (${kyla.n.bygga ?? 0} av ${kyla.tot} val)`, (kyla.n.bygga ?? 0) <= kyla.tot * 0.1],
       [`den svältande byn letar inte flinta vid stenarna, inte heller när den saknar flinta till elden (${svalt.sok + svaltFlinta.sok} av ${svalt.tot + svaltFlinta.tot} val)`, svalt.sok + svaltFlinta.sok === 0],
-      ['när byn svälter bärs maten på marken in, men inte grenarna', !barGren && !!barGrenRik && !!barBar && barBar.x < c.x],
+      // vid svält bärs maten först (steg 10.2.6): det andra väger som om det låg längre bort
+      [`när byn svälter bärs maten på marken in före grenarna (${barBar && barBar.x < c.x ? 'maten' : 'grenarna'} först)`, !!barGren && !!barGrenRik && !!barBar && barBar.x < c.x],
     ];
   },
 };
