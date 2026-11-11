@@ -65,7 +65,7 @@ export const VARG = balans('varg', {
   undvik: 10, // flocken går undan från en grupp (minst två) som kommer så här nära
   ser: 14, // flocken ser en ensam människa inom så här många rutor
   anfall: 0.7, // en flock (minst två) anfaller när hunger × (0,5 + modet) är över detta ...
-  anfallChans: 0.3, // ... med den här chansen på fem minuter (chansPer, steg 10.2.15)
+  anfallChans: 0.3, // ... med den här chansen på en minut (chansPer, steg 10.2.15: förr per slag om fem minuter, men flocken som såg den ensamma hann gå därifrån innan den anföll)
   flockMod: 0.15, // modet gånger 1 + flockMod × (vargarna − 1): större flock, modigare
   stjalHunger: 0.4, // på natten smyger en så här hungrig flock fram till förrådet ...
   stjalChans: 0.05, // ... med den här chansen på fem minuter
@@ -352,10 +352,10 @@ function flockSteg(s: State, f: Vargflock, folk: Person[], dtSec: number) {
   if (f.gor === 'vantar') { vanta(s, f, folk, dtSec); return; }
   if (n >= 2 && f.hunger * (0.5 + mod) > VARG.anfall) {
     const p = bytet(s, f, folk);
-    if (p && chansPer(s, VARG.anfallChans, 300, dtSec, 'varg')) { f.gor = 'anfaller'; f.byte = p.id; count(s, 'vargAnfall'); return; }
+    if (p && chansPer(s, VARG.anfallChans, 60, dtSec, 'varg')) { f.gor = 'anfaller'; f.byte = p.id; count(s, 'vargAnfall'); return; }
     if (!p) { // ingen är ensam: flocken kan vänta utanför ett stängt hus där någon gömmer sig
       const o = stangdDorr(s, f, folk);
-      if (o && !f.trottnat && chansPer(s, VARG.anfallChans, 300, dtSec, 'varg')) { borjaVanta(s, f, o, folk); return; }
+      if (o && !f.trottnat && chansPer(s, VARG.anfallChans, 60, dtSec, 'varg')) { borjaVanta(s, f, o, folk); return; }
     }
   }
   // ett får eller en get som står ute utan någon vaken nära (steg 9.8.12): djuret i fähuset är skyddat
@@ -446,7 +446,7 @@ function vanta(s: State, f: Vargflock, folk: Person[], dtSec: number) {
     return;
   }
   const p = bytet(s, f, folk); // ser den någon ensam i byn jagar den hellre den
-  if (p && chansPer(s, VARG.anfallChans, 300, dtSec, 'varg')) { slutaVanta(f); f.gor = 'anfaller'; f.byte = p.id; count(s, 'vargAnfall'); return; }
+  if (p && chansPer(s, VARG.anfallChans, 60, dtSec, 'varg')) { slutaVanta(f); f.gor = 'anfaller'; f.byte = p.id; count(s, 'vargAnfall'); return; }
   f.mx = ut.x; f.my = ut.y;
   if (ga(s, f, VARG.flyFart, dtSec) > 1) return;
   const modigaUt = modiga(s, folk.filter(q => roomAt(s, q.x, q.y) === r), f); // de som vågar går ut och slåss
