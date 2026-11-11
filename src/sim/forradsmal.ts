@@ -128,7 +128,7 @@ export const MATERIALMAL = {
   grenar: { min: tand },
   torrgras: { min: s => harNaver(s) ? 0 : tand(s) }, // med näver, eller ett blad och ved att tälja den ur, behövs inget hö till tändningen (steg 6.3.3)
   sten: { min: () => 0 },
-  flinta: { min: () => TROSKEL.flintaMinsta },
+  flinta: { min: s => TROSKEL.flintaMinsta + flintaKrok.verktyg(s) }, // och flintan till de redskap byn vill ha och saknar (steg 10.2.12)
   virke: { min: () => 0 },
   lera: { min: s => Math.max(0, REDSKAPMAL.lerkruka(s) - krukorIByn(s)) * 2 }, // steg 9.4.10: målet följer hur mycket lera byn gör av med, och leran till de krukor byn vill ha och saknar (två per kruka): annars grävdes ingen lera förrän en kruka gjorts, och ingen kruka gjordes utan lera
   // steg 10.2.12: det som görs och tas av förrådet följer också förbrukningen; minst en (en att börja med, innan något använts)
@@ -197,6 +197,8 @@ const vuxna = (s: State, fran: number) => living(s).filter(p => ageOf(p, s.now) 
 const perVuxna = (s: State, per: number, min: number, max: number, fran: number = ALDER.vuxen) => clamp(Math.floor(vuxna(s, fran) / per), min, max);
 // ett spjut per tre vuxna, när någon väl har börjat fiska eller jaga
 const spjutVill = (s: State) => (s.stat?.fiskeForsok ?? 0) > 0 || (s.stat?.prod_jakt ?? 0) > 0 ? perVuxna(s, VILLTAL.spjutPerVuxna, VILLTAL.spjutMin, VILLTAL.spjutMax) : 0;
+// flintan till redskapen byn vill ha och saknar (redskap.ts, satt där så att filerna inte importerar varandra)
+export const flintaKrok = { verktyg: (_s: State) => 0 };
 const krukorIByn = (s: State) => tingOf(s).filter(t => t.k.startsWith('lerkruka_')).length;
 const ortkokKan = (s: State) => living(s).some(p => (p.tek?.ortkok ?? 0) >= 1); // någon kan koka i örtköket (steg 9.4.14)
 export const REDSKAPMAL: Record<string, (s: State) => number> = {
