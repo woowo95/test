@@ -381,9 +381,11 @@ export function stepFire(s: State, dtSec: number, ppl: Person[]) {
     f.want = top?.w.v ?? 0; f.wantBy = top?.p.id; f.wantWhy = top?.w.why;
     per.set(f, cands);
   }
-  // den eld som flest använder först; när bränslet tryter (BRASA.slackDygn) och det finns flera eldar sköts bara den
+  // den eld som flest värmer sig vid först; när bränslet tryter sköts så många eldar som veden räcker till i BRASA.slackDygn
+  // dygn var (steg 10.2.10), de mest använda först
   const ordning = alla.length > 1 ? [...alla].sort((a, b) => per.get(b)!.length - per.get(a)!.length || (a.id ?? -1) - (b.id ?? -1)) : alla;
-  const skots = alla.length > 1 && vedPerEld(s, 0) < BRASA.slackDygn ? ordning.slice(0, 1) : ordning;
+  const racker = Math.max(1, Math.floor(vedPerEld(s, 0) * alla.length / BRASA.slackDygn));
+  const skots = alla.length > racker ? ordning.slice(0, racker) : ordning;
   // påfyllning: en i taget vid varje eld
   if (fuelStock(s) >= ELD.hamtaMin) for (const f of skots) {
     if (!(f.lit || emberOn(s, f)) || eldIVatten(s, f) || ppl.some(p => p.task?.act === 'elda' && p.task.ref === f.id)) continue;
