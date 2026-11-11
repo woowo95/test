@@ -180,6 +180,7 @@ SCENARIER.vakt = {
 
 // Det i registren som bara händer i vissa byar: namnet och varför. Allt annat ska hända i minst en av byarna
 const SALLSYNT: Record<string, string> = {
+  fagel: 'fågeln fälls i ungefär hälften av byarna på 35 dygn (mätt i tolv byar efter system 10.1: åtta fåglar i sex byar), eftersom jägaren bara smyger på en fågel när ingen kanin eller inget rådjur finns nära; scenariot faglar prövar den',
   naverask: 'sen teknik i fas 9 (steg 9.4.13): byn vill ha näveraskar först när någon kan koka i örtköket; scenariot vatskor prövar den',
   lerkruka: 'lerkrukan (steg 9.4.11) kräver tekniken Lerkruka (nivå 3) och lera; scenarierna lera och kruka prövar den',
   lerkruka_liten: 'som lerkruka; scenarierna lera och kruka prövar den', lerkruka_mellan: 'som lerkruka; scenarierna lera och kruka prövar den', lerkruka_stor: 'som lerkruka; scenarierna lera och kruka prövar den',
