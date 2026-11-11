@@ -60,7 +60,7 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
   (s, t) => {
     return [s.rovare, ...s.rovareFler ?? []].flatMap(r => {
     if (!r) return [];
-    const gor = r.gor === 'samlas' ? 'Samlas i skogen' : r.gor === 'kommer' ? 'På väg mot byn' : r.gor === 'vantar' ? 'Väntar utanför byn' : r.gor === 'slass' ? 'Slåss vid förrådet' : r.gor === 'rotar' ? 'Letar i förråden' : r.gor === 'letar' ? 'Letar hus för hus' : 'Flyr', n = r.folk.length;
+    const gor = r.gor === 'kommer' ? 'Går mot byn' : r.gor === 'vantar' ? 'Rastar' : r.gor === 'slass' ? 'Slåss' : r.gor === 'rotar' ? 'Tar ur förrådet' : r.gor === 'letar' ? 'Letar hus för hus' : 'Flyr', n = r.folk.length;
     return rovarna(s, r).map((q, i) => {
       const sk = kartKampe(s, q); // i striden på kartan (steg 10.1.14): kämpens läge
       return {

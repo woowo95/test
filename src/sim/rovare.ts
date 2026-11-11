@@ -42,18 +42,15 @@ import { LARMHOT, rollVid, viljaKrok } from './roller';
 import { KartStrid, djurIKartStrid, kartStridBorja, kartStridMed, kartStrider } from './kartstrid';
 import { EFTER, FAROR, gastKrok } from './efterstrid';
 
-// ---------- rövarflocken (steg 4.4.5) ----------
-// En grundversion av anfallen (stora räder, krig, tribut och murar ligger i 11.2). När byn är rik (Byns rikedom, varde.ts, med
-// försvaret räknat emot: de vuxna som kan slåss och deras vapen) kan en liten flock rövare komma: folk från en grannklan som
-// inte tycker om byn (klaner.ts), annars fredlösa utan klan. Flocken samlas en stund i kartans kant, där den kan upptäckas.
-// Den som är vaken och nära ser den, vakten ser längst och gissar hur många de är (gissningen blir sämre ju längre bort de
-// står), ropar (larma i rykten.ts) och väcker byn; sedan delar sig byn (rovarSkydd, steg 9.2.116): kämparna tar vapen och väntar vid
-// förrådet, hjälparna en bit bakom dem, och barnen, de svaga och de räddaste gömmer sig. En liten flock väntar på mörkret, och ett tyst
-// anfall (natt, få rövare, ingen vaken som ser dem) kommer fram osett. Rövarna går mot förrådet. Ser de att byn väntar med
-// fler än de själva vänder de om. Annars slåss de med dem som står i vägen (striden i strid.ts, 3.7), med avsikten att skada,
-// och plundrar det mest värda i förrådet (inte redskapen) om de vinner eller ingen står emot. Sedan flyr de mot kanten. Går
-// striden dåligt flyr de utan något. Rövarna är inte bybor: var och en har ett namn, kroppens tal och ett vapen, och den som
-// dör i striden är borta. Allt stegas likadant i båda lägena med byns följd 'rovare'.
+// ---------- rövarflocken (steg 4.4.5, Striden på kartan i designdokumentet) ----------
+// När byn är rik (Byns rikedom, varde.ts, med försvaret räknat emot) kan ett gäng rövare komma: folk från en grannklan som inte
+// tycker om byn (klaner.ts), annars fredlösa utan klan. Rövarna är människor (gäster, gast.ts) med kropp, sår och vapen. Gänget
+// går in från kartans kant till en rastplats utanför byn, där var och en vilar, går omkring och pratar, och går sedan mot byn.
+// Gänget har ingen ledare: alla har samma mål och var och en går sin egen väg bredvid de andra. Var och en väljer vad hen gör ur
+// registret ROVARHANDLINGAR med poäng (Samma val för alla); det finns ingen fast följd av lägen, och flockens läge (f.gor) är
+// bara det de flesta gör, för texterna. Den som ser dem varnar, och byn gör sig redo (rovarSkydd, roller.ts). Striderna, med
+// byn, med djuren och med andra gäng, sker på kartan (kartstrid.ts). Rövarna tar det mest värda tills de bär så mycket de orkar
+// och går hem. Allt stegas likadant i båda lägena med byns följd 'rovare'.
 export const ROVARE = balans('rovare', {
   forsvarMest: 0.2, // försvaret sänker chansen högst så här mycket (steg 8.7.13)
   kommer: 0.012, // chansen i timmen att en flock kommer, gånger hur rik byn är (rik nedan), när ingen flock är på kartan ...
@@ -113,9 +110,9 @@ export const ROVARE = balans('rovare', {
 export const rovarna = (s: State, f: { folk: number[] }): Person[] => f.folk.map(id => gastAv(s, id)).filter((p): p is Person => !!p);
 const gr = (r: Person) => r.gast!;
 // x, y: ledaren (den första rövaren), mx, my: ledarens mål. lurat: flocken har väntat utanför byn. test: flocken kom från
-// testläget och samlas och väntar kortare (steg 9.2.103). anfall: flocken har setts i eller nära byn, och byn går mot den (steg 9.2.104)
+// testläget och rastar kortare (steg 9.2.103). anfall: flocken har setts i eller nära byn, och byn går mot den (steg 9.2.104)
 // striden vid förrådet som pågår (steg 6.6.10): striden (strid.ts) och när den började (t0), och arenans hörn på kartan (ox, oy)
-export interface Rovarflock { rast?: { x: number; y: number }; vantat?: boolean; anfaller?: boolean; klar?: boolean; radKlar?: boolean; antal?: number; strider?: number; tagit?: Record<string, number>; sx?: number; sy?: number; skal?: import('./rader').RadSkal; rad?: boolean; mal?: number; hugger?: { bit: number; till: number }; tant?: boolean; id: number; klan?: number; folk: number[]; x: number; y: number; mx: number; my: number; gor: 'samlas' | 'kommer' | 'vantar' | 'slass' | 'flyr' | 'letar' | 'rotar'; letar?: number[]; rotar?: { x: number; y: number; min: number }[]; rotat?: boolean; letat?: boolean; till: number; sedd?: number; gissning?: number; vackt?: boolean; lurat?: boolean; test?: boolean; anfall?: boolean; bud?: { av: number; till: number; t: number } }
+export interface Rovarflock { rast?: { x: number; y: number }; vantat?: boolean; anfaller?: boolean; klar?: boolean; radKlar?: boolean; antal?: number; strider?: number; tagit?: Record<string, number>; sx?: number; sy?: number; skal?: import('./rader').RadSkal; rad?: boolean; mal?: number; hugger?: { bit: number; till: number }; tant?: boolean; id: number; klan?: number; folk: number[]; x: number; y: number; mx: number; my: number; gor: 'kommer' | 'vantar' | 'slass' | 'flyr' | 'letar' | 'rotar'; /* det de flesta gör, för texterna (steg 10.2.30) */ letar?: number[]; rotar?: { x: number; y: number; min: number }[]; rotat?: boolean; letat?: boolean; till: number; sedd?: number; gissning?: number; vackt?: boolean; lurat?: boolean; test?: boolean; anfall?: boolean; bud?: { av: number; till: number; t: number } }
 
 const avst = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
 const vaken = (p: Person) => p.task?.act !== 'sova';
@@ -150,7 +147,7 @@ export function skickaRovare(s: State, n: number): { ok: boolean; text: string }
   return { ok: true, text };
 }
 // en flock kommer till en punkt i kanten som inte är vatten. tvinga = ett scenario eller testläget (antalet); direkt = testläget
-// (steg 9.2.103): flocken dyker upp ungefär ROVARE.testUt rutor utanför byns område (testPlats) och samlas och väntar kortare,
+// (steg 9.2.103): gänget kommer in från kartans kant som ett vanligt gäng och rastar kortare (ROVARE.testVanta),
 // men går annars som en vanlig flock
 export function rovarnaKommer(s: State, tvinga?: number, direkt?: boolean, klan?: number) {
   if (!tvinga && rnd(s, 'rovare') >= ROVARE.kommer * lockar(s) * efterAnfall(s)) return;
@@ -179,7 +176,7 @@ export function rovarnaKommer(s: State, tvinga?: number, direkt?: boolean, klan?
   });
   folk.forEach((id, j) => { const g = gastAv(s, id)?.gast; if (g) g.fil = j - (folk.length - 1) / 2; }); // var sin fil bredvid de andra (steg 10.2.25)
   const nr = s.rovarNr = (s.rovarNr ?? 0) + 1;
-  // testläget (steg 9.2.103): flocken samlas ROVARE.testSamlas minuter, aldrig den vanliga väntan
+  // testläget (steg 9.2.103): gänget rastar ROVARE.testVanta minuter i stället för den vanliga väntan
   s.rovare = { id: nr, klan: k?.id, folk, x, y, mx: x, my: y, gor: 'kommer', till: 0, ...(direkt ? { test: true } : {}) };
   stallUpp(s, s.rovare, x, y);
   s.rovarVila = s.now;

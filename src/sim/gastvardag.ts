@@ -50,7 +50,7 @@ function gastAkt(s: State, p: Person): Act {
   if (g.sort === 'rovare') {
     const f = [s.rovare, ...s.rovareFler ?? []].find(f => f?.folk.includes(p.id));
     if (!f) return 'gaHem';
-    return f.gor === 'samlas' || f.gor === 'kommer' ? 'gastKommer' : f.gor === 'vantar' ? 'gastVantar' : f.gor === 'flyr' ? 'gastFly' : 'plundra';
+    return f.gor === 'kommer' ? 'gastKommer' : f.gor === 'vantar' ? 'gastVantar' : f.gor === 'flyr' ? 'gastFly' : 'plundra';
   }
   if (g.sort === 'framling') return g.fas === 'pratar' ? 'gastVantar' : g.fas === 'gar' ? 'gaHem' : 'gastKommer';
   return 'gastKommer';
