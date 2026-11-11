@@ -1302,7 +1302,15 @@ SCENARIER.brasa = {
     const lika = !!e && !!e.ring && e.lightings >= 1 && Array.isArray(e.log); // en lägereld som den första
     // värmen: vid den är det varmare än den första elden ensam ger
     let varm = false;
-    if (e?.lit) { const med = heatAt(b, e.at!.x + 0.5, e.at!.y + 1.5); e.lit = false; const utan = heatAt(b, e.at!.x + 0.5, e.at!.y + 1.5); e.lit = true; varm = fireHeat(b, e) > 0 && med > utan; }
+    if (e?.lit) {
+      /* Byn hinner ofta lägga fler lägereldar än den som provas (en tredje ligger tätt intill), så "utan" är den första elden ensam:
+         alla andra eldar släcks en stund, och inte bara den som provas */
+      const med = heatAt(b, e.at!.x + 0.5, e.at!.y + 1.5), andra = SIM.eldarOf(b).filter(f => f !== b.fire), tand = andra.map(f => f.lit);
+      for (const f of andra) f.lit = false;
+      const utan = heatAt(b, e.at!.x + 0.5, e.at!.y + 1.5);
+      andra.forEach((f, k) => { f.lit = tand[k]; });
+      varm = fireHeat(b, e) > 0 && med > utan;
+    }
     // isär: en släckt lägereld som ingen sover nära tas isär, och stenarna blir en hög
     let isar = false, hog = false, ateranv = false;
     if (e) {

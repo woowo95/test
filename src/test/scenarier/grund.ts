@@ -944,7 +944,7 @@ SCENARIER.oversvamning = {
     for (let i = 0; i < W * W; i++) if (land[i] === 1 && g[i] !== T.Sten) strand.push({ x: i % W, y: Math.floor(i / W) });
     strand.sort((a, b) => Math.hypot(a.x - c.x, a.y - c.y) - Math.hypot(b.x - c.x, b.y - c.y));
     const [pb, pg, ps] = [strand[0], strand.find(p => Math.hypot(p.x - strand[0].x, p.y - strand[0].y) >= 3)!, strand.find(p => Math.hypot(p.x - strand[0].x, p.y - strand[0].y) >= 6)!];
-    s.stackar!.push({ k: 'rotter', n: 200, c: 1, x: pb.x, y: pb.y }, { k: 'grenar', n: 8, c: 1, x: pg.x, y: pg.y }, { k: 'sten', n: 3, c: 1, x: ps.x, y: ps.y });
+    s.stackar!.push({ k: 'grenar', n: 8, c: 1, x: pg.x, y: pg.y }, { k: 'sten', n: 3, c: 1, x: ps.x, y: ps.y });
     SIM.tidy(s);
     const pf = strand.find(p => Math.hypot(p.x - strand[0].x, p.y - strand[0].y) >= 9)!;
     s.falt = [{ id: 1, x: pf.x, y: pf.y, w: 1, dir: 1, n: 1, agare: -1, steg: 'vaxer', klara: 0, kvar: 0, sadda: 1, groda: 'arter', vuxit: 0, rord: s.now } as SIM.Falt];
@@ -954,8 +954,17 @@ SCENARIER.oversvamning = {
     // tills vattnet står som högst
     let hogst = 0, iVattnet = 0, slit1 = 0, q2: State | undefined;
     let malIVatten = 0; // någon går för att bära något som ligger i vattnet (bara mot en ruta under vatten)
+    let lagt = false;
     for (let h = 0; h < 4 * 24 && !(hogst && (s.flod?.niva ?? 0) < hogst); h++) {
-      kor(s, 1, s => { if (s.flod) for (const p of living(s)) if (p.task?.act === 'bara' && SIM.iVattnetNu(s, Math.floor(p.task.ty) * W + Math.floor(p.task.tx))) malIVatten++; });
+      /* Maten på stranden läggs fem minuter innan vattnet först stiger: byn bär annars in den på en halvtimme, och det beror på turen
+         (var folk står och hur stort förrådet är) om något hinner bli kvar. Provet gäller maten som ingen hunnit bära, inte byns snabbhet */
+      let del = 1;
+      if (!lagt && SIM.flodNiva(s, s.now + HOUR) > (s.flod?.niva ?? 0)) {
+        kor(s, 11 / 12);
+        s.stackar!.push({ k: 'rotter', n: 200, c: 1, x: pb.x, y: pb.y }); SIM.tidy(s);
+        lagt = true; del = 1 / 12;
+      }
+      kor(s, del, s => { if (s.flod) for (const p of living(s)) if (p.task?.act === 'bara' && SIM.iVattnetNu(s, Math.floor(p.task.ty) * W + Math.floor(p.task.tx))) malIVatten++; });
       if ((s.flod?.niva ?? 0) > hogst) { hogst = s.flod!.niva; slit1 = wearMult(s, ps.x, ps.y); }
       if (!q2 && hogst >= 2) q2 = cloneState(s);
       iVattnet = Math.max(iVattnet, living(s).filter(p => SIM.iVattnetNu(s, Math.floor(p.y) * W + Math.floor(p.x))).length);

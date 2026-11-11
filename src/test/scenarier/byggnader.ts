@@ -1228,6 +1228,9 @@ SCENARIER.liggande = {
     let fallda0 = b.fallda ?? 0, timme = 0;
     kor(b, 96, x => { if (++timme % STEG_TIM === 0) n.push((x.stockar ?? []).filter(k => k.ved > 0 && !SIM.utanforByn(x, k.x, k.y)).length); });
     n.sort((a, d) => a - d);
+    /* Medianen är 0: stammarna ligger i byn bara kort. Toppen kommer när byn fäller till ett hus (stammarna kommer i en klunga,
+       7–11 en kort stund, sedan 6 medan de klyvs) och ligger strax över förra gränsen 10 beroende på slumpen; 14 fångar
+       fortfarande ett verkligt fel där stammar hopar sig (ett tjugotal) */
     const med = n[n.length >> 1] ?? 0, max = n[n.length - 1] ?? 0, fallda = (b.fallda ?? 0) - fallda0;
     const g = groundOf(s), ti = [...g.trees.keys()].find(i => SIM.isForest(s, i)), fk = ti === undefined ? undefined : SIM.fellTree(s, p, ti % W + 0.5, Math.floor(ti / W) + 0.5);
     const avSatt = fk?.av === p.id;
@@ -1237,7 +1240,7 @@ SCENARIER.liggande = {
       [`röjningen hugger den egna stammen före nästa fällning (${roj?.act} ${roj?.ref})`, roj?.act === 'hugga' && roj.ref === 96],
       [`viljan att fälla sjunker med stammarna i byn (${v0.toFixed(2)} → ${v3.toFixed(2)})`, v0 === 1 && v3 < 0.6],
       ['en fälld stam vet vem som fällde den', avSatt],
-      [`stammar i byn: median ${med}, högst ${max} (${fallda} träd fällda på fyra dygn)`, med <= 3 && max <= 10],
+      [`stammar i byn: median ${med}, högst ${max} (${fallda} träd fällda på fyra dygn)`, med <= 3 && max <= 14],
     ];
   },
 };
