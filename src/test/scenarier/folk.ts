@@ -2580,3 +2580,29 @@ SCENARIER.plundring = {
     ];
   },
 };
+
+SCENARIER.rovardjur = {
+  text: 'Rövare mot djur på kartan (steg 10.2.29): en björn på rövarnas väg ger en strid på kartan som rövarna reagerar på, var och en med sitt eget val (slåss eller fly), utan tärningskast vid sidan av kartan',
+  kor: () => {
+    const s = createState(4, START);
+    for (let i = 0; i < 12; i++) step(s, 300);
+    SIM.skickaRovare(s, 3);
+    const f = s.rovare!, ids = new Set(f.folk);
+    step(s, 20);
+    const r0 = SIM.rovarna(s, f)[0];
+    s.bjornUndan = { fran: s.now, till: s.now + 3 * HOUR, x0: r0.x! + 6, y0: r0.y!, x1: r0.x! + 6, y1: r0.y! };
+    let strid = false, med = 0, lagen = new Set<string>();
+    for (let i = 0; i < 300; i++) {
+      step(s, 1);
+      for (const g of SIM.kartStrider(s)) if (g.efter?.typ === 'bjorn') {
+        strid = true;
+        const ks = g.st.kampar.filter(k => k.pid !== undefined && ids.has(k.pid));
+        med = Math.max(med, ks.length); for (const k of ks) lagen.add(k.lage);
+      }
+    }
+    return [
+      [`björnen och rövarna slogs på kartan (${strid ? 'ja' : 'nej'}, ${med} rövare med)`, strid && med > 0],
+      [`rövarna reagerade var för sig i striden (${[...lagen].join(', ')})`, lagen.size > 0],
+    ];
+  },
+};

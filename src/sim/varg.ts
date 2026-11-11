@@ -556,7 +556,7 @@ export function vargjaktSteg(s: State, p: Person, tk: Task) {
 // en strid mellan folk och flocken på kartan (steg 10.1.17, kartstrid.ts): vargarna är kämpar ur registret (KAMPAR) där flocken
 // står, människorna där de står, och striden stegas med byn. Såren sitter på folket när bettet träffar (STRIDSLAG.varg); när den
 // är slut gör vargSlut resten. De dödade vargarna bärs hem av jägarna (på vargjakt)
-export function vargStrid(s: State, f: Vargflock, folk: Person[], avsikt: Avsikt, orsak: string) {
+export function vargStrid(s: State, f: Vargflock, folk: Person[], avsikt: Avsikt, orsak: string, utanLarm = false) {
   const n = f.vargar.length, modF = 1 + VARG.flockMod * (n - 1);
   const djur: DjurMed[] = f.vargar.map((id, j) => {
     const d = dragOf('varg', id), v = j / Math.max(1, n) * Math.PI * 2, q = freeNear(s, clamp(f.x + (n > 1 ? Math.cos(v) : 0), 0.5, W - 0.5), clamp(f.y + (n > 1 ? Math.sin(v) : 0), 0.5, H - 0.5)), k = djurKampe('varg', 0, 1, q.x, q.y);
@@ -564,9 +564,9 @@ export function vargStrid(s: State, f: Vargflock, folk: Person[], avsikt: Avsikt
     if (j === 0 && n > 1) { k.ledare = 'fram'; k.namn = 'Ledarvargen'; } else if (n > 1) k.namn = `Varg ${j + 1}`; // ledarvargen: faller den sjunker modet hos de andra
     return { art: 'varg', id, k, blod: halsaOf(s, id).blod };
   });
-  const med = folk.filter(p => alive(p));
+  const med = folk.filter(p => p.gast ? p.died === undefined && p.left === undefined : alive(p)) /* också rövarna (steg 10.2.29) */;
   if (!med.length || !djur.length) return;
-  soker(s, larma(s, 'varg', n, med.filter(vaken))); // de som slåss ropar
+  if (!utanLarm) soker(s, larma(s, 'varg', n, med.filter(vaken))); // de som slåss ropar (inte rövarna, steg 10.2.29)
   kartStridBorja(s, avsikt, [med, []], 'vargar ' + orsak, { typ: 'varg', egen: true, flock: f.id, avsikt, orsak, n }, djur);
   count(s, 'djurStrid');
 }

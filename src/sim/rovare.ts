@@ -23,7 +23,7 @@ import { ledareOf } from './styre';
 import { DAY, HOUR, MIN, Person, SEC, State, T, Task, W, H, inMap } from './typer';
 import { vaderNu } from './vader';
 import { grundvarde, rikedom } from './varde';
-import { husPlats, iHus, kanterna, setHotVilja, setRovarVal, skyddVidElden } from './varg';
+import { husPlats, iHus, kanterna, setHotVilja, setRovarVal, skyddVidElden, vargIStrid, vargStrid } from './varg';
 import { taVapen } from './vakt';
 import { foddNar, gastNyckel } from './gastliv';
 import { gastAv, gastGar, gastTillbaka, nyGast, nyttGastId } from './gast';
@@ -34,11 +34,12 @@ import { findPath, markFart } from './vag';
 import { GANG } from './gang';
 import { kvarlevor } from './kvarlevor';
 import { RADER, hamndKlar, huggDorr, iFarten, klanMinns, overtygelse, radDygn, radSeger, svarTrohet, tandaHus } from './rader';
-import { bjornarOf, vargarOf } from './djur';
+import { bjornarOf } from './djur';
+import { bjornStrid } from './bjorn';
 import { tingOf } from './agande';
 import { viktOf } from './saker';
 import { LARMHOT, rollVid, viljaKrok } from './roller';
-import { KartStrid, kartStridBorja, kartStridMed, kartStrider } from './kartstrid';
+import { KartStrid, djurIKartStrid, kartStridBorja, kartStridMed, kartStrider } from './kartstrid';
 import { EFTER, FAROR, gastKrok } from './efterstrid';
 
 // ---------- rövarflocken (steg 4.4.5) ----------
@@ -93,7 +94,6 @@ export const ROVARE = balans('rovare', {
   boskapR: 30, // varje rövare driver bort ett betesdjur som står ute inom så här många rutor (steg 9.8.12)
   styrka: [8, 14], mod: [8, 15], uthallighet: [9, 14], smidighet: [8, 14], skicklighet: [6, 11], // rövarnas kroppar (lägst, högst)
   fiende: 15, // när byn dödar rövare blir klanen så här mycket ovänligare för var och en
-  flockarMots: 20, djurChans: 0.2, djurR: 6, // två flockar slåss när de är så här nära, och ett rovdjur anfaller så här ofta inom djurR rutor (steg 8.7.18–8.7.19)
   testVanta: 1, // testläget: gänget rastar så här många minuter innan anfallet, i stället för lurMin; inget annat skiljer (steg 10.1.16)
   larmTim: 2, // ... om hen inte redan fått larmet de senaste så här många timmarna
   anfallUt: 2, // en flock som setts så här nära byns område (utanforByn) eller inne i det gör att byn går i anfallsläge (steg 9.2.104)
@@ -774,29 +774,31 @@ export function rovarSteg(s: State, dtSec: number, ev?: TalkEvent[]) {
   if (s.rovare && !s.rovare.folk.length) s.rovare = undefined;
   if (s.rovareFler) { s.rovareFler = s.rovareFler.filter(q => q.folk.length); if (!s.rovare) s.rovare = s.rovareFler.shift(); if (!s.rovareFler.length) s.rovareFler = undefined; }
   // möts flockar från klaner som inte tycker om varandra slåss de
-  if (nyTimme && s.rovare) for (const o of s.rovareFler ?? []) flockarMots(s, s.rovare, o);
-  if (nyTimme) for (const f of [s.rovare, ...(s.rovareFler ?? [])]) if (f) djurMotRovare(s, f);
+  if (s.rovare) for (const o of s.rovareFler ?? []) flockarMots(s, s.rovare, o);
+  for (const f of [s.rovare, ...(s.rovareFler ?? [])]) if (f) djurMotRovare(s, f);
 }
-// två flockar från klaner som inte tycker om varandra: en strid mellan tre parter. Den svagaste flocken flyr
+// två gäng från klaner som inte tycker om varandra och som har varandra inom synhåll är två sidor som kan slåss (steg 10.2.29):
+// striden körs på kartan som all annan strid, och stridsmodet och hotet avgör om något av dem drar sig undan
 function flockarMots(s: State, a: Rovarflock, b: Rovarflock) {
-  if (a.klan === b.klan || avst(a, b) > ROVARE.flockarMots || flockStrid(s, a) || flockStrid(s, b)) return; // inte medan en av dem slåss med byn
+  if (a.klan === b.klan || flockStrid(s, a) || flockStrid(s, b) || kartStrider(s).some(g => g.efter?.typ === 'rovarMot')) return;
   const ka = klanById(s, a.klan), kb = klanById(s, b.klan);
   if ((ka?.inst ?? 0) > 0 && (kb?.inst ?? 0) > 0) return;
+  const ra = rovarna(s, a), rb = rovarna(s, b);
+  if (!ra.some(x => rb.some(y => avst(x, y) < KLOCKA.faraSyn))) return;
   count(s, 'flockarSlass');
-  const svag = a.folk.length <= b.folk.length ? a : b;
-  log(s, `Två rövarflockar möttes vid byn och slogs med varandra.`, 'world'); kronika(s, 'Två rövarflockar slogs med varandra vid byn.', 'rovare');
-  for (const r of rovarna(s, svag)) r.blod = Math.max(0.2, r.blod - 0.4);
-  svag.gor = 'flyr';
+  log(s, `Två rövargäng möttes vid byn och slogs med varandra.`, 'world'); kronika(s, 'Två rövargäng slogs med varandra vid byn.', 'rovare');
+  kartStridBorja(s, 'skada', [ra, rb], 'två rövargäng', { typ: 'rovarMot' });
 }
-// djuren bryr sig inte om klanen (steg 8.7.19): rovdjur anfaller rövare, handlare och gäster efter samma regler som byborna
+// djuren bryr sig inte om klanen (steg 8.7.19 och 10.2.29): en björn eller vargflock och ett gäng som har varandra inom synhåll
+// slåss på kartan som byborna gör, och varje rövare väljer själv i striden (slåss, fly)
 function djurMotRovare(s: State, f: Rovarflock) {
   if (flockStrid(s, f)) return; // inte mitt i striden med byn
-  for (const d of vargarNara(s, f)) {
-    const r = gastAv(s, f.folk[0] ?? 0); if (!r || rnd(s, 'rovare') >= ROVARE.djurChans) continue;
-    r.blod = Math.max(0, r.blod - 0.3); count(s, 'djurMotRovare');
-    if (r.blod <= 0.1) { f.folk.shift(); tappar(s, r); gastGar(s, r.id); log(s, `${d} tog en av rövarna.`, 'world'); }
-  }
+  const fo = rovarna(s, f).filter(r => !kartStrider(s).some(g => g.st.kampar.some(k => k.pid === r.id)));
+  if (!fo.length) return;
+  const nara = (d: { x: number; y: number }) => fo.some(r => avst(r, d) < KLOCKA.faraSyn);
+  for (const v of s.vargar ?? []) if (v.vargar.length && nara(v) && !vargIStrid(s, v)) { vargStrid(s, v, fo, 'skada', 'mot rövarna', true); count(s, 'djurMotRovare'); return; }
+  const b = bjornarOf(s, s.now).find(d => d.art === 'bjorn');
+  if (b && nara(b) && !djurIKartStrid(s, 'bjorn')) { bjornStrid(s, b.id, fo, false, 'skada'); count(s, 'djurMotRovare'); }
 }
-const vargarNara = (s: State, f: Rovarflock) => bjornarOf(s, s.now).filter(d => d.art === 'bjorn').concat(vargarOf(s) as never).filter(d => Math.hypot(d.x - f.x, d.y - f.y) < ROVARE.djurR).map(d => d.art === 'bjorn' ? 'En björn' : 'En varg'); // björnungarna anfaller inte
 // slaget hålls kort medan ett gäng är på kartan (klocka.ts, steg 10.2.14)
 SLAGHINDER.push(s => flockar(s).some(f => f.folk.length > 0) ? KLOCKA.slag : undefined);
