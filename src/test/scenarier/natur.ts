@@ -1633,7 +1633,7 @@ SCENARIER.individer = {
   kor: () => {
     const s = createState(6, START);
     klockan(s);
-    const dj = djurOf(s), art = SIM.DJUR.kanin.strid;
+    const dj = djurOf(s), art = SIM.djurStrid('kanin');
     const drag = dj.map(d => SIM.dragOf(d.art, d.id));
     const samma = dj.every((d, i) => JSON.stringify(SIM.dragOf(d.art, d.id)) === JSON.stringify(drag[i]));
     const iSpann = drag.every(g => g.alder >= 1 && g.alder <= art.alder && g.styrka > 0 && g.snabbhet > 0 && g.skygghet! >= 0 && g.skygghet! <= 1);
