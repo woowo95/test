@@ -2425,3 +2425,28 @@ SCENARIER.faran = {
     ];
   },
 };
+
+SCENARIER.rovarinne = {
+  text: 'Rövarna kommer in i bild (steg 10.2.23): från testknappen går gänget in från kartans kant steg för steg mot rastplatsen, och bilden visar dem gå hela vägen (rovarPlats) i stället för att stå i kanten',
+  kor: () => {
+    const s = createState(4, START);
+    for (let i = 0; i < 12; i++) step(s, 300);
+    const ok = SIM.skickaRovare(s, 3).ok, f = s.rovare!, t0 = s.now;
+    const start = SIM.rovarna(s, f).map(r => ({ x: r.x!, y: r.y! }));
+    let narmare = 0, prov = 0;
+    let fore = start.map(() => 0);
+    for (let i = 0; i < 6 && f.gor === 'kommer'; i++) {
+      step(s, 10);
+      const nu = SIM.rovarna(s, f).map((r, j) => Math.hypot(r.x! - start[j].x, r.y! - start[j].y));
+      nu.forEach((d, j) => { prov++; if (d > fore[j] + 1) narmare++; });
+      fore = nu;
+    }
+    // bilden: var de syns mitt i det senaste slaget är inte där de började
+    const syns = SIM.rovarna(s, f).map((r, j) => Math.hypot(SIM.rovarPlats(r, s.now - 1000).x - start[j].x, SIM.rovarPlats(r, s.now - 1000).y - start[j].y));
+    return [
+      [`gänget kom från kanten (${ok})`, ok],
+      [`och går in mot rastplatsen: längre från kanten i ${narmare} av ${prov} prov om tio sekunder`, prov > 0 && narmare >= prov * 0.7],
+      [`bilden visar dem på väg (${syns.map(d => d.toFixed(0)).join(', ')} rutor från kanten efter ${Math.round((s.now - t0) / 1000)} s)`, syns.every(d => d > 5)],
+    ];
+  },
+};
