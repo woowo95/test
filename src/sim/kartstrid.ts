@@ -133,6 +133,12 @@ function varldAv(s: State, g: KartStrid): StridVarld {
   };
 }
 
+// världen för en strid på prov (testarenan och scenarierna, steg 10.1.6): kartans väggar och vatten där byn ligger, och provets
+// egna väggar som rutor (rutans index). Inget sätts på någon person: de som är med i arenan påverkas inte
+export function provVarld(s: State | undefined, vaggar: ReadonlySet<number>): StridVarld {
+  return { vagg: (x, y) => x < 0 || y < 0 || x >= W || y >= H || vaggar.has(Math.floor(y) * W + Math.floor(x)) || (!!s && blocked(s, x, y)) };
+}
+
 // ---------- striden stegas med byn ----------
 export function kartStridSteg(s: State, dtSec: number) {
   if (!s.kartStrider?.length) return;

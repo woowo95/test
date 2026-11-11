@@ -4,13 +4,12 @@
 // uppställningen och loggen ligger vid sidan av kartan. Loggen visar symbolerna först med hela meningen när man trycker på raden eller håller musen över den.
 import {
   AVSIKTER, Avsikt, KLADER_STRID, MANNISKOVAPEN, STRID, STRIDHANDELSER, STRIDSDJUR, LAGE_ORD, VAPEN, Vapen, kampeSort,
-  Strid, Uppstallning, Hinder, korManga, djurKampe, foljet, personKampe, stridRapport, spelaUpp, stegIGang, type StridGang, stridText, sakNamn, living, byId, timeLabel,
+  Strid, Uppstallning, korManga, djurKampe, foljet, personKampe, stridRapport, nyStrid, stridSteg, iVarlden, provVarld, stridText, sakNamn, living, byId,
   getMap, eldPlats, T, W as MW, H as MH, ageOf, ALDER,
 } from '../sim';
 import * as PIXI from 'pixi.js';
 import { $, esc, personFarg } from './hjalp';
 import { s } from './lage';
-import { lista } from '../sim/ord';
 import { TS, cam, lagerEfter, layout, peopleG } from './scen';
 import { dolda } from './manniskor';
 import { stopFollow } from './portratt';
@@ -21,11 +20,16 @@ type Kalla = { typ: 'by'; pid: number } | { typ: 'egen' } | { typ: 'djur'; art: 
 interface Rad { kalla: Kalla; vapen: Vapen; reserv?: Vapen; klader: string[]; st: { styrka: number; uthallighet: number; mod: number; smidighet: number; skicklighet: number } }
 const ny = (): Rad => ({ kalla: { typ: 'egen' }, vapen: 'hand', klader: [], st: { styrka: 10, uthallighet: 10, mod: 10, smidighet: 10, skicklighet: 10 } });
 // platserna (steg 3.7.20): väggarna i rutor på planen (AW × AH). Den som står i öppningen stänger den för fienderna
-const PLATSER: Record<string, { tecken: string; namn: string; hinder: Hinder[] }> = {
-  oppen: { tecken: '⬜', namn: 'Öppen plan', hinder: [] },
-  dorr: { tecken: '🚪', namn: 'En vägg med en dörröppning', hinder: [{ x: AW / 2 - 0.25, y: 0, b: 0.5, h: 4 }, { x: AW / 2 - 0.25, y: 5, b: 0.5, h: 4 }] },
-  gang: { tecken: '🛤️', namn: 'En trång gång mellan två väggar', hinder: [{ x: 5, y: 0, b: 4, h: 4 }, { x: 5, y: 5, b: 4, h: 4 }] },
+// Sedan steg 10.1.6 är väggarna riktiga rutor på kartan (rutor på planen, från dess övre vänstra hörn), och striden frågar världen om dem
+const rutor = (x0: number, x1: number, y0: number, y1: number) => { const ut: [number, number][] = []; for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) ut.push([x, y]); return ut; };
+const PLATSER: Record<string, { tecken: string; namn: string; vaggar: [number, number][] }> = {
+  oppen: { tecken: '⬜', namn: 'Öppen plan', vaggar: [] },
+  dorr: { tecken: '🚪', namn: 'En vägg med en dörröppning', vaggar: [...rutor(7, 7, 0, 3), ...rutor(7, 7, 5, 8)] },
+  gang: { tecken: '🛤️', namn: 'En trång gång mellan två väggar', vaggar: [...rutor(5, 8, 0, 3), ...rutor(5, 8, 5, 8)] },
 };
+// provets väggar som kartans rutor, och världen striden sker i: byns karta på platsen och de väggarna (provVarld i sim/kartstrid.ts)
+const vaggRutor = () => new Set(PLATSER[lag.plats].vaggar.map(([x, y]) => (oy + y) * MW + ox + x));
+const varlden = () => provVarld(s, vaggRutor());
 const lag: { sidor: [Rad[], Rad[]]; avsikt: Avsikt; fro: number; fart: number; vind: number; dimma: number; halt: number; plats: string } = { sidor: [[ny()], [ny()]], avsikt: 'skada', fro: 1, fart: 1, vind: 0, dimma: 0, halt: 0, plats: 'oppen' };
 let st: Strid | undefined, spelar = false, sist = 0, kvar = 0, sedd = 0, filter = -1, manga = '';
 const blink = new Map<number, { t: number; h: 'traff' | 'miss' | 'tog'; mot?: number; kast?: 1 }>(); // senaste slaget per kämpe (för utfallet)
@@ -36,25 +40,20 @@ function uppstallning(): Uppstallning {
   const kampar: Uppstallning['kampar'] = [];
   let id = 1;
   lag.sidor.forEach((sida, sd) => sida.forEach((r, i) => {
-    const x = sd === 0 ? 3.5 : AW - 3.5, y = AH / 2 + (i - (sida.length - 1) / 2) * 2, side = sd as 0 | 1;
+    const x = ox + (sd === 0 ? 3.5 : AW - 3.5), y = oy + AH / 2 + (i - (sida.length - 1) / 2) * 2, side = sd as 0 | 1; // kartans rutor (steg 10.1.6)
     const p = r.kalla.typ === 'by' ? byId(s, r.kalla.pid) : undefined;
     if (r.kalla.typ === 'djur') kampar.push(djurKampe(r.kalla.art, id++, side, x, y));
     else if (p) kampar.push({ ...personKampe(s, p, id++, side, x, y), vapen: r.vapen, reserv: r.reserv !== r.vapen ? r.reserv : undefined, klader: r.klader });
     else kampar.push({ id: id++, namn: `Kämpe ${sd === 0 ? 'A' : 'B'}${sida.length > 1 ? i + 1 : ''}`, sida: side, st: { ...r.st }, vapen: r.vapen, reserv: r.reserv !== r.vapen ? r.reserv : undefined, klader: r.klader, fart: 1, x, y });
   }));
   foljet(s, kampar); // byns ledare och vännerna som skyddar hen (steg 3.7.12)
-  const hinder = PLATSER[lag.plats].hinder;
-  return { avsikt: lag.avsikt, w: AW, h: AH, vind: lag.vind, dimma: lag.dimma, halt: lag.halt, ...(hinder.length ? { hinder } : {}), kampar };
+  // den som flyr springer bort från planen åt sitt håll och har lämnat striden en bit från fienderna
+  for (const k of kampar) k.fly = { x: Math.max(1, Math.min(MW - 2, k.sida === 0 ? ox - 8 : ox + AW + 8)), y: k.y };
+  return { karta: true, avsikt: lag.avsikt, w: MW, h: MH, vind: lag.vind, dimma: lag.dimma, halt: lag.halt, kampar };
 }
-let senast: StridGang | undefined; // striden som visas (↺ visar den igen)
-function starta(u = uppstallning(), fro = lag.fro, g?: StridGang) { senast = g ?? { u, fro }; st = spelaUpp(senast, 0); // med blodet och de som kom till (steg 6.6.10)
+let senast: { u: Uppstallning; fro: number } | undefined; // striden som visas (↺ visar den igen: samma uppställning och samma slump)
+function starta(u = uppstallning(), fro = lag.fro) { senast = { u, fro }; st = nyStrid(u, fro);
   sedd = 0; kvar = 0; blink.clear(); filter = -1; manga = ''; byFolk(); visaLogg(); }
-// striderna som hänt i byn (steg 3.7.2, s.strider): samma uppställning och frö ger samma strid igen
-function visaByStrider() {
-  const m = s.strider ?? [];
-  $('arByn').innerHTML = `<option value="-1">🏘️ ${m.length ? 'Striderna i byn' : 'Inga strider i byn än'}</option>` + m.map((x, i) => ({ x, i })).reverse().map(({ x, i }) => `<option value="${i}">${esc(timeLabel(s, x.t))}: ${esc(([0, 1] as const).map(sd => lista(x.u.kampar.filter(k => k.sida === sd).map(k => k.namn))).join(' mot '))} (${esc(x.orsak)})</option>`).join('');
-}
-
 // ---------- uppställningen ----------
 function radHtml(sd: number, i: number, r: Rad) {
   const folk = living(s);
@@ -133,13 +132,13 @@ export function drawArena() {
   arenaG.clear();
   if ($('arena').hidden || !st) { if (dolda.size) dolda.clear(); return; }
   arenaG.lineStyle(1, 0xffffff, 0.35).drawRect(ox * TS, oy * TS, AW * TS, AH * TS).lineStyle(0); // planens kant
-  for (const o of st.hinder ?? []) arenaG.beginFill(0x6b5236).drawRect((ox + o.x) * TS, (oy + o.y) * TS, o.b * TS, o.h * TS).endFill().beginFill(0x4a3926).drawRect((ox + o.x) * TS, (oy + o.y + o.h) * TS - 2, o.b * TS, 2).endFill(); // väggarna (steg 3.7.20), platshållare
-  for (const o of st.marken) arenaG.lineStyle(1.2, 0x5a4630, 1).moveTo((ox + o.x) * TS - 4, (oy + o.y) * TS + 2).lineTo((ox + o.x) * TS + 4, (oy + o.y) * TS - 1).lineStyle(0); // vapen på marken (steg 3.7.8)
+  for (const [vx, vy] of PLATSER[lag.plats].vaggar) arenaG.beginFill(0x6b5236).drawRect((ox + vx) * TS, (oy + vy) * TS, TS, TS).endFill().beginFill(0x4a3926).drawRect((ox + vx) * TS, (oy + vy + 1) * TS - 2, TS, 2).endFill(); // väggarna (steg 3.7.20), platshållare
+  for (const o of st.marken) arenaG.lineStyle(1.2, 0x5a4630, 1).moveTo(o.x * TS - 4, o.y * TS + 2).lineTo(o.x * TS + 4, o.y * TS - 1).lineStyle(0); // vapen på marken (steg 3.7.8)
   for (const k of st.kampar) {
     if (k.lage === 'borta') continue;
-    let x = (ox + k.x) * TS, y = (oy + k.y) * TS;
+    let x = k.x * TS, y = k.y * TS;
     const b = blink.get(k.id), ny = b && st.t - b.t < 0.35, mal = b?.mot !== undefined ? st.kampar.find(m => m.id === b.mot) : undefined;
-    if (ny && mal && b.kast) { const f = (st.t - b.t) / 0.35; arenaG.beginFill(0x8a8378).drawCircle((ox + k.x + (mal.x - k.x) * f) * TS, (oy + k.y + (mal.y - k.y) * f) * TS - 4, 1.5).endFill(); } // det kastade på väg (steg 3.7.7)
+    if (ny && mal && b.kast) { const f = (st.t - b.t) / 0.35; arenaG.beginFill(0x8a8378).drawCircle((k.x + (mal.x - k.x) * f) * TS, (k.y + (mal.y - k.y) * f) * TS - 4, 1.5).endFill(); } // det kastade på väg (steg 3.7.7)
     else if (ny && mal) { const d = Math.hypot(mal.x - k.x, mal.y - k.y) || 1; x += ((mal.x - k.x) / d) * 4; y += ((mal.y - k.y) / d) * 4; } // utfallet mot målet
     const p = k.pid !== undefined ? byId(s, k.pid) : undefined;
     const r = k.djur ? 4 : p && ageOf(p, s.now) < ALDER.smabarn ? 2.8 : p && ageOf(p, s.now) < ALDER.vuxen ? 3.8 : 5;
@@ -154,7 +153,7 @@ export function drawArena() {
     if (k.lage === 'dod') arenaG.lineStyle(1.2, 0x24201d, 1).moveTo(x - 3, y - r - 6).lineTo(x + 3, y - r).moveTo(x + 3, y - r - 6).lineTo(x - 3, y - r).lineStyle(0);
     if (k.lage === 'ger') arenaG.lineStyle(1, 0xeeeeee, 1).moveTo(x + 2, y - r).lineTo(x + 2, y - r - 8).lineStyle(0).beginFill(0xffffff).drawRect(x + 2, y - r - 8, 4, 3).endFill(); // vit flagga
     if (k.skador.length) arenaG.beginFill(0x8e2f22).drawRect(x - 5, y + r + 2, Math.round(10 * (1 - Math.max(0, k.blod)) + 1), 1.5).endFill(); // blodet hen förlorat
-    if (ny && b.h === 'miss' && mal) arenaG.beginFill(0xffffff, 0.7).drawCircle((ox + mal.x) * TS + 5, (oy + mal.y) * TS - 6, 1.6).drawCircle((ox + mal.x) * TS + 7.5, (oy + mal.y) * TS - 7, 1.2).endFill(); // luft: missen
+    if (ny && b.h === 'miss' && mal) arenaG.beginFill(0xffffff, 0.7).drawCircle(mal.x * TS + 5, mal.y * TS - 6, 1.6).drawCircle(mal.x * TS + 7.5, mal.y * TS - 7, 1.2).endFill(); // luft: missen
   }
 }
 
@@ -183,7 +182,7 @@ function visaLogg() {
   $('arRapport').innerHTML = rap + manga;
 }
 function korHundra() {
-  const r = korManga(uppstallning(), lag.fro, 100), u = uppstallning(), sd = (n: 0 | 1) => esc(u.kampar.filter(k => k.sida === n).map(k => k.namn).join(', '));
+  const r = korManga(uppstallning(), lag.fro, 100, varlden()), u = uppstallning(), sd = (n: 0 | 1) => esc(u.kampar.filter(k => k.sida === n).map(k => k.namn).join(', '));
   manga = `<p><b>🎲 100 strider</b>: ${sd(0)} vann ${r.vann[0]}, ${sd(1)} vann ${r.vann[1]}${r.oavgjort ? `, ${r.oavgjort} oavgjorda` : ''}. I snitt ${r.tid.toFixed(1)} s.</p>`
     + `<p>${(Object.keys(r.slut) as (keyof typeof r.slut)[]).filter(k => r.slut[k]).map(k => k === 'borta' ? `🚪 kom undan ${r.slut[k]}` : `${STRIDHANDELSER[k as 'dod'].tecken} ${LAGE_ORD[k]} ${r.slut[k]}`).join(' · ')}</p>`
     + r.per.map(p => `<p>${esc(p.namn)}: vann ${p.vann}, dog ${p.dog}, låg ${p.nere}, ${p.traffar.toFixed(1)} träffar per strid.</p>`).join('');
@@ -193,7 +192,7 @@ function korHundra() {
 // ---------- tiden ----------
 function steg() {
   if (!st || st.slut) return;
-  stegIGang(st, senast!);
+  iVarlden(varlden(), () => stridSteg(st!)); // samma strid som på kartan: världen ger väggarna (steg 10.1.6)
   for (; sedd < st.logg.length; sedd++) { const r = st.logg[sedd]; if ((r.h === 'traff' || r.h === 'miss' || r.h === 'tog') && r.a !== undefined) blink.set(r.a, { t: r.t, h: r.h, mot: r.b, kast: r.kast }); }
 }
 function ram(nu: number) {
@@ -214,7 +213,7 @@ export function oppnaArena() {
   $('arena').hidden = false;
   valjPlats(); visaPlats();
   if (!st) starta(); else { byFolk(); visaLogg(); }
-  visaUpp(); visaByStrider();
+  visaUpp();
 }
 $('arena').innerHTML = `<div class="card arena">
   <div class="arTopp"><h2>⚔️ Arena</h2><span><button type="button" class="ghost" id="arVisa" title="Visa striden på kartan">🎯</button><button type="button" class="ghost" id="arStang" title="Stäng arenan">✕</button></span></div>
@@ -232,7 +231,6 @@ $('arena').innerHTML = `<div class="card arena">
         <select id="arFart" title="Fart">${[0.25, 0.5, 1, 2, 4].map(f => `<option value="${f}"${f === 1 ? ' selected' : ''}>${f}×</option>`).join('')}</select>
         <span id="arTid" class="muted"></span>
       </div>
-      <select id="arByn" title="Se en strid som hänt i byn igen"></select>
       <div id="arRapport"></div>
     </div>
     <div id="arUpp"></div>
@@ -244,10 +242,9 @@ $('arStang').addEventListener('click', () => { spelar = false; $('arena').hidden
 $('arVisa').addEventListener('click', visaPlats);
 $('arSpela').addEventListener('click', () => { if (st?.slut) starta(); spela(!spelar); });
 $('arSteg').addEventListener('click', () => { spela(false); steg(); visaLogg(); });
-$('arOm').addEventListener('click', () => { starta(senast?.u, senast?.fro, senast); spela(true); });
+$('arOm').addEventListener('click', () => { starta(senast?.u, senast?.fro); spela(true); });
 $('arFro').addEventListener('click', () => { lag.fro = (lag.fro * 1103515245 + 12345) | 0; starta(); spela(true); });
 $('arHundra').addEventListener('click', korHundra);
-$('arByn').addEventListener('change', e => { const m = s.strider?.[Number((e.target as HTMLSelectElement).value)]; if (m) { starta(m.u, m.fro, m); spela(true); } });
 $('arHalt').addEventListener('change', e => { lag.halt = Number((e.target as HTMLSelectElement).value); starta(); });
 $('arDimma').addEventListener('change', e => { lag.dimma = Number((e.target as HTMLSelectElement).value); starta(); });
 $('arVind').addEventListener('change', e => { lag.vind = Number((e.target as HTMLSelectElement).value); starta(); });

@@ -339,7 +339,7 @@ export interface Strid {
 // en vägg på platsen: rektangeln x, y, b(redd), h(öjd) i rutor (steg 3.7.20)
 export interface Hinder { x: number; y: number; b: number; h: number }
 // uppställningen som en strid börjar ur (arenan och, senare, byn)
-export interface Uppstallning { avsikt: Avsikt; w: number; h: number; vind?: number; dimma?: number; halt?: number; hinder?: Hinder[]; kampar: (Omit<Kampe, 'skador' | 'blod' | 'ork' | 'modNu' | 'lage' | 'vant' | 'mal' | 'backar' | 'slag' | 'traffar' | 'gjort' | 'skott' | 'haller' | 'vantar' | 'ifatt' | 'vada' | 'ligger' | 'bocker' | 'later' | 'kryper'> & { blod0?: number })[] } // blod0: blodet när striden börjar (1 om inget sägs)
+export interface Uppstallning { karta?: true; avsikt: Avsikt; w: number; h: number; vind?: number; dimma?: number; halt?: number; hinder?: Hinder[]; kampar: (Omit<Kampe, 'skador' | 'blod' | 'ork' | 'modNu' | 'lage' | 'vant' | 'mal' | 'backar' | 'slag' | 'traffar' | 'gjort' | 'skott' | 'haller' | 'vantar' | 'ifatt' | 'vada' | 'ligger' | 'bocker' | 'later' | 'kryper'> & { blod0?: number })[] } // blod0: blodet när striden börjar (1 om inget sägs)
 
 // stridens egen slumpföljd (samma blandning som rnd i slump.ts)
 export function slump(st: Strid) {
@@ -359,6 +359,7 @@ export function nyStrid(u: Uppstallning, fro: number): Strid {
   const kampar: Kampe[] = u.kampar.map(kampeAv);
   const st: Strid = { avsikt: u.avsikt, t: 0, w: u.w, h: u.h, r: fro | 0, vind: u.vind ?? 0, dimma: u.dimma ?? 0, halt: u.halt ?? 0, marken: [], kampar, logg: [{ t: 0, h: 'borjar' }] };
   if (u.hinder?.length) st.hinder = u.hinder.map(o => ({ ...o }));
+  if (u.karta) st.karta = true; // på kartans rutor (steg 10.1.4)
   if (!AVS[u.avsikt].vapen) for (const k of kampar) if (!sortAv(k).naturligt) { k.vapen = 'hand'; k.reserv = undefined; }
   for (const k of kampar) { const kv = VAP[k.vapen].kast; if (kv) k.skott = kv.skott; }
   for (const k of kampar) k.vant = slump(st) * VAP[k.vapen].takt; // ingen slår exakt samtidigt
@@ -823,7 +824,7 @@ export function stridSteg(st: Strid) {
   }
 }
 // hela striden till slutet
-export function stridTillSlut(st: Strid) { while (!st.slut) stridSteg(st); return st; }
+export function stridTillSlut(st: Strid, v?: StridVarld) { if (v) iVarlden(v, () => { while (!st.slut) stridSteg(st); }); else while (!st.slut) stridSteg(st); return st; }
 
 // en strid som pågår på kartan (steg 6.6.10, rövarna vid förrådet): uppställningen och fröet, blodet som någon redan
 // förlorat när striden började (blod, efter kämpens id) och de som kommit till efter hand (in, med striden tid t). Striden
@@ -927,10 +928,10 @@ export function stridRapport(st: Strid): StridRapport {
 
 // ---------- samma strid många gånger (arenan) ----------
 export interface ManyResultat { n: number; vann: [number, number]; oavgjort: number; tid: number; slut: Record<KampeLage, number>; per: { id: number; namn: string; vann: number; dog: number; nere: number; traffar: number }[] }
-export function korManga(u: Uppstallning, fro: number, n: number): ManyResultat {
+export function korManga(u: Uppstallning, fro: number, n: number, v?: StridVarld): ManyResultat { // v = världen striden sker i (kartans väggar, steg 10.1.6)
   const res: ManyResultat = { n, vann: [0, 0], oavgjort: 0, tid: 0, slut: { strid: 0, nere: 0, ger: 0, flykt: 0, borta: 0, dod: 0 }, per: u.kampar.map(k => ({ id: k.id, namn: k.namn, vann: 0, dog: 0, nere: 0, traffar: 0 })) };
   for (let i = 0; i < n; i++) {
-    const st = stridTillSlut(nyStrid(u, (fro + Math.imul(i + 1, 0x9e3779b9)) | 0));
+    const st = stridTillSlut(nyStrid(u, (fro + Math.imul(i + 1, 0x9e3779b9)) | 0), v);
     const w = st.slut!.vinnare;
     if (w === -1) res.oavgjort++; else res.vann[w]++;
     res.tid += st.slut!.t / n;

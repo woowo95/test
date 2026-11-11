@@ -915,7 +915,27 @@ SCENARIER.blockera = {
       }
       if (slaE) igenom++;
     }
+    // samma dörr som riktiga rutor på kartan (steg 10.1.6, testarenans plats): väggen är rutorna x = 27 utom rutan y = 19, och
+    // striden frågar världen om dem (provVarld). Samma sak ska gälla: ingen förbi den som står i öppningen, ingen i en vägg
+    const X0 = 20, Y0 = 15, rutor = new Set<number>(); // inne på den minsta kartan (64 × 40 när ingen by är laddad) for (let y = 0; y < 9; y++) if (y !== 4) rutor.add((Y0 + y) * SIM.W + X0 + 7);
+    const varld = SIM.provVarld(undefined, rutor), iRuta = (x: number, y: number) => rutor.has(Math.floor(y) * SIM.W + Math.floor(x));
+    let kForbi = 0, kVagg = 0, kIgenom = 0, kN = 0;
+    for (let fro = 1; fro <= 40; fro++) {
+      const st = SIM.nyStrid({ karta: true, avsikt: 'skada', w: SIM.W, h: SIM.H, kampar: [m(1, 0, 'kniv', X0 + 2, Y0 + 3), m(2, 0, 'kniv', X0 + 2, Y0 + 4.5), m(3, 0, 'kniv', X0 + 2, Y0 + 6), m(4, 1, 'yxa', X0 + 7.5, Y0 + 4.5, 0), m(5, 1, 'hand', X0 + 12, Y0 + 4.5, 0)].map(k => ({ ...k, fly: { x: k.sida ? X0 + 30 : X0 - 15, y: k.y } })) }, fro);
+      const D = st.kampar[3]; let slaE = false; kN++;
+      SIM.iVarlden(varld, () => {
+        while (!st.slut) {
+          SIM.stridSteg(st);
+          for (const k of st.kampar.filter(k => k.sida === 0 && k.lage === 'strid')) { if (D.lage === 'strid' && k.x > X0 + 8.25) kForbi++; if (iRuta(k.x, k.y)) kVagg++; }
+          if (st.logg.some(r => r.b === 5 && (r.h === 'traff' || r.h === 'miss'))) slaE = true;
+        }
+      });
+      if (slaE) kIgenom++;
+    }
+    const manga = SIM.korManga({ karta: true, avsikt: 'skada', w: SIM.W, h: SIM.H, kampar: [m(1, 0, 'yxa', X0 + 3, Y0 + 4.5), m(2, 1, 'kniv', X0 + 11, Y0 + 4.5)].map(k => ({ ...k, fly: { x: k.sida ? X0 + 30 : X0 - 15, y: k.y } })) }, 1, 50, varld);
     return [
+      [`dörren som riktiga rutor på kartan: ingen kommer förbi den som står i öppningen (${kForbi}) eller står i en vägg (${kVagg}), och när hen fallit går de igenom (${kIgenom} av ${kN})`, kForbi === 0 && kVagg === 0 && kIgenom >= kN * 0.6],
+      [`hundra strider i rad går genom samma värld (${manga.n} strider genom dörren, ${manga.vann[0]} mot ${manga.vann[1]}, ${manga.oavgjort} oavgjorda)`, manga.n === 50 && manga.vann[0] + manga.vann[1] > 0],
       [`öppen plan, 60 strider tre mot tre (${steg} steg): ingen kliver närmare än ${KR} rutor till en fiende som står (${nara} gånger)`, steg > 1000 && nara === 0],
       [`den som flyr förbi en fiende som står går runt hen (som närmast ${runt.toFixed(2)} rutor) och kommer undan (${borta ? 'ja' : 'nej'})`, runt >= KR - 1e-6 && runt < 1.2 && borta],
       [`dörröppningen: ingen kommer förbi den som står i den (${forbi} gånger) eller går genom väggen (${iVaggen}, ${utan} vid sidan av öppningen)`, forbi === 0 && iVaggen === 0 && utan === 0],
