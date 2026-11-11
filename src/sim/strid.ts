@@ -311,7 +311,7 @@ export interface Kampe {
   haller?: true; vantar?: true; ifatt?: true; vada?: number; // håller avståndet, väntar på fritt läge, blev ifattsprungen utan reserv, vådaträffar
   tung?: number; // steg 3.7.8: bördan (det hen bär genom vad hen orkar, 0–1) ...
   ligger?: number; bocker?: number; later?: number; // ... sekunder kvar på marken och kvar av att böja sig ner, den hen låter resa sig
-  gast?: 1; /* en gäst (rövare, handlare, främling), inte en bybo */ ledare?: 'fram' | 'bak'; skyddar?: number; // steg 3.7.12: byns ledare (går först eller står bakom), och ledaren (kämpens id) som vännen skyddar
+  fallT?: number; /* stridens tid när hen föll eller började fly */ gast?: 1; /* en gäst (rövare, handlare, främling), inte en bybo */ ledare?: 'fram' | 'bak'; skyddar?: number; // steg 3.7.12: byns ledare (går först eller står bakom), och ledaren (kämpens id) som vännen skyddar
   kryper?: number; // steg 3.7.19: hen kan inte gå och kryper undan; rutorna hen krupit
   fly?: { x: number; y: number }; // steg 9.2.76: dit hen flyr (rutor på platsen), i stället för mot närmaste kanten
 }
@@ -399,7 +399,7 @@ function valjMal(st: Strid, k: Kampe) {
   }
   let bast: Kampe | undefined, bd = Infinity;
   for (const m of st.kampar) {
-    if (m.sida === k.sida || !(iStrid(m) || (nere && (m.lage === 'nere' || m.lage === 'flykt')))) continue;
+    if (m.sida === k.sida || !(iStrid(m) || (nere && (m.lage === 'nere' || m.lage === 'flykt') && st.t - (m.fallT ?? st.t) < sortAv(k).forfoljer))) continue; // djuren förföljer inte (KAMPAR)
     const d = dist(k, m) + (m.lage === 'nere' ? 2 : 0) - (iStrid(m) && m.mal !== undefined && m.mal !== k.id ? STRID.ringa : 0); // den som står är farligare än den som ligger, och den som slåss med en annan är lättast (ringa in)
     if (d < bd) { bd = d; bast = m; }
   }
@@ -511,6 +511,7 @@ function raddaSteg(st: Strid, k: Kampe, dt: number) {
   return true;
 }
 function falla(st: Strid, k: Kampe, h: 'nere' | 'dod' | 'ger' | 'flykt', rad: Handelse = h) {
+  if (h === 'nere' || h === 'flykt') k.fallT ??= st.t; // när hen föll eller vände (hur länge en sort följer efter: KAMPAR.forfoljer)
   k.lage = h; k.mal = undefined; k.ligger = undefined; k.bocker = undefined;
   if (h === 'ger') for (const v of st.kampar) if (v.sida === k.sida && v !== k && iStrid(v)) v.modNu -= STRID.smitta; // varje bybo som gett upp sänker de andras mod (steg 8.8.8)
   st.logg.push({ t: st.t, h: rad, a: k.id });
@@ -813,7 +814,7 @@ export function stridSteg(st: Strid) {
   // striden pågår så länge båda sidor har någon som står, tills de som flyr har kommit undan och, om avsikten är att
   // döda, tills de som ligger är döda
   const kvar = [0, 1].map(sd => st.kampar.some(k => k.sida === sd && iStrid(k) && !k.hjalp)); // hjälparna slåss inte (steg 9.5.20)
-  const ofardig = st.kampar.some(k => k.lage === 'flykt' || (avs.nere && k.lage === 'nere' && kvar[1 - k.sida]));
+  const ofardig = st.kampar.some(k => k.lage === 'flykt' || (avs.nere && k.lage === 'nere' && st.kampar.some(o => o.sida !== k.sida && iStrid(o) && !o.hjalp && st.t - (k.fallT ?? st.t) < sortAv(o).forfoljer)));
   if (kvar[0] && kvar[1]) st.avgjord = undefined; else st.avgjord ??= st.t; // när ena sidan inte längre har någon som slåss
   if ((!kvar[0] || !kvar[1]) && (!ofardig || st.t - (st.avgjord ?? st.t) >= STRID.efterTid) || st.t >= STRID.maxTid) {
     const vinnare = kvar[0] && !kvar[1] ? 0 : kvar[1] && !kvar[0] ? 1 : -1;

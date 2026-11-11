@@ -20,12 +20,13 @@ export interface KampeSort {
   raddar: boolean; // går till en vän som ligger och blöder
   avstar: boolean; // kan dra sig undan före första slaget när modet inte räcker
   leder: boolean; // kan vara ledare som går först
+  forfoljer: number; // så många sekunder följer sorten efter den som flyr eller fallit och slår hen (där avsikten är att döda). Människan ger sig inte; djuren vill mest bli av med hotet
   flock: boolean; // en flock: när en av dem faller eller flyr tappar de andra mer mod (STRID.flock), och flykten räknas som ett fall
 }
-const manniska: KampeSort = { namn: 'Människan', art: 'Människa', fart: 1, vapen: ['hand'], skydd: 0, naturligt: false, parerar: true, kryper: true, raddar: true, avstar: true, leder: true, flock: false };
+const manniska: KampeSort = { namn: 'Människan', art: 'Människa', fart: 1, vapen: ['hand'], skydd: 0, naturligt: false, parerar: true, kryper: true, raddar: true, avstar: true, leder: true, forfoljer: Infinity, flock: false };
 // ett djur: slåss med kroppen, parerar inte, kryper inte, räddar ingen och drar sig inte undan i förväg
 const djur = (namn: string, art: string, alder: number, kropp: NonNullable<KampeSort['kropp']>, fart: number, vapen: Vapen): KampeSort =>
-  ({ namn, art, alder, kropp, fart, vapen: [vapen], skydd: 0, naturligt: true, parerar: false, kryper: false, raddar: false, avstar: false, leder: false, flock: true });
+  ({ namn, art, alder, kropp, fart, vapen: [vapen], skydd: 0, naturligt: true, parerar: false, kryper: false, raddar: false, avstar: false, leder: false, forfoljer: 5, flock: true });
 export const KAMPAR = {
   manniska,
   kanin: djur('Haren', 'Hare', 6, { styrka: 2, uthallighet: 6, mod: 2, smidighet: 16, skicklighet: 4 }, 1.4, 'bett'),
