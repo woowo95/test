@@ -3,9 +3,10 @@
 // (stat tekTim_, teknik.ts). En by som inte lade några timmar räknas som ointresserad, inte som långsam (steg 2.12.9).
 // Byarna körs samtidigt, en per processorkärna (ca 40 s datortid per by)
 import './utc';
-import { BEAT, createState, step, living, TEKNIK, TEK, TEKTAL, knows, canThink, hasMaterial, ageOf, ALDER, DAY } from '../sim';
+import { createState, step, living, TEKNIK, TEK, TEKTAL, knows, canThink, hasMaterial, ageOf, ALDER, DAY } from '../sim';
 import { START, STEG_DYGN, STEG_TIM } from './kor';
 import { korJson, pool } from './pool';
+const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 interface Rad { oppen?: number; pa?: number; tim: number }
 const DYGN = 90;

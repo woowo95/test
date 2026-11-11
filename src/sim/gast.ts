@@ -1,3 +1,4 @@
+import { KLOCKA, SLAGHINDER } from './klocka';
 // Gästerna är personer (steg 9.2.111, "Ekonomi och handel: Gästerna är personer" i designdokumentet): handlaren, rövarna,
 // främlingarna och de andra som kommer till byn är människor av samma slag som byborna. En gäst ligger bland folket
 // (s.people) med en gästrad (gast: sorten, klanen och hemmet) och ett negativt id, så att hen aldrig tar en bybos id och
@@ -150,3 +151,5 @@ export function gastTillbaka(s: State, p: Person) {
   count(s, 'gast igen');
   return true;
 }
+// slaget hålls kort medan en gäst är i byn (klocka.ts, steg 10.2.14)
+SLAGHINDER.push(s => gasterNu(s).length ? KLOCKA.slag : undefined);

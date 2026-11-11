@@ -2,6 +2,7 @@ import { han, mark, tal } from './ord';
 import { tabortBuske } from './buskar';
 import { freeTools, tingOf } from './agande';
 import { balans } from './balans';
+import { KLOCKA, SLAGHINDER } from './klocka';
 import { brasorOf } from './brasor';
 import { hearthOf } from './eld';
 import { rasar } from './bygg';
@@ -724,3 +725,5 @@ export function askaSteg(s: State) {
     if (!s.aska.length) delete s.aska;
   }
 }
+// slaget hålls kort medan det brinner (klocka.ts, steg 10.2.14)
+SLAGHINDER.push(s => s.brand ? KLOCKA.slag : undefined);

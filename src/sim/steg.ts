@@ -23,8 +23,7 @@ import { loggBer, stepBerattelser } from './berattelser';
 import { UTBROTT_ACTS, moodOf, stepHumor, utbrottKlar } from './humor';
 import { glomRykten, stepRykten } from './rykten';
 import { stepStyre } from './styre';
-import { STRID } from './strid';
-import { bildKrok, faraNara, gralBlirSlagsmal, lekSteg, kartStridSteg, serStriden, stegTaget } from './kartstrid';
+import { bildKrok, gralBlirSlagsmal, lekSteg, kartStridSteg, nastaSteg, serStriden, stegTaget } from './kartstrid';
 import { sportKlar, sportSteg } from './sport';
 import { lyssnaSteg, upptradaKlar, upptradaSteg } from './framtradande';
 import { fylldSack, redskapIHanden, tidyTools } from './agande';
@@ -106,12 +105,13 @@ import { rullaKvalitet } from './kvalitet';
 import { protesTimme } from './protes';
 import { halsoNotiser } from './halsonotiser';
 import { kost, kostStart } from './kostnad';
+import { KLOCKA } from './klocka';
 import { borjaForlossning } from './forlossning';
 
 // Simuleringen går i slag om fem minuter (BEAT), i spelet och vid ikappräkning likadant. Inom ett slag går tiden åt
 // till det som händer i tur och ordning (taskStep). Arbetet görs i bitar om högst BIT sekunder, och man bär aldrig mer
 // än som ryms i de fria händerna (fullBorda i utrustning.ts, steg 6.1.8). STEG.markNot = hur mycket ett steg nöter marken (MARK.nott per ruta)
-export const BEAT = 300;
+export const BEAT = KLOCKA.slag;
 const BIT = 60;
 // Balanstalen (regel 8). Kroppens gränser och takter (KROPP) och åldrarna (ALDER) står i folk.ts, eftersom val.ts och behov.ts läser dem
 const STEG = balans('steg', {
@@ -292,129 +292,136 @@ const LAMNA: Partial<Record<Act, (s: State, p: Person, tk: Task) => void>> = {
 };
 
 // ---------- huvudsteg ----------
-// ett slag om dtSec sekunder (BEAT i spelet och ikappräkningen; testerna kan ta andra). events = samtalen, för att visa dem
-// Medan faran är nära (en strid pågår på kartan, kartstrid.ts) går hela byn i korta steg (STRID.kortSteg, steg 10.1.4), så att alla
-// väljer om hela tiden; annars tas hela tiden i ett slag. Spelet och ikappräkningen går igenom samma följd av slag
+// tiden i spelet går i slag (steg 10.2.14, "Klockan och slagen" i fliken Läget): hela byn stegas tillsammans, KLOCKA.slag
+// sekunder i taget (kortare när faran är nära, längre när ingen kan nå någon annan: nastaSteg i kartstrid.ts). step(s, dtSec)
+// tar så många slag som ryms i dtSec; ett slag som anroparen delar fortsätter i nästa anrop (s.stegRest). Spelet och
+// ikappräkningen frågar nastaSteg och går igenom samma följd av slag. events = samtalen, för att visa dem
 export function step(s: State, dtSec: number, events?: TalkEvent[]) { // också när gränssnittet räknar (typer.ts)
   simulera(() => {
     let kvar = dtSec;
     while (kvar > 1e-9) {
-      const d = faraNara(s) ? Math.min(kvar, STRID.kortSteg) : kvar;
-      slag(s, d, events); stegTaget(s, d); kvar -= d;
+      const plan = nastaSteg(s), d = Math.min(kvar, plan);
+      slag(s, d, events); stegTaget(s, d, plan); kvar -= d;
     }
   });
 }
+// det ett slag delar mellan systemen i TAKTER
+type Slag = { dt: number; t0: number; now: number; ai: number; ppl: Person[]; events?: TalkEvent[]; social: Person[]; inRum?: Map<number, number> };
+// hur många som är i varje rum (värmen räknas på det), en gång per slag när någon frågar
+const rumAntal = (s: State, c: Slag) => {
+  if (!c.inRum) { c.inRum = new Map(); for (const p of c.ppl) { const r = roomAt(s, p.x, p.y); if (r) c.inRum.set(r.id, (c.inRum.get(r.id) ?? 0) + 1); } }
+  return c.inRum;
+};
+// Registret över byns system och hur ofta de räknas (steg 10.2.14). sek = hur ofta i sekunder (0 = varje slag), fas = var i
+// perioden (0–1; utspritt så att inte allt räknas i samma slag). fn får tiden sedan systemet räknades sist (dt sekunder).
+// Slaget anropar systemen bara härifrån, i den här ordningen; ett nytt system får en rad här, satt efter hur fort det
+// ändras på riktigt. npm run kostnad visar datortiden per rad
+type Takt = { namn: string; sek: number; fas?: number; fn: (s: State, dt: number, c: Slag) => void };
+export const TAKTER: Takt[] = [
+  { namn: 'kartan', sek: 0, fn: s => { gridOf(s); stationRutor(s); sakerPaGolvet(s); } }, // väggarna och rummen, hyllorna och sakerna på golvet (steg 2.3.6), så att vägsökningen vet var de står
+  { namn: 'tidsåldern', sek: 60, fn: (s, _dt, c) => { if (c.ai !== s.lastAgeIdx) { s.lastAgeIdx = c.ai; log(s, AGES_BORJAR[c.ai], 'world'); } } },
+  { namn: 'kaninerna', sek: 10, fn: (s, dt) => djurSteg(s, dt) }, // kaningrupperna väljer plats när deras tid börjar
+  { namn: 'grannklanerna', sek: 600, fn: (s, dt) => klanSteg(s, dt) }, // de växer och glömmer (klaner.ts, steg 4.4.3)
+  { namn: 'handlaren', sek: 0, fn: (s, dt) => handelSteg(s, dt) }, // kommer, handlar och går (handel.ts, steg 4.4.1)
+  { namn: 'vargarna', sek: 0, fn: (s, dt) => vargSteg(s, dt) }, // under istiden (varg.ts, steg 3.7.1)
+  { namn: 'björnen', sek: 0, fn: s => bjornSteg(s) }, // den som kommer nära björnen (bjorn.ts, steg 6.6.5)
+  { namn: 'rövarna', sek: 0, fn: (s, dt) => rovarSteg(s, dt) }, // rövarflocken (rovare.ts, steg 4.4.5)
+  { namn: 'främlingen', sek: 0, fn: (s, dt) => framlingSteg(s, dt) }, // som kommer gående (liv.ts, steg 9.2.115)
+  { namn: 'tornadon', sek: 0, fn: s => tornadoSteg(s, { rovarTornado, handlarTornado, handlarPlats }) }, // drar fram (tornado.ts, steg 3.8.4), och rövarna och handlaren drabbas (steg 6.4.12)
+  { namn: 'branden', sek: 0, fn: (s, dt) => { brandSteg(s, dt); brinnerSteg(s, dt); } }, // gnistor, blixten, elden som sprider sig och den som brinner (brand.ts)
+  { namn: 'förrådets slitage', sek: 60, fn: (s, dt) => { wearStore(s, dt); stepBlotVed(s, dt); } }, // slitage, fortare utanför lagret, och veden som blir blöt och torkar (steg 7.3.4)
+  { namn: 'elden', sek: 10, fn: (s, dt, c) => stepFire(s, dt, c.ppl) },
+  // varje timme (det som räknas per timme och inte får tiden): byn vid timmens början, världen och husen en stund in i timmen
+  { namn: 'timmen: byn', sek: 3600, fas: 0, fn: s => {
+    atSteg(s); stepSeder(s); updateTags(s); stepRelationer(s); stepUppvaxt(s); stepReligion(s); for (const p of living(s)) morkHumor(s, p); facklorTimme(s); stepHumor(s); stepDelning(s); stepLarlingar(s);
+    forbrukTimme(s); // materialens förbrukning glöms långsamt (forradsmal.ts, steg 6.2.14)
+    arbetsTimme(s); // byns behov för arbetsordningen (val.ts, steg 6.1.12)
+    historikSteg(s); // nyckeltalen till byns historik (läses inte av simuleringen)
+  } },
+  { namn: 'timmen: världen', sek: 3600, fas: 1 / 3, fn: (s, _dt, c) => { stepVader(s); vindfallen(s); regnetTvattar(s); stepMotgang(s); stepTorka(s); stepFlod(s); stepIs(s); growGround(s, 1, c.ai); growFynd(s, 1, c.ai, vaxtFaktor(s), vaderNu(s).nb); forget(s, 1); stepRykten(s, moodOf); glomRykten(s, 1); stepBerattelser(s); stepStyre(s); rotStumps(s); tidyStore(s); } },
+  { namn: 'timmen: husen och sakerna', sek: 3600, fas: 2 / 3, fn: (s, _dt, c) => {
+    vaggRensa(s); kvarTimme(s); kultTimme(s); kyrkaTimme(s); wearBuild(s, 1, c.ai); stepByggnader(s); husKlaraTimme(s); stepMjardar(s); stepNaken(s); stepByggplan(s); stepEldFlytt(s); lagerIStraket(s); stepPaborjat(s); stepStationer(s); stepPynt(s); stepKrukor(s); protesTimme(s); halsoNotiser(s); stepKok(s); vatskorTimme(s); stepBrygg(s); stepBak(s); stepSophog(s); stepKompost(s); stepOrtKrukor(s); stadaByten(s); stepBrasor(s); stepKlader(s); stepOdling(s); stepTamdjur(s); stepHagar(s); stepBoskap(s); stepVinter(s); stepHons(s);
+    askaSteg(s); // det svarta efter en eldsvåda försvinner (brand.ts)
+    sorgTimme(s); // sorgen i stadier (liv.ts, steg 9.2.33)
+    smittaTimme(s); smittaUtifranTimme(s); // smittan (sjukdom.ts, steg 9.5.3 och 9.5.5)
+    compact(s); // här och inte i sparningen, så att alla lägen städar vid samma tid
+  } },
+  // kroppen: behoven, att äta, hälsan och graviditeten, för var och en
+  { namn: 'behoven', sek: 30, fn: (s, dt, c) => {
+    const fh = hearthOf(s.fire), temp = temperature(s), coldRate = coldOf(temp), inRum = rumAntal(s, c);
+    for (const p of c.ppl) {
+      if (!alive(p)) continue; // dödad tidigare i samma slag (av vargar eller i ett slagsmål)
+      const a = ageOf(p, c.now);
+      needsStep(s, p, a, dt, coldRate, fh, inRum, temp);
+      if (p.task?.act !== 'strid') needLadder(s, p, dt); // äta: sitt eget, byns, och i yttersta nöd andras (behov.ts). Inte mitt i en strid (strid.ts)
+      if (healthStep(s, p, a, c.ai, dt)) continue; // dog
+      pregnancy(s, p, a, c.ppl.length, dt);
+      if (p.thoughts.some(x => x.until <= c.now)) p.thoughts = p.thoughts.filter(x => x.until > c.now);
+    }
+  } },
+  // det var och en gör: alla en bit i taget, sida vid sida
+  { namn: 'aktiviteterna', sek: 0, fn: (s, dt, c) => {
+    const learn = 1 + 0.1 * s.seder.v.nyfikenhet; // en nyfiken by lär sig snabbare
+    for (const p of c.ppl) {
+      if (!alive(p)) continue;
+      delete p.framme; // (en äldre sparning, där de som inte var inblandade räknades en minut i förväg)
+      if (spar.pa) { spar.v.set(p, [c.t0, p.x, p.y]); spar.u.set(p, [[c.t0, kopia(p.task)]]); }
+      const k = kostStart(), akt = p.task?.act ?? 'välja';
+      taskStep(s, p, ageOf(p, c.now), c.now, dt, learn, c.social);
+      kost('aktivitet: ' + akt, k);
+      s.now = c.now;
+    }
+  } },
+  // samtal: ca ett per 4 minuter per person i social aktivitet, med dem som är nära när slaget slutar
+  { namn: 'samtalen', sek: 0, fn: (s, dt, c) => {
+    if (c.social.length < 2) return;
+    const social = c.social.filter(p => kanPrata(s, p)); // en brottning kan ha börjat under steget (steg 9.2.100)
+    for (const p of social) {
+      if (!alive(p)) continue;
+      const expect = dt / STEG.samtalSek * (STEG.samtalBas + stat(p, 'empati', c.now) / STEG.samtalEmpati) * (p.sinnen === undefined ? 1 : tal(p) * STEG.samtalTal + horsel(p) * STEG.samtalHorsel + 1 - STEG.samtalTal - STEG.samtalHorsel); // talet och hörseln (steg 8.2.2)
+      let n = Math.floor(expect); if (rnd(s, 'samtal', p) < expect - n) n++;
+      const nara = social.filter(q => q !== p && alive(q) && Math.hypot(q.x - p.x, q.y - p.y) < SAMTAL.radie);
+      const med = p.task?.med !== undefined ? nara.find(q => q.id === p.task!.med) : undefined, others = med ? [med] : nara; // den man står bredvid (steg 4.5.6.7)
+      for (let i = 0; i < n; i++) { const g = converse(s, p, others, c.events); if (g) gralBlirSlagsmal(s, p, g); } // ett gräl kan bli ett slagsmål (strid.ts)
+      if (n && others.length) { count(s, 'samtal', n); if (p.task && !ACTS[p.task.act].social) p.pratArbete = (p.pratArbete ?? 0) + n; } // samtalen under arbetet (steg 8.1.12)
+    }
+  } },
+  { namn: 'striden', sek: 0, fn: (s, dt) => { kartStridSteg(s, dt); serStriden(s); } }, // striderna på kartan stegas med byn, och de som ser dem väljer på nytt (kartstrid.ts, steg 10.1.4)
+  // gästernas vardag (steg 9.2.113, gastvardag.ts): värmen räknas som en bybos, men reskläderna tar det mesta av kylan
+  { namn: 'gästerna', sek: 30, fn: (s, dt, c) => { const temp = temperature(s), coldRate = coldOf(temp), inRum = rumAntal(s, c); gastVardag(s, dt, g => { const v = varmeDelar(s, g, coldRate, inRum, temp); v.kyla *= 1 - GASTVARD.klad; return nyVarme(g.warm, v, dt / HOUR_S); }); } },
+  { namn: 'handlarprat', sek: 0, fn: (s, dt, c) => pratMedHandlare(s, dt, c.events) }, // småprat med handlaren (steg 4.5.4.15, handel.ts)
+  // relationer bleknar långsamt utan umgänge
+  { namn: 'relationerna', sek: 600, fn: (s, dt) => { const k = Math.exp(-STEG.blek * dt / 86400); for (const key in s.rels) { const r = s.rels[key]; r.op *= k; r.rom *= k; } } },
+  { namn: 'flytt och nybyggare', sek: 60, fn: (s, dt) => { if (living(s).length === 0) log(s, 'Byn är tom. Ingen finns kvar vid elden.', 'world'); regulate(s, dt); } },
+  { namn: 'redskapen', sek: 60, fn: s => { tidyTools(s); placeTools(s); } }, // redskapen som släpptes läggs i förrådet
+];
+// tiden (sekunder) sedan raden t räknades, om den ska räknas i slaget som slutar vid now, annars undefined. Sist räknad står i
+// s.takter; en by som saknar den (en ny eller äldre sparning) räknar raden som om den räknats när slaget började
+function taktDt(s: State, t: Takt, i: number, now: number, dtSec: number) {
+  if (t.sek <= 0) return dtSec;
+  const tk = s.takter ??= {}, P = t.sek * SEC, off = (t.fas ?? (i * 0.618) % 1) * P;
+  const sist = tk[t.namn] ?? now - dtSec * SEC;
+  if (Math.floor((now - off) / P) === Math.floor((sist - off) / P)) { tk[t.namn] = sist; return undefined; }
+  tk[t.namn] = now;
+  return (now - sist) / SEC;
+}
 function slag(s: State, dtSec: number, events?: TalkEvent[]) {
-  let k = kostStart();
   useMap(s);
   const t0 = s.now;
   s.now += dtSec * SEC;
   const now = s.now;
-  const ai = ageIndex(s);
-  if (ai !== s.lastAgeIdx) {
-    s.lastAgeIdx = ai;
-    log(s, AGES_BORJAR[ai], 'world');
-  }
-  const ppl = living(s);
-  gridOf(s); // väggarna och rummen, så att vägsökningen vet var väggarna står
-  stationRutor(s); sakerPaGolvet(s); // ... och var hyllorna står och sakerna ligger på golvet (steg 2.3.6)
-  k = kost('kartan', k);
-  djurSteg(s, dtSec); // kaningrupperna väljer plats när deras tid börjar
-  klanSteg(s, dtSec); // grannklanerna växer och glömmer (klaner.ts, steg 4.4.3)
-  handelSteg(s, dtSec); // handlaren kommer, handlar och går (handel.ts, steg 4.4.1)
-  vargSteg(s, dtSec); // vargarna under istiden (varg.ts, steg 3.7.1)
-  bjornSteg(s); // den som kommer nära björnen (bjorn.ts, steg 6.6.5)
-  rovarSteg(s, dtSec); // rövarflocken (rovare.ts, steg 4.4.5)
-  framlingSteg(s, dtSec); // främlingen som kommer gående (liv.ts, steg 9.2.115)
-  tornadoSteg(s, { rovarTornado, handlarTornado, handlarPlats }); // tornadon drar fram (tornado.ts, steg 3.8.4), och rövarna och handlaren drabbas (steg 6.4.12)
-  brandSteg(s, dtSec); // gnistor, blixten och elden som sprider sig (brand.ts, steg 3.8.5)
-  brinnerSteg(s, dtSec); // den som brinner (brand.ts, steg 6.4.16)
-  k = kost('världen', k);
-  // förråd: ruttning och ved
-  wearStore(s, dtSec); // slitage per slag, fortare utanför lagret
-  stepBlotVed(s, dtSec); // veden blir blöt och torkar (steg 7.3.4)
-  stepFire(s, dtSec, ppl);
-  k = kost('förrådet och elden', k);
-  const fh = hearthOf(s.fire), temp = temperature(s), coldRate = coldOf(temp);
-  const learn = 1 + 0.1 * s.seder.v.nyfikenhet; // en nyfiken by lär sig snabbare
-  if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
-    atSteg(s); stepSeder(s); updateTags(s); stepRelationer(s); stepUppvaxt(s); stepReligion(s); for (const p of living(s)) morkHumor(s, p); facklorTimme(s); stepHumor(s); stepDelning(s); stepLarlingar(s);
-    stepVader(s); vindfallen(s); regnetTvattar(s); stepMotgang(s); stepTorka(s); stepFlod(s); stepIs(s); growGround(s, 1, ai); growFynd(s, 1, ai, vaxtFaktor(s), vaderNu(s).nb); forget(s, 1); stepRykten(s, moodOf); glomRykten(s, 1); stepBerattelser(s); stepStyre(s); rotStumps(s); tidyStore(s);
-    vaggRensa(s); kvarTimme(s); kultTimme(s); kyrkaTimme(s); wearBuild(s, 1, ai); stepByggnader(s); husKlaraTimme(s); stepMjardar(s); stepNaken(s); stepByggplan(s); stepEldFlytt(s); lagerIStraket(s); stepPaborjat(s); stepStationer(s); stepPynt(s); stepKrukor(s); protesTimme(s); halsoNotiser(s); stepKok(s); vatskorTimme(s); stepBrygg(s); stepBak(s); stepSophog(s); stepKompost(s); stepOrtKrukor(s); stadaByten(s); stepBrasor(s); stepKlader(s); stepOdling(s); stepTamdjur(s); stepHagar(s); stepBoskap(s); stepVinter(s); stepHons(s);
-    askaSteg(s); // det svarta efter en eldsvåda försvinner (brand.ts)
-    sorgTimme(s); // sorgen i stadier (liv.ts, steg 9.2.33)
-    smittaTimme(s); smittaUtifranTimme(s); // smittan (sjukdom.ts, steg 9.5.3 och 9.5.5)
-    forbrukTimme(s); // materialens förbrukning glöms långsamt (forradsmal.ts, steg 6.2.14)
-    arbetsTimme(s); // byns behov för arbetsordningen (val.ts, steg 6.1.12)
-    historikSteg(s); // nyckeltalen till byns historik (läses inte av simuleringen)
-    compact(s); // här och inte i sparningen, så att alla lägen städar vid samma tid
-  }
-  k = kost('timmen', k);
-
-  let social: Person[] = [];
-  const egenTid = new Map<Person, number>(); // så lång tid var och en stegades (samtalen räknas på den)
-  const inRum = new Map<number, number>(); // hur många som är i varje rum
-  for (const p of ppl) { const r = roomAt(s, p.x, p.y); if (r) inRum.set(r.id, (inRum.get(r.id) ?? 0) + 1); }
-  for (const p of ppl) {
-    if (!alive(p)) continue; // dödad tidigare i samma slag (av vargar eller i ett slagsmål)
-    const a = ageOf(p, now);
-    k = kost('rummen och åldern', k);
-    needsStep(s, p, a, dtSec, coldRate, fh, inRum, temp);
-    k = kost('behoven', k);
-    if (p.task?.act !== 'strid') needLadder(s, p, dtSec); // äta: sitt eget, byns, och i yttersta nöd andras (behov.ts). Inte mitt i en strid (strid.ts)
-    k = kost('äta', k);
-    const dog = healthStep(s, p, a, ai, dtSec);
-    k = kost('hälsan', k);
-    if (dog) continue; // dog
-    pregnancy(s, p, a, ppl.length, dtSec);
-    if (!alive(p)) continue; // dog i barnsäng
-    // Under de korta stegen (en strid pågår, steg 10.1.4) stegas hela byn varje gång, så att ingen är före eller efter de andra:
-    // den som hör larmet står där hen är, inte där hen skulle ha varit om en minut. Arbetet tål korta steg (fisket bedömer platsen
-    // efter en hel bit, kaninerna ser efter folk på klockan)
-    delete p.framme; // (en äldre sparning, där de som inte var inblandade räknades en minut i förväg)
-    const egenDt = dtSec, slut = now;
-    if (spar.pa) { spar.v.set(p, [now - egenDt * SEC, p.x, p.y]); spar.u.set(p, [[now - egenDt * SEC, kopia(p.task)]]); }
-    egenTid.set(p, egenDt);
-    const akt = p.task?.act ?? 'välja';
-    taskStep(s, p, a, slut, egenDt, learn, social);
-    k = kost('aktivitet: ' + akt, k);
-    s.now = now;
-    if (p.thoughts.some(x => x.until <= now)) p.thoughts = p.thoughts.filter(x => x.until > now);
-  }
-  k = kost('rummen och åldern', k);
-  // samtal: ca ett per 4 minuter per person i social aktivitet
+  const c: Slag = { dt: dtSec, t0, now, ai: ageIndex(s), ppl: living(s), events, social: [] };
   const e0 = events?.length ?? 0;
-  if (social.length > 1) {
-    social = social.filter(p => kanPrata(s, p)); // en brottning kan ha börjat under steget (steg 9.2.100)
-    for (const p of social) {
-      if (!alive(p)) continue;
-      const expect = (egenTid.get(p) ?? dtSec) / STEG.samtalSek * (STEG.samtalBas + stat(p, 'empati', now) / STEG.samtalEmpati) * (p.sinnen === undefined ? 1 : tal(p) * STEG.samtalTal + horsel(p) * STEG.samtalHorsel + 1 - STEG.samtalTal - STEG.samtalHorsel); // talet och hörseln (steg 8.2.2)
-      let n = Math.floor(expect); if (rnd(s, 'samtal', p) < expect - n) n++;
-      // bara med dem som är nära när slaget slutar
-      const nara = social.filter(q => q !== p && alive(q) && Math.hypot(q.x - p.x, q.y - p.y) < SAMTAL.radie);
-      const med = p.task?.med !== undefined ? nara.find(q => q.id === p.task!.med) : undefined, others = med ? [med] : nara; // den man står bredvid (steg 4.5.6.7)
-      for (let i = 0; i < n; i++) { const g = converse(s, p, others, events); if (g) gralBlirSlagsmal(s, p, g); } // ett gräl kan bli ett slagsmål (strid.ts)
-      if (n && others.length) { count(s, 'samtal', n); if (p.task && !ACTS[p.task.act].social) p.pratArbete = (p.pratArbete ?? 0) + n; } // samtalen under arbetet (steg 8.1.12)
-    }
-  }
-  k = kost('samtalen', k);
-  kartStridSteg(s, dtSec); serStriden(s); // striderna på kartan stegas med byn, och de som ser dem väljer på nytt (kartstrid.ts, steg 10.1.4)
-  // gästernas vardag (steg 9.2.113, gastvardag.ts): värmen räknas som en bybos, men reskläderna tar det mesta av kylan
-  gastVardag(s, dtSec, g => { const v = varmeDelar(s, g, coldRate, inRum, temp); v.kyla *= 1 - GASTVARD.klad; return nyVarme(g.warm, v, dtSec / HOUR_S); });
-  pratMedHandlare(s, dtSec, events); // småprat med handlaren (steg 4.5.4.15, handel.ts)
-  k = kost('striden och gästerna', k);
+  TAKTER.forEach((t, i) => {
+    const dt = taktDt(s, t, i, now, dtSec);
+    if (dt === undefined) return;
+    const k = kostStart();
+    t.fn(s, dt, c);
+    s.now = now;
+    kost(t.namn, k);
+  });
   // samtalen visas utspridda över slaget
   if (events) for (let i = e0; i < events.length; i++) events[i].t = t0 + (i - e0 + 0.5) / (events.length - e0) * dtSec * SEC;
-  // relationer bleknar långsamt utan umgänge
-  if (rnd(s, 'samtal') < dtSec / STEG.blekSek) {
-    const k = Math.exp(-STEG.blek * (STEG.blekSek / 86400));
-    for (const key in s.rels) { const r = s.rels[key]; r.op *= k; r.rom *= k; }
-  }
-  if (living(s).length === 0) log(s, 'Byn är tom. Ingen finns kvar vid elden.', 'world');
-  regulate(s, dtSec);
-  tidyTools(s);
-  placeTools(s); // redskapen som släpptes läggs i förrådet
-  kost('städningen', k);
 }
 
 

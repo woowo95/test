@@ -1,7 +1,8 @@
 // npm run detaljer -- [by …]: den långa utskriften för en eller flera byar i 90 dygn (90 år i spelet), när något behöver undersökas
 import './utc';
-import { ALDER, BEAT, HOUR, createState, step, living, AGES, ageIndex, ageOf, serialize, State, SED_LIST, sedDrag, foodOf, amountOf, STACK_ORDER } from '../sim';
+import { ALDER, HOUR, createState, step, living, AGES, ageIndex, ageOf, serialize, State, SED_LIST, sedDrag, foodOf, amountOf, STACK_ORDER } from '../sim';
 import { START as start, STEG_DYGN, markStat } from './kor';
+const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 const valda = process.argv.slice(2).map(Number);
 for (const seed of valda.length ? valda : [1, 42, 777]) {

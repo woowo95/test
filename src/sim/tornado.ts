@@ -1,4 +1,5 @@
 import { balans } from './balans';
+import { KLOCKA, SLAGHINDER } from './klocka';
 import { hp } from './gast';
 import { rasar } from './bygg';
 import { MATERIAL, bitAt, blocked, roofed, touch, vagBort } from './byggnad';
@@ -490,3 +491,5 @@ export function tornadoSkydd(s: State, p: Person): { act: 'undan'; why: string; 
   const f = fara(s, t, p);
   return f && { act: 'undan', why: 'En tornado kommer, går undan från dess väg', spot: f.spot, dur: f.dur };
 }
+// slaget hålls kort medan tornadon drar fram (klocka.ts, steg 10.2.14)
+SLAGHINDER.push(s => s.tornado ? KLOCKA.slag : undefined);

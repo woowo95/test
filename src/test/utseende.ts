@@ -10,9 +10,10 @@
 import { createRequire } from 'node:module';
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { BEAT, State, ageIndex, createState, hourOf, serialize, step } from '../sim';
+import { State, ageIndex, createState, hourOf, serialize, step } from '../sim';
 import { FARGER, MORKARE } from '../palett';
 import { START } from './kor';
+const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 process.env.TZ = 'Europe/Stockholm'; // klockslagen i byn och i webbläsaren är svensk tid
 const MAPP = resolve(process.argv[2] ?? 'utseende'), BY = Number(process.argv[3] ?? 3);

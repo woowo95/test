@@ -2,6 +2,7 @@ import { honom } from './ord';
 import { bynsMitt, utanforByn } from './omrade';
 import { ByteForsok, ByteMinne, DAY, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
+import { KLOCKA, SLAGHINDER } from './klocka';
 import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, stat, think } from './folk';
 import { SAMTAL, TalkEvent, isSocial } from './samtal';
 import { kronika } from './historik';
@@ -728,3 +729,5 @@ BYTESPRIS.push((s, fran, till, k) => {
   if (!h || (fran.id !== h.id && till.id !== h.id) || k === 'silver') return;
   return grundvarde(k) * handlarVarde(s, h, k);
 });
+// slaget hålls kort medan handlaren är på besök (klocka.ts, steg 10.2.14)
+SLAGHINDER.push(s => s.handlare ? KLOCKA.slag : undefined);

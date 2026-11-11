@@ -1,10 +1,11 @@
 // Scenarier. Djur och natur: djur, abborre, sjön, kaniner, rötter, värmekartor och naturen.
-import { FANGST, createState, bearbeta, canProcess, makeTool, step, living, cloneState, ageStart, nyKalender, pilesOf, amountOf, STACK, isLight, T, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, findL, areaOf, describe, utanforByn, bynsMitt, FYND, FYND_IDS, GRUPPER, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, observe, hoped, Lager, skyggOf, grupperOf, KANINER, share, djurOf, KANIN, SLAKT, DJUR, DJURARTER, gain, ownsAmount, setAmount, BEAT, matGott, barnMat, hungerFlytt, regulate, kroppensMat, foodDays, SAMTALSSLAG, SAKER, materialOf, balansTal, fullBorda } from '../../sim';
+import { FANGST, createState, bearbeta, canProcess, makeTool, step, living, cloneState, ageStart, nyKalender, pilesOf, amountOf, STACK, isLight, T, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, findL, areaOf, describe, utanforByn, bynsMitt, FYND, FYND_IDS, GRUPPER, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, observe, hoped, Lager, skyggOf, grupperOf, KANINER, share, djurOf, KANIN, SLAKT, DJUR, DJURARTER, gain, ownsAmount, setAmount, matGott, barnMat, hungerFlytt, regulate, kroppensMat, foodDays, SAMTALSSLAG, SAKER, materialOf, balansTal, fullBorda } from '../../sim';
 import * as SIM from '../../sim';
 const { RT, STATION } = SIM;
 import { FOREST, isSoil } from '../../sim/vag';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import { stridIByn, setMat, slutStrider, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank, medHus, nyInvanare } from './hjalp';
+const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 SCENARIER.djur = {
   text: 'Kaniner syns där det finns vilt, skuttar omkring och hoppar undan folk. Jakt fångar hela kaniner som bärs hem hela och äts som de är; med flintkniv slaktas de till mer kött, ben, skinn och senor',
@@ -1913,7 +1914,7 @@ SCENARIER.kallar = {
     for (let i = 0; i < 40 && !av.f.jagare; i++) SIM.jaktBeslut(av.s, av.f, living(av.s));
     const avJag = av.f.jagare?.length ?? 0;
     for (const id of av.f.jagare ?? []) SIM.byId(av.s, id)!.task = undefined;
-    step(av.s, SIM.BEAT);
+    step(av.s, 300);
     // flocken står på isen längre från land än VARG.na: jägarna kommer inte längre än stranden och anfaller därifrån (kodgenomgången 3.10.25)
     const is = by(); is.vuxna[3].pot.mod = 16; is.f.sag = is.vuxna[3].id; is.s.is = { vatten: -5, cm: 30 };
     const ic = bynsMitt(is.s), m = getMap(is.s.seed), landNara = (x: number, y: number) => { let d = Infinity; for (let dy = -6; dy <= 6; dy++) for (let dx = -6; dx <= 6; dx++) { const i = (y + dy) * W + x + dx; if (i >= 0 && i < W * H && m.tiles[i] !== T.Vatten) d = Math.min(d, Math.hypot(dx, dy)); } return d; };
@@ -1922,7 +1923,7 @@ SCENARIER.kallar = {
     const pa = () => { is.f.x = is.f.mx = isR.x + 0.5; is.f.y = is.f.my = isR.y + 0.5; is.f.gor = 'vantar'; };
     pa(); for (let i = 0; i < 40 && !is.f.jagare; i++) SIM.jaktBeslut(is.s, is.f, living(is.s));
     const isJag = is.f.jagare?.length ?? 0, isStrid0 = is.s.stat?.vargstrid ?? 0;
-    for (let i = 0; i < 12 * 4 && is.f.jagare; i++) { pa(); step(is.s, SIM.BEAT); }
+    for (let i = 0; i < 12 * 4 && is.f.jagare; i++) { pa(); step(is.s, 300); }
     slutStrider(is.s);
     // står flocken längre ut än stranden når (ingen land inom fem rutor) kallar ingen till jakt (kodgenomgången 3.10.25)
     const ut = by(); ut.vuxna[3].pot.mod = 16; ut.f.sag = ut.vuxna[3].id; ut.s.is = { vatten: -5, cm: 30 };

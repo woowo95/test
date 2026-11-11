@@ -1499,7 +1499,7 @@ SCENARIER.rollekavild = {
     let rutor = 0; for (let i = 0; i < SIM.W * SIM.H; i++) if (richness(s, 'rolleka', i % SIM.W, Math.floor(i / SIM.W)) > 0.25) rutor++;
     s.kal = SIM.nyKalender(s.now, 0); let istid = 0; for (let i = 0; i < SIM.W * SIM.H; i++) if (richness(s, 'rolleka', i % SIM.W, Math.floor(i / SIM.W)) > 0) istid++;
     const b = createState(3, START); b.kal = SIM.nyKalender(b.now, 2); b.now += 0;
-    for (let i = 0; i < 24 * 12 * 6; i++) step(b, SIM.BEAT);
+    for (let i = 0; i < 24 * 12 * 6; i++) step(b, 300);
     return [
       [`röllekan är ett lager på kartan (${FYND.rolleka.namn}) och växer på ${rutor} rutor på sommaren`, rutor > 50],
       [`under istiden växer den inte (${istid} rutor)`, istid === 0],

@@ -5,6 +5,8 @@
 // Björnjakten (steg 6.6.6): när någon sett björnen kan byn gå på björnjakt, men bara en stor grupp med spjut vågar och
 // klarar det. En fälld björn styckas där den föll och bärs hem, och den som fällde den blir björndödare
 import { balans } from './balans';
+import { SLAGHINDER, nasTid } from './klocka';
+import { GANG } from './gang';
 import { kronikaBer, och, personFalt, talOrd } from './berattelser';
 import { blodas } from './blod';
 import { blocked, freeNear, roomAt } from './byggnad';
@@ -250,3 +252,11 @@ function bjornGarUndan(s: State, x: number, y: number) {
   s.bjornUndan = { fran: s.now, till: s.now + BJORNMOTE.undanTim * HOUR, x0: x, y0: y, x1: tx, y1: ty };
   count(s, 'bjornGickUndan');
 }
+// slaget hålls så kort att den som är vaken och ute inte hinner gå förbi björnen (klocka.ts, steg 10.2.14)
+SLAGHINDER.push(s => {
+  const b = bjornarOf(s).find(d => d.art === 'bjorn');
+  if (!b) return undefined;
+  let L = Infinity;
+  for (const p of living(s)) if (vaken(p)) L = Math.min(L, nasTid(Math.hypot(p.x - b.x, p.y - b.y) - BJORNMOTE.naraUngar, GANG.fart * 2));
+  return L;
+});

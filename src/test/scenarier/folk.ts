@@ -1,11 +1,12 @@
 // Scenarier. Folket: befolkning, faror, seder, samtal, liv och utflyttning.
 import * as BILD from '../../ui/stridbild';
-import { Person, createState, tidyTools, addTool, getRel, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, ageStart, amountOf, isLight, ageOf, DAY, HOUR, State, findL, areaOf, stat, hoped, gain, ownedSum, setAmount, setStock, BEAT, tingOf, planBuild, regulate, ACTS } from '../../sim';
+import { Person, createState, tidyTools, addTool, getRel, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, ageStart, amountOf, isLight, ageOf, DAY, HOUR, State, findL, areaOf, stat, hoped, gain, ownedSum, setAmount, setStock, tingOf, planBuild, regulate, ACTS } from '../../sim';
 import * as SIM from '../../sim';
 import { byId, isSocial, TalkEvent } from '../../sim';
 import { START, STEG_DYGN } from '../kor';
 import { hasIcon } from '../../ikoner';
 import { stridIByn, rovarGang, korTills, setFood, kor, klockan, tandEld, byggare, SCENARIER, pct, grenarUte, barGrenar, nyInvanare, valjer, MATARBETE, TRAARBETE, REDSKAPSARBETE, FORBATTRING, MATMEDREDSKAP, rikBy } from './hjalp';
+const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 SCENARIER.befolkning = {
   lang: true,
@@ -2336,6 +2337,39 @@ SCENARIER.personlogg = {
       ['de andra fick ingen rad om döden', k107[2]],
       ['tre händelser av samma slag samma dygn blir en rad (' + (ihop[0]?.text ?? '') + ')', ihop.length === fore108 + 1 && ihop[0].alla.length === 3],
       ['en orolig och en modig skriver olika om samma skada (' + till.join(' | ') + ')', till[0] !== till[1] && till.every(x => x.startsWith('Fick ett sår i armen.'))],
+    ];
+  },
+};
+
+SCENARIER.klockan = {
+  text: 'Klockan och slagen (steg 10.2.14): hela byn stegas tillsammans i korta slag (KLOCKA.slag). Två som går mot varandra från var sitt håll ser varandra innan de möts och möts ungefär mitt på vägen, där de faktiskt är, i stället för att hoppa förbi varandra i ett långt slag. När alla sover blir slagen längre',
+  kor: () => {
+    const s = createState(5, START);
+    const [a, b] = living(s).filter(q => SIM.ageOf(q, s.now) >= 16);
+    const eld = SIM.eldPlats(s), A = SIM.freeNear(s, eld.x - 14, eld.y + 5), B = SIM.freeNear(s, eld.x + 14, eld.y + 5);
+    for (const [p, fran, till] of [[a, A, B], [b, B, A]] as const) {
+      p.x = fran.x; p.y = fran.y; p.toa = 1; p.hunger = 1; p.torst = 1; p.rest = 1;
+      p.task = { act: 'promenad', phase: 'go', tx: till.x, ty: till.y, until: s.now + HOUR, carry: 0, why: 'prov' };
+    }
+    const mitt = { x: (A.x + B.x) / 2, y: (A.y + B.y) / 2 };
+    let minD = Infinity, motesPlats = mitt, sag = false;
+    for (let i = 0; i < 40; i++) {
+      const fore = Math.hypot(a.x - b.x, a.y - b.y);
+      step(s, SIM.KLOCKA.slag);
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      if (d < SIM.KLOCKA.sikt && d < fore) sag = true; // inom synhåll medan de fortfarande närmar sig
+      if (d < minD) { minD = d; motesPlats = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; }
+    }
+    const fran = Math.hypot(motesPlats.x - mitt.x, motesPlats.y - mitt.y);
+    // natten: när alla sover blir slaget längre
+    const n = createState(5, START);
+    for (const p of living(n)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: n.now + 4 * HOUR, carry: 0, why: 'prov' };
+    const natt = SIM.nastaSteg(n);
+    return [
+      ['de ser varandra (inom synhåll) medan de går mot varandra', sag],
+      [`och möts: som närmast ${minD.toFixed(1)} rutor i slutet av ett slag om ${SIM.KLOCKA.slag} s (högst så långt en av dem går på ett slag)`, minD <= SIM.GANG.fart * SIM.KLOCKA.slag],
+      [`ungefär mitt på vägen (${fran.toFixed(1)} rutor från mitten)`, fran < 4],
+      [`när alla sover blir slaget längre (${natt} s)`, natt > SIM.KLOCKA.slag],
     ];
   },
 };

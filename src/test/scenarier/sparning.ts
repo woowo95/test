@@ -1,10 +1,11 @@
 // Scenarier. Sparning, historik och slumpföljder.
 import { isDeepStrictEqual } from 'node:util';
-import { Person, createState, addTool, getRel, step, living, serializeParts, joinParts, serialize, cloneState, amountOf, ageOf, DAY, State, migrate, die, housesOf, sumOf, setAmount, foodOf, STACK_ORDER, rnd, STROMMAR, Strom, BEAT, spar, SPARVERSION, tingOf, fnId, ALDER, stepFire, chooseTask } from '../../sim';
+import { Person, createState, addTool, getRel, step, living, serializeParts, joinParts, serialize, cloneState, amountOf, ageOf, DAY, State, migrate, die, housesOf, sumOf, setAmount, foodOf, STACK_ORDER, rnd, STROMMAR, Strom, spar, SPARVERSION, tingOf, fnId, ALDER, stepFire, chooseTask } from '../../sim';
 import * as SIM from '../../sim';
 import { DOK_KB, START, STEG_DYGN, korBy } from '../kor';
 import { kanonisk } from '../pool';
 import { setItems, setFood, Koll, kor, SCENARIER } from './hjalp';
+const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 SCENARIER.historik = {
   lang: true,

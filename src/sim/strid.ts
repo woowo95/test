@@ -76,7 +76,7 @@ export const STRID = balans('strid', {
   skoldSlag: 0.3, skoldPil: 0.6, // skölden blockerar 3 av 10 slag och 6 av 10 pilar och kast (steg 8.7.3)
   smidPer: 1, // varje steg rustning tar så här mycket smidighet
   tick: 0.2, // sekunder i spelet per tidssteg i striden (samma i båda lägena)
-  kortSteg: 1, // sekunder per steg för hela byn när faran är nära (steg 10.1.1, mätt med npm run kortsteg: 43 ms datortid per by och minut i spelet mot 15 med femminuterssteg; 0,5 s kostar 67 och 2 s 29). Används från steg 10.1.4
+  kortSteg: 0.5, // sekunder per steg för hela byn när faran är nära (steg 10.1.1 och 10.2.13, mätt med npm run kortsteg). Byns vanliga slag är KLOCKA.slag (klocka.ts)
   tempo: 2, // striden går så här många gånger långsammare än den räknas: allt i den (slagen, stegen, blodet, orken) tar längre tid men slutar likadant (steg 3.7.18)
   maxTid: 480, // en strid slutar senast efter så här många sekunder (oavgjort)
   efterTid: 20, // när ena sidan inte har någon kvar som slåss slutar striden senast så här många sekunder senare, också om någon ännu flyr eller ligger (den som inte kommer undan blir kvar på platsen)

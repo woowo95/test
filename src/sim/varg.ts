@@ -1,6 +1,7 @@
 import { lista, stor, tal } from './ord';
 import { utanforByn } from './omrade';
 import { balans } from './balans';
+import { KLOCKA, SLAGHINDER } from './klocka';
 import { kronikaBer, och, personFalt, sakVarg, talOrd } from './berattelser';
 import { redskapIHanden } from './agande';
 import { blodas } from './blod';
@@ -656,3 +657,5 @@ export function vargSteg(s: State, dtSec: number) {
   if (!s.vargar.length) s.vargar = undefined;
 }
 import { VALP, hundSkaller, tamArt, tamDor, tamUte, vargValp } from './tamdjur';
+// slaget hålls kort medan vargarna är på kartan (klocka.ts, steg 10.2.14)
+SLAGHINDER.push(s => s.vargar?.length ? KLOCKA.slag : undefined);

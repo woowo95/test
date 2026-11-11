@@ -1,6 +1,7 @@
 import { antal, lista, och, stor, tal } from './ord';
 import { utanforByn } from './omrade';
 import { balans } from './balans';
+import { KLOCKA, SLAGHINDER } from './klocka';
 import { blodas } from './blod';
 import { isParent, ALDER, KROPP, ageOf, alive, byId, count, isSick, living, log, makeName, ovning, stat, think } from './folk';
 import { halsa, horsel, kanGa } from './halsa';
@@ -750,3 +751,5 @@ function djurMotRovare(s: State, f: Rovarflock) {
   }
 }
 const vargarNara = (s: State, f: Rovarflock) => bjornarOf(s, s.now).filter(d => d.art === 'bjorn').concat(vargarOf(s) as never).filter(d => Math.hypot(d.x - f.x, d.y - f.y) < ROVARE.djurR).map(d => d.art === 'bjorn' ? 'En björn' : 'En varg'); // björnungarna anfaller inte
+// slaget hålls kort medan ett gäng är på kartan (klocka.ts, steg 10.2.14)
+SLAGHINDER.push(s => flockar(s).some(f => f.folk.length > 0) ? KLOCKA.slag : undefined);

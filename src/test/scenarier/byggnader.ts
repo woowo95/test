@@ -1613,7 +1613,7 @@ SCENARIER.hamtning = {
     const tagits = SIM.amountOf(s, 'flinta') === flinta0 - 1 && SIM.tingOf(s).some(x => x.k === 'paborjat' && x.halv?.ag === p.id);
     const bar = !!tk.hamtat?.flinta && tk.phase === 'go' && Math.hypot(tk.tx - spot.x, tk.ty - spot.y) < 0.01;
     let borjade = false, borjadeVid: number | undefined;
-    for (let i = 0; i < 12 && !borjade; i++) { step(s, SIM.BEAT); if (p.task?.act === 'yxa' && p.task.phase === 'do') { borjade = true; borjadeVid = Math.hypot(p.x - spot.x, p.y - spot.y); } }
+    for (let i = 0; i < 12 && !borjade; i++) { step(s, 300); if (p.task?.act === 'yxa' && p.task.phase === 'do') { borjade = true; borjadeVid = Math.hypot(p.x - spot.x, p.y - spot.y); } }
     return [
       ['framme vid platsen utan material går hen först till lagret, och inget har flyttats än', tillLagret && orortFore],
       ['vid lagret tas materialet (det påbörjade skapas där)', tagits],
@@ -1648,7 +1648,7 @@ SCENARIER.byggstar = {
     const s = createState(3, START); byggare(s);
     let intill = 0, annars = 0;
     for (let i = 0; i < 30 * STEG_TIM; i++) {
-      step(s, SIM.BEAT);
+      step(s, 300);
       for (const p of living(s)) {
         const t = p.task; if (t?.act !== 'bygga' || t.phase !== 'do') continue;
         const b = SIM.bitById(s, t.ref); if (!b || b.k !== 'vagg') continue;

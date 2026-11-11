@@ -9,9 +9,10 @@ import './utc';
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { BEAT, createState, serialize, step } from '../sim';
+import { createState, serialize, step } from '../sim';
 import { START } from './kor';
 import { kanonisk, korSkript, LAG_PRIO, sek } from './pool';
+const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 const BYAR: [seed: number, dygn: number][] = [[42, 30], [1, 30], [3, 2], [139, 30], [121, 14]];
 const FIL = fileURLToPath(new URL('../../test/samma.json', import.meta.url));

@@ -12,6 +12,8 @@
 // Steg 10.1.4 flyttar slagsmålet efter ett gräl hit; leken, brottningen, rånen och ledarstriden kommer i 10.1.7 och rövarna
 // och djuren i stegen efter.
 import { balans } from './balans';
+import { KLOCKA, SLAGHINDER, nasTid } from './klocka';
+import { GANG } from './gang';
 import { blocked, freeNear } from './byggnad';
 import { ALDER, ageOf, alive, byId, count, gjort, living, log, relKey, stat } from './folk';
 import { KROPPSDELAR, forlora, skada } from './halsa';
@@ -31,7 +33,6 @@ import { ledareOf } from './styre';
 import { Act, H, HOUR, Person, SEC, State, W } from './typer';
 import { upplev } from './uppvaxt';
 import { husPlats, kanterna } from './varg';
-const BEAT_SEK = 300; // byns vanliga steg (BEAT i steg.ts)
 
 export const KARTSTRID = balans('kartstrid', {
   ser: 12, // den som är vaken och står så här nära en strid ser den (rutor)
@@ -88,13 +89,34 @@ function tillBilden(g: KartStrid, n0: number) {
 // faran är nära så länge en strid pågår på kartan (fler faror kommer med rövarna och djuren)
 export const KARTSTRID_PROV = { alltid: false }; // proven: byn går i korta steg också utan strid (npm run kortsteg mäter att arbetet går som vanligt)
 export const faraNara = (s: State) => KARTSTRID_PROV.alltid || kartStrider(s).length > 0 || FAROR.some(f => f(s));
-// längden på byns nästa steg (sekunder): korta steg medan faran är nära, annars det som är kvar av femminuterssteget som de
-// korta stegen avbröt (s.stegRest), annars ett helt. Spelet och ikappräkningen frågar samma sak, så att stegen blir desamma
-export function nastaSteg(s: State) { return faraNara(s) ? STRID.kortSteg : s.stegRest ?? BEAT_SEK; }
-// ett steg om d sekunder är taget: hur mycket som är kvar av femminuterssteget
-export function stegTaget(s: State, d: number) {
-  const kvar = (s.stegRest ?? BEAT_SEK) - d;
-  if (kvar > 1e-6 && kvar < BEAT_SEK) s.stegRest = Math.round(kvar * 1000) / 1000; else delete s.stegRest;
+// längden på byns nästa slag (sekunder): korta steg medan faran är nära, annars det som är kvar av ett slag som anroparen
+// delade (s.stegRest), annars ett helt (slagLangd). Spelet och ikappräkningen frågar samma sak, så att slagen blir desamma
+export function nastaSteg(s: State) { return faraNara(s) ? STRID.kortSteg : s.stegRest ?? slagLangd(s); }
+// ett steg om d sekunder av ett planerat slag om plan sekunder är taget: det som är kvar av slaget
+export function stegTaget(s: State, d: number, plan: number) {
+  const kvar = plan - d;
+  if (kvar > 1e-6) s.stegRest = Math.round(kvar * 1000) / 1000; else delete s.stegRest;
+}
+const sover = (p: Person) => p.task?.act === 'sova' && p.task.phase === 'do';
+// slagets längd (steg 10.2.14): KLOCKA.slag, men längre när ingen kan nå någon annan under slaget: två vakna (eller en vaken
+// och en som sover) som går mot varandra kommer inte inom synhåll (KLOCKA.sikt), ingen som sover vaknar, och inget i
+// SLAGHINDER (rövarna, djuren, gästerna, branden) håller det kort. Alltid ett helt antal vanliga slag, högst KLOCKA.langst
+export function slagLangd(s: State) {
+  const bas = KLOCKA.slag;
+  let L = KLOCKA.langst;
+  if (L <= bas) return bas;
+  for (const h of SLAGHINDER) { const v = h(s); if (v !== undefined && v < L) { L = v; if (L <= bas) return bas; } }
+  const ppl = living(s), v = GANG.fart;
+  for (let i = 0; i < ppl.length; i++) {
+    const p = ppl[i], sp = sover(p);
+    if (sp) L = Math.min(L, (p.task!.until - s.now) / SEC);
+    for (let j = i + 1; j < ppl.length; j++) {
+      const q = ppl[j], vv = (sp ? 0 : v) + (sover(q) ? 0 : v);
+      if (vv > 0) L = Math.min(L, nasTid(Math.hypot(p.x - q.x, p.y - q.y), vv));
+    }
+    if (L <= bas) return bas;
+  }
+  return Math.max(bas, Math.floor(L / bas) * bas);
 }
 
 // ---------- striden börjar ----------

@@ -194,12 +194,12 @@ $('okNew').addEventListener('click', () => {
 });
 
 // ---------- huvudloop ----------
-// Byn räknas i slag om fem minuter (BEAT), alltid ett slag före klockan som visas (ui.nu). Under slaget ritas folk där
+// Byn räknas i korta slag (nastaSteg: KLOCKA.slag, kortare när faran är nära och längre när ingen kan nå någon), högst ett slag före klockan som visas (ui.nu). Under slaget ritas folk där
 // de är enligt det som räknades (manniskor.ts), så spelet visar samma sak som räknades
 const events: TalkEvent[] = [];
 vidNyBy.push(() => { events.length = 0; });
 const IKAPP_EFTER = 120 * SEC; // är byn mer än två minuter efter klockan (fliken var gömd) räknas den ikapp
-const MAX_SLAG = 300; // högst så här många slag per bildruta (25 timmar i spelet)
+const MAX_SLAG = 5000; // högst så här många slag per bildruta (RAKNA_MS sätter oftast gränsen först)
 // och högst så här länge (datorns tid) räknas byn per bildruta: hinner den inte med farten i testläget går spelet
 // långsammare, men bilden och knapparna svarar (steg 3.10.4)
 const RAKNA_MS = 40;
@@ -230,7 +230,7 @@ function tick() {
   }
   // spar.pa är på också här: varje slag börjar om vägen (steg.ts), så bara det sista slaget sparas och ritas
   const t0 = performance.now();
-  // så långt som nästa steg är (nastaSteg, kartstrid.ts): korta steg medan en strid pågår, annars fem minuter (steg 10.1.4)
+  // så långt som nästa slag är (nastaSteg, kartstrid.ts, steg 10.2.14)
   for (let n = 0; s.now < vt && n < MAX_SLAG && (!n || performance.now() - t0 < RAKNA_MS); n++) step(s, nastaSteg(s), events);
   ui.nu = Math.min(vt, s.now);
   nyBild();
