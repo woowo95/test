@@ -1,6 +1,6 @@
 # Att sortera inför fas 10
 
-Anteckningar från diskussionschatten efter fas 9 (v524). Inget är bestämt eller inlagt i Färdplanen än. Mer information kommer från Björn; sedan sorteras allt och de godkända punkterna blir steg i fas 10.
+Anteckningar från diskussionschatten efter fas 9 (v524). **Planen står nu i Färdplanen i designdokumentet: 10.1 Striden på kartan och 10.2 Rättningar efter fas 9.** Den här filen är underlaget och ändras inte mer; där den och Färdplanen säger olika gäller Färdplanen. Promenaden som står still letas inte efter nu.
 
 ## Gaffatejpen i `granskning/gaffatejp-9.9.2.md` (numren där)
 

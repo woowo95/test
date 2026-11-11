@@ -89,6 +89,8 @@ Inget test ser de flesta av dem, så de gås igenom för hand, med fasens nya sa
 
 Mät datortiden för tre byar i 15 dygn (15 år i spelet, två veckor i verkligheten) i snabbläget, nu och på commiten före fasen (i en `git worktree`), på samma sätt som i förra fasens kodgenomgång (siffrorna står i det steget i Färdplanen). Ta reda på vad som tar mest tid med en profilering (`node --cpu-prof`), och gör det snabbare utan att spelet ändras (`npm run samma` lika). Ge siffrorna före och efter.
 
+Prestandan är ett tal som följs fas för fas, inte en lista som bockas av. Skriv talen (sekunder per by och dygn i snabbläget, och datortiden för `npm run koll` som aktiv tid per kärna, inte bara klocktid) i steget i Färdplanen, bredvid förra fasens tal. En platt profil, där ingen funktion sticker ut, betyder inte att det är klart: har tiden per by och dygn vuxit mer än spelet har vuxit, leta i hur ofta saker räknas (varje steg, varje person, varje ruta) i stället för i en enskild funktion, och säg i rapporten vad som växer och varför.
+
 ### Gaffatejp och onödiga hårda regler
 
 Spelet sätter grundreglerna, och det byarna gör ska växa fram ur systemen och balanstalen. Gaffatejp är kod som tvingar fram ett visst resultat i stället för att systemen ger det. Regeln "System, inte regler, men med måtta" i `CLAUDE.md`.
