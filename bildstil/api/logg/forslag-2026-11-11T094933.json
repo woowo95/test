@@ -1,0 +1,41 @@
+{
+ "kommando": "rita",
+ "args": [
+  "f7_fangstbank=gör nya versioner utan förlaga",
+  "f9_kk_strid=Nya versioner: gör så att det är tydligare vapen på bilderna, med tydliga former (spjut, yxa, kniv, sköld). Det är bara blobbar just nu.",
+  "f9_lerkrukor=Den största lerkrukan är exakt samma bild som vi har i dag (den stora lerkrukan i bilden med behållarna), oförändrad. Gör den lilla och den mellanstora mindre än den, i samma stil. Gör dem symmetriska. En person står bredvid för skala.",
+  "f9_snickarbank=Nya versioner: de förra var felriktade, ritade rakt från sidan med långa ben. Läs instruktionen och regeln Stationerna ovanifrån: skivan ses ovanifrån och tar hälften till tre fjärdedelar av höjden, framkanten är ett smalt band och bara korta benstumpar syns. Två rutor bred, med stubben att sitta på framför.",
+  "f9_bryggkar=Nya versioner: karet får vara upp till fyra rutor brett (64 punkter). Det ska gå att vrida: rita det både liggande längs (vågrätt) och tvärs (lodrätt).",
+  "f9_kat_grot=nya versioner",
+  "f9_brod=Nya versioner: de förra var för gula. Gör bara vanliga brödlimpor: en enda limpa som sak i förrådet.",
+  "f9_staket=Nya versioner: visa staketet i ett sammanhang där flera bitar sitter ihop i en hage. Rita bitarna längs och tvärs så att de passar ihop.",
+  "f9_bonor=Nya versioner: kortet gäller bönorna som skörd, som sak i förrådet, inte plantan som växer. Rita en enda sak.",
+  "f9_jordgubbsplanta=Nya versioner: alla plantor visas på en åker. Rita plantan som den växer på en ruta av åkern.",
+  "f9_appeltrad=Nya versioner: alla träd visas med spelets egna träd bredvid (granen och björken) och ska passa ihop med dem i stil och storlek.",
+  "f9_hassel=Nya versioner: busken visas med spelets egna träd bredvid (granen och björken) och ska passa ihop med dem i stil och storlek.",
+  "f9_appel=Nya versioner: ett föremål som ligger i förrådet ritas som ett enda föremål, alltså ett äpple. Stackarna ritas sedan i ett eget förslag.",
+  "f9_jordgubbar=Nya versioner: den som ritar får bara använda behållarna som finns (lerkrukan eller näverasken), inte hitta på nya. Bären som sak i förrådet."
+ ],
+ "modell": "claude-opus-5-5",
+ "uppskattat": {
+  "lag": 6.18,
+  "hog": 13.25
+ },
+ "dollar": 6.468,
+ "rapport": [
+  "f7_fangstbank: 3 versioner; kontrollerna varnar fortfarande: version 2: perspektiv: Inte snett ovanifrån: ingen mörkare framkant under ytan, som en vy rakt framifrån.",
+  "f9_kk_strid: 3 versioner",
+  "f9_lerkrukor: 3 versioner",
+  "f9_snickarbank: 3 versioner",
+  "f9_bryggkar: 3 versioner",
+  "f9_kat_grot: 3 versioner",
+  "f9_brod: 3 versioner",
+  "f9_staket: 3 versioner",
+  "f9_bonor: 3 versioner",
+  "f9_jordgubbsplanta: 3 versioner; kontrollerna varnar fortfarande: version 2: olika; version 3: olika; version 3: olika",
+  "f9_appeltrad: 3 versioner",
+  "f9_hassel: 3 versioner",
+  "f9_appel: 3 versioner",
+  "f9_jordgubbar: 3 versioner"
+ ]
+}

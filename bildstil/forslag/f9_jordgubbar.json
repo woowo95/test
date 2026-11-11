@@ -4,71 +4,78 @@
  "slag": null,
  "vad": "Steg 9.7.9: jordgubbar är en gröda som odlas på fältet, ger bär på sommaren och sprider sig själv med utlöpare. Här bären som sak i förrådet.",
  "av": "API:t (claude-opus-5-5), tre idéer",
+ "kommentar": "Nya versioner: den som ritar får bara använda behållarna som finns (lerkrukan eller näverasken), inte hitta på nya. Bären som sak i förrådet.",
  "versioner": [
   {
    "bilder": [
     {
      "namn": "f9_jordgubbar",
      "rader": [
-      "......rrrr......",
-      "....rrqutsrr....",
-      "..EHrutOtutsFE..",
-      ".EHurtututOtsFE.",
-      ".EGrutututtsrFE.",
-      ".EGHrrtsstrrGFE.",
-      ".EHGHGGGGGGFGFE.",
-      "..EFGFFGFFFFFE..",
-      "...EEFFFFFFEE...",
-      ".....EEEEEE....."
+      "....U....",
+      ".U.UOU.U.",
+      "UPUPOOUOU",
+      ".UPPOOOU.",
+      ".rUPrOUr.",
+      ".rutttsr.",
+      ".rtKtKsr.",
+      "..rttsr..",
+      "..rtKsr..",
+      "...rsr...",
+      "....r...."
      ]
     }
    ],
-   "anteckning": "Skålen står på marken i förrådet och ses snett ovanifrån. Öppningen är en bred oval. Bakkanten skymtar bara på sidorna, eftersom bärkupolen täcker mitten. Framkanten syns som en ljusare läpp i jord2 och jord3, och under den ligger ett smalt band i jord1 med kontur i jord0, svagt rundat mot botten. Skålen är 14 × 10 punkter och spegelsymmetrisk. Bara ljuset skiljer sidorna åt: den vänstra kanten är ljusare och den högra mörkare. Bären är de mättade rost-tonerna, rost2 och rost3 med kontur i rost0, eftersom de är maten man ska se. De ligger i en liten kupol som sticker upp över bakkanten. Två gröna foderblad i oliv2 bryter av, och en glanspunkt i ben2 sitter på ett bär uppe till vänster. Granskningen: Granskad mot reglerna. Storleken stämmer: skålen är 14 × 10 punkter inom en 16-ruta, alltså ungefär lika bred som kolonisten och tydligt en sak man bär i famnen. Vinkeln stämmer: snett ovanifrån, med öppningen som en bred oval, ett smalt framband i jord1 på 2 rader och en kontur i jord0. Bären har kontur i rost0, glanspunkten i ben2 sitter uppe till vänster och foderbladen i oliv2 är få. Skålen syns bra på gräset tack vare den bruna konturen och de mättade bären. En sak rättades: på rad 2 saknade högra sidan skålkanten i trä, eftersom ett bär (rost0) låg där kanten skulle vara. Skålens kontur var därför inte spegelsymmetrisk. Punkten är nu jord1, så kanten är lika på båda sidor och bara ljuset skiljer dem åt. Resten är oförändrat.",
-   "ide": "En låg, rund träskål på cirka 14 × 10 punkter, sedd snett ovanifrån, så att öppningen är en bred oval som tar tre fjärdedelar av höjden och framsidan ett smalt band på 2–3 punkter i jord1 med kontur i jord0. Skålen är spegelsymmetrisk, och bara ljuset skiljer sidorna åt. Skålen är fylld till en liten kupol av små röda bär i rost2 och rost3 med kontur i rost0, med enstaka gröna foderblad i oliv2 och en glanspunkt i ben2 på ett bär uppe till vänster."
+   "anteckning": "Ett enda jordgubbsbär i förrådet, utan behållare, som ligger på sidan och ses snett uppifrån. Därför syns ovansidan av bäret med frön och foderbladen som en liten stjärna där stjälken sitter, med en kort stjälkstump i mitten. Bäret är en spegelsymmetrisk droppform, bred upptill och spetsig nedåt, 7 punkter bred med rost0 som kontur. Kroppen är rost2 med korn av rost1, som blir mörkare nere till höger, och glansen är en punkt rost3 uppe till vänster. Fröna är glesa punkter i senap2. Foderbladen är oliv3 och oliv2 med barr0 som kontur. Bilden är 9 × 11 punkter, så bäret blir litet men läsbart mot gräset. Granskningen: Storleken (9 × 11) passar mot kolonisten (14 × 20) och får vara kvar. Formen är spegelsymmetrisk, och konturerna i rost0 och barr0 gör att bäret syns på gräset. Jag rättade tre saker. 1) På rad 4 låg två ensamma punkter i barr0 inne i bärets kropp. De lästes som mörka fläckar, vilket reglerna förbjuder. Nu är de två nedre foderflikarna ritade med fyllning (barr0 och oliv3 till vänster, oliv2 och barr0 till höger) så att de hänger ner över bärets topp, och bärets kontur syns i mitten mellan dem. 2) Fröna låg ojämnt, och två av dem satt direkt under varandra. Nu ligger de i ett glest förskjutet rutmönster: två på rad 6 och ett på rad 8. Glansen i rost3 står ensam uppe till vänster på rad 5 och krockar inte med något frö. 3) Kornet följer ljuset tydligare, med rost1 åt höger och nedåt. Bladstjärnan och stjälkstumpen är i stort sett oförändrade.",
+   "ide": "Ett enda jordgubbsbär, liggande på sidan och sett snett uppifrån, ungefär 7 punkter brett och 8 högt: en spegelsymmetrisk droppform, bred och rundad upptill och spetsig nedåt, med rost0 som kontur, kropp i rost2 med korn av rost1 och rost3, och en glans på en punkt i rost3 uppe till vänster. Fröna är några få jämnt utspridda punkter i senap2 i ett glest rutmönster, så att de läses som yta och inte som fläckar. Överst sitter foderbladen som en liten stjärna av fem korta flikar i oliv3 och oliv2 med barr0 som kontur och en kort stjälkstump i mitten."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_jordgubbar_naverask",
+     "rader": [
+      "..EEEEEEEE..",
+      ".EwqqqqpppE.",
+      "EqpuPtuttpoE",
+      "EqutrutrPtoE",
+      "EptursPutsoE",
+      "EpprtsrtsooE",
+      "EoqqqqpppooE",
+      "EppoppoooooE",
+      ".EpoooooooE.",
+      "..EEEEEEEE.."
+     ]
+    }
+   ],
+   "anteckning": "Saken står på marken i förrådet och ses snett ovanifrån som kartan. Det är spelets låga näverask, öppen utan lock, så att man ser in i den. Mynningen är en oval på de översta sju raderna (tre fjärdedelar av höjden). Den har en ljus näverkant (ben3 och ben2) som blir mörkare åt höger och framkanten. Asken är fylld till kanten med en kupad hög jordgubbar. I mitten sticker bärtopparna upp över bakkanten. Av bären syns bara ovansidorna: rost3 som glans uppe till vänster, rost2 i mitten, rost1 nedåt och rost0 i springorna mellan bären. Några foderblad i oliv3 sitter på topparna. Framför mynningen syns askens raka sida som ett smalt band på tre rader i mörkare näver (ben1 och ben0). Botten är rundad, och konturen är jord0 runt hela asken. Silhuetten är spegelsymmetrisk; bara ljuset från övre vänstra hörnet och kornet skiljer sidorna åt. De mättade rosttonerna finns bara i bären, så att det man kan ta syns först. Granskningen: Storlek (12 × 10), vinkel, symmetri och kontur mot gräset var i ordning, liksom framkanten på rad 7–8 i mörkare näverton. Två saker rättades så att bilden följer idén om en öppen oval mynning. Bären gick ända upp mot bakkantens kontur, så askens bakre kant syntes inte. Rad 1 är nu en ljus näverkant (w, q, p), så att man ser ner i asken. Bärytan fyllde dessutom en rektangel kant i kant. Nu är den oval: rad 2 och 5 är smalare (kolumn 3–8) och rad 3–4 bredare (kolumn 2–9), med näverkanten synlig på båda sidor, ljusare till vänster (q/p) och mörkare till höger (o). Mynningen tar fortfarande rad 0–6, ungefär tre fjärdedelar av höjden. Bären i rost2/rost3 med rost0 mellan och några foderbladsprickar i oliv3 är kvar som det mättade som syns först. Ytterformen är oförändrat spegelsymmetrisk.",
+   "ide": "Den låga näverasken som redan finns i spelet, sedd snett ovanifrån, ungefär 12 punkter bred och 9 hög, med en öppen oval mynning som tar tre fjärdedelar av höjden och ett smalt framband på 2–3 punkter i asken mörkare näverton. Mynningen är fylld till kanten med rundade bär i rost2 och rost3 med rost0 mellan dem, som en kupad yta där bara bärens ovansidor och några gröna foderbladsprickar i oliv3 syns. Formen är spegelsymmetrisk; bara ljuset från övre vänstra hörnet och kornet skiljer sidorna åt, och bären är det mättade som ska synas först."
   },
   {
    "bilder": [
     {
      "namn": "f9_jordgubbar",
      "rader": [
-      "..............KL",
-      "............uOJK",
-      ".........utOtr..",
-      "......utOtsr....",
-      "...utOtsrrr.....",
-      ".uOtsrrr........",
-      ".trrr...........",
-      "J..............."
+      ".......rrP......",
+      ".....rrutrPr....",
+      "....ruttsrutr...",
+      "....rtsPrttsr...",
+      "....EHHGGGGFE...",
+      "....EGGFFFFFE...",
+      "......EGFFE.....",
+      ".....EHGGFFE....",
+      "....EHHGGGFFE...",
+      "...EHqHGGGFFFE..",
+      "...EHHGHGGFFFE..",
+      "...EJKKKJJJJIE..",
+      "...EHGHGGFGFFE..",
+      "...EGHGGFGFFFE..",
+      "....EGGFGFFFE...",
+      ".....EFFFFFE....",
+      "......EEEEE....."
      ]
     }
    ],
-   "anteckning": "Bären är uppträdda på ett grässtrå som ligger platt på marken och ses snett ovanifrån. Strået löper som en diagonal från nedre vänstra hörnet, där en kort bar stråände i senap1 sticker ut, till övre högra hörnet, där fröhuvudet sitter kvar som en liten tofs i senap2. Sex bär sitter tätt som pärlor och döljer strået mellan sig. De två minsta (3×3) sitter ytterst och de fyra största (4×4) i mitten. Varje bär har kontur i rost0 och fyllning i rost2 med en ljus punkt i rost3 uppe till vänster och rost1 nere till höger, så att ljuset kommer uppifrån vänster. Ett foderblad i oliv2 sitter på bärets övre högra kant, där strået går in mot nästa bär. Bilden är cirka 27 × 10 punkter och har ingen skugga. De mättade rosttonerna är sparade till bären eftersom de är det man kan ta. Granskningen: Rättat: 1) Storleken. Strået var 27 × 10 punkter, nästan dubbelt så brett som kolonisten (14). Det är nu 16 × 8, nära idéns 16 × 6. 2) Raderna var olika långa (22–27 tecken). Nu är alla 16. 3) Bären är omritade som tydliga pärlor längs diagonalen från nedre vänstra till övre högra hörnet. De tre mittersta är 3 × 3 och de yttersta 2 × 2, alltså minst ytterst. Varje bär har rost3 uppe till vänster, rost2 i mitten och rost1 med kontur i rost0 nere till höger, så att ljuset kommer från övre vänster. Spetsen pekar nedåt åt vänster och ett foderblad i oliv2 sitter mot strået. 4) Strået syns i senap1 i nedre vänstra änden och mellan sista bäret och tofsen. Tofsen i övre högra hörnet är senap2 med en ljusare punkt i senap3. Saken ligger på marken, sedd ovanifrån, och bärs inte. De mättade rosttonerna syns tydligt mot det olivgröna gräset.",
-   "ide": "Bären uppträdda på ett grässtrå, som man plockade dem förr, som en lång och smal diagonal silhouette på cirka 16 × 6 punkter som ligger på marken och ses ovanifrån. Strået är en tunn linje i senap1 och senap2 som löper från nedre vänstra till övre högra hörnet, med en liten tofs i senap2 i ena änden. Längs strået sitter sex eller sju bär i rost2 och rost3 som pärlor på rad, med kontur i rost0 och små foderblad i oliv2 mot strået, och de minsta bären sitter ytterst."
-  },
-  {
-   "bilder": [
-    {
-     "namn": "f9_jordgubbar",
-     "rader": [
-      "...EEEEEE...",
-      "..EHHGGGGE..",
-      ".EHE.rr.EGE.",
-      ".EGrutsOrGE.",
-      "EquturXutsoE",
-      "EqrutsOtsroE",
-      "EqqpqqpqppoE",
-      "EGHGGHGGGFFE",
-      "EqqoppoqqooE",
-      "EqqoppoqqooE",
-      "EppoqqoppooE",
-      "EppoqqoppooE",
-      "EqqoppoqqooE",
-      ".EEEEEEEEEE."
-     ]
-    }
-   ],
-   "anteckning": "Näveraskan står på marken och ses snett ovanifrån: öppningen är en rektangel där bärhögen bullrar upp över kanten, och den bakre kanten döljs av bären. Framsidan är en högre panel i ben med vävt rutmönster, ljusast till vänster och mörkast till höger, med kontur i jord0 och en kantbindning av vidja i jord2. Bärhanken i jord2 går upp från kortsidorna och spänner över öppningen. Bären ligger framför hankens nedre del, eftersom de fyller asken. De röda bären i rost2 och rost3 har kontur i rost0 och är det mest mättade i bilden, så att maten syns först. Några blad i oliv2 och barr3 bryter av det röda. Bilden är 14 × 17 punkter. Granskningen: Rättat: asken var 14 × 17 punkter, nästan lika hög som kolonisten (20), och för stor för en bärkorg. Den är nu ritad om i idéns storlek, 12 × 14, med samma uppbyggnad: bärhank av vidja i jord, bärhög i rost med blad i oliv och barr, kantband i jord och framsida i ben. Fyra punkter i ben3 bröt mot regeln om högst en eller två punkter glans; de är bytta mot ben2, och nävret är nu ljusast uppe till vänster och mörkast till höger. Det oregelbundna mönstret på framsidan är ersatt av ett tydligt vävt rutmönster, rutor om 2 × 2 i ben2 och ben1 åtskilda av ben0, med raderna förskjutna mot varandra. Formen och hanken är spegelsymmetriska, bara ljuset och kornet skiljer sidorna åt, och nedre hörnen är rundade. Vinkeln snett ovanifrån, konturen i jord0 och det röda som syns först mot gräset är oförändrade.",
-   "ide": "En hög, fyrkantig näveraska på cirka 12 × 14 punkter som står upp och ses snett ovanifrån, med den öppna överkanten som en rektangel och framsidan som en högre panel i ben1 och ben0 med vävt rutmönster och kontur i jord0. En böjd bärhank av vidja i jord2 går upp från kortsidorna och spänner över öppningen, förkortad mot bakkanten. Ovanför kanten bullrar en hög av röda bär i rost2 och rost3 med några gröna blad i oliv2 och barr3, så att det röda syns först mot det dämpade nävret."
+   "anteckning": "Lerkrukan står upprätt på golvet i förrådet och ses snett uppifrån, som i spelet. Den är 11 punkter bred och 13 hög: en bukig och spegelsymmetrisk kropp, en smal hals och en mynning med kant. Senapsbandet följer spelets kruka. Kroppen hålls i dämpade jordtoner med jord0 som kontur. Ljuset faller på vänstra buken, med en punkt glans i ben2, och den högra sidan är mörkare. Bären ligger i krukan, så bara den lilla kullen ovanför mynningen syns. Det är tre eller fyra rundade bär i rost2 och rost3 med rost0 som kontur och några foderblad i oliv3. Det röda är det enda mättade, eftersom maten är det man ska se. Det är en enda sak och ingen ny behållare. En avvikelse: spelets kruka är rostorange, men här är kroppen jordbrun enligt idén, så att de rostfärgade bären syns mot den. Granskningen: Granskat mot reglerna; ingen rättning behövdes, så versionen lämnas oförändrad. Storlek: krukan är 11 punkter bred och 13 hög (rad 4–16), med bären 17 rader. Den är mindre än kolonisten (14 × 20) och har samma storlek som den godkända krukan. Vinkel: krukan står snett uppifrån med den ovala mynningen överst och bärkullen ovanpå. Det är ingen station, så regeln om ytan ovanifrån gäller inte. Symmetri: silhuetten är spegelsymmetrisk kring kolumn 8 i mynning (kol 4–12), hals (6–10), buk (3–13) och botten (6–10). Bärkullen följer samma bredd, och bara ljus och korn skiljer sidorna åt. Kontur och toner: jord0 runt krukan och rost0 runt bären, ingen kol0, och kroppen har tre jordtoner med korn. Det gula bandet finns redan på spelets lerkruka och är kvar. Glansen är en enda punkt i ben2 (inte vit) på vänstra buken. Ljuset faller uppe till vänster på både bär och buk. Läsbarhet: de mättade rosttonerna finns bara i bären, alltså maten, och bären syns först. Krukan är ljusare än gräset och har kontur, så den syns mot marken. Idén följs: det är spelets befintliga lerkruka och ingen ny behållare, och den visar en enda sak. Bären syns bara ovanför mynningen, med foderblad i oliv3. Saken bärs inte, så regeln om huvud och ansikte är inte aktuell.",
+   "ide": "Den runda lerkrukan som redan finns i spelet, stående och sedd snett uppifrån, ungefär 11 punkter bred och 13 hög: en hög, bukig och spegelsymmetrisk silhuett med smal hals och en oval öppning högst upp. I öppningen sticker en liten kulle av bär upp över kanten, tre eller fyra rundade bär i rost2 och rost3 med rost0-kontur och ett par foderblad i oliv3, medan krukans kropp hålls i dämpade jordtoner med jord0 som kontur och ljuset på vänstra buken. Bären är bara det som logiskt syns ovanför mynningen, så krukans höjd och de röda topparna ger en tydlig, hög silhuett mot den låga asken."
   }
  ]
 }

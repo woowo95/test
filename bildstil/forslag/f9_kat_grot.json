@@ -4,87 +4,88 @@
  "slag": null,
  "vad": "Steg 9.6.3: maten som kokas till gröt av säd hör till gruppen Gröt och får en egen symbol i listan över rätter. Här symbolen på en mörk ruta.",
  "av": "API:t (claude-opus-5-5), tre idéer",
+ "kommentar": "nya versioner",
  "versioner": [
   {
    "bilder": [
     {
      "namn": "f9_kat_grot",
      "rader": [
+      "......p..p......",
       ".....p....p.....",
-      "....p....p......",
-      "....p....p......",
-      ".....p....p.....",
+      "......o..o......",
       ".....oooooo.....",
-      "...oqwLLKKqqo...",
-      "..oqwqLKKJqqpo..",
-      ".EoqqwqqKqqppoE.",
-      "EHHqqqqqpqqppGFE",
-      "EHHHGHGGGGGGGFFE",
-      "EGHGGGFGGGFGFFFE",
-      ".EGGGFGGFGFFFFE.",
-      "..EGFGFFGFFFFE..",
-      "...EEEFFFFEEE...",
-      "....EGGFFFFE....",
+      "...EowqqqqpoE...",
+      "..EHopqpqppoFE..",
+      "..EHGGGGGGGFFE..",
+      "...EEHGGGGFEE...",
+      "..EGHHGGGGGFFE..",
+      ".EGHHGGGGGGGFFE.",
+      ".EHHGGGGGGGFGFE.",
+      ".EHGGGGGGGGGFFE.",
+      ".EGGGGGGGFGFFFE.",
+      "..EGGGGGFGFFFE..",
+      "...EFGFGFFFFE...",
       "....EEEEEEEE...."
      ]
     }
    ],
-   "anteckning": "Skålen står på sin fot på bordet och ses lätt snett framifrån. Därför syns grötens kupiga yta ovanför den främre kanten, medan den bakre kanten döljs av kupan. Vid sidorna syns bara kantens ändar. Skålens form är spegelsymmetrisk och bara ljuset skiljer sidorna åt: jord3 på kanten uppe till vänster och jord1 nere till höger. Konturen är jord0 runt träet och ben0 runt gröten. Smörklicken sitter mitt på kupan och rinner en punkt nedåt. Ångan stiger i två korta, böjda slingor i ben1 upp till överkanten och har ingen kontur, eftersom den inte är något fast. Granskningen: Rättat: ångslingorna satt en punkt för långt åt höger (mitt 8,5 i stället för rutans mitt 7,5). De är flyttade en punkt åt vänster så att symbolen är centrerad och symmetrisk. Allt annat följer reglerna och idén och är oförändrat. Skålen har jord0-kontur, jord1–jord2 och en ljusare kant uppe till vänster. Grötkupan är i ben2–ben3 med ljuset uppe till vänster och smörklicken i senap. Formen är spegelsymmetrisk, kol0 används inte och symbolen fyller rutan.",
-   "ide": "En låg, bred träskål sedd lätt snett framifrån, spegelsymmetrisk, som fyller rutans nedre två tredjedelar: skålen i jord1–jord2 med jord0-kontur och en ljusare kant uppe till vänster, och ovanpå en kupig yta av gröt i ben2–ben3 med en klick smält smör i senap2–senap3 mitt på. Ovanför grötkupan stiger två korta, böjda ångslingor i ben1 som når upp mot rutans överkant och gör silhuetten hög nog att läsas som varm mat."
+   "anteckning": "Lerkrukan står rakt framifrån och ses lite uppifrån, så mynningen syns som en smal oval. Bakre kanten döljs av gröten som väller upp över den, och den främre läppen syns som ett ljust band i jord G och H. Buken är 14 punkter bred och spegelsymmetrisk; ljuset från vänster ger H till vänster och F till höger, med kontur i E runt hela krukan. Gröten är en kupa i ben p och q med kontur o och en glanspunkt w uppe till vänster. Två korta ångslingor i o och p stiger rakt upp mot överkanten och rör inte krukan. Granskningen: Krukan, gröten och storleken följer idén: buken är 14 punkter bred, krukan är spegelsymmetrisk, gröten är ljus med kontur i o och har en glanspunkt i w uppe till vänster. Jag rättade tre saker. 1) Mynningens överkant saknade kontur, så H i rad 5 låg öppen mot bakgrunden. Jag lade till E i rad 4 (kolumn 3 och 12) så att den ovala mynningen har kontur runt hela. 2) Ångslingorna var inte spegelsymmetriska (kolumn 6/10 och 5/9). Nu är de ett speglat, böljande par i kolumn 6/9, 5/10 och 6/9, och de går fria från grötens kontur. 3) En ensam ljus prick (H) mitt i buken i rad 10 blev G, så att kornet inte bildar en fläck.",
+   "ide": "Lerkrukan rakt framifrån, spegelsymmetrisk: en rund buk som är 14 punkter bred och fyller nedre två tredjedelar av rutan, en kort hals och en utvikt mynning som ses lite uppifrån som en smal oval. Krukan ritas i jord F, G och H med kontur i E. Ur mynningen väller en kupig hög gröt i ben p, q och w med kontur o och en glanspunkt uppe till vänster. Över gröten stiger två korta ångslingor i ben o och p mot rutans överkant."
   },
   {
    "bilder": [
     {
      "namn": "f9_kat_grot",
      "rader": [
-      "..............EE",
-      "............EHGE",
-      "...........EHGE.",
-      "..........EHGE..",
-      "...kkkkkkEHGE...",
-      ".kknnnnnEHGEnkk.",
-      ".knLLqqEHGEqpnk.",
-      "kknqLqqpFppppnkk",
-      "kknnnnnnnnnnnmkk",
-      ".kmnmmmmmmmmllk.",
-      ".knommmmmmmmllk.",
-      ".knmmmmmmmmmllk.",
-      "..kmmmmmmmmllk..",
-      "...kkkkkkkkkk...",
-      "...mk..mk..mk...",
-      "...kk..kk..kk..."
+      "................",
+      "................",
+      "....nnnnnnn.....",
+      "..nnqqqqqqpnn...",
+      ".nqwwwJJJwqqpn..",
+      "nqwwwJLLKJwqqpn.",
+      "nqqwwJLKKJwqppn.",
+      "noqqwwJJJwqqpon.",
+      "nqooooooooooopn.",
+      "nwqqqqqqqqqpppn.",
+      "nqqooqqqqoooqpn.",
+      "nqwqqqqpqqqqppn.",
+      "nqqqoooqqqooopn.",
+      ".nqqqppppppoon..",
+      "..nnnnnnnnnnn...",
+      "................"
      ]
     }
    ],
-   "anteckning": "Grytan står på sina tre korta ben och ses framifrån, lätt uppifrån, så att öppningen blir en smal ellips. Det bakre brättet syns i kol3 och grötens yta i ben2–senap3 är ljusast uppe till vänster. Det främre brättet är en kol3-rad över buken. Kroppen, öronen och benen är spegelsymmetriska; bara glansen på vänster bukkant och skuggan till höger skiljer sidorna åt. Staven i jord2–jord3 med jord0-kontur ligger mot bakkanten. Den går över det bakre brättet upp mot övre högra hörnet. Den nedre änden försvinner ner i gröten och syns där bara som en liten grop. Därför ritas ingen slevskopa. Granskningen: Rättat: grytans öron syntes inte, eftersom buken i rad 9–10 var lika bred som brättet (hela rutans bredd) och öronen gick ihop med kroppen. Buken i rad 9–10 är nu en punkt smalare på varje sida (kolumn 1–14). Brättets kol0-punkter i kolumn 0 och 15 på rad 7–8 sticker därför ut som två små, symmetriska öron, som idén säger. Skuggningen på höger sida (kol1) och glansen på vänster bukkant (en punkt ben0) är kvar. Resten följer reglerna och är oförändrat. Grytan är symmetrisk med tre ben placerade symmetriskt. Gröten syns som en ljus ellips i ben2–senap3 under brättet. Staven i jord2–jord3 med jord0-kontur ger den tydliga diagonalen mot övre högra hörnet. Symbolen är ritad framifrån och nästan fyller rutan.",
-   "ide": "En rund järngryta med två små öron på sidorna och tre korta ben, symmetrisk och nästan rutans fulla bredd: grytan i kol2–kol3 med kol0-kontur, lätt glans på vänster bukkant, och grötens yta syns som en smal ljus ellips i ben2–senap3 strax under brättet. En trästav eller slev i jord2 sticker snett upp ur gröten mot övre högra hörnet, så att silhuetten blir en rund kropp med en tydlig diagonal."
+   "anteckning": "Symbolen visar näverasken som redan finns i spelet, sedd framifrån och lite uppifrån. Den står låg och bred på sin botten, 15 punkter bred och 8 punkter hög, med en rak front och rundade nedre hörn. Mynningen är en bred oval upptill, och genom vinkeln syns gröten i den. Där bak skymtar askens insida som ett skuggat band i p och o. Framkanten markeras av ett streck i o mellan gröten och fronten. Gröten är ljus i w och q med korn. Mitt i den ligger en smörklick på 5 × 3 punkter i L och K med kontur i J, som enda mättade färg. Fronten har näverns toner q och p, ljusast uppe till vänster, och några korta vågräta streck i o. Konturen är n runt hela saken. Granskningen: Silhuetten var redan spegelsymmetrisk, men mynningen var en rak rektangel (raderna 4–6 var fyllda i full bredd) och inte en bred oval. Jag rundade nu ovalen uppåt med en smal topp (rad 2–3), och dess underkant böjer sig som en läpp i o (o vid kanterna på rad 7, sedan o tvärs över på rad 8). Gröten ligger inne i ovalen med det ljusa w åt vänster mot ljuset. Smörklicken i J, K och L är centrerad kring mittkolumnen och har ljuset L uppe till vänster. Asken behåller björknävertonerna q och p med vågräta streck i o, den mörkare högersidan i p och o och konturen n. Den är 15 punkter bred, i stort sett lika hög som förut och nästan fyller rutan. Siluetten med bred, låg nederdel och oval mynning skiljer sig tydligt från krukans runda.",
+   "ide": "Näverasken låg och bred: en rektangel med rundade hörn, 15 punkter bred och bara 7–8 hög, framifrån med mynningen som en bred oval upptill. Asken ritas i björknävertoner q och p med några vågräta mörka streck i o och kontur o/n. Ovalen är fylld med ljus gröt i q och w. Mitt i gröten ligger en tydlig klick smör i senap K och L med kontur J, så att den låga och breda silhuetten blir helt olik krukans runda."
   },
   {
    "bilder": [
     {
      "namn": "f9_kat_grot",
      "rader": [
-      ".....LK.KJ......",
-      "...ooKJoJIoo....",
-      "..owwqwqqqqpo...",
-      "..owqwqqqpqpo...",
-      "..oqqqpqqpqpo...",
-      "...oqpooopoo....",
-      "...rqouttpsr....",
-      "...routttosrrrr.",
-      "...ruttttssrttsr",
-      "...ruttttssrrrsr",
-      "...rutttsssr.rsr",
-      "...ruttttssr.rsr",
-      "...rutttsssrrrsr",
-      "...ruttttssrsssr",
-      "...rtttssssrrrr.",
-      "....rrrrrrr....."
+      ".......EEEEEEE..",
+      "......EHHHHHHGE.",
+      ".....EHHoooooGGE",
+      ".....EHoqwqqqoGE",
+      ".....EoqqqpqqpoE",
+      ".....EoqqpqpqpoE",
+      ".....EoqpqpqppoE",
+      ".....EKopqpppoGE",
+      ".....EHKoooooGGE",
+      "....EHHGGGGFFFE.",
+      "...EHGFEEEEEEE..",
+      "..EHGFE.........",
+      ".EHGFE..........",
+      "EHGFE...........",
+      "EGFE............",
+      ".EE............."
      ]
     }
    ],
-   "anteckning": "Kruset står upprätt och ses från sidan, nästan fyllande rutan: en hög, smal lerkrus i rost1–rost2 med rost0-kontur, ljuset på vänster sida (rost3 i vänsterkanten) och mörkare åt höger. Det raka örat sitter på höger sida med ett litet hål mot kroppen. Gröten väller upp över mynningen som en rundad hätta i ben2–ben3 med ben0-kontur, något bredare än kruset, och rinner ner över kanten på två ställen, ett längre till vänster och ett kortare till höger. På grötens topp ligger två sädeskorn i senap1–senap2, så att det syns att rätten är kokt av säd. Ingen bakgrund; programmet lägger den mörka rutan. Granskningen: Storlek, vinkel och symmetri stämmer: symbolen är 16 × 16 och sedd från sidan. Krus och hätta är centrerade kring samma mitt, och kruset syns tydligt på mörk ruta och på gräset. Två saker rättades. 1) Krusets kropp hade utspridda ensamma rost3-prickar, som gav ett bubbligt mönster och fick den att likna en ölsejdel. Nu har den en jämn ljusgång: rost3 längs vänsterkanten, rost2 i mitten och rost1 mot höger, med kornet växlat rad för rad. 2) Örat var en oklar fläck med lösa rost2-punkter och ett hål på en enda punkt. Nu är det en ren ögla: överbalk i rost2, sida och underbalk i rost1, rost0-kontur runt om och ett tydligt hål i två rader. Dessutom har den andra droppen av gröt över kanten fått ben1 med ben0-kontur under, i stället för en ensam ben0-prick. Hättan i ben2–ben3 och sädeskornen i senap ligger kvar som förut.",
-   "ide": "En hög, smal lerkrus eller kopp med rakt öra på ena sidan, sedd från sidan, där gröten väller upp över kanten som en tjock rundad hätta: kruset i rost1–rost2 med rost0-kontur och ljuset på vänster sida, och grötens hätta i ben2–ben3 som rinner ner en bit över kanten på ett eller två ställen. Längst upp ligger några ax eller korn av säd i senap1–senap2 på grötens topp, så att det syns att rätten är kokt av säd."
+   "anteckning": "Skeden ses ovanifrån och lite snett, liggande diagonalt från nedre vänstra till övre högra hörnet. Skaftet är ett grovt band av trä, H uppe till vänster och F nere till höger, med kontur i jord E. Skedbladet tar ungefär halva rutan uppe till höger. Där syns träkanten bara som en smal ring överst och nederst, för gröten fyller bladet. Klicken är rundad i ben q och p med kontur o. Den har en enda glanspunkt w uppe till vänster och mörknar mot nedre högra kanten. Två sädeskorn i senap K sitter där gröten möter skaftets fäste. Det är ingen ny behållare, bara ett redskap att äta med. Granskningen: Granskat: symbolen fyller rutan, har E-kontur runt hela, ljuset kommer från övre vänstra hörnet (H uppe till vänster, G och F nere till höger) och följer idén. Där finns träskeden på diagonalen, gröten i q och w med o-kontur, en glanspunkt uppe till vänster och två sädeskorn i K där gröten möter skaftet. Inga nya behållare och ingen kol0. Jag rättade en sak: skedbladet var inte spegelsymmetriskt kring skaftets diagonala axel. Nedre högra kanten låg en punkt för långt in jämfört med den övre vänstra. Jag flyttade konturen en punkt utåt (rad 8 slutar nu med GGE, rad 9 med FFFE och rad 10 har E i kolumn 7–13), så att bladet blir en jämn, symmetrisk oval längs diagonalen. Allt annat är oförändrat.",
+   "ide": "En sked av trä snett över rutan från nedre vänstra till övre högra hörnet: ett grovt skaft av jord G och H med kontur E och ett stort skedblad som tar ungefär halva rutan uppe till höger. Bladet är toppat med en rundad klick gröt i ben q och w med kontur o, och en glanspunkt uppe till vänster. Där gröten bryter mot skaftet sitter några få sädeskorn i senap K. Den diagonala silhuetten skiljer symbolen från behållarna, och skeden är ett redskap man äter med, ingen ny behållare."
   }
  ]
 }

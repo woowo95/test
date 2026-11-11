@@ -1,0 +1,202 @@
+{
+ "kort": "f7_fangstbank",
+ "namn": "Fångstbänken",
+ "slag": null,
+ "vad": "Steg 7.4.1: arbetsbänken där byn gör fällor och mjärdar, tre rutor bred och två djup. Tre nya försök där stationen är flera delar som står var för sig med gräs emellan, så att delarna kan ställas olika från by till by: en bänk, en stubbe, en korg, en ställning, ett kar och det som byggs. Var och en står bredvid slaktbänken (till vänster), snett ovanifrån.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "kommentar": "gör nya versioner utan förlaga",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f7_fangstbank",
+     "rader": [
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "..........................................L.....",
+      ".......................................L..K.....",
+      ".......................................K..K.....",
+      ".......................................K..K.....",
+      ".......................................K...K....",
+      "........................................K..K....",
+      "...........................GE.......EEEEKEEKEEE.",
+      "..EEEEEEEEEEEEEEEEEE.......HF......EHHHGKHGKHGGE",
+      ".EHHHGHHHHGHHHGHHGGGE......HF......EHGQQJQQJQGFE",
+      ".EHGHHHGHHHGGHHHGGHGE......HF......EGGRQJRQJRGFE",
+      ".EHGKLKKKKFFKKKKKJGGE....EEHFEE....EHGRSJRQRRGFE",
+      ".EGHJKJKJKFFJKJKJJGFE...EqqGFqpE...EGGRRQRRQRFFE",
+      ".EHGIJIJIJFFIJIJIIFGE..EqpGTSGppE..EGGQRRRQRQGFE",
+      ".EGHGGGHGGGHGGFGGGFGE..EqGpoGpGoE..EGGFGGFGFFFFE",
+      ".EGGFGGGFGGGFGGFGFFFE..EpoGGGGooE..EFFFFGFFFFFFE",
+      ".EFFGFFFFFFGFFFFFFFFE..EGHGGFGFFE..EFFFFFFFGFFFE",
+      ".EEEEEEEEEEEEEEEEEEEE..EGGFGFFFFE...EEEEEEEEEEE.",
+      "...EFE..........EFE....EFGFFFFFFE...............",
+      "...EFE..........EFE.....EEEEEEEE................",
+      "...EFE..........EFE.................IIIII.......",
+      "...EEE..........EEE..............KKKLJLKLIII....",
+      "....................................LJKLKLKLII..",
+      "....................................KJLKLKLKLKI.",
+      ".................................LKKKJKLKLKLKKKI",
+      "....................................KJJKJKJKJKI.",
+      "....................................JJKJKJKJII..",
+      ".................................KKJJJJKJIII....",
+      "....................................IIIII......."
+     ]
+    }
+   ],
+   "anteckning": "Stationen är en låg rad på 48 × 32 punkter med fyra delar som står var för sig, med genomskinligt gräs emellan, så att de kan ställas olika i varje by. Längst till vänster står bänken av en kluven stock (20 × 14). Skivan ses ovanifrån i jord1–jord3 med korn längs stocken. Framkanten är ett band på två rader i jord1 och jord0, och bara de två främre benen syns, som stumpar på 4 punkter. På skivan ligger en bunt vidjespön i senap, ovanifrån, hopbunden på mitten. Mitt i står stubben (10 × 9) med snittytan överst i ben1–ben2 och en årsring i jord2, och barksidan framtill. Kniven sitter nedstucken i snittet, så bara skaftet och en bit av bladet syns. De sticker uppåt-bakåt från stubben, eftersom vi ser den snett ovanifrån. Till höger står karet, en urholkad stock utan ben. Kanten och det mörka vattnet i skiffer0–skiffer1 ses ovanifrån, med en glimt i skiffer2, och framsidan är ett band på två rader. Två spön som blötläggs står lutade i vattnet. Under ytan är de mörkare (senap1), och ovanför kanten sticker de upp ljusa mot bakkanten. Framför karet ligger mjärden på sidan. Struten är spegelsymmetrisk kring sin mittlinje, med kontur i senap0 och fläta i senap2–senap3 som är ljusare upptill. Mynningsringen vetter åt vänster, och därifrån sticker tre oflätade spön ut, så att den läses som halvfärdig. Den är det ljusaste och mest mättade i bilden och ska ses först. Ljuset kommer uppifrån vänster i alla delar, och skuggan på marken är inte ritad. Granskningen: Version 1 följer idén och reglerna i stort. Storleken stämmer: 48 × 32 punkter, bänken och karet är ungefär knähöga mot kolonisten. Vinkeln är rätt: ytorna syns ovanifrån och har smala framkantband. Stubben och mjärden är spegelsymmetriska, och delarna har kontur och syns mot gräset. Rättat: 1) Ensamma mörka prickar i jord0 i framkantbanden på bänken (rad 19) och karet (rad 18–19) är bytta mot jord1/jord2, så att bandet får korn utan fläckar. 2) Den mörka pricken i jord0 på stubbens snittyta (rad 17) är nu jord2, som en del av årsringen. 3) Bänkens benstumpar är förlängda från 3 till 4 punkter, som idén säger. Inget annat är ändrat.",
+   "ide": "Låg rad i bredd, 48 × 32 punkter: längst till vänster en lång bänk av en kluven stock (cirka 20 × 10), skivan sedd ovanifrån i jord1–jord3 med ett smalt framkantband i jord0 och två korta benstumpar på 4 punkter. På bänken ligger buntade vidjespön i senap1–senap2. Mitt i står en rund stubbe (cirka 10 × 9) med ljus snittyta i ben1–ben2 och årsringar i jord2; en kniv sticker ner i den. Till höger står ett lågt kar av en urholkad stock fyllt med mörkt vatten i skiffer0–skiffer1, med spön som blötläggs. Framför karet ligger en halvflätad mjärde på sidan, en spegelsymmetrisk strut i senap2–senap3 med kontur i senap0, så att den läses först. Gräs syns mellan alla delar."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f7_fangstbank_stallning",
+     "rader": [
+      "EE..EE.......................EE..EE",
+      "EH..GE.......................EH..GE",
+      "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE",
+      "EHGHHGHGHHGHHGHGHHGHHGHGHHGHHGHGHHE",
+      "EGFGFFGFGGFGFFGFGGFGFFGFGGFGFFGFGFE",
+      "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE",
+      ".EHGE.....o......p......o.....EHGE.",
+      ".EGFE....III.....o.....III....EGFE.",
+      ".EHGE....IKI.....p.....IKI....EHGE.",
+      ".EGFE...IKJJI...pqp...IKJJI...EGFE.",
+      ".EHGE...IKKJI..p...o..IKKJI...EHGE.",
+      ".EGFE...IIIII..p...o..IIIII...EGFE.",
+      ".EHGE..ILJKJJI.p...o.ILJKJJI..EHGE.",
+      ".EGFE..IKKJKJI..poo..IKKJKJI..EGFE.",
+      ".EHGE..IKJKJJI.......IKJKJJI..EHGE.",
+      ".EGFE.IIIIIIIII.....IIIIIIIII.EGFE.",
+      ".EHGE.IKJKJKJJI.....IKJKJKJJI.EHGE.",
+      ".EGFE.IKKJKJKJI.....IKKJKJKJI.EGFE.",
+      ".EHGE..IIIIIII.......IIIIIII..EHGE.",
+      ".EGFE.........................EGFE.",
+      ".EHGE.........................EHGE.",
+      ".EGFE.........................EGFE.",
+      ".EHGE.........................EHGE.",
+      ".EEEE.........................EEEE."
+     ]
+    },
+    {
+     "namn": "f7_fangstbank_stubbe",
+     "rader": [
+      "...EEEEEEEE...",
+      ".EHHHHHHHHGGE.",
+      "EHHGGGGGGGGHGE",
+      "EHGHHHGGHHHGGE",
+      "EHGHHHHHHHHGFE",
+      "EHHGGGGGGGGGFE",
+      "EEHHHGHHGGFFEE",
+      "EGEEEEEEEEEEFE",
+      "EGFGFFGFFGFFFE",
+      "EGFFGFFGFFFFFE",
+      ".EEEEEEEEEEEE."
+     ]
+    },
+    {
+     "namn": "f7_fangstbank_natbank",
+     "rader": [
+      ".EEEEEEEEEEEEEEEEEEEEEE.",
+      "EHHGHHHGHHGHHGHGHGGHGGGE",
+      "EHGHqqqqqqqqqpppppppGHGE",
+      "EHHGqHHqHHqHHpHGpGGpGGGE",
+      "EHGHqGHqHGqHGpGHpGHpGHGE",
+      "EHHGqqqqqqqqqpppppppGGGE",
+      "EHGHqGHqHGqHGpGHpGHpGHGE",
+      "EHHGqHHqHHqHHpHGpGGpGGGE",
+      "EHGHqqqqqqqqqpppppppGHGE",
+      "EGFGpFGpFGpFGoFFoFFoFFFE",
+      "EFFGFFFFGFFFFFFFFGFFFFFE",
+      "EEEEEEEEEEEEEEEEEEEEEEEE",
+      "..EGE..............EFE..",
+      "..EGE..............EFE..",
+      "..EEE..............EEE.."
+     ]
+    }
+   ],
+   "anteckning": "Fångstbänken är tre delar som står var för sig. (1) Ställningen, 34×24, står vid bakkanten. Två klykstolpar i jord1–jord2 har kontur i jord0, och tvärslån vilar i klykorna. Slån ses snett ovanifrån: en ljus översida i jord3/jord2 och en mörkare framsida i jord1/jord2. Två mjärdar hänger i var sitt snöre med den slutna spetsen uppåt och öppningen nedåt. De är spegelsymmetriska strutar i senap1–senap2 med band i senap0, och ljuset faller från vänster. Mellan dem hänger en snara av rep i ben1, med knut och slinga. Allt under slån är fritt, så hängsakerna syns. Stolparna når marken längre ner än mjärdarna. (2) Stubben, 14×11, är kort och bred. Snittytan ses ovanifrån med årsringar och tar sju av elva rader. Under den ligger ett smalt barkband på 3 punkter i jord1 och en kontur i jord0. (3) Den tvåbenta bänken, 24×15, har skivan ovanifrån på två tredjedelar av höjden. Nätet är utbrett över skivan som ett glest rutmönster i ben2 (ljus sida) och ben1 (skuggsida). Några maskor hänger över framkanten, som är ett band på 2 punkter i jord1 under skivan och åtgärdar förra versionens rena framvy. Bara de två främre benen syns, som stumpar på 3 punkter. Stubben och bänken är låga och ställs framför ställningen, med gräs emellan. Granskningen: Rättat: 1) Ställningen hade en rad (rad 19, mjärdarnas nederkant) som var 35 punkter i stället för 34, och den högra stolpen hamnade då snett. 2) Den högra mjärden låg tätt mot den högra stolpen men en punkt från den vänstra, så ställningen var inte symmetrisk. Ställningen är nu 35 × 24 med stolparna jämnt fördelade kring snaran. Båda mjärdarna har en punkts luft mot stolparna, och tvärslån och klykorna är förlängda med en punkt. 3) Stubbens övre kontur var osymmetrisk (dubbelt E till vänster på rad 2), och den är nu spegelsymmetrisk. 4) Den mörka fläcken FF mitt på stubbens skiva bröt mot regeln om korn och inte fläckar. Den är nu en ljus kärna i jord2 inom årsringen. Nätbänken är oförändrad: skivan ses ovanifrån och tar 9 av 15 rader, framkanten är ett band på 2 punkter, benen är stumpar på 3 punkter och nätet är ett glest rutmönster i ben1–ben2.",
+   "ide": "Hög silhuett med ställningen bakom: vid bakkanten står en ställning av två klykstolpar med en tvärslå (cirka 30 punkter bred och 22 hög, förkortad), i jord1–jord2 med kontur i jord0. På tvärslån hänger två färdiga mjärdar med öppningen nedåt, symmetriska strutar i senap1–senap2, och en snara av rep i ben1. Framför ställningen står till vänster en kort, bred stubbe som sittplats och till höger en liten tvåbent bänk med ett nät under arbete utbrett över skivan; nätet ritas ovanifrån som ett glest rutmönster i ben1–ben2. Eftersom bara de låga delarna står framför ställningen syns hängsakerna fritt."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f7_fangstbank_stubbe_med_falla",
+     "rader": [
+      "........QQQQ........",
+      ".......QTTSSQ.......",
+      "......QTSSSSRQ......",
+      ".....EHHGQQQQGGE....",
+      "...EEEHEqqqpqGEEE...",
+      "..EqqqHEpqqpqGEqpE..",
+      ".EqqpqHHHHGGGGEqppE.",
+      "EqqpqpHooooooGEqppoE",
+      "EqppqpHEpqppqGEpqpoE",
+      "EqqpqHHHHGGGGGEpqpoE",
+      "EqpqpEEEEEEEEEEqppoE",
+      ".EqqpqppqppqpppqpoE.",
+      ".EGpqppppppppppoFFE.",
+      ".EHGGoooooooooFFFFE.",
+      ".EHGGGFGGFGFFFFFFFE.",
+      ".EGGFGGFGFFGFFFFFEE.",
+      ".EEEEEEEEEEEEEEEEEE."
+     ]
+    },
+    {
+     "namn": "f7_fangstbank_mjarde",
+     "rader": [
+      "...IIIIII...",
+      ".IILKLKLKII.",
+      "IKLIIIIIIKJI",
+      "ILIIJKJKIIKI",
+      "IKIJIEEEJIJI",
+      "ILIKIEEEJIKI",
+      "IKIIJKJJIIJI",
+      "IKLKLKJKJJJI",
+      "IJKJKJKJJIJI",
+      "IKJKJJKJIJII",
+      "IJKJKJJIJIJI",
+      "IKJJKJIJIJII",
+      ".IJKJIJIJII.",
+      "..IIIIIIII.."
+     ]
+    },
+    {
+     "namn": "f7_fangstbank_pall",
+     "rader": [
+      ".EEEEEEEEEEEE.",
+      "EHpHHpHHGHHGGE",
+      "EHHGHHGHHGHGGE",
+      "EpHHGHHHGHGGFE",
+      "EHGHHGHGHGGGFE",
+      "EFFGFFGFFFFFEE",
+      "EFEFFEFFEFFEEE",
+      ".EEEEEEEEEEEE.",
+      "..EGFE..EGFE..",
+      "..EGFE..EGFE..",
+      "..EEEE..EEEE.."
+     ]
+    },
+    {
+     "namn": "f7_fangstbank_stenhall",
+     "rader": [
+      "...QQQQQQQQQ....",
+      ".QQSSTSSSRSSRQQ.",
+      "QSTHHHHHHHHSRSRQ",
+      "QSSRSPPPPPPPPSRQ",
+      "QTSSRRRRRRRRSSRQ",
+      "QSSTSSqqqSSSRSRQ",
+      "QSTSSqpSpqSSRSRQ",
+      "QSSSSSoqqoSRSRRQ",
+      "QQRRSRRRRRRRRRQQ",
+      ".QQQQQQQQQQQQQQ."
+     ]
+    }
+   ],
+   "anteckning": "Stationen är fyra fristående delar som ställs med gräs emellan, alla snett ovanifrån. Stubben är en bred och låg kloss som står på marken. Snittytan ses ovanifrån i ben1–ben2 med årsringar, och barken syns som ett smalt band framtill (ljusare till vänster, mörkare till höger). På snittytan står fällan under bygge: en fyrkantig bur av käppar i jord2–jord3. Den bakre käppen och stenen (skiffer2–skiffer3, kontur skiffer0) står upp vid bakkanten och sticker därför upp ovanför stubben, förkortade. Stenen vilar på bakre käppen som tyngd, så att fällan kan slå igen. Mjärden står på högkant med öppningen uppåt. Man ser ner i den: ljus kant, mörkt inre och strupen som en inre ring. Den flätade väggen syns under framkanten. Pallen är en kluven halvstock med den ljusa klyvytan uppåt och barken som mörkt framband. Bara de två främre stumparna syns, tre punkter höga. Hällen är en låg, platt sten i skiffer1–skiffer2. Ovanpå ligger en knippe vidjor i jord3/oliv3 och en ring av tråd i ben, ritade ovanifrån. Ingen ny behållare har hittats på. Granskningen: Granskat mot reglerna. Storleken stämmer mot kolonisten (14 × 20): stubben är 20 × 17 och de mindre delarna 12–16 punkter breda. Alla delar ses snett ovanifrån, är tecknade i paletten, har kontur i materialets mörkaste ton och ljus från övre vänstra hörnet. Ingen del bärs, så regeln om remmar och huvudet gäller inte. Två rättelser: 1) Pallen: de två benstumparna satt osymmetriskt, med två punkter kvar till vänster och en till höger. De sitter nu speglade med två punkter på var sida (kolumn 2–5 och 8–11). 2) Stubben: sidan av bark var fyra rader hög plus kontur, alltså tjockare än framkantens 2–3 punkter, och stubben såg mindre låg ut. En barkrad är borttagen, så att sidan är två rader plus kontur. Snittytan tar nu drygt hälften av höjden, och stubben är 20 × 17. Mjärden (spegelsymmetrisk ring med öppningen uppåt) och stenhällen (vidjor och trådring ovanifrån) är oförändrade.",
+   "ide": "Tät klunga runt en stor stubbe, nästan rund i planform: i mitten en mycket bred, låg stubbe (cirka 16 × 12) med snittytan ovanifrån i ben1–ben2, och på den en fälla under bygge, en fyrkantig slagfälla av käppar i jord2–jord3 med en sten i skiffer2–skiffer3 som tyngd. Runt den, med gräs emellan, står tre mindre delar: snett bakom till vänster en rund kärl- eller korgmjärde på högkant (en ring av flätade spön i senap1–senap3, öppningen uppåt så att man ser ner i den); till höger en kort pall av en kluven halvstock på två stumpar; framför en platt stenhäll i skiffer1–skiffer2 där vidjor och tråd ligger utlagda. Helheten blir rund och låg i stället för rak och lång."
+  }
+ ]
+}

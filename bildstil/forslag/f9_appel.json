@@ -4,76 +4,68 @@
  "slag": null,
  "vad": "Steg 9.7.13: äpplen är frukten från äppelträdet och går att äta rå eller lagra över vintern. Här äpplena som sak i förrådet.",
  "av": "API:t (claude-opus-5-5), tre idéer",
+ "kommentar": "Nya versioner: ett föremål som ligger i förrådet ritas som ett enda föremål, alltså ett äpple. Stackarna ritas sedan i ett eget förslag.",
  "versioner": [
   {
    "bilder": [
     {
      "namn": "f9_appel",
      "rader": [
-      ".....rrr.....",
-      "....ruFOr....",
-      "....rutsr....",
-      "...rrrtrrr...",
-      "..ruFtruFtr..",
-      ".rrrtrrrtrrr.",
-      "ruFtruFtruFtr",
-      "rutsrutsrutsr",
-      "rttsrttsrttsr",
-      ".rrr.rrr.rrr."
+      ".....FON..",
+      "..rrFrrr..",
+      ".rusFttsr.",
+      ".rLuttKsr.",
+      ".rutKtssr.",
+      ".rtttsssr.",
+      "..rtsssr..",
+      "...rrrr..."
      ]
     }
    ],
-   "anteckning": "Högen ligger på marken i förrådet, sedd snett uppifrån. Den har tre äpplen längst ner, två i glappen ovanpå och ett överst. Varje högre äpple ligger över de lägre, så det ritas framför dem och täcker deras ovansida. Därför syns de små skaften i jord1 bara på de äpplen där toppen är fri: det översta och de två i mitten. Ett blad i oliv2 sitter vid det översta skaftet och ett vid det högra mittäpplet. Varje äpple är ett klot på 5 × 5 punkter i rost2 med kontur i rost0. Det har en glanspunkt i rost3 uppe till vänster och rost1 nere till höger. Formen är spegelsymmetrisk; bara ljuset, glansen och bladen skiljer sidorna åt. Bilden är 13 × 10 punkter och mättat röd mot det dämpade gräset, eftersom äpplena är mat som går att ta. Granskningen: Högen ritades om från grunden. I version 1 flöt äpplena ihop till en enda rost-klump, och det gick inte att läsa ut tre, två och ett. Formen var också osymmetrisk, eftersom bladet satt utanför konturen på rad 3 och skaftet satt snett ovanför toppen på rad 0. Nu består högen av sex tydliga klot på 5 × 5 punkter i en låg pyramid: tre längst ner, två i mitten och ett överst. De främre äpplena täcker de bakre. Varje äpple har kontur i rost0, yta i rost2, en glans i rost3 uppe till vänster och rost1 på den skuggade högra sidan. Skaftet är en punkt i jord1 mitt på ovansidan, så att högen ses snett uppifrån. Det enda bladet i oliv2 ligger vid det översta skaftet, inne i konturen, så att silhuetten förblir spegelsymmetrisk. Storleken är 13 × 10 punkter, rimligt mot kolonisten (14 × 20), och rosten syns tydligt mot det olivgröna gräset.",
-   "ide": "En liten hög med fem eller sex äpplen, ungefär 12 × 10 punkter, som en låg pyramid med tre äpplen längst ner, två ovanpå och ett överst, sedd snett uppifrån så att äpplenas ovansidor och de små skaften syns. Varje äpple är ett runt klot på 4–5 punkter i rost2 och rost3 med ljuset uppe till vänster, en glanspunkt i rost3 och kontur i rost0; skaften är en enda punkt i jord1 och här och där sitter ett litet blad i oliv2. Högen är spegelsymmetrisk till formen, bara ljuset och kornet skiljer sidorna åt."
+   "anteckning": "Ett enda äpple som ligger i förrådet. Det står upprätt på botten och ses snett ovanifrån, så den grunda gropen med skaftet syns i övre delen av formen. Kroppen är 8 × 7 punkter och spegelsymmetrisk; bara ljuset och kornet skiljer sidorna åt. Ljuset kommer uppifrån vänster: rost2 och rost3 där, med en enda glanspunkt i senap3, och rost1 nere till höger. Skalet har korn av enstaka senap2-punkter. Konturen är rost0. Gropen är rost1 vid skaftets fot. Skaftet är två punkter jord1 som lutar åt höger, med ett litet blad i oliv2/oliv1. Ingen behållare och ingen hög. Granskningen: Storleken (ett äpple på 8 × 7 punkter med skaft, mot kolonisten på 14 × 20), formen och symmetrin var rätt och behölls. Rostkonturen syns bra mot gräset. Det här rättade jag: Idén säger att den grunda gropen ska synas i övre tredjedelen, men skaftet satt bara på konturen och övre raden hade mörka s-punkter som såg ut som en fläck. Nu går skaftet ner i en grop på rad 2, med en skuggad vänstervägg i s och en ljus högervägg i t, så att äpplet läses snett ovanifrån. Det fanns flera ljusa punkter uppe till vänster (L och två u) och två K-punkter som låg diagonalt intill varandra och bildade en fläck. Nu finns en enda glanspunkt i L, och de två K-punkterna är utspridda som korn. De ensamma s-punkterna i de ljusa raderna 4 och 5 är borttagna, så att tonen går jämnt från rost3 och rost2 uppe till vänster till rost1 nere till höger. Bottenraden fick en t-punkt till vänster för ljusets skull.",
+   "ide": "Ett runt, lite bredare än högt äpple (cirka 8 × 7 punkter) som står upprätt och ses snett ovanifrån, så att den grunda gropen med skaftet syns i övre tredjedelen. Formen är spegelsymmetrisk kring mittlinjen, med rost2 och rost3 uppe till vänster, rost1 nere till höger, kontur i rost0 och korn av enstaka senap2-punkter i skalet. Skaftet är två punkter jord1 som lutar lite åt höger och har ett litet blad i oliv2/oliv1, och glansen är en enda u- eller L-punkt uppe till vänster."
   },
   {
    "bilder": [
     {
      "namn": "f9_appel",
      "rader": [
-      "....EEEEEEEE....",
-      "...EHGGGGGGFE...",
-      "...EHEEEEEEFE...",
-      "...EGE....EFE...",
-      "..EEGEEEEEEFEE..",
-      ".EHGGHGGHGGGGFE.",
-      "EHrutrrLKrrutrFE",
-      "EGuttsLKKJuttsFE",
-      "EGttssKKJJttssFE",
-      "EHrssrrJIrrssrFE",
-      "EHHGHGGHGGHGGGFE",
-      "EFGFGFGFGFGFGFFE",
-      ".EGFGFGFGFGFGFE.",
-      "..EEEEEEEEEEEE.."
+      "...E...",
+      "...F...",
+      ".rrFII.",
+      "rtrrrKI",
+      "rutKKJI",
+      "rttKJKI",
+      "rtsKKJI",
+      ".rsKJI.",
+      ".rJKJI.",
+      "..rII.."
      ]
     }
    ],
-   "anteckning": "Korgen står på marken i förrådet och ses snett ovanifrån. Den breda ovala öppningen tar mer än halva höjden, och äpplena fyller den så att de buktar upp över bakkanten. Framsidan syns bara som ett smalt flätat band i jord1 och jord2 med rutigt korn och kontur i jord0. Handtaget står upp från bakkanten, förkortat till en låg båge i jord2, och dess fötter går ned bakom äpplena till kanten. Ljuset kommer uppifrån vänster: kanten är ljusast (jord3) till vänster och mörkare till höger. Äpplena är röda (rost2 och rost3) och ett är gult (senap2), med springor i rost0. Korgens och handtagets form är spegelsymmetrisk; bara ljuset och kornet skiljer sidorna åt. Granskningen: Rättat: handtaget var osymmetriskt (benen satt på olika avstånd från mitten och var olika breda). Nu står det spegelsymmetriskt, förkortat, från bakkanten. Bakre korgkanten saknades, så öppningen läste inte som en oval; nu finns en ljus bakkant i jord2 och jord3. Framsidan var 5 punkter hög och öppningen bara 5 av 15 rader. Nu är framkanten en kantrad och ett smalt flätband på 2 rader, och öppningen tar större delen av korgkroppen. Äpplena var otydliga fläckar och blev tre runda klot på 4 × 4 punkter (två röda i rost2/rost3 med skugga i rost1, ett gult i senap) med springor i rost0. Ljuset kommer uppifrån vänster, och den högra kanten är mörkare i jord1. Storleken är 16 × 14, i nivå med kolonisten.",
-   "ide": "En rund flätad korg, ungefär 14 × 12 punkter, sedd snett ovanifrån så att öppningen är en bred oval som tar mer än halva höjden, full med röda äpplen som sticker upp över kanten. Korgens framsida är ett smalt band av flätat vide i jord1 och jord2 med ett rutigt korn och kontur i jord0, och ett böjt handtag i jord2 står upp från bakkanten, förkortat. Äpplena i öppningen är små klot på 3–4 punkter i rost2, rost3 och några i senap2 för gula sorter, med mörka springor i rost0 emellan; korgen och handtaget är spegelsymmetriska."
+   "anteckning": "Ett enda vildäpple som ligger i förrådet. Det står upprätt på blomändan och ses snett ovanifrån, så toppen vänder mot betraktaren. Därför syns skaftgropen som en mörk rost0-båge strax under överkanten, och skaftet (jord0/jord1) sticker rakt upp ur den, tre punkter högt och utan blad. Silhuetten är spegelsymmetrisk: bredast upptill och smalare ner mot blomändan. Bara färgerna skiljer sidorna åt. Rodnaden i rost2 sitter på den vänstra, belysta sidan, med en enda glanspunkt i rost3 uppe till vänster. Den högra sidan är gulgrön i senap2 och senap1 med korn och mörknar nedåt höger. Konturen är rost0 runt det röda och senap0 runt det gula. Ingen behållare och ingen skugga. Granskningen: Krympte äpplet från 9 × 12 till 7 × 10 punkter (kroppen 7 × 8 och skaftet tre punkter jord0/jord1), så att det följer idén (cirka 7 × 9) och inte blir orimligt stort bredvid kolonisten (14 × 20) och de godkända sakerna. Silhuetten är fortfarande spegelsymmetrisk och smalare nedtill. Skaftgropen är en rost0-båge nära toppen. Rodnaden i rost2 med en enda glanspunkt i rost3 ligger uppe till vänster och mörknar mot rost1 nedtill. Den gulgröna högersidan i senap1/senap2 har senap0-kontur och rött har rost0-kontur. Färgerna syns tydligt mot gräset. Vinkeln snett ovanifrån behålls, eftersom skaftet står rakt upp ur gropen.",
+   "ide": "Ett avlångt vildäpple (cirka 7 × 9 punkter, högre än brett och smalare nedtill) som står på sin blomända och ses snett ovanifrån. Därför syns skaftgropen som en mörk rost0-båge nära toppen och skaftet sticker rakt upp som tre punkter jord0/jord1, utan blad. Skalet är gulgrönt i senap1 och senap2 med en rodnad i rost2 på den vänstra, belysta sidan, och konturen är senap0 runt det gula och rost0 runt det röda. Silhuetten är symmetrisk, och bara ljuset skiljer sidorna åt."
   },
   {
    "bilder": [
     {
      "namn": "f9_appel",
      "rader": [
-      ".EEEEEEEEEEEEE.",
-      "EHFGFFFGFFFGFGE",
-      "EHuEtKuEtJuEtGE",
-      "EHuttJuttKuttGE",
-      "EHttsKttsJttsGE",
-      "EHJKJKKJKJJKJGE",
-      "EHuEtJuEtKuEtGE",
-      "EHuttKuttJuttGE",
-      "EHttsJttsKttsGE",
-      "EHHHGHHHGHHGHGE",
-      "EFGFFEFGFEFGFFE",
-      "EFFGFEGFFEFFGFE",
-      ".EEEEEEEEEEEEE."
+      "........OO",
+      "......FONN",
+      ".....F....",
+      "..rrrrOO..",
+      ".rtuttrON.",
+      "rtttstsr..",
+      "rrtststr..",
+      "rtstsssr..",
+      ".rstssr...",
+      "..rrrr...."
      ]
     }
    ],
-   "anteckning": "Lådan står på golvet i förrådet och ses snett ovanifrån. Överst syns bakkantens bräda ovanifrån och under den lådans inre bakvägg som en mörkare list i jord1. Insidan tar tre fjärdedelar av höjden. Där ligger äpplena i två förskjutna rader med en halmrad emellan, så att varje äpple syns för sig. Varje äpple är en 3 × 3-punkts prick i rost3 och rost2 och är ljust uppe till vänster, mörkt i rost1 nere till höger. Skaftet är en punkt i jord0. Halmen i senap1 och senap2 syns i springorna mellan äpplena. Framkanten är ett brädband på 2 punkter i jord1 med fogar i jord0. Under den finns inga ben, eftersom lådan står direkt på golvet. Konturen runt hela lådan är jord0, och sidokanterna är ljusare till vänster, mot ljuset. Rosttonerna är de enda mättade, eftersom äpplena är det man ska se och kan ta. Granskningen: Rättat: 1) Symmetrin. I 16 punkters bredd låg äppelraderna snett: en halmpunkt mot vänster vägg och ingen mot höger. Lådan är nu 15 punkter bred. Insidan blir då 11 punkter, så de tre äpplena per rad (3 punkter med halm i springorna) ligger exakt centrerat. Framkantens brädfogar sitter symmetriskt (4–3–4). 2) Storleken. Lådan var 16 × 14, högre än idéns cirka 16 × 11 och för stor bredvid kolonisten. Den översta ljusa listen är borttagen, så bilden är nu 15 × 13. Bakkanten är nu direkt lådans inre sida i en mörkare ton, som idén säger. Oförändrat, eftersom det redan följde reglerna: vinkeln snett ovanifrån (insidan med äpplena tar ungefär tre fjärdedelar av höjden), framkanten som ett band på 2 punkter i jord1 med fogar i jord0, konturen i jord0, ljuset uppifrån vänster (vänster vägg i jord3, höger i jord2), äpplena i rost2/rost3 med skaft i jord0 på halm i senap1/senap2. Lådan är ljusare än gräset och syns tydligt.",
-   "ide": "En låg fyrkantig lagerlåda av grova bräder, ungefär 16 × 11 punkter, som i förrådet över vintern, sedd snett ovanifrån så att lådans insida med äpplena tar tre fjärdedelar av höjden. Framkanten är ett smalt brädband på 2–3 punkter i jord1 med brädfogar i jord0, kanterna har kontur i jord0, och längs bakkanten syns lådans inre sida som en mörkare list. Äpplena ligger i två–tre prydliga rader ovanifrån som runda prickar på 3 punkter i rost2 och rost3 med en skaftpunkt i jord0, och de ligger på ett tunt lager halm i senap1 och senap2 som syns i springorna."
+   "anteckning": "Ett enda litet järnåldersäpple som ligger på sidan i förrådet, 8 × 7 punkter i en bild på 13 × 10. Blomändan vänder åt vänster och syns som en liten stjärna i rost0 i konturen. Skaftet sitter i gropen uppe till höger och fortsätter som en kort kvist i jord1 snett uppåt höger, som när frukten plockats med kvisten kvar. Två blad i oliv2 och oliv1 sticker ut åt höger och gör silhuetten asymmetrisk. Kroppen har rost1 och rost2 med korn, ljusast uppe till vänster och mörkast nere till höger. Konturen är rost0 och glansen en enda punkt i rost3 uppe till vänster. Ingen behållare och ingen hög, bara äpplet. Granskningen: Rättat: äppelkroppen var osymmetrisk. Den var 8 punkter bred, men topp- och bottenraden låg förskjutna en punkt åt höger. Nu är silhuetten spegelsymmetrisk: 4, 6, 8, 8, 8, 6 och 4 punkter kring samma mitt. Den vänstra sidan hade dubbel rost0 på tre rader, vilket gav en mörk fläck på den ljusa sidan och bröt mot ljuset uppifrån vänster. Nu är blomändan en liten instjärna i rost0 som sitter ihop med konturen, i stället för en mörk klump. Ljuset är omlagt: rost2 dominerar uppe till vänster, rost1 nere till höger och u-glansen är kvar på en enda punkt. Därmed blir äpplet ljusare än gräset och syns bättre. Skaftet utgår nu från toppen nära mitten och pekar snett upp åt höger. De två bladen i oliv2 och oliv1 sitter kvar på kvisten åt höger. Storleken är 8 × 7 för frukten och 10 × 10 för hela bilden, vilket passar mot kolonisten på 14 × 20.",
+   "ide": "Ett litet, tillplattat järnåldersäpple (cirka 7 × 6 punkter) som ligger på sidan, så att skaftet pekar snett uppåt höger och den lilla blomändan syns som en mörk prick-stjärna i rost0 till vänster. Kvar på skaftet sitter en kort kvist i jord1 med två blad i oliv2 och oliv1 som sticker ut åt höger, och de gör silhuetten längre och asymmetrisk på samma sätt som en avplockad frukt. Äpplet har två–tre rosttoner med korn, kontur i rost0 och en enda u-punkt som glans uppe till vänster."
   }
  ]
 }
