@@ -418,7 +418,8 @@ const VARJE_SLAG = new Set<Act>(['strid', 'slacka', 'slackaSig', 'hjalpaBrinnand
 // dag som blir natt), och hen har inte väntat KLOCKA.arbetsBit sekunder
 function vantar(p: Person, tk: Task, now: number, dt: number) {
   const d = ACTS[tk.act];
-  return tk.phase === 'do' && !d.tur && !d.runda && !VARJE_SLAG.has(tk.act) && tk.med === undefined && tk.until > now + 1e-6
+  const stannat = !!d.tur && !tk.hopp && (tk.plock ?? 0) > (tk.vant ?? 0) + dt; // promenaden som står still vid en punkt (steg 10.2.21 D)
+  return tk.phase === 'do' && (!d.tur || stannat) && !d.runda && !VARJE_SLAG.has(tk.act) && tk.med === undefined && tk.until > now + 1e-6
     && (tk.vant ?? 0) + dt < KLOCKA.arbetsBit && p.toa >= KROPP.toaAvbryt && !(d.dygn && tk.dark !== !isLight(now));
 }
 // tiden (sekunder) sedan raden t räknades, om den ska räknas i slaget som slutar vid now, annars undefined. Sist räknad står i
