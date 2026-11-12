@@ -1238,7 +1238,7 @@ function strackaFran(s: State, tk: Task, x0: number, y0: number, r: number) {
   const vt = vattenNu(s), kand: number[] = [];
   for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
     const x = x0 + dx, y = y0 + dy;
-    if (Math.hypot(dx, dy) > r + 0.01 || !inMap(x, y) || vt[y * W + x] === T.Vatten || sakerPa(s, tk, x, y) <= 0) continue;
+    if (Math.hypot(dx, dy) > r + 0.01 || !inMap(x, y) || vt[y * W + x] === T.Vatten || sakerPa(s, tk, x, y) <= 0 || blocked(s, x + 0.5, y + 0.5)) continue; // (inte i en vägg)
     kand.push(y * W + x);
   }
   const ut: number[] = [];
@@ -1256,7 +1256,7 @@ function narmastMedSaker(s: State, tk: Task, x0: number, y0: number, r: number) 
   const vt = vattenNu(s);
   for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
     const x = x0 + dx, y = y0 + dy, d = Math.hypot(dx, dy);
-    if (d > r + 0.01 || d >= bd || !inMap(x, y) || vt[y * W + x] === T.Vatten || sakerPa(s, tk, x, y) <= 0) continue;
+    if (d > r + 0.01 || d >= bd || !inMap(x, y) || vt[y * W + x] === T.Vatten || sakerPa(s, tk, x, y) <= 0 || blocked(s, x + 0.5, y + 0.5)) continue; // (inte i en vägg)
     bast = { x, y }; bd = d;
   }
   return bast;
