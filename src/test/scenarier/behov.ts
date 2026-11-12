@@ -416,7 +416,7 @@ SCENARIER.torst = {
     const isen = q.task!.act === 'dricka' && /isen/.test(q.task!.why ?? '');
     // två dygn (två år i spelet) i tre byar: alla dricker, ingen törstar ihjäl, och lärdomarna om vattnet sprids
     let drickor = 0, magont = 0, dog = 0, hort = 0, maxTorstiga = 0;
-    for (const seed of [5, 6, 7]) {
+    for (const seed of [5, 6, 7, 8]) {
       const b = createState(seed, START); setFood(b, 60); setAmount(b, 'ved', 40);
       kor(b, 48, b => { maxTorstiga = Math.max(maxTorstiga, living(b).filter(x => x.torst <= 0).length); });
       drickor += (b.stat?.drack as number ?? 0) + (b.stat?.['smalt sno'] as number ?? 0); magont += b.stat?.['magont av vatten'] as number ?? 0; dog += b.stat?.['dog av törst'] as number ?? 0;
@@ -430,7 +430,7 @@ SCENARIER.torst = {
       ['utan vatten tär törsten på hälsan', tar],
       ['i istiden smälts snö vid elden', sno],
       ['i istiden utan eld hugger man upp isen och dricker', isen],
-      [`på två dygn i tre byar: ${drickor} gånger drack man, ${magont} fick ont i magen, ${hort} lärdomar om vattnet hade man hört av andra, ${dog} törstade ihjäl (som mest ${maxTorstiga} uttorkade samtidigt)`, drickor > 50 && dog === 0 && hort > 0],
+      [`på två dygn i fyra byar: ${drickor} gånger drack man, ${magont} fick ont i magen, ${hort} lärdomar om vattnet hade man hört av andra, ${dog} törstade ihjäl (som mest ${maxTorstiga} uttorkade samtidigt)`, drickor > 50 && dog === 0 && hort > 0],
     ];
   },
 };
@@ -548,7 +548,7 @@ SCENARIER.kropp = {
 };
 
 SCENARIER.vattensack = {
-  text: 'Steg 2.10.1: vattensäcken sys av skinn vid slöjdbänken med bensylen. Med den hämtar en vuxen vatten åt den som inte kan gå och ligger hemma; utan säck får hen vatten av de andra, och när törsten blir farlig också om säcken inte kommer',
+  text: 'Steg 2.10.1: vattensäcken sys av skinn vid slöjdbänken med bensylen. Med den hämtar en vuxen vatten åt den som inte kan gå och ligger hemma. Inget vatten kommer ur tomma luften (steg 10.2.35): utan säck bär en vuxen vatten i händerna, och den som ligger väntar också när törsten blir farlig',
   kor: () => {
     const s = createState(5, START);
     klockan(s, 10); rikBy(s);
@@ -558,13 +558,15 @@ SCENARIER.vattensack = {
     fyll(p, 0); fyll(q, 1); fyll(r, 2); r.x = c.x + 40;
     skada(s, p, 'benH', 'benbrott', 0.9, 'olycka', ''); for (const w of p.skador!) { w.b = 0; if (w.k === 'benbrott') { w.satt = 1; w.spala = 1; } } // också såret i ett öppet brott, och benet är redan satt och spjälat (steg 9.5.27–9.5.28)
     const kanInte = !kanGa(p) && hemma(s, p);
-    // utan säck: hen får vatten av de andra
+    // utan säck: hen väntar, och en annan bär vatten i händerna
     p.torst = 0.3; chooseTask(s, p); const utan = p.task?.act;
+    chooseTask(s, q); const qt = q.task as Task | undefined, hander = qt?.act === 'vatten' && !qt.tool && qt.ref === p.id;
+    q.task = undefined;
     // med säck: hen väntar, och en annan hämtar vatten i säcken
     const sack = addTool(s, 'vattensack', q);
     const akt = (x: Person) => (x.task as Person['task'])?.act;
     p.task = undefined; chooseTask(s, p); const vantar = akt(p);
-    chooseTask(s, q); const hamtar = q.task?.act, tar = q.task?.tool;
+    chooseTask(s, q); const qt2 = q.task as Task | undefined, hamtar = qt2?.act, tar = qt2?.tool;
     let fick = false;
     for (let i = 0; i < 4 * STEG_TIM && !fick; i++) { step(s, BEAT); p.torst = Math.min(p.torst, 0.3); if ((s.stat?.['bar vatten'] as number ?? 0) > 0) fick = true; }
     const sliten = (tingOf(s).find(t => t.id === sack.id)?.c ?? 0) < 1;
@@ -573,12 +575,52 @@ SCENARIER.vattensack = {
     const fl = STATIONER.flatarbank, tek = TEKNIK.find(t => t.id === 'vattensack');
     return [
       ['den som har brutit benet kan inte gå och ligger hemma', kanInte],
-      [`utan säck får hen vatten av de andra (${utan})`, utan === 'fatt'],
+      [`utan säck väntar hen (${utan ?? 'inget'}) och en annan bär vatten i händerna`, utan !== 'fatt' && utan !== 'dricka' && hander],
       [`med en säck i byn väntar hen på den (${vantar ?? 'inget'})`, vantar !== 'fatt' && vantar !== 'dricka'],
       [`en annan vuxen tar säcken och hämtar vatten (${hamtar}, ${tar})`, hamtar === 'vatten' && tar === 'vattensack'],
       [`vattnet kommer fram inom fyra timmar och säcken slits (${fick}, ${sliten})`, fick && sliten],
-      [`farligt törstig får hen vatten av de andra ändå (${farligt})`, farligt === 'fatt'],
+      [`farligt törstig väntar hen också på den som bär vatten (${farligt ?? 'inget'})`, farligt !== 'fatt' && farligt !== 'dricka'],
       ['säcken sys bara vid slöjdbänken med bensylen, och tekniken kommer efter skinnkläderna', !!fl.bara?.includes('vattensack') && fl.kraver?.vattensack === 'bensyl' && !!tek?.krav.includes('skinnklader')],
+    ];
+  },
+};
+
+SCENARIER.luften = {
+  text: 'Steg 10.2.35: inget vatten ur tomma luften. Spädbarnet dricker av sin mor, som då blir törstigare; det lilla barnet utan mor nära får vatten som en vuxen bär dit; gästen dricker ur sin vattensäck, som tar slut och fylls när hen går förbi vattnet',
+  kor: () => {
+    const s = createState(5, START);
+    klockan(s, 10); rikBy(s);
+    const c = bynsMitt(s), [mor, hamtare] = treVuxna(s, 1);
+    for (const x of [mor, hamtare]) Object.assign(x, { torst: 1, task: undefined, x: c.x + 0.5, y: c.y + 2.5 });
+    // spädbarnet med modern nära
+    const spad = SIM.newPerson(s, 'k', s.now - 0.5 * SIM.DAY); s.people.push(spad);
+    Object.assign(spad, { x: mor.x + 1, y: mor.y, torst: 0.3, mother: mor.id, task: undefined });
+    SIM.torstSteg(s, spad, ageOf(spad, s.now), 30);
+    const ammad = spad.torst === 1 && mor.torst < 0.9;
+    // det lilla barnet utan mor nära: en vuxen bär vatten dit
+    const barn = SIM.newPerson(s, 'm', s.now - 2 * SIM.DAY); s.people.push(barn);
+    Object.assign(barn, { x: c.x + 0.5, y: c.y + 3.5, torst: 0.3, task: undefined });
+    SIM.torstSteg(s, barn, ageOf(barn, s.now), 30);
+    const torstigt = barn.torst < 0.3;
+    const val = SIM.vattenVal(s, hamtare);
+    // gästen: säcken tar slut långt från vattnet och fylls vid vattnet
+    const g = SIM.nyGast(s, { id: SIM.nyttGastId(s), namn: 'Gäst', sex: 'm', fodd: s.now - 30 * SIM.DAY, rad: { sort: 'handlare' }, x: c.x + 0.5, y: c.y + 0.5, nyckel: 4242 });
+    if (!s.people.includes(g)) s.people.push(g);
+    const vt = SIM.vattenNu(s), langt = (i: number) => vt[i] !== T.Vatten && [-3, -2, -1, 0, 1, 2, 3].every(dy => [-3, -2, -1, 0, 1, 2, 3].every(dx => vt[i + dy * W + dx] !== T.Vatten));
+    let torr = -1, strand = -1;
+    for (let i = 4 * W; i < vt.length - 4 * W && (torr < 0 || strand < 0); i++) { if (torr < 0 && langt(i) && getMap(s.seed).tiles[i] !== T.Sten) torr = i; if (strand < 0 && vt[i] !== T.Vatten && vt[i + 1] === T.Vatten) strand = i; }
+    const sta = (i: number) => { g.x = i % W + 0.5; g.y = Math.floor(i / W) + 0.5; };
+    sta(torr); g.gast!.vatten = 1; g.torst = 0.2;
+    const varme = (q: Person) => q.warm;
+    SIM.gastVardag(s, 30, varme); const drack = g.torst === 1 && g.gast!.vatten === 0;
+    g.torst = 0.2; SIM.gastVardag(s, 30, varme); const tom = g.torst < 0.4;
+    sta(strand); SIM.gastVardag(s, 30, varme); const fylld = g.torst === 1 && (g.gast!.vatten ?? 0) >= 1;
+    return [
+      [`spädbarnet dricker av sin mor, som blir törstigare (modern ${mor.torst.toFixed(2)})`, ammad],
+      [`det lilla barnet blir törstigt (${barn.torst.toFixed(2)}) och en vuxen hämtar vatten åt det (${val?.why ?? 'inget'})`, torstigt && val?.ref === barn.id],
+      ['gästen dricker ur sin säck', drack],
+      ['när säcken är tom släcks inte gästens törst långt från vattnet', tom],
+      ['vid vattnet fylls säcken och gästen dricker', fylld],
     ];
   },
 };

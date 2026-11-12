@@ -954,7 +954,7 @@ SCENARIER.buden = {
     for (let d = 1; d <= 7; d++) { s.now = dag0 + d * 86400000 + 12 * 3600000; SIM.kyrkaTimme(s); fastade ||= (q.fasta ?? 0) > s.now; djur = s.stat?.djuroffer ?? 0; }
     const forst = SIM.forradSum(tr) > 0, tiond = (SIM.ownedStock(s, pr).bar ?? 0) > prast0;
     // främlingen, giftermålet, hämnden, de döda och lunden
-    const ny = nyInvanare(s, 'm', 25); ny.hunger = 0.3; SIM.budTillfalle(s, 'framling', ny);
+    const ny = nyInvanare(s, 'm', 25); ny.hunger = 0.3; const mat0 = SIM.FOOD.reduce((a, k) => a + SIM.amountOf(s, k), 0); SIM.budTillfalle(s, 'framling', ny); const matEfter = SIM.FOOD.reduce((a, k) => a + SIM.amountOf(s, k), 0);
     const annan = nyInvanare(s, 'k', 25); annan.tro = undefined;
     const hinder = SIM.budTillfalle(s, 'par', q, annan), inget = !SIM.budTillfalle(s, 'par', q, v.find(p => p !== q && p !== pr)!);
     const r0 = SIM.getRel(s, q, ny).op; SIM.handelse(s, ny, 'sla', q); const hamnd = SIM.getRel(s, q, ny).op < r0;
@@ -964,7 +964,7 @@ SCENARIER.buden = {
       ['tionde till prästen ur den egna maten', tiond],
       [`djuroffret en gång i veckan (${djur}, kött ${kott0} → ${SIM.amountOf(s, 'kott')})`, djur === 1 && SIM.amountOf(s, 'kott') < kott0],
       [`att tacka före maten stärker tron (${t0} → ${q.troStyrka})`, q.troStyrka! > t0 || t0 >= 100],
-      [`främlingen fick mat (${ny.hunger.toFixed(2)})`, ny.hunger > 0.3],
+      [`främlingen fick mat ur förrådet (${ny.hunger.toFixed(2)}; maten ${mat0.toFixed(0)} → ${matEfter.toFixed(0)}, steg 10.2.35)`, ny.hunger > 0.3 && matEfter < mat0],
       ['man gifter sig inte utanför tron, men inom den', hinder && inget],
       [`hämnden: relationen till den som slog blir sämre (${r0} → ${SIM.getRel(s, q, ny).op})`, hamnd],
       ['de döda talar man inte illa om', SIM.budTillfalle(s, 'talaIlla', q)],

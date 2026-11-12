@@ -5,7 +5,8 @@
 // krav (ACTS[act].gast); gastAkt sätter den som passar det sorten gör just nu. Allt dras ur gästens egna slumpföljder (p.rngs),
 // aldrig byns, så att byn utvecklas likadant vare sig en gäst kommer eller inte, så länge gästen inte behöver något av byn
 import type { Act, Person, State } from './typer';
-import { HOUR, HOUR_S } from './typer';
+import { H, HOUR, HOUR_S, T, W } from './typer';
+import { vattenNu } from './sjo';
 import { balans } from './balans';
 import { chance, clamp } from './slump';
 import { ACTS } from './handlingar';
@@ -24,7 +25,9 @@ export const GASTVARD = balans('gastvard', {
   matsack: 6, // portionerna i packningen när gästen kommer
   atUnder: 0.45, // gästen äter när mättnaden är under detta
   portion: 0.4, // så mycket en portion höjer mättnaden
-  drickUnder: 0.4, // och dricker ur vattensäcken under detta
+  drickUnder: 0.4, // och dricker ur vattensäcken under detta ...
+  sack: 4, // ... som rymmer så här många klunkar och fylls när gästen går förbi vattnet (steg 10.2.35)
+  sackNara: 1.5, // så nära vattnet (rutor) fyller gästen säcken
   sovUnder: 0.35, // somnar när vilan är under detta, om ingen handlar
   vaken: 0.95, // och vaknar när den är så här hög
   somnTim: 6, // timmar sömn från tom till full vila
@@ -68,6 +71,15 @@ function kanSova(s: State, p: Person) {
   return !!h && h.id === p.id && (h.fas === 'vantar' || (h.fas === 'handlar' && !h.affar && !h.ko?.length));
 }
 
+// står gästen vid vattnet (en vattenruta inom GASTVARD.sackNara)?
+function vidVattnet(s: State, p: Person) {
+  const v = vattenNu(s), r = Math.ceil(GASTVARD.sackNara);
+  for (let y = Math.floor(p.y) - r; y <= Math.floor(p.y) + r; y++) for (let x = Math.floor(p.x) - r; x <= Math.floor(p.x) + r; x++) {
+    if (x < 0 || y < 0 || x >= W || y >= H || Math.hypot(x + 0.5 - p.x, y + 0.5 - p.y) > GASTVARD.sackNara) continue;
+    if (v[y * W + x] === T.Vatten) return true;
+  }
+  return false;
+}
 // ett slag för varje gäst (steg.ts, efter byborna). varme = gästens värme efter slaget, räknad som en bybos i steg.ts
 export function gastVardag(s: State, dtSec: number, varme: (p: Person) => number) {
   const h = dtSec / HOUR_S, now = s.now;
@@ -78,7 +90,9 @@ export function gastVardag(s: State, dtSec: number, varme: (p: Person) => number
     naringSjunker(p, h, KROPP.hungerTim);
     if (p.hunger < GASTVARD.atUnder && g.mat >= 1) { g.mat--; ata(p, { torrmort: GASTVARD.portion / 2, rotter: GASTVARD.portion / 2 }); count(s, 'gast at'); }
     torstSteg(s, p, a, dtSec);
-    if (p.torst < GASTVARD.drickUnder) p.torst = 1; // vattensäcken fylls vid bäckarna på vägen
+    g.vatten ??= GASTVARD.sack;
+    if (g.vatten < GASTVARD.sack && vidVattnet(s, p)) g.vatten = GASTVARD.sack; // säcken fylls när gästen går förbi vattnet
+    if (p.torst < GASTVARD.drickUnder && g.vatten >= 1) { g.vatten--; p.torst = 1; count(s, 'gast drack'); }
     p.warm = varme(p);
     p.social = clamp(p.social - dtSec / (KROPP.socialTim * HOUR_S), 0, 1);
     // sömnen

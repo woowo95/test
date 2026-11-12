@@ -2,6 +2,7 @@
 // vilken skala och sida som ger det. Kyrkans egendom (Tro.forrad), hovet och templet, helgonen och kvädena. Allt en tro avgör är frågor i FRAGOR
 // med trons krets (rost.ts). Buden gäller de troende, de starkt troende mer; ett bud som blivit lag gäller alla (LAGAR, lagar.ts).
 import { Act, DAY, HOUR, Person, State } from './typer';
+import { MAT } from './behov';
 import { balans } from './balans';
 import { clamp, rnd } from './slump';
 import { ALDER, type BudTillfalle, ageOf, count, living, log, relKey, satBudTillfalle, stat, think } from './folk';
@@ -41,7 +42,7 @@ export const KYRKA = balans('kyrka', {
   djur: 2, // djuroffret: så mycket kött en gång i veckan (sju dygn, sju år i spelet)
   djurSakna: -0.03, // den troende mår så här mycket sämre när det inte finns något att offra
   offerDygn: 28, // människooffret: högst en gång på så här många dygn (år i spelet), och bara den som dömts
-  framlingRel: 10, framlingMat: 0.2, // främlingen: så mycket bättre relation och så mycket mättare
+  framlingRel: 10, // främlingen: så mycket bättre relation med den som ger (maten är en portion ur förrådet, steg 10.2.35)
   hamndRel: 15, // hämnden: relationen till den som gjort en våldsam handling blir så här mycket sämre
   vecka: 7, // vilodagen, fastan och djuroffret: en gång på så här många dygn (år i spelet)
 });
@@ -258,10 +259,10 @@ function budDygn(s: State) {
 // de bud som verkar i andra system (folk.ts budTillfalle): true = budet stoppar det
 function budTillfalleK(s: State, typ: BudTillfalle, p: Person, q?: Person): boolean {
   if (!s.tron?.length) return false;
-  if (typ === 'framling') { // främlingar ska få mat: de som följer budet ger, och relationen blir bättre
-    let gav = false;
-    for (const f of living(s)) if (f !== p && harBud(s, f, 'framling')) { const r = s.rels[relKey(f.id, p.id)]; if (r) r.op = Math.min(100, r.op + KYRKA.framlingRel); gav = true; }
-    if (gav) { p.hunger = Math.min(1, p.hunger + KYRKA.framlingMat); count(s, 'framling_mat'); }
+  if (typ === 'framling') { // främlingar ska få mat: de som följer budet ger av sin mat ur förrådet (steg 10.2.35), och relationen blir bättre
+    let gav: Person | undefined;
+    for (const f of living(s)) if (f !== p && harBud(s, f, 'framling')) { const r = s.rels[relKey(f.id, p.id)]; if (r) r.op = Math.min(100, r.op + KYRKA.framlingRel); gav ??= f; }
+    if (gav && (MAT.anvand(s, p) > 0 || MAT.anvand(s, p, gav) > 0)) count(s, 'framling_mat'); // ur byns förråd, annars av den som ger
     return false;
   }
   if (typ === 'par') return !!q && ((harBud(s, p, 'giftaTro') || harBud(s, q, 'giftaTro')) && p.tro !== q.tro || [p, q].some(x => harBud(s, x, 'ogifta') && prastOf(s, troOf(s, x.tro)!) === x));
