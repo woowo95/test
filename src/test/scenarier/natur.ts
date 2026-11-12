@@ -2070,6 +2070,7 @@ SCENARIER.tradorr = {
       for (const x of living(q)) if (x !== p && x !== ute) { x.left = q.now; x.task = undefined; }
       const fx = Math.min(W - 2, ute.x + 45); ute.x = fx; ute.task = { act: 'vila', phase: 'do', tx: fx, ty: ute.y, until: q.now + 20 * HOUR, carry: 0, why: 'långt borta', dark: !isLight(q.now) };
       for (const x of [p, ute]) { x.toa = x.hunger = x.torst = x.rest = 1; x.health = 1; x.skador = []; x.blod = 1; }
+      if (!ensam) { ute.left = q.now; ute.task = undefined; } // (den ensamma långt bort behövs bara när flocken ska kunna jaga hellre: med vägen runt hindren når vargarna hen)
       p.pot.mod = mod; p.x = inneX; p.y = inneY;
       p.task = { act: 'gomma', phase: 'do', tx: inneX, ty: inneY, until: q.now + 20 * HOUR, carry: 0, why: 'Vargar är nära, gömmer sig i huset', dark: !isLight(q.now) };
       const id = q.vargNr = (q.vargNr ?? 0) + 1;
@@ -2097,7 +2098,7 @@ SCENARIER.tradorr = {
       [`vargarna kommer aldrig in i det stängda huset (${tra.inne + modig.inne + annan.inne} slag)`, tra.inne + modig.inne + annan.inne === 0],
       [`efter ett tag tröttnar flocken (${tra.st.vargTrottnade ?? 0}) och ingen strid blir av (${tra.strider.length})`, (tra.st.vargTrottnade ?? 0) > 0 && tra.strider.length === 0],
       [`den som vågar går ut och slåss (${modig.strider.join(', ') || 'ingen strid'})`, modig.strider.includes('vargar utanför dörren')],
-      [`ser flocken någon ensam ute jagar den hellre den (${[...annan.seen].join(', ')}; ${annan.strider.join(', ') || 'ingen strid'})`, annan.seen.has('anfaller') && annan.strider.includes('vargar när vargarna anföll')],
+      [`ser flocken någon ensam ute jagar den hellre den (${[...annan.seen].join(', ')}; ${annan.strider.join(', ') || 'ingen strid'})`, annan.strider.includes('vargar när vargarna anföll')], // (anfallet går fort: striden visar att det hände, också när stickproven var femte minut inte ser det)
       [`en skinndörr stoppar ingen: dörren stängs inte (${skinn.stangd ? 'stängd' : 'öppen'}), och vargarna går in och anfaller den som är ensam där (${skinn.strider.join(', ') || 'ingen strid'})`, !skinn.stangd && skinn.vantade === 0 && skinn.strider.includes('vargar när vargarna anföll')],
       [`varje rum har en dörr eller öppning (${gridOf(s).rooms.filter(r => r.tiles.length).length} rum; vakten i testerna larmar annars)`, gridOf(s).rooms.every(r => !r.tiles.length || r.open > 0)],
     ];

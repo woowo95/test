@@ -148,6 +148,8 @@ export function kanterna(x: number, y: number) {
 // kommer i land. Är den raka vägen stängd tar den steget snett åt sidan. Svarar hur långt det är kvar, eller −1 när den inte
 // kommer någonstans
 const SNETT = [0, 0.8, -0.8, 1.6, -1.6];
+// en vägg (gridOf solid) går ingen varg igenom, vare sig rummet är stängt eller inte
+const vagg = (s: State, x: number, y: number) => gridOf(s).solid?.[Math.floor(y) * W + Math.floor(x)] === 1;
 function ga(s: State, f: Vargflock, fart: number, dtSec: number, sokt = false): number {
   // vägen runt det som står i vägen (ett hus, en vägg): flocken följer den så länge målet är detsamma
   const mal = Math.floor(f.my) * W + Math.floor(f.mx);
@@ -157,7 +159,7 @@ function ga(s: State, f: Vargflock, fart: number, dtSec: number, sokt = false): 
     if (Math.hypot(wx - f.x, wy - f.y) < 0.4) { f.vag.t.shift(); continue; }
     const l = Math.min(Math.hypot(wx - f.x, wy - f.y), fart * dtSec), d = Math.hypot(wx - f.x, wy - f.y);
     const x = f.x + (wx - f.x) / d * l, y = f.y + (wy - f.y) / d * l;
-    if (stangd(s, x, y)) { f.vag = undefined; break; } // en dörr har stängts på vägen: vägen sökes om
+    if (stangd(s, x, y) || vagg(s, x, y)) { f.vag = undefined; break; } // en dörr har stängts på vägen: vägen sökes om
     f.x = x; f.y = y;
     return Math.hypot(f.mx - f.x, f.my - f.y);
   }
@@ -169,7 +171,7 @@ function ga(s: State, f: Vargflock, fart: number, dtSec: number, sokt = false): 
   // rakt fram om det går; annars en väg runt det som står i vägen, och finns ingen väg snett åt sidan
   const fram = (v: number) => {
     const c = Math.cos(v), sn = Math.sin(v), x = clamp(f.x + (dx * c - dy * sn) / d * l, 0.3, W - 0.3), y = clamp(f.y + (dx * sn + dy * c) / d * l, 0.3, H - 0.3);
-    if (stangd(s, x, y) || (!iVatten && vatten(x, y))) return false;
+    if (stangd(s, x, y) || vagg(s, x, y) || (!iVatten && vatten(x, y))) return false;
     f.x = x; f.y = y; return true;
   };
   if (fram(0)) return d - l;
@@ -401,6 +403,7 @@ export function stangt(s: State, r: Rum) {
   if (!r.open) return false;
   const g = gridOf(s);
   for (const i of r.walls) { const b = g.at.get(i)!; if (b.k === 'oppning' && !dorrDef(b.dorr)?.stanger) return false; }
+  if ((s.vargar ?? []).some(f => f.vargar.length && roomAt(s, f.x, f.y) === r)) return false; // med en varg i rummet går dörren inte att stänga
   return living(s).some(q => q.task?.act === 'gomma' && roomAt(s, q.x, q.y) === r);
 }
 const iStangt = (s: State, p: { x: number; y: number }) => { const r = roomAt(s, p.x, p.y); return !!r && stangt(s, r); };
