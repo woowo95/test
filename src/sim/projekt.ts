@@ -5,7 +5,8 @@ import { clamp } from './slump';
 import { LAGER, amountOf, lagerFlyttVal } from './lager';
 import { arMaterial, materialBuffert, stationBrist, villAv, villHaAv } from './forradsmal';
 import { SAKER } from './saker';
-import { PLAGG, PLAGG_LIST } from './klader';
+import { KLADER, PLAGG, PLAGG_LIST } from './klader';
+import { coldOf, temperature } from './vader';
 import { ARBETE, grundvarde, varuVarde } from './varde';
 import { balans } from './balans';
 import { GORS, harAv, makeTask, receptTill, wantsRope, wantsTool } from './redskap';
@@ -58,7 +59,7 @@ const overHusUppgift = (s: State, p?: Person, virke = false): Uppgift | undefine
 
 export const PROJEKT_TAL = balans('projekt', {
   kyla: 0.3, // när kylan är en fara väger varje projekt så här mycket av sitt värde (steg 10.2.6): tiden går helst till värmen
-  kniv: 1.2, yxa: 1.2, spjut: 1, metspo: 0.8, korg: 0.8, bensyl: 1, rock: 0.8, skor: 0.5, balte: 0.6, axelrem: 0.4, ryggsack: 0.5, benspade: 0.6, vattensack: 0.5, slanda: 0.5, fackla: 0.4, talgljus: 0.3, boll: 0.3, slagtra: 0.3, mal: 0.3, trumma: 0.3, benflojt: 0.3, lyra: 0.3, // hur mycket varje redskap väger när byn saknar alla den vill ha
+  kniv: 1.2, yxa: 1.2, spjut: 1, metspo: 0.8, korg: 0.8, bensyl: 1, rock: 1, skor: 0.7, balte: 0.6, axelrem: 0.4, ryggsack: 0.5, benspade: 0.6, vattensack: 0.5, slanda: 0.5, fackla: 0.4, talgljus: 0.3, boll: 0.3, slagtra: 0.3, mal: 0.3, trumma: 0.3, benflojt: 0.3, lyra: 0.3, // hur mycket varje redskap väger när byn saknar alla den vill ha
   slaktbank: 1, flatarbank: 0.6, scen: 0.3, // ... varje station när byn saknar den
   grill: 0.8, // ... grillställningen (steg 2.8.1)
   tork: 0.6, // ... torkställningen (steg 2.8.2)
@@ -105,6 +106,7 @@ export interface Uppgift { act: Act; text: string; min?: number; tool?: string; 
 export interface ProjektFara { kyla: boolean; gras: number }
 export interface ProjektDef {
   namn: string; vikt: number;
+  motKyla?: true; // skyddar mot kylan (plaggen som värmer, steg 10.2.71): väger mer ju kallare det är, och kylan som fara stoppar det inte
   brist(s: State): number; kostnad(): number;
   egen?(s: State, fam: readonly Person[], p?: Person): number; // hur mycket p och familjen saknar det (0 till 1, steg 6.1.16)
   kan(s: State, p: Person, f: ProjektFara): boolean;
@@ -117,7 +119,7 @@ const NAMN: Record<string, string> = { kniv: 'Kniv', yxa: 'Yxa', spjut: 'Spjut',
 const redskap = (g: string): ProjektDef => {
   const k = GORS[g].reduce((a, b) => grundvarde(b) < grundvarde(a) ? b : a); // det billigaste slaget räknas i kostnaden
   return {
-    namn: NAMN[g] ?? SAKER[GORS[g][0]]!.namn, vikt: (PROJEKT_TAL as Record<string, number>)[g] ?? 1,
+    namn: NAMN[g] ?? SAKER[GORS[g][0]]!.namn, vikt: (PROJEKT_TAL as Record<string, number>)[g] ?? 1, ...((PLAGG as Record<string, { varme?: number }>)[g]?.varme ? { motKyla: true as const } : {}),
     brist: s => { const v = villAv(s, g); return v > 0 ? clamp((v - harAv(s, g)) / v, 0, 1) : 0; },
     egen: (s, fam) => villAv(s, g) > 0 && !tingOf(s).some(t => t.agare !== undefined && GORS[g].includes(t.k) && fam.some(q => q.id === t.agare)) ? 1 : 0, // ingen i familjen äger ett
     kostnad: () => grundvarde(k),
@@ -320,7 +322,9 @@ export const PROJEKT_LIST = Object.keys(PROJEKT);
 // rader som läggs till när allt är laddat (hovet och templet, kyrka.ts via steg.ts) kommer med i listan också
 export function laggTillProjekt(rader: Record<string, ProjektDef>) { for (const k in rader) { PROJEKT[k] = rader[k]; if (!PROJEKT_LIST.includes(k)) PROJEKT_LIST.push(k); } }
 // värdet av projektet just nu: vikten gånger bristen, delat med kostnaden
-export const projektVarde = (s: State, k: string) => { const d = PROJEKT[k]; return d.vikt * d.brist(s) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad()); };
+// det som skyddar mot kylan väger mer ju kallare det är (steg 10.2.71, KLADER.kylaVikt)
+const kylFaktor = (s: State, d: ProjektDef) => d.motKyla ? 1 + KLADER.kylaVikt * coldOf(temperature(s)) : 1;
+export const projektVarde = (s: State, k: string) => { const d = PROJEKT[k]; return d.vikt * kylFaktor(s, d) * d.brist(s) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad()); };
 // hur mycket p bryr sig om det hen och familjen saknar, jämfört med byn (steg 6.1.16): mindre med empati och seden Sammanhållning
 export const egenintresse = (s: State, p: Person) => clamp(PROJEKT_TAL.egen - PROJEKT_TAL.egenEmpati * (stat(p, 'empati', s.now) - SED.mitt) / SED.spann - PROJEKT_TAL.egenSed * (s.seder?.v.gemenskap ?? 0), 0, PROJEKT_TAL.egenMax);
 // det projektet är värt för den som har familjen fam och egenintresset ei: byns värde och det egna (vad p och familjen saknar) gånger egenintresset
@@ -329,7 +333,7 @@ export const egenintresse = (s: State, p: Person) => clamp(PROJEKT_TAL.egen - PR
 export const bristNu = (s: State, k: string) => s.arbBehov?.brist && s.arbBehov.bv === (s.byggV ?? 0) ? s.arbBehov.brist[k] ?? 0 : PROJEKT[k].brist(s);
 export function personVarde(s: State, k: string, fam: readonly Person[], ei: number, p?: Person) {
   const d = PROJEKT[k], e = d.egen && ei > 0 ? d.egen(s, fam, p) : 0;
-  return d.vikt * (bristNu(s, k) + e * ei) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad());
+  return d.vikt * kylFaktor(s, d) * (bristNu(s, k) + e * ei) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad());
 }
 // den i familjen som sover under tak utan en bädd
 function utanEgenBadd(s: State, fam: readonly Person[]) {
@@ -371,8 +375,9 @@ export function bastaProjekt(s: State, p: Person, f: ProjektFara, egen = false) 
   let best: { k: string; varde: number; u?: Uppgift; sak?: string } | undefined;
   const fam = familjOf(s, p.id), ei = egenintresse(s, p); // p, partnern och de ogifta barnen
   for (const k of PROJEKT_LIST) {
-    // när kylan är en fara är projekten mindre värda: tiden går helst till värmen (steg 10.2.6, PROJEKT_TAL.kyla)
-    const d = PROJEKT[k], v = (egen ? (d.egen && ei > 0 ? d.vikt * d.egen(s, fam, p) * ei / Math.max(PROJEKT_TAL.minKostnad, d.kostnad()) : 0) : personVarde(s, k, fam, ei, p)) * (f.kyla ? PROJEKT_TAL.kyla : 1);
+    // när kylan är en fara är projekten mindre värda: tiden går helst till värmen (steg 10.2.6, PROJEKT_TAL.kyla), utom det som
+    // skyddar mot kylan (steg 10.2.71)
+    const d = PROJEKT[k], v = (egen ? (d.egen && ei > 0 ? d.vikt * kylFaktor(s, d) * d.egen(s, fam, p) * ei / Math.max(PROJEKT_TAL.minKostnad, d.kostnad()) : 0) : personVarde(s, k, fam, ei, p)) * (f.kyla && !d.motKyla ? PROJEKT_TAL.kyla : 1);
     if (v <= 0 || best && v <= best.varde) continue;
     if (d.kan(s, p, f)) {
       const u = d.uppgift(s, p), vf = u?.act === 'falla' ? v * fallVilja(s) : v; // färre fällningar när stammar ligger kvar (steg 9.2.87)

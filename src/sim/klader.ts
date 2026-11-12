@@ -19,6 +19,7 @@ import { balans } from './balans';
 export const KLADER = balans('klader', {
   naken: -0.06, // humöret för den som är helt naken (steg 10.2.72) ...
   nakenDel: -0.015, // ... och för varje del (fötterna, benen, överkroppen) som saknar plagg
+  kylaVikt: 1.5, // ett plagg som värmer väger så här mycket mer i projekten när kylan är som störst (coldOf 1, steg 10.2.71)
   vinterVarm: 1.5, // ett material minst så här varmt (gånger kaninskinnet) håller bäraren varm nog när kylan kommer (punkt 1)
   hotTim: 48, // vargar sedda nära byn eller en strid i byn för högst så här många timmar sedan: byn hotas (punkt 2)
   gottOm: 2, // det finns gott om ett material när det räcker till så här många plagg till, utöver det som behövs (punkt 4)
