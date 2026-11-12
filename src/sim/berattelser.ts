@@ -8,8 +8,10 @@ import { kronika } from './historik';
 import { Bevis, HANDELSER, INTRYCK, IntryckTyp, bevisText, intryckOm, intryckText, samlatIntryck } from './rykten';
 import { SAKER, sakNamn } from './saker';
 import { moodOf } from './humor';
-import { roomAt } from './byggnad';
-import { HOUR, LogEntry, MIN, Person, Rel, SKILLS, SKILL_NAMES, STATS, Skill, Stat, State, Upplevelse } from './typer';
+import { Hus, housesOf, husById, roomAt } from './byggnad';
+import { bedTile, fnId } from './byggnader';
+import { bynsMitt } from './omrade';
+import { DAY, HOUR, LogEntry, MIN, Person, W, Rel, SKILLS, SKILL_NAMES, STATS, Skill, Stat, State, Upplevelse } from './typer';
 import { upplev, upplevelseText } from './uppvaxt';
 import { isLight, kalender } from './tid';
 import { temperature, vaderNu } from './vader';
@@ -38,7 +40,11 @@ export const BERATT = balans('beratt', {
   glomtDygn: 6, // eftermälet (steg 6.7.4): så här många dygn efter döden säger texten att det är länge sedan
   skon: 5, // skönheten står alltid med (steg 3.9.7) när den ligger så här långt från mitten (10) eller mer
   aldstBy: 4, // den äldsta i byn nämns när byn har minst så här många invånare
-  mycket: 0.6, // beskrivningen får en mening till när minst fem delar (de fasta med) sticker ut så här mycket (vikt 0–1)
+  delar: 2, // beskrivningen (steg 10.2.52) tar så här många delar, de fasta med, och fyller ut med delar slumpade efter vikten ...
+  viktig: 0.85, // ... och en del med så här hög vikt är alltid med (att någon sörjer sin närmaste, binamnet, ledaren)
+  utkant: 0.75, utkantHus: 3, // hen bor i utkanten: huset står minst så här långt ut av det längsta husets avstånd från byns mitt, när byn har så här många hus
+  verkstadNara: 6, // hen bor mitt emot verkstaden: verkstadshuset står så här nära (rutor mellan väggarna)
+  langeHus: 10, // hen har bott länge i sitt hus: hen äger huset hen sover i, och det har stått i så här många dygn
   // mer ur livet (steg 3.9.8)
   mangaBarn: 4, // föräldern nämns med barnen från så här många barn
   bastSk: 10, // bäst i byn på en färdighet räknas från den här nivån (färdigheterna går till 20, mästare vid 16)
@@ -672,6 +678,36 @@ const MDEF = {
     '{Hans} {vad} har {hen} efter sin {fo2}.',
   ],
   // längtan: {vem} = den hen är förälskad i
+  besk_utkant: [ // hur personen bor (steg 10.2.52)
+    '{Hen} bor i utkanten av byn.',
+    'Huset där {hen} sover står längst ut i byn.',
+    '{Hen} har sin säng i ett av husen i byns utkant.',
+    'Längst ut i byn, där skogen tar vid, har {hen} sitt hus.',
+    '{Hen} sover i byns utkant, en bit från de andra.',
+    'Det är en bit att gå till {hans} hus i byns utkant.',
+    'Ute i kanten av byn har {hen} sin sovplats.',
+    '{Hen} har valt att bo i byns utkant.',
+  ],
+  besk_verkstad: [
+    '{Hen} bor mitt emot verkstaden.',
+    'Från {hans} hus hör man arbetet i verkstaden.',
+    '{Hen} sover i huset bredvid verkstaden.',
+    'Verkstaden ligger alldeles intill {hans} hus.',
+    'När {hen} går ut ur sitt hus ser {hen} verkstaden.',
+    '{Hen} bor granne med verkstaden.',
+    'Från {hans} dörr är det bara några steg till verkstaden.',
+    '{Hans} hus står mitt emot verkstaden.',
+  ],
+  besk_langeHus: [
+    '{Hen} har bott länge i sitt hus.',
+    'Huset {hen} äger har varit {hans} hem länge.',
+    '{Hen} har levt många år i samma hus.',
+    'Huset {hen} bor i har {hen} haft i många år.',
+    '{Hen} har inte flyttat på länge; huset är {hans}.',
+    'Väggarna i {hans} hus har sett {honom} i många år.',
+    '{Hen} har sitt eget hus och har bott där länge.',
+    'Länge har {hen} haft samma hus att komma hem till.',
+  ],
   besk_langtan: [
     '{Hen} längtar efter {vem}.',
     'I hemlighet tänker {hen} ofta på {vem}.',
@@ -2193,6 +2229,27 @@ function skonaDel(s: State, p: Person) {
   }
   return l[Math.floor(hash(s.seed, p.id, 11) * l.length)];
 }
+// huset där p sover (bedTile i byggnader.ts), om det står i ett hus
+function hemHus(s: State, p: Person) {
+  const t = bedTile(s, p);
+  if (t === undefined) return undefined;
+  const r = roomAt(s, t % W + 0.5, Math.floor(t / W) + 0.5);
+  return r?.hus !== undefined ? husById(s, r.hus) : undefined;
+}
+const husMitt = (h: Hus) => ({ x: h.x + h.w / 2, y: h.y + h.h / 2 });
+function borUtkant(s: State, p: Person) {
+  const h = hemHus(s, p), alla = housesOf(s).filter(q => q.klar);
+  if (!h || alla.length < BERATT.utkantHus) return false;
+  const m = bynsMitt(s), d = (q: Hus) => Math.hypot(husMitt(q).x - m.x, husMitt(q).y - m.y);
+  return d(h) >= BERATT.utkant * Math.max(...alla.map(d));
+}
+function borVidVerkstad(s: State, p: Person) {
+  const h = hemHus(s, p);
+  if (!h) return false;
+  const mellan = (a: Hus, c: Hus) => Math.max(0, Math.max(a.x - (c.x + c.w), c.x - (a.x + a.w)), Math.max(a.y - (c.y + c.h), c.y - (a.y + a.h)));
+  return housesOf(s).some(q => q !== h && q.klar && fnId(q) === 'verkstad' && mellan(h, q) <= BERATT.verkstadNara);
+}
+function langeIHus(s: State, p: Person) { const h = hemHus(s, p); return !!h && h.ag === p.id && !!h.klar && s.now - h.klar >= BERATT.langeHus * DAY; }
 export const BESK_DELAR: BeskDel[] = [
   { id: 'grundare', fast: true, vikt: b => b.p.grundare ? 1 : 0, text: b => mening(b, 'besk_grundare', 10) },
   { id: 'skonhet', fast: true, vikt: b => skonDel(b.s, b.p) ? 1 : 0, text: b => {
@@ -2219,6 +2276,10 @@ export const BESK_DELAR: BeskDel[] = [
   { id: 'rel', vikt: b => b.f.partner || b.f.van ? 0.6 : 0, text: b => mening(b, b.f.partner && b.f.van ? 'besk_partnerVan' : b.f.partner ? 'besk_partner' : 'besk_van', 2) },
   { id: 'langtan', vikt: b => langtar(b.s, b.p) ? 0.55 : 0, text: b => { b.f.vem = langtar(b.s, b.p)!.name; return mening(b, 'besk_langtan', 25); } },
   { id: 'fiende', vikt: b => b.f.fiende ? 0.65 : 0, text: b => mening(b, 'besk_fiende', 3) },
+  // hur hen bor (steg 10.2.52): i utkanten, mitt emot verkstaden, länge i sitt hus
+  { id: 'utkant', vikt: b => borUtkant(b.s, b.p) ? 0.35 : 0, text: b => mening(b, 'besk_utkant', 32) },
+  { id: 'verkstad', vikt: b => borVidVerkstad(b.s, b.p) ? 0.3 : 0, text: b => mening(b, 'besk_verkstad', 33) },
+  { id: 'langeHus', vikt: b => langeIHus(b.s, b.p) ? 0.4 : 0, text: b => mening(b, 'besk_langeHus', 34) },
   { id: 'saknad', vikt: b => { const d = alive(b.p) ? saknad(b.s, b.p) : undefined; return d ? (d[2] ? 0.85 : 0.45) : 0; }, text: b => {
     const [q, vem, sorj] = saknad(b.s, b.p)!;
     b.f.dod = q.name; b.f.vem = vem;
@@ -2384,8 +2445,16 @@ export function beskrivning(s: State, p: Person) {
   f.partner = alive(p) ? namnPa(p.partner) : undefined; f.van = namnPa(p.bast); f.fiende = namnPa(p.arke); f.mentor = namnPa(p.mentor);
   const delar = BESK_DELAR.map((d, i) => ({ d, i, v: d.vikt(b) })).filter(x => x.v > 0);
   const fasta = delar.filter(x => x.d.fast), andra = delar.filter(x => !x.d.fast).sort((x, y) => y.v - x.v || x.i - y.i);
-  const max = Math.max(fasta.length, delar.filter(x => x.v >= BERATT.mycket).length >= 5 ? 4 : 3);
-  const valda = [...fasta, ...andra].slice(0, max).sort((x, y) => x.i - y.i);
+  // kortare och olika från dygn till dygn (steg 10.2.52): de fasta och de viktigaste delarna är alltid med, och de andra fyller
+  // ut till BERATT.delar, slumpade efter vikten. Slumpen är personens och dygnets (hash3), inte byns, så att texten står still under dygnet
+  const viktiga = andra.filter(x => x.v >= BERATT.viktig), ovriga = andra.filter(x => x.v < BERATT.viktig), dygn = Math.floor(s.now / DAY);
+  const valda = [...fasta, ...viktiga];
+  for (let k = 0; ovriga.length && valda.length < BERATT.delar; k++) {
+    let r = hash3(p.id, k, dygn) * ovriga.reduce((n, x) => n + x.v, 0), j = 0;
+    while (j < ovriga.length - 1 && (r -= ovriga[j]!.v) > 0) j++;
+    valda.push(ovriga.splice(j, 1)[0]!);
+  }
+  valda.sort((x, y) => x.i - y.i);
   const ut = [mening(b, drag.length >= 2 ? 'besk_drag2' : drag.length ? 'besk_drag1' : 'besk_drag0', 0), ...trots ? [mening(b, 'besk_trots', 31)] : [], ...valda.map(x => { const t = x.d.text(b); textLyssnare?.('del:' + x.d.id, -1, t, b.f); return t; })];
   if (ut.length < 2) ut.push(mening(b, 'besk_inget', 6));
   textLyssnare?.('beskrivning', -1, ut.join(' '), f);

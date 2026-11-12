@@ -6,7 +6,7 @@ import { byId, isSocial, TalkEvent } from '../../sim';
 import { START, STEG_DYGN } from '../kor';
 import * as SLAGLANGD from '../slaglangd';
 import { hasIcon } from '../../ikoner';
-import { stridIByn, rovarGang, korTills, setFood, kor, klockan, tandEld, byggare, SCENARIER, pct, grenarUte, barGrenar, nyInvanare, valjer, MATARBETE, TRAARBETE, REDSKAPSARBETE, FORBATTRING, MATMEDREDSKAP, rikBy } from './hjalp';
+import { stridIByn, rovarGang, korTills, setFood, kor, klockan, tandEld, byggare, SCENARIER, pct, grenarUte, barGrenar, nyInvanare, valjer, MATARBETE, TRAARBETE, REDSKAPSARBETE, FORBATTRING, MATMEDREDSKAP, rikBy, medHus } from './hjalp';
 const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 SCENARIER.befolkning = {
@@ -1937,17 +1937,22 @@ SCENARIER.vemibyn = {
     const b2 = SIM.beskrivning(t, g);
     void mor;
     const alla = living(t).map(x => SIM.beskrivning(t, x));
-    const varianter = ['besk_grundare', 'besk_vacker', 'besk_ful', 'besk_aldst', 'besk_titel', 'besk_uppfann', 'besk_bedrift', 'besk_sorjer', 'besk_saknar', 'besk_vapenGilla', 'besk_vapenOgilla']
+    // hur hen bor (steg 10.2.52): den som äger huset hen sover i och haft det länge
+    const u = createState(6, START); klockan(u, 12); const hus = medHus(u)!, [hq] = living(u);
+    hus.ag = hq.id; hus.klar = u.now - 11 * DAY; const bor = SIM.BESK_DELAR.find(d => d.id === 'langeHus')!;
+    const lange = SIM.bedTile(u, hq) !== undefined && bor.vikt({ s: u, p: hq, f: {}, nyck: () => 0, borjan: new Set() } as never) > 0;
+    const varianter = ['besk_utkant', 'besk_verkstad', 'besk_langeHus', 'besk_grundare', 'besk_vacker', 'besk_ful', 'besk_aldst', 'besk_titel', 'besk_uppfann', 'besk_bedrift', 'besk_sorjer', 'besk_saknar', 'besk_vapenGilla', 'besk_vapenOgilla']
       .every(m => (SIM.BERATTELSER as Record<string, unknown[]>)[m].length >= 8);
     return [
       [`registret har delarna (${SIM.BESK_DELAR.length})`, SIM.BESK_DELAR.length >= 12 && SIM.BESK_DELAR.filter(d => d.fast).length === 3],
-      [`grundaren, skönheten och det som sticker ut mest står med (${b1})`, p.grundare === true && /grund|först|början|stigarna|slog sig ner/.test(b1) && /rep/.test(b1) && meningar(b1) === 4],
+      [`grundaren och skönheten står med, och beskrivningen är kort: egenskaperna och de två fasta delarna (steg 10.2.52) (${b1})`, p.grundare === true && /grund|först|början|stigarna|slog sig ner/.test(b1) && meningar(b1) === 3],
       ['skönheten är en egen del, inte ett ord bland egenskaperna', !/vacker\b.*vacker\b/.test(b1)],
-      [`den äldsta och det hen är känd som, och en femte mening när mycket sticker ut (${b2})`, /70/.test(b2) && /mästare/.test(b2) && meningar(b2) === 5],
+      [`skönheten, den äldsta och sorgen står alltid med, och inget mer (steg 10.2.52) (${b2})`, /70/.test(b2) && meningar(b2) === 4],
       ['den döda hen sörjer står med före smaken', b2.includes(barn.name)],
       ['seg heter nu uthållig', !alla.some(x => /\bseg\b|snart trött/.test(x))],
       [`alla i byn får en hel text med 2–5 meningar (${alla.length})`, alla.every(x => hel(x) && meningar(x) >= 2 && meningar(x) <= 5)],
       ['minst åtta varianter i varje ny mall', varianter],
+      ['den som äger huset hen sover i och haft det länge får en mening om det (steg 10.2.52)', lange],
     ];
   },
 };
