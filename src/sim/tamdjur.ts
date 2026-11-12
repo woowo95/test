@@ -10,7 +10,7 @@ import { farorNu } from './kult';
 import { isFood } from './saker';
 import { ALDER, ageOf, byId, count, forstaGang, gjort, living, log, ovning } from './folk';
 import { getable, takeMaterial } from './behov';
-import { rnd } from './slump';
+import { hash3, rnd } from './slump';
 import { put } from './lager';
 import { stat } from './folk';
 import { DAY, Person, State, inMap } from './typer';
@@ -49,12 +49,11 @@ export const arHona = (d: Tamdjur) => d.hona ?? d.id % 2 === 0; // äldre sparfi
 export const tamNamn = (d: Tamdjur) => tamArt(d.art).namn;
 // ett nytt djur av arten, fött nu (eller born), ägt av agare
 export function nyttTamdjur(s: State, art: TamArtId, x: number, y: number, agare?: number, born = s.now): Tamdjur {
-  // id:t räknas upp och används aldrig igen (s.nextTam), så att en uppgift som pekar på ett dött djur inte träffar ett nytt. Könet:
-  // varannan hane och hona av varje art, den första en hane, så att två djur av arten alltid är ett par, vilka djur byn än köper emellan
+  // id:t räknas upp och används aldrig igen (s.nextTam), så att en uppgift som pekar på ett dött djur inte träffar ett nytt. Könet
+  // slumpas ur byn och id:t (steg 10.2.42), utan att dra ur någon slumpföljd
   const l = (s.tamdjur ??= []), id = TAM_ID0 + Math.max(s.nextTam ?? 0, l.reduce((m, d) => Math.max(m, d.id - TAM_ID0 + 1), 0));
   s.nextTam = id - TAM_ID0 + 1;
-  const arten = l.filter(q => q.art === art && q.dog === undefined), honor = arten.filter(arHona).length;
-  const d: Tamdjur = { id, art, born, hunger: 0, x, y, agare, hona: honor < arten.length - honor };
+  const d: Tamdjur = { id, art, born, hunger: 0, x, y, agare, hona: hash3(s.seed, id, 0x7a6d) < 0.5 };
   l.push(d); count(s, `tam_${art}`);
   return d;
 }

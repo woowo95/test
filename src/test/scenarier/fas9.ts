@@ -1679,6 +1679,10 @@ SCENARIER.boskap = {
     stepBoskap(s);
     const far = tamdjurOf(s).filter(d => d.art === 'far');
     const agda = far.every(d => d.agare === p.id), kvar = amountOf(s, 'levfar');
+    // könet slumpas (steg 10.2.42): bland många djur blir det både honor och hanar; provet gör de två köpta till ett par
+    const manga = Array.from({ length: 20 }, (_, i) => SIM.nyttTamdjur(createState(2, START), 'far', 1, 1, undefined, s.now - i)).concat(Array.from({ length: 20 }, () => SIM.nyttTamdjur(s, 'get', 1, 1)));
+    const blandat = manga.some(hona) && manga.some(q => !hona(q));
+    s.tamdjur = (s.tamdjur ?? []).filter(d => d.art === 'far'); far[0].hona = true; far[1].hona = false;
     // ullen klipps med kniven
     setAmount(s, 'kniv', 1);
     const ull0 = amountOf(s, 'ull'), d = klippVal(s, p);
@@ -1695,7 +1699,7 @@ SCENARIER.boskap = {
     return [
       [`handlaren har får och getter med sig`, iHandeln],
       [`det köpta blir ${far.length} får som ägs av köparen, och varan är borta (${kvar})`, far.length === 2 && agda && kvar < 1],
-      [`ett par: en hona och en hane`, far.some(hona) && far.some(q => !hona(q))],
+      [`könet slumpas, så bland många djur finns både honor och hanar`, blandat && far.some(hona) && far.some(q => !hona(q))],
       [`fåret klipps med kniven och ger ull (${ull0} → ${ull1})`, !!d && ull1 - ull0 === BOSKAP.ull],
       [`ullen växer ut igen (${(far.find(q => q.id === d?.id)?.ull ?? 0).toFixed(2)})`, (far.find(q => q.id === d?.id)?.ull ?? 0) > 0],
       [`på våren får honan ${unga} lamm (${h} timmar)`, var0 && unga >= 1],
