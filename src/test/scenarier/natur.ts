@@ -151,7 +151,7 @@ SCENARIER.sjo = { // by 4: by 3 fiskade knappt efter steg 2.3.11
     const fx = fi % W + 0.5, fy = Math.floor(fi / W) + 0.5;
     for (let n = 0; n < 200 && SIM.richness(f, 'fiske', fx, fy) >= SIM.PLATS.tomtGrans; n++) SIM.takeFrom(f, 'fiske', fx, fy, 1);
     fp.x = fx; fp.y = fy; fp.task = { act: 'fiske', phase: 'do', tx: fx, ty: fy, until: f.now + 2 * HOUR, carry: 0, why: 'prov', dark: !isLight(f.now) };
-    step(f, BEAT);
+    step(f, 70); // en bit om BIT sekunder: hen ser att stranden är tom (steg.ts)
     const flyttat = !!fp.task && fp.task.act === 'fiske' && Math.hypot(fp.task.tx - fx, fp.task.ty - fy) > 1.5;
     return [
       [`fiskaren går till en annan plats när stranden är utfiskad (${f.stat?.fiskeByter ?? 0} byten)`, flyttat && (f.stat?.fiskeByter ?? 0) === 1],
