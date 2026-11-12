@@ -25,7 +25,9 @@ import { Tamdjur, tamDor, tamdjurOf } from './tamdjur';
 import { faltRiktning, faltSite } from './odling';
 
 export const VINTER = balans('vinter', {
-  angSida: 6, // slåtterängens sida i rutor
+  angMarg: 1.5, // ängen får så här många gånger de rutor som höet till djuren behöver (alla rutor har inte högt gräs) ...
+  angMin: 3, angMax: 10, // ... med sidan mellan så här många rutor
+  angMatMin: 3, // minuter för att märka ut en äng
   ho: 3, // så mycket hö en ruta högt gräs ger när den slås
   slaMin: 10, // minuter för att slå en ruta
   ovning: 0.02, // djurskötseln växer så här mycket när man slår
@@ -48,15 +50,26 @@ export interface Ang { id: number; x: number; y: number; w: number; h: number }
 export const angarOf = (s: State) => s.angar ?? [];
 export const angAt = (s: State, x: number, y: number) => angarOf(s).find(a => x >= a.x && x < a.x + a.w && y >= a.y && y < a.y + a.h);
 export function angRutor(a: Ang) { const r: number[] = []; for (let y = a.y; y < a.y + a.h; y++) for (let x = a.x; x < a.x + a.w; x++) r.push(y * W + x); return r; }
-// byn märker ut en slåtteräng när den har en hage, på samma sorts plats som ett fält (fri, nära byn, utanför hagarna)
-function planeraAng(s: State) {
-  if (angarOf(s).length || !hagarOf(s).length || !betesdjurOf(s).length) return;
-  const n = VINTER.angSida, at = faltSite(s, n, n * n);
+// Ängen är ett projekt (raden ang i PROJEKT, projekt.ts, steg 10.2.36): när byn har betesdjur och en hage men ängarna är för
+// små för höet djuren behöver i istiden märker någon ut en ny, så stor som det som saknas, på samma sorts plats som ett fält
+const angBehov = (s: State) => Math.ceil(betesdjurOf(s).length * VINTER.hoPerDjur / VINTER.ho * VINTER.angMarg); // rutorna djuren behöver
+const angHar = (s: State) => angarOf(s).reduce((n, a) => n + a.w * a.h, 0);
+export const angBrist = (s: State) => betesdjurOf(s).length && hagarOf(s).length && angHar(s) * VINTER.angMarg < angBehov(s) ? 1 : 0;
+const angSida = (s: State) => Math.min(VINTER.angMax, Math.max(VINTER.angMin, Math.ceil(Math.sqrt(Math.max(1, angBehov(s) - angHar(s))))));
+// projektets arbete för p: att märka ut ängen
+export function angUppgift(s: State, p: Person) {
+  if (ageOf(p, s.now) < ALDER.vuxen || !angBrist(s) || living(s).some(q => q !== p && q.task?.act === 'ang')) return undefined;
+  const n = angSida(s), at = faltSite(s, n, n * n);
+  return at && { act: 'ang' as const, text: 'Märker ut en slåtteräng, där gräset får växa sig högt till hö åt djuren.', min: VINTER.angMatMin, spot: { x: at.x + 0.5, y: at.y + 0.5 } };
+}
+export function angKlar(s: State, p: Person) {
+  if (!angBrist(s)) return;
+  const n = angSida(s), at = faltSite(s, n, n * n);
   if (!at) return;
   const y = faltRiktning(s, at.y) > 0 ? at.y : at.y - (n - 1);
-  (s.angar ??= []).push({ id: 1, x: at.x, y, w: n, h: n });
+  (s.angar ??= []).push({ id: angarOf(s).length + 1, x: at.x, y, w: n, h: n });
   s.byggV = (s.byggV ?? 0) + 1; count(s, 'angar');
-  log(s, 'Byn märkte ut en slåtteräng, där gräset får växa sig högt till hö åt djuren i istiden.', 'world', []);
+  log(s, `${p.name} märkte ut en slåtteräng, där gräset får växa sig högt till hö åt djuren i istiden.`, 'world', [p.id]);
 }
 // slåttern: på sensommaren och hösten, i dagsljus, med skäran
 const slattertid = (s: State) => { const ai = kalender(s).ai; return ai === SOMMAR || ai === HOST; };
@@ -105,7 +118,7 @@ function stallIn(s: State, d: Tamdjur, inne: Map<number, number>) {
 
 // en timme: byn märker ut ängen; i istiden står djuren i fähuset (och ger gödsel), och de som inte får plats fryser
 export function stepVinter(s: State) {
-  planeraAng(s); glomHamlade(s);
+  glomHamlade(s);
   const istid = iIstiden(kalender(s).ai), inne = new Map<number, number>();
   let godsel = 0;
   for (const d of betesdjurOf(s)) {

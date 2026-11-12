@@ -16,19 +16,21 @@ import { blocked } from './byggnad';
 import { bynsMitt } from './omrade';
 import { TAM, Tamdjur, tamArt, tamdjurOf } from './tamdjur';
 
-// en timme för hagarna och betesdjuren (efter stepTamdjur): byn lägger ut en hage, djuren betar, staketet slits
+// en timme för hagarna och betesdjuren (efter stepTamdjur): djuren betar, staketet slits
 export function stepHagar(s: State) {
   for (const d of betesdjurOf(s)) stepBete(s, d);
-  planeraHage(s);
   for (const h of hagarOf(s)) slitHage(s, h);
 }
-// En inhägnad av staketet (steg 9.7.10) på gräs nära byn, en rektangel på HAGE.sida × HAGE.sida rutor med staket runt om.
+// En inhägnad av staketet (steg 9.7.10) på gräs nära byn, en kvadrat med staket runt om, så stor som djuren behöver (hageSida).
+// Hagen är ett projekt (raden hage i PROJEKT, projekt.ts, steg 10.2.36): någon märker ut den och sätter staketet.
 // Djuren äter det som redan finns i marken (mark.ts, buskar.ts): getterna helst buskar och ungträd, fåren gräset. Är hagen för
 // liten äts betet upp fortare än det växer, marken blir bar och djuren svälter. Staketet slits av vädret och djuren; ett hål
 // släpper ut djuren, som betar fritt tills någon lagat hålet och lett tillbaka dem med ett rep (handlingen valla)
 export interface Hage { id: number; x: number; y: number; w: number; h: number }
 export const HAGE = balans('hage', {
-  sida: 6, // hagens sida i rutor
+  perDjur: 9, // en ny hage får så här många rutor bete per betesdjur i byn ...
+  minSida: 4, maxSida: 10, // ... med sidan mellan så här många rutor
+  matMin: 3, // minuter för att märka ut en hage
   slit: 0.002, // chansen i timmen att en ruta av hagens staket går sönder ...
   slitDjur: 0.3, // ... gånger 1 + slitDjur för varje djur i hagen
   rymma: 0.08, // chansen i timmen att ett djur hittar hålet i staketet
@@ -41,7 +43,6 @@ export const HAGE = balans('hage', {
   ovning: 0.03, // djurskötseln växer så mycket när man vallar
   fri: 12, // ett djur utan hage strövar högst så här långt (rutor) från byns mitt
   flyttDygn: 1, // en hage vars bete räcker kortare än så här många dygn för djuren i den är nedbetad: djuren flyttas (steg 9.8.6)
-  max: 4, // byn har högst så här många hagar
   hundLojal: 0.6, // en hund som är minst så här lojal hjälper ägaren att valla hela flocken på en gång
 });
 export const hagarOf = (s: State) => s.hagar ?? [];
@@ -87,19 +88,36 @@ export function malHage(s: State, n: number, fran?: Hage) {
   return b;
 }
 
-// byn lägger ut en hage när den har betesdjur och ingen hage, om någon kan sätta staket. Samma plats som ett fält skulle få
-// En hage som är nedbetad står kvar och växer igen; finns ingen annan hage med bete läggs en ny ut (steg 9.8.6)
-function planeraHage(s: State) {
-  if (!betesdjurOf(s).length || !living(s).some(p => knows(p, 'staket'))) return;
+// hagens sida för byns betesdjur (steg 10.2.36)
+export const hageSida = (s: State) => Math.min(HAGE.maxSida, Math.max(HAGE.minSida, Math.ceil(Math.sqrt(Math.max(1, betesdjurOf(s).length) * HAGE.perDjur))));
+// behöver djuren en ny hage? När det inte finns någon, eller en hage är nedbetad och ingen annan har bete (steg 9.8.6); en
+// nedbetad hage står kvar och växer igen. En hage som inte har staket runt om än blir färdig först
+export function nyHageBehov(s: State) {
+  if (!betesdjurOf(s).length) return false;
   const hs = hagarOf(s);
-  if (hs.length >= HAGE.max || hs.some(h => !hageHel(s, h))) return;
-  if (hs.length && !hs.some(h => nedbetad(s, h) && !malHage(s, djurIHagen(s, h).length, h))) return;
-  const n = HAGE.sida, at = faltSite(s, n, n * n);
+  if (hs.some(h => !hageHel(s, h))) return false;
+  return !hs.length || hs.some(h => nedbetad(s, h) && !malHage(s, djurIHagen(s, h).length, h));
+}
+// projektets brist (raden hage i PROJEKT): staket att sätta, eller djur som behöver en ny hage, när någon kan sätta staket
+export const hageBrist = (s: State) => betesdjurOf(s).length && living(s).some(p => knows(p, 'staket')) && (hagarOf(s).some(h => !hageHel(s, h)) || nyHageBehov(s)) ? 1 : 0;
+// projektets arbete för p: nästa staketruta, eller att märka ut en ny hage där ett fält skulle kunna ligga (ref −1)
+export function hageUppgift(s: State, p: Person) {
+  if (ageOf(p, s.now) < ALDER.vuxen || !knows(p, 'staket')) return undefined;
+  const v = hageVal(s, p);
+  if (v) return { act: 'hage' as const, text: 'Sätter staket runt hagen, så att djuren inte rymmer.', min: STAKET.min, spot: { x: v.i % W + 0.5, y: Math.floor(v.i / W) + 0.5 }, ref: v.i };
+  if (!nyHageBehov(s) || living(s).some(q => q !== p && q.task?.act === 'hage' && q.task.ref === -1)) return undefined;
+  const n = hageSida(s), at = faltSite(s, n, n * n);
+  return at && { act: 'hage' as const, text: 'Märker ut en hage åt djuren.', min: HAGE.matMin, spot: { x: at.x + 0.5, y: at.y + 0.5 }, ref: -1 };
+}
+// hagen märks ut (hageKlar med ref −1) på samma sorts plats som ett fält
+function laggUtHage(s: State, p: Person) {
+  if (!nyHageBehov(s)) return;
+  const hs = hagarOf(s), n = hageSida(s), at = faltSite(s, n, n * n);
   if (!at) return;
   const y = faltRiktning(s, at.y) > 0 ? at.y : at.y - (n - 1);
   (s.hagar ??= []).push({ id: (s.hagar?.length ?? 0) + 1, x: at.x, y, w: n, h: n });
   s.byggV = (s.byggV ?? 0) + 1; count(s, 'hagar');
-  log(s, hs.length ? 'Djuren hade betat ner hagen, och byn märkte ut en ny hage åt dem.' : 'Byn märkte ut en plats för en hage åt djuren.', 'world', []);
+  log(s, hs.length ? `Djuren hade betat ner hagen, och ${p.name} märkte ut en ny hage åt dem.` : `${p.name} märkte ut en plats för en hage åt djuren.`, 'world', [p.id]);
 }
 // nästa staketruta p sätter runt en hage (också där staketet gått sönder)
 export function hageVal(s: State, p: Person) {
@@ -111,6 +129,7 @@ export function hageVal(s: State, p: Person) {
   return undefined;
 }
 export function hageKlar(s: State, p: Person, i?: number) {
+  if (i === -1) { laggUtHage(s, p); return; }
   if (i === undefined || harStaket(s, i) || getable(s, p, 'grenar') < STAKET.grenar) return;
   const h = hagarOf(s).find(q => hageKant(s, q).includes(i));
   if (!h) return;

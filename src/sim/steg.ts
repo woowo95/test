@@ -244,7 +244,8 @@ MEDAN.grilla = (s, p, _t, dtSec) => grilla(s, p, dtSec / HOUR_S); // grillen öv
 KLAR.koka_mat = (s, p) => kokaKlar(s, p);
 KLAR.sopor = (s, p) => soporKlar(s, p);
 KLAR.mata = (s, p, t) => mataKlar(s, p, t.ref); // de tama djuren (tamdjur.ts, steg 9.8.1)
-KLAR.hage = (s, p, t) => hageKlar(s, p, t.ref); // hagen (steg 9.8.4)
+KLAR.hage = (s, p, t) => hageKlar(s, p, t.ref); // hagen (steg 9.8.4), eller att märka ut den (ref −1, steg 10.2.36)
+KLAR.ang = (s, p) => angKlar(s, p); // slåtterängen märks ut (steg 10.2.36)
 KLAR.valla = (s, p, t) => vallaKlar(s, p, t.ref);
 KLAR.klippa = (s, p, t) => klippKlar(s, p, t.ref);
 KLAR.mjolka = (s, p, t) => mjolkaKlar(s, p, t.ref);
@@ -1478,5 +1479,5 @@ import { stepOrtKrukor } from './kruka';
 import { mataKlar, stepTamdjur } from './tamdjur';
 import { hageKlar, stepHagar, vallaKlar } from './hage';
 import { avlivaKlar, klippKlar, mjolkaKlar, stepBoskap } from './boskap';
-import { slaKlar, stepVinter, hamlaKlar } from './slatter';
+import { angKlar, slaKlar, stepVinter, hamlaKlar } from './slatter';
 import { stepHons } from './hons';

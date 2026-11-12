@@ -13,7 +13,9 @@ import { STATIONER, STATION_LIST, StationDef, StationSlag, TILLBEHOR, TILLBEHOR_
 import { brasaLeta, kanLetaBrasaSten } from './brasor';
 import { DORRAR, DORR_LIST, DorrDef, DorrSlag } from './byggnad';
 import { dorrOppningar, dorrSpot, kanHangaDorr, receptDorr, utanDorr } from './bygg';
-import { GRODOR, ODLING, faltBrist, faltUppgift } from './odling';
+import { GRODOR, ODLING, STAKET, faltBrist, faltUppgift } from './odling';
+import { hageBrist, hageUppgift } from './hage';
+import { VINTER, angBrist, angUppgift } from './slatter';
 import { SKOG, fallTid, fellingTiles, klyvStam, stockOverHus, egenStock, fallVilja, rojSpot, skaGravas, skaRojas, stubbeSpot, stubbeUppgift, treeSpot } from './skog';
 import { fylldSack, freeTools, tingOf } from './agande';
 import { ACTS } from './handlingar';
@@ -82,6 +84,7 @@ export const PROJEKT_TAL = balans('projekt', {
   rojning: 1, // ... att fälla träden på en lagerplats eller ett fält i skogen (steg 3.6.9)
   ljus: 0.4, // ... att ställa fram ett talgljus på ett bord eller en hylla inne (steg 6.3.8, ljus.ts)
   uppsatt: 0.4, // ... att sätta upp en fackla där folk ofta är vakna i mörker (steg 6.3.7, ljus.ts)
+  hage: 1, ang: 1, // ... hagen och ängen åt betesdjuren (steg 10.2.36)
   falt: 1, // ... arbetet på fälten när ett fält har arbete att göra, eller någon som kan odla har frön men inget fält (steg 2.10.3)
   minKostnad: 0.25, // kostnaden räknas aldrig under så här många arbetstimmar
   // jaget och familjen (steg 6.1.16): det egna värdet räknas med egenintresset, som är egen för en vanlig människa i en by
@@ -295,6 +298,22 @@ export const PROJEKT: Record<string, ProjektDef> = {
     kostnad: () => varuVarde({ [GRODOR.rovor.fro]: ODLING.froPerRuta * ODLING.rutorPerMun }, (ODLING.beredaMin + ODLING.saMin) * ODLING.rutorPerMun / 60 * ARBETE), // ett fält för en person
     kan: (s, p) => !!faltUppgift(s, p),
     uppgift: (s, p) => { const u = faltUppgift(s, p); return u && { act: 'odla', text: u.text, min: u.min, tool: u.tool, spot: u.spot, ref: u.ref }; },
+  },
+  // hagen åt betesdjuren (steg 9.8.4 och 10.2.36, hage.ts): staketet runt den, eller att märka ut en ny så stor som djuren behöver
+  hage: {
+    namn: 'Hage', vikt: PROJEKT_TAL.hage,
+    brist: s => hageBrist(s),
+    kostnad: () => varuVarde({ grenar: STAKET.grenar * 28 }, 28 * STAKET.min / 60 * ARBETE), // staketet runt en hage för några djur
+    kan: (s, p) => !!hageUppgift(s, p),
+    uppgift: (s, p) => hageUppgift(s, p),
+  },
+  // slåtterängen (steg 9.8.9 och 10.2.36, slatter.ts): att märka ut den när ängarna ger för lite hö åt djuren
+  ang: {
+    namn: 'Slåtteräng', vikt: PROJEKT_TAL.ang,
+    brist: s => angBrist(s),
+    kostnad: () => VINTER.angMatMin / 60 * ARBETE + VINTER.ho * grundvarde('torrgras'),
+    kan: (s, p) => !!angUppgift(s, p),
+    uppgift: (s, p) => angUppgift(s, p),
   },
 };
 export const PROJEKT_LIST = Object.keys(PROJEKT);

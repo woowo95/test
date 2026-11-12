@@ -1626,14 +1626,14 @@ SCENARIER.hund = {
 SCENARIER.hage = {
   text: 'Steg 9.8.4: hagen. Byn med betesdjur märker ut en hage och sätter staket runt den, djuren leds in med rep och betar gräset, buskarna och ungträden; staketet slits, och genom ett hål rymmer djuren',
   kor: () => {
-    const { nyttTamdjur, stepTamdjur: stegaDjur, stepHagar, hagarOf, hageVal, hageKlar, hageHel, vallaVal, vallaKlar, hageRutor, setAmount, groundOf, HAGE, hageKant, tamdjurOf } = SIM;
+    const { nyttTamdjur, stepTamdjur: stegaDjur, stepHagar, hagarOf, hageVal, hageKlar, hageHel, vallaVal, vallaKlar, hageRutor, setAmount, groundOf, hageKant, tamdjurOf } = SIM;
     const s = createState(5, START); klockan(s, 10);
     const stepTamdjur = (q: typeof s) => { stegaDjur(q); stepHagar(q); };
     const p = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0];
     (p.tek ??= {}).staket = 1; setAmount(s, 'grenar', 400); setAmount(s, 'rep', 2);
     const m = SIM.bynsMitt(s);
     const f1 = nyttTamdjur(s, 'far', m.x, m.y), f2 = nyttTamdjur(s, 'get', m.x + 1, m.y);
-    stepTamdjur(s);
+    const mat = SIM.hageUppgift(s, p); if (mat?.ref === -1) SIM.hageKlar(s, p, -1); // hagen är ett projekt: någon märker ut den (steg 10.2.36)
     const h = hagarOf(s)[0];
     let n = 0;
     for (let v = hageVal(s, p); v && n < 200; v = hageVal(s, p), n++) hageKlar(s, p, v.i);
@@ -1649,7 +1649,7 @@ SCENARIER.hage = {
     for (let i = 0; i < 200 && tamdjurOf(s).some(d => d.hage !== undefined); i++) stepTamdjur(s);
     const rymt = tamdjurOf(s).filter(d => d.hage === undefined).length;
     return [
-      [`byn märker ut en hage när den har betesdjur (${h ? `${h.w} × ${h.h}` : 'ingen'})`, !!h && h.w === HAGE.sida],
+      [`någon märker ut en hage när byn har betesdjur, så stor som de behöver (${h ? `${h.w} × ${h.h}` : 'ingen'}, projektet hage, steg 10.2.36)`, mat?.ref === -1 && SIM.projektVarde(s, 'hage') >= 0 && !!h && h.w === SIM.hageSida(s)],
       [`staketet sätts runt hela hagen (${n} rutor)`, hel],
       [`djuren leds in i hagen med rep`, inne],
       [`djuren betar gräset (${gras0.toFixed(1)} → ${gras1.toFixed(1)})`, gras1 < gras0],
@@ -1703,23 +1703,24 @@ SCENARIER.boskap = {
 };
 
 SCENARIER.hagflytt = {
-  text: 'Steg 9.8.6: flytta djuren. När hagen betats ner lägger byn ut en ny hage, och handlingen valla leder ett djur i ett rep dit, eller hela flocken med en hund som är lojal nog; den gamla hagen står kvar och växer igen',
+  text: 'Steg 9.8.6: flytta djuren. När hagen betats ner märker någon ut en ny hage, och handlingen valla leder ett djur i ett rep dit, eller hela flocken med en hund som är lojal nog; den gamla hagen står kvar och växer igen',
   kor: () => {
-    const { nyttTamdjur, stepHagar, hagarOf, hageVal, hageKlar, vallaVal, vallaKlar, hageRutor, setAmount, groundOf, tamdjurOf, nedbetad, djurIHagen } = SIM;
+    const { nyttTamdjur, hagarOf, hageVal, hageKlar, vallaVal, vallaKlar, hageRutor, setAmount, groundOf, tamdjurOf, nedbetad, djurIHagen } = SIM;
+    const matUt = () => { const u = SIM.hageUppgift(s, p); if (u?.ref === -1) hageKlar(s, p, -1); }; // hagen är ett projekt (steg 10.2.36)
     const s = createState(5, START); klockan(s, 10);
     const p = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0];
     (p.tek ??= {}).staket = 1; setAmount(s, 'grenar', 800); setAmount(s, 'rep', 2);
     const m = SIM.bynsMitt(s);
     nyttTamdjur(s, 'far', m.x, m.y); nyttTamdjur(s, 'far', m.x + 1, m.y); nyttTamdjur(s, 'get', m.x, m.y + 1);
     const bygg = () => { for (let v = hageVal(s, p), n = 0; v && n < 400; v = hageVal(s, p), n++) hageKlar(s, p, v.i); };
-    stepHagar(s); bygg();
+    matUt(); bygg();
     for (let d = vallaVal(s, p); d; d = vallaVal(s, p)) vallaKlar(s, p, d.id);
     const h1 = hagarOf(s)[0];
     // betet tar slut i hagen
     const g = groundOf(s);
     for (const i of hageRutor(h1)) { g.cover[i] = 0; g.trees[i] = 0; if (g.buske) g.buske[i] = 0; }
     const ned = nedbetad(s, h1);
-    stepHagar(s);
+    matUt();
     const ny = hagarOf(s).length;
     bygg();
     const d1 = vallaVal(s, p);
@@ -1732,7 +1733,7 @@ SCENARIER.hagflytt = {
     const kvar = djurIHagen(s, h1).length;
     return [
       [`hagen är nedbetad när betet tar slut`, ned],
-      [`byn lägger ut en ny hage (${ny} hagar)`, ny === 2],
+      [`någon märker ut en ny hage (${ny} hagar)`, ny === 2],
       [`valla leder ett djur i rep till den nya hagen (${3 - flyttad} av 3 flyttade)`, flyttad === 2],
       [`med en lojal hund flyttas resten på en gång (${kvar} kvar i den gamla)`, kvar === 0],
       [`den gamla hagen står kvar`, hagarOf(s).includes(h1) && tamdjurOf(s).length === 4],
@@ -1815,14 +1816,14 @@ SCENARIER.mjolk = {
 SCENARIER.slatter = {
   text: 'Steg 9.8.9: djurens vinter. Byn med hage och betesdjur märker ut en slåtteräng; på sensommaren slås den med skäran till hö. I istiden står djuren i fähuset och ger gödsel till komposten; de som inte får plats fryser ihjäl, och på hösten slaktar byn de djur den inte har hö till',
   kor: () => {
-    const { nyttTamdjur, stepHagar, stepVinter, hageVal, hageKlar, angarOf, angRutor, slaVal, slaKlar, setAmount, amountOf, addTool, groundOf, tamdjurOf, HIGH, VINTER, fahusAkut, mataVal, foderFor, slaktOrsak, DAY } = SIM;
+    const { nyttTamdjur, stepVinter, hageVal, hageKlar, angarOf, angRutor, slaVal, slaKlar, setAmount, amountOf, addTool, groundOf, tamdjurOf, HIGH, VINTER, fahusAkut, mataVal, foderFor, slaktOrsak, DAY } = SIM;
     const s = createState(5, START); klockan(s, 10);
     const p = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0];
     (p.tek ??= {}).staket = 1; setAmount(s, 'grenar', 800); setAmount(s, 'rep', 2); setAmount(s, 'torrgras', 0);
     const m = SIM.bynsMitt(s);
     const djur = [nyttTamdjur(s, 'far', m.x, m.y, undefined, s.now - 3 * DAY), nyttTamdjur(s, 'far', m.x + 1, m.y, undefined, s.now - 3 * DAY), nyttTamdjur(s, 'far', m.x + 1, m.y + 1, undefined, s.now - 3 * DAY), nyttTamdjur(s, 'get', m.x, m.y + 1, undefined, s.now - 3 * DAY)];
-    stepHagar(s); for (let v = hageVal(s, p), n = 0; v && n < 400; v = hageVal(s, p), n++) hageKlar(s, p, v.i);
-    stepVinter(s);
+    hageKlar(s, p, -1); for (let v = hageVal(s, p), n = 0; v && n < 400; v = hageVal(s, p), n++) hageKlar(s, p, v.i);
+    const angBrist = SIM.angBrist(s), au = SIM.angUppgift(s, p); if (au) SIM.angKlar(s, p); // ängen är ett projekt (steg 10.2.36)
     const ang = angarOf(s)[0];
     // på sommaren slås ängen med skäran
     s.kal = SIM.nyKalender(s.now, SIM.SOMMAR);
@@ -1852,7 +1853,7 @@ SCENARIER.slatter = {
     for (const d of tamdjurOf(s)) if (d !== d0) d.hunger = 0;
     const matas = mataVal(s, p) === d0 && foderFor(s, p, d0) === 'torrgras';
     return [
-      [`byn märker ut en slåtteräng när den har hage och djur`, !!ang && ang.w === VINTER.angSida],
+      [`någon märker ut en slåtteräng när byn har hage och djur, så stor som höet till dem kräver (${ang ? `${ang.w} × ${ang.h}` : 'ingen'})`, angBrist === 1 && !!au && !!ang && ang.w * ang.h * VINTER.angMarg >= djur.length * VINTER.hoPerDjur / VINTER.ho && SIM.angBrist(s) === 0],
       [`utan skära slås ingen äng`, utan],
       [`med skäran slås ängen till hö (${slagna} rutor, ${ho} hö)`, slagna >= 1 && ho === slagna * VINTER.ho],
       [`på hösten behövs ett fähus åt djuren`, akut],
