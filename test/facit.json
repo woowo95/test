@@ -3,100 +3,100 @@
   "1": {
    "granser": [
     0,
-    20,
     30,
+    60,
     90
    ],
    "bitMs": [
-    344381,
-    337681,
-    1128028
+    329158,
+    439158,
+    365461
    ],
    "n": {
-    "pop": 15,
+    "pop": 9,
     "atergrundad": 0,
     "invandrade": 2,
-    "utvandrade": 13,
-    "fodda": 49,
-    "doda": 32,
+    "utvandrade": 4,
+    "fodda": 21,
+    "doda": 19,
     "svalt": 0,
     "kyla": 0,
-    "blod": 3,
+    "blod": 4,
     "infektion": 0,
     "amputerat": 0,
-    "hunger": 9,
-    "humor": 0.6,
-    "vintermat": 83,
-    "vinterved": 118,
+    "hunger": 0,
+    "humor": 0.595,
+    "vintermat": 416,
+    "vinterved": 838,
     "eld": 90,
-    "kb": 2820,
-    "delKb": 556
+    "kb": 2472,
+    "delKb": 331
    }
   },
   "42": {
    "granser": [
     0,
-    10,
-    20,
+    50,
+    70,
     90
    ],
    "bitMs": [
-    182604,
-    419659,
-    855144
+    686204,
+    545684,
+    620635
    ],
    "n": {
-    "pop": 11,
+    "pop": 25,
     "atergrundad": 0,
-    "invandrade": 7,
-    "utvandrade": 13,
-    "fodda": 28,
-    "doda": 22,
-    "svalt": 2,
+    "invandrade": 0,
+    "utvandrade": 0,
+    "fodda": 37,
+    "doda": 29,
+    "svalt": 0,
     "kyla": 4,
-    "blod": 1,
+    "blod": 5,
     "infektion": 0,
     "amputerat": 0,
-    "hunger": 86,
-    "humor": 0.612,
-    "vintermat": 0,
-    "vinterved": 125,
-    "eld": 82,
-    "kb": 2595,
-    "delKb": 360
+    "hunger": 0,
+    "humor": 0.616,
+    "vintermat": 1157,
+    "vinterved": 165,
+    "eld": 88,
+    "kb": 2996,
+    "delKb": 572
    }
   },
   "777": {
    "granser": [
     0,
-    20,
     40,
+    70,
     90
    ],
    "bitMs": [
-    503958,
-    474859,
-    1214872
+    709914,
+    630843,
+    522473
    ],
    "n": {
-    "pop": 20,
+    "pop": 26,
     "atergrundad": 0,
-    "invandrade": 1,
-    "utvandrade": 16,
-    "fodda": 67,
-    "doda": 43,
+    "invandrade": 0,
+    "utvandrade": 10,
+    "fodda": 44,
+    "doda": 21,
     "svalt": 0,
-    "kyla": 13,
-    "blod": 2,
+    "kyla": 0,
+    "blod": 1,
     "infektion": 0,
     "amputerat": 0,
-    "hunger": 1,
-    "humor": 0.621,
-    "vintermat": 27,
-    "vinterved": 59,
-    "eld": 81,
-    "kb": 2885,
-    "delKb": 701
+    "hunger": 0,
+    "humor": 0.64,
+    "vintermat": 164,
+    "vinterved": 208,
+    "eld": 99,
+    "kb": 2762,
+    "delKb": 586
    }
   }
  }
