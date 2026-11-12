@@ -25,6 +25,7 @@ import { delaVarsel } from './motgang';
 // rik plats ger (toppOf i fynd.ts) och säkerheten (c) går från 0 till 1. Hur nära ett område ligger lägret står i PLATS
 export const MINNE = balans('minne', {
   max: 20, // så många lärdomar minns man högst; det minst säkra trängs undan
+  platser: 1, // 0 = man minns inga platser där bär, vilt och fisk finns, bara provet i steg 10.2.64 (npm run jamfor --satt minne.platser=0)
   faraVikt: 2, // en rädsla, och minnet av högvattnet (steg 3.8.7), räknas så här många gånger så säker när det trängs undan ...
   vattenVikt: 2, // ... och vattnet, rent eller smutsigt (steg 9.9.5 och 10.2.42): man vet sällan mer än ett par ställen att dricka
   rik: 0.6, // en plats är rik (värde 1, gott om) när den ger så här stor del av det bästa som finns
@@ -175,6 +176,7 @@ const relOf = (k: LKind, v: number) => arFynd(k) ? v / (toppOf(k) * MINNE.rik) :
 // Man ser också om det växer där (buskar, svampmark, spår), så att man vet om platsen är plockad eller död.
 // Var platsen mycket sämre än man trott rättas lärdomen, och det blir en nyhet som gärna berättas vidare.
 export function observe(s: State, p: Person, k: LKind, x: number, y: number, c = 1) {
+  if (!MINNE.platser && arFynd(k)) return; // provet utan lärdomarna om var saker finns (steg 10.2.64)
   const a = areaOf(x, y), v = areaValue(s, k, a), g = arFynd(k) ? areaValue(s, k, a, 'vaxer') : undefined;
   const l = findL(p, k, a);
   if (l) {
