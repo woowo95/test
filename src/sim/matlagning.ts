@@ -2,7 +2,8 @@ import { DAY, HOUR, MIN, Person, State } from './typer';
 import { alive, byId, count, enTill, forstaGang, gjort, log, ovning, stat, think } from './folk';
 import { clamp, rnd } from './slump';
 import { Del, addDel } from './egendom';
-import { amountOf, put, use } from './lager';
+import { amountOf, put, skickAv, use } from './lager';
+import { grundvarde } from './varde';
 import { Station, isKlar, kanGoras, stationFor, stationerOf } from './stationer';
 import { matPerDygn } from './ekonomi';
 import { ageIndex, kallTid } from './tid';
@@ -30,6 +31,7 @@ export const MATLAG = balans('matlagning', {
   maxTim: 1, // ett pass vid grillen är högst så här många timmar
   min: 1, // byn grillar när det finns så mycket rått att grilla
   passExtra: 5, // ett pass vid grillen varar så många minuter längre än maten tar
+  ruttna: 2, // råvaran som lagas först (ravaraPoang, steg 10.2.37): värdet gånger 1 + ruttna × hur långt den har ruttnat
   brann: 0.3, // en helt ovan kock bränner så stor del av maten ...
   brannFull: 10, // ... och den med färdigheten Matlagning så här hög bränner inget
   ovning: 0.15, // färdigheten växer så här mycket per timme vid grillen (gånger 0,4 + intelligens / 20)
@@ -51,8 +53,10 @@ export const RATTER: readonly Ratt[] = [
   { ra: 'kott', blir: 'grillkott', per: 1 },
   { ra: 'vargkott', blir: 'grillkott', per: 1 }, // köttet är eget per art men blir samma grillade kött (steg 3.7.14)
 ];
-// det som grillas nu: den första råvaran det finns tillräckligt av (gränssnittet visar den på spettet)
-export const grillVara = (s: State) => RATTER.find(r => amountOf(s, r.ra) >= MATLAG.min);
+// råvaran som lagas först (steg 10.2.37): den som byn har mest av i värde, och mer av det som håller på att ruttna
+export const ravaraPoang = (s: State, k: string, n = amountOf(s, k)) => n * grundvarde(k) * (1 + MATLAG.ruttna * (1 - skickAv(s, k)));
+// det som grillas nu: råvaran med högst poäng av dem det finns tillräckligt av (gränssnittet visar den på spettet)
+export const grillVara = (s: State) => { let b: Ratt | undefined, bv = 0; for (const r of RATTER) { if (amountOf(s, r.ra) < MATLAG.min) continue; const v = ravaraPoang(s, r.ra); if (!b || v > bv) { b = r; bv = v; } } return b; };
 // p kan grilla: byn har grillen, elden brinner, det finns något att grilla och ingen annan grillar
 export const kanGrilla = (s: State, p: Person) => kanGoras(s, 'grilla', p) && s.fire.lit && !!grillVara(s) && !!stationFor(s, 'grilla', p); // en grill rymmer sin arbetare (steg 10.2.5)
 // hur länge ett pass vid grillen varar
@@ -249,13 +253,14 @@ const RATT_SMAK = ['lok', 'salt', 'rolleka']; // smaken i krukan (steg 9.6.3, 9.
 // råvarorna som går i krukan: de med grupper, utom det redan grillade och det som först ska slaktas
 const iKrukan = (k: string) => !!INGREDIENSER[k] && !k.startsWith('grill') && k !== 'vilt' && k !== 'fagel' && !RATT_SMAK.includes(k);
 export interface KokRecept { id: string; huvud: string; andra: string; smak?: string; kat: Kategori; niva: Maltidsniva; hh: RattHuvud }
-// det som kan kokas nu, av det p kan ta (eller byn har): den första huvudingrediensen i ordningen, en råvara ur en annan grupp
-// (helst stärkelse), och smaken om den finns
+// det som kan kokas nu, av det p kan ta (eller byn har): huvudingrediensen med högst poäng (ravaraPoang, steg 10.2.37), en
+// råvara ur en annan grupp (helst stärkelse), och smaken om den finns
 export function kokRecept(s: State, p?: Person): KokRecept | undefined {
-  const har = (k: string, n: number) => (p ? getable(s, p, k) : amountOf(s, k)) - utsadeKrok.av(s, k) >= n;
-  for (const hh of RATT_HUVUD_LIST) {
-    const huvud = Object.keys(INGREDIENSER).find(k => INGREDIENSER[k].huvud === hh && iKrukan(k) && har(k, RATT.huvud));
-    if (!huvud) continue;
+  const tar = (k: string) => (p ? getable(s, p, k) : amountOf(s, k)) - utsadeKrok.av(s, k), har = (k: string, n: number) => tar(k) >= n;
+  const huvuden = Object.keys(INGREDIENSER).filter(k => INGREDIENSER[k].huvud && iKrukan(k) && har(k, RATT.huvud) && (RATT_HUVUD_LIST as string[]).includes(INGREDIENSER[k].huvud!))
+    .map(k => ({ k, v: ravaraPoang(s, k, tar(k)) })).sort((a, b) => b.v - a.v);
+  for (const { k: huvud } of huvuden) {
+    const hh = INGREDIENSER[huvud].huvud as RattHuvud;
     const g0 = grupperAv(huvud), andra = Object.keys(INGREDIENSER).filter(k => k !== huvud && iKrukan(k) && grupperAv(k).some(g => !g0.includes(g)) && har(k, RATT.andra))
       .sort((a, b) => (grupperAv(b).includes('starkelse') ? 1 : 0) - (grupperAv(a).includes('starkelse') ? 1 : 0))[0];
     if (!andra) continue;

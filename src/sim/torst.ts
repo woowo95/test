@@ -53,6 +53,7 @@ export const TORST = balans('torst', {
   magMin: 2, magSpann: 4, // ... och man är sjuk i magMin + slump × magSpann timmar
   fyllMin: 3, // så många minuter det tar att fylla vattensäcken vid vattnet (steg 2.10.1)
   hamtaR: 30, // man hämtar vatten åt den som inte kan gå och är högst så här många rutor bort
+  hamtaTorst: 2, hamtaFalt: 1, hamtaKok: 0.3, // vattnets poäng (steg 10.2.37): gånger törsten, gånger hur torrt fältet är, och örtköket
   hander: 0.35, // så mycket av törsten släcks av vattnet som bärs i händerna, utan säck eller kruka (steg 10.2.35)
   ammaAr: 1, // under så här många år dricker barnet av sin mor när hon är nära ...
   ammaNara: 6, // ... högst så här många rutor bort
@@ -211,6 +212,8 @@ const hamtas = (s: State, q: Person) => living(s).some(o => o.task?.act === 'vat
 const vattnas = (s: State, f: Falt) => living(s).some(o => o.task?.act === 'vatten' && o.task.falt && o.task.ref === f.id);
 // ett fält som behöver vatten: under torkan när grödan snart vissnar (steg 3.8.2), och annars när rutor på familjens fält är torrare än
 // det p vattnar till (steg 9.7.4)
+// hur torrt fältet är, 0 till 1: vattnet i torkan, annars andelen torra rutor
+const faltTorrt = (s: State, p: Person, f: Falt) => s.sjoTorr?.pa && f.vatten !== undefined ? 1 - f.vatten : torraRutor(f, p).length / Math.max(1, f.n);
 const torrtFalt = (s: State, p: Person) => faltOf(s).find(f => (f.agare === p.id || familjOf(s, p.id).some(q => q.id === f.agare)) && f.vuxit !== undefined && !vattnas(s, f) && (s.sjoTorr?.pa && (f.vatten ?? 1) < TORKA.vattna || torraRutor(f, p).length >= JORD.karlRutor));
 // örtköket behöver vatten (steg 7.6.6): ingen säck står fylld, ingen fyller en, och byn vill ha något som kokas med vatten och som
 // någon kan göra. ref = FYLL i uppgiften: säcken fylls och blir stående fylld
@@ -235,7 +238,12 @@ export function vattenVal(s: State, p: Person): { spot: { x: number; y: number }
     if (d >= bd || hamtas(s, q)) continue;
     best = q; bd = d;
   }
-  const f = best || !karl ? undefined : torrtFalt(s, p), kok = !best && !f && !!karl && villFylla(s, p);
+  // vem eller vad som får vattnet väljs med poäng (steg 10.2.37): den törstige efter hur törstig hen är, fältet efter hur torrt
+  // det är och örtköket med ett fast tal; utan säck eller kruka bärs vattnet bara åt en törstig
+  const ft = karl ? torrtFalt(s, p) : undefined, kk = !!karl && villFylla(s, p);
+  const vp = best ? TORST.hamtaTorst * (1 - best.torst) : 0, vf = ft ? TORST.hamtaFalt * faltTorrt(s, p, ft) : 0, vk = kk ? TORST.hamtaKok : 0;
+  if (best && vp < Math.max(vf, vk)) best = undefined;
+  const f = !best && ft && vf >= vk ? ft : undefined, kok = !best && !f && kk;
   const spot = (best || f || kok) && naVattnet(s, p) && drickPlats(s, p); // genom isen bara med ett hål (is.ts)
   if (!spot) return undefined;
   const i = karl === 'vattensack' ? 'säcken' : karl ? 'krukan' : 'händerna';

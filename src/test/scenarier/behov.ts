@@ -625,6 +625,29 @@ SCENARIER.luften = {
   },
 };
 
+SCENARIER.poangval = {
+  text: 'Steg 10.2.37: det som grillas och kokas väljs med poäng: den råvara byn har mest av i värde, och mer av det som håller på att ruttna, i stället för kött och fisk i fast ordning',
+  kor: () => {
+    const s = createState(1, START);
+    for (const k of FOOD) SIM.setAmount(s, k, 0);
+    SIM.setAmount(s, 'fisk', 2); SIM.setAmount(s, 'kott', 12);
+    const mestKott = SIM.grillVara(s)?.ra;
+    SIM.setAmount(s, 'fisk', 12); SIM.setAmount(s, 'kott', 2);
+    const mestFisk = SIM.grillVara(s)?.ra;
+    // lika mycket, men fisken håller på att ruttna
+    SIM.setAmount(s, 'kott', 12); SIM.pilesOf(s); for (const st of s.stackar!) if (st.k === 'fisk') st.c = 0.3;
+    const ruttnar = SIM.grillVara(s)?.ra;
+    SIM.setAmount(s, 'rotter', 6);
+    const kok = SIM.kokRecept(s)?.huvud;
+    return [
+      [`mest kött: köttet grillas (${mestKott})`, mestKott === 'kott'],
+      [`mest fisk: fisken grillas (${mestFisk})`, mestFisk === 'fisk'],
+      [`lika mycket, men fisken ruttnar: fisken grillas först (${ruttnar})`, ruttnar === 'fisk'],
+      [`i krukan blir det som ruttnar huvudingrediensen (${kok})`, kok === 'fisk'],
+    ];
+  },
+};
+
 SCENARIER.vard = {
   text: 'Steg 2.5.2: ett öppet sår kan bli infekterat, och utan vård blir det kallbrand och döden. Vården är en egen handling: man trycker på ett sår som blöder, lägger ett förband av mossa (som hittas när man letar i naturen och ibland på ett fällt träd) och rengör ett infekterat sår, på sig själv eller någon annan. Den som inte kan gå kravlar hem eller bärs hem, och man läker fortare när man vilar',
   lang: true,

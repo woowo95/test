@@ -2300,6 +2300,7 @@ SCENARIER.radjur = {
 };
 
 SCENARIER.faglar = {
+  lang: true,
   text: 'Steg 6.6.3: fåglar i små flockar på marken, i tre utseenden efter platsen. De flyger upp när någon kommer nära, och efter ett försök att fälla en flyger alla nära iväg för en stund. Spjutet eller stenen fäller dem sällan; en fågel slaktas till kött och fjädrar, och samlarna hittar ägg på våren',
   kor: () => {
     const s0 = createState(6, START);

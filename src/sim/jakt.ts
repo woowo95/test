@@ -1,4 +1,5 @@
 import { stridBild } from './kartstrid';
+import { grundvarde } from './varde';
 import { utanforByn } from './omrade';
 import { balans } from './balans';
 import { blodas } from './blod';
@@ -30,6 +31,8 @@ import { kn, learnK, useK } from './kunskap';
 // Kaninen slår aldrig tillbaka, men den som griper en levande kanin kan bli biten. Hela försöket räknas när det börjar
 // med stridens regler och en egen slumpföljd (fröet ur jägarens följd), så att det blir likadant i båda lägena. Gruppen
 // skräms av varje försök och är svårare att smyga på en stund. Stenen träffar sämre och tappas oftast bort
+// det fällda djuret av varje art, vars grundvärde bytet väljs efter (steg 10.2.37)
+const BYTE: Record<string, string> = { kanin: 'vilt', radjur: 'radjur', fagel: 'fagel' };
 export const JAKT = balans('jakt', {
   smygSek: 120, // ett försök: så många sekunder att leta upp en kanin och smyga sig fram
   letaR: 30, // finns ingen kanin nära jaktplatsen går jägaren till den närmaste gruppen inom så här många rutor ...
@@ -52,6 +55,7 @@ export const JAKT = balans('jakt', {
   hamtaSek: 40, // att hämta det kastade spjutet
   dod: 0.2, // en kanin dör av träffar (och gamla sår) av den här graden sammanlagt; en svagare träff och den springer skadad
   bett: 0.15, bettGrad: 0.06, // den som griper en kanin med händerna blir biten med den här chansen och graden
+  bytesNara: 4, // bytets värde i valet delas med 1 + avståndet (rutor) delat med detta (steg 10.2.37)
   fly: 6, // så långt (rutor) flyr gruppen bort från jägaren när den skräms (steg 4.5.4.1), och då får jägaren smyga sig nära igen
 });
 // motvinden (steg 6.6.7): djuren känner lukten av jägaren när vinden blåser från hen mot dem och ser hen då på längre håll,
@@ -138,21 +142,27 @@ function letaPlats(s: State, p: Person) {
 // kaninen ser hen (Björn efter v159). Det som händer i världen händer när det är slut (jaktKlar). Svarar 0, −2 om jägaren
 // gick mot en kanin längre bort, eller −1 om ingen kanin finns inom räckhåll
 export function jaktForsok(s: State, p: Person, tk: Task, t = s.now): number {
-  let m: ReturnType<typeof djurOf>[number] | undefined, md = KANINER.narvR + KANINER.hopp * KANINER.hoppMax;
+  let m: ReturnType<typeof djurOf>[number] | undefined;
+  const md = KANINER.narvR + KANINER.hopp * KANINER.hoppMax;
   // bara de grupper som kan ha en kanin inom räckhåll räknas fram (kodgenomgången 3.10.25: de andra räknades vid varje arbetsbit)
   const dj = djurOf(s, s.now, undefined, (gx, gy) => Math.hypot(gx - tk.tx, gy - tk.ty) < md + KANIN_UT || Math.hypot(gx - p.x, gy - p.y) < JAKT.letaR + KANIN_UT);
-  // rådjuren (steg 6.6.2) fälls bara med spjutet, och jägaren går hellre mot ett rådjur i närheten än mot en kanin
+  // jägaren väljer bytet med högst värde (steg 10.2.37): det fällda djurets grundvärde, mindre ju längre bort det är. Rådjuren
+  // (steg 6.6.2) fälls bara med spjutet och syns på längre håll; fåglarna (steg 6.6.3) och kaninerna inom räckhåll
   const spjut = !!tk.tool && tk.tool in VAPEN && !!(VAPEN as Record<string, { kast?: unknown }>)[tk.tool].kast;
+  let bv = 0;
+  const prova = (d: NonNullable<typeof m>, r: number) => {
+    const dd = Math.hypot(d.x - tk.tx, d.y - tk.ty);
+    if (dd >= r) return;
+    const v = grundvarde(BYTE[d.art] ?? 'vilt') / (1 + dd / JAKT.bytesNara);
+    if (v > bv) { bv = v; m = d; }
+  };
+  for (const d of dj) prova(d, md);
   if (spjut) {
     const rd = radjurOf(s, s.now, undefined, (gx, gy) => Math.hypot(gx - tk.tx, gy - tk.ty) < RADJUR.jaktR + RADJUR_UT || Math.hypot(gx - p.x, gy - p.y) < JAKT.letaR + RADJUR_UT);
-    let rm: typeof m, rdd: number = RADJUR.jaktR;
-    for (const d of rd) { const dd = Math.hypot(d.x - tk.tx, d.y - tk.ty); if (dd < rdd) { rdd = dd; rm = d; } }
-    if (rm) { m = rm; md = rdd; }
+    for (const d of rd) prova(d, RADJUR.jaktR);
     dj.push(...rd);
   }
-  if (!m || m.art !== 'radjur') for (const d of dj) { if (d.art === 'radjur') continue; const dd = Math.hypot(d.x - tk.tx, d.y - tk.ty); if (dd < md) { md = dd; m = d; } }
-  // fåglarna (steg 6.6.3): jägaren smyger på en fågel bara när ingen kanin eller inget rådjur finns nära jaktplatsen
-  if (!m) for (const d of faglarOf(s, s.now, undefined, (gx, gy) => Math.hypot(gx - tk.tx, gy - tk.ty) < md + FAGEL_UT)) { const dd = Math.hypot(d.x - tk.tx, d.y - tk.ty); if (dd < md) { md = dd; m = d; } }
+  for (const d of faglarOf(s, s.now, undefined, (gx, gy) => Math.hypot(gx - tk.tx, gy - tk.ty) < md + FAGEL_UT)) prova(d, md);
   if (!m) { // ingen kanin nära: jägaren går i vanlig fart till den närmaste gruppen hen ser ...
     let n: ReturnType<typeof djurOf>[number] | undefined, nd: number = JAKT.letaR;
     for (const d of dj) { const dd = Math.hypot(d.x - p.x, d.y - p.y); if (dd < nd) { nd = dd; n = d; } }

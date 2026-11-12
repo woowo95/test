@@ -1164,6 +1164,7 @@ SCENARIER.latrin = {
   },
 };
 SCENARIER.grill = {
+  lang: true,
   text: 'Grillställningen och matlagningen (steg 2.8.1): grillen sätts upp över elden av grenar och rep och används bara när elden brinner. Där grillas fiskkött, abborre och kött till grillad fisk och grillat kött, som håller längre och äts först. En ovan kock bränner en del, en skicklig ingenting, och färdigheten Matlagning växer vid grillen. Rått kött och rå fisk gör en lite sur och kan ge matförgiftning; rå växtmat gör inget',
   kor: () => {
     const { MATLAG, kanGrilla, grilla, grillVara, ratt, brannDel, stationSite, stationRutor, FOOD } = SIM;
@@ -1480,14 +1481,15 @@ SCENARIER.falt = {
       setAmount(s, 'rovfron', 200);
       f.r = Array.from({ length: f.n }, () => ({ st: 'mogen' as const, g: 'arter' as const, m: s.now })); SIM.sammanfatta(f); // varje ruta är mogen (steg 9.7.1)
       const tk = { act: 'odla', tool: 'mogen', ref: f.id, until: s.now + HOUR } as unknown as SIM.Task;
-      const k0 = amountOf(s, 'arter'), r0 = amountOf(s, 'artfron'), n0 = f.n;
+      const allt = (k: string) => SIM.pilesOf(s).filter(q => q.k === k).reduce((n, q) => n + q.n, 0); // (också det som lagts bredvid ett fullt lager)
+      const k0 = allt('arter'), r0 = allt('artfron'), n0 = f.n;
       SIM.workOdla(s, p, tk, SIM.ODLING.skordaMin * 60 * 2);
       tva = f.r!.filter(r => r.st !== 'mogen').length;
       SIM.finishOdla(s, p, tk);
       delvis = f.steg === 'mogen' && tva === 2;
       SIM.workOdla(s, p, tk, SIM.ODLING.skordaMin * 60 * f.n);
       SIM.finishOdla(s, p, tk);
-      arter = amountOf(s, 'arter') - k0; fronSkord = amountOf(s, 'artfron') - r0;
+      arter = allt('arter') - k0; fronSkord = allt('artfron') - r0;
       const vaxte = f.n > n0 ? f.steg === 'roja' && f.r!.filter(r => r.st !== 'roja').length === n0 : f.steg === 'bereda';
       skord = vaxte && arter > 0 && fronSkord > 0 && tk.until === s.now;
     }

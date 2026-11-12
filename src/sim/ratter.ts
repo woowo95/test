@@ -103,7 +103,7 @@ export const KATEGORIER = {
   brod: { namn: 'bröd', tecken: '🍽', passiv: 25 }, // degen jäser 20 minuter och gräddas 5 i bakugnen (steg 9.6.23)
 } satisfies Record<string, { namn: string; tecken: string; passiv: number }>;
 export type Kategori = keyof typeof KATEGORIER;
-// huvudingredienserna, i den ordning de väljs, och kategorierna de kan bli i krukan (den första när rätten har stärkelse,
+// huvudingredienserna (den som byn har mest av i värde väljs först, ravaraPoang i matlagning.ts, steg 10.2.37) och kategorierna de kan bli i krukan (den första när rätten har stärkelse,
 // annars den sista)
 export const RATT_HUVUD = {
   kott: { namn: 'Kött', kat: ['gryta', 'soppa'] },

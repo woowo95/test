@@ -599,6 +599,7 @@ export function fronFamiljer(s: State) {
 // som saknar fält får ett minsta fält, delat på frösorterna. Det sparas (går inte i krukan, brygden eller kvarnen) och plockas
 // tills byn har det
 export function utsade(s: State, k: string) {
+  if (!FROSORTER.includes(k)) return 0; // bara frön sparas till sådden
   let rutor = 0;
   for (const f of faltOf(s)) if (f.groda && GRODOR[f.groda].fro === k) rutor += f.n;
   return Math.ceil((rutor + fronFamiljer(s) * ODLING.faltMin / FROSORTER.length) * ODLING.froPerRuta);

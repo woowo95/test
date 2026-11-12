@@ -721,13 +721,14 @@ SCENARIER.kokning = {
     const { kokRecept, kokaKlar, stepKok, kanKoka, TILLAGNING, setAmount, addTool, chooseTask, SAKER, amountOf, rattId } = SIM;
     const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
     for (const k of SIM.FOOD) setAmount(s, k, 0);
-    setAmount(s, 'fisk', 4); setAmount(s, 'rotter', 4); setAmount(s, 'rolleka', 2);
+    const ro = 2 + SIM.utsade(s, 'rolleka'); // (röllekan som sparas till sådden används inte i krukan)
+    setAmount(s, 'fisk', 4); setAmount(s, 'rotter', 4); setAmount(s, 'rolleka', ro);
     p.tek = { ...(p.tek ?? {}), kruka: 1 }; s.fire.lit = true; p.skill.matlagning = SIM.MATLAG.brannFull; // en skicklig kock bränner inget (steg 9.6.4)
     const kr = addTool(s, 'lerkruka_mellan', p); kr.hos = undefined;
     const r = kokRecept(s, p), namn = r ? SAKER[r.id]!.namn : '';
     const kan = kanKoka(s, p);
     kokaKlar(s, p);
-    const pa = !!kr.kok && amountOf(s, 'fisk') === 2 && amountOf(s, 'rotter') === 2 && amountOf(s, 'rolleka') === 1;
+    const pa = !!kr.kok && amountOf(s, 'fisk') === 2 && amountOf(s, 'rotter') === 2 && amountOf(s, 'rolleka') === ro - 1;
     p.task = undefined; p.hunger = 0.9; p.rest = 1; chooseTask(s, p);
     const akt = (p.task as SIM.Person["task"])?.act, annat = akt !== "koka_mat" && !!kr.kok;
     s.fire.lit = false; stepKok(s); const vantar = !!kr.kok;
