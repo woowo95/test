@@ -2389,10 +2389,13 @@ SCENARIER.klockan = {
 
 SCENARIER.slaglangd = {
   lang: true,
-  text: 'Allt räknas per tid (steg 10.2.15): de sparade testbyarna körs tre timmar i spelet med slag om 2 och 1 sekund, och ingen händelse (byns statistik) blir mer än tre gånger så vanlig med den ena längden, så att slagets längd kan ändras utan att byn blir en annan',
+  text: 'Allt räknas per tid (steg 10.2.15): de sparade testbyarna körs tre timmar i spelet med slag om 4, 2 och 1 sekund, och ingen händelse (byns statistik) blir mer än tre gånger så vanlig med 1 sekund som med 2 och vanligare åt samma håll från 4 till 2 sekunder, så att slagets längd kan ändras utan att byn blir en annan',
   kor: () => {
-    const a = SLAGLANGD.korMedNu(3, 2), b = SLAGLANGD.korMedNu(3, 1), d = SLAGLANGD.skillnader(a, b, 50, 3);
-    return [[`händelser som skiljer sig mer än tre gånger (minst 50 gånger): ${d.map(x => `${x.namn} ${Math.round(x.a)}/${Math.round(x.b)}`).join(', ') || 'inga'}`, d.length === 0]];
+    // två slaglängder ger två förlopp, och en enda person som väljer ett annat arbete kan ge en stor skillnad (veden efter v513:
+    // 111, 120, 475 och 107 med slag om 4, 2, 1 och 0,5 s). Det som räknas per anrop blir vanligare för varje halvering av slaget
+    const s4 = SLAGLANGD.korMedNu(3, 4), a = SLAGLANGD.korMedNu(3, 2), b = SLAGLANGD.korMedNu(3, 1);
+    const d = SLAGLANGD.skillnader(a, b, 50, 3).filter(x => { const y = s4.sum[x.namn] ?? 0; return x.b > x.a ? x.a > y * 1.5 : y > x.a * 1.5; });
+    return [[`händelser som skiljer sig mer än tre gånger med 2 och 1 s (minst 50 gånger), åt samma håll i de flesta byar och från 4 till 2 s: ${d.map(x => `${x.namn} ${Math.round(s4.sum[x.namn] ?? 0)}/${Math.round(x.a)}/${Math.round(x.b)}`).join(', ') || 'inga'}`, d.length === 0]];
   },
 };
 
