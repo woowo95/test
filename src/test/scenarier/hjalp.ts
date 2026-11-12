@@ -248,3 +248,5 @@ export function korTills(s: SIM.State, klart: () => boolean, maxSek = 3600, varj
   while (!klart() && s.now - t0 < maxSek * 1000) { SIM.step(s, Math.min(SIM.nastaSteg(s), maxSek - (s.now - t0) / 1000 + 1)); varje?.(); }
   return (s.now - t0) / 1000;
 }
+// tändmaterial och flinta så att byn inte behöver hämta det (eldens reserv och flintan till redskapen är förrådsmål, steg 10.2.7 och 10.2.12): för prov som gäller annat arbete
+export function tandOchFlinta(s: State) { SIM.setAmount(s, 'torrgras', 30); SIM.setAmount(s, 'grenar', 60); SIM.setAmount(s, 'flinta', 10); }

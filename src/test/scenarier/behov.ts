@@ -3,7 +3,7 @@ import { Person, createState, getRel, step, living, temperature, nyKalender, amo
 import { cloneState, stepIs, stepVader, isCm, vattenGrader, halVal, halMin, drickVal, iIstiden, ageIndex, tidyTools } from '../../sim';
 import * as SIM from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
-import { setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, bastaJaktruta, SCENARIER, rikBy } from './hjalp';
+import { setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, bastaJaktruta, SCENARIER, rikBy, tandOchFlinta } from './hjalp';
 const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 SCENARIER.behov = {
@@ -815,7 +815,7 @@ SCENARIER.matdygn = {
     const { foodDays, foodOf, chooseTask, ALDER, SAKER, ruttTemp } = SIM;
     // gott om trä, så att det bara är maten som fattas (sedan steg 3.10.23.7 väljer de annars trä när förrådet räcker 0,7 dygn)
     // byn delar all mat, så att ingen familj fyller sin egen del av bufferten (bufferten per jag, steg 6.2.20)
-    const by = () => { const s = createState(6, START); klockan(s, 11); tandEld(s); setAmount(s, 'ved', 100); s.delning = { andel: 1 }; return s; }; // ved för ungefär nio dygn: under FORRAD.vedMatt (forradsmal.ts), så att vedarbetet finns kvar att välja (steg 6.1.5)
+    const by = () => { const s = createState(6, START); klockan(s, 11); tandEld(s); setAmount(s, 'ved', 100); tandOchFlinta(s); s.delning = { andel: 1 }; return s; }; // ved för ungefär nio dygn: under FORRAD.vedMatt (forradsmal.ts), så att vedarbetet finns kvar att välja (steg 6.1.5)
     // lika mycket fisk (håller ett dygn) och torkat kött (håller länge): fisken räcker kortare, eftersom det mesta hinner ruttna
     const f = by(); setMat(f, { fisk: 120 });
     const t = by(); setMat(t, { torrkott: 120 });
@@ -901,7 +901,7 @@ SCENARIER.arbetare = {
   kor: () => {
     const { arbetsTimme, chooseTask, ALDER } = SIM;
     // byn delar all mat, så att familjernas egen mat (en egen rad, bufferten per jag, steg 6.2.20) inte blandas in
-    const by = (mat: number) => { const s = createState(6, START); klockan(s, 11); tandEld(s); setAmount(s, 'ved', 100); setMat(s, { torrkott: mat }); s.delning = { andel: 1 }; arbetsTimme(s); return s; };
+    const by = (mat: number) => { const s = createState(6, START); klockan(s, 11); tandEld(s); setAmount(s, 'ved', 100); tandOchFlinta(s); setMat(s, { torrkott: mat }); s.delning = { andel: 1 }; arbetsTimme(s); return s; };
     const tom = by(3), rik = by(600);
     const arbTom = tom.arbBehov!.arb, arbRik = rik.arbBehov!.arb;
     const minstEn = Object.values(arbTom).every(n => n >= 1) && Object.values(arbRik).every(n => n >= 1);

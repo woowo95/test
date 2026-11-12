@@ -17,7 +17,7 @@ function by(seed: number) {
 const vuxna = (s: State) => living(s).filter(q => ageOf(q, s.now) >= ALDER.vuxen);
 // de vuxna väljer på dagen n gånger, utan egna behov; räknar hur ofta ett projekt blir valt som arbete (inte på fritiden)
 function valjer(s: State, n: number) {
-  const acts = new Set([...Object.keys(GORS), 'station', 'tvinna']);
+  const acts = new Set([...Object.keys(GORS), 'station', 'tvinna', 'lera']); // (leran till krukorna, steg 10.2.12)
   let proj = 0;
   for (let i = 0; i < n; i++) {
     const p = vuxna(s)[i % vuxna(s).length];
@@ -51,7 +51,7 @@ SCENARIER.projekt = {
     const k = by(5); setFood(k, 200); Object.assign(k.fire, { lit: false, fuel: 0, emberUntil: undefined });
     for (const q of k.people) q.warm = 0.1; // alla fryser och elden är släckt: kylan är en fara
     const kyla = dangers(k).kyla, iKyla = bastaProjekt(k, vuxna(k)[0], dangers(k));
-    const bara = !iKyla || iKyla.u?.act === 'tvinna';
+    const bara = !iKyla || iKyla.u?.act === 'tvinna' || iKyla.u?.act === 'lera'; // (repet och leran är inga redskap eller stationer)
     return [
       ['varje redskap, varje station och repet är ett projekt', allt],
       [`listan har det mest värda först (${lista.map(r => r.d.namn).join(', ')})`, lista.length >= 3 && sorterad],
@@ -97,7 +97,7 @@ SCENARIER.material = {
   kor: () => {
     const s = by(4), p = vuxna(s)[0], f = dangers(s);
     const med = bastaProjekt(s, p, f);
-    setItems(s, { flinta: 0, torrgras: 0, grenar: 0 }); setAmount(s, 'ved', 0);
+    setItems(s, { flinta: 0, torrgras: 0, grenar: 0 }); setAmount(s, 'ved', 0); setAmount(s, 'lera', 50); // (leran till krukorna finns: den grävs utan material, steg 10.2.12)
     const utan = bastaProjekt(s, p, f), yxa = SIM.fattas(s, p, 'yxa', f);
     const ho = (hamtar?: string) => { const t = by(4), q = vuxna(t)[0]; setItems(t, { torrgras: Math.ceil(SIM.materialBuffert(t, 'torrgras')) + 1, grenar: 50 }); q.task = { act: 'samla', phase: 'do', tx: q.x, ty: q.y, until: t.now + SIM.HOUR, carry: 0, why: "test", dark: false, hamtar }; return SIM.forageItems(t, q, 3600)?.torrgras ?? 0; };
     // höet ligger över bufferten men under taket (steg 6.2.14): över taket plockar ingen
