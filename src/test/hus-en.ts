@@ -6,6 +6,7 @@ import { BYGGNADER, Byggnad, FN, HUS, housesOf, storeFull, DAY, living, familjOf
 import { byggbehov, kopbart, saljBehov, saljPris, kopPris, husKostnadAv, onskadPlats } from '../sim/byggplan';
 import { sovPersoner, sovRutorFor } from '../sim/byggnader';
 
+const RUTT = 10; // så mycket mat som ruttnat bort på sistone räknas som att maten ruttnar (bara statistiken här)
 const [seed, dagar] = process.argv.slice(2).map(Number);
 let steg = 0, rottMax = 0;
 // timmar då ... (en gång i timmen)
@@ -48,10 +49,10 @@ const r = korBy(seed, dagar, s => {
   rottMax = Math.max(rottMax, rot);
   if (forradDag < 0 && hs.some(h => h.fn === 'forrad' && h.klar)) forradDag = (s.now - s.founded) / DAY;
   if (hs.some(h => h.fn === 'forrad')) { tim.harForrad++; return; }
-  if (rot >= HUS.ruttMin) tim.rutt++;
+  if (rot >= RUTT) tim.rutt++;
   if (storeFull(s)) tim.full++;
   const tomma = hs.some(h => (h.fn ?? 'sovsal') === 'sovsal' && h.ag === undefined && h.klar && h.tom !== undefined);
-  if ((rot >= HUS.ruttMin || storeFull(s)) && tomma) tim.tomma++;
+  if ((rot >= RUTT || storeFull(s)) && tomma) tim.tomma++;
   const b = byggbehov(s), i = b.findIndex(q => q.fn === 'forrad');
   if (i < 0) return;
   tim.behov++;

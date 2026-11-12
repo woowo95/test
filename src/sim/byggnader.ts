@@ -4,7 +4,7 @@ import { Hus, MATERIAL, Rum, bitById, bitsOf, gridOf, housesOf, husById, roofed,
 import { ageIndex, kallTid } from './tid';
 import { heatAt } from './eld';
 import { eldPlats } from './karta';
-import { changed, enPerRuta, ownedAll, put, stacksOf, storeFull, zoneAt, zonesOf } from './lager';
+import { changed, enPerRuta, isStored, ownedAll, put, stacksOf, zoneAt, zonesOf } from './lager';
 import { kronika } from './historik';
 import { DAY, HOUR, W } from './typer';
 import { tingOf } from './agande';
@@ -29,12 +29,12 @@ export const HUS = balans('hus', {
   sovPer: 3,
   sovFast: 2, // ... plus så här många för gångar och rymd, lika för alla hus. Sovplatserna räknas i personer (sovPersoner)
   faraBonus: 100, // en fara (kylan) går före all bekvämlighet: så många poäng över vikten gånger hur akut det är
-  ruttMin: 10, // så mycket mat som ruttnat bort på sistone innan byn bygger ett förrådshus
-  ruttFullt: 4, // behovet av förrådshus är som störst när så här många gånger ruttMin ruttnat
   ruttGlom: 0.97, // så mycket av det som ruttnat som byn minns efter en timme (hälften efter ett dygn)
   ruttGlomMin: 0.01, // mindre än så här glöms helt
-  forradPlats: 6, // ett nytt förrådshus rymmer så här många rutor
-  forradFullt: 0.5, // hur akut ett fullt förråd är (0 till 1)
+  forradPlats: 6, // ett nytt förrådshus rymmer minst så här många rutor ...
+  forradMax: 16, // ... och högst så här många; ett mindre byggs ut när förrådet växer (steg 10.2.67)
+  forradMinBrist: 4, // så här många rutor av förrådet ska sakna tak innan byn bygger eller bygger ut ett förrådshus
+  forradAkut: 1, // hur akut förrådshuset är när allt i förrådet saknar tak (0 till 1)
   familjAkut: 0.5, // hur akut det är att en familj får eget hus (0 till 1)
   familjMin: 3, // en familj med färre än så här många ger inget familjehus
   tomDygn: 1, // en sovsal som ingen sovit i så här länge (dygn, år i spelet) får en ny funktion eller rivs
@@ -169,11 +169,24 @@ export function antalLika(s: State, fn: Fn, w: number, h: number, utom?: Hus) {
 }
 
 // ett för maten när den ruttnar, ett för materialet när förrådet är fullt
+// förrådshusen växer med förrådet (steg 10.2.67): det byn vill ha under tak (rutorna förrådet fyller, efter förrådsmålen) mot det
+// förrådshusen rymmer. Bristen avgör hur akut det är och hur stort huset blir; ett förrådshus som blivit för litet byggs ut
 function forradBehov(s: State): Akut {
-  const har = (slag: string) => housesOf(s).some(h => h.fn === 'forrad' && (h.slag ?? 'mat') === slag), rot = s.ruttet ?? 0;
-  if (rot >= HUS.ruttMin && !har('mat')) return { v: Math.min(1, rot / (HUS.ruttFullt * HUS.ruttMin)), plats: HUS.forradPlats, slag: 'mat' };
-  if (storeFull(s) && !har('material')) return { v: HUS.forradFullt, plats: HUS.forradPlats, slag: 'material' };
-  return { v: 0, plats: 0 };
+  const forrad = new Set(housesOf(s).filter(h => h.fn === 'forrad' && h.klar).map(h => h.id));
+  let inne = 0;
+  for (const z of zonesOf(s)) if (z.hus !== undefined && forrad.has(z.hus)) inne += z.w * z.h;
+  const rutor = new Set<number>(); // rutorna förrådet fyller
+  for (const a of stacksOf(s)) if (a.n > 0 && isStored(s, a.x, a.y)) rutor.add(a.y * W + a.x);
+  let ute = 0, inneFullt = 0;
+  const zs = zonesOf(s);
+  for (const i of rutor) { const z = zs[zoneAt(s, i % W, Math.floor(i / W))]; if (z?.hus !== undefined && forrad.has(z.hus)) inneFullt++; else ute++; }
+  const brist = ute - (inne - inneFullt);
+  if (brist < HUS.forradMinBrist) return { v: 0, plats: 0 };
+  // huset tar emot allt, mat och material (inget slag): det byggs för förrådet, inte ett för maten och ett för materialet
+  const plats = Math.max(HUS.forradPlats, Math.min(HUS.forradMax, brist));
+  // ett förrådshus som inte nått sin största storlek byggs ut i stället för ett nytt
+  const litet = housesOf(s).find(h => forrad.has(h.id) && !h.ut && (h.w - 2) * (h.h - 2) < HUS.forradMax);
+  return { v: Math.min(1, brist / Math.max(1, rutor.size)) * HUS.forradAkut, plats, ...(litet ? { hus: litet.id } : {}) };
 }
 // byns färdiga sovsalar som ingen sover i (h.tom sätts i funktionsbyte), utan station som gör dem till verkstäder
 const tommaSovsalar = (s: State): Hus[] => housesOf(s).filter(h => (h.fn ?? 'sovsal') === 'sovsal' && h.ag === undefined && h.klar && h.tom !== undefined && !harArbete(s, h));

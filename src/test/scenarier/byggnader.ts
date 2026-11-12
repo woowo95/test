@@ -44,7 +44,7 @@ SCENARIER.byggnader = {
 
 SCENARIER.forradshus = {
   lang: true,
-  text: 'Ruttnar maten eller är förrådet fullt bygger byn ett förrådshus. Golvet blir en lagerplats under tak, där det som ligger ruttnar och slits mindre, och maten bärs in dit',
+  text: 'Fyller förrådet fler rutor än förrådshusen rymmer bygger byn ett förrådshus (steg 10.2.67). Golvet blir en lagerplats under tak, där det som ligger ruttnar och slits mindre, och maten bärs in dit',
   kor: () => {
     const s = createState(6, START);
     klockan(s);
@@ -52,9 +52,12 @@ SCENARIER.forradshus = {
     planBuild(s); const sov = byggKlart(s);
     const tak = homeless(s) === 0;
     const forr = mostUrgent(s);
-    s.ruttet = 50; // mycket mat har ruttnat på sistone
+    // förrådet fyller många rutor utan tak (steg 10.2.67): det byn vill ha under tak mot vad förrådshusen rymmer
+    for (const k of ['ved', 'grenar', 'sten', 'torrgras', 'bar', 'rotter', 'kantarell', 'abborre', 'flinta', 'kanin']) SIM.put(s, k, 60);
     const nu = mostUrgent(s);
-    planBuild(s); const h = byggKlart(s);
+    // det som är mest värt byggs först (en familj med råd bygger sitt hus, sedan kläderna från början, steg 10.2.73), sedan förrådshuset
+    let h: ReturnType<typeof byggKlart>;
+    for (let k = 0; k < 4 && h?.fn !== 'forrad'; k++) { planBuild(s); h = byggKlart(s); }
     const z = zonesOf(s).find(q => q.hus === h?.id);
     const inne = !!z && wearMult(s, z.x, z.y) === LAGER.inne && (z.prio ?? 0) > Math.max(...zonesOf(s).filter(q => q !== z).map(q => q.prio ?? 0));
     // som spelet frågar: inga sovplatser i husets rum, och ingen har sin sovplats där
