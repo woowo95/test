@@ -447,9 +447,9 @@ function funktionsbyte(s: State) {
 }
 // är det varmare inne i rummet än vid elden? c = kylan (coldOf): hur kallt det är ute
 // Den som ska värma sig (varmer) väger värmen inne mot värmen vid elden, med vägen dit (HUS.vagVarme per ruta, steg 10.2.9): en
-// släckt eld värmer inte, vad som än finns att tända den med
-export function varmareInne(s: State, rum: Rum, c: number, varmer = false, p?: { x: number; y: number }) {
-  const f = eldPlats(s), inne = -c * (1 - shelterOf(s, rum, Math.min(living(s).length, rum.tiles.length))), ute = heatAt(s, f.x + 0.5, f.y + HUS.varmeY) * KROPP.eldVarme - c;
+// släckt eld värmer inte, vad som än finns att tända den med. f är elden man annars skulle sitta vid (den som brinner, val.ts)
+export function varmareInne(s: State, rum: Rum, c: number, varmer = false, p?: { x: number; y: number }, f = eldPlats(s)) {
+  const inne = -c * (1 - shelterOf(s, rum, Math.min(living(s).length, rum.tiles.length))), ute = heatAt(s, f.x + 0.5, f.y + HUS.varmeY) * KROPP.eldVarme - c;
   if (varmer) {
     const t = rum.tiles[0], dIn = p && t !== undefined ? Math.hypot(p.x - (t % W + 0.5), p.y - (Math.floor(t / W) + 0.5)) : 0, dUt = p ? Math.hypot(p.x - f.x - 0.5, p.y - f.y - 0.5) : 0;
     return inne - HUS.vagVarme * dIn >= ute - HUS.vagVarme * dUt;
