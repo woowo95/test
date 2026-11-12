@@ -647,6 +647,8 @@ function flockVal(s: State, f: Rovarflock, folk: Person[], dtSec: number, ev?: T
     const tk = q.task!, m = ser ? r : (f.anfaller ? malFor(s, f, r) : r);
     if (Math.hypot(tk.tx - m.x, tk.ty - m.y) > 1.5) { tk.tx = m.x; tk.ty = m.y; tk.phase = 'go'; tk.path = undefined; tk.pk = undefined; tk.why = ser ? 'Rövarna är här, går mot dem' : 'Går dit rövarna är på väg'; }
   }
+  // hämnden som letat igenom alla hus utan att hitta den de söker ger sig av (letaSteg, steg 8.8.5)
+  if (f.gor === 'letar' && f.anfaller && !f.klar && !f.letar?.length) letaSteg(s, f, folk);
   const lagen: Record<string, number> = {};
   for (const r of fo) {
     if (iStriden(s, f, r)) { lagen.sla = (lagen.sla ?? 0) + 1; gr(r).gor = 'sla'; gr(r).varStrid = true; continue; } // striden på kartan för hen
