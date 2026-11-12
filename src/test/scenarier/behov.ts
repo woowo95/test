@@ -174,7 +174,7 @@ SCENARIER.aktivitet = {
       [`ingen bär mer från arbetet än som ryms i de fria händerna (${tungt} för tunga)`, tungt === 0],
       [`man håller sig nära platsen (${utanfor} gånger utanför)`, utanfor === 0],
       [`ingen går ut i vattnet, längs hela vägen (${vatten} punkter i vattnet)`, vatten === 0],
-      [`elden matas med en famn i taget (högst ${eldMax.toFixed(1)})`, eldMax > 0 && eldMax <= 1 + 1e-9],
+      [`elden matas med det den vill ha och man orkar bära, i hela vedträn (högst ${eldMax.toFixed(1)} på en gång; steg 10.2.7)`, eldMax > 0 && Number.isInteger(eldMax) && eldMax <= Math.max(...SIM.HEARTHS.map(h => h.maxFuel))],
       // en timmes bärplockning med gångtiden ger ca 12,6 i medel för byarna 1–8 (uppmätt i v132, efter steg 2.12.4: en full
       // börda på 10–20 minuter), 6,4 i v189, 5,2 i v190 (andra byar när eldkonsten togs bort, steg 3.10.8) och 2,9 i v206 (det vilda
       // blev sällsyntare, steg 3.10.23.7). Bandet är brett:

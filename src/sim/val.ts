@@ -7,7 +7,7 @@ import { RUS, kvallsDryck } from './rus';
 import { forbrukat } from './forradsmal';
 import { grundvarde } from './varde';
 import { narStridVal } from './kartstrid';
-import { facklaVal } from './ljus';
+import { facklaVal, ljusAt } from './ljus';
 import { OMRADE, bynsAvstand, bynsMitt, iByn, omrade, platsIByn, utanforByn } from './omrade';
 import { GANG } from './gang';
 import { iVattnetNu, sjoNamn, sjoVid, strandNu, vattenNu } from './sjo';
@@ -1188,10 +1188,12 @@ function craft(s: State, p: Person, v: Val, why: string) {
   if (ageOf(p, s.now) >= ALDER.grillar && kanGrilla(s, p)) alt.push({ sc: VAL.hantGrilla * b(), gor: () => grillVal(s, v, `${why}. Grillar maten.`) });
   const lv = laraVal(s, p);
   if (lv) alt.push({ sc: VAL.hantLara * b(), gor: () => { set(v, 'lara', `${why}. Går i lära hos ${lv.m.name}.`); v.spot = lv.spot; v.dur = lv.min * MIN; } });
+  // på natten bara där det är ljust: vid elden, ett talgljus eller en fackla (steg 10.2.49)
+  const ljust = (sp?: { x: number; y: number }) => isLight(s.now) || !sp || ljusAt(s, sp.x, sp.y) > 0;
   const fara = dangers(s), ch = fara.kyla || fara.svalt ? 0 : forsokChans(s, p, foodDays(s), woodDays(s)), fv = ch > 0 ? forsokVal(s, p) : undefined;
-  if (fv) alt.push({ sc: VAL.hantForsok * ch / TEKTAL.forsokChans * b(), gor: () => { set(v, 'forsok', `${why}. Prövar sig fram till ${TEK[fv.id].namn.toLowerCase()}.`); v.tool = fv.id; v.dur = fv.min * MIN; if (fv.spot) v.spot = fv.spot; } });
+  if (fv && ljust(fv.spot)) alt.push({ sc: VAL.hantForsok * ch / TEKTAL.forsokChans * b(), gor: () => { set(v, 'forsok', `${why}. Prövar sig fram till ${TEK[fv.id].namn.toLowerCase()}.`); v.tool = fv.id; v.dur = fv.min * MIN; if (fv.spot) v.spot = fv.spot; } });
   const pr = bastaProjekt(s, p, fara, true); // pyssel för ens egen skull: byns projekt görs under Förbättra på dagen (steg 6.1.17)
-  if (pr?.u) alt.push({ sc: VAL.hantProjekt * b(), gor: () => projektVal(v, pr.u!, why) });
+  if (pr?.u && ljust(pr.u.spot)) alt.push({ sc: VAL.hantProjekt * b(), gor: () => projektVal(v, pr.u!, why) });
   let bast: typeof alt[number] | undefined;
   for (const x of alt) if (!bast || x.sc > bast.sc) bast = x;
   if (bast) { bast.gor(); return; }
@@ -1304,7 +1306,8 @@ function night(s: State, p: Person, v: Val, a: number) {
   const now = s.now;
   const r = rnd(s, 'val', p);
   const story = (p.skill.berattande + (a > VAL.berattaAlder ? VAL.berattaBonus : 0)) / VAL.berattaDiv;
-  const craftW = (p.skill.hantverk + stat(p, 'flit', now)) / VAL.nattHantDiv;
+  // handarbetet på natten följer ljuset vid elden och tröttheten (steg 10.2.49): i mörker och trött gör man inget
+  const e = eldPlats(s), craftW = (p.skill.hantverk + stat(p, 'flit', now)) / VAL.nattHantDiv * clamp(p.rest, 0, 1) * clamp(ljusAt(s, e.x + 0.5, e.y + 0.5), 0, 1);
   // på natten håller man sig vid lägret; de modiga går lite längre ut i mörkret för att bära in saker
   const near = VAL.nattNar + stat(p, 'mod', now) / 20 * VAL.nattLangt, gt = a >= ALDER.ansvar && r < VAL.nattBara && s.stackar?.length ? haulJob(s, near) : undefined;
   if (gt) { set(v, 'bara', `Mörkt, ${near > 6 ? 'men är modig och ' : ''}${gt.why[0].toLowerCase()}${gt.why.slice(1)}`); v.spot = gt; v.dur = VAL.nattBaraTim * HOUR; }
