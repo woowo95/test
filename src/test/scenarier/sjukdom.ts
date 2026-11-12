@@ -111,19 +111,23 @@ SCENARIER.epidemi = {
     // risken utifrån
     const r = createState(9, START); let bar = 0, mass = 0;
     for (let i = 0; i < 4000; i++) { const k = barSmitta(r); if (k) { bar++; if (k === 'massling') mass++; } }
-    // samma by utan och med kunskapen, i sex dygn (sex år i spelet)
-    const kor = (vet: boolean) => {
-      const s = createState(21, START);
+    // samma byar utan och med kunskapen, i sex dygn (sex år i spelet); tre byar, eftersom en ensam by skiljer sig med en sjuk hit eller dit
+    const kor1 = (vet: boolean, seed: number) => {
+      const s = createState(seed, START);
       if (vet) for (const q of living(s)) SIM.learnK(q, 'smitta', 1, s.now);
       const [p] = living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
       insjukna(s, p, 'koppor');
-      for (let h = 0; h < 6 * 24; h++) for (let k = 0; k < 12; k++) SIM.step(s, 300);
-      return { s, smittade: Number(s.stat?.smittad_koppor ?? 0), larde: Number(s.stat?.larSmittan ?? 0), epidemi: (s.hist?.kronika ?? []).some(([, t]) => t.startsWith('Kopporna gick genom byn')) };
+      // smittade räknas efter två dygn: efter sex har nästan alla i en liten by haft kopporna med eller utan kunskapen, och utan den
+      // dör fler, så att färre finns kvar att smitta. Kunskapen syns i hur fort det sprids
+      let tva = 0;
+      for (let h = 0; h < 6 * 24; h++) { for (let k = 0; k < 12; k++) SIM.step(s, 300); if (h === 2 * 24 - 1) tva = Number(s.stat?.smittad_koppor ?? 0); }
+      return { s, smittade: tva, larde: Number(s.stat?.larSmittan ?? 0), epidemi: (s.hist?.kronika ?? []).some(([, t]) => t.startsWith('Kopporna gick genom byn')) };
     };
+    const kor = (vet: boolean) => { const r = [21, 22, 23].map(seed => kor1(vet, seed)); return { smittade: r.reduce((a, x) => a + x.smittade, 0), larde: r.reduce((a, x) => a + x.larde, 0), epidemi: r.some(x => x.epidemi) }; };
     const utan = kor(false), med = kor(true);
     return [
       [`en handlare eller främling bär ibland en sjukdom (${(bar / 40).toFixed(1)} % av besöken, ${Math.round(mass / Math.max(1, bar) * 100)} % mässlingen)`, bar > 40 && bar < 250 && mass > bar / 2],
-      [`med kunskapen Smittan blir färre sjuka (${med.smittade} mot ${utan.smittade} utan)`, med.smittade < utan.smittade],
+      [`med kunskapen Smittan blir färre sjuka de två första dygnen (${med.smittade} mot ${utan.smittade} utan, tre byar)`, med.smittade < utan.smittade],
       [`utan kunskapen lär sig byn den när flera i samma hus blir sjuka, eller krönikan skriver om epidemin (lärde ${utan.larde}, epidemin ${utan.epidemi ? 'ja' : 'nej'})`, utan.larde > 0 || utan.epidemi],
     ];
   },
