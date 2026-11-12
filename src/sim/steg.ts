@@ -217,6 +217,9 @@ for (const a of UTBROTT_ACTS) KLAR[a] = utbrottKlar; // efter ett utbrott (humor
 MEDAN.buren = burenSteg; // den som bärs hem väntar så länge någon bär hen
 // att dricka (torst.ts): en gång när man kommit fram, och törsten hålls släckt så länge man dricker
 for (const act of DRICKA_ACTS) MEDAN[act] = (s, p, t) => { if (t.prog === undefined) { t.prog = 0; drick(s, p, t); } else p.torst = 1; };
+// snön i krukan (steg 10.2.50): man väntar vid elden medan den smälter och dricker när den smält, när arbetet är klart
+MEDAN.smalta = () => undefined;
+KLAR.smalta = (s, p, t) => drick(s, p, t);
 // slakt och rensning: den första arten med arbetet som finns i förrådet (kaninen före vargen, steg 3.7.14)
 // mjärden är klar: materialet tas, och den sätts ut på närmaste strand (steg 7.4.2)
 for (const k of Object.keys(FALLOR)) KLAR[k as Act] = (s, p) => { for (const [q, n] of Object.entries((RECEPT as Record<string, { av?: Record<string, number> }>)[k].av!)) takeMaterial(s, p, q, n); sattUt(s, p, k); };

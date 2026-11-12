@@ -11,7 +11,7 @@ import { GORS, borjaTool, minOf, toolDone } from './redskap';
 import { fallTid } from './skog';
 import { fartVid, startStation, tillbehorDef } from './stationer';
 import { dorrDef } from './byggnad';
-import { DRICKA_ACTS, TORST, drickMin } from './torst';
+import { DRICKA_ACTS, TORST, drickMin, startSmalta } from './torst';
 import { halMin } from './is';
 import { ACTS } from './handlingar';
 import { balans } from './balans';
@@ -45,7 +45,7 @@ export function startWork(s: State, p: Person, tk: Task) {
   if (tk.act === 'ljus') { tk.until = s.now + LJUS.min * MIN; return; } // ett talgljus på bordet (ljus.ts)
   if (tk.act === 'uppsatt') { tk.until = s.now + UPPSATT.min * MIN; return; } // en uppsatt fackla (ljus.ts)
   if (tk.act === 'dorr') { tk.until = s.now + (dorrDef(tk.tool)?.min ?? 0) * MIN; return; } // en dörr i en öppning (bygg.ts)
-  if (DRICKA_ACTS.has(tk.act)) { tk.until = s.now + drickMin(s, p, tk.act) * MIN; return; } // att dricka (torst.ts)
+  if (DRICKA_ACTS.has(tk.act)) { tk.until = s.now + drickMin(s, p, tk.act) * MIN; startSmalta(s, p, tk); return; } // att dricka (torst.ts); snön i en kruka vid elden (steg 10.2.50)
   if (tk.act === 'varda') { tk.until = s.now + HALSA.vardMin * MIN; return; } // vården (halsa.ts)
   if (tk.act === 'vatten') { tk.until = s.now + (TORST.fyllMin + halMin(s, p)) * MIN; return; } // vattensäcken fylls (torst.ts), med hålet i isen (is.ts)
   if (tk.act === 'tillbehor') { tk.until = s.now + (tillbehorDef(tk.tool ?? '')?.min ?? 0) * MIN; return; } // ett tillbehör till en möbel (stationer.ts)

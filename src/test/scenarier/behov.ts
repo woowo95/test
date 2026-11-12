@@ -410,8 +410,17 @@ SCENARIER.torst = {
     // istiden: snö smälts vid elden, och utan eld hugger man upp isen
     const is = createState(6, START); is.kal = nyKalender(is.now, 0); klockan(is, 10); tandEld(is); is.is = { vatten: 0, cm: 3 }; // tunn is: den går att hugga upp med händerna (steg 2.11.3)
     const q = living(is)[0];
+    // utan en ledig lerkruka smälts ingen snö (steg 10.2.50)
     Object.assign(q, { rest: 1, toa: 1, hunger: 1, social: 1, warm: 1, health: 1, torst: 0.3, task: undefined }); chooseTask(is, q);
+    const utanKruka = q.task!.act !== 'smalta';
+    // med en lerkruka: snön läggs i krukan vid elden, smälter medan man väntar, och den törstige dricker; resten blir kvar i krukan
+    const kruka = addTool(is, 'lerkruka_mellan', q); kruka.hos = undefined;
+    Object.assign(q, { torst: 0.3, task: undefined }); chooseTask(is, q);
     const sno = q.task!.act === 'smalta';
+    let snoIKruka = false;
+    for (let k = 0; k < STEG_TIM * 2 && q.task?.act === 'smalta'; k++) { step(is, 300); if (kruka.inne?.v === 'sno') snoIKruka = true; }
+    const snoDrack = q.torst > 0.9 && (is.stat?.['smalt sno'] ?? 0) >= 1, kvarN = kruka.inne?.v === 'vatten' ? kruka.inne.n : 0, kvar = kvarN >= 1;
+    Object.assign(q, { torst: 0.3, task: undefined }); kruka.inne = undefined; // (vattnet i krukan är en dryck hemma)
     is.fire.lit = false; q.task = undefined; q.warm = 1; chooseTask(is, q);
     const isen = q.task!.act === 'dricka' && /isen/.test(q.task!.why ?? '');
     // två dygn (två år i spelet) i tre byar: alla dricker, ingen törstar ihjäl, och lärdomarna om vattnet sprids
@@ -428,7 +437,8 @@ SCENARIER.torst = {
       [`framme dricker hen (törsten ${torstNu.toFixed(2)}) och lär sig hur vattnet är där (${lard ? describe(s, lard).what : 'ingen lärdom'})`, drack && !!lard],
       ['den som tror att vattnet är smutsigt dricker någon annanstans', undviker],
       ['utan vatten tär törsten på hälsan', tar],
-      ['i istiden smälts snö vid elden', sno],
+      ['i istiden smälts snö vid elden, i en lerkruka', sno && utanKruka],
+      [`snön ligger i krukan vid elden medan den smälter, den törstige dricker och vatten blir kvar i krukan (snö i krukan ${snoIKruka}, drack ${snoDrack}, kvar ${kvarN})`, snoIKruka && snoDrack && kvar],
       ['i istiden utan eld hugger man upp isen och dricker', isen],
       [`på två dygn i fyra byar: ${drickor} gånger drack man, ${magont} fick ont i magen, ${hort} lärdomar om vattnet hade man hört av andra, ${dog} törstade ihjäl (som mest ${maxTorstiga} uttorkade samtidigt)`, drickor > 50 && dog === 0 && hort > 0],
     ];

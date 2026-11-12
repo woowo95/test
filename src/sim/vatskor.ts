@@ -5,7 +5,7 @@
 // när det används blir den tomma behållaren kvar där den stod. Bilden: behållaren med en yta i vätskans färg (ui/foremal.ts)
 import { tingOf, Ting } from './agande';
 import { krukaAv } from './kruka';
-import { DAY, HOUR, Person, State } from './typer';
+import { DAY, HOUR, MIN, Person, State } from './typer';
 import { balans } from './balans';
 import { KROPP, count, forstaGang, log, think } from './folk';
 import { isSick } from './sjukdom';
@@ -50,7 +50,8 @@ export const VATSKOR = {
   ol: { namn: 'Öl', farg: 0x906f0f, i: ['lerkruka_stor'], haller: 6 }, // ölet (steg 9.6.13, brygg.ts): i stora krukor, håller sex dygn
   saft: { namn: 'Saft', farg: 0x742a01, i: ['lerkruka_mellan'], haller: 2 }, // bär krossade i en mellanstor kruka (steg 9.6.9): den första drycken, håller två dygn
   mjolk: { namn: 'Mjölk', farg: 0xbdb39b, i: ['lerkruka_liten', 'lerkruka_mellan'], haller: 1 }, // getmjölken (steg 9.8.8, boskap.ts): håller ett dygn
-  te: { namn: 'Örtte', farg: 0x906f0f, i: ['lerkruka_liten'] }, // örtteet av rölleka (steg 9.5.8): kokas och står kvar i den lilla krukan
+  te: { namn: 'Örtte', farg: 0x906f0f, i: ['lerkruka_liten'] },
+  sno: { namn: 'Snö', farg: 0xdad0bb, i: ['lerkruka_liten', 'lerkruka_mellan', 'lerkruka_stor'] }, // snön som smälts i en kruka vid elden (steg 10.2.50, torst.ts): blir vatten // örtteet av rölleka (steg 9.5.8): kokas och står kvar i den lilla krukan
 } satisfies Record<string, VatskaDef>;
 export type VatskaId = keyof typeof VATSKOR;
 export const ar_vatska = (k: string): k is VatskaId => k in VATSKOR;
@@ -88,6 +89,7 @@ export function taVatska(s: State, v: VatskaId, n: number) {
 // en gång i timmen (steg.ts): en vätska som har en hållbarhet (saften) och är äldre än den hälls ut, och krukan blir tom
 export function vatskorTimme(s: State) {
   for (const t of tingOf(s)) {
+    if (t.inne?.v === 'sno') { if (snoSmalt(s, t)) count(s, 'snoSmalt'); continue; } // en snökruka som blivit stående vid elden (steg 10.2.50)
     const v = t.inne?.v, h = v ? (VATSKOR[v] as VatskaDef).haller : undefined;
     if (h === undefined || t.inne!.t === undefined || s.now - t.inne!.t < h * DAY) continue;
     count(s, v === 'saft' ? 'saftSur' : 'vatskaUthalld', t.inne!.n); t.inne = undefined;
@@ -98,7 +100,7 @@ export const DRYCK = balans('dryck', {
   slacker: 0.5, // så mycket av törsten en del saft släcker
   saftGlad: 0.03, saftTim: 4, // tanken av att dricka saft, och hur länge
   mjolkProtein: 0.15, mjolkFett: 0.1, // mjölken (steg 9.8.8) fyller protein och fett så här mycket per del
-  mjolkVarde: 1.2, saftVarde: 1.1, koktVarde: 1, smak: 0.5, // hur gärna man dricker mjölk, saft och kokt vatten, och hur mycket smaken (−1 till 1) drar (steg 10.2.34)
+  mjolkVarde: 1.2, saftVarde: 1.1, koktVarde: 1, vattenVarde: 0.9, smak: 0.5, // hur gärna man dricker mjölk, saft och kokt vatten, och hur mycket smaken (−1 till 1) drar (steg 10.2.34)
 });
 // mjölken (steg 9.8.8): en dryck och ett protein (Ingrediensgrupper). Den släcker törsten som saften och fyller protein och fett.
 // Ost och smör av mjölken kommer senare
@@ -112,7 +114,7 @@ function drickMjolk(s: State, p: Person) {
   if (forstaGang(s, 'mjolkForsta')) log(s, `${p.name} drack byns första getmjölk.`, 'world', [p.id]);
 }
 // drycken hemma (steg 10.2.34): den som valt att dricka (handlingen dryck, torst.ts och val.ts) dricker det hen helst vill ha av
-// det byn har: örtteet när hen är sjuk eller fryser, vinet eller ölet på kvällen, annars mjölk, saft eller kokt vatten, efter
+// det byn har (och vattnet i en kruka, av snön som smälts vid elden, steg 10.2.50): örtteet när hen är sjuk eller fryser, vinet eller ölet på kvällen, annars mjölk, saft eller kokt vatten, efter
 // smaken (smakOf) och vad drycken ger. k = drycken hen valt, annars den hen helst vill ha
 export function drickHemma(s: State, p: Person, k?: string) {
   const v = k ?? dryckFor(s, p);
@@ -121,6 +123,7 @@ export function drickHemma(s: State, p: Person, k?: string) {
   if (v === 'vin' || v === 'ol') { drickAlkohol(s, p, v); return; }
   if (v === 'mjolk') return drickMjolk(s, p);
   if (v === 'kokt') { taVatska(s, 'kokt', 1); p.torst = 1; count(s, 'koktDrucket'); return; }
+  if (v === 'vatten') { const t = vattenKruka(s); if (t?.inne) { t.inne.n -= 1; if (t.inne.n <= 0) t.inne = undefined; p.torst = 1; count(s, 'krukvattenDrucket'); } return; }
   taVatska(s, 'saft', 1);
   p.torst = Math.min(1, p.torst + DRYCK.slacker);
   think(p, 'Drack saft', DRYCK.saftGlad, s.now, DRYCK.saftTim * HOUR);
@@ -130,16 +133,31 @@ export function drickHemma(s: State, p: Person, k?: string) {
 // den dryck p helst vill ha mot törsten av det byn har: mjölken mättar, saften är god, det kokta vattnet är rent; smaken avgör
 export function dryckFor(s: State, p: Person): string | undefined {
   let bast: string | undefined, bv = -Infinity;
-  for (const [k, bas] of [['mjolk', DRYCK.mjolkVarde], ['saft', DRYCK.saftVarde], ['kokt', DRYCK.koktVarde]] as const) {
-    if (!medVatska(s, k)) continue;
+  for (const [k, bas] of [['mjolk', DRYCK.mjolkVarde], ['saft', DRYCK.saftVarde], ['kokt', DRYCK.koktVarde], ['vatten', DRYCK.vattenVarde]] as const) {
+    if (k === 'vatten' ? !vattenKruka(s) : !medVatska(s, k)) continue;
     const v = bas + DRYCK.smak * (p.smak?.[k] ?? 0);
     if (v > bv) { bv = v; bast = k; }
   }
   return bast;
 }
-torstDryck.finns = s => !!(medVatska(s, 'mjolk') || medVatska(s, 'saft') || medVatska(s, 'kokt'));
+// vattnet i en lerkruka (av snön, steg 10.2.50); vattnet i säckarna bärs till fälten och till den som inte kan gå (torst.ts)
+const vattenKruka = (s: State) => tingOf(s).find(t => t.inne?.v === 'vatten' && t.inne.n > 0 && !!krukaAv(t.k));
+torstDryck.finns = s => !!(medVatska(s, 'mjolk') || medVatska(s, 'saft') || medVatska(s, 'kokt') || vattenKruka(s));
 torstDryck.drick = (s, p, k) => drickHemma(s, p, k);
-import { dryckKrok as torstDryck } from './torst';
+// snön smälts i en lerkruka vid elden (steg 10.2.50): framme fylls en ledig kruka med snö och ställs vid elden. När snön stått
+// där så länge det tar att smälta den (TORST.snoMin, medan en eld brinner) är den vatten. Den som väntat vid krukan dricker,
+// och resten av vattnet blir kvar i krukan
+torstDryck.snoKruka = s => !!ledigFor(s, 'sno');
+torstDryck.snoIn = (s, p) => { const t = ledigFor(s, 'sno'); if (!t) return undefined; t.inne = { v: 'sno', n: karRymmer(t), t: s.now }; if (forstaGang(s, 'snoKruka')) log(s, `${p.name} fyllde en lerkruka med snö och ställde den vid elden.`, 'world', [p.id]); return t.id; };
+torstDryck.snoDrick = (s, id) => { const t = tingOf(s).find(q => q.id === id); if (!t?.inne || t.inne.v !== 'sno' && t.inne.v !== 'vatten') return false; t.inne = { v: 'vatten', n: t.inne.n, t: s.now }; t.inne.n -= 1; if (t.inne.n <= 0) t.inne = undefined; return true; };
+// snön i krukan t har smält: den har stått vid en eld som brinner så länge det tar (räknas vid den tiden, en gång i timmen)
+function snoSmalt(s: State, t: Ting) {
+  if (t.inne?.v !== 'sno' || t.inne.t === undefined || !nagonEld(s) || s.now - t.inne.t < TORST.snoMin * MIN) return false;
+  t.inne = { v: 'vatten', n: t.inne.n, t: s.now };
+  return true;
+}
+import { TORST, dryckKrok as torstDryck } from './torst';
+import { nagonEld } from './eld';
 import { mattnad, naringOf } from './naring';
 // vinet och ölet för berusningen (rus.ts, steg 9.6.14)
 alkoholKrok.finns = (s, v) => !!medVatska(s, v);

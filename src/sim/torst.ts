@@ -66,15 +66,18 @@ export const DRICKA: DrickaDef[] = [
   // den som inte kan gå och är hemma väntar på den som bär vatten dit (vattenVal, steg 2.10.1 och 10.2.35)
   // en dryck hemma (steg 10.2.34): mjölk, saft eller kokt vatten ur byns krukor, en vald handling som tar en stund
   { act: 'dryck', why: 'Är törstig och dricker hemma', min: () => TORST.drickMin, nar: (s, p) => kanGa(p) && hemma(s, p) && !!dryckKrok.finns(s) },
-  // isen ligger på sjön: den som kan smälter snö vid en brinnande eld, annars hugger man upp ett hål i isen
-  { act: 'smalta', why: 'Är törstig och smälter snö vid elden', min: () => TORST.snoMin, nar: s => islagt(s) && s.fire.lit },
+  // isen ligger på sjön: den som kan smälter snö i en lerkruka vid en brinnande eld (steg 10.2.50), annars hugger man upp ett hål i isen
+  { act: 'smalta', why: 'Är törstig och smälter snö i en kruka vid elden', min: () => TORST.snoMin, nar: s => islagt(s) && s.fire.lit && dryckKrok.snoKruka(s) },
   { act: 'dricka', why: 'Är törstig och går och dricker vid vattnet', min: () => TORST.drickMin, nar: () => true },
   // snön (steg 9.6.18): väljs bara när inget bättre finns nära (drickVal), sämst av sätten att dricka
   { act: 'ata_sno', why: 'Är törstig och äter snö', min: () => TORST.snoAtMin, nar: () => false },
 ];
 export const DRICKA_ACTS = new Set<Act>(DRICKA.map(d => d.act));
 // drycken hemma (vatskor.ts, satt där): finns någon, och att dricka den
-export const dryckKrok: { finns: (s: State) => boolean; drick: (s: State, p: Person, k?: string) => void } = { finns: () => false, drick: () => undefined };
+// snön i en lerkruka (steg 10.2.50, vatskor.ts): finns en ledig kruka, fyll den med snö vid elden (ger krukans id), och drick ur den när snön smält
+export const dryckKrok: { finns: (s: State) => boolean; drick: (s: State, p: Person, k?: string) => void; snoKruka: (s: State) => boolean; snoIn: (s: State, p: Person) => number | undefined; snoDrick: (s: State, id: number) => boolean } = { finns: () => false, drick: () => undefined, snoKruka: () => false, snoIn: () => undefined, snoDrick: () => false };
+// framme vid elden (paborjat.ts): en ledig lerkruka fylls med snö och ställs vid elden (steg 10.2.50)
+export function startSmalta(s: State, p: Person, tk: Task) { if (tk.act === 'smalta') tk.ref = dryckKrok.snoIn(s, p); }
 // så många minuter man dricker när man kommit fram (paborjat.ts: tiden räknas från framkomsten), med hålet i isen
 export const drickMin = (s: State, p: Person, act: Act) => (DRICKA.find(d => d.act === act)?.min() ?? 0) + (act === 'dricka' ? halMin(s, p) : 0);
 
@@ -185,8 +188,9 @@ export function drickVal(s: State, p: Person) {
 export function drick(s: State, p: Person, t: Task) {
   if (t.act === 'dryck') { dryckKrok.drick(s, p, t.tool); return; }
   if (t.act === 'ata_sno') { p.torst = Math.min(1, p.torst + TORST.snoSlacker); p.warm = Math.max(0, p.warm - TORST.snoKyla); count(s, 'at sno'); if (forstaGang(s, 'atSno')) log(s, `${p.name} åt snö för att släcka törsten.`, 'world', [p.id]); return; } // snön (steg 9.6.18) släcker sämre och kyler
+  const torstFore = p.torst;
   p.torst = 1;
-  if (t.act === 'smalta') { count(s, 'smalt sno'); return; }
+  if (t.act === 'smalta') { if (t.ref !== undefined && dryckKrok.snoDrick(s, t.ref)) count(s, 'smalt sno'); else { p.torst = torstFore; count(s, 'smaltUtanKruka'); } return; } // snön har smält i krukan; krukan kan ha tagits
   if (t.act === 'fatt') { count(s, 'fick vatten'); return; } // (en uppgift från en äldre sparad by)
   count(s, 'drack');
   const x = Math.floor(t.tx), y = Math.floor(t.ty);
