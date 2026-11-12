@@ -102,9 +102,7 @@ export function vagSvg(n: number, sida: -1 | 1, skala = 2) {
   linje(cx - 3, 3, cx + 3, 3, brons); linje(cx - 3, 4, cx - 3, 8, brons); linje(cx + 3, 4, cx + 3, 8, brons);
   // visaren, vinkelrätt mot balken
   for (let t = 1; t <= 5; t++) satt(cx + lut * t, py - t, morkt);
-  // strecken bakom balkens ändar, ett per steg (steg 9.2.4): där balkens ände står vid 0 till VIKTER vikter åt varje håll,
-  // så att lutningen går att läsa. De ritas först, och balken ritas över
-  for (let k = -5; k <= 5; k++) { const y = py + Math.round(k * VAG_TIPP); for (const s of [-1, 1]) for (let d = 1; d <= 3; d++) satt(cx + s * (VAG_L + d), y, k ? farg('senap', 1) : morkt); }
+  // inga streck bakom balkens ändar (steg 10.2.57): sammanfattningen under symbolerna säger varför vågen lutar (flikar/seder.ts)
   // balken, två punkter tjock
   for (let x = -VAG_L; x <= VAG_L; x++) { satt(cx + x, py + lut * x, ljust); satt(cx + x, py + lut * x + 1, brons); }
   satt(cx, py, morkt);

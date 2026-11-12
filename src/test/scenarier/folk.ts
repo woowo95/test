@@ -88,6 +88,7 @@ SCENARIER.faror = {
 };
 
 SCENARIER.seder = {
+  lang: true,
   text: 'Sederna håller sig mellan -1 och 1 och rör sig mot det invånarna drar åt: en flitig by drar Plikt uppåt och får högre pliktkänsla än en lat. Yrket kommer av vanan',
   kor: () => {
     const s = createState(4, START);

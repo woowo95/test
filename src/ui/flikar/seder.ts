@@ -46,14 +46,21 @@ const UPP_IKON: Partial<Record<string, string>> = {
   holdBarn: 's_barn', flyttade: 'i_okand', barnFott: 's_barn', gammal: 'i_legend', bonHjalpte: 'a_be', bonInte: 'a_be', tecken: 'tro_blixt',
   byggdeHus: 'a_bygga', forstaMastare: 'i_skicklig', overflod: 'a_gott', sorjde: 's_dod',
 };
+// sammanfattningen under symbolerna (steg 10.2.57): allt som drar vågen åt varje håll, i hundradelar, så att man ser varför den lutar
+function sedSumma(k: Sed, alla: ReturnType<typeof sedDrag>) {
+  let neg = 0, pos = 0;
+  for (const r of alla) { const d = r.d[k]; if (d < 0) neg -= d; else pos += d; }
+  const del = (x: number) => Math.round(x * 100);
+  return `<div class="sedsumma muted small"><span>← ${esc(SEDER[k].neg.toLowerCase())} ${del(neg)}</span><span>${esc(SEDER[k].pos.toLowerCase())} ${del(pos)} →</span></div>`;
+}
 export function sedFormat(k: Sed) {
-  const rader = sedDrag(s).filter(r => Math.abs(r.d[k]) >= 0.005).sort((a, b) => Math.abs(b.d[k]) - Math.abs(a.d[k])).slice(0, 5);
+  const alla = sedDrag(s).filter(r => Math.abs(r.d[k]) >= 0.005), rader = alla.slice().sort((a, b) => Math.abs(b.d[k]) - Math.abs(a.d[k])).slice(0, 5);
   if (!rader.length) return '';
   return `<div class="sedformat">${rader.map(r => {
     const d = r.d[k], m = Math.abs(d), pil = (d > 0 ? '→' : '←').repeat(m >= 0.15 ? 3 : m >= 0.05 ? 2 : 1), mot = d > 0 ? SEDER[k].pos : SEDER[k].neg;
     const text = `${upplevelseKort(r.k)}: drar mot ${mot.toLowerCase()} (${Math.max(1, Math.round(m * 100))} av 100), ${r.n} ${r.n === 1 ? 'minns' : 'minns'} det`;
     return `<span class="sedupp" title="${esc(text)}">${tecknet(UPP_IKON[r.k] ?? 'i_okand', '•')}<b>${pil}</b><span class="muted">${r.n}</span></span>`;
-  }).join('')}</div>`;
+  }).join('')}</div>${sedSumma(k, alla)}`;
 }
 
 // en sed går att trycka på (steg 9.2.66): ett tryck öppnar en lista under vågen med vad seden gör och en rad per upplevelse som
