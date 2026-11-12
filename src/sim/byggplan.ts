@@ -1,3 +1,5 @@
+import { fuelStock, hearthOf } from './eld';
+import { TROSKEL } from './forradsmal';
 import { husNytt } from './byggnad';
 import { faltAt } from './odling';
 import { angAt } from './slatter';
@@ -51,7 +53,6 @@ export const PLAN = balans('byggplan', {
   bryggaMax: 4, // en brygga är högst så här lång
   omkringMax: 8, // torkhuset och vedboden byggs runt det som står inom så här många rutor åt varje håll (steg 9.2.137)
   utEld: 4, // ett hus byggs inte ut närmare elden än så här många rutor
-  forbVed: 30, // en förbättring föreslås först när byn har så mycket trä
   forbGolv: 0.3, forbRum: 0.5, forbRik: 0.4, // hur mycket förbättringen är värd (0 till 1)
   egetRumFolk: 4, // en familj med så här många vill ha ett eget rum
   barUtTim: 24, // så länge väntar ett hus på att det som låg i en lagerplats ska bäras ut (timmar i spelet)
@@ -296,11 +297,13 @@ function utbyggnad(s: State, h: Hus, side: 'v' | 'o' | 'n' | 's', k: number, okA
 // ---------- förbättringarna (steg 7.2.10) ----------
 // Byn stannar aldrig: när inget behov är akut föreslår Byggplanen ett bättre golv, ett eget rum åt en växande familj och en
 // utbyggnad åt den rika. Bitarna märks forb och byggs på nivån Förbättra i Arbetsordningen (val.ts)
-const finnsTra = (s: State) => amountOf(s, 'ved') >= PLAN.forbVed;
+// räcker veden till förbättringen (steg 10.2.44)? Den ved ritningen tar dras från förrådet, och resten måste räcka minst
+// TROSKEL.forsokVed dygn till elden: en förbättring äter inte upp veden byn eldar med
+const vedRacker = (s: State, f: Forslag) => { const ved = f.ritning.reduce((n, a) => n + (MATERIAL[a.m].item === 'ved' ? MATERIAL[a.m].n : 0), 0); return (fuelStock(s) - ved) / (hearthOf(s.fire).burn * 24) >= TROSKEL.forsokVed; };
 const battreGolv: AtgardDef = {
   namn: 'Byta material', steg: 0,
   foresla: (s, b) => {
-    if (b.fn !== 'forbattra' || !finnsTra(s)) return [];
+    if (b.fn !== 'forbattra') return [];
     const j = bitsOf(s).find(q => q.k === 'golv' && q.m === 'jord' && q.b >= 1 && q.hus !== undefined && husById(s, q.hus)?.klar && !husById(s, q.hus)?.ut);
     if (!j) return [];
     const h = husById(s, j.hus)!, ritning = [{ x: j.x, y: j.y, m: 'tra' }];
@@ -311,7 +314,7 @@ const battreGolv: AtgardDef = {
 const egetRum: AtgardDef = {
   namn: 'Dela upp', steg: 0,
   foresla: (s, b) => {
-    if (b.fn !== 'forbattra' || !finnsTra(s)) return [];
+    if (b.fn !== 'forbattra') return [];
     const st = stationRutor(s);
     for (const h of housesOf(s)) {
       if (h.ag === undefined || !h.klar || h.ut || familjOf(s, h.ag).length < PLAN.egetRumFolk) continue;
@@ -332,7 +335,7 @@ const egetRum: AtgardDef = {
 const rikUt: AtgardDef = {
   namn: 'Bygga ut åt den rika', steg: 1,
   foresla: (s, b, okAt) => {
-    if (b.fn !== 'forbattra' || !finnsTra(s)) return [];
+    if (b.fn !== 'forbattra') return [];
     for (const h of housesOf(s)) {
       if (h.ag === undefined || !h.klar || h.ut || !rikOf(s, h.ag)) continue;
       const fs = byggaUt.foresla(s, { fn: fnId(h), a: { v: 1, plats: PLAN.rikExtra, ag: h.ag, hus: h.id }, sc: 0 }, okAt);
@@ -755,7 +758,7 @@ function valj(s: State, u: ByggBehov, okAt: (i: number) => boolean) {
   for (const k of Object.keys(ATGARDER)) {
     const d = ATGARDER[k];
     for (const f of d.foresla(s, u, okAt).slice(0, PLAN.perBehov)) {
-      if (!ritningOk(s, f, okAt)) continue;
+      if (!ritningOk(s, f, okAt) || u.fn === 'forbattra' && !vedRacker(s, f)) continue;
       const sc = f.varde / (Math.max(PROJEKT_TAL.minKostnad, f.kostnad) * (1 + PLAN.stegPaslag * d.steg));
       if (sc > bs) { bs = sc; bast = f; }
     }

@@ -79,8 +79,9 @@ export const ODLING = balans('odling', {
   ruttDygn: 1.5, // ... och har sedan ruttnat helt efter så här många dygn till (skörden minskar under tiden)
   grasDygn: 3, // ett fält där ingen arbetat på så här många dygn och där inget växer blir gräs igen
   // på hösten blir nätterna kalla, och grödan hinner inte mogna innan frosten tar den (steg 2.12.2):
-  artMarg: 5, // ärter (korn före steg 3.10.23.8) sås bara om de hinner mogna med så här många dygn tillgodo före istiden (1,5 före steg 2.12.2); annars rovor ...
-  rovMarg: 3, // ... med så här många dygn tillgodo
+  // en gröda sås bara om den hinner mogna med några dygn tillgodo före istiden, fler ju mindre frost den tål (steg 10.2.44):
+  // margBas dygn för den som tål margRef grader, och margFrost dygn till för varje grad mindre, minst margMin
+  margBas: 3, margRef: -6, margFrost: 1, margMin: 1,
   // talen som stod lösa (kodgenomgången 3.10.25), med samma värden
   vildAvst: 8, // platsen för vilda frön är värd hälften så här många rutor från byn
 });
@@ -212,12 +213,12 @@ function dygnTillIstid(s: State) {
   if (iIstiden(k.ai)) return 0;
   return (k.slut - s.now) / DAY + ((ISTID - k.ai - 1 + 8) % 4) * 7;
 }
-// grödorna som kan sås nu, den bästa först: ärter om de hinner mogna före istiden med marginal, och rovor om de hinner
+// grödorna som kan sås nu, den bästa först: de som hinner mogna före istiden med marginal efter frosttåligheten
 // Vilken gröda som sås avgörs av en poäng över alla rader i GRODOR (steg 9.6.11): skörden per ruta gånger grundvärdet och hur
-// mycket byn saknar av den, för de grödor som hinner mogna före istiden (ärterna med större marginal) och som någon kan odla
+// mycket byn saknar av den, för de grödor som hinner mogna före istiden (med större marginal för den som tål mindre frost) och som någon kan odla
 export function grodorNu(s: State): GrodaSlag[] {
   const d = dygnTillIstid(s), folk = Math.max(1, living(s).length);
-  const kan = (Object.keys(GRODOR) as GrodaSlag[]).filter(g => ((GRODOR[g] as GrodaDef).plats ?? 'falt') === 'falt' && ((GRODOR[g] as GrodaDef).flerarig && d > 0 || d >= GRODOR[g].dygn + (g === 'arter' ? ODLING.artMarg : ODLING.rovMarg)) && /* en flerårig gröda vilar över istiden (steg 9.7.9) */ (!(GRODOR[g] as GrodaDef).tek || living(s).some(p => knows(p, (GRODOR[g] as GrodaDef).tek!))));
+  const kan = (Object.keys(GRODOR) as GrodaSlag[]).filter(g => ((GRODOR[g] as GrodaDef).plats ?? 'falt') === 'falt' && ((GRODOR[g] as GrodaDef).flerarig && d > 0 || d >= GRODOR[g].dygn + Math.max(ODLING.margMin, ODLING.margBas + ODLING.margFrost * (GRODOR[g].frost - ODLING.margRef))) && /* en flerårig gröda vilar över istiden (steg 9.7.9) */ (!(GRODOR[g] as GrodaDef).tek || living(s).some(p => knows(p, (GRODOR[g] as GrodaDef).tek!))));
   const poang = (g: GrodaSlag) => GRODOR[g].perRuta * grundvarde(GRODOR[g].sak) * clamp(1 - amountOf(s, GRODOR[g].sak) / (folk * ODLING.villPer), 0.1, 1);
   return kan.map(g => ({ g, p: poang(g) })).sort((a, b) => b.p - a.p || a.g.localeCompare(b.g)).map(x => x.g);
 }

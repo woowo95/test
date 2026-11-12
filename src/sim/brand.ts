@@ -8,8 +8,8 @@ import { GANG } from './gang';
 import { brasorOf } from './brasor';
 import { hearthOf } from './eld';
 import { rasar } from './bygg';
-import { Bit, MATERIAL, bitAt, blocked, dorrDef, touch, vagBort } from './byggnad';
-import { Station, stationAt, stationDef, taBort } from './stationer';
+import { Bit, MATERIAL, bitAt, bitsOf, blocked, dorrDef, touch, vagBort } from './byggnad';
+import { Station, stationAt, stationDef, stationerOf, taBort } from './stationer';
 import { ALDER, ageOf, alive, count, livet, living, log } from './folk';
 import { Kroppsdel, kanGa, skada } from './halsa';
 import { kronika } from './historik';
@@ -21,7 +21,7 @@ import { die } from './liv';
 import { groundOf, markslag } from './mark';
 import { TORR } from './trad';
 import { nyStubbe } from './skog';
-import { faltAt, faltBrann, faltIndex, grodaPa } from './odling';
+import { faltAt, faltBrann, faltIndex, faltOf, faltRutor, grodaPa } from './odling';
 import { wearUsed } from './redskap';
 import { larma, larmNu } from './rykten';
 import { SAKER } from './saker';
@@ -87,7 +87,9 @@ export const BRAND = balans('brand', {
   stor: 20, // ... och i krönikan när den bränt så här många, eller när den kommit nära byn
   sikt: 20, // man ser elden så här många rutor bort på dagen ...
   siktNatt: 0.5, // ... och så här stor del av det på natten (men glöden syns)
-  hot: 10, // elden hotar byn när en ruta brinner så här nära byns område (utanforByn): då släcker de vuxna
+  hot: 10, // elden hotar byn när en ruta brinner så här nära byns område (utanforByn): då släcker de vuxna ...
+  hotR: 2, hotVarde: 8, // ... och också längre bort, när det inom så här många rutor står så här mycket värt (husen, förrådet, stationerna, fälten; steg 10.2.44)
+  husVarde: 2, faltVarde: 1, // det en husbit och en fältruta är värd (grundvärde) i hotet
   hetta: 1.2, // branden är het (steg 9.2.135): en ruta som brinner värmer som lägerelden tätt intill (värmen i heatAt, eld.ts; över KROPP.eldTatt blir man för varm) ...
   hettaR: 2, // ... ut till så här många rutor, avtagande
   fara: 2, // den som är så här nära en brinnande ruta och inte släcker går undan ...
@@ -452,10 +454,30 @@ function brann(b: Brand, namn: string) { (b.brann ??= {})[namn] = (b.brann[namn]
 // det som brann upp, i ord: "Kista, Trägolv ×3"
 const brannText = (b: Brand) => Object.entries(b.brann ?? {}).map(([k, n]) => n > 1 ? `${k.toLowerCase()} (${tal(n)})` : k.toLowerCase()).join(', ');
 
-// brinner det nära byn (dess område, steg 6.2.4)? Då släcker de vuxna
+// brinner det nära byn (dess område, steg 6.2.4) eller nära något som är värt mycket? Då släcker de vuxna (steg 10.2.44)
 function hotar(s: State, b: Brand) {
   const ut = bynsAvstand(s);
-  return b.r.some(r => ut.at(r[0]) <= BRAND.hot);
+  return b.r.some(r => ut.at(r[0]) <= BRAND.hot || vardeNara(s, r[0]) >= BRAND.hotVarde);
+}
+// rutan i är värd att släcka: nära byn, eller nära något som är värt mycket
+const hotad = (s: State, ut: ReturnType<typeof bynsAvstand>, i: number) => ut.at(i) <= BRAND.hot || vardeNara(s, i) >= BRAND.hotVarde;
+// värdet på kartan (grundvärdet av husens bitar, högarna, stationerna och fälten), räknat en gång i timmen
+const vardeKarta = new WeakMap<State, { h: number; v: Float32Array }>();
+function vardeNara(s: State, i: number) {
+  const h = Math.floor(s.now / HOUR);
+  let c = vardeKarta.get(s);
+  if (!c || c.h !== h) {
+    const v = new Float32Array(W * H);
+    for (const bt of bitsOf(s)) v[bt.y * W + bt.x] += BRAND.husVarde;
+    for (const a of stacksOf(s)) v[a.y * W + a.x] += a.n * (SAKER[a.k] ? grundvarde(a.k) : 0);
+    for (const st of stationerOf(s)) v[st.y * W + st.x] += grundvarde(st.k) || BRAND.husVarde;
+    for (const f of faltOf(s)) for (const j of faltRutor(f)) v[j] += BRAND.faltVarde;
+    vardeKarta.set(s, c = { h, v });
+  }
+  const x0 = i % W, y0 = Math.floor(i / W), R = BRAND.hotR;
+  let n = 0;
+  for (let y = Math.max(0, y0 - R); y <= Math.min(H - 1, y0 + R); y++) for (let x = Math.max(0, x0 - R); x <= Math.min(W - 1, x0 + R); x++) n += c.v[y * W + x];
+  return n;
 }
 // den brinnande rutan närmast byns område
 function narmastByn(s: State, b: Brand) {
@@ -622,8 +644,8 @@ function brandMal(s: State, b: Brand, p: Person, hot: boolean): BrandMal | undef
     // var och en tar sin egen ruta i eldens kant (steg 9.9.4): rutorna inne i elden sprider den inte längre, och två på samma ruta
     // släcker inte fortare. Finns ingen ledig kantruta nära byn tas den närmaste som brinner där
     const ut = bynsAvstand(s), inre = inreOf(b);
-    const m0 = narmast(b, p.x, p.y, i => slacks(s, i, p) || ut.at(i) > BRAND.hot || !!inre[i]);
-    const m = m0.i >= 0 ? m0 : narmast(b, p.x, p.y, i => ut.at(i) > BRAND.hot); // bara det som brinner nära byn
+    const m0 = narmast(b, p.x, p.y, i => slacks(s, i, p) || !hotad(s, ut, i) || !!inre[i]);
+    const m = m0.i >= 0 ? m0 : narmast(b, p.x, p.y, i => !hotad(s, ut, i)); // bara det som brinner nära byn eller nära något värt
     const fot = m.i >= 0 ? fotfaste(s, b, m.i, p) : undefined;
     if (fot) return { act: 'slacka', why: 'Släcker elden med händerna', spot: fot, dur: BRAND.handMin * MIN, ref: m.i };
   }
@@ -689,7 +711,7 @@ export function slackaSteg(s: State, p: Person, t: Task, dtSec: number) {
       const n0 = narmast(b, p.x, p.y, i => ledig(i) || !!inre[i] || slacks(s, i, p)), n = n0.i >= 0 && n0.d <= BRAND.handR ? n0 : narmast(b, p.x, p.y, ledig);
       r = n.i >= 0 && n.d <= BRAND.handR ? b.r.find(q => q[0] === n.i) : undefined;
       if (!r) {
-        const ut = bynsAvstand(s), m = narmast(b, p.x, p.y, i => ledig(i) || ut.at(i) > BRAND.hot || !!inre[i] || slacks(s, i, p));
+        const ut = bynsAvstand(s), m = narmast(b, p.x, p.y, i => ledig(i) || !hotad(s, ut, i) || !!inre[i] || slacks(s, i, p));
         if (m.i < 0 || !kanGa(p)) { if (varv === 0) t.until = s.now; return; }
         const pl = fotfaste(s, b, m.i, p);
         if (!pl) { if (varv === 0) t.until = s.now; return; }
@@ -746,3 +768,4 @@ export function askaSteg(s: State) {
 SLAGHINDER.push(s => s.brand ? KLOCKA.slag : undefined);
 // branden och en bybo som kan nå varandra under ett slag, plus synhållet: byn går i korta steg (steg 10.2.18)
 FAROR.push(s => { const b = s.brand; return !!b?.r.length && living(s).some(q => kanNa(narmast(b, q.x, q.y).d, 0, GANG.fart)); });
+import { grundvarde } from './varde';

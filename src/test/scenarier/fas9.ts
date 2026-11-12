@@ -2030,7 +2030,7 @@ SCENARIER.hamla = {
     const valt = i !== undefined && SIM.tradArt(g, i).id === 'bjork';
     hamlaKlar(s, p, i);
     const hamlat = hamladeOf(s).length === 1 && amountOf(s, 'lovkarve') === 0;
-    const genast = hamlaVal(s, p) === undefined; // skotten är inte klara än
+    const genast = hamlaVal(s, p) !== i; // skotten är inte klara än (räcker inte lövet kan en björk till hamlas, steg 10.2.44)
     s.now += VINTER.lovDygn * SIM.DAY + SIM.HOUR; klockan(s, 10); s.kal = SIM.nyKalender(s.now, SIM.SOMMAR);
     const igen = hamlaVal(s, p);
     hamlaKlar(s, p, igen);

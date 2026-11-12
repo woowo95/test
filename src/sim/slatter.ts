@@ -156,7 +156,8 @@ const upptagen = (s: State, p: Person, i: number) => living(s).some(q => q !== p
 export function hamlaVal(s: State, p: Person): number | undefined {
   if (ageOf(p, s.now) < ALDER.vuxen || !isLight(s.now) || !lovtid(s) || !betesdjurOf(s).length) return undefined;
   for (const h of hamladeOf(s)) if (moget(s, h) && !upptagen(s, p, h.i)) return h.i;
-  if (hoRacker(s) || hamladeOf(s).some(h => !moget(s, h) && s.now - h.t < DAY)) return undefined; // ett nyss hamlat träd räcker en stund
+  // en ny björk när höet och lövet som de hamlade träden ger nästa gång inte räcker åt djuren: antalet följer höbristen (steg 10.2.44)
+  if (hoAv(s) + hamladeOf(s).length * VINTER.lov >= betesdjurOf(s).length * VINTER.hoPerDjur) return undefined;
   const i = nyBjork(s);
   return i !== undefined && !upptagen(s, p, i) ? i : undefined;
 }
