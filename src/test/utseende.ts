@@ -26,6 +26,7 @@ const FALL = [
   { namn: 'mitt-i-natten', ai: 2, h: 1 },
   { namn: 'istid', ai: 0, h: 12 },
   { namn: 'istid-natt', ai: 0, h: 22 },
+  { namn: 'inzoomning', ai: 0, h: 12, zoom: 20 }, // kartan så långt inzoomad det går, i istiden med snön (steg 10.2.56): allt ska vara skarpa hela punkter
 ];
 const SPELA_MS = 3000; // så länge spelet går innan bilden tas, så att allt hinner ritas
 const SKARMAR = [
@@ -89,7 +90,7 @@ const MATA = `pal => {
     text.forEach(t => { t.visible = true; });
   }
   const var_ = Object.entries(rutor).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([k, n]) => k.split(',').map(v => v * 40 / app.renderer.resolution).join(',') + ' ' + n);
-  return { lager, var: var_, skalor, utanfor, ritade, topp, klocka: (document.getElementById('calTime') || {}).textContent, nu: new Date().toString(), by: new Date(by.s.now).toString() };
+  return { varld: world.scale.x * app.renderer.resolution, lager, var: var_, skalor, utanfor, ritade, topp, klocka: (document.getElementById('calTime') || {}).textContent, nu: new Date().toString(), by: new Date(by.s.now).toString() };
 }`;
 
 async function main() {
@@ -108,10 +109,11 @@ async function main() {
       pg.on('pageerror', (e: Error) => fel.push(e.message));
       if (process.env.LAGER) await ctx.addInitScript('window.__lager = true');
       await pg.goto(SIDA);
+      if ('zoom' in f) await pg.evaluate(`(() => { const by = window.__byn, f = by.s.fire; by.cam.zoom = ${f.zoom}; by.layout(); })()`);
       await pg.clock.runFor(SPELA_MS);
       await pg.waitForTimeout(1500);
       await pg.screenshot({ path: `${MAPP}/${f.namn}-${sk.namn}${lg.fil}.png`, timeout: 120000 }); // mobilens bild är stor
-      const r = await pg.evaluate(`(${MATA})(${JSON.stringify(palett)})`) as { skalor: Record<string, number>; utanfor: number; ritade: number; topp: string[]; var: string[]; lager: string[]; klocka: string; nu: string; by: string };
+      const r = await pg.evaluate(`(${MATA})(${JSON.stringify(palett)})`) as { varld: number; skalor: Record<string, number>; utanfor: number; ritade: number; topp: string[]; var: string[]; lager: string[]; klocka: string; nu: string; by: string };
       if (process.env.DEBUG) console.log(new Date(t).toString(), '|', r.nu, '|', r.by, '|', r.klocka, '\n   var (x,y i skärmpunkter):', r.var.join('; '));
       const andel = r.ritade ? r.utanfor / r.ritade : 1;
       const rad = `${f.namn.padEnd(14)} ${sk.namn.padEnd(6)} ${lg.namn.padEnd(5)} ${(andel * 100).toFixed(2).padStart(6)} % utanför paletten (${r.utanfor} av ${r.ritade} punkter)${r.topp.length ? ': ' + r.topp.join(', ') : ''}`;
@@ -121,6 +123,9 @@ async function main() {
       if (kanda.length) console.log('   väntar på ritningar (steg 5.5.5):', kanda.map(k => `${KANDA[k]} ×${r.skalor[k]}`).join(', '));
       if (r.lager.length) console.log('   lagren:', r.lager.join('; '));
       if (fel.length) console.log('   FEL på sidan:', fel.slice(0, 3).join(' | '));
+      // inzoomad ritas varje punkt i världen som ett helt antal punkter på skärmen (steg 10.2.56)
+      if ('zoom' in f && Math.abs(r.varld - Math.round(r.varld)) > 1e-6) larm.push(`${f.namn} ${sk.namn} ${lg.namn}: kartan i skalan ${r.varld.toFixed(3)}, inte hela punkter`);
+      if ('zoom' in f) console.log(`   kartans skala: ${r.varld.toFixed(3)} punkter på skärmen per punkt i världen`);
       if (r.utanfor) larm.push(`${f.namn} ${sk.namn} ${lg.namn}: ${r.utanfor} punkter utanför paletten`);
       if (nya.length) larm.push(`${f.namn} ${sk.namn} ${lg.namn}: bilder i en skala som inte är hel`);
       if (fel.length) larm.push(`${f.namn} ${sk.namn} ${lg.namn}: fel på sidan`);

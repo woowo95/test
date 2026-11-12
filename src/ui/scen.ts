@@ -77,14 +77,16 @@ export function layout() {
   if (app.renderer.width !== w * app.renderer.resolution || app.renderer.height !== h * app.renderer.resolution) app.renderer.resize(w, h);
   const fit = Math.min(w / (W * TS), h / (H * TS));
   cam.zoom = clamp(cam.zoom, 1, 20); // den största förstoringen: tjugo gånger hela kartan (steg 3.10.6, 9.2.85)
-  const sc = fit * cam.zoom;
+  // hela punkter (steg 10.2.56): inzoomad blir varje punkt i världen ett helt antal punkter på skärmen, så att ingen punkt
+  // blir bredare än sin granne och bilden inte ser suddig ut
+  const res = app.renderer.resolution, sc0 = fit * cam.zoom, sc = sc0 * res >= 1 ? Math.max(1, Math.round(sc0 * res)) / res : sc0;
   if (cam.x < 0 && s) { const f = eldPlats(s); cam.x = f.x * TS; cam.y = f.y * TS; }
   if (cam.x < 0) { cam.x = W * TS / 2; cam.y = H * TS / 2; }
   const hw = w / 2 / sc, hh = h / 2 / sc;
   cam.x = W * TS <= hw * 2 ? W * TS / 2 : Math.max(hw, Math.min(W * TS - hw, cam.x));
   cam.y = H * TS <= hh * 2 ? H * TS / 2 : Math.max(hh, Math.min(H * TS - hh, cam.y));
   world.scale.set(sc);
-  world.position.set(w / 2 - cam.x * sc, h / 2 - cam.y * sc);
+  world.position.set(Math.round((w / 2 - cam.x * sc) * res) / res, Math.round((h / 2 - cam.y * sc) * res) / res); // på hela punkter på skärmen
 }
 // en punkt på skärmen i världens pixlar, och rutan den ligger i
 export const toWorld = (gx: number, gy: number) => world.toLocal(new PIXI.Point(gx, gy));
