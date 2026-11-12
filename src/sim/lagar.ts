@@ -230,7 +230,7 @@ function raddDygn(vuxna: Person[], s: State) {
 export function lagRegister() {
 satAktRadd((s, p, act, om) => raddForAkt(s, p, act, om));
 FRAGOR.nylag = {
-  namn: (_s, d) => `Ny lag: ${LAGAR[d.id as string].namn}`, krets: 'byn',
+  namn: (_s, d) => `Ny lag: ${LAGAR[d.id as string].namn}`, om: (_s, d) => LAGAR[d.id as string].text, krets: 'byn',
   rost: (s, p, d) => LAGAR[d.id as string].rost(s, p),
   gor: (s, d, fram) => {
     const id = d.id as string, def = LAGAR[id], st = styreAv(s);
@@ -241,12 +241,12 @@ FRAGOR.nylag = {
   },
 };
 FRAGOR.bortlag = {
-  namn: (_s, d) => `Ta bort lagen: ${LAGAR[d.id as string].namn}`, krets: 'byn',
+  namn: (_s, d) => `Ta bort lagen: ${LAGAR[d.id as string].namn}`, om: (_s, d) => LAGAR[d.id as string].text, krets: 'byn',
   rost: (s, p, d) => { const r = LAGAR[d.id as string].rost(s, p); return { v: -r.v, why: r.v < 0 ? r.why : 'Vill behålla lagen' }; },
   gor: (s, d) => { const st = styreAv(s); st.lagar = st.lagar?.filter(l => l.id !== d.id); count(s, 'lag_bort'); log(s, `Byn tog bort lagen: ${LAGAR[d.id as string].namn.toLowerCase()}.`, 'world'); },
 };
 FRAGOR.lagstraff = {
-  namn: (_s, d) => `Ändra straffet: ${LAGAR[d.id as string].namn}`, krets: 'byn',
+  namn: (_s, d) => `Ändra straffet: ${LAGAR[d.id as string].namn}`, om: (_s, d) => LAGAR[d.id as string].text, krets: 'byn',
   rost: (_s, p, d) => ({ v: (d.ny as number) === 3 || (d.ny as number) === 6 ? dev(p.pot.aggression) - dev(p.pot.empati) : dev(p.pot.empati) * 0.5, why: 'Tycker att straffet ska vara ett annat' }),
   gor: (s, d) => { const l = s.styre?.lagar?.find(x => x.id === d.id); if (l) l.straff = d.ny as number; },
 };

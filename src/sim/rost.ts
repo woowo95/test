@@ -103,11 +103,12 @@ function kretsVikter(s: State, tr: Tro) {
 }
 // ---------- registret ----------
 export interface Rost { id: number; namn: string; w: number; ja: boolean; why: string; }
-export interface Omrostning { t: number; f: string; namn: string; fram: number; framNamn: string; roster: Rost[]; ja: number; nej: number; gick: boolean; varfor?: string }
+export interface Omrostning { t: number; f: string; namn: string; fram: number; framNamn: string; roster: Rost[]; ja: number; nej: number; gick: boolean; varfor?: string; om?: string } // om: vad lagen eller påbudet gör (steg 10.2.58)
 export interface Fraga { f: string; d: FragaData; fram: number; prio?: number }
 export type FragaData = Record<string, string | number | undefined>;
 export interface FragaDef {
   namn(s: State, d: FragaData): string;
+  om?(s: State, d: FragaData): string; // vad lagen eller påbudet gör, som fliken Lagar visar när man trycker på omröstningen (steg 10.2.58)
   krets: 'byn' | 'tro'; // vilka som röstar: byn, eller en tros troende (8.6.7)
   rost(s: State, p: Person, d: FragaData): { v: number; why: string }; // −1 till 1: åsikten och intresset
   gor(s: State, d: FragaData, fram: Person | undefined): void; // vad ett ja gör
@@ -116,7 +117,7 @@ export interface FragaDef {
 export const FRAGOR: Record<string, FragaDef> = {
   // påbuden som finns blir de första frågorna (steg 8.3.1)
   pabud: {
-    namn: (_s, d) => `${PABUD[d.k as Pabud].namn}: ändra påbudet`, krets: 'byn',
+    namn: (_s, d) => `${PABUD[d.k as Pabud].namn}: ändra påbudet`, om: (_s, d) => PABUD[d.k as Pabud].text, krets: 'byn',
     rost: (s, p, d) => {
       const k = d.k as Pabud, egen = PABUD[k].asikt(s, p), nytt = d.v as number, gamla = s.styre?.pabud?.[k] ?? 0;
       const v = Math.abs(egen - gamla) - Math.abs(egen - nytt);
@@ -155,7 +156,8 @@ export function rostaOm(s: State, fr: Fraga) {
     return { id: p.id, namn: p.name, w: andel, ja: r.v + gillar > 0, why: fram === p ? 'La fram frågan' : r.why };
   });
   const ja = roster.reduce((a, r) => a + (r.ja ? r.w : 0), 0), nej = roster.reduce((a, r) => a + (r.ja ? 0 : r.w), 0), gick = ja > nej;
-  (st.roster ??= []).push({ t: s.now, f: fr.f, namn: def.namn(s, fr.d), fram: fr.fram, framNamn: fram?.name ?? '', roster, ja, nej, gick });
+  const om = def.om?.(s, fr.d);
+  (st.roster ??= []).push({ t: s.now, f: fr.f, namn: def.namn(s, fr.d), fram: fr.fram, framNamn: fram?.name ?? '', roster, ja, nej, gick, ...(om ? { om } : {}) });
   if (st.roster.length > ROST.sparas) st.roster.splice(0, st.roster.length - ROST.sparas);
   count(s, 'omrostning'); count(s, gick ? 'omrostning_ja' : 'omrostning_nej');
   const envalde = Math.max(0, s.seder.v.rang ?? 0);

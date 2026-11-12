@@ -33,14 +33,14 @@ function styretHtml() {
       return `<li ${sedKlick(v.sed!)}>${sedVag(x, esc(d.neg), esc(d.pos))}${sedFormat(v.sed!)}${sedLista(v.sed!)}</li>`;
     }).join('');
     const hist = st.historia.slice().reverse().map(h => `<li><span class="when">${timeLabel(s, h.fran)}</span>${pLink(byId(s, h.id)) === '–' ? esc(h.namn) : pLink(byId(s, h.id))}, ${esc([...(h.forr ?? []), h.titel].map(x => x.toLowerCase()).join(', sedan '))}${h.till !== undefined ? ` – ${dygnTxt(h.till - h.fran)}, ${esc(h.slut ?? '')}` : ''}</li>`).join('');
-    return `${ledare}<h3>Vågskålar</h3><ul class="seder">${skalar}</ul>${lagarDel()}${omrostningar()}${rattegangar()}<h3>Ledarna genom tiden</h3><ol class="logg">${hist}</ol>`;
+    return `${ledare}<h3>Vågskålar</h3><ul class="seder">${skalar}</ul>${omrostningar()}${rattegangar()}<h3>Ledarna genom tiden</h3><ol class="logg">${hist}</ol>`;
 }
 
 // stenen Styre (steg 9.3.1): delarna i en rad knappar överst, styret och påbuden. Registret: en ny del är en rad i DELAR
 interface Del { id: string; tecken: string; namn: string; html(): string }
 const DELAR: Del[] = [
   { id: 'styre', tecken: '👑', namn: 'Styret', html: styretHtml },
-  { id: 'pabud', tecken: '📜', namn: 'Påbud', html: () => pabudDel() },
+  { id: 'pabud', tecken: '📜', namn: 'Lagar', html: () => `${lagarDel() || '<p class="muted">Byn har inga lagar än.</p>'}<h3>Påbud</h3>${pabudDel()}` }, // lagarna och påbuden (steg 10.2.58)
 ];
 const oppen = () => DELAR.find(d => d.id === ui.styreDel) ?? DELAR[0];
 export const styre: Flik = {
@@ -87,7 +87,7 @@ export function pabudDel() {
 function lagarDel() {
   const lagar = lagarNu(s);
   if (!lagar.length) return '';
-  return `<h3>Lagar <span class="muted small">${lagar.length} av ${lagTak(s)} · efterlevs ${Math.round(efterlevs(s) * 100)} %</span></h3><ul class="rels">${lagar.slice(0, LAG.takVisas).map(l => { const d = LAGAR[l.id]; return `<li title="${esc(`${d.text}. ${d.om ? `Kom efter ${d.om}. ` : ''}Straffet: ${STRAFF_NAMN[l.straff].toLowerCase()}.`)}">${d.sym} ${esc(d.namn)} <span class="muted">${esc(STRAFF_NAMN[l.straff])}</span></li>`; }).join('')}</ul>`;
+  return `<p class="muted small">${lagar.length} av ${lagTak(s)} lagar · efterlevs ${Math.round(efterlevs(s) * 100)} %</p><ul class="rels">${lagar.slice(0, LAG.takVisas).map(l => { const d = LAGAR[l.id]; return `<li title="${esc(`${d.text}. ${d.om ? `Kom efter ${d.om}. ` : ''}Straffet: ${STRAFF_NAMN[l.straff].toLowerCase()}.`)}">${d.sym} ${esc(d.namn)} <span class="muted">${esc(STRAFF_NAMN[l.straff])}</span></li>`; }).join('')}</ul>`;
 }
 // ministrarna (steg 8.3.8): en rad per post
 function ministrar() {
@@ -114,7 +114,7 @@ function rostMer(o: Omrostning) {
     const mark = (r.id === o.fram ? ` <span title="Lade fram frågan">${iconImg('r_fram', 12)}</span>` : '') + (l?.id === r.id ? ` <span title="Byns ledare">${iconImg('ledarskap', 12)}</span>` : '');
     return `<li class="klick" data-hjalp="${id}" data-hjalp-grupp="rr-" title="${esc(r.why)}" tabindex="0" role="button">${sym}<span class="rnamn">${esc(r.namn)}${mark}</span><span class="rostw" title="Väger ${Math.round(r.w * 100)} %">${bar(r.w / max)}</span></li>${hjalpText(id, `<li class="small muted rvarfor">${esc(r.why)}</li>`)}`;
   }).join('');
-  return `<li class="small"><p class="muted">${val ? `Byn valde ${esc(o.framNamn)}.` : `Lades fram av ${esc(o.framNamn)}.`} ${o.varfor ? esc(o.varfor) : ''}</p>${stapel}<ul class="roster">${rader}</ul></li>`;
+  return `<li class="small">${o.om ? `<p>${esc(o.om)}</p>` : ''}<p class="muted">${val ? `Byn valde ${esc(o.framNamn)}.` : `Lades fram av ${esc(o.framNamn)}.`} ${o.varfor ? esc(o.varfor) : ''}</p>${stapel}<ul class="roster">${rader}</ul></li>`;
 }
 // rättegångarna (steg 3.10.17): en rad per dom, nyast först. Ett tryck visar berättelsen och hur domen gick till
 const plus = (v: number) => `${v < 0 ? '−' : '+'}${num(Math.abs(v))}`;
