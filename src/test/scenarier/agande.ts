@@ -590,6 +590,10 @@ SCENARIER.klader = {
       bs.c = 1; SIM.toolDone(s, sy, 'rock_kaninskinn'); const c1 = bs.c; SIM.toolDone(s, sy, 'vattensack'); const c2 = bs.c;
       syrSlits = `1 → ${c1.toFixed(2)} → ${c2.toFixed(2)}`; syrOk = c1 < 1 - 0.01 && c2 < c1 - 0.01;
     }
+    // kläderna från början (steg 10.2.73)
+    const ny = createState(9, START), startPa = (q: Person) => SIM.tingOf(ny).filter(x => x.bar === q.id && SIM.kladAv(x.k)).map(x => SIM.kladAv(x.k)!.plagg);
+    const startKlader = living(ny).map(q => startPa(q).join('+')).join(', ');
+    const startOk = living(ny).every(q => ['rock', 'byxor', 'skor'].every(pl => startPa(q).includes(pl as never))) && !living(ny).some(q => (q.tek?.skinnklader ?? 0) >= 1);
     return [
       ['utan bensylen vid slöjdbänken sys inga kläder', utan],
       [`en bensyl slipas och läggs vid slöjdbänken (efter ${timBensyl} timmar)`, slipad && kan],
@@ -601,6 +605,7 @@ SCENARIER.klader = {
       ['kläderna väger: den som har dem på sig bär mer på kroppen', tyngre],
       ['ett utslitet plagg försvinner och räknas', slitet],
       ['den dödes plagg tar någon annan på sig', arv],
+      [`i en ny koloni har alla enkla kläder och skor på sig, men ingen kan sy (steg 10.2.73; ${startKlader})`, startOk],
     ];
   },
 };
@@ -807,6 +812,7 @@ SCENARIER.plagg = {
     // valet av material i en by som har båda skinnen
     const by = (ai: number) => {
       const s = createState(2, START); tandEld(s);
+      s.ting = SIM.tingOf(s).filter(t => !SIM.kladAv(t.k)); // utan kläderna från början (steg 10.2.73): valet av material för den som saknar en rock
       s.now = SIM.ageStart(s, ai) + 30 * HOUR;
       for (const r of s.people) { r.tek = { ...r.tek, kniv: 1, flatarbank: 1, bensyl: 1, skinnklader: 1 }; r.warm = 1; }
       setAmount(s, 'skinn', 30); setAmount(s, 'vargskinn', 6); setAmount(s, 'rep', 12);
