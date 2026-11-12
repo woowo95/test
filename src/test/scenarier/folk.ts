@@ -2674,3 +2674,22 @@ SCENARIER.stalle = {
     ];
   },
 };
+
+SCENARIER.naken = {
+  text: 'Steg 10.2.72: att vara naken känns. Den som är helt naken får sämre humör, också när ingen annan har kläder, och den som saknar plagg på fötterna, benen eller överkroppen får lite sämre humör för varje del',
+  kor: () => {
+    const s = createState(5, START);
+    const p = living(s).find(q => SIM.ageOf(q, s.now) >= 20)!;
+    for (const t of SIM.tingOf(s)) if (t.bar === p.id) t.bar = undefined;
+    const tanke = (q: Person) => (q.thoughts ?? []).filter(x => /naken|Har inget på/.test(x.text)).map(x => `${x.text} ${x.v.toFixed(3)}`).join(', ');
+    p.thoughts = []; SIM.TAKTER.find(t => t.namn === 'stepNaken')!.fn(s, 3600, undefined as never);
+    const helt = tanke(p);
+    const byxor = SIM.KLADER_AV.find(r => r.plagg === 'byxor')!, t = addTool(s, byxor.k, p); t.bar = p.id;
+    p.thoughts = []; SIM.TAKTER.find(t => t.namn === 'stepNaken')!.fn(s, 3600, undefined as never);
+    const delvis = tanke(p);
+    return [
+      [`helt naken: ${helt || 'ingen tanke'}`, /Är naken/.test(helt)],
+      [`med byxor: ${delvis || 'ingen tanke'}`, /fötterna och överkroppen/.test(delvis) && !/Är naken/.test(delvis)],
+    ];
+  },
+};

@@ -94,6 +94,9 @@ import { oppnaSed } from './rost';
 import { handelse } from './rykten';
 import { tal, horsel, barMed, burenSteg, halsa, halsaSteg, lakerFullt, lamnaAv, mossaFynd, mossaPaStam, vardKlar, vardMal } from './halsa';
 import { bordPlats, fullBorda, kladVarme, ryggKorg, ryms, slitRygg, stepKlader } from './utrustning';
+import { KLADER, PLAGG, kladAv } from './klader';
+import { allaTing } from './agande';
+import { och } from './ord';
 import { stepPynt } from './pynt';
 import { stadaByten } from './byte';
 import { stationFlyttTimme, stationFor, kvVid, stationFlytta, finishStation, finishTillbehor, stationAt, stationRutor, stepStationer, tillbehorVarme, workStation } from './stationer';
@@ -1019,13 +1022,20 @@ function tidTillTom(s: State, p: Person, tk: Task) {
 // Rundan söker sig utåt (steg 4.5.6.2): varje ruta längre från lägret är värd drag() mer. Nyfikenheten och modet drar ut;
 // bördan, hungern, törsten, tröttheten, mörkret som kommer, kylan och rädslan drar hem. Det finns inget tak: den som dras
 // utåt kan gå ända till kartans kant. Barn, gamla och skadade dras mindre ut
-// den som är naken blir missnöjd, mer ju fler andra i byn som bär kläder (steg 7.7.11)
+// att vara naken känns (steg 10.2.72): den som är helt naken får sämre humör, också när ingen annan har kläder, och den som
+// saknar plagg på fötterna, benen eller överkroppen får lite sämre humör för varje del som saknas
+const NAKEN_DELAR: Record<string, string> = { fotter: 'fötterna', ben: 'benen', kropp: 'överkroppen' };
+const kroppsdel = (plats: string) => plats === 'inre' || plats === 'yttre' ? 'kropp' : plats; // skjortan och rocken klär överkroppen
 function stepNaken(s: State) {
-  const folk = living(s), kladda = folk.filter(p => kladVarme(s, p) > 0).length;
-  if (!kladda || !folk.length) return;
-  for (const p of folk) if (kladVarme(s, p) === 0 && ageOf(p, s.now) >= ALDER.bygger) think(p, 'Är naken när andra har kläder', NAKEN * kladda / folk.length, s.now, 2 * HOUR);
+  const pa = new Map<number, Set<string>>();
+  for (const t of allaTing(s)) { const r = t.bar !== undefined ? kladAv(t.k) : undefined; if (r) (pa.get(t.bar!) ?? pa.set(t.bar!, new Set()).get(t.bar!)!).add(kroppsdel(PLAGG[r.plagg].plats)); }
+  for (const p of living(s)) {
+    if (ageOf(p, s.now) < ALDER.bygger) continue;
+    const har = pa.get(p.id), saknas = Object.keys(NAKEN_DELAR).filter(d => !har?.has(d));
+    if (saknas.length === Object.keys(NAKEN_DELAR).length && !har?.size) think(p, 'Är naken', KLADER.naken, s.now, 2 * HOUR);
+    else if (saknas.length) think(p, `Har inget på ${och(saknas.map(d => NAKEN_DELAR[d]!))}`, KLADER.nakenDel * saknas.length, s.now, 2 * HOUR);
+  }
 }
-const NAKEN = -0.06;
 const ROLLEKA = 0.6; // så mycket rölleka per timmes samlande på en rik röllekaruta (steg 9.7.15)
 export const RUNDA = balans('runda', {
   sett: 12, // så många rutor minns man att man nyss plockat på ...
