@@ -177,13 +177,13 @@ export function rostKvall(s: State) {
   }
 }
 // ---------- ministrarna (steg 8.3.8) ----------
-export interface MinisterDef { namn: string; nar(s: State): boolean; vem(s: State): Person | undefined; pabud?: Pabud[]; sektion(s: State): number }
+export interface MinisterDef { namn: string; kort: string; om: string; nar(s: State): boolean; vem(s: State): Person | undefined; pabud?: Pabud[]; sektion(s: State): number }
 const basta = (s: State, f: (p: Person) => number) => { let b: Person | undefined, bv = -Infinity; for (const p of living(s)) if (vuxenRost(s, p) && f(p) > bv) { bv = f(p); b = p; } return b; };
 export const MINISTRAR: Record<string, MinisterDef> = {
-  overstePrast: { namn: 'Överstepräst', nar: s => !!overstePrast(s), vem: s => overstePrast(s), sektion: s => living(s).filter(p => p.tro !== undefined).length / 3 }, // steg 8.6.16
-  krigshovding: { namn: 'Krigshövding', nar: s => (s.stat?.vargjakt ?? 0) + (s.stat?.vargstrid ?? 0) + (s.stat?.rovarstrid ?? 0) >= 6 && krigare(s).length >= 3, vem: s => basta(s, p => p.skill.narstrid + p.pot.mod / 4), sektion: s => krigare(s).length },
-  domare: { namn: 'Domare', nar: s => (s.styre?.lagar?.length ?? 0) >= 2, vem: s => basta(s, p => p.pot.intelligens + p.pot.empati / 2), sektion: () => 1 }, // steg 8.4.16
-  forvaltare: { namn: 'Förvaltare', nar: s => rikedom(s) >= 800, vem: s => basta(s, p => p.pot.intelligens + p.skill.handel / 2), pabud: ['matlager', 'vedlager', 'torkat'], sektion: s => living(s).length / 4 },
+  overstePrast: { namn: 'Överstepräst', kort: 'leder tron', om: 'Den främsta prästen i byns största tro. Talar för de troende i styret.', nar: s => !!overstePrast(s), vem: s => overstePrast(s), sektion: s => living(s).filter(p => p.tro !== undefined).length / 3 }, // steg 8.6.16
+  krigshovding: { namn: 'Krigshövding', kort: 'leder striderna', om: 'Väljs när byn har stridit ofta. Den skickligaste kämpen leder vargjakterna och försvaret.', nar: s => (s.stat?.vargjakt ?? 0) + (s.stat?.vargstrid ?? 0) + (s.stat?.rovarstrid ?? 0) >= 6 && krigare(s).length >= 3, vem: s => basta(s, p => p.skill.narstrid + p.pot.mod / 4), sektion: s => krigare(s).length },
+  domare: { namn: 'Domare', kort: 'dömer på tinget', om: 'Väljs när byn har lagar. Den klokaste avgör skuld och straff.', nar: s => (s.styre?.lagar?.length ?? 0) >= 2, vem: s => basta(s, p => p.pot.intelligens + p.pot.empati / 2), sektion: () => 1 }, // steg 8.4.16
+  forvaltare: { namn: 'Förvaltare', kort: 'sköter förråden', om: 'Väljs när byn blivit rik. Lägger fram påbuden om mat, ved och torkat.', nar: s => rikedom(s) >= 800, vem: s => basta(s, p => p.pot.intelligens + p.skill.handel / 2), pabud: ['matlager', 'vedlager', 'torkat'], sektion: s => living(s).length / 4 },
 };
 export const framFor = (s: State, k: Pabud) => { for (const [id, m] of Object.entries(MINISTRAR)) if (m.pabud?.includes(k)) { const p = byId(s, s.styre?.ministrar?.[id]); if (p && alive(p)) return p; } return undefined; };
 // posterna ses över varje årstid, som titeln. Vid Envälde utser ledaren, annars väljer byn

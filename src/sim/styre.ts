@@ -113,19 +113,22 @@ export const STR = balans('straff', {
 // titlarna (bara text, steg 3.10.18), i den ordning de prövas: den första som passar vinner. namn = [mannens, kvinnans].
 // Titeln väljs när ledaren väljs och ses över varje årstid när påbuden sätts. Präst och schaman hör till religionen
 interface TitelLage { vuxna: Person[]; folk: number; rang: number; leg: number; stod: number; hard: number; krig: number }
-const TITLAR: { namn: [string, string]; passar: (s: State, p: Person, x: TitelLage) => boolean }[] = [
-  { namn: ['Kung', 'Drottning'], passar: (_s, _p, x) => x.folk >= LED.kungFolk && x.rang >= LED.kungRang },
-  { namn: ['Jarl', 'Jarl'], passar: (_s, _p, x) => x.folk >= LED.jarlFolk && x.rang >= LED.jarlRang },
-  { namn: ['Järnhanden', 'Järnhanden'], passar: (_s, _p, x) => x.hard >= LED.jarnHard && x.leg < LED.jarnLeg }, // ett öknamn som folket använder
-  { namn: ['Krigshövding', 'Krigshövding'], passar: (_s, _p, x) => x.krig >= LED.krig }, // och seden Fejd när den finns (9.2.3)
-  { namn: ['Hövding', 'Hövding'], passar: (_s, _p, x) => x.rang >= LED.hovding },
-  { namn: ['Storjägare', 'Storjägare'], passar: (_s, p) => p.tag === 'Jägare' },
-  { namn: ['Den vise', 'Den visa'], passar: (_s, p) => p.pot.intelligens >= LED.vis },
-  { namn: ['Byfader', 'Bymoder'], passar: (s, p, x) => x.stod >= LED.faderStod && stat(p, 'empati', s.now) >= LED.faderEmp },
-  { namn: ['Äldste', 'Äldsta'], passar: (s, p, x) => ageOf(p, s.now) >= ALDER.aldre && x.vuxna.every(q => ageOf(q, s.now) <= ageOf(p, s.now)) },
-  { namn: ['Ålderman', 'Ålderkvinna'], passar: () => true }, // byns valda förman (Ålderkvinna för en kvinna, steg 4.5.3.2)
+// kort och om (steg 10.2.59): några ord om rollen, och mer när man trycker på den
+const TITLAR: { namn: [string, string]; kort: string; om: string; passar: (s: State, p: Person, x: TitelLage) => boolean }[] = [
+  { namn: ['Kung', 'Drottning'], kort: 'härskar över ett stort folk', om: 'Leder en stor by med hög rang. Påbuden och lagarna väger tungt, och folket väntar sig mycket.', passar: (_s, _p, x) => x.folk >= LED.kungFolk && x.rang >= LED.kungRang },
+  { namn: ['Jarl', 'Jarl'], kort: 'leder ett växande folk', om: 'Leder en stor by med hög rang, nästan som en kung.', passar: (_s, _p, x) => x.folk >= LED.jarlFolk && x.rang >= LED.jarlRang },
+  { namn: ['Järnhanden', 'Järnhanden'], kort: 'styr med hårda straff', om: 'Ett öknamn som folket ger den som straffar hårt fast byn inte godtar hen.', passar: (_s, _p, x) => x.hard >= LED.jarnHard && x.leg < LED.jarnLeg }, // ett öknamn som folket använder
+  { namn: ['Krigshövding', 'Krigshövding'], kort: 'leder i strid', om: 'Byn har stridit mycket, och ledaren är främst en krigare.', passar: (_s, _p, x) => x.krig >= LED.krig }, // och seden Fejd när den finns (9.2.3)
+  { namn: ['Hövding', 'Hövding'], kort: 'byns ansedda ledare', om: 'Har hög rang i byn och bestämmer påbuden.', passar: (_s, _p, x) => x.rang >= LED.hovding },
+  { namn: ['Storjägare', 'Storjägare'], kort: 'den bästa jägaren leder', om: 'Byn följer den som skaffar mest vilt.', passar: (_s, p) => p.tag === 'Jägare' },
+  { namn: ['Den vise', 'Den visa'], kort: 'leder med klokskap', om: 'Byn följer den klokaste.', passar: (_s, p) => p.pot.intelligens >= LED.vis },
+  { namn: ['Byfader', 'Bymoder'], kort: 'tar hand om alla', om: 'Har stort stöd och mycket empati: leder som en förälder.', passar: (s, p, x) => x.stod >= LED.faderStod && stat(p, 'empati', s.now) >= LED.faderEmp },
+  { namn: ['Äldste', 'Äldsta'], kort: 'den äldsta leder', om: 'Byn följer den som levt längst.', passar: (s, p, x) => ageOf(p, s.now) >= ALDER.aldre && x.vuxna.every(q => ageOf(q, s.now) <= ageOf(p, s.now)) },
+  { namn: ['Ålderman', 'Ålderkvinna'], kort: 'byns valda förman', om: 'Byn har valt hen att leda och bestämma påbuden, utan större makt än så.', passar: () => true }, // byns valda förman (Ålderkvinna för en kvinna, steg 4.5.3.2)
 ];
 const TITELNAMN = new Set(TITLAR.flatMap(t => t.namn));
+// några ord om titeln, och mer (steg 10.2.59)
+export const titelOm = (namn?: string) => TITLAR.find(t => namn !== undefined && t.namn.includes(namn));
 const hon = (p: Person) => p.sex === 'k' ? 'hon' : 'han', hennes = (p: Person) => p.sex === 'k' ? 'hennes' : 'hans';
 const stor = (t: string) => t[0].toUpperCase() + t.slice(1);
 // styrelseformerna: namnet och texten byggs ur sederna. Texten står överst i fliken Styre och är skriven som en lagtext (steg 9.2.72):
