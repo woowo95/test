@@ -995,7 +995,7 @@ SCENARIER.strakprov = {
       return JSON.parse(u.stdout.trim().split('\n').pop()!) as { hus: number; fran: number; samre: number; ingen: number; om: number; utan: boolean; vakter: string[] };
     };
     // 12 dygn: efter 8 dygn har ingen kommit på timmerväggen, och då byggs inget hus att pröva stråken på
-    const med = by({}), utan = by({ BALANS: 'strak.pa=0' });
+    const med = by({}), utan = by({ BALANS: [process.env.BALANS, 'strak.pa=0'].filter(Boolean).join(',') }); // kartans storlek (storlek.ts) gäller båda
     return [
       [`båda byarna har hus efter 12 dygn (12 år i spelet): med ${med.hus}, utan ${utan.hus}; med stråken sämre plats ${med.samre}, ingen plats ${med.ingen}, stråk som drogs om ${med.om}`, med.hus > 0 && utan.hus > 0 && !med.utan && utan.utan],
       [`med stråken står inget hus mer än 4 rutor längre från byns mitt än utan (längst bort ${med.fran.toFixed(1)} mot ${utan.fran.toFixed(1)})`, med.fran <= utan.fran + 4],

@@ -927,7 +927,7 @@ const MDEF = {
     'Ord blev slag, och {namn} skadades svårt av {mot}.',
     'Byn talade länge om slagsmålet där {mot} skadade {namn} svårt.',
     '{namn} bar länge märkena efter slagsmålet med {mot}.',
-    { t: 'Mitt i natten slogs {namn} och {mot}, och {namn} skadades svårt.', om: f => f.natt === true },
+    { t: 'Mitt i natten slogs {namn} och {mot}, och {namn} skadades svårt.', om: f => f.natt === true && !f.flera },
     { t: 'I snön syntes blodet efter slagsmålet där {mot} skadade {namn} svårt.', om: f => f.sno === true },
   ],
   k_skadadLek: [

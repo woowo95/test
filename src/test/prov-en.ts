@@ -2,11 +2,12 @@
 // som JSON på sista raden (används av prov.ts). Utan stråken: BALANS="strak.pa=0", då räknas och ritas de men hindrar inget.
 import './utc';
 import { korBy } from './kor';
-import { bitsOf, bynsMitt, eldPlats, getMap, groundOf, housesOf, markslag, omrade, stationerOf, storlekAv, straken, STRAK, zonesOf, faltAt, H, W, T } from '../sim';
+import { bitsOf, eldPlats, getMap, groundOf, housesOf, markslag, omrade, stationerOf, storlekAv, straken, STRAK, zonesOf, faltAt, H, W, T } from '../sim';
 
 const [seed, dagar] = process.argv.slice(2).map(Number), utan = !STRAK.pa;
 const r = korBy(seed, dagar), s = r.s, st = s.stat ?? {};
-const o = omrade(s), m = bynsMitt(s), hus = housesOf(s).filter(h => h.klar);
+// byns mitt för provet är husens och lagrets mitt (omrade), inte torget: torget kan hamna i utkanten när mitten är full
+const o = omrade(s), m = o.mitt, hus = housesOf(s).filter(h => h.klar);
 const mitt = (h: { x: number; y: number; w: number; h: number }) => ({ x: h.x + h.w / 2, y: h.y + h.h / 2 });
 const fran = hus.map(h => Math.hypot(mitt(h).x - m.x, mitt(h).y - m.y));
 // avståndet mellan två hus: rutorna mellan väggarna (0 = vägg i vägg)
