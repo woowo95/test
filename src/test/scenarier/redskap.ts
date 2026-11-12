@@ -70,7 +70,7 @@ SCENARIER.stenring = {
     // Buskarna runt platsen töms, för annars går man vidare till nästa (nastaBuske, steg 2.12.4)
     const r = createState(4, START), rm = getMap(r.seed);
     r.now = new Date(r.now).setHours(10, 0, 0, 0); Object.assign(r.fire, { lit: false, fuel: 0, emberUntil: undefined, ring: true });
-    setItems(r, { flinta: 1 }); setFood(r, 100);
+    setItems(r, { flinta: 1, torrgras: 0, grenar: 0, naver: 0 }); setFood(r, 100); // inget tändmaterial i förrådet
     const th = living(r).find(q => ageOf(q, r.now) >= ALDER.vuxen)!;
     Object.assign(th, { toa: 1, torst: 1, warm: KROPP.kallt - 0.05, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
     chooseTask(r, th);
@@ -78,9 +78,10 @@ SCENARIER.stenring = {
     for (const k of SIM.lagren('samla')) for (let dy = -8; dy <= 8; dy++) for (let dx = -8; dx <= 8; dx++) if (inMap(tom.x + dx, tom.y + dy)) takenOf(r)[k]![SIM.tileOf(tom.x + dx, tom.y + dy)] = 1;
     const valt = th.task?.act === 'samla' && !!th.task.tandmat;
     Object.assign(th.task!, { tx: tom.x, ty: tom.y, phase: 'do', until: r.now + 3 * HOUR }); th.x = tom.x; th.y = tom.y;
-    kor(r, 1 / 60); // ett slag (fem minuter): tändmaterialet hittas lika fort som bären (steg 2.12.4), så det räcker snart
+    kor(r, 1 / 360); // tio sekunder: tändmaterialet hittas lika fort som bären (steg 2.12.4), och det räcker snart (en tändning, steg 10.2.7)
     const nara = () => th.task?.act === 'samla' && th.task.phase === 'do' && Math.hypot(th.task.tx - tom.x, th.task.ty - tom.y) <= 6; // rundan (steg 4.5.6.1): hen går omkring på platsen
-    const fortsatt = nara() && (th.task!.items?.torrgras ?? 0) + (th.task!.items?.grenar ?? 0) > 0; // hö eller kvistar: tändmaterialet ligger på rutorna (steg 9.3.4)
+    const fortsatt = nara() && (th.task!.items?.torrgras ?? 0) + (th.task!.items?.grenar ?? 0) > 0 // hö eller kvistar: tändmaterialet ligger på rutorna (steg 9.3.4)
+      || (th.task?.act === 'tanda' && SIM.amountOf(r, 'torrgras') + SIM.amountOf(r, 'grenar') + SIM.getable(r, th, 'torrgras') + SIM.getable(r, th, 'grenar') > 0); // ... eller redan hämtat så mycket en tändning tar (steg 10.2.7) och tänder
     setItems(r, { flinta: 1, torrgras: 50, grenar: 50 }); kor(r, 0.25);
     const slutat = !nara();
     // elden tänds bara om det finns bränsle kvar sedan grenarna till tändningen tagits (flintan tar 3 grenar)
@@ -89,8 +90,10 @@ SCENARIER.stenring = {
     // redskap räknas i styck, som yxorna i skog.ts: en flinta och en sliten yxa räcker, och ingen letar mer
     const sl = createState(2, START); setItems(sl, { flinta: 1 }); addTool(sl, 'yxa', living(sl)[0]); for (const x of tingOf(sl)) if (x.k === 'yxa') x.c = 0.5;
     const slitenYxa = wantsFlint(sl);
+    for (const x of tingOf(sl)) if (x.k === 'yxa') x.c = 1;
+    const helYxa = wantsFlint(sl); // (byn kan vilja ha fler yxor: flintans förrådsmål räknar redskapen byn saknar, steg 10.2.12)
     return [
-      [`en sliten yxa räknas som en yxa när byn vill ha flinta (${slitenYxa ? 'vill ha mer' : 'räcker'})`, !slitenYxa],
+      [`en sliten yxa räknas som en yxa när byn vill ha flinta (${slitenYxa ? 'vill ha mer' : 'räcker'}, med en hel yxa ${helYxa ? 'vill ha mer' : 'räcker'})`, slitenYxa === helYxa],
       [`elden tänds bara med bränsle kvar efter tändgrenarna (5 grenar: ${tand5 ? 'ja' : 'nej'}, 6 grenar: ${tand6 ? 'ja' : 'nej'})`, !tand5 && tand6],
       [`en korg flätas vid slöjdbänken, inte där flintan skulle letas (${korgFel} av ${korgar} korgar fel)`, korgar > 0 && korgFel === 0],
       [`när raden leta har sina arbetare letar färre flinta till en yxa (${fler} av 300 när någon redan letar, ${ensam} annars)`, ensam > 0 && fler < ensam * 0.6],

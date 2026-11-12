@@ -8,7 +8,7 @@ import { nyKvalitet } from './kvalitet';
 import { amountOf, gain, put, use } from './lager';
 import { getable, Recept, takeMaterial, takeRecipe } from './behov';
 import { addDel } from './egendom';
-import { flintaKrok, sparas, villAv, villHaAv } from './forradsmal';
+import { sparas, villAv, villHaAv } from './forradsmal';
 import { addTool, freeTools, halvOf, nTools, ownsFree, tingOf, wearTool } from './agande';
 import { KLADER, KLADMATERIAL, PLAGG, PLAGG_LIST, kladAv, materialTill, valMaterial } from './klader';
 import { ageIndex, kallTid } from './tid';
@@ -290,5 +290,5 @@ export function makeTool(s: State, p: Person, g: string) {
   const k = kindFor(s, p, g);
   if (hasRecipe(s, p, k)) { takeRecipe(s, p, k); toolDone(s, p, k); }
 }
-// flintan till de redskap byn vill ha och saknar: den räknas i flintans förrådsmål, så att flinta letas till en yxa (steg 10.2.12)
-flintaKrok.verktyg = s => { let n = 0; for (const g in GORS) { const f = av(GORS[g][0]).flinta ?? 0; if (f) n += Math.max(0, villAv(s, g) - harAv(s, g)) * f; } return n; };
+// flintan till de redskap byn vill ha och saknar: den räknas i flintans förrådsmål (flintaKrok, satt i val.ts), så att flinta letas till en yxa (steg 10.2.12)
+export const flintaTillVerktyg = (s: State) => { let n = 0; for (const g in GORS) { const f = av(GORS[g][0]).flinta ?? 0; if (f) n += Math.max(0, villAv(s, g) - harAv(s, g)) * f; } return n; };
