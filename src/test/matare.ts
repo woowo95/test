@@ -47,7 +47,9 @@ export function startaMatare(stoppa?: () => void) {
       clearInterval(h);
       const vagg = (Date.now() - t0) / 1000, snitt = vagg > 0 ? summa / vagg : 0;
       const delar = tid.map((s, n) => ({ n, s })).filter(x => x.s >= 1).map(x => `${x.n}: ${Math.round(x.s)} s`).join(', ');
-      return `Datorn: ${karnor} kärnor, i snitt ${snitt.toFixed(1)} i arbete (${Math.round(snitt / karnor * 100)} %), största minnet ${(maxRss / 1e9).toFixed(1)} GB av ${(totalmem() / 1e9).toFixed(0)} GB.\n`
+      // klocktiden och den aktiva tiden per kärna (steg 10.2.65): processortiden delad på kärnorna; lika med klocktiden när alla arbetar hela tiden
+      return `Klocktid ${Math.round(vagg)} s, aktiv tid per kärna ${Math.round(summa / karnor)} s (datorns tid).\n`
+        + `Datorn: ${karnor} kärnor, i snitt ${snitt.toFixed(1)} i arbete (${Math.round(snitt / karnor * 100)} %), största minnet ${(maxRss / 1e9).toFixed(1)} GB av ${(totalmem() / 1e9).toFixed(0)} GB.\n`
         + `Så länge så många kärnor arbetade samtidigt (datorns tid): ${delar || 'för kort för att mäta'}.`;
     },
   };

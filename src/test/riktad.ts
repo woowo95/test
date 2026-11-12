@@ -14,6 +14,8 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { korJson, korSkript, pool, scenarioSammanfattning, seedAv, sek, typkontroll, typRad } from './pool';
+import { matUnderTestet } from './matare';
+matUnderTestet(); // klocktiden och den aktiva tiden per kärna sist (steg 10.2.65)
 import './scenarier/grund';
 import './scenarier/sparning';
 import './scenarier/redskap';
