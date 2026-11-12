@@ -653,7 +653,7 @@ function flockVal(s: State, f: Rovarflock, folk: Person[], dtSec: number, ev?: T
     if (!vet) continue;
     if (avst(r, q) < ROVARE.moter && !flockStrid(s, f)) { slaSteg({ s, f, r, folk, dt: dtSec, mal: r, fiende: q, hot: 1, last: 0, kvar: f.folk.length }); continue; }
     const tk = q.task!, m = ser ? r : (f.anfaller ? malFor(s, f, r) : r);
-    if (Math.hypot(tk.tx - m.x, tk.ty - m.y) > 1.5) { tk.tx = m.x; tk.ty = m.y; tk.phase = 'go'; tk.path = undefined; tk.pk = undefined; tk.why = ser ? 'Rövarna är här, går mot dem' : 'Går dit rövarna är på väg'; }
+    if (Math.hypot(tk.tx - m.x, tk.ty - m.y) > 1.5) { const at = freeNear(s, m.x, m.y); tk.tx = at.x; tk.ty = at.y; /* man går dit på land, aldrig ut i vattnet */ tk.phase = 'go'; tk.path = undefined; tk.pk = undefined; tk.why = ser ? 'Rövarna är här, går mot dem' : 'Går dit rövarna är på väg'; }
   }
   // hämnden som letat igenom alla hus utan att hitta den de söker ger sig av (letaSteg, steg 8.8.5)
   if (f.gor === 'letar' && f.anfaller && !f.klar && !f.letar?.length) letaSteg(s, f, folk);
