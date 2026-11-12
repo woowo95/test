@@ -334,7 +334,7 @@ export function tradSkuggor(lang = 1) {
 // Runt folket och det man valt (nara, steg 6.8.14) blir alla kronor som når inom NARA rutor helt genomskinliga, så att bara
 // stammen ritas kvar (steg 9.2.88), och de som når inom NARA_KANT rutor rastrade, en tonad kant så att det inte blinkar när
 // någon går förbi
-export const GENOM = 0.45, GENOM_KANT = 0.72, NARA = 2, NARA_KANT = 3;
+export const GENOM = 0.45, GENOM_KANT = 0.72, NARA = 1, NARA_KANT = 2; // inom en ruta från en person (steg 10.2.81), med den tonade kanten en ruta längre ut
 // trädet som tonats: bilden och platsen det hade (stammen har en annan storlek och ritas på samma fot)
 const tonade = new Map<PIXI.Sprite, { t: PIXI.Texture; x: number; y: number }>();
 // den genomsiktliga kronan (steg 5.5.1): samma bild med punkterna borttagna i ett rastermönster (andelen kvar), så att det
