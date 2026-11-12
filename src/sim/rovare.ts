@@ -65,7 +65,7 @@ export const ROVARE = balans('rovare', {
   gissFel: 0.5, // vaktens gissning av antalet: fel med upp till så här stor del, gånger avståndet / vaktSer (andra gissar som på längsta avståndet)
   bredvid: 2, // var och en går mot en egen punkt upp till så här många rutor från gängets mål (steg 10.2.25) ...
   filBredd: 1.1, // ... och går en egen fil så här många rutor från de andras
-  fartSpann: 0.08, // ... och så här mycket fortare eller långsammare än en bybo
+  fartSpann: 0.08, // ... och upp till så här mycket långsammare än en bybo
   nara: 1.5, // rövarna är framme vid förrådet så här nära
   // rövarnas val (steg 10.1.9–10.1.15, ROVARHANDLINGAR)
   rastR: 3, // rastplatsen: så här nära mitten håller de sig, och så långt går den som går omkring
@@ -505,7 +505,7 @@ function ga(c: RCtx, m: { x: number; y: number }) {
 // rövarens egen punkt kring det gänget går mot (upp till ROVARE.bredvid rutor åt sidan) och egen fart (ROVARE.fartSpann), fasta för var och en
 const egenPunkt = (r: Person): [number, number] => { const v = hash3(r.id, 11, 0) * Math.PI * 2, d = ROVARE.bredvid * (0.4 + 0.6 * hash3(r.id, 12, 0)); return [Math.cos(v) * d, Math.sin(v) * d]; };
 const sidaOm = (r: Person) => (gr(r).fil ?? (hash3(r.id, 14, 0) - 0.5) * 2) * ROVARE.filBredd; // rutor åt sidan om vägen: var och en sin fil
-const egenFart = (r: Person) => 1 + (hash3(r.id, 13, 0) - 0.5) * 2 * ROVARE.fartSpann;
+const egenFart = (r: Person) => 1 - hash3(r.id, 13, 0) * ROVARE.fartSpann; // aldrig fortare än en bybo
 // mot närmaste kanten; den som kommer dit är borta från kartan, hem till klanen (steg 9.2.114)
 function hemat(c: RCtx) {
   const { s, f, r } = c;

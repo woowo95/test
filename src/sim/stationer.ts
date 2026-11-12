@@ -886,7 +886,9 @@ export function startStation(s: State, p: Person, tk: Task) {
 // medan man bygger
 export function workStation(s: State, _p: Person, tk: Task, dtSec: number) {
   const t = stationById(s, tk.ref);
-  if (t) t.kvar = Math.max(0, t.kvar - dtSec * SEC);
+  if (!t) return;
+  t.kvar = Math.max(0, t.kvar - dtSec * SEC);
+  tk.until = Math.min(tk.until, s.now + t.kvar); // bygger flera på den blir den klar fortare (steg 10.2.5), och då är arbetet slut
 }
 // klar: första gången står det i loggen
 export function finishStation(s: State, p: Person, tk: Task) {

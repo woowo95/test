@@ -327,7 +327,7 @@ SCENARIER.grenrunda = {
             // ett plock (steg 9.2.55) görs där hen står: förra gången stod hen på rutan och plockade (inte på väg), eller var på
             // väg dit och hann fram och plocka i samma steg
             const m = mal.get(p.id);
-            if (f !== undefined && g > f + 1e-9) { vaxer++; if (m && (!m.hopp || Math.hypot(p.x - m.x, p.y - m.y) < 1.5 || t.plock !== undefined)) vidStopp++; if (Math.abs(g - f - 1) < 1e-9) enGren++; }
+            if (f !== undefined && g > f + 1e-9) { vaxer++; if (m && (!m.hopp || Math.hypot(p.x - m.x, p.y - m.y) < 1.5 || t.plock !== undefined)) vidStopp++; if (Math.abs(g - f - Math.round(g - f)) < 1e-9) enGren++; } // (den som står still vid arbetet räknas en bit i taget, steg 10.2.21: två plock kan komma i samma steg)
             bar.set(p.id, g); mal.set(p.id, { x: t.tx, y: t.ty, hopp: !!t.hopp });
           }
           texter.add(SIM.taskText(t));
@@ -348,7 +348,7 @@ SCENARIER.grenrunda = {
       [`grenplockarna stannar i skogen (${(vedSkog / Math.max(1, vedStopp) * 100).toFixed(0)} % av stoppen)`, vedSkog > 0.8 * vedStopp],
       [`den som letar stenar eller flinta stannar vid stenarna eller i sanden (${sokNara} av ${sokStopp} stopp)`, sokStopp === 0 || sokNara > 0.8 * sokStopp],
       [`stenarna hittades (${stenar} stenar, eller ringen)`, stenar > 0],
-      [`varje plock ger en hel gren i handen där hen står och bördan har inga bråkdelar (${vaxer} gånger växte bördan, ${vidStopp} på målrutan, ${enGren} med en gren; ${hela} av ${prov} hela; steg 9.2.55)`, vaxer > 20 && vidStopp >= vaxer * 0.95 && enGren === vaxer && hela === prov],
+      [`varje plock ger en hel gren i handen där hen står och bördan har inga bråkdelar (${vaxer} gånger växte bördan, ${vidStopp} på målrutan, ${enGren} med hela grenar; ${hela} av ${prov} hela; steg 9.2.55)`, vaxer > 20 && vidStopp >= vaxer * 0.95 && enGren === vaxer && hela === prov],
       [`Gör just nu säger letar efter grenar och plockar grenar (${tx.filter(x => x.includes('gren') || x.includes('sten')).join(', ')})`, tx.some(x => x.endsWith('letar efter grenar')) && tx.some(x => x.endsWith('plockar grenar'))],
     ];
   },
@@ -549,6 +549,8 @@ SCENARIER.slaktbank = {
     while (!stationerOf(s).some(isKlar) && h < 48) { kor(s, 1, v => { for (const r of living(v)) if (r.task?.act === 'station') byggare = r.task.why ?? ''; }); h++; }
     const st = stationerOf(s)[0], klar = !!st && isKlar(st);
     const logg = s.log.some(l => l.text.includes('första slaktbänk'));
+    for (const r of living(s)) r.task = undefined; // (ingen står vid bänken när den prövas, och det som lagts ner framför den bärs bort)
+    if (st) { const fr = SIM.framfor(st); s.stackar = (s.stackar ?? []).filter(a => !fr.some(q => q.x === a.x && q.y === a.y)); SIM.touch(s); }
     const sz = st ? SIM.storlekAv(st) : { w: 0, h: 0 }, rutor = Array.from({ length: sz.w * sz.h }, (_, i) => ({ x: st!.x + i % sz.w, y: st!.y + Math.floor(i / sz.w) }));
     const avElden = st ? Math.min(...rutor.map(r => SIM.utanforByn(s, r.x, r.y))) : 0; // till lägret och husen (steg 2.10.16)
     const bredd = STATIONER.slaktbank.w, ingenAnnan = !!st && rutor.every(r => !usable(s, r.x, r.y) && SIM.stationAt(s, r.x, r.y) === st) && !SIM.stationAt(s, st.x + sz.w, st.y);
@@ -629,9 +631,9 @@ SCENARIER.flatarbank = {
     setMat(s, { bar: 200 }); setAmount(s, 'ved', 60); setAmount(s, 'virke', 4); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 40); setAmount(s, 'flinta', 3);
     const ved0 = amountOf(s, 'virke');
     let h = 0, byggare = '', hantverk = 0, tvinnar = 0;
-    while (!stationerOf(s).some(isKlar) && h < 72) { kor(s, 1, v => { for (const r of living(v)) if (r.task?.act === 'station') byggare = r.task.why ?? ''; }); h++; }
+    let logg = false; // (loggen rymmer de senaste 400 raderna, så raden ses medan det händer)
+    while (!stationerOf(s).some(isKlar) && h < 72) { kor(s, 1, v => { for (const r of living(v)) if (r.task?.act === 'station') byggare = r.task.why ?? ''; }); h++; logg ||= s.log.some(l => l.text.includes('första slöjdbänk')); }
     const st = stationerOf(s).find(isKlar), klar = !!st && st.k === 'flatarbank';
-    const logg = s.log.some(l => l.text.includes('första slöjdbänk'));
     const tog = ved0 - amountOf(s, 'virke') >= RT.flatarbankVirke - 1e-9; // (grenarna plockas samtidigt, så de räknas inte här)
     // korgen: utan bänk vill ingen fläta en, med bänken görs den där
     const u = createState(1, START), uq = living(u).find(r => ageOf(r, u.now) >= 18)!;
@@ -1221,6 +1223,7 @@ SCENARIER.grill = {
   },
 };
 SCENARIER.tork = {
+  lang: true,
   text: 'Torkställningen och torkningen (steg 2.8.2): ställningen görs av grenar och rep och står ute. Det kött och den fisk som byn inte hinner äta hängs upp och torkar på fem dygn. En ställning rymmer fyra bitar; får det inte plats bygger byn fler (steg 2.10.22), och det ruttnar inte medan det hänger. Det torkade tas ner till lagret, håller så länge något får hålla där och äts sist. I frost ruttnar maten nästan inte',
   kor: () => {
     const { TORK, kanTorka, torka, torken, torkarna, torkBrist, ruttTemp, LAGER, FOOD } = SIM;

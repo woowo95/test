@@ -1848,7 +1848,7 @@ SCENARIER.rovargang = {
       for (const r of fo) if (r.gast?.gor) valde.add(r.gast.gor);
       if (g.vantat && !g.anfaller && g.rast) {
         if (!vantade) { vantade = true; lurAvst = Math.hypot(g.rast.x - m.x, g.rast.y - m.y); rastUt = SIM.utanforByn(s, g.rast.x, g.rast.y); olika = new Set(fo.map(r => `${r.x.toFixed(1)},${r.y.toFixed(1)}`)).size === fo.length; }
-        if (fo.some(r => Math.hypot(r.x - g.rast!.x, r.y - g.rast!.y) > SIM.ROVARE.rastR * 1.5 + 1)) klunga = false;
+        if (fo.some(r => r.gast?.gor !== 'tillRast' && Math.hypot(r.x - g.rast!.x, r.y - g.rast!.y) > SIM.ROVARE.rastR * 1.5 + 1)) klunga = false; // (de som ännu går dit rastar inte)
       }
       if (g.anfaller && !tag && (s.stat?.rovat ?? 0) > 0) tag = true;
     });
