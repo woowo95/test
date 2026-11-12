@@ -23,7 +23,7 @@ import { loggBer, stepBerattelser } from './berattelser';
 import { UTBROTT_ACTS, moodOf, stepHumor, utbrottKlar } from './humor';
 import { glomRykten, stepRykten } from './rykten';
 import { stepStyre } from './styre';
-import { bildKrok, gralBlirSlagsmal, lekSteg, kartStridSteg, nastaSteg, serStriden, stegTaget } from './kartstrid';
+import { bildKrok, gralBlirSlagsmal, lekSteg, kartStridSteg, nastaSteg, serStriden } from './kartstrid';
 import { sportKlar, sportSteg } from './sport';
 import { lyssnaSteg, upptradaKlar, upptradaSteg } from './framtradande';
 import { fylldSack, redskapIHanden, tidyTools } from './agande';
@@ -294,15 +294,19 @@ const LAMNA: Partial<Record<Act, (s: State, p: Person, tk: Task) => void>> = {
 // ---------- huvudsteg ----------
 // tiden i spelet går i slag (steg 10.2.14, "Klockan och slagen" i fliken Läget): hela byn stegas tillsammans, KLOCKA.slag
 // sekunder i taget (kortare när faran är nära, längre när ingen kan nå någon annan: nastaSteg i kartstrid.ts). step(s, dtSec)
-// tar så många slag som ryms i dtSec; ett slag som anroparen delar fortsätter i nästa anrop (s.stegRest). Spelet och
-// ikappräkningen frågar nastaSteg och går igenom samma följd av slag. events = samtalen, för att visa dem
+// lägger dtSec till tiden som ska räknas (s.skuld) och tar så många hela slag som ryms; det som blir över räknas i nästa anrop.
+// Ett slag delas aldrig, så att byn blir densamma hur tiden än delas upp: spelet, ikappräkningen och testerna går igenom samma
+// följd av slag. events = samtalen, för att visa dem
 export function step(s: State, dtSec: number, events?: TalkEvent[]) { // också när gränssnittet räknar (typer.ts)
   simulera(() => {
-    let kvar = dtSec;
-    while (kvar > 1e-9) {
-      const plan = nastaSteg(s), d = Math.min(kvar, plan);
-      slag(s, d, events); stegTaget(s, d, plan); kvar -= d;
+    if (s.stegRest !== undefined) delete s.stegRest; // (en äldre sparning)
+    let skuld = (s.skuld ?? 0) + dtSec;
+    for (let n = 0; n < 1e6; n++) {
+      const plan = nastaSteg(s);
+      if (skuld < plan - 1e-9) break;
+      slag(s, plan, events); skuld -= plan;
     }
+    if (skuld > 1e-9) s.skuld = Math.round(skuld * 1000) / 1000; else delete s.skuld;
   });
 }
 // två rövare som pratar på rastplatsen samtalar som byborna (steg 10.2.24)

@@ -89,14 +89,9 @@ function tillBilden(g: KartStrid, n0: number) {
 // faran är nära så länge en strid pågår på kartan (fler faror kommer med rövarna och djuren)
 export const KARTSTRID_PROV = { alltid: false }; // proven: byn går i korta steg också utan strid (npm run kortsteg mäter att arbetet går som vanligt)
 export const faraNara = (s: State) => KARTSTRID_PROV.alltid || kartStrider(s).length > 0 || FAROR.some(f => f(s));
-// längden på byns nästa slag (sekunder): korta steg medan faran är nära, annars det som är kvar av ett slag som anroparen
-// delade (s.stegRest), annars ett helt (slagLangd). Spelet och ikappräkningen frågar samma sak, så att slagen blir desamma
-export function nastaSteg(s: State) { return faraNara(s) ? STRID.kortSteg : s.stegRest ?? slagLangd(s); }
-// ett steg om d sekunder av ett planerat slag om plan sekunder är taget: det som är kvar av slaget
-export function stegTaget(s: State, d: number, plan: number) {
-  const kvar = plan - d;
-  if (kvar > 1e-6) s.stegRest = Math.round(kvar * 1000) / 1000; else delete s.stegRest;
-}
+// längden på byns nästa slag (sekunder): korta steg medan faran är nära, annars ett helt slag (slagLangd). Spelet och
+// ikappräkningen frågar samma sak, och step delar aldrig ett slag, så att slagen blir desamma
+export function nastaSteg(s: State) { return faraNara(s) ? STRID.kortSteg : slagLangd(s); }
 const sover = (p: Person) => p.task?.act === 'sova' && p.task.phase === 'do';
 // slagets längd (steg 10.2.14): KLOCKA.slag, men längre när ingen kan nå någon annan under slaget: två vakna (eller en vaken
 // och en som sover) som går mot varandra kommer inte inom synhåll (KLOCKA.sikt), ingen som sover vaknar, och inget i

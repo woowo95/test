@@ -1592,8 +1592,9 @@ SCENARIER.stridkarta = {
     const e = ny(22), f = ny(22);
     SIM.kartStridBorja(e.s, 'slagsmal', [[e.a], [e.b]], 'lika'); SIM.kartStridBorja(f.s, 'slagsmal', [[f.a], [f.b]], 'lika');
     let stegSpel = 0;
-    for (const till = e.s.now + 900 * 1000; e.s.now < till - 1;) { step(e.s, Math.min(SIM.nastaSteg(e.s), (till - e.s.now) / 1000)); stegSpel++; }
+    for (const till = e.s.now + 900 * 1000; e.s.now + SIM.nastaSteg(e.s) * 1000 <= till + 1;) { step(e.s, SIM.nastaSteg(e.s)); stegSpel++; }
     for (let i = 0; i < 3; i++) step(f.s, 300);
+    delete f.s.skuld; // (det som inte räckte till ett helt slag räknas i nästa anrop, steg 10.2.14)
     const lika = SIM.serialize(e.s) === SIM.serialize(f.s);
     // 4) de som står nära: den empatiska och modiga går emellan, den rädda går undan, och barnet går undan
     let emellan = 0, undan = 0, skilda = 0, barnUndan = 0, barnEmellan = 0;
