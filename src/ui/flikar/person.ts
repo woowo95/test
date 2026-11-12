@@ -159,9 +159,10 @@ function gastRelRad(namn: string, r: GastRel, g?: number, gast?: boolean, klan?:
 // namnet bredvid porträttet får alltid plats (steg 9.2.128): ett långt namn står med mindre bokstäver i stället för att klippas
 const namnStorlek = (namn: string) => namn.length <= 10 ? '' : ` style="font-size:${Math.max(14, Math.round(24 * 10 / namn.length))}px"`;
 // bredvid porträttet (steg 9.2.95): kön, ålder och yrke, och partnern om det finns en ("med …")
+// raden bredvid porträttet: yrket och partnern. Kön och ålder står under Presentation (steg 10.2.53)
 function pFakta(p: Person) {
-  const a = Math.floor(ageOf(p, alive(p) ? s.now : (p.died ?? p.left ?? s.now))), y = yrkeNamn(s, p), q = byId(s, p.partner);
-  return [p.sex === 'k' ? 'Kvinna' : 'Man', `${a} år`, y ? esc(y) : '', q ? `med ${pLink(q)}` : ''].filter(Boolean).join(' · ');
+  const y = yrkeNamn(s, p), q = byId(s, p.partner);
+  return [y ? esc(y) : '', q ? `med ${pLink(q)}` : ''].filter(Boolean).join(' · ');
 }
 // bär personen något just nu? (steg 9.2.96: annars står inget om bördan under Utrustning)
 const barNu = (p: Person) => !carryTxt(p).startsWith('Bär inget');

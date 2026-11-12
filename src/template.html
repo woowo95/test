@@ -76,14 +76,13 @@ header::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; h
 .chips button.chip { pointer-events: auto; border: 0; font: inherit; font-size: 13px; cursor: pointer; }
 /* folket längst ner på kartan (steg 5.3.3.4) */
 .ports { position: absolute; left: 8px; right: calc(var(--stenar) + 8px + 132px); bottom: 8px; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: thin; padding-bottom: 2px; touch-action: pan-x; overscroll-behavior: contain; } /* zoomen står i hörnet till höger om raden (steg 6.8.13) */
-.port { flex: none; width: 150px; display: grid; grid-template-columns: 64px minmax(0, 1fr); grid-template-areas: "d n" "d i" "a a"; gap: 0 5px; align-items: center; text-align: left;
-  background: rgba(36, 32, 29, 0.72); color: #dad0bb; border: 1px solid transparent; border-radius: 4px; padding: 4px 6px; font: inherit; font-size: 14px; line-height: 1.25; cursor: pointer; } /* mycket större (steg 9.2.2) */
+.port { flex: none; width: 84px; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "d" "n" "a"; gap: 1px 0; justify-items: center; text-align: center;
+  background: rgba(36, 32, 29, 0.72); color: #dad0bb; border: 1px solid transparent; border-radius: 4px; padding: 4px 4px; font: inherit; font-size: 13px; line-height: 1.2; cursor: pointer; } /* smalt (steg 10.2.53): namnet under porträttet och det hen gör, så att fler får plats */
 .port:hover { background: rgba(36, 32, 29, 0.9); }
 .port[aria-pressed="true"] { border-color: #d8b25f; }
 .port .pf { grid-area: d; width: 64px; height: 64px; }
-.port .pn { grid-area: n; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.port .pi { grid-area: i; opacity: 0.75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.port .pa { grid-area: a; opacity: 0.9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.port .pn { grid-area: n; max-width: 100%; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.port .pa { grid-area: a; max-width: 100%; opacity: 0.9; font-size: 12px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; min-height: 2.4em; }
 .port.low .pn::after { content: " !"; color: #bd753e; }
 .tip { position: absolute; z-index: 5; width: 210px; background: rgba(36, 32, 29, 0.92); color: #dad0bb; border-radius: 6px; padding: 8px 10px; font-size: 13px; pointer-events: none; }
 .tip h4 { margin: 0; font-size: 16px; font-family: var(--display); font-weight: 400; }

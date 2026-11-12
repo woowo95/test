@@ -25,7 +25,7 @@ export function renderPorts() {
     let el = portEls.get(p.id);
     if (!el) {
       el = document.createElement('button'); el.type = 'button'; el.className = 'port'; el.dataset.id = String(p.id);
-      el.innerHTML = `<img class="pf" alt="" width="64" height="64"><span class="pn"></span><span class="pi"></span><span class="pa"></span>`;
+      el.innerHTML = `<img class="pf" alt="" width="64" height="64"><span class="pn"></span><span class="pa"></span>`;
       portEls.set(p.id, el);
     }
     if (row.children[k] !== el) row.insertBefore(el, row.children[k] ?? null);
@@ -35,8 +35,7 @@ export function renderPorts() {
     const img = el.children[0] as HTMLImageElement, u = portrattUrl(skapad(s, p));
     if (img.getAttribute('src') !== u) img.src = u; // bara när porträttet ändrats (steg 5.2.3.2)
     el.children[1].textContent = p.name;
-    el.children[2].textContent = yrkeNamn(s, p) ?? '';
-    el.children[3].textContent = shortAct(p);
+    el.children[2].textContent = shortAct(p); // yrket står i rutan när man håller musen över kortet (steg 10.2.53)
   });
   if (tipId !== undefined) showTip(tipId);
 }
