@@ -342,7 +342,7 @@ function sjukBadd(s: State, p: Person) {
   const b = boende(s), bor = new Set([...b.plats.values()]);
   for (const h of housesOf(s)) {
     if (!h.klar || h.ut) continue;
-    const rutor = gridOf(s).rooms.filter(r => r.hus === h.id).flatMap(r => r.tiles);
+    const rutor = gridOf(s).rooms.filter(r => r.hus === h.id).flatMap(r => r.tiles).filter(i => !blot(s, i)); // (ingen sover på en blöt ruta)
     if (!rutor.length || rutor.some(i => bor.has(i))) continue;
     const sjuka = living(s).filter(q => q.sjuk && q.sjuk.st !== undefined && SJUKDOMAR[q.sjuk.k].smitta > 0).sort((a, c) => a.id - c.id);
     return rutor[sjuka.indexOf(p) % rutor.length];

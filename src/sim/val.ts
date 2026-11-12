@@ -122,6 +122,7 @@ export const VAL = balans('val', {
   akut: 3, // arbetet är helt akut när det mest behövda väger så här mycket
   kolChans: 0.2, kolMin: 10, // kol hämtas ur den släckta elden när elden vill ha mindre än så här, med denna chans, i så många minuter
   lekBas: 0.45, lekSed: 0.2, lekUng: 0.5, // barnets lust att leka (plus seden Barn gånger Sed), och så mycket mer för det yngsta (steg 10.2.43) ...
+  nattTrott: 0.5, // på natten är handarbetet så här mycket mindre för den som är helt trött (steg 10.2.49)
   barnHjalp: 0.5, // ... mot lusten att hjälpa till: åldern delat med vuxen gånger detta plus hur akut byn behöver arbete
   flitigBas: 0.88, flitigAkut: 0.12, // chansen att arbeta för den flitige: Bas + Akut gånger hur akut arbetet är
   latBas: 0.6, latAkut: 0.4, // ... och för den lata (gånger hur väl de egna behoven är fyllda)
@@ -1307,7 +1308,7 @@ function night(s: State, p: Person, v: Val, a: number) {
   const r = rnd(s, 'val', p);
   const story = (p.skill.berattande + (a > VAL.berattaAlder ? VAL.berattaBonus : 0)) / VAL.berattaDiv;
   // handarbetet på natten följer ljuset vid elden och tröttheten (steg 10.2.49): i mörker och trött gör man inget
-  const e = eldPlats(s), craftW = (p.skill.hantverk + stat(p, 'flit', now)) / VAL.nattHantDiv * clamp(p.rest, 0, 1) * clamp(ljusAt(s, e.x + 0.5, e.y + 0.5), 0, 1);
+  const e = eldPlats(s), craftW = (p.skill.hantverk + stat(p, 'flit', now)) / VAL.nattHantDiv * (1 - VAL.nattTrott * (1 - clamp(p.rest, 0, 1))) * clamp(ljusAt(s, e.x + 0.5, e.y + 0.5), 0, 1);
   // på natten håller man sig vid lägret; de modiga går lite längre ut i mörkret för att bära in saker
   const near = VAL.nattNar + stat(p, 'mod', now) / 20 * VAL.nattLangt, gt = a >= ALDER.ansvar && r < VAL.nattBara && s.stackar?.length ? haulJob(s, near) : undefined;
   if (gt) { set(v, 'bara', `Mörkt, ${near > 6 ? 'men är modig och ' : ''}${gt.why[0].toLowerCase()}${gt.why.slice(1)}`); v.spot = gt; v.dur = VAL.nattBaraTim * HOUR; }
