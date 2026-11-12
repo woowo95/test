@@ -490,8 +490,7 @@ const VARJE_SLAG = new Set<Act>(['strid', 'slacka', 'slackaSig', 'hjalpaBrinnand
 // dag som blir natt), och hen har inte väntat KLOCKA.arbetsBit sekunder
 function vantar(p: Person, tk: Task, now: number, dt: number) {
   const d = ACTS[tk.act];
-  const stannat = !!d.tur && !tk.hopp && (tk.plock ?? 0) > (tk.vant ?? 0) + dt; // promenaden som står still vid en punkt (steg 10.2.21 D)
-  return tk.phase === 'do' && (!d.tur || stannat) && !d.runda && !VARJE_SLAG.has(tk.act) && tk.med === undefined && tk.until > now + 1e-6
+  return tk.phase === 'do' && !d.tur && !d.runda && !VARJE_SLAG.has(tk.act) && tk.med === undefined && tk.until > now + 1e-6
     && (tk.vant ?? 0) + dt < KLOCKA.arbetsBit && p.toa >= KROPP.toaAvbryt && !(d.dygn && tk.dark !== !isLight(now));
 }
 // tiden (sekunder) sedan raden t räknades, om den ska räknas i slaget som slutar vid now, annars undefined. Sist räknad står i
@@ -800,14 +799,13 @@ function turSteg(s: State, p: Person, tk: Task, left: number, n = 0): number {
     const w = walk(s, p, tk, Math.min(left, Math.max(slut, 1e-3))), used = Math.max(w.used, 1e-3);
     if (p.task !== tk || !w.framme) return used;
     tk.hopp = undefined;
-    const h = hash3(p.id, tileOf(tk.tx, tk.ty), Math.floor(now / SEC));
-    if (h < r.se) { tk.plock = r.stopp[0] + h / r.se * (r.stopp[1] - r.stopp[0]); lookAround(s, p, tk.tx, tk.ty); }
+    // vid en del av punkterna ser man sig omkring, utan att stanna: promenaden stannar aldrig på vägen (steg 10.2.80)
+    if (hash3(p.id, tileOf(tk.tx, tk.ty), Math.floor(now / SEC)) < r.se) lookAround(s, p, tk.tx, tk.ty);
     return used;
   }
-  if ((tk.plock ?? 0) > 1e-6) { const used = Math.max(1e-3, Math.min(left, tk.plock!, slut, BIT)); tk.plock! -= used; return used; }
   tk.plock = undefined;
   const q = n < 2 ? turPunkt(s, p, tk, r.r) : undefined;
-  if (!q) return Math.max(1e-3, Math.min(left, slut, BIT)); // ingen punkt att gå till: hen står kvar en stund
+  if (!q) { tk.until = now; return 1e-3; } // ingen punkt att gå till: promenaden är slut, och hen väljer något annat i stället för att stå still
   tk.tx = q.x + 0.5; tk.ty = q.y + 0.5; tk.hopp = true; tk.pk = undefined;
   return turSteg(s, p, tk, left, n + 1);
 }

@@ -228,7 +228,7 @@ SCENARIER.fritid = {
 
 SCENARIER.promenad = {
   lang: true,
-  text: 'Promenaden är en riktig runda (steg 6.2.8): man går i vanlig fart mellan några punkter på land runt platsen man valt, stannar ibland och ser sig omkring, och går aldrig i vattnet, en vägg eller en station. Ingen svängning i bilden. Sträckorna är långa och raka och vänder sällan (steg 9.2.84)',
+  text: 'Promenaden är en riktig runda (steg 6.2.8): man går i vanlig fart mellan några punkter på land runt platsen man valt, ser sig omkring utan att stanna (steg 10.2.80), och går aldrig i vattnet, en vägg eller en station. Ingen svängning i bilden. Sträckorna är långa och raka och vänder sällan (steg 9.2.84)',
   kor: () => {
     let prom = 0, punkter = 0, stopp = 0, land = true, langtFran = 0, maxR = 0, strackor = 0, vander = 0, langd = 0, valda = 0;
     for (const seed of [5, 6]) {
@@ -261,7 +261,7 @@ SCENARIER.promenad = {
     return [
       [`folk tar promenader (${prom})`, prom >= 3],
       [`varje promenad går mellan flera punkter (${(punkter / Math.max(1, prom)).toFixed(1)} i snitt)`, punkter >= 2 * prom],
-      [`man stannar ibland och ser sig omkring (${stopp} steg i ett stopp)`, stopp > 0],
+      [`promenaden stannar aldrig på vägen (steg 10.2.80; ${stopp} steg i ett stopp, ${punkter} punkter)`, stopp === 0 && punkter > 0],
       [`punkterna ligger inom ${r} rutor från platsen man valde (längst ${maxR.toFixed(1)})`, maxR <= r + 2], // en punkt i en vägg eller i vattnet flyttas till rutan bredvid
       ['den som promenerar går aldrig i vattnet eller i en vägg', land],
       ['promenaden svänger inte i bilden (ingen vandra i handlingens rad)', !ACTS.promenad.vandra],
