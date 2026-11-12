@@ -68,7 +68,7 @@ export const VARG = balans('varg', {
   anfallChans: 0.3, // ... med den här chansen på en minut (chansPer, steg 10.2.15: förr per slag om fem minuter, men flocken som såg den ensamma hann gå därifrån innan den anföll)
   flockMod: 0.15, // modet gånger 1 + flockMod × (vargarna − 1): större flock, modigare
   stjalHunger: 0.4, // på natten smyger en så här hungrig flock fram till förrådet ...
-  stjalChans: 0.05, // ... med den här chansen på fem minuter
+  stjalChans: 0.05, // ... med den här chansen på en minut (förr per slag om fem minuter, steg 10.2.15)
   vaken: 5, // och vänder om någon är vaken inom så här många rutor
   stjalPer: 1.5, // så många saker mat (kött först) en varg tar, avrundat
   stjalMat: 0.15, // hungern sjunker så här mycket per sak den tar
@@ -360,9 +360,9 @@ function flockSteg(s: State, f: Vargflock, folk: Person[], dtSec: number) {
   }
   // ett får eller en get som står ute utan någon vaken nära (steg 9.8.12): djuret i fähuset är skyddat
   const d = f.hunger > VARG.stjalHunger ? tamBytet(s, f, folk) : undefined;
-  if (d && chansPer(s, VARG.stjalChans, 300, dtSec, 'varg')) { f.gor = 'smyger'; f.tam = d.id; f.mx = d.x; f.my = d.y; count(s, 'vargSmygerTam'); return; }
+  if (d && chansPer(s, VARG.stjalChans, 60, dtSec, 'varg')) { f.gor = 'smyger'; f.tam = d.id; f.mx = d.x; f.my = d.y; count(s, 'vargSmygerTam'); return; }
   const z = zoneOf(s);
-  if (z && !isLight(s.now) && f.hunger > VARG.stjalHunger && (!s.fire.lit || f.hunger >= VARG.eldHunger) && chansPer(s, VARG.stjalChans, 300, dtSec, 'varg')) {
+  if (z && !isLight(s.now) && f.hunger > VARG.stjalHunger && (!s.fire.lit || f.hunger >= VARG.eldHunger) && chansPer(s, VARG.stjalChans, 60, dtSec, 'varg')) {
     f.gor = 'smyger'; f.mx = z.x + z.w / 2; f.my = z.y + z.h / 2; count(s, 'vargSmyger'); return;
   }
   if (ga(s, f, VARG.gaFart, dtSec) < 1) nyttMal(s, f);
