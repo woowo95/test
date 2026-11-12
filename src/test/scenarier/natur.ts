@@ -854,7 +854,7 @@ SCENARIER.skinnfall = {
   kor: () => {
     const { TILLBEHOR, TEK, PROJEKT, varmeDelar, roomAt } = SIM;
     // en by med ett hus och en halmbädd, där alla kan göra en skinnfäll och har skinn
-    const s = createState(1, START); klockan(s); tandEld(s);
+    const s = createState(1, START); klockan(s); tandEld(s); medHus(s); // (utan hus byggs bädden ute, steg 10.2.48)
     const b = medBank(s, 'halmbadd');
     for (const r of s.people) r.tek = { ...r.tek, halmbadd: 1, skinnfall: 1 };
     setMat(s, { bar: 200 }); setAmount(s, 'skinn', 10); setAmount(s, 'ved', 30);

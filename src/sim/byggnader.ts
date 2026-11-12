@@ -1,6 +1,6 @@
 import { husNytt } from './byggnad';
 import { KROPP, alive, byId, count, familjOf, living, log } from './folk';
-import { Hus, MATERIAL, Rum, bitById, bitsOf, gridOf, housesOf, husById, roofed, roomAt, shelterOf, touch } from './byggnad';
+import { Hus, MATERIAL, Rum, bitById, bitsOf, gridOf, housesOf, husById, roofed, shelterOf, touch } from './byggnad';
 import { ageIndex, kallTid } from './tid';
 import { heatAt } from './eld';
 import { eldPlats } from './karta';
@@ -257,9 +257,6 @@ function boende(s: State): Boende {
     else { const st = stationRutor(s).sov; baddar.push(...t.filter(i => st.has(i))); gemensamt.push(...t.filter(i => !st.has(i))); }
   }
   gemensamt.unshift(...baddar);
-  // utan tak att sova under sover man i bäddarna ute, tills det finns ett hus (steg 10.2.48)
-  let ute: true | undefined;
-  if (!gemensamt.length) { const st = stationRutor(s).sov; for (const i of st) if (!roomAt(s, i % W + 0.5, Math.floor(i / W) + 0.5)) { gemensamt.push(i); ute = true; } gemensamt.sort((a, c) => a - c); }
   for (const h of hs) {
     let tiles = egnaTiles.get(h.id);
     if (!tiles?.length) continue;
@@ -287,7 +284,7 @@ function boende(s: State): Boende {
   };
   for (const e of new Set(egna.values())) fordela(e.tiles, e.folk);
   fordela(gemensamt, ovriga);
-  b = { key, egna, gemensamt, ovriga, plats, ...(ute ? { ute } : {}) };
+  b = { key, egna, gemensamt, ovriga, plats };
   boenden.set(s, b);
   return b;
 }

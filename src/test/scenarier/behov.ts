@@ -649,20 +649,14 @@ SCENARIER.poangval = {
 };
 
 SCENARIER.sangar = {
-  text: 'Steg 10.2.48: sängarna kommer fort. Utan ett hus att sova i byggs halmbäddarna ute, och den som sover i en bädd ute har en bädd men inget tak, så att byn ändå bygger en sovsal; halmbädden väger mer i projekten',
+  text: 'Steg 10.2.48: sängarna kommer fort. Halmbädden väger mer i projekten, och bristen räknar alla som saknar en bädd; utan ett hus att sova i sover man vid elden (bäddar ute nära elden väntar)',
   kor: () => {
     const s = createState(3, START); klockan(s, 10);
     for (const p of living(s)) p.tek = { ...p.tek, halmbadd: 1 };
     const utanTak = SIM.utanTak(s), brist = SIM.PROJEKT.halmbadd.brist(s), plats = SIM.stationSite(s, 'halmbadd');
-    // en bädd ute: någon sover i den, men byn saknar fortfarande tak
-    const id = (s.nextStation ??= 1); s.nextStation++;
-    if (plats) s.stationer = [...(s.stationer ?? []), { id, k: 'halmbadd', x: plats.x, y: plats.y, kvar: 0, klar: s.now } as SIM.Station];
-    SIM.touch(s);
-    const iBadd = living(s).filter(p => { const b = SIM.bedTile(s, p); return b !== undefined && SIM.stationRutor(s).sov.has(b); }).length;
     return [
-      [`utan hus har byn inget tak att sova under, och alla saknar en bädd (brist ${brist.toFixed(2)})`, utanTak && brist >= 0.99],
-      [`halmbädden kan byggas ute (${plats ? `${plats.x},${plats.y}` : 'ingen plats'})`, !!plats],
-      [`någon sover i bädden ute (${iBadd}), men byn saknar fortfarande tak (${SIM.homeless(s)} utan tak)`, iBadd >= 1 && SIM.homeless(s) === living(s).length],
+      [`utan hus saknar alla en bädd (brist ${brist.toFixed(2)})`, utanTak && brist >= 0.99],
+      [`utan hus byggs ingen bädd ute: man sover vid elden (${plats ? 'en plats' : 'ingen plats'})`, !plats],
       [`halmbädden väger mer i projekten (${SIM.PROJEKT_TAL.halmbadd})`, SIM.PROJEKT_TAL.halmbadd >= 1.5],
     ];
   },
