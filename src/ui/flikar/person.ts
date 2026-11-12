@@ -59,12 +59,13 @@ export const person: Flik = {
 interface Del { id: string; tecken: string; namn: string; levande?: true; html(p: Person): string; kort?(p: Person): string; gast?(g: Gast): string }
 interface PFlik { id: string; tecken: string; namn: string; delar: string[] }
 const FLIKAR: PFlik[] = [
-  { id: 'om', tecken: '🪪', namn: 'Om', delar: ['pres', 'hand', 'tid'] },
+  { id: 'om', tecken: '🪪', namn: 'Om', delar: ['pres', 'tid'] },
   { id: 'egen', tecken: '{sym_egenskaper}', namn: 'Egenskaper', delar: ['egen'] }, // en egen flik igen (steg 6.9.10)
   { id: 'kropp', tecken: '❤️', namn: 'Kropp', delar: ['behov', 'halsa'] },
   { id: 'saker', tecken: '🎒', namn: 'Saker', delar: ['utr', 'form'] },
   { id: 'folk', tecken: '👥', namn: 'Människor', delar: ['rel', 'ryk'] },
   { id: 'kun', tecken: '🧠', namn: 'Kunskap', delar: ['kun'] },
+  { id: 'logg', tecken: '📜', namn: 'Händelser', delar: ['hand'] }, // personens händelselogg i en egen flik: byten, framträdanden, matcher och det viktiga (steg 10.2.61)
 ];
 // flikarna som har något att visa, den öppna (ui.personDel är fliken eller en del i den) och dess delar
 function valda(finns: (d: Del) => boolean) {
