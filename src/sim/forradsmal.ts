@@ -79,12 +79,12 @@ export const VILLTAL = balans('vill', {
 // (bygg.ts, stationer.ts, redskap.ts), räknat ur vad eldarna förbrukar: veden de bränner under TROSKEL.eldTim timmar, och det en
 // tändning tar (grenarna som läggs i, höet eller nävern som tar eld och flintan) för varje eld som brinner eller ska tändas
 export function eldReserv(s: State, k: string) {
+  if (k === 'flinta') return TROSKEL.flintaSparas; // flintan går inte åt när man tänder, och en släckt eld ska kunna tändas igen
   const eldar = eldarOf(s).filter(f => f.lit || (f.want ?? 0) > 0);
   if (!eldar.length) return 0;
   if (k === 'ved') return Math.ceil(eldar.reduce((a, f) => a + hearthOf(f).burn, 0) * TROSKEL.eldTim);
   if (k === 'grenar') return Math.ceil(ELD.tandBransle / GREN) * eldar.length;
   if (k === 'torrgras') return TROSKEL.tandBrist;
-  if (k === 'flinta') return TROSKEL.flintaSparas;
   return 0;
 }
 export const sparas = (s: State, k: string) => eldReserv(s, k);
