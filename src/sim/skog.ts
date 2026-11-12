@@ -1,3 +1,5 @@
+import { NARA } from './fynd';
+import { tingOf } from './agande';
 import { STRAK, straken } from './strak';
 import { bynsMitt, utanforByn } from './omrade';
 import { freeTools } from './agande';
@@ -217,6 +219,8 @@ export function chopStock(s: State, ref: number | undefined, amount: number) {
 // den fällda stam närmast byn som räcker till ett virke (steg 4.5.5.2)
 // finns det en stam att klyva (utan att leta upp den närmaste)
 export const finnsKlyvStam = (s: State) => (s.stockar ?? []).some(k => k.ved >= SKOG.virkeVed);
+// virket räknas som till hands när det kan klyvas: en fälld stam och en yxa i byn (naraByn i fynd.ts, steg 10.2.40)
+NARA.virke = s => finnsKlyvStam(s) && tingOf(s).some(q => q.k === 'yxa');
 export const klyvStam = (s: State) => (s.stockar ?? []).filter(k => k.ved >= SKOG.virkeVed).sort((a, c) => utanforByn(s, a.x, a.y) - utanforByn(s, c.x, c.y))[0];
 // en vuxen med en ledig yxa som ska skaffa ved: hugga en fälld stam eller fälla ett träd. Utan yxa görs en som projekt
 // (withTools i val.ts, steg 6.2.17), eller samlas grenar

@@ -12,7 +12,7 @@ import { DORRAR, MATERIAL } from './byggnad';
 import { tingOf } from './agande';
 import { Act, HOUR, HOUR_S, MIN, Person, Skill, State, Task, inMap } from './typer';
 import { balans } from './balans';
-import { finnsKlyvStam } from './skog';
+import { naraByn } from './fynd';
 import { ACTS, ACT_LIST, forsokVad } from './handlingar';
 import type { SamtalDef } from './samtal';
 import { lartUt } from './relationer';
@@ -234,14 +234,9 @@ export const TEKTAL = balans('teknik', {
 
 export const knows = (p: Person, id: string) => (p.tek?.[id] ?? 0) >= 1;
 // finns saken i byn: ett redskap räknas om det finns, hur slitet det än är; annat räknas i mängd
-// virket (steg 4.5.5.2) räknas som till hands när det kan klyvas: en fälld stam och en yxa i byn; annars kluvs det aldrig innan någon kan en teknik som behöver det
-// höet och kvistarna ligger på marken runt byn och plockas först när de behövs (steg 9.3.4), så de är alltid till hands: annars kom
-// ingen på repet, som görs av hö, förrän höet råkade ligga i förrådet (steg 9.9.5)
-const PA_MARKEN = new Set(['torrgras', 'grenar']);
-// leran grävs först när någon kan göra krukor, så den räknas som till hands när det finns lera att gräva nära byn (lera.ts sätter
-// kroken, så att filerna inte laddar varandra i en ring): annars kom ingen på lerkrukan (steg 9.9.4)
-export const leraKrok = { finns: (_s: State): unknown => undefined };
-export const harSak = (s: State, k: string) => isTool(k) ? tingOf(s).some(q => q.k === k) : PA_MARKEN.has(k) || amountOf(s, k) >= TEKTAL.materialMin || (k === 'lera' && !!leraKrok.finns(s)) || (k === 'virke' && finnsKlyvStam(s) && tingOf(s).some(q => q.k === 'yxa'));
+// det som finns nära byn räknas också som till hands (naraByn i fynd.ts, steg 10.2.40): höet och kvistarna på marken, leran att
+// gräva och virket ur en fälld stam plockas eller görs först när någon behöver dem, så annars kom ingen på repet eller lerkrukan
+export const harSak = (s: State, k: string) => isTool(k) ? tingOf(s).some(q => q.k === k) : amountOf(s, k) >= TEKTAL.materialMin || naraByn(s, k);
 // det som måste finnas i byn för att man ska komma på tekniken: en av sakerna i varje grupp. Det räknas ur receptet
 // (steg 2.12.5): det som har samma id som tekniken (en sak, station, ett tillbehör eller en dörr), annars det första
 // redskapet eller väggmaterialet som tekniken ger. Varje sak i receptet är en grupp, och verktygen (ett av dem räcker) en

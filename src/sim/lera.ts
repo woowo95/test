@@ -9,7 +9,7 @@ import { bynsMitt, omrade } from './omrade';
 import { balans } from './balans';
 import { count, forstaGang, log } from './folk';
 import { clamp } from './slump';
-import { H, HOUR, Person, State, Task, W, egen, inMap, tvaDelar } from './typer';
+import { H, Person, State, Task, W, inMap } from './typer';
 import { wearUsed } from './redskap';
 
 export const LERA = balans('lera', {
@@ -45,7 +45,6 @@ export function leraGravd(s: State, p: Person, t: Task) {
   count(s, 'leraGravd', n);
   if (forstaGang(s, 'leraForsta')) log(s, `${p.name} grävde lera vid stranden.`, 'world', [p.id]);
 }
-import { leraKrok } from './teknik';
+import { NARA } from './fynd';
 // (teknikernas krav frågar ofta; platsen räknas om en gång i timmen, steg 10.2.21)
-const leraNu = tvaDelar<{ h: number; v: ReturnType<typeof leraPlats> }>(); // (två delar: gränssnittet fyller inte simuleringens, regel 4)
-leraKrok.finns = s => { const h = Math.floor(s.now / HOUR), m = egen(leraNu), c = m.get(s); if (c && c.h === h) return c.v; const v = leraPlats(s); m.set(s, { h, v }); return v; };
+NARA.lera = s => !!leraPlats(s); // leran att gräva nära byn räknas som till hands (naraByn i fynd.ts, steg 10.2.40)

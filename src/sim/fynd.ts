@@ -12,7 +12,7 @@ import { underBuffert } from './forradsmal';
 import { LAGER, addTo, amountOf, foodOf } from './lager';
 import { nTools } from './agande';
 import { DAY, H, HOUR, HOUR_S, OX, OY, Person, State, T, W, egen, inMap, mapKey, tvaDelar, visning } from './typer';
-import { FOREST, Ground, isSoil } from './vag';
+import { FOREST, Ground, HIGH, isSoil } from './vag';
 import { ACTS, RedskapDef, SNABBARE } from './handlingar';
 import { balans } from './balans';
 import { BARBUSKE, BUSKE, BUSKTAL, barKrok, busksort } from './buskar';
@@ -586,6 +586,32 @@ export function prospect(s: State, k: Kind) {
     c.v[k] = n ? top.slice(0, n).reduce((a, b) => a + b, 0) / n : 0;
   }
   return c.v[k]!;
+}
+
+// ---------- nära byn (steg 10.2.40) ----------
+// Finns saken nära byn, så att den räknas som till hands för teknikernas krav (harSak i teknik.ts)? En fråga till kartorna för
+// det som ligger runt byn och plockas eller görs först när någon behöver det: skogen ger grenarna och det höga gräset höet, och
+// system med en egen källa sätter sin rad i NARA (leran att gräva i lera.ts, virket ur de fällda stammarna i skog.ts). Det som är
+// sällsynt (flintan) räknas inte: det måste finnas i byn. Räknas en gång i timmen per sak
+export const NARA: Record<string, (s: State) => boolean> = {
+  grenar: s => naraMark(s, (g, i) => g.trees[i] >= FOREST),
+  torrgras: s => naraMark(s, (g, i) => g.cover[i] >= HIGH),
+};
+const naraCache = tvaDelar<{ h: number; v: Record<string, boolean> }>(); // (två delar: gränssnittet fyller inte simuleringens, regel 4)
+export function naraByn(s: State, k: string) {
+  const h = Math.floor(s.now / HOUR), m = egen(naraCache);
+  let c = m.get(s);
+  if (!c || c.h !== h) m.set(s, c = { h, v: {} });
+  return c.v[k] ??= !!NARA[k]?.(s);
+}
+// finns det en ruta inom en dags arbete från byn (som prospect) där f säger ja
+function naraMark(s: State, f: (g: Ground, i: number) => boolean) {
+  const m = bynsMitt(s), g = groundOf(s), lager = bynsAvstand(s);
+  for (let y = Math.max(0, m.y - PLATS.dagY); y < Math.min(H, m.y + PLATS.dagY + 1); y++) for (let x = Math.max(0, m.x - PLATS.dagX); x < Math.min(W, m.x + PLATS.dagX + 1); x++) {
+    const i = y * W + x;
+    if (lager.at(i) <= FANGST.syn && f(g, i)) return true;
+  }
+  return false;
 }
 
 // ---------- flinta ----------
