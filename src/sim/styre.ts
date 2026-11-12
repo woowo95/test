@@ -1,6 +1,6 @@
 import { honom, slaktOrd } from './ord';
 import { ALDER, REL, ageOf, alive, byId, count, franMitt, isKin, isParent, living, log, relKey, stat, think } from './folk';
-import { efterlevs, lagForBrott, tasUppKvall, tabuDygn } from './lagar';
+import { efterlevs, lagDygn, lagForBrott, tasUppKvall } from './lagar';
 import type { Lag } from './lagar';
 import { ROST, FRAGOR, rostaOm, missnojeLatt, missnojeNoll, missnojeStrafft, missnojeTimme, oppnaSed, rostKvall, seOverMinistrar, vikter } from './rost';
 import type { Fraga, Fraktion, Omrostning, Rost } from './rost';
@@ -579,7 +579,7 @@ export function stepStyre(s: State) {
   if (!s.styre!.oppna.includes('natur') && (s.fallda ?? 0) > 0) oppnaSed(s, 'natur');
   missnojeTimme(s);
   if (!ledareOf(s)) return;
-  if (Math.floor(hourOf(s.now)) === STR.timme) { doma(s, l); rostKvall(s); if (!s.styre?.fragor?.length) tasUppKvall(s); kyrkaKvall(s); tabuDygn(s); }
+  if (Math.floor(hourOf(s.now)) === STR.timme) { doma(s, l); rostKvall(s); if (!s.styre?.fragor?.length) tasUppKvall(s); kyrkaKvall(s); lagDygn(s); }
 }
 // skammen: den straffade håller sig undan bordet och elden (val.ts)
 export const skams = (p: Person, now: number) => p.skam !== undefined && p.skam > now;

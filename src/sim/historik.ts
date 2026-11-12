@@ -49,7 +49,7 @@ const histOf = (s: State) => (s.hist ??= ny());
 export interface KronikaKat { id: string; namn: string; ikon: string; tecken: string; slag: string[] }
 export const KRONIKA_KAT: KronikaKat[] = [
   { id: 'liv', namn: 'Liv', ikon: 'kk_liv', tecken: '❤️', slag: ['k_fodd', 'k_dog', 'k_dogSpad', 'k_gift', 'k_atergrundad', 'arv', 'flytt'] },
-  { id: 'styre', namn: 'Styre', ikon: 'kk_styre', tecken: '👑', slag: ['ledare', 'tabu', 'k_ledare', 'k_forstaLedare', 'k_utvisad'] },
+  { id: 'styre', namn: 'Styre', ikon: 'kk_styre', tecken: '👑', slag: ['ledare', 'k_ledare', 'k_forstaLedare', 'k_utvisad'] },
   { id: 'strid', namn: 'Strid', ikon: 'kk_strid', tecken: '⚔️', slag: ['rovare', 'k_vargAnfall', 'k_vargSprang', 'k_vargjakt', 'k_forstaVarg', 'k_bjornAnfall', 'k_bjornSprang', 'k_bjornjakt', 'k_bjornjaktMiss', 'k_forstaBjorn', 'k_skadad'] },
   { id: 'tro', namn: 'Tro', ikon: 'kk_tro', tecken: '☀️', slag: ['tro'] },
   { id: 'bygge', namn: 'Bygge och uppfinningar', ikon: 'kk_bygge', tecken: '🏠', slag: ['bygge', 'k_husKlar', 'k_uppfann', 'k_forstaEld', 'episk', 'forlust'] },

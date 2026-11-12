@@ -2567,6 +2567,7 @@ SCENARIER.forvarlista = {
 };
 
 SCENARIER.kronikakat = {
+  lang: true,
   text: 'Steg 9.2.73: krönikans kategorier. Varje krönikerad har ett slag, och registret KRONIKA_KAT säger vilken kategori slaget hör till: en födsel under Liv. En rad med kategoriernas symboler överst filtrerar, och en rad utan slag ur en gammal sparfil står bara när ingen kategori är vald',
   kor: () => {
     utanWebblasare();

@@ -736,7 +736,7 @@ SCENARIER.lagar = {
   },
 };
 SCENARIER.tinget = {
-  text: 'Steg 8.4.7–8.4.10: tinget avgör skulden, straffet står i lagen och blir likadant varje gång, och rädslor som många delar blir tabun: platser och handlingar',
+  text: 'Steg 8.4.7–8.4.10: tinget avgör skulden, straffet står i lagen och blir likadant varje gång, och den som sett någon dö av en farlig handling blir rädd för den',
   kor: () => {
     const { s, v, l } = medLedare(), q = v[1], d = v[2];
     s.seder.v.rang = 1;
@@ -750,25 +750,20 @@ SCENARIER.tinget = {
     s.now = s.now - (s.now % 86400000) + 20 * 3600000;
     for (let i = 0; i < 20 && !(s.styre!.ratt?.length); i++) { SIM.stepStyre(s); }
     const r = s.styre!.ratt?.[0];
-    // tabu
-    const a = 77; for (const p of v) (p.lardomar ??= []).push({ k: 'fara', a, v: 0.8, c: 0.8, t: s.now, led: 0, om: 'något hände' });
-    SIM.tabuDygn(s);
-    // en handling blir tabu: en dör under björnjakten där de andra ser det, och de blir rädda för att jaga björn
+    // en dör under björnjakten där de andra ser det, och de blir rädda för att jaga björn
     const s2 = medLedare(7).s; nyInvanare(s2, 'm', 25); nyInvanare(s2, 'k', 25);
     const v2 = SIM.living(s2), offer = v2[0];
     offer.task = { act: 'bjornjakt', phase: 'do', tx: offer.x, ty: offer.y, until: s2.now, carry: 0, why: '' } as SIM.Task;
     for (const p of v2) { p.x = offer.x + 1; p.y = offer.y; }
     SIM.die(s2, offer, 'bjorn');
     const radda = SIM.living(s2).filter(p => (p.raddAkt?.bjornjakt ?? 0) > 0).length;
-    SIM.tabuDygn(s2);
-    const kvar = SIM.living(s2)[0];
+    SIM.lagDygn(s2);
+    const kvar = SIM.living(s2)[0]; kvar.pot.mod = 1; // (den fega låter bli det hen är rädd för)
     return [
       [`rättegången gäller lagens straff (${r ? SIM.STRAFF_NAMN[r.steg] : 'ingen'}) eller så efterlevdes lagen inte (${s.stat?.lag_ej_efterlevd ?? 0})`, !!r && r.steg === 4 || (s.stat?.lag_ej_efterlevd ?? 0) > 0],
       [`böterna går till den drabbade (${yxa.agare === d.id ? d.name : 'ingen'})`, !r || yxa.agare === d.id || yxa.agare === fore],
-      [`en fruktad plats blir tabu (${s.tabun?.length})`, s.tabun?.length === 1],
       [`de som såg björnen döda ${offer.name} blir rädda för att jaga björn (${radda})`, radda === SIM.living(s2).length],
-      [`att jaga björn blir tabu (${s2.tabuAkt?.map(t => t.k).join(', ')})`, !!s2.tabuAkt?.some(t => t.k === 'bjornjakt')],
-      [`och byn låter bli det (${SIM.tabuAkt(s2, kvar, 'bjornjakt')}), men inte annat`, SIM.tabuAkt(s2, kvar, 'bjornjakt') === 'jaga björn' && !SIM.tabuAkt(s2, kvar, 'fiske')],
+      [`den som är rädd nog låter bli det (${SIM.raddFor(s2, kvar, 'bjornjakt')}), men inte annat (steg 10.2.41: inget tabu för hela byn)`, SIM.raddFor(s2, kvar, 'bjornjakt') === 'jaga björn' && !SIM.raddFor(s2, kvar, 'fiske') && !('tabuAkt' in s2)],
     ];
   },
 };
@@ -787,7 +782,7 @@ SCENARIER.skatt = {
     const fick = (SIM.ownedStock(s, l).bar ?? 0) - fore, egen = SIM.ownedStock(s, q).bar ?? 0;
     SIM.put(s, 'bar', 60, { [l.id]: 60 });
     const miss0 = q.missnoje ?? 0, mat0 = SIM.ownedStock(s, l).bar ?? 0;
-    SIM.tabuDygn(s);
+    SIM.lagDygn(s);
     return [
       ['under Allmogen går skatten till byns förråd', tillByn],
       ['under Envälde går den till ledarens', tillLedaren],

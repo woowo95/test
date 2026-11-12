@@ -68,7 +68,7 @@ import { efterAnfall } from './rovare';
 import { BONER, bonFritid, bonNod, bonVikt, ritualVal, satFaror } from './kult';
 import { avrustaVal, begravaVal, rustaVal } from './grav';
 import { budBrutet, budForbjuder, viltBikta, vilodagNu } from './kyrka';
-import { LAG, lagGaller, tabuAkt } from './lagar';
+import { LAG, lagGaller, raddFor } from './lagar';
 import { ligger } from './sjukdom';
 
 // ---------- val av aktivitet ----------
@@ -857,11 +857,11 @@ export function chooseTask(s: State, p: Person) {
   }
   // buden (steg 8.6.8): den troende låter bli det som är förbjudet och vilar på vilodagen. Svält och kyla går före, men kostar
   if (rad && rad.niva > 2) {
-    const id = budForbjuder(s, p, v.act), tabu = id ? undefined : tabuAkt(s, p, v.act); // och låter bli det som är tabu (steg 8.4.10)
+    const id = budForbjuder(s, p, v.act), tabu = id ? undefined : raddFor(s, p, v.act); // och låter bli det hen är rädd nog för (steg 8.4.10)
     if (id || tabu || (vilodagNu(s, p) && ACTS[v.act].arbete)) {
       const f = faror(c);
       if (f.svalt || f.kyla) { if (id) budBrutet(s, p, id); }
-      else { set(v, 'vila', id ? 'Tron förbjuder det' : tabu ? `Vill inte ${tabu}` : 'Det är vilodag'); v.spot = undefined; v.tool = undefined; v.ref = undefined; if (tabu) count(s, 'tabuUndvek'); }
+      else { set(v, 'vila', id ? 'Tron förbjuder det' : tabu ? `Vill inte ${tabu}` : 'Det är vilodag'); v.spot = undefined; v.tool = undefined; v.ref = undefined; if (tabu) count(s, 'raddUndvek'); }
     }
   }
   // straffet skam (steg 3.5.3, styre.ts): inte det faran väljer (vargarna, tornadon, branden, vattnet) och inte det som skyddar (skamfri i ACTS)

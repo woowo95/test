@@ -101,7 +101,6 @@ export function storreKarta(s: State) {
     }
     for (const l of p.lardomar ?? []) l.a = omArea(l.a);
   }
-  for (const tb of s.tabun ?? []) tb.a = omArea(tb.a);
   for (const f of s.flackar ?? []) f.i = ny(f.i);
   if (s.halvfallt) s.halvfallt = Object.fromEntries(Object.entries(s.halvfallt).map(([i, v]) => [ny(Number(i)), v]));
   if (s.morkPlats) s.morkPlats = Object.fromEntries(Object.entries(s.morkPlats).map(([i, v]) => [ny(Number(i)), v]));

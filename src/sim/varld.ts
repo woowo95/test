@@ -311,6 +311,7 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }
 function uppgradera(s: State) {
+  { const g = s as State & { tabun?: unknown; tabuAkt?: unknown }; delete g.tabun; delete g.tabuAkt; } // tabun togs bort (steg 10.2.41)
   useMap(s);
   if (behoverStorreKarta(s)) storreKarta(s); // först av allt, innan något räknats på den gamla kartan (steg 2.10.9, kartflytt.ts)
   for (const [n, , gor] of UPPGRADERINGAR) if ((s.v ?? 1) < n) { gor(s); s.v = n; }

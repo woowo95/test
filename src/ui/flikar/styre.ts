@@ -1,4 +1,4 @@
-import { type Omrostning, LAG, LAGAR, TABU_AKT, placeName, efterlevs, lagTak, lagarNu, MINISTRAR, TRONFOLJD_TEXT, tronfoljd, DAY, LED, PABUD, PABUD_LIST, Pabud, Rattegang, SEDER, STR, STRAFF_NAMN, VAGSKALAR, byId, legitimitet, ledareOf, onskatDygn, pabud, pabudAndel, rattegang, styrelseform, timeLabel, torkAndel } from '../../sim';
+import { type Omrostning, LAG, LAGAR, efterlevs, lagTak, lagarNu, MINISTRAR, TRONFOLJD_TEXT, tronfoljd, DAY, LED, PABUD, PABUD_LIST, Pabud, Rattegang, SEDER, STR, STRAFF_NAMN, VAGSKALAR, byId, legitimitet, ledareOf, onskatDygn, pabud, pabudAndel, rattegang, styrelseform, timeLabel, torkAndel } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { bar, esc, hjalpKnapp, hjalpText, num, pLink } from '../hjalp';
 import { s, ui } from '../lage';
@@ -33,7 +33,7 @@ function styretHtml() {
       return `<li ${sedKlick(v.sed!)}>${sedVag(x, esc(d.neg), esc(d.pos))}${sedFormat(v.sed!)}${sedLista(v.sed!)}</li>`;
     }).join('');
     const hist = st.historia.slice().reverse().map(h => `<li><span class="when">${timeLabel(s, h.fran)}</span>${pLink(byId(s, h.id)) === '–' ? esc(h.namn) : pLink(byId(s, h.id))}, ${esc([...(h.forr ?? []), h.titel].map(x => x.toLowerCase()).join(', sedan '))}${h.till !== undefined ? ` – ${dygnTxt(h.till - h.fran)}, ${esc(h.slut ?? '')}` : ''}</li>`).join('');
-    return `${ledare}<h3>Vågskålar</h3><ul class="seder">${skalar}</ul>${lagarDel()}${tabunDel()}${omrostningar()}${rattegangar()}<h3>Ledarna genom tiden</h3><ol class="logg">${hist}</ol>`;
+    return `${ledare}<h3>Vågskålar</h3><ul class="seder">${skalar}</ul>${lagarDel()}${omrostningar()}${rattegangar()}<h3>Ledarna genom tiden</h3><ol class="logg">${hist}</ol>`;
 }
 
 // stenen Styre (steg 9.3.1): delarna i en rad knappar överst, styret och påbuden. Registret: en ny del är en rad i DELAR
@@ -83,12 +83,6 @@ export function pabudDel() {
       : `<div class="ruta bred"><div class="rutnamn">${esc(namn)}</div><dl class="kv smal">${ks.map(k => rad(k, false)).join('')}</dl></div>`).join('')}</div>`;
 }
 
-// tabun (steg 8.4.10): de platser och handlingar som byn undviker, med vad som hände; texten kommer fram vid hovring
-function tabunDel() {
-  const rader = [...(s.tabun ?? []).map(t => ({ namn: `Platsen ${placeName(s, t.a)}`, om: t.om })), ...(s.tabuAkt ?? []).map(t => ({ namn: `Att ${TABU_AKT[t.k]?.namn ?? t.k}`, om: t.om }))];
-  if (!rader.length) return '';
-  return `<h3>Tabun</h3><ul class="rels">${rader.map(r => `<li title="${esc(r.om ? `Byn minns: ${r.om}.` : 'Något hände.')}">${iconImg('fara')} ${esc(r.namn)}</li>`).join('')}</ul>`;
-}
 // lagarna (steg 8.4.1): en symbol per lag och en för straffet; texten kommer fram vid hovring. Hur väl de efterlevs och taket (steg 8.4.3, 8.4.9)
 function lagarDel() {
   const lagar = lagarNu(s);

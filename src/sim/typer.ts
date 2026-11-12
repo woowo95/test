@@ -239,7 +239,7 @@ export interface Person {
   halvminne?: string[]; // tekniker hen var lärling i när mästaren dog: det hen hunnit lära sig finns kvar i tek (steg 4.2.3.4)
   kunskap?: Record<string, { v: number; t: number }>; // det personen kan (alltid rätt), 0–1, och när det senast användes
   lardomar?: Lardom[]; // det personen tror om platser (kan vara fel, överdrivet eller inaktuellt)
-  raddAkt?: Record<string, number>; // rädslan för en handling efter en olycka, per rad i TABU_AKT (steg 8.4.10)
+  raddAkt?: Record<string, number>; // rädslan för en handling efter en olycka, per rad i RADD_AKT (steg 8.4.10)
   thoughts: Thought[];
   x: number; y: number; task?: Task;
   fame: string[];
@@ -332,8 +332,6 @@ export interface State {
   tradAlder?: string; // trädens ålder efter att de vuxit klart, dygn per ruta, packat (trad.ts, steg 5.1.4.2)
   stockar?: Stock[]; // fällda träd som ligger och väntar på att huggas
   stridRapporter?: { t: number; orsak: string; vinnare?: number; n: number }[]; // de äldre striderna (steg 8.8.10)
-  tabun?: import('./lagar').Tabu[]; // farliga platser som hela byn undviker (steg 8.4.10)
-  tabuAkt?: import('./lagar').TabuAkt[]; // handlingar som hela byn låter bli (steg 8.4.10)
   skattLedare?: number; // så mycket har gått till ledarens förråd som skatt (steg 8.4.17)
   aktOm?: Record<string, string>; // vad byn minns om olyckan bakom rädslan för en handling
   gravar?: import('./kvarlevor').Grav[]; gravplatser?: Record<string, { x: number; y: number }>; heliga?: import('./kult').HeligPlats[]; ritual?: import('./kult').Ritual; ritualKo?: import('./kult').Ritual[]; // graven, de heliga platserna och ritualerna (system 8.5)
