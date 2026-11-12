@@ -3,10 +3,11 @@ import * as BILD from '../../ui/stridbild';
 import { Person, createState, tidyTools, addTool, getRel, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, ageStart, amountOf, isLight, ageOf, DAY, HOUR, State, findL, areaOf, stat, hoped, gain, ownedSum, setAmount, setStock, tingOf, planBuild, regulate, ACTS } from '../../sim';
 import * as SIM from '../../sim';
 import { byId, isSocial, TalkEvent } from '../../sim';
-import { START, STEG_DYGN } from '../kor';
+import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import * as SLAGLANGD from '../slaglangd';
 import { hasIcon } from '../../ikoner';
 import { stridIByn, rovarGang, korTills, setFood, kor, klockan, tandEld, byggare, SCENARIER, pct, grenarUte, barGrenar, nyInvanare, valjer, MATARBETE, TRAARBETE, REDSKAPSARBETE, FORBATTRING, MATMEDREDSKAP, rikBy, medHus } from './hjalp';
+import { stalle, SITTA } from '../../ui/stalle';
 const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 SCENARIER.befolkning = {
@@ -2644,6 +2645,31 @@ SCENARIER.anfallet = {
       [`försvararna gjorde sig redo och mötte dem (${redo} prov)`, redo > 0],
       [`striden eller plundringen syntes (${ny('rovarStrid')} strider, ${ny('rovat')} saker tagna)`, ny('rovarStrid') + ny('rovat') > 0],
       [`gänget gick hem eller dog (${s.rovare === f ? 'kvar' : 'borta'})`, s.rovare !== f],
+    ];
+  },
+};
+
+SCENARIER.stalle = {
+  text: 'Steg 10.2.55: figuren sitter bara på en sittplats och går bara när den flyttat sig. En by går tolv timmar, och varje person prövas i varje steg med samma regel som bilden (ui/stalle.ts): ingen ritas sittande utan sittplats eller gående utan att ha flyttat sig',
+  kor: () => {
+    const s = createState(7, START); klockan(s, 8); medHus(s);
+    const forra = new Map<number, { x: number; y: number }>();
+    let sittUtan = 0, garStilla = 0, sitter = 0, gar = 0, star = 0, forst = '';
+    for (let k = 0; k < STEG_TIM * 12; k++) {
+      step(s, 300);
+      for (const p of living(s)) {
+        const tk = p.task, f = forra.get(p.id), rorde = !!f && Math.abs(p.x - f.x) + Math.abs(p.y - f.y) > 1e-4;
+        forra.set(p.id, { x: p.x, y: p.y });
+        const ligger = tk?.act === 'sova' && tk.phase === 'do' || !SIM.kanGa(p);
+        const l = stalle(s, { ligger, gor: tk?.phase === 'do' ? tk.act : undefined, x: p.x, y: p.y, vidBank: false, rorde });
+        if (l === 'sitta') { sitter++; if (!SIM.sittAt(s, p.x, p.y)) { sittUtan++; forst ||= `${p.name} sitter utan sittplats (${tk?.act})`; } }
+        if (l === 'ga') { gar++; if (!rorde) { garStilla++; forst ||= `${p.name} går utan att flytta sig (${tk?.act})`; } }
+        if (l === 'sta' && tk?.phase === 'do' && SITTA.has(tk.act)) star++;
+      }
+    }
+    return [
+      [`ingen sitter utan sittplats och ingen går utan att flytta sig (${sitter} sittande, ${gar} gående${forst ? `; ${forst}` : ''})`, sittUtan === 0 && garStilla === 0 && gar > 0],
+      [`den som samtalar eller vilar utan sittplats står (${star} gånger)`, star > 0],
     ];
   },
 };

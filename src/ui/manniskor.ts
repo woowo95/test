@@ -26,6 +26,7 @@ import { fotSkugga, skuggFolk, skuggLangd } from './skugga';
 import { jaktPlats } from './jakt';
 import { kartKampe, slagAv } from './stridbild';
 import { slag } from './animation';
+import { stalle } from './stalle';
 import { hasIcon, iconCanvas, kartbild, ljusSymbol } from '../ikoner';
 
 // människorna på kartan: kroppen, det de bär, pratbubblor, symbolen för vad de gör och namnet
@@ -284,7 +285,6 @@ function figurAv(id: number) {
 // gångsteg 2, stå, som bildstilens gång, en bild per slag i animationernas klocka (ui/animation.ts) och förskjutet per person
 const huvud = new Map<number, number>(), SYMBOL_LUFT = 8; // figurens översta punkt i bildrutan, och så långt ovanför den symbolens mitt står
 vidNyBy.push(() => huvud.clear());
-const SITTA = new Set(['maltid', 'samtal', 'vila', 'lyssna', 'beratta']);
 // striden hen är med i just nu (steg 5.1.9.5): vapnet och var den närmaste motståndaren står, ur byns senaste strider
 function stridNu(p: Person): { vapen: string; mot?: { x: number; y: number }; ruta?: number } | undefined {
   // striden på kartan (steg 10.1.5): vapnet och målet är kämpens, och armen gör slagets rörelse just när ett slag sker (ruta 0 annars)
@@ -293,15 +293,15 @@ function stridNu(p: Person): { vapen: string; mot?: { x: number; y: number }; ru
   return undefined;
 }
 const SLA = new Set(['falla', 'bygga', 'krossa', 'slakta', 'yxa', 'dorr']);
-const forra = new Map<number, { x: number; y: number; rx: number; ry: number; rikt: Rikt; rord: number }>();
+const forra = new Map<number, { x: number; y: number; rx: number; ry: number; rikt: Rikt; rorde: boolean }>();
 const GANG: [Ben, Arm][] = [['gang1', 'gang1'], ['sta', 'hanga'], ['gang2', 'gang2'], ['sta', 'hanga']];
-const GAR_MS = 300; // så länge efter senaste rörelsen (datorns tid) går figuren, så att den inte stannar mellan bildrutorna
-const gar = (id: number, nu: number) => nu - (forra.get(id)?.rord ?? -Infinity) < GAR_MS;
+// figuren går bara när den flyttat sig sedan förra bilden (steg 10.2.55): den som står still går aldrig i bilden
+const gar = (id: number) => !!forra.get(id)?.rorde;
 vidNyBy.push(() => forra.clear());
 const SVANG = 2; // hur mycket större det nya hållet ska vara för att figuren ska vända sig (steg 6.8.2)
 // (rx, ry) = platsen utan knuffarna och glidningen i bilden: bara den räknas som att hen går (steg 8.1.2), så att den som står vid latrinen eller dricker vatten står stilla i bilden
 function riktning(id: number, x: number, y: number, rx = x, ry = y): Rikt {
-  const f = forra.get(id); let rikt: Rikt = f?.rikt ?? 'fram', rord = f?.rord ?? -Infinity;
+  const f = forra.get(id); let rikt: Rikt = f?.rikt ?? 'fram', rorde = false;
   if (f) {
     const dx = x - f.x, dy = y - f.y;
     if (Math.abs(dx) + Math.abs(dy) > 0.01) {
@@ -312,9 +312,9 @@ function riktning(id: number, x: number, y: number, rx = x, ry = y): Rikt {
       const tvars = rikt === 'sida' || rikt === 'vast' ? Math.abs(dy) : Math.abs(dx);
       if (!(langs > 0 && tvars < langs * SVANG)) rikt = ny;
     }
-    if (Math.abs(rx - f.rx) + Math.abs(ry - f.ry) > 1e-4) rord = performance.now();
+    rorde = Math.abs(rx - f.rx) + Math.abs(ry - f.ry) > 1e-4;
   }
-  forra.set(id, { x, y, rx, ry, rikt, rord });
+  forra.set(id, { x, y, rx, ry, rikt, rorde });
   return rikt;
 }
 // gästerna: handlaren som en person (steg 8.1.8) och rövarna (steg 6.6.12), figurer ur skaparen som byborna (ui/utseende.ts), som går, slåss med sitt vapen mot
@@ -332,7 +332,7 @@ function ritaRovarna(skugga: PIXI.Graphics) {
     let rikt = riktning(g.id, g.x, g.y);
     const strid = sk && !ligger ? STRIDBILD[sk.k.vapen as string] ?? STRIDBILD.hand : undefined, ab = strid ? arbetsBild(strid, kk ? (sl ? Math.min(3, Math.floor(sl.andel * 4)) : 0) : slag() - g.id) : undefined;
     if (sk?.mot) rikt = sk.mot.x < g.x ? 'vast' : 'sida';
-    const steg = !ligger && !ab && gar(g.id, performance.now()) ? GANG[(slag() - g.id) % 4] : undefined;
+    const steg = !ligger && !ab && gar(g.id) ? GANG[(slag() - g.id) % 4] : undefined;
     const ben: Ben = ab ? ab.ben : steg ? steg[0] : 'sta', arm: Arm = ab ? ab.arm : steg ? steg[1] : 'hanga';
     const humor = sk ? 'arg' : s.rovare?.gor === 'flyr' ? 'radd' : 'lugn';
     const sp = figurAv(g.id);
@@ -379,9 +379,10 @@ export function drawPeople(t: number) {
     // rörelse i armarna
     const bank = gor && !ligger ? stationAt(s, q.x, q.y - 1) : undefined, bd = bank && isKlar(bank) ? stationDef(bank.k) : undefined;
     const vidBank = !!(bank && bd?.sitt && bd.gor.includes(gor as never) && Math.floor(q.y) === bank.y + storlekAv(bank).h);
-    const sitter = !ligger && !!gor && (SITTA.has(gor) || vidBank);
     const ra = platsAv(p);
     let rikt = riktning(p.id, q.x, q.y, ra.x, ra.y);
+    // sitter bara på en sittplats, går bara när hen flyttat sig (steg 10.2.55, ui/stalle.ts)
+    const st = stalle(s, { ligger, gor, x: q.x, y: q.y, vidBank, rorde: gar(p.id) }), sitter = st === 'sitta';
     if (sitter && rikt === 'bak') rikt = 'fram';
     if (vidBank) { rikt = 'bak'; x = (bank!.x + storlekAv(bank!).w / 2) * TS; y = (bank!.y + storlekAv(bank!).h) * TS + TS / 2 - r * 0.9; }
     // arbetet i bild (steg 5.1.9.4, ui/arbetsbild.ts): rörelsen från sidan, en bild per slag, förskjutet per person
@@ -390,7 +391,7 @@ export function drawPeople(t: number) {
     const ab = arb ? arbetsBild(arb, strid?.ruta ?? slag() + p.id) : undefined; // i striden på kartan styr slaget rörelsen, inte klockan
     if (strid?.mot) rikt = strid.mot.x < q.x ? 'vast' : 'sida'; // vänd mot motståndaren (steg 5.1.9.5)
     else if (ab && !vidBank && rikt !== 'sida' && rikt !== 'vast') rikt = p.id % 2 ? 'vast' : 'sida';
-    const steg = !sitter && !ligger && gar(p.id, performance.now()) ? GANG[(slag() + p.id) % 4] : undefined;
+    const steg = st === 'ga' ? GANG[(slag() + p.id) % 4] : undefined;
     const ben: Ben = sitter ? 'sitta' : ab ? ab.ben : steg ? steg[0] : 'sta';
     let arm: Arm = tk && load(tk, s) > 0 && gor !== 'bygga' ? 'bara' : gor && SLA.has(gor) ? 'sla' : gor === 'station' ? 'framfor' : 'hanga';
     if (steg && arm === 'hanga') arm = steg[1];
