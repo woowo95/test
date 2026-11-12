@@ -489,6 +489,8 @@ function gearHtml(p: Person) {
   const bordaTxt = bar ? `bär ${carryTxt(p).replace(/^Bär /, '')}` : '';
   // den som äter vid bordet har maten i den första fria handen (steg 3.10.3)
   const mal = vidBordet(p) ? t?.mal : undefined, malHand = mal ? (['hoger', 'vanster'] as const).find(k => !u[k].ting && !u[k].borda) : undefined;
+  // hur många av saken som ligger i handen (steg 10.2.82): en siffra på symbolen när det är fler än en
+  const antal = (k: Plats) => { const i = (k === 'hoger' || k === 'vanster') ? ih[k] : undefined, n = i ? Math.round(i.v / Math.max(1e-9, viktOf(i.k))) : 0; return n > 1 ? `<span class="hantal">${n}</span>` : ''; };
   const ruta = (k: Plats, stor = false) => {
     const pl = PLATSER[k], x = u[k], cls = stor ? ' stor' : '';
     if (x.ting) {
@@ -496,10 +498,10 @@ function gearHtml(p: Person) {
       const title = `${pl.namn}: ${sakNamn(x.ting.k).toLowerCase()}${x.ting.q !== undefined ? `, ${kvNamn(x.ting).toLowerCase()}` : ''}, ${whose(x.ting)}, ${Math.round(x.ting.c * 100)} %, väger ${kg(viktOf(x.ting.k))}${SAKER[x.ting.k]?.klad?.varme ? `, skyddar ${Math.round(SAKER[x.ting.k]!.klad!.varme * 100)} % mot kylan` : ''}${pl.hand && h === 2 ? ', tar båda händerna' : ''}${k === 'krok' || k === 'krok2' ? x.ting.hos === p.id ? ', hänger i bältet medan hen bär' : ', hänger i bältet tills hen behöver det' : ''}${x.borda ? `; ${bordaTxt}` : ''}`;
       const i = ting(x.ting, title, (k === 'vanster' && x.ting === u.hoger.ting ? 'kan hand pa' : 'kan hand') + cls, stor ? 36 : 16);
       const ik = (k === 'hoger' || k === 'vanster') && ih[k]?.k; // det som ligger i just den handen (steg 6.1.2)
-      return x.borda && ik ? i.replace(/<\/span>$/, `<span class="antal">${iconImg(ik, 10)}</span></span>`) : i;
+      return x.borda && ik ? i.replace(/<\/span>$/, `<span class="antal">${iconImg(ik, 10)}</span>${antal(k)}</span>`) : i;
     }
     const ik = (k === 'hoger' || k === 'vanster') ? ih[k]?.k : undefined;
-    if (x.borda && ik) { const title = `${pl.namn}: ${sakNamn(ik).toLowerCase()}; ${bordaTxt}`; return `<span class="tnod liten hand${cls}" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(ik, stor ? 36 : 16)}</span>`; }
+    if (x.borda && ik) { const title = `${pl.namn}: ${sakNamn(ik).toLowerCase()}; ${bordaTxt}`; return `<span class="tnod liten hand${cls}" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(ik, stor ? 36 : 16)}${antal(k)}</span>`; }
     if (k === malHand) { const title = `${pl.namn}: äter ${sakNamn(mal!).toLowerCase()}`; return `<span class="tnod liten hand${cls}" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(mal!, stor ? 36 : 16)}</span>`; }
     const title = `${pl.namn}: ${pl.hand ? 'tom' : 'inget'}`;
     return `<span class="tnod liten hand tom${cls}" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}">${pl.ikon}</span>`;
