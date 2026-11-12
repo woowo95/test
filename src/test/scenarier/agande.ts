@@ -5,7 +5,7 @@ import { Person, Act, Task, createState, bearbeta, ownedBy, tidyTools, addTool, 
 import * as SIM from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import { lasBy } from '../delby';
-import { rovarGang, korTills, setItems, setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank, utanWebblasare, nyInvanare } from './hjalp';
+import { rovarGang, korTills, setItems, setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank, utanWebblasare, nyInvanare, tandOchFlinta } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
 import { notisHtml, notisKlick, notisKnapp, notisVal } from '../../ui/notiser';
 import { bortaBerattelse, bortaHtml, ikappHtml } from '../../ui/borta';
@@ -320,7 +320,7 @@ SCENARIER.delning = {
     const igen = s.delning!;
     // bufferten per jag (steg 6.2.20): i en rik by har byn ingen buffert för maten, utan familjen sin för det den äger. Den
     // fattiga familjen (äger ingen mat) samlar åt sig, den rika (äger mat för många dygn) gör det inte, fast byns förråd är fullt
-    const j = createState(5, START); klockan(j); tandEld(j); setFood(j, 300); setItems(j, { flinta: 10, grenar: 30, torrgras: 10 }); setAmount(j, 'ved', 80); rikBy(j);
+    const j = createState(5, START); klockan(j); tandEld(j); setFood(j, 300); tandOchFlinta(j); setAmount(j, 'ved', 80); rikBy(j);
     // den fattiga är den som bryr sig mest om sig själv och familjen (egenintresset, projekt.ts)
     const vx = living(j).filter(q => SIM.ageOf(q, j.now) >= 18).sort((a, b) => SIM.egenintresse(j, b) - SIM.egenintresse(j, a)), fattig = vx[0], rikP = vx.find(q => !SIM.familjOf(j, fattig.id).includes(q))!;
     for (const q of SIM.familjOf(j, rikP.id)) gain(j, q, 'bar', 120);
