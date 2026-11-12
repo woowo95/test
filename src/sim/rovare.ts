@@ -217,7 +217,7 @@ export function gaMot(s: State, r: Person, mx: number, my: number, sek: number, 
     // prövas igen först efter ROVARE.vagSok sekunder: vägsökningen går över hela kartan
     const pk = gr(r).pk, nara = pk !== undefined && !!gr(r).path?.length && Math.hypot(pk % W - mx, Math.floor(pk / W) - my) <= ROVARE.vagFlytt;
     if (nara) gr(r).pk = mal;
-    else if (gr(r).ingen === mal && s.now - (gr(r).ingenT ?? 0) < ROVARE.vagSok * SEC) return -1;
+    else if (gr(r).ingen !== undefined && s.now - (gr(r).ingenT ?? 0) < ROVARE.vagSok * SEC && Math.hypot(gr(r).ingen! % W - mx, Math.floor(gr(r).ingen! / W) - my) <= ROVARE.vagFlytt) return -1; // (också ett mål nära det som inte gick)
     else {
       gr(r).pk = mal; gr(r).path = findPath(g, r.x, r.y, mx, my) ?? undefined;
       if (!gr(r).path) { gr(r).pk = undefined; gr(r).ingen = mal; gr(r).ingenT = s.now; return -1; }
@@ -258,7 +258,7 @@ function lurPlats(s: State, f: Rovarflock, m: { x: number; y: number }) {
     for (let r = Math.min(d, ROVARE.lur); r <= d; r++) {
       const x = clamp(m.x + Math.cos(v + dv) * r, 0.5, W - 0.5), y = clamp(m.y + Math.sin(v + dv) * r, 0.5, H - 0.5);
       if (utanforByn(s, x, y) < ROVARE.lurUt && r + 1 <= d) continue;
-      if (!iVatten(s, x, y) && !bitAt(s, Math.floor(x), Math.floor(y))) return { x: Math.floor(x) + 0.5, y: Math.floor(y) + 0.5 };
+      if (!iVatten(s, x, y) && !bitAt(s, Math.floor(x), Math.floor(y)) && findPath(groundOf(s), f.x, f.y, x, y)) return { x: Math.floor(x) + 0.5, y: Math.floor(y) + 0.5 }; // dit gänget kan gå
       break;
     }
   }
