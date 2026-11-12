@@ -271,3 +271,29 @@ document.addEventListener('keydown', e => {
   e.preventDefault();
   el.click();
 });
+
+// kameran med tangenterna (steg 10.2.83): piltangenterna och WASD flyttar kartan, fortare ju längre tangenten hålls nere,
+// men inte när man skriver i ett textfält
+const KAMERA_TANGENT: Record<string, [number, number]> = { arrowup: [0, -1], w: [0, -1], arrowdown: [0, 1], s: [0, 1], arrowleft: [-1, 0], a: [-1, 0], arrowright: [1, 0], d: [1, 0] };
+const KAMERA_FART = 420, KAMERA_FORT = 2.5, KAMERA_FORT_SEK = 1.5; // skärmpunkter i sekunden, och upp till så här många gånger fortare efter så här många sekunder
+const nere = new Map<string, number>(); // tangenten -> när den trycktes ner (datorns tid)
+const skriver = (el: EventTarget | null) => el instanceof HTMLElement && (el.matches('input, textarea, select') || el.isContentEditable);
+let kameraT = 0;
+function kameraTangent(nu: number) {
+  if (!nere.size) { kameraT = 0; return; }
+  const dt = kameraT ? Math.min(0.1, (nu - kameraT) / 1000) : 0; kameraT = nu;
+  let dx = 0, dy = 0, fort = 1;
+  for (const [k, t0] of nere) { const [x, y] = KAMERA_TANGENT[k]!; dx += x; dy += y; fort = Math.max(fort, 1 + (KAMERA_FORT - 1) * Math.min(1, (nu - t0) / 1000 / KAMERA_FORT_SEK)); }
+  if (dt > 0 && (dx || dy)) { stopFollow(); const v = KAMERA_FART * fort * dt / world.scale.x; cam.x += dx * v; cam.y += dy * v; layout(); }
+  requestAnimationFrame(kameraTangent);
+}
+document.addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if (!KAMERA_TANGENT[k] || e.ctrlKey || e.metaKey || e.altKey || skriver(e.target)) return;
+  e.preventDefault();
+  if (nere.has(k)) return;
+  const forst = !nere.size; nere.set(k, performance.now());
+  if (forst) { kameraT = 0; requestAnimationFrame(kameraTangent); }
+});
+document.addEventListener('keyup', e => { nere.delete(e.key.toLowerCase()); });
+window.addEventListener('blur', () => nere.clear());
