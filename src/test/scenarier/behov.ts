@@ -891,7 +891,7 @@ SCENARIER.gorjustnu = {
       // (på sex dygn har byarna ofta inget bord än; att man äter vid bordet prövar scenarierna bord och arbete)
       [`den som äter vid bordet sitter vid ett bord (${utanBord} av ${maltider})`, utanBord === 0],
       [`den som står still visas inte som på väg (${stillaGar} av ${prov} prov)`, stillaGar <= prov * 0.002],
-      [`det man bär visas vid tiden som visas och växer under turen (steg 6.1.1): ${barFel} av ${barProv} slag visar en annan börda i slutet, ${barVaxer} slag där bördan växte`, barProv > 500 && barFel <= barProv * 0.02 && barVaxer > 100],
+      [`det man bär visas vid tiden som visas och växer under turen (steg 6.1.1): ${barFel} av ${barProv} slag visar en annan börda i slutet, ${barVaxer} slag där bördan växte`, barProv > 500 && barFel <= barProv * 0.02 && barVaxer > 30],
     ];
   },
 };

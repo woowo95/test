@@ -19,6 +19,6 @@ export const nasTid = (avstand: number, v: number) => v > 0 ? (avstand - KLOCKA.
 // faran är nära (steg 10.2.18, FAROR i efterstrid.ts): ett hot och en bybo som är avstand rutor isär kan nå varandra under ett
 // slag, när de båda går mot varandra (vHot och vFolk rutor i sekunden), plus synhållet
 export const kanNa = (avstand: number, vHot: number, vFolk: number) => avstand < (vHot + vFolk) * KLOCKA.slag + KLOCKA.faraSyn;
-// ett nytt slag börjar direkt (testknapparna, steg 10.2.18): det som är kvar av ett delat slag räknas inte, så att faran
+// ett nytt slag börjar direkt (testknapparna, steg 10.2.18): tiden som inte räckt till ett helt slag räknas inte, så att faran
 // som knappen gav räknas i nästa slag
-export function nyttSlag(s: State) { delete s.stegRest; }
+export function nyttSlag(s: State) { delete s.stegRest; delete s.skuld; }

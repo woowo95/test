@@ -133,7 +133,7 @@ export const VAL = balans('val', {
   // kan komma, varor till handlaren, underhållet, att gå i lära och att fylla grenar och hö mot taket (gånger det som fattas).
   // Maten och veden över bufferten väger sitt behov (FORRAD), vid bufferten 0,4 respektive 0,15 gånger lusten / forbLust
   forbLust: 15, // maten och veden över bufferten: behovet gånger lusten (Försörjningens poäng, median ungefär 23 för maten och 7 för veden) delat med detta
-  forbStam: 3, // ... och veden så här många gånger mer när en fälld stam ligger kvar och personen har en ledig yxa
+  forbStam: 8, // ... och veden så här många gånger mer när en fälld stam ligger kvar och personen har en ledig yxa
   forbFritid: 0.04, // ... och fritiden, som vinner när förråden är nära eller över taket (det mjuka taket, steg 10.2.4)
   forbForsok: 0.6, forbTek: 0.5, forbHandel: 0.4, forbUnderhall: 0.45, forbLara: 0.35, forbFylla: 0.2,
   // handarbetet på fritiden (craft, steg 10.2.3): viltet och fisken som ruttnar, torka, grilla, gå i lära, pröva sig fram (gånger

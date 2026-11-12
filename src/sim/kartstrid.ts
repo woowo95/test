@@ -196,6 +196,7 @@ export function kartStridSteg(s: State, dtSec: number) {
       for (const k of st.kampar) {
         const p = personAv(s, k); if (!p) continue;
         if (p.died !== undefined) { if (k.lage !== 'dod') { k.lage = 'dod'; k.mal = undefined; } continue; } // dog av något annat
+        if (sport && p.task?.act !== 'sport' && k.lage !== 'borta') { k.lage = 'borta'; k.mal = undefined; st.logg.push({ t: st.t, h: 'borta', a: k.id }); (g.fri ??= []).push(p.id); continue; } // brottaren som lämnat matchen (den slutade, eller hen gick och åt) har lämnat kampen
         if (!g.fri?.includes(p.id)) { k.x = p.x; k.y = p.y; }
         k.blod = p.blod ?? 1;
       }
