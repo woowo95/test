@@ -54,8 +54,7 @@ import { EFTER, FAROR, gastKrok } from './efterstrid';
 export const ROVARE = balans('rovare', {
   forsvarMest: 0.2, // försvaret sänker chansen högst så här mycket (steg 8.7.13)
   kommer: 0.012, // chansen i timmen att en flock kommer, gånger hur rik byn är (rik nedan), när ingen flock är på kartan ...
-  rikFran: 300, // ... rikedomen minus försvaret från vilken byn lockar rövare ...
-  rikSpann: 1000, // ... och så mycket mer för den största chansen
+  rikFull: 1300, // ... den rikedom vid vilken byn lockar rövare som mest: chansen växer från noll med rikedomen (steg 10.2.45)
   forsvarBas: 15, forsvarSkada: 60, // försvaret: varje vuxen som kan slåss räknas forsvarBas + forsvarSkada × vapnets skada
   vilaDygn: 6, // så många dygn efter en flock kommer ingen ny
   antal: [2, 5], // så många rövare (minst, högst)
@@ -127,7 +126,7 @@ export function forsvaret(s: State) {
 }
 // hur mycket byn lockar rövare (0–1): rikedomen minus försvaret
 // (steg 8.7.13) rikedomen väger mest: försvaret sänker chansen bara lite, högst en femtedel, eftersom rövarna har svårt att veta hur bra försvar byn har
-export const lockar = (s: State) => { const rik = rikedom(s); return clamp((rik - ROVARE.rikFran) / ROVARE.rikSpann, 0, 1) * (1 - ROVARE.forsvarMest * clamp(forsvaret(s) / Math.max(1, rik), 0, 1)); };
+export const lockar = (s: State) => { const rik = rikedom(s); return clamp(rik / ROVARE.rikFull, 0, 1) * (1 - ROVARE.forsvarMest * clamp(forsvaret(s) / Math.max(1, rik), 0, 1)); };
 // (steg 8.7.14) skyddet efter ett anfall avtar med tiden i stället för en fast vila
 export const efterAnfall = (s: State) => s.rovarVila === undefined ? 1 : 1 - Math.exp(-Math.max(0, s.now - s.rovarVila) / (ROVARE.vilaDygn * DAY));
 

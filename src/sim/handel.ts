@@ -42,7 +42,6 @@ export const HANDEL = balans('handel', {
   rikOftare: 0.5, // ... och oftare ju rikare byn är: dygn / (1 + rikOftare × (rikedomen / rik − 1)) ...
   dygnMin: 2, // ... men aldrig oftare än så här
   dygnMax: 14, // ... och aldrig mer sällan (en by som blivit fattigare)
-  forsta: [0.2, 1], // den första kommer så här många dygn efter att byn blivit rik nog
   // kvällsmarknaden (steg 4.5.4.11): filten läggs ut på kvällen, efter arbetet, och handlaren går på morgonen (klockslag). Den
   // som kommer fram efter sentKvall, på natten eller på dagen väntar vid filtens plats till nästa kväll
   kvall: 19, sentKvall: 23, morgon: 7,
@@ -359,7 +358,7 @@ function gaSteg(s: State, h: Handlare) {
 export function handelSteg(s: State, dtSec: number) {
   const nyTimme = Math.floor(s.now / HOUR) !== Math.floor((s.now - dtSec * SEC) / HOUR);
   if (nyTimme && !s.handlare) {
-    if (s.nastaHandlare === undefined) { if (rikedom(s) >= HANDEL.rik) s.nastaHandlare = s.now + mellan(s, HANDEL.forsta) * DAY; }
+    if (s.nastaHandlare === undefined) s.nastaHandlare = s.now + intervall(s) * DAY; // den första kommer också efter rikedomen: en fattig by får vänta länge (steg 10.2.45)
     else if (s.now >= s.nastaHandlare && (!iIstiden(ageIndex(s)) || s.infart?.klar) && !kommer(s)) s.nastaHandlare = s.now + intervall(s) * DAY;
   }
   const h = s.handlare;

@@ -24,7 +24,6 @@ import { DORRAR } from './byggnad';
 import { tand } from './brand';
 
 export const RADER = balans('rader', {
-  rikedom: 500, // ingen räd förrän byns rikedom är över så här mycket
   forsvar: 0.2, // lockelsen är rikedomen minus så här stor del av försvaret
   chans: 0.01, // chansen per dygn, för varje 500 i lockelse och för varje klan som har ett skäl
   skyddDygn: 3, // chansen efter en räd stiger igen med den här tidskonstanten (ingen fast vila)
@@ -58,7 +57,7 @@ const spridning = (s: State) => { const r = rnd(s, 'rovare'); return r < 0.04 ? 
 // en gång per dygn (från rovarSteg)
 export function radDygn(s: State, tvingaSkal?: RadSkal, tvingaKlan?: Klan) {
   const lock = lockelse(s);
-  if (!tvingaSkal && (rikedom(s) < RADER.rikedom || s.rovare)) return;
+  if (!tvingaSkal && s.rovare) return; // en flock i taget; chansen växer med lockelsen (rikedomen minus försvaret, steg 10.2.45)
   for (const k of tvingaKlan ? [tvingaKlan] : klanerOf(s)) {
     const skal = (Object.keys(SKAL) as RadSkal[]).filter(q => SKAL[q].galler(s, k));
     if (!skal.length && !tvingaSkal) continue;

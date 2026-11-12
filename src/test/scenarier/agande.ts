@@ -944,17 +944,18 @@ SCENARIER.handelsvaror = {
   },
 };
 SCENARIER.handlare = {
-  text: 'Handlare som kommer när byns rikedom passerat en gräns (steg 4.4.1.2, handel.ts): en fattig by får ingen handlare; när rikedomen passerat HANDEL.rik bestäms när den första kommer. Handlaren kommer gående från kartans kant, väntar på kvällen (steg 4.5.4.11), breder ut en filt med sina varor nära elden på kvällen och går hem på morgonen, och nästa besök bestäms. Byborna handlar på kvällen. Varorna ryms i ryggsäcken, den första handlaren står i krönikan, och under istiden kommer ingen.',
+  text: 'Handlare som kommer oftare ju rikare byn är (steg 4.4.1.2 och 10.2.45, handel.ts): en fattig by får vänta länge, och i en rik by kommer den första snart. Handlaren kommer gående från kartans kant, väntar på kvällen (steg 4.5.4.11), breder ut en filt med sina varor nära elden på kvällen och går hem på morgonen, och nästa besök bestäms. Byborna handlar på kvällen. Varorna ryms i ryggsäcken, den första handlaren står i krönikan, och under istiden kommer ingen.',
   kor: () => {
     const timmar = (s: State, n: number) => { for (let i = 0; i < n * 3600 / BEAT; i++) step(s, BEAT); };
-    // en fattig by: ingen handlare bestäms
+    // en fattig by: handlaren kommer sällan (steg 10.2.45: ingen fast gräns, tiden följer rikedomen)
     let s = createState(6, START);
     timmar(s, 3);
-    const fattig = s.nastaHandlare === undefined && !s.handlare && rikedom(s) < SIM.HANDEL.rik;
+    const fattigT = (s.nastaHandlare ?? 0) - s.now, fattig = !s.handlare && fattigT > SIM.HANDEL.dygnMax / 2 * SIM.DAY;
     // en rik by: den första handlaren bestäms
     rikBy(s); for (let i = 0; i < 40; i++) addTo(s, 'flinta', 10);
     timmar(s, 2);
-    const bestamd = rikedom(s) >= SIM.HANDEL.rik && s.nastaHandlare !== undefined && s.nastaHandlare <= s.now + SIM.HANDEL.forsta[1] * SIM.DAY;
+    s.nastaHandlare = undefined; timmar(s, 2); // (den rika byn bestämmer på nytt, efter sin rikedom)
+    const bestamd = rikedom(s) >= SIM.HANDEL.rik && s.nastaHandlare !== undefined && s.nastaHandlare - s.now < fattigT;
     // handlaren kommer: från kanten, med varor som ryms i ryggsäcken
     s.nastaHandlare = s.now;
     for (let i = 0; i < 30 && s.handlare?.fas !== 'handlar' && s.handlare?.fas !== 'vantar'; i++) step(s, BEAT);
@@ -982,7 +983,7 @@ SCENARIER.handlare = {
     timmar(t, 3);
     const istid = SIM.iIstiden(SIM.ageIndex(t)) && !t.handlare;
     return [
-      [`en fattig by får ingen handlare (rikedom ${Math.round(rikedom(createState(6, START)))})`, fattig],
+      [`en fattig by får vänta länge på handlaren (rikedom ${Math.round(rikedom(createState(6, START)))}, ${(fattigT / SIM.DAY).toFixed(1)} dygn)`, fattig],
       [`när byn är rik nog bestäms den första handlaren (rikedom ${Math.round(rikedom(s))})`, bestamd],
       [`handlaren kommer från kanten med varor som ryms i ryggsäcken (${h && med ? `${hNamn}, ${SIM.kgOf(med.varor).toFixed(1)} kg av ${SIM.rymmer(h)}` : 'ingen'})`, kom],
       [`handlaren som kommer klockan ${dagNu.toFixed(1)} väntar vid filtens plats till kvällen (${v0?.kvall ? SIM.hourOf(v0.kvall).toFixed(1) : '–'})`, vantar],
@@ -1744,9 +1745,9 @@ SCENARIER.rovare = {
   text: 'Rövarflocken (steg 4.4.5, 10.1.9, rovare.ts): en rik by lockar rövare, mindre ju bättre försvar den har. Flocken kommer från en grannklan som inte tycker om byn och går in från kartans kant. Den som ser dem ropar, och byn skyddar sig: den som vet varnar först och väljer sedan sin roll. Ett tyst anfall (alla sover) plundrar förrådet osett; står de vuxna emot blir det en strid; står många fler emot flyr eller faller rövarna utan att ha tagit något, och de som flyr lämnar kartan. Testknappen skickar ett gäng som går som vanligt men väntar kortare.',
   kor: () => {
     const s = createState(6, START); klockan(s);
-    const fattig = SIM.lockar(s) === 0;
+    const fattig = SIM.lockar(s) < 0.2; // (chansen växer från noll med rikedomen, steg 10.2.45)
     const r = cloneState(s); setAmount(r, 'skinn', 400);
-    const utan = Math.min(1, Math.max(0, (rikedom(r) - SIM.ROVARE.rikFran) / SIM.ROVARE.rikSpann));
+    const utan = Math.min(1, Math.max(0, rikedom(r) / SIM.ROVARE.rikFull));
     const rik = SIM.lockar(r) > 0, forsvar = SIM.forsvaret(r) > 0 && SIM.lockar(r) < utan;
     // flocken kommer från den fientliga klanen
     const k0 = SIM.klanerOf(s)[0]; for (const c of SIM.klanerOf(s)) c.inst = 10; k0.inst = -60;
@@ -1812,7 +1813,7 @@ SCENARIER.rovare = {
     const vila = SIM.efterAnfall(k) < 0.1; // skyddet efter ett anfall avtar med tiden (steg 8.7.14)
     return [
       [`testläget skickar en liten, mellanstor och stor flock (${tl.join(', ')} rövare) från kanten, och den når byn inom en timme (steg 4.5.7.10, 10.1.16), och en handlare, med en rad i Händelser (${tlRad}) och ett skäl när det inte går (${tlSkal})`, tl[0] > 0 && tl[0] < tl[1] && tl[1] < tl[2] && testHandlare],
-      ['en ny och fattig by lockar inga rövare', fattig],
+      [`en ny och fattig by lockar få rövare (${SIM.lockar(s).toFixed(2)})`, fattig],
       ['en rik by lockar rövare', rik],
       ['försvaret räknas emot rikedomen', forsvar],
       ['flocken kommer från den fientliga klanen och går in från kartans kant', kommer],
