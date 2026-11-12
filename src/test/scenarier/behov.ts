@@ -648,6 +648,26 @@ SCENARIER.poangval = {
   },
 };
 
+SCENARIER.sangar = {
+  text: 'Steg 10.2.48: sängarna kommer fort. Utan ett hus att sova i byggs halmbäddarna ute, och den som sover i en bädd ute har en bädd men inget tak, så att byn ändå bygger en sovsal; halmbädden väger mer i projekten',
+  kor: () => {
+    const s = createState(3, START); klockan(s, 10);
+    for (const p of living(s)) p.tek = { ...p.tek, halmbadd: 1 };
+    const utanTak = SIM.utanTak(s), brist = SIM.PROJEKT.halmbadd.brist(s), plats = SIM.stationSite(s, 'halmbadd');
+    // en bädd ute: någon sover i den, men byn saknar fortfarande tak
+    const id = (s.nextStation ??= 1); s.nextStation++;
+    if (plats) s.stationer = [...(s.stationer ?? []), { id, k: 'halmbadd', x: plats.x, y: plats.y, kvar: 0, klar: s.now } as SIM.Station];
+    SIM.touch(s);
+    const iBadd = living(s).filter(p => { const b = SIM.bedTile(s, p); return b !== undefined && SIM.stationRutor(s).sov.has(b); }).length;
+    return [
+      [`utan hus har byn inget tak att sova under, och alla saknar en bädd (brist ${brist.toFixed(2)})`, utanTak && brist >= 0.99],
+      [`halmbädden kan byggas ute (${plats ? `${plats.x},${plats.y}` : 'ingen plats'})`, !!plats],
+      [`någon sover i bädden ute (${iBadd}), men byn saknar fortfarande tak (${SIM.homeless(s)} utan tak)`, iBadd >= 1 && SIM.homeless(s) === living(s).length],
+      [`halmbädden väger mer i projekten (${SIM.PROJEKT_TAL.halmbadd})`, SIM.PROJEKT_TAL.halmbadd >= 1.5],
+    ];
+  },
+};
+
 SCENARIER.vard = {
   text: 'Steg 2.5.2: ett öppet sår kan bli infekterat, och utan vård blir det kallbrand och döden. Vården är en egen handling: man trycker på ett sår som blöder, lägger ett förband av mossa (som hittas när man letar i naturen och ibland på ett fällt träd) och rengör ett infekterat sår, på sig själv eller någon annan. Den som inte kan gå kravlar hem eller bärs hem, och man läker fortare när man vilar',
   lang: true,

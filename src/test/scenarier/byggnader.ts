@@ -1208,6 +1208,7 @@ SCENARIER.stockhus = {
   },
 };
 SCENARIER.liggande = {
+  lang: true,
   text: 'Steg 9.2.87: hela trädet tas om hand innan nästa fälls: den som fällt ett träd hugger helst stammen själv, och viljan att fälla ett nytt träd för ett projekt sjunker med antalet stammar som ligger i byn',
   kor: () => {
     const s = createState(6, START);

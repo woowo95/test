@@ -1,6 +1,6 @@
 import { husNytt } from './byggnad';
 import { KROPP, alive, byId, count, familjOf, living, log } from './folk';
-import { Hus, MATERIAL, Rum, bitById, bitsOf, gridOf, housesOf, husById, roofed, shelterOf, touch } from './byggnad';
+import { Hus, MATERIAL, Rum, bitById, bitsOf, gridOf, housesOf, husById, roofed, roomAt, shelterOf, touch } from './byggnad';
 import { ageIndex, kallTid } from './tid';
 import { heatAt } from './eld';
 import { eldPlats } from './karta';
@@ -238,7 +238,7 @@ function familjUtanHus(s: State): { ag: number; folk: Person[]; kop?: boolean } 
 // och en bädd vars ägare sover någon annanstans står tom tills den flyttats (inredningen i stationer.ts). Cachen gäller så länge husen (s.byggV), tiden (s.now) och antalet levande är desamma. s.now flyttas inom
 // ett slag av varje persons egen tid (taskStep i steg.ts), så den räknas om flera gånger per slag (ungefär 0,5 % av körtiden);
 // s.now står kvar i nyckeln eftersom familjerna kan ändras inom ett slag
-interface Boende { key: string; egna: Map<number, { tiles: number[]; folk: Person[]; hus: number }>; gemensamt: number[]; ovriga: Person[]; plats: Map<number, number> }
+interface Boende { key: string; egna: Map<number, { tiles: number[]; folk: Person[]; hus: number }>; gemensamt: number[]; ovriga: Person[]; plats: Map<number, number>; ute?: true } // ute: byn har inget tak att sova under, och de gemensamma platserna är bäddarna ute (steg 10.2.48)
 const boenden = new WeakMap<State, Boende>();
 function boende(s: State): Boende {
   const ppl = living(s), key = `${s.byggV ?? 0}:${s.now}:${ppl.length}`;
@@ -257,6 +257,9 @@ function boende(s: State): Boende {
     else { const st = stationRutor(s).sov; baddar.push(...t.filter(i => st.has(i))); gemensamt.push(...t.filter(i => !st.has(i))); }
   }
   gemensamt.unshift(...baddar);
+  // utan tak att sova under sover man i bäddarna ute, tills det finns ett hus (steg 10.2.48)
+  let ute: true | undefined;
+  if (!gemensamt.length) { const st = stationRutor(s).sov; for (const i of st) if (!roomAt(s, i % W + 0.5, Math.floor(i / W) + 0.5)) { gemensamt.push(i); ute = true; } gemensamt.sort((a, c) => a - c); }
   for (const h of hs) {
     let tiles = egnaTiles.get(h.id);
     if (!tiles?.length) continue;
@@ -284,7 +287,7 @@ function boende(s: State): Boende {
   };
   for (const e of new Set(egna.values())) fordela(e.tiles, e.folk);
   fordela(gemensamt, ovriga);
-  b = { key, egna, gemensamt, ovriga, plats };
+  b = { key, egna, gemensamt, ovriga, plats, ...(ute ? { ute } : {}) };
   boenden.set(s, b);
   return b;
 }
@@ -326,12 +329,15 @@ export function sovKvar(s: State, r: Rum) {
 // så många som sover under tak men inte i en halmbädd
 export function utanBadd(s: State) {
   const b = boende(s), st = stationRutor(s).sov;
+  if (b.ute || !b.gemensamt.length) { let n = Math.max(0, b.ovriga.length - b.gemensamt.length); for (const e of new Set(b.egna.values())) n += Math.max(0, e.folk.length - e.tiles.filter(i => st.has(i)).length); return n; } // (de som sover ute utan bädd)
   let n = Math.min(b.ovriga.length, b.gemensamt.length) - Math.min(b.ovriga.length, b.gemensamt.filter(i => st.has(i)).length);
   for (const [h, e] of new Map([...b.egna.values()].map(e => [e.tiles, e]))) n += Math.min(e.folk.length, h.length) - Math.min(e.folk.length, h.filter(i => st.has(i)).length);
   return n;
 }
 // så många som saknar en egen sovplats under tak
-export const homeless = (s: State) => { const b = boende(s); return Math.max(0, b.ovriga.length - b.gemensamt.length); };
+export const homeless = (s: State) => { const b = boende(s); return b.ute ? b.ovriga.length : Math.max(0, b.ovriga.length - b.gemensamt.length); }; // den som sover i en bädd ute har inget tak
+// byn har inget tak att sova under (bäddarna står då ute, steg 10.2.48)
+export const utanTak = (s: State) => !!boende(s).ute || !boende(s).gemensamt.length;
 // den sjuke sover för sig (steg 9.5.5, kunskapen Smittan): i ett färdigt hus där ingen bor, när någon i byn kan Smittan och
 // sjukdomen smittar. En ruta per sjuk i huset, ingen frisk sover där (ingen bor där)
 function sjukBadd(s: State, p: Person) {
