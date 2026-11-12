@@ -10,12 +10,12 @@ import { utanforByn } from './omrade';
 // en, får vara ifred (lite bättre humör) och lämnar ingen fläck, men gropen fylls (Station.fyllt) och fylls igen när den är
 // full, så att byn gräver en ny. Får någon ont i magen av vatten som toaletten smutsat ner lär sig byn att smutsen kommer
 // därifrån (s.hygien), och lägger sedan latrinen längre från vattnet (siteUtkant i stationer.ts)
-import { Act, H, HOUR, Person, State, T, W } from './typer';
+import { Act, DAY, H, HOUR, Person, State, T, W } from './typer';
 import { getMap } from './karta';
 import { STATION, Station, isKlar, stationById, stationDef, stationFor, stationerOf, storlekAv } from './stationer';
 import { clamp } from './slump';
 import { balans } from './balans';
-import { count, forstaGang, log, think } from './folk';
+import { count, forstaGang, living, log, think } from './folk';
 import { groundOf, tileOf } from './mark';
 import { FOREST } from './vag';
 import { smutsOf } from './sjo';
@@ -25,6 +25,8 @@ import { vaderNu } from './vader';
 
 // ---------- balanstal (regel 8) ----------
 export const SMUTS = balans('smuts', {
+  latrinVantFull: 10, // så många minuters väntan på latrinen på sistone (byn tillsammans) gör bristen på latriner hel (steg 10.2.79) ...
+  latrinVantDygn: 1, // ... och väntan klingar av till hälften på så här många dygn
   vattenNara: 3, // toa-smuts så här många rutor från vattnet gör vattnet smutsigare ...
   vattenPer: 0.25, // ... så här mycket för en toa-fläck i full styrka på stranden (mindre längre bort) ...
   latrinVatten: 0.5, // ... och så här mycket för en latrin på stranden
@@ -203,7 +205,14 @@ export function latrinFor(s: State, p: Person) {
 export const latrinFyllt = (t: Station) => clamp(t.fyllt ?? 0, 0, 1);
 // byn vill ha en ny latrin: den saknar en som inte är nästan full (projekt.ts)
 // med en kompost (steg 9.7.6) töms den nästan fulla latrinen i stället, så byn vill ha en ny först när den är full
-export const latrinBrist = (s: State) => { const ko = harKompost(s); return latriner(s).some(t => !isKlar(t) || latrinFyllt(t) < (ko ? 1 - 1e-9 : STATION.latrinNy)) ? 0 : 1; };
+// minuterna byborna väntat på latrinen på sistone, avklingade till nu (steg 10.2.79)
+export const latrinVantNu = (s: State) => { const v = s.latrinVant; return v ? v.m * Math.pow(0.5, (s.now - v.t) / (SMUTS.latrinVantDygn * DAY)) : 0; };
+// väntan läggs till (den som står och väntar på en latrin där någon annan är, steg.ts)
+export function latrinVanta(s: State, min: number) { s.latrinVant = { m: latrinVantNu(s) + min, t: s.now }; count(s, 'latrinVantMin', min); }
+// bristen på latriner: ingen latrin som inte är (nästan) full, eller så mycket väntan på dem som finns (steg 10.2.79)
+export const latrinBrist = (s: State) => { const ko = harKompost(s), full = latriner(s).some(t => !isKlar(t) || latrinFyllt(t) < (ko ? 1 - 1e-9 : STATION.latrinNy)) ? 0 : 1; return Math.max(full, Math.min(1, latrinVantNu(s) / SMUTS.latrinVantFull)); };
+// någon annan använder latrinen t just nu (står där och har börjat): latrinen används av en i taget (steg 10.2.79)
+export const latrinUpptagen = (s: State, t: Station, p: Person) => living(s).some(q => q !== p && q.task?.act === 'toa' && q.task.ref === t.id && q.task.phase === 'do' && q.task.prog !== undefined);
 const harKompost = (s: State) => stationerOf(s).some(t => t.k === 'kompost' && isKlar(t));
 // p har gått på toa (framme, eller kissade på sig): i latrinen fylls gropen, annars blir det en fläck där p står
 export function toaBesok(s: State, p: Person, ref?: number) {

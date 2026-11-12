@@ -82,7 +82,7 @@ import { balans } from './balans';
 import { grilla, torka } from './matlagning';
 import { stepBrasor } from './brasor';
 import { sjoRakna, vattenNu } from './sjo';
-import { akel, regnetTvattar, toaBesok } from './smuts';
+import { akel, latrinUpptagen, latrinVanta, regnetTvattar, toaBesok } from './smuts';
 import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from './torst';
 import { kvarTimme } from './kvarlevor';
 import { avrustaKlar, gravKlar, kroppUpp, rustaKlar } from './grav';
@@ -99,7 +99,7 @@ import { allaTing } from './agande';
 import { och } from './ord';
 import { stepPynt } from './pynt';
 import { stadaByten } from './byte';
-import { stationFlyttTimme, stationFor, kvVid, stationFlytta, finishStation, finishTillbehor, stationAt, stationRutor, stepStationer, tillbehorVarme, workStation } from './stationer';
+import { stationById, stationFlyttTimme, stationFor, kvVid, stationFlytta, finishStation, finishTillbehor, stationAt, stationRutor, stepStationer, tillbehorVarme, workStation } from './stationer';
 import { forbrukTimme, underBuffert, villHaAv } from './forradsmal';
 import { notis } from './notiser';
 import { stepKrukor } from './kruka';
@@ -181,7 +181,12 @@ bildKrok.spara = (s, p) => spara(s, p); // den som flyttas av striden på kartan
 type Krok = (s: State, p: Person, t: Task, dtSec: number) => void;
 // det som händer medan man gör något (efter att ha kommit fram). Arbete för byn sköts av workStep
 const MEDAN: Partial<Record<Act, Krok>> = {
-  toa: (s, p, t) => { p.toa = 1; if (t.prog === undefined) { t.prog = 0; toaBesok(s, p, t.ref); } }, // i latrinen, annars blir det en fläck (smuts.ts)
+  // i latrinen, annars blir det en fläck (smuts.ts). Latrinen används av en i taget (steg 10.2.79): står någon annan där väntar
+  // man bredvid, tiden räknas och arbetet blir längre, och väntan går in i bristen på latriner
+  toa: (s, p, t, dt) => {
+    if (t.prog === undefined) { const l = stationById(s, t.ref); if (l && latrinUpptagen(s, l, p)) { t.until += dt * SEC; latrinVanta(s, dt / 60); return; } }
+    p.toa = 1; if (t.prog === undefined) { t.prog = 0; toaBesok(s, p, t.ref); }
+  },
   kol: (s, p, t) => { const e = eldById(s, t.ref); if (e) takeCoal(s, p, 'hämtade', e); },
   bygga: (s, p, t, dtSec) => buildStep(s, p, t, dtSec),
   tvinna: (s, p, t, dtSec) => twineRope(s, p, dtSec / HOUR_S, t.handel ? villHaAv(s, 'rep') + handlarMal(s, 'rep') : undefined), // rep till handlaren (steg 6.2.11)

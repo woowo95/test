@@ -1101,6 +1101,13 @@ SCENARIER.latrin = {
     Object.assign(lp, { x: lat.x + 0.5, y: lat.y + 1.5 }); lp.thoughts = [];
     toaBesok(l, lp, lat.id);
     const ifred = !flackarOf(l).length && (lat.fyllt ?? 0) > 0 && lp.thoughts.some(t => t.text === 'Fick vara ifred') && l.stat?.latrinbesok === 1;
+    // en i taget (steg 10.2.79): står någon redan på latrinen väntar den andra, och väntan går in i bristen på latriner
+    const lk = cloneState(l), [l1, l2] = living(lk).filter(r => ageOf(r, lk.now) >= 18 && r.id !== lp.id) as [SIM.Person, SIM.Person];
+    for (const r of [l1, l2]) Object.assign(r, { x: lat.x + 0.5, y: lat.y + 0.5, toa: 0.2, task: { act: 'toa', phase: 'do', tx: lat.x + 0.5, ty: lat.y + 0.5, until: lk.now + 10 * SIM.MIN, carry: 0, why: '', ref: lat.id } });
+    const brist0 = latrinBrist(lk), slut0 = l2.task!.until;
+    step(lk, 60);
+    const vantar = l1.task?.prog !== undefined && l2.task?.prog === undefined && (l2.task?.until ?? 0) > slut0, brist1 = latrinBrist(lk);
+    const enITaget = vantar && SIM.latrinVantNu(lk) > 0 && brist1 > brist0;
     lat.fyllt = STATION.latrinNy; const brist = latrinBrist(l) === 1;
     lat.fyllt = 1 - 0.5 / STATION.latrinRymmer; toaBesok(l, lp, lat.id);
     const igen = !stationerOf(l).some(t => t.id === lat.id) && l.stat?.['latriner fyllda'] === 1 && groundOf(l).cover[lat.y * W + lat.x] === 0 && latrinFor(l, lp) === undefined;
@@ -1143,6 +1150,7 @@ SCENARIER.latrin = {
       }
     }
     return [
+      [`latrinen används av en i taget: den andra väntar, och väntan går in i bristen på latriner (${brist0.toFixed(2)} → ${brist1.toFixed(2)})`, enITaget],
       [`den som samlar väljer aldrig en plats med toa-smuts eller i ett hus (${spotFel} av ${spotVal})`, spotVal > 50 && spotFel === 0],
       [`toabesöket utanför en latrin lämnar en fläck där man står`, flack],
       ['den som står bredvid blir äcklad, men inte den som själv är på toa', akelQ && sjalv],

@@ -360,6 +360,7 @@ export interface State {
   kunskap?: Record<string, number>; // äldre sparfiler: byns gemensamma kunskap, flyttas till varje person
   kal?: { t0: number; a0: number; b0: number }; // kalendern: tidsåldern a0 började t0 och slutar måndagen b0 (dagens nummer), se tid.ts
   ruttet?: number; // mat som ruttnat bort på sistone (glöms med tiden, byggnader.ts)
+  latrinVant?: { m: number; t: number }; // minuterna byborna väntat på en latrin på sistone (m vid tiden t, klingar av, steg 10.2.79, smuts.ts)
   skramma?: number[]; // fälten som har en fågelskrämma (steg 9.7.11, odling.ts)
   tamdjur?: import('./tamdjur').Tamdjur[]; nextTam?: number; // de tama djuren (fas 9.8, tamdjur.ts) och nästa lediga nummer
   hons?: import('./hons').Hons; // hönsflocken (steg 9.8.10, hons.ts)
