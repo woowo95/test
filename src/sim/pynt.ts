@@ -7,7 +7,7 @@ import { kvOf } from './kvalitet';
 import { isKlar, krukaHemma, sovrum, stationDef, stationRum, stationerOf } from './stationer';
 
 // ---------- pyntet i hemmen (steg 4.3.4) ----------
-// Lerkrukan, bonaden och det snidade väggbrädet är möbler som bara är till för att pynta (pynt i STATIONER, stationer.ts).
+// Lerkrukan och bonaden är möbler som bara är till för att pynta (pynt i STATIONER, stationer.ts).
 // Var och en som är vuxen och sover inne bygger ett åt sig själv, av den sort hen tycker om (pyntSort), och ställer det i
 // rummet där hen sover: i familjens hus eller i byns hus där hen sover. Högst ett var, så att byn inte fylls av små saker.
 // Som alla möbler får det en kvalitet när det blir klart, och ett mästerverk kan få en berättelse och ett motiv (4.3.3).

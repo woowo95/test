@@ -65,7 +65,7 @@ export function antal(n: number, k: string) {
 }
 // sin eller sitt framför saken (sina för flera)
 export const sin = (k: string, n = 1) => n !== 1 ? 'sina' : enEtt(k) === 'ett' ? 'sitt' : 'sin';
-// sin eller sitt efter en sak eller station med fältet ett (en lerkruka, ett väggbräde)
+// sin eller sitt efter en sak eller station med fältet ett (en lerkruka, ett bord)
 export const sinOrd = (d: { ett?: boolean }) => d.ett ? 'sitt' : 'sin';
 export const enOrd = (d: { ett?: boolean }) => d.ett ? 'ett' : 'en';
 
@@ -79,7 +79,7 @@ export const GORA: Record<string, string> = {
   bord: 'bygga bord', hylla: 'göra hyllor och kistor', skinnfall: 'sy skinnfällar', skinndorr: 'hänga dörrar av skinn', tradorr: 'göra trädörrar',
   bensyl: 'slipa bensylar', skinnklader: 'sy kläder av skinn', vattensack: 'sy vattensäckar', balte: 'fläta bälten', axelrem: 'sy axelremmar', ryggsack: 'sy ryggsäckar', mal: 'binda mål', boll: 'sy bollar',
   slagtra: 'tälja slagträn', scen: 'bygga en scen', trumma: 'göra trummor', benflojt: 'skära benflöjter', lyra: 'göra lyror', kruka: 'bygga upp lerkrukor',
-  bonad: 'göra bonader', vaggbrade: 'snida väggbräden', benspade: 'göra benspadar', latrin: 'gräva en latrin', grill: 'bygga en grillställning',
+  bonad: 'göra bonader', benspade: 'göra benspadar', latrin: 'gräva en latrin', grill: 'bygga en grillställning',
   tork: 'bygga en torkställning', odling: 'odla', ledarskap: 'välja en ledare', fackla: 'göra facklor', skogsvard: 'flytta plantor dit skogen behövs',
 };
 // teknikens namn med gemen till dess id; teknik.ts fyller i det när TEKNIK läses (för det som bara sparat namnet, som p.fame)

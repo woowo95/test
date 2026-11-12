@@ -368,14 +368,14 @@ SCENARIER.konst = {
 };
 
 SCENARIER.pynt = {
-  text: 'Pynt i hemmen (steg 4.3.4): var och en som är vuxen och sover inne bygger ett pynt åt sig själv (en lerkruka, en bonad eller ett snidat väggbräde, efter smaken), och lusten efter ett till avtar, i rummet där hen sover. Ägaren trivs där, och de som ser det får ett bättre intryck av ägaren, mer ju finare det är',
+  text: 'Pynt i hemmen (steg 4.3.4): var och en som är vuxen och sover inne bygger ett pynt åt sig själv (en lerkruka eller en bonad, efter smaken), och lusten efter ett till avtar, i rummet där hen sover. Ägaren trivs där, och de som ser det får ett bättre intryck av ägaren, mer ju finare det är',
   kor: () => {
     const { PROJEKT, PYNT_LIST, isKlar, pyntOf, pyntSort, villPynt, bedTile, stationRum, stepPynt, intryckOm } = SIM;
     const s = createState(6, START); klockan(s); tandEld(s); medHus(s);
     setFood(s, 300); SIM.setAmount(s, 'ved', 40); SIM.setAmount(s, 'virke', 6); SIM.setAmount(s, 'skinn', 4); SIM.setAmount(s, 'rep', 4);
     // bara p kan göra pynt: rummet har plats för färre pynt än de som sover där, och de andra hann annars ta platserna först
     const p = vuxna(s).find(q => bedTile(s, q) !== undefined && pyntSort(s, q) !== 'kruka')!; // lerkrukan är ett ting sedan steg 9.4.11 (scenariot kruka)
-    p.tek = { ...p.tek, kruka: 1, bonad: 1, vaggbrade: 1 };
+    p.tek = { ...p.tek, kruka: 1, bonad: 1 };
     const k = pyntSort(s, p);
     const vill = villPynt(s, p, k), bara = PYNT_LIST.filter(j => villPynt(s, p, j)).length, brist = PROJEKT[k]!.brist(s);
     const sorter = new Set(Array.from({ length: 12 }, (_, i) => pyntSort(s, { id: i } as Person))).size; // smaken skiljer sig mellan människor

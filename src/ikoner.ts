@@ -63,7 +63,6 @@ export const PAL: Record<string, Record<string, string>> = {
   // pyntet (steg 4.3.4, platshållare i bildstilens palett, 16 punkter per ruta)
   kruka: { o: '#24201d', r: '#521100', R: '#742a01', T: '#bd753e', k: '#2f261d', z: 'rgba(36,32,29,.30)' }, // (Björn valde version 1 efter v245, steg 4.5.2)
   bonad: { o: '#24201d', b: '#5e3c24', c: '#7d5b40', r: '#521100', R: '#742a01', s: '#906f0f', S: '#b2921b', w: '#a0947d', W: '#bdb39b' }, // (Björn valde version 3 efter v245, steg 4.5.2)
-  vaggbrade: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', e: '#987e62', k: '#2f261d', z: 'rgba(36,32,29,.30)' }, // (Björn valde version 3 efter v245, steg 4.5.2)
   virke: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', e: '#bdb39b', E: '#dad0bb', z: 'rgba(36,32,29,.30)' }, // kluvna stockar (steg 4.5.5.2, platshållare, 16 punkter)
   // filten där stora byten görs (steg 4.4.1.1, platshållare, 16 punkter)
   silver: { o: '#372f25', S: '#bdb39b', W: '#dad0bb', s: '#987e62' },
@@ -2377,25 +2376,7 @@ export const PIX: Record<string, string[]> = {
     '..oSooSooSooSo..',
     '...o..o..o..o...',
   ],
-  // det snidade väggbrädet (platshållare): ett bräde med inristade mönster och en uddig kant, på två konsoler
-  vaggbrade: [ // (Björn valde version 3 efter v245, steg 4.5.2)
-    '................',
-    '................',
-    'ooo..........ooo',
-    'ecco........occe',
-    'okco........ocko',
-    'occoooooooooocco',
-    '.obeeeeeeeeeebo.',
-    '.obcacacacaccbo.',
-    '.obbbbbbbbbbbbo.',
-    '..oooboooobooo..',
-    '....obo..obo....',
-    '.....o....o.....',
-    '.....zzzzzzz....',
-    '................',
-    '................',
-    '................',
-  ],
+
   // trumman (platshållare, 16 punkter): ett ljust skinn spänt över en ring av trä, med snören
   virke: [ // platshållare (steg 4.5.5.2): ett kluvet virke med ljus klyvyta
     '................',
@@ -3788,7 +3769,7 @@ PIX.balte = PIX.balte_rep; PAL.balte = PAL.balte_rep;
 // Björns val efter v193 (steg 3.10.13): den fångade kaninen på kartan ser ut som viltet i förrådet
 PIX.kanin_dod = PIX.vilt; PAL.kanin_dod = PAL.vilt;
 // pyntet (steg 4.3.4): samma bild på kartan och i listorna, och lerkrukan för intrycket smakfull
-for (const k of ['kruka', 'bonad', 'vaggbrade']) { PIX[k + '_karta'] = PIX[k]; PAL[k + '_karta'] = PAL[k]; }
+for (const k of ['kruka', 'bonad']) { PIX[k + '_karta'] = PIX[k]; PAL[k + '_karta'] = PAL[k]; }
 
 // den vilda rovan har samma symbol som rovan (Björn efter v245, steg 4.5.2)
 PIX.vildrova = PIX.rovor; PAL.vildrova = PAL.rovor;

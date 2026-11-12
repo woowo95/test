@@ -274,11 +274,6 @@ export const STATIONER = {
     bygger: 'Ritar ett mönster på ett skinn och hänger upp det som en bonad.',
     forsta: '{namn} hängde upp byns första bonad där {han} sover, ett skinn med ett mönster på. Den är bara till för att vara vacker.',
   },
-  vaggbrade: {
-    namn: 'Snidat väggbräde', ett: true, ikon: 'vaggbrade', w: 1, h: 1, tek: ['vaggbrade'], av: RECEPT.vaggbrade.av, min: RECEPT.vaggbrade.min, gor: [], inne: true, mobel: true, flera: true, pynt: true,
-    bygger: 'Snidar mönster i ett bräde och sätter upp det på väggen.',
-    forsta: '{namn} snidade byns första väggbräde och satte upp det där {han} sover. Det är bara till för att vara vackert.',
-  },
 } satisfies Record<string, StationDef>;
 export type StationSlag = keyof typeof STATIONER;
 export const STATION_LIST = Object.keys(STATIONER) as StationSlag[];
@@ -1353,5 +1348,5 @@ export function stepStationer(s: State) {
   touch(s);
   for (const t of borta) log(s, `${stationDef(t.k)?.namn ?? 'En station'} försvann när huset revs.`, 'world');
 }
-// namnet efter 'byns första': adjektivet i bestämd form ('lilla bord', 'snidade väggbräde'; steg 4.5.1.4)
+// namnet efter 'byns första': adjektivet i bestämd form ('lilla bord'; steg 4.5.1.4)
 const forstaForm = (namn: string) => namn.toLowerCase().replace(/^litet /, 'lilla ').replace(/^(\p{L}+)at /u, '$1ade ');
