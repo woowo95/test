@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { bordighet, fuktAv, rutorAv } from '../sim';
+import { bordighet, fuktAv, husVisas, rutorAv } from '../sim';
 import { gravAt, heligAt, kvarAt, BAR, busksort, FALT_STEG, FOREST, GRODOR, isSoil, stadium, Falt, byId, faltAt, faltIndex, HIGH, MATERIAL, Person, T, W, bitAt, bynsMitt, condOf, dorrDef, emberOn, eldXY, eldarOf, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, stationerOf, framfor, bordPlatser, tingOf, toaAt, tandTest, blixtTest, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, verbOf, zoneAt, zonesOf, Pile, Station, storlekAv, tornadoPos, tornadoAndel, hageAt , nyttSlag } from '../sim';
 import { gorText } from './jakt';
 import { iconImg, tecknet } from '../ikoner';
@@ -249,12 +249,12 @@ function showHover(gx: number, gy: number) {
     const M = MATERIAL[bit.m], hus = husById(s, bit.hus);
     const st = bit.b < 1 ? `byggs, ${Math.round(bit.b * 100)} %${M.n ? `, material ${Math.round(bit.mat)} av ${M.n} ${sakNamn(M.item!).toLowerCase()}` : ''}` : M.slit ? `skick ${Math.round(bit.c * 100)} %` : '';
     const d = dorrDef(bit.dorr); // en dörr i öppningen (byggnad.ts)
-    rows.push(`${iconImg(d?.ikon ?? M.ikon ?? '', 12)} <b>${esc(d?.namn ?? M.namn)}</b>${hus ? ` i ${esc(hus.namn.toLowerCase())}` : ''}${st ? ' · ' + st : ''}${d ? ` · släpper ut ${Math.round(d.tat * 100)} % mindre värme än en öppning` : ''}`);
+    rows.push(`${iconImg(d?.ikon ?? M.ikon ?? '', 12)} <b>${esc(d?.namn ?? M.namn)}</b>${hus ? ` i ${esc(husVisas(s, hus).toLowerCase())}` : ''}${st ? ' · ' + st : ''}${d ? ` · släpper ut ${Math.round(d.tat * 100)} % mindre värme än en öppning` : ''}`);
   }
   const rum = roomAt(s, x, y);
   if (rum) {
     const hus = husById(s, rum.hus), n = sovplatser(s, rum), fns = hus ? rumsFunktioner(s, hus).map(f => tecknet(f.ikon, f.ikon, 12)).join('') : '';
-    rows.push(`Under tak${hus ? ` (${esc(hus.namn)})` : ''}${fns ? ' ' + fns : ''} · ${n ? `${n} sovplatser · ` : ''}håller värmen ${Math.round(insulation(s, rum) * 100)} %`);
+    rows.push(`Under tak${hus ? ` (${esc(husVisas(s, hus))})` : ''}${fns ? ' ' + fns : ''} · ${n ? `${n} sovplatser · ` : ''}håller värmen ${Math.round(insulation(s, rum) * 100)} %`);
   }
   const here = living(s).filter(p => { const o = posOf(p); return Math.floor(o.x) === x && Math.floor(o.y) === y; });
   if (here.length) rows.push(here.map(p => `${esc(p.name)}${prickar(p, true)} (${(t => t ? gorText(p, t).toLowerCase() : 'vilar')(uppgiftVid(p))})`).join(', '));

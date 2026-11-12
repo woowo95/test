@@ -1,5 +1,5 @@
 import { bedTile, sovplatser } from './byggnader';
-import { Rum } from './byggnad';
+import { Hus, Rum, gridOf } from './byggnad';
 import { balans } from './balans';
 import { brasorOf } from './brasor';
 import { eldPlats } from './karta';
@@ -141,5 +141,8 @@ export function rumVila(s: State, r: Rum | undefined) {
   for (const m of rumMinus(s, r)) if (m.vila) v *= 1 - m.vila;
   return v;
 }
+// ett färdigt hus där inget står (inget rum har en tagg) heter tomt hus tills något står där (steg 10.2.39)
+export const husTomt = (s: State, h: Hus) => !!h.klar && gridOf(s).rooms.filter(r => r.hus === h.id && r.tiles.length).every(r => rumTaggar(s, r).size === 0);
+export const husVisas = (s: State, h: Hus) => husTomt(s, h) ? 'Tomt hus' : h.namn;
 // rummets namn efter taggarna, till gränssnittet
 export const rumNamn = (s: State, r: Rum) => rumVisas(s, r).map(t => t.namn).join(', ');

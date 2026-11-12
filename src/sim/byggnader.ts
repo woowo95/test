@@ -38,6 +38,8 @@ export const HUS = balans('hus', {
   familjAkut: 0.5, // hur akut det är att en familj får eget hus (0 till 1)
   familjMin: 3, // en familj med färre än så här många ger inget familjehus
   tomDygn: 1, // en sovsal som ingen sovit i så här länge (dygn, år i spelet) får en ny funktion eller rivs
+  tomSamling: 0.5, // hur akut ett samlingshus är för en tom sovsal när byn inget har (tomBlir, steg 10.2.39) ...
+  tomRiv: 0.3, // ... och är inget värt mer än så här rivs den
   tomTim: 4, // ... men behöver byn ett förrådshus blir den det redan efter så här många timmar, före ett nytt hus (steg 2.12.5)
   rivTillbaka: 0.5, // så mycket av materialet kommer tillbaka när ett hus rivs
   varmeMarg: 0.02, // ett samlingshus räknas som varmare än elden även om det är så här mycket kallare ...
@@ -409,6 +411,17 @@ function riv(s: State, h: Hus) {
   touch(s); changed(s); count(s, 'rivet');
   log(s, `${h.namn} behövdes inte längre och revs. ${Math.round(ved)} trä kom tillbaka till byn.`, 'world'); kronika(s, `${h.namn} revs.`, 'bygge');
 }
+// vad en tom sovsal blir (steg 10.2.39): det byn behöver mest, med poäng som i BYGGNADER (vikten gånger hur akut det är). En
+// station som står där gör den till en verkstad (steg 2.2.17), ett förrådshus när maten ruttnar eller förrådet är fullt, ett
+// samlingshus när byn inget har (HUS.tomSamling, eller mer när en scen står utan sal); är inget värt mer än HUS.tomRiv rivs den
+function tomBlir(s: State, h: Hus, f: Akut, hs: Hus[]): { fn: Fn | 'riv'; slag?: Akut['slag'] } {
+  let b: { fn: Fn | 'riv'; slag?: Akut['slag'] } = { fn: 'riv' }, bv = HUS.tomRiv;
+  const prova = (fn: Fn, v: number, slag?: Akut['slag']) => { if (v > bv) { bv = v; b = { fn, slag }; } };
+  if (harArbete(s, h)) prova('verkstad', BYGGNADER.verkstad.vikt);
+  if (f.v > 1e-9) prova('forrad', BYGGNADER.forrad.vikt * f.v, f.slag);
+  if (!hs.some(q => q.fn === 'samling')) prova('samling', BYGGNADER.samling.vikt * Math.max(HUS.tomSamling, BYGGNADER.samling.akut?.(s).v ?? 0));
+  return b;
+}
 function funktionsbyte(s: State) {
   const hs = housesOf(s), arbete = new Set(living(s).filter(p => p.task?.act === 'bygga').map(p => bitById(s, p.task!.ref)?.hus));
   const fri = (h: Hus) => !!h.klar && !arbete.has(h.id);
@@ -424,10 +437,8 @@ function funktionsbyte(s: State) {
     h.tom ??= s.now;
     const forrad = f.v > 1e-9 && !harArbete(s, h); // byn behöver ett förrådshus: ett tomt hus blir det före ett nytt
     if (s.now - h.tom < (forrad ? HUS.tomTim * HOUR : HUS.tomDygn * DAY)) continue;
-    if (harArbete(s, h)) bytFn(s, h, 'verkstad'); // en station står där: den blir en verkstad och står kvar (steg 2.2.17)
-    else if (f.v > 1e-9) bytFn(s, h, 'forrad', f.slag);
-    else if (!hs.some(q => q.fn === 'samling')) bytFn(s, h, 'samling');
-    else riv(s, h);
+    const b = tomBlir(s, h, f, hs);
+    if (b.fn === 'riv') riv(s, h); else bytFn(s, h, b.fn, b.slag);
     return; // ett hus i taget
   }
 }
