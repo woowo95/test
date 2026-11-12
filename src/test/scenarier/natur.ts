@@ -51,11 +51,12 @@ SCENARIER.djur = {
       if (j.task?.act === 'jakt' && j.task.phase === 'back') { if (Math.abs(j.task.carry - KANIN) < 1e-9 && !j.task.items) hem++; else if (j.task.carry > 0) annat++; }
     }
     // utan kniv ingen slakt; med kniv blir en kanin kött, ben, skinn och senor (vid slaktbänken)
-    setAmount(s, 'flinta', 2); setAmount(s, 'grenar', 2); medBank(s);
+    setAmount(s, 'flinta', 2); setAmount(s, 'grenar', 10); setAmount(s, 'kniv', 0); medBank(s); // (grenar till en tändning sparas till elden, steg 10.2.7; byn kan ha gjort en kniv)
     const utan = !canProcess(s, p, DJUR.kanin);
     for (const r of s.people) r.tek = { ...r.tek, kniv: 1, rep: 1 };
+    const kniv0 = amountOf(s, 'kniv'); // (byn kan redan ha en sliten kniv som inte är hens)
     makeTool(s, p, 'kniv');
-    const kniv = amountOf(s, 'kniv') === 1 && Math.abs(amountOf(s, 'flinta') - 1) < 1e-9;
+    const kniv = Math.abs(amountOf(s, 'kniv') - kniv0 - 1) < 1e-9 && Math.abs(amountOf(s, 'flinta') - 1) < 1e-9;
     // allt vilt är byns: med jägarens kaniner bland byns delas det upp på flera ägare, och var och en får bara hela saker (steg 2.10.7)
     setMat(s, {}); setMat(s, { vilt: 3 * KANIN }); setAmount(s, 'ben', 0); setAmount(s, 'skinn', 0); setAmount(s, 'rep', 0);
     const kan = canProcess(s, p, DJUR.kanin);
