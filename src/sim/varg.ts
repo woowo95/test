@@ -15,7 +15,8 @@ import { halsa, kanGa } from './halsa';
 import { Act, larmAvbryter } from './handlingar';
 import { brinnerNara, eldXY, eldarOf } from './eld';
 import { eldPlats, getMap } from './karta';
-import { punktIRuta } from './mark';
+import { groundOf, punktIRuta } from './mark';
+import { findPath } from './vag';
 import { addTo, amountOf, avbryt, foodOf, zoneOf } from './lager';
 import { handelse, larma, larmNu, ryktbarhet } from './rykten';
 import { SAKER } from './saker';
@@ -147,17 +148,35 @@ export function kanterna(x: number, y: number) {
 // kommer i land. Är den raka vägen stängd tar den steget snett åt sidan. Svarar hur långt det är kvar, eller −1 när den inte
 // kommer någonstans
 const SNETT = [0, 0.8, -0.8, 1.6, -1.6];
-function ga(s: State, f: Vargflock, fart: number, dtSec: number) {
+function ga(s: State, f: Vargflock, fart: number, dtSec: number, sokt = false): number {
+  // vägen runt det som står i vägen (ett hus, en vägg): flocken följer den så länge målet är detsamma
+  const mal = Math.floor(f.my) * W + Math.floor(f.mx);
+  if (f.vag && f.vag.m !== mal) f.vag = undefined;
+  while (f.vag?.t.length) {
+    const i = f.vag.t[0], wx = i % W + 0.5, wy = Math.floor(i / W) + 0.5;
+    if (Math.hypot(wx - f.x, wy - f.y) < 0.4) { f.vag.t.shift(); continue; }
+    const l = Math.min(Math.hypot(wx - f.x, wy - f.y), fart * dtSec), d = Math.hypot(wx - f.x, wy - f.y);
+    const x = f.x + (wx - f.x) / d * l, y = f.y + (wy - f.y) / d * l;
+    if (stangd(s, x, y)) { f.vag = undefined; break; } // en dörr har stängts på vägen: vägen sökes om
+    f.x = x; f.y = y;
+    return Math.hypot(f.mx - f.x, f.my - f.y);
+  }
+  if (f.vag && !f.vag.ingen) f.vag = undefined;
   const dx = f.mx - f.x, dy = f.my - f.y, d = Math.hypot(dx, dy);
   if (d < 1e-6) return 0;
   const l = Math.min(d, fart * dtSec), vt = vattenNu(s), vatten = (x: number, y: number) => vt[Math.floor(y) * W + Math.floor(x)] === T.Vatten;
   const iVatten = vatten(f.x, f.y);
-  for (const v of SNETT) {
+  // rakt fram om det går; annars en väg runt det som står i vägen, och finns ingen väg snett åt sidan
+  const fram = (v: number) => {
     const c = Math.cos(v), sn = Math.sin(v), x = clamp(f.x + (dx * c - dy * sn) / d * l, 0.3, W - 0.3), y = clamp(f.y + (dx * sn + dy * c) / d * l, 0.3, H - 0.3);
-    if (stangd(s, x, y) || (!iVatten && vatten(x, y))) continue;
-    f.x = x; f.y = y;
-    return v ? Math.hypot(f.mx - f.x, f.my - f.y) : d - l;
-  }
+    if (stangd(s, x, y) || (!iVatten && vatten(x, y))) return false;
+    f.x = x; f.y = y; return true;
+  };
+  if (fram(0)) return d - l;
+  const vag = sokt || f.vag?.ingen ? undefined : findPath(groundOf(s), f.x, f.y, f.mx, f.my);
+  if (vag?.length) { f.vag = { m: mal, t: vag }; return ga(s, f, fart, dtSec, true); }
+  if (!sokt && !vag) f.vag = { m: mal, t: [], ingen: true }; // ingen väg dit: den söks inte igen förrän målet är ett annat
+  for (const v of SNETT) if (v && fram(v)) return Math.hypot(f.mx - f.x, f.my - f.y);
   return -1;
 }
 // ett nytt mål en bit bort, bort från elden (och mot en kaningrupp när flocken är hungrig)
