@@ -24,7 +24,7 @@ import { kunnighet } from './ekonomi';
 import { chance, clamp, rnd } from './slump';
 import { BLOTVED, torrVed } from './blotved';
 import { ARSTID, ageIndex, iIstiden, isLight } from './tid';
-import { SNABBARE } from './handlingar';
+import { ACTS, SNABBARE } from './handlingar';
 import { Act, DAY, Fire, FireLog, GREN, HEARTHS, HOUR, HOUR_S, IGNITERS, Person, SEC, State, T, Task, W, H } from './typer';
 import { balans } from './balans';
 import { num } from './format';
@@ -328,11 +328,14 @@ function brinner(s: State, f: Fire, dtSec: number) {
 }
 type Kand = { p: Person; w: Wish };
 // vem som fyller på elden f: den som vill ha klart mer ved än det som ligger på, plikttrogna och nära först
+// den som är mitt i en fara eller nöd (vårdar, slåss, gömmer sig, släcker en brand, flyr, varnar) gör inte två saker samtidigt
+const I_NOD = new Set<string>(['varda', 'strid', 'gomma', 'forsvar', 'forsvarRovare', 'hjalpaRovare', 'slacka', 'slackaSig', 'fly', 'varna', 'skilja']);
+const iNod = (p: Person) => !!p.task && (I_NOD.has(p.task.act) || !!(ACTS[p.task.act] as { nodFri?: true }).nodFri);
 function fyllare(s: State, f: Fire, cands: Kand[]) {
   const h = hearthOf(f), e = eldXY(s, f), fx = e.x + 0.5, fy = e.y + 0.5;
   let best: Kand | undefined, bs = -1e9;
   for (const c of cands) {
-    if (c.w.v < f.fuel * ELD.fyllMarg + ELD.fyllPlus || fuelFor(s, c.p) < ELD.hamtaMin) continue; // bara den som har ved att ta (byns eller sin egen)
+    if (iNod(c.p) || c.w.v < f.fuel * ELD.fyllMarg + ELD.fyllPlus || fuelFor(s, c.p) < ELD.hamtaMin) continue; // bara den som har ved att ta (byns eller sin egen)
     const sc = (c.w.v - f.fuel) / h.maxFuel * (ELD.valjPlikt + duty(s, c.p)) - Math.hypot(c.p.x - fx, c.p.y - fy) / ELD.valjAvstand + (c.p.task?.act === 'vakt' ? ELD.valjVakt : 0) + rnd(s, 'eld') * ELD.valjBrus;
     if (sc > bs) { bs = sc; best = c; }
   }
@@ -343,7 +346,7 @@ function tandare(s: State, f: Fire, cands: Kand[]) {
   const h = hearthOf(f);
   let c: Kand | undefined, ck = -Infinity;
   for (const o of cands) {
-    if (ageOf(o.p, s.now) < ALDER.ansvar || o.w.v < h.maxFuel * ELD.tandKandidat || !canLight(s, o.p, f)) continue;
+    if (iNod(o.p) || ageOf(o.p, s.now) < ALDER.ansvar || o.w.v < h.maxFuel * ELD.tandKandidat || !canLight(s, o.p, f)) continue;
     const k = o.p.skill.hantverk + stat(o.p, 'flit', s.now) / ELD.tandFlit + rnd(s, 'eld') * ELD.tandBrus;
     if (k > ck) { ck = k; c = o; }
   }
