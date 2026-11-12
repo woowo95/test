@@ -38,7 +38,7 @@ SCENARIER.sport = {
   kor: () => {
     const s = rikDag(3, { rep: 4 }), vill = vuxna(s).filter(q => SIM.sportVikt(s, q, 1) > 0).length;
     const f = rikDag(3, { rep: 4 }); setFood(f, 1);
-    const vf = vuxna(f).filter(q => SIM.sportVikt(f, q, 1) > 0).length;
+    const vf = vuxna(f).filter(q => SIM.sportVikt(f, q, 1) > 0).length, lust = (x: State) => vuxna(x).reduce((a, q) => a + SIM.sportVikt(x, q, 1), 0); // (överskottet är en faktor, steg 10.2.43)
     // två samtalar när den tredje börjar en match, och följer med
     const g = rikDag(3, { rep: 4 }), med = vuxna(g).slice(0, 3), fore = med.map(q => q.skill.narstrid);
     fritid(g, med[1]!); fritid(g, med[2]!);
@@ -52,7 +52,7 @@ SCENARIER.sport = {
     const e = rikDag(3, { rep: 4 }), ensam = !spela(e, vuxna(e)[0]!) && !e.sport;
     return [
       [`i en rik by vill ${vill} av ${vuxna(s).length} vuxna spela på fritiden`, vill === vuxna(s).length],
-      ['när maten är knapp vill ingen spela', vf === 0],
+      [`när maten är knapp vill man spela mycket mindre (${lust(f).toFixed(2)} mot ${lust(s).toFixed(2)}, ${vf} vill alls)`, lust(f) < lust(s) * 0.5],
       [`${foljer} går till ${sport0.toLowerCase()}en; ${(g.stat?.sportTim ?? 0).toFixed(1)} spelartimmar, högst ${sett} på planen samtidigt`, foljer === 3 && (g.stat?.sportTim ?? 0) >= 1 && sett >= 2],
       [`${glad} av tre är glada efter att ha spelat, och ${battre} blev bättre i närstrid`, glad >= 2 && battre >= 2],
       ['när ingen har fritid följer ingen med, och det blir ingen match', ensam],
@@ -368,7 +368,7 @@ SCENARIER.konst = {
 };
 
 SCENARIER.pynt = {
-  text: 'Pynt i hemmen (steg 4.3.4): var och en som är vuxen och sover inne bygger ett pynt åt sig själv (en lerkruka, en bonad eller ett snidat väggbräde, efter smaken), högst ett, i rummet där hen sover. Ägaren trivs där, och de som ser det får ett bättre intryck av ägaren, mer ju finare det är',
+  text: 'Pynt i hemmen (steg 4.3.4): var och en som är vuxen och sover inne bygger ett pynt åt sig själv (en lerkruka, en bonad eller ett snidat väggbräde, efter smaken), och lusten efter ett till avtar, i rummet där hen sover. Ägaren trivs där, och de som ser det får ett bättre intryck av ägaren, mer ju finare det är',
   kor: () => {
     const { PROJEKT, PYNT_LIST, isKlar, pyntOf, pyntSort, villPynt, bedTile, stationRum, stepPynt, intryckOm } = SIM;
     const s = createState(6, START); klockan(s); tandEld(s); medHus(s);
@@ -385,7 +385,7 @@ SCENARIER.pynt = {
     try { while (!(pyntSt(s) && isKlar(pyntSt(s)!)) && h < 240) { kor(s, 1); h++; for (const m of ['virke', 'skinn', 'rep']) if (SIM.amountOf(s, m) < 4) SIM.setAmount(s, m, 6); } } finally { PYNT_LIST.forEach((j, i) => { PROJEKT[j]!.vikt = vikt[i]; }); }
     const t = pyntSt(s), b = bedTile(s, p), rum = t && stationRum(s, t);
     const byggd = !!t && isKlar(t) && t.k === k && t.ag === p.id && !!t.inne && b !== undefined && !!rum?.tiles.includes(b) && t.q !== undefined;
-    const mer = PYNT_LIST.some(j => villPynt(s, p, j));
+    const mer = PYNT_LIST.some(j => villPynt(s, p, j)) ? SIM.pyntLust(s, p) : 0; // lusten efter ett pynt till avtar (steg 10.2.43)
     // i rummet: ägaren trivs, och den som är vaken där får ett bättre intryck av ägaren. Ett uselt pynt ger inget
     const v = SIM.living(s).find(q => q !== p)!, ruta = rum?.tiles[0] ?? 0;
     const prova = (q: number) => {
@@ -400,7 +400,7 @@ SCENARIER.pynt = {
     return [
       [`p vill ha ett pynt av sin sort (${k}) och bara den (${bara}), byn vill bygga det (brist ${brist.toFixed(2)}), och smaken skiljer sig (${sorter} sorter hos tolv)`, vill && bara === 1 && brist > 0 && sorter === SIM.PYNT_SMAK.length],
       [`p bygger sitt pynt på ${h} timmar (ungefär ${h / 2} månader i spelet), inne i rummet där p sover, med en kvalitet`, byggd],
-      ['högst ett pynt var', !!t && !mer],
+      [`lusten efter ett pynt till avtar (${mer.toFixed(2)} mot 1 utan)`, !!t && mer <= SIM.STATION.pyntAvtar + 1e-9],
       [`ägaren trivs i rummet: humör +${(fin.glad * 100).toFixed(0)} % med ett mästerverk, +${(normal.glad * 100).toFixed(0)} % med ett normalt`, fin.glad > normal.glad && normal.glad > 0],
       [`den som ser det får intrycket smakfull: ${fin.syn.toFixed(3)} med ett mästerverk, ${normal.syn.toFixed(3)} med ett normalt`, fin.syn > normal.syn && normal.syn > 0],
       [`ett uselt pynt ger ingenting (${usel.glad}, ${usel.syn})`, usel.glad === 0 && usel.syn === 0],

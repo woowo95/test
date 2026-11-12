@@ -31,7 +31,8 @@ export const BYTE = balans('byte', {
   packaMin: 1, // ... och filtarna plockas ihop så här många minuter efter det
   minnas: 10, // så många byten minns en bybo (p.byten)
   overlSek: 40, // så många sekunder (spelets tid) tar det för saken att gå från hand till hand
-  tillbakaTim: 1, // så många timmar köper ingen tillbaka ett slag av saker av den hen just bytt bort det till
+  tillbakaTim: 1, // så många timmar efter ett byte behöver den som fick ett slag av saker det mer ...
+  nyssFatt: 2, // ... så här mycket mer (gånger 1 + detta), när den som gav det vill ha det tillbaka (steg 10.2.43)
   // två filtar mitt emot varandra ligger så långt isär (rutor, mitt till mitt): filten är drygt en ruta djup, så det blir ungefär
   // en ruta fritt mellan dem (steg 4.5.7.1), och var och en står bakom sin egen filt, BYTE.bakom rutor från filtens mitt
   filtMot: 2.4,
@@ -112,7 +113,7 @@ export function bakomFilt(s: State, f: Filt) {
 export const nyttPar = (s: State) => (s.filtNr = (s.filtNr ?? 0) + 1);
 // filten mitt emot f, om det finns en
 export const filtMot = (s: State, f: Filt) => f.par === undefined ? undefined : s.filtar?.find(g => g !== f && g.par === f.par);
-// vad som nyss bytts bort: slaget k gick från a till b vid t. Så att två inte byter samma sak fram och tillbaka
+// vad som nyss bytts bort: slaget k gick från a till b vid t. Den som fick det behöver det mer en stund (BYTE.nyssFatt)
 export interface Bytt { k: string; a: number; b: number; t: number }
 export const nyssBytt = (s: State, k: string, a: number, b: number) => !!s.bytt?.some(x => x.k === k && x.a === a && x.b === b && s.now - x.t < BYTE.tillbakaTim * HOUR);
 // ta bort det som inte syns längre (en gång i timmen, steg.ts)

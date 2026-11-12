@@ -52,6 +52,7 @@ import { paStrak } from './strak';
 
 // ---------- balanstal (regel 8) ----------
 export const STATION = balans('station', {
+  pyntAvtar: 0.3, // lusten efter ett pynt till är så här stor del av lusten efter det förra (steg 10.2.43)
   kvLite: 0.1, kvMer: 0.2, // hur mycket bättre det som görs vid stationen blir (steg 9.4.9, kv i STATIONER): slöjdbänken, örtköket och fångstbänken lite, snickarbänken mer
   // dragningen mot mitten (steg 9.4.8): hur mycket en station ute används glöms på brukatDygn dygn; att flytta den är värt det
   // gånger hur många rutor närmare dem som använder den, delat med flyttFull, och den nya platsen ligger minst flyttMinste närmare
@@ -698,20 +699,25 @@ const egnaLediga = (s: State, p: Person) => tingOf(s).filter(t => t.agare === p.
 // p vill ha en kista: hen sover inne, har ingen och har minst kistaVill egna saker som ingen använder
 export const villKista = (s: State, p: Person) => !kistaOf(s, p) && bedTile(s, p) !== undefined && egnaLediga(s, p).length >= STATION.kistaVill;
 // ---------- pyntet (steg 4.3.4, pynt.ts) ----------
-// p:s pynt, färdigt eller halvbyggt. Var och en har högst ett, så att byn inte fylls av små saker
+// p:s pynt, färdigt eller halvbyggt. Lusten efter ett pynt till avtar med varje pynt man redan har (STATION.pyntAvtar, steg 10.2.43)
 export const PYNT_LIST = STATION_LIST.filter(k => (STATIONER[k] as StationDef).pynt);
 // en lerkruka som står i rummet där p sover är också pynt (steg 9.4.12): pyntet räknas på tingen i rummet, inte bara på möblerna
 export const krukaHemma = (s: State, p: Person) => { const rum = sovrum(s, p); return rum ? tingOf(s).find(t => t.k.startsWith('lerkruka_') && t.agare === p.id && t.ler === undefined && t.hos === undefined && t.lass === undefined && t.bar === undefined && t.x !== undefined && roomAt(s, t.x, t.y!) === rum) : undefined; };
 export const pyntOf = (s: State, p: Person) => stationerOf(s).find(t => t.ag === p.id && !!stationDef(t.k)?.pynt) ?? krukaHemma(s, p);
+// hur många pynt p har (möblerna och krukan hemma), och om ett av dem är halvbyggt
+const pyntAntal = (s: State, p: Person) => stationerOf(s).filter(t => t.ag === p.id && !!stationDef(t.k)?.pynt).length + (krukaHemma(s, p) ? 1 : 0);
+const halvPynt = (s: State, p: Person) => stationerOf(s).some(t => t.ag === p.id && !!stationDef(t.k)?.pynt && !isKlar(t));
+// lusten efter ett pynt till: 1 för den som inget har, och STATION.pyntAvtar gånger mindre för varje pynt hen redan har
+export const pyntLust = (s: State, p: Person) => STATION.pyntAvtar ** pyntAntal(s, p);
 // sorten p vill ha: smaken, fast för var och en (ingen slump). Lerkrukan är en av sorterna fast den inte är en möbel
 export const PYNT_SMAK = ['kruka', ...PYNT_LIST];
 export const pyntSort = (s: State, p: Person) => PYNT_SMAK[Math.floor(hash3(s.seed, p.id, 43) * PYNT_SMAK.length)];
-// p vill ha pyntet k: hen är vuxen, sover inne, har inget och k är hens sort
-export const villPynt = (s: State, p: Person, k: string) => ageOf(p, s.now) >= ALDER.vuxen && !pyntOf(s, p) && pyntSort(s, p) === k && bedTile(s, p) !== undefined;
-// hur stor del av de vuxna som sover inne som vill ha pyntet k (projektets brist)
+// p vill ha pyntet k: hen är vuxen, sover inne, bygger inte redan ett och k är hens sort
+export const villPynt = (s: State, p: Person, k: string) => ageOf(p, s.now) >= ALDER.vuxen && !halvPynt(s, p) && pyntSort(s, p) === k && bedTile(s, p) !== undefined;
+// hur mycket de vuxna som sover inne vill ha pyntet k (projektets brist): lusten hos dem som vill ha det, delat med hur många de är
 export function pyntBrist(s: State, k: string) {
   const v = living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen && bedTile(s, p) !== undefined);
-  return v.length ? v.filter(p => villPynt(s, p, k)).length / v.length : 0;
+  return v.length ? v.reduce((a, p) => a + (villPynt(s, p, k) ? pyntLust(s, p) : 0), 0) / v.length : 0;
 }
 // rummet där p sover
 export const sovrum = (s: State, p: Person) => { const b = bedTile(s, p); return b === undefined ? undefined : roomAt(s, b % W, Math.floor(b / W)); };

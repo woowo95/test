@@ -308,8 +308,9 @@ const kanForsoka = (s: State, p: Person, t: Tek) => !!t.forsok && ageOf(p, s.now
   && p.skill[t.forsok.skill] >= TEKTAL.forsokSkill && (r => !r.length || r.some(k => amountOf(s, k) >= 1))(forbrukas(t)) && (!t.forsok.vid.length || !!stationForsok(s, t));
 // hur ofta (steg 4.2.1.2): sedvanan mot nya sätt (seden nyfikenhet, Förnyelse – Tradition) och personens nyfikenhet. Bara när
 // byn har ett överskott av mat och ved (matDygn, vedDygn); farorna avgörs i valet (val.ts), där de går före
-export const forsokChans = (s: State, p: Person, matDygn: number, vedDygn: number) => matDygn < TROSKEL.forsokMat || vedDygn < TROSKEL.forsokVed ? 0
-  : TEKTAL.forsokChans * Math.max(0, 1 + (s.seder?.v.nyfikenhet ?? 0) * TEKTAL.forsokSed) * stat(p, 'nyfikenhet', s.now) / 10;
+// överskottet (steg 10.2.43): 0 utan mat och ved, 1 när maten räcker TROSKEL.forsokMat dygn och veden TROSKEL.forsokVed, däremellan efter det som räcker kortast
+export const overskott = (matDygn: number, vedDygn: number, mat = TROSKEL.forsokMat, ved = TROSKEL.forsokVed) => Math.max(0, Math.min(1, matDygn / mat, vedDygn / ved));
+export const forsokChans = (s: State, p: Person, matDygn: number, vedDygn: number) => overskott(matDygn, vedDygn) * TEKTAL.forsokChans * Math.max(0, 1 + (s.seder?.v.nyfikenhet ?? 0) * TEKTAL.forsokSed) * stat(p, 'nyfikenhet', s.now) / 10;
 // vad p kan pröva sig fram till nu, och var: den teknik hen kommit längst mot (så att försöken samlas på en sak)
 export function forsokVal(s: State, p: Person): { id: string; spot?: { x: number; y: number }; min: number } | undefined {
   let bast: Tek | undefined;

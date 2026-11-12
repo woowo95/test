@@ -19,7 +19,7 @@ import { Pabud, legitimitet, pabud } from './styre';
 import { ALDER, ageOf, living } from './folk';
 import { clamp } from './slump';
 import { sportFor } from './sport';
-import { STATIONER, StationDef, StationSlag, bordBrist, forvarBrist, harStation, isKlar, pyntBrist, stationerOf, tommaPlatser, villPynt } from './stationer';
+import { STATIONER, StationDef, StationSlag, bordBrist, forvarBrist, harStation, isKlar, pyntBrist, pyntLust, stationerOf, tommaPlatser, villPynt } from './stationer';
 import { nTools, tingOf } from './agande';
 import { brasaBrist } from './brasor';
 import { BYGGNADER, fnId, utanBadd } from './byggnader';
@@ -57,8 +57,8 @@ export const TROSKEL = balans('troskel', {
   flintaSparas: 1, // flintor som sparas att tända eld med: ett redskap av flinta görs bara av det som är över (receptet plus detta)
   kolEld: 0.6, // kol hämtas ur den släckta elden när elden vill ha mindre än så här (val.ts)
   // gränserna för försök och bygge
-  forsokMat: 1.1, // byn prövar sig fram bara när maten räcker minst så här många dygn ...
-  forsokVed: 2, // ... och veden så här många (byn har ett överskott, teknik.ts)
+  forsokMat: 1.1, // byn prövar sig fram fullt ut när maten räcker så här många dygn ...
+  forsokVed: 2, // ... och veden så här många, och mindre med mindre (overskott i teknik.ts, steg 10.2.43)
   byggMatFran: 0.25, byggMatSpann: 0.9, byggMatMin: 0.1, // maten dämpar bygget: (matdygn - Fran) / Spann, aldrig under Min (val.ts)
 });
 // Redskapen och stationerna (steg 6.2.17): hur många byn vill ha är bufferten. Ett redskap räknas per vuxen från ALDER.vuxen
@@ -209,7 +209,8 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   nal: s => living(s).some(p => p.skill.lakekonst >= 2) ? 1 : 0, // en bennål när någon kan sy ett sår (steg 9.5.15)
   krycka: s => protesVill(s, 'krycka'), traben: s => protesVill(s, 'traben'), krok: s => protesVill(s, 'krok'), ogonlapp: s => protesVill(s, 'ogonlapp'), // proteserna (steg 9.5.11, protes.ts)
   naverask: s => ortkokKan(s) ? TILLVERKA.koka_salva.vill + TILLVERKA.koka_lim.vill : 0, // näveraskarna (steg 9.4.14): salvan och limmet som byn vill ha förvaras i dem
-  lerkruka: s => living(s).filter(p => villPynt(s, p, 'kruka')).length + (nTools(s, 'vattensack') < 1 ? 1 : 0) + (ortkokKan(s) ? TILLVERKA.koka_tjara.vill : 0), // och tjäran i stora krukor (steg 9.4.14) // lerkrukorna (steg 9.4.12): de som vill ha en kruka som pynt, och en att bära vatten i när byn saknar en vattensäck
+  lerkruka: s => Math.round(living(s).reduce((n, p) => n + (villPynt(s, p, 'kruka') ? pyntLust(s, p) : 0), 0)) + // lusten efter en kruka till avtar (steg 10.2.43)
+    (nTools(s, 'vattensack') < 1 ? 1 : 0) + (ortkokKan(s) ? TILLVERKA.koka_tjara.vill : 0), // och tjäran i stora krukor (steg 9.4.14) // lerkrukorna (steg 9.4.12): de som vill ha en kruka som pynt, och en att bära vatten i när byn saknar en vattensäck
   kniv: s => VILLTAL.knivar + tommaPlatser(s, 'kniv'), // och en till för en tom knivplats vid slaktbänken
   bensyl: s => tommaPlatser(s, 'bensyl'), // en till slöjdbänken (steg 2.3.2)
   rock: s => living(s).length, // en per person (steg 2.3.2), av vilket material som helst (klader.ts)

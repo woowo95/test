@@ -24,7 +24,7 @@ import { balans } from './balans';
 import { RELT, arBast, arRivaler, minnsGava } from './relationer';
 import { handelse, smakMat } from './rykten';
 import { VED } from './eld';
-import { Part, Vara, vidLura, byteKlart, nyssBytt, flytta, gavaKlar, varorText, vardeOf } from './byte';
+import { BYTE, Part, Vara, vidLura, byteKlart, nyssBytt, flytta, gavaKlar, varorText, vardeOf } from './byte';
 import { SJUK, insjukna } from './sjukdom';
 
 // ---------- behovsstegen ----------
@@ -635,9 +635,10 @@ function vaxelSilver(G: Part, M: Part, for_: number, betal: Vara[]) {
 }
 // samma byte för alla parter (steg 4.4.1.1): M byter till sig vill av G. Bybor, byn och handlaren (handel.ts) går hit
 export function bytaMed(s: State, M: Part, G: Part, vill: Vara[], v: Villkor): number {
-  vill = vill.map(w => w.t ? w : { ...w, n: Math.ceil(w.n - 1e-6) }).filter(w => w.n > 0 && !nyssBytt(s, w.k, M.id, G.id)); // hela saker (steg 2.10.7), och inte tillbaka det M nyss bytte bort till G
+  vill = vill.map(w => w.t ? w : { ...w, n: Math.ceil(w.n - 1e-6) }).filter(w => w.n > 0); // hela saker (steg 2.10.7)
   if (!vill.length) return 0;
-  const ger = vill.reduce((x, w) => x + w.n * vardeOf(w) * G.varde(w.k), 0); // det G ger, för G
+  // det G nyss fått av M behöver G mer än annars: G vill ha mer för att ge tillbaka det (steg 10.2.43)
+  const ger = vill.reduce((x, w) => x + w.n * vardeOf(w) * G.varde(w.k) * (nyssBytt(s, w.k, M.id, G.id) ? 1 + BYTE.nyssFatt : 1), 0); // det G ger, för G
   const far = vill.reduce((x, w) => x + w.n * vardeOf(w), 0) * v.behov; // det M får, för M
   if (ger <= 1e-9) return 0;
   const varor = betalVaror(M, G, v.utom), betala = (mal: number) => betalaAv(varor, G, mal);

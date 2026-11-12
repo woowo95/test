@@ -573,8 +573,8 @@ export const VILDA = {
   vildrova: { groda: 'rovor', mat: 'rotter' }, // små rötter
   arter: { groda: 'arter', mat: 'arter' }, // ärtor
   vildlok: { groda: 'lok', mat: 'lok' },
-  hassel: { groda: 'hassel', mat: 'notter', alltid: true }, // den vilda hasseln (steg 9.7.14): nötterna plockas alltid, och kan också sättas // löken (steg 9.6.20): lökarna som sparas sätts på fältet
-} satisfies Record<string, { groda: GrodaSlag; mat: string; alltid?: true }>;
+  hassel: { groda: 'hassel', mat: 'notter', mat_: true }, // den vilda hasseln (steg 9.7.14): nötterna är mat och plockas när byn behöver mat (steg 10.2.43), och kan också sättas // löken (steg 9.6.20): lökarna som sparas sätts på fältet
+} satisfies Record<string, { groda: GrodaSlag; mat: string; mat_?: true }>;
 const VILDA_IDS = Object.keys(VILDA) as (keyof typeof VILDA)[];
 // fröna grödorna sås med
 const FROSORTER = [...new Set(Object.values(GRODOR).map(g => g.fro))];
@@ -635,7 +635,7 @@ export function vildFronPlats(s: State) {
 // (ODLING.vildMat per frö), och platsen töms lite. Den som plockar tänker på odling (steg 2.10.11). När byn har nog plockar man
 // och tänker ändå, men tar inte med sig fler och lämnar platsen. Svaret är det man tar med sig: frön och mat per sak
 export function froFynd(s: State, p: Person, tk: Task, dtSec: number) {
-  const ta = !fronNog(s, tk.items);
+  const ta = !fronNog(s, tk.items), matBrist = foodDays(s) < buffert(s, 'mat'); // nötterna tas med när maten i förrådet räcker kortare än bufferten (steg 10.2.43)
   const sk = kunnighet(p.skill.samla) * SNABBARE * dtSec / HOUR_S, ut: Record<string, number> = {};
   let n = 0;
   for (const k of VILDA_IDS) {
@@ -643,7 +643,7 @@ export function froFynd(s: State, p: Person, tk: Task, dtSec: number) {
     if (r <= 0) continue;
     const g = ODLING.froTakt * r / FYND[k].topp * sk;
     n += g;
-    if (!ta && !(VILDA[k] as { alltid?: true }).alltid) continue; // nötterna är mat och plockas alltid (steg 9.7.14)
+    if (!ta && !((VILDA[k] as { mat_?: true }).mat_ && matBrist)) continue; // nötterna är mat och plockas efter matbristen
     takeFrom(s, k, tk.tx, tk.ty, g * ODLING.froUttag);
     const v = VILDA[k], fro = GRODOR[v.groda].fro;
     ut[fro] = (ut[fro] ?? 0) + g; ut[v.mat] = (ut[v.mat] ?? 0) + g * ODLING.vildMat;
@@ -656,8 +656,8 @@ export function froFynd(s: State, p: Person, tk: Task, dtSec: number) {
 }
 import { TEK, learn } from './teknik';
 import { grundvarde } from './varde';
-import { EKONOMI } from './ekonomi';
-import { FORRADSMAL } from './forradsmal';
+import { EKONOMI, foodDays } from './ekonomi';
+import { FORRADSMAL, buffert } from './forradsmal';
 
 // ---------- jordens värden (steg 9.7.2, Odlingen i detalj: Jorden) ----------
 // Bördigheten ligger i marken (s.bord, bara de rutor där den inte är full) och finns kvar när fältet växer igen: den sjunker med

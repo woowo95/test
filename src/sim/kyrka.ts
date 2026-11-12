@@ -1,3 +1,5 @@
+import { TROSKEL } from './forradsmal';
+import { hearthOf, woodDays } from './eld';
 // Kyrkan och buden (system 8.6). Registret BUD: varje bud är ett förbud, ett krav eller ett offer, med storlek (1–4), vilken nivå tron behöver och
 // vilken skala och sida som ger det. Kyrkans egendom (Tro.forrad), hovet och templet, helgonen och kvädena. Allt en tro avgör är frågor i FRAGOR
 // med trons krets (rost.ts). Buden gäller de troende, de starkt troende mer; ett bud som blivit lag gäller alla (LAGAR, lagar.ts).
@@ -121,7 +123,7 @@ function skattDygn(s: State) {
   if (!lagGaller(s, 'kyrkskatt') || lagGaller(s, 'ejKyrkskatt')) return;
   for (const tr of s.tron ?? []) {
     if (tr.slut !== undefined || troNiva(tr) < 4) continue;
-    const n = Math.ceil(troende(s, tr).length / 5) * KYRKA.skatt, k = amountOf(s, 'ved') >= n + 10 ? 'ved' : undefined;
+    const n = Math.ceil(troende(s, tr).length / 5) * KYRKA.skatt, k = woodDays(s) - n / (hearthOf(s.fire).burn * 24) >= TROSKEL.forsokVed ? 'ved' : undefined; // bara ur ett överskott av ved, efter hur länge den räcker (steg 10.2.43)
     if (k) { const l = ledareOf(s) ?? living(s)[0]; if (l) { use(s, l, k, n); gavaIn(tr, k, n); count(s, 'kyrkskatt'); } }
   }
 }

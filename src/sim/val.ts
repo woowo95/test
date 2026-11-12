@@ -121,7 +121,8 @@ export const VAL = balans('val', {
   tillfalleMin: 0.5,
   akut: 3, // arbetet är helt akut när det mest behövda väger så här mycket
   kolChans: 0.2, kolMin: 10, // kol hämtas ur den släckta elden när elden vill ha mindre än så här, med denna chans, i så många minuter
-  lekBas: 0.45, lekSed: 0.2, // en yngre än vuxen leker med denna chans (plus seden Barn gånger Sed)
+  lekBas: 0.45, lekSed: 0.2, lekUng: 0.5, // barnets lust att leka (plus seden Barn gånger Sed), och så mycket mer för det yngsta (steg 10.2.43) ...
+  barnHjalp: 0.5, // ... mot lusten att hjälpa till: åldern delat med vuxen gånger detta plus hur akut byn behöver arbete
   flitigBas: 0.88, flitigAkut: 0.12, // chansen att arbeta för den flitige: Bas + Akut gånger hur akut arbetet är
   latBas: 0.6, latAkut: 0.4, // ... och för den lata (gånger hur väl de egna behoven är fyllda)
   arbeteMin: 60, arbeteSpann: 120, // ett arbetspass
@@ -734,7 +735,10 @@ export const ARBETEN: readonly Arbete[] = [
     const { s, p, v, a } = c;
     if (a >= ALDER.vuxen) return false;
     const d = dag(c);
-    if (rnd(s, 'val', p) < VAL.lekBas + VAL.lekSed * s.seder.v.barn) return set(v, 'leka', lekText(s));
+    // leken och hjälpen ur poängen (steg 10.2.43): leken efter seden Barn och mer för de yngre, hjälpen efter åldern och hur akut
+    // byn behöver arbete; barnet leker med chansen lek / (lek + hjälp)
+    const lek = (VAL.lekBas + VAL.lekSed * s.seder.v.barn) * (1 + VAL.lekUng * (1 - a / ALDER.vuxen)), hjalp = a / ALDER.vuxen * (VAL.barnHjalp + d.u);
+    if (rnd(s, 'val', p) < lek / Math.max(1e-9, lek + hjalp)) return set(v, 'leka', lekText(s));
     const tand = d.best === 'samla' && needTinder(s);
     set(v, d.best, `Hjälper till. ${tand ? 'Byn behöver tändmaterial till elden' : ACTS[d.best].behov === 'ved' ? `Byn behöver ved, förrådet räcker ${dygn(d.wd)}` : d.fd < d.matBuf ? `Byn behöver mat, förrådet räcker ${dygn(d.fd)}` : `Mer mat till förrådet, som räcker ${dygn(d.fd)}`}.`);
     if (tand) v.tandmat = true;

@@ -1,3 +1,4 @@
+import { overskott } from './teknik';
 // Sporten (steg 4.3.1, Kultur, sport och konst): barnens lekar blir sport för de vuxna. Några sociala sporter med enkla
 // föremål, när byn har ett överskott av mat och ved och folk har fritid. Sporten ger glädje och tränar bara färdigheter
 // (brottning och dragkamp närstrid, kast och bollspel träffsäkerhet), aldrig egenskaperna. Den är ingen stor del av spelet.
@@ -55,7 +56,7 @@ export function tystISporten(s: State, p: Person) {
 export const SPORT = balans('sport', {
   vikt: 0.4, // vikten i fritiden (leisure i val.ts) att börja en match, gånger lugnet och (styrka + smidighet) / 20 ...
   med: 12, // ... och gånger så här mycket när en match väntar på spelare
-  mat: 1.1, ved: 2, // bara när maten räcker så här många dygn och veden så här många (byn har ett överskott)
+  mat: 1.1, ved: 2, // fullt ut när maten räcker så här många dygn och veden så här många, mindre med mindre (overskott i teknik.ts, steg 10.2.43)
   alderTill: 50, // över detta spelar man inte
   minuter: 50, spann: 40, // en match varar så här många minuter, plus upp till spann
   vanta: 30, // minuter: har inte tillräckligt många kommit fram så här länge efter starten, blir det ingen match
@@ -119,8 +120,7 @@ export function sportVikt(s: State, p: Person, calm: number) {
   if (a < ALDER.vuxen || a > SPORT.alderTill) return 0;
   const m = oppen(s);
   if (!m && !SPORTER.some(d => kanSpela(s, d, vuxna(s)))) return 0;
-  if (foodDays(s) < SPORT.mat || woodDays(s) < SPORT.ved) return 0;
-  return SPORT.vikt * calm * (m ? SPORT.med : 1) * (stat(p, 'styrka', s.now) + stat(p, 'smidighet', s.now)) / 20;
+  return overskott(foodDays(s), woodDays(s), SPORT.mat, SPORT.ved) * SPORT.vikt * calm * (m ? SPORT.med : 1) * (stat(p, 'styrka', s.now) + stat(p, 'smidighet', s.now)) / 20;
 }
 // att spela: gå med i matchen som väntar, annars börja en ny med en sport byn kan spela
 export function sportVal(s: State, p: Person): { why: string; spot: { x: number; y: number }; dur: number; ref: number; tool: string } | undefined {
