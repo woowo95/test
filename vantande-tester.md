@@ -6,4 +6,4 @@ Raderna skrivs så här: committen, systemet och testerna, till exempel "abc1234
 
 ## Väntar
 
-(inget)
+6f752f49 10.2 Klockan (10.2.35–10.2.66 utom 10.2.46, 10.2.50–10.2.57, 10.2.60–10.2.64) och rättningarna efter det stora testet: koll, likhet, riktad --karta, facit. Väntar på att Björn säger att datorn är uppe
