@@ -58,7 +58,7 @@ SCENARIER.forsok = {
 };
 
 SCENARIER.forsoklust = {
-  text: 'Hur ofta experten prövar sig fram (steg 4.2.1.2): seden Förnyelse – Tradition och personens nyfikenhet, och bara när byn har ett överskott av mat och ved',
+  text: 'Hur ofta experten prövar sig fram (steg 4.2.1.2): seden Förnyelse – Tradition och personens nyfikenhet, och mer ju större överskott byn har av mat och ved',
   kor: () => {
     const { s, p } = experten();
     const c = () => SIM.forsokChans(s, p, SIM.TROSKEL.forsokMat + 1, SIM.TROSKEL.forsokVed + 1);
@@ -67,12 +67,13 @@ SCENARIER.forsoklust = {
     p.pot.nyfikenhet = 10; s.seder.v.nyfikenhet = 1; const fornyelse = c();
     s.seder.v.nyfikenhet = -1; const tradition = c();
     s.seder.v.nyfikenhet = 0;
-    const utanMat = SIM.forsokChans(s, p, SIM.TROSKEL.forsokMat - 0.1, SIM.TROSKEL.forsokVed + 1), utanVed = SIM.forsokChans(s, p, SIM.TROSKEL.forsokMat + 1, SIM.TROSKEL.forsokVed - 0.1);
+    // överskottet är en faktor (steg 10.2.43): utan mat eller ved prövar ingen, med lite prövar man mindre än med ett fullt överskott
+    const full = SIM.forsokChans(s, p, SIM.TROSKEL.forsokMat + 1, SIM.TROSKEL.forsokVed + 1), utanMat = SIM.forsokChans(s, p, 0, SIM.TROSKEL.forsokVed + 1), utanVed = SIM.forsokChans(s, p, SIM.TROSKEL.forsokMat + 1, 0), halvt = SIM.forsokChans(s, p, SIM.TROSKEL.forsokMat / 2, SIM.TROSKEL.forsokVed + 1);
     const f = (x: number) => x.toFixed(2);
     return [
       [`den nyfikne prövar oftare (${f(nyfiken)} mot ${f(mitt)})`, nyfiken > mitt * 1.5],
       [`i en by med Förnyelse oftare, med Tradition mer sällan (${f(fornyelse)}, ${f(mitt)}, ${f(tradition)})`, fornyelse > mitt && tradition < mitt],
-      ['ingen prövar när maten eller veden inte räcker till ett överskott', utanMat === 0 && utanVed === 0],
+      [`ingen prövar utan mat eller ved, och med halva överskottet prövar man mindre (${halvt.toFixed(4)} mot ${full.toFixed(4)})`, utanMat === 0 && utanVed === 0 && halvt > 0 && halvt < full],
     ];
   },
 };

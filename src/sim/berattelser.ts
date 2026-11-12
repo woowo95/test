@@ -262,7 +262,7 @@ const MDEF = {
     'Om kvällarna sitter {hen} hos {partner}, om dagarna går {hen} ofta med {van}.',
     'Två står {honom} nära: {partner}, som {hen} lever med, och vännen {van}.',
     '{Hen} har {partner} och {hen} har {van}, och mer behöver {hen} inte.',
-    '{partner} är {hans} partner. {van} är den {hen} går till när något tynger.',
+    'Med {partner} delar {hen} livet, och till {van} går {hen} när något tynger.',
   ],
   besk_partner: [
     '{Hen} lever med {partner}.',

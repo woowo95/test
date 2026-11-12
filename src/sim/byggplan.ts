@@ -299,7 +299,7 @@ function utbyggnad(s: State, h: Hus, side: 'v' | 'o' | 'n' | 's', k: number, okA
 // utbyggnad åt den rika. Bitarna märks forb och byggs på nivån Förbättra i Arbetsordningen (val.ts)
 // räcker veden till förbättringen (steg 10.2.44)? Den ved ritningen tar dras från förrådet, och resten måste räcka minst
 // TROSKEL.forsokVed dygn till elden: en förbättring äter inte upp veden byn eldar med
-const vedRacker = (s: State, f: Forslag) => { const ved = f.ritning.reduce((n, a) => n + (MATERIAL[a.m].item === 'ved' ? MATERIAL[a.m].n : 0), 0); return (fuelStock(s) - ved) / (hearthOf(s.fire).burn * 24) >= TROSKEL.forsokVed; };
+const vedRacker = (s: State, f: Forslag) => { const ved = f.ritning.reduce((n, a) => n + (MATERIAL[a.m].item === 'ved' ? MATERIAL[a.m].n : 0), 0); return ved <= 0 || (fuelStock(s) - ved) / (hearthOf(s.fire).burn * 24) >= TROSKEL.forsokVed; };
 const battreGolv: AtgardDef = {
   namn: 'Byta material', steg: 0,
   foresla: (s, b) => {
