@@ -7,8 +7,9 @@ import { esc, linkify } from './hjalp';
 import { ritaOm, s } from './lage';
 
 export const notisVal: { oppen: boolean; nr?: number; fraga?: boolean } = { oppen: false }; // fraga: "ta bort alla?" väntar på ja
-let visaPlats = (_x: number, _y: number) => {};
-export const satVisaPlats = (f: (x: number, y: number) => void) => { visaPlats = f; };
+let visaPlats = (_x: number, _y: number, _zoom?: number) => {};
+export const satVisaPlats = (f: (x: number, y: number, zoom?: number) => void) => { visaPlats = f; };
+export const visaPaKartan = (x: number, y: number, zoom?: number) => visaPlats(x, y, zoom); // kameran till platsen (lärdomarna, steg 10.2.63)
 
 // brevet i raden överst: tomt sigill och antalet olästa
 export const notisKnapp = () => { const n = olasta(s); return `${'{sym_notis}'}${n ? ` ${n}` : ''}`; };

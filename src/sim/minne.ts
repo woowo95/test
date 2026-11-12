@@ -94,7 +94,7 @@ export const MINNE = balans('minne', {
 export const AREA = 8; // ett lärdomsområde är AREA × AREA rutor
 const aw = () => Math.ceil(W / AREA), ah = () => Math.ceil(H / AREA);
 export const areaOf = (x: number, y: number) => Math.floor(clamp(y, 0, H - 1) / AREA) * aw() + Math.floor(clamp(x, 0, W - 1) / AREA);
-const areaCenter = (a: number) => ({ x: Math.min(W, (a % aw()) * AREA + AREA / 2), y: Math.min(H, Math.floor(a / aw()) * AREA + AREA / 2) });
+export const areaCenter = (a: number) => ({ x: Math.min(W, (a % aw()) * AREA + AREA / 2), y: Math.min(H, Math.floor(a / aw()) * AREA + AREA / 2) });
 
 // hur mycket ett område ger, så som man ser det när man går runt där: snittet av de fem bästa rutorna.
 // 'nu' är det som finns kvar, 'vaxer' var det växer (buskar och spår syns även när det är plockat) och 'syns'

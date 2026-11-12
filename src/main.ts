@@ -10,6 +10,7 @@ import { sattSkuggLangd, skuggLangdAv } from './ui/skugga';
 import { drawVader } from './ui/vaderbild';
 import { drawStructures } from './ui/foremal';
 import { drawFilter } from './ui/filter';
+import { drawNal } from './ui/nal';
 import { drawAnimals, drawPlants } from './ui/vaxter';
 import { drawFlackar } from './ui/smuts';
 import { addTalks, drawPeople, posOf } from './ui/manniskor';
@@ -215,6 +216,7 @@ function ritaKartan(now: number) {
   drawSkuggor();
   drawNight(ui.nu);
   drawFilter();
+  drawNal();
   drawOmrade();
   drawVader(now);
 }

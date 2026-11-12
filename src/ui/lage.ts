@@ -59,6 +59,7 @@ export const ui = {
   sak: '', // saken som visas i panelen: "t:<id>", "s:<x>,<y>,<slag>", toa-högen "f:<ruta>", stubben "u:<ruta>" eller trädet "r:<ruta>" (flikar/sak.ts)
   lagerNr: 0, // vilken lagerplats som visas i panelen
   filter: undefined as Grupp | undefined, // värmekartan som visas på kartan
+  nal: undefined as { a: number; x: number; y: number } | undefined, // nålen på kartan vid platsen för en lärdom man tryckt på (steg 10.2.63)
   filterArt: undefined as FyndId | undefined, // bara en art i gruppen, vald i teckenförklaringen
   stammar: false, // träden visas som stammar (steg 5.3.6)
 };

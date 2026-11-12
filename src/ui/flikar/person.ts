@@ -1,4 +1,4 @@
-import { larmRollNu, LARMHOT, ROLLNAMN, blodSteg, BLODSTEG, tidKvar, VARD, vardNasta, hp, sjukText, personRader, PERSONLOGG, gastLever } from '../../sim';
+import { areaCenter, larmRollNu, LARMHOT, ROLLNAMN, blodSteg, BLODSTEG, tidKvar, VARD, vardNasta, hp, sjukText, personRader, PERSONLOGG, gastLever } from '../../sim';
 import { kvOf, paSigVikt, klanById, FORMAGOR, gangDelar, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
 import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, handOrkar, handPlatser, capacity, kvNamn, handerFor, load, utrustning, bordaIHander, type IHanden, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, timeLabel, vidBordet, upplevelseText, uppEffekt, vuxenUpp, Upplevelse, yrkeNamn, andlighet, troOf, tolkning, teckenText, troNamn, pratarMed, gastRelationer, actIkon, utbIkon, AMNEN, type ByteMinne, type GastRel, type Slakting, stacksOf, grundvarde, tingVarde, housesOf, husVarde } from '../../sim';
 import { gorText } from '../jakt';
@@ -14,6 +14,7 @@ import { tekInfo } from './teknik';
 import { fritidLista } from './fram';
 import { gastById, gastRad, type Gast } from '../gaster';
 import type { Flik } from '../panel';
+import { visaPaKartan } from '../notiser';
 
 // allt om den valda personen i fem flikar (steg 5.3.4.1, registret FLIKAR): Om (presentationen, egenskaperna och tiden),
 // Kropp (behoven och hälsan), Saker (utrustningen och förmögenheten), Människor (relationerna och ryktena) och Kunskap.
@@ -38,6 +39,8 @@ export const person: Flik = {
   klick(el) {
     const ti = el.closest<HTMLElement>('.tid [data-t]');
     if (ti) { tidVald = tidVald === ti.dataset.t ? undefined : ti.dataset.t; return true; }
+    const ln = el.closest<HTMLElement>('[data-lnal]'); // en lärdoms plats: kameran dit och en nål på kartan, ett tryck till tar bort nålen (steg 10.2.63)
+    if (ln) { const a = Number(ln.dataset.lnal); if (ui.nal?.a === a) ui.nal = undefined; else { const c = areaCenter(a); ui.nal = { a, ...c }; visaPaKartan(c.x, c.y, 6); } return true; }
     const tg = el.closest<HTMLElement>('[data-ptek]'); // en teknik i kunskapen: rutan om den visas eller döljs
     if (tg) { kunTek = kunTek === tg.dataset.ptek ? undefined : tg.dataset.ptek; return true; }
     const f = el.closest<HTMLElement>('[data-pfall]'); // en dels rubrik: fäll ut eller ihop (steg 5.3.4.2)
@@ -558,7 +561,7 @@ function lardomHtml(p: Person, ls: Lardom[]) {
     return `<button type="button" class="tnod liten kan${hjalpOppen(id(k)) ? ' sel' : ''}" data-hjalp="${id(k)}" data-hjalp-grupp="ld-${p.id}-" title="${esc(title)}" aria-label="${esc(title)}">${tecknet(d.ikon, d.tecken)}<span class="antal">${n.length}</span>${fel ? '<span class="brist">!</span>' : ''}</button>`;
   }).join('');
   const k = slag.find(x => hjalpOppen(id(x)));
-  const lista = k ? `<ul class="lard">${groups(ls.filter(l => l.k === k)).map(g => `<li class="${g[0].k === 'fara' ? 'fara' : ''}"><b>${esc(cap(describe(s, g[0]).place))}</b>${g.map(l => { const d = describe(s, l); return `<span>${esc(d.what)} <small class="muted">${d.sure}, ${esc(d.src)}</small>${d.wrong ? `<small class="fel">${esc(d.wrong)}</small>` : ''}</span>`; }).join('')}</li>`).join('')}</ul>` : '';
+  const lista = k ? `<ul class="lard">${groups(ls.filter(l => l.k === k)).map(g => `<li class="${g[0].k === 'fara' ? 'fara' : ''}"><b>${esc(cap(describe(s, g[0]).place))}</b>${g[0].k === 'flod' ? '' : `<button type="button" class="lnal${ui.nal?.a === g[0].a ? ' sel' : ''}" data-lnal="${g[0].a}" title="Visa platsen på kartan" aria-label="Visa platsen på kartan">{sym_oga}</button>`}${g.map(l => { const d = describe(s, l); return `<span>${esc(d.what)} <small class="muted">${d.sure}, ${esc(d.src)}</small>${d.wrong ? `<small class="fel">${esc(d.wrong)}</small>` : ''}</span>`; }).join('')}</li>`).join('')}</ul>` : '';
   return `<div class="tekrad">${sym}</div>${lista}`;
 }
 // vad personen brukar ägna sin vakna tid åt, i grupper efter slaget av arbete (SLAG); en handling utan slag står för sig.

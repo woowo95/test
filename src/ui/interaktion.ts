@@ -197,7 +197,7 @@ view.addEventListener('pointerleave', () => { $('hoverBox').hidden = true; ui.ho
 $('zIn').addEventListener('click', () => zoomAt(1.4));
 $('zOut').addEventListener('click', () => zoomAt(1 / 1.4));
 // en notis visar sin plats på kartan (steg 5.4.3.2)
-satVisaPlats((x, y) => { stopFollow(); cam.zoom = Math.max(cam.zoom, 2.4); cam.x = (x + 0.5) * TS; cam.y = (y + 0.5) * TS; layout(); });
+satVisaPlats((x, y, zoom = 2.4) => { stopFollow(); cam.zoom = Math.max(cam.zoom, zoom); cam.x = (x + 0.5) * TS; cam.y = (y + 0.5) * TS; layout(); });
 $('zHome').addEventListener('click', () => { stopFollow(); cam.zoom = 2.4; const f = bynsMitt(s); cam.x = f.x * TS; cam.y = f.y * TS; layout(); });
 
 // ---------- rutan i hörnet: vad som finns under musen ----------
