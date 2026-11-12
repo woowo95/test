@@ -40,6 +40,8 @@ export interface MarkIn {
 // snö som ligger (0–1, vädret); is: 0 öppet vatten, 1 tunn is, 2 tjock is
 export interface MarkTid { ny: number; gammal: number; frac: number }
 let IN: MarkIn, W = 0, H = 0, tid = 2, is = 0, MT: MarkTid = { ny: 2, gammal: 2, frac: 1 }, SNO = 0;
+// snön som smält runt eldarna och vid en brand (steg 10.2.51): rutan -> 1 till 3 (en tredjedel till allt)
+let SMALT = new Map<number, number>();
 let SD = new Float32Array(0), FD = new Float32Array(0), NOTT = new Float32Array(0), TRAD = new Uint8Array(0), ASKA = new Float32Array(0);
 const SDMAX = 3;
 // avståndet i rutor till kanten av det inne() säger, med tecken: över 0 inne, under 0 ute (högst SDMAX)
@@ -105,7 +107,8 @@ function punkt(x: number, y: number): number {
   sort = ANNAT;
   tid = MT.frac >= 1 || vn(x, y, 24, 777) < MT.frac ? MT.ny : MT.gammal;
   // snön ligger i fläckar när det är lite, och över allt när det är mycket (steg 5.1.13)
-  const vinter = SNO > 0 && (SNO >= 1 || vn(x, y, 30, 779) < SNO * 1.1 - 0.05);
+  const sm = SMALT.size ? SMALT.get(tileXY(x, y)) ?? 0 : 0, snoHar = SNO * (1 - sm / 3); // runt elden har snön smält (steg 10.2.51)
+  const vinter = snoHar > 0 && (snoHar >= 1 || vn(x, y, 30, 779) < snoHar * 1.1 - 0.05);
   if (tid === 0 && !vinter) tid = 3; // istiden utan snö: vissnat gräs, som på hösten
   // kanterna mellan sorterna slingrar sig: rutan läses några punkter åt sidan, efter en långsam våg
   const jx = x + Math.round((vn(x, y, 9, 11) - 0.5) * 9), jy = y + Math.round((vn(x, y, 9, 12) - 0.5) * 9);
@@ -202,7 +205,7 @@ export function rakna(x0: number, y0: number, px: Int8Array) {
   const satt = (x: number, y: number, c: number) => { x -= x0; y -= y0; if (x >= 0 && y >= 0 && x < BP && y < BP) px[y * BP + x] = c; };
   const morka = (x: number, y: number) => { x -= x0; y -= y0; if (x >= 0 && y >= 0 && x < BP && y < BP) px[y * BP + x] = morkare(px[y * BP + x]); };
   const sortAv = (x: number, y: number) => { const lx = x - x0, ly = y - y0; if (lx >= 0 && ly >= 0 && lx < BP && ly < BP) return sorter[ly * BP + lx]; punkt(x, y); return sort; };
-  if (SNO >= 1) return; // allt under snö
+  if (SNO >= 1 && !SMALT.size) return; // allt under snö
   // tuvor, blommor och stenar på gräset (version 1), utlagda på ett rutnät med slump i varje cell
   for (let cy = Math.floor(y0 / 6) - 1; cy * 6 < y0 + BP + 4; cy++) for (let cx = Math.floor(x0 / 7) - 1; cx * 7 < x0 + BP + 3; cx++) {
     const x = cx * 7 + Math.floor(hash(cx, cy, 311) * 7), y = cy * 6 + Math.floor(hash(cx, cy, 312) * 6);
@@ -326,11 +329,11 @@ let nyckel = '';
 let sig = new Int32Array(0);
 const smutsiga = new Set<number>();
 // en rutas utseende i ett tal: sorten, hur nött, om det står träd och hur svart efter en brand
-const rutSig = (i: number, a: number) => IN.tiles[i] | Math.min(15, Math.floor((1 - IN.cover[i]) * 16)) << 4 | (IN.trees[i] >= 0.5 ? 1 : 0) << 8 | Math.min(15, Math.ceil(a * 15)) << 9;
+const rutSig = (i: number, a: number) => IN.tiles[i] | Math.min(15, Math.floor((1 - IN.cover[i]) * 16)) << 4 | (IN.trees[i] >= 0.5 ? 1 : 0) << 8 | Math.min(15, Math.ceil(a * 15)) << 9 | (SMALT.get(i) ?? 0) << 13;
 // in: kartan nu; mt: tidsåldern och övergången; sno: snön (0–1); glob: det som ändrar hela marken (byn, vattnet); aska:
-// rutan -> hur svart (0–1)
-export function stallMark(inp: MarkIn, mt: MarkTid, sno: number, nyIs: number, glob: string, aska: Map<number, number> | undefined) {
-  IN = inp;
+// rutan -> hur svart (0–1); smalt: rutan -> hur mycket av snön som smält där, 1 till 3 (steg 10.2.51)
+export function stallMark(inp: MarkIn, mt: MarkTid, sno: number, nyIs: number, glob: string, aska: Map<number, number> | undefined, smalt?: Map<number, number>) {
+  IN = inp; SMALT = smalt ?? new Map();
   const g = `${inp.W}|${inp.H}|${mt.ny}|${mt.gammal}|${mt.frac}|${sno}|${nyIs}|${glob}`;
   if (g !== nyckel) {
     nyckel = g; W = inp.W; H = inp.H; MT = mt; SNO = sno; is = nyIs;

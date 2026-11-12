@@ -176,7 +176,7 @@ export function drickVal(s: State, p: Person) {
   if (!kanGa(p) && hemma(s, p)) return undefined; // väntar på den som bär vatten dit (vattenVal)
   if (d.act === 'smalta') return { act: d.act as Act, why: d.why, min: d.min(), spot: undefined as { x: number; y: number } | undefined };
   if (d.act === 'dryck') return { act: d.act, why: d.why, min: d.min(), spot: { x: p.x, y: p.y } };
-  const h = halVal(s, p), sno = snoPaMarken(s) > 0;
+  const h = halVal(s, p), sno = snoVid(s, p.x, p.y) > 0; // snön där man står; vid elden har den smält (steg 10.2.51)
   const snon = () => ({ act: 'ata_sno' as Act, why: 'Är törstig och äter snö', min: TORST.snoAtMin, spot: { x: p.x, y: p.y } }); // steg 9.6.18
   if (islagt(s) && !h) return sno ? snon() : undefined; // isen är för tjock för det man har: snön, om den ligger
   const spot = drickPlats(s, p);
@@ -292,4 +292,4 @@ export function vattenFram(s: State, p: Person, t: Task) {
   }
   p.task = undefined;
 }
-import { snoPaMarken } from './vader';
+import { snoVid } from './brand';

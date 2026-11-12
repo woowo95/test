@@ -2579,3 +2579,19 @@ SCENARIER.hantverk7 = {
     ];
   },
 };
+
+SCENARIER.snosmalt = {
+  text: 'Steg 10.2.51: snön smälter av värmen. Runt en eld som brinner är marken bar, en bit bort ligger snön kvar, när elden slocknat räknas kartans snö igen, och man går fortare i den smälta snön vid elden',
+  kor: () => {
+    const s = createState(5, START); tandEld(s); s.fire.fuel = SIM.hearthOf(s.fire).maxFuel;
+    s.vader = { ...(s.vader ?? { fukt: 0.5 }), sno: 1 };
+    const e = SIM.eldPlats(s), vid = SIM.snoVid(s, e.x + 0.5, e.y + 1.5), langt = SIM.snoVid(s, e.x + 20.5, e.y + 20.5);
+    const p = living(s)[0], fartVid = SIM.snoPaRutan(s, p, e.x + 0.5, e.y + 1.5), fartLangt = SIM.snoPaRutan(s, p, e.x + 20.5, e.y + 20.5);
+    s.fire.lit = false; const slackt = SIM.snoVid(s, e.x + 0.5, e.y + 1.5);
+    return [
+      [`vid elden har snön smält (${vid.toFixed(2)} kvar), långt bort ligger den kvar (${langt.toFixed(2)})`, vid < 0.2 && langt > 0.99],
+      [`när elden slocknat ligger kartans snö där igen (${slackt.toFixed(2)})`, slackt > 0.99],
+      [`man går fortare vid elden än i snön långt bort (${fartVid.toFixed(2)} mot ${fartLangt.toFixed(2)})`, fartVid > fartLangt],
+    ];
+  },
+};

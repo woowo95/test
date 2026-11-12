@@ -6,7 +6,7 @@ import { KLOCKA, SLAGHINDER, kanNa } from './klocka';
 import { FAROR } from './efterstrid';
 import { GANG } from './gang';
 import { brasorOf } from './brasor';
-import { hearthOf } from './eld';
+import { hearthOf, heatAt } from './eld';
 import { rasar } from './bygg';
 import { Bit, MATERIAL, bitAt, bitsOf, blocked, dorrDef, touch, vagBort } from './byggnad';
 import { Station, stationAt, stationDef, stationerOf, taBort } from './stationer';
@@ -31,7 +31,7 @@ import { vattenNu } from './sjo';
 import { DAY, H, HEARTHS, HOUR, HOUR_S, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { allaBarn, drabbadHus, upplev } from './uppvaxt';
 import { VAG, isSoil } from './vag';
-import { blixtNu, snoPaMarken, torrTim, vaderNu } from './vader';
+import { VADER, blixtNu, snoPaMarken, torrTim, vaderNu } from './vader';
 import { hash3 } from './slump';
 import { larmAvbryter } from './handlingar';
 import { tecken } from './religion';
@@ -190,6 +190,14 @@ export const brandKant = (s: State) => s.brand ? s.brand.r.filter(r => !inreOf(s
 export const brinner = (s: State, i: number) => !!s.brand && kartaOf(s.brand)[i] === 1;
 // hettan från branden vid (x, y) (steg 9.2.135), i samma enheter som lägerelden (heatAt i eld.ts): som tätt intill elden nära en ruta
 // som brinner, avtagande ut till BRAND.hettaR rutor
+// snön smälter av värmen (steg 10.2.51): runt en eld som brinner och vid en skogsbrand är marken bar, efter värmen i
+// värmesystemet som finns (heatAt i eld.ts och brandHetta här). Inget sparas per ruta: snön på en ruta är kartans snö
+// gånger det som är kvar efter värmen där. snoSmalt = hur mycket av snön som smält på (x, y), 0 till 1
+export const snoSmalt = (s: State, x: number, y: number) => {
+  const h = Math.max(heatAt(s, x, y), brandHetta(s, x, y));
+  return h <= VADER.snoVarmeFran ? 0 : Math.min(1, (h - VADER.snoVarmeFran) / (VADER.snoVarmeHel - VADER.snoVarmeFran));
+};
+export const snoVid = (s: State, x: number, y: number) => { const n = snoPaMarken(s); return n > 0 ? n * (1 - snoSmalt(s, x, y)) : 0; };
 export function brandHetta(s: State, x: number, y: number) {
   const b = s.brand;
   if (!b?.r.length) return 0;

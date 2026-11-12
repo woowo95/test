@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { sakerPaMarken, BJORK, BRAND, busksort, DAY, H, HOUR, STADIER, T, VAG, W, tradArt, valjArt, ageIndex, stadium, emberOn, fireHeat, eldXY, eldarOf, groundOf, isCm, kalender, lightLevel, snoPaMarken, vaderNu, LJUSKALLOR, type Ljuspunkt, living, byId, rovarPlats } from '../sim';
+import { sakerPaMarken, BJORK, BRAND, busksort, DAY, H, HOUR, STADIER, T, VAG, W, tradArt, valjArt, ageIndex, stadium, emberOn, fireHeat, eldXY, eldarOf, groundOf, isCm, kalender, lightLevel, snoPaMarken, snoSmalt, heatRadius, vaderNu, LJUSKALLOR, type Ljuspunkt, living, byId, rovarPlats } from '../sim';
 import { s, ui } from './lage';
 import { posOf } from './manniskor';
 import { TS, app, figurLayer, husLayer, mork, pileLayer, terrainG, world } from './scen';
@@ -29,6 +29,22 @@ function markTid() {
   return { ny: k.ai, gammal: (k.ai + 3) % 4, frac: dt >= DAY ? 1 : Math.floor(dt / DAY * OVERGANG) / OVERGANG };
 }
 const snoNu = () => Math.round(snoPaMarken(s) * SNOSTEG) / SNOSTEG;
+// snön som smält runt eldarna som brinner och vid en brand (steg 10.2.51, snoSmalt i vader.ts), i tre steg per ruta, och en
+// nyckel som ändras när den gör det. Bara rutorna inom eldens och brandens värme räknas
+function smaltKarta(sno: number) {
+  const karta = new Map<number, number>();
+  if (sno <= 0) return { karta, nyckel: '' };
+  const prova = (x: number, y: number) => { if (x < 0 || y < 0 || x >= W || y >= H) return; const i = y * W + x; if (karta.has(i)) return; const n = Math.round(snoSmalt(s, x + 0.5, y + 0.5) * 3); if (n > 0) karta.set(i, n); };
+  for (const f of eldarOf(s)) {
+    if (!f.lit) continue;
+    const e = eldXY(s, f), r = Math.ceil(heatRadius(s, f));
+    for (let y = e.y - r; y <= e.y + r; y++) for (let x = e.x - r; x <= e.x + r; x++) prova(x, y);
+  }
+  const R = Math.ceil(BRAND.hettaR);
+  for (const [i] of s.brand?.r ?? []) { const bx = i % W, by = Math.floor(i / W); for (let y = by - R; y <= by + R; y++) for (let x = bx - R; x <= bx + R; x++) prova(x, y); }
+  let h = 0; for (const [i, n] of karta) h = (Math.imul(h, 31) + i * 4 + n) | 0;
+  return { karta, nyckel: `${karta.size}:${h}` };
+}
 // björkens löv på rutan (x, y): tidsåldern för en tid förskjuten upp till ett dygn åt något håll, och röda höstlöv på
 // ungefär var tredje björk (bildstilen)
 function lovAt(x: number, y: number): Lov {
@@ -58,8 +74,8 @@ export function drawTerrain(force = false) {
   const is = isNiva();
   const vat = (s.sjoTorr?.v ?? -1) * 4 + (s.flod?.niva ?? 0); // torkan och översvämningen: vattnet som det är nu (steg 3.8.2, 3.8.3)
   const ask = s.aska?.length ? s.aska.length * 1000 + Math.floor(s.now / (6 * HOUR)) % 1000 : 0; // det svarta efter en eldsvåda bleknar (steg 3.8.5)
-  const mt = markTid(), sno = snoNu();
-  const nyckel = `${s.seed}|${mt.ny}|${mt.frac}|${sno}|${is}|${vat}|${ask}`;
+  const mt = markTid(), sno = snoNu(), smalt = smaltKarta(sno);
+  const nyckel = `${s.seed}|${mt.ny}|${mt.frac}|${sno}|${is}|${vat}|${ask}|${smalt.nyckel}`;
   // träden ritas om när löven kan byta, var annan timme (datorns tid) inom ett dygn från ett skifte
   const k = kalender(s), nara = s.now - k.start < DAY || k.slut - s.now < DAY;
   const tNyckel = `${ai}|${sno}|${nara ? Math.floor(s.now / (2 * HOUR)) : ''}|${(s.hamlade ?? []).map(h => h.i).join(',')}`; // och när en björk hamlas (steg 9.8.16)
@@ -69,7 +85,7 @@ export function drawTerrain(force = false) {
     // marken som brann nyss: mörk, och ljusare ju längre sedan (BRAND.svart dygn)
     let svart: Map<number, number> | undefined;
     for (const [i, t] of s.aska ?? []) (svart ??= new Map()).set(i, Math.max(0, 0.75 * (1 - (s.now - t) / (BRAND.svart * DAY))));
-    stallMark({ W, H, tiles: g.tiles, cover: g.cover, trees: g.trees, vatten: T.Vatten, sand: T.Sand, sten: T.Sten, lera: T.Lera, jord }, mt, sno, is, `${s.seed}|${vat}`, svart);
+    stallMark({ W, H, tiles: g.tiles, cover: g.cover, trees: g.trees, vatten: T.Vatten, sand: T.Sand, sten: T.Sten, lera: T.Lera, jord }, mt, sno, is, `${s.seed}|${vat}`, svart, smalt.karta);
     ritaTrad(g, sno);
   }
   ritaMark(6, force);

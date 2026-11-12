@@ -18,6 +18,7 @@ import { Person, State } from './typer';
 import { SAKER } from './saker';
 import { tingOf } from './agande';
 import { snoPaMarken } from './vader';
+import { snoSmalt } from './brand';
 import { roofed } from './byggnad';
 
 // Balanstalen (regel 8): farten för en frisk vuxen och det som gör den långsammare
@@ -55,7 +56,8 @@ export function snoFart(s: State, p: Person) {
   for (const t of tingOf(s)) if (t.bar === p.id) tar = Math.max(tar, SAKER[t.k]?.klad?.snoTar ?? 0);
   return 1 - GANG.snoBroms * sno * (1 - tar);
 }
-export const snoPaRutan = (s: State, p: Person, x: number, y: number) => { const f = snoFart(s, p); return f < 1 && roofed(s, x, y) ? 1 : f; };
+// runt en eld och vid en brand har snön smält (steg 10.2.51): bromsen gånger det som är kvar av snön på rutan
+export const snoPaRutan = (s: State, p: Person, x: number, y: number) => { const f = snoFart(s, p); return f >= 1 || roofed(s, x, y) ? 1 : 1 - (1 - f) * (1 - snoSmalt(s, x, y)); };
 export const GANGFART = {
   alder: { namn: 'Åldern', tecken: '🧒', kropp: true, varde: l => { const a = ageOf(l.p, l.now); return a < ALDER.gangBarn ? GANG.fartBarn / GANG.fart : a > ALDER.gangGammal ? GANG.fartGammal / GANG.fart : 1; }, text: l => ageOf(l.p, l.now) < ALDER.gangBarn ? 'Barn' : 'Gammal' },
   skador: { namn: 'Skadade ben och fötter', tecken: '🦵', kropp: true, varde: l => kanGa(l.p) ? rorlighetSkador(l.p) : 1 },

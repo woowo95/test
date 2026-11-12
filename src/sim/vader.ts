@@ -61,6 +61,7 @@ export const VADER = balans('vader', {
   vaxtTorr: 0.7, vaxtBlot: 1.3, // växterna och grödorna växer så här fort i torr och i blöt mark (gånger)
   snoFaller: 0.15, // snön på marken växer så här mycket per timme i det kraftigaste snöfallet ...
   snoSmalter: 0.01, // ... och smälter så här mycket per timme och grad över noll
+  snoVarmeFran: 0.1, snoVarmeHel: 0.4, // värmen från en eld eller en brand (heatAt, brandHetta) där snön börjar smälta och där den är borta (steg 10.2.51)
 });
 
 // ---------- väder: temperatur ----------
