@@ -1777,6 +1777,7 @@ SCENARIER.motvind = {
 };
 
 SCENARIER.kaninbyn = {
+  lang: true,
   text: 'Kaninerna undviker byn (steg 6.6.8): en kaningrupp börjar inte och glider inte dit där husen, stigarna och den nötta marken är, och hela gruppen flyttar bort när någon kommer nära, inte bara när en jägare gör det. Platsen sparas i byn och är densamma efter inläsning',
   kor: () => {
     const s = createState(1, START);
@@ -1804,8 +1805,10 @@ SCENARIER.kaninbyn = {
     };
     const gick = prov(false), smog = prov(true);
     // sparat och inläst: grupperna står på samma plats
-    const fore = JSON.stringify(SIM.grupperOf(s)), ater = SIM.migrate(JSON.parse(SIM.serialize(s)));
-    const efter = JSON.stringify(SIM.grupperOf(ater));
+    // (sparningen avrundar platsen till tusendelar av en ruta)
+    const runda = (g: ReturnType<typeof SIM.grupperOf>) => JSON.stringify(g.map(q => ({ ...q, x: Math.round(q.x * 100) / 100, y: Math.round(q.y * 100) / 100 })));
+    const fore = runda(SIM.grupperOf(s)), ater = SIM.migrate(JSON.parse(SIM.serialize(s)));
+    const efter = runda(SIM.grupperOf(ater));
     const st = s.stat ?? {};
     return [
       [`${starter} nya platser på tre dygn, ingen där folk rör sig (lägsta skygghet på platsen ${minF.toFixed(2)}, ${nara} närmare byn än ${FANGST.skyggIn} rutor)`, starter >= 4 && minF > 0 && nara === 0],

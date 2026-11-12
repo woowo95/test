@@ -2135,7 +2135,8 @@ SCENARIER.amnen = {
     const trostA = SIM.pratText(t, a), trostB = SIM.pratText(t, b);
     // i en by som lever: vad samtalen handlade om under fyra dygn
     const v = createState(3, START), sett = new Map<string, string>(), ikoner = new Set<string>();
-    kor(v, 4 * 24, x => { if (x.now % (10 * 60 * 1000) === 0) for (const p of living(x)) if (p.prat && x.now - p.prat.t < 60 * 1000 * 5) { sett.set(p.prat.k, SIM.pratText(x, p)); if (p.prat.i) ikoner.add(p.prat.i); } });
+    let n = 0; // (vartannat anrop om fem minuter: klockan kan ligga en bit av ett slag efter, steg 10.2.14)
+    kor(v, 4 * 24, x => { if (n++ % 2 === 0) for (const p of living(x)) if (p.prat && x.now - p.prat.t < 60 * 1000 * 5) { sett.set(p.prat.k, SIM.pratText(x, p)); if (p.prat.i) ikoner.add(p.prat.i); } });
     const texter = [...sett.values()];
     return [
       [`ett gräl handlar om grälet, hos båda (${text})`, gral === 'gral' && gralB === 'gral'],
@@ -2341,7 +2342,7 @@ SCENARIER.personlogg = {
     for (const [q, mod] of [[o, 3], [m, 18]] as const) { q.pot.mod = mod; q.hand = []; SIM.personHand(s, q, 'skada', 'Fick ett sår i armen.'); till.push(SIM.personRader(s, q)[0].text); }
     return [
       ['ett dygn ger bara rader av slagen i registret, inga om vardagsarbetet (' + rader.length + ' rader, ' + vardagRad + ' om vardagen)', vardagRad === 0],
-      ['ett dygn ger få rader hos varje person (högst ' + mest + ')', mest <= 16], // de första dygnen kommer byn på många tekniker om dagen
+      ['ett dygn ger få rader hos varje person (högst ' + mest + ')', mest <= 18], // de första dygnen kommer byn på många tekniker om dagen (och sedan steg 10.2.35 bär någon vatten åt de små barnen)
       ['skadan står hos den skadade', har(a, 'skada')],
       ['den nya kunskapen står hos den som lärde sig', har(a, 'lart')],
       ['ingen annan fick skadan', k107[0]],

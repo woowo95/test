@@ -327,6 +327,8 @@ const SALLSYNT: Record<string, string> = {
   gastFly: 'rövarna kommer till få byar på 35 dygn, och de flyr bara efter en förlorad strid; scenarierna rovargang och rovarstrid prövar det',
   gaHem: 'handlaren och främlingen kommer till få byar på 35 dygn och går hem när besöket är slut; scenarierna handlare och framling prövar det',
   ang: 'ängen märks ut först när byn har betesdjur och en hage (steg 10.2.36), i få byar på 35 dygn; scenariot slatter prövar den',
+  gastKommer: 'gästen är på väg in en kort stund innan hen väntar vid filten (det som räknas här); scenarierna handlare och rovargang prövar det',
+  jordgubbar: 'jordgubbarna sätts sällan på 35 dygn, när andra grödor ger mer; scenariot flerarig prövar dem', jordgubbsplanta: 'som jordgubbar; scenariot flerarig prövar dem',
   undan: 'tornadon kommer sällan, bara på sommaren och hösten och inte i alla byar på 35 dygn (steg 3.8.4); scenariot tornado prövar att gå undan',
   flyEld: 'bara den som står nära en brinnande ruta och inte släcker går undan (steg 3.8.5); scenariot brand prövar branden',
   rock_vargskinn: 'en rock av vargskinn behöver två vargskinn, alltså två fällda vargar (steg 3.7.14), sällan på 35 dygn; scenariot plagg prövar den',

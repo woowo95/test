@@ -791,7 +791,8 @@ SCENARIER.kloka = {
     const c = anar(trog, [klok.id, gammal.id]);
     // i byn: varslet sprids i samtal innan den äldsta anar det
     tandEld(v); setMat(v, { bar: 20, torkat: 20 });
-    kor(v, (start - 2.1 * DAY - v.now) / HOUR);
+    for (const p of living(v)) (p.kunskap ??= {}).svamp = { v: 1, t: v.now }; // (alla skiljer svamparna åt: provet gäller varslet, och den kloka ska inte förgiftas)
+    kor(v, (start - 1.3 * DAY - v.now) / HOUR); // (den äldsta anar den 1–2 dygn innan: fram till strax innan dess)
     const hort = living(v).filter(p => p.varsel?.t === start && p.varsel.src !== undefined).length;
     const f = (x?: { t: number; c: number }) => x ? `${x.t.toFixed(1)} dygn innan, säker ${x.c.toFixed(2)}` : 'inte alls';
     // en motgång som tar slut när nästa börjar direkt efter: slutet räknas ändå, och de som klarade den minns den (kodgenomgången 3.10.25)
