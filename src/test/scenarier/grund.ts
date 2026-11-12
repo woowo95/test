@@ -1148,7 +1148,7 @@ SCENARIER.flodrest = {
       [`där vattnet står byggs inget (${valtIFloden} av ${iFloden} timmar väljs golvet under vatten)`, iFloden > 0 && valtIFloden === 0],
       [`vattenkartan följer översvämningen också när den når fyra rutor upp (${utanFlod} rutor vatten utan, ${medFlod} med)`, medFlod > utanFlod],
       [`vattnet nådde ${hogst} rutor upp på land`, hogst >= 2],
-      [`de vuxna bar undan maten innan vattnet kom (${s.stat?.['flod undan'] ?? 0} gånger; ${rotterKvarVid1} av 12 rötter kvar två rutor från vattnet medan det stod en ruta upp)`, (s.stat?.['flod undan'] ?? 0) >= 1 && rotterKvarVid1 === 0],
+      [`de vuxna ser vattnet stiga och bär undan maten innan det kommer (${s.stat?.['flod undan'] ?? 0} gånger med raden flod, ${s.stat?.['flod avbryter'] ?? 0} avbröt det de gjorde; ${rotterKvarVid1} av 12 rötter kvar två rutor från vattnet medan det stod en ruta upp)`, ((s.stat?.['flod undan'] ?? 0) >= 1 || (s.stat?.['flod avbryter'] ?? 0) >= 1) && rotterKvarVid1 === 0],
       [`alla i byn som var där minns hur högt vattnet nådde (${minns} av ${dar.length}, byn minns ${s.flodMinne ?? 0} rutor${utan.length ? `; inte ${utan.join(', ')}` : ''})`, minns === dar.length && dar.length > 0 && s.flodMinne === hogst],
       [`där bygger man inte (en ruta från vattnet är ${ledigNu ? 'ledig' : 'inte ledig'} efteråt)`, !ledigNu],
       [`jordgolvet blev lera och torkade till jordgolv igen (${lera ? 'lera' : 'aldrig lera'}, nu ${SIM.MATERIAL[jord.m].namn.toLowerCase()})`, lera && jord.m === 'jord'],

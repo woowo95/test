@@ -1,9 +1,10 @@
 import { bynsMitt } from './omrade';
 import { balans } from './balans';
-import { count, living, log } from './folk';
+import { ALDER, ageOf, count, living, log } from './folk';
 import { motgangNu, motgangTal } from './motgang';
 import { bitsOf, roofed, touch } from './byggnad';
-import { stacksOf, tidy } from './lager';
+import { avbryt, flodUndan, stacksOf, tidy } from './lager';
+import { larmAvbryter } from './handlingar';
 import { forvarAt } from './stationer';
 import { isFood, viktOf } from './saker';
 import { iVattnetNu, vattenNu } from './sjo';
@@ -79,6 +80,16 @@ export function stepFlod(s: State) {
   if (minne) s.flodMinne = minne; else delete s.flodMinne;
   if (niva !== fore) andras(s, niva, fore, minne);
   lera(s);
+  if (s.flodHot) serFloden(s);
+}
+// de vakna vuxna ser vattnet stiga: når det maten och ingen bär undan den än, avbryter de det de gör och väljer om (raden flod i
+// val.ts bär undan den). Det som fortsätter i en brand (strid, vård, den som bärs eller föder) fortsätter också nu
+function serFloden(s: State) {
+  if (!flodUndan(s) || living(s).some(p => p.task?.act === 'bara' && p.task.why?.startsWith('Vattnet stiger'))) return;
+  for (const p of living(s)) {
+    if (!p.task || p.task.act === 'sova' || p.task.act === 'badd' || p.task.act === 'bara' || ageOf(p, s.now) < ALDER.vuxen || !larmAvbryter(p.task.act, 'brand')) continue;
+    avbryt(s, p); p.task = undefined; count(s, 'flod avbryter');
+  }
 }
 // vattnet stiger eller sjunker en ruta
 function andras(s: State, niva: number, fore: number, minne: number) {
@@ -93,6 +104,7 @@ function andras(s: State, niva: number, fore: number, minne: number) {
     if (s.fire.lit && iVattnetNu(s, f.y * W + f.x)) s.fire.fuel = 0; // elden i vattnet slocknar (stepFire i eld.ts)
     count(s, 'flod stiger');
     log(s, fore ? 'Vattnet fortsätter att stiga.' : 'Sjön svämmar över. Vattnet stiger upp på stranden.', 'world');
+
   } else {
     delete s.flodHot;
     if (!mindes) minns(s, hogst); // första gången det sjunker
