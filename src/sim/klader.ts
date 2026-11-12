@@ -22,6 +22,8 @@ export const KLADER = balans('klader', {
   gottOm: 2, // det finns gott om ett material när det räcker till så här många plagg till, utöver det som behövs (punkt 4)
   dyrt: 1.5, // ett plagg som kostar så här många gånger det billigaste är dyrt och sparas (punkt 5)
   skyddTak: 0.9, // ett plagg tar som mest så här stor del av en skada (kodgenomgången 3.10.25: talet stod löst)
+  // vikterna i valet av material (valMaterial, steg 10.2.38): punkterna vägs ihop, och de första väger mest
+  vKyla: 8, vHot: 5, vSaknas: 3, vGottOm: 2, vDyrt: 1.5, vFin: 1, vVarde: 0.5,
 });
 
 export type MaterialSlag = 'skinn' | 'lader' | 'tyg' | 'ull' | 'flatat' | 'smycke'; // ull: ylletyget (steg 9.8.14), som tyget men också till kappan, manteln och sjalen
@@ -154,21 +156,26 @@ export interface MaterialLage { k: string; varme: number; skydd: number; kvar: n
 // läget i byn: kyla = vintern närmar sig eller någon fryser, hot = vargar nära eller en strid nyligen, fin = den som syr åt
 // sig själv har gott anseende och tar ett finare material när inget annat skiljer
 export interface ValLage { kyla: boolean; hot: boolean; fin: boolean }
-// det material den som syr väljer bland ks (alla går att göra nu): varje punkt väger mer än alla efter den
+// det material den som syr väljer bland ks (alla går att göra nu): punkterna vägs ihop med vikterna i KLADER (steg 10.2.38),
+// lägst summa vinner. De första punkterna väger mest, men flera senare kan tillsammans väga upp en tidigare
 export function valMaterial(ks: MaterialLage[], l: ValLage): string | undefined {
   if (ks.length <= 1) return ks[0]?.k;
   const billigast = Math.min(...ks.map(m => m.varde));
+  // skyddet, finheten och värdet räknas från det minsta (0) till det största (1) bland materialen
+  const del = (f: (m: MaterialLage) => number) => { const v = ks.map(f), lo = Math.min(...v), hi = Math.max(...v); return (m: MaterialLage) => hi - lo > 1e-12 ? (f(m) - lo) / (hi - lo) : 0; };
+  const skydd = del(m => m.skydd), finhet = del(m => m.finhet), varde = del(m => m.varde);
   const varmNog = (m: MaterialLage) => m.varme >= Math.max(...ks.map(x => x.varme)) - 1e-9 || kladVarmNog(m);
-  const punkter: ((m: MaterialLage) => number)[] = [
-    m => l.kyla && !varmNog(m) ? 1 : 0, // (1) kylan: ett material som håller bäraren varm nog, annars det varmaste
-    m => l.hot ? -m.skydd : 0, // (2) striden: det som skyddar mest
-    m => m.kvar < m.behovs ? 1 : 0, // (3) det som saknas sparas
-    m => m.kvar - m.behovs >= KLADER.gottOm * m.till ? 0 : 1, // (4) det som finns gott om används först
-    m => m.varde > billigast * KLADER.dyrt ? 1 : 0, // (5) det dyra sparas till byten och gåvor
-    m => l.fin ? -m.finhet : m.finhet, // (6) smak och anseende: den ansedda tar det finare materialet, andra det enklare
-    m => l.fin ? -m.varde : m.varde, // ... och sist värdet: den ansedda tar det dyrare plagget, andra det billigare
-  ];
-  return [...ks].sort((a, b) => { for (const f of punkter) { const d = f(a) - f(b); if (d) return d; } return 0; })[0].k;
+  const summa = (m: MaterialLage) =>
+    KLADER.vKyla * (l.kyla && !varmNog(m) ? 1 : 0) // (1) kylan: ett material som håller bäraren varm nog, annars det varmaste
+    + KLADER.vHot * (l.hot ? -skydd(m) : 0) // (2) striden: det som skyddar mest
+    + KLADER.vSaknas * (m.kvar < m.behovs ? 1 : 0) // (3) det som saknas sparas
+    + KLADER.vGottOm * (m.kvar - m.behovs >= KLADER.gottOm * m.till ? 0 : 1) // (4) det som finns gott om används först
+    + KLADER.vDyrt * (m.varde > billigast * KLADER.dyrt ? 1 : 0) // (5) det dyra sparas till byten och gåvor
+    + KLADER.vFin * (l.fin ? -finhet(m) : finhet(m)) // (6) smak och anseende: den ansedda tar det finare materialet, andra det enklare
+    + KLADER.vVarde * (l.fin ? -varde(m) : varde(m)); // ... och värdet: den ansedda tar det dyrare plagget, andra det billigare
+  let b = ks[0], bv = summa(b);
+  for (const m of ks.slice(1)) { const v = summa(m); if (v < bv - 1e-12) { b = m; bv = v; } }
+  return b.k;
 }
 // varmt nog i kylan: materialet är så varmt som ett vinterplagg behöver (KLADER.vinterVarm), eller plagget värmer inte alls
 const kladVarmNog = (m: MaterialLage) => { const r = kladAv(m.k); return !!r && (KLADMATERIAL[r.mat].varme >= KLADER.vinterVarm || PLAGG[r.plagg].varme === 0); };
