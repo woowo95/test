@@ -64,6 +64,7 @@ export const ROVARE = balans('rovare', {
   gissFel: 0.5, // vaktens gissning av antalet: fel med upp till så här stor del, gånger avståndet / vaktSer (andra gissar som på längsta avståndet)
   bredvid: 2, // var och en går mot en egen punkt upp till så här många rutor från gängets mål (steg 10.2.25) ...
   filBredd: 1.1, // ... och går en egen fil så här många rutor från de andras
+  vagSok: 30, vagFlytt: 3, // en väg som inte gick att hitta söks igen efter så här många sekunder, och vägen behålls när målet flyttat sig högst så här många rutor
   fartSpann: 0.08, // ... och upp till så här mycket långsammare än en bybo
   nara: 1.5, // rövarna är framme vid förrådet så här nära
   // rövarnas val (steg 10.1.9–10.1.15, ROVARHANDLINGAR)
@@ -212,8 +213,16 @@ export function stallUpp(s: State, f: Rovarflock, x: number, y: number) {
 export function gaMot(s: State, r: Person, mx: number, my: number, sek: number, t0: number, fartF = 1) {
   const g = groundOf(s), mal = tileOf(mx, my);
   if (gr(r).pk !== mal) {
-    gr(r).pk = mal; gr(r).path = findPath(g, r.x, r.y, mx, my) ?? undefined;
-    if (!gr(r).path) { gr(r).pk = undefined; return -1; }
+    // ett mål som flyttat sig högst ROVARE.vagFlytt rutor behåller vägen (den sista biten går rakt); ett mål som inte gick att nå
+    // prövas igen först efter ROVARE.vagSok sekunder: vägsökningen går över hela kartan
+    const pk = gr(r).pk, nara = pk !== undefined && !!gr(r).path?.length && Math.hypot(pk % W - mx, Math.floor(pk / W) - my) <= ROVARE.vagFlytt;
+    if (nara) gr(r).pk = mal;
+    else if (gr(r).ingen === mal && s.now - (gr(r).ingenT ?? 0) < ROVARE.vagSok * SEC) return -1;
+    else {
+      gr(r).pk = mal; gr(r).path = findPath(g, r.x, r.y, mx, my) ?? undefined;
+      if (!gr(r).path) { gr(r).pk = undefined; gr(r).ingen = mal; gr(r).ingenT = s.now; return -1; }
+      gr(r).ingen = undefined;
+    }
   }
   if (!gr(r).spar?.length) spara(s, r, t0);
   let tid = 0;

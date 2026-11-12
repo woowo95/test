@@ -51,6 +51,7 @@ import { LARMHOT, rollVid } from './roller';
 // flyr när en varg faller eller ledarvargen dör. Bett blir ofta infekterade. En dödad varg blir en fälld varg som bärs hem
 // och slaktas (redskap.ts), och den som dödade den blir en vargdödare (rykten.ts)
 export const VARG = balans('varg', {
+  vagSok: 30, vagFlytt: 3, // flocken söker en ny väg runt hinder högst var så här många sekunder, och behåller den när målet flyttat sig högst så här många rutor
   kommer: 0.08, // chansen i timmen under istiden att en flock kommer, när ingen är på kartan (0,03 före steg 3.10.15: nu finns vargar nästan hela vintern)
   ensam: 0.3, // chansen att det är en ensam varg ...
   flockMax: 6, // ... annars 2 till så här många
@@ -153,7 +154,8 @@ const vagg = (s: State, x: number, y: number) => gridOf(s).solid?.[Math.floor(y)
 function ga(s: State, f: Vargflock, fart: number, dtSec: number, sokt = false): number {
   // vägen runt det som står i vägen (ett hus, en vägg): flocken följer den så länge målet är detsamma
   const mal = Math.floor(f.my) * W + Math.floor(f.mx);
-  if (f.vag && f.vag.m !== mal) f.vag = undefined;
+  // ett mål som flyttat sig några rutor (den som flocken jagar går) behåller vägen; ett annat mål tar bort den
+  if (f.vag && f.vag.m !== mal) { const vx = f.vag.m % W, vy = Math.floor(f.vag.m / W); if (f.vag.ingen || Math.hypot(vx - Math.floor(f.mx), vy - Math.floor(f.my)) > VARG.vagFlytt) f.vag = undefined; else f.vag.m = mal; }
   while (f.vag?.t.length) {
     const i = f.vag.t[0], wx = i % W + 0.5, wy = Math.floor(i / W) + 0.5;
     if (Math.hypot(wx - f.x, wy - f.y) < 0.4) { f.vag.t.shift(); continue; }
@@ -175,9 +177,12 @@ function ga(s: State, f: Vargflock, fart: number, dtSec: number, sokt = false): 
     f.x = x; f.y = y; return true;
   };
   if (fram(0)) return d - l;
-  const vag = sokt || f.vag?.ingen ? undefined : findPath(groundOf(s), f.x, f.y, f.mx, f.my);
+  // en ny väg söks högst var VARG.vagSok sekund (en takt per tid): vägsökningen går över hela kartan
+  const far = !sokt && !f.vag?.ingen && s.now - (f.vagT ?? -Infinity) >= VARG.vagSok * 1000;
+  if (far) f.vagT = s.now;
+  const vag = far ? findPath(groundOf(s), f.x, f.y, f.mx, f.my) : undefined;
   if (vag?.length) { f.vag = { m: mal, t: vag }; return ga(s, f, fart, dtSec, true); }
-  if (!sokt && !vag) f.vag = { m: mal, t: [], ingen: true }; // ingen väg dit: den söks inte igen förrän målet är ett annat
+  if (far && !vag) f.vag = { m: mal, t: [], ingen: true }; // ingen väg dit: den söks inte igen förrän målet är ett annat
   for (const v of SNETT) if (v && fram(v)) return Math.hypot(f.mx - f.x, f.my - f.y);
   return -1;
 }
