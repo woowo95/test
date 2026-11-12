@@ -920,10 +920,10 @@ const MDEF = {
   ],
   k_skadad: [
     '{namn} skadades svårt i ett slagsmål med {mot}.',
-    'Det blev slagsmål mellan {namn} och {mot}, och {namn} skadades svårt.',
-    '{namn} och {mot} kom i luven på varandra. Det slutade med att {namn} låg svårt skadad.',
+    { t: 'Det blev slagsmål mellan {namn} och {mot}, och {namn} skadades svårt.', om: f => !f.flera }, // (med fler än en blir det 'A och B och C')
+    { t: '{namn} och {mot} kom i luven på varandra. Det slutade med att {namn} låg svårt skadad.', om: f => !f.flera }, // (med fler än en blir det 'A och B och C')
     'Det var {arstid} när {namn} skadades svårt i ett slagsmål med {mot}.',
-    'Ingen kunde stoppa slagsmålet mellan {namn} och {mot} förrän {namn} låg svårt skadad.',
+    { t: 'Ingen kunde stoppa slagsmålet mellan {namn} och {mot} förrän {namn} låg svårt skadad.', om: f => !f.flera },
     'Ord blev slag, och {namn} skadades svårt av {mot}.',
     'Byn talade länge om slagsmålet där {mot} skadade {namn} svårt.',
     '{namn} bar länge märkena efter slagsmålet med {mot}.',

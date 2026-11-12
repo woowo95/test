@@ -1062,7 +1062,7 @@ export function efterStrid(s: State, st: Strid, k: Kampe, p: Person, mot: Person
   ovning(p, 'narstrid', lek ? SLAGSMAL.ovningLek : SLAGSMAL.ovning);
   // tycket för vapnet (steg 3.7.10): den som vann eller övade med det gillar det, en svår förlust ger ogillande
   const svar = k.lage === 'nere' || k.skador.reduce((a, w) => a + w.g, 0) >= STRID.tyckeSvar;
-  if (svartSkadad(k)) { notis(s, 'strid', `${p.name} skadades svårt i ${lek ? 'en lek' : 'ett slagsmål'} med ${och(mot.map(q => q.name))}.`, [p.id, ...mot.map(q => q.id)], { x: Math.floor(p.x), y: Math.floor(p.y) }); kronikaBer(s, lek ? 'k_skadadLek' : 'k_skadad', p.id, { ...personFalt(p), mot: och(mot.map(q => q.name)) }); } // steg 3.7.16: döden skriver die
+  if (svartSkadad(k)) { notis(s, 'strid', `${p.name} skadades svårt i ${lek ? 'en lek' : 'ett slagsmål'} med ${och(mot.map(q => q.name))}.`, [p.id, ...mot.map(q => q.id)], { x: Math.floor(p.x), y: Math.floor(p.y) }); kronikaBer(s, lek ? 'k_skadadLek' : 'k_skadad', p.id, { ...personFalt(p), mot: och(mot.map(q => q.name)), flera: mot.length > 1 }); } // steg 3.7.16: döden skriver die
   if (lek) smaka(p, 'v:' + k.vapen, STRID.tyckeLek);
   else if (vinnare === k.sida) smaka(p, 'v:' + k.vapen, STRID.tyckeVann);
   else if (vinnare !== -1 && svar) smaka(p, 'v:' + k.vapen, -STRID.tyckeForlust);
