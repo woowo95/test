@@ -133,7 +133,7 @@ export function renderPanel(force = false) {
   }
   const vanster = ui.tab === 'person' || (ärRuta(ui.tab) && ui.selected !== undefined) ? 'person' : undefined;
   document.body.classList.toggle('vOppen', !!vanster);
-  document.body.classList.toggle('hOppen', !!ui.hoger); // kartans knappar flyttar till vänster om den högra panelen (steg 5.3.6)
+  document.body.classList.toggle('hOppen', !!ui.hoger); // zoomen flyttar till vänster om den högra panelen (steg 5.3.6); värmekartornas knappar står kvar och täcks (steg 10.2.62)
   renderOwned();
   skriv(SIDOR.v, vanster, force);
   skriv(SIDOR.h, ui.hoger, force);

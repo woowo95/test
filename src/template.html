@@ -123,9 +123,9 @@ img.ikon.sym { vertical-align: middle; } /* emojierna som pixelsymboler i hel sk
 .filters button[aria-pressed="true"] { outline: 2px solid #d8b25f; }
 .legend { position: absolute; right: calc(var(--stenar) + 50px); bottom: 52px; z-index: 1; background: rgba(36, 32, 29, 0.6); border-radius: 4px; padding: 5px 7px; display: flex; flex-direction: column; gap: 3px; }
 /* kartans knappar (steg 5.3.6 och 6.8.13): zoomen nere i högra hörnet bredvid porträttraden, filtren för värmekartan ovanför den, och båda till vänster om den högra panelen när den är öppen */
-body.hOppen .zoom, body.hOppen .filters { right: calc(var(--stenar) + 14px + min(360px, 100vw - var(--stenar) - 24px) + 10px); }
-body.hOppen .legend { right: calc(var(--stenar) + 14px + min(360px, 100vw - var(--stenar) - 24px) + 50px); }
-@media (max-width: 760px) { body.hOppen .zoom, body.hOppen .filters, body.hOppen .legend { display: none; } } /* ingen plats bredvid panelen på en smal skärm (steg 5.3.7) */
+body.hOppen .zoom { right: calc(var(--stenar) + 14px + min(360px, 100vw - var(--stenar) - 24px) + 10px); }
+/* värmekartornas knappar och förklaring står kvar när panelen fälls ut, och panelen får täcka dem (steg 10.2.62) */
+@media (max-width: 760px) { body.hOppen .zoom { display: none; } } /* ingen plats bredvid panelen på en smal skärm (steg 5.3.7) */
 .legend button { display: flex; align-items: center; gap: 5px; background: none; border: 0; padding: 2px 3px; border-radius: 3px; cursor: pointer; }
 .legend button:hover { background: rgba(218, 208, 187, 0.12); }
 .legend button[aria-pressed="true"] { outline: 2px solid #d8b25f; }
