@@ -141,10 +141,10 @@ const DEF = {
   kompost: { var: 'station', av: { virke: 1 }, min: 10, tek: 'kompost' }, // komposten (steg 9.7.6): en enkel inhägnad av lite trä
   grill: { var: 'station', av: { grenar: RT.grillGrenar, rep: RT.grillRep }, min: RT.grillMin },
   tork: { var: 'station', av: { grenar: RT.torkGrenar, rep: RT.torkRep }, min: RT.torkMin },
-  bakugn: { var: 'station', av: { sten: 8, lera: 4 }, min: 20, tek: 'bakugn' }, // bakugnen (steg 9.6.23): ett valv av sten tätat med lera
+  bakugn: { var: 'station', av: { huggen_sten: 4, lera: 4 }, min: 20, tek: 'bakugn' }, // bakugnen (steg 9.6.23): ett valv av huggen sten tätat med lera (steg 10.2.66)
   kvarnsten: { var: 'station', av: { huggen_sten: 2 }, min: 20, tek: 'kvarnsten' }, // kvarnstenen (steg 9.6.22): två huggna stenar som kornet mals mellan
   bryggkar: { var: 'station', av: { virke: 1 }, min: 15, tek: 'bryggkar', verktyg: { yxa: 'yxan' } }, // bryggkaret (steg 9.6.12)
-  rokeri: { var: 'station', av: { sten: 6, grenar: 4, lera: 2 }, min: 20, tek: 'rokeri' }, // rökeriet (steg 9.6.8): en låg stenugn med ett tak av grenar och lera
+  rokeri: { var: 'station', av: { huggen_sten: 3, grenar: 4, lera: 2 }, min: 20, tek: 'rokeri' }, // rökeriet (steg 9.6.8): en låg ugn av huggen sten med ett tak av grenar och lera (steg 10.2.66)
   brasa: { var: 'station', av: { sten: RT.brasaSten }, min: RT.brasaMin },
   scen: { var: 'station', av: { virke: RT.scenVirke }, min: RT.scenMin },
   // proteserna (steg 9.5.11, protes.ts): kryckan och träbenet täljs och kroken görs av virke bara vid snickarbänken, ögonlappen av skinn för hand
@@ -157,7 +157,7 @@ const DEF = {
   lerkruka_liten: { var: 'sak', av: { lera: 1 }, min: 3, slag: 'liten', tek: 'kruka' }, lerkruka_mellan: { var: 'sak', av: { lera: 2 }, min: 4, slag: 'liten', tek: 'kruka' }, lerkruka_stor: { var: 'sak', av: { lera: 4 }, min: 4, slag: 'liten', tek: 'kruka' }, // lerkrukan i tre storlekar (steg 9.4.11, KRUKOR i kruka.ts): byggs upp för hand av lera med sand i
   bonad: { var: 'station', av: { skinn: RT.bonadSkinn, rep: RT.bonadRep }, min: RT.bonadMin },
   // tillbehören (stationer.ts) och dörrarna (byggnad.ts)
-  stekhall: { var: 'tillbehor', av: { sten: 2 }, min: 10, tek: 'stekhall' }, // stekhällen (steg 9.6.21): en flat sten över elden vid grillen
+  stekhall: { var: 'tillbehor', av: { huggen_sten: 1 }, min: 10, tek: 'stekhall' }, // stekhällen (steg 9.6.21): en flat huggen sten över elden vid grillen (steg 10.2.66)
   skinnfall: { var: 'tillbehor', av: { skinn: RT.fallSkinn }, min: RT.fallMin },
   skinndorr: { var: 'dorr', av: { skinn: RT.skinndorrSkinn }, min: RT.skinndorrMin },
   tradorr: { var: 'dorr', av: { virke: RT.tradorrVirke, rep: RT.tradorrRep }, min: RT.tradorrMin },
