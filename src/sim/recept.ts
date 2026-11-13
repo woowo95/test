@@ -37,6 +37,7 @@ export const RT = balans('recept', {
   torkGrenar: 5, torkRep: 1, torkMin: 20, // torkställningen: så många grenar och rep och så många minuters arbete
   brasaSten: 6, brasaMin: 15, // en lägereld till: så många stenar (som lägereldens ring) och så många minuters arbete
   bonadSkinn: 1, bonadRep: 1, bonadMin: 12, // bonaden: ett skinn med mönster, upphängt i ett rep
+  hogsateVirke: 3, hogsateMin: 15, bankVirke: 2, bankMin: 12, // långhusets högsäte och bänkar (steg 10.2.68)
   skinndorrSkinn: 2, // en skinndörr görs av så många skinn ...
   skinndorrMin: 20, // ... och så många minuters arbete
   tradorrVirke: 2, tradorrRep: 1, // en trädörr görs av så mycket virke (steg 4.5.5.2) och rep ...
@@ -156,6 +157,8 @@ const DEF = {
   naverask: { var: 'sak', av: { naver: 1, rep: 1 }, min: 3, slag: 'liten', tek: 'naverask' }, // näveraskan (steg 9.4.13): viks av näver och sys ihop med rep, för hand eller fortare vid slöjdbänken
   lerkruka_liten: { var: 'sak', av: { lera: 1 }, min: 3, slag: 'liten', tek: 'kruka' }, lerkruka_mellan: { var: 'sak', av: { lera: 2 }, min: 4, slag: 'liten', tek: 'kruka' }, lerkruka_stor: { var: 'sak', av: { lera: 4 }, min: 4, slag: 'liten', tek: 'kruka' }, // lerkrukan i tre storlekar (steg 9.4.11, KRUKOR i kruka.ts): byggs upp för hand av lera med sand i
   bonad: { var: 'station', av: { skinn: RT.bonadSkinn, rep: RT.bonadRep }, min: RT.bonadMin },
+  hogsate: { var: 'station', av: { virke: RT.hogsateVirke }, min: RT.hogsateMin }, // långhusets högsäte och bänkar (steg 10.2.68)
+  bank: { var: 'station', av: { virke: RT.bankVirke }, min: RT.bankMin },
   // tillbehören (stationer.ts) och dörrarna (byggnad.ts)
   stekhall: { var: 'tillbehor', av: { huggen_sten: 1 }, min: 10, tek: 'stekhall' }, // stekhällen (steg 9.6.21): en flat huggen sten över elden vid grillen (steg 10.2.66)
   skinnfall: { var: 'tillbehor', av: { skinn: RT.fallSkinn }, min: RT.fallMin },

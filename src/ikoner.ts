@@ -63,6 +63,8 @@ export const PAL: Record<string, Record<string, string>> = {
   // pyntet (steg 4.3.4, platshållare i bildstilens palett, 16 punkter per ruta)
   kruka: { o: '#24201d', r: '#521100', R: '#742a01', T: '#bd753e', k: '#2f261d', z: 'rgba(36,32,29,.30)' }, // (Björn valde version 1 efter v245, steg 4.5.2)
   bonad: { o: '#24201d', b: '#5e3c24', c: '#7d5b40', r: '#521100', R: '#742a01', s: '#906f0f', S: '#b2921b', w: '#a0947d', W: '#bdb39b' }, // (Björn valde version 3 efter v245, steg 4.5.2)
+  hogsate: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', e: '#987e62', s: '#906f0f', S: '#d8b25f', z: 'rgba(36,32,29,.30)' }, // långhusets högsäte (steg 10.2.68, platshållare, 16 punkter)
+  bank: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', e: '#987e62', z: 'rgba(36,32,29,.30)' }, // långhusets bänk (steg 10.2.68, platshållare, 16 punkter per ruta)
   virke: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', e: '#bdb39b', E: '#dad0bb', z: 'rgba(36,32,29,.30)' }, // kluvna stockar (steg 4.5.5.2, platshållare, 16 punkter)
   // filten där stora byten görs (steg 4.4.1.1, platshållare, 16 punkter)
   silver: { o: '#372f25', S: '#bdb39b', W: '#dad0bb', s: '#987e62' },
@@ -2358,6 +2360,42 @@ export const PIX: Record<string, string[]> = {
     '...zzzzzzzzzzz..',
   ],
   // bonaden (platshållare): ett ljust skinn med ett rött mönster, upphängt i en käpp, med fransar
+  hogsate: [ // platshållare (steg 10.2.68)
+    '....oooooooo....',
+    '...oSsSsSsSSo...',
+    '...oceeeeeeco...',
+    '...obccccccbo...',
+    '...obccccccbo...',
+    '...obccccccbo...',
+    '...obccccccbo...',
+    '..oobccccccboo..',
+    '..oeeeeeeeeeeo..',
+    '..obbbbbbbbbbo..',
+    '..oaaaaaaaaaao..',
+    '..oao......oao..',
+    '..oao......oao..',
+    '..oao......oao..',
+    '..ooo......ooo..',
+    '...zzz....zzz...',
+  ],
+  bank: [ // platshållare (steg 10.2.68)
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '.oooooooooooooooooooooooooooooo.',
+    'oeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeo',
+    'occcccccccccccccccccccccccccccco',
+    'obbbbbbbbbbbbbbbbbbbbbbbbbbbbbbo',
+    'oaaaaaaaaaaaaaaaaaaaaaaaaaaaaaao',
+    '.oaoo.......oaao......oaao..oao.',
+    '.oao........oao........oao..oao.',
+    '.oao........oao........oao..oao.',
+    '.ooo........ooo........ooo..ooo.',
+    '..zzz........zzz........zzz.zzz.',
+  ],
   bonad: [ // (Björn valde version 3 efter v245, steg 4.5.2)
     '.oooooooooooooo.',
     'ocbbbbbbbbbbbbbo',

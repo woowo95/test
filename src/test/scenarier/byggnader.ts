@@ -1832,3 +1832,25 @@ SCENARIER.mittenstation = {
     ];
   },
 };
+
+SCENARIER.langhus = {
+  text: 'Steg 10.2.68: långhuset är byns stora hus. Storleken väger in byns rikedom och seden Sammanhållning, och där vill byn ha ett högsäte och bänkar längs väggarna, som får sin plats i långhuset och är sittplatser',
+  kor: () => {
+    const s = createState(6, START); klockan(s); byggare(s);
+    for (let i = 0; i < 8; i++) nyInvanare(s, i % 2 ? 'm' : 'k', 25);
+    const behov = { fn: 'sovsal', a: { v: 1, plats: 10 } } as never;
+    const fattig = SIM.onskadPlats(s, behov);
+    SIM.put(s, 'silver', 5000);
+    const rik = SIM.onskadPlats(s, behov);
+    planBuild(s); byggKlart(s);
+    const rum = SIM.langhusRum(s);
+    const hog = SIM.stationBrist(s, 'hogsate'), bank = SIM.stationBrist(s, 'bank');
+    const plats = SIM.stationSite(s, 'hogsate'), iRum = !!rum && !!plats && rum.tiles.includes(Math.floor(plats.y) * W + Math.floor(plats.x));
+    return [
+      [`en rikare by bygger ett större långhus (${fattig} mot ${rik} sovplatser)`, rik > fattig],
+      [`byn har ett långhus (${rum ? SIM.sovplatser(s, rum) : 0} sovplatser) och vill ha ett högsäte och bänkar (brist ${hog} och ${bank.toFixed(2)})`, !!rum && hog === 1 && bank > 0],
+      ['högsätet får sin plats i långhuset', iRum],
+      ['bänken och högsätet är sittplatser', !!SIM.STATIONER.bank.sittplats && !!SIM.STATIONER.hogsate.sittplats && !!SIM.STATIONER.hogsate.enda],
+    ];
+  },
+};

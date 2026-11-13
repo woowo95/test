@@ -19,10 +19,10 @@ import { Pabud, legitimitet, pabud } from './styre';
 import { ALDER, ageOf, living } from './folk';
 import { clamp } from './slump';
 import { sportFor } from './sport';
-import { STATIONER, StationDef, StationSlag, bordBrist, forvarBrist, harStation, isKlar, pyntBrist, pyntLust, stationerOf, tommaPlatser, villPynt } from './stationer';
+import { STATION, STATIONER, StationDef, StationSlag, bordBrist, forvarBrist, harStation, isKlar, pyntBrist, pyntLust, stationerOf, tommaPlatser, villPynt } from './stationer';
 import { nTools, tingOf } from './agande';
 import { brasaBrist } from './brasor';
-import { BYGGNADER, fnId, utanBadd } from './byggnader';
+import { BYGGNADER, fnId, langhusRum, sovplatser, utanBadd } from './byggnader';
 import { latrinBrist } from './smuts';
 import { torkBrist } from './matlagning';
 import { GREN, HOUR, State, WEEK } from './typer';
@@ -247,10 +247,20 @@ export const villAv = (s: State, g: string) => REDSKAPMAL[g](s);
 // sina egna mått. Bristen är hur stor del av bufferten som saknas (0 till 1), som projektets brist (projekt.ts)
 // En halvbyggd station (en kista, ett pynt) görs klar även när ingen längre vill ha en ny: bristen är då 1
 const harBrist = (s: State) => { const n = (s.eldar ?? []).filter(f => f.hearth === 'hard').length, hus = (s.hus ?? []).filter(h => h.klar && !(BYGGNADER as Record<string, { omkring?: boolean }>)[fnId(h)]?.omkring).length; /* torkhuset och vedboden har ingen härd */ return n < hus ? 0.5 : 0; };
+// långhusets möbler (steg 10.2.68): ett högsäte i byn, och en bänk per STATION.bankPer sovplatser i långhuset
+function langhusBrist(s: State, k: StationSlag) {
+  const r = langhusRum(s);
+  if (!r) return 0;
+  const har = stationerOf(s).filter(t => t.k === k).length;
+  if ((STATIONER[k] as StationDef).enda) return har ? 0 : 1;
+  const vill = Math.ceil(sovplatser(s, r) / STATION.bankPer);
+  return vill > 0 ? Math.max(0, (vill - har) / vill) : 0;
+}
 export function stationBrist(s: State, k: StationSlag) {
   const d: StationDef = STATIONER[k];
   if (!d.brasa && stationerOf(s).some(t => t.k === k && !isKlar(t))) return 1;
   if (d.hard) return harBrist(s); // härden: ett hus där folk sover utan en härd (steg 7.5.3)
+  if (d.langhus) return langhusBrist(s, k); // högsätet och bänkarna i långhuset (steg 10.2.68)
   return d.pynt ? pyntBrist(s, k) : d.brasa ? brasaBrist(s) : d.sover ? (living(s).length ? utanBadd(s) / living(s).length : 0) : d.platser ? bordBrist(s, k)
     : d.forvar ? forvarBrist(s, k) : d.gor.includes('toa') ? latrinBrist(s) : d.gor.includes('torka') ? torkBrist(s) : harStation(s, k) ? 0 : 1;
 }

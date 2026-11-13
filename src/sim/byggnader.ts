@@ -470,6 +470,17 @@ export function varmareInne(s: State, rum: Rum, c: number, varmer = false, p?: {
   return inne >= Math.min(0, ute) - HUS.varmeMarg;
 }
 // samlingshusets rum, där man umgås när det är kallt (val.ts)
+// långhuset (steg 10.2.68): byns största sovsal (ingen äger den) med minst HUS.langhus sovplatser, där högsätet och bänkarna står
+export function langhusRum(s: State): Rum | undefined {
+  let best: Rum | undefined, bn = 0;
+  for (const r of gridOf(s).rooms) {
+    const h = husById(s, r.hus);
+    if (!h?.klar || h.ag !== undefined || fnId(h) !== 'sovsal') continue;
+    const n = sovplatser(s, r);
+    if (n >= HUS.langhus && n > bn) { bn = n; best = r; }
+  }
+  return best;
+}
 export const samlingRum = (s: State): Rum | undefined => {
   const ids = new Set(housesOf(s).filter(h => h.klar).map(h => h.id));
   return ids.size ? gridOf(s).rooms.find(r => r.hus !== undefined && ids.has(r.hus) && r.tiles.length && rumFnId(s, r) === 'samling') : undefined;

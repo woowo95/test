@@ -20,7 +20,7 @@ import { kronika } from './historik';
 import { clamp } from './slump';
 import { ledareOf } from './styre';
 import { PROJEKT_TAL } from './projekt';
-import { ARBETE, formogenheter, grundvarde, husVarde, varuVarde } from './varde';
+import { ARBETE, formogenheter, grundvarde, husVarde, rikedom, varuVarde } from './varde';
 import { BYGG } from './bygg';
 import { DAY, GRANNAR4, H, HOUR, Person, State, T, W, inMap } from './typer';
 import { underMinnet } from './sjo';
@@ -74,6 +74,8 @@ export const PLAN = balans('byggplan', {
   raderVikt: 1.5, // planen i rader: så många poäng mindre för ett hus nära ett gångstråk
   sedMarg: 0.5, // först när seden Dagens behov är starkare än så här bygger byn mindre
   sedStorlek: 0.1, // seden Förutseende bygger så här mycket större, Dagens behov så här mycket mindre
+  langRik: 0.5, langRikPer: 100, // långhuset (steg 10.2.68) blir upp till så här mycket större när byns rikedom per invånare är dubbelt så stor som så här ...
+  langSed: 0.3, // ... och så här mycket större när seden Sammanhållning är som starkast
   rikExtra: 2, // den rika bygger så här många rutor större ...
   rikGang: 1.5, // ... och är rik när familjen äger så här många gånger den övre kvartilen i byn
 });
@@ -195,7 +197,9 @@ export function onskadPlats(s: State, b: ByggBehov) {
   const sed = s.seder?.v?.forsiktighet ?? 0, rik = b.a.ag !== undefined && rikOf(s, b.a.ag) ? PLAN.rikExtra : 0;
   // Dagens behov tar bort marginalen när seden är tydlig, men bygger aldrig för få
   const f = sed > 0 ? 1 + PLAN.sedStorlek * sed : 1 + PLAN.sedStorlek * Math.min(0, sed + PLAN.sedMarg);
-  return Math.min(sover(b) ? sovPersoner(BYGG.maxInne) : BYGG.maxInne, Math.max(1, Math.round(b.a.plats * f) + rik));
+  // långhuset, byns stora hus och stolthet (steg 10.2.68): byns sovsal blir större med byns rikedom per invånare och seden Sammanhållning
+  const n = living(s).length, lang = b.fn === 'sovsal' && b.a.ag === undefined && n ? 1 + PLAN.langRik * Math.min(1, Math.max(0, rikedom(s) / n / PLAN.langRikPer - 1)) + PLAN.langSed * Math.max(0, s.seder?.v?.gemenskap ?? 0) : 1;
+  return Math.min(sover(b) ? sovPersoner(BYGG.maxInne) : BYGG.maxInne, Math.max(1, Math.round(b.a.plats * f * lang) + rik));
 }
 const rikOf = (s: State, ag: number) => { if (!byId(s, ag)) return false; const f = formogenheter(s).egen, v = f.get(ag) ?? 0, alla = [...f.values()].sort((x, y) => x - y); return alla.length > 1 && v >= alla[Math.floor(alla.length * 0.75)] * PLAN.rikGang; };
 
