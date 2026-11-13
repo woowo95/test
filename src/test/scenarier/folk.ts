@@ -2481,11 +2481,11 @@ SCENARIER.rovarrast = {
       gor.forEach(g => handlingar.add(g));
       olika.prov++; if (new Set(gor).size > 1) olika.ja++;
       const par = fo.flatMap((a, j) => fo.slice(j + 1).map(b => Math.hypot(a.x! - b.x!, a.y! - b.y!))), d = par.reduce((x, y) => x + y, 0) / Math.max(1, par.length);
-      if (d > 1.5) isar++; // i snitt mer än en och en halv ruta isär (de som pratar står nära)
+      if (d > 0.7) isar++; // inte på samma punkt (de som pratar står nära varandra, steg 10.2.94)
     }
     return [
       [`gänget rastade ${Math.round(rastTid / 60)} minuter`, rastTid >= 600],
-      [`och gjorde ${[...handlingar].join(', ')}`, handlingar.has('rasta') && handlingar.has('gaOmkring') && handlingar.has('prata')],
+      [`och gjorde ${[...handlingar].join(', ')}`, handlingar.has('rasta') && handlingar.has('prata')], // gå omkring gör de bara ibland (steg 10.2.94)
       [`de pratade med varandra med pratbubbla (${prat} samtal)`, prat > 0],
       [`var och en gör sitt (olika handlingar i ${olika.ja} av ${olika.prov} prov) och de står utspridda (${isar} prov)`, olika.ja > olika.prov * 0.2 && isar > olika.prov * 0.3],
     ];
@@ -2715,6 +2715,32 @@ SCENARIER.vilan = {
     return [
       [`med ett bord nära sätter sig den som vilar på en stubbe (${sitter ? 'sitter' : 'inte'})`, sitter && stalle(s, { ligger: false, gor: 'vila', x: vid.x, y: vid.y, vidBank: false, rorde: false }) === 'sitta'],
       [`utan sittplats ligger den som vilar på marken (${ligger})`, !SIM.sittAt(ute, mark.x, mark.y) && ligger === 'ligga'],
+    ];
+  },
+};
+
+SCENARIER.rovarprat = {
+  text: 'Steg 10.2.94: rövarna pratar mer och går mindre på rastplatsen. De står eller sitter mest och pratar, två eller fler i taget, och går omkring bara ibland; pratbubblorna syns ofta, och de går en mindre del av tiden än de står',
+  kor: () => {
+    const s = createState(4, START);
+    for (let i = 0; i < 12; i++) step(s, 300);
+    SIM.rovarnaKommer(s, 4);
+    const f = s.rovare!, ids = new Set(f.folk);
+    let prat = 0, rastSek = 0, gar = 0, star = 0;
+    let forra = new Map<number, { x: number; y: number }>();
+    for (let i = 0; i < 360 && !f.anfaller && rastSek < 3600; i++) {
+      const ev: TalkEvent[] = [];
+      step(s, 10, ev);
+      if (!f.vantat) { forra = new Map(); continue; }
+      rastSek += 10;
+      prat += ev.filter(e => ids.has(e.a) && ids.has(e.b)).length;
+      for (const r of SIM.rovarna(s, f)) { const q = forra.get(r.id); if (q) { if (Math.hypot(r.x! - q.x, r.y! - q.y) > 0.2) gar++; else star++; } forra.set(r.id, { x: r.x!, y: r.y! }); }
+    }
+    const perMin = prat / Math.max(1, rastSek / 60);
+    return [
+      [`gänget rastade ${Math.round(rastSek / 60)} minuter`, rastSek >= 600],
+      [`de pratade ofta (${prat} samtal, ${perMin.toFixed(1)} i minuten)`, perMin >= 0.5],
+      [`de gick en mindre del av tiden än de stod (${gar} mot ${star} prov)`, gar < star],
     ];
   },
 };

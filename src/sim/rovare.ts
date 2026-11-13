@@ -69,8 +69,8 @@ export const ROVARE = balans('rovare', {
   nara: 1.5, // rövarna är framme vid förrådet så här nära
   // rövarnas val (steg 10.1.9–10.1.15, ROVARHANDLINGAR)
   rastR: 3, // rastplatsen: så här nära mitten håller de sig, och så långt går den som går omkring
-  rastaPoang: 0.35, gaPoang: 0.35, prataPoang: 0.3, // poängen för att vila, gå omkring och prata på rastplatsen (steg 10.2.24: vilan vann nästan alltid med 0,5)
-  pratSek: 40, // den som pratar samtalar ungefär en gång på så här många sekunder
+  rastaPoang: 0.35, gaPoang: 0.2, prataPoang: 0.38, // poängen för att vila, gå omkring och prata på rastplatsen (steg 10.2.24: vilan vann nästan alltid med 0,5; steg 10.2.94: mer prat, mindre gång)
+  pratSek: 15, // den som pratar samtalar ungefär en gång på så här många sekunder (snart när två står bredvid varandra, steg 10.2.94)
   rastSek: [20, 90], // en vila, en promenad eller ett samtal på rastplatsen varar så här många sekunder
   valKvar: 0.2, valBrus: 0.3, // det hen redan gör har så här mycket försteg i valet, och vilan, promenaden och samtalet slumpas med så här mycket
   horhall: 30, // den som varnar hörs så här många rutor (gånger LARM.natt på natten): hörhållet är stort (steg 10.1.12) ...
@@ -472,7 +472,7 @@ export const ROVARHANDLINGAR: Record<RovarGor, { namn: string; poang: (c: RCtx) 
   tillRast: { namn: 'Går mot rastplatsen', poang: c => !c.f.anfaller && c.f.rast && avst(c.r, c.f.rast) > ROVARE.rastR ? 1 : -1, gor: c => { ga(c, c.f.rast!); } },
   // på rastplatsen: vilar, går omkring lite och pratar med de andra
   // var och en vilar på sin egen plats runt rastplatsen, så att gänget sprider ut sig (steg 10.2.24)
-  rasta: { namn: 'Rastar', poang: c => c.f.anfaller ? -1 : ROVARE.rastaPoang, gor: c => { const g = gr(c.r); if (!c.f.rast) return; g.vx ??= c.f.rast.x + (rnd(c.s, 'rovare') - 0.5) * 2 * ROVARE.rastR; g.vy ??= c.f.rast.y + (rnd(c.s, 'rovare') - 0.5) * 2 * ROVARE.rastR; if (avst(c.r, { x: g.vx, y: g.vy }) > 0.6) ga(c, { x: g.vx, y: g.vy }); } },
+  rasta: { namn: 'Rastar', poang: c => c.f.anfaller ? -1 : ROVARE.rastaPoang, gor: c => { const g = gr(c.r); if (!c.f.rast) return; if (g.vx === undefined && avst(c.r, c.f.rast) <= ROVARE.rastR && !rovarna(c.s, c.f).some(q => q !== c.r && avst(q, c.r) < 0.8)) { g.vx = c.r.x!; g.vy = c.r.y!; } /* vilar där hen står, om ingen står på samma plats (steg 10.2.94) */ g.vx ??= c.f.rast.x + (rnd(c.s, 'rovare') - 0.5) * 2 * ROVARE.rastR; g.vy ??= c.f.rast.y + (rnd(c.s, 'rovare') - 0.5) * 2 * ROVARE.rastR; if (avst(c.r, { x: g.vx, y: g.vy }) > 0.6) ga(c, { x: g.vx, y: g.vy }); } },
   gaOmkring: { namn: 'Går omkring', poang: c => c.f.anfaller || !c.f.rast ? -1 : ROVARE.gaPoang, gor: c => { const g = gr(c.r); g.vx ??= c.f.rast!.x + (rnd(c.s, 'rovare') - 0.5) * 2 * ROVARE.rastR; g.vy ??= c.f.rast!.y + (rnd(c.s, 'rovare') - 0.5) * 2 * ROVARE.rastR; if (ga(c, { x: g.vx, y: g.vy }) < 0.6) g.gorTill = 0; } },
   // pratar med den närmaste i gänget: går fram och samtalar i samma samtalssystem som byn, med pratbubbla (steg 10.2.24)
   prata: { namn: 'Pratar', poang: c => c.f.anfaller || c.kvar < 2 ? -1 : ROVARE.prataPoang, gor: c => {
