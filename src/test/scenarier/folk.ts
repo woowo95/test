@@ -2,6 +2,7 @@
 import * as BILD from '../../ui/stridbild';
 import { Person, createState, tidyTools, addTool, getRel, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, ageStart, amountOf, isLight, ageOf, DAY, HOUR, State, findL, areaOf, stat, hoped, gain, ownedSum, setAmount, setStock, tingOf, planBuild, regulate, ACTS } from '../../sim';
 import * as SIM from '../../sim';
+import { STRIDANSIKTE, stridAnsikte } from '../../ui/stridansikte';
 import { byId, isSocial, TalkEvent } from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import * as SLAGLANGD from '../slaglangd';
@@ -2741,6 +2742,21 @@ SCENARIER.rovarprat = {
       [`gänget rastade ${Math.round(rastSek / 60)} minuter`, rastSek >= 600],
       [`de pratade ofta (${prat} samtal, ${perMin.toFixed(1)} i minuten)`, perMin >= 0.5],
       [`de gick en mindre del av tiden än de stod (${gar} mot ${star} prov)`, gar < star],
+    ];
+  },
+};
+
+SCENARIER.stridansikte = {
+  text: 'Steg 10.2.95: ansiktet i striden. Den som slåss, håller vakt, står emot eller går mot byn för att anfalla har ett argt eller allvarligt ansikte, aldrig glatt eller ledset, och behåller det en stund efter striden; den som flyr eller gömmer sig är rädd',
+  kor: () => {
+    const s = createState(4, START), p = living(s)[0];
+    const fraga = (gor?: string) => stridAnsikte(s, p, gor);
+    const vakt = fraga('vakt'), forsvar = fraga('forsvar'), fly = fraga('fly'), rovare = fraga('motMalet');
+    s.now += STRIDANSIKTE.minne / 2; const kvar = fraga('samtal');
+    s.now += STRIDANSIKTE.minne; const sedan = fraga('samtal');
+    return [
+      [`på vakten allvarlig (${vakt}), med vapen mot fienden arg (${forsvar}), på flykten rädd (${fly}), rövaren på väg mot byn allvarlig (${rovare})`, vakt === 'lugn' && forsvar === 'arg' && fly === 'radd' && rovare === 'lugn'],
+      [`en stund efter striden är ansiktet kvar (${kvar}), sedan följer det humöret igen (${sedan ?? 'humöret'})`, kvar === 'arg' && sedan === undefined],
     ];
   },
 };

@@ -25,6 +25,7 @@ import { gaster } from './gaster';
 import { fotSkugga, skuggFolk, skuggLangd } from './skugga';
 import { jaktPlats } from './jakt';
 import { kartKampe, slagAv } from './stridbild';
+import { stridAnsikte } from './stridansikte';
 import { slag } from './animation';
 import { stalle, vidArbetet } from './stalle';
 import { hasIcon, iconCanvas, kartbild, ljusSymbol } from '../ikoner';
@@ -334,7 +335,7 @@ function ritaRovarna(skugga: PIXI.Graphics) {
     if (sk?.mot) rikt = sk.mot.x < g.x ? 'vast' : 'sida';
     const steg = !ligger && !ab && gar(g.id) ? GANG[(slag() - g.id) % 4] : undefined;
     const ben: Ben = ab ? ab.ben : steg ? steg[0] : 'sta', arm: Arm = ab ? ab.arm : steg ? steg[1] : 'hanga';
-    const humor = sk ? 'arg' : s.rovare?.gor === 'flyr' ? 'radd' : 'lugn';
+    const humor = (gp && stridAnsikte(s, gp, gp.gast?.gor)) ?? (sk ? 'arg' : 'lugn'); // var och ens egen handling (steg 10.2.95)
     const sp = figurAv(g.id);
     sp.texture = figurTex(r ? rovarSkapad(s, r, humor) : g.sort === 'Främling' ? skapad(s, g.p) : handlarSkapad(s, g.namn, g.sex, s.people.find(q => q.id === g.id && q.gast)), { rikt, ben, arm, ligga: ligger }, g.id === markeradNu());
     const w = sp.texture.width, h = sp.texture.height;

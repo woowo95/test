@@ -6,6 +6,7 @@
 import { gastTingOf, gastVapen, infStadium, blodSteg, ALDER, BERATT, BESK_ANSIKTE, KLADMATERIAL, KROPP, ageOf, blodning, byId, hash, isSick, kladAv, load, moodOf, utbrottNu, utrustning } from '../sim';
 import type { Person, State } from '../sim';
 import { KARNA } from '../portrattkarna';
+import { stridAnsikte } from './stridansikte';
 import { s as visad, uppgiftVid } from './lage';
 
 // en person i karaktärsskaparens form (skapare.js): kön, ålder, en del per sort, färgerna, humöret och det man bär
@@ -72,7 +73,7 @@ function kropp(s: State, p: Person, del: Record<string, string | null>) {
   const t = p.task, gor = t?.act;
   const m = moodOf(p, s.now);
   const humor = gor === 'sova' && t?.phase === 'do' ? 'sover' : utbrottNu(s, p) ? 'arg' : gor && RADD.has(gor) ? 'radd'
-    : m > HUMORGRANS.glad ? 'glad' : m > HUMORGRANS.nojd ? 'nojd' : m > HUMORGRANS.lugn ? 'lugn' : 'ledsen';
+    : stridAnsikte(s, p, gor) ?? (m > HUMORGRANS.glad ? 'glad' : m > HUMORGRANS.nojd ? 'nojd' : m > HUMORGRANS.lugn ? 'lugn' : 'ledsen'); // i striden argt eller allvarligt (steg 10.2.95)
   const huvud = (p.skador ?? []).filter(w => w.d === 'huvud');
   const forband = huvud.some(w => w.f) ? ['forband-huvud'] : [];
   if (huvud.some(w => !w.f && (w.k === 'blamarke' || w.k === 'krossar'))) del.blamarke = 'blamarke-1';
