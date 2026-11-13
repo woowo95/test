@@ -43,7 +43,7 @@ import { MJARDE, kanVittja } from './fisk';
 import { bitAt, bitsOf, blocked, freeNear, husById, roomAt } from './byggnad';
 import { bedTile, homeless, samlingRum, varmareInne } from './byggnader';
 import { groundOf, isForest, punktIRuta, tileOf } from './mark';
-import { axeTask, egenStock, fallTid, stockOverHus, stocks } from './skog';
+import { SKOG, axeTask, egenStock, fallTid, stockOverHus, stocks } from './skog';
 import { GA_TID, startWork, startsOnArrival } from './paborjat';
 import { duty, dygn, habitShare, habitTotal } from './seder';
 import { clamp, hash3, pick, pickNarmaste, rnd } from './slump';
@@ -52,6 +52,7 @@ import { ARSTID, ageIndex, isLight, kallTid, yearNo } from './tid';
 import { Act, Fire, H, HOUR, MIN, Person, Skill, Stat, State, T, Task, W, inMap } from './typer';
 import { SAKER, gruppOf, isFood, sakNamn } from './saker';
 import { TILLVERKA } from './tillverka';
+import { materialBuffert } from './forradsmal';
 import { balans } from './balans';
 import { islagt, naVattnet } from './is';
 import { drickVal, torstig, tortarFarligt, vattenVal } from './torst';
@@ -1123,6 +1124,12 @@ function building(s: State, p: Person, v: Val, job: NonNullable<ReturnType<typeo
   const b = job.bit, hus = s.hus?.find(h => h.id === b.hus)?.namn.toLowerCase() ?? 'huset';
   const over = job.fell ? stockOverHus(s) ?? egenStock(s, p) : undefined; // en stam över ett färdigt hus, eller den p själv fällt, huggs före nästa fällning (steg 9.2.86, 9.2.87)
   if (over) {
+    // behöver byn virke (till timmerväggarna, steg 10.2.70) klyvs det ur stammen i stället för att den huggs till ved (steg 10.2.102)
+    if (over.ved >= SKOG.virkeVed && amountOf(s, 'virke') < materialBuffert(s, 'virke')) {
+      set(v, 'klyva', 'Klyver virke ur stammen hen fällde.');
+      v.ref = over.id; v.tool = 'yxa'; v.spot = { x: over.x + 0.3, y: over.y + 0.2 };
+      return;
+    }
     set(v, 'hugga', stockOverHus(s) === over ? 'Hugger en fälld stam som ligger över ett hus.' : 'Hugger stammen hen fällde.');
     v.ref = over.id; v.tool = 'yxa'; v.spot = { x: over.x + 0.3, y: over.y + 0.2 };
     return;

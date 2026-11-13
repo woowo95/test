@@ -14,7 +14,8 @@ import { SJUK, insjukna } from './sjukdom';
 import { INGREDIENSER, KATEGORIER, Kategori, Maltidsniva, RATT, RATT_HUVUD, RATT_HUVUD_LIST, RATT_SAKER, RattHuvud, grupperAv, hallerSteg, nivaAvGrupper, rattId, utsadeKrok } from './ratter';
 import { tingOf } from './agande';
 import { getable, takeMaterial } from './behov';
-import { bakKrok, stationBrinner, rokKrok, rokVed } from './stationseld';
+import { stationBrinner, rokVed } from './stationseld';
+import { bakKrok, rokKrok } from './stationseldkrok';
 import { knows } from './teknik';
 
 // ---------- matlagning (steg 2.8.1) ----------

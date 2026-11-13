@@ -982,10 +982,15 @@ SCENARIER.oversvamning = {
     // en hylla i förrådshuset tas inte isär för att vattnet en tid står runt huset: det sjunker undan (kodgenomgången 3.10.25)
     let hyllor = 0, hyllorKvar = 0;
     for (const seed of [4, 5, 6]) {
-      const h = createState(seed, START); klockan(h); tandEld(h); medHus(h); h.ruttet = 50;
-      const hh = medHus(h), z = SIM.zonesOf(h).find(q => q.hus === hh?.id);
+      const h = createState(seed, START); klockan(h); tandEld(h); medHus(h);
+      // förrådet fyller fler rutor än förrådshusen rymmer, så att ett förrådshus byggs (steg 10.2.67); sedan töms det igen
+      const fyll = ['ved', 'grenar', 'sten', 'torrgras', 'bar', 'rotter', 'kantarell', 'abborre', 'flinta', 'kanin'], forut = fyll.map(k => SIM.amountOf(h, k));
+      for (const k of fyll) SIM.put(h, k, 60);
+      let hh = medHus(h); for (let i = 0; i < 4 && hh?.fn !== 'forrad'; i++) hh = medHus(h);
+      fyll.forEach((k, i) => SIM.setAmount(h, k, forut[i]));
+      const z = SIM.zonesOf(h).find(q => q.hus === hh?.id);
       if (!hh || !z) continue;
-      hh.slag = 'material'; z.slag = 'material'; h.ruttet = 0; SIM.touch(h);
+      hh.slag = 'material'; z.slag = 'material'; SIM.touch(h);
       (h.stationer ??= []).push({ id: h.nextStation = (h.nextStation ?? 0) + 1, k: 'hylla', x: z.x + (z.w > 1 ? 1 : 0), y: z.y, kvar: 0, inne: 1 } as SIM.Station); SIM.touch(h);
       SIM.stepStationer(h);
       if (!SIM.stationerOf(h).some(q => q.k === 'hylla')) continue;

@@ -482,7 +482,7 @@ SCENARIER.varde = {
       [`allt som går att skaffa har ett värde, och det andra har inget${utanVarde.length ? ` (utan värde: ${utanVarde.join(', ')})` : ''}${medVarde.length ? ` (med värde: ${medVarde.join(', ')})` : ''}`, !utanVarde.length && !medVarde.length],
       [`tio trä i förrådet gör byn ${tra.toFixed(1)} rikare`, Math.abs(tra - 10 * v('ved')) < 1e-6],
       [`en yxa räknas efter sitt skick (${yxa.toFixed(0)} ny, ${halv.toFixed(0)} halvsliten)`, Math.abs(yxa - v('yxa')) < 1e-6 && Math.abs(halv - v('yxa') / 2) < 1e-6],
-      [`en timmervägg räknas efter material och arbete (${hus.toFixed(1)})`, Math.abs(hus - (2 * v('ved') + SIM.MATERIAL.timmer.tim)) < 1e-6],
+      [`en timmervägg räknas efter material och arbete (${hus.toFixed(1)})`, Math.abs(hus - (SIM.MATERIAL.timmer.n * v(SIM.MATERIAL.timmer.item!) + SIM.MATERIAL.timmer.tim)) < 1e-6], // timret är virke (steg 10.2.70)
     ];
   },
 };
@@ -542,6 +542,7 @@ SCENARIER.utrustning = {
 };
 
 SCENARIER.klader = {
+  env: { BALANS: 'karta.bredd=120,karta.hojd=120,start.klader=1' }, // kläderna från början (steg 10.2.73) prövas här
   text: 'Steg 2.3.2: bensylen slipas av ett ben mot en sten och läggs vid slöjdbänken. Med den sys rockar och skor av skinn och rep vid bänken (steg 3.10.12: plagg av ett material), och bensylen slits för varje plagg. Utan bensylen sys inga kläder. Den som saknar ett plagg tar på sig ett, kläderna skyddar mot kylan, väger något och slits ut, och den dödes kläder kan någon annan ta på sig',
   kor: () => {
     const s = createState(2, START); tandEld(s);
@@ -1168,7 +1169,7 @@ SCENARIER.tillfalle = {
     s.now += (SIM.VARG.kallMin + 1) * SIM.MIN;
     const borta = !!sen && !SIM.vargjaktVal(s, sen);
     // handeln: en rik by där handlaren just kommit (eller snart går) och byn redan handlat; a är trött
-    const hs = createState(6, START);
+    const hs = createState(6, START); utanStartKlader(hs);
     rikBy(hs); hs.nastaHandlare = hs.now;
     for (let i = 0; i < 40 && hs.handlare?.fas !== 'handlar'; i++) { step(hs, BEAT); utanVantan(hs); }
     const h = hs.handlare!, a = living(hs).filter(p => SIM.ageOf(p, hs.now) >= SIM.ALDER.vuxen)[0];

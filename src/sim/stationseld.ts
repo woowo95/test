@@ -22,9 +22,9 @@ export const ELDSTATIONER: Record<string, EldStation> = {
   bakugn: { burn: 1.5, max: 3, varme: 0, radie: 0, tim: () => bakKrok.passivTim(), kravs: true }, // degen gräddas medan elden brinner
   rokeri: { burn: 0.25, max: 4, varme: 0, radie: 0, tim: () => rokKrok.dygn() * 24, kravs: false }, // man tar ner det rökta också när elden är släckt
 };
-// krokarna sätts av matlagning.ts (den läses efter den här filen)
-export const bakKrok = { passivTim: () => 25 / 60 };
-export const rokKrok = { dygn: () => 1 };
+// krokarna sätts av matlagning.ts (stationseldkrok.ts)
+import { bakKrok, rokKrok } from './stationseldkrok';
+export { bakKrok, rokKrok };
 export const eldDef = (t: Station) => ELDSTATIONER[t.k];
 export const stationBrinner = (t?: Station) => !!t?.eld?.lit;
 const glod = (s: State, t: Station) => !t.eld?.lit && (t.eld?.glod ?? 0) > s.now;

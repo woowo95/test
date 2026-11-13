@@ -609,6 +609,8 @@ SCENARIER.verkstad = {
     while (homeless(s) > 0 && s.people.length > 2) s.people.pop();
     for (const r of s.people) r.tek = { ...r.tek, flatarbank: 1, timmervagg: 1, yxa: 1 };
     setFood(s, 400); setAmount(s, 'ved', 80); setAmount(s, 'grenar', 20); setAmount(s, 'virke', SIM.RT.flatarbankVirke); // virket finns: byn har ingen yxa att klyva med (steg 4.5.5.2)
+    // byn har redan ett förrådshus, som går före allt annat när förrådet fyller fler rutor än det rymmer (steg 10.2.67)
+    for (let i = 0; i < 3 && BYGGNADER.forrad.akut(s).v > 0; i++) { s.byggSok = undefined; planBuild(s); byggKlart(s); }
     const vill = inneUtanPlats(s), a = BYGGNADER.verkstad.akut(s), hemlosa = homeless(s);
     s.byggSok = undefined; planBuild(s);
     const B = byggKlart(s);
@@ -620,7 +622,7 @@ SCENARIER.verkstad = {
     const igen = BYGGNADER.verkstad.akut(s).v;
     // en sovsal där ingen sover men där en station står blir en verkstad, och stationen står kvar
     const q = cloneState(s), Bq = housesOf(q).find(r => r.id === B?.id)!;
-    Bq.fn = 'sovsal'; Bq.tom = q.now - 2 * DAY; q.ruttet = 20; // byn skulle annars vilja ha ett förrådshus
+    Bq.fn = 'sovsal'; Bq.tom = q.now - 2 * DAY; q.stackar = []; SIM.changed(q); // (tomt förråd: med ett fullt förråd blir den tomma sovsalen ett förrådshus, steg 10.2.67)
     stepByggnader(q);
     const kvar = !!t && !!stationerOf(q).find(r => r.id === t.id);
     // en slöjdbänk som står ute (byggd före v59) bärs in när ett hus har plats; slaktbänken står alltid ute (Björn, efter v64)
@@ -1133,15 +1135,15 @@ SCENARIER.scenflytt = {
     SIM.stepStationer(s);
     const uteUnder = s.stationer.includes(sc);
     delete s.fram;
-    const virke = amountOf(s, 'virke');
+    const virke = amountOf(s, 'plankor'); // scenens golv är plankor (steg 10.2.90)
     SIM.stepStationer(s);
-    const riven = !s.stationer.includes(sc), tillbaka = amountOf(s, 'virke') - virke, ska = Math.floor(SIM.RECEPT.scen.av.virke! * SIM.HUS.rivTillbaka);
+    const riven = !s.stationer.includes(sc), tillbaka = amountOf(s, 'plankor') - virke, ska = Math.floor(SIM.RECEPT.scen.av.plankor! * SIM.HUS.rivTillbaka);
     const plats = SIM.stationSite(s, 'scen');
     const ny = plats && !!SIM.roomAt(s, plats.x, plats.y);
     return [
       ['utan sal står scenen kvar', uteUtanSal],
       ['den rivs inte medan någon uppträder', uteUnder],
-      [`med en sal rivs den, och hälften av materialet kommer tillbaka (${tillbaka} av ${ska} virke)`, riven && tillbaka === ska],
+      [`med en sal rivs den, och hälften av materialet kommer tillbaka (${tillbaka} av ${ska} plankor)`, riven && tillbaka === ska],
       ['den nya scenen får sin plats i salen', !!ny],
     ];
   },

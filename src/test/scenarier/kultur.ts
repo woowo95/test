@@ -227,7 +227,7 @@ SCENARIER.scen = {
       [`med bara benflöjten ${flojt} gånger musik och ${sangFlojt} sång (till flöjten kan man inte sjunga)`, flojt >= 2 && sangFlojt === 0],
       [`med lyran är kvaliteten ${q} mot ${kval.toFixed(2)} utan, för ${n} som lyssnar: ${text}`, n >= 2 && q > kval * 1.2 && text.includes('lyran')],
       [`lyran slits (${slits.toFixed(2)} kvar)`, slits < 1 && slits > 0],
-      [`nivåerna: ${tek.join(', ')}`, tek.join() === 'scen 2,trumma 2,benflojt 2,lyra 4'],
+      [`nivåerna: ${tek.join(', ')}`, tek.join() === 'scen 3,trumma 2,benflojt 2,lyra 4'], // scenen kräver klyvplatsen (steg 10.2.90)
     ];
   },
 };

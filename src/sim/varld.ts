@@ -1,3 +1,4 @@
+import { balans } from './balans';
 import { delarIRad } from './stationer';
 import { nyaKlaner } from './klaner';
 import { gastVapenSatt, gastAv, nyGast, nyttGastId } from './gast';
@@ -25,6 +26,8 @@ import { historikKolumner } from './historik';
 // ---------- skapa värld ----------
 // storlek: kartans storlek, för testerna av äldre byar (en ny by får KARTA.bredd × KARTA.hojd, kartflytt.ts)
 const START_KLADER = ['rock', 'byxor', 'skor'] as const;
+// kläderna från början (steg 10.2.73): 1 = alla har dem på sig. Scenarierna, som prövar annat, börjar utan (storlek.ts)
+export const START = balans('start', { klader: 1 });
 export function createState(seed: number, now: number, storlek = { W: KARTA.bredd, H: KARTA.hojd }): State { return simulera(() => skapaBy(seed, now, storlek)); } // som simuleringen (typer.ts)
 function skapaBy(seed: number, now: number, storlek: { W: number; H: number }): State {
   // en liten koloni: två par och ett barn, utan eld och med lite mat och grenar
@@ -41,7 +44,7 @@ function skapaBy(seed: number, now: number, storlek: { W: number; H: number }): 
   for (const p of s.people) { startSkills(s, p, ageOf(p, now)); startSmak(s, p); }
   // kläderna från början (steg 10.2.73): alla har enkla kläder och skor av harskinn som de haft med sig och har på sig, men ingen
   // kan göra nya; de slits som andra plagg. Sparade byar får inga nya kläder
-  for (const p of s.people) for (const pl of START_KLADER) newTing(s, kladNyckel(pl, 'kaninskinn'), 1, p.id).bar = p.id;
+  if (START.klader) for (const p of s.people) for (const pl of START_KLADER) newTing(s, kladNyckel(pl, 'kaninskinn'), 1, p.id).bar = p.id;
   s.seder.v = sederTarget(s);
   stepDelning(s); // en ny by är fattig och delar nästan allt
   nyaKlaner(s); // grannklanerna (steg 4.4.3)

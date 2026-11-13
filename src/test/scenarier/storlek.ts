@@ -4,4 +4,6 @@
 // Den här filen läses först, före simuleringen, eftersom balanstalen läses en gång när balans.ts laddas
 const p = (globalThis as { process?: { env: Record<string, string | undefined> } }).process;
 if (p && !/karta\./.test(p.env.BALANS ?? '')) p.env.BALANS = ['karta.bredd=120,karta.hojd=120', p.env.BALANS].filter(Boolean).join(',');
+// scenarierna skrevs utan kläderna från början (steg 10.2.73) och prövar annat: de börjar utan, och scenariot klader slår på dem
+if (p && !/start\.klader/.test(p.env.BALANS ?? '')) p.env.BALANS = [p.env.BALANS, 'start.klader=0'].filter(Boolean).join(',');
 export {};
