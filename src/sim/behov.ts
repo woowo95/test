@@ -2,7 +2,7 @@ import { utsadeKrok } from './ratter';
 import { hans, honom } from './ord';
 import { upplev } from './uppvaxt';
 import { loggBer } from './berattelser';
-import { State, Person, HOUR, DAY } from './typer';
+import { State, Person, HOUR, DAY, MIN } from './typer';
 import { FOOD, REDSKAP_SLAG, SAKER, SAK_LIST, isTool, viktOf } from './saker';
 import { ACTS, actsOf, usesTool } from './handlingar';
 import { ALDER, KROPP, REL, ageOf, alive, byId, count, getRel, gjort, isKin, isParent, livet, living, log, ovning, relKey, stat, think } from './folk';
@@ -239,7 +239,12 @@ function askAround(s: State, m: Person, b: Behov) {
 }
 // m byter till sig det m saknar för behovet av någon i närheten, familj och vänner först
 function tradeAround(s: State, m: Person, b: Behov) {
-  for (const g of kretsen(s, m, g => overOf(s, g, b, m) >= b.minst, vilja(s, m, b), true)) if (tradeFor(s, m, g, b)) return true;
+  // den som nyss sagt nej frågas inte igen på en stund (HANDLA.nejMin)
+  if (m.byteNej) { for (const id in m.byteNej) if (m.byteNej[id] <= s.now) delete m.byteNej[id]; if (!Object.keys(m.byteNej).length) m.byteNej = undefined; }
+  for (const g of kretsen(s, m, g => !(m.byteNej?.[g.id]) && overOf(s, g, b, m) >= b.minst, vilja(s, m, b), true)) {
+    if (tradeFor(s, m, g, b)) return true;
+    (m.byteNej ??= {})[g.id] = s.now + HANDLA.nejMin * MIN;
+  }
   return false;
 }
 // m byter till sig en portion (b.mangd) av det g har över för behovet
@@ -559,6 +564,7 @@ export function bynPart(s: State, x: number, y: number, bud?: Person): Part {
 export const HANDLA = balans('handla', {
   andel: 0.03, // så mycket större del av vinsten (av hela) per poäng i Handel man är skickligare än motparten ...
   andelMin: 0.1, andelMax: 0.9, // ... men aldrig mindre eller mer än så här av den
+  nejMin: 30, // den som sagt nej till ett byte frågas inte igen förrän efter så här många minuter (steg 10.2.102: förut i varje slag)
   lura: 6, // så många poäng skickligare kan lura den andra ...
   luraChans: 0.4, // ... och gör det så här ofta ...
   luraAndel: 0.15, // ... och tar så stor del av bytets värde extra

@@ -51,6 +51,7 @@ import { samtalMed } from './samtal';
 import { ARSTID, ageIndex, isLight, kallTid, yearNo } from './tid';
 import { Act, Fire, H, HOUR, MIN, Person, Skill, Stat, State, T, Task, W, inMap } from './typer';
 import { SAKER, gruppOf, isFood, sakNamn } from './saker';
+import { TILLVERKA } from './tillverka';
 import { balans } from './balans';
 import { islagt, naVattnet } from './is';
 import { drickVal, torstig, tortarFarligt, vattenVal } from './torst';
@@ -996,6 +997,15 @@ function bygg(c: Ctx) {
   const it = job.item;
   // timret är virke (steg 10.2.70): det klyvs ur en fälld stam, eller ett träd fälls först (virkets uppgift i projekt.ts)
   if (it === 'virke') { const u = PROJEKT.virke!.uppgift(c.s, c.p); if (u && freeTools(c.s, c.p, 'yxa') > 0) { projektVal(c.v, u, 'Bygget behöver virke'); return true; } }
+  // det som görs vid en station (plankorna till trägolvet, steg 10.2.90): det görs där, och går det inte nu väntar bygget
+  // (förut föll det tillbaka på att samla grenar, och veden ur stammarna fyllde förrådet, steg 10.2.102)
+  if (it && it !== 'torrgras' && it !== 'ved' && it !== 'grenar' && it !== 'virke') {
+    const pk = Object.keys(TILLVERKA).find(k => TILLVERKA[k].ger === it), pd = pk ? PROJEKT[pk] : undefined;
+    const u = pd && pd.kan(c.s, c.p, faror(c)) ? pd.uppgift(c.s, c.p) : undefined;
+    if (!u) return false;
+    projektVal(c.v, u, `Bygget behöver ${sakNamn(it).toLowerCase()}`);
+    return true;
+  }
   arbeta(c, it === 'torrgras' ? 'samla' : 'ved', `Bygget behöver ${it === 'torrgras' ? 'hö' : it === 'ved' ? 'ved' : it === 'virke' ? 'virke' : 'grenar'}`, { hamtar: it, job: it === 'ved' ? job : undefined });
   return true;
 }

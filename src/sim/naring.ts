@@ -102,8 +102,9 @@ export const skorbjugg = (p: Person) => bristGrad(p, 'vitamin') / NARINGBAL.skor
 export function matOrdning(p: Person) {
   const b = bristerNu(p);
   if (!b.length) return FOOD;
-  const v = (k: string) => { const i = naringI(k); return b.reduce((a, x) => a + bristGrad(p, x) * i[x], 0); };
-  return [...FOOD].sort((a, c) => v(c) - v(a));
+  // värdet räknas en gång per slag av mat och inte i varje jämförelse (steg 10.2.102); ordningen blir densamma
+  const g = b.map(x => bristGrad(p, x)), v = new Map(FOOD.map(k => { const i = naringI(k); return [k, b.reduce((a, x, j) => a + g[j] * i[x], 0)]; }));
+  return [...FOOD].sort((a, c) => v.get(c)! - v.get(a)!);
 }
 // tankarna för den som har brist ("Längtar efter kött"), och att man glömmer vad andra längtat efter (needsStep i steg.ts)
 export function bristSteg(p: Person, now: number) {

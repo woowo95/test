@@ -1,10 +1,11 @@
+import { woodDays } from './eld';
 import { eldKan } from './stationseld';
 import { LERA, leraBrist, leraPlats } from './lera';
 import { Act, Person, State } from './typer';
 import { familjOf, stat } from './folk';
 import { clamp } from './slump';
 import { LAGER, amountOf, lagerFlyttVal } from './lager';
-import { arMaterial, materialBuffert, stationBrist, villAv, villHaAv } from './forradsmal';
+import { arMaterial, buffert, materialBuffert, stationBrist, villAv, villHaAv } from './forradsmal';
 import { SAKER } from './saker';
 import { KLADER, PLAGG, PLAGG_LIST } from './klader';
 import { coldOf, temperature } from './vader';
@@ -53,6 +54,9 @@ const overHusUppgift = (s: State, p?: Person, virke = false): Uppgift | undefine
   const o = stockOverHus(s);
   if (o) return { act: 'hugga', text: 'Hugger en fälld stam som ligger över ett hus.', tool: 'yxa', spot: { x: o.x + 0.3, y: o.y + 0.2 }, ref: o.id };
   const e = p && egenStock(s, p);
+  // det som blir kvar av stammen när virket är kluvet huggs till ved bara när byn behöver ved (steg 10.2.102: timret är virke sedan
+  // 10.2.70, och veden ur resterna fyllde förrådet); annars ligger stammen kvar tills någon behöver veden
+  if (e && virke && e.ved < SKOG.virkeVed && woodDays(s) >= buffert(s, 'ved')) return undefined;
   if (e) return virke && e.ved >= SKOG.virkeVed
     ? { act: 'klyva', text: 'Klyver virke ur stammen hen fällde.', tool: 'yxa', spot: { x: e.x + 0.3, y: e.y + 0.2 }, ref: e.id }
     : { act: 'hugga', text: 'Hugger stammen hen fällde.', tool: 'yxa', spot: { x: e.x + 0.3, y: e.y + 0.2 }, ref: e.id };

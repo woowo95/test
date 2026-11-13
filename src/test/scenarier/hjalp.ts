@@ -58,6 +58,8 @@ export function medHus(s: State) {
   s.people.forEach((p, i) => { p.tek = tek[i]; });
   return byggKlart(s);
 }
+// en by utan kläderna från början (steg 10.2.73), för de scenarier som prövar något kläderna ändrar (värmen, rikedomen)
+export const utanStartKlader = (s: State) => { s.ting = SIM.tingOf(s).filter(t => !SIM.kladAv(t.k)); };
 // tomt förråd: ingen mat, inget trä, inga grenar, ingen flinta och inget hö
 export const tomtForrad = (s: State) => { setMat(s, {}); setStock(s, { ved: 0, grenar: 0, flinta: 0, torrgras: 0 }); };
 // byns tre första blir tre vuxna utan släkt på samma ruta, friska, utan uppgift och med hungern hunger (byte, behov och ved).

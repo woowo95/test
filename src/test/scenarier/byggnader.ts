@@ -7,7 +7,7 @@ import * as SIM from '../../sim';
 import { findPath } from '../../sim/vag';
 import { KANIN } from '../../sim/redskap';
 import { START, STEG_TIM } from '../kor';
-import { setItems, setFood, kor, klockan, tandEld, byggare, byggKlart, nyInvanare, medBank, medHus, STOCKHOLM, SCENARIER } from './hjalp';
+import { setItems, setFood, kor, klockan, tandEld, byggare, byggKlart, nyInvanare, medBank, medHus, STOCKHOLM, SCENARIER, utanStartKlader } from './hjalp';
 
 SCENARIER.byggnader = {
   text: 'Varje sorts byggnad är en rad i ett register med behov och vikt. Byn bygger för det mest akuta behovet, faror först: den som saknar tak över huvudet får en sovsal',
@@ -43,7 +43,6 @@ SCENARIER.byggnader = {
 
 
 // kläderna från början (steg 10.2.73) tas bort i prov som räknar med familjernas förmögenhet utan dem
-const utanStartKlader = (s: SIM.State) => { s.ting = SIM.tingOf(s).filter(t => !SIM.kladAv(t.k)); };
 SCENARIER.forradshus = {
   lang: true,
   text: 'Fyller förrådet fler rutor än förrådshusen rymmer bygger byn ett förrådshus (steg 10.2.67). Golvet blir en lagerplats under tak, där det som ligger ruttnar och slits mindre, och maten bärs in dit',
@@ -403,12 +402,12 @@ SCENARIER.bygg = {
     const langhus = housesOf(q).filter(h => (h.fn === 'sovsal' || h.fn === 'samling') && SIM.sovPersoner((h.w - 2) * (h.h - 2)) >= SIM.HUS.langhus).length, // en tom sovsal kan ha blivit samlingshus (steg 1.6.4)
       langRaknat = q.stat?.planerat_langhus ?? 0;
     // en kall natt utan eld: den som är inne kyls långsammare än den som är ute
-    const k = cloneState(q); k.now = ageStart(k, 0) + 3 * HOUR; k.fire.lit = false; k.fire.fuel = 0;
+    const k = cloneState(q); k.now = ageStart(k, 0) + 3 * HOUR; k.fire.lit = false; k.fire.fuel = 0; utanStartKlader(k); // (i kläderna kyls ingen på två minuter, steg 10.2.73)
     let varmInne = 0, varmUte = 0, ni = 0, nu = 0;
     const b2 = gridOf(k).rooms.flatMap(r => r.tiles); // golvrutor under tak
     // tre inne i huset och de andra ute, långt från huset och elden (förr stod någon alltid ute, men inte sedan steg 2.12.1)
     const ute = ringUte(k);
-    living(k).forEach((p, i) => { p.warm = 0.8; if (i < 3 && b2[i] !== undefined) { p.x = b2[i] % W + 0.5; p.y = Math.floor(b2[i] / W) + 0.5; } else if (ute) { p.x = ute.x + 0.5; p.y = ute.y + 0.5; } });
+    living(k).forEach((p, i) => { p.warm = 0.8; if (i < 3 && b2[i] !== undefined) { p.x = b2[i] % W + 0.5; p.y = Math.floor(b2[i] / W) + 0.5; } else if (ute) { p.x = ute.x + 0.5; p.y = ute.y + 0.5; } p.task = { act: 'vila', phase: 'do', tx: p.x, ty: p.y, until: k.now + HOUR, carry: 0 } as SIM.Task; }); // (alla står stilla: arbete och samtal värmer annars olika mycket)
     const fore = new Map(living(k).map(p => [p.id, { inne: !!roomAt(k, p.x, p.y), ute: heatAt(k, p.x, p.y) < 0.05 }]));
     step(k, 120);
     for (const p of living(k)) { const f = fore.get(p.id); if (!f) continue; if (f.inne) { varmInne += p.warm; ni++; } else if (f.ute) { varmUte += p.warm; nu++; } }
