@@ -18,7 +18,7 @@ export interface ReceptRad { var: 'sak' | 'station' | 'tillbehor' | 'dorr' | 'pl
 export const RT = balans('recept', {
   slaktbankVirke: 3, // en slaktbänk kräver så mycket virke (steg 4.5.5.2) ...
   slaktbankMin: 20, // ... och så många minuters arbete
-  scenVirke: 6, scenMin: 20, // scenen (steg 4.3.2.2): så mycket virke och så många minuters arbete
+  scenVirke: 6, scenMin: 20, // scenen (steg 4.3.2.2): så många plankor till golvet (steg 10.2.90) och så många minuters arbete
   flatarbankVirke: 2, // en flätarbänk kräver så mycket virke ...
   flatarbankGrenar: 3, // ... och så många grenar ...
   flatarbankMin: 20, // ... och så många minuters arbete
@@ -45,7 +45,7 @@ export const RT = balans('recept', {
   tradorrMin: 20, // ... och så många minuters arbete
 });
 // trä till ett bord som tar w × h rutor, med stubbar på platserna runt det (platserAv i stationer.ts)
-const bordVirke = (w: number, h: number) => Math.ceil(w * h / 2) * RT.bordVirke + RT.bordVirke; // hela virken (litet bord 2, bord 3, långbord 4)
+const bordSkiva = (w: number, h: number) => Math.ceil(w * h / 2) * RT.bordVirke; // skivan av plankor (steg 10.2.90): en planka för varje två rutor, och ett virke till stubbarna (litet bord 1, bord 2, långbord 3)
 
 const DEF = {
   // sakerna (saker.ts): redskapen, maten som lagas och det som slaktas
@@ -88,7 +88,7 @@ const DEF = {
   braxkott: { var: 'sak', av: { braxen: 1 }, ger: 2, min: 3, slag: 'bearbeta' }, /* en braxen ger två kött (rensa i DJUR) */ sikkott: { var: 'sak', av: { sik: 1 }, min: 3, slag: 'bearbeta' }, // steg 9.6.17
   rokfisk: { var: 'sak', av: { fisk: 1 }, min: 2, slag: 'bearbeta' }, rokkott: { var: 'sak', av: { kott: 1 }, min: 2, slag: 'bearbeta' }, // steg 9.6.8
   saltfisk: { var: 'sak', av: { fisk: 4, salt: 1 }, ger: 4, min: 3, slag: 'bearbeta' }, saltkott: { var: 'sak', av: { kott: 4, salt: 1 }, ger: 4, min: 3, slag: 'bearbeta' }, // steg 9.6.19
-  malt: { var: 'sak', av: { korn: 4 }, ger: 4, min: 2, slag: 'bearbeta' }, mjol: { var: 'sak', av: { korn: 4 }, ger: 4, min: 4, slag: 'bearbeta' }, brod: { var: 'sak', av: { mjol: 4, ved: 1 }, ger: 4, min: 3, slag: 'bearbeta' }, // steg 9.6.13, 9.6.22 och 9.6.23
+  malt: { var: 'sak', av: { korn: 4 }, ger: 4, min: 2, slag: 'bearbeta' }, mjol: { var: 'sak', av: { korn: 4 }, ger: 4, min: 4, slag: 'bearbeta' }, brod: { var: 'sak', av: { mjol: 4 }, ger: 4, min: 3, slag: 'bearbeta' }, // steg 9.6.13, 9.6.22 och 9.6.23
   gaddkott: { var: 'sak', av: { gadda: 1 }, min: 3, slag: 'bearbeta' }, // gäddan ger 2 kött (steg 7.4.3)
   mortkott: { var: 'sak', av: { mort: 2 }, min: 2, slag: 'bearbeta' }, // 2 mörtar rensas till 1 kött
   fangstbank: { var: 'station', av: { virke: 2, grenar: 2 }, min: 20, slag: 'stor', tek: 'fangstbank' }, // steg 7.4.1
@@ -133,12 +133,12 @@ const DEF = {
   slaktbank: { var: 'station', av: { virke: RT.slaktbankVirke }, min: RT.slaktbankMin },
   flatarbank: { var: 'station', av: { virke: RT.flatarbankVirke, grenar: RT.flatarbankGrenar }, min: RT.flatarbankMin },
   halmbadd: { var: 'station', av: { torrgras: RT.halmbaddHo, grenar: RT.halmbaddGrenar }, min: RT.halmbaddMin },
-  bord: { var: 'station', av: { virke: bordVirke(2, 1) }, min: RT.bordMin },
-  bord2: { var: 'station', av: { virke: bordVirke(2, 2) }, min: RT.bord2Min },
-  bord3: { var: 'station', av: { virke: bordVirke(3, 2) }, min: RT.bord3Min },
-  hylla: { var: 'station', av: { virke: RT.hyllaVirke, rep: RT.hyllaRep }, min: RT.hyllaMin },
-  kista: { var: 'station', av: { virke: RT.kistaVirke }, min: RT.kistaMin },
-  stall: { var: 'station', av: { virke: RT.stallVirke, rep: RT.stallRep }, min: RT.stallMin },
+  bord: { var: 'station', av: { virke: RT.bordVirke, plankor: bordSkiva(2, 1) }, min: RT.bordMin },
+  bord2: { var: 'station', av: { virke: RT.bordVirke, plankor: bordSkiva(2, 2) }, min: RT.bord2Min },
+  bord3: { var: 'station', av: { virke: RT.bordVirke, plankor: bordSkiva(3, 2) }, min: RT.bord3Min },
+  hylla: { var: 'station', av: { plankor: RT.hyllaVirke, rep: RT.hyllaRep }, min: RT.hyllaMin },
+  kista: { var: 'station', av: { plankor: RT.kistaVirke }, min: RT.kistaMin },
+  stall: { var: 'station', av: { plankor: RT.stallVirke, rep: RT.stallRep }, min: RT.stallMin },
   latrin: { var: 'station', av: {}, min: RT.latrinMin },
   kompost: { var: 'station', av: { virke: 1 }, min: 10, tek: 'kompost' }, // komposten (steg 9.7.6): en enkel inhägnad av lite trä
   grill: { var: 'station', av: { grenar: RT.grillGrenar, rep: RT.grillRep }, min: RT.grillMin },
@@ -148,7 +148,7 @@ const DEF = {
   bryggkar: { var: 'station', av: { virke: 1 }, min: 15, tek: 'bryggkar', verktyg: { yxa: 'yxan' } }, // bryggkaret (steg 9.6.12)
   rokeri: { var: 'station', av: { huggen_sten: 3, grenar: 4, lera: 2 }, min: 20, tek: 'rokeri' }, // rökeriet (steg 9.6.8): en låg ugn av huggen sten med ett tak av grenar och lera (steg 10.2.66)
   brasa: { var: 'station', av: { sten: RT.brasaSten }, min: RT.brasaMin },
-  scen: { var: 'station', av: { virke: RT.scenVirke }, min: RT.scenMin },
+  scen: { var: 'station', av: { plankor: RT.scenVirke }, min: RT.scenMin },
   // proteserna (steg 9.5.11, protes.ts): kryckan och träbenet täljs och kroken görs av virke bara vid snickarbänken, ögonlappen av skinn för hand
   krycka: { var: 'sak', av: { virke: 1 }, min: 4, slag: 'liten', tek: 'protes', bank: 'snickarbank', bara: true, kniv: true }, traben: { var: 'sak', av: { virke: 1, rep: 1 }, min: 4, slag: 'liten', tek: 'protes', bank: 'snickarbank', bara: true, kniv: true },
   krok: { var: 'sak', av: { virke: 1 }, min: 3, slag: 'liten', tek: 'protes', bank: 'snickarbank', bara: true }, ogonlapp: { var: 'sak', av: { skinn: 1 }, min: 3, slag: 'liten' },
@@ -165,7 +165,7 @@ const DEF = {
   stekhall: { var: 'tillbehor', av: { huggen_sten: 1 }, min: 10, tek: 'stekhall' }, // stekhällen (steg 9.6.21): en flat huggen sten över elden vid grillen (steg 10.2.66)
   skinnfall: { var: 'tillbehor', av: { skinn: RT.fallSkinn }, min: RT.fallMin },
   skinndorr: { var: 'dorr', av: { skinn: RT.skinndorrSkinn }, min: RT.skinndorrMin },
-  tradorr: { var: 'dorr', av: { virke: RT.tradorrVirke, rep: RT.tradorrRep }, min: RT.tradorrMin },
+  tradorr: { var: 'dorr', av: { plankor: RT.tradorrVirke, rep: RT.tradorrRep }, min: RT.tradorrMin },
   // plaggen (klader.ts): mangd bitar av materialet, och det i av
   rock: { var: 'plagg', mangd: 3, av: { rep: 1 }, min: 5 },
   skor: { var: 'plagg', mangd: 1, av: { rep: 1 }, min: 5 },

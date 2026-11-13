@@ -320,6 +320,12 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
       if (t.deg) t.eld = { ved: 1, lit: 1 };
       if (t.k === 'rokeri' && t.tork?.length) { for (const q of t.tork) q.rok = s.now - q.t; t.eld = { ved: 2, lit: 1 }; }
     }
+  }],  [39, 'v527: trägolvet läggs av plankor (steg 10.2.90): det som burits till ett trägolv räknas om från ved till plankor (2 ved är 1 planka), och ett trägolv som inte är lagt än blir jordgolv när ingen kan göra plankor', s => {
+    const kan = (s.people ?? []).some(p => (p.tek?.klyvplats ?? 0) >= 1);
+    for (const b of s.byggen ?? []) if (b.m === 'tra') {
+      if (b.b < 1 && !kan) { b.m = 'jord'; b.mat = 0; b.lm = undefined; continue; }
+      b.mat = Math.min(1, Math.round(b.mat / 2)); if (b.lm !== undefined) b.lm = Math.min(1, Math.round(b.lm / 2));
+    }
   }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];

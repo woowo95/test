@@ -7,7 +7,7 @@ import { kronikaBer, och, personFalt, sakVarg, talOrd } from './berattelser';
 import { redskapIHanden } from './agande';
 import { blodas } from './blod';
 import { bedFor } from './bygg';
-import { Bit, Rum, bitAt, blocked, dorrDef, roomAt, freeNear, gridOf } from './byggnad';
+import { Bit, Rum, bitAt, bitsOf, blocked, dorrDef, roomAt, freeNear, gridOf } from './byggnad';
 import { dodaDjur, dragOf, djurOf, grupperOf, halsaOf, satDjurHalsa } from './djur';
 import { upplev } from './uppvaxt';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, franMitt, getRel, isSick, livet, living, log, ovning, stat, think } from './folk';
@@ -409,7 +409,10 @@ export function stangt(s: State, r: Rum) {
   const g = gridOf(s);
   for (const i of r.walls) { const b = g.at.get(i)!; if (b.k === 'oppning' && !dorrDef(b.dorr)?.stanger) return false; }
   if ((s.vargar ?? []).some(f => f.vargar.length && roomAt(s, f.x, f.y) === r)) return false; // med en varg i rummet går dörren inte att stänga
-  return living(s).some(q => q.task?.act === 'gomma' && roomAt(s, q.x, q.y) === r);
+  // någon gömmer sig i rummet, eller i ett rum innanför i samma hus (ett hus delat i två rum, steg 10.2.69): då stängs också den yttre dörren
+  const innanfor = new Set<Rum>([r]);
+  for (const i of r.walls) { const b = g.at.get(i)!; if (b.k === 'oppning' && b.hus === r.hus) for (const q of grannRum(s, b.x, b.y)) if (q.hus === r.hus) innanfor.add(q); }
+  return living(s).some(q => { if (q.task?.act !== 'gomma') return false; const qr = roomAt(s, q.x, q.y); return !!qr && innanfor.has(qr); });
 }
 const iStangt = (s: State, p: { x: number; y: number }) => { const r = roomAt(s, p.x, p.y); return !!r && stangt(s, r); };
 // en varg kan inte vara här: i ett stängt rum eller i dess väggar och dörrar
@@ -441,7 +444,10 @@ function vagIn(s: State, f: Vargflock, p: Person): { x: number; y: number } {
 function stangdDorr(s: State, f: Vargflock, folk: Person[]) {
   const q = folk.filter(p => p.task?.act === 'gomma' && avst(p, f) < VARG.ser && iStangt(s, p)).sort((a, b) => avst(a, f) - avst(b, f))[0];
   const r = q && roomAt(s, q.x, q.y);
-  return r ? oppningar(s, r).sort((a, b) => avst(f, a) - avst(f, b))[0] : undefined;
+  if (!r) return undefined;
+  // dörren ut ur huset: i ett hus med flera rum (steg 10.2.69) är rummets egen öppning kanske en inre dörr
+  const ut = bitsOf(s).filter(b => b.k === 'oppning' && b.hus === r.hus && GRANNAR4.some(([dx, dy]) => !roomAt(s, b.x + dx + 0.5, b.y + dy + 0.5) && !bitAt(s, b.x + dx + 0.5, b.y + dy + 0.5)));
+  return (ut.length ? ut : oppningar(s, r)).sort((a, b) => avst(f, a) - avst(f, b))[0];
 }
 // rummet bakom dörren där flocken väntar, om det fortfarande är stängt
 const vantarVid = (s: State, f: Vargflock) => f.dorr ? grannRum(s, f.dorr.x, f.dorr.y).find(r => stangt(s, r)) : undefined;

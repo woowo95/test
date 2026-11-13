@@ -68,7 +68,7 @@ export const treVuxna = (s: State, hunger: number, mer?: (q: Person) => void) =>
   return [a, b, c] as const;
 };
 // alla vuxna (från ålder år) kan göra timmerväggar och yxor
-export const byggare = (s: State, alder = 14) => { for (const p of living(s)) if (ageOf(p, s.now) >= alder) Object.assign((p.tek ??= {}), { yxa: 1, timmervagg: 1 }); };
+export const byggare = (s: State, alder = 14) => { for (const p of living(s)) if (ageOf(p, s.now) >= alder) Object.assign((p.tek ??= {}), { yxa: 1, timmervagg: 1, klyvplats: 1 }); }; // trägolvet kräver klyvplatsen (steg 10.2.90)
 // mitten av rutan med mest vilt inom radie rutor från lägret, utom vatten (undefined om det inte finns vilt där)
 export function bastaJaktruta(s: State, radie: number, c = bynsMitt(s)) {
   const m = getMap(s.seed);

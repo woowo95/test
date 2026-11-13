@@ -230,8 +230,8 @@ export function husKlart(s: State, h: Hus, p: Person) {
     h.byggare = undefined;
   }
 }
-// materialet i bitarna (det som burits dit), per sak: ved och virke (timret är virke sedan steg 10.2.70)
-export const tramat = (bs: Bit[]) => { const r: Record<string, number> = {}; for (const b of bs) { const k = MATERIAL[b.m].item; if (k === 'ved' || k === 'virke') r[k] = (r[k] ?? 0) + b.mat; } return r; };
+// materialet i bitarna (det som burits dit), per sak: ved, virke och plankor (timret är virke sedan steg 10.2.70, golvet plankor sedan 10.2.90)
+export const tramat = (bs: Bit[]) => { const r: Record<string, number> = {}; for (const b of bs) { const k = MATERIAL[b.m].item; if (k === 'ved' || k === 'virke' || k === 'plankor') r[k] = (r[k] ?? 0) + b.mat; } return r; };
 // HUS.rivTillbaka av träet i bitarna går till ägaren (eller byn), hela saker. Ger hur många saker det blev
 export function tillbaka(s: State, h: Hus, mat: Record<string, number>) {
   let n = 0;

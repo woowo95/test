@@ -103,7 +103,7 @@ export const TEKNIK: Tek[] = [
     omr: ['hantverk', 'bygga'], krav: ['timmervagg'], niva: 3, tid: 4 },
   // borden (steg 2.2.15): en teknik för alla tre storlekarna, med samma id som det minsta (bord i STATIONER)
   { id: 'bord', namn: 'Bord', text: 'Kluvna stockar på ben, med stubbar att sitta på runt omkring.', effekt: 'Vid bordet äter man tillsammans, blir glad av det och samtalar.',
-    omr: ['hantverk', 'bygga'], krav: ['timmervagg'], niva: 3, tid: 4 },
+    omr: ['hantverk', 'bygga'], krav: ['timmervagg', 'klyvplats'], niva: 3, tid: 4 },
   // förvaringen (steg 2.3.6): en teknik för hyllan, kistan och redskapsstället, med samma id som hyllan
   { id: 'hylla', namn: 'Hyllor och kistor', text: 'Hyllor och ställ av trä och rep i förrådshuset, och kistor i sovrummet för egna redskap och kläder.', effekt: 'Flera högar ryms på samma plats, så att lagret tar mindre plats. I kistan slits det som under tak.',
     omr: ['hantverk'], krav: ['rep', 'bord'], niva: 4, tid: 3.3, forsok: { vid: ['bord', 'bord2', 'bord3', 'flatarbank'], skill: 'hantverk', vad: 'hur man bygger hyllor och kistor' }, episk: '{Namn} hade byggt och rivit om och om igen vid bordet. Till sist stod den första hyllan, och den höll.' },
@@ -114,7 +114,7 @@ export const TEKNIK: Tek[] = [
   { id: 'skinndorr', namn: 'Skinndörr', text: 'En hud som hängs i dörröppningen.', effekt: 'Huset släpper ut mindre värme genom dörren.',
     omr: ['bygga', 'hantverk'], krav: ['timmervagg', 'skinnklader'], niva: 5, tid: 6.7, forsok: { vid: ['flatarbank'], skill: 'hantverk', vad: 'hur man gör en dörr av skinn' }, episk: '{Namn} hängde hud efter hud i dörröppningen innan {hen} fick den att sluta tätt. Den kvällen stannade värmen kvar i huset.' },
   { id: 'tradorr', namn: 'Trädörr', text: 'Kluvna bräder som surras ihop med rep och hängs i dörröppningen.', effekt: 'Huset håller värmen bättre, och dörren stängs när någon gömmer sig för vargarna.',
-    omr: ['bygga', 'hantverk'], krav: ['timmervagg', 'rep'], niva: 3, tid: 4 },
+    omr: ['bygga', 'hantverk'], krav: ['timmervagg', 'rep', 'klyvplats'], niva: 3, tid: 4 },
   // kläderna (steg 2.3.2): bensylen slipas av ett ben och läggs vid slöjdbänken, och med den sys kläderna där
   { id: 'bensyl', namn: 'Bensyl', text: 'Ett vasst ben som slipas mot en sten eller en flinta.', effekt: 'Med bensylen vid slöjdbänken kan man sy skinn.',
     omr: ['hantverk'], krav: ['flatarbank', 'kniv'], niva: 3, tid: 4.2 },
@@ -144,7 +144,7 @@ export const TEKNIK: Tek[] = [
     omr: ['sport', 'hantverk'], krav: ['kniv'], niva: 2, tid: 3 },
   // scenen och instrumenten (steg 4.3.2.2, framtradande.ts): man kommer på dem när man uppträder
   { id: 'scen', namn: 'Scen', text: 'Ett golv av kluvna stockar en bit från elden, där den som uppträder syns för alla.', effekt: 'Vid scenen ligger byns instrument, och där blir det sång och musik.',
-    omr: ['upptrada'], krav: ['rep'], niva: 2, tid: 4 },
+    omr: ['upptrada'], krav: ['rep', 'klyvplats'], niva: 3, tid: 4 },
   { id: 'trumma', namn: 'Trumma', text: 'Ett skinn som spänns över en ring av trä.', effekt: 'Med trumman vid scenen kan man sjunga och spela.',
     omr: ['upptrada', 'hantverk'], krav: ['kniv'], niva: 2, tid: 4 },
   { id: 'benflojt', namn: 'Benflöjt', text: 'Ett ihåligt ben med hål att blåsa och sätta fingrarna på.', effekt: 'Med benflöjten vid scenen kan man spela.',

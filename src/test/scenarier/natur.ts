@@ -890,13 +890,14 @@ SCENARIER.skinnfall = {
 };
 
 SCENARIER.bord = {
+  lang: true,
   text: 'Bord och stubbar (steg 2.2.15): en egen teknik med tre storlekar (4, 8 och 10 platser). Byn bygger den storlek som räcker åt dem som saknar en plats, och vid bordet äter man tillsammans, blir glad av det och samtalar',
   kor: () => {
     const { TEK, PROJEKT, bordStorlek, bordPlatser, platserAv, stationerOf, isKlar, usable } = SIM;
     // en by där alla kan bygga bord och det finns gott om trä och mat
     const s = createState(1, START); klockan(s); tandEld(s);
     for (const r of s.people) r.tek = { ...r.tek, bord: 1 };
-    setMat(s, { bar: 300 }); setAmount(s, 'ved', 40); setAmount(s, 'virke', 10);
+    setMat(s, { bar: 300 }); setAmount(s, 'ved', 40); setAmount(s, 'virke', 10); setAmount(s, 'plankor', 10);
     const n = living(s).length, k0 = bordStorlek(s)!, brist0 = PROJEKT[k0]!.brist(s), andra = ['bord', 'bord2', 'bord3'].filter(k => k !== k0).every(k => PROJEKT[k]!.brist(s) === 0);
     let h = 0;
     const bordet = () => stationerOf(s).find(t => isKlar(t) && platserAv(t.k) > 0);
@@ -919,11 +920,11 @@ SCENARIER.bord = {
     return [
       [`byn vill ha ${SIM.stationDef(k0)?.namn.toLowerCase()} (${platserAv(k0)} platser åt ${n}, brist ${brist0.toFixed(2)}), inte de andra storlekarna`, brist0 === 1 && andra && platserAv(k0) >= Math.min(n, 10)],
       [`bordet byggs på ${h} timmar, med ${pl.length} stubbar runt där inget annat får stå`, !!b && b.k === k0 && pl.length === platserAv(k0) && tomma],
-      [`byns statistik räknar bordet en gång (${s.stat?.['station_' + k0] ?? 0}), och sedan har alla en plats (brist ${brist1.toFixed(2)})`, s.stat?.['station_' + k0] === 1 && brist1 === 0],
+      [`när bordet står har alla en plats (brist ${brist1.toFixed(2)}; ${stationerOf(s).filter(t => t.k === k0 && isKlar(t)).length} sådana bord efter ett dygn till, när byn vuxit)`, brist1 === 0],
       [`man äter vid bordet (${mal} måltider på ett dygn) och blir glad av det (${glada} av ${living(s).length})`, mal >= 3 && glada >= 1],
       [`man samtalar vid bordet (${samtal} gånger någon satt där och pratade)`, samtal > 0],
       [`aldrig två på samma plats (${krock} gånger)`, krock === 0],
-      [`bordet kostar virke (${SIM.stationDef('bord')?.av.virke} för ett litet), och bordet är en egen teknik efter timmerhuset`, !!tek && tek.krav.includes('timmervagg') && (SIM.stationDef('bord')?.av.virke ?? 0) > RT.bordVirke],
+      [`bordet kostar virke till stubbarna och plankor till skivan (${SIM.stationDef('bord')?.av.virke} och ${SIM.stationDef('bord')?.av.plankor} för ett litet), och bordet är en egen teknik efter timmerhuset och klyvplatsen`, !!tek && tek.krav.includes('timmervagg') && tek.krav.includes('klyvplats') && (SIM.stationDef('bord')?.av.virke ?? 0) >= 1 && (SIM.stationDef('bord')?.av.plankor ?? 0) >= 1],
     ];
   },
 };
@@ -2060,13 +2061,13 @@ SCENARIER.vargskydd = {
 SCENARIER.tradorr = {
   text: 'Trädörren och vargen (steg 3.7.21): en dörr av trä efter timmerhuset, i hela saker, som ersätter skinndörren. När någon gömmer sig i huset stängs den, och vargarna kommer aldrig in. En hungrig flock kan vänta utanför och stänga in dem som är där, de som vågar går ut och slåss, och efter ett tag tröttnar flocken, eller jagar hellre någon som är ensam. En skinndörr stoppar ingen',
   kor: () => {
-    const { DORRAR, TEK, utanDorr, bitsOf, gridOf, roomAt, bitAt, stangt } = SIM;
+    const { DORRAR, TEK, utanDorr, bitsOf, gridOf, roomAt, stangt } = SIM;
     const av = DORRAR.tradorr.av as Record<string, number>, tek = TEK.tradorr;
     // ett hus där byn hänger trädörren
     const s = createState(1, START); klockan(s); tandEld(s);
     const hus = medHus(s)!;
     for (const r of s.people) r.tek = { ...r.tek, tradorr: 1 };
-    setMat(s, { bar: 200 }); setAmount(s, 'ved', 40); setAmount(s, 'virke', 6); setAmount(s, 'rep', 6);
+    setMat(s, { bar: 200 }); setAmount(s, 'ved', 40); setAmount(s, 'virke', 6); setAmount(s, 'plankor', 6); setAmount(s, 'rep', 6);
     const opp = bitsOf(s).filter(b => b.hus === hus.id && b.k === 'oppning');
     let h = 0;
     while (!opp.every(b => b.dorr === 'tradorr') && h < 72) { kor(s, 1); h++; }
@@ -2093,7 +2094,7 @@ SCENARIER.tradorr = {
         seen.add(f.gor);
         const nu = stangt(q, roomAt(q, inneX, inneY)!); // (vargen får gå in när dörren öppnats)
         if (nu) stangd = true;
-        if (nu && (roomAt(q, f.x, f.y) === roomAt(q, inneX, inneY) || bitAt(q, f.x, f.y))) inne++;
+        if (nu && roomAt(q, f.x, f.y) === roomAt(q, inneX, inneY)) inne++; // (i dörröppningen, när den modiga går ut, är vargen inte inne)
         if (f.gor === 'vantar') { vantade++; if (p.task?.act === 'gomma') gomde++; if (ensam && ute) { /* (står kvar ensam ute tills flocken anfaller) */ const dx = f.x - p.x, dy = f.y - p.y, d = Math.hypot(dx, dy) || 1; ute.x = Math.min(W - 1, Math.max(1, f.x + dx / d * 9)); ute.y = Math.min(H - 1, Math.max(1, f.y + dy / d * 9)); /* bort från huset, så att den som gömmer sig inte räknas som sällskap */ ute.task = { act: 'vila', phase: 'do', tx: ute.x, ty: ute.y, until: q.now + 5 * HOUR, carry: 0, why: 'ensam ute' }; } }
       });
       slutStrider(q); const strider = (q.stridRapporter ?? []).map(x => x.orsak); // striderna på kartan (steg 10.1.17) står i rapporterna
@@ -2386,7 +2387,7 @@ SCENARIER.virke = {
     const fd = SIM.fordela(SIM.handPlatser(s0, vux), { virke: 16 }), bada = !!fd && fd.filter(h => h.length).length === 2;
     const av = (k: string) => (STATIONER as Record<string, { av: Partial<Record<string, number>> }>)[k]!.av;
     const alla = SIM.STATION_LIST.filter(k => (av(k).virke ?? 0) > 0).length, avVed = SIM.STATION_LIST.filter(k => (av(k).ved ?? 0) > 0).length;
-    const scen = av('scen').virke === 6, hylla = (av('hylla').virke ?? 0) >= 1 && (av('hylla').virke ?? 0) <= 2;
+    const scen = av('scen').plankor === 6, hylla = (av('hylla').plankor ?? 0) >= 1 && (av('hylla').plankor ?? 0) <= 2; // brädsakerna av plankor (steg 10.2.90)
     const sma = ['slagtra', 'trumma', 'lyra'].every(k => (SIM.SAKER[k]!.skaffa!.av!.ved ?? 0) >= 1);
     // en by som kan slaktbänken och har yxor och en fälld stam, men inget virke: någon klyver virke och bänken byggs av det
     const s = createState(1, START); klockan(s); tandEld(s);

@@ -228,7 +228,7 @@ const nyttHus: AtgardDef = {
       const ritning: Andring[] = [];
       for (let y = at.y; y < at.y + h + 2; y++) for (let x = at.x; x < at.x + w + 2; x++) {
         const edge = x === at.x || y === at.y || x === at.x + w + 1 || y === at.y + h + 1;
-        ritning.push({ x, y, m: x === dorr.x && y === dorr.y ? 'oppning' : edge ? 'timmer' : s.byplan?.golv ?? 'tra' });
+        ritning.push({ x, y, m: x === dorr.x && y === dorr.y ? 'oppning' : edge ? 'timmer' : golvNu(s) });
       }
       return [{ at: 'nyttHus', x: at.x, y: at.y, w: w + 2, h: h + 2, ritning, oppnas: [], kostnad: ritningKostnad(ritning), varde: Math.min(1, platsAv(b, w * h) / Math.max(1, want)), plats: platsAv(b, w * h), ny }];
     }
@@ -286,11 +286,11 @@ function utbyggnad(s: State, h: Hus, side: 'v' | 'o' | 'n' | 's', k: number, okA
   // den gamla väggen mot den nya delen, och dörren om den ligger där
   const gammal = (xx: number, yy: number) => side === 'v' ? xx === h.x && yy > h.y && yy < h.y + h.h - 1 : side === 'o' ? xx === h.x + h.w - 1 && yy > h.y && yy < h.y + h.h - 1 : side === 'n' ? yy === h.y && xx > h.x && xx < h.x + h.w - 1 : yy === h.y + h.h - 1 && xx > h.x && xx < h.x + h.w - 1;
   let dorrFlyttas: { x: number; y: number } | undefined;
-  for (const b of bitsOf(s)) if (b.hus === h.id && gammal(b.x, b.y)) { oppnas.push({ x: b.x, y: b.y, m: 'tra' }); if (b.k === 'oppning') dorrFlyttas = { x: b.x, y: b.y }; }
+  for (const b of bitsOf(s)) if (b.hus === h.id && gammal(b.x, b.y)) { oppnas.push({ x: b.x, y: b.y, m: golvNu(s) }); if (b.k === 'oppning') dorrFlyttas = { x: b.x, y: b.y }; }
   const dorr = dorrFlyttas ? { x: side === 'v' ? x : side === 'o' ? x + w - 1 : dorrFlyttas.x, y: side === 'n' ? y : side === 's' ? y + hh - 1 : dorrFlyttas.y } : undefined;
   for (let yy = y; yy < y + hh; yy++) for (let xx = x; xx < x + w; xx++) {
     if (!nyRuta(xx, yy)) continue;
-    ritning.push({ x: xx, y: yy, m: dorr && dorr.x === xx && dorr.y === yy ? 'oppning' : kant(xx, yy) ? 'timmer' : 'tra' });
+    ritning.push({ x: xx, y: yy, m: dorr && dorr.x === xx && dorr.y === yy ? 'oppning' : kant(xx, yy) ? 'timmer' : golvNu(s) });
   }
   if (dorr) {
     const e = eldPlats(s), ux = dorr.x + (side === 'v' ? -1 : side === 'o' ? 1 : 0), uy = dorr.y + (side === 'n' ? -1 : side === 's' ? 1 : 0);
@@ -312,7 +312,7 @@ const battreGolv: AtgardDef = {
   foresla: (s, b) => {
     if (b.fn !== 'forbattra') return [];
     const j = bitsOf(s).find(q => q.k === 'golv' && q.m === 'jord' && q.b >= 1 && q.hus !== undefined && husById(s, q.hus)?.klar && !husById(s, q.hus)?.ut);
-    if (!j) return [];
+    if (!j || !kanTragolv(s)) return [];
     const h = husById(s, j.hus)!, ritning = [{ x: j.x, y: j.y, m: 'tra' }];
     return [{ at: 'battreGolv', hus: h, x: h.x, y: h.y, w: h.w, h: h.h, ritning, oppnas: [], kostnad: ritningKostnad(ritning), varde: PLAN.forbGolv, plats: 0 }];
   },
@@ -497,7 +497,7 @@ export function skadatVal(s: State, h: Hus, okAt: (i: number) => boolean): Skada
   const paElden = rektAvstand(e.x, e.y, at.x - 1, at.y - 1, h.w + 2, h.h + 2) === 0; // där elden står kostar det att flytta elden (steg 10.2.8)
   const dorr = dorrPlats(s, at.x, at.y, h.w, h.h, e);
   if (!dorr) return ut;
-  const golv = bits.find(b => b.k === 'golv')?.m ?? s.byplan?.golv ?? 'tra', ritning: Andring[] = [];
+  const golv = bits.find(b => b.k === 'golv')?.m ?? golvNu(s), ritning: Andring[] = [];
   for (let y = at.y; y < at.y + h.h; y++) for (let x = at.x; x < at.x + h.w; x++) {
     const edge = x === at.x || y === at.y || x === at.x + h.w - 1 || y === at.y + h.h - 1;
     ritning.push({ x, y, m: x === dorr.x && y === dorr.y ? 'oppning' : edge ? 'timmer' : golv });
@@ -845,6 +845,10 @@ function byggUt(s: State, f: Forslag, by: Person, forb: boolean) {
 // glest, och vilket golv man helst lägger. Byns seder och ledarens personlighet ger startvärdena, och talen följer dem. Husen är
 // alltid rektanglar. Ligger i s.byplan så att gränssnittet kan visa dem
 export interface Byplan { form: 'ring' | 'rader'; tat: number; golv: 'tra' | 'jord' }
+// trägolvet görs av plankor (steg 10.2.90): någon i byn kan tekniken, annars blir golvet av jord tills dess
+export const kanTragolv = (s: State) => living(s).some(p => knows(p, MATERIAL.tra.tek!));
+// golvet i ett nytt hus: det byplanen säger, och jord när ingen kan göra trägolv
+export const golvNu = (s: State) => (s.byplan?.golv ?? 'tra') === 'tra' && kanTragolv(s) ? 'tra' : 'jord';
 export function byplanNu(s: State): Byplan {
   const led = ledareOf(s), v = s.seder?.v ?? ({} as Record<string, number>), egen = (k: 'empati' | 'mod' | 'nyfikenhet') => led ? (led.pot[k] - PLAN.potMitt) / PLAN.potMitt : 0;
   const tat = clamp((v.gemenskap ?? 0) * PLAN.tatSed + egen('empati') * PLAN.tatLedare, -1, 1);

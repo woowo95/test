@@ -424,20 +424,27 @@ SCENARIER.sak = {
 // ett sovhus och ett förrådshus för material (det första förrådshuset byggs när maten ruttnar och är för mat; här görs
 // det till ett för material, som när förrådet blivit fullt). Ger lagerplatsen under dess tak
 function materialForrad(v: State) {
-  medHus(v); v.ruttet = 50;
-  const h = medHus(v), z = SIM.zonesOf(v).find(q => q.hus === h?.id);
+  medHus(v);
+  // förrådet fyller fler rutor än förrådshusen rymmer, så att nästa hus blir ett förrådshus (steg 10.2.67); sedan töms det igen
+  const fyll = ['ved', 'grenar', 'sten', 'torrgras', 'bar', 'rotter', 'kantarell', 'abborre', 'flinta', 'kanin'], forut = fyll.map(k => SIM.amountOf(v, k));
+  for (const k of fyll) SIM.put(v, k, 60);
+  let h = medHus(v);
+  for (let i = 0; i < 4 && h?.fn !== 'forrad'; i++) h = medHus(v); // ett familjehus kan komma före
+  const z = SIM.zonesOf(v).find(q => q.hus === h?.id);
   if (h && z) { h.slag = 'material'; z.slag = 'material'; }
-  v.ruttet = 0; SIM.touch(v);
+  fyll.forEach((k, i) => SIM.setAmount(v, k, forut[i]));
+  SIM.touch(v);
   return z;
 }
 SCENARIER.forvaring = {
+  lang: true,
   text: 'Förvaring (steg 2.3.6): hyllan, kistan och redskapsstället står i lagret, så att flera högar och redskap ryms på en ruta. De går inte att gå igenom, och lösa saker på golvet går man långsamt över. Hyllan och stället byggs bara inomhus, i förrådshuset, och kistan inte alls i byns lager (steg 2.10.18)',
   kor: () => {
     const { STATION, PROJEKT, LAGER, stationerOf, isKlar, rymd, groundOf, findPath, speedAt, wearMult, slitageNu, zonesOf, inZone, placeTools, stationAt, newTing } = SIM;
     // en by där alla kan bygga förvaring, med lagret fullt av grenar och gott om trä och rep
     const s = createState(6, START); klockan(s); tandEld(s);
     for (const r of s.people) r.tek = { ...r.tek, hylla: 1 };
-    setMat(s, { bar: 300 }); setAmount(s, 'ved', 40); setAmount(s, 'rep', 6); setAmount(s, 'grenar', SIM.rutaOf('grenar') * 8);
+    setMat(s, { bar: 300 }); setAmount(s, 'ved', 40); setAmount(s, 'plankor', 6); setAmount(s, 'rep', 6); setAmount(s, 'grenar', SIM.rutaOf('grenar') * 8); // hyllan av plankor (steg 10.2.90)
     // utan förrådshus: ingen hylla i lagret ute (steg 2.10.18)
     const ute = PROJEKT.hylla!.brist(s) === 0 && !SIM.stationSite(s, 'hylla') && !SIM.stationSite(s, 'stall');
     // ett förrådshus för material, och grenarna läggs om så att de hamnar där först
@@ -516,7 +523,7 @@ SCENARIER.kista = {
     // en by med ett hus, där alla kan bygga förvaring och har gott om trä. p äger en yxa och en kniv som ingen använder
     const s = createState(6, START); klockan(s); tandEld(s); medHus(s);
     for (const r of s.people) r.tek = { ...r.tek, hylla: 1 };
-    setMat(s, { bar: 300 }); setAmount(s, 'ved', 40); setAmount(s, 'virke', 10);
+    setMat(s, { bar: 300 }); setAmount(s, 'ved', 40); setAmount(s, 'virke', 10); setAmount(s, 'plankor', 10);
     const p = living(s)[0], q = living(s)[1];
     const egna = [newTing(s, 'yxa', 1, p.id), newTing(s, 'kniv', 1, p.id)], byns = newTing(s, 'spjut', 1, BYN);
     placeTools(s);

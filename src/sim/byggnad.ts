@@ -40,7 +40,7 @@ export const MATERIAL: Record<string, Material> = {
   brygga: { namn: 'Brygga', k: 'golv', item: 'virke', n: 1, tim: 10 / 60, slit: 1 / (50 * 24), brinner: 1, tek: 'brygga', vag: true, brygga: true, farg: 0x8a6a3a, ikon: 'brygga' }, // över vatten (steg 7.3.9): man kan gå och stå på den
   ris: { namn: 'Risvägg', k: 'vagg', item: 'grenar', n: 5, tim: 20 / 60, slit: 0.002, isol: 0.55, storm: 1.5, brinner: 1.5, farg: 0x6b4a2a, ikon: 'risvagg' }, // äldre sparfiler: risväggar byggs inte längre men kan lagas
   jord: { namn: 'Jordgolv', k: 'golv', n: 0, tim: 5 / 60, slit: 0, farg: 0x7a5a3a },
-  tra: { namn: 'Trägolv', k: 'golv', item: 'ved', n: 2, tim: 10 / 60, slit: 0.0002, brinner: 1, tek: 'timmervagg', farg: 0xa07446, ikon: 'tragolv' },
+  tra: { namn: 'Trägolv', k: 'golv', item: 'plankor', n: 1, tim: 10 / 60, slit: 0.0002, brinner: 1, tek: 'klyvplats', /* en planka per ruta (steg 10.2.90) */ farg: 0xa07446, ikon: 'tragolv' },
   ho: { namn: 'Golv av hö', k: 'golv', item: 'torrgras', n: 1, tim: 5 / 60, slit: 0.002, brinner: 2, farg: 0xd2b866, ikon: 'hogolv' }, // äldre sparfiler: hö-golv läggs inte längre, slits till jordgolv
   lera: { namn: 'Lera', k: 'golv', n: 0, tim: 5 / 60, slit: 0, farg: 0x5c4630 }, // ett jordgolv som legat under vatten (steg 3.8.7, flod.ts): ingen sover där, och det blir jordgolv igen när det torkat
   oppning: { namn: 'Öppning', k: 'oppning', n: 0, tim: 0, slit: 0, farg: 0x7a5a3a },
