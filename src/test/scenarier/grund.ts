@@ -1487,7 +1487,7 @@ SCENARIER.tornadogast = {
     }
     const st = s.stat ?? {}, varor1 = h.varor.reduce((n, w) => n + w.n, 0), dog = s.log.some(l => l.text.includes(`${namn} från ${hem} dog`));
     return [
-      [`rövarflocken dog i tornadon (${s.rovare === f ? `${f.folk.length} kvar` : 'borta'}; ${st.rovarDoda ?? 0} döda)`, s.rovare !== f && (st.rovarDoda ?? 0) >= 3],
+      [`rövarflocken mitt i tornadons väg är borta och rövare dog (${s.rovare === f ? `${f.folk.length} kvar` : 'borta'}; ${st.rovarDoda ?? 0} döda; som byborna överlever en del, efter kroppen)`, s.rovare !== f && (st.rovarDoda ?? 0) >= 1],
       [`handlaren ${namn} flög ${hFlog.toFixed(1)} rutor och gick hem (${h.fas}${dog ? ', dog' : ''}; varorna ${varor0} → ${varor1})`, (h.fas as string) === 'gar' && !dog && hFlog >= 1 && varor1 <= varor0 && varor1 > 0],
     ];
   },

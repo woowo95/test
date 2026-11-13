@@ -43,7 +43,7 @@ SCENARIER.faror = {
       if (ai !== undefined) s.now = ageStart(s, ai) + 30 * HOUR;
       klockan(s, 11); byggare(s); tandEld(s);
       for (const p of living(s)) Object.assign((p.tek ??= {}), { korg: 1, fiskespjut: 1, metspo: 1, kniv: 1 });
-      setStock(s, { ved: 200, grenar: 20, torrgras: 40, flinta: 3, ben: 2, rep: 2 }); setAmount(s, 'yxa', 1); setFood(s, 0); setAmount(s, 'torrkott', 300); // torkat kött: bufferten är drygt sju dygn och taket sexton (9.9.4), och bär ruttnar långt innan dess
+      setStock(s, { ved: 200, grenar: 20, torrgras: 40, flinta: 3, ben: 2, rep: 2 }); setAmount(s, 'yxa', 1); setFood(s, 0); setAmount(s, 'torrkott', 300); setAmount(s, 'virke', 12); /* virket till timmerväggarna (steg 10.2.70) */ // torkat kött: bufferten är drygt sju dygn och taket sexton (9.9.4), och bär ruttnar långt innan dess
       s.delning = { andel: 1 }; // byn delar all mat, så att familjerna inte fyller sin egen del av bufferten (steg 6.2.20)
       planBuild(s);
       return s;

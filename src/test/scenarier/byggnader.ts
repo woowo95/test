@@ -1540,7 +1540,8 @@ SCENARIER.brygga = {
     klockan(s); byggare(s);
     for (const p of living(s)) Object.assign((p.tek ??= {}), { stockvag: 1, brygga: 1 });
     SIM.planBuild(s); byggKlart(s);
-    put(s, 'virke', 30);
+    put(s, 'virke', 6); // (lite virke: virket fyller många rutor, och ett fullt förråd gör förrådshuset akut, steg 10.2.67)
+    for (let i = 0; i < 3 && SIM.BYGGNADER.forrad.akut(s).v > 0; i++) { s.byggSok = undefined; SIM.planBuild(s); byggKlart(s); }
     s.byggBehov = undefined; SIM.planBuild(s);
     const vag = bitsOf(s).filter(b => b.m === 'stockvag'), bryggaBit = bitsOf(s).filter(b => b.m === 'brygga');
     const valdes = vag.length + bryggaBit.length > 0;

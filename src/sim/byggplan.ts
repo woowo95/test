@@ -9,7 +9,7 @@ import { Hus, MATERIAL, bitAt, bitsOf, gridOf, housesOf, husById, touch } from '
 import { eldPlats, getMap } from './karta';
 import { groundOf } from './mark';
 import { PLATS, rektAvstand } from './plats';
-import { delarAv, rivStation, stangerIn, stationDef, stationRutor, stationerOf, storlekAv, uteStation } from './stationer';
+import { type Station, delarAv, rivStation, stangerIn, stationDef, stationRutor, stationerOf, storlekAv, uteStation } from './stationer';
 import { enOrd, stor } from './ord';
 import { knows } from './teknik';
 import { villHaMer } from './forradsmal';
@@ -818,7 +818,9 @@ function bygg(s: State, f: Forslag, u: ByggBehov, by: Person) {
   s.nextBit++;
   for (const a of f.ritning) bitsOf(s).push({ id: s.nextBit++, x: a.x, y: a.y, k: MATERIAL[a.m].k, m: a.m, b: a.m === 'oppning' ? 1 : 0, mat: 0, c: 1, hus: hus.id });
   housesOf(s).push(hus); touch(s);
-  for (const t of stationerI(s, f.x, f.y, f.w, f.h)) rivStation(s, t, `${stor(enOrd(stationDef(t.k)!))} ${stationDef(t.k)!.namn.toLowerCase()} revs för ${hus.namn.toLowerCase()}.`); // det som stod ute där huset ska stå (steg 10.2.77)
+  // (torkhuset byggs runt torkställningarna, steg 9.2.137: det som står innanför väggarna står kvar)
+  const innanfor = (t: Station) => !!row.omkring && delarAv(t).every(q => q.x > f.x && q.y > f.y && q.x + q.w < f.x + f.w && q.y + q.h < f.y + f.h);
+  for (const t of stationerI(s, f.x, f.y, f.w, f.h)) if (!innanfor(t)) rivStation(s, t, `${stor(enOrd(stationDef(t.k)!))} ${stationDef(t.k)!.namn.toLowerCase()} revs för ${hus.namn.toLowerCase()}.`); // det som stod ute där huset ska stå (steg 10.2.77)
   if (row.omkring) for (const z of zonesOf(s)) if (z.hus === undefined && z.x > f.x && z.y > f.y && z.x + z.w < f.x + f.w && z.y + z.h < f.y + f.h) z.hus = hus.id; // vedboden byggs runt lagerplatsen (steg 9.2.137)
   lagerUrVagen(s, f, hus);
   if (f.ny) s.fire.flytt = { x: f.ny.x, y: f.ny.y, varfor: 'plats' };
