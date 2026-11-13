@@ -675,6 +675,7 @@ export function bytaMed(s: State, M: Part, G: Part, vill: Vara[], v: Villkor): n
   if (vill.reduce((x, w) => x + w.n * vardeOf(w), 0) * del < DELA.byteMinst) return 0;
   const fatt = vill.map(w => ({ ...w, n: w.t ? 1 : helt(w.n * del) })).filter(w => w.n > 0);
   if (vaxel > 0) fatt.push({ k: 'silver', n: vaxel });
+  if (!fatt.length || !betal.length) return 0; // ett byte är något mot något: blev ena sidan noll hela saker blir det inget byte
   return genomfor(s, M, G, fatt, betal, v.typ, desperat, !!v.delad, lura(s, M, G, betal, varor, ger * del));
 }
 // det M kan betala G med: det som är värt mest för G och minst för M först (ut = värt för G, in = värt för M)
