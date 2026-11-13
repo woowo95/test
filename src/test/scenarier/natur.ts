@@ -2376,10 +2376,14 @@ SCENARIER.gangar = {
 };
 
 SCENARIER.virke = {
-  text: 'Ved och virke (steg 4.5.5.2): träet är ved (bränsle, 20 i en stack, 1 kg styck) och virke (kluvna stockar, 2 i en stack, 10 kg styck). Virket klyvs ur de fällda stammarna med yxa när byn vill bygga en station av virke, och stationerna och möblerna byggs av virke; små saker görs av ved',
+  text: 'Ved och virke (steg 4.5.5.2 och 10.2.89): träet är ved (bränsle, 20 i en stack) och virke (kluvna stockar, 2 i en stack, 16 i vikt styck, som bärs med båda händerna, en i taget och inte av barn). Virket klyvs ur de fällda stammarna med yxa när byn vill bygga en station av virke, och stationerna och möblerna byggs av virke; små saker görs av ved',
   kor: () => {
     const { STATIONER, stationerOf, isKlar, addTool, fellTree, stocks } = SIM;
-    const vikt = STACK.ved === 20 && SIM.viktOf('ved') === 5 && STACK.virke === 2 && SIM.viktOf('virke') === 15;
+    const vikt = STACK.ved === 20 && SIM.viktOf('ved') === 5 && STACK.virke === 2 && SIM.viktOf('virke') === 16;
+    // virket bärs med båda händerna, en i taget, och den som är för svag bär inget (steg 10.2.89)
+    const s0 = createState(1, START), vux = living(s0).filter(r => ageOf(r, s0.now) >= 18).sort((a, b) => SIM.handOrkar(s0, b) - SIM.handOrkar(s0, a))[0]!, barn = living(s0).find(r => ageOf(r, s0.now) < 10);
+    const rv = SIM.ryms(s0, vux), tva = rv({ virke: 16 }) && !rv({ virke: 32 }) && !rv({ virke: 16, ved: 5 }), svag = !!barn && !SIM.ryms(s0, barn)({ virke: 16 });
+    const fd = SIM.fordela(SIM.handPlatser(s0, vux), { virke: 16 }), bada = !!fd && fd.filter(h => h.length).length === 2;
     const av = (k: string) => (STATIONER as Record<string, { av: Partial<Record<string, number>> }>)[k]!.av;
     const alla = SIM.STATION_LIST.filter(k => (av(k).virke ?? 0) > 0).length, avVed = SIM.STATION_LIST.filter(k => (av(k).ved ?? 0) > 0).length;
     const scen = av('scen').virke === 6, hylla = (av('hylla').virke ?? 0) >= 1 && (av('hylla').virke ?? 0) <= 2;
@@ -2399,7 +2403,8 @@ SCENARIER.virke = {
     while (!stationerOf(s).some(isKlar) && h < 48) { kor(s, 1, v => { for (const r of living(v)) if (r.task?.act === 'klyva') klov++; }); h++; }
     const st = stationerOf(s).find(t => t.k === 'slaktbank'), klar = !!st && isKlar(st);
     return [
-      [`ved: 20 i en stack à 5 vikt; virke: 2 i en stack à 15 vikt`, vikt],
+      [`ved: 20 i en stack à 5 vikt; virke: 2 i en stack à 16 vikt`, vikt],
+      [`virket bärs med båda händerna (${bada ? 'ja' : 'nej'}), en bit i taget och utan annat (${tva ? 'ja' : 'nej'}), och ett barn bär inget (${barn ? (svag ? 'nej' : 'ja') : 'inget barn'})`, bada && tva && svag],
       [`stationerna och möblerna kostar virke (${alla} slag av virke, ${avVed} av ved), scenen 6 och en hylla 1–2`, alla >= 10 && avVed <= 1 && scen && hylla], // klyvplatsen byggs av 1 virke och 2 ved
       ['slagträet, trumman och lyran görs av ved', sma],
       [`slaktbänken saknar virke (${brist0 ? 'ja' : 'nej'}) och har ${stocks(s).length} fällda stammar kvar`, brist0 > 0 && fallda > 0],

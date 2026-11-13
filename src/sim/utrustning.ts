@@ -102,6 +102,8 @@ function iHanderna(s: State, p: Person): HandPlats[] {
 // ett. Man bär alltid minst en sak, hur tung den än är för en (barnet med en sten)
 export type Fordelning = [string, number][][];
 export function fordela(pl: HandPlats[], b: Record<string, number>): Fordelning | undefined {
+  const tung = Object.keys(b).find(k => b[k] > 1e-9 && SAKER[k]?.lyft);
+  if (tung) return lyftas(pl, b, tung);
   const ri = pl.findIndex(x => x.hand === 'rygg');
   if (ri >= 0) return medRygg(pl, ri, b);
   const slag = Object.entries(b).filter(x => x[1] > 1e-9).sort((x, y) => y[1] - x[1] || (x[0] < y[0] ? -1 : 1));
@@ -124,6 +126,16 @@ export function fordela(pl: HandPlats[], b: Record<string, number>): Fordelning 
   }
   if (slag.length > pl.length) return undefined;
   for (let i = 0; i < slag.length; i++) { if (slag[i][1] > pl[i].kap + E && !en) return undefined; r[i].push(slag[i]); }
+  return r;
+}
+// det som lyfts med båda händerna (virket, steg 10.2.89): bara det, i båda de fria händerna, av den som orkar det; aldrig i
+// korgen eller ryggsäcken, och utan undantaget för en enda sak
+function lyftas(pl: HandPlats[], b: Record<string, number>, k: string): Fordelning | undefined {
+  if (Object.keys(b).some(q => q !== k && b[q] > 1e-9)) return undefined;
+  const h = pl.map((x, i) => [x, i] as const).filter(([x]) => x.hand !== 'rygg' && !x.korg);
+  if (h.length < 2 || b[k] > h[0][0].kap + h[1][0].kap + 1e-9) return undefined;
+  const r: Fordelning = pl.map(() => []);
+  r[h[0][1]].push([k, b[k] / 2]); r[h[1][1]].push([k, b[k] / 2]);
   return r;
 }
 // med ryggsäcken (steg 7.1.3): varje slag läggs i ryggsäcken eller i händerna, och ett slag kan delas mellan dem. Det

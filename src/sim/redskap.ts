@@ -253,7 +253,7 @@ export function handelTask(s: State, p: Person, k: string) {
 export const wantsTool = (s: State, p: Person, g: string, spar = 0) => {
   const ks = GORS[g];
   return kanGoras(s, g as Act, p) && (!!halvOf(s, p, ks) || ks.some(k => canMake(s, p, k) && (!av(k).torrgras || amountOf(s, 'torrgras') >= spar)))
-    && (harAv(s, g) < takAv(s, g) || ersattAv(s, g) > 0) && villAv(s, g) > 0 && enTill(s, g as Act, p); // också över bufferten, upp till taket (steg 10.2.74)
+    && harAv(s, g) < takAv(s, g) && villAv(s, g) > 0 && enTill(s, g as Act, p); // också över bufferten, upp till taket (steg 10.2.74)
 };
 // underhållet (steg 6.2.12, nivån Förbättra i val.ts): en grupp där byn har så många den vill, men några av dem är slitna
 // (REDSKAP.slitet) så att de hela är färre än byn vill ha. Inget lagas: ett nytt görs medan det gamla håller, och det gamla

@@ -128,8 +128,9 @@ const redskap = (g: string): ProjektDef => {
       const v = villAv(s, g), har = harAv(s, g);
       if (v <= 0) return 0;
       if (har < v) return clamp((v - har) / v, 0, 1);
-      const tak = takAv(s, g), over = tak > v ? Math.max(0, (tak - har) / (tak - v)) : 0;
-      return PROJEKT_TAL.overBuffert * Math.min(1, over + ersattAv(s, g) / v);
+      const tak = takAv(s, g); // taket gäller också det som ersätter ett sämre: det sämre finns kvar tills det slits ut
+      if (har >= tak) return 0;
+      return PROJEKT_TAL.overBuffert * Math.min(1, (tak > v ? (tak - har) / (tak - v) : 0) + ersattAv(s, g) / v);
     },
     egen: (s, fam) => villAv(s, g) > 0 && !tingOf(s).some(t => t.agare !== undefined && GORS[g].includes(t.k) && fam.some(q => q.id === t.agare)) ? 1 : 0, // ingen i familjen äger ett
     kostnad: () => grundvarde(k),

@@ -10,6 +10,7 @@ export interface SakDef {
   ett?: true; // ett ett-ord (ett rep, ett bär); annars ett en-ord. För kontrollen av texterna (steg 4.5.1.2)
   stack?: number; // en full börda: vad en normalstark vuxen bär. Saknas = ingen egen stack
   vikt?: number; // hur mycket en styck tar av en hand (steg 6.1.8; en vanlig hand orkar 10, utrustning.ts). Saknas = VIKT_STACK delat med stacken
+  lyft?: true; // bärs med båda händerna, en i taget, av den som orkar den, aldrig i korgen eller ryggsäcken (virket, steg 10.2.89)
   hander?: 1 | 2; // låst till så många händer (som pilbågen); annars räknas det fram ur vikten och styrkan (utrustning.ts)
   rymmer?: number; // det som hålls i en hand rymmer så mycket vikt, av vilka slag som helst (korgen)
   ruta?: number; // hur mycket som ryms i en stack på en ruta i lagret; saknas = en börda
@@ -221,7 +222,7 @@ const DEF = {
   silver: { namn: 'Silver', ett: true, varde: 1, stack: 200, mapp: 'Silver', brinnerInte: true },
   // virket (steg 4.5.5.2): kluvna stockar som klyvs ur de fällda stammarna med yxa (klyva i handlingar.ts). Stationerna och
   // möblerna byggs av virke; veden är bränsle och små saker
-  virke: { namn: 'Virke', ett: true, skaffa: { act: 'klyva', tek: 'yxa' }, stack: 2, vikt: 15, mapp: 'Material', slits: 0.0002, blir: { k: 'ved', per: 5 } },
+  virke: { namn: 'Virke', ett: true, skaffa: { act: 'klyva', tek: 'yxa' }, stack: 2, vikt: 16, lyft: true, mapp: 'Material', slits: 0.0002, blir: { k: 'ved', per: 5 } },
   // nävern (steg 6.3.3, eld.ts): täljs ur en ved med kniv eller yxa när elden ska tändas, fyra av en ved; en näver ersätter höet och tar lättare eld
   naver: { namn: 'Näver', skaffa: RECEPT.naver, stack: 50, mapp: 'Bränsle', slits: 0.0006 },
   // styckdelen (steg 6.6.1, styckning.ts): en bit av ett stort djur som var för tungt att bära helt och styckades där det
