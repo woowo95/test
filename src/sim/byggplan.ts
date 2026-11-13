@@ -54,7 +54,7 @@ export const PLAN = balans('byggplan', {
   omkringMax: 8, // torkhuset och vedboden byggs runt det som står inom så här många rutor åt varje håll (steg 9.2.137)
   utEld: 4, // ett hus byggs inte ut närmare elden än så här många rutor
   forbGolv: 0.3, forbRum: 0.5, forbRik: 0.4, // hur mycket förbättringen är värd (0 till 1)
-  egetRumFolk: 4, // en familj med så här många vill ha ett eget rum
+  hemRik: 2, // hemmen blir finare (steg 10.2.69): överskottet är 1 när familjen äger så här många gånger byns median per person (0 vid medianen)
   barUtTim: 24, // så länge väntar ett hus på att det som låg i en lagerplats ska bäras ut (timmar i spelet)
   lagerKostnad: 0.5, // att göra en lagerplats större eller ny kostar så här mycket (arbetet med att bära om)
   forStort: 2, // ett hus är för stort när det har så här många gånger fler sovplatser än familjen
@@ -321,8 +321,9 @@ const egetRum: AtgardDef = {
     if (b.fn !== 'forbattra') return [];
     const st = stationRutor(s);
     for (const h of housesOf(s)) {
-      if (h.ag === undefined || !h.klar || h.ut || familjOf(s, h.ag).length < PLAN.egetRumFolk) continue;
-      if (gridOf(s).rooms.filter(r => r.hus === h.id && r.tiles.length).length > 1) continue;
+      // ett eget rum åt var och en i familjen (steg 10.2.69): värdet växer med överskottet, i stället för en gräns för familjens storlek
+      if (h.ag === undefined || !h.klar || h.ut || hemOverskott(s, h.ag) <= 0 || rumI(s, h) >= familjOf(s, h.ag).length) continue;
+      if (rumI(s, h) > 1) continue; // (delningen mitt på huset går bara i ett hus med ett rum; fler rum kommer med utbyggnaden)
       const iw = h.w - 2, ih = h.h - 2, lang = iw >= ih, n = lang ? iw : ih, tvars = lang ? ih : iw;
       if (n < 2 * HUS.minSida + 1) continue;
       const m = Math.floor(n / 2), ritning: Andring[] = [];
@@ -331,19 +332,29 @@ const egetRum: AtgardDef = {
         ritning.push({ x, y, m: i === Math.floor(tvars / 2) ? 'oppning' : 'timmer' });
       }
       if (ritning.some(a => st.at.has(a.y * W + a.x) || bitAt(s, a.x, a.y)?.k !== 'golv')) continue;
-      return [{ at: 'egetRum', hus: h, x: h.x, y: h.y, w: h.w, h: h.h, ritning, oppnas: [], kostnad: ritningKostnad(ritning), varde: PLAN.forbRum, plats: 0 }];
+      return [{ at: 'egetRum', hus: h, x: h.x, y: h.y, w: h.w, h: h.h, ritning, oppnas: [], kostnad: ritningKostnad(ritning), varde: PLAN.forbRum * hemOverskott(s, h.ag), plats: 0 }];
     }
     return [];
   },
 };
+// hemmen blir finare (steg 10.2.69): hur mycket familjen har över (det den äger mot PLAN.hemRef, 0 till 2) och hur många rum huset har
+const hemOverskott = (s: State, ag: number) => {
+  const f = formogenheter(s).egen, fam = familjOf(s, ag), alla = [...f.values()].sort((x, y) => x - y), med = alla.length ? alla[Math.floor(alla.length / 2)]! : 0;
+  const hus = housesOf(s).reduce((n, h) => n + (h.ag !== undefined && fam.some(q => q.id === h.ag) ? husVarde(s, h) : 0), 0); // huset de har räknas inte som överskott
+  const per = (fam.reduce((n, q) => n + (f.get(q.id) ?? 0), 0) - hus) / Math.max(1, fam.length);
+  return med > 0 ? Math.min(2, Math.max(0, (per / med - 1) / (PLAN.hemRik - 1))) : 0;
+};
+const rumI = (s: State, h: Hus) => gridOf(s).rooms.filter(r => r.hus === h.id && r.tiles.length).length;
 const rikUt: AtgardDef = {
   namn: 'Bygga ut åt den rika', steg: 1,
   foresla: (s, b, okAt) => {
     if (b.fn !== 'forbattra') return [];
     for (const h of housesOf(s)) {
-      if (h.ag === undefined || !h.klar || h.ut || !rikOf(s, h.ag)) continue;
+      // den rika bygger större, och en familj med överskott som har färre rum än den är många bygger ut för egna rum (steg 10.2.69)
+      const over = h.ag !== undefined ? hemOverskott(s, h.ag) : 0, rum = h.ag !== undefined && over > 0 && rumI(s, h) < familjOf(s, h.ag).length;
+      if (h.ag === undefined || !h.klar || h.ut || !rikOf(s, h.ag) && !rum) continue;
       const fs = byggaUt.foresla(s, { fn: fnId(h), a: { v: 1, plats: PLAN.rikExtra, ag: h.ag, hus: h.id }, sc: 0 }, okAt);
-      if (fs.length) return fs.map(f => ({ ...f, varde: PLAN.forbRik }));
+      if (fs.length) return fs.map(f => ({ ...f, varde: PLAN.forbRik * Math.max(rikOf(s, h.ag!) ? 1 : 0, over) }));
     }
     return [];
   },

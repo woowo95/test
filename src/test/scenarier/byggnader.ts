@@ -42,6 +42,8 @@ SCENARIER.byggnader = {
 };
 
 
+// kläderna från början (steg 10.2.73) tas bort i prov som räknar med familjernas förmögenhet utan dem
+const utanStartKlader = (s: SIM.State) => { s.ting = SIM.tingOf(s).filter(t => !SIM.kladAv(t.k)); };
 SCENARIER.forradshus = {
   lang: true,
   text: 'Fyller förrådet fler rutor än förrådshusen rymmer bygger byn ett förrådshus (steg 10.2.67). Golvet blir en lagerplats under tak, där det som ligger ruttnar och slits mindre, och maten bärs in dit',
@@ -93,7 +95,7 @@ SCENARIER.familjehus = {
   lang: true,
   text: 'Ett par med barn som inte har något eget hus och äger nog för att betala det bygger ett familjehus. Familjens material tas först, familjen sover där, huset går i arv och blir byns när ingen äger det',
   kor: () => {
-    const s = createState(6, START);
+    const s = createState(6, START); utanStartKlader(s); // Byggplanen prövas i en by utan kläderna från början (steg 10.2.73), som när provet skrevs
     klockan(s);
     byggare(s);
     planBuild(s); byggKlart(s); // först en sovsal åt alla
@@ -106,7 +108,8 @@ SCENARIER.familjehus = {
     const u = mostUrgent(s);
     planBuild(s);
     const h = housesOf(s).find(q => q.fn === 'familjehus');
-    const planerad = u?.fn === 'familjehus' && !!h && h.ag === a.id && h.namn === husNamn(a.name), namn = h?.namn ?? 'inget';
+    // (familjens ved fyller förrådet, så förrådshuset kan vara mer akut, steg 10.2.67: familjehuset planeras ändå)
+    const planerad = !!u && !!h && h.ag === a.id && h.namn === husNamn(a.name), namn = h?.namn ?? 'inget';
     // det som finns att bygga med räknar familjens trä en gång, för alla som bygger (samhalle-57, samhalle-63)
     const allt = SIM.avail(s, 'ved', undefined, h?.id), forMycket = living(s).filter(p => SIM.avail(s, 'ved', p, h?.id) > allt + 1e-9).map(p => p.name);
     const helper = SIM.avail(s, 'ved', d, h?.id);
@@ -114,7 +117,7 @@ SCENARIER.familjehus = {
     const fore = ownsAmount(s, b, 'ved'), kom: Record<string, number> = {};
     const ag = takeForHouse(s, d, h?.id, 'ved', 2, kom);
     const familjens = Math.abs(fore - ownsAmount(s, b, 'ved') - 2) < 1e-9 && Math.abs((ag[b.id] ?? 0) - 2) < 1e-9 && (kom[`familj:${b.id}:ved`] ?? 0) > 0;
-    byggKlart(s);
+    for (let k = 0; k < 3 && !h?.klar; k++) byggKlart(s); // förrådshuset kan byggas först (steg 10.2.67)
     const inne = (p: Person) => { const i = bedTile(s, p); return !!h && i !== undefined && i % W > h.x && i % W < h.x + h.w - 1 && Math.floor(i / W) > h.y && Math.floor(i / W) < h.y + h.h - 1; };
     const sover = !!h?.klar && [a, b, c].every(inne) && !inne(d) && homeless(s) === 0;
     // ägaren dör: partnern ärver huset, som får hens namn; partnern flyttar: huset blir byns
@@ -1042,7 +1045,7 @@ SCENARIER.rumstyper = {
 SCENARIER.byggplan = {
   text: 'Steg 7.2.2–7.2.6: behoven anmäls och Byggplanen tar det förslag som ger mest värde per kostnad. Ritningen prövas, ett behov måste ha funnits ett tag, och ett hus byggs ut i stället för att ett nytt byggs. Den nya delen byggs först och väggen öppnas sist',
   kor: () => {
-    const s = createState(6, START);
+    const s = createState(6, START); utanStartKlader(s); // Byggplanen prövas i en by utan kläderna från början (steg 10.2.73), som när provet skrevs
     klockan(s); byggare(s);
     SIM.planBuild(s); byggKlart(s);
     const h = housesOf(s)[0], fore = { w: h.w, h: h.h }, rumFore = gridOf(s).rooms.filter(r => r.hus === h.id && r.tiles.length).length;
@@ -1448,7 +1451,7 @@ SCENARIER.samlingssal = {
 SCENARIER.byggplan2 = {
   text: 'Steg 7.2.10–7.2.18: när inget är akut föreslår Byggplanen ett bättre golv och ett eget rum på nivån Förbättra. Planens tal följer seden, byn och varje familj har var sin ändring, silver går att betala med i byn, ett hus kan köpas och rivas, och lagret är ett byggbehov utan tak på lagerplatserna',
   kor: () => {
-    const s = createState(6, START);
+    const s = createState(6, START); utanStartKlader(s); // Byggplanen prövas i en by utan kläderna från början (steg 10.2.73), som när provet skrevs
     klockan(s); byggare(s);
     SIM.planBuild(s); byggKlart(s);
     const h = housesOf(s)[0];
@@ -1457,6 +1460,7 @@ SCENARIER.byggplan2 = {
     const j = bitsOf(s).find(b => b.hus === h.id && b.k === 'golv' && !SIM.vidElden(s, b.x, b.y))!;
     s.stubbar = []; j.m = 'jord'; SIM.touch(s);
     SIM.planBuild(s);
+    for (let k = 0; k < 3 && j.m !== 'tra'; k++) { byggKlart(s); SIM.planBuild(s); } // veden kan göra förrådshuset mer akut först (steg 10.2.67)
     const golvForb = j.m === 'tra' && j.forb === 1 && !SIM.buildJob(s, living(s)[0])?.bit.forb && SIM.buildJob(s, living(s)[0], true)?.bit === j;
     j.b = 1; j.forb = undefined; j.mat = 1; SIM.touch(s);
     // byns planering
@@ -1851,6 +1855,25 @@ SCENARIER.langhus = {
       [`byn har ett långhus (${rum ? SIM.sovplatser(s, rum) : 0} sovplatser) och vill ha ett högsäte och bänkar (brist ${hog} och ${bank.toFixed(2)})`, !!rum && hog === 1 && bank > 0],
       ['högsätet får sin plats i långhuset', iRum],
       ['bänken och högsätet är sittplatser', !!SIM.STATIONER.bank.sittplats && !!SIM.STATIONER.hogsate.sittplats && !!SIM.STATIONER.hogsate.enda],
+    ];
+  },
+};
+
+SCENARIER.hemmen = {
+  text: 'Steg 10.2.69: hemmen blir finare. En familj med överskott vill ha ett eget rum åt var och en, och värdet växer med överskottet i stället för en gräns för familjens storlek; en fattig familj vill inte',
+  kor: () => {
+    const s = createState(6, START); klockan(s);
+    const h = medHus(s)!, a = s.people[0]!, fam = SIM.familjOf(s, a.id);
+    h.ag = a.id; SIM.touch(s);
+    const forb = { fn: 'forbattra', a: { v: 1, plats: 0 }, sc: 0 } as never, ok = () => true;
+    const varde = () => SIM.BYGGATGARDER.egetRum.foresla(s, forb, ok)[0]?.varde ?? 0; // delningen för egna rum (utbyggnaden åt den rika gäller som förut)
+    for (const q of living(s)) if (!fam.includes(q)) SIM.put(s, 'silver', 20, { [q.id]: 20 }); // de andra äger mer: familjen är fattig
+    const fattig = varde();
+    SIM.put(s, 'silver', 80, { [a.id]: 80 }); const lite = varde();
+    SIM.put(s, 'silver', 40, { [a.id]: 40 }); const mer = varde();
+    return [
+      [`en fattig familj (${fam.length} personer) bygger inte om (värde ${fattig.toFixed(2)})`, fattig === 0],
+      [`med överskott vill familjen ha egna rum, mer ju större överskottet är (${lite.toFixed(2)} → ${mer.toFixed(2)})`, lite > 0 && mer > lite],
     ];
   },
 };
