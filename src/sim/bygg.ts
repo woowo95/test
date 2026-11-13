@@ -230,11 +230,19 @@ export function husKlart(s: State, h: Hus, p: Person) {
     h.byggare = undefined;
   }
 }
+// materialet i bitarna (det som burits dit), per sak: ved och virke (timret är virke sedan steg 10.2.70)
+const tramat = (bs: Bit[]) => { const r: Record<string, number> = {}; for (const b of bs) { const k = MATERIAL[b.m].item; if (k === 'ved' || k === 'virke') r[k] = (r[k] ?? 0) + b.mat; } return r; };
+// HUS.rivTillbaka av träet i bitarna går till ägaren (eller byn), hela saker. Ger hur många saker det blev
+function tillbaka(s: State, h: Hus, mat: Record<string, number>) {
+  let n = 0;
+  for (const [k, v] of Object.entries(mat)) { const m = Math.floor(v * HUS.rivTillbaka + 1e-9); if (m > 0) { put(s, k, m, h.ag !== undefined ? { [h.ag]: m } : undefined); n += m; } }
+  return n;
+}
 // ett hus rivs: bitarna och huset försvinner, och HUS.rivTillbaka av träet går till ägaren (eller byn). Ger hur mycket trä det blev
 export function rivHus(s: State, h: Hus) {
-  const ved = Math.floor(bitsOf(s).filter(b => b.hus === h.id).reduce((a, b) => a + (MATERIAL[b.m].item === 'ved' ? b.mat : 0), 0) * HUS.rivTillbaka + 1e-9);
+  const mat = tramat(bitsOf(s).filter(b => b.hus === h.id));
   s.byggen = bitsOf(s).filter(b => b.hus !== h.id); s.hus = housesOf(s).filter(q => q !== h);
-  if (ved > 0) put(s, 'ved', ved, h.ag !== undefined ? { [h.ag]: ved } : undefined);
+  const ved = tillbaka(s, h, mat);
   touch(s); changed(s); count(s, 'rivet');
   return ved;
 }
@@ -268,20 +276,20 @@ function stigAv(s: State, x: number, y: number) {
 function slutUt(s: State, h: Hus, p: Person) {
   const ut = h.ut!;
   if (ut.oppnas.length) {
-    let ved = 0;
+    const gamla: Bit[] = [];
     for (const [x, y, m] of ut.oppnas) {
       const b = bitsOf(s).find(q => q.hus === h.id && q.x === x && q.y === y);
       if (!b) continue;
-      if (MATERIAL[b.m].item === 'ved') ved += b.mat;
+      gamla.push({ ...b });
       const M = MATERIAL[m];
       b.m = m; b.k = M.k; b.b = 0; b.mat = 0; b.c = 1; b.dorr = undefined; b.lp = b.lm = undefined;
     }
     ut.oppnas = [];
     h.rumFn = undefined; // rummen blir ett nytt rum med husets funktion
     // väggen finns inte längre: det materialet räknas inte till huset
-    glomKom(h, 'ved', ved);
-    const n = Math.floor(ved * HUS.rivTillbaka + 1e-9);
-    if (n > 0) put(s, 'ved', n, h.ag !== undefined ? { [h.ag]: n } : undefined);
+    const mat = tramat(gamla);
+    for (const [k, v] of Object.entries(mat)) glomKom(h, k, v);
+    tillbaka(s, h, mat);
     touch(s); changed(s);
     return;
   }

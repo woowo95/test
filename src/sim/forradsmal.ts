@@ -22,6 +22,7 @@ import { sportFor } from './sport';
 import { STATION, STATIONER, StationDef, StationSlag, bordBrist, forvarBrist, harStation, isKlar, pyntBrist, pyntLust, stationerOf, tommaPlatser, villPynt } from './stationer';
 import { nTools, tingOf } from './agande';
 import { brasaBrist } from './brasor';
+import { MATERIAL, bitsOf } from './byggnad';
 import { BYGGNADER, fnId, langhusRum, sovplatser, utanBadd } from './byggnader';
 import { latrinBrist } from './smuts';
 import { torkBrist } from './matlagning';
@@ -122,6 +123,8 @@ export const lyxtak = (s: State, k: Resurs, extra = 0) => extra ? FORRADSMAL[k].
 interface Materialmal {
   min: (s: State) => number; // byn vill alltid ha minst så här mycket (tändmaterialet till elden, flintan)
 }
+// virket som byggbitarna (väggarna av timmer) ännu saknar: det som inte burits dit till det som inte är byggt
+const virkeTillHus = (s: State) => Math.ceil(bitsOf(s).reduce((n, b) => n + (b.b < 1 && MATERIAL[b.m]?.item === 'virke' ? Math.max(0, MATERIAL[b.m]!.n - b.mat) : 0), 0) - 1e-9);
 const tand = (s: State) => s.fire.lit ? TROSKEL.tandVill : TROSKEL.tandVillSlocknad; // tändmaterialet invånarna vill ha
 const harNaver = (s: State) => amountOf(s, 'naver') >= TROSKEL.tandBrist || nTools(s, 'kniv') + nTools(s, 'yxa') > 0 && amountOf(s, 'ved') >= 1;
 export const MATERIALMAL = {
@@ -129,7 +132,7 @@ export const MATERIALMAL = {
   torrgras: { min: s => harNaver(s) ? 0 : tand(s) }, // med näver, eller ett blad och ved att tälja den ur, behövs inget hö till tändningen (steg 6.3.3)
   sten: { min: () => 0 },
   flinta: { min: s => TROSKEL.flintaMinsta + flintaKrok.verktyg(s) }, // och flintan till de redskap byn vill ha och saknar (steg 10.2.12)
-  virke: { min: () => 0 },
+  virke: { min: s => virkeTillHus(s) }, // det husen i Byggplanen behöver, också de som inte är påbörjade (steg 10.2.70)
   lera: { min: s => Math.max(0, REDSKAPMAL.lerkruka(s) - krukorIByn(s)) * 2 }, // steg 9.4.10: målet följer hur mycket lera byn gör av med, och leran till de krukor byn vill ha och saknar (två per kruka): annars grävdes ingen lera förrän en kruka gjorts, och ingen kruka gjordes utan lera
   // steg 10.2.12: det som görs och tas av förrådet följer också förbrukningen; minst en (en att börja med, innan något använts)
   rep: { min: () => VILLTAL.repMin }, /* repet går åt till redskapen innan någon förbrukning hunnit räknas: några att börja med */ mossa: { min: () => 1 }, salva: { min: () => 1 }, tjara: { min: () => 1 }, benlim: { min: () => 1 }, tval: { min: () => 1 },

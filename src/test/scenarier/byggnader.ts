@@ -104,19 +104,19 @@ SCENARIER.familjehus = {
     const b = ppl.find(q => q.id === a.partner)!, d = ppl.find(q => q !== a && q !== b && q !== c)!;
     const fam = familjOf(s, a.id).map(q => q.id);
     const fattig = mostUrgent(s)?.fn !== 'familjehus';
-    put(s, 'ved', 30 * MATERIAL.timmer!.n, { [b.id]: 30 * MATERIAL.timmer!.n }); // familjen blir rik nog
+    put(s, 'virke', 30 * MATERIAL.timmer!.n, { [b.id]: 30 * MATERIAL.timmer!.n }); // familjen blir rik nog (timret är virke, steg 10.2.70)
     const u = mostUrgent(s);
     planBuild(s);
     const h = housesOf(s).find(q => q.fn === 'familjehus');
     // (familjens ved fyller förrådet, så förrådshuset kan vara mer akut, steg 10.2.67: familjehuset planeras ändå)
     const planerad = !!u && !!h && h.ag === a.id && h.namn === husNamn(a.name), namn = h?.namn ?? 'inget';
     // det som finns att bygga med räknar familjens trä en gång, för alla som bygger (samhalle-57, samhalle-63)
-    const allt = SIM.avail(s, 'ved', undefined, h?.id), forMycket = living(s).filter(p => SIM.avail(s, 'ved', p, h?.id) > allt + 1e-9).map(p => p.name);
-    const helper = SIM.avail(s, 'ved', d, h?.id);
+    const allt = SIM.avail(s, 'virke', undefined, h?.id), forMycket = living(s).filter(p => SIM.avail(s, 'virke', p, h?.id) > allt + 1e-9).map(p => p.name);
+    const helper = SIM.avail(s, 'virke', d, h?.id);
     // den som hjälper till tar familjens trä först
-    const fore = ownsAmount(s, b, 'ved'), kom: Record<string, number> = {};
-    const ag = takeForHouse(s, d, h?.id, 'ved', 2, kom);
-    const familjens = Math.abs(fore - ownsAmount(s, b, 'ved') - 2) < 1e-9 && Math.abs((ag[b.id] ?? 0) - 2) < 1e-9 && (kom[`familj:${b.id}:ved`] ?? 0) > 0;
+    const fore = ownsAmount(s, b, 'virke'), kom: Record<string, number> = {};
+    const ag = takeForHouse(s, d, h?.id, 'virke', 2, kom);
+    const familjens = Math.abs(fore - ownsAmount(s, b, 'virke') - 2) < 1e-9 && Math.abs((ag[b.id] ?? 0) - 2) < 1e-9 && (kom[`familj:${b.id}:virke`] ?? 0) > 0;
     for (let k = 0; k < 3 && !h?.klar; k++) byggKlart(s); // förrådshuset kan byggas först (steg 10.2.67)
     const inne = (p: Person) => { const i = bedTile(s, p); return !!h && i !== undefined && i % W > h.x && i % W < h.x + h.w - 1 && Math.floor(i / W) > h.y && Math.floor(i / W) < h.y + h.h - 1; };
     const sover = !!h?.klar && [a, b, c].every(inne) && !inne(d) && homeless(s) === 0;

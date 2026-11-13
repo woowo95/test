@@ -7,6 +7,7 @@ import { stepDelning } from './delning';
 import { put, setStock, storeFromSums } from './lager';
 import { isTool } from './saker';
 import { migrateTools, newTing, toolsFromItems } from './agande';
+import { MATERIAL } from './byggnad';
 import { kladNyckel } from './klader';
 import { migrateFalt } from './odling';
 import { KARTA, behoverStorreKarta, storreKarta } from './kartflytt';
@@ -311,6 +312,9 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     delete o.strider; delete o.djurStrider;
     for (const f of [s.rovare, ...(s.rovareFler ?? [])]) if (f) delete (f as unknown as Record<string, unknown>).strid;
     for (const p of s.people) { delete p.framme; if (p.task?.act === 'strid' && !s.kartStrider?.length) p.task.until = Math.min(p.task.until, s.now); }
+  }],
+  [37, 'v527: timret är virke (steg 10.2.70): väggarna står kvar, och det som burits till en timmervägg räknas om från ved till virke (5 ved är 1 virke)', s => {
+    for (const b of s.byggen ?? []) if (b.m === 'timmer') { b.mat = Math.min(MATERIAL.timmer!.n, Math.round(b.mat / 5)); if (b.lm !== undefined) b.lm = Math.round(b.lm / 5); }
   }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
