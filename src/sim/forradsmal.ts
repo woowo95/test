@@ -26,7 +26,7 @@ import { MATERIAL, bitsOf } from './byggnad';
 import { BYGGNADER, fnId, langhusRum, sovplatser, utanBadd } from './byggnader';
 import { latrinBrist } from './smuts';
 import { torkBrist } from './matlagning';
-import { GREN, HOUR, State, WEEK } from './typer';
+import { DAY, GREN, HOUR, State, WEEK } from './typer';
 import { TILLVERKA } from './tillverka';
 import { protesVill } from './protes';
 
@@ -65,6 +65,9 @@ export const TROSKEL = balans('troskel', {
 // Redskapen och stationerna (steg 6.2.17): hur många byn vill ha är bufferten. Ett redskap räknas per vuxen från ALDER.vuxen
 // (yxan från yxaFran)
 export const VILLTAL = balans('vill', {
+  rustBas: 0.15, rustHot: 0.6, // vapnen efter hoten (steg 10.2.75): rustning, hjälm och sköld åt så här stor del av de vuxna i fred, och upp till så här mycket mer vid stort hot ...
+  bageBas: 0.1, bageHot: 0.4, // ... och bågar och slungor
+  hotDygn: 6, hotStrider: 3, // hotet: så här många strider på så här många dygn är fullt hot
   spjutPerVuxna: 3, spjutMin: 1, spjutMax: 4, // byn vill ha ett spjut (och ett metspö) per så här många vuxna, minst Min och högst Max
   snoskorPer: 4, halsbandPer: 3,
   korgPerVuxna: 3, korgMin: 1, korgMax: 5, // ... en korg
@@ -204,6 +207,13 @@ const spjutVill = (s: State) => (s.stat?.fiskeForsok ?? 0) > 0 || (s.stat?.prod_
 export const flintaKrok = { verktyg: (_s: State) => 0 };
 const krukorIByn = (s: State) => tingOf(s).filter(t => t.k.startsWith('lerkruka_')).length;
 const ortkokKan = (s: State) => living(s).some(p => (p.tek?.ortkok ?? 0) >= 1); // någon kan koka i örtköket (steg 9.4.14)
+// hoten byn mött (steg 10.2.75): strider de senaste VILLTAL.hotDygn dygnen, och rövare, vargar eller björnen nära nu (0 till 1)
+export function hotNu(s: State) {
+  const strider = (s.stridRapporter ?? []).filter(r => s.now - r.t < VILLTAL.hotDygn * DAY).length;
+  return Math.min(1, strider / VILLTAL.hotStrider + (s.rovare ? 0.5 : 0) + (s.vargar?.length ? 0.3 : 0) + (s.bjornJakt && s.now - s.bjornJakt.sedd < VILLTAL.hotDygn * DAY ? 0.3 : 0)); // björnen sedd på sistone
+}
+// vapnen och rustningen växer med de vuxna och hoten (steg 10.2.75): bas i fred och upp till bas + hot vid fullt hot, andelar av de vuxna
+const vapenVill = (s: State, bas: number, hot: number) => Math.ceil(living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen).length * (bas + hot * hotNu(s)) - 1e-9);
 export const REDSKAPMAL: Record<string, (s: State) => number> = {
   spjut: spjutVill,
   metspo: spjutVill, // ett metspö per spjut
@@ -231,7 +241,7 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   balte: s => living(s).length, // ett per person (steg 2.3.3)
   axelrem: spjutVill, // en per spjut (steg 7.1.2)
   ryggsack: s => perVuxna(s, VILLTAL.korgPerVuxna, VILLTAL.korgMin, VILLTAL.korgMax), // lika många som korgarna, till dem som samlar (steg 7.1.3)
-  rustning: s => Math.ceil(living(s).length / 4), hjalm: s => Math.ceil(living(s).length / 4), skold: s => Math.ceil(living(s).length / 4), bage: () => 2, slunga: () => 2, horn: () => 1, // vapnen och rustningen (system 8.7)
+  rustning: s => vapenVill(s, VILLTAL.rustBas, VILLTAL.rustHot), hjalm: s => vapenVill(s, VILLTAL.rustBas, VILLTAL.rustHot), skold: s => vapenVill(s, VILLTAL.rustBas, VILLTAL.rustHot), bage: s => vapenVill(s, VILLTAL.bageBas, VILLTAL.bageHot), slunga: s => vapenVill(s, VILLTAL.bageBas, VILLTAL.bageHot), horn: () => 1, // vapnen och rustningen efter de vuxna och hoten (steg 10.2.75); // vapnen och rustningen (system 8.7)
   skara: s => (s.angar?.length ?? 0) > 0 ? 1 : 0, // en skära när byn har en slåtteräng (steg 9.8.9)
   benspade: () => VILLTAL.spadar, // till latrinen och rötterna (steg 2.7.2)
   fackla: () => VILLTAL.facklor, // till den som går ut i mörkret (steg 6.3.6, ljus.ts)
