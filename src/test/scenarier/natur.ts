@@ -1855,8 +1855,9 @@ SCENARIER.varg = {
     // en hungrig flock anfaller den som är ensam långt från byn
     const an = by(12), e = SIM.eldPlats(an), tl = SIM.getMap(an.seed).tiles, ensam = living(an).find(q => ageOf(q, an.now) >= 18)!;
     const land = (a: number, r: number) => { const x = Math.round(e.x + Math.cos(a) * r), y = Math.round(e.y + Math.sin(a) * r); return SIM.inMap(x, y) && tl[y * W + x] !== SIM.T.Vatten ? { x: x + 0.5, y: y + 0.5 } : undefined; };
-    let ri = 0; while (ri < 6.3 && !(land(ri, 26) && land(ri, 36))) ri += 0.2;
-    const ut = land(ri, 26)!, fl = land(ri, 36)!;
+    // (flocken står längre bort än den ensamma ser, VARG.folkSer, men inom det flocken ser, VARG.ser)
+    let ri = 0; while (ri < 6.3 && !(land(ri, 26) && land(ri, 38))) ri += 0.2;
+    const ut = land(ri, 26)!, fl = land(ri, 38)!;
     const fa = flock(an, 4, 0, 1); fa.x = fa.mx = fl.x; fa.y = fa.my = fl.y;
     // den ensamma står kvar och samlar tills flocken är framme
     // (de andra håller sig vid elden, så att ingen annan går ut mot flocken och skrämmer den)
