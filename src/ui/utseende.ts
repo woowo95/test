@@ -79,10 +79,19 @@ function kropp(s: State, p: Person, del: Record<string, string | null>) {
   if (huvud.some(w => !w.f && (w.k === 'blamarke' || w.k === 'krossar'))) del.blamarke = 'blamarke-1';
   return { humor, forband, ogonlapp: !!p.saknas?.some(d => d === 'ogaV' || d === 'ogaH'), sjuk: isSick(p, s.now) || blodSteg(p) >= 1 || (p.skador ?? []).some(w => infStadium(w) >= 2) /* blek av blodförlusten (steg 9.5.17) och av feber i ett sår (steg 9.5.24) */, kyla: p.warm < KROPP.kallt, blod: blodning(p) > 0 };
 }
+// små barns porträtt (steg 10.2.54): barn upp till SMABARN.ar år har ett eget, enklare ansikte med få varianter (samma drag för
+// alla små barn och en av SMABARN.frisyrer frisyrer), medan hårfärgen och hudfärgen är barnets egna och följer med när det växer
+export const SMABARN = { ar: 5, frisyrer: 3 };
+function smabarnet(p: Person, u: Skapad) {
+  const kon = p.sex === 'k' ? 'kvinna' : 'man';
+  for (const del of ANSIKTE) u.del[del] = KARNA.radAv(KARNA.slumpFran(7), del, 'barn', kon, 0);
+  u.del.frisyr = KARNA.radAv(KARNA.slumpFran(11 + hash(p.id, 54, 1) * SMABARN.frisyrer | 0), 'frisyr', 'barn', kon, 0);
+}
 export function skapad(s: State, p: Person): Skapad {
   const d = drag(s, p), alder = alderAv(ageOf(p, s.now));
   const u: Skapad = alder !== 'barn' && d.anlag ? KARNA.somUng(d) : { ...d, del: { ...d.del } };
   u.alder = alder;
+  if (ageOf(p, s.now) < SMABARN.ar) smabarnet(p, u);
   // ärren i ansiktet (steg 8.2.4): samma ärr hela livet, ur rader i PORTRATT; ögonlappen när ett öga är borta
   const arr = p.arr?.find(a => a.d === 'huvud' || a.d === 'kake' || a.d === 'ogaV' || a.d === 'ogaH');
   u.del = { ...u.del, huvudbonad: null, arr: arr ? `arr-${arr.n}` : null, blamarke: null, redskap: null };
