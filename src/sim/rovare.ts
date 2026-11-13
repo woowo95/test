@@ -70,6 +70,7 @@ export const ROVARE = balans('rovare', {
   // rövarnas val (steg 10.1.9–10.1.15, ROVARHANDLINGAR)
   rastR: 3, // rastplatsen: så här nära mitten håller de sig, och så långt går den som går omkring
   rastaPoang: 0.35, gaPoang: 0.2, prataPoang: 0.38, // poängen för att vila, gå omkring och prata på rastplatsen (steg 10.2.24: vilan vann nästan alltid med 0,5; steg 10.2.94: mer prat, mindre gång)
+  sparEfter: 0.15, // bilden: det som flyttar rövaren efter en gång som redan sparats till samma tid visas så här många sekunder senare (steg 10.2.96)
   pratSek: 15, // den som pratar samtalar ungefär en gång på så här många sekunder (snart när två står bredvid varandra, steg 10.2.94)
   rastSek: [20, 90], // en vila, en promenad eller ett samtal på rastplatsen varar så här många sekunder
   valKvar: 0.2, valBrus: 0.3, // det hen redan gör har så här mycket försteg i valet, och vilan, promenaden och samtalet slumpas med så här mycket
@@ -200,6 +201,7 @@ function egenPlats(s: State, x: number, y: number, r: Person) {
 }
 function spara(s: State, r: Person, t: number) {
   const sp = gr(r).spar ??= [];
+  if (sp.length >= 3 && sp[sp.length - 3] >= t - 1e-9 && sp.length > 3) t = sp[sp.length - 3] + ROVARE.sparEfter * SEC; // bilden går bara framåt: det som flyttade hen efter en gång som redan sparats kommer efter den (steg 10.2.96)
   sp.push(Math.round(t), Math.round(r.x! * 1000) / 1000, Math.round(r.y! * 1000) / 1000);
   let i = 0; while (i + 3 < sp.length && sp[i + 3] < s.now - SPAR_SEK * SEC) i += 3;
   if (i) sp.splice(0, i);
@@ -453,7 +455,8 @@ const gavSigNyss = (s: State, q: Person) => q.gavSig !== undefined && s.now - q.
 const kanStaEmot = (s: State, q: Person) => starEmot(q) && vuxenKan(s, q) && !gavSigNyss(s, q);
 // flockens strid på kartan, om den pågår
 export const flockStrid = (s: State, f: Rovarflock) => kartStrider(s).find(g => g.efter?.typ === 'rovare' && g.efter.flock === f.id);
-const iStriden = (s: State, f: Rovarflock, p: Person) => { const g = flockStrid(s, f); return !!g && !g.fri?.includes(p.id) && g.st.kampar.some(k => k.pid === p.id); };
+// rövaren är med i en strid på kartan, flockens eller någon annan (steg 10.2.96: den som striden flyttar går inte samtidigt)
+const iStriden = (_s: State, _f: Rovarflock, p: Person) => kartStrider(_s).some(g => !g.fri?.includes(p.id) && !g.st.slut && g.st.kampar.some(k => k.pid === p.id));
 // det rövaren bär av bytet, i vikt
 const lastAv = (r: Person) => Object.entries(gr(r).bar ?? {}).reduce((a, [k, n]) => a + viktOf(k) * n, 0);
 // lagerplatsen närmast rövaren där det ligger något att ta
@@ -723,7 +726,7 @@ gastKrok.dod = (s, r, av) => {
   f.folk = f.folk.filter(id => id !== r.id);
   gastGar(s, r.id);
 };
-gastKrok.spara = (s, r) => spara(s, r, s.now);
+gastKrok.spara = (s, r, t) => spara(s, r, t ?? s.now);
 // rövare och bybor som kan nå varandra under ett slag, plus synhållet: då går byn i korta steg (FAROR i efterstrid.ts, kanNa i klocka.ts)
 // (också medan byn vet om ett gäng som väntar: larmet går led för led och budbäraren springer, och det ska inte ta fem minuter per led)
 FAROR.push(s => flockar(s).some(f => f.folk.length > 0 && (!!f.anfaller || (f.sedd !== undefined && !f.klar) || rovarna(s, f).some(r => living(s).some(q => kanNa(avst(q, r), GANG.fart, GANG.fart))))));

@@ -73,7 +73,7 @@ const sportAv = (a: Avsikt) => !!(AVSIKTER[a] as { sport?: true }).sport;
 export interface SlagBild { strid: number; t: number; l: number; fran?: number; mot?: number; fx: number; fy: number; mx: number; my: number; v?: string; kast?: 1; utfall: string }
 export const stridBild = { pa: false, slag: [] as SlagBild[] };
 // vägen den som slåss rör sig sparas för bilden som annan gång (spar i steg.ts sätter kroken, så att filerna inte importerar varandra i cirkel)
-export const bildKrok: { spara?: (s: State, p: Person) => void } = {};
+export const bildKrok: { spara?: (s: State, p: Person, t?: number) => void } = {};
 function tillBilden(g: KartStrid, n0: number) {
   const st = g.st;
   for (const h of slagen(st)) {
@@ -207,7 +207,8 @@ export function kartStridSteg(s: State, dtSec: number) {
       // ... och efter det
       for (const k of st.kampar) {
         const p = personAv(s, k); if (!p || p.died !== undefined || g.fri?.includes(p.id)) continue;
-        if (p.x !== k.x || p.y !== k.y) { p.x = k.x; p.y = k.y; if (p.gast) gastKrok.spara?.(s, p); else bildKrok.spara?.(s, p); }
+        // (bilden får platsen vid tiden då stridssteget slutade, inte alla steg på slagets slut: annars hoppar den, steg 10.2.96)
+        if (p.x !== k.x || p.y !== k.y) { p.x = k.x; p.y = k.y; const tt = s.now - g.rest * SEC; if (p.gast) gastKrok.spara?.(s, p, tt); else bildKrok.spara?.(s, p, tt); }
         p.blod = clamp(k.blod, 0, 1);
         if (sport) continue; // brottaren har matchen som uppgift
         if (k.lage === 'ger' || k.lage === 'borta') { // har lämnat striden: väljer på nytt

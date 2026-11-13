@@ -2422,7 +2422,7 @@ SCENARIER.rovarstrid = {
     let mitt = false, nara = true, slag = false, kom = false;
     korTills(s, () => !g || !!g.st.slut, 900, () => {
       if (!g!.st.slut) mitt = true;
-      for (const r of SIM.rovarna(s, f)) if (Math.hypot(r.x - m.x, r.y - m.y) > SIM.ROVARE.motR + 4) nara = false;
+      for (const r of SIM.rovarna(s, f)) { const k = g!.st.kampar.find(q => q.pid === r.id); if (k && !g!.fri?.includes(r.id) && !['flykt', 'ger', 'borta', 'dod'].includes(k.lage) && Math.hypot(r.x - m.x, r.y - m.y) > SIM.ROVARE.motR + 4) nara = false; } // (den som flyr springer mot kanten)
       if (g!.st.kampar.some(k => k.pid === c.id)) kom = true;
       if (g!.st.logg.some(r => (r.h === 'traff' || r.h === 'miss' || r.h === 'tog') && r.a !== undefined && r.b !== undefined && g!.st.kampar.find(k => k.id === r.a)!.sida !== g!.st.kampar.find(k => k.id === r.b)!.sida)) slag = true;
     });

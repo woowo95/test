@@ -2760,3 +2760,27 @@ SCENARIER.stridansikte = {
     ];
   },
 };
+
+SCENARIER.rovarhopp = {
+  text: 'Steg 10.2.96: rövarna hoppar inte i bilden. Bilden visar rövarna längs vägen de faktiskt gått, också när striden på kartan flyttar dem, och mellan två bilder flyttar sig ingen rövare längre än hen hinner gå eller springa',
+  kor: () => {
+    const s = createState(4, START);
+    for (let i = 0; i < 12; i++) step(s, 300);
+    const f = rovarGang(s, 4, undefined, { anfaller: true });
+    const t0 = s.now, max = SIM.GANG.fart * 0.1 * 1.6 + 0.05;
+    let hopp = 0, prov = 0, fel = 0;
+    while (s.now - t0 < 20 * 60 * 1000 && SIM.rovarna(s, f).length) {
+      const fore = s.now; SIM.step(s, SIM.nastaSteg(s));
+      for (const r of SIM.rovarna(s, f)) {
+        let p = SIM.rovarPlats(r, fore);
+        for (let t = fore + 100; t <= s.now; t += 100) { const q = SIM.rovarPlats(r, t); prov++; if (Math.hypot(q.x - p.x, q.y - p.y) > max) hopp++; p = q; }
+        const b = SIM.rovarPlats(r, s.now + 1000); fel = Math.max(fel, Math.hypot(b.x - r.x!, b.y - r.y!));
+      }
+    }
+    return [
+      [`gänget anföll och striden på kartan flyttade dem (${s.stat?.kartStrid ?? 0} strider)`, (s.stat?.kartStrid ?? 0) > 0],
+      [`ingen rövare flyttar sig i bilden längre än hen hinner springa på en tiondels sekund (${hopp} hopp av ${prov})`, hopp === 0 && prov > 100],
+      [`bilden hamnar där rövaren är (högst ${fel.toFixed(2)} rutor ifrån)`, fel < 0.6],
+    ];
+  },
+};

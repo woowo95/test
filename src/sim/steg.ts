@@ -176,7 +176,7 @@ export function sparUppgift(p: Person, t: number, nu: number): Task | undefined 
   return u[i][1];
 }
 function spara(s: State, p: Person, t = s.now) { if (spar.pa) { spar.v.get(p)?.push(t, p.x, p.y); sparaUppgift(p, t); } }
-bildKrok.spara = (s, p) => spara(s, p); // den som flyttas av striden på kartan (kartstrid.ts)
+bildKrok.spara = (s, p, t) => spara(s, p, t ?? s.now); // den som flyttas av striden på kartan (kartstrid.ts), vid tiden för stridssteget
 
 type Krok = (s: State, p: Person, t: Task, dtSec: number) => void;
 // det som händer medan man gör något (efter att ha kommit fram). Arbete för byn sköts av workStep
