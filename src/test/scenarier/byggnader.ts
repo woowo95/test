@@ -160,7 +160,7 @@ SCENARIER.agandet = {
     // familjen bygger ett eget hus
     const ppl = living(s).sort((x, y) => x.id - y.id), c = ppl.find(q => q.mother !== undefined)!, a = ppl.find(q => q.id === Math.min(c.mother!, c.father!))!;
     const b = ppl.find(q => q.id === a.partner)!;
-    put(s, 'ved', 30 * MATERIAL.timmer!.n, { [b.id]: 30 * MATERIAL.timmer!.n });
+    put(s, 'silver', 200, { [b.id]: 200 }); // familjen har råd (förut ved till väggarna; timret är virke sedan steg 10.2.70, och virket fyller förrådet)
     planBuild(s);
     const h = housesOf(s).find(q => q.fn === 'familjehus')!;
     byggKlart(s);
@@ -1897,10 +1897,13 @@ SCENARIER.rivforhus = {
 };
 
 SCENARIER.koket = {
+  lang: true,
   text: 'Steg 10.2.91–10.2.92: kökets stationer står inne och samlas i köket. Örtköket, bakugnen och kvarnstenen står inne i ett hus som härden (rökeriet ute), ett rum med en av dem är ett kök, och en ny köksstation ställs helst i ett rum som redan är ett kök',
   kor: () => {
     const s = createState(6, START); klockan(s);
-    medHus(s); medHus(s);
+    medHus(s); for (let j = 0; j < 6; j++) nyInvanare(s, j % 2 ? 'm' : 'k', 25);
+    for (let k = 0; k < 12 * 12; k++) step(s, 300); // (ett behov ska ha funnits en stund innan Byggplanen bygger)
+    s.byggSok = undefined; medHus(s); // två hus
     for (const h of SIM.housesOf(s)) h.ag = undefined; // (byns hus: byns stationer ställs inte i en familjs hus)
     const inne = ['ortkok', 'bakugn', 'kvarnsten'].every(k => !!SIM.stationDef(k)?.inne) && !SIM.stationDef('rokeri')?.inne;
     const rumAv = (at?: { x: number; y: number }) => at && SIM.roomAt(s, at.x + 0.5, at.y + 0.5);
