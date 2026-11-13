@@ -26,7 +26,7 @@ import { fotSkugga, skuggFolk, skuggLangd } from './skugga';
 import { jaktPlats } from './jakt';
 import { kartKampe, slagAv } from './stridbild';
 import { slag } from './animation';
-import { stalle } from './stalle';
+import { stalle, vidArbetet } from './stalle';
 import { hasIcon, iconCanvas, kartbild, ljusSymbol } from '../ikoner';
 
 // människorna på kartan: kroppen, det de bär, pratbubblor, symbolen för vad de gör och namnet
@@ -384,6 +384,9 @@ export function drawPeople(t: number) {
     // sitter bara på en sittplats, går bara när hen flyttat sig (steg 10.2.55, ui/stalle.ts)
     const st = stalle(s, { ligger, gor, x: q.x, y: q.y, vidBank, rorde: gar(p.id) }), sitter = st === 'sitta';
     if (sitter && rikt === 'bak') rikt = 'fram';
+    // stå vid arbetet (steg 10.2.78): på en ruta intill arbetsrutan och vänd mot den
+    const va = !ligger ? vidArbetet(s, gor, q.x, q.y) : undefined;
+    if (va) { x = va.x * TS; y = va.y * TS; rikt = va.rikt; }
     if (vidBank) { rikt = 'bak'; x = (bank!.x + storlekAv(bank!).w / 2) * TS; y = (bank!.y + storlekAv(bank!).h) * TS + TS / 2 - r * 0.9; }
     // arbetet i bild (steg 5.1.9.4, ui/arbetsbild.ts): rörelsen från sidan, en bild per slag, förskjutet per person
     const strid = gor === 'strid' && !ligger ? stridNu(p) : undefined;

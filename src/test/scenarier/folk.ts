@@ -7,7 +7,7 @@ import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import * as SLAGLANGD from '../slaglangd';
 import { hasIcon } from '../../ikoner';
 import { stridIByn, rovarGang, korTills, setFood, kor, klockan, tandEld, byggare, SCENARIER, pct, grenarUte, barGrenar, nyInvanare, valjer, MATARBETE, TRAARBETE, REDSKAPSARBETE, FORBATTRING, MATMEDREDSKAP, rikBy, medHus, medBank } from './hjalp';
-import { stalle, SITTA } from '../../ui/stalle';
+import { stalle, SITTA, vidArbetet } from '../../ui/stalle';
 const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 SCENARIER.befolkning = {
@@ -2653,9 +2653,9 @@ SCENARIER.anfallet = {
 SCENARIER.stalle = {
   text: 'Steg 10.2.55: figuren sitter bara på en sittplats och går bara när den flyttat sig. En by går tolv timmar, och varje person prövas i varje steg med samma regel som bilden (ui/stalle.ts): ingen ritas sittande utan sittplats eller gående utan att ha flyttat sig',
   kor: () => {
-    const s = createState(7, START); klockan(s, 8); medHus(s);
+    const s = createState(7, START); klockan(s, 8); medHus(s); SIM.setAmount(s, 'yxa', 2); tidyTools(s); // yxorna: någon fäller och hugger (steg 10.2.78)
     const forra = new Map<number, { x: number; y: number }>();
-    let sittUtan = 0, garStilla = 0, sitter = 0, gar = 0, star = 0, forst = '';
+    let sittUtan = 0, garStilla = 0, sitter = 0, gar = 0, star = 0, forst = '', arbeten = 0, felArbete = 0;
     for (let k = 0; k < STEG_TIM * 12; k++) {
       step(s, 300);
       for (const p of living(s)) {
@@ -2666,11 +2666,19 @@ SCENARIER.stalle = {
         if (l === 'sitta') { sitter++; if (!SIM.sittAt(s, p.x, p.y)) { sittUtan++; forst ||= `${p.name} sitter utan sittplats (${tk?.act})`; } }
         if (l === 'ga') { gar++; if (!rorde) { garStilla++; forst ||= `${p.name} går utan att flytta sig (${tk?.act})`; } }
         if (l === 'sta' && tk?.phase === 'do' && SITTA.has(tk.act)) star++;
+        // stå vid arbetet (steg 10.2.78): den som arbetar med en ruta ritas på en ruta intill och vänd mot den
+        const va = tk?.phase === 'do' ? vidArbetet(s, tk.act, p.x, p.y) : undefined;
+        if (va) {
+          arbeten++;
+          const rx = Math.floor(p.x), ry = Math.floor(p.y), vx = Math.floor(va.x), vy = Math.floor(va.y), mot = { bak: ry < vy, fram: ry > vy, sida: rx > vx, vast: rx < vx }[va.rikt];
+          if (rx === vx && ry === vy || Math.abs(rx - vx) + Math.abs(ry - vy) !== 1 || !mot) { felArbete++; forst ||= `${p.name} ${tk!.act} på sin egen ruta eller med ryggen mot arbetet`; }
+        }
       }
     }
     return [
       [`ingen sitter utan sittplats och ingen går utan att flytta sig (${sitter} sittande, ${gar} gående${forst ? `; ${forst}` : ''})`, sittUtan === 0 && garStilla === 0 && gar > 0],
-      [`den som samtalar eller vilar utan sittplats står (${star} gånger)`, star > 0],
+      [`den som samtalar utan sittplats står (${star} gånger)`, star > 0],
+      [`den som arbetar med en ruta står intill och är vänd mot den (${arbeten} gånger, ${felArbete} fel; steg 10.2.78)`, arbeten > 0 && felArbete === 0],
     ];
   },
 };
