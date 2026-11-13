@@ -92,7 +92,7 @@ SCENARIER.yxa = {
       for (const k of s.stockar ?? []) { if (!sedan.has(k.id)) { sedan.set(k.id, s.now); if (blaste) vind.add(k.id); } if (!vind.has(k.id)) fallda.add(tileOf(k.x, k.y)); }
     });
     // (en stam som ingen fällt, av vinden eller när lagret växte över ungskogen, har ingen fällare och huggs när byn behöver ved)
-    const liggande = (s.stockar ?? []).filter(k => k.av !== undefined && !vind.has(k.id) && !rojs.has(tileOf(k.x, k.y)) && s.now - (sedan.get(k.id) ?? s.now) > 2 * DAY).length;
+    const liggande = (s.stockar ?? []).filter(k => k.av !== undefined && !vind.has(k.id) && !rojs.has(tileOf(k.x, k.y)) && s.now - (sedan.get(k.id) ?? s.now) > 2 * DAY).length, fullt = SIM.woodDays(s) >= SIM.buffert(s, 'ved'); // (när veden räcker över bufferten väntar stammen tills byn behöver veden)
     const g = groundOf(s);
     // på gångstråken trampas marken där träden stod till jord, så räkna bara utanför dem (byns område täcker sedan steg 6.2.1
     // också skogen där byn fäller, så området går inte att räkna bort)
@@ -103,7 +103,7 @@ SCENARIER.yxa = {
       ['träd har fällts', (s.fallda ?? 0) >= 3],
       ['ved har huggits', ved > 0],
       [`gräs där träden stod utanför stråken, minst hälften (${gras} av ${ute.length})`, ute.length >= 3 && gras >= ute.length / 2],
-      [`stammarna huggs upp (ingen ligger mer än två dygn utanför lagret i skogen: ${liggande})`, liggande === 0]];
+      [`stammarna huggs upp när byn behöver ved (ingen ligger mer än två dygn utanför lagret i skogen: ${liggande}${fullt ? ', men veden räcker över bufferten' : ''})`, liggande === 0 || fullt]];
   },
 };
 
