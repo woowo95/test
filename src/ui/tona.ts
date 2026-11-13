@@ -3,12 +3,14 @@
 import { H, W, alive, housesOf, living, stationerOf } from '../sim';
 import { piles, s, ui } from './lage';
 import { posOf } from './manniskor';
+import { gaster } from './gaster';
 import { djurSynliga } from './vaxter';
 import { tonaTrad } from './trad';
 
 export function drawTona() {
   const pt: { x: number; y: number }[] = [], nara: { x: number; y: number }[] = [];
   for (const p of living(s)) if (alive(p)) { const q = posOf(p); pt.push(q); nara.push(q); } // en ring runt folket (steg 6.8.14)
+  for (const g of gaster()) { pt.push({ x: g.x, y: g.y }); nara.push({ x: g.x, y: g.y }); } // och runt gästerna: rövarna, handlaren, främlingen (steg 10.2.99)
   for (const d of djurSynliga()) pt.push({ x: d.x, y: d.y });
   for (const p of piles()) if (!p.stored) pt.push({ x: p.x, y: p.y }); // (en hög, ingen person)
   for (const st of stationerOf(s)) pt.push({ x: st.x, y: st.y });

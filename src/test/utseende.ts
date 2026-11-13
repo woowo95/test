@@ -10,7 +10,7 @@
 import { createRequire } from 'node:module';
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { State, ageIndex, createState, hourOf, serialize, step } from '../sim';
+import { State, ageIndex, bynsMitt, createState, hourOf, rovarnaKommer, serialize, stallUpp, step } from '../sim';
 import { FARGER, MORKARE } from '../palett';
 import { START } from './kor';
 const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
@@ -26,6 +26,7 @@ const FALL = [
   { namn: 'mitt-i-natten', ai: 2, h: 1 },
   { namn: 'istid', ai: 0, h: 12 },
   { namn: 'istid-natt', ai: 0, h: 22 },
+  { namn: 'natt-rovare', ai: 2, h: 22, rovare: true }, // ett rövargäng med fackla nära byn på natten (steg 10.2.99): ljuset kring alla människor
   { namn: 'inzoomning', ai: 0, h: 12, zoom: 20 }, // kartan så långt inzoomad det går, i istiden med snön (steg 10.2.56): allt ska vara skarpa hela punkter
 ];
 const SPELA_MS = 3000; // så länge spelet går innan bilden tas, så att allt hinner ritas
@@ -99,6 +100,7 @@ async function main() {
   const b = await chromium.launch();
   for (const f of FALL.filter(f => !process.env.FALL || process.env.FALL.split(',').includes(f.namn))) {
     if (!tills(s, f.ai, f.h)) { larm.push(`${f.namn}: byn kom aldrig dit`); continue; }
+    if ('rovare' in f) { rovarnaKommer(s, 4, true); const c = bynsMitt(s); if (s.rovare) stallUpp(s, s.rovare, c.x + 8, c.y + 2); }
     const fil = serialize(s), t = s.now;
     for (const sk of SKARMAR.filter(k => k.namn === 'dator' || f.namn === 'dag' || process.env.ALLA)) for (const lg of LAGEN.filter(l => !process.env.LAGE || process.env.LAGE === l.namn)) {
       const ctx = await b.newContext({ ...sk.opt, timezoneId: 'Europe/Stockholm', colorScheme: lg.schema });

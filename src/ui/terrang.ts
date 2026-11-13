@@ -2,6 +2,7 @@ import * as PIXI from 'pixi.js';
 import { sakerPaMarken, BJORK, BRAND, busksort, DAY, H, HOUR, STADIER, T, VAG, W, tradArt, valjArt, ageIndex, stadium, emberOn, fireHeat, eldXY, eldarOf, groundOf, isCm, kalender, lightLevel, snoPaMarken, vaderNu, LJUSKALLOR, type Ljuspunkt, living, byId, rovarPlats } from '../sim';
 import { s, ui } from './lage';
 import { posOf } from './manniskor';
+import { gaster } from './gaster';
 import { TS, app, figurLayer, husLayer, mork, pileLayer, terrainG, world } from './scen';
 import { ritaSkuggor, sattMoln, skuggLangd } from './skugga';
 import { stallNatt } from './natt';
@@ -110,10 +111,11 @@ function kantHash(x: number, y: number) {
 // Molnen och regnet gör skymningen och natten mörkare på samma sätt, en del av ett steg (vaderMork i ui/vaderbild.ts, steg 5.5.1); på dagen inte (steg 10.2.20)
 // eldens ljus når så många rutor när den brinner för fullt (steg 6.8.15); glöden och en svag eld lyser mindre, i samma förhållande
 const ELD_LJUS = 14, FOLK_LJUS = 1.5; // ... och ljuset kring en människa så många rutor (steg 9.2.69)
+const FACKEL_STORRE = 1.25, FACKEL_FLADDER = 0.08; // facklans sken är så här mycket större än dess ljus i simuleringen och fladdrar så här mycket (steg 10.2.99)
 export function drawNight(t: number) {
   // på dagen är kartan ljus överallt (steg 10.2.20): vädret gör bara skymningen och natten mörkare. Förut gjorde en mulen himmel
   // (0,5 steg, avrundat till ett helt) hela kartan till skymning mitt på dagen
-  const klocka = DJUPNATT * (1 - lightLevel(t)), m = klocka > 0 ? klocka + vaderMork(t) : 0, eldar: { x: number; y: number; r: number; k: number }[] = [];
+  const klocka = DJUPNATT * (1 - lightLevel(t)), m = klocka > 0 ? klocka + vaderMork(t) : 0, eldar: { x: number; y: number; r: number; k: number }[] = [], facklor: { x: number; y: number }[] = [];
   if (m > 0) for (const e of eldarOf(s)) { // varje lägereld lyser (steg 4.5.6.8)
     const I = fireHeat(s, e);
     if (!(I > 0 || emberOn(s, e))) continue;
@@ -122,10 +124,12 @@ export function drawNight(t: number) {
   }
   // facklorna och de andra ljuskällorna (steg 6.3.6–6.3.8, LJUSKALLOR i sim/ljus.ts); elden har sitt sken ovan
   // (en fackla som någon bär lyser där bäraren syns i bilden, steg 10.2.19)
-  if (m > 0) for (const [n, k] of Object.entries(LJUSKALLOR)) if (n !== 'eld') for (const l of k.kallor(s) as Ljuspunkt[]) { const q = l.bar !== undefined ? synsVid(l.bar) ?? l : l; eldar.push({ x: q.x * TS, y: q.y * TS, r: TS * l.r, k: 0.8 }); }
+  // (steg 10.2.99: facklan lyser som en liten eld, större än människans cirkel, i eldens form och fladdrande)
+  if (m > 0) for (const [n, k] of Object.entries(LJUSKALLOR)) if (n !== 'eld') for (const l of k.kallor(s) as Ljuspunkt[]) { const q = l.bar !== undefined ? synsVid(l.bar) ?? l : l, fl = 1 + FACKEL_FLADDER * Math.sin(t / 90 + q.x * 7 + q.y * 3) * Math.sin(t / 37 + q.x); facklor.push(q); eldar.push({ x: q.x * TS, y: q.y * TS, r: TS * l.r * FACKEL_STORRE * fl, k: -0.85 }); }
   // ljuset kring människorna (steg 9.2.69): bara i bilden; den som bär en fackla har facklans ljus
   // (där var och en syns i bilden, inte där hen står i slutet av slaget, steg 10.2.19)
-  const folk = m > 0 ? living(s).map(posOf).filter(p => !eldar.some(e => e.k > 0 && Math.hypot(e.x - p.x * TS, e.y - p.y * TS) < TS)).map(p => ({ x: p.x * TS, y: p.y * TS - TS * 0.4, r: TS * FOLK_LJUS })) : [];
+  // alla människor på kartan, byborna och gästerna (rövarna, handlaren, främlingen; steg 10.2.99)
+  const folk = m > 0 ? [...living(s).map(posOf), ...gaster(t)].filter(p => !facklor.some(e => Math.hypot(e.x - p.x, e.y - p.y) < 1)).map(p => ({ x: p.x * TS, y: p.y * TS - TS * 0.4, r: TS * FOLK_LJUS })) : [];
   stallNatt(mork, world, Math.min(DJUPNATT, m), eldar, folk);
 }
 // skuggorna på marken och golven (steg 5.1.8, ui/skugga.ts): träden, folket, djuren, stationerna, sakerna och väggarna.
