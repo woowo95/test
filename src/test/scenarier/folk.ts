@@ -6,7 +6,7 @@ import { byId, isSocial, TalkEvent } from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import * as SLAGLANGD from '../slaglangd';
 import { hasIcon } from '../../ikoner';
-import { stridIByn, rovarGang, korTills, setFood, kor, klockan, tandEld, byggare, SCENARIER, pct, grenarUte, barGrenar, nyInvanare, valjer, MATARBETE, TRAARBETE, REDSKAPSARBETE, FORBATTRING, MATMEDREDSKAP, rikBy, medHus } from './hjalp';
+import { stridIByn, rovarGang, korTills, setFood, kor, klockan, tandEld, byggare, SCENARIER, pct, grenarUte, barGrenar, nyInvanare, valjer, MATARBETE, TRAARBETE, REDSKAPSARBETE, FORBATTRING, MATMEDREDSKAP, rikBy, medHus, medBank } from './hjalp';
 import { stalle, SITTA } from '../../ui/stalle';
 const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
@@ -2690,6 +2690,23 @@ SCENARIER.naken = {
     return [
       [`helt naken: ${helt || 'ingen tanke'}`, /Är naken/.test(helt)],
       [`med byxor: ${delvis || 'ingen tanke'}`, /fötterna och överkroppen/.test(delvis) && !/Är naken/.test(delvis)],
+    ];
+  },
+};
+
+SCENARIER.vilan = {
+  text: 'Steg 10.2.76: den som vilar ligger i en säng eller sitter på en stol, bänk eller stubbe om det finns en ledig nära, och annars ligger hen på marken, aldrig stående',
+  kor: () => {
+    const s = createState(5, START); klockan(s, 12);
+    const p = living(s).find(q => SIM.ageOf(q, s.now) >= 20)!, bord = medBank(s, 'bord');
+    Object.assign(p, { x: bord.x + 1, y: bord.y + 3 });
+    const vid = SIM.spotFor(s, 'vila', p), sitter = SIM.sittAt(s, vid.x, vid.y);
+    const ute = createState(5, START); klockan(ute, 12);
+    const q = living(ute).find(r => SIM.ageOf(r, ute.now) >= 20)!, mark = SIM.spotFor(ute, 'vila', q);
+    const ligger = stalle(ute, { ligger: false, gor: 'vila', x: mark.x, y: mark.y, vidBank: false, rorde: false });
+    return [
+      [`med ett bord nära sätter sig den som vilar på en stubbe (${sitter ? 'sitter' : 'inte'})`, sitter && stalle(s, { ligger: false, gor: 'vila', x: vid.x, y: vid.y, vidBank: false, rorde: false }) === 'sitta'],
+      [`utan sittplats ligger den som vilar på marken (${ligger})`, !SIM.sittAt(ute, mark.x, mark.y) && ligger === 'ligga'],
     ];
   },
 };

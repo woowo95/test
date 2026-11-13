@@ -55,7 +55,7 @@ import { balans } from './balans';
 import { islagt, naVattnet } from './is';
 import { drickVal, torstig, tortarFarligt, vattenVal } from './torst';
 import { forSmutsigt, latrinFor } from './smuts';
-import { stationBrukad, bordenOf, ledigPlats, sittAt, stationAt, stationFor, storlekAv, vidStation } from './stationer';
+import { stationBrukad, bordenOf, ledigPlats, sittAt, stationAt, stationFor, stationRutor, storlekAv, vidStation } from './stationer';
 import { RATTER, TORKAS, grillTid, kanGrilla, kanTorka, torkTid } from './matlagning';
 import { TEK, TEKTAL, forsokChans, forsokVal, knows, laraVal, tekArbete } from './teknik';
 import { sportVal, sportVikt } from './sport';
@@ -180,6 +180,7 @@ export const VAL = balans('val', {
   isarVidga: 0.12, // ... och ringen blir så här mycket bredare för varje försök efter det fjärde, när det är trångt
   nattPrat: 10, nattPratSpann: 15, // på natten samtalar man så här många minuter, plus upp till spann, och går sedan till en ny plats (steg 3.6.8)
   eldRadie: 1.3, eldRadieSpann: 0.9, // vid elden sätter man sig så här många rutor från den, plus upp till spann (handlingens radie går före)
+  vilaNara: 6, // den som vilar sätter sig på en ledig sittplats högst så här många rutor bort (steg 10.2.76)
   sovRadie: 1.8, sovRadieSpann: 1.2, // ... och den som sover ute lägger sig så här långt bort
   // skuggan (steg 2.3.13)
   skuggaRadie: 10, // så många rutor bort letar den som är för varm efter skugga
@@ -256,6 +257,18 @@ function bryggSpot(s: State, p: Person) {
   const b = pick(s, br, 'val', p);
   return { x: b.x + 0.5, y: b.y + 0.5 };
 }
+// den närmaste lediga sittplatsen (en stubbe vid ett bord, en stol eller en bänk, stationRutor) inom VAL.vilaNara rutor från p:
+// ingen annan är på väg dit eller sitter där (steg 10.2.76)
+function ledigSittplats(s: State, p: Person) {
+  const upptagna = new Set(living(s).filter(q => q !== p && q.task && q.task.phase !== 'back').map(q => Math.floor(q.task!.ty) * W + Math.floor(q.task!.tx)));
+  let best: { x: number; y: number } | undefined, bd: number = VAL.vilaNara;
+  for (const i of stationRutor(s).sitt) {
+    if (upptagna.has(i)) continue;
+    const x = i % W + 0.5, y = Math.floor(i / W) + 0.5, d = Math.hypot(x - p.x, y - p.y);
+    if (d < bd && !blocked(s, x, y)) { bd = d; best = { x, y }; }
+  }
+  return best;
+}
 function platsFor(s: State, act: Act, p: Person): { x: number; y: number } {
   const m = getMap(s.seed), d = ACTS[act], plats = d.plats ?? 'skog';
   const eb = plats === 'elden' ? eldFor(s, p) : undefined, f = eb ? eldXY(s, eb) : eldPlats(s); // vid elden: vid den brinnande lägereld man hör till, annars den närmaste som brinner (steg 6.3.1)
@@ -294,6 +307,8 @@ function platsFor(s: State, act: Act, p: Person): { x: number; y: number } {
     // i huset om det är varmare där än vid elden
     const bed = bedFor(s, p), c = coldOf(temperature(s)), rum = bed && roomAt(s, bed.x, bed.y);
     if (bed && rum && (varmareInne(s, rum, c, false, undefined, f) || c === 0 || nederbord(s))) return bed; // när det inte är kallt räcker värmen överallt; i regnet under tak
+    // vilan (steg 10.2.76): den som vilar sätter sig på en ledig stubbe, stol eller bänk nära, och lägger sig annars på marken
+    if (act === 'vila') { const sitt = ledigSittplats(s, p); if (sitt) return sitt; }
     for (let k = 0; k < 12; k++) {
       const ang = (p.id * 2.399 + rnd(s, 'val', p) * 0.5) % (Math.PI * 2), r = VAL.sovRadie + rnd(s, 'val', p) * VAL.sovRadieSpann, x = f.x + 0.5 + Math.cos(ang) * r, y = f.y + 0.5 + Math.sin(ang) * r;
       if (inMap(x, y) && !blocked(s, x, y) && !stationAt(s, x, y)) return { x, y };

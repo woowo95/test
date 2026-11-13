@@ -11,5 +11,6 @@ export type Stalle = 'sitta' | 'ga' | 'sta' | 'ligga';
 export function stalle(s: State, l: { ligger: boolean; gor?: string; x: number; y: number; vidBank: boolean; rorde: boolean }): Stalle {
   if (l.ligger) return 'ligga';
   if (l.vidBank || l.gor && SITTA.has(l.gor) && sittAt(s, l.x, l.y)) return 'sitta';
+  if (l.gor === 'vila') return 'ligga'; // vilan utan sittplats: man ligger på marken, aldrig stående (steg 10.2.76)
   return l.rorde ? 'ga' : 'sta';
 }
