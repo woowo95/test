@@ -9,7 +9,8 @@ import { Hus, MATERIAL, bitAt, bitsOf, gridOf, housesOf, husById, touch } from '
 import { eldPlats, getMap } from './karta';
 import { groundOf } from './mark';
 import { PLATS, rektAvstand } from './plats';
-import { stangerIn, stationRutor, storlekAv, uteStation } from './stationer';
+import { delarAv, rivStation, stangerIn, stationDef, stationRutor, stationerOf, storlekAv, uteStation } from './stationer';
+import { enOrd, stor } from './ord';
 import { knows } from './teknik';
 import { villHaMer } from './forradsmal';
 import { amountOf, changed, flyttaLager, inZone, lagerFullt, lagerNy, overflow, overlaps, lagerStorre, ownedAll, usable, zonesOf } from './lager';
@@ -76,6 +77,7 @@ export const PLAN = balans('byggplan', {
   sedStorlek: 0.1, // seden Förutseende bygger så här mycket större, Dagens behov så här mycket mindre
   langRik: 0.5, langRikPer: 100, // långhuset (steg 10.2.68) blir upp till så här mycket större när byns rikedom per invånare är dubbelt så stor som så här ...
   langSed: 0.3, // ... och så här mycket större när seden Sammanhållning är som starkast
+  rivStation: 3, // varje station, möbel eller eld ute där ett hus ska stå kostar så här mycket i platsens poäng; den rivs först (steg 10.2.77)
   rikExtra: 2, // den rika bygger så här många rutor större ...
   rikGang: 1.5, // ... och är rik när familjen äger så här många gånger den övre kvartilen i byn
 });
@@ -84,7 +86,7 @@ export const PLAN = balans('byggplan', {
 // utomElden = huset får stå där elden står: elden flyttas då först (steg 2.10.4, eldflytt.ts)
 const tileOk = (s: State, x: number, y: number, utomElden: boolean) => {
   if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1) return false;
-  if (!usable(s, x, y, utomElden)) return false; // inte vatten, sten, inpå elden (utom när elden kan flyttas) eller på ett annat bygge (träden spelar ingen roll: de fälls innan bygget börjar)
+  if (!usable(s, x, y, utomElden, true)) return false; // en station ute rivs för huset (steg 10.2.77): en kostnad i platsens poäng // inte vatten, sten, inpå elden (utom när elden kan flyttas) eller på ett annat bygge (träden spelar ingen roll: de fälls innan bygget börjar)
   if (underMinnet(s, y * W + x)) return false; // byn minns att vattnet nådde hit (steg 3.8.7, flod.ts)
   // en lagerplats påverkar inte var huset står (steg 8.1.15): det som ligger i den räknas inte, utan bärs ut när bygget börjar
   const iLager = zonesOf(s).some(z => inZone(z, x, y));
@@ -117,7 +119,8 @@ function siteFor(s: State, w: number, h: number, okAt: (i: number) => boolean) {
     const near = rektAvstand(f.x, f.y, x, y, w, h), m = o.mitt;
     const eld = rektAvstand(f.x, f.y, x - 1, y - 1, w + 2, h + 2) === 0 ? ELDFLYTT.husStraff : 0; // där elden står bara om ingen annan plats finns: elden flyttas först
     const form = s.byplan?.form ?? 'ring', rad = form === 'rader' && strakNara(s, x, y, w, h) ? PLAN.raderVikt : 0;
-    const sc = Math.max(0, BYGG.husAvst - near) + BYGG.utomVikt * Math.max(0, ut - Math.min(w, h) / 2) + (BYGG.mittVikt + (form === 'ring' ? PLAN.ringVikt : 0)) * Math.hypot(cx - m.x - 0.5, cy - m.y - 0.5) + eld - rad; // träden spelar ingen roll: de fälls som en del av bygget (steg 8.1.14)
+    const riv = PLAN.rivStation * stationerI(s, x, y, w, h).length; // det som står ute där huset ska stå rivs (steg 10.2.77)
+    const sc = riv + Math.max(0, BYGG.husAvst - near) + BYGG.utomVikt * Math.max(0, ut - Math.min(w, h) / 2) + (BYGG.mittVikt + (form === 'ring' ? PLAN.ringVikt : 0)) * Math.hypot(cx - m.x - 0.5, cy - m.y - 0.5) + eld - rad; // träden spelar ingen roll: de fälls som en del av bygget (steg 8.1.14)
     platser.push({ x, y, sc });
   }
   // den bästa platsen som inte stänger in någon mark (stationer.ts); lika bra platser i samma ordning som de söktes
@@ -806,6 +809,8 @@ function lagerUrVagen(s: State, f: Forslag, hus: Hus) {
   const iVagen = zonesOf(s).filter(z => z.hus === undefined && overlaps(z, f, 0));
   if (iVagen.length) { for (const z of iVagen) flyttaLager(s, z); hus.barUt = s.now + PLAN.barUtTim * HOUR; }
 }
+// stationerna, möblerna och eldarna ute som står där ett hus med yttermåtten w×h vid (x, y) ska stå (steg 10.2.77)
+const stationerI = (s: State, x: number, y: number, w: number, h: number) => stationerOf(s).filter(t => !t.inne && t.k !== 'latrin' && delarAv(t).some(q => q.x < x + w && q.x + q.w > x && q.y < y + h && q.y + q.h > y));
 // ett nytt hus: ritningen blir bitar
 function bygg(s: State, f: Forslag, u: ByggBehov, by: Person) {
   const row: Byggnad = BYGGNADER[u.fn as Fn], iw = f.w - 2, ih = f.h - 2, same = antalLika(s, u.fn as Fn, iw, ih);
@@ -813,6 +818,7 @@ function bygg(s: State, f: Forslag, u: ByggBehov, by: Person) {
   s.nextBit++;
   for (const a of f.ritning) bitsOf(s).push({ id: s.nextBit++, x: a.x, y: a.y, k: MATERIAL[a.m].k, m: a.m, b: a.m === 'oppning' ? 1 : 0, mat: 0, c: 1, hus: hus.id });
   housesOf(s).push(hus); touch(s);
+  for (const t of stationerI(s, f.x, f.y, f.w, f.h)) rivStation(s, t, `${stor(enOrd(stationDef(t.k)!))} ${stationDef(t.k)!.namn.toLowerCase()} revs för ${hus.namn.toLowerCase()}.`); // det som stod ute där huset ska stå (steg 10.2.77)
   if (row.omkring) for (const z of zonesOf(s)) if (z.hus === undefined && z.x > f.x && z.y > f.y && z.x + z.w < f.x + f.w && z.y + z.h < f.y + f.h) z.hus = hus.id; // vedboden byggs runt lagerplatsen (steg 9.2.137)
   lagerUrVagen(s, f, hus);
   if (f.ny) s.fire.flytt = { x: f.ny.x, y: f.ny.y, varfor: 'plats' };

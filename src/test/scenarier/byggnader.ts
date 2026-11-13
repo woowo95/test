@@ -1877,3 +1877,20 @@ SCENARIER.hemmen = {
     ];
   },
 };
+
+SCENARIER.rivforhus = {
+  text: 'Steg 10.2.77: möbler, stationer och eldar som står ute hindrar inte ett hus. Byggplanen räknar dem som en liten kostnad, och de rivs innan bygget börjar: materialet kommer delvis tillbaka, och projekten bygger dem igen på en ny plats',
+  kor: () => {
+    const s = createState(5, START); klockan(s);
+    const t = medBank(s, 'slaktbank');
+    const forHus = SIM.usable(s, t.x, t.y, false, true), annars = SIM.usable(s, t.x, t.y);
+    const brist0 = SIM.stationBrist(s, 'slaktbank'), virke0 = amountOf(s, 'virke');
+    SIM.rivStation(s, t, 'Slaktbänken revs för ett hus.');
+    const borta = !SIM.stationerOf(s).some(q => q.id === t.id), tillbaka = amountOf(s, 'virke') > virke0, brist1 = SIM.stationBrist(s, 'slaktbank');
+    return [
+      ['en station ute hindrar inte ett hus, men annat som byggs', forHus && !annars],
+      [`när den rivs försvinner den och en del av materialet kommer tillbaka (virke ${virke0} → ${amountOf(s, 'virke')})`, borta && tillbaka],
+      [`och byn vill bygga den igen (brist ${brist0} → ${brist1})`, brist1 > brist0],
+    ];
+  },
+};

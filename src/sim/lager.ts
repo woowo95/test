@@ -355,15 +355,16 @@ function shareOf(ag: Del | undefined, n: number, owner = BYN, s?: State): Del {
 // ---------- platser ----------
 // kan något ligga eller byggas på rutan? Inte på vatten, sten, inpå elden, i ett hus eller där en station står (stationer.ts),
 // utom förvaringen. utomElden = bortse från elden (ett hus som får byggas där elden står, när elden flyttas, eldflytt.ts)
-export function usable(s: State, x: number, y: number, utomElden = false) {
+// utomStation: en station, möbel eller eld som står ute hindrar inte (den rivs innan huset byggs, steg 10.2.77)
+export function usable(s: State, x: number, y: number, utomElden = false, utomStation = false) {
   const m = getMap(s.seed), f = eldPlats(s);
   if (!inMap(x, y)) return false;
   const t = m.tiles[y * W + x];
   if (s.torg && x >= s.torg.x && y >= s.torg.y && x < s.torg.x + s.torg.w && y < s.torg.y + s.torg.h) return false; // på torget byggs och ställs inget (steg 7.3.13)
-  if (t === T.Vatten || s.flod && iVattnetNu(s, y * W + x) || t === T.Sten || !utomElden && Math.max(Math.abs(x - f.x), Math.abs(y - f.y)) <= 1 || bitAt(s, x, y) || sittAt(s, x, y) || faltAt(s, x, y)) return false; // inte heller på ett fält (odling.ts)
+  if (t === T.Vatten || s.flod && iVattnetNu(s, y * W + x) || t === T.Sten || !utomElden && Math.max(Math.abs(x - f.x), Math.abs(y - f.y)) <= 1 || bitAt(s, x, y) || sittAt(s, x, y) && !utomStation || faltAt(s, x, y)) return false; // inte heller på ett fält (odling.ts)
   if (s.heliga?.length && heligRuta(s, x, y)) return false; // på en helig plats byggs inget (steg 8.5.5)
   const st = stationAt(s, x, y);
-  return !st || !!stationDef(st.k)?.forvar || utomElden && !!stationDef(st.k)?.eld; // i en hylla, kista eller ett ställ ligger saker (steg 2.3.6); grillen flyttas med elden
+  return !st || !!stationDef(st.k)?.forvar || utomElden && !!stationDef(st.k)?.eld || utomStation && !st.inne; // i en hylla, kista eller ett ställ ligger saker (steg 2.3.6); grillen flyttas med elden
 }
 // vuxna träd i lagerplatsen z: de fälls först (steg 3.6.9), så i skogen bara när byn har en yxa (Infinity annars)
 function skogI(s: State, z: Zone) {

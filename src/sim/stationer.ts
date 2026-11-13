@@ -1322,6 +1322,12 @@ function scenIn(s: State) {
 }
 // scenen bärs aldrig (steg 8.1.16): ska den flyttas rivs den, och en del av materialet kommer tillbaka som när ett hus rivs.
 // Byn bygger en ny (scenen i STATIONER, med platsen i salen när det finns en). Instrumenten blir kvar i byn
+// en station ute rivs för ett hus (steg 10.2.77): den tas isär, en del av materialet kommer tillbaka som när ett hus rivs, och
+// projekten bygger den igen på en ny plats eftersom behovet och värdet finns kvar
+export function rivStation(s: State, t: Station, text: string) {
+  if (stationDef(t.k)?.eld || stationDef(t.k)?.brasa) { const f = s.eldar?.find(e => e.at && e.at.x === t.x && e.at.y === t.y); if (f) { f.lit = false; f.fuel = 0; } } // elden släcks
+  rivScen(s, t, text); count(s, 'rivenForHus');
+}
 export function rivScenen(s: State, text: string) { const t = stationerOf(s).find(q => q.k === 'scen'); if (t) rivScen(s, t, text); }
 function rivScen(s: State, t: Station, text: string) {
   taBort(s, t);
