@@ -187,6 +187,7 @@ const SALLSYNT: Record<string, string> = {
   lerkruka: 'lerkrukan (steg 9.4.11) kräver tekniken Lerkruka (nivå 3) och lera; scenarierna lera och kruka prövar den',
   lerkruka_liten: 'som lerkruka; scenarierna lera och kruka prövar den', lerkruka_mellan: 'som lerkruka; scenarierna lera och kruka prövar den', lerkruka_stor: 'som lerkruka; scenarierna lera och kruka prövar den',
   lera: 'leran (steg 9.4.10) grävs bara när byn gör av med den, till lerkrukorna; scenariot lera prövar den',
+  smalta: 'snön smälts bara när sjön är frusen, elden brinner och det finns en ledig lerkruka (steg 10.2.50), inte i alla byar på 35 dygn; scenariot torst prövar det',
   trumma: 'instrumenten görs bara till scenen, som kräver plankor och tekniken på nivå 3 (steg 10.2.90) och sällan står klar på 35 dygn; scenariot scen prövar dem',
   benflojt: 'instrumenten görs bara till scenen, som kräver plankor och tekniken på nivå 3 (steg 10.2.90) och sällan står klar på 35 dygn; scenariot scen prövar dem',
   lyra: 'lyran görs bara vid snickarbänken med kniven där (steg 9.4.5, nivå 4), sällan på 35 dygn; scenarierna snickarbank och scen prövar den',
