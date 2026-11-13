@@ -1317,7 +1317,7 @@ export function nastaMal(s: State, p: Person, tk: Task, x0: number, y0: number, 
   let bast: { x: number; y: number } | undefined, bv = 0;
   for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
     const x = x0 + dx, y = y0 + dy, d = Math.hypot(dx, dy);
-    if (d <= RUNDA.syn || d > R || !inMap(x, y) || vt[y * W + x] === T.Vatten) continue;
+    if (d <= RUNDA.syn || d > R || !inMap(x, y) || vt[y * W + x] === T.Vatten || blocked(s, x + 0.5, y + 0.5)) continue; // (inte i en vägg)
     const trangt = andra.filter(q => Math.hypot(q.x - x, q.y - y) < RUNDA.syn).length;
     // vägen dit räknas i samma enhet som det hen tror finns där: bortom synvidden i saker (iSaker). Förut vägde avståndet femtio
     // gånger tyngre än det hen hört, så att inget mål längre bort vann och rundan gick åt ett slumpat håll (steg 9.9.5)
@@ -1329,7 +1329,7 @@ export function nastaMal(s: State, p: Person, tk: Task, x0: number, y0: number, 
   const m = bynsMitt(s), v0 = Math.atan2(y0 - m.y, x0 - m.x), g = groundOf(s);
   for (let k = 0; k < 8; k++) {
     const v = v0 + (hash3(p.id, k, Math.floor(s.now / HOUR)) - 0.5) * Math.PI, x = Math.round(x0 + Math.cos(v) * R), y = Math.round(y0 + Math.sin(v) * R);
-    if (!inMap(x, y) || vt[y * W + x] === T.Vatten) continue;
+    if (!inMap(x, y) || vt[y * W + x] === T.Vatten || blocked(s, x + 0.5, y + 0.5)) continue;
     if (k < 6 && !(g.trees[y * W + x] > 0 || markslag(g, y * W + x) === 'hog' || markslag(g, y * W + x) === 'buske')) continue;
     count(s, 'nyttMalRiktning');
     return { x, y };

@@ -110,14 +110,14 @@ export function gangDelar(s: State, p: Person) {
 }
 
 // vakten i testerna (steg 9.2.101): den som ritas gående (kan gå, inte kravlar) ska inte röra sig under VAKT_DEL av en frisk
-// vuxens fart om inte minst två saker saktar ner hen samtidigt (raderna i GANGFART som drar ner farten, och mörkret).
+// vuxens fart om inte minst två saker saktar ner hen samtidigt, eller en sak ensam halverar farten (raderna i GANGFART som drar ner farten, och mörkret).
 // steg.ts frågar lyss för varje bit av vägen när testerna satt den; i spelet är den tom
 export const VAKT_DEL = 0.5;
 export const gangVakt: { lyss?: (s: State, p: Person, rutor: number, mork: boolean) => void } = {};
 export function gangLangsam(s: State, p: Person, rutor: number, mork: boolean): string | undefined {
   if (!kanGa(p) || rutor >= GANG.fart * VAKT_DEL) return undefined;
   const d = gangDelar(s, p).delar.filter(x => x.v < -1e-9), n = d.length + (mork ? 1 : 0);
-  if (n >= 2) return undefined;
+  if (n >= 2 || d.some(x => 1 + x.v <= VAKT_DEL + 1e-9)) return undefined; // två saker, eller en som ensam halverar farten (ett skadat ben)
   return `${p.name} (${p.task?.act ?? 'inget'}) går ${rutor.toFixed(2)} rutor i sekunden: ${[...d.map(x => `${x.namn} ${Math.round((1 + x.v) * 100)} %`), ...(mork ? ['mörker'] : [])].join(', ') || 'inget saktar ner'}`;
 }
 

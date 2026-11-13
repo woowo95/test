@@ -1012,7 +1012,7 @@ SCENARIER.snogang = {
   },
 };
 SCENARIER.gangvakt = {
-  text: 'Vakten för långsam gång (steg 9.2.101): den som ritas gående och rör sig under hälften av en frisk vuxens fart larmar i npm test och i scenarierna, om inte minst två saker saktar ner hen samtidigt (snö, börda, skada, ålder, mörker). Den som kravlar ritas liggande och räknas inte',
+  text: 'Vakten för långsam gång (steg 9.2.101): den som ritas gående och rör sig under hälften av en frisk vuxens fart larmar i npm test och i scenarierna, om inte minst två saker saktar ner hen samtidigt (snö, börda, skada, ålder, mörker) eller en sak ensam halverar farten. Den som kravlar ritas liggande och räknas inte',
   kor: () => {
     const { GANG, VAKT_DEL, gangLangsam, gangVakt, skada, ALDER } = SIM;
     const s = createState(3, START), [p, q, k] = living(s).filter(x => ageOf(x, s.now) >= 18 && ageOf(x, s.now) <= ALDER.gangGammal);

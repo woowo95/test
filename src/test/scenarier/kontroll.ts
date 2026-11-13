@@ -187,6 +187,8 @@ const SALLSYNT: Record<string, string> = {
   lerkruka: 'lerkrukan (steg 9.4.11) kräver tekniken Lerkruka (nivå 3) och lera; scenarierna lera och kruka prövar den',
   lerkruka_liten: 'som lerkruka; scenarierna lera och kruka prövar den', lerkruka_mellan: 'som lerkruka; scenarierna lera och kruka prövar den', lerkruka_stor: 'som lerkruka; scenarierna lera och kruka prövar den',
   lera: 'leran (steg 9.4.10) grävs bara när byn gör av med den, till lerkrukorna; scenariot lera prövar den',
+  trumma: 'instrumenten görs bara till scenen, som kräver plankor och tekniken på nivå 3 (steg 10.2.90) och sällan står klar på 35 dygn; scenariot scen prövar dem',
+  benflojt: 'instrumenten görs bara till scenen, som kräver plankor och tekniken på nivå 3 (steg 10.2.90) och sällan står klar på 35 dygn; scenariot scen prövar dem',
   lyra: 'lyran görs bara vid snickarbänken med kniven där (steg 9.4.5, nivå 4), sällan på 35 dygn; scenarierna snickarbank och scen prövar den',
   flyttStation: 'en station ute flyttas bara när den används mycket och står långt från husen och lagren (steg 9.4.8); scenariot mittenstation prövar det',
   flyttLager: 'en lagerplats flyttas bara när mycket hämtas där och en plats närmare mitten är ledig (steg 9.4.7); scenariot mittenlager prövar det',
