@@ -2784,3 +2784,26 @@ SCENARIER.rovarhopp = {
     ];
   },
 };
+
+SCENARIER.vaktser = {
+  text: 'Steg 10.2.97: vakten ser gänget på rastplatsen. Vakten ser mycket längre än andra (ROVARE.vaktSer), så att den som håller vakt ser gänget medan det väntar på rastplatsen och varnar då, också på andra sidan byn',
+  kor: () => {
+    const s = createState(4, START); klockan(s, 12);
+    for (let i = 0; i < 6; i++) step(s, 300);
+    const z = SIM.zoneOf(s)!, m = { x: z.x + z.w / 2, y: z.y + z.h / 2 };
+    // rastplatsen ROVARE.lur rutor från förrådet åt ett håll, och vakten på andra sidan byn
+    let rast: { x: number; y: number } | undefined, v = 0;
+    for (; v < 6.3 && !rast; v += 0.3) { const x = m.x + Math.cos(v) * SIM.ROVARE.lur, y = m.y + Math.sin(v) * SIM.ROVARE.lur; if (SIM.inMap(x, y) && !SIM.blocked(s, x, y) && SIM.vattenNu(s)[Math.floor(y) * SIM.W + Math.floor(x)] !== SIM.T.Vatten) rast = { x, y }; }
+    const vakt = living(s).find(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen)!;
+    const post = SIM.freeNear(s, m.x - Math.cos(v) * 10, m.y - Math.sin(v) * 10);
+    for (const p of living(s)) { p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 4 * HOUR, carry: 0 } as SIM.Task; }
+    Object.assign(vakt, post); vakt.task = { act: 'vakt', phase: 'do', tx: vakt.x, ty: vakt.y, until: s.now + 2 * HOUR, carry: 0 } as SIM.Task;
+    const f = rovarGang(s, 3, rast);
+    const d = Math.hypot(vakt.x - f.x, vakt.y - f.y);
+    for (let i = 0; i < 20 && f.sedd === undefined; i++) step(s, 1);
+    return [
+      [`vakten står ${d.toFixed(0)} rutor från gänget på rastplatsen, på andra sidan byn (folk ser ${SIM.ROVARE.folkSer})`, !!rast && d > SIM.ROVARE.lur],
+      [`vakten ser gänget och vet om det (${f.sedd !== undefined ? 'ja' : 'nej'})`, f.sedd !== undefined && vakt.larm?.vad === 'rovare'],
+    ];
+  },
+};
