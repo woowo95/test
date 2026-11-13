@@ -403,14 +403,13 @@ SCENARIER.bygg = {
       langRaknat = q.stat?.planerat_langhus ?? 0;
     // en kall natt utan eld: den som är inne kyls långsammare än den som är ute
     const k = cloneState(q); k.now = ageStart(k, 0) + 3 * HOUR; k.fire.lit = false; k.fire.fuel = 0; utanStartKlader(k); // (i kläderna kyls ingen på två minuter, steg 10.2.73)
+    // samma person inne i huset och ute, långt från huset och elden: kroppens värme efter en halvtimme, räknad som i spelet (needsStep)
+    // (förut två minuter i spelet med alla, men då hann någon tända elden och de andra samlas där)
     let varmInne = 0, varmUte = 0, ni = 0, nu = 0;
-    const b2 = gridOf(k).rooms.flatMap(r => r.tiles); // golvrutor under tak
-    // tre inne i huset och de andra ute, långt från huset och elden (förr stod någon alltid ute, men inte sedan steg 2.12.1)
-    const ute = ringUte(k);
-    living(k).forEach((p, i) => { p.warm = 0.8; if (i < 3 && b2[i] !== undefined) { p.x = b2[i] % W + 0.5; p.y = Math.floor(b2[i] / W) + 0.5; } else if (ute) { p.x = ute.x + 0.5; p.y = ute.y + 0.5; } p.task = { act: 'vila', phase: 'do', tx: p.x, ty: p.y, until: k.now + HOUR, carry: 0 } as SIM.Task; }); // (alla står stilla: arbete och samtal värmer annars olika mycket)
-    const fore = new Map(living(k).map(p => [p.id, { inne: !!roomAt(k, p.x, p.y), ute: heatAt(k, p.x, p.y) < 0.05 }]));
-    step(k, 120);
-    for (const p of living(k)) { const f = fore.get(p.id); if (!f) continue; if (f.inne) { varmInne += p.warm; ni++; } else if (f.ute) { varmUte += p.warm; nu++; } }
+    const b2 = gridOf(k).rooms.flatMap(r => r.tiles), ute = ringUte(k), p0 = living(k).find(p => SIM.ageOf(p, k.now) >= SIM.ALDER.vuxen);
+    const temp = SIM.temperature(k), cr = SIM.coldOf(temp), varmVid = (x: number, y: number) => { if (!p0) return 0; p0.x = x; p0.y = y; const r = roomAt(k, x, y), inRum = new Map(r ? [[r.id, 1]] : []); return SIM.nyVarme(0.8, SIM.varmeDelar(k, p0, cr, inRum, temp), 0.5); };
+    if (p0 && b2.length) { varmInne = varmVid(b2[0] % W + 0.5, Math.floor(b2[0] / W) + 0.5); ni = 1; }
+    if (p0 && ute && heatAt(k, ute.x + 0.5, ute.y + 0.5) < 0.05) { varmUte = varmVid(ute.x + 0.5, ute.y + 0.5); nu = 1; }
     const h = housesOf(q)[0], folk = living(q).length, b = gridOf(q).rooms.reduce((n, r) => n + sovplatser(q, r), 0);
     const iVagg = living(q).filter(p => isWall(q, p.x, p.y)).length;
     // huset minns var materialet kom ifrån (steg 1.3.3): minst det som ligger i det, och lagningarnas material räknas också

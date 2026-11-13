@@ -36,7 +36,9 @@ import { PROJEKT, PROJEKT_LIST, PROJEKT_TAL, Uppgift, bastaProjekt, egenintresse
 import { faltNu, vildFronPlats } from './odling';
 import { MINNE, areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { eldPlats, getMap } from './karta';
-import { ryggsack } from './utrustning';
+import { ryggsack, ryms } from './utrustning';
+// p orkar bära en av saken k (virket lyfts med båda händerna, steg 10.2.89)
+const kanLyfta = (s: State, p: Person, k: string) => !SAKER[k]?.lyft || ryms(s, p)({ [k]: viktOf(k) });
 import { amountOf, avbryt, fetchSpot, flodUndan, haulJob, isStored, timKvar } from './lager';
 import { BYGG, bedFor, buildJob, siteOf } from './bygg';
 import { MJARDE, kanVittja } from './fisk';
@@ -50,7 +52,7 @@ import { clamp, hash3, pick, pickNarmaste, rnd } from './slump';
 import { samtalMed } from './samtal';
 import { ARSTID, ageIndex, isLight, kallTid, yearNo } from './tid';
 import { Act, Fire, H, HOUR, MIN, Person, Skill, Stat, State, T, Task, W, inMap } from './typer';
-import { SAKER, gruppOf, isFood, sakNamn } from './saker';
+import { SAKER, gruppOf, isFood, sakNamn, viktOf } from './saker';
 import { TILLVERKA } from './tillverka';
 import { materialBuffert } from './forradsmal';
 import { balans } from './balans';
@@ -715,6 +717,7 @@ export const ARBETEN: readonly Arbete[] = [
     // vid svält bärs maten först, och det andra är mindre värt så länge byn svälter (VAL.baraKyla gäller också då)
     const f = faror(c);
     if (!(s.stackar?.length && (gt = haulJob(s, undefined, f.svalt)))) return false;
+    if (!kanLyfta(s, p, gt.k)) return false; // virket bär bara den som orkar lyfta det (steg 10.2.89): annars valdes samma jobb om och om igen
     const fara = f.kyla || (f.svalt && !isFood(gt.k));
     if (!radda(s, p, a => !isStored(s, a.x, a.y), fara ? VAL.baraKyla : 1, vardeUte(s) / VAL.baraVarde)) return false;
     set(v, 'bara', gt.why); v.spot = gt; v.dur = VAL.baraTim * HOUR; return true;
@@ -1352,7 +1355,7 @@ function night(s: State, p: Person, v: Val, a: number) {
   const e = eldPlats(s), craftW = (p.skill.hantverk + stat(p, 'flit', now)) / VAL.nattHantDiv * (1 - VAL.nattTrott * (1 - clamp(p.rest, 0, 1))) * clamp(ljusAt(s, e.x + 0.5, e.y + 0.5), 0, 1);
   // på natten håller man sig vid lägret; de modiga går lite längre ut i mörkret för att bära in saker
   const near = VAL.nattNar + stat(p, 'mod', now) / 20 * VAL.nattLangt, gt = a >= ALDER.ansvar && r < VAL.nattBara && s.stackar?.length ? haulJob(s, near) : undefined;
-  if (gt) { set(v, 'bara', `Mörkt, ${near > 6 ? 'men är modig och ' : ''}${gt.why[0].toLowerCase()}${gt.why.slice(1)}`); v.spot = gt; v.dur = VAL.nattBaraTim * HOUR; }
+  if (gt && kanLyfta(s, p, gt.k)) { set(v, 'bara', `Mörkt, ${near > 6 ? 'men är modig och ' : ''}${gt.why[0].toLowerCase()}${gt.why.slice(1)}`); v.spot = gt; v.dur = VAL.nattBaraTim * HOUR; }
   else if (a >= ALDER.hjalper && p.rest < VAL.nattVila) set(v, 'vila', 'Mörkt och trött efter dagen, vilar ut vid elden');
   else if (a < ALDER.hjalper) { if (r < VAL.nattBarnSamtal) set(v, 'samtal', 'Mörkt, sitter med de vuxna vid elden'); else set(v, 'sova', 'Barn sover på natten'); }
   else if (r < story) set(v, 'beratta', 'Mörkt, berättar för de andra vid elden');
