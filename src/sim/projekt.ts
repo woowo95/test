@@ -9,7 +9,7 @@ import { KLADER, PLAGG, PLAGG_LIST } from './klader';
 import { coldOf, temperature } from './vader';
 import { ARBETE, grundvarde, varuVarde } from './varde';
 import { balans } from './balans';
-import { GORS, harAv, makeTask, receptTill, wantsRope, wantsTool } from './redskap';
+import { GORS, ersattAv, harAv, makeTask, receptTill, takAv, wantsRope, wantsTool } from './redskap';
 import { STATIONER, STATION_LIST, StationDef, StationSlag, TILLBEHOR, TILLBEHOR_LIST, TillbehorDef, TillbehorSlag, kanBygga, kanGoraTillbehor, receptStation, receptTillbehor, stationSpot, villKista, tillbehorSpot, tillbehorStationer, utanTillbehor } from './stationer';
 import { brasaLeta, kanLetaBrasaSten } from './brasor';
 import { DORRAR, DORR_LIST, DorrDef, DorrSlag } from './byggnad';
@@ -58,6 +58,7 @@ const overHusUppgift = (s: State, p?: Person, virke = false): Uppgift | undefine
 };
 
 export const PROJEKT_TAL = balans('projekt', {
+  overBuffert: 0.3, // ett redskap, vapen eller plagg över det byn behöver väger så här mycket när det är långt till taket (steg 10.2.74)
   kyla: 0.3, // när kylan är en fara väger varje projekt så här mycket av sitt värde (steg 10.2.6): tiden går helst till värmen
   kniv: 1.2, yxa: 1.2, spjut: 1, metspo: 0.8, korg: 0.8, bensyl: 1, rock: 1, skor: 0.7, balte: 0.6, axelrem: 0.4, ryggsack: 0.5, benspade: 0.6, vattensack: 0.5, slanda: 0.5, fackla: 0.4, talgljus: 0.3, boll: 0.3, slagtra: 0.3, mal: 0.3, trumma: 0.3, benflojt: 0.3, lyra: 0.3, // hur mycket varje redskap väger när byn saknar alla den vill ha
   slaktbank: 1, flatarbank: 0.6, scen: 0.3, // ... varje station när byn saknar den
@@ -120,7 +121,15 @@ const redskap = (g: string): ProjektDef => {
   const k = GORS[g].reduce((a, b) => grundvarde(b) < grundvarde(a) ? b : a); // det billigaste slaget räknas i kostnaden
   return {
     namn: NAMN[g] ?? SAKER[GORS[g][0]]!.namn, vikt: (PROJEKT_TAL as Record<string, number>)[g] ?? 1, ...((PLAGG as Record<string, { varme?: number }>)[g]?.varme ? { motKyla: true as const } : {}),
-    brist: s => { const v = villAv(s, g); return v > 0 ? clamp((v - harAv(s, g)) / v, 0, 1) : 0; },
+    // under bufferten: hur stor del som saknas. Över den, upp till taket (steg 10.2.74): ett till är värt mindre ju närmare taket,
+    // och det som kan ersättas av ett bättre är också värt något; vägs med poäng mot att fylla förråden
+    brist: s => {
+      const v = villAv(s, g), har = harAv(s, g);
+      if (v <= 0) return 0;
+      if (har < v) return clamp((v - har) / v, 0, 1);
+      const tak = takAv(s, g), over = tak > v ? Math.max(0, (tak - har) / (tak - v)) : 0;
+      return PROJEKT_TAL.overBuffert * Math.min(1, over + ersattAv(s, g) / v);
+    },
     egen: (s, fam) => villAv(s, g) > 0 && !tingOf(s).some(t => t.agare !== undefined && GORS[g].includes(t.k) && fam.some(q => q.id === t.agare)) ? 1 : 0, // ingen i familjen äger ett
     kostnad: () => grundvarde(k),
     kan: (s, p, f) => wantsTool(s, p, g, f.gras),

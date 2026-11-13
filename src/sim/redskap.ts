@@ -4,7 +4,7 @@ import { clamp, rnd } from './slump';
 import { Act, HOUR, State, Person } from './typer';
 import { ACTS, ACT_LIST, toolRow } from './handlingar';
 import { SAKER, SAK_LIST, gruppOf, isTool, sakNamn } from './saker';
-import { nyKvalitet } from './kvalitet';
+import { NORMAL, kvOf, nyKvalitet } from './kvalitet';
 import { amountOf, gain, put, use } from './lager';
 import { getable, Recept, takeMaterial, takeRecipe } from './behov';
 import { addDel } from './egendom';
@@ -25,6 +25,7 @@ import { krukaAv, krukaFormad } from './kruka';
 // Vad byn sparar när den gör redskap (hur många den vill ha står i REDSKAPMAL i forradsmal.ts, steg 6.2.17). Hur mycket ett redskap kräver står i receptet (skaffa.av
 // i saker.ts) och läses därifrån (RECEPT); hur länge det håller och vad det ger står i handlingens rad (handlingar.ts).
 export const REDSKAP = balans('redskap', {
+  tak: 1.5, // projekten över bufferten (steg 10.2.74): byn vill ha upp till så här många gånger det den behöver av en grupp
   maskPerGrav: 4, // en grävning ger så här många maskar
   slaktMinDel: 2, // vilt slaktas när det finns minst 1 / Del kanin
   kottMin: 0.8, kottMax: 1.2, kottFull: 20, // slakten ger så stor del av köttet (slakt.kott i DJUR) utan jaktfärdighet, och så stor del med färdigheten Full eller mer
@@ -187,6 +188,16 @@ for (const k of SAK_LIST) if (SAKER[k]!.gors) (GORS[gruppOf(k)] ??= []).push(k);
 for (const ks of Object.values(GORS)) ks.sort((a, b) => plats(a) - plats(b));
 // hur många byn har av gruppen g (hur många den vill ha: villAv i forradsmal.ts, steg 6.2.17)
 export const harAv = (s: State, g: string) => GORS[g].reduce((a, k) => a + nTools(s, k), 0);
+// taket för gruppen g (steg 10.2.74): över det byn behöver är ett till värt mindre ju närmare taket
+export const takAv = (s: State, g: string) => Math.ceil(villAv(s, g) * REDSKAP.tak - 1e-9);
+// ting i gruppen g som kan ersättas av ett bättre (steg 10.2.74): av ett slag som är mindre värt än det bästa någon i byn kan
+// göra, eller av sämre kvalitet än normal
+export function ersattAv(s: State, g: string) {
+  const ks = GORS[g], kan = ks.filter(k => living(s).some(p => canMake(s, p, k)));
+  if (!kan.length) return 0;
+  const bast = Math.max(...kan.map(k => grundvarde(k)));
+  return tingOf(s).reduce((n, t) => n + (ks.includes(t.k) && (grundvarde(t.k) < bast - 1e-9 || kvOf(t) < NORMAL) ? 1 : 0), 0);
+}
 // verktyget som används till k (det första som finns i byn), eller undefined. En sliten yxa är fortfarande en yxa
 const verktygFor = (s: State, k: string) => Object.keys(SAKER[k]!.skaffa!.verktyg ?? {}).find(m => isTool(m) ? nTools(s, m) >= 1 : amountOf(s, m) >= 1);
 const ordFor = (s: State, k: string) => { const m = verktygFor(s, k); return m ? SAKER[k]!.skaffa!.verktyg![m] : ''; };
@@ -242,7 +253,7 @@ export function handelTask(s: State, p: Person, k: string) {
 export const wantsTool = (s: State, p: Person, g: string, spar = 0) => {
   const ks = GORS[g];
   return kanGoras(s, g as Act, p) && (!!halvOf(s, p, ks) || ks.some(k => canMake(s, p, k) && (!av(k).torrgras || amountOf(s, 'torrgras') >= spar)))
-    && harAv(s, g) < villAv(s, g) && enTill(s, g as Act, p);
+    && (harAv(s, g) < takAv(s, g) || ersattAv(s, g) > 0) && villAv(s, g) > 0 && enTill(s, g as Act, p); // också över bufferten, upp till taket (steg 10.2.74)
 };
 // underhållet (steg 6.2.12, nivån Förbättra i val.ts): en grupp där byn har så många den vill, men några av dem är slitna
 // (REDSKAP.slitet) så att de hela är färre än byn vill ha. Inget lagas: ett nytt görs medan det gamla håller, och det gamla
