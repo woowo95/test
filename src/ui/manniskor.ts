@@ -383,7 +383,7 @@ export function drawPeople(t: number) {
     const ra = platsAv(p);
     let rikt = riktning(p.id, q.x, q.y, ra.x, ra.y);
     // sitter bara på en sittplats, går bara när hen flyttat sig (steg 10.2.55, ui/stalle.ts)
-    const st = stalle(s, { ligger, gor, x: q.x, y: q.y, vidBank, rorde: gar(p.id) }), sitter = st === 'sitta';
+    const st = stalle(s, { ligger, gor, x: q.x, y: q.y, vidBank, rorde: gar(p.id) }), sitter = st === 'sitta'; // (platsen i bilden: q är posOf)
     if (sitter && rikt === 'bak') rikt = 'fram';
     // stå vid arbetet (steg 10.2.78): på en ruta intill arbetsrutan och vänd mot den
     const va = !ligger ? vidArbetet(s, gor, q.x, q.y) : undefined;

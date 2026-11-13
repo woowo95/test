@@ -1769,7 +1769,7 @@ SCENARIER.mitten = {
     s.byggSok = undefined; planBuild(s);
     const nytt = hus(s).find(q => q.id === H0.flyttas), planerat = !!nytt && nytt.flyttFran === H0.id && !living(s).some(p => SIM.buildJob(s, p)?.bit.hus === H0.id);
     // det nya huset blir klart: det gamla rivs och det nya tar över funktionen
-    if (nytt) { for (const b of bits(s)) if (b.hus === nytt.id) b.b = 1; husKlart(s, nytt, living(s)[0]); }
+    if (nytt) { for (const b of bits(s)) if (b.hus === nytt.id) b.b = 1; for (const i of SIM.kronaOver(s, nytt)) SIM.groundOf(s).trees[i] = 0; s.stockar = s.stockar?.filter(k => !(k.x >= nytt.x && k.y >= nytt.y && k.x < nytt.x + nytt.w && k.y < nytt.y + nytt.h)); husKlart(s, nytt, living(s)[0]); } // (träden och stammarna på platsen är borta, som i byggKlart)
     const borta = !hus(s).includes(H0) && !bits(s).some(b => b.hus === H0.id);
     return [
       [`med en rasad vägg är det mer värt att bygga upp huset där det står (${en ? `${en.stanna.toFixed(3)} mot ${en.flytta.toFixed(3)}` : 'inget val'})`, !!en && en.stanna > en.flytta],

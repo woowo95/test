@@ -430,7 +430,7 @@ const kopaHus: AtgardDef = {
     return ut;
   },
 };
-export const husKostnadAv = (n: number) => { const w = Math.max(HUS.minSida, Math.ceil(Math.sqrt(n))), h = Math.max(HUS.minSida, Math.ceil(n / w)); return ((2 * (w + 2) + 2 * h - 1) * (MATERIAL.timmer.n * grundvarde('ved') + MATERIAL.timmer.tim * ARBETE)) + w * h * (MATERIAL.tra.n * grundvarde('ved') + MATERIAL.tra.tim * ARBETE); };
+export const husKostnadAv = (n: number) => { const w = Math.max(HUS.minSida, Math.ceil(Math.sqrt(n))), h = Math.max(HUS.minSida, Math.ceil(n / w)); return ((2 * (w + 2) + 2 * h - 1) * (MATERIAL.timmer.n * grundvarde(MATERIAL.timmer.item!) + MATERIAL.timmer.tim * ARBETE)) + w * h * (MATERIAL.tra.n * grundvarde(MATERIAL.tra.item!) + MATERIAL.tra.tim * ARBETE); }; // väggarna av virke och golvet av plankor (steg 10.2.70 och 10.2.90)
 // husbytet (steg 7.2.12) är ett vanligt stort byte (genomfor i behov.ts): två filtar, huset som en symbol på den enas och betalningen på
 // den andras, handslag, en rad i loggen och krönikan, relationen och Handel som i alla byten. Priset hamnar mellan säljarens lägsta och
 // köparens högsta: vän eller släkt betalar mindre, och den skickligare får det bättre. Köparen betalar med det som hen behöver minst, i
