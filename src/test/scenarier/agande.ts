@@ -2903,3 +2903,29 @@ SCENARIER.handlarenIgen = {
     ];
   },
 };
+
+SCENARIER.rovarstilla = {
+  text: 'Steg 10.2.98: rövarna står inte stilla nära målet. När gänget nästan är framme och byborna gör sig redo vid förrådet står aldrig hela gänget stilla i bilden längre än en kort stund, utom när alla tar ur förrådet eller slåss; att någon enstaka står still är i sin ordning',
+  kor: () => {
+    let langst = 0, anfall = 0;
+    for (const seed of [6, 7, 8]) {
+      const s = createState(seed, START); klockan(s);
+      for (const c of SIM.klanerOf(s)) c.inst = -60;
+      const z = SIM.zoneOf(s)!, m = { x: z.x + z.w / 2, y: z.y + z.h / 2 };
+      const vuxna = living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vaktFran && SIM.ageOf(p, s.now) < SIM.ALDER.vaktTill).slice(0, 3);
+      for (const p of vuxna) { Object.assign(p, SIM.freeNear(s, m.x + 0.5, m.y)); p.larm = { t: s.now, vad: 'rovare', storlek: 3, led: 0, varnat: 1 }; p.task = { act: 'forsvarRovare', phase: 'do', tx: p.x, ty: p.y, until: s.now + HOUR, carry: 0 }; }
+      const f = rovarGang(s, 4, { x: m.x + 14, y: m.y }, { anfaller: true }); f.sedd = s.now;
+      const forra = new Map<number, string>(); let still = 0;
+      korTills(s, () => !!f.klar || !SIM.rovarna(s, f).length, 900, () => {
+        anfall++;
+        const rs = SIM.rovarna(s, f), upptagna = rs.every(r => r.gast!.gor === 'ta' || r.gast!.gor === 'sla');
+        const stilla = rs.every(r => { const b = SIM.rovarPlats(r, s.now), k = `${b.x.toFixed(2)},${b.y.toFixed(2)}`, v = forra.get(r.id) === k; forra.set(r.id, k); return v; });
+        if (stilla && !upptagna) { still += SIM.nastaSteg(s); langst = Math.max(langst, still); } else still = 0;
+      });
+    }
+    return [
+      [`tre anfall mot försvarare vid förrådet (${anfall} steg)`, anfall > 30],
+      [`hela gänget står aldrig stilla längre än en kort stund (längst ${langst.toFixed(0)} s)`, langst <= 10],
+    ];
+  },
+};
