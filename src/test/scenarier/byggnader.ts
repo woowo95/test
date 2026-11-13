@@ -208,7 +208,7 @@ SCENARIER.agandet = {
 SCENARIER.funktion = {
   text: 'Funktionen följer behovet: en sovsal som ingen sover i blir förrådshus eller samlingshus eller rivs, ett samlingshus blir sovsal när sovplatserna inte räcker, och ett familjehus utan ägare blir sovsal. När det är kallt umgås man i samlingshuset',
   kor: () => {
-    const s = createState(6, START);
+    const s = createState(6, START); utanStartKlader(s); // utan kläderna från början (steg 10.2.73): ingen familj har råd med ett eget hus
     klockan(s);
     byggare(s);
     planBuild(s); const A = byggKlart(s)!;
@@ -225,9 +225,9 @@ SCENARIER.funktion = {
     const samling = B.fn === 'samling' && B.namn === 'Samlingshuset', bNamn = B.namn;
     // en sovsal till som ingen behöver rivs, eftersom byn redan har ett samlingshus
     kom(); const C = nyttHus(); gar();
-    const ved0 = amountOf(s, 'ved');
+    const ved0 = amountOf(s, 'virke'); // timret är virke (steg 10.2.70)
     stepByggnader(s); s.now += DAY + HOUR; stepByggnader(s);
-    const rivet = !housesOf(s).includes(C) && (s.stat?.rivet ?? 0) === 1 && amountOf(s, 'ved') > ved0 && !bitsOf(s).some(b => b.hus === C.id);
+    const virkeEfter = amountOf(s, 'virke'), rivet = !housesOf(s).includes(C) && (s.stat?.rivet ?? 0) === 1 && virkeEfter > ved0 && !bitsOf(s).some(b => b.hus === C.id);
     // när det är kallt och elden är slocknad umgås man i samlingshuset
     s.now = ageStart(s, 0) + 3 * HOUR; s.fire.lit = false; s.fire.fuel = 0; // i istiden
     const iB = (sp: { x: number; y: number }) => sp.x >= B.x && sp.x < B.x + B.w && sp.y >= B.y && sp.y < B.y + B.h && roofed(s, sp.x, sp.y);
@@ -242,7 +242,7 @@ SCENARIER.funktion = {
     const tillbaka = fnId(B) === 'sovsal';
     // ingen sover där igen, och maten ruttnar: det blir ett förrådshus
     // (steg 2.12.5: ett tomt hus blir förrådshus redan efter några timmar, före ett nytt hus)
-    gar(); s.ruttet = 50; stepByggnader(s); s.now += 5 * HOUR; const hus0 = housesOf(s).length; stepByggnader(s);
+    gar(); for (const k of ['ved', 'grenar', 'sten', 'torrgras', 'bar', 'rotter', 'kantarell', 'abborre', 'flinta', 'kanin']) put(s, k, 60); /* förrådet fyller fler rutor än förrådshusen rymmer (steg 10.2.67) */ stepByggnader(s); s.now += 5 * HOUR; const hus0 = housesOf(s).length; stepByggnader(s);
     const forrad = B.fn === 'forrad' && zonesOf(s).some(z => z.hus === B.id) && housesOf(s).length === hus0;
     // ett familjehus som ingen äger blir en sovsal
     A.fn = 'familjehus'; A.ag = undefined; stepByggnader(s);
@@ -253,7 +253,7 @@ SCENARIER.funktion = {
       [`efter ett dygn (ett år i spelet) blir den ett samlingshus (${bNamn})`, samling],
       ['när det är kallt samtalar man i samlingshuset i stället för vid den slocknade elden', inne],
       [`den som ska värma sig går till elden som brinner, inte till ett samlingshus som är kallare (samtalet ${samtalInne ? 'inne' : 'ute'})`, !varmInne && samtalInne],
-      ['finns redan ett samlingshus rivs nästa tomma sovsal, och en del av timret kommer tillbaka', rivet],
+      [`finns redan ett samlingshus rivs nästa tomma sovsal, och en del av timret kommer tillbaka (rivet ${(s.stat?.rivet ?? 0)}, virke ${ved0} → ${virkeEfter}, huset kvar ${housesOf(s).includes(C)})`, rivet],
       ['saknas sovplatser blir samlingshuset en sovsal igen', tillbaka],
       ['en tom sovsal blir förrådshus när maten ruttnar, efter fem timmar (en femtedels år i spelet) och i stället för ett nytt hus', forrad],
       ['ett familjehus utan ägare blir en sovsal', fam],
@@ -440,16 +440,16 @@ SCENARIER.bygg = {
     // stockar läggs i väggen (toWalls: ett träd fälldes på husplatsen) medan byggaren håller materialet till den: väggen får
     // det den behöver och byggaren behåller resten (buildStep i steg.ts, kodgenomgången 3.10.25)
     const u = createState(8, START); klockan(u); byggare(u); u.byggSok = undefined; planBuild(u);
-    const uh = housesOf(u).find(x => !x.klar), ub = uh && bitsOf(u).find(x => x.hus === uh.id && x.k === 'vagg' && MATERIAL[x.m].item === 'ved');
+    // (timret är virke sedan steg 10.2.70: det byggaren håller av virket läggs i väggen, och inget försvinner)
+    const uh = housesOf(u).find(x => !x.klar), ub = uh && bitsOf(u).find(x => x.hus === uh.id && x.k === 'vagg' && MATERIAL[x.m].item === 'virke');
     let iVaggen = 0, iHanden = 0, behov = 0;
     if (uh && ub) {
       behov = MATERIAL[ub.m].n; ub.mat = 0; ub.b = 0.999; touch(u);
       const bp = living(u).find(x => ageOf(x, u.now) >= 18)!;
       bp.x = ub.x + 0.5; bp.y = ub.y + 1.5; bp.hunger = 0;
-      bp.task = { act: 'bygga', phase: 'do', tx: bp.x, ty: bp.y, until: u.now + HOUR, carry: 0, ref: ub.id, items: { ved: behov } };
-      SIM.toWalls(u, ub.x, ub.y, 1, uh.id);
+      bp.task = { act: 'bygga', phase: 'do', tx: bp.x, ty: bp.y, until: u.now + HOUR, carry: 0, ref: ub.id, items: { virke: behov } };
       step(u, 60);
-      iVaggen = ub.mat; iHanden = bp.task?.items?.ved ?? 0;
+      iVaggen = ub.mat; iHanden = bp.task?.items?.virke ?? 0;
     }
     return [
       ['ett slutet rum med väggar räknas som under tak', !!rum && rum.tiles.length === 4],
@@ -1342,7 +1342,7 @@ SCENARIER.staende = {
 SCENARIER.husmarknad = {
   text: 'Steg 9.2.109 och 9.2.110: alla bostäder går att köpa, men priset följer hur mycket säljaren behöver huset. Ett hus där folk bor kostar mer än att bygga nytt, ett hus som ägaren inte behöver säljs billigt, och en familj som inte har råd att bygga nytt köper ett sådant, med det hela familjen äger',
   kor: () => {
-    const s = createState(6, START);
+    const s = createState(6, START); utanStartKlader(s); // utan kläderna från början (steg 10.2.73): familjens förmögenhet som när provet skrevs
     klockan(s); byggare(s);
     planBuild(s); byggKlart(s); // en sovsal åt alla
     const ppl = living(s).sort((x, y) => x.id - y.id), c = ppl.find(q => q.mother !== undefined)!, a = ppl.find(q => q.id === Math.min(c.mother!, c.father!))!;

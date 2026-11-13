@@ -4,7 +4,8 @@ import { Hus, MATERIAL, Rum, bitById, bitsOf, gridOf, housesOf, husById, roofed,
 import { ageIndex, kallTid } from './tid';
 import { heatAt } from './eld';
 import { eldPlats } from './karta';
-import { changed, enPerRuta, isStored, ownedAll, put, stacksOf, zoneAt, zonesOf } from './lager';
+import { changed, enPerRuta, isStored, ownedAll, stacksOf, zoneAt, zonesOf } from './lager';
+import { tillbaka, tramat } from './bygg';
 import { kronika } from './historik';
 import { DAY, HOUR, W } from './typer';
 import { tingOf } from './agande';
@@ -421,9 +422,9 @@ function bytFn(s: State, h: Hus, fn: Fn, slag?: 'mat' | 'material') {
   husKlar(s, h);
 }
 function riv(s: State, h: Hus) {
-  const ved = Math.floor(bitsOf(s).filter(b => b.hus === h.id).reduce((a, b) => a + (MATERIAL[b.m].item === 'ved' ? b.mat : 0), 0) * HUS.rivTillbaka); // hela trä
+  const mat = tramat(bitsOf(s).filter(b => b.hus === h.id)); // virket och veden i väggarna (timret är virke, steg 10.2.70)
   s.byggen = bitsOf(s).filter(b => b.hus !== h.id); s.hus = housesOf(s).filter(q => q !== h);
-  if (ved >= 1) put(s, 'ved', ved);
+  const ved = tillbaka(s, { ...h, ag: undefined }, mat); // till byn
   touch(s); changed(s); count(s, 'rivet');
   log(s, `${h.namn} behövdes inte längre och revs. ${Math.round(ved)} trä kom tillbaka till byn.`, 'world'); kronika(s, `${h.namn} revs.`, 'bygge');
 }

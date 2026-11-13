@@ -12,7 +12,7 @@ import { PLATS, rektAvstand } from './plats';
 import { stangerIn, stationRutor, storlekAv, uteStation } from './stationer';
 import { knows } from './teknik';
 import { villHaMer } from './forradsmal';
-import { amountOf, changed, flyttaLager, inZone, lagerFullt, lagerNy, overflow, overlaps, lagerStorre, ownedAll, put, usable, zonesOf } from './lager';
+import { amountOf, changed, flyttaLager, inZone, lagerFullt, lagerNy, overflow, overlaps, lagerStorre, ownedAll, usable, zonesOf } from './lager';
 import { tingOf } from './agande';
 import { findPath } from './vag';
 import { Akut, BYGGNADER, Byggnad, FN, Fn, HUS, antalLika, fnId, fnOf, husNamn, RUMSFUNKTIONER, satKanKopa, sovHus, sovPersoner, sovRutorFor, sovplatser, torkUte, vedUte } from './byggnader';
@@ -21,7 +21,7 @@ import { clamp } from './slump';
 import { ledareOf } from './styre';
 import { PROJEKT_TAL } from './projekt';
 import { ARBETE, formogenheter, grundvarde, husVarde, rikedom, varuVarde } from './varde';
-import { BYGG } from './bygg';
+import { BYGG, tillbaka, tramat } from './bygg';
 import { DAY, GRANNAR4, H, HOUR, Person, State, T, W, inMap } from './typer';
 import { underMinnet } from './sjo';
 import { balans } from './balans';
@@ -499,7 +499,7 @@ export function skadatVal(s: State, h: Hus, okAt: (i: number) => boolean): Skada
     const edge = x === at.x || y === at.y || x === at.x + h.w - 1 || y === at.y + h.h - 1;
     ritning.push({ x, y, m: x === dorr.x && y === dorr.y ? 'oppning' : edge ? 'timmer' : golv });
   }
-  const tillbaka = Math.floor(bits.reduce((a, b) => a + (MATERIAL[b.m].item === 'ved' ? b.mat : 0), 0) * HUS.rivTillbaka + 1e-9) * grundvarde('ved');
+  const tillbaka = Object.entries(tramat(bits)).reduce((n, [k, v]) => n + Math.floor(v * HUS.rivTillbaka + 1e-9) * grundvarde(k), 0); // virket och veden (steg 10.2.70)
   const flyttaK = Math.max(0, ritningKostnad(ritning) - tillbaka) + (paElden ? eldFlyttKostnad() : 0), ny: Forslag = { at: 'nyttHus', x: at.x, y: at.y, w: h.w, h: h.h, ritning, oppnas: [], kostnad: flyttaK, varde: 1, plats: 0 };
   return { ...ut, ny, flytta: varde(lage(s, ny)) / Math.max(PROJEKT_TAL.minKostnad, flyttaK) };
 }
@@ -527,9 +527,9 @@ export function rivOmTomt(s: State) {
     if (folk.length && folk.some(q => sovHus(s, q) === h.id)) { h.tom = undefined; continue; }
     h.tom ??= s.now;
     if (s.now - h.tom < PLAN.rivDygn * DAY) continue;
-    const ved = Math.floor(bitsOf(s).filter(b => b.hus === h.id).reduce((a, b) => a + (MATERIAL[b.m].item === 'ved' ? b.mat : 0), 0) * HUS.rivTillbaka + 1e-9), o = h.ag, namn = h.namn;
+    const mat = tramat(bitsOf(s).filter(b => b.hus === h.id)), namn = h.namn;
     s.byggen = bitsOf(s).filter(b => b.hus !== h.id); s.hus = housesOf(s).filter(q => q !== h);
-    if (ved > 0) put(s, 'ved', ved, { [o]: ved });
+    const ved = tillbaka(s, h, mat); // till ägaren: virket och veden (steg 10.2.70)
     touch(s); changed(s); count(s, 'rivet');
     log(s, `${namn} stod tomt och revs. ${ved} trä gick till ägaren.`, 'world'); kronika(s, `${namn} revs.`, 'bygge');
     return;

@@ -974,6 +974,8 @@ function bygg(c: Ctx) {
   const job = dag(c).job!;
   if (!job.missing) { building(c.s, c.p, c.v, job); return true; }
   const it = job.item;
+  // timret är virke (steg 10.2.70): det klyvs ur en fälld stam, eller ett träd fälls först (virkets uppgift i projekt.ts)
+  if (it === 'virke') { const u = PROJEKT.virke!.uppgift(c.s, c.p); if (u && freeTools(c.s, c.p, 'yxa') > 0) { projektVal(c.v, u, 'Bygget behöver virke'); return true; } }
   arbeta(c, it === 'torrgras' ? 'samla' : 'ved', `Bygget behöver ${it === 'torrgras' ? 'hö' : it === 'ved' ? 'ved' : it === 'virke' ? 'virke' : 'grenar'}`, { hamtar: it, job: it === 'ved' ? job : undefined });
   return true;
 }
