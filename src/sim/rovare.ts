@@ -165,8 +165,9 @@ export function rovarnaKommer(s: State, tvinga?: number, direkt?: boolean, klan?
   const k: Klan | undefined = klan !== undefined ? klanById(s, klan) : klanerOf(s).filter(q => q.inst < 0).sort((a, b) => a.inst - b.inst)[0];
   const n = tvinga ?? Math.round(mellan(s, ROVARE.antal));
   const folk: number[] = Array.from({ length: n }, () => { // gänget har ingen ledare (steg 10.2.25)
-    const sex = rnd(s, 'rovare') < 0.8 ? 'm' as const : 'k' as const;
+    const slump = rnd(s, 'rovare') < 0.5 ? 'm' as const : 'k' as const; // man eller kvinna som alla andra (steg 10.2.100)
     const hem = k?.personer.find(q => q.roll === 'rovare' && q.kropp); // en som flydde hem förra gången kommer igen (steg 9.2.114); slumpen dras ändå
+    const sex = hem?.sex ?? slump;
     const namn = hem?.namn ?? makeName(s, sex, 'rovare'); // vapnet och kläderna kommer ur registret GASTUTRUSTNING (gast.ts, steg 10.1.8)
     const styrka = mellan(s, ROVARE.styrka), uthallighet = mellan(s, ROVARE.uthallighet), mod = mellan(s, ROVARE.mod), smidighet = mellan(s, ROVARE.smidighet), skick = mellan(s, ROVARE.skicklighet);
     const ov = Math.max(0, (skick - 5) * 2); // skickligheten i striden är 5 + färdigheten / 2, som hos en bybo (personKampe)

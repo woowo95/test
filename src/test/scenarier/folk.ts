@@ -2807,3 +2807,15 @@ SCENARIER.vaktser = {
     ];
   },
 };
+
+SCENARIER.rovarkon = {
+  text: 'Steg 10.2.100: rövarnas kön som alla andras. En rövare blir man eller kvinna som andra människor, utan en egen fördelning, och bland många gäng är ungefär hälften kvinnor',
+  kor: () => {
+    let k = 0, n = 0;
+    for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) {
+      const s = createState(seed, START);
+      for (let i = 0; i < 6; i++) { SIM.rovarnaKommer(s, 4, true); for (const r of SIM.rovarna(s, s.rovare!)) { n++; if (r.sex === 'k') k++; } s.rovare = undefined; s.rovareFler = undefined; s.people = s.people.filter(p => !p.gast); }
+    }
+    return [[`${k} av ${n} rövare är kvinnor (${Math.round(100 * k / Math.max(1, n))} %)`, n >= 150 && k / n > 0.38 && k / n < 0.62]];
+  },
+};
