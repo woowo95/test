@@ -23,6 +23,7 @@ import { groundOf, tileOf } from './mark';
 import { FOREST } from './vag';
 import { brasaMal, nyEld } from './brasor';
 import { vidEld } from './eld';
+import { rumTaggar } from './rum';
 import { underMinnet } from './sjo';
 import { paStrak } from './strak';
 
@@ -73,6 +74,7 @@ export const STATION = balans('station', {
   gangMin: 3, gangSok: 6, // en station ute får stå i en gång mellan husen (väggar på båda sidor, högst gangSok rutor bort) bara om gången är minst gangMin bred, och då mot en vägg med husMellan fritt bredvid (steg 4.5.4.5)
   uteVagg: 0.6, // ute: så här många poäng mindre för varje ruta som står mot en husvägg (Björn efter v101: stationerna står snyggt mot väggarna)
   samling: 1, // ... och så här många mindre i ett hus där ingen sover (samlingshuset), för det som inte är en bädd
+  kokSamla: 1.5, // ... och så här många mindre för en av kökets stationer i ett rum som redan är ett kök (steg 10.2.92)
   fallVarme: 0.5, // den som sover under en skinnfäll kyls så här mycket mindre (av det som når in i huset)
   // förvaringen (steg 2.3.6): hyllan, kistan och redskapsstället
   hyllaRymmer: 3, // ... och rymmer så många högar av ett slag
@@ -114,7 +116,7 @@ export const STATION = balans('station', {
 export interface Utkant { till: number; avst: number; vatten?: true; falt?: true; tradFri?: true } // tradFri: söker en plats utan träd (bara latrinen, steg 8.1.14)
 export interface Forvar { rymmer: number; redskap?: true; tak?: true; stangd?: true; privat?: true }
 export interface StationDel { namn: string; ikon?: string; w: number; h: number; arbete?: true } // en del i en station med delar (steg 9.4.1)
-export interface StationDef { kv?: number; delar?: StationDel[]; hard?: true; namn: string; ett?: true; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: Utkant; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar; pynt?: true; samtidigt?: number; langhus?: true; sittplats?: true; enda?: true; fahus?: true } // fahus = står i fähuset (krubban, steg 10.2.88); enda = byn har bara en (högsätet); langhus = står i långhuset (steg 10.2.68); sittplats = rutorna är sittplatser (bänken)
+export interface StationDef { kv?: number; delar?: StationDel[]; hard?: true; namn: string; ett?: true; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: Utkant; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar; pynt?: true; samtidigt?: number; langhus?: true; sittplats?: true; enda?: true; fahus?: true; kok?: true } // kok = en av kökets stationer: står inne och ger rummet taggen Kök (steg 10.2.91–10.2.92) // fahus = står i fähuset (krubban, steg 10.2.88); enda = byn har bara en (högsätet); langhus = står i långhuset (steg 10.2.68); sittplats = rutorna är sittplatser (bänken)
 // de enkla redskapen: görs vid slöjdbänken om byn har en, lite fortare där (fart), annars vid elden som förut (Björn, efter v90)
 const ENKLA: Act[] = ['yxa', 'kniv', 'bensyl', 'balte', 'boll', 'benflojt', 'fackla', 'talgljus', 'naverask', 'ogonlapp', 'nal'];
 // träsakerna vid snickarbänken (steg 9.4.5): receptets kolumn bank säger var det görs fortare och bättre, bara att det bara görs
@@ -153,7 +155,7 @@ export const STATIONER = {
   // med örterna och bänken med morteln, där man arbetar. Det går att arbeta vid först när alla delar står i samma rum
   ortkok: {
     delar: [{ namn: 'Härden', ikon: 'ortkok_hard', w: 1, h: 2 }, { namn: 'Torkstället', ikon: 'ortkok_tork', w: 1, h: 2 }, { namn: 'Bänken', ikon: 'ortkok_bank', w: 1, h: 2, arbete: true }],
-    kv: STATION.kvLite, namn: 'Örtkök', ikon: 'ortkok', w: 3, h: 2, tek: ['ortkok'], av: RECEPT.ortkok.av, min: RECEPT.ortkok.min, gor: ['koka_vatten', 'koka_te', 'koka_salva', 'koka_tjara', 'koka_lim', 'koka_tval', 'koka_rokelse', 'koka_olja'], fart: { koka_te: STATION.redskapFart, koka_vatten: STATION.redskapFart }, bara: ['koka_salva', 'koka_tjara', 'koka_lim', 'koka_tval'],
+    kv: STATION.kvLite, namn: 'Örtkök', ikon: 'ortkok', w: 3, h: 2, tek: ['ortkok'], av: RECEPT.ortkok.av, min: RECEPT.ortkok.min, inne: true, kok: true, gor: ['koka_vatten', 'koka_te', 'koka_salva', 'koka_tjara', 'koka_lim', 'koka_tval', 'koka_rokelse', 'koka_olja'], fart: { koka_te: STATION.redskapFart, koka_vatten: STATION.redskapFart }, bara: ['koka_salva', 'koka_tjara', 'koka_lim', 'koka_tval'],
     bygger: 'Bygger ett örtkök.', forsta: '{namn} byggde byns första örtkök. Där kokas och blandas örter, talg och annat.',
   },
   // snickarbänken (steg 9.4.4): står inne som slöjdbänken och har en sittplats. Snickaren arbetar där (seder.ts)
@@ -171,7 +173,7 @@ export const STATIONER = {
   },
   // härden (steg 7.5.3): en eldstad inne i ett hus; när den är byggd blir den en eld som värmer huset (nyHard i brasor.ts)
   harden: {
-    namn: 'Härd', ikon: 'harden', w: 2, h: 2, tek: ['harden'], av: RECEPT.harden.av, min: RECEPT.harden.min, gor: [], inne: true, hard: true,
+    namn: 'Härd', ikon: 'harden', w: 2, h: 2, tek: ['harden'], av: RECEPT.harden.av, min: RECEPT.harden.min, gor: [], inne: true, hard: true, kok: true,
     bygger: 'Lägger en härd av huggna stenar på golvet.', forsta: '{namn} lade byns första härd. Den värmer hela huset.',
   },
   halmbadd: {
@@ -230,12 +232,12 @@ export const STATIONER = {
   },
   // torkställningen (steg 2.8.2, matlagning.ts): en fiskhäck med A-ramar, två rutor bred, som sticker upp över raden ovanför
   bakugn: { // steg 9.6.23 (matlagning.ts): degen jäser och gräddas till bröd, med en egen eld av ved
-    namn: 'Bakugn', ikon: 'bakugn', w: 2, h: 2, tek: ['bakugn'], av: RECEPT.bakugn.av, min: RECEPT.bakugn.min, gor: ['baka'], bara: ['baka'],
+    namn: 'Bakugn', ikon: 'bakugn', w: 2, h: 2, tek: ['bakugn'], av: RECEPT.bakugn.av, min: RECEPT.bakugn.min, gor: ['baka'], bara: ['baka'], inne: true, kok: true,
     bygger: 'Bygger en bakugn av sten och lera.',
     forsta: '{namn} byggde byns första bakugn. Där blir mjölet bröd, som håller länge.',
   },
   kvarnsten: { // steg 9.6.22: kornet mals till mjöl (tillverka.ts)
-    namn: 'Kvarnsten', ikon: 'kvarnsten', w: 1, h: 1, tek: ['kvarnsten'], av: RECEPT.kvarnsten.av, min: RECEPT.kvarnsten.min, gor: ['mala_korn'], bara: ['mala_korn'],
+    namn: 'Kvarnsten', ikon: 'kvarnsten', w: 1, h: 1, tek: ['kvarnsten'], av: RECEPT.kvarnsten.av, min: RECEPT.kvarnsten.min, gor: ['mala_korn'], bara: ['mala_korn'], inne: true, kok: true,
     bygger: 'Lägger två huggna stenar till en kvarnsten.',
     forsta: '{namn} lade byns första kvarnsten. Där mals kornet till mjöl som går att spara.',
   },
@@ -625,7 +627,8 @@ function sokUte(s: State, k: string) {
 function golvFri(s: State, rum: Set<number>, x: number, y: number) {
   const i = y * W + x;
   return rum.has(i) && !stationRutor(s).at.has(i) && !stationRutor(s).sitt.has(i) && !zonesOf(s).some(z => x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h)
-    && !(s.stackar ?? []).some(a => a.x === x && a.y === y) && !tingOf(s).some(q => q.x === x && q.y === y && q.hos === undefined && q.lass === undefined);
+    && !(s.stackar ?? []).some(a => a.x === x && a.y === y) && !tingOf(s).some(q => q.x === x && q.y === y && q.hos === undefined && q.lass === undefined)
+    && !(s.eldar ?? []).some(f => f.at && x >= f.at.x && y >= f.at.y && x < f.at.x + (f.hearth === 'hard' ? 2 : 1) && y < f.at.y + (f.hearth === 'hard' ? 2 : 1)); // inte på en eld eller härd
 }
 // står något på rutorna (x, y, w×h) i ett hus ingång: rutan innanför en öppning (steg 3.10.1)? Öppningen själv är inget golv
 const iIngang = (s: State, x: number, y: number, w: number, h: number) => rutorAv(x, y, w, h).some(q => GRANNAR4.some(([dx, dy]) => bitAt(s, q.x + dx, q.y + dy)?.k === 'oppning'));
@@ -640,7 +643,7 @@ function siteInne(s: State, k: string, bara?: Rum, far?: (h: Hus) => boolean) {
     if (!hus?.klar || !r.tiles.length || bara && r !== bara || far && !far(hus)) continue;
     const fn = rumFnOf(s, r);
     if (d.sover ? !fn.sover : fn.lager) continue;
-    const rum = new Set(r.tiles), kvar = sovKvar(s, r), bonus = !d.sover && !fn.sover ? -STATION.samling : 0;
+    const rum = new Set(r.tiles), kvar = sovKvar(s, r), bonus = (!d.sover && !fn.sover ? -STATION.samling : 0) - (d.kok && rumTaggar(s, r).has('kok') ? STATION.kokSamla : 0); // köket samlar sina stationer (steg 10.2.92)
     for (const rot of [0, 1] as const) {
       const { w, h } = storlek(k, rot), tar = d.sover || d.pynt ? 0 : w * h; // halmbädden är en del av sovplatsen, och pyntet tar ingen (steg 9.2.36)
       if (tar > kvar) continue;

@@ -1894,3 +1894,28 @@ SCENARIER.rivforhus = {
     ];
   },
 };
+
+SCENARIER.koket = {
+  text: 'Steg 10.2.91–10.2.92: kökets stationer står inne och samlas i köket. Örtköket, bakugnen och kvarnstenen står inne i ett hus som härden (rökeriet ute), ett rum med en av dem är ett kök, och en ny köksstation ställs helst i ett rum som redan är ett kök',
+  kor: () => {
+    const s = createState(6, START); klockan(s);
+    medHus(s); medHus(s);
+    for (const h of SIM.housesOf(s)) h.ag = undefined; // (byns hus: byns stationer ställs inte i en familjs hus)
+    const inne = ['ortkok', 'bakugn', 'kvarnsten'].every(k => !!SIM.stationDef(k)?.inne) && !SIM.stationDef('rokeri')?.inne;
+    const rumAv = (at?: { x: number; y: number }) => at && SIM.roomAt(s, at.x + 0.5, at.y + 0.5);
+    // utan härd: kvarnstenen ställs i ett rum; härden läggs i ett annat rum, som då blir ett kök
+    const forut = rumAv(SIM.stationSite(s, 'kvarnsten'));
+    const r2 = SIM.gridOf(s).rooms.find(r => r.hus !== forut?.hus && r.tiles.length && SIM.husById(s, r.hus)?.klar && SIM.sovKvar(s, r) >= 2);
+    const t0 = r2?.tiles.find(i => !SIM.stationRutor(s).at.has(i)) ?? 0;
+    if (r2) { s.eldar = [...(s.eldar ?? []), { ...SIM.newFire(), id: 9001, at: { x: t0 % W, y: Math.floor(t0 / W) }, hearth: 'hard', folk: [] }]; SIM.touch(s); }
+    const kok = !!r2 && SIM.rumTaggar(s, r2).has('kok');
+    const efter = rumAv(SIM.stationSite(s, 'kvarnsten'));
+    const k1 = SIM.stationSite(s, 'bakugn');
+    return [
+      [`örtköket, bakugnen och kvarnstenen står inne, rökeriet ute (${inne ? 'ja' : 'nej'})`, inne],
+      [`rummet med härden är ett kök (${kok ? 'ja' : 'nej'}; ${SIM.housesOf(s).length} hus)`, kok],
+      [`kvarnstenen ställs i rummet med härden (${efter?.hus === r2?.hus ? 'ja' : 'nej'}), och utan härden i ett annat rum`, !!r2 && !!efter && forut?.hus !== r2.hus && efter.hus === r2.hus], // (rummen räknas om när härden lagts: jämför husen)
+      [`också bakugnen får en plats inne (${k1 ? 'ja' : 'nej'})`, !!k1 && 'inne' in k1],
+    ];
+  },
+};

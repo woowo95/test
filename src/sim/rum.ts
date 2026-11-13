@@ -31,7 +31,7 @@ export const RUM = balans('rum', {
 // det som står i rummet, räknat en gång per rum
 export interface RumInfo {
   rutor: number; sida: number; sov: number; folk: number; bord: number; eld: number; arbete: number; forvar: number; scen: number;
-  tork: number; pynt: number; smuts: number; slakt: number; krubba: number; bara: Set<string>;
+  tork: number; pynt: number; smuts: number; slakt: number; krubba: number; kok: number; bara: Set<string>;
 }
 export type RumSlag = 'grund' | 'egenskap' | 'kombination';
 export interface RumsTyp {
@@ -43,7 +43,7 @@ export const RUMSTYPER = {
   sovrum: { namn: 'Sovrum', ikon: '🛏️', slag: 'grund', om: 'En eller två sover här', krav: i => i.sov >= 1 && i.sov <= RUM.sovrumMax },
   sovsal: { namn: 'Sovsal', ikon: '🛏️', slag: 'grund', om: 'Tre eller fler kan sova här', krav: i => i.sov > RUM.sovrumMax },
   matsal: { namn: 'Matsal', ikon: 'bord', slag: 'grund', om: 'Här står ett bord, så att man kan äta under tak', krav: i => i.bord >= 1 },
-  kok: { namn: 'Kök', ikon: 'lagereld', slag: 'grund', om: 'Här finns en härd', krav: i => i.eld >= 1 },
+  kok: { namn: 'Kök', ikon: 'lagereld', slag: 'grund', om: 'Här finns en härd, ett örtkök, en bakugn eller en kvarnsten', krav: i => i.eld >= 1 || i.kok >= 1 }, // steg 10.2.92
   forrad: { namn: 'Förråd', ikon: '📦', slag: 'grund', om: 'Hyllor, kistor, ställ eller lagerrutor', krav: i => i.forvar >= RUM.forradMin },
   verkstad: { namn: 'Verkstad', ikon: 'verkstad', slag: 'grund', om: 'Här står en arbetsbänk', krav: i => i.arbete >= 1 },
   scensal: { namn: 'Scensal', ikon: 'scen', slag: 'grund', om: 'Här står en scen', krav: i => i.scen >= 1 },
@@ -77,7 +77,7 @@ export const RUM_MINUS: RumMinus[] = [
 ];
 
 function rumInfo(s: State, r: Rum): RumInfo {
-  const rutor = new Set(r.tiles), i: RumInfo = { rutor: r.tiles.length, sida: 0, sov: sovplatser(s, r), folk: 0, bord: 0, eld: 0, arbete: 0, forvar: 0, scen: 0, tork: 0, pynt: 0, smuts: 0, slakt: 0, krubba: 0, bara: new Set() };
+  const rutor = new Set(r.tiles), i: RumInfo = { rutor: r.tiles.length, sida: 0, sov: sovplatser(s, r), folk: 0, bord: 0, eld: 0, arbete: 0, forvar: 0, scen: 0, tork: 0, pynt: 0, smuts: 0, slakt: 0, krubba: 0, kok: 0, bara: new Set() };
   if (r.tiles.length) {
     const xs = r.tiles.map(t => t % W), ys = r.tiles.map(t => Math.floor(t / W));
     i.sida = Math.min(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) + 1;
@@ -98,7 +98,8 @@ function rumInfo(s: State, r: Rum): RumInfo {
     if (t.k === 'tork') i.tork++;
     if (t.k === 'slaktbank') i.slakt++;
     if (d.fahus) i.krubba++;
-    if (d.gor.length && t.k !== 'scen' && t.k !== 'tork') i.arbete++;
+    if (d.kok) i.kok++;
+    if (d.gor.length && t.k !== 'scen' && t.k !== 'tork' && !d.kok) i.arbete++; // kökets stationer gör rummet till ett kök, inte en verkstad
   }
   const e = eldPlats(s);
   if (rutor.has(e.y * W + e.x)) i.eld++;
