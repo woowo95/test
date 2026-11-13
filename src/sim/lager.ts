@@ -926,6 +926,8 @@ function lagerFlyttBast(s: State): { z: Zone; ny: Zone; vinst: number; saker: nu
 export function lagerFlytta(s: State, z: Zone, ny: Zone) {
   const zs = zonesOf(s), i = zs.indexOf(z);
   if (i < 0) return false;
+  // platsen valdes för en stund sedan (lagerFlyttTimme): har den blivit upptagen sedan dess (ett fält, ett bygge) blir det ingen flytt
+  if (!allUsable(s, ny) || strakI(s, ny.x, ny.y, ny.w, ny.h) || zs.some(q => q !== z && overlaps(ny, q, LAGER.mellan))) { s.lagerFlytt = undefined; return false; }
   zs[i] = { ...ny, hamtat: z.hamtat, hamtatT: z.hamtatT };
   s.lagerFlytt = undefined;
   count(s, 'lagerFlyttatIn');
