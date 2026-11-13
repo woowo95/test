@@ -320,14 +320,14 @@ export function stepKok(s: State) {
 import { smakForgiftad } from './rykten';
 
 // ---------- stekhällen (steg 9.6.21) ----------
-// En flat sten över elden vid grillen (tillbehöret stekhall). Kött eller fisk steks med talg (och smak, om det finns) till en
+// En flat sten på härden inne i huset (tillbehöret stekhall, steg 10.2.87), och steken görs bara där när härden brinner. Kött eller fisk steks med talg (och smak, om det finns) till en
 // stek: protein och fett är två grupper, så steken är lagad, med smak fin. Den smakar bättre (STEK.glad när man äter den)
 export const STEK = balans('stek', {
   min: 3, // så många minuters arbete
   huvud: 2, talg: 1, // av köttet eller fisken och talgen; det blir lika många portioner som köttet
   glad: 0.02, // tanken av att äta en stek, utöver måltidens nivå
 });
-const stekhallen = (s: State) => stationerOf(s).find(t => t.k === 'grill' && isKlar(t) && t.med?.includes('stekhall'));
+export const stekhallen = (s: State) => s.eldar?.find(f => f.hearth === 'hard' && f.lit && f.med?.includes('stekhall'));
 export function stekRecept(s: State, p?: Person) {
   const har = (k: string, n: number) => (p ? getable(s, p, k) : amountOf(s, k)) - utsadeKrok.av(s, k) >= n;
   if (!har('talg', STEK.talg)) return undefined;
@@ -340,10 +340,10 @@ export function stekRecept(s: State, p?: Person) {
   }
   return undefined;
 }
-export const kanSteka = (s: State, p: Person) => knows(p, 'stekhall') && s.fire.lit && !!stekhallen(s) && ratterBehovs(s) && !!stationFor(s, 'steka', p) && !!stekRecept(s, p);
+export const kanSteka = (s: State, p: Person) => knows(p, 'stekhall') && !!stekhallen(s) && ratterBehovs(s) && !!stekRecept(s, p);
 export function stekaKlar(s: State, p: Person) {
   const r = stekRecept(s, p);
-  if (!r || !s.fire.lit || !stekhallen(s)) return;
+  if (!r || !stekhallen(s)) return;
   const ag: Record<string, number> = {};
   for (const [k, n] of [[r.huvud, STEK.huvud], ['talg', STEK.talg], ...(r.smak ? [[r.smak, RATT.smak]] : [])] as [string, number][]) addDel(ag, takeMaterial(s, p, k, n), 1);
   let n = 0; for (let i = 0; i < STEK.huvud; i++) if (rnd(s, 'mat', p) >= brannDel(p)) n++;

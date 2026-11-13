@@ -473,6 +473,7 @@ export interface FireLog { t: number; k: 'tänd' | 'fyll' | 'slocknade' | 'glöd
 export interface Fire {
   blot?: number; // så stor del av bränslet som är blött (steg 7.3.4)
   hearth: string; fuel: number; lit: boolean; emberUntil?: number; ring?: boolean; // ringen av stenar runt eldplatsen
+  med?: string[]; // tillbehören på härden: stekhällen (steg 10.2.87)
   litAt?: number; litBy?: number; burned: number; // denna eld
   totalBurned: number; litSec: number; lightings: number; outs: number;
   tries: number; tryTotal: number; tryProg: number; // försök sedan elden senast brann, totalt, sekunder in i pågående försök

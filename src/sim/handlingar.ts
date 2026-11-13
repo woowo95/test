@@ -80,7 +80,8 @@ interface ActDef {
   // stationen där handlingen görs (stationer.ts; runt elden så länge byn inte har någon)
   // eller vid ett bord (en ledig plats, steg 2.2.15; vid elden om det inte finns någon)
   // eller i skuggan under ett träd eller i ett hus nära den som är för varm (steg 2.3.13)
-  plats?: 'elden' | 'kol' | 'sang' | 'lek' | 'ang' | 'strand' | 'avsides' | 'skog' | 'station' | 'bord' | 'skugga';
+  plats?: 'elden' | 'kol' | 'sang' | 'lek' | 'ang' | 'strand' | 'avsides' | 'skog' | 'station' | 'bord' | 'skugga' | 'hard'; // hard: vid en härd som har tillbehöret med (steg 10.2.87)
+  med?: string; // tillbehöret i härden arbetet görs vid (plats hard)
   radie?: number; // avstånd från elden, för plats 'elden'
   fortsatter?: readonly Larmslag[]; // larmen som inte avbryter handlingen (brand.ts, tornado.ts, varg.ts)
   nodFri?: true; // nöden (toa) avbryter den inte (steg.ts)
@@ -226,7 +227,7 @@ const DEF = {
   roka: { namn: 'Röker kött och fisk', slag: 'hantverk', hantverk: true, ovar: 'matlagning', stilla: true, verb: 'röker', plats: 'station' }, // rökeriet (matlagning.ts, steg 9.6.8)
   baka: { namn: 'Bakar bröd', slag: 'hantverk', hantverk: true, ovar: 'matlagning', verb: 'bakar', plats: 'station' }, // vid bakugnen (matlagning.ts, steg 9.6.23)
   mala_korn: { namn: 'Mal korn till mjöl', slag: 'hantverk', hantverk: true, verb: 'mal', plats: 'station' }, // vid kvarnstenen (steg 9.6.22)
-  steka: { namn: 'Steker på stekhällen', slag: 'hantverk', hantverk: true, ovar: 'matlagning', social: true, tyst: true, stilla: true, verb: 'steker', plats: 'station' }, // stekhällen vid grillen (matlagning.ts, steg 9.6.21)
+  steka: { namn: 'Steker på stekhällen', slag: 'hantverk', hantverk: true, ovar: 'matlagning', social: true, tyst: true, stilla: true, verb: 'steker', plats: 'hard', med: 'stekhall' }, // stekhällen på härden (steg 10.2.87) (matlagning.ts, steg 9.6.21)
   skramma: { namn: 'Sätter upp en fågelskrämma', slag: 'odla', verb: 'sätter upp en fågelskrämma' }, // odling.ts (steg 9.7.11)
   avliva: { namn: 'Slaktar ett djur', slag: 'odla', verb: 'avlivar', tungt: true }, // boskap.ts (steg 9.8.7)
   mjolka: { namn: 'Mjölkar getterna', slag: 'odla', verb: 'mjölkar', yrke: 'Herde' }, // boskap.ts (steg 9.8.8)

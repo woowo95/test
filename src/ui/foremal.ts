@@ -310,6 +310,7 @@ function lagereld(f: Fire) {
   const l = f.lit ? (fireHeat(s, f) > 0.5 ? 'stort' : 'lite') : emberOn(s, f) ? 'glod' : (f.ash ?? 0) >= 1 ? 'kol' : f.fuel > 0 ? 'ny' : 'tom';
   if (f.ring) pileIcons.add('kb_lagereld_ring', x, y, 1);
   pileIcons.add(f.lit ? eldBild(l as 'stort' | 'lite') : 'kb_lagereld_' + l, x, y, 1);
+  if (f.med?.includes('stekhall')) { const b = hasIcon('stekhall_karta') ? 'stekhall_karta' : 'stekhall', w = iconCanvas(b).width; pileIcons.add(b, cx - w / 2, cy - w / 2 - 2, 1); } // stekhällen på härden (steg 10.2.87)
   if (!f.lit) return;
   if (l === 'stort') rokIkoner.add(gnistBild(), cx - ANIMTAKT.gnista.x, cy - ANIMTAKT.gnista.y, 1);
   rokIkoner.add(rokBild(undefined, e.x + e.y), cx - ANIMTAKT.rok.x, cy - ANIMTAKT.rok.y, 1); // varje eld i sin egen takt

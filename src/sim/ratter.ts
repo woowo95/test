@@ -90,7 +90,7 @@ export const nivaAvGrupper = (g: Set<Matgrupp>): Maltidsniva => g.size >= 3 && g
 export const TILLAGNING = {
   grilla: { namn: 'Grilla', behover: 'Grillställningen och elden', tek: 'grill', kategorier: ['grillat'], gor: 'En råvara i taget över elden. Rätten blir enkel' },
   baka: { namn: 'Baka', behover: 'Bakugnen, mjöl och vatten', tek: 'bakugn', kategorier: ['brod'], gor: 'Degen jäser och gräddas i ugnen utan bagaren. Brödet håller sex dygn' }, // steg 9.6.23
-  steka: { namn: 'Steka', behover: 'Stekhällen över elden, och talg', tek: 'stekhall', kategorier: ['stek'], gor: 'Kött eller fisk med talg på den heta stenen. Steken smakar bättre' }, // steg 9.6.21
+  steka: { namn: 'Steka', behover: 'Stekhällen på härden, och talg', tek: 'stekhall', kategorier: ['stek'], gor: 'Kött eller fisk med talg på den heta stenen. Steken smakar bättre' }, // steg 9.6.21
   koka: { namn: 'Koka', behover: 'En mellanstor lerkruka i elden', tek: 'kruka', kategorier: ['gryta', 'soppa', 'grot'], gor: 'Två eller tre grupper i krukan, som står på elden utan kocken. Kokningen dödar smitta' },
 } satisfies Record<string, { namn: string; behover: string; tek: string; kategorier: string[]; gor: string }>;
 // kategorierna: namnet efter huvudingrediensen, symbolen och hur länge rätten står på elden (minuter, passiv tid)

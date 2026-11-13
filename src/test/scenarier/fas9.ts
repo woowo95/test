@@ -1113,23 +1113,31 @@ SCENARIER.lok = {
 };
 
 SCENARIER.stek = {
-  text: 'Steg 9.6.21: stekhällen. En flat sten över elden vid grillen där kött och fisk steks med talg till stek, som smakar bättre; en ny rad i TILLAGNING',
+  text: 'Steg 9.6.21 och 10.2.87: stekhällen. En flat sten på härden inne i huset där kött och fisk steks med talg till stek, som smakar bättre (en rad i TILLAGNING). Steken görs bara vid härden, när den brinner, och en stekhäll som ligger vid grillen flyttas till härden när det finns en',
   kor: () => {
-    const { stekaKlar, kanSteka, setAmount, amountOf, rattId, TILLAGNING, TILLBEHOR, MAT, FOOD } = SIM;
+    const { stekaKlar, kanSteka, setAmount, amountOf, rattId, stepStationer, newFire, TILLAGNING, TILLBEHOR, MAT, FOOD, ACTS } = SIM;
     const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
     for (const k of FOOD) setAmount(s, k, 0);
     setAmount(s, 'kott', 4); setAmount(s, 'talg', 2);
     s.fire.lit = true; p.skill.matlagning = SIM.MATLAG.brannFull; p.tek = { ...(p.tek ?? {}), stekhall: 1 };
-    const utan = kanSteka(s, p);
-    s.stationer = [...(s.stationer ?? []), { id: 994, k: 'grill', x: 1, y: 1, kvar: 0, med: ['stekhall'] } as SIM.Station];
+    const grill = { id: 994, k: 'grill', x: 1, y: 1, kvar: 0, med: ['stekhall'] } as SIM.Station;
+    s.stationer = [...(s.stationer ?? []), grill];
+    const vidGrill = kanSteka(s, p);
+    const hard: SIM.Fire = { ...newFire(), id: 995, at: { x: 6, y: 6 }, hearth: 'hard', folk: [] };
+    s.eldar = [...(s.eldar ?? []), hard];
+    stepStationer(s);
+    const flyttad = !grill.med?.includes('stekhall') && !!hard.med?.includes('stekhall');
+    const slackt = kanSteka(s, p);
+    hard.lit = true; hard.fuel = 3;
     const med = kanSteka(s, p);
     stekaKlar(s, p);
     const stek = SIM.RATT_SAKER.filter(k => SIM.rattInfo(k)?.kat === 'stek' && SIM.rattInfo(k)?.huvud === 'kott').reduce((n, k) => n + amountOf(s, k), 0);
     for (const k of FOOD) setAmount(s, k, 0); setAmount(s, rattId('kott', 'stek', 'lagad'), 2); p.thoughts = []; p.hunger = 0.2; MAT.anvand(s, p);
     const gott = p.thoughts.some(t => t.text === 'Åt en stek');
     return [
-      [`steka är en rad i TILLAGNING (${TILLAGNING.steka.namn}) och stekhällen ett tillbehör till grillen (${TILLBEHOR.stekhall.till})`, !!TILLAGNING.steka && TILLBEHOR.stekhall.till === 'grill'],
-      [`utan stekhäll steker ingen (${utan ? 'ja' : 'nej'}), med den (${med ? 'ja' : 'nej'})`, !utan && med],
+      [`steka är en rad i TILLAGNING (${TILLAGNING.steka.namn}) och stekhällen ett tillbehör till härden (${TILLBEHOR.stekhall.till}), där man steker (${ACTS.steka.plats})`, !!TILLAGNING.steka && TILLBEHOR.stekhall.till === 'hard' && ACTS.steka.plats === 'hard'],
+      [`vid grillen steker ingen (${vidGrill ? 'ja' : 'nej'}), och stekhällen där flyttas till härden (${flyttad ? 'ja' : 'nej'})`, !vidGrill && flyttad],
+      [`på en släckt härd steker ingen (${slackt ? 'ja' : 'nej'}), på en brinnande ja (${med ? 'ja' : 'nej'})`, !slackt && med],
       [`två kött och en talg blir ${stek} köttstek (${amountOf(s, 'talg')} talg kvar)`, stek === 2],
       [`steken smakar bättre (${gott ? 'ja' : 'nej'})`, gott],
     ];

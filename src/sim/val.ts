@@ -49,7 +49,7 @@ import { duty, dygn, habitShare, habitTotal } from './seder';
 import { clamp, hash3, pick, pickNarmaste, rnd } from './slump';
 import { samtalMed } from './samtal';
 import { ARSTID, ageIndex, isLight, kallTid, yearNo } from './tid';
-import { Act, H, HOUR, MIN, Person, Skill, Stat, State, T, Task, W, inMap } from './typer';
+import { Act, Fire, H, HOUR, MIN, Person, Skill, Stat, State, T, Task, W, inMap } from './typer';
 import { SAKER, gruppOf, isFood, sakNamn } from './saker';
 import { balans } from './balans';
 import { islagt, naVattnet } from './is';
@@ -285,6 +285,11 @@ function platsFor(s: State, act: Act, p: Person): { x: number; y: number } {
   }
   if (plats === 'station') { const st = stationFor(s, act, p); if (st) { const at = vidStation(st); return { x: at.x + (rnd(s, 'val', p) - 0.5) * 0.6 * storlekAv(st).w, y: at.y }; } } // vid stationen, längs hela dess bredd, annars i byn (eller vid elden när det är kallt)
   if (plats === 'bord') { const at = ledigPlats(s, p); if (at) return at; } // vid ett bord, annars vid elden
+  if (plats === 'hard') { // vid den närmaste brinnande härden med tillbehöret (stekhällen, steg 10.2.87)
+    let b: Fire | undefined, bd = Infinity;
+    for (const f of s.eldar ?? []) if (f.hearth === 'hard' && f.lit && (!d.med || f.med?.includes(d.med))) { const e = eldXY(s, f), dd = Math.hypot(e.x - p.x, e.y - p.y); if (dd < bd) { bd = dd; b = f; } }
+    if (b) return vidEld(s, b, (rnd(s, 'val', p) - 0.5) * 0.8, 1.3);
+  }
   if (plats === 'elden' || plats === 'station' || plats === 'bord') {
     // när det är kallt samtalar och berättar man i samlingshuset, om det är varmare där än vid elden (byggnader.ts)
     const sal = d.social ? samlingRum(s) : undefined, c = sal ? coldOf(temperature(s)) : 0;

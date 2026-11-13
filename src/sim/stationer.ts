@@ -1,7 +1,7 @@
 import { bynsMitt, omrade, tillHoljet, utanforByn } from './omrade';
 import { RECEPT, type ReceptRad } from './recept';
 import { hash3 } from './slump';
-import { Act, DAY, GRANNAR4, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
+import { Act, DAY, Fire, GRANNAR4, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { eldPlats, getMap } from './karta';
 import { knows } from './teknik';
 import { ALDER, ageOf, alive, byId, count, andraGor, enTill, familjOf, forstaGang, gjort, living, log } from './folk';
@@ -22,6 +22,7 @@ import { kvHaller, nyKvalitet } from './kvalitet';
 import { groundOf, tileOf } from './mark';
 import { FOREST } from './vag';
 import { brasaMal, nyEld } from './brasor';
+import { vidEld } from './eld';
 import { underMinnet } from './sjo';
 import { paStrak } from './strak';
 
@@ -223,7 +224,7 @@ export const STATIONER = {
   },
   // grillställningen (steg 2.8.1, matlagning.ts): två klykor och ett spett med vev, tre rutor bred med elden i mitten
   grill: {
-    namn: 'Grillställning', ikon: 'grill', w: 3, h: 1, tek: ['grill'], av: RECEPT.grill.av, min: RECEPT.grill.min, gor: ['grilla', 'steka'], bara: ['grilla', 'steka'], eld: true,
+    namn: 'Grillställning', ikon: 'grill', w: 3, h: 1, tek: ['grill'], av: RECEPT.grill.av, min: RECEPT.grill.min, gor: ['grilla'], bara: ['grilla'], eld: true,
     bygger: 'Sätter upp en grillställning av grenar och rep över elden.',
     forsta: '{namn} satte upp byns första grillställning över elden. Där grillas köttet och fisken, och den grillade maten håller längre.',
   },
@@ -996,10 +997,10 @@ export function bordBrist(s: State, k: string) {
 const forstaText = (t: string, p: Person) => t.replace('{namn}', p.name).replace(/{hans}/g, hans(p)).replace(/{han}/g, han(p));
 export interface TillbehorDef { namn: string; ikon: string; till: string; tek: string[]; av: Record<string, number>; min: number; varme?: number; gor: string; forsta: string }
 export const TILLBEHOR = {
-  stekhall: { // steg 9.6.21 (matlagning.ts): kött och fisk steks med talg på hällen
-    namn: 'Stekhäll', ikon: 'stekhall', till: 'grill', tek: ['stekhall'], av: RECEPT.stekhall.av, min: RECEPT.stekhall.min,
-    gor: 'Lägger en flat sten över elden vid grillen.',
-    forsta: '{namn} lade byns första stekhäll över elden. Där steks köttet och fisken i talg.',
+  stekhall: { // steg 9.6.21 (matlagning.ts): kött och fisk steks med talg på hällen, som ligger på härden inne (steg 10.2.87)
+    namn: 'Stekhäll', ikon: 'stekhall', till: 'hard', tek: ['stekhall'], av: RECEPT.stekhall.av, min: RECEPT.stekhall.min,
+    gor: 'Lägger en flat sten på härden.',
+    forsta: '{namn} lade byns första stekhäll på härden. Där steks köttet och fisken i talg.',
   },
   skinnfall: {
     namn: 'Skinnfäll', ikon: 'skinnfall', till: 'halmbadd', tek: ['skinnfall'], av: RECEPT.skinnfall.av, min: RECEPT.skinnfall.min, varme: STATION.fallVarme,
@@ -1011,8 +1012,21 @@ export type TillbehorSlag = keyof typeof TILLBEHOR;
 export const TILLBEHOR_LIST = Object.keys(TILLBEHOR) as TillbehorSlag[];
 export const tillbehorDef = (k: string): TillbehorDef | undefined => (TILLBEHOR as Record<string, TillbehorDef>)[k];
 // de färdiga stationer som tillbehöret hör till, och de av dem som saknar det
-export const tillbehorStationer = (s: State, k: TillbehorSlag) => stationerOf(s).filter(t => isKlar(t) && t.k === TILLBEHOR[k].till);
+// det ett tillbehör ligger i: en station eller möbel, eller en härd, som är en eld (till: 'hard', steg 10.2.87)
+export type Hallare = Station | Fire;
+const arEld = (h: Hallare): h is Fire => 'hearth' in h;
+export const tillbehorStationer = (s: State, k: TillbehorSlag): Hallare[] => TILLBEHOR[k].till === 'hard' ? (s.eldar ?? []).filter(f => f.hearth === 'hard') : stationerOf(s).filter(t => isKlar(t) && t.k === TILLBEHOR[k].till);
 export const utanTillbehor = (s: State, k: TillbehorSlag) => tillbehorStationer(s, k).filter(t => !t.med?.includes(k));
+// där man står vid den: framför stationen, eller vid härden
+export const hallareVid = (s: State, h: Hallare) => arEld(h) ? vidEld(s, h, 0, 1.3) : vidStation(h);
+// en stekhäll som ligger vid grillen flyttas till en härd som saknar en (steg 10.2.87)
+function stekhallTillHarden(s: State) {
+  const g = stationerOf(s).find(t => t.k === 'grill' && t.med?.includes('stekhall')), h = g && utanTillbehor(s, 'stekhall')[0];
+  if (!g || !h) return;
+  g.med = g.med!.filter(k => k !== 'stekhall'); if (!g.med.length) g.med = undefined;
+  (h.med ??= []).push('stekhall'); count(s, 'stekhallFlyttad');
+  if (forstaGang(s, 'stekhallFlyttad')) log(s, 'Stekhällen vid grillen flyttades till härden.', 'world');
+}
 // p kan göra tillbehöret: p kan tekniken, det finns fler stationer som saknar det än de som redan gör det, och p kan få tag i
 // materialet
 // materialet p saknar till ett tillbehör av sorten k som någon station saknar (steg 6.1.17)
@@ -1030,7 +1044,7 @@ export function kanGoraTillbehor(s: State, p: Person, k: TillbehorSlag) {
 // platsen dit den som gör tillbehöret går: framför den första stationen som saknar det
 export function tillbehorSpot(s: State, k: TillbehorSlag) {
   const t = utanTillbehor(s, k)[0];
-  return t ? vidStation(t) : undefined;
+  return t ? hallareVid(s, t) : undefined;
 }
 // klart: materialet tas och tillbehöret läggs i den första stationen som saknar det (har någon annan hunnit före blir det
 // nästa, och saknar ingen det längre blir det inget)
@@ -1353,6 +1367,7 @@ const iRivetHus = (s: State, t: Station) => { const b = bitAt(s, t.x, t.y); retu
 // som stod inne i ett hus som rivits försvinner
 export function stepStationer(s: State) {
   if (!s.stationer?.length) return;
+  if (s.eldar?.length) stekhallTillHarden(s);
   fyllPlatser(s);
   kistorna(s);
   barIn(s);
