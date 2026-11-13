@@ -622,8 +622,17 @@ function letaSteg(s: State, f: Rovarflock, folk: Person[]) {
   f.letar!.shift();
 }
 // hotet rövaren ser: de som står emot inom synhåll (KLOCKA.faraSyn), mot rövarna i flocken som är med (var och en räknad med sitt vapen)
+// vapnets skada för var och en räknas en gång per slag och inte för varje rövare (steg 10.2.101: hotet kostade mest i striden)
+const vapenMinne = new WeakMap<State, { t: number; m: Map<number, number> }>();
+function vapenSkada(s: State, p: Person) {
+  let c = vapenMinne.get(s);
+  if (!c || c.t !== s.now) vapenMinne.set(s, c = { t: s.now, m: new Map() });
+  let v = c.m.get(p.id);
+  if (v === undefined) c.m.set(p.id, v = VAPEN[personKampe(s, p, 0, 0, 0, 0).vapen].skada);
+  return v;
+}
 function hotMot(s: State, f: Rovarflock, r: Person, folk: Person[]) {
-  const kraft = (p: Person) => 1 + ROVARE.hotVapen * VAPEN[personKampe(s, p, 0, 0, 0, 0).vapen].skada;
+  const kraft = (p: Person) => 1 + ROVARE.hotVapen * vapenSkada(s, p);
   const de = folk.filter(q => alive(q) && kanStaEmot(s, q) && avst(q, r) < KLOCKA.faraSyn).reduce((a, q) => a + kraft(q), 0);
   const vi = rovarna(s, f).filter(q => !gr(q).flytt && avst(q, r) < KLOCKA.faraSyn).reduce((a, q) => a + kraft(q), 0);
   return de / Math.max(0.5, vi);

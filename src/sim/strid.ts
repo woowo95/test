@@ -444,17 +444,25 @@ function vagRunt(st: Strid, k: Kampe, mx: number, my: number, fi: Kampe[]): [num
   const W = Math.ceil(bw / RUT), H = Math.ceil(bh / RUT), cell = (x: number, y: number) => clamp(Math.floor((y - oy) / RUT), 0, H - 1) * W + clamp(Math.floor((x - ox) / RUT), 0, W - 1);
   const mitt = (c: number): [number, number] => [ox + (c % W + 0.5) * RUT, oy + (Math.floor(c / W) + 0.5) * RUT];
   const fran = cell(k.x, k.y), till = cell(mx, my);
+  // (rutornas väggar en gång för båda varven, och utan nya listor för varje ruta: vägen kostade mest i striden, steg 10.2.101)
+  const vagg = new Int8Array(W * H), ko = new Int32Array(W * H), prev = new Int32Array(W * H);
   for (const med of [fi, []]) {
-    const prev = new Int32Array(W * H).fill(-1), ko = [fran];
+    prev.fill(-1); ko[0] = fran; let n0 = 1;
     prev[fran] = fran;
-    for (let i = 0; i < ko.length && prev[till] < 0; i++) {
+    for (let i = 0; i < n0 && prev[till] < 0; i++) {
       const c = ko[i], cx = c % W, cy = Math.floor(c / W);
       for (const [ex, ey] of GRANNAR4) {
         const nx = cx + ex, ny = cy + ey, n = ny * W + nx;
         if (nx < 0 || ny < 0 || nx >= W || ny >= H || prev[n] >= 0) continue;
-        const [px, py] = mitt(n);
-        if (n !== till && (iVagg(st, px, py) || med.some(o => Math.hypot(o.x - px, o.y - py) < STRID.kropp))) continue;
-        prev[n] = c; ko.push(n);
+        const px = ox + (nx + 0.5) * RUT, py = oy + (ny + 0.5) * RUT;
+        if (n !== till) {
+          if (!vagg[n]) vagg[n] = iVagg(st, px, py) ? 2 : 1;
+          if (vagg[n] === 2) continue;
+          let nara = false;
+          for (const o of med) if (Math.hypot(o.x - px, o.y - py) < STRID.kropp) { nara = true; break; }
+          if (nara) continue;
+        }
+        prev[n] = c; ko[n0++] = n;
       }
     }
     if (prev[till] < 0) continue;

@@ -149,8 +149,11 @@ export function kartStridMed(s: State, g: KartStrid, p: Person, sida: 0 | 1) {
 // ---------- världen striden frågar ----------
 function varldAv(s: State, g: KartStrid): StridVarld {
   const lek = lekAv(g.st.avsikt), sport = sportAv(g.st.avsikt);
+  // väggarna och vattnet per ruta, en gång per slag: vägen runt hindren frågar samma rutor många gånger (steg 10.2.101). Inget
+  // byggs eller rivs medan slaget stegar striden, så svaret är detsamma
+  const minne = new Map<number, boolean>();
   return {
-    vagg: (x, y) => x < 0 || y < 0 || x >= W || y >= H || blocked(s, x, y),
+    vagg: (x, y) => { if (x < 0 || y < 0 || x >= W || y >= H) return true; const i = Math.floor(y) * W + Math.floor(x); let v = minne.get(i); if (v === undefined) minne.set(i, v = blocked(s, x, y)); return v; },
     // såret sitter på personen när slaget träffar
     skada: (k, w, av) => {
       const p = personAv(s, k);
