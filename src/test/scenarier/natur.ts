@@ -1859,7 +1859,8 @@ SCENARIER.varg = {
     const ut = land(ri, 26)!, fl = land(ri, 36)!;
     const fa = flock(an, 4, 0, 1); fa.x = fa.mx = fl.x; fa.y = fa.my = fl.y;
     // den ensamma står kvar och samlar tills flocken är framme
-    kor(an, 3, s => { if (!s.stat?.vargstrid) { ensam.x = ut.x; ensam.y = ut.y; ensam.task = { act: 'samla', phase: 'do', tx: ut.x, ty: ut.y, until: s.now + HOUR, carry: 0 } as SIM.Task; } });
+    // (de andra håller sig vid elden, så att ingen annan går ut mot flocken och skrämmer den)
+    kor(an, 3, s => { if (!s.stat?.vargstrid) { ensam.x = ut.x; ensam.y = ut.y; ensam.task = { act: 'samla', phase: 'do', tx: ut.x, ty: ut.y, until: s.now + HOUR, carry: 0 } as SIM.Task; for (const q of living(s)) if (q !== ensam) { q.x = e.x + 0.5; q.y = e.y + 1.5; q.task = { act: 'vila', phase: 'do', tx: q.x, ty: q.y, until: s.now + HOUR, carry: 0 } as SIM.Task; } } });
     const anfall = an.stat?.vargAnfall ?? 0, stridAn = an.stat?.vargstrid ?? 0;
     // på natten, när elden slocknat och alla sover, stjäl de mat ur förrådet
     let stal = 0;
