@@ -2187,3 +2187,21 @@ SCENARIER.krubba = {
     ];
   },
 };
+
+SCENARIER.kompostfalt = {
+  text: 'Steg 10.2.93: komposten läggs nära fälten. Platsen får poäng efter avståndet till närmaste fält, så att den som bär ut komposten går kort, och utan fält ligger den som förut i byns utkant',
+  kor: () => {
+    const s = createState(3, START); klockan(s, 10);
+    SIM.addTool(s, 'yxa', SIM.living(s)[0]);
+    const utan = SIM.stationSite(s, 'kompost');
+    const w = 5, n = 15, at = SIM.faltSite(s, w, n);
+    if (at) { s.falt = [{ ...({} as SIM.Falt), id: 1, x: at.x, y: at.y, w, dir: SIM.faltRiktning(s, at.y), n, agare: SIM.living(s)[0].id, steg: 'bereda', klara: 0, kvar: 0, rord: s.now } as SIM.Falt]; s.byggV = (s.byggV ?? 0) + 1; }
+    const med = SIM.stationSite(s, 'kompost');
+    const rutor = s.falt ? SIM.faltRutor(s.falt[0]) : [];
+    const avst = (q?: { x: number; y: number }) => q && rutor.length ? Math.min(...rutor.map(i => Math.hypot(i % SIM.W - q.x, Math.floor(i / SIM.W) - q.y))) : Infinity;
+    return [
+      [`utan fält finns en plats i utkanten (${utan ? `${utan.x},${utan.y}` : 'ingen'})`, !!utan],
+      [`med ett fält hamnar komposten intill det (${avst(med).toFixed(1)} rutor bort, utan fält ${avst(utan).toFixed(1)})`, !!at && avst(med) <= 1.5 && avst(med) < avst(utan)],
+    ];
+  },
+};
