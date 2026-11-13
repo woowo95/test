@@ -23,7 +23,8 @@ import { STATION, STATIONER, StationDef, StationSlag, bordBrist, forvarBrist, ha
 import { nTools, tingOf } from './agande';
 import { brasaBrist } from './brasor';
 import { MATERIAL, bitsOf } from './byggnad';
-import { BYGGNADER, fnId, langhusRum, sovplatser, utanBadd } from './byggnader';
+import { BYGGNADER, fahusUtanKrubba, fnId, langhusRum, sovplatser, utanBadd } from './byggnader';
+import { fahusHus } from './slatter';
 import { latrinBrist } from './smuts';
 import { torkBrist } from './matlagning';
 import { DAY, GREN, HOUR, State, WEEK } from './typer';
@@ -274,6 +275,7 @@ export function stationBrist(s: State, k: StationSlag) {
   if (!d.brasa && stationerOf(s).some(t => t.k === k && !isKlar(t))) return 1;
   if (d.hard) return harBrist(s); // härden: ett hus där folk sover utan en härd (steg 7.5.3)
   if (d.langhus) return langhusBrist(s, k); // högsätet och bänkarna i långhuset (steg 10.2.68)
+  if (d.fahus) { const n = fahusHus(s).length; return n ? fahusUtanKrubba(s).length / n : 0; } // en krubba i varje fähus (steg 10.2.88)
   return d.pynt ? pyntBrist(s, k) : d.brasa ? brasaBrist(s) : d.sover ? (living(s).length ? utanBadd(s) / living(s).length : 0) : d.platser ? bordBrist(s, k)
     : d.forvar ? forvarBrist(s, k) : d.gor.includes('toa') ? latrinBrist(s) : d.gor.includes('torka') ? torkBrist(s) : harStation(s, k) ? 0 : 1;
 }

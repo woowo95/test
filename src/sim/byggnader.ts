@@ -472,6 +472,10 @@ export function varmareInne(s: State, rum: Rum, c: number, varmer = false, p?: {
 }
 // samlingshusets rum, där man umgås när det är kallt (val.ts)
 // långhuset (steg 10.2.68): byns största sovsal (ingen äger den) med minst HUS.langhus sovplatser, där högsätet och bänkarna står
+// fähusens rum som saknar en krubba (steg 10.2.88): där ställs nästa krubba
+export const fahusUtanKrubba = (s: State): Rum[] => gridOf(s).rooms.filter(r => { const h = husById(s, r.hus); return !!h?.klar && fnId(h) === 'fahus' && !krubbaKrok.iRum(s, r); });
+// stationer.ts sätter kroken (den läses efter den här filen)
+export const krubbaKrok = { iRum: (_s: State, _r: Rum) => false };
 export function langhusRum(s: State): Rum | undefined {
   let best: Rum | undefined, bn = 0;
   for (const r of gridOf(s).rooms) {

@@ -2,7 +2,7 @@
 import { createState } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, kor, klockan } from './hjalp';
+import { SCENARIER, kor, klockan, medHus } from './hjalp';
 
 SCENARIER.andrade = {
   text: 'Steg 9.1.1: platserna växer bara tillbaka där något tagits. Varje ruta där ett lager har tagits ur står i lagrets lista, så att ingen ruta glöms när resten av kartan inte räknas',
@@ -1854,9 +1854,10 @@ SCENARIER.slatter = {
     const slakt = djur.filter(d => slaktOrsak(s, d) === 'host').length;
     setAmount(s, 'torrgras', djur.length * VINTER.hoPerDjur);
     const ingenSlakt = djur.every(d => slaktOrsak(s, d) !== 'host');
-    // i istiden: ett fähus med plats för två; de andra djuren fryser ihjäl
-    const id = (s.nextBit ??= 1); s.nextBit++;
-    SIM.housesOf(s).push({ id, namn: 'Fähuset', x: m.x + 8, y: m.y + 8, w: 4, h: 3, fn: 'fahus', klar: s.now } as SIM.Hus);
+    // i istiden: ett fähus med en krubba (steg 10.2.88), med plats för några; de andra djuren fryser ihjäl
+    const fh = medFahus(s), id = fh?.id ?? -1, plats = SIM.fahusPlats(s);
+    for (let i = 0; i < 2; i++) nyttTamdjur(s, 'far', m.x + 3 + i, m.y, undefined, s.now - 3 * DAY); // fler djur än fähuset rymmer
+    const n = tamdjurOf(s).filter(d => d.art !== 'hund').length;
     s.kal = SIM.nyKalender(s.now, SIM.ISTID);
     s.stationer = [...(s.stationer ?? []), { id: 990, k: 'kompost', x: m.x + 14, y: m.y + 14, kvar: 0 } as SIM.Station]; SIM.touch(s); /* en färdig kompost, som i scenariot kompost */
     const ko = SIM.komposten(s), rest0 = ko?.kompost?.rest ?? 0;
@@ -1874,7 +1875,7 @@ SCENARIER.slatter = {
       [`på hösten behövs ett fähus åt djuren`, akut],
       [`utan hö slaktar byn djur på hösten (${slakt})`, slakt >= 1],
       [`med hö nog slaktas inga för vinterns skull`, ingenSlakt],
-      [`i istiden står två djur i fähuset (${inne}) och de andra fryser ihjäl (${kvar} kvar)`, inne === 2 && kvar === 2],
+      [`i istiden står ${plats} djur i fähuset (${inne}) och de andra fryser ihjäl (${kvar} kvar)`, inne === Math.min(plats, n) && kvar === inne && inne < n],
       [`gödseln hamnar i komposten (${rest0} → ${rest1})`, !!ko && rest1 > rest0],
       [`djuren i fähuset får hö`, matas],
     ];
@@ -2138,6 +2139,51 @@ SCENARIER.stationseld = {
       [`i ett kallt örtkök utan ved kokas ingen salva`, ingen],
       [`örtkökets eld värmer lite nära (${nara.toFixed(2)}) men inte ${ELDSTATIONER.ortkok.radie} rutor bort (${langt.toFixed(2)})`, nara > 0 && nara < 0.5 && langt === 0],
       ['veden går åt i elden och inte i recepten (salvan utan ved, tjäran av 3 ved)', utanBransle],
+    ];
+  },
+};
+
+// ett färdigt fähus med en krubba (steg 10.2.88): Byggplanen bygger hus tills det finns ett fähus, och krubban ställs där den vill
+export function medFahus(s: SIM.State) {
+  const forut = SIM.kalender(s).ai;
+  s.kal = SIM.nyKalender(s.now, SIM.HOST);
+  for (let i = 0; i < 6 && !SIM.fahusHus(s).length; i++) { s.byggSok = undefined; medHus(s); }
+  const h = SIM.fahusHus(s)[0];
+  const at = h && SIM.stationSite(s, 'krubba');
+  if (at) { s.stationer = [...(s.stationer ?? []), { id: 989, k: 'krubba', x: at.x, y: at.y, kvar: 0, inne: 1, ...(at.rot ? { rot: 1 } : {}) } as SIM.Station]; SIM.touch(s); }
+  s.kal = SIM.nyKalender(s.now, forut);
+  return h;
+}
+
+SCENARIER.krubba = {
+  text: 'Steg 10.2.88: fähuset får sin funktion av krubban. Byggplanen bygger fähuset som andra hus, med väggar, dörr och golv, och byn ställer en krubba där; rummet med krubban får taggen Fähus, och där står djuren i istiden. Utan krubba står inga djur där',
+  kor: () => {
+    const { nyttTamdjur, stepVinter, tamdjurOf, fahusHus, fahusOf, stationBrist, DAY } = SIM;
+    const s = createState(5, START); klockan(s, 10);
+    for (const p of SIM.living(s)) (p.tek ??= {}).staket = 1;
+    const m = SIM.bynsMitt(s);
+    for (let i = 0; i < 3; i++) nyttTamdjur(s, 'far', m.x + i, m.y, undefined, s.now - 3 * DAY);
+    s.kal = SIM.nyKalender(s.now, SIM.HOST);
+    for (let i = 0; i < 6 && !fahusHus(s).length; i++) { s.byggSok = undefined; medHus(s); }
+    const h = fahusHus(s)[0];
+    const vill = stationBrist(s, 'krubba');
+    s.kal = SIM.nyKalender(s.now, SIM.ISTID);
+    stepVinter(s);
+    const utanKrubba = !!h && tamdjurOf(s).every(d => d.fahus === undefined) && !fahusOf(s).length;
+    const at = h && SIM.stationSite(s, 'krubba');
+    const iHuset = !!at && at.x > h.x && at.y > h.y && at.x < h.x + h.w - 1 && at.y < h.y + h.h - 1;
+    if (at) { s.stationer = [...(s.stationer ?? []), { id: 989, k: 'krubba', x: at.x, y: at.y, kvar: 0, inne: 1, ...(at.rot ? { rot: 1 } : {}) } as SIM.Station]; SIM.touch(s); }
+    const rum = h && SIM.gridOf(s).rooms.find(r => r.hus === h.id), tagg = !!rum && SIM.rumTaggar(s, rum).has('fahus');
+    stepVinter(s);
+    const inne = tamdjurOf(s).filter(d => d.fahus === h?.id);
+    const iRummet = !!rum && inne.length > 0 && inne.every(d => rum.tiles.includes(Math.floor(d.y) * SIM.W + Math.floor(d.x)));
+    const nojd = stationBrist(s, 'krubba') === 0;
+    return [
+      [`Byggplanen bygger ett fähus åt djuren (${h ? `${h.w} × ${h.h}` : 'inget'}), och byn vill ha en krubba där (brist ${vill})`, !!h && vill === 1],
+      ['utan krubba står inga djur i fähuset', utanKrubba],
+      [`krubban ställs i fähuset, och rummet får taggen Fähus (${tagg ? 'ja' : 'nej'})`, iHuset && tagg],
+      [`i istiden står djuren i rummet med krubban (${inne.length} av ${tamdjurOf(s).length})`, iRummet && inne.length === 3],
+      ['med en krubba i fähuset vill byn inte ha fler', nojd],
     ];
   },
 };

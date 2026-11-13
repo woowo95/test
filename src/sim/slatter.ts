@@ -18,7 +18,8 @@ import { HOST, SOMMAR, iIstiden, isLight, kalender } from './tid';
 import { groundOf } from './mark';
 import { BAR, HIGH } from './vag';
 import { getMap } from './karta';
-import { housesOf, Hus } from './byggnad';
+import { gridOf, housesOf, Hus } from './byggnad';
+import { rumTaggar } from './rum';
 import { komposten } from './rester';
 import { betesdjurOf, hagarOf } from './hage';
 import { Tamdjur, tamDor, tamdjurOf } from './tamdjur';
@@ -94,9 +95,12 @@ export function slaKlar(s: State, p: Person, i?: number) {
 }
 
 // ---------- fähuset ----------
-export const fahusOf = (s: State) => housesOf(s).filter(h => h.fn === 'fahus' && h.klar);
+// fähusen: husen som byggts till fähus (fahusHus, Byggplanen) och de som har ett rum med en krubba, med taggen Fähus (steg 10.2.88).
+// Djuren står bara där det finns en krubba
+export const fahusHus = (s: State) => housesOf(s).filter(h => h.fn === 'fahus' && h.klar);
+export const fahusOf = (s: State) => housesOf(s).filter(h => h.klar && gridOf(s).rooms.some(r => r.hus === h.id && rumTaggar(s, r).has('fahus')));
 const golv = (h: Hus) => Math.max(1, (h.w - 2) * (h.h - 2));
-export const fahusPlats = (s: State) => fahusOf(s).reduce((n, h) => n + golv(h) * VINTER.perRuta, 0);
+export const fahusPlats = (s: State) => fahusHus(s).reduce((n, h) => n + golv(h) * VINTER.perRuta, 0); // det Byggplanen räknar med
 // hur akut ett fähus är (raden fahus i BYGGNADER): djuren som inte får plats, inför och under istiden
 export function fahusAkut(s: State) {
   const n = betesdjurOf(s).length, saknas = n - fahusPlats(s), ai = kalender(s).ai;

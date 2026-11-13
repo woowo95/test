@@ -31,7 +31,7 @@ export const RUM = balans('rum', {
 // det som står i rummet, räknat en gång per rum
 export interface RumInfo {
   rutor: number; sida: number; sov: number; folk: number; bord: number; eld: number; arbete: number; forvar: number; scen: number;
-  tork: number; pynt: number; smuts: number; slakt: number; bara: Set<string>;
+  tork: number; pynt: number; smuts: number; slakt: number; krubba: number; bara: Set<string>;
 }
 export type RumSlag = 'grund' | 'egenskap' | 'kombination';
 export interface RumsTyp {
@@ -49,6 +49,7 @@ export const RUMSTYPER = {
   scensal: { namn: 'Scensal', ikon: 'scen', slag: 'grund', om: 'Här står en scen', krav: i => i.scen >= 1 },
   vedbod: { namn: 'Vedbod', ikon: 'ved', slag: 'grund', om: 'Bara ved på golvet', krav: i => i.bara.size === 1 && i.bara.has('ved') && i.sov === 0 },
   slakteri: { namn: 'Slakteri', ikon: 'slaktbank', slag: 'grund', om: 'Här står en slaktbänk', krav: i => i.slakt >= 1 },
+  fahus: { namn: 'Fähus', ikon: 'krubba', slag: 'grund', om: 'Här står en krubba med hö, och här står djuren i istiden', krav: i => i.krubba >= 1 }, // steg 10.2.88
   torkhus: { namn: 'Torkhus', ikon: 'tork', slag: 'grund', om: 'En torkställning under tak', krav: i => i.tork >= 1 },
   varmt: { namn: 'Varmt', ikon: 'lagereld', slag: 'egenskap', om: 'Härden värmer rummet', krav: i => i.eld >= 1 },
   prytt: { namn: 'Prytt', ikon: 'bonad', slag: 'egenskap', om: 'Minst tre saker pryder rummet', krav: i => i.pynt >= RUM.pryttMin },
@@ -76,7 +77,7 @@ export const RUM_MINUS: RumMinus[] = [
 ];
 
 function rumInfo(s: State, r: Rum): RumInfo {
-  const rutor = new Set(r.tiles), i: RumInfo = { rutor: r.tiles.length, sida: 0, sov: sovplatser(s, r), folk: 0, bord: 0, eld: 0, arbete: 0, forvar: 0, scen: 0, tork: 0, pynt: 0, smuts: 0, slakt: 0, bara: new Set() };
+  const rutor = new Set(r.tiles), i: RumInfo = { rutor: r.tiles.length, sida: 0, sov: sovplatser(s, r), folk: 0, bord: 0, eld: 0, arbete: 0, forvar: 0, scen: 0, tork: 0, pynt: 0, smuts: 0, slakt: 0, krubba: 0, bara: new Set() };
   if (r.tiles.length) {
     const xs = r.tiles.map(t => t % W), ys = r.tiles.map(t => Math.floor(t / W));
     i.sida = Math.min(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) + 1;
@@ -96,6 +97,7 @@ function rumInfo(s: State, r: Rum): RumInfo {
     if (t.k === 'scen') i.scen++;
     if (t.k === 'tork') i.tork++;
     if (t.k === 'slaktbank') i.slakt++;
+    if (d.fahus) i.krubba++;
     if (d.gor.length && t.k !== 'scen' && t.k !== 'tork') i.arbete++;
   }
   const e = eldPlats(s);
