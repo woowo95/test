@@ -7,7 +7,7 @@ import { sorgTimme } from './liv';
 import { lagerIStraket } from './strak';
 import { rumVila } from './rum';
 import { PLAN, planBuild, stepByggplan } from './byggplan';
-import { FALLOR, FISKAR, MJARDE, mjardarOf, sattUt, stepMjardar, valjFisk, vittja } from './fisk';
+import { FALLOR, FISKAR, MJARDE, mjardarOf, sattUt, sattVid, stepMjardar, valjFisk, vittja } from './fisk';
 import { TILLVERKA, TILLVERKA_LIST } from './tillverka';
 import { RECEPT } from './recept';
 import { stepBlotVed } from './blotved';
@@ -230,7 +230,11 @@ MEDAN.smalta = () => undefined;
 KLAR.smalta = (s, p, t) => drick(s, p, t);
 // slakt och rensning: den första arten med arbetet som finns i förrådet (kaninen före vargen, steg 3.7.14)
 // mjärden är klar: materialet tas, och den sätts ut på närmaste strand (steg 7.4.2)
-for (const k of Object.keys(FALLOR)) KLAR[k as Act] = (s, p) => { for (const [q, n] of Object.entries((RECEPT as Record<string, { av?: Record<string, number> }>)[k].av!)) takeMaterial(s, p, q, n); sattUt(s, p, k); };
+for (const k of Object.keys(FALLOR)) KLAR[k as Act] = (s, p, t) => {
+  for (const [q, n] of Object.entries((RECEPT as Record<string, { av?: Record<string, number> }>)[k].av!)) takeMaterial(s, p, q, n);
+  // fångstgropen (steg 10.2.84) grävdes där den ska ligga; mjärden och snaran görs vid fångstbänken och sätts ut
+  if (FALLOR[k].gravs) { const x = Math.floor(t.tx), y = Math.floor(t.ty); if (!mjardarOf(s).some(m => m.x === x && m.y === y)) sattVid(s, p, k, x, y); } else sattUt(s, p, k);
+};
 lagRegister(); kyrkaRegister(); laggTillProjekt(kyrkProjekt()); satOffrad((s, p) => die(s, p, 'offrad'));
 satOppnaAndlig(s => oppnaSed(s, 'andlig'));
 satBudHandelse((s, p) => handelse(s, p, 'budbrott'));
@@ -406,6 +410,7 @@ export const TAKTER: Takt[] = [
   { namn: 'vatskorTimme', sek: 3600, fn: s => { vatskorTimme(s); } },
   { namn: 'stepBrygg', sek: 3600, fn: s => { stepBrygg(s); } },
   { namn: 'stepBak', sek: 3600, fn: s => { stepBak(s); } },
+  { namn: 'stationseldarna', sek: 60, fn: (s, dt) => stepStationsEld(s, dt) }, // örtkökets, bakugnens och rökeriets eldar brinner (stationseld.ts, steg 10.2.85)
   { namn: 'stepSophog', sek: 3600, fn: s => { stepSophog(s); } },
   { namn: 'stepKompost', sek: 3600, fn: s => { stepKompost(s); } },
   { namn: 'stepOrtKrukor', sek: 3600, fn: s => { stepOrtKrukor(s); } },
@@ -1476,6 +1481,7 @@ function compact(s: State) {
   for (const k in s.rels) { const m = /^(-?\d+)-(-?\d+)$/.exec(k), a = Number(m?.[1]), b = Number(m?.[2]); /* gästernas id är negativa */ if (!ids.has(a) && !ids.has(b)) delete s.rels[k]; }
 }
 import { bakaKlar, kokaKlar, stekaKlar, stepBak, stepKok } from './matlagning';
+import { stepStationsEld } from './stationseld';
 import { vatskorTimme } from './vatskor';
 import { bryggKlar, maltaKlar, stepBrygg } from './brygg';
 import { rusSteg } from './rus';

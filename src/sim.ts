@@ -107,6 +107,7 @@ export * from './sim/byggnader';
 export * from './sim/rum';
 export * from './sim/byggplan';
 export * from './sim/fisk';
+export * from './sim/stationseld';
 export * from './sim/tillverka';
 export * from './sim/blotved';
 export * from './sim/delning';

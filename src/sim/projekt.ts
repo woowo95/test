@@ -1,3 +1,4 @@
+import { eldKan } from './stationseld';
 import { LERA, leraBrist, leraPlats } from './lera';
 import { Act, Person, State } from './typer';
 import { familjOf, stat } from './folk';
@@ -22,7 +23,7 @@ import { fylldSack, freeTools, tingOf } from './agande';
 import { ACTS } from './handlingar';
 import { tileOf } from './mark';
 import { Recept, getable, saknatAv } from './behov';
-import { FALLOR, fallorAv, mjardarVill } from './fisk';
+import { FALLOR, fallPlats, fallorAv, mjardarVill } from './fisk';
 import { TILLVERKA, TILLVERKA_LIST } from './tillverka';
 import { RECEPT } from './recept';
 import { knows } from './teknik';
@@ -184,7 +185,7 @@ const tillverk = (k: string): ProjektDef => {
   const antal = (s: State) => ar_vatska(d.ger) ? vatskaAv(s, d.ger) : amountOf(s, d.ger), kar = (s: State) => !ar_vatska(d.ger) || !!ledigFor(s, d.ger);
   // så många byn vill ha: det som följer förbrukningen (salvan, tjäran, limmet, tvålen; MATERIALMAL, steg 10.2.12) efter den, det andra efter raden
   const vill = (s: State) => arMaterial(d.ger) ? villHaAv(s, d.ger) : d.vill;
-  const har = (s: State, p: Person) => knows(p, d.tek) && kanGoras(s, d.act, p) && (!d.eld || !!stationFor(s, d.act) || s.fire.lit) && (!d.vatten || !!fylldSack(s)) && (!d.verktyg || freeTools(s, p, d.verktyg) > 0 || verktygVid(s, d.act, d.verktyg));
+  const har = (s: State, p: Person) => knows(p, d.tek) && kanGoras(s, d.act, p) && (!d.eld || !!stationFor(s, d.act) || s.fire.lit) && eldKan(s, p, stationFor(s, d.act, p)) /* örtkökets eld (steg 10.2.85) */ && (!d.vatten || !!fylldSack(s)) && (!d.verktyg || freeTools(s, p, d.verktyg) > 0 || verktygVid(s, d.act, d.verktyg));
   return {
     namn: SAKER[d.ger]?.namn ?? (ar_vatska(d.ger) ? VATSKOR[d.ger].namn : d.ger), vikt: PROJEKT_TAL.tillverka, // teet är bara en vätska (steg 9.5.8)
     brist: s => clamp(1 - antal(s) / vill(s), 0, 1),
@@ -204,14 +205,20 @@ export const PROJEKT: Record<string, ProjektDef> = {
   // fällorna (steg 7.4.2, 7.5.10 och 7.5.11): görs vid fångstbänken och sätts ut. Byn vill ha några för varje den som fångar
   ...Object.fromEntries(Object.keys(FALLOR).map(k => [k, ((): ProjektDef => {
     const r = RECEPT[k as keyof typeof RECEPT] as { av: Record<string, number>; min: number };
-    const kan = (s: State, p: Person) => knows(p, k) && fallorAv(s, k).length < mjardarVill(s) && kanGoras(s, k as Act, p);
+    // fångstgropen (steg 10.2.84) grävs med benspaden där viltet går, och den som gräver behöver en plats i skogen
+    const grav = FALLOR[k].gravs, kan = (s: State, p: Person) => knows(p, k) && fallorAv(s, k).length < mjardarVill(s) && kanGoras(s, k as Act, p)
+      && (!grav || (freeTools(s, p, 'benspade') > 0 && !!fallPlats(s, p, k)));
     return {
       namn: SAKER[k]!.namn, vikt: (PROJEKT_TAL as Record<string, number>)[k] ?? 0.5,
       brist: s => { const v = mjardarVill(s); return v > 0 ? clamp((v - fallorAv(s, k).length) / v, 0, 1) : 0; },
       kostnad: () => varuVarde(r.av, r.min / 60 * ARBETE),
       kan: (s, p) => kan(s, p) && Object.entries(r.av).every(([q, n]) => getable(s, p, q) >= n),
       recept: (s, p) => kan(s, p) ? { av: r.av } : undefined,
-      uppgift: () => ({ act: k as Act, text: `${ACTS[k as Act].namn}.`, min: r.min }),
+      uppgift: (s, p) => {
+        if (!grav) return { act: k as Act, text: `${ACTS[k as Act].namn}.`, min: r.min };
+        const at = fallPlats(s, p, k);
+        return at && { act: k as Act, text: `${ACTS[k as Act].namn} i skogen, där viltet går.`, min: r.min, tool: 'benspade', spot: { x: at.x + 0.5, y: at.y + 0.5 } };
+      },
     };
   })()])),
   rep: {

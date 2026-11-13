@@ -14,6 +14,7 @@ import { SJUK, insjukna } from './sjukdom';
 import { INGREDIENSER, KATEGORIER, Kategori, Maltidsniva, RATT, RATT_HUVUD, RATT_HUVUD_LIST, RATT_SAKER, RattHuvud, grupperAv, hallerSteg, nivaAvGrupper, rattId, utsadeKrok } from './ratter';
 import { tingOf } from './agande';
 import { getable, takeMaterial } from './behov';
+import { bakKrok, stationBrinner, rokKrok, rokVed } from './stationseld';
 import { knows } from './teknik';
 
 // ---------- matlagning (steg 2.8.1) ----------
@@ -154,6 +155,9 @@ export const ROKAS: readonly Ratt[] = [
 export type TorkSlag = 'tork' | 'rokeri';
 const TORK_RAD = { tork: () => TORKAS, rokeri: () => ROKAS };
 const torkDygn = (k: TorkSlag) => k === 'rokeri' ? ROK.dygn : TORK.dygn;
+rokKrok.dygn = () => ROK.dygn;
+// det som hänger i rökeriet röks bara medan elden brinner (steg 10.2.85): tiden räknas i q.rok, i torkställningen från q.t
+const tidAv = (s: State, q: Hang, k: TorkSlag) => k === 'rokeri' ? q.rok ?? 0 : s.now - q.t;
 export type Hang = NonNullable<Station['tork']>[number];
 // byns färdiga torkställningar (eller rökerier), och den första av dem
 export const torkarna = (s: State, k: TorkSlag = 'tork') => stationerOf(s).filter(t => isKlar(t) && t.k === k);
@@ -161,8 +165,8 @@ export const torken = (s: State): Station | undefined => torkarna(s)[0];
 const hangOf = (t: Station) => t.tork ?? (t.tork = []);
 const hangtSumma = (t?: Station) => { let n = 0; for (const q of t?.tork ?? []) n += q.n; return n; };
 // hur stor del av torkningen som är gjord (0–1): gränssnittet färgar maten efter det
-export const torrDel = (s: State, q: Hang, k: TorkSlag = 'tork') => clamp((s.now - q.t) / ((q.k === 'maltkorn' ? TORK.maltDygn : torkDygn(k)) * DAY), 0, 1);
-const klar = (s: State, q: Hang, k: TorkSlag = 'tork') => s.now - q.t >= (q.k === 'maltkorn' ? BRYGG_MALT() : torkDygn(k)) * DAY; // maltet gror och torkar (steg 9.6.13)
+export const torrDel = (s: State, q: Hang, k: TorkSlag = 'tork') => clamp(tidAv(s, q, k) / ((q.k === 'maltkorn' ? TORK.maltDygn : torkDygn(k)) * DAY), 0, 1);
+const klar = (s: State, q: Hang, k: TorkSlag = 'tork') => tidAv(s, q, k) >= (q.k === 'maltkorn' ? BRYGG_MALT() : torkDygn(k)) * DAY; // maltet gror och torkar (steg 9.6.13)
 const BRYGG_MALT = () => TORK.maltDygn;
 // så mycket rått (i saker) som finns över det byn äter innan det ruttnar (steg 10.2.11): det äts under så många dygn som det som
 // ruttnar först håller. Inför och under istiden behålls inget rått förrän byn har sin torkade mat för vintern (torkVinter)
@@ -204,8 +208,10 @@ export function kanTorka(s: State, p: Person, k: TorkSlag = 'tork') {
   const act = k === 'rokeri' ? 'roka' : 'torka';
   if (!kanGoras(s, act, p) || !stationFor(s, act, p)) return false; // en ställning rymmer sin arbetare (steg 10.2.5)
   const a = torkArbete(s, k);
-  return a.ner > 1e-6 || a.upp >= TORK.min;
+  return a.ner > 1e-6 || a.upp >= TORK.min || k === 'rokeri' && rokVed(s, p, rokKvar);
 }
+// så många timmar det tar innan allt som hänger i rökeriet t är rökt (steg 10.2.85)
+const rokKvar = (t: Station) => Math.max(0, ...(t.tork ?? []).map(q => (ROK.dygn * DAY - (q.rok ?? 0)) / HOUR));
 // hur länge ett pass vid ställningen varar
 export const torkTid = (s: State, k: TorkSlag = 'tork') => { const a = torkArbete(s, k); return Math.min(TORK.maxTim * HOUR, (a.ner + a.upp) / TORK.timme * HOUR + 5 * MIN); };
 
@@ -352,17 +358,18 @@ export function stekaKlar(s: State, p: Person) {
 // i ugnen (KATEGORIER.brod: 25 minuter) utan bagaren, och brödet läggs i förrådet. Brödet håller sex dygn
 export const BAK = balans('bak', {
   min: 3, // så många minuters arbete
-  mjol: 4, ved: 1, // så mycket mjöl och ved per sats; vattnet tas ur en fylld behållare
+  mjol: 4, ved: 1, // så mycket mjöl per sats, och så mycket ved behövs för att elda ugnen (den läggs i ugnens eld); vattnet tas ur en fylld behållare
   brod: 4, // så många bröd blir det
   dygn: 1, // byn bakar när bröden räcker kortare än så här många dygn av det byn äter (steg 10.2.11)
 });
+bakKrok.passivTim = () => KATEGORIER.brod.passiv / 60; // ugnens eld ska brinna medan degen gräddas (stationseld.ts)
 export const bakugnen = (s: State) => stationerOf(s).find(t => t.k === 'bakugn' && isKlar(t) && !t.deg);
-export const kanBaka = (s: State, p: Person) => knows(p, 'bakugn') && !!bakugnen(s) && amountOf(s, 'brod') * (SAKER.brod?.mat ?? 1) < matPerDygn(s) * BAK.dygn && !!stationFor(s, 'baka', p) && getable(s, p, 'mjol') >= BAK.mjol && getable(s, p, 'ved') >= BAK.ved && !!fylldSack(s);
+export const kanBaka = (s: State, p: Person) => knows(p, 'bakugn') && !!bakugnen(s) && amountOf(s, 'brod') * (SAKER.brod?.mat ?? 1) < matPerDygn(s) * BAK.dygn && !!stationFor(s, 'baka', p) && getable(s, p, 'mjol') >= BAK.mjol && (getable(s, p, 'ved') >= BAK.ved || stationBrinner(bakugnen(s))) && !!fylldSack(s);
 export function bakaKlar(s: State, p: Person) {
   const t = bakugnen(s), sack = fylldSack(s);
-  if (!t || !sack || getable(s, p, 'mjol') < BAK.mjol || getable(s, p, 'ved') < BAK.ved) return;
+  if (!t || !sack || getable(s, p, 'mjol') < BAK.mjol) return;
   const ag: Record<string, number> = {};
-  addDel(ag, takeMaterial(s, p, 'mjol', BAK.mjol), 1); takeMaterial(s, p, 'ved', BAK.ved); sack.inne = undefined;
+  addDel(ag, takeMaterial(s, p, 'mjol', BAK.mjol), 1); sack.inne = undefined; // veden lades i ugnens eld när bagaren kom (stationseld.ts, steg 10.2.85)
   let n = 0; for (let i = 0; i < BAK.brod; i++) if (rnd(s, 'mat', p) >= brannDel(p)) n++;
   count(s, 'brant', BAK.brod - n);
   t.deg = { n, kvar: KATEGORIER.brod.passiv * MIN, ag };
@@ -372,9 +379,7 @@ export function bakaKlar(s: State, p: Person) {
 // en gång i timmen (steg.ts): degen i ugnen jäser och gräddas, och brödet läggs i förrådet
 export function stepBak(s: State) {
   for (const t of stationerOf(s)) {
-    if (!t.deg) continue;
-    t.deg.kvar -= HOUR;
-    if (t.deg.kvar > 0) continue;
+    if (!t.deg || t.deg.kvar > 0) continue; // degen gräddas medan ugnens eld brinner (stationseld.ts, steg 10.2.85)
     const tot = Object.values(t.deg.ag).reduce((a, b) => a + b, 0) || 1, del: Del = {};
     for (const o in t.deg.ag) { const q = byId(s, Number(o)); if (q && alive(q)) del[o] = t.deg.ag[o] / tot * t.deg.n; }
     if (t.deg.n > 0) { put(s, 'brod', t.deg.n, del); count(s, 'bakat', t.deg.n); }

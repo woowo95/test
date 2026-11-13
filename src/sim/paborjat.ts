@@ -1,3 +1,4 @@
+import { eldaForst } from './stationseld';
 import { Act, DAY, HOUR, MIN, Person, SEC, State, Task } from './typer';
 import { LJUS, UPPSATT } from './ljus';
 import { halvOf, newTing, tingOf } from './agande';
@@ -38,8 +39,15 @@ export const GOR_ACTS = Object.keys(GORS) as Act[];
 export const startsOnArrival = (act: Act) => !!GORS[act] || !!ACTS[act]?.framme || DRICKA_ACTS.has(act);
 const halvById = (s: State, id?: number) => id === undefined ? undefined : tingOf(s).find(t => t.id === id && t.halv);
 
-// framme: arbeta vidare på det man har påbörjat, eller ta materialet och börja. Saknas materialet blir det inget
+// framme: arbeta vidare på det man har påbörjat, eller ta materialet och börja. Saknas materialet blir det inget.
+// Vid en station med egen eld (örtköket, bakugnen, rökeriet) eldar man först, och brinner den inte blir det inget (steg 10.2.85)
 export function startWork(s: State, p: Person, tk: Task) {
+  const e = eldaForst(s, p, tk);
+  if (e === false) { tk.until = s.now; return; }
+  startWork0(s, p, tk);
+  if (e > 0) tk.until += e * MIN;
+}
+function startWork0(s: State, p: Person, tk: Task) {
   if (tk.act === 'station') { startStation(s, p, tk); return; } // en station byggs vidare där den står (stationer.ts)
   if (tk.act === 'odla') { startOdla(s, p, tk); return; } // på fältet (odling.ts)
   if (tk.act === 'ljus') { tk.until = s.now + LJUS.min * MIN; return; } // ett talgljus på bordet (ljus.ts)

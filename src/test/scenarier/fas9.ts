@@ -833,7 +833,9 @@ SCENARIER.rokeri = {
     p.tek = { ...(p.tek ?? {}), rokeri: 1 };
     const kan = kanTorka(s, p, 'rokeri');
     torka(s, p, 1, 'rokeri'); const uppe = 30 - amountOf(s, 'fisk');
-    s.now += ROK.dygn * SIM.DAY + SIM.HOUR; torka(s, p, 1, 'rokeri');
+    const rok = SIM.stationerOf(s).find(t => t.k === 'rokeri')!; setAmount(s, 'ved', 20); // elden i rökeriet brinner hela dygnet (steg 10.2.85)
+    for (let h = 0; h <= ROK.dygn * 24; h++) { SIM.elda(s, p, rok, 24); s.now += SIM.HOUR; SIM.stepStationsEld(s, 3600); }
+    torka(s, p, 1, 'rokeri');
     const rokt = amountOf(s, 'rokfisk');
     for (const k of FOOD) setAmount(s, k, 0); setAmount(s, 'rokfisk', 4); p.thoughts = []; p.hunger = 0.2; MAT.anvand(s, p);
     const gott = p.thoughts.some(t => t.text === 'Åt rökt mat');
@@ -1165,9 +1167,9 @@ SCENARIER.brod = {
     setAmount(s, 'mjol', 6); setAmount(s, 'ved', 3); setAmount(s, 'brod', 0);
     const sack = addTool(s, 'vattensack', p); sack.hos = undefined; fyllVatska(s, 'vatten', 1, sack);
     const kan = kanBaka(s, p);
-    bakaKlar(s, p);
+    SIM.elda(s, p, ugn, 1); bakaKlar(s, p); // ugnens eld tänds först (steg 10.2.85)
     const iUgnen = !!ugn.deg && amountOf(s, 'mjol') === 2;
-    stepBak(s);
+    SIM.stepStationsEld(s, 3600); stepBak(s);
     const brod = amountOf(s, 'brod');
     return [
       [`bagaren kan baka (${kan ? 'ja' : 'nej'}), och degen jäser i ugnen (${iUgnen ? 'ja' : 'nej'})`, kan && iUgnen],
@@ -2044,6 +2046,90 @@ SCENARIER.hamla = {
       [`efter ${VINTER.lovDygn} dygn skärs skotten till ${lov} lövkärvar, som räknas som hö (${hoAv(s)})`, igen === i && lov === VINTER.lov && hoAv(s) === lov],
       [`geten äter lövkärvarna (${foder})`, foder === 'lovkarve'],
       [`det hamlade trädet står kvar`, g.trees[ti] >= 1],
+    ];
+  },
+};
+
+SCENARIER.fangstgrop = {
+  text: 'Steg 10.2.84: fångstgropen grävs på plats. Den görs inte vid fångstbänken: den som har benspaden går ut i skogen där viltkartan säger att viltet går, gräver gropen där och täcker den med grenar, och gropen ligger kvar på kartan och fångar rådjur',
+  kor: () => {
+    const { PROJEKT, STATIONER, KLAR_FOR, addTool, mjardarOf, stepMjardar, richness, iByn, amountOf, vittja } = SIM;
+    const s = createState(4, START); klockan(s, 10);
+    const p = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0]!;
+    p.tek = { ...(p.tek ?? {}), grop: 1, fangstbank: 1, benspade: 1 };
+    const inteBank = !(STATIONER.fangstbank.gor as string[]).includes('grop');
+    const utan = PROJEKT.grop.kan(s, p, { kyla: false, gras: 0 });
+    addTool(s, 'benspade', p);
+    const med = PROJEKT.grop.kan(s, p, { kyla: false, gras: 0 });
+    const u = PROJEKT.grop.uppgift(s, p);
+    const at = u?.spot, x = at ? Math.floor(at.x) : -1, y = at ? Math.floor(at.y) : -1;
+    const ute = !!at && !iByn(s, x, y) && Math.hypot(at.x - p.x, at.y - p.y) >= SIM.MJARDE.skogUt;
+    const rik = at ? richness(s, 'jakt', x, y) : 0;
+    const t: SIM.Task = { act: 'grop', phase: 'do', tx: at?.x ?? p.x, ty: at?.y ?? p.y, until: s.now, carry: 0, why: '' };
+    KLAR_FOR.grop!(s, p, t, 0);
+    const g = mjardarOf(s).find(m => m.k === 'grop');
+    const dar = !!g && g.x === x && g.y === y;
+    for (let h = 0; h < 2000 && g && g.n === 0; h++) { s.now += SIM.HOUR; stepMjardar(s); }
+    const fangat = !!g && (g.fisk.radjur ?? 0) > 0;
+    if (g) vittja(s, p, g);
+    return [
+      ['fångstbänken gör ingen grop längre', inteBank],
+      [`utan benspade grävs ingen grop (${utan ? 'grävs' : 'nej'}), med spaden ja (${med ? 'ja' : 'nej'})`, !utan && med],
+      [`gropen grävs med benspaden i skogen, utanför byn, där det finns vilt (${u?.tool ?? 'inget redskap'}, vilt ${rik.toFixed(2)})`, u?.act === 'grop' && u.tool === 'benspade' && ute && rik > 0],
+      ['gropen ligger där den grävdes', dar],
+      [`gropen fångar ett rådjur, som den som vittjar får (${amountOf(s, 'radjur')})`, fangat && amountOf(s, 'radjur') >= 1],
+    ];
+  },
+};
+
+SCENARIER.stationseld = {
+  text: 'Steg 10.2.85–10.2.86: örtköket, bakugnen och rökeriet har egna eldar. Den som ska arbeta där lägger på ved och tänder den, den brinner så länge veden räcker och glöder sedan, och arbetet går bara när den brinner: degen gräddas och köttet röks inte förrän elden tänts. Veden går åt i elden och inte i recepten, och örtkökets eld värmer lite',
+  kor: () => {
+    const { bakaKlar, kanBaka, stepBak, setAmount, amountOf, addTool, fyllVatska, torka, kanTorka, torrDel, stepStationsEld, eldaForst, vidStation, heatAt, STATIONSELD, ELDSTATIONER, RECEPT, FOOD } = SIM;
+    const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    const ugn = { id: 991, k: 'bakugn', x: 2, y: 8, kvar: 0 } as SIM.Station, rok = { id: 992, k: 'rokeri', x: 2, y: 2, kvar: 0 } as SIM.Station;
+    const ort = { id: 993, k: 'ortkok', x: 8, y: 2, kvar: 0 } as SIM.Station;
+    s.stationer = [...(s.stationer ?? []), ugn, rok, ort];
+    p.tek = { ...(p.tek ?? {}), bakugn: 1, rokeri: 1, ortkok: 1 }; p.skill.matlagning = SIM.MATLAG.brannFull;
+    const tim = (n: number) => { for (let h = 0; h < n; h++) { s.now += SIM.HOUR; stepStationsEld(s, 3600); stepBak(s); } };
+    // bakugnen: degen står i en kall ugn och blir inget bröd
+    setAmount(s, 'mjol', 8); setAmount(s, 'ved', 0); setAmount(s, 'brod', 0);
+    const sack = addTool(s, 'vattensack', p); sack.hos = undefined; fyllVatska(s, 'vatten', 1, sack);
+    const utanVed = !kanBaka(s, p);
+    bakaKlar(s, p); tim(3);
+    const kallUgn = !!ugn.deg && amountOf(s, 'brod') === 0;
+    // bagaren kommer till ugnen, lägger på ved och tänder: då gräddas degen
+    setAmount(s, 'ved', 3); const at = vidStation(ugn); p.x = at.x; p.y = at.y;
+    const tk: SIM.Task = { act: 'baka', phase: 'do', tx: p.x, ty: p.y, until: s.now + 3 * SIM.MIN, carry: 0, why: '' };
+    const tand = eldaForst(s, p, tk), brann = !!ugn.eld?.lit, vedTagen = 3 - amountOf(s, 'ved');
+    tim(1);
+    const brod = amountOf(s, 'brod');
+    tim(1); const slackt = !ugn.eld?.lit && (ugn.eld?.glod ?? 0) > s.now;
+    tim(STATIONSELD.glodTim + 1); const kall = !ugn.eld?.lit && ugn.eld?.glod === undefined;
+    // rökeriet: fisken hänger men röks inte förrän elden brinner
+    for (const k of FOOD) setAmount(s, k, 0); setAmount(s, 'fisk', 10); setAmount(s, 'ved', 0);
+    torka(s, p, 1, 'rokeri'); const uppe = rok.tork?.[0];
+    tim(30);
+    const intRokt = !!uppe && torrDel(s, uppe, 'rokeri') === 0 && amountOf(s, 'rokfisk') === 0;
+    setAmount(s, 'ved', 20); const vill = kanTorka(s, p, 'rokeri');
+    for (let h = 0; h < 30; h++) { SIM.elda(s, p, rok, 24); tim(1); }
+    torka(s, p, 1, 'rokeri'); const rokt = amountOf(s, 'rokfisk');
+    // örtköket: utan ved blir det ingen kokning; med eld värmer det lite nära
+    setAmount(s, 'ved', 0); const oa = vidStation(ort); p.x = oa.x; p.y = oa.y;
+    const kok: SIM.Task = { act: 'koka_salva', phase: 'do', tx: p.x, ty: p.y, until: s.now + 5 * SIM.MIN, carry: 0, why: '' };
+    const ingen = eldaForst(s, p, kok) === false;
+    setAmount(s, 'ved', 2); eldaForst(s, p, kok);
+    const e = SIM.eldPlatsAv(ort), nara = heatAt(s, e.x + 0.5, e.y), langt = heatAt(s, e.x + ELDSTATIONER.ortkok.radie + 0.5, e.y);
+    const utanBransle = !('ved' in RECEPT.salva.av!) && RECEPT.tjara.av!.ved === 3;
+    return [
+      [`utan ved kan ingen baka (${utanVed ? 'nej' : 'ja'}), och en deg i den kalla ugnen blir inget bröd (${kallUgn ? 'inget' : 'bröd'})`, utanVed && kallUgn],
+      [`bagaren lägger på ved (${vedTagen}) och tänder ugnen (${tand} min), och då blir degen ${brod} bröd`, brann && tand === STATIONSELD.tandMin && vedTagen >= 1 && brod > 0],
+      [`när veden brunnit upp glöder elden en stund och slocknar sedan helt`, slackt && kall],
+      [`fisken i det kalla rökeriet röks inte (${intRokt ? 'nej' : 'ja'}), och byn vill elda där (${vill ? 'ja' : 'nej'})`, intRokt && vill],
+      [`med elden tänd blir fisken rökt (${rokt})`, rokt > 0],
+      [`i ett kallt örtkök utan ved kokas ingen salva`, ingen],
+      [`örtkökets eld värmer lite nära (${nara.toFixed(2)}) men inte ${ELDSTATIONER.ortkok.radie} rutor bort (${langt.toFixed(2)})`, nara > 0 && nara < 0.5 && langt === 0],
+      ['veden går åt i elden och inte i recepten (salvan utan ved, tjäran av 3 ved)', utanBransle],
     ];
   },
 };

@@ -315,6 +315,11 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
   }],
   [37, 'v527: timret är virke (steg 10.2.70): väggarna står kvar, och det som burits till en timmervägg räknas om från ved till virke (5 ved är 1 virke)', s => {
     for (const b of s.byggen ?? []) if (b.m === 'timmer') { b.mat = Math.min(MATERIAL.timmer!.n, Math.round(b.mat / 5)); if (b.lm !== undefined) b.lm = Math.round(b.lm / 5); }
+  }],  [38, 'v527: örtköket, bakugnen och rökeriet har egna eldar (steg 10.2.85): en deg som står i ugnen och det som hänger i rökeriet får en eld som brinner, så att de blir klara som förut', s => {
+    for (const t of s.stationer ?? []) {
+      if (t.deg) t.eld = { ved: 1, lit: 1 };
+      if (t.k === 'rokeri' && t.tork?.length) { for (const q of t.tork) q.rok = s.now - q.t; t.eld = { ved: 2, lit: 1 }; }
+    }
   }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];

@@ -1,3 +1,4 @@
+import { stationsVarme } from './stationseld';
 import { han } from './ord';
 import { tal } from './ord';
 import { allaBarn } from './uppvaxt';
@@ -138,7 +139,7 @@ export function heatRadius(s: State, f = s.fire) { return radieAv(fireHeat(s, f)
 const varmeFran = (I: number, r: number, fx: number, fy: number, x: number, y: number) => { const d = Math.hypot(x - fx, y - fy); return d >= r ? 0 : I * (1 - d / r); };
 // värmen på platsen: från den lägereld som värmer mest där (steg 2.9.1)
 export function heatAt(s: State, x: number, y: number) {
-  let v = 0;
+  let v = s.stationer?.length ? stationsVarme(s, x, y) : 0; // örtkökets eld värmer lite (stationseld.ts, steg 10.2.86)
   for (const f of eldarOf(s)) { const I = fireHeat(s, f); if (I) { const e = eldXY(s, f); v = Math.max(v, varmeFran(I, radieAv(I, f), e.x + 0.5, e.y + 0.5, x, y)); } }
   return v;
 }

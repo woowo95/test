@@ -45,13 +45,13 @@ export function valjFisk(s: State, p: Person, iMjarde = false, nat = false) {
   return kand[0];
 }
 // ---------- fällorna (steg 7.4.2, 7.5.10 och 7.5.11) ----------
-// En fälla görs vid fångstbänken och sätts ut. Den fångar medan ingen är där och vittjas av den som går förbi (arbetet vittja). Varje
+// En fälla görs vid fångstbänken och sätts ut, och fångstgropen grävs där den ska ligga (steg 10.2.84). Den fångar medan ingen är där och vittjas av den som går förbi (arbetet vittja). Varje
 // sort är en rad: var den sätts (vid vattnet eller i skogen), vad den fångar och chansen per timme gånger hur rikt det är där
-export interface FallaDef { namn: string; plats: 'strand' | 'skog'; lager: string; fangst: number; ger: (s: State, p: Person) => string; slits: number }
+export interface FallaDef { namn: string; plats: 'strand' | 'skog'; lager: string; fangst: number; ger: (s: State, p: Person) => string; slits: number; gravs?: true } // gravs: grävs där den ska ligga, med benspaden (fångstgropen, steg 10.2.84)
 export const FALLOR: Record<string, FallaDef> = {
   mjarde: { namn: 'Mjärde', plats: 'strand', lager: 'fiske', fangst: MJARDE.fangst, ger: (s, p) => valjFisk(s, p, true), slits: 0 },
   snara: { namn: 'Snara', plats: 'skog', lager: 'jakt', fangst: MJARDE.snaraFangst, ger: (s, p) => rnd(s, 'arbete', p) < MJARDE.snaraFagel ? 'fagel' : 'vilt', slits: MJARDE.snaraSlit },
-  grop: { namn: 'Fångstgrop', plats: 'skog', lager: 'jakt', fangst: MJARDE.gropFangst, ger: () => 'radjur', slits: 0 },
+  grop: { namn: 'Fångstgrop', plats: 'skog', lager: 'jakt', fangst: MJARDE.gropFangst, ger: () => 'radjur', slits: 0, gravs: true },
 };
 export interface Mjarde { id: number; k?: string; x: number; y: number; ag: number; fisk: Record<string, number>; n: number; c?: number }
 export const mjardarOf = (s: State) => (s.mjardar ??= []);
@@ -72,10 +72,20 @@ export function stepMjardar(s: State) {
     if (d.slits) { m.c = (m.c ?? 1) - d.slits; if (m.c <= 0) s.mjardar = s.mjardar.filter(q => q !== m); }
   }
 }
-// sätter ut en fälla nära den som gjort den: en mjärde på stranden, en snara och en grop en bit bort där marken är fri
+// sätter ut en fälla nära den som gjort den: en mjärde på stranden, en snara en bit bort där marken är fri
 export function sattUt(s: State, p: Person, k: string) {
+  const at = fallPlats(s, p, k);
+  return at && sattVid(s, p, k, at.x, at.y);
+}
+// fällan läggs på rutan (x, y): fångstgropen där den grävdes (steg 10.2.84)
+export function sattVid(s: State, p: Person, k: string, x: number, y: number) {
+  const m: Mjarde = { id: (s.nextBit ??= 1), k, x, y, ag: p.id, fisk: {}, n: 0 }; s.nextBit++; mjardarOf(s).push(m); count(s, 'fallaUt_' + k); return m;
+}
+// rutan där en fälla av sorten k sätts, från p: närmaste fria strand för mjärden, och i skogen (snaran, gropen) den ruta på
+// avståndet MJARDE.skogUt eller längre där det finns mest vilt
+export function fallPlats(s: State, p: { x: number; y: number }, k: string): { x: number; y: number } | undefined {
   const d = FALLOR[k], sh = strandNu(s), m0 = getMap(s.seed).tiles, skog = d.plats === 'skog';
-  const satt = (x: number, y: number) => { const m: Mjarde = { id: (s.nextBit ??= 1), k, x, y, ag: p.id, fisk: {}, n: 0 }; s.nextBit++; mjardarOf(s).push(m); count(s, 'fallaUt_' + k); return m; };
+  const satt = (x: number, y: number) => ({ x, y });
   let forsta: { x: number; y: number } | undefined;
   for (let r = skog ? MJARDE.skogUt : 1; r < MJARDE.sattUtR; r++) {
     // i skogen den ruta på avståndet där det finns mest vilt: på en ruta utan vilt skulle fällan aldrig fånga något

@@ -174,7 +174,7 @@ const DEF = {
   vava_ull: { namn: 'Väver ylletyg', slag: 'hantverk', hantverk: true, verb: 'väver', plats: 'station' },
   gor_leksak: { namn: 'Täljer en leksak', slag: 'hantverk', hantverk: true, verb: 'täljer', plats: 'station' }, // steg 7.5.4; vid snickarbänken om byn har en (steg 9.4.5), annars vid elden
   snara: { namn: 'Gör en snara', slag: 'hantverk', hantverk: true, verb: 'gör', plats: 'station' }, // vid fångstbänken (steg 7.5.10)
-  grop: { namn: 'Gräver en fångstgrop', slag: 'hantverk', hantverk: true, verb: 'gräver', plats: 'station' }, // steg 7.5.11
+  grop: { namn: 'Gräver en fångstgrop', slag: 'bygga', verb: 'gräver', redskap: { benspade: { tar: 'Tar benspaden.', haller: 40, kravs: true } }, slits: { enhet: 'gropar', per: 'gang' }, tungt: true, framme: true, stilla: true }, // på plats i skogen, där viltet går (steg 7.5.11 och 10.2.84)
   byxor: { namn: 'Syr byxor', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, // steg 7.7
   mossa: { namn: 'Syr en mössa', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' },
   snoskor: { namn: 'Gör snöskor', slag: 'hantverk', hantverk: true, stilla: true, verb: 'gör', plats: 'station' },
