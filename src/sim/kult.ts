@@ -99,6 +99,8 @@ export function bonKlar(s: State, p: Person, t: { tool?: string; ref?: number; w
   if (id === 'bikt') { p.skuld = 0; count(s, 'bikt'); }
 }
 const rokelse = (s: State, p: Person) => { if (amountOf(s, 'rokelse') < 1 || rnd(s, 'tro', p) > 0.2) return false; takeMaterial(s, p, 'rokelse', 1); return true; };
+// bär prästen sin dräkt eller sin mask (steg 10.3.11)
+export const barDrakt = (s: State, p: Person) => (s.ting ?? []).some(t => t.bar === p.id && (kladAv(t.k)?.plagg === 'prastdrakt' || kladAv(t.k)?.plagg === 'mask'));
 const barTecken = (s: State, p: Person) => (s.ting ?? []).some(t => t.bar === p.id && (kladAv(t.k)?.plagg === 'tecken' || kladAv(t.k)?.plagg === 'prastdrakt'));
 // bönen i andligheten (steg 8.5.4): en bön i nöd som hjälpte eller inte hjälpte blir en upplevelse
 function bonSvar(s: State, p: Person) {
@@ -163,18 +165,19 @@ export function helga(s: State, tr: Tro, x: number, y: number, om: string) {
 }
 
 // ---------- prästen (steg 8.5.9) ----------
-// sorten följer Var och en – Präster; regeln om vem som får bli präst bestäms när den första utses och ändras aldrig
+// sorten följer Var och en – Präster; vem som får bli präst följer buden Bara kvinnor och Bara män (steg 10.3.11), och regeln gäller när en präst utses
 export const prastSort = (tr: Tro, k: 'k' | 'm') => { const v = skalaV(tr, 'prast') ?? 0; return v < 34 ? (k === 'k' ? 'Völva' : 'Schaman') : v < 67 ? (k === 'k' ? 'Gydja' : 'Gode') : 'Präst'; };
+// får q bli präst i tron? Buden Bara kvinnor och Bara män stänger ute det andra könet (steg 10.3.11)
+export const farBliPrast = (tr: Tro, q: Person) => !(budInK(tr, 'prastKvinna') && q.sex !== 'k') && !(budInK(tr, 'prastMan') && q.sex !== 'm');
+const budInK = (tr: Tro, id: string) => !!tr.bud?.some(b => b.id === id);
 export const prastOf = (s: State, tr: Tro) => { const q = byId(s, tr.prast); return q && alive(q) && q.tro === tr.id ? q : undefined; };
 // hur väl någon passar som präst: andligheten och karisman
 export const prastRang = (s: State, p: Person) => andlighet(s, p) + stat(p, 'karisma', s.now) * 3;
 function prastSteg(s: State, tr: Tro, folk: Person[]) {
   if (!rymsBud(s, tr, 2) || prastOf(s, tr)) return; // budet om en präst har storlek 2 (steg 10.3.12 gör det till ett bud)
-  const kand = folk.filter(q => ageOf(q, s.now) >= ALDER.vuxen && andlighet(s, q) >= KULT.prastAnde && (!tr.prastRegel || tr.prastRegel === 'bada' || tr.prastRegel === q.sex));
+  const kand = folk.filter(q => ageOf(q, s.now) >= ALDER.vuxen && andlighet(s, q) >= KULT.prastAnde && farBliPrast(tr, q));
   if (!kand.length) return;
   const p = kand.sort((a, b) => prastRang(s, b) - prastRang(s, a))[0];
-  if (!tr.prastRegel) { const r = rnd(s, 'tro', p); tr.prastRegel = r < 0.34 ? 'k' : r < 0.67 ? 'm' : 'bada'; }
-  if (tr.prastRegel !== 'bada' && tr.prastRegel !== p.sex) return;
   tr.prast = p.id; count(s, 'prast');
   const t = `${p.name} blev ${prastSort(tr, p.sex).toLowerCase()} i ${troNamn(tr).toLowerCase()}.`;
   log(s, t, 'rel', [p.id]); kronika(s, t, 'tro'); p.fame.push(`Blev ${prastSort(tr, p.sex).toLowerCase()}`); personHand(s, p, 'titel', `Blev ${prastSort(tr, p.sex).toLowerCase()}.`);
@@ -238,12 +241,14 @@ export function ritualTimme(s: State) {
   const r = s.ritual;
   if (r && s.now >= r.slut) {
     const d = RDEF[r.k], med = living(s).filter(p => p.task?.act === 'ritual');
-    const prast = r.tro !== undefined ? troOf(s, r.tro) : undefined, ledd = prast && prastOf(s, prast) ? KULT.starkare : 1;
-    const tr = prast;
+    const tr = r.tro !== undefined ? troOf(s, r.tro) : undefined, pr = tr && prastOf(s, tr);
+    // prästen leder (steg 10.3.11): med budet om dräkten ger ritualen mer när prästen bär den och hälften så mycket tro och inget extra humör när den saknas
+    const drakt = !!tr && budInK(tr, 'drakt'), bar = !!pr && barDrakt(s, pr);
+    const ledd = pr && (!drakt || bar) ? KULT.starkare : 1, troF = !pr || !drakt ? 1 : bar ? KULT.starkare : 0.5;
     for (const p of med) {
       think(p, r.namn ?? d.namn, (r.om?.includes(p.id) ? d.huvud ?? d.humor : d.humor) * ledd, s.now, 12 * HOUR);
       // en ritual ger tro bara till dem som har ritualens tro (steg 10.3.3); fastan ger mer
-      if (r.tro !== undefined && p.tro === r.tro) p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + (r.form === 'fasta' ? KULT.fastaTro : r.k === 'vuxen' && r.om?.includes(p.id) ? KULT.vuxenTro : d.tro));
+      if (r.tro !== undefined && p.tro === r.tro) p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + (r.form === 'fasta' ? KULT.fastaTro : r.k === 'vuxen' && r.om?.includes(p.id) ? KULT.vuxenTro : d.tro) * troF);
       p.task!.until = s.now;
     }
     if (r.k === 'hogtid' && tr) hogtidSlut(s, tr, r, med);

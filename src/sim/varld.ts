@@ -353,6 +353,14 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
       if (tr && !h.skandad && !tr.bud?.some(b => b.id === 'helig' && b.v === v)) (tr.bud ??= []).push({ id: 'helig', v, t: h.t });
     }
   }],
+  [45, 'v528: prästens bud (steg 10.3.11): den slumpade regeln om vem som får bli präst blir ett antaget bud, och en tro med präst har budet om dräkten', s => {
+    for (const tr of s.tron ?? []) {
+      const r = (tr as { prastRegel?: string }).prastRegel; delete (tr as { prastRegel?: string }).prastRegel;
+      if (tr.slut !== undefined) continue;
+      if (r === 'k' || r === 'm') (tr.bud ??= []).push({ id: r === 'k' ? 'prastKvinna' : 'prastMan', t: tr.t });
+      if (tr.prast !== undefined && !tr.bud?.some(b => b.id === 'drakt')) (tr.bud ??= []).push({ id: 'drakt', t: tr.t });
+    }
+  }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

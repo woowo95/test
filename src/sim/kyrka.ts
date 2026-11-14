@@ -67,6 +67,8 @@ export const BUDROSTTAL = balans('budrost', {
   humor: 0.1, // humöret jämfört med grundhumöret, gånger budets storlek
   matMycket: 20, // den som äger så här mycket mat är helt emot de bud som tar av maten
 });
+// den som kunde bli präst men stängs ute av budet är emot det (steg 10.3.11)
+const utestangd = (s: State, p: Person, kon: 'k' | 'm') => p.sex !== kon && ageOf(p, s.now) >= ALDER.vuxen && andlighet(s, p) >= KULT.prastAnde ? { v: -1, why: 'Kan inte bli präst med budet' } : { v: 0, why: '' };
 // den som äger mycket mat är emot de bud som tar av den
 const matIntresse = (s: State, p: Person) => { const egen = ownedStock(s, p), n = FOOD.reduce((a, k) => a + (egen[k] ?? 0), 0); return { v: -clamp(n / BUDROSTTAL.matMycket, 0, 1), why: 'Äger mycket mat' }; };
 export interface BudDef { namn: string; sort: 'forbud' | 'krav' | 'offer'; storlek: 1 | 2 | 3 | 4; skala?: 'natur' | 'manga' | 'prast' | 'livet' | 'forlat' | 'fest' | 'krig' | 'oppen' | 'sprid'; sida?: 0 | 1; acts?: Act[]; text: string; kyla?: boolean
@@ -76,6 +78,7 @@ export interface BudDef { namn: string; sort: 'forbud' | 'krav' | 'offer'; storl
   kraver?: string; // budet kan bara föreslås när tron har det här (offret vid högtiden kräver en högtid)
   nu?(s: State, tr: Tro): boolean; // budets tillfälle är nu: det lyfts fram bland trons förslag (steg 10.3.3)
   om?(s: State, tr: Tro, b: AntagetBud): string // ritualbuden: när, vilka, var, vad som går åt (fliken Religion)
+  grupp?: string; // bud i samma grupp utesluter varandra: tron har högst ett av dem (steg 10.3.11)
   sed?: [Sed, 1 | -1]; // sederna som hör till budet: sedens sida som drar mot budet (steg 10.3.9)
   intresse?(s: State, p: Person, tr: Tro, v?: BudVarde): { v: number; why: string } // radens eget intresse, -1 till 1, för budets värde (steg 10.3.9)
   antas?(s: State, tr: Tro, b: AntagetBud): void } // det som händer när budet antas (steg 10.3.10)
@@ -106,6 +109,10 @@ export const BUD = {
   aldrigDoda: { namn: 'Aldrig döda en människa', sort: 'forbud', storlek: 4, skala: 'krig', sida: 0, text: 'Inte ens i försvar', acts: ['strid'], sed: ['krig', -1] },
   ingenRoj: { namn: 'Ingen ny mark får röjas', sort: 'forbud', storlek: 4, skala: 'natur', sida: 0, text: 'Skogen får stå', acts: ['falla'], sed: ['natur', -1] },
   ogifta: { namn: 'Prästerna lever ogifta', sort: 'forbud', storlek: 4, skala: 'fest', sida: 1, text: 'Prästen ger sig åt tron', intresse: (s, p, tr) => prastOf(s, tr) === p ? { v: -1, why: 'Är själv präst' } : { v: 0, why: '' } },
+  // prästens bud (steg 10.3.11): vem som får bli präst och dräkten. Den som stängs ute och kunde bli präst röstar emot
+  prastKvinna: { namn: 'Bara kvinnor blir präster', sort: 'forbud', storlek: 1, grupp: 'prastkon', text: 'Bara en kvinna kan bli präst', intresse: (s, p) => utestangd(s, p, 'k') },
+  prastMan: { namn: 'Bara män blir präster', sort: 'forbud', storlek: 1, grupp: 'prastkon', text: 'Bara en man kan bli präst', intresse: (s, p) => utestangd(s, p, 'm') },
+  drakt: { namn: 'Prästen bär en egen dräkt', sort: 'krav', storlek: 1, text: 'Byn syr en dräkt åt prästen, och ritualen hon eller han leder ger mer i den' },
   // den heliga platsen (steg 10.3.10): den kandidat som kom först föreslås, och värdet är rutan. De troende vill ha den nära hemmet
   helig: { namn: 'En helig plats', sort: 'krav', storlek: 1, text: 'Tron ber och samlas vid en helig plats',
     varden: (s, tr) => { const k = heligaKandidater(s, tr)[0]; return k ? [heligVarde(k.x, k.y)] : []; },
@@ -134,8 +141,9 @@ export const budIn = (tr: Tro | undefined, id: BudId): tr is Tro => !!tr?.bud?.s
 // budets namn, med värdet när det har ett
 export const budNamn = (s: State, b: { id: BudId; v?: BudVarde }) => { const d = BDEF[b.id]; return b.v === undefined ? d.namn : `${d.namn}: ${d.vardeNamn ? d.vardeNamn(s, b.v) : String(b.v)}`; };
 // de bud raden kan föreslås som nu: ett per värde som inte redan antagits, eller raden själv en gång
-const budForslag = (s: State, tr: Tro, id: BudId): { id: BudId; v?: BudVarde }[] => {
+export const budForslag = (s: State, tr: Tro, id: BudId): { id: BudId; v?: BudVarde }[] => {
   const d = BDEF[id];
+  if (d.grupp && tr.bud?.some(b => BDEF[b.id]?.grupp === d.grupp)) return []; // tron har redan ett bud i gruppen
   if (!d.varden) return budIn(tr, id) ? [] : [{ id }];
   return d.varden(s, tr).filter(v => !tr.bud?.some(b => b.id === id && b.v === v)).map(v => ({ id, v }));
 };
