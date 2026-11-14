@@ -24,6 +24,7 @@ import { LANG_S, SCENARIER } from './scenarier/hjalp';
 import { gangLangsam, gangVakt } from '../sim/gang';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { Utfall, korSkript, pool, prioAv } from './pool';
+import { ui } from '../ui/lage';
 
 const GRUPP = 6; // så många korta scenarier i varje process
 // hur lång tid varje scenario tog förra gången (processorns tid, s), sparat när alla körs (steg 9.2.64): kön startar de
@@ -52,6 +53,9 @@ async function korHar(namn: string) {
   // vakten för långsam gång (steg 9.2.101): ett larm blir en kontroll som inte går igenom
   let langsam: string | undefined, nLangsam = 0;
   gangVakt.lyss = (s, p, rutor, mork) => { const t = gangLangsam(s, p, rutor, mork); if (t) { nLangsam++; langsam ??= t; } };
+  // gränssnittets läge börjar som i ett nytt spel: i en grupp lämnade ett scenario annars kvar en vald flik åt nästa (handlarrel
+  // lämnade relationerna öppna, och handslag såg då inte bytena)
+  Object.assign(ui, structuredClone(UI_START));
   const cpu0 = process.threadCpuUsage(), k = sc.kor();
   gangVakt.lyss = undefined;
   if (langsam) k.push([`vakten: någon går mycket långsamt utan flera skäl (${nLangsam} ggr), första: ${langsam}`, false]);
@@ -65,6 +69,7 @@ async function korHar(namn: string) {
 // en grupp korta scenarier i en process, efter varandra (uppstarten tar mer tid än de flesta scenarier). Före vart och ett
 // skrivs en rad med namnet, så att utskriften kan delas upp igen
 const MARK = '@@scenario ';
+const UI_START = structuredClone(ui);
 if (val) await korHar(val);
 else if (grupp) for (const n of arg.slice(1)) { console.log(MARK + n); await korHar(n); }
 else {
