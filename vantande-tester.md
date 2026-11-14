@@ -1,5 +1,10 @@
 # Väntande tester
 
-## 10.2.102 – det stora testet efter 10.2 (commit 1e90bedc och senare)
+## 10.2.102 – det sista efter 10.2 (commit 88793874)
 
-Rättat efter förra körningen: by 42 (byte mot ingenting), by 777 (rundans mål i en vägg), strakprov (lagret flyttades in på ett fält), varg (flocken stod inom synhåll för den ensamma), aldrig (instrumenten sällsynta, gångvakten). `npm run koll` körs nu. Sedan: `npm run likhet`, `npm run utseende` (natt-rovare), `npm run jamfor -- 35 64 --mot` versionen före 10.1, `npm run kostnad`, `npm run riktad -- --karta`. Därefter publicera, bocka av 10.2.50–10.2.102 (utom 10.2.60) och sätt "Programmeras nu" till (inget).
+Klart och grönt: `npm run koll` (alla scenarier, aldrig omkörd och grön), nytt facit och ny samma-koll (commit 88793874), `npm run likhet` (4 av 4 byar exakt lika), `npm run utseende` (natt-rovare och inzoomning, inga larm). 10.2.50–10.2.101 (utom 10.2.60) är avbockade med (v527) i Färdplanen.
+
+Kvar:
+- `npm run jamfor -- 35 64 --mot e4216284` (v524), som information. Avbröts efter de första 8 byarna, som är sparade i `node_modules/.cache/jamfor` (i testkopian `$TMPDIR/samhalle-test`), så nästa körning fortsätter därifrån. Kör med `caffeinate -i`: Mac:en sover annars på batteri, och då ser byarna ut att hänga (stoppas efter 150 min).
+- `npm run kostnad`, `npm run riktad -- --karta` (committa kartan).
+- Publicera som v527, bocka av 10.2.102 med resultatet av jamfor och kostnad, och sätt "Programmeras nu" till (inget).
