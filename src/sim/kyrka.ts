@@ -74,6 +74,7 @@ export const BUD = {
   lunden: { namn: 'Inte fälla träd i den heliga lunden', sort: 'forbud', storlek: 2, niva: 2, skala: 'natur', sida: 0, text: 'Lunden får stå' },
   kottHelg: { namn: 'Inget kött på heliga dagar', sort: 'forbud', storlek: 2, niva: 3, skala: 'fest', sida: 1, text: 'Inget kött på den heliga dagen', acts: ['slakta'] },
   framling: { namn: 'Främlingar ska få mat', sort: 'krav', storlek: 2, niva: 2, skala: 'oppen', sida: 0, text: 'Den som kommer får äta' },
+  orena: { namn: 'En fiendes saker är orena', sort: 'forbud', storlek: 2, niva: 2, skala: 'oppen', sida: 1, text: 'Man rör inte det fienden bar' }, // steg 10.3.6
   giftaTro: { namn: 'Inte gifta sig utanför tron', sort: 'forbud', storlek: 2, niva: 3, skala: 'oppen', sida: 1, text: 'Man gifter sig inom tron' },
   fasta: { namn: 'Fasta vissa dagar', sort: 'krav', storlek: 3, niva: 3, skala: 'fest', sida: 1, text: 'Vissa dagar äter man inte' },
   vilodag: { namn: 'En vilodag av sju', sort: 'forbud', storlek: 3, niva: 3, text: 'Den sjunde dagen arbetar ingen' },

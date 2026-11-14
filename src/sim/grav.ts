@@ -11,7 +11,8 @@ import { freeTools, newTing, take } from './agande';
 import { GA_TID } from './paborjat';
 import { KULT } from './kult';
 import { nyRitual } from './kultlatt';
-import { Grav, GravStil, gravAt, kvarById, nara } from './kvarlevor';
+import { Grav, GravStil, Kvarleva, gravAt, kvarById, nara } from './kvarlevor';
+import { budIn, foljer } from './kyrka';
 import { Tro, skalaV, troOf } from './religion';
 import { amountOf, put } from './lager';
 import { SAKER } from './saker';
@@ -87,16 +88,20 @@ export function gravKlar(s: State, p: Person, t: Task) {
   if (tr && !ovardig) { nyRitual(s, 'begravning', { tro: tr.id, x, y, om: [q.vem], namn: `Begravningen av ${q.namn}` }); (s.troSkalor?.includes('livet') ? 0 : count(s, 'livet_oppen')); if (tr.gravSlag === undefined) tr.gravSlag = trosGrav(s, tr); }
   else if (stil === 'jord' && !ovardig) log(s, `${p.name} begravde ${q.namn}.`, 'rel', [p.id]);
 }
-// avrusta den fallne (steg 8.7.5): en vuxen tar det fienden hade, 2 minuter per sak, och bär hem det. Sakerna blir byns
+// avrusta den fallne (steg 8.7.5 och 10.3.6): en vuxen tar det fienden hade, 2 minuter per sak, och bär hem det. Bytet hen tagit från byn
+// (saker) tar vem som helst. Fiendens egna vapen och plagg (ting, med kvalitet och slitage) rör inte den som följer budet om orena saker
+const orena = (s: State, p: Person) => { const tr = troOf(s, p.tro); return budIn(tr, 'orena') && foljer(p, 'orena'); };
+const avrustbart = (s: State, p: Person, k: Kvarleva) => (k.saker ? Object.values(k.saker).reduce((a, b) => a + b, 0) : 0) + (k.ting && !orena(s, p) ? k.ting.length : 0);
 export function avrustaVal(s: State, p: Person) {
-  const q = s.kvarlevor?.find(k => k.k === 'fiende' && k.saker && !living(s).some(o => o !== p && o.task?.act === 'avrusta' && o.task.ref === k.id));
+  const q = s.kvarlevor?.find(k => k.k === 'fiende' && avrustbart(s, p, k) > 0 && !living(s).some(o => o !== p && o.task?.act === 'avrusta' && o.task.ref === k.id));
   if (!q) return undefined;
-  return { spot: { x: q.x + 0.5, y: q.y + 0.5 }, ref: q.id, min: 2 * Object.values(q.saker!).reduce((a, b) => a + b, 0), why: `Tar hand om det ${q.namn} bar` };
+  return { spot: { x: q.x + 0.5, y: q.y + 0.5 }, ref: q.id, min: 2 * avrustbart(s, p, q), why: `Tar hand om det ${q.namn} bar` };
 }
 export function avrustaKlar(s: State, p: Person, t: Task) {
   const q = kvarById(s, t.ref ?? -1);
-  if (!q?.saker) return;
-  for (const [k, n] of Object.entries(q.saker)) { if (SAKER[k]?.redskap) for (let i = 0; i < n; i++) newTing(s, k, 1, -1); else put(s, k, n); }
+  if (!q || !avrustbart(s, p, q)) return;
+  for (const [k, n] of Object.entries(q.saker ?? {})) { if (SAKER[k]?.redskap) for (let i = 0; i < n; i++) newTing(s, k, 1, -1); else put(s, k, n); }
+  if (q.ting && !orena(s, p)) { for (const g of q.ting) { const ny = newTing(s, g.k, g.c, -1); if (g.q !== undefined) ny.q = g.q; } q.ting = undefined; }
   q.saker = undefined; count(s, 'avrustad');
   think(p, 'Tog det en fallen fiende bar', -0.02, s.now, 6 * HOUR);
 }

@@ -973,6 +973,30 @@ SCENARIER.dodessaker = {
   },
 };
 
+SCENARIER.orena = {
+  text: 'Steg 10.3.6: fiendens saker är orena. Utan bud tas vapen och plagg hem med sin kvalitet, med budet tar den troende bara bytet och en som inte tror tar resten',
+  kor: () => {
+    const { s, v, tr } = medTro(6, 3);
+    const fiende = () => { const k = { id: (s.nextKvar = (s.nextKvar ?? 0) + 1), k: 'fiende' as const, x: Math.floor(v[0].x) + 2, y: Math.floor(v[0].y), t: s.now, vem: -1, namn: 'Rövaren', text: 'Rövaren', saker: { bar: 2 }, ting: [{ k: 'yxa', c: 0.6, q: 3 }, { k: 'rock_vargskinn', c: 0.4 }] }; (s.kvarlevor ??= []).push(k); return k; };
+    const avrusta = (p: SIM.Person) => { const val = SIM.avrustaVal(s, p); if (!val) return false; SIM.avrustaKlar(s, p, { act: 'avrusta', ref: val.ref } as SIM.Task); return true; };
+    const ting0 = (s.ting ?? []).length;
+    // utan bud: allt tas hem, med kvalitet och slitage
+    tr.bud = []; const a = fiende(); avrusta(v[1]);
+    const nya = (s.ting ?? []).slice(ting0), yxa = nya.find(t => t.k === 'yxa');
+    const allt = !a.ting && !a.saker && !!yxa && yxa.q === 3 && Math.abs(yxa.c - 0.6) < 1e-9 && nya.some(t => t.k === 'rock_vargskinn');
+    // med budet: den troende tar bara bytet, en som inte tror tar resten
+    tr.bud = [{ id: 'orena', t: s.now }]; const q = v[1]; q.troStyrka = 60;
+    const b = fiende(); avrusta(q);
+    const bara = !b.saker && b.ting?.length === 2, igen = !SIM.avrustaVal(s, q);
+    const annan = v[2]; annan.tro = undefined; avrusta(annan);
+    return [
+      [`utan bud tas vapen och plagg hem med sin kvalitet (${nya.map(t => `${t.k} ${t.c.toFixed(1)}`).join(', ')})`, allt],
+      ['med budet tar den troende bara bytet och rör inte fiendens saker', bara && igen],
+      ['en som inte tror tar resten', !b.ting],
+    ];
+  },
+};
+
 SCENARIER.kyrkan = {
   text: 'Steg 8.6: seden Världslig – Andlig, kyrkans förråd, hovet och templet av sten som projekt, buden med trons krets, att bryta ett bud ger skuld, ett bud kan bli lag, helgon, kväden och översteprästen',
   kor: () => {
