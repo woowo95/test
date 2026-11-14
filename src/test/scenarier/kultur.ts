@@ -919,6 +919,38 @@ SCENARIER.ritualer = {
   },
 };
 
+SCENARIER.dop = {
+  text: 'Steg 10.3.4: dopet och vuxenblivandet är bud. Med buden samlas byn efter en födsel och när någon fyller 14, utan buden händer inget, tvillingar får en ritual tillsammans, och den ungas tro stärks mer än de andras',
+  kor: () => {
+    const { s, v, tr } = medTro(6, 2);
+    const mor = v.find(p => p.sex === 'k' && SIM.ageOf(p, s.now) >= 18)!, far = v.find(p => p.sex === 'm' && SIM.ageOf(p, s.now) >= 18);
+    const tom = () => { s.ritualKo = []; s.ritual = undefined; };
+    const fod = () => { const b = SIM.newPerson(s, 'k', s.now, mor, far); b.x = mor.x; b.y = mor.y; s.people.push(b); return b; };
+    const ritualer = (k: string) => [s.ritual, ...(s.ritualKo ?? [])].filter(r => r?.k === k) as SIM.Ritual[];
+    // utan bud: ingen ritual
+    tr.bud = []; tom(); fod(); SIM.kultTimme(s); const utan = ritualer('dop').length === 0;
+    s.now += 3600000;
+    // med budet: dopet efter en födsel, tvillingar tillsammans
+    tr.bud = [{ id: 'dop', t: s.now }, { id: 'vuxen', t: s.now }]; tom();
+    const a = fod(), b = fod(); SIM.kultTimme(s);
+    const dop = ritualer('dop');
+    // vuxenblivandet: en ung som just fyllt 14
+    s.now += 3600000; tom();
+    const ung = v.find(p => p !== mor && p !== far)!; ung.born = s.now - SIM.ALDER.vuxen * 86400000 - 30 * 60000;
+    for (const p of v) p.troStyrka = 50;
+    SIM.kultTimme(s);
+    const r = s.ritual as SIM.Ritual | undefined;
+    if (r?.k === 'vuxen') { for (const p of SIM.living(s)) if (SIM.ritualVal(s, p)) p.task = { act: 'ritual', phase: 'do', tx: r.x, ty: r.y, until: r.slut, carry: 0, why: '' } as SIM.Task; s.now = r.slut; SIM.ritualTimme(s); }
+    const annan = v.find(p => p !== ung && p.tro === tr.id)!;
+    return [
+      ['utan budet händer inget när ett barn föds', utan],
+      [`med budet samlas byn efter födseln, och tvillingarna får en ritual (${dop.map(x => x.namn).join(', ')})`, dop.length === 1 && dop[0].namn!.includes(a.name) && dop[0].namn!.includes(b.name) && dop[0].tro === tr.id],
+      [`byn samlas när någon fyller 14 (${r?.namn})`, r?.k === 'vuxen' && r.om?.[0] === ung.id],
+      [`den ungas tro stärks mer än de andras (${ung.troStyrka} mot ${annan.troStyrka})`, ung.troStyrka! > annan.troStyrka! && annan.troStyrka! > 50],
+    ];
+  },
+};
+
 SCENARIER.kyrkan = {
   text: 'Steg 8.6: seden Världslig – Andlig, kyrkans förråd, hovet och templet av sten som projekt, buden med trons krets, att bryta ett bud ger skuld, ett bud kan bli lag, helgon, kväden och översteprästen',
   kor: () => {

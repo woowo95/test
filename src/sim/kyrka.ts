@@ -91,6 +91,10 @@ export const BUD = {
     om: (s, tr) => `Vid varje högtid. Var och en som följer budet lägger en hel mat, den hen äger mest av, ${helig(s, tr) ? 'på den heliga platsen' : 'vid elden'}, och den är borta.` },
   valsigna: { namn: 'Bröllopet välsignas', sort: 'krav', storlek: 1, niva: 2, text: 'Paret vigs vid den heliga platsen', nu: (s, tr) => (tr.brollop ?? -Infinity) + KYRKA.tillfalle * DAY > s.now,
     om: (s, tr) => `När två i tron gifter sig. Byns fest hålls ${helig(s, tr) ? 'vid den heliga platsen' : 'vid elden'}, prästen leder, och de troende får tro. Maten är byns, som vid alla bröllop.` },
+  dop: { namn: 'Dopet', sort: 'krav', storlek: 1, niva: 2, text: 'Barnet välsignas när det fötts', nu: (s, tr) => (tr.fodd ?? -Infinity) + KYRKA.tillfalle * DAY > s.now,
+    om: (s, tr) => `När ett barn föds och moderns tro, annars faderns, har budet. Byn samlas i en timme ${helig(s, tr) ? 'vid den heliga platsen' : 'vid elden'}. Inget går åt.` },
+  vuxen: { namn: 'Vuxenblivandet', sort: 'krav', storlek: 1, niva: 2, text: 'Den unga välsignas när hen blir vuxen', nu: (s, tr) => (tr.vuxen ?? -Infinity) + KYRKA.tillfalle * DAY > s.now,
+    om: (s, tr) => `När någon fyller ${ALDER.vuxen} år och hens tro, annars moderns, annars faderns, har budet. Byn samlas i en timme ${helig(s, tr) ? 'vid den heliga platsen' : 'vid elden'}. Inget går åt.` },
   manniskooffer: { namn: 'Människooffer', sort: 'offer', storlek: 4, niva: 4, skala: 'krig', sida: 1, text: 'Tron kräver det yttersta' },
 } satisfies Record<string, BudDef>;
 export type BudId = keyof typeof BUD;

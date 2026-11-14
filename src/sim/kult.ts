@@ -44,6 +44,7 @@ export const KULT = balans('kult', {
   fest: 50, forsakelse: 50, // Fest – Försakelse: över så här mycket på respektive sida (0 = Fest, 100 = Försakelse)
   bal: 4, // så mycket ved ett bål tar
   vattenR: 20, // ... och så här nära ska vattnet vara för att den döde läggs i vatten
+  vuxenTro: 3, // den unga får så här mycket tro av sitt vuxenblivande, de andra ritualens vanliga (steg 10.3.4)
   fastaTro: 4, // fastan ger tron så här mycket i stället för högtidens 3 (steg 10.3.3)
   offerTro: 2, offerInget: -0.02, // offret vid högtiden: tron hos den som offrar, och humöret hos den som inget har
 });
@@ -189,6 +190,8 @@ export const RITUALER = {
   begravning: { namn: 'Begravning', tim: 1, humor: 0.05, tro: 2, vem: (s, r) => living(s).filter(p => p.tro === r.tro || r.om?.some(id => { const d = byId(s, id); return d && (isParent(p, d) || isParent(d, p) || p.partner === id); })), plats: (_s, r) => ({ x: r.x, y: r.y }) },
   brollop: { namn: 'Bröllop', tim: 2, humor: 0.08, huvud: 0.15, tro: 1, vem: vuxna, plats: (s, r) => { const tr = troOf(s, r.tro); return (tr && helig(s, tr)) ?? vidElden(s); } }, // välsignat (tron har budet, steg 10.3.3) vid trons heliga plats
   hogtid: { namn: 'Högtid', tim: 3, humor: 0.1, tro: 3, vem: (s, r) => living(s).filter(p => p.tro === r.tro), plats: (s, r) => { const tr = troOf(s, r.tro); return (tr && helig(s, tr)) ?? vidElden(s); } },
+  dop: { namn: 'Dop', tim: 1, humor: 0.05, huvud: 0.1, tro: 1, vem: vuxna, plats: (s, r) => { const tr = troOf(s, r.tro); return (tr && helig(s, tr)) ?? vidElden(s); } }, // steg 10.3.4: huvud = föräldrarna
+  vuxen: { namn: 'Vuxenblivande', tim: 1, humor: 0.05, huvud: 0.15, tro: 1, vem: vuxna, plats: (s, r) => { const tr = troOf(s, r.tro); return (tr && helig(s, tr)) ?? vidElden(s); } }, // huvud = den unga
   leddBon: { namn: 'Ledd bön', tim: 1, humor: 0.06, tro: 1.5, vem: (s, r) => living(s).filter(p => p.tro === r.tro), plats: (s, r) => { const tr = troOf(s, r.tro); return (tr && helig(s, tr)) ?? vidElden(s); } },
 } satisfies Record<string, RitualDef>;
 export type RitualId = keyof typeof RITUALER;
@@ -209,7 +212,7 @@ export function ritualTimme(s: State) {
     for (const p of med) {
       think(p, r.namn ?? d.namn, (r.om?.includes(p.id) ? d.huvud ?? d.humor : d.humor) * ledd, s.now, 12 * HOUR);
       // en ritual ger tro bara till dem som har ritualens tro (steg 10.3.3); fastan ger mer
-      if (r.tro !== undefined && p.tro === r.tro) p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + (r.form === 'fasta' ? KULT.fastaTro : d.tro));
+      if (r.tro !== undefined && p.tro === r.tro) p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + (r.form === 'fasta' ? KULT.fastaTro : r.k === 'vuxen' && r.om?.includes(p.id) ? KULT.vuxenTro : d.tro));
       p.task!.until = s.now;
     }
     if (r.k === 'hogtid' && tr) hogtidSlut(s, tr, r, med);
@@ -239,6 +242,29 @@ function valsigna(s: State, n: Ritual) {
   if (!tr) return;
   tr.brollop = s.now;
   if (budIn(tr, 'valsigna')) { n.tro = tr.id; count(s, 'brollop_valsignat'); }
+}
+// dopet och vuxenblivandet (steg 10.3.4): ett barn som fötts eller en ung som fyllt 14 under den senaste timmen. Tron är den första av
+// den ungas egen (vid vuxenblivandet), moderns och faderns som har budet. Tvillingar välsignas tillsammans. Ingen tas upp i tron av ritualen
+const troMedBud = (s: State, id: 'dop' | 'vuxen', ...vem: (Person | undefined)[]) => vem.map(q => troOf(s, q?.tro)).find(tr => budIn(tr, id));
+function livsRiter(s: State) {
+  const ny = living(s).filter(p => p.born > s.now - HOUR && p.born <= s.now), modrar = new Set<number>();
+  for (const b of ny) {
+    const m = byId(s, b.mother), f = byId(s, b.father);
+    for (const q of [m, f]) { const tr = troOf(s, q?.tro); if (tr) tr.fodd = s.now; } // födseln bland de troende lyfter fram budet
+    if (!m || modrar.has(m.id)) continue;
+    modrar.add(m.id);
+    const tr = troMedBud(s, 'dop', m, f);
+    if (!tr) continue;
+    const barn = ny.filter(q => q.mother === m.id);
+    nyRitual(s, 'dop', { tro: tr.id, om: [m.id, ...(f ? [f.id] : [])], namn: `Dopet av ${barn.map(q => q.name).join(' och ')}` });
+  }
+  for (const p of living(s)) {
+    if (ageOf(p, s.now) < ALDER.vuxen || ageOf(p, s.now - HOUR) >= ALDER.vuxen) continue;
+    const m = byId(s, p.mother), f = byId(s, p.father);
+    for (const q of [p, m, f]) { const tr = troOf(s, q?.tro); if (tr) tr.vuxen = s.now; }
+    const tr = troMedBud(s, 'vuxen', p, m, f);
+    if (tr) nyRitual(s, 'vuxen', { tro: tr.id, om: [p.id], namn: `${p.name} blir vuxen` });
+  }
 }
 // högtiderna (steg 8.5.14 och 10.3.3): en tro har 0–4, var och en ett bud knutet till en tidsålder. Skalan Fest – Försakelse avgör bara hur
 // många som föreslås; formen (gille eller fasta) sparas i budet när det antas och står kvar när skalan flyttar sig
@@ -285,6 +311,7 @@ function hogtidSlut(s: State, tr: Tro, r: Ritual, med: Person[]) {
 // ---------- varje timme ----------
 export function kultTimme(s: State) {
   for (const p of living(s)) { bonSvar(s, p); profetSteg(s, p); }
+  livsRiter(s);
   for (const tr of levande(s)) {
     const folk = troende(s, tr);
     if (!folk.length) continue;
