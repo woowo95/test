@@ -1213,7 +1213,7 @@ SCENARIER.rutan = {
     const [p, q] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
     p.partner = q.id; q.partner = p.id;
     for (const r of [p, q]) r.tek = { ...(r.tek ?? {}), odling: 1 };
-    const f: SIM.Falt = { id: 1, x: Math.floor(p.x) + 4, y: Math.floor(p.y), w: 4, dir: 1, n: 8, agare: p.id, steg: 'sa', klara: 0, kvar: 0, rord: s.now };
+    const f: SIM.Falt = { id: 1, x: Math.floor(p.x) - 8, y: Math.floor(p.y), w: 4, dir: 1, n: 8, agare: p.id, steg: 'sa', klara: 0, kvar: 0, rord: s.now };
     f.r = [{ st: 'sa' }, { st: 'sa' }, { st: 'sa' }, { st: 'sa' }, { st: 'vaxer', g: 'rovor', v: 0.99 }, { st: 'bereda' }, { st: 'bereda' }, { st: 'bereda' }];
     s.falt = [f]; sammanfatta(f);
     for (const k of ['rovfron', 'artfron']) setAmount(s, k, 0);
@@ -1366,7 +1366,7 @@ SCENARIER.odlare = {
     const prov = (skill: number) => {
       const s = createState(1, START); klockan(s, 10);
       const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!; p.tek = { ...(p.tek ?? {}), odling: 1 }; p.skill.odling = skill;
-      const f: SIM.Falt = { id: 1, x: Math.floor(p.x) + 3, y: Math.floor(p.y), w: 4, dir: 1, n: 8, agare: p.id, steg: 'mogen', klara: 0, kvar: 0, rord: s.now, r: Array.from({ length: 8 }, () => ({ st: 'mogen' as const, g: 'rovor' as const, m: s.now })) };
+      const f: SIM.Falt = { id: 1, x: Math.floor(p.x) - 8, y: Math.floor(p.y), w: 4, dir: 1, n: 8, agare: p.id, steg: 'mogen', klara: 0, kvar: 0, rord: s.now, r: Array.from({ length: 8 }, () => ({ st: 'mogen' as const, g: 'rovor' as const, m: s.now })) };
       s.falt = [f]; sammanfatta(f); setAmount(s, 'rovor', 0);
       workOdla(s, p, { act: 'odla', tool: 'mogen', ref: f.id, fr: 0, until: s.now + SIM.HOUR, tx: p.x, ty: p.y } as unknown as SIM.Task, ODLING.skordaMin * 60 * 4);
       return { rutor: f.r!.filter(r => r.st !== 'mogen').length, rovor: amountOf(s, 'rovor'), skill: p.skill.odling };
