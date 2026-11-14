@@ -347,6 +347,12 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
   [43, 'v528: trons tyngd (steg 10.3.8): den sparade nivån tas bort, tyngden räknas när någon frågar', s => {
     for (const tr of s.tron ?? []) delete (tr as { niva?: number }).niva;
   }],
+  [44, 'v528: den heliga platsen är ett bud (steg 10.3.10): trons platser blir antagna bud oavsett tyngd', s => {
+    for (const h of s.heliga ?? []) {
+      const tr = s.tron?.find(q => q.id === h.tro), v = `${h.x},${h.y}`;
+      if (tr && !h.skandad && !tr.bud?.some(b => b.id === 'helig' && b.v === v)) (tr.bud ??= []).push({ id: 'helig', v, t: h.t });
+    }
+  }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

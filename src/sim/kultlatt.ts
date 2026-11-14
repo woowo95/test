@@ -3,6 +3,14 @@
 import { Person, State } from './typer';
 import type { Ting } from './agande';
 import type { Ritual, RitualId } from './kult';
+// den heliga platsens värde i budet En helig plats (steg 10.3.10): rutan
+export const heligVarde = (x: number, y: number) => `${x},${y}`;
+// platsen vanhelgas: den förlorar sitt bud men visas kvar (steg 10.3.10)
+export function vanhelgaPlats(s: State, h: { x: number; y: number; tro: number; skandad?: number }) {
+  h.skandad = s.now;
+  const tr = s.tron?.find(t => t.id === h.tro), v = heligVarde(h.x, h.y);
+  if (tr?.bud) tr.bud = tr.bud.filter(b => !(b.id === 'helig' && b.v === v));
+}
 export const heligRuta = (s: State, x: number, y: number) => !!s.heliga?.some(h => h.x === x && h.y === y); // där fälls och byggs inget
 export const arPrast = (s: State, p: Person) => !!s.tron?.some(t => t.prast === p.id);
 export function nyRitual(s: State, k: RitualId, d: Partial<Ritual> = {}) { (s.ritualKo ??= []).push({ k, start: s.now, slut: 0, x: d.x ?? 0, y: d.y ?? 0, ...d }); }

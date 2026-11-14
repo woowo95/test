@@ -13,12 +13,14 @@ import { ALDER, type BudTillfalle, ageOf, count, living, log, relKey, satBudTill
 import { FOOD } from './saker';
 import { kronika } from './historik';
 import { Tro, andlighet, gudarOf, skalaV, troNamn, rymsBud, troOf, troende } from './religion';
-import { RITUALER, helga, helig, hogtidAv, hogtidNamn, hogtidNu, prastOf, prastRang } from './kult';
+import { KULT, RITUALER, helga, helig, heligaKandidater, hogtidAv, hogtidNamn, hogtidNu, prastOf, prastRang } from './kult';
 import { FRAGOR, Fraga, FragaData, rostaOm } from './rost';
 import { LAGAR, LagForslag, lagGaller } from './lagar';
 import { addTo, amountOf, ownMove, ownedStock, ownsAmount, use } from './lager';
 import { freeNear } from './byggnad';
 import { eldPlats } from './karta';
+import { heligVarde } from './kultlatt';
+import { bedFor } from './bygg';
 import { ledareOf } from './styre';
 import { upplev } from './uppvaxt';
 import type { ProjektDef } from './projekt';
@@ -75,7 +77,8 @@ export interface BudDef { namn: string; sort: 'forbud' | 'krav' | 'offer'; storl
   nu?(s: State, tr: Tro): boolean; // budets tillfälle är nu: det lyfts fram bland trons förslag (steg 10.3.3)
   om?(s: State, tr: Tro, b: AntagetBud): string // ritualbuden: när, vilka, var, vad som går åt (fliken Religion)
   sed?: [Sed, 1 | -1]; // sederna som hör till budet: sedens sida som drar mot budet (steg 10.3.9)
-  intresse?(s: State, p: Person, tr: Tro): { v: number; why: string } } // radens eget intresse, -1 till 1 (steg 10.3.9)
+  intresse?(s: State, p: Person, tr: Tro, v?: BudVarde): { v: number; why: string } // radens eget intresse, -1 till 1, för budets värde (steg 10.3.9)
+  antas?(s: State, tr: Tro, b: AntagetBud): void } // det som händer när budet antas (steg 10.3.10)
 export type BudVarde = string | number;
 // ett antaget bud: raden, värdet den gäller och när den antogs (steg 10.3.1)
 export interface AntagetBud { id: BudId; v?: BudVarde; t: number }
@@ -103,6 +106,13 @@ export const BUD = {
   aldrigDoda: { namn: 'Aldrig döda en människa', sort: 'forbud', storlek: 4, skala: 'krig', sida: 0, text: 'Inte ens i försvar', acts: ['strid'], sed: ['krig', -1] },
   ingenRoj: { namn: 'Ingen ny mark får röjas', sort: 'forbud', storlek: 4, skala: 'natur', sida: 0, text: 'Skogen får stå', acts: ['falla'], sed: ['natur', -1] },
   ogifta: { namn: 'Prästerna lever ogifta', sort: 'forbud', storlek: 4, skala: 'fest', sida: 1, text: 'Prästen ger sig åt tron', intresse: (s, p, tr) => prastOf(s, tr) === p ? { v: -1, why: 'Är själv präst' } : { v: 0, why: '' } },
+  // den heliga platsen (steg 10.3.10): den kandidat som kom först föreslås, och värdet är rutan. De troende vill ha den nära hemmet
+  helig: { namn: 'En helig plats', sort: 'krav', storlek: 1, text: 'Tron ber och samlas vid en helig plats',
+    varden: (s, tr) => { const k = heligaKandidater(s, tr)[0]; return k ? [heligVarde(k.x, k.y)] : []; },
+    vardeNamn: (s, v) => { const [x, y] = String(v).split(',').map(Number), h = s.heliga?.find(q => q.x === x && q.y === y); if (h) return h.om; for (const tr of s.tron ?? []) { const k = heligaKandidater(s, tr).find(q => q.x === x && q.y === y); if (k) return k.om; } return `rutan ${v}`; },
+    intresse: (s, p, _tr, v) => { const [x, y] = String(v).split(',').map(Number), hem = bedFor(s, p) ?? eldPlats(s), d = Math.hypot(hem.x - x, hem.y - y); return d > KULT.heligR ? { v: 0, why: '' } : { v: 1 - d / KULT.heligR, why: 'Platsen ligger nära hemmet' }; },
+    antas: (s, tr, b) => { const [x, y] = String(b.v).split(',').map(Number), k = heligaKandidater(s, tr).find(q => q.x === x && q.y === y); helga(s, tr, x, y, k?.om ?? 'en helig plats'); },
+    om: (s, _tr, b) => { const [x, y] = String(b.v).split(',').map(Number), h = s.heliga?.find(q => q.x === x && q.y === y); return h ? `De troende ber här när de bor inom ${KULT.heligR} rutor. ${h.boner ?? 0} böner och ${h.ritualer ?? 0} ritualer har hållits här.` : ''; } },
   // ritualerna som bud (steg 10.3.3)
   hogtid: { namn: 'Högtid', sort: 'krav', storlek: 1, text: 'Tron firar en högtid i en tidsålder', varden: hogtidNu, vardeNamn: (_s, v) => hogtidNamn(v), nu: () => true,
     om: (s, tr, b) => { const { ai, form } = hogtidAv(b.v); return `${['I istiden', 'I vårtiden', 'I sommartiden', 'I hösttiden'][ai]}, en kväll i ${RITUALER.hogtid.tim} timmar. De troende samlas ${helig(s, tr) ? 'vid den heliga platsen' : 'vid elden'}. ${form === 'fasta' ? 'Ingen mat: ett dygn utan mat (ett år i spelet).' : 'En hel mat per närvarande, ur kyrkans egendom först och annars ur den egna maten.'}`; } },
@@ -260,8 +270,6 @@ function helgonDygn(s: State) {
     count(s, 'helgon');
     const t = `${kand.name} har blivit ett helgon i ${troNamn(tr).toLowerCase()}.`;
     log(s, t, 'rel', []); kronika(s, t, 'tro');
-    const g = s.gravar?.find(q => q.vem === kand.id);
-    if (g) helga(s, tr, g.x, g.y, `där ${kand.name} ligger begravd`);
   }
 }
 // ---------- kvädena (steg 8.6.13) ----------
@@ -361,23 +369,23 @@ export const satOppnaAndlig = (f: typeof oppnaAndlig) => { oppnaAndlig = f; };
 // ---------- rösten om ett bud (registret, steg 10.3.9) ----------
 // rösten är summan av raderna, över noll är ja. ja och nej: skälet när raden drar åt det hållet. Vad hen tycker om den som
 // föreslår räknas för alla frågor (rostaOm) och läggs inte till här
-interface BudRostRad { ja: string; nej: string; v: (s: State, p: Person, tr: Tro, b: BudDef) => number; why?: (s: State, p: Person, tr: Tro, b: BudDef) => string }
+interface BudRostRad { ja: string; nej: string; v: (s: State, p: Person, tr: Tro, b: BudDef, bv?: BudVarde) => number; why?: (s: State, p: Person, tr: Tro, b: BudDef, bv?: BudVarde) => string }
 export const BUDROST: Record<string, BudRostRad> = {
   tro: { ja: 'Tror att budet är rätt', nej: 'Tycker att budet är för hårt', v: (_s, p, _tr, b) => (p.troStyrka ?? 0) / 100 - b.storlek * BUDROSTTAL.hard },
   egen: { ja: '', nej: 'Gör själv det budet förbjuder', v: (_s, p, _tr, b) => b.sort === 'forbud' && b.acts ? -BUDROSTTAL.egen * habitShare(p, b.acts) : 0 },
-  intresse: { ja: '', nej: '', v: (s, p, tr, b) => b.intresse ? BUDROSTTAL.intresse * b.intresse(s, p, tr).v : 0, why: (s, p, tr, b) => b.intresse!(s, p, tr).why },
+  intresse: { ja: '', nej: '', v: (s, p, tr, b, bv) => b.intresse ? BUDROSTTAL.intresse * b.intresse(s, p, tr, bv).v : 0, why: (s, p, tr, b, bv) => b.intresse!(s, p, tr, bv).why },
   sed: { ja: 'Budet passar hens sed', nej: 'Budet går emot hens sed', v: (s, p, _tr, b) => b.sed ? b.sed[1] * (BUDROSTTAL.drag * drar(s, p)[b.sed[0]] + BUDROSTTAL.sed * (s.seder.v[b.sed[0]] ?? 0)) : 0 },
   ande: { ja: 'Är andlig', nej: 'Är världslig', v: (s, p) => BUDROSTTAL.ande * (andlighet(s, p) - 50) / 50 },
   skala: { ja: 'Budet passar tron', nej: 'Budet passar inte tron', v: (_s, _p, tr, b) => { const v = b.skala ? skalaV(tr, b.skala) : undefined; return v === undefined ? 0 : BUDROSTTAL.skala * (b.sida ? v - 50 : 50 - v) / 50; } },
   humor: { ja: 'Mår bra', nej: 'Mår dåligt och vill inte ha fler bördor', v: (s, p, _tr, b) => BUDROSTTAL.humor * b.storlek * (moodOf(p, s.now) - HUMOR.bas) },
 };
 // rösten om budet id: summan, delarna och skälet (den del som vägde tyngst åt det håll hen röstade)
-export function budRost(s: State, p: Person, tr: Tro, id: BudId) {
-  const b = BDEF[id], delar = Object.entries(BUDROST).map(([k, r]) => ({ k, v: r.v(s, p, tr, b) }));
+export function budRost(s: State, p: Person, tr: Tro, id: BudId, bv?: BudVarde) {
+  const b = BDEF[id], delar = Object.entries(BUDROST).map(([k, r]) => ({ k, v: r.v(s, p, tr, b, bv) }));
   const v = delar.reduce((a, d) => a + d.v, 0), ja = v > 0;
   const top = delar.filter(d => ja ? d.v > 0 : d.v < 0).sort((a, b2) => Math.abs(b2.v) - Math.abs(a.v))[0];
   const rad = top ? BUDROST[top.k] : undefined;
-  const why = !rad || !top ? (ja ? BUDROST.tro.ja : BUDROST.tro.nej) : rad.why ? rad.why(s, p, tr, b) : ja ? rad.ja : rad.nej;
+  const why = !rad || !top ? (ja ? BUDROST.tro.ja : BUDROST.tro.nej) : rad.why ? rad.why(s, p, tr, b, bv) : ja ? rad.ja : rad.nej;
   return { v, why, delar };
 }
 // raderna i LAGAR och FRAGOR som hör till kyrkan läggs till när allt är laddat (steg.ts)
@@ -402,7 +410,7 @@ FRAGOR.kyrkutgift = {
 };
 FRAGOR.nyttBud = {
   namn: (s, d) => `${troNamn(troOf(s, d.tro as number)!)}: ${budNamn(s, { id: d.id as BudId, v: d.v })}`, krets: 'tro',
-  rost: (s, p, d) => { const tr = troOf(s, d.tro as number); if (!tr) return { v: 0, why: '' }; const r = budRost(s, p, tr, d.id as BudId); return { v: r.v, why: r.why }; },
-  gor: (s, d) => { const tr = troOf(s, d.tro as number)!, b: AntagetBud = { id: d.id as BudId, ...(d.v !== undefined ? { v: d.v } : {}), t: s.now }; (tr.bud ??= []).push(b); count(s, 'bud_ny'); const t = `${troNamn(tr)} fick ett nytt bud: ${budNamn(s, b).toLowerCase()}.`; log(s, t, 'rel', []); kronika(s, t, 'tro'); },
+  rost: (s, p, d) => { const tr = troOf(s, d.tro as number); if (!tr) return { v: 0, why: '' }; const r = budRost(s, p, tr, d.id as BudId, d.v as BudVarde | undefined); return { v: r.v, why: r.why }; },
+  gor: (s, d) => { const tr = troOf(s, d.tro as number)!, b: AntagetBud = { id: d.id as BudId, ...(d.v !== undefined ? { v: d.v } : {}), t: s.now }; (tr.bud ??= []).push(b); BDEF[b.id].antas?.(s, tr, b); count(s, 'bud_ny'); const t = `${troNamn(tr)} fick ett nytt bud: ${budNamn(s, b).toLowerCase()}.`; log(s, t, 'rel', []); kronika(s, t, 'tro'); },
 };
 }

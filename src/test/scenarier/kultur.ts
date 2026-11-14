@@ -877,6 +877,7 @@ SCENARIER.ritualer = {
     const { s, v, tr } = medTro(6, 3);
     tr.bud = [];
     SIM.kultTimme(s);
+    const k = SIM.heligaKandidater(s, tr)[0]; SIM.FRAGOR.nyttBud.gor(s, { tro: tr.id, id: 'helig', v: SIM.heligVarde(k.x, k.y) }, undefined);
     const h = s.heliga?.[0], ingen = !!h && !SIM.usable(s, h.x, h.y);
     const pr = SIM.prastOf(s, tr);
     // ritualen körs till slut: alla i v är med
@@ -905,10 +906,10 @@ SCENARIER.ritualer = {
     // bröllopet: byns fest utan bud, vid den heliga platsen och med tro när tron välsignar det
     tom(); tr.bud = []; SIM.nyRitual(s, 'brollop', { om: [v[0].id, v[1].id], namn: 'Bröllopet' }); s.ritual = undefined; SIM.ritualTimme(s);
     const utan = s.ritual as SIM.Ritual | undefined, val = SIM.ritualVal(s, v[2]);
-    tom(); tr.bud = [{ id: 'valsigna', t: s.now }]; SIM.nyRitual(s, 'brollop', { om: [v[0].id, v[1].id], namn: 'Bröllopet' }); s.ritual = undefined; SIM.ritualTimme(s);
+    tom(); tr.bud = [{ id: 'valsigna', t: s.now }, ...(tr.bud ?? []).filter(b => b.id === 'helig')]; SIM.nyRitual(s, 'brollop', { om: [v[0].id, v[1].id], namn: 'Bröllopet' }); s.ritual = undefined; SIM.ritualTimme(s);
     const med = s.ritual as SIM.Ritual | undefined, hp = SIM.helig(s, tr);
     return [
-      [`platsen där tron föddes blir helig (${h ? SIM.HELIGA_PLATSER[h.k].namn : 'ingen'}), och där byggs inget`, ingen],
+      [`platsen där tron föddes blir helig när budet antas (${h ? SIM.HELIGA_PLATSER[h.k].namn : 'ingen'}), och där byggs inget`, ingen],
       [`prästen utses (${pr?.name}), ${pr ? SIM.prastSort(tr, pr.sex) : ''}`, !!pr],
       ['ingen högtid utan bud', utanBud],
       [`högtiden firas i sin tidsålder (${ratt?.namn}), inte i en annan`, fel && !!ratt && ratt.namn === SIM.hogtidNamn(SIM.hogtidVarde(ai, 'gille'))],
@@ -918,6 +919,51 @@ SCENARIER.ritualer = {
       [`bröllopet utan bud är byns fest vid elden utan tron (${utan?.namn})`, utan?.k === 'brollop' && utan.tro === undefined && !!val],
       ['bröllopet med budet hålls vid trons heliga plats', med?.k === 'brollop' && med.tro === tr.id && !!hp && Math.abs(med.x - hp.x) < 3 && Math.abs(med.y - hp.y) < 3],
       [`högtiderna följer skalan Fest – Försakelse (${(() => { const sk = tr.sk; tr.sk = { ...sk, fest: 10 }; const f = SIM.hogtider(tr); tr.sk = { ...sk, fest: 90 }; const g = SIM.hogtider(tr); tr.sk = sk; return `${f} vid fest, ${g} vid försakelse`; })()})`, (() => { const sk = tr.sk; tr.sk = { ...sk, fest: 10 }; const f = SIM.hogtider(tr); tr.sk = { ...sk, fest: 90 }; const g = SIM.hogtider(tr); tr.sk = sk; return f >= 2 && g === 0; })()],
+    ];
+  },
+};
+
+SCENARIER.heligplats = {
+  text: 'Steg 10.3.10: den heliga platsen är ett bud. Ingen plats blir helig utan omröstning, bönen hålls vid elden före och vid den närmaste platsen inom 15 rutor efter, de troende vill ha platsen nära hemmet, bönen i nöd som fick svar ger en kandidat också utan präst, ingen fjärde plats föreslås, platsen räknar bönerna och en sparad by behåller sina platser som bud',
+  kor: () => {
+    const { s, v, tr } = medTro(6, 1);
+    tr.bud = []; tr.prast = undefined; const p = v[1];
+    for (let i = 0; i < 24; i++) { s.now += SIM.HOUR; tr.prast = undefined; SIM.kultTimme(s); }
+    const ingen = !(s.heliga ?? []).some(h => h.tro === tr.id), kand = SIM.heligaKandidater(s, tr);
+    const eld = SIM.eldPlats(s), fore = SIM.bonFritid(s, p)?.spot, vidElden = !!fore && Math.hypot(fore.x - eld.x, fore.y - eld.y) < 5;
+    // budet antas: platsen blir helig och bönen hålls där
+    const val = SIM.heligVarde(kand[0].x, kand[0].y);
+    const nara = SIM.budRost(s, v[0], tr, 'helig', val).delar.find(d => d.k === 'intresse')!.v;
+    SIM.FRAGOR.nyttBud.gor(s, { tro: tr.id, id: 'helig', v: val }, undefined);
+    const h = s.heliga!.find(q => q.tro === tr.id)!, helgad = !!h && tr.bud!.some(b => b.id === 'helig' && b.v === val);
+    p.x = h.x + 3.5; p.y = h.y + 3.5; p.bonD = undefined;
+    const efter = SIM.bonFritid(s, p)?.spot, vidPlatsen = !!efter && Math.abs(efter.x - (h.x + 0.5)) < 1 && Math.abs(efter.y - (h.y + 1.5)) < 1;
+    p.x = h.x + 30; p.y = h.y; const langt = SIM.bonFritid(s, p)?.spot, langtElden = !!langt && Math.hypot(langt.x - eld.x, langt.y - eld.y) < 5;
+    // bönen räknas där den hålls
+    p.x = h.x + 0.5; p.y = h.y + 1.5; p.task = { act: 'ritual', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' } as SIM.Task;
+    SIM.bonKlar(s, p, { tool: 'vardag' }); const boner = h.boner ?? 0;
+    // bönen i nöd som fick svar ger en kandidat också utan präst
+    const q = v[2]; q.bonVan = { t: s.now, o: 'svalt', x: h.x + 6, y: h.y + 2 }; setFood(s, 500); tr.prast = undefined; const utanPrast = !SIM.prastOf(s, tr); SIM.kultTimme(s);
+    const svar = tr.heligKand?.some(k => k.x === h.x + 6 && k.y === h.y + 2) && SIM.heligaKandidater(s, tr).some(k => k.x === h.x + 6);
+    // ingen fjärde plats
+    SIM.helga(s, tr, h.x + 6, h.y + 2, 'här'); SIM.helga(s, tr, h.x - 8, h.y, 'där');
+    const tre = SIM.heligaKandidater(s, tr).length === 0 && SIM.BUD.helig.varden(s, tr).length === 0;
+    // en vanhelgad plats förlorar sitt bud men visas kvar
+    SIM.vanhelgaPlats(s, h); const vanh = !tr.bud!.some(b => b.id === 'helig' && b.v === val) && s.heliga!.includes(h);
+    // en sparad by behåller sina platser som bud
+    const g = JSON.parse(SIM.serialize(s)); g.v = 43; for (const t of g.tron) t.bud = [];
+    const ny = SIM.migrate(g), ntr = SIM.troOf(ny, tr.id)!, sparad = (ntr.bud ?? []).filter(b => b.id === 'helig').length === 2;
+    return [
+      [`ingen plats blir helig utan omröstning (${kand.length} kandidat, först ${kand[0]?.om})`, ingen && kand[0]?.om === 'där tron föddes'],
+      ['bönen hålls vid elden innan tron har en plats', vidElden],
+      [`den som bor nära vill ha platsen (${nara.toFixed(2)})`, nara > 0],
+      ['budet gör platsen helig', helgad],
+      ['bönen hålls vid platsen inom 15 rutor, och vid elden längre bort', vidPlatsen && langtElden],
+      [`platsen räknar bönerna (${boner})`, boner === 1],
+      ['bönen i nöd som fick svar ger en kandidat utan präst', !!svar && utanPrast],
+      ['ingen fjärde plats föreslås', tre],
+      ['en vanhelgad plats förlorar sitt bud och visas kvar', vanh],
+      ['en sparad by behåller sina platser som bud', sparad],
     ];
   },
 };

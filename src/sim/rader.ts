@@ -11,6 +11,7 @@ import { Klan, klanById, klanerOf } from './klaner';
 import { rikedom } from './varde';
 import { Rovarflock, forsvaret, rovarnaKommer } from './rovare';
 import { gastAv } from './gast';
+import { vanhelgaPlats } from './kultlatt';
 import { andlighet, troende } from './religion';
 import { larma } from './rykten';
 import { die } from './liv';
@@ -138,7 +139,7 @@ function riverHeligt(s: State, k: Klan | undefined) {
     tr.gudabild = undefined;
     for (const p of troende(s, tr)) p.troStyrka = Math.max(0, (p.troStyrka ?? 0) - RADER.skandad);
   }
-  for (const h of s.heliga ?? []) h.skandad = s.now;
+  for (const h of s.heliga ?? []) if (!h.skandad) vanhelgaPlats(s, h);
 }
 // den som ger upp i ett heligt krig svär trohet till anfallarnas gud (steg 8.8.6, 8.8.8)
 export function svarTrohet(s: State, f: Rovarflock, p: Person) {
