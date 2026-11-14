@@ -1323,17 +1323,30 @@ function platsTom(s: State, p: Person, tk: Task, x: number, y: number) { count(s
 // nästa mål (steg 9.2.54): den ruta inom RUNDA.malR som är bäst när det hen tror finns där (platslärdomarna, trorOm i minne.ts;
 // grenarna och stenarna syns) vägs mot vägen dit och rädslan, och som är mindre värd för varje bybo som redan är där eller på väg
 // dit. Aldrig tillbaka över rutor hen tömt (de har inga saker), och bara bort från det hen redan sett här. Scenariot samlarmal frågar den direkt
+// rutorna längre bort än inre och högst yttre rutor, rad för rad (dy ytterst), med avståndet: räknas en gång per par av mått
+const ringar = new Map<string, { dx: Int16Array; dy: Int16Array; d: Float64Array }>();
+function ringen(inre: number, yttre: number) {
+  const key = `${inre}:${yttre}`;
+  let r = ringar.get(key);
+  if (!r) {
+    const dx: number[] = [], dy: number[] = [], d: number[] = [];
+    for (let y = -yttre; y <= yttre; y++) for (let x = -yttre; x <= yttre; x++) { const a = Math.hypot(x, y); if (!(a <= inre || a > yttre)) { dx.push(x); dy.push(y); d.push(a); } }
+    ringar.set(key, r = { dx: Int16Array.from(dx), dy: Int16Array.from(dy), d: Float64Array.from(d) });
+  }
+  return r;
+}
 export function nastaMal(s: State, p: Person, tk: Task, x0: number, y0: number, radsla: (x: number, y: number) => number) {
   // det hen ser räknas som det är, i saker på rutan; längre bort det hen tror, räknat i saker (rikedomen delad med toppen, gånger
   // sakerna på en full ruta), så att en plats som ser rik ut men är tom inte lockar
   const res = ACTS[tk.act].resurs, sikt = sightOf(s, p);
-  const tror0 = res && !tk.sok ? trorOm(s, p, res, true) : undefined, iSaker = res && !tk.sok ? (FYND.bar.saker ?? 1) / Math.max(1e-9, toppOf(res)) : 0;
+  const tror0 = res && !tk.sok ? trorOm(s, p, res, 'osedda') : undefined, iSaker = res && !tk.sok ? (FYND.bar.saker ?? 1) / Math.max(1e-9, toppOf(res)) : 0;
   const andra = living(s).filter(q => q !== p && q.task?.act === tk.act).map(q => ({ x: q.task!.tx, y: q.task!.ty }));
   const vt = vattenNu(s), R = RUNDA.malR, saker = sakerLasare(s, tk);
   let bast: { x: number; y: number } | undefined, bv = 0;
-  for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
-    const x = x0 + dx, y = y0 + dy, d = Math.hypot(dx, dy);
-    if (d <= RUNDA.syn || d > R || !inMap(x, y) || vt[y * W + x] === T.Vatten || blocked(s, x + 0.5, y + 0.5)) continue; // (inte i en vägg)
+  const ring = ringen(RUNDA.syn, R);
+  for (let k = 0; k < ring.d.length; k++) {
+    const x = x0 + ring.dx[k], y = y0 + ring.dy[k], d = ring.d[k];
+    if (!inMap(x, y) || vt[y * W + x] === T.Vatten || blocked(s, x + 0.5, y + 0.5)) continue; // (inte i en vägg)
     let trangt = 0;
     for (const q of andra) if (Math.hypot(q.x - x, q.y - y) < RUNDA.syn) trangt++;
     const ser = !tror0 || sees(s, p, x, y, sikt), tror = ser ? saker(x, y) : tror0!(x, y) * iSaker;
