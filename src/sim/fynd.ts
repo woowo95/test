@@ -321,6 +321,19 @@ export function synsOf(s: State, k: Lager, i: number): number {
   for (const j of lagren(k)) { const f = FYND[j]; v += f.bas(s, i, f.monster ? monsterOf(s, j).snitt : 1) * sasong(s, j); }
   return v;
 }
+// synsOf för den som frågar om många rutor på en gång utan att något i byn ändras emellan (trorOm i minne.ts): lägret,
+// årstiden och mönstrens snitt hämtas en gång. Samma tal som synsOf
+export function synsFor(s: State, k: Lager): (i: number) => number {
+  const ls = lagren(k), fs = ls.map(j => FYND[j]), n = ls.length, lager = bynsAvstand(s), tiles = getMap(s.seed).tiles;
+  let sa: number[] | undefined, sn: number[] = [];
+  return i => {
+    if (iLagretI(lager, tiles, i)) return 0;
+    if (!sa) { sn = fs.map((f, m) => f.monster ? monsterOf(s, ls[m]).snitt : 1); sa = ls.map(j => sasong(s, j)); }
+    let v = 0;
+    for (let m = 0; m < n; m++) v += fs[m].bas(s, i, sn[m]) * sa[m];
+    return v;
+  };
+}
 const sasong = (s: State, k: FyndId) => (FYND[k].arstid?.[ageIndex(s)] ?? 1) * (s.sjoTorr?.pa ? FYND[k].torka ?? 1 : 1);
 // var det växer just nu, med årstiden men utan uttaget: det man ser av buskar och spår även när det är plockat
 export const vaxerAt = (s: State, k: Lager, i: number) => iLagret(s, i) ? 0 : vaxerUte(s, k, i);
