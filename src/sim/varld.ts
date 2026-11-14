@@ -18,7 +18,7 @@ import { newSeder, sederTarget, TAGS } from './seder';
 import { clamp, gauss, rnd } from './slump';
 import { Act, DAY, Person, SEC, State, simulera, useMap } from './typer';
 import { startSmak } from './rykten';
-import { nyAndlighet, troNiva } from './religion';
+import { nyAndlighet } from './religion';
 import { hogtidForm, hogtidVarde, hogtider } from './kult';
 import { newFire } from './eld';
 import { UPPREPAT, lasAlder, lasArt, packaAlder, packaArt } from './trad';
@@ -336,13 +336,16 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
   }],
   [41, 'v528: ritualerna är bud (steg 10.3.3): trons högtider blir bud som redan antagits, med formen efter skalan Fest – Försakelse', s => {
     for (const tr of s.tron ?? []) {
-      if (tr.slut !== undefined || troNiva(tr) < 2 || tr.bud?.some(b => b.id === 'hogtid')) continue;
+      if (tr.slut !== undefined || ((tr as { niva?: number }).niva ?? 0) < 2 || tr.bud?.some(b => b.id === 'hogtid')) continue;
       const n = hogtider(tr);
       for (let ai = 0; ai < 4; ai++) if ((tr.id + ai) % 4 < n) (tr.bud ??= []).push({ id: 'hogtid', v: hogtidVarde(ai, hogtidForm(tr)), t: tr.t });
     }
   }],
   [42, 'v528: den dödes saker är bud (steg 10.3.5): en tro långt åt Livet efter, som redan gav gravgåvor, får budet Gravgåvor', s => {
     for (const tr of s.tron ?? []) if (tr.slut === undefined && (tr.sk?.livet ?? 0) >= 60 && !tr.bud?.some(b => b.id === 'gravgava')) (tr.bud ??= []).push({ id: 'gravgava', t: tr.t });
+  }],
+  [43, 'v528: trons tyngd (steg 10.3.8): den sparade nivån tas bort, tyngden räknas när någon frågar', s => {
+    for (const tr of s.tron ?? []) delete (tr as { niva?: number }).niva;
   }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];

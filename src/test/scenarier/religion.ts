@@ -314,43 +314,61 @@ SCENARIER.religionsflik = {
   },
 };
 
-SCENARIER.trosniva = {
-  text: 'Trons nivåer (steg 4.1.4): en tro växer en nivå i taget, personlig tro, delad tro (3), seder (5 eller halva byn), präst (8 och en andlig och karismatisk), och kyrkan väntar på hovet; den faller en nivå när villkoret inte längre uppfylls. Var och en – Präster låses upp med den första prästen, Öppen – Sluten när en andra tro finns',
+SCENARIER.trostyngd = {
+  text: 'Trons tyngd (steg 10.3.8): vad en tro kan bestämma kommer ur tyngden, summan av de troendes trosstyrka gånger trons ålder upp till ett tak, prästen, kyrkans egendom och trons hus. Varje bud kräver tyngden för sin storlek, ett antaget bud står kvar när tyngden sjunker, och etiketten räknas ur vad tron har',
   kor: () => {
     const s = createState(9, START);
-    for (let i = 0; i < 12; i++) nyInvanare(s, i % 2 ? 'k' : 'm', 30).andlig = 0; // byn är stor nog att hälften är mer än fem
     const a = nyInvanare(s, 'k', 40); a.andlig = 100;
     for (let i = 0; i < 50 && a.tro === undefined; i++) { s.now += 25 * SIM.HOUR; SIM.tecken(s, a, 'blixt'); }
     const tr = SIM.troOf(s, a.tro)!, folk = [a];
-    const till = (n: number) => { while (folk.length < n) { const p = nyInvanare(s, 'm', 30); p.andlig = 50; p.pot.karisma = 5; p.tro = tr.id; folk.push(p); } };
-    const niva = (h = 1) => { for (let i = 0; i < h; i++) SIM.stepReligion(s); return SIM.troNiva(tr); };
-    a.pot.karisma = 5;
-    till(2); const n2 = niva(3);
-    till(3); const n3 = niva(3);
-    till(5); const n5 = niva(3);
-    till(8); const n8 = niva(3); // ingen kan bli präst
-    const prastFore = SIM.skalaSyns(s, 'prast');
-    a.pot.karisma = 20; const n8p = niva(), n8p2 = niva(3), prastEfter = SIM.skalaSyns(s, 'prast') && tr.sk?.prast !== undefined;
-    till(20); const n20 = niva(5); // kyrkan väntar på hovet
-    // de troende dör: tron faller en nivå i taget
-    for (const p of folk.slice(4)) p.died = s.now;
-    const f1 = niva(), f2 = niva(), f3 = niva(3);
-    // en andra tro: Öppen – Sluten
+    while (folk.length < 10) { const p = nyInvanare(s, 'm', 30); p.andlig = 50; p.tro = tr.id; folk.push(p); }
+    for (const p of folk) p.troStyrka = 100;
+    const del = (id: string) => SIM.tyngdDelar(s, tr).find(d => d.id === id)!.v;
+    // en ny tro med tio ivriga: bara små bud
+    const ny = del('troende'), ny1 = SIM.rymsBud(s, tr, 1), ny2 = SIM.rymsBud(s, tr, 2);
+    const barn = nyInvanare(s, 'k', 5); barn.tro = tr.id; barn.troStyrka = 100; const medBarn = del('troende');
+    // åldern: full vikt efter 28 dygn, sedan inte mer
+    const t0 = tr.t; tr.t = s.now - SIM.TYNGD.alderDygn * SIM.DAY; const full = del('troende'); tr.t = s.now - 3 * SIM.TYNGD.alderDygn * SIM.DAY; const gammal = del('troende'); tr.t = t0;
+    for (const p of folk) p.troStyrka = 50; const halv = del('troende'); for (const p of folk) p.troStyrka = 100;
+    // prästen, egendomen och huset
+    const utanPrast = del('prast'); tr.prast = folk[1].id; const medPrast = del('prast');
+    tr.forrad = { ved: 10 }; const halvEgendom = del('egendom'); tr.forrad = { ved: 200 }; const fullEgendom = del('egendom'); tr.forrad = undefined;
+    tr.hov = { x: 0, y: 0, prog: 1 }; const halvbyggt = del('hus'); tr.hov.klar = s.now; const klart = del('hus');
+    const summa = Math.abs(SIM.tyngd(s, tr) - SIM.tyngdDelar(s, tr).reduce((x, d) => x + d.v, 0)) < 1e-9;
+    // etiketterna, den första som stämmer
+    const et = () => SIM.troEtikett(s, tr).namn;
+    const kyrka = et(); tr.hov = undefined; const prast = et(); tr.prast = undefined;
+    (s.heliga ??= []).push({ x: 1, y: 1, k: 'fodd' as SIM.HeligPlats['k'], tro: tr.id, t: s.now, om: 'där tron föddes' }); const seder = et();
+    s.heliga[s.heliga.length - 1].skandad = s.now; const vanhelgad = et(); s.heliga.pop();
+    const namn = tr.namn; tr.namn = 'Åskans tro'; const delad = et(); tr.namn = undefined; const personlig = et(); tr.namn = namn;
+    // ett antaget bud står kvar när de troende dör
+    tr.bud = [{ id: 'forstaFangst', t: s.now }];
+    for (const p of folk.slice(2)) p.died = s.now;
+    SIM.stepReligion(s);
+    const kvar = SIM.budIn(tr, 'forstaFangst') && !SIM.rymsBud(s, tr, 2);
+    // skalorna: Var och en – Präster med den första prästen, Öppen – Sluten med en andra tro
+    const prastFore = SIM.skalaSyns(s, 'prast'); tr.prast = folk[1].id; SIM.stepReligion(s); const prastEfter = SIM.skalaSyns(s, 'prast');
     const oppenFore = SIM.skalaSyns(s, 'oppen');
     const b = nyInvanare(s, 'm', 40); b.andlig = 100;
     for (let i = 0; i < 50 && b.tro === undefined; i++) { s.now += 25 * SIM.HOUR; SIM.tecken(s, b, 'brand'); }
-    niva();
-    const tr2 = SIM.troOf(s, b.tro), oppen = SIM.skalaSyns(s, 'oppen') && tr.sk?.oppen !== undefined && tr2?.sk?.oppen !== undefined;
+    SIM.stepReligion(s);
+    const oppen = SIM.skalaSyns(s, 'oppen');
+    const f = (x: number) => x.toFixed(2);
     return [
-      [`två troende är en personlig tro, tre en delad tro (${n2}, ${n3})`, n2 === 0 && n3 === 1],
-      [`fem är seder (${n5})`, n5 === 2],
-      [`åtta utan någon som kan bli präst förblir seder (${n8})`, n8 === 2],
-      [`med en andlig och karismatisk får tron en präst (${n8p}, ${n8p2})`, n8p === 3 && n8p2 === 3],
+      [`de troende: trosstyrkan gånger åldern, 0,25 för en ny tro (${f(ny)} med tio)`, Math.abs(ny - 10 * SIM.TYNGD.alderFran) < 1e-6],
+      [`barnen räknas inte (${f(medBarn)})`, medBarn === ny],
+      [`hälften så stark tro väger hälften (${f(halv)})`, Math.abs(halv - ny / 2) < 1e-6],
+      [`åldern ger full vikt efter 28 dygn och sedan inte mer (${f(full)}, ${f(gammal)})`, Math.abs(full - 10) < 1e-6 && Math.abs(gammal - 10) < 1e-6],
+      [`en ny tro med tio ivriga får bud av storlek 1 men inget större (${ny1}, ${ny2})`, ny1 && !ny2],
+      [`prästen väger ${SIM.TYNGD.prast} (${utanPrast} → ${medPrast})`, utanPrast === 0 && medPrast === SIM.TYNGD.prast],
+      [`egendomen ger upp till ${SIM.TYNGD.egendom}, fullt vid värdet av ${SIM.TYNGD.egendomVed} ved (${f(halvEgendom)}, ${f(fullEgendom)})`, Math.abs(halvEgendom - SIM.TYNGD.egendom / 2) < 1e-6 && fullEgendom === SIM.TYNGD.egendom],
+      [`bara ett färdigt hus väger (${halvbyggt} → ${klart})`, halvbyggt === 0 && klart === SIM.TYNGD.hus],
+      ['tyngden är summan av delarna', summa],
+      [`etiketterna: ${[kyrka, prast, seder, vanhelgad, delad, personlig].join(', ')}`, kyrka === 'Kyrka' && prast === 'Präst' && seder === 'Seder' && vanhelgad === 'Personlig tro' && delad === 'Delad tro' && personlig === 'Personlig tro'],
+      ['ett antaget bud står kvar när tyngden sjunker', kvar],
       [`Var och en – Präster låses upp med den första prästen (${prastFore} → ${prastEfter})`, !prastFore && prastEfter],
-      [`kyrkan väntar på hovet (${n20} med tjugo troende)`, n20 === 3],
-      [`tron faller en nivå i taget när de troende dör (${f1}, ${f2}, ${f3})`, f1 === 2 && f2 === 1 && f3 === 1],
-      [`Öppen – Sluten låses upp när en andra tro finns, och båda trosriktningarna får ett värde (${oppenFore} → ${oppen})`, !oppenFore && oppen],
-      ['nivån står i fliken', (() => { utanWebblasare(); setByn(s); return religion.html().includes('Nivå: <b>Delad tro</b>'); })()],
+      [`Öppen – Sluten låses upp när en andra tro finns (${oppenFore} → ${oppen})`, !oppenFore && oppen],
+      ['etiketten och tyngden står i fliken', (() => { utanWebblasare(); setByn(s); return religion.html().includes('tyngd'); })()],
     ];
   },
 };

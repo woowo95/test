@@ -813,11 +813,14 @@ SCENARIER.sederfas8 = {
   },
 };
 
-const medTro = (seed = 6, niva = 2) => {
+// en by med en tro som har tyngd för bud av storleken `storlek` (steg 10.3.8): en gammal tro med ivriga troende, och fler vuxna
+// troende när byns egna inte räcker
+const medTro = (seed = 6, storlek = 2) => {
   const x = medLedare(seed), { s, v } = x;
-  const tr: SIM.Tro = { id: 1, grundare: v[0].id, gnamn: v[0].name, t: s.now, ar: 1, k: 'drom', bakom: 'Rösten', vill: 'att man lyssnar', svek: 'det blir tyst', natur: 60, manga: 40, bekr: s.now, x: Math.floor(v[0].x), y: Math.floor(v[0].y), niva, namn: 'Rösternas väg' };
+  const tr: SIM.Tro = { id: 1, grundare: v[0].id, gnamn: v[0].name, t: s.now - SIM.TYNGD.alderDygn * SIM.DAY, ar: 1, k: 'drom', bakom: 'Rösten', vill: 'att man lyssnar', svek: 'det blir tyst', natur: 60, manga: 40, bekr: s.now, x: Math.floor(v[0].x), y: Math.floor(v[0].y), namn: 'Rösternas väg' };
   s.tron = [tr];
-  for (const p of v) { p.tro = 1; p.troStyrka = 60; p.andlig = 80; p.pot.karisma = 14; }
+  while (v.length < SIM.tyngdFor(storlek)) { const p = nyInvanare(s, v.length % 2 ? 'k' : 'm', 30); (p.tek ??= {}).ledarskap = 1; p.tek.lag = 1; v.push(p); }
+  for (const p of v) { p.tro = 1; p.troStyrka = 100; p.andlig = 80; p.pot.karisma = 14; }
   return { ...x, tr };
 };
 SCENARIER.graven = {
@@ -1054,7 +1057,7 @@ SCENARIER.troskrets = {
     kvall(1);
     const o1 = tr.roster?.[0], baraTroende = !!o1 && o1.roster.every(r => SIM.byId(s, r.id)?.tro === tr.id);
     // ett nedröstat bud: bara den som talar tror starkt, de andra tycker att budet är för hårt
-    for (const p of v) p.troStyrka = p === frams ? 60 : 0;
+    for (const p of v) p.troStyrka = p === frams ? 100 : 0; // den som talar bär ensam tyngden för ett litet bud (steg 10.3.8)
     for (const p of v) for (const q of v) if (p !== q) SIM.getRel(s, p, q).op = 0;
     const n0 = tr.roster?.length ?? 0;
     kvall(2);

@@ -10,7 +10,7 @@ import { clamp, rnd } from './slump';
 import { ALDER, type BudTillfalle, ageOf, count, living, log, relKey, satBudTillfalle, stat, think } from './folk';
 import { FOOD } from './saker';
 import { kronika } from './historik';
-import { Tro, andlighet, gudarOf, skalaV, troNamn, troNiva, troOf, troende } from './religion';
+import { Tro, andlighet, gudarOf, skalaV, troNamn, rymsBud, troOf, troende } from './religion';
 import { RITUALER, helga, helig, hogtidAv, hogtidNamn, hogtidNu, prastOf, prastRang } from './kult';
 import { FRAGOR, Fraga, FragaData, rostaOm } from './rost';
 import { LAGAR, LagForslag, lagGaller } from './lagar';
@@ -52,7 +52,7 @@ export const KYRKA = balans('kyrka', {
   vecka: 7, // vilodagen, fastan och djuroffret: en gång på så här många dygn (år i spelet)
 });
 
-export interface BudDef { namn: string; sort: 'forbud' | 'krav' | 'offer'; storlek: 1 | 2 | 3 | 4; niva: number; skala?: 'natur' | 'manga' | 'prast' | 'livet' | 'forlat' | 'fest' | 'krig' | 'oppen' | 'sprid'; sida?: 0 | 1; acts?: Act[]; text: string; kyla?: boolean
+export interface BudDef { namn: string; sort: 'forbud' | 'krav' | 'offer'; storlek: 1 | 2 | 3 | 4; skala?: 'natur' | 'manga' | 'prast' | 'livet' | 'forlat' | 'fest' | 'krig' | 'oppen' | 'sprid'; sida?: 0 | 1; acts?: Act[]; text: string; kyla?: boolean
   // ett bud som bär ett värde (steg 10.3.1): de värden som går att föreslå just nu (en tidsålder, ett ting, en plats, en djurart, en ingrediens),
   // och vad värdet heter i budets namn. Samma rad kan antas en gång per värde; utan varden antas raden en gång
   varden?(s: State, tr: Tro): BudVarde[]; vardeNamn?(s: State, v: BudVarde): string
@@ -63,41 +63,41 @@ export type BudVarde = string | number;
 // ett antaget bud: raden, värdet den gäller och när den antogs (steg 10.3.1)
 export interface AntagetBud { id: BudId; v?: BudVarde; t: number }
 export const BUD = {
-  tacka: { namn: 'Tacka gudarna före maten', sort: 'krav', storlek: 1, niva: 2, skala: 'livet', sida: 0, text: 'Man tackar innan man äter' },
-  tecken: { namn: 'Bära trons tecken', sort: 'krav', storlek: 1, niva: 2, skala: 'natur', sida: 0, text: 'De troende bär tecknet' },
-  halsa: { namn: 'Hälsa elden på morgonen', sort: 'krav', storlek: 1, niva: 2, text: 'Man hälsar elden när man vaknar' },
-  deDoda: { namn: 'Inte tala illa om de döda', sort: 'forbud', storlek: 1, niva: 2, skala: 'natur', sida: 1, text: 'De döda talar man väl om' },
-  fodsel: { namn: 'Bön vid födsel och död', sort: 'krav', storlek: 1, niva: 2, text: 'Man ber när någon föds eller dör' },
-  forstaFangst: { namn: 'Den första fångsten offras', sort: 'offer', storlek: 2, niva: 2, skala: 'livet', sida: 0, text: 'Det första man får går till tron' },
-  gravgava: { namn: 'Gravgåvor till de döda', sort: 'offer', storlek: 2, niva: 2, skala: 'livet', sida: 1, text: 'De döda får något med sig' },
-  medfolj: { namn: 'Det den döde bar följer med', sort: 'offer', storlek: 3, niva: 3, skala: 'livet', sida: 1, text: 'Allt den döde bar följer hen och ärvs inte' },
-  lunden: { namn: 'Inte fälla träd i den heliga lunden', sort: 'forbud', storlek: 2, niva: 2, skala: 'natur', sida: 0, text: 'Lunden får stå' },
-  kottHelg: { namn: 'Inget kött på heliga dagar', sort: 'forbud', storlek: 2, niva: 3, skala: 'fest', sida: 1, text: 'Inget kött på den heliga dagen', acts: ['slakta'] },
-  framling: { namn: 'Främlingar ska få mat', sort: 'krav', storlek: 2, niva: 2, skala: 'oppen', sida: 0, text: 'Den som kommer får äta' },
-  orena: { namn: 'En fiendes saker är orena', sort: 'forbud', storlek: 2, niva: 2, skala: 'oppen', sida: 1, text: 'Man rör inte det fienden bar' }, // steg 10.3.6
-  giftaTro: { namn: 'Inte gifta sig utanför tron', sort: 'forbud', storlek: 2, niva: 3, skala: 'oppen', sida: 1, text: 'Man gifter sig inom tron' },
-  fasta: { namn: 'Fasta vissa dagar', sort: 'krav', storlek: 3, niva: 3, skala: 'fest', sida: 1, text: 'Vissa dagar äter man inte' },
-  vilodag: { namn: 'En vilodag av sju', sort: 'forbud', storlek: 3, niva: 3, text: 'Den sjunde dagen arbetar ingen' },
-  ingetKott: { namn: 'Inte döda djur', sort: 'forbud', storlek: 3, niva: 4, skala: 'krig', sida: 0, text: 'Man dödar inga djur', acts: ['jakt', 'slakta'] },
-  orent: { namn: 'Inte gräva i jorden', sort: 'forbud', storlek: 3, niva: 4, skala: 'natur', sida: 0, text: 'Jorden är helig', acts: ['stubbe', 'plantera'] },
-  tionde: { namn: 'Tionde till prästen', sort: 'offer', storlek: 3, niva: 3, skala: 'prast', sida: 1, text: 'En tiondel går till prästen' },
-  hamnd: { namn: 'Hämnd är en plikt', sort: 'krav', storlek: 3, niva: 4, skala: 'forlat', sida: 1, text: 'Den som drabbas ska hämnas' },
-  djuroffer: { namn: 'Djuroffer', sort: 'offer', storlek: 3, niva: 4, skala: 'krig', sida: 1, text: 'Tron kräver djur' },
-  aldrigDoda: { namn: 'Aldrig döda en människa', sort: 'forbud', storlek: 4, niva: 4, skala: 'krig', sida: 0, text: 'Inte ens i försvar', acts: ['strid'] },
-  ingenRoj: { namn: 'Ingen ny mark får röjas', sort: 'forbud', storlek: 4, niva: 4, skala: 'natur', sida: 0, text: 'Skogen får stå', acts: ['falla'] },
-  ogifta: { namn: 'Prästerna lever ogifta', sort: 'forbud', storlek: 4, niva: 4, skala: 'fest', sida: 1, text: 'Prästen ger sig åt tron' },
+  tacka: { namn: 'Tacka gudarna före maten', sort: 'krav', storlek: 1, skala: 'livet', sida: 0, text: 'Man tackar innan man äter' },
+  tecken: { namn: 'Bära trons tecken', sort: 'krav', storlek: 1, skala: 'natur', sida: 0, text: 'De troende bär tecknet' },
+  halsa: { namn: 'Hälsa elden på morgonen', sort: 'krav', storlek: 1, text: 'Man hälsar elden när man vaknar' },
+  deDoda: { namn: 'Inte tala illa om de döda', sort: 'forbud', storlek: 1, skala: 'natur', sida: 1, text: 'De döda talar man väl om' },
+  fodsel: { namn: 'Bön vid födsel och död', sort: 'krav', storlek: 1, text: 'Man ber när någon föds eller dör' },
+  forstaFangst: { namn: 'Den första fångsten offras', sort: 'offer', storlek: 2, skala: 'livet', sida: 0, text: 'Det första man får går till tron' },
+  gravgava: { namn: 'Gravgåvor till de döda', sort: 'offer', storlek: 2, skala: 'livet', sida: 1, text: 'De döda får något med sig' },
+  medfolj: { namn: 'Det den döde bar följer med', sort: 'offer', storlek: 3, skala: 'livet', sida: 1, text: 'Allt den döde bar följer hen och ärvs inte' },
+  lunden: { namn: 'Inte fälla träd i den heliga lunden', sort: 'forbud', storlek: 2, skala: 'natur', sida: 0, text: 'Lunden får stå' },
+  kottHelg: { namn: 'Inget kött på heliga dagar', sort: 'forbud', storlek: 2, skala: 'fest', sida: 1, text: 'Inget kött på den heliga dagen', acts: ['slakta'] },
+  framling: { namn: 'Främlingar ska få mat', sort: 'krav', storlek: 2, skala: 'oppen', sida: 0, text: 'Den som kommer får äta' },
+  orena: { namn: 'En fiendes saker är orena', sort: 'forbud', storlek: 2, skala: 'oppen', sida: 1, text: 'Man rör inte det fienden bar' }, // steg 10.3.6
+  giftaTro: { namn: 'Inte gifta sig utanför tron', sort: 'forbud', storlek: 2, skala: 'oppen', sida: 1, text: 'Man gifter sig inom tron' },
+  fasta: { namn: 'Fasta vissa dagar', sort: 'krav', storlek: 3, skala: 'fest', sida: 1, text: 'Vissa dagar äter man inte' },
+  vilodag: { namn: 'En vilodag av sju', sort: 'forbud', storlek: 3, text: 'Den sjunde dagen arbetar ingen' },
+  ingetKott: { namn: 'Inte döda djur', sort: 'forbud', storlek: 3, skala: 'krig', sida: 0, text: 'Man dödar inga djur', acts: ['jakt', 'slakta'] },
+  orent: { namn: 'Inte gräva i jorden', sort: 'forbud', storlek: 3, skala: 'natur', sida: 0, text: 'Jorden är helig', acts: ['stubbe', 'plantera'] },
+  tionde: { namn: 'Tionde till prästen', sort: 'offer', storlek: 3, skala: 'prast', sida: 1, text: 'En tiondel går till prästen' },
+  hamnd: { namn: 'Hämnd är en plikt', sort: 'krav', storlek: 3, skala: 'forlat', sida: 1, text: 'Den som drabbas ska hämnas' },
+  djuroffer: { namn: 'Djuroffer', sort: 'offer', storlek: 3, skala: 'krig', sida: 1, text: 'Tron kräver djur' },
+  aldrigDoda: { namn: 'Aldrig döda en människa', sort: 'forbud', storlek: 4, skala: 'krig', sida: 0, text: 'Inte ens i försvar', acts: ['strid'] },
+  ingenRoj: { namn: 'Ingen ny mark får röjas', sort: 'forbud', storlek: 4, skala: 'natur', sida: 0, text: 'Skogen får stå', acts: ['falla'] },
+  ogifta: { namn: 'Prästerna lever ogifta', sort: 'forbud', storlek: 4, skala: 'fest', sida: 1, text: 'Prästen ger sig åt tron' },
   // ritualerna som bud (steg 10.3.3)
-  hogtid: { namn: 'Högtid', sort: 'krav', storlek: 1, niva: 2, text: 'Tron firar en högtid i en tidsålder', varden: hogtidNu, vardeNamn: (_s, v) => hogtidNamn(v), nu: () => true,
+  hogtid: { namn: 'Högtid', sort: 'krav', storlek: 1, text: 'Tron firar en högtid i en tidsålder', varden: hogtidNu, vardeNamn: (_s, v) => hogtidNamn(v), nu: () => true,
     om: (s, tr, b) => { const { ai, form } = hogtidAv(b.v); return `${['I istiden', 'I vårtiden', 'I sommartiden', 'I hösttiden'][ai]}, en kväll i ${RITUALER.hogtid.tim} timmar. De troende samlas ${helig(s, tr) ? 'vid den heliga platsen' : 'vid elden'}. ${form === 'fasta' ? 'Ingen mat: ett dygn utan mat (ett år i spelet).' : 'En hel mat per närvarande, ur kyrkans egendom först och annars ur den egna maten.'}`; } },
-  offer: { namn: 'Offer vid högtiden', sort: 'offer', storlek: 2, niva: 2, kraver: 'hogtid', text: 'Var och en lägger en mat på den heliga platsen',
+  offer: { namn: 'Offer vid högtiden', sort: 'offer', storlek: 2, kraver: 'hogtid', text: 'Var och en lägger en mat på den heliga platsen',
     om: (s, tr) => `Vid varje högtid. Var och en som följer budet lägger en hel mat, den hen äger mest av, ${helig(s, tr) ? 'på den heliga platsen' : 'vid elden'}, och den är borta.` },
-  valsigna: { namn: 'Bröllopet välsignas', sort: 'krav', storlek: 1, niva: 2, text: 'Paret vigs vid den heliga platsen', nu: (s, tr) => (tr.brollop ?? -Infinity) + KYRKA.tillfalle * DAY > s.now,
+  valsigna: { namn: 'Bröllopet välsignas', sort: 'krav', storlek: 1, text: 'Paret vigs vid den heliga platsen', nu: (s, tr) => (tr.brollop ?? -Infinity) + KYRKA.tillfalle * DAY > s.now,
     om: (s, tr) => `När två i tron gifter sig. Byns fest hålls ${helig(s, tr) ? 'vid den heliga platsen' : 'vid elden'}, prästen leder, och de troende får tro. Maten är byns, som vid alla bröllop.` },
-  dop: { namn: 'Dopet', sort: 'krav', storlek: 1, niva: 2, text: 'Barnet välsignas när det fötts', nu: (s, tr) => (tr.fodd ?? -Infinity) + KYRKA.tillfalle * DAY > s.now,
+  dop: { namn: 'Dopet', sort: 'krav', storlek: 1, text: 'Barnet välsignas när det fötts', nu: (s, tr) => (tr.fodd ?? -Infinity) + KYRKA.tillfalle * DAY > s.now,
     om: (s, tr) => `När ett barn föds och moderns tro, annars faderns, har budet. Byn samlas i en timme ${helig(s, tr) ? 'vid den heliga platsen' : 'vid elden'}. Inget går åt.` },
-  vuxen: { namn: 'Vuxenblivandet', sort: 'krav', storlek: 1, niva: 2, text: 'Den unga välsignas när hen blir vuxen', nu: (s, tr) => (tr.vuxen ?? -Infinity) + KYRKA.tillfalle * DAY > s.now,
+  vuxen: { namn: 'Vuxenblivandet', sort: 'krav', storlek: 1, text: 'Den unga välsignas när hen blir vuxen', nu: (s, tr) => (tr.vuxen ?? -Infinity) + KYRKA.tillfalle * DAY > s.now,
     om: (s, tr) => `När någon fyller ${ALDER.vuxen} år och hens tro, annars moderns, annars faderns, har budet. Byn samlas i en timme ${helig(s, tr) ? 'vid den heliga platsen' : 'vid elden'}. Inget går åt.` },
-  manniskooffer: { namn: 'Människooffer', sort: 'offer', storlek: 4, niva: 4, skala: 'krig', sida: 1, text: 'Tron kräver det yttersta' },
+  manniskooffer: { namn: 'Människooffer', sort: 'offer', storlek: 4, skala: 'krig', sida: 1, text: 'Tron kräver det yttersta' },
 } satisfies Record<string, BudDef>;
 export type BudId = keyof typeof BUD;
 const BDEF: Record<BudId, BudDef> = BUD;
@@ -131,7 +131,7 @@ export function budBrutet(s: State, p: Person, id: BudId) {
   if (!budIn(tr, id)) return;
   p.skuld = (p.skuld ?? 0) + KYRKA.skuld; p.troStyrka = Math.max(0, (p.troStyrka ?? 0) - KYRKA.skuldTro);
   think(p, `Bröt mot budet: ${BDEF[id].namn.toLowerCase()}`, KYRKA.skuldHumor, s.now, 12 * HOUR);
-  if ((skalaV(tr, 'forlat') ?? 0) > 70 && troNiva(tr) >= 4 && (p.skuld ?? 0) >= KYRKA.stotaUt) {
+  if ((skalaV(tr, 'forlat') ?? 0) > 70 && rymsBud(s, tr, 4) && (p.skuld ?? 0) >= KYRKA.stotaUt) {
     p.tro = undefined; p.skuld = 0; count(s, 'utstott');
     log(s, `${troNamn(tr)} stötte ut ${p.name}.`, 'rel', [p.id]);
   }
@@ -157,7 +157,7 @@ function offerTimme(s: State, tr: Tro, folk: Person[]) {
 function skattDygn(s: State) {
   if (!lagGaller(s, 'kyrkskatt') || lagGaller(s, 'ejKyrkskatt')) return;
   for (const tr of s.tron ?? []) {
-    if (tr.slut !== undefined || troNiva(tr) < 4) continue;
+    if (tr.slut !== undefined || !rymsBud(s, tr, 4)) continue;
     const n = Math.ceil(troende(s, tr).length / 5) * KYRKA.skatt, k = woodDays(s) - n / (hearthOf(s.fire).burn * 24) >= TROSKEL.forsokVed ? 'ved' : undefined; // bara ur ett överskott av ved, efter hur länge den räcker (steg 10.2.43)
     if (k) { const l = ledareOf(s) ?? living(s)[0]; if (l) { use(s, l, k, n); gavaIn(tr, k, n); count(s, 'kyrkskatt'); } }
   }
@@ -183,7 +183,7 @@ export function trosTalare(s: State, tr: Tro): Person | undefined {
 const forslag = (s: State, p: Person, f: string, d: FragaData): LagForslag => { const r = FRAGOR[f].rost(s, p, d); return { fr: { f, d, fram: p.id }, prio: r.v, varfor: `${p.name} vill det: ${r.why.toLowerCase()}` }; };
 export const TROS_UPP: { id: string; lista(s: State, tr: Tro, p: Person): LagForslag[] }[] = [
   { id: 'kyrkutgift', lista: (s, tr, p) => { const vad = utgiftNu(s, tr); return vad ? [forslag(s, p, 'kyrkutgift', { tro: tr.id, vad })] : []; } },
-  { id: 'nyttBud', lista: (s, tr, p) => (Object.keys(BUD) as BudId[]).filter(id => BDEF[id].niva <= troNiva(tr) && passar(tr, BDEF[id]) && (!BDEF[id].kraver || budIn(tr, BDEF[id].kraver as BudId)) && (BDEF[id].storlek < 3 || (s.seder.v.andlig ?? 0) > 0 || BDEF[id].storlek === 3))
+  { id: 'nyttBud', lista: (s, tr, p) => (Object.keys(BUD) as BudId[]).filter(id => rymsBud(s, tr, BDEF[id].storlek) && passar(tr, BDEF[id]) && (!BDEF[id].kraver || budIn(tr, BDEF[id].kraver as BudId)))
     .flatMap(id => budForslag(s, tr, id)).map(b => { const f = forslag(s, p, 'nyttBud', { tro: tr.id, id: b.id, v: b.v }); return f.prio > 0 && BDEF[b.id].nu?.(s, tr) ? { ...f, prio: f.prio + KYRKA.nu } : f; }) }, // budet vars tillfälle är nu lyfts fram
 ];
 const trosNyckel = (fr: Fraga) => fr.f + ':' + JSON.stringify(fr.d);
@@ -347,7 +347,7 @@ export const kyrkProjekt = (): Record<string, ProjektDef> => ({ hov: kyrkBygge('
 export function kyrkaRegister() {
 satBudTillfalle((s, typ, p, q) => budTillfalleK(s, typ, p, q));
 for (const id of Object.keys(BUD) as BudId[]) if (BDEF[id].sort === 'forbud' && BDEF[id].acts) LAGAR[budLag(id)] = { namn: BDEF[id].namn, sym: '📜', text: BDEF[id].text, straff: 4, brott: ['budbrott'], kan: s => (s.seder.v.andlig ?? 0) > 0.2 && !!s.tron?.some(t => budIn(t, id)), prio: s => (s.seder.v.andlig ?? 0) > 0.2 && s.tron?.some(t => budIn(t, id)) ? clamp((s.seder.v.andlig ?? 0), 0, 1) * 0.6 : 0, rost: (s, p) => { const ja = budIn(troOf(s, p.tro), id); return { v: ja ? 0.6 : -0.4, why: ja ? 'Tror på budet' : 'Delar inte tron' }; }, om: 'kyrkans önskan' };
-LAGAR.kyrkskatt = { namn: 'Kyrkskatt', sym: '📜', text: 'En del av byns förråd går till kyrkan', straff: 4, om: 'kyrkans krav', kan: s => !!s.tron?.some(t => troNiva(t) >= 4), prio: s => (s.seder.v.andlig ?? 0) > 0.4 ? clamp(s.seder.v.andlig, 0, 1) * 0.7 : 0, rost: (_s, p) => ({ v: p.tro !== undefined ? 0.4 : -0.5, why: p.tro !== undefined ? 'Vill stödja tron' : 'Betalar inte för en tro hen inte har' }) };
+LAGAR.kyrkskatt = { namn: 'Kyrkskatt', sym: '📜', text: 'En del av byns förråd går till kyrkan', straff: 4, om: 'kyrkans krav', kan: s => !!s.tron?.some(t => t.slut === undefined && rymsBud(s, t, 4)), prio: s => (s.seder.v.andlig ?? 0) > 0.4 ? clamp(s.seder.v.andlig, 0, 1) * 0.7 : 0, rost: (_s, p) => ({ v: p.tro !== undefined ? 0.4 : -0.5, why: p.tro !== undefined ? 'Vill stödja tron' : 'Betalar inte för en tro hen inte har' }) };
 LAGAR.ejKyrkskatt = { namn: 'Förbud mot kyrkskatt', sym: '📜', text: 'Kyrkan tar inget ur byns förråd', straff: 0, om: 'kyrkans makt', kan: s => !!s.tron?.length, prio: s => (s.seder.v.andlig ?? 0) < -0.4 ? clamp(-s.seder.v.andlig, 0, 1) * 0.6 : 0, rost: (_s, p) => ({ v: p.tro === undefined ? 0.5 : -0.4, why: p.tro === undefined ? 'Delar inte tron' : 'Vill stödja tron' }) };
 FRAGOR.kyrkutgift = {
   namn: (s, d) => `${troNamn(troOf(s, d.tro as number)!)}: ${{ hov: 'bygga ett hov', tempel: 'bygga ett tempel av sten', prast: 'försörja prästen', fattig: 'ge åt de fattiga', gudabild: 'resa en gudabild' }[d.vad as string]}`, krets: 'tro',

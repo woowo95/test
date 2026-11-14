@@ -8,7 +8,7 @@ import { clamp, rnd } from './slump';
 import { ALDER, KROPP, ageOf, alive, byId, count, isParent, living, log, stat, think } from './folk';
 import { kronika } from './historik';
 import { upplev } from './uppvaxt';
-import { TRO, Tro, andlighet, grunda, tecken, skalaV, troNamn, troNiva, troOf, troende } from './religion';
+import { TRO, Tro, andlighet, grunda, tecken, skalaV, troNamn, rymsBud, troOf, troende } from './religion';
 import { ageIndex, ageStart } from './tid';
 import { getMap } from './karta';
 import { groundOf } from './mark';
@@ -21,9 +21,10 @@ import { budIn, foljer } from './kyrka';
 import { FOOD } from './saker';
 import { takeMaterial } from './behov';
 import { kladAv } from './klader';
-import { nyRitual, satGravVarde } from './kultlatt';
-import { tingVarde } from './varde';
+import { nyRitual, satEgendomVarde, satGravVarde } from './kultlatt';
+import { grundvarde, tingVarde, varuVarde } from './varde';
 satGravVarde(t => tingVarde(t)); // gravgåvan är den finaste saken (steg 10.3.5)
+satEgendomVarde(o => varuVarde(o) / grundvarde('ved')); // kyrkans egendom i trons tyngd (steg 10.3.8)
 import { isSick } from './sjukdom';
 
 // farorna över byn (dangers i val.ts, som sätter den här när den laddas: val.ts läser det mesta i spelet)
@@ -140,7 +141,7 @@ export const prastOf = (s: State, tr: Tro) => { const q = byId(s, tr.prast); ret
 // hur väl någon passar som präst: andligheten och karisman
 export const prastRang = (s: State, p: Person) => andlighet(s, p) + stat(p, 'karisma', s.now) * 3;
 function prastSteg(s: State, tr: Tro, folk: Person[]) {
-  if (troNiva(tr) < 3 || prastOf(s, tr)) return;
+  if (!rymsBud(s, tr, 2) || prastOf(s, tr)) return; // budet om en präst har storlek 2 (steg 10.3.12 gör det till ett bud)
   const kand = folk.filter(q => ageOf(q, s.now) >= ALDER.vuxen && andlighet(s, q) >= KULT.prastAnde && (!tr.prastRegel || tr.prastRegel === 'bada' || tr.prastRegel === q.sex));
   if (!kand.length) return;
   const p = kand.sort((a, b) => prastRang(s, b) - prastRang(s, a))[0];
@@ -319,7 +320,7 @@ export function kultTimme(s: State) {
     if (!folk.length) continue;
     prastSteg(s, tr, folk);
     hogtidSteg(s, tr);
-    if (troNiva(tr) >= 2 && tr.x !== undefined && !s.heliga?.some(h => h.tro === tr.id)) helga(s, tr, tr.x, tr.y!, 'där tron föddes');
+    if (rymsBud(s, tr, 1) && tr.x !== undefined && !s.heliga?.some(h => h.tro === tr.id)) helga(s, tr, tr.x, tr.y!, 'där tron föddes');
     const pr = prastOf(s, tr);
     if (pr && !s.ritual && !s.ritualKo?.some(r => r.k === 'leddBon' && r.tro === tr.id) && (tr.leddBon ?? 0) + 2 * DAY <= s.now && helig(s, tr)) { tr.leddBon = s.now; nyRitual(s, 'leddBon', { tro: tr.id }); }
   }

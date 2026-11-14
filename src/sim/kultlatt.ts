@@ -10,6 +10,10 @@ export function nyRitual(s: State, k: RitualId, d: Partial<Ritual> = {}) { (s.ri
 // och bar hen inget den finaste hen ägde. Det den döde bar följer med: allt hen bar, och inget av det ärvs. Sakerna läggs på kroppen (med)
 // och följer den i graven, på bålet eller i vattnet; graven minns dem. Utan bud ärvs allt
 let vardeAv: (t: Ting) => number = t => t.q ?? 0;
+// värdet av kyrkans egendom räknat i ved, för trons tyngd (steg 10.3.8); sätts av kult.ts, som läser värdena
+let iVed: (o: Record<string, number>) => number = () => 0;
+export const satEgendomVarde = (f: typeof iVed) => { iVed = f; };
+export const egendomIVed = (o: Record<string, number>) => iVed(o);
 export const satGravVarde = (f: typeof vardeAv) => { vardeAv = f; };
 export function gravgava(s: State, p: Person) {
   const tr = s.tron?.find(t => t.id === p.tro), har = (id: string) => !!tr?.bud?.some(b => b.id === id);
