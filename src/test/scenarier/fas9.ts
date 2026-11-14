@@ -1770,7 +1770,7 @@ SCENARIER.tamslakt = {
     if (val) avlivaKlar(s, p, val.id);
     const ungOrsak = slaktOrsak(s, ung), ungKvar = tamdjurOf(s).includes(ung); /* innan flocken fylls på */
     const kropp = amountOf(s, 'slaktfar');
-    const rens0 = amountOf(s, 'slaktrens'), horn0 = amountOf(s, 'djurhorn'), skinn0 = amountOf(s, 'skinn');
+    const rens0 = amountOf(s, 'slaktrens'), horn0 = amountOf(s, 'djurhorn'), skinn0 = amountOf(s, 'farskinn');
     const kan = canProcess(s, p, DJUR.far);
     if (kan) bearbeta(s, p, DJUR.far, 2);
     const rens1 = amountOf(s, 'slaktrens');
@@ -1788,7 +1788,7 @@ SCENARIER.tamslakt = {
       [`det gamla fåret väljs och avlivas (${val === gammal ? 'det gamla' : val ? 'ett annat' : 'inget'})`, val === gammal && !tamdjurOf(s).includes(gammal)],
       [`det unga fåret slaktas inte (${ungOrsak ?? '–'})`, ungKvar && !ungOrsak],
       [`det avlivade fåret ligger vid slaktbänken (${kropp})`, kropp === 1],
-      [`det slaktas som viltet och ger horn, skinn och slaktrens (horn ${horn0} → ${amountOf(s, 'djurhorn')}, skinn ${skinn0} → ${amountOf(s, 'skinn')}, rens ${rens0} → ${rens1})`, kan && amountOf(s, 'djurhorn') > horn0 && amountOf(s, 'skinn') > skinn0 && rens1 > rens0],
+      [`det slaktas som viltet och ger horn, skinn och slaktrens (horn ${horn0} → ${amountOf(s, 'djurhorn')}, fårskinn ${skinn0} → ${amountOf(s, 'farskinn')}, rens ${rens0} → ${rens1})`, kan && amountOf(s, 'djurhorn') > horn0 && amountOf(s, 'farskinn') > skinn0 && rens1 > rens0],
       [`hunden får slaktrensen`, mat],
       [`fisken ger fiskrens till agn (${fiskrens}), inte slaktrens (${rens1} → ${rens2})`, fiskrens >= 1 && rens2 === rens1],
       [`en hane är mindre värd att behålla än en hona (${SIM.behallVarde(s, hane!).toFixed(2)} mot ${SIM.behallVarde(s, honan!).toFixed(2)}), så att hanen slaktas först när betet, höet eller maten inte räcker`, SIM.behallVarde(s, hane!) < SIM.behallVarde(s, honan!)],

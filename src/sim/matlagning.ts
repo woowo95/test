@@ -7,7 +7,7 @@ import { grundvarde } from './varde';
 import { Station, isKlar, kanGoras, stationFor, stationerOf } from './stationer';
 import { matPerDygn } from './ekonomi';
 import { ageIndex, kallTid } from './tid';
-import { SAKER } from './saker';
+import { KOTTSLAG, SAKER } from './saker';
 import { loggBer } from './berattelser';
 import { balans } from './balans';
 import { SJUK, insjukna } from './sjukdom';
@@ -52,8 +52,7 @@ export const RATTER: readonly Ratt[] = [
   { ra: 'abborre', blir: 'grillfisk', per: 1 }, // den hela abborren grillas som den är när den inte rensats
   { ra: 'gaddkott', blir: 'grillgadda', per: 1 }, { ra: 'gadda', blir: 'grillgadda', per: 1 }, { ra: 'mortkott', blir: 'grillmort', per: 1 }, // grillad fisk behåller artens näring (steg 7.4.3)
   { ra: 'braxkott', blir: 'grillfisk', per: 1 }, { ra: 'sikkott', blir: 'grillfisk', per: 1 }, // steg 9.6.17
-  { ra: 'kott', blir: 'grillkott', per: 1 },
-  { ra: 'vargkott', blir: 'grillkott', per: 1 }, // köttet är eget per art men blir samma grillade kött (steg 3.7.14)
+  ...KOTTSLAG.map(k => ({ ra: k, blir: 'grillkott', per: 1 })), // köttet är eget per art men blir samma grillade kött (steg 3.7.14, 10.3.14)
 ];
 // råvaran som lagas först (steg 10.2.37): den som byn har mest av i värde, och mer av det som håller på att ruttna
 export const ravaraPoang = (s: State, k: string, n = amountOf(s, k)) => n * grundvarde(k) * (1 + MATLAG.ruttna * (1 - skickAv(s, k)));
@@ -140,8 +139,7 @@ export const TORKAS: readonly Ratt[] = [
   { ra: 'gaddkott', blir: 'torrgadda', per: 1 }, { ra: 'mortkott', blir: 'torrmort', per: 1 },
   { ra: 'braxkott', blir: 'torrfisk', per: 1 }, { ra: 'sikkott', blir: 'torrfisk', per: 1 }, // steg 9.6.17
   { ra: 'ratlin', blir: 'lin', per: 1 }, // linet rötas som köttet på torkställningen (steg 7.7.7)
-  { ra: 'kott', blir: 'torrkott', per: 1 },
-  { ra: 'vargkott', blir: 'torrkott', per: 1 },
+  ...KOTTSLAG.map(k => ({ ra: k, blir: 'torrkott', per: 1 })),
 ];
 // rökeriet (steg 9.6.8): en station som torkställningen, där köttet och fisken röks på ROK.dygn dygn, också i regn och på
 // vintern (handlingen roka har inget krav på vädret), och blir rökt mat som håller som den torkade och smakar lite bättre
@@ -151,7 +149,7 @@ export const ROK = balans('rokeri', {
 });
 export const ROKAS: readonly Ratt[] = [
   { ra: 'fisk', blir: 'rokfisk', per: 1 }, { ra: 'abborre', blir: 'rokfisk', per: 1 }, { ra: 'gaddkott', blir: 'rokfisk', per: 1 }, { ra: 'mortkott', blir: 'rokfisk', per: 1 }, { ra: 'braxkott', blir: 'rokfisk', per: 1 }, { ra: 'sikkott', blir: 'rokfisk', per: 1 },
-  { ra: 'kott', blir: 'rokkott', per: 1 }, { ra: 'vargkott', blir: 'rokkott', per: 1 },
+  ...KOTTSLAG.map(k => ({ ra: k, blir: 'rokkott', per: 1 })),
 ];
 export type TorkSlag = 'tork' | 'rokeri';
 const TORK_RAD = { tork: () => TORKAS, rokeri: () => ROKAS };

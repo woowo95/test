@@ -107,6 +107,14 @@ const DEF = {
   // vargen (steg 3.7.14, vargen själv i 3.7.1): den fällda vargen bärs hem hel och slaktas med kniv till vargkött, ben och ett
   // vargskinn. Den äts inte som den är. Vargskinnet är tjockare än kaninens och blir kläder av vargskinn (klader.ts), som värmer mer
   varg: { vikt: 15, namn: 'Fälld varg', skaffa: { act: 'jakt' }, stack: 1, mapp: 'Material', haller: 3 }, // en varg är en full famn
+  // eget kött per art (steg 10.3.14): kött = true gör saken till ett köttslag (KOTTSLAG), som grillas, torkas, röks och saltas till samma saker
+  radjurkott: { namn: 'Rådjurskött', ett: true, skaffa: RECEPT.radjurkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2.2, fett: 0.7, energi: 0.8, mineral: 0.7, vitamin: 0.3 }, ra: true, haller: 2 },
+  farkott: { namn: 'Fårkött', ett: true, skaffa: RECEPT.farkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 1.8, fett: 1.5, energi: 0.9, mineral: 0.6, vitamin: 0.3 }, ra: true, haller: 2 },
+  getkott: { namn: 'Getkött', ett: true, skaffa: RECEPT.getkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2, fett: 0.9, energi: 0.8, mineral: 0.6, vitamin: 0.3 }, ra: true, haller: 2 },
+  fagelkott: { namn: 'Fågelkött', ett: true, skaffa: RECEPT.fagelkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2, fett: 0.8, energi: 0.7, mineral: 0.5, vitamin: 0.3 }, ra: true, haller: 2 },
+  bjornkott: { namn: 'Björnkött', ett: true, skaffa: RECEPT.bjornkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2, fett: 1.6, energi: 0.9, mineral: 0.6, vitamin: 0.3 }, ra: true, haller: 2 },
+  farskinn: { namn: 'Fårskinn', ett: true, skaffa: RECEPT.farskinn, stack: 10, mapp: 'Material', slits: 0.0006 }, // fårets och getens egna skinn (steg 10.3.14)
+  getskinn: { namn: 'Getskinn', ett: true, skaffa: RECEPT.getskinn, stack: 10, mapp: 'Material', slits: 0.0006 },
   vargkott: { namn: 'Vargkött', ett: true, skaffa: RECEPT.vargkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2, fett: 1.2, energi: 0.8, mineral: 0.6, vitamin: 0.3 }, ra: true, haller: 2 },
   vargskinn: { namn: 'Vargskinn', ett: true, skaffa: RECEPT.vargskinn, stack: 5, mapp: 'Material', slits: 0.0006 },
   slaktfar: { vikt: 12, namn: 'Slaktat får', ett: true, varde: 20, stack: 1, mapp: 'Material', haller: 3 }, slaktget: { vikt: 12, namn: 'Slaktad get', varde: 20, stack: 1, mapp: 'Material', haller: 3 }, // steg 9.8.7: ett tamdjur som avlivats, slaktas vid slaktbänken som viltet
@@ -287,6 +295,7 @@ export const RUTA: Record<string, number> = Object.fromEntries(STACK_ORDER.map(k
 const STACK_STD = 25; // stackens och rutans storlek för ett slag som saknar egen (gamla sparfiler, prov)
 export const stackOf = (k: string) => STACK[k] ?? STACK_STD;
 export const rutaOf = (k: string) => RUTA[k] ?? STACK_STD;
+export { KOTTSLAG } from './recept';
 export const FOOD = SAK_LIST.filter(k => SAKER[k]!.mat !== undefined).sort((a, b) => SAKER[a]!.mat! - SAKER[b]!.mat!) as string[]; // i den ordning de äts
 export const isFood = (k: string) => SAKER[k]?.mat !== undefined;
 export const isTool = (k: string) => !!SAKER[k]?.redskap;

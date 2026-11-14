@@ -10,7 +10,7 @@ import { clamp, rnd } from './slump';
 import { HUMOR, moodOf } from './humor';
 import { type Sed, drar, habitShare } from './seder';
 import { ALDER, type BudTillfalle, ageOf, count, living, log, relKey, satBudTillfalle, stat, think } from './folk';
-import { FOOD } from './saker';
+import { FOOD, KOTTSLAG } from './saker';
 import { kronika } from './historik';
 import { Tro, andlighet, gudarOf, skalaV, troNamn, rymsBud, troOf, troende } from './religion';
 import { KULT, RITUALER, type RitualId, farBliPrast, heligaFor, helga, helig, heligaKandidater, hogtidAv, hogtidNamn, hogtidNu, prastOf, prastRang } from './kult';
@@ -366,7 +366,8 @@ function budDygn(s: State) {
     }
     // djuroffret en gång i veckan, och människooffret: bara den som dömts, högst en gång på offerDygn
     if ((dag + tr.id) % KYRKA.vecka === 0 && budIn(tr, 'djuroffer')) {
-      if (amountOf(s, 'kott') >= KYRKA.djur) { addTo(s, 'kott', -KYRKA.djur); count(s, 'djuroffer'); for (const p of med('djuroffer')) p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + 2); }
+      const slag = KOTTSLAG.reduce((a, k) => amountOf(s, k) > amountOf(s, a) ? k : a, 'kott'); // det köttslag byn har mest av (steg 10.3.14)
+      if (amountOf(s, slag) >= KYRKA.djur) { addTo(s, slag, -KYRKA.djur); count(s, 'djuroffer'); for (const p of med('djuroffer')) p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + 2); }
       else for (const p of med('djuroffer')) think(p, 'Tron kräver djur, och det finns inget att offra', KYRKA.djurSakna, s.now, DAY);
     }
     if (budIn(tr, 'manniskooffer') && dag - (tr.offrad ?? -Infinity) >= KYRKA.offerDygn) {

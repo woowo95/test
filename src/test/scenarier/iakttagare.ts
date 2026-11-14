@@ -199,7 +199,7 @@ for (const [ks, why] of [
   [['bryggkar', 'tappa', 'ol'], 'vinet och ölet (steg 9.6.12–9.6.13) är tekniker på nivå 4–5; scenarierna vin och ol prövar dem'],
   [['supa'], 'supandet (steg 9.6.15) kräver vin eller öl i byn; scenariot bakfylla prövar det'],
   [['nat', 'braxen', 'sik', 'braxkott', 'sikkott'], 'nätet (steg 9.6.16) är en teknik på nivå 4, och braxen och sik fångas mest i nätet; scenarierna nat och braxen prövar dem'],
-  [['salt', 'saltfisk', 'saltkott', 'salta_fisk', 'salta_kott'], 'saltet (steg 9.6.19) kommer bara med handlarna; scenariot salt prövar det'],
+  [['salt', 'saltfisk', 'saltkott', 'salta_fisk', 'salta_kott', 'salta_vargkott', 'salta_radjurkott', 'salta_farkott', 'salta_getkott', 'salta_fagelkott', 'salta_bjornkott'], 'saltet (steg 9.6.19) kommer bara med handlarna; scenariot salt prövar det'],
   [['rokeri', 'roka', 'rokfisk', 'rokkott'], 'rökeriet (steg 9.6.8) är en teknik på nivå 5; scenariot rokeri prövar det'],
   [['stekhall'], 'stekhällen (steg 9.6.21) är en teknik på nivå 4; scenariot stek prövar den'],
 ] as [string[], string][]) for (const k of ks) SALLSYNT[k] ??= why;

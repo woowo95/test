@@ -696,6 +696,7 @@ SCENARIER.ibyn = {
 };
 
 SCENARIER.heltal = {
+  lang: true,
   text: 'Hela saker (steg 2.10.7): förrådet har bara hela saker. Arbetet räknas hos den som arbetar tills det blivit en hel sak, och den som tar en del av en sak tar en hel; resten blir påbörjad hos ägaren och tas först nästa gång. Inga resurser i decimaler (steg 3.6.13): inget recept, bygge, lagning eller utfall är mindre än en hel sak',
   kor: () => {
     const hel = (v: number) => Math.abs(v - Math.round(v)) < 1e-6;
