@@ -154,7 +154,34 @@ SCENARIER.tecken = {
       const sista = grundare[1]; if (sista) sista.died = s.now;
       SIM.stepReligion(s);
       const dog = !sista || SIM.troOf(s, sista.tro)?.slut === s.now;
+      // tvillingar som föds levande är ett tecken för föräldrarna (steg 10.3.7)
+      let tvSag = false, tvForsok = 0;
+      for (; tvForsok < 40 && !tvSag; tvForsok++) {
+        s.now += 25 * SIM.HOUR;
+        const m = nyInvanare(s, 'k', 25), f = nyInvanare(s, 'm', 28); m.andlig = 100; f.andlig = 100;
+        m.pregnantBy = f.id; m.pregnantSince = s.now - 270 * SIM.DAY; m.foder = { f: 'tvillingar', till: s.now };
+        SIM.birth(s, m);
+        const barn2 = s.people.filter(q => q.mother === m.id && q.born === s.now && SIM.alive(q));
+        tvSag = barn2.length === 2 && [m, f].every(q => q.upp?.some(u => u.k === 'tecken' && u.om?.includes('tvillingarna') && u.om.includes(barn2[0].name)));
+      }
+      // björnen som vände om: den som möter björnen utan att den anfaller (steg 10.3.7)
+      const sb = createState(6, START);
+      let bt: number | undefined;
+      for (let t = sb.now; t < sb.now + 60 * SIM.DAY && bt === undefined; t += 20 * SIM.MIN) { const b = SIM.bjornarOf(sb, t); if (b.some(d => d.art === 'bjorn') && !b.some(d => d.art === 'bjornunge')) bt = t; }
+      let bjSag = 0, bjMote = 0;
+      const bjJson = JSON.stringify(sb);
+      for (let i = 0; bt !== undefined && i < 20; i++) {
+        const k = SIM.migrate(JSON.parse(bjJson)); k.now = bt;
+        for (let r = 0; r < i * 7; r++) SIM.rnd(k, 'bjorn');
+        const mor = SIM.bjornarOf(k, bt).find(d => d.art === 'bjorn')!, p = SIM.living(k)[0];
+        for (const q of SIM.living(k)) if (q !== p) { q.x = 2; q.y = 2; }
+        p.x = mor.x + 1; p.y = mor.y; p.task = undefined; p.andlig = 100;
+        SIM.bjornSteg(k);
+        if (!(k.stat?.bjornstrid ?? 0) && !SIM.djurIKartStrid(k, 'bjorn')) { bjMote++; if (p.upp?.some(u => u.k === 'tecken' && u.om === SIM.teckenText('bjornVande'))) bjSag++; }
+      }
       return [
+        [`tvillingar som föds levande är ett tecken för båda föräldrarna (${tvForsok} försök)`, tvSag],
+        [`den som möter björnen utan att den anfaller minns björnen som vände om (${bjSag} av ${bjMote} möten)`, bjMote > 0 && bjSag === bjMote],
         [`den världsliga (andlighet 0) tolkar inte blixten som en tro (${varldslig.filter(p => p.tro !== undefined).length} av 60)`, varldslig.every(p => p.tro === undefined)],
         [`den mycket andliga gör det ibland (${grundare.length} av 60)`, grundare.length >= 5 && grundare.length < 40],
         [`tron har grundare, tecken och tolkning (${tr ? SIM.tolkning(tr) : 'ingen'})`, helt],

@@ -24,6 +24,7 @@ import { EFTER, Efter, FAROR, STRIDSLAG } from './efterstrid';
 import { ledareOf } from './styre';
 import { lamnaFallt, styckaFallt } from './styckning';
 import { upplev } from './uppvaxt';
+import { tecken } from './religion';
 import { H, HOUR, MIN, Person, SEC, State, Task, W } from './typer';
 import { bynsMitt } from './omrade';
 
@@ -88,6 +89,7 @@ export function bjornSteg(s: State) {
     // den ser björnen, blir rädd och går därifrån
     think(p, ungar.length ? 'Såg en björn med ungar' : 'Såg en björn', -BJORNMOTE.rädd, s.now, BJORNMOTE.räddTim * HOUR);
     avbryt(s, p);
+    tecken(s, p, 'bjornVande'); // björnen som vände om (steg 10.3.7)
     log(s, `${p.name} kom nära en björn${ungar.length ? ' med ungar' : ''} och drog sig försiktigt undan.`, 'world', [p.id]);
   }
   const j = s.bjornJakt;

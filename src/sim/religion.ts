@@ -232,6 +232,11 @@ export const TECKEN = {
     bakom: ["Den som lägger locket på", "Isens herre", "Vattnets vinterande"], vill: ["att man inte går först på isen", "att man bryter en vak och lämnar en fisk", "att man är tyst vid isen"], svek: ["isen brister", "fisken dör", "vattnet kommer aldrig tillbaka"] },
   bonSvar: { text: "bönen som fick svar", natur: 55, omr: 'atten', sym: 'tro_drom', namn: ["Svarets tro", "De hörda folk", "Bönens väg"],
     bakom: ["Den som lyssnar", "Den hörande", "Rösten som svarar"], vill: ["att man ber varje kväll", "att man tackar högt", "att man ber för andra"], svek: ["ingen svarar mer", "man blir ensam i sin nöd", "bönen vänds mot en"] },
+  // tvillingarna och björnen som vände om (steg 10.3.7)
+  tvillingar: { text: "tvillingarna {om} som föddes levande", natur: 60, omr: 'atten', sym: 'tro_barn', namn: ["Tvillingarnas tro", "De dubbla folk", "Det delade blodets väg"],
+    bakom: ["Den som gav två i stället för ett", "Moderns moder", "De två i mörkret"], vill: ["att tvillingar aldrig skiljs åt", "att man delar allt i två lika delar", "att man tackar vid varje födsel"], svek: ["den ena tvillingen tas tillbaka", "det blir inga fler barn", "syskon blir ovänner"] },
+  bjornVande: { text: "björnen som vände om", natur: 20, omr: 'jakt', sym: 'tro_hare', namn: ["Björnens tro", "Den skonades folk", "Ramens väg"],
+    bakom: ["Skogens gamle", "Den som går på fyra och på två", "Björnmodern"], vill: ["att ingen säger björnens namn högt", "att man lämnar honung i skogen", "att man går tyst förbi idet"], svek: ["björnen kommer tillbaka och vänder inte", "ramen tar boskapen", "man möter den ensam i mörkret"] },
 } satisfies Record<string, TeckenDef>;
 export type TeckenTyp = keyof typeof TECKEN;
 const TDEF: Record<TeckenTyp, TeckenDef> = TECKEN;
@@ -239,6 +244,7 @@ const TDEF: Record<TeckenTyp, TeckenDef> = TECKEN;
 export const TECKENTAL = balans('tecken', {
   blixt: 0.3, brand: 0.3, vinterSlut: 0.3, torkaSlut: 0.3, flodSlut: 0.3, jakt: 0.3, barnFrisk: 0.3, drom: 0.3,
   tornado: 0.25, brandStopp: 0.2, overlevde: 0.2, barnAska: 0.2, ingenDog: 0.1, skord: 0.1, dubbelt: 0.15, fynd: 0.1, svampsyn: 0.25, dodDrom: 0.15, frosjo: 0.1, bonSvar: 0.2,
+  tvillingar: 0.2, bjornVande: 0.1,
 } satisfies Record<TeckenTyp, number>);
 export const teckenText = (k: TeckenTyp, om?: string) => TDEF[k].text.replace('{om}', om ?? '');
 
