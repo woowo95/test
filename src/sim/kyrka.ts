@@ -27,6 +27,7 @@ import { bedFor } from './bygg';
 import { ledareOf } from './styre';
 import { upplev } from './uppvaxt';
 import type { ProjektDef } from './projekt';
+import { troshusForslag, troshusRegister } from './troshus';
 
 export const KYRKA = balans('kyrka', {
   offerChans: 0.03, // chansen per timme att en andlig ger en gåva till kyrkan ...
@@ -309,6 +310,8 @@ export const TROS_UPP: { id: string; lista(s: State, tr: Tro, p: Person): LagFor
       const f = g ? forslag(s, p, 'bytBud', { tro: tr.id, id: b.id, v: b.v, gid: g.id, gv: g.v }) : forslag(s, p, 'nyttBud', { tro: tr.id, id: b.id, v: b.v });
       return f.prio > 0 && BDEF[b.id].nu?.(s, tr) ? { ...f, prio: f.prio + KYRKA.nu } : f; // budet vars tillfälle är nu lyfts fram
     }) },
+  // planen för trons hus, del för del (steg 10.3.18)
+  { id: 'troshus', lista: (s, tr, p) => troshusForslag(s, tr).map(d => forslag(s, p, 'troshus', d)) },
   // ett bud tas bort när den som talar själv är emot det, tidigast KYRKA.nedrostat dygn efter att det antogs (steg 10.3.13)
   { id: 'taBortBud', lista: (s, tr, p) => (tr.bud ?? []).filter(b => b.t + KYRKA.nedrostat * DAY <= s.now).map(b => forslag(s, p, 'taBortBud', { tro: tr.id, id: b.id, v: b.v })) },
 ];
@@ -492,6 +495,7 @@ export function budRost(s: State, p: Person, tr: Tro, id: BudId, bv?: BudVarde) 
 // hovet och templet som rader i PROJEKT (steg 8.6.14); steg.ts lägger in dem när allt är laddat
 export const kyrkProjekt = (): Record<string, ProjektDef> => ({ hov: kyrkBygge('hov'), tempel: kyrkBygge('tempel') });
 export function kyrkaRegister() {
+troshusRegister();
 satHeligtDjur(foljerStorlek, (s, p) => budBrutet(s, p, 'heligtDjur'));
 satMatBud((s, p, k) => !farorNu(s).svalt && !!matBud(s, p, k), (s, p, k) => { const b = matBud(s, p, k); if (b) budBrutet(s, p, b.id); });
 satBudTillfalle((s, typ, p, q) => budTillfalleK(s, typ, p, q));

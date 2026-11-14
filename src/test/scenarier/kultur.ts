@@ -1617,3 +1617,34 @@ SCENARIER.matbud = {
     ];
   },
 };
+SCENARIER.troshusplan = {
+  text: 'Steg 10.3.18: planen för trons hus bestäms del för del i trons krets ur TROSHUS_DELAR (storleken, formen, väggarna när byn kan bygga flera slags, och en fråga per möbel). Skalorna avgör vilket val som läggs fram, ett nej ger ett annat val en annan kväll, och namnet är den första raden i TROSHUSNAMN som passar',
+  kor: () => {
+    const { s, tr } = medTro(6, 3);
+    tr.bud = [{ id: 'prast', t: s.now }]; tr.sk = { ...tr.sk, fest: 10, prast: 80 }; tr.manga = 80; tr.natur = 60;
+    const pr = SIM.trosTalare(s, tr)!;
+    const basta = () => { const l = SIM.TROS_UPP.find(r => r.id === 'troshus')!.lista(s, tr, pr).filter(f => f.prio > 0 && (tr.nedrostat?.[f.fr.f + ':' + JSON.stringify(f.fr.d)] ?? 0) <= s.now); return l.sort((a, b) => b.prio - a.prio)[0]?.fr.d; };
+    const forst = basta();
+    // ett nej: samma val vilar, och nästa gång läggs ett annat fram
+    (tr.nedrostat ??= {})['troshus:' + JSON.stringify(forst)] = s.now + 3 * SIM.DAY;
+    const sedan = basta();
+    tr.nedrostat = {};
+    // kvällarna tills planen är klar; frågorna om planen kommer i registrets ordning
+    const dag0 = s.now - (s.now % SIM.DAY), ordning: string[] = [];
+    for (let d = 1; d <= 400 && !SIM.planKlar(s, tr); d++) {
+      s.now = dag0 + d * SIM.DAY + 20 * SIM.HOUR;
+      SIM.kyrkaKvall(s);
+      for (const k of Object.keys(tr.plan ?? {})) if (!ordning.includes(k)) ordning.push(k);
+    }
+    const iOrdning = ordning.join(',') === 'storlek,form,altare,gudabild,bank';
+    const namn = SIM.troshusNamn(s, tr);
+    tr.manga = 20; tr.natur = 20; const helgedom = SIM.troshusNamn(s, tr);
+    tr.natur = 60; tr.plan = { ...tr.plan, storlek: 'trangt' }; const ve = SIM.troshusNamn(s, tr);
+    return [
+      [`Fest lägger fram rymligt först (${forst?.v}), och efter ett nej något annat (${sedan?.v})`, forst?.del === 'storlek' && forst.v === 'rymligt' && sedan?.del === 'storlek' && sedan.v !== 'rymligt'],
+      [`frågorna kommer i ordning, och väggarna frågas inte när byn bara kan bygga ett slags (${ordning.join(', ')})`, iOrdning],
+      [`planen blir klar och sparas på tron (${SIM.planText(s, tr)})`, SIM.planKlar(s, tr) && tr.plan?.form === 'avlang'],
+      [`namnet följer skalorna: en enda gud och präster ger ${namn}, naturens andar ${helgedom}, ett trångt hus ${ve}`, namn === 'Kyrka' && helgedom === 'Helgedom' && ve === 'Vé'],
+    ];
+  },
+};

@@ -97,6 +97,7 @@ export * from './sim/kvarlevor';
 export * from './sim/kult';
 export * from './sim/rader';
 export * from './sim/kyrka';
+export * from './sim/troshus';
 export * from './sim/kultlatt';
 export * from './sim/grav';
 export * from './sim/rost';
