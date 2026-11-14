@@ -117,7 +117,9 @@ export function zoneAt(s: State, x: number, y: number) {
 }
 export function isStored(s: State, x: number, y: number) {
   const zs = zonesOf(s);
-  for (let i = 0; i < zs.length; i++) if (nearZone(zs[i], x, y, LAGER.bredvid)) return true;
+  // en ruta på ett fält hör aldrig till förrådet, också när en lagerplats flyttats eller vuxit intill fältet: det som ligger där
+  // ligger utanför lagret och bärs in som annat utanför
+  for (let i = 0; i < zs.length; i++) if (nearZone(zs[i], x, y, LAGER.bredvid)) return !faltAt(s, x, y);
   return false;
 }
 export function stacksOf(s: State): Stack[] {
