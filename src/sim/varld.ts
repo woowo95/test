@@ -18,7 +18,8 @@ import { newSeder, sederTarget, TAGS } from './seder';
 import { clamp, gauss, rnd } from './slump';
 import { Act, DAY, Person, SEC, State, simulera, useMap } from './typer';
 import { startSmak } from './rykten';
-import { nyAndlighet } from './religion';
+import { nyAndlighet, troNiva } from './religion';
+import { hogtidForm, hogtidVarde, hogtider } from './kult';
 import { newFire } from './eld';
 import { UPPREPAT, lasAlder, lasArt, packaAlder, packaArt } from './trad';
 import { historikKolumner } from './historik';
@@ -332,6 +333,13 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
   }],
   [40, 'v528: buden bär ett värde (steg 10.3.1): varje antaget bud blir raden, utan värde, och tiden tron grundades som tiden det antogs', s => {
     for (const tr of s.tron ?? []) if (tr.bud) tr.bud = (tr.bud as unknown[]).map(b => typeof b === 'string' ? { id: b as import('./kyrka').BudId, t: tr.t } : b as import('./kyrka').AntagetBud);
+  }],
+  [41, 'v528: ritualerna är bud (steg 10.3.3): trons högtider blir bud som redan antagits, med formen efter skalan Fest – Försakelse', s => {
+    for (const tr of s.tron ?? []) {
+      if (tr.slut !== undefined || troNiva(tr) < 2 || tr.bud?.some(b => b.id === 'hogtid')) continue;
+      const n = hogtider(tr);
+      for (let ai = 0; ai < 4; ai++) if ((tr.id + ai) % 4 < n) (tr.bud ??= []).push({ id: 'hogtid', v: hogtidVarde(ai, hogtidForm(tr)), t: tr.t });
+    }
   }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];

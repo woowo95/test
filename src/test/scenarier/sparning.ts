@@ -143,7 +143,12 @@ SCENARIER.sparning = {
     for (let h = 0; h < 3 * 24; h++) { kor(a, 1); kor(b, 1); sparaSomUI(b); }
     // oavsett i vilken ordning fälten skrivs (kanonisk): sparningen lägger kartorna packade i byn (packGround), och det första sparandet bestämmer var i texten
     const sparLika = kanonisk(serialize(a)) === kanonisk(serialize(b)), dodaStadat = Object.keys(a.rels).every(k => k.split('-').map(Number).some(id => living(a).some(q => q.id === id)));
+    // en by från före steg 10.3.3: trons högtider blir bud som redan antagits
+    const forTro = JSON.parse(hel); forTro.v = 40;
+    forTro.tron = [{ id: 1, grundare: 0, gnamn: 'X', t: 0, ar: 1, k: 'drom', bakom: '', vill: '', svek: '', natur: 50, manga: 50, bekr: 0, niva: 2, sk: { fest: 10 } }];
+    const hogBud = (migrate(forTro).tron?.[0].bud ?? []).filter(b => b.id === 'hogtid');
     const forst: Koll[] = [
+      [`trons högtider i en sparad by blir bud (${hogBud.map(b => SIM.hogtidNamn(b.v)).join(', ')})`, hogBud.length === 4 && hogBud.every(b => SIM.hogtidAv(b.v).form === 'gille')],
       [`en by som sparas varje timme blir samma by som en som inte sparas (tre dygn)`, sparLika],
       [`relationer mellan två döda städas bort i simuleringen (${relDoda} relationer före)`, dodaStadat],
       [`byn delas i ${Object.keys(delar).join(', ')} (${Object.entries(kb).map(([d, n]) => `${d} ${n} KB`).join(', ')})`, ['byn', 'folket', 'kartor', 'loggen'].every(d => d in delar) && delar.folket.includes('"people"') && !delar.byn.includes('"people"')],

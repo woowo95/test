@@ -12,8 +12,10 @@ function kultHtml(tr: Tro) {
   const pr = prastOf(s, tr), pl = (s.heliga ?? []).filter(h => h.tro === tr.id), hg = hogtider(tr), rad: string[] = [];
   if (pr) rad.push(`<li>${esc(prastSort(tr, pr.sex))}: ${pLink(pr)}</li>`);
   for (const h of pl) rad.push(`<li title="${esc(`Platsen ${h.om}`)}">${esc(HELIGA_PLATSER[h.k].namn)}${h.skandad ? ' (vanhelgad)' : ''}</li>`);
-  if (hg) rad.push(`<li>${hg} ${hg === 1 ? 'högtid' : 'högtider'} om året</li>`);
-  for (const b of tr.bud ?? []) rad.push(`<li title="${esc(BUD[b.id].text)}">📜 ${esc(budNamn(s, b))}</li>`);
+  const har = (tr.bud ?? []).filter(b => b.id === 'hogtid').length;
+  if (hg || har) rad.push(`<li title="Skalan Fest – Försakelse avgör hur många högtider tron föreslår">${har} av ${Math.max(hg, har)} ${hg === 1 ? 'högtid' : 'högtider'} om året</li>`);
+  // varje bud: namnet, och för ritualbuden när, vilka, var och vad som går åt; varför står sist (steg 10.3.3)
+  for (const b of tr.bud ?? []) { const d = BUD[b.id] as { text: string; om?(s: unknown, tr: Tro, b: unknown): string }; rad.push(`<li title="${esc(`${d.om ? d.om(s, tr, b) + ' ' : ''}Varför: ${d.text.toLowerCase()}.`)}">📜 ${esc(budNamn(s, b))}</li>`); }
   if (tr.hov) rad.push(`<li>📜 ${tr.hov.klar ? 'Hovet står klart' : 'Hovet byggs'}</li>`);
   if (forradSum(tr)) rad.push(`<li title="${esc(Object.entries(tr.forrad!).filter(([, n]) => n > 0).map(([k, n]) => `${n} ${k}`).join(', '))}">📜 Kyrkans förråd: ${forradSum(tr)}</li>`);
   for (const h of tr.helgon ?? []) rad.push(`<li title="${esc(`Krönikan: ${h.krönika} Myten: ${h.myt}`)}">✨ Helgonet ${esc(h.namn)}</li>`);

@@ -5,7 +5,7 @@ import { personHand } from './personlogg';
 import { DAY, HOUR, MIN, Person, State, T, W, inMap } from './typer';
 import { balans } from './balans';
 import { clamp, rnd } from './slump';
-import { ALDER, ageOf, alive, byId, count, isParent, living, log, stat, think } from './folk';
+import { ALDER, KROPP, ageOf, alive, byId, count, isParent, living, log, stat, think } from './folk';
 import { kronika } from './historik';
 import { upplev } from './uppvaxt';
 import { TRO, Tro, andlighet, grunda, tecken, skalaV, troNamn, troNiva, troOf, troende } from './religion';
@@ -15,7 +15,9 @@ import { groundOf } from './mark';
 import { FOREST } from './vag';
 import { freeNear } from './byggnad';
 import { eldPlats } from './karta';
-import { addTo, amountOf } from './lager';
+import { addTo, amountOf, ownedStock, use } from './lager';
+import { ata } from './naring';
+import { budIn, foljer } from './kyrka';
 import { FOOD } from './saker';
 import { takeMaterial } from './behov';
 import { kladAv } from './klader';
@@ -42,6 +44,8 @@ export const KULT = balans('kult', {
   fest: 50, forsakelse: 50, // Fest – Försakelse: över så här mycket på respektive sida (0 = Fest, 100 = Försakelse)
   bal: 4, // så mycket ved ett bål tar
   vattenR: 20, // ... och så här nära ska vattnet vara för att den döde läggs i vatten
+  fastaTro: 4, // fastan ger tron så här mycket i stället för högtidens 3 (steg 10.3.3)
+  offerTro: 2, offerInget: -0.02, // offret vid högtiden: tron hos den som offrar, och humöret hos den som inget har
 });
 
 // ---------- bönen (steg 8.5.2–8.5.4) ----------
@@ -178,12 +182,12 @@ function vanhelga(s: State) {
 
 // ---------- ritualerna (steg 8.5.6, 8.5.13, 8.5.14) ----------
 export interface RitualDef { namn: string; tim: number; humor: number; tro: number; huvud?: number; vem(s: State, r: Ritual): Person[]; plats(s: State, r: Ritual): { x: number; y: number } }
-export interface Ritual { k: RitualId; start: number; slut: number; x: number; y: number; tro?: number; namn?: string; om?: number[]; gick?: number }
+export interface Ritual { k: RitualId; start: number; slut: number; x: number; y: number; tro?: number; namn?: string; om?: number[]; gick?: number; form?: HogtidForm }
 const vuxna = (s: State) => living(s).filter(p => ageOf(p, s.now) >= ALDER.smabarn);
 const vidElden = (s: State) => { const f = eldPlats(s), q = freeNear(s, f.x + 0.5, f.y + 2); return q; };
 export const RITUALER = {
   begravning: { namn: 'Begravning', tim: 1, humor: 0.05, tro: 2, vem: (s, r) => living(s).filter(p => p.tro === r.tro || r.om?.some(id => { const d = byId(s, id); return d && (isParent(p, d) || isParent(d, p) || p.partner === id); })), plats: (_s, r) => ({ x: r.x, y: r.y }) },
-  brollop: { namn: 'Bröllop', tim: 2, humor: 0.08, huvud: 0.15, tro: 1, vem: vuxna, plats: vidElden },
+  brollop: { namn: 'Bröllop', tim: 2, humor: 0.08, huvud: 0.15, tro: 1, vem: vuxna, plats: (s, r) => { const tr = troOf(s, r.tro); return (tr && helig(s, tr)) ?? vidElden(s); } }, // välsignat (tron har budet, steg 10.3.3) vid trons heliga plats
   hogtid: { namn: 'Högtid', tim: 3, humor: 0.1, tro: 3, vem: (s, r) => living(s).filter(p => p.tro === r.tro), plats: (s, r) => { const tr = troOf(s, r.tro); return (tr && helig(s, tr)) ?? vidElden(s); } },
   leddBon: { namn: 'Ledd bön', tim: 1, humor: 0.06, tro: 1.5, vem: (s, r) => living(s).filter(p => p.tro === r.tro), plats: (s, r) => { const tr = troOf(s, r.tro); return (tr && helig(s, tr)) ?? vidElden(s); } },
 } satisfies Record<string, RitualDef>;
@@ -201,16 +205,21 @@ export function ritualTimme(s: State) {
   if (r && s.now >= r.slut) {
     const d = RDEF[r.k], med = living(s).filter(p => p.task?.act === 'ritual');
     const prast = r.tro !== undefined ? troOf(s, r.tro) : undefined, ledd = prast && prastOf(s, prast) ? KULT.starkare : 1;
+    const tr = prast;
     for (const p of med) {
       think(p, r.namn ?? d.namn, (r.om?.includes(p.id) ? d.huvud ?? d.humor : d.humor) * ledd, s.now, 12 * HOUR);
-      if (p.tro !== undefined) p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + d.tro);
+      // en ritual ger tro bara till dem som har ritualens tro (steg 10.3.3); fastan ger mer
+      if (r.tro !== undefined && p.tro === r.tro) p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + (r.form === 'fasta' ? KULT.fastaTro : d.tro));
       p.task!.until = s.now;
     }
+    if (r.k === 'hogtid' && tr) hogtidSlut(s, tr, r, med);
     count(s, 'ritual_' + r.k);
     s.ritual = undefined;
   }
   if (s.ritual || !s.ritualKo?.length) return;
-  const n = s.ritualKo.shift()!, d = RDEF[n.k], at = d.plats(s, n);
+  const n = s.ritualKo.shift()!, d = RDEF[n.k];
+  if (n.k === 'brollop') valsigna(s, n);
+  const at = d.plats(s, n);
   s.ritual = { ...n, start: s.now, slut: s.now + d.tim * HOUR, x: at.x, y: at.y };
   log(s, `${n.namn ?? d.namn} samlar byn.`, 'rel', []);
   if (n.k === 'brollop') festMat(s);
@@ -223,18 +232,55 @@ function festMat(s: State) {
   addTo(s, k, -n); count(s, 'festmat');
   for (const p of folk) p.hunger = Math.min(1, p.hunger + KULT.festMat);
 }
-// högtiderna (steg 8.5.14): en tro har 0–4, var och en knuten till en tidsålder, och firas när den tidsåldern kommer. Fest ger fler, Försakelse färre
+// bröllopet (steg 10.3.3): byns fest hålls alltid. Har båda i paret samma tro och den har budet Bröllopet välsignas, hålls det vid trons
+// heliga plats och de troende får tro. Ett bröllop bland de troende lyfter fram budet bland trons förslag (tr.brollop)
+function valsigna(s: State, n: Ritual) {
+  const [a, b] = (n.om ?? []).map(id => byId(s, id)), tr = a && b && a.tro !== undefined && a.tro === b.tro ? troOf(s, a.tro) : undefined;
+  if (!tr) return;
+  tr.brollop = s.now;
+  if (budIn(tr, 'valsigna')) { n.tro = tr.id; count(s, 'brollop_valsignat'); }
+}
+// högtiderna (steg 8.5.14 och 10.3.3): en tro har 0–4, var och en ett bud knutet till en tidsålder. Skalan Fest – Försakelse avgör bara hur
+// många som föreslås; formen (gille eller fasta) sparas i budet när det antas och står kvar när skalan flyttar sig
 export const hogtider = (tr: Tro) => { const f = skalaV(tr, 'fest') ?? 50; return f < KULT.fest ? 2 + (f < 25 ? 2 : 0) : f > 75 ? 0 : 1; };
+export type HogtidForm = 'gille' | 'fasta';
 const HOGTIDSNAMN = ['Isblotet', 'Vårfesten', 'Midsommarnatten', 'Skördenatten'];
+const TIDSALDER = ['istiden', 'vårtiden', 'sommartiden', 'hösttiden'];
+// budets värde: tidsålderns nummer och formen, t.ex. "2:gille"
+export const hogtidVarde = (ai: number, form: HogtidForm) => `${ai}:${form}`;
+export const hogtidAv = (v: unknown) => { const [a, f] = String(v).split(':'); return { ai: Number(a), form: (f === 'fasta' ? 'fasta' : 'gille') as HogtidForm }; };
+export const hogtidNamn = (v: unknown) => { const { ai, form } = hogtidAv(v); return form === 'fasta' ? `Fastan i ${TIDSALDER[ai]}` : HOGTIDSNAMN[ai]; };
+export const hogtidForm = (tr: Tro): HogtidForm => (skalaV(tr, 'fest') ?? 0) > KULT.forsakelse ? 'fasta' : 'gille';
+// den högtid tron kan rösta in nu: tidsålderns, så länge tron har färre än skalan ger och inte redan har en i den här tidsåldern
+export function hogtidNu(s: State, tr: Tro): string[] {
+  const har = (tr.bud ?? []).filter(b => b.id === 'hogtid'), ai = ageIndex(s);
+  return har.length >= hogtider(tr) || har.some(b => hogtidAv(b.v).ai === ai) ? [] : [hogtidVarde(ai, hogtidForm(tr))];
+}
+// högtiden firas en gång i sin tidsålder, första gången i samma tidsålder som den antogs
 function hogtidSteg(s: State, tr: Tro) {
-  if (troNiva(tr) < 2) return;
-  const n = hogtider(tr), ai = ageIndex(s), st = ageStart(s, ai);
-  if (!n || (tr.id + ai) % 4 >= n || tr.hogtid === st) return;
+  const ai = ageIndex(s), st = ageStart(s, ai);
+  if (tr.hogtid === st) return;
+  const b = tr.bud?.find(x => x.id === 'hogtid' && hogtidAv(x.v).ai === ai);
+  if (!b) return;
   tr.hogtid = st;
-  const fasta = (skalaV(tr, 'fest') ?? 0) > KULT.forsakelse;
-  nyRitual(s, 'hogtid', { tro: tr.id, namn: fasta ? `Fastan i ${['istiden', 'vårtiden', 'sommartiden', 'hösttiden'][ai]}` : HOGTIDSNAMN[ai] });
-  if (fasta) for (const p of troende(s, tr)) { p.fasta = s.now + DAY; p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + 1); }
-  else for (const p of troende(s, tr).slice(0, 3)) if (amountOf(s, 'bar') >= 1 && rnd(s, 'tro', p) < 0.5) { takeMaterial(s, p, 'bar', 1); p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + 2); count(s, 'offer'); } // offret: en hel sak läggs på den heliga platsen
+  nyRitual(s, 'hogtid', { tro: tr.id, namn: hogtidNamn(b.v), form: hogtidAv(b.v).form });
+}
+// när högtiden slutar: gillets mat eller fastans dygn, och offret av dem som följer budet
+function hogtidSlut(s: State, tr: Tro, r: Ritual, med: Person[]) {
+  const f = (tr.forrad ??= {});
+  for (const p of med) {
+    if (r.form === 'fasta') { if (p.tro === tr.id) p.fasta = s.now + DAY; }
+    else { // gillet: en hel mat, ur kyrkans egendom först och annars ur den egna maten; den som inget har äter inte
+      const k = FOOD.find(q => (f[q] ?? 0) >= 1);
+      if (k) { f[k]--; ata(p, { [k]: KROPP.mattar }); count(s, 'gille_mat'); }
+      else { const e = ownedStock(s, p), m = FOOD.filter(q => (e[q] ?? 0) >= 1).sort((a, b) => (e[b] ?? 0) - (e[a] ?? 0))[0]; if (m) { use(s, p, m, 1); ata(p, { [m]: KROPP.mattar }); count(s, 'gille_mat'); } }
+    }
+    // offret: den som följer budet lägger en hel mat, den hen äger mest av, på den heliga platsen, och den är borta
+    if (p.tro !== tr.id || !budIn(tr, 'offer') || !foljer(p, 'offer')) continue;
+    const e = ownedStock(s, p), m = FOOD.filter(q => (e[q] ?? 0) >= 1).sort((a, b) => (e[b] ?? 0) - (e[a] ?? 0))[0];
+    if (m) { use(s, p, m, 1); p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + KULT.offerTro); count(s, 'offer'); }
+    else think(p, 'Hade inget att offra', KULT.offerInget, s.now, 12 * HOUR);
+  }
 }
 // ---------- varje timme ----------
 export function kultTimme(s: State) {
