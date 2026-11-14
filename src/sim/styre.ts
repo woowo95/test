@@ -558,6 +558,7 @@ export function rattegang(s: State, r: Rattegang) {
 // ---------- en gång i timmen ----------
 export function stepStyre(s: State) {
   const st = s.styre;
+  if (Math.floor(hourOf(s.now)) === STR.timme) kyrkaKvall(s); // trons krets väntar inte på att byn har en ledare (steg 10.3.2)
   if (!st && !living(s).some(p => knows(p, 'ledarskap'))) return;
   const ai = ageIndex(s);
   if (st?.ledare !== undefined) {
@@ -582,7 +583,7 @@ export function stepStyre(s: State) {
   if (!s.styre!.oppna.includes('natur') && (s.fallda ?? 0) > 0) oppnaSed(s, 'natur');
   missnojeTimme(s);
   if (!ledareOf(s)) return;
-  if (Math.floor(hourOf(s.now)) === STR.timme) { doma(s, l); rostKvall(s); if (!s.styre?.fragor?.length) tasUppKvall(s); kyrkaKvall(s); lagDygn(s); }
+  if (Math.floor(hourOf(s.now)) === STR.timme) { doma(s, l); rostKvall(s); if (!s.styre?.fragor?.length) tasUppKvall(s); lagDygn(s); }
 }
 // skammen: den straffade håller sig undan bordet och elden (val.ts)
 export const skams = (p: Person, now: number) => p.skam !== undefined && p.skam > now;

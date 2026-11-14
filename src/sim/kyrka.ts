@@ -11,9 +11,9 @@ import { ALDER, type BudTillfalle, ageOf, count, living, log, relKey, satBudTill
 import { FOOD } from './saker';
 import { kronika } from './historik';
 import { Tro, andlighet, gudarOf, skalaV, troNamn, troNiva, troOf, troende } from './religion';
-import { helga, helig, prastOf } from './kult';
-import { FRAGOR, FragaData, rostaOm } from './rost';
-import { LAGAR, lagGaller } from './lagar';
+import { helga, helig, prastOf, prastRang } from './kult';
+import { FRAGOR, Fraga, FragaData, rostaOm } from './rost';
+import { LAGAR, LagForslag, lagGaller } from './lagar';
 import { addTo, amountOf, ownMove, ownedStock, ownsAmount, use } from './lager';
 import { freeNear } from './byggnad';
 import { eldPlats } from './karta';
@@ -34,7 +34,8 @@ export const KYRKA = balans('kyrka', {
   skuldTro: 2, // ... och så här mycket svagare tro
   stotaUt: 5, // så mycket skuld innan en sträng och mäktig kyrka stöter ut någon
   helgonDygn: 28, // ett helgon blir det tidigast så här många dygn (år i spelet) efter döden, en generation
-  fram: 0.12, // chansen per kväll att prästen lägger fram något
+  fram: 0.12, // chansen per kväll att den som talar för tron lägger fram något (steg 10.3.2)
+  nedrostat: 3, // ett förslag som röstats ned i trons krets tas inte upp igen på så här många dygn (år i spelet)
   valsigna: 0.15, // så mycket översteprästens välsignelse eller fördömelse är värd i legitimiteten
   kvadeDygn: 7, // prästen diktar ett kväde en gång så här ofta
   // budens verkan (steg 8.6.6–8.6.10)
@@ -155,16 +156,35 @@ export function utgiftNu(s: State, tr: Tro): 'hov' | 'tempel' | 'prast' | 'fatti
 }
 // bud som fråga i trons krets (steg 8.6.7)
 const passar = (tr: Tro, b: BudDef) => { if (!b.skala) return true; const v = skalaV(tr, b.skala); if (v === undefined) return false; return b.sida === 0 ? v < 50 : v >= 50; };
-// klockan 20: prästen eller profeten lägger ibland fram något i trons krets
+// ---------- trons krets tar upp sina egna frågor (steg 10.3.2) ----------
+// den som talar för tron: prästen, annars en profet, annars den främsta bland de vuxna troende (den som själv skulle bli präst)
+export function trosTalare(s: State, tr: Tro): Person | undefined {
+  return prastOf(s, tr) ?? living(s).find(p => p.tro === tr.id && p.profet) ?? troende(s, tr).filter(p => ageOf(p, s.now) >= ALDER.vuxen).sort((a, b) => prastRang(s, b) - prastRang(s, a))[0];
+}
+// vad som kan läggas fram i trons krets, som lagarnas TAS_UPP: den som talar föreslår det hen själv helst röstar för (prio = hens egen röst)
+const forslag = (s: State, p: Person, f: string, d: FragaData): LagForslag => { const r = FRAGOR[f].rost(s, p, d); return { fr: { f, d, fram: p.id }, prio: r.v, varfor: `${p.name} vill det: ${r.why.toLowerCase()}` }; };
+export const TROS_UPP: { id: string; lista(s: State, tr: Tro, p: Person): LagForslag[] }[] = [
+  { id: 'kyrkutgift', lista: (s, tr, p) => { const vad = utgiftNu(s, tr); return vad ? [forslag(s, p, 'kyrkutgift', { tro: tr.id, vad })] : []; } },
+  { id: 'nyttBud', lista: (s, tr, p) => (Object.keys(BUD) as BudId[]).filter(id => BDEF[id].niva <= troNiva(tr) && passar(tr, BDEF[id]) && (BDEF[id].storlek < 3 || (s.seder.v.andlig ?? 0) > 0 || BDEF[id].storlek === 3))
+    .flatMap(id => budForslag(s, tr, id)).map(b => forslag(s, p, 'nyttBud', { tro: tr.id, id: b.id, v: b.v })) },
+];
+const trosNyckel = (fr: Fraga) => fr.f + ':' + JSON.stringify(fr.d);
+// klockan 20: varje tro har sin chans att den som talar för den lägger fram något. Hen lägger bara fram det hen själv röstar ja till,
+// och ett nedröstat förslag vilar i KYRKA.nedrostat dygn
 export function kyrkaKvall(s: State) {
   for (const tr of s.tron ?? []) {
     if (tr.slut !== undefined) continue;
-    const pr = prastOf(s, tr) ?? living(s).find(p => p.tro === tr.id && p.profet);
+    const pr = trosTalare(s, tr);
     if (!pr || rnd(s, 'tro', pr) >= KYRKA.fram) continue;
-    const vad = utgiftNu(s, tr);
-    if (vad) { rostaOm(s, { f: 'kyrkutgift', d: { tro: tr.id, vad } as FragaData, fram: pr.id }); return; }
-    const nasta = (Object.keys(BUD) as BudId[]).filter(id => BDEF[id].niva <= troNiva(tr) && passar(tr, BDEF[id]) && (BDEF[id].storlek < 3 || (s.seder.v.andlig ?? 0) > 0 || BDEF[id].storlek === 3)).flatMap(id => budForslag(s, tr, id)).sort((a, b) => BDEF[a.id].storlek - BDEF[b.id].storlek)[0];
-    if (nasta) { rostaOm(s, { f: 'nyttBud', d: { tro: tr.id, id: nasta.id, v: nasta.v } as FragaData, fram: pr.id }); return; }
+    const ned = (tr.nedrostat ??= {});
+    let bast: LagForslag | undefined;
+    for (const r of TROS_UPP) for (const f of r.lista(s, tr, pr)) if (f.prio > 0 && (ned[trosNyckel(f.fr)] ?? 0) <= s.now && (!bast || f.prio > bast.prio)) bast = f;
+    if (!bast) continue;
+    const gick = rostaOm(s, bast.fr);
+    if (!gick) ned[trosNyckel(bast.fr)] = s.now + KYRKA.nedrostat * DAY;
+    for (const k of Object.keys(ned)) if (ned[k] <= s.now) delete ned[k];
+    const o = tr.roster?.[tr.roster.length - 1];
+    if (o) o.varfor = bast.varfor;
   }
 }
 // ---------- hovet och templet (steg 8.6.14) ----------

@@ -130,11 +130,13 @@ export function helga(s: State, tr: Tro, x: number, y: number, om: string) {
 // sorten följer Var och en – Präster; regeln om vem som får bli präst bestäms när den första utses och ändras aldrig
 export const prastSort = (tr: Tro, k: 'k' | 'm') => { const v = skalaV(tr, 'prast') ?? 0; return v < 34 ? (k === 'k' ? 'Völva' : 'Schaman') : v < 67 ? (k === 'k' ? 'Gydja' : 'Gode') : 'Präst'; };
 export const prastOf = (s: State, tr: Tro) => { const q = byId(s, tr.prast); return q && alive(q) && q.tro === tr.id ? q : undefined; };
+// hur väl någon passar som präst: andligheten och karisman
+export const prastRang = (s: State, p: Person) => andlighet(s, p) + stat(p, 'karisma', s.now) * 3;
 function prastSteg(s: State, tr: Tro, folk: Person[]) {
   if (troNiva(tr) < 3 || prastOf(s, tr)) return;
   const kand = folk.filter(q => ageOf(q, s.now) >= ALDER.vuxen && andlighet(s, q) >= KULT.prastAnde && (!tr.prastRegel || tr.prastRegel === 'bada' || tr.prastRegel === q.sex));
   if (!kand.length) return;
-  const p = kand.sort((a, b) => andlighet(s, b) + stat(b, 'karisma', s.now) * 3 - andlighet(s, a) - stat(a, 'karisma', s.now) * 3)[0];
+  const p = kand.sort((a, b) => prastRang(s, b) - prastRang(s, a))[0];
   if (!tr.prastRegel) { const r = rnd(s, 'tro', p); tr.prastRegel = r < 0.34 ? 'k' : r < 0.67 ? 'm' : 'bada'; }
   if (tr.prastRegel !== 'bada' && tr.prastRegel !== p.sex) return;
   tr.prast = p.id; count(s, 'prast');

@@ -901,7 +901,7 @@ SCENARIER.kyrkan = {
     // ett bud i trons krets
     tr.bud = [];
     const gick = SIM.rostaOm(s, { f: 'nyttBud', d: { tro: tr.id, id: 'ingetKott' }, fram: pr.id });
-    const o = s.styre!.roster![s.styre!.roster!.length - 1];
+    const o = tr.roster![tr.roster!.length - 1];
     const bara = o.roster.every(r => SIM.byId(s, r.id)?.tro === tr.id);
     tr.bud = [{ id: 'ingetKott', t: s.now }];
     const q = v.find(p => p !== pr)!; q.troStyrka = 60; const forb = SIM.budForbjuder(s, q, 'jakt');
@@ -929,6 +929,42 @@ SCENARIER.kyrkan = {
       ['hovet är ett projekt som bara de troende bygger', projHov],
       [`sedan ett tempel av sten (${ut2}) där hovet stod, också ett projekt (${!!tr.tempel?.klar})`, ut2 === 'tempel' && projTempel && !!tr.tempel?.klar && tr.tempel.x === tr.hov!.x],
       ['översteprästen finns', SIM.overstePrast(s) === pr && !!l],
+    ];
+  },
+};
+
+SCENARIER.troskrets = {
+  text: 'Steg 10.3.2: trons krets tar upp sina egna frågor. En by utan ledarskap röstar om ett bud och har fortfarande inget styre efteråt, den främsta bland de troende lägger fram utan präst och profet, ett nedröstat bud kommer inte tillbaka på tre dygn (tre år i spelet), och två trosriktningar tar upp var sin fråga samma kväll',
+  env: { BALANS: 'kyrka.fram=1' }, // varje kväll tas något upp, så att scenariot inte väntar på chansen
+  kor: () => {
+    const { s, v, tr } = medTro(6, 2);
+    s.styre = undefined; for (const p of v) delete p.tek!.ledarskap;
+    const dag0 = s.now - (s.now % 86400000), kvall = (d: number) => { s.now = dag0 + d * 86400000 + 20 * 3600000; SIM.kyrkaKvall(s); };
+    const frams = v.filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen).sort((a, b) => SIM.prastRang(s, b) - SIM.prastRang(s, a))[0];
+    kvall(1);
+    const o1 = tr.roster?.[0], baraTroende = !!o1 && o1.roster.every(r => SIM.byId(s, r.id)?.tro === tr.id);
+    // ett nedröstat bud: bara den som talar tror starkt, de andra tycker att budet är för hårt
+    for (const p of v) p.troStyrka = p === frams ? 60 : 0;
+    for (const p of v) for (const q of v) if (p !== q) SIM.getRel(s, p, q).op = 0;
+    const n0 = tr.roster?.length ?? 0;
+    kvall(2);
+    const ned = tr.roster?.[n0];
+    const tillbaka: number[] = [];
+    for (let d = 3; d <= 7; d++) { const n = tr.roster!.length; kvall(d); if (tr.roster!.slice(n).some(o => o.namn === ned?.namn)) tillbaka.push(d - 2); }
+    // två trosriktningar samma kväll
+    const tr2: SIM.Tro = { ...structuredClone(tr), id: 2, namn: 'Stillhetens väg', roster: undefined, nedrostat: undefined, bud: undefined };
+    s.tron!.push(tr2);
+    for (const p of v.slice(Math.ceil(v.length / 2))) { p.tro = 2; }
+    for (const p of v) p.troStyrka = 60;
+    const a0 = tr.roster!.length, b0 = tr2.roster?.length ?? 0;
+    kvall(8);
+    const bada = tr.roster!.length > a0 && (tr2.roster?.length ?? 0) > b0;
+    return [
+      [`en by utan ledarskap röstar i trons krets (${o1?.namn ?? 'ingen omröstning'}: ${o1?.gick ? 'ja' : 'nej'})`, baraTroende],
+      ['byn har inget styre efter omröstningen', s.styre === undefined],
+      [`den främsta bland de troende lägger fram utan präst och profet (${o1?.framNamn}, väntat ${frams.name})`, o1?.fram === frams.id && !SIM.prastOf(s, tr) && !v.some(p => p.profet)],
+      [`ett nedröstat bud (${ned?.namn ?? 'inget'}, ${ned?.gick ? 'ja' : 'nej'}) kommer tillbaka först efter tre dygn (${tillbaka.join(', ') || 'inte alls'})`, !!ned && !ned.gick && tillbaka.every(d => d >= 3)],
+      [`två trosriktningar tar upp var sin fråga samma kväll (${tr.roster!.slice(a0).map(o => o.namn).join(', ')} / ${(tr2.roster ?? []).slice(b0).map(o => o.namn).join(', ')})`, bada],
     ];
   },
 };

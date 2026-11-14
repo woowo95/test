@@ -94,11 +94,11 @@ function ministrar() {
   return Object.entries(s.styre?.ministrar ?? {}).map(([id, pid]) => { const q = byId(s, pid); return q ? `<li>${pLink(q)}<span></span><span></span><span class="muted">${esc(MINISTRAR[id]?.namn ?? id)}</span><span class="muted small" title="${esc(MINISTRAR[id]?.om ?? '')}">${esc(MINISTRAR[id]?.kort ?? '')}</span></li>` : ''; }).join('');
 }
 // omröstningarna (steg 8.3.3): frågan, vem som la fram den och utfallet. Ett tryck visar varje röst som en symbol med vikten och varför
-function omrostningar() {
-  const lista = s.styre?.roster;
+// trons krets visar sina egna i fliken Religion (steg 10.3.2)
+export function omrostningar(lista = s.styre?.roster, rubrik = 'Omröstningar') {
   if (!lista?.length) return '';
-  return `<h3>Omröstningar</h3><ol class="logg">${lista.slice().reverse().map(o => {
-    const id = `rost-${o.t}-${o.f}`, val = o.f === 'ledare';
+  return `<h3>${esc(rubrik)}</h3><ol class="logg">${lista.slice().reverse().map(o => {
+    const id = `rost-${o.t}-${o.f}-${o.fram}`, val = o.f === 'ledare';
     return `<li class="klick" data-hjalp="${id}" data-hjalp-grupp="rost-" title="Tryck för alla röster" tabindex="0" role="button"><span class="when">${timeLabel(s, o.t)}</span>${esc(o.namn)}${val ? `: ${esc(o.framNamn)}` : ` ${o.gick ? 'ja' : 'nej'}`} <span class="muted">${val ? '' : `(${Math.round(o.ja * 100)} % mot ${Math.round(o.nej * 100)} %)`}</span></li>${hjalpText(id, rostMer(o))}`;
   }).join('')}</ol>`;
 }

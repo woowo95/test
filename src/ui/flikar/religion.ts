@@ -3,6 +3,7 @@ import { tecknet } from '../../ikoner';
 import { bar, esc, hjalpKnapp, hjalpText, pLink } from '../hjalp';
 import { s } from '../lage';
 import { sedBar } from './seder';
+import { omrostningar } from './styre';
 import type { Flik } from '../panel';
 import { BUD, HELIGA_PLATSER, RITUALER, budNamn, forradSum, hogtider, prastOf, prastSort } from '../../sim';
 
@@ -56,7 +57,7 @@ function troHtml(tr: Tro) {
     ${skalaHtml(tr)}
     ${gudarHtml(tr)}
     <ul class="rels">${folk.map(p => `<li>${pLink(p)}<span></span><span>${bar((p.troStyrka ?? 0) / 100)}</span><span class="muted">${Math.floor(ageOf(p, s.now))} år</span></li>`).join('')}</ul>
-    ${kultHtml(tr)}<h3>Upplevelser som rör tron</h3>${upplevHtml(folk)}`;
+    ${kultHtml(tr)}${omrostningar(tr.roster, 'Trons omröstningar')}<h3>Upplevelser som rör tron</h3>${upplevHtml(folk)}`;
 }
 
 export const religion: Flik = {

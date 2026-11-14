@@ -147,7 +147,7 @@ export function laggFram(s: State, f: string, d: FragaData, fram: Person, prio =
 }
 const vuxenRost = (s: State, p: Person) => ageOf(p, s.now) >= ALDER.vuxen;
 export function rostaOm(s: State, fr: Fraga) {
-  const def = FRAGOR[fr.f], fram = byId(s, fr.fram), st = styreAv(s);
+  const def = FRAGOR[fr.f], fram = byId(s, fr.fram);
   // kretsen: byn, eller en tros troende (steg 8.6.7). De troende väger lika, och Var och en – Präster flyttar vikten till prästerna
   const tr = def.krets === 'tro' ? troOf(s, fr.d.tro as number) : undefined;
   const v = tr ? kretsVikter(s, tr) : vikter(s).filter(x => vuxenRost(s, x.p) && !utanRost(s, x.p));
@@ -157,8 +157,10 @@ export function rostaOm(s: State, fr: Fraga) {
   });
   const ja = roster.reduce((a, r) => a + (r.ja ? r.w : 0), 0), nej = roster.reduce((a, r) => a + (r.ja ? 0 : r.w), 0), gick = ja > nej;
   const om = def.om?.(s, fr.d);
-  (st.roster ??= []).push({ t: s.now, f: fr.f, namn: def.namn(s, fr.d), fram: fr.fram, framNamn: fram?.name ?? '', roster, ja, nej, gick, ...(om ? { om } : {}) });
-  if (st.roster.length > ROST.sparas) st.roster.splice(0, st.roster.length - ROST.sparas);
+  // trons omröstningar sparas på tron, och trons krets skapar aldrig byns styre (steg 10.3.2)
+  const lista = tr ? (tr.roster ??= []) : (styreAv(s).roster ??= []);
+  lista.push({ t: s.now, f: fr.f, namn: def.namn(s, fr.d), fram: fr.fram, framNamn: fram?.name ?? '', roster, ja, nej, gick, ...(om ? { om } : {}) });
+  if (lista.length > ROST.sparas) lista.splice(0, lista.length - ROST.sparas);
   count(s, 'omrostning'); count(s, gick ? 'omrostning_ja' : 'omrostning_nej');
   const envalde = Math.max(0, s.seder.v.rang ?? 0);
   // missnöjet med styret: bara byns frågor, inte trons eller skulden på tinget
