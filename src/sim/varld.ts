@@ -330,6 +330,9 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
       b.mat = Math.min(1, Math.round(b.mat / 2)); if (b.lm !== undefined) b.lm = Math.min(1, Math.round(b.lm / 2));
     }
   }],
+  [40, 'v528: buden bär ett värde (steg 10.3.1): varje antaget bud blir raden, utan värde, och tiden tron grundades som tiden det antogs', s => {
+    for (const tr of s.tron ?? []) if (tr.bud) tr.bud = (tr.bud as unknown[]).map(b => typeof b === 'string' ? { id: b as import('./kyrka').BudId, t: tr.t } : b as import('./kyrka').AntagetBud);
+  }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

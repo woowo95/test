@@ -903,7 +903,7 @@ SCENARIER.kyrkan = {
     const gick = SIM.rostaOm(s, { f: 'nyttBud', d: { tro: tr.id, id: 'ingetKott' }, fram: pr.id });
     const o = s.styre!.roster![s.styre!.roster!.length - 1];
     const bara = o.roster.every(r => SIM.byId(s, r.id)?.tro === tr.id);
-    tr.bud = ['ingetKott'];
+    tr.bud = [{ id: 'ingetKott', t: s.now }];
     const q = v.find(p => p !== pr)!; q.troStyrka = 60; const forb = SIM.budForbjuder(s, q, 'jakt');
     q.troStyrka = 5; const inte = SIM.budForbjuder(s, q, 'jakt');
     q.troStyrka = 60; const t0 = q.troStyrka; SIM.budBrutet(s, q, 'ingetKott');
@@ -940,7 +940,7 @@ SCENARIER.buden = {
     for (const p of v) p.troStyrka = 90;
     SIM.kultTimme(s);
     const pr = SIM.prastOf(s, tr)!, q = v.find(p => p !== pr)!;
-    tr.bud = ['fasta', 'forstaFangst', 'tionde', 'tacka', 'djuroffer', 'framling', 'giftaTro', 'hamnd', 'deDoda', 'lunden'];
+    tr.bud = (['fasta', 'forstaFangst', 'tionde', 'tacka', 'djuroffer', 'framling', 'giftaTro', 'hamnd', 'deDoda', 'lunden'] as const).map(id => ({ id, t: s.now }));
     setFood(s, 100); SIM.put(s, 'kott', 10); SIM.put(s, 'bar', 30, { [q.id]: 30 });
     // ett dygn i taget klockan tolv, en vecka (sju år i spelet)
     let fastade = false, djur = 0;
@@ -953,7 +953,13 @@ SCENARIER.buden = {
     const annan = nyInvanare(s, 'k', 25); annan.tro = undefined;
     const hinder = SIM.budTillfalle(s, 'par', q, annan), inget = !SIM.budTillfalle(s, 'par', q, v.find(p => p !== q && p !== pr)!);
     const r0 = SIM.getRel(s, q, ny).op; SIM.handelse(s, ny, 'sla', q); const hamnd = SIM.getRel(s, q, ny).op < r0;
+    // en sparad by från före steg 10.3.1 har buden som namn: de blir antagna bud utan värde
+    const gammal = structuredClone(s); gammal.v = 39;
+    for (const t of gammal.tron ?? []) (t as { bud?: unknown[] }).bud = t.bud?.map(b => b.id);
+    const ny2 = SIM.migrate(gammal).tron?.find(t => t.id === tr.id)?.bud ?? [];
+    const omgjord = ny2.length === tr.bud.length && ny2.every((b, i) => b.id === tr.bud![i].id && b.v === undefined && b.t === tr.t);
     return [
+      [`en sparad by får buden i den nya formen (${ny2.map(b => SIM.budNamn(s, b)).slice(0, 3).join(', ')} …)`, omgjord],
       [`fastan en dag i veckan (${fastade})`, fastade],
       [`den första fångsten går till tron (${JSON.stringify(tr.forrad)})`, forst],
       ['tionde till prästen ur den egna maten', tiond],
