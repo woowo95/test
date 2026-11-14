@@ -1,3 +1,4 @@
+import { heligtAvstar } from './kultlatt';
 import { leraGravd } from './lera';
 import { GASTVARD, gastVardag } from './gastvardag';
 import { husKlaraTimme } from './bygg';
@@ -86,7 +87,7 @@ import { akel, latrinUpptagen, latrinVanta, regnetTvattar, toaBesok } from './sm
 import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from './torst';
 import { kvarTimme } from './kvarlevor';
 import { avrustaKlar, gravKlar, kroppUpp, rustaKlar } from './grav';
-import { bonKlar, kultTimme } from './kult';
+import { bonKlar, farorNu, kultTimme } from './kult';
 import { hovArbete, kyrkProjekt, kyrkaRegister, kyrkaTimme, satBudHandelse, satOffrad, satOppnaAndlig } from './kyrka';
 import { laggTillProjekt } from './projekt';
 import { lagRegister } from './lagar';
@@ -254,7 +255,12 @@ for (const k of TILLVERKA_LIST) { const d = TILLVERKA[k]; KLAR[d.act] = (s, p) =
   if (forstaGang(s, 'gjort_' + d.ger)) log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]);
 }; }
 MEDAN.vittja = (s, p, t) => { const m = mjardarOf(s).find(q => q.id === t.ref); if (m) vittja(s, p, m); t.until = s.now; };
-for (const art of DJURARTER) MEDAN[art.act] ??= (s, p, _t, dtSec) => bearbeta(s, p, DJURARTER.find(a => a.act === art.act && djurKvar(s, a) > 0) ?? art, dtSec / HOUR_S);
+// det heliga djuret slaktas inte, utom i svält (steg 10.3.15): finns bara det kvar är arbetet slut
+for (const art of DJURARTER) MEDAN[art.act] ??= (s, p, _t, dtSec) => {
+  const svalt = farorNu(s).svalt, a = DJURARTER.find(q => q.act === art.act && djurKvar(s, q) > 0 && !heligtAvstar(s, p, q.art, svalt));
+  if (!a) { if (p.task) p.task.until = s.now; return; }
+  bearbeta(s, p, a, dtSec / HOUR_S);
+};
 MEDAN.grilla = (s, p, _t, dtSec) => grilla(s, p, dtSec / HOUR_S); // grillen över elden (matlagning.ts)
 KLAR.koka_mat = (s, p) => kokaKlar(s, p);
 KLAR.sopor = (s, p) => soporKlar(s, p);

@@ -21,7 +21,8 @@ import { budIn, foljer } from './kyrka';
 import { FOOD } from './saker';
 import { takeMaterial } from './behov';
 import { kladAv } from './klader';
-import { nyRitual, satEgendomVarde, satGravVarde, vanhelgaPlats } from './kultlatt';
+import { heligtDjurAv, nyRitual, satEgendomVarde, satGravVarde, vanhelgaPlats } from './kultlatt';
+import { tamdjurOf } from './tamdjur';
 import { grundvarde, tingVarde, varuVarde } from './varde';
 satGravVarde(t => tingVarde(t)); // gravgåvan är den finaste saken (steg 10.3.5)
 satEgendomVarde(o => varuVarde(o) / grundvarde('ved')); // kyrkans egendom i trons tyngd (steg 10.3.8)
@@ -328,8 +329,15 @@ function hogtidSteg(s: State, tr: Tro) {
   nyRitual(s, 'hogtid', { tro: tr.id, namn: hogtidNamn(b.v), form: hogtidAv(b.v).form });
 }
 // när högtiden slutar: gillets mat eller fastans dygn, och offret av dem som följer budet
-function hogtidSlut(s: State, tr: Tro, r: Ritual, med: Person[]) {
+export function hogtidSlut(s: State, tr: Tro, r: Ritual, med: Person[]) {
   const f = (tr.forrad ??= {});
+  // djuroffret vid högtiden (steg 10.3.15): har tron ett heligt djur som är ett tamdjur offras ett av dem, och det är borta.
+  // Ett vilt heligt djur offras inte
+  if (r.form !== 'fasta' && budIn(tr, 'djuroffer')) for (const b of tr.bud ?? []) {
+    if (b.id !== 'heligtDjur') continue;
+    const d = tamdjurOf(s).find(q => q.art === heligtDjurAv(b.v).art);
+    if (d) { d.dog = s.now; s.tamdjur = (s.tamdjur ?? []).filter(q => q !== d); count(s, 'heligtOffer'); for (const p of med) if (p.tro === tr.id) p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + KULT.offerTro); }
+  }
   for (const p of med) {
     if (r.form === 'fasta') { if (p.tro === tr.id) p.fasta = s.now + DAY; }
     else { // gillet: en hel mat, ur kyrkans egendom först och annars ur den egna maten; den som inget har äter inte

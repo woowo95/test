@@ -1,3 +1,4 @@
+import { SAK_ART, heligtBrutet } from './kultlatt';
 import { utsadeKrok } from './ratter';
 import { hans, honom } from './ord';
 import { upplev } from './uppvaxt';
@@ -93,6 +94,7 @@ function eat(s: State, p: Person, fran?: Person) {
   // maten fyller näringsvärdena, och mättnaden är en sammanfattning av dem (steg 2.6.1, naring.ts)
   ratt(s, p, per, full); // rått kött och rå fisk (matlagning.ts, steg 2.8.1), av det som åts innan det skalas till mättnad
   for (const k in per) per[k] *= f;
+  for (const k in per) heligtBrutet(s, p, SAK_ART[k]); // den svältande åt det heliga djurets kött (steg 10.3.15)
   ata(p, per); smakMat(s, p, per); maltidTanke(s, p, per); eatPoison(s, p); count(s, 'atit', portion); // portioner som ätits (foodDays i ekonomi.ts mäts mot det)
   if (q < 0.5) think(p, 'Maten var dålig', -0.05, now, 6 * HOUR);
   if (portion > 0 && vidBordet(p)) {

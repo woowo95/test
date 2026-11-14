@@ -1,3 +1,4 @@
+import { heligtAvstar } from './kultlatt';
 import { lista, stor, tal } from './ord';
 import { utanforByn } from './omrade';
 import { balans } from './balans';
@@ -553,6 +554,7 @@ export function jaktBeslut(s: State, f: Vargflock, folk: Person[]) {
 
 // nivån Tillfälle (val.ts, steg 6.1.14): den som ska följa med på vargjakten och ännu inte gått
 export function vargjaktVal(s: State, p: Person) {
+  if (heligtAvstar(s, p, 'varg')) return undefined; // det heliga djuret jagas inte; den som blir anfallen försvarar sig (steg 10.3.15)
   const f = flockarna(s).find(x => x.jagare?.includes(p.id));
   if (!f || f.gor === 'flyr' || p.task?.act === 'vargjakt' || s.now >= (f.kallTill ?? 0) || s.now >= (f.jaktTill ?? 0)) return undefined;
   const sp = jaktPlats(s, f), k = f.kallare === undefined ? undefined : byId(s, f.kallare);

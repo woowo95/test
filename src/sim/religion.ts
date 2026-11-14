@@ -148,19 +148,20 @@ export function satSkala(s: State, tr: Tro, k: SkalaId) {
 // ett område som en gud råder över: namn (i listor och fliken), om (i meningar: "råder över åskan och himlen"), forled: ordleden
 // som namnet börjar med (Is-grim, Eld-vald), i: var anden bor på Natur-sidan, heder: hedersnamnen (rykten.ts) som knyter en död
 // bybo till området, och symbolen (ikoner.ts). Händelserna som föder området står där de händer (gudHandelse)
-interface GudDef { namn: string; om: string; forled: string[]; i: string[]; heder: IntryckTyp[]; sym: string }
+// djur: arterna guden kan göra heliga (steg 10.3.15)
+interface GudDef { namn: string; om: string; forled: string[]; i: string[]; heder: IntryckTyp[]; djur: string[]; sym: string }
 export const GUDAR = {
-  aska: { namn: 'Åska och himmel', om: 'åskan och himlen', forled: ['Dun', 'Blix', 'Sky', 'Ås'], i: ['åskmolnen', 'den stora örnen', 'den höga eken'], heder: [], sym: 'gud_aska' },
-  sjon: { namn: 'Sjön och vattnet', om: 'sjön och vattnet', forled: ['Djup', 'Våg', 'Sjö', 'Strand'], i: ['den stora gäddan', 'djupet', 'forsen'], heder: [], sym: 'gud_sjon' },
-  skord: { namn: 'Skörd och jord', om: 'skörden och jorden', forled: ['Ax', 'Korn', 'Mull', 'Fröd'], i: ['den första tuvan', 'det gamla äppelträdet', 'åkerns sten'], heder: ['generos', 'flitig', 'rattvis'], sym: 'gud_skord' },
-  doden: { namn: 'Döden', om: 'döden', forled: ['Grav', 'Mörk', 'Natt', 'Skugg'], i: ['korpen', 'den döda granen', 'mossen'], heder: [], sym: 'gud_doden' },
-  jakt: { namn: 'Jakt och skog', om: 'jakten och skogen', forled: ['Varg', 'Hjort', 'Skog', 'Björk'], i: ['den vita hjorten', 'den gamla vargen', 'den stora granen'], heder: ['vargdodare', 'bjorndodare'], sym: 'gud_jakt' },
-  elden: { namn: 'Elden', om: 'elden', forled: ['Eld', 'Glöd', 'Brand', 'Bål'], i: ['glöden', 'den svarta stenen vid elden', 'röken'], heder: [], sym: 'gud_elden' },
-  vintern: { namn: 'Vintern och isen', om: 'vintern och isen', forled: ['Is', 'Frost', 'Snö', 'Rim'], i: ['isen på sjön', 'snöugglan', 'den frusna forsen'], heder: [], sym: 'gud_vintern' },
-  solen: { namn: 'Solen', om: 'solen', forled: ['Sol', 'Ljus', 'Dag', 'Glans'], i: ['solstenen', 'lärkan', 'kullen i öster'], heder: [], sym: 'gud_solen' },
-  atten: { namn: 'Ätten', om: 'ätten och barnen', forled: ['Ätt', 'Ung', 'Barn', 'Stam'], i: ['den gamla linden', 'källan', 'björnmodern'], heder: ['hjalpsam'], sym: 'gud_atten' },
-  kriget: { namn: 'Kriget', om: 'kriget och striden', forled: ['Sköld', 'Spjut', 'Strid', 'Hugg'], i: ['vildsvinet', 'den kluvna stenen', 'korpen'], heder: ['stark'], sym: 'gud_kriget' },
-  hantverk: { namn: 'Hantverket', om: 'hantverket', forled: ['Smid', 'Sten', 'Hamr', 'Tälj'], i: ['flintberget', 'bävern', 'den gamla stubben'], heder: ['skicklig', 'rik'], sym: 'gud_hantverk' },
+  aska: { namn: 'Åska och himmel', om: 'åskan och himlen', forled: ['Dun', 'Blix', 'Sky', 'Ås'], i: ['åskmolnen', 'den stora örnen', 'den höga eken'], heder: [], djur: [], sym: 'gud_aska' },
+  sjon: { namn: 'Sjön och vattnet', om: 'sjön och vattnet', forled: ['Djup', 'Våg', 'Sjö', 'Strand'], i: ['den stora gäddan', 'djupet', 'forsen'], heder: [], djur: [], sym: 'gud_sjon' },
+  skord: { namn: 'Skörd och jord', om: 'skörden och jorden', forled: ['Ax', 'Korn', 'Mull', 'Fröd'], i: ['den första tuvan', 'det gamla äppelträdet', 'åkerns sten'], heder: ['generos', 'flitig', 'rattvis'], djur: ['far', 'get'], sym: 'gud_skord' },
+  doden: { namn: 'Döden', om: 'döden', forled: ['Grav', 'Mörk', 'Natt', 'Skugg'], i: ['korpen', 'den döda granen', 'mossen'], heder: [], djur: ['fagel'], sym: 'gud_doden' },
+  jakt: { namn: 'Jakt och skog', om: 'jakten och skogen', forled: ['Varg', 'Hjort', 'Skog', 'Björk'], i: ['den vita hjorten', 'den gamla vargen', 'den stora granen'], heder: ['vargdodare', 'bjorndodare'], djur: ['varg', 'radjur', 'kanin'], sym: 'gud_jakt' },
+  elden: { namn: 'Elden', om: 'elden', forled: ['Eld', 'Glöd', 'Brand', 'Bål'], i: ['glöden', 'den svarta stenen vid elden', 'röken'], heder: [], djur: [], sym: 'gud_elden' },
+  vintern: { namn: 'Vintern och isen', om: 'vintern och isen', forled: ['Is', 'Frost', 'Snö', 'Rim'], i: ['isen på sjön', 'snöugglan', 'den frusna forsen'], heder: [], djur: [], sym: 'gud_vintern' },
+  solen: { namn: 'Solen', om: 'solen', forled: ['Sol', 'Ljus', 'Dag', 'Glans'], i: ['solstenen', 'lärkan', 'kullen i öster'], heder: [], djur: [], sym: 'gud_solen' },
+  atten: { namn: 'Ätten', om: 'ätten och barnen', forled: ['Ätt', 'Ung', 'Barn', 'Stam'], i: ['den gamla linden', 'källan', 'björnmodern'], heder: ['hjalpsam'], djur: ['bjorn'], sym: 'gud_atten' },
+  kriget: { namn: 'Kriget', om: 'kriget och striden', forled: ['Sköld', 'Spjut', 'Strid', 'Hugg'], i: ['vildsvinet', 'den kluvna stenen', 'korpen'], heder: ['stark'], djur: ['fagel'], sym: 'gud_kriget' },
+  hantverk: { namn: 'Hantverket', om: 'hantverket', forled: ['Smid', 'Sten', 'Hamr', 'Tälj'], i: ['flintberget', 'bävern', 'den gamla stubben'], heder: ['skicklig', 'rik'], djur: [], sym: 'gud_hantverk' },
 } satisfies Record<string, GudDef>;
 export type GudOmr = keyof typeof GUDAR;
 export const GUD_OMR: Record<GudOmr, GudDef> = GUDAR;

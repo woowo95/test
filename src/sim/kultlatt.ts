@@ -3,6 +3,7 @@
 import { Person, State } from './typer';
 import type { Ting } from './agande';
 import type { Ritual, RitualId } from './kult';
+import { balans } from './balans';
 // den heliga platsens värde i budet En helig plats (steg 10.3.10): rutan
 export const heligVarde = (x: number, y: number) => `${x},${y}`;
 // platsen vanhelgas: den förlorar sitt bud men visas kvar (steg 10.3.10)
@@ -38,3 +39,27 @@ export function gravgava(s: State, p: Person) {
 }
 // byta tro (steg 8.5.12): i samtal, när tron svikit en. Var och en har en tro i taget
 export const bytaChans = (p: Person, oppen: number) => ((p.tvivel ?? 0) * 0.5 + 0.02) * (1 - (p.troStyrka ?? 0) / 150) * (1 - oppen / 200);
+
+// ---------- det heliga djuret (steg 10.3.15) ----------
+// budet Ett heligt djur har värdet "art:storlek": arten och storleken (2–4) som räknades när budet föreslogs
+export const HELIGTDJUR = balans('heligtdjur', {
+  hunger: 0.2, // den som är så här hungrig (0 = svälter) äter det heliga djurets kött och bryter budet
+});
+export const heligtDjurVarde = (art: string, st: number) => `${art}:${st}`;
+export const heligtDjurAv = (v: unknown) => { const [art, st] = String(v).split(':'); return { art, st: Number(st) || 2 }; };
+// sakerna som bara arten ger: det råa köttet och skinnet (fylls av DJUR i redskap.ts). Det lagade, torkade och garvade minns inte djuret
+export const SAK_ART: Record<string, string> = {};
+// följer p ett bud av den här storleken? (kyrka.ts sätter det, som foljer)
+let foljerSt: (p: Person, st: number) => boolean = () => false;
+let brutet: (s: State, p: Person) => void = () => {};
+export const satHeligtDjur = (f: typeof foljerSt, b: typeof brutet) => { foljerSt = f; brutet = b; };
+// är arten helig för p? Jakten, slakten, avlivningen, ätandet och klädvalet frågar den här
+export function heligtFor(s: State, p: Person, art: string | undefined): boolean {
+  if (p.tro === undefined || !art) return false;
+  const b = s.tron?.find(t => t.id === p.tro)?.bud?.find(q => q.id === 'heligtDjur' && heligtDjurAv(q.v).art === art);
+  return !!b && foljerSt(p, heligtDjurAv(b.v).st);
+}
+// p låter bli: arten är helig och ingen nöd (svält, kyla) går före
+export const heligtAvstar = (s: State, p: Person, art: string | undefined, nod = false) => !nod && heligtFor(s, p, art);
+// p gjorde det ändå (i nöd): budet är brutet
+export const heligtBrutet = (s: State, p: Person, art: string | undefined) => { if (heligtFor(s, p, art)) brutet(s, p); };

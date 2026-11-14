@@ -16,6 +16,7 @@ import { HOST, iIstiden, isLight, kalender, VAR } from './tid';
 import { VINTER, hoAv, hoRacker } from './slatter';
 import { HAGE, betesdjurOf, djurIHagen, hageDygn, hagarOf } from './hage';
 import { farorNu } from './kult';
+import { heligtAvstar } from './kultlatt';
 import { fyllVatska, ledigFor } from './vatskor';
 import { TamArtId, Tamdjur, arHona, nyttTamdjur, tamAlder, tamArt, tamdjurOf } from './tamdjur';
 
@@ -166,7 +167,9 @@ export function slaktOrsak(s: State, d: Tamdjur, p?: Person): string | undefined
 }
 export function avlivaVal(s: State, p: Person) {
   if (ageOf(p, s.now) < ALDER.vuxen || !kanGoras(s, 'slakta', p) || getable(s, p, 'kniv') < 1 || !isLight(s.now)) return undefined;
+  const svalt = farorNu(s).svalt;
   for (const d of tamdjurOf(s)) {
+    if (heligtAvstar(s, p, d.art, svalt)) continue; // det heliga djuret avlivas inte, utom i svält (steg 10.3.15)
     if (living(s).some(q => q !== p && q.task?.act === 'avliva' && q.task.ref === d.id)) continue;
     if (slaktOrsak(s, d, p)) return d;
   }

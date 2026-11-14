@@ -1511,3 +1511,50 @@ SCENARIER.kruka = {
     ];
   },
 };
+
+SCENARIER.heligtdjur = {
+  text: 'Steg 10.3.15: heliga djur är bud. Arten kommer ur trons gudar och storleken ur köttet byn slaktat; den troende avlivar inte arten, går förbi dess kött och tar av plagget av dess skinn, den svältande äter och får skuld, den anfallne försvarar sig, och vid högtiden offras ett tamdjur av arten',
+  kor: () => {
+    const { s, v, tr } = medTro(6, 3);
+    klockan(s, 12);
+    tr.gudar = [{ omr: ['jakt'], namn: 'Skog', form: 'ande', t: s.now, ar: 1, bekr: s.now, ber: '' }, { omr: ['skord'], namn: 'Ax', form: 'ande', t: s.now, ar: 1, bekr: s.now, ber: '' }] as SIM.Gud[];
+    (s.stat ??= {}).slaktatFar = 10; s.stat.slaktat = 2;
+    const varden = (SIM.BUD.heligtDjur as SIM.BudDef).varden!(s, tr).map(String);
+    const far = varden.find(x => x.startsWith('far:')), radjur = varden.find(x => x.startsWith('radjur:'));
+    const fyra = far === 'far:4' && radjur === 'radjur:2';
+    tr.bud = [...(tr.bud ?? []), { id: 'heligtDjur', v: 'far:3', t: s.now }];
+    const p = v[1], q = v[2];
+    q.tro = undefined;
+    // avlivningen: det gamla fåret avlivas inte av den troende, men av den som inte tror
+    SIM.nyttTamdjur(s, 'far', p.x + 1, p.y, undefined, s.now - 30 * SIM.DAY);
+    for (const r of [p, q]) SIM.addTool(s, 'kniv', r);
+    const avstar = SIM.heligtAvstar(s, p, 'far') && !SIM.heligtAvstar(s, q, 'far');
+    // maten: den troende går förbi fårköttet, den svältande äter det och får skuld
+    setFood(s, 0); SIM.setAmount(s, 'farkott', 6); SIM.setAmount(s, 'bar', 6);
+    p.hunger = 0.6; const m1 = SIM.takeFood(s, 3, p).per;
+    const forbi = !m1.farkott && (m1.bar ?? 0) > 0;
+    SIM.setAmount(s, 'bar', 0); p.hunger = 0.05; const skuld0 = p.skuld ?? 0;
+    const m2 = SIM.takeFood(s, 1, p).per; for (const k in m2) SIM.heligtBrutet(s, p, SIM.SAK_ART[k]);
+    const svalt = (m2.farkott ?? 0) > 0 && (p.skuld ?? 0) > skuld0;
+    // kläderna: plagget av fårskinn tas av och ligger kvar
+    const rock = SIM.addTool(s, 'rock_farskinn', p); rock.bar = p.id;
+    SIM.stepKlader(s);
+    const av = rock.bar !== p.id && SIM.allaTing(s).includes(rock), tog = rock.bar === q.id;
+    // den anfallne försvarar sig: budet förbjuder inte försvaret
+    const forsvar = !SIM.budForbjuder(s, p, 'forsvar') && !SIM.budForbjuder(s, p, 'strid');
+    // djuroffret vid högtiden: ett tamdjur av arten
+    tr.bud.push({ id: 'djuroffer', t: s.now });
+    const n0 = SIM.tamdjurOf(s).filter(d => d.art === 'far').length;
+    SIM.hogtidSlut(s, tr, { k: 'hogtid', start: s.now, slut: s.now, x: 0, y: 0, tro: tr.id, form: 'gille' }, SIM.troende(s, tr));
+    const offrat = n0 >= 1 && SIM.tamdjurOf(s).filter(d => d.art === 'far').length === n0 - 1;
+    return [
+      [`arten kommer ur gudarna och storleken ur köttet (${varden.join(', ')})`, fyra],
+      ['den troende avlivar inte fåret, den som inte tror gör det', avstar],
+      [`den troende går förbi fårköttet (${JSON.stringify(m1)})`, forbi],
+      [`den svältande äter det och får skuld (${JSON.stringify(m2)}, skuld ${skuld0} → ${p.skuld ?? 0})`, svalt],
+      [`plagget av fårskinn tas av och ligger kvar${tog ? ', och den som inte tror tar det' : ''}`, av],
+      ['den anfallne försvarar sig', forsvar],
+      [`vid högtiden offras ett får (${n0} → ${SIM.tamdjurOf(s).filter(d => d.art === 'far').length})`, offrat],
+    ];
+  },
+};

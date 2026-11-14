@@ -25,8 +25,9 @@ import { KROPP, count, living } from './folk';
 import { temperature } from './vader';
 import { bordSlag, carryKind, handOrkar } from './lager';
 import { balans } from './balans';
-import { arPrast } from './kultlatt';
-import { kladAv } from './klader';
+import { SAK_ART, arPrast, heligtAvstar, heligtBrutet } from './kultlatt';
+import { farorNu } from './kult';
+import { KLADMATERIAL, kladAv } from './klader';
 
 export const UTRUSTNING = balans('utrustning', {
   kropp: 5, // det man har på sig väger lätt mot vad händerna orkar: i strid är man tung av kläder som väger så här många gånger det händerna orkar (strid.ts)
@@ -243,9 +244,11 @@ const rang = (p: Person, t: Ting) => t.agare === p.id ? 0 : t.agare === BYN ? 1 
 const arMantel = (k: string) => kladAv(k)?.plagg === 'mantel';
 // plagg som bara vissa bär: prästens dräkt och masken åt prästen, trons tecken åt de troende (system 8.5)
 const kladFor = (s: State, p: Person, k: string) => { const pl = kladAv(k)?.plagg; return pl === 'prastdrakt' || pl === 'mask' ? arPrast(s, p) : pl === 'tecken' ? p.tro !== undefined : true; };
+// plagget av det heliga djurets skinn (steg 10.3.15): den som följer budet bär det inte, utom när kylan är en fara
+const kladArt = (k: string) => { const m = kladAv(k)?.mat; return m ? SAK_ART[KLADMATERIAL[m].sak] : undefined; };
 export function stepKlader(s: State) {
   if (!tingOf(s).some(t => SAKER[t.k]?.klad)) return;
-  const kallt = temperature(s) < KROPP.kladTemp;
+  const kallt = temperature(s) < KROPP.kladTemp, kyla = farorNu(s).kyla;
   const ledare = s.styre?.ledare;
   for (const p of living(s)) {
     // ledarens mantel (steg 8.3.14): den tillhör byn och följer ämbetet. Ledaren byter till den; den som inte längre leder tappar den
@@ -258,10 +261,11 @@ export function stepKlader(s: State) {
     // för varm (steg 2.3.4): de varma plaggen tas av, och tas på igen först när det är kallt och kroppen inte är varmare än idealet.
     // Bältet värmer inte och sitter kvar
     if (p.warm > KROPP.forVarm) for (const t of paSig(s, p)) if (SAKER[t.k]!.klad!.varme > 0) t.bar = undefined;
+    for (const t of paSig(s, p)) if (heligtAvstar(s, p, kladArt(t.k), kyla)) { t.bar = undefined; count(s, 'heligtPlaggAv'); } // plagget tas av och ligger kvar
     const har = new Set(paSig(s, p).map(t => SAKER[t.k]!.klad!.plats));
     for (const k of KLAD_SLAG) {
       const pl = SAKER[k]!.klad!.plats;
-      if (har.has(pl) || arMantel(k) || !kladFor(s, p, k) || (SAKER[k]!.klad!.varme > 0 && (!kallt || p.warm > 1))) continue;
+      if (har.has(pl) || arMantel(k) || !kladFor(s, p, k) || heligtAvstar(s, p, kladArt(k), kyla) || (SAKER[k]!.klad!.varme > 0 && (!kallt || p.warm > 1))) continue;
       let best: Ting | undefined;
       for (const t of tingOf(s)) {
         if (t.k !== k || t.bar !== undefined || t.hos !== undefined || t.lass !== undefined || t.halv || !lends(s, t.agare, p)) continue;
@@ -269,6 +273,7 @@ export function stepKlader(s: State) {
       }
       if (!best) continue;
       best.bar = p.id; best.x = best.y = best.vid = undefined;
+      heligtBrutet(s, p, kladArt(k)); // i kylan bär hen det heliga djurets skinn och bryter budet
       har.add(pl);
     }
   }
