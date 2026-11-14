@@ -819,6 +819,7 @@ const medTro = (seed = 6, storlek = 2) => {
   const x = medLedare(seed), { s, v } = x;
   const tr: SIM.Tro = { id: 1, grundare: v[0].id, gnamn: v[0].name, t: s.now - SIM.TYNGD.alderDygn * SIM.DAY, ar: 1, k: 'drom', bakom: 'Rösten', vill: 'att man lyssnar', svek: 'det blir tyst', natur: 60, manga: 40, bekr: s.now, x: Math.floor(v[0].x), y: Math.floor(v[0].y), namn: 'Rösternas väg' };
   s.tron = [tr];
+  if (storlek >= 2) tr.bud = [{ id: 'prast', t: s.now }]; // en tro som rymmer budet har en präst (steg 10.3.12)
   while (v.length < SIM.tyngdFor(storlek)) { const p = nyInvanare(s, v.length % 2 ? 'k' : 'm', 30); (p.tek ??= {}).ledarskap = 1; p.tek.lag = 1; v.push(p); }
   for (const p of v) { p.tro = 1; p.troStyrka = 100; p.andlig = 80; p.pot.karisma = 14; }
   return { ...x, tr };
@@ -875,7 +876,7 @@ SCENARIER.ritualer = {
   text: 'Steg 8.5.5–8.5.14 och 10.3.3: en plats blir helig ur en händelse och där fälls och byggs inget, prästen utses efter skalan, och ritualerna är bud: ingen högtid utan bud, högtiden i sin tidsålder, gillets mat, fastan, offret av den som följer budet, och bröllopet med och utan trons välsignelse',
   kor: () => {
     const { s, v, tr } = medTro(6, 3);
-    tr.bud = [];
+    tr.bud = [{ id: 'prast', t: s.now }];
     SIM.kultTimme(s);
     const k = SIM.heligaKandidater(s, tr)[0]; SIM.FRAGOR.nyttBud.gor(s, { tro: tr.id, id: 'helig', v: SIM.heligVarde(k.x, k.y) }, undefined);
     const h = s.heliga?.[0], ingen = !!h && !SIM.usable(s, h.x, h.y);
@@ -972,13 +973,13 @@ SCENARIER.prastregel = {
   text: 'Steg 10.3.11: prästens bud. Utan bud blir den bästa präst oavsett kön, med budet Bara män bara en man, den som redan är präst sitter kvar, den som stängs ute röstar emot, dräkten sys först med budet, och ritualen prästen leder ger mindre tro när dräkten saknas',
   kor: () => {
     const { s, v, tr } = medTro(6, 2);
-    tr.bud = []; tr.prast = undefined;
+    tr.bud = [{ id: 'prast', t: s.now }]; tr.prast = undefined;
     const k = v.find(p => p.sex === 'k')!, m = v.find(p => p.sex === 'm')!;
     for (const p of v) p.andlig = 30;
     k.andlig = 100; k.pot.karisma = 20; m.andlig = 90;
     SIM.kultTimme(s); const utanBud = tr.prast === k.id;
     // den sittande sitter kvar när budet antas
-    tr.bud = [{ id: 'prastMan', t: s.now }]; SIM.kultTimme(s); const kvar = tr.prast === k.id;
+    tr.bud = [{ id: 'prast', t: s.now }, { id: 'prastMan', t: s.now }]; SIM.kultTimme(s); const kvar = tr.prast === k.id;
     // en ny präst utses: bara en man
     tr.prast = undefined; SIM.kultTimme(s); const man = tr.prast === m.id;
     // den som stängs ute röstar emot
@@ -1008,6 +1009,31 @@ SCENARIER.prastregel = {
       [`dräkten sys först med budet (${utanDrakt} → ${medDrakt})`, utanDrakt === 0 && medDrakt === 1],
       ['i en sparad by blir regeln ett bud och en tro med präst har dräkten', sparad],
       [`ritualen ger mindre tro när dräkten saknas (${med.toFixed(2)} med, ${utan.toFixed(2)} utan)`, med > 0 && Math.abs(utan * 3 - med) < 0.01],
+    ];
+  },
+};
+
+SCENARIER.prastbud = {
+  text: 'Steg 10.3.12: prästen är ett bud. Ingen präst utan budet Tron ska ha en präst, den främsta bland de troende lägger fram det när tron varken har präst eller profet, en präst utses efter ett ja, en ny väljs när prästen dör, och en sparad by med en levande präst har budet',
+  kor: () => {
+    const { s, v, tr } = medTro(6, 2);
+    tr.bud = []; tr.prast = undefined;
+    for (const p of v) p.profet = undefined;
+    SIM.kultTimme(s); const ingen = !SIM.prastOf(s, tr);
+    const tal = SIM.trosTalare(s, tr)!, forslag = SIM.TROS_UPP.flatMap(r => r.lista(s, tr, tal)).filter(f => f.prio > 0).sort((a, b) => b.prio - a.prio);
+    const fram = forslag.some(f => f.fr.d.id === 'prast');
+    SIM.FRAGOR.nyttBud.gor(s, { tro: tr.id, id: 'prast' }, tal); SIM.kultTimme(s);
+    const pr = SIM.prastOf(s, tr), utsedd = !!pr && pr === tal;
+    if (pr) SIM.die(s, pr, 'alderdom');
+    SIM.kultTimme(s); const ny = SIM.prastOf(s, tr), nyVald = !!ny && ny !== pr;
+    const g = JSON.parse(SIM.serialize(s)); g.v = 45; g.tron[0].bud = [];
+    const sparad = SIM.budIn(SIM.migrate(g).tron![0], 'prast');
+    return [
+      ['ingen präst utan budet', ingen],
+      [`den främsta bland de troende lägger fram budet (${tal?.name}: ${forslag.slice(0, 3).map(f => f.fr.d.id).join(', ')})`, fram],
+      [`en präst utses efter ett ja (${pr?.name})`, utsedd],
+      [`en ny väljs när prästen dör (${ny?.name})`, nyVald],
+      ['en sparad by med en levande präst har budet', sparad],
     ];
   },
 };
@@ -1224,7 +1250,7 @@ SCENARIER.buden = {
     // en sparad by från före steg 10.3.1 har buden som namn: de blir antagna bud utan värde
     const gammal = structuredClone(s); gammal.v = 39;
     for (const t of gammal.tron ?? []) (t as { bud?: unknown[] }).bud = t.bud?.map(b => b.id);
-    const ny2 = (SIM.migrate(gammal).tron?.find(t => t.id === tr.id)?.bud ?? []).filter(b => !['hogtid', 'helig', 'drakt', 'prastKvinna', 'prastMan'].includes(b.id)); // högtiderna, platserna och prästens bud läggs till av senare uppgraderingar
+    const ny2 = (SIM.migrate(gammal).tron?.find(t => t.id === tr.id)?.bud ?? []).filter(b => !['hogtid', 'helig', 'drakt', 'prastKvinna', 'prastMan', 'prast'].includes(b.id)); // högtiderna, platserna och prästens bud läggs till av senare uppgraderingar
     const omgjord = ny2.length === tr.bud.length && ny2.every((b, i) => b.id === tr.bud![i].id && b.v === undefined && b.t === tr.t);
     // en by utan ledare: tidsålderns högtid läggs fram före de andra buden och röstas in i trons krets (steg 10.3.3)
     const b2 = medTro(7, 2); b2.s.styre = undefined; b2.tr.bud = []; b2.tr.sk = { ...b2.tr.sk, fest: 10 };

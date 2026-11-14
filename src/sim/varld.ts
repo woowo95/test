@@ -361,6 +361,12 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
       if (tr.prast !== undefined && !tr.bud?.some(b => b.id === 'drakt')) (tr.bud ??= []).push({ id: 'drakt', t: tr.t });
     }
   }],
+  [46, 'v528: prästen är ett bud (steg 10.3.12): en tro med levande präst har budet Tron ska ha en präst', s => {
+    for (const tr of s.tron ?? []) {
+      const pr = tr.prast !== undefined ? s.people.find(p => p.id === tr.prast) : undefined;
+      if (tr.slut === undefined && pr && pr.died === undefined && pr.tro === tr.id && !tr.bud?.some(b => b.id === 'prast')) (tr.bud ??= []).push({ id: 'prast', t: tr.t });
+    }
+  }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

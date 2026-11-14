@@ -13,7 +13,7 @@ import { ALDER, type BudTillfalle, ageOf, count, living, log, relKey, satBudTill
 import { FOOD } from './saker';
 import { kronika } from './historik';
 import { Tro, andlighet, gudarOf, skalaV, troNamn, rymsBud, troOf, troende } from './religion';
-import { KULT, RITUALER, helga, helig, heligaKandidater, hogtidAv, hogtidNamn, hogtidNu, prastOf, prastRang } from './kult';
+import { KULT, RITUALER, farBliPrast, helga, helig, heligaKandidater, hogtidAv, hogtidNamn, hogtidNu, prastOf, prastRang } from './kult';
 import { FRAGOR, Fraga, FragaData, rostaOm } from './rost';
 import { LAGAR, LagForslag, lagGaller } from './lagar';
 import { addTo, amountOf, ownMove, ownedStock, ownsAmount, use } from './lager';
@@ -67,6 +67,8 @@ export const BUDROSTTAL = balans('budrost', {
   humor: 0.1, // humöret jämfört med grundhumöret, gånger budets storlek
   matMycket: 20, // den som äger så här mycket mat är helt emot de bud som tar av maten
 });
+// den som skulle bli präst om tron fick en nu (steg 10.3.12)
+const blivandePrast = (s: State, tr: Tro): Person | undefined => troende(s, tr).filter(q => ageOf(q, s.now) >= ALDER.vuxen && andlighet(s, q) >= KULT.prastAnde && farBliPrast(tr, q)).sort((a, b) => prastRang(s, b) - prastRang(s, a))[0];
 // den som kunde bli präst men stängs ute av budet är emot det (steg 10.3.11)
 const utestangd = (s: State, p: Person, kon: 'k' | 'm') => p.sex !== kon && ageOf(p, s.now) >= ALDER.vuxen && andlighet(s, p) >= KULT.prastAnde ? { v: -1, why: 'Kan inte bli präst med budet' } : { v: 0, why: '' };
 // den som äger mycket mat är emot de bud som tar av den
@@ -112,6 +114,8 @@ export const BUD = {
   // prästens bud (steg 10.3.11): vem som får bli präst och dräkten. Den som stängs ute och kunde bli präst röstar emot
   prastKvinna: { namn: 'Bara kvinnor blir präster', sort: 'forbud', storlek: 1, grupp: 'prastkon', text: 'Bara en kvinna kan bli präst', intresse: (s, p) => utestangd(s, p, 'k') },
   prastMan: { namn: 'Bara män blir präster', sort: 'forbud', storlek: 1, grupp: 'prastkon', text: 'Bara en man kan bli präst', intresse: (s, p) => utestangd(s, p, 'm') },
+  // prästen (steg 10.3.12): den sittande prästen och den som skulle bli präst vill ha budet
+  prast: { namn: 'Tron ska ha en präst', sort: 'krav', storlek: 2, text: 'Tron har en präst som leder den', intresse: (s, p, tr) => prastOf(s, tr) === p ? { v: 1, why: 'Är själv präst' } : !prastOf(s, tr) && blivandePrast(s, tr) === p ? { v: 1, why: 'Skulle själv bli präst' } : { v: 0, why: '' } },
   drakt: { namn: 'Prästen bär en egen dräkt', sort: 'krav', storlek: 1, text: 'Byn syr en dräkt åt prästen, och ritualen hon eller han leder ger mer i den' },
   // den heliga platsen (steg 10.3.10): den kandidat som kom först föreslås, och värdet är rutan. De troende vill ha den nära hemmet
   helig: { namn: 'En helig plats', sort: 'krav', storlek: 1, text: 'Tron ber och samlas vid en helig plats',

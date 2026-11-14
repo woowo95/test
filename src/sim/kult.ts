@@ -8,7 +8,7 @@ import { clamp, rnd } from './slump';
 import { ALDER, KROPP, ageOf, alive, byId, count, isParent, living, log, stat, think } from './folk';
 import { kronika } from './historik';
 import { upplev } from './uppvaxt';
-import { TRO, Tro, andlighet, grunda, tecken, skalaV, troNamn, rymsBud, troOf, troende } from './religion';
+import { TRO, Tro, andlighet, grunda, tecken, skalaV, troNamn, troOf, troende } from './religion';
 import { ageIndex, ageStart } from './tid';
 import { getMap } from './karta';
 import { groundOf } from './mark';
@@ -168,13 +168,13 @@ export function helga(s: State, tr: Tro, x: number, y: number, om: string) {
 // sorten följer Var och en – Präster; vem som får bli präst följer buden Bara kvinnor och Bara män (steg 10.3.11), och regeln gäller när en präst utses
 export const prastSort = (tr: Tro, k: 'k' | 'm') => { const v = skalaV(tr, 'prast') ?? 0; return v < 34 ? (k === 'k' ? 'Völva' : 'Schaman') : v < 67 ? (k === 'k' ? 'Gydja' : 'Gode') : 'Präst'; };
 // får q bli präst i tron? Buden Bara kvinnor och Bara män stänger ute det andra könet (steg 10.3.11)
-export const farBliPrast = (tr: Tro, q: Person) => !(budInK(tr, 'prastKvinna') && q.sex !== 'k') && !(budInK(tr, 'prastMan') && q.sex !== 'm');
-const budInK = (tr: Tro, id: string) => !!tr.bud?.some(b => b.id === id);
+export const farBliPrast = (tr: Tro, q: Person): boolean => !(budInK(tr, 'prastKvinna') && q.sex !== 'k') && !(budInK(tr, 'prastMan') && q.sex !== 'm');
+const budInK = (tr: Tro, id: string): boolean => !!tr.bud?.some(b => b.id === id);
 export const prastOf = (s: State, tr: Tro) => { const q = byId(s, tr.prast); return q && alive(q) && q.tro === tr.id ? q : undefined; };
 // hur väl någon passar som präst: andligheten och karisman
 export const prastRang = (s: State, p: Person) => andlighet(s, p) + stat(p, 'karisma', s.now) * 3;
 function prastSteg(s: State, tr: Tro, folk: Person[]) {
-  if (!rymsBud(s, tr, 2) || prastOf(s, tr)) return; // budet om en präst har storlek 2 (steg 10.3.12 gör det till ett bud)
+  if (!budInK(tr, 'prast') || prastOf(s, tr)) return; // en präst utses när tron har budet Tron ska ha en präst, och en ny när prästen dör eller lämnar tron (steg 10.3.12)
   const kand = folk.filter(q => ageOf(q, s.now) >= ALDER.vuxen && andlighet(s, q) >= KULT.prastAnde && farBliPrast(tr, q));
   if (!kand.length) return;
   const p = kand.sort((a, b) => prastRang(s, b) - prastRang(s, a))[0];
