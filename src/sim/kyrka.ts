@@ -1,7 +1,7 @@
 import { TROSKEL } from './forradsmal';
 import { hearthOf, woodDays } from './eld';
 // Kyrkan och buden (system 8.6). Registret BUD: varje bud är ett förbud, ett krav eller ett offer, med storlek (1–4), vilken nivå tron behöver och
-// vilken skala och sida som ger det. Kyrkans egendom (Tro.forrad), hovet och templet, helgonen och kvädena. Allt en tro avgör är frågor i FRAGOR
+// vilken skala och sida som ger det. Kyrkans egendom (saker i lagret som tron äger), hovet och templet, helgonen och kvädena. Allt en tro avgör är frågor i FRAGOR
 // med trons krets (rost.ts). Buden gäller de troende, de starkt troende mer; ett bud som blivit lag gäller alla (LAGAR, lagar.ts).
 import { Act, DAY, HOUR, Person, State } from './typer';
 import { MAT } from './behov';
@@ -16,7 +16,8 @@ import { GUDAR, Tro, andlighet, gudarOf, skalaV, troNamn, rymsBud, troOf, troend
 import { farorNu, KULT, RITUALER, type RitualId, farBliPrast, heligaFor, helga, helig, heligaKandidater, hogtidAv, hogtidNamn, hogtidNu, prastOf, prastRang } from './kult';
 import { FRAGOR, Fraga, FragaData, rostaOm } from './rost';
 import { LAGAR, LagForslag, lagGaller } from './lagar';
-import { addTo, amountOf, ownMove, ownedStock, ownsAmount, use } from './lager';
+import { amountOf, ownMove, ownedStock, ownsAmount, ownsId, put, takeLimit, use } from './lager';
+import { kyrkaId } from './egendom';
 import { freeNear } from './byggnad';
 import { eldPlats } from './karta';
 import { heligVarde, heligtDjurAv, heligtDjurVarde, satHeligtDjur, satMatBud } from './kultlatt';
@@ -255,14 +256,20 @@ export const satBudHandelse = (f: typeof handelseBud) => { handelseBud = f; };
 export const viltBikta = (s: State, p: Person) => { const tr = troOf(s, p.tro); return !!tr && (p.skuld ?? 0) > 0 && !!prastOf(s, tr) && (skalaV(tr, 'forlat') ?? 100) < 50; };
 
 // ---------- kyrkans egendom (steg 8.6.2–8.6.4) ----------
-const gavaIn = (tr: Tro, k: string, n: number) => { const f = (tr.forrad ??= {}); f[k] = (f[k] ?? 0) + n; };
-export const forradSum = (tr: Tro) => Object.values(tr.forrad ?? {}).reduce((a, b) => a + b, 0);
+// kyrkans förråd är saker i byns lager som tron äger (steg 10.3.17): gåvorna byter ägare, och det som kommer ur byns
+// förråd (skatten, den första fångsten) blir kyrkans
+const gavaIn = (s: State, tr: Tro, k: string, n: number, fran?: Person) => { if (fran) ownMove(s, k, n, fran.id, kyrkaId(tr.id)); else { const m = Math.min(n, takeLimit(s, k)); if (m >= 1) { use(s, undefined, k, Math.floor(m), true); put(s, k, Math.floor(m), { [kyrkaId(tr.id)]: Math.floor(m) }); } } };
+export const kyrkansForrad = (s: State, tr: Tro) => ownedStock(s, kyrkaId(tr.id));
+export const kyrkansAv = (s: State, tr: Tro, k: string) => Math.floor(ownsId(s, kyrkaId(tr.id), k) + 1e-9);
+export const forradSum = (s: State, tr: Tro) => Object.values(kyrkansForrad(s, tr)).reduce((a, b) => a + Math.floor(b + 1e-9), 0);
+// kyrkans egna utgifter: n av slaget k ur kyrkans del, och bara ur den
+export const kyrkanTar = (s: State, tr: Tro, k: string, n: number) => kyrkansAv(s, tr, k) >= n ? (use(s, undefined, k, n, true, kyrkaId(tr.id)), true) : false;
 function offerTimme(s: State, tr: Tro, folk: Person[]) {
   for (const p of folk) {
     if (andlighet(s, p) < KYRKA.offerAnde || rnd(s, 'tro', p) >= KYRKA.offerChans) continue;
     const k = ['ved', 'grenar', 'sten', 'bar', 'rep'].find(q => ownsAmount(s, p, q) >= 1);
     if (!k) continue;
-    use(s, p, k, 1); gavaIn(tr, k, 1); count(s, 'kyrka_gava');
+    gavaIn(s, tr, k, 1, p); count(s, 'kyrka_gava');
     think(p, 'Gav en gåva till tron', 0.02, s.now, 6 * HOUR);
   }
 }
@@ -272,17 +279,17 @@ function skattDygn(s: State) {
   for (const tr of s.tron ?? []) {
     if (tr.slut !== undefined || !rymsBud(s, tr, 4)) continue;
     const n = Math.ceil(troende(s, tr).length / 5) * KYRKA.skatt, k = woodDays(s) - n / (hearthOf(s.fire).burn * 24) >= TROSKEL.forsokVed ? 'ved' : undefined; // bara ur ett överskott av ved, efter hur länge den räcker (steg 10.2.43)
-    if (k) { const l = ledareOf(s) ?? living(s)[0]; if (l) { use(s, l, k, n); gavaIn(tr, k, n); count(s, 'kyrkskatt'); } }
+    if (k) { const l = ledareOf(s) ?? living(s)[0]; if (l) { gavaIn(s, tr, k, n); count(s, 'kyrkskatt'); } }
   }
 }
 // vad förrådet går till (steg 8.6.4): en fråga i trons krets, i en ordning efter trons skalor
 export function utgiftNu(s: State, tr: Tro): 'hov' | 'tempel' | 'prast' | 'fattig' | 'gudabild' | undefined {
   const opp = skalaV(tr, 'oppen') ?? 50, pr = skalaV(tr, 'prast') ?? 50;
-  if (!tr.hov && (tr.forrad?.ved ?? 0) >= KYRKA.hovVed) return 'hov'; // hovet byggs av trä ur kyrkans förråd
-  if (pr > 60 && prastOf(s, tr) && (tr.forrad?.bar ?? 0) >= 1) return 'prast';
-  if (opp < 40 && (tr.forrad?.bar ?? 0) >= 2) return 'fattig';
-  if (tr.hov?.klar && !tr.gudabild && (tr.forrad?.ved ?? 0) >= 3) return 'gudabild';
-  if (tr.hov?.klar && !tr.tempel && (tr.forrad?.sten ?? 0) >= KYRKA.templeSten) return 'tempel'; // templet av sten (steg 8.6.14)
+  if (!tr.hov && kyrkansAv(s, tr, 'ved') >= KYRKA.hovVed) return 'hov'; // hovet byggs av trä ur kyrkans förråd
+  if (pr > 60 && prastOf(s, tr) && kyrkansAv(s, tr, 'bar') >= 1) return 'prast';
+  if (opp < 40 && kyrkansAv(s, tr, 'bar') >= 2) return 'fattig';
+  if (tr.hov?.klar && !tr.gudabild && kyrkansAv(s, tr, 'ved') >= 3) return 'gudabild';
+  if (tr.hov?.klar && !tr.tempel && kyrkansAv(s, tr, 'sten') >= KYRKA.templeSten) return 'tempel'; // templet av sten (steg 8.6.14)
   return undefined;
 }
 // bud som fråga i trons krets (steg 8.6.7)
@@ -332,7 +339,7 @@ const byggeAv = (tr: Tro, k: KyrkBygge) => k === 'hov' ? tr.hov : tr.tempel;
 const byggesMin = (k: KyrkBygge) => k === 'hov' ? KYRKA.hovMin : KYRKA.tempelMin;
 // det som byggs härnäst: hovet, och när det är klart templet
 const nastaBygge = (tr: Tro): KyrkBygge | undefined => tr.hov && !tr.hov.klar ? 'hov' : tr.hov?.klar && tr.tempel && !tr.tempel.klar ? 'tempel' : undefined;
-const kanBygga = (s: State, p: Person, k: KyrkBygge) => { const tr = troOf(s, p.tro); return !!tr && tr.slut === undefined && nastaBygge(tr) === k && ageOf(p, s.now) >= ALDER.vuxen && (k === 'tempel' || (tr.forrad?.ved ?? 0) >= 1); };
+const kanBygga = (s: State, p: Person, k: KyrkBygge) => { const tr = troOf(s, p.tro); return !!tr && tr.slut === undefined && nastaBygge(tr) === k && ageOf(p, s.now) >= ALDER.vuxen && (k === 'tempel' || kyrkansAv(s, tr, 'ved') >= 1); };
 function kyrkBygge(k: KyrkBygge): ProjektDef {
   return {
     namn: k === 'hov' ? 'Hovet' : 'Templet', vikt: k === 'hov' ? KYRKA.hovVikt : KYRKA.tempelVikt,
@@ -348,7 +355,7 @@ export function hovArbete(s: State, p: Person, min: number) {
   b.prog += min;
   if (b.prog < byggesMin(k)) return;
   b.klar = s.now;
-  if (k === 'hov') { const f = tr.forrad ??= {}; f.ved = Math.max(0, (f.ved ?? 0) - KYRKA.hovVed); } // hovet tar sitt trä
+  if (k === 'hov') kyrkanTar(s, tr, 'ved', Math.min(KYRKA.hovVed, kyrkansAv(s, tr, 'ved'))); // hovet tar sitt trä
   const t = k === 'hov' ? `${troNamn(tr)} har byggt ett hov.` : `${troNamn(tr)} har byggt ett tempel av sten där hovet stod.`;
   log(s, t, 'rel', [p.id]); kronika(s, t, 'tro'); count(s, k === 'hov' ? 'hov' : 'tempel');
 }
@@ -407,7 +414,7 @@ function budDygn(s: State) {
     if ((dag + tr.id) % KYRKA.vecka === 3) for (const p of med('fasta')) p.fasta = s.now + DAY;
     // den första fångsten går till tron: en hel sak mat ur byns förråd per forstaPer som följer budet
     const ff = med('forstaFangst').length;
-    if (ff) { const n = Math.ceil(ff / KYRKA.forstaPer), k = FOOD.filter(q => amountOf(s, q) >= n).sort((a, b) => amountOf(s, b) - amountOf(s, a))[0]; if (k) { addTo(s, k, -n); gavaIn(tr, k, n); count(s, 'forstaFangst'); } }
+    if (ff) { const n = Math.ceil(ff / KYRKA.forstaPer), k = FOOD.filter(q => amountOf(s, q) >= n).sort((a, b) => amountOf(s, b) - amountOf(s, a))[0]; if (k) { gavaIn(s, tr, k, n); count(s, 'forstaFangst'); } }
     // tionde till prästen: en tiondel av den egna maten, i hela saker
     const pr = prastOf(s, tr);
     if (pr) for (const p of med('tionde')) {
@@ -420,8 +427,8 @@ function budDygn(s: State) {
     }
     // djuroffret en gång i veckan, och människooffret: bara den som dömts, högst en gång på offerDygn
     if ((dag + tr.id) % KYRKA.vecka === 0 && budIn(tr, 'djuroffer')) {
-      const slag = KOTTSLAG.reduce((a, k) => amountOf(s, k) > amountOf(s, a) ? k : a, 'kott'); // det köttslag byn har mest av (steg 10.3.14)
-      if (amountOf(s, slag) >= KYRKA.djur) { addTo(s, slag, -KYRKA.djur); count(s, 'djuroffer'); for (const p of med('djuroffer')) p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + 2); }
+      const slag = KOTTSLAG.reduce((a, k) => takeLimit(s, k) > takeLimit(s, a) ? k : a, 'kott'); // det köttslag byn har mest av (steg 10.3.14)
+      if (takeLimit(s, slag) >= KYRKA.djur) { use(s, undefined, slag, KYRKA.djur, true); count(s, 'djuroffer'); for (const p of med('djuroffer')) p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + 2); }
       else for (const p of med('djuroffer')) think(p, 'Tron kräver djur, och det finns inget att offra', KYRKA.djurSakna, s.now, DAY);
     }
     if (budIn(tr, 'manniskooffer') && dag - (tr.offrad ?? -Infinity) >= KYRKA.offerDygn) {
@@ -495,12 +502,12 @@ FRAGOR.kyrkutgift = {
   namn: (s, d) => `${troNamn(troOf(s, d.tro as number)!)}: ${{ hov: 'bygga ett hov', tempel: 'bygga ett tempel av sten', prast: 'försörja prästen', fattig: 'ge åt de fattiga', gudabild: 'resa en gudabild' }[d.vad as string]}`, krets: 'tro',
   rost: (s, p, d) => ({ v: (d.vad === 'hov' ? 0.3 : 0.1) + (andlighet(s, p) - 50) / 100, why: 'Tycker att det är rätt för tron' }),
   gor: (s, d) => {
-    const tr = troOf(s, d.tro as number)!, f = tr.forrad ??= {};
+    const tr = troOf(s, d.tro as number)!;
     if (d.vad === 'hov') { const at = helig(s, tr), e = eldPlats(s), q = freeNear(s, (at?.x ?? e.x) + 2, (at?.y ?? e.y) + 2); tr.hov = { x: Math.floor(q.x), y: Math.floor(q.y), prog: 0 }; log(s, `${troNamn(tr)} ska bygga ett hov.`, 'rel', []); }
-    if (d.vad === 'prast') { const pr = prastOf(s, tr); if (pr) { f.bar--; think(pr, 'Fick mat av tron', 0.03, s.now, 6 * HOUR); } }
-    if (d.vad === 'fattig') { const q = living(s).filter(p => p.hunger < 0.6).sort((a, b) => a.hunger - b.hunger)[0]; if (q) f.bar -= 2; if (q) { q.hunger = Math.min(1, q.hunger + 0.3); think(q, 'Fick mat av tron', 0.05, s.now, 6 * HOUR); } }
-    if (d.vad === 'tempel' && tr.hov) { f.sten = (f.sten ?? 0) - KYRKA.templeSten; tr.tempel = { x: tr.hov.x, y: tr.hov.y, prog: 0 }; log(s, `${troNamn(tr)} ska bygga ett tempel av sten där hovet står.`, 'rel', []); }
-    if (d.vad === 'gudabild') { f.ved -= 3; tr.gudabild = s.now; log(s, `${troNamn(tr)} reste en gudabild av trä.`, 'rel', []); }
+    if (d.vad === 'prast') { const pr = prastOf(s, tr); if (pr && kyrkanTar(s, tr, 'bar', 1)) { think(pr, 'Fick mat av tron', 0.03, s.now, 6 * HOUR); } }
+    if (d.vad === 'fattig') { const q = living(s).filter(p => p.hunger < 0.6).sort((a, b) => a.hunger - b.hunger)[0]; if (q && kyrkanTar(s, tr, 'bar', 2)) { q.hunger = Math.min(1, q.hunger + 0.3); think(q, 'Fick mat av tron', 0.05, s.now, 6 * HOUR); } }
+    if (d.vad === 'tempel' && tr.hov && kyrkanTar(s, tr, 'sten', KYRKA.templeSten)) { tr.tempel = { x: tr.hov.x, y: tr.hov.y, prog: 0 }; log(s, `${troNamn(tr)} ska bygga ett tempel av sten där hovet står.`, 'rel', []); }
+    if (d.vad === 'gudabild' && kyrkanTar(s, tr, 'ved', 3)) { tr.gudabild = s.now; log(s, `${troNamn(tr)} reste en gudabild av trä.`, 'rel', []); }
   },
 };
 FRAGOR.taBortBud = {

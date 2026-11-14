@@ -17,7 +17,7 @@ import { freeNear } from './byggnad';
 import { eldPlats } from './karta';
 import { addTo, amountOf, ownedStock, use } from './lager';
 import { ata } from './naring';
-import { budIn, foljer, hogtidKrav, hogtidMat } from './kyrka';
+import { budIn, foljer, hogtidKrav, hogtidMat, kyrkansAv, kyrkanTar } from './kyrka';
 import { FOOD } from './saker';
 import { takeMaterial } from './behov';
 import { kladAv } from './klader';
@@ -330,7 +330,6 @@ function hogtidSteg(s: State, tr: Tro) {
 }
 // när högtiden slutar: gillets mat eller fastans dygn, och offret av dem som följer budet
 export function hogtidSlut(s: State, tr: Tro, r: Ritual, med: Person[]) {
-  const f = (tr.forrad ??= {});
   // djuroffret vid högtiden (steg 10.3.15): har tron ett heligt djur som är ett tamdjur offras ett av dem, och det är borta.
   // Ett vilt heligt djur offras inte
   if (r.form !== 'fasta' && budIn(tr, 'djuroffer')) for (const b of tr.bud ?? []) {
@@ -342,9 +341,9 @@ export function hogtidSlut(s: State, tr: Tro, r: Ritual, med: Person[]) {
     if (r.form === 'fasta') { if (p.tro === tr.id) p.fasta = s.now + DAY; }
     else { // gillet: en hel mat, ur kyrkans egendom först och annars ur den egna maten; den som inget har äter inte. Med budet
       // Högtidens mat tas budets ingrediens först, och ingen äter det tron förbjuder hen (steg 10.3.16)
-      const ord = hogtidMat(tr).filter(q => !matAvstar(s, p, q)), k = ord.find(q => (f[q] ?? 0) >= 1);
+      const ord = hogtidMat(tr).filter(q => !matAvstar(s, p, q)), k = ord.find(q => kyrkansAv(s, tr, q) >= 1);
       let at = k;
-      if (k) { f[k]--; ata(p, { [k]: KROPP.mattar }); count(s, 'gille_mat'); }
+      if (k && kyrkanTar(s, tr, k, 1)) { ata(p, { [k]: KROPP.mattar }); count(s, 'gille_mat'); }
       else { const e = ownedStock(s, p), m = ord.filter(q => (e[q] ?? 0) >= 1).sort((a, b) => (hogtidKrav(tr, b) ? 1 : 0) - (hogtidKrav(tr, a) ? 1 : 0) || (e[b] ?? 0) - (e[a] ?? 0))[0]; at = m; if (m) { use(s, p, m, 1); ata(p, { [m]: KROPP.mattar }); count(s, 'gille_mat'); } }
       if (p.tro === tr.id && budIn(tr, 'matKrav') && foljer(p, 'matKrav') && !(at && hogtidKrav(tr, at))) think(p, 'Högtidens mat saknades', KULT.offerInget, s.now, 12 * HOUR);
       else if (at && hogtidKrav(tr, at)) count(s, 'hogtid_ratt');

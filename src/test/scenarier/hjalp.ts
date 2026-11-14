@@ -262,3 +262,8 @@ export function korTills(s: SIM.State, klart: () => boolean, maxSek = 3600, varj
 }
 // tändmaterial och flinta så att byn inte behöver hämta det (eldens reserv och flintan till redskapen är förrådsmål, steg 10.2.7 och 10.2.12): för prov som gäller annat arbete
 export function tandOchFlinta(s: State) { SIM.setAmount(s, 'torrgras', 30); SIM.setAmount(s, 'grenar', 60); SIM.setAmount(s, 'flinta', 10); }
+// kyrkans förråd blir m: det tron ägde tas bort, och m läggs i lagret med tron som ägare (steg 10.3.17)
+export function satKyrka(s: SIM.State, tr: SIM.Tro, m: Record<string, number>) {
+  for (const [k, n] of Object.entries(SIM.kyrkansForrad(s, tr))) { const v = Math.floor(n + 1e-9); if (v >= 1) SIM.kyrkanTar(s, tr, k, v); }
+  for (const [k, n] of Object.entries(m)) SIM.put(s, k, n, { [SIM.kyrkaId(tr.id)]: n });
+}

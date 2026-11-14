@@ -6,7 +6,7 @@ import { s } from '../lage';
 import { sedBar } from './seder';
 import { omrostningar } from './styre';
 import type { Flik } from '../panel';
-import { BUD, HELIGA_PLATSER, RITUALER, budNamn, forradSum, hogtider, prastOf, prastSort } from '../../sim';
+import { BUD, HELIGA_PLATSER, RITUALER, budNamn, forradSum, hogtider, kyrkansForrad, prastOf, prastSort } from '../../sim';
 
 // det tron har: prästen, de heliga platserna och högtiderna (system 8.5)
 function kultHtml(tr: Tro) {
@@ -18,7 +18,7 @@ function kultHtml(tr: Tro) {
   // varje bud: namnet, och för ritualbuden när, vilka, var och vad som går åt; varför står sist (steg 10.3.3)
   for (const b of tr.bud ?? []) { const d = BUD[b.id] as { text: string; om?(s: unknown, tr: Tro, b: unknown): string }; rad.push(`<li title="${esc(`${d.om ? d.om(s, tr, b) + ' ' : ''}Varför: ${d.text.toLowerCase()}.`)}">📜 ${esc(budNamn(s, b))}</li>`); }
   if (tr.hov) rad.push(`<li>📜 ${tr.hov.klar ? 'Hovet står klart' : 'Hovet byggs'}</li>`);
-  if (forradSum(tr)) rad.push(`<li title="${esc(Object.entries(tr.forrad!).filter(([, n]) => n > 0).map(([k, n]) => `${n} ${k}`).join(', '))}">📜 Kyrkans förråd: ${forradSum(tr)}</li>`);
+  if (forradSum(s, tr)) rad.push(`<li title="${esc(Object.entries(kyrkansForrad(s, tr)).filter(([, n]) => n >= 1).map(([k, n]) => `${Math.floor(n + 1e-9)} ${k}`).join(', '))}">📜 Kyrkans förråd: ${forradSum(s, tr)}</li>`);
   for (const h of tr.helgon ?? []) rad.push(`<li title="${esc(`Krönikan: ${h.krönika} Myten: ${h.myt}`)}">✨ Helgonet ${esc(h.namn)}</li>`);
   if (tr.kvade) rad.push(`<li title="${esc(tr.kvade.text)}">📜 Heliga kväden</li>`);
   if (s.ritual?.tro === tr.id) rad.push(`<li>Just nu: ${esc(s.ritual.namn ?? RITUALER[s.ritual.k].namn)}</li>`);

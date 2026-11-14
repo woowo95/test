@@ -186,7 +186,8 @@ export const wornOf = (s: State, k: string) => isTool(k) ? amountOf(s, k) : summ
 export function foodOf(s: State) { const n = summa(s).n; let f = 0; for (const k of FOOD) f += n[k] ?? 0; return f; }
 
 // ---------- vems det är (egendom.ts) ----------
-export const ownsAmount = (s: State, p: Person, k: string) => agOf(s, k)?.[p.id] ?? 0;
+export const ownsId = (s: State, id: number, k: string) => agOf(s, k)?.[id] ?? 0;
+export const ownsAmount = (s: State, p: Person, k: string) => ownsId(s, p.id, k);
 // hur mycket av slaget k invånarna äger tillsammans (resten är byns)
 export const ownedSum = (s: State, k: string) => sumOf(agOf(s, k));
 // det av slaget k som är byns
@@ -194,14 +195,16 @@ const villageAmount = (s: State, k: string) => Math.max(0, amountOf(s, k) - owne
 // det av slaget k som p får ta: sitt eget och byns
 export const mayTake = (s: State, p: Person, k: string) => ownsAmount(s, p, k) + villageAmount(s, k);
 // det av slaget k som får tas: den personens (fran, stöld), annars p:s eget och byns, annars allt
-export const takeLimit = (s: State, k: string, p?: Person, fran?: Person) => fran ? ownsAmount(s, fran, k) : p ? mayTake(s, p, k) : amountOf(s, k);
+// det av slaget k som någon tro äger (steg 10.3.17)
+const kyrkornas = (s: State, k: string) => { const d = agOf(s, k); let n = 0; if (d) for (const o in d) if (+o < BYN) n += d[o]; return n; };
+export const takeLimit = (s: State, k: string, p?: Person, fran?: Person) => fran ? ownsAmount(s, fran, k) : p ? mayTake(s, p, k) : amountOf(s, k) - kyrkornas(s, k);
 // allt p äger i förrådet, per slag (i den ordning slagen först har ägare bland stackarna, som förut)
-export function ownedStock(s: State, p: Person) {
-  const out: Record<string, number> = {}, sett = new Set<string>();
+export function ownedStock(s: State, p: Person | number) {
+  const id = typeof p === 'number' ? p : p.id, out: Record<string, number> = {}, sett = new Set<string>();
   for (const a of summa(s).st) {
     if (!a.ag || sett.has(a.k) || !isStored(s, a.x, a.y)) continue;
     sett.add(a.k);
-    const v = agOf(s, a.k)![p.id]; if (v > 0) out[a.k] = v;
+    const v = agOf(s, a.k)![id]; if (v > 0) out[a.k] = v;
   }
   return out;
 }
@@ -282,8 +285,8 @@ function cleanDel(s: State, a: Stack) {
   if (!d) return;
   let sum = 0;
   for (const o in d) {
-    const q = +o === BYN ? undefined : byId(s, +o);
-    if (!q || !alive(q) || !(d[o] > 1e-9)) delete d[o]; else sum += d[o];
+    const q = +o <= BYN ? undefined : byId(s, +o); // en tro (id under noll) äger tills den dör ut (releaseOwner, steg 10.3.17)
+    if ((+o >= BYN && (!q || !alive(q))) || !(d[o] > 1e-9)) delete d[o]; else sum += d[o];
   }
   if (sum > a.n + HEL) { const ks = Object.keys(d); heltFordelat(ks.map(o => d[o]), a.n).forEach((m, i) => { d[ks[i]] = m; if (!(m > 0)) delete d[ks[i]]; }); }
   if (!Object.keys(d).length) delete a.ag;

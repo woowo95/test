@@ -6,6 +6,7 @@ import { gastNyckel } from './gastliv';
 import { migrateTek } from './teknik';
 import { stepDelning } from './delning';
 import { put, setStock, storeFromSums } from './lager';
+import { kyrkaId } from './egendom';
 import { isTool } from './saker';
 import { migrateTools, newTing, toolsFromItems } from './agande';
 import { MATERIAL } from './byggnad';
@@ -369,6 +370,12 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
   }],
   [47, 'v528: Inget kött på heliga dagar förbjuder inte längre slakten (steg 10.3.16), så lagen ur budet finns inte', s => {
     if (s.styre?.lagar) s.styre.lagar = s.styre.lagar.filter(l => l.id !== 'bud_kottHelg');
+  }],
+  [48, 'v528: kyrkans förråd är saker i lagret som tron äger (steg 10.3.17); talen läggs ut som hela saker, och en död tros blir byns', s => {
+    for (const tr of s.tron ?? []) {
+      for (const [k, v] of Object.entries(tr.forrad ?? {})) { const n = Math.floor(v + 1e-9); if (n >= 1) put(s, k, n, tr.slut === undefined ? { [kyrkaId(tr.id)]: n } : undefined); }
+      delete tr.forrad;
+    }
   }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];

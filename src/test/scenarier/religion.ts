@@ -2,7 +2,7 @@
 import { createState, Person } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, nyInvanare, utanWebblasare } from './hjalp';
+import { SCENARIER, nyInvanare, satKyrka, utanWebblasare } from './hjalp';
 import { hasIcon } from '../../ikoner';
 import { setByn } from '../../ui/lage';
 import { religion } from '../../ui/flikar/religion';
@@ -332,7 +332,7 @@ SCENARIER.trostyngd = {
     for (const p of folk) p.troStyrka = 50; const halv = del('troende'); for (const p of folk) p.troStyrka = 100;
     // prästen, egendomen och huset
     const utanPrast = del('prast'); tr.prast = folk[1].id; const medPrast = del('prast');
-    tr.forrad = { ved: 10 }; const halvEgendom = del('egendom'); tr.forrad = { ved: 200 }; const fullEgendom = del('egendom'); tr.forrad = undefined;
+    satKyrka(s, tr, { ved: 10 }); const halvEgendom = del('egendom'); satKyrka(s, tr, { ved: 200 }); const fullEgendom = del('egendom'); satKyrka(s, tr, {});
     tr.hov = { x: 0, y: 0, prog: 1 }; const halvbyggt = del('hus'); tr.hov.klar = s.now; const klart = del('hus');
     const summa = Math.abs(SIM.tyngd(s, tr) - SIM.tyngdDelar(s, tr).reduce((x, d) => x + d.v, 0)) < 1e-9;
     // etiketterna, den första som stämmer

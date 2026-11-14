@@ -8,6 +8,9 @@ import { kronika } from './historik';
 import { bytaChans, egendomIVed } from './kultlatt';
 import type { IntryckTyp } from './rykten';
 import { isSick } from './sjukdom';
+import { kyrkansForrad } from './kyrka';
+import { releaseOwner } from './lager';
+import { kyrkaId } from './egendom';
 
 // Religionen (fas 4.1, "Religion" i designdokumentet). Andligheten (steg 4.1.1.1) är en egenskap hos varje person, 0–100:
 // hur viktigt det heliga är för hen, inte vad hen tror på. Den ärvs delvis och flyttas av upplevelserna (uppvaxt.ts, steg
@@ -98,7 +101,7 @@ const tyngdAlder = (s: State, tr: Tro) => TYNGD.alderFran + (1 - TYNGD.alderFran
 export const TYNGDDELAR: Record<string, TyngdDel> = {
   troende: { namn: 'De troende', v: (s, tr) => living(s).filter(p => p.tro === tr.id && ageOf(p, s.now) >= ALDER.vuxen).reduce((a, p) => a + (p.troStyrka ?? 0) / 100, 0) * tyngdAlder(s, tr) },
   prast: { namn: 'Prästen', v: (s, tr) => { const q = tr.prast !== undefined ? s.people.find(p => p.id === tr.prast) : undefined; return q && alive(q) && q.tro === tr.id ? TYNGD.prast : 0; } },
-  egendom: { namn: 'Kyrkans egendom', v: (_s, tr) => tr.forrad ? TYNGD.egendom * clamp(egendomIVed(tr.forrad) / TYNGD.egendomVed, 0, 1) : 0 },
+  egendom: { namn: 'Kyrkans egendom', v: (s, tr) => { const f = kyrkansForrad(s, tr); return TYNGD.egendom * clamp(egendomIVed(f) / TYNGD.egendomVed, 0, 1); } },
   hus: { namn: 'Trons hus', v: (_s, tr) => TYNGD.hus * ((tr.hov?.klar ? 1 : 0) + (tr.tempel?.klar ? 1 : 0)) },
 };
 export const tyngdDelar = (s: State, tr: Tro) => Object.entries(TYNGDDELAR).map(([id, d]) => ({ id, namn: d.namn, v: d.v(s, tr) }));
@@ -265,7 +268,7 @@ export const teckenText = (k: TeckenTyp, om?: string) => TDEF[k].text.replace('{
 // sk: värdet på de skalor som låsts upp efter de två första, gudar: trons gudar (steg 4.1.5)
 export interface Tro { hogtidDag?: number; // dygnet då högtiden hölls: också en helig dag (steg 10.3.16)
   bud?: import('./kyrka').AntagetBud[]; roster?: import('./rost').Omrostning[]; nedrostat?: Record<string, number>; // trons omröstningar, och det som röstats ned och vilar (steg 10.3.2)
-  forrad?: Record<string, number>; hov?: { x: number; y: number; prog: number; klar?: number }; tempel?: { x: number; y: number; prog: number; klar?: number }; fodda?: number; offrad?: number; gudabild?: number; helgon?: { id: number; namn: string; t: number; krönika: string; myt: string }[]; kvade?: { t: number; text: string; av: number; larjunge?: number }; x?: number; y?: number; prast?: number; hogtid?: number; heligKand?: { x: number; y: number; t: number; om: string }[]; brollop?: number; fodd?: number; vuxen?: number; leddBon?: number; profeter?: number[]; gravSlag?: 'helig' | 'vatten' | 'bryn' | 'by'; id: number; grundare: number; gnamn: string; t: number; k: TeckenTyp; om?: string; bakom: string; vill: string; svek: string; natur: number; manga: number; bekr: number; slut?: number; ar: number; namn?: string; sym?: string; ber?: string; sk?: Partial<Record<SkalaId, number>>; gudar?: Gud[] }
+  forrad?: Record<string, number>; /* bara i äldre sparfiler (före steg 10.3.17) */ hov?: { x: number; y: number; prog: number; klar?: number }; tempel?: { x: number; y: number; prog: number; klar?: number }; fodda?: number; offrad?: number; gudabild?: number; helgon?: { id: number; namn: string; t: number; krönika: string; myt: string }[]; kvade?: { t: number; text: string; av: number; larjunge?: number }; x?: number; y?: number; prast?: number; hogtid?: number; heligKand?: { x: number; y: number; t: number; om: string }[]; brollop?: number; fodd?: number; vuxen?: number; leddBon?: number; profeter?: number[]; gravSlag?: 'helig' | 'vatten' | 'bryn' | 'by'; id: number; grundare: number; gnamn: string; t: number; k: TeckenTyp; om?: string; bakom: string; vill: string; svek: string; natur: number; manga: number; bekr: number; slut?: number; ar: number; namn?: string; sym?: string; ber?: string; sk?: Partial<Record<SkalaId, number>>; gudar?: Gud[] }
 export const troOf = (s: State, id: number | undefined) => id === undefined ? undefined : s.tron?.find(t => t.id === id);
 export const troende = (s: State, tr: Tro) => living(s).filter(p => p.tro === tr.id);
 // tolkningen som meningar: "Den som bor i åskmolnen vill att man tystnar när det mullrar. Om man sviker: blixten slår ner i ens hus."
@@ -453,7 +456,7 @@ export function stepReligion(s: State) {
   for (const tr of s.tron ?? []) {
     if (tr.slut !== undefined) continue;
     const folk = troende(s, tr);
-    if (!folk.length) { tr.slut = s.now; count(s, 'tro_slut'); continue; }
+    if (!folk.length) { tr.slut = s.now; releaseOwner(s, kyrkaId(tr.id)); count(s, 'tro_slut'); continue; } // kyrkans del blir byns (steg 10.3.17)
     if (!tr.namn && folk.length >= TRO.namn) namnge(s, tr, folk);
     gudSteg(s, tr);
   }
