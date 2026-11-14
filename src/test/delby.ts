@@ -13,12 +13,13 @@ import { createState, migrate, serialize, type State } from '../sim';
 import { Ack, korBy, START } from './kor';
 import type { Nyckeltal } from './nyckeltal';
 import { kanonisk } from './pool';
+import { IAKTTAGARE } from './scenarier/iakttagare';
 
 export const DEL = 5; // dygn per del (5 år i spelet): byn sparas och läses in så här ofta, och bitarnas gränser ligger på delgränserna
 export const lasBy = (fil: string): State => migrate(JSON.parse(gunzipSync(readFileSync(fil)).toString('utf8')));
 export const sparaBy = (fil: string, s: State) => writeFileSync(fil, gzipSync(serialize(s), { level: 9 }));
 
-export interface BitSvar { seed: number; fran: number; till: number; ack: Ack[]; n: Nyckeltal; vakter: string[]; ms: number; delMs: number[]; delHash: string[] }
+export interface BitSvar { seed: number; fran: number; till: number; ack: Ack[]; n: Nyckeltal; vakter: string[]; ms: number; delMs: number[]; delHash: string[]; iakt: Record<string, unknown> }
 
 // delarnas summor och den sista delens nyckeltal blir byns nyckeltal, som om allt gått i en körning
 export function laggIhop(bitar: BitSvar[]): { n: Nyckeltal; vakter: string[]; ms: number } {
@@ -44,8 +45,11 @@ if (arg[0] === '--bit') {
   let s = fran === 0 || !inFil || inFil === '-' ? createState(seed, START) : lasBy(inFil);
   const ack: Ack[] = [], delMs: number[] = [], delHash: string[] = [], vakter: string[] = [];
   let n: Nyckeltal | undefined;
+  // iakttagarna (steg 10.2.106) tittar på byn efter varje steg och i slutet av biten
+  const iakt = Object.fromEntries(Object.entries(IAKTTAGARE).map(([k, i]) => [k, i.ny()]));
+  const se = (s: State) => { for (const k in IAKTTAGARE) IAKTTAGARE[k]!.se(s, iakt[k]); };
   for (let d = fran; d < till; d += DEL) {
-    const r = korBy(seed, Math.min(DEL, till - d), undefined, s);
+    const r = korBy(seed, Math.min(DEL, till - d), se, s);
     ack.push(r.ack); delMs.push(r.n.ms); vakter.push(...r.vakter); n = r.n;
     const txt = serialize(r.s);
     // hela byns tillstånd som en kort hash efter varje del: samma-kollen jämför den med facit (steg 10.2.105)
@@ -54,6 +58,7 @@ if (arg[0] === '--bit') {
     if (alla && d + DEL < till) sparaBy(`${alla}/${seed}-${d + DEL}.json.gz`, s);
   }
   if (utFil) sparaBy(utFil, s);
-  const svar: BitSvar = { seed, fran, till, ack, n: n!, vakter, ms: delMs.reduce((a, b) => a + b, 0), delMs, delHash };
+  for (const k in IAKTTAGARE) IAKTTAGARE[k]!.slut?.(s, iakt[k]);
+  const svar: BitSvar = { seed, fran, till, ack, n: n!, vakter, ms: delMs.reduce((a, b) => a + b, 0), delMs, delHash, iakt };
   console.log(JSON.stringify(svar));
 }

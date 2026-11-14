@@ -1,8 +1,8 @@
 // Scenarier. Redskap: stenring, spjut, redskap, slitage och teknik.
-import { createState, addTool, twineRope, makeTool, wearUsed, isSpear, step, living, cloneState, pilesOf, zoneOf, amountOf, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, ageOf, spears, SPJUT_FORSOK, getMap, DAY, HOUR, W, State, takenOf, migrate, bynsMitt, TEKNIK, knows, thinkWhileWorking, die, isWall, H, richness, setAmount, tingOf, wantsTool, makeTask, wantsFlint, ALDER, KROPP, inMap, canLight, dangers, toolGain, chooseTask } from '../../sim';
+import { createState, addTool, twineRope, makeTool, wearUsed, isSpear, step, living, cloneState, pilesOf, zoneOf, amountOf, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, ageOf, spears, SPJUT_FORSOK, getMap, DAY, HOUR, W, State, takenOf, migrate, bynsMitt, knows, thinkWhileWorking, die, isWall, H, richness, setAmount, tingOf, wantsTool, makeTask, wantsFlint, ALDER, KROPP, inMap, canLight, dangers, toolGain, chooseTask } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { setItems, setMat, setFood, kor, klockan, tandEld, bastaJaktruta, SCENARIER, medBank, medHus } from './hjalp';
+import { setItems, setMat, setFood, kor, klockan, tandEld, bastaJaktruta, SCENARIER, medBank, medHus, testBy } from './hjalp';
 const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 SCENARIER.stenring = {
@@ -333,23 +333,8 @@ SCENARIER.hallbarhet = {
 };
 
 SCENARIER.teknik = {
-  lang: true,
-  text: 'Ingen kan göra yxa, spjut eller rep från början: den som arbetar kommer på det (nyfikna och intelligenta fortare), lär ut det i samtal, och kunskapen dör med den sista som kan den',
+  text: 'Nyfikna och intelligenta kommer på en teknik fortare, utan material kommer man inte på något, och kunskapen dör med den sista som kan den. Att ingen kan något från början, att repet och yxan kommer på och att kunskapen sprids iakttas i testbyarna i npm test (iakttagaren teknikbyar, steg 10.2.106)',
   kor: () => {
-    // by 3 hade bara en kvar efter 20 dygn sedan kartan blev 120 × 120 (2.10.9). När repet kommer på skiljer mycket mellan byarna
-    // (0,5–18 dygn, och i någon by inte på 20 dygn); by 8 slutade komma på det efter fynd 28 i 3.10.25, by 2 kommer på det tidigt
-    const s = createState(2, START);
-    const forst: Record<string, number> = {};
-    let yxaInnan = false, repInnan = false;
-    const kanFran = TEKNIK.every(t => !s.people.some(p => knows(p, t.id)));
-    kor(s, 20 * 24, s => {
-      for (const t of TEKNIK) if (forst[t.id] === undefined && living(s).some(p => knows(p, t.id))) forst[t.id] = (s.now - s.founded) / DAY;
-      if ((s.stat?.yxa1 ?? 0) > 0 && forst.yxa === undefined) yxaInnan = true; // gjord i byn: en handlare kan sälja en yxa förut
-      if ((amountOf(s, 'rep')) > 0 && forst.rep === undefined) repInnan = true;
-    });
-    const kan = (id: string) => living(s).filter(p => knows(p, id)).length;
-    // spridningen i samtal mäts några dygn efter att repet kom på (det kan komma på sent i byn)
-    for (let h = 0; forst.rep !== undefined && kan('rep') < 3 && h < 6 * 24; h++) kor(s, 1);
     // nyfikna och intelligenta kommer på det fortare
     const q = createState(4, START), [a, b] = living(q).filter(p => ageOf(p, q.now) >= 20);
     a.pot.nyfikenhet = a.pot.intelligens = 16; b.pot.nyfikenhet = b.pot.intelligens = 6; a.tek = {}; b.tek = {};
@@ -360,20 +345,15 @@ SCENARIER.teknik = {
     const c = living(q).filter(p => ageOf(p, q.now) >= 20)[2]; c.tek = {}; setAmount(q, 'flinta', 0); setAmount(q, 'yxa', 0);
     thinkWhileWorking(q, c, 'ved', 10 * 3600);
     const utanMaterial = !(c.tek.yxa);
-    // den sista som kan yxa dör
-    const ens = living(s).filter(p => knows(p, 'yxa'));
+    // den sista som kan yxa dör, i en by från npm test
+    const s = testBy(20), ens = living(s).filter(p => knows(p, 'yxa'));
     ens.slice(1).forEach(p => { p.tek!.yxa = 0; });
     if (ens[0]) die(s, ens[0], 'olycka');
-    const dott = kan('yxa') === 0;
-    const dagar = (k: string) => forst[k] === undefined ? 'aldrig' : `dygn ${forst[k].toFixed(1)}`;
+    const dott = ens.length > 0 && living(s).filter(p => knows(p, 'yxa')).length === 0;
     return [
-      ['ingen kan något från början', kanFran],
-      [`repet kommer på (${dagar('rep')}), yxan (${dagar('yxa')}) och spjutet (${dagar('fiskespjut')}); korgen, som kräver slöjdbänken, ${dagar('korg')}`, forst.rep !== undefined && forst.yxa !== undefined && forst.rep > 0.2 && forst.yxa > 0.3],
-      ['ingen gör en yxa eller ett rep innan någon kommit på hur', !yxaInnan && !repInnan],
-      [`kunskapen sprids i samtal (${kan('rep')} kan göra rep, ${kan('yxa')} yxa)`, kan('rep') >= 3 && ens.length >= 3],
       ['en nyfiken och intelligent person kommer på det mycket fortare', snabb],
       ['utan flinta kommer ingen på yxan', utanMaterial],
-      ['när den sista som kan yxa dör finns kunskapen inte kvar', dott],
+      [`när den sista som kan yxa dör finns kunskapen inte kvar (${ens.length} kunde)`, dott],
     ];
   },
 };

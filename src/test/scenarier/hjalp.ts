@@ -2,7 +2,10 @@
 // och ../scenario.ts kör dem.
 import { Person, Act, ownedBy, tidyTools, heldBy, isTool, step, living, temperature, ageIndex, kalender, yearNo, pilesOf, amountOf, capacity, load, isLight, T, condOf, FOOD, zonesOf, ageOf, groundOf, getMap, DAY, HOUR, W, State, skogAndel, takenOf, Kind, describe, stat, utanforByn, bynsMitt, TEKNIK, knows, bitsOf, housesOf, gridOf, roomAt, insulation, FYND_IDS, angOf, fyndAt, H, vaxerAt, richness, djurOf, ownedStock, ownedSum, setAmount, setStock, foodOf, isFood, STACK_ORDER, rikedomDelar, grundvarde, tingOf, komOf, fnOf, Task, barnMat, hungerFlytt, FOLDERS, STATS, ACTS, coverOf, lightLevel, timeLabel, hearthOf, igniterOf, fireWant, fireHeat, heatRadius, emberOn, zoneAt, bitAt, husById, isSick, isSocial, moodOf, duty, habitTotal, habitShare, childrenOf, homeKind, taskName, carryKind, influence, hasMaterial, wornOf, relKey, sakNamn, tingNamn, visning } from '../../sim';
 import * as SIM from '../../sim';
-import { STEG_TIM } from '../kor';
+import { readdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { STEG_TIM, korBy } from '../kor';
+import { lasBy } from '../delby';
 const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 // förrådet i proven: stackarna är det enda som sparas (steg 1.1.2), så proven ställer in förrådet genom lagret
@@ -15,6 +18,13 @@ export const setMat = (s: State, m: Record<string, number>) => { for (const k of
 export const setFood = (s: State, n: number) => { const f = foodOf(s); if (f > 0) { const m: Record<string, number> = {}; for (const k of FOOD) m[k] = amountOf(s, k) * n / f; setStock(s, m); } else setAmount(s, 'bar', n); };
 
 export type Koll = [string, boolean];
+// en by från npm test (steg 10.2.106): den yngsta av testbyarna som facit sparat (test/facit-byar/) och som är minst minDygn
+// gammal, så att ett scenario som bara iakttar en by inte kör en egen. Finns ingen sparad by (före första facit) körs by 1 dit
+export const testBy = (minDygn: number): State => {
+  const dir = fileURLToPath(new URL('../../../test/facit-byar/', import.meta.url));
+  const filer = readdirSync(dir).map(f => /^(\d+)-(\d+)\.json\.gz$/.exec(f)).filter(m => m && +m[2] >= minDygn).sort((a, b) => +a![2] - +b![2] || +a![1] - +b![1]);
+  return filer.length ? lasBy(dir + filer[0]![0]) : korBy(1, minDygn).s;
+};
 export const kor = (s: State, timmar: number, varje?: (s: State) => void) => { for (let i = 0; i < timmar * STEG_TIM; i++) { step(s, BEAT); varje?.(s); } };
 // klockan h samma dag, i testernas tidszon (UTC, se utc.ts; ett scenario med env: STOCKHOLM får svensk tid)
 export const klockan = (s: State, h = 10) => { s.now = new Date(s.now).setHours(h, 0, 0, 0); };

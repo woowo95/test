@@ -12,6 +12,7 @@ import { DOK_KB, rad } from './kor';
 import { NYCKELTAL, Nyckeltal } from './nyckeltal';
 import { korJson, pool, prioAv } from './pool';
 import { BitSvar, DEL, laggIhop } from './delby';
+import { IAKTTAGARE } from './scenarier/iakttagare';
 
 const FACIT = new URL('../../test/facit.json', import.meta.url), BYDIR = fileURLToPath(new URL('../../test/facit-byar/', import.meta.url));
 // JOBB: byarnas bitar delas så att ingen bit tar mer än en JOBB-del av alla byars tid tillsammans, så att inget jobb i det
@@ -37,6 +38,7 @@ const facitText = (f: Facit) => JSON.stringify({ byar: Object.fromEntries(Object
 const spara = process.argv.includes('--spara'), utkastI = process.argv.indexOf('--utkast'), utkast = utkastI >= 0 ? process.argv[utkastI + 1] : undefined;
 
 type Jobb = { seed: number; fran: number; till: number; in: string; ut: string; forra: number };
+let allaBitar: BitSvar[] = [];
 let res: { seed: number; n: Nyckeltal; vakter: string[] }[], nytt: Facit = { byar: {} }, jobbtider: { namn: string; ms: number }[] = [];
 const facit = lasFacit();
 
@@ -47,6 +49,7 @@ if (spara) {
   const hela = await pool(BYAR.map(seed => () => korJson<BitSvar>('delby.ts', ['--bit', String(seed), '0', String(DAGAR), '-', '-', '--alla', tmp], `by ${seed}`)
     .catch((e: Error) => { console.log(e.message); process.exit(1); })));
   res = hela.map(b => ({ seed: b.seed, ...laggIhop([b]) }));
+  allaBitar = hela;
   const mal = hela.reduce((a, b) => a + b.delMs.reduce((x, y) => x + y, 0), 0) / JOBB;
   for (const b of hela) {
     const bitar = Math.max(1, Math.ceil(b.delMs.reduce((x, y) => x + y, 0) / mal));
@@ -74,6 +77,7 @@ if (spara) {
   const f = (j: Jobb) => prioAv(facit?.byar[j.seed]?.bitMs.length ? j.forra / 1000 : undefined); // de korta bitarna med lägre prioritet (steg 9.2.64)
   const svar = await pool(ordning.map(j => () => korJson<BitSvar>('delby.ts', ['--bit', String(j.seed), String(j.fran), String(j.till), j.in, j.ut], `by ${j.seed}, dygn ${j.fran}–${j.till}`, {}, f(j))
     .catch((e: Error) => { console.log(e.message); process.exit(1); })));
+  allaBitar = svar;
   res = BYAR.map(seed => {
     const bitar = svar.filter(b => b.seed === seed).sort((a, b) => a.fran - b.fran);
     nytt.byar[seed] = { granser: [0, ...bitar.map(b => b.till)], bitMs: bitar.map(b => b.ms), n: laggIhop(bitar).n, hash: bitar.map(b => b.delHash[b.delHash.length - 1]) };
@@ -113,6 +117,17 @@ if (spara) {
   }
   console.log(andr.length ? 'Ändrat mot facit:\n  ' + andr.join('\n  ') : 'Facit: oförändrat.');
   console.log(samma.length ? 'ANNAN UTVECKLING (hela byn): ' + samma.join('; ') : 'Samma utveckling som förut (hela byn).');
+}
+
+// iakttagarna (steg 10.2.106): bitarna i följd läggs ihop per by, och kontrollerna skrivs som scenarierna (OK/FEL namn)
+const bitarAv: Record<number, BitSvar[]> = {};
+for (const b of allaBitar) (bitarAv[b.seed] ??= []).push(b);
+for (const [namn, i] of Object.entries(IAKTTAGARE)) {
+  const byar = BYAR.map(seed => ({ seed, m: bitarAv[seed]!.sort((a, b) => a.fran - b.fran).map(b => b.iakt[namn]).reduce((a, b) => i.ihop(a, b)) }));
+  const k = i.kolla(byar), fel = k.filter(x => !x[1]);
+  console.log(fel.length ? `FEL ${namn}: ${i.text}\n${fel.map(x => '  ✗ ' + x[0]).join('\n')}` : `OK ${namn}`);
+  if (process.env.ALLA) for (const x of k.filter(x => x[1])) console.log('  ✓ ' + x[0]);
+  if (fel.length) process.exitCode = 1;
 }
 
 console.log(vakter.length ? 'VAKTER LARMAR:\n  ' + vakter.join('\n  ') : 'Vakter: inga fel.');

@@ -1,18 +1,20 @@
 // Scenarier. Sparning, historik och slumpföljder.
 import { isDeepStrictEqual } from 'node:util';
-import { Person, createState, addTool, getRel, step, living, serializeParts, joinParts, serialize, cloneState, amountOf, ageOf, DAY, State, migrate, die, housesOf, sumOf, setAmount, foodOf, STACK_ORDER, rnd, STROMMAR, Strom, spar, SPARVERSION, tingOf, fnId, ALDER, stepFire, chooseTask } from '../../sim';
+import { Person, createState, addTool, getRel, step, living, serializeParts, joinParts, serialize, cloneState, amountOf, ageOf, DAY, State, migrate, die, housesOf, sumOf, setAmount, foodOf, STACK_ORDER, rnd, STROMMAR, Strom, spar, SPARVERSION, tingOf, fnId, ALDER, stepFire, chooseTask, WEEK } from '../../sim';
 import * as SIM from '../../sim';
 import { DOK_KB, START, STEG_DYGN, korBy } from '../kor';
 import { kanonisk } from '../pool';
-import { setItems, setFood, Koll, kor, SCENARIER } from './hjalp';
+import { setItems, setFood, Koll, kor, SCENARIER, testBy } from './hjalp';
 const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 SCENARIER.historik = {
   lang: true,
   text: 'Byns historik: nyckeltalen varje timme den senaste veckan, sedan ett värde per dygn, och viktiga händelser i krönikan. Den sparas i en del per vecka och ändrar inget i byn',
   kor: () => {
-    const s = createState(3, START), t = createState(3, START);
-    for (let i = 0; i < 10 * STEG_DYGN; i++) { step(s, BEAT); step(t, BEAT); t.hist = undefined; } // t: utan historik
+    // en by från npm test (steg 10.2.106), och samma by utan historik, ett dygn framåt
+    const s = testBy(10), t = cloneState(s); t.hist = undefined;
+    for (let i = 0; i < STEG_DYGN; i++) { step(s, BEAT); step(t, BEAT); t.hist = undefined; } // t: utan historik
+    const veckor = Math.floor((s.now - s.founded) / WEEK) + 1;
     const h = s.hist!, i = (id: string) => h.tal.indexOf(id) + 1;
     const timOk = h.tim.length >= 7 * 24 && h.tim.length <= 8 * 24 && h.tim[0][0] >= s.now - 8 * DAY;
     const dagar = h.dygn.map(r => Math.floor(r[0] / DAY)), ettPerDygn = dagar.every((d, k) => k === 0 || d === dagar[k - 1] + 1);
@@ -39,7 +41,8 @@ SCENARIER.historik = {
       ['nyckeltalen är rimliga (invånare, humör 0–1, skog som andel)', folkOk],
       [`födda och döda räknas upp som i byns statistik (${sist[i('fodda')]} födda, ${sist[i('doda')]} döda)`, sist[i('fodda')] === (s.stat?.fodda ?? 0) && sist[i('doda')] === (s.stat?.doda ?? 0)],
       [`krönikan har byns födslar och första eld (${h.kronika.length} rader)`, fodda === (s.stat?.fodda ?? 0) && h.kronika.some(k => k[2] === 'k_forstaEld') === s.fire.lightings > 0],
-      [`historiken sparas i en del per vecka (${hd.join(', ')}; största ${Math.round(storst / 1024)} KB av högst ${DOK_KB})`, hd.length === 2 && storst < DOK_KB * 1024 && !delar.byn.includes('"hist"')],
+      // en stor del delas av sparningen i molnet i dokument om 80 KB (BIT i ui/spara.ts), så delens storlek har ingen gräns
+      [`historiken sparas i en del per vecka (${hd.length} delar på ${veckor} veckor; största ${Math.round(storst / 1024)} KB, i dokument om högst ${DOK_KB} KB)`, hd.length === veckor && !delar.byn.includes('"hist"')],
       ['delarna blir samma historik igen', isDeepStrictEqual(ater, JSON.parse(serialize(s)).hist)],
       ['historiken ändrar inget i byn', JSON.stringify(utan) === serialize(t)],
       ['krönikans text beror inte på hur lång krönikan är', sammaText],
