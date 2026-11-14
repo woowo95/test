@@ -302,4 +302,5 @@ export function makeTool(s: State, p: Person, g: string) {
   if (hasRecipe(s, p, k)) { takeRecipe(s, p, k); toolDone(s, p, k); }
 }
 // flintan till de redskap byn vill ha och saknar: den räknas i flintans förrådsmål (flintaKrok, satt i val.ts), så att flinta letas till en yxa (steg 10.2.12)
-export const flintaTillVerktyg = (s: State) => { let n = 0; for (const g in GORS) { const f = av(GORS[g][0]).flinta ?? 0; if (f) n += Math.max(0, villAv(s, g) - harAv(s, g)) * f; } return n; };
+const FLINTGRUPPER = Object.keys(GORS).map(g => [g, av(GORS[g][0]).flinta ?? 0] as const).filter(r => r[1]); // grupperna vars recept tar flinta, ur registret
+export const flintaTillVerktyg = (s: State) => { let n = 0; for (const [g, f] of FLINTGRUPPER) n += Math.max(0, villAv(s, g) - harAv(s, g)) * f; return n; };

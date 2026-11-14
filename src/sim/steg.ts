@@ -1094,7 +1094,7 @@ export function sakerPaRutan(s: State, tk: Task, x: number, y: number): { k: str
   // länge byn behöver flinta (som förut i forageItems, eld.ts)
   if (tk.sok) {
     const v = rutVarde(s, tk)(x, y), sten = needStones(s);
-    const n = sten ? Math.floor(v * RUNDA.stenSaker + 1e-9) : flintaBehovs(s, tk) && hash3(s.seed, i, 991) < v * RUNDA.flintTat ? 1 : 0;
+    const n = sten ? Math.floor(v * RUNDA.stenSaker + 1e-9) : hash3(s.seed, i, 991) < v * RUNDA.flintTat && flintaBehovs(s, tk) ? 1 : 0; // rutans tal först: det är billigt, och de flesta rutor har ingen flinta
     return [{ k: sten ? 'sten' : 'flinta', n: Math.max(0, n - plockatPa(s, plockKey(tk, i))) }];
   }
   // bär och rötter, och svampen som växer där (kantarellen och den giftiga spindlingen)
@@ -1310,18 +1310,19 @@ export function nastaMal(s: State, p: Person, tk: Task, x0: number, y0: number, 
   // det hen ser räknas som det är, i saker på rutan; längre bort det hen tror, räknat i saker (rikedomen delad med toppen, gånger
   // sakerna på en full ruta), så att en plats som ser rik ut men är tom inte lockar
   const res = ACTS[tk.act].resurs, sikt = sightOf(s, p);
-  const tror0 = res && !tk.sok ? trorOm(s, p, res) : undefined, iSaker = res && !tk.sok ? (FYND.bar.saker ?? 1) / Math.max(1e-9, toppOf(res)) : 0;
-  const tror = (x: number, y: number) => !tror0 || sees(s, p, x, y, sikt) ? sakerPa(s, tk, x, y) : tror0(x, y) * iSaker;
+  const tror0 = res && !tk.sok ? trorOm(s, p, res, true) : undefined, iSaker = res && !tk.sok ? (FYND.bar.saker ?? 1) / Math.max(1e-9, toppOf(res)) : 0;
   const andra = living(s).filter(q => q !== p && q.task?.act === tk.act).map(q => ({ x: q.task!.tx, y: q.task!.ty }));
   const vt = vattenNu(s), R = RUNDA.malR;
   let bast: { x: number; y: number } | undefined, bv = 0;
   for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
     const x = x0 + dx, y = y0 + dy, d = Math.hypot(dx, dy);
     if (d <= RUNDA.syn || d > R || !inMap(x, y) || vt[y * W + x] === T.Vatten || blocked(s, x + 0.5, y + 0.5)) continue; // (inte i en vägg)
-    const trangt = andra.filter(q => Math.hypot(q.x - x, q.y - y) < RUNDA.syn).length;
+    let trangt = 0;
+    for (const q of andra) if (Math.hypot(q.x - x, q.y - y) < RUNDA.syn) trangt++;
+    const ser = !tror0 || sees(s, p, x, y, sikt), tror = ser ? sakerPa(s, tk, x, y) : tror0!(x, y) * iSaker;
     // vägen dit räknas i samma enhet som det hen tror finns där: bortom synvidden i saker (iSaker). Förut vägde avståndet femtio
     // gånger tyngre än det hen hört, så att inget mål längre bort vann och rundan gick åt ett slumpat håll (steg 9.9.5)
-    const v = (tror(x, y) - radsla(x, y)) / (1 + trangt) - d * RUNDA.ut * (tror0 && !sees(s, p, x, y, sikt) ? iSaker : 1);
+    const v = (tror - radsla(x, y)) / (1 + trangt) - d * RUNDA.ut * (ser ? 1 : iSaker);
     if (v > bv + 1e-9) { bv = v; bast = { x, y }; }
   }
   if (bast) { count(s, 'nyttMal'); return bast; }
