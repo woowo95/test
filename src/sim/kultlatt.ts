@@ -63,3 +63,10 @@ export function heligtFor(s: State, p: Person, art: string | undefined): boolean
 export const heligtAvstar = (s: State, p: Person, art: string | undefined, nod = false) => !nod && heligtFor(s, p, art);
 // p gjorde det ändå (i nöd): budet är brutet
 export const heligtBrutet = (s: State, p: Person, art: string | undefined) => { if (heligtFor(s, p, art)) brutet(s, p); };
+
+// ---------- maten som bud (steg 10.3.16) ----------
+// kyrka.ts sätter krokarna: p låter bli saken k (råvaran eller rätten av den) för ett matbud, utom i svält, och bryter budet om hen ändå åt
+const matKrok = { avstar: (_s: State, _p: Person, _k: string) => false, brutet: (_s: State, _p: Person, _k: string) => {} };
+export const satMatBud = (avstar: typeof matKrok.avstar, brutet: typeof matKrok.brutet) => { matKrok.avstar = avstar; matKrok.brutet = brutet; };
+export const matAvstar = (s: State, p: Person, k: string) => matKrok.avstar(s, p, k);
+export const matBrutet = (s: State, p: Person, k: string) => matKrok.brutet(s, p, k);

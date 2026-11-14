@@ -367,6 +367,9 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
       if (tr.slut === undefined && pr && pr.died === undefined && pr.tro === tr.id && !tr.bud?.some(b => b.id === 'prast')) (tr.bud ??= []).push({ id: 'prast', t: tr.t });
     }
   }],
+  [47, 'v528: Inget kött på heliga dagar förbjuder inte längre slakten (steg 10.3.16), så lagen ur budet finns inte', s => {
+    if (s.styre?.lagar) s.styre.lagar = s.styre.lagar.filter(l => l.id !== 'bud_kottHelg');
+  }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

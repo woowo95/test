@@ -17,11 +17,11 @@ import { freeNear } from './byggnad';
 import { eldPlats } from './karta';
 import { addTo, amountOf, ownedStock, use } from './lager';
 import { ata } from './naring';
-import { budIn, foljer } from './kyrka';
+import { budIn, foljer, hogtidKrav, hogtidMat } from './kyrka';
 import { FOOD } from './saker';
 import { takeMaterial } from './behov';
 import { kladAv } from './klader';
-import { heligtDjurAv, nyRitual, satEgendomVarde, satGravVarde, vanhelgaPlats } from './kultlatt';
+import { heligtDjurAv, matAvstar, nyRitual, satEgendomVarde, satGravVarde, vanhelgaPlats } from './kultlatt';
 import { tamdjurOf } from './tamdjur';
 import { grundvarde, tingVarde, varuVarde } from './varde';
 satGravVarde(t => tingVarde(t)); // gravgåvan är den finaste saken (steg 10.3.5)
@@ -325,7 +325,7 @@ function hogtidSteg(s: State, tr: Tro) {
   if (tr.hogtid === st) return;
   const b = tr.bud?.find(x => x.id === 'hogtid' && hogtidAv(x.v).ai === ai);
   if (!b) return;
-  tr.hogtid = st;
+  tr.hogtid = st; tr.hogtidDag = Math.floor(s.now / DAY); // dygnet är heligt (steg 10.3.16)
   nyRitual(s, 'hogtid', { tro: tr.id, namn: hogtidNamn(b.v), form: hogtidAv(b.v).form });
 }
 // när högtiden slutar: gillets mat eller fastans dygn, och offret av dem som följer budet
@@ -340,10 +340,14 @@ export function hogtidSlut(s: State, tr: Tro, r: Ritual, med: Person[]) {
   }
   for (const p of med) {
     if (r.form === 'fasta') { if (p.tro === tr.id) p.fasta = s.now + DAY; }
-    else { // gillet: en hel mat, ur kyrkans egendom först och annars ur den egna maten; den som inget har äter inte
-      const k = FOOD.find(q => (f[q] ?? 0) >= 1);
+    else { // gillet: en hel mat, ur kyrkans egendom först och annars ur den egna maten; den som inget har äter inte. Med budet
+      // Högtidens mat tas budets ingrediens först, och ingen äter det tron förbjuder hen (steg 10.3.16)
+      const ord = hogtidMat(tr).filter(q => !matAvstar(s, p, q)), k = ord.find(q => (f[q] ?? 0) >= 1);
+      let at = k;
       if (k) { f[k]--; ata(p, { [k]: KROPP.mattar }); count(s, 'gille_mat'); }
-      else { const e = ownedStock(s, p), m = FOOD.filter(q => (e[q] ?? 0) >= 1).sort((a, b) => (e[b] ?? 0) - (e[a] ?? 0))[0]; if (m) { use(s, p, m, 1); ata(p, { [m]: KROPP.mattar }); count(s, 'gille_mat'); } }
+      else { const e = ownedStock(s, p), m = ord.filter(q => (e[q] ?? 0) >= 1).sort((a, b) => (hogtidKrav(tr, b) ? 1 : 0) - (hogtidKrav(tr, a) ? 1 : 0) || (e[b] ?? 0) - (e[a] ?? 0))[0]; at = m; if (m) { use(s, p, m, 1); ata(p, { [m]: KROPP.mattar }); count(s, 'gille_mat'); } }
+      if (p.tro === tr.id && budIn(tr, 'matKrav') && foljer(p, 'matKrav') && !(at && hogtidKrav(tr, at))) think(p, 'Högtidens mat saknades', KULT.offerInget, s.now, 12 * HOUR);
+      else if (at && hogtidKrav(tr, at)) count(s, 'hogtid_ratt');
     }
     // offret: den som följer budet lägger en hel mat, den hen äger mest av, på den heliga platsen, och den är borta
     if (p.tro !== tr.id || !budIn(tr, 'offer') || !foljer(p, 'offer')) continue;

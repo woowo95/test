@@ -1558,3 +1558,48 @@ SCENARIER.heligtdjur = {
     ];
   },
 };
+
+SCENARIER.matbud = {
+  text: 'Steg 10.3.16: maten är bud. Ingrediensen kommer ur trons gudar, den troende går förbi fiskgrytan och den råa fisken, den svältande äter och får skuld, den troende kocken lagar annat, högtiden tar budets ingrediens först, och Inget kött på heliga dagar gäller bara den heliga dagen',
+  kor: () => {
+    const { s, v, tr } = medTro(6, 3);
+    klockan(s, 12);
+    tr.gudar = [{ omr: ['sjon'], namn: 'Djup', form: 'ande', t: s.now, ar: 1, bekr: s.now, ber: '' }, { omr: ['solen'], namn: 'Sol', form: 'ande', t: s.now, ar: 1, bekr: s.now, ber: '' }] as SIM.Gud[];
+    const varden = (SIM.BUD.matForbud as SIM.BudDef).varden!(s, tr).map(String);
+    tr.bud = [...(tr.bud ?? []), { id: 'matForbud', v: 'fisk', t: s.now }];
+    const p = v[1], q = v[2]; q.tro = undefined;
+    const gryta = Object.keys(SIM.SAKER).find(k => /^r_fisk_\w+_lagad$/.test(k))!;
+    setFood(s, 0); SIM.setAmount(s, 'abborre', 30); SIM.setAmount(s, gryta, 30); SIM.setAmount(s, 'bar', 30);
+    const m1 = SIM.takeFood(s, 3, p).per, forbi = !m1.abborre && !m1[gryta] && (m1.bar ?? 0) > 0;
+    const m0 = SIM.takeFood(s, 3, q).per, annan = (m0.abborre ?? 0) + (m0[gryta] ?? 0) > 0 || (m0.bar ?? 0) > 0;
+    // den svältande: byn har nästan ingen mat
+    setFood(s, 0); SIM.setAmount(s, 'abborre', 1); const skuld0 = p.skuld ?? 0;
+    const svalt = SIM.farorNu(s).svalt, m2 = SIM.takeFood(s, 1, p).per; for (const k in m2) SIM.matBrutet(s, p, k);
+    const at = svalt && (m2.abborre ?? 0) > 0 && (p.skuld ?? 0) > skuld0;
+    // kocken: den troende lagar inte fisken
+    setFood(s, 0); SIM.setAmount(s, 'abborre', 20); SIM.setAmount(s, 'rotter', 20);
+    const annat = SIM.kokRecept(s, p), ickeTroende = SIM.kokRecept(s, q);
+    const kock = ickeTroende?.hh === 'fisk' && !!annat && annat.hh !== 'fisk';
+    // högtiden: budets ingrediens först
+    tr.bud.push({ id: 'matKrav', v: 'bar', t: s.now });
+    tr.forrad = { kott: 20, bar: 20 };
+    const n0 = s.stat?.hogtid_ratt ?? 0;
+    SIM.hogtidSlut(s, tr, { k: 'hogtid', start: s.now, slut: s.now, x: 0, y: 0, tro: tr.id, form: 'gille' }, SIM.troende(s, tr));
+    const hogtid = (s.stat?.hogtid_ratt ?? 0) > n0 && tr.forrad.kott === 20 && tr.forrad.bar < 20;
+    // Inget kött på heliga dagar: bara den heliga dagen
+    tr.bud = [{ id: 'prast', t: s.now }, { id: 'kottHelg', t: s.now }];
+    setFood(s, 0); SIM.setAmount(s, 'kott', 30); SIM.setAmount(s, 'bar', 30);
+    const dag = Math.floor(s.now / SIM.DAY), helg = (dag + 7 - (dag % 7) + (tr.id % 7)) * SIM.DAY + 12 * SIM.HOUR;
+    s.now = helg; const h1 = SIM.heligDag(s, tr), k1 = SIM.takeFood(s, 2, p).per;
+    s.now = helg + SIM.DAY; const h2 = SIM.heligDag(s, tr), k2 = SIM.takeFood(s, 30, p).per;
+    const kottHelg = h1 && !h2 && !k1.kott && (k2.kott ?? 0) > 0 && !SIM.budForbjuder(s, p, 'slakta');
+    return [
+      [`ingrediensen kommer ur gudarna (${varden.join(', ')})`, varden.includes('fisk') && varden.includes('bar') && varden.length === 2],
+      [`den troende går förbi fiskgrytan och den råa fisken (${JSON.stringify(m1)})`, forbi && annan],
+      [`den svältande äter och får skuld (${JSON.stringify(m2)}, skuld ${skuld0} → ${p.skuld ?? 0})`, at],
+      [`den troende kocken lagar annat (${annat?.hh ?? '–'}, den som inte tror ${ickeTroende?.hh ?? '–'})`, kock],
+      [`högtiden tar budets ingrediens först (${JSON.stringify(tr.forrad)})`, hogtid],
+      [`Inget kött på heliga dagar gäller bara den dagen och förbjuder inte slakten (${JSON.stringify(k1)} / ${JSON.stringify(k2)})`, kottHelg],
+    ];
+  },
+};

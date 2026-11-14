@@ -22,7 +22,7 @@ import { FLOD } from './flod';
 import { forbrukat } from './forradsmal';
 import { strakI } from './strak';
 import { slappPlanta } from './skogsvard';
-import { HELIGTDJUR, SAK_ART, heligRuta, heligtAvstar } from './kultlatt';
+import { HELIGTDJUR, SAK_ART, heligRuta, heligtAvstar, matAvstar } from './kultlatt';
 
 // ---------- balanstal (regel 8) ----------
 // Förrådet: hur lagerplatserna växer, hur fort saker slits och ruttnar, hur mycket en person bär och vad som bärs in först.
@@ -672,6 +672,7 @@ export function takeFood(s: State, n: number, p?: Person, fran?: Person) {
     if (n - got <= 1e-12) break;
     if (krav > 0 && skickAv(s, k) < krav) continue; // för skämd för den som inte är hungrig nog (steg 9.6.24)
     if (p && SAK_ART[k] && heligtAvstar(s, p, SAK_ART[k], p.hunger <= HELIGTDJUR.hunger)) continue; // det heliga djurets kött, utom i svält (steg 10.3.15)
+    if (p && matAvstar(s, p, k)) continue; // maten tron förbjuder, utom i svält (steg 10.3.16)
     const v = Math.min(n - got, amountOf(s, k), takeLimit(s, k, p, fran));
     if (v <= 1e-12) continue;
     const r = takeOwn(s, k, v, p, false, fran?.id);

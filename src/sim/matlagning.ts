@@ -1,3 +1,4 @@
+import { matAvstar } from './kultlatt';
 import { DAY, HOUR, MIN, Person, State } from './typer';
 import { alive, byId, count, enTill, forstaGang, gjort, log, ovning, stat, think } from './folk';
 import { clamp, rnd } from './slump';
@@ -57,9 +58,10 @@ export const RATTER: readonly Ratt[] = [
 // råvaran som lagas först (steg 10.2.37): den som byn har mest av i värde, och mer av det som håller på att ruttna
 export const ravaraPoang = (s: State, k: string, n = amountOf(s, k)) => n * grundvarde(k) * (1 + MATLAG.ruttna * (1 - skickAv(s, k)));
 // det som grillas nu: råvaran med högst poäng av dem det finns tillräckligt av (gränssnittet visar den på spettet)
-export const grillVara = (s: State) => { let b: Ratt | undefined, bv = 0; for (const r of RATTER) { if (amountOf(s, r.ra) < MATLAG.min) continue; const v = ravaraPoang(s, r.ra); if (!b || v > bv) { b = r; bv = v; } } return b; };
+// den troende kocken grillar inte det tron förbjuder (steg 10.3.16)
+export const grillVara = (s: State, p?: Person) => { let b: Ratt | undefined, bv = 0; for (const r of RATTER) { if (amountOf(s, r.ra) < MATLAG.min || p && matAvstar(s, p, r.ra)) continue; const v = ravaraPoang(s, r.ra); if (!b || v > bv) { b = r; bv = v; } } return b; };
 // p kan grilla: byn har grillen, elden brinner, det finns något att grilla och ingen annan grillar
-export const kanGrilla = (s: State, p: Person) => kanGoras(s, 'grilla', p) && s.fire.lit && !!grillVara(s) && !!stationFor(s, 'grilla', p); // en grill rymmer sin arbetare (steg 10.2.5)
+export const kanGrilla = (s: State, p: Person) => kanGoras(s, 'grilla', p) && s.fire.lit && !!grillVara(s, p) && !!stationFor(s, 'grilla', p); // en grill rymmer sin arbetare (steg 10.2.5)
 // hur länge ett pass vid grillen varar
 export const grillTid = (s: State) => { const r = grillVara(s); return Math.min(MATLAG.maxTim * HOUR, (r ? amountOf(s, r.ra) / MATLAG.timme : 0) * HOUR + MATLAG.passExtra * MIN); };
 // så stor del av maten p bränner
@@ -68,7 +70,7 @@ export const brannDel = (p: Person) => MATLAG.brann * clamp(1 - (p.skill.matlagn
 // grilla i hours timmar. Arbetet går mot nästa hela bit (p.delar), och varje hel bit bränns eller inte (steg 9.6.4): chansen
 // sjunker med färdigheten Matlagning. Rätten är deras som ägde råvaran; det som bränns är förstört
 export function grilla(s: State, p: Person, hours: number) {
-  const r = grillVara(s);
+  const r = grillVara(s, p);
   if (!r || !s.fire.lit || !kanGoras(s, 'grilla')) { if (p.task) p.task.until = s.now; return; }
   const d = (p.delar ??= {}), t = (d[GRILL] ?? 0) + hours * MATLAG.timme, hela = Math.min(Math.floor(t + 1e-9), Math.floor(amountOf(s, r.ra) + 1e-9));
   d[GRILL] = Math.min(t - Math.floor(t + 1e-9), 0.999);
@@ -262,7 +264,7 @@ export interface KokRecept { id: string; huvud: string; andra: string; smak?: st
 // råvara ur en annan grupp (helst stärkelse), och smaken om den finns
 export function kokRecept(s: State, p?: Person): KokRecept | undefined {
   const tar = (k: string) => (p ? getable(s, p, k) : amountOf(s, k)) - utsadeKrok.av(s, k), har = (k: string, n: number) => tar(k) >= n;
-  const huvuden = Object.keys(INGREDIENSER).filter(k => INGREDIENSER[k].huvud && iKrukan(k) && har(k, RATT.huvud) && (RATT_HUVUD_LIST as string[]).includes(INGREDIENSER[k].huvud!))
+  const huvuden = Object.keys(INGREDIENSER).filter(k => INGREDIENSER[k].huvud && iKrukan(k) && har(k, RATT.huvud) && !(p && matAvstar(s, p, k)) /* den troende kocken lagar inte det tron förbjuder (steg 10.3.16) */ && (RATT_HUVUD_LIST as string[]).includes(INGREDIENSER[k].huvud!))
     .map(k => ({ k, v: ravaraPoang(s, k, tar(k)) })).sort((a, b) => b.v - a.v);
   for (const { k: huvud } of huvuden) {
     const hh = INGREDIENSER[huvud].huvud as RattHuvud;

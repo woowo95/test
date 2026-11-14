@@ -148,20 +148,20 @@ export function satSkala(s: State, tr: Tro, k: SkalaId) {
 // ett område som en gud råder över: namn (i listor och fliken), om (i meningar: "råder över åskan och himlen"), forled: ordleden
 // som namnet börjar med (Is-grim, Eld-vald), i: var anden bor på Natur-sidan, heder: hedersnamnen (rykten.ts) som knyter en död
 // bybo till området, och symbolen (ikoner.ts). Händelserna som föder området står där de händer (gudHandelse)
-// djur: arterna guden kan göra heliga (steg 10.3.15)
-interface GudDef { namn: string; om: string; forled: string[]; i: string[]; heder: IntryckTyp[]; djur: string[]; sym: string }
+// djur: arterna guden kan göra heliga (steg 10.3.15); mat: huvudingredienserna i gudens matbud (steg 10.3.16)
+interface GudDef { namn: string; om: string; forled: string[]; i: string[]; heder: IntryckTyp[]; djur: string[]; mat: string[]; sym: string }
 export const GUDAR = {
-  aska: { namn: 'Åska och himmel', om: 'åskan och himlen', forled: ['Dun', 'Blix', 'Sky', 'Ås'], i: ['åskmolnen', 'den stora örnen', 'den höga eken'], heder: [], djur: [], sym: 'gud_aska' },
-  sjon: { namn: 'Sjön och vattnet', om: 'sjön och vattnet', forled: ['Djup', 'Våg', 'Sjö', 'Strand'], i: ['den stora gäddan', 'djupet', 'forsen'], heder: [], djur: [], sym: 'gud_sjon' },
-  skord: { namn: 'Skörd och jord', om: 'skörden och jorden', forled: ['Ax', 'Korn', 'Mull', 'Fröd'], i: ['den första tuvan', 'det gamla äppelträdet', 'åkerns sten'], heder: ['generos', 'flitig', 'rattvis'], djur: ['far', 'get'], sym: 'gud_skord' },
-  doden: { namn: 'Döden', om: 'döden', forled: ['Grav', 'Mörk', 'Natt', 'Skugg'], i: ['korpen', 'den döda granen', 'mossen'], heder: [], djur: ['fagel'], sym: 'gud_doden' },
-  jakt: { namn: 'Jakt och skog', om: 'jakten och skogen', forled: ['Varg', 'Hjort', 'Skog', 'Björk'], i: ['den vita hjorten', 'den gamla vargen', 'den stora granen'], heder: ['vargdodare', 'bjorndodare'], djur: ['varg', 'radjur', 'kanin'], sym: 'gud_jakt' },
-  elden: { namn: 'Elden', om: 'elden', forled: ['Eld', 'Glöd', 'Brand', 'Bål'], i: ['glöden', 'den svarta stenen vid elden', 'röken'], heder: [], djur: [], sym: 'gud_elden' },
-  vintern: { namn: 'Vintern och isen', om: 'vintern och isen', forled: ['Is', 'Frost', 'Snö', 'Rim'], i: ['isen på sjön', 'snöugglan', 'den frusna forsen'], heder: [], djur: [], sym: 'gud_vintern' },
-  solen: { namn: 'Solen', om: 'solen', forled: ['Sol', 'Ljus', 'Dag', 'Glans'], i: ['solstenen', 'lärkan', 'kullen i öster'], heder: [], djur: [], sym: 'gud_solen' },
-  atten: { namn: 'Ätten', om: 'ätten och barnen', forled: ['Ätt', 'Ung', 'Barn', 'Stam'], i: ['den gamla linden', 'källan', 'björnmodern'], heder: ['hjalpsam'], djur: ['bjorn'], sym: 'gud_atten' },
-  kriget: { namn: 'Kriget', om: 'kriget och striden', forled: ['Sköld', 'Spjut', 'Strid', 'Hugg'], i: ['vildsvinet', 'den kluvna stenen', 'korpen'], heder: ['stark'], djur: ['fagel'], sym: 'gud_kriget' },
-  hantverk: { namn: 'Hantverket', om: 'hantverket', forled: ['Smid', 'Sten', 'Hamr', 'Tälj'], i: ['flintberget', 'bävern', 'den gamla stubben'], heder: ['skicklig', 'rik'], djur: [], sym: 'gud_hantverk' },
+  aska: { namn: 'Åska och himmel', om: 'åskan och himlen', forled: ['Dun', 'Blix', 'Sky', 'Ås'], i: ['åskmolnen', 'den stora örnen', 'den höga eken'], heder: [], djur: [], mat: [], sym: 'gud_aska' },
+  sjon: { namn: 'Sjön och vattnet', om: 'sjön och vattnet', forled: ['Djup', 'Våg', 'Sjö', 'Strand'], i: ['den stora gäddan', 'djupet', 'forsen'], heder: [], djur: [], mat: ['fisk'], sym: 'gud_sjon' },
+  skord: { namn: 'Skörd och jord', om: 'skörden och jorden', forled: ['Ax', 'Korn', 'Mull', 'Fröd'], i: ['den första tuvan', 'det gamla äppelträdet', 'åkerns sten'], heder: ['generos', 'flitig', 'rattvis'], djur: ['far', 'get'], mat: ['sad'], sym: 'gud_skord' },
+  doden: { namn: 'Döden', om: 'döden', forled: ['Grav', 'Mörk', 'Natt', 'Skugg'], i: ['korpen', 'den döda granen', 'mossen'], heder: [], djur: ['fagel'], mat: [], sym: 'gud_doden' },
+  jakt: { namn: 'Jakt och skog', om: 'jakten och skogen', forled: ['Varg', 'Hjort', 'Skog', 'Björk'], i: ['den vita hjorten', 'den gamla vargen', 'den stora granen'], heder: ['vargdodare', 'bjorndodare'], djur: ['varg', 'radjur', 'kanin'], mat: ['kott'], sym: 'gud_jakt' },
+  elden: { namn: 'Elden', om: 'elden', forled: ['Eld', 'Glöd', 'Brand', 'Bål'], i: ['glöden', 'den svarta stenen vid elden', 'röken'], heder: [], djur: [], mat: [], sym: 'gud_elden' },
+  vintern: { namn: 'Vintern och isen', om: 'vintern och isen', forled: ['Is', 'Frost', 'Snö', 'Rim'], i: ['isen på sjön', 'snöugglan', 'den frusna forsen'], heder: [], djur: [], mat: [], sym: 'gud_vintern' },
+  solen: { namn: 'Solen', om: 'solen', forled: ['Sol', 'Ljus', 'Dag', 'Glans'], i: ['solstenen', 'lärkan', 'kullen i öster'], heder: [], djur: [], mat: ['bar'], sym: 'gud_solen' },
+  atten: { namn: 'Ätten', om: 'ätten och barnen', forled: ['Ätt', 'Ung', 'Barn', 'Stam'], i: ['den gamla linden', 'källan', 'björnmodern'], heder: ['hjalpsam'], djur: ['bjorn'], mat: [], sym: 'gud_atten' },
+  kriget: { namn: 'Kriget', om: 'kriget och striden', forled: ['Sköld', 'Spjut', 'Strid', 'Hugg'], i: ['vildsvinet', 'den kluvna stenen', 'korpen'], heder: ['stark'], djur: ['fagel'], mat: [], sym: 'gud_kriget' },
+  hantverk: { namn: 'Hantverket', om: 'hantverket', forled: ['Smid', 'Sten', 'Hamr', 'Tälj'], i: ['flintberget', 'bävern', 'den gamla stubben'], heder: ['skicklig', 'rik'], djur: [], mat: [], sym: 'gud_hantverk' },
 } satisfies Record<string, GudDef>;
 export type GudOmr = keyof typeof GUDAR;
 export const GUD_OMR: Record<GudOmr, GudDef> = GUDAR;
@@ -263,7 +263,8 @@ export const teckenText = (k: TeckenTyp, om?: string) => TDEF[k].text.replace('{
 // första skalorna (0–100: Natur – Människa och Många – En). bekr: när ett tecken senast bekräftade den. slut: när den sista
 // som trodde dog. ar: året den kom. namn, sym och ber (berättelsen om hur den började) får den när TRO.namn tror (steg 4.1.2.3).
 // sk: värdet på de skalor som låsts upp efter de två första, gudar: trons gudar (steg 4.1.5)
-export interface Tro { bud?: import('./kyrka').AntagetBud[]; roster?: import('./rost').Omrostning[]; nedrostat?: Record<string, number>; // trons omröstningar, och det som röstats ned och vilar (steg 10.3.2)
+export interface Tro { hogtidDag?: number; // dygnet då högtiden hölls: också en helig dag (steg 10.3.16)
+  bud?: import('./kyrka').AntagetBud[]; roster?: import('./rost').Omrostning[]; nedrostat?: Record<string, number>; // trons omröstningar, och det som röstats ned och vilar (steg 10.3.2)
   forrad?: Record<string, number>; hov?: { x: number; y: number; prog: number; klar?: number }; tempel?: { x: number; y: number; prog: number; klar?: number }; fodda?: number; offrad?: number; gudabild?: number; helgon?: { id: number; namn: string; t: number; krönika: string; myt: string }[]; kvade?: { t: number; text: string; av: number; larjunge?: number }; x?: number; y?: number; prast?: number; hogtid?: number; heligKand?: { x: number; y: number; t: number; om: string }[]; brollop?: number; fodd?: number; vuxen?: number; leddBon?: number; profeter?: number[]; gravSlag?: 'helig' | 'vatten' | 'bryn' | 'by'; id: number; grundare: number; gnamn: string; t: number; k: TeckenTyp; om?: string; bakom: string; vill: string; svek: string; natur: number; manga: number; bekr: number; slut?: number; ar: number; namn?: string; sym?: string; ber?: string; sk?: Partial<Record<SkalaId, number>>; gudar?: Gud[] }
 export const troOf = (s: State, id: number | undefined) => id === undefined ? undefined : s.tron?.find(t => t.id === id);
 export const troende = (s: State, tr: Tro) => living(s).filter(p => p.tro === tr.id);
