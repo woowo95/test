@@ -58,7 +58,7 @@ const GRAVSTIL: Record<GravStil, string> = { jord: 'Begravd i jorden', hog: 'En 
 function grav(i: number) {
   const g = gravAt(s, i % W, Math.floor(i / W));
   if (!g) return '<p class="muted">Graven finns inte längre.</p>';
-  return `<div class="phead">${iconImg('grav', 32)}<div><h2>${esc(g.namn)}s grav</h2></div></div><p>${esc(GRAVSTIL[g.stil])}${g.ovardig ? ', utan heder' : ''}. Begravd för ${durTxt(s.now - g.t)} sedan.</p>`;
+  return `<div class="phead">${iconImg('grav', 32)}<div><h2>${esc(g.namn)}s grav</h2></div></div><p>${esc(GRAVSTIL[g.stil])}${g.ovardig ? ', utan heder' : ''}. Begravd för ${durTxt(s.now - g.t)} sedan.</p>${g.med?.length ? `<p class="small">${g.stil === 'bal' ? 'Brändes med' : 'I graven'}: ${esc(g.med.map(k => sakNamn(k)).join(', '))}</p>` : ''}`;
 }
 function heligPlats(i: number) {
   const h = heligAt(s, i % W, Math.floor(i / W));

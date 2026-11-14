@@ -20,8 +20,8 @@ export const KVARLEVOR = {
 export type KvarSlag = keyof typeof KVARLEVOR;
 export const gravAt = (s: State, x: number, y: number) => s.gravar?.find(g => g.x === x && g.y === y);
 export type GravStil = 'jord' | 'hog' | 'bal' | 'vatten';
-export interface Grav { x: number; y: number; t: number; vem: number; namn: string; stil: GravStil; tro?: number; ovardig?: true }
-export interface Kvarleva { id: number; k: KvarSlag; x: number; y: number; t: number; vem: number; namn: string; text: string; bars?: number; saker?: Record<string, number> }
+export interface Grav { x: number; y: number; t: number; vem: number; namn: string; stil: GravStil; tro?: number; ovardig?: true; med?: string[] } // med = sakerna som följde den döde (steg 10.3.5)
+export interface Kvarleva { id: number; k: KvarSlag; x: number; y: number; t: number; vem: number; namn: string; text: string; bars?: number; saker?: Record<string, number>; med?: string[] }
 export const kvarlevor = (s: State) => (s.kvarlevor ??= []);
 export function nyKvarleva(s: State, k: KvarSlag, p: Person, text: string) {
   const q: Kvarleva = { id: (s.nextKvar = (s.nextKvar ?? 0) + 1), k, x: Math.floor(p.x), y: Math.floor(p.y), t: s.now, vem: p.id, namn: p.name, text };

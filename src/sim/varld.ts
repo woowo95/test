@@ -341,6 +341,9 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
       for (let ai = 0; ai < 4; ai++) if ((tr.id + ai) % 4 < n) (tr.bud ??= []).push({ id: 'hogtid', v: hogtidVarde(ai, hogtidForm(tr)), t: tr.t });
     }
   }],
+  [42, 'v528: den dödes saker är bud (steg 10.3.5): en tro långt åt Livet efter, som redan gav gravgåvor, får budet Gravgåvor', s => {
+    for (const tr of s.tron ?? []) if (tr.slut === undefined && (tr.sk?.livet ?? 0) >= 60 && !tr.bud?.some(b => b.id === 'gravgava')) (tr.bud ??= []).push({ id: 'gravgava', t: tr.t });
+  }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

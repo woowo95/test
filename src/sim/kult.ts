@@ -21,7 +21,9 @@ import { budIn, foljer } from './kyrka';
 import { FOOD } from './saker';
 import { takeMaterial } from './behov';
 import { kladAv } from './klader';
-import { nyRitual } from './kultlatt';
+import { nyRitual, satGravVarde } from './kultlatt';
+import { tingVarde } from './varde';
+satGravVarde(t => tingVarde(t)); // gravgåvan är den finaste saken (steg 10.3.5)
 import { isSick } from './sjukdom';
 
 // farorna över byn (dangers i val.ts, som sätter den här när den laddas: val.ts läser det mesta i spelet)

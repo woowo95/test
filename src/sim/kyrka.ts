@@ -70,6 +70,7 @@ export const BUD = {
   fodsel: { namn: 'Bön vid födsel och död', sort: 'krav', storlek: 1, niva: 2, text: 'Man ber när någon föds eller dör' },
   forstaFangst: { namn: 'Den första fångsten offras', sort: 'offer', storlek: 2, niva: 2, skala: 'livet', sida: 0, text: 'Det första man får går till tron' },
   gravgava: { namn: 'Gravgåvor till de döda', sort: 'offer', storlek: 2, niva: 2, skala: 'livet', sida: 1, text: 'De döda får något med sig' },
+  medfolj: { namn: 'Det den döde bar följer med', sort: 'offer', storlek: 3, niva: 3, skala: 'livet', sida: 1, text: 'Allt den döde bar följer hen och ärvs inte' },
   lunden: { namn: 'Inte fälla träd i den heliga lunden', sort: 'forbud', storlek: 2, niva: 2, skala: 'natur', sida: 0, text: 'Lunden får stå' },
   kottHelg: { namn: 'Inget kött på heliga dagar', sort: 'forbud', storlek: 2, niva: 3, skala: 'fest', sida: 1, text: 'Inget kött på den heliga dagen', acts: ['slakta'] },
   framling: { namn: 'Främlingar ska få mat', sort: 'krav', storlek: 2, niva: 2, skala: 'oppen', sida: 0, text: 'Den som kommer får äta' },

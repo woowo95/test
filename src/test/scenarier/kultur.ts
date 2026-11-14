@@ -951,6 +951,28 @@ SCENARIER.dop = {
   },
 };
 
+SCENARIER.dodessaker = {
+  text: 'Steg 10.3.5: den dödes saker är bud. Utan bud ärvs det den döde bar, med Gravgåvor följer den finaste saken hen och resten ärvs, och med Det den döde bar följer med ärvs inget av det burna. Graven minns sakerna',
+  kor: () => {
+    const fall = (bud: SIM.BudId[]) => {
+      const { s, v, tr } = medTro(6, 3);
+      tr.bud = bud.map(id => ({ id, t: s.now }));
+      const d = v.find(p => SIM.ageOf(p, s.now) >= 20)!;
+      const yxa = SIM.newTing(s, 'yxa', 1, d.id); yxa.bar = d.id; yxa.q = 4;
+      const kniv = SIM.newTing(s, 'kniv', 1, d.id); kniv.bar = d.id; kniv.q = 1;
+      SIM.die(s, d, 'alderdom');
+      const kvar = (t: SIM.Ting) => (s.ting ?? []).includes(t), kr = s.kvarlevor?.find(k => k.k === 'kropp' && k.vem === d.id);
+      return { yxa: kvar(yxa), kniv: kvar(kniv), med: kr?.med ?? [] };
+    };
+    const utan = fall([]), gava = fall(['gravgava']), allt = fall(['medfolj']);
+    return [
+      ['utan bud ärvs det den döde bar', utan.yxa && utan.kniv && !utan.med.length],
+      [`med Gravgåvor följer den finaste saken (${gava.med.join(', ')}) och resten ärvs`, !gava.yxa && gava.kniv && gava.med.length === 1 && gava.med[0] === 'yxa'],
+      [`med Det den döde bar följer med ärvs inget av det burna (${allt.med.join(', ')})`, !allt.yxa && !allt.kniv && allt.med.length === 2],
+    ];
+  },
+};
+
 SCENARIER.kyrkan = {
   text: 'Steg 8.6: seden Världslig – Andlig, kyrkans förråd, hovet och templet av sten som projekt, buden med trons krets, att bryta ett bud ger skuld, ett bud kan bli lag, helgon, kväden och översteprästen',
   kor: () => {

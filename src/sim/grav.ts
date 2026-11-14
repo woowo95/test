@@ -81,7 +81,7 @@ export function gravKlar(s: State, p: Person, t: Task) {
   s.kvarlevor = s.kvarlevor!.filter(k => k !== q);
   const d = byId(s, q.vem), ovardig = !!d?.brottsling, tr = ovardig ? undefined : troOf(s, d?.tro), stil = gravStil(tr), x = Math.floor(p.x), y = Math.floor(p.y);
   if (stil === 'bal' && amountOf(s, 'ved') >= KULT.bal) takeMaterial(s, p, 'ved', KULT.bal);
-  if (stil !== 'vatten') gravarOf(s).push({ x, y, t: s.now, vem: q.vem, namn: q.namn, stil, ...(tr ? { tro: tr.id } : {}), ...(ovardig ? { ovardig: true as const } : {}) });
+  if (stil !== 'vatten') gravarOf(s).push({ x, y, t: s.now, vem: q.vem, namn: q.namn, stil, ...(tr ? { tro: tr.id } : {}), ...(ovardig ? { ovardig: true as const } : {}), ...(q.med ? { med: q.med } : {}) });
   count(s, 'grav'); count(s, 'grav_' + stil); groundOf(s).cover[y * W + x] = 0;
   think(p, `Begravde ${q.namn}`, -0.02, s.now, 6 * HOUR);
   if (tr && !ovardig) { nyRitual(s, 'begravning', { tro: tr.id, x, y, om: [q.vem], namn: `Begravningen av ${q.namn}` }); (s.troSkalor?.includes('livet') ? 0 : count(s, 'livet_oppen')); if (tr.gravSlag === undefined) tr.gravSlag = trosGrav(s, tr); }
