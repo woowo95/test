@@ -40,6 +40,11 @@ rmSync(FACIT + '.byar/', { recursive: true, force: true });
 // de fem längsta jobben: testbyarnas bitar, scenarierna (processorns tid ur deras rader), typkontrollen och samma-kollen
 const jobb: { namn: string; ms: number }[] = [...(jobbRad ? JSON.parse(jobbRad.slice(7)) : []), { namn: 'typkontrollen', ms: typT.ms }, { namn: 'samma-kollen', ms: sammaT.ms }];
 for (const m of scen.out.matchAll(/^(?:OK|FEL) +(\S+) \((\d+) s\)/gm)) jobb.push({ namn: 'scenariot ' + m[1], ms: +m[2] * 1000 });
-console.log('De fem längsta jobben: ' + jobb.sort((a, b) => b.ms - a.ms).slice(0, 5).map(j => `${j.namn} ${Math.round(j.ms / 1000)} s`).join(', ') + '.');
+const langst = 'De fem längsta jobben: ' + jobb.sort((a, b) => b.ms - a.ms).slice(0, 5).map(j => `${j.namn} ${Math.round(j.ms / 1000)} s`).join(', ') + '.';
+console.log(langst);
 console.log(`(${sek(t0)} s, datorns tid)`);
+// tidsvakten (steg 10.2.103, Testerna och deras tid i fliken Läget): testet ska ta högst GRANS_MIN minuter i klocktid. Det
+// avbryts inte och inga tester stryks; larmet säger att nästa steg blir att göra spelet eller testerna snabbare
+const GRANS_MIN = 20, min = (Date.now() - t0) / 60_000;
+if (min > GRANS_MIN) console.log(`TIDSVAKT: det stora testet tog ${Math.round(min)} min klocktid, mer än gränsen ${GRANS_MIN} min (datorns tid). ${langst} Gör spelet eller testerna snabbare (Testerna och deras tid i fliken Läget).`);
 if (typ.code || test.code || scen.code) process.exitCode = 1; // samma-kollens "annan utveckling" är väntad efter en ändring i spelet
