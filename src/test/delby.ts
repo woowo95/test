@@ -3,20 +3,22 @@
 // (några delar efter varandra) kan då börja från en sparad by och ge exakt samma by som om hela körningen gått från början,
 // och bitarna körs samtidigt. Facit sparar byn vid bitarnas gränser (test/facit-byar/).
 //   node --import tsx src/test/delby.ts --bit <frö> <från dygn> <till dygn> [sparad by in eller -] [sparad by ut] [--alla <mapp>]
-// skriver sista raden som JSON: delarnas summor, nyckeltalen i slutet, vakterna och tiden. --alla sparar byn vid varje
+// skriver sista raden som JSON: delarnas summor, nyckeltalen i slutet, vakterna, tiden och hela byns hash efter varje del. --alla sparar byn vid varje
 // delgräns i mappen och tiden för varje del (för npm run facit, som väljer gränserna).
 import './utc';
+import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { gunzipSync, gzipSync } from 'node:zlib';
 import { createState, migrate, serialize, type State } from '../sim';
 import { Ack, korBy, START } from './kor';
 import type { Nyckeltal } from './nyckeltal';
+import { kanonisk } from './pool';
 
 export const DEL = 5; // dygn per del (5 år i spelet): byn sparas och läses in så här ofta, och bitarnas gränser ligger på delgränserna
 export const lasBy = (fil: string): State => migrate(JSON.parse(gunzipSync(readFileSync(fil)).toString('utf8')));
 export const sparaBy = (fil: string, s: State) => writeFileSync(fil, gzipSync(serialize(s), { level: 9 }));
 
-export interface BitSvar { seed: number; fran: number; till: number; ack: Ack[]; n: Nyckeltal; vakter: string[]; ms: number; delMs: number[] }
+export interface BitSvar { seed: number; fran: number; till: number; ack: Ack[]; n: Nyckeltal; vakter: string[]; ms: number; delMs: number[]; delHash: string[] }
 
 // delarnas summor och den sista delens nyckeltal blir byns nyckeltal, som om allt gått i en körning
 export function laggIhop(bitar: BitSvar[]): { n: Nyckeltal; vakter: string[]; ms: number } {
@@ -40,15 +42,18 @@ if (arg[0] === '--bit') {
   const [seed, fran, till] = arg.slice(1, 4).map(Number), inFil = arg[4], utFil = arg[5] && arg[5] !== '-' ? arg[5] : undefined;
   const alla = arg.indexOf('--alla') >= 0 ? arg[arg.indexOf('--alla') + 1] : undefined;
   let s = fran === 0 || !inFil || inFil === '-' ? createState(seed, START) : lasBy(inFil);
-  const ack: Ack[] = [], delMs: number[] = [], vakter: string[] = [];
+  const ack: Ack[] = [], delMs: number[] = [], delHash: string[] = [], vakter: string[] = [];
   let n: Nyckeltal | undefined;
   for (let d = fran; d < till; d += DEL) {
     const r = korBy(seed, Math.min(DEL, till - d), undefined, s);
     ack.push(r.ack); delMs.push(r.n.ms); vakter.push(...r.vakter); n = r.n;
-    s = migrate(JSON.parse(serialize(r.s))); // sparad och inläst, som när en bit börjar från en sparad by
+    const txt = serialize(r.s);
+    // hela byns tillstånd som en kort hash efter varje del: samma-kollen jämför den med facit (steg 10.2.105)
+    delHash.push(createHash('md5').update(kanonisk(txt)).digest('hex').slice(0, 12));
+    s = migrate(JSON.parse(txt)); // sparad och inläst, som när en bit börjar från en sparad by
     if (alla && d + DEL < till) sparaBy(`${alla}/${seed}-${d + DEL}.json.gz`, s);
   }
   if (utFil) sparaBy(utFil, s);
-  const svar: BitSvar = { seed, fran, till, ack, n: n!, vakter, ms: delMs.reduce((a, b) => a + b, 0), delMs };
+  const svar: BitSvar = { seed, fran, till, ack, n: n!, vakter, ms: delMs.reduce((a, b) => a + b, 0), delMs, delHash };
   console.log(JSON.stringify(svar));
 }

@@ -16,13 +16,15 @@ import { BitSvar, DEL, laggIhop } from './delby';
 const FACIT = new URL('../../test/facit.json', import.meta.url), BYDIR = fileURLToPath(new URL('../../test/facit-byar/', import.meta.url));
 // JOBB: byarnas bitar delas så att ingen bit tar mer än en JOBB-del av alla byars tid tillsammans, så att inget jobb i det
 // stora testet är mycket längre än de andra (steg 10.2.104): en lång by får fler bitar än en kort
-const BYAR = [1, 42, 777], DAGAR = 90, JOBB = 20;
+// by 1511 och 4634 får alla motgångar (MOTGANGAR) inom testets tid, så att samma-kollen ur testbyarna kör dem alla (steg 10.2.105)
+const BYAR = [1, 1511, 4634], DAGAR = 90, JOBB = 20;
 // hur mycket ett tal får ändras innan det räknas som en ändring står i registret (facit i nyckeltal.ts):
 // körtiden jämförs inte och sparfilens storlek får variera lite; allt annat ska vara exakt lika
 const lika = (a: number, b: number) => a === b;
 
-// facit: per by bitarnas gränser (dygn), hur lång tid varje bit tog (ms, datorns tid) och nyckeltalen. Ett äldre facit är bara nyckeltalen
-interface FacitBy { granser: number[]; bitMs: number[]; n: Nyckeltal }
+// facit: per by bitarnas gränser (dygn), hur lång tid varje bit tog (ms, datorns tid), nyckeltalen och hela byns hash i slutet av
+// varje bit (samma-kollen, steg 10.2.105). Ett äldre facit är bara nyckeltalen
+interface FacitBy { granser: number[]; bitMs: number[]; n: Nyckeltal; hash?: string[] }
 interface Facit { byar: Record<string, FacitBy> }
 const lasFacit = (): Facit | undefined => {
   if (!existsSync(FACIT)) return undefined;
@@ -50,7 +52,8 @@ if (spara) {
     const bitar = Math.max(1, Math.ceil(b.delMs.reduce((x, y) => x + y, 0) / mal));
     const g = basta(b.delMs, bitar), granser = [0, ...g.map(i => i * DEL), DAGAR];
     const bitMs = granser.slice(1).map((t, i) => b.delMs.slice(granser[i] / DEL, t / DEL).reduce((a, x) => a + x, 0));
-    nytt.byar[b.seed] = { granser, bitMs, n: res.find(r => r.seed === b.seed)!.n };
+    const hash = granser.slice(1).map(t => b.delHash[t / DEL - 1]);
+    nytt.byar[b.seed] = { granser, bitMs, n: res.find(r => r.seed === b.seed)!.n, hash };
   }
   if (!res.some(r => r.vakter.length)) {
     rmSync(BYDIR, { recursive: true, force: true }); mkdirSync(BYDIR, { recursive: true });
@@ -73,7 +76,7 @@ if (spara) {
     .catch((e: Error) => { console.log(e.message); process.exit(1); })));
   res = BYAR.map(seed => {
     const bitar = svar.filter(b => b.seed === seed).sort((a, b) => a.fran - b.fran);
-    nytt.byar[seed] = { granser: [0, ...bitar.map(b => b.till)], bitMs: bitar.map(b => b.ms), n: laggIhop(bitar).n };
+    nytt.byar[seed] = { granser: [0, ...bitar.map(b => b.till)], bitMs: bitar.map(b => b.ms), n: laggIhop(bitar).n, hash: bitar.map(b => b.delHash[b.delHash.length - 1]) };
     return { seed, ...laggIhop(bitar) };
   });
   jobbtider = svar.map(b => ({ namn: `by ${b.seed}, dygn ${b.fran}–${b.till}`, ms: b.ms }));
@@ -97,14 +100,19 @@ if (spara) {
 } else if (!facit) {
   console.log('Inget facit ännu. Spara med: npm run facit');
 } else {
-  const andr: string[] = [];
+  const andr: string[] = [], samma: string[] = [];
   for (const r of res) {
     const f = facit.byar[r.seed]?.n;
     if (!f) { andr.push(`by ${r.seed}: saknas i facit`); continue; }
     const d = NYCKELTAL.filter(m => !(m.facit ?? lika)(r.n[m.k], f[m.k])).map(m => `${m.kort} ${f[m.k]} → ${r.n[m.k]}`);
     if (d.length) andr.push(`by ${r.seed}: ${d.join(', ')}`);
+    // samma-kollen (steg 10.2.105): hela byns tillstånd i slutet av varje bit, också det som inget nyckeltal visar
+    const fh = facit.byar[r.seed].hash, nh = nytt.byar[r.seed]?.hash, g = nytt.byar[r.seed]?.granser ?? [];
+    const olik = fh && nh && fh.length === nh.length ? nh.map((h, i) => h === fh[i] ? 0 : g[i + 1]).filter(x => x) : [];
+    if (olik.length) samma.push(`by ${r.seed} efter dygn ${olik.join(', ')}`);
   }
   console.log(andr.length ? 'Ändrat mot facit:\n  ' + andr.join('\n  ') : 'Facit: oförändrat.');
+  console.log(samma.length ? 'ANNAN UTVECKLING (hela byn): ' + samma.join('; ') : 'Samma utveckling som förut (hela byn).');
 }
 
 console.log(vakter.length ? 'VAKTER LARMAR:\n  ' + vakter.join('\n  ') : 'Vakter: inga fel.');

@@ -5,7 +5,7 @@ import { START as start, STEG_DYGN, markStat } from './kor';
 const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 const valda = process.argv.slice(2).map(Number);
-for (const seed of valda.length ? valda : [1, 42, 777]) {
+for (const seed of valda.length ? valda : [1, 1511, 4634]) {
   const s = createState(seed, start);
   const days = 90;
   const t0 = performance.now();
