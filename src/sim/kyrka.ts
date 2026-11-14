@@ -7,6 +7,8 @@ import { Act, DAY, HOUR, Person, State } from './typer';
 import { MAT } from './behov';
 import { balans } from './balans';
 import { clamp, rnd } from './slump';
+import { HUMOR, moodOf } from './humor';
+import { type Sed, drar, habitShare } from './seder';
 import { ALDER, type BudTillfalle, ageOf, count, living, log, relKey, satBudTillfalle, stat, think } from './folk';
 import { FOOD } from './saker';
 import { kronika } from './historik';
@@ -52,13 +54,28 @@ export const KYRKA = balans('kyrka', {
   vecka: 7, // vilodagen, fastan och djuroffret: en gång på så här många dygn (år i spelet)
 });
 
+// rösten om ett bud (steg 10.3.9, "Hur var och en röstar" i designdokumentet; startvärden): vikterna för raderna i BUDROST
+export const BUDROSTTAL = balans('budrost', {
+  hard: 0.12, // tron mot hårdheten: så mycket mindre per storlek
+  egen: 1, // andelen av tiden i handlingarna budet förbjuder
+  intresse: 0.5, // radens eget intresse
+  drag: 0.2, sed: 0.1, // den egna dragningen och byns sed, där en sed hör till budet
+  ande: 0.1, // den andlige är mer för alla bud
+  skala: 0.15, // hur långt trons skala står på budets sida
+  humor: 0.1, // humöret jämfört med grundhumöret, gånger budets storlek
+  matMycket: 20, // den som äger så här mycket mat är helt emot de bud som tar av maten
+});
+// den som äger mycket mat är emot de bud som tar av den
+const matIntresse = (s: State, p: Person) => { const egen = ownedStock(s, p), n = FOOD.reduce((a, k) => a + (egen[k] ?? 0), 0); return { v: -clamp(n / BUDROSTTAL.matMycket, 0, 1), why: 'Äger mycket mat' }; };
 export interface BudDef { namn: string; sort: 'forbud' | 'krav' | 'offer'; storlek: 1 | 2 | 3 | 4; skala?: 'natur' | 'manga' | 'prast' | 'livet' | 'forlat' | 'fest' | 'krig' | 'oppen' | 'sprid'; sida?: 0 | 1; acts?: Act[]; text: string; kyla?: boolean
   // ett bud som bär ett värde (steg 10.3.1): de värden som går att föreslå just nu (en tidsålder, ett ting, en plats, en djurart, en ingrediens),
   // och vad värdet heter i budets namn. Samma rad kan antas en gång per värde; utan varden antas raden en gång
   varden?(s: State, tr: Tro): BudVarde[]; vardeNamn?(s: State, v: BudVarde): string
   kraver?: string; // budet kan bara föreslås när tron har det här (offret vid högtiden kräver en högtid)
   nu?(s: State, tr: Tro): boolean; // budets tillfälle är nu: det lyfts fram bland trons förslag (steg 10.3.3)
-  om?(s: State, tr: Tro, b: AntagetBud): string } // ritualbuden: när, vilka, var, vad som går åt (fliken Religion)
+  om?(s: State, tr: Tro, b: AntagetBud): string // ritualbuden: när, vilka, var, vad som går åt (fliken Religion)
+  sed?: [Sed, 1 | -1]; // sederna som hör till budet: sedens sida som drar mot budet (steg 10.3.9)
+  intresse?(s: State, p: Person, tr: Tro): { v: number; why: string } } // radens eget intresse, -1 till 1 (steg 10.3.9)
 export type BudVarde = string | number;
 // ett antaget bud: raden, värdet den gäller och när den antogs (steg 10.3.1)
 export interface AntagetBud { id: BudId; v?: BudVarde; t: number }
@@ -68,24 +85,24 @@ export const BUD = {
   halsa: { namn: 'Hälsa elden på morgonen', sort: 'krav', storlek: 1, text: 'Man hälsar elden när man vaknar' },
   deDoda: { namn: 'Inte tala illa om de döda', sort: 'forbud', storlek: 1, skala: 'natur', sida: 1, text: 'De döda talar man väl om' },
   fodsel: { namn: 'Bön vid födsel och död', sort: 'krav', storlek: 1, text: 'Man ber när någon föds eller dör' },
-  forstaFangst: { namn: 'Den första fångsten offras', sort: 'offer', storlek: 2, skala: 'livet', sida: 0, text: 'Det första man får går till tron' },
+  forstaFangst: { namn: 'Den första fångsten offras', sort: 'offer', storlek: 2, skala: 'livet', sida: 0, text: 'Det första man får går till tron', intresse: (s, p) => matIntresse(s, p) },
   gravgava: { namn: 'Gravgåvor till de döda', sort: 'offer', storlek: 2, skala: 'livet', sida: 1, text: 'De döda får något med sig' },
   medfolj: { namn: 'Det den döde bar följer med', sort: 'offer', storlek: 3, skala: 'livet', sida: 1, text: 'Allt den döde bar följer hen och ärvs inte' },
-  lunden: { namn: 'Inte fälla träd i den heliga lunden', sort: 'forbud', storlek: 2, skala: 'natur', sida: 0, text: 'Lunden får stå' },
+  lunden: { namn: 'Inte fälla träd i den heliga lunden', sort: 'forbud', storlek: 2, skala: 'natur', sida: 0, text: 'Lunden får stå', sed: ['natur', -1] },
   kottHelg: { namn: 'Inget kött på heliga dagar', sort: 'forbud', storlek: 2, skala: 'fest', sida: 1, text: 'Inget kött på den heliga dagen', acts: ['slakta'] },
-  framling: { namn: 'Främlingar ska få mat', sort: 'krav', storlek: 2, skala: 'oppen', sida: 0, text: 'Den som kommer får äta' },
+  framling: { namn: 'Främlingar ska få mat', sort: 'krav', storlek: 2, skala: 'oppen', sida: 0, text: 'Den som kommer får äta', sed: ['gemenskap', 1] },
   orena: { namn: 'En fiendes saker är orena', sort: 'forbud', storlek: 2, skala: 'oppen', sida: 1, text: 'Man rör inte det fienden bar' }, // steg 10.3.6
   giftaTro: { namn: 'Inte gifta sig utanför tron', sort: 'forbud', storlek: 2, skala: 'oppen', sida: 1, text: 'Man gifter sig inom tron' },
   fasta: { namn: 'Fasta vissa dagar', sort: 'krav', storlek: 3, skala: 'fest', sida: 1, text: 'Vissa dagar äter man inte' },
-  vilodag: { namn: 'En vilodag av sju', sort: 'forbud', storlek: 3, text: 'Den sjunde dagen arbetar ingen' },
-  ingetKott: { namn: 'Inte döda djur', sort: 'forbud', storlek: 3, skala: 'krig', sida: 0, text: 'Man dödar inga djur', acts: ['jakt', 'slakta'] },
-  orent: { namn: 'Inte gräva i jorden', sort: 'forbud', storlek: 3, skala: 'natur', sida: 0, text: 'Jorden är helig', acts: ['stubbe', 'plantera'] },
-  tionde: { namn: 'Tionde till prästen', sort: 'offer', storlek: 3, skala: 'prast', sida: 1, text: 'En tiondel går till prästen' },
-  hamnd: { namn: 'Hämnd är en plikt', sort: 'krav', storlek: 3, skala: 'forlat', sida: 1, text: 'Den som drabbas ska hämnas' },
+  vilodag: { namn: 'En vilodag av sju', sort: 'forbud', storlek: 3, text: 'Den sjunde dagen arbetar ingen', sed: ['arbete', -1] },
+  ingetKott: { namn: 'Inte döda djur', sort: 'forbud', storlek: 3, skala: 'krig', sida: 0, text: 'Man dödar inga djur', acts: ['jakt', 'slakta'], sed: ['natur', -1] },
+  orent: { namn: 'Inte gräva i jorden', sort: 'forbud', storlek: 3, skala: 'natur', sida: 0, text: 'Jorden är helig', acts: ['stubbe', 'plantera'], sed: ['natur', -1] },
+  tionde: { namn: 'Tionde till prästen', sort: 'offer', storlek: 3, skala: 'prast', sida: 1, text: 'En tiondel går till prästen', intresse: (s, p) => matIntresse(s, p) },
+  hamnd: { namn: 'Hämnd är en plikt', sort: 'krav', storlek: 3, skala: 'forlat', sida: 1, text: 'Den som drabbas ska hämnas', sed: ['fejd', 1] },
   djuroffer: { namn: 'Djuroffer', sort: 'offer', storlek: 3, skala: 'krig', sida: 1, text: 'Tron kräver djur' },
-  aldrigDoda: { namn: 'Aldrig döda en människa', sort: 'forbud', storlek: 4, skala: 'krig', sida: 0, text: 'Inte ens i försvar', acts: ['strid'] },
-  ingenRoj: { namn: 'Ingen ny mark får röjas', sort: 'forbud', storlek: 4, skala: 'natur', sida: 0, text: 'Skogen får stå', acts: ['falla'] },
-  ogifta: { namn: 'Prästerna lever ogifta', sort: 'forbud', storlek: 4, skala: 'fest', sida: 1, text: 'Prästen ger sig åt tron' },
+  aldrigDoda: { namn: 'Aldrig döda en människa', sort: 'forbud', storlek: 4, skala: 'krig', sida: 0, text: 'Inte ens i försvar', acts: ['strid'], sed: ['krig', -1] },
+  ingenRoj: { namn: 'Ingen ny mark får röjas', sort: 'forbud', storlek: 4, skala: 'natur', sida: 0, text: 'Skogen får stå', acts: ['falla'], sed: ['natur', -1] },
+  ogifta: { namn: 'Prästerna lever ogifta', sort: 'forbud', storlek: 4, skala: 'fest', sida: 1, text: 'Prästen ger sig åt tron', intresse: (s, p, tr) => prastOf(s, tr) === p ? { v: -1, why: 'Är själv präst' } : { v: 0, why: '' } },
   // ritualerna som bud (steg 10.3.3)
   hogtid: { namn: 'Högtid', sort: 'krav', storlek: 1, text: 'Tron firar en högtid i en tidsålder', varden: hogtidNu, vardeNamn: (_s, v) => hogtidNamn(v), nu: () => true,
     om: (s, tr, b) => { const { ai, form } = hogtidAv(b.v); return `${['I istiden', 'I vårtiden', 'I sommartiden', 'I hösttiden'][ai]}, en kväll i ${RITUALER.hogtid.tim} timmar. De troende samlas ${helig(s, tr) ? 'vid den heliga platsen' : 'vid elden'}. ${form === 'fasta' ? 'Ingen mat: ett dygn utan mat (ett år i spelet).' : 'En hel mat per närvarande, ur kyrkans egendom först och annars ur den egna maten.'}`; } },
@@ -341,6 +358,28 @@ export function kyrkaTimme(s: State) {
 }
 let oppnaAndlig: (s: State) => void = () => {};
 export const satOppnaAndlig = (f: typeof oppnaAndlig) => { oppnaAndlig = f; };
+// ---------- rösten om ett bud (registret, steg 10.3.9) ----------
+// rösten är summan av raderna, över noll är ja. ja och nej: skälet när raden drar åt det hållet. Vad hen tycker om den som
+// föreslår räknas för alla frågor (rostaOm) och läggs inte till här
+interface BudRostRad { ja: string; nej: string; v: (s: State, p: Person, tr: Tro, b: BudDef) => number; why?: (s: State, p: Person, tr: Tro, b: BudDef) => string }
+export const BUDROST: Record<string, BudRostRad> = {
+  tro: { ja: 'Tror att budet är rätt', nej: 'Tycker att budet är för hårt', v: (_s, p, _tr, b) => (p.troStyrka ?? 0) / 100 - b.storlek * BUDROSTTAL.hard },
+  egen: { ja: '', nej: 'Gör själv det budet förbjuder', v: (_s, p, _tr, b) => b.sort === 'forbud' && b.acts ? -BUDROSTTAL.egen * habitShare(p, b.acts) : 0 },
+  intresse: { ja: '', nej: '', v: (s, p, tr, b) => b.intresse ? BUDROSTTAL.intresse * b.intresse(s, p, tr).v : 0, why: (s, p, tr, b) => b.intresse!(s, p, tr).why },
+  sed: { ja: 'Budet passar hens sed', nej: 'Budet går emot hens sed', v: (s, p, _tr, b) => b.sed ? b.sed[1] * (BUDROSTTAL.drag * drar(s, p)[b.sed[0]] + BUDROSTTAL.sed * (s.seder.v[b.sed[0]] ?? 0)) : 0 },
+  ande: { ja: 'Är andlig', nej: 'Är världslig', v: (s, p) => BUDROSTTAL.ande * (andlighet(s, p) - 50) / 50 },
+  skala: { ja: 'Budet passar tron', nej: 'Budet passar inte tron', v: (_s, _p, tr, b) => { const v = b.skala ? skalaV(tr, b.skala) : undefined; return v === undefined ? 0 : BUDROSTTAL.skala * (b.sida ? v - 50 : 50 - v) / 50; } },
+  humor: { ja: 'Mår bra', nej: 'Mår dåligt och vill inte ha fler bördor', v: (s, p, _tr, b) => BUDROSTTAL.humor * b.storlek * (moodOf(p, s.now) - HUMOR.bas) },
+};
+// rösten om budet id: summan, delarna och skälet (den del som vägde tyngst åt det håll hen röstade)
+export function budRost(s: State, p: Person, tr: Tro, id: BudId) {
+  const b = BDEF[id], delar = Object.entries(BUDROST).map(([k, r]) => ({ k, v: r.v(s, p, tr, b) }));
+  const v = delar.reduce((a, d) => a + d.v, 0), ja = v > 0;
+  const top = delar.filter(d => ja ? d.v > 0 : d.v < 0).sort((a, b2) => Math.abs(b2.v) - Math.abs(a.v))[0];
+  const rad = top ? BUDROST[top.k] : undefined;
+  const why = !rad || !top ? (ja ? BUDROST.tro.ja : BUDROST.tro.nej) : rad.why ? rad.why(s, p, tr, b) : ja ? rad.ja : rad.nej;
+  return { v, why, delar };
+}
 // raderna i LAGAR och FRAGOR som hör till kyrkan läggs till när allt är laddat (steg.ts)
 // hovet och templet som rader i PROJEKT (steg 8.6.14); steg.ts lägger in dem när allt är laddat
 export const kyrkProjekt = (): Record<string, ProjektDef> => ({ hov: kyrkBygge('hov'), tempel: kyrkBygge('tempel') });
@@ -363,7 +402,7 @@ FRAGOR.kyrkutgift = {
 };
 FRAGOR.nyttBud = {
   namn: (s, d) => `${troNamn(troOf(s, d.tro as number)!)}: ${budNamn(s, { id: d.id as BudId, v: d.v })}`, krets: 'tro',
-  rost: (_s, p, d) => { const b = BDEF[d.id as BudId], st = (p.troStyrka ?? 0) / 100; return { v: st - b.storlek * 0.12, why: st - b.storlek * 0.12 > 0 ? 'Tror att budet är rätt' : 'Tycker att budet är för hårt' }; },
+  rost: (s, p, d) => { const tr = troOf(s, d.tro as number); if (!tr) return { v: 0, why: '' }; const r = budRost(s, p, tr, d.id as BudId); return { v: r.v, why: r.why }; },
   gor: (s, d) => { const tr = troOf(s, d.tro as number)!, b: AntagetBud = { id: d.id as BudId, ...(d.v !== undefined ? { v: d.v } : {}), t: s.now }; (tr.bud ??= []).push(b); count(s, 'bud_ny'); const t = `${troNamn(tr)} fick ett nytt bud: ${budNamn(s, b).toLowerCase()}.`; log(s, t, 'rel', []); kronika(s, t, 'tro'); },
 };
 }

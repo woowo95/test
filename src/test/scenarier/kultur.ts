@@ -1046,6 +1046,35 @@ SCENARIER.kyrkan = {
   },
 };
 
+SCENARIER.budrost = {
+  text: 'Steg 10.3.9: rösten om ett bud är summan av raderna i BUDROST: tron mot hårdheten, vad budet kostar hen själv, sederna, andligheten, trons skalor och humöret gånger budets storlek. Skälet är den rad som väger tyngst åt det håll hen röstade',
+  kor: () => {
+    const { s, tr } = medTro(6, 3);
+    const ny = (troStyrka = 60) => { const p = nyInvanare(s, 'm', 30); p.tro = tr.id; p.troStyrka = troStyrka; p.andlig = 50; p.pot = { ...ref.pot }; p.habit = {}; p.hunger = 0.7; p.rest = 0.8; p.social = 0.6; return p; };
+    const ref = nyInvanare(s, 'm', 30);
+    const rost = (p: Person, id: SIM.BudId) => SIM.budRost(s, p, tr, id);
+    // jägaren och samlaren med lika stark tro
+    const jagare = ny(), samlare = ny(); jagare.habit = { jakt: 10, samla: 2 } as Person['habit']; samlare.habit = { samla: 10 } as Person['habit'];
+    const rj = rost(jagare, 'ingetKott'), rs = rost(samlare, 'ingetKott');
+    // den rike och den fattige om tiondet
+    const rik = ny(), fattig = ny(); SIM.put(s, 'bar', 40, { [rik.id]: 40 });
+    const rr = rost(rik, 'tionde'), rf = rost(fattig, 'tionde');
+    // den som mår dåligt: nej till ett stort bud, ja till ett litet
+    const ledsen = ny(); ledsen.hunger = 0; ledsen.rest = 0; ledsen.social = 0; const glad = ny();
+    const stor = rost(ledsen, 'ogifta'), liten = rost(ledsen, 'tacka'), gladStor = rost(glad, 'ogifta');
+    // omröstningen frågar samma röst
+    const fr = SIM.FRAGOR.nyttBud.rost(s, jagare, { tro: tr.id, id: 'ingetKott' });
+    const f = (x: number) => x.toFixed(2);
+    return [
+      [`jägaren röstar emot Inte döda djur (${f(rj.v)}: ${rj.why})`, rj.v < 0 && rj.why === 'Gör själv det budet förbjuder'],
+      [`samlaren med lika stark tro röstar för (${f(rs.v)}: ${rs.why})`, rs.v > 0],
+      [`den rike röstar emot tiondet (${f(rr.v)}: ${rr.why}) och den fattige för (${f(rf.v)})`, rr.v < 0 && rr.why === 'Äger mycket mat' && rf.v > 0],
+      [`den som mår dåligt röstar nej till ett stort bud (${f(stor.v)}: ${stor.why}) men ja till ett litet (${f(liten.v)})`, stor.v < 0 && stor.why === 'Mår dåligt och vill inte ha fler bördor' && liten.v > 0 && gladStor.v > 0],
+      [`skälet är den tyngsta raden åt det hållet (${rs.why})`, rs.why === 'Tror att budet är rätt'],
+      ['omröstningen räknar med samma röst', fr.v === rj.v && fr.why === rj.why],
+    ];
+  },
+};
 SCENARIER.troskrets = {
   text: 'Steg 10.3.2: trons krets tar upp sina egna frågor. En by utan ledarskap röstar om ett bud och har fortfarande inget styre efteråt, den främsta bland de troende lägger fram utan präst och profet, ett nedröstat bud kommer inte tillbaka på tre dygn (tre år i spelet), och två trosriktningar tar upp var sin fråga samma kväll',
   env: { BALANS: 'kyrka.fram=1' }, // varje kväll tas något upp, så att scenariot inte väntar på chansen
