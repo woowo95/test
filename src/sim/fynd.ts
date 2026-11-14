@@ -505,6 +505,20 @@ export function richness(s: State, k: Lager, x: number, y: number) {
   if (FYND[lagren(k)[0]].vatten) return standAt(s, k, x, y, i => nuAt(s, k, i));
   return nuAt(s, k, tileOf(x, y)); // på land: bara rutan man står på
 }
+// richness på land för lagren js, för den som frågar om många rutor på en gång utan att något i byn ändras emellan (sakerLasare i
+// steg.ts): lägret, uttaget, årstiden och mönstren hämtas en gång. rik(n, i) är exakt richness för lagret js[n] på rutan i; ett
+// lager i vattnet eller med djur (narvaro) räknas som vanligt
+export function richnessFor(s: State, js: readonly FyndId[]): (n: number, i: number) => number {
+  const enkel = js.map(j => !FYND[j].vatten && !narvaro[j]), lager = bynsAvstand(s), tiles = getMap(s.seed).tiles, d = takenOf(s);
+  const sa: number[] = [], mo: (Float32Array | undefined)[] = [];
+  return (n, i) => {
+    const j = js[n], f = FYND[j];
+    if (!enkel[n]) return richness(s, j, i % W + 0.5, Math.floor(i / W) + 0.5);
+    if (iLagretI(lager, tiles, i)) return 0;
+    const t = d[j], cap = f.bas(s, i, f.monster ? (mo[n] ??= monsterOf(s, j).m)[i] : 1); // capUte, sedan årstiden, som vaxerUte
+    return 0 + (0 + cap * (sa[n] ??= sasong(s, j))) * (t ? 1 - t[i] : 1); // summorna i vaxerUte och fyndAt börjar på 0
+  };
+}
 // richness för en handling som tar ur flera lager (bär och rötter), och lagrens egna värden (r, samma ordning som lagren),
 // så att takeFrom kan dela uttaget utan att räkna om dem. Summan är exakt den richness ger när inget lager har djur
 // eller vatten; annars räknas den som vanligt och r saknas
