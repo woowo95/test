@@ -1230,11 +1230,14 @@ export function stationFlyttTimme(s: State) {
     const d = stationDef(t.k);
     if (!d || !isKlar(t) || t.inne || d.inne || d.forvar || d.eld || d.brasa || d.utkant || d.sover || d.pynt || d.mobel) continue;
     const b = brukatNu(s, t);
-    if (b < 1 || (bast && b * 1000 <= bast.vinst)) continue;
+    if (b < 1) continue;
+    // vinsten är högst b gånger avståndet nu (den nya platsen kan inte vara närmare än tyngdpunkten), så platsen söks bara
+    // där den kan bli den bästa (steg 10.2.108: samma val, utan att stationSite räknas i onödan)
+    const { w, h } = storlekAv(t), fore = Math.hypot(t.x + w / 2 - c.x, t.y + h / 2 - c.y);
+    if (fore < STATION.flyttMinste || (bast && b * fore <= bast.vinst)) continue;
     const at = utan(s, t, () => stationSite(s, t.k, byId(s, t.ag)));
     if (!at || 'inne' in at && at.inne) continue;
-    const { w, h } = storlekAv(t), n = storlek(t.k, at.rot);
-    const fore = Math.hypot(t.x + w / 2 - c.x, t.y + h / 2 - c.y), efter = Math.hypot(at.x + n.w / 2 - c.x, at.y + n.h / 2 - c.y);
+    const n = storlek(t.k, at.rot), efter = Math.hypot(at.x + n.w / 2 - c.x, at.y + n.h / 2 - c.y);
     if (efter > fore - STATION.flyttMinste) continue;
     const vinst = b * (fore - efter);
     if (!bast || vinst > bast.vinst) bast = { id: t.id, x: at.x, y: at.y, ...(at.rot ? { rot: 1 as const } : {}), vinst };

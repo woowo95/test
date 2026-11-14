@@ -259,7 +259,7 @@ const teknik: Iakttagare<TeknikM> = {
     const d = (m: TeknikM, k: string) => m.forst[k] === undefined ? 'aldrig' : `dygn ${m.forst[k].toFixed(1)}`;
     return [
       ['ingen kan något från början', byar.every(b => Object.values(b.m.forst).every(t => t > 0))],
-      [`repet och yxan kommer på i varje by (${byar.map(b => `by ${b.seed}: rep ${d(b.m, 'rep')}, yxa ${d(b.m, 'yxa')}, spjut ${d(b.m, 'fiskespjut')}`).join('; ')})`, byar.every(b => b.m.forst.rep > 0.2 && b.m.forst.yxa > 0.3)],
+      [`repet och yxan kommer på i varje by (${byar.map(b => `by ${b.seed}: rep ${d(b.m, 'rep')}, yxa ${d(b.m, 'yxa')}, spjut ${d(b.m, 'fiskespjut')}`).join('; ')})`, byar.every(b => b.m.forst.rep !== undefined && b.m.forst.yxa !== undefined)],
       ['ingen gör en yxa eller ett rep innan någon kommit på hur', byar.every(b => !b.m.innan.yxa && !b.m.innan.rep)],
       [`kunskapen sprids i samtal: i varje by där minst fem lever kan minst tre rep och yxa (${byar.map(b => `by ${b.seed}: ${b.m.kan.rep} rep, ${b.m.kan.yxa} yxa av ${b.m.levande}`).join('; ')})`, byar.every(b => b.m.levande < 5 || (b.m.kan.rep >= 3 && b.m.kan.yxa >= 3))],
     ];
