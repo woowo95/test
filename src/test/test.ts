@@ -18,7 +18,10 @@ const FACIT = new URL('../../test/facit.json', import.meta.url), BYDIR = fileURL
 // JOBB: byarnas bitar delas så att ingen bit tar mer än en JOBB-del av alla byars tid tillsammans, så att inget jobb i det
 // stora testet är mycket längre än de andra (steg 10.2.104): en lång by får fler bitar än en kort
 // by 1511 och 4634 får alla motgångar (MOTGANGAR) inom testets tid, så att samma-kollen ur testbyarna kör dem alla (steg 10.2.105)
-const BYAR = [1, 1511, 4634], DAGAR = 90, JOBB = 20;
+// DAGAR: 50 dygn (50 år i spelet, sju veckor i verkligheten); hela 90 dygn körs i fasens Balans med TESTDYGN=90 npm test
+// (steg 10.2.107), som jämför med facit men aldrig sparar något
+const FACITDYGN = 50, DAGAR = Number(process.env.TESTDYGN ?? FACITDYGN), BYAR = [1, 1511, 4634], JOBB = 20;
+if (DAGAR !== FACITDYGN && (process.argv.includes('--spara') || process.argv.includes('--utkast'))) { console.log(`Facit gäller ${FACITDYGN} dygn; med TESTDYGN=${DAGAR} sparas inget.`); process.exit(1); }
 // hur mycket ett tal får ändras innan det räknas som en ändring står i registret (facit i nyckeltal.ts):
 // körtiden jämförs inte och sparfilens storlek får variera lite; allt annat ska vara exakt lika
 const lika = (a: number, b: number) => a === b;
@@ -70,7 +73,7 @@ if (spara) {
   const jobb: Jobb[] = [];
   for (const seed of BYAR) {
     const f = facit?.byar[seed];
-    const granser = f && f.granser.slice(1, -1).every(g => existsSync(byFil(BYDIR, seed, g))) ? f.granser : [0, DAGAR];
+    const granser = f && f.granser.at(-1) === DAGAR && f.granser.slice(1, -1).every(g => existsSync(byFil(BYDIR, seed, g))) ? f.granser : [0, DAGAR];
     granser.slice(1).forEach((till, i) => jobb.push({ seed, fran: granser[i], till, in: i ? byFil(BYDIR, seed, granser[i]) : '-', ut: ut && till < DAGAR ? byFil(ut, seed, till) : '-', forra: f?.bitMs[i] ?? till - granser[i] }));
   }
   const ordning = [...jobb].sort((a, b) => b.forra - a.forra); // den som tog längst tid förra gången först
