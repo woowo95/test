@@ -12,7 +12,7 @@ import { createState, migrate, serialize, type State } from '../sim';
 import { Ack, korBy, START } from './kor';
 import type { Nyckeltal } from './nyckeltal';
 
-export const DEL = 10; // dygn per del (10 år i spelet): byn sparas och läses in så här ofta, och bitarnas gränser ligger på delgränserna
+export const DEL = 5; // dygn per del (5 år i spelet): byn sparas och läses in så här ofta, och bitarnas gränser ligger på delgränserna
 export const lasBy = (fil: string): State => migrate(JSON.parse(gunzipSync(readFileSync(fil)).toString('utf8')));
 export const sparaBy = (fil: string, s: State) => writeFileSync(fil, gzipSync(serialize(s), { level: 9 }));
 

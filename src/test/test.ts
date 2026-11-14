@@ -14,7 +14,9 @@ import { korJson, pool, prioAv } from './pool';
 import { BitSvar, DEL, laggIhop } from './delby';
 
 const FACIT = new URL('../../test/facit.json', import.meta.url), BYDIR = fileURLToPath(new URL('../../test/facit-byar/', import.meta.url));
-const BYAR = [1, 42, 777], DAGAR = 90, BITAR = 3;
+// JOBB: byarnas bitar delas så att ingen bit tar mer än en JOBB-del av alla byars tid tillsammans, så att inget jobb i det
+// stora testet är mycket längre än de andra (steg 10.2.104): en lång by får fler bitar än en kort
+const BYAR = [1, 42, 777], DAGAR = 90, JOBB = 20;
 // hur mycket ett tal får ändras innan det räknas som en ändring står i registret (facit i nyckeltal.ts):
 // körtiden jämförs inte och sparfilens storlek får variera lite; allt annat ska vara exakt lika
 const lika = (a: number, b: number) => a === b;
@@ -37,14 +39,16 @@ let res: { seed: number; n: Nyckeltal; vakter: string[] }[], nytt: Facit = { bya
 const facit = lasFacit();
 
 if (spara) {
-  // hela vägen för varje by, sparad vid varje delgräns; gränserna väljs sedan bland delgränserna så att BITAR bitar tar ungefär lika lång tid
+  // hela vägen för varje by, sparad vid varje delgräns; gränserna väljs sedan bland delgränserna så att bitarna tar ungefär lika lång tid, fler bitar i en lång by
   const tmp = `${tmpdir()}/facit-byar-${process.pid}/`;
   mkdirSync(tmp, { recursive: true });
   const hela = await pool(BYAR.map(seed => () => korJson<BitSvar>('delby.ts', ['--bit', String(seed), '0', String(DAGAR), '-', '-', '--alla', tmp], `by ${seed}`)
     .catch((e: Error) => { console.log(e.message); process.exit(1); })));
   res = hela.map(b => ({ seed: b.seed, ...laggIhop([b]) }));
+  const mal = hela.reduce((a, b) => a + b.delMs.reduce((x, y) => x + y, 0), 0) / JOBB;
   for (const b of hela) {
-    const g = basta(b.delMs), granser = [0, ...g.map(i => i * DEL), DAGAR];
+    const bitar = Math.max(1, Math.ceil(b.delMs.reduce((x, y) => x + y, 0) / mal));
+    const g = basta(b.delMs, bitar), granser = [0, ...g.map(i => i * DEL), DAGAR];
     const bitMs = granser.slice(1).map((t, i) => b.delMs.slice(granser[i] / DEL, t / DEL).reduce((a, x) => a + x, 0));
     nytt.byar[b.seed] = { granser, bitMs, n: res.find(r => r.seed === b.seed)!.n };
   }
@@ -106,14 +110,14 @@ if (spara) {
 console.log(vakter.length ? 'VAKTER LARMAR:\n  ' + vakter.join('\n  ') : 'Vakter: inga fel.');
 if (vakter.length) process.exitCode = 1;
 
-// gränserna (som delindex) som delar delarnas tider i BITAR bitar i följd med den kortaste längsta biten
-function basta(ms: number[]): number[] {
+// gränserna (som delindex) som delar delarnas tider i bitar (så många) i följd med den kortaste längsta biten
+function basta(ms: number[], bitar: number): number[] {
   const n = ms.length, sum = (a: number, b: number) => ms.slice(a, b).reduce((x, y) => x + y, 0);
   let bast: number[] = [], bm = Infinity;
   const prova = (start: number, kvar: number, valda: number[]) => {
     if (kvar === 1) { const m = Math.max(...[...valda, n].map((g, i, a) => sum(i ? a[i - 1] : 0, g))); if (m < bm) { bm = m; bast = valda; } return; }
     for (let g = start + 1; g <= n - kvar + 1; g++) prova(g, kvar - 1, [...valda, g]);
   };
-  prova(0, Math.min(BITAR, n), []);
+  prova(0, Math.min(bitar, n), []);
   return bast;
 }
