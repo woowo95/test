@@ -4,7 +4,7 @@ import { groundOf } from './mark';
 import { FOREST, findPath, nasbara } from './vag';
 import { Ting, halvKlar, nTools, newTing, tingOf } from './agande';
 import { kvHaller } from './kvalitet';
-import { forvarAt, sittAt, stationAt, stationDef, stationRutor, tillbakaVid } from './stationer';
+import { forvarAt, sittAt, stationAt, stationDef, stationRutor, tillbakaVid, vidRutaAr } from './stationer';
 import { faltAt } from './odling';
 import { ruttSmuts } from './smuts';
 import { ALDER, KROPP, alive, byId, count, isSick, living, stat, ageOf, log } from './folk';
@@ -231,6 +231,14 @@ export function releaseOwner(s: State, id: number) {
   if (s.delar) delete s.delar[id]; // det påbörjade försvinner med hen
   if (s.andelRest) delete s.andelRest[id];
   for (const a of stacksOf(s)) if (a.ag?.[id] !== undefined) { delete a.ag[id]; cleanDel(s, a); }
+  // redskapen och plaggen som blev kvar blir byns, och ingen bär eller håller dem längre (placeTools lägger dem i förrådet)
+  for (const t of tingOf(s)) {
+    if (t.agare === id) t.agare = BYN;
+    if (t.hos === id) t.hos = undefined;
+    if (t.lass === id) t.lass = undefined;
+    if (t.krok === id) t.krok = undefined;
+    if (t.bar === id) t.bar = undefined;
+  }
   changed(s);
 }
 // allt id äger i alla stackar, också de utanför förrådet, per slag (arv.ts)
@@ -453,6 +461,7 @@ function roomIn(s: State, occ: Occ, x: number, y: number, k: string) {
   const a = occ.get(key(x, y)), f = forvarAt(s, x, y), st = stationAt(s, x, y);
   if (f?.redskap) return isTool(k) && (!a || isTool(a.k)) && (occ.redskap.get(key(x, y)) ?? 0) < f.rymmer;
   if (st && stationDef(st.k)?.forvar?.redskap) return isTool(k) && !a; // ett ställ som byggs: ett redskap, som på marken
+  if (st && vidRutaAr(st, x, y)) return false; // rutan där stationen har sitt redskap (bensylen vid bänken) är stationens
   return !a || (a.k === k && !isTool(k) && a.n < rymd(s, x, y, k) - 1e-9);
 }
 // en snabb kontroll före roomIn: stacken a på rutan gör att inget mer av slaget k ryms där (roomIn hade sagt nej). Ett annat

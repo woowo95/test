@@ -1110,6 +1110,9 @@ function vidRuta(t: Station, k: string) {
   const i = Math.max(0, Object.keys(stationDef(t.k)?.vid ?? {}).indexOf(k)), { w, h } = storlekAv(t);
   return { x: t.x + i % w, y: t.y + Math.min(h - 1, Math.floor(i / w)) };
 }
+// är (x, y) rutan där stationen t har sitt redskap? Den rutan är stationens också när redskapet är borta, så att lagret inte
+// lägger något annat där (lager.ts, roomIn)
+export const vidRutaAr = (t: Station, x: number, y: number) => Object.keys(stationDef(t.k)?.vid ?? {}).some(k => { const r = vidRuta(t, k); return r.x === x && r.y === y; });
 // ett nytt redskap läggs vid stationen om en plats för det står tom (redskap.ts, toolDone). true = det lades där
 export function nyttVid(s: State, k: Ting) {
   const t = tomPlats(s, k.k);
