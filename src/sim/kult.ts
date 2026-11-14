@@ -147,9 +147,8 @@ export const helig = (s: State, tr: Tro, nara?: { x: number; y: number }) => {
 // den heliga plats som någon som står vid (x, y) är vid
 const heligVid = (s: State, tro: number | undefined, x: number, y: number) => tro === undefined ? undefined : s.heliga?.find(h => h.tro === tro && !h.skandad && Math.abs(h.x + 0.5 - x) <= 1.5 && Math.abs(h.y + 1.5 - y) <= 1.5);
 // kandidaterna till budet En helig plats (steg 10.3.10): platsen där tron föddes, trons helgons gravar och rutorna där en bön i nöd
-// fick svar; den som hände först föreslås. Ingen när tron har KULT.heligTak platser
+// fick svar; den som hände först föreslås. När tron har KULT.heligTak platser är en ny ett byte mot den minst använda (steg 10.3.13)
 export function heligaKandidater(s: State, tr: Tro) {
-  if (heligaFor(s, tr).length >= KULT.heligTak) return [];
   const k: { x: number; y: number; t: number; om: string }[] = [];
   if (tr.x !== undefined) k.push({ x: tr.x, y: tr.y!, t: tr.t, om: 'där tron föddes' });
   for (const h of tr.helgon ?? []) { const g = s.gravar?.find(q => q.vem === h.id); if (g) k.push({ x: g.x, y: g.y, t: h.t, om: `där ${h.namn} ligger begravd` }); }

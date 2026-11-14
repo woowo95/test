@@ -948,7 +948,7 @@ SCENARIER.heligplats = {
     const svar = tr.heligKand?.some(k => k.x === h.x + 6 && k.y === h.y + 2) && SIM.heligaKandidater(s, tr).some(k => k.x === h.x + 6);
     // ingen fjärde plats
     SIM.helga(s, tr, h.x + 6, h.y + 2, 'här'); SIM.helga(s, tr, h.x - 8, h.y, 'där');
-    const tre = SIM.heligaKandidater(s, tr).length === 0 && SIM.BUD.helig.varden(s, tr).length === 0;
+    const tal = SIM.trosTalare(s, tr) ?? v[0], tre = !SIM.TROS_UPP.flatMap(r => r.lista(s, tr, tal)).some(f => f.fr.f === 'nyttBud' && f.fr.d.id === 'helig');
     // en vanhelgad plats förlorar sitt bud men visas kvar
     SIM.vanhelgaPlats(s, h); const vanh = !tr.bud!.some(b => b.id === 'helig' && b.v === val) && s.heliga!.includes(h);
     // en sparad by behåller sina platser som bud
@@ -962,7 +962,7 @@ SCENARIER.heligplats = {
       ['bönen hålls vid platsen inom 15 rutor, och vid elden längre bort', vidPlatsen && langtElden],
       [`platsen räknar bönerna (${boner})`, boner === 1],
       ['bönen i nöd som fick svar ger en kandidat utan präst', !!svar && utanPrast],
-      ['ingen fjärde plats föreslås', tre],
+      ['ingen fjärde plats föreslås, bara ett byte', tre],
       ['en vanhelgad plats förlorar sitt bud och visas kvar', vanh],
       ['en sparad by behåller sina platser som bud', sparad],
     ];
@@ -984,7 +984,7 @@ SCENARIER.prastregel = {
     tr.prast = undefined; SIM.kultTimme(s); const man = tr.prast === m.id;
     // den som stängs ute röstar emot
     tr.bud = []; const emot = SIM.budRost(s, k, tr, 'prastMan').delar.find(d => d.k === 'intresse')!.v;
-    const grupp = (() => { const fore = SIM.budForslag(s, tr, 'prastMan').length; tr.bud = [{ id: 'prastKvinna', t: s.now }]; return fore === 1 && SIM.budForslag(s, tr, 'prastMan').length === 0; })();
+    const grupp = (() => { const fore = SIM.budForslag(s, tr, 'prastMan').length; tr.bud = [{ id: 'prastKvinna', t: s.now }]; return fore === 1 && SIM.ersatter(s, tr, { id: 'prastMan' })?.id === 'prastKvinna'; })();
     // dräkten sys först med budet
     tr.bud = []; tr.prast = m.id; const utanDrakt = SIM.REDSKAPMAL.prastdrakt(s) + SIM.REDSKAPMAL.mask(s);
     tr.bud = [{ id: 'drakt', t: s.now }]; const medDrakt = SIM.REDSKAPMAL.prastdrakt(s) + SIM.REDSKAPMAL.mask(s);
@@ -1005,7 +1005,7 @@ SCENARIER.prastregel = {
       ['den sittande prästen sitter kvar när budet antas', kvar],
       ['med budet Bara män blir bara en man präst', man],
       [`den som stängs ute röstar emot (${emot.toFixed(2)})`, emot < 0],
-      ['bara ett bud om vem som får bli präst', grupp],
+      ['bara ett bud om vem som får bli präst: det andra är ett byte', grupp],
       [`dräkten sys först med budet (${utanDrakt} → ${medDrakt})`, utanDrakt === 0 && medDrakt === 1],
       ['i en sparad by blir regeln ett bud och en tro med präst har dräkten', sparad],
       [`ritualen ger mindre tro när dräkten saknas (${med.toFixed(2)} med, ${utan.toFixed(2)} utan)`, med > 0 && Math.abs(utan * 3 - med) < 0.01],
@@ -1034,6 +1034,59 @@ SCENARIER.prastbud = {
       [`en präst utses efter ett ja (${pr?.name})`, utsedd],
       [`en ny väljs när prästen dör (${ny?.name})`, nyVald],
       ['en sparad by med en levande präst har budet', sparad],
+    ];
+  },
+};
+
+SCENARIER.budbort = {
+  text: 'Steg 10.3.13: buden ändras och tas bort. Ett bud som den som talar ogillar röstas bort, spärren håller, Bara män ersätter Bara kvinnor, en närmare plats ersätter den minst använda, ett bud tas bort mitt i en ritual utan fel, och lagen ur ett borttaget bud tas upp i lagarna',
+  kor: () => {
+    const { s, v, l, tr } = medTro(6, 4);
+    SIM.kultTimme(s);
+    const pr = SIM.prastOf(s, tr)!;
+    for (const p of v) p.troStyrka = 10;
+    // prästen ogillar att präster lever ogifta
+    tr.bud = [{ id: 'prast', t: s.now - 5 * SIM.DAY }, { id: 'ogifta', t: s.now - 5 * SIM.DAY }, { id: 'lunden', t: s.now }];
+    const lista = SIM.TROS_UPP.flatMap(r => r.lista(s, tr, pr)).filter(f => f.fr.f === 'taBortBud' && f.prio > 0);
+    const foreslar = lista.some(f => f.fr.d.id === 'ogifta');
+    const gick = SIM.rostaOm(s, { f: 'taBortBud', d: { tro: tr.id, id: 'ogifta' }, fram: pr.id });
+    const borta = gick && !SIM.budIn(tr, 'ogifta') && SIM.budIn(tr, 'prast');
+    // spärren: ett bud som just antagits föreslås inte bort
+    const sparr = !lista.some(f => f.fr.d.id === 'lunden');
+    // ett byte: Bara män i stället för Bara kvinnor
+    tr.bud.push({ id: 'prastKvinna', t: s.now });
+    const man = v.find(p => p.sex === 'm' && p !== pr) ?? v[0];
+    const byte = SIM.TROS_UPP.flatMap(r => r.lista(s, tr, man)).find(f => f.fr.f === 'bytBud' && f.fr.d.id === 'prastMan');
+    SIM.FRAGOR.bytBud.gor(s, { tro: tr.id, id: 'prastMan', gid: 'prastKvinna' }, man);
+    const bytt = !!byte && byte.fr.d.gid === 'prastKvinna' && SIM.budIn(tr, 'prastMan') && !SIM.budIn(tr, 'prastKvinna');
+    // en ny plats när tron har tre: den minst använda byts ut
+    const x0 = Math.floor(v[0].x), y0 = Math.floor(v[0].y);
+    for (const [dx, n] of [[0, 5], [4, 0], [-4, 3]] as const) { SIM.FRAGOR.nyttBud.gor(s, { tro: tr.id, id: 'helig', v: SIM.heligVarde(x0 + dx, y0 + 6) }, undefined); const h = s.heliga!.find(q => q.x === x0 + dx && q.y === y0 + 6); if (h) h.boner = n; }
+    tr.heligKand = [{ x: x0 + 1, y: y0 - 4, t: s.now - 100 * SIM.DAY, om: 'där bönen fick svar' }];
+    const g = SIM.ersatter(s, tr, { id: 'helig', v: SIM.heligVarde(x0 + 1, y0 - 4) });
+    if (g) SIM.FRAGOR.bytBud.gor(s, { tro: tr.id, id: 'helig', v: SIM.heligVarde(x0 + 1, y0 - 4), gid: g.id, gv: g.v }, undefined);
+    const platser = SIM.heligaFor(s, tr), plats = g?.v === SIM.heligVarde(x0 + 4, y0 + 6) && platser.length === 3 && platser.some(h => h.x === x0 + 1) && !platser.some(h => h.x === x0 + 4);
+    // mitt i en ritual
+    const ai = SIM.ageIndex(s), hv = SIM.hogtidVarde(ai, 'gille');
+    tr.bud.push({ id: 'hogtid', v: hv, t: s.now }); s.ritual = undefined; s.ritualKo = [];
+    SIM.nyRitual(s, 'hogtid', { tro: tr.id, namn: SIM.hogtidNamn(hv), form: 'gille' }); SIM.nyRitual(s, 'hogtid', { tro: tr.id, namn: SIM.hogtidNamn(hv), form: 'gille' });
+    SIM.ritualTimme(s); const igang = !!s.ritual;
+    SIM.taBortBud(s, tr, { id: 'hogtid', v: hv });
+    let fel = '';
+    try { s.now = ((s.ritual as SIM.Ritual | undefined)?.slut ?? s.now) + 1; SIM.ritualTimme(s); } catch (e) { fel = String(e); }
+    const ritual = igang && !fel && !SIM.budIn(tr, 'hogtid') && !s.ritualKo?.some(r => r.k === 'hogtid');
+    // lagen ur ett borttaget bud
+    const st = SIM.styreAv(s); st.lagar = [{ id: 'bud_ingetKott', t: s.now, straff: 4, av: -1, om: '' }];
+    tr.bud.push({ id: 'ingetKott', t: s.now }); SIM.taBortBud(s, tr, { id: 'ingetKott' });
+    const lag = SIM.lagarNu(s).some(x => x.id === 'bud_ingetKott') && SIM.TAS_UPP.flatMap(r => r.lista(s, l)).some(f => f.fr.f === 'bortlag' && f.fr.d.id === 'bud_ingetKott');
+    return [
+      [`den som talar föreslår att ta bort ett bud hen ogillar (${lista.map(f => f.fr.d.id).join(', ')})`, foreslar],
+      ['de troende röstar bort budet', borta],
+      ['spärren: ett nytt bud föreslås inte bort', sparr],
+      ['Bara män ersätter Bara kvinnor', bytt],
+      [`en närmare plats ersätter den minst använda (${g?.v})`, plats],
+      [`ett bud tas bort mitt i en ritual utan fel${fel ? ` (${fel})` : ''}`, ritual],
+      ['lagen ur budet står kvar och tas upp i lagarna', lag],
     ];
   },
 };
