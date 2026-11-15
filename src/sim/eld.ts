@@ -10,7 +10,8 @@ import { Del, addDel } from './egendom';
 import { coldOf, hardVinter, temperature, vaderNu, VADER } from './vader';
 import { MOTGANG } from './motgang';
 import { isWall, roomAt } from './byggnad';
-import { ALDER, KROPP, ageOf, alive, count, forstaGang, gjort, isSick, living, log, stat, think } from './folk';
+import { ligger } from './sjukdom';
+import { ALDER, KROPP, ageOf, alive, count, forstaGang, gjort, living, log, stat, think } from './folk';
 import { allaTing, nTools, wearTool } from './agande';
 import { kroppFart } from './gang';
 import { SAKER } from './saker';
@@ -342,9 +343,10 @@ export function fetchFuel(s: State, p: Person, why: string, fran?: Person, f = h
   if (fran) p.task!.fran = fran.id;
   if (f.id !== undefined) p.task!.ref = f.id;
 }
+// den som är sjuk men uppe (ligger inte, sjukdom.ts) orkar lägga ved på elden
 const awake = (s: State, p: Person, minAge: number) => {
   const t = p.task;
-  return ageOf(p, s.now) >= minAge && !isSick(p, s.now) && halsa(p) >= KROPP.svag &&
+  return ageOf(p, s.now) >= minAge && !ligger(p, s.now) && halsa(p) >= KROPP.svag &&
     (!t || (t.act !== 'sova' && t.act !== 'gomma' && !(t.phase === 'back' && t.carry > 0) && !t.items)); // den som gömmer sig för vargarna går inte ut till elden
 };
 // så mycket fortare än vanligt elden brinner nu, två faktorer: i regnet brinner en eld ute fortare (steg 2.11.1; en eld under
